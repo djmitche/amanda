@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.20 1997/12/31 01:32:25 jrj Exp $
+ * $Id: selfcheck.c,v 1.21 1997/12/31 22:26:03 jrj Exp $
  *
  * do self-check and send back any error messages
  */
@@ -244,6 +244,7 @@ char *program, *disk;
 int level;
 {
     char *device = NULL;
+    char *err = NULL;
 
     if (strcmp(program, "GNUTAR") == 0) {
 #ifdef SAMBA_CLIENT
@@ -288,11 +289,13 @@ int level;
 #endif
     }
 
+    dbprintf(("checking disk %s: device %s", disk, device));
+
 #ifndef CHECK_FOR_ACCESS_WITH_OPEN
-    if(access(device, R_OK) == -1)
-	    printf("ERROR [can not access %s (%s): %s]\n",
-		   device, disk, strerror(errno));
-    else {
+    if(access(device, R_OK) == -1) {
+	    err = strerror(errno);
+	    printf("ERROR [can not access %s (%s): %s]\n", device, disk, err);
+    } else {
 	    printf("OK %s\n", disk);
     }
 
@@ -301,14 +304,16 @@ int level;
 	/* XXX better check in this case */
 	int tstfd;
 	if((tstfd = open(device, O_RDONLY)) == -1) {
-	    printf("ERROR [could not open %s (%s): %s]\n",
-		   device, disk, strerror(errno));
+	    err = strerror(errno);
+	    printf("ERROR [could not open %s (%s): %s]\n", device, disk, err);
 	} else {
 	    printf("OK %s\n", device);
 	}
 	aclose(tstfd);
     }
 #endif
+
+    dbprintf((": %s\n", err ? err : "OK"));
     afree(device);
 
     /* XXX perhaps do something with level: read dumpdates and sanity check */

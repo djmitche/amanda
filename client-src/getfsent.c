@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getfsent.c,v 1.9 1997/12/30 05:23:53 jrj Exp $
+ * $Id: getfsent.c,v 1.10 1997/12/31 22:26:02 jrj Exp $
  *
  * generic version of code to read fstab
  */
@@ -330,55 +330,62 @@ generic_fsent_t *fsent;
 
 #endif /* } */
 
-#ifdef DEV_ROOT
-static char dev_root[] = "/dev/";
-static char dev_rroot[] = "/dev/r";
-#endif
+/*
+ *=====================================================================
+ * Convert either a block or character device name to a character (raw)
+ * device name.
+ *
+ * char *dev2rdev(char *name);
+ *
+ * entry:	name - device name to convert
+ * exit:	matching character device name if found,
+ *		otherwise returns the input
+ *
+ * The input must be an absolute path.
+ *
+ * The exit string area is always an alloc-d area that the caller is
+ * responsible for releasing.
+ *=====================================================================
+ */
 
 static char *dev2rdev(name)
 char *name;
 {
-  static char *fname = NULL;
-#ifdef DEV_ROOT
+  char *fname = NULL;
   struct stat st;
-#endif
-  int len;
+  char *s;
+  int ch;
 
-  if (strncmp(name, DEV_PREFIX, (len = strlen(DEV_PREFIX))) == 0) {
-    fname = newstralloc2(fname, RDEV_PREFIX, name+len);
-#ifdef DEV_ROOT
-  } else if (strncmp(name, dev_root, (len = strlen(dev_root))) == 0
-	     && (fname = newstralloc2(fname, dev_rroot, name+len))
-	     && stat(fname, &st) == 0) {
-    /* do nothing else */;
-#endif
-  } else {
-    return name;
+  if(stat(name, &st) == 0 && S_ISCHR(st.st_mode)) {
+    /*
+     * If the input is already a character device, just return it.
+     */
+    return stralloc(name);
   }
-  return fname;
-}  
 
-static char *rdev2dev2rdev(name)
-char *name;
-{
-  static char *fname = NULL;
-#ifdef DEV_ROOT
-  struct stat st;
-#endif
-  int len;
+  s = name;
+  ch = *s++;
 
-  if (strncmp(name, RDEV_PREFIX, (len = strlen(RDEV_PREFIX))) == 0) {
-    fname = newstralloc2(fname, DEV_PREFIX, name+len);
-#ifdef DEV_ROOT
-  } else if (strncmp(name, dev_rroot, (len = strlen(dev_rroot))) == 0
-	     && (fname = newstralloc2(fname, dev_root, name+len))
-	     && stat(fname, &st) == 0) {
-    /* do nothing else */;
-#endif
-  } else {
-    return dev2rdev(name);
+  if(ch == '\0' || ch != '/') return stralloc(name);
+
+  ch = *s++;					/* start after first '/' */
+  /*
+   * Break the input path at each '/' and create a new name with an
+   * 'r' before the right part.  For instance:
+   *
+   *   /dev/sd0a -> /dev/rsd0a
+   *   /dev/dsk/c0t0d0s0 -> /dev/rdsk/c0t0d0s0 -> /dev/dsk/rc0t0d0s0
+   */
+  while(ch) {
+    if (ch == '/') {
+      s[-1] = '\0';
+      fname = newvstralloc(fname, name, "/r", s, NULL);
+      s[-1] = ch;
+      if(stat(fname, &st) == 0 && S_ISCHR(st.st_mode)) return fname;
+    }
+    ch = *s++;
   }
-  return fname;
+  return stralloc(name);			/* no match */
 }
 
 static int samefile(stats, estat)
@@ -399,6 +406,8 @@ generic_fsent_t *fsent;
 {
   struct stat stats[3];
   char *fullname = NULL;
+  char *rdev = NULL;
+  int rc;
 
   if (!name)
     return 0;
@@ -416,12 +425,15 @@ generic_fsent_t *fsent;
       stats[2].st_dev = -1;
     afree(fullname);
   }
-  else if (stat(rdev2dev2rdev(name), &stats[1]) == -1)
+  else if (stat((rdev = dev2rdev(name)), &stats[1]) == -1)
     stats[1].st_dev = -1;
+
+  afree(rdev);
 
   if (!open_fstab())
     return 0;
 
+  rc = 0;
   while(get_fstab_nextentry(fsent)) {
     struct stat estat;
     if ((fsent->mntdir != NULL
@@ -431,15 +443,15 @@ generic_fsent_t *fsent;
 	 && stat(fsent->fsname, &estat) != -1
 	 && samefile(stats, &estat)) ||
 	(fsent->fsname != NULL
-	 && stat(rdev2dev2rdev(fsent->fsname), &estat) != -1
+	 && stat((rdev = dev2rdev(fsent->fsname)), &estat) != -1
 	 && samefile(stats, &estat))) {
-      close_fstab();
-      return 1;
+      rc = 1;
+      break;
     }
   }
-
+  afree(rdev);
   close_fstab();
-  return 0;
+  return rc;
 }
 
 int is_local_fstype(fsent)

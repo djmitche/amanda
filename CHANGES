@@ -1,5 +1,11 @@
 Version 2.4.0b5
 
+	Get rid of DEV_ROOT/DEV_RROOT and figure out the raw name on the
+	fly by trying a leading 'r' before each path element one at a time
+	until we find a character device.  This should handle all the current
+	cases plus things like Solaris DiskSuite that have /dev/md/rdsk/xxx
+	names.  -JJ
+
 	Change kill logic in sendsize to try TERM first, then KILL if that
 	does not get dump's attention.  This fixes a problem on AIX 4.x
 	where dump was always getting a KILL and leaving orphaned message

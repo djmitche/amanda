@@ -1879,14 +1879,6 @@ fi
 AC_DEFINE_UNQUOTED(DEV_PREFIX,"${DEV_PREFIX}")
 AC_DEFINE_UNQUOTED(RDEV_PREFIX,"${RDEV_PREFIX}")
 
-AC_MSG_CHECKING(whether /dev/root and /dev/rroot exist)
-if test -b /dev/root -a -c /dev/rroot; then
-    AC_DEFINE_UNQUOTED(DEV_ROOT)
-    AC_MSG_RESULT(yes)
-else
-    AC_MSG_RESULT(no)
-fi
-
 case $mount in
     /dev/vg*)
 	AC_MSG_WARN("*** Run amhpfixdevs on HP-UX systems using /dev/vg??.")
