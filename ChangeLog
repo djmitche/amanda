@@ -1,5 +1,10 @@
 1999-09-19 John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/amverify.sh.in: put back an "mt status" wait loop I
+	  erroneously removed, but protect it from AIX.
+
+1999-09-19 John R. Jackson  <jrj@purdue.edu>
+
 	* common-src/util.c: fix math in bind_portrange so ports requested
 	  are between those the caller passed and make sure port 0 does not
 	  accidentally get requested, which returns a non-privileged port.
