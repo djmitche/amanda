@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.37 2002/11/08 01:52:32 martinea Exp $
+/* $Id: amidxtaped.c,v 1.38 2002/11/11 21:53:03 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -109,7 +109,6 @@ int nslots, backwards;
 int scan_init(rc, ns, bk)
 int rc, ns, bk;
 {
-    dbprintf(("%s: AA\n", debug_prefix_time(NULL)));
     if(rc)
         error("could not get changer info: %s", changer_resultstr);
 
@@ -361,58 +360,55 @@ char **argv;
 	}
     } while (re_end == 0);
 
-    if(re_fsf || re_label) {
-	if(re_config) {
-	    char *conffile;
-	    config_dir = vstralloc(CONFIG_DIR, "/", re_config, "/", NULL);
-	    conffile = stralloc2(config_dir, CONFFILE_NAME);
-	    if (read_conffile(conffile)) {
-		dbprintf(("%s: config '%s' not found\n",
-			  debug_prefix_time(NULL), re_config));
-		amfree(re_fsf);
-		amfree(re_label);
-		amfree(re_config);
-	    }
-	    else {
-		if(re_fsf && getconf_int(CNF_AMRECOVER_DO_FSF) == 0) {
-		    amfree(re_fsf);
-		}
-		if(re_label && getconf_int(CNF_AMRECOVER_CHECK_LABEL) == 0) {
-		    amfree(re_label);
-		}
-		if(re_label &&
-		   strcmp(re_device, getconf_str(CNF_AMRECOVER_CHANGER)) == 0) {
-
-		    if(changer_init() == 0) {
-			dbprintf(("%s: No changer available\n",
-				  debug_prefix_time(NULL)));
-		    }
-		    else {
-			get_lock = lock_logfile();
-			searchlabel = stralloc(re_label);
-			changer_find(scan_init, taperscan_slot, searchlabel);
-			if(found == 0) {
-			    dbprintf(("%s: Can't find label \"%s\"\n",
-				      debug_prefix_time(NULL), searchlabel));
-			    exit(1);
-			}
-			else {
-			    dbprintf(("%s: label \"%s\" found\n",
-				      debug_prefix_time(NULL), searchlabel));
-			}
-		    }
-		}
-	    }
-	}
-	else {
+    if(re_config) {
+	char *conffile;
+	config_dir = vstralloc(CONFIG_DIR, "/", re_config, "/", NULL);
+	conffile = stralloc2(config_dir, CONFFILE_NAME);
+	if (read_conffile(conffile)) {
+	    dbprintf(("%s: config '%s' not found\n",
+		      debug_prefix_time(NULL), re_config));
 	    amfree(re_fsf);
 	    amfree(re_label);
+	    amfree(re_config);
 	}
     }
+    else {
+	amfree(re_fsf);
+	amfree(re_label);
+    }
 
-    if(get_lock == 0 && re_device && re_config &&
+    if(re_fsf && re_config && getconf_int(CNF_AMRECOVER_DO_FSF) == 0) {
+	amfree(re_fsf);
+    }
+    if(re_label && re_config && getconf_int(CNF_AMRECOVER_CHECK_LABEL) == 0) {
+	amfree(re_label);
+    }
+
+    if(re_device && re_config &&
        strcmp(re_device, getconf_str(CNF_TAPEDEV)) == 0) {
 	get_lock = lock_logfile();
+    }
+
+    if(re_label &&
+       strcmp(re_device, getconf_str(CNF_AMRECOVER_CHANGER)) == 0) {
+
+	if(changer_init() == 0) {
+	    dbprintf(("%s: No changer available\n",
+		       debug_prefix_time(NULL)));
+	}
+	else {
+	    searchlabel = stralloc(re_label);
+	    changer_find(scan_init, taperscan_slot, searchlabel);
+	    if(found == 0) {
+		dbprintf(("%s: Can't find label \"%s\"\n",
+			  debug_prefix_time(NULL), searchlabel));
+		exit(1);
+	    }
+	    else {
+		dbprintf(("%s: label \"%s\" found\n",
+			  debug_prefix_time(NULL), searchlabel));
+	    }
+	}
     }
 
     dbprintf(("%s: amrestore_nargs=%d\n",
