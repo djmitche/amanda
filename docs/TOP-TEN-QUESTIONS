@@ -71,6 +71,10 @@ SHORT ANSWER:
 Do NOT USE "localhost" as host entry in your disklist entries (aka DLEs).
 Use the FQDN (Fully Qualified Domain Name) instead.
 
+In AMANDA-Releases newer than 2004-03-22 there is a WARNING issued when
+you use something like "localhost" or "localhost.localdomain.net" in 
+your disklist.
+
 Example (applies to Linux, syntax may be different on other systems):
 
 $ hostname --fqdn
