@@ -25,13 +25,14 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: holding.c,v 1.9 1998/01/02 18:48:32 jrj Exp $
+ * $Id: holding.c,v 1.10 1998/02/05 03:05:43 martinea Exp $
  *
  * Functions to access holding disk
  */
 
 #include "amanda.h"
 #include "holding.h"
+#include "fileheader.h"
 
 #define MAX_ARGS 10
 
@@ -264,11 +265,9 @@ int get_amanda_names(fname, hostname, diskname, level)
 char *fname, **hostname, **diskname;
 int *level;
 {
-    char buffer[TAPE_BLOCK_BYTES], *datestamp = NULL;
+    dumpfile_t file;
+    char buffer[TAPE_BLOCK_BYTES];
     int fd;
-    char *s, *fp;
-    int ch;
-
     *hostname = *diskname = NULL;
 
     if((fd = open(fname, O_RDONLY)) == -1)
@@ -279,73 +278,15 @@ int *level;
 	return 1;
     }
 
-    s = buffer;
-    ch = *s++;
-
-    skip_whitespace(s, ch);
-#define sc "AMANDA: FILE"
-    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+    parse_file_header(buffer,&file,sizeof(buffer));
+    if(file.type != F_DUMPFILE) {
 	aclose(fd);
 	return 1;
     }
-    s += sizeof(sc)-1;
-    ch = s[-1];
-#undef sc
-
-    skip_whitespace(s, ch);
-    if(ch == '\0') {
-	aclose(fd);
-	return 1;
-    }
-    fp = s - 1;
-    skip_non_whitespace(s, ch);
-    s[-1] = '\0';
-    datestamp = stralloc(fp);
-    s[-1] = ch;
-
-    skip_whitespace(s, ch);
-    if(ch == '\0') {
-	aclose(fd);
-	afree(datestamp);
-	return 1;
-    }
-    fp = s - 1;
-    skip_non_whitespace(s, ch);
-    s[-1] = '\0';
-    *hostname = stralloc(fp);
-    s[-1] = ch;
-
-    skip_whitespace(s, ch);
-    if(ch == '\0') {
-	aclose(fd);
-	afree(datestamp);
-	return 1;
-    }
-    fp = s - 1;
-    skip_non_whitespace(s, ch);
-    s[-1] = '\0';
-    *diskname = stralloc(fp);
-    s[-1] = ch;
-
-    skip_whitespace(s, ch);
-#define sc "lev"
-    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
-	aclose(fd);
-	afree(datestamp);
-	return 1;
-    }
-    s += sizeof(sc)-1;
-    ch = s[-1];
-#undef sc
-
-    skip_whitespace(s, ch);
-    if(ch == '\0' || sscanf(s - 1, "%d", level) != 1) {
-	aclose(fd);
-	afree(datestamp);
-	return 1;
-    }
+    *hostname = stralloc(file.name);
+    *diskname = stralloc(file.disk);
+    *level = file.dumplevel;
 
     aclose(fd);
-    afree(datestamp);
     return 0;
 }
