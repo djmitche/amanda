@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.66.2.7.4.5.2.9 2003/01/31 20:42:42 martinea Exp $
+ * $Id: amanda.h,v 1.66.2.7.4.5.2.10 2003/02/05 02:07:58 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -1175,8 +1175,9 @@ extern pid_t waitpid P((pid_t pid, amwait_t *stat_loc, int options));
 #ifndef S_ISDIR
 #if defined(_S_IFMT) && defined(_S_IFDIR)
 #define S_ISDIR(mode)   (((mode) & (_S_IFMT)) == (_S_IFDIR))
-#endif
+#else
 error: Don t know how to define S_ISDIR
+#endif
 #endif
 
 #endif	/* !AMANDA_H */

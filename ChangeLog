@@ -1,3 +1,8 @@
+2003-02-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Fix by Colin Henein <cmh@orange-carb.org>
+
+	* common-src/amanda.h: Fix for the where S_ISDIR is not defined.
+
 2003-02-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Doug Kingston <dpk@randomnotes.org>
 
