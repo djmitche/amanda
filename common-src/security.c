@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.c,v 1.20 1999/04/09 19:51:29 kashmir Exp $
+ * $Id: security.c,v 1.21 1999/04/10 06:18:59 kashmir Exp $
  *
  * Security driver interface for the Amanda backup system.
  */
@@ -95,7 +95,7 @@ arglist_function1(void security_seterror, security_handle_t *, handle,
 
     assert(handle->error != NULL);
     arglist_start(argp, fmt);
-    ap_vsnprintf(buf, sizeof(buf), fmt, argp);
+    vsnprintf(buf, sizeof(buf), fmt, argp);
     arglist_end(argp);
     handle->error = newstralloc(handle->error, buf);
 }
@@ -130,7 +130,7 @@ arglist_function1(void security_stream_seterror, security_stream_t *, stream,
 
     assert(stream->error != NULL);
     arglist_start(argp, fmt);
-    ap_vsnprintf(buf, sizeof(buf), fmt, argp);
+    vsnprintf(buf, sizeof(buf), fmt, argp);
     arglist_end(argp);
     stream->error = newstralloc(stream->error, buf);
 }

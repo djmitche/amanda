@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.49 1999/03/02 01:08:49 martinea Exp $
+ * $Id: amflush.c,v 1.50 1999/04/10 06:19:34 kashmir Exp $
  *
  * write files from work directory onto tape
  */
@@ -141,21 +141,21 @@ char **main_argv;
 	/* First, find out the last existing errfile,           */
 	/* to avoid ``infinite'' loops if tapecycle is infinite */
 
-	ap_snprintf(number,100,"%d",days);
+	snprintf(number,100,"%d",days);
 	errfilex = newvstralloc(errfilex, errfile, ".", number, NULL);
 	while ( days < maxdays && stat(errfilex,&stat_buf)==0) {
 	    days++;
-	    ap_snprintf(number,100,"%d",days);
+	    snprintf(number,100,"%d",days);
 	    errfilex = newvstralloc(errfilex, errfile, ".", number, NULL);
 	}
-	ap_snprintf(number,100,"%d",days);
+	snprintf(number,100,"%d",days);
 	errfilex = newvstralloc(errfilex, errfile, ".", number, NULL);
 	nerrfilex = NULL;
 	while (days > 1) {
 	    amfree(nerrfilex);
 	    nerrfilex = errfilex;
 	    days--;
-	    ap_snprintf(number,100,"%d",days);
+	    snprintf(number,100,"%d",days);
 	    errfilex = vstralloc(errfile, ".", number, NULL);
 	    rename(errfilex, nerrfilex);
 	}
@@ -433,7 +433,7 @@ static char *construct_datestamp()
 
     today = time((time_t *)NULL);
     tm = localtime(&today);
-    ap_snprintf(datestamp, sizeof(datestamp),
+    snprintf(datestamp, sizeof(datestamp),
                 "%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
     return stralloc(datestamp);
 }

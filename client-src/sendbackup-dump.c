@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.68 1999/04/09 20:41:28 kashmir Exp $
+ * $Id: sendbackup-dump.c,v 1.69 1999/04/10 06:18:28 kashmir Exp $
  *
  * send backup data using BSD dump
  */
@@ -138,7 +138,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
     char *indexcmd = NULL;
     char level_str[NUM_STR_SIZE];
 
-    ap_snprintf(level_str, sizeof(level_str), "%d", level);
+    snprintf(level_str, sizeof(level_str), "%d", level);
 
     fprintf(stderr, "%s: start [%s:%s level %d]\n",
 	    get_pname(), host, disk, level);

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: alloc.c,v 1.17 1998/11/04 00:43:18 kashmir Exp $
+ * $Id: alloc.c,v 1.18 1999/04/10 06:18:38 kashmir Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -103,7 +103,7 @@ int l;
     }
 
     strcpy (loc, p);
-    ap_snprintf(loc + len, 1 + NUM_STR_SIZE, "@%d", l);
+    snprintf(loc + len, 1 + NUM_STR_SIZE, "@%d", l);
 
     for (ls_last = NULL, ls = root; ls != NULL; ls_last = ls, ls = ls->next) {
 	if (strcmp (loc, ls->str) == 0) {

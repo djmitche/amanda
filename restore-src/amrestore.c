@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.28 1998/10/14 22:36:24 jrj Exp $
+ * $Id: amrestore.c,v 1.29 1999/04/10 06:19:22 kashmir Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -120,7 +120,7 @@ dumpfile_t *file;
     char *sfn;
     char *fn;
 
-    ap_snprintf(number, sizeof(number), "%d", file->dumplevel);
+    snprintf(number, sizeof(number), "%d", file->dumplevel);
     sfn = sanitise_filename(file->disk);
     fn = vstralloc(file->name,
 		   ".",

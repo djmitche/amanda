@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.46 1998/11/12 13:18:38 martinea Exp $
+ * $Id: infofile.c,v 1.47 1999/04/10 06:19:57 kashmir Exp $
  *
  * manage current info file
  */
@@ -436,7 +436,7 @@ int lev;
     }
 
     t = gmtime(&last);
-    ap_snprintf(stamp, sizeof(stamp), "%d:%d:%d:%d:%d:%d",
+    snprintf(stamp, sizeof(stamp), "%d:%d:%d:%d:%d:%d",
 		t->tm_year+1900, t->tm_mon+1, t->tm_mday,
 		t->tm_hour, t->tm_min, t->tm_sec);
 

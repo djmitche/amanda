@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.64 1999/04/09 20:41:30 kashmir Exp $
+ * $Id: sendbackup-gnutar.c,v 1.65 1999/04/10 06:18:30 kashmir Exp $
  *
  * send backup data using GNU tar
  */
@@ -175,7 +175,7 @@ char *dumpdate;
 	    if(ch == '/' || isspace(ch)) s[-1] = '_';
 	}
 
-	ap_snprintf(number, sizeof(number), "%d", level);
+	snprintf(number, sizeof(number), "%d", level);
 	incrname = vstralloc(basename, "_", number, ".new", NULL);
 	unlink(incrname);
 	umask(0007);
@@ -202,7 +202,7 @@ notincremental:
 	    int baselevel = level;
 
 	    while (in == NULL && --baselevel >= 0) {
-		ap_snprintf(number, sizeof(number), "%d", baselevel);
+		snprintf(number, sizeof(number), "%d", baselevel);
 		inputname = newvstralloc(inputname,
 					 basename, "_", number,
 					 NULL);
@@ -262,7 +262,7 @@ notincremental:
     free_amandates();
 
     gmtm = gmtime(&prev_dumptime);
-    ap_snprintf(dumptimestr, sizeof(dumptimestr),
+    snprintf(dumptimestr, sizeof(dumptimestr),
 		"%04d-%02d-%02d %2d:%02d:%02d GMT",
 		gmtm->tm_year + 1900, gmtm->tm_mon+1, gmtm->tm_mday,
 		gmtm->tm_hour, gmtm->tm_min, gmtm->tm_sec);

@@ -1000,9 +1000,9 @@ int ch;
 	static char pbuf[10];
 
 	if (isprint(ch) || ch == ' ')
-		ap_snprintf(pbuf, sizeof(pbuf), "%c", ch);
+		snprintf(pbuf, sizeof(pbuf), "%c", ch);
 	else
-		ap_snprintf(pbuf, sizeof(pbuf), "\\%o", ch);
+		snprintf(pbuf, sizeof(pbuf), "\\%o", ch);
 	return(pbuf);
 }
 #endif

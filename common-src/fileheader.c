@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.14 1999/03/04 22:40:05 kashmir Exp $
+ * $Id: fileheader.c,v 1.15 1999/04/10 06:18:54 kashmir Exp $
  *
  */
 
@@ -345,20 +345,20 @@ int buflen;
     memset(buffer,'\0',buflen);
 
     switch (file->type) {
-    case F_TAPESTART: ap_snprintf(buffer, buflen,
+    case F_TAPESTART: snprintf(buffer, buflen,
 				  "AMANDA: TAPESTART DATE %s TAPE %s\n\014\n",
 				  file->datestamp, file->name);
 		      break;
     case F_CONT_DUMPFILE:
     case F_DUMPFILE : if( file->type == F_DUMPFILE) {
-			ap_snprintf(buffer, buflen,
+			snprintf(buffer, buflen,
 				  "AMANDA: FILE %s %s %s lev %d comp %s program %s\n",
 				  file->datestamp, file->name, file->disk,
 				  file->dumplevel, file->comp_suffix,
 				  file->program);
 		      }
 		      else if( file->type == F_CONT_DUMPFILE) {
-			ap_snprintf(buffer, buflen,
+			snprintf(buffer, buflen,
 				  "AMANDA: CONT_FILE %s %s %s lev %d comp %s program %s\n",
 				  file->datestamp, file->name, file->disk,
 				  file->dumplevel, file->comp_suffix,
@@ -376,7 +376,7 @@ int buflen;
 		      strncat(buffer,
 			"To restore, position tape at start of file and run:\n",
 			buflen-strlen(buffer));
-		      ap_snprintf(number, sizeof(number),
+		      snprintf(number, sizeof(number),
 				  "%d", TAPE_BLOCK_SIZE);
 		      line = newvstralloc(line, "\t",
 				       "dd",
@@ -392,7 +392,7 @@ int buflen;
 		      amfree(line);
 		      buffer[buflen-1] = '\0';
 		      break;
-    case F_TAPEEND  : ap_snprintf(buffer, buflen,
+    case F_TAPEEND  : snprintf(buffer, buflen,
 				  "AMANDA: TAPEEND DATE %s\n\014\n",
 				  file->datestamp);
 		      break;

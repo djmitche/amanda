@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.18 1998/12/14 19:12:13 kashmir Exp $
+ * $Id: debug.c,v 1.19 1999/04/10 06:18:48 kashmir Exp $
  *
  * debug log subroutines
  */
@@ -90,7 +90,7 @@ void debug_open()
     }
 
 #ifdef DEBUG_FILE_WITH_PID
-    ap_snprintf(pid_str, sizeof(pid_str), "%ld", (long)getpid());
+    snprintf(pid_str, sizeof(pid_str), "%ld", (long)getpid());
     dbfilename = vstralloc(DEBUG_DIR, "/", get_pname(),
 			   ".", pid_str, ".debug", NULL);
 #else

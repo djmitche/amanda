@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: genversion.c,v 1.19 1998/12/15 01:12:36 kashmir Exp $
+ * $Id: genversion.c,v 1.20 1999/04/10 06:18:56 kashmir Exp $
  *
  * dump the current Amanda version info
  */
@@ -46,7 +46,7 @@ int main P((void));
     int len = strlen(string);						\
     if(linelen+len >= MARGIN) { 					\
 	newline(); 							\
-	ap_snprintf(line, sizeof(line), "%*s", indent, "");		\
+	snprintf(line, sizeof(line), "%*s", indent, "");		\
 	linelen = indent;						\
     }									\
     line[sizeof(line)-1] = '\0';					\
@@ -93,7 +93,7 @@ int main()
     {
 	char version_str[STR_SIZE];
 
-	ap_snprintf(version_str, sizeof(version_str), "Amanda-%s", version());
+	snprintf(version_str, sizeof(version_str), "Amanda-%s", version());
 	prvar(" VERSION", version_str);
     }
 

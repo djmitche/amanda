@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.13 1998/12/02 22:34:43 kashmir Exp $
+ * $Id: dgram.c,v 1.14 1999/04/10 06:18:50 kashmir Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -265,7 +265,7 @@ arglist_function1(void dgram_cat, dgram_t *, dgram, const char *, fmt)
 	return;
 
     arglist_start(argp, fmt);
-    dgram->len += ap_vsnprintf(dgram->cur, bufsize, fmt, argp);
+    dgram->len += vsnprintf(dgram->cur, bufsize, fmt, argp);
     dgram->cur = dgram->data + dgram->len;
     arglist_end(argp);
 }

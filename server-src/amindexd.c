@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.43 1999/02/15 02:30:23 martinea Exp $
+ * $Id: amindexd.c,v 1.44 1999/04/10 06:19:38 kashmir Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -237,8 +237,8 @@ arglist_function1(void reply, int, n, char *, fmt)
     char buf[STR_SIZE];
 
     arglist_start(args, fmt);
-    ap_snprintf(buf, sizeof(buf), "%03d ", n);
-    ap_vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
+    snprintf(buf, sizeof(buf), "%03d ", n);
+    vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
     arglist_end(args);
 
     if (printf("%s\r\n", buf) <= 0)
@@ -263,8 +263,8 @@ arglist_function1(void lreply, int, n, char *, fmt)
     char buf[STR_SIZE];
 
     arglist_start(args, fmt);
-    ap_snprintf(buf, sizeof(buf), "%03d-", n);
-    ap_vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
+    snprintf(buf, sizeof(buf), "%03d-", n);
+    vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
     arglist_end(args);
 
     if (printf("%s\r\n", buf) <= 0)
@@ -290,8 +290,8 @@ arglist_function1(void fast_lreply, int, n, char *, fmt)
     char buf[STR_SIZE];
 
     arglist_start(args, fmt);
-    ap_snprintf(buf, sizeof(buf), "%03d-", n);
-    ap_vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
+    snprintf(buf, sizeof(buf), "%03d-", n);
+    vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
     arglist_end(args);
 
     if (printf("%s\r\n", buf) <= 0)
@@ -451,7 +451,7 @@ int build_disk_table P((void))
 	find_output = find_output->next) {
 	if(strcmp(dump_hostname, find_output->hostname) == 0 &&
 	   strcmp(disk_name    , find_output->diskname) == 0) {
-	    ap_snprintf(date, sizeof(date), "%04d-%02d-%02d",
+	    snprintf(date, sizeof(date), "%04d-%02d-%02d",
 			find_output->datestamp/10000,
 			(find_output->datestamp/100) %100,
 			find_output->datestamp %100);
@@ -1098,7 +1098,7 @@ char **errstr;
     if(ntohs(addr->sin_port) >= IPPORT_RESERVED) {
 	char number[NUM_STR_SIZE];
 
-	ap_snprintf(number, sizeof(number), "%d", ntohs(addr->sin_port));
+	snprintf(number, sizeof(number), "%d", ntohs(addr->sin_port));
 	*errstr = vstralloc("[",
 			    "host ", remotehost, ": ",
 			    "port ", number, " not secure",

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.44 1999/03/02 01:08:54 martinea Exp $
+ * $Id: driverio.c,v 1.45 1999/04/10 06:19:50 kashmir Exp $
  *
  * I/O-related functions for driver program
  */
@@ -90,7 +90,7 @@ int fd;
     for(dumper = dmptable; dumper < dmptable + MAX_DUMPERS; dumper++)
 	if(dumper->outfd == fd) return dumper->name;
 
-    ap_snprintf(fd_str, sizeof(fd_str), "%d", fd);
+    snprintf(fd_str, sizeof(fd_str), "%d", fd);
     str = newvstralloc(str, "unknown child (fd ", fd_str, ")", NULL);
     return str;
 }
@@ -168,7 +168,7 @@ int inparallel;
     char number[NUM_STR_SIZE];
 
     for(dumper = dmptable, i = 0; i < inparallel; dumper++, i++) {
-	ap_snprintf(number, sizeof(number), "%d", i);
+	snprintf(number, sizeof(number), "%d", i);
 	dumper->name = stralloc2("dumper", number);
 
 	startup_dump_process(dumper, dumper_program);
@@ -239,7 +239,7 @@ char *datestamp;
 	break;
     case FILE_WRITE:
 	dp = (disk_t *) ptr;
-	ap_snprintf(number, sizeof(number), "%d", level);
+	snprintf(number, sizeof(number), "%d", level);
 	cmdline = vstralloc("FILE-WRITE",
 			    " ", disk2serial(dp),
 			    " ", destname,
@@ -251,7 +251,7 @@ char *datestamp;
 	break;
     case PORT_WRITE:
 	dp = (disk_t *) ptr;
-	ap_snprintf(number, sizeof(number), "%d", level);
+	snprintf(number, sizeof(number), "%d", level);
 	cmdline = vstralloc("PORT-WRITE",
 			    " ", disk2serial(dp),
 			    " ", dp->host->hostname,
@@ -293,8 +293,8 @@ disk_t *dp;
 
     switch(cmd) {
     case FILE_DUMP:
-	ap_snprintf(number, sizeof(number), "%d", sched(dp)->level);
-	ap_snprintf(chunksize, sizeof(chunksize), "%ld",
+	snprintf(number, sizeof(number), "%d", sched(dp)->level);
+	snprintf(chunksize, sizeof(chunksize), "%ld",
 		    (long)sched(dp)->holdp->chunksize);
 	o = optionstr(dp);
 	cmdline = vstralloc(cmdstr[cmd],
@@ -311,7 +311,7 @@ disk_t *dp;
 	amfree(o);
 	break;
     case PORT_DUMP:
-	ap_snprintf(number, sizeof(number), "%d", sched(dp)->level);
+	snprintf(number, sizeof(number), "%d", sched(dp)->level);
 	o = optionstr(dp);
 	cmdline = vstralloc(cmdstr[cmd],
 			    " ", disk2serial(dp),
@@ -418,7 +418,7 @@ disk_t *dp;
     stable[s].gen = generation++;
     stable[s].dp = dp;
 
-    ap_snprintf(str, sizeof(str), "%02d-%05ld", s, stable[s].gen);
+    snprintf(str, sizeof(str), "%02d-%05ld", s, stable[s].gen);
     return str;
 }
 

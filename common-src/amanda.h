@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.75 1999/04/09 19:43:27 kashmir Exp $
+ * $Id: amanda.h,v 1.76 1999/04/10 06:18:40 kashmir Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -989,18 +989,14 @@ extern int shmget P((key_t key, size_t size, int shmflg));
 #endif
 #endif
 
-#if defined(HAVE_SNPRINTF) && defined(HAVE_VSNPRINTF)
-#define ap_snprintf	snprintf
-#define ap_vsnprintf	vsnprintf
-#endif
 #ifndef HAVE_SNPRINTF_DECL
 #include "arglist.h"
-int ap_snprintf  P((char *buf, size_t len, const char *format,...))
+int snprintf  P((char *buf, size_t len, const char *format,...))
 		    __attribute__((format(printf,3,4)));
 #endif
 #ifndef HAVE_VSNPRINTF_DECL
 #include "arglist.h"
-int ap_vsnprintf P((char *buf, size_t len, const char *format, va_list ap));
+int vsnprintf P((char *buf, size_t len, const char *format, va_list ap));
 #endif
 
 #ifndef HAVE_SOCKET_DECL

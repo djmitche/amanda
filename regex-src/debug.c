@@ -235,8 +235,8 @@ int ch;
 	static char buf[10];
 
 	if (isprint(ch) || ch == ' ')
-		ap_snprintf(buf, sizeof(buf), "%c", ch);
+		snprintf(buf, sizeof(buf), "%c", ch);
 	else
-		ap_snprintf(buf, sizeof(buf), "\\%o", ch);
+		snprintf(buf, sizeof(buf), "\\%o", ch);
 	return(buf);
 }

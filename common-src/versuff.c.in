@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: versuff.c.in,v 1.6 1998/07/04 00:19:06 oliva Exp $
+ * $Id: versuff.c.in,v 1.7 1999/04/10 06:19:05 kashmir Exp $
  *
  * provide amanda version number and suffix appended to program names
  */
@@ -62,9 +62,9 @@ version()
 
 	if(vsuff) return vsuff;			/* been here once already */
 
-	ap_snprintf(major_str, sizeof(major_str), "%d", VERSION_MAJOR);
-	ap_snprintf(minor_str, sizeof(minor_str), "%d", VERSION_MINOR);
-	ap_snprintf(patch_str, sizeof(patch_str), "%d", VERSION_PATCH);
+	snprintf(major_str, sizeof(major_str), "%d", VERSION_MAJOR);
+	snprintf(minor_str, sizeof(minor_str), "%d", VERSION_MINOR);
+	snprintf(patch_str, sizeof(patch_str), "%d", VERSION_PATCH);
 
 	vsuff = vstralloc(major_str, ".", minor_str, ".", patch_str,
 			  VERSION_COMMENT,

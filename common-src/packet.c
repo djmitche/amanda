@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: packet.c,v 1.1 1998/11/04 20:17:29 kashmir Exp $
+ * $Id: packet.c,v 1.2 1999/04/10 06:18:57 kashmir Exp $
  *
  * Routines for modifying the amanda protocol packet type
  */
@@ -61,7 +61,7 @@ arglist_function2(void pkt_init, pkt_t *, pkt, pktype_t, type,
     pkt->type = type;
 
     arglist_start(argp, fmt);
-    ap_vsnprintf(pkt->body, sizeof(pkt->body), fmt, argp);
+    vsnprintf(pkt->body, sizeof(pkt->body), fmt, argp);
     arglist_end(argp);
 }
 
@@ -84,7 +84,7 @@ arglist_function1(void pkt_cat, pkt_t *, pkt, const char *, fmt)
 	return;
 
     arglist_start(argp, fmt);
-    ap_vsnprintf(pkt->body + len, bufsize, fmt, argp);
+    vsnprintf(pkt->body + len, bufsize, fmt, argp);
     arglist_end(argp);
 }
 

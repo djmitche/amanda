@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.9 1999/03/28 21:30:38 martinea Exp $
+ * $Id: find.c,v 1.10 1999/04/10 06:19:55 kashmir Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -74,7 +74,7 @@ char **lfind_diskstrs;
 
 	tp = lookup_tapepos(tape);
 	if(tp == NULL) continue;
-	ap_snprintf(ds_str, sizeof(ds_str), "%d", tp->datestamp);
+	snprintf(ds_str, sizeof(ds_str), "%d", tp->datestamp);
 
 	/* search log files */
 
@@ -85,7 +85,7 @@ char **lfind_diskstrs;
 	for(seq = 0; 1; seq++) {
 	    char seq_str[NUM_STR_SIZE];
 
-	    ap_snprintf(seq_str, sizeof(seq_str), "%d", seq);
+	    snprintf(seq_str, sizeof(seq_str), "%d", seq);
 	    logfile = newvstralloc(logfile,
 			conflogdir, "/log.", ds_str, ".", seq_str, NULL);
 	    if(access(logfile, R_OK) != 0) break;
@@ -135,7 +135,7 @@ char **find_log()
 
 	tp = lookup_tapepos(tape);
 	if(tp == NULL) continue;
-	ap_snprintf(ds_str, sizeof(ds_str), "%d", tp->datestamp);
+	snprintf(ds_str, sizeof(ds_str), "%d", tp->datestamp);
 
 	/* search log files */
 
@@ -146,7 +146,7 @@ char **find_log()
 	for(seq = 0; 1; seq++) {
 	    char seq_str[NUM_STR_SIZE];
 
-	    ap_snprintf(seq_str, sizeof(seq_str), "%d", seq);
+	    snprintf(seq_str, sizeof(seq_str), "%d", seq);
 	    logfile = newvstralloc(logfile,
 			conflogdir, "/log.", ds_str, ".", seq_str, NULL);
 	    if(access(logfile, R_OK) != 0) break;
@@ -469,7 +469,7 @@ int datestamp;
     month = (datestamp / 100) % 100;
     day   = datestamp % 100;
 
-    ap_snprintf(nice, sizeof(nice), "%4d-%02d-%02d", year, month, day);
+    snprintf(nice, sizeof(nice), "%4d-%02d-%02d", year, month, day);
 
     return nice;
 }

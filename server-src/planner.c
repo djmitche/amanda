@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.88 1999/04/09 20:13:19 kashmir Exp $
+ * $Id: planner.c,v 1.89 1999/04/10 06:20:02 kashmir Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -428,7 +428,7 @@ static char *construct_datestamp()
 
     today = time((time_t *)NULL);
     tm = localtime(&today);
-    ap_snprintf(datestamp, sizeof(datestamp),
+    snprintf(datestamp, sizeof(datestamp),
 		"%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
     return stralloc(datestamp);
 }
@@ -933,7 +933,7 @@ host_t *hostp;
 
     assert(hostp->disks != NULL);
 
-    ap_snprintf(number, sizeof(number), "%d", hostp->maxdumps);
+    snprintf(number, sizeof(number), "%d", hostp->maxdumps);
     req = vstralloc("SERVICE sendsize\n",
 		    "OPTIONS ",
 		    "maxdumps=", number, ";",
@@ -957,8 +957,8 @@ host_t *hostp;
 
 	    if(lev == -1) break;
 
-	    ap_snprintf(level, sizeof(level), "%d", lev);
-	    ap_snprintf(spindle, sizeof(spindle), "%d", dp->spindle);
+	    snprintf(level, sizeof(level), "%d", lev);
+	    snprintf(spindle, sizeof(spindle), "%d", dp->spindle);
 	    if(dp->exclude) {
 		exclude1 = dp->exclude_list ? " exclude-list=" : " exclude-file=";
 		exclude2 = dp->exclude;
@@ -1481,7 +1481,7 @@ static void delay_dumps P((void))
 	if(est(dp)->dump_level != 0 && est(dp)->dump_size > tape->length) {
 	    char level_str[NUM_STR_SIZE];
 
-	    ap_snprintf(level_str, sizeof(level_str),
+	    snprintf(level_str, sizeof(level_str),
 			"%d", est(dp)->dump_level);
 	    errbuf = vstralloc(dp->host->hostname,
 			       " ", dp->name,
@@ -1554,7 +1554,7 @@ static void delay_dumps P((void))
 	if(est(dp)->dump_level != 0) {
 	    char level_str[NUM_STR_SIZE];
 
-	    ap_snprintf(level_str, sizeof(level_str),
+	    snprintf(level_str, sizeof(level_str),
 			"%d", est(dp)->dump_level);
 	    errbuf = vstralloc(dp->host->hostname,
 			       " ", dp->name,
@@ -1925,11 +1925,11 @@ static void output_scheduleline(dp)
     }
 
     if(ep->dump_level == 0 && ep->degr_size != -1) {
-	ap_snprintf(degr_level_str, sizeof(degr_level_str),
+	snprintf(degr_level_str, sizeof(degr_level_str),
 		    "%d", ep->degr_level);
-	ap_snprintf(degr_size_str, sizeof(degr_size_str),
+	snprintf(degr_size_str, sizeof(degr_size_str),
 		    "%ld", ep->degr_size);
-	ap_snprintf(degr_time_str, sizeof(degr_time_str),
+	snprintf(degr_time_str, sizeof(degr_time_str),
 		    "%ld", degr_time);
 	degr_str = vstralloc(" ", degr_level_str,
 			     " ", degr_date,
@@ -1937,13 +1937,13 @@ static void output_scheduleline(dp)
 			     " ", degr_time_str,
 			     NULL);
     }
-    ap_snprintf(dump_priority_str, sizeof(dump_priority_str),
+    snprintf(dump_priority_str, sizeof(dump_priority_str),
 		"%d", ep->dump_priority);
-    ap_snprintf(dump_level_str, sizeof(dump_level_str),
+    snprintf(dump_level_str, sizeof(dump_level_str),
 		"%d", ep->dump_level);
-    ap_snprintf(dump_size_str, sizeof(dump_size_str),
+    snprintf(dump_size_str, sizeof(dump_size_str),
 		"%ld", ep->dump_size);
-    ap_snprintf(dump_time_str, sizeof(dump_time_str),
+    snprintf(dump_time_str, sizeof(dump_time_str),
 		"%ld", dump_time);
     schedline = vstralloc(dp->host->hostname,
 			  " ", dp->name,

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.58 1999/04/09 20:05:37 kashmir Exp $
+ * $Id: amcheck.c,v 1.59 1999/04/10 06:19:30 kashmir Exp $
  *
  * checks for common problems in server and clients
  */
@@ -106,7 +106,7 @@ char **argv;
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
-    ap_snprintf(pid_str, sizeof(pid_str), "%ld", (long)getpid());
+    snprintf(pid_str, sizeof(pid_str), "%ld", (long)getpid());
 
     erroutput_type = ERR_INTERACTIVE;
 
@@ -225,7 +225,7 @@ char **argv;
 	    char number[NUM_STR_SIZE];
 	    char *wait_msg = NULL;
 
-	    ap_snprintf(number, sizeof(number), "%ld", (long)pid);
+	    snprintf(number, sizeof(number), "%ld", (long)pid);
 	    wait_msg = vstralloc("parent: reaped bogus pid ", number, "\n",
 				 NULL);
 	    for(l = 0, n = strlen(buffer); l < n; l += s) {

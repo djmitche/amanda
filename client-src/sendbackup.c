@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.47 1999/04/09 20:41:25 kashmir Exp $
+ * $Id: sendbackup.c,v 1.48 1999/04/10 06:18:32 kashmir Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -467,10 +467,10 @@ amwait_t w;
 #endif
 
     if(ret == 0) {
-	ap_snprintf(number, sizeof(number), "%d", sig);
+	snprintf(number, sizeof(number), "%d", sig);
 	thiserr = vstralloc(str, " got signal ", number, NULL);
     } else {
-	ap_snprintf(number, sizeof(number), "%d", ret);
+	snprintf(number, sizeof(number), "%d", ret);
 	thiserr = vstralloc(str, " returned ", number, NULL);
     }
 

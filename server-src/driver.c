@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.72 1999/03/02 01:08:51 martinea Exp $
+ * $Id: driver.c,v 1.73 1999/04/10 06:19:47 kashmir Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -817,7 +817,7 @@ char *construct_datestamp()
 
     timevar = time((time_t *)NULL);
     tm = localtime(&timevar);
-    ap_snprintf(datestamp, sizeof(datestamp),
+    snprintf(datestamp, sizeof(datestamp),
 		"%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
     return stralloc(datestamp);
 }
@@ -1303,7 +1303,7 @@ disk_t *diskp;
     sched(diskp)->act_size = sched(diskp)->est_size;
 
     sfn = sanitise_filename(diskp->name);
-    ap_snprintf(sched(diskp)->destname, sizeof(sched(diskp)->destname),
+    snprintf(sched(diskp)->destname, sizeof(sched(diskp)->destname),
 		"%s/%s/%s.%s.%d",
 		holdp->diskdir, datestamp, diskp->host->hostname,
 		sfn, sched(diskp)->level);

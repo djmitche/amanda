@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.51 1999/04/07 19:48:35 jrj Exp $
+/* $Id: taper.c,v 1.52 1999/04/10 06:20:09 kashmir Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -461,14 +461,14 @@ buffer_t *bp;
 
     pn[0] = procname[0];
     pn[1] = '\0';
-    ap_snprintf(bt, sizeof(bt), "%d", (int)(bp-buftable));
+    snprintf(bt, sizeof(bt), "%d", (int)(bp-buftable));
 
     switch(bp->status) {
     case FULL:		status[0] = 'F'; status[1] = '\0'; break;
     case FILLING:	status[0] = 'f'; status[1] = '\0'; break;
     case EMPTY:		status[0] = 'E'; status[1] = '\0'; break;
     default:
-	ap_snprintf(status, sizeof(status), "%ld", bp->status);
+	snprintf(status, sizeof(status), "%ld", bp->status);
 	break;
     }
 
@@ -729,8 +729,8 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 		double rt;
 
 		rt = runtime.r.tv_sec+runtime.r.tv_usec/1000000.0;
-		ap_snprintf(kb_str, sizeof(kb_str), "%ld", filesize);
-		ap_snprintf(kps_str, sizeof(kps_str), "%3.1f",
+		snprintf(kb_str, sizeof(kb_str), "%ld", filesize);
+		snprintf(kps_str, sizeof(kps_str), "%3.1f",
 				     rt ? filesize / rt : 0.0);
 		str = syncpipe_getstr();
 		errstr = newvstralloc(errstr,
@@ -1094,10 +1094,10 @@ void write_file()
     /* tell reader the tape and file number */
 
     syncpipe_putstr(label);
-    ap_snprintf(number, sizeof(number), "%d", filenum);
+    snprintf(number, sizeof(number), "%d", filenum);
     syncpipe_putstr(number);
 
-    ap_snprintf(number, sizeof(number), "%ld", total_writes);
+    snprintf(number, sizeof(number), "%ld", total_writes);
     rdwait_str = stralloc(walltime_str(rdwait));
     wrwait_str = stralloc(walltime_str(wrwait));
     fmwait_str = stralloc(walltime_str(fmwait));
@@ -1610,7 +1610,7 @@ int label_tape()
 	} else {
 	    char cur_str[NUM_STR_SIZE];
 
-	    ap_snprintf(cur_str, sizeof(cur_str), "%d", cur_tape - 1);
+	    snprintf(cur_str, sizeof(cur_str), "%d", cur_tape - 1);
 	    oldtapefilename = vstralloc(tapefilename, ".today.", cur_str, NULL);
 	}
 	rename(tapefilename, oldtapefilename);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.22 1999/04/07 19:48:31 jrj Exp $
+ * $Id: tapeio.c,v 1.23 1999/04/10 06:20:13 kashmir Exp $
  *
  * implements tape I/O functions
  */
@@ -355,7 +355,7 @@ int count;
     }
 
     if(tapefd_fsf(fd, count) == -1) {
-	ap_snprintf(count_str, sizeof(count_str), "%d", count);
+	snprintf(count_str, sizeof(count_str), "%d", count);
 	errstr = newvstralloc(errstr,
 			      "fast-forward ", count_str, "files: ",
 			      strerror(errno),

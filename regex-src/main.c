@@ -427,7 +427,7 @@ char *should;
 				(sub.rm_so != -1 && sub.rm_eo == -1) ||
 				(sub.rm_so != -1 && sub.rm_so < 0) ||
 				(sub.rm_eo != -1 && sub.rm_eo < 0) ) {
-		ap_snprintf(grump, sizeof(grump),
+		snprintf(grump, sizeof(grump),
 			    "start %ld end %ld", (long)sub.rm_so,
 			    (long)sub.rm_eo);
 		return(grump);
@@ -441,7 +441,7 @@ char *should;
 
 	/* check for in range */
 	if (sub.rm_eo > strlen(str)) {
-		ap_snprintf(grump, sizeof(grump),
+		snprintf(grump, sizeof(grump),
 			    "start %ld end %ld, past end of string",
 			    (long)sub.rm_so, (long)sub.rm_eo);
 		return(grump);
@@ -453,13 +453,13 @@ char *should;
 
 	/* check for not supposed to match */
 	if (should == NULL) {
-		ap_snprintf(grump, sizeof(grump), "matched `%.*s'", len, p);
+		snprintf(grump, sizeof(grump), "matched `%.*s'", len, p);
 		return(grump);
 	}
 
 	/* check for wrong match */
 	if (len != shlen || strncmp(p, should, (size_t)shlen) != 0) {
-		ap_snprintf(grump, sizeof(grump),
+		snprintf(grump, sizeof(grump),
 			    "matched `%.*s' instead", len, p);
 		return(grump);
 	}
@@ -473,7 +473,7 @@ char *should;
 	if (shlen == 0)
 		shlen = 1;	/* force check for end-of-string */
 	if (strncmp(p, at, shlen) != 0) {
-		ap_snprintf(grump, sizeof(grump), "matched null at `%.20s'", p);
+		snprintf(grump, sizeof(grump), "matched null at `%.20s'", p);
 		return(grump);
 	}
 	return(NULL);
@@ -507,7 +507,7 @@ char *name;
 	size_t n;
 	regex_t re;
 
-	ap_snprintf(efbuf, sizeof(efbuf), "REG_%s", name);
+	snprintf(efbuf, sizeof(efbuf), "REG_%s", name);
 	assert(strlen(efbuf) < sizeof(efbuf));
 	re.re_endp = efbuf;
 	(void) regerror(REG_ATOI, &re, efbuf, sizeof(efbuf));

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: token.c,v 1.22 1998/09/02 03:39:35 oliva Exp $
+ * $Id: token.c,v 1.23 1999/04/10 06:19:04 kashmir Exp $
  *
  * token bashing routines
  */
@@ -141,7 +141,7 @@ arglist_function(char *squotef, char *, format)
 	/* Format the token */
 
 	arglist_start(argp, format);
-	ap_vsnprintf(linebuf, sizeof(linebuf), format, argp);
+	vsnprintf(linebuf, sizeof(linebuf), format, argp);
 	arglist_end(argp);
 
 	return quote(" ", linebuf);
@@ -155,7 +155,7 @@ arglist_function1(char *quotef, char *, sep, char *, format)
 	/* Format the token */
 
 	arglist_start(argp, format);
-	ap_vsnprintf(linebuf, sizeof(linebuf), format, argp);
+	vsnprintf(linebuf, sizeof(linebuf), format, argp);
 	arglist_end(argp);
 
 	return quote(sep, linebuf);

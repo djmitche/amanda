@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcleanupdisk.c,v 1.3 1999/02/26 22:08:14 martinea Exp $
+ * $Id: amcleanupdisk.c,v 1.4 1999/04/10 06:19:32 kashmir Exp $
  */
 #include "amanda.h"
 
@@ -200,7 +200,7 @@ static char *construct_datestamp()
 
     today = time((time_t *)NULL);
     tm = localtime(&today);
-    ap_snprintf(datestamp, sizeof(datestamp),
+    snprintf(datestamp, sizeof(datestamp),
                 "%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
     return stralloc(datestamp);
 }

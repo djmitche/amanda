@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amregex.h,v 1.9 1998/07/04 00:18:36 oliva Exp $
+ * $Id: amregex.h,v 1.10 1999/04/10 06:18:44 kashmir Exp $
  *
  * compatibility header file for Henry Spencer's regex library.
  */
@@ -92,18 +92,14 @@ extern void *memset P((void *s, int c, size_t n));
 #define USEBCOPY
 #endif
 
-#if defined(HAVE_SNPRINTF) && defined(HAVE_VSNPRINTF)
-#define ap_snprintf	snprintf
-#define ap_vsnprintf	vsnprintf
-#endif
 #ifndef HAVE_SNPRINTF_DECL
 #include "arglist.h"
-int ap_snprintf  P((char *buf, size_t len, const char *format,...))
+int snprintf  P((char *buf, size_t len, const char *format,...))
 		    __attribute__((format(printf,3,4)));
 #endif
 #ifndef HAVE_VSNPRINTF_DECL
 #include "arglist.h"
-int ap_vsnprintf P((char *buf, size_t len, const char *format, va_list ap));
+int vsnprintf P((char *buf, size_t len, const char *format, va_list ap));
 #endif
 
 #define POSIX_MISTAKE

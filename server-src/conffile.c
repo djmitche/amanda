@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.62 1999/04/09 20:07:59 kashmir Exp $
+ * $Id: conffile.c,v 1.63 1999/04/10 06:19:44 kashmir Exp $
  *
  * read configuration file
  */
@@ -353,10 +353,10 @@ char *str;
     if(np->name == NULL) return NULL;
 
     if(np->typ == INT) {
-	ap_snprintf(number, sizeof(number), "%d", getconf_int(np->parm));
+	snprintf(number, sizeof(number), "%d", getconf_int(np->parm));
 	tmpstr = newstralloc(tmpstr, number);
     } else if(np->typ == REAL) {
-	ap_snprintf(number, sizeof(number), "%f", getconf_real(np->parm));
+	snprintf(number, sizeof(number), "%f", getconf_real(np->parm));
 	tmpstr = newstralloc(tmpstr, number);
     } else {
 	tmpstr = newstralloc(tmpstr, getconf_str(np->parm));

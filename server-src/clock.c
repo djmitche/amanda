@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clock.c,v 1.5 1998/07/04 00:19:38 oliva Exp $
+ * $Id: clock.c,v 1.6 1999/04/10 06:19:42 kashmir Exp $
  *
  * timing functions
  */
@@ -118,7 +118,7 @@ times_t t;
     static char str[NUM_STR_SIZE+10];
 
     /* tv_sec/tv_usec are longs on some systems */
-    ap_snprintf(str, sizeof(str),
+    snprintf(str, sizeof(str),
 		"rtime %d.%03d", (int)t.r.tv_sec, (int)t.r.tv_usec/1000);
     return str;
 }
@@ -129,7 +129,7 @@ times_t t;
     static char str[NUM_STR_SIZE+10];
 
     /* tv_sec/tv_usec are longs on some systems */
-    ap_snprintf(str, sizeof(str),
+    snprintf(str, sizeof(str),
 		"%d.%03d", (int)t.r.tv_sec, (int)t.r.tv_usec/1000);
     return str;
 }

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.23 1999/04/09 16:22:02 kashmir Exp $
+ * $Id: bsd-security.c,v 1.24 1999/04/10 06:18:46 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -1143,7 +1143,7 @@ pkthdr2str(bh, pkt)
     assert(bh != NULL);
     assert(pkt != NULL);
 
-    ap_snprintf(retbuf, sizeof(retbuf), "Amanda %d.%d %s HANDLE %d SEQ %d\n",
+    snprintf(retbuf, sizeof(retbuf), "Amanda %d.%d %s HANDLE %d SEQ %d\n",
 	VERSION_MAJOR, VERSION_MINOR, pkt_type2str(pkt->type),
 	bh->proto_handle, bh->sequence);
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.101 1999/02/10 06:00:56 oliva Exp $
+ * $Id: sendsize.c,v 1.102 1999/04/10 06:18:34 kashmir Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -416,10 +416,10 @@ disk_estimates_t *est;
 
     for(level = 0; level < DUMP_LEVELS; level++) {
 	if(est->est[level].needestimate) {
-	    ap_snprintf(number, sizeof(number), "%d", level);
+	    snprintf(number, sizeof(number), "%d", level);
 	    argv[argc++] = stralloc(number); 
 	    dbprintf((" %s", number));
-	    ap_snprintf(number, sizeof(number),
+	    snprintf(number, sizeof(number),
 			"%ld", (long)est->est[level].dumpsince);
 	    argv[argc++] = stralloc(number); 
 	    dbprintf((" %s", number));
@@ -615,7 +615,7 @@ long getsize_dump(disk, level)
     char level_str[NUM_STR_SIZE];
     int s;
 
-    ap_snprintf(level_str, sizeof(level_str), "%d", level);
+    snprintf(level_str, sizeof(level_str), "%d", level);
 
     device = amname_to_devname(disk);
     fstype = amname_to_fstype(disk);
@@ -1061,7 +1061,7 @@ time_t dumpsince;
 	if(ch == '/' || isspace(ch)) s[-1] = '_';
       }
 
-      ap_snprintf(number, sizeof(number), "%d", level);
+      snprintf(number, sizeof(number), "%d", level);
       incrname = vstralloc(basename, "_", number, ".new", NULL);
       unlink(incrname);
       umask(0007);
@@ -1097,7 +1097,7 @@ notincremental:
 	int baselevel = level;
 
 	while (in == NULL && --baselevel >= 0) {
-	  ap_snprintf(number, sizeof(number), "%d", baselevel);
+	  snprintf(number, sizeof(number), "%d", baselevel);
 	  inputname = newvstralloc(inputname, basename, "_", number, NULL);
 	  in = fopen(inputname, "r");
 	}
@@ -1167,7 +1167,7 @@ notincremental:
 #endif
 
     gmtm = gmtime(&dumpsince);
-    ap_snprintf(dumptimestr, sizeof(dumptimestr),
+    snprintf(dumptimestr, sizeof(dumptimestr),
 		"%04d-%02d-%02d %2d:%02d:%02d GMT",
 		gmtm->tm_year + 1900, gmtm->tm_mon+1, gmtm->tm_mday,
 		gmtm->tm_hour, gmtm->tm_min, gmtm->tm_sec);

@@ -85,7 +85,7 @@ size_t errbuf_size;
 				strncpy(convbuf, r->name, sizeof(convbuf)-1);
 				convbuf[sizeof(convbuf)-1] = '\0';
 			} else {
-				ap_snprintf(convbuf, sizeof(convbuf),
+				snprintf(convbuf, sizeof(convbuf),
 					    "REG_0x%x", target);
 			}
 			assert(strlen(convbuf) < sizeof(convbuf));
@@ -125,6 +125,6 @@ int buflen;
 	if (r->code < 0)
 		return("0");
 
-	ap_snprintf(localbuf, buflen, "%d", r->code);
+	snprintf(localbuf, buflen, "%d", r->code);
 	return(localbuf);
 }

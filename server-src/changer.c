@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.17 1998/12/14 20:29:53 kashmir Exp $
+ * $Id: changer.c,v 1.18 1999/04/10 06:19:40 kashmir Exp $
  *
  * interface routines for tape changers
  */
@@ -337,7 +337,7 @@ char *cmdstr;
     cmdpipe = NULL;
     /* mark out-of-control changers as fatal error */
     if(WIFSIGNALED(exitcode)) {
-	ap_snprintf(number, sizeof(number), "%d", WTERMSIG(exitcode));
+	snprintf(number, sizeof(number), "%d", WTERMSIG(exitcode));
 	cmd = newvstralloc(cmd,
 			   "<error> ",
 			   changer_resultstr,

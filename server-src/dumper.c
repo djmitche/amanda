@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.117 1999/04/09 20:24:11 kashmir Exp $
+/* $Id: dumper.c,v 1.118 1999/04/10 06:19:52 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -164,7 +164,7 @@ static char *construct_datestamp()
 
     timestamp = time((time_t *)NULL);
     tm = localtime(&timestamp);
-    ap_snprintf(datestamp, sizeof(datestamp),
+    snprintf(datestamp, sizeof(datestamp),
 		"%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
     return stralloc(datestamp);
 }
@@ -609,7 +609,7 @@ databuf_flush(db)
 	    errstr = squotef("lseek holding file: %s", strerror(errno));
 	    return (-1);
 	}
-	ap_snprintf(file.cont_filename, sizeof(file.cont_filename),
+	snprintf(file.cont_filename, sizeof(file.cont_filename),
 	    "%s.%d", db->filename, ++db->filename_seq);
 	write_tapeheader(fd, &file);
 	aclose(fd);
@@ -960,7 +960,7 @@ finish_tapeheader(file)
 #ifndef UNCOMPRESS_OPT
 #define	UNCOMPRESS_OPT	""
 #endif
-	ap_snprintf(file->uncompress_cmd, sizeof(file->uncompress_cmd),
+	snprintf(file->uncompress_cmd, sizeof(file->uncompress_cmd),
 	    " %s %s |", UNCOMPRESS_PATH, UNCOMPRESS_OPT);
 	strncpy(file->comp_suffix, COMPRESS_SUFFIX,sizeof(file->comp_suffix)-1);
 	file->comp_suffix[sizeof(file->comp_suffix)-1] = '\0';
@@ -1010,7 +1010,7 @@ do_dump(db)
     status = 0;
     fh_init(&file);
 
-    ap_snprintf(level_str, sizeof(level_str), "%d", level);
+    snprintf(level_str, sizeof(level_str), "%d", level);
     fn = sanitise_filename(diskname);
     errfname = newvstralloc(errfname,
 			    "/tmp",
@@ -1092,7 +1092,7 @@ do_dump(db)
     if (dumpsize < 0) dumpsize = 0;	/* XXX - maybe this should be fatal? */
 
     errstr = alloc(128);
-    ap_snprintf(errstr, 128, "sec %s kb %ld kps %3.1f orig-kb %ld",
+    snprintf(errstr, 128, "sec %s kb %ld kps %3.1f orig-kb %ld",
 	walltime_str(runtime), dumpsize,
 	dumptime ? dumpsize / dumptime : 0.0, origsize);
     q = squotef("[%s]", errstr);
@@ -1624,7 +1624,7 @@ startup_dump(hostname, disk, level, dumpdate, progname, options)
 	authopt = authoptbuf;
     }
 
-    ap_snprintf(level_string, sizeof(level_string), "%d", level);
+    snprintf(level_string, sizeof(level_string), "%d", level);
     if(strncmp(progname,"DUMP",4) == 0 || strncmp(progname,"GNUTAR",6) == 0)
 	req = vstralloc("SERVICE sendbackup\n",
 		        "OPTIONS ",

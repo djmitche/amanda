@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.61 1999/01/23 14:11:03 martinea Exp $
+ * $Id: amadmin.c,v 1.62 1999/04/10 06:19:27 kashmir Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -222,7 +222,7 @@ int seq;
 
     tm = localtime(&t);
 
-    ap_snprintf(str, sizeof(str),
+    snprintf(str, sizeof(str),
 		"%2d/%02d %3s", tm->tm_mon+1, tm->tm_mday, dow[tm->tm_wday]);
     return str;
 }

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.17 1998/07/04 00:20:07 oliva Exp $
+ * $Id: logfile.c,v 1.18 1999/04/10 06:19:59 kashmir Exp $
  *
  * common log file writing routine
  */
@@ -100,7 +100,7 @@ arglist_function(void log_add, logtype_t, typ)
 
     arglist_start(argp, typ);
     format = arglist_val(argp, char *);
-    ap_vsnprintf(linebuf, sizeof(linebuf)-1, format, argp);
+    vsnprintf(linebuf, sizeof(linebuf)-1, format, argp);
 						/* -1 to allow for '\n' */
     arglist_end(argp);
 
@@ -168,7 +168,7 @@ char *datestamp;
     logfile = vstralloc(getconf_str(CNF_LOGDIR), "/log", NULL);
 
     for(seq = 0; 1; seq++) {	/* if you've got MAXINT files in your dir... */
-	ap_snprintf(seq_str, sizeof(seq_str), "%d", seq);
+	snprintf(seq_str, sizeof(seq_str), "%d", seq);
 	fname = newvstralloc(fname,
 			     logfile,
 			     ".", datestamp,

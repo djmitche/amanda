@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.50 1999/04/07 02:54:45 martinea Exp $
+ * $Id: reporter.c,v 1.51 1999/04/10 06:20:06 kashmir Exp $
  *
  * nightly Amanda Report generator
  */
@@ -309,7 +309,7 @@ static char *TextRule(ColumnName From, ColumnName To, char *s) {
     leng= strlen(s);
     if(leng >= (RuleSpaceSize - cd->PrefixSpace))
 	leng = RuleSpaceSize - cd->PrefixSpace - 1;
-    ap_snprintf(RuleSpace, RuleSpaceSize, "%*s%*.*s ", cd->PrefixSpace, "", 
+    snprintf(RuleSpace, RuleSpaceSize, "%*s%*.*s ", cd->PrefixSpace, "", 
 		leng, leng, s);
     txtlength = cd->PrefixSpace + leng + 1;
     nbrules = ColWidth(From,To) - txtlength;
@@ -323,10 +323,10 @@ char *sDivZero(float a, float b, ColumnName cn) {
     ColumnInfo *cd= &ColumnData[cn];
     static char PrtBuf[256];
     if (b == 0.0)
-    	ap_snprintf(PrtBuf, sizeof(PrtBuf),
+    	snprintf(PrtBuf, sizeof(PrtBuf),
 	  "%*s", cd->Width, "-- ");
     else
-    	ap_snprintf(PrtBuf, sizeof(PrtBuf),
+    	snprintf(PrtBuf, sizeof(PrtBuf),
 	  cd->Format, cd->Width, cd->Precision, a/b);
     return PrtBuf;
 }
@@ -928,7 +928,7 @@ void CheckIntMax(ColumnInfo *cd, int n) {
     if (cd->MaxWidth) {
     	char testBuf[200];
     	int l;
-	ap_snprintf(testBuf, sizeof(testBuf),
+	snprintf(testBuf, sizeof(testBuf),
 	  cd->Format, cd->Width, cd->Precision, n);
 	l= strlen(testBuf);
 	if (cd->Width < l)
@@ -940,7 +940,7 @@ void CheckFloatMax(ColumnInfo *cd, double d) {
     if (cd->MaxWidth) {
     	char testBuf[200];
 	int l;
-	ap_snprintf(testBuf, sizeof(testBuf),
+	snprintf(testBuf, sizeof(testBuf),
 	  cd->Format, cd->Width, cd->Precision, d);
 	l= strlen(testBuf);
 	if (cd->Width < l)
@@ -985,10 +985,10 @@ void CalcMaxWidth() {
 	      sDivZero(pct(data(dp)->outsize), f, Compress));
 
 	    if(!amflush_run)
-		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
+		snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
 		  "%3d:%02d", mnsc(data(dp)->dumper.sec));
 	    else
-		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
+		snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
 		  "N/A ");
 	    CheckStringMax(&ColumnData[DumpTime], TimeRateBuffer);
 
@@ -1000,10 +1000,10 @@ void CalcMaxWidth() {
 		continue;
 	    }
 	    if(data(dp)->taper[i].success)
-		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer), 
+		snprintf(TimeRateBuffer, sizeof(TimeRateBuffer), 
 		  "%3d:%02d", mnsc(data(dp)->taper[i].sec));
 	    else
-		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
+		snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
 		  "N/A ");
 	    CheckStringMax(cd, TimeRateBuffer);
 
@@ -1150,10 +1150,10 @@ void output_summary()
 	    cd= &ColumnData[DumpTime];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
 	    if(!amflush_run)
-		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
+		snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
 		  "%3d:%02d", mnsc(data(dp)->dumper.sec));
 	    else
-		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
+		snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
 		  "N/A ");
 	    fprintf(mailf, cd->Format, cd->Width, cd->Width, TimeRateBuffer);
 
@@ -1173,10 +1173,10 @@ void output_summary()
 		continue;
 	    }
 	    if(data(dp)->taper[i].success)
-		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
+		snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
 		  "%3d:%02d", mnsc(data(dp)->taper[i].sec));
 	    else
-		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
+		snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
 		  "N/A ");
 	    fprintf(mailf, cd->Format, cd->Width, cd->Width, TimeRateBuffer);
 
@@ -1223,7 +1223,7 @@ int datestamp;
     day   = datestamp % 100;
     month = (datestamp / 100) % 100;
 
-    ap_snprintf(nice, sizeof(nice), "%s %d, %d", months[month], day, year);
+    snprintf(nice, sizeof(nice), "%s %d, %d", months[month], day, year);
 
     return nice;
 }
@@ -1759,7 +1759,7 @@ prefix (host, disk, level)
     char number[NUM_STR_SIZE];
     static char *str = NULL;
 
-    ap_snprintf(number, sizeof(number), "%d", level);
+    snprintf(number, sizeof(number), "%d", level);
     if(host) {
 	strncpy(h, host, sizeof(h)-1);
     } else {

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.26 1998/11/19 23:05:14 kashmir Exp $
+/* $Id: amidxtaped.c,v 1.27 1999/04/10 06:19:20 kashmir Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -409,7 +409,7 @@ char **errstr;
     if(ntohs(addr->sin_port) >= IPPORT_RESERVED) {
 	char number[NUM_STR_SIZE];
 
-	ap_snprintf(number, sizeof(number), "%d", ntohs(addr->sin_port));
+	snprintf(number, sizeof(number), "%d", ntohs(addr->sin_port));
 	*errstr = vstralloc("[",
 			    "host ", remotehost, ": ",
 			    "port ", number, " not secure",
