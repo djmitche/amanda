@@ -49,7 +49,12 @@ accesscount=`cat $accessfile`
 #
 
 readstatus() {
-  used=`$MTX -s | sed -n 's/Drive: No tape Loaded/-1/p;s/Drive: tape \(.\) loaded/\1/p'`
+  used=`$MTX -s |
+    sed -n 's/Drive: No tape Loaded/-1/p;s/Drive: tape \(.\) loaded/\1/p'`
+
+  if [ -z "$used" ]; then
+    used="-1";
+  fi
 }
 
 
@@ -171,7 +176,7 @@ loadslot() {
       echo "$load $tape"
       exit 0
     else
-      echo " $res"
+      echo "$load $res"
       exit 2
     fi
 }
