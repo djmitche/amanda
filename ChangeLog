@@ -1,3 +1,9 @@
+1999-06-01  Jens Persson  <jens.persson@btj.se>
+
+	* configure.in (UDPPORTRANGE): Set from --with-udpportrange.
+	* config/acconfig.h: Add UDPPORTRANGE.
+	* common-src/dgram.c: Implement it.
+
 1999-05-27  Mike Grupenhoff <kashmir@munge.com>
 
 	* common-src/alloc.c (alloc, debug_alloc, newalloc, debug_newalloc):
