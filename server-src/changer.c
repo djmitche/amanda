@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: changer.c,v 1.8 1998/01/26 21:16:17 jrj Exp $
+ * $Id: changer.c,v 1.9 1998/01/29 20:18:51 jrj Exp $
  *
  * interface routines for tape changers
  */
@@ -234,6 +234,7 @@ char *cmdstr;
 {
     FILE *cmdpipe;
     char *cmd = NULL;
+    char *cmd_and_io = NULL;
     int exitcode;
     char number[NUM_STR_SIZE];
 
@@ -244,15 +245,32 @@ char *cmdstr;
     } else {
 	cmd = vstralloc(tapechanger, " ", cmdstr, NULL);
     }
+    cmd_and_io = stralloc2(cmd, " 2>&1");
 
 /* fprintf(stderr, "changer: opening pipe from: %s\n", cmd); */
 
-    if((cmdpipe = popen(cmd, "r")) == NULL)
-	error("could not open pipe to \"%s\": %s", cmd, strerror(errno));
-
     afree(changer_resultstr);
+
+    if((cmdpipe = popen(cmd_and_io, "r")) == NULL) {
+	changer_resultstr = vstralloc ("<error> ",
+				       "could not open pipe to \"",
+				       cmd,
+				       "\": ",
+				       strerror(errno),
+				       NULL);
+	afree(cmd);
+	afree(cmd_and_io);
+	return 2;
+    }
+    afree(cmd_and_io);
+
     if((changer_resultstr = agets(cmdpipe)) == NULL) {
-	error("could not read result from \"%s\": %s", cmd, strerror(errno));
+	changer_resultstr = vstralloc ("<error> ",
+				       "could not read result from \"",
+				       cmd,
+				       errno ? "\": " : "\"",
+				       errno ? strerror(errno) : "",
+				       NULL);
     }
 
     exitcode = pclose(cmdpipe);
@@ -261,6 +279,7 @@ char *cmdstr;
     if(WIFSIGNALED(exitcode)) {
 	ap_snprintf(number, sizeof(number), "%d", WTERMSIG(exitcode));
 	cmd = newvstralloc(cmd,
+			   "<error> ",
 			   changer_resultstr,
 			   " (got signal ", number, ")",
 			   NULL);
