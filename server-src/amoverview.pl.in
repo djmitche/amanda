@@ -133,7 +133,7 @@ $fh->close or
 # make formats
 
 my $top_format = "format TOP =\n\n" .
-    sprintf("%-0${opt_hostwidth}s %0${opt_diskwidth}s ", '', 'date') .
+    sprintf("%-0${opt_hostwidth}s %-0${opt_diskwidth}s ", '', 'date') .
     join(' ', map((split(/-/, $_))[1], sort keys %dates)) . "\n" .
     sprintf("%-0${opt_hostwidth}s %-0${opt_diskwidth}s ", 'host', 'disk') .
     join(' ', map((split(/-/, $_))[2], sort keys %dates)) . "\n" .
