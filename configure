@@ -5264,7 +5264,7 @@ fi
 	DB_LIB=ndbm
     elif test "$ac_cv_lib_c_dbm_open" = yes &&  test "$ac_cv_header_ndbm_h" = yes; then
 	DB_STYLE=ndbm
-	DB_HEADER=ndhm.h
+	DB_HEADER=ndbm.h
 	DB_LIB=c
     else
 	echo $ac_n "checking for dbm_open in -ldb""... $ac_c" 1>&6
@@ -6623,8 +6623,8 @@ fi
 done
 
 if test "${ice_have_dbm_open}" = yes; then
-echo $ac_n "checking for dbm_open declaration in db.h dbm.h gdbm.h ndbm.h""... $ac_c" 1>&6
-echo "configure:6628: checking for dbm_open declaration in db.h dbm.h gdbm.h ndbm.h" >&5
+echo $ac_n "checking for dbm_open declaration in ${DB_HEADER-no/db/header/file}""... $ac_c" 1>&6
+echo "configure:6628: checking for dbm_open declaration in ${DB_HEADER-no/db/header/file}" >&5
 if eval "test \"`echo '$''{'ice_cv_have_dbm_open_decl'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -6632,7 +6632,7 @@ else
 ice_cv_have_dbm_open_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
 ice_re_word='(^|[^a-zA-Z_0-9_])'
-for header in db.h dbm.h gdbm.h ndbm.h; do
+for header in ${DB_HEADER-no/db/header/file}; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
 #line 6639 "configure"

@@ -1,3 +1,5 @@
+        Fixed autoconf for gdbm on linux. -oliva
+
 Version 2.3.0.4
 
 	Have bsd_security_ok() in amandad return 1 when BSD security is

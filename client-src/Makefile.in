@@ -460,59 +460,6 @@ distdir: $(DISTFILES)
 	  || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
 	  || cp -p $$d/$$file $(distdir)/$$file; \
 	done
-amandad.o amandad.lo: amandad.c ../common-src/amanda.h ../config.h \
-	../common-src/dgram.h ../common-src/version.h \
-	../common-src/protocol.h
-amrecover.o amrecover.lo: amrecover.c ../common-src/amanda.h ../config.h \
-	amrecover.h ../common-src/getfsent.h
-amrestore.o amrestore.lo: amrestore.c ../common-src/amanda.h ../config.h \
-	../common-src/regex.h ../common-src/tapeio.h
-calcsize.o calcsize.lo: calcsize.c ../common-src/amanda.h ../config.h \
-	../common-src/statfs.h
-createindex-dump.o createindex-dump.lo: createindex-dump.c \
-	../common-src/amanda.h ../config.h ../common-src/getfsent.h \
-	indexfilename.h ../common-src/version.h
-createindex-gnutar.o createindex-gnutar.lo: createindex-gnutar.c \
-	../common-src/amanda.h ../config.h indexfilename.h \
-	../common-src/version.h
-display_commands.o display_commands.lo: display_commands.c \
-	../common-src/amanda.h ../config.h amrecover.h
-extract_list.o extract_list.lo: extract_list.c ../common-src/amanda.h \
-	../config.h amrecover.h
-help.o help.lo: help.c amrecover.h ../common-src/amanda.h ../config.h
-indexfilename.o indexfilename.lo: indexfilename.c ../common-src/amanda.h \
-	../config.h indexfilename.h
-rundump.o rundump.lo: rundump.c ../common-src/amanda.h ../config.h \
-	../common-src/version.h
-runtar.o runtar.lo: runtar.c ../common-src/amanda.h ../config.h \
-	../common-src/version.h
-selfcheck.o selfcheck.lo: selfcheck.c ../common-src/amanda.h ../config.h \
-	../common-src/statfs.h ../common-src/version.h
-sendbackup-common.o sendbackup-common.lo: sendbackup-common.c \
-	sendbackup-common.h ../common-src/amanda.h ../config.h \
-	../common-src/stream.h ../common-src/arglist.h \
-	../common-src/tapeio.h
-sendbackup-dump.o sendbackup-dump.lo: sendbackup-dump.c \
-	sendbackup-common.h ../common-src/amanda.h ../config.h \
-	../common-src/getfsent.h ../common-src/version.h
-sendbackup-gnutar.o sendbackup-gnutar.lo: sendbackup-gnutar.c \
-	../common-src/amanda.h ../config.h sendbackup-common.h \
-	../common-src/amandates.h ../common-src/getfsent.h \
-	../common-src/version.h
-sendindex.o sendindex.lo: sendindex.c ../common-src/amanda.h ../config.h \
-	indexfilename.h ../common-src/stream.h ../common-src/arglist.h \
-	../common-src/tapeio.h
-sendsize.o sendsize.lo: sendsize.c ../common-src/amanda.h ../config.h \
-	../common-src/amandates.h ../common-src/getfsent.h \
-	../common-src/version.h
-set_commands.o set_commands.lo: set_commands.c ../common-src/amanda.h \
-	../config.h amrecover.h
-uparse.o uparse.lo: uparse.c ../common-src/amanda.h ../config.h \
-	amrecover.h
-uscan.o uscan.lo: uscan.c ../common-src/amanda.h ../config.h uparse.h
-versionsuffix.o versionsuffix.lo: versionsuffix.c ../common-src/amanda.h \
-	../config.h ../common-src/version.h
-
 info:
 dvi:
 check: all

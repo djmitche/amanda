@@ -267,9 +267,6 @@ distdir: $(DISTFILES)
 	  || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
 	  || cp -p $$d/$$file $(distdir)/$$file; \
 	done
-seagate-changer.o seagate-changer.lo: seagate-changer.c \
-	../common-src/amanda.h ../config.h
-
 info:
 dvi:
 check: all

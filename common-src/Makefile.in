@@ -245,51 +245,6 @@ distdir: $(DISTFILES)
 	  || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
 	  || cp -p $$d/$$file $(distdir)/$$file; \
 	done
-add_exclude.o add_exclude.lo: add_exclude.c amanda.h ../config.h
-alloc.o alloc.lo: alloc.c amanda.h ../config.h
-alloca.o alloca.lo: alloca.c ../config.h
-amandates.o amandates.lo: amandates.c amanda.h ../config.h logfile.h \
-	getfsent.h amandates.h
-changer.o changer.lo: changer.c amanda.h ../config.h conffile.h \
-	version.h changer.h
-check_exclude.o check_exclude.lo: check_exclude.c amanda.h ../config.h \
-	fnmatch.h
-clock.o clock.lo: clock.c amanda.h ../config.h clock.h
-conffile.o conffile.lo: conffile.c amanda.h ../config.h arglist.h \
-	conffile.h clock.h
-debug.o debug.lo: debug.c amanda.h ../config.h arglist.h
-dgram.o dgram.lo: dgram.c amanda.h ../config.h dgram.h
-diskfile.o diskfile.lo: diskfile.c amanda.h ../config.h arglist.h \
-	conffile.h diskfile.h
-error.o error.lo: error.c amanda.h ../config.h logfile.h arglist.h
-fileblocks.o fileblocks.lo: fileblocks.c ../config.h
-findpass.o findpass.lo: findpass.c findpass.h amanda.h ../config.h
-flock.o flock.lo: flock.c amanda.h ../config.h
-fnmatch.o fnmatch.lo: fnmatch.c ../config.h amanda.h fnmatch.h
-getcwd.o getcwd.lo: getcwd.c
-getfsent.o getfsent.lo: getfsent.c amanda.h ../config.h getfsent.h
-infofile.o infofile.lo: infofile.c amanda.h ../config.h conffile.h \
-	infofile.h
-logfile.o logfile.lo: logfile.c amanda.h ../config.h arglist.h \
-	conffile.h logfile.h
-match.o match.lo: match.c amanda.h ../config.h regex.h
-mktime.o mktime.lo: mktime.c
-protocol.o protocol.lo: protocol.c amanda.h ../config.h protocol.h \
-	dgram.h version.h
-regex.o regex.lo: regex.c ../config.h amanda.h regex.h
-statfs.o statfs.lo: statfs.c amanda.h ../config.h statfs.h
-stralloc.o stralloc.lo: stralloc.c amanda.h ../config.h
-strdup.o strdup.lo: strdup.c ../config.h
-stream.o stream.lo: stream.c amanda.h ../config.h dgram.h stream.h
-strerror.o strerror.lo: strerror.c amanda.h ../config.h
-strstr.o strstr.lo: strstr.c amanda.h ../config.h
-tapefile.o tapefile.lo: tapefile.c amanda.h ../config.h tapefile.h \
-	conffile.h
-tapeio.o tapeio.lo: tapeio.c amanda.h ../config.h logfile.h tapeio.h
-unctime.o unctime.lo: unctime.c amanda.h ../config.h
-version.o version.lo: version.c
-versuff.o versuff.lo: versuff.c amanda.h ../config.h version.h
-
 info:
 dvi:
 check: all
