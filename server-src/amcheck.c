@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.53 1998/12/01 21:29:17 jrj Exp $
+ * $Id: amcheck.c,v 1.54 1998/12/04 20:55:00 kashmir Exp $
  *
  * checks for common problems in server and clients
  */
@@ -39,20 +39,6 @@
 #include "clock.h"
 #include "version.h"
 #include "amindex.h"
-
-/*
- * If we don't have the new-style wait access functions, use our own,
- * compatible with old-style BSD systems at least.  Note that we don't
- * care about the case w_stopval == WSTOPPED since we don't ask to see
- * stopped processes, so should never get them from wait.
- */
-#ifndef WEXITSTATUS
-#   define WEXITSTATUS(r)       (((union wait *) &(r))->w_retcode)
-#   define WTERMSIG(r)          (((union wait *) &(r))->w_termsig)
-
-#   undef WIFSIGNALED
-#   define WIFSIGNALED(r)        (((union wait *) &(r))->w_termsig != 0)
-#endif
 
 #define CHECK_TIMEOUT   30
 #define BUFFER_SIZE	32768

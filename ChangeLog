@@ -1,3 +1,11 @@
+1998-12-04  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/amanda.h: implement WIFSIGNALED() if not already
+	defined
+	* server-src/amcheck.c: ream out compat definitions of WEXITSTATUS(),
+	WTERMSIG(), and WIFSIGNALED().  These are already handled in amanda.h
+	* server-src/changer.c: ditto
+
 1998-12-03  Mike Grupenhoff <kashmir@munge.com>
 
 	* common-src/bsd-security.c (recv_security_ok): only check for

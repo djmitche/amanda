@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.69 1998/11/25 05:24:27 kashmir Exp $
+ * $Id: amanda.h,v 1.70 1998/12/04 20:54:55 kashmir Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -200,6 +200,10 @@ struct iovec {
 # ifndef WIFEXITED
 #  define WIFEXITED(stat_val) ((*(unsigned*)&(stat_val) & 255) == 0)
 # endif
+#endif
+
+#ifndef WIFSIGNALED
+# define WIFSIGNALED(stat_val)	(WTERMSIG(stat_val) != 0)
 #endif
 
 #ifdef HAVE_UNISTD_H

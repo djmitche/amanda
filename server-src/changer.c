@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.15 1998/11/18 07:36:56 oliva Exp $
+ * $Id: changer.c,v 1.16 1998/12/04 20:55:02 kashmir Exp $
  *
  * interface routines for tape changers
  */
@@ -33,21 +33,6 @@
 #include "version.h"
 
 #include "changer.h"
-
-/*
- * If we don't have the new-style wait access functions, use our own,
- * compatible with old-style BSD systems at least.  Note that we don't
- * care about the case w_stopval == WSTOPPED since we don't ask to see
- * stopped processes, so should never get them from wait.
- */
-#ifndef WEXITSTATUS
-#   define WEXITSTATUS(r)       (((union wait *) &(r))->w_retcode)
-#   define WTERMSIG(r)          (((union wait *) &(r))->w_termsig)
-
-#   undef  WIFSIGNALED
-#   define WIFSIGNALED(r)       (((union wait *) &(r))->w_termsig != 0)
-#endif
-
 
 char *changer_resultstr = NULL;
 
