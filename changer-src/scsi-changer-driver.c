@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-changer-driver.c,v 1.1.2.27.2.2 2001/02/28 00:03:12 jrjackson Exp $
+ * $Id: scsi-changer-driver.c,v 1.1.2.27.2.3 2001/05/10 20:24:06 jrjackson Exp $
  *
  * Interface to control a tape robot/library connected to the SCSI bus
  *
@@ -1415,13 +1415,13 @@ int DLT4000Eject(char *Device, int type)
 
   if ((pRequestSense = malloc(sizeof(RequestSense_T))) == NULL)
     {
-      dbprintf(("%-20s : malloc failed\n","GenericEject"));
+      dbprintf(("%-20s : malloc failed\n","DLT4000Eject"));
       return(-1);
     }
 
   if ((pExtendedRequestSense = malloc(sizeof(ExtendedRequestSense_T))) == NULL)
     {
-      dbprintf(("%-20s : malloc failed\n","GenericEject"));
+      dbprintf(("%-20s : malloc failed\n","DLT4000Eject"));
       return(-1);
     }
   
@@ -1430,7 +1430,7 @@ int DLT4000Eject(char *Device, int type)
   
   if ( type > 1)
     {
-      dbprintf(("GenericEject : use mtio ioctl for eject on %s\n", pTapeDev->dev));
+      dbprintf(("DLT4000Eject : use mtio ioctl for eject on %s\n", pTapeDev->dev));
       return(Tape_Eject(pTapeDev->fd));
     }
   
@@ -1438,7 +1438,7 @@ int DLT4000Eject(char *Device, int type)
 		  pTapeDevCtl != NULL &&
 		  pTapeDev->fd != pTapeDevCtl->fd && 
 		  pTapeDevCtl->SCSI == 1) {
-    dbprintf(("GenericEject : Close %s \n", pTapeDev->dev));
+    dbprintf(("DLT4000Eject : Close %s \n", pTapeDev->dev));
     close(pTapeDev->fd);
   }
   
