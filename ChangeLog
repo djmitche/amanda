@@ -1,5 +1,10 @@
 1999-09-18 John R. Jackson  <jrj@purdue.edu>
 
+	* configure.in: several compress/uncompress variables were not being
+	  set properly.
+
+1999-09-18 John R. Jackson  <jrj@purdue.edu>
+
 	* client-src/sendbackup.c: pclose returns a child exit status of the
 	  pipe, not an errno, so do not try to strerror it.
 	  Have the index child process exit with the pclose exit code.
