@@ -1,3 +1,8 @@
+1998-05-25  Allen Briggs  <briggs@canolog.ninthwonder.com>
+
+	* changer-src/chg-manual.sh.in (ONLINEREGEX): add `^er=0$' for
+	NetBSD's mt
+
 1998-05-23  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* client-src/sendsize.c (getsize_dump): killpgrp must be direct
