@@ -19,9 +19,6 @@ allocate a huge memory block.  The current workaround is to use a
 finite tapecycle; a correct fix would involve dynamically growing the
 structure allocated by planner as needed.
 
-* amlabel should ask for confirmation before overwriting an active
-tape.
-
 * amcheck and amadmin should check whether the user that invoked it is
 the user configured to run amanda.
 
