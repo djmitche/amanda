@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getfsent.c,v 1.11.2.2 1998/02/03 16:06:58 amcore Exp $
+ * $Id: getfsent.c,v 1.11.2.3 1998/02/26 11:24:47 amcore Exp $
  *
  * generic version of code to read fstab
  */
@@ -437,6 +437,10 @@ generic_fsent_t *fsent;
   while(get_fstab_nextentry(fsent)) {
     struct stat estat;
     if ((fsent->mntdir != NULL
+	 && strcmp(fsent->mntdir, name) == 0) ||
+	(fsent->fsname != NULL
+	 && strcmp(fsent->fsname, name) == 0) ||
+	(fsent->mntdir != NULL
 	 && stat(fsent->mntdir, &estat) != -1
 	 && samefile(stats, &estat)) ||
 	(fsent->fsname != NULL
