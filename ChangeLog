@@ -1,5 +1,11 @@
 2004-02-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* config/acinclude.m4i: Define CF_WAIT_INT.
+	* configure.in: Call CF_WAIT_INT.
+	* common-src/amanda.h: Try to make waitpid doesn't warn.
+
+2004-02-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.4.5b1).
 
 2004-01-29  Jean-Louis Martineau <martineau@iro.umontreal.ca>
