@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.18.2.15.2.2 2001/07/19 22:15:16 jrjackson Exp $
+ * $Id: amlabel.c,v 1.18.2.15.2.3 2001/07/31 23:07:30 jrjackson Exp $
  *
  * write an Amanda label on a tape
  */
@@ -70,6 +70,8 @@ int main(argc, argv)
     int have_changer;
     int force, tape_ok;
     tape_t *tp;
+    tapetype_t *tape;
+    long tt_blocksize_kb;
     int slotcommand;
     uid_t uid_me;
     uid_t uid_dumpuser;
@@ -164,6 +166,10 @@ int main(argc, argv)
     if((tp = lookup_tapelabel(label))!=NULL) {
 	if(!force)
 	    error("label %s already on a tape\n",label);
+    }
+    tape = lookup_tapetype(getconf_str(CNF_TAPETYPE));
+    if((tt_blocksize_kb = tape->blocksize) < 0) {
+	tt_blocksize_kb = -tt_blocksize_kb;
     }
 
     if((have_changer = changer_init()) == 0) {
@@ -260,14 +266,16 @@ int main(argc, argv)
 
 #ifdef HAVE_LINUX_ZFTAPE_H
 	if (is_zftape(tapename) == 1){
-	    if((errstr = tapefd_wrlabel(fd, "X", label)) != NULL) {
+	    errstr = tapefd_wrlabel(fd, "X", label, tt_blocksize_kb * 1024);
+	    if(errstr != NULL) {
 		putchar('\n');
 		error(errstr);
 	    }
 	}
 	else
 #endif /* HAVE_LINUX_ZFTAPE_H */
-	if((errstr = tape_wrlabel(tapename, "X", label)) != NULL) {
+	errstr = tape_wrlabel(tapename, "X", label, tt_blocksize_kb * 1024);
+	if(errstr != NULL) {
 	    putchar('\n');
 	    error(errstr);
 	}
@@ -280,14 +288,16 @@ int main(argc, argv)
 
 #ifdef HAVE_LINUX_ZFTAPE_H
 	if (is_zftape(tapename) == 1){
-	    if((errstr = tapefd_wrendmark(fd, "X")) != NULL) {
+	    errstr = tapefd_wrendmark(fd, "X", tt_blocksize_kb * 1024);
+	    if(errstr != NULL) {
 		putchar('\n');
 		error(errstr);
 	    }
 	}
 	else
 #endif /* HAVE_LINUX_ZFTAPE_H */
-	if((errstr = tape_wrendmark(tapename, "X")) != NULL) {
+	errstr = tape_wrendmark(tapename, "X", tt_blocksize_kb * 1024);
+	if(errstr != NULL) {
 	    putchar('\n');
 	    error(errstr);
 	}

@@ -20,6 +20,10 @@ amrestore \- extract backup images from an Amanda tape
 .B \-C
 ]
 [
+.B \-b
+.I blocksize
+]
+[
 .B \-p
 ]
 [
@@ -46,7 +50,7 @@ amrestore \- extract backup images from an Amanda tape
 .B Amrestore
 extracts backup images from the tape mounted on
 .I tapedevice
-or from the holding file
+or from the holding disk file
 .I holdingfile
 that match
 .IR hostname ,
@@ -112,6 +116,15 @@ in the current directory named:
 .I hostname.diskname.datestamp.dumplevel
 .RE
 .SH OPTIONS
+.TP
+.B \-b
+Set the blocksize used to read the tape or holding file.
+All holding files must be read with a blocksize of 32 KBytes.
+.B Amrestore
+should normally be able to determine the blocksize for tapes
+on its own and not need this parameter.
+.IP
+The default is 32 KBytes.
 .TP
 .B \-p
 Pipe output.
@@ -194,6 +207,10 @@ or
 may also be used to compress the result.
 .B Amrecover
 uses the header to determine the restore program to use.
+.LP
+If a header is written (\-r or \-h),
+only 32 KBytes are output regardless of the tape blocksize.
+This makes the resulting image usable as a holding file.
 .SH EXAMPLES
 The following does an interactive restore of disk
 .I rz3g
@@ -242,7 +259,9 @@ seine.rz1g.19910125.0
 .EE
 .RE
 .LP
-You may also use amrestore to extract a backup image from a holding disk
+You may also use
+.B amrestore
+to extract a backup image from a holding disk
 file that has not yet been flushed to tape:
 .LP
 .RS
@@ -250,6 +269,23 @@ file that has not yet been flushed to tape:
 % amrestore \-p /amanda/20001119/seine.rz1a.2 | restore \-ivbf 2 \-
 .EE
 .RE
+.LP
+.B Amrestore
+may be used to generate a listing of images on a tape:
+.LP
+.RS
+.EX
+% mt -f /dev/nrmt9 rewind
+% amrestore \-p /dev/nrmt9 no-such-host > /dev/null
+.EE
+.RE
+.LP
+This asks
+.B amrestore
+to find images for host
+.BR no-such-host .
+It will not find any entries that match, but along the way will report
+each image it skips.
 .SH CAVEATS
 .LP
 GNU tar must be used to restore files from backup images created with

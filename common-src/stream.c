@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.10.2.6.2.2 2001/06/18 22:24:33 jrjackson Exp $
+ * $Id: stream.c,v 1.10.2.6.2.3 2001/07/31 23:07:29 jrjackson Exp $
  *
  * functions for managing stream sockets
  */
@@ -72,9 +72,9 @@ int sendsize, recvsize;
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = INADDR_ANY;
 
-    if(sendsize != DEFAULT_SIZE) 
+    if(sendsize >= 0) 
         try_socksize(server_socket, SO_SNDBUF, sendsize);
-    if(recvsize != DEFAULT_SIZE) 
+    if(recvsize >= 0) 
         try_socksize(server_socket, SO_RCVBUF, recvsize);
 
     /*
@@ -266,9 +266,9 @@ out:
 	      inet_ntoa(claddr.sin_addr),
 	      ntohs(claddr.sin_port)));
 
-    if(sendsize != DEFAULT_SIZE) 
+    if(sendsize >= 0) 
 	try_socksize(client_socket, SO_SNDBUF, sendsize);
-    if(recvsize != DEFAULT_SIZE) 
+    if(recvsize >= 0) 
 	try_socksize(client_socket, SO_RCVBUF, recvsize);
 
     if (localport != NULL)
@@ -363,9 +363,9 @@ int server_socket, timeout, sendsize, recvsize;
 	aclose(connected_socket);
     }
 
-    if(sendsize != DEFAULT_SIZE) 
+    if(sendsize >= 0) 
 	try_socksize(connected_socket, SO_SNDBUF, sendsize);
-    if(recvsize != DEFAULT_SIZE) 
+    if(recvsize >= 0) 
 	try_socksize(connected_socket, SO_RCVBUF, recvsize);
 
     return connected_socket;

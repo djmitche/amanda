@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.30.2.3 2001/07/19 22:15:16 jrjackson Exp $
+ * $Id: driver.c,v 1.58.2.30.2.4 2001/07/31 23:07:30 jrjackson Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -534,8 +534,9 @@ disklist_t *rq;
 	while(diskp) {
 	    assert(diskp->host != NULL && sched(diskp) != NULL);
 
-	    /* round estimate to next multiple of TAPE_BLOCK_SIZE */
-	    sched(diskp)->est_size = ((sched(diskp)->est_size + TAPE_BLOCK_SIZE-1)/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
+	    /* round estimate to next multiple of DISK_BLOCK_KB */
+	    sched(diskp)->est_size = am_round(sched(diskp)->est_size,
+					      DISK_BLOCK_KB);
 
 	    if(diskp->host->start_t > now) {
 		cur_idle = max(cur_idle, IDLE_START_WAIT);
@@ -1093,8 +1094,10 @@ void handle_dumper_result(fd)
 	} else { /* !h[++activehd] - must allocate more space */
 	    sched(dp)->act_size = sched(dp)->est_size; /* not quite true */
 	    sched(dp)->est_size = sched(dp)->act_size * 21 / 20; /* +5% */
-	    sched(dp)->est_size = ((sched(dp)->est_size + TAPE_BLOCK_SIZE - 1)/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
-	    h = find_diskspace( sched(dp)->est_size - sched(dp)->act_size, &dummy, h[activehd-1] );
+	    sched(dp)->est_size = am_round(sched(dp)->est_size, DISK_BLOCK_KB);
+	    h = find_diskspace( sched(dp)->est_size - sched(dp)->act_size,
+				&dummy,
+				h[activehd-1] );
 	    if( !h ) {
     /*	    cur_idle = max(cur_idle, IDLE_NO_DISKSPACE); */
 	        /* No diskspace available. The reason for this will be
@@ -1301,14 +1304,14 @@ disklist_t *waitqp;
 	sp = (sched_t *) alloc(sizeof(sched_t));
 	sp->level    = level;
 	sp->dumpdate = stralloc(dumpdate);
-	sp->est_size = TAPE_BLOCK_SIZE + size; /* include header */
+	sp->est_size = DISK_BLOCK_KB + size; /* include header */
 	sp->est_time = time;
 	sp->priority = priority;
 
 	if(degr_dumpdate) {
 	    sp->degr_level = degr_level;
 	    sp->degr_dumpdate = stralloc(degr_dumpdate);
-	    sp->degr_size = TAPE_BLOCK_SIZE + degr_size;
+	    sp->degr_size = DISK_BLOCK_KB + degr_size;
 	    sp->degr_time = degr_time;
 	} else {
 	    sp->degr_level = -1;
@@ -1436,7 +1439,7 @@ int as_pref;
 long halloc, dalloc, hfree, dfree;
 
     as_pref = (pref!=NULL);
-    size = ((size + TAPE_BLOCK_SIZE - 1)/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
+    size = am_round(size, DISK_BLOCK_KB);
 
 #ifdef HOLD_DEBUG
     printf("find diskspace: want %lu K\n", size );
@@ -1459,12 +1462,12 @@ long halloc, dalloc, hfree, dfree;
 	minp = NULL; minj = -1;
 	for(j = 0, hdp = getconf_holdingdisks(); hdp != NULL; hdp = hdp->next, j++ ) {
 	    if( pref && pref->disk == hdp && !used[j] &&
-		holdalloc(hdp)->allocated_space <= hdp->disksize - TAPE_BLOCK_SIZE) {
+		holdalloc(hdp)->allocated_space <= hdp->disksize - DISK_BLOCK_KB) {
 		minp = hdp;
 		minj = j;
 		break;
 	    }
-	    else if( holdalloc(hdp)->allocated_space <= hdp->disksize - 2*TAPE_BLOCK_SIZE &&
+	    else if( holdalloc(hdp)->allocated_space <= hdp->disksize - 2*DISK_BLOCK_KB &&
 		!used[j] && 
 		(!minp ||
 		 holdalloc(hdp)->allocated_dumpers < holdalloc(minp)->allocated_dumpers ||
@@ -1482,13 +1485,13 @@ long halloc, dalloc, hfree, dfree;
 	hfree = minp->disksize - holdalloc(minp)->allocated_space;
 
 	/* dfree = free space for data, remove 1 header for each chunksize */
-	dfree = hfree - (((hfree-1)/minp->chunksize)+1) * TAPE_BLOCK_SIZE;
+	dfree = hfree - (((hfree-1)/minp->chunksize)+1) * DISK_BLOCK_KB;
 
 	/* dalloc = space I can allocate for data */
 	dalloc = ( dfree < size ) ? dfree : size;
 
 	/* halloc = space to allocate, including 1 header for each chunksize */
-	halloc = dalloc + (((dalloc-1)/minp->chunksize)+1) * TAPE_BLOCK_SIZE;
+	halloc = dalloc + (((dalloc-1)/minp->chunksize)+1) * DISK_BLOCK_KB;
 
 #ifdef HOLD_DEBUG
 	fprintf(stdout,"find diskspace: size %ld hf %ld df %ld da %ld ha %ld\n",		size, hfree, dfree, dalloc, halloc);
@@ -1543,8 +1546,8 @@ disk_t *diskp;
 
     ap_snprintf( lvl, sizeof(lvl), "%d", sched(diskp)->level );
 
-    size = sched(diskp)->est_size - sched(diskp)->act_size;
-    size = ((size + TAPE_BLOCK_SIZE - 1)/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
+    size = am_round(sched(diskp)->est_size - sched(diskp)->act_size,
+		    DISK_BLOCK_KB);
 
     for( c = 0; holdp[c]; c++ ); /* count number of disks */
 

@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: tapeio.c,v 1.20.4.7.2.4 2001/06/29 23:39:56 jrjackson Exp $
+ * $Id: tapeio.c,v 1.20.4.7.2.5 2001/07/31 23:07:30 jrjackson Exp $
  *
  * implements generic tape I/O functions
  */
@@ -258,9 +258,9 @@ tapefd_getinfo_host(fd)
     int fd;
 {
     amtable_alloc((void **)&tape_info,
-		  sizeof(*tape_info),
-		  fd,
 		  &tape_info_count,
+		  sizeof(*tape_info),
+		  fd + 1,
 		  10,
 		  tape_info_init);
     return tape_info[fd].host;
@@ -272,9 +272,9 @@ tapefd_setinfo_host(fd, v)
     char *v;
 {
     amtable_alloc((void **)&tape_info,
-		  sizeof(*tape_info),
-		  fd,
 		  &tape_info_count,
+		  sizeof(*tape_info),
+		  fd + 1,
 		  10,
 		  tape_info_init);
     amfree(tape_info[fd].host);
@@ -288,9 +288,9 @@ tapefd_getinfo_disk(fd)
     int fd;
 {
     amtable_alloc((void **)&tape_info,
-		  sizeof(*tape_info),
-		  fd,
 		  &tape_info_count,
+		  sizeof(*tape_info),
+		  fd + 1,
 		  10,
 		  tape_info_init);
     return tape_info[fd].disk;
@@ -302,9 +302,9 @@ tapefd_setinfo_disk(fd, v)
     char *v;
 {
     amtable_alloc((void **)&tape_info,
-		  sizeof(*tape_info),
-		  fd,
 		  &tape_info_count,
+		  sizeof(*tape_info),
+		  fd + 1,
 		  10,
 		  tape_info_init);
     amfree(tape_info[fd].disk);
@@ -318,9 +318,9 @@ tapefd_getinfo_level(fd)
     int fd;
 {
     amtable_alloc((void **)&tape_info,
-		  sizeof(*tape_info),
-		  fd,
 		  &tape_info_count,
+		  sizeof(*tape_info),
+		  fd + 1,
 		  10,
 		  tape_info_init);
     return tape_info[fd].level;
@@ -332,9 +332,9 @@ tapefd_setinfo_level(fd, v)
     int v;
 {
     amtable_alloc((void **)&tape_info,
-		  sizeof(*tape_info),
-		  fd,
 		  &tape_info_count,
+		  sizeof(*tape_info),
+		  fd + 1,
 		  10,
 		  tape_info_init);
     tape_info[fd].level = v;
@@ -345,9 +345,9 @@ tapefd_getinfo_datestamp(fd)
     int fd;
 {
     amtable_alloc((void **)&tape_info,
-		  sizeof(*tape_info),
-		  fd,
 		  &tape_info_count,
+		  sizeof(*tape_info),
+		  fd + 1,
 		  10,
 		  tape_info_init);
     return tape_info[fd].datestamp;
@@ -359,9 +359,9 @@ tapefd_setinfo_datestamp(fd, v)
     char *v;
 {
     amtable_alloc((void **)&tape_info,
-		  sizeof(*tape_info),
-		  fd,
 		  &tape_info_count,
+		  sizeof(*tape_info),
+		  fd + 1,
 		  10,
 		  tape_info_init);
     tape_info[fd].datestamp = newstralloc(tape_info[fd].datestamp, v);
@@ -372,9 +372,9 @@ tapefd_getinfo_length(fd)
     int fd;
 {
     amtable_alloc((void **)&tape_info,
-		  sizeof(*tape_info),
-		  fd,
 		  &tape_info_count,
+		  sizeof(*tape_info),
+		  fd + 1,
 		  10,
 		  tape_info_init);
     return tape_info[fd].length;
@@ -386,9 +386,9 @@ tapefd_setinfo_length(fd, v)
     long v;
 {
     amtable_alloc((void **)&tape_info,
-		  sizeof(*tape_info),
-		  fd,
 		  &tape_info_count,
+		  sizeof(*tape_info),
+		  fd + 1,
 		  10,
 		  tape_info_init);
     tape_info[fd].length = v;
@@ -399,9 +399,9 @@ tapefd_getinfo_tapetype(fd)
     int fd;
 {
     amtable_alloc((void **)&tape_info,
-		  sizeof(*tape_info),
-		  fd,
 		  &tape_info_count,
+		  sizeof(*tape_info),
+		  fd + 1,
 		  10,
 		  tape_info_init);
     return tape_info[fd].tapetype;
@@ -413,9 +413,9 @@ tapefd_setinfo_tapetype(fd, v)
     char *v;
 {
     amtable_alloc((void **)&tape_info,
-		  sizeof(*tape_info),
-		  fd,
 		  &tape_info_count,
+		  sizeof(*tape_info),
+		  fd + 1,
 		  10,
 		  tape_info_init);
     tape_info[fd].tapetype = newstralloc(tape_info[fd].tapetype, v);
@@ -426,9 +426,9 @@ tapefd_getinfo_fake_label(fd)
     int fd;
 {
     amtable_alloc((void **)&tape_info,
-		  sizeof(*tape_info),
-		  fd,
 		  &tape_info_count,
+		  sizeof(*tape_info),
+		  fd + 1,
 		  10,
 		  tape_info_init);
     return tape_info[fd].fake_label;
@@ -440,9 +440,9 @@ tapefd_setinfo_fake_label(fd, v)
     int v;
 {
     amtable_alloc((void **)&tape_info,
-		  sizeof(*tape_info),
-		  fd,
 		  &tape_info_count,
+		  sizeof(*tape_info),
+		  fd + 1,
 		  10,
 		  tape_info_init);
     tape_info[fd].fake_label = v;
@@ -453,9 +453,9 @@ tapefd_getinfo_ioctl_fork(fd)
     int fd;
 {
     amtable_alloc((void **)&tape_info,
-		  sizeof(*tape_info),
-		  fd,
 		  &tape_info_count,
+		  sizeof(*tape_info),
+		  fd + 1,
 		  10,
 		  tape_info_init);
     return tape_info[fd].ioctl_fork;
@@ -467,9 +467,9 @@ tapefd_setinfo_ioctl_fork(fd, v)
     int v;
 {
     amtable_alloc((void **)&tape_info,
-		  sizeof(*tape_info),
-		  fd,
 		  &tape_info_count,
+		  sizeof(*tape_info),
+		  fd + 1,
 		  10,
 		  tape_info_init);
     tape_info[fd].ioctl_fork = v;
@@ -512,9 +512,9 @@ tape_open(filename, mode, mask)
     vslot = name2slot(filename, &tname);
     if((fd = vtable[vslot].xxx_tape_open(tname, mode, mask)) >= 0) {
 	amtable_alloc((void **)&tape_info,
-		      sizeof(*tape_info),
-		      fd,
 		      &tape_info_count,
+		      sizeof(*tape_info),
+		      fd + 1,
 		      10,
 		      tape_info_init);
 	/*
@@ -687,9 +687,19 @@ tape_rewind(devname)
     char *r = NULL;
 
     if((fd = tape_open(devname, O_RDONLY)) < 0) {
-	r = errstr = newstralloc2(errstr, "tape open: ", strerror(errno));
+	r = errstr = newvstralloc(errstr,
+				  "tape_rewind: tape open: ",
+				  devname,
+				  ": ",
+				  strerror(errno),
+				  NULL);
     } else if(tapefd_rewind(fd) == -1) {
-	r = errstr = newstralloc2(errstr, "rewinding tape: ", strerror(errno));
+	r = errstr = newvstralloc(errstr,
+				  "tape_rewind: rewinding tape: ",
+				  devname,
+				  ": ",
+				  strerror(errno),
+				  NULL);
     }
     if(fd >= 0) {
 	tapefd_close(fd);
@@ -705,9 +715,19 @@ tape_unload(devname)
     char *r = NULL;
 
     if((fd = tape_open(devname, O_RDONLY)) < 0) {
-	r = errstr = newstralloc2(errstr, "tape open: ", strerror(errno));
+	r = errstr = newvstralloc(errstr,
+				  "tape_unload: tape open: ",
+				  devname,
+				  ": ",
+				  strerror(errno),
+				  NULL);
     } else if(tapefd_unload(fd) == -1) {
-	r = errstr = newstralloc2(errstr, "unloading tape: ", strerror(errno));
+	r = errstr = newvstralloc(errstr,
+				  "tape_unload: unloading tape: ",
+				  devname,
+				  ": ",
+				  strerror(errno),
+				  NULL);
     }
     if(fd >= 0) {
 	tapefd_close(fd);
@@ -725,12 +745,18 @@ tape_fsf(devname, count)
     char *r = NULL;
 
     if((fd = tape_open(devname, O_RDONLY)) < 0) {
-	r = errstr = newstralloc2(errstr, "tape open: ", strerror(errno));
+	r = errstr = newvstralloc(errstr,
+				  "tape_fsf: tape open: ",
+				  devname,
+				  ": ",
+				  strerror(errno),
+				  NULL);
     } else if(tapefd_fsf(fd, count) == -1) {
 	ap_snprintf(count_str, sizeof(count_str), "%d", count);
 	r = errstr = newvstralloc(errstr,
-			          "forward skip ", count_str, "file",
-			          (count == 1) ? "" : "s",
+			          "tape_fsf: fsf ",
+				  count_str,
+				  "file", (count == 1) ? "" : "s",
 			          ": ",
 			          strerror(errno),
 			          NULL);
@@ -748,7 +774,7 @@ tapefd_rdlabel(fd, datestamp, label)
     char **label;
 {
     int rc;
-    char buffer[TAPE_BLOCK_BYTES];
+    char buffer[MAX_TAPE_BLOCK_BYTES + 1];
     dumpfile_t file;
     char *r = NULL;
 
@@ -760,15 +786,14 @@ tapefd_rdlabel(fd, datestamp, label)
 	*label = stralloc(FAKE_LABEL);
     } else if(tapefd_rewind(fd) == -1) {
 	r = errstr = newstralloc2(errstr, "rewinding tape: ", strerror(errno));
-    } else if((rc = tapefd_read(fd, buffer, sizeof(buffer))) == -1) {
+    } else if((rc = tapefd_read(fd, buffer, sizeof(buffer) - 1)) == -1) {
 	r = errstr = newstralloc2(errstr, "reading label: ", strerror(errno));
     } else {
 
 	/* make sure buffer is null-terminated */
-	if(rc == sizeof(buffer)) rc--;
 	buffer[rc] = '\0';
 
-	parse_file_header(buffer, &file, sizeof(buffer));
+	parse_file_header(buffer, &file, rc);
 	if(file.type != F_TAPESTART) {
 	    r = errstr = newstralloc(errstr, "not an amanda tape");
 	} else {
@@ -789,7 +814,12 @@ tape_rdlabel(devname, datestamp, label)
     char *r = NULL;
 
     if((fd = tape_open(devname, O_RDONLY)) < 0) {
-	r = errstr = newstralloc2(errstr, "tape open: ", strerror(errno));
+	r = errstr = newvstralloc(errstr,
+				  "tape_rdlabel: tape open: ",
+				  devname,
+				  ": ",
+				  strerror(errno),
+				  NULL);
     } else if(tapefd_rdlabel(fd, datestamp, label) != NULL) {
 	r = errstr;
     }
@@ -800,13 +830,14 @@ tape_rdlabel(devname, datestamp, label)
 }
 
 char *
-tapefd_wrlabel(fd, datestamp, label)
+tapefd_wrlabel(fd, datestamp, label, size)
     int fd;
     char *datestamp;
     char *label;
+    unsigned int size;
 {
     int rc;
-    char buffer[TAPE_BLOCK_BYTES];
+    char *buffer = NULL;
     dumpfile_t file;
     char *r = NULL;
 
@@ -819,25 +850,28 @@ tapefd_wrlabel(fd, datestamp, label)
 	file.datestamp[sizeof(file.datestamp) - 1] = '\0';
 	strncpy(file.name, label, sizeof(file.name) - 1);
 	file.name[sizeof(file.name) - 1] = '\0';
-	write_header(buffer,&file,sizeof(buffer));
+	buffer = alloc(size);
+	build_header(buffer, &file, size, 0);
 	tapefd_setinfo_host(fd, NULL);
 	tapefd_setinfo_disk(fd, label);
 	tapefd_setinfo_level(fd, -1);
-	if((rc = tapefd_write(fd, buffer, sizeof(buffer))) != sizeof(buffer)) {
+	if((rc = tapefd_write(fd, buffer, size)) != size) {
 	    r = errstr = newstralloc2(errstr,
 				      "writing label: ",
 			              (rc != -1) ? "short write"
 						 : strerror(errno));
 	}
+	amfree(buffer);
     }
     return r;
 }
 
 char *
-tape_wrlabel(devname, datestamp, label)
+tape_wrlabel(devname, datestamp, label, size)
     char *devname;
     char *datestamp;
     char *label;
+    unsigned int size;
 {
     int fd;
     char *r = NULL;
@@ -847,7 +881,7 @@ tape_wrlabel(devname, datestamp, label)
 				  "writing label: ",
 				  (errno == EACCES) ? "tape is write-protected"
 						    : strerror(errno));
-    } else if(tapefd_wrlabel(fd, datestamp, label) != NULL) {
+    } else if(tapefd_wrlabel(fd, datestamp, label, size) != NULL) {
 	r = errstr;
     }
     if(fd >= 0) {
@@ -857,12 +891,13 @@ tape_wrlabel(devname, datestamp, label)
 }
 
 char *
-tapefd_wrendmark(fd, datestamp)
+tapefd_wrendmark(fd, datestamp, size)
     int fd;
     char *datestamp;
+    unsigned int size;
 {
     int rc;
-    char buffer[TAPE_BLOCK_BYTES];
+    char *buffer = NULL;
     dumpfile_t file;
     char *r = NULL;
 
@@ -870,23 +905,26 @@ tapefd_wrendmark(fd, datestamp)
     file.type = F_TAPEEND;
     strncpy(file.datestamp, datestamp, sizeof(file.datestamp) - 1);
     file.datestamp[sizeof(file.datestamp) - 1] = '\0';
-    write_header(buffer, &file,sizeof(buffer));
+    buffer = alloc(size);
+    build_header(buffer, &file, size, 0);
     tapefd_setinfo_host(fd, NULL);
     tapefd_setinfo_disk(fd, "TAPEEND");
     tapefd_setinfo_level(fd, -1);
 
-    if((rc = tapefd_write(fd, buffer, sizeof(buffer))) != sizeof(buffer)) {
+    if((rc = tapefd_write(fd, buffer, size)) != size) {
 	r = errstr = newstralloc2(errstr, "writing endmark: ",
 			          (rc != -1) ? "short write" : strerror(errno));
     }
+    amfree(buffer);
 
     return r;
 }
 
 char *
-tape_wrendmark(devname, datestamp)
+tape_wrendmark(devname, datestamp, size)
     char *devname;
     char *datestamp;
+    unsigned int size;
 {
     int fd;
     char *r = NULL;
@@ -896,7 +934,7 @@ tape_wrendmark(devname, datestamp)
 				  "writing endmark: ",
 				  (errno == EACCES) ? "tape is write-protected"
 						    : strerror(errno));
-    } else if(tapefd_wrendmark(fd, datestamp) != NULL) {
+    } else if(tapefd_wrendmark(fd, datestamp, size) != NULL) {
 	r = errstr;
     }
     if(fd >= 0) {

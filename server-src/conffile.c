@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.15.2.2 2001/06/21 22:38:29 jrjackson Exp $
+ * $Id: conffile.c,v 1.54.2.15.2.3 2001/07/31 23:07:30 jrjackson Exp $
  *
  * read configuration file
  */
@@ -89,7 +89,7 @@ typedef enum {
     EXCLUDE, KENCRYPT, IGNORE, COMPRATE,
 
     /* tape type */
-    /*COMMENT,*/ LBL_TEMPL, FILEMARK, LENGTH, SPEED,
+    /*COMMENT,*/ BLOCKSIZE, LBL_TEMPL, FILEMARK, LENGTH, SPEED,
 
     /* network interface */
     /*COMMENT, USE,*/
@@ -953,7 +953,7 @@ static int read_confline()
 	    int i;
 
 	    i = get_number();
-	    i = (i/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
+	    i = (i / DISK_BLOCK_KB) * DISK_BLOCK_KB;
 
 	    if(!seen_disksize) {
 		conf_disksize.i = i;
@@ -1033,15 +1033,17 @@ static void get_holdingdisk()
 	    break;
 	case USE:
 	    get_simple((val_t *)&hdcur.disksize, &hdcur.s_size, INT);
-	    hdcur.disksize = (hdcur.disksize/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
+	    hdcur.disksize = am_floor(hdcur.disksize, DISK_BLOCK_KB);
 	    break;
 	case CHUNKSIZE:
 	    get_simple((val_t *)&hdcur.chunksize, &hdcur.s_csize, INT);
-	    if(hdcur.chunksize == 0)
-	        hdcur.chunksize =  ((INT_MAX/1024)-(2*TAPE_BLOCK_SIZE));
-	    else if(hdcur.chunksize < 0)
-		parserror("Negative chunksize (%ld) is no longer supported", hdcur.chunksize);
-	    hdcur.chunksize = (hdcur.chunksize/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
+	    if(hdcur.chunksize == 0) {
+	        hdcur.chunksize =  ((INT_MAX / 1024) - (2 * DISK_BLOCK_KB));
+	    } else if(hdcur.chunksize < 0) {
+		parserror("Negative chunksize (%ld) is no longer supported",
+			  hdcur.chunksize);
+	    }
+	    hdcur.chunksize = am_floor(hdcur.chunksize, DISK_BLOCK_KB);
 	    break;
 	case RBRACE:
 	    done = 1;
@@ -1398,6 +1400,7 @@ static void copy_dumptype()
 keytab_t tapetype_keytable[] = {
     { "COMMENT", COMMENT },
     { "LBL-TEMPL", LBL_TEMPL },
+    { "BLOCKSIZE", BLOCKSIZE },
     { "FILEMARK", FILEMARK },
     { "LENGTH", LENGTH },
     { "SPEED", SPEED },
@@ -1409,6 +1412,7 @@ static void get_tapetype()
     int done;
     int save_overwrites;
     keytab_t *save_kt;
+    long blocksize_kb;
 
     save_overwrites = allow_overwrites;
     allow_overwrites = 1;
@@ -1441,11 +1445,30 @@ static void get_tapetype()
 	case LBL_TEMPL:
 	    get_simple((val_t *)&tpcur.lbl_templ, &tpcur.s_lbl_templ, STRING);
 	    break;
+	case BLOCKSIZE:
+	    get_simple((val_t *)&tpcur.blocksize, &tpcur.s_blocksize, INT);
+	    if((blocksize_kb = tpcur.blocksize) < 0) {
+		blocksize_kb = -blocksize_kb;
+	    }
+	    if(blocksize_kb < DISK_BLOCK_KB) {
+		parserror("Tape blocksize must be at least %d KBytes",
+			  DISK_BLOCK_KB);
+	    } else if(blocksize_kb > MAX_TAPE_BLOCK_KB) {
+		parserror("Tape blocksize must not be larger than %d KBytes",
+			  MAX_TAPE_BLOCK_KB);
+	    }
+	    break;
 	case LENGTH:
 	    get_simple((val_t *)&tpcur.length, &tpcur.s_length, INT);
+	    if(tpcur.length < 0) {
+		parserror("Tape length must be positive");
+	    }
 	    break;
 	case FILEMARK:
 	    get_simple((val_t *)&tpcur.filemark, &tpcur.s_filemark, INT);
+	    if(tpcur.filemark < 0) {
+		parserror("Tape file mark size must be positive");
+	    }
 	    break;
 	case SPEED:
 	    get_simple((val_t *)&tpcur.speed, &tpcur.s_speed, INT);
@@ -1473,12 +1496,14 @@ static void init_tapetype_defaults()
 {
     tpcur.comment = "";
     tpcur.lbl_templ = "";
+    tpcur.blocksize = -(DISK_BLOCK_KB);
     tpcur.length = 2000 * 1024;
     tpcur.filemark = 1000;
     tpcur.speed = 200;
 
     tpcur.s_comment = 0;
     tpcur.s_lbl_templ = 0;
+    tpcur.s_blocksize = 0;
     tpcur.s_length = 0;
     tpcur.s_filemark = 0;
     tpcur.s_speed = 0;
@@ -1518,6 +1543,7 @@ static void copy_tapetype()
 
     ttcopy(comment, s_comment);
     ttcopy(lbl_templ, s_lbl_templ);
+    ttcopy(blocksize, s_blocksize);
     ttcopy(length, s_length);
     ttcopy(filemark, s_filemark);
     ttcopy(speed, s_speed);
@@ -2414,6 +2440,7 @@ dump_configuration(filename)
 	printf("\nTAPETYPE %s:\n", tp->name);
 	printf("	COMMENT \"%s\"\n", tp->comment);
 	printf("	LBL_TEMPL %s\n", tp->lbl_templ);
+	printf("	BLOCKSIZE %ld\n", (long)tp->blocksize);
 	printf("	LENGTH %lu\n", (unsigned long)tp->length);
 	printf("	FILEMARK %lu\n", (unsigned long)tp->filemark);
 	printf("	SPEED %ld\n", (long)tp->speed);

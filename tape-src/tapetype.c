@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.3.2.3.2.2 2001/07/11 21:39:36 jrjackson Exp $
+ * $Id: tapetype.c,v 1.3.2.3.2.3 2001/07/31 23:07:30 jrjackson Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -33,15 +33,16 @@
 
 #include "tapeio.h"
 
-#define BLOCKKB 32			/* block size in KBytes */
-#define BLOCKSIZE ((BLOCKKB) * 1024)	/* block size in bytes */
 #define NBLOCKS 32			/* number of random blocks */
 
 static char *sProgName;
 static char *tapedev;
 static int fd;
 
-static char randombytes[NBLOCKS][BLOCKSIZE];
+static int blockkb = 32;
+static int blocksize;
+
+static char *randombytes;
 
 #if USE_RAND
 /* If the C library does not define random(), try to use rand() by
@@ -54,15 +55,19 @@ static char randombytes[NBLOCKS][BLOCKSIZE];
 
 static void initrandombytes() {
   int i, j;
-  for(i=0; i < NBLOCKS; ++i)
-    for(j=0; j < BLOCKSIZE; ++j)
-      randombytes[i][j] = (char)random();
+  char *p;
+
+  j = NBLOCKS * blocksize;
+  randombytes = p = alloc(j);
+  for(i=0; i < j; ++i) {
+    *p++ = (char)random();
+  }
 }
 
 static char *getrandombytes() {
   static int counter = 0;
-  ++counter;
-  return randombytes[counter % NBLOCKS];
+
+  return randombytes + ((counter++ % NBLOCKS) * blocksize);
 }
 
 static int short_write;
@@ -72,7 +77,7 @@ int writeblock(fd)
 {
   size_t w;
 
-  if ((w = tapefd_write(fd, getrandombytes(), BLOCKSIZE)) == BLOCKSIZE) {
+  if ((w = tapefd_write(fd, getrandombytes(), blocksize)) == blocksize) {
     return 1;
   }
   if (w >= 0) {
@@ -105,6 +110,7 @@ void usage()
   fputs("usage: ", stderr);
   fputs(sProgName, stderr);
   fputs(" -h", stderr);
+  fputs(" [-b blocksize]", stderr);
   fputs(" [-e estsize]", stderr);
   fputs(" [-f tapedev]", stderr);
   fputs(" [-t typename]", stderr);
@@ -116,6 +122,7 @@ void help()
   usage();
   fputs("\
   -h			display this message\n\
+  -b blocksize		record block size (default: 32k)\n\
   -e estsize		estimated tape size (default: 1g == 1024m)\n\
   -f tapedev		tape device name (default: $TAPE)\n\
   -t typename		tapetype name (default: unknown-tapetype)\n\
@@ -131,7 +138,7 @@ void show_progress(blocks, files)
   size_t *blocks, *files;
 {
   fprintf(stderr, "wrote %ld %dKb block%s in %ld file%s",
-	  (long)*blocks, BLOCKKB, (*blocks == 1) ? "" : "s",
+	  (long)*blocks, blockkb, (*blocks == 1) ? "" : "s",
 	  (long)*files, (*files == 1) ? "" : "s");
 }
 
@@ -226,8 +233,20 @@ int main(argc, argv)
   tapedev = getenv("TAPE");
   typename = "unknown-tapetype";
 
-  while ((ch = getopt(argc, argv, "e:f:t:h")) != EOF) {
+  while ((ch = getopt(argc, argv, "b:e:f:t:h")) != EOF) {
     switch (ch) {
+    case 'b':
+      blockkb = strtol(optarg, &suffix, 0);
+      if (*suffix == '\0' || *suffix == 'k' || *suffix == 'K') {
+      } else if (*suffix == 'm' || *suffix == 'M') {
+	blockkb *= 1024;
+      } else if (*suffix == 'g' || *suffix == 'G') {
+	blockkb *= 1024 * 1024;
+      } else {
+	fprintf(stderr, "%s: unknown size suffix \'%c\'\n", sProgName, *suffix);
+	return 1;
+      }
+      break;
     case 'e':
       estsize = strtol(optarg, &suffix, 0);
       if (*suffix == '\0' || *suffix == 'k' || *suffix == 'K') {
@@ -259,6 +278,7 @@ int main(argc, argv)
       break;
     }
   }
+  blocksize = blockkb * 1024;
 
   if (tapedev == NULL || optind < argc) {
     usage();
@@ -281,7 +301,10 @@ int main(argc, argv)
   /*
    * Do pass 1 -- write files that are 1% of the estimated size until error.
    */
-  pass1size = (estsize * 0.01) / BLOCKKB;	/* 1% of estimate */
+  pass1size = (estsize * 0.01) / blockkb;	/* 1% of estimate */
+  if(pass1size <= 0) {
+    pass1size = 2;				/* strange end case */
+  }
   do_pass(pass1size, &pass1blocks, &pass1files, &pass1time);
 
   /*
@@ -315,14 +338,14 @@ int main(argc, argv)
   } else {
     filediff = pass2files - pass1files;
   }
-  filemark = blockdiff * BLOCKKB / filediff;
+  filemark = blockdiff * blockkb / filediff;
 
   /*
    * Compute the length as the average of the two pass sizes including
    * tape marks.
    */
-  size = ((pass1blocks * BLOCKKB + filemark * pass1files)
-           + (pass2blocks * BLOCKKB + filemark * pass2files)) / 2;
+  size = ((pass1blocks * blockkb + filemark * pass1files)
+           + (pass2blocks * blockkb + filemark * pass2files)) / 2;
   if (size >= 1024 * 1024 * 1000) {
     size /= 1024 * 1024;
     sizeunits = "gbytes";
@@ -336,8 +359,8 @@ int main(argc, argv)
   /*
    * Compute the speed as the average of the two passes.
    */
-  speed = (((double)pass1blocks * BLOCKKB / pass1time)
-           + ((double)pass2blocks * BLOCKKB / pass2time)) / 2;
+  speed = (((double)pass1blocks * blockkb / pass1time)
+           + ((double)pass2blocks * blockkb / pass2time)) / 2;
 
   /*
    * Dump the tapetype.

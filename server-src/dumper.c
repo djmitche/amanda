@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.13.2.3 2001/07/19 22:15:16 jrjackson Exp $
+/* $Id: dumper.c,v 1.75.2.13.2.4 2001/07/31 23:07:30 jrjackson Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -69,17 +69,22 @@ int argc;
 int interactive;
 char *handle = NULL;
 
-char databuf[DATABUF_SIZE];
+char databuf[DISK_BLOCK_BYTES];
 char mesgbuf[MESGBUF_SIZE+1];
 char *errstr = NULL;
-char *dataptr;		/* data buffer markers */
-int spaceleft, abort_pending;
-long dumpsize, origsize, filesize;
+char *datain;				/* where to read in data */
+char *dataout;				/* where to write out data */
+char *datalimit;			/* end of the data area */
+int abort_pending;
+long dumpsize;				/* total size of dump */
+long dumpbytes;
+long origsize;
+long filesize;				/* size of current holding disk file */
 int nb_header_block;
 static enum { srvcomp_none, srvcomp_fast, srvcomp_best } srvcompress;
 
 static FILE *errf = NULL;
-char *filename = NULL;
+char *filename = NULL;			/* holding disk base file name */
 string_t cont_filename;
 char *hostname = NULL;
 char *diskname = NULL;
@@ -87,7 +92,8 @@ char *options = NULL;
 char *progname = NULL;
 int level;
 char *dumpdate = NULL;
-long chunksize, use;
+long chunksize;
+long use;				/* space remaining in this hold disk */
 char *datestamp;
 char *backup_name = NULL;
 char *recover_cmd = NULL;
@@ -98,7 +104,7 @@ int conf_dtimeout;
 
 dumpfile_t file;
 int filename_seq;
-long split_size;
+long split_size;			/* next dumpsize we will split at */
 
 int datafd = -1;
 int mesgfd = -1;
@@ -115,7 +121,7 @@ void check_options P((char *options));
 void service_ports_init P((void));
 int write_tapeheader P((int outfd, dumpfile_t *type));
 int write_dataptr P((int outf));
-int update_dataptr P((int outf, int size, int split));
+int update_dataptr P((int *outf, int size));
 static void process_dumpeof P((void));
 static void process_dumpline P((char *str));
 static void add_msg_data P((char *str, int len));
@@ -276,23 +282,29 @@ char **main_argv;
 	    diskname = newstralloc(diskname, argv[5]);
 	    level = atoi(argv[6]);
 	    dumpdate = newstralloc(dumpdate, argv[7]);
-	    chunksize = atoi(argv[8]);
-	    chunksize = (chunksize/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
+	    chunksize = am_floor(atoi(argv[8]), DISK_BLOCK_KB);
 	    progname = newstralloc(progname, argv[9]);
-	    use = atoi(argv[10]);
-	    use = (use/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
+	    use = am_floor(atoi(argv[10]), DISK_BLOCK_KB);
 	    options = newstralloc(options, argv[11]);
 	    cont_filename[0] = '\0';
 
 	    tmp_filename = newvstralloc(tmp_filename, filename, ".tmp", NULL);
-	    if((outfd = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600)) == -1) {
-		q = squotef("[holding file \"%s\": %s]",
+	    outfd = open(tmp_filename, O_RDWR|O_CREAT|O_TRUNC, 0600);
+	    if(outfd == -1) {
+		int save_errno = errno;
+		q = squotef("[main holding file \"%s\": %s]",
 			    tmp_filename, strerror(errno));
-		putresult("FAILED %s %s\n", handle, q);
+		if(save_errno == ENOSPC) {
+		    putresult("NO-ROOM %s %lu\n", handle, use);
+		    putresult("TRY-AGAIN %s %s\n", handle, q);
+		}
+		else {
+		    putresult("FAILED %s %s\n", handle, q);
+		}
 		amfree(q);
 		break;
 	    }
-	    filename_seq = 0;
+	    filename_seq = 1;
 
 	    check_options(options);
 
@@ -351,14 +363,14 @@ char **main_argv;
 	    /* connect outf to taper port */
 
 	    outfd = stream_client("localhost", taper_port,
-				  DATABUF_SIZE*2, DEFAULT_SIZE, NULL);
+				  STREAM_BUFSIZE, -1, NULL);
 	    if(outfd == -1) {
 		q = squotef("[taper port open: %s]", strerror(errno));
 		putresult("FAILED %s %s\n", handle, q);
 		amfree(q);
 		break;
 	    }
-	    filename_seq = 0;
+	    filename_seq = 1;
 
 	    check_options(options);
 
@@ -478,186 +490,206 @@ arglist_function(static void putresult, char *, format)
 
 int write_dataptr(outf)
 int outf;
-/*
- * Updates the buffer pointer for the input data buffer.  The buffer is
- * written if it is full, or the remainder is zeroed if at eof.
- */
 {
+    int w;
     int written;
 
-    do {
-	written = write(outf, databuf + spaceleft, sizeof(databuf) - spaceleft);
-	if(written > 0) {
-	    spaceleft += written;
-	    continue;
-	} else if(written < 0 && errno != ENOSPC) {
+    written = w = 0;
+    while(dataout < datain) {
+	if((w = write(outf, dataout, datain - dataout)) < 0) {
+	    break;
+	}
+	dataout += w;
+	written += w;
+    }
+    dumpbytes += written;
+    dumpsize += (dumpbytes / 1024);
+    filesize += (dumpbytes / 1024);
+    dumpbytes %= 1024;
+    if(w < 0) {
+	if(errno != ENOSPC) {
 	    errstr = squotef("data write: %s", strerror(errno));
 	    return 1;
 	}
-	/* Modification by Peter Conrad:
-	 * NO-ROOM is informational only. The file will be truncated
-	 * to the last full TAPE_BLOCK. Later, RQ_MORE_DISK will be
+	/*
+	 * NO-ROOM is informational only.  Later, RQ_MORE_DISK will be
 	 * issued to use another holding disk.
 	 */
-	spaceleft = (spaceleft / TAPE_BLOCK_BYTES) * TAPE_BLOCK_BYTES;
-	ftruncate( outf, (filesize*1024) + spaceleft );
-	if( spaceleft > 0 ) {
-	    memmove( databuf, databuf+spaceleft, sizeof(databuf)-spaceleft );
-	    dumpsize += spaceleft/1024;
-	    filesize += spaceleft/1024;
-	}
 	putresult("NO-ROOM %s %lu\n", handle, use+split_size-dumpsize);
-	use = 0; /* force RQ_MORE_DISK */
+	use = 0;				/* force RQ_MORE_DISK */
 	split_size = dumpsize;
-	dataptr = databuf + spaceleft;
-	spaceleft = sizeof(databuf)-spaceleft;
-	return 0;
-    } while (spaceleft != sizeof(databuf));
-    dataptr = databuf;
-    dumpsize += (sizeof(databuf)/1024);
-    filesize += (sizeof(databuf)/1024);
+    }
+    if(dataout == datain) {
+	/*
+	 * We flushed the whole buffer so reset to use it all.
+	 */
+	dataout = datain = databuf;
+    }
     return 0;
 }
 
-
-int update_dataptr(outf, size, split)
-int outf, size, split;
+int update_dataptr(p_outfd, size)
+int *p_outfd, size;
 /*
  * Updates the buffer pointer for the input data buffer.  The buffer is
- * written if it is full, or the remainder is zeroed if at eof.
+ * written if it is full or we are at EOF.
  */
 {
-int rc=0;
+    int outfd = *p_outfd;
+    int rc = 0;
+    char *new_filename = NULL;
+    char *tmp_filename = NULL;
+    char sequence[NUM_STR_SIZE];
+    int new_outfd = -1;
+    cmd_t cmd;
+    int save_type;
+    long left_in_chunk;
 
-    spaceleft -= size;
-    dataptr += size;
+    datain += size;
 
-    if(size == 0) {	/* eof, zero rest of buffer */
-	memset(dataptr, '\0', spaceleft);
-	/* dataptr still points to the point where padding started */
-	spaceleft = 0;
-    }
-
-    while(spaceleft == 0 && !rc) {	/* buffer is full, write it */
+    while((size == 0 && dataout < datain) || datain >= datalimit) {
 
 	NAUGHTY_BITS;
 
-	if(split && split_size > 0 && dumpsize >= split_size) {
-	    char *new_filename = NULL;
-	    char sequence[10];
-	    int new_outf;
-	    int save_spaceleft;
-	    char *save_dataptr;
-	    char save_databuf[DATABUF_SIZE];
-	    char *tmp_filename = NULL;
-
-
-	    memcpy(save_databuf, databuf, sizeof(databuf)); 
-	    save_spaceleft = spaceleft;
-	    save_dataptr = dataptr;
-    	    spaceleft = sizeof(databuf);
-	    dataptr = databuf;
-
-	    if( use == 0 ) { /* no more space on this disk. request some more */
-	    cmd_t cmd;
-
+	while(size > 0 && split_size > 0 && dumpsize >= split_size) {
+	    amfree(new_filename);
+	    if(use == 0) {
+		/*
+		 * Probably no more space on this disk.  Request more.
+		 */
                 putresult("RQ-MORE-DISK %s\n", handle);
                 cmd = getcmd();
-                if(cmd != CONTINUE && cmd != ABORT) {
-                    error("error [bad command after RQ-MORE-DISK: %d]", cmd);
-                }
                 if(cmd == CONTINUE) {
-		    chunksize = atoi(argv[3]);
-		    chunksize = (chunksize/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
+		    /* CONTINUE filename chunksize use */
+		    chunksize = am_floor(atoi(argv[3]), DISK_BLOCK_KB);
                     use = atoi(argv[4]);
-		    if( !strcmp( filename, argv[2] ) ) { /* same disk */
-			split_size += (chunksize-filesize>use)?use:chunksize-filesize;
-			use = (chunksize-filesize>use)?0:use-(chunksize-filesize);
-			if(chunksize>filesize)
-			    new_filename = newstralloc(new_filename, argv[2]);
-		    } else { /* different disk -> use new file */
+		    if(strcmp(filename, argv[2]) == 0) {
+			/*
+			 * Same disk, so use what room is left up to the
+			 * next chunk boundary or the amount we were given,
+			 * whichever is less.
+			 */
+			left_in_chunk = chunksize - filesize;
+			if(left_in_chunk > use) {
+			    split_size += use;
+			    use = 0;
+			} else {
+			    split_size += left_in_chunk;
+			    use -= left_in_chunk;
+			}
+			if(left_in_chunk > 0) {
+			    /*
+			     * We still have space in this chunk.
+			     */
+			    break;
+			}
+		    } else {
+			/*
+			 * Different disk, so use new file.
+			 */
 			filename = newstralloc(filename, argv[2]);
 		    }
-                } else {
+                } else if(cmd == ABORT) {
                     abort_pending = 1;
                     errstr = newstralloc(errstr, "ERROR");
-                    return 1;
+                    rc = 1;
+		    goto common_exit;
+		} else {
+                    error("error [bad command after RQ-MORE-DISK: %d]", cmd);
                 }
 	    }
 
-	    if( !new_filename ) { /* use another file */
-		int save_type, tmp_outf;
+	    ap_snprintf(sequence, sizeof(sequence), "%d", filename_seq);
+	    new_filename = newvstralloc(new_filename,
+					filename,
+					".",
+					sequence,
+					NULL);
+	    tmp_filename = newvstralloc(tmp_filename,
+					new_filename,
+					".tmp",
+					NULL);
+	    new_outfd = open(tmp_filename, O_RDWR|O_CREAT|O_TRUNC, 0600);
+	    if(new_outfd == -1) {
+		int save_errno = errno;
 
-		filename_seq++;
-		ap_snprintf(sequence, sizeof(sequence), "%d", filename_seq);
-		new_filename = newvstralloc(new_filename,
-					    filename,
-					    ".",
-					    sequence,
-					    NULL);
-   
-		tmp_filename = newvstralloc(tmp_filename, new_filename, ".tmp", NULL);
-		if((new_outf = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600)) == -1) {
-		    close(outf);
-		    errstr = squotef("holding file \"%s\": %s",
-		 		     tmp_filename, strerror(errno));
-		    return 1;
+		errstr = squotef("creating chunk holding file \"%s\": %s",
+		 		 tmp_filename,
+				 strerror(save_errno));
+		if(save_errno == ENOSPC) {
+		    putresult("NO-ROOM %s %lu\n",
+			      handle, 
+			      use + split_size - dumpsize);
+		    use = 0;		/* force RQ_MORE_DISK */
+		    split_size = dumpsize;
+		    continue;
 		}
-		save_type = file.type;
-		file.type = F_CONT_DUMPFILE;
-		file.cont_filename[0] = '\0';
-		if( write_tapeheader(new_outf, &file) ) { /*failed-disk full?*/
-		    close(new_outf);
-		    unlink(new_filename);
-		    filename_seq--;
-		    putresult("NO-ROOM %s %lu\n", handle, use);
-		    use = 0; /* force RQ_MORE_DISK */
-                } else { /* everything is fine */
- 
-		    strncpy(file.cont_filename, new_filename, 
-			    sizeof(file.cont_filename));
-		    file.cont_filename[sizeof(file.cont_filename)-1] = '\0';
-    
-		    tmp_filename = newvstralloc(tmp_filename, cont_filename, ".tmp", NULL);
-		    close(outf);
-		    if((tmp_outf = open(tmp_filename,O_RDWR)) == -1) {
-			close(new_outf);
-			errstr = squotef("holding file \"%s\": %s",
-					 tmp_filename, strerror(errno));
-			return 1;
-		    }
-		    strncpy(file.cont_filename, new_filename, 
-			    sizeof(file.cont_filename));
-		    file.cont_filename[sizeof(file.cont_filename)-1] = '\0';
-		    file.type = save_type;
-		    write_tapeheader(tmp_outf, &file);
-		    close(tmp_outf);
-		    file.type = F_CONT_DUMPFILE;
-		    if(dup2(new_outf,outf) == -1) {
-			close(new_outf);
- 			errstr = squotef("can't dup2: %s", strerror(errno));
-			return 1;
-		    }
-		    close(new_outf);
- 
-		    strncpy(cont_filename, new_filename, sizeof(cont_filename));
-		    cont_filename[sizeof(cont_filename)-1] = '\0';
-    
-		    split_size += (chunksize>use)?use:chunksize;
-		    use = (chunksize>use)?0:use-chunksize;
-		    spaceleft = sizeof(databuf);
-		    dataptr = databuf;
-		    dumpsize += TAPE_BLOCK_SIZE;
-		    filesize = TAPE_BLOCK_SIZE;
-		    nb_header_block++;
-		} 
-		memcpy(databuf, save_databuf, sizeof(databuf)); 
+		aclose(outfd);
+		rc = 1;
+		goto common_exit;
 	    }
-	    spaceleft = save_spaceleft;
-	    dataptr = save_dataptr;
+	    save_type = file.type;
+	    file.type = F_CONT_DUMPFILE;
+	    file.cont_filename[0] = '\0';
+	    if(write_tapeheader(new_outfd, &file)) {
+		int save_errno = errno;
+
+		aclose(new_outfd);
+		unlink(tmp_filename);
+		if(save_errno == ENOSPC) {
+		    putresult("NO-ROOM %s %lu\n",
+			      handle, 
+			      use + split_size - dumpsize);
+		    use = 0;			/* force RQ_MORE_DISK */
+		    split_size = dumpsize;
+		    continue;
+		}
+		errstr = squotef("write_tapeheader file \"%s\": %s",
+				 tmp_filename, strerror(errno));
+		rc = 1;
+		goto common_exit;
+	    }
+	    if(lseek(outfd, (off_t)0, SEEK_SET) != 0) {
+		errstr = squotef("cannot lseek: %s", strerror(errno));
+		aclose(new_outfd);
+		unlink(tmp_filename);
+		rc = 1;
+		goto common_exit;
+	    }
+	    strncpy(file.cont_filename, new_filename, 
+		    sizeof(file.cont_filename));
+	    file.cont_filename[sizeof(file.cont_filename)-1] = '\0';
+	    file.type = save_type;
+	    if(write_tapeheader(outfd, &file)) {
+		errstr = squotef("write_tapeheader file linked to \"%s\": %s",
+				 tmp_filename, strerror(errno));
+		aclose(new_outfd);
+		unlink(tmp_filename);
+		rc = 1;
+		goto common_exit;
+	    }
+	    file.type = F_CONT_DUMPFILE;
+	    strncpy(cont_filename, new_filename, sizeof(cont_filename));
+	    cont_filename[sizeof(cont_filename)-1] = '\0';
+
+	    aclose(outfd);
+	    *p_outfd = outfd = new_outfd;
+	    new_outfd = -1;
+
+	    dumpsize += DISK_BLOCK_KB;
+	    filesize = DISK_BLOCK_KB;
+	    split_size += (chunksize>use)?use:chunksize;
+	    use = (chunksize>use)?0:use-chunksize;
+	    nb_header_block++;
+	    filename_seq++;
 	}
-	rc = write_dataptr(outf);
+	rc = write_dataptr(outfd);
     }
+
+common_exit:
+
+    amfree(new_filename);
+    amfree(tmp_filename);
     return rc;
 }
 
@@ -908,12 +940,12 @@ int write_tapeheader(outfd, file)
 int outfd;
 dumpfile_t *file;
 {
-    char buffer[TAPE_BLOCK_BYTES];
-    int	 written=0;
+    char buffer[DISK_BLOCK_BYTES];
+    int	 written;
 
-    write_header(buffer, file, sizeof(buffer));
+    build_header(buffer, file, sizeof(buffer), sizeof(buffer));
 
-    written = write(outfd, buffer, sizeof(buffer));
+    written = fullwrite(outfd, buffer, sizeof(buffer));
     if(written == sizeof(buffer)) return 0;
     if(written < 0) return written;
     errno = ENOSPC;
@@ -925,6 +957,7 @@ int do_dump(mesgfd, datafd, indexfd, outfd)
 int mesgfd, datafd, indexfd, outfd;
 {
     int maxfd, nfound, size1, size2, eof1, eof2;
+    int rc;
     fd_set readset, selectset;
     struct timeval timeout;
     int outpipe[2];
@@ -952,7 +985,7 @@ int mesgfd, datafd, indexfd, outfd;
 #endif
 
 #if DUMPER_SOCKET_BUFFERING
-    int lowat = DATABUF_SIZE;
+    int lowat = NETWORK_BLOCK_BYTES;
     int recbuf = 0;
     int sizeof_recbuf = sizeof(recbuf);
     int lowwatset = 0;
@@ -961,9 +994,9 @@ int mesgfd, datafd, indexfd, outfd;
 
     startclock();
 
-    dataptr = databuf;
-    spaceleft = sizeof(databuf);
-    dumpsize = origsize = filesize = dump_result = 0;
+    datain = dataout = databuf;
+    datalimit = databuf + sizeof(databuf);
+    dumpsize = dumpbytes = origsize = filesize = dump_result = 0;
     nb_header_block = 0;
     got_info_endline = got_sizeline = got_endline = 0;
     header_done = 0;
@@ -987,6 +1020,7 @@ int mesgfd, datafd, indexfd, outfd;
 			      strerror(errno),
 			      NULL);
 	amfree(errfname);
+	rc = 2;
 	goto failed;
     } else {
 	unlink(errfname);			/* so it goes away on close */
@@ -1006,11 +1040,13 @@ int mesgfd, datafd, indexfd, outfd;
 	    aclose(outpipe[1]);
 	    errstr = newstralloc(errstr, "descriptor out of range");
 	    errno = EMFILE;
+	    rc = 2;
 	    goto failed;
 	}
 	switch(compresspid=fork()) {
 	case -1:
 	    errstr = newstralloc2(errstr, "couldn't fork: ", strerror(errno));
+	    rc = 2;
 	    goto failed;
 	default:
 	    aclose(outpipe[1]);
@@ -1052,12 +1088,14 @@ int mesgfd, datafd, indexfd, outfd;
 				 NULL);
 	   amfree(indexfile_real);
 	   amfree(indexfile_tmp);
+	   rc = 2;
 	   goto failed;
 	}
 
 	switch(indexpid=fork()) {
 	case -1:
 	    errstr = newstralloc2(errstr, "couldn't fork: ", strerror(errno));
+	    rc = 2;
 	    goto failed;
 	default:
 	    aclose(indexfd);
@@ -1104,7 +1142,7 @@ int mesgfd, datafd, indexfd, outfd;
 #endif
 
     else {
-	recbuf = DATABUF_SIZE*2;
+	recbuf = STREAM_BUFSIZE;
 	if (setsockopt(datafd, SOL_SOCKET, SO_RCVBUF,
 		       (void *) &recbuf, sizeof_recbuf)) {
 	    const int errornumber = errno;
@@ -1179,29 +1217,32 @@ int mesgfd, datafd, indexfd, outfd;
 
 	if(nfound == 0)  {
 	    errstr = newstralloc(errstr, "data timeout");
+	    rc = 2;
 	    goto failed;
 	}
 	if(nfound == -1) {
 	    errstr = newstralloc2(errstr, "select: ", strerror(errno));
+	    rc = 2;
 	    goto failed;
 	}
 
 	/* read/write any data */
 
 	if(datafd >= 0 && FD_ISSET(datafd, &selectset)) {
-	    size1 = read(datafd, dataptr, spaceleft);
-	    switch(size1) {
-	    case -1:
+	    size1 = read(datafd, datain, datalimit - datain);
+	    if(size1 < 0) {
 		errstr = newstralloc2(errstr, "data read: ", strerror(errno));
+		rc = 2;
 		goto failed;
-	    case 0:
-		if(update_dataptr(outfd, size1, 1)) goto failed;
+	    }
+	    if(update_dataptr(&outfd, size1)) {
+		rc = 2;
+		goto failed;
+	    }
+	    if(size1 == 0) {
 		eof1 = 1;
 		FD_CLR(datafd, &readset);
 		aclose(datafd);
-		break;
-	    default:
-		if(update_dataptr(outfd, size1, 1)) goto failed;
 	    }
 	}
 
@@ -1210,6 +1251,7 @@ int mesgfd, datafd, indexfd, outfd;
 	    switch(size2) {
 	    case -1:
 		errstr = newstralloc2(errstr, "mesg read: ", strerror(errno));
+		rc = 2;
 		goto failed;
 	    case 0:
 		eof2 = 1;
@@ -1225,12 +1267,23 @@ int mesgfd, datafd, indexfd, outfd;
 	    if (got_info_endline && !header_done) { /* time to do the header */
 		make_tapeheader(&file, F_DUMPFILE);
 		if (write_tapeheader(outfd, &file)) {
+		    int save_errno = errno;
 		    errstr = newstralloc2(errstr, "write_tapeheader: ", 
 					  strerror(errno));
+		    if(save_errno == ENOSPC) {
+			putresult("NO-ROOM %s %lu\n", handle, 
+				  use+split_size-dumpsize);
+			use = 0; /* force RQ_MORE_DISK */
+			split_size = dumpsize;
+			rc = 1;
+		    }
+		    else {
+			rc = 2;
+		    }
 		    goto failed;
 		}
-		dumpsize += TAPE_BLOCK_SIZE;
-		filesize += TAPE_BLOCK_SIZE;
+		dumpsize += DISK_BLOCK_KB;
+		filesize += DISK_BLOCK_KB;
 		nb_header_block++;
 		header_done = 1;
 		strncat(cont_filename,filename,sizeof(cont_filename));
@@ -1249,12 +1302,15 @@ int mesgfd, datafd, indexfd, outfd;
     }
 #endif
 
-    if(dump_result > 1) goto failed;
+    if(dump_result > 1) {
+	rc = 2;
+	goto failed;
+    }
 
     runtime = stopclock();
     dumptime = runtime.r.tv_sec + runtime.r.tv_usec/1000000.0;
 
-    dumpsize -= (nb_header_block * TAPE_BLOCK_SIZE);/* don't count the header */
+    dumpsize -= (nb_header_block * DISK_BLOCK_KB);/* don't count the header */
     if (dumpsize < 0) dumpsize = 0;	/* XXX - maybe this should be fatal? */
 
     ap_snprintf(kb_str, sizeof(kb_str), "%ld", dumpsize);
@@ -1300,7 +1356,7 @@ int mesgfd, datafd, indexfd, outfd;
 	amfree(indexfile_real);
     }
 
-    return 1;
+    return 0;
 
  failed:
 
@@ -1313,7 +1369,10 @@ int mesgfd, datafd, indexfd, outfd;
 
     if(!abort_pending) {
 	q = squotef("[%s]", errstr);
-	putresult("FAILED %s %s\n", handle, q);
+	if(rc==2)
+	    putresult("FAILED %s %s\n", handle, q);
+	else
+	    putresult("TRY-AGAIN %s %s\n", handle, q);
 	amfree(q);
     }
 
@@ -1359,7 +1418,7 @@ int mesgfd, datafd, indexfd, outfd;
 	amfree(indexfile_real);
     }
 
-    return 0;
+    return rc;
 }
 
 /* -------------------- */
@@ -1525,8 +1584,7 @@ pkt_t *pkt;
 	nl = NULL;
     }
 
-    datafd = stream_client(hostname, data_port,
-			   DEFAULT_SIZE, DEFAULT_SIZE, NULL);
+    datafd = stream_client(hostname, data_port, -1, -1, NULL);
     if(datafd == -1) {
 	errstr = newvstralloc(errstr,
 			      "[could not connect to data port: ",
@@ -1537,8 +1595,7 @@ pkt_t *pkt;
 	amfree(optionstr);
 	return;
     }
-    mesgfd = stream_client(hostname, mesg_port,
-			   DEFAULT_SIZE, DEFAULT_SIZE, NULL);
+    mesgfd = stream_client(hostname, mesg_port, -1, -1, NULL);
     if(mesgfd == -1) {
 	errstr = newvstralloc(errstr,
 			      "[could not connect to mesg port: ",
@@ -1553,8 +1610,7 @@ pkt_t *pkt;
     }
 
     if (index_port != -1) {
-	indexfd = stream_client(hostname, index_port,
-				DEFAULT_SIZE, DEFAULT_SIZE, NULL);
+	indexfd = stream_client(hostname, index_port, -1, -1, NULL);
 	if (indexfd == -1) {
 	    errstr = newvstralloc(errstr,
 				  "[could not connect to index port: ",
