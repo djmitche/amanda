@@ -1,5 +1,13 @@
 Version 2.4.0
 
+	various portability problems fixed.
+
+	amflush now correctly updates the info database.  -oliva
+	reported by Liudvikas Bukys <bukys@cs.rochester.edu>
+
+	sendsize now wait()s for tar and samba child processes.  -oliva
+	reported by Brian Morris <brian@mvhs.fuhsd.org>
+
 	ensure that `amadmin find' reports multiple backups performed on
 	the same day in the correct sequence.
 	-Liudvikas Bukys <bukys@cs.rochester.edu>
