@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: set_commands.c,v 1.11.2.3.4.2.2.5 2003/03/14 21:36:28 martinea Exp $
+ * $Id: set_commands.c,v 1.11.2.3.4.2.2.6 2004/02/11 13:03:52 martinea Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -360,6 +360,7 @@ char *default_dir;
     else {
 	printf("Too many directory\n");
     }
+    amfree(dir);
 }
 
 void set_directory(dir)
@@ -433,6 +434,7 @@ char *dir;
 		/* at top of disk */
 		printf("Invalid directory - Can't cd outside mount point \"%s\"\n",
 		       mount_point);
+		amfree(new_dir);
 		amfree(ldir);
 		return;
 	    }

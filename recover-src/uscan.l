@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: uscan.l,v 1.14.2.3.4.1.2.2 2003/01/01 23:28:52 martinea Exp $
+ * $Id: uscan.l,v 1.14.2.3.4.1.2.3 2004/02/11 13:03:52 martinea Exp $
  *
  * lexer for amrecover interactive language
  */
@@ -102,12 +102,13 @@ mode    { return MODE; }
     /* quoted file names */
 %}
 
-\"               { amfree(string_buf); BEGIN(quotedstring); }
+\"               { if(string_buf != NULL) {printf("ERROR:string_buf != NULL: %s\n",string_buf);}; BEGIN(quotedstring); }
 
 <quotedstring>\"        { /* saw closing quote - all done */
   BEGIN(INITIAL);
   if(string_buf) {
     yylval.strval = string_buf;
+    string_buf = NULL;
   } else {
     yylval.strval = "";
   }

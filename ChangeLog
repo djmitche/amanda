@@ -1,3 +1,8 @@
+2004-02-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* recover-src/set_commands.c (cd_dir, set_directory): Fix memory leak.
+	* recover-src/uscan.l: Fix double amfree.
+
 2004-01-29  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* Makefile.am (EXTRA_DIST): Add contrib/mkamandisk.
