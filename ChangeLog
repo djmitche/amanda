@@ -1,3 +1,8 @@
+2000-12-12 John R. Jackson <jrj@purdue.edu>
+
+	* client-src/sendbackup-gnutar.c: Fix regex pattern to accept blanks
+	  or tabs.
+
 2000-12-12 John R. Jackson  <jrj@purdue.edu> and Marc Mengel <mengel@fnal.gov>
 
 	* Makefile.am: Work around problem with automake 1.4 not including
@@ -1289,7 +1294,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.421 2000/12/12 21:59:24 jrjackson Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.422 2000/12/12 22:02:22 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

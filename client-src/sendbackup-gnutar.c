@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.56.2.14 2000/10/11 02:08:26 martinea Exp $
+ * $Id: sendbackup-gnutar.c,v 1.56.2.15 2000/12/12 22:02:23 jrjackson Exp $
  *
  * send backup data using GNU tar
  */
@@ -98,8 +98,8 @@ static regex_t re_table[] = {
   { DMP_NORMAL, "^nread=", 1},
   { DMP_NORMAL, "^\\([0-9][0-9]* kb/s\\)", 1},
   { DMP_NORMAL, "^\\([0-9][0-9]*\\.[0-9][0-9]* kb/s\\)", 1},
-  { DMP_NORMAL, "^[ ]*[0-9][0-9]* \\([ ]*[0-9][0-9]*\\.[0-9][0-9]* kb/s\\)", 1},
-  { DMP_NORMAL, "^[ ]*directory ", 1},
+  { DMP_NORMAL, "^[ \t]*[0-9][0-9]* \\([ \t]*[0-9][0-9]*\\.[0-9][0-9]* kb/s\\)", 1},
+  { DMP_NORMAL, "^[ \t]*directory ", 1},
   { DMP_NORMAL, "^load_client_codepage", 1},
 #endif
 
