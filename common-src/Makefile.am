@@ -21,7 +21,7 @@ INCLUDES = -I$(REGsrcdir)
 
 libamanda_la_SOURCES = \
 	alloc.c		amflock.c	\
-	base64.c	bsd-security.c	\
+	bsd-security.c	\
 	debug.c		dgram.c		\
 	event.c		error.c		\
 	file.c		fileheader.c	\
@@ -40,13 +40,14 @@ libamanda_la_LDFLAGS =  -release $(VERSION)
 libamanda_a_SOURCES =	$(libamanda_la_SOURCES)
 libamanda_a_LIBADD =	$(libamanda_la_LIBADD)
 
-noinst_HEADERS =	amanda.h	arglist.h	\
-			base64.h	dgram.h		\
-			event.h		packet.h	\
-			protocol.h	queue.h		\
-			security.h	statfs.h	\
-			stream.h	token.h		\
-			version.h	amregex.h	\
+noinst_HEADERS =	amanda.h	amregex.h	arglist.h	\
+			dgram.h		\
+			event.h		\
+			packet.h	protocol.h	\
+			queue.h		\
+			security.h	statfs.h	stream.h	\
+			token.h		\
+			version.h	\
 			fileheader.h
 
 .sh:
@@ -82,7 +83,7 @@ REGEXHSRC =	$(REGsrcdir)/regex2.h \
 		$(REGsrcdir)/regfree.c
 
 # these are used for testing only:
-TEST_PROGS = statfs token file security
+TEST_PROGS = statfs token file
 
 CLEANFILES = regex.h regcomp.ih engine.ih regerror.ih *.test.c
 
@@ -113,11 +114,6 @@ token_LDADD = $(libamanda_a_LIBADD) \
 file_SOURCES = file.test.c
 file_LDADD = $(libamanda_a_LIBADD) \
 	alloc.$(OBJ_EXTENSION) error.$(OBJ_EXTENSION)
-
-security_SOURCES = security.test.c
-security_LDADD = $(libamanda_a_LIBADD) \
-	alloc.$(OBJ_EXTENSION) debug.$(OBJ_EXTENSION) \
-	error.$(OBJ_EXTENSION) file.$(OBJ_EXTENSION)
 
 %.test.c: $(srcdir)/%.c
 	echo '#define TEST' >$@
