@@ -254,9 +254,11 @@ week-end and incrementals on weekdays?
 
 A: You can't.  Amanda doesn't work this way.  You just have to tell
 Amanda how many tapes you have (tapecycle), and how often you want it
-to perform full backups of each filesystem (dumpcycle).  It will
-spread full backups along the dumpcycle, so you won't have any
-full-only or incremental-only runs.
+to perform full backups of each filesystem (dumpcycle).  If you don't
+run it once a daily (including Saturdays and Sundays :-), you'll also
+want to tell Amanda how many times you'll run it per dumpcycle
+(runspercycle).  It will spread full backups along the dumpcycle, so
+you won't have any full-only or incremental-only runs.
 
 
 Q: What if my tape unit uses expensive tapes, and I don't want to use
@@ -448,6 +450,18 @@ A: Make sure all directories and files are readable and writable by
 the Amanda user, within the directory you specified as `infofile' in
 `amanda.conf'.  From then on, only run amanda server commands
 (amadmin, amdump, amflush, amcleanup) as the Amanda user, not as root.
+
+
+Q: Why does Amanda sometimes promote full dumps?
+
+A: To spread the full dumps along the dumpcycle, so that daily runs
+take roughtly the same amount of tape and time.  As soon as you start
+using Amanda, it will run full dumps of all filesystems.  Then, on the
+following runs, it will promote some backups, so as to adjust the
+balance.  After one or two dumpcycles, it should stop promoting dumps.
+You can see how well it is doing with `amadmin <conf> balance'.  If
+you find the results surprising, you may want to adjust dumpcycle or
+runspercycle.
 
 
 Q: Why does `amrecover' report `no index records' or `disk not found'?
