@@ -1,3 +1,7 @@
+1999-03-25  Neil Crellin  <neil@wallaby.cc>
+
+	* docs/TAPE.CHANGERS (chg-chs): URL for chs
+
 1999-03-25  Alexandre Oliva  <oliva@dcc.unicamp.br>, Tom Schutter  <tom@platte.com>, Cloyce D. Spradling  <cloyce@headgear.org>
 
 	* patches/samba-largefs.patch: updated for Samba 2.0.*
