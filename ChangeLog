@@ -1,5 +1,7 @@
 2000-01-13  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* configure.in: Recognize alpha*-*-linux-* and sparc*-*-linux-*.
+
 	* tape-src/Makefile.am (../common-src/libamanda.$(LIB_EXTENSION)):
 	Allow for `make tapetype' before libamanda is built.
 

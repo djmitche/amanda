@@ -1202,9 +1202,9 @@ case "$target" in
 			;;
   *-pc-linux-*)
 			;;
-  alpha-*-linux-*)
+  alpha*-*-linux-*)
 			;;
-  sparc-*-linux-*)
+  sparc*-*-linux-*)
 			;;
   powerpc-*-linux-*)
 			;;
