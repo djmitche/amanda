@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.125 2002/03/24 19:25:50 jrjackson Exp $
+ * $Id: sendsize.c,v 1.126 2002/03/31 19:14:22 jrjackson Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -79,6 +79,8 @@ typedef struct disk_estimates_s {
     char *program;
     int program_is_wrapper;
     int spindle;
+    pid_t child;
+    int done;
     option_t *options;
     level_estimate_t est[DUMP_LEVELS];
 } disk_estimates_t;
@@ -87,7 +89,6 @@ disk_estimates_t *est_list;
 
 #define MAXMAXDUMPS 16
 
-int maxdumps = 1, dumpsrunning = 0;
 char *host;				/* my hostname from the server */
 char *prefix;				/* debug line prefix if maxdumps */
 char *prefix_line;			/* debug line prefix if maxdumps */
@@ -115,6 +116,7 @@ char **argv;
     option_t *options = NULL;
     int program_is_wrapper;
     disk_estimates_t *est;
+    disk_estimates_t *est1;
     disk_estimates_t *est_prev;
     char *line = NULL;
     char *s, *fp;
@@ -123,6 +125,12 @@ char **argv;
     int fd;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
+    int done;
+    int need_wait;
+    int maxdumps = 1;
+    int dumpsrunning;
+    char my_pid[NUM_STR_SIZE];
+
 
     /* initialize */
 
@@ -146,8 +154,9 @@ char **argv;
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 
-    prefix = stralloc(get_pname());
-    prefix_line = stralloc("");
+    snprintf(my_pid, sizeof(my_pid), "%d", getpid());
+    prefix = vstralloc(get_pname(), ": ", my_pid, NULL);
+    prefix_line = stralloc2(prefix, ": ");
 
     host = alloc(MAX_HOSTNAME_LENGTH+1);
     gethostname(host, MAX_HOSTNAME_LENGTH);
@@ -305,12 +314,114 @@ char **argv;
     finish_amandates();
     free_amandates();
 
-    for(est = est_list; est != NULL; est = est->next)
-	calc_estimates(est);
+    dumpsrunning = 0;
+    need_wait = 0;
+    done = 0;
+    while(! done) {
+	done = 1;
 
-    while(dumpsrunning > 0) {
-      wait(NULL);
-      --dumpsrunning;
+	/*
+	 * See if we need to wait for a child before we can do anything
+	 * else in this pass.
+	 */
+	if(need_wait) {
+	    pid_t child_pid;
+	    amwait_t child_status;
+	    int exit_code;
+
+	    dbprintf(("%s: waiting for child to complete\n", prefix));
+	    child_pid = wait(&child_status);
+	    if(child_pid == -1) {
+		error("wait failed: %s", strerror(errno));
+	    }
+	    if(WIFSIGNALED(child_status)) {
+		dbprintf(("%s: child %ld terminated with signal %d\n",
+			  prefix, (long) child_pid, WTERMSIG(child_status)));
+	    } else {
+		exit_code = WEXITSTATUS(child_status);
+		if(exit_code == 0) {
+		    dbprintf(("%s: child %ld terminated normally\n",
+			      prefix, (long) child_pid));
+		} else {
+		    dbprintf(("%s: child %ld terminated with code %d\n",
+			      prefix, (long) child_pid, exit_code));
+		}
+	    }
+	    /*
+	     * Find the child and mark it done.
+	     */
+	    for(est = est_list; est != NULL; est = est->next) {
+		if(est->child == child_pid) {
+		    break;
+		}
+	    }
+	    if(est == NULL) {
+		dbprintf(("%s: unexpected child %ld\n", prefix, child_pid));
+	    } else {
+		est->done = 1;
+		dumpsrunning--;
+	    }
+	}
+	/*
+	 * If we are already running the maximum number of children
+	 * go back and wait until one of them finishes.
+	 */
+	if(dumpsrunning >= maxdumps) {
+	    done = 0;
+	    need_wait = 1;
+	    continue;				/* have to wait first */
+	}
+	/*
+	 * Find a new child to start.
+	 */
+	for(est = est_list; est != NULL; est = est->next) {
+	    if(est->done == 0) {
+		done = 0;			/* more to do */
+	    }
+	    if(est->child != 0) {
+		continue;			/* child is running or done */
+	    }
+	    /*
+	     * Make sure there is no spindle conflict.
+	     */
+	    if(est->spindle != -1) {
+		for(est1 = est_list; est1 != NULL; est1 = est1->next) {
+		    if(est1->child == 0) {
+			/*
+			 * Ignore anything not yet started, including us.
+			 */
+			continue;
+		    }
+		    if(est1->done) {
+			continue;		/* ignore completed disks */
+		    }
+		    if(est1->spindle == est->spindle) {
+			break;			/* oops -- they match */
+		    }
+		}
+		if(est1 != NULL) {
+		    continue;			/* spindle conflict */
+		}
+	    }
+	    break;				/* start this estimate */
+	}
+	if(est == NULL) {
+	    if(dumpsrunning > 0) {
+		need_wait = 1;			/* nothing to do but wait */
+	    }
+	} else {
+	    done = 0;
+	    if((est->child = fork()) == 0) {
+		snprintf(my_pid, sizeof(my_pid), "%d", getpid());
+		prefix = newvstralloc(prefix, get_pname(), ": ", my_pid, NULL);
+		prefix_line = newstralloc2(prefix_line, prefix, ": ");
+		calc_estimates(est);		/* child does the estimate */
+		exit(0);
+	    } else if(est->child == -1) {
+		error("calc_estimates fork failed: %s", strerror(errno));
+	    }
+	    dumpsrunning++;			/* parent */
+	}
     }
 
     est_prev = NULL;
@@ -413,31 +524,9 @@ disk_estimates_t *est;
 void calc_estimates(est)
 disk_estimates_t *est;
 {
-    char my_pid[NUM_STR_SIZE];
+    dbprintf(("%s: calculating for amname '%s', dirname '%s', spindle %d\n",
+	      prefix, est->amname, est->dirname, est->spindle));
 
-    dbprintf(("%s: calculating for amname '%s', dirname '%s'\n",
-	      prefix, est->amname, est->dirname));
-    if (maxdumps > 1) {
-      while(dumpsrunning >= maxdumps) {
-	wait(NULL);
-	--dumpsrunning;
-      }
-      ++dumpsrunning;
-      switch(fork()) {
-      case 0:
-	break;
-      case -1:
-        error("%s: calc_estimates: fork returned: %s",
-	      get_pname(), strerror(errno));
-      default:
-	return;
-      }
-      snprintf(my_pid, sizeof(my_pid), "%d", getpid());
-      prefix = newvstralloc(prefix, prefix, ": ", my_pid, NULL);
-      prefix_line = newstralloc2(prefix_line, prefix, ": ");
-    }
-
-    /* Now in the child process */
     if(est->program_is_wrapper ==  1)
 	wrapper_calc_estimates(est);
     else
@@ -458,8 +547,9 @@ disk_estimates_t *est;
 	else
 #endif
 	  generic_calc_estimates(est);
-    if (maxdumps > 1)
-      exit(0);
+
+    dbprintf(("%s: done with amname '%s', dirname '%s', spindle %d\n",
+	      prefix, est->amname, est->dirname, est->spindle));
 }
 
 /*
