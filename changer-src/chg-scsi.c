@@ -1,5 +1,5 @@
 /*
- *  $Id: chg-scsi.c,v 1.6.2.9 1999/02/14 20:07:59 th Exp $
+ *  $Id: chg-scsi.c,v 1.6.2.10 1999/02/15 20:32:49 th Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -593,7 +593,12 @@ void clean_tape(int fd,char *tapedev,char *cnt_file, int drivenum,
     put_current_slot(cnt_file,counter);
   }
   load(fd,drivenum,cleancart);
-  
+  /*
+   * Hack, sleep for some time
+   */
+
+  sleep(60);
+
   if (drive_loaded(fd, drivenum))
     unload(fd,drivenum,cleancart);  
   unlink(usagetime);

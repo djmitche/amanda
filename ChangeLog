@@ -1,3 +1,10 @@
+1999-02-15  Thomas Hepper <th@ant.han.de>
+
+	* changer-src/scsi-changer-driver.c forget to increment retry
+	in SCSI_* functions
+	* changer-src/chg-scsi.c (clean_tape) added sleep(60) after
+	loading the cleaning tape and before unloading
+
 1999-02-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/list_dir.h: remove global variable dir_list, declare

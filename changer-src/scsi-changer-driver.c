@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.11 1999/02/14 20:08:02 th Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.12 1999/02/15 20:32:52 th Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -3568,6 +3568,7 @@ int SCSI_ModeSense(int DeviceFD, char *buffer, u_char size, u_char byte1, u_char
               break;
             }
         }
+      retry++;
       if (ret == 0)
         {
           dbprintf(("SCSI_ModeSense end: %d\n", ret));
@@ -3624,18 +3625,19 @@ int SCSI_Inquiry(int DeviceFD, char *buffer, u_char size)
           switch(SenseHandler(DeviceFD, 0 , (char *)pRequestSense))
             {
             case SENSE_IGNORE:
-              dbprintf(("SCSI_ModeSense : SENSE_IGNORE\n"));
+              dbprintf(("SCSI_Inquiry : SENSE_IGNORE\n"));
               return(0);
               break;
             case SENSE_RETRY:
-              dbprintf(("SCSI_ModeSense : SENSE_RETRY no %d\n", retry));
+              dbprintf(("SCSI_Inquiry : SENSE_RETRY no %d\n", retry));
               break;
             default:
-              dbprintf(("SCSI_ModeSense : end %d\n", pRequestSense->SenseKey));
+              dbprintf(("SCSI_Inquiry : end %d\n", pRequestSense->SenseKey));
               return(pRequestSense->SenseKey);
               break;
             }
         }
+      retry++;
       if (ret == 0)
         {
           dump_hex(buffer, size);
@@ -3729,6 +3731,7 @@ int SCSI_ReadElementStatus(int DeviceFD,
               break;
             }
         }
+      retry++;
       if (ret == 0)
         {
           retry=0;
@@ -3794,6 +3797,7 @@ int SCSI_ReadElementStatus(int DeviceFD,
               break;
             }
         }
+      retry++;
       if (ret == 0)
         {
           retry=0;
