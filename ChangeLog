@@ -1,5 +1,11 @@
 1998-09-09  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* server-src/amtape.c (show_init): no longer print `scanning'
+ 	message
+	(show_init_show, current_init_all): call show_init, then print the
+ 	appropriate `scanning' message
+	Reported by David Wolfskill <dhw@whistle.com>
+
 	* changer-src/chg-scsi.c (main): use new multi-configuration
 	mechanism only if tape_device contains only a single digit
 

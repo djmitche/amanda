@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.18 1998/07/04 00:19:33 oliva Exp $
+ * $Id: amtape.c,v 1.19 1998/09/09 05:15:53 oliva Exp $
  *
  * tape changer interface program
  */
@@ -50,6 +50,8 @@ void taper_scan P((int argc, char **argv));
 int scan_init P((int rc, int ns, int bk));
 int loadlabel_slot P((int rc, char *slotstr, char *device));
 int show_init P((int rc, int ns, int bk));
+int show_init_all P((int rc, int ns, int bk));
+int show_init_current P((int rc, int ns, int bk));
 int show_slot P((int rc, char *slotstr, char *device));
 int taperscan_slot P((int rc, char *slotstr, char *device));
 
@@ -310,9 +312,25 @@ int rc, ns, bk;
 
     nslots = ns;
     backwards = bk;
+    return 0;
+}
+
+int show_init_all(rc, ns, bk)
+int rc, ns, bk;
+{
+    int ret = show_init(rc, ns, bk);
     fprintf(stderr, "%s: scanning all %d slots in tape-changer rack:\n",
 	    get_pname(), nslots);
-    return 0;
+    return ret;
+}
+
+int show_init_current(rc, ns, bk)
+int rc, ns, bk;
+{
+    int ret = show_init(rc, ns, bk);
+    fprintf(stderr, "%s: scanning current slot in tape-changer rack:\n",
+	    get_pname());
+    return ret;
 }
 
 int show_slot(rc, slotstr, device)
@@ -343,7 +361,7 @@ char **argv;
     if(argc != 1)
 	usage();
 
-    changer_current(show_init, show_slot);
+    changer_current(show_init_current, show_slot);
 }
 
 void show_slots(argc, argv)
@@ -353,7 +371,7 @@ char **argv;
     if(argc != 1)
 	usage();
 
-    changer_scan(show_init, show_slot);
+    changer_scan(show_init_all, show_slot);
 }
 
 
