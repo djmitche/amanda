@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-file.c,v 1.2 2001/01/25 00:25:31 jrjackson Exp $
+ * $Id: output-file.c,v 1.3 2001/02/10 00:08:33 jrjackson Exp $
  *
  * tapeio.c virtual tape interface for a file device.
  *
@@ -62,6 +62,7 @@ struct file_info {
     char **filename;			/* list of file names */
     int file_limit;			/* length of filename array */
     int fd;				/* data file descriptor */
+    int is_online;			/* true if "tape" is "online" */
     int at_bof;				/* true if at begining of file */
     int at_eof;				/* true if at end of file */
     int at_eom;				/* true if at end of medium */
@@ -70,6 +71,120 @@ struct file_info {
 } *file_info = NULL;
 
 static int open_count = 0;
+
+/*
+ * "Open" the tape by scanning the "data" directory.  "Tape files"
+ * have five leading digits indicating the position (counting from zero)
+ * followed by a '.' and optional other information (e.g. host/disk/level
+ * image name).
+ *
+ * We allow for the following situations:
+ *
+ *   + If we see the same "file" (position number) more than once, the
+ *     last one seen wins.  This should not normally happen.
+ *
+ *   + We allow gaps in the positions.  This should not normally happen.
+ *
+ * Anything in the directory that does not match a "tape file" name
+ * pattern is ignored.
+ *
+ * If the data directory does not exist, the "tape" is considered offline.
+ * It is allowed to "appear" later.
+ */
+
+static int
+check_online(fd)
+    int fd;
+{
+    char *token[MAX_TOKENS];
+    DIR *tapedir;
+    struct dirent *entry;
+    char *line;
+    int f;
+    int fn;
+    int rc = 0;
+
+    /*
+     * If we are already online, there is nothing else to do.
+     */
+    if (file_info[fd].is_online) {
+	goto common_exit;
+    }
+
+    if ((tapedir = opendir(file_info[fd].basename)) == NULL) {
+	/*
+	 * We have already opened the info file which is in the same
+	 * directory as the data directory, so ENOENT has to mean the data
+	 * directory is not there, which we treat as being "offline".
+	 * We're already offline at this point (see the above test)
+	 * and this is not an error, so just return success (no error).
+	 */
+	rc = (errno != ENOENT);
+	goto common_exit;
+    }
+    while ((entry = readdir(tapedir)) != NULL) {
+	if (is_dot_or_dotdot(entry->d_name)) {
+	    continue;
+	}
+	if (isdigit((int)entry->d_name[0])
+	    && isdigit((int)entry->d_name[1])
+	    && isdigit((int)entry->d_name[2])
+	    && isdigit((int)entry->d_name[3])
+	    && isdigit((int)entry->d_name[4])
+	    && entry->d_name[5] == '.') {
+
+	    /*
+	     * This is a "tape file".
+	     */
+	    fn = atoi(entry->d_name);
+	    amtable_alloc((void **)&file_info[fd].filename,
+			  sizeof(*file_info[fd].filename),
+			  fn,
+			  &file_info[fd].file_limit,
+			  10,
+			  NULL);
+	    if (file_info[fd].filename[fn] != NULL) {
+		/*
+		 * Two files with the same position???
+		 */
+		amfree(file_info[fd].filename[fn]);
+	    }
+	    file_info[fd].filename[fn] = stralloc(entry->d_name);
+	    if (fn + 1 > file_info[fd].file_count) {
+		file_info[fd].file_count = fn + 1;
+	    }
+	}
+    }
+    closedir(tapedir);
+
+    /*
+     * Parse the info file.  We know we are at beginning of file because
+     * the only thing that can happen to it prior to here is it being
+     * opened.
+     */
+    for (; (line = areads(fd)) != NULL; free(line)) {
+	f = split(line, token, sizeof(token) / sizeof(token[0]), " ");
+	if (f == 2 && strcmp(token[1], "position") == 0) {
+	    file_info[fd].file_current = atoi(token[2]);
+	}
+    }
+
+    /*
+     * Set EOM and make sure we are not pre-BOI.
+     */
+    if (file_info[fd].file_current >= file_info[fd].file_count) {
+	file_info[fd].at_eom = 1;
+    }
+    if (file_info[fd].file_current < 0) {
+	file_info[fd].file_current = 0;
+    }
+
+    file_info[fd].is_online = 1;
+
+common_exit:
+
+    return rc;
+}
 
 /*
  * Open the tape file if not already.  If we are beyond the file count
@@ -225,17 +340,9 @@ file_tape_open(filename, mode)
     char *filename;
     int mode;
 {
-    int fd;
-    char *sfn = NULL;
+    int fd = -1;
     int save_errno;
     char *info_file = NULL;
-    char *line;
-    int f;
-    char *token[MAX_TOKENS];
-    char *dirname = NULL;
-    DIR *tapedir;
-    struct dirent *entry;
-    int fn;
 
     /*
      * Use only O_RDONLY and O_RDWR.
@@ -248,8 +355,7 @@ file_tape_open(filename, mode)
     /*
      * Open/create the info file for this "tape".
      */
-    sfn = sanitise_filename(filename);
-    info_file = stralloc2("/tmp/", sfn);
+    info_file = stralloc2(filename, "/info");
     if ((fd = open(info_file, O_RDWR|O_CREAT, 0600)) < 0) {
 	goto common_exit;
     }
@@ -267,6 +373,7 @@ file_tape_open(filename, mode)
     file_info[fd].file_current = 0;
     file_info[fd].file_count = 0;
     file_info[fd].fd = -1;
+    file_info[fd].is_online = 0;		/* true when .../data found */
     file_info[fd].at_bof = 1;			/* by definition */
     file_info[fd].at_eof = 0;			/* do not know yet */
     file_info[fd].at_eom = 0;			/* may get reset below */
@@ -274,94 +381,21 @@ file_tape_open(filename, mode)
     file_info[fd].amount_written = 0;
 
     /*
-     * Parse the info file.
+     * Save the base directory name and see if we are "online".
      */
-    for (; (line = areads(fd)) != NULL; free(line)) {
-	f = split(line, token, sizeof(token) / sizeof(token[0]), " ");
-	if (f == 2 && strcmp(token[1], "position") == 0) {
-	    file_info[fd].file_current = atoi(token[2]);
-	}
-    }
-
-    /*
-     * "Open" the tape by scanning the filename directory.  "Tape files"
-     * have five leading digits indicating the position (counting from
-     * zero) followed by a '.' and optional other information (e.g.
-     * host/disk/level image name).
-     *
-     * We allow for the following situations:
-     *
-     *   + If we see the same "file" (position number) more than once, the
-     *     last one seen wins.  This should not normally happen.
-     *
-     *   + We allow gaps in the positions.  This should not normally happen.
-     *
-     * Anything in the directory that does not match a "tape file" name
-     * pattern is ignored.
-     */
-    dirname = stralloc2(filename, "/");
-    if ((tapedir = opendir(dirname)) == NULL) {
+    file_info[fd].basename = stralloc2(filename, "/data/");
+    if (check_online(fd)) {
 	save_errno = errno;
 	aclose(fd);
+	fd = -1;
+	amfree(file_info[fd].basename);
 	errno = save_errno;
 	goto common_exit;
     }
-    while ((entry = readdir(tapedir)) != NULL) {
-	if (is_dot_or_dotdot(entry->d_name)) {
-	    continue;
-	}
-	if (isdigit((int)entry->d_name[0])
-	    && isdigit((int)entry->d_name[1])
-	    && isdigit((int)entry->d_name[2])
-	    && isdigit((int)entry->d_name[3])
-	    && isdigit((int)entry->d_name[4])
-	    && entry->d_name[5] == '.') {
-
-	    /*
-	     * This is a "tape file".
-	     */
-	    fn = atoi(entry->d_name);
-	    amtable_alloc((void **)&file_info[fd].filename,
-			  sizeof(*file_info[fd].filename),
-			  fn,
-			  &file_info[fd].file_limit,
-			  10,
-			  NULL);
-	    if (file_info[fd].filename[fn] != NULL) {
-		/*
-		 * Two files with the same position???
-		 */
-		amfree(file_info[fd].filename[fn]);
-	    }
-	    file_info[fd].filename[fn] = stralloc(entry->d_name);
-	    if (fn + 1 > file_info[fd].file_count) {
-		file_info[fd].file_count = fn + 1;
-	    }
-	}
-    }
-    closedir(tapedir);
-
-    /*
-     * Set EOM and make sure we are not pre-BOI.
-     */
-    if (file_info[fd].file_current >= file_info[fd].file_count) {
-	file_info[fd].at_eom = 1;
-    }
-    if (file_info[fd].file_current < 0) {
-	file_info[fd].file_current = 0;
-    }
-
-    /*
-     * Save the base directory name.
-     */
-    file_info[fd].basename = dirname;
-    dirname = NULL;
 
 common_exit:
 
     amfree(info_file);
-    amfree(dirname);
-    amfree(sfn);
 
     /*
      * Return the info file descriptor as the unique descriptor for
@@ -377,6 +411,17 @@ file_tapefd_read(fd, buffer, count)
 {
     int result;
     int file_fd;
+
+    /*
+     * Make sure we are online.
+     */
+    if ((result = check_online(fd)) != 0) {
+	return result;
+    }
+    if (! file_info[fd].is_online) {
+	errno = EIO;
+	return -1;
+    }
 
     /*
      * Do not allow any more reads after we find EOF.
@@ -424,6 +469,17 @@ file_tapefd_write(fd, buffer, count)
     long length;
     long kbytes_left;
     int result;
+
+    /*
+     * Make sure we are online.
+     */
+    if ((result = check_online(fd)) != 0) {
+	return result;
+    }
+    if (! file_info[fd].is_online) {
+	errno = EIO;
+	return -1;
+    }
 
     /*
      * Check for write access first.
@@ -556,33 +612,36 @@ file_tapefd_close(fd)
     amfree(file_info[fd].basename);
 
     /*
-     * Update the status file.
+     * Update the status file if we were online.
      */
-    if (lseek(fd, 0, SEEK_SET) != 0) {
-	save_errno = errno;
-	aclose(fd);
-	errno = save_errno;
-	return -1;
-    }
-    if (ftruncate(fd, 0) != 0) {
-	save_errno = errno;
-	aclose(fd);
-	errno = save_errno;
-	return -1;
-    }
-    snprintf(number, sizeof(number), "%d", file_info[fd].file_current);
-    line = vstralloc("position ", number, "\n", NULL);
-    len = strlen(line);
-    result = write(fd, line, len);
-    amfree(line);
-    if (result != len) {
-	if (result >= 0) {
-	    errno = ENOSPC;
+    if (file_info[fd].is_online) {
+	if (lseek(fd, 0, SEEK_SET) != 0) {
+	    save_errno = errno;
+	    aclose(fd);
+	    errno = save_errno;
+	    return -1;
 	}
-	save_errno = errno;
-	aclose(fd);
-	errno = save_errno;
-	return -1;
+	if (ftruncate(fd, 0) != 0) {
+	    save_errno = errno;
+	    aclose(fd);
+	    errno = save_errno;
+	    return -1;
+	}
+	snprintf(number, sizeof(number),
+		 "%d", file_info[fd].file_current);
+	line = vstralloc("position ", number, "\n", NULL);
+	len = strlen(line);
+	result = write(fd, line, len);
+	amfree(line);
+	if (result != len) {
+	    if (result >= 0) {
+		errno = ENOSPC;
+	    }
+	    save_errno = errno;
+	    aclose(fd);
+	    errno = save_errno;
+	    return -1;
+	}
     }
 
     return close(fd);
@@ -599,9 +658,17 @@ file_tapefd_status(fd, stat)
     int fd;
     struct am_mt_status *stat;
 {
+    int result;
+
+    /*
+     * See if we are online.
+     */
+    if ((result = check_online(fd)) != 0) {
+	return result;
+    }
     memset((void *)stat, 0, sizeof(*stat));
     stat->online_valid = 1;
-    stat->online = 1;
+    stat->online = file_info[fd].is_online;
     return 0;
 }
 
@@ -626,6 +693,17 @@ file_tapefd_rewind(fd)
     int fd;
 {
     int result = 0;
+
+    /*
+     * Make sure we are online.
+     */
+    if ((result = check_online(fd)) != 0) {
+	return result;
+    }
+    if (! file_info[fd].is_online) {
+	errno = EIO;
+	return -1;
+    }
 
     /*
      * If our last operation was a write, write a tapemark.
@@ -662,6 +740,19 @@ int
 file_tapefd_unload(fd)
     int fd;
 {
+    int result;
+
+    /*
+     * Make sure we are online.
+     */
+    if ((result = check_online(fd)) != 0) {
+	return result;
+    }
+    if (! file_info[fd].is_online) {
+	errno = EIO;
+	return -1;
+    }
+
     file_tapefd_rewind(fd);
     return 0;
 }
@@ -671,6 +762,17 @@ file_tapefd_fsf(fd, count)
     int fd, count;
 {
     int result = 0;
+
+    /*
+     * Make sure we are online.
+     */
+    if ((result = check_online(fd)) != 0) {
+	return result;
+    }
+    if (! file_info[fd].is_online) {
+	errno = EIO;
+	return -1;
+    }
 
     /*
      * If our last operation was a write and we are going to move
@@ -744,6 +846,17 @@ file_tapefd_weof(fd, count)
     char *save_disk;
     int save_level;
     int save_errno;
+
+    /*
+     * Make sure we are online.
+     */
+    if ((result = check_online(fd)) != 0) {
+	return result;
+    }
+    if (! file_info[fd].is_online) {
+	errno = EIO;
+	return -1;
+    }
 
     /*
      * Check for write access first.
