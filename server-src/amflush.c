@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.77 2004/04/23 11:44:46 martinea Exp $
+ * $Id: amflush.c,v 1.78 2004/10/20 21:49:17 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -225,6 +225,12 @@ char **main_argv;
 	exit(1);
     }
 
+    holding_list = get_flush(datestamp_list, NULL, 1, 0);
+    if(holding_list->first == NULL) {
+	printf("Could not find any valid dump image, check directory.\n");
+	exit(1);
+    }
+
     if(!batch) confirm();
 
     for(dp = diskq.head; dp != NULL; dp = dp->next) {
@@ -268,7 +274,6 @@ char **main_argv;
     }
     driver_stream = fdopen(driver_pipe[1], "w");
 
-    holding_list = get_flush(datestamp_list, NULL, 1, 0);
     for(holding_file=holding_list->first; holding_file != NULL;
 				   holding_file = holding_file->next) {
 	get_dumpfile(holding_file->name, &file);
