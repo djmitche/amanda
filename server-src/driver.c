@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.46.2.4 1998/07/31 05:16:35 oliva Exp $
+ * $Id: driver.c,v 1.46.2.5 1998/09/03 20:14:08 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -191,6 +191,7 @@ char **main_argv;
 	}
 
 	for(hdp = holdingdisks, dsk = 0; hdp != NULL; hdp = hdp->next, dsk++) {
+	    struct stat stat_hdp;
 	    hdp->up = (void *)alloc(sizeof(holdalloc_t));
 	    holdalloc(hdp)->allocated_dumpers = 0;
 	    holdalloc(hdp)->allocated_space = 0L;
@@ -229,10 +230,23 @@ char **main_argv;
 	    newdir = newvstralloc(newdir,
 				  hdp->diskdir, "/", datestamp,
 				  NULL);
-	    if (mkdir(newdir, 0770) == -1) {
-		log_add(L_WARNING, "WARNING: could not create %s: %s",
-			newdir, strerror(errno));
-		hdp->disksize = 0L;
+	    if (stat(newdir, &stat_hdp) == -1) {
+		if (mkdir(newdir, 0770) == -1) {
+		    log_add(L_WARNING, "WARNING: could not create %s: %s",
+			    newdir, strerror(errno));
+		    hdp->disksize = 0L;
+		}
+	    }
+	    else {
+		if (!S_ISDIR((stat_hdp.st_mode))) {
+		    log_add(L_WARNING, "WARNING: %s is not a directory",
+			    newdir);
+		    hdp->disksize = 0L;
+		}
+		else if (access(newdir,W_OK) == -1) {
+		    log_add(L_WARNING, "WARNING: directory %s is not writable",
+			    newdir);
+		}
 	    }
 	}
     }
