@@ -1,3 +1,8 @@
+1998-09-09  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* changer-src/chg-scsi.c (main): use new multi-configuration
+	mechanism only if tape_device contains only a single digit
+
 1998-09-08  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/planner.c (setup_estimate): Don't write a

@@ -1,5 +1,5 @@
 /*
- *	$Id: chg-scsi.c,v 1.4 1998/06/13 06:13:19 oliva Exp $
+ *	$Id: chg-scsi.c,v 1.5 1998/09/09 04:56:44 oliva Exp $
  *
  *	chg-scsi.c -- generic SCSI changer driver
  *
@@ -618,7 +618,7 @@ int main(int argc, char *argv[])
     tape_device = getconf_str(CNF_TAPEDEV);
 
     /* Get the configuration parameters */
-    if (strlen(tape_device)==1){
+    if (tape_device[0] >= '0' && tape_device[0] <= '9' && tape_device[1] == 0){
       read_config(changer_file,&chg);
       confnum=atoi(tape_device);
       use_slots    = chg.conf[confnum].end-chg.conf[confnum].start+1;
