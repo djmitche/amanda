@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.7.2.14 2001/06/19 19:46:26 jrjackson Exp $
+#	$Id: amverify.sh.in,v 1.7.2.15 2001/06/19 19:51:04 jrjackson Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -122,16 +122,16 @@ doonefile() {
 		shift
 		shift 9
 		if [ X"$1" = X"program" -a X"$2" != X"" ]; then
-			if [ X"$TAR" != X"" -a X"$2" = X"$TAR" ]; then
+			if [ X"$TAR" != X"" \
+			     -a \( X"`basename $2`" = X"`basename $TAR" \
+				   -o X"`basename $2`" = X"gtar" \
+				   -o X"`basename $2`" = X"gnutar" \
+				   -o X"`basename $2`" = X"tar" \) ]; then
 				CMD=$TAR
 				ARGS="tf -"
 			elif [ X"$TAR" != X"" \
 			       -a X"$SAMBA_CLIENT" != X"" \
 			       -a X"$2" = X"$SAMBA_CLIENT" ]; then
-				CMD=$TAR
-				ARGS="tf -"
-			elif [ X"$TAR" != X"" \
-			       -a X`basename $2` = X`basename $TAR` ]; then
 				CMD=$TAR
 				ARGS="tf -"
 			elif [ X"$DUMP" != X"" -a X"$2" = X"$DUMP" ]; then
