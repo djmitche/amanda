@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.36 1998/01/28 15:49:27 jrj Exp $
+ * $Id: conffile.c,v 1.37 1998/02/15 20:20:55 martinea Exp $
  *
  * read configuration file
  */
@@ -483,6 +483,7 @@ char *str;
 {
     interface_t *p;
 
+    if(str == NULL) return interface_list;
     for(p = interface_list; p != NULL; p = p->next) {
 	if(strcmp(p->name, str) == 0) return p;
     }
