@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.30 1999/04/28 21:48:21 kashmir Exp $
+ * $Id: diskfile.c,v 1.31 1999/05/14 21:57:39 kashmir Exp $
  *
  * read disklist file
  */
@@ -200,7 +200,7 @@ char *st;
     char *s = st;
 
     while(*s) {
-	if(islower(*s)) *s = toupper(*s);
+	if(islower((int)*s)) *s = toupper((int)*s);
 	s++;
     }
     return st;

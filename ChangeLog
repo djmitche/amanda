@@ -1,5 +1,16 @@
 1999-05-14  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/conffile.c (getconf_byname): islower takes an int
+	for an arg.
+	* server-src/diskfile.c (upcase): islower takes an int for an
+	arg.
+	* server-src/driver.c (update_failed_dump_to_tape): prototype.
+	* server-src/holding.c (insert_dirname, scan_holdingdisk):
+	prototype and make static, (is_datestr): isdigit takes an int
+	for an arg.
+
+1999-05-14  Mike Grupenhoff <kashmir@munge.com>
+
 	* client-src/calcsize.c (basename): make static, prototype, and
 	only include if BUILTIN_EXCLUDE_SUPPORT is defined and
 	HAVE_BASENAME is not defined.
@@ -23,7 +34,6 @@
 	* server-src/changer.c (report_bad_resultstr, run_changer_command):
 	prototype.
 	* server-src/conffile.h: properly prototype getconf_holdingdisks()
-	* server-src/driver.c (update_failed_dump_to_tape): prototype.
 	* server-src/driverio.h: properly prototype init_driverio().
 	* server-src/find.c (find_compare, parse_taper_datestamp_log):
 	prototype.

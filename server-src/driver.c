@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.83 1999/05/14 19:08:55 kashmir Exp $
+ * $Id: driver.c,v 1.84 1999/05/14 21:57:41 kashmir Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -86,6 +86,7 @@ static int sort_by_time P((disk_t *a, disk_t *b));
 static void start_degraded_mode P((disklist_t *queuep));
 static void start_some_dumps P((dumper_t *dumper, disklist_t *rq));
 static void taper_queuedisk P((disk_t *));
+static void update_failed_dump_to_tape P((disk_t *));
 #if 0
 static void dump_state P((const char *str));
 #endif

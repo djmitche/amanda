@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.26 1999/05/07 16:43:19 kashmir Exp $
+ * $Id: holding.c,v 1.27 1999/05/14 21:57:44 kashmir Exp $
  *
  * Functions to access holding disk
  */
@@ -33,6 +33,8 @@
 #include "holding.h"
 #include "fileheader.h"
 
+static holding_t *insert_dirname P((holding_t **, char *));
+static void scan_holdingdisk P((holding_t **, char *, int));
 
 int is_dir(fname)
 char *fname;
@@ -63,7 +65,7 @@ char *fname;
 
     /* must be 8 digits */
     for(cp = fname; *cp; cp++)
-	if(!isdigit(*cp)) break;
+	if(!isdigit((int)*cp)) break;
     if(*cp != '\0' || cp-fname != 8) return 0;
 
     /* sanity check year, month, and day */
@@ -101,7 +103,7 @@ char *fname;
 
 #define MAX_DIRS 26	/* so we can select them A .. Z */
 
-holding_t *insert_dirname(holding_list, name)
+static holding_t *insert_dirname(holding_list, name)
 holding_t **holding_list;
 char *name;
 {
@@ -134,7 +136,7 @@ holding_t *holding_list;
     }
 }
 
-void scan_holdingdisk(holding_list, diskdir, verbose)
+static void scan_holdingdisk(holding_list, diskdir, verbose)
 holding_t **holding_list;
 char *diskdir;
 int verbose;
