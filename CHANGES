@@ -1,3 +1,5 @@
+	gb now valid way to specify size of holding disk.  -kovert
+
 	configure no longer checks for MAXFILESIZE; INT_MAX is used
 	instead.  -oliva
 
@@ -92,6 +94,8 @@
 	-Eric Schnoebelen <eric@cirr.com>
 
 Version 2.4.0p1
+
+	add --with-owner option.  -kovert
 
 	only call initgroups() if it is available.  -oliva
 

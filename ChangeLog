@@ -1,3 +1,10 @@
+1998-06-07 Todd Kover <kovert@omniscient.com>
+
+	* add --with-owner option to allow installed binaries to be owned
+	by someone other than the amanda user
+
+	* add GB as valid holding disk size.
+
 1998-06-07 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amadmin.c (info): don't need to specify an host.
