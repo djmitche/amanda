@@ -1,3 +1,7 @@
+2002-03-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* client-src/sendbackup-gnutar.c: Fix use of no_record.
+
 2002-03-24  John R. Jackson (jrj@purdue.edu)
 
 	* client-src/amandad.c: Make sure argv[0] is valid before using it.

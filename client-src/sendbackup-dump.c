@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.80 2002/03/09 15:09:39 martinea Exp $
+ * $Id: sendbackup-dump.c,v 1.81 2002/03/24 21:27:02 martinea Exp $
  *
  * send backup data using BSD dump
  */
@@ -207,7 +207,7 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 	dumppid = pipespawn(progname, STDIN_PIPE,
 			    &dumpin, &dumpout, &mesgf,
 			    "xfsdump",
-			    no_record ? "-J" : skip_argument,
+			    options->no_record ? "-J" : skip_argument,
 			    "-F",
 			    "-l", dumpkeys,
 			    "-",
@@ -233,7 +233,7 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 	program->restore_name = VXRESTORE;
 
 	dumpkeys = vstralloc(level_str,
-			     no_record ? "" : "u",
+			     options->no_record ? "" : "u",
 			     "s",
 			     "f",
 			     NULL);
@@ -274,7 +274,7 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 	program->restore_name = VRESTORE;
 
 	dumpkeys = vstralloc(level_str,
-			     no_record ? "" : "u",
+			     options->no_record ? "" : "u",
 			     "b",
 			     "f",
 			     NULL);
@@ -342,7 +342,7 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
     /* AIX backup program */
     dumpkeys = vstralloc("-",
 			 level_str,
-			 no_record ? "" : "u",
+			 options->no_record ? "" : "u",
 			 "f",
 			 NULL);
 
