@@ -1,5 +1,21 @@
 2004-08-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/driver.c (handle_dumper_result, handle_chunker_result):
+	  Don't call free_serial().
+	* server-src/driver.c (dumper_result): Call free_serial_dp(dp).
+	* server-src/driverio.c (dumper_cmd): Remove CONTINUE cmd.
+        * server-src/driverio.c (chunker_cmd): Print serial number for CONTINUE
+          command.
+        * server-src/driverio.c (disk2serial): Try to find a 'dp' before
+          allocating a new serial.
+	* server-src/driverio.c (free_serial_dp): New function to remove the
+	  serial for a dp.
+	* server-src/driverio.h (free_serial_dp): Prototype.
+        * server-src/chunker.c (databuf_flush): Read serial number for CONTINUE
+          command.
+
+2004-08-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/planner.c (getsize): Do SERVER estimate, call sendsize with
 	  CALCSIZE estimate.
 

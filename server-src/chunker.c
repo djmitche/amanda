@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.19 2003/06/03 20:14:28 martinea Exp $
+/* $Id: chunker.c,v 1.20 2004/08/03 18:05:59 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -573,12 +573,13 @@ databuf_flush(db)
 	    if(cmd == CONTINUE) {
 		/*
 		 * CONTINUE
+		 *   serial
 		 *   filename
 		 *   chunksize
 		 *   use
 		 */
 		cmdargs.argc++;			/* true count of args */
-		a = 2;
+		a = 3;
 
 		if(a >= cmdargs.argc) {
 		    error("error [chunker CONTINUE: not enough args: filename]");

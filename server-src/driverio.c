@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.67 2004/08/02 18:53:31 martinea Exp $
+ * $Id: driverio.c,v 1.68 2004/08/03 18:05:59 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -326,8 +326,6 @@ disk_t *dp;
     char *cmdline = NULL;
     char number[NUM_STR_SIZE];
     char numberport[NUM_STR_SIZE];
-    char chunksize[NUM_STR_SIZE];
-    char use[NUM_STR_SIZE];
     char *o;
     int activehd=0;
     assignedhd_t **h=NULL;
@@ -372,22 +370,6 @@ disk_t *dp;
 	if( dp ) {
 	    cmdline = vstralloc(cmdstr[cmd],
 				" ", sched(dp)->destname,
-				"\n", NULL );
-	} else {
-	    cmdline = stralloc2(cmdstr[cmd], "\n");
-	}
-	break;
-    case CONTINUE:
-	if( dp ) {
-	    holdalloc(h[activehd]->disk)->allocated_dumpers++;
-	    snprintf(chunksize, sizeof(chunksize), "%ld", 
-		     h[activehd]->disk->chunksize );
-	    snprintf(use, sizeof(use), "%ld", 
-		     h[activehd]->reserved - h[activehd]->used );
-	    cmdline = vstralloc(cmdstr[cmd],
-				" ", h[activehd]->destname,
-				" ", chunksize,
-				" ", use,
 				"\n", NULL );
 	} else {
 	    cmdline = stralloc2(cmdstr[cmd], "\n");
@@ -468,6 +450,7 @@ disk_t *dp;
 	    snprintf(use, sizeof(use), "%ld", 
 		     h[activehd]->reserved - h[activehd]->used );
 	    cmdline = vstralloc(cmdstr[cmd],
+				" ", disk2serial(dp),
 				" ", h[activehd]->destname,
 				" ", chunksize,
 				" ", use,
@@ -481,9 +464,13 @@ disk_t *dp;
 	break;
     case DONE:
     case FAILED:
-	cmdline = vstralloc(cmdstr[cmd],
-			    " ", disk2serial(dp),
-			    "\n",  NULL);
+	if( dp) {
+	    cmdline = vstralloc(cmdstr[cmd],
+				" ", disk2serial(dp),
+				"\n",  NULL);
+	} else {
+	    cmdline = vstralloc(cmdstr[cmd], "\n");
+	}
 	break;
     default:
 	error("Don't know how to send %s command to chunker", cmdstr[cmd]);
@@ -553,11 +540,35 @@ char *str;
 }
 
 
+void free_serial_dp(dp)
+disk_t *dp;
+{
+    int s;
+
+    for(s = 0; s < MAX_SERIAL; s++) {
+	if(stable[s].dp == dp) {
+	    stable[s].gen = 0;
+	    return;
+	}
+    }
+
+    printf("driver: error time %s serial not found\n",
+	   walltime_str(curclock()));
+}
+
+
 char *disk2serial(dp)
 disk_t *dp;
 {
     int s;
     static char str[NUM_STR_SIZE];
+
+    for(s = 0; s < MAX_SERIAL; s++) {
+	if(stable[s].dp == dp) {
+	    snprintf(str, sizeof(str), "%02d-%05ld", s, stable[s].gen);
+	    return str;
+	}
+    }
 
     /* find unused serial number */
     for(s = 0; s < MAX_SERIAL; s++) if(stable[s].gen == 0) break;

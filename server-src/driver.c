@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.139 2004/04/26 15:02:29 martinea Exp $
+ * $Id: driver.c,v 1.140 2004/08/03 18:05:59 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -898,7 +898,7 @@ static void continue_dumps()
 				   dumper->dp != dp; dumper++);
 	    assert( dumper < dmptable + inparallel );
 	    sched(dp)->activehd = assign_holdingdisk( h, dp );
-	    dumper_cmd( dumper, CONTINUE, dp );
+	    chunker_cmd( dumper, CONTINUE, dp );
 	    amfree(h);
 	    remove_disk( &roomq, dp );
 	}
@@ -1119,6 +1119,8 @@ dumper_result(dp)
     dumper = sched(dp)->dumper;
     chunker = dumper->chunker;
 
+    free_serial_dp(dp);
+
     h = sched(dp)->holdp;
     activehd = sched(dp)->activehd;
 
@@ -1210,7 +1212,7 @@ handle_dumper_result(cookie)
 		error("error [dumper DONE result_argc != 6: %d]", result_argc);
 	    }
 
-	    free_serial(result_argv[2]);
+	    /*free_serial(result_argv[2]);*/
 
 	    sched(dp)->origsize = (long)atof(result_argv[3]);
 	    sched(dp)->dumptime = (long)atof(result_argv[5]);
@@ -1236,7 +1238,7 @@ handle_dumper_result(cookie)
 	    }
 	    /* FALLTHROUGH */
 	case FAILED: /* FAILED <handle> <errstr> */
-	    free_serial(result_argv[2]);
+	    /*free_serial(result_argv[2]);*/
 	    dumper->result = cmd;
 	    break;
 
@@ -1248,7 +1250,7 @@ handle_dumper_result(cookie)
 	     * other dumps that are waiting on disk space.
 	     */
 	    assert(pending_aborts);
-	    free_serial(result_argv[2]);
+	    /*free_serial(result_argv[2]);*/
 	    dumper->result = cmd;
 	    break;
 
@@ -1283,7 +1285,7 @@ handle_dumper_result(cookie)
 	/* send the dumper result to the chunker */
 	if(dumper->chunker->down == 0 && dumper->chunker->fd != -1) {
 	    if(cmd == DONE) {
-		chunker_cmd(dumper->chunker, cmd, dp);
+		chunker_cmd(dumper->chunker, DONE, dp);
 	    }
 	    else {
 		chunker_cmd(dumper->chunker, FAILED, dp);
@@ -1347,7 +1349,7 @@ handle_chunker_result(cookie)
 		error("error [chunker %s result_argc != 4: %d]", cmdstr[cmd],
 		      result_argc);
 	    }
-	    free_serial(result_argv[2]);
+	    /*free_serial(result_argv[2]);*/
 
 	    sched(dp)->dumpsize = (long)atof(result_argv[3]);
 
@@ -1368,7 +1370,7 @@ handle_chunker_result(cookie)
 
 	    break;
 	case FAILED: /* FAILED <handle> <errstr> */
-	    free_serial(result_argv[2]);
+	    /*free_serial(result_argv[2]);*/
 
 	    event_release(chunker->ev_read);
 
@@ -1422,7 +1424,7 @@ handle_chunker_result(cookie)
 	     */
 	    /*assert(pending_aborts);*/
 
-	    free_serial(result_argv[2]);
+	    /*free_serial(result_argv[2]);*/
 
 	    event_release(chunker->ev_read);
 
