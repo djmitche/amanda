@@ -175,6 +175,8 @@ int fd;
         printf("argv[%d] = \"%s\"\n", arg, argv[arg]);
 #endif
 
+    if(argc < 1) return BOGUS;
+
     for(t = BOGUS+1; t < LAST_TOK; t++)
 	if(!strcmp(argv[1], cmdstr[t])) return t;
     

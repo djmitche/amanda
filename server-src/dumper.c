@@ -331,11 +331,12 @@ static cmd_t getcmd()
 
     /* not enough commands for a table lookup */
 
+    if(argc < 1) return BOGUS;
     if(!strcmp(argv[1],"FILE-DUMP")) return FILE_DUMP;
-    else if(!strcmp(argv[1],"PORT-DUMP")) return PORT_DUMP;
-    else if(!strcmp(argv[1],"CONTINUE")) return CONTINUE;
-    else if(!strcmp(argv[1],"ABORT")) return ABORT;
-    else if(!strcmp(argv[1],"QUIT")) return QUIT;
+    if(!strcmp(argv[1],"PORT-DUMP")) return PORT_DUMP;
+    if(!strcmp(argv[1],"CONTINUE")) return CONTINUE;
+    if(!strcmp(argv[1],"ABORT")) return ABORT;
+    if(!strcmp(argv[1],"QUIT")) return QUIT;
     return BOGUS;
 }
 

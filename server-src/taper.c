@@ -898,10 +898,11 @@ char ***argvp;
 
     /* not enough commands for a table lookup */
 
+    if(argc < 1) return BOGUS;
     if(!strcmp(argv[1],"START-TAPER")) return START_TAPER;
-    else if(!strcmp(argv[1],"FILE-WRITE")) return FILE_WRITE;
-    else if(!strcmp(argv[1],"PORT-WRITE")) return PORT_WRITE;
-    else if(!strcmp(argv[1],"QUIT")) return QUIT;
+    if(!strcmp(argv[1],"FILE-WRITE")) return FILE_WRITE;
+    if(!strcmp(argv[1],"PORT-WRITE")) return PORT_WRITE;
+    if(!strcmp(argv[1],"QUIT")) return QUIT;
     return BOGUS;
 }
 
