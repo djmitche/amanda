@@ -1,5 +1,10 @@
 1998-10-16  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/reporter.c: remove declaration of curlinenum,
+	curlog, curprog and curstr.
+
+1998-10-16  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amflush.c (main): move declaration of diskqp from
 	global to local.
 
