@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.20.2.7 2004/10/21 13:09:35 martinea Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.20.2.8 2004/11/08 18:37:42 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -128,7 +128,6 @@ int main(main_argc, main_argv)
 {
     disklist_t *origqp;
     disk_t *diskp;
-    fd_set selectset;
     int fd, dsk;
     dumper_t *dumper;
     char *newdir = NULL;
@@ -314,7 +313,6 @@ int main(main_argc, main_argv)
     runq.head = runq.tail = NULL;
 
     read_flush(&tapeq);
-    if(!nodump) read_schedule(&waitq, &runq);
 
     log_add(L_STATS, "startup time %s", walltime_str(curclock()));
 
@@ -326,7 +324,7 @@ int main(main_argc, main_argv)
 	   getconf_str(CNF_DUMPORDER));
     fflush(stdout);
 
-    /* ok, planner is done, now lets see if the tape is ready */
+    /* Let's see if the tape is ready */
 
     cmd = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
 
@@ -336,13 +334,47 @@ int main(main_argc, main_argv)
 	FD_CLR(taper,&readset);
     }
 
+    short_dump_state();					/* for amstatus */
+
     tape_left = tape_length;
     taper_busy = 0;
     taper_disk = NULL;
+
+    /* Start autoflush while waiting for dump schedule */
+    if(!nodump) {
+	/* Start any autoflush tape writes */
+	if (!empty(tapeq)) {
+	    startaflush();
+	    short_dump_state();				/* for amstatus */
+
+	    /* Process taper results until the schedule arrives */
+	    while (1) {
+		fd_set selectset;
+
+		FD_ZERO(&selectset);
+		FD_SET(0, &selectset);
+		FD_SET(taper, &selectset);
+
+		if(select(taper+1, (SELECT_ARG_TYPE *)(&selectset), NULL, NULL,
+			  &sleep_time) == -1)
+		    error("select: %s", strerror(errno));
+		if (FD_ISSET(0, &selectset)) break;	/* schedule arrived */
+		if (FD_ISSET(taper, &selectset)) handle_taper_result();
+		short_dump_state();			/* for amstatus */
+	    }
+	    
+	}
+
+	/* Read the dump schedule */
+	read_schedule(&waitq, &runq);
+    }
+
+    /* Start any needed flushes */
     startaflush();
 
     while(start_some_dumps(&runq) || some_dumps_in_progress() ||
 	  any_delayed_disk) {
+	fd_set selectset;
 
 	short_dump_state();
 

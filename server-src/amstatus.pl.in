@@ -679,7 +679,7 @@ foreach $host (sort @hosts) {
 				$size{$hostpart} = &dump_size($holding_file{$hostpart}) / 1024;
 			}
 			$in_flush=0;
-			if($estimate_done != 1) {
+			if($estimate_done != 1 && !defined $flush{$hostpart}) {
 				if(defined $estimate{$hostpart}) {
 					if($estimate{$hostpart} != 1) {
 						if( defined $opt_gestimate) {
