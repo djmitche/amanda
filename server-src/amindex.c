@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * amindex.c - index control
+ * $Id: amindex.c,v 1.3 1997/08/27 08:12:49 amcore Exp $
+ *
+ * index control
  */
 
 #include "amindex.h"

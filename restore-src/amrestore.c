@@ -25,8 +25,11 @@
  *			   University of Maryland at College Park
  */
 /*
- * amrestore.c  - retrieves files from an amanda tape
+ * $Id: amrestore.c,v 1.5 1997/08/27 08:12:43 amcore Exp $
  *
+ * retrieves files from an amanda tape
+ */
+/*
  * usage: amrestore [-p] [-r|-c] tape-device [hostname [diskname]]
  *
  * Pulls all files from the tape that match the hostname and diskname regular

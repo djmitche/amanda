@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * planner.c - backup schedule planner for the Amanda backup system.
+ * $Id: planner.c,v 1.31 1997/08/27 08:13:25 amcore Exp $
+ *
+ * backup schedule planner for the Amanda backup system.
  */
 #include "amanda.h"
 #include "conffile.h"

@@ -24,6 +24,11 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
+/*
+ * $Id: match.c,v 1.4 1997/08/27 08:12:02 amcore Exp $
+ *
+ * functions for checking and matching regular expressions
+ */
 
 #include "amanda.h"
 #include "regex.h"

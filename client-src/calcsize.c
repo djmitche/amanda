@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /* 
- * calcsize.c - traverse directory tree to get backup size estimates
+ * $Id: calcsize.c,v 1.10 1997/08/27 08:11:29 amcore Exp $
+ *
+ * traverse directory tree to get backup size estimates
  */
 #include "amanda.h"
 #include "statfs.h"

@@ -1,77 +1,36 @@
-/***************************************************************************
-*
-* File:          $RCSfile: amidxtaped.c,v $
-*
-* Revision:      $Revision: 1.3 $
-* Last Edited:   $Date: 1997/08/26 02:16:37 $
-* Author:        $Author: amcore $
-*
-* History:       $Log: amidxtaped.c,v $
-* History:       Revision 1.3  1997/08/26 02:16:37  amcore
-* History:       Fix dangling references to bindir.  by John R. Jackson
-* History:
-* History:       Revision 1.2  1997/07/03 07:48:12  amcore
-* History:       Added MT_FILE_FLAG to {ac,}config.h, so that amidxtaped uses the
-* History:       switch determined by configure for invoking mt.
-* History:
-* History:       Changed sendsize so that it sends SIGKILL instead of SIGTERM to
-* History:       xfsdump.  The previous approach caused hangs on some releases of IRIX
-* History:       6.x.
-* History:
-* History:       Removed a duplicated invocation of start_index in the vxdump support
-* History:       in sendbackup-dump.
-* History:
-* History:       Revision 1.1  1997/05/14 08:29:29  amcore
-* History:       Moved library files and its dependencies into appropriate directories.
-* History:
-* History:       Now --without-amrecover does not build recover, --without-restore does
-* History:       not build amrestore nor amidxtaped.
-* History:
-* History:       Created new directory tape-src, to contain the tapeio library.  It is
-* History:       used by both server-src and restore-src.  If neither of them is built,
-* History:       the tape library is not build either.
-* History:
-* History:       Moved amidxtaped.c from server-src to restore-src.
-* History:
-* History:       Moved amrestore.c from recover-src to restore-src.
-* History:
-* History:       Moved add_exclude.c amandates.c amandates.h check_exclude.c fnmatch.c
-* History:       fnmatch.h getfsent.c getfsent.h unctime.c from common-src to
-* History:       client-src.
-* History:
-* History:       Renamed log_dummy.c to nolog.c.
-* History:
-* History:       Created new library nolog, with nolog.c, to be used in subdirectories
-* History:       supposed to be run without the server library.
-* History:
-* History:       Moved amindex.c amindex.h changer.c changer.h clock.c clock.h
-* History:       conffile.c conffile.h diskfile.c diskfile.h infofile.c infofile.h
-* History:       logfile.c logfile.h tapefile.c tapefile.h from common-src to server.c.
-* History:
-* History:       Moved tapeio.c tapeio.h from common-src to tape-src.
-* History:
-* History:       Revision 1.1.1.1  1997/03/15 21:30:10  amcore
-* History:       Mass import of 2.3.0.4 as-is.  We can remove generated files later.
-* History:
-* History:       Revision 1.4  1997/01/29 08:08:18  alan
-* History:       better handling of return status from amrestore
-* History:
-* History:       Revision 1.3  1997/01/29 07:31:49  alan
-* History:       removed ejection of tape - this is probably not what most people want
-* History:
-* History:       Revision 1.2  1996/12/19 08:56:37  alan
-* History:       first go at file extraction
-* History:
-* History:       Revision 1.1  1996/12/16 07:53:42  alan
-* History:       Initial revision
-* History:
-*
-***************************************************************************/
-
-/* This daemon extracts a dump image off a tape for amrecover and returns
-   it over the network. It basically, reads a number of arguments from stdin
-   (it is invoked via inet), one per line, preceeded by the number of them,
-   and forms them into an argv structure, then execs amrestore.
+/*
+ * Amanda, The Advanced Maryland Automatic Network Disk Archiver
+ * Copyright (c) 1991, 1996 University of Maryland at College Park
+ * All Rights Reserved.
+ *
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation, and that the name of U.M. not be used in advertising or
+ * publicity pertaining to distribution of the software without specific,
+ * written prior permission.  U.M. makes no representations about the
+ * suitability of this software for any purpose.  It is provided "as is"
+ * without express or implied warranty.
+ *
+ * U.M. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL U.M.
+ * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * Author: James da Silva, Systems Design and Analysis Group
+ *			   Computer Science Department
+ *			   University of Maryland at College Park
+ */
+/* $Id: amidxtaped.c,v 1.4 1997/08/27 08:12:41 amcore Exp $
+ *
+ * This daemon extracts a dump image off a tape for amrecover and
+ * returns it over the network. It basically, reads a number of
+ * arguments from stdin (it is invoked via inet), one per line,
+ * preceeded by the number of them, and forms them into an argv
+ * structure, then execs amrestore
  */
 
 #include "amanda.h"

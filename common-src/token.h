@@ -22,6 +22,11 @@
  *
  * Author: George Scott, Computer Centre, Monash University
  */
+/*
+ * $Id: token.h,v 1.5 1997/08/27 08:12:24 amcore Exp $
+ *
+ * interface to token module
+ */
 #ifndef TOKEN_H
 #define TOKEN_H
 

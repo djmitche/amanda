@@ -24,6 +24,11 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
+/*
+ * $Id: stream.h,v 1.2 1997/08/27 08:12:19 amcore Exp $
+ *
+ * interface to stream module
+ */
 #ifndef STREAM_H
 #define STREAM_H
 

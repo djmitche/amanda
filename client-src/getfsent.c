@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * getfsent - generic version of code to read fstab
+ * $Id: getfsent.c,v 1.2 1997/08/27 08:11:32 amcore Exp $
+ *
+ * generic version of code to read fstab
  */
 
 #include "amanda.h"
@@ -258,7 +260,9 @@ static char *dev2rdev(name)
 char *name;
 {
   static char fname[1024];
+#ifdef DEV_ROOT
   struct stat st;
+#endif
   
   if (strncmp(name, DEV_PREFIX, strlen(DEV_PREFIX)) == 0)
     sprintf(fname, "%s%s", RDEV_PREFIX, name+strlen(DEV_PREFIX));
@@ -278,7 +282,9 @@ static char *rdev2dev2rdev(name)
 char *name;
 {
   static char fname[1024];
+#ifdef DEV_ROOT
   struct stat st;
+#endif
 
   if (strncmp(name, RDEV_PREFIX, strlen(RDEV_PREFIX)) == 0)
     sprintf(fname, "%s%s", DEV_PREFIX, name+strlen(RDEV_PREFIX));

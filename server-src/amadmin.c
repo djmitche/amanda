@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * amadmin.c - controlling process for the Amanda backup system
+ * $Id: amadmin.c,v 1.9 1997/08/27 08:12:45 amcore Exp $
+ *
+ * controlling process for the Amanda backup system
  */
 #include "amanda.h"
 #include "conffile.h"

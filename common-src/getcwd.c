@@ -25,8 +25,10 @@
  * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
+/* $Id: getcwd.c,v 1.2 1997/08/27 08:12:01 amcore Exp $ */
+
 #ifndef lint
-static char rcsid[] = "$Header: /home/dustin/code/amanda/svn/cvs-conversion/sf-rsync/amanda/common-src/Attic/getcwd.c,v 1.1 1997/03/15 21:29:59 amcore Exp $ SPRITE (Berkeley)";
+static char rcsid[] = "$Header: /home/dustin/code/amanda/svn/cvs-conversion/sf-rsync/amanda/common-src/Attic/getcwd.c,v 1.2 1997/08/27 08:12:01 amcore Exp $ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include <stdio.h>

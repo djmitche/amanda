@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * tapeio.h - interface for tapeio.c
+ * $Id: tapeio.h,v 1.3 1997/08/27 08:13:35 amcore Exp $
+ *
+ * interface for tapeio.c
  */
 #ifndef TAPEIO_H
 #define TAPEIO_H

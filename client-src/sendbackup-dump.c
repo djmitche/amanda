@@ -24,9 +24,10 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-
 /* 
- * sendbackup-dump.c - send backup data using BSD dump
+ * $Id: sendbackup-dump.c,v 1.27 1997/08/27 08:11:38 amcore Exp $
+ *
+ * send backup data using BSD dump
  */
 
 #include "sendbackup.h"

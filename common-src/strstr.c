@@ -24,6 +24,11 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
+/*
+ * $Id: strstr.c,v 1.2 1997/08/27 08:12:21 amcore Exp $
+ *
+ * replacement for missing ANSI-C strstr function
+ */
 #include "amanda.h"
 
 char *strstr(a, b)

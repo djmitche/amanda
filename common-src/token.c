@@ -22,14 +22,16 @@
  *
  * Author: George Scott, Computer Centre, Monash University.
  */
-
 /*
-** token.c - token bashing routines
-**
-** The quoting method used here was selected because it has the property that
-** quoting a string that doesn't contain funny characters results in an unchanged
-** string and it was easy to code.  There are probably other algorithms that are
-** just as effective.
+ * $Id: token.c,v 1.7 1997/08/27 08:12:22 amcore Exp $
+ *
+ * token bashing routines
+ */
+/*
+** The quoting method used here was selected because it has the
+** property that quoting a string that doesn't contain funny
+** characters results in an unchanged string and it was easy to code.
+** There are probably other algorithms that are just as effective.
 **/
 
 #include "amanda.h"
@@ -93,7 +95,7 @@ char *sep;	/* Token separators - usually " " */
 			pi++;
 			if (*pi >= '0' && *pi <= '3') {
 				*po =       (*pi++ - '0') << 6;
-				*po = *po + (*pi++ - '0') << 3;
+				*po = *po +((*pi++ - '0') << 3);
 				*po = *po + (*pi   - '0')     ;
 			}
 			else *po = *pi;
@@ -167,9 +169,12 @@ char *str;	/* the string to quote */
 
 	len = 0;
 	for (pi = str; *pi; pi++) {
-		if (*pi < ' ' || *pi > '~') len = len + 4;
-		else if (*sep && strchr(sep, *pi) || *pi == '\\') len = len + 2;
-		else len++;
+		if (*pi < ' ' || *pi > '~')
+		  len = len + 4;
+		else if ((*sep && strchr(sep, *pi)) || *pi == '\\')
+		  len = len + 2;
+		else
+		  len++;
 	}
 
 	/* Allocate some space */
@@ -187,7 +192,7 @@ char *str;	/* the string to quote */
 			*po++ = ((*pi >> 3) & 07) + '0';
 			*po++ = ((*pi     ) & 07) + '0';
 		}
-		else if (*sep && strchr(sep, *pi) || *pi == '\\') {
+		else if ((*sep && strchr(sep, *pi)) || *pi == '\\') {
 			*po++ = '\\';
 			*po++ = *pi;
 		}

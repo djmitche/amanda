@@ -1,129 +1,34 @@
-/***************************************************************************
-*
-* File:          $RCSfile: amrecover.c,v $
-* Module:        
-* Part of:       
-*
-* Revision:      $Revision: 1.3 $
-* Last Edited:   $Date: 1997/08/26 21:46:51 $
-* Author:        $Author: amcore $
-*
-* Notes:         
-* Private Func:  
-* History:       $Log: amrecover.c,v $
-* History:       Revision 1.3  1997/08/26 21:46:51  amcore
-* History:       amrecover prints whatever error message amindexd sends to it before
-* History:       quitting.  by John R. Jackson.
-* History:
-* History:       Revision 1.2  1997/08/15 15:14:29  amcore
-* History:       Updated version number to 2.4.0b2 (supposed to be the next pre-release)
-* History:
-* History:       Added optional argument to --with-testing.  If given, it will be
-* History:       appended to service names, instead of the `-test' default.
-* History:
-* History:       amrecover-related services are also affected by this switch.
-* History:
-* History:       Fixed Makefile's so that test programs can be built out of source
-* History:       code that support them with -DTEST.
-* History:
-* History:       Fixed test programs in server-src
-* History:
-* History:       disklist.c would not read hostnames correctly: fixed
-* History:
-* History:       conffile.c would not keep the main configuration file name: fixed
-* History:
-* History:       Revision 1.1  1997/05/13 02:15:29  george
-* History:       Move amrecover from client-src to recover-src.
-* History:       Affected files are:
-* History:          amrecover.c
-* History:          amrecover.h
-* History:          display_commands.c
-* History:          extract_list.c
-* History:          help.c
-* History:          set_commands.c
-* History:          uparse.c
-* History:          uparse.h
-* History:          uparse.y
-* History:          uscan.c
-* History:          uscan.l
-* History:
-* History:       Revision 1.4  1997/05/05 20:50:02  oliva
-* History:       changed functions definitions so that they do not use P((args));
-* History:       unprotoized argument declarations were provided instead.
-* History:
-* History:       Revision 1.3  1997/04/29 09:40:13  amcore
-* History:       Better guessing of disk name at startup
-* History:       Now handles disks specified by logical names
-* History:
-* History:       Revision 1.2  1997/04/17 09:16:57  amcore
-* History:       amrecover failed to restore from an uncompressed dump image
-* History:       because I read the amrestore man page incorrectly. It now
-* History:       handles uncompressed as well as compressed dump images.
-* History:
-* History:       Revision 1.1.1.1  1997/03/15 21:29:58  amcore
-* History:       Mass import of 2.3.0.4 as-is.  We can remove generated files later.
-* History:
-* History:       Revision 1.19  1996/12/31 09:32:00  alan
-* History:       Removed inclusion of mntent.h and use of MAXMNTSTR since this was
-* History:       non-portable, as pointed out by Izzy Ergas <erga00@nbhd.org>.
-* History:
-* History:       Revision 1.18  1996/12/19 08:53:48  alan
-* History:       first go at file extraction
-* History:
-* History:       Revision 1.17  1996/12/17 09:47:06  alan
-* History:       *** empty log message ***
-* History:
-* History:       Revision 1.16  1996/11/06 08:24:54  alan
-* History:       changed initial ordering so client sees something if INDEX_DIR doesn't
-* History:       exist.
-* History:
-* History:       Revision 1.15  1996/10/29 08:30:57  alan
-* History:       Pete Geenhuizen inspired changes to support logical disk names etc
-* History:
-* History:       Revision 1.14  1996/10/03 05:45:01  alan
-* History:       updated version number
-* History:
-* History:       Revision 1.13  1996/10/02 18:34:22  alan
-* History:       synchronization with Blair's changes
-* History:
-* History:       Revision 1.12  1996/09/10 10:30:41  alan
-* History:       guess_disk() got disk_path wrong if mount_point not /
-* History:
-* History:       Revision 1.11  1996/07/29 10:23:48  alan
-* History:       due to problems on SunOS changed get_line() to strip off \r\n
-* History:
-* History:       Revision 1.10  1996/07/29 09:50:20  alan
-* History:       ?
-* History:
-* History:       Revision 1.9  1996/07/23 10:55:13  alan
-* History:       added clause to handle broken SunOS .h files
-* History:
-* History:       Revision 1.8  1996/06/26 10:06:49  alan
-* History:       added signal handler for SIGINT
-* History:
-* History:       Revision 1.7  1996/06/20 10:57:16  alan
-* History:       make guess_disk OS independent and detect network disks
-* History:
-* History:       Revision 1.6  1996/05/23 10:09:22  alan
-* History:       changed optional arguments to match recover
-* History:
-* History:       Revision 1.5  1996/05/22 09:29:27  alan
-* History:       added defaults for config and host
-* History:
-* History:       Revision 1.4  1996/05/16 11:00:09  alan
-* History:       added access to server reply directly
-* History:
-* History:       Revision 1.3  1996/05/16 09:52:45  alan
-* History:       handled reply properly
-* History:
-* History:       Revision 1.2  1996/05/13 09:20:54  alan
-* History:       changes
-* History:
-* History:       Revision 1.1  1996/05/12 10:05:50  alan
-* History:       Initial revision
-* History:
-*
-***************************************************************************/
+/*
+ * Amanda, The Advanced Maryland Automatic Network Disk Archiver
+ * Copyright (c) 1991, 1996 University of Maryland at College Park
+ * All Rights Reserved.
+ *
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation, and that the name of U.M. not be used in advertising or
+ * publicity pertaining to distribution of the software without specific,
+ * written prior permission.  U.M. makes no representations about the
+ * suitability of this software for any purpose.  It is provided "as is"
+ * without express or implied warranty.
+ *
+ * U.M. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL U.M.
+ * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * Author: James da Silva, Systems Design and Analysis Group
+ *			   Computer Science Department
+ *			   University of Maryland at College Park
+ */
+/*
+ * $Id: amrecover.c,v 1.4 1997/08/27 08:12:28 amcore Exp $
+ *
+ * an interactive program for recovering backed-up files
+ */
 
 #include "amanda.h"
 #include <netinet/in_systm.h>

@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- *  error.c  - error handling common to Amanda programs
+ * $Id: error.c,v 1.3 1997/08/27 08:11:58 amcore Exp $
+ *
+ * error handling common to Amanda programs
  */
 #include "amanda.h"
 #include "arglist.h"

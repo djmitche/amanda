@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * tapefile.c  - routines to read and write the amanda active tape list
+ * $Id: tapefile.c,v 1.4 1997/08/27 08:13:28 amcore Exp $
+ *
+ * routines to read and write the amanda active tape list
  */
 #include "amanda.h"
 #include "tapefile.h"

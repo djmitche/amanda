@@ -24,6 +24,12 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
+/*
+ * $Id: arglist.h,v 1.2 1997/08/27 08:11:53 amcore Exp $
+ *
+ * support macros for variable argument list declaration and definition
+ */
+
 #ifndef ARGLIST_H
 #define ARGLIST_H
 

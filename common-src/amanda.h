@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * amanda.h - the central header file included by all amanda sources.
+ * $Id: amanda.h,v 1.17 1997/08/27 08:11:49 amcore Exp $
+ *
+ * the central header file included by all amanda sources
  */
 #ifndef AMANDA_H
 #define AMANDA_H

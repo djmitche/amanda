@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * infofile.h -  interface for current info file reading code
+ * $Id: infofile.h,v 1.4 1997/08/27 08:13:20 amcore Exp $
+ *
+ * interface for current info file reading code
  */
 #ifndef INFOFILE_H
 #define INFOFILE_H

@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /* 
- * selfcheck.c - do self-check and send back any error messages
+ * $Id: selfcheck.c,v 1.9 1997/08/27 08:11:36 amcore Exp $
+ *
+ * do self-check and send back any error messages
  */
 
 #include "amanda.h"

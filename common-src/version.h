@@ -25,7 +25,11 @@
  *			   University of Maryland at College Park
  */
 /*
- * version.h - the current Amanda version.
+ * $Id: version.h,v 1.3 1997/08/27 08:12:25 amcore Exp $
+ *
+ * interface to obtain the current amanda version
+ */
+/*
  *	The printed version string is <major>.<minor>[.<patch>[comment]]
  *      - Changes in comments imply a non-standard version of Amanda.
  *	- Changes in patchlevel imply mostly bugfixes.

@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * reporter.c - nightly Amanda Report generator
+ * $Id: reporter.c,v 1.7 1997/08/27 08:13:27 amcore Exp $
+ *
+ * nightly Amanda Report generator
  */
 /*
 report format

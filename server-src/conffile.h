@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * conffile.h -  interface for config file reading code
+ * $Id: conffile.h,v 1.12 1997/08/27 08:13:06 amcore Exp $
+ *
+ * interface for config file reading code
  */
 #ifndef CONFFILE_H
 #define CONFFILE_H

@@ -24,6 +24,11 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
+/*
+ * $Id: protocol.c,v 1.7 1997/08/27 08:12:07 amcore Exp $
+ *
+ * implements amanda protocol
+ */
 #include "amanda.h"
 #include "protocol.h"
 #include "version.h"

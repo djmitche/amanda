@@ -24,6 +24,11 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
+/*
+ * $Id: clock.h,v 1.2 1997/08/27 08:13:03 amcore Exp $
+ *
+ * interface for timing functions
+ */
 #ifndef CLOCK_H
 #define CLOCK_H
 

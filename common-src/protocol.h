@@ -24,6 +24,11 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
+/*
+ * $Id: protocol.h,v 1.4 1997/08/27 08:12:08 amcore Exp $
+ *
+ * interfaces for amanda protocol
+ */
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
 

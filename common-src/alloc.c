@@ -25,8 +25,11 @@
  *			   University of Maryland at College Park
  */
 /*
- * alloc.c - Memory allocators with error handling.  If the allocation fails,
- * error() is called, relieving the caller from checking the return code.
+ * $Id: alloc.c,v 1.3 1997/08/27 08:11:47 amcore Exp $
+ *
+ * Memory allocators with error handling.  If the allocation fails,
+ * error() is called, relieving the caller from checking the return
+ * code
  */
 #include "amanda.h"
 

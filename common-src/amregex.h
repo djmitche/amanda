@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * amregex.h - compatibility header file for Henry Spencer's regex library.
+ * $Id: amregex.h,v 1.3 1997/08/27 08:11:52 amcore Exp $
+ *
+ * compatibility header file for Henry Spencer's regex library.
  */
 #ifndef AMREGEX_H
 #define AMREGEX_H

@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * driver.h - defines and globals for the Amanda driver
+ * $Id: driver.h,v 1.9 1997/08/27 08:13:14 amcore Exp $
+ *
+ * defines and globals for the Amanda driver
  */
 #define MAX_DUMPERS 15
 #define MAX_ARGS 10
@@ -156,3 +158,5 @@ void dumper_cmd P((dumper_t *dumper, tok_t cmd, disk_t *dp));
 disk_t *serial2disk P((char *str));
 void free_serial P((char *str));
 char *disk2serial P((disk_t *dp));
+void update_info_dumper P((disk_t *dp, long origsize, long dumpsize, long dumptime));
+void update_info_taper P((disk_t *dp, char *label, int filenum));

@@ -24,6 +24,11 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
+/*
+ * $Id: security.c,v 1.2 1997/08/27 08:12:13 amcore Exp $
+ *
+ * wrapper file for kerberos security
+ */
 
 #include <amanda.h>
 

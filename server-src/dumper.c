@@ -24,6 +24,10 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
+/* $Id: dumper.c,v 1.24 1997/08/27 08:13:16 amcore Exp $
+ *
+ * requests remote amandad processes to dump filesystems
+ */
 #include "amanda.h"
 #include "conffile.h"
 #include "logfile.h"
@@ -202,7 +206,7 @@ char **main_argv;
     /* now, find out who I'm running as */
 
     if((pwptr = getpwuid(getuid())) == NULL)
-	error("can't get login name for my uid %d", getuid());
+	error("can't get login name for my uid %ld", (long)getuid());
     strcpy(loginid, pwptr->pw_name);
 
     signal(SIGPIPE, SIG_IGN);
@@ -331,9 +335,6 @@ char **main_argv;
 
 static cmd_t getcmd()
 {
-    char *p;
-    int arg;
-
     if(interactive) {
 	printf("%s> ", pname);
 	fflush(stdout);
@@ -345,9 +346,12 @@ static cmd_t getcmd()
     argc = split(line, argv, MAX_ARGS+1, " ");
 
 #if DEBUG
-    printf("argc = %d\n", argc);
-    for(arg = 0; arg < MAX_ARGS+1; arg++)
+    {
+      int arg;
+      printf("argc = %d\n", argc);
+      for(arg = 0; arg < MAX_ARGS+1; arg++)
 	printf("argv[%d] = \"%s\"\n", arg, argv[arg]);
+    }
 #endif
 
     /* not enough commands for a table lookup */

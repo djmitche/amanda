@@ -24,7 +24,10 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* Wrapper file for Henry Spencer's regcomp.c */
+/* $Id: regcomp.c,v 1.2 1997/08/27 08:12:09 amcore Exp $
+ *
+ * wrapper file for Henry Spencer's regcomp.c
+ */
 
 #include "amregex.h"
 #include "../regex-src/regcomp.c"

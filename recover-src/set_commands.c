@@ -1,72 +1,34 @@
-/***************************************************************************
-*
-* File:          $RCSfile: set_commands.c,v $
-* Module:        
-* Part of:       
-*
-* Revision:      $Revision: 1.1 $
-* Last Edited:   $Date: 1997/05/13 02:15:35 $
-* Author:        $Author: george $
-*
-* Notes:         
-* Private Func:  
-* History:       $Log: set_commands.c,v $
-* History:       Revision 1.1  1997/05/13 02:15:35  george
-* History:       Move amrecover from client-src to recover-src.
-* History:       Affected files are:
-* History:          amrecover.c
-* History:          amrecover.h
-* History:          display_commands.c
-* History:          extract_list.c
-* History:          help.c
-* History:          set_commands.c
-* History:          uparse.c
-* History:          uparse.h
-* History:          uparse.y
-* History:          uscan.c
-* History:          uscan.l
-* History:
-* History:       Revision 1.2  1997/04/21 08:48:26  amcore
-* History:       These changes cleanup a number of problems related to getting
-* History:       and maintaining a consistent directory listing as the disk, host,
-* History:       and date are changed. Thanks to Bob Ramstad <rramstad@nfic.com>
-* History:       for pointing out the date problems.
-* History:
-* History:       Revision 1.1.1.1  1997/03/15 21:29:58  amcore
-* History:       Mass import of 2.3.0.4 as-is.  We can remove generated files later.
-* History:
-* History:       Revision 1.10  1996/11/08 09:57:03  alan
-* History:       set_disk and set_host now check for non-zero extract list
-* History:
-* History:       Revision 1.9  1996/11/08 08:57:05  alan
-* History:       added code to set_disk() so disk_path set to mount point
-* History:
-* History:       Revision 1.8  1996/10/29 08:30:57  alan
-* History:       Pete Geenhuizen inspired changes to support logical disk names etc
-* History:
-* History:       Revision 1.7  1996/10/24 08:17:41  alan
-* History:       If user entered "cd /mount/point" it didn't work - does now
-* History:
-* History:       Revision 1.6  1996/10/23 09:13:20  alan
-* History:       removed Blair's mapping of disk names to server
-* History:
-* History:       Revision 1.5  1996/10/02 18:48:53  alan
-* History:       synchronization with Blair's changes
-* History:
-* History:       Revision 1.4  1996/09/09 10:27:32  alan
-* History:       added pwd command
-* History:
-* History:       Revision 1.3  1996/05/20 10:23:01  alan
-* History:       *** empty log message ***
-* History:
-* History:       Revision 1.2  1996/05/13 09:21:40  alan
-* History:       changes
-* History:
-* History:       Revision 1.1  1996/05/12 10:06:23  alan
-* History:       Initial revision
-* History:
-*
-***************************************************************************/
+/*
+ * Amanda, The Advanced Maryland Automatic Network Disk Archiver
+ * Copyright (c) 1991, 1996 University of Maryland at College Park
+ * All Rights Reserved.
+ *
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation, and that the name of U.M. not be used in advertising or
+ * publicity pertaining to distribution of the software without specific,
+ * written prior permission.  U.M. makes no representations about the
+ * suitability of this software for any purpose.  It is provided "as is"
+ * without express or implied warranty.
+ *
+ * U.M. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL U.M.
+ * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * Author: James da Silva, Systems Design and Analysis Group
+ *			   Computer Science Department
+ *			   University of Maryland at College Park
+ */
+/*
+ * $Id: set_commands.c,v 1.2 1997/08/27 08:12:34 amcore Exp $
+ *
+ * implements the "set" commands in amrecover
+ */
 
 #include "amanda.h"
 #include "amrecover.h"

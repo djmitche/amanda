@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * infofile.c - manage current info file
+ * $Id: infofile.c,v 1.13 1997/08/27 08:13:19 amcore Exp $
+ *
+ * manage current info file
  */
 #include "amanda.h"
 #include "conffile.h"

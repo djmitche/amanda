@@ -24,6 +24,11 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
+/*
+ * $Id: tapeio.c,v 1.3 1997/08/27 08:13:34 amcore Exp $
+ *
+ * implements tape I/O functions
+ */
 #include "amanda.h"
 
 #include "tapeio.h"

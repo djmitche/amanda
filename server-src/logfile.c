@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- *  logfile.c - common log file writing routine
+ * $Id: logfile.c,v 1.6 1997/08/27 08:13:23 amcore Exp $
+ *
+ * common log file writing routine
  */
 #include "amanda.h"
 #include "arglist.h"

@@ -25,9 +25,11 @@
  *			   University of Maryland at College Park
  */
 /*
- * amandad.c - handle client-host side of Amanda network communications,
- *	       including security checks, execution of the proper service,
- *	       and acking the master side.
+ * $Id: amandad.c,v 1.8 1997/08/27 08:11:25 amcore Exp $
+ *
+ * handle client-host side of Amanda network communications, including
+ * security checks, execution of the proper service, and acking the
+ * master side
  */
 
 #include "amanda.h"

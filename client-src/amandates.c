@@ -24,6 +24,12 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
+/*
+ * $Id: amandates.c,v 1.6 1997/08/27 08:11:26 amcore Exp $
+ *
+ * manage amandates file, that mimics /etc/dumpdates, but stores
+ * GNUTAR dates
+ */
 
 #include "amanda.h"
 #include "getfsent.h"

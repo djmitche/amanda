@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * driver.c - controlling process for the Amanda backup system
+ * $Id: driver.c,v 1.11 1997/08/27 08:13:12 amcore Exp $
+ *
+ * controlling process for the Amanda backup system
  */
 
 /*

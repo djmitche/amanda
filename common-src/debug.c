@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- *  debug.c  - debug log subroutines
+ * $Id: debug.c,v 1.5 1997/08/27 08:11:55 amcore Exp $
+ *
+ * debug log subroutines
  */
 
 #include "amanda.h"

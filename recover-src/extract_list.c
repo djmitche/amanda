@@ -1,114 +1,34 @@
-/***************************************************************************
-*
-* File:          $RCSfile: extract_list.c,v $
-*
-* Revision:      $Revision: 1.3 $
-* Last Edited:   $Date: 1997/08/22 16:55:25 $
-* Author:        $Author: amcore $
-*
-* History:       $Log: extract_list.c,v $
-* History:       Revision 1.3  1997/08/22 16:55:25  amcore
-* History:       Added support to AIX restore
-* History:
-* History:       Revision 1.2  1997/08/15 15:14:31  amcore
-* History:       Updated version number to 2.4.0b2 (supposed to be the next pre-release)
-* History:
-* History:       Added optional argument to --with-testing.  If given, it will be
-* History:       appended to service names, instead of the `-test' default.
-* History:
-* History:       amrecover-related services are also affected by this switch.
-* History:
-* History:       Fixed Makefile's so that test programs can be built out of source
-* History:       code that support them with -DTEST.
-* History:
-* History:       Fixed test programs in server-src
-* History:
-* History:       disklist.c would not read hostnames correctly: fixed
-* History:
-* History:       conffile.c would not keep the main configuration file name: fixed
-* History:
-* History:       Revision 1.1  1997/05/13 02:15:32  george
-* History:       Move amrecover from client-src to recover-src.
-* History:       Affected files are:
-* History:          amrecover.c
-* History:          amrecover.h
-* History:          display_commands.c
-* History:          extract_list.c
-* History:          help.c
-* History:          set_commands.c
-* History:          uparse.c
-* History:          uparse.h
-* History:          uparse.y
-* History:          uscan.c
-* History:          uscan.l
-* History:
-* History:       Revision 1.3  1997/04/17 09:16:53  amcore
-* History:       amrecover failed to restore from an uncompressed dump image
-* History:       because I read the amrestore man page incorrectly. It now
-* History:       handles uncompressed as well as compressed dump images.
-* History:
-* History:       Revision 1.2  1997/03/19 11:41:08  oliva
-* History:       If no DUMP program is found, amcheck no longer produces error
-* History:       messages.  If any filesystem is to be backed up with DUMP but
-* History:       configure did not find a DUMP program, rundump will be invoked and it
-* History:       will say that no DUMP program is available.
-* History:
-* History:       If no RESTORE program is found, amrecover will not invoke it.  An
-* History:       error message will be printed instead.
-* History:
-* History:       Revision 1.1.1.1  1997/03/15 21:29:58  amcore
-* History:       Mass import of 2.3.0.4 as-is.  We can remove generated files later.
-* History:
-* History:       Revision 1.15  1997/01/28 07:28:33  alan
-* History:       forgot to malloc space for restore_args[3]
-* History:
-* History:       Revision 1.14  1997/01/24 08:40:53  alan
-* History:       wrapped disk_name up into a regular expression that only matches it
-* History:       exactly
-* History:
-* History:       Revision 1.13  1997/01/22 08:56:17  alan
-* History:       added flags to restore so only reads blocks of size 1k
-* History:
-* History:       Revision 1.12  1996/12/31 08:56:32  alan
-* History:       tidied up logging to debug file
-* History:
-* History:       Revision 1.11  1996/12/30 10:04:36  alan
-* History:       Was getting dumps compressed/uncompressed wrong
-* History:       Wan't piping data through uncompress as needed anyway, had pipe/socket
-* History:       in wrong order.
-* History:
-* History:       Revision 1.10  1996/12/19 08:53:34  alan
-* History:       first go at file extraction
-* History:
-* History:       Revision 1.9  1996/12/16 08:27:27  alan
-* History:       first attempt at actual extraction
-* History:
-* History:       Revision 1.8  1996/11/08 09:57:36  alan
-* History:       added clear command
-* History:
-* History:       Revision 1.7  1996/11/06 09:27:15  alan
-* History:       a tape list is now deleted if the last item on it is deleted
-* History:
-* History:       Revision 1.6  1996/10/02 18:43:43  alan
-* History:       synchronization with Blair's changes
-* History:
-* History:       Revision 1.5  1996/07/29 10:24:21  alan
-* History:       due to problems on SunOS changed get_line() to strip off \r\n
-* History:
-* History:       Revision 1.4  1996/05/23 10:08:51  alan
-* History:       made display_extract_list take a filename argument
-* History:
-* History:       Revision 1.3  1996/05/22 11:03:20  alan
-* History:       added delete and show
-* History:
-* History:       Revision 1.2  1996/05/20 11:07:38  alan
-* History:       added code to add file to extract list
-* History:
-* History:       Revision 1.1  1996/05/17 10:50:51  alan
-* History:       Initial revision
-* History:
-*
-***************************************************************************/
+/*
+ * Amanda, The Advanced Maryland Automatic Network Disk Archiver
+ * Copyright (c) 1991, 1996 University of Maryland at College Park
+ * All Rights Reserved.
+ *
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation, and that the name of U.M. not be used in advertising or
+ * publicity pertaining to distribution of the software without specific,
+ * written prior permission.  U.M. makes no representations about the
+ * suitability of this software for any purpose.  It is provided "as is"
+ * without express or implied warranty.
+ *
+ * U.M. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL U.M.
+ * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * Author: James da Silva, Systems Design and Analysis Group
+ *			   Computer Science Department
+ *			   University of Maryland at College Park
+ */
+/*
+ * $Id: extract_list.c,v 1.4 1997/08/27 08:12:32 amcore Exp $
+ *
+ * implements the "extract" command in amrecover
+ */
 
 #include "amanda.h"
 #include "amrecover.h"
@@ -607,7 +527,7 @@ EXTRACT_LIST *elist;
 	exit(61);
     }
     strcpy(restore_args[3], "-");	/* data on stdin */
-#else
+#endif
     for (i = 0, fn = elist->files; i < files_off_tape; i++, fn = fn->next)
     {
 	if ((restore_args[no_initial_params+i]

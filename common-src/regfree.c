@@ -24,7 +24,11 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* Wrapper file for Henry Spencer's regfree.c */
+/*
+ * $Id: regfree.c,v 1.2 1997/08/27 08:12:12 amcore Exp $
+ *
+ * wrapper file for Henry Spencer's regfree.c
+ */
 
 #include "amregex.h"
 #include "../regex-src/regfree.c"

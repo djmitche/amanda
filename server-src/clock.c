@@ -24,6 +24,11 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
+/*
+ * $Id: clock.c,v 1.2 1997/08/27 08:13:02 amcore Exp $
+ *
+ * timing functions
+ */
 #include "amanda.h"
 
 #include "clock.h"

@@ -31,6 +31,8 @@
  * SUCH DAMAGE.
  */
 
+/* $Id: unctime.c,v 1.2 1997/08/27 08:11:44 amcore Exp $ */
+
 #include "amanda.h"
 
 /*

@@ -1,56 +1,34 @@
-/***************************************************************************
-*
-* File:          $RCSfile: amindexd.h,v $
-* Part of:       
-*
-* Revision:      $Revision: 1.2 $
-* Last Edited:   $Date: 1997/05/01 19:03:41 $
-* Author:        $Author: oliva $
-*
-* Description:   
-* Public Func:   
-* History:       $Log: amindexd.h,v $
-* History:       Revision 1.2  1997/05/01 19:03:41  oliva
-* History:       Integrated amgetidx into sendbackup&dumper.
-* History:
-* History:       New command in configuration file: indexdir; it indicates the
-* History:       subdirectory of amanda-index where index files should be stored.
-* History:
-* History:       Index files are now compressed in the server (since the server will
-* History:       have to decompress them)
-* History:
-* History:       Removed RSH configuration from configure
-* History:
-* History:       Added check for index directory to self check
-* History:
-* History:       Changed amindexd and amtrmidx to use indexdir option.
-* History:
-* History:       Revision 1.1.1.1  1997/03/15 21:30:10  amcore
-* History:       Mass import of 2.3.0.4 as-is.  We can remove generated files later.
-* History:
-* History:       Revision 1.7  1996/11/05 08:50:18  alan
-* History:       removed #define of GREP since not needed
-* History:
-* History:       Revision 1.6  1996/10/29 08:32:14  alan
-* History:       Pete Geenhuizen inspired changes to support logical disk names etc
-* History:
-* History:       Revision 1.5  1996/10/02 18:42:29  alan
-* History:       removed define of WC since no longer needed
-* History:
-* History:       Revision 1.4  1996/10/01 18:21:34  alan
-* History:       synchronization with Blair's changes
-* History:
-* History:       Revision 1.3  1996/07/18 10:16:09  alan
-* History:       compress prog path now picked from config
-* History:
-* History:       Revision 1.2  1996/06/09 10:01:59  alan
-* History:       made command paths specifiable
-* History:
-* History:       Revision 1.1  1996/05/22 09:09:53  alan
-* History:       Initial revision
-* History:
-*
-***************************************************************************/
+/*
+ * Amanda, The Advanced Maryland Automatic Network Disk Archiver
+ * Copyright (c) 1991, 1996 University of Maryland at College Park
+ * All Rights Reserved.
+ *
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation, and that the name of U.M. not be used in advertising or
+ * publicity pertaining to distribution of the software without specific,
+ * written prior permission.  U.M. makes no representations about the
+ * suitability of this software for any purpose.  It is provided "as is"
+ * without express or implied warranty.
+ *
+ * U.M. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL U.M.
+ * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * Author: James da Silva, Systems Design and Analysis Group
+ *			   Computer Science Department
+ *			   University of Maryland at College Park
+ */
+/*
+ * $Id: amindexd.h,v 1.3 1997/08/27 08:12:52 amcore Exp $
+ *
+ * interface for amindexd variables
+ */
 
 #ifndef AMINDEXD
 #define AMINDEXD

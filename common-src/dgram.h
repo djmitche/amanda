@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * dgram.h - interface for dgram.c 
+ * $Id: dgram.h,v 1.2 1997/08/27 08:11:57 amcore Exp $
+ *
+ * interface for datagram module
  */
 #ifndef DGRAM_H
 #define DGRAM_H

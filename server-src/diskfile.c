@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * diskfile.c - read disklist file
+ * $Id: diskfile.c,v 1.11 1997/08/27 08:13:10 amcore Exp $
+ *
+ * read disklist file
  */
 #include "amanda.h"
 #include "arglist.h"
@@ -155,7 +157,7 @@ int (*cmp) P((disk_t *a, disk_t *b));
     out->head = (disk_t *)0;
     out->tail = (disk_t *)0;
 
-    while(disk = dequeue_disk(tmp))
+    while((disk = dequeue_disk(tmp)))
 	insert_disk(out, disk, cmp);
 }
 

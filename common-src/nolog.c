@@ -24,7 +24,9 @@
  * Changed by Alexandre Oliva
  */
 /*
- *  nolog.c - dummy logerror() replacement for error.c to call on clients.
+ * $Id: nolog.c,v 1.3 1997/08/27 08:12:06 amcore Exp $
+ *
+ * dummy logerror() replacement for error.c to call on clients
  */
 
 void logerror(ignore)

@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /* 
- * sendsize.c - send estimated backup sizes using dump
+ * $Id: sendsize.c,v 1.25 1997/08/27 08:11:43 amcore Exp $
+ *
+ * send estimated backup sizes using dump
  */
 
 #include "amanda.h"

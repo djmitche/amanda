@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /* 
- * sendbackup.c - common code for the sendbackup-* programs.
+ * $Id: sendbackup.c,v 1.10 1997/08/27 08:11:40 amcore Exp $
+ *
+ * common code for the sendbackup-* programs.
  */
 
 #include "sendbackup.h"

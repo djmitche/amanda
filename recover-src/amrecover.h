@@ -1,89 +1,34 @@
-/***************************************************************************
-*
-* File:          $RCSfile: amrecover.h,v $
-* Module:        
-* Part of:       
-*
-* Revision:      $Revision: 1.1 $
-* Last Edited:   $Date: 1997/05/13 02:15:30 $
-* Author:        $Author: george $
-*
-* Description:   
-* Public Func:   
-* History:       $Log: amrecover.h,v $
-* History:       Revision 1.1  1997/05/13 02:15:30  george
-* History:       Move amrecover from client-src to recover-src.
-* History:       Affected files are:
-* History:          amrecover.c
-* History:          amrecover.h
-* History:          display_commands.c
-* History:          extract_list.c
-* History:          help.c
-* History:          set_commands.c
-* History:          uparse.c
-* History:          uparse.h
-* History:          uparse.y
-* History:          uscan.c
-* History:          uscan.l
-* History:
-* History:       Revision 1.3  1997/04/21 08:48:29  amcore
-* History:       These changes cleanup a number of problems related to getting
-* History:       and maintaining a consistent directory listing as the disk, host,
-* History:       and date are changed. Thanks to Bob Ramstad <rramstad@nfic.com>
-* History:       for pointing out the date problems.
-* History:
-* History:       Revision 1.2  1997/04/17 09:17:00  amcore
-* History:       amrecover failed to restore from an uncompressed dump image
-* History:       because I read the amrestore man page incorrectly. It now
-* History:       handles uncompressed as well as compressed dump images.
-* History:
-* History:       Revision 1.1.1.1  1997/03/15 21:29:58  amcore
-* History:       Mass import of 2.3.0.4 as-is.  We can remove generated files later.
-* History:
-* History:       Revision 1.14  1996/12/19 08:53:40  alan
-* History:       first go at file extraction
-* History:
-* History:       Revision 1.13  1996/11/11 08:22:02  alan
-* History:       added basic help command
-* History:
-* History:       Revision 1.12  1996/11/08 09:57:28  alan
-* History:       added clear command
-* History:
-* History:       Revision 1.11  1996/10/02 18:36:33  alan
-* History:       synchronization with Blair's changes
-* History:
-* History:       Revision 1.10  1996/09/09 10:27:51  alan
-* History:       added pwd command
-* History:
-* History:       Revision 1.9  1996/06/06 10:01:06  alan
-* History:       changed default server to kowhai
-* History:
-* History:       Revision 1.8  1996/05/23 10:09:50  alan
-* History:       changed display_extract_list to take filename argument
-* History:
-* History:       Revision 1.7  1996/05/22 11:03:09  alan
-* History:       added delete and show
-* History:
-* History:       Revision 1.6  1996/05/22 09:29:53  alan
-* History:       added defaults for config and host
-* History:
-* History:       Revision 1.5  1996/05/17 10:51:06  alan
-* History:       added protos
-* History:
-* History:       Revision 1.4  1996/05/16 11:00:21  alan
-* History:       *** empty log message ***
-* History:
-* History:       Revision 1.3  1996/05/14 10:52:09  alan
-* History:       ?
-* History:
-* History:       Revision 1.2  1996/05/13 09:21:13  alan
-* History:       changes
-* History:
-* History:       Revision 1.1  1996/05/12 10:06:35  alan
-* History:       Initial revision
-* History:
-*
-***************************************************************************/
+/*
+ * Amanda, The Advanced Maryland Automatic Network Disk Archiver
+ * Copyright (c) 1991, 1996 University of Maryland at College Park
+ * All Rights Reserved.
+ *
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation, and that the name of U.M. not be used in advertising or
+ * publicity pertaining to distribution of the software without specific,
+ * written prior permission.  U.M. makes no representations about the
+ * suitability of this software for any purpose.  It is provided "as is"
+ * without express or implied warranty.
+ *
+ * U.M. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL U.M.
+ * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * Author: James da Silva, Systems Design and Analysis Group
+ *			   Computer Science Department
+ *			   University of Maryland at College Park
+ */
+/*
+ * $Id: amrecover.h,v 1.2 1997/08/27 08:12:30 amcore Exp $
+ *
+ * data structures and declarations for amrecover
+ */
 
 #include "amanda.h"
 

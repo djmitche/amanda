@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * driver.c - controlling process for the Amanda backup system
+ * $Id: driverio.c,v 1.14 1997/08/27 08:13:15 amcore Exp $
+ *
+ * I/O-related functions for driver program
  */
 #include "amanda.h"
 #include "clock.h"
@@ -33,6 +35,7 @@
 #include "diskfile.h"
 #include "infofile.h"
 #include "logfile.h"
+#include "token.h"
 
 #define GLOBAL		/* the global variables defined here */
 #include "driver.h"
@@ -152,7 +155,6 @@ char line[MAX_LINE];
 tok_t getresult(fd)
 int fd;
 {
-    char *p;
     int arg, len;
     tok_t t;
 

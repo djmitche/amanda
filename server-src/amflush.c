@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * amflush.c - write files from work directory onto tape
+ * $Id: amflush.c,v 1.7 1997/08/27 08:12:48 amcore Exp $
+ *
+ * write files from work directory onto tape
  */
 #include "amanda.h"
 

@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * logfile.h - interface to logfile module.
+ * $Id: logfile.h,v 1.3 1997/08/27 08:13:24 amcore Exp $
+ *
+ * interface to logfile module
  */
 #ifndef LOGFILE_H
 #define LOGFILE_H

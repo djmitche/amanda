@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * amlabel.c -- write an Amanda label on a tape
+ * $Id: amlabel.c,v 1.4 1997/08/27 08:12:54 amcore Exp $
+ *
+ * write an Amanda label on a tape
  */
 #include "amanda.h"
 #include "conffile.h"

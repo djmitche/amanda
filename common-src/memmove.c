@@ -24,7 +24,10 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* Wrapper file for Henry Spencer's memmove.c */
+/* $Id: memmove.c,v 1.2 1997/08/27 08:12:03 amcore Exp $
+ *
+ * wrapper file for Henry Spencer's memmove.c
+ */
 
 #include "amanda.h"
 

@@ -1,36 +1,33 @@
-/***************************************************************************
-*
-* File:          $RCSfile: disk_history.c,v $
-* Part of:       
-*
-* Revision:      $Revision: 1.2 $
-* Last Edited:   $Date: 1997/07/24 08:04:19 $
-* Author:        $Author: george $
-*
-* Notes:         
-* Private Func:  
-* History:       $Log: disk_history.c,v $
-* History:       Revision 1.2  1997/07/24 08:04:19  george
-* History:       Remove extra spaces from where they are not needed/wanted.
-* History:
-* History:       Revision 1.1.1.1  1997/03/15 21:30:10  amcore
-* History:       Mass import of 2.3.0.4 as-is.  We can remove generated files later.
-* History:
-* History:       Revision 1.1  1996/12/04 13:17:57  th
-* History:       Add amindex
-* History:
-* History:       Revision 1.3  1996/10/01 18:24:19  alan
-* History:       synchronization with Blair's changes
-* History:
-* History:       Revision 1.2  1996/06/17 10:10:21  alan
-* History:       disk_hist wasn't being initialised
-* History:       disk_hist wasn't being set to NULL after list cleared
-* History:
-* History:       Revision 1.1  1996/05/13 09:14:53  alan
-* History:       Initial revision
-* History:
-*
-***************************************************************************/
+/*
+ * Amanda, The Advanced Maryland Automatic Network Disk Archiver
+ * Copyright (c) 1991, 1996 University of Maryland at College Park
+ * All Rights Reserved.
+ *
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation, and that the name of U.M. not be used in advertising or
+ * publicity pertaining to distribution of the software without specific,
+ * written prior permission.  U.M. makes no representations about the
+ * suitability of this software for any purpose.  It is provided "as is"
+ * without express or implied warranty.
+ *
+ * U.M. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL U.M.
+ * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * Author: James da Silva, Systems Design and Analysis Group
+ *			   Computer Science Department
+ *			   University of Maryland at College Park
+ */
+/* $Id: disk_history.c,v 1.3 1997/08/27 08:13:07 amcore Exp $
+ *
+ * functions for obtaining backup history
+ */
 
 #include "amanda.h"
 #include "disk_history.h"

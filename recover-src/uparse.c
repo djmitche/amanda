@@ -1,5 +1,5 @@
 
-/*  A Bison parser, made from uparse.y
+/*  A Bison parser, made from /home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y
  by  GNU Bison version 1.25
   */
 
@@ -25,7 +25,7 @@
 #define	PATH	275
 #define	DATE	276
 
-#line 1 "uparse.y"
+#line 32 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 
 #include "amanda.h"
 #include "amrecover.h"
@@ -33,7 +33,7 @@
 void yyerror P((char *s));
 extern int yylex P((void));
 
-#line 10 "uparse.y"
+#line 41 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 typedef union {
   int intval;
   double floatval;
@@ -109,9 +109,9 @@ static const short yyrhs[] = {    23,
 
 #if YYDEBUG != 0
 static const short yyrline[] = { 0,
-    30,    32,    33,    34,    35,    36,    37,    38,    41,    43,
-    44,    45,    46,    49,    51,    52,    53,    54,    55,    58,
-    62,    66,    68,    71,    75,    77,    80,    82,    84,    88
+    61,    63,    64,    65,    66,    67,    68,    69,    72,    74,
+    75,    76,    77,    80,    82,    83,    84,    85,    86,    89,
+    93,    97,    99,   102,   106,   108,   111,   113,   115,   119
 };
 #endif
 
@@ -674,83 +674,83 @@ yyreduce:
   switch (yyn) {
 
 case 9:
-#line 42 "uparse.y"
+#line 73 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 { set_date(yyvsp[0].strval); ;
     break;}
 case 10:
-#line 43 "uparse.y"
+#line 74 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 { set_host(yyvsp[0].strval); ;
     break;}
 case 11:
-#line 44 "uparse.y"
+#line 75 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 { set_disk(yyvsp[-1].strval, yyvsp[0].strval); ;
     break;}
 case 12:
-#line 45 "uparse.y"
+#line 76 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 { set_disk(yyvsp[0].strval, NULL); ;
     break;}
 case 13:
-#line 46 "uparse.y"
+#line 77 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 { set_directory(yyvsp[0].strval); ;
     break;}
 case 14:
-#line 50 "uparse.y"
+#line 81 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 { list_disk_history(); ;
     break;}
 case 15:
-#line 51 "uparse.y"
+#line 82 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 { list_directory(); ;
     break;}
 case 16:
-#line 52 "uparse.y"
+#line 83 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 { display_extract_list(yyvsp[0].strval); ;
     break;}
 case 17:
-#line 53 "uparse.y"
+#line 84 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 { display_extract_list(NULL); ;
     break;}
 case 18:
-#line 54 "uparse.y"
+#line 85 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 { show_directory(); ;
     break;}
 case 19:
-#line 55 "uparse.y"
+#line 86 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 { clear_extract_list(); ;
     break;}
 case 20:
-#line 59 "uparse.y"
+#line 90 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 { quit(); ;
     break;}
 case 22:
-#line 67 "uparse.y"
+#line 98 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 { add_file(yyvsp[0].strval); ;
     break;}
 case 23:
-#line 68 "uparse.y"
+#line 99 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 { add_file(yyvsp[0].strval); ;
     break;}
 case 25:
-#line 76 "uparse.y"
+#line 107 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 { delete_file(yyvsp[0].strval); ;
     break;}
 case 26:
-#line 77 "uparse.y"
+#line 108 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 { delete_file(yyvsp[0].strval); ;
     break;}
 case 27:
-#line 81 "uparse.y"
+#line 112 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 { char buf[1024]; printf("%s\n", getcwd(buf, 1024)); ;
     break;}
 case 28:
-#line 82 "uparse.y"
+#line 113 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 { if (chdir(yyvsp[0].strval) == -1) printf("%s: No such directory\n", yyvsp[0].strval); ;
     break;}
 case 29:
-#line 85 "uparse.y"
+#line 116 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 { help_list(); ;
     break;}
 case 30:
-#line 89 "uparse.y"
+#line 120 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 { extract_files(); ;
     break;}
 }
@@ -951,7 +951,7 @@ yyerrhandle:
   yystate = yyn;
   goto yynewstate;
 }
-#line 92 "uparse.y"
+#line 123 "/home/msc/oliva/src/amanda/amanda-2/recover-src/uparse.y"
 
 
 void yyerror(s)

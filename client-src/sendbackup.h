@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /* 
- * sendbackup.h - a few common decls for the sendbackup-* sources
+ * $Id: sendbackup.h,v 1.5 1997/08/27 08:11:42 amcore Exp $
+ *
+ * a few common decls for the sendbackup-* sources
  */
 #include "amanda.h"
 

@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * genversion.c - dump the current Amanda version info.
+ * $Id: genversion.c,v 1.7 1997/08/27 08:12:00 amcore Exp $
+ *
+ * dump the current Amanda version info
  */
 #include "amanda.h"
 #include "version.h"

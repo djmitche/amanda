@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * amindex.h - headers for index control
+ * $Id: amindex.h,v 1.2 1997/08/27 08:12:50 amcore Exp $
+ *
+ * headers for index control
  */
 #ifndef AMINDEX_H
 #define AMINDEX_H

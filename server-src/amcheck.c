@@ -24,6 +24,11 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
+/*
+ * $Id: amcheck.c,v 1.14 1997/08/27 08:12:46 amcore Exp $
+ *
+ * checks for common problems in server and clients
+ */
 #include "amanda.h"
 #include "conffile.h"
 #include "statfs.h"

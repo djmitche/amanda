@@ -24,6 +24,11 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
+/*
+ * $Id: getfsent.h,v 1.2 1997/08/27 08:11:33 amcore Exp $
+ *
+ * interfaces for obtaining filesystem information
+ */
 #ifndef GETFSENT_H
 #define GETFSENT_H
 

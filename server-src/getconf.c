@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * getconf.c - a little wrapper to extract config variables for shell scripts
+ * $Id: getconf.c,v 1.3 1997/08/27 08:13:18 amcore Exp $
+ *
+ * a little wrapper to extract config variables for shell scripts
  */
 #include "amanda.h"
 #include "conffile.h"

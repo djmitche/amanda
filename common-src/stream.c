@@ -24,6 +24,11 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
+/*
+ * $Id: stream.c,v 1.2 1997/08/27 08:12:17 amcore Exp $
+ *
+ * functions for managing stream sockets
+ */
 #include "amanda.h"
 #include "dgram.h"
 

@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * statfs - a generic statfs-like routine.
+ * $Id: statfs.c,v 1.2 1997/08/27 08:12:15 amcore Exp $
+ *
+ * a generic statfs-like routine
  */
 #include "amanda.h"
 #include "statfs.h"

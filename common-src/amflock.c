@@ -24,9 +24,13 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-
-/* amflock.c - file locking routines.  Put here to hide the system
-**             dependant stuff from the rest of the code.
+/*
+ * $Id: amflock.c,v 1.9 1997/08/27 08:11:50 amcore Exp $
+ *
+ * file locking routines, put here to hide the system dependant stuff
+ * from the rest of the code
+ */
+/*
 **
 ** Notes:
 ** - These are "best effort" routines.

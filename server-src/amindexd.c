@@ -1,105 +1,35 @@
-/***************************************************************************
-*
-* File:          $RCSfile: amindexd.c,v $
-* Part of:       
-*
-* Revision:      $Revision: 1.6 $
-* Last Edited:   $Date: 1997/08/26 02:16:40 $
-* Author:        $Author: amcore $
-*
-* Notes:         
-* Private Func:  
-* History:       $Log: amindexd.c,v $
-* History:       Revision 1.6  1997/08/26 02:16:40  amcore
-* History:       Fix dangling references to bindir.  by John R. Jackson
-* History:
-* History:       Revision 1.5  1997/07/24 08:04:10  george
-* History:       Remove extra spaces from where they are not needed/wanted.
-* History:
-* History:       Revision 1.4  1997/07/03 14:32:21  george
-* History:       Put dumptype info directly into the disk structure.
-* History:
-* History:       This is in preparation for turning dumptype's into macros.
-* History:
-* History:       Revision 1.3  1997/07/03 11:29:11  george
-* History:       Convert the config file compression variables from 3 separate mutually
-* History:       exclusive flags into 1 int with different values.
-* History:
-* History:       Revision 1.2  1997/05/01 19:03:39  oliva
-* History:       Integrated amgetidx into sendbackup&dumper.
-* History:
-* History:       New command in configuration file: indexdir; it indicates the
-* History:       subdirectory of amanda-index where index files should be stored.
-* History:
-* History:       Index files are now compressed in the server (since the server will
-* History:       have to decompress them)
-* History:
-* History:       Removed RSH configuration from configure
-* History:
-* History:       Added check for index directory to self check
-* History:
-* History:       Changed amindexd and amtrmidx to use indexdir option.
-* History:
-* History:       Revision 1.1.1.1  1997/03/15 21:30:10  amcore
-* History:       Mass import of 2.3.0.4 as-is.  We can remove generated files later.
-* History:
-* History:       Revision 1.16  1996/12/19 08:56:29  alan
-* History:       first go at file extraction
-* History:
-* History:       Revision 1.15  1996/12/14 08:56:32  alan
-* History:       had compare value for strncmp wrong!
-* History:
-* History:       Revision 1.14  1996/12/09 08:08:42  alan
-* History:       changes from Les Gonder <les@trigraph.on.ca> to support files with
-* History:       spaces in their names
-* History:
-* History:       Revision 1.13  1996/11/06 08:24:45  alan
-* History:       changed initial ordering so client sees something if INDEX_DIR doesn't
-* History:       exist.
-* History:
-* History:       Revision 1.12  1996/11/03 10:03:20  alan
-* History:       uncommented out code to set userid to dump user
-* History:
-* History:       Revision 1.11  1996/10/30 09:49:38  alan
-* History:       removed #define of GREP since not needed
-* History:
-* History:       Revision 1.10  1996/10/29 08:32:14  alan
-* History:       Pete Geenhuizen inspired changes to support logical disk names etc
-* History:
-* History:       Revision 1.9  1996/10/01 18:19:37  alan
-* History:       synchronization with Blair's changes
-* History:
-* History:       Revision 1.8  1996/09/24 11:14:40  alan
-* History:       updated version number
-* History:
-* History:       Revision 1.7  1996/07/18 10:31:25  alan
-* History:       got it wrong
-* History:
-* History:       Revision 1.6  1996/07/18 10:24:18  alan
-* History:       get gzip path from config now
-* History:
-* History:       Revision 1.5  1996/06/17 10:41:39  alan
-* History:       made is_dir_valid opaque
-* History:
-* History:       Revision 1.4  1996/06/13 11:10:04  alan
-* History:       made disk check only use file names in index directory
-* History:       so question answered is really: Does amindexd know about disk?
-* History:
-* History:       Revision 1.3  1996/06/13 10:05:14  alan
-* History:       added checking of return codes when sending to client
-* History:
-* History:       Revision 1.2  1996/06/09 10:01:44  alan
-* History:       made command paths specifiable
-* History:
-* History:       Revision 1.1  1996/05/13 09:13:39  alan
-* History:       Initial revision
-* History:
-*
-***************************************************************************/
-
-/* This is the server daemon part of the index client/server system. It is
-   assummed that this is launched from inetd instead of being started as
-   a daemon because it is not often used
+/*
+ * Amanda, The Advanced Maryland Automatic Network Disk Archiver
+ * Copyright (c) 1991, 1996 University of Maryland at College Park
+ * All Rights Reserved.
+ *
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation, and that the name of U.M. not be used in advertising or
+ * publicity pertaining to distribution of the software without specific,
+ * written prior permission.  U.M. makes no representations about the
+ * suitability of this software for any purpose.  It is provided "as is"
+ * without express or implied warranty.
+ *
+ * U.M. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL U.M.
+ * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * Author: James da Silva, Systems Design and Analysis Group
+ *			   Computer Science Department
+ *			   University of Maryland at College Park
+ */
+/*
+ * $Id: amindexd.c,v 1.7 1997/08/27 08:12:51 amcore Exp $
+ *
+ * This is the server daemon part of the index client/server system.
+ * It is assummed that this is launched from inetd instead of being
+ * started as a daemon because it is not often used
  */
 
 #include "amanda.h"
@@ -278,7 +208,6 @@ int is_config_valid(config)
 char *config;
 {
     char conf_dir[1024];
-    char *result;
 
     /* check that the config actually exists */
     if (strlen(config) == 0)

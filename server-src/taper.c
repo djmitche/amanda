@@ -24,6 +24,10 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
+/* $Id: taper.c,v 1.13 1997/08/27 08:13:32 amcore Exp $
+ *
+ * moves files from holding disk to tape, or from a socket to tape
+ */
 
 #include "amanda.h"
 #include "conffile.h"
@@ -879,8 +883,7 @@ char ***argvp;
      */
     static char line[MAX_LINE];
     static char *argv[MAX_ARGS+1];
-    char *p;
-    int arg, argc;
+    int argc;
 
     if(interactive) {
 	fprintf(stderr, "taper> ");
@@ -893,9 +896,12 @@ char ***argvp;
     argc = split(line, argv, MAX_ARGS+1, " ");
 
 #ifdef DEBUG
-    printf("argc = %d\n", argc);
-    for(arg = 0; arg < MAX_ARGS+1; arg++)
+    {
+      int arg;
+      printf("argc = %d\n", argc);
+      for(arg = 0; arg < MAX_ARGS+1; arg++)
 	printf("argv[%d] = \"%s\"\n", arg, argv[arg]);
+    }
 #endif
 
     *argvp = argv;

@@ -1,59 +1,4 @@
 /*
- * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991, 1995 University of Maryland at College Park
- * All Rights Reserved.
- *
- * Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of U.M. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  U.M. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty.
- *
- * U.M. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL U.M.
- * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
- * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- * Author: James da Silva, Systems Design and Analysis Group
- *			   Computer Science Department
- *			   University of Maryland at College Park
- */
-
-/*
- * This implementation of mktime is lifted straight from the NetBSD (BSD 4.4)
- * version.  I modified it slightly to divorce it from the internals of the
- * ctime library.  Thus this version can't use details of the internal
- * timezone state file to figure out strange unnormalized struct tm values,
- * as might result from someone doing date math on the tm struct then passing
- * it to mktime.
- *
- * It just does as well as it can at normalizing the tm input, then does a
- * binary search of the time space using the system's localtime() function.
- *
- * The original binary search was defective in that it didn't consider the
- * setting of tm_isdst when comparing tm values, causing the search to be
- * flubbed for times near the dst/standard time changeover.  The original
- * code seems to make up for this by grubbing through the timezone info
- * whenever the binary search barfed.  Since I don't have that luxury in
- * portable code, I have to take care of tm_isdst in the comparison routine.
- * This requires knowing how many minutes offset dst is from standard time.
- *
- * So, if you live somewhere in the world where dst is not 60 minutes offset,
- * and your vendor doesn't supply mktime(), you'll have to edit this variable
- * by hand.  Sorry about that.
- */
-
-#ifndef DSTMINUTES
-#define DSTMINUTES 60
-#endif
-
-/*
  * Copyright (c) 1987, 1989 Regents of the University of California.
  * All rights reserved.
  *
@@ -89,7 +34,35 @@
  * SUCH DAMAGE.  */
 
 /*static char *sccsid = "from: @(#)ctime.c	5.26 (Berkeley) 2/23/91";*/
-/*static char *rcsid = "$Id: mktime.c,v 1.1 1997/03/15 21:29:59 amcore Exp $";*/
+/*static char *rcsid = "$Id: mktime.c,v 1.2 1997/08/27 08:12:04 amcore Exp $";*/
+
+/*
+ * This implementation of mktime is lifted straight from the NetBSD (BSD 4.4)
+ * version.  I modified it slightly to divorce it from the internals of the
+ * ctime library.  Thus this version can't use details of the internal
+ * timezone state file to figure out strange unnormalized struct tm values,
+ * as might result from someone doing date math on the tm struct then passing
+ * it to mktime.
+ *
+ * It just does as well as it can at normalizing the tm input, then does a
+ * binary search of the time space using the system's localtime() function.
+ *
+ * The original binary search was defective in that it didn't consider the
+ * setting of tm_isdst when comparing tm values, causing the search to be
+ * flubbed for times near the dst/standard time changeover.  The original
+ * code seems to make up for this by grubbing through the timezone info
+ * whenever the binary search barfed.  Since I don't have that luxury in
+ * portable code, I have to take care of tm_isdst in the comparison routine.
+ * This requires knowing how many minutes offset dst is from standard time.
+ *
+ * So, if you live somewhere in the world where dst is not 60 minutes offset,
+ * and your vendor doesn't supply mktime(), you'll have to edit this variable
+ * by hand.  Sorry about that.
+ */
+
+#ifndef DSTMINUTES
+#define DSTMINUTES 60
+#endif
 
 #define FALSE 0
 #define TRUE 1

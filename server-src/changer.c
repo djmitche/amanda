@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * changer.c - interface routines for tape changers
+ * $Id: changer.c,v 1.3 1997/08/27 08:13:00 amcore Exp $
+ *
+ * interface routines for tape changers
  */
 #include "amanda.h"
 #include "conffile.h"

@@ -24,6 +24,11 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
+/*
+ * $Id: amandates.h,v 1.2 1997/08/27 08:11:27 amcore Exp $
+ *
+ * interface for amandates file
+ */
 #ifndef AMANDATES_H
 #define AMANDATES_H
 

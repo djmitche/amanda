@@ -24,6 +24,11 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
+/*
+ * $Id: amtape.c,v 1.4 1997/08/27 08:12:55 amcore Exp $
+ *
+ * tape changer interface program
+ */
 #include "amanda.h"
 #include "conffile.h"
 #include "tapefile.h"

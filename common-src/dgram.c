@@ -25,7 +25,10 @@
  *			   University of Maryland at College Park
  */
 /* 
- * dgram.c - library routines to marshall/send, recv/unmarshall UDP packets */
+ * $Id: dgram.c,v 1.2 1997/08/27 08:11:56 amcore Exp $
+ *
+ * library routines to marshall/send, recv/unmarshall UDP packets
+ */
 #include "amanda.h"
 #include "dgram.h"
 

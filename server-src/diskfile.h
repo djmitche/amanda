@@ -25,7 +25,9 @@
  *			   University of Maryland at College Park
  */
 /*
- * diskfile.h -  interface for disklist file reading code
+ * $Id: diskfile.h,v 1.8 1997/08/27 08:13:11 amcore Exp $
+ *
+ * interface for disklist file reading code
  */
 #ifndef DISKFILE_H
 #define DISKFILE_H

@@ -25,7 +25,11 @@
  *			   University of Maryland at College Park
  */
 /*
- * conffile.c - read configuration file
+ * $Id: conffile.c,v 1.18 1997/08/27 08:13:04 amcore Exp $
+ *
+ * read configuration file
+ */
+/*
  *
  * XXX - I'm not happy *at all* with this implementation, but I don't
  * think YACC would be any easier.  A more table based implementation

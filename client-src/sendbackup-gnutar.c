@@ -24,9 +24,10 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-
 /* 
- * sendbackup-gnutar.c - send backup data using GNU tar
+ * $Id: sendbackup-gnutar.c,v 1.21 1997/08/27 08:11:39 amcore Exp $
+ *
+ * send backup data using GNU tar
  */
 
 #include "amanda.h"
