@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.13.4.6.2.5 2002/03/03 17:10:51 martinea Exp $
+ * $Id: sendsize.c,v 1.97.2.13.4.6.2.6 2002/03/13 01:07:03 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -259,18 +259,7 @@ char **argv;
 		}
 		else {
 		    options = malloc(sizeof(option_t));
-		    options->compress = NO_COMPR;
-		    options->no_record = 0;
-		    options->bsd_auth = 0;
-		    options->createindex = 0;
-#ifdef KRB4_SECURITY
-		    options->krb4_auth = 0;
-		    options->kencrypt = 0;
-#endif
-		    options->exclude_file = NULL;
-		    options->exclude_list = NULL;
-		    options->include_file = NULL;
-		    options->include_list = NULL;
+		    init_options(options);
 		    if(strncmp(s-1, "exclude-file=", 13) == 0) {
 			options->exclude_file = append_sl(options->exclude_file, s+12);
 		    }
@@ -288,18 +277,7 @@ char **argv;
 	    }
 	    else {
 		options = malloc(sizeof(option_t));
-		options->compress = NO_COMPR;
-		options->no_record = 0;
-		options->bsd_auth = 0;
-		options->createindex = 0;
-#ifdef KRB4_SECURITY
-		options->krb4_auth = 0;
-		options->kencrypt = 0;
-#endif
-		options->exclude_file = NULL;
-		options->exclude_list = NULL;
-		options->include_file = NULL;
-		options->include_list = NULL;
+		init_options(options);
 	    }
 	}
 

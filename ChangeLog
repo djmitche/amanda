@@ -1,5 +1,11 @@
 2002-03-12  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* client-src/client_util.c (init_options): New function.
+	* client-src/client_util.h (init_options): Prototype.
+	* client-src/sendsize.c (main): Use init_options.
+
+2002-03-12  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* client-src/client-util.c: Check for include and exclude files.
 
 2002-03-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
