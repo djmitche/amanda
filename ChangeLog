@@ -1,3 +1,8 @@
+1999-09-29 John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/dumper.c (do_dump): closed the dump messages file too
+	  soon.
+
 1999-09-23  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
 	* recover-src/extract_list.c (samba_extract_method): Default to
