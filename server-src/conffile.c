@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.41 1998/04/08 16:25:10 amcore Exp $
+ * $Id: conffile.c,v 1.42 1998/04/29 07:11:57 amcore Exp $
  *
  * read configuration file
  */
@@ -2039,25 +2039,33 @@ tok_t exp;
 	    else tok = lookup_keyword(tokenval.s);
 	}
 	else if(isdigit(ch)) {	/* integer */
+	    int sign;
+	    if (1) {
+		sign = 1;
+	    } else {
+	    negative_number: /* look for goto negative_number below */
+		sign = -1;
+	    }
 	    tokenval.i = 0;
 	    do {
 		tokenval.i = tokenval.i * 10 + (ch - '0');
 		ch = getc(conf);
 	    } while(isdigit(ch));
 	    if(ch != '.') {
-		if(exp != REAL)
+		if(exp != REAL) {
 		    tok = INT;
-		else {
+		    tokenval.i *= sign;
+		} else {
 		    /* automatically convert to real when expected */
 		    i = tokenval.i;
-		    tokenval.r = (double) i;
+		    tokenval.r = sign * (double) i;
 		    tok = REAL;
 		}
 	    }
 	    else {
 		/* got a real number, not an int */
 		i = tokenval.i;
-		tokenval.r = (double) i;
+		tokenval.r = sign * (double) i;
 		i=0; d=1;
 		ch = getc(conf);
 		while(isdigit(ch)) {
@@ -2065,7 +2073,7 @@ tok_t exp;
 		    d = d * 10;
 		    ch = getc(conf);
 		}
-		tokenval.r += ((double)i)/d;
+		tokenval.r += sign * ((double)i)/d;
 		tok = REAL;
 	    }
 	    ungetc(ch,conf);
@@ -2098,6 +2106,15 @@ tok_t exp;
 	    else tok = STRING;
 	    break;
 
+	case '-':
+	    ch = getc(conf);
+	    if (isdigit(ch))
+		goto negative_number;
+	    else {
+		ungetc(ch, conf);
+		tok = UNKNOWN;
+	    }
+	    break;
 	case ',':  tok = COMMA; break;
 	case '{':  tok = LBRACE; break;
 	case '}':  tok = RBRACE; break;

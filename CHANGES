@@ -1,3 +1,6 @@
+	negative numbers are now accepted in the configuration file
+	parser.  -oliva
+
 	allow a total estimate time-out to be specified.  -oliva
 	Suggested by Martyn Johnson <Martyn.Johnson@cl.cam.ac.uk>
 
