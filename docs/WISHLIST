@@ -19,8 +19,8 @@ structure allocated by planner as needed.
 * amlabel should ask for confirmation before overwriting an active
 tape.
 
-* amcheck should check whether the user that invoked it is the user
-configured to run amanda.
+* amcheck and amadmin should check whether the user that invoked it is
+* the user configured to run amanda.
 
 * Support for Solaris 2.[5-6]*'s ufsdump -S switch (for estimates)
 should be added.
@@ -94,6 +94,12 @@ an absolute value or a percentage of the total amount of available
 holding disk space.
 
 * amflush should be able to flush several runs into a single tape.
+
+* amanda should install man-pages for installed programs only
+
+* we should provide for client-side configuration files, to specify
+default tape server, index server, and perhaps even pathnames to
+some programs.
 
 * Ports to non-Unix platforms, specifically Macs and PCs.  The hooks are in
 the Amanda protocol to support non-dump backup programs, but no-one has
