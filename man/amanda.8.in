@@ -179,7 +179,7 @@ if you like the default.
 .TP
 .B org
 Default:
-.I "YOUR ORG".
+.I @DEFAULT_CONFIG@.
 A descriptive name for your configuration.  This string is used for
 the mail report.  It should be different for each different Amanda
 configuration you have.
@@ -212,7 +212,7 @@ recovery.
 .TP
 .B dumpuser
 Default: 
-.I bin.
+.I @CLIENT_LOGIN@.
 The login name that Amanda uses to run the backups.  The slave hosts must
 let the master host in as this user.
 
@@ -232,8 +232,25 @@ The size of the holding disk available to Amanda, in megabytes.
 .TP
 .B tapedev
 Default:
-.I /dev/rmt8.
-The path name of the tape device file.
+.I @DEFAULT_TAPE_DEVICE@.
+The path name of the tape device file.  If you have configured a tape
+changer, this option is not used.
+
+.TP
+.B tpchanger
+Default:
+.I none.
+The name of the tape changer that should be used.  If you do not have
+an automatic tape changer, comment this definition out of your
+configuration file.
+
+.TP
+.B runtapes
+Default:
+.I 1.
+This option specifies the maximum number of tapes to be used in a
+single run of amdump.  If you do not have an automatic tapechanger,
+make sure this option is not set in your configuration file.
 
 .TP
 .B labelstr
@@ -275,6 +292,14 @@ parallel.  Amanda will stay within the constraints of network
 bandwidth and holding disk space available, so it doesn't hurt to set
 this number a bit high.  Some contention can occur with larger numbers
 of dumps, but this effect is relatively small on most systems.
+
+.TP
+.B maxdumps
+Default:
+.I 1.
+The maximum number of backups from a single host that Amanda will
+attempt to run in parallel.  This can also be used as a dumptype
+option.
 
 .TP
 .B bumpsize
@@ -327,8 +352,16 @@ The file name for the historical information database file.
 .TP
 .B logfile
 Default:
-.I @LOG_DIR@/log
+.I @LOG_DIR@/log.
 The file name for the nightly log file.
+
+.TP
+.B indexdir
+Default
+.I @INDEX_DIR@.
+The directory where index files should be stored.  Index files are
+only generated for filesystems whose dumptypes have the index option
+enabled.
 
 .TP
 .B tapefile
