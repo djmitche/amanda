@@ -1,5 +1,10 @@
 2004-11-19  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/amadmin.c: Balance subcommand use displayunit.
+	* server-src/amcheck.c: Small cleanup.
+
+2004-11-19  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* restore-src/amrestore.c: Undo patch from 2004-11-11, it break
 	  the file: dirver.
 
