@@ -1,4 +1,11 @@
-2002-07-02  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+2002-07-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* common-src/amfeatures.c (am_feature_to_string): Return the string
+	  "UNKNOWNFEATURE" if no features.
+	* common-src/amfeatures.c (am_string_to_feature): Return NULL if the
+	  string is "UNKNOWNFEATURE".
+
+2002-07-20  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* common-src/file.c (debug_agets): line_free was badly set when
 	the buffer size in increased.

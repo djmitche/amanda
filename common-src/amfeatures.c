@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.c,v 1.1.2.4 2002/04/26 00:45:38 martinea Exp $
+ * $Id: amfeatures.c,v 1.1.2.5 2002/08/21 18:48:43 martinea Exp $
  *
  * Feature test related code.
  */
@@ -309,7 +309,7 @@ am_feature_to_string(f)
     size_t			i;
 
     if (f == NULL) {
-	result = stralloc("");
+	result = stralloc("UNKNOWNFEATURE");
     } else {
 	result = alloc((f->size * 2) + 1);
 	for (i = 0; i < f->size; i++) {
@@ -348,7 +348,7 @@ am_string_to_feature(s)
     size_t			i;
     int				ch1, ch2;
 
-    if (s != NULL) {
+    if (s != NULL && strcmp(s,"UNKNOWNFEATURE") != 0) {
 	f = am_allocate_feature_set();
 	for (i = 0; i < f->size && (ch1 = *s++) != '\0'; i++) {
 	    if (isdigit(ch1)) {
