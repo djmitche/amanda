@@ -1,5 +1,11 @@
 2002-02-09 John R. Jackson (jrj@purdue.edu)
 
+	* configure.in: Must look in both strings.h and string.h when trying
+	  to find function declarations (strncasecmp was not found on AIX
+	  but is really there and our override caused a mismatch error).
+
+2002-02-09 John R. Jackson (jrj@purdue.edu)
+
 	* configure.in: Add code to test for a type defined in other than the
 	  autoconf expected locations.  Use it to look for socklen_t.
 
