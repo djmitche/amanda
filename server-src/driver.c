@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-2000 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.25 1999/11/12 00:16:24 oliva Exp $
+ * $Id: driver.c,v 1.58.2.26 2000/01/16 06:34:22 oliva Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -929,7 +929,7 @@ int fd;
 
 
 void handle_dumper_result(fd)
-int fd;
+     int fd;
 {
     assignedhd_t **h=NULL;
     dumper_t *dumper;
@@ -1065,7 +1065,7 @@ int fd;
 	delete_diskspace(dp);
 	dumper->busy = 0;
 	dp->host->inprogress -= 1;
-	dp->inprogress = 1;
+	dp->inprogress = 0;
 	continue_dumps();
 
 	/* no need to log this, dumper will do it */
