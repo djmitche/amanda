@@ -1,0 +1,18 @@
+--- aclocal	Thu Nov 27 07:26:37 1997
++++ aclocal	Thu Nov 27 07:30:27 1997
+@@ -381,11 +381,11 @@
+ {
+     return if ! length ($output);
+ 
+-    print STDERR "Writing aclocal.m4\n" if $verbosity;
++    print STDERR "Writing $output_file\n" if $verbosity;
+ 
+-    open (ACLOCAL, "> aclocal.m4")
+-	|| die "aclocal: couldn't open \`aclocal.m4' for writing: $!\n";
+-    print ACLOCAL "dnl aclocal.m4 generated automatically by aclocal $VERSION\n";
++    open (ACLOCAL, "> $output_file")
++	|| die "aclocal: couldn't open \`$output_file' for writing: $!\n";
++    print ACLOCAL "dnl $output_file generated automatically by aclocal $VERSION\n";
+     print ACLOCAL "\
+ dnl Copyright (C) 1994, 1995, 1996, 1997 Free Software Foundation, Inc.
+ dnl This Makefile.in is free software; the Free Software Foundation
