@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.130 1999/06/02 21:43:05 kashmir Exp $
+/* $Id: dumper.c,v 1.131 1999/06/18 23:29:27 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -42,6 +42,7 @@
 #include "version.h"
 #include "fileheader.h"
 #include "server_util.h"
+#include "util.h"
 
 #ifndef SEEK_SET
 #define SEEK_SET 0
@@ -1113,7 +1114,10 @@ do_dump(db)
     if (indexfile) {
 	char *tmpname = NULL;
 	int len;
+	amwait_t index_status;
 
+	aclose(indexout);
+	waitpid(indexpid,&index_status,0);
 	if((len = strlen(indexfile)) < 4) {
 	    errstr = newstralloc2(errstr, "bad indexfile name: ", indexfile);
 	    goto log_failed;
@@ -1205,9 +1209,9 @@ read_mesgfd(cookie, buf, size)
 	security_stream_close(streams[MESGFD].fd);
 	streams[MESGFD].fd = NULL;
 	/*
-	 * If the data fd has also shut down, then we're done.
+	 * If the data fd and index fd has also shut down, then we're done.
 	 */
-	if (streams[DATAFD].fd == NULL)
+	if (streams[DATAFD].fd == NULL && streams[INDEXFD].fd == NULL)
 	    stop_dump();
 	return;
     default:
@@ -1290,9 +1294,9 @@ read_datafd(cookie, buf, size)
 	security_stream_close(streams[DATAFD].fd);
 	streams[DATAFD].fd = NULL;
 	/*
-	 * If the mesg fd has also shut down, then we're done.
+	 * If the mesg fd and index fd has also shut down, then we're done.
 	 */
-	if (streams[MESGFD].fd == NULL)
+	if (streams[MESGFD].fd == NULL && streams[INDEXFD].fd == NULL)
 	    stop_dump();
 	return;
     }
@@ -1322,12 +1326,26 @@ read_indexfd(cookie, buf, size)
     assert(cookie != NULL);
     fd = *(int *)cookie;
 
-    /*
-     * On error, or EOF, just stop reading the index stream.  EOF
-     * on the data stream will cause everything to shut down.
-     */
-    if (size <= 0)
+    if (size < 0)
+	errstr = newstralloc2(errstr, "index read: ",
+	    security_stream_geterror(streams[INDEXFD].fd));
+	dump_result = 2;
+	stop_dump();
 	return;
+
+    /*
+     * EOF.  Stop and return.
+     */
+    if (size == 0) {
+	security_stream_close(streams[INDEXFD].fd);
+	streams[INDEXFD].fd = NULL;
+	/*
+	 * If the mesg fd has also shut down, then we're done.
+	 */
+	if (streams[DATAFD].fd == NULL && streams[MESGFD].fd == NULL)
+	    stop_dump();
+	return;
+    }
 
     assert(buf != NULL);
 
