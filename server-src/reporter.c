@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.62 2000/09/26 00:17:37 martinea Exp $
+ * $Id: reporter.c,v 1.63 2000/09/27 00:30:17 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -507,6 +507,14 @@ main(argc, argv)
 	}
     }
 
+#if !defined MAILER
+    if(!outfname) {
+	printf("You must run amreport with '-f <output file>' because configure\n");
+	printf("didn't find a mailer.\n");
+	exit (1);
+    }
+#endif
+
     safe_cd();
 
     /* read configuration files */
@@ -628,6 +636,7 @@ main(argc, argv)
 
     }
     else {
+#ifdef MAILER
 	mail_cmd = vstralloc(MAILER,
 			     " -s", " \"", subj_str, "\"",
 			     " ", getconf_str(CNF_MAILTO),
@@ -635,7 +644,7 @@ main(argc, argv)
 	if((mailf = popen(mail_cmd, "w")) == NULL)
 	    error("could not open pipe to \"%s\": %s",
 		  mail_cmd, strerror(errno));
-
+#endif
     }
 
     /* open pipe to print spooler if necessary) */

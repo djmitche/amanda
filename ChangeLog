@@ -1,3 +1,9 @@
+2000-09-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/amcheck.c: Don't accept -m or -M option if MAILER
+	is not defined.
+	* server-src/reporter.c: Need a -f optionn if MAILER is not defined.
+
 2000-09-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	patch by <jeg@time.ucsc.edu>
 
