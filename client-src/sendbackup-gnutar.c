@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.56.2.2 1999/01/20 07:22:15 oliva Exp $
+ * $Id: sendbackup-gnutar.c,v 1.56.2.3 1999/01/20 23:20:43 oliva Exp $
  *
  * send backup data using GNU tar
  */
@@ -90,6 +90,7 @@ static regex_t re_table[] = {
   { DMP_NORMAL, "^nread=", 1},
   { DMP_NORMAL, "^\\([0-9][0-9]* kb/s\\)", 1},
   { DMP_NORMAL, "^\\([0-9][0-9]*\\.[0-9][0-9]* kb/s\\)", 1},
+  { DMP_NORMAL, "^[ ]*[0-9][0-9]* \\([ ]*[0-9][0-9]*\\.[0-9][0-9]* kb/s\\)", 1},
   { DMP_NORMAL, "^[ ]*directory ", 1},
   { DMP_NORMAL, "^tar: dumped [0-9][0-9]* tar files", 1},
   { DMP_NORMAL, "^load_client_codepage", 1},
@@ -100,6 +101,7 @@ static regex_t re_table[] = {
   { DMP_NORMAL, "^ERRDOS - ERRbadshare opening remote file", 1},
   { DMP_NORMAL, "^ERRDOS - ERRbadfile opening remote file", 1},
   { DMP_NORMAL, "^ERRDOS - ERRnoaccess setting attributes on file", 1},
+  { DMP_NORMAL, "^ERRDOS - ERRnoaccess opening remote file", 1},
 #endif
 
   /* catch-all: DMP_STRANGE is returned for all other lines */

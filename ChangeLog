@@ -1,4 +1,6 @@
 1999-01-20  Todd Pfaff  <pfaff@mcmaster.ca>
+	
+	* client-src/sendbackup-gnutar.c: more Samba 2.0.0 messages
 
 	* client-src/sendbackup-gnutar.c: new Samba 2.0.0 message 
 
