@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.20 1998/09/11 23:25:26 jrj Exp $
+ * $Id: amtape.c,v 1.21 1998/10/12 22:23:19 jrj Exp $
  *
  * tape changer interface program
  */
@@ -47,6 +47,7 @@ void load_label P((int argc, char **argv));
 void show_slots P((int argc, char **argv));
 void show_current P((int argc, char **argv));
 void taper_scan P((int argc, char **argv));
+void show_device P((int argc, char **argv));
 int scan_init P((int rc, int ns, int bk));
 int loadlabel_slot P((int rc, char *slotstr, char *device));
 int show_init P((int rc, int ns, int bk));
@@ -72,6 +73,7 @@ void usage()
     fprintf(stderr, "\t\tslot last            load tape from last slot\n");
     fprintf(stderr, "\t\tlabel <label>        find and load labeled tape\n");
     fprintf(stderr, "\t\ttaper                perform taper's scan alg.\n");
+    fprintf(stderr, "\t\tdevice               show current tape device\n");
 
     exit(1);
 }
@@ -128,6 +130,7 @@ char **argv;
     else if(strcmp(argv[0], "current") == 0)  show_current(argc, argv);
     else if(strcmp(argv[0], "show") == 0)  show_slots(argc, argv);
     else if(strcmp(argv[0], "taper") == 0) taper_scan(argc, argv);
+    else if(strcmp(argv[0], "device") == 0) show_device(argc, argv);
     else {
 	fprintf(stderr, "%s: unknown command \"%s\"\n", argv0, argv[0]);
 	usage();
@@ -492,4 +495,18 @@ char **argv;
     amfree(searchlabel);
     amfree(first_match);
     amfree(first_match_label);
+}
+
+/* ---------------------------- */
+
+void show_device(argc, argv)
+int argc;
+char **argv;
+{
+    char *slot, *device;
+
+    if(changer_loadslot("current", &slot, &device))
+	error("Could not load current slot.\n");
+
+    printf("%s\n", device);
 }
