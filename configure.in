@@ -1831,15 +1831,15 @@ cat <<EOF >conftest.$ac_ext
 int flock(fd, operation)
 int fd, operation;
 {
-    int prevpos;
+    off_t prevpos;
  
     assert(operation == LOCK_EX || operation == LOCK_UN);
  
     /* save our current position */
-    if((prevpos = lseek(fd, SEEK_CUR, 0)) == -1) return -1;
+    if((prevpos = lseek(fd, (off_t)0, SEEK_CUR)) == -1) return -1;
  
     /* a lock on the first byte of the file serves as our advisory file lock */
-    if(lseek(fd, SEEK_SET, 0) == -1) return -1;
+    if(lseek(fd, (off_t)0, SEEK_SET) == -1) return -1;
     if(operation == LOCK_EX) {
 	if(lockf(fd, F_LOCK, 1) == -1) return -1;
     }
@@ -1848,7 +1848,7 @@ int fd, operation;
     }
  
     /* restore our current position */
-    if(lseek(fd, SEEK_SET, prevpos) == -1) return -1;
+    if(lseek(fd, prevpos, SEEK_SET) == -1) return -1;
     return 0;
 }
 

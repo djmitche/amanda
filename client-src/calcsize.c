@@ -239,7 +239,7 @@ char **argv;
 	flock(1, LOCK_EX);
 #endif
 
-	lseek(1, SEEK_END, 0);
+	lseek(1, (off_t)0, SEEK_END);
 	write(1, result, strlen(result));
 
 #ifdef NEED_POSIX_FLOCK
