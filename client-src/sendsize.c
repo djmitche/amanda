@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.36 1997/10/26 05:01:00 amcore Exp $
+ * $Id: sendsize.c,v 1.37 1997/10/30 14:49:10 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -105,7 +105,7 @@ char **argv;
     chdir("/tmp");
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
     umask(0);
-    dbopen("/tmp/sendsize.debug");
+    dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 
     gethostname(host, sizeof(host)-1);

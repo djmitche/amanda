@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: rundump.c,v 1.10 1997/09/29 22:05:52 amcore Exp $
+ * $Id: rundump.c,v 1.11 1997/10/30 14:49:04 amcore Exp $
  *
  * runs DUMP program as root
  */
@@ -47,7 +47,7 @@ char **argv;
     noenv[0] = (char *)0;
 #endif /* USE_RUNDUMP */
 
-    dbopen("/tmp/rundump.debug");
+    dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 
 #if (!defined(DUMP) && !defined(XFSDUMP)) && !defined(VXDUMP) \
@@ -72,8 +72,6 @@ char **argv;
 	char *pwname = CLIENT_LOGIN;
 	if((pwptr = getpwnam(pwname)) == NULL)
 	    error("error [cannot find user %s in passwd file]\n", pwname);
-
-	chown("/tmp/rundump.debug", pwptr->pw_uid, getgid());
 
 #ifdef FORCE_USERID
 	if (getuid() != pwptr->pw_uid)

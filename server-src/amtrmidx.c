@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtrmidx.c,v 1.8 1997/08/27 08:12:58 amcore Exp $
+ * $Id: amtrmidx.c,v 1.9 1997/10/30 14:49:33 amcore Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -61,7 +61,7 @@ char **argv;
 	return 1;
     }
 
-    dbopen("/tmp/amtrmidx.debug");
+    dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 
     /* get the list of disks being dumped and their types */

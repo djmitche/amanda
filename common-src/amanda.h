@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.18 1997/10/08 05:33:20 george Exp $
+ * $Id: amanda.h,v 1.19 1997/10/30 14:49:17 amcore Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -268,11 +268,11 @@ extern int errno;
 extern int db_file;
 
 #ifdef DEBUG_CODE
-#   define dbopen(filename)    debug_open(filename)
+#   define dbopen()    debug_open()
 #   define dbclose()    debug_close()
 #   define dbprintf(p)  (debug? (debug_printf p, 0) : 0)
 
-extern void debug_open P((char *filename));
+extern void debug_open P((void));
 extern void debug_close P((void));
 extern void debug_printf P((char *format, ...))
 #ifdef __GNUC__
@@ -280,7 +280,7 @@ extern void debug_printf P((char *format, ...))
 #endif
      ;
 #else
-#   define dbopen(filename)
+#   define dbopen()
 #   define dbclose()
 #   define dbprintf(p)
 #endif
@@ -330,6 +330,7 @@ extern time_t unctime   P((char *timestr));
 extern int    amflock   P((int fd, char *resource));
 extern int    amroflock P((int fd, char *resource));
 extern int    amfunlock P((int fd, char *resource));
+extern int    maketreefor P((char *file, int mode, uid_t uid, gid_t gid));
 
 extern int debug;
 extern char *version_info[];

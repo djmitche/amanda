@@ -1,5 +1,8 @@
 Version 2.4.0b4
 
+	--with-debugging now accepts a directory name, where debugging
+	files should be stored.  -John R. Jackson <jrj@cc.purdue.edu>
+
 	SCO OpenServer V5 port.  -Christopher B. Olsen
 	<colsen@compus.com>
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.6 1997/09/04 06:33:27 amcore Exp $
+ * $Id: debug.c,v 1.7 1997/10/30 14:49:18 amcore Exp $
  *
  * debug log subroutines
  */
@@ -67,27 +67,43 @@ arglist_function(void debug_printf, char *, format)
 
 }
 
-void debug_open(filename)
-char *filename;
+void debug_open()
 {
     time_t curtime;
     int saved_debug;
     int maxtries = 50;
-#ifdef DEBUG_FILE_WITH_PID
-    static char dbfilename[256];
+    char dbfilename[256];
+    struct passwd *pwent;
+    uid_t uid = 0;
+    gid_t gid = 0;
 
-    sprintf(dbfilename,"%s.%ld", filename, (long) getpid());
-#else
-#   define dbfilename filename
+#ifndef DEBUG_DIR
+#define DEBUG_DIR "/tmp"
 #endif
+
+#ifdef DEBUG_FILE_WITH_PID
+    sprintf(dbfilename,"%s/%s.debug.%ld", DEBUG_DIR, pname, (long) getpid());
+#else
+    sprintf(dbfilename,"%s/%s.debug", DEBUG_DIR, pname);
+#endif
+
+    if((pwent = getpwnam(CLIENT_LOGIN)) != NULL) {
+	uid = pwent->pw_uid;
+	gid = pwent->pw_gid;
+    }
 
     do {
       unlink(dbfilename);
       if (--maxtries)
 	continue;
       error("open debug file \"%s\": %s", dbfilename, strerror(errno));
-    } while((db_file = open(dbfilename, O_WRONLY|O_CREAT|O_EXCL|O_APPEND,
-			    0600)) == -1);
+    } while(maketreefor(dbfilename, 0700, uid, gid) != 0
+	    || (db_file = open(dbfilename, O_WRONLY|O_CREAT|O_EXCL|O_APPEND,
+			       0600)) == -1);
+
+    if (uid || gid) {
+	chown(dbfilename, uid, gid);
+    }
 
     time(&curtime);
     saved_debug = debug; debug = 1;

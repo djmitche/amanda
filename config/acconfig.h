@@ -20,6 +20,7 @@
 #undef mandir
 #undef CONFIG_DIR
 #undef DB_DIR
+#undef DEBUG_DIR
 #undef LOG_DIR
 #undef INDEX_DIR
 

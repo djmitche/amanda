@@ -358,18 +358,19 @@
 # ASSERTIONS=yes
 
 
-# DEBUGGING		--without-debugging
-#			Default: yes
-#			Turning off debugging has each program save a
-#			transcript of what it did to a file in /tmp for
-#			debugging purposes.
+# DEBUGGING		--with-debugging
+#			Default: /tmp/amanda
+#			Turning off debugging prevents that each
+#			program saves a transcript of what it did to a
+#			file in /tmp/amanda for debugging purposes.  An
+#			alternate directory can be specified too.
 # DEBUGGING=no
-
+# DEBUGGING=/var/amanda/debug
 
 # DEBUG_FILE_WITH_PID	--with-pid-debug-files
 #			Default: no
 #			Have the Amanda debugging files that are placed
-#			in /tmp have the process ID appended to their
+#			in /tmp/amanda have the process ID appended to their
 #			filename.
 # DEBUG_FILE_WITH_PID=yes
 

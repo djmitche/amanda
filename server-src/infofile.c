@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.18 1997/10/03 08:29:24 george Exp $
+ * $Id: infofile.c,v 1.19 1997/10/30 14:49:34 amcore Exp $
  *
  * manage current info file
  */
@@ -48,34 +48,6 @@
 #endif
 
 #ifdef TEXTDB
-
-int maketreefor(file)
-char *file;
-{
-    char *p;
-
-    p = strrchr(file, '/');
-    if (p == file) return 0;
-    *p = '\0';
-
-    if (access(file, F_OK) == 0) {
-	*p = '/';
-	return 0;
-    }
-
-    if (maketreefor(file) == -1) {
-	*p = '/';
-	return -1;
-    }
-
-    if (mkdir(file, 0755) != 0) {
-	*p = '/';
-	return -1;
-    }
-
-    *p = '/';
-    return 0;
-}
 
 FILE *open_txinfofile(host, disk, mode)
 char *host;
@@ -104,7 +76,7 @@ char *mode;
 
     /* create the directory structure if in write mode */
     if (writing) {
-        if (maketreefor(infofile) == -1) {
+        if (maketreefor(infofile, 0755, (uid_t)0, (gid_t)0) == -1) {
 	    free(infofile);
 #ifdef ASSERTIONS
 	    infofile = (char *)0;

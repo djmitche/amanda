@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.7 1997/08/27 08:12:51 amcore Exp $
+ * $Id: amindexd.c,v 1.8 1997/10/30 14:49:31 amcore Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assummed that this is launched from inetd instead of being
@@ -545,7 +545,7 @@ char **argv;
 
     /* initialize */
     umask(0);
-    dbopen("/tmp/amindexd.debug");
+    dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 
     /* localhost[sizeof(local_hostname)-1] = '\0'; */ /* local_hostname is static */

@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: amidxtaped.c,v 1.5 1997/09/19 02:38:05 george Exp $
+/* $Id: amidxtaped.c,v 1.6 1997/10/30 14:49:29 amcore Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -117,7 +117,7 @@ char **argv;
     /* if no debug file, ship to bit bucket */
     (void)close(STDERR_FILENO);
 #ifdef DEBUG_CODE
-    dbopen("/tmp/amidxtaped.debug");
+    dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 #else
     if ((i = open("/dev/null", O_WRONLY)) != STDERR_FILENO)

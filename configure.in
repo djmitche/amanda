@@ -758,20 +758,35 @@ y |  ye | yes) AC_DEFINE(ASSERTIONS)
 esac
 
 AC_ARG_WITH(debugging,
-    [   --without-debugging    do not record runtime debugging information into /tmp],
+    [   --with[out]-debugging  [do not] record runtime debugging information in specified directory [/tmp/amanda]],
     DEBUGGING="$withval",
     : ${DEBUGGING=yes}
 )
+DEBUGGING=`(
+    test "x$prefix" = xNONE && prefix=$ac_default_prefix
+    test "x$exec_prefix" = xNONE && exec_prefix=${prefix}
+    eval echo "$DEBUGGING"
+)`
 case "$DEBUGGING" in
-n | no) : ;;
-y |  ye | yes) AC_DEFINE(DEBUG_CODE)
+n | no) DEBUG_DIR="";;
+y |  ye | yes)
+	DEBUG_DIR="/tmp/amanda"
+	AC_DEFINE(DEBUG_CODE)
   ;;
-*) AC_MSG_ERROR([*** You must not supply an argument to --without-debugging option.])
+/*)
+	DEBUG_DIR="$DEBUGGING"
+	AC_DEFINE(DEBUG_CODE)
   ;;
+*) AC_MSG_ERROR([*** You must supply a full pathname to --with-debugging option.])
+  ;;
+esac
+case "$DEBUG_DIR" in
+"") :;;
+*) AC_SUBST(DEBUG_DIR);;
 esac
 
 AC_ARG_WITH(pid-debug-files,
-    [   --with-pid-debug-files append pid's to program's /tmp debugging filenames],
+    [   --with-pid-debug-files append pid's to program's debugging filenames],
     DEBUG_FILE_WITH_PID="$withval",
     : ${DEBUG_FILE_WITH_PID=no}
 )

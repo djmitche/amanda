@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: runtar.c,v 1.5 1997/09/29 22:05:54 amcore Exp $
+ * $Id: runtar.c,v 1.6 1997/10/30 14:49:05 amcore Exp $
  *
  * runs GNUTAR program as root
  */
@@ -46,7 +46,7 @@ char **argv;
     noenv[0] = (char *)0;
 #endif
 
-    dbopen("/tmp/runtar.debug");
+    dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 
 #ifndef GNUTAR
@@ -62,8 +62,6 @@ char **argv;
 	char *pwname = CLIENT_LOGIN;
 	if((pwptr = getpwnam(pwname)) == NULL)
 	    error("error [cannot find user %s in passwd file]\n", pwname);
-
-	chown("/tmp/runtar.debug", pwptr->pw_uid, getgid());
 
 #ifdef FORCE_USERID
 	if (getuid() != pwptr->pw_uid)

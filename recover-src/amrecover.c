@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.5 1997/09/19 02:38:01 george Exp $
+ * $Id: amrecover.c,v 1.6 1997/10/30 14:49:27 amcore Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -402,7 +402,7 @@ char **argv;
 	exit(1);
     }
 
-    dbopen("/tmp/amrecover.debug");
+    dbopen();
     
     disk_name[0] = '\0';
     mount_point[0] = '\0';

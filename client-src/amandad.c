@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.10 1997/09/26 11:24:21 george Exp $
+ * $Id: amandad.c,v 1.11 1997/10/30 14:49:02 amcore Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -165,9 +165,7 @@ char **argv;
 
     chdir("/tmp");
     umask(077);
-    dbopen("/tmp/amandad.debug");
-    if (pwptr != NULL)
-        chown("/tmp/amandad.debug", pwptr->pw_uid, getgid());
+    dbopen();
     {
 	extern int db_file;
 	dup2(db_file, 1);
