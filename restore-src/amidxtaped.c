@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.40 2003/02/28 19:56:47 martinea Exp $
+/* $Id: amidxtaped.c,v 1.41 2003/02/28 19:59:48 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -46,6 +46,7 @@ static char *pgm = "amidxtaped";	/* in case argv[0] is not set */
 char *conf_logdir = NULL;
 char *conf_logfile = NULL;
 int get_lock = 0;
+char *found_device = NULL;
 
 static char *get_client_line P((void));
 static int check_security P((struct sockaddr_in *, char *, unsigned long,
@@ -151,6 +152,7 @@ char *device;
             if(strcmp(label, FAKE_LABEL) == 0 ||
                strcmp(label, searchlabel) == 0) {
                 /* it's the one we are looking for, stop here */
+		found_device = newstralloc(found_device,device);
 		dbprintf((" (exact label match)\n"));
                 found = 1;
                 return 1;
@@ -412,6 +414,7 @@ char **argv;
 		exit(1);
 	    }
 	    else {
+		     re_device=stralloc(found_device);
 		dbprintf(("%s: label \"%s\" found\n",
 			  debug_prefix_time(NULL), searchlabel));
 	    }

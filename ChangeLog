@@ -1,4 +1,9 @@
 2003-02-28  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Eric Doutreleau <Eric.Doutreleau@int-evry.fr>
+	
+	* restore-src/amidxtaped.c: Use the device sent by the changer.
+
+2003-02-28  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* restore-src/amidxtaped.c: Remove lock 'unlink(conf_logfile)' on
 	  all failure path.
