@@ -1,5 +1,5 @@
---- automake	Fri Feb 13 07:17:13 1998
-+++ automake	Fri Feb 13 07:14:16 1998
+--- bin/automake	Fri Feb 13 07:17:13 1998
++++ bin/automake	Fri Feb 13 07:14:16 1998
 @@ -882,7 +882,7 @@
  	    $base = $1;
  	    ($hname = $2) =~ tr/y/h/;
@@ -59,3 +59,21 @@
  
  	    local ($stamp_name) = 'stamp-h';
  	    $stamp_name .= "${hdr_index}" if scalar (@config_headers) > 1;
+--- share/automake/depend2.am~	Fri Feb 13 06:33:04 1998
++++ share/automake/depend2.am	Sun Feb 15 03:40:49 1998
+@@ -26,3 +26,15 @@
+ 	: > .deps/$(*F).P; \
+ ## FIXME: should use @PFX@, but that didn't work.
+ 	$(PFXCOMPILE) -c $<
++
++## FIXME: should use @EXT@, but that didn't work.
++%.lo: %EXT
++## FIXME: should use @PFX@, but that didn't work.
++	@echo '$(LIBTOOL) --mode=compile $(PFXCOMPILE) -c $<'; \
++	DEPENDENCIES_OUTPUT='.deps/$(*F).P'; \
++	export DEPENDENCIES_OUTPUT; \
++## Note that using DEPENDENCIES_OUTPUT causes gcc to append to the
++## named file.  So we truncate it explicitly.
++	: > .deps/$(*F).P; \
++## FIXME: should use @PFX@, but that didn't work.
++	$(LIBTOOL) --mode=compile $(PFXCOMPILE) -c $<
