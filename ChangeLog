@@ -1,5 +1,9 @@
 2000-01-21  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* server-src/amstatus.pl.in: Compute and display TRY-AGAIN tape
+	errors.
+	Reported by David Wolfskill <dhw@whistle.com>
+
 	* man/amtoc.8.in: Document -w.
 
 2000-01-21  David Wolfskill  <dhw@whistle.com>
