@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: packet.c,v 1.5 2002/02/10 03:34:04 jrjackson Exp $
+ * $Id: packet.c,v 1.6 2004/02/13 14:00:35 martinea Exp $
  *
  * Routines for modifying the amanda protocol packet type
  */
@@ -36,11 +36,12 @@
  * Table of packet types and their printable forms
  */
 static const struct {
-    const char name[4];
+    const char name[5];
     pktype_t type;
 } pktypes[] = {
     { "REQ", P_REQ },
     { "REP", P_REP },
+    { "PREP", P_PREP },
     { "ACK", P_ACK },
     { "NAK", P_NAK }
 };

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.36 2003/04/26 02:02:17 kovert Exp $
+ * $Id: protocol.c,v 1.37 2004/02/13 14:00:35 martinea Exp $
  *
  * implements amanda protocol
  */
@@ -40,8 +40,8 @@
  * Valid actions that can be passed to the state machine
  */
 typedef enum {
-    A_START, A_TIMEOUT, A_ERROR, A_RCVDATA, A_PENDING, A_CONTINUE, A_FINISH,
-    A_ABORT
+    A_START, A_TIMEOUT, A_ERROR, A_RCVDATA, A_CONTPEND, A_PENDING,
+    A_CONTINUE, A_FINISH, A_ABORT
 } action_t;
 
 /*
@@ -364,6 +364,10 @@ state_machine(p, action, pkt)
 	 * Setup to receive another pkt, and wait for the recv event
 	 * to occur.
 	 */
+	case A_CONTPEND:
+	    (*p->continuation)(p->datap, pkt, p->security_handle);
+	    /* FALLTHROUGH */
+
 	case A_PENDING:
 #ifdef PROTO_DEBUG
 	    dbprintf(("%s: state_machine: p %X state %s: timeout %d\n",
@@ -534,6 +538,7 @@ s_ackwait(p, action, pkt)
      * Move to the reply state to handle it.
      */
     case P_REP:
+    case P_PREP:
 	p->state = s_repwait;
 	return (A_CONTINUE);
 
@@ -588,17 +593,22 @@ s_repwait(p, action, pkt)
      * requeue the packet and retry.  Otherwise, acknowledge
      * the reply, cleanup this packet, and return.
      */
-    if (pkt->type != P_REP)
+    if (pkt->type != P_REP && pkt->type != P_PREP)
 	return (A_PENDING);
 
-    pkt_init(&ack, P_ACK, "");
-    if (security_sendpkt(p->security_handle, &ack) < 0) {
-	/* XXX should retry */
-	security_seterror(p->security_handle, "error sending ACK: %s",
-	    security_geterror(p->security_handle));
-	return (A_ABORT);
+    if(pkt->type == P_REP) {
+	pkt_init(&ack, P_ACK, "");
+	if (security_sendpkt(p->security_handle, &ack) < 0) {
+	    /* XXX should retry */
+	    security_seterror(p->security_handle, "error sending ACK: %s",
+		security_geterror(p->security_handle));
+	    return (A_ABORT);
+	}
+	return (A_FINISH);
     }
-    return (A_FINISH);
+    else if(pkt->type == P_PREP) {
+	return (A_CONTPEND);
+    }
 }
 
 /*
@@ -677,6 +687,7 @@ action2str(action)
 	X(A_TIMEOUT),
 	X(A_ERROR),
 	X(A_RCVDATA),
+	X(A_CONTPEND),
 	X(A_PENDING),
 	X(A_CONTINUE),
 	X(A_FINISH),

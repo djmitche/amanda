@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.150 2004/02/02 20:29:01 martinea Exp $
+ * $Id: planner.c,v 1.151 2004/02/13 14:00:36 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -72,7 +72,8 @@ double conf_bumpmult;
 
 #define DISK_READY				0		/* must be 0 */
 #define DISK_ACTIVE				1
-#define DISK_DONE				2
+#define DISK_PARTIALY_DONE			2
+#define DISK_DONE				3
 
 typedef struct est_s {
     int state;
@@ -97,7 +98,8 @@ typedef struct est_s {
 
 #define est(dp)	((est_t *)(dp)->up)
 
-disklist_t startq, waitq, estq, failq, schedq;
+/* pestq = partial estimate */
+disklist_t startq, waitq, pestq, estq, failq, schedq;
 long total_size;
 double total_lev0, balanced_size, balance_threshold;
 unsigned long tape_length, tape_mark;
@@ -384,6 +386,8 @@ char **argv;
     section_start = curclock();
 
     estq.head = estq.tail = NULL;
+    pestq.head = pestq.tail = NULL;
+    waitq.head = waitq.tail = NULL;
     failq.head = failq.tail = NULL;
 
     get_estimates();
@@ -586,8 +590,6 @@ int seq;	/* sequence number of request */
 int lev;	/* dump level being requested */
 info_t *info;	/* info block for disk */
 {
-    stats_t *stat;
-
     if(seq < 0 || seq >= MAX_LEVELS) {
 	error("error [planner askfor: seq out of range 0..%d: %d]",
 	      MAX_LEVELS, seq);
@@ -600,7 +602,7 @@ info_t *info;	/* info block for disk */
     if (lev == -1) {
 	ep->level[seq] = -1;
 	ep->dumpdate[seq] = (char *)0;
-	ep->est_size[seq] = -1;
+	ep->est_size[seq] = -2;
 	return;
     }
 
@@ -609,9 +611,7 @@ info_t *info;	/* info block for disk */
     ep->dumpdate[seq] = stralloc(get_dumpdate(info,lev));
     malloc_mark(ep->dumpdate[seq]);
 
-    stat = &info->inf[lev];
-    if(stat->date == EPOCH) ep->est_size[seq] = -1;
-    else ep->est_size[seq] = stat->size;
+    ep->est_size[seq] = -2;
 
     return;
 }
@@ -1098,6 +1098,69 @@ static void get_estimates P((void))
 	est(dp)->errstr = "hmm, disk was stranded on waitq";
 	enqueue_disk(&failq, dp);
     }
+
+    while(!empty(pestq)) {
+	disk_t *dp = dequeue_disk(&pestq);
+
+	if(est(dp)->level[0] != -1 && est(dp)->est_size[0] < 0) {
+	    if(est(dp)->est_size[0] == -1) {
+		log_add(L_WARNING,
+			"disk %s:%s, estimate of level %d failed: %d.",
+			dp->host->hostname, dp->name,
+			est(dp)->level[0], est(dp)->est_size[0]);
+	    }
+	    else {
+		log_add(L_WARNING,
+			"disk %s:%s, estimate of level %d timed out: %d.",
+			dp->host->hostname, dp->name,
+			est(dp)->level[0], est(dp)->est_size[0]);
+	    }
+	    est(dp)->level[0] = -1;
+	}
+
+	if(est(dp)->level[1] != -1 && est(dp)->est_size[1] < 0) {
+	    if(est(dp)->est_size[1] == -1) {
+		log_add(L_WARNING,
+			"disk %s:%s, estimate of level %d failed: %d.",
+			dp->host->hostname, dp->name,
+			est(dp)->level[1], est(dp)->est_size[1]);
+	    }
+	    else {
+		log_add(L_WARNING,
+			"disk %s:%s, estimate of level %d timed out: %d.",
+			dp->host->hostname, dp->name,
+			est(dp)->level[1], est(dp)->est_size[1]);
+	    }
+	    est(dp)->level[1] = -1;
+	}
+
+	if(est(dp)->level[2] != -1 && est(dp)->est_size[2] < 0) {
+	    if(est(dp)->est_size[2] == -1) {
+		log_add(L_WARNING,
+			"disk %s:%s, estimate of level %d failed: %d.",
+			dp->host->hostname, dp->name,
+			est(dp)->level[2], est(dp)->est_size[2]);
+	    }
+	    else {
+		log_add(L_WARNING,
+			"disk %s:%s, estimate of level %d timed out: %d.",
+			dp->host->hostname, dp->name,
+			est(dp)->level[2], est(dp)->est_size[2]);
+	    }
+	    est(dp)->level[2] = -1;
+	}
+
+	if((est(dp)->level[0] != -1 && est(dp)->est_size[0] > 0) ||
+	   (est(dp)->level[1] != -1 && est(dp)->est_size[1] > 0) ||
+	   (est(dp)->level[2] != -1 && est(dp)->est_size[2] > 0)) {
+	    enqueue_disk(&estq, dp);
+	}
+	else {
+	   est(dp)->errstr = vstralloc("disk ", dp->name,
+				       ", all estimate timed out", NULL);
+	   enqueue_disk(&failq, dp);
+	}
+    }
 }
 
 static void getsize(hostp)
@@ -1441,71 +1504,96 @@ security_handle_t *sech;
 	hostp->features = am_set_default_feature_set();
     }
 
+
     /* XXX what about disks that only got some estimates...  do we care? */
     /* XXX amanda 2.1 treated that case as a bad msg */
 
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
 	if(dp->todo == 0) continue;
-	if(est(dp)->state != DISK_ACTIVE) continue;
-	est(dp)->state = DISK_DONE;
-	if(est(dp)->level[0] == -1) continue;	/* ignore this disk */
-	remove_disk(&waitq, dp);
-	if(est(dp)->got_estimate) {
-	    fprintf(stderr,"%s: time %s: got result for host %s disk %s:",
-		    get_pname(), walltime_str(curclock()),
-		    dp->host->hostname, dp->name);
-	    fprintf(stderr," %d -> %ldK, %d -> %ldK, %d -> %ldK\n",
-		    est(dp)->level[0], est(dp)->est_size[0],
-		    est(dp)->level[1], est(dp)->est_size[1],
-		    est(dp)->level[2], est(dp)->est_size[2]);
+	if(est(dp)->state != DISK_ACTIVE &&
+	   est(dp)->state != DISK_PARTIALY_DONE) continue;
 
-	    if((est(dp)->level[0] != -1 && est(dp)->est_size[0] > 0) ||
-	       (est(dp)->level[1] != -1 && est(dp)->est_size[1] > 0) ||
-	       (est(dp)->level[2] != -1 && est(dp)->est_size[2] > 0)) {
+	if(est(dp)->state == DISK_ACTIVE) {
+	    remove_disk(&waitq, dp);
+	}
+	else if(est(dp)->state == DISK_PARTIALY_DONE) {
+	    remove_disk(&pestq, dp);
+	}
 
-		if(est(dp)->level[2] != -1 && est(dp)->est_size[2] < 0) {
-		    log_add(L_WARNING,
-			    "disk %s:%s, estimate of level %d failed: %d.",
-			    dp->host->hostname, dp->name,
-			    est(dp)->level[2], est(dp)->est_size[2]);
-		    est(dp)->level[2] = -1;
-		}
-		if(est(dp)->level[1] != -1 && est(dp)->est_size[1] < 0) {
-		    log_add(L_WARNING,
-			    "disk %s:%s, estimate of level %d failed: %d.",
-			    dp->host->hostname, dp->name,
-			    est(dp)->level[1], est(dp)->est_size[1]);
-		    est(dp)->level[1] = -1;
-		}
-		if(est(dp)->level[0] != -1 && est(dp)->est_size[0] < 0) {
-		    log_add(L_WARNING,
-			    "disk %s:%s, estimate of level %d failed: %d.",
-			    dp->host->hostname, dp->name,
-			    est(dp)->level[0], est(dp)->est_size[0]);
-		    est(dp)->level[0] = -1;
-		}
+	if(pkt->type == P_REP) {
+	    est(dp)->state = DISK_DONE;
+	}
+	else if(pkt->type == P_PREP) {
+	    est(dp)->state = DISK_PARTIALY_DONE;
+	}
 
-		enqueue_disk(&estq, dp);
+	if(est(dp)->level[0] == -1) continue;   /* ignore this disk */
+
+
+	if(pkt->type == P_PREP) {
+		fprintf(stderr,"%s: time %s: got partial result for host %s disk %s:",
+			get_pname(), walltime_str(curclock()),
+			dp->host->hostname, dp->name);
+		fprintf(stderr," %d -> %ldK, %d -> %ldK, %d -> %ldK\n",
+			est(dp)->level[0], est(dp)->est_size[0],
+			est(dp)->level[1], est(dp)->est_size[1],
+			est(dp)->level[2], est(dp)->est_size[2]);
+	}
+	else if(pkt->type == P_REP) {
+		fprintf(stderr,"%s: time %s: got result for host %s disk %s:",
+			get_pname(), walltime_str(curclock()),
+			dp->host->hostname, dp->name);
+		fprintf(stderr," %d -> %ldK, %d -> %ldK, %d -> %ldK\n",
+			est(dp)->level[0], est(dp)->est_size[0],
+			est(dp)->level[1], est(dp)->est_size[1],
+			est(dp)->level[2], est(dp)->est_size[2]);
+		if((est(dp)->level[0] != -1 && est(dp)->est_size[0] > 0) ||
+		   (est(dp)->level[1] != -1 && est(dp)->est_size[1] > 0) ||
+		   (est(dp)->level[2] != -1 && est(dp)->est_size[2] > 0)) {
+
+		    if(est(dp)->level[2] != -1 && est(dp)->est_size[2] < 0) {
+			log_add(L_WARNING,
+				"disk %s:%s, estimate of level %d failed: %d.",
+				dp->host->hostname, dp->name,
+				est(dp)->level[2], est(dp)->est_size[2]);
+			est(dp)->level[2] = -1;
+		    }
+		    if(est(dp)->level[1] != -1 && est(dp)->est_size[1] < 0) {
+			log_add(L_WARNING,
+				"disk %s:%s, estimate of level %d failed: %d.",
+				dp->host->hostname, dp->name,
+				est(dp)->level[1], est(dp)->est_size[1]);
+			est(dp)->level[1] = -1;
+		    }
+		    if(est(dp)->level[0] != -1 && est(dp)->est_size[0] < 0) {
+			log_add(L_WARNING,
+				"disk %s:%s, estimate of level %d failed: %d.",
+				dp->host->hostname, dp->name,
+				est(dp)->level[0], est(dp)->est_size[0]);
+			est(dp)->level[0] = -1;
+		    }
+		    enqueue_disk(&estq, dp);
 	    }
 	    else {
 		enqueue_disk(&failq, dp);
-		est(dp)->errstr = vstralloc("disk ", dp->name,
-					    ", all estimate failed", NULL);
+		if(est(dp)->got_estimate) {
+		    est(dp)->errstr = vstralloc("disk ", dp->name,
+						", all estimate failed", NULL);
+		}
+		else {
+		    fprintf(stderr, "error result for host %s disk %s: missing estimate\n",
+		   	    dp->host->hostname, dp->name);
+		    est(dp)->errstr = vstralloc("missing result for ", dp->name,
+						" in ", dp->host->hostname,
+						" response",
+						NULL);
+		}
 	    }
 	}
-	else {
-	    enqueue_disk(&failq, dp);
-
-	    fprintf(stderr, "%s: time %s: error result for host %s disk %s: missing estimate\n",
-		get_pname(), walltime_str(curclock()),
-		dp->host->hostname, dp->name);
-
-	    est(dp)->errstr = vstralloc("missing result for ", dp->name,
-					" in ", dp->host->hostname, " response",
-					NULL);
+	else if(pkt->type == P_PREP) {
+	    enqueue_disk(&pestq, dp);
 	}
     }
-    hostp->up = HOST_READY;
     getsize(hostp);
     return;
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: packet.h,v 1.5 2002/02/10 03:34:04 jrjackson Exp $
+ * $Id: packet.h,v 1.6 2004/02/13 14:00:35 martinea Exp $
  *
  * interfaces for modifying amanda protocol packet type
  */
@@ -36,7 +36,7 @@
  */
 #define	MAX_PACKET	(50*1024)
 
-typedef enum { P_REQ = 0, P_REP = 1, P_ACK = 2, P_NAK = 3 } pktype_t;
+typedef enum { P_REQ = 0, P_REP = 1, P_PREP = 2, P_ACK = 3, P_NAK = 4 } pktype_t;
 typedef struct {
     pktype_t type;				/* type of packet */
     char body[MAX_PACKET];			/* body of packet */

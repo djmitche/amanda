@@ -156,6 +156,7 @@ while(<AMDUMP>) {
 		$dump_finished{$hostpart}=0;
 		$taper_started{$hostpart}=0;
 		$taper_finished{$hostpart}=0;
+		$partialestimate{$hostpart}=0;
 		$error{$hostpart}="";
 	}
 	elsif(/got result for host (\S+) disk (\S+): (\d+) -> (\d+)K,/) {
@@ -165,6 +166,16 @@ while(<AMDUMP>) {
 		$estimate{$hostpart}=1;
 		$level{$hostpart}=$3;
 		$esize{$hostpart}=$4;
+		$partialestimate{$hostpart}=0;
+	}
+	elsif(/got partial result for host (\S+) disk (\S+): (\d+) -> (\d+)K,/) {
+		$host=$1;
+		$partition=$2;
+		$hostpart=&make_hostpart($host,$partition,$gdatestamp);
+		$estimate{$hostpart}=1;
+		$level{$hostpart}=$3;
+		$esize{$hostpart}=$4;
+		$partialestimate{$hostpart}=1;
 	}
 	elsif(/getting estimates took/) {
 		$estimate_done=1;
@@ -678,6 +689,9 @@ foreach $host (sort @hosts) {
 							printf "%-${maxnamelength}s", "$host:$partition";
 							printf "%2d",  $level{$hostpart};
 							printf "%9dk", $esize{$hostpart};
+							if($partialestimate{$hostpart} == 1) {
+								print " partial";
+							}
 							print " estimate done\n";
 						}
 						$epartition++;

@@ -1,4 +1,18 @@
 2004-02-13  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	The estimate send a PREP (partial REP) packet after each estimate.
+	* client-src/amandad.c: Send PREP packet if sendsize.
+	* common-src/amfeatures.c (am_init_feature_set): Add
+	  fe_partial_estimate.
+	* common-src/amfeatures.h (am_feature_e): Add fe_partial_estimate.
+	* common-src/packet.c (pktypes[]): Add PREP.
+	* common-src/packet.h (pktype_t): Add P_PREP.
+	* common-src/protocol.c (action_t): Add A_CONTPEND.
+	* common-src/protocol.c: Handle P_PREP packet.
+	* server-src/amstatus.pl.in: Parse "got partial result" line.
+	* server-src/planner.c: Handle P_PREP packet.
+
+2004-02-13  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Reported by Jason Brooks <jason.brooks@windriver.com>
 
 	* server-src/reporter.c: Remove duplicate setting of cd to

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.55 2003/05/26 03:52:52 kovert Exp $
+ * $Id: amandad.c,v 1.56 2004/02/13 14:00:35 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -45,6 +45,7 @@
 #include "security.h"
 #include "stream.h"
 #include "util.h"
+#include "client_util.h"
 
 #define	REP_TIMEOUT	(6*60*60)	/* secs for service to reply */
 #define	ACK_TIMEOUT  	10		/* XXX should be configurable */
@@ -77,6 +78,7 @@ struct active_service {
     security_handle_t *security_handle;	/* remote server */
     state_t state;			/* how far this has progressed */
     pid_t pid;				/* pid of subprocess */
+    int send_partial_reply;		/* send PREP packet */
     int reqfd;				/* pipe to write requests */
     int repfd;				/* pipe to read replies */
     event_handle_t *ev_repfd;		/* read event handle for repfd */
@@ -733,6 +735,12 @@ s_repwait(as, action, pkt)
     as->repbuf[n + as->repbufsize] = '\0';
     if (n > 0) {
 	as->repbufsize += n;
+	if(as->send_partial_reply) {
+	    pkt_init(&as->rep_pkt, P_PREP, "%s", as->repbuf);
+	    do_sendpkt(as->security_handle, &as->rep_pkt);
+	    pkt_init(&as->rep_pkt, P_REP, "");
+	}
+ 
 	return (A_PENDING);
     }
 
@@ -1124,6 +1132,21 @@ service_new(security_handle, cmd, arguments)
 	as->security_handle = security_handle;
 	as->state = NULL;
 	as->pid = pid;
+	as->send_partial_reply = 0;
+	if(strcmp(cmd+(strlen(cmd)-8), "sendsize") == 0) {
+	    g_option_t *g_options;
+	    char *option_str, *p;
+
+	    option_str = stralloc(as->arguments+8);
+	    p = strchr(option_str,'\n');
+	    if(p) *p = '\0';
+
+	    g_options = parse_g_options(option_str, 1);
+	    if(am_has_feature(g_options->features, fe_partial_estimate)) {
+		as->send_partial_reply = 1;
+	    }
+	    amfree(option_str);
+	}
 
 	/* write to the request pipe */
 	aclose(data[0][0]);
