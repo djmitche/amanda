@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.27 1998/03/21 18:00:27 martinea Exp $
+ * $Id: reporter.c,v 1.28 1998/03/23 16:54:44 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -294,13 +294,13 @@ char **argv;
 	if (strcmp(printer,"") != 0)	/* alternate printer is defined */
 	  /* print to the specified printer */
 #ifdef LPRFLAG
-	  cmd = newvstralloc(LPRCMD, " ", LPRFLAG, printer, NULL);
+	  cmd = newvstralloc(cmd, LPRCMD, " ", LPRFLAG, printer, NULL);
 #else
-	  cmd = newvstralloc(LPRCMD, NULL);
+	  cmd = newvstralloc(cmd, LPRCMD, NULL);
 #endif
 	else
 	  /* print to the default printer */
-	  cmd = newvstralloc(LPRCMD, NULL);
+	  cmd = newvstralloc(cmd, LPRCMD, NULL);
 
 	if ((strcmp(tp->lbl_templ,"")) != 0)
 	  if ((postscript = popen(cmd,"w")) == NULL)
