@@ -119,17 +119,24 @@ CleanTapelist () {
   return $?
   if [ "xno" = "x${DoNothing}" ]; then
     lines=`wc -l < $TapeList`
-    cp -p $TapeList ${TapeList}~ && (
-      if test "$lines" -gt 1; then
-        [ -s ${NewTapelist} ] &&
-          cp ${NewTapelist} $TapeList &&
-          rm -f ${NewTapelist}
-      else
-        [ -f ${NewTapelist} ] &&
-          cp ${NewTapelist} $TapeList &&
-          rm -f ${NewTapelist}
-      fi
-    )
+    linesafter=`wc -l < $NewTapelist`
+    if [ "$lines" -gt "$linesafter" ]; then
+      cp -p $TapeList ${TapeList}~ && (
+        if test "$lines" -gt 1; then
+          [ -s ${NewTapelist} ] &&
+            cp ${NewTapelist} $TapeList &&
+            rm -f ${NewTapelist}
+        else
+          [ -f ${NewTapelist} ] &&
+            cp ${NewTapelist} $TapeList &&
+            rm -f ${NewTapelist}
+        fi
+      )
+      log "${Program}: remove label ${Tape}."
+    else
+      log "${Program}: no such tape: ${Tape}."
+      return 1
+    fi
   fi
   
   return $?
