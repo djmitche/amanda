@@ -1,3 +1,7 @@
+1998-07-23  John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/reporter.c (main): handle LPRCMD being undefined.
+
 1998-07-15  Blair Zajac  <blair@gps.caltech.edu>
 
 	* server-src/reporter.c (main): declare optind
