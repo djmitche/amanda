@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.5 2001/06/21 22:37:50 jrjackson Exp $
+ * $Id: planner.c,v 1.76.2.15.2.6 2001/07/13 20:38:37 jrjackson Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -62,7 +62,16 @@ int conf_etimeout;
 int conf_reserve;
 double conf_bumpmult;
 
+#define HOST_READY				((void *)0)
+#define HOST_ACTIVE				((void *)1)
+#define HOST_DONE				((void *)2)
+
+#define DISK_READY				0
+#define DISK_ACTIVE				1
+#define DISK_DONE				2
+
 typedef struct est_s {
+    int state;
     int got_estimate;
     int dump_priority;
     int dump_level;
@@ -88,7 +97,6 @@ long total_size;
 double total_lev0, balanced_size, balance_threshold;
 unsigned long tape_length, tape_mark;
 int result_port, amanda_port;
-int max_disks;
 
 #ifdef KRB4_SECURITY
 int kamanda_port;
@@ -556,6 +564,7 @@ setup_estimate(dp)
     ep = alloc(sizeof(est_t));
     malloc_mark(ep);
     dp->up = (void *) ep;
+    ep->state = DISK_READY;
     ep->dump_size = -1;
     ep->dump_priority = dp->priority;
     ep->errstr = 0;
@@ -986,7 +995,10 @@ static void handle_result P((proto_t *p, pkt_t *pkt));
 
 static void get_estimates P((void))
 {
+    host_t *hostp;
+    disk_t *dp;
     struct servent *amandad;
+    int something_started;
 
     if((amandad = getservbyname(AMANDA_SERVICE_NAME, "udp")) == NULL)
 	amanda_port = AMANDA_SERVICE_DEFAULT;
@@ -1000,9 +1012,22 @@ static void get_estimates P((void))
 	kamanda_port = ntohs(amandad->s_port);
 #endif
 
-    while(!empty(startq)) {
-	getsize(startq.head->host);
-	check_protocol();
+    something_started = 1;
+    while(something_started) {
+	something_started = 0;
+	for(dp = startq.head; dp != NULL; dp = dp->next) {
+	    hostp = dp->host;
+	    if(hostp->up == HOST_READY) {
+		something_started = 1;
+		getsize(hostp);
+		check_protocol();
+		/*
+		 * dp is no longer on startq, so dp->next is not valid
+		 * and we have to start all over.
+		 */
+		break;
+	    }
+	}
     }
     run_protocol();
 
@@ -1019,10 +1044,14 @@ host_t *hostp;
     disklist_t *destqp;
     disk_t *dp;
     char *req = NULL, *errstr = NULL;
-    int i, disks, rc, timeout;
+    int i, estimates, rc, timeout, disk_state, req_len;
     char number[NUM_STR_SIZE];
 
     assert(hostp->disks != NULL);
+
+    if(hostp->up != HOST_READY) {
+	return;
+    }
 
     ap_snprintf(number, sizeof(number), "%d", hostp->maxdumps);
     req = vstralloc("SERVICE sendsize\n",
@@ -1031,15 +1060,24 @@ host_t *hostp;
 		    "hostname=", hostp->hostname, ";",
 		    "\n",
 		    NULL);
-    disks = 0;
+    req_len = strlen(req);
+    req_len += 128;				/* room for SECURITY ... */
+    estimates = 0;
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
-	est(dp)->got_estimate = 0;
-	if(est(dp)->level[0] == -1) continue;	/* ignore this disk */
+	char *s = NULL;
+	int s_len = 0;
 
-	remove_disk(&startq, dp);
+	if(est(dp)->state != DISK_READY) {
+	    continue;
+	}
+	est(dp)->got_estimate = 0;
+	if(est(dp)->level[0] == -1) {
+	    est(dp)->state = DISK_DONE;
+	    continue;	/* ignore this disk */
+	}
 
 	for(i = 0; i < MAX_LEVELS; i++) {
-	    char *t;
+	    char *l;
 	    char *exclude1 = "";
 	    char *exclude2 = "";
 	    char spindle[NUM_STR_SIZE];
@@ -1054,24 +1092,38 @@ host_t *hostp;
 		exclude1 = dp->exclude_list ? " exclude-list=" : " exclude-file=";
 		exclude2 = dp->exclude;
 	    }
-	    t = vstralloc(req,
-			  dp->program, " ", dp->name, " ", level, " ",
+	    l = vstralloc(dp->program, " ", dp->name, " ", level, " ",
 			  est(dp)->dumpdate[i], " ", spindle,
 			  exclude1,
 			  exclude2,
 			  "\n",
 			  NULL);
-	    amfree(req);
-	    req = t;
-	    disks++;
+	    strappend(s, l);
+	    s_len += strlen(l);
+	    amfree(l);
 	}
+	if(req_len + s_len > MAX_DGRAM / 2) {	/* allow 2X for err response */
+	    amfree(s);
+	    break;
+	}
+	estimates += i;
+	strappend(req, s);
+	req_len += s_len;
+	amfree(s);
+	est(dp)->state = DISK_ACTIVE;
+	remove_disk(&startq, dp);
     }
-    if(disks > max_disks) max_disks = disks;
+
+    if(estimates == 0) {
+	amfree(req);
+	hostp->up = HOST_DONE;
+	return;
+    }
 
     if (conf_etimeout < 0)
       timeout = - conf_etimeout;
     else
-      timeout = disks * conf_etimeout;
+      timeout = estimates * conf_etimeout;
 
 #ifdef KRB4_SECURITY
     if(hostp->disks->auth == AUTH_KRB4)
@@ -1091,17 +1143,23 @@ host_t *hostp;
 			   ": ", strerror(errno),
 			   NULL);
 	destqp = &failq;
+	hostp->up = HOST_DONE;
+	disk_state = DISK_DONE;
     }
     else {
 	errstr = NULL;
 	destqp = &waitq;
+	hostp->up = HOST_ACTIVE;
+	disk_state = DISK_ACTIVE;
     }
 
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
-	if(est(dp)->level[0] == -1) continue;   /* ignore this disk */
-	est(dp)->errstr = errstr;
-	errstr = NULL;
-	enqueue_disk(destqp, dp);
+	if(est(dp)->state == DISK_ACTIVE) {
+	    est(dp)->state = disk_state;
+	    est(dp)->errstr = errstr;
+	    errstr = NULL;
+	    enqueue_disk(destqp, dp);
+	}
     }
     amfree(errstr);
 }
@@ -1240,6 +1298,8 @@ pkt_t *pkt;
     /* XXX amanda 2.1 treated that case as a bad msg */
 
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	if(est(dp)->state != DISK_ACTIVE) continue;
+	est(dp)->state = DISK_DONE;
 	if(est(dp)->level[0] == -1) continue;   /* ignore this disk */
 	remove_disk(&waitq, dp);
 	if(est(dp)->got_estimate) {
@@ -1272,6 +1332,8 @@ pkt_t *pkt;
 					NULL);
 	}
     }
+    hostp->up = HOST_READY;
+    getsize(hostp);
     return;
 
  NAK_parse_failed:
@@ -1308,14 +1370,17 @@ pkt_t *pkt;
 	msgdisk_undo = NULL;
     }
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
-	if(est(dp)->level[0] == -1) continue;   /* ignore this disk */
-	remove_disk(&waitq, dp);
-	enqueue_disk(&failq, dp);
+	if(est(dp)->state == DISK_ACTIVE) {
+	    est(dp)->state = DISK_DONE;
+	    remove_disk(&waitq, dp);
+	    enqueue_disk(&failq, dp);
 
-	est(dp)->errstr = stralloc(errbuf);
-	fprintf(stderr, "error result for host %s disk %s: %s\n",
-	    dp->host->hostname, dp->name, errbuf);
+	    est(dp)->errstr = stralloc(errbuf);
+	    fprintf(stderr, "error result for host %s disk %s: %s\n",
+	        dp->host->hostname, dp->name, errbuf);
+	}
     }
+    hostp->up = HOST_DONE;
     amfree(errbuf);
 }
 
