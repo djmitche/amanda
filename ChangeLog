@@ -1,3 +1,11 @@
+1999-02-10  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/amlabel.c (main): try to read just-written tape label
+	back; if wrendmark overwrote the label, suggest using a
+	non-rewinding device
+	* tape-src/tapeio.c (tape_wrendmark): would not close tape device if 
+	wrendmark failed
+
 1999-02-10  Paul Bijnens  <Paul.Bijnens@lant.be>
 
 	* server-src/amoverview.pl.in: Y2K fix in output to user
