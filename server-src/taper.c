@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-1998, 2000 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.59 1999/11/11 00:22:03 jrj Exp $
+/* $Id: taper.c,v 1.60 2000/04/09 08:27:38 oliva Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1370,10 +1370,10 @@ buffer_t *attach_buffers()
 
 
 void detach_buffers(bufp)
-buffer_t *bufp;
+     buffer_t *bufp;
 {
     if(shmdt((SHM_ARG_TYPE *)bufp) == -1)
-	error("shmdr: %s", strerror(errno));
+	error("shmdt: %s", strerror(errno));
 }
 
 void destroy_buffers()
