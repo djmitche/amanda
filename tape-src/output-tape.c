@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-tape.c,v 1.11 2002/11/23 16:52:08 martinea Exp $
+ * $Id: output-tape.c,v 1.12 2003/01/02 22:39:53 martinea Exp $
  *
  * tapeio.c virtual tape interface for normal tape drives.
  */
@@ -259,7 +259,7 @@ tape_tapefd_unload(fd)
     f = MT_OFFLINE;
 #else
 #ifdef MT_UNLOAD
-    f = MT_UNLOAD
+    f = MT_UNLOAD;
 #else
     f = syntax error;
 #endif

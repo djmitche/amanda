@@ -1,3 +1,8 @@
+2003-01-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Fix by Josh More <jmore@remote-print.com>
+
+	* tape-src/output-tape.c: Add a ; after f = MT_UNLOAD
+
 2003-01-01  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Undo patch of 2002-11-27. That doesn't work well for the planner.
 
