@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.11 1998/11/17 18:12:00 jrj Exp $
+ * $Id: stream.c,v 1.12 1998/11/19 22:00:56 kashmir Exp $
  *
  * functions for managing stream sockets
  */
@@ -110,8 +110,8 @@ int sendsize, recvsize;
     }
 
 #ifdef SO_KEEPALIVE
-    if(setsockopt(server_socket, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on)) 
-       == -1) {
+    if(setsockopt(server_socket, SOL_SOCKET, SO_KEEPALIVE, (void *)&on,
+	sizeof(on)) == -1) {
         aclose(server_socket);
         return -1;
     }
@@ -147,8 +147,8 @@ int port, sendsize, recvsize, *localport;
     }
 
 #ifdef SO_KEEPALIVE
-    if(setsockopt(client_socket, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on)) 
-       == -1) {
+    if(setsockopt(client_socket, SOL_SOCKET, SO_KEEPALIVE, (void *)&on,
+	sizeof(on)) == -1) {
         aclose(client_socket);
         return -1;
     }

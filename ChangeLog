@@ -1,3 +1,9 @@
+1998-11-19  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/stream.c (stream_server, stream_client): cast 4th
+	arg of setsockopt() to (void *) to quash a compiler warning
+	under solaris.
+
 1998-11-19  John R. Jackson  <jrj@purdue.edu>
 
 	* recover-src/amrecover.c (main): use set_host to find the initial
