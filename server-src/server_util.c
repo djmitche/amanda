@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.c,v 1.10 2002/03/23 19:58:09 martinea Exp $
+ * $Id: server_util.c,v 1.11 2002/04/13 19:24:51 jrjackson Exp $
  *
  */
 
@@ -57,8 +57,9 @@ struct cmdargs *cmdargs;
 	fflush(stdout);
     }
 
-    if ((line = agets(stdin)) == NULL)
-	return (QUIT);
+    if ((line = agets(stdin)) == NULL) {
+	line = stralloc("QUIT");
+    }
 
     cmdargs->argc = split(line, cmdargs->argv,
 	sizeof(cmdargs->argv) / sizeof(cmdargs->argv[0]), " ");

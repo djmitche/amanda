@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.150 2002/04/08 02:37:18 jrjackson Exp $
+/* $Id: dumper.c,v 1.151 2002/04/13 19:24:51 jrjackson Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -41,6 +41,7 @@
 #include "token.h"
 #include "version.h"
 #include "fileheader.h"
+#include "features.h"
 #include "server_util.h"
 #include "util.h"
 
@@ -75,6 +76,7 @@ static comp_t srvcompress = COMP_NONE;
 
 static FILE *errf = NULL;
 static char *hostname = NULL;
+am_feature_t *their_features = NULL;
 static char *diskname = NULL;
 static char *device = NULL;
 static char *options = NULL;
@@ -101,6 +103,9 @@ static struct {
     { "INDEX", NULL },
 };
 #define	NSTREAMS	(sizeof(streams) / sizeof(streams[0]))
+
+static am_feature_t *our_features = NULL;
+static char *our_feature_string = NULL;
 
 /* local functions */
 int main P((int, char **));
@@ -156,6 +161,7 @@ main(main_argc, main_argv)
     unsigned long malloc_hist_2, malloc_size_2;
     char *conffile;
     char *q = NULL;
+    int a;
 
     for (outfd = 3; outfd < FD_SETSIZE; outfd++) {
 	/*
@@ -190,6 +196,9 @@ main(main_argc, main_argv)
     }
 
     safe_cd();
+
+    our_features = am_init_feature_set();
+    our_feature_string = am_feature_to_string(our_features);
 
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if(read_conffile(conffile)) {
@@ -239,21 +248,77 @@ main(main_argc, main_argv)
 
 	case PORT_DUMP:
 	    /*
-	     * PORT-DUMP handle port host disk device level dumpdate
-	     *    progname options
+	     * PORT-DUMP
+	     *   handle
+	     *   port
+	     *   host
+	     *   features
+	     *   disk
+	     *   device
+	     *   level
+	     *   dumpdate
+	     *   progname
+	     *   options
 	     */
-	    if (cmdargs.argc != 10)
-		error("error [dumper PORT-DUMP argc != 10: %d]", cmdargs.argc);
-	    handle = newstralloc(handle, cmdargs.argv[2]);
-	    taper_port = atoi(cmdargs.argv[3]);
-	    hostname = newstralloc(hostname, cmdargs.argv[4]);
-	    diskname = newstralloc(diskname, cmdargs.argv[5]);
-	    device = newstralloc(device, cmdargs.argv[6]);
+	    cmdargs.argc++;			/* true count of args */
+	    a = 2;
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: handle]");
+	    }
+	    handle = newstralloc(handle, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: handle]");
+	    }
+	    taper_port = atoi(cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: handle]");
+	    }
+	    hostname = newstralloc(hostname, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: features]");
+	    }
+	    am_release_feature_set(their_features);
+	    their_features = am_string_to_feature(cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: handle]");
+	    }
+	    diskname = newstralloc(diskname, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: handle]");
+	    }
+	    device = newstralloc(device, cmdargs.argv[a++]);
 	    if(strcmp(device,"NODEVICE") == 0) amfree(device);
-	    level = atoi(cmdargs.argv[7]);
-	    dumpdate = newstralloc(dumpdate, cmdargs.argv[8]);
-	    progname = newstralloc(progname, cmdargs.argv[9]);
-	    options = newstralloc(options, cmdargs.argv[10]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: handle]");
+	    }
+	    level = atoi(cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: handle]");
+	    }
+	    dumpdate = newstralloc(dumpdate, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: handle]");
+	    }
+	    progname = newstralloc(progname, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: handle]");
+	    }
+	    options = newstralloc(options, cmdargs.argv[a++]);
+
+	    if(a != cmdargs.argc) {
+		error("error [dumper PORT-DUMP: too many args: %d != %d]",
+		      cmdargs.argc, a);
+	    }
 
 	    /* connect outf to taper port */
 
@@ -269,8 +334,13 @@ main(main_argc, main_argv)
 
 	    check_options(options);
 
-	    rc = startup_dump(hostname, diskname, device, level, dumpdate, progname,
-		options);
+	    rc = startup_dump(hostname,
+			      diskname,
+			      device,
+			      level,
+			      dumpdate,
+			      progname,
+			      options);
 	    if (rc != 0) {
 		q = squote(errstr);
 		putresult(rc == 2? FAILED : TRYAGAIN, "%s %s\n",
@@ -286,7 +356,13 @@ main(main_argc, main_argv)
 	    break;
 
 	default:
-	    q = squote(cmdargs.argv[1]);
+	    if(cmdargs.argc >= 1) {
+		q = squote(cmdargs.argv[1]);
+	    } else if(cmdargs.argc >= 0) {
+		q = squote(cmdargs.argv[0]);
+	    } else {
+		q = stralloc("(no input?)");
+	    }
 	    putresult(BAD_COMMAND, "%s\n", q);
 	    amfree(q);
 	    break;
@@ -1206,6 +1282,7 @@ sendbackup_response(datap, pkt, sech)
     int ports[NSTREAMS], *response_error = datap, i;
     char *p;
     char *tok;
+    char *tok_end;
     char *extra = NULL;
 
     assert(response_error != NULL);
@@ -1249,6 +1326,11 @@ bad_nak:
 #if defined(PACKET_DEBUG)
     fprintf(stderr, "got response:\n----\n%s\n----\n\n", pkt->body);
 #endif
+
+    for(i = 0; i < NSTREAMS; i++) {
+	ports[i] = -1;
+	streams[i].fd = NULL;
+    }
 
     p = pkt->body;
     while((tok = strtok(p, " \n")) != NULL) {
@@ -1309,7 +1391,25 @@ bad_nak:
 		extra = stralloc("OPTIONS token is missing");
 		goto parse_error;
 	    }
-	    /* we do nothing with the options right now */
+	    tok_end = tok + strlen(tok);
+
+	    while((p = strchr(tok, ';')) != NULL) {
+		*p++ = '\0';
+#define sc "features="
+		if(strncmp(tok, sc, sizeof(sc)-1) == 0) {
+		    tok += sizeof(sc) - 1;
+#undef sc
+		    am_release_feature_set(their_features);
+		    if((their_features = am_string_to_feature(tok)) == NULL) {
+			errstr = newvstralloc(errstr,
+					      "OPTIONS: bad features value: ",
+					      tok,
+					      NULL);
+			goto parse_error;
+		    }
+		}
+		tok = p;
+	    }
 	    continue;
 	}
 
@@ -1397,6 +1497,7 @@ startup_dump(hostname, disk, device, level, dumpdate, progname, options)
     char *authopt, *endauthopt, authoptbuf[64];
     int response_error;
     const security_driver_t *secdrv;
+    char *dumper_api;
 
     /*
      * Default to bsd authentication if none specified.  This is gross.
@@ -1404,9 +1505,9 @@ startup_dump(hostname, disk, device, level, dumpdate, progname, options)
      * Options really need to be pre-parsed into some sort of structure
      * much earlier, and then flattened out again before transmission.
      */
-    if ((authopt = strstr(options, "auth=")) == NULL ||
-	(endauthopt = strchr(authopt, ';')) == NULL ||
-	(sizeof(authoptbuf) - 1 < endauthopt - authopt)) {
+    if ((authopt = strstr(options, "auth=")) == NULL
+	|| (endauthopt = strchr(authopt, ';')) == NULL
+	|| (sizeof(authoptbuf) - 1 < endauthopt - authopt)) {
 	authopt = "BSD";
     } else {
 	authopt += strlen("auth=");
@@ -1416,64 +1517,27 @@ startup_dump(hostname, disk, device, level, dumpdate, progname, options)
     }
 
     snprintf(level_string, sizeof(level_string), "%d", level);
-    if(strncmp(progname,"DUMP",4) == 0 || strncmp(progname,"GNUTAR",6) == 0) {
-	if(device) {
-	    req = vstralloc("SERVICE sendbackup\n",
-			    "OPTIONS ",
-			    "hostname=", hostname, ";",
-			    "\n",
-			    progname, " ", disk, " ", device, " ",
-			    level_string, " ", 
-			    dumpdate, " ",
-			    "OPTIONS ", options,
-			    /* compat: if auth=krb4, send krb4-auth */
-			    (strcasecmp(authopt, "krb4") ? "" : "krb4-auth"),
-			    "\n",
-			    NULL);
-	}
-	else {
-	    req = vstralloc("SERVICE sendbackup\n",
-			    "OPTIONS ",
-			    "hostname=", hostname, ";",
-			    "\n",
-			    progname, " ", disk, " ", level_string, " ", 
-			    dumpdate, " ",
-			    "OPTIONS ", options,
-			    /* compat: if auth=krb4, send krb4-auth */
-			    (strcasecmp(authopt, "krb4") ? "" : "krb4-auth"),
-			    "\n",
-			    NULL);
-	}
+    if(strncmp(progname, "DUMP", 4) == 0
+       || strncmp(progname, "GNUTAR", 6) == 0) {
+	dumper_api = "";
+    } else {
+	dumper_api = "DUMPER ";
     }
-    else {
-	if(device) {
-	    req = vstralloc("SERVICE sendbackup\n",
-			    "OPTIONS ",
-			    "hostname=", hostname, ";",
-			    "\n",
-			    "DUMPER ", progname, " ", disk, " ", device, " ",
-			    level_string, " ",
-			    dumpdate, " ",
-			    "OPTIONS ", options,
-			    /* compat: if auth=krb4, send krb4-auth */
-			    (strcasecmp(authopt, "krb4") ? "" : "krb4-auth"),
-			    "\n",
-			    NULL);
-	}
-	else {
-	    req = vstralloc("SERVICE sendbackup\n",
-			    "OPTIONS ",
-			    "hostname=", hostname, ";",
-			    "\n",
-			    "DUMPER ", progname, " ", disk, " ", level_string, " ",
-			    dumpdate, " ",
-			    "OPTIONS ", options,
-			    /* compat: if auth=krb4, send krb4-auth */
-			    (strcasecmp(authopt, "krb4") ? "" : "krb4-auth"),
-			    "\n",
-			    NULL);
-	}
-    }
+    req = vstralloc("SERVICE sendbackup\n",
+		    "OPTIONS ",
+		    "features=", our_feature_string, ";",
+		    "hostname=", hostname, ";",
+		    "\n",
+		    dumper_api, progname,
+		    " ", disk,
+		    " ", device ? device : "",
+		    " ", level_string,
+		    " ", dumpdate,
+		    " OPTIONS ", options,
+		    /* compat: if auth=krb4, send krb4-auth */
+		    (strcasecmp(authopt, "krb4") ? "" : "krb4-auth"),
+		    "\n",
+		    NULL);
 
     secdrv = security_getdriver(authopt);
     if (secdrv == NULL) {

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.34 2002/03/31 21:02:00 jrjackson Exp $
+/* $Id: amidxtaped.c,v 1.35 2002/04/13 19:24:51 jrjackson Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -441,7 +441,7 @@ char **errstr;
 			"bad bsd security line",
 			"]", NULL);
 
-#define sc "USER"
+#define sc "USER "
     if(strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
 	*errstr = bad_bsd;
 	bad_bsd = NULL;

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.49 2002/04/08 01:24:43 jrjackson Exp $
+ * $Id: amandad.c,v 1.50 2002/04/13 19:24:51 jrjackson Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -38,6 +38,7 @@
 #include "amandad.h"
 #include "clock.h"
 #include "event.h"
+#include "features.h"
 #include "packet.h"
 #include "version.h"
 #include "queue.h"
@@ -102,6 +103,7 @@ struct active_service {
  * Here are the services that we allow.
  */
 static const char *services[] = {
+    "noop",
     "sendsize",
     "sendbackup",
     "selfcheck",
@@ -402,7 +404,7 @@ protocol_accept(handle, pkt)
     security_handle_t *handle;
     pkt_t *pkt;
 {
-    pkt_t nak;
+    pkt_t pkt_out;
     struct active_service *as;
     char *pktbody, *tok, *service, *arguments;
     int i;
@@ -413,8 +415,8 @@ protocol_accept(handle, pkt)
     if (pkt == NULL) {
 	dbprintf(("%s: accept error: %s\n",
 	    debug_prefix_time(NULL), security_geterror(handle)));
-	pkt_init(&nak, P_NAK, "ERROR %s\n", security_geterror(handle));
-	do_sendpkt(handle, &nak);
+	pkt_init(&pkt_out, P_NAK, "ERROR %s\n", security_geterror(handle));
+	do_sendpkt(handle, &pkt_out);
 	security_close(handle);
 	return;
     }
@@ -465,22 +467,24 @@ protocol_accept(handle, pkt)
     if (i == NSERVICES) {
 	dbprintf(("%s: %s: invalid service\n",
 	    debug_prefix_time(NULL), service));
-	pkt_init(&nak, P_NAK, "ERROR %s: invalid service\n", service);
-	goto sendnak;
+	pkt_init(&pkt_out, P_NAK, "ERROR %s: invalid service\n", service);
+	goto send_pkt_out;
     }
 
-    /* see if the binary exists */
-    tok = vstralloc(libexecdir, "/", service,
-	versionsuffix(), NULL);
-    amfree(service);
-    service = tok;
-
-    if (access(service, X_OK) < 0) {
-	dbprintf(("%s: can't execute %s: %s\n",
-	    debug_prefix_time(NULL), service, strerror(errno)));
-	pkt_init(&nak, P_NAK, "ERROR execute access to \"%s\" denied\n",
-	    service);
-	goto sendnak;
+    /*
+     * If this is not an internal function, see if the binary exists.
+     */
+    if (strcmp(service, "noop") != 0) {
+	service = newvstralloc(service,
+			       libexecdir, "/", service, versionsuffix(),
+			       NULL);
+	if (access(service, X_OK) < 0) {
+	    dbprintf(("%s: can't execute %s: %s\n",
+	        debug_prefix_time(NULL), service, strerror(errno)));
+	    pkt_init(&pkt_out, P_NAK, "ERROR execute access to \"%s\" denied\n",
+	        service);
+	    goto send_pkt_out;
+	}
     }
 
     /* see if its already running */
@@ -490,8 +494,8 @@ protocol_accept(handle, pkt)
 		strcmp(as->arguments, arguments) == 0) {
 		    dbprintf(("%s: %s %s: already running, acking req\n",
 			debug_prefix_time(NULL), service, arguments));
-		    pkt_init(&nak, P_ACK, "");
-		    goto sendnak;
+		    pkt_init(&pkt_out, P_ACK, "");
+		    goto send_pkt_out;
 	    }
     }
 
@@ -506,9 +510,9 @@ protocol_accept(handle, pkt)
 	const char *errmsg = strerror(errno);
 	dbprintf(("%s: error sending arguments to %s: %s\n",
 	    debug_prefix_time(NULL), service, errmsg));
-	pkt_init(&nak, P_NAK, "ERROR error writing arguments to %s: %s\n",
+	pkt_init(&pkt_out, P_NAK, "ERROR error writing arguments to %s: %s\n",
 	    service, errmsg);
-	goto sendnak;
+	goto send_pkt_out;
     }
     aclose(as->reqfd);
 
@@ -525,20 +529,16 @@ protocol_accept(handle, pkt)
     return;
 
 badreq:
-    pkt_init(&nak, P_NAK, "ERROR invalid REQ\n");
+    pkt_init(&pkt_out, P_NAK, "ERROR invalid REQ\n");
     dbprintf(("%s: received invalid %s packet:\n<<<<<\n%s>>>>>\n\n",
 	debug_prefix_time(NULL), pkt_type2str(pkt->type), pkt->body));
 
-sendnak:
-    if (pktbody != NULL)
-	amfree(pktbody);
-    if (service != NULL)
-	amfree(service);
-    if (arguments != NULL)
-	amfree(arguments);
-    if (as != NULL)
-	service_delete(as);
-    do_sendpkt(handle, &nak);
+send_pkt_out:
+    amfree(pktbody);
+    amfree(service);
+    amfree(arguments);
+    service_delete(as);
+    do_sendpkt(handle, &pkt_out);
     security_close(handle);
 }
 
@@ -1201,6 +1201,28 @@ service_new(security_handle, cmd, arguments)
 	}
 
 	/* run service */
+	if (strcmp(cmd, "noop") == 0) {
+	    char ch;
+	    am_feature_t *our_features = NULL;
+	    char *our_feature_string = NULL;
+	    char *options;
+
+	    while (read(0, &ch, 1) > 0) {}	/* soak up any stdin */
+	    our_features = am_init_feature_set();
+	    our_feature_string = am_feature_to_string(our_features);
+	    options = vstralloc("OPTIONS features=",
+				our_feature_string,
+				";\n",
+				NULL);
+	    amfree(our_feature_string);
+	    am_release_feature_set(our_features);
+	    our_features = NULL;
+	    if (fullwrite(1, options, strlen(options)) < 0) {
+		error("error sending noop response: %s", strerror(errno));
+	    }
+	    amfree(options);
+	    exit(0);
+	}
 	execle(cmd, cmd, NULL, safe_env());
 	error("could not exec service %s: %s", cmd, strerror(errno));
     }

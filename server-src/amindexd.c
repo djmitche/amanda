@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.66 2002/03/31 21:02:00 jrjackson Exp $
+ * $Id: amindexd.c,v 1.67 2002/04/13 19:24:51 jrjackson Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -1227,7 +1227,7 @@ char **errstr;
 			"bad bsd security line",
 			"]", NULL);
 
-#define sc "USER"
+#define sc "USER "
     if(strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
 	*errstr = bad_bsd;
 	bad_bsd = NULL;

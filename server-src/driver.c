@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.124 2002/04/13 01:51:48 jrjackson Exp $
+ * $Id: driver.c,v 1.125 2002/04/13 19:24:51 jrjackson Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -413,8 +413,9 @@ main(main_argc, main_argv)
 	}
     }
 
-    if(taper >= 0)
+    if(taper >= 0) {
 	taper_cmd(QUIT, NULL, NULL, 0, NULL);
+    }
 
     /* wait for all to die */
 
@@ -716,7 +717,8 @@ start_some_dumps(dumper, rq)
 	assert(dumper->ev_wait == NULL);
 	dumper->ev_wait = event_register((event_id_t)handle_idle_wait,
 	    EV_WAIT, handle_idle_wait, dumper);
-	fprintf(stderr,"EV_WAIT:\n");
+	fprintf(stderr,"%s: EV_WAIT: %s\n",
+		debug_prefix_time(NULL), idle_strings[cur_idle]);
     }
     idle_reason = max(idle_reason, cur_idle);
 }
@@ -1488,7 +1490,7 @@ read_flush()
 
     tq.head = tq.tail = NULL;
 
-	for(line = 0; (inpline = agets(stdin)) != NULL; free(inpline)) {
+    for(line = 0; (inpline = agets(stdin)) != NULL; free(inpline)) {
 	line++;
 
 	s = inpline;
@@ -1496,7 +1498,7 @@ read_flush()
 
 	skip_whitespace(s, ch);                 /* find the command */
 	if(ch == '\0') {
-	    error("Aflush line %d: syntax error", line);
+	    error("flush line %d: syntax error (no command)", line);
 	    continue;
 	}
 	command = s - 1;
@@ -1508,13 +1510,13 @@ read_flush()
 	}
 
 	if(strcmp(command,"FLUSH") != 0) {
-	    error("Bflush line %d: syntax error", line);
+	    error("flush line %d: syntax error (%s != FLUSH)", line, command);
 	    continue;
 	}
 
 	skip_whitespace(s, ch);			/* find the hostname */
 	if(ch == '\0') {
-	    error("Cflush line %d: syntax error", line);
+	    error("flush line %d: syntax error (no hostname)", line);
 	    continue;
 	}
 	hostname = s - 1;
@@ -1523,7 +1525,7 @@ read_flush()
 
 	skip_whitespace(s, ch);			/* find the diskname */
 	if(ch == '\0') {
-	    error("Cflush line %d: syntax error", line);
+	    error("flush line %d: syntax error (no diskname)", line);
 	    continue;
 	}
 	diskname = s - 1;
@@ -1532,7 +1534,7 @@ read_flush()
 
 	skip_whitespace(s, ch);			/* find the datestamp */
 	if(ch == '\0') {
-	    error("Cflush line %d: syntax error", line);
+	    error("flush line %d: syntax error (no datestamp)", line);
 	    continue;
 	}
 	datestamp = s - 1;
@@ -1541,14 +1543,14 @@ read_flush()
 
 	skip_whitespace(s, ch);			/* find the level number */
 	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
-	    error("Cflush line %d: syntax error", line);
+	    error("flush line %d: syntax error (bad level)", line);
 	    continue;
 	}
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);			/* find the filename */
 	if(ch == '\0') {
-	    error("Cflush line %d: syntax error", line);
+	    error("flush line %d: syntax error (no filename)", line);
 	    continue;
 	}
 	destname = s - 1;
@@ -1626,7 +1628,7 @@ read_schedule(waitqp)
     int degr_level;
     long time, degr_time;
     unsigned long size, degr_size;
-    char *hostname, *diskname, *datestamp, *inpline = NULL;
+    char *hostname, *features, *diskname, *datestamp, *inpline = NULL;
     char *command;
     char *s;
     int ch;
@@ -1644,7 +1646,7 @@ read_schedule(waitqp)
 
 	skip_whitespace(s, ch);			/* find the command */
 	if(ch == '\0') {
-	    error("Aschedule line %d: syntax error", line);
+	    error("schedule line %d: syntax error (no command)", line);
 	    continue;
 	}
 	command = s - 1;
@@ -1652,22 +1654,31 @@ read_schedule(waitqp)
 	s[-1] = '\0';
 
 	if(strcmp(command,"DUMP") != 0) {
-	    error("Bschedule line %d: syntax error", line);
+	    error("schedule line %d: syntax error (%s != DUMP)", line, command);
 	    continue;
 	}
 
 	skip_whitespace(s, ch);			/* find the host name */
 	if(ch == '\0') {
-	    error("Cschedule line %d: syntax error", line);
+	    error("schedule line %d: syntax error (no host name)", line);
 	    continue;
 	}
 	hostname = s - 1;
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';
 
+	skip_whitespace(s, ch);			/* find the feature list */
+	if(ch == '\0') {
+	    error("schedule line %d: syntax error (no feature list)", line);
+	    continue;
+	}
+	features = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+
 	skip_whitespace(s, ch);			/* find the disk name */
 	if(ch == '\0') {
-	    error("Dschedule line %d: syntax error", line);
+	    error("schedule line %d: syntax error (no disk name)", line);
 	    continue;
 	}
 	diskname = s - 1;
@@ -1676,7 +1687,7 @@ read_schedule(waitqp)
 
 	skip_whitespace(s, ch);			/* find the datestamp */
 	if(ch == '\0') {
-	    error("Eschedule line %d: syntax error", line);
+	    error("schedule line %d: syntax error (no datestamp)", line);
 	    continue;
 	}
 	datestamp = s - 1;
@@ -1685,21 +1696,21 @@ read_schedule(waitqp)
 
 	skip_whitespace(s, ch);			/* find the priority number */
 	if(ch == '\0' || sscanf(s - 1, "%d", &priority) != 1) {
-	    error("schedule line %d: syntax error", line);
+	    error("schedule line %d: syntax error (bad priority)", line);
 	    continue;
 	}
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);			/* find the level number */
 	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
-	    error("schedule line %d: syntax error", line);
+	    error("schedule line %d: syntax error (bad level)", line);
 	    continue;
 	}
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);			/* find the dump date */
 	if(ch == '\0') {
-	    error("schedule line %d: syntax error", line);
+	    error("schedule line %d: syntax error (bad dump date)", line);
 	    continue;
 	}
 	dumpdate = s - 1;
@@ -1708,14 +1719,14 @@ read_schedule(waitqp)
 
 	skip_whitespace(s, ch);			/* find the size number */
 	if(ch == '\0' || sscanf(s - 1, "%lu", &size) != 1) {
-	    error("schedule line %d: syntax error", line);
+	    error("schedule line %d: syntax error (bad size)", line);
 	    continue;
 	}
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);			/* find the time number */
 	if(ch == '\0' || sscanf(s - 1, "%ld", &time) != 1) {
-	    error("schedule line %d: syntax error", line);
+	    error("schedule line %d: syntax error (bad estimated time)", line);
 	    continue;
 	}
 	skip_integer(s, ch);
@@ -1724,14 +1735,14 @@ read_schedule(waitqp)
 	skip_whitespace(s, ch);			/* find the degr level number */
 	if(ch != '\0') {
 	    if(sscanf(s - 1, "%d", &degr_level) != 1) {
-		error("schedule line %d: syntax error", line);
+		error("schedule line %d: syntax error (bad degr level)", line);
 		continue;
 	    }
 	    skip_integer(s, ch);
 
 	    skip_whitespace(s, ch);		/* find the degr dump date */
 	    if(ch == '\0') {
-		error("schedule line %d: syntax error", line);
+		error("schedule line %d: syntax error (bad degr dump date)", line);
 		continue;
 	    }
 	    degr_dumpdate = s - 1;
@@ -1740,14 +1751,14 @@ read_schedule(waitqp)
 
 	    skip_whitespace(s, ch);		/* find the degr size number */
 	    if(ch == '\0'  || sscanf(s - 1, "%lu", &degr_size) != 1) {
-		error("schedule line %d: syntax error", line);
+		error("schedule line %d: syntax error (bad degr size)", line);
 		continue;
 	    }
 	    skip_integer(s, ch);
 
 	    skip_whitespace(s, ch);		/* find the degr time number */
 	    if(ch == '\0' || sscanf(s - 1, "%lu", &degr_time) != 1) {
-		error("schedule line %d: syntax error", line);
+		error("schedule line %d: syntax error (bad degr estimated time)", line);
 		continue;
 	    }
 	    skip_integer(s, ch);
@@ -1800,6 +1811,7 @@ read_schedule(waitqp)
 	sp->no_space = 0;
 
 	dp->up = (char *) sp;
+	dp->host->features = am_string_to_feature(features);
 	remove_disk(waitqp, dp);
 	enqueue_disk(&rq, dp);
     }
@@ -1905,7 +1917,7 @@ find_diskspace(size, cur_idle, pref)
     size = am_round(size, DISK_BLOCK_KB);
 
 #ifdef HOLD_DEBUG
-    printf("find diskspace: want %lu K\n", size );
+    printf("%s: want %lu K\n", debug_prefix_time(": find_diskspace"), size);
     fflush(stdout);
 #endif
 
@@ -1958,8 +1970,9 @@ find_diskspace(size, cur_idle, pref)
 	halloc = dalloc + (((dalloc-1)/minp->chunksize)+1) * DISK_BLOCK_KB;
 
 #ifdef HOLD_DEBUG
-	fprintf(stdout,"find diskspace: size %ld hf %ld df %ld da %ld ha %ld\n",
-		size, hfree, dfree, dalloc, halloc);
+	printf("%s: find diskspace: size %ld hf %ld df %ld da %ld ha %ld\n",
+	       debug_prefix_time(": find_diskspace"),
+	       size, hfree, dfree, dalloc, halloc);
 	fflush(stdout);
 #endif
 	size -= dalloc;
@@ -1982,7 +1995,8 @@ find_diskspace(size, cur_idle, pref)
 
 #ifdef HOLD_DEBUG
     for( i = 0; result && result[i]; i++ ) {
-	printf("find diskspace: selected %s free %ld reserved %ld dumpers %d\n",
+	printf("%s: find diskspace: selected %s free %ld reserved %ld dumpers %d\n",
+		debug_prefix_time(": find_diskspace"),
 		result[i]->disk->diskdir,
 		result[i]->disk->disksize - holdalloc(result[i]->disk)->allocated_space,
 		result[i]->reserved,
@@ -2031,7 +2045,8 @@ assign_holdingdisk(holdp, diskp)
 	    holdalloc(holdp[0]->disk)->allocated_space += holdp[0]->reserved;
 	    size = (holdp[0]->reserved>size) ? 0 : size-holdp[0]->reserved;
 #ifdef HOLD_DEBUG
-	    printf("merging holding disk %s to disk %s:%s, add %lu for reserved %lu, left %lu\n",
+	    printf("%s: merging holding disk %s to disk %s:%s, add %lu for reserved %lu, left %lu\n",
+		   debug_prefix_time(": assign_holdingdisk"),
 		   sched(diskp)->holdp[j-1]->disk->diskdir,
 		   diskp->host->hostname, diskp->name,
 		   holdp[0]->reserved, sched(diskp)->holdp[j-1]->reserved,
@@ -2056,8 +2071,9 @@ assign_holdingdisk(holdp, diskp)
 	holdalloc(holdp[i]->disk)->allocated_space += holdp[i]->reserved;
 	size = (holdp[i]->reserved>size) ? 0 : size-holdp[i]->reserved;
 #ifdef HOLD_DEBUG
-	printf("%d assigning holding disk %s to disk %s:%s, reserved %lu, left %lu\n", i,
-		holdp[i]->disk->diskdir, diskp->host->hostname, diskp->name,
+	printf("%s: %d assigning holding disk %s to disk %s:%s, reserved %lu, left %lu\n",
+		debug_prefix_time(": assign_holdingdisk"),
+		i, holdp[i]->disk->diskdir, diskp->host->hostname, diskp->name,
 		holdp[i]->reserved, size );
 	fflush(stdout);
 #endif
@@ -2080,8 +2096,9 @@ adjust_diskspace(diskp, cmd)
     int i;
 
 #ifdef HOLD_DEBUG
-    printf("adjust: %s:%s %s\n", diskp->host->hostname, diskp->name,
-	   sched(diskp)->destname );
+    printf("%s: %s:%s %s\n",
+	   debug_prefix_time(": adjust_diskspace"),
+	   diskp->host->hostname, diskp->name, sched(diskp)->destname);
     fflush(stdout);
 #endif
 
@@ -2095,7 +2112,8 @@ adjust_diskspace(diskp, cmd)
 	holdalloc(holdp[i]->disk)->allocated_space += diff;
 
 #ifdef HOLD_DEBUG
-	printf("adjust: hdisk %s done, reserved %ld used %ld diff %ld alloc %ld dumpers %d\n",
+	printf("%s: hdisk %s done, reserved %ld used %ld diff %ld alloc %ld dumpers %d\n",
+		debug_prefix_time(": adjust_diskspace"),
 		holdp[i]->disk->name, holdp[i]->reserved, holdp[i]->used, diff,
 		holdalloc(holdp[i]->disk)->allocated_space,
 		holdalloc(holdp[i]->disk)->allocated_dumpers );
@@ -2107,8 +2125,9 @@ adjust_diskspace(diskp, cmd)
     sched(diskp)->act_size = total;
 
 #ifdef HOLD_DEBUG
-    printf("adjust: after: disk %s:%s used %ld\n", diskp->host->hostname,
-	   diskp->name, sched(diskp)->act_size );
+    printf("%s: after: disk %s:%s used %ld\n",
+	   debug_prefix_time(": adjust_diskspace"),
+	   diskp->host->hostname, diskp->name, sched(diskp)->act_size );
     fflush(stdout);
 #endif
 

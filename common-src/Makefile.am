@@ -17,6 +17,7 @@ libamanda_la_SOURCES = \
 	clock.c		\
 	debug.c		dgram.c		\
 	event.c		error.c		\
+	features.c	\
 	file.c		fileheader.c	\
 	krb4-security.c	krb5-security.c	\
 	match.c		\
@@ -38,6 +39,7 @@ noinst_HEADERS =	amanda.h	amregex.h	arglist.h	\
 			clock.h		\
 			dgram.h		\
 			event.h		\
+			features.h	\
 			packet.h	pipespawn.h	protocol.h	\
 			queue.h		\
 			sl.h		security.h	statfs.h	\
@@ -81,7 +83,7 @@ REGEXHSRC =	$(REGsrcdir)/regex2.h \
 		$(REGsrcdir)/regfree.c
 
 # these are used for testing only:
-TEST_PROGS = statfs token file bsdsecurity
+TEST_PROGS = statfs token file bsdsecurity features
 
 CLEANFILES = regex.h regcomp.ih engine.ih regerror.ih *.test.c
 
@@ -103,6 +105,7 @@ regerror.ih: $(REGsrcdir)/regerror.c $(REGsrcdir)/mkh
 
 STANDARD_COMMON_STUFF_NOT_FILE = \
 	alloc.$(OBJEXT) \
+	clock.$(OBJEXT) \
 	debug.$(OBJEXT) \
 	error.$(OBJEXT) \
 	util.$(OBJEXT)
@@ -111,23 +114,29 @@ STANDARD_COMMON_STUFF = \
 	$(STANDARD_COMMON_STUFF_NOT_FILE) \
 	file.$(OBJEXT)
 
-statfs_SOURCES = statfs.test.c alloc.c debug.c error.c file.c
+statfs_SOURCES = statfs.test.c
 statfs_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF)
 
-token_SOURCES = token.test.c alloc.c debug.c error.c file.c
+token_SOURCES = token.test.c
 token_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF)
 
-file_SOURCES = file.test.c alloc.c debug.c error.c
+file_SOURCES = file.test.c
 file_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF_NOT_FILE)
 
 bsdsecurity_SOURCES = bsd-security.test.c
 bsdsecurity_LDADD = $(libamanda_a_LIBADD) \
-		    $(STANDARD_COMMON_STUFF) \
+		    alloc.$(OBJEXT) \
+		    clock.$(OBJEXT) \
+		    debug.$(OBJEXT) \
+		    error.$(OBJEXT) \
 		    dgram.$(OBJEXT) \
 		    event.$(OBJEXT) \
 		    packet.$(OBJEXT) \
 		    security.$(OBJEXT) \
 		    versuff.$(OBJEXT)
+
+features_SOURCES = features.test.c
+features_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF)
 
 %.test.c: $(srcdir)/%.c
 	echo '#define TEST' >$@

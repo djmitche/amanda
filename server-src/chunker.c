@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.14 2002/03/23 19:58:09 martinea Exp $
+/* $Id: chunker.c,v 1.15 2002/04/13 19:24:51 jrjackson Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -40,6 +40,7 @@
 #include "token.h"
 #include "version.h"
 #include "fileheader.h"
+#include "features.h"
 #include "server_util.h"
 #include "util.h"
 
@@ -115,6 +116,8 @@ main(main_argc, main_argv)
     char *filename;
     long chunksize, use;
     times_t runtime;
+    am_feature_t *their_features = NULL;
+    int a;
 
     for (outfd = 3; outfd < FD_SETSIZE; outfd++) {
 	/*
@@ -181,21 +184,83 @@ main(main_argc, main_argv)
 
 	case PORT_WRITE:
 	    /*
-	     * PORT-WRITE handle filename host disk level dumpdate chunksize
-	     *   progname use options
+	     * PORT-WRITE
+	     *   handle
+	     *   filename
+	     *   host
+	     *   features
+	     *   disk
+	     *   level
+	     *   dumpdate
+	     *   chunksize
+	     *   progname
+	     *   use
+	     *   options
 	     */
-	    if (cmdargs.argc != 11)
-		error("error [dumper PORT-WRITE argc != 11: %d]", cmdargs.argc);
-	    handle = newstralloc(handle, cmdargs.argv[2]);
-	    filename = cmdargs.argv[3];
-	    hostname = newstralloc(hostname, cmdargs.argv[4]);
-	    diskname = newstralloc(diskname, cmdargs.argv[5]);
-	    level = atoi(cmdargs.argv[6]);
-	    dumpdate = newstralloc(dumpdate, cmdargs.argv[7]);
-	    chunksize = am_floor(atoi(cmdargs.argv[8]), DISK_BLOCK_KB);
-	    progname = newstralloc(progname, cmdargs.argv[9]);
-	    use = am_floor(atoi(cmdargs.argv[10]), DISK_BLOCK_KB);
-	    options = newstralloc(options, cmdargs.argv[11]);
+	    cmdargs.argc++;			/* true count of args */
+	    a = 2;
+
+	    if(a >= cmdargs.argc) {
+		error("error [chunker PORT-WRITE: not enough args: handle]");
+	    }
+	    handle = newstralloc(handle, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [chunker PORT-WRITE: not enough args: filename]");
+	    }
+	    filename = cmdargs.argv[a++];
+
+	    if(a >= cmdargs.argc) {
+		error("error [chunker PORT-WRITE: not enough args: hostname]");
+	    }
+	    hostname = newstralloc(hostname, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [chunker PORT-WRITE: not enough args: features]");
+	    }
+	    am_release_feature_set(their_features);
+	    their_features = am_string_to_feature(cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [chunker PORT-WRITE: not enough args: diskname]");
+	    }
+	    diskname = newstralloc(diskname, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [chunker PORT-WRITE: not enough args: level]");
+	    }
+	    level = atoi(cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [chunker PORT-WRITE: not enough args: dumpdate]");
+	    }
+	    dumpdate = newstralloc(dumpdate, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [chunker PORT-WRITE: not enough args: chunksize]");
+	    }
+	    chunksize = atoi(cmdargs.argv[a++]);
+	    chunksize = am_floor(chunksize, DISK_BLOCK_KB);
+
+	    if(a >= cmdargs.argc) {
+		error("error [chunker PORT-WRITE: not enough args: progname]");
+	    }
+	    progname = newstralloc(progname, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [chunker PORT-WRITE: not enough args: use]");
+	    }
+	    use = am_floor(atoi(cmdargs.argv[a++]), DISK_BLOCK_KB);
+
+	    if(a >= cmdargs.argc) {
+		error("error [chunker PORT-WRITE: not enough args: options]");
+	    }
+	    options = newstralloc(options, cmdargs.argv[a++]);
+
+	    if(a != cmdargs.argc) {
+		error("error [chunker PORT-WRITE: too many args: %d != %d]",
+		      cmdargs.argc, a);
+	    }
 
 	    while((infd = startup_chunker(filename, use, chunksize, &db)) < 0) {
 		q = squotef("[chunker startup failed: %s]", errstr);
@@ -269,7 +334,13 @@ main(main_argc, main_argv)
 	    break;
 
 	default:
-	    q = squote(cmdargs.argv[1]);
+	    if(cmdargs.argc >= 1) {
+		q = squote(cmdargs.argv[1]);
+	    } else if(cmdargs.argc >= 0) {
+		q = squote(cmdargs.argv[0]);
+	    } else {
+		q = stralloc("(no input?)");
+	    }
 	    putresult(BAD_COMMAND, "%s\n", q);
 	    amfree(q);
 	    break;
@@ -290,6 +361,8 @@ main(main_argc, main_argv)
     amfree(options);
     amfree(config_dir);
     amfree(config_name);
+    am_release_feature_set(their_features);
+    their_features = NULL;
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -460,11 +533,14 @@ databuf_flush(db)
     int rc = 1;
     int w, written;
     long left_in_chunk;
+    char *arg_filename = NULL;
     char *new_filename = NULL;
     char *tmp_filename = NULL;
     char sequence[NUM_STR_SIZE];
     int newfd;
     filetype_t save_type;
+    char *q;
+    int a;
 
     /*
      * If there's no data, do nothing.
@@ -491,10 +567,37 @@ databuf_flush(db)
 		cmd = getcmd(&cmdargs);
 	    }
 	    if(cmd == CONTINUE) {
-		/* CONTINUE filename chunksize use */
-		db->chunk_size = am_floor(atoi(cmdargs.argv[3]), DISK_BLOCK_KB);
-		db->use = atoi(cmdargs.argv[4]);
-		if(strcmp( db->filename, cmdargs.argv[2]) == 0) {
+		/*
+		 * CONTINUE
+		 *   filename
+		 *   chunksize
+		 *   use
+		 */
+		cmdargs.argc++;			/* true count of args */
+		a = 2;
+
+		if(a >= cmdargs.argc) {
+		    error("error [chunker CONTINUE: not enough args: filename]");
+		}
+		arg_filename = newstralloc(arg_filename, cmdargs.argv[a++]);
+
+		if(a >= cmdargs.argc) {
+		    error("error [chunker CONTINUE: not enough args: chunksize]");
+		}
+		db->chunk_size = atoi(cmdargs.argv[a++]);
+		db->chunk_size = am_floor(db->chunk_size, DISK_BLOCK_KB);
+
+		if(a >= cmdargs.argc) {
+		    error("error [chunker CONTINUE: not enough args: use]");
+		}
+		db->use = atoi(cmdargs.argv[a++]);
+
+		if(a != cmdargs.argc) {
+		    error("error [chunker CONTINUE: too many args: %d != %d]",
+			  cmdargs.argc, a);
+		}
+
+		if(strcmp(db->filename, arg_filename) == 0) {
 		    /*
 		     * Same disk, so use what room is left up to the
 		     * next chunk boundary or the amount we were given,
@@ -518,7 +621,7 @@ databuf_flush(db)
 		    /*
 		     * Different disk, so use new file.
 		     */
-		    db->filename = newstralloc(db->filename, cmdargs.argv[2]);
+		    db->filename = newstralloc(db->filename, arg_filename);
 		}
 	    } else if(cmd == ABORT) {
 		abort_pending = 1;
@@ -527,7 +630,14 @@ databuf_flush(db)
 		rc = 0;
 		goto common_exit;
 	    } else {
-		error("error [bad command after RQ-MORE-DISK: %d]", cmd);
+		if(cmdargs.argc >= 1) {
+		    q = squote(cmdargs.argv[1]);
+		} else if(cmdargs.argc >= 0) {
+		    q = squote(cmdargs.argv[0]);
+		} else {
+		    q = stralloc("(no input?)");
+		}
+		error("error [bad command after RQ-MORE-DISK: \"%s\"]", q);
 	    }
 	}
 
@@ -693,6 +803,7 @@ common_exit:
 
     amfree(new_filename);
     amfree(tmp_filename);
+    amfree(arg_filename);
     return rc;
 }
 

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.79 2002/03/23 19:58:09 martinea Exp $
+/* $Id: taper.c,v 1.80 2002/04/13 19:24:51 jrjackson Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -40,6 +40,7 @@
 #include "version.h"
 #include "arglist.h"
 #include "token.h"
+#include "features.h"
 #include "fileheader.h"
 #include "server_util.h"
 #ifdef HAVE_LIBVTBLC
@@ -151,6 +152,8 @@ static unsigned long malloc_hist_1, malloc_size_1;
 static unsigned long malloc_hist_2, malloc_size_2;
 char *config_name = NULL;
 char *config_dir = NULL;
+
+am_feature_t *their_features = NULL;
 
 int runtapes, cur_tape, have_changer, tapedays;
 char *labelstr, *conf_tapelist;
@@ -372,13 +375,18 @@ int rdpipe, wrpipe;
 {
     cmd_t cmd;
     struct cmdargs cmdargs;
-    char *handle = NULL, *hostname = NULL, *diskname = NULL, *result;
+    char *handle = NULL;
+    char *filename = NULL;
+    char *hostname = NULL;
+    char *diskname = NULL;
+    char *result = NULL;
     char *datestamp = NULL;
     char tok;
-    char *q;
+    char *q = NULL;
     int level, fd, data_port, data_socket, wpid;
     struct stat stat_file;
     int tape_started;
+    int a;
 
     procname = "reader";
     syncpipe_init(rdpipe, wrpipe);
@@ -437,17 +445,52 @@ int rdpipe, wrpipe;
 	switch(cmd) {
 	case PORT_WRITE:
 	    /*
-	     * PORT-WRITE <handle> <host> <disk> <lev> <datestamp>
+	     * PORT-WRITE
+	     *   handle
+	     *   hostname
+	     *   features
+	     *   diskname
+	     *   level
+	     *   datestamp
 	     */
-	    if(cmdargs.argc != 6) {
-		error("error [file_reader_side PORT-WRITE argc != 6: %d]",
-		      cmdargs.argc);
+	    cmdargs.argc++;			/* true count of args */
+	    a = 2;
+
+	    if(a >= cmdargs.argc) {
+		error("error [taper PORT-WRITE: not enough args: handle]");
 	    }
-	    handle = stralloc(cmdargs.argv[2]);
-	    hostname = stralloc(cmdargs.argv[3]);
-	    diskname = stralloc(cmdargs.argv[4]);
-	    level = atoi(cmdargs.argv[5]);
-	    datestamp = stralloc(cmdargs.argv[6]);
+	    handle = newstralloc(handle, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [taper PORT-WRITE: not enough args: hostname]");
+	    }
+	    hostname = newstralloc(hostname, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [taper PORT-WRITE: not enough args: features]");
+	    }
+	    am_release_feature_set(their_features);
+	    their_features = am_string_to_feature(cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [taper PORT-WRITE: not enough args: diskname]");
+	    }
+	    diskname = newstralloc(diskname, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [taper PORT-WRITE: not enough args: level]");
+	    }
+	    level = atoi(cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [taper PORT-WRITE: not enough args: datestamp]");
+	    }
+	    datestamp = newstralloc(datestamp, cmdargs.argv[a++]);
+
+	    if(a != cmdargs.argc) {
+		error("error [taper file_reader_side PORT-WRITE: too many args: %d != %d]",
+		      cmdargs.argc, a);
+	    }
 
 	    data_port = 0;
 	    data_socket = stream_server(&data_port, -1, STREAM_BUFSIZE);	
@@ -460,11 +503,7 @@ int rdpipe, wrpipe;
 			      NULL);
 		q = squote(m);
 		putresult(TAPE_ERROR, "%s %s\n", handle, q);
-		amfree(q);
 		amfree(m);
-		amfree(handle);
-		amfree(hostname);
-		amfree(diskname);
 		break;
 	    }
 	    putresult(PORT, "%d\n", data_port);
@@ -473,57 +512,79 @@ int rdpipe, wrpipe;
 				   -1, NETWORK_BLOCK_BYTES)) == -1) {
 		q = squote("[port connect timeout]");
 		putresult(TAPE_ERROR, "%s %s\n", handle, q);
-		amfree(q);
 		aclose(data_socket);
-		amfree(handle);
-		amfree(hostname);
-		amfree(diskname);
 		break;
 	    }
 	    read_file(fd, handle, hostname, diskname, datestamp, level, 1);
 	    aclose(data_socket);
-	    amfree(handle);
-	    amfree(hostname);
-	    amfree(diskname);
 	    break;
 
 	case FILE_WRITE:
 	    /*
-	     * FILE-WRITE <sn> <fname> <hst> <dsk> <lev> <datestamp>
+	     * FILE-WRITE
+	     *   handle
+	     *   filename
+	     *   hostname
+	     *   features
+	     *   diskname
+	     *   level
+	     *   datestamp
 	     */
-	    if(cmdargs.argc != 7) {
-		error("error [file_reader_side FILE-WRITE argc != 7: %d]",
-		      cmdargs.argc);
+	    cmdargs.argc++;			/* true count of args */
+	    a = 2;
+
+	    if(a >= cmdargs.argc) {
+		error("error [taper FILE-WRITE: not enough args: handle]");
+	    }
+	    handle = newstralloc(handle, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [taper FILE-WRITE: not enough args: filename]");
+	    }
+	    filename = newstralloc(filename, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [taper FILE-WRITE: not enough args: hostname]");
+	    }
+	    hostname = newstralloc(hostname, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [taper FILE-WRITE: not enough args: features]");
+	    }
+	    am_release_feature_set(their_features);
+	    their_features = am_string_to_feature(cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [taper FILE-WRITE: not enough args: diskname]");
+	    }
+	    diskname = newstralloc(diskname, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [taper FILE-WRITE: not enough args: level]");
+	    }
+	    level = atoi(cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [taper FILE-WRITE: not enough args: datestamp]");
+	    }
+	    datestamp = newstralloc(datestamp, cmdargs.argv[a++]);
+
+	    if(a != cmdargs.argc) {
+		error("error [taper file_reader_side FILE-WRITE: too many args: %d != %d]",
+		      cmdargs.argc, a);
 	    }
 
-	    handle = stralloc(cmdargs.argv[2]);
-	    hostname = stralloc(cmdargs.argv[4]);
-	    diskname = stralloc(cmdargs.argv[5]);
-	    level = atoi(cmdargs.argv[6]);
-	    datestamp = stralloc(cmdargs.argv[7]);
-
-	    if(stat(cmdargs.argv[3],&stat_file)!=0) {
+	    if(stat(filename, &stat_file)!=0) {
 		q = squotef("[%s]", strerror(errno));
 		putresult(TAPE_ERROR, "%s %s\n", handle, q);
-		amfree(q);
-		amfree(handle);
-		amfree(hostname);
-		amfree(diskname);
 		break;
 	    }
-	    if((fd = open(cmdargs.argv[3], O_RDONLY)) == -1) {
+	    if((fd = open(filename, O_RDONLY)) == -1) {
 		q = squotef("[%s]", strerror(errno));
 		putresult(TAPE_ERROR, "%s %s\n", handle, q);
-		amfree(q);
-		amfree(handle);
-		amfree(hostname);
-		amfree(diskname);
 		break;
 	    }
 	    read_file(fd, handle, hostname, diskname, datestamp, level, 0);
-	    amfree(handle);
-	    amfree(hostname);
-	    amfree(diskname);
 	    break;
 
 	case QUIT:
@@ -562,14 +623,22 @@ int rdpipe, wrpipe;
 	    exit(0);
 
 	default:
-	    handle = stralloc(cmdargs.argv[1]);
-	    q = squote(handle);
+	    if(cmdargs.argc >= 1) {
+		q = squote(cmdargs.argv[1]);
+	    } else if(cmdargs.argc >= 0) {
+		q = squote(cmdargs.argv[0]);
+	    } else {
+		q = stralloc("(no input?)");
+	    }
 	    putresult(BAD_COMMAND, "%s\n", q);
-	    amfree(q);
-	    amfree(handle);
 	    break;
 	}
     }
+    amfree(q);
+    amfree(handle);
+    amfree(hostname);
+    amfree(filename);
+    amfree(diskname);
 }
 
 void dumpbufs(str1)

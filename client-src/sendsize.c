@@ -24,13 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.127 2002/03/31 21:02:00 jrjackson Exp $
+ * $Id: sendsize.c,v 1.128 2002/04/13 19:24:51 jrjackson Exp $
  *
  * send estimated backup sizes using dump
  */
 
 #include "amanda.h"
 #include "pipespawn.h"
+#include "features.h"
 #include "amandates.h"
 #include "clock.h"
 #include "util.h"
@@ -92,6 +93,10 @@ disk_estimates_t *est_list;
 
 char *host;				/* my hostname from the server */
 
+static am_feature_t *our_features = NULL;
+static char *our_feature_string = NULL;
+static am_feature_t *their_features = NULL;
+
 /* local functions */
 int main P((int argc, char **argv));
 void add_diskest P((char *disk, char *amdevice, int level, int spindle, 
@@ -152,6 +157,9 @@ char **argv;
     startclock();
     dbprintf(("%s: version %s\n", get_pname(), version()));
 
+    our_features = am_init_feature_set();
+    our_feature_string = am_feature_to_string(our_features);
+
     set_debug_prefix_pid(getpid());
 
     host = alloc(MAX_HOSTNAME_LENGTH+1);
@@ -163,9 +171,20 @@ char **argv;
     start_amandates(0);
 
     for(; (line = agets(stdin)) != NULL; free(line)) {
-#define sc "OPTIONS"
+#define sc "OPTIONS "
 	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
 #undef sc
+#define sc "features="
+	    s = strstr(line, sc);
+	    if(s != NULL) {
+		s += sizeof(sc)-1;
+#undef sc
+		am_release_feature_set(their_features);
+		if((their_features = am_string_to_feature(s)) == NULL) {
+		    err_extra = "bad features value";
+		    goto err;
+		}
+	    }
 #define sc "maxdumps="
 	    s = strstr(line, sc);
 	    if(s != NULL) {
@@ -194,7 +213,8 @@ char **argv;
 		host = newstralloc(host, fp);
 	    }
 
-	    printf("OPTIONS maxdumps=%d;\n", maxdumps);
+	    printf("OPTIONS features=%s;maxdumps=%d;hostname=%s;\n",
+		   our_feature_string, maxdumps, host);
 	    fflush(stdout);
 	    continue;
 	}
@@ -429,6 +449,11 @@ char **argv;
     }
     amfree(est_prev);
     amfree(host);
+    amfree(our_feature_string);
+    am_release_feature_set(our_features);
+    our_features = NULL;
+    am_release_feature_set(their_features);
+    their_features = NULL;
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.125 2002/03/31 21:02:00 jrjackson Exp $
+ * $Id: planner.c,v 1.126 2002/04/13 19:24:51 jrjackson Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -40,6 +40,7 @@
 #include "security.h"
 #include "protocol.h"
 #include "version.h"
+#include "features.h"
 #include "server_util.h"
 #include "holding.h"
 
@@ -66,11 +67,11 @@ int conf_reserve;
 int conf_autoflush;
 double conf_bumpmult;
 
-#define HOST_READY				((void *)0)
+#define HOST_READY				((void *)0)	/* must be 0 */
 #define HOST_ACTIVE				((void *)1)
 #define HOST_DONE				((void *)2)
 
-#define DISK_READY				0
+#define DISK_READY				0		/* must be 0 */
 #define DISK_ACTIVE				1
 #define DISK_DONE				2
 
@@ -107,6 +108,9 @@ long tt_blocksize_kb;
 int runs_per_cycle;
 time_t today;
 char *datestamp = NULL;
+
+static am_feature_t *our_features = NULL;
+static char *our_feature_string = NULL;
 
 /* We keep a LIFO queue of before images for all modifications made
  * to schedq in our attempt to make the schedule fit on the tape.
@@ -199,6 +203,9 @@ char **argv;
     set_logerror(logerror);
     startclock();
     section_start = curclock();
+
+    our_features = am_init_feature_set();
+    our_feature_string = am_feature_to_string(our_features);
 
     fprintf(stderr, "%s: pid %ld executable %s version %s\n",
 	    get_pname(), (long) getpid(), argv[0], version());
@@ -487,6 +494,8 @@ char **argv;
      * on stderr for the debug file.
      */
 
+    fprintf(stderr,"\nGENERATING SCHEDULE:\n--------\n");
+
     if(conf_autoflush) {
 	dumpfile_t file;
 	sl_t *holding_list;
@@ -496,19 +505,28 @@ char **argv;
 				       holding_file = holding_file->next) {
 	    get_dumpfile(holding_file->name, &file);
 	    
-	    fprintf(stderr,"FLUSH %s %s %s %d %s\n", file.name, file.disk,
-		    file.datestamp, file.dumplevel, holding_file->name);
-	    fprintf(stdout,"FLUSH %s %s %s %d %s\n", file.name, file.disk,
-		    file.datestamp, file.dumplevel, holding_file->name);
+	    fprintf(stderr,
+		    "FLUSH %s %s %s %d %s\n",
+		    file.name,
+		    file.disk,
+		    file.datestamp,
+		    file.dumplevel,
+		    holding_file->name);
+	    fprintf(stdout,
+		    "FLUSH %s %s %s %d %s\n",
+		    file.name,
+		    file.disk,
+		    file.datestamp,
+		    file.dumplevel,
+		    holding_file->name);
 	}
 	free_sl(holding_list);
 	holding_list = NULL;
     }
-    fprintf(stderr,"ENDFLUSH\n");
-    fprintf(stdout,"ENDFLUSH\n");
+    fprintf(stderr, "ENDFLUSH\n");
+    fprintf(stdout, "ENDFLUSH\n");
     fflush(stdout);
 
-    fprintf(stderr,"\nGENERATING SCHEDULE:\n--------\n");
     while(!empty(schedq)) output_scheduleline(dequeue_disk(&schedq));
     fprintf(stderr, "--------\n");
 
@@ -518,6 +536,9 @@ char **argv;
     amfree(datestamp);
     amfree(config_dir);
     amfree(config_name);
+    amfree(our_feature_string);
+    am_release_feature_set(our_features);
+    our_features = NULL;
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -1071,6 +1092,8 @@ host_t *hostp;
     disk_t *dp;
     int i, estimates, disks, timeout, req_len;
     const security_driver_t *secdrv;
+    char *dumper;
+    char *service;
 
     assert(hostp->disks != NULL);
 
@@ -1078,128 +1101,134 @@ host_t *hostp;
 	return;
     }
 
+    /*
+     * The first time through here we send a "noop" request.  This will
+     * return the feature list from the client if it supports that.
+     * If it does not, handle_result() will set the feature list to an
+     * empty structure.  In either case, we do the disks on the second
+     * (and subsequent) pass(es).
+     */
+    if(hostp->features == NULL) {
+	service = "noop";
+    } else {
+	service = "sendsize";
+    }
     snprintf(number, sizeof(number), "%d", hostp->maxdumps);
-    req = vstralloc("SERVICE sendsize\n",
+    req = vstralloc("SERVICE ", service, "\n",
 		    "OPTIONS ",
+		    "features=", our_feature_string, ";",
 		    "maxdumps=", number, ";",
 		    "hostname=", hostp->hostname, ";",
 		    "\n",
 		    NULL);
-    disks = 0;
-    req_len = strlen(req);
-    req_len += 128;				/* room for SECURITY ... */
-    estimates = 0;
-    for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
-	char *s = NULL;
-	int s_len = 0;
+    if(hostp->features != NULL) {
+	disks = 0;
+	req_len = strlen(req);
+	req_len += 128;                             /* room for SECURITY ... */
+	estimates = 0;
+	for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	    char *s = NULL;
+	    int s_len = 0;
 
-	if(dp->todo == 0) continue;
-	if(est(dp)->state != DISK_READY) continue;
-	est(dp)->got_estimate = 0;
-	if(est(dp)->level[0] == -1) {
-	    est(dp)->state = DISK_DONE;
-	    continue;
-	}
-
-	for(i = 0; i < MAX_LEVELS; i++) {
-	    char *l;
-	    int nb_exclude;
-	    int nb_include;
-	    char *exclude1 = "";
-	    char *exclude2 = "";
-	    char spindle[NUM_STR_SIZE];
-	    char level[NUM_STR_SIZE];
-	    int lev = est(dp)->level[i];
-
-	    if(lev == -1) break;
-
-	    snprintf(level, sizeof(level), "%d", lev);
-	    snprintf(spindle, sizeof(spindle), "%d", dp->spindle);
-	    nb_exclude = 0;
-	    nb_include = 0;
-	    if(dp->exclude_file) nb_exclude += dp->exclude_file->nb_element;
-	    if(dp->exclude_list) nb_exclude += dp->exclude_list->nb_element;
-	    if(dp->include_file) nb_include += dp->include_file->nb_element;
-	    if(dp->include_list) nb_include += dp->include_list->nb_element;
-	    if(nb_exclude > 1 || nb_include > 0 || 
-	       (dp->exclude_list && dp->exclude_list->nb_element == 1 && dp->exclude_optional )) {
-		exclude1 = " OPTIONS |";
-		exclude2 = optionstr(dp);
+	    if(dp->todo == 0) continue;
+	    if(est(dp)->state != DISK_READY) continue;
+	    est(dp)->got_estimate = 0;
+	    if(est(dp)->level[0] == -1) {
+		est(dp)->state = DISK_DONE;
+		continue;
 	    }
-	    else {
-		if(dp->exclude_file && dp->exclude_file->nb_element == 1) {
-		    exclude1 = " exclude-file=";
-		    exclude2 = dp->exclude_file->first->name;
-		}
-		else if(dp->exclude_list && dp->exclude_list->nb_element == 1) {
-		    exclude1 = " exclude-list=";
-		    exclude2 = dp->exclude_list->first->name;
-		}
-	    }
-	    if(strncmp(dp->program,"DUMP",4) == 0 || 
-	       strncmp(dp->program,"GNUTAR",6) == 0) {
-		if(dp->device) {
-		    l = vstralloc(dp->program, " ", dp->name, " ",
-				  dp->device, " ", level, " ",
-				  est(dp)->dumpdate[i], " ", spindle,
-				  exclude1,
-				  exclude2,
-				  "\n",
-				  NULL);
+
+	    for(i = 0; i < MAX_LEVELS; i++) {
+		char *l;
+		int nb_exclude;
+		int nb_include;
+		char *exclude1 = "";
+		char *exclude2 = "";
+		char spindle[NUM_STR_SIZE];
+		char level[NUM_STR_SIZE];
+		int lev = est(dp)->level[i];
+
+		if(lev == -1) break;
+
+		snprintf(level, sizeof(level), "%d", lev);
+		snprintf(spindle, sizeof(spindle), "%d", dp->spindle);
+		nb_exclude = 0;
+		nb_include = 0;
+		if(dp->exclude_file) nb_exclude += dp->exclude_file->nb_element;
+		if(dp->exclude_list) nb_exclude += dp->exclude_list->nb_element;
+		if(dp->include_file) nb_include += dp->include_file->nb_element;
+		if(dp->include_list) nb_include += dp->include_list->nb_element;
+		if(nb_exclude > 1 || nb_include > 0 || 
+		   (dp->exclude_list
+		    && dp->exclude_list->nb_element == 1
+		    && dp->exclude_optional)) {
+		    exclude1 = " OPTIONS |";
+		    exclude2 = optionstr(dp);
 		}
 		else {
-		    l = vstralloc(dp->program, " ", dp->name, " ", level, " ",
-				  est(dp)->dumpdate[i], " ", spindle,
-				  exclude1,
-				  exclude2,
-				  "\n",
-				  NULL);
+		    if(dp->exclude_file && dp->exclude_file->nb_element == 1) {
+			exclude1 = " exclude-file=";
+			exclude2 = dp->exclude_file->first->name;
+		    }
+		    else if(dp->exclude_list
+			    && dp->exclude_list->nb_element == 1) {
+			exclude1 = " exclude-list=";
+			exclude2 = dp->exclude_list->first->name;
+		    }
 		}
-	    } else {
-		if(dp->device) {
-		    l = vstralloc("DUMPER ",
-				  dp->program, " ", dp->name, " ",
-				  dp->device, " ", level, " ",
-				  est(dp)->dumpdate[i], " ", spindle, " ",
-				  optionstr(dp),
-				  "\n",
-				  NULL);
+		if(strncmp(dp->program,"DUMP",4) == 0 || 
+		   strncmp(dp->program,"GNUTAR",6) == 0) {
+		    dumper = "";
+		} else {
+		    dumper = "DUMPER ";
 		}
-		else {
-		    l = vstralloc("DUMPER ",
-				  dp->program, " ", dp->name, " ", level, " ",
-				  est(dp)->dumpdate[i], " ", spindle, " ",
-				  optionstr(dp),
-				  "\n",
-				  NULL);
-		}
+		l = vstralloc(dumper,
+			      dp->program,
+			      " ", dp->name,
+			      " ", dp->device ? dp->device : "",
+			      " ", level,
+			      " ", est(dp)->dumpdate[i],
+			      " ", spindle,
+			      " ", optionstr(dp),
+			      "\n",
+			      NULL);
+		strappend(s, l);
+		s_len += strlen(l);
+		amfree(l);
 	    }
-	    strappend(s, l);
-	    s_len += strlen(l);
-	    amfree(l);
-	}
-	if(req_len + s_len > MAX_PACKET / 2) {	/* allow 2X for err response */
+	    /*
+	     * Allow 2X for err response.
+	     */
+	    if(req_len + s_len > MAX_PACKET / 2) {
+		amfree(s);
+		break;
+	    }
+	    estimates += i;
+	    strappend(req, s);
+	    req_len += s_len;
 	    amfree(s);
-	    break;
+	    est(dp)->state = DISK_ACTIVE;
+	    remove_disk(&startq, dp);
 	}
-	estimates += i;
-	strappend(req, s);
-	req_len += s_len;
-	amfree(s);
-	est(dp)->state = DISK_ACTIVE;
-	remove_disk(&startq, dp);
-    }
 
-    if(estimates == 0) {
-	amfree(req);
-	hostp->up = HOST_DONE;
-	return;
-    }
+	if(estimates == 0) {
+	    amfree(req);
+	    hostp->up = HOST_DONE;
+	    return;
+	}
 
-    if (conf_etimeout < 0)
-      timeout = - conf_etimeout;
-    else
-      timeout = estimates * conf_etimeout;
+	if (conf_etimeout < 0) {
+	    timeout = - conf_etimeout;
+	} else {
+	    timeout = estimates * conf_etimeout;
+	}
+    } else {
+	/*
+	 * We use ctimeout for the "noop" request because it should be
+	 * very fast and etimeout has other side effects.
+	 */
+	timeout = getconf_int(CNF_CTIMEOUT);
+    }
 
     secdrv = security_getdriver(hostp->disks->security_driver);
     if (secdrv == NULL) {
@@ -1245,20 +1274,26 @@ security_handle_t *sech;
     long size;
     disk_t *dp;
     host_t *hostp;
-    char *resp;
     char *msgdisk=NULL, *msgdisk_undo=NULL, msgdisk_undo_ch = '\0';
     char *remoterr, *errbuf = NULL;
     char *s;
+    char *t;
+    char *fp;
+    char *p;
+    char *line;
     int ch;
+    int tch;
 
     hostp = (host_t *)datap;
+    hostp->up = HOST_READY;
 
     if (pkt == NULL) {
 	errbuf = vstralloc("Request to ", hostp->hostname, " failed: ", 
 	    security_geterror(sech), NULL);
 	goto error_return;
-    } else if (pkt->type == P_NAK) {
-#define sc "ERROR"
+    }
+    if (pkt->type == P_NAK) {
+#define sc "ERROR "
 	if(strncmp(pkt->body, sc, sizeof(sc)-1) == 0) {
 	    s = pkt->body + sizeof(sc)-1;
 	    ch = *s++;
@@ -1273,53 +1308,85 @@ security_handle_t *sech;
 	    errbuf = vstralloc(hostp->hostname, " NAK: ", remoterr, NULL);
 	    if(s) *s = '\n';
 	    goto error_return;
-	} else {
-	    goto NAK_parse_failed;
 	}
-    }
-
-    s = pkt->body;
-    ch = *s++;
-
-#define sc "ERROR"
-    if(strncmp(s - 1, sc, sizeof(sc)-1) == 0) {
-	/* this is an error response packet */
-	s += sizeof(sc)-1;
-	ch = s[-1];
-#undef sc
-
-	skip_whitespace(s, ch);
-	if(ch == '\0') goto bogus_error_packet;
-	remoterr = s - 1;
-	skip_line(s, ch);
-	s[-1] = '\0';
-	errbuf = vstralloc(hostp->hostname, ": ", remoterr, NULL);
-	goto error_return;
-    }
-
-#define sc "OPTIONS"
-    if(strncmp(s - 1, sc, sizeof(sc)-1) == 0) {
-#undef sc
-	/* got options back from other side, ignore them */
-	skip_line(s, ch);
+	goto NAK_parse_failed;
     }
 
     msgdisk_undo = NULL;
+    s = pkt->body;
+    ch = *s++;
     while(ch) {
-	resp = s - 1;
-	skip_whitespace(s, ch);
-	if (ch == '\0') goto bad_msg;
-	msgdisk = s - 1;
-	skip_non_whitespace(s, ch);
-	msgdisk_undo = s - 1;
-	msgdisk_undo_ch = *msgdisk_undo;
-	s[-1] = '\0';
+	line = s - 1;
+	skip_line(s, ch);
+	if (s[-2] == '\n') {
+	    s[-2] = '\0';
+	}
 
-	skip_whitespace(s, ch);
-	if (ch == '\0' || sscanf(s - 1, "%d SIZE %ld", &level, &size) != 2) {
+#define sc "OPTIONS "
+	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
+#undef sc
+
+#define sc "features="
+	    t = strstr(line, sc);
+	    if(t != NULL && (isspace((int)t[-1]) || t[-1] == ';')) {
+		t += sizeof(sc)-1;
+#undef sc
+		am_release_feature_set(hostp->features);
+		if((hostp->features = am_string_to_feature(t)) == NULL) {
+		    errbuf = vstralloc(hostp->hostname,
+				       ": bad features value: ",
+				       line,
+				       "\n",
+				       NULL);
+		    goto error_return;
+		}
+	    }
+
+	    continue;
+	}
+
+#define sc "ERROR "
+	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
+	    t = line + sizeof(sc)-1;
+	    tch = t[-1];
+#undef sc
+
+	    fp = t - 1;
+	    skip_whitespace(t, tch);
+	    if (tch == '\n') {
+		t[-1] = '\0';
+	    }
+	    /*
+	     * If the "error" is that the "noop" service is unknown, it
+	     * just means the client is "old" (does not support the servie).
+	     * We can ignore this.
+	     */
+	    if(hostp->features == NULL
+	       && pkt->type == P_NAK
+	       && (strcmp(t - 1, "unknown service: noop") == 0
+	           || strcmp(t - 1, "noop: invalid service") == 0)) {
+		continue;
+	    } else {
+		errbuf = vstralloc(hostp->hostname,
+			           (pkt->type == P_NAK) ? "NAK " : "",
+			           ": ",
+			           fp,
+			           NULL);
+	        goto error_return;
+	    }
+	}
+
+	msgdisk = t = line;
+	tch = *t++;
+	skip_non_whitespace(t, tch);
+	msgdisk_undo = t - 1;
+	msgdisk_undo_ch = *msgdisk_undo;
+	*msgdisk_undo = '\0';
+
+	skip_whitespace(t, tch);
+	if (sscanf(t - 1, "%d SIZE %ld", &level, &size) != 2) {
 	    goto bad_msg;
 	}
-	skip_line(s, ch);
 
 	dp = lookup_hostdisk(hostp, msgdisk);
 
@@ -1327,22 +1394,30 @@ security_handle_t *sech;
 	msgdisk_undo = NULL;
 
 	if(dp == NULL) {
-	    char tmp;
-
-	    tmp = s[-1];
-	    s[-1] = '\0';			/* for error message */
 	    log_add(L_ERROR, "%s: invalid reply from sendsize: `%s'\n",
-		    hostp->hostname, resp);
-	    s[-1] = tmp;
+		    hostp->hostname, line);
 	} else {
-	    for(i = 0; i < MAX_LEVELS; i++)
+	    for(i = 0; i < MAX_LEVELS; i++) {
 		if(est(dp)->level[i] == level) {
 		    est(dp)->est_size[i] = size;
 		    break;
 		}
-	    if(i == MAX_LEVELS) goto bad_msg;   /* this est wasn't requested */
+	    }
+	    if(i == MAX_LEVELS) {
+		goto bad_msg;			/* this est wasn't requested */
+	    }
 	    est(dp)->got_estimate++;
 	}
+    }
+
+    if(hostp->up == HOST_READY && hostp->features == NULL) {
+	/*
+	 * The client does not support the features list, so give it an
+	 * empty one.
+	 */
+	dbprintf(("%s: no feature set from host %s\n",
+		  debug_prefix_time(NULL), hostp->hostname));
+	hostp->features = am_allocate_feature_set();
     }
 
     /* XXX what about disks that only got some estimates...  do we care? */
@@ -1396,14 +1471,9 @@ security_handle_t *sech;
 	*msgdisk_undo = msgdisk_undo_ch;
 	msgdisk_undo = NULL;
     }
-    errbuf = vstralloc(hostp->hostname, " NAK: ", "[NAK parse failed]", NULL);
+    errbuf = stralloc2(hostp->hostname, " NAK: [NAK parse failed]");
     fprintf(stderr, "got strange nak from %s:\n----\n%s----\n\n",
 	    hostp->hostname, pkt->body);
-    goto error_return;
-
- bogus_error_packet:
-
-    errbuf = vstralloc(hostp->hostname, ": [bogus error packet]", NULL);
     goto error_return;
 
  bad_msg:
@@ -1413,9 +1483,9 @@ security_handle_t *sech;
 	msgdisk_undo = NULL;
     }
     fprintf(stderr,"got a bad message, stopped at:\n");
-    fprintf(stderr,"----\n%s----\n\n", resp);
-    errbuf = vstralloc("badly formatted response from ", hostp->hostname, NULL);
-    goto error_return;
+    fprintf(stderr,"----\n%s----\n\n", line);
+    errbuf = stralloc2("badly formatted response from ", hostp->hostname);
+    /* fall through to ... */
 
  error_return:
 
@@ -1423,6 +1493,7 @@ security_handle_t *sech;
 	*msgdisk_undo = msgdisk_undo_ch;
 	msgdisk_undo = NULL;
     }
+    i = 0;
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
 	if(est(dp)->state != DISK_ACTIVE) continue;
 	est(dp)->state = DISK_DONE;
@@ -1430,11 +1501,19 @@ security_handle_t *sech;
 	    est(dp)->state = DISK_DONE;
 	    remove_disk(&waitq, dp);
 	    enqueue_disk(&failq, dp);
+	    i++;
 
 	    est(dp)->errstr = stralloc(errbuf);
 	    fprintf(stderr, "error result for host %s disk %s: %s\n",
 	        dp->host->hostname, dp->name, errbuf);
 	}
+    }
+    if(i == 0) {
+	/*
+	 * If there were no disks involved, make sure the error gets
+	 * reported.
+	 */
+	log_add(L_ERROR, "%s", errbuf);
     }
     hostp->up = HOST_DONE;
     amfree(errbuf);
@@ -2111,6 +2190,7 @@ static void output_scheduleline(dp)
     char degr_size_str[NUM_STR_SIZE];
     char degr_time_str[NUM_STR_SIZE];
     char *dump_date, *degr_date;
+    char *features;
     int i;
 
     ep = est(dp);
@@ -2168,7 +2248,9 @@ static void output_scheduleline(dp)
 		"%ld", ep->dump_size);
     snprintf(dump_time_str, sizeof(dump_time_str),
 		"%ld", dump_time);
+    features = am_feature_to_string(dp->host->features);
     schedline = vstralloc("DUMP ",dp->host->hostname,
+			  " ", features,
 			  " ", dp->name,
 			  " ", datestamp,
 			  " ", dump_priority_str,
@@ -2181,6 +2263,7 @@ static void output_scheduleline(dp)
 
     fputs(schedline, stdout);
     fputs(schedline, stderr);
+    amfree(features);
     amfree(schedline);
     amfree(degr_str);
 }

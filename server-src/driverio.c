@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.62 2002/03/23 19:58:09 martinea Exp $
+ * $Id: driverio.c,v 1.63 2002/04/13 19:24:51 jrjackson Exp $
  *
  * I/O-related functions for driver program
  */
@@ -262,6 +262,7 @@ char *datestamp;
     char *cmdline = NULL;
     char number[NUM_STR_SIZE];
     disk_t *dp;
+    char *features;
 
     switch(cmd) {
     case START_TAPER:
@@ -270,25 +271,31 @@ char *datestamp;
     case FILE_WRITE:
 	dp = (disk_t *) ptr;
 	snprintf(number, sizeof(number), "%d", level);
+	features = am_feature_to_string(dp->host->features);
 	cmdline = vstralloc(cmdstr[cmd],
 			    " ", disk2serial(dp),
 			    " ", destname,
 			    " ", dp->host->hostname,
+			    " ", features,
 			    " ", dp->name,
 			    " ", number,
 			    " ", datestamp,
 			    "\n", NULL);
+	amfree(features);
 	break;
     case PORT_WRITE:
 	dp = (disk_t *) ptr;
 	snprintf(number, sizeof(number), "%d", level);
+	features = am_feature_to_string(dp->host->features);
 	cmdline = vstralloc(cmdstr[cmd],
 			    " ", disk2serial(dp),
 			    " ", dp->host->hostname,
+			    " ", features,
 			    " ", dp->name,
 			    " ", number,
 			    " ", datestamp,
 			    "\n", NULL);
+	amfree(features);
 	break;
     case QUIT:
 	cmdline = stralloc2(cmdstr[cmd], "\n");
@@ -325,6 +332,7 @@ disk_t *dp;
     int activehd=0;
     assignedhd_t **h=NULL;
     char *device;
+    char *features;
 
     if(dp && sched(dp) && sched(dp)->holdp) {
 	h = sched(dp)->holdp;
@@ -342,11 +350,13 @@ disk_t *dp;
     case PORT_DUMP:
 	snprintf(number, sizeof(number), "%d", sched(dp)->level);
 	snprintf(numberport, sizeof(numberport), "%d", dumper->output_port);
+	features = am_feature_to_string(dp->host->features);
 	o = optionstr(dp);
 	cmdline = vstralloc(cmdstr[cmd],
 			    " ", disk2serial(dp),
 			    " ", numberport,
 			    " ", dp->host->hostname,
+			    " ", features,
 			    " ", dp->name,
 			    " ", device,
 			    " ", number,
@@ -354,6 +364,7 @@ disk_t *dp;
 			    " ", dp->program,
 			    " |", o,
 			    "\n", NULL);
+	amfree(features);
 	amfree(o);
 	break;
     case QUIT:
@@ -417,6 +428,7 @@ disk_t *dp;
     char *o;
     int activehd=0;
     assignedhd_t **h=NULL;
+    char *features;
 
     if(dp && sched(dp) && sched(dp)->holdp) {
 	h = sched(dp)->holdp;
@@ -429,11 +441,13 @@ disk_t *dp;
 	snprintf(number, sizeof(number), "%d", sched(dp)->level);
 	snprintf(chunksize, sizeof(chunksize), "%ld", h[0]->disk->chunksize);
 	snprintf(use, sizeof(use), "%ld", h[0]->reserved );
+	features = am_feature_to_string(dp->host->features);
 	o = optionstr(dp);
 	cmdline = vstralloc(cmdstr[cmd],
 			    " ", disk2serial(dp),
 			    " ", sched(dp)->destname,
 			    " ", dp->host->hostname,
+			    " ", features,
 			    " ", dp->name,
 			    " ", number,
 			    " ", sched(dp)->dumpdate,
@@ -442,6 +456,7 @@ disk_t *dp;
 			    " ", use,
 			    " |", o,
 			    "\n", NULL);
+	amfree(features);
 	amfree(o);
 	break;
     case CONTINUE:

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.41 2002/04/08 00:16:18 jrjackson Exp $
+ * $Id: bsd-security.c,v 1.42 2002/04/13 19:24:51 jrjackson Exp $
  *
  * "BSD" security module
  */
@@ -947,7 +947,7 @@ check_user_ruserok(host, pwd, remoteuser)
 		  debug_prefix_time(NULL),
 	          host, myuid == 0, remoteuser, pwd->pw_name));
 	if (myuid == 0) {
-	    dbprintf(("%s: because you are running as root, "
+	    dbprintf(("%s: because you are running as root, ",
 		      debug_prefix(NULL)));
 	    dbprintf(("/etc/hosts.equiv will not be used\n"));
 	} else {

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.86 2002/04/07 20:01:12 jrjackson Exp $
+ * $Id: amcheck.c,v 1.87 2002/04/13 19:24:51 jrjackson Exp $
  *
  * checks for common problems in server and clients
  */
@@ -45,6 +45,7 @@
 #include "token.h"
 #include "server_util.h"
 #include "pipespawn.h"
+#include "features.h"
 
 #define BUFFER_SIZE	32768
 
@@ -76,6 +77,9 @@ void usage()
 
 static unsigned long malloc_hist_1, malloc_size_1;
 static unsigned long malloc_hist_2, malloc_size_2;
+
+static am_feature_t *our_features = NULL;
+static char *our_feature_string = NULL;
 
 int main(argc, argv)
 int argc;
@@ -125,6 +129,9 @@ char **argv;
     snprintf(pid_str, sizeof(pid_str), "%ld", (long)getpid());
 
     erroutput_type = ERR_INTERACTIVE;
+
+    our_features = am_init_feature_set();
+    our_feature_string = am_feature_to_string(our_features);
 
     if(geteuid() == 0) {
 	seteuid(getuid());
@@ -310,6 +317,9 @@ char **argv;
     amfree(version_string);
     amfree(config_dir);
     amfree(config_name);
+    amfree(our_feature_string);
+    am_release_feature_set(our_features);
+    our_features = NULL;
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -1148,11 +1158,11 @@ FILE *outf;
 
 static void handle_result P((void *, pkt_t *, security_handle_t *));
 
-#define HOST_READY				((void *)0)
+#define HOST_READY				((void *)0)	/* must be 0 */
 #define HOST_ACTIVE				((void *)1)
 #define HOST_DONE				((void *)2)
 
-#define DISK_READY				((void *)0)
+#define DISK_READY				((void *)0)	/* must be 0 */
 #define DISK_ACTIVE				((void *)1)
 #define DISK_DONE				((void *)2)
 
@@ -1163,6 +1173,7 @@ void start_host(hostp)
     char *req = NULL;
     int req_len = 0;
     int disk_count;
+    char *service;
     const security_driver_t *secdrv;
     char number[NUM_STR_SIZE];
 
@@ -1170,30 +1181,66 @@ void start_host(hostp)
 	return;
     }
 
+    /*
+     * The first time through here we send a "noop" request.  This will
+     * return the feature list from the client if it supports that.
+     * If it does not, handle_result() will set the feature list to an
+     * empty structure.  In either case, we do the disks on the second
+     * (and subsequent) pass(es).
+     */
+    if(hostp->features == NULL) {
+	service = "noop";
+    } else {
+	service = "selfcheck";
+    }
+
     snprintf(number, sizeof(number), "%d", hostp->maxdumps);
-    req = vstralloc("SERVICE selfcheck\n",
+    req = vstralloc("SERVICE ", service, "\n",
 		    "OPTIONS ",
+		    "features=", our_feature_string, ";",
 		    "maxdumps=", number, ";",
 		    "hostname=", hostp->hostname, ";",
 		    "\n",
 		    NULL);
-    req_len = strlen(req);
-    req_len += 128;				/* room for SECURITY ... */
-    req_len += 256;				/* room for non-disk answers */
-    disk_count = 0;
-    for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
-	char *l;
-	int l_len;
-	char *o;
+    if(hostp->features != NULL) {
+	req_len = strlen(req);
+	req_len += 128;                         /* room for SECURITY ... */
+	req_len += 256;                         /* room for non-disk answers */
+	disk_count = 0;
+	for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	    char *l;
+	    int l_len;
+	    char *o;
 
-	if(dp->up != DISK_READY || dp->todo != 1) {
-	    continue;
-	}
-	o = optionstr(dp);
-	if(strncmp(dp->program,"DUMP",4) == 0 || 
-	   strncmp(dp->program,"GNUTAR",6) == 0) {
-	    if(dp->device) {
-		l = vstralloc(dp->program, 
+	    if(dp->up != DISK_READY || dp->todo != 1) {
+		continue;
+	    }
+	    o = optionstr(dp);
+	    if(strncmp(dp->program,"DUMP",4) == 0 || 
+	       strncmp(dp->program,"GNUTAR",6) == 0) {
+		if(dp->device) {
+		    l = vstralloc(dp->program, 
+				  " ",
+				  dp->name,
+				  " ",
+				  dp->device,
+				  " 0 OPTIONS |",
+				  o,
+				  "\n",
+				  NULL);
+		}
+		else {
+		    l = vstralloc(dp->program, 
+				  " ",
+				  dp->name,
+				  " 0 OPTIONS |",
+				  o,
+				  "\n",
+				  NULL);
+		}
+	    } else {
+		l = vstralloc("DUMPER ",
+			      dp->program, 
 			      " ",
 			      dp->name,
 			      " ",
@@ -1203,44 +1250,27 @@ void start_host(hostp)
 			      "\n",
 			      NULL);
 	    }
-	    else {
-		l = vstralloc(dp->program, 
-			      " ",
-			      dp->name,
-			      " 0 OPTIONS |",
-			      o,
-			      "\n",
-			      NULL);
+	    l_len = strlen(l);
+	    amfree(o);
+	    /*
+	     * Allow 2X for err response.
+	     */
+	    if(req_len + l_len > MAX_PACKET / 2) {
+		amfree(l);
+		break;
 	    }
-	} else {
-	    l = vstralloc("DUMPER ",
-			  dp->program, 
-			  " ",
-			  dp->name,
-			  " ",
-			  dp->device,
-			  " 0 OPTIONS |",
-			  o,
-			  "\n",
-			  NULL);
-	}
-	l_len = strlen(l);
-	amfree(o);
-	if(req_len + l_len > MAX_PACKET / 2) {	/* allow 2X for err response */
+	    strappend(req, l);
+	    req_len += l_len;
 	    amfree(l);
-	    break;
+	    dp->up = DISK_ACTIVE;
+	    disk_count++;
 	}
-	strappend(req, l);
-	req_len += l_len;
-	amfree(l);
-	dp->up = DISK_ACTIVE;
-	disk_count++;
-    }
 
-    if(disk_count == 0) {
-	amfree(req);
-	hostp->up = HOST_DONE;
-	return;
+	if(disk_count == 0) {
+	    amfree(req);
+	    hostp->up = HOST_DONE;
+	    return;
+	}
     }
 
     secdrv = security_getdriver(hostp->disks->security_driver);
@@ -1328,71 +1358,103 @@ security_handle_t *sech;
 {
     host_t *hostp;
     disk_t *dp;
-    char *errstr;
+    char *line;
     char *s;
+    char *t;
     int ch;
+    int tch;
 
     hostp = (host_t *)datap;
+    hostp->up = HOST_READY;
 
     if (pkt == NULL) {
 	fprintf(outf,
 	    "WARNING: %s: selfcheck request failed: %s\n", hostp->hostname,
 	    security_geterror(sech));
 	remote_errors++;
-	return;
-    } else if (pkt->type == P_NAK) {
-#define sc "ERROR"
-	if(strncmp(pkt->body, sc, sizeof(sc)-1) == 0) {
-	    s = pkt->body + sizeof(sc)-1;
-#undef sc
-	    ch = *s++;
-	    skip_whitespace(s, ch);
-	    errstr = s - 1;
-
-	    fprintf(outf, "ERROR: %s NAK: %s\n", hostp->hostname, errstr);
-	} else {
-	    fprintf(outf, "ERROR: %s NAK: [NAK parse failed]\n",
-		hostp->hostname);
-	}
-	remote_errors++;
 	hostp->up = HOST_DONE;
 	return;
     }
 
-    s = pkt->body;
-    ch = *s++;
-/*
+#if 0
     fprintf(errf, "got response from %s:\n----\n%s----\n\n",
 	    hostp->hostname, pkt->body);
-*/
+#endif
 
-#define sc "OPTIONS"
-    if(strncmp(s - 1, sc, sizeof(sc)-1) == 0) {
-	/* no options yet */
-	skip_line(s, ch);
-    }
-#undef sc
-
-    hostp->up = HOST_READY;
+    s = pkt->body;
+    ch = *s++;
     while(ch) {
-#define sc "ERROR"
-	if(strncmp(s - 1, sc, sizeof(sc)-1) == 0) {
-	    s += sizeof(sc)-1;
-	    ch = s[-1];
+	line = s - 1;
+	skip_line(s, ch);
+	if (s[-2] == '\n') {
+	    s[-2] = '\0';
+	}
+
+#define sc "OPTIONS "
+	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
 #undef sc
 
-	    skip_whitespace(s, ch);
-	    errstr = s - 1;
-	    skip_line(s, ch);
-	    /* overwrite '\n'; s-1 points to the beginning of the next line */
-	    s[-2] = '\0';
+#define sc "features="
+	    t = strstr(line, sc);
+	    if(t != NULL && (isspace((int)t[-1]) || t[-1] == ';')) {
+		t += sizeof(sc)-1;
+#undef sc
+		am_release_feature_set(hostp->features);
+		if((hostp->features = am_string_to_feature(t)) == NULL) {
+		    fprintf(outf, "ERROR: %s: bad features value: %s\n",
+			    hostp->hostname, line);
+		}
+	    }
 
-	    fprintf(outf, "ERROR: %s: %s\n", hostp->hostname, errstr);
-	    remote_errors++;
-	    hostp->up = HOST_DONE;
-	} else {
-	    skip_line(s, ch);
+	    continue;
 	}
+
+#define sc "OK "
+	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
+	    continue;
+#undef sc
+	}
+
+#define sc "ERROR "
+	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
+	    t += sizeof(sc)-1;
+	    tch = t[-1];
+#undef sc
+
+	    skip_whitespace(t, tch);
+	    /*
+	     * If the "error" is that the "noop" service is unknown, it
+	     * just means the client is "old" (does not support the servie).
+	     * We can ignore this.
+	     */
+	    if(hostp->features == NULL
+	       && pkt->type == P_NAK
+	       && (strcmp(t - 1, "unknown service: noop") == 0
+		   || strcmp(t - 1, "noop: invalid service") == 0)) {
+	    } else {
+		fprintf(outf, "ERROR: %s%s: %s\n",
+			(pkt->type == P_NAK) ? "NAK " : "",
+			hostp->hostname,
+			t - 1);
+		remote_errors++;
+		hostp->up = HOST_DONE;
+	    }
+	    continue;
+	}
+
+	fprintf(outf, "ERROR: %s: unknown response: %s\n",
+		hostp->hostname, line);
+	remote_errors++;
+	hostp->up = HOST_DONE;
+    }
+    if(hostp->up == HOST_READY && hostp->features == NULL) {
+	/*
+	 * The client does not support the features list, so give it an
+	 * empty one.
+	 */
+	dbprintf(("%s: no feature set from host %s\n",
+		  debug_prefix_time(NULL), hostp->hostname));
+	hostp->features = am_allocate_feature_set();
     }
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
 	if(dp->up == DISK_ACTIVE) {

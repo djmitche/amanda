@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.48 2002/03/22 15:00:13 martinea Exp $
+ * $Id: diskfile.c,v 1.49 2002/04/13 19:24:51 jrjackson Exp $
  *
  * read disklist file
  */
@@ -179,10 +179,12 @@ char *diskname;
 
 	host->hostname = stralloc(hostname);
 	host->disks = NULL;
-	host->up = NULL;
 	host->inprogress = 0;
 	host->maxdumps = 1;
+	host->netif = NULL;
 	host->start_t = 0;
+	host->up = NULL;
+	host->features = NULL;
     }
     enqueue_disk(list, disk);
 
@@ -491,10 +493,12 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 	host->hostname = hostname;
 	hostname = NULL;
 	host->disks = NULL;
-	host->up = NULL;
 	host->inprogress = 0;
 	host->maxdumps = 1;		/* will be overwritten */
+	host->netif = NULL;
 	host->start_t = 0;
+	host->up = NULL;
+	host->features = NULL;
     }
 
     host->netif = netif;
