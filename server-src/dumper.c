@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.47 1998/01/22 03:06:44 amcore Exp $
+/* $Id: dumper.c,v 1.48 1998/01/22 18:05:03 jrj Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -86,7 +86,7 @@ double dumptime;	/* Time dump took in secs */
 static enum { srvcomp_none, srvcomp_fast, srvcomp_best } srvcompress;
 
 char *errfname = NULL;
-FILE *errf;
+FILE *errf = NULL;
 char *filename = NULL;
 char *hostname = NULL;
 char *diskname = NULL;
@@ -1074,7 +1074,7 @@ int mesgfd, datafd, indexfd, outfd;
 failed:
     putresult("FAILED %s %s\n", handle, squotef("[%s]", errstr));
 
-    afclose(errf);
+    if(errf) afclose(errf);
     /* fall through to ... */
 
  log_failed:
