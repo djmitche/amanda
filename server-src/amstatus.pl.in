@@ -279,7 +279,7 @@ while(<AMDUMP>) {
 		$busy_time{$2}+=($1-$dump_time{$hostpart});
 		$running_dumper{$2} = "0";
 		$dump_time{$hostpart}=$1;
-		$error{$hostpart}=$error;
+		$error{$hostpart}="driver: $error";
 		$dumpers_active--;
 	}
 	elsif(/driver: result time (\S+) from (dumper\d+): TRY-AGAIN (\d+-\d+) (.*)/) {
@@ -292,7 +292,7 @@ while(<AMDUMP>) {
 		$busy_time{$2}+=($1-$dump_time{$hostpart});
 		$running_dumper{$2} = "0";
 		$dump_time{$hostpart}=$1;
-		$error{$hostpart}="(aborted:$error)";
+		$error{$hostpart}="driver: (aborted:$error)";
 		$dumpers_active--;
 	}
 	elsif(/driver: result time (\S+) from (dumper\d+): DONE (\d+-\d+) (\d+) (\d+) (\d+) \[.*\]/) {
@@ -318,7 +318,7 @@ while(<AMDUMP>) {
 		$busy_time{$2}+=($1-$dump_time{$hostpart});
 		$running_dumper{$2} = "0";
 		$dump_time{$hostpart}=$1;
-		$error{$hostpart}="(aborted)";
+		$error{$hostpart}="driver: (aborted)";
 		$dumpers_active--;
 	}
 	elsif(/driver: finished-cmd time (\S+) dumper\d+ dumped (\S+):(\S+)/){
@@ -386,7 +386,7 @@ while(<AMDUMP>) {
 		$taper_finished{$hostpart}= $2 eq 'TAPE-ERROR' ? -2 : -1;
 		$busy_time{"taper"}+=($1-$taper_time{$hostpart});
 		$taper_time{$hostpart}=$1;
-		$error{$hostpart}=$error;
+		$error{$hostpart}="driver: $error";
 	}
 	elsif(/planner: FAILED (\S+) (\S+) (\S+) (\d+) (.*)/) {
 		$host=$1;
@@ -395,7 +395,7 @@ while(<AMDUMP>) {
 		$hostpart=&make_hostpart($host,$partition,$datestamp);
 		$dump_started{$hostpart}=-1;
 		$level{$hostpart}=$4;
-		$error{$hostpart}=$5;
+		$error{$hostpart}="planner: $5";
 	}
 	elsif(/dump of driver schedule after start degraded mode:/) {
 		$start_degraded_mode=1;
@@ -505,7 +505,7 @@ foreach $host (sort @hosts) {
 						$epartition++;
 						$estsize += $esize{$hostpart};
 					}
-					else {
+					elsif (!defined $dump_started{$hostpart}) {
 						if( defined $opt_failed) {
 							printf "%-40s%2d", "$host:$partition", $level{$hostpart};
 							print " no estimate\n";
