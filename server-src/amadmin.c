@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.27.2.2 1998/02/28 16:53:43 amcore Exp $
+ * $Id: amadmin.c,v 1.27.2.3 1998/03/09 23:30:01 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -458,7 +458,6 @@ void balance()
 	    continue;
 	}
 	seq = next_level0(dp, &inf);
-	if(seq > max_seq) max_seq = seq;
 	if(seq < 0) {
 	    overdue++;
 	    if (-seq > max_overdue)
@@ -466,10 +465,14 @@ void balance()
 	    seq = 0;
 	}
 	if(seq >= total) {
-	    printf("bogus seq number %d for %s:%s", seq,
-		  dp->host->hostname, dp->name);
+	    if(seq > total) /* next_level0() can return dumpcycle if run */
+			    /* immediately  after amdump */
+		printf("bogus seq number %d for %s:%s", seq,
+			dp->host->hostname, dp->name);
 	    seq = total-1;
 	}
+	if(seq > max_seq) max_seq = seq;
+
 	sp[seq].disks++;
 	sp[seq].origsize += inf.inf[0].size;
 	sp[seq].outsize += inf.inf[0].csize;
