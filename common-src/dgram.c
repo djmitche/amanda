@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.11 1998/10/12 20:03:11 kashmir Exp $
+ * $Id: dgram.c,v 1.12 1998/11/24 20:02:07 kashmir Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -104,25 +104,18 @@ int *portp;
     name.sin_family = AF_INET;
     name.sin_addr.s_addr = INADDR_ANY;
 
-/*
- * under krb4, it really doesn't matter where you're coming from, since
- * exchanges are all wrapped in kerberos bits.  It actually causes a problem
- * for sites that block lower ports at a firewall.  perhaps this should just
- * be configured to try to optionally bind to a compile time or config file
- * range.  next version of amanda...  XXX  people mixing bsd-auth and
- * krb4-auth run into problems here.
- */
-#ifndef KRB4_SECURITY
+    /*
+     * If possible, we get a reserved port, since some of our security types
+     * depend on it.  If we don't have proper privledges to do this, we just
+     * don't worry about it.  It's up to the caller and user to grant us
+     * the right things.
+     */
     if(geteuid() == 0) {
 	if(bind_reserved(s, &name) == -1) {
 	    aclose(s);
 	    return -1;
 	}
-    }
-    else {
-#else
-   { /* pesky language symantics */
-#endif
+    } else {
 	/* pick any available non-reserved port */
 	name.sin_port = INADDR_ANY;
 	if(bind(s, (struct sockaddr *)&name, sizeof name) == -1) {

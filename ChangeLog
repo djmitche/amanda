@@ -1,3 +1,8 @@
+1998-11-24  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/dgram.c (dgram_bind): always try to get a reserved
+	port, even if KRB4_SECURITY is defined
+
 1998-11-23  Mike Grupenhoff <kashmir@munge.com>
 
 	* common-src/bsd-security.c (struct bsd_handle): change 'int handle'
