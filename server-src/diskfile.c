@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.27.4.6.4.2 2001/11/03 13:38:37 martinea Exp $
+ * $Id: diskfile.c,v 1.27.4.6.4.3 2001/11/11 23:38:30 martinea Exp $
  *
  * read disklist file
  */
@@ -76,13 +76,9 @@ host_t *lookup_host(hostname)
 char *hostname;
 {
     host_t *p;
-    int nameLen = strlen(hostname);
 
     for(p = hostlist; p != NULL; p = p->next) {
-	if(!strncasecmp(p->hostname, hostname, nameLen)) {
-	    if (p->hostname[nameLen] == '\0' || p->hostname[nameLen] == '.')
-		return p;
-	}
+	if(strcasecmp(p->hostname, hostname) == 0) return p;
     }
     return NULL;
 }
