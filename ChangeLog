@@ -1,3 +1,9 @@
+2000-10-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* client-src/selfcheck.c (check_disk): Write an appropriate
+	message if the disk name start with '//' and the program is DUMP
+	or SAMBA is not compiled in.
+
 2000-10-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/driver.c (handle_chunker_result): The dumpsize is
