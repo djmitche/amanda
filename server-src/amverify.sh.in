@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.7.2.4 1999/06/25 22:07:37 oliva Exp $
+#	$Id: amverify.sh.in,v 1.7.2.5 1999/09/05 21:12:08 jrj Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -97,6 +97,11 @@ doonefile() {
 			if [ X"$TAR" != X"" -a X"$2" = X"$TAR" ]; then
 				CMD=$TAR
 				ARGS="tf -"
+			elif [ X"$TAR" != X"" \
+			       -a X"$SAMBA_CLIENT" != X"" \
+			       -a X"$2" = X"$SAMBA_CLIENT" ]; then
+				CMD=$TAR
+				ARGS="tf -"
 			elif [ X"$DUMP" != X"" -a X"$2" = X"$DUMP" ]; then
 				CMD=$RESTORE
 				if [ $IS_AIX -eq 1 ]; then
@@ -104,6 +109,15 @@ doonefile() {
 				else
 					ARGS="tbf 2 -"
 				fi
+			elif [ X"$VDUMP" != X"" -a X"$2" = X"$VDUMP" ]; then
+				CMD=$VRESTORE
+				ARGS="tbf 2 -"
+			elif [ X"$VXDUMP" != X"" -a X"$2" = X"$VXDUMP" ]; then
+				CMD=$VXRESTORE
+				ARGS="tbf 2 -"
+			elif [ X"$XFSDUMP" != X"" -a X"$2" = X"$XFSDUMP" ]; then
+				CMD=$XFSRESTORE
+				ARGS="-t -v silent -"
 			else
 				echo "** Cannot do $2 dumps" > $TEMP/errors
 				result=999	# flag as not really an error
@@ -125,14 +139,22 @@ doonefile() {
 #
 #	CONFIG_DIR	directory in which the config file resides
 #	AMRESTORE	full path name of amrestore
-#	AMGETCONF	full path name of getconf
+#	AMGETCONF	full path name of amgetconf
+#	AMTAPE		full path name of amtape
 #	TAR		ditto for GNU-tar
+#	SAMBA_CLIENT	ditto for smbclient
 #	DUMP		ditto for the system dump program
 #	RESTORE		ditto for the system restore program
-#	MT		ditto for mt
+#	VDUMP		ditto for the system dump program
+#	VRESTORE	ditto for the system restore program
+#	VXDUMP		ditto for the system dump program
+#	VXRESTORE	ditto for the system restore program
+#	XFSDUMP		ditto for the system dump program
+#	XFSRESTORE	ditto for the system restore program
 #	DD		ditto for dd
-#	MAIL		mail program
+#	MT		ditto for mt
 #	MTOPT		flag given to MT to specify tape device: -f or -t
+#	MAIL		mail program
 #	IS_AIX		true if this is an AIX system
 
 CONFIG_DIR=@CONFIG_DIR@
@@ -142,12 +164,19 @@ AMRESTORE=$sbindir/amrestore$SUF
 AMGETCONF=$libexecdir/getconf$SUF
 AMTAPE=$sbindir/amtape$SUF
 TAR=@GNUTAR@
+SAMBA_CLIENT=@SAMBA_CLIENT@
 DUMP=@DUMP@
 RESTORE=@RESTORE@
-MT=@MT@
-MAIL=@MAILER@
+VDUMP=@VDUMP@
+VRESTORE=@VRESTORE@
+VXDUMP=@VXDUMP@
+VXRESTORE=@VXRESTORE@
+XFSDUMP=@XFSDUMP@
+XFSRESTORE=@XFSRESTORE@
 DD=@DD@
+MT=@MT@
 MTOPT=@MT_FILE_FLAG@
+MAIL=@MAILER@
 if [ `/bin/uname -s 2>/dev/null` = AIX ]; then
 	IS_AIX=1
 else
