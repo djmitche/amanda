@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.7 1998/12/12 02:44:15 martinea Exp $
+ * $Id: driver.c,v 1.58.2.8 1998/12/12 14:44:00 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -944,6 +944,7 @@ int fd;
     case ABORT_FINISHED: /* ABORT-FINISHED <handle> */
 	assert(pending_aborts);
 	free_serial(result_argv[2]);
+	rename_tmp_holding(sched(dp)->destname, 0);
 	deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
 	adjust_diskspace(dp, DONE);
 	delete_diskspace(dp);
