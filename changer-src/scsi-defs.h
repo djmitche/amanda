@@ -250,12 +250,15 @@ typedef struct
     unsigned char ascq;
     unsigned char byte79[3];
 #ifdef LITTLE_ENDIAN_BITFIELDS        
+    PackedBit     byte10res : 6;
+    PackedBit     invert : 1;
+    PackedBit     svalid : 1;
 #else
     PackedBit     svalid : 1;
     PackedBit     invert : 1;
     PackedBit     byte10res : 6;
 #endif
-    unsigned char ssea[2];
+    unsigned char source[2];
     unsigned char byte1314[4];
 } MediumTransportElementDescriptor_T;
 
@@ -489,6 +492,7 @@ typedef struct ElementInfo
 {
     int type;       /* CHANGER - 1, STORAGE - 2, TAPE - 4 */
     int address;    /* Adress of this Element */
+    int from;       /* From where did it come */
     char status;    /* F -> Full, E -> Empty */
     int ASC;        /* Additional Sense Code from read element status */
     int ASCQ;      /* */
@@ -496,14 +500,10 @@ typedef struct ElementInfo
 } ElementInfo_T;
 
 
+
 typedef struct {
-    char *ident;                   /* Length of prod_ident from inquiry */
-    int (*move)(int, int, int);    /* Move Element */
-    int (*status)(int, ElementInfo_T **);   /* Read Element Status */
-    int (*resetstatus)(int);                /* Reset Element inventory */
-    int (*free)();                 /* Is slot free */
-    int (*eject)();                /* Eject tape from drive */
-    int (*clean)();                /* Cleaning Flag set, Vendor specific */
+    char *ident;                   /* Name of the device from inquiry */
+    int (*function[7])();          /* New way to call the device dependend functions move/eject ... */
 } ChangerCMD_T ;
 
 typedef struct {
@@ -516,7 +516,8 @@ typedef struct OpenFiles {
     int fd;
     unsigned char SCSI;
     char *dev;
-    char name[16];
+    char *ConfigName;
+    char ident[17];
     SCSIInquiry_T *inquiry;
     struct OpenFiles *next;
 } OpenFiles_T;
@@ -531,7 +532,7 @@ typedef struct LogPageDecode {
 /* Funktion-Declaration */
 /* ======================================================= */
 OpenFiles_T * SCSI_OpenDevice(char *DeviceName);
-int OpenDevice(char *DeviceName);
+int OpenDevice(char *DeviceName, char *ConfigName);
 
 int SCSI_CloseDevice(int DeviceFD); 
 int CloseDevice(char *,int ); 
@@ -579,7 +580,36 @@ int SCSI_ExecuteCommand(int DeviceFD,
 #define SC_COM_LOG_SENSE 0x4d
 #define SC_MOVE_MEDIUM 0xa5
 #define SC_COM_RES 0xb8
-
+/*
+ * Define for LookupDevice
+ */
+#define LOOKUP_NAME 1
+#define LOOKUP_FD 2
+#define LOOKUP_TYPE 3
+#define LOOKUP_CONFIG 4
+/*
+ * Defines for the function types in Changer_CMD_T
+ */
+#define CHG_MOVE 0
+#define CHG_STATUS 1
+#define CHG_RESET_STATUS 2
+#define CHG_FREE 3
+#define CHG_EJECT 4
+#define CHG_CLEAN 5
+#define CHG_REWIND 6
+/*
+ * Defines for the type field in the inquiry command
+ */
+#define TYPE_DISK 0
+#define TYPE_TAPE 1
+#define TYPE_PRINTER 2
+#define TYPE_PROCESSOR 3
+#define TYPE_WORM 4
+#define TYPE_CDROM 5
+#define TYPE_SCANNER 6
+#define TYPE_OPTICAL 7
+#define TYPE_CHANGER 8
+#define TYPE_COMM 9
 /*
  * Local variables:
  * indent-tabs-mode: nil

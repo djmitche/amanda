@@ -1,3 +1,36 @@
+1999-01-26	Thomas Hepper <th@ant.han.de>	
+	* changer-src/Makefile.am added to LDADD 
+	../tape-src/libamtape.$(LIB_EXTENSION)
+	* changer-src/chg-scsi.c If statfile is not set try to get the info
+	about the current loaded tape direct from the changer.
+	Fixed debug output for the eject value if > 1
+	* changer-src/libscsi.h Prototype for GetCurrentSlot
+	* changer-src/scsi-aix.c If the Device we open is not a changer or tape
+	return NULL, so that the above function can abort. New eject per mtio ioctl.
+	* changer-src/scsi-bsd.c see scsi-aix.c
+	* changer-src/scsi-linux.c see scsi-aix.c
+	* changer-src/scsi-hpux_new.c see scsi-aix.c
+	* changer-src/scsi-irix.c see scsi-aix.c
+	* changer-src/scsi-solaris.c see scsi-aix.c and added a retry loop for
+	the execution of SCSI commands.
+	* changer-src/scsi-changer-driver.c New Function SCSI_ReadElementStatus
+	split ReadElementStatus in device and device independed part
+	New EXB120ElementStatus, renamed ReadElementStatus in GenericElementStatus
+	added EXB 120 and DLT7000 to the devices list.
+	Removed the linked list for the element status. Now every element
+	type has its own array allocated in the *ElementStatus functions.
+	Check in the functions which sends SCSI commands if the fd is able to
+	receive SCSI commands.
+	In GenericEject check which type of eject to use (ioctl/SCSI)
+	New GetCurrentSlot, try to get the info about the loaded tape direct from
+	the changer.
+	* changer-src/scsi-chio.c Add function GetCurrentSlot (not well tested yet)
+	* changer-src/scsi-defs.h Added missing decl. in MediumTransportElementDescriptor_T
+	for LITTLE_ENDIAN_BITFIELDS
+	new field from in ElementInfo_T
+	* changer-src/sci-hpux.c EMpty function GetCurrentSlot, do we still need scsi-hpux.c ?
+	* docs/TAPE.CHANGERS added some notes for HP-UX, expanded list of tested devices
+	
 1999-01-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/conffile.c (init_defaults): default value of runspercycle

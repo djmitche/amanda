@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-linux.c,v 1.6 1998/12/22 05:11:42 oliva Exp $";
+static char rcsid[] = "$Id: scsi-linux.c,v 1.7 1999/01/26 14:21:06 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on Linux
@@ -30,6 +30,7 @@ static char rcsid[] = "$Id: scsi-linux.c,v 1.6 1998/12/22 05:11:42 oliva Exp $";
 
 #include <scsi/scsi_ioctl.h>
 #include <scsi/sg.h>
+#include <sys/mtio.h>
 
 #include <scsi-defs.h>
 
@@ -50,11 +51,28 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
       if (strncmp("/dev/sg", DeviceName, 7) == 0)
         {
           pwork->inquiry = (SCSIInquiry_T *)malloc(sizeof(SCSIInquiry_T));
-          Inquiry(DeviceFD, pwork->inquiry);
-          for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
-             pwork->name[i] = pwork->inquiry->prod_ident[i];
-          pwork->name[i] = '\0';
-          pwork->SCSI = 1;
+          if ((Inquiry(DeviceFD, pwork->inquiry)) != NULL)
+            {
+              if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
+                {
+                  for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
+                    pwork->ident[i] = pwork->inquiry->prod_ident[i];
+                  pwork->ident[i] = '\0';
+                  pwork->SCSI = 1;
+                  PrintInquiry(pwork->inquiry);
+                  return(pwork);
+                } else {
+                  free(pwork->inquiry);
+                  free(pwork);
+                  close(DeviceFD);
+                  return(NULL);
+                }
+            } else {
+              free(pwork->inquiry);
+              pwork->inquiry = NULL;
+              return(pwork);
+            }
+
         }
       return(pwork); 
     }
@@ -68,8 +86,6 @@ int SCSI_CloseDevice(int DeviceFD)
     ret = close(DeviceFD);
     return(ret);
 }
-
-
 #ifdef LINUX_CHG
 #define SCSI_OFF sizeof(struct sg_header)
 int SCSI_ExecuteCommand(int DeviceFD,
@@ -87,17 +103,22 @@ int SCSI_ExecuteCommand(int DeviceFD,
   int osize;
   int status;
 
-  if (SCSI_OFF + 12 + DataBufferLength > 4096) 
+  if (SCSI_OFF + CDB_Length + DataBufferLength > 4096) 
     {
        return(-1);
     }
 
-  buffer = (char *)malloc(SCSI_OFF + 12 + DataBufferLength);
-  memset(buffer, 0, SCSI_OFF + 12 + DataBufferLength);
+  buffer = (char *)malloc(SCSI_OFF + CDB_Length + DataBufferLength);
+  memset(buffer, 0, SCSI_OFF + CDB_Length + DataBufferLength);
   memcpy(buffer + SCSI_OFF, CDB, CDB_Length);
 
   psg_header = (struct sg_header *)buffer;
-  psg_header->twelve_byte = 12;
+  if (CDB_Length >= 12)
+    {
+      psg_header->twelve_byte = 1;
+    } else {
+      psg_header->twelve_byte = 0;
+    }
   psg_header->result = 0;
   psg_header->reply_len = SCSI_OFF + DataBufferLength;
 
@@ -111,8 +132,8 @@ int SCSI_ExecuteCommand(int DeviceFD,
       break;
   }
 
-  status = write(DeviceFD, buffer, SCSI_OFF + 12 + osize);
-  if ( status < 0 || status != SCSI_OFF + 12 + osize ||
+  status = write(DeviceFD, buffer, SCSI_OFF + CDB_Length + osize);
+  if ( status < 0 || status != SCSI_OFF + CDB_Length + osize ||
     psg_header->result ) 
     {
       dbprintf(("SCSI_ExecuteCommand error send \n"));
@@ -195,6 +216,17 @@ int SCSI_ExecuteCommand(int DeviceFD,
     return Result;
 }
 #endif
+
+int Tape_Eject ( int DeviceFD)
+{
+  struct mtop mtop;
+
+  mtop.mt_op = MTUNLOAD;
+  mtop.mt_count = 1;
+  ioctl(DeviceFD, MTIOCTOP, &mtop);
+  return;
+}
+
 #endif
 /*
  * Local variables:

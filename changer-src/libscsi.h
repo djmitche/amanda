@@ -1,5 +1,5 @@
 /*
- *	$Id: libscsi.h,v 1.6 1998/12/22 05:11:27 oliva Exp $
+ *	$Id: libscsi.h,v 1.7 1999/01/26 14:20:47 th Exp $
  *
  *	libscsi.h -- library header for routines to handle the changer
  *			support for chio based systems
@@ -21,11 +21,16 @@
  */
 int get_clean_state P((char *tape));
 
+/*
+ * This function gets the next empty slot from the changer
+ * (From this slot the tape is loaded ...)
+ */
+int GetCurrentSlot P((int fd, int drive));
 
 /*
  * Eject the actual tape from the tapedrive
  */
-void eject_tape P((char *tape));
+void eject_tape P((char *tape, int type));
 
 
 /* 

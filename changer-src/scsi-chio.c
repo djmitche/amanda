@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-chio.c,v 1.9 1998/12/22 05:11:34 oliva Exp $
+ *	$Id: scsi-chio.c,v 1.10 1999/01/26 14:20:58 th Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -49,6 +49,39 @@ int rc = 0;
 	changer_info_init++;
     }
     return (rc);
+}
+
+/* Get the number of the first free slot
+ * return > 0 number of empty slot
+ * return = 0 no slot free
+ * return < 0 error
+ */
+int GetCurrentSlot(int fd, int drive)
+{
+    struct changer_element_status  ces;
+    int slot;
+    int i, rc;
+
+    get_changer_info(fd);
+
+    ces.ces_type = CHET_ST;
+    ces.ces_data = malloc(changer_info.cp_nslots);
+
+    rc = ioctl(fd, CHIOGSTATUS, &ces);
+    if (rc) {
+	dbprintf(("%s: changer status query failed: 0x%x %s\n",
+			get_pname(), rc,strerror(errno)));
+	return -1;
+    }
+    for (slot = 0; slot < changer_info.cp_nslots; slot++)
+    {
+    	i = ces.ces_data[slot] & CESTATUS_FULL;
+    	dbprintf(("\tGetCurrentSlot slot %d = %d\n", slot, i));
+    	if (!i)
+            return(slot);
+    }
+
+
 }
 
 int get_clean_state(int changerfd, char *changerdev, char *dev)
@@ -245,16 +278,10 @@ int rc;
 }
 
 /* This function should ask the drive if it is ready */
-int Tape_Ready ( char *tapedev , char * changerdev, int changerfd, int wait)
+int Tape_Ready ( char *tapedev , int wait)
 {
   FILE *out=NULL;
   int cnt=0;
-  
-  if (tapedev == NULL || strcmp(tapedev,changerdev) == 0)
-    {
-      sleep(wait);
-      return(0);
-    }
   
   while ((cnt < wait) && (NULL==(out=fopen(tapedev,"w+")))){
     cnt++;

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-bsd.c,v 1.2 1998/12/22 05:11:31 oliva Exp $";
+static char rcsid[] = "$Id: scsi-bsd.c,v 1.3 1999/01/26 14:20:51 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an SGI Workstation
@@ -28,6 +28,7 @@ static char rcsid[] = "$Id: scsi-bsd.c,v 1.2 1998/12/22 05:11:31 oliva Exp $";
 #endif
 
 #include <sys/scsiio.h>
+#include <sys/mtio.h>
 
 #include <scsi-defs.h>
 
@@ -47,14 +48,30 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
       pwork = (OpenFiles_T *)malloc(sizeof(OpenFiles_T));
       pwork->next = NULL;
       pwork->fd = DeviceFD;
+      pwork->SCSI = 0;
       pwork->dev = strdup(DeviceName);
       pwork->inquiry = (SCSIInquiry_T *)malloc(sizeof(SCSIInquiry_T));
-      Inquiry(DeviceFD, pwork->inquiry);
-      for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
-        pwork->name[i] = pwork->inquiry->prod_ident[i];
-      pwork->name[i] = '\0';
-      pwork->SCSI = 1;
-      return(pwork);
+
+      if (Inquiry(DeviceFD, pwork->inquiry) == 0)
+          {
+              if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
+                  {
+                      for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
+                          pwork->ident[i] = pwork->inquiry->prod_ident[i];
+                      pwork->ident[i] = '\0';
+                      pwork->SCSI = 1;
+                      PrintInquiry(pwork->inquiry);
+                      return(pwork);
+                  } else {
+                      free(pwork->inquiry);
+                      free(pwork);
+                      return(NULL);
+                  }
+          } else {
+              free(pwork->inquiry);
+              pwork->inquiry = NULL;
+              return(pwork);
+          }
     }
   
   return(NULL); 
@@ -136,6 +153,17 @@ int SCSI_ExecuteCommand(int DeviceFD,
       }
   }   
   return(ds.retsts);
+}
+
+int Tape_Eject ( int DeviceFD)
+{
+    struct mtop mtop;
+
+    mtop.mt_op = MTOFFL;
+    mtop.mt_count = 1;
+    ioctl(DeviceFD, MTIOCTOP, &mtop);
+
+    return(0);
 }
 
 #endif
