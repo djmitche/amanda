@@ -1,4 +1,12 @@
-1998-09-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+1998-10-03  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* docs/DUMPER-API: New `index-<mode>' options.
+	define `support parse-estimate' and `support parse-backup' subcommand.
+	New 'estimate-direct', `estimate-parse', `backup-direct' and
+	`backup-parse' options.
+	Remove PARSE keyword from estimate and backup command.
+
+1998-10-03  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* docs/DUMPER-API: define PARSE keyword in stderr of the backup
 	command

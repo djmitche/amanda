@@ -1,6 +1,6 @@
 AMANDA DUMPER API
 
-Last modified $Date: 1998/10/03 13:05:17 $
+Last modified $Date: 1998/10/04 00:08:09 $
 
 by Alexandre Oliva <oliva@dcc.unicamp.br>
 
@@ -144,15 +144,41 @@ image: implies that the command `index-from-image' generates an index
 file from a backup image (for example, `tar -t').
 
 direct: implies that the `backup' command can produce an index file as
-it generates the backup image.  This will be explicitly requested with
-an additional option `index-direct' in the `backup' command
-invocation.
+it generates the backup image.
 
 parse: implies that the `backup-parse' command can produce an index
-file as it generates the backup image.  This will be explicitly
-requested with an additional option `index-direct' (not
-`index-parse'!) in the `backup-parse' command invocation.
+file as it generates the backup formatted output .
 
+The indexing mechanisms will be explicitly requested with the additionnal
+option `index-<mode>' in the `backup' and `backup-parse' command invocation.
+
+The `parse-estimate' support subcommand print a list of valid mechanisms to
+parse the estimate output and write the estimate size to its output, the
+two mechanisms are:
+
+direct: implies that the `estimate' command can produce the estimate output.
+
+parse: implies that the `estimate-parse' command can produce the estimate
+output when fed with the `estimate' output.
+
+The estimate parsing mechanisms will be explicitly requested with the 
+additionnal option `estimate-<mode>' in the `estimate' and 
+`estimate-parse' command invocation.
+
+The `parse-backup' support subcommand print a list of valid mechanisms to
+parse the backup stderr, the two mechanisms are:
+
+direct: implies that the `backup' command can produce the
+backup-formatted-ouput.
+
+parse: implies that the `backup-parse' command can produce the 
+backup-formatted-ouput when fed with the `backup' stderr.
+
+The backup parsing mechanisms will be explicitly requested with the 
+additionnal option `backup-<mode>' in the `backup' and `backup-parse'
+command invocation.
+
+There is also two support subcommand to request 
 `index-from-image' should be supported, if possible, even if other
 index commands are not, since it can be used in the future to create
 index files from previously backed up filesystems.  
@@ -263,15 +289,17 @@ USER root
 GROUP operator
 
 and exit, with exit status 2.  If requested estimate type is not
-supported, exit status 3 should be returned.  Otherwise, the script
+supported, exit status 3 should be returned.
+If the option `estimate-direct' is set, then the `estimate' command
 should write to stdout the estimated size, in bytes, a pair of numbers
-that, multiplied by one another, yield the estimated size in bytes, or
-the word PARSE.
+that, multiplied by one another, yield the estimated size in bytes.
 
-If the first line of output of the estimate command contains only the
-word PARSE, any further output will be fed to the `estimate-parse'
-command, that should extract from its input the estimated size.  The
-syntax of `estimate-parse' is identical to that of `estimate'.
+If the option `estimate-parse' is set, then the `estimate' command 
+should write to stdout the informations needed by the 
+`estimate-parse' command, that should extract from its input the 
+estimated size.
+
+The syntax of `estimate-parse' is identical to that of `estimate'.
 
 Both `estimate' and `estimate-parse' can output the word `KILL', after
 printing the estimate.  In this case, Amanda will send a SIGTERM
@@ -289,11 +317,15 @@ image should be written to standard output, whereas stderr should be
 used for the user-oriented output of the backup program and other
 messages.
 
-If the first line of the standard error of the backup command contains only
-the word PARSE, any further output (stderr) will be fed to the `backup-parse'
-command, that should edit its input so that it prints in standard output
-a formatted-output-backup, otherwise the standard error of the backup
-command should contains the formatted-output-backup.
+If the option `backup-direct' is set, then the `backup' command should 
+write to stderr a formatted-output-backup.
+
+If the option `backup-parse' is set, then the `backup' command 
+should write to stderr the informations needed by the `backup-parse'
+command, that should edit its input so that it prints to standard
+output a formatted-output-backup.
+
+The syntax of `estimate-parse' is identical to that of `estimate'.
 
 The syntax of the formatted-output-backup is as follow:
 All lines should start with either `| ' for normal output, `? ' for
@@ -303,9 +335,11 @@ print a line starting with `# ', followed by the total backup size in
 bytes or by a pair of numbers that, multiplied, yield the total backup
 size; this number will be used for consistency check.
 
-The option `index-direct' should cause commands `backup' and
-`backup-parse' to output the index directly to file descriptor 3.  The
-syntax of the index file is described in the next section.
+The option `index-direct' should cause commands `backup' to output 
+the index directly to file descriptor 3.  The option `index-parse' 
+should cause commands `backup-parse' to output the index directly to
+file descriptor 3.  The syntax of the index file is described in the 
+next section.
 
 3.5. The `index-from-output' and `index-from-image' commands
 
