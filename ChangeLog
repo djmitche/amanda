@@ -1,3 +1,8 @@
+1999-02-22  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* client-src/sendbackup-gnutar.c: new regexp for SAMBA
+	Reported by Grzegorz Mucha <grzegorz.mucha@solidex.com.pl>
+
 1999-02-17  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/amtoc.pl.in: minor fixes for multi-tape runs
