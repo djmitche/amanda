@@ -1,5 +1,13 @@
 1999-04-06  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c (add_msg_data): now takes a 'len' arg, and
+	doesn't expect the data to be nul terminated.  Also, move
+	the buffer from global scope into the function, and have a NULL
+	arg flush it out if there is leftover data at the end.  Finally,
+	resize the buffer in 256 byte chunks.
+
+1999-04-06  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/stream.c, common-src/stream.h (stream_client): add
 	yet another arg - if nonzero, do a nonblocking connect
 	* server-src/dumper.c: catch up with extra arg to stream_client()

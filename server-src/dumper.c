@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.102 1999/04/06 16:20:01 kashmir Exp $
+/* $Id: dumper.c,v 1.103 1999/04/06 18:54:29 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -132,7 +132,7 @@ static int databuf_write P((struct databuf *, const void *, int));
 static int databuf_flush P((struct databuf *));
 static void process_dumpeof P((void));
 static void process_dumpline P((char *str));
-static void add_msg_data P((const char *str));
+static void add_msg_data P((const char *str, size_t len));
 static void log_msgout P((logtype_t typ));
 
 static int runcompress P((int, pid_t *));
@@ -722,7 +722,6 @@ databuf_flush(db)
     return (0);
 }
 
-static char *msgbuf = NULL;
 int got_info_endline;
 int got_sizeline;
 int got_endline;
@@ -731,12 +730,7 @@ int dump_result;
 static void process_dumpeof()
 {
     /* process any partial line in msgbuf? !!! */
-    if(msgbuf != NULL) {
-	fprintf(errf,"? dumper: error [partial line in msgbuf: %ld bytes]\n",
-		(long int) strlen(msgbuf));
-	fprintf(errf,"? dumper: error [partial line in msgbuf: \"%s\"]\n",
-		msgbuf);
-    }
+    add_msg_data(NULL, 0);
     if(!got_sizeline && dump_result < 2) {
 	/* make a note if there isn't already a failure */
 	fputs("? dumper: strange [missing size line from sendbackup]\n",errf);
@@ -866,27 +860,69 @@ char *str;
 }
 
 static void
-add_msg_data(str)
+add_msg_data(str, len)
     const char *str;
+    size_t len;
 {
+    static struct {
+	char *buf;	/* buffer holding msg data */
+	size_t size;	/* size of alloced buffer */
+    } msg = { NULL, 0 };
     char *line, *nl;
+    size_t buflen;
+
+    if (msg.buf != NULL)
+	buflen = strlen(msg.buf);
+    else
+	buflen = 0;
+
+    /*
+     * If our argument is NULL, then we need to flush out any remaining
+     * bits and return.
+     */
+    if (str == NULL) {
+	if (buflen == 0)
+	    return;
+	fprintf(errf,"? dumper: error [partial line in msgbuf: %ld bytes]\n",
+	    (long)buflen);
+	fprintf(errf,"? dumper: error [partial line in msgbuf: \"%s\"]\n",
+	    msg.buf);
+	msg.buf[0] = '\0';
+	return;
+    }
+
+    /*
+     * Expand the buffer if it can't hold the new contents.
+     */
+    if (buflen + len + 1 > msg.size) {
+	char *newbuf;
+	size_t newsize;
+
+/* round up to next y, where y is a power of 2 */
+#define	ROUND(x, y)	(((x) + (y) - 1) & ~((y) - 1))
+
+	newsize = ROUND(buflen + len + 1, 256);
+	newbuf = alloc(newsize);
+
+	if (msg.buf != NULL) {
+	    strcpy(newbuf, msg.buf);
+	    amfree(msg.buf);
+	} else
+	    newbuf[0] = '\0';
+	msg.buf = newbuf;
+	msg.size = newsize;
+    }
 
     /*
      * If there was a partial line from the last call, then
-     * prepend it to the front.
+     * append the new data to the end.
      */
-    if (msgbuf != NULL) {
-	char *t = stralloc2(msgbuf, str);
-	amfree(msgbuf);
-	msgbuf = t;
-    } else
-	msgbuf = stralloc(str);
+    strncat(msg.buf, str, len);
 
     /*
      * Process all lines in the buffer
      */
-    for (line = msgbuf;;) {
-
+    for (line = msg.buf;;) {
 	/*
 	 * If there's no newline, then we've only got a partial line.
 	 * We go back for more.
@@ -898,12 +934,16 @@ add_msg_data(str)
 	line = nl + 1;
     }
 
-    if (line[0] != '\0')
-	line = stralloc(line);
-    else
-	line = NULL;
-    amfree(msgbuf);
-    msgbuf = line;
+    /*
+     * If we did not process all of the data, move it to the front
+     * of the buffer so it is there next time.
+     */
+    if (*line != '\0') {
+	buflen = strlen(line);
+	memmove(line, msg.buf, buflen + 1);
+    } else {
+	msg.buf[0] = '\0';
+    }
 }
 
 
@@ -1239,8 +1279,7 @@ do_dump(mesgfd, datafd, indexfd, db)
 		aclose(mesgfd);
 		break;
 	    default:
-		mesgbuf[size2] = '\0';
-		add_msg_data(mesgbuf);
+		add_msg_data(mesgbuf, size2);
 	    }
 
 	    if (got_info_endline && !header_done) { /* time to do the header */
