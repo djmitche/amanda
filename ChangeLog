@@ -1,5 +1,23 @@
 2001-07-10 John R. Jackson <jrj@purdue.edu>
 
+	* server-src/Makefile.am: Backport development branch chg-scsi code
+	  to 2.4.2.
+	* changer-src/chg-scsi.c: Ditto.
+	* changer-src/libscsi.h: Ditto.
+	* changer-src/scsi-aix.c: Ditto.
+	* changer-src/scsi-bsd.c: Ditto.
+	* changer-src/scsi-cam.c: Ditto.
+	* changer-src/scsi-changer-driver.c: Ditto.
+	* changer-src/scsi-defs.h: Ditto.
+	* changer-src/scsi-hpux.c: Ditto.
+	* changer-src/scsi-hpux_new.c: Ditto.
+	* changer-src/scsi-irix.c: Ditto.
+	* changer-src/scsi-linux.c: Ditto.
+	* changer-src/scsi-solaris.c: Ditto.
+	* changer-src/sense.c: Ditto.
+
+2001-07-10 John R. Jackson <jrj@purdue.edu>
+
 	* server-src/amcheck.c: Move user name check before attempt to create
 	  temp files so more appropriate error message is generated.
 

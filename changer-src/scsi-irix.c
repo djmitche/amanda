@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998, 2000 University of Maryland at College Park
+ * Copyright (c) 1991-2000 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-irix.c,v 1.1.2.13 2000/10/24 23:49:39 martinea Exp $
+ * $Id: scsi-irix.c,v 1.1.2.13.4.1 2001/07/10 22:03:15 jrjackson Exp $
  *
  * Interface to execute SCSI commands on an SGI Workstation
  *
@@ -58,58 +58,85 @@
 #include <scsi-defs.h>
 
 /*
- * Check if the device is already open,
- * if no open it and save it in the list 
- * of open files.
  */
-OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
+int SCSI_OpenDevice(int ip)
 {
+  extern OpenFiles_T *pDev;
   int DeviceFD;
   int i;
-  OpenFiles_T *pwork;
   
-  if ((DeviceFD = open(DeviceName, O_RDONLY)) > 0)
+  if (pDev[ip].inqdone == 0)
     {
-      pwork= (OpenFiles_T *)malloc(sizeof(OpenFiles_T));
-      memset(pwork, 0, sizeof(OpenFiles_T));
-      pwork->fd = DeviceFD;
-      pwork->SCSI = 0;
-      pwork->inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
-      pwork->dev = strdup(DeviceName);
-      if (SCSI_Inquiry(DeviceFD, pwork->inquiry, INQUIRY_SIZE) == 0)
-          {
-          if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
+      if ((DeviceFD = open(pDev[ip].dev, O_RDWR | O_EXCL)) > 0)
+        {
+          pDev[ip].inqdone = 1;          pDev[ip].SCSI = 0;
+          pDev[ip].avail = 1;
+          pDev[ip].fd = DeviceFD;
+          pDev[ip].inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
+          if (SCSI_Inquiry(ip, pDev[ip].inquiry, INQUIRY_SIZE) == 0)
             {
-              for (i=0;i < 16 ;i++)
-                pwork->ident[i] = pwork->inquiry->prod_ident[i];
-              for (i=15; i >= 0 && !isalnum(pwork->ident[i]) ; i--)
+              if (pDev[ip].inquiry->type == TYPE_TAPE || pDev[ip].inquiry->type == TYPE_CHANGER)
                 {
-                  pwork->ident[i] = '\0';
+                  for (i=0;i < 16 ;i++)
+                    pDev[ip].ident[i] = pDev[ip].inquiry->prod_ident[i];
+                  for (i=15; i >= 0 && !isalnum(pDev[ip].ident[i]) ; i--)
+                    {
+                      pDev[ip].ident[i] = '\0';
+                    }
+                  pDev[ip].SCSI = 1;
+                  close(DeviceFD);
+                  PrintInquiry(pDev[ip].inquiry);
+                  return(1);
+                } else { /* ! TYPE_TAPE ! TYPE_CHANGER */
+                  close(DeviceFD);
+                  free(pDev[ip].inquiry);
+                  pDev[ip].inquiry = NULL;
+                  pDev[ip].avail = 0;
+                  return(0);
                 }
-              pwork->SCSI = 1;
-              PrintInquiry(pwork->inquiry);
-              return(pwork);
-            } else {
+            } else { /* inquiry failed */
               close(DeviceFD);
-                free(pwork->inquiry);
-                free(pwork);
-                return(NULL);
+              free(pDev[ip].inquiry);
+              pDev[ip].inquiry = NULL;
+              pDev[ip].avail = 0;
+              return(0);
             }
-          } else {
-              free(pwork->inquiry);
-              pwork->inquiry = NULL;
-              return(pwork);
-          }
-      return(pwork);
+
+          /*
+           * Open ok, but no SCSI communication available 
+           */
+
+          free(pDev[ip].inquiry);
+          pDev[ip].inquiry = NULL;
+          close(DeviceFD);
+          pDev[ip].avail = 0;
+          return(0);
+        }
+    } else {
+      if ((DeviceFD = open(pDev[ip].dev, O_RDWR | O_EXCL)) > 0)
+        {
+          pDev[ip].fd = DeviceFD;
+          pDev[ip].devopen = 1;
+          return(1);
+        } else {
+          pDev[ip].devopen = 0;
+          return(0);
+        }
     }
-  return(NULL); 
+  return(0); 
 }
 
 int SCSI_CloseDevice(int DeviceFD)
 {
-  int ret;
-    
-  ret = close(DeviceFD) ;
+  extern OpenFiles_T *pDev;
+  int ret = 0;
+  
+  if (pDev[DeviceFD].devopen == 1)
+    {
+      pDev[DeviceFD].devopen = 0;
+      ret = close(pDev[DeviceFD].fd);
+    }
+
   return(ret);
 }
 
@@ -122,10 +149,16 @@ int SCSI_ExecuteCommand(int DeviceFD,
                         char *pRequestSense,
                         int RequestSenseLength)
 {
+  extern OpenFiles_T *pDev;
   ExtendedRequestSense_T ExtendedRequestSense;
   struct dsreq ds;
   int Zero = 0, Result;
   int retries = 5;
+  
+  if (pDev[DeviceFD].avail == 0)
+    {
+      return(SCSI_ERROR);
+    }
   
   memset(&ds, 0, sizeof(struct dsreq));
   memset(pRequestSense, 0, RequestSenseLength);
@@ -155,11 +188,18 @@ int SCSI_ExecuteCommand(int DeviceFD,
     }
   
   while (--retries > 0) {
-    Result = ioctl(DeviceFD, DS_ENTER, &ds);
+    if (pDev[DeviceFD].devopen == 0)
+      {
+        SCSI_OpenDevice(DeviceFD);
+      }
+    Result = ioctl(pDev[DeviceFD].fd, DS_ENTER, &ds);
+    SCSI_CloseDevice(DeviceFD);
+
     if (Result < 0)
       {
         RET(&ds) = DSRT_DEVSCSI;
-        return (-1);
+        SCSI_CloseDevice(DeviceFD);
+        return (SCSI_ERROR);
       }
     DecodeSCSI(CDB, "SCSI_ExecuteCommand : ");
     dbprintf(("\t\t\tSTATUS(%02X) RET(%02X)\n", STATUS(&ds), RET(&ds)));
@@ -171,43 +211,181 @@ int SCSI_ExecuteCommand(int DeviceFD,
         if (retries > 0)
           sleep(2);
         continue;
-      case ST_GOOD:                /*  GOOD */
+      case ST_GOOD:                /*  GOOD 0x00 */
         switch (RET(&ds))
           {
+          case DSRT_SENSE:
+            return(SCSI_SENSE);
+            break;
           case DSRT_SHORT:
-            return(ST_GOOD);
+            return(SCSI_OK);
             break;
           case DSRT_OK:
           default:
-            return(STATUS(&ds));
+            return(SCSI_OK);
           }
-      case ST_CHECK:               /*  CHECK CONDITION */ 
-        return(ST_CHECK);
+      case ST_CHECK:               /*  CHECK CONDITION 0x02 */ 
+        switch (RET(&ds))
+          {
+          case DSRT_SENSE:
+            return(SCSI_SENSE);
+            break;
+          default:
+            return(SCSI_CHECK);
+            break;
+          }
+        return(SCSI_CHECK);
         break;
-      case ST_COND_MET:            /*  INTERM/GOOD */
+      case ST_COND_MET:            /*  INTERM/GOOD 0x10 */
       default:
         continue;
       }
   }     
-  return(STATUS(&ds));
+  return(SCSI_ERROR);
 }
 
-int Tape_Eject ( int DeviceFD)
+int Tape_Ioctl ( int DeviceFD, int command)
 {
+  extern OpenFiles_T *pDev;
   struct mtop mtop;
-
-  mtop.mt_op = MTUNLOAD;
-  mtop.mt_count = 1;
-  ioctl(DeviceFD, MTIOCTOP, &mtop);
+  
+  if (pDev[DeviceFD].devopen == 0)
+    {
+      SCSI_OpenDevice(DeviceFD);
+    }
+  
+  switch (command)
+    {
+    case IOCTL_EJECT:
+      mtop.mt_op = MTUNLOAD;
+      mtop.mt_count = 1;
+      break;
+    default:
+      break;
+    }
+  
+  ioctl(pDev[DeviceFD].fd, MTIOCTOP, &mtop);
+  SCSI_CloseDevice(DeviceFD);
   return(0);
 }
 
 int Tape_Status( int DeviceFD)
 {
-/*
-  Not yet
-*/
-  return(-1);
+  extern OpenFiles_T *pDev;
+  struct mtget mtget;
+  int ret = 0;
+
+  if (pDev[DeviceFD].devopen == 0)
+    {
+      SCSI_OpenDevice(DeviceFD);
+    }
+
+  if (ioctl(pDev[DeviceFD].fd , MTIOCGET, &mtget) != 0)
+    {
+      dbprintf(("Tape_Status error ioctl %d\n",errno));
+      SCSI_CloseDevice(DeviceFD);
+      return(-1);
+    }
+  
+  switch(mtget.mt_dposn)
+    {
+    case MT_EOT:
+      ret = ret | TAPE_EOT;
+      break;
+    case MT_BOT:
+      ret = ret | TAPE_BOT;
+      break;
+    case MT_WPROT:
+      ret = ret | TAPE_WR_PROT;
+      break;
+    case MT_ONL:
+      ret = TAPE_ONLINE;
+      break;
+    case MT_EOD:
+      break;
+    case MT_FMK:
+      break;
+    default:
+      break;
+    }
+
+  SCSI_CloseDevice(DeviceFD);
+  return(ret); 
+}
+
+int ScanBus(int print)
+{
+  DIR *dir;
+  struct dirent *dirent;
+  extern OpenFiles_T *pDev;
+  extern int errno;
+  int count = 0;
+
+  dir = opendir("/dev/scsi");
+
+  while ((dirent = readdir(dir)) != NULL)
+    {
+      if (strstr(dirent->d_name, "sc") != NULL)
+      {
+        pDev[count].dev = malloc(10);
+        pDev[count].inqdone = 0;
+        sprintf(pDev[count].dev,"/dev/scsi/%s", dirent->d_name);
+        if (OpenDevice(count,pDev[count].dev, "Scan", NULL ))
+          {
+            SCSI_CloseDevice(count);
+            pDev[count].inqdone = 0;
+            
+            if (print)
+              {
+                printf("name /dev/scsi/%s ", dirent->d_name);
+                
+                switch (pDev[count].inquiry->type)
+                  {
+                  case TYPE_DISK:
+                    printf("Disk");
+                    break;
+                  case TYPE_TAPE:
+                    printf("Tape");
+                    break;
+                  case TYPE_PRINTER:
+                    printf("Printer");
+                    break;
+                  case TYPE_PROCESSOR:
+                    printf("Processor");
+                    break;
+                  case TYPE_WORM:
+                    printf("Worm");
+                    break;
+                  case TYPE_CDROM:
+                    printf("Cdrom");
+                    break;
+                  case TYPE_SCANNER:
+                    printf("Scanner");
+                    break;
+                  case TYPE_OPTICAL:
+                    printf("Optical");
+                    break;
+                  case TYPE_CHANGER:
+                    printf("Changer");
+                    break;
+                  case TYPE_COMM:
+                    printf("Comm");
+                    break;
+                  default:
+                    printf("unknown %d",pDev[count].inquiry->type);
+                    break;
+                  }
+                printf("\n");
+              }
+            count++;
+	    printf("Count %d\n",count);
+          } else {
+            free(pDev[count].dev);
+            pDev[count].dev=NULL;
+          }
+      }
+    }
+  return 0;
 }
 
 #endif
