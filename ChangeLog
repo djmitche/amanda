@@ -1,3 +1,8 @@
+2002-02-16  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* common-src/debug.c (debug_open); Don't try to renmae an already
+	  renamed file.
+
 2002-02-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/conffile.c (dump_configuration): Print multiple
