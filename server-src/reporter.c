@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.37 1998/07/08 05:23:34 oliva Exp $
+ * $Id: reporter.c,v 1.38 1998/07/16 00:26:07 blair Exp $
  *
  * nightly Amanda Report generator
  */
@@ -185,6 +185,7 @@ char **argv;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     char *mail_cmd, *printer_cmd;
+    extern int optind;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
