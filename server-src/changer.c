@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.14.4.6.4.1.2.2 2003/01/01 23:28:53 martinea Exp $
+ * $Id: changer.c,v 1.14.4.6.4.1.2.3 2003/02/28 19:23:25 martinea Exp $
  *
  * interface routines for tape changers
  */
@@ -534,7 +534,6 @@ char *labelstr;
 	dbprintf(("changer_label: calling changer -label %s\n",labelstr));
 	rc = run_changer_command("-label", labelstr, &slotstr, &rest);
 	amfree(slotstr);
-	amfree(rest);
     }
 
     if(rc) return rc;

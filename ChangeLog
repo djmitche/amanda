@@ -1,4 +1,9 @@
 2003-02-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	Patch by Martin Forssen <maf@appgate.com>
+
+	* server-src/changer.c (changer_label): Do not amfree(rest).
+
+2003-02-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* Amanda 2.4.4 released.
 	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.4.4).
