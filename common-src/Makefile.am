@@ -29,7 +29,7 @@ libamanda_la_SOURCES = \
 	regfree.c	security.c	statfs.c	stream.c	\
 	token.c		version.c	versuff.c
 
-libamanda_la_LIBADD =	@LTLIBOBJS@
+libamanda_la_LIBADD =	@LTLIBOBJS@ @ALLOCA@
 
 libamanda_la_LDFLAGS =  -version-info $(libamanda_version)
 
