@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.61.2.7 1998/02/19 09:41:55 amcore Exp $
+ * $Id: sendsize.c,v 1.61.2.8 1998/03/06 02:39:22 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -867,6 +867,8 @@ int level;
 
     kill(-dumppid, SIGTERM);
 
+    wait(NULL);
+
     aclose(nullfd);
     afclose(dumpout);
 
@@ -1141,6 +1143,8 @@ notincremental:
 
     unlink(incrname);
     afree(incrname);
+
+    wait(NULL);
 
     aclose(nullfd);
     afclose(dumpout);
