@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.35 2000/10/10 21:47:23 martinea Exp $
+ * $Id: diskfile.c,v 1.36 2000/12/30 15:30:27 martinea Exp $
  *
  * read disklist file
  */
@@ -385,6 +385,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
     disk->no_hold	= dtype->no_hold;
     disk->kencrypt	= dtype->kencrypt;
     disk->index		= dtype->index;
+    disk->todo		= 1;
 
     skip_whitespace(s, ch);
     fp = s - 1;
@@ -547,6 +548,34 @@ disk_t *dp;
 		     NULL);
 }
 
+
+void match_disklist(disklist_t *origqp, int sargc, char **sargv)
+{
+
+    if(sargc > 0) {
+	disk_t *dp;
+	for(dp = origqp->head; dp != NULL; dp = dp->next) {
+	    int c;
+	    int matched=0;
+	    host_t *hostp = dp->host;
+
+	    for(c=0;c<sargc && matched==0;c+=2) {
+		if(match_host(sargv[c], hostp->hostname)) {
+		    if(c+1>=sargc || match_disk(sargv[c+1], dp->name)) {
+			matched=1;
+			break;
+		    }
+		}
+	    }
+
+	    if(!matched) {
+		dp->todo = 0;
+	    }
+	}
+    }
+}
+
+ 
 #ifdef TEST
 
 static void dump_disk P((const disk_t *));

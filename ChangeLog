@@ -1,5 +1,11 @@
 2000-11-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/diskfile.c (match_disklist): new function.
+	* server-src/diskfile.h (struct disk_s): new field todo.
+	* server-src/diskfile.h (match_disklist): prototype.
+
+2000-11-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* common-src/match.c (match_word, match_host, match_disk): 
 	new functions.
 	* common-src/amanda.h (match_host, match_disk): prototype.
