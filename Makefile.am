@@ -38,7 +38,8 @@ EXTRA_DIST = \
 	regex-src/fake/limits.h		regex-src/fake/memmove.c	\
 	regex-src/fake/stdlib.h
 
-$(ACLOCAL_M4): $(srcdir)/config/acinclude.m4 $(LIBTOOL_M4)
+$(ACLOCAL_M4): $(srcdir)/configure.in \
+               $(srcdir)/config/acinclude.m4 $(LIBTOOL_M4)
 	rm -f $(srcdir)/aclocal.m4 $(ACLOCAL_M4)
 	cd $(srcdir) && $(ACLOCAL) --output=$(ACLOCAL_M4)
 	test ! -f $(srcdir)/aclocal.m4 || \
