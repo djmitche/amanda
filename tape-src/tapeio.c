@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.10.2.3 1998/02/19 10:32:42 amcore Exp $
+ * $Id: tapeio.c,v 1.10.2.4 1998/02/22 02:04:42 amcore Exp $
  *
  * implements tape I/O functions
  */
@@ -205,7 +205,7 @@ int mode;
 	ret = open(filename, mode);
 	/* if tape open fails with errno==EAGAIN, it is worth retrying
 	 * a few seconds later.  */
-	if (ret == 0 || errno != EAGAIN)
+	if (ret >= 0 || errno != EAGAIN)
 	    break;
 	sleep(delay);
 	timeout -= delay;
