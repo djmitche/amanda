@@ -1,5 +1,16 @@
 2000-10-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* configure.in: --with-samba-user is deprecated.
+	* docs/SAMBA: the username is now on the amandapass file.
+	* NEWS: the username is now on the amandapass file.
+	* client-src/findpass.c (findpass): accept "*" as diskname.
+	* client-src/selfcheck.c (check_disk): call to samba changed.
+	* client-src/sendsize.c (getsize_smbtar): ditto.
+	* client-src/sendbackup-gnutar.c (start_backup): ditto.
+	* recover-src/extract_list.c (extract_files_child): ditto.
+	
+2000-10-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/dumper.c (write_tapeheader): set errno = ENOSPC
 	and return -1 if is not fully written.
 
@@ -1020,7 +1031,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.384 2000/10/11 00:44:00 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.385 2000/10/11 02:08:25 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

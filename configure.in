@@ -573,19 +573,10 @@ AC_ARG_WITH(smbclient,
 )
 
 AC_ARG_WITH(samba-user,
-    [    --with-samba-user=USER User for smbclient ["backup"]],
-    [
-	case "$withval" in
-	"" | y | ye | yes | n | no)
-	    AC_MSG_ERROR([*** You must supply a user to the --with-samba-user option.])
-	  ;;
-	*) SAMBA_USER="$withval"
-	  ;;
-	esac
-    ],
-    : ${SAMBA_USER="backup"}
+   [  --with-samba-user was deprecated],
+   [    AC_MSG_ERROR([*** The samba-user option was deprecated, the username go in the amandapass])
+   ]
 )
-AC_DEFINE_UNQUOTED(SAMBA_USER,"$SAMBA_USER",[Define the location of smbclient for backing up Samba PC clients. ])
 
 AC_ARG_WITH(gnutar-listdir,
    [  --with-gnutar-listdir=DIR  gnutar directory lists go in DIR [localstatedir/amanda/gnutar-lists]],

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43.2.11 2000/09/23 15:33:58 martinea Exp $
+ * $Id: extract_list.c,v 1.43.2.12 2000/10/11 02:08:27 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1303,9 +1303,8 @@ static void extract_files_child(in_fd, elist)
     	if (smbpass) {
             restore_args[j++] = stralloc(file.disk);
 	    passwd_field=j;
-    	    restore_args[j++] = smbpass;
     	    restore_args[j++] = stralloc("-U");
-    	    restore_args[j++] = stralloc(SAMBA_USER);
+    	    restore_args[j++] = smbpass;
     	    if (domain) {
             	restore_args[j++] = stralloc("-W");
     	    	restore_args[j++] = stralloc(domain);

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.12 2000/09/24 14:04:52 martinea Exp $
+ * $Id: sendsize.c,v 1.97.2.13 2000/10/11 02:08:26 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -955,15 +955,15 @@ long getsize_smbtar(disk, level, exclude_spec)
 	tarkeys = "archive 1;recurse;dir";
 #endif
 
-    dbprintf(("%s: running \"%s \'%s\' %s -d %s -U %s -E%s%s -c \'%s\'\"\n",
-	      get_pname(), SAMBA_CLIENT, sharename, "XXXXX",
-	      SAMBA_DEBUG_LEVEL, SAMBA_USER, domain ? " -W " : "",
+    dbprintf(("%s: running \"%s \'%s\' -d %s -U %s -E%s%s -c \'%s\'\"\n",
+	      get_pname(), SAMBA_CLIENT, sharename,
+	      SAMBA_DEBUG_LEVEL, "(see amandapass)", domain ? " -W " : "",
 	      domain ? domain : "", tarkeys));
 
     dumppid = pipespawn(SAMBA_CLIENT, STDERR_PIPE, &nullfd, &nullfd, &pipefd, 
-	      "smbclient", sharename, pass,
+	      "smbclient", sharename,
 	      "-d", SAMBA_DEBUG_LEVEL,
-	      "-U", SAMBA_USER,
+	      "-U", pass,
 	      "-E",
 	      domain ? "-W" : skip_argument,
 	      domain ? domain : skip_argument,

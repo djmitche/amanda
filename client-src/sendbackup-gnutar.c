@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.56.2.13 2000/09/24 23:42:10 martinea Exp $
+ * $Id: sendbackup-gnutar.c,v 1.56.2.14 2000/10/11 02:08:26 martinea Exp $
  *
  * send backup data using GNU tar
  */
@@ -338,8 +338,8 @@ notincremental:
 	assert (tarcount < sizeof (taropt));
 	taropt[tarcount] = '\0';
 
-	dbprintf(("backup from %s, user %s, pass %s\n", 
-		  sharename, SAMBA_USER, "XXXXX"));
+	dbprintf(("backup from %s, pass %s\n", 
+		  sharename, "(see amandapass)"));
 
 	program->backup_name = program->restore_name = SAMBA_CLIENT;
 
@@ -360,7 +360,7 @@ notincremental:
 
 	dumppid = pipespawn(program->backup_name, STDIN_PIPE, &dumpin,
 			    &dumpout, &mesgf, "smbclient",
-			    sharename, pass, "-U", SAMBA_USER, "-E",
+			    sharename, "-U", pass, "-E",
 			    domain ? "-W" : skip_argument, 
 			    domain ? domain : skip_argument,
 			    "-d0", taropt, "-",
