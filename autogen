@@ -53,8 +53,8 @@ rm -f $missingfiles
 missingfiles=
 
 make -f $makefilename \
-    $top_srcdir/aclocal.m4 $srcdir/configure $srcdir/config.h.in \
-    "$@" || exit 1
+  $top_srcdir/aclocal.m4 $srcdir/configure $srcdir/config.h.in ||
+exit 1
 
 find . -name Makefile.am -print | while read f; do
     (srcdir=`dirname $f` &&
