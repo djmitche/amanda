@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.22 1998/01/12 22:32:38 blair Exp $
+ * $Id: extract_list.c,v 1.23 1998/01/16 16:03:32 amcore Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1128,8 +1128,8 @@ EXTRACT_LIST *elist;
 #ifndef GNUTAR
         fprintf(stderr, "GNUTAR program not available.\n");
 #else
-	cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
-	/* cmd = stralloc(GNUTAR); */
+	/* cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL); */
+	cmd = stralloc(GNUTAR);
         dbprintf(("Exec'ing %s with arguments:\n", cmd));
         for (i = 0; i < no_initial_params + files_off_tape; i++)
 	    dbprintf(("\t%s\n", restore_args[i]));
