@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.66.2.7.4.5.2.12.2.1 2004/02/02 19:53:04 martinea Exp $
+ * $Id: amanda.h,v 1.66.2.7.4.5.2.12.2.2 2004/04/29 20:47:21 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -239,6 +239,7 @@
 #include <stdio.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
+#include "amanda-int.h"
 
 #ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
@@ -774,7 +775,7 @@ extern char *version_info[];
 
 /* from security.c */
 extern int security_ok P((struct sockaddr_in *addr,
-			  char *str, u_int32_t cksum, char **errstr));
+			  char *str, uint32_t cksum, char **errstr));
 extern char *get_bsd_security P((void));
 
 /*

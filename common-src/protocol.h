@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.h,v 1.8.10.2.2.1 2004/02/13 14:01:08 martinea Exp $
+ * $Id: protocol.h,v 1.8.10.2.2.2 2004/04/29 20:47:22 martinea Exp $
  *
  * interfaces for amanda protocol
  */
@@ -46,7 +46,7 @@ typedef enum { P_BOGUS, P_REQ, P_REP, P_PREP, P_ACK, P_NAK } pktype_t;
 typedef struct {			/* a predigested datagram */
     pktype_t type;
     struct sockaddr_in peer;
-    u_int32_t cksum;
+    uint32_t cksum;
     int version_major, version_minor;
     int sequence;
     char *handle;
@@ -67,7 +67,7 @@ typedef struct proto_s {
     int origseq, curseq;
     int handleofs;
     char *security;
-    u_int32_t auth_cksum;
+    uint32_t auth_cksum;
     char *req;					/* body of request msg */
     void (*continuation) P((struct proto_s *, pkt_t *));
     void *datap;

@@ -1,3 +1,15 @@
+2004-04-29  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* config/acinclude.m4i (AX_CREATE_STDINT_H) : New macro.
+	* configure.in: Use AX_CREATE_STDINT_H(common-src/amanda-int.h).
+	* common-src/amanda.h: include "common-src/amanda-int.h".
+	* changer-src/scsi-cam.c: Change u_int32_t for uint32_t.
+	* client-src/amandad-krb4.c: Change u_int32_t for uint32_t.
+	* common-src/krb4-security.c: Change u_int32_t for uint32_t.
+	* common-src/krb4-security.h: Change u_int32_t for uint32_t.
+	* common-src/protocol.h: Change u_int32_t for uint32_t.
+	* common-src/security.c: Change u_int32_t for uint32_t.
+
 2004-04-27  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* configure.in: Fix for automake 1.8.4.

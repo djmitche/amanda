@@ -38,7 +38,7 @@ static char *ticketfilename = NULL;
 int krb4_auth = 0;
 int kencrypt = 0;
 des_cblock session_key;
-u_int32_t auth_cksum;		/* was 'long' on 32-bit platforms */
+uint32_t auth_cksum;		/* was 'long' on 32-bit platforms */
 
 void krb4_killtickets(void)
 {
@@ -98,7 +98,7 @@ void kerberos_service_init()
 }
 
 
-u_int32_t kerberos_cksum(str)
+uint32_t kerberos_cksum(str)
 char *str;
 {
     des_cblock seed;
@@ -162,7 +162,7 @@ des_cblock key;
 /*
  * struct timeval is a host structure, and may not be used in
  * protocols, because members are defined as 'long', rather than
- * u_int32_t.
+ * uint32_t.
  */
 typedef struct net_tv {
   int32_t tv_sec;
@@ -303,7 +303,7 @@ proto_t *p;
     char *astr = NULL;
     union {
 	char pad[8];
-	u_int32_t i;
+	uint32_t i;
     } mutual;
     int len;
     char *s, *fp;
@@ -354,7 +354,7 @@ proto_t *p;
 char *get_krb_security(str, host_inst, realm, cksum)
 char *str;
 char *host_inst, *realm;
-u_int32_t *cksum;
+uint32_t *cksum;
 {
     KTEXT_ST ticket;
     int rc;
@@ -390,7 +390,7 @@ u_int32_t *cksum;
 int krb4_security_ok(addr, str, cksum, errstr)
 struct sockaddr_in *addr;
 char *str;
-u_int32_t cksum;
+uint32_t cksum;
 char **errstr;
 {
     KTEXT_ST ticket;
