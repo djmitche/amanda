@@ -54,7 +54,7 @@
 #define MAX_ARGS 	10
 #define DATABUF_SIZE 	32*1024
 #define MESGBUF_SIZE  	4*1024
-#define HDR_KBYTES	32	/* from client-src/sendbackup-common.c */
+#define HDR_BYTES	32*1024	/* from client-src/sendbackup-common.c */
 
 #define AMANDA_SERVICE_DEFAULT	10080
 #define KAMANDA_SERVICE_DEFAULT	10081
@@ -664,24 +664,22 @@ int mesgfd, datafd, outfd;
 		if (dup2(tmp, 0) == -1)
 		    fprintf(stderr, "err dup2 in: %s\n", strerror(errno));
 		/*
-		 * copy out the first HDR_KBYTES kb uncompressed; this
+		 * copy out the first HDR_BYTES uncompressed; this
 		 * is the tape header. It's too big for one read, so do
 		 * it in small chunks. If the header copy fails, all we
 		 * can do is output an error and exit.
 		 */
-		for(count=0; count<(HDR_KBYTES*8); ++count) {
-		    bytes=read(0,hdrbuf,128);
+		for(count=HDR_BYTES; count>0;) {
+		    bytes=read(0,hdrbuf,(count < 1024 ? count : 1024));
 		    if (bytes < 0)  {
 			fprintf(stderr, "bytes=%d, exiting.\n", bytes);
-			exit(0);
+			exit(1);
 		    }
-		    if (bytes < 128) {
-			fprintf(stderr, "bytes in=%d, wrote %d, exiting\n",
-				bytes,
-				write(1,hdrbuf, bytes));
-			exit(0);
+		    if (write(1,hdrbuf,bytes) != bytes) {
+		        fprintf(stderr, "error writing header");
+			exit(1);
 		    }
-		    write(1,hdrbuf,128);
+		    count -= bytes;
 		}
 		/* now spawn gzip -1 to take care of the rest */
 		execlp(COMPRESS_PATH, "gzip", "-1", (char *)0);
