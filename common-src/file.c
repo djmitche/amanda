@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.22 1999/10/03 21:56:22 jrj Exp $
+ * $Id: file.c,v 1.23 2000/09/24 01:57:06 martinea Exp $
  *
  * file and directory bashing routines
  */
@@ -86,7 +86,7 @@ gid_t gid;	/* gid for new directories */
     dir = stralloc(file);	/* make a copy we can play with */
 
     p = strrchr(dir, '/');
-    if(p != dir) {	/* got a '/' */
+    if(p != dir && p != NULL) {	/* got a '/' or a simple name */
 	*p = '\0';
 
 	if(access(dir, F_OK) != 0) {	/* doesn't exist */
