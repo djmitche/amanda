@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.1.2.5 2002/02/15 17:59:20 martinea Exp $
+ * $Id: client_util.c,v 1.1.2.6 2002/02/15 18:25:01 martinea Exp $
  *
  */
 
@@ -128,7 +128,7 @@ char *aexc;
     if(l > MAXPATHLEN-1) {
 	dbprintf(("%s: exclude too long: %s\n", get_pname(), aexc));
 	if(verbose)
-	    printf("ERROR [exclude too long: %s\n", aexc);
+	    printf("ERROR [exclude too long: %s]\n", aexc);
 	return 0;
     }
     else {
@@ -149,15 +149,15 @@ char *ainc;
 
     l = strlen(ainc);
     if(l > MAXPATHLEN-1) {
-	dbprintf(("%s: exclude too long: %s\n", get_pname(), ainc));
+	dbprintf(("%s: include too long: %s\n", get_pname(), ainc));
 	if(verbose)
-	    printf("ERROR [exclude too long: %s\n", ainc);
+	    printf("ERROR [include too long: %s]\n", ainc);
 	return 0;
     }
     else if(ainc[0] != '.' && ainc[0] != '\0' && ainc[1] != '/') {
         dbprintf(("%s: include must start with './': %s\n", get_pname(), ainc));
 	if(verbose)
-	    printf("ERROR [include must start with './': %s\n", ainc);
+	    printf("ERROR [include must start with './': %s]\n", ainc);
 	return 0;
     }
     else {
