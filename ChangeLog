@@ -1,5 +1,8 @@
 1999-05-23  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* server-src/amindex.h: Keep P macro expression in a single line.
+	Reported by Patrick Harrold <patrickh@nasco-inc.com>
+
 	* common-src/Makefile.am (statfs_LDADD): Added alloc.obj.
 
 	* common-src/statfs.c (STATFS_SCALE, sys/statvfs.h): If f_frsize is
