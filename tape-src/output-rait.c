@@ -1,4 +1,4 @@
-#include "rait.h"
+#include "output-rait.h"
 #include <string.h>
 #include <sys/errno.h>
 #include <fcntl.h>

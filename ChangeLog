@@ -1,4 +1,18 @@
+2000-12-04 John R. Jackson  <jrj@purdue.edu>
+
+	* Makefile.am: Work around problem with automake 1.4 not including
+	  pkgdata_DATA.
+	* docs/Makefile.am: Include RAIT and VTAPE-API in distribution.
+	  Work around problem with automake 1.4 not including pkgdata_DATA.
+	* tape-src/rait.h: Renamed to rait.h.
+	* tape-src/rait.c: Renamed to rait.c.
+	* tape-src/output-rait.h: Renamed from rait.h.
+	* tape-src/output-rait.c: Renamed from rait.c.
+	* tape-src/Makefile.am: Reflect the new rait.[ch] names.
+	* tape-src/tapeio.c: Use output-rait.h name.  Minor typo changes.
+
 2000-12-08 Marc Mengel <mengel@fnal.gov>
+
 	* docs/RAIT: New file.
 	* docs/VTAPE-API: New file.
 	* tape-src/rait.c: New File providing RAIT virtual tape type.
@@ -37,7 +51,8 @@
 
 2000-12-04 John R. Jackson  <jrj@purdue.edu>
 
-	server-src/amdump.sh.in: Temporary fix for $LOGNAME vs whoami problem.
+	* server-src/amdump.sh.in: Temporary fix for $LOGNAME vs whoami
+	  problem.
 
 2000-12-04 John R. Jackson  <jrj@purdue.edu>
 
@@ -52,8 +67,8 @@
 	* man/amrestore.8: Document the new option, the compression level,
 	  and clean up some nroff issues.
 
->>>>>>> 1.787
 2000-11-30 Marc Mengel <mengel@fnal.gov>
+
 	* changer-src/chg-chio.pl.in: Use am-mt and am-dd versus mt and dd.
 	* changer-src/chg-chs.sh.in: Likewise.
 	* changer-src/chg-manual.sh.in: Likewise.

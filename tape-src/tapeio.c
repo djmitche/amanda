@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.31 2000/12/09 02:57:21 mengel Exp $
+ * $Id: tapeio.c,v 1.32 2000/12/12 21:40:58 jrjackson Exp $
  *
  * implements tape I/O functions
  */
@@ -46,7 +46,7 @@ extern int plain_tape_access(), plain_tape_open(), plain_tape_stat(),
 
 extern void plain_tapefd_resetofs();
 
-#include "rait.h"
+#include "output-rait.h"
 
 static struct virtualtape {
     char *prefix;
@@ -403,7 +403,7 @@ int (*ioctl)();
 {
     int st;
     return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, T_OFFL, &st);
-                               /* not sure of speling here ^^^ */
+                           /* not sure of spelling here ^^^^^^ */
 }
 
 int tapefd_fsf_ioctl(tapefd, count, ioctl)
@@ -740,14 +740,9 @@ int plain_tape_open(filename, mode)
     struct mtop mt;
 #endif /* HAVE_LINUX_ZFTAPE_H */
     int ret = 0, delay = 2, timeout = 200;
-    if (mode == 0 )
-	mode = O_RDONLY;
-#ifdef WHY
-    if (mode == 0 || mode == O_RDONLY)
-	mode = O_RDONLY;
-    else
+    if (mode != O_RDONLY) {
 	mode = O_RDWR;
-#endif
+    }
 #if 0
     /* Since we're no longer using a special name for no-tape, we no
        longer need this */
@@ -1097,4 +1092,3 @@ char *devname;
     tapefd_close(fd);
     return NULL;
 }
-

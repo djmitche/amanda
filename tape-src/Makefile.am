@@ -10,7 +10,8 @@ noinst_LIBRARIES = 	libamtape.a
 LIB_EXTENSION = a
 endif
 
-libamtape_la_SOURCES = 	tapeio.c rait.c
+libamtape_la_SOURCES = 	tapeio.c \
+			output-rait.c
 
 libamtape_la_LDFLAGS =  -release $(VERSION)
 
