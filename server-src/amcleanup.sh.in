@@ -128,5 +128,7 @@ if [ -f $erramflush ]; then
     done
     mv $erramflush $erramflush.1
 fi
-	
+
+$libexecdir/amcleanupdisk $conf
+
 exit $lognotfound
