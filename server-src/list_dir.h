@@ -25,33 +25,17 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.h,v 1.5 1997/12/16 18:02:18 jrj Exp $
+ * $Id: list_dir.h,v 1.1 1997/12/19 16:04:33 george Exp $
  *
- * interface for amindexd variables
  */
 
-#ifndef AMINDEXD
-#define AMINDEXD
+typedef struct DIR_ITEM {
+    DUMP_ITEM *dump;
+    char *path;
+    struct DIR_ITEM *next;
+} DIR_ITEM;
 
-#define LONG_LINE 256
+extern DIR_ITEM *dir_list;
 
-#include "disk_history.h"
-
-/* state */
-extern char local_hostname[MAX_HOSTNAME_LENGTH];	/* me! */
-extern char remote_hostname[LONG_LINE];	/* the client */
-extern char dump_hostname[LONG_LINE];	/* the machine we are restoring */
-extern char disk_name[LONG_LINE];	/* the disk we are restoring */
-extern char config[LONG_LINE];		/* the config we are restoring */
-extern char date[LONG_LINE];
-
-extern void reply P((int n, char *fmt, ...));
-extern void lreply P((int n, char *fmt, ...));
-extern void fast_lreply P((int n, char *fmt, ...));
-
-extern int opaque_ls P((char *dir, int recursive));
-extern int translucent_ls P((char *dir));
-
-extern int uncompress_file P((char *filename_gz, char *filename, int len));
-
-#endif /* AMINDEXD */
+extern void clear_dir_list P((void));
+extern int add_dir_list_item P((DUMP_ITEM *dump, char *path));

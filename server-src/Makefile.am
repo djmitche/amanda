@@ -52,9 +52,9 @@ CLEANFILES = *.test.c
 
 DISTCLEANFILES = $(EXTRA_SCRIPTS)
 
-amindexd_SOURCES =	amindexd.c			amindexd.h	\
+amindexd_SOURCES =	amindexd.c					\
 			disk_history.c			disk_history.h	\
-			list_dir.c
+			list_dir.c			list_dir.h
 
 driver_SOURCES =	driver.c			driver.h	\
 			driverio.c

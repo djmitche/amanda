@@ -24,34 +24,26 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: list_dir.c,v 1.9 1997/12/16 18:02:36 jrj Exp $
+/* $Id: list_dir.c,v 1.10 1997/12/19 16:04:32 george Exp $
  *
- * obtains directory listings from index files
+ * manage directory listings from index files
  */
 
 #include "amanda.h"
-#include "amindexd.h"
-#include "amindex.h"
+#include "disk_history.h"
+#include "list_dir.h"
 
-typedef struct DIR_ITEM
-{
-    DUMP_ITEM *dump;
-    char *path;
+DIR_ITEM *dir_list = NULL; /* first dir entry */
+DIR_ITEM *dir_last = NULL; /* last dir entry  */
+DIR_ITEM *cur_list = NULL; /* current dir entry,for speeding up search */
 
-    struct DIR_ITEM *next;
-}
-DIR_ITEM;
-
-static DIR_ITEM *dir_list = NULL; /* first dir entry */
-static DIR_ITEM *dir_last = NULL; /* last dir entry  */
-static DIR_ITEM *cur_list = NULL; /* current dir entry,for speeding up search */
-
-static void clear_dir_list P((void))
+void clear_dir_list P((void))
 {
     DIR_ITEM *this;
 
     if (dir_list == NULL)
 	return;
+
     do
     {
 	this = dir_list;
@@ -60,6 +52,7 @@ static void clear_dir_list P((void))
 	free(this);
     }
     while (dir_list != NULL);
+
     dir_last = NULL;
     cur_list = NULL;
 }
@@ -71,7 +64,7 @@ static void clear_dir_list P((void))
 /* It's true because the output of the index file is sorted         */
 /* Maybe it could be more efficient if the index was sorted when    */
 /* it is generated                                                  */
-static int add_dir_list_item(dump, path)
+int add_dir_list_item(dump, path)
 DUMP_ITEM *dump;
 char *path;
 {
@@ -91,28 +84,35 @@ char *path;
 
     if(strcmp(path,dir_last->path) == 0)
 	return 0; /* found */
+
     /* if smaller than last path */
     if(strcmp(path,dir_last->path) == -1)
     {
 	if(cur_list==NULL)
 	    cur_list=dir_list;
+
 	/* reset cur_list if path is smaller than cur_list->path */
 	if(strcmp(path,cur_list->path) == -1)
 	    cur_list=dir_list;
+
 	if(strcmp(path,cur_list->path) == 0)
 	    return 0; /* found */
+
 	while (cur_list->next!=NULL && (strcmp(path,cur_list->next->path) == 1))
 	{
 	    cur_list=cur_list->next;
 	}
+
 	if(strcmp(path,cur_list->next->path) == 0)
 	{
 	    cur_list=cur_list->next;
 	    return 0; /* found */
 	}
+
 	/* add at cur_list */
 	if((cur = (DIR_ITEM *)malloc(sizeof(DIR_ITEM))) == NULL)
 	    return -1;
+
 	cur->next = cur_list->next;
 	cur->dump = dump;
 	cur->path = stralloc(path);
@@ -124,142 +124,11 @@ char *path;
     {
 	if ((dir_last->next = (DIR_ITEM *)malloc(sizeof(DIR_ITEM))) == NULL)
 	    return -1;
+
 	dir_last=dir_last->next;
 	dir_last->next = NULL;
 	dir_last->dump = dump;
 	dir_last->path = stralloc(path);
 	return 0; /* added */
     }
-}
-
-
-/* find all matching entries in a dump listing */
-/* return -1 if error - and writes error message */
-static int process_ls_dump(dir, dump_item, recursive)
-char *dir;
-DUMP_ITEM *dump_item;
-int  recursive;
-{
-    char line[2048];
-    char old_line[2048];
-    char filename[1024];
-    char *filename_gz;
-    char dir_slash[1024];
-    FILE *fp;
-    char *p;
-    int len_dir_slash;
-
-    if (strcmp(dir, "/") == 0) {
-	strncpy(dir_slash, dir, sizeof(dir_slash)-1);
-	dir_slash[sizeof(dir_slash)-1] = '\0';
-    } else {
-	ap_snprintf(dir_slash, sizeof(dir_slash), "%s/", dir);
-    }
-
-    filename_gz=getindexfname(dump_hostname, disk_name, dump_item->date,
-			      dump_item->level);
-    if(uncompress_file(filename_gz, filename, sizeof(filename))!=0)
-    {
-	reply(599, "System error %d", errno);
-	return -1;
-    }
-
-    if((fp = fopen(filename,"r"))==0)
-    {
-	reply(599, "System error %d", errno);
-	return -1;
-    }
-    len_dir_slash= strlen(dir_slash);
-    old_line[0]='\0';
-    while (fgets(line, LONG_LINE, fp) != NULL)
-    {
-	if(strncmp(dir_slash,line,len_dir_slash)==0)
-	{
-	    p=&line[len_dir_slash];
-	    while((*p != '\n') && (*p != '/')) /* read the file name */
-		p++;
-	    if(*p == '/')
-		p++;
-	    *p = '\0'; /* overwire '\n' or cut the line */
-	    if(strcmp(line,old_line)!=0)
-	    {
-		strncpy(old_line, line, sizeof(old_line)-1);
-		old_line[sizeof(old_line)-1] = '\0';
-		add_dir_list_item(dump_item, line);
-	    }
-	}
-    }
-    return 0;
-}
-
-
-int opaque_ls(dir,recursive)
-char *dir;
-int  recursive;
-{
-    DUMP_ITEM *dump_item;
-    DIR_ITEM *dir_item;
-    int last_level;
-
-    clear_dir_list();
-
-    if (strlen(disk_name) == 0)
-    {
-	reply(502, "Must set config,host,disk before listing a directory");
-	return -1;
-    }
-    if (strlen(date) == 0)
-    {
-	reply(502, "Must set date before listing a directory");
-	return -1;
-    }
-
-    /* scan through till we find first dump on or before date */
-    for (dump_item=first_dump(); dump_item!=NULL; dump_item=next_dump(dump_item))
-	if (strcmp(dump_item->date, date) <= 0)
-	    break;
-    if (dump_item == NULL)
-    {
-	/* no dump for given date */
-	reply(500, "No dumps available on or before date \"%s\"", date);
-	return -1;
-    }
-
-    /* get data from that dump */
-    if (process_ls_dump(dir, dump_item,recursive) == -1)
-	return -1;
-
-    /* go back processing higher level dumps till we hit a level 0 dump */
-    last_level = dump_item->level;
-    while ((last_level != 0) && ((dump_item=next_dump(dump_item)) != NULL))
-    {
-	if (dump_item->level < last_level)
-	{
-	    last_level = dump_item->level;
-	    if (process_ls_dump(dir, dump_item,recursive) == -1)
-		return -1;
-	}
-    }
-
-    /* return the information to the caller */
-    if(recursive)
-    {
-	lreply(200, " Opaque recursive list of %s", dir);
-	for (dir_item = dir_list; dir_item != NULL; dir_item = dir_item->next)
-	    fast_lreply(201, " %s %d %-16s %s",
-			dir_item->dump->date, dir_item->dump->level,
-			dir_item->dump->tape, dir_item->path);
-	reply(200, " Opaque recursive list of %s", dir);
-    }
-    else
-    {
-	lreply(200, " Opaque list of %s", dir);
-	for (dir_item = dir_list; dir_item != NULL; dir_item = dir_item->next)
-	    lreply(201, " %s %d %-16s %s",
-		   dir_item->dump->date, dir_item->dump->level,
-		   dir_item->dump->tape, dir_item->path);
-	reply(200, " Opaque list of %s", dir);
-    }
-    clear_dir_list();
-    return 0;
 }

@@ -25,39 +25,51 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.12 1997/12/19 11:54:54 george Exp $
+ * $Id: amindexd.c,v 1.13 1997/12/19 16:04:30 george Exp $
  *
  * This is the server daemon part of the index client/server system.
- * It is assummed that this is launched from inetd instead of being
+ * It is assumed that this is launched from inetd instead of being
  * started as a daemon because it is not often used
  */
+
+/*
+** Notes:
+** - this server will do very little until it knows what Amanda config it
+**   is to use.  Setting the config has the side effect of changing to the
+**   index directory.
+** - XXX - I'm pretty sure the config directory name should have '/'s stripped
+**   from it.  It is given to us by an unknown person via the network.
+*/
 
 #include "amanda.h"
 #include "conffile.h"
 #include "diskfile.h"
 #include "arglist.h"
-#ifdef HAVE_NETINET_IN_SYSTM_H
-#include <netinet/in_systm.h>
-#endif
-#ifdef HAVE_NETINET_IP_H
-#include <netinet/ip.h>
-#endif
-#include <grp.h>
 #include "dgram.h"
 #include "version.h"
 #include "protocol.h"
-#include "amindexd.h"
 #include "version.h"
 #include "amindex.h"
+#include "disk_history.h"
+#include "list_dir.h"
+
+#ifdef HAVE_NETINET_IN_SYSTM_H
+#include <netinet/in_systm.h>
+#endif
+
+#ifdef HAVE_NETINET_IP_H
+#include <netinet/ip.h>
+#endif
+
+#include <grp.h>
+
+#define LONG_LINE 256
 
 typedef struct REMOVE_ITEM
 {
     char filename[1024];
     struct REMOVE_ITEM *next;
-}
-REMOVE_ITEM;
-
-static REMOVE_ITEM *to_remove = NULL; /* file to remove at end */
+} REMOVE_ITEM;
 
 char *pname = "amindexd";
 char *server_version = "1.1";
@@ -69,6 +81,10 @@ char dump_hostname[LONG_LINE];		/* the machine we are restoring */
 char disk_name[LONG_LINE];		/* the disk we are restoring */
 char config[LONG_LINE];			/* the config we are restoring */
 char date[LONG_LINE];
+disklist_t *disk_list;			/* all the disks in the current config */
+
+static REMOVE_ITEM *to_remove = NULL; /* file to remove at end */
+
 
 void remove_uncompressed_file()
 {
@@ -80,81 +96,6 @@ void remove_uncompressed_file()
 	dbprintf(("Removing index file: %s\n",remove_file->filename));
     }
 }
-
-/* send a 1 line reply to the client */
-arglist_function1(void reply, int, n, char *, fmt)
-{
-    va_list args;
-    char buf[LONG_LINE];
-
-    arglist_start(args, fmt);
-    ap_snprintf(buf, sizeof(buf), "%03d ", n);
-    ap_vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
-    arglist_end(args);
-
-    if (printf("%s\r\n", buf) <= 0)
-    {
-	dbprintf(("! error %d in printf\n", errno));
-	remove_uncompressed_file();
-	exit(1);
-    }
-    if (fflush(stdout) != 0)
-    {
-	dbprintf(("! error in fflush %d\n", errno));
-	remove_uncompressed_file();
-	exit(1);
-    }
-    dbprintf(("< %s\n", buf));
-}
-
-
-/* send one line of a multi-line response */
-arglist_function1(void lreply, int, n, char *, fmt)
-{
-    va_list args;
-    char buf[LONG_LINE];
-
-    arglist_start(args, fmt);
-    ap_snprintf(buf, sizeof(buf), "%03d-", n);
-    ap_vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
-    arglist_end(args);
-
-    if (printf("%s\r\n", buf) <= 0)
-    {
-	dbprintf(("! error %d in printf\n", errno));
-	remove_uncompressed_file();
-	exit(1);
-    }
-    if (fflush(stdout) != 0)
-    {
-	dbprintf(("! error in fflush %d\n", errno));
-	remove_uncompressed_file();
-	exit(1);
-    }
-
-    dbprintf(("< %s\n", buf));
-}
-
-
-/* send one line of a multi-line response */
-arglist_function1(void fast_lreply, int, n, char *, fmt)
-{
-    va_list args;
-    char buf[LONG_LINE];
-
-    arglist_start(args, fmt);
-    ap_snprintf(buf, sizeof(buf), "%03d-", n);
-    ap_vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
-    arglist_end(args);
-
-    if (printf("%s\r\n", buf) <= 0)
-    {
-	dbprintf(("! error %d in printf\n", errno));
-	remove_uncompressed_file();
-	exit(1);
-    }
-}
-
 
 int uncompress_file(filename_gz, filename, filename_len)
 char *filename_gz;
@@ -204,6 +145,132 @@ int filename_len;
     return 0;
 }
 
+/* find all matching entries in a dump listing */
+/* return -1 if error */
+static int process_ls_dump(dir, dump_item, recursive)
+char *dir;
+DUMP_ITEM *dump_item;
+int  recursive;
+{
+    char line[2048];
+    char old_line[2048];
+    char filename[1024];
+    char *filename_gz;
+    char dir_slash[1024];
+    FILE *fp;
+    char *p;
+    int len_dir_slash;
+
+    if (strcmp(dir, "/") == 0) {
+	strncpy(dir_slash, dir, sizeof(dir_slash)-1);
+	dir_slash[sizeof(dir_slash)-1] = '\0';
+    } else {
+	ap_snprintf(dir_slash, sizeof(dir_slash), "%s/", dir);
+    }
+
+    filename_gz=getindexfname(dump_hostname, disk_name, dump_item->date,
+			      dump_item->level);
+    if(uncompress_file(filename_gz, filename, sizeof(filename))!=0)
+	return -1;
+
+    if((fp = fopen(filename,"r"))==0)
+	return -1;
+
+    len_dir_slash= strlen(dir_slash);
+    old_line[0]='\0';
+    while (fgets(line, LONG_LINE, fp) != NULL)
+    {
+	if(strncmp(dir_slash,line,len_dir_slash)==0)
+	{
+	    p=&line[len_dir_slash];
+	    while((*p != '\n') && (*p != '/')) /* read the file name */
+		p++;
+	    if(*p == '/')
+		p++;
+	    *p = '\0'; /* overwire '\n' or cut the line */
+	    if(strcmp(line,old_line)!=0)
+	    {
+		strncpy(old_line, line, sizeof(old_line)-1);
+		old_line[sizeof(old_line)-1] = '\0';
+		add_dir_list_item(dump_item, line);
+	    }
+	}
+    }
+    return 0;
+}
+
+/* send a 1 line reply to the client */
+arglist_function1(void reply, int, n, char *, fmt)
+{
+    va_list args;
+    char buf[LONG_LINE];
+
+    arglist_start(args, fmt);
+    ap_snprintf(buf, sizeof(buf), "%03d ", n);
+    ap_vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
+    arglist_end(args);
+
+    if (printf("%s\r\n", buf) <= 0)
+    {
+	dbprintf(("! error %d in printf\n", errno));
+	remove_uncompressed_file();
+	exit(1);
+    }
+    if (fflush(stdout) != 0)
+    {
+	dbprintf(("! error in fflush %d\n", errno));
+	remove_uncompressed_file();
+	exit(1);
+    }
+    dbprintf(("< %s\n", buf));
+}
+
+/* send one line of a multi-line response */
+arglist_function1(void lreply, int, n, char *, fmt)
+{
+    va_list args;
+    char buf[LONG_LINE];
+
+    arglist_start(args, fmt);
+    ap_snprintf(buf, sizeof(buf), "%03d-", n);
+    ap_vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
+    arglist_end(args);
+
+    if (printf("%s\r\n", buf) <= 0)
+    {
+	dbprintf(("! error %d in printf\n", errno));
+	remove_uncompressed_file();
+	exit(1);
+    }
+    if (fflush(stdout) != 0)
+    {
+	dbprintf(("! error in fflush %d\n", errno));
+	remove_uncompressed_file();
+	exit(1);
+    }
+
+    dbprintf(("< %s\n", buf));
+}
+
+/* send one line of a multi-line response */
+arglist_function1(void fast_lreply, int, n, char *, fmt)
+{
+    va_list args;
+    char buf[LONG_LINE];
+
+    arglist_start(args, fmt);
+    ap_snprintf(buf, sizeof(buf), "%03d-", n);
+    ap_vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
+    arglist_end(args);
+
+    if (printf("%s\r\n", buf) <= 0)
+    {
+	dbprintf(("! error %d in printf\n", errno));
+	remove_uncompressed_file();
+	exit(1);
+    }
+}
+
 /* see if hostname is valid */
 /* valid is defined to be that there are index records for it */
 /* also do a security check on the requested dump hostname */
@@ -214,7 +281,6 @@ char *host;
 {
     DIR *dirp;
     struct dirent *direntp;
-    char cwd[LONG_LINE];
 
     if (strlen(config) == 0)
     {
@@ -236,9 +302,8 @@ char *host;
 #endif
 
     /* check that the config actually handles that host */
-    /* assume in config dir already */
-    (void)getcwd(cwd, LONG_LINE);
-    if ((dirp = opendir(cwd)) == NULL)
+    /* assume in index dir already */
+    if ((dirp = opendir(".")) == NULL)
     {
 	reply(599, "System error: %d.", errno);
 	return -1;
@@ -263,19 +328,17 @@ char *disk;
 {
     DIR *dirp;
     struct dirent *direntp;
-    char cwd[LONG_LINE];
     char *search_str;
     int i;
 
     if (strlen(dump_hostname) == 0)
     {
-	reply(501, "Must set host before setting disk.");
+	reply(501, "Must set config,host before setting disk.");
 	return -1;
     }
 
     /* check that given disk is from given host and handled by given config */
-    (void)getcwd(cwd, LONG_LINE);
-    if ((dirp = opendir(cwd)) == NULL)
+    if ((dirp = opendir(".")) == NULL)
     {
 	reply(599, "System error: %d.", errno);
 	return -1;
@@ -316,7 +379,7 @@ char *config;
     ap_snprintf(conf_dir, sizeof(conf_dir), "%s/%s", CONFIG_DIR, config);
     if (chdir(conf_dir) == -1)
     {
-	reply(501, "Couldn't cd into config dir. Misconfiguration?");
+	reply(501, "Couldn't cd into config dir.  Misconfiguration?");
 	return -1;
     }
 
@@ -324,6 +387,13 @@ char *config;
     if (read_conffile(CONFFILE_NAME))
     {
 	reply(501, "Couldn't read config file!");
+	return -1;
+    }
+
+    /* read the disk file while we are here - just in case we need it */
+    if ((disk_list = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
+    {
+	reply(501, "Couldn't read disk file");
 	return -1;
     }
 
@@ -352,7 +422,7 @@ int build_disk_table P((void))
 
     if (strlen(disk_name) == 0)
     {
-	reply(590, "Must set disk before building disk table");
+	reply(590, "Must set config,host,disk before building disk table");
 	return -1;
     }
 
@@ -395,11 +465,14 @@ int disk_history_list P((void))
 
     lreply(200, " Dump history for config \"%s\" host \"%s\" disk \"%s\"",
 	  config, dump_hostname, disk_name);
+
     for (item=first_dump(); item!=NULL; item=next_dump(item))
 	lreply(201, " %s %d %s %d", item->date, item->level, item->tape,
 	       item->file);
+
     reply(200, "Dump history for config \"%s\" host \"%s\" disk \"%s\"",
 	  config, dump_hostname, disk_name);
+
     return 0;
 }
 
@@ -439,6 +512,7 @@ char *dir;
     for (item=first_dump(); item!=NULL; item=next_dump(item))
 	if (strcmp(item->date, date) <= 0)
 	    break;
+
     if (item == NULL)
     {
 	/* no dump for given date */
@@ -485,14 +559,87 @@ char *dir;
     return -1;
 }
 
+int opaque_ls(dir,recursive)
+char *dir;
+int  recursive;
+{
+    DUMP_ITEM *dump_item;
+    DIR_ITEM *dir_item;
+    int last_level;
+
+    clear_dir_list();
+
+    if (strlen(disk_name) == 0)
+    {
+	reply(502, "Must set config,host,disk before listing a directory");
+	return -1;
+    }
+    if (strlen(date) == 0)
+    {
+	reply(502, "Must set date before listing a directory");
+	return -1;
+    }
+
+    /* scan through till we find first dump on or before date */
+    for (dump_item=first_dump(); dump_item!=NULL; dump_item=next_dump(dump_item))
+	if (strcmp(dump_item->date, date) <= 0)
+	    break;
+
+    if (dump_item == NULL)
+    {
+	/* no dump for given date */
+	reply(500, "No dumps available on or before date \"%s\"", date);
+	return -1;
+    }
+
+    /* get data from that dump */
+    if (process_ls_dump(dir, dump_item,recursive) == -1) {
+	reply(599, "System error %d", errno);
+	return -1;
+    }
+
+    /* go back processing higher level dumps till we hit a level 0 dump */
+    last_level = dump_item->level;
+    while ((last_level != 0) && ((dump_item=next_dump(dump_item)) != NULL))
+    {
+	if (dump_item->level < last_level)
+	{
+	    last_level = dump_item->level;
+	    if (process_ls_dump(dir, dump_item,recursive) == -1) {
+		reply(599, "System error %d", errno);
+		return -1;
+	    }
+	}
+    }
+
+    /* return the information to the caller */
+    if(recursive)
+    {
+	lreply(200, " Opaque recursive list of %s", dir);
+	for (dir_item = dir_list; dir_item != NULL; dir_item = dir_item->next)
+	    fast_lreply(201, " %s %d %-16s %s",
+			dir_item->dump->date, dir_item->dump->level,
+			dir_item->dump->tape, dir_item->path);
+	reply(200, " Opaque recursive list of %s", dir);
+    }
+    else
+    {
+	lreply(200, " Opaque list of %s", dir);
+	for (dir_item = dir_list; dir_item != NULL; dir_item = dir_item->next)
+	    lreply(201, " %s %d %-16s %s",
+		   dir_item->dump->date, dir_item->dump->level,
+		   dir_item->dump->tape, dir_item->path);
+	reply(200, " Opaque list of %s", dir);
+    }
+    clear_dir_list();
+    return 0;
+}
 
 
 /* returns the value of tapedev from the amanda.conf file if set,
    otherwise reports an error */
 int tapedev_is P((void))
 {
-    char orig_dir[1024];
-    char conf_dir[1024];
     char *result;
 
     /* check state okay to do this */
@@ -502,35 +649,10 @@ int tapedev_is P((void))
 	return -1;
     }
 
-    /* record cwd */
-    (void)getcwd(orig_dir, 1024);
-
-    /* cd to confdir */
-    ap_snprintf(conf_dir, sizeof(conf_dir), "%s/%s", CONFIG_DIR, config);
-    if (chdir(conf_dir) == -1)
-    {
-	reply(501, "Couldn't cd into config dir. Misconfiguration?");
-	return -1;
-    }
-
-    /* read conffile */
-    if (read_conffile(CONFFILE_NAME))
-    {
-	reply(501, "Couldn't read config file!");
-	return -1;
-    }
-
     /* get tapedev value */
     if ((result = getconf_str(CNF_TAPEDEV)) == NULL)
     {
-	reply(501, "Tapedev not set inside config file.");
-	return -1;
-    }
-
-    /* cd back to orig cwd */
-    if (chdir(orig_dir) == -1)
-    {
-	reply(501, "Couldn't cd back to orig dir.");
+	reply(501, "Tapedev not set in config file.");
 	return -1;
     }
 
@@ -542,68 +664,24 @@ int tapedev_is P((void))
 /* returns YES if dumps for disk are compressed, NO if not */
 int are_dumps_compressed P((void))
 {
-    char orig_dir[1024];
-    char conf_dir[1024];
     disk_t *diskp;
-    disklist_t *diskl;
 
     /* check state okay to do this */
-    if (strlen(config) == 0)
-    {
-	reply(501, "Must set config before asking about tapedev.");
-	return -1;
-    }
-    if (strlen(dump_hostname) == 0)
-    {
-	reply(501, "Must set host name before asking about tapedev.");
-	return -1;
-    }
     if (strlen(disk_name) == 0)
     {
-	reply(501, "Must set disk name before asking about tapedev.");
-	return -1;
-    }
-
-    /* record cwd */
-    (void)getcwd(orig_dir, 1024);
-
-    /* cd to confdir */
-    ap_snprintf(conf_dir, sizeof(conf_dir), "%s/%s", CONFIG_DIR, config);
-    if (chdir(conf_dir) == -1)
-    {
-	reply(501, "Couldn't cd into config dir. Misconfiguration?");
-	return -1;
-    }
-
-    /* read conffile */
-    if (read_conffile(CONFFILE_NAME))
-    {
-	reply(501, "Couldn't read config file!");
-	return -1;
-    }
-
-    /* read the disk file */
-    if ((diskl = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
-    {
-	reply(501, "Couldn't read disk file");
+	reply(501, "Must set config,host,disk name before asking about dumps.");
 	return -1;
     }
 
     /* now go through the list of disks and find which have indexes */
-    for (diskp = diskl->head; diskp != NULL; diskp = diskp->next)
+    for (diskp = disk_list->head; diskp != NULL; diskp = diskp->next)
 	if ((strcmp(diskp->host->hostname, dump_hostname) == 0)
 	    && (strcmp(diskp->name, disk_name) == 0))
 	    break;
+
     if (diskp == NULL)
     {
 	reply(501, "Couldn't find host/disk in disk file.");
-	return -1;
-    }
-
-    /* cd back to orig cwd */
-    if (chdir(orig_dir) == -1)
-    {
-	reply(501, "Couldn't cd back to orig dir.");
 	return -1;
     }
 
@@ -656,9 +734,6 @@ char **argv;
     if(gethostname(local_hostname, sizeof(local_hostname)-1) == -1)
 	error("gethostname: %s", strerror(errno));
 
-    reply(220, "%s AMANDA index server (%s) ready.", local_hostname,
-	  server_version);
-
     /* now trim domain off name */
     for (bptr = local_hostname; *bptr != '\0'; bptr++)
 	if (*bptr == '.')
@@ -687,9 +762,13 @@ char **argv;
     if (argc == 2) {
 	strncpy(config, argv[1], sizeof(config)-1);
 	config[sizeof(config)-1] = '\0';
+	if (is_config_valid(config) != -1) return 1;
     } else {
 	config[0] = '\0';
     }
+
+    reply(220, "%s AMANDA index server (%s) ready.", local_hostname,
+	  server_version);
 
     /* a real simple parser since there are only a few commands */
     while (1)
