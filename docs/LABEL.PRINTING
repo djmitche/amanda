@@ -25,7 +25,7 @@ DLT tapes (in progress).
 
 History
 -------
-At the University of Colorado at boulder, we used to use some dump scripts
+At the University of Colorado at Boulder, we used to use some dump scripts
 that printed out paper tape labels that went with the tape. When we started
 using amanda for our dumps, my boss insisted we still generate them, in
 case we weren't able to access the amanda database. The thought was that
