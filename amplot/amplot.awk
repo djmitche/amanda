@@ -89,6 +89,9 @@ BEGIN{
 		else if( $2=="state")       do_state();
 		else if( $2=="interface-state") ;
 		else if( $2=="hdisk-state") do_hdisk++;
+		else if( $2=="flush" && $3=="size" ) {
+			flush_size = $4;
+		}
 		else if( $2=="start")       do_start();
 		else if( $2=="send-cmd") { 
 			if( $7=="FILE-DUMP"){
@@ -154,32 +157,26 @@ function do_state(){		# state line is printed out after driver
 		printf plot_fmt, time, unused_old, time,unused >>"bandw_free";
 	unused_old = unused;
 
-	if(holding_disk_old != 0) {
+	if(holding_disk_old != $9) {
 		disk_alloc_time[disk_a] = time;
 		disk_alloc_space[disk_a] = holding_disk_old;
 		disk_a++;
+		disk_alloc_time[disk_a] = time;
+		disk_alloc_space[disk_a] = $9;
+		disk_a++;
+		holding_disk_old = $9;
 	}
-	disk_alloc_time[disk_a] = time;
-	disk_alloc_space[disk_a] = $9;
-	disk_a++;
-	holding_disk_old = $9;
-#	space = (holding_disk - $9)*const+disk_raise;	# how much disk is used
-#	if( space != space_old ) 
-#		printf plot_fmt, time, space_old, time, space >> "disk_alloc";
-#	space_old = space;
-	printf "" >> "disk_alloc";
 
 	twait = tsize;
-	if(twait_old != 0) {
+	if(twait_old != twait) {
 		twait_time[twait_a] = time;
 		twait_wait[twait_a] = twait_old;
 		twait_a++;
+		twait_time[twait_a] = time;
+		twait_wait[twait_a] = twait;
+		twait_a++;
+		twait_old = twait;
 	}
-	twait_time[twait_a] = time;
-	twait_wait[twait_a] = twait;
-	twait_a++;
-	twait_old = twait;
-	printf "" >> "tape_wait";
 
 	active = (dumpers-$13)*dump_shift+dump_raise;
 	if( active != active_old )
@@ -225,20 +222,15 @@ function do_start() { 		# get configuration parameters
 	}
 	no_disks += no_flush;
 	size        = $10/1024;	       # size of holding disk in MB
-	holding_disk= $10;
-	init_holding_disk= $10;
-	if (holding_disk != 0) {
-		const        = 100/holding_disk; # displaying the use of the holding disk
-	} else {
-		const        = 100;
-	}
-	holding_disk_old = init_holding_disk;
-#	print 0, space_old > "disk_alloc"; # need to reset the files I create 
+	holding_disk= $10 + flush_size;
+	init_holding_disk= $10 + flush_size;
+	holding_disk_old = $10;
 	disk_a = 0;
 	disk_alloc_time[disk_a] = 0;
 	disk_alloc_space[disk_a] = holding_disk_old;
 	disk_a++;
-	twait_old = 0;
+	tsize = flush_size;
+	twait_old = tsize;
 	twait_a = 0;
 	twait_time[twait_a] = 0;
 	twait_wait[twait_a] = twait_old;
@@ -282,26 +274,43 @@ function do_quit(){		# this is issued by driver at the end
 			max_space = disk_alloc_space[a];
 		}
 	}
-	if(init_holding_disk != 100) {
+
+	space_change = 0;
+	if(max_space > holding_disk) {
+		space_change = max_space - holding_disk;
 		holding_disk = max_space;
-		const = 100/holding_disk;
-	}
-	for(a=0; a<disk_a; ++a) {
-		space = (holding_disk - disk_alloc_space[a])*const+disk_raise
-		printf plot_fmt1, disk_alloc_time[a], space >> "disk_alloc";
 	}
 
 	twait_time[twait_a] = tim;
 	twait_wait[twait_a] = twait_old;
 	twait_a++;
-	max_wait=dtwait_wait[0];
+	min_wait=twait_wait[0];
 	for(a=0; a<twait_a; a++) {
-		if(twait_wait[a] > max_wait) {
-			max_wait = twait_wait[a];
+		if(twait_wait[a] < min_wait) {
+			min_wait = twait_wait[a];
 		}
 	}
+	if(min_wait < 0) {
+		if(flush_size == 0) {
+			holding_disk -= min_wait;
+			holding_disk -= space_change;
+		}
+		for(a=0; a<twait_a; a++) {
+			twait_wait[a] -= min_wait;
+		}
+	}
+	if (holding_disk != 0) {
+		const = 100/holding_disk;
+	}
+	else {
+		const = 100;
+	}
+	for(a=0; a<disk_a; ++a) {
+		space = (holding_disk - disk_alloc_space[a])*const+disk_raise
+		printf plot_fmt1, disk_alloc_time[a], space >> "disk_alloc";
+	}
 	for(a=0; a<twait_a; ++a) {
-		space = (max_wait - twait_wait[a])*const+disk_raise
+		space = (twait_wait[a])*const+disk_raise
 		printf plot_fmt1, twait_time[a], space >> "tape_wait";
 	}
 
@@ -320,7 +329,7 @@ function do_result(){		# process lines driver: result
 			tcnt--;	written++;
 		}
 		else { 				# dumperx done 
-		  tsize += (int($14/32)+1)*32; 	# in tape blocks 
+		  tsize += (int($15/32)+1)*32; 	# in tape blocks 
 		  tcnt++;	done++;
 		  xx = host[$6];
 		  d = disk[$6];

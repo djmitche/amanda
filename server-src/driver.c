@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.131 2003/06/05 15:48:50 martinea Exp $
+ * $Id: driver.c,v 1.132 2003/07/07 15:19:28 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1653,7 +1653,7 @@ read_schedule(waitqp)
     char *command;
     char *s;
     int ch;
-
+    long flush_size = 0;
 
     rq.head = rq.tail = NULL;
 
@@ -1838,7 +1838,9 @@ read_schedule(waitqp)
 	}
 	remove_disk(waitqp, dp);
 	enqueue_disk(&rq, dp);
+	flush_size += sp->act_size;
     }
+    printf("driver: flush size %ld\n", flush_size);
     amfree(inpline);
     if(line == 0)
 	log_add(L_WARNING, "WARNING: got empty schedule from planner");

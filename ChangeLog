@@ -1,5 +1,12 @@
 2003-07-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* amplot/amplot.sh.in: Remove files before runnig amplot.awk.
+	* amplot/amplot.awk: Parse 'flush line', fix tape_wait line.
+	* server-src/driver.c (read_flush): Write a 'flush size' to the
+	  debug file.
+
+2003-07-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* changer-src/chg-chio.pl.in: Fix next/prev command.
 
 2003-07-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
