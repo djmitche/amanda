@@ -276,6 +276,8 @@ char *disk;
 }
 #endif
 
+static char lockname[1024];
+
 int open_infofile(filename)
 char *filename;
 {
@@ -286,11 +288,9 @@ char *filename;
 
     return 0; /* success! */
 #else
-    char lockname[256];
-
     /* lock the dbm file */
 
-    sprintf(lockname, "%s.dir", filename);
+    sprintf(lockname, "%s.lck", filename);
     if((lockfd = open(lockname, O_CREAT|O_RDWR, 0666)) == -1)
 	return 2;
 
@@ -319,6 +319,8 @@ void close_infofile()
 
     close(lockfd);
     lockfd = -1;
+
+    unlink(lockname);
 #endif
 }
 
