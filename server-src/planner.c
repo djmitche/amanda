@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.136 2002/11/28 02:29:45 martinea Exp $
+ * $Id: planner.c,v 1.137 2002/12/17 21:18:50 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -86,6 +86,7 @@ typedef struct est_s {
     long last_lev0size;
     int next_level0;
     int level_days;
+    int promote;
     double fullrate, incrrate;
     double fullcomp, incrcomp;
     char *errstr;
@@ -636,6 +637,7 @@ setup_estimate(dp)
     ep->dump_size = -1;
     ep->dump_priority = dp->priority;
     ep->errstr = 0;
+    ep->promote = 0;
 
     /* calculated fields */
 
@@ -2035,69 +2037,96 @@ arglist_function1(static void delay_one_dump,
 
 static int promote_highest_priority_incremental P((void))
 {
-    disk_t *dp;
+    disk_t *dp, *dp1, *dp_promote;
     long new_size, new_total, new_lev0;
-    int check_days, check_limit;
+    int check_days;
+    int nb_today, nb_same_day, nb_today2;
 
     /*
      * return 1 if did so; must update total_size correctly; must not
      * cause total_size to exceed tape_length
      */
-    check_limit = conf_dumpcycle - 1;
-    fprintf(stderr, "   promote: checking up to %d day%s ahead\n",
-	    check_limit - 1, (check_limit - 1 == 1) ? "" : "s");
 
-    for(check_days = 1; check_days < check_limit; check_days++) {
-	fprintf(stderr, "   promote: checking %d day%s now\n",
-		check_days, (check_days == 1) ? "" : "s");
+    dp_promote = NULL;
+    for(dp = schedq.head; dp != NULL; dp = dp->next) {
 
-	for(dp = schedq.head; dp != NULL; dp = dp->next) {
-	    if(est(dp)->next_level0 != check_days)
-		continue; /* totals continue here too */
+	est(dp)->promote = -1000;
 
-	    if(est_size(dp,0) <= 0) {
-		fprintf(stderr,
-		    "    promote: can't move %s:%s: no full dumps allowed.\n",
-		    dp->host->hostname, dp->name);
-		continue;
+	if(est_size(dp,0) <= 0)
+	    continue;
+
+	if(est(dp)->next_level0 <= 0)
+	    continue;
+
+	new_size = est_tape_size(dp, 0);
+	new_total = total_size - est(dp)->dump_size + new_size;
+	new_lev0 = total_lev0 + new_size;
+
+	if(new_total > tape_length ||
+	   new_lev0 > balanced_size + balance_threshold) {
+	    continue;
+	}
+
+	nb_today = 0;
+	nb_same_day = 0;
+        for(dp1 = schedq.head; dp1 != NULL; dp1 = dp1->next) {
+	    if(strcmp(dp->host->hostname, dp1->host->hostname) == 0) {
+		if(est(dp1)->dump_level == 0)
+		    nb_today++;
+		else if(est(dp1)->next_level0 == est(dp)->next_level0)
+		    nb_same_day++;
 	    }
+	}
+	nb_today2 = nb_today*nb_today;
+	if(nb_today == 0) nb_same_day++;
 
-	    new_size = est_tape_size(dp, 0);
-	    new_total = total_size - est(dp)->dump_size + new_size;
-	    new_lev0 = total_lev0 + new_size;
+	if(nb_same_day >= nb_today2) {
+	    est(dp)->promote = ((nb_same_day - nb_today2)*(nb_same_day - nb_today2)) + 
+			       conf_dumpcycle - est(dp)->next_level0;
+	}
+	else {
+	    est(dp)->promote = -nb_today2 +
+			       conf_dumpcycle - est(dp)->next_level0;
+	}
 
-	    if(new_total > tape_length
-	       || new_lev0 > balanced_size + balance_threshold) {
-
-		fprintf(stderr,
-	"  promote: %s:%s too big: new size %ld total %ld, bal size %1.0f thresh %1.0f\n",
-			dp->host->hostname, dp->name, new_size,
-			new_lev0, balanced_size, balance_threshold);
-		continue;
-	    }
-
-	    total_size = new_total;
-	    total_lev0 = new_lev0;
-	    est(dp)->degr_level = est(dp)->dump_level;
-	    est(dp)->degr_size = est(dp)->dump_size;
-	    est(dp)->dump_level = 0;
-	    est(dp)->dump_size = new_size;
-	    est(dp)->next_level0 = 0;
-
-	    fprintf(stderr,
-	"   promote: moving %s:%s up, total_lev0 %1.0f, total_size %ld\n",
-		    dp->host->hostname, dp->name,
-		    total_lev0, total_size);
-
-	    log_add(L_INFO,
-		    "Full dump of %s:%s promoted from %d day%s ahead.",
-		    dp->host->hostname, dp->name,
-		    check_days, (check_days == 1) ? "" : "s");
-
-	    return 1;
+        if(!dp_promote || est(dp_promote)->promote < est(dp)->promote) {
+	    dp_promote = dp;
+	    fprintf(stderr,"   try %s:%s %d %d %d = %d\n",
+		    dp->host->hostname, dp->name, nb_same_day, nb_today, est(dp)->next_level0, est(dp)->promote);
+	}
+        else {
+	    fprintf(stderr,"no try %s:%s %d %d %d = %d\n",
+		    dp->host->hostname, dp->name, nb_same_day, nb_today, est(dp)->next_level0, est(dp)->promote);
 	}
     }
 
+    if(dp_promote) {
+	dp = dp_promote;
+
+	new_size = est_tape_size(dp, 0);
+	new_total = total_size - est(dp)->dump_size + new_size;
+	new_lev0 = total_lev0 + new_size;
+
+	total_size = new_total;
+	total_lev0 = new_lev0;
+	check_days = est(dp)->next_level0;
+	est(dp)->degr_level = est(dp)->dump_level;
+	est(dp)->degr_size = est(dp)->dump_size;
+	est(dp)->dump_level = 0;
+	est(dp)->dump_size = new_size;
+	est(dp)->next_level0 = 0;
+
+	fprintf(stderr,
+	      "   promote: moving %s:%s up, total_lev0 %1.0f, total_size %ld\n",
+		dp->host->hostname, dp->name,
+		total_lev0, total_size);
+
+	log_add(L_INFO,
+		"Full dump of %s:%s promoted from %d day%s ahead.",
+		dp->host->hostname, dp->name,
+		check_days, (check_days == 1) ? "" : "s");
+	return 1;
+    }
     return 0;
 }
 
