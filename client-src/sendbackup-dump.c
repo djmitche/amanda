@@ -33,11 +33,17 @@
  * File:	$RCSFile: sendbackup-dump.c,v $
  * Part of:	
  *
- * Revision:	$Revision: 1.5 $
- * Last Edited:	$Date: 1997/04/17 00:41:02 $
- * Author:	$Author: oliva $
+ * Revision:	$Revision: 1.6 $
+ * Last Edited:	$Date: 1997/04/18 05:21:56 $
+ * Author:	$Author: amcore $
  *
  * History:	$Log: sendbackup-dump.c,v $
+ * History:	Revision 1.6  1997/04/18 05:21:56  amcore
+ * History:	clean up kerberos a bit; make error messages more meaningful.
+ * History:	options strings arrays are now 512 bytes instead of 80.  (with many
+ * History:	options it runs over 80 characters).
+ * History:	'gcc -Wall'-happy a bit more
+ * History:
  * History:	Revision 1.5  1997/04/17 00:41:02  oliva
  * History:	Fixed typo
  * History:
@@ -57,7 +63,7 @@
 #include "version.h"
 
 #ifdef KRB4_SECURITY
-#include "sendbackup-krb4.c"
+#include "sendbackup-krb4.h"
 #else					/* I'd tell you what this does */
 #define NAUGHTY_BITS			/* but then I'd have to kill you */
 #endif

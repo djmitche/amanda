@@ -33,11 +33,17 @@
  * File:	$RCSFile: sendbackup-dump.c,v $
  * Part of:	
  *
- * Revision:	$Revision: 1.5 $
+ * Revision:	$Revision: 1.6 $
  * Last Edited:	$data: 1997/03/24 10:10:10 $
- * Author:	$Author: oliva $
+ * Author:	$Author: amcore $
  *
  * History:	$Log: sendbackup-gnutar.c,v $
+ * History:	Revision 1.6  1997/04/18 05:22:00  amcore
+ * History:	clean up kerberos a bit; make error messages more meaningful.
+ * History:	options strings arrays are now 512 bytes instead of 80.  (with many
+ * History:	options it runs over 80 characters).
+ * History:	'gcc -Wall'-happy a bit more
+ * History:
  * History:	Revision 1.5  1997/04/10 03:49:07  oliva
  * History:	Fixed handling of exclusion on GNUTAR.
  * History:	Removed option GNUTAR_EXCLUDE_FILE, now enabled by default.
@@ -64,7 +70,7 @@
 #endif
 
 #ifdef KRB4_SECURITY
-#include "sendbackup-krb4.c"
+#include "sendbackup-krb4.h"
 #else					/* I'd tell you what this does */
 #define NAUGHTY_BITS			/* but then I'd have to kill you */
 #endif

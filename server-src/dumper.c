@@ -875,7 +875,7 @@ void sendbackup_response(p, pkt)
 proto_t *p;
 pkt_t *pkt;
 {
-    char optionstr[80];
+    char optionstr[512];
     int data_port, mesg_port;
 
     if(p->state == S_FAILED) {
@@ -992,14 +992,18 @@ char *hostname, *disk, *levelstr, *dumpname, *options;
 	    else
 		rc = krb_get_cred(CLIENT_HOST_PRINCIPLE, CLIENT_HOST_INSTANCE,
 				  realm, &cred);
-	}
+	    if(rc > 0 ) {
+	        sprintf(errstr, "[host %s: krb4 error (krb_get_cred) %d: %s]",
+		    hostname, rc, krb_err_txt[rc]);
+	        return 2;
+	    }
+        }
 	if(rc > 0) {
-	    sprintf(errstr, "[host %s: krb4 error %d: %s]",
+	    sprintf(errstr, "[host %s: krb4 error (make_krb_req) %d: %s]",
 		    hostname, rc, krb_err_txt[rc]);
 	    return 2;
 	}
-    }
-    else
+    } else
 #endif
 	rc = make_request(hostname, amanda_port, req, NULL,
 			  STARTUP_TIMEOUT, sendbackup_response);

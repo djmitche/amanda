@@ -759,8 +759,8 @@ char *host_inst, *realm;
 
 #define HOSTNAME_INSTANCE host_inst
 
-    if(rc = krb_mk_req(&ticket, CLIENT_HOST_PRINCIPLE,
-		       CLIENT_HOST_INSTANCE, realm, p->auth_cksum)) {
+    if((rc = krb_mk_req(&ticket, CLIENT_HOST_PRINCIPLE,
+		       CLIENT_HOST_INSTANCE, realm, p->auth_cksum))) {
 	if(rc == NO_TKT_FIL) {
 	    /* It's been kdestroyed.  Get a new one and try again */
 	    kerberos_service_init();
@@ -796,7 +796,7 @@ void (*continuation) P((proto_t *p, pkt_t *pkt));
 
 #ifdef PROTO_DEBUG
     fprintf(stderr, "time %d: make_krb_request: host %s -> p %X\n", 
-	    CURTIME, hostname, (int)p);
+	    CURTIME, hostname, req, (int)p);
 #endif
 
     if((hp = host2krbname(hostname, inst, realm)) == 0)
@@ -805,7 +805,7 @@ void (*continuation) P((proto_t *p, pkt_t *pkt));
     p->peer.sin_family = AF_INET;
     p->peer.sin_port = htons(port);
 
-    if(rc = add_krb_security(p, inst, realm))
+    if((rc = add_krb_security(p, inst, realm)))
 	return rc;
 
     state_machine(p, A_START, NULL);

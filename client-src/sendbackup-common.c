@@ -69,7 +69,7 @@ static int srvcompress=0;
 #define COMPR_BEST 2
 
 #ifdef KRB4_SECURITY
-#include "sendbackup-krb4.c"
+#include "sendbackup-krb4.h"
 #else					/* I'd tell you what this does */
 #define NAUGHTY_BITS			/* but then I'd have to kill you */
 #endif
@@ -156,7 +156,7 @@ int argc;
 char **argv;
 {
     int level, mesgpipe[2];
-    char disk[256], options[80], datestamp[80];
+    char disk[512], options[512], datestamp[80];
 
     /* initialize */
 

@@ -52,8 +52,13 @@ The /etc/services line is:
 
 And the /etc/inetd.conf line is:
 
-    kamanda dgram udp wait bin /usr/local/libexec/amanda/amandad amandad -krb4
+    kamanda dgram udp wait root /usr/local/libexec/amanda/amandad amandad -krb4
 
+Note that you're running this as root, rather than as your dump user.
+Amanda will set it's uid down to the dump user at times it doesn't need
+to read the srvtab file, and give up root permissions entirely before
+it goes off and runs dump.  Alternately you can change your srvtab files
+to be readable by user amanda.
 
 3. CONF FILE
 

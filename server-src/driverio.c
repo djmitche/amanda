@@ -235,7 +235,7 @@ fflush(stdout);
 char *optionstr(dp)
 disk_t *dp;
 {
-    static char str[80];
+    static char str[512];
 
     strcpy(str,";");
 
