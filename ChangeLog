@@ -1,5 +1,9 @@
 1999-09-05 John R. Jackson  <jrj@purdue.edu>
 
+	* recover-src/extract_list.c: add VRESTORE and VXRESTORE support.
+
+1999-09-05 John R. Jackson  <jrj@purdue.edu>
+
 	* common-src/stream.c: make sure errno is returned properly from
 	  stream_client() and stream_server().
 	* client-src/sendbackup.c: report errors from stream_server() and
@@ -224,7 +228,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.254 1999/09/05 22:28:14 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.255 1999/09/05 22:49:39 jrj Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
