@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.52 1998/02/06 19:55:55 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.53 1998/02/13 06:26:27 amcore Exp $
  *
  * send backup data using BSD dump
  */
@@ -40,7 +40,7 @@
 #define NAUGHTY_BITS			/* but then I'd have to kill you */
 #endif
 
-#define LEAF_AND_DIRS "sed -e \'\ns/^leaf[ \t]*[0-9]*[ \t]*\\.//\nt\n/^dir[ \t]/ {\ns/^dir[ \t]*[0-9]*[ \t]*\\n//\ns%$%/%\nt\n}\nd\n\'"
+#define LEAF_AND_DIRS "sed -e \'\ns/^leaf[ \t]*[0-9]*[ \t]*\\.//\nt\n/^dir[ \t]/ {\ns/^dir[ \t]*[0-9]*[ \t]*\\.//\ns%$%/%\nt\n}\nd\n\'"
 
 static regex_t re_table[] = {
   /* the various encodings of dump size */
@@ -281,7 +281,7 @@ char *dumpdate;
 			     " -tvf", " -",
 			     " 2>/dev/null",
 			     " | ",
-			     LEAF_AND_DIRS,
+			     "sed -e \'\n/^\\./ {\ns/^\\.//\ns/, [0-9]*$//\ns/^\\.//\ns/ @-> .*$//\nt\n}\nd\n\'",
 			     NULL);
 	write_tapeheader();
 
@@ -305,7 +305,8 @@ char *dumpdate;
 
 	indexcmd = vstralloc(RESTORE,
 			     " -tvf", " -",
-			     " 2>/dev/null",
+			     " 2>&1",
+			     /* not to /dev/null because of DU's dump */
 			     " | ",
 			     LEAF_AND_DIRS,
 			     NULL);
