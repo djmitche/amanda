@@ -25,11 +25,12 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.12 1998/11/24 20:02:07 kashmir Exp $
+ * $Id: dgram.c,v 1.13 1998/12/02 22:34:43 kashmir Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
 #include "amanda.h"
+#include "arglist.h"
 #include "dgram.h"
 
 int bind_reserved(sock, addrp)
@@ -248,17 +249,25 @@ dgram_t *dgram_alloc()
 }
 
 
-void dgram_cat(dgram, str)
-dgram_t *dgram;
-const char *str;
+arglist_function1(void dgram_cat, dgram_t *, dgram, const char *, fmt)
 {
-    int len = strlen(str);
+    size_t bufsize;
+    va_list argp;
 
-    if(dgram->len + len > MAX_DGRAM) len = MAX_DGRAM - dgram->len;
-    strncpy(dgram->cur, str, len);
-    dgram->cur += len;
-    dgram->len += len;
-    *(dgram->cur) = '\0';
+    assert(dgram != NULL);
+    assert(fmt != NULL);
+
+    assert(dgram->len == dgram->cur - dgram->data);
+    assert(dgram->len >= 0 && dgram->len < sizeof(dgram->data));
+
+    bufsize = sizeof(dgram->data) - dgram->len;
+    if (bufsize <= 0)
+	return;
+
+    arglist_start(argp, fmt);
+    dgram->len += ap_vsnprintf(dgram->cur, bufsize, fmt, argp);
+    dgram->cur = dgram->data + dgram->len;
+    arglist_end(argp);
 }
 
 void dgram_eatline(dgram)

@@ -1,5 +1,11 @@
 1998-12-02  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/dgram.c (dgram_cat): now can take printf-style
+	arguments
+	* common-src/dgram.g (dgram_cat): update prototype
+
+1998-12-02  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/bsd-security.c: wrap entire file in #ifdef BSD_SECURITY
 	* common-src/bsd-security.c (bsd_connect): catch up with
 	security interface changes - upper layer now allocates our handle
