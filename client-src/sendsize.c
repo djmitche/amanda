@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.13.4.6.2.13 2002/04/17 20:05:42 martinea Exp $
+ * $Id: sendsize.c,v 1.97.2.13.4.6.2.14 2002/04/19 14:24:29 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -366,7 +366,7 @@ char **argv;
 	    }
 	    if(est == NULL) {
 		dbprintf(("%s: unexpected child %ld\n",
-			  debug_prefix_time(NULL), child_pid));
+			  debug_prefix_time(NULL), (long)child_pid));
 	    } else {
 		est->done = 1;
 		dumpsrunning--;

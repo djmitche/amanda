@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.27.4.6.4.3.2.8 2002/04/13 23:36:19 jrjackson Exp $
+ * $Id: diskfile.c,v 1.27.4.6.4.3.2.9 2002/04/19 14:24:29 martinea Exp $
  *
  * read disklist file
  */
@@ -540,8 +540,10 @@ FILE *f;
     }
 }
 
-char *optionstr(dp)
+char *optionstr(dp, their_features, fdout)
 disk_t *dp;
+am_feature_t * their_features;
+FILE *fdout;
 {
     char *auth_opt = NULL;
     char *kencrypt_opt = "";
@@ -557,9 +559,11 @@ disk_t *dp;
     char *exc = NULL;
     char *result = NULL;
     sle_t *excl;
+    int nb_exclude_file;
+    int nb_include_file;
 
     if(dp->host
-       && am_has_feature(dp->host->features, amanda_feature_auth_keyword)) {
+       && am_has_feature(dp->host->features, fe_options_auth)) {
 	auth_opt = stralloc("auth=");
 	if(dp->auth == AUTH_BSD) {
 	    strappend(auth_opt, "bsd");
@@ -570,62 +574,216 @@ disk_t *dp;
 	}
 	strappend(auth_opt, ";");
     } else if(dp->auth == AUTH_BSD) {
-	auth_opt = stralloc("bsd-auth;");
+	if(am_has_feature(dp->host->features, fe_options_bsd_auth)) {
+	    auth_opt = stralloc("bsd-auth;");
+	}
+	else if(fdout) {
+	    fprintf(fdout, "WARNING: client %s does not support bsd-auth\n",
+		    dp->host->hostname);
+	}
     } else if(dp->auth == AUTH_KRB4) {
-	auth_opt = stralloc("krb4-auth;");
-	if(dp->kencrypt) kencrypt_opt = "kencrypt;";
+	if(am_has_feature(dp->host->features, fe_options_krb4_auth)) {
+	    auth_opt = stralloc("krb4-auth;");
+	}
+	else if(fdout) {
+	    fprintf(fdout, "WARNING: client %s does not support krb4-auth\n",
+		    dp->host->hostname);
+	}
+	if(dp->kencrypt) {
+	    if(am_has_feature(dp->host->features, fe_options_kencrypt)) {
+		kencrypt_opt = "kencrypt;";
+	    }
+	    else if(fdout) {
+		fprintf(fdout,
+			"WARNING: client %s does not support kencrypt\n",
+			dp->host->hostname);
+	    }
+	}
     }
 
     switch(dp->compress) {
     case COMP_FAST:
-	compress_opt = "compress-fast;";
+	if(am_has_feature(their_features, fe_options_compress_fast)) {
+	    compress_opt = "compress-fast;";
+	}
+	else if(fdout) {
+	    fprintf(fdout,
+		    "WARNING: client %s does not support fast compression",
+		    dp->host->hostname);
+	}
 	break;
     case COMP_BEST:
-	compress_opt = "compress-best;";
+	if(am_has_feature(their_features, fe_options_compress_best)) {
+	    compress_opt = "compress-best;";
+	}
+	else if(fdout) {
+	    fprintf(fdout,
+		    "WARNING: client %s does not support best compression",
+		    dp->host->hostname);
+	}
 	break;
     case COMP_SERV_FAST:
-	compress_opt = "srvcomp-fast;";
+	if(am_has_feature(their_features, fe_options_srvcomp_fast)) {
+	    compress_opt = "srvcomp-fast;";
+	}
 	break;
     case COMP_SERV_BEST:
-        compress_opt = "srvcomp-best;";
+	if(am_has_feature(their_features, fe_options_srvcomp_best)) {
+            compress_opt = "srvcomp-best;";
+	}
 	break;
     }
 
-    if(!dp->record) record_opt = "no-record;";
-    if(dp->index) index_opt = "index;";
+    if(!dp->record) {
+	if(am_has_feature(their_features, fe_options_no_record)) {
+	    record_opt = "no-record;";
+	}
+	else if(fdout) {
+	    fprintf(fdout, "WARNING: client %s does not support no record",
+		    dp->host->hostname);
+	}
+    }
+
+    if(dp->index) {
+	if(am_has_feature(their_features, fe_options_index)) {
+	    index_opt = "index;";
+	}
+	else if(fdout) {
+	    fprintf(fdout, "WARNING: client %s does not support index",
+		    dp->host->hostname);
+	}
+    }
 
     exclude_file = stralloc("");
+    nb_exclude_file = 0;
     if(dp->exclude_file != NULL && dp->exclude_file->nb_element > 0) {
-	for(excl = dp->exclude_file->first; excl != NULL; excl = excl->next) {
-	    exc = newvstralloc( exc, "exclude-file=", excl->name, ";", NULL);
-	    strappend(exclude_file, exc);
+	nb_exclude_file = dp->exclude_file->nb_element;
+	if(am_has_feature(their_features, fe_options_exclude_file)) {
+	    if(am_has_feature(their_features, fe_options_multiple_exclude) ||
+	       dp->exclude_file->nb_element == 1) {
+		for(excl = dp->exclude_file->first; excl != NULL;
+						    excl = excl->next) {
+		    exc = newvstralloc( exc, "exclude-file=", excl->name,
+					";", NULL);
+		    strappend(exclude_file, exc);
+		}
+	    } else {
+		exc = newvstralloc(exc, "exclude-file=",
+				   dp->exclude_file->last->name, ";", NULL);
+		strappend(exclude_file, exc);
+		if(fdout) {
+		    fprintf(fdout,
+			 "WARNING: client %s does not support multiple exclude",
+			 dp->host->hostname);
+		}
+	    }
+	} else if(fdout) {
+	    fprintf(fdout, "WARNING: client %s does not support exclude file",
+		    dp->host->hostname);
 	}
     }
     exclude_list = stralloc("");
     if(dp->exclude_list != NULL && dp->exclude_list->nb_element > 0) {
-	for(excl = dp->exclude_list->first; excl != NULL; excl = excl->next) {
-	    exc = newvstralloc( exc, "exclude-list=", excl->name, ";", NULL);
-	    strappend(exclude_list, exc);
+	if(am_has_feature(their_features, fe_options_exclude_list)) {
+	    if(am_has_feature(their_features, fe_options_multiple_exclude) ||
+	       (dp->exclude_list->nb_element == 1 && nb_exclude_file == 0)) {
+		for(excl = dp->exclude_list->first; excl != NULL;
+						    excl = excl->next) {
+		    exc = newvstralloc( exc, "exclude-list=", excl->name,
+					";", NULL);
+		    strappend(exclude_list, exc);
+		}
+	    } else {
+		exc = newvstralloc(exc, "exclude-list=",
+				   dp->exclude_list->last->name, ";", NULL);
+		strappend(exclude_list, exc);
+		if(fdout) {
+			fprintf(fdout,
+			 "WARNING: client %s does not support multiple exclude",
+			 dp->host->hostname);
+		}
+	    }
+	} else if(fdout) {
+	    fprintf(fdout, "WARNING: client %s does not support exclude list",
+		    dp->host->hostname);
 	}
     }
 
     include_file = stralloc("");
+    nb_include_file = 0;
     if(dp->include_file != NULL && dp->include_file->nb_element > 0) {
-	for(excl = dp->include_file->first; excl != NULL; excl = excl->next) {
-	    exc = newvstralloc( exc, "include-file=", excl->name, ";", NULL);
-	    strappend(include_file, exc);
+	nb_include_file = dp->include_file->nb_element;
+	if(am_has_feature(their_features, fe_options_include_file)) {
+	    if(am_has_feature(their_features, fe_options_multiple_include) ||
+	       dp->include_file->nb_element == 1) {
+		for(excl = dp->include_file->first; excl != NULL;
+						    excl = excl->next) {
+		    exc = newvstralloc( exc, "include-file=", excl->name,
+					";", NULL);
+		    strappend(include_file, exc);
+		}
+	    } else {
+		exc = newvstralloc(exc, "include-file=",
+				   dp->include_file->last->name, ";", NULL);
+		strappend(include_file, exc);
+		if(fdout) {
+		    fprintf(fdout,
+			 "WARNING: client %s does not support multiple include",
+			 dp->host->hostname);
+		}
+	    }
+	} else if(fdout) {
+	    fprintf(fdout, "WARNING: client %s does not support include file",
+		    dp->host->hostname);
 	}
     }
     include_list = stralloc("");
     if(dp->include_list != NULL && dp->include_list->nb_element > 0) {
-	for(excl = dp->include_list->first; excl != NULL; excl = excl->next) {
-	    exc = newvstralloc( exc, "include-list=", excl->name, ";", NULL);
-	    strappend(include_list, exc);
+	if(am_has_feature(their_features, fe_options_include_list)) {
+	    if(am_has_feature(their_features, fe_options_multiple_include) ||
+	       (dp->include_list->nb_element == 1 && nb_include_file == 0)) {
+		for(excl = dp->include_list->first; excl != NULL;
+						    excl = excl->next) {
+		    exc = newvstralloc( exc, "include-list=", excl->name,
+					";", NULL);
+		    strappend(include_list, exc);
+		}
+	    } else {
+		exc = newvstralloc(exc, "include-list=",
+				   dp->include_list->last->name, ";", NULL);
+		strappend(include_list, exc);
+		if(fdout) {
+			fprintf(fdout,
+			 "WARNING: client %s does not support multiple include",
+			 dp->host->hostname);
+		}
+	    }
+	} else if(fdout) {
+	    fprintf(fdout, "WARNING: client %s does not support include list",
+		    dp->host->hostname);
 	}
     }
 
-    if(dp->exclude_optional) excl_opt = "exclude-optional;";
-    if(dp->include_optional) incl_opt = "include-optional;";
+    if(dp->exclude_optional) {
+	if(am_has_feature(their_features, fe_options_optional_exclude)) {
+	    excl_opt = "exclude-optional;";
+	}
+	else if(fdout) {
+	    fprintf(fdout,
+		    "WARNING: client %s does not support optional exclude",
+		    dp->host->hostname);
+	}
+    }
+    if(dp->include_optional) {
+	if(am_has_feature(their_features, fe_options_optional_include)) {
+	   incl_opt = "include-optional;";
+	}
+	else if(fdout) {
+	    fprintf(fdout,
+		    "WARNING: client %s does not support optional include",
+		    dp->host->hostname);
+	}
+    }
 
     result = vstralloc(";",
 		       auth_opt,

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.h,v 1.1.2.1 2002/04/17 20:05:42 martinea Exp $
+ * $Id: amfeatures.h,v 1.1.2.2 2002/04/19 14:24:29 martinea Exp $
  *
  * Define feature test related items.
  */
@@ -73,7 +73,49 @@ typedef enum {
      * and so on.
      */
 
-    amanda_feature_auth_keyword,
+    fe_options_auth, /* amanda_feature_auth_keyword */
+
+    fe_selfcheck_req,
+    fe_selfcheck_req_device,
+    fe_selfcheck_rep,
+
+    fe_sendsize_req_no_options,
+    fe_sendsize_req_options,
+    fe_sendsize_req_device,		/* require fe_sendsize_req_options */
+    fe_sendsize_rep,
+
+    fe_sendbackup_req,
+    fe_sendbackup_req_device,
+    fe_sendbackup_rep,
+
+    fe_noop_req,
+    fe_noop_rep,
+
+    fe_program_dump,
+    fe_program_gnutar,
+    fe_program_dumper_api,
+
+    fe_options_compress_fast,
+    fe_options_compress_best,
+    fe_options_srvcomp_fast,
+    fe_options_srvcomp_best,
+    fe_options_no_record,
+    fe_options_index,
+    fe_options_exclude_file,
+    fe_options_exclude_list,
+    fe_options_multiple_exclude,	/* require fe_sendsize_req_options */
+    fe_options_optional_exclude,	/* require fe_sendsize_req_options */
+    fe_options_include_file,		/* require fe_sendsize_req_options */
+    fe_options_include_list,		/* require fe_sendsize_req_options */
+    fe_options_multiple_include,	/* require fe_sendsize_req_options */
+    fe_options_optional_include,	/* require fe_sendsize_req_options */
+    fe_options_bsd_auth,
+    fe_options_krb4_auth,
+    fe_options_kencrypt,
+
+    fe_g_options_maxdump,
+    fe_g_options_hostname,
+    fe_g_options_features,
 
     /*
      * All new features must be inserted immediately *before* this entry.
@@ -90,6 +132,7 @@ typedef struct am_feature_s {
  * Functions.
  */
 extern am_feature_t *am_init_feature_set P((void));
+extern am_feature_t *am_set_default_feature_set P((void));
 extern am_feature_t *am_allocate_feature_set P((void));
 extern void am_release_feature_set P((am_feature_t *));
 extern int am_add_feature P((am_feature_t *f, am_feature_e n));

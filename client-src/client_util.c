@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.1.2.17 2002/04/13 23:36:18 jrjackson Exp $
+ * $Id: client_util.c,v 1.1.2.18 2002/04/19 14:24:29 martinea Exp $
  *
  */
 
@@ -421,7 +421,7 @@ int verbose;
     tok = strtok(p,";");
 
     while (tok != NULL) {
-	if(am_has_feature(fs, amanda_feature_auth_keyword)
+	if(am_has_feature(fs, fe_options_auth)
 	   && strncmp(tok, "auth=", 5) == 0) {
 	    if(strcasecmp(tok + 5, "bsd") == 0) {
 		options->bsd_auth = 1;
