@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.15 1997/12/30 05:24:34 jrj Exp $
+ * $Id: extract_list.c,v 1.16 1997/12/31 23:21:16 jrj Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -861,9 +861,7 @@ static int okay_to_continue P((void))
     } else {
 	ret = 0;
     }
-    if (ch != EOF) {
-	while((ch = getchar()) != EOF && ch != '\n') {}
-    }
+    while(ch != EOF && ch != '\n') ch = getchar();
     return ret;
 }
 
