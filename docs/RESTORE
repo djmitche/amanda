@@ -59,7 +59,7 @@ level 0 dump on it into the tape drive of Aaron.
 Become super-user in the client host and run (replace <amanda> with
 the username under which amanda runs):
 
-rsh -n Aaron -l <amanda> amrestore -p /dev/rmt/0cn Barney '/home$' |
+rsh -n -l <amanda> Aaron amrestore -p /dev/rmt/0cn Barney '/home\$' |
 restore -ivbf 2 -
 
 This requires client root to have login access to <amanda>@Aaron, with
