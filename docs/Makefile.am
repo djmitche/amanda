@@ -3,6 +3,7 @@ pkgdata_DATA = \
 	DUMPER-API		\
 	EXCLUDE			\
 	FAQ			\
+	HOWTO-AFS		\
 	HOWTO-CYGWIN.html	\
 	INDEXING		\
 	INSTALL			\
