@@ -1,3 +1,7 @@
+2001-08-24 John R. Jackson (jrj@purdue.edu)
+
+	* server-src/taper.c: Allocate buffers on page boundaries.
+
 2001-08-22 John R. Jackson (jrj@purdue.edu)
 
 	* tape-src/Makefile.am: Add chown/chgrp rules for ammt/amdd install
