@@ -1,7 +1,7 @@
 README for adding PC hosts to the Amanda backup system.
 
 Release 2. 28/Jan/1997
-$Id: SAMBA,v 1.6 1997/12/10 08:46:55 amcore Exp $
+$Id: SAMBA,v 1.7 1998/01/31 19:46:16 amcore Exp $
 
 Installation
 
@@ -15,9 +15,9 @@ Amanda 'client' host, that will act as the 'samba server' host.  This
 will most likely be the same machine as the Amanda master server.
 This patch also works fine with newer releases of samba, but it is
 unnecessary for releases of samba newer than 1.9.17.  In version
-1.9.17, make sure you don't set a low logging/debuggin level in the
-samba configuration file, because this flag may prevent that estimate
-sizes are printed correctly.
+1.9.17 or higher, make sure you don't set a low logging/debuggin level
+in the samba configuration file, because this flag may prevent that
+estimate sizes are printed correctly.
 
 If you have very long pathnames or very deep directory trees in the PC
 filesystems, you may have to upgrade samba to 1.9.18 (currently in
@@ -121,10 +121,11 @@ The estimate and totals are probably a bit out, since tar pads to the
 nearest 512 bytes after each file (i think).  Not sure how much of a
 problem this is.
 
-If you compile with smclient support, gnutar support is automatically
+If you compile with smbclient support, gnutar support is automatically
 added too.  If you aren't using the gnutar part, you may get warnings
 about the availability of /usr/local/bin/gtar (or whatever it was
-compiled with) - these can safely be ignored.
+compiled with) - these can safely be ignored, unless you enable index
+generation for those filesystems.
 
 Michael Zucchi
 School of Computer and Information Science
