@@ -88,6 +88,7 @@ DUX4 dump is broken.  There is a patch available:
 
 ftp://ftp.service.digital.com/public/dunix/v4.0b/duv40bas00005-19970926.README
 
+
 When both dump and vdump are available, amanda will use vdump for
 backing up advfs filesystems only, and dump will be used for the rest.
 Since vdump must be run as root, amanda will use the rundump program
