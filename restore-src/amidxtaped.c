@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: amidxtaped.c,v 1.13 1998/01/02 18:48:10 jrj Exp $
+/* $Id: amidxtaped.c,v 1.14 1998/01/03 22:50:14 jrj Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -108,6 +108,7 @@ char **argv;
     struct stat stat_tape;
     char *tapename = NULL;
     int fd;
+    struct sockaddr_in addr;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -150,6 +151,14 @@ char **argv;
 	return 1;
     }
 #endif
+
+    i = sizeof (addr);
+    if (getpeername(0, (struct sockaddr *)&addr, &i) == -1)
+	error("getpeername: %s", strerror(errno));
+    if (addr.sin_family != AF_INET || htons(addr.sin_port) == 20) {
+	error("connection rejected from %s family %d port %d",
+	      inet_ntoa(addr.sin_addr), addr.sin_family, htons(addr.sin_port));
+    }
 
     /* get the number of arguments */
     afree(buf);
