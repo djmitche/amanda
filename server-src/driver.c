@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.31 1998/02/14 23:26:25 amcore Exp $
+ * $Id: driver.c,v 1.32 1998/02/15 20:22:25 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1081,8 +1081,14 @@ interface_t *ip;
     int res;
 
     if (ip == (interface_t *)0) {
-	/* XXX - got to do better than this! */
-	res = 10000;
+	interface_t *p;
+	int maxusage=0;
+	int curusage=0;
+	for(p = lookup_interface(NULL); p != NULL; p = p->next) {
+	    maxusage += p->maxusage;
+	    curusage += p->curusage;
+	}
+	res = maxusage - curusage;
     }
     else {
 	/* XXX - kludge - if we are currently using nothing
