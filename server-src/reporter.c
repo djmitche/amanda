@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.16 1998/01/12 22:32:55 blair Exp $
+ * $Id: reporter.c,v 1.16.2.1 1998/01/24 06:05:20 amcore Exp $
  *
  * nightly Amanda Report generator
  */
@@ -239,7 +239,7 @@ char **argv;
     subj_str = vstralloc(getconf_str(CNF_ORG),
 			 " ", amflush_run ? "AMFLUSH" : "AMANDA",
 			 " ", "MAIL REPORT FOR",
-			 " ", nicedate(atoi(datestamp)),
+			 " ", nicedate(datestamp ? atoi(datestamp) : 0),
 			 NULL);
 
    /* open pipe to mailer */
@@ -1112,7 +1112,7 @@ void generate_missing()
 
     for(dp = diskq->head; dp != NULL; dp = dp->next) {
 	if(data(dp)->result == L_BOGUS) {
-	    str = vstralloc("  ", prefix(hostname, diskname, -987),
+	    str = vstralloc("  ", prefix(dp->host->hostname, dp->name, -987),
 			    " ", "RESULTS MISSING",
 			    NULL);
 	    addline(&errsum, str);
