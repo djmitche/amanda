@@ -1,3 +1,9 @@
+2002-02-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* client-src/sendsize.c: Set include_file and include_list to NULL
+	  when using old protocol.
+	* client-src/sendbackup-gnutar.c: Include "." when using old protocol.
+
 2002-02-13  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/conffile.h (dumptype_t): Add include_file and include_list.

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.80 2002/02/14 01:51:04 martinea Exp $
+ * $Id: sendbackup-gnutar.c,v 1.81 2002/02/14 16:07:20 martinea Exp $
  *
  * send backup data using GNU tar
  */
@@ -496,7 +496,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 		my_argv[i++] = excl->name;
 	    }
 	}
-	if(nb_include >= 0) {
+	if(nb_include >= 1) {
 	    if(options->include_file) {
 		for(excl = options->include_file->first; excl != NULL;
 		    excl = excl->next) {

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.117 2002/02/14 01:51:05 martinea Exp $
+ * $Id: sendsize.c,v 1.118 2002/02/14 16:07:20 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -265,6 +265,8 @@ char **argv;
 		    options->createindex = 0;
 		    options->exclude_file = NULL;
 		    options->exclude_list = NULL;
+		    options->include_file = NULL;
+		    options->include_list = NULL;
 		    if(strncmp(s-1, "exclude-file=", 13) == 0) {
 			options->exclude_file =
 				append_sl(options->exclude_file, s+12);
