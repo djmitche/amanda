@@ -1,3 +1,8 @@
+1998-09-16  John R. Jackson  <jrj@purdue.edu>
+
+	* man/amadmin.8.in: document that "hostname" is optional for "info".
+	Reported by David Wolfskill <dhw@whistle.com>.
+
 1998-09-15  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/FAQ: common compile-time and link-time errors
