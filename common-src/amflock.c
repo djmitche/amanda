@@ -69,27 +69,35 @@
 #  define F_UNLOCK F_ULOCK
 #endif
 
+/* Lock a file using lockf().
+** Notes:
+** - returns errors for some non-files like pipes.
+** - probably only works for files open for writing.
+*/
 int use_lockf(fd, op)
-int fd;
-int op;
+int fd; /* fd of file to operate on */
+int op;	/* true to lock; false to unlock */
 {
-	off_t prevpos;
+	off_t pos;
 
-	/* save our current position */
-	if((prevpos = lseek(fd, (off_t)0, SEEK_CUR)) == -1) return -1;
-
-	/* a lock on the first byte of the file serves as our advisory file lock */
-	if(lseek(fd, (off_t)0, SEEK_SET) == -1) return -1;
-
-	if(op) {
-		if(lockf(fd, F_LOCK, 1) == -1) return -1;
+	if (op) {
+		/* lock from here on */
+		if (lockf(fd, F_LOCK, (off_t)0) == -1) return -1;
 	}
 	else {
-		if(lockf(fd, F_UNLOCK, 1) == -1) return -1;
-	}
+		/* unlock from here on */
+		if (lockf(fd, F_UNLOCK, (off_t)0) == -1) return -1;
 
-	/* restore our current position */
-	if(lseek(fd, prevpos, SEEK_SET) == -1) return -1;
+		/* unlock from bof to here */
+		pos = lseek(fd, (off_t)0, SEEK_CUR);
+		if (pos == (off_t)-1) {
+			if (errno == ESPIPE) pos = (off_t)0;
+			else return -1;
+		}
+
+		if (pos > (off_t)0 &&
+		    lockf(fd, F_UNLOCK, -pos) == -1) return -1;
+	}
 
 	return 0;
 }
@@ -97,9 +105,12 @@ int op;
 #endif
 
 #if !defined(USE_POSIX_FCNTL) && !defined(USE_FLOCK) && !defined(USE_LOCKF) && defined(USE_MYLOCK)
-/* XXX - error checking in this secton needs to be tightened up */
+/* XXX - error checking in this section needs to be tightened up */
 
-int steal_lock(fn, mypid)	/* can we steal a lock 0=no; 1=yes; 2=not locked; 3=error */
+/* Can we steal a lock?
+**   0=no; 1=yes; 2=not locked; 3=error
+*/
+int steal_lock(fn, mypid)
 char *fn;
 long mypid;
 {
@@ -138,7 +149,9 @@ long mypid;
 	return 0;
 }
 
-int my_lock(res, op)	/* lock or unlock a resource */
+/* Locking using existance of a file.
+*/
+int my_lock(res, op)
 char *res; /* name of resource to lock */
 int op;    /* true to lock; false to unlock */
 {
@@ -236,7 +249,7 @@ char *resource;
 }
 
 
-/* Get a file lock.
+/* Get a file lock (for read/write files).
 */
 int amflock(fd, resource)
 int fd;
@@ -304,6 +317,8 @@ char *resource;
 **     - lock the file and then try and lock it from another process
 **     - lock the file from another process and check that process
 **       termination unlocks it.
+**     The hard part is to find a system independent way to not block
+**     for ever.
 */
 #ifdef CONFIGURE_TEST
 main()
