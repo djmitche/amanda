@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.10 1997/10/03 07:01:09 george Exp $
+ * $Id: amadmin.c,v 1.11 1997/11/11 05:06:46 amcore Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -62,7 +62,8 @@ void find P((int argc, char **argv));
 int find_match P((char *host, char *disk));
 char *nicedate P((int datestamp));
 int bump_thresh P((int level));
-int search_logfile P((char *label, int datestamp, char *logfile));
+int search_logfile P((char *label, int datestamp, char *logfile,
+		      int pass, int host_len, int *disk_len, int *label_len));
 int get_logline P((FILE *logf));
 void export_db P((int argc, char **argv));
 void import_db P((int argc, char **argv));
@@ -507,7 +508,7 @@ char **argv;
 {
     char *conflog, logfile[1024];
     host_t *hp;
-    int tape, maxtape, len, seq, logs;
+    int tape, maxtape, host_len, disk_len, label_len, seq, logs, pass;
     tape_t *tp;
 
     if(argc < 4) {
@@ -520,16 +521,27 @@ char **argv;
     find_diskstrs = &argv[4];
     find_ndisks = argc - 4;
 
-    if((hp = lookup_host(find_hostname)) == NULL)
+    if((hp = lookup_host(find_hostname)) == NULL) {
 	printf("Warning: host %s not in disklist.\n", find_hostname);
+    } else {
+	find_hostname = hp->hostname;
+    }
 
     conflog = getconf_str(CNF_LOGFILE);
     maxtape = getconf_int(CNF_TAPECYCLE);
 
-    len = strlen(find_hostname)-4;
-    printf("date        host%*s disk lv tape  file status\n",
-	   len>0?len:0,"");
-    for(tape = 1; tape <= maxtape; tape++) {
+    host_len = strlen(find_hostname);
+    disk_len = 4;
+    label_len = 4;
+    pass = 0;
+    do {
+      if (pass != 0) {
+	printf("date        host%*s disk%*s lv tape%*s file status\n",
+	       host_len>4?host_len-4:0,"",
+	       disk_len>4?disk_len-4:0,"",
+	       label_len>4?label_len-4:0,"");
+      }
+      for(tape = 1; tape <= maxtape; tape++) {
 	tp = lookup_tapepos(tape);
 	if(tp == NULL) continue;
 
@@ -542,26 +554,30 @@ char **argv;
 	for(seq = 0; 1; seq++) {
 	    sprintf(logfile, "%s.%d.%d", conflog, tp->datestamp, seq);
 	    if(access(logfile, R_OK) != 0) break;
-	    logs += search_logfile(tp->label, tp->datestamp, logfile);
+	    logs += search_logfile(tp->label, tp->datestamp, logfile,
+				   pass, host_len, &disk_len, &label_len);
 	}
 
 	/* search old-style amflush log, if any */
 
 	sprintf(logfile, "%s.%d.amflush", conflog, tp->datestamp);
 	if(access(logfile,R_OK) == 0) {
-	    logs += search_logfile(tp->label, tp->datestamp, logfile);
+	    logs += search_logfile(tp->label, tp->datestamp, logfile,
+				   pass, host_len, &disk_len, &label_len);
 	}
 
 	/* search old-style main log, if any */
 
 	sprintf(logfile, "%s.%d", conflog, tp->datestamp);
 	if(access(logfile,R_OK) == 0) {
-	    logs += search_logfile(tp->label, tp->datestamp, logfile);
+	    logs += search_logfile(tp->label, tp->datestamp, logfile,
+				   pass, host_len, &disk_len, &label_len);
 	}
-	if(logs == 0)
+	if(logs == 0 && pass == 0)
 	    printf("Warning: no log files found for tape %s written %s\n",
 		   tp->label, nicedate(tp->datestamp));
-    }
+      }
+    } while (pass++ == 0);
 }
 
 int find_match(host, disk)
@@ -594,14 +610,18 @@ int datestamp;
     return nice;
 }
 
-int search_logfile(label, datestamp, logfile)
+int search_logfile(label, datestamp, logfile,
+		   pass, host_len, disk_len, label_len)
 char *label, *logfile;
 int datestamp;
+int pass;
+int host_len, *disk_len, *label_len;
 {
     FILE *logf;
     char host[80], disk[80], ck_label[80], rest[MAX_LINE];
     int level, rc, filenum, ck_datestamp, tapematch;
     int passlabel, ck_datestamp2;
+    int len;
 
     if((logf = fopen(logfile, "r")) == NULL)
 	error("could not open logfile %s: %s", logfile, strerror(errno));
@@ -612,10 +632,13 @@ int datestamp;
 	if(curlog == L_START && curprog == P_TAPER) {
 	    rc = sscanf(curstr, " datestamp %d label %s",
 			&ck_datestamp, ck_label);
-	    if(rc != 2)
-		printf("strange log line \"start taper %s\"\n", curstr);
-	    else if(ck_datestamp == datestamp && !strcmp(ck_label,label))
+	    if(rc != 2) {
+		if (pass == 0) {
+		    printf("strange log line \"start taper %s\"\n", curstr);
+		}
+	    } else if(ck_datestamp == datestamp && !strcmp(ck_label,label)) {
 		tapematch = 1;
+	    }
 	}
     }
 
@@ -631,29 +654,49 @@ int datestamp;
 	if(curlog == L_START && curprog == P_TAPER) {
 	    rc = sscanf(curstr, " datestamp %d label %s",
 			&ck_datestamp2, ck_label);
-	    if(rc != 2)
-		printf("strange log line \"start taper %s\"\n", curstr);
-	    else
+	    if(rc != 2) {
+		if(pass == 0) {
+		    printf("strange log line \"start taper %s\"\n", curstr);
+		}
+	    } else {
 		if (strcmp(ck_label,label))
 		    passlabel = !passlabel;
+	    }
 	}
 	if(curlog == L_SUCCESS || curlog == L_FAIL) {
 	    rc =sscanf(curstr,"%s %s %d %[^\n]", host, disk, &level, rest);
 	    if(rc != 4) {
-		printf("strange log line \"%s\"\n", curstr);
+		if(pass == 0) {
+		    printf("strange log line \"%s\"\n", curstr);
+		}
 		continue;
 	    }
 	    if(find_match(host, disk)) {
 		if(curprog == P_TAPER) {
-		    printf("%s  %-4s %-4s %d  %-6s %3d", nicedate(datestamp),
-			   host, disk, level, label, filenum);
-		    if(curlog == L_SUCCESS) printf(" OK\n");
-		    else printf(" FAILED %s\n", rest);
+		    if(pass == 0) {
+			if((len = strlen(disk)) > *disk_len) {
+			    *disk_len = len;
+			}
+			if((len = strlen(label)) > *label_len) {
+			    *label_len = len;
+			}
+		    } else {
+			printf("%s  %-*s %-*s %2d %-*s %4d",
+			       nicedate(datestamp),
+			       host_len, host,
+			       *disk_len, disk, level,
+			       *label_len, label, filenum);
+		        if(curlog == L_SUCCESS) printf(" OK\n");
+		        else printf(" FAILED %s\n", rest);
+		    }
 		}
-		else if(curlog == L_FAIL) {	/* print other failures too */
-		    printf("%s  %-4s %-4s %d  %-10s FAILED (%s) %s\n",
-			   nicedate(datestamp), host, disk, level,
-			   "---", program_str[(int)curprog], rest);
+		else if(curlog == L_FAIL && pass != 0) {
+		    /* print other failures too */
+		    printf("%s  %-*s %-*s %2d %-*s FAILED (%s) %s\n",
+			   nicedate(datestamp),
+			   host_len, host,
+			   *disk_len, disk, level,
+			   *label_len, "---", program_str[(int)curprog], rest);
 		}
 	    }
 	}
