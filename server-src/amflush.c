@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.41.2.5 1999/02/16 03:19:16 martinea Exp $
+ * $Id: amflush.c,v 1.41.2.6 1999/02/26 22:07:20 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -42,7 +42,7 @@
 static char *config;
 char *confdir;
 char *reporter_program;
-char **datestamps;
+holding_t *holding_list;
 char *datestamp;
 
 /* local functions */
@@ -118,7 +118,7 @@ char **main_argv;
     reporter_program = vstralloc(sbindir, "/", "amreport", versionsuffix(),
 				 NULL);
 
-    datestamps = pick_datestamp();
+    holding_list = pick_datestamp();
     confirm();
     if(!foreground) detach();
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
@@ -201,15 +201,15 @@ void confirm()
 {
     tape_t *tp;
     char *tpchanger;
-    char **dss;
+    holding_t *dir;
 
-    if(*datestamps == NULL) {
+    if(holding_list == NULL) {
 	printf("Could not find any Amanda directories to flush.");
 	exit(1);
     }
     printf("\nFlushing dumps in");
-    for(dss = datestamps; *dss != NULL; dss++)
-	printf(" %s,",*dss);
+    for(dir = holding_list; dir != NULL; dir = dir->next)
+	printf(" %s,",dir->name);
     printf("\n");
     printf("today: %s\n",datestamp);
     tpchanger = getconf_str(CNF_TPCHANGER);
@@ -388,7 +388,7 @@ char *diskdir, *datestamp;
 void run_dumps()
 {
     holdingdisk_t *hdisk;
-    char **dss;
+    holding_t *dir;
     tok_t tok;
     int result_argc;
     char *result_argv[MAX_ARGS+1];
@@ -412,9 +412,9 @@ void run_dumps()
     }
     else {
 
-    	for(dss = datestamps; *dss != NULL; dss++) {
+	for(dir = holding_list; dir !=NULL; dir = dir->next) {
 	    for(hdisk = getconf_holdingdisks(); hdisk != NULL; hdisk = hdisk->next)
-		flush_holdingdisk(hdisk->diskdir, *dss);
+		flush_holdingdisk(hdisk->diskdir, dir->name);
 	}
 
 	/* tell taper to quit, then wait for it */
