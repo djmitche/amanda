@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.18 1998/01/02 18:48:17 jrj Exp $
+ * $Id: amflush.c,v 1.19 1998/01/27 06:32:30 amcore Exp $
  *
  * write files from work directory onto tape
  */
@@ -235,6 +235,8 @@ char *diskdir;
 	    taper_cmd(FILE_WRITE, dp, destname, level);
 	    tok = getresult(taper, 0);
 	}
+
+	free_serial(disk2serial(dp));
 
 	switch(tok) {
 	case DONE: /* DONE <handle> <label> <tape file> <err mess> */

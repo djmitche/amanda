@@ -23,6 +23,9 @@
 
 Version 2.4.0
 
+	fix serial number message in amflush
+	-Liudvikas Bukys <bukys@cs.rochester.edu>
+
 	removed backslashes from inside macro calls.
 	un-indented # directives.
 	-Gregory Neil Shapiro <gshapiro@WPI.EDU>
