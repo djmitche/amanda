@@ -1,13 +1,17 @@
-2003-04-08  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+2003-03-13  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* changer-src/Makefile.am (libexec_SCRIPTS): Missing \.
+
+2003-03-08  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* NEWS: amrecover_changer works with chg-multi.
 
-2003-04-08  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+2003-03-08  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* client-src/client_util.c (add_include): If include contain 2 '/' then
 	  use at asis, don't try to match it.
 
-2003-04-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+2003-03-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* file tape-src/output-rait.c (rait_open): Call tapefd_set_master_fd();
 	* file tape-src/tapeio.c (struct tape_info): Add master_fd field.
@@ -19,7 +23,7 @@
 	* file tape-src/tapeio.h (tapefd_set_master_fd): Prototype.
 	* NEWS: rait: works with file:
 
-2003-04-06  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+2003-03-06  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* tape-src/output-file.c (file_tapefd_can_fork): New function that 
 	  return 1 if the file: can be run under a forked process.
@@ -41,17 +45,17 @@
 	  xxx_tapefd_can_fork function.
 	* tape-src/tapeio.h (tapefd_can_fork): Prototype.
 
-2003-04-05  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+2003-03-05  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* tape-src/output-file.c (file_tapefd_write): Call file_release(fd)
 	  before opening the file for writing.
 
-2003-04-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+2003-03-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* changer-src/chg-zd-mtx.sh.in: Default for driveslot is 0.
 	* NEWS: default driveslot for chg-zd-mtx is now 0.
 
-2003-04-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+2003-03-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* amplot/amplot.sh.in: New -b option for b/w postscript.
 	* amplot/amplot.awk: Add 'color' to command if bw is set.
@@ -59,7 +63,7 @@
 	* man/amplot.8: Document -b option.
 	* NEWS: Document amplot -b option.
 
-2003-04-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+2003-03-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* recover-src/extract_list.c: Fix the name of the
 	  amidxtaped.<timestamp>.debug file.
