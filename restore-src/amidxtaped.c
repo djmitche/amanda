@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: amidxtaped.c,v 1.20 1998/02/26 19:24:53 jrj Exp $
+/* $Id: amidxtaped.c,v 1.21 1998/03/07 18:09:39 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -274,9 +274,11 @@ char **argv;
     }
 
     /* rewind tape */
-    /* the first non-option argument is the tape device */
+    /* the first non-option argument is the tape device except [-d datestamp] */
     for (i = 1; i <= amrestore_nargs; i++)
-	if (amrestore_args[i][0] != '-')
+	if (!strncmp(amrestore_args[i],"-d",2))
+	    i++;
+	else if (amrestore_args[i][0] != '-')
 	    break;
     if (i > amrestore_nargs)
     {

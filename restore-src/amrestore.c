@@ -25,12 +25,12 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.20 1998/02/26 19:24:54 jrj Exp $
+ * $Id: amrestore.c,v 1.21 1998/03/07 18:09:40 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
 /*
- * usage: amrestore [-p] [-h] [-r|-c] tape-device [hostname [diskname]]
+ * usage: amrestore [-p] [-h] [-r|-c] [-d datestamp] tape-device [hostname [diskname]]
  *
  * Pulls all files from the tape that match the hostname and diskname regular
  * expressions.  For example, specifying "rz1" as the diskname matches "rz1a",
@@ -41,6 +41,8 @@
  *	-c   write compressed
  *	-r   raw, write file as is on tape (with header, possibly compressed)
  *	-h   write the header too
+ *
+ *	-d   the file should have this datestamp
  */
 
 #include "amanda.h"
@@ -60,7 +62,8 @@ pid_t compress_pid = -1;
 
 void errexit P((void));
 void handle_sigpipe P((int sig));
-int disk_match P((dumpfile_t *file, char *hostname, char *diskname));
+int disk_match P((dumpfile_t *file, char *datestamp, 
+		  char *hostname, char *diskname));
 char *make_filename P((dumpfile_t *file));
 int read_file_header P((char *buffer, dumpfile_t *file,
 			int buflen, int tapedev));
@@ -89,9 +92,9 @@ int sig;
     got_sigpipe++;
 }
 
-int disk_match(file, hostname, diskname)
+int disk_match(file, datestamp, hostname, diskname)
 dumpfile_t *file;
-char *hostname, *diskname;
+char *datestamp, *hostname, *diskname;
 
 /*
  * Returns 1 if the current dump file matches the hostname and diskname
@@ -102,10 +105,12 @@ char *hostname, *diskname;
 {
     if(file->type != F_DUMPFILE) return 0;
 
-    if(*hostname == '\0' || match(hostname, file->name)) {
-	return (*diskname == '\0' || match(diskname, file->disk));
-    }
-    return 0;
+    if((*hostname == '\0' || match(hostname, file->name)) &&
+       (*diskname == '\0' || match(diskname, file->disk)) &&
+       (*datestamp == '\0' || match(datestamp, file->datestamp)))
+	return 1;
+    else
+	return 0;
 }
 
 
@@ -315,7 +320,7 @@ void usage()
  * Print usage message and terminate.
  */
 {
-    error("Usage: amrestore [-r|-c] [-h] [-p] tapedev [host [disk]]");
+    error("Usage: amrestore [-r|-c] [-h] [-p] [-d datestamp] tapedev [host [disk]]");
 }
 
 
@@ -334,7 +339,7 @@ char **argv;
     struct stat stat_tape;
     dumpfile_t file;
     char *filename = NULL;
-    char *tapename, *hostname, *diskname;
+    char *datestamp, *tapename, *hostname, *diskname;
     amwait_t compress_status;
     int tapedev;
     int fd;
@@ -356,13 +361,15 @@ char **argv;
     onerror(errexit);
     signal(SIGPIPE, handle_sigpipe);
 
+    datestamp = "";
     /* handle options */
-    while( (opt = getopt(argc, argv, "crpkh")) != -1) {
+    while( (opt = getopt(argc, argv, "cd:rpkh")) != -1) {
 	switch(opt) {
 	case 'c': compflag = 1; break;
 	case 'r': rawflag = 1; break;
 	case 'p': pipeflag = 1; break;
 	case 'h': headerflag = 1; break;
+	case 'd': datestamp = stralloc(optarg); break;
 	default:
 	    usage();
 	}
@@ -417,7 +424,7 @@ char **argv;
     while(file.type == F_TAPESTART || file.type == F_DUMPFILE) {
 	afree(filename);
 	filename = make_filename(&file);
-	if(disk_match(&file,hostname,diskname) != 0) {
+	if(disk_match(&file,datestamp,hostname,diskname) != 0) {
 	    fprintf(stderr, "%s: %3d: restoring %s\n", 
 		    get_pname(), file_number, filename);
 	    restore(&file, filename, tapedev, isafile);
