@@ -1,4 +1,9 @@
 2000-09-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	patch by <jeg@time.ucsc.edu>
+
+	* server-src/reporter.c (output_summary): check for tape_labels.
+
+2000-09-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amindexd.c: use strcasecmp to compare hostname.
 
@@ -982,7 +987,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.377 2000/09/25 23:50:29 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.378 2000/09/26 00:18:39 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
