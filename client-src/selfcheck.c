@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.40.2.3.4.4.2.18 2002/10/27 14:31:18 martinea Exp $
+ * $Id: selfcheck.c,v 1.40.2.3.4.4.2.19 2002/12/12 16:01:39 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -369,7 +369,7 @@ check_options(program, disk, device, options)
 	    need_restore=1;
 #endif
     }
-    if(options->compress != COMPR_BEST || options->compress == COMPR_FAST) 
+    if(options->compress == COMPR_BEST || options->compress == COMPR_FAST) 
 	need_compress_path=1;
 }
 

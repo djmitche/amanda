@@ -1,3 +1,7 @@
+2002-12-12  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* client-src/selfcheck.c: Typo.
+
 2002-12-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/reporter.c (output_stats): Typo.
