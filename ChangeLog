@@ -1,3 +1,10 @@
+2001-05-16 John R. Jackson <jrj@purdue.edu>
+
+	* client-src/patch-system.sh.in: Go ahead and update /etc/services
+	  on a client even if the services themselves are not turned on to
+	  inetd.  Compliments of Tom Schutter <t.schutter@att.net>.  Add
+	  the TCP port for amandad for future use.
+
 2001-05-15 John R. Jackson <jrj@purdue.edu>
 
 	* restore-src/amidxtaped.c: Call tape_stat() instead of stat() to
