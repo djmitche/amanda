@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.11 1999/05/15 20:56:50 martinea Exp $
+ * $Id: planner.c,v 1.76.2.12 1999/08/15 07:41:37 oliva Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -489,8 +489,9 @@ info_t *info;	/* info block for disk */
     return;
 }
 
-static void setup_estimate(dp)
-disk_t *dp;
+static void
+setup_estimate(dp)
+     disk_t *dp;
 {
     est_t *ep;
     info_t info;
@@ -622,7 +623,7 @@ disk_t *dp;
 	}
 
 	if(ep->next_level0 == 1) {
-	    log_add(L_WARNING, "Skipping full dump of %s:%s tommorrow.",
+	    log_add(L_WARNING, "Skipping full dump of %s:%s tomorrow.",
 		    dp->host->hostname, dp->name);
 	}
     }
@@ -852,10 +853,11 @@ info_t *info;
     return min_level;
 }
 
-/* when is next level 0 due? 0 = today, 1 = tommorrow, etc*/
-static int next_level0(dp, info)
-disk_t *dp;
-info_t *info;
+/* when is next level 0 due? 0 = today, 1 = tomorrow, etc*/
+static int
+next_level0(dp, info)
+     disk_t *dp;
+     info_t *info;
 {
     if(dp->strategy == DS_NOFULL || dp->strategy == DS_INCRONLY)
 	return 1;		/* fake it */
