@@ -674,6 +674,8 @@ stderr=$TMPDIR/$myname.2.$$
 mtx_status=$TMPDIR/$myname.status.$$
 trap "rm -f $stdout $stderr $mtx_status" 0	# exit cleanup
 
+Log "Using config file $configfile"
+
 # Log the argument list.
 
 Log "Arg info:"
