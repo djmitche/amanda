@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: fileheader.c,v 1.9 1998/05/05 21:47:28 martinea Exp $
+ * $Id: fileheader.c,v 1.10 1998/06/26 11:51:50 oliva Exp $
  *
  */
 
@@ -211,7 +211,7 @@ int buflen;
 
 	skip_whitespace(s, ch);
 	if(ch == '\0') {
-	    goto weird_header;
+	    return;				/* "program" is optional */
 	}
 	verify = s - 1;
 	skip_non_whitespace(s, ch);
