@@ -1,3 +1,24 @@
+2002-02-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* client-src/client_util.c (get_name): Create a file name.
+	* client-src/client_util.c (build_name): Remove old files,
+	  build an unused file name.
+	* client-src/client_util.c (add_exclude): Add an exclude pattern to
+	  the exclude file.
+	* client-src/client_util.c (add_include): Add an include to the
+	  include file.
+	* client-src/client_util.c (build_exclude): Concat all excludes in
+	  one file.
+	* client-src/client_util.c (build_include): Concat all includes in
+	  one file.
+	* client-src/client_util.h (build_exclude, build_include): Prototype.
+	* client-src/selfcheck.c.diff (check_options): Call build_exclude
+	  and build_include.
+	* client-src/sendsize.c.diff: Call gtar with one
+	  exclude file/include file.
+	* client-src/sendbackup-gnutar.c.diff: Call gtar with one
+	  exclude file/include file.
+
 2002-02-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* common-src/amanda.h (amfree): Change e local variable to e__errno.

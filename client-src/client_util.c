@@ -24,12 +24,244 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.1.2.3 2002/02/14 01:50:42 martinea Exp $
+ * $Id: client_util.c,v 1.1.2.4 2002/02/15 14:19:53 martinea Exp $
  *
  */
 
 #include "client_util.h"
 #include "getfsent.h"
+#include "util.h"
+
+static char *get_name(diskname, exin, t, n)
+char *diskname, *exin;
+time_t t;
+int n;
+{
+    char number[NUM_STR_SIZE];
+    char *filename;
+    char *ts;
+
+    if(n<0 || n>1000)
+	return NULL;
+    ts = construct_timestamp(&t);
+    if(n == 0)
+	number[0] = '\0';
+    else
+	ap_snprintf(number, sizeof(number), "%03d", n - 1);
+	
+    filename = vstralloc(get_pname(), ".", diskname, ".", ts, number, ".",
+			 exin, NULL);
+    amfree(ts);
+    return filename;
+}
+
+
+static char *build_name(disk, exin)
+char *disk, *exin;
+{
+    int n=0;
+    char *filename = NULL;
+    char *diskname;
+    time_t curtime;
+    char *dbgdir = NULL;
+    char *e = NULL;
+    DIR *d;
+    struct dirent *entry;
+    char *test_name = NULL;
+    int test_name_len, match_len, d_name_len;
+
+
+    time(&curtime);
+    diskname = sanitise_filename(disk);
+
+    dbgdir = stralloc2(AMANDA_DBGDIR, "/");
+    if((d = opendir(AMANDA_DBGDIR)) == NULL) {
+	error("open debug directory \"%s\": %s",
+	AMANDA_DBGDIR, strerror(errno));
+    }
+    test_name = get_name(diskname, exin, curtime - (AMANDA_DEBUG_DAYS * 24 * 60 * 60), 0);
+    test_name_len = strlen(test_name);
+    match_len = strlen(get_pname()) + strlen(diskname) + 2;
+    while((entry = readdir(d)) != NULL) {
+	if(is_dot_or_dotdot(entry->d_name)) {
+	    continue;
+	}
+	d_name_len = strlen(entry->d_name);
+	if(strncmp(test_name, entry->d_name, match_len) != 0
+	   || d_name_len < match_len + 14 + 8
+	   || strcmp(entry->d_name+ d_name_len - 7, exin) != 0) {
+	    continue;				/* not one of our files */
+	}
+	if(strcmp(entry->d_name, test_name) < 0) {
+	    e = newvstralloc(e, dbgdir, entry->d_name, NULL);
+	    (void) unlink(e);                   /* get rid of old file */
+	}
+    }
+    amfree(dbgdir);
+    amfree(test_name);
+    amfree(e);
+    closedir(d);
+
+    do {
+	amfree(filename);
+	filename = get_name(diskname, exin, curtime, n);
+	n++;
+    } while(access(filename, F_OK) == 0 && n<1000);
+
+    if(n==1000) {
+	error("Can't create filename %s\n", filename);
+    }
+
+    amfree(diskname);
+
+    return filename;
+}
+
+
+static int add_exclude(file_exclude, aexc, verbose)
+FILE *file_exclude;
+char *aexc;
+{
+    int l;
+
+    l = strlen(aexc);
+    if(l > MAXPATHLEN-1) {
+	dbprintf(("%s: exclude too long: %s\n", get_pname(), aexc));
+	if(verbose)
+	    printf("ERROR [exclude too long: %s\n", aexc);
+	return 0;
+    }
+    else {
+        if(aexc[l-1] != '\n') {
+	    aexc[l] = '\n';
+	    aexc[l+1] = '\0';
+	 }
+	 fprintf(file_exclude, "%s", aexc);
+    }
+    return 1;
+}
+
+static int add_include(file_include, ainc, verbose)
+FILE *file_include;
+char *ainc;
+{
+    int l;
+
+    l = strlen(ainc);
+    if(l > MAXPATHLEN-1) {
+	dbprintf(("%s: exclude too long: %s\n", get_pname(), ainc));
+	if(verbose)
+	    printf("ERROR [exclude too long: %s\n", ainc);
+	return 0;
+    }
+    else if(ainc[0] != '.' && ainc[0] != '\0' && ainc[1] != '/') {
+        dbprintf(("%s: include must start with './': %s\n", get_pname(), ainc));
+	if(verbose)
+	    printf("ERROR [include must start with './': %s\n", ainc);
+	return 0;
+    }
+    else {
+        if(ainc[l-1] != '\n') {
+	    ainc[l] = '\n';
+	    ainc[l+1] = '\0';
+	 }
+	 fprintf(file_include, "%s", ainc);
+    }
+    return 1;
+}
+
+char *build_exclude(disk, options, verbose)
+char *disk;
+option_t *options;
+int verbose;
+{
+    char *filename, *f;
+    FILE *file_exclude;
+    FILE *exclude;
+    char aexc[MAXPATHLEN+1];
+    sle_t *excl;
+    int nb_exclude = 0;
+
+    if(options->exclude_file) nb_exclude += options->exclude_file->nb_element;
+    if(options->exclude_list) nb_exclude += options->exclude_list->nb_element;
+
+    if(nb_exclude == 0) return NULL;
+
+    filename = build_name(disk, "exclude");
+    file_exclude = fopen(filename,"w");
+
+    if(options->exclude_file) {
+	for(excl = options->exclude_file->first; excl != NULL;
+	    excl = excl->next) {
+	    add_exclude(file_exclude, excl->name, verbose);
+	}
+    }
+
+    if(options->exclude_list) {
+	for(excl = options->exclude_list->first; excl != NULL;
+	    excl = excl->next) {
+	    exclude = fopen(excl->name, "r");
+	    while (!feof(file_exclude)) {
+		fgets(aexc, MAXPATHLEN, exclude); /* \n might not be there */
+		add_exclude(file_exclude, aexc, verbose);
+	    }
+	    fclose(exclude);
+	}
+    }
+
+    fclose(file_exclude);
+
+    f = vstralloc(AMANDA_DBGDIR, "/", filename, NULL);
+    amfree(filename);
+    return f;
+}
+
+char *build_include(disk, options, verbose)
+char *disk;
+option_t *options;
+int verbose;
+{
+    char *filename, *f;
+    FILE *file_include;
+    FILE *include;
+    char ainc[MAXPATHLEN+1];
+    sle_t *incl;
+    int nb_include = 0;
+
+    if(options->include_file) nb_include += options->include_file->nb_element;
+    if(options->include_list) nb_include += options->include_list->nb_element;
+
+    if(nb_include == 0) return NULL;
+
+    filename = build_name(disk, "include");
+    file_include = fopen(filename,"w");
+
+    if(options->include_file) {
+	for(incl = options->include_file->first; incl != NULL;
+	    incl = incl->next) {
+	    add_include(file_include, incl->name, verbose);
+	}
+    }
+
+    if(options->include_list) {
+	for(incl = options->include_list->first; incl != NULL;
+	    incl = incl->next) {
+	    include = fopen(incl->name, "r");
+	    while (!feof(file_include)) {
+		fgets(ainc, MAXPATHLEN, include); /* \n might not be there */
+		add_include(file_include, ainc, verbose);
+	    }
+	    fclose(include);
+	}
+    }
+
+    fclose(file_include);
+
+    f = vstralloc(AMANDA_DBGDIR, "/", filename, NULL);
+    amfree(filename);
+    return f;
+}
+
 
 option_t *parse_options(str, disk, verbose)
 char *str;
