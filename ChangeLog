@@ -1,5 +1,11 @@
 2004-09-15  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* tape-src/tapetype.c: New -o option, doesn't overwrite amanda
+	  tape without -o.
+	* man/amtapetype.8.in: Document new -o option.
+
+2004-09-15  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/amstatus.pl.in: Works with failed dump to tape.
 
 2004-08-31  Jean-Louis Martineau <martineau@iro.umontreal.ca>
