@@ -1,3 +1,8 @@
+2001-07-25 John R. Jackson <jrj@purdue.edu>
+
+	* docs/TAPE.CHANGER: Changes from Ben Lewis (bhlewis@purdue.edu) to
+	  document the new (but optional) searchable features.
+
 2001-07-19 John R. Jackson <jrj@purdue.edu>
 
 	* common-src/error.c: Fix function prototype error.

@@ -68,11 +68,19 @@ The tape changer program must support the following commands:
     <tpchanger> -info 
 		outputs to stdout three fields: the current slot string, the
 		number of slots, and whether the changer can go backwards (0
-		if it can't, 1 if it can).  Same error handling as above.
+		if it can't, 1 if it can).  An optional fourth field 
+		indicating whether the changer is searchable may be output
+		if the changer supports the -search and -label commands and
+		is able to load a tape given only the Amanda label string
+		(again, 0 if it can't, 1 if it can). Same error handling as
+		above.
 
-	Example:
+	Examples:
 		% chg-multi -info
-		0 10 1				# exitcode returned is 0
+		0 10 1			# exitcode returned is 0
+
+		% chg-zd-mtx -info
+		0 10 1 1
 
     <tpchanger> -reset
 		resets changer to known state and loads the first slot.
@@ -102,6 +110,31 @@ The tape changer program must support the following commands:
 
 		% chg-multi -eject
 		0 drive was not loaded		# exitcode returned is 1
+
+
+The tape changer program MAY support the following commands:
+
+    <tpchanger> -search <labelstr>
+		loads an Amanda tape by name (labelstr).  Output
+		and error handling are the same as the -slot command.
+		Taper, amcheck and amtape will use this command if
+		your changer is searchable.
+
+	Example:
+		% chg-zd-mtx -search DailySet005
+		5 /dev/nrst8			# exitcode returned is 0
+
+    <tpchanger> -label <labelstr>
+		associates the Amanda label <labelstr> with the barcode 
+		of the currently loaded (in the tape drive) tape.
+		Outputs to stdout the return code, current slot and
+		tape device --  all are currently ignored.  Amlabel
+		will use this command if your changer is searchable.
+
+	Example:
+		% chg-zd-mtx -label DailySet006
+		0 6 /dev/nrst8			# exitcode returned is 0
+
 
 For all the commands:
 
