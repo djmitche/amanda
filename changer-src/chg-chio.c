@@ -36,6 +36,7 @@
    */
 
 #include "amanda.h"
+#include "conffile.h"
 
 #if defined(HAVE_CHIO_H) || defined(HAVE_SYS_CHIO_H)
 
@@ -339,7 +340,10 @@ int main(argc, argv)
 {
     int target,oldtarget;
     command com;   /* a little DOS joke */
-    int fd;
+    int fd, rc;
+
+    struct changer_params params;
+    char *changer_dev, *changer_file, *tape_device;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -350,10 +354,6 @@ int main(argc, argv)
 	 */
 	close(fd);
     }
-
-    struct changer_params params;
-    int    fd,rc;
-    char *changer_dev, *changer_file, *tape_device;
 
     parse_args(argc,argv,&com);
 

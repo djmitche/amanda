@@ -1,10 +1,15 @@
 # Makefile for Amanda tape changer programs.
 
-INCLUDES =		-I$(top_srcdir)/common-src
+INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/server-src
 
 AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
+
+# they cross-reference each other a bit, so need to be included twice
+LDADD = ../server-src/libamserver.la ../common-src/libamanda.la \
+	../server-src/libamserver.la ../common-src/libamanda.la
+
 
 SUFFIXES =		.pl .sh
 
