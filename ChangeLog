@@ -1,5 +1,11 @@
 1998-10-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/dumper.c: remove declaration of pid.
+	* server-src/dumper.c(do_dump): move declaration of runtime, 
+	dumptime, compresspid, indexpid and killerr from global to local.
+
+1998-10-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/planner.c: remove declaration of total_waiting and
 	result_socket.
 	* server-src/planner.c(main): move declaration of initial_size from

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.69 1998/09/02 03:40:43 oliva Exp $
+/* $Id: dumper.c,v 1.70 1998/10/15 03:01:25 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -79,11 +79,8 @@ char mesgbuf[MESGBUF_SIZE+1];
 char *errstr = NULL;
 char *dataptr;		/* data buffer markers */
 int spaceleft, abort_pending;
-pid_t pid;
 long dumpsize, origsize;
 int nb_header_block;
-times_t runtime;
-double dumptime;	/* Time dump took in secs */
 static enum { srvcomp_none, srvcomp_fast, srvcomp_best } srvcompress;
 
 char *errfname = NULL;
@@ -110,7 +107,6 @@ int datafd = -1;
 int mesgfd = -1;
 int indexfd = -1;
 int amanda_port;
-int compresspid, indexpid, killerr;
 
 /* local functions */
 int main P((int main_argc, char **main_argv));
@@ -247,7 +243,6 @@ char **main_argv;
     signal(SIGCHLD, SIG_IGN);
 
     interactive = isatty(0);
-    pid = getpid();
 
     amfree(datestamp);
     datestamp = construct_datestamp();
@@ -902,6 +897,9 @@ int mesgfd, datafd, indexfd, outfd;
     char orig_kb_str[NUM_STR_SIZE];
     char *fn;
     char *q;
+    times_t runtime;
+    double dumptime;	/* Time dump took in secs */
+    int compresspid, indexpid, killerr;
 
 #ifndef DUMPER_SOCKET_BUFFERING
 #define DUMPER_SOCKET_BUFFERING 0
