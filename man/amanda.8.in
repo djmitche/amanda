@@ -79,6 +79,12 @@ amanda \- Advanced Maryland Automatic Network Disk Archiver
 .I options
 ]
 .I config label
+.br
+.B amstatus
+.I config
+[
+.I options
+]
 .SH DESCRIPTION
 Amanda is the "Advanced Maryland Automatic Network Disk Archiver".
 This manual page gives an overview of the Amanda commands and
@@ -173,6 +179,9 @@ Check Amanda backup tapes for errors (GNU tar format backups only).
 Delete a tape from the
 .I tapelist
 and Amanda database.
+.TP
+.B amstatus
+Give the status of a running amdump.
 .SH CONFIGURATION
 There are three user\-editable files that control the behavior of Amanda.
 The first is
@@ -1094,4 +1103,5 @@ amlabel(8),
 amoverview(8),
 amrecover(8),
 amrestore(8),
-amtoc(8),
+amstatus(8),
+amtoc(8)
