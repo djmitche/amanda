@@ -232,8 +232,8 @@ AC_ARG_WITH(amrecover,
 	    if ${NO_CLIENT_MODE-false}; then
 		AC_MSG_ERROR([*** --without-client and --with-amrecover are incompatible])
 	    fi
-	    NO_RECOVER_MODE=true;;
-	n | no) NO_RECOVER_MODE=false;;
+	    NO_RECOVER_MODE=false;;
+	n | no) NO_RECOVER_MODE=true;;
 	*)
 	    AC_MSG_ERROR([*** You must not supply an argument to --with-amrecover option.])
 	  ;;
