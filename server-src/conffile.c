@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.68 1999/08/25 06:46:14 oliva Exp $
+ * $Id: conffile.c,v 1.69 1999/09/05 21:06:11 jrj Exp $
  *
  * read configuration file
  */
@@ -1886,6 +1886,7 @@ static int get_time()
 
 keytab_t numb_keytable[] = {
     { "B", MULT1 },
+    { "BPS", MULT1 },
     { "BYTE", MULT1 },
     { "BYTES", MULT1 },
     { "DAY", MULT1 },
@@ -1894,16 +1895,26 @@ keytab_t numb_keytable[] = {
     { "K", MULT1K },
     { "KB", MULT1K },
     { "KBPS", MULT1K },
+    { "KBYTE", MULT1K },
     { "KBYTES", MULT1K },
+    { "KILOBYTE", MULT1K },
     { "KILOBYTES", MULT1K },
     { "KPS", MULT1K },
     { "M", MULT1M },
     { "MB", MULT1M },
     { "MBPS", MULT1M },
+    { "MBYTE", MULT1M },
     { "MBYTES", MULT1M },
     { "MEG", MULT1M },
+    { "MEGABYTE", MULT1M },
     { "MEGABYTES", MULT1M },
+    { "G", MULT1G },
     { "GB", MULT1G },
+    { "GBPS", MULT1G },
+    { "GBYTE", MULT1G },
+    { "GBYTES", MULT1G },
+    { "GIG", MULT1G },
+    { "GIGABYTE", MULT1G },
     { "GIGABYTES", MULT1G },
     { "MPS", MULT1M },
     { "TAPE", MULT1 },

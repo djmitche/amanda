@@ -1,3 +1,8 @@
+1999-09-05 John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/conffile.c: add several common abbreviations to config
+	  file processing.
+
 1999-09-01 John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/amtoc.pl.in: allow multiple -s entries.
