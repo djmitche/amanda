@@ -1,5 +1,17 @@
 Version 2.4.0b4
 
+	Fixed amflush so that it cd's to the configuration directory
+	before invoking reporter.  -oliva
+
+	driver no longer opens the infofile, so a deadlock is
+	prevented.  -oliva
+
+	Fixed typo in sendbackup-dump that would prevent compilation
+	if either xfsdump or vxdump were enabled.  -oliva
+
+	Debugging messages produced by sendbackup are no longer
+	included in the dump stream.  -oliva
+
 	amrestore should wait for the child process to die before
 	re-opening the tape device.  -Dietmar Braun
 	<dietmar@tin-lizzy.hig>
