@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.19 1998/09/09 05:15:53 oliva Exp $
+ * $Id: amtape.c,v 1.20 1998/09/11 23:25:26 jrj Exp $
  *
  * tape changer interface program
  */
@@ -443,7 +443,7 @@ char **argv;
     if(read_tapelist(getconf_str(CNF_TAPELIST)))
 	error("could not load \"%s\"\n", getconf_str(CNF_TAPELIST));
 
-    if((tp = lookup_last_reusable_tape()) == NULL)
+    if((tp = lookup_last_reusable_tape(0)) == NULL)
 	searchlabel = NULL;
     else
 	searchlabel = stralloc(tp->label);

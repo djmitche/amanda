@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.46 1998/09/02 03:40:22 oliva Exp $
+ * $Id: amadmin.c,v 1.47 1998/09/11 23:25:19 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -528,7 +528,7 @@ void tape()
     int runtapes,i;
 
     runtapes = getconf_int(CNF_RUNTAPES);
-    tp = lookup_last_reusable_tape();
+    tp = lookup_last_reusable_tape(0);
 
     for ( i=0 ; i < runtapes ; i++ ) {
 	printf("The next Amanda run should go onto ");
@@ -537,7 +537,7 @@ void tape()
 	    printf("tape %s or ", tp->label);
 	printf("a new tape.\n");
 	
-	tp = lookup_previous_reusable_tape(tp);;
+	tp = lookup_last_reusable_tape(i + 1);
     }
 }
 

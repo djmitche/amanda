@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.35 1998/09/08 17:47:26 martinea Exp $
+ * $Id: amflush.c,v 1.36 1998/09/11 23:25:24 jrj Exp $
  *
  * write files from work directory onto tape
  */
@@ -146,7 +146,7 @@ printf("today: %s\n",datestamp);
     else printf("to tape drive %s.\n", getconf_str(CNF_TAPEDEV));
 
     printf("Expecting ");
-    tp = lookup_last_reusable_tape();
+    tp = lookup_last_reusable_tape(0);
     if(tp != NULL) printf("tape %s or ", tp->label);
     printf("a new tape.");
     tp = lookup_tapepos(1);

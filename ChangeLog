@@ -1,3 +1,24 @@
+1998-09-11  John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/tapefile.c (lookup_last_reusable_tape): use new
+	calling sequence that passes how old a tape to return.  Remove
+	lookup_previous_reusable_tape().
+	* server-src/tapefile.h (lookup_last_reusable_tape): use new
+	calling sequence that passes how old a tape to return.  Remove
+	lookup_previous_reusable_tape().
+	* server-src/amadmin.c (tape): use new lookup_last_reusable_tape
+	calling sequence.
+	* server-src/amcheck.c (taper_scan, start_server_check): use new
+	lookup_last_reusable_tape calling sequence.
+	* server-src/amflush.c (confirm): use new lookup_last_reusable_tape
+	calling sequence.
+	* server-src/amtape.c (taper_scan): use new lookup_last_reusable_tape
+	calling sequence.
+	* server-src/reporter.c (output_tapeinfo): use new
+	lookup_last_reusable_tape calling sequence.
+	* server-src/taper.c (taper_scan): use new lookup_last_reusable_tape
+	calling sequence.
+
 1998-09-11  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* client-src/sendbackup-gnutar.c (re_table): ignore

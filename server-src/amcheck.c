@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.46 1998/07/04 15:53:10 martinea Exp $
+ * $Id: amcheck.c,v 1.47 1998/09/11 23:25:21 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -380,7 +380,7 @@ char *taper_scan()
 {
     char *outslot = NULL;
 
-    if((tp = lookup_last_reusable_tape()) == NULL)
+    if((tp = lookup_last_reusable_tape(0)) == NULL)
 	searchlabel = NULL;
     else
 	searchlabel = tp->label;
@@ -596,7 +596,7 @@ int fd;
 	}
 
 	if(tapebad) {
-	    tape_t *exptape = lookup_last_reusable_tape();
+	    tape_t *exptape = lookup_last_reusable_tape(0);
 	    fprintf(outf, "       (expecting ");
 	    if(exptape != NULL) fprintf(outf, "tape %s or ", exptape->label);
 	    fprintf(outf, "a new tape)\n");

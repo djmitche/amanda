@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapefile.h,v 1.5 1998/07/04 00:20:15 oliva Exp $
+ * $Id: tapefile.h,v 1.6 1998/09/11 23:25:32 jrj Exp $
  *
  * interface for active tape list manipulation routines
  */
@@ -49,8 +49,7 @@ tape_t *lookup_tapelabel P((char *label));
 tape_t *lookup_tapepos P((int pos));
 tape_t *lookup_tapedate P((int datestamp));
 int lookup_nb_tape P(());
-tape_t *lookup_last_reusable_tape P(());
-tape_t *lookup_previous_reusable_tape P((tape_t *tp));
+tape_t *lookup_last_reusable_tape P((int skip));
 void remove_tapelabel P((char *label));
 tape_t *add_tapelabel P((int datestamp, char *label));
 int reusable_tape P((tape_t *tp));

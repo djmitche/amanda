@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.41 1998/09/09 05:29:32 oliva Exp $
+ * $Id: reporter.c,v 1.42 1998/09/11 23:25:28 jrj Exp $
  *
  * nightly Amanda Report generator
  */
@@ -607,6 +607,7 @@ void output_tapeinfo()
 {
     tape_t *tp;
     int run_tapes;
+    int skip = 0;
 
     if(degraded_mode) {
 	fprintf(mailf,
@@ -623,10 +624,13 @@ void output_tapeinfo()
 	    fputs("THESE DUMPS WERE TO DISK.  Flush them onto", mailf);
 	}
 
-	tp = lookup_last_reusable_tape();
+	tp = lookup_last_reusable_tape(skip);
 	if(tp != NULL) fprintf(mailf, " tape %s or", tp->label);
 	fputs(" a new tape.\n", mailf);
-	if(tp != NULL) tp = lookup_previous_reusable_tape(tp);
+	if(tp != NULL) {
+	    skip++;
+	    tp = lookup_last_reusable_tape(skip);
+	}
 
     }
     else {
@@ -639,7 +643,7 @@ void output_tapeinfo()
 		    last_run_tapes == 1 ? "" : "s",
 		    tape_labels ? tape_labels : "");
 
-	tp = lookup_last_reusable_tape();
+	tp = lookup_last_reusable_tape(skip);
     }
 
     run_tapes = getconf_int(CNF_RUNTAPES);
@@ -656,7 +660,8 @@ void output_tapeinfo()
 	if(run_tapes > 1) fputs(", ", mailf);
 
 	run_tapes -= 1;
-	tp = lookup_previous_reusable_tape(tp);
+	skip++;
+	tp = lookup_last_reusable_tape(skip);
     }
     fputs(".\n", mailf);
 }
