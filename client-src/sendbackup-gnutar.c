@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.69 1999/09/15 00:31:35 jrj Exp $
+ * $Id: sendbackup-gnutar.c,v 1.70 1999/11/29 19:21:25 oliva Exp $
  *
  * send backup data using GNU tar
  */
@@ -58,10 +58,14 @@ static regex_t re_table[] = {
 #endif
   
   /* samba may produce these output messages */
+  { DMP_NORMAL, "^[Aa]dded interface", 1},
+  { DMP_NORMAL, "^session request to ", 1},
+  { DMP_NORMAL, "^tar: dumped [0-9][0-9]* (tar )?files", 1},
+
+#if SAMBA_VERSION < 2
   { DMP_NORMAL, "^doing parameter", 1},
   { DMP_NORMAL, "^pm_process\\(\\)", 1},
   { DMP_NORMAL, "^adding IPC", 1},
-  { DMP_NORMAL, "^Added interface", 1},
   { DMP_NORMAL, "^Opening", 1},
   { DMP_NORMAL, "^Connect", 1},
   { DMP_NORMAL, "^Domain=", 1},
@@ -85,9 +89,9 @@ static regex_t re_table[] = {
   { DMP_NORMAL, "^\\([0-9][0-9]*\\.[0-9][0-9]* kb/s\\)", 1},
   { DMP_NORMAL, "^[ ]*[0-9][0-9]* \\([ ]*[0-9][0-9]*\\.[0-9][0-9]* kb/s\\)", 1},
   { DMP_NORMAL, "^[ ]*directory ", 1},
-  { DMP_NORMAL, "^tar: dumped [0-9][0-9]* tar files", 1},
   { DMP_NORMAL, "^load_client_codepage", 1},
-  { DMP_NORMAL, "^session request to ", 1},
+#endif
+
 #ifdef IGNORE_SMBCLIENT_ERRORS
   /* This will cause amanda to ignore real errors, but that may be
    * unavoidable when you're backing up system disks.  It seems to be

@@ -1,3 +1,12 @@
+1999-11-29  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* client-src/sendbackup-gnutar.c (re_table): #if out the debugging
+	Samba messages unless SAMBA_VERSION < 2.
+
+1999-11-29  John E.P.Hynes  <john@hytronix.ne.mediaone.net>
+
+	* client-src/sendbackup-gnutar.c (re_table): Update for Samba 2.0.6.
+
 1999-11-25 John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/amflush.c (main): conf_logdir should not be free'd
