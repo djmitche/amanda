@@ -76,6 +76,7 @@ typedef struct dumptype_s {
     /* flag options */
     int compress_best:1;
     int compress_fast:1;
+    int srvcompress:1;
     int record:1;
     int skip_incr:1;
     int skip_full:1;
