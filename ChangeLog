@@ -1,5 +1,14 @@
 1999-04-30  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/driver.c: make all local functions static.
+	Exposed two prototypes for nonexistant functions
+	(diskname2filename, driver_main), and one function (dump_state)
+	that was never called.  #if 0 out dump_state.
+	Nuke inside_dump_to_tape global - it's value was never used.
+	Make pending_aborts global a static local in handle_dumper_result.
+
+1999-04-30  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/driverio.h (dumper_t): merge infd and outfd into
 	just 'fd'.  Comment the other members of the struct.
 	* server-src/driverio.c: infd/outfd -> fd

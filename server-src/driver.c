@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.77 1999/04/30 21:07:10 kashmir Exp $
+ * $Id: driver.c,v 1.78 1999/04/30 22:50:50 kashmir Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -48,7 +48,6 @@
 #include "server_util.h"
 
 disklist_t waitq, runq, stoppedq, tapeq;
-int pending_aborts, inside_dump_to_tape;
 int use_lffo;
 disk_t *taper_disk;
 int big_dumpers;
@@ -58,36 +57,36 @@ unsigned long total_disksize;
 char *dumper_program;
 int  inparallel;
 
-int driver_main P((int argc, char **argv));
-int client_constrained P((disk_t *dp));
-int sort_by_priority_reversed P((disk_t *a, disk_t *b));
-int sort_by_time P((disk_t *a, disk_t *b));
-int sort_by_size_reversed P((disk_t *a, disk_t *b));
-int start_some_dumps P((disklist_t *rq));
-void dump_schedule P((disklist_t *qp, char *str));
-void start_degraded_mode P((disklist_t *queuep));
-void handle_taper_result P((void));
-dumper_t *idle_dumper P((void));
-int some_dumps_in_progress P((void));
-int num_busy_dumpers P((void));
-dumper_t *lookup_dumper P((int fd));
-void handle_dumper_result P((int fd));
-disklist_t read_schedule P((disklist_t *waitqp));
-int free_kps P((interface_t *ip));
-void interface_state P((char *time_str));
-void allocate_bandwidth P((interface_t *ip, int kps));
-void deallocate_bandwidth P((interface_t *ip, int kps));
-unsigned long free_space P((void));
-holdingdisk_t *find_diskspace P((unsigned long size, int *cur_idle));
-char *diskname2filename P((char *dname));
-void assign_holdingdisk P((holdingdisk_t *holdp, disk_t *diskp));
-void adjust_diskspace P((disk_t *diskp, tok_t tok));
-void delete_diskspace P((disk_t *diskp));
-void holdingdisk_state P((char *time_str));
-int dump_to_tape P((disk_t *dp));
-int queue_length P((disklist_t q));
-void short_dump_state P((void));
-void dump_state P((char *str));
+static void adjust_diskspace P((disk_t *diskp, tok_t tok));
+static void allocate_bandwidth P((interface_t *ip, int kps));
+static void assign_holdingdisk P((holdingdisk_t *holdp, disk_t *diskp));
+static int client_constrained P((disk_t *dp));
+static void deallocate_bandwidth P((interface_t *ip, int kps));
+static void delete_diskspace P((disk_t *diskp));
+static void dump_schedule P((disklist_t *qp, char *str));
+static int dump_to_tape P((disk_t *dp));
+static holdingdisk_t *find_diskspace P((unsigned long size, int *cur_idle));
+static int free_kps P((interface_t *ip));
+static unsigned long free_space P((void));
+static void handle_dumper_result P((int fd));
+static void handle_taper_result P((void));
+static void holdingdisk_state P((char *time_str));
+static dumper_t *idle_dumper P((void));
+static void interface_state P((char *time_str));
+static dumper_t *lookup_dumper P((int fd));
+static int num_busy_dumpers P((void));
+static int queue_length P((disklist_t q));
+static disklist_t read_schedule P((disklist_t *waitqp));
+static void short_dump_state P((void));
+static int some_dumps_in_progress P((void));
+static int sort_by_priority_reversed P((disk_t *a, disk_t *b));
+static int sort_by_size_reversed P((disk_t *a, disk_t *b));
+static int sort_by_time P((disk_t *a, disk_t *b));
+static void start_degraded_mode P((disklist_t *queuep));
+static int start_some_dumps P((disklist_t *rq));
+#if 0
+static void dump_state P((const char *str));
+#endif
 int main P((int argc, char **argv));
 
 #define LITTLE_DUMPERS 3
@@ -97,7 +96,7 @@ char *datestamp;
 
 #define max(a, b)     ((a) > (b)? (a) : (b))
 #define min(a, b)     ((a) < (b)? (a) : (b))
-char *idle_strings[] = {
+static const char *idle_strings[] = {
 #define NOT_IDLE		0
     "not-idle",
 #define IDLE_START_WAIT		1
@@ -123,7 +122,8 @@ struct timeval sleep_time = { SLEEP_MAX, 0 };
 /* enabled if any disks are in start-wait: */
 int any_delayed_disk = 0;
 
-int main(main_argc, main_argv)
+int
+main(main_argc, main_argv)
      int main_argc;
      char **main_argv;
 {
@@ -272,7 +272,6 @@ int main(main_argc, main_argv)
     if(inparallel > MAX_DUMPERS) inparallel = MAX_DUMPERS;
 
     /* fire up the dumpers now while we are waiting */
-
     startup_dump_processes(dumper_program, inparallel);
 
     /*
@@ -403,8 +402,9 @@ int main(main_argc, main_argv)
     return 0;
 }
 
-int client_constrained(dp)
-disk_t *dp;
+static int
+client_constrained(dp)
+    disk_t *dp;
 {
     disk_t *dp2;
 
@@ -430,8 +430,9 @@ disk_t *dp;
 
 #define is_bigdumper(d) (((d)-dmptable) >= (inparallel-big_dumpers))
 
-int start_some_dumps(rq)
-disklist_t *rq;
+static int
+start_some_dumps(rq)
+    disklist_t *rq;
 {
     int total, cur_idle;
     disk_t *diskp, *big_degraded_diskp;
@@ -439,7 +440,7 @@ disklist_t *rq;
     holdingdisk_t *holdp, *big_degraded_holdp;
     time_t now = time(NULL);
 
-    if(rq->head == NULL) {
+    if (empty(*rq)) {
 	idle_reason = 0;
 	return 0;
     }
@@ -548,8 +549,9 @@ disklist_t *rq;
     return total;
 }
 
-int sort_by_priority_reversed(a, b)
-disk_t *a, *b;
+static int
+sort_by_priority_reversed(a, b)
+    disk_t *a, *b;
 {
     if(sched(b)->priority - sched(a)->priority != 0)
 	return sched(b)->priority - sched(a)->priority;
@@ -557,8 +559,9 @@ disk_t *a, *b;
 	return sort_by_time(a, b);
 }
 
-int sort_by_time(a, b)
-disk_t *a, *b;
+static int
+sort_by_time(a, b)
+    disk_t *a, *b;
 {
     long diff;
 
@@ -571,8 +574,9 @@ disk_t *a, *b;
     }
 }
 
-int sort_by_size_reversed(a, b)
-disk_t *a, *b;
+static int
+sort_by_size_reversed(a, b)
+    disk_t *a, *b;
 {
     long diff;
 
@@ -585,9 +589,10 @@ disk_t *a, *b;
     }
 }
 
-void dump_schedule(qp, str)
-disklist_t *qp;
-char *str;
+static void
+dump_schedule(qp, str)
+    disklist_t *qp;
+    char *str;
 {
     disk_t *dp;
 
@@ -601,9 +606,9 @@ char *str;
     printf("--------\n");
 }
 
-
-void start_degraded_mode(queuep)
-disklist_t *queuep;
+static void
+start_degraded_mode(queuep)
+    disklist_t *queuep;
 {
     disk_t *dp;
     disklist_t newq;
@@ -647,8 +652,8 @@ disklist_t *queuep;
     dump_schedule(queuep, "after start degraded mode");
 }
 
-
-void handle_taper_result()
+static void
+handle_taper_result()
 {
     disk_t *dp;
     int filenum;
@@ -765,8 +770,8 @@ void handle_taper_result()
     }
 }
 
-
-dumper_t *idle_dumper()
+static dumper_t *
+idle_dumper()
 {
     dumper_t *dumper;
 
@@ -776,7 +781,8 @@ dumper_t *idle_dumper()
     return NULL;
 }
 
-int some_dumps_in_progress()
+static int
+some_dumps_in_progress()
 {
     dumper_t *dumper;
 
@@ -786,7 +792,8 @@ int some_dumps_in_progress()
     return taper_busy;
 }
 
-int num_busy_dumpers()
+static int
+num_busy_dumpers()
 {
     dumper_t *dumper;
     int n;
@@ -798,8 +805,9 @@ int num_busy_dumpers()
     return n;
 }
 
-dumper_t *lookup_dumper(fd)
-int fd;
+static dumper_t *
+lookup_dumper(fd)
+    int fd;
 {
     dumper_t *dumper;
 
@@ -809,9 +817,11 @@ int fd;
     return NULL;
 }
 
-void handle_dumper_result(fd)
-int fd;
+static void
+handle_dumper_result(fd)
+    int fd;
 {
+    static int pending_aborts = 0;
     dumper_t *dumper;
     disk_t *dp, *sdp;
     long origsize;
@@ -988,8 +998,9 @@ int fd;
     return;
 }
 
-disklist_t read_schedule(waitqp)
-disklist_t *waitqp;
+static disklist_t
+read_schedule(waitqp)
+    disklist_t *waitqp;
 {
     sched_t *sp;
     disk_t *dp;
@@ -1155,8 +1166,9 @@ disklist_t *waitqp;
     return rq;
 }
 
-int free_kps(ip)
-interface_t *ip;
+static int
+free_kps(ip)
+    interface_t *ip;
 {
     int res;
 
@@ -1182,8 +1194,9 @@ interface_t *ip;
     return res;
 }
 
-void interface_state(time_str)
-char *time_str;
+static void
+interface_state(time_str)
+    char *time_str;
 {
     interface_t *ip;
 
@@ -1195,23 +1208,26 @@ char *time_str;
     printf("\n");
 }
 
-void allocate_bandwidth(ip, kps)
-interface_t *ip;
-int kps;
+static void
+allocate_bandwidth(ip, kps)
+    interface_t *ip;
+    int kps;
 {
     ip->curusage += kps;
 }
 
-void deallocate_bandwidth(ip, kps)
-interface_t *ip;
-int kps;
+static void
+deallocate_bandwidth(ip, kps)
+    interface_t *ip;
+    int kps;
 {
     assert(kps <= ip->curusage);
     ip->curusage -= kps;
 }
 
 /* ------------ */
-unsigned long free_space()
+static unsigned long
+free_space()
 {
     holdingdisk_t *hdp;
     unsigned long total_free;
@@ -1226,9 +1242,10 @@ unsigned long free_space()
     return total_free;
 }
 
-holdingdisk_t *find_diskspace(size, cur_idle)
-unsigned long size;
-int *cur_idle;
+static holdingdisk_t *
+find_diskspace(size, cur_idle)
+    unsigned long size;
+    int *cur_idle;
     /* find holding disk with enough space + minimal # of dumpers */
 {
     holdingdisk_t *minp, *hdp;
@@ -1259,10 +1276,10 @@ int *cur_idle;
     return minp;
 }
 
-
-void assign_holdingdisk(holdp, diskp)
-holdingdisk_t *holdp;
-disk_t *diskp;
+static void
+assign_holdingdisk(holdp, diskp)
+    holdingdisk_t *holdp;
+    disk_t *diskp;
 {
     char *sfn;
 
@@ -1286,9 +1303,10 @@ disk_t *diskp;
     holdalloc(holdp)->allocated_dumpers += 1;
 }
 
-void adjust_diskspace(diskp, tok)
-disk_t *diskp;
-tok_t tok;
+static void
+adjust_diskspace(diskp, tok)
+    disk_t *diskp;
+    tok_t tok;
 {
     holdingdisk_t *holdp;
     unsigned long kbytes;
@@ -1344,8 +1362,9 @@ tok_t tok;
 #endif
 }
 
-void delete_diskspace(diskp)
-disk_t *diskp;
+static void
+delete_diskspace(diskp)
+    disk_t *diskp;
 {
 #ifdef HOLD_DEBUG
     printf("delete: file %s size %lu hdisk %s\n",
@@ -1359,8 +1378,9 @@ disk_t *diskp;
     sched(diskp)->destname[0] = '\0';
 }
 
-void holdingdisk_state(time_str)
-char *time_str;
+static void
+holdingdisk_state(time_str)
+    char *time_str;
 {
     holdingdisk_t *hdp;
     int dsk;
@@ -1376,8 +1396,9 @@ char *time_str;
     printf("\n");
 }
 
-static void update_failed_dump_to_tape(dp)
-disk_t *dp;
+static void
+update_failed_dump_to_tape(dp)
+    disk_t *dp;
 {
     time_t save_timestamp = sched(dp)->timestamp;
     /* setting timestamp to 0 removes the current level from the
@@ -1391,8 +1412,9 @@ disk_t *dp;
 }
 
 /* ------------------- */
-int dump_to_tape(dp)
-disk_t *dp;
+static int
+dump_to_tape(dp)
+    disk_t *dp;
 {
     dumper_t *dumper;
     int failed = 0;
@@ -1403,8 +1425,6 @@ disk_t *dp;
     tok_t tok;
     int result_argc;
     char *result_argv[MAX_ARGS+1];
-
-    inside_dump_to_tape = 1;	/* for simulator */
 
     printf("driver: dumping %s:%s directly to tape\n",
 	   dp->host->hostname, dp->name);
@@ -1419,7 +1439,6 @@ disk_t *dp;
 	fflush(stdout);
 	log_add(L_WARNING, "no idle dumpers for %s:%s.\n",
 	        dp->host->hostname, dp->name);
-	inside_dump_to_tape = 0;
 	return 2;	/* fatal problem */
     }
 
@@ -1431,7 +1450,6 @@ disk_t *dp;
 	printf("driver: did not get PORT from taper for %s:%s\n",
 		dp->host->hostname, dp->name);
 	fflush(stdout);
-	inside_dump_to_tape = 0;
 	return 2;	/* fatal problem */
     }
     /* copy port number */
@@ -1541,12 +1559,12 @@ disk_t *dp;
     dp->inprogress = 0;
     deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
 
-    inside_dump_to_tape = 0;
     return failed;
 }
 
-int queue_length(q)
-disklist_t q;
+static int
+queue_length(q)
+    disklist_t q;
 {
     disk_t *p;
     int len;
@@ -1555,8 +1573,8 @@ disklist_t q;
     return len;
 }
 
-
-void short_dump_state()
+static void
+short_dump_state()
 {
     int i, nidle;
     char *wall_time;
@@ -1582,8 +1600,10 @@ void short_dump_state()
     fflush(stdout);
 }
 
-void dump_state(str)
-char *str;
+#if 0
+static void
+dump_state(str)
+    const char *str;
 {
     int i;
     disk_t *dp;
@@ -1612,3 +1632,4 @@ char *str;
     printf("================\n");
     fflush(stdout);
 }
+#endif
