@@ -1,7 +1,7 @@
-1999-08-23 John R. Jackson  <jrj@purdue.edu>
+1999-09-01 John R. Jackson  <jrj@purdue.edu>
 
-	* recover-src/amrecover.c (main): fix test for IPPORT_RESERVED.
-	* recover-src/extract_list.c (extract_files_setup): ditto.
+	* common-src/dgram.h: expressions in #define should be protected by
+	  parenthesis.
 
 1999-08-25  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
@@ -21,6 +21,11 @@
 	* man/amanda.8.in (disklist): Document it.
 	* NEWS: Likewise.
 	* example/disklist: Exemplify it.
+
+1999-08-23 John R. Jackson  <jrj@purdue.edu>
+
+	* recover-src/amrecover.c (main): fix test for IPPORT_RESERVED.
+	* recover-src/extract_list.c (extract_files_setup): ditto.
 
 1999-08-23 John R. Jackson  <jrj@purdue.edu>
 

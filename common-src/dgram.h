@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: dgram.h,v 1.11 1999/06/07 16:05:18 kashmir Exp $
+ * $Id: dgram.h,v 1.12 1999/09/01 18:00:22 jrj Exp $
  *
  * interface for datagram module
  */
@@ -34,7 +34,7 @@
 
 #include "amanda.h"
 
-#define MAX_DGRAM      64*1024
+#define MAX_DGRAM      (64*1024)
 
 typedef struct dgram_s {
     char *cur;
