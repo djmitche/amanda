@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.26 1997/09/11 04:33:18 amcore Exp $
+/* $Id: dumper.c,v 1.27 1997/09/23 00:05:30 george Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -516,7 +516,7 @@ char *str;
 	    break;
 	}
 	if(!strncmp(str, "sendbackup: size", 16)) {
-	    origsize = (long) ((atof(str + 16)+1023.0) / 1024.0);
+	    origsize = (long)atof(str + 16);
 	    got_sizeline = 1;
 	    break;
 	}

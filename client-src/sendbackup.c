@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.13 1997/09/18 23:47:57 george Exp $
+ * $Id: sendbackup.c,v 1.14 1997/09/23 00:05:27 george Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -510,14 +510,7 @@ int mesgin;
 
     program->end_backup(goterror);
 
-    /*
-     * XXX Amanda 2.2 protocol compatibility requires that the dump
-     * size be sent in bytes.  In order to handle filesystems larger
-     * than 2 GB on 32-bit systems, we are recording the size in Kbytes.
-     * To get to bytes here, we make the value a double.  In the future,
-     * the protocol should be changed to send the size in kbytes.
-     */
-    fprintf(stderr, "%s: size %1.0f\n", pname, ((double)dump_size)*1024.0);
+    fprintf(stderr, "%s: size %ld\n", pname, dump_size);
     fprintf(stderr, "%s: end\n", pname);
 }
 
