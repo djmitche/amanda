@@ -472,7 +472,7 @@ get_loaded_info() {
 	loadedbarcode=$2
 
 	if [ -z "$loadedslot" ]; then
-		Exit 2 "<none>" "could not determine current slot"
+		Exit 2 "<none>" "could not determine current slot, are you sure your drive slot is $driveslot"
 		return $?			# in case we are internal
 	fi
 	if IsNumeric "$loadedslot" ; then
