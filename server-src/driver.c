@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.66 1998/12/12 14:43:01 martinea Exp $
+ * $Id: driver.c,v 1.67 1998/12/18 22:24:20 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -351,17 +351,19 @@ int main(main_argc, main_argv)
 		    "no more holding disk space");
     }
 
+    short_dump_state();				/* for amstatus */
+
     printf("driver: QUITTING time %s telling children to quit\n",
            walltime_str(curclock()));
     fflush(stdout);
-
-    if(taper)
-	taper_cmd(QUIT, NULL, NULL, 0, NULL);
 
     for(dumper = dmptable; dumper < dmptable + inparallel; dumper++) {
 	dumper_cmd(dumper, QUIT, NULL);
 	amfree(dumper->name);
     }
+
+    if(taper)
+	taper_cmd(QUIT, NULL, NULL, 0, NULL);
 
     /* wait for all to die */
 
