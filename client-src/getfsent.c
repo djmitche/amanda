@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-1998, 2001 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: getfsent.c,v 1.23 2001/03/30 02:40:28 martinea Exp $
+ * $Id: getfsent.c,v 1.24 2001/04/09 02:01:45 oliva Exp $
  *
  * generic version of code to read fstab
  */
@@ -431,8 +431,8 @@ struct stat stats[3], *estat;
 }
 
 int search_fstab(name, fsent)
-char *name;
-generic_fsent_t *fsent;
+     char *name;
+     generic_fsent_t *fsent;
 {
   struct stat stats[3];
   char *fullname = NULL;
@@ -479,8 +479,8 @@ generic_fsent_t *fsent;
     if(fsent->fsname != NULL) {
       sfs = stat(fsent->fsname, &fsstat);
       sfsr = stat((rdev = dev2rdev(fsent->fsname)), &fsrstat);
-      if(sfs == -1 && sfsr == -1)
-        continue;
+      /* We don't want to `continue;' even if both sfs and sfsr are
+	 -1, because, if we get here, at least smnt is not -1.  */
     }
 
     if((fsent->mntdir != NULL &&
