@@ -1,3 +1,9 @@
+1999-12-12 John R. Jackson  <jrj@purdue.edu>
+
+	* tape-src/tapetype.c: tweak the algorithm to write files in both
+	passes and compute the tape mark size as the difference.  Never
+	report a negative tape mark size.  Various other minor cleanup.
+
 1999-11-29  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
 	* client-src/sendbackup-gnutar.c (re_table): #if out the debugging
