@@ -1,3 +1,7 @@
+2001-05-11 John R. Jackson <jrj@purdue.edu>
+
+	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.4.2p2)
+
 2001-05-10 John R. Jackson <jrj@purdue.edu>
 
 	* changer-src/scsi-changer-driver.c: Fix routine name in diagnostic
