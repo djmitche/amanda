@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.25 1998/03/07 18:12:56 martinea Exp $
+ * $Id: amflush.c,v 1.26 1998/03/08 08:05:04 amcore Exp $
  *
  * write files from work directory onto tape
  */
@@ -188,8 +188,9 @@ char *diskdir, *datestamp;
     char *destname = NULL;
     char *hostname = NULL;
     char *diskname = NULL;
-    int level, filenum;
+    int filenum;
     disk_t *dp;
+    sched_t sp;
 
     dirname = vstralloc(diskdir, "/", datestamp, NULL);
 
@@ -238,11 +239,14 @@ char *diskdir, *datestamp;
 	    continue;
 	}
 
-	taper_cmd(FILE_WRITE, dp, destname, level, datestamp);
+	sched(dp) = &sp;
+
+	taper_cmd(FILE_WRITE, dp, destname, sp.level, datestamp);
+
 	tok = getresult(taper, 0);
 	if(tok == TRYAGAIN) {
 	    /* we'll retry one time */
-	    taper_cmd(FILE_WRITE, dp, destname, level, datestamp);
+	    taper_cmd(FILE_WRITE, dp, destname, sp.level, datestamp);
 	    tok = getresult(taper, 0);
 	}
 
