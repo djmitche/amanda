@@ -236,8 +236,8 @@ while(<AMDUMP>) {
 
 close(AMDUMP);
 
-foreach $host (@hosts) {
-	foreach $partition (@$host) {
+foreach $host (sort @hosts) {
+	foreach $partition (sort @$host) {
 		$nb_partition++;
 		$hostpart = "$host$partition";
 		if($estimate_done != 1) {
