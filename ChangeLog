@@ -1,5 +1,10 @@
 2001-02-27 John R. Jackson <jrj@purdue.edu>
 
+	* common-src/dgram.c: Add lots more error logging to help track down
+	  problems.
+
+2001-02-27 John R. Jackson <jrj@purdue.edu>
+
 	* common-src/stream.c: Add lots more error logging to help track down
 	  problems.
 
