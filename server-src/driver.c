@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.3 1998/11/11 14:33:19 martinea Exp $
+ * $Id: driver.c,v 1.58.2.4 1998/11/30 21:33:50 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -428,7 +428,7 @@ int start_some_dumps(rq)
 disklist_t *rq;
 {
     int total, cur_idle;
-    disk_t *diskp, *nextp;
+    disk_t *diskp, *big_degraded_diskp;
     dumper_t *dumper;
     holdingdisk_t *holdp;
     time_t now = time(NULL);
@@ -467,6 +467,7 @@ disklist_t *rq;
 	/* found an idle dumper, now find a disk for it */
 	if(is_bigdumper(dumper)) diskp = rq->tail;
 	else diskp = rq->head;
+	big_degraded_diskp = NULL;
 
 	if(idle_reason == IDLE_NO_DUMPERS)
 	    idle_reason = NOT_IDLE;
@@ -476,14 +477,12 @@ disklist_t *rq;
 	while(diskp) {
 	    assert(diskp->host != NULL && sched(diskp) != NULL);
 
-	    if(is_bigdumper(dumper)) nextp = diskp->prev;
-	    else nextp = diskp->next;
-
 	    if(diskp->start_t > now) {
 		cur_idle = max(cur_idle, IDLE_START_WAIT);
 		sleep_time.tv_sec = min(diskp->start_t - now, sleep_time.tv_sec);
 		any_delayed_disk = 1;
-	    } else if(sched(diskp)->est_kps > free_kps(diskp->host->netif))
+	    }
+	    else if(sched(diskp)->est_kps > free_kps(diskp->host->netif))
 		cur_idle = max(cur_idle, IDLE_NO_BANDWIDTH);
 	    else if((holdp = find_diskspace(sched(diskp)->est_size,&cur_idle)) == NULL)
 		cur_idle = max(cur_idle, IDLE_NO_DISKSPACE);
@@ -494,23 +493,38 @@ disklist_t *rq;
 	    else {
 
 		/* disk fits, dump it */
-		cur_idle = NOT_IDLE;
-		allocate_bandwidth(diskp->host->netif, sched(diskp)->est_kps);
-		assign_holdingdisk(holdp, diskp);
-		diskp->host->inprogress += 1;	/* host is now busy */
-		diskp->inprogress = 1;
-		sched(diskp)->dumper = dumper;
-		sched(diskp)->holdp = holdp;
-		sched(diskp)->timestamp = time((time_t *)0);
-
-		dumper->busy = 1;		/* dumper is now busy */
-		dumper->dp = diskp;		/* link disk to dumper */
-		total++;
-		remove_disk(rq, diskp);		/* take it off the run queue */
-		dumper_cmd(dumper, FILE_DUMP, diskp);
-		break;
+		if(is_bigdumper(dumper) && degraded_mode) {
+		   if(!big_degraded_diskp || 
+		      sched(diskp)->priority > big_degraded_diskp->priority)
+			big_degraded_diskp = diskp;
+		}
+		else {
+		    cur_idle = NOT_IDLE;
+		    break;
+		}
 	    }
-	    diskp = nextp;
+	    if(is_bigdumper(dumper)) diskp = diskp->prev;
+	    else diskp = diskp->next;
+	}
+
+	if(is_bigdumper(dumper) && degraded_mode) {
+	    diskp = big_degraded_diskp;
+	    if(big_degraded_diskp) cur_idle = NOT_IDLE;
+	}
+	if(diskp && cur_idle == NOT_IDLE) {
+	    allocate_bandwidth(diskp->host->netif, sched(diskp)->est_kps);
+	    assign_holdingdisk(holdp, diskp);
+	    diskp->host->inprogress += 1;	/* host is now busy */
+	    diskp->inprogress = 1;
+	    sched(diskp)->dumper = dumper;
+	    sched(diskp)->holdp = holdp;
+	    sched(diskp)->timestamp = time((time_t *)0);
+
+	    dumper->busy = 1;		/* dumper is now busy */
+	    dumper->dp = diskp;		/* link disk to dumper */
+	    total++;
+	    remove_disk(rq, diskp);		/* take it off the run queue */
+	    dumper_cmd(dumper, FILE_DUMP, diskp);
 	}
 	idle_reason = max(idle_reason, cur_idle);
     }
@@ -520,7 +534,10 @@ disklist_t *rq;
 int sort_by_priority_reversed(a, b)
 disk_t *a, *b;
 {
-    return sched(b)->priority - sched(a)->priority;
+    if(sched(b)->priority - sched(a)->priority != 0)
+	return sched(b)->priority - sched(a)->priority;
+    else
+	return sort_by_time(a, b);
 }
 
 int sort_by_time(a, b)

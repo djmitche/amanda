@@ -1,3 +1,10 @@
+1998-11-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/driver.c (start_some_dumps): In degraded mode,
+	a big dumper should do high priority dump before low priority.
+	* server-src/driver.c (sort_by_priority_reversed): sort by
+	time if priority is equal.
+
 1998-11-28  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/infofile.h: declare FORCE_BUMP and FORCE_NO_BUMP
