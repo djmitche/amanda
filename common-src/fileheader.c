@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.23 2002/02/11 01:32:10 jrjackson Exp $
+ * $Id: fileheader.c,v 1.24 2002/02/11 14:14:35 martinea Exp $
  */
 
 #include "amanda.h"
@@ -281,7 +281,7 @@ build_header(buffer, file, buflen)
 
     case F_TAPEEND:
 	snprintf(buffer, buflen, "AMANDA: TAPEEND DATE %s\n\014\n",
-	    file->datestamp, file->blocksize);
+	    file->datestamp);
 	break;
 
     case F_UNKNOWN:
