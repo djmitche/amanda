@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-aix.c,v 1.1.2.15 2001/07/10 21:53:06 jrjackson Exp $
+ * $Id: scsi-aix.c,v 1.1.2.16 2001/08/10 17:00:41 ant Exp $
  *
  * Interface to execute SCSI commands on an AIX System
  *
@@ -315,38 +315,47 @@ int SCSI_Scan()
   if ((fd = open(bus, O_RDWR)) == -1)
     return(1);
 
-  for (target = 0; target < 7; target++) {
-    printf("Target %d:\n", target);
-    if (ioctl(fd, SCIOSTART, IDLUN(target, 0)) == -1) {
-      if (errno == EINVAL) {
-        printf("is in use\n");
-        isbusy = 1;
-      } else {
-        return(1);
-      }
-    } else {
-      isbusy = 0;
-    }
-
-    for (lun = 0; lun < 7; lun++)
-      {
-        bzero(&si, sizeof(si));
-        si.scsi_id = target;
-        si.lun_id = lun;
-        si.inquiry_len = 255;
-        si.inquiry_ptr = &buf;
-        if (ioctl(fd, SCIOINQU, &si) == -1)
-          {
-            printf("SCIOINQU: %s\n", strerror(errno));
+  for (target = 0; target < 7; target++) 
+    {
+      for (lun = 0; lun < 7; lun++)
+        {
+          printf("Target:Lun %d:%d\n", target,lun);
+          if (ioctl(fd, SCIOSTART, IDLUN(target, lun)) == -1) {
+            if (errno == EINVAL) {
+              printf("is in use\n");
+              isbusy = 1;
+            } else {
+              return(1);
+            }
           } else {
-            type = buf[0] & 0x1f;
-            buf[8+28] = 0;
-            printf(stdout,"%-28s|Device Type %d\n",&buf[8], type);
+            isbusy = 0;
           }
-      }
-    if (!isbusy && ioctl(fd, SCIOSTOP, IDLUN(target, 0)) == -1)
-      return(1);
-  }
+          
+          bzero(&si, sizeof(si));
+          si.scsi_id = target;
+          si.lun_id = lun;
+          si.inquiry_len = 255;
+          si.inquiry_ptr = &buf;
+          if (ioctl(fd, SCIOINQU, &si) == -1)
+            {
+              printf("SCIOINQU: %s\n", strerror(errno));
+            } else {
+              dump_hex(&buf, 255, DEBUG_INFO, SECTION_SCSI);
+              type = buf[0] & 0x1f;
+              buf[8+28] = 0;
+              printf(stdout,"%-28s|Device Type %d\n",buf[8], type);
+            }
+          if (!isbusy && ioctl(fd, SCIOSTOP, IDLUN(target, lun)) == -1)
+            return(1);
+        }
+    }
+}
+
+int Tape_Ioctl(int DeviceFD, int command)
+{
+  extern OpenFiles_T *pDev;
+  int ret = -1;
+  return(ret);
 }
 
 int Tape_Ioctl ( int DeviceFD)
