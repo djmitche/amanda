@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.41 1998/09/04 15:39:37 martinea Exp $
+ * $Id: extract_list.c,v 1.42 1998/09/26 07:09:26 oliva Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1184,8 +1184,8 @@ enum dumptypes {IS_UNKNOWN, IS_DUMP, IS_GNUTAR, IS_TAR, IS_SAMBA};
 
 /* exec restore to do the actual restoration */
 static void extract_files_child(in_fd, elist)
-int in_fd;
-EXTRACT_LIST *elist;
+    int in_fd;
+    EXTRACT_LIST *elist;
 {
     int no_initial_params;
     int i,j=0;
@@ -1281,8 +1281,10 @@ EXTRACT_LIST *elist;
     	    if (domain) {
             	restore_args[j++] = stralloc("-W");
     	    	restore_args[j++] = stralloc(domain);
-   	    }	
-    	}
+   	    } else
+		no_initial_params -= 2;
+    	} else
+	    no_initial_params -= 6;
     	restore_args[j++] = stralloc("-d0");
     	restore_args[j++] = stralloc("-Tx");
 	restore_args[j++] = stralloc("-");	/* data on stdin */

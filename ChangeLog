@@ -1,5 +1,9 @@
 1998-09-26  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* recover-src/extract_list.c (extract_files_child): fix-up
+ 	no_initial_params if password or domain information is not found
+	Reported by Jose Cheng <jcheng@math.ist.utl.pt>
+
 	* docs/DUMPER-API: extended `index' to `index-from-output' or
  	`index-from-image', as suggested by Dale Hagglund <rdh@best.com>.
   	Explained that the dumptype option `program' is the name of the
