@@ -1,5 +1,10 @@
 2000-11-01 John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/amverify.sh.in: use common form for getting the first
+	line of a file/pipe.  Sed is more portable than head.
+
+2000-11-01 John R. Jackson  <jrj@purdue.edu>
+
 	* common-src/security.c (bsd_security_ok): Same fix for amwait_t !=
 	int as applied a while back to changer.c.  Compliments of John E.
 	Hein <jhein@timing.com>.
@@ -1125,7 +1130,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.401 2000/11/01 20:35:35 jrjackson Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.402 2000/11/01 21:09:21 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
