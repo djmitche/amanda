@@ -4,26 +4,25 @@ Installation
 
 Amanda is able to back up Microsoft Windows shared disks by using
 SAMBA, a package that implements a SMB client and server for Unix.
-This version of amanda is reported to work with samba 1.9.18p8, as
-long as a patch provided in the Amanda Patches Page is installed.  The
-bug fixed by this patch caused SAMBA to print log messages to the tar
-file it produced, rendering the backup useless.  The bug will
-hopefully be fixed in the next release of SAMBA.
+This version of amanda is reported to work with samba 1.9.18p10.
+Releases from 1.9.18p5 up to 1.9.18p8 would log information in the tar
+files it produces, making them unusable (both the tar files and the
+releases of SAMBA :-)!  If you really must, a patch that fixes the
+problem was posted to the Amanda Users mailing-list; please check the
+archives.  The patch may be available in the Amanda Patches Page too.
 
-If you're using SAMBA pre-1.9.18p4, make sure you don't set a low
-logging/debugging level in the samba configuration file, because this
-flag may prevent that estimate sizes are printed correctly.  Amanda
-will report an estimate failure in this case.
+Amanda no longer supports SAMBA releases prior to 1.9.18.  If you're
+using SAMBA from 1.9.18 up to 1.9.18p3, make sure you don't set a low
+logging/debugging level in smb.conf.  This flag may prevent that
+estimate sizes are printed correctly.  Amanda will report an estimate
+failure in this case.
 
-Amanda no longer supports SAMBA releases prior to 1.9.18.
-
-
-If you wish to back up large (>2GB) filesystems with samba, apply
-samba-largefs.patch, after making sure your C compiler supports
-`unsigned long long's, and that printf() in your C library understands
-that "%llu" means `unsigned long long'.  gcc may help you getting
-unsigned long longs, in case your platform doesn't, but it will not
-help printf understand "%llu".
+This problem may also occur if you have large (>2GB) filesystems to
+back up with samba.  In this case, apply samba-largefs.patch, after
+making sure your C compiler supports `unsigned long long's, and that
+printf() in your C library understands that "%llu" means `unsigned
+long long'.  gcc may help you getting unsigned long longs, in case
+your platform doesn't, but it will not help printf understand "%llu".
 
 After building and installing samba with the selected patches, Amanda
 must be configured with smbclient support - when you run configure,

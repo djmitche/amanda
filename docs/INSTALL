@@ -42,21 +42,20 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	Samba allows Unix systems to talk to PC clients.  Amanda can
 	back up Microsoft Windows 95/NT clients using samba:
 
-		ftp://samba.anu.edu.au/pub/tridge/samba/samba-1.9.18p8.tar.gz
+		ftp://samba.anu.edu.au/pub/tridge/samba/samba-1.9.18p10.tar.gz
 
 	Read docs/SAMBA for configuration tips and known limitations.
 
-    *** There is a required patch for samba-1.9.18p8 in the Amanda
-    *** Patches Page.  If you don't install it, you won't be able to
-    *** restore your backups!
+    *** Please read important notes about pre-1.9.18p10 releases of
+    *** SAMBA in docs/SAMBA.  Not reading them may cause loss of data
+    *** and/or useless backups!
 
 
     B.  If you wish to make use of some of the scripts that come with
 	Amanda, you will need to install Perl.  You can get Perl from
 	any CPAN site.  
-	    ftp://ftp.gnu.org/pub/gnu/perl-5.004_04.tar.gz
-		Some of the Amanda scripts use Perl.  Perl 5.004_04 is the
-		latest release of Perl.
+	    ftp://ftp.gnu.org/pub/gnu/perl-5.005_01.tar.gz
+
 
     C.  One of the programs included in this package is amplot,
 	which reads a data file that Amanda generates for each dump
@@ -77,7 +76,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	packages be installed on your system.  The following packages
 	are used:
 
-	    ftp://ftp.gnu.org/pub/gnu/readline-2.2.tar.gz
+	    ftp://ftp.gnu.org/pub/gnu/readline-2.2.1.tar.gz
 		amrecover optionally uses the readline library for its
 		command-line edition mechanisms.  This library itself
 		requires either termcap, curses or ncurses.  termcap
@@ -93,15 +92,14 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	    ftp://ftp.gnu.org/pub/gnu/automake-1.3.tar.gz
 	    ftp://ftp.gnu.org/pub/gnu/bison-1.25.tar.gz
 	    ftp://ftp.gnu.org/pub/gnu/flex-2.5.4a.tar.gz
-	    ftp://ftp.gnu.org/gnu/libtool-1.2.tar.gz
+	    ftp://alpha.gnu.org/gnu/libtool-1.2a.tar.gz
 
 	Although Amanda uses libtool in order to build shared
 	libraries (unless --disable-libtool is issued), you shouldn't
-	have any version of libtool different from 1.2, the one
-	distributed with Amanda, otherwise you may find
-	incompatibilities between the libtool scripts and its autoconf
-	macros.  In other words, don't bother installing libtool
-	unless you have an older version already installed.
+	have any version of libtool older than 1.2, otherwise you may
+        find incompatibilities between the libtool scripts and its
+        autoconf macros.  In other words, don't bother installing
+        libtool unless you have an older version already installed.
 
     E.  Read about the different configuration options available for
 	building and running Amanda.  To see the options, do both:
