@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.79 2002/02/13 15:21:17 martinea Exp $
+ * $Id: sendbackup-gnutar.c,v 1.80 2002/02/14 01:51:04 martinea Exp $
  *
  * send backup data using GNU tar
  */
@@ -439,14 +439,17 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
     {
 
 	int nb_exclude = 0;
+	int nb_include = 0;
 	char **my_argv;
 	int i = 0;
 	sle_t *excl;
 
 	if(options->exclude_file) nb_exclude+=options->exclude_file->nb_element;
 	if(options->exclude_list) nb_exclude+=options->exclude_list->nb_element;
+	if(options->include_file) nb_include+=options->include_file->nb_element;
+	if(options->include_list) nb_include+=options->include_list->nb_element;
 
-	my_argv = malloc(sizeof(char *) * (17 + (nb_exclude *2)));
+	my_argv = malloc(sizeof(char *) * (17 + (nb_exclude*2)+(nb_include*2)));
 
 	cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
 	info_tapeheader();
@@ -489,11 +492,28 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 	if(options->exclude_list) {
 	    for(excl = options->exclude_list->first; excl != NULL;
 		excl = excl->next) {
-		my_argv[i++] = "--exclude";
+		my_argv[i++] = "--exclude-from";
 		my_argv[i++] = excl->name;
 	    }
 	}
-	my_argv[i++] = ".";
+	if(nb_include >= 0) {
+	    if(options->include_file) {
+		for(excl = options->include_file->first; excl != NULL;
+		    excl = excl->next) {
+		    my_argv[i++] = excl->name;
+		}
+	    }
+	    if(options->include_list) {
+		for(excl = options->include_list->first; excl != NULL;
+		    excl = excl->next) {
+		    my_argv[i++] = "--files-from";
+		    my_argv[i++] = excl->name;
+		}
+	    }
+	}
+	else {
+	    my_argv[i++] = ".";
+	}
 	my_argv[i++] = NULL;
 	if(i >= 17 + 2*nb_exclude) {
 	    error("i = %d",i);

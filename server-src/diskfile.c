@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.45 2002/02/13 14:47:47 martinea Exp $
+ * $Id: diskfile.c,v 1.46 2002/02/14 01:51:05 martinea Exp $
  *
  * read disklist file
  */
@@ -403,6 +403,8 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
     disk->program	= dtype->program;
     disk->exclude_file	= duplicate_sl(dtype->exclude_file);
     disk->exclude_list	= duplicate_sl(dtype->exclude_list);
+    disk->include_file	= duplicate_sl(dtype->include_file);
+    disk->include_list	= duplicate_sl(dtype->include_list);
     disk->priority	= dtype->priority;
     disk->dumpcycle	= dtype->dumpcycle;
     disk->frequency	= dtype->frequency;
@@ -538,6 +540,8 @@ disk_t *dp;
     char *index_opt = "";
     char *exclude_file;
     char *exclude_list;
+    char *include_file;
+    char *include_list;
     char *exc = NULL;
     sle_t *excl;
 
@@ -578,6 +582,21 @@ disk_t *dp;
 
     if(dp->kencrypt) kencrypt_opt = "kencrypt;";
 
+    include_file = stralloc("");
+    if(dp->include_file != NULL && dp->include_file->nb_element > 0) {
+	for(excl = dp->include_file->first; excl != NULL; excl = excl->next) {
+	    exc = newvstralloc( exc, "include-file=", excl->name, ";", NULL);
+	    strappend(include_file, exc);
+	}
+    }
+    include_list = stralloc("");
+    if(dp->include_list != NULL && dp->include_list->nb_element > 0) {
+	for(excl = dp->include_list->first; excl != NULL; excl = excl->next) {
+	    exc = newvstralloc( exc, "include-list=", excl->name, ";", NULL);
+	    strappend(include_list, exc);
+	}
+    }
+
     return vstralloc(";",
 		     "auth=",
 		     dp->security_driver,
@@ -588,6 +607,8 @@ disk_t *dp;
 		     index_opt,
 		     exclude_file,
 		     exclude_list,
+		     include_file,
+		     include_list,
 		     NULL);
 }
 

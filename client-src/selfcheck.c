@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.53 2002/02/13 20:54:27 martinea Exp $
+ * $Id: selfcheck.c,v 1.54 2002/02/14 01:51:04 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -233,6 +233,12 @@ check_options(program, disk, options)
 	    if(options->exclude_list && options->exclude_list->nb_element > 0) {
 		printf("ERROR [samba does not support exclude list]\n");
 	    }
+	    if(options->include_file && options->include_file->nb_element > 0) {
+		printf("ERROR [samba does not support include file]\n");
+	    }
+	    if(options->include_list && options->include_list->nb_element > 0) {
+		printf("ERROR [samba does not support include list]\n");
+	    }
 	    need_samba=1;
 	}
 	else
@@ -244,6 +250,12 @@ check_options(program, disk, options)
 	}
 	if(options->exclude_list && options->exclude_list->nb_element > 0) {
 	    printf("ERROR [DUMP does not support exclude list]\n");
+	}
+	if(options->include_file && options->include_file->nb_element > 0) {
+	    printf("ERROR [DUMP does not support include file]\n");
+	}
+	if(options->include_list && options->include_list->nb_element > 0) {
+	    printf("ERROR [DUMP does not support include list]\n");
 	}
 #ifdef USE_RUNDUMP
 	need_rundump=1;

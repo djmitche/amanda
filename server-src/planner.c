@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.119 2002/02/13 14:47:47 martinea Exp $
+ * $Id: planner.c,v 1.120 2002/02/14 01:51:05 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1090,6 +1090,7 @@ host_t *hostp;
 	for(i = 0; i < MAX_LEVELS; i++) {
 	    char *l;
 	    int nb_exclude;
+	    int nb_include;
 	    char *exclude1 = "";
 	    char *exclude2 = "";
 	    char spindle[NUM_STR_SIZE];
@@ -1101,9 +1102,12 @@ host_t *hostp;
 	    snprintf(level, sizeof(level), "%d", lev);
 	    snprintf(spindle, sizeof(spindle), "%d", dp->spindle);
 	    nb_exclude = 0;
+	    nb_include = 0;
 	    if(dp->exclude_file) nb_exclude += dp->exclude_file->nb_element;
 	    if(dp->exclude_list) nb_exclude += dp->exclude_list->nb_element;
-	    if(nb_exclude > 1) {
+	    if(dp->include_file) nb_include += dp->include_file->nb_element;
+	    if(dp->include_list) nb_include += dp->include_list->nb_element;
+	    if(nb_exclude > 1 || nb_include > 0) {
 		exclude1 = " OPTIONS |";
 		exclude2 = optionstr(dp);
 	    }

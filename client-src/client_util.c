@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.2 2002/02/13 20:54:27 martinea Exp $
+ * $Id: client_util.c,v 1.3 2002/02/14 01:51:04 martinea Exp $
  *
  */
 
@@ -46,12 +46,10 @@ int verbose;
     options->no_record = 0;
     options->bsd_auth = 0;
     options->createindex = 0;
-#ifdef KRB4_SECURITY
-    options->krb4_auth = 0;
-    options->kencrypt = 0;
-#endif
     options->exclude_file = NULL;
     options->exclude_list = NULL;
+    options->include_file = NULL;
+    options->include_list = NULL;
 
     p = stralloc(str);
     tok = strtok(p,";");
@@ -112,6 +110,36 @@ int verbose;
 	    }
 	    else {
 		options->exclude_list = append_sl(options->exclude_list,exc);
+	    }
+	}
+	else if(strncmp(tok,"include-file=", 13) == 0) {
+	    exc = &tok[13];
+	    options->include_file = append_sl(options->include_file,exc);
+	}
+	else if(strncmp(tok,"include-list=", 13) == 0) {
+	    exc = &tok[13];
+	    if(*exc != '/') {
+		char *dirname = amname_to_dirname(disk);
+		char *efile = vstralloc(dirname,"/",exc, NULL);
+		if(access(efile, F_OK) != 0) {
+		    /* if include list file does not exist, ignore it.
+		     * Should not test for R_OK, because the file may be
+		     * readable by root only! */
+		    dbprintf(("%s: include list file \"%s\" does not exist, ignoring\n",
+			      get_pname(), efile));
+		    if(verbose) {
+			printf("ERROR [include list file \"%s\" does not exist]\n", efile);
+		    }
+		}
+		else {
+		    options->include_list =
+			append_sl(options->include_list, efile);
+		}
+		amfree(dirname);
+		amfree(efile);
+	    }
+	    else {
+		options->include_list = append_sl(options->include_list,exc);
 	    }
 	}
 	else if(strcmp(tok,"|") == 0) {
