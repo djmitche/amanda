@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.23 1997/11/07 04:01:03 blair Exp $
+ * $Id: amanda.h,v 1.24 1997/11/07 04:06:10 blair Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -303,20 +303,21 @@ extern void debug_printf P((char *format, ...))
 #endif
 
 /* Global constants.  */
-#ifndef SERVICE_SUFFIX
+#ifdef SERVICE_SUFFIX
+#define AMANDA_SERVICE_NAME "amanda" SERVICE_SUFFIX
+#define KAMANDA_SERVICE_NAME "kamanda" SERVICE_SUFFIX
+#else
 #define SERVICE_SUFFIX ""
+#define AMANDA_SERVICE_NAME "amanda"
+#define KAMANDA_SERVICE_NAME "kamanda"
 #endif
 
-#define AMANDA_SERVICE_NAME "amanda" SERVICE_SUFFIX
 #define AMANDA_SERVICE_DEFAULT	10080
-
-#define KAMANDA_SERVICE_NAME "kamanda" SERVICE_SUFFIX
 #define KAMANDA_SERVICE_DEFAULT	10081
 
 /* Size of a tape block in kbytes.  Do not change lightly.  */
 #define TAPE_BLOCK_SIZE 32
 #define TAPE_BLOCK_BYTES (TAPE_BLOCK_SIZE*1024)
-
 
 /* Define miscellaneous amanda functions.  */
 #define ERR_INTERACTIVE	1
