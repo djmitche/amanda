@@ -1,3 +1,8 @@
+2000-04-16 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/taper.c: don't crash if the tapelist file
+	doesn't exist.
+
 2000-04-09  Frank Wojcik  <fwojcik@lucent.com>
 
 	* server-src/taper.c (detach_buffers): Fixed typo in error message.
