@@ -1,5 +1,10 @@
 2001-06-19 John R. Jackson <jrj@purdue.edu>
 
+	* server-src/holding.c: Use fullread() instead of read() to read the
+	  holding disk file.
+
+2001-06-19 John R. Jackson <jrj@purdue.edu>
+
 	* server-src/amtape.c: Document "slot advance" in the help output.
 
 2001-06-19 John R. Jackson <jrj@purdue.edu>
