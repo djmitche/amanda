@@ -1,3 +1,7 @@
+2004-11-08  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/diskfile.c (read_diskline): A spindle must be numerical.
+
 2004-10-22  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* Amanda 2.4.4p4 released.
