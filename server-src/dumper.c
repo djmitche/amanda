@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991,1994 University of Maryland
+ * Copyright (c) 1991-1998 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -20,11 +20,10 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * Author: James da Silva, Systems Design and Analysis Group
- *			   Computer Science Department
- *			   University of Maryland at College Park
+ * Authors: the Amanda Development Team.  Its members are listed in a
+ * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.67 1998/06/17 17:15:40 jrj Exp $
+/* $Id: dumper.c,v 1.68 1998/07/04 00:19:54 oliva Exp $
  *
  * requests remote amandad processes to dump filesystems
  */

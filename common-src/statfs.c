@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991,1993 University of Maryland
+ * Copyright (c) 1991-1998 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -20,12 +20,11 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * Author: James da Silva, Systems Design and Analysis Group
- *			   Computer Science Department
- *			   University of Maryland at College Park
+ * Authors: the Amanda Development Team.  Its members are listed in a
+ * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: statfs.c,v 1.9 1998/04/01 11:36:30 amcore Exp $
+ * $Id: statfs.c,v 1.10 1998/07/04 00:18:57 oliva Exp $
  *
  * a generic statfs-like routine
  */

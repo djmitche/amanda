@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991 University of Maryland
+ * Copyright (c) 1991-1998 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.8 1998/02/23 21:47:35 jrj Exp $
+ * $Id: dgram.c,v 1.9 1998/07/04 00:18:39 oliva Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */

@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991,1994 University of Maryland
+ * Copyright (c) 1991-1998 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -20,12 +20,11 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * Author: James da Silva, Systems Design and Analysis Group
- *			   Computer Science Department
- *			   University of Maryland at College Park
+ * Authors: the Amanda Development Team.  Its members are listed in a
+ * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.53 1998/05/20 05:02:22 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.54 1998/07/04 00:18:22 oliva Exp $
  *
  * send backup data using GNU tar
  */

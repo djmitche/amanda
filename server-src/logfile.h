@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991 University of Maryland
+ * Copyright (c) 1991-1998 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.h,v 1.5 1998/02/26 19:25:18 jrj Exp $
+ * $Id: logfile.h,v 1.6 1998/07/04 00:20:08 oliva Exp $
  *
  * interface to logfile module
  */

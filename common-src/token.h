@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1997 University of Maryland
+ * Copyright (c) 1997-1998 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -23,7 +23,7 @@
  * Author: George Scott, Computer Centre, Monash University
  */
 /*
- * $Id: token.h,v 1.8 1997/12/15 21:27:36 blair Exp $
+ * $Id: token.h,v 1.9 1998/07/04 00:19:03 oliva Exp $
  *
  * interface to token module
  */

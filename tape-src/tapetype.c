@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991 University of Maryland
+ * Copyright (c) 1991-1998 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.1 1998/06/10 09:57:06 oliva Exp $
+ * $Id: tapetype.c,v 1.2 1998/07/04 00:20:21 oliva Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */

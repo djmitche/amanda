@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991 University of Maryland
+ * Copyright (c) 1991-1998 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.3 1998/04/08 16:25:20 amcore Exp $
+ * $Id: find.c,v 1.4 1998/07/04 00:19:55 oliva Exp $
  *
  * controlling process for the Amanda backup system
  */

@@ -1,6 +1,6 @@
 #
 # Amanda, The Advanced Maryland Automatic Network Disk Archiver
-# Copyright (c) 1992,1993,1994,1995 University of Maryland
+# Copyright (c) 1992-1998 University of Maryland at College Park
 # All Rights Reserved.
 #
 # Permission to use, copy, modify, distribute, and sell this software and its
