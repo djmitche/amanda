@@ -689,9 +689,11 @@ foreach $host (sort @hosts) {
 					}
 				}
 				elsif(defined $flush{$hostpart}) {
-					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
-					printf "%8dk", $size{$hostpart};
-					print " waiting to flush\n";
+					if( defined $opt_waittaper ) {
+						printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+						printf "%8dk", $size{$hostpart};
+						print " waiting to flush\n";
+					}
 					$wfpartition++;
 					$wfsize += $size{$hostpart};
 				}
