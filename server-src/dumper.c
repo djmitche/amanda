@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.131 1999/06/18 23:29:27 martinea Exp $
+/* $Id: dumper.c,v 1.132 1999/06/19 02:04:26 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1326,12 +1326,13 @@ read_indexfd(cookie, buf, size)
     assert(cookie != NULL);
     fd = *(int *)cookie;
 
-    if (size < 0)
+    if (size < 0) {
 	errstr = newstralloc2(errstr, "index read: ",
 	    security_stream_geterror(streams[INDEXFD].fd));
 	dump_result = 2;
 	stop_dump();
 	return;
+    }
 
     /*
      * EOF.  Stop and return.
