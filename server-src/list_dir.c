@@ -3,13 +3,17 @@
 * File:          $RCSfile: list_dir.c,v $
 * Part of:       
 *
-* Revision:      $Revision: 1.2 $
-* Last Edited:   $Date: 1997/05/01 19:03:48 $
-* Author:        $Author: oliva $
+* Revision:      $Revision: 1.3 $
+* Last Edited:   $Date: 1997/07/16 05:28:18 $
+* Author:        $Author: amcore $
 *
 * Notes:         
 * Private Func:  
 * History:       $Log: list_dir.c,v $
+* History:       Revision 1.3  1997/07/16 05:28:18  amcore
+* History:       Quote index filename when it is given to a shell, so that variable
+* History:       substitution is prevented.
+* History:
 * History:       Revision 1.2  1997/05/01 19:03:48  oliva
 * History:       Integrated amgetidx into sendbackup&dumper.
 * History:
@@ -150,7 +154,7 @@ DUMP_ITEM *dump_item;
 		no_fields++;
     }
     
-    sprintf(cmd, "%s %s %s 2>/dev/null | grep \"^%s\" | cut -d/ -f1-%d | sort | uniq",
+    sprintf(cmd, "%s %s '%s' 2>/dev/null | grep \"^%s\" | cut -d/ -f1-%d | sort | uniq",
 	    UNCOMPRESS_PATH,
 #ifdef UNCOMPRESS_OPT
 	    UNCOMPRESS_OPT,

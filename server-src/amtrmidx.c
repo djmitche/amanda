@@ -1,5 +1,5 @@
 /* $RCSfile: amtrmidx.c,v $
-   $Date: 1997/07/03 14:32:23 $
+   $Date: 1997/07/16 05:28:17 $
 
    amtrmidx - trims number of index files to only those still in system.
    Well actually, it keeps a few extra, plus goes back to the last
@@ -76,7 +76,7 @@ char **argv;
 	    /* get listing of indices, newest first */
 	    /* We have to be careful here of
              * trigraph replacement by some compilers.  */
-	    sprintf(cmd, "ls -r %s_%s_????%s-??_?%s",
+	    sprintf(cmd, "ls -r '%s_%s_'????%s-??_?%s",
 		    diskp->host->hostname, diskp->name,
 		    "-??", COMPRESS_SUFFIX);
 	    if ((fp = popen(cmd, "r")) == NULL)
