@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: calcsize.c,v 1.12 1997/09/19 02:37:54 george Exp $
+ * $Id: calcsize.c,v 1.13 1997/11/12 21:45:04 blair Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -34,6 +34,7 @@
 
 #define ROUND(n,x)	(x + (x % n) ? (n - x % n) : 0)
 
+/*
 static unsigned long round_function(n, x)
 unsigned long n, x;
 {
@@ -42,6 +43,7 @@ unsigned long n, x;
     x += n-remainder;
   return x;
 }
+*/
 
 # define ST_BLOCKS(s)	((s).st_size / 512 + (((s).st_size % 512) ? 1 : 0))
 
@@ -133,7 +135,9 @@ char **argv;
     /* need at least program, amname, and directory name */
 
     if(argc < 2) {
+#ifdef BUILTIN_EXCLUDE_SUPPORT
       usage:
+#endif
 	error("Usage: %s [DUMP|GNUTAR%s] name dir [level date] ...",
 #ifdef BUILTIN_EXCLUDE_SUPPORT
 		" [-X --exclude[-list]=regexp]",
