@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.25 1999/02/26 22:08:19 martinea Exp $
+ * $Id: holding.c,v 1.26 1999/05/07 16:43:19 kashmir Exp $
  *
  * Functions to access holding disk
  */
@@ -409,6 +409,13 @@ int complete;
 	    return 0;
 	}
 	buflen=fill_buffer(fd, buffer, sizeof(buffer));
+	if (buflen == 0) {
+	    fprintf(stderr,"rename_tmp_holding: %s: empty file?\n", filename_tmp);
+	    amfree(filename);
+	    amfree(filename_tmp);
+	    close(fd);
+	    return 0;
+	}
 	parse_file_header(buffer, &file, buflen);
 	close(fd);
 	if(complete == 0 ) {

@@ -1,3 +1,12 @@
+1999-05-07  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/alloc.c (safe_env): allow DISPLAY into the
+	environment for purify.
+	* server-src/holding.c (rename_tmp_holding): if fill_buffer
+	returns 0, don't try to parse a nonexistant header.
+	* server-src/taper.c (file_reader_side): init datestamp to
+	NULL, and don't try to free it if it's still NULL on exit.
+
 1999-05-06  Mike Grupenhoff <kashmir@munge.com>
 
 	* server-src/driver.c (start_some_dumps): sleep_time is an
