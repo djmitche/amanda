@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.21 2001/07/13 20:36:58 jrjackson Exp $
+ * $Id: planner.c,v 1.76.2.22 2001/07/19 21:49:44 jrjackson Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -243,7 +243,7 @@ char **argv;
 
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if(read_conffile(conffile)) {
-	error("could not find config file \"%s\"", conffile);
+	error("errors processing config file \"%s\"", conffile);
     }
     amfree(conffile);
     conf_diskfile = getconf_str(CNF_DISKFILE);
