@@ -1,3 +1,8 @@
+1998-08-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/amcleanup.sh.in (sbindir): amreport now lives in
+ 	sbindir; added it to PATH and removed full pathnames to binaries
+
 1998-08-27  Blair Zajac  <blair@gps.caltech.edu>
 
 	* configure.in: Add the directory /usr/lib/fs/vxfs to the search

@@ -33,10 +33,11 @@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libexecdir=@libexecdir@
+sbindir=@sbindir@
 
 confdir=@CONFIG_DIR@
 
-PATH=$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
+PATH=$sbindir:$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
 export PATH
 
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
@@ -68,7 +69,7 @@ tapecycle=`getconf$SUF tapecycle`
 if [ -f $logfile ]; then
 	echo "amcleanup: processing outstanding log file."
 	exec </dev/null >/dev/null 2>&1
-	$libexecdir/amreport$SUF
+	amreport$SUF
 
 	if [ -f $errfile ]; then
 	    # Keep debug log through the tapecycle plus a couple days
@@ -90,7 +91,7 @@ if [ -f $logfile ]; then
 	fi
 	
 	# Trim the index file to those for dumps that still exist.
-	$libexecdir/amtrmidx$SUF $conf
+	amtrmidx$SUF $conf
 
 else
 	echo "amcleanup: no unprocessed logfile to clean up."
