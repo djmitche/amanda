@@ -1,5 +1,9 @@
 2004-11-22  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/driver.c (startaflush): Use ALGO_SMALLEST if nothing fit.
+
+2004-11-22  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/driver.c: Typo.
 
 2004-11-19  Jean-Louis Martineau <martineau@iro.umontreal.ca>
