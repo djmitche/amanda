@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.91 1998/12/19 19:53:33 kashmir Exp $
+/* $Id: dumper.c,v 1.92 1998/12/19 20:22:11 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -132,6 +132,9 @@ static void process_dumpeof P((void));
 static void process_dumpline P((char *str));
 static void add_msg_data P((char *str, int len));
 static void log_msgout P((logtype_t typ));
+
+static int runcompress P((int, pid_t *));
+
 void sendbackup_response P((proto_t *p, pkt_t *pkt));
 int startup_dump P((char *hostname, char *disk, int level, char *dumpdate,
 		    char *dumpname, char *options));
@@ -973,7 +976,6 @@ do_dump(mesgfd, datafd, indexfd, db)
     int maxfd, nfound, eof1, eof2;
     fd_set readset, selectset;
     struct timeval timeout;
-    int outpipe[2];
     int header_done;	/* flag - header has been written */
     char *indexfile = NULL;
     char level_str[NUM_STR_SIZE];
@@ -1032,48 +1034,7 @@ do_dump(mesgfd, datafd, indexfd, db)
 	goto failed;
     }
 
-    /* insert pipe in the *READ* side, if server-side compression is desired */
     compresspid = -1;
-    if (srvcompress) {
-	int tmpfd;
-
-	tmpfd = datafd;
-	pipe(outpipe); /* outpipe[0] is pipe's stdin, outpipe[1] is stdout. */
-	datafd = outpipe[0];
-	if(datafd < 0 || datafd >= FD_SETSIZE) {
-	    aclose(outpipe[0]);
-	    aclose(outpipe[1]);
-	    errstr = newstralloc(errstr, "descriptor out of range");
-	    errno = EMFILE;
-	    goto failed;
-	}
-	switch(compresspid=fork()) {
-	case -1:
-	    errstr = newstralloc2(errstr, "couldn't fork: ", strerror(errno));
-	    goto failed;
-	default:
-	    aclose(outpipe[1]);
-	    aclose(tmpfd);
-	    break;
-	case 0:
-	    aclose(outpipe[0]);
-	    /* child acts on stdin/stdout */
-	    if (dup2(outpipe[1],1) == -1)
-		fprintf(stderr, "err dup2 out: %s\n", strerror(errno));
-	    if (dup2(tmpfd, 0) == -1)
-		fprintf(stderr, "err dup2 in: %s\n", strerror(errno));
-	    for(tmpfd = 3; tmpfd <= FD_SETSIZE; ++tmpfd) {
-		close(tmpfd);
-	    }
-	    /* now spawn gzip -1 to take care of the rest */
-	    execlp(COMPRESS_PATH, COMPRESS_PATH,
-		   (srvcompress == srvcomp_best ? COMPRESS_BEST_OPT
-						: COMPRESS_FAST_OPT),
-		   (char *)0);
-	    error("error: couldn't exec %s.\n", COMPRESS_PATH);
-	}
-	/* Now the pipe has been inserted. */
-    }
 
     indexpid = -1;
     if (indexfd != -1) {
@@ -1275,6 +1236,18 @@ do_dump(mesgfd, datafd, indexfd, db)
 
 		if (datafd != -1)
 		    FD_SET(datafd, &readset);	/* now we can read the data */
+		/*
+		 * If srvcompress is set, then we need to start compressing
+		 * all future writes to the holding file/taper/chunk process
+		 * Insert a gzip process in front of our outfd
+		 */
+		if (srvcompress != srvcomp_none) {
+		    if (runcompress(db->fd, &compresspid) < 0) {
+			errstr = newstralloc2(errstr, "compress startup: ", 
+			    strerror(errno));
+			goto failed;
+		    }
+		}
 	    }
 	}
     } /* end while */
@@ -1395,6 +1368,58 @@ do_dump(mesgfd, datafd, indexfd, db)
 	unlink(indexfile);
 
     return 0;
+}
+
+/*
+ * Runs compress with the first arg as its stdout.  Returns
+ * 0 on success or negative if error, and it's pid via the second
+ * argument.  The outfd arg is dup2'd to the pipe to the compress
+ * process.
+ */
+static int
+runcompress(outfd, pid)
+    int outfd;
+    pid_t *pid;
+{
+    int outpipe[2], tmpfd;
+
+    assert(outfd >= 0);
+    assert(pid != NULL);
+
+    /* outpipe[0] is pipe's stdin, outpipe[1] is stdout. */
+    if (pipe(outpipe) < 0) {
+	errstr = newstralloc2(errstr, "pipe: ", strerror(errno));
+	return (-1);
+    }
+
+    switch (*pid = fork()) {
+    case -1:
+	aclose(outpipe[0]);
+	aclose(outpipe[1]);
+	errstr = newstralloc2(errstr, "couldn't fork: ", strerror(errno));
+	return (-1);
+    default:
+	if (dup2(outpipe[0], outfd) < 0) {
+	    aclose(outpipe[1]);
+	    aclose(outpipe[0]);
+	    return (-1);
+	}
+	aclose(outpipe[1]);
+	aclose(outpipe[0]);
+	return (0);
+    case 0:
+	aclose(outpipe[0]);
+	if (dup2(outpipe[1], 0) < 0)
+	    error("err dup2 in: %s", strerror(errno));
+	if (dup2(outfd, 1) == -1)
+	    error("err dup2 out: %s", strerror(errno));
+	for (tmpfd = 3; tmpfd <= FD_SETSIZE; ++tmpfd)
+	    close(tmpfd);
+	execlp(COMPRESS_PATH, COMPRESS_PATH, (srvcompress == srvcomp_best ?
+	    COMPRESS_BEST_OPT : COMPRESS_FAST_OPT), NULL);
+	error("error: couldn't exec %s: %s", COMPRESS_PATH, strerror(errno));
+    }
+    /* NOTREACHED */
 }
 
 /* -------------------- */

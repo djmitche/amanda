@@ -1,5 +1,13 @@
 1998-12-19  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c (runcompress): new function.  Given an output
+	file descriptor, inserts a gzip/compress in front of that descriptor.
+	* server-src/dumper.c (do_dump): if srvcompress is true, insert
+	the gzip (using runcompress) in front of the output fd instead
+	of the input fd.  Only do this after the tapeheader has been written.
+
+1998-12-19  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c (startup_chunker): new function.  When doing
 	chunking, fork a piped subprocess that reads in a fileheader and
 	a data stream, and writes out the headered, chunked files.  This
