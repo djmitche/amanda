@@ -525,7 +525,7 @@ get_slot_list() {
     : loop
     n
     /^.*Storage Element \([0-9][0-9]*\):Full/ {
-        s/.*Storage Element \([0-9][0-9]*\):Full/\1/p
+        s/.*Storage Element \([0-9][0-9]*\):Full.*/\1/p
         b loop
     }
     /^.*Storage Element \([0-9][0-9]*\):Empty/ {
@@ -533,7 +533,7 @@ get_slot_list() {
     }
 }
 /^.*Storage Element \([0-9][0-9]*\):Full/ {
-    s/.*Storage Element \([0-9][0-9]*\):Full/\1/p
+    s/.*Storage Element \([0-9][0-9]*\):Full.*/\1/p
 }
 ' < $mtx_status 2>&1 | grep -v "^${cleanslot}\$" | sort -n`
 	slot_list=`echo $slot_list`		# remove the newlines
