@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.19.2.7.2.14 2003/04/28 20:29:17 martinea Exp $
+ * $Id: amcheck.c,v 1.50.2.19.2.7.2.15 2003/10/07 17:10:08 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -709,7 +709,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 		confbad = 1;
 	    }
 #if !defined(LPRCMD)
-	    fprintf(outf, "ERROR: lbl_templ set but no printer defined\n");
+	    fprintf(outf, "ERROR: lbl_templ set but no LPRCMD defined, you should reconfigure amanda\n       and make sure it find a lpr or lp command.\n");
 	    confbad = 1;
 #endif
 	}

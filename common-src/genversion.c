@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: genversion.c,v 1.18.4.4.4.1.2.1 2002/02/11 03:00:10 jrjackson Exp $
+ * $Id: genversion.c,v 1.18.4.4.4.1.2.2 2003/10/07 17:10:08 martinea Exp $
  *
  * dump the current Amanda version info
  */
@@ -58,6 +58,12 @@ int main P((void));
 /* Print a text "variable" */
 #define prvar(var, val) do {						\
     str = newvstralloc(str, (var), "=\\\"", (val), "\\\"", NULL);	\
+    prstr(str);								\
+} while(0)
+
+/* Print a undef "variable" */
+#define prundefvar(var) do {						\
+    str = newvstralloc(str, (var), "=UNDEF", NULL);			\
     prstr(str);								\
 } while(0)
 
@@ -108,18 +114,26 @@ int main()
 
 #ifdef BUILT_DATE
     prvar(" BUILT_DATE", BUILT_DATE);
+#else
+    prundefvar(" BUILT_DATE");
 #endif
 
 #ifdef BUILT_MACH
     prvar(" BUILT_MACH", BUILT_MACH);
+#else
+    prundefvar(" BUILT_MACH");
 #endif
 
 #ifdef CC
     prvar(" CC", CC);
+#else
+    prundefvar(" CC");
 #endif
 
 #ifdef CONFIGURE_COMMAND
     prvar(" CONFIGURE_COMMAND", CONFIGURE_COMMAND);
+#else
+    prundefvar(" CONFIGURE_COMMAND");
 #endif
 
     newline();
@@ -134,58 +148,92 @@ int main()
     prvar(" AMANDA_TMPDIR", AMANDA_TMPDIR);
 #ifdef AMANDA_DBGDIR
     prvar(" AMANDA_DBGDIR", AMANDA_DBGDIR);
+#else
+    prundefvar(" AMANDA_DBGDIR");
 #endif
 
     prvar(" CONFIG_DIR", CONFIG_DIR);
 
 #ifdef DEV_PREFIX
     prvar(" DEV_PREFIX", DEV_PREFIX);
+#else
+    prundefvar(" DEV_PREFIX");
 #endif
 
 #ifdef RDEV_PREFIX
     prvar(" RDEV_PREFIX", RDEV_PREFIX);
+#else
+    prundefvar(" RDEV_PREFIX");
 #endif
 
 #ifdef DUMP
     prvar(" DUMP", DUMP);
     prvar(" RESTORE", RESTORE);
+#else
+    prundefvar(" DUMP");
+    prundefvar(" RESTORE");
 #endif
 
 #ifdef VDUMP
     prvar(" VDUMP", VDUMP);
     prvar(" VRESTORE", VRESTORE);
+#else
+    prundefvar(" VDUMP");
+    prundefvar(" VRESTORE");
 #endif
 
 #ifdef XFSDUMP
     prvar(" XFSDUMP", XFSDUMP);
     prvar(" XFSRESTORE", XFSRESTORE);
+#else
+    prundefvar(" XFSDUMP");
+    prundefvar(" XFSRESTORE");
 #endif
 
 #ifdef VXDUMP
     prvar(" VXDUMP", VXDUMP);
     prvar(" VXRESTORE", VXRESTORE);
+#else
+    prundefvar(" VXDUMP");
+    prundefvar(" VXRESTORE");
 #endif
 
 #ifdef SAMBA_CLIENT
     prvar(" SAMBA_CLIENT", SAMBA_CLIENT);
+#else
+    prundefvar(" SAMBA_CLIENT");
 #endif
 
 #ifdef GNUTAR
     prvar(" GNUTAR", GNUTAR);
+#else
+    prundefvar(" GNUTAR");
 #endif
 
 #ifdef COMPRESS_PATH
     prvar(" COMPRESS_PATH", COMPRESS_PATH);
+#else
+    prundefvar(" COMPRESS_PATH");
 #endif
 
 #ifdef UNCOMPRESS_PATH
     prvar(" UNCOMPRESS_PATH", UNCOMPRESS_PATH);
+#else
+    prundefvar(" UNCOMPRESS_PATH");
+#endif
+
+#ifdef LPRCMD
+    prvar(" LPRCMD", LPRCMD);
+#else
+    prundefvar(" LPRCMD");
 #endif
 
     prvar(" MAILER", MAILER);
 
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
     prvar(" listed_incr_dir", GNUTAR_LISTED_INCREMENTAL_DIR);
+#else
+    prundefvar(" listed_incr_dir");
 #endif
 
     newline();
