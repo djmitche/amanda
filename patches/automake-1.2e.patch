@@ -1,0 +1,61 @@
+--- automake	Fri Feb 13 07:17:13 1998
++++ automake	Fri Feb 13 07:14:16 1998
+@@ -882,7 +882,7 @@
+ 	    $base = $1;
+ 	    ($hname = $2) =~ tr/y/h/;
+ 	    ($cname = $2) =~ tr/y/c/;
+-	    $output_rules .= "${base}.${hname}: ${base}.${cname}\n";
++	    $output_rules .= "\$(srcdir)/${base}.${hname}: \$(srcdir)/${base}.${cname}\n";
+ 	}
+ 	$output_rules .= "\n";
+ 
+@@ -2896,8 +2896,8 @@
+     {
+ 	local (@ac_deps) = (
+ 			    ($seen_maint_mode ? "\@MAINT\@" : "") ,
+-			    "configure.in",
+-			    ($acinclude ? ' acinclude.m4' : '')
++			    '$(top_srcdir)/configure.in',
++			    ($acinclude ? ' $(srcdir)/acinclude.m4' : '')
+ 			    );
+ 
+ 	# Scan all -I directories for m4 files.  These are our
+@@ -2991,7 +2991,7 @@
+ 		      # Don't know why.
+ 		      . ': '
+ 		      . ($seen_maint_mode ? '@MAINT@ ' : '')
+-		      . $amfile . ' '
++		      . '$(srcdir)/' . $amfile . ' '
+ 		      . '$(top_srcdir)/configure.in $(ACLOCAL_M4) '
+ 		      . join (' ', @rewritten) . "\n"
+ 		      . "\tcd \$(top_srcdir) && \$(AUTOMAKE) "
+@@ -3053,21 +3053,24 @@
+ 					  $FOREIGN, $ch_sans_dir);
+ 
+ 	    # Header defined and in this directory.
+-	    local (@files);
++	    local (@files, @relfiles);
+ 	    if (-f $relative_dir . '/acconfig.h')
+ 	    {
+-		push (@files, 'acconfig.h');
++		push (@relfiles, "acconfig.h");
++		push (@files, "\\\$(srcdir)/acconfig.h");
+ 	    }
+ 	    if (-f $one_name . '.top')
+ 	    {
+-		push (@files, "${cn_sans_dir}.top");
++		push (@relfiles, "${cn_sans_dir}.top");
++		push (@files, "\\\$(srcdir)/${cn_sans_dir}.top");
+ 	    }
+ 	    if (-f $one_name . '.bot')
+ 	    {
+-		push (@files, "${cn_sans_dir}.bot");
++		push (@relfiles, "${cn_sans_dir}.bot");
++		push (@files, "\\\$(srcdir)/${cn_sans_dir}.bot");
+ 	    }
+ 
+-	    &push_dist_common (@files);
++	    &push_dist_common (@relfiles);
+ 
+ 	    local ($stamp_name) = 'stamp-h';
+ 	    $stamp_name .= "${hdr_index}" if scalar (@config_headers) > 1;
