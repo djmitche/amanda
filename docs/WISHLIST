@@ -28,6 +28,10 @@ should be added.
 * It should be possible to configure estimate and data time-outs on a
 per-filesystem basis.
 
+* The location of the `tapelist' file should be configurable, and
+should not default to the `etc' directory.  Ideally, `etc'
+directories/files should be writable by root only.
+
 * SAMBA should be treated as a different backup program, not as
 GNUTAR, because it cannot handle dump-style incrementals (as of
 samba-1.9.17p5).  We should be able to back up subdirectories of
