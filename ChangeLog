@@ -1,5 +1,12 @@
 1998-12-14  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/changer.c (changer_label): make it return void
+	to keep gcc warning about control reaching the end of a nonvoid
+	function.
+	* server-src/changer.c: update changer_label's proto for previous
+
+1998-12-14  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/amanda.h: define SET, CLR, ISSET macros for dealing
 	with bitmasks
 	* server-src/amadmin.c: use the bitmask macros for setting

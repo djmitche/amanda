@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.16 1998/12/04 20:55:02 kashmir Exp $
+ * $Id: changer.c,v 1.17 1998/12/14 20:29:53 kashmir Exp $
  *
  * interface routines for tape changers
  */
@@ -382,7 +382,7 @@ char *searchlabel, **outslotstr, **devicename;
    giving a label for a tape. (Maybe also, when the label and the associated
    slot is known. e.g. during library scan.
 */
-int changer_label (slotsp,labelstr)
+void changer_label (slotsp,labelstr)
 int slotsp; 
 char *labelstr;
 {
