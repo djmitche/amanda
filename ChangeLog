@@ -1,5 +1,8 @@
-2002-12-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+2002-12-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* amplot/amplot.awk: Parse newer log lines.
+
+2002-12-11  Jean-Louis Martineau <martineau@iro.umontreal.ca> 
 	* server-src/reporter.c (output_stats): Typo.
 
 2002-12-09  Jean-Louis Martineau <martineau@iro.umontreal.ca>
