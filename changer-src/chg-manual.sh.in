@@ -28,7 +28,7 @@ MT=@MT@
 MTF=@MT_FILE_FLAG@
 DD=@DD@
 MAILER=@MAILER@
-ONLINEREGEX="ONLINE|READY|sense[_ ]key[(]0x0[)]|sense key error = 0|^er=0$"
+ONLINEREGEX="ONLINE|READY|sense[_ ]key[(]0x0[)]|sense key error = 0|^er=0$|, mt_erreg: 0x0$"
 REPORTTO=`amgetconf$SUF mailto`
 tape=`amgetconf$SUF tapedev`
 ORG=`amgetconf$SUF ORG`
