@@ -24,6 +24,7 @@ EXTRA_DIST = \
 	COPYRIGHT-APACHE		\
 	COPYRIGHT-REGEX 		\
 	docs/DUMPER-API			\
+	docs/EVENT-API			\
 	docs/FAQ			\
 	docs/INDEXING			\
 	docs/INSTALL			\
@@ -34,6 +35,8 @@ EXTRA_DIST = \
 	docs/RESTORE			\
 	docs/SAMBA			\
 	docs/SECURITY			\
+	docs/SECURITY-API		\
+	docs/STRATEGY-API		\
 	docs/SYSTEM.NOTES		\
 	docs/TAPE.CHANGERS		\
 	docs/TAPETYPES			\

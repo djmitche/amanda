@@ -1,5 +1,9 @@
 1998-11-07  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* Makefile.am (EXTRA_DIST): added EVENT-API, SECURITY-API and
+	STRATEGY-API
+	* docs/STRATEGY-API: new file
+
 	* configure.in (GNUTAR): accept tar from Free paxutils, the new name
 	of GNU tar
 
