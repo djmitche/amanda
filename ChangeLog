@@ -1,3 +1,7 @@
+2003-01-24  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amstatus.pl.in: print an usage by tape.
+
 2003-01-23  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* recover-src/extract_list.c (add_extract_item, delete_extract_item): 
