@@ -1,3 +1,7 @@
+2002-11-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* tape-src/output-tape.c (tape_tapefd_fsf): Must not be static.
+
 2002-11-19  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/reporter.c: Fix for LPRCMD not defined.

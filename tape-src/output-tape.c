@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-tape.c,v 1.1.2.6.2.4 2002/11/12 21:24:20 martinea Exp $
+ * $Id: output-tape.c,v 1.1.2.6.2.5 2002/11/23 16:52:33 martinea Exp $
  *
  * tapeio.c virtual tape interface for normal tape drives.
  */
@@ -71,7 +71,7 @@
  * when skipping.
  */
 
-static int
+int
 tape_tapefd_fsf(fd, count)
     int fd;
     int count;
