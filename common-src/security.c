@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: security.c,v 1.7 1998/01/17 15:33:40 amcore Exp $
+ * $Id: security.c,v 1.7.2.1 1998/02/26 12:20:16 amcore Exp $
  *
  * wrapper file for kerberos security
  */
@@ -138,7 +138,16 @@ char **errstr;
     /* If we did not find it, your DNS is messed up or someone is trying
      * to pull a fast one on you. :(
      */
+
+   /*   Check even the aliases list. Work around for Solaris if dns goes over NIS */
+
     if( !hp->h_addr_list[i] ) {
+        for (i = 0; hp->h_aliases[i] !=0 ; i++) {
+	     if ( strcmp(hp->h_aliases[i],inet_ntoa(addr->sin_addr)) == 0)
+	         break;                          /* name is good, keep it */
+        }
+    }
+    if( !hp->h_aliases[i] ) {
 	*errstr = vstralloc("[",
 			    "ip address ", inet_ntoa(addr->sin_addr),
 			    " is not in the ip list for ", remotehost,
