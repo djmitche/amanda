@@ -94,7 +94,7 @@
 1998-11-17  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/tapefile.c (lookup_last_reusable_tape): Wrong order
-	to shift the tpsave array (untested).
+	to shift the tpsave array.
 
 1998-11-17  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
