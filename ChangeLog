@@ -1,5 +1,7 @@
 1999-01-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* NEWS: chg-scsi ports, Samba 2.0.0 support and SECURITY API
+
 	* configure.in (USE_AMANDAHOSTS): enable by default
 	* example/config.site: ditto
 	* docs/INSTALL: ditto

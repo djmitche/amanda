@@ -1,5 +1,11 @@
+Changes in release 2.5.0
+
+* New SECURITY API (see docs/SECURITY.API for details)
+
 Changes in release 2.4.2
 
+* Samba 2.0.0 is now supported
+* chg-scsi was ported to several platforms
 * --with-amandahosts is now enabled by default
 * new force-bump, force-no-bump and unforce-bump command in amadmin.
 * Increased the maximum number of filesystems that can be backed up
