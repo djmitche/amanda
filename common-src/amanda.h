@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.66.2.7.4.5.2.12.2.2 2004/04/29 20:47:21 martinea Exp $
+ * $Id: amanda.h,v 1.66.2.7.4.5.2.12.2.3 2004/04/30 12:13:14 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -239,7 +239,10 @@
 #include <stdio.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
-#include "amanda-int.h"
+
+#if !defined(CONFIGURE_TEST)
+#  include "amanda-int.h"
+#endif
 
 #ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
