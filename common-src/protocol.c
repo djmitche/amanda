@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: protocol.c,v 1.21 1998/01/27 02:17:43 martinea Exp $
+ * $Id: protocol.c,v 1.22 1998/01/30 00:28:25 martinea Exp $
  *
  * implements amanda protocol
  */
@@ -959,5 +959,4 @@ void run_protocol()
 	    state_machine(p, A_TIMEOUT, NULL);
 	}
     }
-    afree(proto_handle_table);
 }
