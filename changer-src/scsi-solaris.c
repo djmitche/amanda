@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-solaris.c,v 1.1.2.13 1999/03/16 20:43:36 th Exp $";
+static char rcsid[] = "$Id: scsi-solaris.c,v 1.1.2.14 1999/06/18 20:43:34 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an Sun Workstation
@@ -98,6 +98,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
                         char *pRequestSense,
                         int RequestSenseLength)
 {
+  extern FILE * debug_file;
   int ret;
   int retries = 1;
   extern int errno;
@@ -140,7 +141,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
     {
        dbprintf(("ioctl on %d failed, errno %d, ret %d\n",DeviceFD, errno, ret));
        RequestSense(DeviceFD, &pExtendedRequestSense, 0);
-       DecodeExtSense(&pExtendedRequestSense, "SCSI_ExecuteCommand:");
+       DecodeExtSense(&pExtendedRequestSense, "SCSI_ExecuteCommand:", debug_file);
     } else {
       return(ret);
     }

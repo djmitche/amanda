@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.14.4.3 1999/03/16 20:43:48 th Exp $
+ * $Id: changer.c,v 1.14.4.4 1999/06/18 20:43:37 th Exp $
  *
  * interface routines for tape changers
  */
@@ -256,7 +256,12 @@ char *searchlabel;
     done = user_init(rc, nslots, backwards);
     amfree(curslotstr);
    
-    dbprintf(("changer_find: looking for %s changer is searchable = %d \n",searchlabel,searchable));
+    if (searchlabel != NULL)
+    {
+      dbprintf(("changer_find: looking for %s changer is searchable = %d \n",searchlabel,searchable));
+    } else {
+      dbprintf(("changer_find: looking for NULL changer is searchable = %d \n",searchable));
+    }
 
     if ((searchlabel!=NULL) && searchable && !done){
       rc=changer_search(searchlabel,&curslotstr,&device);

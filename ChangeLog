@@ -1,3 +1,18 @@
+1999-06-18  Thomas Hepper <th@ant.han.de>
+
+	* server-src/changer.c: (changer_find) check if serachlabel is NULL
+	if yes don't print it to the debug file
+
+	* changer-src/scsi-solaris.c: (SCSI_ExecuteCommand) Add missing
+	parameter to DecodeExtSense.
+
+	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
+	parameter to DecodeExtSense.
+
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.219 1999/06/18 20:43:13 th Exp $";
+	* changer-src-/chg-scsi.c: dito
+	* changer-src/scsi-changer-driver.c: dito
+
 1999-06-17  Thomas Hepper <th@ant.han.de>
 
 	* configure.in: Add new example files amanda.conf.chg-scsi, 
