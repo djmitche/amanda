@@ -1,5 +1,12 @@
 Version 2.4.0
 
+	fix a few file-locking configure bugs.  -oliva
+
+	chg-multi updates and bugfixes.
+	-Liudvikas Bukys <bukys@cs.rochester.edu>
+
+Version 2.4.0b6
+
 	amindexd bugfix -Jos Alsters <Jos.Alsters@sci.kun.nl>
 
 	New --disable-libtool configure option, for those who really don't
