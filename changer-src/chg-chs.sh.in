@@ -336,7 +336,7 @@ if [ $slotempty -eq 1 ]; then
 	exit 1
 fi
 
-if [ $command = -slot -a $slotparm = advance ]; then
+if [ "$command" = -slot -a "$slotparm" = advance ]; then
 	device=/dev/null
 fi
 

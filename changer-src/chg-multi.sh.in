@@ -27,14 +27,17 @@
 #
 
 #
-# chg-generic.sh - generic tape changer script
+# chg-multi.sh - generic tape changer script
 #
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libexecdir=@libexecdir@
 
-pname="chg-generic"
+pname="chg-multi"
+
+PATH=$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
+export PATH
 
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
 if test "$USE_VERSION_SUFFIXES" = "yes"; then
@@ -44,9 +47,6 @@ else
 fi
 
 ourconf=`getconf$SUF changerfile`
-
-PATH=$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
-export PATH
 
 MT=@MT@
 MTF=@MT_FILE_FLAG@
@@ -98,7 +98,7 @@ if [ "$ejectdelay" = "" ]; then
 fi
 
 ourstate=`awk '$1 == "statefile" {print $2}' $ourconf 2>/dev/null`
-if [ "$outstate" = "" ]; then
+if [ "$ourstate" = "" ]; then
 	echo "<none> $pname: statefile not specified in $ourconf"
 	exit 2
 fi
@@ -314,9 +314,9 @@ fi
 
 # update state
 
-echo "# generic-changer state cache: DO NOT EDIT!" >  $ourstate
-echo curslot $newslot 				   >> $ourstate
-echo curloaded $curloaded			   >> $ourstate
+echo "# multi-changer state cache: DO NOT EDIT!" >  $ourstate
+echo curslot $newslot 				 >> $ourstate
+echo curloaded $curloaded			 >> $ourstate
 
 # return slot info
 
@@ -325,7 +325,7 @@ if [ $slotempty -eq 1 ]; then
 	exit 1
 fi
 
-if [ $command = -slot -a $slotparm = advance ]; then
+if [ "$command" = -slot -a "$slotparm" = advance ]; then
 	device=/dev/null
 fi
 
