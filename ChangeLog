@@ -1,3 +1,8 @@
+1999-05-10  Mike Grupenhoff <kashmir@munge.com>
+
+	* client-src/sendsize.c (getsize_dump): print out the strerror
+	if we can't exec killpgrp.
+
 1999-05-07 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* example/amanda.conf.in: typo
