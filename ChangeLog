@@ -1,3 +1,8 @@
+1999-08-23 John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/reporter.c (copy_template_file): make sure all data is
+	  written to label template pipeline.
+
 1999-08-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	Patch by Peter Conrad <conrad@opus5.de>
 
@@ -140,7 +145,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.240 1999/08/21 20:40:15 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.241 1999/08/23 20:30:48 jrj Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

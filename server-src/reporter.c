@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.7 1999/05/19 21:16:16 martinea Exp $
+ * $Id: reporter.c,v 1.44.2.8 1999/08/23 20:31:02 jrj Exp $
  *
  * nightly Amanda Report generator
  */
@@ -1876,20 +1876,17 @@ void copy_template_file(lbl_templ)
 char *lbl_templ;
 {
   char buf[BUFSIZ];
-  int numread, numwritten;
+  int numread, l, n, s;
 
   if ((template_file = fopen(lbl_templ,"r")) == NULL)
     error("could not open template file \"%s\":%s",
 	  lbl_templ ,strerror(errno));
 
-  while ((numread = (read((fileno(template_file)), buf, BUFSIZ))) > 0) {
-    if ((numwritten = (write((fileno(postscript)), buf, numread)))
-	!= numread) {
-      if (numread < 0)
+  while ((numread = (read((fileno(template_file)), buf, sizeof(buf)))) > 0) {
+    for(l = 0, n = numread; l < n; l += s) {
+      if((s = write(fileno(postscript), buf + l, n - l)) < 0) {
 	error("error copying template file: %s",strerror(errno));
-      else
-	error("error copying template file: short write (r:%d w:%d)",
-	      numread, numwritten);
+      }
     }
   }
   if (numread < 0)
