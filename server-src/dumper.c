@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.134 1999/09/30 00:05:39 jrj Exp $
+/* $Id: dumper.c,v 1.135 2001/01/05 00:48:50 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -58,7 +58,7 @@
 
 #define STARTUP_TIMEOUT 60
 
-typedef enum { BOGUS, FILE_DUMP, PORT_DUMP, CONTINUE, ABORT, QUIT } cmd_t;
+typedef enum { BOGUS, PORT_DUMP, CONTINUE, ABORT, QUIT } cmd_t;
 
 struct cmdargs {
     int argc;
@@ -68,9 +68,6 @@ struct cmdargs {
 struct databuf {
     int fd;			/* file to flush to */
     const char *filename;	/* name of what fd points to */
-    int filename_seq;		/* for chunking */
-    long split_size;		/* when to chunk */
-    long chunk_size;		/* size of each chunk */
     char buf[DATABUF_SIZE];
     char *dataptr;		/* data buffer markers */
     int spaceleft;
@@ -122,7 +119,7 @@ static int do_dump P((struct databuf *));
 void check_options P((char *));
 static void finish_tapeheader P((dumpfile_t *));
 static int write_tapeheader P((int, dumpfile_t *));
-static void databuf_init P((struct databuf *, int, const char *, long));
+static void databuf_init P((struct databuf *, int, const char *));
 static int databuf_write P((struct databuf *, const void *, int));
 static int databuf_flush P((struct databuf *));
 static void process_dumpeof P((void));
@@ -137,7 +134,6 @@ static void sendbackup_response P((void *, pkt_t *, security_handle_t *));
 static int startup_dump P((const char *, const char *, int, const char *,
 		    const char *, const char *));
 static void stop_dump P((void));
-static int startup_chunker P((const char *, long));
 
 static void read_indexfd P((void *, void *, ssize_t));
 static void read_datafd P((void *, void *, ssize_t));
@@ -170,8 +166,6 @@ main(main_argc, main_argv)
     unsigned long malloc_hist_2, malloc_size_2;
     char *conffile;
     char *q = NULL;
-    char *filename;
-    long chunksize;
 
     for (outfd = 3; outfd < FD_SETSIZE; outfd++) {
 	/*
@@ -255,77 +249,6 @@ main(main_argc, main_argv)
 	case QUIT:
 	    break;
 
-	case FILE_DUMP:
-	    /*
-	     * FILE-DUMP handle filename host disk level dumpdate chunksize
-	     *   progname options
-	     */
-	    if (cmdargs.argc != 10)
-		error("error [dumper FILE-DUMP argc != 10: %d]", cmdargs.argc);
-	    handle = newstralloc(handle, cmdargs.argv[2]);
-	    filename = cmdargs.argv[3];
-	    hostname = newstralloc(hostname, cmdargs.argv[4]);
-	    diskname = newstralloc(diskname, cmdargs.argv[5]);
-	    level = atoi(cmdargs.argv[6]);
-	    dumpdate = newstralloc(dumpdate, cmdargs.argv[7]);
-	    chunksize = atoi(cmdargs.argv[8]);
-	    chunksize = (chunksize/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
-	    progname = newstralloc(progname, cmdargs.argv[9]);
-	    options = newstralloc(options, cmdargs.argv[10]);
-
-	    /*
-	     * We start a subprocess to do the chunking, and pipe our
-	     * data to it.  This allows us to insert a compress in between
-	     * if srvcompress is set.
-	     */
-	    if (chunksize > 0) {
-		outfd = startup_chunker(filename, chunksize);
-		if (outfd < 0) {
-		    q = squotef("[chunker startup failed: %s]",
-			strerror(errno));
-		    putresult("FAILED %s %s\n", handle, q);
-		    amfree(q);
-		    break;
-		}
-		databuf_init(&db, outfd, "<pipe to chunker>", -1);
-	    } else {
-		char *tmp_filename;
-
-		tmp_filename = vstralloc(filename, ".tmp", NULL);
-		outfd = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600);
-		if (outfd < 0) {
-		    q = squotef("[holding file \"%s\": %s]",
-				tmp_filename, strerror(errno));
-		    putresult("FAILED %s %s\n", handle, q);
-		    amfree(q);
-		    amfree(tmp_filename);
-		    break;
-		}
-		amfree(tmp_filename);
-		databuf_init(&db, outfd, filename, -1);
-	    }
-
-	    check_options(options);
-
-	    rc = startup_dump(hostname, diskname, level, dumpdate, progname,
-		options);
-	    if (rc != 0) {
-		q = squote(errstr);
-		putresult("%s %s %s\n", rc == 2 ? "FAILED" : "TRY-AGAIN",
-		    handle, q);
-		if (rc == 2)
-		    log_add(L_FAIL, "%s %s %d [%s]", hostname, diskname, level,
-			errstr);
-		amfree(q);
-	    } else {
-		abort_pending = 0;
-		if (do_dump(&db)) {
-		}
-		if (abort_pending)
-		    putresult("ABORT-FINISHED %s\n", handle);
-	    }
-	    break;
-
 	case PORT_DUMP:
 	    /*
 	     * PORT-DUMP handle port host disk level dumpdate progname options
@@ -351,7 +274,7 @@ main(main_argc, main_argv)
 		amfree(q);
 		break;
 	    }
-	    databuf_init(&db, outfd, "<taper program>", -1);
+	    databuf_init(&db, outfd, "<output program>");
 
 	    check_options(options);
 
@@ -407,71 +330,6 @@ main(main_argc, main_argv)
     exit(0);
 }
 
-/*
- * Forks a subprocess that reads in a file header and data, and writes
- * out several files.  Returns a file descriptor to a pipe to the process
- * on success, or -1 on error.
- */
-static int
-startup_chunker(filename, chunksize)
-    const char *filename;
-    long chunksize;
-{
-    struct databuf db;
-    char buf[TAPE_BLOCK_BYTES], *tmp_filename;
-    int nread;
-    int pipefd[2], outfd;
-
-    if (pipe(pipefd) < 0)
-	return (-1);
-
-    switch (fork()) {
-    case -1:
-	aclose(pipefd[0]);
-	aclose(pipefd[1]);
-	return (-1);
-
-    case 0:
-	aclose(pipefd[0]);
-	return (pipefd[1]);
-
-    default:
-	dup2(pipefd[0], 0);
-	aclose(pipefd[0]);
-	aclose(pipefd[1]);
-	break;
-    }
-
-    tmp_filename = vstralloc(filename, ".tmp", NULL);
-    if ((outfd = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600)) < 0) {
-	putresult("FAILED %s [holding file \"%s\": %s]", handle,
-	    tmp_filename, strerror(errno));
-	amfree(tmp_filename);
-	exit(1);
-    }
-    amfree(tmp_filename);
-    databuf_init(&db, outfd, filename, chunksize);
-
-    /*
-     * The first thing we should recieve is the file header, which we
-     * need to save into "file", as well as write out.  Later, the
-     * chunk code will rewrite it.
-     */
-    if ((nread = read(0, buf, sizeof(buf))) <= 0)
-	exit(1);
-    parse_file_header(buf, &file, nread);
-    databuf_write(&db, buf, nread);
-
-    /*
-     * We've written the file header.  Now, just write data until the
-     * end.
-     */
-    while ((nread = read(0, buf, sizeof(buf))) > 0)
-	databuf_write(&db, buf, nread);
-    databuf_flush(&db);
-    close(0);
-    exit(0);
-}
 
 static cmd_t
 getcmd(cmdargs)
@@ -481,7 +339,6 @@ getcmd(cmdargs)
 	const char str[12];
 	cmd_t cmd;
     } cmdtab[] = {
-	{ "FILE-DUMP", FILE_DUMP },
 	{ "PORT-DUMP", PORT_DUMP },
 	{ "CONTINUE", CONTINUE },
 	{ "ABORT", ABORT },
@@ -534,17 +391,14 @@ arglist_function(static void putresult, const char *, format)
  * Initialize a databuf.  Takes a writeable file descriptor.
  */
 static void
-databuf_init(db, fd, filename, split_size)
+databuf_init(db, fd, filename)
     struct databuf *db;
     int fd;
     const char *filename;
-    long split_size;
 {
 
     db->fd = fd;
     db->filename = filename;
-    db->filename_seq = 0;
-    db->chunk_size = db->split_size = split_size;
     db->dataptr = db->buf;
     db->spaceleft = sizeof(db->buf);
     db->compresspid = -1;
@@ -588,9 +442,8 @@ databuf_flush(db)
     struct databuf *db;
 {
     struct cmdargs cmdargs;
-    int fd, written, off;
+    int written, off;
     cmd_t cmd;
-    char *tmp_filename;
 
     /*
      * If there's no data, do nothing.
@@ -604,63 +457,6 @@ databuf_flush(db)
     if (db->spaceleft > 0) {
 	memset(db->dataptr, 0, db->spaceleft);
 	db->spaceleft = 0;
-    }
-
-    /*
-     * See if we need to split this file.
-     */
-    if (db->split_size > 0 && dumpsize >= db->split_size) {
-	/*
-	 * First, update the header of the current file to point
-	 * to the next chunk, and then close it.
-	 */
-	fd = db->fd;
-	if (lseek(fd, (off_t)0, SEEK_SET) < 0) {
-	    errstr = squotef("lseek holding file: %s", strerror(errno));
-	    return (-1);
-	}
-	snprintf(file.cont_filename, sizeof(file.cont_filename),
-	    "%s.%d", db->filename, ++db->filename_seq);
-	write_tapeheader(fd, &file);
-	aclose(fd);
-
-	/*
-	 * Now, open the new chunk file, and give it a new header
-	 * that has no cont_filename pointer.
-	 */
-	tmp_filename = vstralloc(file.cont_filename, ".tmp", NULL);
-	if ((fd = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600)) == -1) {
-	    errstr = squotef("holding file \"%s\": %s",
-			tmp_filename, strerror(errno));
-	    amfree(tmp_filename);
-	    return (-1);
-	}
-	file.type = F_CONT_DUMPFILE;
-	file.cont_filename[0] = '\0';
-	write_tapeheader(fd, &file);
-	dumpsize += TAPE_BLOCK_SIZE;
-	/*
-	 * XXX this is bogus - this is being updated in the chunker process
-	 * and therefore will never be seen by the dumper.
-	 */
-	headersize += TAPE_BLOCK_SIZE;
-	amfree(tmp_filename);
-
-	/*
-	 * Now put give the new file the old file's descriptor
-	 */
-	if (fd != db->fd) {
-	    if (dup2(fd, db->fd) == -1) {
-		errstr = squotef("can't dup2: %s", strerror(errno));
-		return (-1);
-	    }
-	    aclose(fd);
-	}
-
-	/*
-	 * Update when we need to chunk again
-	 */
-	db->split_size += db->chunk_size;
     }
 
     /*
@@ -998,10 +794,15 @@ write_tapeheader(outfd, file)
     dumpfile_t *file;
 {
     char buffer[TAPE_BLOCK_BYTES];
+    int written;
 
     write_header(buffer, file, sizeof(buffer));
-    write(outfd, buffer, sizeof(buffer));
-    return (0);
+
+    written = write(outfd, buffer, sizeof(buffer));
+    if(written == sizeof(buffer)) return 0;
+    if(written < 0) return written;
+    errno = ENOSPC;
+    return -1;
 }
 
 static int

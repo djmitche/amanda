@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.4 2000/10/29 19:05:15 martinea Exp $
+/* $Id: chunker.c,v 1.5 2001/01/05 00:48:50 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -74,7 +74,6 @@ struct databuf {
     char buf[DATABUF_SIZE];
     char *dataptr;		/* data buffer markers */
     int spaceleft;
-    pid_t compresspid;		/* valid if fd is pipe to compress */
 };
 
 int interactive;
@@ -221,10 +220,10 @@ main(main_argc, main_argv)
 	     */
 	    infd = startup_chunker(filename, use, chunksize, &db);
 	    if (infd < 0) {
-		q = squotef("[chunker startup failed: %s]",
+		/*q = squotef("[chunker startup failed: %s]",
 		    strerror(errno));
 		putresult("FAILED %s %s\n", handle, q);
-		amfree(q);
+		amfree(q);*/
 		break;
 	    }
 	    if(do_chunk(infd, &db)) {
@@ -312,13 +311,21 @@ startup_chunker(filename, use, chunksize, db)
 
     tmp_filename = vstralloc(filename, ".tmp", NULL);
     if ((outfd = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600)) < 0) {
-	putresult("FAILED %s [holding file \"%s\": %s]", handle,
-	    tmp_filename, strerror(errno));
+	if(errno == ENOSPC) {
+	    putresult("NO-ROOM %s %lu", handle, use);
+	    putresult("TRY-AGAIN %s [holding file \"%s\": %s]", handle,
+		      tmp_filename, strerror(errno));
+	}
+	else {
+	    putresult("FAILED %s [holding file \"%s\": %s]", handle,
+		      tmp_filename, strerror(errno));
+	}
 	amfree(tmp_filename);
-	exit(1);
+	return(-1);
     }
     amfree(tmp_filename);
     databuf_init(db, outfd, filename, use, chunksize);
+    db->filename_seq++;
     return infd;
 }
 
@@ -340,7 +347,17 @@ do_chunk(infd, db)
     if ((nread = read(infd, buf, sizeof(buf))) <= 0)
 	exit(1);
     parse_file_header(buf, &file, nread);
-    databuf_write(db, buf, nread);
+    /*databuf_write(db, buf, nread);*/
+    if(write_tapeheader(db->fd, &file)) {
+	int save_errno = errno;
+	errstr = squotef("write_tapeheader file \"%s\": %s",
+			 db->filename, strerror(errno));
+	if(save_errno == ENOSPC) {
+	    putresult("NO-ROOM %s %lu\n", handle, 
+		      db->use+db->split_size-dumpsize);
+	}
+	return (-1);
+    }
     headersize = dumpsize;
 
     /*
@@ -421,7 +438,6 @@ databuf_init(db, fd, filename, use, chunk_size)
     long use;
     long chunk_size;
 {
-
     db->fd = fd;
     db->filename = stralloc(filename);
     db->filename_seq = 0;
@@ -430,8 +446,6 @@ databuf_init(db, fd, filename, use, chunk_size)
     db->use = (use>db->split_size) ? use - db->split_size : 0;
     db->dataptr = db->buf;
     db->spaceleft = sizeof(db->buf);
-    db->compresspid = -1;
-
 }
 
 
@@ -473,7 +487,6 @@ databuf_flush(db)
 {
     struct cmdargs cmdargs;
     int fd, written, off;
-    char *tmp_filename;
 
     /*
      * If there's no data, do nothing.
@@ -492,7 +505,7 @@ databuf_flush(db)
     /*
      * See if we need to split this file.
      */
-    if (db->split_size > 0 && dumpsize >= db->split_size) {
+    while (db->split_size > 0 && dumpsize >= db->split_size) {
 	int newfile = 1;
 	if( db->use == 0 ) { /* no more space on this disk. request some more */
 	    cmd_t cmd;
@@ -515,7 +528,7 @@ databuf_flush(db)
 		} else { /* different disk -> use new file */
 		    db->filename = newstralloc(db->filename, cmdargs.argv[2]);
 		}
-	    } else {
+	    } else { /* test ABORT */
 		abort_pending = 1;
 		errstr = newstralloc(errstr, "ERROR");
 		putresult("ABORT-FINISHED %s\n", handle);
@@ -525,69 +538,99 @@ databuf_flush(db)
 	}
 
 	if(newfile ) { /* use another file */
-	    /*
-	     * First, update the header of the current file to point
-	     * to the next chunk, and then close it.
-	     */
-	    fd = db->fd;
-	    if (lseek(fd, (off_t)0, SEEK_SET) < 0) {
-	        errstr = squotef("lseek holding file: %s", strerror(errno));
-	        return (-1);
-	    }
-	    snprintf(file.cont_filename, sizeof(file.cont_filename),
-	        "%s.%d", db->filename, ++db->filename_seq);
-	    write_tapeheader(fd, &file);
-	    aclose(fd);
+	    char new_filename[1000];
+	    char *tmp_filename;
+	    int newfd;
 
 	    /*
-	     * Now, open the new chunk file, and give it a new header
+	     * First, open the new chunk file, and give it a new header
 	     * that has no cont_filename pointer.
 	     */
-	    tmp_filename = vstralloc(file.cont_filename, ".tmp", NULL);
-	    if ((fd = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600)) == -1) {
+	    snprintf(new_filename, sizeof(file.cont_filename),
+		     "%s.%d", db->filename, db->filename_seq);
+
+	    tmp_filename = vstralloc(new_filename, ".tmp", NULL);
+	    if ((newfd = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600)) == -1) {
+		int save_errno = errno;
 	        errstr = squotef("holding file \"%s\": %s",
 			    tmp_filename, strerror(errno));
 	        amfree(tmp_filename);
-	        return (-1);
-	    }
-	    file.type = F_CONT_DUMPFILE;
-	    file.cont_filename[0] = '\0';
-	    write_tapeheader(fd, &file);
-	    dumpsize += TAPE_BLOCK_SIZE;
-	    filesize = TAPE_BLOCK_SIZE;
-	    /*
-	     * XXX this is bogus - this is being updated in the chunker process
-	     * and therefore will never be seen by the dumper.
-	     */
-	    headersize += TAPE_BLOCK_SIZE;
-	    amfree(tmp_filename);
-
-	    /*
-	     * Now put give the new file the old file's descriptor
-	     */
-	    if (fd != db->fd) {
-	        if (dup2(fd, db->fd) == -1) {
-		    errstr = squotef("can't dup2: %s", strerror(errno));
-		    return (-1);
-	        }
-	        aclose(fd);
-	    }
-
-	    /*
-	     * Update when we need to chunk again
-	     */
-	    if(newfile && db->use == TAPE_BLOCK_SIZE) { /* header + data */
-		/* use one more block than allowed */
-		db->split_size += 2 * TAPE_BLOCK_SIZE;
-		db->use = 0;
+		if(save_errno == ENOSPC) {
+		    db->split_size = dumpsize;
+		    db->use = 0;
+		    putresult("NO-ROOM %s %lu\n", handle, 
+			      db->use+db->split_size-dumpsize);
+		}
+	        else return (-1);
 	    }
 	    else {
-	    	db->split_size += (db->chunk_size>db->use)?db->use:db->chunk_size;
-	    	db->use = (db->chunk_size>db->use)?0:db->use-db->chunk_size;
+		int save_type = file.type;
+		file.type = F_CONT_DUMPFILE;
+		file.cont_filename[0] = '\0';
+		if(write_tapeheader(newfd, &file)) {
+		    int save_errno = errno;
+		    errstr = squotef("write_tapeheader file \"%s\": %s",
+				     tmp_filename, strerror(errno));
+		    amfree(tmp_filename);
+		    if(save_errno == ENOSPC) {
+			db->split_size = dumpsize;
+			db->use = 0;
+			putresult("NO-ROOM %s %lu\n", handle, 
+			          db->use+db->split_size-dumpsize);
+		    }
+	            else return (-1);
+		}
+		else {
+		    amfree(tmp_filename);
+		    dumpsize += TAPE_BLOCK_SIZE;
+		    filesize = TAPE_BLOCK_SIZE;
+		    headersize += TAPE_BLOCK_SIZE;
+
+		    db->filename_seq++;
+		    /*
+		     * Now, update the header of the current file to point
+		     * to the next chunk, and then close it.
+		     */
+
+		    fd = db->fd;
+		    if (lseek(fd, (off_t)0, SEEK_SET) < 0) {
+		        errstr = squotef("lseek holding file: %s", strerror(errno));
+		        return (-1);
+		    }
+
+		    file.type = save_type;
+		    strncpy(file.cont_filename, new_filename, sizeof(file.cont_filename));
+		    file.cont_filename[sizeof(file.cont_filename)] = '\0';
+		    write_tapeheader(fd, &file);
+		    aclose(fd);
+
+		    /*
+		     * Now put give the new file the old file's descriptor
+		     */
+		    if (newfd != db->fd) {
+		        if (dup2(newfd, db->fd) == -1) {
+			    errstr = squotef("can't dup2: %s", strerror(errno));
+			    return (-1);
+		        }
+		        aclose(fd);
+		    }
+
+		    /*
+		     * Update when we need to chunk again
+		     */
+		    if(newfile && db->use == TAPE_BLOCK_SIZE) { /* header + data */
+			/* use one more block than allowed */
+			db->split_size += 2 * TAPE_BLOCK_SIZE;
+			db->use = 0;
+		    }
+		    else {
+		    	db->split_size += (db->chunk_size>db->use)?db->use:db->chunk_size;
+		    	db->use = (db->chunk_size>db->use)?0:db->use-db->chunk_size;
+		    }
+		}
 	    }
 	}
     }
-
     /*
      * Write out the buffer
      */
@@ -625,6 +668,7 @@ databuf_flush(db)
     db->dataptr = db->buf;
     dumpsize += (sizeof(db->buf) / 1024);
     filesize += (sizeof(db->buf)/1024);
+
     return (0);
 }
 
@@ -638,10 +682,15 @@ write_tapeheader(outfd, file)
     dumpfile_t *file;
 {
     char buffer[TAPE_BLOCK_BYTES];
+    int written;
 
     write_header(buffer, file, sizeof(buffer));
-    write(outfd, buffer, sizeof(buffer));
-    return (0);
+
+    written = write(outfd, buffer, sizeof(buffer));
+    if(written == sizeof(buffer)) return 0;
+    if(written < 0) return written;
+    errno = ENOSPC;
+    return -1;
 }
 
 

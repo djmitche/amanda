@@ -1,3 +1,11 @@
+2001-01-04  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/driver.c (continue_dumps): Don't reduce est_size if
+	  it is already larger than holding space allocated.
+	* server-src/dumper.c: Remove all code for FILE_DUMP command.
+	* server-src/chunker.c: Better handling of ENOSPC from
+	  write_tapeheader().
+
 2001-01-04 John R. Jackson <jrj@purdue.edu>
 
 	* server-src/conffile.c (main): Fix conffile test program so it builds
