@@ -24,13 +24,13 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.46 1998/12/09 21:37:38 oliva Exp $
+ * $Id: sendbackup.c,v 1.47 1999/04/09 20:41:25 kashmir Exp $
  *
  * common code for the sendbackup-* programs.
  */
 
 #include "sendbackup.h"
-#include "stream.h"
+#include "amandad.h"
 #include "arglist.h"
 #include "getfsent.h"
 #include "../tape-src/tapeio.h"
@@ -47,9 +47,9 @@ int encpid = -1;
 int indexpid = -1;
 char *errorstr = NULL;
 
-int data_socket, data_port, dataf;
-int mesg_socket, mesg_port, mesgf;
-int index_socket, index_port, indexf;
+int datafd;
+int mesgfd;
+int indexfd;
 
 char *efile = NULL;
 char *estr = NULL;
@@ -57,12 +57,6 @@ int compress, no_record, bsd_auth;
 int createindex;
 #define COMPR_FAST 1
 #define COMPR_BEST 2
-
-#ifdef KRB4_SECURITY
-#include "sendbackup-krb4.h"
-#else					/* I'd tell you what this does */
-#define NAUGHTY_BITS			/* but then I'd have to kill you */
-#endif
 
 long dump_size = -1;
 
@@ -143,10 +137,6 @@ char *disk;
 
     no_record = strstr(str, "no-record") != NULL;
     bsd_auth = strstr(str, "bsd-auth") != NULL;
-#ifdef KRB4_SECURITY
-    krb4_auth = strstr(str, "krb4-auth") != NULL;
-    kencrypt = strstr(str, "kencrypt") != NULL;
-#endif
     createindex = strstr(str, "index") != NULL;
 }
 
@@ -156,7 +146,6 @@ char *optionstr()
     char *compress_opt = "";
     char *record_opt = "";
     char *bsd_opt = "";
-    char *krb4_opt = "";
     char *kencrypt_opt = "";
     char *index_opt = "";
 
@@ -166,10 +155,6 @@ char *optionstr()
 	compress_opt = "compress-fast;";
     if(no_record) record_opt = "no-record;";
     if(bsd_auth) bsd_opt = "bsd-auth;";
-#ifdef KRB4_SECURITY
-    if(krb4_auth) krb4_opt = "krb4-auth;";
-    if(kencrypt) kencrypt_opt = "kencrypt;";
-#endif
     if(createindex) index_opt = "index;";
 
     optstr = newvstralloc(optstr,
@@ -177,7 +162,6 @@ char *optionstr()
 			  compress_opt,
 			  record_opt,
 			  bsd_opt,
-			  krb4_opt,
 			  kencrypt_opt,
 			  index_opt,
 			  estr ? estr : "",
@@ -209,11 +193,13 @@ char **argv;
 	 * that would cause an open we do to get a very high file
 	 * descriptor, which in turn might be used as an index into
 	 * an array (e.g. an fd_set).
+	 *
+	 * Skip over the file descriptors that are passed to us from
+	 * amandad.
 	 */
-#ifdef KRB4_SECURITY
-	if (fd != KEY_PIPE)	/* XXX interface needs to be fixed */
-#endif
-		close(fd);
+	if (fd == DATA_FD_OFFSET)
+	    fd += DATA_FD_COUNT;
+	close(fd);
     }
 
     set_pname("sendbackup");
@@ -352,69 +338,33 @@ char **argv;
 
     parse_options(options, disk);
 
-#ifdef KRB4_SECURITY
-    if(krb4_auth) {
-	if(read(KEY_PIPE, session_key, sizeof session_key) 
-	   != sizeof session_key) {
-	  dbprintf(("ERROR [%s: could not read session key]\n", argv[0]));
-	  error("ERROR [%s: could not read session key]\n", argv[0]);
-	}
-    }
-#endif
-
     if(!interactive) {
-      data_socket = stream_server(&data_port, DATABUF_SIZE*2, DATABUF_SIZE*2);
-      mesg_socket = stream_server(&mesg_port, DEFAULT_SIZE, DEFAULT_SIZE);
+	datafd = DATA_FD_OFFSET + 0;
+	mesgfd = DATA_FD_OFFSET + 1;
+	indexfd = DATA_FD_OFFSET + 2;
     }
-    if (!interactive && createindex) {
-      index_socket = stream_server(&index_port, DEFAULT_SIZE, DEFAULT_SIZE);
-    } else {
-      index_port = -1;
-    }
+    if (!createindex)
+	indexfd = -1;
 
     printf("CONNECT DATA %d MESG %d INDEX %d\n",
-	   data_port, mesg_port, index_port);
+	   datafd, mesgfd, indexfd);
     printf("OPTIONS %s\n", optionstr());
     freopen("/dev/null","w",stdout);
 
-    if (createindex)
-      dbprintf(("  waiting for connect on %d, then %d, then %d\n",
-		data_port, mesg_port, index_port));
-    else
-      dbprintf(("  waiting for connect on %d, then %d\n",
-		data_port, mesg_port));
-
     if(interactive) {
-      if((dataf = open("/dev/null", O_RDWR)) < 0) {
+      if((datafd = open("/dev/null", O_RDWR)) < 0) {
 	s = strerror(errno);
 	dbprintf(("ERROR [%s: open of /dev/null for debug data stream: %s]\n",
 		  argv[0], s));
 	error("ERROR [%s: open of /dev/null for debug data stream: %s]\n",
 		  argv[0], s);
       }
-      mesgf = 2;
-    } else {
-      dataf = stream_accept(data_socket, TIMEOUT, DEFAULT_SIZE, DEFAULT_SIZE);
-      if(dataf == -1) {
-        dbprintf(("%s: timeout on data port %d\n", argv[0], data_port));
-      }
-      mesgf = stream_accept(mesg_socket, TIMEOUT, DEFAULT_SIZE, DEFAULT_SIZE);
-      if(mesgf == -1) {
-        dbprintf(("%s: timeout on mesg port %d\n", argv[0], mesg_port));
-      }
-    }
-    if(interactive) {
-      indexf = 1;
-    } else if (createindex) {
-      indexf = stream_accept(index_socket,
-			     TIMEOUT, DEFAULT_SIZE, DEFAULT_SIZE);
-      if (indexf == -1) {
-	dbprintf(("%s: timeout on index port %d\n", argv[0], index_port));
-      }
+      mesgfd = 2;
+      indexfd = 1;
     }
 
     if(!interactive) {
-      if(dataf == -1 || mesgf == -1 || (createindex && indexf == -1)) {
+      if(datafd == -1 || mesgfd == -1 || (createindex && indexfd == -1)) {
         dbclose();
         exit(1);
       }
@@ -422,30 +372,11 @@ char **argv;
 
     dbprintf(("  got all connections\n"));
 
-#ifdef KRB4_SECURITY
-    if(!interactive) {
-      if (krb4_auth) {
-        if(kerberos_handshake(dataf, session_key) == 0) {
-	    dbprintf(("kerberos_handshake on data socket failed\n"));
-	    dbclose();
-	    exit(1);
-        }
-
-        if(kerberos_handshake(mesgf, session_key) == 0) {
-	    dbprintf(("kerberos_handshake on mesg socket failed\n"));
-	    dbclose();
-	    exit(1);
-        }
-
-        dbprintf(("%s: kerberos handshakes succeeded!\n", argv[0]));
-      }
-    }
-#endif
-
     if(!interactive) {
       /* redirect stderr */
-      if(dup2(mesgf, 2) == -1) {
-	  dbprintf(("error redirecting stderr: %s\n", strerror(errno)));
+      if(dup2(mesgfd, 2) == -1) {
+	  dbprintf(("error redirecting stderr to fd %d: %s\n", mesgfd,
+	      strerror(errno)));
 	  dbclose();
 	  exit(1);
       }
@@ -457,9 +388,11 @@ char **argv;
       error("error [opening mesg pipe: %s]", s);
     }
 
-    program->start_backup(host, disk, level, dumpdate, dataf, mesgpipe[1],
-			  indexf);
+    program->start_backup(host, disk, level, dumpdate, datafd, mesgpipe[1],
+			  indexfd);
+dbprintf(("started backup\n"));
     parse_backup_messages(mesgpipe[0]);
+dbprintf(("parsed backup messages\n"));
 
     dbclose();
 
@@ -627,16 +560,18 @@ va_dcl
 	if(dup2(inpipe[0], 0) == -1) {
 	  e = strerror(errno);
 	  dbprintf(("error [spawn %s: dup2 in: %s]\n", prog, e));
-	  error("error [spawn %s: dup2 in: %s]", prog, e);
+	  error("error [spawn %s: dup2(%d, in): %s]", prog, inpipe[0], e);
 	}
 	if(dup2(stdoutfd, 1) == -1) {
 	  e = strerror(errno);
-	  dbprintf(("error [spawn %s: dup2 out: %s]\n", prog, e));
+	  dbprintf(("error [spawn %s: dup2(%d, out): %s]\n", prog,
+	      stdoutfd, e));
 	  error("error [spawn %s: dup2 out: %s]", prog, e);
 	}
 	if(dup2(stderrfd, 2) == -1) {
 	  e = strerror(errno);
-	  dbprintf(("error [spawn %s: dup2 err: %s]\n", prog, e));
+	  dbprintf(("error [spawn %s: dup2(%d, err): %s]\n", prog,
+	      stderrfd, e));
 	  error("error [spawn %s: dup2 err: %s]", prog, e);
 	}
 
@@ -1017,7 +952,3 @@ extern backup_program_t dump_program, gnutar_program;
 backup_program_t *programs[] = {
   &dump_program, &gnutar_program, NULL
 };
-
-#ifdef KRB4_SECURITY
-#include "sendbackup-krb4.c"
-#endif

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.67 1999/03/17 04:25:22 oliva Exp $
+ * $Id: sendbackup-dump.c,v 1.68 1999/04/09 20:41:28 kashmir Exp $
  *
  * send backup data using BSD dump
  */
@@ -32,12 +32,6 @@
 #include "sendbackup.h"
 #include "getfsent.h"
 #include "version.h"
-
-#ifdef KRB4_SECURITY
-#include "sendbackup-krb4.h"
-#else					/* I'd tell you what this does */
-#define NAUGHTY_BITS			/* but then I'd have to kill you */
-#endif
 
 #define LEAF_AND_DIRS "sed -e \'\ns/^leaf[ \t]*[0-9]*[ \t]*\\.//\nt\n/^dir[ \t]/ {\ns/^dir[ \t]*[0-9]*[ \t]*\\.//\ns%$%/%\nt\n}\nd\n\'"
 
@@ -148,8 +142,6 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 
     fprintf(stderr, "%s: start [%s:%s level %d]\n",
 	    get_pname(), host, disk, level);
-
-    NAUGHTY_BITS;
 
     if(compress)
 	comppid = pipespawn(COMPRESS_PATH, &dumpout, dataf, mesgf,

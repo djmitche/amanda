@@ -1,5 +1,15 @@
 1999-04-09  Mike Grupenhoff <kashmir@munge.com>
 
+	* client-src/sendbackup.c: security changes:
+	remove krb4 code and NAUGHTY_BITS macros.
+	(parse_options): don't look for krb4 options
+	(main): don't close pipes that were handed to us from amandad.
+	Don't open stream directly - just use the pipes given to us.
+	* client-src/sendbackup-dump.c, client-src/sendbackup-gnutar.c:
+	Remove krb4 code and NAUGHTY_BITS macros.
+
+1999-04-09  Mike Grupenhoff <kashmir@munge.com>
+
 	* client-src/amandad.h: new file describing the pipes between
 	amandad and children.
 	* client-src/amandad.c: rewrite for security changes.  Can

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.63 1999/03/06 09:09:41 th Exp $
+ * $Id: sendbackup-gnutar.c,v 1.64 1999/04/09 20:41:30 kashmir Exp $
  *
  * send backup data using GNU tar
  */
@@ -38,13 +38,6 @@
 #ifdef SAMBA_CLIENT
 #include "findpass.h"
 #endif
-
-#ifdef KRB4_SECURITY
-#include "sendbackup-krb4.h"
-#else					/* I'd tell you what this does */
-#define NAUGHTY_BITS			/* but then I'd have to kill you */
-#endif
-
 
 static regex_t re_table[] = {
   /* tar prints the size in bytes */
@@ -138,8 +131,6 @@ char *dumpdate;
 
     fprintf(stderr, "%s: start [%s:%s level %d]\n",
 	    get_pname(), host, disk, level);
-
-    NAUGHTY_BITS;
 
     if(compress) {
 #if defined(COMPRESS_BEST_OPT) && defined(COMPRESS_FAST_OPT)
