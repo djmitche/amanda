@@ -1960,12 +1960,6 @@ AC_SUBST(MTX)
 AC_SUBST(ac_n)
 AC_SUBST(ac_c)
 
-dnl kerberos bits that need to be linked into common-src/libamanda.a
-AC_SUBST(KRB4COMMON_C)
-AC_SUBST(KRB4COMMON_O)
-AC_SUBST(KRB4CLIENT_C)
-AC_SUBST(KRB4CLIENT_O)
-
 if ${NO_SERVER_MODE-false}; then
     BUILD_CHANGER_PROGS_LIBEXEC=
     BUILD_CHANGER_SCRIPTS_LIBEXEC=
