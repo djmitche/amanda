@@ -1,3 +1,7 @@
+1998-12-01  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/arglist.h: implement arglist_function3()
+
 1998-11-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/driver.c (start_some_dumps): In degraded mode,
