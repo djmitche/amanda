@@ -81,7 +81,7 @@ reset() {
 
 # load #
 
-load() {
+loadslot() {
 	$MT $MTF $tape rewind
 	used=`$MT $MTF $tape status 2>&1 | $EGREP "ONLINE|READY"`
 	echo "     -> loaded $used" >> /tmp/changer.debug
@@ -94,7 +94,7 @@ load() {
 		;;
 	prev)
 		load=`expr $used - 1`
-		[ $load eq 0] && load=1
+		[ $load eq 0 ] && load=1
 		;;
 	first)
 		load=1
@@ -171,7 +171,7 @@ while [ $# -ge 1 ];do
 	case $1 in
 	-slot)
 		shift
-		load $*
+		loadslot $*
 		;;
 	-info)
 		shift

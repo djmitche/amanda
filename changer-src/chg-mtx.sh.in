@@ -24,14 +24,15 @@ fi
 
 myname=$0
 tape=`getconf$SUF tapedev`
+TAPE=$tape; export TAPE # for mtx command
 MT=@MT@
 MTF=@MT_FILE_FLAG@
 MTX=@MTX@
 DD=@DD@
+firstlost=1
 lastslot=5
 # counted from 1 !!!
-cleanslot=5
-ecleanslot=6
+cleanslot=6
 
 changerfile=`getconf$SUF changerfile`
 
@@ -70,37 +71,40 @@ reset() {
 }
 #
 #
-load() {
+loadslot() {
   used=`$MTX -s | sed -n 's/Drive: No tape Loaded/-1/p;s/Drive: tape \(.\) loaded/\1/p'`
   echo "     -> loaded $used" >> /tmp/changer.debug
   case $1 in
     current)
 	     if [ $used -lt 0 ];then
 	       $MTX -l 1
-	       echo "0 $tape"
+	       echo "1 $tape"
 	       exit 0
 	     else 
-	       echo "`expr $used - 1 ` $tape"
+	       echo "$used $tape"
 	       exit 0
 	     fi
 	     ;;
     next)
 	  load=`expr $used + 1`
-	  [ $load -gt $lastslot ] && load=1
+	  [ $load -gt $lastslot ] && load=$firstslot
 	  ;;
     prev)
 	  load=`expr $used - 1`
-	  [ $load eq 0] && load=1
+	  [ $load -lt $firstslot ] && load=$lastslot
 	  ;;
     first)
-	   load=1
-	   ;;
+	  load=$firstslot
+	  ;;
     last)
 	  load=$lastslot
 	  ;;
-    [0-5])
-	   load=`expr $1 + 1`
-	   ;;
+    [$firstslot-$lastslot])
+	  load=$1
+	  ;;
+    clean)
+	  load=$cleanslot
+	  ;;
     *)
        echo "0 illegal request"
        exit 1
@@ -108,17 +112,17 @@ load() {
     esac
 #
     if [ $load = $used ]; then
-        echo "`expr $used - 1 ` $tape"
+        echo "$used $tape"
         exit 0
     fi
 
-    if [ $load = $ecleanslot ]; then
+    if [ $load = $cleanslot ]; then
 	expr $cleancount + 1 > $cleanfile
 	echo 0 > $accessfile
     else
 	expr $accesscount + 1 > $accessfile
 	if [ $accesscount -gt 9 ]; then
-		$myname -slot $cleanslot >/dev/null
+		$myname -slot clean >/dev/null
 		used=0
 	fi
     fi	
@@ -144,7 +148,7 @@ load() {
       echo "     -> rew $load" >> /tmp/changer.debug
       $MT $MTF $tape rew
       $DD if=$tape count=1 >> /tmp/changer.debug 2>&1
-      echo "`expr $load - 1` $tape"
+      echo "$load $tape"
       exit 0
     else
       echo " $res"
@@ -158,7 +162,7 @@ info() {
   if [ $used -lt 0 ];then
     echo "0 $lastslot 1"
   else
-    echo "`expr $used - 1 ` $lastslot 1"
+    echo "$used $lastslot 1"
   fi
   exit 0
 }
@@ -168,7 +172,7 @@ while [ $# -ge 1 ];do
   case $1 in
     -slot)
 	   shift
-	   load $*
+	   loadslot $*
 	   ;;
     -info)
 	   shift
