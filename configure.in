@@ -727,10 +727,14 @@ if test "x" = "x$CFLAGS"; then
     CFLAGS=-g
 fi
 OLD_CFLAGS="$CFLAGS"
+AMANDA_CFLAGS="$AMANDA_CFLAGS $KRB4INCLUDES"
+AMANDA_CPPFLAGS="$AMANDA_CPPFLAGS $KRB4INCLUDES"
+AMANDA_LDFLAGS="$AMANDA_LDFLAGS $KRB4INCLUDES"
 CFLAGS="$CFLAGS $AMANDA_CPPFLAGS $AMANDA_CFLAGS"
 CPPFLAGS="$CPPFLAGS $AMANDA_CPPFLAGS"
-LDFLAGS="$LDFLAGS $AMANDA_LDFLAGS"
+LDFLAGS="$LDFLAGS $AMANDA_LDFLAGS $KRB4LDFLAGS"
 AC_SUBST(AMANDA_CFLAGS)
+
 
 dnl Check for programs.
 AC_PATH_PROGS(AR,ar,,$LOCSYSPATH)
@@ -1323,6 +1327,10 @@ ICE_CHECK_DECL(select,sys/types.h sys/socket.h sys/select.h time.h sys/time.h)
 AMANDA_FUNC_SELECT_ARG_TYPE
 ICE_CHECK_DECL(sendto,sys/types.h sys/socket.h)
 
+dnl atexit() is prefered, sunos (maybe others?) define on_exit
+AC_CHECK_FUNCS(atexit)
+AC_CHECK_FUNCS(on_exit)
+
 dnl arguments for setpgrp or not
 AC_CHECK_FUNC(setpgrp,[AC_FUNC_SETPGRP])
 ICE_CHECK_DECL(setpgrp,sys/types.h unistd.h)
@@ -1710,6 +1718,7 @@ fi
 
 dnl restore the old CFLAGS
 CFLAGS="$OLD_CFLAGS"
+LIBS="$LIBS $KRB4LIBS"
 
 dnl extra substitution parameters
 AC_SUBST(MTX)
@@ -1721,7 +1730,6 @@ AC_SUBST(KRB4COMMON_C)
 AC_SUBST(KRB4COMMON_O)
 AC_SUBST(KRB4CLIENT_C)
 AC_SUBST(KRB4CLIENT_O)
-LIBS="$LIBS $KRB4LIBS"
 
 AC_OUTPUT( \
 	amplot/amcat.awk		amplot/amplot.sh		\

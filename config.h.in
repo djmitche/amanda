@@ -43,6 +43,12 @@
 /* Define if you have the vprintf function.  */
 #undef HAVE_VPRINTF
 
+/* Define if you have the atexit function. */
+#undef HAVE_ATEXIT
+
+/* Define if you have the on_exit function. */
+#define HAVE_ON_EXIT
+
 /* Define to `long' if <sys/types.h> doesn't define.  */
 #undef off_t
 
