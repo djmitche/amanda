@@ -600,7 +600,7 @@ degraded mode (incremental) backups will be performed to the holding disk.
 If you wish to also allow full backups in this case,
 you may reduce the amount of holding disk space reserved for incrementals.
 .TP
-.BS columspec string
+.BS columnspec string
 Specify the width of columns, reporter should use.
 .I String
 is a comma (',') seperated list of triples. Each triple consists

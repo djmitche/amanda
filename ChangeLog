@@ -1,5 +1,9 @@
 1999-09-01 John R. Jackson  <jrj@purdue.edu>
 
+	* man/amanda.8.in: typo in columnspec description.
+
+1999-09-01 John R. Jackson  <jrj@purdue.edu>
+
 	* common-src/dgram.h: expressions in #define should be protected by
 	  parenthesis.
 
