@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.13.2.3.2.15.2.7 2004/09/17 11:54:57 martinea Exp $
+ * $Id: amadmin.c,v 1.49.2.13.2.3.2.15.2.8 2004/11/19 13:21:49 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -77,6 +77,8 @@ void disklist_one P((disk_t *dp));
 static void check_dumpuser P((void));
 
 static char *conf_tapelist = NULL;
+static char *displayunit;
+static long int unitdivisor;
 
 int main(argc, argv)
 int argc;
@@ -152,6 +154,9 @@ char **argv;
 	error("could not open info db \"%s\"", conf_infofile);
     }
     amfree(conf_infofile);
+
+    displayunit = getconf_str(CNF_DISPLAYUNIT);
+    unitdivisor = getcont_unit_divisor();
 
     if(strcmp(argv[2],"force-bump") == 0) force_bump(argc, argv);
     else if(strcmp(argv[2],"force-no-bump") == 0) force_no_bump(argc, argv);
@@ -854,18 +859,18 @@ char **argv;
 	    continue;
 	}
 	sp[distinct].disks++;
-	sp[distinct].origsize += info.inf[0].size;
-	sp[distinct].outsize += info.inf[0].csize;
+	sp[distinct].origsize += info.inf[0].size/unitdivisor;
+	sp[distinct].outsize += info.inf[0].csize/unitdivisor;
 
 	sp[balance].disks++;
 	if(dp->dumpcycle == 0) {
-	    sp[balance].origsize += info.inf[0].size * runs_per_cycle;
-	    sp[balance].outsize += info.inf[0].csize * runs_per_cycle;
+	    sp[balance].origsize += (info.inf[0].size/unitdivisor) * runs_per_cycle;
+	    sp[balance].outsize += (info.inf[0].csize/unitdivisor) * runs_per_cycle;
 	}
 	else {
-	    sp[balance].origsize += info.inf[0].size *
+	    sp[balance].origsize += (info.inf[0].size/unitdivisor) *
 				    (conf_dumpcycle / dp->dumpcycle);
-	    sp[balance].outsize += info.inf[0].csize *
+	    sp[balance].outsize += (info.inf[0].csize/unitdivisor) *
 				   (conf_dumpcycle / dp->dumpcycle);
 	}
 
@@ -888,13 +893,13 @@ char **argv;
 	    }
 	    
 	    sp[seq].disks++;
-	    sp[seq].origsize += info.inf[0].size;
-	    sp[seq].outsize += info.inf[0].csize;
+	    sp[seq].origsize += info.inf[0].size/unitdivisor;
+	    sp[seq].outsize += info.inf[0].csize/unitdivisor;
 
 	    if(seq < later) {
 		sp[total].disks++;
-		sp[total].origsize += info.inf[0].size;
-		sp[total].outsize += info.inf[0].csize;
+		sp[total].origsize += info.inf[0].size/unitdivisor;
+		sp[total].outsize += info.inf[0].csize/unitdivisor;
 	    }
 	    
 	    /* See, if there's another run in this dumpcycle */
@@ -919,7 +924,8 @@ char **argv;
     }
 
     empty_day = 0;
-    printf("\n due-date  #fs    orig KB     out KB   balance\n");
+    printf("\n due-date  #fs    orig %cB     out %cB   balance\n",
+	   displayunit[0], displayunit[0]);
     printf("----------------------------------------------\n");
     for(seq = 0; seq < later; seq++) {
 	if(sp[seq].disks == 0 &&

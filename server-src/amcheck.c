@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.19.2.7.2.20.2.7 2004/11/16 13:58:40 martinea Exp $
+ * $Id: amcheck.c,v 1.50.2.19.2.7.2.20.2.8 2004/11/19 13:21:49 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -90,8 +90,8 @@ static unsigned long malloc_hist_2, malloc_size_2;
 
 static am_feature_t *our_features = NULL;
 static char *our_feature_string = NULL;
-char *displayunit;
-long int unitdivisor;
+static char *displayunit;
+static long int unitdivisor;
 
 int main(argc, argv)
 int argc;
