@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.25 1998/01/14 22:44:09 amcore Exp $
+ * $Id: selfcheck.c,v 1.26 1998/01/22 21:36:48 amcore Exp $
  *
  * do self-check and send back any error messages
  */
@@ -44,6 +44,8 @@ int need_samba=0;
 int need_rundump=0;
 int need_dump=0;
 int need_restore=0;
+int need_vdump=0;
+int need_vrestore=0;
 int need_xfsdump=0;
 int need_xfsrestore=0;
 int need_vxdump=0;
@@ -151,6 +153,8 @@ char **argv;
 	    need_rundump=1;
 	    need_dump=1;
 	    need_restore=1;
+	    need_vdump=1;
+	    need_vrestore=1;
 	    need_xfsdump=1;
 	    need_xfsrestore=1;
 	    need_vxdump=1;
@@ -198,12 +202,22 @@ char *program, *disk, *str;
 	need_rundump=1;
 #endif
 #ifndef AIX_BACKUP
-#ifdef OSF1_VDUMP
-	device = stralloc(amname_to_dirname(disk));
-#else
 	device = stralloc(amname_to_devname(disk));
-#endif
 
+#ifdef VDUMP
+#ifdef DUMP
+	if (strcmp(amname_to_fstype(device), "advfs") == 0)
+#else
+	if (1)
+#endif
+	{
+	    need_vdump=1;
+	    need_rundump=1;
+	    if (as_index)
+		need_vrestore=1;
+	}
+	else
+#endif /* VDUMP */
 #ifdef XFSDUMP
 #ifdef DUMP
 	if (strcmp(amname_to_fstype(device), "xfs") == 0)
@@ -306,10 +320,12 @@ int level;
 #endif
 	device = stralloc(amname_to_dirname(disk));
     } else {
-#ifdef OSF1_VDUMP
-        device = stralloc(amname_to_dirname(disk));
-#else
         device = stralloc(amname_to_devname(disk));
+#ifdef VDUMP
+#ifdef DUMP
+        if (strcmp(amname_to_fstype(device), "advfs") == 0)
+#endif
+	    device = newstralloc(device, amname_to_dirname(disk));
 #endif
     }
 
@@ -376,6 +392,16 @@ static void check_overall()
 	check_file(RESTORE, X_OK);
 #endif
 
+#ifdef VDUMP
+    if ( need_vdump )
+	check_file(VDUMP, X_OK);
+#endif
+
+#ifdef VRESTORE
+    if ( need_vrestore )
+	check_file(VRESTORE, X_OK);
+#endif
+
 #ifdef XFSDUMP
     if( need_xfsdump )
 	check_file(XFSDUMP, X_OK);
@@ -431,11 +457,11 @@ static void check_overall()
 	check_file(COMPRESS_PATH, X_OK);
 #if defined(DUMP) || defined(XFSDUMP)
     if( need_dump || need_xfsdump )
-#ifdef OSF1_VDUMP
-	check_file("/etc/vdumpdates", R_OK|W_OK);
-#else
 	check_file("/etc/dumpdates", R_OK|W_OK);
 #endif
+#ifdef VDUMP
+    if (need_vdump)
+	check_file("/etc/vdumpdates", R_OK|W_OK);
 #endif
     check_file("/dev/null", R_OK|W_OK);
     check_space("/tmp", 64);		/* for amandad i/o */

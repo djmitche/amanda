@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: genversion.c,v 1.13 1998/01/06 02:45:12 george Exp $
+ * $Id: genversion.c,v 1.14 1998/01/22 21:36:54 amcore Exp $
  *
  * dump the current Amanda version info
  */
@@ -133,6 +133,14 @@ int main()
     prvar(" RESTORE", RESTORE);
 #endif
 
+#ifdef VDUMP
+    prvar(" VDUMP", VDUMP);
+#endif
+
+#ifdef VRESTORE
+    prvar(" VRESTORE", VRESTORE);
+#endif
+
 #ifdef XFSDUMP
     prvar(" XFSDUMP", XFSDUMP);
 #endif
@@ -227,10 +235,6 @@ int main()
 #endif
 #if !defined(USE_POSIX_FCNTL) && !defined(USE_FLOCK) && !defined(USE_LOCK) && !defined(USE_LNLOCK)
     prstr(" LOCKING=**NONE**");
-#endif
-
-#ifdef OSF1_VDUMP
-    prstr(" OSF1_VDUMP");
 #endif
 
 #ifdef STATFS_BSD

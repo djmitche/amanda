@@ -1,5 +1,7 @@
 Version 2.4.0
 
+	use vdump to dump advfs filesystems only.  -oliva
+
 	chg-multi updates and bugfixes.
 	-Liudvikas Bukys <bukys@cs.rochester.edu>
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.47 1998/01/22 15:00:30 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.48 1998/01/22 21:36:50 amcore Exp $
  *
  * send backup data using BSD dump
  */
@@ -111,7 +111,7 @@ static regex_t re_table[] = {
   { DMP_NORMAL, "^  VXDUMP:" },                                 /* Sinix */
   { DMP_NORMAL, "^  UFSDUMP:" },                                /* Sinix */
 
-#ifdef OSF1_VDUMP	/* this is for OSF/1 3.2's vdump for advfs */
+#ifdef VDUMP	/* this is for OSF/1 3.2's vdump for advfs */
   { DMP_NORMAL, "^The -s option is ignored"},			/* OSF/1 */
   { DMP_NORMAL, "^path"},					/* OSF/1 */
   { DMP_NORMAL, "^dev/fset"},					/* OSF/1 */
@@ -163,7 +163,7 @@ char *dumpdate;
     }
 
     /* invoke dump */
-#ifdef OSF1_VDUMP
+#ifdef VDUMP
     device = stralloc(amname_to_dirname(disk));
 #else
     device = stralloc(amname_to_devname(disk));
@@ -260,23 +260,24 @@ char *dumpdate;
     else
 #endif							/* } */
 
+#ifdef VDUMP						/* { */
+#ifdef DUMP
+    if (strcmp(amname_to_fstype(device), "advfs") == 0)
+#else
+    if (1)
+#endif
     {
-	char *bs;
-
-#ifdef OSF1_VDUMP
-	bs = "b";
-#else
-	bs = "s";
+        char *progname = cmd = newvstralloc(cmd, libexecdir, "/", "rundump",
+					    versionsuffix(), NULL);
+	program->backup_name  = VDUMP;
+#ifndef VRESTORE
+#define VRESTORE "vrestore"
 #endif
+	program->restore_name = VRESTORE;
 
-	dumpkeys = vstralloc(level_str, no_record ? "" : "u", bs, "f", NULL);
+	dumpkeys = vstralloc(level_str, no_record ? "" : "u", "b", "f", NULL);
 
-	indexcmd = vstralloc(
-#ifdef RESTORE
-			     RESTORE,
-#else
-			     "restore",
-#endif
+	indexcmd = vstralloc(VRESTORE,
 			     " -tvf", " -",
 			     " 2>/dev/null",
 			     " | ",
@@ -288,11 +289,33 @@ char *dumpdate;
 
 	dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf, 
 			    "dump", dumpkeys,
-#ifdef OSF1_VDUMP
 			    "60",
-#else
-			    "1048576",
+			    "-", device,
+			    (char *)0);
+    }
+    else
+#endif							/* } */
+
+    {
+#ifndef RESTORE
+#define RESTORE "restore"
 #endif
+
+	dumpkeys = vstralloc(level_str, no_record ? "" : "u", "s", "f", NULL);
+
+	indexcmd = vstralloc(RESTORE,
+			     " -tvf", " -",
+			     " 2>/dev/null",
+			     " | ",
+			     LEAF_AND_DIRS,
+			     NULL);
+	write_tapeheader();
+
+	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
+
+	dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf, 
+			    "dump", dumpkeys,
+			    "1048576",
 			    "-", device,
 			    (char *)0);
     }
@@ -300,12 +323,7 @@ char *dumpdate;
     /* AIX backup program */
     dumpkeys = vstralloc("-", level_str, no_record ? "" : "u", "f", NULL);
 
-    indexcmd = vstralloc(
-#ifdef RESTORE
-			 RESTORE,
-#else
-			 "restore",
-#endif
+    indexcmd = vstralloc(RESTORE,
 			 " -B",
 			 " -tvf", " -",
 			 " 2>/dev/null",
@@ -348,11 +366,7 @@ backup_program_t dump_program = {
   "dump"
 #endif
   ,
-#ifdef RESTORE
   RESTORE
-#else
-  "restore"
-#endif
   ,
   re_table, start_backup, end_backup
 };

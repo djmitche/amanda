@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.61 1998/01/20 06:00:30 amcore Exp $
+ * $Id: sendsize.c,v 1.62 1998/01/22 21:36:51 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -550,11 +550,7 @@ int level;
 
     ap_snprintf(level_str, sizeof(level_str), "%d", level);
 
-#ifdef OSF1_VDUMP
-    device = stralloc(amname_to_dirname(disk));
-#else
     device = stralloc(amname_to_devname(disk));
-#endif
 
     cmd = vstralloc(libexecdir, "/", "rundump", versionsuffix(), NULL);
 
@@ -598,6 +594,21 @@ int level;
     }
     else
 #endif							/* } */
+#ifdef VDUMP						/* { */
+#ifdef DUMP						/* { */
+    if (strcmp(amname_to_fstype(device), "advfs") == 0)
+#else							/* } { */
+    if (1)
+#endif							/* } */
+    {
+        device = newstralloc(device, amname_to_dirname(disk));
+        char *name = " (vdump)";
+	dumpkeys = vstralloc(level_str, "b", "f", NULL);
+	dbprintf(("%s: running \"%s%s %s 60 - %s\"\n",
+		  pname, cmd, name, dumpkeys, device));
+    }
+    else
+#endif							/* } */
 #ifdef DUMP						/* { */
     if (1) {
 	char *name = NULL;
@@ -624,21 +635,10 @@ int level;
 #  else							/* } { */
 			     "",
 #  endif						/* } */
-#  ifdef OSF1_VDUMP					/* { */
-			     "b",
-#  else							/* } { */
-			     "s",
-#  endif						/* } */
-			     "f",
-			     NULL);
+			     "s", "f", NULL);
 
-#  ifdef OSF1_VDUMP					/* { */
-	dbprintf(("%s: running \"%s%s %s 60 - %s\"\n",
-		  pname, cmd, name, dumpkeys, device));
-#  else							/* } { */
 	dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n",
 		  pname, cmd, name, dumpkeys, device));
-#  endif						/* } */
 # endif							/* } */
 	afree(name);
     }
@@ -680,17 +680,18 @@ int level;
 		   safe_env());
 	else
 #endif
+#ifdef VDUMP
+	if (strcmp(amname_to_fstype(device), "advfs") == 0)
+	    execle(cmd, "vdump", dumpkeys, "60", "-", device, (char *)0,
+		   safe_env());
+	else
+#endif
 #ifdef DUMP
 # ifdef AIX_BACKUP
 	    execle(cmd, "backup", dumpkeys, "-", device, (char *)0, safe_env());
 # else
-#  ifdef OSF1_VDUMP
-	    execle(cmd, "dump", dumpkeys, "60", "-", device, (char *)0,
-		   safe_env());
-#  else
 	    execle(cmd, "dump", dumpkeys, "100000", "-", device, (char *)0,
 		   safe_env());
-#  endif
 # endif
 #endif
 	{
@@ -728,7 +729,7 @@ int level;
 	dbprintf(("(PC SHARE connection problem, is this disk really empty?)\n.....\n"));
 
 #ifndef HAVE_DUMP_ESTIMATE
-#ifdef OSF1_VDUMP
+#ifdef VDUMP
     sleep(5);
 #endif
     /*

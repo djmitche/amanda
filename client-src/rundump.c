@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: rundump.c,v 1.14 1998/01/02 18:47:45 jrj Exp $
+ * $Id: rundump.c,v 1.15 1998/01/22 21:36:47 amcore Exp $
  *
  * runs DUMP program as root
  */
@@ -35,6 +35,10 @@
 char *pname = "rundump";
 
 int main P((int argc, char **argv));
+
+#ifdef VDUMP
+#define USE_RUNDUMP
+#endif
 
 int main(argc, argv)
 int argc;
@@ -59,8 +63,9 @@ char **argv;
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 
-#if (!defined(DUMP) && !defined(XFSDUMP)) && !defined(VXDUMP) \
-    || !defined(USE_RUNDUMP)
+#if !defined(VDUMP) && \
+    ((!defined(DUMP) && !defined(XFSDUMP) && !defined(VXDUMP)) \
+     || !defined(USE_RUNDUMP))
 
 #if !defined(USE_RUNDUMP)
 #define ERRMSG "rundump not enabled on this system.\n"
@@ -106,6 +111,14 @@ char **argv;
     if (strcmp(argv[0], "vxdump") == 0)
         dump_program = VXDUMP;
     else /* strcmp(argv[0], "vxdump") != 0 */
+
+#endif
+
+#ifdef VDUMP
+
+    if (strcmp(argv[0], "vdump") == 0)
+	dump_program = VDUMP;
+    else /* strcmp(argv[0], "vdump") != 0 */
 
 #endif
 
