@@ -384,7 +384,8 @@ can see how many read/write errors (corrected) are processed by the tape
 labelfile <filename>
 
 This file is used for the mapping from barcode labels to amanda volume labels.
-It is used if the changer has a barcode reader.
+It is used if the changer has a barcode reader. To initialize run amtape show,
+this will add the mapping for the tapes in the magazine.
 
 eject > 1
 

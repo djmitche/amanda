@@ -1129,6 +1129,10 @@ if test ! -z "$SAMBA_CLIENT"; then
   case "`\"$SAMBA_CLIENT\" '\\\\not.a.host.name\\notashare' -U nosuchuser -N -Tx /dev/null 2>&1`" in
   *"Unknown host"*|*"Connection to not.a.host.name failed"*)
 		AC_DEFINE_UNQUOTED(SAMBA_CLIENT,"$SAMBA_CLIENT")
+		$SAMBA_CLIENT '\\not.a.host.name\notashare' -U nosuchuser -N -Tqx /dev/null 2>&1 | grep -i "unknown tar option"
+		if test $? -eq 1;then
+			AC_DEFINE_UNQUOTED(SAMBA_TAR_SILENT,"q")
+		fi
 		;;
   *)
 		AC_MSG_WARN([*** $SAMBA_CLIENT does not seem to be smbclient, so it will not be used.])
@@ -1136,6 +1140,7 @@ if test ! -z "$SAMBA_CLIENT"; then
 		;;
   esac
 fi
+
 
 AC_PATH_PROGS(GZIP,gzip,,$LOCSYSPATH)
 if test "$GZIP"; then

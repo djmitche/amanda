@@ -42,6 +42,9 @@
 /* Define the location of smbclient for backing up Samba PC clients.  */
 #undef SAMBA_CLIENT
 
+/* Define  this if you need the q option for samba tar */
+#undef SAMBA_TAR_SILENT
+
 /* Define the location of smbclient for backing up Samba PC clients.  */
 #undef SAMBA_USER
 

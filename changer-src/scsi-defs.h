@@ -827,7 +827,7 @@ typedef struct ElementInfo
     int address;    /* Adress of this Element */
     int from;       /* From where did it come */
     char status;    /* F -> Full, E -> Empty */
-    char VolTag[TAG_SIZE]; /* Label Info if Barcode reader exsist */
+    char VolTag[TAG_SIZE+1]; /* Label Info if Barcode reader exsist */
     int ASC;        /* Additional Sense Code from read element status */
     int ASCQ;      /* */
     unsigned char scsi; /* if DTE, which scsi address */
@@ -879,7 +879,7 @@ OpenFiles_T *SCSI_OpenDevice(char *DeviceName);
 OpenFiles_T *OpenDevice(char *DeviceName, char *ConfigName);
 
 int SCSI_CloseDevice(int DeviceFD); 
-int CloseDevice(char *,int ); 
+int CloseDevice(int ); 
 
 int SCSI_ExecuteCommand(int DeviceFD,
                         Direction_T Direction,

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-aix.c,v 1.1.2.9 1999/02/26 19:41:59 th Exp $";
+static char rcsid[] = "$Id: scsi-aix.c,v 1.1.2.10 1999/03/04 20:47:37 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an AIX System
@@ -43,6 +43,7 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
   if ((DeviceFD = openx(DeviceName, O_RDWR, 0, SC_DIAGNOSTIC)) > 0)
     {
       pwork = (OpenFiles_T *)malloc(sizeof(OpenFiles_T));
+      memset(pwork, 0, sizeof(OpenFiles_T));
       pwork->fd = DeviceFD;
       pwork->SCSI = 0;
       pwork->dev = strdup(DeviceName);
@@ -52,9 +53,9 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
         {
           if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
             {
-              for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
+              for (i=0;i < 16 ;i++)
                 pwork->ident[i] = pwork->inquiry->prod_ident[i];
-              for (i=15; i >= 0 && pwork->inquiry->prod_ident[i] == ' ' ; i--)
+              for (i=15; i >= 0 && !isalnum(pwork->inquiry->prod_ident[i]) ; i--)
                 {
                   pwork->inquiry->prod_ident[i] = '\0';
                 }

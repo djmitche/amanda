@@ -1,5 +1,5 @@
 /*
- *  $Id: chg-scsi.c,v 1.6.2.11 1999/02/26 19:41:57 th Exp $
+ *  $Id: chg-scsi.c,v 1.6.2.12 1999/03/04 20:47:35 th Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -578,7 +578,7 @@ typedef struct com_stru
 
 
 /* major command line args */
-#define COMCOUNT 7
+#define COMCOUNT 8
 #define COM_SLOT 0
 #define COM_INFO 1
 #define COM_RESET 2
@@ -586,13 +586,15 @@ typedef struct com_stru
 #define COM_CLEAN 4
 #define COM_LABEL 5
 #define COM_SEARCH 6
+#define COM_STATUS 7
 argument argdefs[]={{"-slot",COM_SLOT,1},
                     {"-info",COM_INFO,0},
                     {"-reset",COM_RESET,0},
                     {"-eject",COM_EJECT,0},
                     {"-clean",COM_CLEAN,0},
                     {"-label",COM_LABEL,1},
-                    {"-search",COM_SEARCH,1}};
+                    {"-search",COM_SEARCH,1},
+                    {"-status",COM_STATUS,1}};
 
 
 /* minor command line args */
@@ -639,6 +641,9 @@ void usage(char *argv[])
 void parse_args(int argc, char *argv[],command *rval)
 {
   int i=0;
+  for (i=0; i < argc; i++)
+    dbprintf(("ARG [%d] : %s\n", i, argv[i]));
+  i = 0;
   if ((argc<2)||(argc>3))
     usage(argv);
   while ((i<COMCOUNT)&&(strcmp(argdefs[i].str,argv[1])))
@@ -924,6 +929,9 @@ int main(int argc, char *argv[])
   target = -1;
 
   switch(com.command_code) {
+  case COM_STATUS:
+    ChangerStatus(com.parameter);
+    break;
   case COM_LABEL: /* Update BarCode/Label mapping file */
     MapBarCode(chg.labelfile, com.parameter, pDTE[drive_num].VolTag, BARCODE_PUT);
     printf("0 0 0\n");
@@ -994,13 +1002,19 @@ int main(int argc, char *argv[])
       break;
     }
     if (!loaded)
-      if (load(fd, drive_num, target) != 0) {
-        printf("%d slot %d move failed\n",target-slot_offset,
-               target-slot_offset);  
-        close(fd);
-        endstatus = 2;
-        break;
+      {
+        if (ask_clean(scsitapedevice))
+          clean_tape(fd,tape_device,clean_file,drive_num,
+                     clean_slot,maxclean,time_file);
+        if (load(fd, drive_num, target) != 0) {
+          printf("%d slot %d move failed\n",target-slot_offset,
+                 target-slot_offset);  
+          close(fd);
+          endstatus = 2;
+          break;
+        }
       }
+
     if (need_sleep)
       if (Tape_Ready(scsitapedevice, need_sleep) == -1)
         {
@@ -1054,7 +1068,8 @@ int main(int argc, char *argv[])
       break;
     }
     
-    
+    put_current_slot(changer_file, slot_offset);
+
     if (need_sleep)
        if (Tape_Ready(scsitapedevice, need_sleep) == -1)
         {

@@ -1,3 +1,28 @@
+1999-03-04  Thomas Hepper <th@ant.han.de>
+	* configure.in Check if samba tar accept the q option
+	* changer-src/chg-scsi.c New command -status. Display slot status.
+	add debug prints to parse_args. Missing {} in case COM_SLOT 
+	add put_current_slot if reset was successfull
+	* changer-src/aix.c Init struct pwork with 0's.
+	Fixed error in copy of the product indent form the inquiry
+	* changer-src/scsi-bsd.c see aix.c
+	* changer-src/scsi-hpux_new.c see aix.c
+	* changer-src/scsi-irix.c see aix.c
+	* changer-src/scsi-linux.c see aix.c
+	* changer-src/scsi-solaris.c see aix.c
+	* changer-src/scsi-changer-driver.c New function TerminatString,
+	places 0 from the end of a string until first char/num
+	Fixed wrong parameter for GenericRewind in LogSense
+	In GenericElementStatus terminate VOL Tag String with 0
+	New function CHangerStatus. dumps changer info on stdout.
+	* changer-src/scsi-defs.h VolTag[TAG_SIZE+1] to have place for
+	terminating 0
+	* client-src/sendbackup-gnutar.c Add option q to tar call if
+	samba tar understand q option
+	* config/acconfig.h New define if samba tar accepts q option
+	* docs/TAPE.CHANGERS Add note on how to init the labelfile	
+
+
 1999-03-03  Ralf Fassel <ralf@akutech.de>
 
 	* common-src/conffile.h: bit field of length 1 should be unsigned int,
