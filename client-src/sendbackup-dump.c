@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.64 1998/09/02 03:39:26 oliva Exp $
+ * $Id: sendbackup-dump.c,v 1.65 1998/09/19 00:04:08 oliva Exp $
  *
  * send backup data using BSD dump
  */
@@ -132,10 +132,10 @@ static regex_t re_table[] = {
 };
 
 static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
-char *host;
-char *disk;
-int level, dataf, mesgf, indexf;
-char *dumpdate;
+    char *host;
+    char *disk;
+    int level, dataf, mesgf, indexf;
+    char *dumpdate;
 {
     int dumpin, dumpout;
     char *dumpkeys = NULL;
@@ -143,7 +143,6 @@ char *dumpdate;
     char *cmd = NULL;
     char *indexcmd = NULL;
     char level_str[NUM_STR_SIZE];
-    char *fstype = NULL;
 
     ap_snprintf(level_str, sizeof(level_str), "%d", level);
 
@@ -178,8 +177,7 @@ char *dumpdate;
     /* normal dump */
 #ifdef XFSDUMP						/* { */
 #ifdef DUMP						/* { */
-    fstype = amname_to_fstype(device);
-    if (strcmp(fstype, "xfs") == 0)
+    if (strcmp(amname_to_fstype(disk), "xfs") == 0)
 #else							/* } { */
     if (1)
 #endif							/* } */
@@ -222,8 +220,7 @@ char *dumpdate;
 #endif							/* } */
 #ifdef VXDUMP						/* { */
 #ifdef DUMP
-    fstype = amname_to_fstype(device);
-    if (strcmp(fstype, "vxfs") == 0)
+    if (strcmp(amname_to_fstype(disk), "vxfs") == 0)
 #else
     if (1)
 #endif
@@ -261,15 +258,14 @@ char *dumpdate;
 
 #ifdef VDUMP						/* { */
 #ifdef DUMP
-    if (strcmp(amname_to_fstype(device), "advfs") == 0)
+    if (strcmp(amname_to_fstype(disk), "advfs") == 0)
 #else
     if (1)
 #endif
     {
         char *progname = cmd = newvstralloc(cmd, libexecdir, "/", "rundump",
 					    versionsuffix(), NULL);
-	amfree(device);
-	device = amname_to_dirname(disk);
+	device = newstralloc(device, amname_to_dirname(disk));
 	program->backup_name  = VDUMP;
 #ifndef VRESTORE
 #define VRESTORE "vrestore"
@@ -349,7 +345,6 @@ char *dumpdate;
 
     amfree(dumpkeys);
     amfree(device);
-    amfree(fstype);
     amfree(cmd);
     amfree(indexcmd);
 

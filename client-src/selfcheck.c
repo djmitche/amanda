@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.38 1998/09/02 03:39:24 oliva Exp $
+ * $Id: selfcheck.c,v 1.39 1998/09/19 00:04:06 oliva Exp $
  *
  * do self-check and send back any error messages
  */
@@ -200,31 +200,29 @@ char **argv;
 }
 
 
-static void check_options(program, disk, str)
-char *program, *disk, *str;
+static void
+check_options(program, disk, str)
+     char *program, *disk, *str;
 {
     int as_index = 0;
-    char *device = NULL;
-    char *fstype = NULL;
 
     if(strstr(str,"index") != NULL)
 	as_index=1;
     if(strcmp(program,"GNUTAR") == 0) {
-	need_runtar=1;
 	need_gnutar=1;
         if(disk[0] == '/' && disk[1] == '/')
-	    need_samba=1;
+	  need_samba=1;
+	else
+	  need_runtar=1;
     }
     if(strcmp(program,"DUMP") == 0) {
 #ifdef USE_RUNDUMP
 	need_rundump=1;
 #endif
 #ifndef AIX_BACKUP
-	device = amname_to_devname(disk);
-
 #ifdef VDUMP
 #ifdef DUMP
-	if (strcmp(amname_to_fstype(device), "advfs") == 0)
+	if (strcmp(amname_to_fstype(disk), "advfs") == 0)
 #else
 	if (1)
 #endif
@@ -238,8 +236,7 @@ char *program, *disk, *str;
 #endif /* VDUMP */
 #ifdef XFSDUMP
 #ifdef DUMP
-	fstype = amname_to_fstype(device);
-	if (strcmp(fstype, "xfs") == 0)
+	if (strcmp(amname_to_fstype(disk), "xfs") == 0)
 #else
 	if (1)
 #endif
@@ -253,8 +250,7 @@ char *program, *disk, *str;
 #endif /* XFSDUMP */
 #ifdef VXDUMP
 #ifdef DUMP
-	fstype = amname_to_fstype(device);
-	if (strcmp(fstype, "vxfs") == 0)
+	if (strcmp(amname_to_fstype(disk), "vxfs") == 0)
 #else
 	if (1)
 #endif
@@ -282,8 +278,6 @@ char *program, *disk, *str;
     if(strstr(str, "index") != NULL) {
 	/* do nothing */
     }
-    amfree(device);
-    amfree(fstype);
 }
 
 static void check_disk(program, disk, level)

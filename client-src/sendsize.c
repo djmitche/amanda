@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.95 1998/09/02 03:39:28 oliva Exp $
+ * $Id: sendsize.c,v 1.96 1998/09/19 00:04:10 oliva Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -593,8 +593,8 @@ regex_t re_size[] = {
 
 
 long getsize_dump(disk, level)
-char *disk;
-int level;
+    char *disk;
+    int level;
 {
     int pipefd[2], nullfd, killctl[2];
     pid_t dumppid;
@@ -612,7 +612,7 @@ int level;
     ap_snprintf(level_str, sizeof(level_str), "%d", level);
 
     device = amname_to_devname(disk);
-    fstype = amname_to_fstype(device);
+    fstype = amname_to_fstype(disk);
 
     cmd = vstralloc(libexecdir, "/rundump", versionsuffix(), NULL);
     rundump_cmd = stralloc(cmd);
