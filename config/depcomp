@@ -31,6 +31,48 @@ tmpdepfile=${tmpdepfile-`echo "$depfile" | sed 's/\.\([^.]*\)$/.T\1/'`}
 
 rm -f "$tmpdepfile"
 
+# Sigh.  Libtool, under some circumstances, assumes the last argument it
+# gets is the source file to compile.  So we cannot just tack our own
+# magic flags on the end of the line.  The following ickiness rebuild
+# the argument list without the last argument but saves it in a variable
+# to be used when libtool is called.
+
+argc=$#
+i=1
+lastarg=
+
+for arg
+do
+  if [ $i -eq 1 ]
+  then
+    # Start a new arg list (and hope it does not clobber the for loop
+    # going on -- sigh).
+    #
+    # The "X" protects us against the first arg starting with a '-' (e.g.
+    # "-x") and confusing the "set" statement.  That is not likely in
+    # this particular situation, but just in case.  We remove it after
+    # the loop.
+    if [ $i -eq $argc ]
+    then
+      lastarg="$arg"
+      set X					# end case -- only one arg
+    else
+      set X "$arg"				# normal start of new arg list
+    fi
+  elif [ $i -eq $argc ]
+  then
+    lastarg="$arg"
+  else
+    set "$@" "$arg"				# not the first, not the last
+  fi
+  i=`expr $i + 1`
+done
+
+if [ $i -gt 1 ]
+then
+  shift						# get rid of the leading "X"
+fi
+
 # Some modes work just like other modes, but use different flags.  We
 # parameterize here, but still list the modes in the big case below,
 # to make depend.m4 easier to write.  Note that we *cannot* use a case
@@ -51,9 +93,10 @@ case "$depmode" in
 gcc3)
 ## gcc 3 implements dependency tracking that does exactly what
 ## we want.  Yay!
-  if "$@" -MT "$object" -MF "$tmpdepfile" -MD -MP; then :
+  "$@" -MT "$object" -MF "$tmpdepfile" -MD -MP "$lastarg"
+  stat=$?
+  if test $stat -eq 0; then :
   else
-    stat=$?
     rm -f "$tmpdepfile"
     exit $stat
   fi
@@ -73,9 +116,10 @@ gcc)
   if test -z "$gccflag"; then
     gccflag=-MD,
   fi
-  if "$@" -Wp,"$gccflag$tmpdepfile"; then :
+  "$@" -Wp,"$gccflag$tmpdepfile" "$lastarg"
+  stat=$?
+  if test $stat -eq 0; then :
   else
-    stat=$?
     rm -f "$tmpdepfile"
     exit $stat
   fi
@@ -111,9 +155,9 @@ hp)
 
 sgi)
   if test "$libtool" = yes; then
-    "$@" "-Wp,-MDupdate,$tmpdepfile"
+    "$@" "-Wp,-MDupdate,$tmpdepfile" "$lastarg"
   else
-    "$@" -MDupdate "$tmpdepfile"
+    "$@" -MDupdate "$tmpdepfile" "$lastarg"
   fi
   stat=$?
   if test $stat -eq 0; then :
@@ -131,7 +175,7 @@ sgi)
     # lines with more than a fixed number of characters (4096 in
     # IRIX 6.2 sed, 8192 in IRIX 6.5).
     tr ' ' '
-' < "$tmpdepfile" | sed 's/^[^\.]*\.o://' | tr '
+' < "$tmpdepfile" | sed 's/^.*\.o://' | tr '
 ' ' ' >> $depfile
 
     tr ' ' '
@@ -153,9 +197,9 @@ aix)
   # in a .u file.
   tmpdepfile=`echo "$object" | sed 's/\(.*\)\..*$/\1.u/'`
   if test "$libtool" = yes; then
-    "$@" -Wc,-M
+    "$@" -Wc,-M "$lastarg"
   else
-    "$@" -M
+    "$@" -M "$lastarg"
   fi
 
   stat=$?
@@ -217,10 +261,11 @@ dashmstdout)
       done
       ;;
     esac
-    "$@" $dashmflag | sed 's:^[^:]*\:[ 	]*:'"$object"'\: :' > "$tmpdepfile"
+    "$@" $dashmflag "$lastarg" |
+    sed 's:^[^:]*\:[ 	]*:'"$object"'\: :' > "$tmpdepfile"
   ) &
   proc=$!
-  "$@"
+  "$@" "$lastarg"
   stat=$?
   wait "$proc"
   if test "$stat" != 0; then exit $stat; fi
@@ -264,7 +309,7 @@ makedepend)
     ${MAKEDEPEND-makedepend} 2>/dev/null -o"$obj_suffix" -f"$tmpdepfile" "$@"
   ) &
   proc=$!
-  "$@"
+  "$@" "$lastarg"
   stat=$?
   wait "$proc"
   if test "$stat" != 0; then exit $stat; fi
@@ -300,12 +345,12 @@ cpp)
       done
       ;;
     esac
-    "$@" -E |
+    "$@" -E "$lastarg" |
     sed -n '/^# [0-9][0-9]* "\([^"]*\)".*/ s:: \1 \\:p' |
     sed '$ s: \\$::' > "$tmpdepfile"
   ) &
   proc=$!
-  "$@"
+  "$@" "$lastarg"
   stat=$?
   wait "$proc"
   if test "$stat" != 0; then exit $stat; fi
@@ -338,11 +383,11 @@ msvisualcpp)
       done
       ;;
     esac
-    "$@" -E |
+    "$@" -E "$lastarg" |
     sed -n '/^#line [0-9][0-9]* "\([^"]*\)"/ s::echo "`cygpath -u \\"\1\\"`":p' | sort | uniq > "$tmpdepfile"
   ) &
   proc=$!
-  "$@"
+  "$@" "$lastarg"
   stat=$?
   wait "$proc"
   if test "$stat" != 0; then exit $stat; fi
@@ -355,7 +400,7 @@ msvisualcpp)
   ;;
 
 none)
-  exec "$@"
+  exec "$@" "$lastarg"
   ;;
 
 *)
