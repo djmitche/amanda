@@ -1,36 +1,46 @@
-2002-07-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+2002-08-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	Patch by Jason Brooks <jason0@mail.wrs.com>
+
+	* docs/chg-scsi.notes: New document.
+	* changer-src/chg-scsi.c: Adding printout of "emubarcode" values
+	  in the debug file.
+	* changer-src/scsi-changer-driver.c: Added dlt8000 and L500 to
+	  ChangerIO[].
+	* changer-src/sense.c: Added dlt8000 and L500 to SenseType[].
+
+2002-08-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* tape-src/output-null.c (null_tape_stat, null_tape_access): Use 
 	  "/dev/null" instead of filename.
 
-2002-07-22  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+2002-08-22  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* changer-src/scsi-hpux.c: Add amanda copyright.
 
-2002-07-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+2002-08-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* recover-src/uparse.y: Fix compiler warning.
 
-2002-07-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+2002-08-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amtrmidx.c: Continue if a directory doesn't exist.
 
-2002-07-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+2002-08-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* man/amanda.8.in (tapecycle): Improve documentation.
 
-2002-07-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+2002-08-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amstatus.pl.in: Works with features.
 
-2002-07-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+2002-08-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* common-src/amfeatures.c (am_feature_to_string): Return the string
 	  "UNKNOWNFEATURE" if no features.
 	* common-src/amfeatures.c (am_string_to_feature): Return NULL if the
 	  string is "UNKNOWNFEATURE".
 
-2002-07-20  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+2002-08-20  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* common-src/file.c (debug_agets): line_free was badly set when
 	the buffer size in increased.
@@ -40,8 +50,7 @@
 	* common-src/amanda.h: Fix bad #define.
 
 2002-07-02  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
-	Patch by
-	  David Munro <D.Munro@surrey.ac.uk>
+	Patch by David Munro <D.Munro@surrey.ac.uk>
 
 	* common-src/sl.c (new_sl): Alloc (sl_t) instead of (sl_t *).
 	  
