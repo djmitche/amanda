@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.56.2.6 1999/03/04 20:47:54 th Exp $
+ * $Id: sendbackup-gnutar.c,v 1.56.2.7 1999/03/05 02:16:03 martinea Exp $
  *
  * send backup data using GNU tar
  */
@@ -303,7 +303,7 @@ notincremental:
 	    }
 	    error("[can't make share name of %s]", disk);
 	}
-#ifdef SAMBA_TAR_SILENT
+#if SAMBA_VERSION >= 2
 	if (level==0) {
 	    if (no_record)
 		taropt = "-Tqc";

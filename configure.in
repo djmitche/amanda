@@ -1127,18 +1127,22 @@ fi
 AC_PATH_PROGS(SAMBA_CLIENT,smbclient,,$LOCSYSPATH)
 if test ! -z "$SAMBA_CLIENT"; then
   case "`\"$SAMBA_CLIENT\" '\\\\not.a.host.name\\notashare' -U nosuchuser -N -Tx /dev/null 2>&1`" in
-  *"Unknown host"*|*"Connection to not.a.host.name failed"*)
+  *"Unknown host"*)
+		smbversion=1
 		AC_DEFINE_UNQUOTED(SAMBA_CLIENT,"$SAMBA_CLIENT")
-		$SAMBA_CLIENT '\\not.a.host.name\notashare' -U nosuchuser -N -Tqx /dev/null 2>&1 | grep -i "unknown tar option"
-		if test $? -eq 1;then
-			AC_DEFINE_UNQUOTED(SAMBA_TAR_SILENT,"q")
-		fi
+		;;
+  *"Connection to not.a.host.name failed"*)
+		smbversion=2
+		AC_DEFINE_UNQUOTED(SAMBA_CLIENT,"$SAMBA_CLIENT")
 		;;
   *)
 		AC_MSG_WARN([*** $SAMBA_CLIENT does not seem to be smbclient, so it will not be used.])
 		SAMBA_CLIENT=
 		;;
   esac
+  AC_DEFINE(SAMBA_VERSION, $smbversion,
+  [Not the actual samba version, just a number that should be increased whenever we start to use a certain samba feature])
+
 fi
 
 
