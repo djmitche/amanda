@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.10 1997/08/27 08:11:40 amcore Exp $
+ * $Id: sendbackup.c,v 1.11 1997/09/09 22:14:49 amcore Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -61,6 +61,8 @@ char thiserr[80], errorstr[256];
 int data_socket, data_port, dataf;
 int mesg_socket, mesg_port, mesgf;
 int index_socket, index_port, indexf;
+
+extern int db_file;
 
 char efile[256],estr[256];
 char line[MAX_LINE];
@@ -163,10 +165,6 @@ char **argv;
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
     umask(0);
     dbopen("/tmp/sendbackup.debug");
-    {
-	extern int db_file;
-	dup2(db_file, 2);
-    }
 
     /* parse dump request */
 
@@ -657,6 +655,20 @@ int sig;
   index_finished = 1;
 }
 
+void save_fd(fd, min)
+int *fd, min;
+{
+  int origfd = *fd;
+  while (*fd >= 0 && *fd < min) {
+    int newfd = dup(*fd);
+    if (newfd == -1)
+      dbprintf(("unable to save file descriptor [%s]", strerror(errno)));
+    *fd = newfd;
+  }
+  if (origfd != *fd)
+    dbprintf(("dupped file descriptor %i to %i", origfd, *fd));
+}
+
 void start_index(createindex, input, mesg, index, cmd)
 int createindex, input, mesg, index;
 char *cmd;
@@ -692,6 +704,11 @@ char *cmd;
   }
 
   /* now in a child process */
+  save_fd(&db_file, 4);
+  save_fd(&pipefd[0], 4);
+  save_fd(&index, 4);
+  save_fd(&mesg, 4);
+  save_fd(&input, 4);
   dup2(pipefd[0], 0);
   dup2(index, 1);
   dup2(mesg, 2);
