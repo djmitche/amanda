@@ -1,5 +1,10 @@
 1999-01-17  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/reporter.c: always call output_stats(), the problem is
+	that degraded_mode is set if amflush fills the tape.
+
+1999-01-17  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amflush.c: write debuging info to $logdir/amflush
 	instead of /dev/null if we run in background.
 	* server-src/amcleanup.sh.in: rename $logdir/amflush.
