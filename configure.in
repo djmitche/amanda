@@ -726,6 +726,19 @@ else
     AC_MSG_RESULT(no)
 fi
 
+AC_ARG_WITH(rsh-security,
+    [  --with-rsh-security use rsh as a transport],
+    RSH_SECURITY=$withval,
+    : ${RSH_SECURITY=yes}
+)
+case "$RSH_SECURITY" in
+n | no) : ;;
+y |  ye | yes) AC_DEFINE(RSH_SECURITY)
+  ;;
+*) AC_MSG_ERROR([*** You must not supply an argument the to --with-rsh-security option.])
+  ;;
+esac
+
 AC_ARG_WITH(server-principal,
     [    --with-server-principal=ARG    server host principal  ["amanda"]],
     [

@@ -1,5 +1,15 @@
 1999-04-10  Mike Grupenhoff <kashmir@munge.com>
 
+	* configure.in: implement --with-rsh-security
+	* common-src/rsh-security.c: first attempt at using rsh or a rsh-like
+	command for dump transport and authentication.  Still has lots
+	of "issues"
+	* common-src/Makefile.am: build rsh-security.c
+	* common-src/security.c: add rsh_security_driver to the drivers array
+	* config/acconfig.h: define RSH_SECURITY
+
+1999-04-10  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c (runcompress): use the proper end of the pipe
 	for writing and reading.  Also, grab errno early on fork error
 	before calling close.

@@ -176,6 +176,9 @@
 /* Define to use BSD .rhosts security.  */
 #undef BSD_SECURITY
 
+/* Define to use rsh as a dump transport. */
+#undef RSH_SECURITY
+
 /* Define to have programs use version suffixes when calling other programs. */
 #undef USE_VERSION_SUFFIXES
 

@@ -29,6 +29,7 @@ libamanda_la_SOURCES = \
 	match.c		\
 	packet.c	protocol.c	\
 	regcomp.c	regerror.c	regexec.c	regfree.c	\
+	rsh-security.c	\
 	security.c	statfs.c	stream.c	\
 	token.c		\
 	version.c	versuff.c
