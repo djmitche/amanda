@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.22 1999/04/06 23:31:44 kashmir Exp $
+ * $Id: bsd-security.c,v 1.23 1999/04/09 16:22:02 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -438,7 +438,7 @@ bsd_close(bh)
 {
 
     bsd_recvpkt_cancel(bh);
-    bsd_close(bh);
+    amfree(bh);
 }
 
 /*
