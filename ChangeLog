@@ -1,3 +1,9 @@
+1998-08-04  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/planner.c (main): if runs_per_cycle is set to zero or
+	negative, set it to 1, in order to avoid division by zero.
+	* server-src/amadmin.c (balance): ditto
+
 1998-08-01  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* client-src/sendsize.c: replace free(line) with amfree(line),

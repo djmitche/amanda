@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.70 1998/07/15 00:11:01 martinea Exp $
+ * $Id: planner.c,v 1.70.2.1 1998/08/04 03:51:21 oliva Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -248,6 +248,10 @@ char **argv;
     } else
 	runs_per_cycle = conf_runspercycle;
 
+    if (runs_per_cycle <= 0) {
+	runs_per_cycle = 1;
+    }
+    
     tape = lookup_tapetype(conf_tapetype);
     tape_length = tape->length * conf_runtapes;
     tape_mark   = tape->filemark;
