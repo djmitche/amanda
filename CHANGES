@@ -1,5 +1,8 @@
 Version 2.4.0p1
 
+	fix strappend2 so that it accepts a NULL first argument.
+	-Rob Riggs <rob@devilsthumb.com>
+
 	pass kerberos encryption switch to client.
 	-Fredrik Jönsson <fjo@nada.kth.se>
 
