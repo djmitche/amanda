@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clock.c,v 1.2.2.1 2002/03/24 22:50:42 jrjackson Exp $
+ * $Id: clock.c,v 1.2.2.2 2002/03/31 21:01:33 jrjackson Exp $
  *
  * timing functions
  */
@@ -46,6 +46,11 @@ static int clock_running = 0;
 #else
 #  define amanda_gettimeofday(x, y) gettimeofday((x))
 #endif
+
+int clock_is_running()
+{
+    return clock_running;
+}
 
 void startclock()
 {
@@ -115,23 +120,31 @@ times_t a,b;
 char *times_str(t)
 times_t t;
 {
-    static char str[NUM_STR_SIZE+10];
+    static char str[10][NUM_STR_SIZE+10];
+    static int n = 0;
+    char *s;
 
     /* tv_sec/tv_usec are longs on some systems */
-    ap_snprintf(str, sizeof(str),
+    ap_snprintf(str[n], sizeof(str[n]),
 		"rtime %d.%03d", (int)t.r.tv_sec, (int)t.r.tv_usec/1000);
-    return str;
+    s = str[n++];
+    n %= am_countof(str);
+    return s;
 }
 
 char *walltime_str(t)
 times_t t;
 {
-    static char str[NUM_STR_SIZE+10];
+    static char str[10][NUM_STR_SIZE+10];
+    static int n = 0;
+    char *s;
 
     /* tv_sec/tv_usec are longs on some systems */
-    ap_snprintf(str, sizeof(str),
+    ap_snprintf(str[n], sizeof(str[n]),
 		"%d.%03d", (int)t.r.tv_sec, (int)t.r.tv_usec/1000);
-    return str;
+    s = str[n++];
+    n %= am_countof(str);
+    return s;
 }
 
 static struct timeval timesub(end,start)

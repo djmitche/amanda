@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.1.2.15 2002/03/25 18:42:40 martinea Exp $
+ * $Id: client_util.c,v 1.1.2.16 2002/03/31 21:01:32 jrjackson Exp $
  *
  */
 
@@ -135,7 +135,7 @@ char *disk, *exin;
     if(afilename == NULL) {
 	filename = get_name(diskname, exin, curtime, 0);
 	afilename = newvstralloc(afilename, dbgdir, filename, NULL);
-	dbprintf(("%s: Cannot create '%s'\n", get_pname(), afilename));
+	dbprintf(("%s: Cannot create '%s'\n", debug_prefix(NULL), afilename));
 	if(verbose)
 	    printf("ERROR [cannot create: %s]\n", afilename);
 	amfree(filename);
@@ -157,7 +157,7 @@ char *aexc;
 
     l = strlen(aexc);
     if(l > MAXPATHLEN-1) {
-	dbprintf(("%s: exclude too long: %s\n", get_pname(), aexc));
+	dbprintf(("%s: exclude too long: %s\n", debug_prefix(NULL), aexc));
 	if(verbose)
 	    printf("ERROR [exclude too long: %s]\n", aexc);
 	return 0;
@@ -186,19 +186,21 @@ char *ainc;
 	l--;
     }
     if(l > MAXPATHLEN-1) {
-	dbprintf(("%s: include too long: %s\n", get_pname(), ainc));
+	dbprintf(("%s: include too long: %s\n", debug_prefix(NULL), ainc));
 	if(verbose)
 	    printf("ERROR [include too long: %s]\n", ainc);
 	return 0;
     }
     else if(l < 3) {
-	dbprintf(("%s: include must be at least 3 character long: %s\n", get_pname(), ainc));
+	dbprintf(("%s: include must be at least 3 character long: %s\n",
+		  debug_prefix(NULL), ainc));
 	if(verbose)
 	    printf("ERROR [include must be at least 3 character long: %s]\n", ainc);
 	return 0;
     }
     else if(ainc[0] != '.' && ainc[0] != '\0' && ainc[1] != '/') {
-        dbprintf(("%s: include must start with './': %s\n", get_pname(), ainc));
+        dbprintf(("%s: include must start with './': %s\n",
+		  debug_prefix(NULL), ainc));
 	if(verbose)
 	    printf("ERROR [include must start with './': %s]\n", ainc);
 	return 0;
@@ -212,7 +214,8 @@ char *ainc;
 	glob = ainc+2;
 	regex = glob_to_regex(glob);
 	if((d = opendir(device)) == NULL) {
-	    dbprintf(("%s: Can't open disk '%s']\n", get_pname(), device));
+	    dbprintf(("%s: Can't open disk '%s']\n",
+		      debug_prefix(NULL), device));
 	    if(verbose)
 		printf("ERROR [Can't open disk '%s']\n", device);
 	    return 0;
@@ -274,7 +277,9 @@ int verbose;
 		    }
 		    else {
 			dbprintf(("%s: Can't open exclude file '%s': %s\n",
-				  get_pname(), exclname, strerror(errno)));
+				  debug_prefix(NULL),
+				  exclname,
+				  strerror(errno)));
 			if(verbose && options->exclude_optional==0)
 			    printf("ERROR [Can't open exclude file '%s': %s]\n",
 				   exclname, strerror(errno));
@@ -285,8 +290,10 @@ int verbose;
             fclose(file_exclude);
 	}
 	else {
-	    dbprintf(("%s: Can't create exclude file '%s': %s\n", get_pname(),
-		      filename, strerror(errno)));
+	    dbprintf(("%s: Can't create exclude file '%s': %s\n",
+		      debug_prefix(NULL),
+		      filename,
+		      strerror(errno)));
 	    if(verbose && options->exclude_optional == 0)
 		printf("ERROR [Can't create exclude file '%s': %s]\n", filename,
 			strerror(errno));
@@ -342,7 +349,9 @@ int verbose;
 		    }
 		    else {
 			dbprintf(("%s: Can't open include file '%s': %s\n",
-				  get_pname(), inclname, strerror(errno)));
+				  debug_prefix(NULL),
+				  inclname,
+				  strerror(errno)));
 			if(verbose && options->include_optional == 0)
 			    printf("ERROR [Can't open include file '%s': %s]\n",
 				   inclname, strerror(errno));
@@ -353,8 +362,10 @@ int verbose;
             fclose(file_include);
 	}
 	else {
-	    dbprintf(("%s: Can't open include file '%s': %s\n", get_pname(),
-		      filename, strerror(errno)));
+	    dbprintf(("%s: Can't open include file '%s': %s\n",
+		      debug_prefix(NULL),
+		      filename,
+		      strerror(errno)));
 	    if(verbose && options->include_optional == 0)
 		printf("ERROR [Can't open include file '%s': %s]\n", filename,
 			strerror(errno));
@@ -362,7 +373,7 @@ int verbose;
     }
 	
     if(nb_exp == 0) {
-	dbprintf(("%s: No include for '%s'\n", get_pname(), disk));
+	dbprintf(("%s: No include for '%s'\n", debug_prefix(NULL), disk));
 	if(verbose && options->include_optional == 0)
 	    printf("ERROR [No include for '%s']\n", disk);
     }
@@ -462,7 +473,7 @@ int verbose;
 	}
 	else {
 	    dbprintf(("%s: unknown option \"%s\"\n",
-                                  get_pname(), tok));
+                                  debug_prefix(NULL), tok));
 	    if(verbose) {
 		printf("ERROR [unknown option \"%s\"]\n", tok);
 	    }

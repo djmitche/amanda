@@ -1,6 +1,7 @@
 #include "amanda.h"
 #include "pipespawn.h"
 #include "arglist.h"
+#include "clock.h"
 
 char skip_argument[1];
 
@@ -31,8 +32,8 @@ va_dcl
     /*
      * Log the command line and count the args.
      */
-    dbprintf(("%s: spawning %s in pipeline\n", get_pname(), prog));
-    dbprintf(("%s: argument list:", get_pname()));
+    dbprintf(("%s: spawning %s in pipeline\n", debug_prefix_time(NULL), prog));
+    dbprintf(("%s: argument list:", debug_prefix(NULL)));
     arglist_start(ap, stderrfd);
     if ((pipedef & PASSWD_PIPE) != 0) {
 	passwdvar = arglist_val(ap, char *);
@@ -198,8 +199,8 @@ char **my_argv;
     /*
      * Log the command line and count the args.
      */
-    dbprintf(("%s: spawning %s in pipeline\n", get_pname(), prog));
-    dbprintf(("%s: argument list:", get_pname()));
+    dbprintf(("%s: spawning %s in pipeline\n", debug_prefix_time(NULL), prog));
+    dbprintf(("%s: argument list:", debug_prefix(NULL)));
     if ((pipedef & PASSWD_PIPE) != 0) {
 	passwdvar = *my_argv++;
 	passwdfd = (int *)*my_argv++;

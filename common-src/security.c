@@ -24,12 +24,13 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.c,v 1.17.2.6.4.1.2.1 2002/02/11 01:30:42 jrjackson Exp $
+ * $Id: security.c,v 1.17.2.6.4.1.2.2 2002/03/31 21:01:33 jrjackson Exp $
  *
  * wrapper file for kerberos security
  */
 
 #include "amanda.h"
+#include "clock.h"
 
 /*
  * Change the following from #undef to #define to cause detailed logging
@@ -69,7 +70,8 @@ void show_stat_info(a, b)
     char *group;
 
     if (stat(name, &sbuf) != 0) {
-	dbprintf(("cannot stat %s: %s\n", name, strerror(errno)));
+	dbprintf(("%s: cannot stat %s: %s\n",
+		  debug_prefix_time(NULL), name, strerror(errno)));
 	amfree(name);
 	return;
     }
@@ -85,9 +87,9 @@ void show_stat_info(a, b)
     } else {
 	group = stralloc(grptr->gr_name);
     }
-    dbprintf(("processing file: %s\n", name));
-    dbprintf(("                 owner=%s group=%s mode=%03o\n",
-	      owner, group, (int) (sbuf.st_mode & 0777)));
+    dbprintf(("%s: processing file: %s\n", debug_prefix_time(NULL), name));
+    dbprintf(("%s: owner=%s group=%s mode=%03o\n",
+	      debug_prefix(NULL), owner, group, (int) (sbuf.st_mode & 0777)));
     amfree(name);
     amfree(owner);
     amfree(group);
@@ -281,8 +283,8 @@ int bsd_security_ok(addr, str, cksum, errstr)
 
     localuser = stralloc(pwptr->pw_name);
 
-    dbprintf(("bsd security: remote host %s user %s local user %s\n",
-	      remotehost, remoteuser, localuser));
+    dbprintf(("%s: bsd security: remote host %s user %s local user %s\n",
+	      debug_prefix_time(NULL), remotehost, remoteuser, localuser));
 
 #ifndef USE_AMANDAHOSTS						/* { */
     /*
@@ -316,10 +318,12 @@ int bsd_security_ok(addr, str, cksum, errstr)
 	{
 	char *dir = stralloc(pwptr->pw_dir);
 
-	dbprintf(("calling ruserok(%s, %d, %s, %s)\n",
+	dbprintf(("%s: calling ruserok(%s, %d, %s, %s)\n",
+		  debug_prefix_time(NULL),
 	          remotehost, myuid == 0, remoteuser, localuser));
 	if (myuid == 0) {
-	    dbprintf(("because you are running as root, "));
+	    dbprintf(("%s: because you are running as root, ",
+		      debug_prefix(NULL)));
 	    dbprintf(("/etc/hosts.equiv will not be used\n"));
 	} else {
 	    show_stat_info("/etc/hosts.equiv", NULL);
@@ -334,21 +338,26 @@ int bsd_security_ok(addr, str, cksum, errstr)
 	(void)open("/dev/null", 2);
 
 	if(ruserok(remotehost, myuid == 0, remoteuser, localuser) == -1) {
-	    char *fmt;
-
 	    dup2(saved_stderr,2);
 	    close(saved_stderr);
-	    fmt = "[access as %s not allowed from %s@%s] ruserok failed\n";
-	    fprintf(fError, fmt, localuser, remoteuser, remotehost);
+	    *errstr = vstralloc("[",
+			        "access as ", localuser, " not allowed",
+			        " from ", remoteuser, "@", remotehost,
+			        "] ruserok failed",
+			        NULL);
+	    fputs(*errstr, fError);
+	    fputc('\n', fError);
 	    fclose(fError);
-	    fmt = stralloc2("check failed: ", fmt);
-	    dbprintf((fmt, localuser, remoteuser, remotehost));
+	    dbprintf(("%s: check failed: %s\n",
+		      debug_prefix_time(NULL), *errstr));
+	    amfree(*errstr);
 	    exit(1);
 	}
 
 	dup2(saved_stderr,2);
 	close(saved_stderr);
-	dbprintf(("bsd security check to %s from %s@%s passed\n",
+	dbprintf(("%s: bsd security check to %s from %s@%s passed\n",
+		  debug_prefix_time(NULL),
 		  localuser, remoteuser, remotehost));
 	exit(0);
     }
@@ -408,7 +417,8 @@ int bsd_security_ok(addr, str, cksum, errstr)
 	 * back to the other end to tell them what to fix in order to
 	 * be able to hack our system.
          */
-	dbprintf(("fopen of %s failed: %s\n", ptmp, strerror(errno)));
+	dbprintf(("%s: fopen of %s failed: %s\n",
+		  debug_prefix_time(NULL), ptmp, strerror(errno)));
 	*errstr = vstralloc("[",
 			    "access as ", localuser, " not allowed",
 			    " from ", remoteuser, "@", remotehost,
@@ -425,7 +435,7 @@ int bsd_security_ok(addr, str, cksum, errstr)
 
     for(; (pbuf = agets(fPerm)) != NULL; free(pbuf)) {
 #if defined(SHOW_SECURITY_DETAIL)				/* { */
-	dbprintf(("processing line: <%s>\n", pbuf));
+	dbprintf(("%s: processing line: <%s>\n", debug_prefix(NULL), pbuf));
 #endif								/* } */
 	pbuf_len = strlen(pbuf);
 	s = pbuf;
@@ -451,13 +461,13 @@ int bsd_security_ok(addr, str, cksum, errstr)
 	    s[-1] = '\0';			/* terminate remoteuser field */
 	}
 #if defined(SHOW_SECURITY_DETAIL)				/* { */
-	dbprintf(("comparing %s with\n", pbuf));
-	dbprintf(("          %s (%s)\n",
-		  remotehost,
+	dbprintf(("%s: comparing %s with\n", debug_prefix(NULL), pbuf));
+	dbprintf(("%s:           %s (%s)\n",
+		  debug_prefix(NULL), remotehost,
 		  (strcasecmp(pbuf, remotehost) == 0) ? "match" : "no match"));
-	dbprintf(("      and %s with\n", ptmp));
-	dbprintf(("          %s (%s)\n",
-		  remoteuser,
+	dbprintf(("%s:       and %s with\n", debug_prefix(NULL), ptmp));
+	dbprintf(("%s:           %s (%s)\n",
+		  debug_prefix(NULL), remoteuser,
 		  (strcasecmp(ptmp, remoteuser) == 0) ? "match" : "no match"));
 #endif								/* } */
 	if(strcasecmp(pbuf, remotehost) == 0
@@ -471,7 +481,8 @@ int bsd_security_ok(addr, str, cksum, errstr)
     amfree(pbuf);
 
     if(amandahostsauth) {
-	dbprintf(("amandahosts security check passed\n"));
+	dbprintf(("%s: amandahosts security check passed\n",
+		  debug_prefix_time(NULL)));
 	amfree(remotehost);
 	amfree(localuser);
 	amfree(remoteuser);
@@ -482,7 +493,7 @@ int bsd_security_ok(addr, str, cksum, errstr)
 			"access as ", localuser, " not allowed",
 			" from ", remoteuser, "@", remotehost,
 			"] amandahostsauth failed", NULL);
-    dbprintf(("check failed: %s\n", *errstr));
+    dbprintf(("%s: check failed: %s\n", debug_prefix_time(NULL), *errstr));
 
     amfree(remotehost);
     amfree(localuser);
@@ -523,6 +534,40 @@ main (argc, argv)
     char *str;
     char *errstr;
     int r;
+    struct passwd	*pwent;
+
+    /*
+     * The following is stolen from amandad to emulate what it would
+     * do on startup.
+     */
+    if(client_uid == (uid_t) -1 && (pwent = getpwnam(CLIENT_LOGIN)) != NULL) {
+	client_uid = pwent->pw_uid;
+	client_gid = pwent->pw_gid;
+	endpwent();
+    }
+#ifdef FORCE_USERID
+
+    /* we'd rather not run as root */
+    if(geteuid() == 0) {
+#ifdef KRB4_SECURITY
+        if(client_uid == (uid_t) -1) {
+	    error("error [cannot find user %s in passwd file]\n", CLIENT_LOGIN);
+	}
+
+        /*
+	 * if we're using kerberos security, we'll need to be root in
+	 * order to get at the machine's srvtab entry, so we hang on to
+	 * some root privledges for now.  We give them up entirely later.
+	 */
+	setegid(client_gid);
+	seteuid(client_uid);
+#else
+	initgroups(CLIENT_LOGIN, client_gid);
+	setgid(client_gid);
+	setuid(client_uid);
+#endif  /* KRB4_SECURITY */
+    }
+#endif	/* FORCE_USERID */
 
     fputs("Remote user: ", stdout);
     fflush(stdout);
@@ -536,18 +581,25 @@ main (argc, argv)
     if ((remotehost = agets(stdin)) == NULL) {
 	return 0;
     }
+
+    set_pname("security");
+    startclock();
+
     if ((hp = gethostbyname(remotehost)) == NULL) {
-	dbprintf(("cannot look up remote host %s\n", remotehost));
+	dbprintf(("%s: cannot look up remote host %s\n",
+		  debug_prefix_time(NULL), remotehost));
 	return 1;
     }
     memcpy((char *)&fake.sin_addr, (char *)hp->h_addr, sizeof(hp->h_addr));
     fake.sin_port = htons(IPPORT_RESERVED - 1);
 
     if ((r = bsd_security_ok(&fake, str, 0, &errstr)) == 0) {
-	dbprintf(("security check of %s@%s failed\n", remoteuser, remotehost));
-	dbprintf(("%s\n", errstr));
+	dbprintf(("%s: security check of %s@%s failed\n",
+		  debug_prefix_time(NULL), remoteuser, remotehost));
+	dbprintf(("%s: %s\n", debug_prefix(NULL), errstr));
     } else {
-	dbprintf(("security check of %s@%s passed\n", remoteuser, remotehost));
+	dbprintf(("%s: security check of %s@%s passed\n",
+		  debug_prefix_time(NULL), remoteuser, remotehost));
     }
     return r;
 }

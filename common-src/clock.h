@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clock.h,v 1.2.2.1 2002/03/24 22:50:42 jrjackson Exp $
+ * $Id: clock.h,v 1.2.2.2 2002/03/31 21:01:33 jrjackson Exp $
  *
  * interface for timing functions
  */
@@ -51,5 +51,6 @@ times_t timesadd P((times_t a, times_t b));
 times_t timessub P((times_t a, times_t b));
 char * times_str P((times_t t));
 char * walltime_str P((times_t t));
+int clock_is_running P((void));
 
 #endif /* CLOCK_H */

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.28.2.4.4.3.2.3 2002/01/14 00:27:27 martinea Exp $
+ * $Id: amrestore.c,v 1.28.2.4.4.3.2.4 2002/03/31 21:01:33 jrjackson Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -357,7 +357,7 @@ int isafile;
 	out = outpipe[1];
 	switch(compress_pid = fork()) {
 	case -1: 
-	    error("%s: could not fork for %s: %s", get_pname(), 
+	    error("could not fork for %s: %s",
 		  UNCOMPRESS_PATH, strerror(errno));
 	default:
 	    aclose(outpipe[0]);
@@ -516,7 +516,7 @@ char **argv;
 	case 'b':
 	    blocksize = strtol(optarg, &e, 10);
 	    if(e == NULL) {
-		error("%s: cannot convert \"%s\"", get_pname(), optarg);
+		error("cannot convert \"%s\"", optarg);
 	    }
 	    if(strcasecmp(e, "k") == 0) {
 		blocksize *= 1024;
@@ -524,9 +524,7 @@ char **argv;
 		blocksize *= 1024 * 1024;
 	    }
 	    if(blocksize < DISK_BLOCK_BYTES) {
-		error("%s: minimum block size is %dk",
-		      get_pname(),
-		      DISK_BLOCK_BYTES / 1024);
+		error("minimum block size is %dk", DISK_BLOCK_BYTES / 1024);
 	    }
 	    break;
 	case 'c': compflag = 1; break;

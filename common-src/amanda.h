@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.66.2.7.4.5.2.4 2002/03/24 19:23:23 jrjackson Exp $
+ * $Id: amanda.h,v 1.66.2.7.4.5.2.5 2002/03/31 21:01:33 jrjackson Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -354,7 +354,7 @@ extern int errno;
  * print debug output, else compile to nothing.
  */
 
-#ifdef DEBUG_CODE
+#ifdef DEBUG_CODE							/* { */
 #   define dbopen()	debug_open()
 #   define dbclose()	debug_close()
 #   define dbprintf(p)	(debug? (debug_printf p, 0) : 0)
@@ -369,14 +369,20 @@ extern void debug_printf P((char *format, ...))
 extern int  debug_fd P((void));
 extern FILE *  debug_fp P((void));
 extern char *  debug_fn P((void));
-#else
+extern void set_debug_prefix_pid P((pid_t));
+extern char *debug_prefix P((char *));
+extern char *debug_prefix_time P((char *));
+#else									/* }{ */
 #   define dbopen()
 #   define dbclose()
 #   define dbprintf(p)
 #   define dbfd()	(-1)
 #   define dbfp()	NULL
 #   define dbfn()	NULL
-#endif
+#   define set_debug_prefix_pid(x)
+#   debug_prefix(x) get_pname()
+#   debug_prefix_time(x) get_pname()
+#endif									/* } */
 
 /* amanda #days calculation, with roundoff */
 
@@ -596,6 +602,12 @@ extern void     areads_relbuf     P((int fd));
     }									\
     (p) = NULL;								\
 } while(0)
+
+/*
+ * Return the number of elements in an array.
+ */
+#define am_countof(a)        (sizeof(a) / sizeof((a)[0]))
+
 /*
  * min/max.  Don't do something like
  *

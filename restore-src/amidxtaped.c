@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.25.2.3.4.1.2.2 2002/03/24 20:25:37 jrjackson Exp $
+/* $Id: amidxtaped.c,v 1.25.2.3.4.1.2.3 2002/03/31 21:01:33 jrjackson Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -33,6 +33,7 @@
  */
 
 #include "amanda.h"
+#include "clock.h"
 #include "version.h"
 
 #include "tapeio.h"
@@ -53,12 +54,13 @@ get_client_line()
     while(1) {
 	if((part = agets(stdin)) == NULL) {
 	    if(errno != 0) {
-		dbprintf(("read error: %s\n", strerror(errno)));
+		dbprintf(("%s: read error: %s\n",
+			  debug_prefix_time(NULL), strerror(errno)));
 	    } else {
-		dbprintf(("EOF reached\n"));
+		dbprintf(("%s: EOF reached\n", debug_prefix_time(NULL)));
 	    }
 	    if(line) {
-		dbprintf(("unprocessed input:\n"));
+		dbprintf(("%s: unprocessed input:\n", debug_prefix_time(NULL)));
 		dbprintf(("-----\n"));
 		dbprintf(("%s\n", line));
 		dbprintf(("-----\n"));
@@ -87,7 +89,7 @@ get_client_line()
 	 */
 	strappend(line, "\n");
     }
-    dbprintf(("> %s\n", line));
+    dbprintf(("%s: > %s\n", debug_prefix_time(NULL), line));
     return line;
 }
 
@@ -161,6 +163,7 @@ char **argv;
     /* if no debug file, ship to bit bucket */
     (void)close(STDERR_FILENO);
     dbopen();
+    startclock();
     dbprintf(("%s: version %s\n", pgm, version()));
 #ifdef DEBUG_CODE
     if(dbfd() != -1 && dbfd() != STDERR_FILENO)
@@ -168,7 +171,8 @@ char **argv;
 	if(dup2(dbfd(),STDERR_FILENO) != STDERR_FILENO)
 	{
 	    perror("amidxtaped can't redirect stderr to the debug file");
-	    dbprintf(("amidxtaped can't redirect stderr to the debug file"));
+	    dbprintf(("%s: can't redirect stderr to the debug file\n",
+		      debug_prefix(NULL)));
 	    return 1;
 	}
     }
@@ -183,7 +187,8 @@ char **argv;
 #endif
 
     if (! (argc >= 1 && argv != NULL && argv[0] != NULL)) {
-	dbprintf(("%s: WARNING: argv[0] not defined: check inetd.conf\n", pgm));
+	dbprintf(("%s: WARNING: argv[0] not defined: check inetd.conf\n",
+		  debug_prefix_time(NULL)));
     }
 
     i = sizeof (addr);
@@ -221,7 +226,9 @@ char **argv;
     amfree(buf);
     buf = stralloc(get_client_line());
     amrestore_nargs = atoi(buf);
-    dbprintf(("amrestore_nargs=%d\n", amrestore_nargs));
+    dbprintf(("%s: amrestore_nargs=%d\n",
+	      debug_prefix_time(NULL),
+	      amrestore_nargs));
 
     amrestore_args = (char **)alloc((amrestore_nargs+2)*sizeof(char *));
     i = 0;
@@ -235,7 +242,7 @@ char **argv;
     amrestore_path = vstralloc(sbindir, "/", "amrestore", NULL);
 
     /* so got all the arguments, now ready to execv */
-    dbprintf(("Ready to execv amrestore with:\n"));
+    dbprintf(("%s: Ready to execv amrestore with:\n", debug_prefix_time(NULL)));
     dbprintf(("path = %s\n", amrestore_path));
     for (i = 0; amrestore_args[i] != NULL; i++)
     {
@@ -248,7 +255,8 @@ char **argv;
 	(void)execv(amrestore_path, amrestore_args);
 
 	/* only get here if exec failed */
-	dbprintf(("Child could not exec %s: %s\n",
+	dbprintf(("%s: child could not exec %s: %s\n",
+		  debug_prefix(NULL),
 		  amrestore_path,
 		  strerror(errno)));
 	return 1;
@@ -258,7 +266,8 @@ char **argv;
     /* this is the parent */
     if (pid == -1)
     {
-	dbprintf(("Error forking child: %s\n", strerror(errno)));
+	dbprintf(("%s: error forking child: %s\n",
+		  debug_prefix_time(NULL), strerror(errno)));
 	dbclose();
 	return 1;
     }
@@ -266,7 +275,8 @@ char **argv;
     /* wait for the child to do the restore */
     if (waitpid(pid, &status, 0) == -1)
     {
-	dbprintf(("Error waiting for child"));
+	dbprintf(("%s: error waiting for child: %s\n",
+		  debug_prefix_time(NULL), strerror(errno)));
 	dbclose();
 	return 1;
     }
@@ -279,12 +289,13 @@ char **argv;
     if (WIFEXITED(status) != 0)
     {
 
-	dbprintf(("amidxtaped: amrestore terminated normally with status: %d\n",
-		  WEXITSTATUS(status)));
+	dbprintf(("%s: amrestore terminated normally with status: %d\n",
+		  debug_prefix_time(NULL), WEXITSTATUS(status)));
     }
     else
     {
-	dbprintf(("amidxtaped: amrestore terminated abnormally.\n"));
+	dbprintf(("%s: amrestore terminated abnormally.\n",
+		  debug_prefix_time(NULL)));
     }
 
     /* rewind tape */
@@ -294,7 +305,8 @@ char **argv;
 	    break;
     if (i > amrestore_nargs)
     {
-	dbprintf(("Couldn't find tape in arguments\n"));
+	dbprintf(("%s: ouldn't find tape in arguments\n",
+		  debug_prefix_time(NULL)));
 	dbclose();
 	return 1;
     }
@@ -307,14 +319,14 @@ char **argv;
     if (!isafile) {
 	char *errstr = NULL;
 
-	dbprintf(("Rewinding tape: "));
+	dbprintf(("%s: rewinding tape ...\n", debug_prefix_time(NULL)));
 	errstr = tape_rewind(tapename);
 
 	if (errstr != NULL) {
-	    dbprintf(("%s\n", errstr));
+	    dbprintf(("%s: %s\n", debug_prefix_time(NULL), errstr));
 	    amfree(errstr);
 	} else {
-	    dbprintf(("done\n"));
+	    dbprintf(("%s: done\n", debug_prefix_time(NULL)));
 	}
     }
     amfree(tapename);

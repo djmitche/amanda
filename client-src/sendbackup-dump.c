@@ -24,12 +24,13 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.65.2.5.4.2.2.5 2002/03/24 21:27:15 martinea Exp $
+ * $Id: sendbackup-dump.c,v 1.65.2.5.4.2.2.6 2002/03/31 21:01:32 jrjackson Exp $
  *
  * send backup data using BSD dump
  */
 
 #include "sendbackup.h"
+#include "clock.h"
 #include "getfsent.h"
 #include "version.h"
 
@@ -45,91 +46,73 @@ static regex_t re_table[] = {
   /* the various encodings of dump size */
   /* this should also match BSDI pre-3.0's buggy dump program, that
      produced doubled DUMP: DUMP: messages */
-  { DMP_SIZE, 
-	"DUMP: [0-9][0-9]* tape blocks",				1024},
+  AM_SIZE_RE("DUMP: [0-9][0-9]* tape blocks", 1024),
+  AM_SIZE_RE("dump: Actual: [0-9][0-9]* tape blocks", 1024),
+  AM_SIZE_RE("backup: There are [0-9][0-9]* tape blocks on [0-9][0-9]* tapes",
+	     1024),
+  AM_SIZE_RE("backup: [0-9][0-9]* tape blocks on [0-9][0-9]* tape\\(s\\)",
+	     1024),
+  AM_SIZE_RE("backup: [0-9][0-9]* 1k blocks on [0-9][0-9]* volume\\(s\\)",
+	     1024),
+  AM_SIZE_RE("DUMP: [0-9][0-9]* blocks \\([0-9][0-9]*KB\\) on [0-9][0-9]* volume",
+	     512),
 
-  { DMP_SIZE,
-	"dump: Actual: [0-9][0-9]* tape blocks",			1024},
-
-  { DMP_SIZE,
-        "backup: There are [0-9][0-9]* tape blocks on [0-9][0-9]* tapes",    1024},
-
-  { DMP_SIZE,
-        "backup: [0-9][0-9]* tape blocks on [0-9][0-9]* tape\\(s\\)",       1024},
-
-  { DMP_SIZE,
-	"backup: [0-9][0-9]* 1k blocks on [0-9][0-9]* volume\\(s\\)",	1024},
-
-  { DMP_SIZE,
-	"DUMP: [0-9][0-9]* blocks \\([0-9][0-9]*KB\\) on [0-9][0-9]* volume", 512},
-
-  { DMP_SIZE,
-"DUMP: [0-9][0-9]* blocks \\([0-9][0-9]*\\.[0-9][0-9]*MB\\) on [0-9][0-9]* volume",
-                                                                          512},
-  { DMP_SIZE, "DUMP: [0-9][0-9]* blocks",                                 512},
-
-  { DMP_SIZE, "DUMP: [0-9][0-9]* bytes were dumped",		            1},
-
-  { DMP_SIZE, "vdump: Dumped  [0-9][0-9]* of [0-9][0-9]* bytes",	    1},
-		/* OSF's vdump */
-
-  { DMP_SIZE, "dump: Actual: [0-9][0-9]* blocks output to pipe",         1024},
-                /* DU 4.0a dump */
-
-  { DMP_SIZE, "dump: Dumped  [0-9][0-9]* of [0-9][0-9]* bytes",		    1},
-		/* DU 4.0 vdump */
-
-  { DMP_SIZE, "DUMP: [0-9][0-9]* KB actual output", 1024},
-		/* HPUX dump */
-
-  { DMP_SIZE, "vxdump: [0-9][0-9]* tape blocks", 1024},
-		/* HPUX 10.20 and above vxdump */
-
-  { DMP_SIZE, "vxdump: [0-9][0-9]* blocks", 1024},
-		/* UnixWare vxdump */
-
-  { DMP_SIZE, "   VXDUMP: [0-9][0-9]* blocks",                            512},
-		/* SINIX vxdump */
-
-  { DMP_SIZE, "   UFSDUMP: [0-9][0-9]* blocks",                           512},
-		/* SINIX ufsdump */
-
-  { DMP_SIZE, "xfsdump: media file size [0-9][0-9]* bytes",                 1},
-		/* Irix 6.2 xfs dump */
+  AM_SIZE_RE("DUMP: [0-9][0-9]* blocks \\([0-9][0-9]*\\.[0-9][0-9]*MB\\) on [0-9][0-9]* volume",
+	     512),
+  AM_SIZE_RE("DUMP: [0-9][0-9]* blocks", 512),
+  AM_SIZE_RE("DUMP: [0-9][0-9]* bytes were dumped", 1),
+  /* OSF's vdump */
+  AM_SIZE_RE("vdump: Dumped  [0-9][0-9]* of [0-9][0-9]* bytes", 1),
+  /* DU 4.0a dump */
+  AM_SIZE_RE("dump: Actual: [0-9][0-9]* blocks output to pipe", 1024),
+  /* DU 4.0 vdump */
+  AM_SIZE_RE("dump: Dumped  [0-9][0-9]* of [0-9][0-9]* bytes", 1),
+  /* HPUX dump */
+  AM_SIZE_RE("DUMP: [0-9][0-9]* KB actual output", 1024),
+  /* HPUX 10.20 and above vxdump */
+  AM_SIZE_RE("vxdump: [0-9][0-9]* tape blocks", 1024),
+  /* UnixWare vxdump */
+  AM_SIZE_RE("vxdump: [0-9][0-9]* blocks", 1024),
+  /* SINIX vxdump */
+  AM_SIZE_RE("   VXDUMP: [0-9][0-9]* blocks", 512),
+  /* SINIX ufsdump */
+  AM_SIZE_RE("   UFSDUMP: [0-9][0-9]* blocks", 512),
+  /* Irix 6.2 xfs dump */
+  AM_SIZE_RE("xfsdump: media file size [0-9][0-9]* bytes", 1),
 
   /* strange dump lines */
-  { DMP_STRANGE, "should not happen" },
-  { DMP_STRANGE, "Cannot open" },
-  { DMP_STRANGE, "[Ee]rror" },
-  { DMP_STRANGE, "[Ff]ail" },
+  AM_STRANGE_RE("should not happen"),
+  AM_STRANGE_RE("Cannot open"),
+  AM_STRANGE_RE("[Ee]rror"),
+  AM_STRANGE_RE("[Ff]ail"),
   /* XXX add more ERROR entries here by scanning dump sources? */
 
   /* any blank or non-strange DUMP: lines are marked as normal */
-  { DMP_NORMAL, "^ *DUMP:" },
-  { DMP_NORMAL, "^dump:" },					/* OSF/1 */
-  { DMP_NORMAL, "^vdump:" },					/* OSF/1 */
-  { DMP_NORMAL, "^ *vxdump:" },					/* HPUX10 */
-  { DMP_NORMAL, "^ *vxfs *vxdump:" },				/* Solaris */
-  { DMP_NORMAL, "^xfsdump:" },					/* IRIX xfs */
-  { DMP_NORMAL, "^ *VXDUMP:" },                                 /* Sinix */
-  { DMP_NORMAL, "^ *UFSDUMP:" },                                /* Sinix */
+  AM_NORMAL_RE("^ *DUMP:"),
+  AM_NORMAL_RE("^dump:"),				/* OSF/1 */
+  AM_NORMAL_RE("^vdump:"),				/* OSF/1 */
+  AM_NORMAL_RE("^ *vxdump:"),				/* HPUX10 */
+  AM_NORMAL_RE("^ *vxfs *vxdump:"),			/* Solaris */
+  AM_NORMAL_RE("^xfsdump:"),				/* IRIX xfs */
+  AM_NORMAL_RE("^ *VXDUMP:"),				/* Sinix */
+  AM_NORMAL_RE("^ *UFSDUMP:"),				/* Sinix */
 
 #ifdef VDUMP	/* this is for OSF/1 3.2's vdump for advfs */
-  { DMP_NORMAL, "^The -s option is ignored"},			/* OSF/1 */
-  { DMP_NORMAL, "^path"},					/* OSF/1 */
-  { DMP_NORMAL, "^dev/fset"},					/* OSF/1 */
-  { DMP_NORMAL, "^type"},					/* OSF/1 */
-  { DMP_NORMAL, "^advfs id"},					/* OSF/1 */
-  { DMP_NORMAL, "^[A-Z][a-z][a-z] [A-Z][a-z][a-z] .[0-9] [0-9]"}, /* OSF/1 */
+  AM_NORMAL_RE("^The -s option is ignored"),		/* OSF/1 */
+  AM_NORMAL_RE("^path"),				/* OSF/1 */
+  AM_NORMAL_RE("^dev/fset"),				/* OSF/1 */
+  AM_NORMAL_RE("^type"),				/* OSF/1 */
+  AM_NORMAL_RE("^advfs id"),				/* OSF/1 */
+  AM_NORMAL_RE("^[A-Z][a-z][a-z] [A-Z][a-z][a-z] .[0-9] [0-9]"), /* OSF/1 */
 #endif
 
-  { DMP_NORMAL, "^backup:" },					/* AIX */
-  { DMP_NORMAL, "^        Use the umount command to unmount the filesystem" },
+  AM_NORMAL_RE("^backup:"),				/* AIX */
+  AM_NORMAL_RE("^        Use the umount command to unmount the filesystem"),
 
-  { DMP_NORMAL, "^[ \t]*$" },
+  AM_NORMAL_RE("^[ \t]*$"),
 
   /* catch-all; DMP_STRANGE is returned for all other lines */
-  { DMP_STRANGE, NULL, 0}
+  AM_STRANGE_RE(NULL)
 };
 
 static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, indexf)
@@ -165,8 +148,8 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 	comppid = pipespawn(COMPRESS_PATH, STDIN_PIPE,
 			    &dumpout, &dataf, &mesgf,
 			    COMPRESS_PATH, compopt, NULL);
-	dbprintf(("%s-gnutar: pid %ld: %s",
-		  get_pname(), (long)comppid, COMPRESS_PATH));
+	dbprintf(("%s: pid %ld: %s",
+		  debug_prefix_time("-dump"), (long)comppid, COMPRESS_PATH));
 	if(compopt != skip_argument) {
 	    dbprintf((" %s", compopt));
 	}

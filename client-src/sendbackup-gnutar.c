@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.56.2.15.4.4.2.7 2002/03/24 19:23:23 jrjackson Exp $
+ * $Id: sendbackup-gnutar.c,v 1.56.2.15.4.4.2.8 2002/03/31 21:01:32 jrjackson Exp $
  *
  * send backup data using GNU tar
  */
@@ -32,6 +32,7 @@
 #include "amanda.h"
 #include "sendbackup.h"
 #include "amandates.h"
+#include "clock.h"
 #include "util.h"
 #include "getfsent.h"			/* for amname_to_dirname lookup */
 #include "version.h"
@@ -49,79 +50,78 @@
 
 static regex_t re_table[] = {
   /* tar prints the size in bytes */
-  { DMP_SIZE, 
-	"^Total bytes written: [0-9][0-9]*",				1},
+  AM_SIZE_RE("^Total bytes written: [0-9][0-9]*", 1),
 
-  { DMP_NORMAL, "^Elapsed time:", 1 },
-  { DMP_NORMAL, "^Throughput", 1 },
+  AM_NORMAL_RE("^Elapsed time:"),
+  AM_NORMAL_RE("^Throughput"),
 
   /* GNU tar 1.13.17 will print this warning when (not) backing up a
      Unix named socket.  */
-  { DMP_NORMAL, ": socket ignored$", 1 },
+  AM_NORMAL_RE(": socket ignored$"),
 
   /* GNUTAR produces a few error messages when files are modified or
      removed while it is running.  They may cause data to be lost, but
      then they may not.  We shouldn't consider them NORMAL until
      further investigation.  */
 #ifdef IGNORE_TAR_ERRORS
-  { DMP_NORMAL, ": File .* shrunk by [0-9][0-9]* bytes, padding with zeros", 1 },
-  { DMP_NORMAL, ": Cannot add file .*: No such file or directory$", 1},
-  { DMP_NORMAL, ": Error exit delayed from previous errors", 1},
+  AM_NORMAL_RE(": File .* shrunk by [0-9][0-9]* bytes, padding with zeros"),
+  AM_NORMAL_RE(": Cannot add file .*: No such file or directory$"),
+  AM_NORMAL_RE(": Error exit delayed from previous errors"),
 #endif
   
   /* samba may produce these output messages */
-  { DMP_NORMAL, "^[Aa]dded interface", 1},
-  { DMP_NORMAL, "^session request to ", 1},
-  { DMP_NORMAL, "^tar: dumped [0-9][0-9]* (tar )?files", 1},
+  AM_NORMAL_RE("^[Aa]dded interface"),
+  AM_NORMAL_RE("^session request to "),
+  AM_NORMAL_RE("^tar: dumped [0-9][0-9]* (tar )?files"),
 
 #if SAMBA_VERSION < 2
-  { DMP_NORMAL, "^doing parameter", 1},
-  { DMP_NORMAL, "^pm_process\\(\\)", 1},
-  { DMP_NORMAL, "^adding IPC", 1},
-  { DMP_NORMAL, "^Opening", 1},
-  { DMP_NORMAL, "^Connect", 1},
-  { DMP_NORMAL, "^Domain=", 1},
-  { DMP_NORMAL, "^max", 1},
-  { DMP_NORMAL, "^security=", 1},
-  { DMP_NORMAL, "^capabilities", 1},
-  { DMP_NORMAL, "^Sec mode ", 1},
-  { DMP_NORMAL, "^Got ", 1},
-  { DMP_NORMAL, "^Chose protocol ", 1},
-  { DMP_NORMAL, "^Server ", 1},
-  { DMP_NORMAL, "^Timezone ", 1},
-  { DMP_NORMAL, "^received", 1},
-  { DMP_NORMAL, "^FINDFIRST", 1},
-  { DMP_NORMAL, "^FINDNEXT", 1},
-  { DMP_NORMAL, "^dos_clean_name", 1},
-  { DMP_NORMAL, "^file", 1},
-  { DMP_NORMAL, "^getting file", 1},
-  { DMP_NORMAL, "^Rejected chained", 1},
-  { DMP_NORMAL, "^nread=", 1},
-  { DMP_NORMAL, "^\\([0-9][0-9]* kb/s\\)", 1},
-  { DMP_NORMAL, "^\\([0-9][0-9]*\\.[0-9][0-9]* kb/s\\)", 1},
-  { DMP_NORMAL, "^[ \t]*[0-9][0-9]* \\([ \t]*[0-9][0-9]*\\.[0-9][0-9]* kb/s\\)", 1},
-  { DMP_NORMAL, "^[ \t]*directory ", 1},
-  { DMP_NORMAL, "^load_client_codepage", 1},
+  AM_NORMAL_RE("^doing parameter"),
+  AM_NORMAL_RE("^pm_process\\(\\)"),
+  AM_NORMAL_RE("^adding IPC"),
+  AM_NORMAL_RE("^Opening"),
+  AM_NORMAL_RE("^Connect"),
+  AM_NORMAL_RE("^Domain="),
+  AM_NORMAL_RE("^max"),
+  AM_NORMAL_RE("^security="),
+  AM_NORMAL_RE("^capabilities"),
+  AM_NORMAL_RE("^Sec mode "),
+  AM_NORMAL_RE("^Got "),
+  AM_NORMAL_RE("^Chose protocol "),
+  AM_NORMAL_RE("^Server "),
+  AM_NORMAL_RE("^Timezone "),
+  AM_NORMAL_RE("^received"),
+  AM_NORMAL_RE("^FINDFIRST"),
+  AM_NORMAL_RE("^FINDNEXT"),
+  AM_NORMAL_RE("^dos_clean_name"),
+  AM_NORMAL_RE("^file"),
+  AM_NORMAL_RE("^getting file"),
+  AM_NORMAL_RE("^Rejected chained"),
+  AM_NORMAL_RE("^nread="),
+  AM_NORMAL_RE("^\\([0-9][0-9]* kb/s\\)"),
+  AM_NORMAL_RE("^\\([0-9][0-9]*\\.[0-9][0-9]* kb/s\\)"),
+  AM_NORMAL_RE("^[ \t]*[0-9][0-9]* \\([ \t]*[0-9][0-9]*\\.[0-9][0-9]* kb/s\\)"),
+  AM_NORMAL_RE("^[ \t]*directory "),
+  AM_NORMAL_RE("^load_client_codepage"),
 #endif
 
 #ifdef IGNORE_SMBCLIENT_ERRORS
   /* This will cause amanda to ignore real errors, but that may be
    * unavoidable when you're backing up system disks.  It seems to be
    * a safe thing to do if you know what you're doing.  */
-  { DMP_NORMAL, "^ERRDOS - ERRbadshare opening remote file", 1},
-  { DMP_NORMAL, "^ERRDOS - ERRbadfile opening remote file", 1},
-  { DMP_NORMAL, "^ERRDOS - ERRnoaccess opening remote file", 1},
-  { DMP_NORMAL, "^ERRSRV - ERRaccess setting attributes on file", 1},
-  { DMP_NORMAL, "^ERRDOS - ERRnoaccess setting attributes on file", 1},
+  AM_NORMAL_RE("^ERRDOS - ERRbadshare opening remote file"),
+  AM_NORMAL_RE("^ERRDOS - ERRbadfile opening remote file"),
+  AM_NORMAL_RE("^ERRDOS - ERRnoaccess opening remote file"),
+  AM_NORMAL_RE("^ERRSRV - ERRaccess setting attributes on file"),
+  AM_NORMAL_RE("^ERRDOS - ERRnoaccess setting attributes on file"),
 #endif
 
 #if SAMBA_VERSION >= 2
   /* Backup attempt of nonexisting directory */
-  { DMP_ERROR, "ERRDOS - ERRbadpath (Directory invalid.)", 1},
+  AM_ERROR_RE("ERRDOS - ERRbadpath (Directory invalid.)"),
 #endif
 
   /* catch-all: DMP_STRANGE is returned for all other lines */
-  { DMP_STRANGE, NULL, 0}
+  AM_STRANGE_RE(NULL)
 };
 
 int cur_level;
@@ -147,6 +147,9 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
     struct tm *gmtm;
     amandates_t *amdates;
     time_t prev_dumptime;
+    char *error_pn = NULL;
+
+    error_pn = stralloc2(get_pname(), "-smbclient");
 
     fprintf(stderr, "%s: start [%s:%s level %d]\n",
 	    get_pname(), host, disk, level);
@@ -166,8 +169,8 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 	comppid = pipespawn(COMPRESS_PATH, STDIN_PIPE,
 			    &dumpout, &dataf, &mesgf,
 			    COMPRESS_PATH, compopt, NULL);
-	dbprintf(("%s-gnutar: pid %ld: %s",
-		  get_pname(), (long)comppid, COMPRESS_PATH));
+	dbprintf(("%s: pid %ld: %s",
+		  debug_prefix_time("-gnutar"), (long)comppid, COMPRESS_PATH));
 	if(compopt != skip_argument) {
 	    dbprintf((" %s", compopt));
 	}
@@ -229,8 +232,8 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 	    if ((in = fopen(inputname, "r")) == NULL) {
 		int save_errno = errno;
 
-		dbprintf(("%s-gnutar: error opening %s: %s\n",
-			  get_pname(),
+		dbprintf(("%s: error opening %s: %s\n",
+			  debug_prefix_time("-gnutar"),
 			  inputname,
 			  strerror(save_errno)));
 		if (baselevel < 0) {
@@ -265,8 +268,8 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 	}
 	out = NULL;
 
-	dbprintf(("%s-gnutar: doing level %d dump as listed-incremental",
-		  get_pname(), level));
+	dbprintf(("%s: doing level %d dump as listed-incremental",
+		  debug_prefix_time("-gnutar"), level));
 	if(baselevel >= 0) {
 	    dbprintf((" from %s", inputname));
 	}
@@ -298,8 +301,8 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 		gmtm->tm_year + 1900, gmtm->tm_mon+1, gmtm->tm_mday,
 		gmtm->tm_hour, gmtm->tm_min, gmtm->tm_sec);
 
-    dbprintf(("%s-gnutar: doing level %d dump from date: %s\n",
-	      get_pname(), level, dumptimestr));
+    dbprintf(("%s: doing level %d dump from date: %s\n",
+	      debug_prefix_time("-gnutar"), level, dumptimestr));
 
     dirname = amname_to_dirname(amdevice);
 
@@ -334,19 +337,24 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 	if (!share) {
 	     amfree(share);
 	     amfree(subdir);
-	     error("%s-smbtar: cannot parse disk entry '%s' for share/subdir",
-		   get_pname(), disk);
+	     set_pname(error_pn);
+	     amfree(error_pn);
+	     error("cannot parse disk entry '%s' for share/subdir", disk);
 	}
 	if ((subdir) && (SAMBA_VERSION < 2)) {
 	     amfree(share);
 	     amfree(subdir);
-	     error("%s-smbtar: subdirectory specified for share '%s' but samba not v2 or better", get_pname(), disk);
+	     set_pname(error_pn);
+	     amfree(error_pn);
+	     error("subdirectory specified for share '%s' but samba not v2 or better", disk);
 	}
 	if ((user_and_password = findpass(share, &domain)) == NULL) {
 	    if(domain) {
 		memset(domain, '\0', strlen(domain));
 		amfree(domain);
 	    }
+	    set_pname(error_pn);
+	    amfree(error_pn);
 	    error("error [invalid samba host or password not found?]");
 	}
 	lpass = strlen(user_and_password);
@@ -357,8 +365,9 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 		memset(domain, '\0', strlen(domain));
 		amfree(domain);
 	    }
-	    error("%s-smbtar: password field not \'user%%pass\' for %s",
-		  get_pname(), disk);
+	    set_pname(error_pn);
+	    amfree(error_pn);
+	    error("password field not \'user%%pass\' for %s", disk);
 	}
 	*pwtext++ = '\0';
 	pwtext_len = strlen(pwtext);
@@ -369,6 +378,8 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 		memset(domain, '\0', strlen(domain));
 		amfree(domain);
 	    }
+	    set_pname(error_pn);
+	    amfree(error_pn);
 	    error("error [can't make share name of %s]", share);
 	}
 
@@ -386,7 +397,7 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 	    strappend(taropt, "a");
 	}
 
-	dbprintf(("%s-gnutar: backup of %s", get_pname(), sharename));
+	dbprintf(("%s: backup of %s", debug_prefix_time("-gnutar"), sharename));
 	if (subdir) {
 	    dbprintf(("/%s",subdir));
 	}
@@ -432,6 +443,8 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 	    aclose(passwdf);
 	    memset(user_and_password, '\0', lpass);
 	    amfree(user_and_password);
+	    set_pname(error_pn);
+	    amfree(error_pn);
 	    error("error [password write failed: %s]", strerror(save_errno));
 	}
 	memset(user_and_password, '\0', lpass);
@@ -514,11 +527,15 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 	amfree(file_include);
 	amfree(my_argv);
     }
-    dbprintf(("%s-gnutar: %s: pid %ld\n", get_pname(), cmd, (long)dumppid));
+    dbprintf(("%s: %s: pid %ld\n",
+	      debug_prefix_time("-gnutar"),
+	      cmd,
+	      (long)dumppid));
 
     amfree(dirname);
     amfree(cmd);
     amfree(indexcmd);
+    amfree(error_pn);
 
     /* close the write ends of the pipes */
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.32.2.4.4.1.2.1 2002/03/24 20:25:37 jrjackson Exp $
+ * $Id: amandad.c,v 1.32.2.4.4.1.2.2 2002/03/31 21:01:32 jrjackson Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -33,6 +33,7 @@
  */
 
 #include "amanda.h"
+#include "clock.h"
 #include "dgram.h"
 #include "version.h"
 #include "protocol.h"
@@ -67,8 +68,6 @@ int ack_timeout     = ACK_TIMEOUT;
 #  include "amandad-krb4.c"
 #endif
 
-static char *pgm = "amandad";		/* in case argv[0] is not set */
-
 /* local functions */
 int main P((int argc, char **argv));
 void sendack P((pkt_t *hdr, pkt_t *msg));
@@ -85,6 +84,7 @@ char **argv;
     char *errstr = NULL;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
+    char *pgm = "amandad";		/* in case argv[0] is not set */
 
     /* in_msg: The first incoming request.
        dup_msg: Any other incoming message.
@@ -166,12 +166,15 @@ char **argv;
 	dup2(db_fd, 2);
     }
 
-    dbprintf(("%s: version %s\n", pgm, version()));
+    startclock();
+
+    dbprintf(("%s: version %s\n", get_pname(), version()));
     for(vp = version_info; *vp != NULL; vp++)
-	dbprintf(("%s: %s", pgm, *vp));
+	dbprintf(("%s: %s", debug_prefix(NULL), *vp));
 
     if (! (argc >= 1 && argv != NULL && argv[0] != NULL)) {
-	dbprintf(("%s: WARNING: argv[0] not defined: check inetd.conf\n", pgm));
+	dbprintf(("%s: WARNING: argv[0] not defined: check inetd.conf\n",
+		  debug_prefix(NULL)));
     }
 
     dgram_zero(&in_msg.dgram); 
@@ -197,10 +200,10 @@ char **argv;
 #ifdef KRB4_SECURITY
     if(argc >= 2 && strcmp(argv[1], "-krb4") == 0) {
 	krb4_auth = 1;
-	dbprintf(("using krb4 security\n"));
+	dbprintf(("%s: using krb4 security\n", debug_prefix(NULL)));
     }
     else {
-	dbprintf(("using bsd security\n"));
+	dbprintf(("%s: using bsd security\n", debug_prefix(NULL)));
 	krb4_auth = 0;
     }
 #endif
@@ -218,12 +221,14 @@ char **argv;
 	error("error receiving message: %s", s);
     }
 
-    dbprintf(("got packet:\n--------\n%s--------\n\n", in_msg.dgram.cur));
+    dbprintf(("%s: got packet:\n--------\n%s--------\n\n",
+	      debug_prefix_time(NULL), in_msg.dgram.cur));
 
     parse_pkt_header(&in_msg);
     if(in_msg.type != P_REQ && in_msg.type != P_NAK && in_msg.type != P_ACK) {
 	/* XXX */
-	dbprintf(("this is a %s packet, nak'ing it\n", 
+	dbprintf(("%s: this is a %s packet, nak'ing it\n", 
+		  debug_prefix_time(NULL),
 		  in_msg.type == P_BOGUS? "bogus" : "unexpected"));
 	if(in_msg.type != P_BOGUS) {
 	    parse_errmsg = newvstralloc(parse_errmsg,"unexpected ",
@@ -236,7 +241,8 @@ char **argv;
 	return 1;
     }
     if(in_msg.type != P_REQ) {
-	dbprintf(("strange, this is not a request packet\n"));
+	dbprintf(("%s: strange, this is not a request packet\n",
+		  debug_prefix_time(NULL)));
 	dbclose();
 	return 1;
     }
@@ -257,7 +263,8 @@ char **argv;
     cmd = newvstralloc(cmd, libexecdir, "/", base, versionsuffix(), NULL);
 
     if(access(cmd, X_OK) == -1) {
-	dbprintf(("execute access to \"%s\" denied\n", cmd));
+	dbprintf(("%s: execute access to \"%s\" denied\n",
+		  debug_prefix_time(NULL), cmd));
 	errstr = newvstralloc(errstr,
 			      "service ", base, " unavailable",
 			      NULL);
@@ -316,7 +323,7 @@ char **argv;
 
 #endif  /* KRB4_SECURITY && FORCE_USERID */
 
-    dbprintf(("%s: running service \"%s\"\n", pgm, cmd));
+    dbprintf(("%s: running service \"%s\"\n", debug_prefix_time(NULL), cmd));
 
     /* spawn first child to handle the request */
 
@@ -429,21 +436,24 @@ char **argv;
 	 *
 	 * It should suffice to ACK whenever the sender is identical.
 	 */
-	dbprintf(("%s: got packet:\n----\n%s----\n\n", pgm,
-		  dup_msg.dgram.data));
+	dbprintf(("%s: got packet:\n----\n%s----\n\n",
+		  debug_prefix_time(NULL), dup_msg.dgram.data));
 	parse_pkt_header(&dup_msg);
 	if(dup_msg.peer.sin_addr.s_addr == in_msg.peer.sin_addr.s_addr &&
 	   dup_msg.peer.sin_port == in_msg.peer.sin_port) {
 	    if(dup_msg.type == P_REQ) {
-		dbprintf(("%s: received dup P_REQ packet, ACKing it\n", pgm));
+		dbprintf(("%s: received dup P_REQ packet, ACKing it\n",
+			  debug_prefix_time(NULL)));
 		sendack(&in_msg, &rej_msg);
 	    }
 	    else {
-		dbprintf(("%s: It's not a P_REQ, ignoring it\n", pgm));
+		dbprintf(("%s: it is not a P_REQ, ignoring it\n",
+			  debug_prefix_time(NULL)));
 	    }
 	}
 	else {
-	    dbprintf(("%s: received other packet, NAKing it\n", pgm));
+	    dbprintf(("%s: received other packet, NAKing it\n",
+		      debug_prefix_time(NULL)));
 	    dbprintf(("  addr: peer %s dup %s, port: peer %d dup %d\n",
 		      inet_ntoa(in_msg.peer.sin_addr),
 		      inet_ntoa(dup_msg.peer.sin_addr),
@@ -469,7 +479,7 @@ send_response:
     while(retry_count < max_retry_count) {
 	if(!retry_count)
 	    dbprintf(("%s: sending REP packet:\n----\n%s----\n\n",
-		      pgm, out_msg.dgram.data));
+		      debug_prefix_time(NULL), out_msg.dgram.data));
 	dgram_send_addr(in_msg.peer, &out_msg.dgram);
 	if((n = dgram_recv(&dup_msg.dgram, ack_timeout, &dup_msg.peer)) <= 0) {
 	    char *s;
@@ -483,7 +493,7 @@ send_response:
 	    /* timed out or error, try again */
 	    retry_count++;
 
-	    dbprintf(("%s: waiting for ack: %s", pgm, s));
+	    dbprintf(("%s: waiting for ack: %s", debug_prefix_time(NULL), s));
 	    if(retry_count < max_retry_count) 
 		dbprintf((", retrying\n"));
 	    else 
@@ -491,8 +501,8 @@ send_response:
 
 	    continue;
 	}
-	dbprintf(("%s: got packet:\n----\n%s----\n\n", pgm,
-		  dup_msg.dgram.data));
+	dbprintf(("%s: got packet:\n----\n%s----\n\n",
+		  debug_prefix_time(NULL), dup_msg.dgram.data));
 	parse_pkt_header(&dup_msg);
 
 	
@@ -501,10 +511,11 @@ send_response:
 	    if(dup_msg.type == P_ACK)
 		break;
 	    else
-		dbprintf(("%s: It's not an ack\n", pgm));
+		dbprintf(("%s: it is not an ack\n", debug_prefix_time(NULL)));
 	}
 	else {
-	    dbprintf(("%s: weird, it's not a proper ack\n", pgm));
+	    dbprintf(("%s: weird, it is not a proper ack\n",
+		      debug_prefix_time(NULL)));
 	    dbprintf(("  addr: peer %s dup %s, port: peer %d dup %d\n",
 		      inet_ntoa(in_msg.peer.sin_addr),
 		      inet_ntoa(dup_msg.peer.sin_addr),
@@ -543,7 +554,8 @@ pkt_t *msg;
 		hdr->handle ? hdr->handle : "",
 		hdr->sequence);
     msg->dgram.len = strlen(msg->dgram.data);
-    dbprintf(("sending ack:\n----\n%s----\n\n", msg->dgram.data));
+    dbprintf(("%s: sending ack:\n----\n%s----\n\n",
+	      debug_prefix_time(NULL), msg->dgram.data));
     dgram_send_addr(hdr->peer, &msg->dgram);
 }
 
@@ -560,7 +572,8 @@ char *str;
 		hdr->sequence, str ? str : "UNKNOWN");
 
     msg->dgram.len = strlen(msg->dgram.data);
-    dbprintf(("sending nack:\n----\n%s----\n\n", msg->dgram.data));
+    dbprintf(("%s: sending nack:\n----\n%s----\n\n",
+	      debug_prefix_time(NULL), msg->dgram.data));
     dgram_send_addr(hdr->peer, &msg->dgram);
 }
 

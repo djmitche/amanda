@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.11.2.3.4.3.2.2 2002/03/24 19:23:23 jrjackson Exp $
+ * $Id: dgram.c,v 1.11.2.3.4.3.2.3 2002/03/31 21:01:33 jrjackson Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -57,14 +57,14 @@ int *portp;
     if((s = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
 	save_errno = errno;
 	dbprintf(("%s: dgram_bind: socket() failed: %s\n",
-		  get_pname(),
+		  debug_prefix(NULL),
 		  strerror(save_errno)));
 	errno = save_errno;
 	return -1;
     }
     if(s < 0 || s >= FD_SETSIZE) {
 	dbprintf(("%s: dgram_bind: socket out of range: %d\n",
-		  get_pname(),
+		  debug_prefix(NULL),
 		  s));
 	aclose(s);
 	errno = EMFILE;				/* out of range */
@@ -96,7 +96,7 @@ int *portp;
     if (bind(s, (struct sockaddr *)&name, (socklen_t)sizeof name) == -1) {
 	save_errno = errno;
 	dbprintf(("%s: dgram_bind: bind(INADDR_ANY) failed: %s\n",
-		  get_pname(),
+		  debug_prefix(NULL),
 		  strerror(save_errno)));
 	errno = save_errno;
 	aclose(s);
@@ -110,7 +110,7 @@ out:
     if(getsockname(s, (struct sockaddr *)&name, &len) == -1) {
 	save_errno = errno;
 	dbprintf(("%s: dgram_bind: getsockname() failed: %s\n",
-		  get_pname(),
+		  debug_prefix(NULL),
 		  strerror(save_errno)));
 	errno = save_errno;
 	aclose(s);
@@ -119,7 +119,7 @@ out:
     *portp = ntohs(name.sin_port);
     dgram->socket = s;
     dbprintf(("%s: dgram_bind: socket bound to %s.%d\n",
-	      get_pname(),
+	      debug_prefix_time(NULL),
 	      inet_ntoa(name.sin_addr),
 	      *portp));
     return 0;
@@ -144,7 +144,7 @@ dgram_t *dgram;
 	if((s = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
 	    save_errno = errno;
 	    dbprintf(("%s: dgram_send_addr: socket() failed: %s\n",
-		      get_pname(),
+		      debug_prefix(NULL),
 		      strerror(save_errno)));
 	    errno = save_errno;
 	    return -1;
@@ -154,7 +154,7 @@ dgram_t *dgram;
 
     if(s < 0 || s >= FD_SETSIZE) {
 	dbprintf(("%s: dgram_send_addr: socket out of range: %d\n",
-		  get_pname(),
+		  debug_prefix(NULL),
 		  s));
 	if(socket_opened) {
 	    aclose(s);
@@ -176,7 +176,7 @@ dgram_t *dgram;
 	if(errno == ECONNREFUSED && wait_count++ < max_wait) {
 	    sleep(5);
 	    dbprintf(("%s: dgram_send_addr: sendto(%s.%d): retry %d after ECONNREFUSED\n",
-		      get_pname(),
+		      debug_prefix_time(NULL),
 		      inet_ntoa(addr_save.sin_addr),
 		      (int) ntohs(addr.sin_port),
 		      wait_count));
@@ -185,7 +185,7 @@ dgram_t *dgram;
 #endif
 	save_errno = errno;
 	dbprintf(("%s: dgram_send_addr: sendto(%s.%d) failed: %s \n",
-		  get_pname(),
+		  debug_prefix_time(NULL),
 		  inet_ntoa(addr_save.sin_addr),
 		  (int) ntohs(addr.sin_port),
 		  strerror(save_errno)));
@@ -197,7 +197,7 @@ dgram_t *dgram;
 	if(close(s) == -1) {
 	    save_errno = errno;
 	    dbprintf(("%s: dgram_send_addr: close(%s.%d): failed: %s\n",
-		      get_pname(),
+		      debug_prefix(NULL),
 		      inet_ntoa(addr_save.sin_addr),
 		      (int) ntohs(addr.sin_port),
 		      strerror(save_errno)));
@@ -223,7 +223,7 @@ dgram_t *dgram;
     if((hp = gethostbyname(hostname)) == 0) {
 	save_errno = errno;
 	dbprintf(("%s: dgram_send: gethostbyname(%s) failed\n",
-		  get_pname(),
+		  debug_prefix_time(NULL),
 		  hostname));
 	errno = save_errno;
 	return -1;
@@ -261,11 +261,11 @@ struct sockaddr_in *fromaddr;
 	save_errno = errno;
 	if(nfound < 0) {
 	    dbprintf(("%s: dgram_recv: select() failed: %s\n",
-		      get_pname(),
+		      debug_prefix_time(NULL),
 		      strerror(save_errno)));
 	} else if(nfound == 0) {
 	    dbprintf(("%s: dgram_recv: timeout after %d second%s\n",
-		      get_pname(),
+		      debug_prefix_time(NULL),
 		      timeout,
 		      (timeout == 1) ? "" : "s"));
 	    nfound = 0;
@@ -275,7 +275,7 @@ struct sockaddr_in *fromaddr;
 	    for(i = 0; i < sock + 1; i++) {
 		if(FD_ISSET(i, &ready)) {
 		    dbprintf(("%s: dgram_recv: got fd %d instead of %d\n",
-			      get_pname(),
+			      debug_prefix_time(NULL),
 			      i,
 			      sock));
 		}
@@ -293,7 +293,7 @@ struct sockaddr_in *fromaddr;
     if(size == -1) {
 	save_errno = errno;
 	dbprintf(("%s: dgram_recv: recvfrom() failed: %s\n",
-		  get_pname(),
+		  debug_prefix(NULL),
 		  strerror(save_errno)));
 	errno = save_errno;
 	return -1;

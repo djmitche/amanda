@@ -1,5 +1,36 @@
 2002-03-31  John R. Jackson (jrj@purdue.edu)
 
+	* client-src/amandad.c: Add relative timestamps to a lot of debug
+	  file messages, and add more messages, to better track what is
+	  going on.  Various general cleanup.
+	* client-src/calcsize.c: Ditto.
+	* client-src/client_util.c: Ditto.
+	* client-src/selfcheck.c: Ditto.
+	* client-src/sendbackup-dump.c: Ditto.
+	* client-src/sendbackup-gnutar.c: Ditto.
+	* client-src/sendbackup.c: Ditto.
+	* client-src/sendbackup.h: Ditto.
+	* client-src/sendsize.c: Ditto.
+	* common-src/Makefile.am: Ditto.
+	* common-src/amanda.h: Ditto.
+	* common-src/clock.c: Ditto.
+	* common-src/clock.h: Ditto.
+	* common-src/debug.c: Ditto.
+	* common-src/dgram.c: Ditto.
+	* common-src/error.c: Ditto.
+	* common-src/pipespawn.c: Ditto.
+	* common-src/security.c: Ditto.
+	* common-src/stream.c: Ditto.
+	* common-src/util.c: Ditto.
+	* man/amanda.8.in: Ditto.
+	* restore-src/amidxtaped.c: Ditto.
+	* restore-src/amrestore.c: Ditto.
+	* server-src/amindexd.c: Ditto.
+	* server-src/getconf.c: Ditto.
+	* server-src/planner.c: Ditto.
+
+2002-03-31  John R. Jackson (jrj@purdue.edu)
+
 	* client-src/sendsize.c: Pay attention to the spindle number.
 
 2002-03-30  John R. Jackson (jrj@purdue.edu)

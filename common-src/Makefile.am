@@ -37,6 +37,7 @@ noinst_HEADERS =	amanda.h	arglist.h	\
 
 STANDARD_COMMON_STUFF_NOT_FILE = \
 	alloc.$(OBJEXT) \
+	clock.$(OBJEXT) \
 	debug.$(OBJEXT) \
 	error.$(OBJEXT) \
 	util.$(OBJEXT)

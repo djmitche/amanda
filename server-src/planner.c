@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.10 2002/03/30 20:07:39 jrjackson Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.11 2002/03/31 21:01:33 jrjackson Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -167,6 +167,7 @@ char **argv;
     char *conf_diskfile;
     char *conf_tapelist;
     char *conf_infofile;
+    times_t section_start;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -202,6 +203,7 @@ char **argv;
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
     set_logerror(logerror);
     startclock();
+    section_start = curclock();
 
     fprintf(stderr, "%s: pid %ld executable %s version %s\n",
 	    get_pname(), (long) getpid(), argv[0], version());
@@ -331,7 +333,10 @@ char **argv;
     kerberos_service_init();
 #endif
 
-    fprintf(stderr, "startup took %s secs\n", walltime_str(curclock()));
+    fprintf(stderr, "%s: time %s: startup took %s secs\n",
+		    get_pname(),
+		    walltime_str(curclock()),
+		    walltime_str(timessub(curclock(), section_start)));
 
     /*
      * 3. Calculate Preliminary Dump Levels
@@ -342,7 +347,7 @@ char **argv;
      */
 
     fprintf(stderr,"\nSETTING UP FOR ESTIMATES...\n");
-    startclock();
+    section_start = curclock();
 
     startq.head = startq.tail = NULL;
     while(!empty(*origqp)) {
@@ -352,8 +357,10 @@ char **argv;
 	}
     }
 
-    fprintf(stderr, "setting up estimates took %s secs\n",
-	    walltime_str(curclock()));
+    fprintf(stderr, "%s: time %s: setting up estimates took %s secs\n",
+		    get_pname(),
+		    walltime_str(curclock()),
+		    walltime_str(timessub(curclock(), section_start)));
 
 
     /*
@@ -366,15 +373,17 @@ char **argv;
     /* go out and get the dump estimates */
 
     fprintf(stderr,"\nGETTING ESTIMATES...\n");
-    startclock();
+    section_start = curclock();
 
     estq.head = estq.tail = NULL;
     failq.head = failq.tail = NULL;
 
     get_estimates();
 
-    fprintf(stderr, "getting estimates took %s secs\n",
-	    walltime_str(curclock()));
+    fprintf(stderr, "%s: time %s: getting estimates took %s secs\n",
+		    get_pname(),
+		    walltime_str(curclock()),
+		    walltime_str(timessub(curclock(), section_start)));
 
     /*
      * At this point, all disks with estimates are in estq, and
@@ -396,8 +405,7 @@ char **argv;
      */
 
     fprintf(stderr,"\nANALYZING ESTIMATES...\n");
-
-    startclock();
+    section_start = curclock();
 
 			/* an empty tape still has a label and an endmark */
     total_size = (tt_blocksize_kb + tape_mark) * 2;
@@ -479,7 +487,10 @@ char **argv;
 
     moved_one = promote_hills();
 
-    fprintf(stderr, "analysis took %s secs\n", walltime_str(curclock()));
+    fprintf(stderr, "%s: time %s: analysis took %s secs\n",
+		    get_pname(),
+		    walltime_str(curclock()),
+		    walltime_str(timessub(curclock(), section_start)));
 
 
     /*
@@ -592,7 +603,9 @@ setup_estimate(dp)
     int i;
 
     assert(dp && dp->host);
-    fprintf(stderr, "setting up estimates for %s:%s\n", dp->host->hostname, dp->name);
+    fprintf(stderr, "%s: time %s: setting up estimates for %s:%s\n",
+		    get_pname(), walltime_str(curclock()),
+		    dp->host->hostname, dp->name);
 
     /* get current information about disk */
 
@@ -705,8 +718,8 @@ setup_estimate(dp)
 	    askfor(ep, 0, -1, &info);
 	    askfor(ep, 1, -1, &info);
 	    askfor(ep, 2, -1, &info);
-	    fprintf(stderr, "planner: SKIPPED %s %s 0 [skip-full]\n",
-		    dp->host->hostname, dp->name);
+	    fprintf(stderr, "%s: SKIPPED %s %s 0 [skip-full]\n",
+		    get_pname(), dp->host->hostname, dp->name);
 	    log_add(L_SUCCESS, "%s %s %s 0 [skipped: skip-full]",
 		    dp->host->hostname, dp->name, datestamp);
 	    return;
@@ -733,8 +746,8 @@ setup_estimate(dp)
 	askfor(ep, 1, -1, &info);
 	askfor(ep, 2, -1, &info);
 
-	fprintf(stderr, "planner: SKIPPED %s %s 1 [skip-incr]\n",
-		dp->host->hostname, dp->name);
+	fprintf(stderr, "%s: SKIPPED %s %s 1 [skip-incr]\n",
+		get_pname(), dp->host->hostname, dp->name);
 
 	log_add(L_SUCCESS, "%s %s %s 1 [skipped: skip-incr]",
 	        dp->host->hostname, dp->name, datestamp);
@@ -1390,7 +1403,8 @@ pkt_t *pkt;
 					    NULL);
 	    }
 
-	    fprintf(stderr,"got result for host %s disk %s:",
+	    fprintf(stderr,"%s: time %s: got result for host %s disk %s:",
+		    get_pname(), walltime_str(curclock()),
 		    dp->host->hostname, dp->name);
 	    fprintf(stderr," %d -> %ldK, %d -> %ldK, %d -> %ldK\n",
 		    est(dp)->level[0], est(dp)->est_size[0],
@@ -1452,8 +1466,9 @@ pkt_t *pkt;
 	    enqueue_disk(&failq, dp);
 
 	    est(dp)->errstr = stralloc(errbuf);
-	    fprintf(stderr, "error result for host %s disk %s: %s\n",
-	        dp->host->hostname, dp->name, errbuf);
+	    fprintf(stderr, "%s: time %s: error result for host %s disk %s: %s\n",
+	        get_pname(), walltime_str(curclock()),
+		dp->host->hostname, dp->name, errbuf);
 	}
     }
     hostp->up = HOST_DONE;
@@ -1577,8 +1592,8 @@ disk_t *dp;
 
     errstr = est(dp)->errstr? est(dp)->errstr : "hmm, no error indicator!";
 
-    fprintf(stderr, "planner: FAILED %s %s %s 0 [%s]\n",
-	dp->host->hostname, dp->name, datestamp, errstr);
+    fprintf(stderr, "%s: FAILED %s %s %s 0 [%s]\n",
+	get_pname(), dp->host->hostname, dp->name, datestamp, errstr);
 
     log_add(L_FAIL, "%s %s %s 0 [%s]", dp->host->hostname, dp->name, datestamp, errstr);
 
@@ -1869,7 +1884,7 @@ static void delay_dumps P((void))
 	nbi = bi->next;
 
 	if(bi->deleted) {
-	    fprintf(stderr, "planner: FAILED %s\n", bi->errstr);
+	    fprintf(stderr, "%s: FAILED %s\n", get_pname(), bi->errstr);
 	    log_add(L_FAIL, "%s", bi->errstr);
 	}
 	else {
@@ -2137,7 +2152,8 @@ static void output_scheduleline(dp)
     if(ep->dump_size == -1) {
 	/* no estimate, fail the disk */
 	fprintf(stderr,
-		"planner: FAILED %s %s %s %d [no estimate]\n",
+		"%s: FAILED %s %s %s %d [no estimate]\n",
+		get_pname(),
 		dp->host->hostname, dp->name, datestamp, ep->dump_level);
 	log_add(L_FAIL, "%s %s %s %d [no estimate]",
 	        dp->host->hostname, dp->name, datestamp, ep->dump_level);
