@@ -109,6 +109,11 @@ indexdir "/usr/adm/amanda/@DEFAULT_CONFIG@/index"	# index directory
 # how many MB will fit on the tape, how big the filemarks are, and how
 # fast the tape device is.
 #
+# A filemark is the amount of wasted space every time a tape section
+# ends.  The only way I can think of to find it out is to write a
+# single tape section until tape finishes, rewind it, then write fixed
+# size tape sections, the compute how much space was wasted.
+#
 # There's a script by Icarus Sparry <I.Sparry@bath.ac.uk> that may help
 # calculating the size of a tape.  Get it from the URL
 # http://www.amanda.org/amanda-users/users/Oct-Dec.1995/msg00208.html
