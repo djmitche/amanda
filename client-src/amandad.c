@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.42 1999/09/15 00:31:23 jrj Exp $
+ * $Id: amandad.c,v 1.43 2001/01/24 22:16:58 jrjackson Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -149,6 +149,7 @@ static struct active_service *service_new P((security_handle_t *,
     const char *, const char *));
 static void service_delete P((struct active_service *));
 static int writebuf P((int, const void *, size_t));
+static int do_sendpkt P((security_handle_t *handle, pkt_t *pkt));
 
 #ifdef AMANDAD_DEBUG
 static const char *state2str P((state_t));
@@ -386,21 +387,19 @@ protocol_accept(handle, pkt)
 	dbprintf(("amandad: accept error: %s\n",
 	    security_geterror(handle)));
 	pkt_init(&nak, P_NAK, "ERROR %s\n", security_geterror(handle));
-	security_sendpkt(handle, &nak);
+	do_sendpkt(handle, &nak);
 	security_close(handle);
 	return;
     }
 
-#ifdef AMANDAD_DEBUG
-    dbprintf(("accept recv %s pkt:\n----\n%s-----\n", pkt_type2str(pkt->type),
+    dbprintf(("accept recv %s pkt:\n<<<<<\n%s>>>>>\n", pkt_type2str(pkt->type),
 	pkt->body));
-#endif
 
     /*
      * If this is not a REQ packet, just forget about it.
      */
     if (pkt->type != P_REQ) {
-	dbprintf(("amandad: received unexpected %s packet:\n-----\n%s-----\n\n",
+	dbprintf(("amandad: received unexpected %s packet:\n<<<<<\n%s>>>>>\n\n",
 	    pkt_type2str(pkt->type), pkt->body));
 	security_close(handle);
 	return;
@@ -471,7 +470,7 @@ protocol_accept(handle, pkt)
      * create a new service instance, and send the arguments down
      * the request pipe.
      */
-    dbprintf(("amandad: creating new service: %s %s\n", service, arguments));
+    dbprintf(("amandad: creating new service: %s\n%s\n", service, arguments));
     as = service_new(handle, service, arguments);
     if (writebuf(as->reqfd, arguments, strlen(arguments)) < 0) {
 	const char *errmsg = strerror(errno);
@@ -497,7 +496,7 @@ protocol_accept(handle, pkt)
 
 badreq:
     pkt_init(&nak, P_NAK, "ERROR invalid REQ\n");
-    dbprintf(("amandad: received invalid %s packet:\n-----\n%s-----\n\n",
+    dbprintf(("amandad: received invalid %s packet:\n<<<<<\n%s>>>>>\n\n",
 	pkt_type2str(pkt->type), pkt->body));
 
 sendnak:
@@ -509,7 +508,7 @@ sendnak:
 	amfree(arguments);
     if (as != NULL)
 	service_delete(as);
-    security_sendpkt(handle, &nak);
+    do_sendpkt(handle, &nak);
     security_close(handle);
 }
 
@@ -566,10 +565,10 @@ state_machine(as, action, pkt)
 	case A_SENDNAK:
 	    dbprintf(("amandad: received unexpected %s packet\n",
 		pkt_type2str(pkt->type)));
-	    dbprintf(("-----\n%s----\n\n", pkt->body));
+	    dbprintf(("<<<<<\n%s----\n\n", pkt->body));
 	    pkt_init(&nak, P_NAK, "ERROR unexpected packet type %s\n",
 		pkt_type2str(pkt->type));
-	    security_sendpkt(as->security_handle, &nak);
+	    do_sendpkt(as->security_handle, &nak);
 #ifdef AMANDAD_DEBUG
 	    dbprintf(("state_machine: %X leaving\n", (unsigned int)as));
 #endif
@@ -606,7 +605,7 @@ s_sendack(as, action, pkt)
     pkt_t ack;
 
     pkt_init(&ack, P_ACK, "");
-    if (security_sendpkt(as->security_handle, &ack) < 0) {
+    if (do_sendpkt(as->security_handle, &ack) < 0) {
 	dbprintf(("error sending ACK: %s\n",
 	    security_geterror(as->security_handle)));
 	return (A_FINISH);
@@ -654,7 +653,7 @@ s_repwait(as, action, pkt)
 	if (pkt->type == P_REQ) {
 	    dbprintf(("amandad: received dup P_REQ packet, ACKing it\n"));
 	    pkt_init(&as->rep_pkt, P_ACK, "");
-	    security_sendpkt(as->security_handle, &as->rep_pkt);
+	    do_sendpkt(as->security_handle, &as->rep_pkt);
 	    return (A_PENDING);
 	}
 	/* something unexpected.  Nak it */
@@ -664,7 +663,7 @@ s_repwait(as, action, pkt)
     if (action == A_TIMEOUT) {
 	pkt_init(&as->rep_pkt, P_NAK, "ERROR timeout on reply pipe\n");
 	dbprintf(("%s timed out waiting for REP data\n", as->cmd));
-	security_sendpkt(as->security_handle, &as->rep_pkt);
+	do_sendpkt(as->security_handle, &as->rep_pkt);
 	return (A_FINISH);
     }
 
@@ -681,7 +680,7 @@ s_repwait(as, action, pkt)
 	dbprintf(("read error on reply pipe: %s\n", errstr));
 	pkt_init(&as->rep_pkt, P_NAK, "ERROR read error on reply pipe: %s\n",
 	    errstr);
-	security_sendpkt(as->security_handle, &as->rep_pkt);
+	do_sendpkt(as->security_handle, &as->rep_pkt);
 	return (A_FINISH);
     }
     /*
@@ -801,10 +800,7 @@ s_sendrep(as, action, pkt)
     /*
      * Transmit it and move to the ack state.
      */
-#ifdef AMANDAD_DEBUG
-    dbprintf(("sending REP pkt:\n----\n%s-----\n", as->rep_pkt.body));
-#endif
-    security_sendpkt(as->security_handle, &as->rep_pkt);
+    do_sendpkt(as->security_handle, &as->rep_pkt);
     security_recvpkt(as->security_handle, protocol_recv, as, ACK_TIMEOUT);
     as->state = s_ackwait;
     return (A_PENDING);
@@ -932,13 +928,13 @@ protocol_recv(cookie, pkt, status)
 
     switch (status) {
     case S_OK:
-#ifdef AMANDAD_DEBUG
-	dbprintf(("received %s pkt:\n----\n%s-----\n", pkt_type2str(pkt->type),
-	    pkt->body));
-#endif
+	dbprintf(("received %s pkt:\n<<<<<\n%s>>>>>\n",
+		  pkt_type2str(pkt->type),
+		  pkt->body));
 	state_machine(as, A_RECVPKT, pkt);
 	break;
     case S_TIMEOUT:
+	dbprintf(("timeout\n"));
 	state_machine(as, A_TIMEOUT, NULL);
 	break;
     case S_ERROR:
@@ -997,7 +993,7 @@ process_netfd(cookie)
     return;
 
 sendnak:
-    security_sendpkt(as->security_handle, &nak);
+    do_sendpkt(as->security_handle, &nak);
     service_delete(as);
 }
 
@@ -1233,6 +1229,17 @@ writebuf(fd, bufp, size)
 	size -= n;
     }
     return (origsize);
+}
+
+static int
+do_sendpkt(handle, pkt)
+    security_handle_t *handle;
+    pkt_t *pkt;
+{
+    dbprintf(("sending %s pkt:\n<<<<<\n%s>>>>>\n",
+	      pkt_type2str(pkt->type),
+	      pkt->body));
+    return security_sendpkt(handle, pkt);
 }
 
 #ifdef AMANDAD_DEBUG
