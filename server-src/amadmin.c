@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.13.2.3.2.15.2.5 2004/08/03 11:27:16 martinea Exp $
+ * $Id: amadmin.c,v 1.49.2.13.2.3.2.15.2.6 2004/09/17 11:40:45 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -805,11 +805,13 @@ char **argv;
     float fseq, disk_dumpcycle;
     info_t info;
     long int total_balanced, balanced;
+    int empty_day;
 
     time(&today);
     conf_dumpcycle = getconf_int(CNF_DUMPCYCLE);
     conf_runspercycle = getconf_int(CNF_RUNSPERCYCLE);
     later = conf_dumpcycle;
+    if(later > 10000) later = 10000;
     overdue = 0;
     max_overdue = 0;
 
@@ -897,7 +899,7 @@ char **argv;
 	} while (seq < later);
     }
 
-    if(sp[total].outsize == 0) {
+    if(sp[total].outsize == 0 && sp[later].outsize == 0) {
 	printf("\nNo data to report on yet.\n");
 	amfree(sp);
 	return;
@@ -912,16 +914,29 @@ char **argv;
 			    / (runs_per_cycle * later));
     }
 
+    empty_day = 0;
     printf("\n due-date  #fs    orig KB     out KB   balance\n");
     printf("----------------------------------------------\n");
     for(seq = 0; seq < later; seq++) {
-	printf("%-9.9s  %3d %10ld %10ld ",
-	       seqdatestr(seq), sp[seq].disks,
-	       sp[seq].origsize, sp[seq].outsize);
-	if(!sp[seq].outsize) printf("     --- \n");
-	else printf("%+8.1f%%\n",
-		    (sp[seq].outsize-balanced)*100.0/(double)balanced);
+	if(sp[seq].disks == 0 &&
+	   ((seq > 0 && sp[seq-1].disks == 0) ||
+	    ((seq < later-1) && sp[seq+1].disks == 0))) {
+	    empty_day++;
+	}
+	else {
+	    if(empty_day > 0) {
+		printf("\n");
+		empty_day = 0;
+	    }
+	    printf("%-9.9s  %3d %10ld %10ld ",
+		   seqdatestr(seq), sp[seq].disks,
+		   sp[seq].origsize, sp[seq].outsize);
+	    if(!sp[seq].outsize) printf("     --- \n");
+	    else printf("%+8.1f%%\n",
+			(sp[seq].outsize-balanced)*100.0/(double)balanced);
+	}
     }
+
     if(sp[later].disks != 0) {
 	printf("later      %3d %10ld %10ld ",
 	       sp[later].disks,
