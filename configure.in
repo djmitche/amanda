@@ -1141,8 +1141,8 @@ case "$target" in
 			AC_DEFINE(UWARE_TAPEIO,1,[Define on UnixWare. ])
 			;;
   *-sco3.2v4*)
-			xenix_tapeio=yes
-			AC_DEFINE(STATFS_SCO_OS5,1,[Define on SCO OS5. ])
+			DEV_PREFIX=/dev/
+			RDEV_PREFIX=/dev/
 			;;
   *-sco3.2v5*)
 			xenix_tapeio=yes
