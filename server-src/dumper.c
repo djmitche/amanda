@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.4 1998/12/09 19:28:27 martinea Exp $
+/* $Id: dumper.c,v 1.75.2.5 1998/12/30 18:44:18 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -279,7 +279,7 @@ char **main_argv;
 	    cont_filename[0] = '\0';
 
 	    tmp_filename = newvstralloc(tmp_filename, filename, ".tmp", NULL);
-	    if((outfd = open(tmp_filename, O_WRONLY|O_CREAT, 0666)) == -1) {
+	    if((outfd = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600)) == -1) {
 		q = squotef("[holding file \"%s\": %s]",
 			    tmp_filename, strerror(errno));
 		putresult("FAILED %s %s\n", handle, q);
@@ -571,7 +571,7 @@ int outf, size, split;
 	    cont_filename[sizeof(cont_filename)-1] = '\0';
 
 	    tmp_filename = newvstralloc(tmp_filename, new_filename, ".tmp", NULL);
-	    if((outf = open(tmp_filename, O_WRONLY|O_CREAT, 0666)) == -1) {
+	    if((outf = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600)) == -1) {
 		errstr = squotef("holding file \"%s\": %s",
 			    tmp_filename, strerror(errno));
 		return 1;
