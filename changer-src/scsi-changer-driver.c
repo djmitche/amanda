@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.33 2001/06/10 20:59:29 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.34 2001/06/12 17:42:28 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -617,12 +617,10 @@ void Inventory(char *labelfile, int drive, int eject, int start, int stop, int c
 	  continue;
 	}
 
-      if (pDev[INDEX_TAPECTL].inqdone == 1 && pDev[INDEX_TAPECTL].SCSI == 1)
-	{
-	  Tape_Ready(INDEX_TAPECTL, 60);
-	} else {
-	  Tape_Ready(INDEX_TAPE, 60);
-	}
+      /*
+       * Wait until the tape is ready
+       */
+      Tape_Ready(INDEX_TAPECTL, 60);
 
       SCSI_CloseDevice(INDEX_TAPE);
 
@@ -1130,21 +1128,73 @@ int Tape_Ready(int fd, int wait_time)
   int cnt = 0;
   
   RequestSense_T *pRequestSense;
-  dbprintf(("##### START Tape_Ready\n"));
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### START Tape_Ready\n");
   
-  
-  if (pDev[fd].SCSI == 0)
+  /*
+   * Which device should we use to get the 
+   * tape status
+   */
+
+  /*
+   * First the ioctl tapedevice
+   */
+  if (pDev[INDEX_TAPE].avail == 1)
     {
-	dbprintf(("Tape_Ready : can't send SCSI commands\n"));
-          sleep(wait_time);
-          return(0);
-      }
+      fd = INDEX_TAPE;
+    }
+  
+  /*
+   * But if available and can do SCSI
+   * the scsitapedev
+   */
+  if (pDev[INDEX_TAPECTL].avail == 1 && pDev[INDEX_TAPECTL].SCSI == 1)
+    {
+      fd = INDEX_TAPECTL;
+    }
+  
+  if (pDev[fd].avail == 1 && pDev[fd].SCSI == 0)
+    {
+      DebugPrint(DEBUG_INFO, SECTION_TAPE,"Tape_Ready : Can't send SCSI commands, try ioctl\n");
+      /*
+       * Do we get an non negative result.
+       * If yes this function is available
+       * and we can use it to get the status 
+       * of the tape
+       */
+      ret = Tape_Status(fd);
+      if (ret >= 0)
+	{
+	  while (cnt < wait_time)
+	    {
+	      if ( ret & TAPE_ONLINE)
+		{
+		  DebugPrint(DEBUG_INFO, SECTION_TAPE,"Tape_Ready : Ready after %d seconds\n",cnt);
+		  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP Tape_Ready\n");
+		  return(0);
+		}
+	      cnt++;
+	      sleep(1);
+	      ret = Tape_Status(fd);
+	    }
+
+	  DebugPrint(DEBUG_INFO, SECTION_TAPE,"Tape_Ready : not ready, stop after %d seconds\n",cnt);
+	  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP Tape_Ready\n");
+	  return(0);
+	  
+	} else {
+	  DebugPrint(DEBUG_INFO, SECTION_TAPE,"Tape_Ready : no ioctl interface, will sleep for %d seconds\n", wait_time);
+	  sleep(wait_time);
+	  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP Tape_Ready\n");
+	  return(0);
+	}
+    }
   
   if ((pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
     {
-        dbprintf(("Tape_Ready : malloc failed\n"));
-        return(-1);
-      }
+      DebugPrint(DEBUG_INFO, SECTION_TAPE,"Tape_Ready : malloc failed\n");
+      DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP Tape_Ready\n");
+      return(-1);
+    }
   
   /*
    * Ignore errors at this point
@@ -1210,7 +1260,8 @@ int Tape_Ready(int fd, int wait_time)
 
   free(pRequestSense);
 
-  dbprintf(("Tape_Ready after %d sec\n", cnt));
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"Tape_Ready after %d sec\n", cnt);
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP Tape_Ready\n"); 
   return(0);
 }
 

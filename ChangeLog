@@ -1,3 +1,10 @@
+2001-06-12 Thomas Hepper <th@ant.han.de>
+	* changer-src/scsi-changer-driver.c (Inventory): Call Tape_Ready and let this function
+	decide how to get the tape drive status.
+	* changer-src/scsi-changer-driver.c (Tape_Ready): Now this function looks how to get
+	the tape drive status.
+	* changer-src/scsi-linux.c: changed some dbprintf to DebugPrint
+	
 2001-06-10 Thomas Hepper <th@ant.han.de>
 	* changer-src/chg-scsi.c: If get_current_slot gets an error from the fscanf function
 	return also an error (-1) to the calling fucntion. (Fixes an error if the slot file
