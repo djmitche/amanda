@@ -1,3 +1,7 @@
+1998-11-16  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* changer-src/scsi-solaris.c (Tape_Ready): typo in Thomas' patch
+
 1998-11-12  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/infofile.h (get_dumpdate): rename record parameter to info.
