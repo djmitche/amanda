@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.7 2001/03/05 23:52:39 martinea Exp $
+/* $Id: chunker.c,v 1.8 2001/03/20 00:27:18 jrjackson Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -172,7 +172,7 @@ main(main_argc, main_argv)
 
     interactive = isatty(0);
 
-    datestamp = construct_datestamp();
+    datestamp = construct_datestamp(NULL);
 
 /*    do {*/
 	cmd = getcmd(&cmdargs);

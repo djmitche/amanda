@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcleanupdisk.c,v 1.9 1999/11/10 23:29:28 jrj Exp $
+ * $Id: amcleanupdisk.c,v 1.10 2001/03/20 00:27:18 jrjackson Exp $
  */
 #include "amanda.h"
 
@@ -104,7 +104,7 @@ char **main_argv;
 	error("could not open info db \"%s\"", conf_infofile);
     amfree(conf_infofile);
 
-    datestamp = construct_datestamp();
+    datestamp = construct_datestamp(NULL);
 
     dumpuser = getconf_str(CNF_DUMPUSER);
     if((pw = getpwnam(dumpuser)) == NULL)

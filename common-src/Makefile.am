@@ -98,19 +98,33 @@ regerror.ih: $(REGsrcdir)/regerror.c $(REGsrcdir)/mkh
 
 # used for testing only
 
+STANDARD_COMMON_STUFF_NOT_FILE = \
+	alloc.$(OBJEXT) \
+	debug.$(OBJEXT) \
+	error.$(OBJEXT) \
+	util.$(OBJEXT)
+
+STANDARD_COMMON_STUFF = \
+	$(STANDARD_COMMON_STUFF_NOT_FILE) \
+	file.$(OBJEXT)
+
 statfs_SOURCES = statfs.test.c alloc.c debug.c error.c file.c
-statfs_LDADD = $(libamanda_a_LIBADD)
+statfs_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF)
 
 token_SOURCES = token.test.c alloc.c debug.c error.c file.c
-token_LDADD = $(libamanda_a_LIBADD)
+token_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF)
 
 file_SOURCES = file.test.c alloc.c debug.c error.c
-file_LDADD = $(libamanda_a_LIBADD)
+file_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF_NOT_FILE)
 
-bsdsecurity_SOURCES = bsd-security.test.c \
-		      alloc.c dgram.c debug.c error.c event.c file.c \
-		      packet.c security.c versuff.c
-bsdsecurity_LDADD = $(libamanda_a_LIBADD)
+bsdsecurity_SOURCES = bsd-security.test.c
+bsdsecurity_LDADD = $(libamanda_a_LIBADD) \
+		    $(STANDARD_COMMON_STUFF) \
+		    dgram.$(OBJEXT) \
+		    event.$(OBJEXT) \
+		    packet.$(OBJEXT) \
+		    security.$(OBJEXT) \
+		    versuff.$(OBJEXT)
 
 %.test.c: $(srcdir)/%.c
 	echo '#define TEST' >$@

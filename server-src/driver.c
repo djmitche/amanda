@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.106 2001/03/05 23:52:39 martinea Exp $
+ * $Id: driver.c,v 1.107 2001/03/20 00:27:18 jrjackson Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -198,7 +198,7 @@ main(main_argc, main_argv)
     amfree(conffile);
 
     amfree(datestamp);
-    datestamp = construct_datestamp();
+    datestamp = construct_datestamp(NULL);
     log_add(L_START,"date %s", datestamp);
 
     taper_program = vstralloc(libexecdir, "/", "taper", versionsuffix(), NULL);

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.106 2001/03/16 00:50:57 jrjackson Exp $
+ * $Id: planner.c,v 1.107 2001/03/20 00:27:18 jrjackson Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -282,7 +282,7 @@ char **argv;
 
     amfree(datestamp);
     today = time(0);
-    datestamp = construct_datestamp();
+    datestamp = construct_datestamp(NULL);
     log_add(L_START, "date %s", datestamp);
 
     /* some initializations */

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.139 2001/03/10 19:48:15 martinea Exp $
+/* $Id: dumper.c,v 1.140 2001/03/20 00:27:18 jrjackson Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -226,7 +226,7 @@ main(main_argc, main_argv)
 
     interactive = isatty(0);
 
-    datestamp = construct_datestamp();
+    datestamp = construct_datestamp(NULL);
     conf_dtimeout = getconf_int(CNF_DTIMEOUT);
 
     protocol_init();

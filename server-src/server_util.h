@@ -24,12 +24,13 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.h,v 1.3 2001/03/05 23:52:39 martinea Exp $
+ * $Id: server_util.h,v 1.4 2001/03/20 00:27:18 jrjackson Exp $
  *
  */
+#ifndef SERVER_UTIL_H
+#define	SERVER_UTIL_H
 
-#ifndef SERVERUTIL_H
-#define SERVERUTIL_H
+#include "util.h"
 
 #define MAX_ARGS 11
 
@@ -49,8 +50,8 @@ struct cmdargs {
     char *argv[MAX_ARGS + 1];
 };
 
-char *construct_datestamp P((void));
 cmd_t getcmd P((struct cmdargs *cmdargs));
 void putresult P((cmd_t result, const char *, ...))
      __attribute__ ((format (printf, 2, 3)));
-#endif
+
+#endif	/* SERVER_UTIL_H */
