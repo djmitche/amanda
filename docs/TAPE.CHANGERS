@@ -501,3 +501,17 @@ A perl5 script that controls an HPc1553 tape drive via a Peripheral
 Vision Inc. SCSI control subsystem that interprets commands sent on
 the SCSI bus.  It expects `tapedev' to specify the tape device to be
 used.  `changerfile' and `changerdev' are ignored.
+
+chg-juke:
+
+A shell script that uses the Fermilab "juke" software (see 
+http://www.fnal.gov/fermitools/, the "juke" link) to control
+tape chagners.  It supports mounting multiple tapes for RAIT 
+tapedrive sets, both multiple jukeboxes, or one jukebox with
+multiple tape drives, or combinations.  'juke' must be configured
+to know tape drives by the same name Amanda calls them.
+
+It uses 'changerfile' to track Amanda's current tape state, 
+'tapedev' must be the tape drive (or RAIT set) name, and 'changerdev' 
+is the juke software's name for the changer, or a csh-glob that
+expands to several jukebox names (i.e. "changer{a,b,c}")

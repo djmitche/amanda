@@ -1,3 +1,9 @@
+2000-12-28 Marc W. Mengel <mengel@fnal.gov>
+	* changer-src/chg-juke.sh.in: New File
+	* changer-src/Makefile.am: Added support for chg-juke.
+	* docs/TAPE.CHANGERS: Likewise.
+	* configure.in: Likewise.
+
 2000-12-24 John R. Jackson <jrj@purdue.edu>
 
 	* server-src/getconf.c: Fix free() of static text string (BUGGY) when

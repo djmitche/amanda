@@ -18,7 +18,7 @@ endif
 
 libexec_SCRIPTS =	chg-manual	chg-multi	chg-mtx		\
 			chg-rth		chg-chs		chg-chio	\
-			chg-zd-mtx
+			chg-zd-mtx	chg-juke
 
 LDADD = ../server-src/libamserver.$(LIB_EXTENSION) \
 	../tape-src/libamtape.$(LIB_EXTENSION) \
