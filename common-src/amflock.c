@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflock.c,v 1.14 1998/01/02 18:47:53 jrj Exp $
+ * $Id: amflock.c,v 1.15 1998/01/24 01:49:15 amcore Exp $
  *
  * file locking routines, put here to hide the system dependant stuff
  * from the rest of the code
@@ -270,50 +270,50 @@ char *res; /* name of resource to lock */
 int op;    /* true to lock; false to unlock */
 {
 	long mypid;
-	char *lockf = NULL;
-	char *tlockf = NULL;
+	char *lockfile = NULL;
+	char *tlockfile = NULL;
 	char *mres = NULL;
 	int rc;
 	char pid_str[NUM_STR_SIZE];
 
 	mypid = (long)getpid();
 
-	lockf = vstralloc("/tmp", "/am", res, ".lock", NULL);
+	lockfile = vstralloc("/tmp", "/am", res, ".lock", NULL);
 
 	if (!op) {
 		/* unlock the resource */
-		assert(read_lock(lockf) == mypid);
+		assert(read_lock(lockfile) == mypid);
 
-		(void)delete_lock(lockf);
-		afree(lockf);
+		(void)delete_lock(lockfile);
+		afree(lockfile);
 		return 0;
 	}
 
 	/* lock the resource */
 
 	ap_snprintf(pid_str, sizeof(pid_str), "%ld", mypid);
-	tlockf = vstralloc("/tmp", "am", res, ".", pid_str, NULL);
+	tlockfile = vstralloc("/tmp", "am", res, ".", pid_str, NULL);
 
-	(void)create_lock(tlockf, mypid);
+	(void)create_lock(tlockfile, mypid);
 
-	mres = stralloc2(res, ".")
+	mres = stralloc2(res, ".");
 
 	while(1) {
-		rc = link_lock(lockf, tlockf);
+		rc = link_lock(lockfile, tlockfile);
 		if (rc == -1) break;
 		if (rc == 0) break;
 
-		rc = steal_lock(lockf, mypid, mres);
+		rc = steal_lock(lockfile, mypid, mres);
 		if (rc == -1) break;
 		if (rc == 0) continue;
 		sleep(1);
 	}
 
-	(void) delete_lock(tlockf);
+	(void) delete_lock(tlockfile);
 
 	afree(mres);
-	afree(tlockf);
-	afree(lockf);
+	afree(tlockfile);
+	afree(lockfile);
 
 	return rc;
 }
