@@ -22,6 +22,9 @@ if WANT_RESTORE
 RESTORE_MAN_PAGES = amrestore.8
 endif
 
+# not autoconf-generated:
+EXTRA_DIST = amplot.8 amrestore.8 amtape.8
+
 man_MANS = $(AMPLOT_MAN_PAGES) $(COMMON_MAN_PAGES) $(SERVER_MAN_PAGES) $(RECOVER_MAN_PAGES) $(RESTORE_MAN_PAGES)
 
 install-data-hook:
