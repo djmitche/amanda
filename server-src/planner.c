@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.19 2001/03/20 00:21:06 jrjackson Exp $
+ * $Id: planner.c,v 1.76.2.20 2001/06/21 22:37:14 jrjackson Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -850,18 +850,29 @@ int level;
     if(level == 0) ratio = est(dp)->fullcomp;
     else ratio = est(dp)->incrcomp;
 
-/*
- * make sure over-inflated compression ratios don't throw off the
- * estimates, this is mostly for when you have a small dump getting
- * compressed which takes up alot more disk/tape space relatively due
- * to the overhead of the compression.  This is specifically for
- * Digital Unix vdump.  This patch is courtesy of Rudolf Gabler
- * (RUG@USM.Uni-Muenchen.DE)
- */
+    /*
+     * make sure over-inflated compression ratios don't throw off the
+     * estimates, this is mostly for when you have a small dump getting
+     * compressed which takes up alot more disk/tape space relatively due
+     * to the overhead of the compression.  This is specifically for
+     * Digital Unix vdump.  This patch is courtesy of Rudolf Gabler
+     * (RUG@USM.Uni-Muenchen.DE)
+     */
 
     if(ratio > 1.1) ratio = 1.1;
 
-    return (long)(size * ratio);
+    size *= ratio;
+
+    /*
+     * Ratio can be very small in some error situations, so make sure
+     * size goes back greater than zero.  It may not be right, but
+     * indicates we did get an estimate.
+     */
+    if(size <= 0) {
+	size = 1;
+    }
+
+    return size;
 }
 
 
