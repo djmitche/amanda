@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmidx.c,v 1.21.4.1.4.2 2001/11/03 13:38:37 martinea Exp $
+ * $Id: amtrmidx.c,v 1.21.4.1.4.2.2.1 2001/12/30 17:26:22 martinea Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -63,8 +63,6 @@ char **argv;
     disklist_t *diskl;
     int no_keep;			/* files per system to keep */
     int i;
-    int level_position;			/* where (from end) is level in name */
-    int datestamp_position;
     char *conffile;
     char *conf_diskfile;
     char *conf_tapelist;
@@ -143,9 +141,6 @@ char **argv;
     /* determine how many indices to keep */
     no_keep = getconf_int(CNF_TAPECYCLE) + 1;
     dbprintf(("Keeping %d index file%s\n", no_keep, (no_keep == 1) ? "" : "s"));
-
-    level_position = strlen(COMPRESS_SUFFIX);
-    datestamp_position = level_position + 9;
 
     /* now go through the list of disks and find which have indexes */
     time(&tmp_time);

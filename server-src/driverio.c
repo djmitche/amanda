@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.35.2.14.4.2 2001/11/03 13:43:40 martinea Exp $
+ * $Id: driverio.c,v 1.35.2.14.4.2.2.1 2001/12/30 17:26:23 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -208,7 +208,7 @@ int max_arg;
 
     if(*result_argc < 1) return BOGUS;
 
-    for(t = BOGUS+1; t < LAST_TOK; t++)
+    for(t = (cmd_t)(BOGUS+1); t < LAST_TOK; t++)
 	if(strcmp(result_argv[1], cmdstr[t]) == 0) return t;
 
     return BOGUS;

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.66.2.7.4.5 2001/11/03 13:38:36 martinea Exp $
+ * $Id: amanda.h,v 1.66.2.7.4.5.2.1 2001/12/30 17:26:22 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -126,6 +126,10 @@
 
 #ifdef HAVE_STRING_H
 #  include <string.h>
+#endif
+
+#ifdef HAVE_STRINGS_H
+#  include <strings.h>
 #endif
 
 #ifdef HAVE_SYSLOG_H

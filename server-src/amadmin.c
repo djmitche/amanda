@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.13.2.3 2001/11/03 13:38:36 martinea Exp $
+ * $Id: amadmin.c,v 1.49.2.13.2.3.2.1 2001/12/30 17:26:22 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -651,7 +651,7 @@ void info_one(dp)
 disk_t *dp;
 {
     info_t info;
-    int lev, lev0date;
+    int lev;
     struct tm *tm;
     stats_t *sp;
 
@@ -674,7 +674,6 @@ disk_t *dp;
 	   info.incr.comp[0]*100, info.incr.comp[1]*100, info.incr.comp[2]*100);
 
     printf("  Dumps: lev datestmp  tape             file   origK   compK secs\n");
-    lev0date = info.inf[0].date;
     for(lev = 0, sp = &info.inf[0]; lev < 9; lev++, sp++) {
 	if(sp->date < (time_t)0 && sp->label[0] == '\0') continue;
 	tm = localtime(&sp->date);
@@ -1043,7 +1042,7 @@ int argc;
 char **argv;
 {
     int vers_maj, vers_min, vers_patch, newer;
-    char *org, *vers_comment;
+    char *org;
     char *line = NULL;
     char *hdr;
     char *s;
@@ -1089,7 +1088,6 @@ char **argv;
     if(ch == '\0') {
 	goto bad_header;
     }
-    vers_comment = s - 1;			/* note: right next to patch */
     skip_non_whitespace(s, ch);
     s[-1] = '\0';
 

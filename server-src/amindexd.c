@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.39.2.11.4.4 2001/11/03 13:38:37 martinea Exp $
+ * $Id: amindexd.c,v 1.39.2.11.4.4.2.1 2001/12/30 17:26:22 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -748,7 +748,6 @@ char **argv;
     struct sockaddr_in his_addr;
     struct hostent *his_name;
     char *arg;
-    int arg_len;
     char *cmd;
     int len;
     int fd;
@@ -934,13 +933,6 @@ char **argv;
 	    if (ch) {
 		arg = s-1;
 		skip_non_whitespace(s, ch);
-		/*
-		 * Save the length of the next non-whitespace string
-		 * (e.g. a host name), but do not terminate it.  Some
-		 * commands want the rest of the line, whitespace or
-		 * not.
-		 */
-		arg_len = s-arg;
 	    }
 	}
 
