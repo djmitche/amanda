@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.6 1999/04/07 02:55:19 martinea Exp $
+ * $Id: reporter.c,v 1.44.2.7 1999/05/19 21:16:16 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -59,26 +59,26 @@ typedef struct line_s {
 
 typedef struct repdata_s {
     logtype_t result;
-    int level;
-    int filenum;
-    float origsize, outsize;
     int nb_taper;
     struct timedata_s {
 	int success;
+	float origsize, outsize;
+	int datestamp;
 	float sec, kps;
+	int level, filenum;
     } taper[MAX_TAPER], dumper;
 } repdata_t;
 
 #define data(dp) ((repdata_t *)(dp)->up)
 
 struct cumulative_stats {
-    int disks;
+    int dumpdisks, tapedisks;
     double taper_time, dumper_time;
-    double outsize, origsize;
-    double coutsize, corigsize;
+    double outsize, origsize, tapesize;
+    double coutsize, corigsize;			/* compressed dump only */
 } stats[3];
 
-int disks[10];	/* by-level breakdown of disk count */
+int dumpdisks[10], tapedisks[10];	/* by-level breakdown of disk count */
 
 float total_time, startup_time;
 
@@ -700,9 +700,11 @@ void output_stats()
     tapesize = tp->length;
     marksize = tp->filemark;
 
-    stats[2].disks       = stats[0].disks       + stats[1].disks;
+    stats[2].dumpdisks   = stats[0].dumpdisks   + stats[1].dumpdisks;
+    stats[2].tapedisks   = stats[0].tapedisks   + stats[1].tapedisks;
     stats[2].outsize     = stats[0].outsize     + stats[1].outsize;
     stats[2].origsize    = stats[0].origsize    + stats[1].origsize;
+    stats[2].tapesize    = stats[0].tapesize    + stats[1].tapesize;
     stats[2].coutsize    = stats[0].coutsize    + stats[1].coutsize;
     stats[2].corigsize   = stats[0].corigsize   + stats[1].corigsize;
     stats[2].taper_time  = stats[0].taper_time  + stats[1].taper_time;
@@ -721,14 +723,15 @@ void output_stats()
 	    "                        --------   --------   --------\n");
 
     fprintf(mailf,
-	    "Dump Time (hrs:min)       %2d:%02d      %2d:%02d      %2d:%02d",
-	    hrmn(total_time), hrmn(stats[0].taper_time),
-	    hrmn(stats[1].taper_time));
+	    "Estimate Time (hrs:min)   %2d:%02d\n", hrmn(startup_time));
 
-    fprintf(mailf,"   (%d:%02d start", hrmn(startup_time));
+    fprintf(mailf,
+	    "Run Time (hrs:min)        %2d:%02d\n", hrmn(total_time));
 
-    if(!got_finish) fputs(")\n", mailf);
-    else fprintf(mailf,", %d:%02d idle)\n", hrmn(idle_time));
+    fprintf(mailf,
+	    "Dump Time (hrs:min)       %2d:%02d      %2d:%02d      %2d:%02d\n",
+	    hrmn(stats[2].dumper_time), hrmn(stats[0].dumper_time),
+	    hrmn(stats[1].dumper_time));
 
     fprintf(mailf,
 	    "Output Size (meg)       %7.1f    %7.1f    %7.1f\n",
@@ -745,28 +748,21 @@ void output_stats()
     divzero(mailf, pct(stats[0].coutsize),stats[0].corigsize);
     fputs("      ", mailf);
     divzero(mailf, pct(stats[1].coutsize),stats[1].corigsize);
-    putc('\n', mailf);
+/*    putc('\n', mailf);*/
 
-    fprintf(mailf, "Tape Used (%%)             ");
-    divzero(mailf, pct(stats[2].outsize+marksize*stats[2].disks),tapesize);
-    fputs("      ", mailf);
-    divzero(mailf, pct(stats[0].outsize+marksize*stats[0].disks),tapesize);
-    fputs("      ", mailf);
-    divzero(mailf, pct(stats[1].outsize+marksize*stats[1].disks),tapesize);
-
-    if(stats[1].disks > 0) fputs("   (level:#disks ...)", mailf);
+    if(stats[1].dumpdisks > 0) fputs("   (level:#disks ...)", mailf);
     putc('\n', mailf);
 
     fprintf(mailf,
 	    "Filesystems Dumped         %4d       %4d       %4d",
-	    stats[2].disks, stats[0].disks, stats[1].disks);
+	    stats[2].dumpdisks, stats[0].dumpdisks, stats[1].dumpdisks);
 
-    if(stats[1].disks > 0) {
+    if(stats[1].dumpdisks > 0) {
 	first = 1;
-	for(lv = 1; lv < 10; lv++) if(disks[lv]) {
+	for(lv = 1; lv < 10; lv++) if(dumpdisks[lv]) {
 	    fputs(first?"   (":" ", mailf);
 	    first = 0;
-	    fprintf(mailf, "%d:%d", lv, disks[lv]);
+	    fprintf(mailf, "%d:%d", lv, dumpdisks[lv]);
 	}
 	putc(')', mailf);
     }
@@ -780,26 +776,62 @@ void output_stats()
     divzero_wide(mailf, stats[1].outsize,stats[1].dumper_time);
     putc('\n', mailf);
 
+    putc('\n', mailf);
+    fprintf(mailf,
+	    "Tape Time (hrs:min)       %2d:%02d      %2d:%02d      %2d:%02d\n",
+	    hrmn(stats[2].taper_time), hrmn(stats[0].taper_time),
+	    hrmn(stats[1].taper_time));
+
+    fprintf(mailf,
+	    "Tape Size (meg)         %7.1f    %7.1f    %7.1f\n",
+	    mb(stats[2].tapesize), mb(stats[0].tapesize),
+	    mb(stats[1].tapesize));
+
+    fprintf(mailf, "Tape Used (%%)             ");
+    divzero(mailf, pct(stats[2].tapesize+marksize*stats[2].tapedisks),tapesize);
+    fputs("      ", mailf);
+    divzero(mailf, pct(stats[0].tapesize+marksize*stats[0].tapedisks),tapesize);
+    fputs("      ", mailf);
+    divzero(mailf, pct(stats[1].tapesize+marksize*stats[1].tapedisks),tapesize);
+
+    if(stats[1].tapedisks > 0) fputs("   (level:#disks ...)", mailf);
+    putc('\n', mailf);
+
+    fprintf(mailf,
+	    "Filesystems Taped          %4d       %4d       %4d",
+	    stats[2].tapedisks, stats[0].tapedisks, stats[1].tapedisks);
+
+    if(stats[1].tapedisks > 0) {
+	first = 1;
+	for(lv = 1; lv < 10; lv++) if(tapedisks[lv]) {
+	    fputs(first?"   (":" ", mailf);
+	    first = 0;
+	    fprintf(mailf, "%d:%d", lv, tapedisks[lv]);
+	}
+	putc(')', mailf);
+    }
+    putc('\n', mailf);
+
     fprintf(mailf, "Avg Tp Write Rate (k/s) ");
-    divzero_wide(mailf, stats[2].outsize,stats[2].taper_time);
+    divzero_wide(mailf, stats[2].tapesize,stats[2].taper_time);
     fputs("    ", mailf);
-    divzero_wide(mailf, stats[0].outsize,stats[0].taper_time);
+    divzero_wide(mailf, stats[0].tapesize,stats[0].taper_time);
     fputs("    ", mailf);
-    divzero_wide(mailf, stats[1].outsize,stats[1].taper_time);
+    divzero_wide(mailf, stats[1].tapesize,stats[1].taper_time);
     putc('\n', mailf);
 
     if (postscript) {
       fprintf(postscript, "(Total Size:        %6.1f MB) DrawStat\n",
 	      mb(stats[2].outsize));
       fprintf(postscript, "(Tape Used (%%)       ");
-      divzero(postscript, pct(stats[2].outsize+marksize*stats[2].disks),
+      divzero(postscript, pct(stats[2].tapesize+marksize*stats[2].tapedisks),
 	      tapesize);
       fprintf(postscript," %%) DrawStat\n");
       fprintf(postscript, "(Compression Ratio:  ");
       divzero(postscript, pct(stats[2].coutsize),stats[2].corigsize);
       fprintf(postscript," %%) DrawStat\n");
       fprintf(postscript,"(Filesystems Dumped: %4d) DrawStat\n",
-	      stats[2].disks);
+	      stats[2].dumpdisks);
     }
 }
 
@@ -968,21 +1000,22 @@ void CalcMaxWidth() {
 	    CheckStringMax(&ColumnData[Disk], dp->name);
 	    if (data(dp)->result == L_BOGUS)
 		continue;
-	    CheckIntMax(&ColumnData[Level], data(dp)->level);
+	    CheckIntMax(&ColumnData[Level], data(dp)->taper[i].level);
+	    CheckIntMax(&ColumnData[Level], data(dp)->dumper.level);
 	    if (data(dp)->result == L_SKIPPED)
 		continue;
 	    if (data(dp)->result == L_FAIL);
 		continue;
 	    if(!amflush_run || i == data(dp)->nb_taper-1) {
-		CheckFloatMax(&ColumnData[OrigKB], data(dp)->origsize);
-		CheckFloatMax(&ColumnData[OutKB], data(dp)->outsize);
+		CheckFloatMax(&ColumnData[OrigKB], data(dp)->dumper.origsize);
+		CheckFloatMax(&ColumnData[OutKB], data(dp)->dumper.outsize);
 	    }
 	    if(dp->compress == COMP_NONE)
 		f = 0.0;
 	    else 
-		f = data(dp)->origsize;
+		f = data(dp)->dumper.origsize;
 	    CheckStringMax(&ColumnData[Disk], 
-	      sDivZero(pct(data(dp)->outsize), f, Compress));
+	      sDivZero(pct(data(dp)->dumper.outsize), f, Compress));
 
 	    if(!amflush_run)
 		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
@@ -1019,13 +1052,13 @@ void CalcMaxWidth() {
 void output_summary()
 {
     disk_t *dp;
-    float f;
     char *ds="DUMPER STATS";
     char *ts=" TAPER STATS";
     char *tmp;
 
     int i, h, w1, wDump, wTape;
-
+    float outsize, origsize;
+    float f;
 
     /* at first determine if we have recalculate our widths */
     if (MaxWidthsRequested)
@@ -1110,7 +1143,12 @@ void output_summary()
 	    
 	    cd= &ColumnData[Level];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
-	    fprintf(mailf, cd->Format, cd->Width, cd->Precision, data(dp)->level);
+	    if(data(dp)->taper[i].success) {
+		fprintf(mailf, cd->Format, cd->Width, cd->Precision, data(dp)->taper[i].level);
+	    }
+	    else {
+		fprintf(mailf, cd->Format, cd->Width, cd->Precision, data(dp)->dumper.level);
+	    }
 
 	    if (data(dp)->result == L_SKIPPED) {
 		fprintf(mailf, "%s\n",
@@ -1125,31 +1163,46 @@ void output_summary()
 		continue;
 	    }
 
+	    if((data(dp)->dumper.success) &&
+	       ((!data(dp)->taper[i].success) ||
+	        (data(dp)->dumper.datestamp == data(dp)->taper[i].datestamp))) {
+		origsize = data(dp)->dumper.origsize;
+		outsize  = data(dp)->dumper.outsize;
+	    }
+	    else {
+		origsize = data(dp)->taper[i].origsize;
+		outsize  = data(dp)->taper[i].outsize;
+	    }
+
 	    cd= &ColumnData[OrigKB];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
-	    if(!amflush_run || i == data(dp)->nb_taper-1)
-		fprintf(mailf, cd->Format, cd->Width, cd->Precision, data(dp)->origsize);
+	    if(origsize != 0.0)
+		fprintf(mailf, cd->Format, cd->Width, cd->Precision, origsize);
 	    else
 		fprintf(mailf, "%*.*s", cd->Width, cd->Width, "N/A");
 
 	    cd= &ColumnData[OutKB];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
-	    if(!amflush_run || i == data(dp)->nb_taper-1)
-		fprintf(mailf, cd->Format, cd->Width, cd->Precision, data(dp)->outsize);
-	    else
-		fprintf(mailf, "%*.*s", cd->Width, cd->Width, "N/A");
+
+	    fprintf(mailf, cd->Format, cd->Width, cd->Precision, outsize);
 	    	
 	    cd= &ColumnData[Compress];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
+
 	    if(dp->compress == COMP_NONE)
 		f = 0.0;
-	    else 
-		f = data(dp)->origsize;
-	    fputs(sDivZero(pct(data(dp)->outsize), f, Compress), mailf);
+	    else if(origsize < 1.0)
+		f = 0.0;
+	    else
+		f = origsize;
+
+	    fputs(sDivZero(pct(outsize), f, Compress), mailf);
 
 	    cd= &ColumnData[DumpTime];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
-	    if(!amflush_run)
+	    if((data(dp)->dumper.success) &&
+	       ((!data(dp)->taper[i].success) ||
+	        (data(dp)->dumper.datestamp == data(dp)->taper[i].datestamp)))
 		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
 		  "%3d:%02d", mnsc(data(dp)->dumper.sec));
 	    else
@@ -1159,7 +1212,9 @@ void output_summary()
 
 	    cd= &ColumnData[DumpRate];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
-	    if(!amflush_run)
+	    if((data(dp)->dumper.success) &&
+	       ((!data(dp)->taper[i].success) ||
+	        (data(dp)->dumper.datestamp == data(dp)->taper[i].datestamp)))
 		fprintf(mailf, cd->Format, cd->Width, cd->Precision, data(dp)->dumper.kps);
 	    else
 		fprintf(mailf, "%*s", cd->Width, "N/A ");
@@ -1189,9 +1244,18 @@ void output_summary()
 	    fputc('\n', mailf);
 
 	    if ((postscript) && (data(dp)->taper[i].success)) {
-		fprintf(postscript,"(%s) (%s) (%d) (%3.0d) (%8.0f) (%8.0f) DrawHost\n",
-			dp->host->hostname, dp->name, data(dp)->level,
-                        data(dp)->filenum, data(dp)->origsize, data(dp)->outsize);
+		if(origsize != 0.0) {
+		    fprintf(postscript,"(%s) (%s) (%d) (%3.0d) (%8.0f) (%8.0f) DrawHost\n",
+			dp->host->hostname, dp->name, data(dp)->taper[i].level,
+                        data(dp)->taper[i].filenum, origsize, 
+			outsize);
+		}
+		else {
+		    fprintf(postscript,"(%s) (%s) (%d) (%3.0d) (%8s) (%8.0f) DrawHost\n",
+			dp->host->hostname, dp->name, data(dp)->taper[i].level,
+                        data(dp)->taper[i].filenum, "N/A", 
+			outsize);
+		}
 	    }
 	}
     }
@@ -1495,13 +1559,14 @@ int level;
 void handle_success()
 {
     disk_t *dp;
-    float sec, kps, kbytes;
+    float sec, kps, kbytes, origkb;
     struct timedata_s *sp;
     info_t inf;
     int i;
     char *s, *fp;
     int ch;
     int datestampI;
+
 
     if(curprog != P_TAPER && curprog != P_DUMPER && curprog != P_PLANNER) {
 	bogus_line();
@@ -1543,7 +1608,7 @@ void handle_success()
 
     if(datestampI < 100)  {
 	level = datestampI;
-	/* datestampI = datestamp;*/
+	datestampI = atoi(datestamp);
     }
     else {
 	skip_whitespace(s, ch);
@@ -1557,12 +1622,22 @@ void handle_success()
     skip_whitespace(s, ch);
 				/* Planner success messages (for skipped
 				   dumps) do not contain statistics */
-    if(curprog != P_PLANNER &&
-       sscanf(s - 1,"[sec %f kb %f kps %f",
-	      &sec, &kbytes, &kps) != 3) {
-	bogus_line();
-	return;
+    if(curprog != P_PLANNER) {
+	if(curprog != P_DUMPER ||
+	   sscanf(s - 1,"[sec %f kb %f kps %f orig-kb %f", 
+		  &sec, &kbytes, &kps, &origkb) != 4)  {
+	    origkb = -1;
+	    if(sscanf(s - 1,"[sec %f kb %f kps %f",
+		      &sec, &kbytes, &kps) != 3) {
+		bogus_line();
+		return;
+	    }
+	}
+	else {
+	    if(origkb == 0.0) origkb = 0.1;
+	}
     }
+
 
     dp = lookup_disk(hostname, diskname);
     if(dp == NULL) {
@@ -1576,8 +1651,6 @@ void handle_success()
 	return;
     }
 
-    data(dp)->level = level;
-
     if(curprog == P_PLANNER) {
 	data(dp)->result = L_SKIPPED;
 	return;
@@ -1588,33 +1661,54 @@ void handle_success()
 	sp = &(data(dp)->taper[data(dp)->nb_taper++]);
     else sp = &(data(dp)->dumper);
 
+    i = level > 0;
+
+    if(origkb == -1) {
+	struct tm *tm;
+	int datestamp;
+	/* grab original size from record */
+	get_info(hostname, diskname, &inf);
+	tm = localtime(&inf.inf[level].date);
+	datestamp = 10000*(tm->tm_year+1900) + 
+		      100*(tm->tm_mon+1) + tm->tm_mday;
+	if(datestampI == datestamp)
+	    origkb = (double)inf.inf[level].size;
+	else
+	    origkb = 0.0;
+    }
+
     sp->success = 1;
+    sp->datestamp = datestampI;
+    sp->level = level;
     sp->sec = sec;
     sp->kps = kps;
+    sp->origsize = origkb;
+    sp->outsize = kbytes;
 
-    i = level > 0;
-    if(curprog == P_TAPER) stats[i].taper_time += sec;
-
-    if(amflush_run || curprog == P_DUMPER) {
-	data(dp)->outsize = kbytes;
-        data(dp)->filenum = ++tapefcount;
-
-	if(curprog == P_DUMPER) stats[i].dumper_time += sec;
-	disks[level] += 1;
-	stats[i].disks += 1;
-	stats[i].outsize += kbytes;
-	if(dp->compress == COMP_NONE)
-	    data(dp)->origsize = kbytes;
-	else {
-	    /* grab original size from record */
-	    get_info(hostname, diskname, &inf);
-	    data(dp)->origsize = (double)inf.inf[level].size;
-
-	    stats[i].coutsize += kbytes;
-	    stats[i].corigsize += data(dp)->origsize;
-	}
-	stats[i].origsize += data(dp)->origsize;
+    if(curprog == P_TAPER) {
+	stats[i].taper_time += sec;
+        sp->filenum = ++tapefcount;
+	tapedisks[level] +=1;
+	stats[i].tapedisks +=1;
+	stats[i].tapesize += kbytes;
     }
+
+    if(curprog == P_DUMPER) {
+	stats[i].dumper_time += sec;
+	if(dp->compress == COMP_NONE) {
+/*	    if(sp->origsize == -1 || sp->origsize == 0.0)*/
+		sp->origsize = kbytes;
+	}
+	else {
+	    stats[i].coutsize += kbytes;
+	    stats[i].corigsize += sp->origsize;
+	}
+	dumpdisks[level] +=1;
+	stats[i].dumpdisks +=1;
+	stats[i].origsize += sp->origsize;
+	stats[i].outsize += kbytes;
+    }
+
 }
 
 void handle_strange()
@@ -1705,7 +1799,7 @@ void handle_failed()
     } else {
 	if(data(dp)->result != L_SUCCESS) {
 	    data(dp)->result = L_FAIL;
-	    data(dp)->level = level;
+	    data(dp)->dumper.level = level;
 	}
     }
 
