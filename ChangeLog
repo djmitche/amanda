@@ -1,5 +1,10 @@
 2002-09-17  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* config/config.guess: Updated from ftp://ftp.gnu.org/gnu/config/
+	* config/config.sub: Updated from ftp://ftp.gnu.org/gnu/config/
+
+2002-09-17  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* client-src/sendsize.c (getsize_dump): Print the fstype.
 	* client-src/sendbackup-dump.c (start_backup): Print the fstype.
 
