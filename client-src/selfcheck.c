@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.14 1997/12/10 10:24:21 amcore Exp $
+ * $Id: selfcheck.c,v 1.15 1997/12/13 05:12:20 amcore Exp $
  *
  * do self-check and send back any error messages
  */
@@ -215,10 +215,10 @@ int level;
 		return;
 	    }
 	    makesharename(disk, device, 1);
-	    sprintf(cmd, "%s %s '%s' -E -U backup%s%s -c quit", SAMBA_CLIENT,
-		    device, pass, domain[0] ? " -W " : "", domain);
-	    printf("running %s %s XXXX -E -U backup%s%s -c quit\n",
-		   SAMBA_CLIENT, device, domain[0] ? " -W " : "", domain);
+	    sprintf(cmd, "%s %s '%s' -E -U %s%s%s -c quit", SAMBA_CLIENT,
+		    device, pass, SAMBA_USER, domain[0] ? " -W " : "", domain);
+	    printf("running %s %s XXXX -E -U %s%s%s -c quit\n",
+		   SAMBA_CLIENT, device, SAMBA_USER, domain[0] ? " -W " : "", domain);
 	    if (system(cmd) & 0xff00)
 		printf("ERROR [PC SHARE %s access error: host down or invalid password?]\n", disk);
 	    else

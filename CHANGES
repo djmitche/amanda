@@ -1,5 +1,9 @@
 Version 2.4.0b5
 
+	It is now possible to specify a username to be used to backup
+	up with samba.
+	-Jean-Louis Martineau <martinea@iro.umontreal.ca>
+
 	Make sure dumper replies with ABORT_FINISHED when a PORT-DUMP
 	is aborted because of tape error.
 	-Michael C. Povel <Michael.Povel@hub.de>

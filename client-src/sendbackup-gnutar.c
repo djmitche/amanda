@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.30 1997/12/13 04:49:48 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.31 1997/12/13 05:12:21 amcore Exp $
  *
  * send backup data using GNU tar
  */
@@ -251,7 +251,8 @@ char *dumpdate;
 	    taropt = "-Tca";
 	else
 	    taropt = "-Tcga";
-	dbprintf(("backup from %s, pass %s\n", sharename, "XXXXX"));
+	dbprintf(("backup from %s, user %s, pass %s\n", 
+		  sharename, SAMBA_USER, "XXXXX"));
 
 	program->backup_name = program->restore_name = SAMBA_CLIENT;
 	
@@ -270,7 +271,7 @@ char *dumpdate;
 
 	dumppid = pipespawn(program->backup_name, &dumpin, dumpout, mesgf,
 			    "smbclient",
-			    sharename, pass, "-U", "backup", "-E",
+			    sharename, pass, "-U", SAMBA_USER, "-E",
 			    domain[0] ? "-W" : "-d0",
 			    domain[0] ? domain : taropt,
 			    domain[0] ? "-d0" : "-",

@@ -563,6 +563,21 @@ if test "$SAMBA_CLIENT"; then
     AC_DEFINE_UNQUOTED(SAMBA_CLIENT,"$SAMBA_CLIENT")
 fi
 
+AC_ARG_WITH(samba-user,
+    [    --with-samba-user=USER User for smbclient ["backup"]],
+    [
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply a user to the --with-samba-user option.])
+	  ;;
+	*) SAMBA_USER="$withval"
+	  ;;
+	esac
+    ],
+    : ${SAMBA_USER="backup"}
+)
+AC_DEFINE_UNQUOTED(SAMBA_USER,"$SAMBA_USER")
+
 AC_ARG_WITH(gnutar-listdir,
    [  --with-gnutar-listdir=DIR  gnutar directory lists go in DIR [localstatedir/amanda/gnutar-lists]],
    [
