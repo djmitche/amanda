@@ -117,7 +117,7 @@ DUMPER_DIR=`(
     test "x$exec_prefix" = xNONE && exec_prefix=${prefix}
     eval echo "$DUMPER_DIR"
 )`
-AC_DEFINE_UNQUOTED(DUMPER_DIR,"$DUMPER_DIR")
+AC_DEFINE_UNQUOTED(DUMPER_DIR,"$DUMPER_DIR",[Directory in which dumper interfaces should be installed and searched. ])
 AC_SUBST(DUMPER_DIR)
 
 AC_ARG_WITH(configdir,
@@ -138,7 +138,8 @@ CONFIG_DIR=`(
     test "x$exec_prefix" = xNONE && exec_prefix=${prefix}
     eval echo "$CONFIG_DIR"
 )`
-AC_DEFINE_UNQUOTED(CONFIG_DIR,"$CONFIG_DIR")
+AC_DEFINE_UNQUOTED(CONFIG_DIR,"$CONFIG_DIR",
+  [The directory in which configuration directories should be created. ])
 AC_SUBST(CONFIG_DIR)
 
 AC_ARG_WITH(indexdir,
@@ -163,7 +164,8 @@ AC_ARG_WITH(suffixes,
 )
 case "$USE_VERSION_SUFFIXES" in
 y | ye | yes)
-    AC_DEFINE(USE_VERSION_SUFFIXES)
+    AC_DEFINE(USE_VERSION_SUFFIXES, 1,
+	[Define to have programs use version suffixes when calling other programs.])
 
     program_suffix="-$VERSION"
     # This is from the output of configure.in.
@@ -285,7 +287,8 @@ AC_ARG_WITH(index-server,
    ],
    : ${DEFAULT_SERVER=`uname -n`}
 )
-AC_DEFINE_UNQUOTED(DEFAULT_SERVER,"$DEFAULT_SERVER")
+AC_DEFINE_UNQUOTED(DEFAULT_SERVER,"$DEFAULT_SERVER",
+  [This is the default Amanda index server. ])
 AC_SUBST(DEFAULT_SERVER)
 
 AC_ARG_WITH(force-uid,
@@ -294,7 +297,8 @@ AC_ARG_WITH(force-uid,
     : ${FORCE_USERID=yes}
 )
 case "$FORCE_USERID" in
-y | ye | yes) AC_DEFINE(FORCE_USERID)
+y | ye | yes) AC_DEFINE(FORCE_USERID, 1,
+	[Define to force to another user on client machines. ])
   ;;
 n | no) :
   ;;
@@ -316,7 +320,8 @@ AC_ARG_WITH(user,
 if test "x${CLIENT_LOGIN+set}" != xset; then
     AC_MSG_ERROR([*** --with-user=USER is missing])
 fi
-AC_DEFINE_UNQUOTED(CLIENT_LOGIN,"$CLIENT_LOGIN")
+AC_DEFINE_UNQUOTED(CLIENT_LOGIN,"$CLIENT_LOGIN",
+  [Define as a the user to force to on client machines. ])
 AC_SUBST(CLIENT_LOGIN)
 
 AC_ARG_WITH(group,
@@ -351,7 +356,8 @@ AC_ARG_WITH(owner,
 if test "x${BINARY_OWNER+set}" != xset ; then
    BINARY_OWNER=$CLIENT_LOGIN
 fi
-AC_DEFINE_UNQUOTED(BINARY_OWNER,"$BINARY_OWNER")
+AC_DEFINE_UNQUOTED(BINARY_OWNER,"$BINARY_OWNER",
+  [Define as the user who owns installed binaries. ])
 AC_SUBST(BINARY_OWNER)
 
 AC_ARG_WITH(rundump,
@@ -377,7 +383,8 @@ AC_ARG_WITH(config,
    ],
    : ${DEFAULT_CONFIG=DailySet1}
 )
-AC_DEFINE_UNQUOTED(DEFAULT_CONFIG,"$DEFAULT_CONFIG")
+AC_DEFINE_UNQUOTED(DEFAULT_CONFIG,"$DEFAULT_CONFIG",
+  [This is the default Amanda configuration. ])
 AC_SUBST(DEFAULT_CONFIG)
 
 AC_ARG_WITH(tape-server,
@@ -393,7 +400,7 @@ AC_ARG_WITH(tape-server,
     ],
     : ${DEFAULT_TAPE_SERVER=$DEFAULT_SERVER}
 )
-AC_DEFINE_UNQUOTED(DEFAULT_TAPE_SERVER,"$DEFAULT_TAPE_SERVER")
+AC_DEFINE_UNQUOTED(DEFAULT_TAPE_SERVER,"$DEFAULT_TAPE_SERVER",[This is the default restoring Amanda tape server. ])
 AC_SUBST(DEFAULT_TAPE_SERVER)
 
 AC_ARG_WITH(tape-device,
@@ -456,7 +463,7 @@ if test -z "$DEFAULT_TAPE_DEVICE"; then
     DEFAULT_TAPE_DEVICE=/dev/null
 fi
 
-AC_DEFINE_UNQUOTED(DEFAULT_TAPE_DEVICE,"$DEFAULT_TAPE_DEVICE")
+AC_DEFINE_UNQUOTED(DEFAULT_TAPE_DEVICE,"$DEFAULT_TAPE_DEVICE",[This is the default no-rewinding tape device. ])
 AC_SUBST(DEFAULT_TAPE_DEVICE)
 
 AC_ARG_WITH(ftape-raw-device,
@@ -492,7 +499,8 @@ if test -z "$DEFAULT_RAW_TAPE_DEVICE"; then
     DEFAULT_RAW_TAPE_DEVICE=/dev/null
 fi
 
-AC_DEFINE_UNQUOTED(DEFAULT_RAW_TAPE_DEVICE,"$DEFAULT_RAW_TAPE_DEVICE")
+AC_DEFINE_UNQUOTED(DEFAULT_RAW_TAPE_DEVICE,"$DEFAULT_RAW_TAPE_DEVICE",[For Linux systems with floppy tapes: 
+ * QIC volume table support via raw tape device. ])
 AC_SUBST(DEFAULT_RAW_TAPE_DEVICE)
 
 AC_ARG_WITH(rew-tape,
@@ -528,7 +536,7 @@ if test -z "$DEFAULT_CHANGER_DEVICE"; then
     DEFAULT_CHANGER_DEVICE=/dev/null
 fi
 
-AC_DEFINE_UNQUOTED(DEFAULT_CHANGER_DEVICE,"$DEFAULT_CHANGER_DEVICE")
+AC_DEFINE_UNQUOTED(DEFAULT_CHANGER_DEVICE,"$DEFAULT_CHANGER_DEVICE",[This is the default changer device. ])
 AC_SUBST(DEFAULT_CHANGER_DEVICE)
 
 AC_ARG_WITH(fqdn,
@@ -538,7 +546,7 @@ AC_ARG_WITH(fqdn,
 )
 case "$USE_FQDN" in
 n | no) : ;;
-y |  ye | yes) AC_DEFINE(USE_FQDN)
+y |  ye | yes) AC_DEFINE(USE_FQDN,1,[Define for backups being done on a multiple networks and FQDNs are used. ])
   ;;
 *) AC_MSG_ERROR([*** You must not supply an argument to --with-fqdn option.])
   ;;
@@ -551,7 +559,9 @@ AC_ARG_WITH(broken-fsf,
 )
 case "$HAVE_BROKEN_FSF" in
 n | no) : ;;
-y |  ye | yes) AC_DEFINE(HAVE_BROKEN_FSF)
+y |  ye | yes) AC_DEFINE(HAVE_BROKEN_FSF,1,[Define this if issuing a fsf on a tape fails when you are not at a tape
+ * mark, for instance, if amrecover gives I/O errors when skipping.
+])
   ;;
 *) AC_MSG_ERROR([*** You must not supply an argument to --with-broken-fsf option.])
   ;;
@@ -594,7 +604,7 @@ AC_ARG_WITH(samba-user,
     ],
     : ${SAMBA_USER="backup"}
 )
-AC_DEFINE_UNQUOTED(SAMBA_USER,"$SAMBA_USER")
+AC_DEFINE_UNQUOTED(SAMBA_USER,"$SAMBA_USER",[Define the location of smbclient for backing up Samba PC clients. ])
 
 AC_ARG_WITH(gnutar-listdir,
    [  --with-gnutar-listdir=DIR  gnutar directory lists go in DIR [localstatedir/amanda/gnutar-lists]],
@@ -613,7 +623,7 @@ if test "$GNUTAR_LISTDIR"; then
         test "x$prefix" = xNONE && prefix=$ac_default_prefix
         eval echo "$GNUTAR_LISTDIR"
     )`
-    AC_DEFINE_UNQUOTED(GNUTAR_LISTED_INCREMENTAL_DIR,"$GNUTAR_LISTDIR")
+    AC_DEFINE_UNQUOTED(GNUTAR_LISTED_INCREMENTAL_DIR,"$GNUTAR_LISTDIR",[The directory in which GNU tar should store directory lists for incrementals. ])
 fi
 
 AC_ARG_WITH(gnutar-listed-incremental,
@@ -631,7 +641,7 @@ AC_ARG_WITH(bsd-security,
 )
 case "$BSD_SECURITY" in
 n | no) : ;;
-y |  ye | yes) AC_DEFINE(BSD_SECURITY)
+y |  ye | yes) AC_DEFINE(BSD_SECURITY,1,[Define to use BSD .rhosts/.amandahosts security. ])
   ;;
 *) AC_MSG_ERROR([*** You must not supply an argument to --with-bsd-security option.])
   ;;
@@ -646,7 +656,7 @@ case "$USE_AMANDAHOSTS" in
 n | no) : ;;
 y |  ye | yes) :
   case "$BSD_SECURITY" in
-  y | ye | yes) AC_DEFINE(USE_AMANDAHOSTS)
+  y | ye | yes) AC_DEFINE(USE_AMANDAHOSTS,1,[Define if you want to use the .amandahosts for BSD security. ])
     ;;
   esac
   ;;
@@ -702,7 +712,7 @@ if test "${KRB4_SECURITY}" = yes -a -f  ${srcdir-.}/common-src/krb4-security.c ;
 	    #
 	    AC_MSG_RESULT(found in $dir)
 	    KRB4_SECURITY=yes
-	    AC_DEFINE(KRB4_SECURITY)
+	    AC_DEFINE(KRB4_SECURITY, 1, [Enable Kerberos security. ])
 	    if test -d $dir/include/kerberosIV ; then
 		#
 		# This handles BSD/OS.
@@ -725,7 +735,7 @@ if test "${KRB4_SECURITY}" = yes -a -f  ${srcdir-.}/common-src/krb4-security.c ;
 	    #
 	    AC_MSG_RESULT(found in $dir)
 	    KRB4_SECURITY=yes
-	    AC_DEFINE(KRB4_SECURITY)
+	    AC_DEFINE(KRB4_SECURITY, 1, [Enable Kerberos security. ])
 	    KRB4INCLUDES="-I$dir/include -I$dir/include/kerberosIV"
 	    KRB4LDFLAGS=-L$dir/lib
 	    if test -f ${dir}/lib/libkrb5.a &&
@@ -752,7 +762,7 @@ AC_ARG_WITH(rsh-security,
 )
 case "$RSH_SECURITY" in
 n | no) : ;;
-y |  ye | yes) AC_DEFINE(RSH_SECURITY)
+y |  ye | yes) AC_DEFINE(RSH_SECURITY,1,[Define if RSH transport should be enabled. ])
   ;;
 *) AC_MSG_ERROR([*** You must not supply an argument the to --with-rsh-security option.])
   ;;
@@ -772,7 +782,7 @@ AC_ARG_WITH(server-principal,
     ],
     : ${SERVER_HOST_PRINCIPLE="amanda"}
 )
-AC_DEFINE_UNQUOTED(SERVER_HOST_PRINCIPLE,"$SERVER_HOST_PRINCIPLE")
+AC_DEFINE_UNQUOTED(SERVER_HOST_PRINCIPLE,"$SERVER_HOST_PRINCIPLE",[The Kerberos server principle. ])
 
 AC_ARG_WITH(server-instance,
     [    --with-server-instance=ARG     server host instance   ["amanda"]],
@@ -787,7 +797,7 @@ AC_ARG_WITH(server-instance,
     ],
     : ${SERVER_HOST_INSTANCE="amanda"}
 )
-AC_DEFINE_UNQUOTED(SERVER_HOST_INSTANCE,"$SERVER_HOST_INSTANCE")
+AC_DEFINE_UNQUOTED(SERVER_HOST_INSTANCE,"$SERVER_HOST_INSTANCE",[The Kerberos server instance. ])
 
 AC_ARG_WITH(server-keyfile,
     [    --with-server-keyfile=ARG      server host key file   ["/.amanda"]],
@@ -802,7 +812,7 @@ AC_ARG_WITH(server-keyfile,
     ],
     : ${SERVER_HOST_KEY_FILE="/.amanda"}
 )
-AC_DEFINE_UNQUOTED(SERVER_HOST_KEY_FILE,"$SERVER_HOST_KEY_FILE")
+AC_DEFINE_UNQUOTED(SERVER_HOST_KEY_FILE,"$SERVER_HOST_KEY_FILE",[The Kerberos server key file. ])
 
 AC_ARG_WITH(client-principal,
     [    --with-client-principal=ARG    client host principal  ["rcmd"]],
@@ -817,7 +827,7 @@ AC_ARG_WITH(client-principal,
     ],
     : ${CLIENT_HOST_PRINCIPLE="rcmd"}
 )
-AC_DEFINE_UNQUOTED(CLIENT_HOST_PRINCIPLE,"$CLIENT_HOST_PRINCIPLE")
+AC_DEFINE_UNQUOTED(CLIENT_HOST_PRINCIPLE,"$CLIENT_HOST_PRINCIPLE",[The Kerberos client host principle. ])
 
 AC_ARG_WITH(client-instance,
     [    --with-client-instance=ARG     client host instance   [HOSTNAME_INSTANCE]],
@@ -832,7 +842,7 @@ AC_ARG_WITH(client-instance,
     ],
     : ${CLIENT_HOST_INSTANCE=HOSTNAME_INSTANCE}
 )
-AC_DEFINE_UNQUOTED(CLIENT_HOST_INSTANCE,$CLIENT_HOST_INSTANCE)
+AC_DEFINE_UNQUOTED(CLIENT_HOST_INSTANCE,$CLIENT_HOST_INSTANCE,[The Kerberos client host instance. ])
 
 AC_ARG_WITH(client-keyfile,
     [    --with-client-keyfile=ARG      client host key file   [KEYFILE]],
@@ -853,7 +863,7 @@ if test "$CLIENT_HOST_KEY_FILE" != "KEYFILE"; then
   CLIENT_HOST_KEY_FILE="\"$CLIENT_HOST_KEY_FILE\""
 fi
 
-AC_DEFINE_UNQUOTED(CLIENT_HOST_KEY_FILE,$CLIENT_HOST_KEY_FILE)
+AC_DEFINE_UNQUOTED(CLIENT_HOST_KEY_FILE,$CLIENT_HOST_KEY_FILE,[The Kerberos client host key file. ])
 
 AC_ARG_WITH(ticket-lifetime,
     [    --with-ticket-lifetime=ARG     ticket lifetime        [128]],
@@ -868,7 +878,7 @@ AC_ARG_WITH(ticket-lifetime,
     ],
     : ${TICKET_LIFETIME=128}
 )
-AC_DEFINE_UNQUOTED(TICKET_LIFETIME,$TICKET_LIFETIME)
+AC_DEFINE_UNQUOTED(TICKET_LIFETIME,$TICKET_LIFETIME,[The Kerberos ticket lifetime. ])
 
 dnl Specify --with-krb5-security if Kerberos software is in somewhere
 dnl other than the listed KRB5_SPOTS.  We only compile kerberos support in
@@ -903,7 +913,7 @@ for dir in $KRB5_SPOTS; do
 	fi
 	AC_MSG_RESULT(found in $dir)
 	KRB5_SECURITY=yes
-	AC_DEFINE(KRB5_SECURITY)
+	AC_DEFINE(KRB5_SECURITY,1,[Define if Kerberos 5 security is to be enabled. ])
 	KRB5INCLUDES=-I$dir/include
 	KRB5LDFLAGS=-L$k5libdir
 	# force the static versions of these libs by linking directly
@@ -934,7 +944,9 @@ if test x"${PORTRANGE+set}" = x"set"; then
     else
 	AC_MSG_ERROR([*** the second port number must be greater than the first one in --with-portrange])
     fi
-    AC_DEFINE_UNQUOTED(PORTRANGE,$PORTRANGE)
+    AC_DEFINE_UNQUOTED(PORTRANGE,$PORTRANGE,[A comma-separated list of two integers, determining the minimum and
+   maximum port number unreserved TCP server sockets should be bound
+   to. ])
 fi
 
 AC_ARG_WITH(udpportrange,
@@ -952,7 +964,9 @@ if test x"${UDPPORTRANGE+set}" = x"set"; then
     else
 	AC_MSG_ERROR([*** the second port number must be greater than the first one in --with-udpportrange])
     fi
-    AC_DEFINE_UNQUOTED(UDPPORTRANGE,$UDPPORTRANGE)
+    AC_DEFINE_UNQUOTED(UDPPORTRANGE,$UDPPORTRANGE,[A comma-separated list of two integers, determining the minimum and
+   maximum port number unreserved UDP server sockets should be bound
+   to. ])
 fi
 
 AC_ARG_WITH(db,
@@ -996,7 +1010,7 @@ AC_ARG_WITH(buffered-dump,
 case "$DUMPER_SOCKET_BUFFERING" in
 n | no) :
   ;;
-y | ye | yes) AC_DEFINE(DUMPER_SOCKET_BUFFERING)
+y | ye | yes) AC_DEFINE(DUMPER_SOCKET_BUFFERING,1,[Define if dumper should buffer the sockets for faster throughput. ])
   ;;
 *) AC_MSG_ERROR([*** You must not supply an argument to --with-buffered-dump.])
   ;;
@@ -1009,7 +1023,7 @@ AC_ARG_WITH(assertions,
 )
 case "$ASSERTIONS" in
 n | no) : ;;
-y |  ye | yes) AC_DEFINE(ASSERTIONS)
+y |  ye | yes) AC_DEFINE(ASSERTIONS,1,[Define if you want assertion checking. ])
   ;;
 *) AC_MSG_ERROR([*** You must not supply an argument to --with-assertions option.])
   ;;
@@ -1029,18 +1043,17 @@ case "$DEBUGGING" in
 n | no) DEBUG_DIR="";;
 y |  ye | yes)
 	DEBUG_DIR="/tmp/amanda"
-	AC_DEFINE(DEBUG_CODE)
   ;;
 /*)
 	DEBUG_DIR="$DEBUGGING"
-	AC_DEFINE(DEBUG_CODE)
   ;;
 *) AC_MSG_ERROR([*** You must supply a full pathname to --with-debugging option.])
   ;;
 esac
 case "$DEBUG_DIR" in
 "") :;;
-*) AC_DEFINE_UNQUOTED(DEBUG_DIR,"$DEBUG_DIR")
+*) AC_DEFINE(DEBUG_CODE,1,[Define if you want debugging. ])
+   AC_DEFINE_UNQUOTED(DEBUG_DIR,"$DEBUG_DIR",[Location of Amanda directories and files. ])
    AC_SUBST(DEBUG_DIR);;
 esac
 
@@ -1051,7 +1064,8 @@ AC_ARG_WITH(pid-debug-files,
 )
 case "$DEBUG_FILE_WITH_PID" in
 n | no) : ;;
-y |  ye | yes) AC_DEFINE(DEBUG_FILE_WITH_PID)
+y |  ye | yes) AC_DEFINE(DEBUG_FILE_WITH_PID,1,[Define if you want the debugging files that appear in the --with-debugging
+ * directory to have the process ID appended to the filename. ])
   ;;
 *) AC_MSG_ERROR([*** You must not supply an argument to --with-pid-debug-files option.])
   ;;
@@ -1070,9 +1084,10 @@ esac
 AMANDA_SERVICE_NAME="amanda$SERVICE_SUFFIX"
 KAMANDA_SERVICE_NAME="kamanda$SERVICE_SUFFIX"
 AC_SUBST(SERVICE_SUFFIX)
-AC_DEFINE_UNQUOTED(SERVICE_SUFFIX, "$SERVICE_SUFFIX")
-AC_DEFINE_UNQUOTED(AMANDA_SERVICE_NAME,  "$AMANDA_SERVICE_NAME")
-AC_DEFINE_UNQUOTED(KAMANDA_SERVICE_NAME, "$KAMANDA_SERVICE_NAME")
+AC_DEFINE_UNQUOTED(SERVICE_SUFFIX, "$SERVICE_SUFFIX",[A suffix that will be appended to service names.
+ * Useful for testing in parallel with a working version. ])
+AC_DEFINE_UNQUOTED(AMANDA_SERVICE_NAME,  "$AMANDA_SERVICE_NAME", [The name for the Amanda service. ])
+AC_DEFINE_UNQUOTED(KAMANDA_SERVICE_NAME, "$KAMANDA_SERVICE_NAME", [The name for the Kerberized Amanda service. ])
 
 AM_DISABLE_SHARED dnl build only static libraries by default
 AC_ARG_ENABLE(libtool,
@@ -1091,19 +1106,16 @@ AM_CONDITIONAL(WANT_LIBTOOL, test x"$USE_LIBTOOL" = x"yes")
     test "x$exec_prefix" = xNONE && exec_prefix=${prefix}
 
     tmp=`eval echo "$bindir"`
-    AC_DEFINE_UNQUOTED(bindir,"$tmp")
+    AC_DEFINE_UNQUOTED(bindir,"$tmp",[Directory in which user binaries should be installed. ])
 
     tmp=`eval echo "$sbindir"`
-    AC_DEFINE_UNQUOTED(sbindir,"$tmp")
+    AC_DEFINE_UNQUOTED(sbindir,"$tmp",[Directory in which administrator binaries should be installed. ])
 
     tmp=`eval echo "$libexecdir"`
-    AC_DEFINE_UNQUOTED(libexecdir,"$tmp")
+    AC_DEFINE_UNQUOTED(libexecdir,"$tmp",[Directory in which internal binaries should be installed. ])
 
-#    tmp=`eval echo $dumperdir`
-#    AC_DEFINE_UNQUOTED(dumperdir,"$tmp")
-#
     tmp=`eval echo $mandir`
-    AC_DEFINE_UNQUOTED(mandir,"$tmp")
+    AC_DEFINE_UNQUOTED(mandir,"$tmp",[Directory in which man-pages should be installed])
 )
 
 AC_PROG_CC
@@ -1119,14 +1131,16 @@ dnl search for on the system.
 DUMP_PROGRAMS="ufsdump dump backup"
 GETCONF_LFS="LFS"
 
+dump_returns_1=
+xenix_tapeio=
 case "$target" in
     *-dec-osf*)
-			AC_DEFINE(STATFS_OSF1)
+			AC_DEFINE(STATFS_OSF1,1,[Define on OSF1. ])
 			;;
     *-dg-*)
 			DUMP_PROGRAMS="dump "$DUMP_PROGRAMS
 			: ${USE_RUNDUMP=yes}
-			AC_DEFINE(DUMP_RETURNS_1)
+			dump_returns_1=yes
 			;;
     *-netbsd*)
 			;;
@@ -1148,8 +1162,8 @@ case "$target" in
 			;;
   *-ibm-aix*)
 			DUMP_PROGRAMS="backup "$DUMP_PROGRAMS
-			AC_DEFINE(AIX_TAPEIO)
-			AC_DEFINE(AIX_BACKUP)
+			AC_DEFINE(AIX_TAPEIO,1,[Define on AIX. ])
+			AC_DEFINE(AIX_BACKUP,1,[Define on AIX. ])
 			;;
   m88k-motorola-sysv4)
 			;;
@@ -1181,18 +1195,18 @@ case "$target" in
 			;;
   *-ultrix*)
 			: ${USE_RUNDUMP=yes}
-			AC_DEFINE(STATFS_ULTRIX)
-			AC_DEFINE(DUMP_RETURNS_1)
+			AC_DEFINE(STATFS_ULTRIX,1,[Define on Ultrix. ])
+			dump_returns_1=yes
 			;;
   *-sysv4.2uw2*)
-			AC_DEFINE(UWARE_TAPEIO)
+			AC_DEFINE(UWARE_TAPEIO,1,[Define on UnixWare. ])
 			;;
   *-sco3.2v5*)
-			AC_DEFINE(XENIX_TAPEIO)
-			AC_DEFINE(STATFS_SCO_OS5)
+			xenix_tapeio=yes
+			AC_DEFINE(STATFS_SCO_OS5,1,[Define on SCO OS5. ])
 			;;
   i386-pc-isc4*)
-			AC_DEFINE(XENIX_TAPEIO)
+			xenix_tapeio=yes
 			;;
   *-sni-sysv4)
 			;;
@@ -1212,6 +1226,14 @@ END
 		;;
 esac
 
+if test -n "$dump_returns_1"; then
+  AC_DEFINE(DUMP_RETURNS_1,1,[Define this if this system's dump exits with 1 as a success code. ])
+fi
+
+if test -n "$xenix_tapeio"; then
+  AC_DEFINE(XENIX_TAPEIO,1,[Define on XENIX/ISC. ])
+fi
+
 AMANDA_CFLAGS="$AMANDA_CFLAGS $KRB4INCLUDES $KRB5INCLUDES $DBMALLOCCFLAGS"
 AMANDA_CPPFLAGS="$AMANDA_CPPFLAGS $KRB4INCLUDES $KRB5INCLUDES $DBMALLOCINCLUDES"
 AMANDA_LDFLAGS="$AMANDA_LDFLAGS $KRB4LDFLAGS $KRB5LDFLAGS"
@@ -1226,7 +1248,8 @@ dnl This specifies the flag for mt that tells mt the proper tape drive
 dnl to use.
 : ${MT_FILE_FLAG="-f"}
 AC_SUBST(MT_FILE_FLAG)
-AC_DEFINE_UNQUOTED(MT_FILE_FLAG, "$MT_FILE_FLAG")
+AC_DEFINE_UNQUOTED(MT_FILE_FLAG, "$MT_FILE_FLAG",[Defined to the switch to be used when invoking mt to specify the
+ * tape device. ])
 
 dnl Check for programs.
 AC_PATH_PROGS(AR,ar,,$LOCSYSPATH)
@@ -1258,13 +1281,13 @@ AC_PATH_PROGS(GREP,grep,,$LOCSYSPATH)
 if test -z "$GREP"; then
     GREP=grep
 fi
-AC_DEFINE_UNQUOTED(GREP,"$GREP")
+AC_DEFINE_UNQUOTED(GREP,"$GREP",[Define the location of the grep program. ])
 
 AC_PATH_PROGS(GNUTAR,gtar gnutar tar,,$LOCSYSPATH)
 if test ! -z "$GNUTAR"; then
   case "`\"$GNUTAR\" --version 2>&1`" in
    *GNU*tar* | *Free*paxutils* )
-		AC_DEFINE_UNQUOTED(GNUTAR,"$GNUTAR")
+		AC_DEFINE_UNQUOTED(GNUTAR,"$GNUTAR",[Define to the location of Gnu tar. ])
 		;;
    *)
 		AC_MSG_WARN([*** $GNUTAR is not GNU tar, so it will not be used.])
@@ -1278,53 +1301,62 @@ if test ! -z "$SAMBA_CLIENT"; then
   case "`\"$SAMBA_CLIENT\" '\\\\not.a.host.name\\notashare' -U nosuchuser -N -Tx /dev/null 2>&1`" in
   *"Unknown host"*)
 		smbversion=1
-		AC_DEFINE_UNQUOTED(SAMBA_CLIENT,"$SAMBA_CLIENT")
 		;;
   *"Connection to not.a.host.name failed"*)
 		smbversion=2
-		AC_DEFINE_UNQUOTED(SAMBA_CLIENT,"$SAMBA_CLIENT")
 		;;
   *)
 		AC_MSG_WARN([*** $SAMBA_CLIENT does not seem to be smbclient, so it will not be used.])
 		SAMBA_CLIENT=
 		;;
   esac
-  AC_DEFINE_UNQUOTED(SAMBA_VERSION, $smbversion,
-  [Not the actual samba version, just a number that should be increased whenever we start to use a certain samba feature])
-
+  if test -n "$SAMBA_CLIENT"; then
+    AC_DEFINE_UNQUOTED(SAMBA_CLIENT,"$SAMBA_CLIENT",[Define the location of smbclient for backing up Samba PC clients. ])
+    AC_DEFINE_UNQUOTED(SAMBA_VERSION, $smbversion,
+      [Not the actual samba version, just a number that should be increased whenever we start to rely on a new samba feature. ])
+  fi
 fi
 
 AC_PATH_PROGS(GZIP,gzip,,$LOCSYSPATH)
 if test "$GZIP"; then
-    AC_DEFINE(HAVE_GZIP)
-    AC_DEFINE_UNQUOTED(COMPRESS_PATH,"$GZIP")
-    AC_DEFINE_UNQUOTED(COMPRESS_SUFFIX,".gz")
-    AC_DEFINE_UNQUOTED(COMPRESS_FAST_OPT,"--fast")
-    AC_DEFINE_UNQUOTED(COMPRESS_BEST_OPT,"--best")
-    AC_DEFINE_UNQUOTED(UNCOMPRESS_PATH,"$GZIP")
-    AC_DEFINE_UNQUOTED(UNCOMPRESS_OPT,"-dc")
+    AC_DEFINE(HAVE_GZIP,1,[Define if Amanda is using the gzip program. ])
+    COMPRESS_PATH="$GZIP"
+    COMPRESS_SUFFIX=".gz"
+    COMPRESS_FAST_OPT="--fast"
+    COMPRESS_BEST_OPT="--best"
+    UNCOMPRESS_PATH="$GZIP"
+    UNCOMPRESS_OPT="-dc"
 else
     if test "$COMPRESS"; then
-	AC_DEFINE_UNQUOTED(COMPRESS_PATH,"$COMPRESS")
-	AC_DEFINE_UNQUOTED(COMPRESS_SUFFIX,".Z")
-	AC_DEFINE_UNQUOTED(COMPRESS_FAST_OPT,"-f")
-	AC_DEFINE_UNQUOTED(COMPRESS_BEST_OPT,"-f")
-	AC_DEFINE_UNQUOTED(UNCOMPRESS_PATH,"$COMPRESS")
-	AC_DEFINE_UNQUOTED(UNCOMPRESS_OPT,"-dc")
+	COMPRESS_PATH="$COMPRESS"
+	COMPRESS_SUFFIX=".Z"
+	COMPRESS_FAST_OPT="-f"
+	COMPRESS_BEST_OPT="-f"
+	UNCOMPRESS_PATH="$COMPRESS"
+	UNCOMPRESS_OPT="-dc"
     else
 	dnl If we have to use cat, we don't define COMPRESS_FAST_OPT,
 	dnl COMPRESS_BEST_OPT, or UNCOMPRESS_OPT as "" since cat will look
 	dnl look for a file by the name of "".
 	AC_MSG_WARN([*** Cannot find either gzip or compress.  Using cat. ***])
-	AC_DEFINE_UNQUOTED(COMPRESS_PATH,"$CAT")
-	AC_DEFINE_UNQUOTED(COMPRESS_SUFFIX,"")
-	AC_DEFINE_UNQUOTED(UNCOMPRESS_PATH,"$CAT")
+	COMPRESS_PATH="$CAT"
+	COMPRESS_SUFFIX=""
+	COMPRESS_FAST_OPT=""
+	COMPRESS_BEST_OPT=""
+	UNCOMPRESS_PATH="$CAT"
+	UNCOMPRESS_OPT=""
     fi
 fi
+AC_DEFINE_UNQUOTED(COMPRESS_PATH,"$COMPRESS_PATH",[Define to the exact path to the gzip or the compress program. ])
+AC_DEFINE_UNQUOTED(COMPRESS_SUFFIX,"$COMPRESS_SUFFIX",[Define to the suffix for the COMPRESS_PATH compression program. ])
+AC_DEFINE_UNQUOTED(COMPRESS_FAST_OPT,"COMPRESS_FAST_OPT",[Define as the command line option for fast compression. ])
+AC_DEFINE_UNQUOTED(COMPRESS_BEST_OPT,"COMPRESS_BEST_OPT",[Define as the command line option for best compression. ])
+AC_DEFINE_UNQUOTED(UNCOMPRESS_PATH,"UNCOMPRESS_PATH",[Define as the exact path to the gzip or compress command. ])
+AC_DEFINE_UNQUOTED(UNCOMPRESS_OPT,"UNCOMPRESS_OPT",[Define as any optional arguments to get UNCOMPRESS_PATH to uncompress. ])
 
 AC_PATH_PROGS(MAILER,Mail mailx mail)
 if test "$MAILER"; then
-    AC_DEFINE_UNQUOTED(MAILER,"$MAILER")
+    AC_DEFINE_UNQUOTED(MAILER,"$MAILER",[Define to a program that understands -s "subject" user < message_file])
 fi
 
 AC_PATH_PROGS(MT,mt,mt,$LOCSYSPATH)
@@ -1337,7 +1369,7 @@ AC_PATH_PROGS(MTX,mtx,mtx,$LOCSYSPATH)
 
 AC_PATH_PROGS(PRINT, lpr lp)
 if test ! -z "$PRINT"; then
-    AC_DEFINE_UNQUOTED(LPRCMD, "$PRINT")
+    AC_DEFINE_UNQUOTED(LPRCMD, "$PRINT",[Command for starting printing jobs. ])
     AC_CACHE_CHECK([which flag to use to select a printer],
 	amanda_cv_printer_flag, [
 	amanda_cv_printer_flag=$PRINTER_FLAG
@@ -1347,7 +1379,7 @@ if test ! -z "$PRINT"; then
 	esac
     ])
     if test ! -z "$amanda_cv_printer_flag"; then
-	AC_DEFINE_UNQUOTED(LPRFLAG, "$amanda_cv_printer_flag")
+	AC_DEFINE_UNQUOTED(LPRFLAG, "$amanda_cv_printer_flag",[LPRCMD switch for specifying a printer name. ])
     else
 	AC_MSG_WARN([*** WARNING: amanda will always print to the default printer])
     fi
@@ -1364,8 +1396,8 @@ AC_PATH_PROGS(SHELL,sh,,$LOCSYSPATH)
 AC_PATH_PROGS(DUMP,$DUMP_PROGRAMS,,$SYSLOCPATH)
 AC_PATH_PROGS(RESTORE,ufsrestore restore,,$SYSLOCPATH)
 if test "$DUMP" -a "$RESTORE"; then
-    AC_DEFINE_UNQUOTED(DUMP,"$DUMP")
-    AC_DEFINE_UNQUOTED(RESTORE,"$RESTORE")
+    AC_DEFINE_UNQUOTED(DUMP,"$DUMP",[Define the location of the ufsdump, backup, or dump program. ])
+    AC_DEFINE_UNQUOTED(RESTORE,"$RESTORE",[Define the location of the ufsrestore or restore program. ])
     if test -x $DUMP; then
         AC_CACHE_CHECK(
 	    [whether $DUMP supports -E or -S for estimates],
@@ -1400,7 +1432,7 @@ if test "$DUMP" -a "$RESTORE"; then
 	amanda_cv_dump_estimate=no
     fi
     if test "$amanda_cv_dump_estimate" != no; then
-	AC_DEFINE_UNQUOTED(HAVE_DUMP_ESTIMATE, "$amanda_cv_dump_estimate")
+	AC_DEFINE_UNQUOTED(HAVE_DUMP_ESTIMATE, "$amanda_cv_dump_estimate",[Define to the string that enables dump estimates. ])
     fi
 
     AC_ARG_WITH(dump-honor-nodump,
@@ -1434,7 +1466,7 @@ if test "$DUMP" -a "$RESTORE"; then
 	amanda_cv_honor_nodump=no
       fi
       if test "$amanda_cv_honor_nodump" = yes; then
-	AC_DEFINE(HAVE_HONOR_NODUMP)
+	AC_DEFINE(HAVE_HONOR_NODUMP,1,[Define this if dump accepts -h for honoring nodump. ])
       fi
     ])
 fi
@@ -1442,8 +1474,8 @@ fi
 AC_PATH_PROGS(XFSDUMP,xfsdump,,$SYSLOCPATH)
 AC_PATH_PROGS(XFSRESTORE,xfsrestore,,$SYSLOCPATH)
 if test "$XFSDUMP" -a "$XFSRESTORE"; then
-    AC_DEFINE_UNQUOTED(XFSDUMP,"$XFSDUMP")
-    AC_DEFINE_UNQUOTED(XFSRESTORE,"$XFSRESTORE")
+    AC_DEFINE_UNQUOTED(XFSDUMP,"$XFSDUMP",[Define the location of the xfsdump program on Irix hosts. ])
+    AC_DEFINE_UNQUOTED(XFSRESTORE,"$XFSRESTORE",[Define the location of the xfsrestore program on Irix hosts. ])
     AC_MSG_WARN([*** xfsdump causes the setuid-root rundump program to be enabled])
     AC_MSG_WARN([*** to disable it, just #undef XFSDUMP in config/config.h])
 fi
@@ -1452,15 +1484,17 @@ VXSYSLOCPATH="$SYSLOCPATH:/usr/lib/fs/vxfs"
 AC_PATH_PROGS(VXDUMP,vxdump,,$VXSYSLOCPATH)
 AC_PATH_PROGS(VXRESTORE,vxrestore,,$VXSYSLOCPATH)
 if test "$VXDUMP" -a "$VXRESTORE"; then
-    AC_DEFINE_UNQUOTED(VXDUMP,"$VXDUMP")
-    AC_DEFINE_UNQUOTED(VXRESTORE,"$VXRESTORE")
+    AC_DEFINE_UNQUOTED(VXDUMP,"$VXDUMP",[Define the location of the vxdump program on HPUX and SINIX hosts or on
+ * other hosts where the Veritas filesystem (vxfs) has been installed. ])
+    AC_DEFINE_UNQUOTED(VXRESTORE,"$VXRESTORE",[Define the location of the vxrestore program on HPUX and SINIX hosts or on
+ * other hosts where the Veritas filesystem (vxfs) has been installed. ])
 fi
 
 AC_PATH_PROGS(VDUMP,vdump,,$SYSLOCPATH)
 AC_PATH_PROGS(VRESTORE,vrestore,,$SYSLOCPATH)
 if test "$VDUMP" -a "$VRESTORE"; then
-    AC_DEFINE_UNQUOTED(VDUMP,"$VDUMP")
-    AC_DEFINE_UNQUOTED(VRESTORE,"$VRESTORE")
+    AC_DEFINE_UNQUOTED(VDUMP,"$VDUMP",[Define the location of the vdump program. ])
+    AC_DEFINE_UNQUOTED(VRESTORE,"$VRESTORE",[Define the location of the vrestore program. ])
 fi
 
 dnl Handle all of the substitutions to make amplot work.
@@ -1532,7 +1566,7 @@ AC_CACHE_CHECK(
     ]
 )
 if test "$need_resetofs" = yes; then
-    AC_DEFINE(NEED_RESETOFS)
+    AC_DEFINE(NEED_RESETOFS,1,[Define if we have to reset tape offsets when reacing 2GB. ])
 fi
 CFLAGS="$amanda_cv_LFS_CFLAGS $CFLAGS"
 CPPFLAGS="$amanda_cv_LFS_CFLAGS $CPPFLAGS"
@@ -1549,7 +1583,13 @@ AMANDA_C_UNSIGNED_LONG_CONSTANTS
 AC_TYPE_OFF_T
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
+
+pushdef([AC_DEFINE_SAVED],defn([AC_DEFINE]))
+pushdef([AC_DEFINE],[AC_DEFINE_SAVED([$1],[$2],[Define to $2 if $1 is not defined])])
 AC_CHECK_TYPE(ssize_t, int)
+popdef([AC_DEFINE])
+popdef([AC_DEFINE_SAVED])
+
 AC_TYPE_UID_T
 AC_TYPE_SIGNAL
 AC_STRUCT_TM
@@ -1641,7 +1681,7 @@ if test x"$ac_cv_header_sys_scsi_h" = x"yes"; then
 	int k = SIOC_MOVE_MEDIUM;
 ], amanda_cv_hpux_scsi_chio=yes, amanda_cv_hpux_scsi_chio=no)])
     if test x"$amanda_cv_hpux_scsi_chio" = x"yes"; then
-	AC_DEFINE(HAVE_HPUX_SCSI_CHIO)
+	AC_DEFINE(HAVE_HPUX_SCSI_CHIO,1,[Define to enable HPUX chio based changer support. ])
 	NO_SCSI_CHANGER_MODE=false
     fi
 fi
@@ -1662,7 +1702,7 @@ if test x"$ac_cv_header_sys_mtio_h" = x"yes" &&
 	ioctl(device, SCSI_IOCTL_SEND_COMMAND, Command);
 ], amanda_cv_linux_scsi=yes, amanda_cv_linux_scsi=no)])
 	if test x"$amanda_cv_linux_scsi" = x"yes";then
-		AC_DEFINE(HAVE_LINUX_LIKE_SCSI)
+		AC_DEFINE(HAVE_LINUX_LIKE_SCSI,1,[Define to enable Linux tape-changer support.])
 		NO_SCSI_CHANGER_MODE=false
 	fi
 fi
@@ -1684,7 +1724,7 @@ if test x"$ac_cv_header_sys_mtio_h" = x"yes" &&
 	ioctl(device, SIOC_IO, Command);
 ], amanda_cv_hpux_scsi=yes, amanda_cv_hpux_scsi=no)])
 	if test x"$amanda_cv_hpux_scsi" = x"yes";then
-		AC_DEFINE(HAVE_HPUX_LIKE_SCSI)
+		AC_DEFINE(HAVE_HPUX_LIKE_SCSI,1,[Define to enable HPUX tape-changer support. ])
 		NO_SCSI_CHANGER_MODE=false
 		NO_CHIO_CHANGER_MODE=false
 	fi
@@ -1706,7 +1746,7 @@ if test x"$ac_cv_header_sys_mtio_h" = x"yes" &&
 	ioctl(device, DS_ENTER, &Command);
 ], amanda_cv_irix_scsi=yes, amanda_cv_irix_scsi=no)])
 	if test x"$amanda_cv_irix_scsi" = x"yes";then
-		AC_DEFINE(HAVE_IRIX_LIKE_SCSI)
+		AC_DEFINE(HAVE_IRIX_LIKE_SCSI,1,[Define to enable IRIX tape-changer support])
 		NO_SCSI_CHANGER_MODE=false
 	fi
 fi
@@ -1727,7 +1767,7 @@ if test x"$ac_cv_header_sys_mtio_h" = x"yes" &&
 	ioctl(device, USCSICMD, Command);
 ], amanda_cv_solaris_scsi=yes, amanda_cv_solaris_scsi=no)])
 	if test x"$amanda_cv_solaris_scsi" = x"yes";then
-		AC_DEFINE(HAVE_SOLARIS_LIKE_SCSI)
+		AC_DEFINE(HAVE_SOLARIS_LIKE_SCSI,1,[Define to enable Solaris tape-changer support])
 		NO_SCSI_CHANGER_MODE=false
 	fi
 fi
@@ -1748,7 +1788,7 @@ if test x"$ac_cv_header_sys_tape_h" = x"yes" &&
 	ioctl(device, STIOCMD, Command);
 ], amanda_cv_aix_scsi=yes, amanda_cv_aix_scsi=no)])
 	if test x"$amanda_cv_aix_scsi" = x"yes";then
-		AC_DEFINE(HAVE_AIX_LIKE_SCSI)
+		AC_DEFINE(HAVE_AIX_LIKE_SCSI,1,[Define to enable AIX tape-changer support])
 		NO_SCSI_CHANGER_MODE=false
 	fi
 fi
@@ -1769,7 +1809,7 @@ if test x"$ac_cv_header_sys_mtio_h" = x"yes" &&
     ioctl(device, SCIOCCOMMAND, &Command);
 ], amanda_cv_bsd_scsi=yes, amanda_cv_bsd_scsi=no)])
     if test x"$amanda_cv_bsd_scsi" = x"yes";then
-       AC_DEFINE(HAVE_BSD_LIKE_SCSI)
+       AC_DEFINE(HAVE_BSD_LIKE_SCSI,1,[Define to enable BSD tape-changer support])
        NO_SCSI_CHANGER_MODE=false
     fi
 fi
@@ -2049,15 +2089,15 @@ dnl    DB_LIB=
 dnl fi
 
 if test "$DB_STYLE" = text; then
-    AC_DEFINE(TEXTDB)
+    AC_DEFINE(TEXTDB,1,[Define to enable the text-based database format. ])
 else
     AC_MSG_CHECKING([for database])
     AC_MSG_RESULT([header is $DB_HEADER, linking against -l$DB_LIB])
     case "$DB_STYLE" in
-	db)	AC_DEFINE(USE_DB_H)   ;;
-	dbm)	AC_DEFINE(USE_DBM_H)  ;;
-	gdbm)	AC_DEFINE(USE_NDBM_H) ;;
-	ndbm)	AC_DEFINE(USE_NDBM_H) ;;
+	db)	AC_DEFINE(USE_DB_H,1,[Define to enable db databases. ])   ;;
+	dbm)	AC_DEFINE(USE_DBM_H,1,[Define to enable dbm databases. ])  ;;
+	gdbm)	AC_DEFINE(USE_GDBM_H,1,[Define to enable gdbm databases. ]) ;;
+	ndbm)	AC_DEFINE(USE_NDBM_H,1,[Define to enable ndbm databases. ]) ;;
     esac
 
     AC_CACHE_CHECK(
@@ -2086,7 +2126,7 @@ else
 	    )
 	])
     if test "$amanda_cv_struct_datum" = yes; then
-	AC_DEFINE(HAVE_STRUCT_DATUM)
+	AC_DEFINE(HAVE_STRUCT_DATUM,1,[Define if the database header declares struct datum. ])
     fi
 fi
 
@@ -2108,7 +2148,7 @@ AC_CACHE_CHECK(whether _POSIX2_RE_DUP_MAX is defined,
 #endif
 ], amanda_cv_have__posix2_re_dup_max=yes, amanda_cv_have__posix2_re_dup_max=no))
 if test "$amanda_cv_have__posix2_re_dup_max" = yes; then
-    AC_DEFINE(HAVE__POSIX2_RE_DUP_MAX)
+    AC_DEFINE(HAVE__POSIX2_RE_DUP_MAX,1,[Define if limits.h defines _POSIX2_RE_DUP_MAX. ])
 fi
 
 AC_CACHE_CHECK(whether CHAR_MIN is defined,
@@ -2120,7 +2160,7 @@ AC_CACHE_CHECK(whether CHAR_MIN is defined,
 #endif
 ], amanda_cv_have_char_min=yes, amanda_cv_have_char_min=no))
 if test "$amanda_cv_have_char_min" = yes; then
-    AC_DEFINE(HAVE_CHAR_MIN)
+    AC_DEFINE(HAVE_CHAR_MIN,1,[Define if limits.h defines CHAR_MIN. ])
 fi
 
 AC_CACHE_CHECK(whether CHAR_MAX is defined,
@@ -2132,7 +2172,7 @@ AC_CACHE_CHECK(whether CHAR_MAX is defined,
 #endif
 ], amanda_cv_have_char_max=yes, amanda_cv_have_char_max=no))
 if test "$amanda_cv_have_char_max" = yes; then
-    AC_DEFINE(HAVE_CHAR_MAX)
+    AC_DEFINE(HAVE_CHAR_MAX,1,[Define if limits.h defines CHAR_MAX. ])
 fi
 
 AC_CACHE_CHECK(whether CHAR_BIT is defined,
@@ -2144,7 +2184,7 @@ AC_CACHE_CHECK(whether CHAR_BIT is defined,
 #endif
 ], amanda_cv_have_char_bit=yes, amanda_cv_have_char_bit=no))
 if test "$amanda_cv_have_char_bit" = yes; then
-    AC_DEFINE(HAVE_CHAR_BIT)
+    AC_DEFINE(HAVE_CHAR_BIT,1,[Define if limits.h defines CHAR_BIT. ])
 fi
 
 dnl Checks for library functions and if the function is declared in
@@ -2223,7 +2263,7 @@ ICE_CHECK_DECL(setresuid,unistd.h)
 
 dnl arguments for setpgrp or not
 AC_CHECK_FUNC(setpgid, [
-	AC_DEFINE(HAVE_SETPGID)
+	AC_DEFINE(HAVE_SETPGID,1,[Define if setpgid() is available. ])
 	ICE_CHECK_DECL(setpgid,sys/types.h unistd.h)
 ])
 AC_CHECK_FUNC(setpgrp,[AC_FUNC_SETPGRP])
@@ -2236,7 +2276,7 @@ AC_CHECK_FUNCS(shmget,
 	AMANDA_FUNC_SHM_ARG_TYPE
 	case "$FORCE_MMAP" in
 	n | no)
-	    AC_DEFINE(HAVE_SYSVSHM)
+	    AC_DEFINE(HAVE_SYSVSHM,1,[Define if SysV shared-memory functions are available. ])
 	  ;;
 	esac
     ]
@@ -2381,8 +2421,8 @@ else
     AC_MSG_RESULT($DEV_PREFIX - $RDEV_PREFIX)
 fi
 
-AC_DEFINE_UNQUOTED(DEV_PREFIX,"${DEV_PREFIX}")
-AC_DEFINE_UNQUOTED(RDEV_PREFIX,"${RDEV_PREFIX}")
+AC_DEFINE_UNQUOTED(DEV_PREFIX,"${DEV_PREFIX}",[Define as the prefix for disk devices, commonly /dev/ or /dev/dsk/ ])
+AC_DEFINE_UNQUOTED(RDEV_PREFIX,"${RDEV_PREFIX}",[Define as the prefix for raw disk devices, commonly /dev/r or /dev/rdsk/ ])
 
 case $mount in
     /dev/vg*)
@@ -2410,7 +2450,7 @@ AC_CACHE_CHECK(
     rm -f /tmp/conftest.lock
 ])
 if test "$amanda_cv_posix_filelocking" = yes; then
-    AC_DEFINE(USE_POSIX_FCNTL)
+    AC_DEFINE(USE_POSIX_FCNTL,1,[Define to use Posix fcntl for file locking.])
     HAS_WORKING_FILE_LOCK=1
 fi
 
@@ -2434,7 +2474,7 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 	rm -f /tmp/conftest.lock
 ])
     if test "$amanda_cv_flock_filelocking" = yes; then
-	AC_DEFINE(USE_FLOCK)
+	AC_DEFINE(USE_FLOCK,1,[Define to use flock for file locking.])
 	HAS_WORKING_FILE_LOCK=1
     fi
 fi
@@ -2459,7 +2499,7 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 	rm -f /tmp/conftest.lock
 ])
     if test "$amanda_cv_lockf_filelocking" = yes; then
-	AC_DEFINE(USE_LOCKF)
+	AC_DEFINE(USE_LOCKF,1,[Define to use lockf for file locking.])
 	HAS_WORKING_FILE_LOCK=1
     fi
 fi
@@ -2487,7 +2527,7 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 	rm -f /tmp/conftest.lock
 ])
     if test "$amanda_cv_lnlock_filelocking" = yes; then
-	AC_DEFINE(USE_LNLOCK)
+	AC_DEFINE(USE_LNLOCK,1,[Define to use a hard-link based approach for file locking.])
 	HAS_WORKING_FILE_LOCK=1
     fi
 fi
@@ -2514,7 +2554,7 @@ AM_CONDITIONAL(WANT_CHG_SCSI, test x"$NO_SCSI_CHANGER_MODE" != x"true")
 AM_CONDITIONAL(WANT_CHIO_SCSI, test x"$NO_CHIO_CHANGER_MODE" != x"true")
 
 case "${FORCE_USE_RUNDUMP-${USE_RUNDUMP}}" in
-y |  ye | yes) AC_DEFINE(USE_RUNDUMP);;
+y |  ye | yes) AC_DEFINE(USE_RUNDUMP,1,[Define to invoke rundump (setuid-root) instead of DUMP program directly. ]);;
 esac
 
 AC_SUBST(LTLIBOBJS)

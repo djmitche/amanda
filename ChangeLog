@@ -1,3 +1,11 @@
+1999-09-13  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* config/acinclude.m4i: Added comments for config/config.h.in to all
+	AC_DEFINEs.
+	* configure.in: Likewise.
+	* config/acconfig.h: Deleted.
+	* autogen: Updated.
+
 1999-09-05 John R. Jackson  <jrj@purdue.edu>
 
 	* changer-src/chg-chio.pl.in: add -w to #! line to catch more errors.
