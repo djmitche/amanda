@@ -11,34 +11,67 @@ typedef struct {
     char *xorbuf;
 } RAIT;
 
-extern int rait_open();
-extern int rait_access(char *, int);
-extern int rait_stat(char *, struct stat *);
-extern int rait_close(int );		
-extern int rait_lseek(int , long, int);
-extern int rait_write(int , const void *, int);
-extern int rait_read(int , void *, int);
-extern int rait_ioctl(int , int, void *);
-extern int rait_copy(char *f1, char *f2, int buflen);
+#ifdef NO_AMANDA
 
-extern char *rait_init_namelist(char * dev,
-				char **dev_left,
-				char **dev_right,
-				char **dev_next);
-extern int rait_next_name(char * dev_left,
-       			  char * dev_right,
-       			  char **dev_next,
-       			  char * dev_real);
+#define P(x)	x			/* for function prototypes */
 
-#ifndef NO_AMANDA
-extern int  rait_tape_open(char *, int);
-extern int  rait_tapefd_fsf(int rait_tapefd, int count);
-extern int  rait_tapefd_rewind(int rait_tapefd);
-extern void rait_tapefd_resetofs(int rait_tapefd);
-extern int  rait_tapefd_unload(int rait_tapefd);
-extern int  rait_tapefd_status(int rait_tapefd, struct am_mt_status *stat);
-extern int  rait_tapefd_weof(int rait_tapefd, int count);
+/*
+ * Tape drive status structure.  This abstracts the things we are
+ * interested in from the free-for-all of what the various drivers
+ * supply.
+ */
+
+struct am_mt_status {
+    char online_valid;			/* is the online flag valid? */
+    char bot_valid;			/* is the BOT flag valid? */
+    char eot_valid;			/* is the EOT flag valid? */
+    char protected_valid;		/* is the protected flag valid? */
+    char flags_valid;			/* is the flags field valid? */
+    char fileno_valid;			/* is the fileno field valid? */
+    char blkno_valid;			/* is the blkno field valid? */
+    char device_status_valid;		/* is the device status field valid? */
+    char error_status_valid;		/* is the device status field valid? */
+
+    char online;			/* true if device is online/ready */
+    char bot;				/* true if tape is at the beginning */
+    char eot;				/* true if tape is at end of medium */
+    char protected;			/* true if tape is write protected */
+    long flags;				/* device flags, whatever that is */
+    long fileno;			/* tape file number */
+    long blkno;				/* block within file */
+    int device_status_size;		/* size of orig device status field */
+    unsigned long device_status;	/* "device status", whatever that is */
+    int error_status_size;		/* size of orig error status field */
+    unsigned long error_status;		/* "error status", whatever that is */
+};
 #endif
+
+extern int rait_open ();
+extern int rait_access P((char *, int));
+extern int rait_stat P((char *, struct stat *));
+extern int rait_close P((int ));
+extern int rait_lseek P((int , long, int));
+extern int rait_write P((int , const void *, int));
+extern int rait_read P((int , void *, int));
+extern int rait_ioctl P((int , int, void *));
+extern int rait_copy P((char *f1, char *f2, int buflen));
+
+extern char *rait_init_namelist P((char * dev,
+				   char **dev_left,
+				   char **dev_right,
+				   char **dev_next));
+extern int rait_next_name P((char * dev_left,
+       			     char * dev_right,
+       			     char **dev_next,
+       			     char * dev_real));
+
+extern int  rait_tape_open ();
+extern int  rait_tapefd_fsf P((int rait_tapefd, int count));
+extern int  rait_tapefd_rewind P((int rait_tapefd));
+extern void rait_tapefd_resetofs P((int rait_tapefd));
+extern int  rait_tapefd_unload P((int rait_tapefd));
+extern int  rait_tapefd_status P((int rait_tapefd, struct am_mt_status *stat));
+extern int  rait_tapefd_weof P((int rait_tapefd, int count));
 
 #ifdef RAIT_REDIRECT
 

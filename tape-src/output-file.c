@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-file.c,v 1.1.2.2 2001/02/10 00:03:11 jrjackson Exp $
+ * $Id: output-file.c,v 1.1.2.3 2001/06/29 23:36:18 jrjackson Exp $
  *
  * tapeio.c virtual tape interface for a file device.
  *
@@ -55,7 +55,8 @@
 #define	MAX_TOKENS	10
 
 struct file_info {
-    int mode;				/* open mode */
+    int flags;				/* open flags */
+    int mask;				/* open mask */
     int file_current;			/* current file position */
     int file_count;			/* number of files */
     char *basename;			/* filename from open */
@@ -204,10 +205,10 @@ file_open(fd)
     char *disk;
     int level;
     char number[NUM_STR_SIZE];
-    int mode;
+    int flags;
 
     if (file_info[fd].fd < 0) {
-	mode = file_info[fd].mode;
+	flags = file_info[fd].flags;
 	pos = file_info[fd].file_current;
 	amtable_alloc((void **)&file_info[fd].filename,
 		      sizeof(*file_info[fd].filename),
@@ -227,7 +228,7 @@ file_open(fd)
 	 * Generate the file name to open.
 	 */
 	if (file_info[fd].filename[pos] == NULL) {
-	    if ((file_info[fd].mode & 3) != O_RDONLY) {
+	    if ((file_info[fd].flags & 3) != O_RDONLY) {
 
 		/*
 		 * This is a new file, so make sure we create/truncate
@@ -235,7 +236,7 @@ file_open(fd)
 		 * information from the caller, if available, else
 		 * a constant.
 		 */
-		mode |= (O_CREAT | O_TRUNC);
+		flags |= (O_CREAT | O_TRUNC);
 		host = tapefd_getinfo_host(fd);
 		disk = tapefd_getinfo_disk(fd);
 		level = tapefd_getinfo_level(fd);
@@ -285,7 +286,7 @@ file_open(fd)
 	/*
 	 * Do the data file open.
 	 */
-	file_info[fd].fd = open(filename, mode, 0700);
+	file_info[fd].fd = open(filename, flags, file_info[fd].mask);
 	amfree(filename);
     }
     return file_info[fd].fd;
@@ -336,9 +337,10 @@ file_release(fd)
  */
 
 int
-file_tape_open(filename, mode)
+file_tape_open(filename, flags, mask)
     char *filename;
-    int mode;
+    int flags;
+    int mask;
 {
     int fd = -1;
     int save_errno;
@@ -347,9 +349,9 @@ file_tape_open(filename, mode)
     /*
      * Use only O_RDONLY and O_RDWR.
      */
-    if ((mode & 3) != O_RDONLY) {
-	mode &= ~3;
-	mode |= O_RDWR;
+    if ((flags & 3) != O_RDONLY) {
+	flags &= ~3;
+	flags |= O_RDWR;
     }
 
     /*
@@ -369,7 +371,8 @@ file_tape_open(filename, mode)
 		  &open_count,
 		  10,
 		  NULL);
-    file_info[fd].mode = mode;
+    file_info[fd].flags = flags;
+    file_info[fd].mask = mask;
     file_info[fd].file_current = 0;
     file_info[fd].file_count = 0;
     file_info[fd].fd = -1;
@@ -484,7 +487,7 @@ file_tapefd_write(fd, buffer, count)
     /*
      * Check for write access first.
      */
-    if ((file_info[fd].mode & 3) == O_RDONLY) {
+    if ((file_info[fd].flags & 3) == O_RDONLY) {
 	errno = EBADF;
 	return -1;
     }
@@ -861,7 +864,7 @@ file_tapefd_weof(fd, count)
     /*
      * Check for write access first.
      */
-    if ((file_info[fd].mode & 3) == O_RDONLY) {
+    if ((file_info[fd].flags & 3) == O_RDONLY) {
 	errno = EACCES;
 	return -1;
     }
