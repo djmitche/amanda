@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.17.4.3.4.3.2.4 2002/03/23 22:47:51 jrjackson Exp $
+ * $Id: debug.c,v 1.17.4.3.4.3.2.5 2002/03/24 22:56:27 jrjackson Exp $
  *
  * debug log subroutines
  */
@@ -245,7 +245,7 @@ void debug_open()
      * Make the first debug log file entry.
      */
     saved_debug = debug; debug = 1;
-    debug_printf("%s: debug %d pid %ld ruid %ld euid %ld start time %s",
+    debug_printf("%s: debug %d pid %ld ruid %ld euid %ld: start at %s",
 		 pname, saved_debug, (long)getpid(),
 		 (long)getuid(), (long)geteuid(),
 		 ctime(&curtime));
