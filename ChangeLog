@@ -1,3 +1,16 @@
+1999-02-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+        * server-src/holding.h: remove declaration of get_letter_from_user()
+        and select_dir().
+        * server-src/holding.c: remove function get_letter_from_user() and
+        select_dir().
+        * server-src/holding.c (pick_datestamp): return empty array instead
+        of calling exit if no directory are found.
+        * server-src/amflush.c (get_letter_from_user): new function copied
+        from holding.c.
+        * server-src/amflush.c (confirm): write a message and exit if no
+        directory were found.
+
 1999-02-14  Thomas Hepper <th@ant.han.de>
 
 	* changer-src/scsi-changer-driver.c New function SCSI_Move

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.17.2.6 1999/02/14 15:26:31 martinea Exp $
+ * $Id: holding.c,v 1.17.2.7 1999/02/14 21:56:47 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -126,44 +126,6 @@ char *name;
     return n;
 }
 
-char get_letter_from_user()
-{
-    char r;
-    int ch;
-
-    fflush(stdout); fflush(stderr);
-    while((ch = getchar()) != EOF && ch != '\n' && isspace(ch)) {}
-    if(ch == '\n') {
-	ch = '\0';
-    } else if (ch != EOF) {
-	r = ch;
-	if(islower(r)) r = toupper(r);
-	while((ch = getchar()) != EOF && ch != '\n') {}
-    } else {
-	printf("\nGot EOF.  Goodbye.\n");
-	exit(1);
-    }
-    return r;
-}
-
-int select_dir()
-{
-    int i;
-    char ch;
-    struct dirname *dir;
-
-    while(1) {
-	puts("\nMultiple Amanda directories, please pick multiple by letter:");
-	for(dir = holding_list, i = 0; dir != NULL && i < 26; dir = dir->next, i++)
-	    printf("  %c. %s\n", 'A'+i, dir->name);
-	printf("Select a directory to flush [A..%c]: [ALL] ", 'A' + i - 1);
-	ch = get_letter_from_user();
-	if(ch < 'A' || ch > 'A' + i - 1)
-	    printf("That is not a valid answer.  Try again, or ^C to quit.\n");
-	else
-	    return ch - 'A';
-    }
-}
 
 void scan_holdingdisk(diskdir,verbose)
 char *diskdir;
@@ -259,8 +221,6 @@ char **pick_datestamp()
 
     if(ndirs == 0) {
 	directories_names[0] = NULL;
-	puts("Could not find any Amanda directories to flush.");
-	exit(1);
     }
     else if(ndirs == 1) {
 	directories_names[0] = stralloc(holding_list->name);

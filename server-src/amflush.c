@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.41.2.3 1999/02/14 15:32:32 martinea Exp $
+ * $Id: amflush.c,v 1.41.2.4 1999/02/14 21:56:44 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -176,6 +176,27 @@ char **main_argv;
 }
 
 
+char get_letter_from_user()
+{
+    char r;
+    int ch;
+
+    fflush(stdout); fflush(stderr);
+    while((ch = getchar()) != EOF && ch != '\n' && isspace(ch)) {}
+    if(ch == '\n') {
+	ch = '\0';
+    } else if (ch != EOF) {
+	r = ch;
+	if(islower(r)) r = toupper(r);
+	while((ch = getchar()) != EOF && ch != '\n') {}
+    } else {
+	printf("\nGot EOF.  Goodbye.\n");
+	exit(1);
+    }
+    return r;
+}
+
+
 void confirm()
 /* confirm before detaching and running */
 {
@@ -183,6 +204,10 @@ void confirm()
     char *tpchanger;
     char **dss;
 
+    if(*datestamps == NULL) {
+	printf("Could not find any Amanda directories to flush.");
+	exit(1);
+    }
     printf("\nFlushing dumps in");
     for(dss = datestamps; *dss != NULL; dss++)
 	printf(" %s,",*dss);
