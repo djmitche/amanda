@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-tape.c,v 1.1.4.4 2001/06/29 23:39:56 jrjackson Exp $
+ * $Id: output-tape.c,v 1.1.4.5 2001/08/09 23:59:01 jrjackson Exp $
  *
  * tapeio.c virtual tape interface for normal tape drives.
  */
@@ -76,7 +76,7 @@ tape_tapefd_fsf(fd, count)
     int fd;
     int count;
 {
-    char buffer[TAPE_BLOCK_BYTES];
+    char buffer[MAX_TAPE_BLOCK_BYTES];
     int len = 0;
 
     while(--count >= 0) {
@@ -477,7 +477,7 @@ int tape_tape_open(filename, flags, mask)
 	struct mtop mt;
 
 	mt.mt_op = MTSETBLK;
-	mt.mt_count = TAPE_BLOCK_BYTES;
+	mt.mt_count = 32 * 1024;	/* wrong?  tape blocksize??? */
 	ioctl(ret, MTIOCTOP, &mt);
     }
 #endif /* HAVE_LINUX_ZFTAPE_H */
@@ -542,7 +542,7 @@ tape_tapefd_status(fd, stat)
 	stat->eot_valid = 1;
 	stat->eot = (0 != (buf.mt_dposn & MT_EOT));
 	stat->protected_valid = 1;
-	stat->protected = (0 != (buf.mt_dposn & MT_WRPROT));
+	stat->protected = (0 != (buf.mt_dposn & MT_WPROT));
 #else									/* }{ */
 #ifdef GMT_ONLINE							/* { */
         /* Linux-ish system */
