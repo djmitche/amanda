@@ -1,3 +1,8 @@
+1998-10-01  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/DUMPER-API: define `support index', to be used instead of the
+ 	previous `index-*' sub-commands
+
 1998-09-30  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/Makefile.am (libexec_PROGRAMS, sbin_SCRIPTS): don't use 

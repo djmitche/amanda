@@ -1,6 +1,6 @@
 AMANDA DUMPER API
 
-Last modified $Date: 1998/09/29 04:02:07 $
+Last modified $Date: 1998/10/01 05:48:34 $
 
 by Alexandre Oliva <oliva@dcc.unicamp.br>
 
@@ -126,19 +126,39 @@ full pathnames to wrapper scripts any more.
 We could have defined a `support' command for full backups, but I
 can't think of a backup program that does not support full backups...
 
-Some other standard `support' sub-commands are `index-from-output',
-`index-from-image', `exclude' and `exclude-list'.
+The ability to produce index files is also subject to an invocation of
+`support' command.  When the support sub-command is `index', like in
+the invocation below, the wrapper must print a list of valid indexing
+mechanisms, one per line, most preferred first.  If indexing is not
+supported, nothing should be printed, and the exit status should be 1.
 
-	DUMP support index-from-output hda0
+	DUMP support index hda0
 
-`index-from-output' means that an index file can be generated from the
-output produced by the backup program (for example, from `tar -cv').
-Index from image means that an index file can be generated from the
-backup image (for example, `tar -t').  `index-from-output' will be
-used when available, since it's likely to be cheaper.  Even if
-`index-from-output' is supported, `index-from-image' should be
-supported too, if possible, since it can be used in the future to
-create index files from previously backed up filesystems.
+The currently known indexing mechanisms are:
+
+output: implies that the command `index-from-output' generates an
+index file from the output produced by the backup program (for
+example, from `tar -cv').
+
+image: implies that the command `index-from-image' generates an index
+file from a backup image (for example, `tar -t').
+
+direct: implies that the `backup' command can produce an index file as
+it generates the backup image.  This will be explicitly requested with
+an additional option `index-direct' in the `backup' command
+invocation.
+
+parse: implies that the `backup-parse' command can produce an index
+file as it generates the backup image.  This will be explicitly
+requested with an additional option `index-direct' (not
+`index-parse'!) in the `backup-parse' command invocation.
+
+`index-from-image' should be supported, if possible, even if other
+index commands are not, since it can be used in the future to create
+index files from previously backed up filesystems.  
+
+Some other standard `support' sub-commands are `exclude' and
+`exclude-list'.
 
 
 One may think (and several people did :-) that there should be only
@@ -146,7 +166,7 @@ one support command, that would print information about all supported
 commands.  The main arguments against this proposal have to do with
 extensibility:
 
-1) the supportedness of commands might vary from filesystem to
+1) the availability of commands might vary from filesystem to
 filesystem.  No, I don't have an example, I just want to keep it as
 open as possible :-)
 
@@ -279,11 +299,9 @@ print a line starting with `# ', followed by the total backup size in
 bytes or by a pair of numbers that, multiplied, yield the total backup
 size; this number will be used for consistency check.
 
-If the wrapper program supports features `index-direct' or
-`index-direct-in-parse', the option `index-direct' should cause
-commands `backup' and `backup-parse', respectively, to output the
-index directly to file descriptor 3.  In this case, the `index-from-*'
-commands will not be used.
+The option `index-direct' should cause commands `backup' and
+`backup-parse' to output the index directly to file descriptor 3.  The
+syntax of the index file is described in the next section.
 
 3.5. The `index-from-output' and `index-from-image' commands
 
@@ -314,3 +332,9 @@ result, i.e., that would perform the backup to standard output, or
 that would restore the whole filesystem reading from standard input.
 This command is to be included in the header of backup images, to ease
 crash-recovery.
+
+4. Conclusion
+
+Well, that's all.  Drop us a note at the amanda-hackers mailing list
+if you have suggestions to improve this document and/or the API.  Some
+help on its implementation would be welcome too.
