@@ -1,3 +1,9 @@
+1999-01-26  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/amdump.sh.in (runuser): set to LOGNAME if defined, and
+	to the output of whoami otherwise
+	Reported by Tom Schutter <tom@platte.com>
+
 1999-01-26  Thomas Hepper <th@ant.han.de>
 	* Makefile.am Added sst driver files to EXTRA_DIST
 
