@@ -153,12 +153,13 @@ on
 (or all hosts).
 Mostly used for debugging.
 .TP
-.P1 info hostname [ disks ]
+.P1 info [ hostname [ disks ] ]
 Display the
 database record for each of the
 .I disks
 on
-.IR hostname .
+.IR hostname
+(or all hosts).
 Mostly used for debugging.
 .SH EXAMPLES
 Request three specific file systems on
