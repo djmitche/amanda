@@ -658,8 +658,8 @@ int fd;
 	dp->host->inprogress -= 1;
 	dp->inprogress = 0;
 	sched(dp)->attempted = 0;
-	printf("driver: finished-cmd time %s dumper%ld dumped %s:%s\n", 
-	       walltime_str(curclock()), (long) (dumper-dmptable), 
+	printf("driver: finished-cmd time %s %s dumped %s:%s\n", 
+	       walltime_str(curclock()), dumper->name, 
 	       dp->host->hostname, dp->name);
 	fflush(stdout);
 
@@ -697,8 +697,8 @@ int fd;
 
 	if(tok == FATAL_TRYAGAIN) {
 	    /* dumper is confused, start another */
-	    log(L_WARNING, "dumper%d (pid %d) confused, restarting it.", 
-		dumper-dmptable, dumper->pid);
+	    log(L_WARNING, "%s (pid %d) confused, restarting it.", 
+		dumper->name, dumper->pid);
 	    FD_CLR(fd,&readset);
 	    close(fd);
 	    startup_dump_process(dumper);
@@ -758,8 +758,8 @@ int fd;
 
     case BOGUS:
 	/* either EOF or garbage from dumper.  Turn it off */
-	log(L_WARNING, "dumper%d pid %d is messed up, ignoring it.\n", 
-	    dumper-dmptable, dumper->pid);
+	log(L_WARNING, "%s pid %d is messed up, ignoring it.\n", 
+	    dumper->name, dumper->pid);
 	FD_CLR(fd,&readset);
 	close(fd);
 	dumper->busy = 0;
@@ -772,13 +772,13 @@ int fd;
 	    dp->host->inprogress -= 1;
 	    dp->inprogress = 0;
 	    if(sched(dp)->attempted) {
-		log(L_FAIL, "%s %s %d [dumper%d died]", 
+		log(L_FAIL, "%s %s %d [%s died]", 
 		    dp->host->hostname, dp->name,
-		    sched(dp)->level, dumper-dmptable);
+		    sched(dp)->level, dumper->name);
 	    }
 	    else {
-		log(L_WARNING, "dumper%d died while dumping %s:%s lev %d.", 
-		    dumper-dmptable, dp->host->hostname, dp->name,
+		log(L_WARNING, "%s died while dumping %s:%s lev %d.", 
+		    dumper->name, dp->host->hostname, dp->name,
 		    sched(dp)->level);
 		sched(dp)->attempted++;
 		enqueue_disk(&runq, dp);
@@ -1141,8 +1141,8 @@ disk_t *dp;
     switch(tok) {
     case BOGUS:
 	/* either eof or garbage from dumper */
-	log(L_WARNING, "dumper%d pid %d is messed up, ignoring it.\n",
-	    dumper-dmptable, dumper->pid);
+	log(L_WARNING, "%s pid %d is messed up, ignoring it.\n",
+	    dumper->name, dumper->pid);
 	dumper->down = 1;       /* mark it down so it isn't used again */
 	failed = 1;     /* dump failed, must still finish up with taper */
 	break;
@@ -1271,10 +1271,10 @@ char *str;
     for(i = 0; i < inparallel; i++) {
 	dp = dmptable[i].dp;
 	if(!dmptable[i].busy)
-	  printf("dumper%02d: idle\n", i);
+	  printf("%s: idle\n", dmptable[i].name);
 	else
-	  printf("dumper%02d: dumping %s:%s.%d est kps %d size %ld time %d\n",
-		i, dp->host->hostname, dp->name, sched(dp)->level,
+	  printf("%s: dumping %s:%s.%d est kps %d size %ld time %d\n",
+		dmptable[i].name, dp->host->hostname, dp->name, sched(dp)->level,
 		sched(dp)->est_kps, sched(dp)->est_size, sched(dp)->est_time);
     }
     dump_queue("TAPE", tapeq, 5, stdout);

@@ -38,7 +38,9 @@
 /* dumper process structure */
 
 typedef struct dumper_s {
-    int busy, down, pid;
+    char *name;		/* name of this dumper */
+    int pid;		/* its pid */
+    int busy, down;
     int infd, outfd;
     disk_t *dp;
 } dumper_t;

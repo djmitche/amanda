@@ -73,10 +73,7 @@ int fd;
     if(fd == taper) return "taper";
 
     for(dumper = dmptable; dumper < dmptable+inparallel; dumper++)
-	if(dumper->outfd == fd) {
-	    sprintf(str, "dumper%ld", (long)(dumper-dmptable));
-	    return str;
-	}
+	if(dumper->outfd == fd) return dumper->name;
 
     sprintf(str, "unknown child (fd %d)", fd);
     return str;
@@ -112,26 +109,26 @@ dumper_t *dumper;
     int fd[2];
 
     if(socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1)
-	error("dumper%d pipe: %s", dumper-dmptable, strerror(errno));
+	error("%s pipe: %s", dumper->name, strerror(errno));
 
     switch(dumper->pid = fork()) {
     case -1:
-	error("fork dumper%d: %s", dumper-dmptable, strerror(errno));
+	error("fork %s: %s", dumper->name, strerror(errno));
     case 0:		/* child process */
 	close(fd[0]);
 	if(dup2(fd[1], 0) == -1 || dup2(fd[1], 1) == -1)
-	    error("dumper%d dup2: %s", dumper-dmptable, strerror(errno));
+	    error("%s dup2: %s", dumper->name, strerror(errno));
 	execl(dumper_program, "dumper", (char *)0);
-	error("exec %s (dumper%d): %s",dumper_program,
-	      dumper-dmptable,strerror(errno));
+	error("exec %s (%s): %s", dumper_program,
+	      dumper->name, strerror(errno));
     default:	/* parent process */
 	close(fd[1]);
 	dumper->infd = dumper->outfd = fd[0];
 	addfd(dumper->outfd);
 	dumper->busy = dumper->down = 0;
 	dumper->dp = NULL;
-	fprintf(stderr,"driver: started dumper%ld pid %d\n", 
-		(long)(dumper-dmptable), dumper->pid);
+	fprintf(stderr,"driver: started %s pid %d\n", 
+		dumper->name, dumper->pid);
 	fflush(stderr);
     }
 }
@@ -140,9 +137,14 @@ void startup_dump_processes()
 {
     int i;
     dumper_t *dumper;
+    char buff[128];
 
-    for(dumper = dmptable, i = 0; i < inparallel; dumper++, i++)
+    for(dumper = dmptable, i = 0; i < inparallel; dumper++, i++) {
+	sprintf(buff, "dumper%d", i);
+	dumper->name = stralloc(buff);
+
 	startup_dump_process(dumper);
+    }
 }
 
 char line[MAX_LINE];
@@ -281,12 +283,12 @@ disk_t *dp;
 	assert(0);
     }
     len = strlen(cmdline);
-printf("driver: send-cmd time %s to dumper%ld: %*.*s\n", 
-       walltime_str(curclock()), (long)(dumper-dmptable),
+printf("driver: send-cmd time %s to %s: %*.*s\n", 
+       walltime_str(curclock()), dumper->name,
        len-1, len-1, cmdline);
 fflush(stdout);
     if(write(dumper->infd, cmdline, len) < len)
-	error("writing dumper%d command: %s", dumper-dmptable, strerror(errno));
+	error("writing %s command: %s", dumper->name, strerror(errno));
 }
 
 #define MAX_SERIAL MAX_DUMPERS+1	/* one for the taper */
