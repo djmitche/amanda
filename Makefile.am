@@ -23,6 +23,11 @@ EXTRA_DIST = \
 	COPYRIGHT			\
 	COPYRIGHT-APACHE		\
 	COPYRIGHT-REGEX 		\
+	contrib/README			\
+	contrib/dbbackup.README		\
+	contrib/dbbackup.ksh		\
+	contrib/dbbackup.sql		\
+	contrib/dbbackup.tcl		\
 	docs/DUMPER-API			\
 	docs/FAQ			\
 	docs/INDEXING			\
