@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.22.2.7.2.2 2001/12/30 17:26:22 martinea Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.22.2.7.2.3 2002/01/08 01:32:27 martinea Exp $";
 #endif
 /*
  * 
@@ -1241,7 +1241,7 @@ int main(int argc, char *argv[])
       }
 
   } else { /* if (strlen(tape_device)==1) */
-  	printf("please check your config and use an config file for chg-scsi\n");
+  	printf("please check your config and use a config file for chg-scsi\n");
 	return(2);
   }
 
