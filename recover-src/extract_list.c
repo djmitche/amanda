@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.8 1997/12/09 06:59:41 amcore Exp $
+ * $Id: extract_list.c,v 1.9 1997/12/09 07:01:32 amcore Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -834,7 +834,7 @@ EXTRACT_LIST *elist;
 	exit(5);
     }
     if(istar) {
-	strcpy(restore_args[1], "-xpvf");
+	strcpy(restore_args[1], "-xpGvf");
         if ((restore_args[2] = (char *)malloc(1024)) == NULL)
         {
 	    perror("Couldn't malloc restore_args[2]");
