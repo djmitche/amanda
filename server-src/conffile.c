@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.33 1998/01/11 21:59:24 jrj Exp $
+ * $Id: conffile.c,v 1.34 1998/01/17 14:29:09 amcore Exp $
  *
  * read configuration file
  */
@@ -1174,6 +1174,8 @@ static void copy_dumptype()
     dtcopy(record, s_record);
     dtcopy(strategy, s_strategy);
     dtcopy(compress, s_compress);
+    dtcopy(comprate[0], s_comprate);
+    dtcopy(comprate[1], s_comprate);
     dtcopy(skip_incr, s_skip_incr);
     dtcopy(skip_full, s_skip_full);
     dtcopy(no_hold, s_no_hold);
