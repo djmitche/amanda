@@ -86,6 +86,7 @@ BEGIN{
 	if( $1 == "driver:") {
 		if($2=="result")            do_result();
 		else if( $2=="state")       do_state();
+		else if( $2=="interface-state") ;
 		else if( $2=="hdisk-state") do_hdisk++;
 		else if( $2=="start")       do_start();
 		else if( $2=="send-cmd") { 

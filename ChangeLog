@@ -1,8 +1,14 @@
+1998-06-24  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* amplot/amplot.awk: ignore `interface-state'
+	Reported by Peter Walker <peter.walker@talarian.com>
+
 1998-06-24 Alexandre Oliva <oliva@dcc.unicamp.br>
 
 	* server-src/amrmtape.sh.in: enable verbose by default; implement -q 
  	for quiet.
 	* man/amrmtape.8.in: ditto
+	Suggested by Nick Hibma  <nick.hibma@jrc.it>
 	
 1998-06-24  Nick Hibma  <nick.hibma@jrc.it>
 
