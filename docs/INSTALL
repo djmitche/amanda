@@ -108,11 +108,11 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	created for Amanda, such as `amanda'; common choices for group
 	are `operator' or `disk'.  If you do not specify
 	--with-user=<username> and --with-group=<groupname>, configure
-	will use your login and group to run backups.  Also choose the
-	default name for your configuration, such as `csd' or
-	`DailySet1').  This name is used by the Amanda commands to
-	choose one of multiple possible configurations.  You may
-	specify it using the --with-config=<confgname>.
+	will abort.  Also choose the default name for your
+	configuration, such as `csd' or `DailySet1').  This name is
+	used by the Amanda commands to choose one of multiple possible
+	configurations.  You may specify it using the
+	--with-config=<confgname>.
 
     G.  Decide where Amanda will live.  You need to choose a root
 	directory for Amanda.  Let this root directory be called

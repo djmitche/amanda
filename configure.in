@@ -316,7 +316,7 @@ n | no) :
 esac
 
 AC_ARG_WITH(user,
-    [  --with-user=USER       force execution to USER on client systems [${LOGIN-${USER-${LOGNAME-`whoami`}}}]],
+    [  --with-user=USER       force execution to USER on client systems [required]],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -325,14 +325,16 @@ AC_ARG_WITH(user,
 	*) CLIENT_LOGIN="$withval"
 	  ;;
 	esac
-    ],
-    : ${CLIENT_LOGIN=${LOGIN-${USER-${LOGNAME-`whoami`}}}}
+    ]
 )
+if test "x${CLIENT_LOGIN+set}" != xset; then
+    AC_MSG_ERROR([*** --with-user=USER is missing])
+fi
 AC_DEFINE_UNQUOTED(CLIENT_LOGIN,"$CLIENT_LOGIN")
 AC_SUBST(CLIENT_LOGIN)
 
 AC_ARG_WITH(group,
-    [  --with-group=USER      group allowed to execute setuid-root programs [`(id 2>/dev/null; echo amanda) | sed -e 's/^.*gid=[0-9]*(\([^)]*\)).*/\1/' | grep -v = | head -1`]],
+    [  --with-group=GROUP     group allowed to execute setuid-root programs [required]],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -341,11 +343,11 @@ AC_ARG_WITH(group,
 	*) SETUID_GROUP="$withval"
 	  ;;
 	esac
-    ],
-    [[
-	: ${SETUID_GROUP=`(id 2>/dev/null; echo amanda) | sed -e 's/^.*gid=[0-9]*(\([^)]*\)).*/\1/' | grep -v = | head -1`}
-    ]]
+    ]
 )
+if test "x${SETUID_GROUP+set}" != xset; then
+    AC_MSG_ERROR([*** --with-group=GROUP is missing])
+fi
 AC_SUBST(SETUID_GROUP)
 
 AC_ARG_WITH(rundump,
