@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.35 1998/01/13 15:06:07 blair Exp $
+ * $Id: amanda.h,v 1.36 1998/01/13 17:41:52 blair Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -624,6 +624,10 @@ extern int fputs P((const char *s, FILE *stream));
 extern size_t fread P((void *ptr, size_t size, size_t nitems, FILE *stream));
 #endif
 
+#ifndef HAVE_FSEEK_DECL
+extern int fseek P((FILE *stream, long offset, int ptrname));
+#endif
+
 #ifndef HAVE_FWRITE_DECL
 extern size_t fwrite P((const void *ptr, size_t size, size_t nitems,
 			FILE *stream));
@@ -857,6 +861,11 @@ extern int ungetc P((int c, FILE *stream));
 #ifndef HAVE_VFPRINTF_DECL
 #include "arglist.h"
 extern int vfprintf P((FILE *stream, const char *format, va_list ap));
+#endif
+
+#ifndef HAVE_VPRINTF_DECL
+#include "arglist.h"
+extern int vprintf P((const char *format, va_list ap));
 #endif
 
 #ifndef HAVE_VSPRINTF_DECL
