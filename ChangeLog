@@ -1,3 +1,9 @@
+1998-11-09  John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/reporter.c (main): ignore SIGPIPE so if a child process
+	dies we do not also go away.  Also fix a core dump if amanda.conf
+	cannot be processed, and clean up a few error messages.
+
 1998-11-09  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/infofile.h (struct info_s): add last_level and
