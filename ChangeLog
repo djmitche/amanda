@@ -1,5 +1,12 @@
 2002-02-13  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* client-src/client_util.c (parse_options): Check that files from
+	  'exclude list' exist'.
+	* client-src/selfcheck.c (check_options): Give ERROR if multiple
+	  exclude are used with samba or if exclude are used with DUMP.
+
+2002-02-13  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* client-src/sendbackup.h: Remove bad stuff introduced in previous
 	  patch.
 	* client-src/sendbackup-gnutar.c: Ditto.
