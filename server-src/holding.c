@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.46 2004/02/02 20:29:01 martinea Exp $
+ * $Id: holding.c,v 1.47 2004/10/21 13:12:23 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -515,19 +515,25 @@ int complete;
 	    return 0;
 	}
 	buflen = fullread(fd, buffer, sizeof(buffer));
+	close(fd);
+
+	if(rename(filename_tmp, filename) != 0) {
+	    fprintf(stderr,
+		    "rename_tmp_holding: could not rename \"%s\" to \"%s\": %s",
+		    filename_tmp, filename, strerror(errno));
+	}
+
 	if (buflen == 0) {
-	    fprintf(stderr,"rename_tmp_holding: %s: empty file?\n", filename_tmp);
+	    fprintf(stderr,"rename_tmp_holding: %s: empty file?\n", filename);
 	    amfree(filename);
 	    amfree(filename_tmp);
-	    close(fd);
 	    return 0;
 	}
 	parse_file_header(buffer, &file, buflen);
-	close(fd);
 	if(complete == 0 ) {
-	    if((fd = open(filename_tmp,O_RDWR)) == -1) {
+	    if((fd = open(filename, O_RDWR)) == -1) {
 		fprintf(stderr, "rename_tmp_holdingX: open of %s failed: %s\n",
-			filename_tmp, strerror(errno));
+			filename, strerror(errno));
 		amfree(filename);
 		amfree(filename_tmp);
 		return 0;
@@ -537,11 +543,6 @@ int complete;
 	    build_header(buffer, &file, sizeof(buffer));
 	    fullwrite(fd, buffer, sizeof(buffer));
 	    close(fd);
-	}
-	if(rename(filename_tmp, filename) != 0) {
-	    fprintf(stderr,
-		    "rename_tmp_holding(): could not rename \"%s\" to \"%s\": %s",
-		    filename_tmp, filename, strerror(errno));
 	}
 	filename = newstralloc(filename, file.cont_filename);
     }
