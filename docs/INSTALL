@@ -41,10 +41,10 @@ to compile some of the Amanda programs (see section 1.2.H below).
 
 	Samba allows Unix systems to talk to PC clients.  Amanda can
 	now back up PC clients using the following package
-		ftp://nimbus.anu.edu.au/pub/tridge/samba/samba-1.9.17p4.tar.gz
+		ftp://nimbus.anu.edu.au/pub/tridge/samba/samba-1.9.18p1.tar.gz
 	You may want to apply patches/samba-largefs.patch.  If you
 	want to use a pre-1.9.17 version of samba, you may need to
-	apply patches/samba-1.9.16p2.patch.
+	apply patches/samba-1.9.16p2.patch too.
 
     B.  If you wish to make use of some of the scripts that come with
 	Amanda, you will need to install Perl.  You can get Perl from
@@ -73,9 +73,8 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	are used:
 
 	    ftp://ftp.gnu.org/pub/gnu/readline-2.1.tar.gz
-		Amanda uses the readline library here.  Some patches
-		are included with this version of Amanda to fix some
-		problems with the compilation of this package.
+		amrecover optionally uses the readline library for its
+		command-line edition mechanisms
 
 	Only if you wish to edit and enhance Amanda, you may need to
 	install the following tools.  Autoconf and automake are
@@ -83,16 +82,18 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	configuration scripts.  Bison is only needed if you
 	are going to work on the index server and client code.
 	    ftp://ftp.gnu.org/pub/gnu/autoconf-2.12.tar.gz
-	    ftp://ftp.gnu.org/pub/gnu/autoconf/automake-1.2.tar.gz
+	    ftp://ftp.cygnus.com/pub/tromey/automake-1.2d.tar.gz
 	    ftp://ftp.gnu.org/pub/gnu/bison-1.25.tar.gz
 	    ftp://ftp.gnu.org/pub/gnu/flex-2.5.4a.tar.gz
+	    ftp://alpha.gnu.org/gnu/libtool-1.0h.tar.gz
 
 	Although Amanda uses libtool in order to build shared
 	libraries (unless --disable-libtool is issued), you shouldn't
 	have any version of libtool different from 1.0h, the one
 	distributed with Amanda, otherwise you may find
 	incompatibilities between the libtool scripts and its autoconf
-	macros.
+	macros.  In other words, don't bother installing libtool
+	unless you have an older version already installed.
 
     E.  Read about the different configuration options available for
 	building and running Amanda.  To see the options, do both:
