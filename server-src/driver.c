@@ -442,11 +442,7 @@ disklist_t *queuep;
 		sched(dp)->dumpdate = sched(dp)->degr_dumpdate;
 		sched(dp)->est_size = sched(dp)->degr_size;
 		sched(dp)->est_time = sched(dp)->degr_time;
-		if(sched(dp)->est_time == 0)
-		    sched(dp)->est_kps = 10;
-		else
-		    sched(dp)->est_kps =
-			sched(dp)->est_size/sched(dp)->est_time;
+		sched(dp)->est_kps  = sched(dp)->degr_kps;
 		insert_disk(&newq, dp, sort_by_priority_reversed);
 	    }
 	    else {
@@ -806,8 +802,9 @@ disklist_t *waitqp;
     info_t inf;
     disk_t *dp;
     disklist_t rq;
-    int rc, time, size, level, line, priority;
-    int degr_level, degr_size, degr_time;
+    int rc, time, level, line, priority;
+    int degr_level, degr_time;
+    unsigned long size, degr_size;
     char hostname[80], diskname[80], inpline[2048];
 
 
@@ -828,7 +825,7 @@ disklist_t *waitqp;
     while(fgets(inpline, 2048, stdin)) {
 	line++;
 
-	rc = sscanf(inpline, "%s %s %d %d %d %d %d %d %d\n",
+	rc = sscanf(inpline, "%s %s %d %d %ld %d %d %ld %d\n",
 		    hostname, diskname, 
 		    &priority, &level, &size, &time,
 		    &degr_level, &degr_size, &degr_time);
@@ -849,20 +846,31 @@ disklist_t *waitqp;
 	sp = (sched_t *) alloc(sizeof(sched_t));
 	sp->level    = level;
 	sp->dumpdate = stralloc(get_dumpdate(&inf, level));
-	sp->est_size = size;
+	sp->est_size = TAPE_BLOCK_SIZE + size; /* include header */
 	sp->est_time = time;
 	sp->priority = priority;
-	if(rc < 9) sp->degr_level = -1;
+
+	if(rc < 9)
+	    sp->degr_level = -1;
 	else {
 	    sp->degr_level = degr_level;
 	    sp->degr_dumpdate = stralloc(get_dumpdate(&inf, degr_level));
-	    sp->degr_size = degr_size;
+	    sp->degr_size = TAPE_BLOCK_SIZE + degr_size;
 	    sp->degr_time = degr_time;
 	}
+
 	if(time == 0)
 	    sp->est_kps = 10;
 	else
 	    sp->est_kps = size/time;
+
+	if(sp->degr_level != -1) {
+	    if(degr_time == 0)
+		sp->degr_kps = 10;
+	    else
+		sp->degr_kps = degr_size/degr_time;
+	}
+
 	sp->attempted = 0;
 	sp->act_size = 0;
 	sp->holdp = NULL;
@@ -932,7 +940,7 @@ int free_space()
 }
 
 holdingdisk_t *find_diskspace(size)
-int size;
+unsigned long size;
     /* find holding disk with enough space + minimal # of dumpers */
 {
     holdingdisk_t *minp, *hdp;
@@ -979,6 +987,7 @@ disk_t *diskp;
 
     sched(diskp)->holdp = holdp;
     sched(diskp)->act_size = sched(diskp)->est_size;
+
     sprintf(sched(diskp)->destname, "%s/%s/%s.%s.%d",
 	    holdp->diskdir, datestamp, diskp->host->hostname,
 	    diskname2filename(diskp->name), sched(diskp)->level);
@@ -993,7 +1002,8 @@ tok_t tok;
 {
     struct stat finfo;
     holdingdisk_t *holdp;
-    int diff, kbytes;
+    unsigned long kbytes;
+    long diff;
 
     if(stat(sched(diskp)->destname, &finfo) == -1)
 	error("stat %s: %s", sched(diskp)->destname, strerror(errno));
@@ -1018,7 +1028,7 @@ tok_t tok;
 	       sched(diskp)->act_size, diff);
 #endif
        
-	sched(diskp)->act_size += diff;
+	sched(diskp)->act_size = kbytes;
 	holdalloc(holdp)->allocated_space += diff;
 	holdalloc(holdp)->allocated_dumpers -= 1;
 	break;
@@ -1031,7 +1041,7 @@ tok_t tok;
 	       sched(diskp)->act_size, diff);
 #endif
 	if(diff > 0) {
-	    sched(diskp)->act_size += diff;
+	    sched(diskp)->act_size = kbytes;
 	    holdalloc(holdp)->allocated_space += diff;
 	}
 	break;

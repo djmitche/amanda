@@ -51,7 +51,7 @@ typedef struct sched_s {
     int est_time, degr_time;
     unsigned long est_size, degr_size, act_size;
     char *dumpdate, *degr_dumpdate;
-    int est_kps;
+    int est_kps, degr_kps;
     char destname[128];				/* file/port name */
     dumper_t *dumper;
     holdingdisk_t *holdp;
@@ -127,7 +127,7 @@ int free_kps P((interface_t *ip));
 void allocate_bandwidth P((interface_t *ip, int kps));
 void deallocate_bandwidth P((interface_t *ip, int kps));
 int free_space P((void));
-holdingdisk_t *find_diskspace P((int size));
+holdingdisk_t *find_diskspace P((unsigned long size));
 char *diskname2filename P((char *dname));
 void assign_holdingdisk P((holdingdisk_t *holdp, disk_t *diskp));
 void adjust_diskspace P((disk_t *diskp, tok_t tok));

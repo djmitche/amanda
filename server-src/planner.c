@@ -299,7 +299,8 @@ char **argv;
 
     startclock();
 
-    total_size = 0;
+			/* an empty tape still has a label and an endmark */
+    total_size = (TAPE_BLOCK_SIZE + tape_mark) * 2;
     total_lev0 = 0.0;
     balanced_size = 0.0;
 
@@ -1063,7 +1064,7 @@ disklist_t *qp;
     fprintf(stderr,"  curr level %d size %d ", est(dp)->curr_level,
 	    est(dp)->size);
 
-    total_size += est(dp)->size + tape_mark;
+    total_size += TAPE_BLOCK_SIZE + est(dp)->size + tape_mark;
 
     if(!(dp->dtype->skip_full || dp->dtype->no_full)) {
 	/* calculate level 0 size for balancing */
@@ -1343,7 +1344,7 @@ static void delay_dumps P((void))
 	ptr = bi->dp;
 
 	if(bi->deleted)
-	    new_total = total_size + est(ptr)->size + tape_mark;
+	    new_total = total_size + TAPE_BLOCK_SIZE + est(ptr)->size + tape_mark;
 	else
 	    new_total = total_size - est(ptr)->size + bi->size;
 
@@ -1411,7 +1412,7 @@ static void delay_remove_dump P((disk_t *dp, char *errstr))
 {
     bi_t *bi;
 
-    total_size -= est(dp)->size + tape_mark;
+    total_size -= TAPE_BLOCK_SIZE + est(dp)->size + tape_mark;
     if(est(dp)->curr_level == 0)
 	total_lev0 -= (double) est(dp)->size;
 

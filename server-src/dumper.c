@@ -896,6 +896,9 @@ int mesgfd, datafd, indexfd, outfd;
     runtime = stopclock();
     dumptime = runtime.r.tv_sec + runtime.r.tv_usec/1000000.0;
 
+    dumpsize -= TAPE_BLOCK_SIZE;	/* don't count the header */
+    if (dumpsize < 0) dumpsize = 0;	/* XXX - maybe this should be fatal? */
+
     sprintf(errstr, "sec %s kb %ld kps %3.1f orig-kb %ld",
 	      walltime_str(runtime), dumpsize, 
 	      dumpsize/dumptime, origsize);
