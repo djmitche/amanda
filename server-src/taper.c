@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.36 1998/05/28 23:12:02 amcore Exp $
+/* $Id: taper.c,v 1.37 1998/06/13 07:40:32 oliva Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -365,6 +365,7 @@ int rdpipe, wrpipe;
 		putresult("TAPE-ERROR %s %s\n", handle, q);
 		amfree(q);
 		amfree(handle);
+		amfree(hostname);
 		amfree(diskname);
 		break;
 	    }
@@ -655,10 +656,10 @@ char *handle, *hostname, *diskname, *datestamp;
 			fprintf(stderr,"taper: r: put W%d\n",(int)(bp-buftable));
 			fflush(stderr);
 		    }
+		    syncpipe_put('W');
+		    syncpipe_putint(bp-buftable);
+		    bp = nextbuf(bp);
 		}
-		syncpipe_put('W');
-		syncpipe_putint(bp-buftable);
-		bp = nextbuf(bp);
 	    }
 	    break;
 

@@ -1,5 +1,8 @@
 1998-06-13  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* server-src/taper.c (read_file): if switching to the next file
+ 	fails or there's no next file, do not send a `W' to taper writer.
+
 	* server-src/changer.h (changer_clean): new function
 	* server-src/changer.c (changer_clean): ditto
 
