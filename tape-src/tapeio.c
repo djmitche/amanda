@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: tapeio.c,v 1.44 2002/11/12 21:24:03 martinea Exp $
+ * $Id: tapeio.c,v 1.45 2002/12/05 19:27:44 martinea Exp $
  *
  * implements generic tape I/O functions
  */
@@ -1080,7 +1080,7 @@ static void
 do_read()
 {
     int result;
-    int count;
+    int count = 0;
     int have_count = 0;
     char buf[sizeof(write_buf)];
     int *p;
