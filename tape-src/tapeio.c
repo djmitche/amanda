@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.6 1997/12/17 04:39:31 jrj Exp $
+ * $Id: tapeio.c,v 1.7 1997/12/17 07:34:23 amcore Exp $
  *
  * implements tape I/O functions
  */
@@ -267,9 +267,10 @@ int count;
     return NULL;
 }
 
-char *tapefd_rdlabel(tapefd, datestamp, label)
+char *tapefd_rdlabel(tapefd, datestamp, label, labsize)
 int tapefd;
 char *datestamp, *label;
+unsigned labsize;
 {
     int rc;
     char buffer[TAPE_BLOCK_BYTES];
@@ -299,15 +300,16 @@ char *datestamp, *label;
     }
     strncpy(datestamp, file.datestamp, sizeof(datestamp)-1);
     datestamp[sizeof(datestamp)-1] = '\0';
-    strncpy(label, file.name, sizeof(label)-1);
-    label[sizeof(label)-1] = '\0';
+    strncpy(label, file.name, labsize-1);
+    label[labsize-1] = '\0';
 
     return NULL;
 }
 
 
-char *tape_rdlabel(devname, datestamp, label)
+char *tape_rdlabel(devname, datestamp, label, bufsize)
 char *devname, *datestamp, *label;
+unsigned bufsize;
 {
     int fd;
 
@@ -317,7 +319,7 @@ char *devname, *datestamp, *label;
 	return errstr;
     }
 
-    if(tapefd_rdlabel(fd, datestamp, label) != NULL) {
+    if(tapefd_rdlabel(fd, datestamp, label, bufsize) != NULL) {
 	tapefd_close(fd);
 	return errstr;
     }

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.22 1997/12/17 04:39:28 jrj Exp $
+ * $Id: amcheck.c,v 1.23 1997/12/17 07:34:17 amcore Exp $
  *
  * checks for common problems in server and clients
  */
@@ -287,7 +287,8 @@ char *device;
 	return 0;
     }
     else {
-	if((errstr = tape_rdlabel(device, datestamp, label)) != NULL)
+	if((errstr = tape_rdlabel(device, datestamp,
+				  label, sizeof(label))) != NULL)
 	    fprintf(errf, "%s: slot %s: %s\n", pname, slotstr, errstr);
 	else {
 	    /* got an amanda tape */
@@ -451,7 +452,8 @@ int fd;
     if(changer_init() && (tapename = taper_scan()) == NULL) {
 	fprintf(outf, "ERROR: %s.\n", changer_resultstr);
 	tapebad = 1;
-    } else if((errstr = tape_rdlabel(tapename, datestamp, label)) != NULL) {
+    } else if((errstr = tape_rdlabel(tapename, datestamp,
+				     label, sizeof(label))) != NULL) {
 	fprintf(outf, "ERROR: %s: %s.\n", tapename, errstr);
 	tapebad = 1;
     } else {
