@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.1 1998/11/12 13:19:28 martinea Exp $
+ * $Id: amadmin.c,v 1.49.2.2 1998/11/24 23:26:02 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -69,6 +69,8 @@ void import_db P((int argc, char **argv));
 void disklist P((int argc, char **argv));
 void disklist_one P((disk_t *dp));
 
+static char *confname;
+
 int main(argc, argv)
 int argc;
 char **argv;
@@ -100,7 +102,8 @@ char **argv;
 	for(argc=0; version_info[argc]; printf("%s",version_info[argc++]));
 	return 0;
     }
-    confdir = vstralloc(CONFIG_DIR, "/", argv[1], NULL);
+    confname = argv[1];
+    confdir = vstralloc(CONFIG_DIR, "/", confname, NULL);
     if(chdir(confdir)) {
 	fprintf(stderr,"%s: could not find config dir %s\n", argv[0], confdir);
 	amfree(confdir);
@@ -225,6 +228,39 @@ info_t *info;
 	return dp->dumpcycle - days_diff(info->inf[0].date, today);
 }
 
+static void check_dumpuser()
+{
+    static int been_here = 0;
+    uid_t uid_me;
+    uid_t uid_dumpuser;
+    char *dumpuser;
+    struct passwd *pw;
+
+    if (been_here) {
+       return;
+    }
+    uid_me = getuid();
+    uid_dumpuser = uid_me;
+    dumpuser = getconf_str(CNF_DUMPUSER);
+
+    if ((pw = getpwnam(dumpuser)) == NULL) {
+	error("cannot look up dump user \"%s\"\n", dumpuser);
+	/* NOTREACHED */
+    }
+    uid_dumpuser = pw->pw_uid;
+    if ((pw = getpwuid(uid_me)) == NULL) {
+	error("ERROR: cannot look up my own uid %ld\n", (long)uid_me);
+	/* NOTREACHED */
+    }
+    if (uid_me != uid_dumpuser) {
+	fprintf(stderr, "WARNING: running as user \"%s\" instead of \"%s\".\n",
+	        pw->pw_name, dumpuser);
+	fprintf(stderr, "WARNING: run \"amcheck -st %s\"\n", confname);
+    }
+    been_here = 1;
+    return;
+}
+
 /* ----------------------------------------------- */
 
 void diskloop(argc, argv, cmdname, func)
@@ -280,6 +316,9 @@ disk_t *dp;
     char *diskname = dp->name;
     info_t info;
 
+#if TEXTDB
+    check_dumpuser();
+#endif
     get_info(hostname, diskname, &info);
     info.command = PLANNER_FORCE;
     if(put_info(hostname, diskname, &info) == 0) {
@@ -312,6 +351,9 @@ disk_t *dp;
 
     get_info(hostname, diskname, &info);
     if(info.command == PLANNER_FORCE) {
+#if TEXTDB
+	check_dumpuser();
+#endif
 	info.command = NO_COMMAND;
 	if(put_info(hostname, diskname, &info) == 0){
 	    printf("%s: force command for %s:%s cleared.\n",
@@ -351,6 +393,7 @@ char **argv;
 	usage();
     }
 
+    check_dumpuser();
     for(count=3; count< argc; count++) {
 	tp = lookup_tapelabel(argv[count]);
 	if ( tp == NULL) {
@@ -358,9 +401,14 @@ char **argv;
 		argv[count]);
 	    continue;
 	}
-	if( tp->reuse == 0 ) tp->reuse = 1;
-	else fprintf(stderr, "reuse: tape %s already reusable.\n",
-		     argv[count]);
+	if( tp->reuse == 0 ) {
+	    tp->reuse = 1;
+	    printf("%s: marking tape %s as reusable.\n",
+		   get_pname(), argv[count]);
+	} else {
+	    fprintf(stderr, "%s: tape %s already reusable.\n",
+		    get_pname(), argv[count]);
+	}
     }
 
     if(write_tapelist(getconf_str(CNF_TAPELIST)))
@@ -380,6 +428,7 @@ char **argv;
 	usage();
     }
 
+    check_dumpuser();
     for(count=3; count< argc; count++) {
 	tp = lookup_tapelabel(argv[count]);
 	if ( tp == NULL) {
@@ -387,9 +436,14 @@ char **argv;
 		argv[count]);
 	    continue;
 	}
-	if( tp->reuse == 1 ) tp->reuse = 0;
-	else fprintf(stderr, "no-reuse: tape %s already not reusable.\n",
-		     argv[count]);
+	if( tp->reuse == 1 ) {
+	    tp->reuse = 0;
+	    printf("%s: marking tape %s as not reusable.\n",
+		   get_pname(), argv[count]);
+	} else {
+	    fprintf(stderr, "%s: tape %s already not reusable.\n",
+		    get_pname(), argv[count]);
+	}
     }
 
     if(write_tapelist(getconf_str(CNF_TAPELIST)))
@@ -950,6 +1004,10 @@ int import_one P((void))
     int ch;
     char *hostname = NULL;
     char *diskname = NULL;
+
+#if TEXTDB
+    check_dumpuser();
+#endif
 
     memset(&info, 0, sizeof(info_t));
 
