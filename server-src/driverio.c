@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.35.2.7 1999/02/23 14:36:06 martinea Exp $
+ * $Id: driverio.c,v 1.35.2.8 1999/03/02 00:58:24 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -49,6 +49,19 @@ char *cmdstr[] = {
     "PORT", "TAPE-ERROR", "TAPER-OK",			/* taper results */
     NULL
 };
+
+
+void init_driverio()
+{
+    dumper_t *dumper;
+
+    taper = -1;
+
+    for(dumper = dmptable; dumper < dmptable + MAX_DUMPERS; dumper++) {
+	dumper->outfd = -1;
+    }
+}
+
 
 void addfd(fd, readset, maxfd)
 int    fd;
@@ -74,7 +87,7 @@ int fd;
 
     if(fd == taper) return "taper";
 
-    for(dumper = dmptable; dumper < dmptable+inparallel; dumper++)
+    for(dumper = dmptable; dumper < dmptable + MAX_DUMPERS; dumper++)
 	if(dumper->outfd == fd) return dumper->name;
 
     ap_snprintf(fd_str, sizeof(fd_str), "%d", fd);
@@ -146,8 +159,9 @@ char *dumper_program;
     }
 }
 
-void startup_dump_processes(dumper_program)
+void startup_dump_processes(dumper_program, inparallel)
 char *dumper_program;
+int inparallel;
 {
     int i;
     dumper_t *dumper;

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.12 1999/02/16 03:19:19 martinea Exp $
+ * $Id: driver.c,v 1.58.2.13 1999/03/02 00:58:22 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -55,6 +55,7 @@ int degraded_mode;
 unsigned long reserved_space;
 unsigned long total_disksize;
 char *dumper_program;
+int  inparallel;
 
 int driver_main P((int argc, char **argv));
 int client_constrained P((disk_t *dp));
@@ -178,6 +179,7 @@ int main(main_argc, main_argv)
 
     /* taper takes a while to get going, so start it up right away */
 
+    init_driverio();
     startup_tape_process(taper_program);
     taper_cmd(START_TAPER, datestamp, NULL, 0, NULL);
 
@@ -271,7 +273,7 @@ int main(main_argc, main_argv)
 
     /* fire up the dumpers now while we are waiting */
 
-    startup_dump_processes(dumper_program);
+    startup_dump_processes(dumper_program, inparallel);
 
     /*
      * Read schedule from stdin.  Usually, this is a pipe from planner,

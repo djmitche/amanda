@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.13.2.3 1999/02/17 01:47:10 martinea Exp $
+ * $Id: driverio.h,v 1.13.2.4 1999/03/02 00:58:27 martinea Exp $
  *
  * driver-related helper functions
  */
@@ -74,9 +74,7 @@ typedef struct holdalloc_s {
 
 #define holdalloc(hp)	((holdalloc_t *) (hp)->up)
 
-
 GLOBAL dumper_t dmptable[MAX_DUMPERS];
-GLOBAL int inparallel;
 
 /* command/result tokens */
 
@@ -90,16 +88,14 @@ typedef enum {
     LAST_TOK
 } tok_t;
 
-extern char *cmdstr[];
-
 GLOBAL int maxfd;
 GLOBAL fd_set readset;
 GLOBAL int taper, taper_busy, taper_pid;
 
-char *childstr P((int fd));
+void init_driverio();
 void startup_tape_process P((char *taper_program));
 void startup_dump_process P((dumper_t *dumper, char *dumper_program));
-void startup_dump_processes P((char *dumper_program));
+void startup_dump_processes P((char *dumper_program, int inparallel));
 tok_t getresult P((int fd, int show, int *result_argc, char **result_argv, int max_arg));
 void taper_cmd P((tok_t cmd, void *ptr, char *destname, int level, char *datestamp));
 void dumper_cmd P((dumper_t *dumper, tok_t cmd, disk_t *dp));
