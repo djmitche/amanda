@@ -254,7 +254,25 @@ define tapetype MIMSY-MEGATAPE {
 # Note that you may specify previously defined dumptypes as a shorthand way
 # of defining parameters.
 
+define dumptype global {
+    comment "Global definitions"
+    # This is quite useful for setting global parameters, so you don't have
+    # to type them everywhere.  All dumptype definitions in this sample file
+    # do include these definitions, either directly or indirectly.
+    # There's nothing special about the name `global'; if you create any
+    # dumptype that does not contain the word `global' or the name of any
+    # other dumptype that contains it, these definitions won't apply.
+    # Note that these definitions may be overridden in other
+    # dumptypes, if the redefinitions appear *after* the `global'
+    # dumptype name.
+    # You may want to use this for globally enabling or disabling
+    # indexing, recording, etc.  Some examples:
+    # index yes
+    # record no
+}
+
 define dumptype always-full {
+    global
     comment "Full dump of this filesystem always"
     compress none
     priority high
@@ -262,6 +280,7 @@ define dumptype always-full {
 }
 
 define dumptype root-tar {
+    global
     program "GNUTAR"
     comment "root partitions dumped with tar"
     compress none
@@ -294,12 +313,14 @@ define dumptype comp-user-tar {
 }
 
 define dumptype holding-disk {
+    global
     comment "The master-host holding disk itself"
     holdingdisk no # do not use the holding disk
     priority medium
 }
 
 define dumptype comp-user {
+    global
     comment "Non-root partitions on reasonably fast machines"
     compress client fast
     priority medium
@@ -312,6 +333,7 @@ define dumptype nocomp-user {
 }
 
 define dumptype comp-root {
+    global
     comment "Root partitions with compression"
     compress client fast
     priority low
@@ -324,6 +346,7 @@ define dumptype nocomp-root {
 }
 
 define dumptype comp-high {
+    global
     comment "very important partitions on fast machines"
     compress client best
     priority high
@@ -336,6 +359,7 @@ define dumptype nocomp-high {
 }
 
 define dumptype nocomp-test {
+    global
     comment "test dump without compression, no /etc/dumpdates recording"
     compress none
     record no
@@ -359,9 +383,10 @@ define dumptype comp-test {
 #          through that interface.  Your OS routing tables do that.  This
 #          is just a mechanism to stop Amanda trashing your network.
 # Attributes are:
-#	use		- bandwidth we can consume.  Note that this is
-#			  not guaranteed; it is only a guideline that
-#			  Amanda will try to keep within.
+#	use		- bandwidth above which amanda won't start
+#			  backups using this interface.  Note that if
+#			  a single backup will take more than that,
+#			  amanda won't try to make it run slower!
 
 define interface local {
     comment "a local disk"
