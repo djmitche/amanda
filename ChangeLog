@@ -1,3 +1,8 @@
+2003-11-27  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/driver.c: Print the tape size.
+	* server-src/amstatus.pl.in: print % of tape use.
+
 2003-11-26  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/conffile.c (copy_dumptype): Copy in/exclude only if seen.
