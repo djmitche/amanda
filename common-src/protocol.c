@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.32 2002/04/13 19:24:51 jrjackson Exp $
+ * $Id: protocol.c,v 1.33 2003/03/27 23:54:38 kovert Exp $
  *
  * implements amanda protocol
  */
@@ -301,7 +301,7 @@ state_machine(p, action, pkt)
 
     for (;;) {
 #ifdef PROTO_DEBUG
-	dbprintf(("state_machine: p %X state %s action %s\n",
+	dbprintf(("%s: state_machine: p %X state %s action %s\n",
 		  debug_prefix_time(": protocol"),
 		  (int)p, pstate2str(p->state), action2str(action)));
 	if (pkt != NULL) {
@@ -338,7 +338,7 @@ state_machine(p, action, pkt)
 	    retaction = (*curstate)(p, action, pkt);
 
 #ifdef PROTO_DEBUG
-	dbprintf(("state_machine: p %X state %s returned %s\n",
+	dbprintf(("%s: state_machine: p %X state %s returned %s\n",
 		  debug_prefix_time(": protocol"),
 		  (int)p, pstate2str(p->state), action2str(retaction)));
 #endif
@@ -356,7 +356,7 @@ state_machine(p, action, pkt)
 	 */
 	case A_PENDING:
 #ifdef PROTO_DEBUG
-	    dbprintf(("state_machine: p %X state %s: timeout %d\n",
+	    dbprintf(("%s: state_machine: p %X state %s: timeout %d\n",
 		      debug_prefix_time(": protocol"),
 		      (int)p, pstate2str(p->state), (int)p->timeout));
 #endif
@@ -376,7 +376,7 @@ state_machine(p, action, pkt)
 	case A_CONTINUE:
 	    assert(p->state != curstate);
 #ifdef PROTO_DEBUG
-	    dbprintf(("state_machine: p %X: moved from %s to %s\n",
+	    dbprintf(("%s: state_machine: p %X: moved from %s to %s\n",
 		      debug_prefix_time(": protocol"),
 		      (unsigned int)p, pstate2str(curstate),
 		      pstate2str(p->state)));
