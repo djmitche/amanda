@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.64 1998/04/14 17:11:36 jrj Exp $
+ * $Id: planner.c,v 1.65 1998/04/27 10:25:24 amcore Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -896,7 +896,7 @@ host_t *hostp;
     disklist_t *destqp;
     disk_t *dp;
     char *req = NULL, *errstr = NULL;
-    int i, disks, rc;
+    int i, disks, rc, timeout;
     char number[NUM_STR_SIZE];
 
     assert(hostp->disks != NULL);
@@ -945,14 +945,19 @@ host_t *hostp;
     }
     if(disks > max_disks) max_disks = disks;
 
+    if (conf_etimeout < 0)
+      timeout = - conf_etimeout;
+    else
+      timeout = disks * conf_etimeout;
+
 #ifdef KRB4_SECURITY
     if(hostp->disks->auth == AUTH_KRB4)
 	rc = make_krb_request(hostp->hostname, kamanda_port, req,
-			      hostp, disks*conf_etimeout, handle_result);
+			      hostp, timeout, handle_result);
     else
 #endif
 	rc = make_request(hostp->hostname, amanda_port, req,
-			  hostp, disks*conf_etimeout, handle_result);
+			  hostp, timeout, handle_result);
 
     req = NULL;					/* do not own this any more */
 

@@ -1,3 +1,6 @@
+	allow a total estimate time-out to be specified.  -oliva
+	Suggested by Martyn Johnson <Martyn.Johnson@cl.cam.ac.uk>
+
 	fix amtoc behavior in case of failed reads.
 	-Niek Rijnbout <niek@knoware.nl>
 
