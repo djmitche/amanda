@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1999 University of Maryland at College Park
+ * Copyright (c) 1991-2000 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.34 1999/09/15 00:32:53 jrj Exp $
+ * $Id: conffile.h,v 1.35 2000/04/09 07:59:04 oliva Exp $
  *
  * interface for config file reading code
  */
@@ -44,7 +44,7 @@ typedef enum conf_e {
     CNF_MAXCYCLE, CNF_TAPECYCLE,
     CNF_DISKSIZE, CNF_NETUSAGE, CNF_INPARALLEL, CNF_TIMEOUT,
     CNF_BUMPSIZE, CNF_BUMPMULT, CNF_BUMPDAYS, CNF_TPCHANGER, CNF_RUNTAPES,
-    CNF_MAXDUMPS, CNF_ETIMEOUT, CNF_DTIMEOUT, 
+    CNF_MAXDUMPS, CNF_ETIMEOUT, CNF_DTIMEOUT, CNF_CTIMEOUT,
     CNF_TAPEBUFS, CNF_RAWTAPEDEV, CNF_PRINTER, CNF_RESERVE,
     CNF_COLUMNSPEC
 } confparm_t;

@@ -1,3 +1,12 @@
+2000-04-09  Davide Marchignoli  <marchign@di.unipi.it>
+  
+	* server-src/conffile.h (confparm_t): Added CTIMEOUT.
+	* server-src/conffile.c: Added ctimeout support.  Default to 30.
+	* example/amanda.conf.in: Likewise.
+	* man/amanda.8.in: Documented it.
+	* server-src/amcheck.c: Use ctimeout from configuration file instead
+	of CHECK_TIMEOUT.
+
 2000-04-09  Stan Brown  <stanb@awod.com>
 
 	* recover-src/amrecover.c (guess_disk): Omit DEV_PREFIX only if

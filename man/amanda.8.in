@@ -476,6 +476,13 @@ Amount of idle time per disk on a given client that
 .B dumper
 will wait before it fail with a data timeout error.
 .TP
+.BN ctimeout int
+Default:
+.IR "30 seconds" .
+Maximal amount of time that
+.B amcheck 
+uses for each client host.
+.TP
 .BN netusage int
 Default:
 .IR "300 Kbps" .

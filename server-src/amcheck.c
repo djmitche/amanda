@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1999 University of Maryland at College Park
+ * Copyright (c) 1991-2000 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.68 1999/11/11 00:22:06 jrj Exp $
+ * $Id: amcheck.c,v 1.69 2000/04/09 07:59:04 oliva Exp $
  *
  * checks for common problems in server and clients
  */
@@ -43,9 +43,9 @@
 #include "version.h"
 #include "amindex.h"
 
-#define CHECK_TIMEOUT   30
 #define BUFFER_SIZE	32768
 
+static int conf_ctimeout;
 static int overwrite;
 char *config_name = NULL;
 char *config_dir = NULL;
@@ -168,6 +168,8 @@ char **argv;
 	error("could not find config file \"%s\"", conffile);
     }
     amfree(conffile);
+
+    conf_ctimeout = getconf_int(CNF_CTIMEOUT);
 
     conf_diskfile = getconf_str(CNF_DISKFILE);
     if (*conf_diskfile == '/') {
@@ -1077,7 +1079,7 @@ int fd;
 	    error("could not find security driver '%s' for host '%s'",
 		hostp->disks->security_driver, hostp->hostname);
 	}
-	protocol_sendreq(hostp->hostname, secdrv, req, CHECK_TIMEOUT,
+	protocol_sendreq(hostp->hostname, secdrv, req, conf_ctimeout,
 				handle_result, hostp);
 
 	amfree(req);
