@@ -1186,7 +1186,8 @@ static int delay_lowest_priority_level_zero P((void))
      */
     preserve = NULL;
     for(ptr = schedq.head; ptr != NULL && preserve == NULL; ptr = ptr->next)
-	preserve = ptr;
+	if(est(ptr)->curr_level == 0)
+	    preserve = ptr;
 
     for(ptr = schedq.tail; ptr != NULL; ptr = ptr->prev) {
 	if(est(ptr)->curr_level == 0 && ptr != preserve) {
