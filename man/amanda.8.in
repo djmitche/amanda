@@ -1680,8 +1680,23 @@ would use the following devices:
 This driver emulates a tape device with a set of files in a directory.
 The
 .I driver-info
-field should be the name of an existing directory.
-The driver will store one file in the directory for each tape file.
+field must be the name of an existing directory.
+The driver will test for a subdirectory of that named
+.I data
+and return
+.B offline
+until it is present.
+When present, the driver uses one file in the
+.I data
+subdirectory for each tape file.
+.IP
+The driver uses a file named
+.I status
+in the
+.B file
+device directory to hold driver status information,
+such as tape position.
+If not present, the driver will create it as though the device is rewound.
 .IP
 The
 .I length
@@ -1690,14 +1705,37 @@ value from the associated
 is used to limit the amount of data written.
 When the limit is reached, the driver will simulate end of tape.
 .IP
-A file in /tmp is used to remember the tape position between programs.
-The file name in /tmp is a variant of the
-.I driver-info
-name.
+One way to use this driver with a real device such as a CD is to
+create a directory for the
+.B file
+device and one or more other directories
+for the actual data.
+Create a symlink named
+.I data
+in the
+.B file
+directory to one of the data directories.
+Set the
+.B tapetype
+length to whatever the medium will hold.
+.IP
+When Amanda fills the
+.B file
+device,
+remove the symlink and (optionally) create a new symlink to another
+data area.
+Use a CD writer software package to burn the image from the first data area.
+.IP
+To read the CD,
+mount it and create the
+.I data
+symlink in the
+.B file
+device directory.
 .IP
 NOTE: record size information is not saved by this driver.
 This is OK for Amanda use,
-but it may cause problems for other applications.
+but may cause problems for other applications.
 .SH AUTHORIZATION
 Amanda processes on the tape server host run as the
 .B dumpuser
