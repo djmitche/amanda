@@ -1,9 +1,13 @@
 1999-04-17 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/server_util.c: use snprintf instead of ap_snprintf.
+
+1999-04-17 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/server_util.c: new file for utility function.
 	New function construct_datestamp.
 	* server-src/server_util.h: ditto
-	* server-src/makefile.am: link server_util.c with libamserver.
+	* server-src/Makefile.am: link server_util.c with libamserver.
 	* amcleanupdisk.c (construct_datestamp): remove function.
 	* server-src/driver.c: ditto
 	* server-src/dumper.c: ditto

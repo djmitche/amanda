@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.c,v 1.2 1999/04/17 22:20:16 martinea Exp $
+ * $Id: server_util.c,v 1.3 1999/04/17 22:35:34 martinea Exp $
  *
  */
 
@@ -38,7 +38,7 @@ char *construct_datestamp()
 
     today = time((time_t *)NULL);
     tm = localtime(&today);
-    ap_snprintf(datestamp, sizeof(datestamp),
+    snprintf(datestamp, sizeof(datestamp),
                 "%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
     return stralloc(datestamp);
 }
