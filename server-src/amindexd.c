@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.37 1998/07/04 00:19:30 oliva Exp $
+ * $Id: amindexd.c,v 1.37.2.1 1998/08/11 22:02:36 oliva Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -52,6 +52,7 @@
 #include "disk_history.h"
 #include "list_dir.h"
 #include "logfile.h"
+#include "token.h"
 
 #ifdef HAVE_NETINET_IN_SYSTM_H
 #include <netinet/in_systm.h>
@@ -436,12 +437,20 @@ int build_disk_table P((void))
 	return -1;
     }
 
-    cmd = vstralloc(sbindir, "/", "amadmin", versionsuffix(),
-		    " ", config,
-		    " ", "find",
-		    " ", dump_hostname,
-		    " \'^", disk_name, "$\'",
-		    NULL);
+    {
+	char *rxdiskname, *shdiskname;
+	rxdiskname = rxquote(disk_name);
+	shdiskname = shquote(rxdiskname);
+	amfree(rxdiskname);
+	cmd = vstralloc(sbindir, "/", "amadmin", versionsuffix(),
+			" ", config,
+			" ", "find",
+			" ", dump_hostname,
+			" \\^", shdiskname, "\\$",
+			NULL);
+	amfree(shdiskname);
+    }
+
     dbprintf(("! %s\n",cmd));
     if ((fp = popen(cmd, "r")) == NULL)
     {

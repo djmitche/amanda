@@ -1,3 +1,14 @@
+1998-08-11  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* common-src/token.h (rxquote, shquote): new functions
+	* common-src/token.c (rxquote) quotes a string into an equivalent
+ 	regular expression
+	(shquote): quotes all shell special meta-characters, so that a
+ 	string can be safely passed down for shell interpretation in
+	system() or popen()-like calls
+	* server-src/amindexd.c (build_disk_table): quote the disk_name with 
+	both rxquote and shquote
+
 1998-08-11  John R. Jackson  <jrj@purdue.edu>
 
 	* changer-src/chg-manual.sh.in: put the debug file in DEBUG_DIR for
