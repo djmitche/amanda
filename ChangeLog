@@ -1,5 +1,9 @@
 2000-11-21 John R. Jackson  <jrj@purdue.edu>
 
+	* configure.in: Forgot to check in this part of new amgetconf.8.in.
+
+2000-11-21 John R. Jackson  <jrj@purdue.edu>
+
 	* contrib/sst/README.Amanda: New file of Amanda specific sst notes.
 	* contrib/sst/sst.c: Attempt at letting gcc compile sst.
 
@@ -1186,7 +1190,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.409 2000/11/21 21:51:30 jrjackson Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.410 2000/11/21 21:58:38 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

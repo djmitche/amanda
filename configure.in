@@ -2521,6 +2521,7 @@ AC_OUTPUT( \
 	man/amrmtape.8			man/amtoc.8			\
 	man/amverify.8			man/Makefile			\
 	man/amstatus.8			man/amreport.8			\
+	man/amgetconf.8							\
 									\
 	docs/Makefile							\
 									\
