@@ -97,6 +97,11 @@ The use of `amhpfixdevs' is deprecated, since you can list
 mount-points or full device names in the disklist.  The script may be
 removed in future releases of Amanda.
 
+
+Sometimes you may get the error message `Link severed' from an HP/UX
+client.  This is just a cute name the developers of HP/UX found for
+`Network error'.  Reported by Michael Brehl <mbr@condor.de>
+
 ---------------------------------------------------------------------------
 Linux
 -----
