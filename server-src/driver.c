@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.17 2003/07/07 15:19:43 martinea Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.18 2003/11/24 16:41:23 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -958,7 +958,6 @@ void handle_taper_result()
 	    log_add(L_FAIL, "%s %s %d %s [too many taper retries]",
 		    dp->host->hostname, dp->name, sched(dp)->level,
 		    sched(dp)->datestamp);
-	    continue_dumps();
 	}
 	else {
 	    sched(dp)->attempted++;
@@ -971,6 +970,7 @@ void handle_taper_result()
 	taper_busy = 0;
 	taper_disk = NULL;
 	startaflush();
+	continue_dumps(); /* continue with those dumps waiting for diskspace */
 
 	break;
 
