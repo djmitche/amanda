@@ -1,5 +1,14 @@
 Version 2.4.0
 
+	if backup server has multiple IP addresses, security code
+	might reject it.  -Gunnar Gunnarsson <gunnar@ki.ericsson.se>
+
+	vdump would not work.  -oliva
+
+	kerberos support was broken.  -mike
+
+Version 2.4.0-980222
+
 	retry tape open on AIX if it fails with EAGAIN errno.
 	-Francois Morris <Francois.Morris@lmcp.jussieu.fr>
 
