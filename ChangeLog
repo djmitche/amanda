@@ -1,5 +1,9 @@
 2002-11-12  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* changer-src/scsi-solaris.c (SCSI_ExecuteCommand): Init ret to 0.
+
+2002-11-12  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* recover-src/extract_list.c (delete_file): j is int.
 	* changer-src/scsi-defs.h (B, B1): Check if already defined.
 	* server-src/taper.c: Some cast to int.

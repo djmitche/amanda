@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-solaris.c,v 1.22 2002/08/22 17:42:48 martinea Exp $
+ * $Id: scsi-solaris.c,v 1.23 2002/11/12 22:47:12 martinea Exp $
  *
  * Interface to execute SCSI commands on an Sun Workstation
  *
@@ -60,7 +60,7 @@
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-solaris.c,v 1.22 2002/08/22 17:42:48 martinea Exp $";
+   static char rcsid[] = "$Id: scsi-solaris.c,v 1.23 2002/11/12 22:47:12 martinea Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -155,7 +155,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
 {
   extern OpenFiles_T *pDev;
   extern FILE * debug_file;
-  int ret;
+  int ret = 0;
   int retries = 1;
   extern int errno;
   struct uscsi_cmd Command;
