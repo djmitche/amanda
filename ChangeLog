@@ -1,5 +1,16 @@
 1999-10-03 John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/driver.c (main): now that multiple results can come back
+	  from taper and dumper without a handshake (e.g. NO-ROOM), we need to
+	  process them all rather than just the first one.  Call the new
+	  areads_dataready() function to peek and see if more data is ready.
+	* common-src/amanda.h: declare areads_dataready().
+	* common-src/file.c: define areads_dataready().  Fix some variable
+	  types.  Fix a buffer expansion problem.  Add code to the test
+	  program to force buffer expansion to be checked out.
+
+1999-10-03 John R. Jackson  <jrj@purdue.edu>
+
 	* common-src/file.c (areads_getbuf): fix a buffer allocation problem.
 
 1999-10-03 John R. Jackson  <jrj@purdue.edu>

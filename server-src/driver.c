@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.88 1999/09/19 19:03:30 jrj Exp $
+ * $Id: driver.c,v 1.89 1999/10/03 21:56:26 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -734,130 +734,138 @@ handle_taper_result(cookie)
 
     assert(cookie == NULL);
 
-    short_dump_state();
+    do {
 
-    tok = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
+	short_dump_state();
 
-    switch(tok) {
+	tok = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
 
-    case DONE:	/* DONE <handle> <label> <tape file> <err mess> */
-	if(result_argc != 5) {
-	    error("error: [taper DONE result_argc != 5: %d", result_argc);
-	}
+	switch(tok) {
 
-	dp = serial2disk(result_argv[2]);
-	free_serial(result_argv[2]);
+	case DONE:	/* DONE <handle> <label> <tape file> <err mess> */
+	    if(result_argc != 5) {
+		error("error: [taper DONE result_argc != 5: %d", result_argc);
+	    }
 
-	filenum = atoi(result_argv[4]);
-	update_info_taper(dp, result_argv[3], filenum, sched(dp)->level);
+	    dp = serial2disk(result_argv[2]);
+	    free_serial(result_argv[2]);
 
-	delete_diskspace(dp);
+	    filenum = atoi(result_argv[4]);
+	    update_info_taper(dp, result_argv[3], filenum, sched(dp)->level);
 
-	printf("driver: finished-cmd time %s taper wrote %s:%s\n",
-	       walltime_str(curclock()), dp->host->hostname, dp->name);
-	fflush(stdout);
-
-	amfree(sched(dp)->dumpdate);
-	amfree(dp->up);
-
-	if(empty(tapeq)) {
-	    taper_busy = 0;
-	    taper_disk = NULL;
-	    event_release(taper_ev_read);
-	    taper_ev_read = NULL;
-	}
-	else {
-	    dp = dequeue_disk(&tapeq);
-	    taper_disk = dp;
-	    taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level, datestamp);
-	}
-	/*
-	 * we need to restart some stopped dumps; without a good
-	 * way to determine which ones to start, let them all compete
-	 * for the remaining disk space.  Remember, having stopped
-	 * processes indicates a failure in our estimation of sizes.
-	 * Rather than have a complicated workaround to deal with
-	 * stopped dumper processes more efficiently, we should
-	 * work on getting better estimates to avoid the situation
-	 * to begin with.
-	 */
-	while(!empty(stoppedq)) {
-	    dp = dequeue_disk(&stoppedq);
-	    dumper_cmd(sched(dp)->dumper, CONTINUE, NULL);
-	}
-	break;
-
-    case TRYAGAIN:  /* TRY-AGAIN <handle> <err mess> */
-	if (result_argc < 2) {
-	    error("error [taper TRYAGAIN result_argc < 2: %d]", result_argc);
-	}
-	dp = serial2disk(result_argv[2]);
-	free_serial(result_argv[2]);
-	printf("driver: taper-tryagain time %s disk %s:%s\n",
-	       walltime_str(curclock()), dp->host->hostname, dp->name);
-	fflush(stdout);
-
-	/* re-insert into taper queue */
-
-	if(sched(dp)->attempted) {
-	    log_add(L_FAIL, "%s %s %d [too many taper retries]",
-		    dp->host->hostname, dp->name, sched(dp)->level);
-	    /* XXX should I do this? */
 	    delete_diskspace(dp);
-	}
-	else {
-	    sched(dp)->attempted++;
-	    taper_queuedisk(dp);
-	}
 
-	/* run next thing from queue */
+	    printf("driver: finished-cmd time %s taper wrote %s:%s\n",
+		   walltime_str(curclock()), dp->host->hostname, dp->name);
+	    fflush(stdout);
 
-	if(empty(tapeq)) {
+	    amfree(sched(dp)->dumpdate);
+	    amfree(dp->up);
+
+	    if(empty(tapeq)) {
+		taper_busy = 0;
+		taper_disk = NULL;
+		event_release(taper_ev_read);
+		taper_ev_read = NULL;
+	    }
+	    else {
+		dp = dequeue_disk(&tapeq);
+		taper_disk = dp;
+		taper_cmd(FILE_WRITE, dp, sched(dp)->destname,
+			  sched(dp)->level, datestamp);
+	    }
+	    /*
+	     * we need to restart some stopped dumps; without a good
+	     * way to determine which ones to start, let them all compete
+	     * for the remaining disk space.  Remember, having stopped
+	     * processes indicates a failure in our estimation of sizes.
+	     * Rather than have a complicated workaround to deal with
+	     * stopped dumper processes more efficiently, we should
+	     * work on getting better estimates to avoid the situation
+	     * to begin with.
+	     */
+	    while(!empty(stoppedq)) {
+		dp = dequeue_disk(&stoppedq);
+		dumper_cmd(sched(dp)->dumper, CONTINUE, NULL);
+	    }
+	    break;
+
+	case TRYAGAIN:  /* TRY-AGAIN <handle> <err mess> */
+	    if (result_argc < 2) {
+		error("error [taper TRYAGAIN result_argc < 2: %d]",
+		      result_argc);
+	    }
+	    dp = serial2disk(result_argv[2]);
+	    free_serial(result_argv[2]);
+	    printf("driver: taper-tryagain time %s disk %s:%s\n",
+		   walltime_str(curclock()), dp->host->hostname, dp->name);
+	    fflush(stdout);
+
+	    /* re-insert into taper queue */
+
+	    if(sched(dp)->attempted) {
+		log_add(L_FAIL, "%s %s %d [too many taper retries]",
+	    	    dp->host->hostname, dp->name, sched(dp)->level);
+		/* XXX should I do this? */
+		delete_diskspace(dp);
+	    }
+	    else {
+		sched(dp)->attempted++;
+		taper_queuedisk(dp);
+	    }
+
+	    /* run next thing from queue */
+
+	    if(empty(tapeq)) {
+		taper_busy = 0;
+		taper_disk = NULL;
+		event_release(taper_ev_read);
+		taper_ev_read = NULL;
+	    }
+	    else {
+		dp = dequeue_disk(&tapeq);
+		taper_disk = dp;
+		taper_cmd(FILE_WRITE, dp, sched(dp)->destname,
+			  sched(dp)->level, datestamp);
+	    }
+	    break;
+
+	case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
+	    dp = serial2disk(result_argv[2]);
+	    free_serial(result_argv[2]);
+	    printf("driver: finished-cmd time %s taper wrote %s:%s\n",
+		   walltime_str(curclock()), dp->host->hostname, dp->name);
+	    fflush(stdout);
+	    /* Note: fall through code... */
+
+	case BOGUS:
+	    /*
+	     * Since we've gotten a tape error, we can't send anything more
+	     * to the taper.  Go into degraded mode to try to get everthing
+	     * onto disk.  Later, these dumps can be flushed to a new tape.
+	     * The tape queue is zapped so that it appears empty in future
+	     * checks.
+	     */
+	    log_add(L_WARNING,
+		    "going into degraded mode because of tape error.");
+	    start_degraded_mode(&runq);
+	    tapeq.head = tapeq.tail = NULL;
 	    taper_busy = 0;
 	    taper_disk = NULL;
 	    event_release(taper_ev_read);
 	    taper_ev_read = NULL;
+	    if(tok != TAPE_ERROR) aclose(taper);
+	    break;
+	default:
+	    error("driver received unexpected token (%d) from taper", tok);
 	}
-	else {
-	    dp = dequeue_disk(&tapeq);
-	    taper_disk = dp;
-	    taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level, datestamp);
-	}
-	break;
-
-    case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
-	dp = serial2disk(result_argv[2]);
-	free_serial(result_argv[2]);
-	printf("driver: finished-cmd time %s taper wrote %s:%s\n",
-	       walltime_str(curclock()), dp->host->hostname, dp->name);
-	fflush(stdout);
-	/* Note: fall through code... */
-
-    case BOGUS:
 	/*
-	 * Since we've gotten a tape error, we can't send anything more
-	 * to the taper.  Go into degraded mode to try to get everthing
-	 * onto disk.  Later, these dumps can be flushed to a new tape.
-	 * The tape queue is zapped so that it appears empty in future
-	 * checks.
+	 * Wakeup any dumpers that are sleeping because of network
+	 * or disk constraints.
 	 */
-	log_add(L_WARNING, "going into degraded mode because of tape error.");
-	start_degraded_mode(&runq);
-	tapeq.head = tapeq.tail = NULL;
-	taper_busy = 0;
-	taper_disk = NULL;
-	event_release(taper_ev_read);
-	taper_ev_read = NULL;
-	if(tok != TAPE_ERROR) aclose(taper);
-	break;
-    default:
-	error("driver received unexpected token (%d) from taper", tok);
-    }
-    /*
-     * Wakeup any dumpers that are sleeping because of network
-     * or disk constraints.
-     */
-    event_wakeup((event_id_t)handle_idle_wait);
+	event_wakeup((event_id_t)handle_idle_wait);
+
+    } while(areads_dataready(taper));
 }
 
 static dumper_t *
@@ -902,167 +910,173 @@ handle_dumper_result(cookie)
     dp = dumper->dp;
     assert(dp != NULL && sched(dp) != NULL);
 
-    short_dump_state();
+    do {
 
-    tok = getresult(dumper->fd, 1, &result_argc, result_argv, MAX_ARGS+1);
+	short_dump_state();
 
-    if(tok != BOGUS) {
-	sdp = serial2disk(result_argv[2]); /* result_argv[2] always contains the serial number */
-	assert(sdp == dp);
-    }
+	tok = getresult(dumper->fd, 1, &result_argc, result_argv, MAX_ARGS+1);
 
-    switch(tok) {
-
-    case DONE: /* DONE <handle> <origsize> <dumpsize> <dumptime> <err str> */
-	if(result_argc != 6) {
-	    error("error [dumper DONE result_argc != 6: %d]", result_argc);
+	if(tok != BOGUS) {
+	    /* result_argv[2] always contains the serial number */
+	    sdp = serial2disk(result_argv[2]);
+	    assert(sdp == dp);
 	}
 
-	free_serial(result_argv[2]);
+	switch(tok) {
 
-	origsize = (long)atof(result_argv[3]);
-	dumpsize = (long)atof(result_argv[4]);
-	dumptime = (long)atof(result_argv[5]);
-	update_info_dumper(dp, origsize, dumpsize, dumptime);
+	case DONE: /* DONE <handle> <origsize> <dumpsize> <dumptime> <errstr> */
+	    if(result_argc != 6) {
+		error("error [dumper DONE result_argc != 6: %d]", result_argc);
+	    }
 
-	rename_tmp_holding(sched(dp)->destname, 1);
-	deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
-	adjust_diskspace(dp, DONE);
-	dumper->busy = 0;
-	dp->host->inprogress -= 1;
-	dp->inprogress = 0;
-	sched(dp)->attempted = 0;
-	printf("driver: finished-cmd time %s %s dumped %s:%s\n",
-	       walltime_str(curclock()), dumper->name,
-	       dp->host->hostname, dp->name);
-	fflush(stdout);
+	    free_serial(result_argv[2]);
 
-	taper_queuedisk(dp);
-	dp = NULL;
-	start_some_dumps(dumper, &runq);
-	break;
+	    origsize = (long)atof(result_argv[3]);
+	    dumpsize = (long)atof(result_argv[4]);
+	    dumptime = (long)atof(result_argv[5]);
+	    update_info_dumper(dp, origsize, dumpsize, dumptime);
 
-    case TRYAGAIN: /* TRY-AGAIN <handle> <err str> */
-	/*
-	 * Requeue this disk, and fall through to the FAILED
-	 * case for cleanup.
-	 */
-	if(sched(dp)->attempted) {
-	    log_add(L_FAIL, "%s %s %d [could not connect to %s]",
-		    dp->host->hostname, dp->name,
-		    sched(dp)->level, dp->host->hostname);
-	}
-	else {
-	    /* give it 15 seconds in case of temp problems */
-	    dp->start_t = time(NULL) + 15;
-	    sched(dp)->attempted++;
-	    enqueue_disk(&runq, dp);
-	}
-	/* FALLTHROUGH */
-    case FAILED: /* FAILED <handle> <errstr> */
-	free_serial(result_argv[2]);
+	    rename_tmp_holding(sched(dp)->destname, 1);
+	    deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
+	    adjust_diskspace(dp, DONE);
+	    dumper->busy = 0;
+	    dp->host->inprogress -= 1;
+	    dp->inprogress = 0;
+	    sched(dp)->attempted = 0;
+	    printf("driver: finished-cmd time %s %s dumped %s:%s\n",
+		   walltime_str(curclock()), dumper->name,
+		   dp->host->hostname, dp->name);
+	    fflush(stdout);
 
-	rename_tmp_holding(sched(dp)->destname, 0);
-	deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
-	adjust_diskspace(dp, DONE);
-	delete_diskspace(dp);
-	dumper->busy = 0;
-	dp->host->inprogress -= 1;
-	dp->inprogress = 0;
+	    taper_queuedisk(dp);
+	    dp = NULL;
+	    start_some_dumps(dumper, &runq);
+	    break;
 
-	/* no need to log this, dumper will do it */
-	/* sleep in case the dumper failed because of a temporary network
-	   problem, as NIS or NFS... */
-	dumper->ev_wait = event_register(15, EV_TIME, handle_idle_wait, dumper);
-	break;
-
-    case NO_ROOM: /* NO-ROOM <handle> */
-	if(!taper_busy && empty(tapeq) && pending_aborts == 0) {
-	    /* no disk space due to be freed */
-	    dumper_cmd(dumper, ABORT, NULL);
-	    pending_aborts++;
+	case TRYAGAIN: /* TRY-AGAIN <handle> <errstr> */
 	    /*
-	     * if this is the only outstanding dump, it must be too big for
-	     * the holding disk, so force it to go directly to tape on the
-	     * next attempt.
+	     * Requeue this disk, and fall through to the FAILED
+	     * case for cleanup.
 	     */
-	    if(num_busy_dumpers() <= 1)
-		dp->no_hold = 1;
-	}
-	else {
-	    adjust_diskspace(dp, NO_ROOM);
-	    enqueue_disk(&stoppedq, dp);
-	}
-	break;
+	    if(sched(dp)->attempted) {
+		log_add(L_FAIL, "%s %s %d [could not connect to %s]",
+	    	    dp->host->hostname, dp->name,
+	    	    sched(dp)->level, dp->host->hostname);
+	    }
+	    else {
+		/* give it 15 seconds in case of temp problems */
+		dp->start_t = time(NULL) + 15;
+		sched(dp)->attempted++;
+		enqueue_disk(&runq, dp);
+	    }
+	    /* FALLTHROUGH */
+	case FAILED: /* FAILED <handle> <errstr> */
+	    free_serial(result_argv[2]);
 
-    case ABORT_FINISHED: /* ABORT-FINISHED <handle> */
-	/*
-	 * We sent an ABORT from the NO-ROOM case because this dump
-	 * wasn't going to fit onto the holding disk.  We now need to
-	 * clean up the remains of this image, and try to finish
-	 * other dumps that are waiting on disk space.
-	 */
-	assert(pending_aborts);
-	free_serial(result_argv[2]);
-	rename_tmp_holding(sched(dp)->destname, 0);
-	deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
-	adjust_diskspace(dp, DONE);
-	delete_diskspace(dp);
-	sched(dp)->attempted++;
-	enqueue_disk(&runq, dp);	/* we'll try again later */
-	dumper->busy = 0;
-	dp->host->inprogress -= 1;
-	dp->inprogress = 0;
-	dp = NULL;
-	pending_aborts--;
-	while(!empty(stoppedq)) {
-	    disk_t *dp2;
-	    dp2 = dequeue_disk(&stoppedq);
-	    dumper_cmd(sched(dp2)->dumper, CONTINUE, NULL);
-	}
-	start_some_dumps(dumper, &runq);
-	break;
-
-    case BOGUS:
-	/* either EOF or garbage from dumper.  Turn it off */
-	log_add(L_WARNING, "%s pid %ld is messed up, ignoring it.\n",
-	        dumper->name, (long)dumper->pid);
-	event_release(dumper->ev_read);
-	aclose(dumper->fd);
-	dumper->busy = 0;
-	dumper->down = 1;	/* mark it down so it isn't used again */
-	if(dp) {
-	    /* if it was dumping something, zap it and try again */
 	    rename_tmp_holding(sched(dp)->destname, 0);
 	    deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
 	    adjust_diskspace(dp, DONE);
 	    delete_diskspace(dp);
+	    dumper->busy = 0;
 	    dp->host->inprogress -= 1;
 	    dp->inprogress = 0;
-	    if(sched(dp)->attempted) {
-		log_add(L_FAIL, "%s %s %d [%s died]",
-		        dp->host->hostname, dp->name,
-		        sched(dp)->level, dumper->name);
+
+	    /* no need to log this, dumper will do it */
+	    /* sleep in case the dumper failed because of a temporary network
+	       problem, as NIS or NFS... */
+	    dumper->ev_wait = event_register(15, EV_TIME, handle_idle_wait,
+					     dumper);
+	    break;
+
+	case NO_ROOM: /* NO-ROOM <handle> */
+	    if(!taper_busy && empty(tapeq) && pending_aborts == 0) {
+		/* no disk space due to be freed */
+		dumper_cmd(dumper, ABORT, NULL);
+		pending_aborts++;
+		/*
+		 * if this is the only outstanding dump, it must be too
+		 * big for the holding disk, so force it to go directly
+		 * to tape on the next attempt.
+		 */
+		if(num_busy_dumpers() <= 1)
+		dp->no_hold = 1;
 	    }
 	    else {
-		log_add(L_WARNING, "%s died while dumping %s:%s lev %d.",
-		        dumper->name, dp->host->hostname, dp->name,
-		        sched(dp)->level);
-		sched(dp)->attempted++;
-		enqueue_disk(&runq, dp);
+		adjust_diskspace(dp, NO_ROOM);
+		enqueue_disk(&stoppedq, dp);
 	    }
-	    dp = NULL;
-	}
-	break;
+	    break;
 
-    default:
-	assert(0);
-    }
-    /*
-     * Wakeup any dumpers that are sleeping because of network
-     * or disk constraints.
-     */
-    event_wakeup((event_id_t)handle_idle_wait);
+	case ABORT_FINISHED: /* ABORT-FINISHED <handle> */
+	    /*
+	     * We sent an ABORT from the NO-ROOM case because this dump
+	     * wasn't going to fit onto the holding disk.  We now need to
+	     * clean up the remains of this image, and try to finish
+	     * other dumps that are waiting on disk space.
+	     */
+	    assert(pending_aborts);
+	    free_serial(result_argv[2]);
+	    rename_tmp_holding(sched(dp)->destname, 0);
+	    deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
+	    adjust_diskspace(dp, DONE);
+	    delete_diskspace(dp);
+	    sched(dp)->attempted++;
+	    enqueue_disk(&runq, dp);	/* we'll try again later */
+	    dumper->busy = 0;
+	    dp->host->inprogress -= 1;
+	    dp->inprogress = 0;
+	    dp = NULL;
+	    pending_aborts--;
+	    while(!empty(stoppedq)) {
+		disk_t *dp2;
+		dp2 = dequeue_disk(&stoppedq);
+		dumper_cmd(sched(dp2)->dumper, CONTINUE, NULL);
+	    }
+	    start_some_dumps(dumper, &runq);
+	    break;
+
+	case BOGUS:
+	    /* either EOF or garbage from dumper.  Turn it off */
+	    log_add(L_WARNING, "%s pid %ld is messed up, ignoring it.\n",
+		    dumper->name, (long)dumper->pid);
+	    event_release(dumper->ev_read);
+	    aclose(dumper->fd);
+	    dumper->busy = 0;
+	    dumper->down = 1;	/* mark it down so it isn't used again */
+	    if(dp) {
+		/* if it was dumping something, zap it and try again */
+		rename_tmp_holding(sched(dp)->destname, 0);
+		deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
+		adjust_diskspace(dp, DONE);
+		delete_diskspace(dp);
+		dp->host->inprogress -= 1;
+		dp->inprogress = 0;
+		if(sched(dp)->attempted) {
+	    	log_add(L_FAIL, "%s %s %d [%s died]",
+	    		dp->host->hostname, dp->name,
+	    		sched(dp)->level, dumper->name);
+		}
+		else {
+	    	log_add(L_WARNING, "%s died while dumping %s:%s lev %d.",
+	    		dumper->name, dp->host->hostname, dp->name,
+	    		sched(dp)->level);
+	    	sched(dp)->attempted++;
+	    	enqueue_disk(&runq, dp);
+		}
+		dp = NULL;
+	    }
+	    break;
+
+	default:
+	    assert(0);
+	}
+	/*
+	 * Wakeup any dumpers that are sleeping because of network
+	 * or disk constraints.
+	 */
+	event_wakeup((event_id_t)handle_idle_wait);
+
+    } while(areads_dataready(dumper->fd));
 }
 
 /*
@@ -1582,7 +1596,7 @@ dump_to_tape(dp)
 	failed = 1;	/* dump failed, must still finish up with taper */
 	break;
 
-    case DONE: /* DONE <handle> <origsize> <dumpsize> <dumptime> <err str> */
+    case DONE: /* DONE <handle> <origsize> <dumpsize> <dumptime> <errstr> */
 	/* everything went fine */
 	origsize = (long)atof(result_argv[3]);
 	dumpsize = (long)atof(result_argv[4]);
@@ -1596,7 +1610,7 @@ dump_to_tape(dp)
 	    free_serial(result_argv[2]);
 	assert(tok == ABORT_FINISHED);
 
-    case TRYAGAIN: /* TRY-AGAIN <handle> <err str> */
+    case TRYAGAIN: /* TRY-AGAIN <handle> <errstr> */
     default:
 	/* dump failed, but we must still finish up with taper */
 	failed = 1;	/* problem with dump, possibly nonfatal */

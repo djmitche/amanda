@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.86 1999/10/03 16:03:00 jrj Exp $
+ * $Id: amanda.h,v 1.87 1999/10/03 21:56:20 jrj Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -497,7 +497,8 @@ extern char  *dbmalloc_areads P((const char *c, int l, int fd));
 extern char  *agets	      P((FILE *file));
 extern char  *areads	      P((int fd));
 #endif
-extern void   areads_relbuf   P((int fd));
+extern ssize_t  areads_dataready  P((int fd));
+extern void     areads_relbuf     P((int fd));
 
 /*
  * amfree(ptr) -- if allocated, release space and set ptr to NULL.
