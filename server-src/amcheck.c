@@ -545,7 +545,7 @@ int fd;
 
         for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
             remove_disk(origqp, dp);
-            sprintf(line, "%s 0\n", dp->name);
+            sprintf(line, "%s %s 0\n", dp->dtype->program, dp->name);
             strcat(req, line);
         }
 	hostcount++;

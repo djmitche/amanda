@@ -31,6 +31,7 @@
 #include "amanda.h"
 #include "statfs.h"
 #include "version.h"
+#include "getfsent.h"
 
 #ifdef SAMBA_CLIENT
 #include "findpass.h"
@@ -44,7 +45,7 @@ char *pname = "selfcheck";
 /* local functions */
 int main P((int argc, char **argv));
 
-static void check_disk P((char *disk, int level));
+static void check_disk P((char *program, char *disk, int level));
 static void check_overall P((void));
 static void check_file P((char *filename, int mode));
 static void check_space P((char *dir, long kbytes));
@@ -54,7 +55,7 @@ int argc;
 char **argv;
 {
     int level;
-    char disk[256];
+    char program[128], disk[256];
 
     /* initialize */
 
@@ -73,8 +74,8 @@ char **argv;
 	    continue;
 	}
 
-	if(sscanf(line, "%s %d\n", disk, &level) != 2) goto err;
-	check_disk(disk, level);
+	if(sscanf(line, "%s %s %d\n", program, disk, &level) != 2) goto err;
+	check_disk(program, disk, level);
     }
 
     check_overall();
@@ -89,16 +90,16 @@ char **argv;
 }
 
 
-static void check_disk(disk, level)
-char *disk;
+static void check_disk(program, disk, level)
+char *program, *disk;
 int level;
 {
     int tstfd;
-    char device[80];
+    char *device;
 
-    if(disk[0] == '/') {
+    if (strcmp(program, "GNUTAR") == 0) {
 #ifdef SAMBA_CLIENT
-	if (disk[1] == '/') {
+        if(disk[0] == '/' && disk[1] == '/') {
 	    char cmd[256], pass[256], domain[256];
 
 	    if (!findpass(disk, pass, domain)) {
@@ -117,24 +118,32 @@ int level;
 	    return;
 	}
 #endif
-
-	/* XXX better check in this case */
-	if(access(disk, R_OK) == -1)
-	    printf("ERROR [can not access %s: %s]\n",
-		   disk, strerror(errno));
-	else
+	device = amname_to_dirname(disk);
+    } else {
+#ifdef OSF1_VDUMP
+        device = amname_to_dirname(disk);
+#else
+        device = amname_to_devname(disk);
+#endif
+    }
+    
+#ifndef CHECK_FOR_ACCESS_WITH_OPEN
+    if(access(device, R_OK) == -1)
+	    printf("ERROR [can not access %s (%s): %s]\n",
+		   device, disk, strerror(errno));
+    else {
 	    printf("OK %s\n", disk);
-	return;
     }
 
-    sprintf(device, "%s%s", RDEV_PREFIX, disk);
-
+#else
+    /* XXX better check in this case */
     if((tstfd = open(device, O_RDONLY)) == -1)
-	printf("ERROR [could not open %s: %s]\n",
-	       device, strerror(errno));
+	printf("ERROR [could not open %s (%s): %s]\n",
+	       device, disk, strerror(errno));
     else
 	printf("OK %s\n", device);
     close(tstfd);
+#endif
 
     /* XXX perhaps do something with level: read dumpdates and sanity check */
 }

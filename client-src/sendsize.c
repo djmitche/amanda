@@ -402,12 +402,15 @@ int level;
     int pipefd[2], nullfd, dumppid;
     long size;
     FILE *dumpout;
-    char dumpkeys[10], device[256];
+    char dumpkeys[10], device[1024];
     int status;
-    char cmd[256];
+    char cmd[4096];
 
-    if(disk[0] == '/') strcpy(device, disk);
-    else sprintf(device, "%s%s", DEV_PREFIX, disk);
+#ifdef OSF1_VDUMP
+    strcpy(device, amname_to_dirname(disk));
+#else
+    strcpy(device, amname_to_devname(disk));
+#endif
 
 #if defined(USE_RUNDUMP) || !defined(DUMP)
     sprintf(cmd, "%s/rundump%s", libexecdir, versionsuffix());

@@ -119,8 +119,8 @@ char *dumpdate;
 {
     int dumpin, dumpout;
     char *host, dumpkeys[80];
-    char device[80];
-    char cmd[256];
+    char device[1024];
+    char cmd[4096];
     
     host = getenv("HOSTNAME");
     if (host == NULL)
@@ -145,11 +145,11 @@ char *dumpdate;
     }
 
     /* invoke dump */
-
-    if(disk[0] == '/')
-	strcpy(device, disk);
-    else
-	sprintf(device, "%s%s", DEV_PREFIX, disk);
+#ifdef OSF1_VDUMP
+    strcpy(device, amname_to_dirname(disk));
+#else
+    strcpy(device, amname_to_devname(disk));
+#endif
 
 #if defined(USE_RUNDUMP) || !defined(DUMP)
     sprintf(cmd, "%s/rundump%s", libexecdir, versionsuffix());
