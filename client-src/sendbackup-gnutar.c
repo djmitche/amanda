@@ -79,7 +79,7 @@ char *disk, *datestamp;
 int level, dataf, mesgf, indexf;
 {
     int dumpin, dumpout;
-    char host[MAX_HOSTNAME_LENGTH], cmd[256];
+    char *host, cmd[256];
     char *dirname;
     char dbprintf_buf[1024];
     int l;
@@ -87,16 +87,10 @@ int level, dataf, mesgf, indexf;
     struct tm *gmtm;
     amandates_t *amdates;
     time_t prev_dumptime;
-#ifndef USE_FQDN
-    char *domain;
-#endif
 
-    host[sizeof(host)-1] = '\0';
-    if(gethostname(host, sizeof(host)-1) == -1)
-	error("error [gethostname: %s]", strerror(errno));
-#ifndef USE_FQDN
-    if((domain = strchr(host, '.'))) *domain++ = '\0';
-#endif
+    host = getenv("HOSTNAME");
+    if (host == NULL)
+      error("environment variable HOSTNAME must be set");
 
     fprintf(stderr, "%s: start [%s:%s level %d datestamp %s]\n",
 	    pname, host, disk, level, datestamp);

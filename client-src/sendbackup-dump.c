@@ -125,13 +125,13 @@ char *disk, *datestamp;
 int level, dataf, mesgf, indexf;
 {
     int dumpin, dumpout;
-    char host[MAX_HOSTNAME_LENGTH], dumpkeys[80];
+    char *host, dumpkeys[80];
     char device[80];
     char cmd[256];
     
-    host[sizeof(host)-1] = '\0';
-    if(gethostname(host, sizeof(host)-1) == -1)
-        error("error [gethostname: %s]", strerror(errno));
+    host = getenv("HOSTNAME");
+    if (host == NULL)
+      error("environment variable HOSTNAME must be set");
 
     fprintf(stderr, "%s: start [%s:%s level %d datestamp %s]\n",
 	    pname, host, disk, level, datestamp);

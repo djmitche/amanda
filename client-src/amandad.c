@@ -118,7 +118,7 @@ struct service_s *servp;
 fd_set insock;
 pkt_t in_msg, out_msg, dup_msg;
 char cmd[256], base[256];
-char *domain, *pwname, **vp;
+char *pwname, **vp;
 struct passwd *pwptr;
 int f, retry_count, rc, reqlen;
 
@@ -126,7 +126,7 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    char *envv[2];
+    char *envv[3];
     char *envp[(sizeof(envv) / sizeof(*envv))];
     char **p = NULL;
     char **q = NULL;
@@ -134,18 +134,21 @@ char **argv;
 
     /* a list of environment variables to be passed to child processes */
     envv[0] = "TZ";
-    envv[1] = (char *)0;
+    envv[1] = "HOSTNAME";
+    envv[2] = (char *)0;
 
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
+
+    pwname = CLIENT_LOGIN;
+    pwptr = getpwnam(pwname);
 
 #ifdef FORCE_USERID
 
     /* we'd rather not run as root */
     if(geteuid() == 0) {
-	pwname = CLIENT_LOGIN;
-	if((pwptr = getpwnam(pwname)) == NULL)
-	    error("error [cannot find user %s in passwd file]\n", pwname);
 #ifdef KRB4_SECURITY
+        if(pwptr == NULL)
+	    error("error [cannot find user %s in passwd file]\n", pwname);
         /*
 	 * if we're using kerberos security, we'll need to be root in
 	 * order to get at the machine's srvtab entry, so we hang on to
@@ -164,8 +167,10 @@ char **argv;
     /* initialize */
 
     chdir("/tmp");
-    umask(0);
+    umask(077);
     dbopen("/tmp/amandad.debug");
+    if (pwptr != NULL)
+        chown("/tmp/amandad.debug", pwptr->pw_uid, getgid());
     {
 	extern int db_file;
 	dup2(db_file, 1);
@@ -189,13 +194,6 @@ char **argv;
 
     strcpy(input_fname, "/tmp/amandad.inpXXXXXX");     mktemp(input_fname);
     strcpy(response_fname, "/tmp/amandad.outXXXXXX");  mktemp(response_fname);
-
-    /* who am I? */
-    /* local_hostname[sizeof(local_hostname)-1] = '\0';*/ /* static variable */
-    if(gethostname(local_hostname, sizeof(local_hostname)-1) == -1)
-        error("gethostname: %s", strerror(errno));
-    domain = strchr(local_hostname, '.');		/* XXX */
-    if(domain) *domain++ = '\0';
 
 #ifdef KRB4_SECURITY
     if(argc >= 2 && !strcmp(argv[1], "-krb4")) {
@@ -229,6 +227,10 @@ char **argv;
 	dbclose();
 	return 1;
     }
+
+    sprintf(local_hostname, "HOSTNAME=%s", in_msg.hostname);
+    putenv(strdup(local_hostname));
+    strcpy(local_hostname, in_msg.hostname);
 
     /* lookup service */
 

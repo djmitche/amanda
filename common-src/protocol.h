@@ -46,6 +46,7 @@ typedef struct {			/* a predigested datagram */
     int version_major, version_minor;
     int sequence;
     char *handle;
+    char *hostname;
     char *service;
     char *program;
     char *security;
@@ -64,6 +65,7 @@ typedef struct proto_s {
     int handleofs;
     char *security;
     int auth_cksum;
+    char *hostname;        /* hostname to be added to a request packet */
     char *req;					/* body of request msg */
     void (*continuation) P((struct proto_s *, pkt_t *));
     void *datap;

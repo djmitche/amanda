@@ -494,6 +494,7 @@ pkt_t *pkt;
 #endif
 
     if(pkt->type == P_REQ) {
+        eat_string(msg, "HOSTNAME");    pkt->hostname = parse_string(msg);
 	eat_string(msg, "SERVICE");     pkt->service = parse_string(msg);
 	eat_string(msg, "PROGRAM");	pkt->program = parse_string(msg);
     }
@@ -524,6 +525,9 @@ proto_t *p;
     dgram_t outmsg;
 
     setup_dgram(p, &outmsg, p->security, "REQ");
+    dgram_cat(&outmsg, "HOSTNAME ");
+    dgram_cat(&outmsg, p->hostname);
+    dgram_cat(&outmsg, " ");
     dgram_cat(&outmsg, p->req);
 
 #ifdef PROTO_DEBUG
@@ -736,6 +740,8 @@ void (*continuation) P((proto_t *p, pkt_t *pkt));
     memcpy(&p->peer.sin_addr, hp->h_addr, hp->h_length);
     p->peer.sin_family = AF_INET;
     p->peer.sin_port = htons(port);
+
+    p->hostname = hostname;
 
     add_bsd_security(p);
 

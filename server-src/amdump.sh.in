@@ -71,6 +71,8 @@ if [ $runuser != $dumpuser ]; then
 	exit 1
 fi
 
+umask 077
+
 # Plan and drive the dumps.
 exec </dev/null >$errfile 2>&1
 $libexecdir/planner$SUF | $libexecdir/driver$SUF
