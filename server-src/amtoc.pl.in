@@ -55,7 +55,7 @@ sub read_info {
 # ------------------------------------------------------------------------
     if (! $use_dbm) {
 	($host, $fs)=split (':', $_[0]);
-	if (open (I, "$admdir/$conf_name/curinfo/$host/$fs/info")) {
+	if (open (I, "$infofile/$host/$fs/info")) {
 	    while (<I>) {
 		chomp;
 		@field=split;
@@ -180,18 +180,17 @@ sub init {
 
             # where to find the directories which hold the
 	    # administration files
-            $admdir=`cd $confdir/$conf_name && $libexecdir/getconf$suf logfile`;
-	    chomp $admdir;
-            $admdir =~ s!(.*)(/.*){2}!$1!o;
+            $infofile=`cd $confdir/$conf_name && $libexecdir/getconf$suf infofile`;
+	    chomp $infofile;
 
-	    if (-d "$admdir/$conf_name/curinfo") {
+	    if (-d "$infofile") {
 		$use_dbm = 0;
 	    } else {
 		$use_dbm = 1;
 	    }
 	    if ($use_dbm) {
-		dbmopen(%curinfo,"$admdir/$conf_name/curinfo",400)
-		    || die ("cannot open dbm_file $admdir/$conf_name/curinfo\n");
+		dbmopen(%curinfo,"$infofile",400)
+		    || die ("cannot open dbm_file $infofile\n");
 	    }
 	}
 	elsif ($ARGV[$i] eq '-l') {
@@ -251,7 +250,8 @@ sub init {
 	close(STDOUT);
 	$t=$tape_name;
 	$t=~s,[\s/],_,g;
-	$toc="$admdir/$conf_name/$t.toc";
+	($toc=$infofile) =~ s![^/]*$!!;		# remove last path element
+	$toc.="$t.toc";
 	open(FOUT,"> $toc") || die "Cannot open toc file ($toc)\n";
 	select(FOUT) || die "Cannot select output file\n";
 	$| = 1; $= =10000; $- = 10000;
