@@ -1,3 +1,10 @@
+1998-07-11  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/FAQ: new entries: how to label tapes, (not) spanning large
+ 	filesystems across tapes, how to enable index generation,
+ 	overwriting selected tapes, cleaning up databases, selecting tape
+ 	changer.
+	
 1998-07-10  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* man/Makefile.am (EXTRA_DIST): amreport.8 is built from .8.in
