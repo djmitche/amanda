@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.31 1997/12/13 05:12:21 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.32 1997/12/16 01:01:56 amcore Exp $
  *
  * send backup data using GNU tar
  */
@@ -332,10 +332,10 @@ char *dumpdate;
 #ifdef ENABLE_GNUTAR_ATIME_PRESERVE
 	strcat(sprintf_buf, "--atime-preserve ");
 #endif
-	strcat(sprintf_buf, "--ignore-failed-read --totals --file - %s.\n");
+	strcat(sprintf_buf, "--ignore-failed-read --totals --file - %s .\n");
 
 	sprintf(dbprintf_buf, sprintf_buf, 
-			dumppid, cmd, efile, dirname,
+			dumppid, cmd, dirname,
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
 			incrname,
 #else
