@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.32 1998/03/17 01:43:52 martinea Exp $
+/* $Id: taper.c,v 1.33 1998/03/23 17:21:51 amcore Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -698,7 +698,7 @@ char *handle, *hostname, *diskname, *datestamp;
 		sprintf(desc + offset, "%i", level);
 
 	        strncpy(vol_label, desc, 44);
-		fprintf(stderr, "taper: added vtbl volume string %i: \"%s\"\n",
+		fprintf(stderr, "taper: added vtbl label string %i: \"%s\"\n",
 			filenum, vol_label);
 		fflush(stderr);
 
@@ -794,7 +794,7 @@ int getp, putp;
 
 #ifdef HAVE_LIBVTBLC
     char *vol_label;
-    char * vol_date;
+    char *vol_date;
 #endif /* HAVE_LIBVTBLC */
 
     procname = "writer";
@@ -834,7 +834,7 @@ int getp, putp;
 	case 'L':		/* read vtbl label */
 	    vtbl_no = syncpipe_getint();
 	    vol_label = syncpipe_getstr();
-	    fprintf(stderr, "taper: read label string %s from pipe\n", 
+	    fprintf(stderr, "taper: read label string \"%s\" from pipe\n", 
 		    vol_label);
 	    strncpy(vtbl_entry[vtbl_no].label, vol_label, 45);
 	    break;
@@ -842,7 +842,7 @@ int getp, putp;
 	case 'D':		/* read vtbl date */
 	    vtbl_no = syncpipe_getint();
 	    vol_date = syncpipe_getstr();
-	    fprintf(stderr, "taper: read date string %s from pipe\n", 
+	    fprintf(stderr, "taper: read date string \"%s\" from pipe\n", 
 		    vol_date);
 	    strncpy(vtbl_entry[vtbl_no].date, vol_date, 20);
 	    break;

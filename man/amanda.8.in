@@ -343,6 +343,13 @@ If you have configured a tape changer
 option), this option is not used
 and should be commented out of your configuration file.
 .TP
+.BS rawtapedev string
+Default:
+.IR @DEFAULT_RAW_TAPE_DEVICE@ .
+The path name of the raw tape device.
+It is only used if amanda is compiled for Linux machines with floppy tapes.
+It is needed for QIC volume table operations.
+.TP
 .BS tpchanger string
 Default:
 .IR none .

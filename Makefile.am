@@ -22,6 +22,7 @@ EXTRA_DIST = \
 	docs/SYSTEM.NOTES		docs/TAPE.CHANGERS		\
 	docs/TAPETYPES			docs/UPGRADE			\
 	docs/WHATS.NEW			docs/WISHLIST			\
+	docs/ZFTAPE			\
 	patches/regex-3.6alpha.patch	patches/samba-largefs.patch	\
 	patches/tar-1.12.patch		\
 	regex-src/COPYRIGHT		regex-src/Makefile 		\
