@@ -152,6 +152,12 @@ server would have to keep listening for clients backup requests for a
 configurable period of time.  This could be used to back up secure
 hosts, for instance.
 
+* Backups to remote tape devices (i.e., not in the main amanda
+server), as well as to filesystems, should be supported.  Instead of
+hard-coding the interface with tape devices in amanda, there should be
+a higher level interface that allowed different storage devices to be
+used.
+
 * Insert your favorite feature here, and send me mail telling about what
 you'd like to see!  Of course, I can't please everyone, and can't implement
 everything, but I am very interested in how other sites operate so that we
