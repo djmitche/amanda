@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.77 2001/01/25 00:25:30 jrjackson Exp $
+ * $Id: conffile.c,v 1.78 2001/06/21 22:39:02 jrjackson Exp $
  *
  * read configuration file
  */
@@ -1679,6 +1679,9 @@ static void get_comprate()
 
     get_simple(&var, &dpcur.s_comprate, REAL);
     dpcur.comprate[0] = dpcur.comprate[1] = var.r;
+    if(dpcur.comprate[0] < 0) {
+	parserror("full compression rate must be >= 0");
+    }
 
     get_conftoken(ANY);
     switch(tok) {
@@ -1692,6 +1695,9 @@ static void get_comprate()
 
     get_conftoken(REAL);
     dpcur.comprate[1] = tokenval.r;
+    if(dpcur.comprate[1] < 0) {
+	parserror("incremental compression rate must be >= 0");
+    }
 }
 
 keytab_t compress_keytable[] = {

@@ -1,3 +1,11 @@
+2001-06-21 John R. Jackson <jrj@purdue.edu>
+
+	* server-src/planner.c: If the compression rate is very small (such
+	  as zero after some types of errors) and FORCE_FULL is set, a path
+	  is taken that (among other bad things) generates a schedule that
+	  driver cannot read (syntax errors).
+	* server-src/conffile.c: Do not allow negative comprate values.
+
 2001-06-19 John R. Jackson <jrj@purdue.edu>
 
 	* server-src/holding.c: Use fullread() instead of read() to read the
