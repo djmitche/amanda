@@ -1,3 +1,8 @@
+2002-11-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* common-src/debug.c: Most of the code must in #ifdef DEBUG_CODE.
+	* client-src/client_util.c: Use AMANDA_TMPDIR instead of AMANDA_DBGDIR.
+
 2002-11-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* docs/TAPE.CHANGERS: Sync with 2.4.3.
@@ -17,7 +22,7 @@
 
 2002-11-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
-	* tape-src/output-tape.c: Add Retry and Skip command to amrecover.
+	* recover-src/extract_list.c: Add Retry and Skip command to amrecover.
 
 2002-11-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
@@ -165,7 +170,7 @@
 
 2002-11-01  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
-	* configure.in (SHELL): Dont' set it, libtool do it.
+	* configure.in (SHELL): Don't set it, libtool do it.
 
 2002-10-31  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 

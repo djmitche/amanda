@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.31 2002/03/31 21:02:00 jrjackson Exp $
+ * $Id: debug.c,v 1.32 2002/11/25 18:06:31 martinea Exp $
  *
  * debug log subroutines
  */
@@ -53,6 +53,7 @@ static pid_t debug_prefix_pid = 0;
 #  define AMANDA_DBGDIR		AMANDA_TMPDIR
 #endif
 
+#ifdef DEBUG_CODE
 /*
  * Format and write a debug message to the process debug file.
  */
@@ -352,3 +353,4 @@ char *debug_prefix_time(suffix)
     errno = save_errno;
     return s;
 }
+#endif
