@@ -1,3 +1,9 @@
+1999-03-15  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* config/ltconfig, config/ltmain.sh: updated from libtool 1.2f
+	* config/libtool.m4i, config/config.guess, config/config.sub: ditto
+	* configure.in: dropped AC_PROG_RANLIB, as suggested by libtoolize
+
 1999-03-14  Mathias Herberts  <Mathias.Herberts@ago.fr>
 
 	* man/amrecover.8.in: document mode and setmode
