@@ -39,7 +39,7 @@
 #define MAXLINE 4096
 
 char line[MAXLINE];
-char *pname = "selfcheck-dump";
+char *pname = "selfcheck";
 
 /* local functions */
 int main P((int argc, char **argv));
@@ -145,7 +145,9 @@ static void check_overall()
     struct stat buf;
     int testfd;
 #endif
+#ifdef DUMP
     check_file(DUMP, X_OK);
+#endif
 #ifdef XFSDUMP
     check_file(XFSDUMP, X_OK);
 #endif
@@ -169,10 +171,12 @@ static void check_overall()
 	printf("ERROR [unable to access /etc/amandapass?]\n");
 #endif
     check_file(COMPRESS_PATH, X_OK);
+#if defined(DUMP) || defined(XFSDUMP)
 #ifdef OSF1_VDUMP
     check_file("/etc/vdumpdates", R_OK|W_OK);
 #else
     check_file("/etc/dumpdates", R_OK|W_OK);
+#endif
 #endif
     check_file("/dev/null", R_OK|W_OK);
     check_space("/tmp", 64);		/* for amandad i/o */

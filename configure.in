@@ -818,8 +818,6 @@ fi
 AC_PATH_PROGS(DUMP,$DUMP_PROGRAMS,,$SYSLOCPATH)
 if test "$DUMP"; then
     AC_DEFINE_UNQUOTED(DUMP,"$DUMP")
-else
-    AC_DEFINE_UNQUOTED(DUMP,"/no/dump/available")
 fi
 case "$DUMP" in
     *vdump*)
@@ -831,8 +829,6 @@ esac
 AC_PATH_PROGS(RESTORE,ufsrestore vrestore restore,,$SYSLOCPATH)
 if test "$RESTORE"; then
     AC_DEFINE_UNQUOTED(RESTORE,"$RESTORE")
-else
-    AC_DEFINE_UNQUOTED(RESTORE,"/no/restore/available")
 fi
 
 AC_PATH_PROGS(XFSDUMP,xfsdump,,$SYSLOCPATH)

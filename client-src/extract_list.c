@@ -2,13 +2,22 @@
 *
 * File:          $RCSfile: extract_list.c,v $
 *
-* Revision:      $Revision: 1.1 $
-* Last Edited:   $Date: 1997/03/15 21:29:58 $
-* Author:        $Author: amcore $
+* Revision:      $Revision: 1.2 $
+* Last Edited:   $Date: 1997/03/19 11:41:08 $
+* Author:        $Author: oliva $
 *
 * History:       $Log: extract_list.c,v $
-* History:       Revision 1.1  1997/03/15 21:29:58  amcore
-* History:       Initial revision
+* History:       Revision 1.2  1997/03/19 11:41:08  oliva
+* History:       If no DUMP program is found, amcheck no longer produces error
+* History:       messages.  If any filesystem is to be backed up with DUMP but
+* History:       configure did not find a DUMP program, rundump will be invoked and it
+* History:       will say that no DUMP program is available.
+* History:
+* History:       If no RESTORE program is found, amrecover will not invoke it.  An
+* History:       error message will be printed instead.
+* History:
+* History:       Revision 1.1.1.1  1997/03/15 21:29:58  amcore
+* History:       Mass import of 2.3.0.4 as-is.  We can remove generated files later.
 * History:
 * History:       Revision 1.15  1997/01/28 07:28:33  alan
 * History:       forgot to malloc space for restore_args[3]
@@ -566,6 +575,9 @@ EXTRACT_LIST *elist;
 
     restore_args[no_initial_params + files_off_tape] = NULL;
 	    
+#ifndef RESTORE
+    fprintf(stderr, "RESTORE program not available.\n");
+#else
     dbprintf(("Exec'ing %s with arguments:\n", RESTORE));
     for (i = 0; i < no_initial_params + files_off_tape; i++)
 	dbprintf(("\t%s\n", restore_args[i]));
@@ -575,6 +587,7 @@ EXTRACT_LIST *elist;
 
     /* only get here if exec failed */
     perror("amrecover couldn't exec restore");
+#endif
     exit(1);
     /*NOT REACHED */
 }

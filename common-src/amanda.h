@@ -275,13 +275,6 @@ extern void debug_printf P((char *format, ...));
 #define ERR_SYSLOG	2
 #define ERR_AMANDALOG	4
 
-/*
- * fetch away some errors (cleanup later)
-*/
-#ifndef DUMP
-# define DUMP "/dev/null"
-#endif
-
 extern int   erroutput_type;
 extern void  error     P((char *format, ...));
 extern int   onerror   P((void (*errf)(void)));

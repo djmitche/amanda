@@ -168,7 +168,7 @@ int level, dataf, mesgf;
     else
 	sprintf(device, "%s%s", DEV_PREFIX, disk);
 
-#ifdef USE_RUNDUMP
+#if defined(USE_RUNDUMP) || !defined(DUMP)
     sprintf(cmd, "%s/rundump%s", libexecdir, versionsuffix());
 #else
     sprintf(cmd, "%s", DUMP);

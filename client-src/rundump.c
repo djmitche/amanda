@@ -18,11 +18,19 @@ char **argv;
     dbopen("/tmp/rundump.debug");
     dbprintf(("%s: version %s\n", argv[0], version()));
 
-#ifndef USE_RUNDUMP
-    fprintf(stderr,"rundump not enabled on this system.\n");
-    dbprintf(("%s: rundump not enabled on this system.\n", argv[0]));
+#if !defined(DUMP) || !defined(USE_RUNDUMP)
+
+#ifndef DUMP
+#define ERRMSG "DUMP not available on this system.\n"
+#else
+#define ERRMSG "rundump not enabled on this system.\n"
+#endif
+
+    fprintf(stderr, ERRMSG);
+    dbprintf(("%s: " ERRMSG, argv[0]));
     dbclose();
     return 1;
+
 #else
 
 #ifdef FORCE_USERID
