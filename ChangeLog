@@ -1,5 +1,10 @@
 1998-11-24  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/amanda.h: uhh, every other decl has a leading
+	'extern' so writev() should as well
+
+1998-11-24  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/amanda.h: if no writev() decl exists, declare one
 
 1998-11-24  Mike Grupenhoff <kashmir@munge.com>
