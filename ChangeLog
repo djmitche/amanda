@@ -1,3 +1,8 @@
+2001-05-07 John R. Jackson <jrj@purdue.edu>
+
+	* client-src/sendbackup-dump.c: Do not use full path to sed.  Found by
+	  Roland E. Lipovits (rel@lipo.at0.net).
+
 2001-05-04 John R. Jackson <jrj@purdue.edu>
 
 	* config/depcomp: Fix problem with argument processing and update to
