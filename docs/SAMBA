@@ -13,6 +13,9 @@ that will act as the 'samba server' host.  This will most likely be the
 same machine as the Amanda master server.  This patch also works fine
 with newer releases of samba.
 
+It is possible that releases newer than 1.9.16p11 of samba will not
+require this patch.  When in doubt, try to apply the patch yourself.
+
 Then, Amanda must be configured with smbclient support - when you
 run configure, add the following argument:
 

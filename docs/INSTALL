@@ -1,7 +1,7 @@
-Amanda 2.3.0.4 INSTALLATION NOTES
+Amanda 2.4.0 INSTALLATION NOTES
 
 This document covers the compilation, installation, and runtime setup
-of Amanda 2.3.0.4.
+of Amanda 2.4.0.
 
 0. BEFORE DOING ANYTHING
 
@@ -31,13 +31,13 @@ to compile some of the Amanda programs (see section 1.2.H below).
     A.  Amanda can optionally make use of the following packages to
 	back up different types of clients or clients with different
 	filesystem dumping programs.  If you wish to use GNU tar to
-	back up filesystems, then install version 1.11.14 from
+	back up filesystems, then install version 1.12 from
 
-		ftp://alpha.gnu.ai.mit.edu/gnu/tar-1.11.14.tar.gz
+		ftp://prep.ai.mit.edu/pub/gnu/tar-1.12.tar.gz
  
 	Samba allows Unix systems to talk to PC clients.  Amanda can
 	now back up PC clients using the following package
-		ftp://nimbus.anu.edu.au/pub/tridge/samba/samba-1.9.16p9.tar.gz
+		ftp://nimbus.anu.edu.au/pub/tridge/samba/samba-1.9.16p11.tar.gz
 	and with the patch in patches/samba-1.9.16p2.patch installed.
 
     B.  If you wish to make use of some of the scripts that come with
@@ -56,7 +56,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	version of awk that understands command line variable
 	substitutions, such as nawk or gawk, which is available from
 
-	    ftp://prep.ai.mit.edu/pub/gnu/gawk-3.0.2.tar.gz
+	    ftp://prep.ai.mit.edu/pub/gnu/gawk-3.0.3.tar.gz
 
 	Amplot also required that gnuplot be installed on your system.
 	Gnuplot is available at
@@ -67,7 +67,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	packages be installed on your system.  The following packages
 	are used:
 
-	    ftp://prep.ai.mit.edu/readline-2.0.tar.gz
+	    ftp://prep.ai.mit.edu/pub/gnu/readline-2.1.tar.gz
 		Amanda uses the readline library here.  Some patches
 		are included with this version of Amanda to fix some
 		problems with the compilation of this package.
@@ -78,9 +78,10 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	configuration scripts.  Bison and flex are only needed if you
 	are going to work on the index server and client code.
 	    ftp://prep.ai.mit.edu/pub/gnu/autoconf-2.12.tar.gz
-	    ftp://ftp.cygnus.com/pub/home/tromey/automake-1.1l.tar.gz
+	    ftp://prep.ai.mit.edu/pub/gnu/autoconf/automake-1.2.tar.gz
+	    ftp://prep.ai.mit.edu/pub/gnu/libtool-1.0.tar.gz
 	    ftp://prep.ai.mit.edu/pub/gnu/bison-1.25.tar.gz
-	    ftp://prep.ai.mit.edu/pub/gnu/flex-2.5.4.tar.gz
+	    ftp://prep.ai.mit.edu/pub/gnu/flex-2.5.4a.tar.gz
 
     E.  Read about the different configuration options available for
 	building and running Amanda.  To see the options, do both:
@@ -105,29 +106,34 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	configure option to change the location of this part of
 	Amanda.
 
-	    $prefix/bin			Amanda server side programs
-					--bindir=
+	    $prefix/sbin		Amanda server side programs
+					--sbindir=
 	    $prefix/libexec		Amanda backup client programs
 					--libexecdir=
+	    $prefix/lib			Amanda dynamic libraries
+					--libdir=
 	    $prefix/etc/amanda		Runtime configuration files
 					--with-configdir=
 	    $prefix/var/amanda		Directory for database files
 					--with-dbdir=
 	    $prefix/var/amanda		Directory for log files
 					--with-logdir=
-	    $prefix/var/amanda-index	Directory for index of dumps
+	    $prefix/var/amanda/index	Directory for index of dumps (server)
 					--with-indexdir=
+	    $prefix/var/amanda/gnutar-lists
+					Directory for GNUtar lists (client)
+					--with-gnutar-listdir=
 	    $prefix/man			Directory for manual pages
 					--mandir=
 
     H.  Decide if you are compiling Amanda on a server only or a
 	client only platform.  If you have a particular operating system
 	that will only be a Amanda client and will never run as the
-	master tape host, then add the --with-client-only option to
+	master tape host, then add the --without-server option to
 	configure.  In the unlikely case that you have a particular
 	operating system that will serve as the tape host and you do
 	not wish to back up any machines that run this operating system,
-	add the --with-server-only option to the configure options.
+	add the --without-client option to the configure options.
 
     I.  Now configure Amanda.  There are two ways of doing this.  If
 	you are running Amanda on a single OS, then probably the first
@@ -277,6 +283,10 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	that no inetd services (like rlogin) are currently in use,
 	otherwise inetd will not be able to bind that port and that
 	service will be unavailable.
+
+    F.  If you intend to back up xfs filesystems on hosts running IRIX,
+	you must create the directory /var/xfsdump/inventory, otherwise
+	xfsdump will not work.
 
 THAT'S IT!  YOU ARE READY TO RUN, UNLESS I FORGOT SOMETHING.  PLEASE
 send mail to amanda-users@cs.umd.edu if you have any comments or
