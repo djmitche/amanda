@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.66 1999/05/14 21:57:36 kashmir Exp $
+ * $Id: conffile.c,v 1.67 1999/08/15 08:04:37 oliva Exp $
  *
  * read configuration file
  */
@@ -606,7 +606,7 @@ static void init_defaults()
     conf_runspercycle.i	= 0;
     conf_tapecycle.i	= 15;
     conf_runtapes.i	= 1;
-    conf_disksize.i	= 200*1024;
+    conf_disksize.i	= 0;
     conf_netusage.i	= 300;
     conf_inparallel.i	= 10;
     conf_maxdumps.i	= 1;

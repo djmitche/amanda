@@ -655,10 +655,11 @@ The path to this holding area.
 .TP
 .BN use int
 Default:
-.IR "10 Mbytes" .
+.IR "0 Gb" .
 Amount of space that can be used in this holding disk area.
 If the value is negative,
 Amanda will use all available space minus that value.
+The default is to use all available space.
 .TP
 .BN chunksize int
 Default:
