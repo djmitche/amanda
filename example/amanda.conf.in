@@ -312,6 +312,9 @@ define tapetype MIMSY-MEGATAPE {
 #			       prototype.  Amanda then backs up just the
 #			       changes.
 #		  "noinc"    - do level 0 dumps every time.
+#			       Unfortunately, this is not currently
+#			       implemented.  Use `dumpcycle 0'
+#			       instead.
 #		  "skip"     - skip all dumps.  Useful for sharing a single
 #			       disklist in several configurations.
 #		  Default: [strategy standard]
