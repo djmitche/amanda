@@ -18,6 +18,7 @@ kind of trouble.  However, you must apply the patch in
 patches/gcc-sol26.patch for Solaris 2.6's header files to be fixed
 correctly.
 
+---------------------------------------------------------------------------
 SunOS 4.x
 ---------
 
@@ -49,13 +50,6 @@ necessary for you, just configure --without-rundump.
 HP/UX
 -----
 
-It has been reported that amandad core dumps on HP/UX 10 if compiled
-against a shared amanda or amclient library.  Issuing
---disabled-shared at configure time has fixed this problem.  If you
-get shared libraries running correctly on HP/UX, please report this to
-the amanda-hackers mailing list so that this note can be updated, as
-it may be a transitory gcc (2.7.2) or libtool (1.0) bug.
-
 If you use logical volumes, you may refer to mountpoints or full
 device pathnames instead of device names in the disk list file.
  
@@ -66,14 +60,6 @@ script.  The error message is:
 
 Using /bin/posix/sh usually works around the problem.  Another
 solution is to install GNU bash and use it instead of /bin/sh.
-
----------------------------------------------------------------------------
-AIX
----
-
-People have found problems regarding shared libraries support on AIX.
-We hope libtool 1.0h, distributed with amanda-2.4.0b5, fixes this
-problem.  If it does not, --disable-shared at configure time.
 
 ---------------------------------------------------------------------------
 Linux
@@ -87,6 +73,11 @@ versions of dump on most Linux sites and CD-ROMs.
 Make sure the user that runs configure has permission to run the dump
 program, otherwise configure may misdetect an ability of dump to
 accept a -E (for estimates) switch.
+
+GNUtar 1.11.8, distributed with some Linux versions, will cause index
+failures (Index returned -1).  Upgrading to GNUtar 1.12 fixes this
+problem.  This is not a Linux-specific problem, but it is quite common
+in this platform.
 
 ---------------------------------------------------------------------------
 Digital Unix 4
