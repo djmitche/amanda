@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-solaris.c,v 1.1.2.17 2000/10/24 23:49:39 martinea Exp $
+ * $Id: scsi-solaris.c,v 1.1.2.18 2000/12/07 19:58:52 ant Exp $
  *
  * Interface to execute SCSI commands on an Sun Workstation
  *
@@ -169,6 +169,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
   {
     if ((ret = ioctl(DeviceFD, USCSICMD, &Command)) >= 0)
     {
+       ret = Command.uscsi_status;
        break;
     }
     dbprintf(("ioctl on %d failed, errno %d, ret %d\n",DeviceFD, errno, ret));

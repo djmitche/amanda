@@ -1,3 +1,12 @@
+2000-12-07 Thomas Hepper <th@ant.han.de>
+
+	changer-src/scsi-changer-driver.c: Added Exabyte 230D Sense Handler
+	(patch from Gary Algier gaa@ulticom.com)
+	Fixed some compile warnings (-Wshadow)
+	changer-src/scsi-solaris.c: Changed the return Value from 
+	SCSI_ExecuteCommand to the value of Command.uscsi_status if
+	the return value of the ioctl is > 0
+
 2000-12-04 John R. Jackson  <jrj@purdue.edu>
 
 	server-src/amdump.sh.in: Temporary fix for $LOGNAME vs whoami problem.
@@ -1236,7 +1245,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.419 2000/12/04 22:49:11 jrjackson Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.420 2000/12/07 19:58:51 ant Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
