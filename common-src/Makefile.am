@@ -55,7 +55,7 @@ EXTRA_PROGRAMS = genversion $(TEST_PROGS)
 genversion_SOURCES = genversion.c
 genversion_LDADD = versuff.$(OBJ_EXTENSION) $(libamanda_a_LIBADD)
 
-genversion.o: genversion.h
+genversion.o: genversion.c genversion.h
 genversion.h: $(top_builddir)/config.status
 	-rm -f $@ $@.new
 	echo '#define CC "$(CC)"' > $@.new

@@ -1,3 +1,9 @@
+1999-08-15  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* common-src/Makefile.am (genversion.o): Depend on genversion.c
+	too.  It seems that IRIX's make doesn't work without it.
+	Reported by Brian Cuttler <brian@wadsworth.org>
+
 1999-08-15  Jon LaBadie  <jon@jgcomp.com>
 	
 	* tape-src/tapetype.c: Speed it up by using larger sections in the
