@@ -1,3 +1,7 @@
+2000-01-21  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* man/amtoc.8.in: Document -w.
+
 2000-01-21  David Wolfskill  <dhw@whistle.com>
 
 	* server-src/amtoc.pl.in: Add `-w' to add new lines and form feeds.
@@ -747,7 +751,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.330 2000/01/21 08:17:11 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.331 2000/01/21 08:21:54 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
