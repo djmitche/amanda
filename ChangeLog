@@ -1,5 +1,9 @@
 2001-08-01 John R. Jackson (jrj@purdue.edu)
 
+	* common-src/debug.c: Only rename files that end in ".debug".
+
+2001-08-01 John R. Jackson (jrj@purdue.edu)
+
 	* common-src/pipespawn.c: Show empty pipespawn() args as "".
 
 2001-07-31 John R. Jackson (jrj@purdue.edu)
