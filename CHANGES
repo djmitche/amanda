@@ -1,15 +1,19 @@
 Version 2.4.0b4
 
+	Planner would core dump if it had to delay dumps.  -Georg
+	Rehfeld<georg@deerwood.hanse.de>
+
 	Added patch for samba to support very long filenames.  -Todd
 	Pfaff <todd@edge.cis.mcmaster.ca>
 
-	Added VXDUMP support to estimate program.  -oliva
+	Added VXDUMP support to estimate program.  -oliva & John
+	R. Jackson <jrj@cc.purdue.edu>
 
 	Fixed amflush so that it cd's to the configuration directory
 	before invoking reporter.  -oliva
 
 	driver no longer opens the infofile, so a deadlock is
-	prevented.  -oliva
+	prevented.  -oliva & John R. Jackson <jrj@cc.purdue.edu>
 
 	Fixed typo in sendbackup-dump that would prevent compilation
 	if either xfsdump or vxdump were enabled.  -oliva
@@ -57,9 +61,10 @@ Version 2.4.0b2
 	--with-testing now supports a trailing argument, that
 	specifies the a string to be appended to service names.  -oliva
 
-	Samba is now invoked with -E, so that error messages are
-	logged to stdout, not to syslog.  -Ernie Oporto
-	<ernie_oporto@MENTORG.COM>
+	Recent versions of Samba require additional arguments so that
+	estimates and total sizes are logged to stdout, not to syslog.
+	-Ernie Oporto <ernie_oporto@MENTORG.COM> & Norbert Holzknecht
+	<Holzknecht@fs31.vdeh-bfi.de>
 
 Version 2.4.0b1
 
