@@ -17,7 +17,7 @@ SUFFIXES =		.pl .sh
 noinst_LIBRARIES =	libscsi.a
 
 libscsi_a_SOURCES =	scsi-hpux.c scsi-chio.c
-EXTRA_DIST = chg-chio.c scsi-proto.c
+EXTRA_DIST = scsi-proto.c
 
 chg_scsi_SOURCES =	chg-scsi.c libscsi.h
 
