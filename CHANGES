@@ -1,3 +1,7 @@
+	ensure that `amadmin find' reports multiple backups performed on
+	the same day in the correct sequence.
+	-Liudvikas Bukys <bukys@cs.rochester.edu>
+
 	chg-chio was renamed to chg-scsi, and now it will support not
 	only chio.h, but also tape changer interfaces available on
 	HPUX, Solaris 2.5, IRIX and possibly others.  Currently, only
@@ -14,6 +18,9 @@
 	new index generation commands.  -oliva
 
 Version 2.4.0
+
+	fix xfsdump index generation command.
+	-Robert Tarrall <tarrall@bamboo.colorado.edu>
 
 	tape device wouldn't rewind if opened O_WRONLY.
 	-Palle Girgensohn <girgen@partitur.se> & oliva
