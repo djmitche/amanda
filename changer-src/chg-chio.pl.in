@@ -393,6 +393,9 @@ if ( $opt_slot ) {
 	}
 	if ( $opt_slot =~ /next/ ) {
 		$tape = $currentTape+1;
+		if ( $tape > $max_slot ) {
+			$tape = 1;
+		}
 		while ( $slots[$tape-1] == 0 ) {        # there is at least 1 
 			if ( ++$tape > $max_slot ) {
 				$tape = 1;
@@ -404,6 +407,9 @@ if ( $opt_slot ) {
 	}
 	if ( $opt_slot =~ /prev/ ) {
 		$tape = $currentTape-1;
+		if ( $tape < 1 ) {
+			$tape = $max_slot;
+		}
 		while ( $slots[$tape-1] == 0 ) {        # there is at least 1
 			if ( --$tape < 1 ) {
 				$tape = $max_slot;

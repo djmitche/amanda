@@ -1,3 +1,7 @@
+2003-07-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+* changer-src/chg-chio.pl.in: Fix next/prev command.
+
 2003-07-06  Thomas Hepper <th@ant.han.de>
 	* changer-src/chg-scsi.c: Added debug Information to see which sg
 	 version is used
