@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.58 2000/12/30 18:29:24 martinea Exp $
+ * $Id: amflush.c,v 1.59 2000/12/31 16:23:18 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -119,10 +119,6 @@ char **main_argv;
     if (read_diskfile(conf_diskfile, &diskq) < 0)
 	error("could not read disklist file \"%s\"", conf_diskfile);
     match_disklist(&diskq, main_argc-2, main_argv+2);
-    for(dp = diskq.head; dp != NULL; dp = dp->next) {
-	if(dp->todo)
-	    log_add(L_DISK, "%s %s", dp->host->hostname, dp->name);
-    }
     amfree(conf_diskfile);
 
     conf_tapelist = getconf_str(CNF_TAPELIST);
@@ -158,6 +154,11 @@ char **main_argv;
 				 NULL);
     logroll_program = vstralloc(libexecdir, "/", "amlogroll", versionsuffix(),
 				NULL);
+
+    for(dp = diskq.head; dp != NULL; dp = dp->next) {
+	if(dp->todo)
+	    log_add(L_DISK, "%s %s", dp->host->hostname, dp->name);
+    }
 
     holding_list = pick_datestamp();
     confirm();
