@@ -16,112 +16,162 @@ va_dcl
 #endif
 {
     va_list ap;
-#define MAX_PIPESPAWN_ARGS	32
-    char *argv[MAX_PIPESPAWN_ARGS+1];
-    int pid, i, inpipe[2], outpipe[2], errpipe[2];
+    int argc;
+    char **argv;
+    int pid, i, inpipe[2], outpipe[2], errpipe[2], passwdpipe[2];
+    char *passwdvar = NULL;
+    int *passwdfd = NULL;
+    char number[NUM_STR_SIZE];
+    char *arg;
     char *e;
+    int ch;
+    char **env;
+    char **newenv;
 
-    dbprintf(("%s: spawning \"%s\" in pipeline\n", get_pname(), prog));
+    /*
+     * Log the command line and count the args.
+     */
+    dbprintf(("%s: spawning %s in pipeline\n", get_pname(), prog));
     dbprintf(("%s: argument list:", get_pname()));
-    arglist_start(ap, stderrfd);		/* setup argv */
-    for(i = 0; i < MAX_PIPESPAWN_ARGS; i++) {
-	char *arg = arglist_val(ap, char *);
-	if (arg == NULL)
-	  break;
-	if (arg == skip_argument)
-	  continue;
-	dbprintf((" \"%s\"", arg));
+    arglist_start(ap, stderrfd);
+    if ((pipedef & PASSWD_PIPE) != 0) {
+	passwdvar = arglist_val(ap, char *);
+	passwdfd = arglist_val(ap, int *);
+    }
+    argc = 0;
+    while((arg = arglist_val(ap, char *)) != NULL) {
+	if (arg == skip_argument) {
+	    continue;
+	}
+	argc++;
+	dbprintf((" "));
+	for(i = 0; (ch = arg[i]) != '\0' && isprint(ch) && ch != ' '; i++) {}
+	if(ch != '\0') {
+	    dbprintf(("\""));
+	}
+	dbprintf(("%s", arg));
+	if(ch != '\0') {
+	    dbprintf(("\""));
+	}
     }
     arglist_end(ap);
     dbprintf(("\n"));
 
+    /*
+     * Create the pipes
+     */
+    if ((pipedef & STDIN_PIPE) != 0) {
+	if(pipe(inpipe) == -1) {
+	    error("error [open pipe to %s: %s]", prog, strerror(errno));
+	}
+    }
+    if ((pipedef & STDOUT_PIPE) != 0) {
+	if(pipe(outpipe) == -1) {
+	    error("error [open pipe to %s: %s]", prog, strerror(errno));
+	}
+    }
+    if ((pipedef & STDERR_PIPE) != 0) {
+	if(pipe(errpipe) == -1) {
+	    error("error [open pipe to %s: %s]", prog, strerror(errno));
+	}
+    }
+    if ((pipedef & PASSWD_PIPE) != 0) {
+	if(pipe(passwdpipe) == -1) {
+	    error("error [open pipe to %s: %s]", prog, strerror(errno));
+	}
+    }
 
-    if ((pipedef & STDIN_PIPE) != 0)
-      if(pipe(inpipe) == -1) {
-	e = strerror(errno);
-	dbprintf(("error [open pipe to %s: %s]\n", prog, e));
-	error("error [open pipe to %s: %s]", prog, e);
-      }
-    if ((pipedef & STDOUT_PIPE) != 0)
-      if(pipe(outpipe) == -1) {
-	e = strerror(errno);
-	dbprintf(("error [open pipe to %s: %s]\n", prog, e));
-	error("error [open pipe to %s: %s]", prog, e);
-      }
-    if ((pipedef & STDERR_PIPE) != 0)
-      if(pipe(errpipe) == -1) {
-	e = strerror(errno);
-	dbprintf(("error [open pipe to %s: %s]\n", prog, e));
-	error("error [open pipe to %s: %s]", prog, e);
-      }
-    
-
+    /*
+     * Fork and set up the return or run the program.
+     */
     switch(pid = fork()) {
     case -1:
-      e = strerror(errno);
-      dbprintf(("error [fork %s: %s]\n", prog, e));
-      error("error [fork %s: %s]", prog, e);
+	e = strerror(errno);
+	error("error [fork %s: %s]", prog, e);
     default:	/* parent process */
-      if ((pipedef & STDIN_PIPE) != 0) {
-	aclose(inpipe[0]);	/* close input side of pipe */
-	*stdinfd = inpipe[1];
-      }
-      if ((pipedef & STDOUT_PIPE) != 0) {
-	aclose(outpipe[1]);	/* close output side of pipe */
-	*stdoutfd = outpipe[0];
-      }
-      if ((pipedef & STDERR_PIPE) != 0) {
-	aclose(errpipe[1]);	/* close output side of pipe */
-	*stderrfd = errpipe[0];
-      }
-      
+	if ((pipedef & STDIN_PIPE) != 0) {
+	    aclose(inpipe[0]);		/* close input side of pipe */
+	    *stdinfd = inpipe[1];
+	}
+	if ((pipedef & STDOUT_PIPE) != 0) {
+	    aclose(outpipe[1]);		/* close output side of pipe */
+	    *stdoutfd = outpipe[0];
+	}
+	if ((pipedef & STDERR_PIPE) != 0) {
+	    aclose(errpipe[1]);		/* close output side of pipe */
+	    *stderrfd = errpipe[0];
+	}
+	if ((pipedef & PASSWD_PIPE) != 0) {
+	    aclose(passwdpipe[0]);	/* close input side of pipe */
+	    *passwdfd = passwdpipe[1];
+	}
 	break;
     case 0:		/* child process */
-      if ((pipedef & STDIN_PIPE) != 0)
-	aclose(inpipe[1]);	/* close output side of pipe */
-      else
-	inpipe[0] = *stdinfd;
-      if ((pipedef & STDOUT_PIPE) != 0)
-	aclose(outpipe[0]);	/* close input side of pipe */
-      else
-	outpipe[1] = *stdoutfd;
-      if ((pipedef & STDERR_PIPE) != 0)
-	aclose(errpipe[0]);	/* close input side of pipe */
-      else
-	errpipe[1] = *stderrfd;
+	if ((pipedef & STDIN_PIPE) != 0) {
+	    aclose(inpipe[1]);		/* close output side of pipe */
+	} else {
+	    inpipe[0] = *stdinfd;
+	}
+	if ((pipedef & STDOUT_PIPE) != 0) {
+	    aclose(outpipe[0]);		/* close input side of pipe */
+	} else {
+	    outpipe[1] = *stdoutfd;
+	}
+	if ((pipedef & STDERR_PIPE) != 0) {
+	    aclose(errpipe[0]);		/* close input side of pipe */
+	} else {
+	    errpipe[1] = *stderrfd;
+	}
+	if ((pipedef & PASSWD_PIPE) != 0) {
+	    aclose(passwdpipe[1]);	/* close output side of pipe */
+	}
 
+	/*
+	 * Shift the pipes to the standard file descriptors as requested.
+	 */
 	if(dup2(inpipe[0], 0) == -1) {
-	  e = strerror(errno);
-	  dbprintf(("error [spawn %s: dup2 in: %s]\n", prog, e));
-	  error("error [spawn %s: dup2 in: %s]", prog, e);
+	    error("error [spawn %s: dup2 in: %s]", prog, strerror(errno));
 	}
 	if(dup2(outpipe[1], 1) == -1) {
-	  e = strerror(errno);
-	  dbprintf(("error [spawn %s: dup2 out: %s]\n", prog, e));
-	  error("error [spawn %s: dup2 out: %s]", prog, e);
+	    error("error [spawn %s: dup2 out: %s]", prog, strerror(errno));
 	}
 	if(dup2(errpipe[1], 2) == -1) {
-	  e = strerror(errno);
-	  dbprintf(("error [spawn %s: dup2 err: %s]\n", prog, e));
-	  error("error [spawn %s: dup2 err: %s]", prog, e);
+	    error("error [spawn %s: dup2 err: %s]", prog, strerror(errno));
 	}
-	
-	arglist_start(ap, stderrfd);		/* setup argv */
-	for(i = 0; i < MAX_PIPESPAWN_ARGS; i++) {
-	  char * tmp = arglist_val(ap, char *);
-	  if (tmp == NULL)
-	    break;
-	  else if (tmp == skip_argument)
-	    i --;
-	  else
-	    argv[i] = tmp;
+
+	/*
+	 * Create the argument vector.
+	 */
+	arglist_start(ap, stderrfd);
+	if ((pipedef & PASSWD_PIPE) != 0) {
+	    passwdvar = arglist_val(ap, char *);
+	    passwdfd = arglist_val(ap, int *);
 	}
-	argv[i] = NULL;
+	argv = (char **)alloc((argc + 1) * sizeof(*argv));
+	i = 0;
+	while((argv[i] = arglist_val(ap, char *)) != NULL) {
+	    if (argv[i] != skip_argument) {
+		i++;
+	    }
+	}
 	arglist_end(ap);
 
-	execve(prog, argv, safe_env());
+	/*
+	 * Get the "safe" environment.  If we are sending a password to
+	 * the child via a pipe, add the environment variable for that.
+	 */
+	env = safe_env();
+	if ((pipedef & PASSWD_PIPE) != 0) {
+	    for(i = 0; env[i] != NULL; i++) {}
+	    newenv = (char **)alloc((i + 1 + 1) * sizeof(*newenv));
+	    ap_snprintf(number, sizeof(number), "%d", passwdpipe[0]);
+	    newenv[0] = vstralloc(passwdvar, "=", number, NULL);
+	    for(i = 0; (newenv[i + 1] = env[i]) != NULL; i++) {}
+	    env = newenv;
+	}
+
+	execve(prog, argv, env);
 	e = strerror(errno);
-	dbprintf(("error [exec %s: %s]\n", prog, e));
 	error("error [exec %s: %s]", prog, e);
 	/* NOTREACHED */
     }
