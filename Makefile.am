@@ -1,4 +1,5 @@
 ## Process this file with automake to produce Makefile.in
+AUTOMAKE_OPTIONS = 1.4 foreign
 
 ACLOCAL_M4_FROM_SRCDIR = config/aclocal.m4
 ACLOCAL_M4 = $(srcdir)/$(ACLOCAL_M4_FROM_SRCDIR)
