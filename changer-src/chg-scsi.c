@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.29 2001/09/15 08:19:16 ant Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.30 2001/09/17 22:17:54 jrjackson Exp $";
 #endif
 /*
  * 
@@ -1073,10 +1073,7 @@ int main(int argc, char *argv[])
 
   if (debug_file == NULL)
     {
-        /*
-      debug_file = fdopen((int)debug_fd(), "a");
-        */
-        debug_file = debug_fp();
+        debug_file = dbfp();
     }
   
   parse_args(argc,argv,&com);

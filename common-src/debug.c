@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.17.4.5 2001/08/01 19:21:41 jrjackson Exp $
+ * $Id: debug.c,v 1.17.4.6 2001/09/17 22:17:54 jrjackson Exp $
  *
  * debug log subroutines
  */
@@ -44,6 +44,7 @@ int db_fd = 2;				/* default is stderr */
 int db_fd = -1;				/* default is to throw away */
 #endif
 static FILE *db_file = NULL;		/* stderr may not be a constant */
+static char *db_filename = NULL;
 
 #ifndef AMANDA_DBGDIR
 #  define AMANDA_DBGDIR		AMANDA_TMPDIR
@@ -208,10 +209,11 @@ void debug_open()
     if(dbfilename == NULL) {
 	error("cannot create %s debug file", get_pname());
     }
-    (void) chown(s, client_uid, client_gid);
+    amfree(db_filename);
+    db_filename = s;
+    s = NULL;
+    (void) chown(db_filename, client_uid, client_gid);
     amfree(dbgdir);
-    amfree(dbfilename);
-    amfree(s);
 
     /*
      * Move the file descriptor up high so it stays out of the way
@@ -247,10 +249,15 @@ void debug_close()
     debug_printf("%s: pid %ld finish time %s", get_pname(), (long)getpid(),
 		 ctime(&curtime));
 
-    if(fclose(db_file) == EOF)
-	error("close debug file: %s", strerror(errno));
+    if(db_file && fclose(db_file) == EOF) {
+	int save_errno = errno;
+
+	db_file = NULL;				/* prevent recursion */
+	error("%s: close debug file: %s", get_pname(), strerror(save_errno));
+    }
     db_fd = -1;
     db_file = NULL;
+    amfree(db_filename);
 }
 
 int debug_fd()
@@ -261,4 +268,9 @@ int debug_fd()
 FILE *debug_fp()
 {
     return db_file;
+}
+
+char *debug_fn()
+{
+    return db_filename;
 }

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.17 2001/07/19 21:49:44 jrjackson Exp $
+/* $Id: dumper.c,v 1.75.2.18 2001/09/17 22:17:54 jrjackson Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1013,9 +1013,8 @@ int mesgfd, datafd, indexfd, outfd;
 	amfree(errfname);
 	rc = 2;
 	goto failed;
-    } else {
-	unlink(errfname);			/* so it goes away on close */
     }
+    unlink(errfname);				/* so it goes away on close */
     amfree(errfname);
 
     /* insert pipe in the *READ* side, if server-side compression is desired */
