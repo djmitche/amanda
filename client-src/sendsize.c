@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.61.2.4 1998/02/15 03:58:30 amcore Exp $
+ * $Id: sendsize.c,v 1.61.2.5 1998/02/15 04:33:33 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -550,13 +550,12 @@ int level;
     char *cmd = NULL;
     char *line = NULL;
     char level_str[NUM_STR_SIZE];
-    pid_t p;
-    int sig;
     int s;
+    int killerr;
 
     ap_snprintf(level_str, sizeof(level_str), "%d", level);
 
-#ifdef OSF1_VDUMP
+#ifdef VDUMP
     device = stralloc(amname_to_dirname(disk));
 #else
     device = stralloc(amname_to_devname(disk));
@@ -599,6 +598,21 @@ int level;
     }
     else
 #endif							/* } */
+#ifdef VDUMP						/* { */
+#ifdef DUMP						/* { */
+    if (strcmp(amname_to_fstype(device), "advfs") == 0)
+#else							/* } { */
+    if (1)
+#endif							/* } */
+    {
+	char *name = " (vdump)";
+	device = newstralloc(device, amname_to_dirname(disk));
+	dumpkeys = vstralloc(level_str, "b", "f", NULL);
+	dbprintf(("%s: running \"%s%s %s 60 - %s\"\n",
+		  pname, cmd, name, dumpkeys, device));
+    }
+    else
+#endif							/* } */
 #ifdef DUMP						/* { */
     if (1) {
 	char *name = NULL;
@@ -625,21 +639,10 @@ int level;
 #  else							/* } { */
 			     "",
 #  endif						/* } */
-#  ifdef OSF1_VDUMP					/* { */
-			     "b",
-#  else							/* } { */
-			     "s",
-#  endif						/* } */
-			     "f",
-			     NULL);
+			     "s", "f", NULL);
 
-#  ifdef OSF1_VDUMP					/* { */
-	dbprintf(("%s: running \"%s%s %s 60 - %s\"\n",
-		  pname, cmd, name, dumpkeys, device));
-#  else							/* } { */
 	dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n",
 		  pname, cmd, name, dumpkeys, device));
-#  endif						/* } */
 # endif							/* } */
 	afree(name);
     }
@@ -659,10 +662,8 @@ int level;
     default:
 	break; 
     case 0:	/* child process */
-#ifndef HAVE_DUMP_ESTIMATE
 	if(SETPGRP == -1)
 	    SETPGRP_FAILED();
-#endif
 
 	dup2(nullfd, 0);
 	dup2(nullfd, 1);
@@ -681,17 +682,18 @@ int level;
 		   safe_env());
 	else
 #endif
+#ifdef VDUMP
+	if (strcmp(amname_to_fstype(device), "advfs") == 0)
+	    execle(cmd, "vdump", dumpkeys, "60", "-", device, (char *)0,
+		   safe_env());
+	else
+#endif
 #ifdef DUMP
 # ifdef AIX_BACKUP
 	    execle(cmd, "backup", dumpkeys, "-", device, (char *)0, safe_env());
 # else
-#  ifdef OSF1_VDUMP
-	    execle(cmd, "dump", dumpkeys, "60", "-", device, (char *)0,
-		   safe_env());
-#  else
 	    execle(cmd, "dump", dumpkeys, "100000", "-", device, (char *)0,
 		   safe_env());
-#  endif
 # endif
 #endif
 	{
@@ -728,35 +730,33 @@ int level;
     if(size == 0 && level == 0)
 	dbprintf(("(PC SHARE connection problem, is this disk really empty?)\n.....\n"));
 
-#ifndef HAVE_DUMP_ESTIMATE
-#ifdef OSF1_VDUMP
-    sleep(5);
-#endif
     /*
      * First, try to kill the dump process nicely.  If it ignores us
      * for several seconds, hit it harder.
      */
-#ifdef XFSDUMP
-    /*
-     * We know xfsdump ignores SIGTERM, so arrange to hit it hard.
-     */
-    sig = (strcmp(amname_to_fstype(device), "xfs") == 0 ? SIGKILL : SIGTERM);
-#else
-    sig = SIGTERM;
-#endif
-    dbprintf(("sending signal %d to process group %ld\n", sig, (long)dumppid));
-    kill(-dumppid, sig);
-    for(s = 5; s > 0 && (p = waitpid(dumppid, &status, WNOHANG)) == 0; s--) {
+    dbprintf(("sending SIGTERM to process group %ld\n", dumppid));
+    killerr = kill(-dumppid, SIGTERM);
+    if (killerr == -1) {
+	dbprintf(("kill failed: %s\n", strerror(errno)));
+    }
+    /* Now check whether it dies */
+    for(s = 5; s > 0 && (killerr = kill(dumppid, 0)) == 0; s--) {
 	sleep(1);
     }
-    if(p == 0) {
-        dbprintf(("sending KILL to process group %ld\n", (long)dumppid));
-	kill(-dumppid, SIGKILL);
-	wait(&status);
+    if(killerr == 0) {
+        dbprintf(("it won\'t die with SIGTERM, but SIGKILL should do\n"));
+	killerr = kill(-dumppid, SIGKILL);
+	if (killerr == -1) {
+	    dbprintf(("kill failed: %s\n", strerror(errno)));
+	}
+	for(s = 5; s > 0 && (killerr = kill(dumppid, 0)) == 0; s--) {
+	    sleep(1);
+	}
+	if(killerr == 0) {
+	    dbprintf(("oh well, seems like it won\'t die; amanda may have to run as root then\n"));
+	}
     }
-#else /* HAVE_DUMP_ESTIMATE */
     wait(&status);
-#endif /* HAVE_DUMP_ESTIMATE */
 
     aclose(nullfd);
     afclose(dumpout);

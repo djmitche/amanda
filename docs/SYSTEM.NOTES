@@ -118,13 +118,16 @@ DUX4 dump is broken.  There is a patch available:
 ftp://ftp.service.digital.com/public/dunix/v4.0b/duv40bas00005-19970926.README
 
 
-If you have vdump on your system, amanda will pick it up
-automatically, and use it *instead* of dump for *all* filesystems.
-Since vdump must be run as root, amanda will use a setuid-root program
-called rundump to call it.  Unfortunately, this makes it impossible
-for amanda to kill it after it has printed an estimate line, as amanda
-usually does with other backup programs, unless the sendsize program
-is run as root.  So, vdump users have four alternatives:
+When both dump and vdump are available, amanda will use vdump for
+backing up advfs filesystems only, and dump will be used for the rest.
+Since vdump must be run as root, amanda will use the rundump program
+for running it, even if USE_RUNDUMP is not defined.  If you want vdump
+to be used for all filesystems, #undef DUMP in config/config.h.
+
+Unfortunately, running vdump as root makes it impossible for amanda to
+kill it after it has printed an estimate line, as amanda usually does
+with other backup programs, unless the sendsize program is run as
+root.  So, vdump users have four alternatives:
 
 1) configure --with-user=root, so that all backup runs as user root.
 You shouldn't usually want lots of unknown code running as root, so
@@ -138,17 +141,6 @@ call a safe program.
 vdump will dump the complete filesystem to /dev/null, but you may live
 with that, as long as you increase the estimate time-out (etimeout) in
 amanda.conf.
-
-4) use dump instead of vdump, by setting the DUMP environment variable
-before running configure, or by changing its definition in
-config/config.h, and undefining both USE_RUNDUMP and OSF1_VDUMP.
-However, you won't be able to dump advfs filesystems.  You should set
-RESTORE too, otherwise you won't be able to create indexes, and you
-must fix the RESTORE index command so that it does not redirect
-`2>/dev/null'.  Use `2>&1' instead, because DU's restore prints file
-lists to stderr, according to Martyn Johnson
-<Martyn.Johnson@cl.cam.ac.uk>.
-
 
 According to Oren Laadan <orenl@cs.huji.ac.il>, DEC compiler version
 "DEC C V5.2-033 on Digital UNIX V4.0 (Rev. 564)" (obtained with "cc -V")

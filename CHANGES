@@ -1,5 +1,13 @@
 Version 2.4.0b6p4
 
+	use vdump to dump advfs filesystems only.  add support for vdump
+	indexes.
+	-Martyn Johnson <Martyn.Johnson@cl.cam.ac.uk> & oliva
+
+	change index generation commands so that they are less prone
+	to be fooled by blanks or strange characters in filenames.
+	-oliva
+
 	check whether exclude-list file exists before calling gnutar.
 	If it does not, log a message to debugging file and discard it.
 	selfcheck should check for that too, and print a warning message,

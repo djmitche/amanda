@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.44.2.3 1998/02/06 19:45:42 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.44.2.4 1998/02/15 04:33:28 amcore Exp $
  *
  * send backup data using BSD dump
  */
@@ -39,6 +39,8 @@
 #else					/* I'd tell you what this does */
 #define NAUGHTY_BITS			/* but then I'd have to kill you */
 #endif
+
+#define LEAF_AND_DIRS "sed -e \'\ns/^leaf[ \t]*[0-9]*[ \t]*\\.//\nt\n/^dir[ \t]/ {\ns/^dir[ \t]*[0-9]*[ \t]*\\.//\ns%$%/%\nt\n}\nd\n\'"
 
 static regex_t re_table[] = {
   /* the various encodings of dump size */
@@ -109,7 +111,7 @@ static regex_t re_table[] = {
   { DMP_NORMAL, "^  VXDUMP:" },                                 /* Sinix */
   { DMP_NORMAL, "^  UFSDUMP:" },                                /* Sinix */
 
-#ifdef OSF1_VDUMP	/* this is for OSF/1 3.2's vdump for advfs */
+#ifdef VDUMP	/* this is for OSF/1 3.2's vdump for advfs */
   { DMP_NORMAL, "^The -s option is ignored"},			/* OSF/1 */
   { DMP_NORMAL, "^path"},					/* OSF/1 */
   { DMP_NORMAL, "^dev/fset"},					/* OSF/1 */
@@ -161,7 +163,7 @@ char *dumpdate;
     }
 
     /* invoke dump */
-#ifdef OSF1_VDUMP
+#ifdef VDUMP
     device = stralloc(amname_to_dirname(disk));
 #else
     device = stralloc(amname_to_devname(disk));
@@ -241,13 +243,8 @@ char *dumpdate;
 	indexcmd = vstralloc(VXRESTORE,
 			     " -tvf", " -",
 			     " 2>/dev/null",
-			     " | awk",
-			     " \'/^[leaf|dir]/ {print $3$1}\'",
-			     " | sed",
-			     " -e", " \'s/leaf$//\'",
-			     " -e", " \'s/dir$/\\//\'",
-			     " | cut",
-			     " -c2-",
+			     " | ",
+			     LEAF_AND_DIRS,
 			     NULL);
 	write_tapeheader();
 
@@ -260,32 +257,55 @@ char *dumpdate;
     else
 #endif							/* } */
 
+#ifdef VDUMP						/* { */
+#ifdef DUMP
+    if (strcmp(amname_to_fstype(device), "advfs") == 0)
+#else
+    if (1)
+#endif
     {
-	char *bs;
-
-#ifdef OSF1_VDUMP
-	bs = "b";
-#else
-	bs = "s";
+        char *progname = cmd = newvstralloc(cmd, libexecdir, "/", "rundump",
+					    versionsuffix(), NULL);
+	program->backup_name  = VDUMP;
+#ifndef VRESTORE
+#define VRESTORE "vrestore"
 #endif
+	program->restore_name = VRESTORE;
 
-	dumpkeys = vstralloc(level_str, no_record ? "" : "u", bs, "f", NULL);
+	dumpkeys = vstralloc(level_str, no_record ? "" : "u", "b", "f", NULL);
 
-	indexcmd = vstralloc(
-#ifdef RESTORE
-			     RESTORE,
-#else
-			     "restore",
-#endif
+	indexcmd = vstralloc(VRESTORE,
 			     " -tvf", " -",
 			     " 2>/dev/null",
-			     " | awk",
-			     " \'/^[leaf|dir]/ {print $3$1}\'",
-			     " | sed",
-			     " -e", " \'s/leaf$//\'",
-			     " -e", " \'s/dir$/\\//\'",
-			     " | cut",
-			     " -c2-",
+			     " | ",
+			     "sed -e \'\n/^\\./ {\ns/^\\.//\ns/, [0-9]*$//\ns/^\\.//\ns/ @-> .*$//\nt\n}\nd\n\'",
+			     NULL);
+	write_tapeheader();
+
+	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
+
+	dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf, 
+			    "vdump", dumpkeys,
+			    "60",
+			    "-", device,
+			    (char *)0);
+    }
+    else
+#endif							/* } */
+
+    {
+#ifndef RESTORE
+#define RESTORE "restore"
+#endif
+
+	dumpkeys = vstralloc(level_str, no_record ? "" : "u", "s", "f", NULL);
+
+	indexcmd = vstralloc(RESTORE,
+			     " -tvf", " -",
+			     " 2>&1",
+			     /* not to /dev/null because of DU's dump */
+			     " | ",
+			     LEAF_AND_DIRS,
 			     NULL);
 	write_tapeheader();
 
@@ -293,11 +313,7 @@ char *dumpdate;
 
 	dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf, 
 			    "dump", dumpkeys,
-#ifdef OSF1_VDUMP
-			    "60",
-#else
 			    "1048576",
-#endif
 			    "-", device,
 			    (char *)0);
     }
@@ -305,22 +321,12 @@ char *dumpdate;
     /* AIX backup program */
     dumpkeys = vstralloc("-", level_str, no_record ? "" : "u", "f", NULL);
 
-    indexcmd = vstralloc(
-#ifdef RESTORE
-			 RESTORE,
-#else
-			 "restore",
-#endif
+    indexcmd = vstralloc(RESTORE,
 			 " -B",
 			 " -tvf", " -",
 			 " 2>/dev/null",
-			 " | awk",
-			 " \'/^[leaf|dir]/ {print $3$1}\'",
-			 " | sed",
-			 " -e", " \'s/leaf$//\'",
-			 " -e", " \'s/dir$/\\//\'",
-			 " | cut",
-			 " -c2-",
+			 " | ",
+			 LEAF_AND_DIRS,
 			 NULL);
     write_tapeheader();
 
@@ -358,11 +364,7 @@ backup_program_t dump_program = {
   "dump"
 #endif
   ,
-#ifdef RESTORE
   RESTORE
-#else
-  "restore"
-#endif
   ,
   re_table, start_backup, end_backup
 };

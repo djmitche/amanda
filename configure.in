@@ -951,7 +951,7 @@ dnl and AIX, have both the backup and dump programs.  HP-UX can't use the
 dnl the backup program while AIX systems can't use the dump program.  So
 dnl a variable is set up here to specify the order of dump programs to
 dnl search for on the system.
-DUMP_PROGRAMS="ufsdump vdump dump backup"
+DUMP_PROGRAMS="ufsdump dump backup"
 
 case "$target" in
     *-dec-osf*)
@@ -1224,19 +1224,8 @@ if test "$DUMP"; then
 	AC_DEFINE(HAVE_DUMP_ESTIMATE)
     fi
 fi
-case "$DUMP" in
-    *vdump*)
-	AC_DEFINE(OSF1_VDUMP)
-	: ${USE_RUNDUMP=yes}
-	case "${FORCE_USE_RUNDUMP-${USE_RUNDUMP}}" in
-	y | ye | yes) :;;
-	n | no) AC_MSG_ERROR([*** rundump must be enabled for vdump to work]);;
-	*) AC_MSG_WARN([*** enabling rundump because vdump must run as root]);;
-	esac
-	;;
-esac
 
-AC_PATH_PROGS(RESTORE,ufsrestore vrestore restore,,$SYSLOCPATH)
+AC_PATH_PROGS(RESTORE,ufsrestore restore,,$SYSLOCPATH)
 if test "$RESTORE"; then
     AC_DEFINE_UNQUOTED(RESTORE,"$RESTORE")
 fi
@@ -1261,6 +1250,16 @@ if test "$VXRESTORE"; then
     AC_DEFINE_UNQUOTED(VXRESTORE,"$VXRESTORE")
 fi
 
+AC_PATH_PROGS(VDUMP,vdump,,$SYSLOCPATH)
+if test "$VDUMP"; then
+    AC_DEFINE_UNQUOTED(VDUMP,"$VDUMP")
+fi
+
+AC_PATH_PROGS(VRESTORE,vrestore,,$SYSLOCPATH)
+if test "$VRESTORE"; then
+    AC_DEFINE_UNQUOTED(VRESTORE,"$VRESTORE")
+fi
+  
 dnl Handle all of the substitutions to make amplot work.
 if test "$PCAT"; then
     AMPLOT_CAT_PACK="if(o==\"z\")print \"$PCAT\"; else"

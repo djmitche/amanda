@@ -66,7 +66,6 @@
 #undef STATFS_ULTRIX
 
 /* For OSF systems.  */
-#undef OSF1_VDUMP
 #undef STATFS_OSF1
 
 /* For XENIX/ISC systems.  */
@@ -77,7 +76,6 @@
 
 /*
  * Decide whether to invoke rundump (setuid-root) or DUMP program directly.
- * This is enabled for OSF1_VDUMP, for instance.
  */
 #undef USE_RUNDUMP
 
@@ -87,11 +85,17 @@
 /* Define this if dump accepts -E for estimates.  */
 #undef HAVE_DUMP_ESTIMATE
 
-/* Define the location of the ufsdump, vdump, backup, or dump program.  */
+/* Define the location of the ufsdump, backup, or dump program.  */
 #undef DUMP
 
 /* Define the location of the ufsrestore or restore program.  */
 #undef RESTORE
+
+/* Define the location of the vdump program.  */
+#undef VDUMP
+
+/* Define the location of the vrestore program.  */
+#undef VRESTORE
 
 /* Define the location of the xfsdump program on Irix hosts.  */
 #undef XFSDUMP
