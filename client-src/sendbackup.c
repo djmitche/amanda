@@ -172,7 +172,7 @@ char **argv;
 	goto err;
     dbprintf(("%s: got input request: %s", argv[0], line));
     if(sscanf(line, "%s %s %d %s OPTIONS %[^\n]\n", 
-	      prog, disk, &level, dumpdate, options) != 6)
+	      prog, disk, &level, dumpdate, options) != 5)
 	goto err;
     dbprintf(("  parsed request as: program `%s' disk `%s' lev %d since %s opt `%s'\n",
 	      prog, disk, level, dumpdate, options));
