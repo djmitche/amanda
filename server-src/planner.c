@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.27 2003/01/04 03:35:54 martinea Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.28 2003/06/10 14:14:26 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -2247,6 +2247,7 @@ static int promote_hills P((void))
 	/* Find all the dumps in that hill and try and remove one */
 	for(dp = schedq.head; dp != NULL; dp = dp->next) {
 	    if(est(dp)->next_level0 != hill_days ||
+	       est(dp)->next_level0 > dp->maxpromoteday ||
 	       dp->skip_full ||
 	       dp->strategy == DS_NOFULL ||
 	       dp->strategy == DS_INCRONLY)
