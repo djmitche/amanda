@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.32 1998/05/05 22:01:30 amcore Exp $
+ * $Id: reporter.c,v 1.33 1998/05/15 12:10:30 amcore Exp $
  *
  * nightly Amanda Report generator
  */
@@ -1036,6 +1036,7 @@ void handle_success()
     s[-1] = ch;
 
     skip_whitespace(s, ch);
+
     if(ch == '\0' || sscanf(s - 1, "%d", &datestampI) != 1) {
 	bogus_line();
 	return;
@@ -1056,7 +1057,10 @@ void handle_success()
     }
 
     skip_whitespace(s, ch);
-    if(sscanf(s - 1,"[sec %f kb %f kps %f",
+				/* Planner success messages (for skipped
+				   dumps) do not contain statistics */
+    if(curprog != P_PLANNER &&
+       sscanf(s - 1,"[sec %f kb %f kps %f",
 	      &sec, &kbytes, &kps) != 3) {
 	bogus_line();
 	return;

@@ -1,3 +1,7 @@
+	fix skip-incr handling so that reporter reports SKIPPED
+	instead of missing result.
+	-Jim Simmons <s4i@sws6.ctd.ornl.gov>
+
 	split big dumps ( > MAXFILESIZE ) in multiple files on holding disk. 
 	new chunksize parameter in holdingdisk description of 
 	the amanda.conf file.

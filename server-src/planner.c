@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.66 1998/05/03 23:54:34 martinea Exp $
+ * $Id: planner.c,v 1.67 1998/05/15 12:10:28 amcore Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -977,6 +977,7 @@ host_t *hostp;
     }
 
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	if(est(dp)->level[0] == -1) continue;   /* ignore this disk */
 	est(dp)->errstr = errstr;
 	errstr = NULL;
 	enqueue_disk(destqp, dp);
@@ -1118,6 +1119,7 @@ pkt_t *pkt;
     /* XXX amanda 2.1 treated that case as a bad msg */
 
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	if(est(dp)->level[0] == -1) continue;   /* ignore this disk */
 	remove_disk(&waitq, dp);
 	if(est(dp)->got_estimate) {
 	    if(est(dp)->est_size[0] >= 0) {
@@ -1185,6 +1187,7 @@ pkt_t *pkt;
 	msgdisk_undo = NULL;
     }
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	if(est(dp)->level[0] == -1) continue;   /* ignore this disk */
 	remove_disk(&waitq, dp);
 	enqueue_disk(&failq, dp);
 
