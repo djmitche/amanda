@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.59 2000/12/31 16:23:18 martinea Exp $
+ * $Id: amflush.c,v 1.60 2001/01/02 19:25:12 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -49,13 +49,16 @@ holding_t *holding_list;
 char *datestamp;
 
 /* local functions */
-int main P((int argc, char **argv));
+int main P((int main_argc, char **main_argv));
 void flush_holdingdisk P((char *diskdir, char *datestamp));
 void confirm P((void));
 void detach P((void));
 void run_dumps P((void));
 static int get_letter_from_user P((void));
 
+typedef struct datearg_s {
+    char *first, *last;
+} datearg_t;
 
 int main(main_argc, main_argv)
 int main_argc;
@@ -64,6 +67,9 @@ char **main_argv;
     int foreground;
     struct passwd *pw;
     char *dumpuser;
+    datearg_t *datearg = NULL;
+    int nb_datearg = 0;
+    char *dash;
     int fd;
     char *conffile;
     char *conf_diskfile;
@@ -74,6 +80,7 @@ char **main_argv;
     pid_t pid;
     pid_t child_pid;
     amwait_t exitcode;
+    int opt;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -94,15 +101,47 @@ char **main_argv;
     erroutput_type = ERR_INTERACTIVE;
     foreground = 0;
 
-    if(main_argc > 1 && strcmp(main_argv[1], "-f") == 0) {
-	foreground = 1;
-	main_argc--,main_argv++;
+    /* process arguments */
+
+    while((opt = getopt(main_argc, main_argv, "fD:")) != EOF) {
+	switch(opt) {
+	case 'f': foreground = 1;
+		  break;
+	case 'D': if (datearg == NULL)
+		      datearg = malloc(20*sizeof(datearg_t));
+		  if(nb_datearg == 20) {
+		      fprintf(stderr,"maximum of 20 -D arguments.\n");
+		      exit(1);
+		  }
+		  if((dash = strchr(optarg,'-'))) {
+		      int len = dash - optarg;
+		      int len_suffix = strlen(dash) - 1;
+		      int len_prefix = len - len_suffix;
+
+		      dash++;
+		      datearg[nb_datearg].first = malloc((len+1)*sizeof(char));
+		      datearg[nb_datearg].last  = malloc((len+1)*sizeof(char));
+		      strncpy(datearg[nb_datearg].first, optarg, len);
+		      datearg[nb_datearg].first[len] = '\0';
+		      strncpy(datearg[nb_datearg].last, optarg, len_prefix);
+		      strncpy(&(datearg[nb_datearg].last[len_prefix]), dash,
+			      len_suffix);
+		      datearg[nb_datearg].last[len]  = '\0';
+		  }
+		  else {
+		      datearg[nb_datearg].first = stralloc(optarg);
+		      datearg[nb_datearg].last  = stralloc(optarg);
+		  }
+		  nb_datearg++;
+		  break;
+	}
     }
+    main_argc -= optind, main_argv += optind;
 
-    if(main_argc != 2)
-	error("Usage: amflush%s [-f] <confdir>", versionsuffix());
+    if(main_argc < 1)
+	error("Usage: amflush%s [-f] [-D date]* <confdir> [host disk]*", versionsuffix());
 
-    config_name = main_argv[1];
+    config_name = main_argv[0];
     config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
 
     conffile = stralloc2(config_dir, CONFFILE_NAME);
@@ -155,13 +194,44 @@ char **main_argv;
     logroll_program = vstralloc(libexecdir, "/", "amlogroll", versionsuffix(),
 				NULL);
 
+    if(datearg) {
+	holding_t *dir, *prev_dir = NULL, *next_dir;
+	int i, ok;
+
+	holding_list = pick_all_datestamp();
+	for(dir = holding_list; dir != NULL;) {
+	    next_dir = dir->next;
+	    ok = 0;
+	    for(i=0; i<nb_datearg && ok==0; i++) {
+		ok = (strncasecmp(dir->name, datearg[i].first,
+				  strlen(datearg[i].first)) >= 0) &&
+		     (strncasecmp(dir->name, datearg[i].last,
+				  strlen(datearg[i].last)) <= 0);
+	    }
+	    if(ok == 0) { /* remove dir */
+		amfree(dir);
+		if(prev_dir)
+		    prev_dir->next = next_dir;
+		else
+		    holding_list = next_dir;
+	    }
+	    else {
+		prev_dir = dir;
+	    }
+	    dir=next_dir;
+	}
+    }
+    else {
+	holding_list = pick_datestamp();
+    }
+
+    confirm();
+
     for(dp = diskq.head; dp != NULL; dp = dp->next) {
 	if(dp->todo)
 	    log_add(L_DISK, "%s %s", dp->host->hostname, dp->name);
     }
 
-    holding_list = pick_datestamp();
-    confirm();
     if(!foreground) detach();
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
     set_logerror(logerror);

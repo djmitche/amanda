@@ -1,4 +1,10 @@
 2001-01-02  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/amflush.c: Use getopt to parse argument.
+	* server-src/amflush.c: New [-D date]* argument.
+	* man/amflush.8.in: Document it.
+
+2001-01-02  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	Patch by Andreas F Mueller <afm@othello.ch>
 
 	* server-src/amadmin.c (force_no_bump_one): Fix message.
