@@ -1,3 +1,10 @@
+1998-10-02  John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/taper.c (write_file): fix a problem with tha taper
+	stats where the times were all the same.  The wallclock_str function
+	returns a pointer to a static area so it cannot be called more
+	than once as an argument to a function.
+
 1998-10-01  John R. Jackson  <jrj@purdue.edu>
 
 	* common-src/protocol.c (parse_integer): allow negative numbers.
