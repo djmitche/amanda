@@ -165,7 +165,7 @@
 
 
 # CLIENT_LOGIN		--with-user=USERNAME
-#			Default: amanda
+#			Default: user that runs configure
 #			The user to install as the owner of all Amanda
 #			programs and the user to switch to on client
 #			machines.
