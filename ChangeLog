@@ -1,3 +1,10 @@
+1999-11-10 John R. Jackson  <jrj@purdue.edu>
+
+	* recover-src/extract_list.c: report the tape server host in the
+	  message to check the amidxtaped.debug file.	If extract_list_child
+	  fails (such as when amidxtaped fails to read the tape), ask if
+	  things should continue instead of aborting.
+
 1999-11-11  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
 	* server-src/driverio.c (update_info_dumper): Discard information on
