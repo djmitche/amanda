@@ -1,20 +1,16 @@
 This patch fixes Samba 2.0.0 up to 2.0.3, so that it does not overflow
-on filesystems larger than 2GB.  Note that it requires a compiler that
-supports long longs, such as gcc.  The problem is fixed on Samba 2.0.4
-(but only if the compiler supports long longs).
+on filesystems larger than 2GB.  The problem is fixed in newer
+releases of Samba.
 
-The hunks for client.c and clitar.c were updated for Samba 2.0.0 by
-Tom Schutter <tom@platte.com>.  The snprintf.c improvement is by
-Cloyce D. Spradling <cloyce@headgear.org>.
-
---- ./source/client/client.c	Sat Feb  6 15:51:52 1999
-+++ ./source/client/client.c	Wed Feb 24 14:55:24 1999
+Index: client/client.c
+--- client/client.c	1999/01/27 19:37:27	1.125
++++ client/client.c	1999/03/30 10:25:18	1.128
 @@ -101,7 +101,7 @@
  int put_total_time_ms = 0;
  
  /* totals globals */
 -int dir_total = 0;
-+unsigned long long dir_total = 0;
++static double dir_total;
  
  #define USENMB
  
@@ -23,19 +19,29 @@ Cloyce D. Spradling <cloyce@headgear.org>.
  	do_dskattr();
  
 -	DEBUG(3, ("Total bytes listed: %d\n", dir_total));
-+	DEBUG(3, ("Total bytes listed: %llu\n", dir_total));
++	DEBUG(3, ("Total bytes listed: %.0f\n", dir_total));
  }
  
  
---- ./source/client/clitar.c	Sat Feb  6 15:51:52 1999
-+++ ./source/client/clitar.c	Wed Feb 24 14:56:21 1999
+@@ -463,7 +463,7 @@
+ 
+ 	do_dskattr();
+ 
+-	DEBUG(0, ("Total number of bytes: %d\n", dir_total));
++	DEBUG(0, ("Total number of bytes: %.0f\n", dir_total));
+ }
+ 
+ 
+Index: client/clitar.c
+--- client/clitar.c	1999/02/03 16:30:54	1.67
++++ client/clitar.c	1999/03/30 10:41:07	1.70
 @@ -85,7 +85,8 @@
  #endif
  
  static char *tarbuf, *buffer_p;
 -static int tp, ntarf, tbufsiz, ttarf;
 +static int tp, ntarf, tbufsiz;
-+static unsigned long long ttarf;
++static double ttarf;
  /* Incremental mode */
  BOOL tar_inc=False;
  /* Reset archive bit */
@@ -44,86 +50,7 @@ Cloyce D. Spradling <cloyce@headgear.org>.
      
      DEBUG(0, ("tar: dumped %d tar files\n", ntarf));
 -    DEBUG(0, ("Total bytes written: %d\n", ttarf));
-+    DEBUG(0, ("Total bytes written: %llu\n", ttarf));
++    DEBUG(0, ("Total bytes written: %.0f\n", (double)ttarf));
      break;
    }
  
---- ./source/lib/snprintf.c	Mon Nov 23 17:50:57 1998
-+++ ./source/lib/snprintf.c	Sat Feb 27 01:53:25 1999
-@@ -131,6 +131,7 @@
- #define DP_C_SHORT   1
- #define DP_C_LONG    2
- #define DP_C_LDOUBLE 3
-+#define DP_C_LLONG   4
- 
- #define char_to_int(p) (p - '0')
- #define MAX(p,q) ((p >= q) ? p : q)
-@@ -237,7 +238,6 @@
- 	state = DP_S_MOD;
-       break;
-     case DP_S_MOD:
--      /* Currently, we don't support Long Long, bummer */
-       switch (ch) 
-       {
-       case 'h':
-@@ -247,6 +247,10 @@
-       case 'l':
- 	cflags = DP_C_LONG;
- 	ch = *format++;
-+	if (ch == 'l') {	/* It's a long long */
-+	  cflags = DP_C_LLONG;
-+	  ch = *format++;
-+	}
- 	break;
-       case 'L':
- 	cflags = DP_C_LDOUBLE;
-@@ -266,6 +270,8 @@
- 	  value = va_arg (args, short int);
- 	else if (cflags == DP_C_LONG)
- 	  value = va_arg (args, long int);
-+	else if (cflags == DP_C_LLONG)
-+	  value = va_arg (args, long long);
- 	else
- 	  value = va_arg (args, int);
- 	fmtint (buffer, &currlen, maxlen, value, 10, min, max, flags);
-@@ -276,6 +282,8 @@
- 	  value = va_arg (args, unsigned short int);
- 	else if (cflags == DP_C_LONG)
- 	  value = (long)va_arg (args, unsigned long int);
-+	else if (cflags == DP_C_LLONG)
-+	  value = (long)va_arg (args, unsigned long long);
- 	else
- 	  value = (long)va_arg (args, unsigned int);
- 	fmtint (buffer, &currlen, maxlen, value, 8, min, max, flags);
-@@ -286,6 +294,8 @@
- 	  value = va_arg (args, unsigned short int);
- 	else if (cflags == DP_C_LONG)
- 	  value = (long)va_arg (args, unsigned long int);
-+	else if (cflags == DP_C_LLONG)
-+	  value = (long long)va_arg (args, unsigned long long);
- 	else
- 	  value = (long)va_arg (args, unsigned int);
- 	fmtint (buffer, &currlen, maxlen, value, 10, min, max, flags);
-@@ -298,6 +308,8 @@
- 	  value = va_arg (args, unsigned short int);
- 	else if (cflags == DP_C_LONG)
- 	  value = (long)va_arg (args, unsigned long int);
-+	else if (cflags == DP_C_LLONG)
-+	  value = (long)va_arg (args, unsigned long long);
- 	else
- 	  value = (long)va_arg (args, unsigned int);
- 	fmtint (buffer, &currlen, maxlen, value, 16, min, max, flags);
-@@ -351,6 +363,12 @@
- 	  long int *num;
- 	  num = va_arg (args, long int *);
- 	  *num = (long int)currlen;
-+        } 
-+	else if (cflags == DP_C_LLONG) 
-+	{
-+	  long long *num;
-+	  num = va_arg (args, long long *);
-+	  *num = (long long)currlen;
-         } 
- 	else 
- 	{
-
