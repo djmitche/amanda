@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.43 1999/01/20 01:33:16 martinea Exp $
+ * $Id: amflush.c,v 1.44 1999/02/14 15:32:03 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -244,15 +244,13 @@ char *diskdir, *datestamp;
     struct dirent *entry;
     char *dirname = NULL;
     char *destname = NULL;
-    char *hostname = NULL;
-    char *diskname = NULL;
     int filenum;
     disk_t *dp;
     sched_t sp;
-    filetype_t filetype;
     tok_t tok;
     int result_argc;
     char *result_argv[MAX_ARGS+1];
+    dumpfile_t file;
 
     dirname = vstralloc(diskdir, "/", datestamp, NULL);
 
@@ -280,36 +278,35 @@ char *diskdir, *datestamp;
 				dirname, "/", entry->d_name,
 				NULL);
 
-	amfree(hostname);
-	amfree(diskname);
-	filetype = get_amanda_names(destname, &hostname, &diskname, &sp.level);
-	if( filetype != F_DUMPFILE) {
-	    if( filetype != F_CONT_DUMPFILE )
+	get_dumpfile(destname, &file);
+	sp.level = file.dumplevel;
+	if( file.type != F_DUMPFILE) {
+	    if( file.type != F_CONT_DUMPFILE )
 		log_add(L_INFO, "%s: ignoring cruft file.", entry->d_name);
 	    continue;
 	}
 
-	dp = lookup_disk(hostname, diskname);
+	dp = lookup_disk(file.name, file.disk);
 
 	if (dp == NULL) {
 	    log_add(L_INFO, "%s: disk %s:%s not in database, skipping it.",
-		    entry->d_name, hostname, diskname);
+		    entry->d_name, file.name, file.disk);
 	    continue;
 	}
 
-	if(sp.level < 0 || sp.level > 9) {
+	if(file.dumplevel < 0 || file.dumplevel > 9) {
 	    log_add(L_INFO, "%s: ignoring file with bogus dump level %d.",
-		    entry->d_name, sp.level);
+		    entry->d_name, file.dumplevel);
 	    continue;
 	}
 
 	dp->up = &sp;
-	taper_cmd(FILE_WRITE, dp, destname, sp.level, datestamp);
+	taper_cmd(FILE_WRITE, dp, destname, file.dumplevel, file.datestamp);
 
 	tok = getresult(taper, 0, &result_argc, result_argv, MAX_ARGS+1);
 	if(tok == TRYAGAIN) {
 	    /* we'll retry one time */
-	    taper_cmd(FILE_WRITE, dp, destname, sp.level, datestamp);
+	    taper_cmd(FILE_WRITE, dp, destname,file.dumplevel,file.datestamp);
 	    tok = getresult(taper, 0, &result_argc, result_argv, MAX_ARGS+1);
 	}
 
@@ -323,7 +320,8 @@ char *diskdir, *datestamp;
 	    free_serial(result_argv[2]);
 
 	    filenum = atoi(result_argv[4]);
-	    update_info_taper(dp, result_argv[3], filenum);
+	    if(file.is_partial == 0)
+		update_info_taper(dp, result_argv[3], filenum);
 
 	    unlink_holding_files(destname);
 	    break;
@@ -359,8 +357,6 @@ char *diskdir, *datestamp;
     if(rmdir(dirname))
 	log_add(L_WARNING, "Could not rmdir %s.  Check for cruft.",
 	        dirname);
-    amfree(diskname);
-    amfree(hostname);
     amfree(destname);
     amfree(dirname);
 }
