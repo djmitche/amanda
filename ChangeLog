@@ -1,3 +1,7 @@
+2004-10-20  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amflush.c: Don't start a driver if nothing to flush.
+
 2004-10-14  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Eric Siegerman <erics@telepres.com>
 
