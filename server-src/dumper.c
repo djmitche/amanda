@@ -54,7 +54,6 @@
 #define MAX_ARGS 	10
 #define DATABUF_SIZE 	32*1024
 #define MESGBUF_SIZE  	4*1024
-#define HDR_BYTES	32*1024	/* from client-src/sendbackup-common.c */
 
 #define AMANDA_SERVICE_DEFAULT	10080
 #define KAMANDA_SERVICE_DEFAULT	10081
@@ -598,7 +597,7 @@ int write_tapeheader(outfd)
 int outfd;
 {
     char line[128], unc[256];
-    char buffer[HDR_BYTES], *bufptr;
+    char buffer[TAPE_BLOCK_BYTES], *bufptr;
     int len;
     char *comp_suf;
     int count;
@@ -627,7 +626,7 @@ int outfd;
     strcat(buffer,"To restore, position tape at start of file and run:\n");
 
     sprintf(line, "\tdd if=<tape> bs=%dk skip=1 |%s %s\n\014\n",
-            BUFFER_SIZE/1024, unc, recover_cmd);
+            TAPE_BLOCK_SIZE, unc, recover_cmd);
     strcat(buffer, line);
 
     len = strlen(buffer);

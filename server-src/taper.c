@@ -58,7 +58,7 @@ typedef enum { BOGUS, START_TAPER, FILE_WRITE, PORT_WRITE, QUIT } cmd_t;
 
 typedef struct buffer_s {
     long status;
-    char buffer[BUFFER_SIZE];
+    char buffer[TAPE_BLOCK_BYTES];
 } buffer_t;
 
 #define nextbuf(p)    ((p) == buftable+NBUFS-1? buftable : (p)+1)
@@ -260,7 +260,7 @@ int rdpipe, wrpipe;
 	    putresult("PORT %d\n", data_port);
 
 	    if((fd = stream_accept(data_socket, CONNECT_TIMEOUT,
-				   DEFAULT_SIZE, BUFFER_SIZE)) == -1) {
+				   DEFAULT_SIZE, sizeof(buftable->buffer))) == -1) {
 		putresult("TAPE-ERROR %s %s\n", handle,
 			  squote("[port connect timeout]"));
 		close(data_socket);
@@ -471,7 +471,7 @@ char *handle, *hostname, *diskname;
 
 	    bp->status = FILLING;
 	    if(interactive || bufdebug) dumpstatus(bp);
-	    if((rc = fill_buffer(fd, bp->buffer, BUFFER_SIZE)) <= 0) {
+	    if((rc = fill_buffer(fd, bp->buffer, sizeof(bp->buffer))) <= 0) {
 		err = (rc < 0)? errno : 0;
 		closing = 1;
 		syncpipe_put('C');
@@ -479,13 +479,12 @@ char *handle, *hostname, *diskname;
 	    else {
 		bp->status = FULL;
 		if(interactive || bufdebug) dumpstatus(bp);
-		filesize += (BUFFER_SIZE/1024);
+		filesize += rc / 1024;
 		if(bufdebug) {
 		    fprintf(stderr,"taper: r: put W%d\n",(int)(bp-buftable));
 		    fflush(stderr);
 		}
 		syncpipe_put('W'); syncpipe_putint(bp-buftable);
-
 
 		bp = nextbuf(bp);
 	    }
@@ -829,12 +828,12 @@ buffer_t *bp;
     }
 
     startclock();
-    rc = tapefd_write(tape_fd, bp->buffer, BUFFER_SIZE);
-    if(rc == BUFFER_SIZE) {
+    rc = tapefd_write(tape_fd, bp->buffer, sizeof(bp->buffer));
+    if(rc == sizeof(bp->buffer)) {
 	tapefd_resetofs(tape_fd);
 	wrwait = timesadd(wrwait, stopclock());
 	total_writes += 1;
-	total_tape_used += (double)BUFFER_SIZE;
+	total_tape_used += (double)rc;
 	bp->status = EMPTY;
 	if(interactive || bufdebug) dumpstatus(bp);
 	if(interactive)write(2, "W", 1);
@@ -1149,7 +1148,7 @@ int label_tape()
 	return 0;
     }
 
-    if((result = tape_rdheader(tapedev, olddatestamp, label)) != NULL) {
+    if((result = tape_rdlabel(tapedev, olddatestamp, label)) != NULL) {
 	strcpy(errstr, result);
 	return 0;
     }
@@ -1178,7 +1177,7 @@ int label_tape()
 	return 0;
     }
 
-    if((result = tapefd_wrheader(tape_fd, datestamp, label)) != NULL) {
+    if((result = tapefd_wrlabel(tape_fd, datestamp, label)) != NULL) {
 	strcpy(errstr, result);
 	return 0;
     }
@@ -1352,7 +1351,7 @@ char *device;
 	return 0;
     }
     else {
-	if((t_errstr = tape_rdheader(device, scan_datestamp, label)) != NULL) {
+	if((t_errstr = tape_rdlabel(device, scan_datestamp, label)) != NULL) {
 	    fprintf(stderr, "%s: slot %s: %s\n", pname, slotstr, t_errstr);
 	    fflush(stderr);
 	}

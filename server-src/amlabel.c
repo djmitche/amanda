@@ -110,7 +110,7 @@ char **argv;
 
     printf(", writing label %s", label); fflush(stdout);
 
-    if((errstr = tape_wrheader(tapename, "X", label)) != NULL)
+    if((errstr = tape_wrlabel(tapename, "X", label)) != NULL)
 	error(errstr);
 
     printf(", writing end marker"); fflush(stdout);

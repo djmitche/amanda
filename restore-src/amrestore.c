@@ -43,7 +43,6 @@
 #include "regex.h"
 #include "tapeio.h"
 
-#define BLOCK_SIZE	32768
 #define STRMAX		256
 #define CREAT_MODE	0640
 
@@ -65,7 +64,7 @@ typedef struct file_s {
 char *pname = "amrestore";
 dumpfile_t file;
 string_t filename, line;
-char buffer[BLOCK_SIZE];
+char buffer[TAPE_BLOCK_BYTES];
 char *tapename, *hostname, *diskname;
 
 int compflag, rawflag, pipeflag;
@@ -146,11 +145,11 @@ void read_file_header()
     char *lp, *bp, *str;
     int nchars;
 
-    buflen = tapefd_read(tapedev, buffer, BLOCK_SIZE);
+    buflen = tapefd_read(tapedev, buffer, sizeof(buffer));
     if(buflen < 0)
 	error("error reading tape: %s", strerror(errno));
 
-    else if(buflen < BLOCK_SIZE) {
+    else if(buflen < sizeof(buffer)) {
 	fprintf(stderr, "amrestore: short block %d bytes\n", buflen);
 	  /* GH: no simple return, but set file.type to F_TAPEEND, so that
 	     the loop in main() stops... */
@@ -393,7 +392,7 @@ void restore()
     /* copy the rest of the file from tape to the output */
     got_sigpipe = 0;
     wc = 0;
-    while((buflen = tapefd_read(tapedev, buffer, BLOCK_SIZE)) > 0) {
+    while((buflen = tapefd_read(tapedev, buffer, sizeof(buffer))) > 0) {
 	if((rc = write(out, buffer, buflen)) < buflen) {
 	    if(got_sigpipe) {
 		fprintf(stderr,"Error %d offset %d+%d, wrote %d\n",

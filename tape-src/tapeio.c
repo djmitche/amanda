@@ -257,32 +257,25 @@ int count;
     return NULL;
 }
 
-char *tape_rdheader(devname, datestamp, label)
-char *devname, *datestamp, *label;
+char *tapefd_rdlabel(tapefd, datestamp, label)
+int tapefd;
+char *datestamp, *label;
 {
-    int fd, rc;
-    char buffer[BUFFER_SIZE];
+    int rc;
+    char buffer[TAPE_BLOCK_BYTES];
 
-    if((fd = tape_open(devname, O_RDONLY)) == -1) {
-	sprintf(errstr, "no tape online");
-	return errstr;
-    }
-
-    if(tapefd_rewind(fd) == -1) {
+    if(tapefd_rewind(tapefd) == -1) {
 	sprintf(errstr, "rewinding tape: %s", strerror(errno));
-	tapefd_close(fd);
 	return errstr;
     }
 
-
-    if((rc = read(fd, buffer, BUFFER_SIZE)) == -1) {
+    if((rc = tapefd_read(tapefd, buffer, sizeof(buffer))) == -1) {
 	sprintf(errstr, "reading label: %s", strerror(errno));
-	tapefd_close(fd);
 	return errstr;
     }
 
     /* make sure buffer is null-terminated */
-    if(rc == BUFFER_SIZE) rc--;
+    if(rc == sizeof(buffer)) rc--;
     buffer[rc] = '\0';
 
     rc = sscanf(buffer, "AMANDA: TAPESTART DATE %[0-9X.] TAPE %s\n", 
@@ -290,6 +283,24 @@ char *devname, *datestamp, *label;
 
     if(rc != 2) {
 	sprintf(errstr, "not an amanda tape");
+	return errstr;
+    }
+
+    return NULL;
+}
+
+
+char *tape_rdlabel(devname, datestamp, label)
+char *devname, *datestamp, *label;
+{
+    int fd;
+
+    if((fd = tape_open(devname, O_RDONLY)) == -1) {
+	sprintf(errstr, "no tape online");
+	return errstr;
+    }
+
+    if(tapefd_rdlabel(fd, datestamp, label) != NULL) {
 	tapefd_close(fd);
 	return errstr;
     }
@@ -299,23 +310,23 @@ char *devname, *datestamp, *label;
 }
 
 
-char *tapefd_wrheader(tapefd, datestamp, label)
+char *tapefd_wrlabel(tapefd, datestamp, label)
 int tapefd;
 char *datestamp, *label;
 {
     int rc;
-    char buffer[BUFFER_SIZE];
+    char buffer[TAPE_BLOCK_BYTES];
 
     if(tapefd_rewind(tapefd) == -1) {
 	sprintf(errstr, "rewinding tape: %s", strerror(errno));
 	return errstr;
     }
 
-    memset(buffer, '\0', BUFFER_SIZE);
+    memset(buffer, '\0', sizeof(buffer));
     sprintf(buffer, "AMANDA: TAPESTART DATE %s TAPE %s\n\014\n", 
 	    datestamp, label);
 
-    if((rc = tapefd_write(tapefd, buffer, BUFFER_SIZE)) != BUFFER_SIZE) {
+    if((rc = tapefd_write(tapefd, buffer, sizeof(buffer))) != sizeof(buffer)) {
 	sprintf(errstr, "writing label: %s",
 		rc != -1? "short write" : strerror(errno));
 	return errstr;
@@ -325,7 +336,7 @@ char *datestamp, *label;
 }
 
 
-char *tape_wrheader(devname, datestamp, label)
+char *tape_wrlabel(devname, datestamp, label)
 char *devname, *datestamp, *label;
 {
     int fd;
@@ -339,7 +350,7 @@ char *devname, *datestamp, *label;
 	return errstr;
     }
 
-    if(tapefd_wrheader(fd, datestamp, label) != NULL) {
+    if(tapefd_wrlabel(fd, datestamp, label) != NULL) {
 	tapefd_close(fd);
 	return errstr;
     }
@@ -354,12 +365,12 @@ int tapefd;
 char *datestamp;
 {
     int rc;
-    char buffer[BUFFER_SIZE];
+    char buffer[TAPE_BLOCK_BYTES];
 
-    memset(buffer, '\0', BUFFER_SIZE);
+    memset(buffer, '\0', sizeof(buffer));
     sprintf(buffer, "AMANDA: TAPEEND DATE %s\n\014\n", datestamp);
 
-    if((rc = tapefd_write(tapefd, buffer, BUFFER_SIZE)) != BUFFER_SIZE) {
+    if((rc = tapefd_write(tapefd, buffer, sizeof(buffer))) != sizeof(buffer)) {
 	sprintf(errstr, "writing endmark: %s", 
 		rc != -1? "short write" : strerror(errno));
 	return errstr;

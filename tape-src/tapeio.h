@@ -32,12 +32,6 @@
 
 #include "amanda.h"
 
-/*
- * Do not change this lightly.  This is the size of the header for
- * compressed dumps or tars.
- */
-#define BUFFER_SIZE	(32*1024)
-
 int tape_open P((char *filename, int mode));
 
 int tapefd_rewind P((int tapefd));
@@ -48,7 +42,8 @@ void tapefd_resetofs P((int tapefd));
 int tapefd_read P((int tapefd, void *buffer, int count));
 int tapefd_write P((int tapefd, void *buffer, int count));
 
-char *tapefd_wrheader P((int tapefd, char *datestamp, char *label));
+char *tapefd_rdlabel P((int tapefd, char *datestamp, char *label));
+char *tapefd_wrlabel P((int tapefd, char *datestamp, char *label));
 char *tapefd_wrendmark P((int tapefd, char *datestamp));
 
 int tapefd_eof P((int tapefd));		/* just used in tapeio-test */
@@ -56,8 +51,8 @@ int tapefd_close P((int tapefd));
 
 char *tape_rewind P((char *dev));
 char *tape_fsf P((char *dev, int count));
-char *tape_rdheader P((char *dev, char *datestamp, char *label));
-char *tape_wrheader P((char *dev, char *datestamp, char *label));
+char *tape_rdlabel P((char *dev, char *datestamp, char *label));
+char *tape_wrlabel P((char *dev, char *datestamp, char *label));
 char *tape_wrendmark P((char *dev, char *datestamp));
 char *tape_writeable P((char *dev));
 

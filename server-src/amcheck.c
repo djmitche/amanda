@@ -50,7 +50,8 @@
 #   define WIFSIGNALED(r)        (((union wait *) &(r))->w_termsig != 0)
 #endif
 
-#define CHECK_TIMEOUT		   30
+#define CHECK_TIMEOUT   30
+#define BUFFER_SIZE	32768
 
 char *pname = "amcheck";
 
@@ -277,7 +278,7 @@ char *device;
 	return 0;
     }
     else {
-	if((errstr = tape_rdheader(device, datestamp, label)) != NULL)
+	if((errstr = tape_rdlabel(device, datestamp, label)) != NULL)
 	    fprintf(errf, "%s: slot %s: %s\n", pname, slotstr, errstr);
 	else {
 	    /* got an amanda tape */
@@ -418,7 +419,7 @@ int fd;
     if(changer_init() && (tapename = taper_scan()) == NULL) {
 	fprintf(outf, "ERROR: %s.\n", changer_resultstr);
 	tapebad = 1;
-    } else if((errstr = tape_rdheader(tapename, datestamp, label)) != NULL) {
+    } else if((errstr = tape_rdlabel(tapename, datestamp, label)) != NULL) {
 	fprintf(outf, "ERROR: %s: %s.\n", tapename, errstr);
 	tapebad = 1;
     } else {

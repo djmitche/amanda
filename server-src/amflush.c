@@ -560,19 +560,17 @@ void run_dumps()
     execl(reporter_program, "reporter", (char *)0);
 }
 
-#define BLOCK_SIZE    32768
-
 int get_amanda_names(fname, hostname, diskname, level)
 char *fname, *hostname, *diskname;
 int *level;
 {
-    char buffer[BLOCK_SIZE], datestamp[80];
+    char buffer[TAPE_BLOCK_BYTES], datestamp[80];
     int fd;
 
     if((fd = open(fname, O_RDONLY)) == -1)
 	return 1;
 
-    if(read(fd, buffer, BLOCK_SIZE) != BLOCK_SIZE) {
+    if(read(fd, buffer, sizeof(buffer)) != sizeof(buffer)) {
 	close(fd);
 	return 1;
     }

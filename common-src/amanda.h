@@ -290,6 +290,10 @@ extern void debug_printf P((char *format, ...));
 #define AMANDA_SERVICE_DEFAULT	10080
 #define KAMANDA_SERVICE_DEFAULT	10081
 
+/* Size of a tape block in kbytes.  Do not change lightly. */
+#define TAPE_BLOCK_SIZE 32
+#define TAPE_BLOCK_BYTES (TAPE_BLOCK_SIZE*1024)
+
 
 /* Define misc amanda functions.  */
 #define ERR_INTERACTIVE	1
