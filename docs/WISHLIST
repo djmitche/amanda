@@ -55,6 +55,14 @@ would be equivalent to:
 //win-srv/F$ XXXX -U backup -W Win32-LAB
 //other/C$ XXXX -U amanda  (no domain specified)
 
+* We should try re-implement the functionality of runtar and rundump
+in a safer way, that would prevent arbitrary runs of tar and dump even
+from the backup user.
+
+* The nolog hack should be removed; instead, server programs should
+call log_error instead of just error, and this function would call
+both log and error.
+
 * It should be possible to re-generate databases and indexes from tapes.
 
 * amdump should not run if files named either amdump or log exist in
@@ -63,16 +71,6 @@ crashed amdump with a new one.  However, when amanda is expected to
 run unattended for long periods of time (1-2 weeks), a cron job should
 be configured to check whether those files exist and, if they do, run
 amcleanup before amdump.
-
-* Instead of hard-coding /dev prefixes, amanda should be able to
-figure out device names by itself, by looking up /etc/*fstab.  Also,
-whenever block device names are needed, this information might be
-obtained from /etc/*fstab.  On systems whose fstab does not contain
-that information, amanda could try to prepend an `r' before each
-pathname component, from the last to the first, and check whether that
-name exists and is a block device.  If no such name is found, the
-device name itself is used.  Can anyone find an example where this
-would fail?
 
 * Ports to non-Unix platforms, specifically Macs and PCs.  The hooks are in
 the Amanda protocol to support non-dump backup programs, but no-one has
