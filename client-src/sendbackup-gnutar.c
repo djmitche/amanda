@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.22 1997/09/19 02:37:58 george Exp $
+ * $Id: sendbackup-gnutar.c,v 1.23 1997/09/26 11:24:24 george Exp $
  *
  * send backup data using GNU tar
  */
@@ -69,13 +69,14 @@ time_t cur_dumptime;
 char *incrname;
 #endif
 
-static void start_backup(disk, level, dumpdate, dataf, mesgf, indexf)
+static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
+char *host;
 char *disk;
 int level, dataf, mesgf, indexf;
 char *dumpdate;
 {
     int dumpin, dumpout;
-    char *host, cmd[256];
+    char cmd[256];
     char *dirname;
     char dbprintf_buf[1024];
     int l;
@@ -84,10 +85,6 @@ char *dumpdate;
     amandates_t *amdates;
     time_t prev_dumptime;
     char indexcmd[4096];
-
-    host = getenv("HOSTNAME");
-    if (host == NULL)
-      error("environment variable HOSTNAME must be set");
 
     fprintf(stderr, "%s: start [%s:%s level %d]\n",
 	    pname, host, disk, level);

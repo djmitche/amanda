@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: protocol.c,v 1.9 1997/09/04 01:57:25 amcore Exp $
+ * $Id: protocol.c,v 1.10 1997/09/26 11:24:31 george Exp $
  *
  * implements amanda protocol
  */
@@ -497,7 +497,6 @@ pkt_t *pkt;
 
     if(pkt->type == P_REQ) {
 	
-        eat_string(msg, "HOSTNAME");    pkt->hostname = parse_string(msg);
 #ifdef KRB4_SECURITY
         eat_string(msg, "");
         pkt->cksum = kerberos_cksum(msg->cur);
@@ -535,9 +534,6 @@ proto_t *p;
     dgram_t outmsg;
 
     setup_dgram(p, &outmsg, p->security, "REQ");
-    dgram_cat(&outmsg, "HOSTNAME ");
-    dgram_cat(&outmsg, p->hostname);
-    dgram_cat(&outmsg, " ");
     dgram_cat(&outmsg, p->req);
 
 #ifdef PROTO_DEBUG
@@ -750,8 +746,6 @@ void (*continuation) P((proto_t *p, pkt_t *pkt));
     memcpy(&p->peer.sin_addr, hp->h_addr, hp->h_length);
     p->peer.sin_family = AF_INET;
     p->peer.sin_port = htons(port);
-
-    p->hostname = hostname;
 
     add_bsd_security(p);
 

@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.27 1997/09/23 00:05:30 george Exp $
+/* $Id: dumper.c,v 1.28 1997/09/26 11:24:35 george Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1110,8 +1110,8 @@ int level;
     int rc;
 
     sprintf(req,
-	    "SERVICE sendbackup\n%s %s %d %s OPTIONS %s\n",
-	    progname, disk, level, dumpdate, options);
+	    "SERVICE sendbackup\nOPTIONS hostname=%s;\n%s %s %d %s OPTIONS %s\n",
+	    hostname, progname, disk, level, dumpdate, options);
 
     datafd = mesgfd = indexfd = -1;
 

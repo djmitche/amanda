@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.33 1997/09/24 17:24:55 amcore Exp $
+ * $Id: sendsize.c,v 1.34 1997/09/26 11:24:28 george Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -77,6 +77,7 @@ disk_estimates_t *est_list;
 #define MAXMAXDUMPS 16
 
 int maxdumps = 1, dumpsrunning = 0;
+char host[MAX_HOSTNAME_LENGTH];		/* my hostname from the server */
 
 /* local functions */
 int main P((int argc, char **argv));
@@ -107,20 +108,28 @@ char **argv;
     dbopen("/tmp/sendsize.debug");
     dbprintf(("%s: version %s\n", argv[0], version()));
 
+    gethostname(host, sizeof(host)-1);
+
     /* handle all service requests */
 
     start_amandates(0);
 
     while(fgets(line, MAXLINE, stdin)) {
 	if(!strncmp(line, "OPTIONS", 7)) {
-	    if((str = strstr(line, "MAXDUMPS=")) != NULL &&
-	       sscanf(str, "MAXDUMPS=%d", &new_maxdumps) == 1) {
-	      if (new_maxdumps > MAXMAXDUMPS)
-		maxdumps = MAXMAXDUMPS;
-	      else if (new_maxdumps > 0)
-		maxdumps = new_maxdumps;
+	    str = strstr(line, "maxdumps=");
+	    if(str != NULL
+	       && sscanf(str, "maxdumps=%d;", &new_maxdumps) == 1) {
+		if (new_maxdumps > MAXMAXDUMPS)
+		    maxdumps = MAXMAXDUMPS;
+		else if (new_maxdumps > 0)
+		    maxdumps = new_maxdumps;
 	    }
-	    sprintf(opt, "OPTIONS MAXDUMPS=%d;\n", maxdumps);
+
+	    str = strstr(line, "hostname=");
+	    if(str != NULL)
+		sscanf(str, "hostname=%s;", &host);
+
+	    sprintf(opt, "OPTIONS maxdumps=%d;\n", maxdumps);
 	    write(1, opt, strlen(opt));
 	    continue;
 	}
@@ -721,18 +730,11 @@ time_t dumpsince;
     long size;
     FILE *dumpout;
     char *incrname;
-    char *host;
     char *dirname;
     char cmd[256], dumptimestr[80];
     struct tm *gmtm;
     time_t prev_dumptime;
     int l;
-
-    host = getenv("HOSTNAME");
-    if (host == NULL) {
-      dbprintf(("environment variable HOSTNAME must be set\n"));
-      return -1;
-    }
 
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
     {

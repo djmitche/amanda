@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.h,v 1.5 1997/08/27 08:11:42 amcore Exp $
+ * $Id: sendbackup.h,v 1.6 1997/09/26 11:24:27 george Exp $
  *
  * a few common decls for the sendbackup-* sources
  */
@@ -70,7 +70,7 @@ extern int indexpid, createindex;
 typedef struct backup_program_s {
     char *name, *backup_name, *restore_name;
     regex_t *re_table;
-    void (*start_backup) P((char *disk, int level, char *dumpdate, \
+    void (*start_backup) P((char *host, char *disk, int level, char *dumpdate, \
 			    int dataf, int mesgf, int indexf));
     void (*end_backup) P((int goterror));
 } backup_program_t;

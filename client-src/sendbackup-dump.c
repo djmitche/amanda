@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.34 1997/09/19 02:37:56 george Exp $
+ * $Id: sendbackup-dump.c,v 1.35 1997/09/26 11:24:23 george Exp $
  *
  * send backup data using BSD dump
  */
@@ -120,21 +120,18 @@ static regex_t re_table[] = {
   { DMP_STRANGE, NULL, 0}
 };
 
-static void start_backup(disk, level, dumpdate, dataf, mesgf, indexf)
+static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
+char *host;
 char *disk;
 int level, dataf, mesgf, indexf;
 char *dumpdate;
 {
     int dumpin, dumpout;
-    char *host, dumpkeys[80];
+    char dumpkeys[80];
     char device[1024];
     char cmd[4096];
     char indexcmd[4096];
     
-    host = getenv("HOSTNAME");
-    if (host == NULL)
-      error("environment variable HOSTNAME must be set");
-
     fprintf(stderr, "%s: start [%s:%s level %d]\n",
 	    pname, host, disk, level);
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.37 1997/09/20 14:59:41 george Exp $
+ * $Id: planner.c,v 1.38 1997/09/26 11:24:37 george Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -859,7 +859,8 @@ host_t *hostp;
 
     assert(hostp->disks != NULL);
 
-    sprintf(req, "SERVICE sendsize\nOPTIONS MAXDUMPS=%d;\n", hostp->maxdumps);
+    sprintf(req, "SERVICE sendsize\nOPTIONS maxdumps=%d;hostname=%s;\n",
+	hostp->maxdumps, hostp->hostname);
 
     disks = 0;
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {

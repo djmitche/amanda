@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.14 1997/09/23 00:05:27 george Exp $
+ * $Id: sendbackup.c,v 1.15 1997/09/26 11:24:26 george Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -158,6 +158,7 @@ char **argv;
     int level, mesgpipe[2];
     char prog[80], disk[1024], options[4096];
     char dumpdate[256];
+    char host[MAX_HOSTNAME_LENGTH];	/* my hostname from the server */
 
     /* initialize */
 
@@ -166,10 +167,24 @@ char **argv;
     umask(0);
     dbopen("/tmp/sendbackup.debug");
 
+    gethostname(host, sizeof(host)-1);
+
     /* parse dump request */
 
     if(fgets(line, MAX_LINE, stdin) == NULL)
 	goto err;
+
+    if(!strncmp(line, "OPTIONS", 7)) {
+	char *str;
+
+	str = strstr(line, "hostname=");
+	if(str != NULL)
+	    sscanf(str, "hostname=%s;", &host);
+
+	if(fgets(line, MAX_LINE, stdin) == NULL)
+	    goto err;
+    }
+
     dbprintf(("%s: got input request: %s", argv[0], line));
     if(sscanf(line, "%s %s %d %s OPTIONS %[^\n]\n", 
 	      prog, disk, &level, dumpdate, options) != 5)
@@ -276,7 +291,8 @@ char **argv;
       error("error [opening mesg pipe: %s]", strerror(errno));
     }
 
-    program->start_backup(disk, level, dumpdate, dataf, mesgpipe[1], indexf);
+    program->start_backup(host, disk, level, dumpdate, dataf, mesgpipe[1],
+			  indexf);
     parse_backup_messages(mesgpipe[0]);
 
     dbclose();

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.9 1997/08/28 16:44:20 amcore Exp $
+ * $Id: amandad.c,v 1.10 1997/09/26 11:24:21 george Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -64,7 +64,6 @@ int ack_timeout     = ACK_TIMEOUT;
 
 char response_fname[256];
 char input_fname[256];
-char local_hostname[MAX_HOSTNAME_LENGTH];
 /*
  * FIXME: Amandad is sprintfing into this tiny buffer information that
  * could potentially very easily overflow it.  This may not be big
@@ -125,7 +124,7 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    char *envv[3];
+    char *envv[2];
     char *envp[(sizeof(envv) / sizeof(*envv))];
     char **p = NULL;
     char **q = NULL;
@@ -133,8 +132,7 @@ char **argv;
 
     /* a list of environment variables to be passed to child processes */
     envv[0] = "TZ";
-    envv[1] = "HOSTNAME";
-    envv[2] = (char *)0;
+    envv[1] = (char *)0;
 
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
 
@@ -227,10 +225,6 @@ char **argv;
 	return 1;
     }
 
-    sprintf(local_hostname, "HOSTNAME=%s", in_msg.hostname);
-    putenv(stralloc(local_hostname));
-    strcpy(local_hostname, in_msg.hostname);
-
     /* lookup service */
 
     for(servp = service_table; servp->name != NULL; servp++)
@@ -258,7 +252,6 @@ char **argv;
     /* everything looks ok initially, send ACK */
 
     sendack(&in_msg, &out_msg);
-
 
     /* 
      * handle security check: this could take a long time, so it is 
