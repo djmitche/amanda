@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.39.2.2 1999/02/14 16:46:14 martinea Exp $
+ * $Id: amindexd.c,v 1.39.2.3 1999/02/15 02:31:01 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -631,7 +631,8 @@ int  recursive;
     if(recursive)
     {
 	lreply(200, " Opaque recursive list of %s", dir);
-	for (dir_item = dir_list; dir_item != NULL; dir_item = dir_item->next)
+	for (dir_item = get_dir_list(); dir_item != NULL; 
+	     dir_item = dir_item->next)
 	    fast_lreply(201, " %s %d %-16s %s",
 			dir_item->dump->date, dir_item->dump->level,
 			dir_item->dump->tape, dir_item->path);
@@ -640,7 +641,8 @@ int  recursive;
     else
     {
 	lreply(200, " Opaque list of %s", dir);
-	for (dir_item = dir_list; dir_item != NULL; dir_item = dir_item->next)
+	for (dir_item = get_dir_list(); dir_item != NULL; 
+	     dir_item = dir_item->next)
 	    lreply(201, " %s %d %-16s %s",
 		   dir_item->dump->date, dir_item->dump->level,
 		   dir_item->dump->tape, dir_item->path);

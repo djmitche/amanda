@@ -1,5 +1,12 @@
 1999-02-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/list_dir.h: remove global variable dir_list, declare
+	new function get_dir_list.
+	* server-src/list_dir.c (get_dir_list): new function to return dir_list.
+	* server-src/amindexd.c (opaque_ls): use get_dir_list.
+
+1999-02-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
         * server-src/holding.h: remove declaration of get_letter_from_user()
         and select_dir().
         * server-src/holding.c: remove function get_letter_from_user() and
