@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.35 1997/12/10 07:37:59 amcore Exp $
+/* $Id: dumper.c,v 1.36 1997/12/15 21:27:44 blair Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -108,10 +108,7 @@ int amanda_port;
 int main P((int main_argc, char **main_argv));
 static cmd_t getcmd P((void));
 static void putresult P((char *format, ...))
-#ifdef __GNUC__
-     __attribute__ ((format (printf, 1, 2)))
-#endif
-     ;
+    __attribute__ ((format (printf, 1, 2)));
 static void do_dump P((int mesgfd, int datafd, int indexfd, int outfd));
 void check_options P((char *options));
 void service_ports_init P((void));

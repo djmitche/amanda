@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.24 1997/12/14 20:07:31 jrj Exp $
+ * $Id: conffile.c,v 1.25 1997/12/15 21:27:42 blair Exp $
  *
  * read configuration file
  */
@@ -228,10 +228,7 @@ static int get_number P((void));
 static int get_bool P((void));
 static void ckseen P((int *seen));
 static void parserror P((char *format, ...))
-#ifdef __GNUC__
-     __attribute__ ((format (printf, 1, 2)))
-#endif
-     ;
+    __attribute__ ((format (printf, 1, 2)));
 static tok_t lookup_keyword P((char *str));
 static void unget_conftoken P((void));
 static void get_conftoken P((tok_t exp));

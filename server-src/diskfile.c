@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.13 1997/12/09 07:16:07 amcore Exp $
+ * $Id: diskfile.c,v 1.14 1997/12/15 21:27:43 blair Exp $
  *
  * read disklist file
  */
@@ -47,10 +47,7 @@ static char *upcase P((char *st));
 static int read_diskline P((void));
 static void get_string P((void));
 static void parserror P((char *format, ...))
-#ifdef __GNUC__
-     __attribute__ ((format (printf, 1, 2)))
-#endif
-     ;
+    __attribute__ ((format (printf, 1, 2)));
 static void eat_line P((void));
 
 

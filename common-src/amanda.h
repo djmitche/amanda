@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.28 1997/11/20 19:58:33 jrj Exp $
+ * $Id: amanda.h,v 1.29 1997/12/15 21:27:35 blair Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -246,6 +246,14 @@ extern int errno;
 #  define stringize(x) "x"
 #endif
 
+/*
+ * So that we can use GNUC attributes (such as to get -Wall warnings
+ * for printf-like functions).  Only do this in gcc 2.7 or later ...
+ * it may work on earlier stuff, but why chance it.
+ */
+#if !defined(__GNUC__) || __GNUC__ < 2 || __GNUC_MINOR__ < 7
+#define __attribute__(__x)
+#endif
 
 /*
  * assertions, but call error() instead of abort 
@@ -279,10 +287,7 @@ extern int db_file;
 extern void debug_open P((void));
 extern void debug_close P((void));
 extern void debug_printf P((char *format, ...))
-#ifdef __GNUC__
-     __attribute__ ((format (printf, 1, 2)))
-#endif
-     ;
+    __attribute__ ((format (printf, 1, 2)));
 #else
 #   define dbopen()
 #   define dbclose()
@@ -322,10 +327,7 @@ extern void debug_printf P((char *format, ...))
 
 extern int    erroutput_type;
 extern void   error     P((char *format, ...))
-#ifdef __GNUC__
-     __attribute__ ((format (printf, 1, 2)))
-#endif
-     ;
+    __attribute__ ((format (printf, 1, 2)));
 extern int    onerror         P((void (*errf)(void)));
 extern void  *alloc           P((int size));
 extern void  *newalloc        P((void *old, int size));
@@ -604,6 +606,16 @@ extern int shmget P((key_t key, size_t size, int shmflg));
 #endif
 #endif
 
+#ifdef HAVE_SNPRINTF
+#define ap_snprintf	snprintf
+#define ap_vsnprintf	vsnprintf
+#endif
+#ifndef HAVE_SNPRINTF_DECL
+int ap_snprintf  P((char *buf, size_t len, const char *format,...))
+		    __attribute__((format(printf,3,4)));
+int ap_vsnprintf P((char *buf, size_t len, const char *format, va_list ap));
+#endif
+
 #ifndef HAVE_SOCKET_DECL
 extern int socket P((int domain, int type, int protocol));
 #endif
@@ -631,10 +643,7 @@ extern int strncasecmp P((const char *s1, const char *s2, int n));
 
 #ifndef HAVE_SYSLOG_DECL
 extern void syslog P((int priority, const char *logstring, ...))
-#ifdef __GNUC__
-     __attribute__ ((format (printf, 2, 3)))
-#endif
-     ;
+    __attribute__ ((format (printf, 2, 3)));
 #endif
 
 #ifndef HAVE_SYSTEM_DECL

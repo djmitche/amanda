@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.14 1997/11/17 12:41:34 amcore Exp $
+/* $Id: taper.c,v 1.15 1997/12/15 21:27:46 blair Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -76,10 +76,7 @@ void tape_writer_side P((int rdpipe, int wrpipe));
 /* misc helper functions */
 cmd_t getcmd P((int *argcp, char ***argvp));
 void putresult P((char *format, ...))
-#ifdef __GNUC__
-     __attribute__ ((format (printf, 1, 2)))
-#endif
-     ;
+    __attribute__ ((format (printf, 1, 2)));
 
 /* shared-memory routines */
 buffer_t *attach_buffers P((void));

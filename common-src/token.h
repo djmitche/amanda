@@ -23,21 +23,20 @@
  * Author: George Scott, Computer Centre, Monash University
  */
 /*
- * $Id: token.h,v 1.7 1997/11/01 09:21:39 george Exp $
+ * $Id: token.h,v 1.8 1997/12/15 21:27:36 blair Exp $
  *
  * interface to token module
  */
 #ifndef TOKEN_H
 #define TOKEN_H
 
+#include "amanda.h"
+
 typedef struct {char *word; int value;} table_t;
 
 extern int split P((char *str, char **token, int toklen, char *sep));
 extern char *squotef P((char *format, ...))
-#ifdef __GNUC__
-     __attribute__ ((format (printf, 1, 2)))
-#endif
-     ;
+    __attribute__ ((format (printf, 1, 2)));
 extern char *squote P((char *str));
 extern char *quotef P((char *sep, char *format, ...));
 extern char *quote P((char *sep, char *str));
