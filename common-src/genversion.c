@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: genversion.c,v 1.22 1999/05/11 23:33:40 kashmir Exp $
+ * $Id: genversion.c,v 1.23 1999/05/17 22:15:22 kashmir Exp $
  *
  * dump the current Amanda version info
  */
@@ -63,7 +63,7 @@ prstr(string)
 }
 
 /* Print a variable */
-void
+static void
 prvar(var, val)
     const char *var, *val;
 {
