@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.61.2.1 1998/01/25 15:34:04 amcore Exp $
+ * $Id: sendsize.c,v 1.61.2.2 1998/01/29 10:07:08 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -39,7 +39,13 @@
 #include "findpass.h"
 #endif
 
-#ifdef SETPGRP_VOID
+#ifdef HAVE_SETPGID
+#  define SETPGRP	setpgid(0, 0)
+#  define SETPGRP_FAILED() do {						\
+    dbprintf(("setpgid(0,0) failed: %s\n", strerror(errno)));		\
+} while(0)
+
+#elif defined(SETPGRP_VOID)
 #  define SETPGRP	setpgrp()
 #  define SETPGRP_FAILED() do {						\
     dbprintf(("setpgrp() failed: %s\n", strerror(errno)));		\

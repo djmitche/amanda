@@ -946,10 +946,6 @@ DUMP_PROGRAMS="ufsdump vdump dump backup"
 
 case "$target" in
     *-dec-osf*)
-			# setpgrp takes void
-			case "$target" in *-dec-osf[[123]]*)
-			    ac_cv_func_setpgrp_void=yes;;
-			esac
 			AC_DEFINE(STATFS_OSF1)
 			;;
     *-dg-*)
@@ -1791,6 +1787,10 @@ ICE_CHECK_DECL(setresgid,unistd.h)
 ICE_CHECK_DECL(setresuid,unistd.h)
 
 dnl arguments for setpgrp or not
+AC_CHECK_FUNC(setpgid, [
+	AC_DEFINE(HAVE_SETPGID)
+	ICE_CHECK_DECL(setpgid,sys/types.h unistd.h)
+])
 AC_CHECK_FUNC(setpgrp,[AC_FUNC_SETPGRP])
 ICE_CHECK_DECL(setpgrp,sys/types.h unistd.h libc.h)
 
