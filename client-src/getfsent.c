@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getfsent.c,v 1.5 1997/11/25 07:26:17 amcore Exp $
+ * $Id: getfsent.c,v 1.6 1997/11/27 09:18:22 amcore Exp $
  *
  * generic version of code to read fstab
  */
@@ -90,6 +90,46 @@ generic_fsent_t *fsent;
     return 1;
 }
 
+#elif defined(HAVE_SYS_VFSTAB_H) /* } { */
+/*
+** SVR4 (GETFSENT_SOLARIS)
+*/
+#define GETFSENT_TYPE "SVR4 (Solaris)"
+
+#include <sys/vfstab.h>
+
+static FILE *fstabf = NULL;
+
+int open_fstab()
+{
+    close_fstab();
+    return (fstabf = fopen(VFSTAB, "r")) != NULL;
+}
+
+void close_fstab()
+{
+    if(fstabf)
+	fclose(fstabf);
+    fstabf = NULL;
+}
+
+int get_fstab_nextentry(fsent)
+generic_fsent_t *fsent;
+{
+    struct vfstab sys_fsent;
+
+    if(getvfsent(fstabf, &sys_fsent) != 0)
+	return 0;
+
+    fsent->fsname  = sys_fsent.vfs_special;
+    fsent->fstype  = sys_fsent.vfs_fstype;
+    fsent->mntdir  = sys_fsent.vfs_mountp;
+    fsent->mntopts = sys_fsent.vfs_mntopts;
+    fsent->freq    = 1;	/* N/A */
+    fsent->passno  = sys_fsent.vfs_fsckpass? atoi(sys_fsent.vfs_fsckpass) : 0;
+    return 1;
+}
+
 #elif defined(HAVE_MNTENT_H) /* } { */
 
 /*
@@ -130,45 +170,6 @@ generic_fsent_t *fsent;
     return 1;
 }
 
-#elif defined(HAVE_SYS_VFSTAB_H) /* } { */
-/*
-** SVR4 (GETFSENT_SOLARIS)
-*/
-#define GETFSENT_TYPE "SVR4 (Solaris)"
-
-#include <sys/vfstab.h>
-
-static FILE *fstabf = NULL;
-
-int open_fstab()
-{
-    close_fstab();
-    return (fstabf = fopen(VFSTAB, "r")) != NULL;
-}
-
-void close_fstab()
-{
-    if(fstabf)
-	fclose(fstabf);
-    fstabf = NULL;
-}
-
-int get_fstab_nextentry(fsent)
-generic_fsent_t *fsent;
-{
-    struct vfstab sys_fsent;
-
-    if(getvfsent(fstabf, &sys_fsent) != 0)
-	return 0;
-
-    fsent->fsname  = sys_fsent.vfs_special;
-    fsent->fstype  = sys_fsent.vfs_fstype;
-    fsent->mntdir  = sys_fsent.vfs_mountp;
-    fsent->mntopts = sys_fsent.vfs_mntopts;
-    fsent->freq    = 1;	/* N/A */
-    fsent->passno  = sys_fsent.vfs_fsckpass? atoi(sys_fsent.vfs_fsckpass) : 0;
-    return 1;
-}
 #elif defined(HAVE_SYS_MNTTAB_H) /* } { */
 
 /* we won't actually include mnttab.h, since it contains nothing useful.. */
@@ -447,6 +448,7 @@ generic_fsent_t *fsent;
 	   strcmp(fsent->fstype, "afs") != 0 &&	/* Andrew Filesystem */
 	   strcmp(fsent->fstype, "swap") != 0 && /* Swap */
 	   strcmp(fsent->fstype, "iso9660") != 0 && /* CDROM */
+	   strcmp(fsent->fstype, "hs") != 0 && /* CDROM */
 	   strcmp(fsent->fstype, "piofs") != 0;	/* an AIX printer thing? */
 }
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.38 1997/10/31 19:57:40 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.39 1997/11/27 09:18:23 amcore Exp $
  *
  * send backup data using BSD dump
  */
@@ -84,6 +84,12 @@ static regex_t re_table[] = {
   { DMP_SIZE, "vxdump: [0-9][0-9]* tape blocks", 512},
 		/* HPUX vxdump */
 
+  { DMP_SIZE, "   VXDUMP: [0-9][0-9]* blocks",                            512},
+		/* SINIX vxdump */
+
+  { DMP_SIZE, "   UFSDUMP: [0-9][0-9]* blocks",                           512},
+		/* SINIX ufsdump */
+
   { DMP_SIZE, "xfsdump: media file size [0-9][0-9]* bytes",                 1},
 		/* Irix 6.2 xfs dump */
 
@@ -100,6 +106,7 @@ static regex_t re_table[] = {
   { DMP_NORMAL, "^vdump:" },					/* OSF/1 */
   { DMP_NORMAL, "^  vxdump:" },					/* HPUX10 */
   { DMP_NORMAL, "^xfsdump:" },					/* IRIX xfs */
+  { DMP_NORMAL, "^  VXDUMP:" },                                 /* Sinix */
   { DMP_NORMAL, "^  UFSDUMP:" },                                /* Sinix */
 
 #ifdef OSF1_VDUMP	/* this is for OSF/1 3.2's vdump for advfs */

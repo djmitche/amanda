@@ -1,5 +1,8 @@
 Version 2.4.0b5
 
+	Ported to SINIX (Reliant Unix V5.43).  -Michael Schmitz
+	<mschmitz@iname.com>
+
 	Configure now looks for large file support and will use it under
 	Solaris 2.6 and above.  -Blair Zajac <blair@gps.caltech.edu>
 
@@ -1012,7 +1015,7 @@ Version 2.3.0.4b1
 	<Michael_Russell@Brown.EDU>.
 
 	Fix problems with amhpfixdevs.  Patch from Michael Schmitz
-	<mc@col.sw-ley.de>.
+	<mschmitz@iname.com>.
 
 	Have DEC OSF1 use installbsd instead of install.  Patch from
 	Rainer Landes <rlandes@fphws01.physik.uni-karlsruhe.de>.
@@ -1054,13 +1057,13 @@ Version 2.3.0.4b1
 
 	Increase the planner timeout for one estimate from 30 seconds
 	to 120 seconds.  Patch from Michael Schmitz
-	<mc@col.sw-ley.de>.
+	<mschmitz@iname.com>.
 
 	The select(2) prototype on HPUX specifies 'int' as argument
 	type of the filedescriptor arguments. All other systems I know
 	of use 'fd_set'. This has been fixed by having configure check
 	the argument type to select and adding casts to the select(2)
-	calls.  Patch from Michael Schmitz  <mc@col.sw-ley.de>.
+	calls.  Patch from Michael Schmitz  <mschmitz@iname.com>.
 
 	Improve the diagnostic output and increase the robustness of
 	the system by adding better error checking on communication

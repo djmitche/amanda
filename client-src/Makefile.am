@@ -34,11 +34,12 @@ sbin_SCRIPTS =		@BUILD_CLIENT_SCRIPTS_SBIN@
 
 libexec_SCRIPTS =	@BUILD_CLIENT_SCRIPTS_LIBEXEC@
 
-EXTRA_SCRIPTS =		amhpfixdevs		patch-system
+EXTRA_SCRIPTS =		amhpfixdevs		patch-system	\
+			amsinixfixdevs
 
 DISTCLEANFILES = $(EXTRA_SCRIPTS)
 
-EXTRA_DIST =		amhpfixdevs.sh
+EXTRA_DIST =		amhpfixdevs.sh		amsinixfixdevs.sh
 
 sendbackup_SOURCES = 	sendbackup.c		sendbackup.h	\
 			sendbackup-dump.c	sendbackup-gnutar.c

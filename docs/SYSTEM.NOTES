@@ -90,3 +90,27 @@ According to Michael Galloway <mgx@spruce.lsd.ornl.gov>, the stock
 DUX4 dump is broken.  There is a patch available:
 
 ftp://ftp.service.digital.com/public/dunix/v4.0b/duv40bas00005-19970926.README
+
+---------------------------------------------------------------------------
+Sinix 5.43 (Reliant Unix)
+-------------------------
+
+The port to Sinix was originally done by Michael Schmitz <mschmitz@iname.com>.
+
+You'll find a perl script 'amsinixfixdevs' in the client-src directory of
+the source distribution. Call this script before you start Amanda for the
+first time and any time you add a new disk. This script will create two new
+directories (/dev/dsk and /dev/rdsk) and lots of symbolic links to the disk
+device files.
+
+Suppose you have a device '/dev/ios0/sdisk000s2' and a virtual disk
+'/dev/vd/vdisk0'. Calling the script will create the following symbolic
+links:
+ 
+	/dev/ios0/sdisk000s2   --> /dev/dsk/ios0_sdisk000s2
+	/dev/ios0/rsdisk000s2  --> /dev/rdsk/ios0_sdisk000s2
+ 	/dev/vd/vdisk0         --> /dev/dsk/vd_vdisk0
+ 	/dev/vd/rvdisk0        --> /dev/rdsk/vd_vdisk0
+
+Michael Schmitz (mschmitz@iname.com)
+Thu Jul 31 16:36:03 MET DST 1997

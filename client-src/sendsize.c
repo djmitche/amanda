@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.41 1997/11/20 19:58:30 jrj Exp $
+ * $Id: sendsize.c,v 1.42 1997/11/27 09:18:24 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -440,6 +440,8 @@ regex_t re_size[] = {
     {"dump: Dumping [0-9][0-9]* bytes, ", 1},                /* DU 4.0 vdump */
     {"DUMP: estimated [0-9][0-9]* KB output", 1024},                 /* HPUX */
     {"xfsdump: estimated dump size: [0-9][0-9]* bytes", 1},  /* Irix 6.2 xfs */
+    {"  UFSDUMP: estimated [0-9][0-9]* blocks", 512},               /* Sinix */
+    {"  VXDUMP: estimated [0-9][0-9]* blocks", 512},                /* Sinix */
     {"Total bytes listed: [0-9][0-9]*", 1},		     /* Samba client */
     {"Total bytes written: [0-9][0-9]*", 1},		    /* Gnutar client */
 

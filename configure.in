@@ -233,6 +233,9 @@ case "$target" in
     *-hp-*)
 	BUILD_CLIENT_SCRIPTS_SBIN=amhpfixdevs
 	;;
+    *-sni-sysv4)
+	BUILD_CLIENT_SCRIPTS_SBIN=amsinixfixdevs
+	;;
     *)
 	BUILD_CLIENT_SCRIPTS_SBIN=
 	;;
@@ -970,6 +973,8 @@ case "$target" in
 			;;
   i386-pc-isc4*)
 			AC_DEFINE(XENIX_TAPEIO)
+			;;
+  *-sni-sysv4)
 			;;
   *)
 			cat <<END
@@ -1765,6 +1770,7 @@ AC_REPLACE_FUNCS(strerror)
 ICE_CHECK_DECL(strerror,string.h)
 AC_FUNC_STRFTIME
 ICE_CHECK_DECL(strftime,time.h sys/time.h)
+AC_REPLACE_FUNCS(strncasecmp)
 ICE_CHECK_DECL(strncasecmp,string.h)
 AC_REPLACE_FUNCS(strstr)
 ICE_CHECK_DECL(syslog,syslog.h)
@@ -1820,21 +1826,31 @@ else
 	    RDEV_PREFIX=/dev/dsk/
 	fi
     elif test -d /dev; then
-	DEV_PREFIX=/dev/
-	# Some systems, notably Linux, do not have raw disk devices
-	# names.  Check this by trying to see if a raw disk device name
-	# exists using the normal raw device path prepended to the
-	# mount point of the root filesystem.
-	if test "$mount"; then
-	    dev_name="/dev/r`basename $mount`"
-	    if test -b $dev_name -o -c $dev_name; then
-		RDEV_PREFIX=/dev/r
-	    else
-		RDEV_PREFIX=/dev/
-	    fi
-	else
-	    RDEV_PREFIX=/dev/r
-	fi
+	case "$target" in
+	    *-sni-sysv4)
+		dev_prefix=/dev/dsk/
+	        rdev_prefix=/dev/rdsk/
+		AC_MSG_WARN("*** Run amsinixfixdevs on Sinix systems using VxFS.")
+	        ;;
+
+            *)
+		DEV_PREFIX=/dev/
+		# Some systems, notably Linux, do not have raw disk devices
+		# names.  Check this by trying to see if a raw disk device name
+		# exists using the normal raw device path prepended to the
+		# mount point of the root filesystem.
+		if test "$mount"; then
+		    dev_name="/dev/r`basename $mount`"
+		    if test -b $dev_name -o -c $dev_name; then
+			RDEV_PREFIX=/dev/r
+		    else
+			RDEV_PREFIX=/dev/
+		    fi
+		else
+		    RDEV_PREFIX=/dev/r
+		fi
+	        ;;
+	esac
     else
 	DEV_PREFIX=/
 	RDEV_PREFIX=/
