@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: protocol.c,v 1.11 1997/11/11 16:59:00 amcore Exp $
+ * $Id: protocol.c,v 1.12 1997/11/12 03:56:09 amcore Exp $
  *
  * implements amanda protocol
  */
@@ -863,7 +863,7 @@ static void handle_incoming_packet()
     dgram_zero(&inpkt.dgram);
     dgram_socket(&inpkt.dgram, proto_socket);
     if(dgram_recv(&inpkt.dgram, 0, &inpkt.peer) == -1)
-	error("protocol packet recieve: %s", strerror(errno));
+	error("protocol packet receive: %s", strerror(errno));
 
 #ifdef PROTO_DEBUG
     fprintf(stderr, "time %d: got packet:\n----\n%s----\n\n",
