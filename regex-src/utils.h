@@ -1,9 +1,3 @@
-/* 97jul04: added by Alexandre Oliva <oliva@dcc.unicamp.br> */
-#ifndef _POSIX2_RE_DUP_MAX
-#define _POSIX2_RE_DUP_MAX 255
-#endif
-/* end of addition */
-
 /* utility definitions */
 #define	DUPMAX		_POSIX2_RE_DUP_MAX	/* xxx is this right? */
 #define	INFINITY	(DUPMAX + 1)
