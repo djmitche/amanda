@@ -1,3 +1,7 @@
+2001-04-13 John R. Jackson <jrj@purdue.edu>
+
+	* example/amanda.conf.in: Fix multiple holding disks comment.
+
 2001-04-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* client-src/getfsent.h (search_fstab): New prototype.
