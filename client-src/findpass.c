@@ -25,14 +25,15 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: findpass.c,v 1.4 1997/08/27 08:11:30 amcore Exp $
+ * $Id: findpass.c,v 1.5 1997/09/25 10:49:50 amcore Exp $
  *
  * Support routines for Amanda SAMBA support
  */
 
 #include "findpass.h"
 
-char *findpass(char *disk, char *pass, char *domain)
+char *findpass(disk, pass, domain)
+char *disk, *pass, *domain;
 {
   FILE *fp;
   static char buffer[256];
@@ -78,7 +79,9 @@ char *findpass(char *disk, char *pass, char *domain)
  * Expand an amanda disk-name into a samba sharename,
  * optionally for a shell execution (\'s are escaped).
  */
-char *makesharename(char *disk, char *buffer, int shell)
+char *makesharename(disk, buffer, shell)
+char *disk, *buffer;
+int shell;
 {
   int c;
   char *ret = buffer;
