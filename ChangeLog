@@ -1,3 +1,7 @@
+2003-04-15  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amstatus.pl.in: Fix for estimate disk.
+
 2003-04-14  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/taper.c: Read holding file correctly if blocksize != 32k.
