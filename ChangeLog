@@ -1,5 +1,9 @@
 2005-04-06  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/amcheck.c: Improve messages.
+
+2005-04-06  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* client-src/sendsize.c (generic_calc_estimates): Use amname instead
 	  of dirname in message.
 
