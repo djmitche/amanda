@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.44 1998/09/29 20:49:54 jrj Exp $
+/* $Id: taper.c,v 1.45 1998/10/02 17:09:33 jrj Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -955,6 +955,7 @@ void write_file()
     int full_buffers, i, bufnum;
     char tok;
     char number[NUM_STR_SIZE];
+    char *rdwait_str, *wrwait_str, *fmwait_str;
 
     rdwait = wrwait = times_zero;
     total_writes = 0;
@@ -1092,14 +1093,20 @@ void write_file()
     syncpipe_putstr(number);
 
     ap_snprintf(number, sizeof(number), "%ld", total_writes);
+    rdwait_str = stralloc(walltime_str(rdwait));
+    wrwait_str = stralloc(walltime_str(wrwait));
+    fmwait_str = stralloc(walltime_str(fmwait));
     errstr = newvstralloc(errstr,
 			  "{wr:",
 			  " writers ", number,
-			  " rdwait ", walltime_str(rdwait),
-			  " wrwait ", walltime_str(wrwait),
-			  " filemark ", walltime_str(fmwait),
+			  " rdwait ", rdwait_str,
+			  " wrwait ", wrwait_str,
+			  " filemark ", fmwait_str,
 			  "}",
 			  NULL);
+    amfree(rdwait_str);
+    amfree(wrwait_str);
+    amfree(fmwait_str);
     syncpipe_putstr(errstr);
 
     /* XXX go to next tape if past tape size? */
