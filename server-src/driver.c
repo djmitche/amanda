@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.50 1998/10/15 02:27:56 martinea Exp $
+ * $Id: driver.c,v 1.51 1998/10/15 19:43:52 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -48,8 +48,7 @@
 
 disklist_t waitq, runq, stoppedq, tapeq;
 int pending_aborts, inside_dump_to_tape;
-int verbose;
-int force_parameters, use_lffo;
+int use_lffo;
 disk_t *taper_disk;
 int big_dumpers;
 int degraded_mode;
@@ -182,74 +181,72 @@ char **main_argv;
 
     /* set up any configuration-dependent variables */
 
-    if(!force_parameters) {
-	inparallel	= getconf_int(CNF_INPARALLEL);
-	big_dumpers	= inparallel - LITTLE_DUMPERS;
-	use_lffo	= 1;
+    inparallel	= getconf_int(CNF_INPARALLEL);
+    big_dumpers	= inparallel - LITTLE_DUMPERS;
+    use_lffo	= 1;
 
-	reserve = getconf_int(CNF_RESERVE);
-	if (reserve < 0 || reserve > 100) {
-	    log_add(L_WARNING, "WARNING: reserve must be between 0 and 100!");
-	    reserve = 100;
+    reserve = getconf_int(CNF_RESERVE);
+    if (reserve < 0 || reserve > 100) {
+	log_add(L_WARNING, "WARNING: reserve must be between 0 and 100!");
+	reserve = 100;
+    }
+
+    for(hdp = holdingdisks, dsk = 0; hdp != NULL; hdp = hdp->next, dsk++) {
+	struct stat stat_hdp;
+	hdp->up = (void *)alloc(sizeof(holdalloc_t));
+	holdalloc(hdp)->allocated_dumpers = 0;
+	holdalloc(hdp)->allocated_space = 0L;
+
+	if(get_fs_stats(hdp->diskdir, &fs) == -1
+	   || access(hdp->diskdir, W_OK) == -1) {
+	    log_add(L_WARNING, "WARNING: ignoring holding disk %s: %s\n",
+		    hdp->diskdir, strerror(errno));
+	    hdp->disksize = 0L;
+	    continue;
 	}
 
-	for(hdp = holdingdisks, dsk = 0; hdp != NULL; hdp = hdp->next, dsk++) {
-	    struct stat stat_hdp;
-	    hdp->up = (void *)alloc(sizeof(holdalloc_t));
-	    holdalloc(hdp)->allocated_dumpers = 0;
-	    holdalloc(hdp)->allocated_space = 0L;
-
-	    if(get_fs_stats(hdp->diskdir, &fs) == -1
-	       || access(hdp->diskdir, W_OK) == -1) {
-		log_add(L_WARNING, "WARNING: ignoring holding disk %s: %s\n",
-		        hdp->diskdir, strerror(errno));
+	if(fs.avail != -1) {
+	    if(hdp->disksize > 0) {
+		if(hdp->disksize > fs.avail) {
+		    log_add(L_WARNING,
+			    "WARNING: %s: %ld KB requested, but only %ld KB available.",
+			    hdp->diskdir, hdp->disksize, fs.avail);
+			    hdp->disksize = fs.avail;
+		}
+	    }
+	    else if(fs.avail + hdp->disksize < 0) {
+		log_add(L_WARNING,
+			"WARNING: %s: not %ld KB free.",
+			hdp->diskdir, -hdp->disksize);
 		hdp->disksize = 0L;
 		continue;
 	    }
+	    else
+		hdp->disksize += fs.avail;
+	}
 
-	    if(fs.avail != -1) {
-		if(hdp->disksize > 0) {
-		    if(hdp->disksize > fs.avail) {
-			log_add(L_WARNING,
-				"WARNING: %s: %ld KB requested, but only %ld KB available.",
-				hdp->diskdir, hdp->disksize, fs.avail);
-				hdp->disksize = fs.avail;
-		    }
-		}
-		else if(fs.avail + hdp->disksize < 0) {
-		    log_add(L_WARNING,
-			    "WARNING: %s: not %ld KB free.",
-			    hdp->diskdir, -hdp->disksize);
-		    hdp->disksize = 0L;
-		    continue;
-		}
-		else
-		    hdp->disksize += fs.avail;
+	printf("driver: adding holding disk %d dir %s size %ld\n",
+	       dsk, hdp->diskdir, hdp->disksize);
+
+	newdir = newvstralloc(newdir,
+			      hdp->diskdir, "/", datestamp,
+			      NULL);
+	if (stat(newdir, &stat_hdp) == -1) {
+	    if (mkdir(newdir, 0770) == -1) {
+		log_add(L_WARNING, "WARNING: could not create %s: %s",
+			newdir, strerror(errno));
+		hdp->disksize = 0L;
 	    }
-
-	    printf("driver: adding holding disk %d dir %s size %ld\n",
-		   dsk, hdp->diskdir, hdp->disksize);
-
-	    newdir = newvstralloc(newdir,
-				  hdp->diskdir, "/", datestamp,
-				  NULL);
-	    if (stat(newdir, &stat_hdp) == -1) {
-		if (mkdir(newdir, 0770) == -1) {
-		    log_add(L_WARNING, "WARNING: could not create %s: %s",
-			    newdir, strerror(errno));
-		    hdp->disksize = 0L;
-		}
+	}
+	else {
+	    if (!S_ISDIR((stat_hdp.st_mode))) {
+		log_add(L_WARNING, "WARNING: %s is not a directory",
+			newdir);
+		hdp->disksize = 0L;
 	    }
-	    else {
-		if (!S_ISDIR((stat_hdp.st_mode))) {
-		    log_add(L_WARNING, "WARNING: %s is not a directory",
-			    newdir);
-		    hdp->disksize = 0L;
-		}
-		else if (access(newdir,W_OK) == -1) {
-		    log_add(L_WARNING, "WARNING: directory %s is not writable",
-			    newdir);
-		}
+	    else if (access(newdir,W_OK) == -1) {
+		log_add(L_WARNING, "WARNING: directory %s is not writable",
+			newdir);
 	    }
 	}
     }

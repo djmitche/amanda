@@ -1,3 +1,8 @@
+1998-10-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/driver.c: remove verbose and force_parameters
+	variables.
+
 1998-10-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/dumper.c: remove declaration of pid.
