@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.50 1998/01/29 08:02:15 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.51 1998/02/04 22:02:33 amcore Exp $
  *
  * send backup data using BSD dump
  */
@@ -186,11 +186,8 @@ char *dumpdate;
     if (1)
 #endif							/* } */
     {
-#ifdef USE_RUNDUMP
-        char *progname = cmd;
-#else
-	char *progname = XFSDUMP;
-#endif
+        char *progname = cmd = newvstralloc(cmd, libexecdir, "/", "rundump",
+					    versionsuffix(), NULL);
 	program->backup_name  = XFSDUMP;
 #ifndef XFSRESTORE
 #define XFSRESTORE "xfsrestore"

@@ -19,6 +19,13 @@
 
 Version 2.4.0
 
+	fix automatic enabling of USE_RUNDUMP for systems that require
+	this.  xfsdump support no longer requires USE_RUNDUMP to be
+	defined, rundump will be enabled and used for xfs filesystems
+	even if USE_RUNDUMP is not defined, unless XFSDUMP is not defined.
+	This seems to have completely solved the xfsdump problems.
+	-oliva
+
 	when USE_RUNDUMP is enabled, instead of checking for read or write
 	access in selfcheck, just test for the existence of disk devices.
 	-oliva
