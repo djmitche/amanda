@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.13 1999/04/16 18:07:17 kashmir Exp $
+ * $Id: event.c,v 1.14 1999/04/17 18:52:41 kashmir Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
  * a uniform interface, central state storage, and centralized
@@ -47,7 +47,7 @@ struct event_handle {
     event_type_t type;		/* type of event */
     event_id_t data;		/* type data */
     time_t lastfired;		/* timestamp of last fired (EV_TIME only) */
-    TAILQ_ENTRY(event_handle) tq;	/* queue handle */
+    LIST_ENTRY(event_handle) le; /* queue handle */
 };
 
 /*
@@ -56,17 +56,17 @@ struct event_handle {
  * malloc overhead when doing a lot of register/releases.
  */
 static struct {
-    TAILQ_HEAD(, event_handle) tailq;
+    LIST_HEAD(, event_handle) listhead;
     int qlength;
 } eventq = {
-    TAILQ_HEAD_INITIALIZER(eventq.tailq), 0
+    LIST_HEAD_INITIALIZER(eventq.listhead), 0
 }, cache = {
-    TAILQ_HEAD_INITIALIZER(eventq.tailq), 0
+    LIST_HEAD_INITIALIZER(eventq.listhead), 0
 };
-#define	eventq_first()		TAILQ_FIRST(&eventq.tailq)
-#define	eventq_next(eh)		TAILQ_NEXT(eh, tq)
-#define	eventq_append(eh)	TAILQ_INSERT_TAIL(&eventq.tailq, eh, tq);
-#define	eventq_remove(eh)	TAILQ_REMOVE(&eventq.tailq, eh, tq);
+#define	eventq_first(q)		LIST_FIRST(&q.listhead)
+#define	eventq_next(eh)		LIST_NEXT(eh, le)
+#define	eventq_add(q, eh)	LIST_INSERT_HEAD(&q.listhead, eh, le);
+#define	eventq_remove(eh)	LIST_REMOVE(eh, le);
 
 /*
  * How many items we can have in the handle cache before we start
@@ -122,7 +122,7 @@ event_register(data, type, fn, arg)
     handle->type = type;
     handle->data = data;
     handle->lastfired = -1;
-    eventq_append(handle);
+    eventq_add(eventq, handle);
     eventq.qlength++;
 
 #ifdef EVENT_DEBUG
@@ -186,16 +186,16 @@ event_wakeup(id)
     int nwaken = 0;
 
 #ifdef EVENT_DEBUG
-	fprintf(stderr, "event: wakeup: enter (%d)\n", id);
+	fprintf(stderr, "event: wakeup: enter (%lu)\n", id);
 #endif
 
     assert(id >= 0);
 
-    for (eh = eventq_first(); eh != NULL; eh = eventq_next(eh)) {
+    for (eh = eventq_first(eventq); eh != NULL; eh = eventq_next(eh)) {
 
 	if (eh->type == EV_WAIT && eh->data == id) {
 #ifdef EVENT_DEBUG
-	    fprintf(stderr, "event: wakeup: %X id=%d\n", (int)eh, id);
+	    fprintf(stderr, "event: wakeup: %X id=%lu\n", (int)eh, id);
 #endif
 	    fire(eh);
 	    nwaken++;
@@ -250,7 +250,7 @@ event_loop(dontblock)
 #ifdef EVENT_DEBUG
 	fprintf(stderr, "event: loop: dontblock=%d, qlength=%d\n", dontblock,
 	    eventq.qlength);
-	for (eh = eventq_first(); eh != NULL; eh = eventq_next(eh)) {
+	for (eh = eventq_first(eventq); eh != NULL; eh = eventq_next(eh)) {
 	    fprintf(stderr, "%X: %s data=%lu fn=0x%x arg=0x%x\n", (int)eh,
 		event_type2str(eh->type), eh->data, (int)eh->fn, (int)eh->arg);
 	}
@@ -288,7 +288,7 @@ event_loop(dontblock)
 	 * We save our next pointer early in case we GC some dead
 	 * events.
 	 */
-	for (eh = eventq_first(); eh != NULL; eh = nexteh) {
+	for (eh = eventq_first(eventq); eh != NULL; eh = nexteh) {
 	    nexteh = eventq_next(eh);
 
 	    switch (eh->type) {
@@ -419,7 +419,7 @@ event_loop(dontblock)
 	 * Now run through the events and fire the ones that are ready.
 	 * Don't handle file descriptor events if the select failed.
 	 */
-	for (eh = eventq_first(); eh != NULL; eh = eventq_next(eh)) {
+	for (eh = eventq_first(eventq); eh != NULL; eh = eventq_next(eh)) {
 	    switch (eh->type) {
 
 	    /*
@@ -512,9 +512,9 @@ gethandle()
 {
     event_handle_t *eh;
 
-    if ((eh = TAILQ_FIRST(&cache.tailq)) != NULL) {
+    if ((eh = eventq_first(cache)) != NULL) {
 	assert(cache.qlength > 0);
-	TAILQ_REMOVE(&cache.tailq, eh, tq);
+	eventq_remove(eh);
 	cache.qlength--;
 	return (eh);
     }
@@ -535,7 +535,7 @@ puthandle(eh)
 	amfree(eh);
 	return;
     }
-    TAILQ_INSERT_HEAD(&cache.tailq, eh, tq);
+    eventq_add(cache, eh);
     cache.qlength++;
 }
 

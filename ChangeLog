@@ -1,3 +1,14 @@
+1999-04-17  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/event.c: Insert new events at the head of the eventq,
+	not the tail, so we don't loop forever if a newly registered
+	event has the same type as the one currently firing.  Noticed
+	and diagnosed by Jean-Louis Martineau.
+	Use a LIST for the eventq, instead of a TAILQ, since we don't need
+	to do tail insertions anymore.
+	Make the eventq_* functions take a queue name so we can also use
+	them for the handle cache.  Rename eventq_append() to eventq_add().
+
 1999-04-17 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* dumper-src/gnutar.pl.in: add DUMPER_DIR to INC.
