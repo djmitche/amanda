@@ -2,6 +2,14 @@
 .TH AMADMIN 8
 .SH NAME
 amadmin \- administrative interface to control Amanda backups
+.de EX
+.if t .ft C
+.nf
+..
+.de EE
+.fi
+.if t .ft
+..
 .SH SYNOPSIS
 .B amadmin
 .I config
@@ -152,11 +160,8 @@ Mostly used for debugging.
 
 .SH EXAMPLES
 
+.PP
 .EX
-'\" In case this set of man macros does not have .EX, the following
-'\" gets things close to correct.
-'na
-'nf
 $ amadmin @DEFAULT_CONFIG@ force machine-a "^/$" /var /usr
 amadmin: machine-a:/ is set to a forced level 0 tonight.
 amadmin: machine-a:/var is set to a forced level 0 tonight.
@@ -167,8 +172,6 @@ amadmin: machine-b:/ is set to a forced level 0 tonight.
 amadmin: machine-b:/var is set to a forced level 0 tonight.
 amadmin: machine-b:/usr is set to a forced level 0 tonight.
 amadmin: machine-b:/home is set to a forced level 0 tonight.
-'fi
-'ad b
 .EE
 
 .RS 5
@@ -187,14 +190,8 @@ get a full level 0 dump during the next Amanda run.
 .RE
 
 .EX
-'\" In case this set of man macros does not have .EX, the following
-'\" gets things close to correct.
-'na
-'nf
 $ amadmin @DEFAULT_CONFIG@ unforce machine-b /home
 amadmin: force command for machine-b:/home cleared.
-'fi
-'ad b
 .EE
 
 .RS 5
@@ -208,10 +205,6 @@ The other file systems would still get a full level 0 dump.
 .RE
 
 .EX
-'\" In case this set of man macros does not have .EX, the following
-'\" gets things close to correct.
-'na
-'nf
 $ amadmin @DEFAULT_CONFIG@ find machine-c /var
 date        host      disk lv tape    file status
 1997-11-09  machine-c /var  0 000110     9 OK
@@ -224,8 +217,6 @@ date        host      disk lv tape    file status
 1997-11-02  machine-c /var  2 000103     2 OK
 1997-11-01  machine-c /var  1 000102     5 OK
 1997-10-31  machine-c /var  1 000101     3 OK
-'fi
-'ad b
 .EE
 
 .RS 5
@@ -244,15 +235,9 @@ some type of error.
 .RE
 
 .EX
-'\" In case this set of man macros does not have .EX, the following
-'\" gets things close to correct.
-'na
-'nf
 $ amadmin @DEFAULT_CONFIG@ delete machine-d /workspace
 amadmin: machine-d:/workspace deleted from curinfo database.
 amadmin: NOTE: you'll have to remove these from the disklist yourself.
-'fi
-'ad b
 .EE
 
 .RS 5
@@ -266,14 +251,8 @@ file, Amanda will treat it as a new disk on the next run.
 .RE
 
 .EX
-'\" In case this set of man macros does not have .EX, the following
-'\" gets things close to correct.
-'na
-'nf
 $ amadmin @DEFAULT_CONFIG@ tape
 The next Amanda run should go onto tape 123456 or a new tape.
-'fi
-'ad b
 .EE
 
 .RS 5
@@ -283,10 +262,6 @@ labeled
 .RE
 
 .EX
-'\" In case this set of man macros does not have .EX, the following
-'\" gets things close to correct.
-'na
-'nf
 $ amadmin @DEFAULT_CONFIG@ balance
  due-date  #fs   orig KB    out KB  balance
 -------------------------------------------
@@ -302,8 +277,6 @@ $ amadmin @DEFAULT_CONFIG@ balance
 11/19 Wed   19   1108737    661867    -9.5%
 -------------------------------------------
 TOTAL      241  12412187   7316312   731631  (estimated 8 runs per dumpcycle)
-'fi
-'ad b
 .EE
 
 .RS 5
