@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.34 1998/02/26 19:25:10 jrj Exp $
+ * $Id: driver.c,v 1.35 1998/02/26 21:01:28 blair Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -347,7 +347,7 @@ char **main_argv;
 	    if(rmdir(newdir) != 0)
 		log_add(L_WARNING, "Could not rmdir %s: %s",
 		        newdir, strerror(errno));
-	    afree(holdalloc(hdp));
+	    afree(hdp->up);
 	}
     }
     afree(newdir);
@@ -606,7 +606,7 @@ void handle_taper_result()
 	fflush(stdout);
 
 	afree(sched(dp)->dumpdate);
-	afree(sched(dp));
+	afree(dp->up);
 
 	if(empty(tapeq)) {
 	    taper_busy = 0;
