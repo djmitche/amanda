@@ -14,22 +14,26 @@ char *findpass(char *disk, char *pass, char *domain)
   if ( (fp = fopen("/etc/amandapass", "r")) ) {
     while (fgets(buffer, sizeof(buffer)-1, fp)) {
       ptr = buffer;
-      while (*ptr && !isspace(*ptr))
+      while (*ptr && isspace(*ptr))
+	ptr++;
+      if (!*ptr || *ptr == '#')
+	continue;
+      while (*ptr && !isspace(*ptr) && *ptr != '#')
 	ptr++;
       if (*ptr) {
 	*ptr++=0;
 	if (!strcmp(disk, buffer)) {
-	  while (*ptr && isspace(*ptr))
+	  while (*ptr && isspace(*ptr) && *ptr != '#')
 	    ptr++;
-	  if (*ptr) {
+	  if (*ptr && *ptr != '#') {
 	    ret=pass;
-	    while (*ptr && !isspace(*ptr))
+	    while (*ptr && !isspace(*ptr) && *ptr != '#')
 	      *pass++=*ptr++;
 	    *pass=0;
-	    while(*ptr && isspace(*ptr))
+	    while(*ptr && isspace(*ptr) && *ptr != '#')
 	      ptr++;
-	    if (*ptr) {
-	      while (*ptr && !isspace(*ptr))
+	    if (*ptr && *ptr != '#') {
+	      while (*ptr && !isspace(*ptr) && *ptr != '#')
 		*domain++=*ptr++;
 	    }
 	    *domain = 0;
