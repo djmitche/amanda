@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb5-security.c,v 1.9 2003/05/25 23:38:54 kovert Exp $
+ * $Id: krb5-security.c,v 1.10 2003/08/29 01:32:14 kovert Exp $
  *
  * krb5-security.c - kerberos V5 security module
  */
@@ -77,6 +77,12 @@
 #else
 #define	k5printf(x)
 #endif
+
+/*
+ * consider undefining when kdestroy() is fixed.  The current version does
+ * not work under krb5-1.2.4 in rh7.3, perhaps others.
+ */
+#define KDESTROY_VIA_UNLINK	1
 
 /*
  * Define this if you want all network traffic encrypted.  This will
