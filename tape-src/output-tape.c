@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-tape.c,v 1.7 2002/01/01 21:18:28 martinea Exp $
+ * $Id: output-tape.c,v 1.8 2002/01/29 16:44:36 jrjackson Exp $
  *
  * tapeio.c virtual tape interface for normal tape drives.
  */
@@ -76,15 +76,20 @@ tape_tapefd_fsf(fd, count)
     int fd;
     int count;
 {
-    char buffer[MAX_TAPE_BLOCK_BYTES];
+    size_t buflen;
+    char *buffer = NULL;
     int len = 0;
 
+    buflen = MAX_TAPE_BLOCK_BYTES;
+    buffer = alloc(buflen);
+
     while(--count >= 0) {
-	while((len = tapefd_read(fd, buffer, sizeof(buffer))) > 0) {}
+	while((len = tapefd_read(fd, buffer, buflen)) > 0) {}
 	if(len < 0) {
 	    break;
 	}
     }
+    amfree(buffer);
     return len;
 }
 #endif									/* } */
