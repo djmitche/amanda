@@ -12,7 +12,8 @@ if WANT_CHG_SCSI
 CHG_SCSI = chg-scsi
 endif
 
-libexec_PROGRAMS =	$(CHG_SCSI) $(CHIO_SCSI)
+libexec_PROGRAMS =	$(CHG_SCSI)
+EXTRA_PROGRAMS =	$(CHIO_SCSI)
 
 libexec_SCRIPTS =	chg-manual	chg-multi	chg-mtx		\
 			chg-rth		chg-chs		chg-chio	\
