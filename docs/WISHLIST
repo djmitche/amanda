@@ -71,6 +71,13 @@ skip incrementals after analysis takes place.
 default tape server, index server, and perhaps even pathnames to
 some programs.
 
+* amidxtaped should be able to deal with tape changers, and it should
+check whether it has the appropriate tape before reading any backup
+files from it.  It should also be possible to configure whether
+amidxtaped should decompress the dump stream or not (so amrecover
+could decompress it locally).  Suggested by Chris Jones
+<cjones@honors.montana.edu>
+
 * Ports to non-Unix platforms, specifically Macs and PCs.  The hooks are in
 the Amanda protocol to support non-dump backup programs, but no-one has
 volunteered to implement the client side.  Sorry, I'm not a Mac programmer!
