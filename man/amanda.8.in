@@ -319,6 +319,20 @@ Default:
 The number of days in the backup cycle.
 Each disk will get a full backup no less often than this many days.
 .TP
+.BN runspercycle int
+Default:
+.IR "same as dumpcycle" .
+The number of amdump runs in 
+.B dumpcycle
+days.
+A value of 0 means the same value as 
+.B dumpcycle.
+A value of -1 means guess the number of runs from the tapelist file, 
+which is the number of tape used in the last 
+.B dumpcycle
+days / 
+.B runtapes.
+.TP
 .BN tapecycle int
 Default:
 .IR "15 tapes" .

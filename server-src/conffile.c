@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.48 1998/07/04 00:19:41 oliva Exp $
+ * $Id: conffile.c,v 1.49 1998/07/15 00:10:57 martinea Exp $
  *
  * read configuration file
  */
@@ -80,7 +80,7 @@ typedef enum {
     COMMENT, DIRECTORY, USE, CHUNKSIZE,
 
     /* dump type */
-    /*COMMENT,*/ PROGRAM, DUMPCYCLE, MAXCYCLE, MAXDUMPS,
+    /*COMMENT,*/ PROGRAM, DUMPCYCLE, RUNSPERCYCLE, MAXCYCLE, MAXDUMPS,
     OPTIONS, PRIORITY, FREQUENCY, INDEX,
     STARTTIME, COMPRESS, AUTH, STRATEGY,
     SKIP_INCR, SKIP_FULL, RECORD, HOLDING,
@@ -160,6 +160,7 @@ static val_t conf_indexdir;
 
 /* ints */
 static val_t conf_dumpcycle;
+static val_t conf_runspercycle;
 static val_t conf_maxcycle;
 static val_t conf_tapecycle;
 static val_t conf_runtapes;
@@ -192,7 +193,8 @@ static int seen_tapedev, seen_tpchanger, seen_chngrdev, seen_chngrfile;
 static int seen_labelstr, seen_runtapes, seen_maxdumps;
 static int seen_tapelist, seen_infofile, seen_diskfile, seen_diskdir;
 static int seen_logdir, seen_bumpsize, seen_bumpmult, seen_bumpdays;
-static int seen_tapetype, seen_dumpcycle, seen_maxcycle, seen_tapecycle;
+static int seen_tapetype, seen_dumpcycle, seen_runspercycle;
+static int seen_maxcycle, seen_tapecycle;
 static int seen_disksize, seen_netusage, seen_inparallel, seen_timeout;
 static int seen_indexdir, seen_etimeout;
 static int seen_reserve;
@@ -315,6 +317,7 @@ struct byname {
     { "INDEXDIR", CNF_INDEXDIR, STRING },
     { "TAPETYPE", CNF_TAPETYPE, STRING },
     { "DUMPCYCLE", CNF_DUMPCYCLE, INT },
+    { "RUNSPERCYCLE", CNF_RUNSPERCYCLE, INT },
     { "MINCYCLE",  CNF_DUMPCYCLE, INT },
     { "RUNTAPES",   CNF_RUNTAPES, INT },
     { "TAPECYCLE", CNF_TAPECYCLE, INT },
@@ -391,6 +394,7 @@ confparm_t parm;
     case CNF_BUMPDAYS: return seen_bumpdays;
     case CNF_TAPETYPE: return seen_tapetype;
     case CNF_DUMPCYCLE: return seen_dumpcycle;
+    case CNF_RUNSPERCYCLE: return seen_runspercycle;
     /*case CNF_MAXCYCLE: return seen_maxcycle;*/
     case CNF_TAPECYCLE: return seen_tapecycle;
     /*case CNF_DISKSIZE: return seen_disksize;*/
@@ -413,6 +417,7 @@ confparm_t parm;
     switch(parm) {
 
     case CNF_DUMPCYCLE: r = conf_dumpcycle.i; break;
+    case CNF_RUNSPERCYCLE: r = conf_runspercycle.i; break;
     case CNF_TAPECYCLE: r = conf_tapecycle.i; break;
     case CNF_RUNTAPES: r = conf_runtapes.i; break;
     /*case CNF_DISKSIZE: r = conf_disksize.i; break;*/
@@ -589,6 +594,7 @@ static void init_defaults()
     malloc_mark(conf_indexdir.s);
 
     conf_dumpcycle.i	= 10;
+    conf_runspercycle.i	= -1;
     conf_tapecycle.i	= 15;
     conf_runtapes.i	= 1;
     conf_disksize.i	= 200*1024;
@@ -612,7 +618,8 @@ static void init_defaults()
     seen_labelstr = seen_runtapes = seen_maxdumps = 0;
     seen_tapelist = seen_infofile = seen_diskfile = seen_diskdir = 0;
     seen_logdir = seen_bumpsize = seen_bumpmult = seen_bumpdays = 0;
-    seen_tapetype = seen_dumpcycle = seen_maxcycle = seen_tapecycle = 0;
+    seen_tapetype = seen_dumpcycle = seen_runspercycle = 0;
+    seen_maxcycle = seen_tapecycle = 0;
     seen_disksize = seen_netusage = seen_inparallel = seen_timeout = 0;
     seen_indexdir = seen_etimeout =  0;
     seen_reserve = 0;
@@ -742,6 +749,7 @@ keytab_t main_keytable[] = {
     { "DISKFILE", DISKFILE },
     { "DISKSIZE", DISKSIZE },	/* XXX - historical */
     { "DUMPCYCLE", DUMPCYCLE },
+    { "RUNSPERCYCLE", RUNSPERCYCLE },
     { "DUMPTYPE", DUMPTYPE },
     { "DUMPUSER", DUMPUSER },
     { "PRINTER", PRINTER },
@@ -797,6 +805,7 @@ static int read_confline()
     case DUMPUSER:  get_simple(&conf_dumpuser,  &seen_dumpuser,  STRING); break;
     case PRINTER:   get_simple(&conf_printer,   &seen_printer,   STRING); break;
     case DUMPCYCLE: get_simple(&conf_dumpcycle, &seen_dumpcycle, INT);    break;
+    case RUNSPERCYCLE: get_simple(&conf_runspercycle, &seen_runspercycle, INT);    break;
     case MAXCYCLE:  get_simple(&conf_maxcycle,  &seen_maxcycle,  INT);    break;
     case TAPECYCLE: get_simple(&conf_tapecycle, &seen_tapecycle, INT);    break;
     case RUNTAPES:  get_simple(&conf_runtapes,  &seen_runtapes,  INT);    break;
@@ -2219,6 +2228,7 @@ dump_configuration(filename)
     printf("conf_tapetype = \"%s\"\n", getconf_str(CNF_TAPETYPE));
 
     printf("conf_dumpcycle = %d\n", getconf_int(CNF_DUMPCYCLE));
+    printf("conf_runspercycle = %d\n", getconf_int(CNF_RUNSPERCYCLE));
     printf("conf_runtapes = %d\n", getconf_int(CNF_RUNTAPES));
     printf("conf_tapecycle = %d\n", getconf_int(CNF_TAPECYCLE));
     printf("conf_bumpsize = %d\n", getconf_int(CNF_BUMPSIZE));
@@ -2258,6 +2268,7 @@ dump_configuration(filename)
 	printf("	PROGRAM \"%s\"\n", dp->program);
 	printf("	PRIORITY %ld\n", (long)dp->priority);
 	printf("	DUMPCYCLE %ld\n", (long)dp->dumpcycle);
+	printf("	RUNSPERCYCLE %ld\n", (long)dp->runspercycle);
 	st = dp->start_t;
 	if(st) {
 	    stm = localtime(&st);

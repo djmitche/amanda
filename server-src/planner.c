@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.69 1998/07/04 00:20:10 oliva Exp $
+ * $Id: planner.c,v 1.70 1998/07/15 00:11:01 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -53,6 +53,7 @@ char *conf_infofile;
 char *conf_tapetype;
 int conf_runtapes;
 int conf_dumpcycle;
+int conf_runspercycle;
 int conf_tapecycle;
 int conf_bumpdays;
 int conf_bumpsize;
@@ -216,6 +217,8 @@ char **argv;
     conf_tapetype = getconf_str(CNF_TAPETYPE);
     conf_runtapes = getconf_int(CNF_RUNTAPES);
     conf_dumpcycle = getconf_int(CNF_DUMPCYCLE);
+    conf_runspercycle = !getconf_seen(CNF_RUNSPERCYCLE) ? 0 :
+			getconf_int(CNF_RUNSPERCYCLE);
     conf_tapecycle = getconf_int(CNF_TAPECYCLE);
     conf_bumpdays = getconf_int(CNF_BUMPDAYS);
     conf_bumpsize = getconf_int(CNF_BUMPSIZE);
@@ -238,7 +241,12 @@ char **argv;
 
     /* some initializations */
 
-    runs_per_cycle = guess_runs_from_tapelist();
+    if(conf_runspercycle == 0) {
+	runs_per_cycle = conf_dumpcycle;
+    } else if(conf_runspercycle == -1 ) {
+	runs_per_cycle = guess_runs_from_tapelist();
+    } else
+	runs_per_cycle = conf_runspercycle;
 
     tape = lookup_tapetype(conf_tapetype);
     tape_length = tape->length * conf_runtapes;

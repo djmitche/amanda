@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.44 1998/07/04 00:19:22 oliva Exp $
+ * $Id: amadmin.c,v 1.45 1998/07/15 00:10:54 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -551,6 +551,7 @@ void balance()
 	long origsize, outsize;
     } *sp;
     int seq, max_seq, total, balanced, runs_per_cycle, overdue, max_overdue;
+    int runspercycle;
     info_t inf;
 
     total = getconf_int(CNF_TAPECYCLE);
@@ -558,10 +559,17 @@ void balance()
     time(&today);
     runtapes = getconf_int(CNF_RUNTAPES);
     dumpcycle = getconf_int(CNF_DUMPCYCLE);
+    runspercycle = !getconf_seen(CNF_RUNSPERCYCLE) ? 0 : 
+		   getconf_int(CNF_RUNSPERCYCLE);
     overdue = 0;
     max_overdue = 0;
 
-    runs_per_cycle = guess_runs_from_tapelist();
+    if(runspercycle == 0) {
+	runs_per_cycle = dumpcycle;
+    } else if(runspercycle == -1 ) {
+	runs_per_cycle = guess_runs_from_tapelist();
+    } else
+	runs_per_cycle = runspercycle;
 
     if(dumpcycle > total)
 	total = dumpcycle;

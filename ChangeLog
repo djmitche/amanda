@@ -1,3 +1,13 @@
+1998-07-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* NEWS: new runspercycle keyword
+	* server-src/conffile.h: new runspercycle keyword
+	* server-src/conffile.c: new runspercycle keyword
+	* server-src/amadmin.c (balance): new runspercycle keyword
+	* server-src/planner.c (main): new runspercycle keyword
+	* man/amanda.8.in: document new runspercycle keyword
+	* example/amanda.conf.in: example for new runspercycle keyword
+
 1998-07-13  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/FAQ: What to do if DUMP program is not available.

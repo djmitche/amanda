@@ -1,5 +1,14 @@
 Changes in release 2.4.1
 
+* A new `runspercycle' keyword in amanda.conf to specify the number
+  of amdump runs in a dumpcycle. The default is one run every day.
+  A value of 0 (the default) means the same value as dumpcycle.  
+  A value of -1 means guess the number of runs from the tapelist file,
+  which is the number of tape used in the last dumpcycle days / runtapes.
+  If you don't run amdump every days, you must set runspercycle
+  otherwise amanda will noy be able to balance the dump. You must
+  set runspercycle to -1 if you want the same behavior as previous
+  version of amanda.
 * Space to be use as holding disk can now be "use all space except ??? Kb"
   using a negative value for the 'use' parameter.
 * FAQ for new users, in docs/FAQ
