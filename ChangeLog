@@ -1,3 +1,23 @@
+1998-05-20  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* client-src/sendbackup.c (check_status): when checking whether dump 
+	returned 1, make sure it was not tar; #ifdef'ed out the code that
+	ignores exit status 2 from gnutar (will be compiled in only if
+	IGNORE_TAR_ERRORS is defined)
+	* client-src/sendbackup-gnutar.c (GNUTAR active filesystem errors): 
+	updated comment; compile in GNUTAR error messages as DMP_NORMAL if
+	IGNORE_TAR_ERRORS is defined; compile in SMBCLIENT error messages as 
+	DMP_NORMAL if IGNORE_SMBCLIENT_ERRORS is defined.
+	
+1998-05-20  Tom Lear  <toml@accesscom.com>
+
+	* client-src/sendbackup.h (tarpid): new variable, used to check
+	whether it is gnutar that is running
+	* client-src/sendbackup-gnutar.c (start_backup): set tarpid when
+	starting gnutar
+	* client-src/sendbackup.c (check_status): if gnutar returns 2,
+	ignore the error
+
 1998-05-19  Jean-Louis Martineau <martineau@IRO.UMontrealCA>
 
 	* client-src/amandad.c: set parse_errmsg when unexpected packet

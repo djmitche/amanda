@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.h,v 1.9 1998/02/26 19:24:24 jrj Exp $
+ * $Id: sendbackup.h,v 1.10 1998/05/20 05:02:26 amcore Exp $
  *
  * a few common decls for the sendbackup-* sources
  */
@@ -62,7 +62,7 @@ typedef struct regex_s {
     int scale;                  /* only used for size lines */
 } regex_t;
 
-extern int compress, comppid, dumppid, no_record;
+extern int compress, comppid, dumppid, tarpid, no_record;
 extern int indexpid, createindex;
 
 typedef struct backup_program_s {

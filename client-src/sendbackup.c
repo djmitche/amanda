@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.39 1998/04/08 16:24:29 amcore Exp $
+ * $Id: sendbackup.c,v 1.40 1998/05/20 05:02:24 amcore Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -39,6 +39,7 @@
 
 int comppid = -1;
 int dumppid = -1;
+int tarpid = -1;
 int encpid = -1;
 int indexpid = -1;
 char *errorstr = NULL;
@@ -514,8 +515,15 @@ amwait_t w;
 #endif
 
 #ifdef DUMP_RETURNS_1
-    if(pid == dumppid) /* Ultrix dump returns 1 sometimes; it's ok too */
+    if(pid == dumppid && tarpid != -1)
+        /* Ultrix dump returns 1 sometimes; it's ok too */
         if(ret == 1) return 0;
+#endif
+
+#ifdef IGNORE_TAR_ERRORS
+    if(pid == tarpid)
+	/* tar bitches about active filesystems, but I don't care */
+        if(ret == 2) return 0;
 #endif
 
     if(ret == 0) {

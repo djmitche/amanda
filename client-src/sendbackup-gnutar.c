@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.52 1998/04/08 16:24:27 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.53 1998/05/20 05:02:22 amcore Exp $
  *
  * send backup data using GNU tar
  */
@@ -57,10 +57,9 @@ static regex_t re_table[] = {
 
   /* GNUTAR produces a few error messages when files are modified or
      removed while it is running.  They may cause data to be lost, but
-     then they may not.  We sholdn't consider them NORMAL until
-     further investigation.  The exit status of GNUTAR has to be taken
-     care of too.  */
-#if 0
+     then they may not.  We shouldn't consider them NORMAL until
+     further investigation.  */
+#ifdef IGNORE_TAR_ERRORS
   { DMP_NORMAL, ": File .* shrunk by [0-9][0-9]* bytes, padding with zeros", 1 },
   { DMP_NORMAL, ": Cannot add file .*: No such file or directory$", 1},
   { DMP_NORMAL, ": Error exit delayed from previous errors", 1},
@@ -93,7 +92,7 @@ static regex_t re_table[] = {
   { DMP_NORMAL, "^\\([0-9][0-9]* kb/s\\)", 1},
   { DMP_NORMAL, "^\\([0-9][0-9]*\\.[0-9][0-9]* kb/s\\)", 1},
   { DMP_NORMAL, "^tar: dumped [0-9][0-9]* tar files", 1},
-#if 0
+#ifdef IGNORE_SMBCLIENT_ERRORS
   /* This will cause amanda to ignore real errors, but that may be
    * unavoidable when you're backing up system disks.  Add this at
    * your own risk! */
@@ -335,6 +334,7 @@ notincremental:
 			    domain ? taropt : (char *)0,
 			    domain ? "-" : (char *)0,
 			    (char *) 0);
+	tarpid = dumppid;
 	memset(pass, '\0', strlen(pass));
 	amfree(pass);
 	if(domain) {
@@ -391,7 +391,8 @@ notincremental:
 			efile ? efile : ".",
 			efile ? "." : (char *)0,
 			(char *) 0);
-
+	tarpid = dumppid;
+	
 	a00 = "sendbackup-gnutar: pid %d: %s";
 	a01 = " --create";
 	a02 = " --directory %s";
