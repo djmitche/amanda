@@ -1,6 +1,7 @@
 2003-04-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/changer.h (changer_label): Return an int.
+	* server-src/changer.h (changer_label): First parameter is char *.
 
 2003-04-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
