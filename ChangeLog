@@ -1,3 +1,7 @@
+1998-10-28  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/SYSTEM.NOTES: Debian 2's dump uses /var/lib/dumpdates 
+
 1998-10-28  John R. Jackson  <jrj@purdue.edu>
 
 	* recover-src/set_commands.c (set_host): if the host given by the user
