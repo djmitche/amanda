@@ -653,7 +653,7 @@ y | ye | yes) : ;;
 esac
 
 AC_MSG_CHECKING(for Kerberos and Amanda kerberos4 bits)
-if test "${KRB4_SECURITY}" = yes -a -f common-src/krb4-security.c ; then
+if test "${KRB4_SECURITY}" = yes -a -f ${srcdir-.}/common-src/krb4-security.c ; then
     for dir in $KRB4_SPOTS; do
 	if test -f ${dir}/lib/libkrb.a -a -f ${dir}/lib/libdes.a ; then
 	    #
@@ -778,6 +778,13 @@ AC_ARG_WITH(client-keyfile,
     ],
     : ${CLIENT_HOST_KEY_FILE=KEYFILE}
 )
+
+# Assume it's either KEYFILE (defined in krb.h), or a string filename...
+if test "$CLIENT_HOST_KEY_FILE" != "KEYFILE"; then
+  CLIENT_HOST_KEY_FILE="\"$CLIENT_HOST_KEY_FILE\""
+fi 
+
+
 AC_DEFINE_UNQUOTED(CLIENT_HOST_KEY_FILE,$CLIENT_HOST_KEY_FILE)
 
 AC_ARG_WITH(ticket-lifetime,
@@ -2008,6 +2015,9 @@ AC_CACHE_CHECK(
 # include <sys/types.h>
 #endif
 #include <sys/uio.h>
+#ifdef __bsdi__
+# include <sys/param.h>			/* to get _BSDI_VERSION */
+#endif
 
 int main()
 {
@@ -2017,6 +2027,9 @@ int main()
 
     if (!f) return 1;
 
+#if defined(__bsdi__) && (_BSDI_VERSION > 199501)
+    fprintf(f, "%ld\n", (long)((((quad_t)1<<41)-1) / 1024));
+#else
     test.iov_len = 1;
     while ((test.iov_len > 0) && (test.iov_len > last)) {
 	if ((last = test.iov_len) > compare)
@@ -2024,6 +2037,7 @@ int main()
 	test.iov_len = (test.iov_len << 1) | 0x01;
     }
     fprintf(f, "%ld\n", compare / 1024);
+#endif
     return 0;
 }
 ], [
