@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.9 1997/08/27 08:12:45 amcore Exp $
+ * $Id: amadmin.c,v 1.10 1997/10/03 07:01:09 george Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -323,7 +323,7 @@ disk_t *dp;
     for(lev = 0, sp = &inf.inf[0]; lev < 9; lev++, sp++) {
 	if(sp->date == EPOCH) continue;
 	tm = localtime(&sp->date);
-	printf("          %d  %04d%02d%02d  %-15s  %4d %7d %7d %4d\n",
+	printf("          %d  %04d%02d%02d  %-15s  %4d %7ld %7ld %4ld\n",
 	       lev, tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday,
 	       sp->label, sp->filenum, sp->size, sp->csize, sp->secs);
     }
@@ -804,7 +804,7 @@ disk_t *dp;
     printf("\n");
     for(l=0;l<DUMP_LEVELS;l++) {
 	if(info.inf[l].date == EPOCH) continue;
-	printf("stats: %d %d %d %d %ld %d %s\n", l,
+	printf("stats: %d %ld %ld %ld %ld %d %s\n", l,
 	       info.inf[l].size, info.inf[l].csize, info.inf[l].secs,
 	       (long)info.inf[l].date, info.inf[l].filenum,
 	       info.inf[l].label);
@@ -908,7 +908,7 @@ int import_one P((void))
 	    break;
 	}
 	memset(&onestat, 0, sizeof(onestat));
-	rc = sscanf(line, "stats: %d %d %d %d %ld %d %80[^\n]",
+	rc = sscanf(line, "stats: %d %ld %ld %ld %ld %d %80[^\n]",
 		    &level, &onestat.size, &onestat.csize, &onestat.secs,
 		    &onedate, &onestat.filenum, onestat.label);
 	if(rc != 7) goto parse_err;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.16 1997/09/26 14:36:49 george Exp $
+ * $Id: infofile.c,v 1.17 1997/10/03 07:01:11 george Exp $
  *
  * manage current info file
  */
@@ -207,7 +207,7 @@ info_t *info;
 	    break;
 	}
 	memset(&onestat, 0, sizeof(onestat));
-	rc = sscanf(line, "stats: %d %d %d %d %ld %d %80[^\n]",
+	rc = sscanf(line, "stats: %d %ld %ld %ld %ld %d %80[^\n]",
 		    &level, &onestat.size, &onestat.csize, &onestat.secs,
 		    &onedate, &onestat.filenum, onestat.label);
 	if(rc != 7) return -2;
@@ -248,7 +248,7 @@ info_t *info;
     fprintf(infof, "\n");
     for(l=0; l<DUMP_LEVELS; l++) {
 	if(info->inf[l].date == EPOCH) continue;
-	fprintf(infof, "stats: %d %d %d %d %ld %d %s\n", l,
+	fprintf(infof, "stats: %d %ld %ld %ld %ld %d %s\n", l,
 	       info->inf[l].size, info->inf[l].csize, info->inf[l].secs,
 	       (long)info->inf[l].date, info->inf[l].filenum,
 	       info->inf[l].label);
@@ -370,18 +370,20 @@ int lev;
 }
 
 double perf_average(a, d)
+/* Weighted average.  # items should agree w/ AVG_COUNT */
 float *a;
 double d;
 {
-    int total = 3;
-    double avg = 0.0;
+    int total;
+    double avg;
 
     if(a[0] == -1.0)
 	return d;
 
-    avg = a[0]*3;
+    avg = a[0]*3, total = 3;
     if(a[1] != -1.0) avg += a[1]*2, total += 2;
     if(a[2] != -1.0) avg += a[2],   total += 1;
+
     return avg / total;
 }
 
@@ -571,7 +573,7 @@ int num;
     printf("incr comp rate %5.1f, %5.1f, %5.1f\n",
 	   r->incr.comp[0]*100,r->incr.comp[1]*100,r->incr.comp[2]*100);
     for(i = 0; i < num; i++) {
-	printf("lev %d date %d tape %s filenum %d size %d csize %d secs %d\n",
+	printf("lev %d date %d tape %s filenum %d size %ld csize %ld secs %ld\n",
 	       i, r->inf[i].date, r->inf[i].label, r->inf[i].filenum,
 	       r->inf[i].size, r->inf[i].csize, r->inf[i].secs);
     }

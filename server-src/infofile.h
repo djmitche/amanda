@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.h,v 1.4 1997/08/27 08:13:20 amcore Exp $
+ * $Id: infofile.h,v 1.5 1997/10/03 07:01:13 george Exp $
  *
  * interface for current info file reading code
  */
@@ -39,14 +39,13 @@
 #define EPOCH		((time_t)0)
 
 #define AVG_COUNT	3
-/* weighted average.  # items should agree w/ AVG_COUNT */
 #define newperf(ary,f)	( ary[2]=ary[1], ary[1]=ary[0], ary[0]=(f) )
 
 typedef struct stats_s {
     /* fields updated by dumper */
-    int size;			/* original size of dump in kbytes */
-    int csize;			/* compressed size of dump in kbytes */
-    int secs;			/* time of dump in secs */
+    long size;			/* original size of dump in kbytes */
+    long csize;			/* compressed size of dump in kbytes */
+    long secs;			/* time of dump in secs */
     time_t date;		/* end time of dump */
     /* fields updated by taper */
     int filenum;		/* file number on tape */
