@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.28 2001/06/04 12:07:40 ant Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.29 2001/06/10 20:59:29 ant Exp $";
 #endif
 /*
  * 
@@ -468,13 +468,24 @@ int get_current_slot(char *count_file)
 {
   FILE *inf;
   int retval;
+  int ret;          /* return value for the fscanf function */
   if ((inf=fopen(count_file,"r")) == NULL) {
     fprintf(stderr, "%s: unable to open current slot file (%s)\n",
             get_pname(), count_file);
     return 0;
   }
-  fscanf(inf,"%d",&retval);
+  ret = fscanf(inf,"%d",&retval);
   fclose(inf);
+  
+  /*
+   * check if we got an result
+   * if no set retval to -1 
+  */
+  if (ret == 0 || ret == EOF)
+    {
+      retval = -1;
+    }
+
   return retval;
 }
 

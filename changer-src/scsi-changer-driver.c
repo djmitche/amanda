@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.32 2001/06/07 12:33:28 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.33 2001/06/10 20:59:29 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -462,7 +462,7 @@ void PrintConf()
     {
       if (pDev[count].dev)
 	{
-	  if (pDev[count].inquiry->type == TYPE_CHANGER)
+	  if (pDev[count].inquiry != NULL && pDev[count].inquiry->type == TYPE_CHANGER)
 	    {
 	      printf("changerdev   %s # This is the device to communicate with the robot\n", pDev[count].dev);
 	      break;
@@ -470,11 +470,16 @@ void PrintConf()
 	}
     }
   
-  if (pDev[count].inquiry != NULL && pDev[count].inquiry->type !=  TYPE_CHANGER)
+  /*
+   * Did we reach the end of the list ?
+   * If no we found an changer and now we try to
+   * get the element status for the count of slots
+   */
+  if (count < CHG_MAXDEV)
     {
-      printf("changerdev   ??? # Ups nothing found. Please check the docs\n");
+      pDev[count].functions->function_status(count, 1);  
     } else {
-      pDev[count].functions->function_status(count, 1);
+      printf("changerdev   ??? # Ups nothing found. Please check the docs\n");
     }
   
   printf("                     #\n");
@@ -493,6 +498,11 @@ void PrintConf()
   printf("                     # /dev/nrst0 on linux, /dev/nrsa0 on BSD ....\n");
   printf("                     #\n");
 
+  /*
+   * OK now lets see if we have an direct SCSI channel
+   * to the tape
+   * If not thats not a problem
+   */
   for (count = 0; count < CHG_MAXDEV; count++)
     {
       if (pDev[count].dev)
@@ -525,10 +535,7 @@ void PrintConf()
 
   cwd = getcwd(NULL, 0);
   
-  if (pDev[count].inquiry->type == TYPE_TAPE)
-    {
-      printf("statfile %s/tape0-slot #\n",cwd);
-    }
+  printf("statfile %s/tape0-slot #\n",cwd);
   printf("cleanfile %s/tape0-clean #\n", cwd);
   printf("usagecount %s/tape0-totaltime #\n", cwd);
   printf("tapestatus %s/tape0-tapestatus #\n", cwd);
@@ -801,6 +808,9 @@ int drive_loaded(int fd, int drivenum)
 /*
  * unload the specified drive into the specified slot
  * (storage element)
+ *
+ * TODO:
+ * Check if the MTE is empty
  */
 int unload(int fd, int drive, int slot) 
 {
@@ -810,6 +820,10 @@ int unload(int fd, int drive, int slot)
   DebugPrint(DEBUG_INFO, SECTION_TAPE,"%-20s : fd %d, slot %d, drive %d \n", "unload", fd, slot, drive);
   
   
+  /*
+   * If the Element Status is not valid try to
+   * init it
+   */
   if (ElementStatusValid == 0)
     {
       if (pDev[INDEX_CHANGER].functions->function_status(INDEX_CHANGER , 1) != 0)
@@ -820,9 +834,16 @@ int unload(int fd, int drive, int slot)
 	}
     }
   
-  DebugPrint(DEBUG_INFO, SECTION_TAPE,"%-20s : unload drive %d[%d] slot %d[%d]\n", "unload", drive, pDTE[drive].address, slot, pSTE[slot].address);
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"%-20s : unload drive %d[%d] slot %d[%d]\n", "unload", 
+	     drive, 
+	     pDTE[drive].address, 
+	     slot, 
+	     pSTE[slot].address);
   
-  
+  /*
+   * Unloading an empty tape unit makes no sense
+   * so return with an error
+   */
   if (pDTE[drive].status == 'E')
     {
       DebugPrint(DEBUG_ERROR, SECTION_TAPE,"unload : Drive %d address %d is empty\n", drive, pDTE[drive].address);
@@ -830,19 +851,28 @@ int unload(int fd, int drive, int slot)
       return(-1);
     }
   
-  if (pSTE[slot].status == 'F')    {
-      ElementStatusValid = 0;
-      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Can't init status\n");
-      return(-1);
-    }
-
+  /*
+   * If the destination slot is full
+   * try to find an enpty slot
+   */
+  if (pSTE[slot].status == 'F')  
     {
       DebugPrint(DEBUG_INFO, SECTION_TAPE,"unload : Slot %d address %d is full\n", drive, pSTE[slot].address);
+      if ( ElementStatusValid == 0)
+	{
+	  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "unload: Element Status not valid, can't find an empty slot\n");
+	  return(-1);
+	}
+
       slot = find_empty(fd, 0, 0);
-      DebugPrint(DEBUG_INFO, SECTION_TAPE,"unload : try to unload to slot %d\n", slot);
+      DebugPrint(DEBUG_INFO, SECTION_TAPE,"unload : found empty one, try to unload to slot %d\n", slot);
     }
   
+  /*
+   * Do the unload/move
+   */
   pDev[INDEX_CHANGER].functions->function_move(INDEX_CHANGER , pDTE[drive].address, pSTE[slot].address);
+
   /*
    * Update the Status
    */
@@ -1057,6 +1087,8 @@ int OpenDevice(int ip , char *DeviceName, char *ConfigName, char *ident)
             }
           p++;
         }  
+    } else { /* Something failed, lets see what */
+      DebugPrint(DEBUG_ERROR, SECTION_SCSI,"##### STOP OpenDevice failed\n");
     }
   DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP OpenDevice (nothing found) !!\n");
   return(0); 
@@ -1103,7 +1135,7 @@ int Tape_Ready(int fd, int wait_time)
   
   if (pDev[fd].SCSI == 0)
     {
-	dbprintf(("Tape_Ready : can#t send SCSI commands\n"));
+	dbprintf(("Tape_Ready : can't send SCSI commands\n"));
           sleep(wait_time);
           return(0);
       }
@@ -5467,4 +5499,5 @@ arglist_function2(void DebugPrint, int, level, int, section, char *, fmt)
 	}
     }
   arglist_end(argp);  
+
 }

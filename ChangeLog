@@ -1,3 +1,11 @@
+2001-06-10 Thomas Hepper <th@ant.han.de>
+	* changer-src/chg-scsi.c: If get_current_slot gets an error from the fscanf function
+	return also an error (-1) to the calling fucntion. (Fixes an error if the slot file
+	is created with an touch)
+	* changer-src/scsi-changer-driver.c: Fixed some NULL pointer errors in PrintConf
+	Fixed an error in the unload function if the destination slot for the unload is not empty.
+	(cut and paste error !!)
+	
 2001-06-07 Thomas Hepper <th@ant.han.de>
 	* changer-src/scsi-changer-driver.c: Change the type of TapeStatus from void to int.
 	In PrintConf changed the loop variable for scan of pDev from 3 to CHG_MAXDEV.
