@@ -14,11 +14,16 @@ Many people see problems with "No buffer space available" when running
 the server under 4.1.x (although we have not here).  Read the file
 SUNOS4.BUG if you encounter this problem.
 
-gcc 2.7.2.* cannot handle the way amanda creates shared libraries, so
-you have to --disable-shared when you configure amanda.  Current
-development snapshots of gcc (as well as the egcs branch) do not
-present this problem, so, if you wish to use shared libraries, you may
-consider installing one of them.
+There's a bug in gcc 2.7.2.* that may cause it not to be able to
+create shared libraries if it is configured to use GNU ld.  A possible
+solution is to configure amanda so that gcc uses /bin/ld instead of
+GNU ld.  Make sure config.cache does not exist, then run:
+
+% CC="gcc -B/bin/" ./configure --whatever-arguments-you-want...
+
+This will cause shared libraries to be built correctly.  Another
+option is to upgrade libtool (amanda-2.4.0b4 is distributed with
+libtool-1.0f, available from ftp://alpha.gnu.org/pub).
 
 ---------------------------------------------------------------------------
 Ultrix
@@ -49,9 +54,8 @@ AIX 3.2
 -------
 
 People have found problems regarding shared libraries support on AIX.
-We hope the current version of libtool, distributed within amanda
-package, fixes this problem.  If it does not, --disable-shared at
-configure time.
+We hope libtool 1.0f, distributed with amanda-2.4.0b4, fixes this
+problem.  If it does not, --disable-shared at configure time.
 
 ---------------------------------------------------------------------------
 Linux
@@ -60,7 +64,7 @@ Linux
 Linux hosts intended to back up efs partitions with dump should
 install the dump package, as it is not installed by default on the
 Linux distributions I know of.  It is possible to find compiled
-versions of dump on most Linux sites.
+versions of dump on most Linux sites and CD-ROMs.
 
 ---------------------------------------------------------------------------
 Digital Unix 4
