@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.60 1998/05/11 08:34:32 amcore Exp $
+ * $Id: amanda.h,v 1.61 1998/05/23 17:56:54 amcore Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -847,7 +847,7 @@ extern void *malloc P((size_t size));
 #ifdef HAVE_MEMMOVE
 extern void *memmove P((void *to, const void *from, size_t n));
 #else
-extern char *memmove P((char *to, const char *from, size_t n));
+extern char *memmove P((char *to, /*const*/ char *from, size_t n));
 #endif
 #endif
 

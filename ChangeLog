@@ -1,3 +1,15 @@
+1998-05-23  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* configure.in (bcopy, bzero, fread, fwrite, vfprintf, vprintf,
+	vsprintf): check for these in stdlib.h
+	(memmove): check for it in strings.h
+	
+	* common-src/amanda.h (memmove): fix declaration of memmove, so as
+ 	to be compatible with the ones in common-src/memmove.c and
+ 	regex-src/fake/memmove.c
+	
+	reported by Tim Potter <tpot@acsys.anu.edu.au>
+
 1998-05-20  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* client-src/sendbackup.c (check_status): when checking whether dump 
