@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.108 2004/09/17 11:47:15 martinea Exp $
+ * $Id: conffile.c,v 1.109 2004/11/16 13:58:29 martinea Exp $
  *
  * read configuration file
  */
@@ -73,6 +73,7 @@ typedef enum {
     AMRECOVER_DO_FSF, AMRECOVER_CHECK_LABEL, AMRECOVER_CHANGER,
 
     TAPERALGO, FIRST, FIRSTFIT, LARGEST, LARGESTFIT, SMALLEST, LAST,
+    DISPLAYUNIT,
 
     /* kerberos 5 */
     KRB5KEYTAB, KRB5PRINCIPAL, 
@@ -155,6 +156,8 @@ char *config_dir = NULL;
 holdingdisk_t *holdingdisks;
 int num_holdingdisks;
 
+long int unit_divisor = 1024;
+
 /* configuration parameters */
 
 /* strings */
@@ -203,6 +206,7 @@ static val_t conf_maxdumpsize;
 static val_t conf_amrecover_do_fsf;
 static val_t conf_amrecover_check_label;
 static val_t conf_taperalgo;
+static val_t conf_displayunit;
 static val_t conf_krb5keytab;
 static val_t conf_krb5principal;
 
@@ -262,6 +266,7 @@ static int seen_amrecover_do_fsf;
 static int seen_amrecover_check_label;
 static int seen_amrecover_changer;
 static int seen_taperalgo;
+static int seen_displayunit;
 static int seen_krb5keytab;
 static int seen_krb5principal;
 
@@ -411,6 +416,7 @@ struct byname {
     { "AMRECOVER_CHECK_LABEL", CNF_AMRECOVER_CHECK_LABEL, BOOL },
     { "AMRECOVER_CHANGER", CNF_AMRECOVER_CHANGER, STRING },
     { "TAPERALGO", CNF_TAPERALGO, INT },
+    { "DISPLAYUNIT", CNF_DISPLAYUNIT, STRING },
     { "AUTOFLUSH", CNF_AUTOFLUSH, BOOL },
     { "RESERVE", CNF_RESERVE, INT },
     { "MAXDUMPSIZE", CNF_MAXDUMPSIZE, INT },
@@ -507,6 +513,7 @@ confparm_t parm;
     case CNF_AMRECOVER_CHECK_LABEL: return seen_amrecover_check_label;
     case CNF_AMRECOVER_CHANGER: return seen_amrecover_changer;
     case CNF_TAPERALGO: return seen_taperalgo;
+    case CNF_DISPLAYUNIT: return seen_displayunit;
     case CNF_KRB5KEYTAB: return seen_krb5keytab;
     case CNF_KRB5PRINCIPAL: return seen_krb5principal;
     default: return 0;
@@ -594,6 +601,7 @@ confparm_t parm;
     case CNF_RAWTAPEDEV: r = conf_rawtapedev.s; break;
     case CNF_COLUMNSPEC: r = conf_columnspec.s; break;
     case CNF_AMRECOVER_CHANGER: r = conf_amrecover_changer.s; break;
+    case CNF_DISPLAYUNIT: r = conf_displayunit.s; break;
     case CNF_KRB5PRINCIPAL: r = conf_krb5principal.s; break;
     case CNF_KRB5KEYTAB: r = conf_krb5keytab.s; break;
 
@@ -715,6 +723,7 @@ static void init_defaults()
     malloc_mark(conf_dumporder.s);
     conf_amrecover_changer.s = stralloc("");
     conf_printer.s = stralloc("");
+    conf_displayunit.s = stralloc("k");
 
     conf_krb5keytab.s = stralloc("/.amanda-v5-keytab");
     conf_krb5principal.s = stralloc("service/amanda");
@@ -789,6 +798,7 @@ static void init_defaults()
     seen_amrecover_check_label = 0;
     seen_amrecover_changer = 0;
     seen_taperalgo = 0;
+    seen_displayunit = 0;
     seen_krb5keytab = 0;
     seen_krb5principal = 0;
     line_num = got_parserror = 0;
@@ -969,6 +979,7 @@ keytab_t main_keytable[] = {
     { "AMRECOVER_CHECK_LABEL", AMRECOVER_CHECK_LABEL },
     { "AMRECOVER_CHANGER", AMRECOVER_CHANGER },
     { "TAPERALGO", TAPERALGO },
+    { "DISPLAYUNIT", DISPLAYUNIT },
     { "KRB5KEYTAB", KRB5KEYTAB },
     { "KRB5PRINCIPAL", KRB5PRINCIPAL },
     { NULL, IDENT }
@@ -1097,6 +1108,31 @@ static int read_confline()
     case AMRECOVER_CHANGER: get_simple(&conf_amrecover_changer,&seen_amrecover_changer, STRING); break;
 
     case TAPERALGO: get_taperalgo(&conf_taperalgo,&seen_taperalgo); break;
+    case DISPLAYUNIT: get_simple(&conf_displayunit,&seen_displayunit, STRING);
+		      if(strcmp(conf_displayunit.s,"k") == 0 ||
+			 strcmp(conf_displayunit.s,"K") == 0) {
+			  conf_displayunit.s[0] = toupper(conf_displayunit.s[0]);
+			  unit_divisor=1;
+		      }
+		      else if(strcmp(conf_displayunit.s,"m") == 0 ||
+			 strcmp(conf_displayunit.s,"M") == 0) {
+			  conf_displayunit.s[0] = toupper(conf_displayunit.s[0]);
+			  unit_divisor=1024;
+		      }
+		      else if(strcmp(conf_displayunit.s,"g") == 0 ||
+			 strcmp(conf_displayunit.s,"G") == 0) {
+			  conf_displayunit.s[0] = toupper(conf_displayunit.s[0]);
+			  unit_divisor=1024*1024;
+		      }
+		      else if(strcmp(conf_displayunit.s,"t") == 0 ||
+			 strcmp(conf_displayunit.s,"T") == 0) {
+			  conf_displayunit.s[0] = toupper(conf_displayunit.s[0]);
+			  unit_divisor=1024*1024*1024;
+		      }
+		      else {
+			  parserror("displayunit must be k,m,g or t.");
+		      }
+		      break;
 
     /* kerberos 5 bits.  only useful when kerberos 5 built in... */
     case KRB5KEYTAB:    get_simple(&conf_krb5keytab,   &seen_krb5keytab,   STRING); break;
@@ -2924,6 +2960,10 @@ int taperalgo;
     return "UNKNOWN";
 }
 
+long int getcont_unit_divisor()
+{
+    return unit_divisor;
+}
 
 /* ------------------------ */
 
@@ -2983,6 +3023,7 @@ dump_configuration(filename)
     printf("conf_amrecover_check_label  = %d\n", getconf_int(CNF_AMRECOVER_CHECK_LABEL));
     printf("conf_amrecover_changer = \"%s\"\n", getconf_str(CNF_AMRECOVER_CHANGER));
     printf("conf_taperalgo  = %s\n", taperalgo2str(getconf_int(CNF_TAPERALGO)));
+    printf("conf_displayunit  = %s\n", getconf_str(CNF_DISPLAYUNIT));
 
     /*printf("conf_diskdir = \"%s\"\n", getconf_str(CNF_DISKDIR));*/
     /*printf("conf_disksize = %d\n", getconf_int(CNF_DISKSIZE));*/

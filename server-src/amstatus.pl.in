@@ -35,7 +35,7 @@ $result = &NGetOpt (	"summary",
 			"gestimate|gettingestimate",
 			"date",
 			"config|c:s",
-			"file:s",
+			"file:s"
 			);
 if($result !=1 ) {
 	&usage();
@@ -91,6 +91,27 @@ if($nb_options == 0 ) {
 	$opt_gestimate   = 1;
 	$opt_estimate    = 1;
 }
+
+$unit=`$sbindir/amgetconf$suf displayunit`;
+chomp($unit);
+$unitdivisor=1;
+if($unit eq 'K') {
+  $unitdivisor = 1;
+  $unit='k';
+}
+elsif($unit eq 'M') {
+  $unitdivisor = 1024;
+  $unit='m';
+}
+elsif($unit eq 'G') {
+  $unitdivisor = 1024*1024;
+  $unit='g';
+}
+elsif($unit eq 'T') {
+  $unitdivisor = 1024*1024*1024;
+  $unit='t';
+}
+
 
 if( defined $opt_file) {
 	if( $opt_file =~ m,^/, ) {
@@ -176,7 +197,7 @@ while(<AMDUMP>) {
 		$hostpart=&make_hostpart($host,$partition,$gdatestamp);
 		$estimate{$hostpart}=1;
 		$level{$hostpart}=$3;
-		$esize{$hostpart}=$4;
+		$esize{$hostpart}=$4 / $unitdivisor;
 		$partialestimate{$hostpart}=0;
 		$getest{$hostpart} = "";
 	}
@@ -187,7 +208,7 @@ while(<AMDUMP>) {
 		if($4 > 0 || $6 > 0 || $8 > 0) {
 			$estimate{$hostpart}=1;
 			$level{$hostpart}=$3;
-			$esize{$hostpart}=$4;
+			$esize{$hostpart}=$4 / $unitdivisor;
 			$partialestimate{$hostpart}=1;
 			if($4 > 0) { $getest{$hostpart} =~ s/:$3://; }
 			if($6 > 0) { $getest{$hostpart} =~ s/:$5://; }
@@ -213,7 +234,7 @@ while(<AMDUMP>) {
 			$level{"$hostpart"}=$4;
 			$esize=$5;
 			$esize=32 if $esize<32;
-			$esize{$hostpart}=$esize;
+			$esize{$hostpart}=$esize / $unitdivisor;
 			$degr_level{$hostpart}=-1;
 		}
 	}
@@ -226,7 +247,7 @@ while(<AMDUMP>) {
 			$level{"$hostpart"}=$5;
 			$esize=$6;
 			$esize=32 if $esize<32;
-			$esize{$hostpart}=$esize;
+			$esize{$hostpart}=$esize / $unitdivisor;
 			$degr_level{$hostpart}=-1;
 		}
 	}
@@ -241,7 +262,7 @@ while(<AMDUMP>) {
 			$level{"$hostpart"}=$6;
 			$esize=$7;
 			$esize=32 if $esize<32;
-			$esize{$hostpart}=$esize;
+			$esize{$hostpart}=$esize / $unitdivisor;
 			$degr_level{$hostpart}=-1;
 		}
 	}
@@ -253,9 +274,9 @@ while(<AMDUMP>) {
 			$level{$hostpart}=$4;
 			$esize=$5;
 			$esize=32 if $esize<32;
-			$esize{$hostpart}=$esize;
+			$esize{$hostpart}=$esize / $unitdivisor;
 			$degr_level{$hostpart}=$6;
-			$degr_size{$hostpart}=$7;
+			$degr_size{$hostpart}=$7 / $unitdivisor;
 			$degr_size{$hostpart}=32 if ($7 < 32);
 		}
 	}
@@ -268,9 +289,9 @@ while(<AMDUMP>) {
 			$level{$hostpart}=$5;
 			$esize=$6;
 			$esize=32 if $esize<32;
-			$esize{$hostpart}=$esize;
+			$esize{$hostpart}=$esize / $unitdivisor;
 			$degr_level{$hostpart}=$7;
-			$degr_size{$hostpart}=$8;
+			$degr_size{$hostpart}=$8 / $unitdivisor;
 			$degr_size{$hostpart}=32 if ($8 < 32);
 		}
 	}
@@ -293,7 +314,7 @@ while(<AMDUMP>) {
 		$dumpers_active=0;
 	}
 	elsif(/^driver: tape size (\d+)/) {
-		$tape_size = $1;
+		$tape_size = $1 / $unitdivisor;
 	}
 	elsif(/^driver: adding holding disk \d+ dir \S+ size (\d+)/) {
 		$holding_space += $1;
@@ -453,8 +474,8 @@ while(<AMDUMP>) {
 	elsif(/driver: result time (\S+) from (dumper\d+): DONE (\d+-\d+) (\d+) (\d+) (\d+) \[.*\]/) {
 		$current_time=$1;
 		$serial=$3;
-		$origsize=$4;
-		$outputsize=$5;
+		$origsize=$4 / $unitdivisor;
+		$outputsize=$5 / $unitdivisor;
 		$hostpart=$serial{$serial};
 		$size{$hostpart}=$outputsize;
 		$dump_finished{$hostpart}=1;
@@ -567,7 +588,7 @@ while(<AMDUMP>) {
 		$current_time=$1;
 		$serial=$2;
 		$label=$3;
-		$size=$6;
+		$size=$6 / $unitdivisor;
 		$hostpart=$serial{$serial};
 		$taper_finished{$hostpart}=1;
 		$busy_time{"taper"}+=($1-$taper_time{$hostpart});
@@ -725,7 +746,7 @@ print "hostpart: $hostpart\n";
 			next if(!defined $estimate{$hostpart} && !defined $flush{$hostpart});
 			$nb_partition++;
 			if( !defined $size{$hostpart} && defined $holding_file{$hostpart}) {
-				$size{$hostpart} = &dump_size($holding_file{$hostpart}) / 1024;
+				$size{$hostpart} = &dump_size($holding_file{$hostpart}) / (1024 * $unitdivisor);
 			}
 			$in_flush=0;
 			if($estimate_done != 1) {
@@ -743,7 +764,7 @@ print "hostpart: $hostpart\n";
 							printf "%8s ", $datestamp if defined $opt_date;
 							printf "%-${maxnamelength}s", "$host:$partition";
 							printf "%2d",  $level{$hostpart};
-							printf "%9dk", $esize{$hostpart};
+							printf "%9d$unit", $esize{$hostpart};
 							if($partialestimate{$hostpart} == 1) {
 								print " partial";
 							}
@@ -793,7 +814,7 @@ print "hostpart: $hostpart\n";
 						if( defined $opt_dumpingtape ) {
 							printf "%8s ", $datestamp if defined $opt_date;
 							printf "%-${maxnamelength}s%2d", "$host:$partition", $level{$hostpart};
-							printf "%9dk", $esize{$hostpart};
+							printf "%9d$unit", $esize{$hostpart};
 							print " dumping to tape";
 							if( defined $starttime ) {
 								print " (", &showtime($taper_time{$hostpart}), ")";
@@ -807,7 +828,7 @@ print "hostpart: $hostpart\n";
 						if( defined $opt_writingtape ) {
 							printf "%8s ", $datestamp if defined $opt_date;
 							printf "%-${maxnamelength}s%2d", "$host:$partition", $level{$hostpart};
-							printf "%9dk", $size{$hostpart};
+							printf "%9d$unit", $size{$hostpart};
 							if($in_flush == 0) {
 								print " writing to tape";
 							}
@@ -851,7 +872,7 @@ print "hostpart: $hostpart\n";
 							 (defined $opt_waittaper && ($taper_finished{$hostpart} == -1))) {
 							printf "%8s ", $datestamp if defined $opt_date;
 							printf "%-${maxnamelength}s%2d", "$host:$partition", $level{$hostpart};
-							printf "%9dk", $xsize;
+							printf "%9d$unit", $xsize;
 							if($in_flush == 0) {
 								print " failed to tape";
 							}
@@ -883,7 +904,7 @@ print "hostpart: $hostpart\n";
 						if( defined $opt_finished ) {
 							printf "%8s ", $datestamp if defined $opt_date;
 							printf "%-${maxnamelength}s%2d", "$host:$partition", $level{$hostpart};
-							printf "%9dk", $size{$hostpart};
+							printf "%9d$unit", $size{$hostpart};
 							if($in_flush == 0) {
 								print " finished";
 							}
@@ -925,7 +946,7 @@ print "hostpart: $hostpart\n";
 							if( defined $opt_waitdumping ) {
 								printf "%8s ", $datestamp if defined $opt_date;
 								printf "%-${maxnamelength}s%2d", "$host:$partition", $level{$hostpart};
-								printf "%9dk", $esize{$hostpart};
+								printf "%9d$unit", $esize{$hostpart};
 								print " wait for dumping $error{$hostpart}\n";
 							}
 							$wpartition++;
@@ -951,8 +972,8 @@ print "hostpart: $hostpart\n";
 						if( defined $opt_dumping ) {
 							printf "%8s ", $datestamp if defined $opt_date;
 							printf "%-${maxnamelength}s%2d", "$host:$partition", $level{$hostpart};
-							printf "%9dk", $esize{$hostpart};
-							printf " dumping %8dk", $size{$hostpart};
+							printf "%9d$unit", $esize{$hostpart};
+							printf " dumping %8d$unit", $size{$hostpart};
 							if($size{$hostpart} != 0) {
 								printf " (%6.2f%%)", (100.0*$size{$hostpart})/$esize{$hostpart};
 							}
@@ -973,7 +994,7 @@ print "hostpart: $hostpart\n";
 						if( defined $opt_waittaper ) {
 							printf "%8s ", $datestamp if defined $opt_date;
 							printf "%-${maxnamelength}s%2d", "$host:$partition", $level{$hostpart};
-							printf "%9dk", $size{$hostpart};
+							printf "%9d$unit", $size{$hostpart};
 							print " dump done";
 							if( defined $starttime ) {
 								print " (", &showtime($dump_time{$hostpart}), ")";
@@ -997,7 +1018,7 @@ print "hostpart: $hostpart\n";
 					if( defined $opt_waittaper ) {
 						printf "%8s ", $datestamp if defined $opt_date;
 						printf "%-${maxnamelength}s%2d", "$host:$partition", $level{$hostpart};
-						printf "%9dk", $size{$hostpart};
+						printf "%9d$unit", $size{$hostpart};
 						print " waiting to flush\n";
 					}
 					$wfpartition++;
@@ -1018,51 +1039,51 @@ if (defined $opt_summary) {
 	print  "SUMMARY          part      real  estimated\n";
 	print  "                           size       size\n";
 	printf "partition       : %3d\n", $nb_partition;
-	printf "estimated       : %3d %20dk\n", $epartition , $estsize;
-	printf "flush           : %3d %9dk\n", $flpartition, $flsize;
-	printf "failed          : %3d %20dk           (%6.2f%%)\n",
+	printf "estimated       : %3d %20d$unit\n", $epartition , $estsize;
+	printf "flush           : %3d %9d$unit\n", $flpartition, $flsize;
+	printf "failed          : %3d %20d$unit           (%6.2f%%)\n",
 		$fpartition , $fsize,
 		$estsize ? ($fsize * 1.0 / $estsize) * 100 : 0.0;
-	printf "wait for dumping: %3d %20dk           (%6.2f%%)\n",
+	printf "wait for dumping: %3d %20d$unit           (%6.2f%%)\n",
 		$wpartition , $wsize,
 		$estsize ? ($wsize * 1.0 / $estsize) * 100 : 0.0;
-	printf "dumping to tape : %3d %20dk           (%6.2f%%)\n",
+	printf "dumping to tape : %3d %20d$unit           (%6.2f%%)\n",
 		$dtpartition, $dtesize,
 		$estsize ? ($dtesize * 1.0 / $estsize) * 100 : 0.0;
-	printf "dumping         : %3d %9dk %9dk (%6.2f%%) (%6.2f%%)\n",
+	printf "dumping         : %3d %9d$unit %9d$unit (%6.2f%%) (%6.2f%%)\n",
 		$dupartition, $dusize, $duesize,
 		$duesize ? ($dusize * 1.0 / $duesize) * 100 : 0.0,
 		$estsize ? ($dusize * 1.0 / $estsize) * 100 : 0.0;
-	printf "dumped          : %3d %9dk %9dk (%6.2f%%) (%6.2f%%)\n",
+	printf "dumped          : %3d %9d$unit %9d$unit (%6.2f%%) (%6.2f%%)\n",
 		$dpartition , $dsize , $desize,
 		$desize ? ($dsize * 1.0 / $desize) * 100 : 0.0,
 		$estsize ? ($dsize * 1.0 / $estsize) * 100 : 0.0;
-	printf "wait for writing: %3d %9dk %9dk (%6.2f%%) (%6.2f%%)\n",
+	printf "wait for writing: %3d %9d$unit %9d$unit (%6.2f%%) (%6.2f%%)\n",
 		$twpartition, $twsize, $twesize,
 		$twesize ? ($twsize * 1.0 / $twesize) * 100 : 0.0,
 		$estsize ? ($twsize * 1.0 / $estsize) * 100 : 0.0;
-	printf "wait to flush   : %3d %9dk %9dk (%6.2f%%) (%6.2f%%)\n",
+	printf "wait to flush   : %3d %9d$unit %9d$unit (%6.2f%%) (%6.2f%%)\n",
 		$wfpartition, $wfsize, $wfsize, 100, 0;
-	printf "writing to tape : %3d %9dk %9dk (%6.2f%%) (%6.2f%%)\n",
+	printf "writing to tape : %3d %9d$unit %9d$unit (%6.2f%%) (%6.2f%%)\n",
 		$tapartition, $tasize, $taesize,
 		$taesize ? ($tasize * 1.0 / $taesize) * 100 : 0.0,
 		$estsize ? ($tasize * 1.0 / $estsize) * 100 : 0.0;
-	printf "failed to tape  : %3d %9dk %9dk (%6.2f%%) (%6.2f%%)\n",
+	printf "failed to tape  : %3d %9d$unit %9d$unit (%6.2f%%) (%6.2f%%)\n",
 		$tfpartition, $tfsize, $tfesize,
 		$tfesize ? ($tfsize * 1.0 / $tfesize) * 100 : 0.0,
 		$estsize ? ($tfsize * 1.0 / $estsize) * 100 : 0.0;
-	printf "taped           : %3d %9dk %9dk (%6.2f%%) (%6.2f%%)\n",
+	printf "taped           : %3d %9d$unit %9d$unit (%6.2f%%) (%6.2f%%)\n",
 		$tpartition , $tsize , $tesize,
 		$tesize ? ($tsize * 1.0 / $tesize) * 100 : 0.0,
 		($estsize+$flsize) ? ($tsize * 1.0 / ($estsize + $flsize)) * 100 : 0.0;
 	if($nb_tape > 1 || $tape_size != 0) {
 		for($i=1; $i <= $nb_tape; $i++) {
 			if($tape_size != 0) {
-				printf "  tape %-3d      : %3d %9dk %9dk (%6.2f%%) %s\n",
+				printf "  tape %-3d      : %3d %9d$unit %9d$unit (%6.2f%%) %s\n",
 					$i, $ntpartition{$i}, $ntsize{$i}, $ntesize{$i}, 100*$ntsize{$i}/$tape_size, $ntlabel{$i};
 			}
 			else {
-				printf "  tape %-3d      : %3d %9dk %9dk %s\n",
+				printf "  tape %-3d      : %3d %9d$unit %9d$unit %s\n",
 					$i, $ntpartition{$i}, $ntsize{$i}, $ntesize{$i}, $ntlabel{$i};
 			}
 		}
@@ -1091,7 +1112,7 @@ if (defined $opt_summary) {
 		} else {
 			$hs = 0.0;
 		}
-		printf "holding space   : %9dk (%6.2f%%)\n", $free{"space:"}, $hs;
+		printf "holding space   : %9d$unit (%6.2f%%)\n", ($free{"space:"}/$unitdivisor), $hs;
 	}
 }
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.53 2004/08/03 11:27:05 martinea Exp $
+ * $Id: conffile.h,v 1.54 2004/11/16 13:58:29 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -82,6 +82,7 @@ typedef enum conf_e {
     CNF_AMRECOVER_CHECK_LABEL,
     CNF_AMRECOVER_CHANGER,
     CNF_TAPERALGO,
+    CNF_DISPLAYUNIT,
     CNF_KRB5KEYTAB,
     CNF_KRB5PRINCIPAL
 } confparm_t;
@@ -288,6 +289,7 @@ dumptype_t *read_dumptype P((char *name, FILE *from, char *fname, int *linenum))
 tapetype_t *lookup_tapetype P((char *identifier));
 interface_t *lookup_interface P((char *identifier));
 holdingdisk_t *getconf_holdingdisks P((void));
+long int getcont_unit_divisor P((void));
 
 int ColumnDataCount P((void));
 int StringToColumn P((char *s));

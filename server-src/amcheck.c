@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.109 2004/08/11 19:16:14 martinea Exp $
+ * $Id: amcheck.c,v 1.110 2004/11/16 13:58:28 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -78,6 +78,8 @@ static unsigned long malloc_hist_2, malloc_size_2;
 
 static am_feature_t *our_features = NULL;
 static char *our_feature_string = NULL;
+char *displayunit;
+long int unitdivisor;
 
 int main(argc, argv)
 int argc;
@@ -233,6 +235,9 @@ char **argv;
 	      pw->pw_name,
 	      dumpuser);
     }
+
+    displayunit = getconf_str(CNF_DISPLAYUNIT);
+    unitdivisor = getcont_unit_divisor();
 
     /*
      * If both server and client side checks are being done, the server
@@ -827,26 +832,28 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	    else if(hdp->disksize > 0) {
 		if(fs.avail < hdp->disksize) {
 		    fprintf(outf,
-			    "WARNING: holding disk %s: only %ld KB free (%ld KB requested)\n",
-			    hdp->diskdir, (long)fs.avail, (long)hdp->disksize);
+			    "WARNING: holding disk %s: only %ld %sB free (%ld %sB requested)\n",
+			    hdp->diskdir, (long)fs.avail/unitdivisor, displayunit,
+			    (long)hdp->disksize/unitdivisor, displayunit);
 		    disklow = 1;
 		}
 		else
 		    fprintf(outf,
-			    "Holding disk %s: %ld KB disk space available, that's plenty\n",
-			    hdp->diskdir, fs.avail);
+			    "Holding disk %s: %ld %sB disk space available, that's plenty\n",
+			    hdp->diskdir, fs.avail/unitdivisor, displayunit);
 	    }
 	    else {
 		if(fs.avail < -hdp->disksize) {
 		    fprintf(outf,
-			    "WARNING: holding disk %s: only %ld KB free, using nothing\n",
-			    hdp->diskdir, fs.avail);
+			    "WARNING: holding disk %s: only %ld %sB free, using nothing\n",
+			    hdp->diskdir, fs.avail/unitdivisor, displayunit);
 		    disklow = 1;
 		}
 		else
 		    fprintf(outf,
-			    "Holding disk %s: %ld KB disk space available, using %ld KB\n",
-			    hdp->diskdir, fs.avail, fs.avail + hdp->disksize);
+			    "Holding disk %s: %ld %sB disk space available, using %ld %sB\n",
+			    hdp->diskdir, fs.avail/unitdivisor, displayunit,
+			    (fs.avail + hdp->disksize)/unitdivisor, displayunit);
 	    }
 	}
     }
