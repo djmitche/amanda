@@ -24,12 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: versionsuffix.c,v 1.6 1998/07/04 00:18:28 oliva Exp $
+ * $Id: versionsuffix.c,v 1.7 1999/05/14 21:52:20 kashmir Exp $
  *
  * prints the (possibly empty) suffix appended to amanda program names
  */
 #include "amanda.h"
 #include "version.h"
+
+int main P((void));
 
 int main()
 {

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: alloc.c,v 1.24 1999/05/14 19:08:45 kashmir Exp $
+ * $Id: alloc.c,v 1.25 1999/05/14 21:52:24 kashmir Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -33,6 +33,8 @@
 #include "amanda.h"
 #include "arglist.h"
 #include "queue.h"
+
+static char *internal_vstralloc P((const char *, va_list));
 
 #if defined(USE_DBMALLOC)
 

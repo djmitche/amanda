@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.30 1999/04/16 05:13:19 kashmir Exp $
+ * $Id: conffile.h,v 1.31 1999/05/14 21:52:43 kashmir Exp $
  *
  * interface for config file reading code
  */
@@ -182,6 +182,6 @@ char *getconf_byname P((char *confname));
 dumptype_t *lookup_dumptype P((char *identifier));
 tapetype_t *lookup_tapetype P((char *identifier));
 interface_t *lookup_interface P((char *identifier));
-holdingdisk_t *getconf_holdingdisks();
+holdingdisk_t *getconf_holdingdisks P((void));
 
 #endif /* ! CONFFILE_H */

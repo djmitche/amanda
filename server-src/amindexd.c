@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.46 1999/04/28 21:48:16 kashmir Exp $
+ * $Id: amindexd.c,v 1.47 1999/05/14 21:52:35 kashmir Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -86,8 +86,24 @@ static REMOVE_ITEM *uncompress_remove = NULL;
 
 static int check_security P((struct sockaddr_in *addr, char *str,
     unsigned long cksum, char **errstr));
+static REMOVE_ITEM *remove_files P((REMOVE_ITEM *));
+static char *uncompress_file P((char *, char **));
+static int process_ls_dump P((char *, DUMP_ITEM *, int, char **));
+static void reply P((int, char *, ...));
+static void lreply P((int, char *, ...));
+static void fast_lreply P((int, char *, ...));
+static int is_dump_host_valid P((char *));
+static int is_disk_valid P((char *));
+static int is_config_valid P((char *));
+static int build_disk_table P((void));
+static int disk_history_list P((void));
+static int is_dir_valid_opaque P((char *));
+static int opaque_ls P((char *, int));
+static int tapedev_is P((void));
+static int are_dumps_compressed P((void));
+int main P((int, char **));
 
-REMOVE_ITEM *remove_files(remove)
+static REMOVE_ITEM *remove_files(remove)
 REMOVE_ITEM *remove;
 {
     REMOVE_ITEM *prev;
@@ -103,7 +119,7 @@ REMOVE_ITEM *remove;
     return remove;
 }
 
-char *uncompress_file(filename_gz, emsg)
+static char *uncompress_file(filename_gz, emsg)
 char *filename_gz;
 char **emsg;
 {
@@ -230,7 +246,7 @@ char **emsg;
 }
 
 /* send a 1 line reply to the client */
-arglist_function1(void reply, int, n, char *, fmt)
+arglist_function1(static void reply, int, n, char *, fmt)
 {
     va_list args;
     char buf[STR_SIZE];
@@ -256,7 +272,7 @@ arglist_function1(void reply, int, n, char *, fmt)
 }
 
 /* send one line of a multi-line response */
-arglist_function1(void lreply, int, n, char *, fmt)
+arglist_function1(static void lreply, int, n, char *, fmt)
 {
     va_list args;
     char buf[STR_SIZE];
@@ -283,7 +299,7 @@ arglist_function1(void lreply, int, n, char *, fmt)
 }
 
 /* send one line of a multi-line response */
-arglist_function1(void fast_lreply, int, n, char *, fmt)
+arglist_function1(static void fast_lreply, int, n, char *, fmt)
 {
     va_list args;
     char buf[STR_SIZE];
@@ -306,7 +322,7 @@ arglist_function1(void fast_lreply, int, n, char *, fmt)
 /* also do a security check on the requested dump hostname */
 /* to restrict access to index records if required */
 /* return -1 if not okay */
-int is_dump_host_valid(host)
+static int is_dump_host_valid(host)
 char *host;
 {
     struct stat dir_stat;
@@ -341,7 +357,7 @@ char *host;
 }
 
 
-int is_disk_valid(disk)
+static int is_disk_valid(disk)
 char *disk;
 {
     char *search_str;
@@ -374,7 +390,7 @@ char *disk;
 }
 
 
-int is_config_valid(config)
+static int is_config_valid(config)
 char *config;
 {
     char *conf_dir = NULL;
@@ -427,7 +443,7 @@ char *config;
 }
 
 
-int build_disk_table P((void))
+static int build_disk_table()
 {
     char date[100];
     find_result_t *find_output;
@@ -464,7 +480,7 @@ int build_disk_table P((void))
 }
 
 
-int disk_history_list P((void))
+static int disk_history_list()
 {
     DUMP_ITEM *item;
 
@@ -490,7 +506,7 @@ int disk_history_list P((void))
 /* is the directory dir backed up - dir assumed complete relative to
    disk mount point */
 /* opaque version of command */
-int is_dir_valid_opaque(dir)
+static int is_dir_valid_opaque(dir)
 char *dir;
 {
     DUMP_ITEM *item;
@@ -574,7 +590,7 @@ char *dir;
     return -1;
 }
 
-int opaque_ls(dir,recursive)
+static int opaque_ls(dir,recursive)
 char *dir;
 int  recursive;
 {
@@ -656,7 +672,7 @@ int  recursive;
 
 /* returns the value of tapedev from the amanda.conf file if set,
    otherwise reports an error */
-int tapedev_is P((void))
+static int tapedev_is()
 {
     char *result;
 
@@ -679,7 +695,7 @@ int tapedev_is P((void))
 
 
 /* returns YES if dumps for disk are compressed, NO if not */
-int are_dumps_compressed P((void))
+static int are_dumps_compressed()
 {
     disk_t *diskp;
 

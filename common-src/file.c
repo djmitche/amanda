@@ -23,12 +23,14 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.16 1999/05/12 16:15:06 kashmir Exp $
+ * $Id: file.c,v 1.17 1999/05/14 21:52:26 kashmir Exp $
  *
  * file and directory bashing routines
  */
 
 #include "amanda.h"
+
+static int mk1dir P((const char *, int, uid_t, gid_t));
 
 /* Make a directory (internal function).
 ** If the directory already exists then we pretend we created it.
@@ -36,8 +38,8 @@
 **       it will do nothing - only root is permitted to change the owner
 **       of a file.
 */
-int mk1dir(dir, mode, uid, gid)
-char *dir;	/* directory to create */
+static int mk1dir(dir, mode, uid, gid)
+const char *dir; /* directory to create */
 int mode;	/* mode for new directory */
 uid_t uid;	/* uid for new directory */
 gid_t gid;	/* gid for new directory */

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.47 1999/04/10 06:19:57 kashmir Exp $
+ * $Id: infofile.c,v 1.48 1999/05/14 21:52:49 kashmir Exp $
  *
  * manage current info file
  */
@@ -34,11 +34,19 @@
 #include "infofile.h"
 #include "token.h"
 
+static void zero_info P((info_t *));
+
 #ifdef TEXTDB
   static char *infodir = (char *)0;
   static char *infofile = (char *)0;
   static char *newinfofile;
   static int writing;
+
+  static FILE *open_txinfofile P((char *, char *, char *));
+  static int close_txinfofile P((FILE *));
+  static int read_txinfofile P((FILE *, info_t *));
+  static int write_txinfofile P((FILE *, info_t *));
+  static int delete_txinfofile P((char *, char *));
 #else
 #  define MAX_KEY 256
 /*#  define HEADER	(sizeof(info_t)-DUMP_LEVELS*sizeof(stats_t))*/
@@ -49,7 +57,7 @@
 
 #ifdef TEXTDB
 
-FILE *open_txinfofile(host, disk, mode)
+static FILE *open_txinfofile(host, disk, mode)
 char *host;
 char *disk;
 char *mode;
@@ -101,7 +109,7 @@ char *mode;
     return infof;
 }
 
-int close_txinfofile(infof)
+static int close_txinfofile(infof)
 FILE *infof;
 {
     int rc = 0;
@@ -124,7 +132,7 @@ FILE *infof;
     return rc;
 }
 
-int read_txinfofile(infof, info) /* XXX - code assumes AVG_COUNT == 3 */
+static int read_txinfofile(infof, info) /* XXX - code assumes AVG_COUNT == 3 */
 FILE *infof;
 info_t *info;
 {
@@ -274,7 +282,7 @@ info_t *info;
     return rc;
 }
 
-int write_txinfofile(infof, info)
+static int write_txinfofile(infof, info)
 FILE *infof;
 info_t *info;
 {
@@ -333,7 +341,7 @@ info_t *info;
     return 0;
 }
 
-int delete_txinfofile(host, disk)
+static int delete_txinfofile(host, disk)
 char *host;
 char *disk;
 {
@@ -468,7 +476,7 @@ double d;	/* default value */
     return sum / n;
 }
 
-void zero_info(info)
+static void zero_info(info)
 info_t *info;
 {
     int i;

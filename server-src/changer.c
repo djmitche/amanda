@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.18 1999/04/10 06:19:40 kashmir Exp $
+ * $Id: changer.c,v 1.19 1999/05/14 21:52:41 kashmir Exp $
  *
  * interface routines for tape changers
  */
@@ -40,6 +40,8 @@ static char *tapechanger = NULL;
 
 /* local functions */
 static int changer_command P((char *cmdstr));
+static int report_bad_resultstr P((void));
+static int run_changer_command P((char *, char *, char **, char **));
 
 int changer_init()
 {

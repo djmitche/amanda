@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.21 1999/05/04 21:15:52 kashmir Exp $
+ * $Id: driverio.h,v 1.22 1999/05/14 21:52:45 kashmir Exp $
  *
  * driver-related helper functions
  */
@@ -94,7 +94,7 @@ typedef enum {
 GLOBAL int taper, taper_busy, taper_pid;
 GLOBAL event_handle_t *taper_ev_read;
 
-void init_driverio();
+void init_driverio P((void));
 void startup_tape_process P((char *taper_program));
 void startup_dump_process P((dumper_t *dumper, char *dumper_program));
 void startup_dump_processes P((char *dumper_program, int inparallel));

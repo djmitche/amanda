@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.24 1999/02/14 15:22:29 martinea Exp $
+ * $Id: amlabel.c,v 1.25 1999/05/14 21:52:38 kashmir Exp $
  *
  * write an Amanda label on a tape
  */
@@ -40,6 +40,7 @@
 
 /* local functions */
 
+int main P((int, char **));
 void usage P((char *argv0));
 
 void usage(argv0)

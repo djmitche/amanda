@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.63 1999/04/28 21:48:07 kashmir Exp $
+ * $Id: amadmin.c,v 1.64 1999/05/14 21:52:30 kashmir Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -75,6 +75,7 @@ void import_db P((int argc, char **argv));
 void disklist P((int argc, char **argv));
 void disklist_one P((disk_t *dp));
 void show_version P((int argc, char **argv));
+static void check_dumpuser P((void));
 
 static char *confname;
 

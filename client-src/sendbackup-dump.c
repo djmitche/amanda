@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.71 1999/04/24 20:48:03 martinea Exp $
+ * $Id: sendbackup-dump.c,v 1.72 1999/05/14 21:52:15 kashmir Exp $
  *
  * send backup data using BSD dump
  */
@@ -124,6 +124,9 @@ static regex_t re_table[] = {
   /* catch-all; DMP_STRANGE is returned for all other lines */
   { DMP_STRANGE, NULL, 0}
 };
+
+static void start_backup P((char *, char *, int, char *, int, int, int));
+static void end_backup P((int));
 
 static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
     char *host;

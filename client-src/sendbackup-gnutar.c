@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.67 1999/04/24 20:48:06 martinea Exp $
+ * $Id: sendbackup-gnutar.c,v 1.68 1999/05/14 21:52:17 kashmir Exp $
  *
  * send backup data using GNU tar
  */
@@ -112,6 +112,9 @@ time_t cur_dumptime;
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
 static char *incrname = NULL;
 #endif
+
+static void start_backup P((char *, char *, int, char *, int, int, int));
+static void end_backup P((int));
 
 static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 char *host;

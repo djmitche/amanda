@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.95 1999/04/30 01:08:51 martinea Exp $
+ * $Id: planner.c,v 1.96 1999/05/14 21:52:51 kashmir Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -129,6 +129,7 @@ static void delay_dumps P((void));
 static int promote_highest_priority_incremental P((void));
 static int promote_hills P((void));
 static void output_scheduleline P((disk_t *dp));
+int main P((int, char **));
 
 int main(argc, argv)
 int argc;
@@ -430,6 +431,7 @@ char **argv;
  *
  */
 
+static void askfor P((est_t *, int, int, info_t *));
 static int last_level P((info_t *info));		  /* subroutines */
 static long est_size P((disk_t *dp, int level));
 static long est_tape_size P((disk_t *dp, int level));

@@ -1,5 +1,39 @@
 1999-05-14  Mike Grupenhoff <kashmir@munge.com>
 
+	* client-src/calcsize.c (basename): make static, prototype, and
+	only include if BUILTIN_EXCLUDE_SUPPORT is defined and
+	HAVE_BASENAME is not defined.
+	* client-src/getfsent.c (dev2rde, samefile): prototype and
+	make static.
+	* client-src/sendbackup-dump.c, client-src/sendbackup-gnutar.c
+	(start_backup, end_backup): prototype.
+	* client-src/sendbackup.c (index_closed, save_fd): prototype
+	and make static.
+	* client-src/versionsuffix.c (main): prototype.
+	* common-src/alloc.c (internal_vstralloc): prototype.
+	* common-src/file.c (mk1dir): prototype, make static, and make
+	first arg const.
+	* server-src/amadmin.c (check_dumpuser): prototype.
+	* server-src/amflush.c (get_letter_from_user): prototype and make
+	static.
+	* server-src/amindexd.c: prototype and make static numerous local
+	functions.
+	* server-src/amlabel.c (main): prototype.
+	* server-src/amtrmidx.c (main): prototype.
+	* server-src/changer.c (report_bad_resultstr, run_changer_command):
+	prototype.
+	* server-src/conffile.h: properly prototype getconf_holdingdisks()
+	* server-src/driver.c (update_failed_dump_to_tape): prototype.
+	* server-src/driverio.h: properly prototype init_driverio().
+	* server-src/find.c (find_compare, parse_taper_datestamp_log):
+	prototype.
+	* server-src/infofile.c (zero_info, open_txinfofile,
+	close_txinfofile, read_txinfofile, write_txinfofile,
+	delete_txinfofile): prototype and make static.
+	* server-src/planner.c (main, askfor): prototype.
+
+1999-05-14  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/server_util.c: include server_util.h for prototypes
 	* server-src/tapefile.h: properly prototype lookup_nb_tape()
 	* server-src/driverio.c (childstr): make static, make return

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: calcsize.c,v 1.24 1998/09/03 22:10:46 oliva Exp $
+ * $Id: calcsize.c,v 1.25 1999/05/14 21:52:11 kashmir Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -291,8 +291,10 @@ char **argv;
  * =========================================================================
  */
 
-#ifndef HAVE_BASENAME
-char *basename(file)
+#if !defined(HAVE_BASENAME) && defined(BUILTIN_EXCLUDE_SUPPORT)
+static char *basename P((char *));
+
+static char *basename(file)
 char *file;
 {
     char *cp;

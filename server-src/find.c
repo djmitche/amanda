@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.10 1999/04/10 06:19:55 kashmir Exp $
+ * $Id: find.c,v 1.11 1999/05/14 21:52:47 kashmir Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -40,6 +40,8 @@ int find_match P((char *host, char *disk));
 int search_logfile P((find_result_t **output_find, char *label, int datestamp, int datestamp_aux, char *logfile));
 void search_holding_disk P((find_result_t **output_find));
 char *find_nicedate P((int datestamp));
+static int find_compare P((const void *, const void *));
+static int parse_taper_datestamp_log P((char *, int *, char **));
 
 static char *find_sort_order = NULL;
 

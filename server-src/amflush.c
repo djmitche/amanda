@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.52 1999/04/28 21:48:13 kashmir Exp $
+ * $Id: amflush.c,v 1.53 1999/05/14 21:52:33 kashmir Exp $
  *
  * write files from work directory onto tape
  */
@@ -52,6 +52,7 @@ void flush_holdingdisk P((char *diskdir, char *datestamp));
 void confirm P((void));
 void detach P((void));
 void run_dumps P((void));
+static int get_letter_from_user P((void));
 
 
 int main(main_argc, main_argv)
@@ -175,10 +176,9 @@ char **main_argv;
 }
 
 
-char get_letter_from_user()
+static int get_letter_from_user()
 {
-    char r;
-    int ch;
+    int r, ch;
 
     fflush(stdout); fflush(stderr);
     while((ch = getchar()) != EOF && ch != '\n' && isspace(ch)) {}

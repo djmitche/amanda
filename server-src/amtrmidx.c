@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmidx.c,v 1.22 1999/04/28 21:48:18 kashmir Exp $
+ * $Id: amtrmidx.c,v 1.23 1999/05/14 21:52:40 kashmir Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -41,6 +41,8 @@
 #include "tapefile.h"
 #include "find.h"
 #include "version.h"
+
+int main P((int, char **));
 
 int main(argc, argv)
 int argc;

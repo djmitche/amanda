@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.50 1999/04/24 20:48:07 martinea Exp $
+ * $Id: sendbackup.c,v 1.51 1999/05/14 21:52:19 kashmir Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -73,6 +73,8 @@ int pipefork P((void (*func) P((void)), char *fname, int *stdinfd,
 		int stdoutfd, int stderrfd));
 void parse_backup_messages P((int mesgin));
 static void process_dumpline P((char *str));
+static void index_closed P((int));
+static void save_fd P((int *, int));
 
 void parse_options(str, disk)
 char *str;
@@ -781,7 +783,7 @@ int sig;
   index_finished = 1;
 }
 
-void save_fd(fd, min)
+static void save_fd(fd, min)
 int *fd, min;
 {
   int origfd = *fd;
