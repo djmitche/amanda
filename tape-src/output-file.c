@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-file.c,v 1.1.2.4.2.3 2003/03/06 21:44:20 martinea Exp $
+ * $Id: output-file.c,v 1.1.2.4.2.4 2003/05/29 20:13:53 martinea Exp $
  *
  * tapeio.c virtual tape interface for a file device.
  *
@@ -140,7 +140,9 @@ check_online(fd)
 	 * We're already offline at this point (see the above test)
 	 * and this is not an error, so just return success (no error).
 	 */
+
 	rc = (errno != ENOENT);
+	fprintf(stderr,"ERROR: %s: %s\n", volume_info[fd].basename, strerror(errno));
 	goto common_exit;
     }
     while ((entry = readdir(tapedir)) != NULL) {
