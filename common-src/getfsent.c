@@ -299,8 +299,6 @@ struct stat stats[3], *estat;
 {
   int i;
   for(i = 0; i < 3; ++i) {
-    if (stats[i].st_dev == -1)
-      continue;
     if (stats[i].st_dev == estat->st_dev &&
 	stats[i].st_ino == estat->st_ino)
       return 1;
