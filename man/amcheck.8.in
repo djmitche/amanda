@@ -16,13 +16,13 @@ amcheck \- run Amanda self\-checks
 .BI -M address
 ]
 [
-.B -mwsc
+.B -mwsct
 ]
 .I config
 .SH DESCRIPTION
 .B Amcheck
 runs a number of self\-checks on both the Amanda tape server host and
-the Amanda backup client hosts.
+the Amanda client hosts.
 .LP
 On the tape server host,
 .B amcheck
@@ -34,7 +34,7 @@ correct drive.
 Holding disks are checked to insure they have enough free space.
 .LP
 .B Amcheck
-also causes a self\-check to be run on all backup client hosts.
+also causes a self\-check to be run on all client hosts.
 This makes sure each host is up and running and that permissions
 on filesystems to be backed up are correct.
 .LP
@@ -57,7 +57,10 @@ value from
 Only the tape server host checks are run.
 .TP
 .B -c
-Only the backup client host checks are run.
+Only the client host checks are run.
+.TP
+.B -t
+Do not run the tape tests on the server host.
 .TP
 .B -w
 Enables a destructive check for write\-protection on the
@@ -83,7 +86,7 @@ value if
 .B -M
 is set.
 .SH EXAMPLES
-In this example, both the tape server and backup client tests are run.
+In this example, both the tape server and client tests are run.
 The results are displayed on standard output.
 .LP
 .RS
@@ -180,7 +183,173 @@ pattern in
 Tape scanning will continue.
 .RE
 .TP
-ERROR: statfs \fIdisk\fP: \fIerror message\fP
+ERROR: cannot look up dump user "\fIuser\fP"
+(error)
+Dump user
+.I user
+from
+.I amanda.conf
+could not be found in the system password information.
+.TP
+ERROR: cannot look up my own uid (\fIuid\fP)
+(error)
+User id
+.I uid
+running
+.B amcheck
+could not be found in the system password information.
+.TP
+ERROR: running as user "\fIrunuser\fP" instead of "\fIdumpuser\fP"
+(error)
+.B Amcheck
+should be run as the dump user
+.I dumpuser
+from
+.I amanda.conf
+instead of
+.IR runuser .
+.TP
+ERROR: program \fIprogram\fP: does not exist
+(error)
+Program
+.I program
+needed on the tape server could not be found.
+.TP
+ERROR: program \fIprogram\fP: not a file
+(error)
+Program
+.I program
+needed on the tape server exists but is not a file.
+.TP
+ERROR: program \fIprogram\fP: not executable
+(error)
+Program
+.I program
+needed on the tape server exists but is not executable.
+.TP
+ERROR: program \fIprogram\fP: not setuid-root
+(error)
+Program
+.I program
+needed on the tape server exists but should be owned by user "root"
+and setuid.
+.TP
+ERROR: \fIXXX\fP dir \fIdirectory\fP: not writable
+(error)
+Directory
+.I directory
+is either not writable,
+i.e. the dump user will not be able to create or remove files,
+or cannot be accessed, perhaps because a parent directory
+does not allow search permission.
+The
+.I XXX
+may be:
+.RS
+.TP
+conf
+for the main Amanda configuration directory
+.TP
+log
+for the Amanda log directory (see
+.B logdir
+in
+.BR amanda.conf )
+.TP
+info
+for an Amanda database information directory (see
+.B curinfo
+in
+.BR amanda.conf )
+or
+.TP
+index
+for an Amanda index directory (see
+.B indexdir
+in
+.BR amanda.conf )
+.RE
+.TP
+NOTE: \fIXXX\fP dir \fIdirectory\fP: does not exist
+(info)
+A database (info) or index directory does not exist or cannot be accessed.
+This might just mean this is a new client or disk,
+but if that is not the case,
+this should be treated as an error.
+.TP
+ERROR: \fIXXX\fP dir \fIname\fP: not a directory
+(error)
+.B Amcheck
+expected
+.I name
+to be a directory,
+but it is something else (e.g. file).
+.TP
+WARNING: info file \fIfile\fP: does not exist
+(warning)
+File
+.I file
+does not exist in the text format database.
+Since the parent directories do exist,
+the file should already have been created.
+.TP
+ERROR: info file \fIname\fP: not a file
+(error)
+.B Amcheck
+expected
+.I name
+to be a file,
+but it is something else (e.g. file).
+.TP
+ERROR: info file \fIfile\fP: not readable
+(error)
+The text format database file
+.I file
+is not readable.
+.TP
+ERROR: log file \fIfile\fP: not writable
+(error)
+Log file
+.I file
+(file
+.B log
+in
+.B logdir
+from
+.BR amanda.conf )
+is either not writable,
+or cannot be accessed, perhaps because a parent directory
+does not allow search permission.
+.TP
+ERROR: tape list \fItapelist\fP: not writable
+(error)
+Amanda tape list file
+.I tapelist
+(see
+.B tapelist
+in
+.BR amanda.conf )
+is not writable or was not found.
+.TP
+NOTE: hold file \fIfile\fP exists
+(info)
+Hold file
+.I file
+exists and will cause
+.B amdump
+to pause at the beginning until it is removed.
+.TP
+ERROR: tape list \fItapelist\fP: parse error
+(error)
+Amanda tape list file
+.I tapelist
+(see
+.B tapelist
+in
+.BR amanda.conf )
+could not be read or parsed.
+.TP
+ERROR: holding disk \fIdisk\fP: statfs: \fIerror message\fP
 (error)
 An error was returned from the
 .I statfs
@@ -188,15 +357,15 @@ system call on holding disk
 .I disk
 (maybe because it does not exist).
 .TP
-ERROR: \fIdisk\fP is unwritable: \fIerror message\fP
+ERROR: holding disk \fIdisk\fP: not writable
 (error)
-An error was returned from the
-.I access
-system call on holding disk
+Holding disk
 .IR disk ,
-probably because the caller does not have write permission.
+is not writable,
+probably because the caller does not have write permission
+or a parent directory does not allow search permission.
 .TP
-WARNING: avail disk space unknown for \fIdisk\fP. \fIN\fP KB requested.
+WARNING: holding disk \fIdisk\fP: available space unknown \fIN\fP KB requested.
 (warning)
 .B Amcheck
 could not determine the amount of available space on holding disk
@@ -205,7 +374,7 @@ to see if there were at least
 .I N
 KBytes available.
 .TP
-WARNING: \fIdisk\fP: only \fIF\fP KB free (\fIR\fP KB requested).
+WARNING: holding disk \fIdisk\fP: only \fIF\fP KB free (\fIR\fP KB requested).
 (warning)
 .I Amanda.conf
 requested
@@ -227,10 +396,29 @@ even though this message is listed as a warning, it causes
 .B amcheck
 to exit with a non-zero status.
 .TP
-\fIdisk\fP: \fIN\fP KB disk space available, that's plenty.
+Holding disk \fIdisk\fP: \fIN\fP KB disk space available, that's plenty.
 (info)
 There was sufficient free space on holding disk
 .IR disk .
+.TP
+WARNING: holding disk \fIdisk\fP: only \fIF\fP KB free, using nothing
+(warning)
+Holding disk
+.I disk
+has
+.I F
+KBytes of free space, but that is not enough for what is requested in
+.IR amanda.conf .
+.TP
+Holding disk \fIdisk\fP: \fIF\fP KB disk space available, using \fIU\fP KB
+(info)
+Holding disk
+.I disk
+has
+.I F
+KBytes of free space and Amanda will be using up to
+.I U
+Kbytes.
 .TP
 WARNING: if a tape changer is not available, runtapes must be set to 1.
 (warning)
@@ -293,6 +481,36 @@ The tape write test (see the
 .B -w
 option) was not enabled.
 .TP
+WARNING: skipping tape test because amdump or amflush seem to be running
+.TP
+WARNING: if they are not, you must run amcleanup
+(warning)
+It looked to
+.B amcheck
+like either
+.B amdump
+or
+.B amflush
+were running because a log file or amdump file exists.
+If they are not running, you probably need to run
+.B amcleanup
+to clear up a previous failure.
+Otherwise, you need to wait until they complete before running
+.BI amcheck .
+.TP
+NOTE: skipping tape checks
+(info)
+The tape tests are being skipped because you used the
+.B -t
+command line option.
+.TP
+WARNING: \fIcompress\fP is not executable, server-compression and indexing will not work
+(warning)
+Compression program
+.I compress
+is not executable,
+so compression on the tape server host and creating index files will not work.
+.TP
 Tape \fIlabel\fP label ok.
 (info)
 Tape
@@ -300,27 +518,18 @@ Tape
 is OK for the next
 run.
 .TP
-Index dir "\fIdirectory\fP" doesn't exist or is not writable.
-(warning)
-The directory used to collect backup index files
-(from the
-.B indexdir
-.I amanda.conf
-option)
-is not accessible.
-.TP
 Server check took \fIS\fP seconds.
 (info)
 Reports how long the tape server host checks took.
 .TP
-ERROR: \fIhost\fP: couldn't resolve hostname
+ERROR: \fIhost\fP: could not resolve hostname
 (error)
-Could not look up backup client hostname
+Could not look up client hostname
 .IR host .
 .TP
 Client check: \fIH\fP hosts checked in \fIS\fP seconds, \fIN\fP problems found.
 (info)
-Reports the number of backup client hosts checked,
+Reports the number of client hosts checked,
 how long it took and the number of errors detected.
 .TP
 WARNING: \fIhost\fP: selfcheck request timed out.  Host down?
@@ -328,6 +537,7 @@ WARNING: \fIhost\fP: selfcheck request timed out.  Host down?
 There was no response from
 .I host
 when trying to do the client checks.
+The host might really be down or it might not be configured properly.
 .TP
 ERROR: \fIhost\fP NAK: \fImessage\fP
 (error)

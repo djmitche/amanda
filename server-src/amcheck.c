@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.1 1998/11/18 07:37:04 oliva Exp $
+ * $Id: amcheck.c,v 1.50.2.2 1998/11/24 22:02:56 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -65,15 +65,17 @@ char *confname;
 
 void usage P((void));
 int start_client_checks P((int fd));
-int start_server_check P((int fd));
+int start_server_check P((int fd, int do_tapechk));
 int main P((int argc, char **argv));
 int scan_init P((int rc, int ns, int bk));
 int taperscan_slot P((int rc, char *slotstr, char *device));
 char *taper_scan P((void));
+int test_server_pgm P((FILE *outf, char *dir, char *pgm,
+		       int suid, uid_t dumpuid));
 
 void usage()
 {
-    error("Usage: amcheck%s [-M <username>] [-mwsc] <conf>", versionsuffix());
+    error("Usage: amcheck%s [-M <username>] [-mwsct] <conf>", versionsuffix());
 }
 
 static unsigned long malloc_hist_1, malloc_size_1;
@@ -89,6 +91,7 @@ char **argv;
     char pid_str[NUM_STR_SIZE];
     int do_clientchk, clientchk_pid, client_probs;
     int do_serverchk, serverchk_pid, server_probs;
+    int do_tapechk;
     int opt, size, result_port, tempfd, mainfd;
     amwait_t retstat;
     pid_t pid;
@@ -132,19 +135,20 @@ char **argv;
     }
 
     mailout = overwrite = 0;
-    do_serverchk = do_clientchk = 1;
+    do_serverchk = do_clientchk = do_tapechk = 1;
     server_probs = client_probs = 0;
     tempfd = mainfd = -1;
 
     /* process arguments */
 
-    while((opt = getopt(argc, argv, "M:mwsc")) != EOF) {
+    while((opt = getopt(argc, argv, "M:mwsct")) != EOF) {
 	switch(opt) {
 	case 'm':	mailout = 1; break;
 	case 'M':	mailout = 1; mailto=optarg; break;
 	case 'w':	overwrite = 1; break;
 	case 's':	do_serverchk = 1; do_clientchk = 0; break;
 	case 'c':	do_serverchk = 0; do_clientchk = 1; break;
+	case 't':	do_tapechk = 0; break;
 	case '?':
 	default:
 	    usage();
@@ -192,7 +196,7 @@ char **argv;
     /* start server side checks */
 
     if(do_serverchk)
-	serverchk_pid = start_server_check(mainfd);
+	serverchk_pid = start_server_check(mainfd, do_tapechk);
     else
 	serverchk_pid = 0;
 
@@ -388,7 +392,7 @@ char *taper_scan()
     found = 0;
     got_match = 0;
 
-    changer_find(scan_init, taperscan_slot,searchlabel);
+    changer_find(scan_init, taperscan_slot, searchlabel);
 
     if(found == 2)
 	searchlabel = first_match_label;
@@ -414,7 +418,40 @@ char *taper_scan()
     return found ? found_device : NULL;
 }
 
-int start_server_check(fd)
+int test_server_pgm(outf, dir, pgm, suid, dumpuid)
+FILE *outf;
+char *dir;
+char *pgm;
+int suid;
+uid_t dumpuid;
+{
+    struct stat statbuf;
+    int pgmbad = 0;
+
+    pgm = vstralloc(dir, "/", pgm, versionsuffix(), NULL);
+    if(stat(pgm, &statbuf) == -1) {
+	fprintf(outf, "ERROR: program %s: does not exist\n",
+		pgm);
+	pgmbad = 1;
+    } else if (!S_ISREG(statbuf.st_mode)) {
+	fprintf(outf, "ERROR: program %s: not a file\n",
+		pgm);
+	pgmbad = 1;
+    } else if (access(pgm, X_OK) == -1) {
+	fprintf(outf, "ERROR: program %s: not executable\n",
+		pgm);
+	pgmbad = 1;
+    } else if (suid \
+	       && dumpuid != 0
+	       && (statbuf.st_uid != 0 || (statbuf.st_mode & 04000) == 0)) {
+	fprintf(outf, "WARNING: program %s: not setuid-root\n",
+		pgm);
+    }
+    amfree(pgm);
+    return pgmbad;
+}
+
+int start_server_check(fd, do_tapechk)
 int fd;
 {
     char *errstr, *tapename;
@@ -422,9 +459,13 @@ int fd;
     tape_t *tp;
     FILE *outf;
     holdingdisk_t *hdp;
-    int pid, tapebad, disklow, logbad;
+    int pid;
+    int tapebad = 0, disklow = 0, logbad = 0;
+    int userbad = 0, infobad = 0, indexbad = 0, pgmbad = 0;
     int inparallel;
-    int testtape = 1;
+    int testtape = do_tapechk;
+    uid_t uid_me = getuid();
+    uid_t uid_dumpuser = uid_me;
 
     switch(pid = fork()) {
     case -1: error("could not fork server check: %s", strerror(errno));
@@ -449,75 +490,157 @@ int fd;
     fprintf(outf, "Amanda Tape Server Host Check\n");
     fprintf(outf, "-----------------------------\n");
 
-    /* check that the tapelist file is writable if it already exists */
+    /*
+     * Make sure we are running as the dump user.
+     */
+    {
+	char *dumpuser = getconf_str(CNF_DUMPUSER);
+	struct passwd *pw;
+
+	if ((pw = getpwnam(dumpuser)) == NULL) {
+	    fprintf(outf, "ERROR: cannot look up dump user \"%s\"\n", dumpuser);
+	    userbad = 1;
+	} else {
+	    uid_dumpuser = pw->pw_uid;
+	}
+	if ((pw = getpwuid(uid_me)) == NULL) {
+	    fprintf(outf, "ERROR: cannot look up my own uid (%ld)\n",
+		    (long)uid_me);
+	    userbad = 1;
+	}
+	if (uid_me != uid_dumpuser) {
+	    fprintf(outf, "ERROR: running as user \"%s\" instead of \"%s\"\n",
+		    pw->pw_name, dumpuser);
+	    userbad = 1;
+	}
+    }
+
+    /*
+     * Look up the programs used on the server side.
+     */
+    {
+	if(access(libexecdir, X_OK) == -1) {
+	    fprintf(outf, "ERROR: program dir %s: not accessible\n",
+		    libexecdir);
+	    pgmbad = 1;
+	} else {
+	    pgmbad = pgmbad \
+		     || test_server_pgm(outf, libexecdir, "planner",
+					1, uid_dumpuser);
+	    pgmbad = pgmbad \
+		     || test_server_pgm(outf, libexecdir, "dumper",
+					1, uid_dumpuser);
+	    pgmbad = pgmbad \
+		     || test_server_pgm(outf, libexecdir, "driver",
+					0, uid_dumpuser);
+	    pgmbad = pgmbad \
+		     || test_server_pgm(outf, libexecdir, "taper",
+					0, uid_dumpuser);
+	    pgmbad = pgmbad \
+		     || test_server_pgm(outf, libexecdir, "getconf",
+					0, uid_dumpuser);
+	    pgmbad = pgmbad \
+		     || test_server_pgm(outf, libexecdir, "amtrmidx",
+					0, uid_dumpuser);
+	}
+	if(access(sbindir, X_OK) == -1) {
+	    fprintf(outf, "ERROR: program dir %s: not accessible\n",
+		    sbindir);
+	    pgmbad = 1;
+	} else {
+	    pgmbad = pgmbad \
+		     || test_server_pgm(outf, sbindir, "amcheck",
+					1, uid_dumpuser);
+	    pgmbad = pgmbad \
+		     || test_server_pgm(outf, sbindir, "amdump",
+					0, uid_dumpuser);
+	    pgmbad = pgmbad \
+		     || test_server_pgm(outf, sbindir, "amreport",
+					0, uid_dumpuser);
+	}
+    }
+
+    /*
+     * Check that the tapelist file is writable if it already exists.
+     * Also, check for a "hold" file (just because it is convenient
+     * to do it here).
+     */
 
     {
+	char *conf_tapelist;
 	char *confdir;
 	char *tapefile;
-	char *conf_tapelist;
+	char *holdfile;
 
 	conf_tapelist=getconf_str(CNF_TAPELIST);
 	confdir = vstralloc(CONFIG_DIR, "/", confname, NULL);
 	tapefile = vstralloc(confdir, "/", conf_tapelist, NULL);
-	if(access(confdir, W_OK) == -1)
-	    fprintf(outf, "ERROR: %s is unwritable: %s\n",
-		    confdir, strerror(errno));
-
-	if(access(tapefile, F_OK) == 0 && access(tapefile, W_OK) != 0)
-	    fprintf(outf, "ERROR: %s is not writable\n", tapefile);
-
+	holdfile = vstralloc(confdir, "/", "hold", NULL);
+	if(access(confdir, W_OK) == -1) {
+	    fprintf(outf, "ERROR: conf dir %s: not writable\n",
+		    confdir);
+	    tapebad = 1;
+	} else if(access(tapefile, F_OK) == 0 && access(tapefile, W_OK) != 0) {
+	    fprintf(outf, "ERROR: tape list %s: not writable\n",
+		    tapefile);
+	    tapebad = 1;
+	} else if(read_tapelist(conf_tapelist)) {
+	    fprintf(outf, "ERROR: tape list %s: parse error\n",
+		    conf_tapelist);
+	    tapebad = 1;
+	}
+	if(access(holdfile, F_OK) != -1) {
+	    fprintf(outf, "NOTE: hold file %s exists\n",
+		    holdfile);
+	}
 	amfree(confdir);
 	amfree(tapefile);
-
-	if(read_tapelist(conf_tapelist))
-	    fprintf(outf, "ERROR: parse error in %s", conf_tapelist);
+	amfree(holdfile);
     }
 
     /* check available disk space */
-
-    disklow = 0;
 
     inparallel = getconf_int(CNF_INPARALLEL);
 
     for(hdp = getconf_holdingdisks(); hdp != NULL; hdp = hdp->next) {
 	if(get_fs_stats(hdp->diskdir, &fs) == -1) {
-	    fprintf(outf, "ERROR: statfs %s: %s\n",
+	    fprintf(outf, "ERROR: holding disk %s: statfs: %s\n",
 		    hdp->diskdir, strerror(errno));
 	    disklow = 1;
 	}
 	else if(access(hdp->diskdir, W_OK) == -1) {
-	    fprintf(outf, "ERROR: %s is unwritable: %s\n",
+	    fprintf(outf, "ERROR: holding disk %s: not writable: %s\n",
 		    hdp->diskdir, strerror(errno));
 	    disklow = 1;
 	}
 	else if(fs.avail == -1) {
 	    fprintf(outf,
-	       "WARNING: avail disk space unknown for %s. %ld KB requested.\n",
+	            "WARNING: holding disk %s: available space unknown (%ld KB requested)\n",
 		    hdp->diskdir, hdp->disksize);
 	    disklow = 1;
 	}
 	else if(hdp->disksize > 0) {
 	    if(fs.avail < hdp->disksize) {
 		fprintf(outf,
-			"WARNING: %s: only %ld KB free (%ld KB requested).\n",
+			"WARNING: holding disk %s: only %ld KB free (%ld KB requested)\n",
 			hdp->diskdir, fs.avail, hdp->disksize);
 		disklow = 1;
 	    }
 	    else
 		fprintf(outf,
-			"%s: %ld KB disk space available, that's plenty.\n",
+			"Holding disk %s: %ld KB disk space available, that's plenty\n",
 			hdp->diskdir, fs.avail);
 	}
 	else {
 	    if(fs.avail < -hdp->disksize) {
 		fprintf(outf,
-			"WARNING: %s: only %ld KB free, using nothing.\n",
+			"WARNING: holding disk %s: only %ld KB free, using nothing\n",
 			hdp->diskdir, fs.avail);
 		disklow = 1;
 	    }
 	    else
 		fprintf(outf,
-			"%s: %ld KB disk space available, using %ld KB.\n",
+			"Holding disk %s: %ld KB disk space available, using %ld KB\n",
 			hdp->diskdir, fs.avail, fs.avail + hdp->disksize);
 	}
     }
@@ -528,14 +651,11 @@ int fd;
 	char *logdir;
 	char *logfile;
 
-	logbad = 0;
-
 	logdir = getconf_str(CNF_LOGDIR);
 	logfile = vstralloc(logdir, "/log", NULL);
 
 	if(access(logdir, W_OK) == -1) {
-	    fprintf(outf, "ERROR: %s is unwritable: %s\n",
-		logdir, strerror(errno));
+	    fprintf(outf, "ERROR: log dir %s: not writable\n", logdir);
 	    logbad = 1;
 	}
 
@@ -543,7 +663,8 @@ int fd;
 	    testtape = 0;
 	    logbad = 1;
 	    if(access(logfile, W_OK) != 0)
-		fprintf(outf, "ERROR: %s is not writable\n", logfile);
+		fprintf(outf, "ERROR: log file %s: not writable\n",
+			logfile);
 	}
 
 	if (testtape) {
@@ -553,14 +674,12 @@ int fd;
 		logbad = 1;
 	    }
 	}
-	
+
 	amfree(logfile);
     }
 
     if (testtape) {
 	/* check that the tape is a valid amanda tape */
-
-	tapebad = 0;
 
 	tapedays = getconf_int(CNF_TAPECYCLE);
 	labelstr = getconf_str(CNF_LABELSTR);
@@ -568,26 +687,26 @@ int fd;
 
 	if (!getconf_seen(CNF_TPCHANGER) && getconf_int(CNF_RUNTAPES) != 1) {
 	    fprintf(outf,
-		    "WARNING: if a tape changer is not available, runtapes must be set to 1.\n");
+		    "WARNING: if a tape changer is not available, runtapes must be set to 1\n");
 	}
 
 	if(changer_init() && (tapename = taper_scan()) == NULL) {
-	    fprintf(outf, "ERROR: %s.\n", changer_resultstr);
+	    fprintf(outf, "ERROR: %s\n", changer_resultstr);
 	    tapebad = 1;
 	} else if(access(tapename,F_OK|R_OK|W_OK) == -1) {
-	    fprintf(outf, "ERROR: %s: %s\n",tapename,strerror(errno));
+	    fprintf(outf, "ERROR: %s: %s\n", tapename, strerror(errno));
 	    tapebad = 1;
 	} else if((errstr = tape_rdlabel(tapename, &datestamp, &label)) != NULL) {
-	    fprintf(outf, "ERROR: %s: %s.\n", tapename, errstr);
+	    fprintf(outf, "ERROR: %s: %s\n", tapename, errstr);
 	    tapebad = 1;
 	} else {
 	    tp = lookup_tapelabel(label);
 	    if(tp != NULL && !reusable_tape(tp)) {
-		fprintf(outf, "ERROR: cannot overwrite active tape %s.\n", label);
+		fprintf(outf, "ERROR: cannot overwrite active tape %s\n", label);
 		tapebad = 1;
 	    }
 	    if(!match(labelstr, label)) {
-		fprintf(outf, "ERROR: label %s doesn't match labelstr \"%s\".\n",
+		fprintf(outf, "ERROR: label %s doesn't match labelstr \"%s\"\n",
 			label, labelstr);
 		tapebad = 1;
 	    }
@@ -604,38 +723,205 @@ int fd;
 	if(!tapebad && overwrite) {
 	    if((errstr = tape_writable(tapename)) != NULL) {
 		fprintf(outf,
-			"ERROR: tape %s label ok, but is not writable.\n", label);
+			"ERROR: tape %s label ok, but is not writable\n",
+			label);
 		tapebad = 1;
 	    }
-	    else fprintf(outf, "Tape %s is writable.\n", label);
+	    else fprintf(outf, "Tape %s is writable\n", label);
 	}
-	else fprintf(outf, "NOTE: skipping tape-writable test.\n");
+	else fprintf(outf, "NOTE: skipping tape-writable test\n");
 
 	if(!tapebad)
-	    fprintf(outf, "Tape %s label ok.\n", label);
+	    fprintf(outf, "Tape %s label ok\n", label);
+    } else if (do_tapechk) {
+	fprintf(outf, "WARNING: skipping tape test because amdump or amflush seem to be running\n");
+	fprintf(outf, "WARNING: if they are not, you must run amcleanup\n");
     } else {
-	fprintf(outf, "WARNING: skipping tape test because amdump or amflush seem to be running;\nWARNING: if they are not, you must run amcleanup.\n");
+	fprintf(outf, "NOTE: skipping tape checks\n");
     }
 
+    /*
+     * See if the information file and index directory for each client
+     * and disk is OK.  Since we may be seeing clients and/or disks for
+     * the first time, these are just warnings, not errors.
+     */
     {
-	char *indexdir = getconf_str(CNF_INDEXDIR);
+	char *infodir = stralloc(getconf_str(CNF_INFOFILE));
+	char *indexdir = stralloc(getconf_str(CNF_INDEXDIR));
+	char *hostinfodir = NULL;
+	char *hostindexdir = NULL;
+	char *diskdir = NULL;
+	char *infofile = NULL;
 	struct stat statbuf;
-	if((stat(indexdir, &statbuf) == -1)
-	   || !S_ISDIR(statbuf.st_mode)
-	   || (access(indexdir, W_OK) == -1)) {
-	    fprintf(outf, "Index dir \"%s\" doesn't exist or is not writable.\n",
-		    indexdir);
+	disklist_t *origqp;
+	disk_t *dp;
+	host_t *hostp;
+	int indexdir_checked = 0;
+	int hostindexdir_checked = 0;
+	char *host;
+	char *disk;
+
+#if TEXTDB
+	if(stat(infodir, &statbuf) == -1) {
+	    fprintf(outf, "NOTE: info dir %s: does not exist\n",
+		    infodir);
+	    amfree(infodir);
+	} else if (!S_ISDIR(statbuf.st_mode)) {
+	    fprintf(outf, "ERROR: info dir %s: not a directory\n",
+		    infodir);
+	    amfree(infodir);
+	    infobad = 1;
+	} else if (access(infodir, W_OK) == -1) {
+	    fprintf(outf, "ERROR: info dir %s: not writable\n",
+		    infodir);
+	    amfree(infodir);
+	    infobad = 1;
+	} else {
+	    strappend(infodir, "/");
 	}
+#endif
+
+	if((origqp = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
+	    error("could not load diskfile %s\n", getconf_str(CNF_DISKFILE));
+
+	while(!empty(*origqp)) {
+	    hostp = origqp->head->host;
+	    host = sanitise_filename(hostp->hostname);
+#if TEXTDB
+	    if(infodir) {
+		hostinfodir = newstralloc2(hostinfodir, infodir, host);
+		if(stat(hostinfodir, &statbuf) == -1) {
+		    fprintf(outf, "NOTE: info dir %s: does not exist\n",
+			    hostinfodir);
+		    amfree(hostinfodir);
+		} else if (!S_ISDIR(statbuf.st_mode)) {
+		    fprintf(outf, "ERROR: info dir %s: not a directory\n",
+			    hostinfodir);
+		    amfree(hostinfodir);
+		    infobad = 1;
+		} else if (access(hostinfodir, W_OK) == -1) {
+		    fprintf(outf, "ERROR: info dir %s: not writable\n",
+			    hostinfodir);
+		    amfree(hostinfodir);
+		    infobad = 1;
+		} else {
+		    strappend(hostinfodir, "/");
+		}
+	    }
+#endif
+	    for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+		disk = sanitise_filename(dp->name);
+#if TEXTDB
+		if(hostinfodir) {
+		    diskdir = newstralloc2(diskdir, hostinfodir, disk);
+		    infofile = vstralloc(diskdir, "/", "info", NULL);
+		    if(stat(diskdir, &statbuf) == -1) {
+			fprintf(outf, "NOTE: info dir %s: does not exist\n",
+				diskdir);
+		    } else if (!S_ISDIR(statbuf.st_mode)) {
+			fprintf(outf, "ERROR: info dir %s: not a directory\n",
+				diskdir);
+			infobad = 1;
+		    } else if (access(diskdir, W_OK) == -1) {
+			fprintf(outf, "ERROR: info dir %s: not writable\n",
+				diskdir);
+			infobad = 1;
+		    } else if(stat(infofile, &statbuf) == -1) {
+			fprintf(outf, "WARNING: info file %s: does not exist\n",
+				infofile);
+		    } else if (!S_ISREG(statbuf.st_mode)) {
+			fprintf(outf, "ERROR: info file %s: not a file\n",
+				infofile);
+			infobad = 1;
+		    } else if (access(infofile, R_OK) == -1) {
+			fprintf(outf, "ERROR: info file %s: not readable\n",
+				infofile);
+			infobad = 1;
+		    }
+		    amfree(infofile);
+		}
+#endif
+		if(dp->index) {
+		    if(! indexdir_checked) {
+			if(stat(indexdir, &statbuf) == -1) {
+			    fprintf(outf, "NOTE: index dir %s: does not exist\n",
+				    indexdir);
+			    amfree(indexdir);
+			} else if (!S_ISDIR(statbuf.st_mode)) {
+			    fprintf(outf, "ERROR: index dir %s: not a directory\n",
+				    indexdir);
+			    amfree(indexdir);
+			    indexbad = 1;
+			} else if (access(indexdir, W_OK) == -1) {
+			    fprintf(outf, "ERROR: index dir %s: not writable\n",
+				    indexdir);
+			    amfree(indexdir);
+			    indexbad = 1;
+			} else {
+			    strappend(indexdir, "/");
+			}
+			indexdir_checked = 1;
+		    }
+		    if(indexdir) {
+			if(! hostindexdir_checked) {
+			    hostindexdir = stralloc2(indexdir, host);
+			    if(stat(hostindexdir, &statbuf) == -1) {
+			        fprintf(outf, "NOTE: index dir %s: does not exist\n",
+				        hostindexdir);
+			        amfree(hostindexdir);
+			    } else if (!S_ISDIR(statbuf.st_mode)) {
+			        fprintf(outf, "ERROR: index dir %s: not a directory\n",
+				        hostindexdir);
+			        amfree(hostindexdir);
+			        indexbad = 1;
+			    } else if (access(hostindexdir, W_OK) == -1) {
+			        fprintf(outf, "ERROR: index dir %s: not writable\n",
+				        hostindexdir);
+			        amfree(hostindexdir);
+			        indexbad = 1;
+			    } else {
+				strappend(hostindexdir, "/");
+			    }
+			    hostindexdir_checked = 1;
+			}
+			if(hostindexdir) {
+			    diskdir = newstralloc2(diskdir, hostindexdir, disk);
+			    if(stat(diskdir, &statbuf) == -1) {
+				fprintf(outf, "NOTE: index dir %s: does not exist\n",
+					diskdir);
+			    } else if (!S_ISDIR(statbuf.st_mode)) {
+				fprintf(outf, "ERROR: index dir %s: not a directory\n",
+					diskdir);
+				indexbad = 1;
+			    } else if (access(diskdir, W_OK) == -1) {
+				fprintf(outf, "ERROR: index dir %s: is not writable\n",
+					diskdir);
+				indexbad = 1;
+			    }
+			}
+		    }
+		}
+		amfree(disk);
+		remove_disk(origqp, dp);
+	    }
+	    amfree(host);
+	    amfree(hostindexdir);
+	    hostindexdir_checked = 0;
+	}
+	amfree(diskdir);
+	amfree(hostinfodir);
+	amfree(infodir);
+	amfree(indexdir);
     }
 
     if (access(COMPRESS_PATH, X_OK) == -1)
-      fprintf(outf, "%s is not executable, server-compression and indexing will not work\n",
-	      COMPRESS_PATH);
+	fprintf(outf, "WARNING: %s is not executable, server-compression and indexing will not work\n",
+	        COMPRESS_PATH);
 
     amfree(datestamp);
     amfree(label);
 
-    fprintf(outf, "Server check took %s seconds.\n", walltime_str(curclock()));
+    fprintf(outf, "Server check took %s seconds\n", walltime_str(curclock()));
 
     fflush(outf);
 
@@ -645,7 +931,13 @@ int fd;
 	malloc_list(fd, malloc_hist_1, malloc_hist_2);
     }
 
-    exit(tapebad || disklow || logbad);
+    exit(userbad \
+	 || tapebad \
+	 || disklow \
+	 || logbad \
+	 || infobad \
+	 || indexbad \
+	 || pgmbad);
     /* NOTREACHED */
     return 0;
 }
@@ -667,6 +959,7 @@ int fd;
     int hostcount, rc, pid;
     int amanda_port;
     struct servent *amandad;
+    int userbad = 0;
 
 #ifdef KRB4_SECURITY
     int kamanda_port;
@@ -687,7 +980,7 @@ int fd;
     startclock();
 
     if((origqp = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
-	error("could not load \"%s\"\n", getconf_str(CNF_DISKFILE));
+	error("could not load diskfile %s\n", getconf_str(CNF_DISKFILE));
 
     if((outf = fdopen(fd, "w")) == NULL)
 	error("fdopen %d: %s", fd, strerror(errno));
@@ -695,6 +988,33 @@ int fd;
 
     fprintf(outf, "\nAmanda Backup Client Hosts Check\n");
     fprintf(outf,   "--------------------------------\n");
+
+    /*
+     * Make sure we are running as the dump user.
+     */
+    {
+	uid_t uid_me = getuid();
+	uid_t uid_dumpuser = uid_me;
+	char *dumpuser = getconf_str(CNF_DUMPUSER);
+	struct passwd *pw;
+
+	if ((pw = getpwnam(dumpuser)) == NULL) {
+	    fprintf(outf, "ERROR: cannot look up dump user \"%s\"\n", dumpuser);
+	    userbad = 1;
+	} else {
+	    uid_dumpuser = pw->pw_uid;
+	}
+	if ((pw = getpwuid(uid_me)) == NULL) {
+	    fprintf(outf, "ERROR: cannot look up my own uid %ld\n",
+		    (long)uid_me);
+	    userbad = 1;
+	}
+	if (uid_me != uid_dumpuser) {
+	    fprintf(outf, "ERROR: running as user \"%s\" instead of \"%s\"\n",
+		    pw->pw_name, dumpuser);
+	    userbad = 1;
+	}
+    }
 
 #ifdef KRB4_SECURITY
     kerberos_service_init();
@@ -756,7 +1076,7 @@ int fd;
 	if(rc) {
 	    /* couldn't resolve hostname */
 	    fprintf(outf,
-		    "ERROR: %s: couldn't resolve hostname\n", hostp->hostname);
+		    "ERROR: %s: could not resolve hostname\n", hostp->hostname);
 	    remote_errors++;
 	}
 	check_protocol();
@@ -765,7 +1085,7 @@ int fd;
     amfree(msg);
 
     fprintf(outf,
-     "Client check: %d host%s checked in %s seconds, %d problem%s found.\n",
+     "Client check: %d host%s checked in %s seconds, %d problem%s found\n",
 	    hostcount, (hostcount == 1) ? "" : "s",
 	    walltime_str(curclock()),
 	    remote_errors, (remote_errors == 1) ? "" : "s");
@@ -777,7 +1097,7 @@ int fd;
 	malloc_list(fd, malloc_hist_1, malloc_hist_2);
     }
 
-    exit(remote_errors > 0);
+    exit(userbad || remote_errors > 0);
     /* NOTREACHED */
     return 0;
 }
