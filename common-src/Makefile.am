@@ -43,7 +43,7 @@ genversion_SOURCES = genversion.c
 genversion_LDADD = versuff.$(OBJ_EXTENSION) $(libamanda_a_LIBADD) \
 	alloc.$(OBJ_EXTENSION) error.$(OBJ_EXTENSION)
 
-genversion.o: genversion.h
+genversion.o: genversion.c genversion.h
 genversion.h: $(top_builddir)/config.status
 	-rm -f $@ $@.new
 	echo '#define CC "$(CC)"' > $@.new
