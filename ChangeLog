@@ -1,5 +1,9 @@
 1999-09-11 John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/amindex.c: minor memory leak.
+
+1999-09-11 John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/amcheck.c: remove duplicated code.
 
 1999-09-11 John R. Jackson  <jrj@purdue.edu>
@@ -365,7 +369,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.263 1999/09/11 18:42:37 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.264 1999/09/11 19:05:32 jrj Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
