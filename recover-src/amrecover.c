@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.15 1998/01/02 18:48:05 jrj Exp $
+ * $Id: amrecover.c,v 1.16 1998/01/03 18:25:24 jrj Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -319,6 +319,7 @@ int cwd_len;
 	    && (strncmp(fsent.mntdir, cwd, current_length) == 0))
 	{
 	    longest_match = current_length;
+	    afree(*mpt_guess);
 	    *mpt_guess = stralloc(fsent.mntdir);
 	    fsname = newstralloc(fsname, fsent.fsname+strlen(DEV_PREFIX));
 	    local_disk = is_local_fstype(&fsent);
@@ -327,11 +328,13 @@ int cwd_len;
     close_fstab();
 
     if (longest_match == 0) {
+	afree(*mpt_guess);
 	afree(fsname);
 	return -1;			/* ? at least / should match */
     }
 
     if (!local_disk) {
+	afree(*mpt_guess);
 	afree(fsname);
 	return 0;
     }
@@ -361,8 +364,9 @@ int cwd_len;
     }
 
     /* neither is okay */
+    afree(*mpt_guess);
     afree(fsname);
-    return 1;
+    return 2;
 }
 
 
