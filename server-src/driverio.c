@@ -184,7 +184,6 @@ int fd;
 }
 
 
-
 void taper_cmd(cmd, /* optional */ ptr)
 tok_t cmd;
 void *ptr;
@@ -253,13 +252,16 @@ disk_t *dp;
 {
     char cmdline[MAX_LINE];
     int len;
+    int lev;
 
     switch(cmd) {
     case FILE_DUMP:
     case PORT_DUMP:
-	sprintf(cmdline, "%s %s %s %s %s %d %s |%s\n", cmdstr[cmd],
+	lev = sched(dp)->level;
+	sprintf(cmdline, "%s %s %s %s %s %d %s %s |%s\n", cmdstr[cmd],
 		disk2serial(dp), sched(dp)->destname, dp->host->hostname,
-		dp->name, sched(dp)->level, dp->dtype->program, optionstr(dp));
+		dp->name, lev, sched(dp)->dumpdate, dp->dtype->program,
+		optionstr(dp));
 	break;
     case QUIT:
     case ABORT:
@@ -350,32 +352,32 @@ long dumpsize;
 long dumptime;
 {
     int level;
-    info_t record;
+    info_t inf;
     stats_t *infp;
     perf_t *perfp;
-    int res;
+    int rc;
 
     level = sched(dp)->level;
 
-    res = open_infofile(getconf_str(CNF_INFOFILE));
-    if(res)
+    rc = open_infofile(getconf_str(CNF_INFOFILE));
+    if(rc)
 	error("could not open infofile %s: %s (%d)", getconf_str(CNF_INFOFILE),
-	      strerror(errno), res);
+	      strerror(errno), rc);
 
-    get_info(dp->host->hostname, dp->name, &record);
+    get_info(dp->host->hostname, dp->name, &inf);
 	
-    infp = &record.inf[level];
+    infp = &inf.inf[level];
     infp->size = origsize;
     infp->csize = dumpsize;
     infp->secs = dumptime;
-    infp->date = sched(dp)->timestamp;
+    if(dp->dtype->record) infp->date = sched(dp)->timestamp;
 
-    if(level == 0) perfp = &record.full;
-    else perfp = &record.incr;
+    if(level == 0) perfp = &inf.full;
+    else perfp = &inf.incr;
     newperf(perfp->comp, origsize? (dumpsize/(float)origsize) : 1.0);
     newperf(perfp->rate, dumpsize/(infp->secs? infp->secs : 1.0));
 
-    if(put_info(dp->host->hostname, dp->name, &record))
+    if(put_info(dp->host->hostname, dp->name, &inf))
 	error("infofile update failed (%s,%s)\n", dp->host->hostname, dp->name);
 
     close_infofile();
@@ -386,21 +388,26 @@ disk_t *dp;
 char *label;
 int filenum;
 {
-    info_t record;
-    int res;
+    info_t inf;
+    int level;
+    int rc;
 
-    res = open_infofile(getconf_str(CNF_INFOFILE));
-    if(res)
+    level = sched(dp)->level;
+
+    rc = open_infofile(getconf_str(CNF_INFOFILE));
+    if(rc)
 	error("could not open infofile %s: %s (%d)", getconf_str(CNF_INFOFILE),
-	      strerror(errno), res);
+	      strerror(errno), rc);
 
-    get_info(dp->host->hostname, dp->name, &record);
+    get_info(dp->host->hostname, dp->name, &inf);
 
-    strcpy(record.inf[sched(dp)->level].label, label);
-    record.inf[sched(dp)->level].filenum = filenum;
-    record.command = NO_COMMAND;
+    /* XXX - should we record these two if no-record? */
+    strcpy(inf.inf[level].label, label);
+    inf.inf[level].filenum = filenum;
 
-    if(put_info(dp->host->hostname, dp->name, &record))
+    inf.command = NO_COMMAND;
+
+    if(put_info(dp->host->hostname, dp->name, &inf))
 	error("infofile update failed (%s,%s)\n", dp->host->hostname, dp->name);
 
     close_infofile();

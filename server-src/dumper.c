@@ -85,8 +85,9 @@ static int srvcompress;
 
 char errfname[MAX_LINE];
 FILE *errf;
-char *filename, *hostname, *diskname, *options, *progname, *levelstr;
+char *filename, *hostname, *diskname, *options, *progname;
 int level;
+char *dumpdate;
 char datestamp[80];
 
 int datafd = -1;
@@ -110,7 +111,7 @@ static void log_msgout P((logtype_t typ));
 void update_info P((void));
 char *diskname2filename P((char *dname));
 void sendbackup_response P((proto_t *p, pkt_t *pkt));
-int startup_dump P((char *hostname, char *disk, char *levelstr, 
+int startup_dump P((char *hostname, char *disk, int level, char *dumpdate,
 		    char *dumpname, char *options));
 
 
@@ -216,16 +217,17 @@ char **main_argv;
 	case QUIT:
 	    break;
 	case FILE_DUMP:	
-	    /* FILE-DUMP handle filename host disk level progname options */
+	    /* FILE-DUMP handle filename host disk level dumpdate progname options */
 
 	    assert(argc == 8);
 	    handle = argv[2];
 	    filename = argv[3];
 	    hostname = argv[4];
 	    diskname = argv[5];
-	    levelstr = argv[6]; level = atoi(levelstr);
-	    progname = argv[7];
-	    options = argv[8];
+	    level = atoi(argv[6]);
+	    dumpdate = argv[7];
+	    progname = argv[8];
+	    options = argv[9];
 
 	    if((outfd = open(filename, O_WRONLY|O_CREAT, 0666)) == -1) {
 		putresult("FAILED %s %s\n", handle,
@@ -237,7 +239,7 @@ char **main_argv;
 
 	    check_options(options);
 
-	    rc = startup_dump(hostname, diskname, levelstr, progname, options);
+	    rc = startup_dump(hostname, diskname, level, dumpdate, progname, options);
 	    if(rc) {
 		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
 			  handle, squote(errstr));
@@ -260,15 +262,16 @@ char **main_argv;
 
 	case PORT_DUMP: 
 
-	    /* PORT-DUMP handle port host disk level progname options */
+	    /* PORT-DUMP handle port host disk level dumpdate progname options */
 	    assert(argc == 8);
 	    handle = argv[2];
 	    taper_port = atoi(argv[3]);
 	    hostname = argv[4];
 	    diskname = argv[5];
-	    levelstr = argv[6]; level = atoi(levelstr);
-	    progname = argv[7];
-	    options = argv[8];
+	    level = atoi(argv[6]);
+	    dumpdate = argv[7];
+	    progname = argv[8];
+	    options = argv[9];
 
 	    /* connect outf to taper port */
 
@@ -282,7 +285,7 @@ char **main_argv;
 
 	    check_options(options);
 
-	    rc = startup_dump(hostname, diskname, levelstr, progname, options);
+	    rc = startup_dump(hostname, diskname, level, dumpdate, progname, options);
 	    if(rc) {
 		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
 			  handle, squote(errstr));
@@ -975,15 +978,16 @@ pkt_t *pkt;
     response_error = 0;
 }
 
-int startup_dump(hostname, disk, levelstr, dumpname, options)
-char *hostname, *disk, *levelstr, *dumpname, *options;
+int startup_dump(hostname, disk, level, dumpdate, dumpname, options)
+char *hostname, *disk, *dumpdate, *dumpname, *options;
+int level;
 {
     char req[8192];
     int rc;
 
     sprintf(req,
-	    "SERVICE sendbackup\n%s %s %s DATESTAMP %s OPTIONS %s\n",
-            progname, disk, levelstr, datestamp, options);
+	    "SERVICE sendbackup\n%s %s %d %s DATESTAMP %s OPTIONS %s\n",
+            progname, disk, level, dumpdate, datestamp, options);
 
     datafd = mesgfd = indexfd = -1;
 

@@ -109,9 +109,10 @@ static regex_t re_table[] = {
   { DMP_STRANGE, NULL, 0}
 };
 
-static void start_backup(disk, level, datestamp, dataf, mesgf, indexf)
+static void start_backup(disk, level, dumpdate, datestamp, dataf, mesgf, indexf)
 char *disk, *datestamp;
 int level, dataf, mesgf, indexf;
+char *dumpdate;
 {
     int dumpin, dumpout;
     char *host, dumpkeys[80];

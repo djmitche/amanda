@@ -69,7 +69,7 @@ extern int indexpid, createindex;
 typedef struct backup_program_s {
     char *name, *backup_name, *restore_name;
     regex_t *re_table;
-    void (*start_backup) P((char *disk, int level, char *datestamp, \
+    void (*start_backup) P((char *disk, int level, char *dumpdate, char *datestamp, \
 			    int dataf, int mesgf, int indexf));
     void (*end_backup) P((int goterror));
 } backup_program_t;

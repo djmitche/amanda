@@ -69,6 +69,7 @@ typedef struct info_s {
 int open_infofile P((char *infofile));
 void close_infofile P((void));
 
+char *get_dumpdate P((info_t *record, int level));
 double perf_average P((float *array, double def));
 int get_info P((char *hostname, char *diskname, info_t *record));
 int get_firstkey P((char *hostname, char *diskname));

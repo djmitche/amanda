@@ -37,6 +37,7 @@
 #include "clock.h"
 #include "conffile.h"
 #include "diskfile.h"
+#include "infofile.h"
 #include "logfile.h"
 #include "statfs.h"
 #include "version.h"
@@ -447,6 +448,7 @@ disklist_t *queuep;
 	else {
 	    if(sched(dp)->degr_level != -1) {
 		sched(dp)->level = sched(dp)->degr_level;
+		sched(dp)->dumpdate = sched(dp)->degr_dumpdate;
 		sched(dp)->est_size = sched(dp)->degr_size;
 		sched(dp)->est_time = sched(dp)->degr_time;
 		if(strcmp(dp->host->hostname, local_hostname) == 0)
@@ -812,6 +814,7 @@ disklist_t read_schedule(waitqp)
 disklist_t *waitqp;
 {
     sched_t *sp;
+    info_t inf;
     disk_t *dp;
     disklist_t rq;
     int rc, time, size, level, line, priority;
@@ -820,6 +823,15 @@ disklist_t *waitqp;
 
 
     rq.head = rq.tail = NULL;
+
+    /* Open the info file.
+    ** XXX - we are just after a dumpdate string.  Maybe it would be easier
+    **       if planner just passed it to us!
+    */
+    rc = open_infofile(getconf_str(CNF_INFOFILE));
+    if(rc)
+        error("could not open infofile %s: %s (%d)", getconf_str(CNF_INFOFILE),
+              strerror(errno), rc);
 
     /* read schedule from stdin */
 
@@ -842,15 +854,19 @@ disklist_t *waitqp;
 		  line, hostname, diskname);
 	    continue;
 	}
+
+	get_info(hostname, diskname, &inf);
 	
 	sp = (sched_t *) alloc(sizeof(sched_t));
 	sp->level    = level;
+	sp->dumpdate = stralloc(get_dumpdate(&inf, level));
 	sp->est_size = size;
 	sp->est_time = time;
 	sp->priority = priority;
 	if(rc < 9) sp->degr_level = -1;
 	else {
 	    sp->degr_level = degr_level;
+	    sp->degr_dumpdate = stralloc(get_dumpdate(&inf, degr_level));
 	    sp->degr_size = degr_size;
 	    sp->degr_time = degr_time;
 	}
@@ -863,7 +879,7 @@ disklist_t *waitqp;
 	sp->attempted = 0;
 	sp->act_size = 0;
 	sp->holdp = NULL;
-	sp->dumper  = NULL;
+	sp->dumper = NULL;
 	sp->timestamp = (time_t)0;
 
 	dp->up = (char *) sp;
@@ -872,6 +888,9 @@ disklist_t *waitqp;
     }
     if(line == 0)
 	log(L_WARNING, "WARNING: got empty schedule from planner");
+
+    close_infofile();
+
     return rq;
 }
 

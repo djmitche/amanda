@@ -83,6 +83,7 @@ typedef struct est_s {
     float fullcomp, incrcomp;
     char *errstr;
     int level[MAX_LEVELS];
+    char *dumpdate[MAX_LEVELS];
     int est_size[MAX_LEVELS];
 } est_t;
 
@@ -390,6 +391,7 @@ char **argv;
     fprintf(stderr,"\nGENERATING SCHEDULE:\n--------\n");
     while(!empty(schedq)) output_scheduleline(&schedq);
     fprintf(stderr, "--------\n");
+
     close_infofile();
     log(L_FINISH, "date %s", datestamp);
 
@@ -421,14 +423,41 @@ static int runs_at P((disk_t *dp, info_t *ip, int lev));
 static int bump_thresh P((int level));
 static int when_overwrite P((char *label));
 
+static void askfor(ep, seq, lev, inf)
+est_t *ep;	/* esimate data block */
+int seq;	/* sequence number of request */
+int lev;	/* dump level being requested */
+info_t *inf;	/* info block for disk */
+{
+    stats_t *stat;
+
+    assert(lev >= -1 && lev < MAX_LEVELS);
+
+    if (lev == -1) {
+	ep->level[seq] = -1;
+	ep->dumpdate[seq] = (char *)0;
+	ep->est_size[seq] = -1;
+	return;
+    }
+
+    ep->level[seq] = lev;
+
+    ep->dumpdate[seq] = stralloc(get_dumpdate(inf,lev));
+
+    stat = &inf->inf[lev];
+    if(stat->date == EPOCH) ep->est_size[seq] = -1;
+    else ep->est_size[seq] = stat->size;
+
+    return;
+}
+
 static void setup_estimates(qp)
 disklist_t *qp;
 {
     disk_t *dp;
     est_t *ep;
     info_t inf;
-    stats_t *s;
-    int i, curr_level;
+    int i;
 
     dp = dequeue_disk(qp);
 
@@ -540,7 +569,9 @@ disklist_t *qp;
 	    fprintf(stderr,"%s:%s lev 0 skipped due to skip-full flag\n",
 		    dp->host->hostname, dp->name);
 	    /* don't enqueue the disk */
-	    ep->level[0] = ep->level[1] = ep->level[2] = -1;
+	    askfor(ep, 0, -1, &inf);
+	    askfor(ep, 1, -1, &inf);
+	    askfor(ep, 2, -1, &inf);
 	    fprintf(stderr, "planner: SKIPPED %s %s 0 [skip-full]\n",
 		    dp->host->hostname, dp->name);
 	    log(L_SUCCESS, "%s %s 0 [skipped: skip-full]", 
@@ -561,7 +592,9 @@ disklist_t *qp;
 	fprintf(stderr,"%s:%s lev 1 skipped due to skip-incr flag\n",
 		dp->host->hostname, dp->name);
 	/* don't enqueue the disk */
-	ep->level[0] = ep->level[1] = ep->level[2] = -1;
+	askfor(ep, 0, -1, &inf);
+	askfor(ep, 1, -1, &inf);
+	askfor(ep, 2, -1, &inf);
 
 	fprintf(stderr, "planner: SKIPPED %s %s 1 [skip-incr]\n",
 		dp->host->hostname, dp->name);
@@ -592,20 +625,22 @@ disklist_t *qp;
     i = 0;
 
     if(!(dp->dtype->skip_full || dp->dtype->no_full))
-	ep->level[i++] = 0;
+	askfor(ep, i++, 0, &inf);
 
     if(!dp->dtype->skip_incr) {
 	if(ep->last_level == -1) {		/* a new disk */
 	    if(dp->dtype->no_full)
-		ep->level[i++] = 1;
+		askfor(ep, i++, 1, &inf);
 	    else assert(!dp->dtype->skip_full);	/* should be handled above */
 	}
 	else {				/* not new, pick normally */
+	    int curr_level;
+
 	    curr_level = ep->last_level;
 	    if(curr_level == 0)
-		ep->level[i++] = 1;
+		askfor(ep, i++, 1, &inf);
 	    else {
-		ep->level[i++] = curr_level;
+		askfor(ep, i++, curr_level, &inf);
 		/*
 		 * If last time we dumped less than the threshold, then this
 		 * time we will too, OR the extra size will be charged to both
@@ -616,25 +651,13 @@ disklist_t *qp;
 		if((inf.inf[curr_level].size == 0 || /* no data, try it anyway */
 		   (inf.inf[curr_level].size > bump_thresh(curr_level))) &&
 		   ep->level_days >= getconf_int(CNF_BUMPDAYS))
-		    ep->level[i++] = curr_level+1;
+		    askfor(ep, i++, curr_level+1, &inf);
 	    }
 	}
     }
 
-    while(i < MAX_LEVELS) {	/* mark end of estimates */
-	ep->level[i] = -1;
-	ep->est_size[i] = -1;
-	i++;
-    }
-
-    /* For each estimate, start with the historical size, if any */
-
-    for(i=0; i < MAX_LEVELS; i++) {
-	if(ep->level[i] == -1) break;
-	s = &inf.inf[ep->level[i]];
-	if(s->date == EPOCH) ep->est_size[i] = -1;
-	else ep->est_size[i] = s->size;
-    }
+    while(i < MAX_LEVELS)	/* mark end of estimates */
+	askfor(ep, i++, -1, &inf);
 
     /* debug output */
 
@@ -810,11 +833,12 @@ host_t *hostp;
 
 	remove_disk(&startq, dp);
 
-	for(i=0;i<MAX_LEVELS;i++) {
-	    if(est(dp)->level[i] == -1) break;
+	for(i = 0; i < MAX_LEVELS; i++) {
+	    int lev = est(dp)->level[i];
+	    if(lev == -1) break;
 
-	    sprintf(line, "%s %s %d %d %s\n", dp->dtype->program,
-		    dp->name, est(dp)->level[i], dp->platter,
+	    sprintf(line, "%s %s %d %s %d %s\n", dp->dtype->program,
+		    dp->name, lev, est(dp)->dumpdate[i], dp->platter,
 		    (dp->dtype->exclude ? dp->dtype->exclude : ""));
 	    strcat(req, line);
 	    disks++;
@@ -1527,7 +1551,7 @@ static int promote_hills P((void))
     sp = (struct balance_stats *)
 	alloc(sizeof(struct balance_stats) * tapecycle);
 
-    for(days=0; days < tapecycle; days++)
+    for(days = 0; days < tapecycle; days++)
 	sp[days].disks = sp[days].size = 0;
 
     for(ptr = schedq.head; ptr != NULL; ptr = ptr->next) {
@@ -1542,7 +1566,7 @@ static int promote_hills P((void))
     while(1) {
 	/* Find the tallest hill */
 	hill_size = 0;
-	for(days=0; days < tapecycle; days++) {
+	for(days = 0; days < tapecycle; days++) {
 	    if(sp[days].disks > 1 && sp[days].size > hill_size) {
 		hill_size = sp[days].size;
 		hill_days = days;

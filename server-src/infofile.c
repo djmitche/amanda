@@ -186,7 +186,7 @@ info_t *info;
 
 	/* time_t not guarranteed to be long */
 	onestat.date = onedate;
-	if(level < 0 || level > 9) return -2;
+	if(level < 0 || level > DUMP_LEVELS-1) return -2;
 
 	info->inf[level] = onestat;
     }
@@ -309,6 +309,34 @@ void close_infofile()
     close(lockfd);
     lockfd = -1;
 #endif
+}
+
+/* Convert a dump level to a GMT based time stamp */
+char *get_dumpdate(rec, lev)
+info_t *rec;
+int lev;
+{
+    static char stamp[20]; /* YYYY:MM:DD:hh:mm:ss */
+    int l;
+    time_t this, last;
+    struct tm *t;
+    int len;
+
+    last = EPOCH;
+
+    for(l = 0; l < lev; l++) {
+	this = rec->inf[l].date;
+	if (this > last) last = this;
+    }
+
+    t = gmtime(&last);
+    len = sprintf(stamp, "%d:%d:%d:%d:%d:%d",
+	t->tm_year+1900, t->tm_mon+1, t->tm_mday,
+	t->tm_hour, t->tm_min, t->tm_sec);
+
+    assert(len < sizeof(stamp));
+
+    return stamp;
 }
 
 double perf_average(a, d)

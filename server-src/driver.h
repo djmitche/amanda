@@ -46,10 +46,12 @@ typedef struct dumper_s {
 /* schedule structure */
 
 typedef struct sched_s {
-    int attempted, level, priority;
-    int est_kps, est_time;
-    int degr_level, degr_time;
+    int attempted, priority;
+    int level, degr_level;
+    int est_time, degr_time;
     unsigned long est_size, degr_size, act_size;
+    char *dumpdate, *degr_dumpdate;
+    int est_kps;
     char destname[128];				/* file/port name */
     dumper_t *dumper;
     holdingdisk_t *holdp;

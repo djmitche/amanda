@@ -65,9 +65,10 @@ time_t cur_dumptime;
 char *incrname;
 #endif
 
-static void start_backup(disk, level, datestamp, dataf, mesgf, indexf)
+static void start_backup(disk, level, dumpdate, datestamp, dataf, mesgf, indexf)
 char *disk, *datestamp;
 int level, dataf, mesgf, indexf;
+char *dumpdate;
 {
     int dumpin, dumpout;
     char *host, cmd[256];
