@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.14.4.5 1999/09/08 23:27:51 jrj Exp $
+ * $Id: changer.c,v 1.14.4.6 1999/09/14 03:22:06 oliva Exp $
  *
  * interface routines for tape changers
  */
@@ -306,11 +306,12 @@ int (*user_slot) P((int rc, char *slotstr, char *device));
 /* ---------------------------- */
 
 static int changer_command(cmd, arg)
-char *cmd;
-char *arg;
+     char *cmd;
+     char *arg;
 {
     int fd[2];
-    amwait_t exitcode;
+    amwait_t wait_exitcode;
+    int exitcode;
     char num1[NUM_STR_SIZE];
     char num2[NUM_STR_SIZE];
     char *cmdstr;
@@ -436,7 +437,7 @@ char *arg;
     }
 
     while(1) {
-	if ((pid = wait(&exitcode)) == -1) {
+	if ((pid = wait(&wait_exitcode)) == -1) {
 	    if(errno == EINTR) {
 		continue;
 	    } else {
@@ -465,8 +466,8 @@ char *arg;
     }
 
     /* mark out-of-control changers as fatal error */
-    if(WIFSIGNALED(exitcode)) {
-	ap_snprintf(num1, sizeof(num1), "%d", WTERMSIG(exitcode));
+    if(WIFSIGNALED(wait_exitcode)) {
+	ap_snprintf(num1, sizeof(num1), "%d", WTERMSIG(wait_exitcode));
 	changer_resultstr = newvstralloc (changer_resultstr,
 					  "<error> ",
 					  changer_resultstr,
@@ -474,7 +475,7 @@ char *arg;
 					  NULL);
 	exitcode = 2;
     } else {
-	exitcode = WEXITSTATUS(exitcode);
+	exitcode = WEXITSTATUS(wait_exitcode);
     }
 
 done:
