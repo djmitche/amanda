@@ -1,4 +1,14 @@
 2005-02-09  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Franz G. Fischer
+
+	* server-src/conffile.c: Adds a value type LONG and a val_t.l long
+	  union member and changes get_number() to return long and
+	  get_simple() to fill val_t.l if called for a long value.  The
+	  get_simple() calls have been changed to LONG for typetype_t.blocksize
+	  typetype_t.length, typetype_t.filemark, holdingdisk_t.disksize and
+	  holdingdisk_t.chunksize.
+
+2005-02-09  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/amdump.sh.in: Redirect in append mode.
 	* server-src/driver.c: Set stdout and stderr to not buffered.

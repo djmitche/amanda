@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.109 2004/11/16 13:58:29 martinea Exp $
+ * $Id: conffile.c,v 1.110 2005/02/09 14:36:30 martinea Exp $
  *
  * read configuration file
  */
@@ -57,7 +57,7 @@
 
 typedef enum {
     UNKNOWN, ANY, COMMA, LBRACE, RBRACE, NL, END,
-    IDENT, INT, BOOL, REAL, STRING, TIME,
+    IDENT, INT, LONG, BOOL, REAL, STRING, TIME,
 
     /* config parameters */
     INCLUDEFILE,
@@ -127,6 +127,7 @@ keytab_t *keytable;
 
 typedef union {
     int i;
+    long l;
     double r;
     char *s;
 } val_t;
@@ -316,7 +317,7 @@ static void get_taperalgo P((val_t *c_taperalgo, int *s_taperalgo));
 
 static void get_simple P((val_t *var, int *seen, tok_t type));
 static int get_time P((void));
-static int get_number P((void));
+static long get_number P((void));
 static int get_bool P((void));
 static void ckseen P((int *seen));
 static void parserror P((char *format, ...))
@@ -1257,11 +1258,11 @@ static void get_holdingdisk()
 	    get_simple((val_t *)&hdcur.diskdir, &hdcur.s_disk, STRING);
 	    break;
 	case USE:
-	    get_simple((val_t *)&hdcur.disksize, &hdcur.s_size, INT);
+	    get_simple((val_t *)&hdcur.disksize, &hdcur.s_size, LONG);
 	    hdcur.disksize = am_floor(hdcur.disksize, DISK_BLOCK_KB);
 	    break;
 	case CHUNKSIZE:
-	    get_simple((val_t *)&hdcur.chunksize, &hdcur.s_csize, INT);
+	    get_simple((val_t *)&hdcur.chunksize, &hdcur.s_csize, LONG);
 	    if(hdcur.chunksize == 0) {
 	        hdcur.chunksize =  ((INT_MAX / 1024) - (2 * DISK_BLOCK_KB));
 	    } else if(hdcur.chunksize < 0) {
@@ -1295,7 +1296,7 @@ static void init_holdingdisk_defaults()
     hdcur.diskdir = stralloc(conf_diskdir.s);
     malloc_mark(hdcur.diskdir);
     hdcur.disksize = 0;
-    hdcur.chunksize = 1024*1024*1024; /* 1 Gb */
+    hdcur.chunksize = 1024*1024/**1024*/; /* 1 Gb = 1M counted in 1Kb blocks */
 
     hdcur.s_comment = 0;
     hdcur.s_disk = 0;
@@ -1761,7 +1762,7 @@ static void get_tapetype()
 	    get_simple((val_t *)&tpcur.lbl_templ, &tpcur.s_lbl_templ, STRING);
 	    break;
 	case BLOCKSIZE:
-	    get_simple((val_t *)&tpcur.blocksize, &tpcur.s_blocksize, INT);
+	    get_simple((val_t *)&tpcur.blocksize, &tpcur.s_blocksize, LONG);
 	    if(tpcur.blocksize < DISK_BLOCK_KB) {
 		parserror("Tape blocksize must be at least %d KBytes",
 			  DISK_BLOCK_KB);
@@ -1775,21 +1776,21 @@ static void get_tapetype()
 	    tpcur.file_pad = (value.i != 0);
 	    break;
 	case LENGTH:
-	    get_simple(&value, &tpcur.s_length, INT);
-	    if(value.i < 0) {
+	    get_simple(&value, &tpcur.s_length, LONG);
+	    if(value.l < 0) {
 		parserror("Tape length must be positive");
 	    }
 	    else {
-		tpcur.length = value.i;
+		tpcur.length = (unsigned long) value.l;
 	    }
 	    break;
 	case FILEMARK:
-	    get_simple(&value, &tpcur.s_filemark, INT);
-	    if(value.i < 0) {
+	    get_simple(&value, &tpcur.s_filemark, LONG);
+	    if(value.l < 0) {
 		parserror("Tape file mark size must be positive");
 	    }
 	    else {
-		tpcur.filemark = value.i;
+		tpcur.filemark = (unsigned long) value.l;
 	    }
 	    break;
 	case SPEED:
@@ -2448,6 +2449,9 @@ tok_t type;
     case INT:
 	var->i = get_number();
 	break;
+    case LONG:
+	var->l = get_number();
+	break;
     case BOOL:
 	var->i = get_bool();
 	break;
@@ -2524,9 +2528,9 @@ keytab_t numb_keytable[] = {
     { NULL, IDENT }
 };
 
-static int get_number()
+static long get_number()
 {
-    int val;
+    long val;
     keytab_t *save_kt;
 
     save_kt = keytable;
@@ -2536,10 +2540,10 @@ static int get_number()
 
     switch(tok) {
     case INT:
-	val = tokenval.i;
+	val = (long) tokenval.i;
 	break;
     case INFINITY:
-	val = BIGINT;
+	val = (long) BIGINT;
 	break;
     default:
 	parserror("an integer expected");
