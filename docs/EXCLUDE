@@ -226,6 +226,21 @@ data is not being excluded as expected please see the Troubleshooting
 section below.  This completes the setup of using a disklist to
 exclude data.
 
+=========
+Expresion
+=========
+
+Quiz: what is the difference between the following entries in
+an exclude list?
+
+1 ./foo
+2 ./foo/
+3 ./foo/*
+
+case 1 directory ./foo won't be in the backup image (that's what you want)
+case 2 matches nothing (don't use it)
+case 3 directory ./foo will be in the backup image but nothing below it.
+
 ==================
 Wildcard Expansion
 ==================
