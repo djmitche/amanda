@@ -182,7 +182,7 @@ char *dumpdate;
 #endif
 	program->restore_name = XFSRESTORE;
 
-	write_tapeheader(compress);
+	write_tapeheader();
 
 	start_index(createindex, dumpout, mesgf, indexf,
 		    XFSRESTORE
@@ -247,7 +247,7 @@ char *dumpdate;
     {
 	sprintf(dumpkeys, "%d%ssf", level, no_record ? "" : "u");
 
-	write_tapeheader(compress);
+	write_tapeheader();
 
 	start_index(createindex, dumpout, mesgf, indexf,
 #ifdef RESTORE
@@ -267,7 +267,7 @@ char *dumpdate;
     /* AIX backup program */
     sprintf(dumpkeys, "-%d%sf", level, no_record ? "" : "u");
 
-    write_tapeheader(compress);
+    write_tapeheader();
 
     start_index(createindex, dumpout, mesgf, indexf,
 #ifdef RESTORE

@@ -221,7 +221,7 @@ char *dumpdate;
 
 	program->backup_name = program->restore_name = SAMBA_CLIENT;
 	
-	write_tapeheader(compress);
+	write_tapeheader();
 	start_index(createindex, dumpout, mesgf, indexf,
 #ifdef GNUTAR
 		    GNUTAR
@@ -246,7 +246,7 @@ char *dumpdate;
       {
 	char sprintf_buf[512];
 
-	write_tapeheader(compress);
+	write_tapeheader();
 
 	start_index(createindex, dumpout, mesgf, indexf,
 #ifdef GNUTAR

@@ -341,8 +341,7 @@ int pid, w;
 
 /* Send header info to the message file.
 */
-void write_tapeheader(compress)
-int compress;
+void write_tapeheader()
 {
     fprintf(stderr, "%s: info BACKUP=%s\n", pname, program->backup_name);
 

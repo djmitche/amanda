@@ -29,7 +29,7 @@
  */
 #include "amanda.h"
 
-void write_tapeheader P((int compress));
+void write_tapeheader P((void));
 int pipespawn P((char *prog, int *stdinfd, int stdoutfd, int stderrfd, ...));
 void start_index P((int createindex, int input, int mesg, \
 		    int index, char *cmd));
