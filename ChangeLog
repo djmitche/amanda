@@ -1,5 +1,8 @@
 1999-03-30  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* patches/samba-largefs.patch: updated to patch that ended up
+	installed in the Samba CVS tree
+
 	* patches/tar-1.12.patch: patch the configure script so that it
 	requires autoconf and autoheader to be run; improve the
 	printf_long_long test so that it doesn't get false positives because 
