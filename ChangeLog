@@ -1,5 +1,10 @@
 1999-04-16  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/conffile.c: explicitly give the seen_columnspec global
+	an int type instead of letting the compiler default to it.
+
+1999-04-16  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/event.h (event_id_t): a new typedef for the
 	first arg to event_register.  Should be wide enough to
 	reasonably hold an int or a pointer (but it is ok to trunc

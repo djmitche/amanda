@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.63 1999/04/10 06:19:44 kashmir Exp $
+ * $Id: conffile.c,v 1.64 1999/04/16 04:46:24 kashmir Exp $
  *
  * read configuration file
  */
@@ -192,7 +192,7 @@ static int seen_disksize, seen_netusage, seen_inparallel, seen_timeout;
 static int seen_indexdir, seen_etimeout, seen_dtimeout;
 static int seen_tapebufs;
 static int seen_reserve;
-static seen_columnspec;
+static int seen_columnspec;
 
 static int allow_overwrites;
 static int token_pushed;
