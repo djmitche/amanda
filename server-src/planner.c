@@ -824,7 +824,8 @@ host_t *hostp;
 
     if(rc) {
 	char str[1024];
-	sprintf(str, "could not resolve hostname \"%s\"", hostp->hostname);
+	sprintf(str, "could not resolve hostname \"%s\": %s", hostp->hostname,
+			strerror(errno));
 	errstr = stralloc(str);
 	destqp = &failq;
     }
