@@ -15,6 +15,7 @@
 
 /* Location of Amanda directories and files.  */
 #undef bindir
+#undef sbindir
 #undef libexecdir
 #undef mandir
 #undef CONFIG_DIR
