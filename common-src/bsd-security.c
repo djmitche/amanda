@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.21 1999/04/06 16:07:26 kashmir Exp $
+ * $Id: bsd-security.c,v 1.22 1999/04/06 23:31:44 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -37,6 +37,10 @@
 #include "security.h"
 #include "stream.h"
 #include "version.h"
+
+#ifndef SO_RCVBUF
+#undef DUMPER_SOCKET_BUFFERING
+#endif
 
 #ifdef BSD_SECURITY
 
@@ -860,8 +864,10 @@ check_user(bh, remoteuser)
         error("error [getpwnam(%s) fails]", CLIENT_LOGIN);
 
     chdir(pwd->pw_dir);
-    if ((fp = fopen(".amandahosts", "r")) == NULL)
+    if ((fp = fopen(".amandahosts", "r")) == NULL) {
+	dbprintf(("can't open .amandahosts: %s\n", strerror(errno)));
 	return (-1);
+    }
 
     rval = -1;	/* assume failure */
     while (fgets(buf, sizeof(buf), fp) != NULL) {
@@ -947,6 +953,9 @@ bsd_stream_client(h, id)
 {
     struct bsd_handle *bh = h;
     struct bsd_stream *bs;
+#ifdef DUMPER_SOCKET_BUFFERING
+    int rcvbuf = sizeof(bs->databuf) * 2;
+#endif
 
     assert(bh != NULL);
 
@@ -969,6 +978,9 @@ bsd_stream_client(h, id)
     }
     bs->socket = -1;	/* we're a client */
     bs->ev_read = NULL;
+#ifdef DUMPER_SOCKET_BUFFERING
+    setsockopt(bs->fd, SOL_SOCKET, SO_RCVBUF, (void *)&rcvbuf, sizeof(rcvbuf));
+#endif
     return (bs);
 }
 

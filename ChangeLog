@@ -1,3 +1,12 @@
+1999-04-06  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/bsd-security.c (check_user): if an .amandahosts
+	file is missing or unreadable, log this fact to the debug file
+	instead of claiming that a user doesn't have permission.
+	* common-src/bsd-security.c (bsd_stream_client): if
+	DUMPER_SOCKET_BUFFERING is defined, set the socket read buffer to
+	be twice the size of our read buffer.
+
 1999-04-06  David Mankins <dm@k12-nis-2.bbn.com>
 
 	* common-src/security.c (bsd_security_ok): if an .amandahosts
