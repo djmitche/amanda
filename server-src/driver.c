@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.16 2003/06/05 15:48:57 martinea Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.17 2003/07/07 15:19:43 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1312,6 +1312,7 @@ disklist_t *tapeqp;
     char *command;
     char *s;
     int ch;
+    long flush_size = 0;
 
     /* read schedule from stdin */
 
@@ -1448,7 +1449,9 @@ disklist_t *tapeqp;
 	dp1->up = (char *)sp;
 
 	enqueue_disk(tapeqp, dp1);
+	flush_size += sp->act_size;
     }
+    printf("driver: flush size %ld\n", flush_size);
     amfree(inpline);
 }
 

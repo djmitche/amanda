@@ -66,10 +66,6 @@ fi
 
 tmp_files="bandw_free disk_alloc dump_idle finished run_queue tape_* title" 
 
-if [ -r disk_alloc ] ; then	# clean up
-	/bin/rm -f $tmp_files 
-fi 
-
 my_plot=$libexecdir/amplot.g
 paper=0 
 gnuplot=1
@@ -135,6 +131,7 @@ do
 		if [ -z "$disp" ] ; then 
 			echo "Do not know how to [gz|z]cat this file"
 		else
+			/bin/rm -f $tmp_files 
 			$disp "$f" | $AWK -f $libexecdir/amplot.awk $para
 			$GNUPLOT $plot $my_plot
 			if [ $disp = "cat" -a  $cmpres -eq 1 ] ; then
@@ -146,9 +143,7 @@ do
 	fi
 done
 
-if [ -r disk_alloc ] ; then
-	/bin/rm -f $tmp_files 
-fi 
+/bin/rm -f $tmp_files 
 
 if [ "$list" != "" ] ; then		# now compress the files we worked on
 # comment out next line if you do not want compression at the end
