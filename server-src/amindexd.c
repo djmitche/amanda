@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.47 1999/05/14 21:52:35 kashmir Exp $
+ * $Id: amindexd.c,v 1.48 1999/05/23 01:50:35 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -347,7 +347,8 @@ char *host;
 
     /* check that the config actually handles that host */
     /* assume in index dir already */
-    if (stat (host, &dir_stat) != 0 || !S_ISDIR(dir_stat.st_mode))
+    if (stat (sanitise_filename(host), &dir_stat) != 0 || 
+        !S_ISDIR(dir_stat.st_mode))
     {
 	reply(501, "No index records for host: %s. Invalid?", host);
 	return -1;
