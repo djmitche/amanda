@@ -1,3 +1,14 @@
+2004-04-26  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* config/config.guess: Update from automake 1.8.
+	* config/config.sub: Update from automake 1.8.
+	* config/depcomp: Update from automake 1.8.
+	* config/install-sh: Update from automake 1.8.
+	* config/missing: Update from automake 1.8.
+	* config/mkinstalldirs: Update from automake 1.8.
+	* config/ltmain.sh: Update from libtool-1.5.6.
+	* config/libtool.m4i: Update from libtool-1.5.6.
+
 2004-04-26  Marc Mengel <mengel@fnal.gov>
 
 	* tape-src/output-rait.c: Verify reads correctly.
