@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.29.4.8 2001/02/28 02:11:23 jrjackson Exp $
+ * $Id: amrecover.c,v 1.29.4.9 2001/06/19 19:34:11 jrjackson Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -314,6 +314,7 @@ int guess_disk (cwd, cwd_len, dn_guess, mpt_guess)
     if (getcwd(cwd, cwd_len) == NULL)
 	return -1;
     cwd_length = strlen(cwd);
+    dbprintf(("guess_disk: %d: \"%s\"\n", cwd_length, cwd));
 
     if (open_fstab() == 0)
 	return -1;
@@ -321,6 +322,11 @@ int guess_disk (cwd, cwd_len, dn_guess, mpt_guess)
     while (get_fstab_nextentry(&fsent))
     {
 	current_length = fsent.mntdir ? strlen(fsent.mntdir) : 0;
+	dbprintf(("guess_disk: %d: %d: \"%s\": \"%s\"\n",
+		  longest_match,
+		  current_length,
+		  fsent.mntdir ? fsent.mntdir : "(mntdir null)",
+		  fsent.fsname ? fsent.fsname : "(fsname null)"));
 	if ((current_length > longest_match)
 	    && (current_length <= cwd_length)
 	    && (strncmp(fsent.mntdir, cwd, current_length) == 0))
@@ -337,6 +343,9 @@ int guess_disk (cwd, cwd_len, dn_guess, mpt_guess)
 	        fsname = newstralloc(fsname,fsent.fsname+strlen(DEV_PREFIX));
 	    }
 	    local_disk = is_local_fstype(&fsent);
+	    dbprintf(("guess_disk: local_disk = %d, fsname = \"%s\"\n",
+		      local_disk,
+		      fsname));
 	}
     }
     close_fstab();
@@ -356,6 +365,7 @@ int guess_disk (cwd, cwd_len, dn_guess, mpt_guess)
     /* have mount point now */
     /* disk name may be specified by mount point (logical name) or
        device name, have to determine */
+    printf("Trying disk %s ...\n", *mpt_guess);
     disk_try = stralloc2("DISK ", *mpt_guess);		/* try logical name */
     if (exchange(disk_try) == -1)
 	exit(1);
@@ -366,6 +376,7 @@ int guess_disk (cwd, cwd_len, dn_guess, mpt_guess)
 	amfree(fsname);
 	return 1;
     }
+    printf("Trying disk %s ...\n", fsname);
     disk_try = stralloc2("DISK ", fsname);		/* try device name */
     if (exchange(disk_try) == -1)
 	exit(1);
@@ -618,7 +629,7 @@ char **argv;
 		case 2:
 		case -1:
 		default:
-		    printf("Can't determine disk and mount point from $CWD\n");
+		    printf("Can't determine disk and mount point from $CWD '%s'\n", cwd);
 		    /* fake an unhappy server */
 		    server_line[0] = '5';
 		    break;
