@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.98 2003/10/07 17:09:46 martinea Exp $
+ * $Id: amcheck.c,v 1.99 2003/10/27 13:22:06 kovert Exp $
  *
  * checks for common problems in server and clients
  */
@@ -975,6 +975,15 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	int hostindexdir_checked = 0;
 	char *host;
 	char *disk;
+	int conf_tapecycle, conf_runspercycle;
+
+	conf_tapecycle = getconf_int(CNF_TAPECYCLE);
+	conf_runspercycle = getconf_int(CNF_RUNSPERCYCLE);
+
+	if(conf_tapecycle < conf_runspercycle) {
+		fprintf(outf, "WARNING: tapecycle (%d) < runspercycle (%d).\n",
+			conf_tapecycle, conf_runspercycle);
+	}
 
 	conf_infofile = getconf_str(CNF_INFOFILE);
 	if (*conf_infofile == '/') {
