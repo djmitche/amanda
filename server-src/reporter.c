@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.17.4.6.2.1 2001/12/09 19:31:10 martinea Exp $
+ * $Id: reporter.c,v 1.44.2.17.4.6.2.2 2001/12/09 20:33:30 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -1418,8 +1418,9 @@ void handle_start()
 	last_run_tapes++;
 	return;
     case P_PLANNER:
-    case P_DRIVER:
 	normal_run = 1;
+	break;
+    case P_DRIVER:
 	break;
     case P_AMFLUSH:
 	amflush_run = 1;
@@ -1456,7 +1457,7 @@ void handle_start()
     if(amflush_run && normal_run) {
 	amflush_run = 0;
 	addline(&notes,
-     "  reporter: both amflush and driver output in log, ignoring amflush.");
+     "  reporter: both amflush and planner output in log, ignoring amflush.");
     }
 }
 
@@ -1776,7 +1777,6 @@ repdata_t *handle_success()
         Idatestamp = 10000*(tm->tm_year+1900) +
                       100*(tm->tm_mon+1) + tm->tm_mday;
 
-fprintf(stderr,"%s %d %d %d\n",dp->name, atoi(datestamp), Idatestamp, atoi(datestamp) == Idatestamp);
 	if(atoi(datestamp) == Idatestamp) {
 	    /* grab original size from record */
 	    origkb = (double)inf.inf[level].size;

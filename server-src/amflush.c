@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.41.2.13.4.6 2001/11/10 19:30:53 martinea Exp $
+ * $Id: amflush.c,v 1.41.2.13.4.6.2.1 2001/12/09 20:33:30 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -43,10 +43,12 @@
 char *config_name = NULL;
 char *config_dir = NULL;
 static char *conf_logdir;
+FILE *driver_stream;
+char *driver_program;
 char *reporter_program;
 char *logroll_program;
-holding_t *holding_list;
 char *datestamp;
+holding_t *datestamp_list;
 
 /* local functions */
 int main P((int main_argc, char **main_argv));
@@ -72,9 +74,15 @@ char **main_argv;
     char *conf_logfile;
     disklist_t *diskqp;
     disk_t *dp;
-    pid_t pid, child_pid;
+    pid_t pid, driver_pid, reporter_pid;
     amwait_t exitcode;
     int opt;
+    dumpfile_t file;
+    holding_t *holding_list=NULL, *holding_file;
+    int nb_date;
+    char **datetoflush;
+    holding_t *dir;
+    int driver_pipe[2];
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -135,7 +143,7 @@ char **main_argv;
     if((diskqp = read_diskfile(conf_diskfile)) == NULL) {
 	error("could not read disklist file \"%s\"", conf_diskfile);
     }
-    match_disklist(diskqp, main_argc-2, main_argv+2);
+    match_disklist(diskqp, main_argc-1, main_argv+1);
     amfree(conf_diskfile);
     conf_tapelist = getconf_str(CNF_TAPELIST);
     if (*conf_tapelist == '/') {
@@ -168,6 +176,8 @@ char **main_argv;
     }
     amfree(conf_logfile);
  
+    driver_program = vstralloc(libexecdir, "/", "driver", versionsuffix(),
+				 NULL);
     reporter_program = vstralloc(sbindir, "/", "amreport", versionsuffix(),
 				 NULL);
     logroll_program = vstralloc(libexecdir, "/", "amlogroll", versionsuffix(),
@@ -177,8 +187,8 @@ char **main_argv;
 	holding_t *dir, *prev_dir = NULL, *next_dir;
 	int i, ok;
 
-	holding_list = pick_all_datestamp(1);
-	for(dir = holding_list; dir != NULL;) {
+	datestamp_list = pick_all_datestamp(1);
+	for(dir = datestamp_list; dir != NULL;) {
 	    next_dir = dir->next;
 	    ok = 0;
 	    for(i=0; i<nb_datearg && ok==0; i++) {
@@ -189,7 +199,7 @@ char **main_argv;
 		if(prev_dir)
 		    prev_dir->next = next_dir;
 		else
-		    holding_list = next_dir;
+		    datestamp_list = next_dir;
 	    }
 	    else {
 		prev_dir = dir;
@@ -198,7 +208,7 @@ char **main_argv;
 	}
     }
     else {
-	holding_list = pick_datestamp(1);
+	datestamp_list = pick_datestamp(1);
     }
     confirm();
 
@@ -211,7 +221,68 @@ char **main_argv;
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
     set_logerror(logerror);
     fprintf(stderr, "amflush: datestamp %s\n", datestamp);
-    run_dumps();
+    log_add(L_START, "date %s", datestamp);
+
+    /* START DRIVER */
+    if(pipe(driver_pipe) == -1) {
+	error("error [opening pipe to driver: %s]", strerror(errno));
+    }
+    if((driver_pid = fork()) == 0) {
+	/*
+	 * This is the child process.
+	 */
+	dup2(driver_pipe[0], 0);
+	close(driver_pipe[1]);
+	execle(driver_program,
+	       "driver", config_name, "nodump", (char *)0,
+	       safe_env());
+	error("cannot exec %s: %s", driver_program, strerror(errno));
+    } else if(driver_pid == -1) {
+	error("cannot fork for %s: %s", driver_program, strerror(errno));
+    }
+    driver_stream = fdopen(driver_pipe[1], "w");
+
+    /* allocate datetoflush */
+    nb_date=0;
+    for(dir = datestamp_list; dir != NULL; dir=dir->next) nb_date ++;
+    datetoflush = malloc((nb_date+1)*sizeof(char *));
+
+    /* fill datetoflush */
+    nb_date=0;
+    for(dir = datestamp_list; dir != NULL; dir=dir->next) {
+	datetoflush[nb_date] = dir->name;
+	nb_date++;
+    }
+    datetoflush[nb_date]=NULL;
+
+    get_flush(datetoflush, &holding_list, NULL, 1, 0);
+    for(holding_file=holding_list; holding_file != NULL;
+				   holding_file = holding_file->next) {
+	get_dumpfile(holding_file->name, &file);
+
+	dp = lookup_disk(file.name, file.disk);
+	if (dp->todo == 0) continue;
+
+	fprintf(stderr,"FLUSH %s %s %s %d %s\n", file.name, file.disk, file.datestamp, file.dumplevel, holding_file->name);
+	fprintf(driver_stream,"FLUSH %s %s %s %d %s\n", file.name, file.disk, file.datestamp, file.dumplevel, holding_file->name);
+    }
+    fprintf(stderr,"ENDFLUSH\n"); fflush(stderr);
+    fprintf(driver_stream,"ENDFLUSH\n"); fflush(driver_stream);
+    fclose(driver_stream);
+
+    /* WAIT DRIVER */
+    while(1) {
+	if((pid = wait(&exitcode)) == -1) {
+	    if(errno == EINTR) {
+		continue;
+	    } else {
+		error("wait for %s: %s", driver_program, strerror(errno));
+	    }
+	} else if (pid == driver_pid) {
+	    break;
+	}
+    }
+
 
     if(!foreground) { /* rename errfile */
 	char *errfile, *errfilex, *nerrfilex, number[100];
@@ -266,7 +337,7 @@ char **main_argv;
      * can be rerun.
      */
 
-    if((child_pid = fork()) == 0) {
+    if((reporter_pid = fork()) == 0) {
 	/*
 	 * This is the child process.
 	 */
@@ -274,7 +345,7 @@ char **main_argv;
 	       "amreport", config_name, (char *)0,
 	       safe_env());
 	error("cannot exec %s: %s", reporter_program, strerror(errno));
-    } else if(child_pid == -1) {
+    } else if(reporter_pid == -1) {
 	error("cannot fork for %s: %s", reporter_program, strerror(errno));
     }
     while(1) {
@@ -284,7 +355,7 @@ char **main_argv;
 	    } else {
 		error("wait for %s: %s", reporter_program, strerror(errno));
 	    }
-	} else if (pid == child_pid) {
+	} else if (pid == reporter_pid) {
 	    break;
 	}
     }
@@ -330,12 +401,12 @@ void confirm()
     char *tpchanger;
     holding_t *dir;
 
-    if(holding_list == NULL) {
+    if(datestamp_list == NULL) {
 	printf("Could not find any Amanda directories to flush.\n");
 	exit(1);
     }
     printf("\nFlushing dumps in");
-    for(dir = holding_list; dir != NULL; dir = dir->next) {
+    for(dir = datestamp_list; dir != NULL; dir = dir->next) {
 	printf(" %s,",dir->name);
     }
     printf("\n");
@@ -391,166 +462,4 @@ void detach()
     exit(0);
 }
 
-
-void flush_holdingdisk(diskdir, datestamp)
-char *diskdir, *datestamp;
-{
-    DIR *workdir;
-    struct dirent *entry;
-    char *dirname = NULL;
-    char *destname = NULL;
-    int filenum;
-    disk_t *dp;
-    cmd_t cmd;
-    int result_argc;
-    char *result_argv[MAX_ARGS+1];
-    dumpfile_t file;
-
-    dirname = vstralloc(diskdir, "/", datestamp, NULL);
-
-    if((workdir = opendir(dirname)) == NULL) {
-	log_add(L_INFO, "%s: could not open working dir: %s",
-	        dirname, strerror(errno));
-	amfree(dirname);
-	return;
-    }
-
-    while((entry = readdir(workdir)) != NULL) {
-	if(is_dot_or_dotdot(entry->d_name)) {
-	    continue;
-	}
-
-	destname = newvstralloc(destname,
-				dirname, "/", entry->d_name,
-				NULL);
-
-	if(is_emptyfile(destname)) {
-	    if(unlink(entry->d_name) == -1) {
-		log_add(L_INFO,"%s: ignoring zero length file.", entry->d_name);
-	    } else {
-		log_add(L_INFO,"%s: removed zero length file.", entry->d_name);
-	    }
-	    continue;
-	}
-
-	get_dumpfile(destname, &file);
-	if( file.type != F_DUMPFILE) {
-	    if( file.type != F_CONT_DUMPFILE )
-		log_add(L_INFO, "%s: ignoring cruft file.", entry->d_name);
-	    continue;
-	}
-
-	dp = lookup_disk(file.name, file.disk);
-
-	if (dp == NULL) {
-	    log_add(L_INFO, "%s: disk %s:%s not in database, skipping it.",
-		    entry->d_name, file.name, file.disk);
-	    continue;
-	}
-	else if (dp->todo == 0) continue;
-
-	if(file.dumplevel < 0 || file.dumplevel > 9) {
-	    log_add(L_INFO, "%s: ignoring file with bogus dump level %d.",
-		    entry->d_name, file.dumplevel);
-	    continue;
-	}
-
-	dp->up = NULL;
-	taper_cmd(FILE_WRITE, dp, destname, file.dumplevel, file.datestamp);
-
-	cmd = getresult(taper, 0, &result_argc, result_argv, MAX_ARGS+1);
-	if(cmd == TRYAGAIN) {
-	    /* we'll retry one time */
-	    taper_cmd(FILE_WRITE, dp, destname,file.dumplevel,file.datestamp);
-	    cmd = getresult(taper, 0, &result_argc, result_argv, MAX_ARGS+1);
-	}
-
-	switch(cmd) {
-	case DONE: /* DONE <handle> <label> <tape file> <err mess> */
-	    if(result_argc != 5) {
-		error("error [DONE result_argc != 5: %d]", result_argc);
-	    }
-	    if( dp != serial2disk(result_argv[2]))
-		error("Bad serial");
-	    free_serial(result_argv[2]);
-
-	    filenum = atoi(result_argv[4]);
-	    if(file.is_partial == 0)
-		update_info_taper(dp, result_argv[3], filenum, file.dumplevel);
-
-	    unlink_holding_files(destname);
-	    break;
-	case TRYAGAIN: /* TRY-AGAIN <handle> <err mess> */
-	    if (result_argc < 2) {
-		error("error [taper TRYAGAIN result_argc < 2: %d]", result_argc);
-	    }
-	    if( dp != serial2disk(result_argv[2]))
-		error("Bad serial");
-	    free_serial(result_argv[2]);
-
-	    log_add(L_WARNING,
-		    "%s: too many taper retries, leaving file on disk",
-		    destname);
-	    break;
-
-	case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
-	    if( dp != serial2disk(result_argv[2]))
-		error("Bad serial");
-	    free_serial(result_argv[2]);
-	    /* Note: fall through code... */
-
-	default:
-	    log_add(L_WARNING, "%s: taper error, leaving file on disk",
-		    destname);
-	    break;
-	}
-    }
-    closedir(workdir);
-
-    /* try to zap the now (hopefully) empty working dir */
-    if(rmdir(dirname))
-	log_add(L_WARNING, "Could not rmdir %s.  Check for cruft.",
-	        dirname);
-    amfree(destname);
-    amfree(dirname);
-}
-
-void run_dumps()
-{
-    holdingdisk_t *hdisk;
-    holding_t *dir;
-    cmd_t cmd;
-    int result_argc;
-    char *result_argv[MAX_ARGS+1];
-    char *taper_program;
-
-    taper_program = vstralloc(libexecdir, "/", "taper", versionsuffix(), NULL);
-    startclock();
-    log_add(L_START, "date %s", datestamp);
-
-    init_driverio();
-    startup_tape_process(taper_program);
-    taper_cmd(START_TAPER, datestamp, NULL, 0, NULL);
-    cmd = getresult(taper, 0, &result_argc, result_argv, MAX_ARGS+1);
-
-    if(cmd != TAPER_OK) {
-	/* forget it */
-	sleep(5);	/* let taper log first, but not really necessary */
-	log_add(L_ERROR, "Cannot flush without tape.  Try again.");
-	log_add(L_FINISH, "date %s time %s",
-		datestamp, walltime_str(curclock()));
-    } else {
-	for(dir = holding_list; dir !=NULL; dir = dir->next) {
-	    for(hdisk = getconf_holdingdisks(); hdisk != NULL; hdisk = hdisk->next)
-		flush_holdingdisk(hdisk->diskdir, dir->name);
-	}
-
-	/* tell taper to quit, then wait for it */
-	taper_cmd(QUIT, NULL, NULL, 0, NULL);
-	while(wait(NULL) != -1);
-
-    }
-
-    log_add(L_FINISH, "date %s time %s", datestamp, walltime_str(curclock()));
-}
 

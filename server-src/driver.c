@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.1 2001/12/09 18:00:00 martinea Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.2 2001/12/09 20:33:30 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -55,6 +55,7 @@ unsigned long reserved_space;
 unsigned long total_disksize;
 char *dumper_program;
 int  inparallel;
+int nodump = 0;
 
 int client_constrained P((disk_t *dp));
 int sort_by_priority_reversed P((disk_t *a, disk_t *b));
@@ -172,6 +173,12 @@ int main(main_argc, main_argv)
     if (main_argc > 1) {
 	config_name = stralloc(main_argv[1]);
 	config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
+	if(main_argc > 2) {
+	    if(strncmp(main_argv[2], "nodump", 6) == 0) {
+		nodump = 1;
+	    }
+	}
+
     } else {
 	char my_cwd[STR_SIZE];
 
@@ -307,7 +314,7 @@ int main(main_argc, main_argv)
 
     /* fire up the dumpers now while we are waiting */
 
-    startup_dump_processes(dumper_program, inparallel);
+    if(!nodump) startup_dump_processes(dumper_program, inparallel);
 
     /*
      * Read schedule from stdin.  Usually, this is a pipe from planner,
@@ -323,7 +330,7 @@ int main(main_argc, main_argv)
     runq.head = runq.tail = NULL;
 
     read_flush(&tapeq);
-    read_schedule(&waitq, &runq);
+    if(!nodump) read_schedule(&waitq, &runq);
 
     log_add(L_STATS, "startup time %s", walltime_str(curclock()));
 
@@ -424,9 +431,11 @@ int main(main_argc, main_argv)
            walltime_str(curclock()));
     fflush(stdout);
 
-    for(dumper = dmptable; dumper < dmptable + inparallel; dumper++) {
-	dumper_cmd(dumper, QUIT, NULL);
-	amfree(dumper->name);
+    if(!nodump) {
+	for(dumper = dmptable; dumper < dmptable + inparallel; dumper++) {
+	    dumper_cmd(dumper, QUIT, NULL);
+	    amfree(dumper->name);
+	}
     }
 
     if(taper)
