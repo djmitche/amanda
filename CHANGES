@@ -1,7 +1,9 @@
 Version 2.4.0b4
 
+	AIX support improved.  -Georg Rehfeld <georg@wmd.de>
+
 	Planner would core dump if it had to delay dumps.  -Georg
-	Rehfeld<georg@deerwood.hanse.de>
+	Rehfeld <georg@wmd.de>
 
 	Added patch for samba to support very long filenames.  -Todd
 	Pfaff <todd@edge.cis.mcmaster.ca>
