@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.114 1999/04/08 23:11:52 kashmir Exp $
+/* $Id: dumper.c,v 1.115 1999/04/08 23:47:58 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -32,6 +32,7 @@
 #include "arglist.h"
 #include "clock.h"
 #include "conffile.h"
+#include "event.h"
 #include "logfile.h"
 #include "protocol.h"
 #include "stream.h"
@@ -109,13 +110,14 @@ static dumpfile_t file;
 static struct {
     const char *name;
     int fd;
+    event_handle_t *ev_read;
 } streams[] = {
 #define	DATAFD	0
-    { "DATA", -1 },
+    { "DATA", -1, NULL },
 #define	MESGFD	1
-    { "MESG", -1 },
+    { "MESG", -1, NULL },
 #define	INDEXFD	2
-    { "INDEX", -1 },
+    { "INDEX", -1, NULL },
 };
 #define	NSTREAMS	(sizeof(streams) / sizeof(streams[0]))
 
@@ -150,6 +152,11 @@ static int startup_dump P((const char *, const char *, int, const char *,
 static void stop_dump P((void));
 static int startup_chunker P((const char *, long));
 
+static void read_mesgfd P((void *));
+static void read_datafd P((void *));
+static void read_indexfd P((void *));
+static void timeout P((int));
+static void timeout_callback P((void *));
 
 void check_options(options)
 char *options;
@@ -416,7 +423,6 @@ main(main_argc, main_argv)
 
 	if (outfd != -1)
 	    aclose(outfd);
-	stop_dump();
 
 	while (wait(NULL) != -1)
 	    continue;
@@ -1035,36 +1041,30 @@ write_tapeheader(outfd, file)
     return (0);
 }
 
+/*
+ * This buffer is shared by all of the read callbacks.
+ */
+static char buf[DATABUF_SIZE];
+
 static int
 do_dump(db)
     struct databuf *db;
 {
-    static char buf[DATABUF_SIZE];
-    int maxfd, nfound, eof1, eof2;
-    fd_set readset, selectset;
-    struct timeval timeout;
     char *indexfile = NULL;
     char level_str[NUM_STR_SIZE];
     char *fn;
     char *q;
     times_t runtime;
     double dumptime;	/* Time dump took in secs */
+    int indexout;
     pid_t indexpid;
 
-#ifndef DUMPER_SOCKET_BUFFERING
-#define DUMPER_SOCKET_BUFFERING 0
-#endif
-
-#if !defined(SO_RCVBUF) || !defined(SO_RCVLOWAT)
-#undef  DUMPER_SOCKET_BUFFERING
-#define DUMPER_SOCKET_BUFFERING 0
-#endif
-
-#if DUMPER_SOCKET_BUFFERING
-    int lowat = DATABUF_SIZE;
-    int recbuf = 0;
-    int lowwatset = 0;
-    int sizeof_recbuf = sizeof(recbuf);
+#if defined(DUMPER_SOCKET_BUFFERING) && defined(SO_RCVBUF)
+    int recbuf = sizeof(buf) * 2;
+    if (setsockopt(streams[DATAFD].fd, SOL_SOCKET, SO_RCVBUF,
+	(void *)&recbuf, sizeof(recbuf)) < 0)
+	fprintf(stderr, "dumper: pid %ld setsockopt(SO_RCVBUF): %s\n",
+	    (long)getpid(), strerror(errno));
 #endif
 
     startclock();
@@ -1095,8 +1095,6 @@ do_dump(db)
 
     indexpid = -1;
     if (streams[INDEXFD].fd != -1) {
-	int tmpfd;
-
 	indexfile = vstralloc(getconf_str(CNF_INDEXDIR),
 			      "/",
 			      getindexfname(hostname, diskname,
@@ -1114,203 +1112,43 @@ do_dump(db)
 	   amfree(indexfile);
 	   goto failed;
 	}
-
-	switch(indexpid=fork()) {
-	case -1:
-	    errstr = newstralloc2(errstr, "couldn't fork: ", strerror(errno));
+	indexout = open(indexfile, O_WRONLY | O_CREAT | O_TRUNC, 0600);
+	if (indexout == -1) {
+	    errstr = newvstralloc(errstr, "err open ", indexfile, ": ",
+		strerror(errno), NULL);
 	    goto failed;
-	default:
-	    aclose(streams[INDEXFD].fd);
-	    streams[INDEXFD].fd = -1;			/* redundant */
-	    break;
-	case 0:
-	    if (dup2(streams[INDEXFD].fd, 0) == -1)
-		error("err dup2 in: %s", strerror(errno));
-	    streams[INDEXFD].fd = open(indexfile, O_WRONLY | O_CREAT | O_TRUNC, 0600);
-	    if (streams[INDEXFD].fd == -1)
-		error("err open %s: %s", indexfile, strerror(errno));
-	    if (dup2(streams[INDEXFD].fd,1) == -1)
-		error("err dup2 out: %s", strerror(errno));
-	    for(tmpfd = 3; tmpfd <= FD_SETSIZE; ++tmpfd) {
-		close(tmpfd);
+	} else {
+	    if (runcompress(indexout, &indexpid) < 0) {
+		aclose(indexout);
+		goto failed;
 	    }
-	    execlp(COMPRESS_PATH, COMPRESS_PATH, COMPRESS_BEST_OPT, (char *)0);
-	    error("error: couldn't exec %s.", COMPRESS_PATH);
 	}
+	/*
+	 * Schedule the indexfd for relaying to the index file
+	 */
+	streams[INDEXFD].ev_read = event_register(streams[INDEXFD].fd,
+	    EV_READFD, read_indexfd, &indexout);
     }
 
     NAUGHTY_BITS_INITIALIZE;
 
-    maxfd = max(streams[MESGFD].fd, streams[DATAFD].fd) + 1;
-    eof1 = eof2 = 0;
+    /*
+     * We only need to process messages initially.  Once we have done
+     * the header, we will start processing data too.
+     */
+    streams[MESGFD].ev_read = event_register(streams[MESGFD].fd, EV_READFD,
+	read_mesgfd, db);
 
-    FD_ZERO(&readset);
+    /*
+     * Setup a read timeout
+     */
+    timeout(conf_dtimeout);
 
-    /* Just process messages for now.  Once we have done the header
-    ** we will start processing data too.
-    */
-    FD_SET(streams[MESGFD].fd, &readset);
-
-    if(streams[DATAFD].fd == -1) eof1 = 1;	/* fake eof on data */
-
-#if DUMPER_SOCKET_BUFFERING
-
-#ifndef EST_PACKET_SIZE
-#define EST_PACKET_SIZE	512
-#endif
-#ifndef	EST_MIN_WINDOW
-#define	EST_MIN_WINDOW	EST_PACKET_SIZE*4 /* leave room for 2k in transit */
-#endif
-
-    else {
-	recbuf = DATABUF_SIZE*2;
-	if (setsockopt(streams[DATAFD].fd, SOL_SOCKET, SO_RCVBUF,
-		       (void *) &recbuf, sizeof_recbuf)) {
-	    const int errornumber = errno;
-	    fprintf(stderr, "dumper: pid %ld setsockopt(SO_RCVBUF): %s\n",
-		    (long) getpid(), strerror(errornumber));
-	}
-	if (getsockopt(streams[DATAFD].fd, SOL_SOCKET, SO_RCVBUF,
-		       (void *) &recbuf, (void *)&sizeof_recbuf)) {
-	    const int errornumber = errno;
-	    fprintf(stderr, "dumper: pid %ld getsockopt(SO_RCVBUF): %s\n",
-		    (long) getpid(), strerror(errornumber));
-	    recbuf = 0;
-	}
-
-	/* leave at least EST_MIN_WINDOW between lowwat and recbuf */
-	if (recbuf-lowat < EST_MIN_WINDOW)
-	    lowat = recbuf-EST_MIN_WINDOW;
-
-	/* if lowwat < ~512, don't bother */
-	if (lowat < EST_PACKET_SIZE)
-	    recbuf = 0;
-    }
-#endif
-
-    while(!(eof1 && eof2)) {
-
-#if DUMPER_SOCKET_BUFFERING
-	/* Set socket buffering */
-	if (recbuf>0 && !lowwatset) {
-	    if (setsockopt(streams[DATAFD].fd, SOL_SOCKET, SO_RCVLOWAT,
-			   (void *) &lowat, sizeof(lowat))) {
-		const int errornumber = errno;
-		fprintf(stderr,
-			"dumper: pid %ld setsockopt(SO_RCVLOWAT): %s\n",
-			(long) getpid(), strerror(errornumber));
-	    }
-	    lowwatset = 1;
-	}
-#endif
-
-	timeout.tv_sec = conf_dtimeout;
-	timeout.tv_usec = 0;
-	memcpy(&selectset, &readset, sizeof(fd_set));
-
-	nfound = select(maxfd, (SELECT_ARG_TYPE *)(&selectset), NULL, NULL, &timeout);
-
-	/* check for errors or timeout */
-
-#if DUMPER_SOCKET_BUFFERING
-	if (nfound==0 && lowwatset) {
-	    const int zero = 0;
-	    /* Disable socket buffering and ... */
-	    if (setsockopt(streams[DATAFD].fd, SOL_SOCKET, SO_RCVLOWAT,
-			   (void *) &zero, sizeof(zero))) {
-		const int errornumber = errno;
-		fprintf(stderr,
-			"dumper: pid %ld setsockopt(SO_RCVLOWAT): %s\n",
-			(long) getpid(), strerror(errornumber));
-	    }
-	    lowwatset = 0;
-
-	    /* ... try once more */
-	    timeout.tv_sec = conf_dtimeout;
-	    timeout.tv_usec = 0;
-	    memcpy(&selectset, &readset, sizeof(fd_set));
-	    nfound = select(maxfd, (SELECT_ARG_TYPE *)(&selectset), NULL, NULL, &timeout);
-	}
-#endif
-
-	if(nfound == 0)  {
-	    errstr = newstralloc(errstr, "data timeout");
-	    goto failed;
-	}
-	if(nfound == -1) {
-	    errstr = newstralloc2(errstr, "select: ", strerror(errno));
-	    goto failed;
-	}
-
-	/* read/write any data */
-
-	if(streams[DATAFD].fd >= 0 && FD_ISSET(streams[DATAFD].fd, &selectset)) {
-	    int size1 = read(streams[DATAFD].fd, buf, sizeof(buf));
-
-	    switch(size1) {
-	    case -1:
-		errstr = newstralloc2(errstr, "data read: ", strerror(errno));
-		goto failed;
-	    case 0:
-		/* flush */
-		if (databuf_flush(db) < 0)
-		    goto failed;
-		eof1 = 1;
-		FD_CLR(streams[DATAFD].fd, &readset);
-		break;
-	    default:
-		if (databuf_write(db, buf, size1) < 0)
-			goto failed;
-		break;
-	    }
-	}
-
-	if(streams[MESGFD].fd >= 0 && FD_ISSET(streams[MESGFD].fd, &selectset)) {
-	    int size2 = read(streams[MESGFD].fd, buf, sizeof(buf));
-	    switch(size2) {
-	    case -1:
-		errstr = newstralloc2(errstr, "mesg read: ", strerror(errno));
-		goto failed;
-	    case 0:
-		eof2 = 1;
-		process_dumpeof();
-		FD_CLR(streams[MESGFD].fd, &readset);
-		aclose(streams[MESGFD].fd);
-		break;
-	    default:
-		add_msg_data(buf, size2);
-		break;
-	    }
-
-	    if (ISSET(status, GOT_INFO_ENDLINE) &&
-		!ISSET(status, HEADER_DONE)) { /* time to do the header */
-		SET(status, HEADER_DONE);
-		finish_tapeheader(&file);
-		if (write_tapeheader(db->fd, &file)) {
-		    errstr = newstralloc2(errstr, "write_tapeheader: ", 
-					  strerror(errno));
-		    goto failed;
-		}
-		dumpsize += TAPE_BLOCK_SIZE;
-		nb_header_block++;
-
-		if (streams[DATAFD].fd != -1)
-		    FD_SET(streams[DATAFD].fd, &readset);	/* now we can read the data */
-		/*
-		 * If srvcompress is set, then we need to start compressing
-		 * all future writes to the holding file/taper/chunk process
-		 * Insert a gzip process in front of our outfd
-		 */
-		if (srvcompress != srvcomp_none) {
-		    if (runcompress(db->fd, &db->compresspid) < 0) {
-			errstr = newstralloc2(errstr, "compress startup: ", 
-			    strerror(errno));
-			goto failed;
-		    }
-		}
-	    }
-	}
-    } /* end while */
+    /*
+     * Start the event loop.  This will exit when all three events
+     * (read the mesgfd, read the datafd, and timeout) are removed.
+     */
+    event_loop(0);
 
     if (dump_result > 1)
 	goto failed;
@@ -1375,7 +1213,8 @@ failed:
 	amfree(q);
     }
 
-    if(errf) afclose(errf);
+    if (errf)
+	afclose(errf);
 
     /* kill all child process */
     if (db->compresspid != -1) {
@@ -1418,7 +1257,193 @@ log_failed:
 }
 
 /*
- * This is called when everything needs to shut down
+ * Callback for reads on the mesgfd stream
+ */
+static void
+read_mesgfd(cookie)
+    void *cookie;
+{
+    struct databuf *db = cookie;
+    ssize_t size = read(streams[MESGFD].fd, buf, sizeof(buf));
+
+    assert(db != NULL);
+
+    switch (size) {
+    case -1:
+	errstr = newstralloc2(errstr, "mesg read: ",
+	    strerror(errno));
+	dump_result = 2;
+	stop_dump();
+	return;
+    case 0:
+	process_dumpeof();
+	stop_dump();
+	return;
+    default:
+	assert(buf != NULL);
+	add_msg_data(buf, size);
+	break;
+    }
+
+    /*
+     * Reset the timeout for future reads
+     */
+    timeout(conf_dtimeout);
+
+    if (ISSET(status, GOT_INFO_ENDLINE) && !ISSET(status, HEADER_DONE)) {
+	SET(status, HEADER_DONE);
+	/* time to do the header */
+	finish_tapeheader(&file);
+	if (write_tapeheader(db->fd, &file)) {
+	    errstr = newstralloc2(errstr, "write_tapeheader: ",
+				  strerror(errno));
+	    dump_result = 2;
+	    stop_dump();
+	    return;
+	}
+	dumpsize += TAPE_BLOCK_SIZE;
+	nb_header_block++;
+
+	/*
+	 * Now, setup the compress for the data output, and start
+	 * reading the datafd.
+	 */
+	if (srvcompress != srvcomp_none) {
+	    if (runcompress(db->fd, &db->compresspid) < 0) {
+		dump_result = 2;
+		stop_dump();
+		return;
+	    }
+	}
+	streams[DATAFD].ev_read = event_register(streams[DATAFD].fd,
+	    EV_READFD, read_datafd, db);
+    }
+}
+
+/*
+ * Callback for reads on the datafd stream
+ */
+static void
+read_datafd(cookie)
+    void *cookie;
+{
+    struct databuf *db = cookie;
+    ssize_t size = read(streams[DATAFD].fd, buf, sizeof(buf));
+
+    assert(db != NULL);
+
+    /*
+     * The read failed.  Error out
+     */
+    if (size < 0) {
+	errstr = newstralloc2(errstr, "data read: ",
+	    strerror(errno));
+	dump_result = 2;
+	stop_dump();
+	return;
+    }
+
+    /*
+     * Reset the timeout for future reads
+     */
+    timeout(conf_dtimeout);
+
+    /* The header had better be written at this point */
+    assert(ISSET(status, HEADER_DONE));
+
+    /*
+     * EOF.  Stop and return.
+     */
+    if (size == 0) {
+	databuf_flush(db);
+	stop_dump();
+	return;
+    }
+
+    /*
+     * We read something.  Add it to the databuf and reschedule for
+     * more data.
+     */
+    assert(buf != NULL);
+    if (databuf_write(db, buf, size) < 0) {
+	dump_result = 2;
+	stop_dump();
+    }
+}
+
+/*
+ * Callback for reads on the index stream
+ */
+static void
+read_indexfd(cookie)
+    void *cookie;
+{
+    ssize_t size = read(streams[DATAFD].fd, buf, sizeof(buf));
+    int n, fd;
+    char *cbuf = buf;
+
+    assert(cookie != NULL);
+    fd = *(int *)cookie;
+
+    if (size <= 0) {
+	event_release(streams[INDEXFD].ev_read);
+	streams[INDEXFD].ev_read = NULL;
+	return;
+    }
+
+    assert(buf != NULL);
+
+    while (size > 0) {
+	n = write(fd, cbuf, size);
+	if (n < 0)
+	    return;
+	size -= n;
+	cbuf += n;
+    }
+}
+
+/*
+ * Startup a timeout in the event handler.  If the arg is 0,
+ * then remove the timeout.
+ */
+static void
+timeout(seconds)
+    int seconds;
+{
+    static event_handle_t *ev_timeout = NULL;
+
+    /*
+     * First, remove a timeout if one is active.
+     */
+    if (ev_timeout != NULL) {
+	event_release(ev_timeout);
+	ev_timeout = NULL;
+    }
+
+    /*
+     * Now, schedule a new one if 'seconds' is greater than 0
+     */
+    if (seconds > 0)
+	ev_timeout = event_register(seconds, EV_TIME, timeout_callback, NULL);
+}
+
+/*
+ * This is the callback for timeout().  If this is reached, then we
+ * have a data timeout.
+ */
+static void
+timeout_callback(unused)
+    void *unused;
+{
+    assert(unused == NULL);
+    errstr = newstralloc(errstr, "data timeout");
+    dump_result = 2;
+    stop_dump();
+}
+
+/*
+ * This is called when everything needs to shut down so event_loop()
+ * will exit.
  */
 static void
 stop_dump()
@@ -1430,8 +1455,14 @@ stop_dump()
 	    aclose(streams[i].fd);
 	    streams[i].fd = -1;
 	}
+	if (streams[i].ev_read != NULL) {
+	    event_release(streams[i].ev_read);
+	    streams[i].ev_read = NULL;
+	}
     }
+    timeout(0);
 }
+
 
 /*
  * Runs compress with the first arg as its stdout.  Returns
@@ -1676,8 +1707,6 @@ startup_dump(hostname, disk, level, dumpdate, progname, options)
 		        "OPTIONS ", options,
 		        "\n",
 		        NULL);
-
-    streams[DATAFD].fd = streams[MESGFD].fd = streams[INDEXFD].fd = -1;
 
 #ifdef KRB4_SECURITY
     if(krb4_auth) {

@@ -1,5 +1,11 @@
 1999-04-08  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c: rewrite to use the event handler instead
+	of a select loop.  Also, compress the index output using
+	runcompress() instead of forking a compress ourselves.
+
+1999-04-08  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c (sendbackup_response): don't krb4 authenticate
 	streams if krb4_auth if false.
 
