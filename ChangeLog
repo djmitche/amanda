@@ -1,5 +1,10 @@
 2000-09-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* example/amanda.conf.in: chunk should not be larger than
+	MAX_FILE_SIZE - 1Mb.
+
+2000-09-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* client-src/sendsize.c (getsize_smbtar): remove unused debug_level 
 	variable.
 	* server-src/amlabel.c (main): init errstr to NULL, 
@@ -937,7 +942,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.368 2000/09/24 14:04:51 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.369 2000/09/24 14:21:12 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
