@@ -109,18 +109,27 @@ install the dump package, as it is not installed by default on most
 Linux distributions.  It is possible to find compiled versions of dump
 on most Linux sites and CD-ROMs.
 
+
 Make sure the user that runs configure has permission to run the dump
 program, otherwise configure may misdetect an ability of dump to
 accept a -E (for estimates) switch.
+
 
 GNUtar 1.11.8, distributed with some Linux versions, will cause index
 failures (Index returned -1).  Upgrading to GNUtar 1.12 fixes this
 problem.  This is not a Linux-specific problem, but it is quite common
 in this platform.
 
+
 Amanda now supports the ftape driver version 3.04d.  It adjusts the
 blocksize automatically to 32k and supports QIC volume tables.  More
 details con be found in the file ZFTAPE in this directory.
+
+
+Some releases of dump for Linux, such as the one distributed with
+Debian 2.0, have modified dump so that it stores dumpdates in
+/var/lib.  If this is your case, you should create a link to it in
+/etc.  Suggested by David Wolfskill <dhw@whistle.com>
 
 ---------------------------------------------------------------------------
 Digital Unix 4
