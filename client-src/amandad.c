@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.53 2003/01/04 17:45:43 martinea Exp $
+ * $Id: amandad.c,v 1.54 2003/03/29 23:47:54 kovert Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -581,7 +581,7 @@ state_machine(as, action, pkt)
 	 */
 	case A_PENDING:
 #ifdef AMANDAD_DEBUG
-	    dbprintf(("%s: state_machine: %X leaving\n",
+	    dbprintf(("%s: state_machine: %X leaving (A_PENDING)\n",
 		debug_prefix_time(NULL), (unsigned int)as));
 #endif
 	    return;
@@ -604,7 +604,7 @@ state_machine(as, action, pkt)
 		pkt_type2str(pkt->type));
 	    do_sendpkt(as->security_handle, &nak);
 #ifdef AMANDAD_DEBUG
-	    dbprintf(("%s: state_machine: %X leaving\n",
+	    dbprintf(("%s: state_machine: %X leaving (A_SENDNAK)\n",
 		debug_prefix_time(NULL), (unsigned int)as));
 #endif
 	    return;
@@ -615,7 +615,7 @@ state_machine(as, action, pkt)
 	case A_FINISH:
 	    service_delete(as);
 #ifdef AMANDAD_DEBUG
-	    dbprintf(("%s: state_machine: %X leaving\n",
+	    dbprintf(("%s: state_machine: %X leaving (A_FINISH)\n",
 		debug_prefix_time(NULL), (unsigned int)as));
 #endif
 	    return;
@@ -925,6 +925,10 @@ s_ackwait(as, action, pkt)
      * If no pipes are open, then we're done.  Otherwise, just start running.
      * The event handlers on all of the pipes will take it from here.
      */
+#ifdef AMANDAD_DEBUG
+    dbprintf(("%s: at end of s_ackwait, npipes is %d\n",
+	debug_prefix_time(NULL), npipes));
+#endif
     if (npipes == 0)
 	return (A_FINISH);
     else {
@@ -1239,6 +1243,11 @@ service_delete(as)
 {
     int i;
     struct datafd_handle *dh;
+
+#ifdef AMANDAD_DEBUG
+	dbprintf(("%s: closing service: %s\n",
+	    debug_prefix_time(NULL), (as->cmd)?as->cmd:"??UNKONWN??"));
+#endif
 
     assert(as != NULL);
 
