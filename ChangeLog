@@ -1,3 +1,13 @@
+1999-05-05  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/amverify.sh.in (pecho): new function.  Like echo
+	but doesn't append newline, and supports \r, etc.  Implemented
+	using perl.
+	* server-src/amverify.sh.in: use pecho where we used to use echo -n,
+	etc.  It's nearly impossible to figure out which echo needs what
+	flags and also know if it supports \r.  So we just punt and use
+	perl.
+
 1999-04-29 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/planner.c (when_overwrite): return a big number (1024)
