@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.137 2001/03/05 23:52:39 martinea Exp $
+/* $Id: dumper.c,v 1.138 2001/03/10 18:24:34 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -85,6 +85,7 @@ char *datestamp;
 char *config_name = NULL;
 char *config_dir = NULL;
 int conf_dtimeout;
+int indexfderror;
 
 static dumpfile_t file;
 
@@ -811,6 +812,7 @@ do_dump(db)
 		goto failed;
 	    }
 	}
+	indexfderror = 0;
 	/*
 	 * Schedule the indexfd for relaying to the index file
 	 */
@@ -1099,11 +1101,15 @@ read_indexfd(cookie, buf, size)
     assert(buf != NULL);
 
     /*
-     * If we get an error while writing to the index file, just
-     * return without scheduling another read.
+     * We ignore error while writing to the index file.
      */
-    if (fullwrite(fd, buf, size) < 0)
-	return;
+    if (fullwrite(fd, buf, size) < 0) {
+	/* Ignore error, but schedule another read. */
+	if(indexfderror == 0) {
+	    indexfderror = 1;
+	    log_add(L_INFO, "Index corrupted for %s:%s", hostname, diskname);
+	}
+    }
     security_stream_read(streams[INDEXFD].fd, read_indexfd, cookie);
 }
 
