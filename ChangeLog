@@ -1,3 +1,12 @@
+2001-06-19 Thomas Hepper <th@ant.han.de>
+	* changer-src/chg-scsi.c: Made clean_slot a global var. Removed
+	the label db update stuff from the COM_SLOT part (moved to unload
+	in scsi-changer-driver.c)
+	* changer-src/scsi-changer-driver.c: Do an unload if the tape is
+	loaded in the Inventory function. Added an marker to avoid recursion
+	in Inventroy function. Added label db check in unload function and
+	call Inventroy if it indicates an out of sync db
+	
 2001-06-18 John R. Jackson <jrj@purdue.edu>
 
 	* recover-src/extract_list.c: Do not pass a 'b' (blocking) factor

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.34 2001/06/12 17:42:28 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.35 2001/06/19 09:04:08 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -573,33 +573,35 @@ void Inventory(char *labelfile, int drive, int eject, int start, int stop, int c
   char *result;
   int fd;                        /* fd from tape_open */
   int barcode;                   /* cache the result from the BarCode function */
+  static int inv_done = 0;       /* Inventory function called ?, marker to disable recursion */
 
   DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE, "##### START Inventory\n");
+  if (inv_done != 0)
+    {
+      DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE, "##### STOP inv_done -> %d Inventory\n",inv_done);
+      return;
+    }
+  inv_done = 1;
   barcode = BarCode(INDEX_CHANGER);
-
+  
   MapBarCode(labelfile,  "", "", RESET_VALID, 0, 0);
-
+  
   /*
-   * If we have an bar code reader
    * Check if an tape is loaded, if yes unload it
    * and do an INIT ELEMENT STATUS
    */
-
-  if (barcode == 1)
+  
+  if (pDTE[0].status == 'F')
     {
-
-      if (pDTE[0].status == 'F')
+      if (eject)
 	{
-	  if (eject)
-	    {
-	      eject_tape("", eject);
-	    }
-	  (void)unload(INDEX_TAPE, 0, 0);
+	  eject_tape("", eject);
 	}
-
-      GenericResetStatus(INDEX_CHANGER);
+      (void)unload(INDEX_TAPE, 0, 0);
     }
-
+  
+  GenericResetStatus(INDEX_CHANGER);
+ 
   for (x = 0; x < STE; x++)
     {
       if (x == clean)
@@ -813,7 +815,14 @@ int drive_loaded(int fd, int drivenum)
 int unload(int fd, int drive, int slot) 
 {
   extern OpenFiles_T *pDev;
-  
+  extern changer_t chg;         /* Needed for the infos about emubarcode and labelfile */
+  int fslot,ffrom;              /* Store the result from the label/slot db (MapBarCode) */
+  char *result = NULL;          /* Needed for the result string of MapBarCode */
+  char *datestamp = NULL;       /* Result pointer for tape_rdlabel */       
+  char *label = NULL;           /* Result pointer for tape_rdlabel */
+  extern int clean_slot;
+  int ret;
+
   DebugPrint(DEBUG_INFO, SECTION_TAPE,"###### START unload\n");
   DebugPrint(DEBUG_INFO, SECTION_TAPE,"%-20s : fd %d, slot %d, drive %d \n", "unload", fd, slot, drive);
   
@@ -861,15 +870,29 @@ int unload(int fd, int drive, int slot)
 	  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "unload: Element Status not valid, can't find an empty slot\n");
 	  return(-1);
 	}
-
+      
       slot = find_empty(fd, 0, 0);
       DebugPrint(DEBUG_INFO, SECTION_TAPE,"unload : found empty one, try to unload to slot %d\n", slot);
     }
   
   /*
+   * Try to read the label
+   * and update the label/slot database
+   */
+  if (pDev[INDEX_TAPE].avail == 1 && (chg.emubarcode == 1 || BarCode(INDEX_CHANGER)))
+    {
+      if (pDev[INDEX_TAPE].devopen == 1)
+	{
+	  SCSI_CloseDevice(INDEX_TAPE);
+	}
+      
+      result = (char *)tape_rdlabel(pDev[INDEX_TAPE].dev, &datestamp, &label);
+      tapefd_close(fd);
+    }
+  /*
    * Do the unload/move
    */
-  pDev[INDEX_CHANGER].functions->function_move(INDEX_CHANGER , pDTE[drive].address, pSTE[slot].address);
+  ret = pDev[INDEX_CHANGER].functions->function_move(INDEX_CHANGER , pDTE[drive].address, pSTE[slot].address);
 
   /*
    * Update the Status
@@ -879,6 +902,35 @@ int unload(int fd, int drive, int slot)
       DebugPrint(DEBUG_ERROR, SECTION_TAPE,"##### STOP unload (-1 update status failed)\n");
       return(-1);
     }
+  
+  /*
+   * Did we get an error from tape_rdlabel
+   * if no update the vol/label mapping
+   */
+  if (result  == NULL)
+  {
+    result = MapBarCode(chg.labelfile, label, "" , FIND_SLOT, 0, 0);
+    if (result == NULL) /* Nothing found, do an inventory */
+      {
+	Inventory(chg.labelfile, drive, chg.eject, 0, 0, clean_slot);
+      } else { /* We got something, is it correct ? */
+	ret = sscanf(result, "%d:%d", &fslot, &ffrom);
+	if (ret == 2)
+	  {
+	    DebugPrint(DEBUG_INFO, SECTION_TAPE,"Result from MapBarCode, slot -> %d, from -> %d\n",fslot, ffrom);
+	    if (slot != fslot)
+	      {
+		DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Slot DB out of sync, slot %d != map %d",slot, fslot);
+		Inventory(chg.labelfile, drive, chg.eject, 0, 0, clean_slot);
+	      } else {
+		result = MapBarCode(chg.labelfile, label, pSTE[slot].VolTag ,UPDATE_SLOT, slot, 0);
+	      }
+	  } else {
+	    DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Error in result from MapBarCode 2 != %d\n",ret);
+	  }
+      }
+  }
+   
   
   DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP unload(0)\n");
   return(0);
@@ -1099,7 +1151,7 @@ int OpenDevice(int ip , char *DeviceName, char *ConfigName, char *ident)
  */
 int BarCode(int fd)
 {
-  int ret;
+  int ret = 0;
   extern OpenFiles_T *pDev;
 
   DebugPrint(DEBUG_INFO, SECTION_BARCODE,"##### START BarCode\n");
@@ -2315,22 +2367,29 @@ int GenericClean(char * Device)
 {
   extern OpenFiles_T *pDev;
   ExtendedRequestSense_T ExtRequestSense;
+  int ret = 0;
 
-  dbprintf(("##### START GenericClean\n"));
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### START GenericClean\n");
   if (pDev[INDEX_TAPECTL].SCSI == 0)
       {
-          dbprintf(("GenericClean : can't send SCSI commands\n"));
+          DebugPrint(DEBUG_ERROR, SECTION_TAPE,"GenericClean : can't send SCSI commands\n");
+	  DebugPrint(DEBUG_ERROR, SECTION_TAPE,"##### STOP GenericClean\n");
           return(0);
       }
 
-  RequestSense(INDEX_TAPECTL, &ExtRequestSense, 0);
-  dbprintf(("GenericClean :\n"));
+  /*
+   * Request Sense Data, reset the counter
+   */
+  RequestSense(INDEX_TAPECTL, &ExtRequestSense, 1);
+
   DecodeExtSense(&ExtRequestSense, "GenericClean : ", debug_file);
   if(ExtRequestSense.CLN) {
-    return(1);
+    ret = 1;
   } else {
-    return(0);
+    ret = 0;
   }
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP GenericClean\n");
+  return(ret);
 }
 
 int GenericResetStatus(int DeviceFD)
@@ -3872,7 +3931,11 @@ int GetElementStatus(int DeviceFD)
 }
 
 /*
- * Get the sense from the last command
+ * Get sense data
+ * If ClearErrorCounters is set the counters will be reset.
+ * Used by GenericClean for example
+ *
+ * TODO
  */
 int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int ClearErrorCounters )
 {
@@ -3880,11 +3943,11 @@ int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int
   RequestSense_T *pRequestSense;
   int ret;
   
-  dbprintf(("##### START RequestSense\n"));
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### START RequestSense\n");
   
   if ((pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
     {
-      dbprintf(("RequestSense : malloc failed\n"));
+      DebugPrint(DEBUG_INFO, SECTION_SCSI,"RequestSense : malloc failed\n");
         return(-1);
     }
   

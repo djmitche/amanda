@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.29 2001/06/10 20:59:29 ant Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.30 2001/06/19 09:04:08 ant Exp $";
 #endif
 /*
  * 
@@ -107,6 +107,7 @@ extern int IEE;
 extern int DTE;
 
 changer_t chg;
+int clean_slot = -1;
 
 typedef enum{
   NUMDRIVE,EJECT,SLEEP,CLEANMAX,DRIVE,START,END,CLEAN,DEVICE,STATFILE,CLEANFILE,DRIVENUM,
@@ -1012,7 +1013,7 @@ int main(int argc, char *argv[])
   int drive_num = 0;
   int need_eject = 0; /* Does the drive need an eject command ? */
   int need_sleep = 0; /* How many seconds to wait for the drive to get ready */
-  int clean_slot = -1;
+
   int maxclean = 0;
   char *clean_file=NULL;
   char *time_file=NULL;
@@ -1034,7 +1035,6 @@ int main(int argc, char *argv[])
   int confnum;
 
   int fd, slotcnt, drivecnt;
-  int tapefd;                    /* Used from tape_open */
   int endstatus = 0;
 
   char *changer_dev;
@@ -1337,41 +1337,19 @@ int main(int argc, char *argv[])
           oldtarget = find_empty(fd, slot_offset, use_slots);
           dbprintf(("COM_SLOT: find_empty %d\n", oldtarget));
         }
+      
+      /*
+       * TODO check if the request slot for the unload is empty
+       */
 
+      /*
+       * If we have an SCSI path to the tape and an raw io path
+       * try to read the Error Counter and the label
+       */
       if (pDev[INDEX_TAPECTL].avail == 1 && pDev[INDEX_TAPE].avail == 1)
         {
           LogSense(INDEX_TAPE);
         }
-      
-      if (pDev[INDEX_TAPE].avail == 1 && emubarcode == 1)
-        {
-          if (pDev[INDEX_TAPE].devopen == 1)
-            {
-              SCSI_CloseDevice(INDEX_TAPE);
-            }
-          if ((tapefd = tape_open(pDev[INDEX_TAPE].dev, O_RDONLY)) != 0)
-            {
-              if ((result = (char *)tapefd_rdlabel(tapefd, &datestamp, &label)) == NULL)
-                {
-                  result = MapBarCode(chg.labelfile, label, "" , FIND_SLOT, 0, 0);
-                  if (result == NULL) /* Nothing found, do an inventory */
-                    {
-                      if (need_eject)
-                        eject_tape(scsitapedevice, need_eject);
-                      (void)unload(fd, drive_num, oldtarget);
-                  if (ask_clean(scsitapedevice))
-                    clean_tape(fd,tape_device,clean_file,drive_num,
-                               clean_slot,maxclean,time_file);
-                  Inventory(chg.labelfile, drive_num, need_eject, 0, 0, clean_slot);
-                  load(fd, drive_num, oldtarget);
-                    } else {
-                      result = MapBarCode(chg.labelfile, label, "" ,UPDATE_SLOT, oldtarget, target);
-                    }
-                }
-              tapefd_close(fd);
-            }
-        }
-
       
       if ((oldtarget)!=target) {
         if (need_eject)
