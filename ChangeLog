@@ -1,3 +1,12 @@
+2001-08-15 Thomas Hepper (th@ant.han.de)
+	* changer-src/chg-scsi.c. Removed version 1 DB support from mapBarCode. Changed the way parameter
+	are given to MapBarCode and returned from there. No a struct is passed where all infos
+	will be returned to the calling function.
+	If eject is set we will not call LogSense in chg-scsi because it is also called in the
+	eject function.
+	* changer-src/scsi-defs.h: Added struct MBC_T used by MapBarCode.
+	* changer-src/scsi-changer-driver.c: Changed all calls to MapBarCode to the new way
+	
 2001-08-14 John R. Jackson (jrj@purdue.edu)
 
 	* docs/EXCLUDE: New document from Andrew Hall <ahall@secureworks.net>

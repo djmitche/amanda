@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-aix.c,v 1.1.2.16 2001/08/10 17:00:41 ant Exp $
+ * $Id: scsi-aix.c,v 1.1.2.17 2001/08/15 18:16:29 ant Exp $
  *
  * Interface to execute SCSI commands on an AIX System
  *
@@ -356,14 +356,6 @@ int Tape_Ioctl(int DeviceFD, int command)
   extern OpenFiles_T *pDev;
   int ret = -1;
   return(ret);
-}
-
-int Tape_Ioctl ( int DeviceFD)
-{
-/*
- Not yet ....
-*/
-  return(-1);
 }
 
 int Tape_Status( int DeviceFD)
