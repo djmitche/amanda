@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.1.2.11 2002/03/22 15:00:22 martinea Exp $
+ * $Id: client_util.c,v 1.1.2.12 2002/03/22 15:40:47 martinea Exp $
  *
  */
 
@@ -430,25 +430,13 @@ int verbose;
 	    if(*exc != '/') {
 		char *dirname = amname_to_dirname(device);
 		char *efile = vstralloc(dirname,"/",exc, NULL);
-		if(access(efile, F_OK) != 0) {
-		    /* if exclude list file does not exist, ignore it.
-		     * Should not test for R_OK, because the file may be
-		     * readable by root only! */
-		    dbprintf(("%s: exclude list file \"%s\" does not exist, ignoring\n",
-			      get_pname(), efile));
-		    if(verbose) {
-			printf("ERROR [exclude list file \"%s\" does not exist]\n", efile);
-		    }
-		}
-		else {
-		    options->exclude_list =
-			append_sl(options->exclude_list, efile);
-		}
+		options->exclude_list =
+		    append_sl(options->exclude_list, efile);
 		amfree(dirname);
 		amfree(efile);
 	    }
 	    else {
-		options->exclude_list = append_sl(options->exclude_list,exc);
+		options->exclude_list = append_sl(options->exclude_list, exc);
 	    }
 	}
 	else if(strncmp(tok,"include-file=", 13) == 0) {
@@ -460,25 +448,13 @@ int verbose;
 	    if(*exc != '/') {
 		char *dirname = amname_to_dirname(device);
 		char *efile = vstralloc(dirname,"/",exc, NULL);
-		if(access(efile, F_OK) != 0) {
-		    /* if include list file does not exist, ignore it.
-		     * Should not test for R_OK, because the file may be
-		     * readable by root only! */
-		    dbprintf(("%s: include list file \"%s\" does not exist, ignoring\n",
-			      get_pname(), efile));
-		    if(verbose) {
-			printf("ERROR [include list file \"%s\" does not exist]\n", efile);
-		    }
-		}
-		else {
-		    options->include_list =
-			append_sl(options->include_list, efile);
-		}
+		options->include_list =
+		    append_sl(options->include_list, efile);
 		amfree(dirname);
 		amfree(efile);
 	    }
 	    else {
-		options->include_list = append_sl(options->include_list,exc);
+		options->include_list = append_sl(options->include_list, exc);
 	    }
 	}
 	else if(strcmp(tok,"|") == 0) {
