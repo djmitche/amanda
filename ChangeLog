@@ -1,3 +1,9 @@
+1999-10-02 John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/driver.c: delete #define of HOLD_DEBUG, it was increasing
+	  the size of the amdump log file by a factor of 10 or more.  Anyone
+	  who needs it can define it in CFLAGS or some other way.
+
 1999-09-29 John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/dumper.c (do_dump): closed the dump messages file too
@@ -488,7 +494,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.285 1999/09/29 23:59:33 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.286 1999/10/02 17:04:05 jrj Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

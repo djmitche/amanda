@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.21 1999/09/19 18:56:23 jrj Exp $
+ * $Id: driver.c,v 1.58.2.22 1999/10/02 17:04:15 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -33,8 +33,6 @@
  * XXX possibly modify tape queue to be cognizant of how much room is left on
  *     tape.  Probably not effective though, should do this in planner.
  */
-
-#define HOLD_DEBUG
 
 #include "amanda.h"
 #include "clock.h"
