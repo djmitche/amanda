@@ -1,3 +1,9 @@
+1999-05-23  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* common-src/statfs.c (STATFS_SCALE, sys/statvfs.h): If f_frsize is
+	zero, use f_bsize.  It now works with GNU libc 2.1.
+	Reported by Heikki Vatiainen <hessu@cs.tut.fi>
+
 1999-05-22 Alex Pilosov <alex@pilosoft.com>
 
 	* server-src/amindexd.c (is_dump_host_valid): sanitize_name(host)
