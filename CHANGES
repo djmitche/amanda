@@ -23,7 +23,8 @@
 
 Version 2.4.0
 
-	# directives must not be indented in configure scripts.
+	removed backslashes from inside macro calls.
+	un-indented # directives.
 	-Gregory Neil Shapiro <gshapiro@WPI.EDU>
 
 	bsd-security is now enabled by default.  -oliva
