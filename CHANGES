@@ -1,5 +1,14 @@
+Version 2.4.0
+
+	fix sendbackup-gnutar crashing problem.  -oliva
+
+	ensure that, in case of tape failure when dumping to tape, no
+	incremental relative to the failed backup is performed.
+	-oliva & Liudvikas Bukys <bukys@cs.rochester.edu>
+
 	Fix buffer use and write() error handling in the index pipeline.
 	-Dietmar Goldbeck <dietmar@telemedia.de>
+	& Lars Fenneberg <lf@elemental.net>
 
 	Possible fix for "taper syncpipe_get: w: unexpected EOF".  Do not
 	close the taper file descriptor in driver on TAPE-ERROR, but let
