@@ -351,7 +351,7 @@ For instance, if you have
 .B dumpcycle
 set to 14 days, do one Amanda run per day and have
 .B runtapes
-set to one, then
+set to one,
 .B tapecycle
 must be at least 15 (14 days * one run/day * one tape/run + one tape).
 .IP
@@ -383,7 +383,7 @@ and should be commented out of your configuration file.
 Default:
 .IR @DEFAULT_RAW_TAPE_DEVICE@ .
 The path name of the raw tape device.
-It is only used if amanda is compiled for Linux machines with floppy tapes.
+It is only used if Amanda is compiled for Linux machines with floppy tapes.
 It is needed for QIC volume table operations.
 .TP
 .BS tpchanger string
@@ -453,8 +453,9 @@ Amount of time per disk on a given client that
 will wait to get the dump size estimates.
 For instance, with the default of 300 seconds and four disks on client A, 
 .B planner
-will wait up to 20 minutes for that machine.  A negative value will be
-interpreted as a total amount of time, instead of a per-disk value.
+will wait up to 20 minutes for that machine.
+A negative value will be interpreted as a total amount of time,
+instead of a per-disk value.
 .TP
 .BN dtimeout int
 Default:
@@ -494,7 +495,7 @@ option.
 .TP
 .BN bumpsize int
 Default:
-.IR "10 Mb" .
+.IR "10 Mbytes" .
 The minimum savings required to trigger an automatic
 bump from one incremental level to the next.
 If Amanda determines that the next higher backup level
@@ -615,28 +616,46 @@ The path to this holding area.
 .TP
 .BN use int
 Default:
-.IR "10 Mb" .
-Amount of space that can be used in this holding disk area. If the value
-is negative, then amanda will use all available space except that value.
+.IR "10 Mbytes" .
+Amount of space that can be used in this holding disk area.
+If the value is negative,
+Amanda will use all available space minus that value.
 .TP
 .BN chunksize int
 Default:
 .IR "-1" .
-Holding disk chunk size: dumps larger than the specified size will be
-stored in multiple holding disk files, so that the size of each chunk
-does not exceed the specified value.  However, even though dump images
-are split in the holding disk, they are concatenated as they are
-written to tape, so that each dump image will be correspond to a
-single continuous tape section.  If you specify 0, Amanda will create
-holding disk chunks as large as INT_MAX/1024 Kb.  A negative value
-will cause filesystems larger than the modulus or the value to be
-dumped directly to tape, without using the holding disk, but note that
-this is likely to be very slow.  The default value, -1, is interpreted
-as -INT_MAX/1024 Kb.  So, by default, Amanda will dump filesystems
-larger than 2 GB (assuming 32 bit integers) directly to tape.  This
-default is provided mainly for backward compatibility; you are
-encouraged to specify a positive value smaller than the maximum file
-size in the holding disk filesystem.
+Holding disk chunk size.
+Dumps larger than the specified size will be
+stored in multiple holding disk files.
+The size of each chunk will not exceed the specified value.
+However, even though dump images are split in the holding disk,
+they are concatenated as they are written to tape,
+so each dump image still corresponds to a single continuous tape section.
+.IP
+If you specify 0, Amanda will create
+holding disk chunks as large as ((INT_MAX/1024)-64) Kbytes.
+.IP
+A negative value causes filesystems larger than the absolute value to be
+dumped directly to tape, without using the holding disk.
+The default value, -1, is interpreted as -((INT_MAX/1024-64) Kbytes.
+which causes Amanda to dump filesystems
+larger than slightly less than 2 Gbytes (assuming 32 bit integers)
+directly to tape.
+The default is provided mainly for backward compatibility.
+You are encouraged to specify a positive value
+smaller than the maximum file size in the holding disk filesystem.
+.IP
+Each holding disk chunk includes a 32 Kbyte header,
+so the minimum chunk size is 64 Kbytes
+(but that would be really silly).
+.IP
+Operating systems that are limited to a maximum file size of 2 Gbytes
+actually cannot handle files that large.
+They must be at least one byte less than 2 Gbytes.
+Since Amanda works with 32 Kbyte blocks,
+and to handle the final read at the end of the chunk,
+the chunk size should be at least 64 Kbytes (2 * 32 Kbytes) smaller than the
+maximum file size, e.g. 2047 Mbytes.
 .RE
 .RE
 .SH DUMPTYPE SECTION
@@ -679,8 +698,8 @@ For instance, setting
 .B dumpcycle
 to 50 in the main part of the config file causes all the
 .B dumptype
-sections to start with that value, and then you may change
-it on a section by section basis.
+sections to start with that value,
+but you may change it on a section by section basis.
 .LP
 The dumptype options and values are:
 .LP
