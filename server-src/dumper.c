@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.147 2002/03/03 17:10:32 martinea Exp $
+/* $Id: dumper.c,v 1.148 2002/03/09 15:09:39 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -253,6 +253,7 @@ main(main_argc, main_argv)
 	    hostname = newstralloc(hostname, cmdargs.argv[4]);
 	    diskname = newstralloc(diskname, cmdargs.argv[5]);
 	    device = newstralloc(device, cmdargs.argv[6]);
+	    if(strcmp(device,"NODEVICE") == 0) amfree(device);
 	    level = atoi(cmdargs.argv[7]);
 	    dumpdate = newstralloc(dumpdate, cmdargs.argv[8]);
 	    progname = newstralloc(progname, cmdargs.argv[9]);

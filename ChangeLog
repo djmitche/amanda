@@ -1,3 +1,10 @@
+2002-03-09  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* client-src/sendbackup-dump.c: use amdevice as argument to
+	  amname_to_fstype.
+	* client-src/sendsize.c: Use amdevice as argument to amname_to_dirname.
+	* server-src/dumper.c: clear device if it is set to NODEVICE.
+
 2002-03-08  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amindexd.c: Compilation fix.

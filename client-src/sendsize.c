@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.120 2002/03/03 17:10:32 martinea Exp $
+ * $Id: sendsize.c,v 1.121 2002/03/09 15:09:39 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -1320,7 +1320,7 @@ time_t dumpsince;
 		gmtm->tm_year + 1900, gmtm->tm_mon+1, gmtm->tm_mday,
 		gmtm->tm_hour, gmtm->tm_min, gmtm->tm_sec);
 
-    dirname = amname_to_dirname(disk);
+    dirname = amname_to_dirname(amdevice);
 
     cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
 
