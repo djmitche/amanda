@@ -33,11 +33,15 @@
  * File:	$RCSFile: sendbackup-dump.c,v $
  * Part of:	
  *
- * Revision:	$Revision: 1.3 $
+ * Revision:	$Revision: 1.4 $
  * Last Edited:	$data: 1997/03/24 10:10:10 $
- * Author:	$Author: blair $
+ * Author:	$Author: oliva $
  *
  * History:	$Log: sendbackup-gnutar.c,v $
+ * History:	Revision 1.4  1997/04/10 01:35:22  oliva
+ * History:	GNUTAR listed incrementals now work if previous incremental level
+ * History:	directory list cannot be found.
+ * History:
  * History:	Revision 1.3  1997/03/24 17:14:43  blair
  * History:	Instead of just listing gtar in the header, put in the
  * History:	full path to gtar.
@@ -184,22 +188,27 @@ int level, dataf, mesgf;
 	umask(0007);
 
 	if (level == 0) {
+	notincremental:
 		dbprintf(("%s: doing level %d dump as listed-incremental: %s\n",
 			  pname, level, incrname));
 	} else {
-	    FILE *in, *out;
+	    FILE *in = NULL, *out;
 	    char *inputname = strdup(incrname);
 	    char buf[512];
+	    int baselevel = level;
+
+	    while (in == NULL && --baselevel >= 0) {
+	      sprintf(inputname+len, "_%d", baselevel);
+	      in = fopen(inputname, "r");
+	    }
+
+	    if (in == NULL)
+	        goto notincremental;
+	    
 	    out = fopen(incrname, "w");
 	    if (out == NULL)
 		error("error [opening %s: %s]", incrname, strerror(errno));
 
-	    sprintf(inputname+len, "_%d", level-1);
-
-	    in = fopen(inputname, "r");
-	    if (in == NULL)
-		error("error [opening %s: %s]", inputname, strerror(errno));
-	
 	    while(fgets(buf, sizeof(buf), in) != NULL)
 		if (fputs(buf, out) == EOF)
 		    error("error [writing to %s: %s]", incrname,
