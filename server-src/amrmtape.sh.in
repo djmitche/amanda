@@ -142,7 +142,7 @@ CleanCurinfo () {
         ;;
       stats*)
 	set ${Line}
-	if [ $# != 8 ]; then
+	if [ $# -lt 6 ] || [ $# -gt 8 ]; then
 	  log "${Program}: unexpected number of fields in 'stats' entry."
 	  return 1
 	fi

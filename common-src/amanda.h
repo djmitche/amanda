@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.46 1998/02/11 23:25:30 jrj Exp $
+ * $Id: amanda.h,v 1.47 1998/02/18 16:15:51 amcore Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -999,6 +999,30 @@ extern int vfprintf P((FILE *stream, const char *format, va_list ap));
 #ifndef HAVE_VPRINTF_DECL
 #include "arglist.h"
 extern int vprintf P((const char *format, va_list ap));
+#endif
+
+#if !defined(S_ISCHR) && defined(_S_IFCHR) && defined(_S_IFMT)
+#define S_ISCHR(mode) (((mode) & _S_IFMT) == _S_IFCHR)
+#endif
+
+#if !defined(S_ISREG) && defined(_S_IFREG) && defined(_S_IFMT)
+#define S_ISREG(mode) (((mode) & _S_IFMT) == _S_IFREG)
+#endif
+
+#ifndef HAVE_WAITPID
+#define waitpid(pid,status,options) wait4(pid,status,options,0)
+#endif
+
+#ifndef STDIN_FILENO
+#define STDIN_FILENO 0
+#endif
+
+#ifndef STDOUT_FILENO
+#define STDOUT_FILENO 1
+#endif
+
+#ifndef STDERR_FILENO
+#define STDERR_FILENO 2
 #endif
 
 #endif	/* !AMANDA_H */
