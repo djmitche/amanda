@@ -1543,6 +1543,7 @@ dnl an appropriate header file.  Add some of the missing functions
 dnl to LIBOBJS.
 ICE_CHECK_DECL(accept,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(atof,stdlib.h)
+AC_CHECK_FUNCS(basename)
 ICE_CHECK_DECL(bind,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(bcopy,string.h strings.h)
 ICE_CHECK_DECL(bzero,string.h strings.h)

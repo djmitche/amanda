@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: calcsize.c,v 1.10 1997/08/27 08:11:29 amcore Exp $
+ * $Id: calcsize.c,v 1.11 1997/09/09 04:05:20 amcore Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -245,6 +245,7 @@ char **argv;
  * =========================================================================
  */
 
+#ifndef HAVE_BASENAME
 char *basename(file)
 char *file;
 {
@@ -254,6 +255,7 @@ char *file;
 	return cp+1;
     return file;
 }
+#endif
 
 void push_name P((char *str));
 char *pop_name P((void));
