@@ -1,3 +1,11 @@
+1999-02-16  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/driverio.h: remove declaration of addfd.
+	* server-src/driverio.c (addfd): 2 new arguments, readset and maxfd,
+	don't use global variable.
+	* server-src/driverio.c (startup_tape_process, startup_dump_process):
+	call addfd with new argument.
+
 1999-02-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/driverio.c (startup_tape_process): new taper_program 
