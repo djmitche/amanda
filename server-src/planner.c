@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.162 2005/02/09 14:31:06 martinea Exp $
+ * $Id: planner.c,v 1.163 2005/03/16 18:09:32 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1341,7 +1341,7 @@ am_host_t *hostp;
 			long est_size = 0;
 			int nb_est = 0;
 
-			for(j=0;j<NB_HISTORY;j++) {
+			for(j=NB_HISTORY-2;j>=0;j--) {
 			    if(info.history[j].level == 0) {
 				est_size = info.history[j].size;
 				nb_est++;
@@ -1382,7 +1382,7 @@ am_host_t *hostp;
 			nb_day = info.consecutive_runs + 1;
 			if(nb_day > NB_DAY-1) nb_day = NB_DAY-1;
 
-			while(nb_day > 0 && nb_est_day[nb_day] > 0) nb_day--;
+			while(nb_day > 0 && nb_est_day[nb_day] == 0) nb_day--;
 
 			if(nb_est_day[nb_day] > 0) {
 			    est(dp)->est_size[i] =
@@ -1401,9 +1401,8 @@ am_host_t *hostp;
 			int nb_est = 0;
 
 			for(j=NB_HISTORY-2;j>=0;j--) {
-			    if(info.history[j].level < 0) continue;
-			    if(info.history[j].level == info.history[j+1].level
-+ 1 ) {
+			    if(info.history[j].level <= 0) continue;
+			    if(info.history[j].level == info.history[j+1].level + 1 ) {
 				est_size += info.history[j].size;
 				nb_est++;
 			    }
@@ -1419,8 +1418,7 @@ am_host_t *hostp;
 			}
 		    }
 	        }
-		fprintf(stderr,"%s time %s:server estimate for host %s disk %s:"
-,
+		fprintf(stderr,"%s time %s: got result for host %s disk %s:",
 			get_pname(), walltime_str(curclock()),
 			dp->host->hostname, dp->name);
 		fprintf(stderr," %d -> %ldK, %d -> %ldK, %d -> %ldK\n",
