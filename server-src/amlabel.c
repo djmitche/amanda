@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.18.2.14 2000/09/24 14:04:52 martinea Exp $
+ * $Id: amlabel.c,v 1.18.2.15 2000/10/11 20:42:40 martinea Exp $
  *
  * write an Amanda label on a tape
  */
@@ -269,8 +269,6 @@ int main(argc, argv)
 	if((errstr = tape_wrlabel(tapename, "X", label)) != NULL) {
 	    putchar('\n');
 	    error(errstr);
-	} else {
-	    tape_ok = 0;
 	}
 
 #ifdef HAVE_LINUX_ZFTAPE_H
