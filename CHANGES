@@ -1,5 +1,8 @@
 Version 2.4.0
 
+	fixed VXDUMP support.
+	-Andrew Ivanov <ivanov@mics.msu.su> & oliva
+
 	typos fixed in chg-chs.
 	-David Barr <dbarr@simplex.com>
 
