@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.58 2001/06/01 21:02:44 jrjackson Exp $
+ * $Id: amindexd.c,v 1.59 2001/06/19 19:56:04 jrjackson Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -861,7 +861,7 @@ char **argv;
 	      htons(his_addr.sin_port));
     }
     if ((his_name = gethostbyaddr((char *)&(his_addr.sin_addr),
-				  sizeof(struct in_addr),
+				  sizeof(his_addr.sin_addr),
 				  AF_INET)) == NULL) {
 	error("gethostbyaddr: %s", strerror(errno));
     }
