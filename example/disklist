@@ -5,7 +5,7 @@
 #
 # File format is:
 #
-#	hostname diskdev dumptype
+#	hostname diskdev dumptype [spindle [interface]]
 #
 # where the dumptypes are defined by you in amanda.conf.
 
