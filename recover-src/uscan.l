@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: uscan.l,v 1.6 1997/12/30 05:24:42 jrj Exp $
+ * $Id: uscan.l,v 1.7 1998/02/27 18:13:45 jrj Exp $
  *
  * lexer for amrecover interactive language
  */
@@ -39,6 +39,7 @@
 
 extern void yyerror P((char *s));
 extern int  yyparse P((void));
+static int  ll_parse_date P((int type, char *text));
 %}
 
 %x quotedstring
@@ -72,25 +73,9 @@ extract { return EXTRACT; }
 
     /* dates */
 
----[0-9][0-9] { time_t now;
-	        struct tm *t;
-                yylval.strval = (char *)malloc(DATE_ALLOC_SIZE);
-                now = time((time_t *)NULL);
-                t = localtime(&now);
-                ap_snprintf(yylval.strval, DATE_ALLOC_SIZE,
-			"%04d-%02d%s", 1900+t->tm_year, t->tm_mon+1, yytext+2);
-                return DATE; }
-
---[0-9][0-9]-[0-9][0-9] { time_t now;
-	                  struct tm *t;
-                          yylval.strval = (char *)malloc(DATE_ALLOC_SIZE);
-                          now = time((time_t *)NULL);
-                          t = localtime(&now);
-                          ap_snprintf(yylval.strval, DATE_ALLOC_SIZE,
-				   "%04d%s", 1900+t->tm_year, yytext+1);
-                          return DATE; }
-
-[1-2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] { yylval.strval = stralloc(yytext); return DATE; }
+---[0-9]+		{ return ll_parse_date(1, yytext); }
+--[0-9]+-[0-9]+		{ return ll_parse_date(2, yytext); }
+[0-9]+-[0-9]+-[0-9]+	{ return ll_parse_date(3, yytext); }
 
     /* file names */
 
@@ -135,6 +120,47 @@ char *line;
 {
     (void)yy_scan_string(line);		/* tell lex to scan lineread */
     return yyparse();			/* parse lineread and act */
+}
+
+static int ll_parse_date(type, text)
+int type;
+char *text;
+{
+    time_t now;
+    struct tm *t;
+    int y, m, d;
+    int ret;
+
+    now = time((time_t *)NULL);
+    t = localtime(&now);
+    y = 1900+t->tm_year;
+    m = t->tm_mon+1;
+    d = t->tm_mday;
+    if(type == 1) {
+	sscanf(text, "---%d", &d);
+    } else if(type == 2) {
+	sscanf(text, "--%d-%d", &m, &d);
+    } else {
+	sscanf(text, "%d-%d-%d", &y, &m, &d);
+	if(y < 70) {
+	    y += 2000;
+	} else if(y < 100) {
+	    y += 1900;
+	}
+    }
+    ret = QUIT;
+    if(y < 1000 || y > 9999) {
+	yyerror("invalid year");
+    } else if(m < 1 || m > 12) {
+	yyerror("invalid month");
+    } else if(d < 1 || d > 31) {
+	yyerror("invalid day");
+    } else {
+	yylval.strval = alloc(DATE_ALLOC_SIZE);
+	ap_snprintf(yylval.strval, DATE_ALLOC_SIZE, "%04d-%02d-%02d", y, m, d);
+	ret = DATE;
+    }
+    return ret;
 }
 
 int yywrap() {
