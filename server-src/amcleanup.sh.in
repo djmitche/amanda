@@ -39,7 +39,8 @@ confdir=@CONFIG_DIR@
 PATH=$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
 export PATH
 
-if test "@USE_VERSION_SUFFIXES" = yes; then
+USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
+if test "$USE_VERSION_SUFFIXES" = yes; then
 	SUF=-@VERSION@
 else
 	SUF=
