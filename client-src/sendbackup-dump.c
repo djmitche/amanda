@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.56 1998/03/12 07:42:42 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.57 1998/03/14 11:59:27 amcore Exp $
  *
  * send backup data using BSD dump
  */
@@ -85,6 +85,9 @@ static regex_t re_table[] = {
 
   { DMP_SIZE, "vxdump: vxdump: [0-9][0-9]* tape blocks", 1024},
 		/* HPUX 10.20 and above vxdump */
+
+  { DMP_SIZE, "vxdump: vxdump: [0-9][0-9]* blocks", 1024},
+		/* UnixWare vxdump */
 
   { DMP_SIZE, "   VXDUMP: [0-9][0-9]* blocks",                            512},
 		/* SINIX vxdump */

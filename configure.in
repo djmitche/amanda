@@ -1016,6 +1016,9 @@ case "$target" in
 			AC_DEFINE(STATFS_ULTRIX)
 			AC_DEFINE(DUMP_RETURNS_1)
 			;;
+  *-sysv4.2uw2*)
+			AC_DEFINE(UWARE_TAPEIO)
+			;;
   *-sco3.2v5*)
 			AC_DEFINE(XENIX_TAPEIO)
 			AC_DEFINE(STATFS_SCO_OS5)
