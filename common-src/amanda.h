@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.40.2.11 1998/03/18 10:01:05 amcore Exp $
+ * $Id: amanda.h,v 1.40.2.12 1998/04/08 16:26:04 amcore Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -395,13 +395,13 @@ extern char  *agets	      P((FILE *file));
 extern char  *areads	      P((int fd));
 
 /*
- * afree(ptr) -- if allocated, release space and set ptr to NULL.
+ * amfree(ptr) -- if allocated, release space and set ptr to NULL.
  *
  * In general, this should be called instead of just free(), unless
  * the very next source line sets the pointer to a new value.
  */
 
-#define	afree(ptr) do {							\
+#define	amfree(ptr) do {							\
     if(ptr) {								\
 	free(ptr);							\
 	(ptr) = NULL;							\
@@ -410,7 +410,7 @@ extern char  *areads	      P((int fd));
 
 #define strappend(s1,s2) do {						\
     char *t = stralloc2((s1),(s2));					\
-    afree(s1);								\
+    amfree(s1);								\
     (s1) = t;								\
 } while(0)
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.26.2.4 1998/03/02 04:54:18 amcore Exp $
+ * $Id: driver.c,v 1.26.2.5 1998/04/08 16:26:51 amcore Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -162,7 +162,7 @@ char **main_argv;
     if(read_conffile(CONFFILE_NAME))
 	error("could not read amanda config file\n");
 
-    afree(datestamp);
+    amfree(datestamp);
     datestamp = construct_datestamp();
     log(L_START,"date %s", datestamp);
 
@@ -219,7 +219,7 @@ char **main_argv;
 	    mkdir(newdir, 0770);
 	}
     }
-    afree(newdir);
+    amfree(newdir);
 
     if(inparallel > MAX_DUMPERS) inparallel = MAX_DUMPERS;
 
@@ -326,7 +326,7 @@ fflush(stdout);
 		    newdir, strerror(errno));
 	}
     }
-    afree(newdir);
+    amfree(newdir);
 
     printf("driver: FINISHED time %s\n", walltime_str(curclock()));
     fflush(stdout);

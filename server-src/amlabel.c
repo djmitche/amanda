@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlabel.c,v 1.7 1998/01/02 18:48:20 jrj Exp $
+ * $Id: amlabel.c,v 1.7.2.1 1998/04/08 16:26:39 amcore Exp $
  *
  * write an Amanda label on a tape
  */
@@ -137,8 +137,8 @@ char **argv;
 	error(errstr);
     }
 
-    afree(outslot);
-    afree(tapename);
+    amfree(outslot);
+    amfree(tapename);
 
     printf(", done.\n");
     return 0;

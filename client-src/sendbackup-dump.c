@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.44.2.8 1998/03/25 19:39:25 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.44.2.9 1998/04/08 16:25:54 amcore Exp $
  *
  * send backup data using BSD dump
  */
@@ -333,10 +333,10 @@ char *dumpdate;
 			"backup", dumpkeys, "-", device, (char *)0);
 #endif							/* } */
 
-    afree(dumpkeys);
-    afree(device);
-    afree(cmd);
-    afree(indexcmd);
+    amfree(dumpkeys);
+    amfree(device);
+    amfree(cmd);
+    amfree(indexcmd);
 
     /* close the write ends of the pipes */
 

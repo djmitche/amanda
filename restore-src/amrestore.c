@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.17.2.1 1998/02/22 02:08:16 amcore Exp $
+ * $Id: amrestore.c,v 1.17.2.2 1998/04/08 16:26:29 amcore Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -198,7 +198,7 @@ int isafile;
 
 	if((dest = creat(filename, CREAT_MODE)) < 0)
 	    error("could not create output file: %s", strerror(errno));
-	afree(filename_ext);
+	amfree(filename_ext);
     }
 
     out = dest;
@@ -408,7 +408,7 @@ char **argv;
     "%s: WARNING: not at start of tape, file numbers will be offset\n", pname);
 
     while(file.type == F_TAPESTART || file.type == F_DUMPFILE) {
-	afree(filename);
+	amfree(filename);
 	filename = make_filename(&file);
 	if(disk_match(&file,hostname,diskname) != 0) {
 	    fprintf(stderr, "%s: %3d: restoring %s\n", 

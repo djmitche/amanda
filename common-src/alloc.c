@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: alloc.c,v 1.11 1998/01/14 23:48:46 george Exp $
+ * $Id: alloc.c,v 1.11.2.1 1998/04/08 16:26:03 amcore Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -55,7 +55,7 @@ void *newalloc(old, size)
 void *old;
 int size;
 {
-    afree(old);
+    amfree(old);
     return alloc(size);
 }
 
@@ -155,7 +155,7 @@ char *newstralloc(oldstr, newstr)
 char *oldstr;
 char *newstr;
 {
-    afree(oldstr);
+    amfree(oldstr);
     return stralloc(newstr);
 }
 
@@ -168,7 +168,7 @@ arglist_function1(char *newvstralloc, char *, oldstr, char *, newstr)
     va_list argp;
     char *result;
 
-    afree(oldstr);
+    amfree(oldstr);
     arglist_start(argp, newstr);
     result = internal_vstralloc(newstr, argp);
     arglist_end(argp);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getfsent.c,v 1.11.2.6 1998/03/22 20:26:03 amcore Exp $
+ * $Id: getfsent.c,v 1.11.2.7 1998/04/08 16:25:51 amcore Exp $
  *
  * generic version of code to read fstab
  */
@@ -214,7 +214,7 @@ generic_fsent_t *fsent;
     char *s;
     int ch;
 
-    afree(cp);
+    amfree(cp);
     for (; (cp = agets(fstabf)) != NULL; free(cp)) {
 	fsent->fsname = strtok(cp, " \t");
 	if ( fsent->fsname && *fsent->fsname != '#' )
@@ -430,12 +430,12 @@ generic_fsent_t *fsent;
     fullname = newstralloc2(fullname, RDEV_PREFIX, name);
     if (stat(fullname, &stats[2]) == -1)
       stats[2].st_dev = -1;
-    afree(fullname);
+    amfree(fullname);
   }
   else if (stat((rdev = dev2rdev(name)), &stats[1]) == -1)
     stats[1].st_dev = -1;
 
-  afree(rdev);
+  amfree(rdev);
 
   if (!open_fstab())
     return 0;
@@ -460,7 +460,7 @@ generic_fsent_t *fsent;
       break;
     }
   }
-  afree(rdev);
+  amfree(rdev);
   close_fstab();
   return rc;
 }

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.25.2.3 1998/03/01 23:36:01 amcore Exp $
+ * $Id: amindexd.c,v 1.25.2.4 1998/04/08 16:26:37 amcore Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -94,10 +94,10 @@ REMOVE_ITEM *remove;
     while(remove) {
 	dbprintf(("Removing index file: %s\n", remove->filename));
 	unlink(remove->filename);
-	afree(remove->filename);
+	amfree(remove->filename);
 	prev = remove;
 	remove = remove->next;
-	afree(prev);
+	amfree(prev);
     }
     return remove;
 }
@@ -134,8 +134,8 @@ char *filename_gz;
 			NULL);
 	dbprintf(("Uncompress command: %s\n",cmd));
 	if (system(cmd)!=0) {
-	    afree(filename);
-	    afree(cmd);
+	    amfree(filename);
+	    amfree(cmd);
 	    return NULL;
 	}
 
@@ -145,13 +145,13 @@ char *filename_gz;
 	remove_file->next = uncompress_remove;
 	uncompress_remove = remove_file;
     } else if(!S_ISREG((stat_filename.st_mode))) {
-	    afree(filename);
-	    afree(cmd);
+	    amfree(filename);
+	    amfree(cmd);
 	    return NULL;
     } else {
 	/* already uncompressed */
     }
-    afree(cmd);
+    amfree(cmd);
     return filename;
 }
 
@@ -181,12 +181,12 @@ int  recursive;
     filename_gz=getindexfname(dump_hostname, disk_name, dump_item->date,
 			      dump_item->level);
     if((filename = uncompress_file(filename_gz)) == NULL) {
-	afree(dir_slash);
+	amfree(dir_slash);
 	return -1;
     }
 
     if((fp = fopen(filename,"r"))==0) {
-	afree(dir_slash);
+	amfree(dir_slash);
 	return -1;
     }
 
@@ -208,10 +208,10 @@ int  recursive;
 	    }
 	}
     }
-    afree(old_line);
-    afree(line);
-    afree(filename);
-    afree(dir_slash);
+    amfree(old_line);
+    amfree(line);
+    amfree(filename);
+    amfree(dir_slash);
     return 0;
 }
 
@@ -393,10 +393,10 @@ char *config;
     if (chdir(conf_dir) == -1)
     {
 	reply(501, "Couldn't cd into config dir.  Misconfiguration?");
-	afree(conf_dir);
+	amfree(conf_dir);
 	return -1;
     }
-    afree(conf_dir);
+    amfree(conf_dir);
 
     /* read conffile */
     if (read_conffile(CONFFILE_NAME))
@@ -452,10 +452,10 @@ int build_disk_table P((void))
     if ((fp = popen(cmd, "r")) == NULL)
     {
 	reply(599, "System error %d", errno);
-	afree(cmd);
+	amfree(cmd);
 	return -1;
     }
-    afree(cmd);
+    amfree(cmd);
     clear_list();
     for(; (line = agets(fp)) != NULL; free(line)) {
 	if (first_line++ == 0) {
@@ -613,25 +613,25 @@ char *dir;
     {
 	filename_gz=getindexfname(dump_hostname, disk_name,
 				  item->date, item->level);
-	afree(filename);
+	amfree(filename);
 	if((filename = uncompress_file(filename_gz)) == NULL) {
 	    reply(599, "System error %d", errno);
-	    afree(ldir);
+	    amfree(ldir);
 	    return -1;
 	}
 	dbprintf(("f %s\n", filename));
 	if ((fp = fopen(filename, "r")) == NULL) {
 	    reply(599, "System error %d", errno);
-	    afree(filename);
-	    afree(ldir);
+	    amfree(filename);
+	    amfree(ldir);
 	    return -1;
 	}
 	for(; (line = agets(fp)) != NULL; free(line)) {
 	    if (strncmp(line, ldir, ldir_len) != 0) {
 		continue;			/* not found yet */
 	    }
-	    afree(filename);
-	    afree(ldir);
+	    amfree(filename);
+	    amfree(ldir);
 	    afclose(fp);
 	    return 0;
 	}
@@ -644,8 +644,8 @@ char *dir;
 	} while ((item != NULL) && (item->level >= last_level));
     } while (item != NULL);
 
-    afree(filename);
-    afree(ldir);
+    amfree(filename);
+    amfree(ldir);
     reply(500, "\"%s\" is an invalid directory", dir);
     return -1;
 }
@@ -841,7 +841,7 @@ char **argv;
 	argv++;
     }
 
-    afree(config);
+    amfree(config);
     if (argc > 0) {
 	config = newstralloc(config, *argv);
 	argc--;
@@ -901,9 +901,9 @@ char **argv;
     s[-1] = ch;
 
     /* clear these so we can detect when the have not been set by the client */
-    afree(dump_hostname);
-    afree(disk_name);
-    afree(target_date);
+    amfree(dump_hostname);
+    amfree(disk_name);
+    amfree(target_date);
 
     if (config != NULL && is_config_valid(config) != -1) return 1;
 
@@ -914,7 +914,7 @@ char **argv;
     while (1)
     {
 	/* get a line from the client */
-	afree(line);
+	amfree(line);
 	while(1) {
 	    if((part = agets(stdin)) == NULL) {
 		if(errno != 0) {
@@ -928,15 +928,15 @@ char **argv;
 		    dbprintf(("? %s\n", line));
 		    dbprintf(("-----\n"));
 		}
-		afree(line);
-		afree(part);
+		amfree(line);
+		amfree(part);
 		uncompress_remove = remove_files(uncompress_remove);
 		dbclose();
 		return 1;		/* they hung up? */
 	    }
 	    if(line) {
 		strappend(line, part);
-		afree(part);
+		amfree(part);
 	    } else {
 		line = part;
 		part = NULL;
@@ -988,7 +988,7 @@ char **argv;
 	    }
 	}
 
-	afree(errstr);
+	amfree(errstr);
 	if (!user_validated && strcmp(cmd, "SECURITY") == 0 && arg) {
 	    user_validated = security_ok(&his_addr, arg, 0, &errstr);
 	    if(user_validated) {
@@ -1014,7 +1014,7 @@ char **argv;
 	    {
 		dump_hostname = newstralloc(dump_hostname, arg);
 		reply(200, "Dump host set to %s.", dump_hostname);
-		afree(disk_name);		/* invalidate any value */
+		amfree(disk_name);		/* invalidate any value */
 	    }
 	    s[-1] = ch;
 	} else if (strcmp(cmd, "DISK") == 0 && arg) {
@@ -1030,8 +1030,8 @@ char **argv;
 	    s[-1] = '\0';
 	    if (is_config_valid(arg) != -1) {
 		config = newstralloc(config, arg);
-		afree(dump_hostname);		/* invalidate any value */
-		afree(disk_name);		/* invalidate any value */
+		amfree(dump_hostname);		/* invalidate any value */
+		amfree(disk_name);		/* invalidate any value */
 		reply(200, "Config set to %s.", config);
 	    }
 	    s[-1] = ch;

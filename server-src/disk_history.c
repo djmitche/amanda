@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: disk_history.c,v 1.5.2.1 1998/02/28 16:53:45 amcore Exp $
+/* $Id: disk_history.c,v 1.5.2.2 1998/04/08 16:26:47 amcore Exp $
  *
  * functions for obtaining backup history
  */
@@ -43,7 +43,7 @@ void clear_list P((void))
     {
 	this = item;
 	item = item->next;
-	afree(this);
+	amfree(this);
     }
     disk_hist = NULL;
 }

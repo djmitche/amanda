@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: changer.c,v 1.7.2.1 1998/03/30 04:51:04 amcore Exp $
+ * $Id: changer.c,v 1.7.2.2 1998/04/08 16:26:43 amcore Exp $
  *
  * interface routines for tape changers
  */
@@ -71,7 +71,7 @@ static int report_bad_resultstr()
     s = vstralloc("badly formed result from changer: ",
 		  "\"", changer_resultstr, "\"",
 		  NULL);
-    afree(changer_resultstr);
+    amfree(changer_resultstr);
     changer_resultstr = s;
     return 2;
 }
@@ -98,7 +98,7 @@ char **rest;
     }
     exitcode = changer_command(changer_cmd);
     if(changer_cmd != cmd) {
-	afree(changer_cmd);
+	amfree(changer_cmd);
     }
     s = changer_resultstr;
     ch = *s++;
@@ -117,7 +117,7 @@ char **rest;
     if(exitcode) {
 	if(ch == '\0') return report_bad_resultstr();
 	result_copy = stralloc(s - 1);
-	afree(changer_resultstr);
+	amfree(changer_resultstr);
 	changer_resultstr = result_copy;
 	return exitcode;
     }
@@ -193,7 +193,7 @@ int (*user_slot) P((int rc, char *slotstr, char *device));
 	    done = user_slot(rc, curslotstr, device);
 	else if(!done)
 	    done = user_slot(0,  curslotstr, device);
-	afree(device);
+	amfree(device);
 
 	checked += 1;
 	slotstr = "next";
@@ -222,8 +222,8 @@ int (*user_slot) P((int rc, char *slotstr, char *device));
     } else if(!done) {
 	done = user_slot(0,  curslotstr, device);
     }
-    afree(curslotstr);
-    afree(device);
+    amfree(curslotstr);
+    amfree(device);
 }
 
 /* ---------------------------- */
@@ -249,7 +249,7 @@ char *cmdstr;
     if((cmdpipe = popen(cmd, "r")) == NULL)
 	error("could not open pipe to \"%s\": %s", cmd, strerror(errno));
 
-    afree(changer_resultstr);
+    amfree(changer_resultstr);
     if((changer_resultstr = agets(cmdpipe)) == NULL) {
 	error("could not read result from \"%s\": %s", cmd, strerror(errno));
     }
@@ -263,7 +263,7 @@ char *cmdstr;
 			   changer_resultstr,
 			   " (got signal ", number, ")",
 			   NULL);
-	afree(changer_resultstr);
+	amfree(changer_resultstr);
 	changer_resultstr = cmd;
 	cmd = NULL;
 	exitcode = 2;
@@ -273,6 +273,6 @@ char *cmdstr;
 
 /* fprintf(stderr, "changer: got exit: %d str: %s\n", exitcode, resultstr); */
 
-    afree(cmd);
+    amfree(cmd);
     return exitcode;
 }

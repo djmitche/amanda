@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: findpass.c,v 1.8 1998/01/14 22:44:08 amcore Exp $
+ * $Id: findpass.c,v 1.8.2.1 1998/04/08 16:25:50 amcore Exp $
  *
  * Support routines for Amanda SAMBA support
  */
@@ -48,7 +48,7 @@ char *disk, **domain;
 
   *domain = NULL;				/* just to be sure */
   if ( (fp = fopen("/etc/amandapass", "r")) ) {
-    afree(buffer);
+    amfree(buffer);
     for (; (buffer = agets(fp)) != NULL; free(buffer)) {
       s = buffer;
       ch = *s++;
@@ -105,7 +105,7 @@ int shell;
   s = buffer;
   while ((ch = *disk++) != '\0') {
     if (s >= buffer+buffer_size-2) {		/* room for escape */
-      afree(buffer);				/* should never happen */
+      amfree(buffer);				/* should never happen */
       return NULL;				/* buffer not big enough */
     }
     if (ch == '/') {

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: protocol.c,v 1.19.2.1 1998/01/30 23:45:25 martinea Exp $
+ * $Id: protocol.c,v 1.19.2.2 1998/04/08 16:26:13 amcore Exp $
  *
  * implements amanda protocol
  */
@@ -388,7 +388,7 @@ char *str;
 				    "expected \"", saved_str, "\",",
 				    " got \"", tmp, "\"",
 				    NULL);
-	afree(tmp);
+	amfree(tmp);
 	longjmp(parse_failed,1);
     }
 }
@@ -558,7 +558,7 @@ char *security, *typestr;
 			security ? "\n" : "",
 			NULL);
     dgram_cat(msg, linebuf);
-    afree(linebuf);
+    amfree(linebuf);
 }
 
 static void send_req(p)
@@ -616,7 +616,7 @@ pkt_t *pkt;
 			"\n", NULL);
 
     dgram_cat(&outmsg, linebuf);
-    afree(linebuf);
+    amfree(linebuf);
 
 #ifdef PROTO_DEBUG
     fprintf(stderr, "time %d: send_ack_repl: len %d: packet:\n----\n%s----\n\n", 

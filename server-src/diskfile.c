@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.20.2.1 1998/04/07 22:53:49 amcore Exp $
+ * $Id: diskfile.c,v 1.20.2.2 1998/04/08 16:26:48 amcore Exp $
  *
  * read disklist file
  */
@@ -208,7 +208,7 @@ static int read_diskline()
     char *s, *fp;
     int ch;
 
-    afree(line);
+    amfree(line);
     for(; (line = agets(diskf)) != NULL; free(line)) {
 	line_num += 1;
 	s = line;
@@ -255,9 +255,9 @@ static int read_diskline()
     skip_whitespace(s, ch);
     if(ch == '\0' || ch == '#') {
 	parserror("disk dumptype expected");
-	if(host == NULL) afree(hostname);
-	afree(disk->name);
-	afree(disk);
+	if(host == NULL) amfree(hostname);
+	amfree(disk->name);
+	amfree(disk);
 	return 1;
     }
     fp = s - 1;
@@ -265,9 +265,9 @@ static int read_diskline()
     s[-1] = '\0';
     if((dtype = lookup_dumptype(upcase(fp))) == NULL) {
 	parserror("undefined dumptype `%s'", fp);
-	if(host == NULL) afree(hostname);
-	afree(disk->name);
-	afree(disk);
+	if(host == NULL) amfree(hostname);
+	amfree(disk->name);
+	amfree(disk);
 	return 1;
     }
     disk->dtype_name	= dtype->name;
@@ -305,9 +305,9 @@ static int read_diskline()
 	s[-1] = '\0';
 	if((netif = lookup_interface(upcase(fp))) == NULL) {
 	    parserror("undefined network interface `%s'", fp);
-	    if(host == NULL) afree(hostname);
-	    afree(disk->name);
-	    afree(disk);
+	    if(host == NULL) amfree(hostname);
+	    amfree(disk->name);
+	    amfree(disk);
 	    return 1;
 	}
     } else {
@@ -409,7 +409,7 @@ disk_t *dp;
     char *exclude_opt2 = "";
     char *exclude_opt3 = "";
 
-    afree(str);
+    amfree(str);
 
     if(dp->auth == AUTH_BSD) {
 	auth_opt = "bsd-auth;";

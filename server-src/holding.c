@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: holding.c,v 1.9.2.2 1998/03/22 20:06:16 amcore Exp $
+ * $Id: holding.c,v 1.9.2.3 1998/04/08 16:27:01 amcore Exp $
  *
  * Functions to access holding disk
  */
@@ -299,7 +299,7 @@ int *level;
     skip_whitespace(s, ch);
     if(ch == '\0') {
 	aclose(fd);
-	afree(datestamp);
+	amfree(datestamp);
 	return 1;
     }
     fp = s - 1;
@@ -311,7 +311,7 @@ int *level;
     skip_whitespace(s, ch);
     if(ch == '\0') {
 	aclose(fd);
-	afree(datestamp);
+	amfree(datestamp);
 	return 1;
     }
     fp = s - 1;
@@ -324,7 +324,7 @@ int *level;
 #define sc "lev"
     if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
 	aclose(fd);
-	afree(datestamp);
+	amfree(datestamp);
 	return 1;
     }
     s += sizeof(sc)-1;
@@ -334,11 +334,11 @@ int *level;
     skip_whitespace(s, ch);
     if(ch == '\0' || sscanf(s - 1, "%d", level) != 1) {
 	aclose(fd);
-	afree(datestamp);
+	amfree(datestamp);
 	return 1;
     }
 
     aclose(fd);
-    afree(datestamp);
+    amfree(datestamp);
     return 0;
 }

@@ -105,7 +105,7 @@ int isempty(fd, slot, nslots)
 
     i = ces.ces_data[slot] & CESTATUS_FULL;
 
-    afree(ces.ces_data);
+    amfree(ces.ces_data);
     return !i;
 }
 
@@ -129,7 +129,7 @@ int find_empty(fd, count)
     i = 0; 
     while ((i < count)&&(ces.ces_data[i] & CESTATUS_FULL))
 	i++;
-    afree(ces.ces_data);
+    amfree(ces.ces_data);
     return i;
 }
 
@@ -152,7 +152,7 @@ int drive_loaded(fd, drivenum)
 
     i = (ces.ces_data[0] & CESTATUS_FULL);
 
-    afree(ces.ces_data);
+    amfree(ces.ces_data);
     return i;
 }
 

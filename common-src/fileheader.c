@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: fileheader.c,v 1.5 1998/01/02 01:05:15 jrj Exp $
+ * $Id: fileheader.c,v 1.5.2.1 1998/04/08 16:26:10 amcore Exp $
  *
  */
 
@@ -299,7 +299,7 @@ int buflen;
 				       "\014\n",	/* ?? */
 				       NULL);
 		      strncat(buffer, line, buflen-strlen(buffer));
-		      afree(line);
+		      amfree(line);
 		      break;
     case F_TAPEEND  : ap_snprintf(buffer, buflen,
 				  "AMANDA: TAPEEND DATE %s\n\014\n",

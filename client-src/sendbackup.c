@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.28.2.8 1998/03/14 07:03:31 amcore Exp $
+ * $Id: sendbackup.c,v 1.28.2.9 1998/04/08 16:25:58 amcore Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -115,7 +115,7 @@ char *str;
 		 * Should not test for R_OK, because the file may be
 		 * readable by root only! */
 		dbprintf(("%s: exclude list file \"%s\" does not exist, ignoring\n", pname, j));
-	        afree(efile);
+	        amfree(efile);
 	    } else
 	        efile = newvstralloc(efile, "--exclude", e, "=", j, NULL);
 	    k[0] = ';';
@@ -243,7 +243,7 @@ char **argv;
 	    host = newstralloc(host, fp);
 	}
 
-	afree(line);
+	amfree(line);
 	if((line = agets(stdin)) == NULL) {
 	    err_extra = "no request after OPTIONS";
 	    goto err;
@@ -516,7 +516,7 @@ amwait_t w;
     if(errorstr) {
 	strappend(errorstr, ", ");
 	strappend(errorstr, thiserr);
-	afree(thiserr);
+	amfree(thiserr);
     } else {
 	errorstr = thiserr;
 	thiserr = NULL;
@@ -690,7 +690,7 @@ int mesgin;
     char *line;
 
     goterror = 0;
-    afree(errorstr);
+    amfree(errorstr);
 
     for(; (line = areads(mesgin)) != NULL; free(line)) {
 	process_dumpline(line);

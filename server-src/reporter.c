@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.16.2.2 1998/03/02 15:51:46 amcore Exp $
+ * $Id: reporter.c,v 1.16.2.3 1998/04/08 16:27:08 amcore Exp $
  *
  * nightly Amanda Report generator
  */
@@ -261,9 +261,9 @@ char **argv;
 			NULL);
 	if((mailf = popen(cmd, "w")) == NULL)
 	    error("could not open pipe to \"%s\": %s", cmd, strerror(errno));
-	afree(cmd);
+	amfree(cmd);
     }
-    afree(subj_str);
+    amfree(subj_str);
 
     if(!got_finish) fputs("*** THE DUMPS DID NOT FINISH PROPERLY!\n\n", mailf);
 
@@ -679,7 +679,7 @@ void handle_start()
 
 	if(tape_labels) {
 	    fp = vstralloc(tape_labels, ", ", label, NULL);
-	    afree(tape_labels);
+	    amfree(tape_labels);
 	    tape_labels = fp;
 	} else {
 	    tape_labels = stralloc(label);
@@ -820,7 +820,7 @@ void handle_note()
 
     str = vstralloc("  ", program_str[curprog], ": ", curstr, NULL);
     addline(&notes, str);
-    afree(str);
+    amfree(str);
 }
 
 
@@ -860,7 +860,7 @@ void handle_error()
     s = vstralloc("  ", program_str[curprog], ": ",
 		  logtype_str[curlog], " ", curstr, NULL);
     addline(&errsum, s);
-    afree(s);
+    amfree(s);
 }
 
 /* ----- */
@@ -947,7 +947,7 @@ void handle_success()
 			" ", "ERROR [not in disklist]",
 			NULL);
 	addline(&errsum, str);
-	afree(str);
+	amfree(str);
 	return;
     }
 
@@ -1000,14 +1000,14 @@ void handle_strange()
 		    " ", "STRANGE",
 		    NULL);
     addline(&errsum, str);
-    afree(str);
+    amfree(str);
 
     addline(&errdet,"");
     str = vstralloc("/-- ", prefix(hostname, diskname, level),
 		    " ", "STRANGE",
 		    NULL);
     addline(&errdet, str);
-    afree(str);
+    amfree(str);
 
     while(contline_next()) {
 	get_logline(logfile);
@@ -1074,7 +1074,7 @@ void handle_failed()
 			" ", "ERROR [not in disklist]",
 			NULL);
 	addline(&errsum, str);
-	afree(str);
+	amfree(str);
     } else {
 	if(data(dp)->result != L_SUCCESS) {
 	    data(dp)->result = L_FAIL;
@@ -1087,7 +1087,7 @@ void handle_failed()
 		    " ", errstr,
 		    NULL);
     addline(&errsum, str);
-    afree(str);
+    amfree(str);
 
     if(curprog == P_DUMPER) {
         addline(&errdet,"");
@@ -1116,7 +1116,7 @@ void generate_missing()
 			    " ", "RESULTS MISSING",
 			    NULL);
 	    addline(&errsum, str);
-	    afree(str);
+	    amfree(str);
 	}
     }
 }

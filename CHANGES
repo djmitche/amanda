@@ -1,5 +1,8 @@
 Version 2.4.0p1
 
+	rename afree to amfree, to work around IRIX 6.4's afree.
+	-oliva, reported Stephan P. Martin <smartin@schlund.de>
+
 	implement `strategy skip' just like `ignore'.
 	-oliva,
 	reported by Michael O'Shaughnessy <mikeo@emg.sms.siemens.com>

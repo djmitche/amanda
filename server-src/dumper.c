@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.46.2.7 1998/02/25 22:02:40 amcore Exp $
+/* $Id: dumper.c,v 1.46.2.8 1998/04/08 16:26:58 amcore Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -229,7 +229,7 @@ char **main_argv;
     interactive = isatty(0);
     pid = getpid();
 
-    afree(datestamp);
+    amfree(datestamp);
     datestamp = construct_datestamp();
 
     service_ports_init();
@@ -366,7 +366,7 @@ static cmd_t getcmd()
 	fflush(stdout);
     }
 
-    afree(line);
+    amfree(line);
     if((line = agets(stdin)) == NULL) {
 	return QUIT;
     }
@@ -613,7 +613,7 @@ int len;
 	}
 	if(msgbuf) {
 	    t = stralloc2(msgbuf, str);
-	    afree(msgbuf);
+	    amfree(msgbuf);
 	    msgbuf = t;
 	} else if(nl == NULL) {
 	    msgbuf = stralloc(str);
@@ -765,7 +765,7 @@ int mesgfd, datafd, indexfd, outfd;
 			      "errfile open \"", errfname, "\": ",
 			      strerror(errno),
 			      NULL);
-	afree(errfname);
+	amfree(errfname);
 	goto failed;
     }
 
@@ -1047,8 +1047,8 @@ int mesgfd, datafd, indexfd, outfd;
 	indexfile[len-4] = '\0';
 	unlink(indexfile);
 	rename(tmpname, indexfile);
-	afree(tmpname);
-	afree(indexfile);
+	amfree(tmpname);
+	amfree(indexfile);
     }
 
     return;
@@ -1245,7 +1245,7 @@ pkt_t *pkt;
 			      "]",
 			      NULL);
 	response_error = 1;
-	afree(optionstr);
+	amfree(optionstr);
 	return;
     }
     mesgfd = stream_client(hostname, mesg_port,
@@ -1259,7 +1259,7 @@ pkt_t *pkt;
 	aclose(datafd);
 	datafd = -1;				/* redundant */
 	response_error = 1;
-	afree(optionstr);
+	amfree(optionstr);
 	return;
     }
 
@@ -1276,7 +1276,7 @@ pkt_t *pkt;
 	    aclose(mesgfd);
 	    datafd = mesgfd = -1;		/* redundant */
 	    response_error = 1;
-	    afree(optionstr);
+	    amfree(optionstr);
 	    return;
 	}
     }
@@ -1292,7 +1292,7 @@ pkt_t *pkt;
 	if (indexfd != -1)
 	    aclose(indexfd);
 	response_error = 1;
-	afree(optionstr);
+	amfree(optionstr);
 	return;
     }
     if(krb4_auth && kerberos_handshake(mesgfd, cred.session) == 0) {
@@ -1303,12 +1303,12 @@ pkt_t *pkt;
 	    aclose(indexfd);
 	aclose(mesgfd);
 	response_error = 1;
-	afree(optionstr);
+	amfree(optionstr);
 	return;
     }
 #endif
     response_error = 0;
-    afree(optionstr);
+    amfree(optionstr);
     return;
 
  request_NAK:
@@ -1316,14 +1316,14 @@ pkt_t *pkt;
 /*  fprintf(stderr, "dumper: got strange NAK: %s", pkt->body); */
     errstr = newstralloc(errstr, "[request NAK]");
     response_error = 2;
-    afree(optionstr);
+    amfree(optionstr);
     return;
 
  bogus_error_packet:
 
     errstr = newstralloc(errstr, "[bogus error packet]");
     response_error = 2;
-    afree(optionstr);
+    amfree(optionstr);
     return;
 
  parse_of_reply_message_failed:
@@ -1331,7 +1331,7 @@ pkt_t *pkt;
     if(nl) *nl = '\n';
     errstr = newstralloc(errstr, "[parse of reply message failed]");
     response_error = 2;
-    afree(optionstr);
+    amfree(optionstr);
     return;
 }
 
@@ -1383,7 +1383,7 @@ int level;
 				      rc_str,
 				      ": ", krb_err_txt[rc],
 				      NULL);
-		afree(req);
+		amfree(req);
 		return 2;
 	    }
 	}
@@ -1395,7 +1395,7 @@ int level;
 				  rc_str,
 				  ": ", krb_err_txt[rc],
 				  NULL);
-	    afree(req);
+	    amfree(req);
 	    return 2;
 	}
     } else

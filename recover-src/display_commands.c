@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: display_commands.c,v 1.8.2.1 1998/03/01 23:35:42 amcore Exp $
+ * $Id: display_commands.c,v 1.8.2.2 1998/04/08 16:26:22 amcore Exp $
  *
  * implements the directory-display related commands in amrecover
  */
@@ -57,7 +57,7 @@ void clear_dir_list P((void))
     {
 	this = dir_list;
 	dir_list = dir_list->next;
-	afree(this);
+	amfree(this);
     } while (dir_list != NULL);
 }
 
@@ -145,33 +145,33 @@ void suck_dir_list_from_server P((void))
 
     cmd = stralloc2("OLSD ", disk_path);
     if (send_command(cmd) == -1) {
-	afree(cmd);
-	afree(disk_path_slash);
+	amfree(cmd);
+	amfree(disk_path_slash);
 	exit(1);
     }
-    afree(cmd);
+    amfree(cmd);
     /* skip preamble */
     if ((i = get_reply_line()) == -1) {
-	afree(disk_path_slash);
+	amfree(disk_path_slash);
 	exit(1);
     }
     if (i == 0)				/* assume something wrong! */
     {
-	afree(disk_path_slash);
+	amfree(disk_path_slash);
 	l = reply_line();
 	printf("%s\n", l);
 	return;
     }
     disk_path_slash_dot = stralloc2(disk_path_slash, ".");
-    afree(cmd);
-    afree(err);
+    amfree(cmd);
+    amfree(err);
     date_undo = tape_undo = dir_undo = NULL;
     /* skip the last line -- duplicate of the preamble */
     while ((i = get_reply_line()) != 0)
     {
 	if (i == -1) {
-	    afree(disk_path_slash_dot);
-	    afree(disk_path_slash);
+	    amfree(disk_path_slash_dot);
+	    amfree(disk_path_slash);
 	    exit(1);
 	}
 	if(err) {
@@ -239,8 +239,8 @@ void suck_dir_list_from_server P((void))
 	}
 	add_dir_list_item(date, level, tape, dir);
     }
-    afree(disk_path_slash_dot);
-    afree(disk_path_slash);
+    amfree(disk_path_slash_dot);
+    amfree(disk_path_slash);
     if(!server_happy()) {
 	puts(reply_line());
     } else if(err) {
@@ -250,7 +250,7 @@ void suck_dir_list_from_server P((void))
 	puts(cmd);
 	clear_dir_list();
     }
-    afree(cmd);
+    amfree(cmd);
 }
 
 

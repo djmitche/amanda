@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.21 1998/01/11 21:19:37 jrj Exp $
+ * $Id: amandad.c,v 1.21.2.1 1998/04/08 16:25:46 amcore Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -259,7 +259,7 @@ char **argv;
     seteuid(getuid());
 #endif /* KRB4_SECURITY */
 
-    afree(errstr);
+    amfree(errstr);
     if(!(servp->flags & NO_AUTH)
        && !security_ok(&in_msg.peer, in_msg.security, in_msg.cksum, &errstr)) {
 	/* XXX log on authlog? */

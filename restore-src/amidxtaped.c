@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: amidxtaped.c,v 1.18.2.1 1998/02/19 09:42:07 amcore Exp $
+/* $Id: amidxtaped.c,v 1.18.2.2 1998/04/08 16:26:28 amcore Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -48,7 +48,7 @@ get_client_line()
     char *part = NULL;
     int len;
 
-    afree(line);
+    amfree(line);
     while(1) {
 	if((part = agets(stdin)) == NULL) {
 	    if(errno != 0) {
@@ -62,15 +62,15 @@ get_client_line()
 		dbprintf(("%s\n", line));
 		dbprintf(("-----\n"));
 	    }
-	    afree(line);
-	    afree(part);
+	    amfree(line);
+	    amfree(part);
 	    dbclose();
 	    exit(1);
 	    /* NOTREACHED */
 	}
 	if(line) {
 	    strappend(line, part);
-	    afree(part);
+	    amfree(part);
 	} else {
 	    line = part;
 	    part = NULL;
@@ -176,7 +176,7 @@ char **argv;
     }
 
     /* do the security thing */
-    afree(buf);
+    amfree(buf);
     buf = stralloc(get_client_line());
     s = buf;
     ch = *s++;
@@ -199,7 +199,7 @@ char **argv;
     }
 
     /* get the number of arguments */
-    afree(buf);
+    amfree(buf);
     buf = stralloc(get_client_line());
     amrestore_nargs = atoi(buf);
     dbprintf(("amrestore_nargs=%d\n", amrestore_nargs));
@@ -303,9 +303,9 @@ char **argv;
 			NULL);
 	dbprintf(("Rewinding tape: %s\n", cmd));
 	system(cmd);
-	afree(cmd);
+	amfree(cmd);
     }
-    afree(tapename);
+    amfree(tapename);
     dbclose();
     return 0;
 }

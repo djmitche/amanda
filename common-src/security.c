@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: security.c,v 1.7.2.3 1998/03/06 03:00:43 amcore Exp $
+ * $Id: security.c,v 1.7.2.4 1998/04/08 16:26:15 amcore Exp $
  *
  * wrapper file for kerberos security
  */
@@ -111,7 +111,7 @@ char **errstr;
 			    "addr ", remotehost, ": ",
 			    "hostname lookup failed",
 			    "]", NULL);
-	afree(remotehost);
+	amfree(remotehost);
 	return 0;
     }
 
@@ -121,7 +121,7 @@ char **errstr;
 			    "hostnames do not match: ",
 			    remotehost, " ", hp->h_name,
 			    "]", NULL);
-	afree(remotehost);
+	amfree(remotehost);
 	return 0;
     }
 
@@ -153,7 +153,7 @@ char **errstr;
 			    " is not in the ip list for ", remotehost,
 			    "]",
 			    NULL);
-	afree(remotehost);
+	amfree(remotehost);
 	return 0;
     }
 
@@ -167,7 +167,7 @@ char **errstr;
 			    "host ", remotehost, ": ",
 			    "port ", number, " not secure",
 			    "]", NULL);
-	afree(remotehost);
+	amfree(remotehost);
 	return 0;
     }
 
@@ -185,7 +185,7 @@ char **errstr;
     if(strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
 	*errstr = bad_bsd;
 	bad_bsd = NULL;
-	afree(remotehost);
+	amfree(remotehost);
 	return 0;
     }
     s += sizeof(sc)-1;
@@ -196,7 +196,7 @@ char **errstr;
     if(ch == '\0') {
 	*errstr = bad_bsd;
 	bad_bsd = NULL;
-	afree(remotehost);
+	amfree(remotehost);
 	return 0;
     }
     fp = s - 1;
@@ -204,7 +204,7 @@ char **errstr;
     s[-1] = '\0';
     remoteuser = stralloc(fp);
     s[-1] = ch;
-    afree(bad_bsd);
+    amfree(bad_bsd);
 
     /* lookup our local user name */
 
@@ -241,9 +241,9 @@ char **errstr;
 			    " from ", remoteuser, "@", remotehost,
 			    "]", NULL);
 	dbprintf(("check failed: %s\n", *errstr));
-	afree(remotehost);
-	afree(localuser);
-	afree(remoteuser);
+	amfree(remotehost);
+	amfree(localuser);
+	amfree(remoteuser);
 	return 0;
     }
 
@@ -251,9 +251,9 @@ char **errstr;
     close(saved_stderr);
     chdir("/");		/* now go someplace where I can't drop core :-) */
     dbprintf(("bsd security check passed\n"));
-    afree(remotehost);
-    afree(localuser);
-    afree(remoteuser);
+    amfree(remotehost);
+    amfree(localuser);
+    amfree(remoteuser);
     return 1;
 #else
     /* We already chdired to ~amandauser */
@@ -263,9 +263,9 @@ char **errstr;
 			    " from ", remoteuser, "@", remotehost,
 			    "]", NULL);
 	dbprintf(("check failed: %s\n", *errstr));
-	afree(remotehost);
-	afree(localuser);
-	afree(remoteuser);
+	amfree(remotehost);
+	amfree(localuser);
+	amfree(remoteuser);
 	return 0;
     }
 
@@ -305,9 +305,9 @@ char **errstr;
     if( amandahostsauth ) {
 	chdir("/");      /* now go someplace where I can't drop core :-) */
 	dbprintf(("amandahosts security check passed\n"));
-	afree(remotehost);
-	afree(localuser);
-	afree(remoteuser);
+	amfree(remotehost);
+	amfree(localuser);
+	amfree(remoteuser);
 	return 1;
     }
 
@@ -317,9 +317,9 @@ char **errstr;
 			"]", NULL);
     dbprintf(("check failed: %s\n", *errstr));
 
-    afree(remotehost);
-    afree(localuser);
-    afree(remoteuser);
+    amfree(remotehost);
+    amfree(localuser);
+    amfree(remoteuser);
     return 0;
 
 #endif

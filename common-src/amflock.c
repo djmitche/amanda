@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflock.c,v 1.14.2.1 1998/01/24 05:50:20 amcore Exp $
+ * $Id: amflock.c,v 1.14.2.2 1998/04/08 16:26:06 amcore Exp $
  *
  * file locking routines, put here to hide the system dependant stuff
  * from the rest of the code
@@ -285,7 +285,7 @@ int op;    /* true to lock; false to unlock */
 		assert(read_lock(lockfile) == mypid);
 
 		(void)delete_lock(lockfile);
-		afree(lockfile);
+		amfree(lockfile);
 		return 0;
 	}
 
@@ -311,9 +311,9 @@ int op;    /* true to lock; false to unlock */
 
 	(void) delete_lock(tlockfile);
 
-	afree(mres);
-	afree(tlockfile);
-	afree(lockfile);
+	amfree(mres);
+	amfree(tlockfile);
+	amfree(lockfile);
 
 	return rc;
 }

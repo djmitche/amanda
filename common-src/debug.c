@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.13.2.1 1998/02/06 18:18:44 jrj Exp $
+ * $Id: debug.c,v 1.13.2.2 1998/04/08 16:26:08 amcore Exp $
  *
  * debug log subroutines
  */
@@ -130,7 +130,7 @@ void debug_open()
 		 pname, debug, (long)getpid(), (long)getuid(),
 		 (long)geteuid(), ctime(&curtime));
     debug = saved_debug;
-    afree(dbfilename);
+    amfree(dbfilename);
 }
 
 void debug_close()

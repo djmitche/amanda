@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtrmidx.c,v 1.15 1998/01/02 18:48:22 jrj Exp $
+ * $Id: amtrmidx.c,v 1.15.2.1 1998/04/08 16:26:42 amcore Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -153,7 +153,7 @@ char **argv;
 	}
     }
 
-    afree(cmd);
+    amfree(cmd);
     dbclose();
 
     return 0;

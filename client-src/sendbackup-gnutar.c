@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.40.2.8 1998/02/22 02:03:48 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.40.2.9 1998/04/08 16:25:56 amcore Exp $
  *
  * send backup data using GNU tar
  */
@@ -157,7 +157,7 @@ char *dumpdate;
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
 #ifdef SAMBA_CLIENT
     if (disk[0] == '/' && disk[1]=='/')
-      afree(incrname);
+      amfree(incrname);
     else
 #endif
     {
@@ -215,7 +215,7 @@ notincremental:
 	    }
 
 	    if (in == NULL) {
-	      afree(inputname);
+	      amfree(inputname);
 	      goto notincremental;
 	    }
 
@@ -244,9 +244,9 @@ notincremental:
 	    dbprintf(("%s: doing level %d dump as listed-incremental from %s, updating to %s\n",
 		      pname, level, inputname, incrname));
 
-	    afree(inputname);
+	    amfree(inputname);
 	}
-	afree(basename);
+	amfree(basename);
     }
 #endif
 
@@ -292,10 +292,10 @@ notincremental:
 	}
 	if ((sharename = makesharename(disk, 0)) == 0) {
 	    memset(pass, '\0', strlen(pass));
-	    afree(pass);
+	    amfree(pass);
 	    if(domain) {
 		memset(domain, '\0', strlen(domain));
-		afree(domain);
+		amfree(domain);
 	    }
 	    error("[can't make share name of %s]", disk);
 	}
@@ -336,12 +336,12 @@ notincremental:
 			    domain ? "-" : (char *)0,
 			    (char *) 0);
 	memset(pass, '\0', strlen(pass));
-	afree(pass);
+	amfree(pass);
 	if(domain) {
 	    memset(domain, '\0', strlen(domain));
-	    afree(domain);
+	    amfree(domain);
 	}
-	afree(sharename);
+	amfree(sharename);
     } else {
 #endif
       cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
@@ -425,14 +425,14 @@ notincremental:
 #endif
 	dbprintf((format_buf, dumppid, cmd, dirname, incr,
 		  efile ? efile : "."));
-	afree(format_buf);
+	amfree(format_buf);
       }
 #ifdef SAMBA_CLIENT
     }
 #endif
 
-    afree(cmd);
-    afree(indexcmd);
+    amfree(cmd);
+    amfree(indexcmd);
 
     /* close the write ends of the pipes */
 
@@ -457,8 +457,8 @@ int goterror;
         if (rename(incrname, nodotnew))
             error("error [renaming %s to %s: %s]", 
 		  incrname, nodotnew, strerror(errno));
-	afree(nodotnew);
-	afree(incrname);
+	amfree(nodotnew);
+	amfree(incrname);
       }
 #endif
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.61.2.12 1998/04/01 09:31:48 amcore Exp $
+ * $Id: sendsize.c,v 1.61.2.13 1998/04/08 16:26:00 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -213,7 +213,7 @@ char **argv;
 	s[-1] = '\0';
 
 	spindle = 0;				/* default spindle */
-	afree(exclude);				/* default is no exclude */
+	amfree(exclude);				/* default is no exclude */
 
 	skip_whitespace(s, ch);			/* find the spindle */
 	if(ch != '\0') {
@@ -407,9 +407,9 @@ disk_estimates_t *est;
 	exit(1);
     }
     for(i = 0; i < argc; i++) {
-	afree(argv[i]);
+	amfree(argv[i]);
     }
-    afree(cmd);
+    amfree(cmd);
 
     wait(NULL);
 }
@@ -643,7 +643,7 @@ int level;
 	dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n",
 		  pname, cmd, name, dumpkeys, device));
 # endif							/* } */
-	afree(name);
+	amfree(name);
     }
     else
 #endif							/* } */
@@ -654,9 +654,9 @@ int level;
 
     switch(dumppid = fork()) {
     case -1:
-	afree(dumpkeys);
-	afree(cmd);
-	afree(device);
+	amfree(dumpkeys);
+	amfree(cmd);
+	amfree(device);
 	return -1;
     default:
 	break; 
@@ -716,8 +716,8 @@ int level;
 	}
     }
 
-    afree(dumpkeys);
-    afree(cmd);
+    amfree(dumpkeys);
+    amfree(cmd);
 
     aclose(pipefd[1]);
     dumpout = fdopen(pipefd[0],"r");
@@ -726,14 +726,14 @@ int level;
 	dbprintf(("%s\n",line));
 	size = handle_dumpline(line);
 	if(size > -1) {
-	    afree(line);
+	    amfree(line);
 	    if((line = agets(dumpout)) != NULL) {
 		dbprintf(("%s\n",line));
 	    }
 	    break;
 	}
     }
-    afree(line);
+    amfree(line);
 
     dbprintf((".....\n"));
     if(size == -1)
@@ -772,7 +772,7 @@ int level;
     aclose(nullfd);
     afclose(dumpout);
 
-    afree(device);
+    amfree(device);
 
     return size;
 }
@@ -793,10 +793,10 @@ int level;
     }
     if ((sharename = makesharename(disk, 0)) == NULL) {
 	memset(pass, '\0', strlen(pass));
-	afree(pass);
+	amfree(pass);
 	if(domain) {
 	    memset(domain, '\0', strlen(domain));
-	    afree(domain);
+	    amfree(domain);
 	}
 	error("[sendsize : can't make share name of %s]", disk);
     }
@@ -815,15 +815,15 @@ int level;
     switch(dumppid = fork()) {
     case -1:
 	memset(pass, '\0', strlen(pass));
-	afree(pass);
+	amfree(pass);
 	if(domain) {
 	    memset(domain, '\0', strlen(domain));
-	    afree(domain);
+	    amfree(domain);
 	}
-	afree(sharename);
+	amfree(sharename);
 	return -1;
     default:
-	afree(sharename);
+	amfree(sharename);
 	break; 
     case 0:   /* child process */
 	dup2(nullfd, 0);
@@ -843,22 +843,22 @@ int level;
 	       safe_env());
 	/* should not get here */
 	memset(pass, '\0', strlen(pass));
-	afree(pass);
+	amfree(pass);
 	if(domain) {
 	    memset(domain, '\0', strlen(domain));
-	    afree(domain);
+	    amfree(domain);
 	}
-	afree(sharename);
+	amfree(sharename);
 	exit(1);
 	/* NOTREACHED */
     }
     memset(pass, '\0', strlen(pass));
-    afree(pass);
+    amfree(pass);
     if(domain) {
 	memset(domain, '\0', strlen(domain));
-	afree(domain);
+	amfree(domain);
     }
-    afree(sharename);
+    amfree(sharename);
     aclose(pipefd[1]);
     dumpout = fdopen(pipefd[0],"r");
 
@@ -866,14 +866,14 @@ int level;
 	dbprintf(("%s\n",line));
 	size = handle_dumpline(line);
 	if(size > -1) {
-	    afree(line);
+	    amfree(line);
 	    if((line = agets(dumpout)) != NULL) {
 		dbprintf(("%s",line));
 	    }
 	    break;
 	}
     }
-    afree(line);
+    amfree(line);
 
     dbprintf((".....\n"));
     if(size == -1)
@@ -945,16 +945,16 @@ notincremental:
 	out = fopen(incrname, "w");
 	if (out == NULL) {
 	  dbprintf(("error [opening %s: %s]\n", incrname, strerror(errno)));
-	  afree(incrname);
-	  afree(basename);
+	  amfree(incrname);
+	  amfree(basename);
 	  return -1;
 	}
 
 	if (fclose(out) == EOF) {
 	  dbprintf(("error [closing %s: %s]\n", incrname, strerror(errno)));
 	  out = NULL;
-	  afree(incrname);
-	  afree(basename);
+	  amfree(incrname);
+	  amfree(basename);
 	  return -1;
 	}
 	out = NULL;
@@ -972,16 +972,16 @@ notincremental:
 	}
 
 	if (in == NULL) {
-	  afree(inputname);
+	  amfree(inputname);
 	  goto notincremental;
 	}
 
 	out = fopen(incrname, "w");
 	if (out == NULL) {
 	  dbprintf(("error [opening %s: %s]\n", incrname, strerror(errno)));
-	  afree(incrname);
-	  afree(basename);
-	  afree(inputname);
+	  amfree(incrname);
+	  amfree(basename);
+	  amfree(inputname);
 	  return -1;
 	}
 
@@ -989,27 +989,27 @@ notincremental:
 	  if (fputs(buf, out) == EOF) {
 	    dbprintf(("error [writing to %s: %s]\n", incrname,
 		      strerror(errno)));
-	    afree(incrname);
-	    afree(basename);
-	    afree(inputname);
+	    amfree(incrname);
+	    amfree(basename);
+	    amfree(inputname);
 	    return -1;
 	  }
 
 	if (ferror(in)) {
 	  dbprintf(("error [reading from %s: %s]\n", inputname,
 		    strerror(errno)));
-	  afree(incrname);
-	  afree(basename);
-	  afree(inputname);
+	  amfree(incrname);
+	  amfree(basename);
+	  amfree(inputname);
 	  return -1;
 	}
 
 	if (fclose(in) == EOF) {
 	  dbprintf(("error [closing %s: %s]\n", inputname, strerror(errno)));
 	  in = NULL;
-	  afree(incrname);
-	  afree(basename);
-	  afree(inputname);
+	  amfree(incrname);
+	  amfree(basename);
+	  amfree(inputname);
 	  return -1;
 	}
 	in = NULL;
@@ -1017,16 +1017,16 @@ notincremental:
 	if (fclose(out) == EOF) {
 	  dbprintf(("error [closing %s: %s]\n", incrname, strerror(errno)));
 	  out = NULL;
-	  afree(incrname);
-	  afree(basename);
-	  afree(inputname);
+	  amfree(incrname);
+	  amfree(basename);
+	  amfree(inputname);
 	  return -1;
 	}
 	out = NULL;
 
-	afree(inputname);
+	amfree(inputname);
       }
-      afree(basename);
+      amfree(basename);
     }
 #endif
 
@@ -1041,7 +1041,7 @@ notincremental:
     cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
 
     if (exclude_spec == NULL) {
-	afree(exclude_arg);
+	amfree(exclude_arg);
 	/* do nothing */
 #define sc "--exclude-list="
     } else if (strncmp(exclude_spec, sc, sizeof(sc)-1)==0) {
@@ -1050,7 +1050,7 @@ notincremental:
 	    exclude_arg = newstralloc2(exclude_arg, "--exclude-from=", file);
 	else {
 	    dbprintf(("%s: missing exclude list file \"%s\" discarded\n", pname, file));
-	    afree(exclude_arg);
+	    amfree(exclude_arg);
 	}
 #undef sc
 #define sc "--exclude-file="
@@ -1091,7 +1091,7 @@ notincremental:
 
     switch(dumppid = fork()) {
     case -1:
-      afree(cmd);
+      amfree(cmd);
       return -1;
     default:
       break;
@@ -1130,8 +1130,8 @@ notincremental:
       exit(1);
       break;
     }
-    afree(exclude_arg);
-    afree(cmd);
+    amfree(exclude_arg);
+    amfree(cmd);
 
     aclose(pipefd[1]);
     dumpout = fdopen(pipefd[0],"r");
@@ -1140,14 +1140,14 @@ notincremental:
 	dbprintf(("%s\n",line));
 	size = handle_dumpline(line);
 	if(size > -1) {
-	    afree(line);
+	    amfree(line);
 	    if((line = agets(dumpout)) != NULL) {
 		dbprintf(("%s\n",line));
 	    }
 	    break;
 	}
     }
-    afree(line);
+    amfree(line);
 
     dbprintf((".....\n"));
     if(size == -1)
@@ -1158,7 +1158,7 @@ notincremental:
     kill(-dumppid, SIGTERM);
 
     unlink(incrname);
-    afree(incrname);
+    amfree(incrname);
 
     wait(NULL);
 

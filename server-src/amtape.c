@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtape.c,v 1.12 1998/01/02 18:48:21 jrj Exp $
+ * $Id: amtape.c,v 1.12.2.1 1998/04/08 16:26:40 amcore Exp $
  *
  * tape changer interface program
  */
@@ -147,7 +147,7 @@ char **argv;
     default:
 	error("could not reset changer: %s", changer_resultstr);
     }
-    afree(slotstr);
+    amfree(slotstr);
 }
 
 
@@ -164,7 +164,7 @@ char **argv;
 	fprintf(stderr, "%s: slot %s not ejected: %s\n",
 		pname, slotstr ? slotstr : "??", changer_resultstr);
     }
-    afree(slotstr);
+    amfree(slotstr);
 }
 
 
@@ -185,8 +185,8 @@ char **argv;
 
     fprintf(stderr, "%s: changed to slot %s on %s\n",
 	    pname, slotstr, devicename);
-    afree(slotstr);
-    afree(devicename);
+    amfree(slotstr);
+    amfree(devicename);
 }
 
 
@@ -408,8 +408,8 @@ char **argv;
 	    fprintf(stderr, "%s: could not load labelstr match in slot %s: %s\n",
 		    pname, first_match, changer_resultstr);
 	}
-	afree(device);
-	afree(slotstr);
+	amfree(device);
+	amfree(slotstr);
     }
     else if(!found) {
 	fprintf(stderr, "%s: could not find ", pname);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapefile.c,v 1.9 1998/01/12 22:32:57 blair Exp $
+ * $Id: tapefile.c,v 1.9.2.1 1998/04/08 16:27:10 amcore Exp $
  *
  * routines to read and write the amanda active tape list
  */
@@ -54,7 +54,7 @@ char *tapefile;
     if((tapef = fopen(tapefile,"r")) != NULL) {
 	while((line = agets(tapef)) != NULL) {
 	    tp = parse_tapeline(line);
-	    afree(line);
+	    amfree(line);
 	    if(tp == NULL) return 1;
 	    tape_list = insert(tape_list, tp);
 	}
@@ -212,7 +212,7 @@ char *line;
 
     skip_whitespace(s, ch);
     if (ch == '\0' || sscanf(s - 1, "%d", &tp->datestamp) != 1) {
-	afree(tp);
+	amfree(tp);
 	return NULL;
     }
     skip_integer(s, ch);

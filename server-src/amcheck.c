@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.30.2.4 1998/04/01 09:50:06 amcore Exp $
+ * $Id: amcheck.c,v 1.30.2.5 1998/04/08 16:26:34 amcore Exp $
  *
  * checks for common problems in server and clients
  */
@@ -230,7 +230,7 @@ char **argv;
 		    error("write main file: %s", strerror(errno));
 		}
 	    }
-	    afree(msg);
+	    amfree(msg);
 	}
     }
 
@@ -277,7 +277,7 @@ char **argv;
 			NULL);
 	if(system(cmd) != 0)
 	    error("mail command failed: %s", cmd);
-	afree(cmd);
+	amfree(cmd);
     }
     if(mailout)
 	unlink(mainfname);
@@ -381,7 +381,7 @@ char *taper_scan()
 	searchlabel = first_match_label;
     else if(!found && got_match) {
 	searchlabel = first_match_label;
-	afree(found_device);
+	amfree(found_device);
 	if(changer_loadslot(first_match, &outslot, &found_device) == 0) {
 	    found = 1;
 	}
@@ -396,7 +396,7 @@ char *taper_scan()
 					    "new tape not found in rack");
 	}
     }
-    afree(outslot);
+    amfree(outslot);
 
     return found ? found_device : NULL;
 }
@@ -489,7 +489,7 @@ int fd;
 	    logbad = 1;
 	}
 
-	afree(logfile);
+	amfree(logfile);
     }
 
     /* check that the tape is a valid amanda tape */
@@ -652,7 +652,7 @@ int fd;
 			  optionstr(dp),
 			  "\n",
 			  NULL);
-	    afree(req);
+	    amfree(req);
 	    req = t;
 	}
 	hostcount++;

@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.21.2.2 1998/03/08 08:11:19 amcore Exp $
+/* $Id: taper.c,v 1.21.2.3 1998/04/08 16:27:12 amcore Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -288,16 +288,16 @@ int rdpipe, wrpipe;
 		putresult("TAPE-ERROR %s %s\n", handle,
 			  squote("[port connect timeout]"));
 		aclose(data_socket);
-		afree(handle);
-		afree(hostname);
-		afree(diskname);
+		amfree(handle);
+		amfree(hostname);
+		amfree(diskname);
 		break;
 	    }
 	    read_file(fd, handle, hostname, diskname, level, 1);
 	    aclose(data_socket);
-	    afree(handle);
-	    afree(hostname);
-	    afree(diskname);
+	    amfree(handle);
+	    amfree(hostname);
+	    amfree(diskname);
 	    break;
 
 	case FILE_WRITE:
@@ -317,15 +317,15 @@ int rdpipe, wrpipe;
 	    if((fd = open(argv[3], O_RDONLY)) == -1) {
 		putresult("TAPE-ERROR %s %s\n", handle,
 			  squotef("[%s]", strerror(errno)));
-		afree(handle);
-		afree(hostname);
-		afree(diskname);
+		amfree(handle);
+		amfree(hostname);
+		amfree(diskname);
 		break;
 	    }
 	    read_file(fd, handle, hostname, diskname, level, 0);
-	    afree(handle);
-	    afree(hostname);
-	    afree(diskname);
+	    amfree(handle);
+	    amfree(hostname);
+	    amfree(diskname);
 	    break;
 
 	case QUIT:
@@ -350,7 +350,7 @@ int rdpipe, wrpipe;
 	default:
 	    handle = stralloc(argv[1]);
 	    putresult("BAD-COMMAND %s\n", squote(handle));
-	    afree(handle);
+	    amfree(handle);
 	    break;
 	}
     }
@@ -406,7 +406,7 @@ buffer_t *bp;
 
     str = vstralloc("taper: ", pn, ": [buf ", bt, ":=", status, "]", NULL);
     dumpbufs(str);
-    afree(str);
+    amfree(str);
 }
 
 
@@ -942,7 +942,7 @@ char ***argvp;
 	fflush(stderr);
     }
 
-    afree(line);
+    amfree(line);
     if((line = agets(stdin)) == NULL) return QUIT;
 
     argc = split(line, argv, sizeof(argv) / sizeof(argv[0]), " ");
@@ -1239,7 +1239,7 @@ int label_tape()
     }
 
     if((result = tape_rdlabel(tapedev, &olddatestamp, &label)) != NULL) {
-	afree(olddatestamp);
+	amfree(olddatestamp);
 	errstr = newstralloc(errstr, result);
 	return 0;
     }
@@ -1253,7 +1253,7 @@ int label_tape()
 	errstr = newvstralloc(errstr,
 			      "cannot overwrite active tape ", label,
 			      NULL);
-	afree(olddatestamp);
+	amfree(olddatestamp);
 	return 0;
     }
 
@@ -1262,7 +1262,7 @@ int label_tape()
 			      "label ", label,
 			      " doesn\'t match labelstr \"", labelstr, "\"",
 			      NULL);
-	afree(olddatestamp);
+	amfree(olddatestamp);
 	return 0;
     }
 
@@ -1274,13 +1274,13 @@ int label_tape()
 	    errstr = newstralloc2(errstr,
 				  "writing label: ", strerror(errno));
 	}
-	afree(olddatestamp);
+	amfree(olddatestamp);
 	return 0;
     }
 
     if((result = tapefd_wrlabel(tape_fd, datestamp, label)) != NULL) {
 	errstr = newstralloc(errstr, result);
-	afree(olddatestamp);
+	amfree(olddatestamp);
 	return 0;
     }
 
@@ -1301,7 +1301,7 @@ int label_tape()
 	oldtapefilename = vstralloc(tapefilename, ".today.", cur_str, NULL);
     }
     rename(tapefilename, oldtapefilename);
-    afree(oldtapefilename);
+    amfree(oldtapefilename);
     if(write_tapelist(tapefilename))
 	error("couldn't write tapelist: %s", strerror(errno));
 
@@ -1310,7 +1310,7 @@ int label_tape()
     total_tape_used=0.0;
     total_tape_fm = 0;
 
-    afree(olddatestamp);
+    amfree(olddatestamp);
     return 1;
 }
 
@@ -1465,7 +1465,7 @@ char *device;
 	return 0;
     }
     else {
-	afree(scan_datestamp);
+	amfree(scan_datestamp);
 	if((t_errstr = tape_rdlabel(device, &scan_datestamp, &label)) != NULL) {
 	    fprintf(stderr, "%s: slot %s: %s\n", pname, slotstr, t_errstr);
 	    fflush(stderr);
@@ -1535,11 +1535,11 @@ char *taper_scan()
 	searchlabel = first_match_label;
     else if(!found && got_match) {
 	searchlabel = first_match_label;
-	afree(found_device);
+	amfree(found_device);
 	if(changer_loadslot(first_match, &outslot, &found_device) == 0) {
 	    found = 1;
 	}
-	afree(outslot);
+	amfree(outslot);
     }
     else if(!found) {
 	if(searchlabel) {
