@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: protocol.h,v 1.4 1997/08/27 08:12:08 amcore Exp $
+ * $Id: protocol.h,v 1.5 1997/09/04 01:57:24 amcore Exp $
  *
  * interfaces for amanda protocol
  */
@@ -68,7 +68,7 @@ typedef struct proto_s {
     int origseq, curseq;
     int handleofs;
     char *security;
-    int auth_cksum;
+    unsigned long auth_cksum;
     char *hostname;        /* hostname to be added to a request packet */
     char *req;					/* body of request msg */
     void (*continuation) P((struct proto_s *, pkt_t *));

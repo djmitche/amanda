@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.2 1997/08/27 08:11:56 amcore Exp $
+ * $Id: dgram.c,v 1.3 1997/09/04 01:57:26 amcore Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -36,8 +36,11 @@ int bind_reserved(sock, addrp)
 int sock;
 struct sockaddr_in *addrp;
 {
-#   define FIRST_PORT	512
-#   define NUM_PORTS  	(IPPORT_RESERVED-FIRST_PORT)
+/*
+ * When using kerberos, we don't care about reserved ports or not.
+ */
+#   define FIRST_PORT 512
+#   define NUM_PORTS		(IPPORT_RESERVED-FIRST_PORT)
     int port, count;
 
     /* 
@@ -90,6 +93,14 @@ int *portp;
     name.sin_family = AF_INET;
     name.sin_addr.s_addr = INADDR_ANY;
 
+/*
+ * under krb4, it really doesn't matter where you're coming from, since
+ * exchanges are all wrapped in kerberos bits.  It actually causes a problem
+ * for sites that block lower ports at a firewall.  perhaps this should just
+ * be configured to try to optionally bind to a compile time or config file
+ * range.  next version of amanda...
+ */
+#ifdef KRB4_SECURITY
     if(geteuid() == 0) {
 	if(bind_reserved(s, &name) == -1) {
 	    close(s);
@@ -97,6 +108,9 @@ int *portp;
 	}
     }
     else {
+#else
+   { /* pesky language symantics */
+#endif
 	/* pick any available non-reserved port */
 	name.sin_port = INADDR_ANY;
 	if(bind(s, (struct sockaddr *)&name, sizeof name) == -1) {
@@ -215,7 +229,7 @@ dgram_t *dgram;
 char *str;
 {
     int len = strlen(str);
-    
+
     if(dgram->len + len > MAX_DGRAM) len = MAX_DGRAM - dgram->len;
     strncpy(dgram->cur, str, len);
     dgram->cur += len;

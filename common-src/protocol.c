@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: protocol.c,v 1.8 1997/09/01 20:56:39 amcore Exp $
+ * $Id: protocol.c,v 1.9 1997/09/04 01:57:25 amcore Exp $
  *
  * implements amanda protocol
  */
@@ -470,6 +470,10 @@ pkt_t *pkt;
 
     msg = &pkt->dgram;
 
+#ifdef PROTO_DEBUG
+    dbprintf(("parsing packet:\n-------\n%s-------\n\n", msg->cur));
+#endif
+
     eat_string(msg, "Amanda");	    pkt->version_major = parse_integer(msg);
     eat_string(msg, ".");	    pkt->version_minor = parse_integer(msg);
     typestr = parse_string(msg);
@@ -491,15 +495,17 @@ pkt_t *pkt;
     }
     else pkt->security = NULL;
 
-#ifdef KRB4_SECURITY
-    eat_string(msg, "");
-    pkt->cksum = kerberos_cksum(msg->cur);
-/*    printf("in cksum %ld over ----\n%s----\n\n", pkt->cksum, msg->cur); */
-    fflush(stdout);
-#endif
-
     if(pkt->type == P_REQ) {
+	
         eat_string(msg, "HOSTNAME");    pkt->hostname = parse_string(msg);
+#ifdef KRB4_SECURITY
+        eat_string(msg, "");
+        pkt->cksum = kerberos_cksum(msg->cur);
+#ifdef PROTO_DEBUG
+        printf("parse_pkt/cksum %ld over \'%s\'\n\n", pkt->cksum, msg->cur); 
+#endif
+        fflush(stdout);
+#endif
 	eat_string(msg, "SERVICE");     pkt->service = parse_string(msg);
     }
 
@@ -766,6 +772,11 @@ char *host_inst, *realm;
     int rc;
 
     p->auth_cksum = kerberos_cksum(p->req);
+
+#ifdef PROTO_DEBUG
+    fprintf(stderr, "add_krb_security() cksum: %lu: \'%s\'\n",
+	p->auth_cksum, p->req);
+#endif
 
 #define HOSTNAME_INSTANCE host_inst
 
