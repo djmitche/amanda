@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.5 2002/01/25 22:45:01 jrjackson Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.6 2002/01/31 18:24:45 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -444,7 +444,7 @@ int main(main_argc, main_argv)
 	pid_t pid;
 	char *who;
 	char *what;
-	int code;
+	int code=0;
 
 	if((pid = wait(&retstat)) == -1) {
 	    if(errno == EINTR) continue;
