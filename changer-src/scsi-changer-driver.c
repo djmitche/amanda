@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.42 2002/08/22 17:42:47 martinea Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.43 2002/08/26 13:57:00 martinea Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -193,7 +193,7 @@ ChangerCMD_T ChangerIO[] = {
    GenericBarCode,
    GenericSearch,
    GenericSenseHandler},
-	/* HP Devices */
+  /* HP Devices */
   {"C1553A",
    "HP Auto Loader [C1553A]",
    GenericMove,
@@ -343,6 +343,19 @@ ChangerCMD_T ChangerIO[] = {
    GenericBarCode,
    GenericSearch,
    GenericSenseHandler},
+  /* Quantum Devices */
+  {"L500",
+   "ATL [L500]",
+   GenericMove,
+   GenericElementStatus,
+   GenericResetStatus,
+   GenericFree,
+   GenericEject,
+   GenericClean,
+   GenericRewind,
+   GenericBarCode,
+   GenericSearch,
+   GenericSenseHandler},
   /* 
    * And now the tape devices
    */
@@ -357,6 +370,18 @@ ChangerCMD_T ChangerIO[] = {
    GenericClean,
    GenericRewind,
    NoBarCode,
+   GenericSearch,
+   GenericSenseHandler},
+  {"DLT8000",
+   "DLT Tape [DLT8000]",
+   DoNothing,
+   DoNothing,
+   DoNothing,
+   DoNothing,
+   DLT4000Eject,
+   GenericClean,
+   GenericRewind,
+   GenericBarCode,
    GenericSearch,
    GenericSenseHandler},
   {"DLT7000",        
@@ -380,7 +405,7 @@ ChangerCMD_T ChangerIO[] = {
    DLT4000Eject,
    GenericClean,
    GenericRewind,
-   NoBarCode,
+   NoBarCode, 
    GenericSearch,
    GenericSenseHandler},
   {NULL, NULL, NULL,NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}
@@ -437,7 +462,7 @@ ElementInfo_T *pDTE = NULL; /*Data Transfer Element */
 int MTE = 0;                /*Counter for the above element types */
 int STE = 0;
 int IEE = 0;
-int DTE = 0;
+int DTE = 0; 
 
 char *chgscsi_datestamp = NULL;       /* Result pointer for tape_rdlabel */       
 char *chgscsi_label = NULL;           /* Result pointer for tape_rdlabel */

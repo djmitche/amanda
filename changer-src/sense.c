@@ -78,6 +78,108 @@
 
 	{ "generic", "", TYPE_CHANGER , -1, 0x0, 0x0, SENSE_ABORT, "Nothing Found"},
 /*
+ *
+ *	L500 (for the L500 ATL library)
+ * */
+	
+	{ "L500", "", TYPE_CHANGER,  SENSE_NULL, 0x0, 0x0, SENSE_NO, "No Sense"},
+	{ "L500", "", TYPE_CHANGER,  SENSE_NULL , -1, -1, SENSE_RETRY, "Default for SENSE_NULL"},
+
+	{ "L500", "", TYPE_CHANGER , SENSE_RECOVERED_ERROR, 0x0, 0x0, SENSE_IGNORE, "Recovered Error"},
+	{ "L500", "", TYPE_CHANGER , SENSE_RECOVERED_ERROR, 0x0a, 0x0, SENSE_IGNORE, "Error Log overflow"},
+	{ "L500", "", TYPE_CHANGER , SENSE_RECOVERED_ERROR, 0x44, 0xc1, SENSE_IGNORE, "EEPROM Copy 1 bad"},
+	{ "L500", "", TYPE_CHANGER , SENSE_RECOVERED_ERROR, 0x44, 0xc2, SENSE_IGNORE, "EEPROM Copy 2 bad"},
+	{ "L500", "", TYPE_CHANGER , SENSE_RECOVERED_ERROR, 0x47, 0x0, SENSE_IGNORE, "SCSI parity error"},
+	{ "L500", "", TYPE_CHANGER , SENSE_RECOVERED_ERROR, 0x48, 0x0, SENSE_IGNORE, "SCSI IDE message received"},
+	{ "L500", "", TYPE_CHANGER,  SENSE_RECOVERED_ERROR , -1, -1, SENSE_RETRY, "Default for SENSE_RECOVERED_ERROR"},
+
+	{ "L500", "", TYPE_CHANGER , SENSE_NOT_READY, 0x0, 0x0, SENSE_ABORT, "Scsi port not initialized"},
+	{ "L500", "", TYPE_CHANGER , SENSE_NOT_READY, 0x04, 0x01, SENSE_RETRY, "Becoming ready, scanning magazines, etc"},
+	{ "L500", "", TYPE_CHANGER , SENSE_NOT_READY, 0x04, 0x03, SENSE_ABORT, "Unit not ready: manual intervention required: Door Open"},
+/* needed? */
+	{ "L500", "", TYPE_CHANGER , SENSE_NOT_READY, 0x3A, 0x0, SENSE_TAPE_NOT_ONLINE, "No Tape online"},
+  	{ "L500", "", TYPE_CHANGER,  SENSE_NOT_READY , -1, -1, SENSE_RETRY, "Default for SENSE_NOT_READY"},
+
+/*	Not used by L500
+	{ "L500", "", TYPE_CHANGER , SENSE_MEDIUM_ERROR, 0x0, 0x0, SENSE_ABORT, "Medium Error"},
+	{ "L500", "", TYPE_CHANGER,  SENSE_MEDIUM_ERROR , -1, -1, SENSE_ABORT, "Default for SENSE_MEDIUM_ERROR"},
+*/
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x0,  0x0,  SENSE_ABORT, "Hardware Error"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x3a, 0x80, SENSE_ABORT, "Media not present"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x40, 0x84, SENSE_ABORT, "POST soft failure"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x44, 0x80, SENSE_ABORT, "Loader Communications timeout"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x44, 0x81, SENSE_ABORT, "Loader communications UART error or buffer overflow"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x44, 0x86, SENSE_ABORT, "bad status returned from loader"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x44, 0xc3, SENSE_ABORT, "EEPROM both copies bad"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x44, 0xff, SENSE_ABORT, "Unexpected status from test"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x80, 0x70, SENSE_ABORT, "Cartridge has no home"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x80, 0x71, SENSE_ABORT, "Loader mechanism problem"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x80, 0x72, SENSE_ABORT, "Tape drive handle problem"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x80, 0x73, SENSE_IGNORE, "No cartridge in drive during unload"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x80, 0x74, SENSE_ABORT, "Loader mechanism problem, after retries"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x80, 0x75, SENSE_ABORT, "Timeout moving cartridge from drive"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x80, 0x76, SENSE_ABORT, "Timeout unloading cartridge into slot"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x80, 0x77, SENSE_ABORT, "Couldn't unlock door after retries"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x80, 0x78, SENSE_ABORT, "Error during SCAN MAGAZINE"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x80, 0x79, SENSE_ABORT, "Couldn't lock door after retries"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x80, 0x80, SENSE_ABORT, "Unexpected door open"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x80, 0x81, SENSE_ABORT, "Didn't find all expected slots during elevator movement"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x80, 0x82, SENSE_ABORT, "Cartridge alreay in drive during LOAD CARTRIDGE"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x80, 0x83, SENSE_ABORT, "Slot empty during LOAD CARTRIDGE"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x80, 0x84, SENSE_ABORT, "Cleaning Tape expired"},
+	{ "L500", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x80, 0x85, SENSE_ABORT, "Cleaning Failed"},
+	{ "L500", "", TYPE_CHANGER,  SENSE_HARDWARE_ERROR,   -1,   -1, SENSE_ABORT, "Default for SENSE_HARDWARE_ERROR"},
+
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x0, 0x0,   SENSE_ABORT, "Illegal Request"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x1a, 0x0,  SENSE_ABORT, "Parameter length error"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x20, 0x0,  SENSE_ABORT, "SCSI invalid opcode"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x21, 0x01, SENSE_ABORT, "Invalid element address"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x24, 0x00, SENSE_ABORT, "Invalid CDB"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x24, 0x81, SENSE_ABORT, "Invalid mode on WRITE BUFFER"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x24, 0x82, SENSE_ABORT, "Invalid drive specified"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x24, 0x83, SENSE_ABORT, "SEND DIAG Invalid test number"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x24, 0x86, SENSE_ABORT, "Invalid offset on WRITE BUFFER"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x24, 0x87, SENSE_ABORT, "Invalid size on WRITE BUFFER"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x24, 0x89, SENSE_ABORT, "Image data too large on WRITE BUFFER"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x24, 0x8b, SENSE_ABORT, "Invalid image for CUP"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x24, 0x8c, SENSE_ABORT, "Non-immediate command during CUP"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x24, 0x8e, SENSE_ABORT, "Invalid personality for CUP"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x24, 0x8f, SENSE_ABORT, "Bad controller image EDC"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x25, 0x0,  SENSE_ABORT, "Invalid LUN"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x26, 0x0,  SENSE_ABORT, "Parameter list error: invalid field"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x26, 0x01, SENSE_ABORT, "Parameter list error: parameter not supported"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x39, 0x0,  SENSE_ABORT, "Saving parameters not supported"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x3a, 0x81, SENSE_ABORT, "Cleaning Slot empty"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x3a, 0x82, SENSE_ABORT, "Cleaning slot doesn't have a cleaning slot"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x3b, 0x0d, SENSE_ABORT, "Destination element full"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x3b, 0x0e, SENSE_ABORT, "Source slot or drive empty"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x3d, 0x0,  SENSE_ABORT, "SCSI invalid ID message"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x53, 0x0,  SENSE_ABORT, "Media Load/Eject failure"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x53, 0x01, SENSE_ABORT, "Cartridge failed to unload"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0xf1, 0x0,  SENSE_ABORT, "Command unspecified"},
+	{ "L500", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0xf1, 0x02, SENSE_ABORT, "Unrecognized loader command"},
+	{ "L500", "", TYPE_CHANGER,  SENSE_ILLEGAL_REQUEST , -1, -1,    SENSE_ABORT, "Default for SENSE_ILLEGAL_REQUEST"},
+
+	{ "L500", "", TYPE_CHANGER , SENSE_UNIT_ATTENTION, 0x0,  0x0,  SENSE_RETRY, "Unit Attention"},
+	{ "L500", "", TYPE_CHANGER , SENSE_UNIT_ATTENTION, 0x28, 0x0,  SENSE_RETRY, "Not ready to Ready transition"},
+	{ "L500", "", TYPE_CHANGER , SENSE_UNIT_ATTENTION, 0x29, 0x0,  SENSE_RETRY, "Reset occured"},
+	{ "L500", "", TYPE_CHANGER , SENSE_UNIT_ATTENTION, 0x2a, 0x01, SENSE_ABORT, "Mode parameters changed"},
+	{ "L500", "", TYPE_CHANGER , SENSE_UNIT_ATTENTION, 0x3f, 0x01, SENSE_ABORT, "Microcode has changed"},
+	{ "L500", "", TYPE_CHANGER,  SENSE_UNIT_ATTENTION, -1, -1,     SENSE_ABORT, "Default for SENSE_UNIT_ATTENTION"},
+
+/*	Not used by L500
+	{ "L500", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, -1, -1, SENSE_IGNORE, "Default for SENSE_CHG_ELEMENT_STATUS"},
+*/
+	{ "L500", "", TYPE_CHANGER,  SENSE_ABORTED_COMMAND, 0x43, 0x0, SENSE_ABORT, "SCSI message error"},
+	{ "L500", "", TYPE_CHANGER,  SENSE_ABORTED_COMMAND, 0x47, 0x0, SENSE_ABORT, "SCSI parity error"},
+	{ "L500", "", TYPE_CHANGER,  SENSE_ABORTED_COMMAND, 0x48, 0x0, SENSE_ABORT, "SCSI IDE message received"},
+	{ "L500", "", TYPE_CHANGER,  SENSE_ABORTED_COMMAND, 0x49, 0x0, SENSE_ABORT, "SCSI invalid message"},
+	{ "L500", "", TYPE_CHANGER,  SENSE_ABORTED_COMMAND, 0x4e, 0x0, SENSE_ABORT, "SCSI overlapped commands"},
+	
+	{ "L500", "", TYPE_CHANGER,  SENSE_ABORTED_COMMAND, -1, -1, SENSE_ABORT, "Default for SENSE_ABORTED_COMMAND"},
+	{ "L500", "", TYPE_CHANGER , -1, 0x0, 0x0, SENSE_ABORT, "Nothing Found"},
+
+/*
  * HP C1553A Tape
  */
 	{ "C1553A", "", TYPE_TAPE,  SENSE_NULL, 0x0, 0x0, SENSE_NO, "No Sense"},
@@ -158,6 +260,59 @@
 	{ "TDS 1420", "", TYPE_TAPE, SENSE_UNIT_ATTENTION , -1, -1, SENSE_RETRY, "Default for SENSE_UNIT_ATTENTION"},
 	
 	{ "TDS 1420", "", TYPE_TAPE, -1, 0x0, 0x0, SENSE_ABORT, "Nothing Found"},
+/*
+ * DLT 8000 Tape
+ * 
+ * */
+	{ "DLT8000", "QUANTUM", TYPE_TAPE,  SENSE_NULL, 0x0, 0x0,   SENSE_NO, "No Sense"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE,  SENSE_NULL, 0x0, 0x01,  SENSE_NO, "Unexpected FM encountered"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE,  SENSE_NULL, 0x0, 0x02,  SENSE_NO, "EOM encountered"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE,  SENSE_NULL, 0x0, 0x04,  SENSE_NO, "BOM encountered"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE,  SENSE_NULL, 0x5d, 0x00, SENSE_NO, "Failure prediction threshold exceeded"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE,  SENSE_NULL, 0x27, 0x82, SENSE_NO, "Data safety write protect"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE,  SENSE_NULL , -1, -1,    SENSE_RETRY, "Default for SENSE_NULL"},
+
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_RECOVERED_ERROR, 0x0, 0x0, SENSE_IGNORE, "Recovered Error"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_RECOVERED_ERROR, 0x0, 0x17, SENSE_IGNORE, "Cleaning requested"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_RECOVERED_ERROR, 0x0a, 0x00, SENSE_IGNORE, "Error log overflow"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_RECOVERED_ERROR, 0x0a, 0x80, SENSE_IGNORE, "Error log generated"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_RECOVERED_ERROR, 0x37, 0x0,  SENSE_IGNORE, "Rounded parameter"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_RECOVERED_ERROR, 0x38, 0x08, SENSE_IGNORE, "repositioning error"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_RECOVERED_ERROR, 0x44, 0xc1, SENSE_IGNORE, "EEPROM copy1 area bad"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_RECOVERED_ERROR, 0x44, 0xc2, SENSE_IGNORE, "EEPROM copy2 area bad"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_RECOVERED_ERROR, 0x47, 0x00, SENSE_IGNORE, "SCSI parity error"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_RECOVERED_ERROR, 0x48, 0x00, SENSE_IGNORE, "IDE Message received"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_RECOVERED_ERROR, 0x51, 0x00, SENSE_IGNORE, "Erase Failure"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_RECOVERED_ERROR, 0x53, 0x01, SENSE_IGNORE, "Unload Tape failure"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_RECOVERED_ERROR, 0x5b, 0x01, SENSE_IGNORE, "Threshold met"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_RECOVERED_ERROR, 0x5b, 0x02, SENSE_IGNORE, "Log counter at maximum"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_RECOVERED_ERROR, 0x80, 0x02, SENSE_IGNORE, "Cleaning requested"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_RECOVERED_ERROR, 0x80, 0x03, SENSE_IGNORE, "Softe error exceeds threshold"},
+/*	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_RECOVERED_ERROR, 0x47, 0x0, SENSE_IGNORE, "Scsi Parity Error"}, */
+	{ "DLT8000", "QUANTUM", TYPE_TAPE,  SENSE_RECOVERED_ERROR , -1, -1, SENSE_RETRY, "Default for SENSE_RECOVERED_ERROR"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_NOT_READY, 0x0, 0x0, SENSE_IGNORE, "Not Ready (this shouldn't happen should it?)"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_NOT_READY, 0x4, 0x1, SENSE_RETRY, "The drive is not ready, but it is in the process of becoming ready"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_NOT_READY, 0x30,0x02, SENSE_ABORT, "Incompatible tape format"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_NOT_READY, 0x30,0x03, SENSE_ABORT, "Cleaning Cartridge in drive"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_NOT_READY, 0x3A, 0x0, SENSE_TAPE_NOT_ONLINE, "No Tape online"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_NOT_READY, 0x5a,0x01, SENSE_ABORT, "Asynchronous eject occurred"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE,  SENSE_NOT_READY , -1, -1, SENSE_RETRY, "Default for SENSE_NOT_READY"},
+
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_MEDIUM_ERROR, 0x0, 0x0, SENSE_ABORT, "Medium Error"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE,  SENSE_MEDIUM_ERROR , -1, -1, SENSE_ABORT, "Default for SENSE_MEDIUM_ERROR"},
+
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_HARDWARE_ERROR, 0x0, 0x0, SENSE_ABORT, "Hardware Error"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE,  SENSE_HARDWARE_ERROR , -1, -1, SENSE_ABORT, "Default for SENSE_HARDWARE_ERROR"},
+
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_ILLEGAL_REQUEST, 0x0, 0x0, SENSE_ABORT, "Illegal Request"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE,  SENSE_ILLEGAL_REQUEST , -1, -1, SENSE_ABORT, "Default for SENSE_ILLEGAL_REQUEST"},
+
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_UNIT_ATTENTION, 0x0, 0x0, SENSE_RETRY, "Unit Attention"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , SENSE_UNIT_ATTENTION, 0x28, 0x0, SENSE_RETRY, "Not ready to ready transition"},
+	{ "DLT8000", "QUANTUM", TYPE_TAPE,  SENSE_UNIT_ATTENTION, -1, -1, SENSE_ABORT, "Default for SENSE_UNIT_ATTENTION"},
+
+	{ "DLT8000", "QUANTUM", TYPE_TAPE , -1, 0x0, 0x0, SENSE_ABORT, "Nothing Found"},
+
 /*
  * DLT 7000 Tape
  */

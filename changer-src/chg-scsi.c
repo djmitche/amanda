@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.39 2002/08/22 17:42:47 martinea Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.40 2002/08/26 13:57:00 martinea Exp $";
 #endif
 /*
  * 
@@ -192,8 +192,13 @@ void dump_changer_struct(changer_t chg)
 
   dbprintf(("Number of configurations: %d\n",chg.number_of_configs));
   dbprintf(("Tapes need eject: %s\n",(chg.eject>0?"Yes":"No")));
+  	dbprintf (("\traw: %d\n",chg.eject));
   dbprintf(("Inv. auto update: %s\n",(chg.autoinv>0?"Yes":"No")));
+  dbprintf (("\traw: %d\n",chg.autoinv));
   dbprintf(("barcode reader  : %s\n",(chg.havebarcode>0?"Yes":"No")));
+  dbprintf (("\traw: %d\n",chg.havebarcode));
+  dbprintf(("Emulate Barcode : %s\n",(chg.emubarcode>0?"Yes":"No")));
+  dbprintf (("\traw: %d\n",chg.emubarcode));
   if (chg.debuglevel != NULL)
      dbprintf(("debug level     : %s\n", chg.debuglevel));
   dbprintf(("Tapes need sleep: %d seconds\n",chg.sleep));
@@ -274,7 +279,7 @@ void free_changer_struct(changer_t *chg)
 }
 
 void parse_line(char *linebuffer,int *token,char **value)
-     /* This function parses a line, and returns the token an value */
+     /* This function parses a line, and returns a token and value */
 {
   char *tok;
   int i;
@@ -594,7 +599,7 @@ int MapBarCode(char *labelfile, MBC_T *result)
       if (rsize == sizeof(LabelV2_T))
       {
       record++;
-      DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : (%d) VolTag %s, BarCode %s, inuse %d, slot %d, from %d, loadcount %d\n",record,
+      DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : (%d) VolTag \"%s\", BarCode %s, inuse %d, slot %d, from %d, loadcount %d\n",record,
                  plabelv2->voltag,
                  plabelv2->barcode,
                  plabelv2->valid,
@@ -706,6 +711,10 @@ int MapBarCode(char *labelfile, MBC_T *result)
            * If the entry is not valid return -1 as slot number
            */
         case BARCODE_VOL:
+	  /*
+	   * DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode: (%d) inside BARCODE_VOL\n", record);
+	  DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"file value: %s, searched for value: %s\n", plabelv2->voltag, result->data.voltag);
+	  */
           if (strcmp(plabelv2->voltag, result->data.voltag) == 0)
             {
               DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : VOL %s match\n", result->data.voltag);
@@ -1306,9 +1315,9 @@ int main(int argc, char *argv[])
         oldtarget = get_current_slot(slot_file);
         if (oldtarget < 0)
           {
-            dbprintf(("COM_SLOT: get_current_slot %d\n", oldtarget));
+            dbprintf(("COM_INVENTORY: get_current_slot %d\n", oldtarget));
             oldtarget = find_empty(fd, slot_offset, use_slots);
-            dbprintf(("COM_SLOT: find_empty %d\n", oldtarget));
+            dbprintf(("COM_INVENTORY: find_empty %d\n", oldtarget));
           }
 
         if (need_eject)
