@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.11.4.1.4.1.2.5 2002/02/11 01:30:42 jrjackson Exp $
+ * $Id: fileheader.c,v 1.11.4.1.4.1.2.6 2003/10/24 13:44:49 martinea Exp $
  *
  */
 
@@ -434,18 +434,18 @@ dumpfile_t *file;
 		file->datestamp, file->name, file->disk, file->dumplevel, 
 		file->comp_suffix);
 	if(*file->program)
-	    printf(" program %s\n",file->program);
+	    fprintf(outf, " program %s\n",file->program);
 	else
-	    printf("\n");
+	    fprintf(outf, "\n");
 	break;
     case F_CONT_DUMPFILE:
 	fprintf(outf, "cont dumpfile: date %s host %s disk %s lev %d comp %s",
 		file->datestamp, file->name, file->disk, file->dumplevel, 
 		file->comp_suffix);
 	if(*file->program)
-	    printf(" program %s\n",file->program);
+	    fprintf(outf, " program %s\n",file->program);
 	else
-	    printf("\n");
+	    fprintf(outf, "\n");
 	break;
     case F_TAPEEND:
 	fprintf(outf, "end of tape: date %s\n", file->datestamp);
