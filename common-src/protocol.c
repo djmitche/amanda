@@ -458,7 +458,7 @@ pkt_t *pkt;
     char *typestr;
 
     if(setjmp(parse_failed)) {
-/*	dbprintf(("%s: leftover:\n----\n%s----\n", errmsg, msg->cur)); */
+/*	dbprintf(("%s: leftover:\n----\n%s----\n\n", errmsg, msg->cur)); */
 	pkt->type = P_BOGUS;
 	return;
     }
@@ -489,7 +489,7 @@ pkt_t *pkt;
 #ifdef KRB4_SECURITY
     eat_string(msg, "");
     pkt->cksum = kerberos_cksum(msg->cur);
-/*    printf("in cksum %ld over ----\n%s----\n", pkt->cksum, msg->cur); */
+/*    printf("in cksum %ld over ----\n%s----\n\n", pkt->cksum, msg->cur); */
     fflush(stdout);
 #endif
 
@@ -530,7 +530,7 @@ proto_t *p;
     dgram_cat(&outmsg, p->req);
 
 #ifdef PROTO_DEBUG
-    fprintf(stderr, "time %d: send_req: packet:\n----\n%s----\n", 
+    fprintf(stderr, "time %d: send_req: packet:\n----\n%s----\n\n", 
 	    CURTIME, outmsg.data);
 #endif
 
@@ -546,7 +546,7 @@ proto_t *p;
     setup_dgram(p, &outmsg, NULL, "ACK");
 
 #ifdef PROTO_DEBUG
-    fprintf(stderr, "time %d: send_ack: packet:\n----\n%s----\n", 
+    fprintf(stderr, "time %d: send_ack: packet:\n----\n%s----\n\n", 
 	    CURTIME, outmsg.data);
 #endif
 
@@ -569,7 +569,7 @@ pkt_t *pkt;
     dgram_cat(&outmsg, linebuf);
 
 #ifdef PROTO_DEBUG
-    fprintf(stderr, "time %d: send_ack_repl: packet:\n----\n%s----\n", 
+    fprintf(stderr, "time %d: send_ack_repl: packet:\n----\n%s----\n\n", 
 	    CURTIME, outmsg.data);
 #endif
 
@@ -856,7 +856,7 @@ static void handle_incoming_packet()
 	error("protocol packet recieve: %s", strerror(errno));
 
 #ifdef PROTO_DEBUG
-    fprintf(stderr, "time %d: got packet:\n----\n%s----\n",
+    fprintf(stderr, "time %d: got packet:\n----\n%s----\n\n",
 	    CURTIME, inpkt.dgram.data);
 #endif
 
