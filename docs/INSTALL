@@ -281,18 +281,6 @@ to compile some of the Amanda programs (see section 1.2.H below).
 
 	    amanda dgram udp wait USER AMANDAD_PATH amandad
 
-	If you wish tighter security checking to make sure that your
-	Amanda clients are only contacted by the Amanda backup host,
-	you can use the TCP/IP daemon wrapper package available as
-
-		ftp://ftp.win.tue.nl/pub/security/tcp_wrappers_7.4.tar.gz
-
-	Then you want to have your inetd.conf file say something like
-
-	    amanda dgram udp wait USER /usr/sbin/tcpd AMANDAD_PATH
-
-	You will also need to edit your /etc/hosts.allow file.
-
     E.  Kick inetd to make it read its config file.  On most systems
 	you can just kill -HUP inetd.  On older systems you may have to
 	kill it completely and restart it.  Note that
