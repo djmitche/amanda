@@ -1,5 +1,9 @@
 1999-08-16  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* common-src/Makefile.am: Replace .o with OBJEXT.  List sources
+	explicitly, instead of LDADDing the corresponding objects.
+	(OBJ_EXTENSION): Wipe out, use OBJEXT.
+
 	* configure.in: Call AC_OBJEXT.
 	(LTLIBOBJS, LTALLOCA): Define, according to ac_objext.
 	* common-src/Makefile.am (libamanda_la_LIBADD): Use them.
@@ -103,7 +107,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.238 1999/08/16 23:10:48 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.239 1999/08/16 23:47:05 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
