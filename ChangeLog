@@ -1,5 +1,12 @@
 2004-03-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* common-src/ssh-security.c: New ssh security driver.
+	* common-src/Makefile.am (libamanda_la_SOURCES): Add ssh-security.c.
+	* common-src/security.c: Add ssh security driver.
+	* configure.in: Add --with-ssh-security. Define SSH_SECURITY.
+
+2004-03-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/amcheck.c: Do labelstr check in correct order.
 
 2004-03-10  Jean-Louis Martineau <martineau@iro.umontreal.ca>

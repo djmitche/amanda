@@ -808,6 +808,19 @@ y |  ye | yes) AC_DEFINE(RSH_SECURITY,1,[Define if RSH transport should be enabl
   ;;
 esac
 
+AC_ARG_WITH(ssh-security,
+    [  --with-ssh-security use ssh as a transport],
+    SSH_SECURITY=$withval,
+    : ${SSH_SECURITY=yes}
+)
+case "$SSH_SECURITY" in
+n | no) : ;;
+y |  ye | yes) AC_DEFINE(SSH_SECURITY,1,[Define if SSH transport should be enabled. ])
+  ;;
+*) AC_MSG_ERROR([*** You must not supply an argument the to --with-ssh-security option.])
+  ;;
+esac
+
 AC_ARG_WITH(server-principal,
     [    --with-server-principal=ARG    server host principal  ["amanda"]],
     [

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.c,v 1.25 2002/02/10 03:34:04 jrjackson Exp $
+ * $Id: security.c,v 1.26 2004/03/16 19:09:39 martinea Exp $
  *
  * Security driver interface for the Amanda backup system.
  */
@@ -46,6 +46,9 @@ extern const security_driver_t krb5_security_driver;
 #ifdef RSH_SECURITY
 extern const security_driver_t rsh_security_driver;
 #endif
+#ifdef SSH_SECURITY
+extern const security_driver_t ssh_security_driver;
+#endif
 
 static const security_driver_t *drivers[] = {
 #ifdef BSD_SECURITY
@@ -59,6 +62,9 @@ static const security_driver_t *drivers[] = {
 #endif
 #ifdef RSH_SECURITY
     &rsh_security_driver,
+#endif
+#ifdef SSH_SECURITY
+    &ssh_security_driver,
 #endif
 };
 #define	NDRIVERS	(sizeof(drivers) / sizeof(drivers[0]))

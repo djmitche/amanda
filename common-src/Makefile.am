@@ -20,7 +20,8 @@ libamanda_la_SOURCES = \
 	packet.c	pipespawn.c	protocol.c	\
 	regcomp.c	regerror.c	regexec.c	regfree.c	\
 	rsh-security.c	\
-	security.c	sl.c		statfs.c	stream.c	\
+	security.c	sl.c		ssh-security.c	statfs.c	\
+	stream.c	\
 	token.c		\
 	util.c		\
 	versuff.c	version.c
