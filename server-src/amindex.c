@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindex.c,v 1.6 1997/12/16 20:44:53 jrj Exp $
+ * $Id: amindex.c,v 1.7 1997/12/19 14:39:58 george Exp $
  *
  * index control
  */
@@ -65,18 +65,3 @@ int level;
 
   return buf;
 }
-
-char *getindexname(dir, host, disk, date, level, len)
-char *dir, *host, *disk, *date;
-int level;
-int *len;
-{
-  static char name[1024];
-
-  *len = sizeof(name);
-  ap_snprintf(name, sizeof(name),
-    "%s/%s", dir, getindexfname(host, disk, date, level));
-
-  return name;
-}
-

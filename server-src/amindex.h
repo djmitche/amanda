@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindex.h,v 1.3 1997/12/16 18:02:15 jrj Exp $
+ * $Id: amindex.h,v 1.4 1997/12/19 14:40:00 george Exp $
  *
  * headers for index control
  */
@@ -36,7 +36,5 @@
 
 char *getindexfname P((char *host, char *disk,
 		       char *date, int level));
-char *getindexname P((char *dir, char *host, char *disk,
-		      char *date, int level, int *len));
 
 #endif /* AMINDEX_H */

@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.38 1997/12/17 04:21:14 jrj Exp $
+/* $Id: dumper.c,v 1.39 1997/12/19 14:39:57 george Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -75,7 +75,6 @@ int argc;
 int interactive;
 char *handle = NULL;
 char loginid[80];
-char *indexfile;
 
 char databuf[DATABUF_SIZE];
 char mesgbuf[MESGBUF_SIZE];
@@ -669,6 +668,7 @@ int mesgfd, datafd, indexfd, outfd;
     struct timeval timeout;
     int outpipe[2];
     int header_done;	/* flag - header has been written */
+    char indexfile[1024];
 
 #ifndef DUMPER_SOCKET_BUFFERING
 #define DUMPER_SOCKET_BUFFERING 0
@@ -728,14 +728,16 @@ int mesgfd, datafd, indexfd, outfd;
 	/* Now the pipe has been inserted. */
     }
 
-    /* start the index reader */
-    if (indexfd != -1) {
+    if (indexfd == -1) {
+	indexfile[0] = '\0';
+	}
+    else {	/* start the index reader */
 	int tmpfd;
-	int len;
 
-	indexfile = getindexname(getconf_str(CNF_INDEXDIR),
-				 hostname, diskname, datestamp, level, &len);
-	strncat(indexfile, ".tmp", len-strlen(indexfile));
+	ap_snprintf(indexfile, sizeof(indexfile), "%s/%s.tmp",
+		getconf_str(CNF_INDEXDIR),
+		getindexfname(hostname, diskname, datestamp, level));
+
 	switch(fork()) {
 	case -1: fprintf(stderr, "couldn't fork\n");
 	default:
@@ -949,7 +951,7 @@ int mesgfd, datafd, indexfd, outfd;
 
     unlink(errfname);
 
-    if (indexfile) {
+    if (indexfile[0]) {
 	char tmpname[1024];
 
 	strncpy(tmpname, indexfile, sizeof(tmpname)-1);
@@ -973,7 +975,7 @@ failed:
 
     unlink(errfname);
 
-    if (indexfile)
+    if (indexfile[0])
 	unlink(indexfile);
 
     return;
