@@ -1,5 +1,10 @@
 2002-12-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/planner.c (promote_highest_priority_incremental): Newer
+	  algorithm that reduce the number of level 0 by hosts on a single day.
+
+2002-12-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* amplot/amplot.awk: Parse newer log lines.
 
 2002-12-12  Jean-Louis Martineau <martineau@iro.umontreal.ca>
