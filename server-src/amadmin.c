@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.28 1998/01/26 21:16:09 jrj Exp $
+ * $Id: amadmin.c,v 1.29 1998/01/30 02:01:49 blair Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -283,9 +283,14 @@ disk_t *dp;
     get_info(hostname, diskname, &inf);
     if(inf.command == PLANNER_FORCE) {
 	inf.command = NO_COMMAND;
-	put_info(hostname, diskname, &inf);
-	printf("%s: force command for %s:%s cleared.\n",
-	       pname, hostname, diskname);
+	if(put_info(hostname, diskname, &inf) == 0){
+	    printf("%s: force command for %s:%s cleared.\n",
+		   pname, hostname, diskname);
+	} else {
+	    fprintf(stderr,
+		    "%s: force command for %s:%s could not be cleared.\n",
+		    pname, hostname, diskname);
+	}
     }
     else {
 	printf("%s: no force command outstanding for %s:%s, unchanged.\n",
