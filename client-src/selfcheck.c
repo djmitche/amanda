@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.49 2001/08/02 03:53:30 jrjackson Exp $
+ * $Id: selfcheck.c,v 1.50 2001/12/18 21:59:23 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -63,6 +63,7 @@ int main P((int argc, char **argv));
 static void check_options P((char *program, char *disk, char *str));
 static void check_disk P((char *program, char *disk, int level, char *optstr));
 static void check_overall P((void));
+static void check_access P((char *filename, int mode));
 static void check_file P((char *filename, int mode));
 static void check_dir P((char *dirname, int mode));
 static void check_suid P((char *filename));
@@ -692,7 +693,7 @@ static void check_overall()
     if (need_vdump)
         check_file("/etc/vdumpdates", F_OK);
 
-    check_file("/dev/null", R_OK|W_OK);
+    check_access("/dev/null", R_OK|W_OK);
     check_space(AMANDA_TMPDIR, 64);	/* for amandad i/o */
 
 #ifdef AMANDA_DBGDIR
@@ -717,7 +718,7 @@ long kbytes;
 	printf("OK %s has more than %ld KB available.\n", dir, kbytes);
 }
 
-static void check_file(filename, mode)
+static void check_access(filename, mode)
 char *filename;
 int mode;
 {
@@ -738,12 +739,33 @@ int mode;
 	printf("OK %s %s\n", filename, adjective);
 }
 
+static void check_file(filename, mode)
+char *filename;
+int mode;
+{
+    struct stat stat_buf;
+    if(!stat(filename, &stat_buf)) {
+	if(!S_ISREG(stat_buf.st_mode)) {
+	    printf("ERROR [%s is not a file]\n", filename);
+	}
+    }
+    check_access(filename, mode);
+}
+
 static void check_dir(dirname, mode)
 char *dirname;
 int mode;
 {
-    char *dir = stralloc2(dirname, "/.");
-    check_file(dir, mode);
+    struct stat stat_buf;
+    char *dir;
+
+    if(!stat(dirname, &stat_buf)) {
+	if(!S_ISDIR(stat_buf.st_mode)) {
+	    printf("ERROR [%s is not a directory]\n", dirname);
+	}
+    }
+    dir = stralloc2(dirname, "/.");
+    check_access(dir, mode);
     amfree(dir);
 }
 
