@@ -1,3 +1,9 @@
+2004-04-22  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Fix by Paul Bijnens <paul.bijnens@xplanation.com>
+
+	* server-src/planner.c (setup_estimate): Only ask for level 0 estimate
+	  if strategy is noinc.
+
 2004-04-21  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Documentation from Paul Bijnens <paul.bijnens@xplanation.com>
 
