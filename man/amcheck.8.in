@@ -260,11 +260,14 @@ The
 may be:
 .RS
 .TP
-conf
-for the main Amanda configuration directory
-.TP
 log
 for the Amanda log directory (see
+.B logdir
+in
+.BR amanda.conf )
+.TP
+oldlog
+for the directory that holds the old log files (see
 .B logdir
 in
 .BR amanda.conf )
@@ -282,8 +285,11 @@ for an Amanda index directory (see
 in
 .BR amanda.conf )
 .TP
-oldlog
-for the directory that holds the old log files
+tapelist
+for the Amanda tapelist directory (see
+.B tapelist
+in
+.BR amanda.conf )
 .RE
 .TP
 NOTE: \fIXXX\fP dir \fIdirectory\fP: does not exist
