@@ -14,6 +14,17 @@ I considered 6 cases.
 The server machine (machine Aaron) is solaris, the client machine 
 (machine Barney) is sunos.
 
+All these cases assume you're trying to restore a complete disk, that
+is, you've replaced the lost disk with a new one, or created a new
+filesystem on it.  Tweaking with the arguments to restore (not
+amrestore), you will be able to restore individual files.
+
+Also, this text does not cover amrecover, a program that provides a
+text user interface similar to interactive restore (restore -i), but
+it allows you to select individual files to recover and automatically
+determines the tapes where they were stored.  The backups must be
+performed with the `index' option enabled for this to work.
+
 Cases:
 
 1)  Client machine fails, non-system critical. 
@@ -35,8 +46,10 @@ Current info for Barney /home:
           2  19971222  Barney06            7    1874     672   83
           3  19970926  Barney03           11   12273    3040  211
 
-This tells us that we will need four tapes to do a full restore 
-(Barney01, Barney16, Barney06, and Barney03).
+This tells us that we will need four tapes to do a full restore
+(Barney01, Barney16).  Note that, even if Barney06 and Barney03 are
+listed, they are actually older than the full backup, so they should
+not be used to restore any data.
 
 Log into Barney.  Cd to the /home directory.  Insert the tape with the 
 level 0 dump on it into the tape drive of Aaron.
