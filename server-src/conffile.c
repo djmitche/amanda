@@ -758,6 +758,39 @@ int *seen;
 /* ------------------------ */
 
 
+int getconf_seen(parm)
+confparm_t parm;
+{
+  switch(parm) {
+  case CNF_ORG: return seen_org;
+  case CNF_MAILTO: return seen_mailto;
+  case CNF_DUMPUSER: return seen_dumpuser;
+  case CNF_TAPEDEV: return seen_tapedev;
+  case CNF_TPCHANGER: return seen_tpchanger;
+  case CNF_LABELSTR: return seen_labelstr;
+  case CNF_RUNTAPES: return seen_runtapes;
+  case CNF_MAXDUMPS: return seen_maxdumps;
+  case CNF_TAPELIST: return seen_tapelist;
+  case CNF_INFOFILE: return seen_infofile;
+  case CNF_DISKFILE: return seen_diskfile;
+  case CNF_DISKDIR: return seen_diskdir;
+  case CNF_LOGFILE: return seen_logfile;
+  case CNF_BUMPSIZE: return seen_bumpsize;
+  case CNF_BUMPMULT: return seen_bumpmult;
+  case CNF_BUMPDAYS: return seen_bumpdays;
+  case CNF_TAPETYPE: return seen_tapetype;
+  case CNF_DUMPCYCLE: return seen_dumpcycle;
+  case CNF_MAXCYCLE: return seen_maxcycle;
+  case CNF_TAPECYCLE: return seen_tapecycle;
+  case CNF_DISKSIZE: return seen_disksize;
+  case CNF_NETUSAGE: return seen_netusage;
+  case CNF_INPARALLEL: return seen_inparallel;
+  case CNF_TIMEOUT: return seen_timeout;
+  case CNF_INDEXDIR: return seen_indexdir;
+  default: return 0;
+  }
+}
+
 int getconf_int(parm)
 confparm_t parm;
 {

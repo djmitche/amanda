@@ -421,6 +421,17 @@ int fd;
     labelstr = getconf_str(CNF_LABELSTR);
     tapename = getconf_str(CNF_TAPEDEV);
 
+    if (getconf_seen(CNF_TAPEDEV) && getconf_seen(CNF_TPCHANGER)) {
+        fprintf(outf,
+		"WARNING: when both tapedev and tpchanger are specified, tapedev is ignored.\n"
+		"WARNING: the device to be used is hard-coded in the changer script.\n");
+    }
+
+    if (!getconf_seen(CNF_TPCHANGER) && getconf_int(CNF_RUNTAPES) != 1) {
+        fprintf(outf,
+	        "WARNING: if a tape changer is not available, runtapes must be set to 1.\n");
+    }
+
     if(changer_init() && (tapename = taper_scan()) == NULL) {
 	fprintf(outf, "ERROR: %s.\n", changer_resultstr);
 	tapebad = 1;

@@ -36,8 +36,8 @@
 
 typedef enum conf_e {
     CNF_ORG, CNF_MAILTO, CNF_DUMPUSER, CNF_TAPEDEV, CNF_LABELSTR,
-    CNF_TAPELIST, CNF_DISKFILE, CNF_INFOFILE, CNF_LOGFILE,
-    CNF_DISKDIR, CNF_INDEXDIR, CNF_TAPETYPE, CNF_DUMPCYCLE, CNF_TAPECYCLE,
+    CNF_TAPELIST, CNF_DISKFILE, CNF_INFOFILE, CNF_LOGFILE, CNF_DISKDIR,
+    CNF_INDEXDIR, CNF_TAPETYPE, CNF_DUMPCYCLE, CNF_MAXCYCLE, CNF_TAPECYCLE,
     CNF_DISKSIZE, CNF_NETUSAGE, CNF_INPARALLEL, CNF_TIMEOUT,
     CNF_BUMPSIZE, CNF_BUMPMULT, CNF_BUMPDAYS, CNF_TPCHANGER, CNF_RUNTAPES,
     CNF_MAXDUMPS
@@ -113,6 +113,7 @@ extern holdingdisk_t *holdingdisks;
 extern int num_holdingdisks;
 
 int read_conffile P((char *filename));
+int getconf_seen P((confparm_t parameter));
 int getconf_int P((confparm_t parameter));
 double getconf_real P((confparm_t parameter));
 char *getconf_str P((confparm_t parameter));
