@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.65 2001/02/02 21:01:04 jrjackson Exp $
+ * $Id: reporter.c,v 1.66 2001/05/29 23:14:52 jrjackson Exp $
  *
  * nightly Amanda Report generator
  */
@@ -898,7 +898,7 @@ output_stats()
 
     if (postscript) {
       fprintf(postscript, "(Total Size:        %6.1f MB) DrawStat\n",
-	      mb(stats[2].outsize));
+	      mb(stats[2].tapesize));
       fprintf(postscript, "(Tape Used (%%)       ");
       divzero(postscript, pct(stats[2].tapesize+marksize*stats[2].tapedisks),
 	      tapesize);
@@ -906,8 +906,8 @@ output_stats()
       fprintf(postscript, "(Compression Ratio:  ");
       divzero(postscript, pct(stats[2].coutsize),stats[2].corigsize);
       fprintf(postscript," %%) DrawStat\n");
-      fprintf(postscript,"(Filesystems Dumped: %4d) DrawStat\n",
-	      stats[2].dumpdisks);
+      fprintf(postscript,"(Filesystems Taped: %4d) DrawStat\n",
+	      stats[2].tapedisks);
     }
 }
 
