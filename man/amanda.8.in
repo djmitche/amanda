@@ -939,6 +939,13 @@ file.
 .LP
 Note that these sections define network interface characteristics,
 not the actual interface that will be used.
+Nor do they impose limits on the bandwidth that will actually be
+taken up by Amanda.
+Amanda computes the bandwidth each file system backup will take based on
+the estimated size and time, then compares that plus any other running
+backups with the limit as another of the criteria when deciding whether
+to start the backup.
+Once a backup starts, it is free to use as much of the network as it can.
 .LP
 The interface options and values are:
 .TP
@@ -949,8 +956,8 @@ A comment string describing this set of network information.
 .TP
 .BS use int
 Default:
-.IR "300 bytes/second" .
-The speed of the interface.
+.IR "300 Kbps" .
+The speed of the interface in Kbytes per second.
 .LP
 In addition to options, you may also put another
 .B interface
