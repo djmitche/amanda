@@ -137,6 +137,16 @@ If you'd rather back up all filesystems with vdump, #undef DUMP in
 config/config.h after running configure.
 
 
+Unfortunately, the output of `dump -E' incorrectly matches a line of
+output from SAMBA, which gets Amanda's estimate process confused.
+client-src/sendsize.c will refuse to compile if both
+HAVE_DUMP_ESTIMATE and SAMBA_CLIENT are defined in config/config.h.
+Amanda will work correctly if you undefine HAVE_DUMP_ESTIMATE in
+config/config.h; if you prefer to have incorrect estimates for SAMBA
+backups, follow the instructions in sendsize.c on removing the
+compile-time error.
+
+
 According to Oren Laadan <orenl@cs.huji.ac.il>, DEC compiler version
 "DEC C V5.2-033 on Digital UNIX V4.0 (Rev. 564)" (obtained with "cc -V")
 does not build Amanda properly, in particular, taper.c.  Using gcc is OK.

@@ -1,3 +1,11 @@
+1998-08-18  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* client-src/sendsize.c (regex_s): refuse to compile if SAMBA_CLIENT
+ 	and HAVE_DUMP_ESTIMATE are both defined: the regexp that matches the
+ 	estimate from DU 4.0's dump also matches an output line from
+ 	smbclient, that provides an incorrect estimate.
+	* docs/SYSTEM.NOTES: document the problem
+
 1998-08-14  John R. Jackson  <jrj@purdue.edu>
 
 	* docs/TAPE.CHANGERS: describe "advance" and clean up some spelling.
