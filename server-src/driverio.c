@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.41 1999/02/17 01:46:34 martinea Exp $
+ * $Id: driverio.c,v 1.42 1999/02/23 14:35:31 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -60,7 +60,7 @@ int    *maxfd;
 	      fd, FD_SETSIZE-1);
     }
     if(readset != NULL)
-	FD_SET(fd, &readset);
+	FD_SET(fd, readset);
     if(maxfd != NULL)
 	if(fd > *maxfd) *maxfd = fd;
 }
