@@ -1,5 +1,10 @@
 2000-01-31 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amadmin.c (force_one, force_bump_one): FORCE_FULL
+	and FORCE_BUMP are mutually exclusive.
+
+2000-01-31 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/driver.c (main): use the holding disk even if the
 	datestamped directory already exist.
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.66 1999/11/02 22:10:16 oliva Exp $
+ * $Id: amadmin.c,v 1.67 2000/02/01 01:36:54 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -368,6 +368,11 @@ disk_t *dp;
 #endif
     get_info(hostname, diskname, &info);
     SET(info.command, FORCE_FULL);
+    if (ISSET(info.command, FORCE_BUMP)) {
+	CLR(info.command, FORCE_BUMP);
+	printf("%s: WARNING: %s:%s FORCE_BUMP command was cleared.\n",
+	       get_pname(), hostname, diskname);
+    }
     if(put_info(hostname, diskname, &info) == 0) {
 	printf("%s: %s:%s is set to a forced level 0 at next run.\n",
 	       get_pname(), hostname, diskname);
@@ -443,6 +448,11 @@ disk_t *dp;
     if (ISSET(info.command, FORCE_NO_BUMP)) {
 	CLR(info.command, FORCE_NO_BUMP);
 	printf("%s: WARNING: %s:%s FORCE_NO_BUMP command was cleared.\n",
+	       get_pname(), hostname, diskname);
+    }
+    if (ISSET(info.command, FORCE_FULL)) {
+	CLR(info.command, FORCE_FULL);
+	printf("%s: WARNING: %s:%s FORCE_FULL command was cleared.\n",
 	       get_pname(), hostname, diskname);
     }
     if(put_info(hostname, diskname, &info) == 0) {
