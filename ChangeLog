@@ -1,3 +1,8 @@
+1999-04-18  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/WISHLIST: Global reformat.  Removed fixed issues.  Added
+	auto-flush mode.
+
 1999-04-17 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/server_util.c: new file for utility function. 
