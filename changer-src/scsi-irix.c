@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-irix.c,v 1.1.2.8 1999/02/12 19:58:33 th Exp $";
+static char rcsid[] = "$Id: scsi-irix.c,v 1.1.2.9 1999/02/26 19:42:14 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an SGI Workstation
@@ -47,7 +47,6 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
   if ((DeviceFD = open(DeviceName, O_RDONLY)) > 0)
     {
       pwork= (OpenFiles_T *)malloc(sizeof(OpenFiles_T));
-      pwork->next = NULL;
       pwork->fd = DeviceFD;
       pwork->SCSI = 0;
       pwork->inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
@@ -57,13 +56,16 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
           if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
             {
               for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
-                  pwork->ident[i] = pwork->inquiry->prod_ident[i];
-              pwork->ident[i] = '\0';
+                pwork->ident[i] = pwork->inquiry->prod_ident[i];
+              for (i=15; i >= 0 && pwork->inquiry->prod_ident[i] == ' ' ; i--)
+                {
+                  pwork->inquiry->prod_ident[i] = '\0';
+                }
               pwork->SCSI = 1;
               PrintInquiry(pwork->inquiry);
               return(pwork);
             } else {
-                close(DeviceFD);
+              close(DeviceFD);
                 free(pwork->inquiry);
                 free(pwork);
                 return(NULL);
@@ -73,6 +75,7 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
               pwork->inquiry = NULL;
               return(pwork);
           }
+      return(pwork);
     }
 
   return(NULL); 
@@ -104,7 +107,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
   memset(pRequestSense, 0, RequestSenseLength);
   memset(&ExtendedRequestSense, 0 , sizeof(ExtendedRequestSense_T)); 
   
-  ds.ds_flags = DSRQ_SENSE; 
+  ds.ds_flags = DSRQ_SENSE|DSRQ_TRACE|DSRQ_PRINT; 
   /* Timeout */
   ds.ds_time = 120000;
   /* Set the cmd */

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.3 1998/12/01 21:22:15 jrj Exp $
+ * $Id: amcheck.c,v 1.50.2.4 1999/02/26 19:42:25 th Exp $
  *
  * checks for common problems in server and clients
  */
@@ -114,6 +114,7 @@ char **argv;
     }
 
     set_pname("amcheck");
+    dbopen();
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
@@ -312,6 +313,7 @@ char **argv;
     }
     if(mailout)
 	unlink(mainfname);
+    dbclose();
     return (server_probs || client_probs);
 }
 

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.10 1999/02/14 20:08:06 th Exp $";
+static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.11 1999/02/26 19:42:16 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on Linux
@@ -57,8 +57,8 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
   if ((DeviceFD = open(DeviceName, O_RDWR)) > 0)
     {
       pwork = (OpenFiles_T *)malloc(sizeof(OpenFiles_T));
-      pwork->next = NULL;
-      pwork->fd = DeviceFD;
+      memset(pwork, 0, sizeof(OpenFiles_T));
+     pwork->fd = DeviceFD;
       if (strncmp("/dev/sg", DeviceName, 7) != 0)
         {
           dbprintf(("SCSI_OpenDevice : checking if %s is a sg device\n", DeviceName));
@@ -90,6 +90,7 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
                         } else {
                           dbprintf(("SCSI_OpenDevice : link %s does not point to /dev/sg device\n",
                                     DeviceName));
+                          pwork->SCSI = 0;
                         }
                     } else {
                       dbprintf(("SCSI_OpenDevice : link %s does not point to /dev/sg device\n",
@@ -126,12 +127,15 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
             {
               if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
                 {
-                  for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
-                pwork->ident[i] = pwork->inquiry->prod_ident[i];
-              pwork->ident[i] = '\0';
-              pwork->SCSI = 1;
-              PrintInquiry(pwork->inquiry);
-              return(pwork);
+                  for (i=0;i < 16;i++)
+                    pwork->ident[i] = pwork->inquiry->prod_ident[i];
+                  for (i=15; i >= 0 && pwork->inquiry->prod_ident[i] == ' ' ; i--)
+                    {
+                      pwork->inquiry->prod_ident[i] = '\0';
+                    }
+                  pwork->SCSI = 1;
+                  PrintInquiry(pwork->inquiry);
+                  return(pwork);
                 } else {
                   free(pwork->inquiry);
                   free(pwork);
@@ -145,8 +149,9 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
               return(pwork);
             }
         }
+      return(pwork);
     }
-  return(pwork); 
+  return(NULL); 
 }
 
 #define SCSI_OFF sizeof(struct sg_header)
@@ -192,6 +197,8 @@ int SCSI_ExecuteCommand(int DeviceFD,
       osize = DataBufferLength;
       break;
   }
+
+  DecodeSCSI(CDB, "SCSI_ExecuteCommand : ");
 
   status = write(DeviceFD, buffer, SCSI_OFF + CDB_Length + osize);
   if ( status < 0 || status != SCSI_OFF + CDB_Length + osize ||
@@ -246,7 +253,6 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
   if ((DeviceFD = open(DeviceName, O_RDWR)) > 0)
     {
       pwork = (OpenFiles_T *)malloc(sizeof(OpenFiles_T));
-      pwork->next = NULL;
       pwork->fd = DeviceFD;
       pwork->SCSI = 0;
       pwork->dev = strdup(DeviceName);

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.18.2.6 1999/02/14 15:23:03 martinea Exp $
+ * $Id: amlabel.c,v 1.18.2.7 1999/02/26 19:42:28 th Exp $
  *
  * write an Amanda label on a tape
  */
@@ -88,6 +88,7 @@ int main(argc, argv)
     }
 
     set_pname("amlabel");
+    dbopen();
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
@@ -386,7 +387,7 @@ int main(argc, argv)
 
         if(changer_init()) {
 /*	Now we try to inform the changer, about the new label */
-/*	  changer_label(label,outslot); */
+	  changer_label(outslot,label); 
 	}
 	printf(", done.\n");
     }
@@ -404,5 +405,6 @@ int main(argc, argv)
 	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
     }
 
+    dbclose();
     return 0;
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.1.2.7 1999/02/12 19:58:31 th Exp $";
+static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.1.2.8 1999/02/26 19:42:11 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an HP-UX Workstation
@@ -40,7 +40,6 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
   if ((DeviceFD = open(DeviceName, O_RDWR| O_NDELAY)) > 0)
     {
       pwork = (OpenFiles_T *)malloc(sizeof(OpenFiles_T));
-      pwork->next = NULL;
       pwork->fd = DeviceFD;
       pwork->SCSI = 0;
       pwork->dev = strdup(DeviceName);
@@ -52,7 +51,10 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
               {
                 for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
                   pwork->ident[i] = pwork->inquiry->prod_ident[i];
-                pwork->ident[i] = '\0';
+                for (i=15; i >= 0 && pwork->inquiry->prod_ident[i] == ' ' ; i--)
+                  {
+                    pwork->inquiry->prod_ident[i] = '\0';
+                  }
                 pwork->SCSI = 1;
                 PrintInquiry(pwork->inquiry);
                 return(pwork);    
@@ -67,6 +69,7 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
             pwork->inquiry = NULL;
             return(pwork);
           }
+      return(pwork);
     }
 
   return(NULL); 
@@ -111,8 +114,9 @@ int SCSI_ExecuteCommand(int DeviceFD,
       sctl_io.flags = sctl_io.flags | SCTL_READ;
       break;
     }
+
   while (--Retries > 0) {
-    
+    DecodeSCSI(CDB, "SCSI_ExecuteCommand : ");
     Result = ioctl(DeviceFD, SIOC_IO, &sctl_io);
     if (Result < 0)
       return(Result);

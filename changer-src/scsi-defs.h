@@ -69,6 +69,7 @@ typedef unsigned char PackedBit;
 #define SENSE_NO_TAPE_ONLINE 1
 #define SENSE_RETRY 2
 #define SENSE_IES 3
+#define SENSE_TAPE_NOT_UNLOADED 4
 /*
  * Defines for the function types in Changer_CMD_T
  */
@@ -117,6 +118,16 @@ typedef unsigned char PackedBit;
 #define MSB3(s,v)               *(s)=B(v,16),  (s)[1]=B(v,8), (s)[2]=B1(v)
 #define MSB4(s,v) *(s)=B(v,24),(s)[1]=B(v,16), (s)[2]=B(v,8), (s)[3]=B1(v)
 
+#define LABEL_DB_VERSION 1
+#define BARCODE_PUT 1
+#define BARCODE_VOL 2
+#define BARCODE_BARCODE 3
+
+typedef struct {
+  char voltag[128];
+  char barcode[TAG_SIZE];
+  unsigned char valid;
+} LabelV1_T;
 
 /* ======================================================= */
 /* RequestSense_T */
@@ -743,6 +754,70 @@ typedef struct
     unsigned char res0819[12];
 } DeviceCapabilitiesPage_T;  
 
+typedef struct ModePageEXB10hLCD
+{
+  unsigned char PageCode;
+  unsigned char ParameterListLength;
+
+#ifdef LITTLE_ENDIAN_BITFIELDS
+  PackedBit WriteLine4 : 1;
+  PackedBit WriteLine3 : 1;
+  PackedBit WriteLine2 : 1;
+  PackedBit WriteLine1 : 1;
+  PackedBit res        : 4;
+#else
+  PackedBit res        : 4;
+  PackedBit WriteLine1 : 1;
+  PackedBit WriteLine2 : 1;
+  PackedBit WriteLine3 : 1;
+  PackedBit WriteLine4 : 1;
+#endif
+  unsigned char reserved;
+  unsigned char line1[20];
+  unsigned char line2[20];
+  unsigned char line3[20];
+  unsigned char line4[20];
+} ModePageEXB10hLCD_T;
+
+typedef struct ModePageEXBBaudRatePage
+{
+  unsigned char PageCode;
+  unsigned char ParameterListLength;
+  unsigned char BaudRate[2];
+} ModePageEXBBaudRatePage_T;
+
+typedef struct ModePageEXB120VendorUnique
+{
+#ifdef  LITTLE_ENDIAN_BITFIELDS
+    PackedBit PageCode : 6;
+    PackedBit RSVD0    : 1;
+    PackedBit PS       : 1;
+#else
+    PackedBit PS       : 1;
+    PackedBit RSVD0    : 1;
+    PackedBit PageCode : 6;
+#endif
+    unsigned char ParameterListLength;
+#ifdef LITTLE_ENDIAN_BITFIELDS
+    PackedBit MDC  : 2;
+    PackedBit NRDC : 1;
+    PackedBit RSVD : 1;
+    PackedBit NBL  : 1;
+    PackedBit PRTY : 1;
+    PackedBit UINT : 1;
+    PackedBit AINT : 1;
+#else
+    PackedBit AINT : 1;
+    PackedBit UINT : 1;
+    PackedBit PRTY : 1;
+    PackedBit NBL  : 1;
+    PackedBit RSVD : 1;
+    PackedBit NRDC : 1;
+    PackedBit MDC  : 2;
+#endif
+    unsigned char MaxParityRetries;
+    unsigned char DisplayMessage[60];
+} ModePageEXB120VendorUnique_T;
 /* ======================================================= */
 /* ElementInfo_T */
 /* ======================================================= */
@@ -755,6 +830,7 @@ typedef struct ElementInfo
     char VolTag[TAG_SIZE]; /* Label Info if Barcode reader exsist */
     int ASC;        /* Additional Sense Code from read element status */
     int ASCQ;      /* */
+    unsigned char scsi; /* if DTE, which scsi address */
 
   PackedBit svalid : 1;
   PackedBit invert : 1;
@@ -770,24 +846,24 @@ typedef struct ElementInfo
 
 
 typedef struct {
-    char *ident;                   /* Name of the device from inquiry */
-    int (*function[10])();          /* New way to call the device dependend functions move/eject ... */
+    char *ident;                  /* Name of the device from inquiry */
+    int (*function[10])();        /* New way to call the device dependend functions move/eject ... */
 } ChangerCMD_T ;
 
 typedef struct {
-    unsigned char command;
-    int length;
-    char *name;
+    unsigned char command;        /* The SCSI command byte */
+    int length;                   /* How long */
+    char *name;                   /* Name of the command */
 } SC_COM_T;
 
 typedef struct OpenFiles {
-    int fd;
-    unsigned char SCSI;
-    char *dev;
-    char *ConfigName;
-    char ident[17];
-    SCSIInquiry_T *inquiry;
-    struct OpenFiles *next;
+    int fd;                       /* The foledescriptor */
+    unsigned char SCSI;           /* Can we send SCSI commands */
+    char *dev;                    /* The device which is used */
+    char *ConfigName;             /* The name in the config */
+    char ident[17];               /* The identifier from the inquiry command */
+    ChangerCMD_T *functions;      /* Pointer to the function array for this device */
+    SCSIInquiry_T *inquiry;       /* The result from the Inquiry */
 } OpenFiles_T;
 
 typedef struct LogPageDecode {
@@ -799,8 +875,8 @@ typedef struct LogPageDecode {
 /* ======================================================= */
 /* Funktion-Declaration */
 /* ======================================================= */
-OpenFiles_T * SCSI_OpenDevice(char *DeviceName);
-int OpenDevice(char *DeviceName, char *ConfigName);
+OpenFiles_T *SCSI_OpenDevice(char *DeviceName);
+OpenFiles_T *OpenDevice(char *DeviceName, char *ConfigName);
 
 int SCSI_CloseDevice(int DeviceFD); 
 int CloseDevice(char *,int ); 

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-bsd.c,v 1.1.2.5 1999/02/12 19:58:23 th Exp $";
+static char rcsid[] = "$Id: scsi-bsd.c,v 1.1.2.6 1999/02/26 19:42:01 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an BSD System (FreeBSD)
@@ -46,8 +46,7 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
   if ((DeviceFD = open(DeviceName, O_RDWR)) > 0)
     {
       pwork = (OpenFiles_T *)malloc(sizeof(OpenFiles_T));
-      pwork->next = NULL;
-      pwork->fd = DeviceFD;
+     pwork->fd = DeviceFD;
       pwork->SCSI = 0;
       pwork->dev = strdup(DeviceName);
       pwork->inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
@@ -55,23 +54,27 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
       if (SCSI_Inquiry(DeviceFD, pwork->inquiry, INQUIRY_SIZE) == 0)
           {
               if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
-                  {
-                      for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
-                          pwork->ident[i] = pwork->inquiry->prod_ident[i];
-                      pwork->ident[i] = '\0';
-                      pwork->SCSI = 1;
-                      PrintInquiry(pwork->inquiry);
-                      return(pwork);
-                  } else {
-                      free(pwork->inquiry);
-                      free(pwork);
-                      return(NULL);
-                  }
+                {
+                  for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
+                    pwork->ident[i] = pwork->inquiry->prod_ident[i];
+                  for (i=15; i >= 0 && pwork->inquiry->prod_ident[i] == ' ' ; i--)
+                    {
+                      pwork->inquiry->prod_ident[i] = '\0';
+                    }
+                  pwork->SCSI = 1;
+                  PrintInquiry(pwork->inquiry);
+                  return(pwork);
+                } else {
+                  free(pwork->inquiry);
+                  free(pwork);
+                  return(NULL);
+                }
           } else {
-              free(pwork->inquiry);
-              pwork->inquiry = NULL;
-              return(pwork);
+            free(pwork->inquiry);
+            pwork->inquiry = NULL;
+            return(pwork);
           }
+      return(pwork);
     }
   
   return(NULL); 

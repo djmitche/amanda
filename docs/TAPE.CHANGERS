@@ -381,6 +381,11 @@ If this option is given on every eject/move the log pages of the tape
 device will be dumped in this file. There are 2 log pages were you
 can see how many read/write errors (corrected) are processed by the tape
 
+labelfile <filename>
+
+This file is used for the mapping from barcode labels to amanda volume labels.
+It is used if the changer has a barcode reader.
+
 eject > 1
 
 Use the mtio ioctl to eject the tape, use only if the standard (1) does
@@ -438,6 +443,13 @@ BreeceHill Q2.15 (EXB-120) and DLT7000 tape
 Powerstor L200 and DLT7000 
 ARCHIVE Python 28849-XXX 
 TANDBERG TDS 1420
+
+It is now possible with a changer that has barcode reader to load tapes faster.
+Also amdump will find tapes faster. Every time a tape is labeled the information
+in the labelfile will be updated. To initialize the label mapping you can also
+do an amtape config show. This will put the mapping for all tapes in the magazine
+into the mapping file.
+
 
 chg-chio: (new perl script, that replaces the original chg-chio written in C)
 

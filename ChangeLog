@@ -1,3 +1,30 @@
+1999-02-26 Thomas Hepper <th@ant.han.de>
+	* changer-src/chg-scsi.c Added global structs for the openend
+	devices. Added new options label and search for the barcode
+	support. New function MapBarCode, map barcode from reader
+	to amanda tape labels.
+	*changer-src/scsi-aix.c Error in copying SCSI ident fixed. 
+	A space mut not be the end of the string...
+	* changer-src/scsi-bsd.c same as scsi-aix.c 
+	* changer-src/scsi-irix.c same as scsi-aix.c 
+	* changer-src/scsi-solaris.c same as scsi-aix.c 
+	* changer-src/scsi-hpux_new.c same as scsi-aix.c 
+	* changer-src/scsi-linux.c same as scsi-aix.c , fixed
+	error in check if we open an sg device.
+	* changer-src/scsi-changer-driver.c Removed LookupFunction
+	and LookupDevice functions .
+	* docs/TAPE.CHANGERS update info about chg-scsi
+
+1999-02-26  Michael Povel  <mcp@ladyada.han.de>
+	* server-src/amcheck.c Added debug output for barcode
+	support
+	* server-src/amlabel.c Added debug output, inform chg-scsi
+	on new label
+	* server-src/amtape.c Added debug output, inform chg-scsi
+	on new label
+	* server-src/changer.c Added debug output, filled function
+	changer-label with live, label search should work now
+
 1999-02-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/driverio.c (addfd): bug fixe.

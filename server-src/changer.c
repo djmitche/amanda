@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.14.4.1 1998/11/18 07:37:11 oliva Exp $
+ * $Id: changer.c,v 1.14.4.2 1999/02/26 19:42:32 th Exp $
  *
  * interface routines for tape changers
  */
@@ -180,6 +180,7 @@ char **curslotstr;
     rc = run_changer_command("-info", (char *) NULL, curslotstr, &rest);
     if(rc) return rc;
 
+    dbprintf(("changer_query: changer return was %s\n",rest));
     if (sscanf(rest, "%d %d %d", nslotsp, backwardsp, searchable) != 3) {
       if (sscanf(rest, "%d %d", nslotsp, backwardsp) != 2) {
         return report_bad_resultstr();
@@ -187,6 +188,7 @@ char **curslotstr;
         *searchable = 0;
       }
     }
+    dbprintf(("changer_query: searchable = %d\n",*searchable));
     return 0;
 }
 
@@ -253,6 +255,8 @@ char *searchlabel;
     rc = changer_query(&nslots, &curslotstr, &backwards,&searchable);
     done = user_init(rc, nslots, backwards);
     amfree(curslotstr);
+   
+    dbprintf(("changer_find: looking for %s changer is searchable = %d \n",searchlabel,searchable));
 
     if ((searchlabel!=NULL) && searchable && !done){
       rc=changer_search(searchlabel,&curslotstr,&device);
@@ -366,7 +370,7 @@ char *cmdstr;
 	exitcode = WEXITSTATUS(exitcode);
     }
 
-/* fprintf(stderr, "changer: got exit: %d str: %s\n", exitcode, resultstr); */
+    dbprintf(("changer: got exit: %d str: %s\n", exitcode, changer_resultstr)); 
 
     amfree(cmd);
     return exitcode;
@@ -382,6 +386,7 @@ char *searchlabel, **outslotstr, **devicename;
     char *rest;
     int rc;
 
+    dbprintf(("changer_search: %s\n",searchlabel));
     rc = run_changer_command("-search", searchlabel, outslotstr, &rest);
     if(rc) return rc;
 
@@ -401,5 +406,19 @@ int changer_label (slotsp,labelstr)
 int slotsp; 
 char *labelstr;
 {
-/* only dummy at the moment */
+    int rc;
+    char *rest=NULL;
+    char *slotstr;
+    char *curslotstr = NULL;
+    int nslots, backwards, searchable;
+
+    dbprintf(("changer_label: %s\n",labelstr));
+    rc = changer_query(&nslots, &curslotstr, &backwards,&searchable);
+
+    if ((rc == 0) && (searchable == 1))
+      rc = run_changer_command("-label", labelstr, &slotstr, &rest);
+
+    if(rc) return rc;
+
+    return 0;
 }

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.22.2.3 1998/12/28 18:49:00 jrj Exp $
+ * $Id: amtape.c,v 1.22.2.4 1999/02/26 19:42:30 th Exp $
  *
  * tape changer interface program
  */
@@ -104,6 +104,7 @@ char **argv;
     }
 
     set_pname("amtape");
+    dbopen();
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
@@ -168,6 +169,7 @@ char **argv;
 	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
     }
 
+    dbclose();
     return 0;
 }
 
@@ -374,6 +376,7 @@ char *slotstr, *device;
     else {
 	fprintf(stderr, "slot %s: date %-8s label %s\n",
 		slotstr, datestamp, label);
+	changer_label(0,label);
     }
     amfree(datestamp);
     amfree(label);
