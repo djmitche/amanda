@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49 1998/10/17 01:53:51 martinea Exp $
+ * $Id: amadmin.c,v 1.50 1998/11/12 13:18:34 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -62,7 +62,7 @@ void bumpsize P((void));
 void diskloop P((int argc, char **argv, char *cmdname,
 		 void (*func) P((disk_t *dp))));
 char *seqdatestr P((int seq));
-static int next_level0 P((disk_t *dp, info_t *ip));
+static int next_level0 P((disk_t *dp, info_t *info));
 int bump_thresh P((int level));
 void export_db P((int argc, char **argv));
 void import_db P((int argc, char **argv));
@@ -213,16 +213,16 @@ int seq;
 
 
 /* when is next level 0 due? 0 = tonight, 1 = tommorrow, etc*/
-static int next_level0(dp, ip)
+static int next_level0(dp, info)
 disk_t *dp;
-info_t *ip;
+info_t *info;
 {
     if(dp->strategy == DS_NOFULL)
 	return 1;	/* fake it */
-    else if(ip->inf[0].date < (time_t)0)
+    else if(info->inf[0].date < (time_t)0)
 	return 0;	/* new disk */
     else
-	return dp->dumpcycle - days_diff(ip->inf[0].date, today);
+	return dp->dumpcycle - days_diff(info->inf[0].date, today);
 }
 
 /* ----------------------------------------------- */
@@ -278,11 +278,11 @@ disk_t *dp;
 {
     char *hostname = dp->host->hostname;
     char *diskname = dp->name;
-    info_t inf;
+    info_t info;
 
-    get_info(hostname, diskname, &inf);
-    inf.command = PLANNER_FORCE;
-    if(put_info(hostname, diskname, &inf) == 0) {
+    get_info(hostname, diskname, &info);
+    info.command = PLANNER_FORCE;
+    if(put_info(hostname, diskname, &info) == 0) {
 	printf("%s: %s:%s is set to a forced level 0 tonight.\n",
 	       get_pname(), hostname, diskname);
     } else {
@@ -308,12 +308,12 @@ disk_t *dp;
 {
     char *hostname = dp->host->hostname;
     char *diskname = dp->name;
-    info_t inf;
+    info_t info;
 
-    get_info(hostname, diskname, &inf);
-    if(inf.command == PLANNER_FORCE) {
-	inf.command = NO_COMMAND;
-	if(put_info(hostname, diskname, &inf) == 0){
+    get_info(hostname, diskname, &info);
+    if(info.command == PLANNER_FORCE) {
+	info.command = NO_COMMAND;
+	if(put_info(hostname, diskname, &info) == 0){
 	    printf("%s: force command for %s:%s cleared.\n",
 		   get_pname(), hostname, diskname);
 	} else {
@@ -406,9 +406,9 @@ disk_t *dp;
 {
     char *hostname = dp->host->hostname;
     char *diskname = dp->name;
-    info_t inf;
+    info_t info;
 
-    if(get_info(hostname, diskname, &inf)) {
+    if(get_info(hostname, diskname, &info)) {
 	printf("%s: %s:%s NOT currently in database.\n",
 	       get_pname(), hostname, diskname);
 	return;
@@ -441,27 +441,27 @@ char **argv;
 void info_one(dp)
 disk_t *dp;
 {
-    info_t inf;
+    info_t info;
     int lev, lev0date;
     struct tm *tm;
     stats_t *sp;
 
-    get_info(dp->host->hostname, dp->name, &inf);
+    get_info(dp->host->hostname, dp->name, &info);
 
     printf("\nCurrent info for %s %s:\n", dp->host->hostname, dp->name);
-    if(inf.command) printf("  (Forcing to level 0 dump on next run)\n");
+    if(info.command) printf("  (Forcing to level 0 dump on next run)\n");
     printf("  Stats: dump rates (kps), Full:  %5.1f, %5.1f, %5.1f\n",
-	   inf.full.rate[0], inf.full.rate[1], inf.full.rate[2]);
+	   info.full.rate[0], info.full.rate[1], info.full.rate[2]);
     printf("                    Incremental:  %5.1f, %5.1f, %5.1f\n",
-	   inf.incr.rate[0], inf.incr.rate[1], inf.incr.rate[2]);
+	   info.incr.rate[0], info.incr.rate[1], info.incr.rate[2]);
     printf("          compressed size, Full: %5.1f%%,%5.1f%%,%5.1f%%\n",
-	   inf.full.comp[0]*100, inf.full.comp[1]*100, inf.full.comp[2]*100);
+	   info.full.comp[0]*100, info.full.comp[1]*100, info.full.comp[2]*100);
     printf("                    Incremental: %5.1f%%,%5.1f%%,%5.1f%%\n",
-	   inf.incr.comp[0]*100, inf.incr.comp[1]*100, inf.incr.comp[2]*100);
+	   info.incr.comp[0]*100, info.incr.comp[1]*100, info.incr.comp[2]*100);
 
     printf("  Dumps: lev datestmp  tape             file   origK   compK secs\n");
-    lev0date = inf.inf[0].date;
-    for(lev = 0, sp = &inf.inf[0]; lev < 9; lev++, sp++) {
+    lev0date = info.inf[0].date;
+    for(lev = 0, sp = &info.inf[0]; lev < 9; lev++, sp++) {
 	if(sp->date < (time_t)0 && sp->label[0] == '\0') continue;
 	tm = localtime(&sp->date);
 	printf("          %d  %04d%02d%02d  %-15s  %4d %7ld %7ld %4ld\n",
@@ -491,14 +491,14 @@ disk_t *dp;
 {
     host_t *hp;
     int days;
-    info_t inf;
+    info_t info;
 
     hp = dp->host;
-    if(get_info(hp->hostname, dp->name, &inf)) {
+    if(get_info(hp->hostname, dp->name, &info)) {
 	printf("new disk %s:%s ignored.\n", hp->hostname, dp->name);
     }
     else {
-	days = next_level0(dp, &inf);
+	days = next_level0(dp, &info);
 	if(days < 0) {
 	    printf("Overdue %2d day%s %s:%s\n",
 		   -days, (-days == 1) ? ": " : "s:",
@@ -561,7 +561,7 @@ void balance()
     } *sp;
     int seq, max_seq, total, balanced, runs_per_cycle, overdue, max_overdue;
     int runspercycle;
-    info_t inf;
+    info_t info;
 
     total = getconf_int(CNF_TAPECYCLE);
     max_seq = getconf_int(CNF_DUMPCYCLE)-1;	/* print at least this many */
@@ -594,11 +594,11 @@ void balance()
 	sp[seq].disks = sp[seq].origsize = sp[seq].outsize = 0;
 
     for(dp = diskqp->head; dp != NULL; dp = dp->next) {
-	if(get_info(dp->host->hostname, dp->name, &inf)) {
+	if(get_info(dp->host->hostname, dp->name, &info)) {
 	    printf("new disk %s:%s ignored.\n", dp->host->hostname, dp->name);
 	    continue;
 	}
-	seq = next_level0(dp, &inf);
+	seq = next_level0(dp, &info);
 	if(seq < 0) {
 	    overdue++;
 	    if (-seq > max_overdue)
@@ -615,12 +615,12 @@ void balance()
 	if(seq > max_seq) max_seq = seq;
 
 	sp[seq].disks++;
-	sp[seq].origsize += inf.inf[0].size;
-	sp[seq].outsize += inf.inf[0].csize;
+	sp[seq].origsize += info.inf[0].size;
+	sp[seq].outsize += info.inf[0].csize;
 
 	sp[total].disks++;
-	sp[total].origsize += inf.inf[0].size;
-	sp[total].outsize += inf.inf[0].csize;
+	sp[total].origsize += info.inf[0].size;
+	sp[total].outsize += info.inf[0].csize;
     }
 
     if(sp[total].outsize == 0) {

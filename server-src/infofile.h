@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.h,v 1.8 1998/11/09 18:59:41 martinea Exp $
+ * $Id: infofile.h,v 1.9 1998/11/12 13:18:40 martinea Exp $
  *
  * interface for current info file reading code
  */
@@ -71,14 +71,14 @@ typedef struct info_s {
 int open_infofile P((char *infofile));
 void close_infofile P((void));
 
-char *get_dumpdate P((info_t *record, int level));
+char *get_dumpdate P((info_t *info, int level));
 double perf_average P((float *array, double def));
-int get_info P((char *hostname, char *diskname, info_t *record));
+int get_info P((char *hostname, char *diskname, info_t *info));
 int get_firstkey P((char *hostname, int hostname_size,
 		    char *diskname, int diskname_size));
 int get_nextkey  P((char *hostname, int hostname_size,
 		    char *diskname, int diskname_size));
-int put_info P((char *hostname, char *diskname, info_t *record));
+int put_info P((char *hostname, char *diskname, info_t *info));
 int del_info P((char *hostname, char *diskname));
 
 #endif /* ! INFOFILE_H */

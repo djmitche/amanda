@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.77 1998/11/09 18:59:43 martinea Exp $
+ * $Id: planner.c,v 1.78 1998/11/12 13:18:43 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -457,19 +457,19 @@ static char *construct_datestamp()
  *
  */
 
-static int last_level P((info_t *ip));		  /* subroutines */
+static int last_level P((info_t *info));		  /* subroutines */
 static long est_size P((disk_t *dp, int level));
 static long est_tape_size P((disk_t *dp, int level));
-static int next_level0 P((disk_t *dp, info_t *ip));
-static int runs_at P((info_t *ip, int lev));
+static int next_level0 P((disk_t *dp, info_t *info));
+static int runs_at P((info_t *info, int lev));
 static long bump_thresh P((int level));
 static int when_overwrite P((char *label));
 
-static void askfor(ep, seq, lev, inf)
+static void askfor(ep, seq, lev, info)
 est_t *ep;	/* esimate data block */
 int seq;	/* sequence number of request */
 int lev;	/* dump level being requested */
-info_t *inf;	/* info block for disk */
+info_t *info;	/* info block for disk */
 {
     stats_t *stat;
 
@@ -491,10 +491,10 @@ info_t *inf;	/* info block for disk */
 
     ep->level[seq] = lev;
 
-    ep->dumpdate[seq] = stralloc(get_dumpdate(inf,lev));
+    ep->dumpdate[seq] = stralloc(get_dumpdate(info,lev));
     malloc_mark(ep->dumpdate[seq]);
 
-    stat = &inf->inf[lev];
+    stat = &info->inf[lev];
     if(stat->date == EPOCH) ep->est_size[seq] = -1;
     else ep->est_size[seq] = stat->size;
 
@@ -505,7 +505,7 @@ static void setup_estimate(dp)
 disk_t *dp;
 {
     est_t *ep;
-    info_t inf;
+    info_t info;
     int i;
 
     assert(dp && dp->host);
@@ -513,7 +513,7 @@ disk_t *dp;
 
     /* get current information about disk */
 
-    if(get_info(dp->host->hostname, dp->name, &inf)) {
+    if(get_info(dp->host->hostname, dp->name, &info)) {
 	/* no record for this disk, make a note of it */
 	log_add(L_INFO, "Adding new disk %s:%s.", dp->host->hostname, dp->name);
     }
@@ -529,7 +529,7 @@ disk_t *dp;
 
     /* calculated fields */
 
-    if(inf.command == PLANNER_FORCE) {
+    if(info.command == PLANNER_FORCE) {
 	/* force a level 0, kind of like a new disk */
 	if(dp->strategy == DS_NOFULL) {
 	    /*
@@ -548,13 +548,13 @@ disk_t *dp;
 		    dp->host->hostname, dp->name);
 
 	    /* clear force command */
-	    if(inf.command == PLANNER_FORCE)
-		inf.command = NO_COMMAND;
-	    if(put_info(dp->host->hostname, dp->name, &inf))
+	    if(info.command == PLANNER_FORCE)
+		info.command = NO_COMMAND;
+	    if(put_info(dp->host->hostname, dp->name, &info))
 		error("could not put info record for %s:%s: %s",
 		      dp->host->hostname, dp->name, strerror(errno));
-	    ep->last_level = last_level(&inf);
-	    ep->next_level0 = next_level0(dp, &inf);
+	    ep->last_level = last_level(&info);
+	    ep->next_level0 = next_level0(dp, &info);
 	}
 	else {
 	    ep->last_level = -1;
@@ -566,11 +566,11 @@ disk_t *dp;
     else if(dp->strategy == DS_NOFULL) {
 	/* force estimate of level 1 */
 	ep->last_level = 1;
-	ep->next_level0 = next_level0(dp, &inf);
+	ep->next_level0 = next_level0(dp, &info);
     }
     else {
-	ep->last_level = last_level(&inf);
-	ep->next_level0 = next_level0(dp, &inf);
+	ep->last_level = last_level(&info);
+	ep->next_level0 = next_level0(dp, &info);
     }
 
     /* adjust priority levels */
@@ -582,21 +582,21 @@ disk_t *dp;
 	ep->dump_priority -= ep->next_level0;
 	/* warn if dump will be overwritten */
 	if(ep->last_level > -1) {
-	    int overwrite_runs = when_overwrite(inf.inf[0].label);
+	    int overwrite_runs = when_overwrite(info.inf[0].label);
 	    if(overwrite_runs == 0) {
 		log_add(L_WARNING,
 		  "Last full dump of %s:%s on tape %s overwritten on this run.",
-		        dp->host->hostname, dp->name, inf.inf[0].label);
+		        dp->host->hostname, dp->name, info.inf[0].label);
 	    }
 	    else if(overwrite_runs < RUNS_REDZONE) {
 		log_add(L_WARNING,
 		  "Last full dump of %s:%s on tape %s overwritten in %d run%s.",
-		        dp->host->hostname, dp->name, inf.inf[0].label,
+		        dp->host->hostname, dp->name, info.inf[0].label,
 		    overwrite_runs, overwrite_runs == 1? "" : "s");
 	    }
 	}
     }
-    else if(inf.command == PLANNER_FORCE)
+    else if(info.command == PLANNER_FORCE)
 	ep->dump_priority += 1;
     /* else XXX bump up the priority of incrementals that failed last night */
 
@@ -605,12 +605,12 @@ disk_t *dp;
     if(dp->skip_full) {
 	if(ep->next_level0 <= 0) {
 	    /* update the date field */
-	    inf.inf[0].date = today;
-	    if(inf.command == PLANNER_FORCE)
-		inf.command = NO_COMMAND;
+	    info.inf[0].date = today;
+	    if(info.command == PLANNER_FORCE)
+		info.command = NO_COMMAND;
 	    ep->next_level0 += conf_dumpcycle;
 	    ep->last_level = 0;
-	    if(put_info(dp->host->hostname, dp->name, &inf))
+	    if(put_info(dp->host->hostname, dp->name, &info))
 		error("could not put info record for %s:%s: %s",
 		      dp->host->hostname, dp->name, strerror(errno));
 	    log_add(L_INFO, "Skipping full dump of %s:%s today.",
@@ -618,9 +618,9 @@ disk_t *dp;
 	    fprintf(stderr,"%s:%s lev 0 skipped due to skip-full flag\n",
 		    dp->host->hostname, dp->name);
 	    /* don't enqueue the disk */
-	    askfor(ep, 0, -1, &inf);
-	    askfor(ep, 1, -1, &inf);
-	    askfor(ep, 2, -1, &inf);
+	    askfor(ep, 0, -1, &info);
+	    askfor(ep, 1, -1, &info);
+	    askfor(ep, 2, -1, &info);
 	    fprintf(stderr, "planner: SKIPPED %s %s 0 [skip-full]\n",
 		    dp->host->hostname, dp->name);
 	    log_add(L_SUCCESS, "%s %s 0 [skipped: skip-full]",
@@ -645,9 +645,9 @@ disk_t *dp;
 	fprintf(stderr,"%s:%s lev 1 skipped due to skip-incr flag\n",
 		dp->host->hostname, dp->name);
 	/* don't enqueue the disk */
-	askfor(ep, 0, -1, &inf);
-	askfor(ep, 1, -1, &inf);
-	askfor(ep, 2, -1, &inf);
+	askfor(ep, 0, -1, &info);
+	askfor(ep, 1, -1, &info);
+	askfor(ep, 2, -1, &info);
 
 	fprintf(stderr, "planner: SKIPPED %s %s 1 [skip-incr]\n",
 		dp->host->hostname, dp->name);
@@ -666,26 +666,26 @@ disk_t *dp;
     }
 
     if(ep->last_level == 0) ep->level_days = 0;
-    else ep->level_days = runs_at(&inf, ep->last_level);
-    ep->last_lev0size = inf.inf[0].csize;
+    else ep->level_days = runs_at(&info, ep->last_level);
+    ep->last_lev0size = info.inf[0].csize;
 
-    ep->fullrate = perf_average(inf.full.rate, 0.0);
-    ep->incrrate = perf_average(inf.incr.rate, 0.0);
+    ep->fullrate = perf_average(info.full.rate, 0.0);
+    ep->incrrate = perf_average(info.incr.rate, 0.0);
 
-    ep->fullcomp = perf_average(inf.full.comp, dp->comprate[0]);
-    ep->incrcomp = perf_average(inf.incr.comp, dp->comprate[1]);
+    ep->fullcomp = perf_average(info.full.comp, dp->comprate[0]);
+    ep->incrcomp = perf_average(info.incr.comp, dp->comprate[1]);
 
     /* determine which estimates to get */
 
     i = 0;
 
     if(!(dp->skip_full || dp->strategy == DS_NOFULL))
-	askfor(ep, i++, 0, &inf);
+	askfor(ep, i++, 0, &info);
 
     if(!dp->skip_incr) {
 	if(ep->last_level == -1) {		/* a new disk */
 	    if(dp->strategy == DS_NOFULL) {
-		askfor(ep, i++, 1, &inf);
+		askfor(ep, i++, 1, &info);
 	    } else {
 		assert(!dp->skip_full);		/* should be handled above */
 	    }
@@ -694,9 +694,9 @@ disk_t *dp;
 
 	    curr_level = ep->last_level;
 	    if(curr_level == 0)
-		askfor(ep, i++, 1, &inf);
+		askfor(ep, i++, 1, &info);
 	    else {
-		askfor(ep, i++, curr_level, &inf);
+		askfor(ep, i++, curr_level, &info);
 		/*
 		 * If last time we dumped less than the threshold, then this
 		 * time we will too, OR the extra size will be charged to both
@@ -704,22 +704,22 @@ disk_t *dp;
 		 * if we haven't been at this level 2 days, or the dump failed
 		 * last night, we can't bump.
 		 */
-		if((inf.inf[curr_level].size == 0 || /* no data, try it anyway */
-		    (((inf.inf[curr_level].size > bump_thresh(curr_level)))
+		if((info.inf[curr_level].size == 0 || /* no data, try it anyway */
+		    (((info.inf[curr_level].size > bump_thresh(curr_level)))
 		     && ep->level_days >= conf_bumpdays))) {
-		    askfor(ep, i++, curr_level+1, &inf);
+		    askfor(ep, i++, curr_level+1, &info);
 		}
 	    } 
 	}
     }
 
     while(i < MAX_LEVELS) 	/* mark end of estimates */
-	askfor(ep, i++, -1, &inf);
+	askfor(ep, i++, -1, &info);
 
     /* debug output */
 
     fprintf(stderr, "setup_estimate: %s:%s: command %d, options:",
-	    dp->host->hostname, dp->name, inf.command);
+	    dp->host->hostname, dp->name, info.command);
     if(dp->strategy == DS_NOFULL) fputs(" no-full", stderr);
     if(dp->skip_full) fputs(" skip-full", stderr);
     if(dp->skip_incr) fputs(" skip-incr", stderr);
@@ -795,15 +795,15 @@ int level;
 
 
 /* what was the level of the last successful dump to tape? */
-static int last_level(ip)
-info_t *ip;
+static int last_level(info)
+info_t *info;
 {
     int min_pos, min_level, i;
     time_t lev0_date, last_date;
     tape_t *tp;
 
-    if(ip->last_level != -1)
-	return ip->last_level;
+    if(info->last_level != -1)
+	return info->last_level;
 
     /* to keep compatibility with old infofile */
     min_pos = 1000000000;
@@ -812,18 +812,18 @@ info_t *ip;
     last_date = EPOCH;
     for(i = 0; i < 9; i++) {
 	if(conf_reserve < 100) {
-	    if(i == 0) lev0_date = ip->inf[0].date;
-	    else if(ip->inf[i].date < lev0_date) continue;
-	    if(ip->inf[i].date > last_date) {
-		last_date = ip->inf[i].date;
+	    if(i == 0) lev0_date = info->inf[0].date;
+	    else if(info->inf[i].date < lev0_date) continue;
+	    if(info->inf[i].date > last_date) {
+		last_date = info->inf[i].date;
 		min_level = i;
 	    }
 	}
 	else {
-	    if((tp = lookup_tapelabel(ip->inf[i].label)) == NULL) continue;
+	    if((tp = lookup_tapelabel(info->inf[i].label)) == NULL) continue;
 	    /* cull any entries from previous cycles */
-	    if(i == 0) lev0_date = ip->inf[0].date;
-	    else if(ip->inf[i].date < lev0_date) continue;
+	    if(i == 0) lev0_date = info->inf[0].date;
+	    else if(info->inf[i].date < lev0_date) continue;
 
 	    if(tp->position < min_pos) {
 		min_pos = tp->position;
@@ -831,45 +831,45 @@ info_t *ip;
 	    }
 	}
     }
-    ip->last_level = i;
+    info->last_level = i;
     return min_level;
 }
 
 /* when is next level 0 due? 0 = today, 1 = tommorrow, etc*/
-static int next_level0(dp, ip)
+static int next_level0(dp, info)
 disk_t *dp;
-info_t *ip;
+info_t *info;
 {
     if(dp->strategy == DS_NOFULL)
 	return 1;		/* fake it */
-    else if(ip->inf[0].date < (time_t)0)
+    else if(info->inf[0].date < (time_t)0)
 	return -days_diff(EPOCH, today);	/* new disk */
     else
-	return dp->dumpcycle - days_diff(ip->inf[0].date, today);
+	return dp->dumpcycle - days_diff(info->inf[0].date, today);
 }
 
 /* how many runs at current level? */
-static int runs_at(ip, lev)
-info_t *ip;
+static int runs_at(info, lev)
+info_t *info;
 int lev;
 {
     tape_t *cur_tape, *old_tape;
     int last, nb_runs;
 
-    last = last_level(ip);
+    last = last_level(info);
     if(lev != last) return 0;
     if(lev == 0) return 1;
 
-    if(ip->consecutive_runs != -1)
-	return ip->consecutive_runs;
+    if(info->consecutive_runs != -1)
+	return info->consecutive_runs;
 
     /* to keep compatibility with old infofile */
-    cur_tape = lookup_tapelabel(ip->inf[lev].label);
-    old_tape = lookup_tapelabel(ip->inf[lev-1].label);
+    cur_tape = lookup_tapelabel(info->inf[lev].label);
+    old_tape = lookup_tapelabel(info->inf[lev-1].label);
     if(cur_tape == NULL || old_tape == NULL) return 0;
 
     nb_runs = (old_tape->position - cur_tape->position) / conf_runtapes;
-    ip->consecutive_runs = nb_runs;
+    info->consecutive_runs = nb_runs;
 
     return nb_runs;
 }
