@@ -1,3 +1,13 @@
+1998-12-19  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/dumper.c (struct databuf): add a chunk_size member,
+	the size of each chunk.  Remove chunksize global.
+	* server-src/dumper.c (main): add a chunksize local var
+	* server-src/dumper.c (databuf_init): init the chunk_size member
+	with the same value as split_size
+	* server-src/dumper.c (databuf_flush): increment db->split_size
+	by the amount in db->chunk_size instead of the global chunksize
+
 1998-12-19  John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/amstatus.pl.in: instead of just displaying why no

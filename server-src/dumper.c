@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.89 1998/12/19 01:33:34 kashmir Exp $
+/* $Id: dumper.c,v 1.90 1998/12/19 18:56:47 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -78,6 +78,7 @@ struct databuf {
     const char *filename;	/* name of what fd points to */
     int filename_seq;		/* for chunking */
     long split_size;		/* when to chunk */
+    long chunk_size;		/* size of each chunk */
     char buf[DATABUF_SIZE];
     char *dataptr;		/* data buffer markers */
     int spaceleft;
@@ -101,7 +102,6 @@ char *options = NULL;
 char *progname = NULL;
 int level;
 char *dumpdate = NULL;
-long chunksize;
 char *datestamp;
 char *backup_name = NULL;
 char *recover_cmd = NULL;
@@ -203,6 +203,7 @@ main(main_argc, main_argv)
     unsigned long malloc_hist_2, malloc_size_2;
     char *q = NULL;
     char *filename, *tmp_filename = NULL;
+    long chunksize;
 
     for (outfd = 3; outfd < FD_SETSIZE; outfd++) {
 	/*
@@ -477,7 +478,7 @@ databuf_init(db, fd, filename, split_size)
     db->fd = fd;
     db->filename = filename;
     db->filename_seq = 0;
-    db->split_size = split_size;
+    db->chunk_size = db->split_size = split_size;
     db->dataptr = db->buf;
     db->spaceleft = sizeof(db->buf);
 }
@@ -587,7 +588,7 @@ databuf_flush(db)
 	/*
 	 * Update when we need to chunk again
 	 */
-	db->split_size += chunksize;
+	db->split_size += db->chunk_size;
     }
 
     /*
