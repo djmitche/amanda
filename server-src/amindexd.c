@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.13 1997/12/19 16:04:30 george Exp $
+ * $Id: amindexd.c,v 1.14 1997/12/23 21:14:56 jrj Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -708,6 +708,7 @@ char **argv;
     struct sockaddr_in his_addr;
     struct hostent *his_name;
     char buf1[LONG_LINE];
+    int cmd_overflow;
 
 #ifdef FORCE_USERID
 
@@ -774,6 +775,7 @@ char **argv;
     while (1)
     {
 	/* get a line from client */
+	cmd_overflow = 0;
 	bptr = buffer;
 	while (1)
 	{
@@ -790,12 +792,20 @@ char **argv;
 		if ((char)i == '\n')
 		    break;
 	    }
-	    *bptr++ = (char)i;
+	    if(bptr < buffer+sizeof(buffer)-1) {
+		*bptr++ = (char)i;
+	    } else {
+		cmd_overflow = 1;
+	    }
 	}
 	*bptr = '\0';
 
 	dbprintf(("> %s\n", buffer));
 
+	if(cmd_overflow) {
+	    reply(500, "Command not recognised/incorrect: %s", buffer);
+	    continue;
+	}
 
 	if (strncmp(buffer, "QUIT", 4) == 0)
 	{
