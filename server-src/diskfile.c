@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.27.4.6.4.3.2.6 2002/04/13 19:24:16 jrjackson Exp $
+ * $Id: diskfile.c,v 1.27.4.6.4.3.2.7 2002/04/13 22:32:23 jrjackson Exp $
  *
  * read disklist file
  */
@@ -543,22 +543,20 @@ FILE *f;
 char *optionstr(dp)
 disk_t *dp;
 {
-    static char *str = NULL;
     char *auth_opt = "";
     char *kencrypt_opt = "";
     char *compress_opt = "";
     char *record_opt = "";
     char *index_opt = "";
-    char *exclude_file;
-    char *exclude_list;
-    char *include_file;
-    char *include_list;
+    char *exclude_file = NULL;
+    char *exclude_list = NULL;
+    char *include_file = NULL;
+    char *include_list = NULL;
     char *excl_opt = "";
     char *incl_opt = "";
     char *exc = NULL;
+    char *result = NULL;
     sle_t *excl;
-
-    amfree(str);
 
     if(dp->auth == AUTH_BSD) {
 	auth_opt = "bsd-auth;";
@@ -618,19 +616,26 @@ disk_t *dp;
     if(dp->exclude_optional) excl_opt = "exclude-optional;";
     if(dp->include_optional) incl_opt = "include-optional;";
 
-    return vstralloc(";",
-		     auth_opt,
-		     kencrypt_opt,
-		     compress_opt,
-		     record_opt,
-		     index_opt,
-		     exclude_file,
-		     exclude_list,
-		     include_file,
-		     include_list,
-		     excl_opt,
-		     incl_opt,
-		     NULL);
+    result = vstralloc(";",
+		       auth_opt,
+		       kencrypt_opt,
+		       compress_opt,
+		       record_opt,
+		       index_opt,
+		       exclude_file,
+		       exclude_list,
+		       include_file,
+		       include_list,
+		       excl_opt,
+		       incl_opt,
+		       NULL);
+    amfree(exclude_file);
+    amfree(exclude_list);
+    amfree(include_file);
+    amfree(include_list);
+    amfree(exc);
+
+    return result;
 }
 
  
