@@ -1,5 +1,9 @@
 2001-01-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/driver.c (start_some_dumps): typo.
+
+2001-01-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/driverio.h (sched_t): new field no_space.
 	* server-src/driver.c (start_some_dumps): don't start a disk if
 	  no_space is set.
