@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.28 1997/09/11 08:04:29 amcore Exp $
+ * $Id: sendsize.c,v 1.29 1997/09/17 20:04:51 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -522,21 +522,20 @@ int level;
 		"s"
 #endif
 		"f", level);
-	dbprintf(("%s: running \"%s %s 100000 - %s\"\n", \
+	dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n", \
 		  pname, cmd, name, dumpkeys, device));
 #else /* AIX_BACKUP */
 	sprintf(dumpkeys, "-%df", level);
-	dbprintf(("%s: running \"%s %s - %s\"\n", \
+	dbprintf(("%s: running \"%s%s %s - %s\"\n", \
 		  pname, cmd, name, dumpkeys, device));
 #endif
     }
     else
-#else
+#endif
     {
         dbprintf(("%s: no dump program available", pname));
 	error("%s: no dump program available", pname);
     }
-#endif
 
     switch(dumppid = fork()) {
     case -1: return -1;
