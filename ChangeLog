@@ -1,5 +1,17 @@
 1998-12-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* common-src/fileheader.h (dumpfile_t): new is_partial field.
+	* common-src/fileheader.c: add codee for new is_partial field.
+	* server-src/holding.h (rename_tmp_holding): declare new function.
+	* server-src/holding.c (rename_tmp_holding): new function.
+	* server-src/dumper.c (do_dump): return 1 if succeded, otherwise 0.
+	* server-src/dumper.c (main): open .tmp when dumping to disk, 
+	rename .tmp if do_dump return 1.
+	* server-src/dumper.c (update_dataptr): open .tmp for new chunk.
+	* server-src/amstatus.pl.in (dump_size): return size of .tmp file.
+
+1998-12-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* NEWS: document new force-bump, force-no-bump and unforce-bump 
 	command in amadmin.
 

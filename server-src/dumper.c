@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.2 1998/11/19 23:13:01 jrj Exp $
+/* $Id: dumper.c,v 1.75.2.3 1998/12/07 23:54:03 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -113,7 +113,7 @@ int main P((int main_argc, char **main_argv));
 static cmd_t getcmd P((void));
 static void putresult P((char *format, ...))
     __attribute__ ((format (printf, 1, 2)));
-static void do_dump P((int mesgfd, int datafd, int indexfd, int outfd));
+int do_dump P((int mesgfd, int datafd, int indexfd, int outfd));
 void check_options P((char *options));
 void service_ports_init P((void));
 static char *construct_datestamp P((void));
@@ -192,6 +192,7 @@ char **main_argv;
     unsigned long malloc_hist_2, malloc_size_2;
     char *q = NULL;
     int fd;
+    char *tmp_filename = NULL;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -277,9 +278,10 @@ char **main_argv;
 	    options = newstralloc(options, argv[10]);
 	    cont_filename[0] = '\0';
 
-	    if((outfd = open(filename, O_WRONLY|O_CREAT, 0666)) == -1) {
+	    tmp_filename = newvstralloc(tmp_filename, filename, ".tmp", NULL);
+	    if((outfd = open(tmp_filename, O_WRONLY|O_CREAT, 0666)) == -1) {
 		q = squotef("[holding file \"%s\": %s]",
-			    filename, strerror(errno));
+			    tmp_filename, strerror(errno));
 		putresult("FAILED %s %s\n", handle, q);
 		amfree(q);
 		break;
@@ -311,7 +313,9 @@ char **main_argv;
 
 	    abort_pending = 0;
 	    split_size = chunksize;
-	    do_dump(mesgfd, datafd, indexfd, outfd);
+	    if(do_dump(mesgfd, datafd, indexfd, outfd)) {
+		rename_tmp_holding(filename,1);
+	    }
 	    aclose(mesgfd);
 	    aclose(datafd);
 	    if (indexfd != -1)
@@ -375,7 +379,8 @@ char **main_argv;
 
 	    abort_pending = 0;
 	    split_size = -1;
-	    do_dump(mesgfd, datafd, indexfd, outfd);
+	    if(do_dump(mesgfd, datafd, indexfd, outfd)) {
+	    }
 	    aclose(mesgfd);
 	    aclose(datafd);
 	    if (indexfd != -1)
@@ -526,6 +531,8 @@ int outf, size, split;
 	    int save_spaceleft;
 	    char *save_dataptr;
 	    char save_databuf[DATABUF_SIZE];
+	    char *tmp_filename = NULL;
+
 
 	    memcpy(save_databuf, databuf, sizeof(databuf)); 
 	    save_spaceleft = spaceleft;
@@ -549,9 +556,10 @@ int outf, size, split;
 		    sizeof(file.cont_filename));
 	    file.cont_filename[sizeof(file.cont_filename)-1] = '\0';
 
-	    if((outf = open(cont_filename,O_RDWR)) == -1) {
+	    tmp_filename = newvstralloc(tmp_filename, cont_filename, ".tmp", NULL);
+	    if((outf = open(tmp_filename,O_RDWR)) == -1) {
 		errstr = squotef("holding file \"%s\": %s",
-			    cont_filename, strerror(errno));
+			    tmp_filename, strerror(errno));
 		return 1;
 	    }
 	    strncpy(file.cont_filename, new_filename, 
@@ -563,9 +571,10 @@ int outf, size, split;
 	    strncpy(cont_filename, new_filename, sizeof(cont_filename));
 	    cont_filename[sizeof(cont_filename)-1] = '\0';
 
-	    if((outf = open(new_filename, O_WRONLY|O_CREAT, 0666)) == -1) {
+	    tmp_filename = newvstralloc(tmp_filename, new_filename, ".tmp", NULL);
+	    if((outf = open(tmp_filename, O_WRONLY|O_CREAT, 0666)) == -1) {
 		errstr = squotef("holding file \"%s\": %s",
-			    filename, strerror(errno));
+			    tmp_filename, strerror(errno));
 		return 1;
 	    }
 	    if(outf != save_outf) {
@@ -883,7 +892,7 @@ dumpfile_t *file;
 }
 
 
-static void do_dump(mesgfd, datafd, indexfd, outfd)
+int do_dump(mesgfd, datafd, indexfd, outfd)
 int mesgfd, datafd, indexfd, outfd;
 {
     int maxfd, nfound, size1, size2, eof1, eof2;
@@ -1255,7 +1264,7 @@ int mesgfd, datafd, indexfd, outfd;
 	amfree(indexfile);
     }
 
-    return;
+    return 1;
 
  failed:
 
@@ -1310,7 +1319,7 @@ int mesgfd, datafd, indexfd, outfd;
     if (indexfile)
 	unlink(indexfile);
 
-    return;
+    return 0;
 }
 
 /* -------------------- */

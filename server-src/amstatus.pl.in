@@ -521,6 +521,7 @@ sub dump_size() {
 	local($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
 		   $atime,$mtime,$ctime,$blksize,$blocks);
 	while ($filename ne "") {
+		$filename = "$filename.tmp" if (!(-e "$filename"));
 		($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
 				$atime,$mtime,$ctime,$blksize,$blocks) = stat($filename);
 		$size=$size-32768 if $size > 32768;
