@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: uscan.l,v 1.7 1998/02/27 18:13:45 jrj Exp $
+ * $Id: uscan.l,v 1.8 1998/02/27 18:33:17 jrj Exp $
  *
  * lexer for amrecover interactive language
  */
@@ -148,7 +148,7 @@ char *text;
 	    y += 1900;
 	}
     }
-    ret = QUIT;
+    ret = PATH;				/* cause a parse error */
     if(y < 1000 || y > 9999) {
 	yyerror("invalid year");
     } else if(m < 1 || m > 12) {
