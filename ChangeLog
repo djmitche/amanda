@@ -1,5 +1,9 @@
 1998-06-13  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* example/amanda.conf.in (bumpmult): fixed equation for threshold
+	* man/amanda.8.in (bumpsize): fix threshold example.
+	problem reported by Brian McEntire <brianm@fsg1.nws.noaa.gov>
+
 	* server-src/logfile.c (open_log): open log file with mode 0600.
 
 	* server-src/amdump.sh.in: refuse to run if either amdump or log

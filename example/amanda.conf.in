@@ -19,7 +19,7 @@ tapecycle 8 tapes	# the number of tapes in rotation
 
 bumpsize 20 Mb		# minimum savings (threshold) to bump level 1 -> 2
 bumpdays 1		# minimum days at each level
-bumpmult 4		# threshold = bumpsize * (level-1)**bumpmult
+bumpmult 4		# threshold = bumpsize * bumpmult^(level-1)
 
 etimeout 300		# number of seconds per filesystem for estimates.
 #etimeout -600		# total number of seconds for estimates.

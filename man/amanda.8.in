@@ -474,9 +474,9 @@ bumping too much by making it harder to bump to the next level.
 For example, with the default
 .B bumpsize
 and
-.BR bumpmult ,
-the bump threshold will be 10 Mbytes for level one, 20 Mbytes for level two,
-40 Mbytes for level three, and so on.
+.BR bumpmult
+set to 2.0, the bump threshold will be 10 Mbytes for level one, 20
+Mbytes for level two, 40 Mbytes for level three, and so on.
 .TP
 .BN bumpdays int
 Default:
