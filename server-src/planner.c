@@ -713,10 +713,8 @@ int level;
 
     if(size == -1) return size;
 
-    if(!dp->dtype->compress_best
-       && !dp->dtype->compress_fast
-       && !dp->dtype->srvcompress)
-	    return size;
+    if(dp->dtype->compress == COMP_NONE)
+	return size;
 
     if(level == 0) ratio = est(dp)->fullcomp;
     else ratio = est(dp)->incrcomp;

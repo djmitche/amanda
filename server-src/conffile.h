@@ -59,6 +59,12 @@ typedef struct tapetype_s {
     long speed;
 } tapetype_t;
 
+#define COMP_NONE	0	/* No compression */
+#define COMP_FAST	1	/* Fast compression on client */
+#define COMP_BEST	2	/* Best compression on client */
+#define COMP_SERV_FAST	3	/* Fast compression on server */
+#define COMP_SERV_BEST	4	/* Best compression on server */
+
 typedef struct dumptype_s {
     struct dumptype_s *next;
     int seen;
@@ -73,10 +79,8 @@ typedef struct dumptype_s {
     auth_t auth;
     int maxdumps;
     time_t start_t;
+    int compress;
     /* flag options */
-    int compress_best:1;
-    int compress_fast:1;
-    int srvcompress:1;
     int record:1;
     int skip_incr:1;
     int skip_full:1;

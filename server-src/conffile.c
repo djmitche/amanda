@@ -561,8 +561,8 @@ static void init_dumpdefaults()
     dpcur.auth = AUTH_BSD;
 
     /* options */
-    dpcur.compress_fast = dpcur.record = 1;
-    dpcur.srvcompress = dpcur.compress_best = 0;
+    dpcur.record = 1;
+    dpcur.compress = COMP_FAST;
     dpcur.skip_incr = dpcur.skip_full = dpcur.no_full = dpcur.no_hold = 0;
     dpcur.kencrypt = 0;
     dpcur.index = 0;
@@ -866,21 +866,17 @@ static void get_dumpopts()
 	switch(tok) {
 	case COMPR_BEST:
 	    ckseen(&dpseen.compress);
-	    dpcur.srvcompress = dpcur.compress_fast = 0;
-	    dpcur.compress_best = 1; break;
+	    dpcur.compress = COMP_BEST; break;
 	case COMPR:
 	case COMPR_FAST:
 	    ckseen(&dpseen.compress);
-	    dpcur.compress_fast = 1;
-	    dpcur.srvcompress = dpcur.compress_best = 0; break;
+	    dpcur.compress = COMP_FAST; break;
 	case NO_COMPRESS:
 	    ckseen(&dpseen.compress);
-	    dpcur.srvcompress = dpcur.compress_fast =
-	      dpcur.compress_best = 0; break;
+	    dpcur.compress = COMP_NONE; break;
 	case SRVCOMPRESS:
 	    ckseen(&dpseen.compress);
-	    dpcur.srvcompress = 1;
-	    dpcur.compress_fast = dpcur.compress_best = 0; break;
+	    dpcur.compress = COMP_SERV_FAST; break;
 	case KRB4_AUTH:  ckseen(&dpseen.auth);  dpcur.auth = AUTH_KRB4;break;
 	case BSD_AUTH:   ckseen(&dpseen.auth);   dpcur.auth = AUTH_BSD;break;
 	case KENCRYPT:   ckseen(&dpseen.kencrypt);  dpcur.kencrypt = 1;break;
@@ -1334,11 +1330,22 @@ dump_configuration()
 	printf("	FREQUENCY %d\n", dp->frequency);
 	printf("	MAXDUMPS %d\n", dp->maxdumps);
 	printf("	OPTIONS: ");
-	if(dp->srvcompress) printf("SRVCOMPRESS ");
-	else if(!dp->compress_fast && !dp->compress_best)
+
+	switch(dp->compress) {
+	case COMP_NONE:
 	    printf("NO-COMPRESS ");
-	else if(dp->compress_best) printf("COMPRESS-BEST ");
-	else printf("COMPRESS-FAST ");
+	    break;
+	case COMP_FAST:
+	    printf("COMPRESS-FAST ");
+	    break;
+	case COMP_BEST:
+	    printf("COMPRESS-BEST ");
+	    break;
+	case COMP_SERV_FAST:
+	    printf("SRVCOMPRESS ");
+	    break;
+	}
+
 	if(!dp->record) printf("NO-");
 	printf("RECORD");
 	if(dp->auth == AUTH_BSD) printf(" BSD-AUTH");

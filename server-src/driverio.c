@@ -235,9 +235,18 @@ disk_t *dp;
 	if(dp->dtype->kencrypt) strcat(str, "kencrypt;");
     }
 
-    if(dp->dtype->srvcompress) strcat(str, "srvcompress;");
-    else if(dp->dtype->compress_best) strcat(str, "compress-best;");
-    else if(dp->dtype->compress_fast) strcat(str, "compress-fast;");
+    switch(dp->dtype->compress) {
+    case COMP_FAST:
+	strcat(str, "compress-fast;");
+	break;
+    case COMP_BEST:
+	strcat(str, "compress-best;");
+	break;
+    case COMP_SERV_FAST:
+	strcat(str, "srvcompress;");
+	break;
+    }
+
     if(!dp->dtype->record) strcat(str,"no-record;");
     if(dp->dtype->index) strcat(str,"index;");
     if(dp->dtype->exclude) strcat(str, dp->dtype->exclude);

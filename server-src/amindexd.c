@@ -3,13 +3,17 @@
 * File:          $RCSfile: amindexd.c,v $
 * Part of:       
 *
-* Revision:      $Revision: 1.2 $
-* Last Edited:   $Date: 1997/05/01 19:03:39 $
-* Author:        $Author: oliva $
+* Revision:      $Revision: 1.3 $
+* Last Edited:   $Date: 1997/07/03 11:29:11 $
+* Author:        $Author: george $
 *
 * Notes:         
 * Private Func:  
 * History:       $Log: amindexd.c,v $
+* History:       Revision 1.3  1997/07/03 11:29:11  george
+* History:       Convert the config file compression variables from 3 separate mutually
+* History:       exclusive flags into 1 int with different values.
+* History:
 * History:       Revision 1.2  1997/05/01 19:03:39  oliva
 * History:       Integrated amgetidx into sendbackup&dumper.
 * History:
@@ -560,10 +564,10 @@ int are_dumps_compressed P((void))
     }
     
     /* send data to caller */
-    if (diskp->dtype->compress_best || diskp->dtype->compress_fast)
-	reply(200, "YES");
-    else
+    if (diskp->dtype->compress == COMP_NONE)
 	reply(200, "NO");
+    else
+	reply(200, "YES");
 
     return 0;
 }
