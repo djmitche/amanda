@@ -26,6 +26,7 @@ EGREP=@EGREP@
 MT=@MT@
 MTF=@MT_FILE_FLAG@
 DD=@DD@
+ONLINEREGEX="ONLINE|READY|sense_key\\(0x0\\)|sense key error = 0"
 tape=`getconf$SUF tapedev`
 
 changerfile=`getconf$SUF changerfile`
@@ -53,7 +54,7 @@ request() {
 #
 
 eject() { 
-	used=`$MT $MTF $tape status 2>&1 | $EGREP "ONLINE|READY"`
+	used=`$MT $MTF $tape status 2>&1 | $EGREP "$ONLINEREGEX"`
 	if [ ! -z "$used" ];then
 		$MT $MTF $tape rewind
 		$MT $MTF $tape offline
@@ -70,7 +71,7 @@ eject() {
 
 reset() {
 	$MT $MTF $tape rewind
-	used=`$MT $MTF $tape status 2>&1 | $EGREP "ONLINE|READY"`
+	used=`$MT $MTF $tape status 2>&1 | $EGREP "$ONLINEREGEX"`
 	if [ ! -z "$used" ];then
 		echo "$slot $tape"
 	else
@@ -83,7 +84,7 @@ reset() {
 
 loadslot() {
 	$MT $MTF $tape rewind
-	used=`$MT $MTF $tape status 2>&1 | $EGREP "ONLINE|READY"`
+	used=`$MT $MTF $tape status 2>&1 | $EGREP "$ONLINEREGEX"`
 	echo "     -> loaded $used" >> /tmp/changer.debug
 	case $1 in
 	current)
@@ -139,7 +140,7 @@ loadslot() {
 	echo "     -> load   $load" >> /tmp/changer.debug
 	while [ -z "$used" ]; do
 		request $load
-		used=`$MT $MTF $tape status 2>&1 | $EGREP "ONLINE|READY"`
+		used=`$MT $MTF $tape status 2>&1 | $EGREP "$ONLINEREGEX"`
 	done
 	echo $load > $slotfile
 	echo "     -> rew $load" >> /tmp/changer.debug
@@ -152,7 +153,7 @@ loadslot() {
 #
 
 info() {
-	used=`$MT $MTF $tape status 2>&1 | $EGREP "ONLINE|READY"`
+	used=`$MT $MTF $tape status 2>&1 | $EGREP "$ONLINEREGEX"`
 	echo "     -> info   $used" >> /tmp/changer.debug
 	if [ -z "$used" ];then
 		echo "0 $lastslot 1"
