@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.20.2.1 2004/02/02 20:29:12 martinea Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.20.2.2 2004/02/13 14:03:36 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -787,7 +787,7 @@ char *str;
     printf("dump of driver schedule %s:\n--------\n", str);
 
     for(dp = qp->head; dp != NULL; dp = dp->next) {
-	printf("  %-10.10s %.16s lv %d t %5ld s %8lu p %d\n",
+	printf("  %-20s %-25s lv %d t %5ld s %8lu p %d\n",
 	       dp->host->hostname, dp->name, sched(dp)->level,
 	       sched(dp)->est_time, sched(dp)->est_size, sched(dp)->priority);
     }
