@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.17 2000/09/27 00:30:43 martinea Exp $
+ * $Id: amcheck.c,v 1.50.2.18 2000/11/21 22:07:32 jrjackson Exp $
  *
  * checks for common problems in server and clients
  */
@@ -730,14 +730,14 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	olddir = vstralloc(conf_logdir, "/oldlog", NULL);
 	if (stat(olddir,&stat_old) == 0) { /* oldlog exist */
 	    if(!(S_ISDIR(stat_old.st_mode))) {
-		fprintf(outf, "ERROR: Oldlog directory \"%s\" is not a directory\n", olddir);
+		fprintf(outf, "ERROR: oldlog directory \"%s\" is not a directory\n", olddir);
 	    }
 	    if(access(olddir, W_OK) == -1) {
 		fprintf(outf, "ERROR: oldlog dir %s: not writable\n", olddir);
 	    }
 	}
 	else if(lstat(olddir,&stat_old) == 0) {
-	    fprintf(outf, "ERROR: Oldlog directory \"%s\" is not a directory\n", olddir);
+	    fprintf(outf, "ERROR: oldlog directory \"%s\" is not a directory\n", olddir);
 	}
 
 	if (testtape) {
@@ -848,7 +848,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 #if TEXTDB
 	if(stat(conf_infofile, &statbuf) == -1) {
 	    fprintf(outf, "NOTE: info dir %s: does not exist\n", conf_infofile);
-	    fprintf(outf, "NOTE: it is supposed to be created on the next run\n");
+	    fprintf(outf, "NOTE: it will be created on the next run\n");
 	    amfree(conf_infofile);
 	} else if (!S_ISDIR(statbuf.st_mode)) {
 	    fprintf(outf, "ERROR: info dir %s: not a directory\n", conf_infofile);

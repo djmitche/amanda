@@ -1,5 +1,9 @@
 2000-11-21 John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/amcheck.c: Minor message wording changes.
+
+2000-11-21 John R. Jackson  <jrj@purdue.edu>
+
 	* configure.in: Forgot to check in this part of new amgetconf.8.in.
 
 2000-11-21 John R. Jackson  <jrj@purdue.edu>
@@ -1190,7 +1194,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.410 2000/11/21 21:58:38 jrjackson Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.411 2000/11/21 22:07:31 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
