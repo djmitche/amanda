@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-linux.c,v 1.1.2.17 2000/10/24 23:49:39 martinea Exp $
+ * $Id: scsi-linux.c,v 1.1.2.18 2000/10/25 00:21:16 martinea Exp $
  *
  * Interface to execute SCSI commands on Linux
  *
@@ -83,7 +83,7 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
   int DeviceFD;
   int i;
   int timeout;
-  OpenFiles_T *pwork;
+  OpenFiles_T *pwork = NULL;
   struct stat pstat;
   char *buffer = NULL ;           /* Will contain the device name after checking */
   int usesg = 0;        /* Do we work with an sg device ?, if yes open RDWR, else RDONLY */
@@ -208,7 +208,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
 {
  struct sg_header *psg_header;
   char *buffer;
-  int osize;
+  int osize=0;
   int status;
 
   if (SCSI_OFF + CDB_Length + DataBufferLength > 4096) 
@@ -391,7 +391,7 @@ int Tape_Status( int DeviceFD)
      return(-1);
   }
 
-  dbprintf(("ioctl -> mtget.mt_gstat %X\n",mtget.mt_gstat));
+  dbprintf(("ioctl -> mtget.mt_gstat %lX\n",mtget.mt_gstat));
   if (GMT_ONLINE(mtget.mt_gstat))
   {
     ret = TAPE_ONLINE;

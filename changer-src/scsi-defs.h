@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-defs.h,v 1.1.2.15 2000/10/24 23:49:39 martinea Exp $
+ * $Id: scsi-defs.h,v 1.1.2.16 2000/10/25 00:21:16 martinea Exp $
  *
  */
 /*
@@ -1057,8 +1057,15 @@ int SCSI_ExecuteCommand(int DeviceFD,
                         int DataBufferLength,
                         char *RequestSense,
                         int RequestSenseLength);
+int SCSI_Inquiry(int, SCSIInquiry_T *, unsigned char);
+int PrintInquiry(SCSIInquiry_T *);
+int DecodeSCSI(CDB_T CDB, char *string);
 
+void ChangerReplay(char *option);
 void ChangerStatus(char * option, char * labelfile, int HasBarCode, char *changer_file, char *changer_dev, char *tape_device);
+
+int BarCode(int fd);
+char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action);
 
 int Tape_Ready(char *tapedev, int wait);
 

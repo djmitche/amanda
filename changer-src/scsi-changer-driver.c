@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-changer-driver.c,v 1.1.2.23 2000/10/24 23:49:39 martinea Exp $
+ * $Id: scsi-changer-driver.c,v 1.1.2.24 2000/10/25 00:21:15 martinea Exp $
  *
  * Interface to control a tape robot/library connected to the SCSI bus
  *
@@ -125,7 +125,6 @@ int DecodeModeSense(char *buffer, int offset, char *pstring, char block, FILE *o
 int SCSI_Move(int DeviceFD, unsigned char chm, int from, int to);
 int SCSI_LoadUnload(int DeviceFD, RequestSense_T *pRequestSense, unsigned char byte1, unsigned char load);
 int SCSI_TestUnitReady(int, RequestSense_T *);
-int SCSI_Inquiry(int, char *, unsigned char);
 int SCSI_ModeSense(int DeviceFD, char *buffer, u_char size, u_char byte1, u_char byte2);
 int SCSI_ModeSelect(int DeviceFD, 
                     char *buffer,
@@ -4650,15 +4649,16 @@ void ChangerReplay(char *option)
 {
     char buffer[1024];
     FILE *ip;
-    int x = 0;
+    int x = 0, bufferx;
    
     if ((ip=fopen("/tmp/chg-scsi-trace", "r")) == NULL)
       {
 	exit(1);
       }
     
-    while (fscanf(ip, "%2x", &buffer[x]) != EOF)
+    while (fscanf(ip, "%2x", &bufferx) != EOF)
       {
+	buffer[x] = bufferx;
 	x++;
       }
 
@@ -5253,7 +5253,7 @@ int SCSI_ModeSense(int DeviceFD, char *buffer, u_char size, u_char byte1, u_char
   return(ret);
 }
 
-int SCSI_Inquiry(int DeviceFD, char *buffer, u_char size)
+int SCSI_Inquiry(int DeviceFD, SCSIInquiry_T *buffer, u_char size)
 {
   CDB_T CDB;
   RequestSense_T *pRequestSense;
@@ -5316,7 +5316,7 @@ int SCSI_Inquiry(int DeviceFD, char *buffer, u_char size)
       retry++;
       if (ret == 0)
         {
-          dump_hex(buffer, size);
+          dump_hex((char *)buffer, size);
           dbprintf(("SCSI_Inquiry : end %d\n", ret));
           return(ret);
         }
