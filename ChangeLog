@@ -1,3 +1,7 @@
+1998-08-14  John R. Jackson  <jrj@purdue.edu>
+
+	* docs/TAPE.CHANGERS: describe "advance" and clean up some spelling.
+
 1998-08-13  Alexandre Oliva  <oliva@dcc.unicamp.br>, Marcel Hild  <hild@id-pro.de>
 
 	* configure.in (--with-portrange): validate and define PORTRANGE
