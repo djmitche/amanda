@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.27 2003/03/08 18:42:49 martinea Exp $
+ * $Id: client_util.c,v 1.28 2003/07/02 17:03:22 martinea Exp $
  *
  */
 
@@ -196,6 +196,7 @@ char *ainc;
 	char *incname = ainc+2;
 	if(strchr(incname, '/')) {
 	    fprintf(file_include, "./%s\n", incname);
+	    nb_exp++;
 	}
 	else {
 	    char *regex;
@@ -220,6 +221,7 @@ char *ainc;
 			nb_exp++;
 		    }
 		}
+		closedir(d);
 	    }
 	}
     }

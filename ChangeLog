@@ -1,3 +1,9 @@
+2003-07-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	patch by Paul Bijnens <paul.bijnens@xplanation.com>
+
+	* client-src/client_util.c (add_include): Count include with 2 /,
+	  Fix descriptor leak.
+
 2003-06-25  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/amstatus.pl.in: Fix print spacing for idle dumpers.
