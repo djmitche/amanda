@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.54 2002/11/05 01:58:52 martinea Exp $
+ * $Id: diskfile.c,v 1.55 2002/12/27 19:35:37 martinea Exp $
  *
  * read disklist file
  */
@@ -479,7 +479,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
     }
 
     if(dtype->ignore || dtype->strategy == DS_SKIP) {
-	return (-1);
+	return (1);
     }
 
     /* success, add disk to lists */
