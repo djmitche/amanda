@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.5 1998/06/24 03:54:23 oliva Exp $
+ * $Id: driverio.h,v 1.6 1998/07/01 15:37:12 jrj Exp $
  *
  * driver-related helper functions
  */
@@ -78,7 +78,7 @@ typedef struct holdalloc_s {
 GLOBAL dumper_t dmptable[MAX_DUMPERS];
 GLOBAL int inparallel, big_dumpers;
 GLOBAL int degraded_mode;
-GLOBAL int reserved_space;
+GLOBAL unsigned long reserved_space;
 
 /* command/result tokens */
 

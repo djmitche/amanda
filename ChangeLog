@@ -1,4 +1,9 @@
-1998-06-26  John R. Jackson  <jrj@purdue.edu>
+1998-07-01  John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/driverio.h: change reserved_space to unsigned long to
+	match free_space() and avoid a compiler warning.
+
+1998-06-30  John R. Jackson  <jrj@purdue.edu>
 
 	* man/amanda.8.in: fix amrecover synopsis and add a short description.
 	Noted by Brendan M Coffey <bcoffey@connix.com>.
