@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.40.2.3.4.4.2.22.2.1 2004/08/11 19:16:27 martinea Exp $
+ * $Id: selfcheck.c,v 1.40.2.3.4.4.2.22.2.2 2004/08/12 12:30:53 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -68,7 +68,7 @@ static g_option_t *g_options = NULL;
 int main P((int argc, char **argv));
 
 static void check_options P((char *program, char *calcprog, char *disk, char *device, option_t *options));
-static void check_disk P((char *program, char *disk, char *amdevice, int level));
+static void check_disk P((char *program, char *calcprog, char *disk, char *amdevice, int level));
 static void check_overall P((void));
 static void check_access P((char *filename, int mode));
 static void check_file P((char *filename, int mode));
@@ -214,7 +214,7 @@ char **argv;
 	    s[-1] = '\0';			/* terminate the options */
 	    options = parse_options(optstr, disk, device, g_options->features, 1);
 	    check_options(program, calcprog, disk, device, options);
-	    check_disk(program, disk, device, level);
+	    check_disk(program, calcprog, disk, device, level);
 	    free_sl(options->exclude_file);
 	    free_sl(options->exclude_list);
 	    free_sl(options->include_file);
@@ -237,7 +237,7 @@ char **argv;
 	    need_gnutar=1;
 	    need_compress_path=1;
 	    need_calcsize=1;
-	    check_disk(program, disk, device, level);
+	    check_disk(program, calcprog, disk, device, level);
 	} else {
 	    goto err;				/* bad syntax */
 	}
@@ -422,8 +422,8 @@ check_options(program, calcprog, disk, device, options)
 	need_compress_path=1;
 }
 
-static void check_disk(program, disk, amdevice, level)
-char *program, *disk, *amdevice;
+static void check_disk(program, calcprog, disk, amdevice, level)
+char *program, *calcprog, *disk, *amdevice;
 int level;
 {
     char *device = NULL;
@@ -435,10 +435,22 @@ int level;
     int access_result;
     char *access_type;
     char *extra_info = NULL;
+    char *myprogram = program;
+
+    if(strcmp(myprogram,"CALCSIZE") == 0) {
+	if(amdevice[0] == '/' && amdevice[1] == '/') {
+	    err = vstralloc("Can't use CALCSIZE for samba estimate,",
+			    " use CLIENT: ",
+			    amdevice,
+			    NULL);
+	    goto common_exit;
+	}
+	myprogram = calcprog;
+    }
 
     dbprintf(("%s: checking disk %s\n", debug_prefix_time(NULL), disk));
 
-    if (strcmp(program, "GNUTAR") == 0) {
+    if (strcmp(myprogram, "GNUTAR") == 0) {
         if(amdevice[0] == '/' && amdevice[1] == '/') {
 #ifdef SAMBA_CLIENT
 	    int nullfd, checkerr;
