@@ -2,6 +2,8 @@ Changes in release 2.5.0
 
 * New SECURITY API (see docs/SECURITY.API for details)
 * New DUMPER API (see docs/DUMPER.API for details)
+* New [host [disk]*]* arguments to amdump, amcheck, amadmin and amflush
+* New [-D datastamp]* arguments to amflush
 
 Changes in release 2.4.2
 
