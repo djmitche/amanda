@@ -1021,6 +1021,8 @@ case "$target" in
 			;;
   *-nextstep3)
 			;;
+  *-pc-bsdi*)
+			;;
   *-pc-linux-*)
 			;;
   alpha-*-linux-*)
@@ -1044,8 +1046,6 @@ case "$target" in
 			esac
 			;;
   *-sun-sunos4.1*)
-			;;
-  sparc-unknown-linux-gnu)
 			;;
   *-ultrix*)
 			: ${USE_RUNDUMP=yes}
@@ -1071,7 +1071,7 @@ case "$target" in
 This machine, target type $target, is not known
 to be fully supported by this configure script.  If the
 installation of Amanda on this system succeeds or needed
-any patches, please email amanda-hackers@cs.umd.edu with
+any patches, please email amanda-hackers@amanda.org with
 the patches or an indication of the sucess or failure of
 the Amanda installation on your system.
 *****
