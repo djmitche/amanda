@@ -1,3 +1,12 @@
+1998-10-31  Michael Schmitz <mschmitz@iname.com>
+
+	* configure.in: let configure check whether strcasecmp is
+ 	present
+	* common-src/strcasecmp.c: new file which contains a definition
+	of strcasecmp
+	* common-src/amanda.h: added code to declare strcasecmp in
+ 	case it's not declared in a standard header
+
 1998-10-31  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* configure.in (snprintf): arrange that it is included in the

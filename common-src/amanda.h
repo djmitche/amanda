@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.64 1998/07/04 00:18:34 oliva Exp $
+ * $Id: amanda.h,v 1.65 1998/10/31 06:19:41 oliva Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -1014,6 +1014,10 @@ extern int socketpair P((int domain, int type, int protocol, int sv[2]));
 
 #ifndef HAVE_SSCANF_DECL
 extern int sscanf P((const char *s, const char *format, ...));
+#endif
+
+#ifndef HAVE_STRCASECMP_DECL
+extern int strcasecmp P((const char *s1, const char *s2));
 #endif
 
 #ifndef HAVE_STRERROR_DECL
