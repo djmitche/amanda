@@ -1,5 +1,9 @@
 2000-12-13 John R. Jackson <jrj@purdue.edu>
 
+	* docs/Makefile.am: Removing entries for missing RAIT/VTAPE-API files.
+
+2000-12-13 John R. Jackson <jrj@purdue.edu>
+
 	* tape-src/tapeio.c: De-commit the RAIT feature from 2.4.2.  It will
 	  be in 2.5 and 2.4.2-multitape.
 	* tape-src/tapeio.h: Ditto.
@@ -1301,7 +1305,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.423 2000/12/13 18:33:30 jrjackson Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.424 2000/12/13 18:57:18 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
