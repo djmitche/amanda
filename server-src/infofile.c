@@ -136,8 +136,6 @@ info_t *info;
     stats_t onestat;
     long onedate;
 
-    memset(info, 0, sizeof(info_t));
-
     /* get version: command: lines */
 
     if(!fgets(line, 1024, infof)) return -1;
@@ -363,14 +361,27 @@ info_t *record;
     char *fn;	/* Name of data file */
     FILE *infof;
     int rc;
+    int i;
+
+    memset(record, '\0', sizeof(info_t));
 
     infof = open_txinfofile(hostname, diskname, "r");
 
-    if(infof == NULL) return -1; /* record not found */
+    if(infof == NULL) {
+	rc = -1; /* record not found */
+    }
+    else {
+	rc = read_txinfofile(infof, record);
 
-    rc = read_txinfofile(infof, record);
+	close_txinfofile(infof);
+    }
 
-    close_txinfofile(infof);
+    if (rc != 0) {
+	for(i = 0; i < AVG_COUNT; i++) {
+	    record->full.comp[i] = record->incr.comp[i] = -1.0;
+	    record->full.rate[i] = record->incr.rate[i] = -1.0;
+	}
+    }
 
     return rc;
 #else
