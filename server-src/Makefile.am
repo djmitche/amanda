@@ -6,8 +6,8 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
-LDADD =	libamserver.a ../tape-src/libamtape.a \
-	../common-src/libamanda.a libamserver.a
+LDADD =	libamserver.a ../tape-src/libamtape.a ../common-src/libamanda.a \
+        libamserver.a ../common-src/libamanda.a
 # libamserver.a must be duplicated in some systems
 
 SUFFIXES =		.sh .pl
