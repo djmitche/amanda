@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.16.2.5.2.9 2002/03/22 15:00:22 martinea Exp $
+ * $Id: conffile.c,v 1.54.2.16.2.5.2.10 2002/04/07 20:00:21 jrjackson Exp $
  *
  * read configuration file
  */
@@ -134,6 +134,23 @@ typedef union {
     double r;
     char *s;
 } val_t;
+
+/* this corresponds to the normal output of amanda, but may
+ * be adapted to any spacing as you like.
+ */
+ColumnInfo ColumnData[] = {
+    { "HostName",   0, 12, 12, 0, "%-*.*s", "HOSTNAME" },
+    { "Disk",       1, 11, 11, 0, "%-*.*s", "DISK" },
+    { "Level",      1, 1,  1,  0, "%*.*d",  "L" },
+    { "OrigKB",     1, 7,  0,  0, "%*.*f",  "ORIG-KB" },
+    { "OutKB",      0, 7,  0,  0, "%*.*f",  "OUT-KB" },
+    { "Compress",   0, 6,  1,  0, "%*.*f",  "COMP%" },
+    { "DumpTime",   0, 7,  7,  0, "%*.*s",  "MMM:SS" },
+    { "DumpRate",   0, 6,  1,  0, "%*.*f",  "KB/s" },
+    { "TapeTime",   1, 6,  6,  0, "%*.*s",  "MMM:SS" },
+    { "TapeRate",   0, 6,  1,  0, "%*.*f",  "KB/s" },
+    { NULL,         0, 0,  0,  0, NULL,     NULL }
+};
 
 /* visible holding disk variables */
 
@@ -2571,6 +2588,103 @@ tok_t exp;
     }
 
     return;
+}
+
+int ColumnDataCount()
+{
+    return sizeof(ColumnData) / sizeof(ColumnData[0]);
+}
+
+/* conversion from string to table index
+ */
+int StringToColumn(char *s) {
+    int cn;
+    for (cn=0; ColumnData[cn].Name != NULL; cn++) {
+    	if (strcasecmp(s, ColumnData[cn].Name) == 0) {
+	    break;
+	}
+    }
+    return cn;
+}
+
+char LastChar(char *s) {
+    return s[strlen(s)-1];
+}
+
+int SetColumDataFromString(ColumnInfo* ci, char *s, char **errstr) {
+    /* Convert from a Columspec string to our internal format
+     * of columspec. The purpose is to provide this string
+     * as configuration paramter in the amanda.conf file or
+     * (maybe) as environment variable.
+     * 
+     * This text should go as comment into the sample amanda.conf
+     *
+     * The format for such a ColumnSpec string s is a ',' seperated
+     * list of triples. Each triple consists of
+     *   -the name of the column (as in ColumnData.Name)
+     *   -prefix before the column
+     *   -the width of the column
+     *       if set to -1 it will be recalculated
+     *	 to the maximum length of a line to print.
+     * Example:
+     * 	"Disk=1:17,HostName=1:10,OutKB=1:7"
+     * or
+     * 	"Disk=1:-1,HostName=1:10,OutKB=1:7"
+     *	
+     * You need only specify those colums that should be changed from
+     * the default. If nothing is specified in the configfile, the
+     * above compiled in values will be in effect, resulting in an
+     * output as it was all the time.
+     *							ElB, 1999-02-24.
+     */
+#ifdef TEST
+    char *myname= "SetColumDataFromString";
+#endif
+
+    while (s && *s) {
+	int Space, Width;
+	int cn;
+    	char *eon= strchr(s, '=');
+
+	if (eon == NULL) {
+	    *errstr = stralloc2("invalid columnspec: ", s);
+#ifdef TEST
+	    fprintf(stderr, "%s: %s\n", myname, *errstr);
+#endif
+	    return -1;
+	}
+	*eon= '\0';
+	cn=StringToColumn(s);
+	if (ColumnData[cn].Name == NULL) {
+	    *errstr = stralloc2("invalid column name: ", s);
+#ifdef TEST
+	    fprintf(stderr, "%s: %s\n", myname, *errstr);
+#endif
+	    return -1;
+	}
+	if (sscanf(eon+1, "%d:%d", &Space, &Width) != 2) {
+	    *errstr = stralloc2("invalid format: ", eon + 1);
+#ifdef TEST
+	    fprintf(stderr, "%s: %s\n", myname, *errstr);
+#endif
+	    return -1;
+	}
+	ColumnData[cn].Width= Width;
+	ColumnData[cn].PrefixSpace= Space;
+	if (LastChar(ColumnData[cn].Format) == 's') {
+	    if (Width < 0)
+		ColumnData[cn].MaxWidth= 1;
+	    else
+		if (Width > ColumnData[cn].Precision)
+		    ColumnData[cn].Precision= Width;
+	}
+	else if (Width < ColumnData[cn].Precision)
+	    ColumnData[cn].Precision= Width;
+	s= strchr(eon+1, ',');
+	if (s != NULL)
+	    s++;
+    }
+    return 0;
 }
 
 

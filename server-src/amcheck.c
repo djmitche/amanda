@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.19.2.7.2.2 2002/03/31 21:52:07 jrjackson Exp $
+ * $Id: amcheck.c,v 1.50.2.19.2.7.2.3 2002/04/07 20:00:18 jrjackson Exp $
  *
  * checks for common problems in server and clients
  */
@@ -627,7 +627,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
     FILE *outf;
     holdingdisk_t *hdp;
     int pid;
-    int tapebad = 0, disklow = 0, logbad = 0;
+    int confbad = 0, tapebad = 0, disklow = 0, logbad = 0;
     int userbad = 0, infobad = 0, indexbad = 0, pgmbad = 0;
     int testtape = do_tapechk;
 
@@ -653,6 +653,43 @@ int start_server_check(fd, do_localchk, do_tapechk)
 
     fprintf(outf, "Amanda Tape Server Host Check\n");
     fprintf(outf, "-----------------------------\n");
+
+    /*
+     * Check various server side config file settings.
+     */
+    if(do_localchk) {
+	char *ColumnSpec;
+	char *errstr = NULL;
+	tapetype_t *tp;
+	char *lbl_templ;
+
+	ColumnSpec = getconf_str(CNF_COLUMNSPEC);
+	if(SetColumDataFromString(ColumnData, ColumnSpec, &errstr) < 0) {
+	    fprintf(outf, "ERROR: %s\n", errstr);
+	    amfree(errstr);
+	    confbad = 1;
+	}
+	tp = lookup_tapetype(getconf_str(CNF_TAPETYPE));
+	lbl_templ = tp->lbl_templ;
+	if(strcmp(lbl_templ, "") != 0) {
+	    if(strchr(lbl_templ, '/') == NULL) {
+		lbl_templ = stralloc2(config_dir, lbl_templ);
+	    } else {
+		lbl_templ = stralloc(lbl_templ);
+	    }
+	    if(access(lbl_templ, R_OK) == -1) {
+		fprintf(outf,
+			"ERROR: cannot access lbl_templ file %s: %s\n",
+			lbl_templ,
+			strerror(errno));
+		confbad = 1;
+	    }
+#if !defined(LPRCMD)
+	    fprintf(outf, "ERROR: lbl_templ set but no printer defined\n");
+	    confbad = 1;
+#endif
+	}
+    }
 
     /*
      * Look up the programs used on the server side.
@@ -699,6 +736,10 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	    pgmbad = pgmbad \
 		     || test_server_pgm(outf, sbindir, "amreport",
 					0, uid_dumpuser);
+	}
+	if(access(COMPRESS_PATH, X_OK) == -1) {
+	    fprintf(outf, "WARNING: %s is not executable, server-compression and indexing will not work\n",
+	            COMPRESS_PATH);
 	}
     }
 
@@ -1100,13 +1141,6 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	amfree(conf_indexdir);
     }
 
-    if(do_localchk) {
-	if(access(COMPRESS_PATH, X_OK) == -1) {
-	    fprintf(outf, "WARNING: %s is not executable, server-compression and indexing will not work\n",
-	            COMPRESS_PATH);
-	}
-    }
-
     amfree(datestamp);
     amfree(label);
     amfree(config_dir);
@@ -1123,6 +1157,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
     }
 
     exit(userbad \
+	 || confbad \
 	 || tapebad \
 	 || disklow \
 	 || logbad \

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.17.4.6.2.3 2002/02/11 01:30:42 jrjackson Exp $
+ * $Id: reporter.c,v 1.44.2.17.4.6.2.4 2002/04/07 20:00:22 jrjackson Exp $
  *
  * nightly Amanda Report generator
  */
@@ -117,6 +117,8 @@ line_t *errsum = NULL;
 line_t *errdet = NULL;
 line_t *notes = NULL;
 
+static char MaxWidthsRequested = 0;	/* determined via config data */
+
 /*
 char *hostname = NULL, *diskname = NULL;
 */
@@ -151,124 +153,6 @@ char *nicedate P((int datestamp));
 static char *prefix P((char *host, char *disk, int level));
 repdata_t *find_repdata P((disk_t *dp, char *datestamp, int level));
 
-/* for each column we define some values on how to
- * format this column element
- */
-typedef struct {
-    char *Name;		/* column name */
-    char PrefixSpace;	/* the blank space to print before this
-   			 * column. It is used to get the space
-			 * between the colums
-			 */
-    char Width;		/* the widht of the column itself */
-    char Precision;	/* the precision if its a float */
-    char MaxWidth;	/* if set, Width will be recalculated
-    			 * to the space needed */
-    char *Format;	/* the printf format string for this
-   			 * column element
-			 */
-    char *Title;	/* the title to use for this column */
-} ColumnInfo;
-
-/* this corresponds to the normal output of amanda, but may
- * be adapted to any spacing as you like.
- */
-ColumnInfo ColumnData[] = {
-    { "HostName",   0, 12, 12, 0, "%-*.*s", "HOSTNAME" },
-    { "Disk",       1, 11, 11, 0, "%-*.*s", "DISK" },
-    { "Level",      1, 1,  1,  0, "%*.*d",  "L" },
-    { "OrigKB",     1, 7,  0,  0, "%*.*f",  "ORIG-KB" },
-    { "OutKB",      0, 7,  0,  0, "%*.*f",  "OUT-KB" },
-    { "Compress",   0, 6,  1,  0, "%*.*f",  "COMP%" },
-    { "DumpTime",   0, 7,  7,  0, "%*.*s",  "MMM:SS" },
-    { "DumpRate",   0, 6,  1,  0, "%*.*f",  "KB/s" },
-    { "TapeTime",   1, 6,  6,  0, "%*.*s",  "MMM:SS" },
-    { "TapeRate",   0, 6,  1,  0, "%*.*f",  "KB/s" },
-    { NULL,         0, 0,  0,  0, NULL,     NULL }
-};
-static char *ColumnSpec="";		/* filled from config */
-static char MaxWidthsRequested=0;	/* determined via config data */
-
-/* conversion from string to table index
- */
-static int StringToColumn(char *s) {
-    int cn;
-    for (cn=0; ColumnData[cn].Name != NULL; cn++) {
-    	if (strcasecmp(s, ColumnData[cn].Name) == 0) {
-	    break;
-	}
-    }
-    return cn;
-}
-
-char LastChar(char *s) {
-    return s[strlen(s)-1];
-}
-
-static int SetColumDataFromString(ColumnInfo* ci, char *s) {
-    /* Convert from a Columspec string to our internal format
-     * of columspec. The purpose is to provide this string
-     * as configuration paramter in the amanda.conf file or
-     * (maybe) as environment variable.
-     * 
-     * This text should go as comment into the sample amanda.conf
-     *
-     * The format for such a ColumnSpec string s is a ',' seperated
-     * list of triples. Each triple consists of
-     *   -the name of the column (as in ColumnData.Name)
-     *   -prefix before the column
-     *   -the width of the column
-     *       if set to -1 it will be recalculated
-     *	 to the maximum length of a line to print.
-     * Example:
-     * 	"Disk=1:17,HostName=1:10,OutKB=1:7"
-     * or
-     * 	"Disk=1:-1,HostName=1:10,OutKB=1:7"
-     *	
-     * You need only specify those colums that should be changed from
-     * the default. If nothing is specified in the configfile, the
-     * above compiled in values will be in effect, resulting in an
-     * output as it was all the time.
-     *							ElB, 1999-02-24.
-     */
-    static char *myname= "SetColumDataFromString";
-
-    while (s && *s) {
-	int Space, Width;
-	int cn;
-    	char *eon= strchr(s, '=');
-
-	if (eon == NULL) {
-	    fprintf(stderr, "%s: invalid columnspec: %s\n", myname, s);
-	    return -1;
-	}
-	*eon= '\0';
-	cn=StringToColumn(s);
-	if (ColumnData[cn].Name == NULL) {
-	    fprintf(stderr, "%s: invalid column name: %s\n", myname, s);
-	    return -1;
-	}
-	if (sscanf(eon+1, "%d:%d", &Space, &Width) != 2) {
-	    fprintf(stderr, "%s: invalid format: %s\n", myname, eon+1);
-	    return -1;
-	}
-	ColumnData[cn].Width= Width;
-	ColumnData[cn].PrefixSpace= Space;
-	if (LastChar(ColumnData[cn].Format) == 's') {
-	    if (Width < 0)
-		ColumnData[cn].MaxWidth= 1;
-	    else
-		if (Width > ColumnData[cn].Precision)
-		    ColumnData[cn].Precision= Width;
-	}
-	else if (Width < ColumnData[cn].Precision)
-	    ColumnData[cn].Precision= Width;
-	s= strchr(eon+1, ',');
-	if (s != NULL)
-	    s++;
-    }
-    return 0;
-}
 
 static int ColWidth(int From, int To) {
     int i, Width= 0;
@@ -280,7 +164,7 @@ static int ColWidth(int From, int To) {
 
 static char *Rule(int From, int To) {
     int i, ThisLeng;
-    int Leng= ColWidth(0, (sizeof(ColumnData) / sizeof(ColumnData[0])));
+    int Leng= ColWidth(0, ColumnDataCount());
     char *RuleSpace= alloc(Leng+1);
     ThisLeng= ColWidth(From, To);
     for (i=0;i<ColumnData[From].PrefixSpace; i++)
@@ -294,8 +178,7 @@ static char *Rule(int From, int To) {
 static char *TextRule(int From, int To, char *s) {
     ColumnInfo *cd= &ColumnData[From];
     int leng, nbrules, i, txtlength;
-    int RuleSpaceSize= ColWidth(0,
-				(sizeof(ColumnData) / sizeof(ColumnData[0])));
+    int RuleSpaceSize= ColWidth(0, ColumnDataCount());
     char *RuleSpace= alloc(RuleSpaceSize), *tmp;
 
     leng= strlen(s);
@@ -373,6 +256,9 @@ char **argv;
     char *mail_cmd = NULL, *printer_cmd = NULL;
     extern int optind;
     char my_cwd[STR_SIZE];
+    char *ColumnSpec = "";
+    char *errstr = NULL;
+    int cn;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -511,16 +397,27 @@ char **argv;
     today_datestamp = construct_datestamp(NULL);
 
     ColumnSpec = getconf_str(CNF_COLUMNSPEC);
-    if(SetColumDataFromString(ColumnData, ColumnSpec) < 0) {
-        error("wrong column specification");
-    } else {
-    	int cn;
-
-    	for (cn = 0; ColumnData[cn].Name != NULL; cn++) {
-	    if (ColumnData[cn].MaxWidth) {
-	    	MaxWidthsRequested = 1;
-		break;
-	    }
+    if(SetColumDataFromString(ColumnData, ColumnSpec, &errstr) < 0) {
+	curlog = L_ERROR;
+	curprog = P_REPORTER;
+	curstr = errstr;
+	handle_error();
+        amfree(errstr);
+	curstr = NULL;
+	ColumnSpec = "";		/* use the default */
+	if(SetColumDataFromString(ColumnData, ColumnSpec, &errstr) < 0) {
+	    curlog = L_ERROR;
+	    curprog = P_REPORTER;
+	    curstr = errstr;
+	    handle_error();
+            amfree(errstr);
+	    curstr = NULL;
+	}
+    }
+    for (cn = 0; ColumnData[cn].Name != NULL; cn++) {
+	if (ColumnData[cn].MaxWidth) {
+	    MaxWidthsRequested = 1;
+	    break;
 	}
     }
 
@@ -538,10 +435,18 @@ char **argv;
     }
 
     if((logfile = fopen(logfname, "r")) == NULL) {
-	error("could not open log %s: %s", logfname, strerror(errno));
+	curlog = L_ERROR;
+	curprog = P_REPORTER;
+	curstr = vstralloc("could not open log ",
+			   logfname,
+			   ": ",
+			   strerror(errno),
+			   NULL);
+	handle_error();
+	amfree(curstr);
     }
 
-    while(get_logline(logfile)) {
+    while(logfile && get_logline(logfile)) {
 	switch(curlog) {
 	case L_START:   handle_start(); break;
 	case L_FINISH:  handle_finish(); break;
@@ -562,7 +467,11 @@ char **argv;
 	case L_FAIL:    handle_failed(); break;
 
 	default:
-	    printf("reporter: unexpected log line\n");
+	    curlog = L_ERROR;
+	    curprog = P_REPORTER;
+	    curstr = stralloc2("unexpected log line: ", curstr);
+	    handle_error();
+	    amfree(curstr);
 	}
     }
     afclose(logfile);
@@ -611,14 +520,22 @@ char **argv;
 	/* if the postscript_label_template (tp->lbl_templ) field is not */
 	/* the empty string (i.e. it is set to something), open the      */
 	/* postscript debugging file for writing.                        */
-	if ((strcmp(tp->lbl_templ,"")) != 0) {
-	    if ((postscript = fopen(psfname,"w")) == NULL) {
-		error("could not open %s: %s", psfname, strerror(errno));
+	if ((strcmp(tp->lbl_templ, "")) != 0) {
+	    if ((postscript = fopen(psfname, "w")) == NULL) {
+		curlog = L_ERROR;
+		curprog = P_REPORTER;
+		curstr = vstralloc("could not open ",
+				   psfname,
+				   ": ",
+				   strerror(errno),
+				   NULL);
+		handle_error();
+		amfree(curstr);
 	    }
 	}
     } else {
 #ifdef LPRCMD
-	if (strcmp(printer,"") != 0)	/* alternate printer is defined */
+	if (strcmp(printer, "") != 0)	/* alternate printer is defined */
 	    /* print to the specified printer */
 #ifdef LPRFLAG
 	    printer_cmd = vstralloc(LPRCMD, " ", LPRFLAG, printer, NULL);
@@ -630,13 +547,25 @@ char **argv;
 	    printer_cmd = vstralloc(LPRCMD, NULL);
 #endif
 
-	if ((strcmp(tp->lbl_templ,"")) != 0)
+	if ((strcmp(tp->lbl_templ, "")) != 0)
 #ifdef LPRCMD
-	    if ((postscript = popen(printer_cmd,"w")) == NULL)
-		error("could not open pipe to \"%s\": %s",
-		      printer_cmd, strerror(errno));
+	    if ((postscript = popen(printer_cmd, "w")) == NULL) {
+		curlog = L_ERROR;
+		curprog = P_REPORTER;
+		curstr = vstralloc("could not open pipe to ",
+				   printer_cmd,
+				   ": ",
+				   strerror(errno),
+				   NULL);
+		handle_error();
+		amfree(curstr);
+	    }
 #else
-	    error("no printer command defined");
+	    curlog = L_ERROR;
+	    curprog = P_REPORTER;
+	    curstr = stralloc2("no printer command defined");
+	    handle_error();
+	    amfree(curstr);
 #endif
     }
 
@@ -644,6 +573,8 @@ char **argv;
 
     if (postscript) {
       copy_template_file(tp->lbl_templ);
+    }
+    if (postscript) {
       /* generate a few elements */
       fprintf(postscript,"(%s) DrawDate\n\n",
 	      nicedate(run_datestamp ? atoi(run_datestamp) : 0));
@@ -2020,16 +1951,45 @@ char *lbl_templ;
     lbl_templ = stralloc(lbl_templ);
   }
   if ((fd = open(lbl_templ, 0)) < 0) {
-    error("could not open template file \"%s\": %s",
-	  lbl_templ, strerror(errno));
+    curlog = L_ERROR;
+    curprog = P_REPORTER;
+    curstr = vstralloc("could not open PostScript template file ",
+		       lbl_templ,
+		       ": ",
+		       strerror(errno),
+		       NULL);
+    handle_error();
+    amfree(curstr);
+    afclose(postscript);
+    return;
   }
   while ((numread = read(fd, buf, sizeof(buf))) > 0) {
     if (fwrite(buf, numread, 1, postscript) != 1) {
-      error("error copying template file");
+      curlog = L_ERROR;
+      curprog = P_REPORTER;
+      curstr = vstralloc("error copying PostScript template file ",
+		         lbl_templ,
+		         ": ",
+		         strerror(errno),
+		         NULL);
+      handle_error();
+      amfree(curstr);
+      afclose(postscript);
+      return;
     }
   }
   if (numread < 0) {
-    error("error reading template file: %s",strerror(errno));
+    curlog = L_ERROR;
+    curprog = P_REPORTER;
+    curstr = vstralloc("error reading PostScript template file ",
+		       lbl_templ,
+		       ": ",
+		       strerror(errno),
+		       NULL);
+    handle_error();
+    amfree(curstr);
+    afclose(postscript);
+    return;
   }
   close(fd);
   amfree(lbl_templ);
@@ -2052,7 +2012,7 @@ int level;
 	repdata = (repdata_t *)alloc(sizeof(repdata_t));
 	memset(repdata, '\0',sizeof(repdata_t));
 	repdata->disk = dp;
-	repdata->datestamp = stralloc(datestamp);
+	repdata->datestamp = stralloc(datestamp ? datestamp : "");
 	repdata->level = level;
 	repdata->dumper.result = L_BOGUS;
 	repdata->taper.result = L_BOGUS;
