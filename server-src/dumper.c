@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.68.2.2 1998/11/03 21:37:55 jrj Exp $
+/* $Id: dumper.c,v 1.68.2.3 1998/11/18 23:50:36 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -276,7 +276,7 @@ char **main_argv;
 	    level = atoi(argv[6]);
 	    dumpdate = newstralloc(dumpdate, argv[7]);
 	    chunksize = atoi(argv[8]);
-	    chunksize = (((int)(chunksize/TAPE_BLOCK_SIZE))-1)*TAPE_BLOCK_SIZE;
+	    chunksize = (((int)(chunksize/TAPE_BLOCK_SIZE))-2)*TAPE_BLOCK_SIZE;
 	    progname = newstralloc(progname, argv[9]);
 	    options = newstralloc(options, argv[10]);
 	    cont_filename[0] = '\0';
