@@ -1,3 +1,8 @@
+2003-05-27  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/tapefile.c (read_tapelist,parse_tapeline): Fix for
+	  previous patch.
+
 2003-05-20  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* common-src/versuff.c.in: Use @VERSION_SUFFIX@.
