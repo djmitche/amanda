@@ -1,3 +1,6 @@
+1999-01-26  Thomas Hepper <th@ant.han.de>
+	* Makefile.am Added sst driver files to EXTRA_DIST
+
 1999-01-26	Thomas Hepper <th@ant.han.de>	
 	* changer-src/Makefile.am added to LDADD 
 	../tape-src/libamtape.$(LIB_EXTENSION)
