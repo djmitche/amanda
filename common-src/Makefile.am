@@ -11,8 +11,6 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
-BUILT_SOURCES = 	version.c
-
 noinst_DATA =		versuff.c
 
 lib_LTLIBRARIES =	@BUILD_COMMON_LTLIB@
@@ -66,7 +64,7 @@ genversion_LDADD = versuff.$(OBJ_EXTENSION) alloc.$(OBJ_EXTENSION) error.$(OBJ_E
 genversion.o: genversion.c
 	$(COMPILE) -DCC="\"$(CC)\"" \
 		   -DBUILT_DATE="\"`date`\"" \
-		   -DBUILT_MACH="\"`uname -a`\"" \
+		   -DBUILT_MACH="\"`uname -a || echo UNKNOWN HOST`\"" \
 		   -c $(srcdir)/genversion.c
 
 version.c:	genversion
