@@ -1,5 +1,5 @@
 /*
- *	$Id: chg-scsi.c,v 1.5 1998/09/09 04:56:44 oliva Exp $
+ *	$Id: chg-scsi.c,v 1.6 1998/09/19 01:58:30 oliva Exp $
  *
  *	chg-scsi.c -- generic SCSI changer driver
  *
@@ -522,9 +522,24 @@ int get_relative_target(int fd,int nslots,char *parameter,int loaded,
     };
 }
 
-int ask_clean(char *tapedev)
+int wait_ready(char *tapedev,int timeout)
+/* This function should ask the drive if it is ready */
+{
+  FILE *out=NULL;
+  int cnt=0;
+  while ((cnt<timeout) && (NULL==(out=fopen(tapedev,"w+")))){
+    cnt++;
+    sleep(1);
+  }
+  if (out != NULL)
+    fclose(out);
+  return 0;
+}
+
+int ask_clean(char *tapedev,int timeout)
 /* This function should ask the drive if it wants to be cleaned */
 {
+  wait_ready(tapedev,timeout);
   return get_clean_state(tapedev);
 }
 
@@ -702,7 +717,7 @@ int main(int argc, char *argv[])
 		    if (need_eject)
 		      eject_tape(tape_device);
 		    (void)unload(fd, drive_num, oldtarget);
-		    if (ask_clean(tape_device))
+		    if (ask_clean(tape_device,need_sleep))
 			clean_tape(fd,tape_device,clean_file,drive_num,
                                    clean_slot,maxclean,time_file);
 		    loaded=0;
@@ -719,7 +734,7 @@ int main(int argc, char *argv[])
 	    if (!loaded)
 		(void)load(fd, drive_num, target);
 	    if (need_sleep)
-	      sleep(need_sleep);
+	      wait_ready(tape_device,need_sleep);
 	    printf("%d %s\n", target-slot_offset, tape_device);
 	    break;
 
@@ -736,7 +751,7 @@ int main(int argc, char *argv[])
 		if (need_eject)
 		    eject_tape(tape_device);
 		(void)unload(fd, drive_num, target);
-		if (ask_clean(tape_device))
+		if (ask_clean(tape_device,need_sleep))
 		    clean_tape(fd,tape_device,clean_file,drive_num,clean_slot,
                                maxclean,time_file);
 	    }
@@ -751,7 +766,7 @@ int main(int argc, char *argv[])
 	    (void)load(fd, drive_num, slot_offset);
 	    put_current_slot(changer_file, slot_offset);
 	    if (need_sleep)
-	      sleep(need_sleep);
+	      wait_ready(tape_device,need_sleep);
 	    printf("%d %s\n", get_current_slot(changer_file), tape_device);
 	    break;
 
@@ -761,7 +776,7 @@ int main(int argc, char *argv[])
 		if (need_eject)
 		  eject_tape(tape_device);
 		(void)unload(fd, drive_num, target);
-		if (ask_clean(tape_device))
+		if (ask_clean(tape_device,need_sleep))
 		    clean_tape(fd,tape_device,clean_file,drive_num,clean_slot,
                                maxclean,time_file);
 		printf("%d %s\n", target, tape_device);
