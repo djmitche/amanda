@@ -1,3 +1,10 @@
+1998-07-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* client-src/selfcheck.c (check_suid): new function to check if a
+	program is SUID root.
+	* client-src/selfcheck.c (check_overall): check that runtar and
+	rundump are SUID root.
+
 1998-07-22  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* configure.in: version number set to 2.4.1
