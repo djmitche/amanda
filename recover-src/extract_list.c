@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.18 1998/01/02 18:48:06 jrj Exp $
+ * $Id: extract_list.c,v 1.19 1998/01/08 18:32:09 jrj Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1157,6 +1157,8 @@ void extract_files P((void))
     /* get tape device name from index server if none specified */
     if (tape_server_name == NULL) {
 	tape_server_name = newstralloc(tape_server_name, server_name);
+    }
+    if (tape_device_name == NULL) {
 	if (send_command("TAPE") == -1)
 	    exit(1);
 	if (get_reply_line() == -1)

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.16 1998/01/03 18:25:24 jrj Exp $
+ * $Id: amrecover.c,v 1.17 1998/01/08 18:32:07 jrj Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -407,11 +407,9 @@ char **argv;
 
     config = newstralloc(config, DEFAULT_CONFIG);
     server_name = newstralloc(server_name, DEFAULT_SERVER);
-#ifdef RECOVER_DEFAULT_TAPE_SERVER
-    tape_server_name = newstralloc(tape_server_name,
-				   RECOVER_DEFAULT_TAPE_SERVER);
-    tape_device_name = newstralloc(tape_device_name,
-				   RECOVER_DEFAULT_TAPE_DEVICE);
+#ifdef DEFAULT_TAPE_SERVER
+    tape_server_name = newstralloc(tape_server_name, DEFAULT_TAPE_SERVER);
+    tape_device_name = newstralloc(tape_device_name, DEFAULT_TAPE_DEVICE);
 #else
     afree(tape_server_name);
     afree(tape_device_name);
