@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: set_commands.c,v 1.20 2003/01/01 23:28:17 martinea Exp $
+ * $Id: set_commands.c,v 1.21 2003/03/14 21:36:12 martinea Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -497,11 +497,22 @@ void set_tape (tape)
     if (tapedev)
     {
 	if (tapedev != tape) {
-	    *tapedev = '\0';
-	    tape_server_name = newstralloc(tape_server_name, tape);
-	} else
+	    if((strchr(tapedev+1, ':') == NULL) &&
+	       (strncmp(tape, "null:", 5) == 0 ||
+		strncmp(tape, "rait:", 5) == 0 ||
+		strncmp(tape, "file:", 5) == 0 ||
+		strncmp(tape, "tape:", 5) == 0)) {
+		tapedev = tape;
+	    }
+	    else {
+		*tapedev = '\0';
+		tape_server_name = newstralloc(tape_server_name, tape);
+		++tapedev;
+	    }
+	} else { /* reset server_name if start with : */
 	    amfree(tape_server_name);
-	++tapedev;
+	    ++tapedev;
+	}
     } else
 	tapedev = tape;
     
