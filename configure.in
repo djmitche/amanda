@@ -1994,8 +1994,13 @@ dnl Some systems have snprintf but not vsnprintf.  If either snprintf or
 dnl vsnprintf are missing, then use the snprintf.c we provide.
 ICE_CHECK_DECL(snprintf,stdio.h)
 ICE_CHECK_DECL(vsnprintf,stdio.h)
-if test $ice_have_snprintf = no || test $ice_have_vsnprintf = no; then
+if test x"$ice_have_snprintf" != x"yes" ||
+   test x"$ice_have_vsnprintf" != x"yes"; then
     LIBOBJS="$LIBOBJS snprintf.o"
+    if false; then :
+	dnl so that automake includes snprintf.c in the distribution
+	AC_REPLACE_FUNCS(snprintf) 
+    fi
 fi
 
 AC_CHECK_FUNCS(sigaction sigemptyset sigvec)
