@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.44.2.8 2000/07/08 01:14:32 martinea Exp $
+ * $Id: sendbackup.c,v 1.44.2.9 2000/09/25 00:11:45 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -135,11 +135,7 @@ char *disk;
 				  get_pname(), efile));
 	                amfree(efile);
 		  }
-		  else
-		  {
-	        	/* efile stays the same. */
-			estr = NULL;
-		  }
+		  estr = NULL;
 	    } else
 /* END HPS */
 	    {
