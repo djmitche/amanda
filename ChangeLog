@@ -1,5 +1,10 @@
 2000-11-22 John R. Jackson  <jrj@purdue.edu>
 
+	* contrib/dbbackup.ksh: Deal with adm being a symlink.
+	* contrib/dbbackup.tcl: Update for Tcl 8.3 and newer Oratcl versions.
+
+2000-11-22 John R. Jackson  <jrj@purdue.edu>
+
 	* Makefile.am: Forgot to add contrib/sst/README.Amanda to the list
 	  of files to put in a distribution.
 

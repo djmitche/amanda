@@ -1,4 +1,4 @@
-#!/opt/tcl-8.0/bin/tclsh8.0
+#!/opt/tcl8.3.0/bin/tclsh8.3
 
 #  .-------------.------------------------------------------------------.
 #  |  module     |  dbbackup.tcl                                        |
@@ -41,7 +41,7 @@
 #  | PURPOSE.                                                           |
 #  `--------------------------------------------------------------------'
 
-package require Oratcl
+package require -exact Oratcl 2.7
 
 set uidpswd /
 set df_dest /opt/oracle/backup

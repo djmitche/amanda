@@ -34,8 +34,8 @@ log=${adm}/dbbackup.log.${timestamp}
 err=${adm}/dbbackup.err.${timestamp}
 rm -f ${log} ${err}
 
-find ${adm} -name "dbbackup.log.*" -atime +30 -print | xargs rm -f
-find ${adm} -name "dbbackup.err.*" -atime +30 -print | xargs rm -f
+find ${adm}/. -name "dbbackup.log.*" -mtime +30 -print | xargs rm -f
+find ${adm}/. -name "dbbackup.err.*" -mtime +30 -print | xargs rm -f
 
 export ORACLE_HOME=$($dbhomescript "$ORACLE_SID")
 export ORA_NLS=$ORACLE_HOME/ocommon/nls/admin/data
