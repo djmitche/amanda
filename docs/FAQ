@@ -213,13 +213,40 @@ help, please take a look at the Amanda Ongoing Projects Page, where
 more up-to-date information is likely to be found about this project.
 
    The current work-around is to use GNU tar to back up subdirectories
-of the huge filesystem separately.  But don't list too many of them:
-if you do, the estimate request or the reply may not fit in a UDP
-packet, and you'll get messages such as `missing estimates for' or
-such, and these backups won't happen.  This is yet another known
-limitation of Amanda; fixing it involves modifying the way estimate
-requests are issued, so that no packet exceeds the maximum packet
-size.
+of the huge filesystem separately.  But be aware of the problems listed in the next question:
+
+
+Q: Why does `amdump' report `results missing'?
+
+A: One of the possible reasons is that you have requested too many
+backups of the host.  In this case, the estimate request or the reply
+may not fit in a UDP packet.  This will cause Amanda not to perform
+some of the backups.  Fixing this problem involves modifying the way
+estimate requests are issued, so that no packet exceeds the maximum
+packet size, and issuing additional requests that did not fit in a UDP
+packet after a reply for the previous set is obtained.
+
+   One possible work-around is to try to shorten the pathnames of the
+directories and the exclude file names, so that more requests fit in
+the UDP packet.  You may create short-named links in some directory
+closer to the root (/) so as to reduce the length of names.  I.e.,
+instead of backing up /usr/home/foo and /usr/home/bar, create the
+following links:
+	/.foo -> /usr/home/foo
+	/.bar -> /usr/home/bar
+then list /.foo and /.bar in the disklist.
+
+   Another approach is to group sub-directories in backup sets,
+instead of backing up them all separately.  For example, create
+/usr/home/.bkp1 and move `foo' and `bar' into it, then create links so
+that the original pathnames remain functional.  Then, list
+/usr/home/.bkp1 in the disklist.  You may create as many `.bkp<N>'
+directories as you need.
+
+   A simpler approach, that may work for you, is to backup only a
+subset of the subdirectories of a filesystem separately.  The others
+can be backed up together with the root of the filesystem, using an
+exclude list that prevents duplicate backups.
 
 
 Q: Why does `amrecover' report `no index records' or `disk not found'?
