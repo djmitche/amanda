@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.27 1998/03/08 14:45:50 martinea Exp $
+ * $Id: amflush.c,v 1.28 1998/03/09 22:35:46 blair Exp $
  *
  * write files from work directory onto tape
  */
@@ -239,7 +239,7 @@ char *diskdir, *datestamp;
 	    continue;
 	}
 
-	sched(dp) = &sp;
+	dp->up = &sp;
 
 	taper_cmd(FILE_WRITE, dp, destname, sp.level, datestamp);
 
