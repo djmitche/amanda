@@ -1,3 +1,7 @@
+1999-05-14  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/TAPE.CHANGERS (chg-rth): URL for chs is no longer valid.
+
 1999-05-12  Mike Grupenhoff <kashmir@munge.com>
 
 	* common-src/amanda.h, common-src/alloc.c, common-src/file.c:
