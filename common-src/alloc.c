@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: alloc.c,v 1.25 1999/05/14 21:52:24 kashmir Exp $
+ * $Id: alloc.c,v 1.26 1999/05/27 19:48:35 kashmir Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -185,14 +185,14 @@ debug_alloc(s, l, size)
 #else
 alloc(size)
 #endif
-    int size;
+    size_t size;
 {
     void *addr;
 
     malloc_enter(dbmalloc_caller_loc(s, l));
     addr = (void *)malloc(max(size, 1));
     if (addr == NULL)
-	error("memory allocation failed");
+	error("memory allocation failed (%u bytes requested)", size);
     malloc_leave(dbmalloc_caller_loc(s, l));
     return addr;
 }
@@ -210,7 +210,7 @@ debug_newalloc(s, l, old, size)
 newalloc(old, size)
 #endif
     void *old;
-    int size;
+    size_t size;
 {
     char *addr;
 

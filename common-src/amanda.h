@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.81 1999/05/14 19:08:42 kashmir Exp $
+ * $Id: amanda.h,v 1.82 1999/05/27 19:48:37 kashmir Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -411,8 +411,8 @@ extern void   error     P((const char *format, ...))
 extern int    onerror         P((void (*errf)(void)));
 
 #if defined(USE_DBMALLOC)
-extern void *debug_alloc P((const char *c, int l, int size));
-extern void *debug_newalloc P((const char *c, int l, void *old, int size));
+extern void *debug_alloc P((const char *c, int l, size_t size));
+extern void *debug_newalloc P((const char *c, int l, void *old, size_t size));
 extern char *debug_stralloc P((const char *c, int l, const char *str));
 extern char *debug_newstralloc P((const char *c, int l, char *oldstr,
     const char *newstr));
@@ -463,8 +463,8 @@ extern char  *debug_newvstralloc    P((char *oldstr, const char *newstr, ...));
 
 #else
 
-extern void  *alloc           P((int size));
-extern void  *newalloc        P((void *old, int size));
+extern void  *alloc           P((size_t size));
+extern void  *newalloc        P((void *old, size_t size));
 extern char  *stralloc        P((const char *str));
 extern char  *newstralloc     P((char *oldstr, const char *newstr));
 extern char  *vstralloc       P((const char *str, ...));
