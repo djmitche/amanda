@@ -1,8 +1,5 @@
-#ifndef lint
-static char rcsid[] = "$Id: scsi-hpux.c,v 1.4.4.8 1999/06/18 20:43:32 th Exp $";
-#endif
 /*
- *	$Id: scsi-hpux.c,v 1.4.4.8 1999/06/18 20:43:32 th Exp $
+ *	$Id: scsi-hpux.c,v 1.4.4.9 2000/10/24 23:49:39 martinea Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems

@@ -1,5 +1,18 @@
 2000-10-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* changer-src/chg-scsi.c: remove rcsid.
+	* changer-src/scsi-aix.c: remove rcsid, add amanda Copyright.
+	* changer-src/scsi-bsd.c: remove rcsid, add amanda Copyright.
+	* changer-src/scsi-changer-driver.c: remove rcsid, add amanda Copyright.
+	* changer-src/scsi-defs.h: add amanda Copyright.
+	* changer-src/scsi-hpux.c: remove rcsid.
+	* changer-src/scsi-hpux_new.c: remove rcsid, add amanda Copyright.
+	* changer-src/scsi-irix.c: remove rcsid, add amanda Copyright.
+	* changer-src/scsi-linux.c: remove rcsid, add amanda Copyright.
+	* changer-src/scsi-solaris.c: remove rcsid, add amanda Copyright.
+
+2000-10-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* AUTHORS: add Thomas Hepper.
 
 2000-10-14  Thomas Hepper <th@ant.han.de>
@@ -1067,7 +1080,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.392 2000/10/24 23:38:54 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.393 2000/10/24 23:49:38 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

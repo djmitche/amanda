@@ -1,8 +1,5 @@
-#ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.20 2000/10/18 17:02:19 ant Exp $";
-#endif
 /*
- *  $Id: chg-scsi.c,v 1.6.2.20 2000/10/18 17:02:19 ant Exp $
+ *  $Id: chg-scsi.c,v 1.6.2.21 2000/10/24 23:49:39 martinea Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
