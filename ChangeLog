@@ -1,5 +1,15 @@
 1999-04-06  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c (do_dump): no need to have a separate buffer
+	to read the mesgfd - just reuse the one we used for data reads.
+	Gets rid of one more global.  Also, we don't need to leave
+	space for a NUL anymore.
+	* server-src/dumper.c (main): wait for children after closing
+	our fds.  Some children may be blocked waiting for EOF on outfd,
+	effectively causing deadlock between dumper and child.
+
+1999-04-06  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c (add_msg_data): now takes a 'len' arg, and
 	doesn't expect the data to be nul terminated.  Also, move
 	the buffer from global scope into the function, and have a NULL

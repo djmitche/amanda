@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.103 1999/04/06 18:54:29 kashmir Exp $
+/* $Id: dumper.c,v 1.104 1999/04/06 19:08:46 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -62,7 +62,6 @@
  *	- Chris Ross (cross@uu.net)  4-Jun-1998
  */
 #define DATABUF_SIZE	TAPE_BLOCK_BYTES
-#define MESGBUF_SIZE	4*1024
 
 #define STARTUP_TIMEOUT 60
 
@@ -87,7 +86,6 @@ struct databuf {
 int interactive;
 char *handle = NULL;
 
-char mesgbuf[MESGBUF_SIZE+1];
 char *errstr = NULL;
 int abort_pending;
 long dumpsize, origsize;
@@ -401,9 +399,6 @@ main(main_argc, main_argv)
 	    break;
 	}
 
-	while (wait(NULL) != -1)
-	    continue;
-
 	if (outfd != -1)
 	    aclose(outfd);
 	if (datafd != -1)
@@ -412,6 +407,9 @@ main(main_argc, main_argv)
 	    aclose(mesgfd);
 	if (indexfd != -1)
 	    aclose(indexfd);
+
+	while (wait(NULL) != -1)
+	    continue;
     } while(cmd != QUIT);
 
     amfree(errstr);
@@ -1267,7 +1265,7 @@ do_dump(mesgfd, datafd, indexfd, db)
 	}
 
 	if(mesgfd >= 0 && FD_ISSET(mesgfd, &selectset)) {
-	    int size2 = read(mesgfd, mesgbuf, sizeof(mesgbuf)-1);
+	    int size2 = read(mesgfd, buf, sizeof(buf));
 	    switch(size2) {
 	    case -1:
 		errstr = newstralloc2(errstr, "mesg read: ", strerror(errno));
@@ -1280,6 +1278,7 @@ do_dump(mesgfd, datafd, indexfd, db)
 		break;
 	    default:
 		add_msg_data(mesgbuf, size2);
+		break;
 	    }
 
 	    if (got_info_endline && !header_done) { /* time to do the header */
