@@ -1,3 +1,6 @@
+2002-03-24  Thomas Hepper ( th@ant.han.de)
+	* changer-src/chg-scsi-chio.c: Fixed problems introduced by the agets change
+
 2002-03-24  John R. Jackson (jrj@purdue.edu)
 
 	* client-src/amandad.c: Make sure argv[0] is valid before using it.

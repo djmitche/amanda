@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.65.2.5.4.2.2.3 2002/03/09 15:09:53 martinea Exp $
+ * $Id: sendbackup-dump.c,v 1.65.2.5.4.2.2.4 2002/03/24 21:00:58 ant Exp $
  *
  * send backup data using BSD dump
  */
@@ -350,7 +350,7 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
     /* AIX backup program */
     dumpkeys = vstralloc("-",
 			 level_str,
-			 no_record ? "" : "u",
+			 options->no_record ? "" : "u",
 			 "f",
 			 NULL);
 
