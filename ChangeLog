@@ -4,6 +4,8 @@
 	building term_kill_{soft,hard} unless they are needed.
 	* server-src/driverio.c (dumper_cmd): clean up compiler warning
 	in printf format by forcing argument to always be long and using %ld.
+	* server-src/driver.c: include <holding.h> to get declaration for
+	unlink_holding_files and avoid a compiler warning.
 
 1998-06-01  Dan Swartzendruber  <dswartz@druber.com> via John R. Jackson
 

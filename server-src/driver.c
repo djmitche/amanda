@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.42 1998/05/17 22:43:42 amcore Exp $
+ * $Id: driver.c,v 1.43 1998/06/01 19:27:04 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -39,6 +39,7 @@
 #include "clock.h"
 #include "conffile.h"
 #include "diskfile.h"
+#include "holding.h"
 #include "infofile.h"
 #include "logfile.h"
 #include "statfs.h"
