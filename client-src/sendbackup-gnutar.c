@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.34 1997/12/17 02:07:01 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.35 1997/12/19 20:38:01 amcore Exp $
  *
  * send backup data using GNU tar
  */
@@ -266,7 +266,7 @@ char *dumpdate;
 	if (level==0)
 	    taropt = "-Tca";
 	else
-	    taropt = "-Tcga";
+	    taropt = "-Tcg";
 	dbprintf(("backup from %s, user %s, pass %s\n", 
 		  sharename, SAMBA_USER, "XXXXX"));
 
