@@ -335,7 +335,7 @@ more up-to-date information is likely to be found about this project.
 
    The current work-around is to use GNU tar to back up subdirectories
 of the huge filesystem separately.  But be aware of the problems
-listed in the next question:
+listed in the question about `results missing'.
 
 
 Q: What's the difference between option `skip-full' and `strategy nofull'?
@@ -370,7 +370,10 @@ may not fit in a UDP packet.  This will cause Amanda not to perform
 some of the backups.  Fixing this problem involves modifying the way
 estimate requests are issued, so that no packet exceeds the maximum
 packet size, and issuing additional requests that did not fit in a UDP
-packet after a reply for the previous set is obtained.
+packet after a reply for the previous set is obtained.  The
+probability of getting this problem has been considerably reduced
+since we increased the maximum UDP packet size from 1Kb to 64Kb, but
+some operating systems may not support such large packets.
 
    One possible work-around is to try to shorten the pathnames of the
 directories and the exclude file names, so that more requests fit in
