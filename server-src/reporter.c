@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.56 1999/09/01 21:20:25 jrj Exp $
+ * $Id: reporter.c,v 1.57 1999/09/14 06:37:08 oliva Exp $
  *
  * nightly Amanda Report generator
  */
@@ -189,7 +189,7 @@ static void output_stats P((void));
 static void output_summary P((void));
 static void output_tapeinfo P((void));
 static char *prefix P((char *, char *, int));
-static char *sDivZero P((float, float, ColumnName));
+static char *sDivZero P((double, double, ColumnName));
 static void setup_data P((void));
 static void setup_disk P((disk_t *));
 static int sort_by_name P((disk_t *, disk_t *));
@@ -356,7 +356,7 @@ TextRule(From, To, s)
 
 static char *
 sDivZero(a, b, cn)
-    float a, b;
+    double a, b;
     ColumnName cn;
 {
     ColumnInfo *cd= &ColumnData[cn];

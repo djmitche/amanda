@@ -1,5 +1,8 @@
 1999-09-14  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* server-src/reporter.c (sDivZero): Change from float to double, to
+	build with DEC cc.
+
 	* configure.in: Get snapshot date from SNAPSHOT file, if it exists.
 	(VERSION): Add the date to it.
 	(SNAPSHOT_STAMP): AC_SUBST to the SNAPSHOT file, if it exists.
