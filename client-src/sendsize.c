@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.98 1998/11/18 06:34:45 oliva Exp $
+ * $Id: sendsize.c,v 1.99 1998/12/09 21:37:41 oliva Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -1169,6 +1169,10 @@ notincremental:
 #define sc "--exclude-list="
     } else if (strncmp(exclude_spec, sc, sizeof(sc)-1)==0) {
 	char *file = exclude_spec + sizeof(sc)-1;
+/* BEGIN HPS */
+	if(*file != '/')
+	  file = vstralloc(dirname,"/",file, NULL);
+/* END HPS */		
 	if (access(file, F_OK) == 0)
 	    exclude_arg = newstralloc2(exclude_arg, "--exclude-from=", file);
 	else {

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.45 1998/11/17 18:12:10 jrj Exp $
+ * $Id: sendbackup.c,v 1.46 1998/12/09 21:37:38 oliva Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -32,6 +32,7 @@
 #include "sendbackup.h"
 #include "stream.h"
 #include "arglist.h"
+#include "getfsent.h"
 #include "../tape-src/tapeio.h"
 #include "amanda.h"
 
@@ -69,7 +70,7 @@ backup_program_t *program = NULL;
 
 /* local functions */
 int main P((int argc, char **argv));
-void parse_options P((char *str));
+void parse_options P((char *str, char *disk));
 char *optionstr P((void));
 char *childstr P((int pid));
 int check_status P((int pid, amwait_t w));
@@ -79,8 +80,9 @@ int pipefork P((void (*func) P((void)), char *fname, int *stdinfd,
 void parse_backup_messages P((int mesgin));
 static void process_dumpline P((char *str));
 
-void parse_options(str)
+void parse_options(str, disk)
 char *str;
+char *disk;
 {
     char *e, *i, *j, *k;
     int ch;
@@ -112,14 +114,28 @@ char *str;
 		e = "";
 	    }
 #undef sc
-	    if (*e != '\0' && access(j, F_OK) != 0) {
+/* BEGIN HPS */
+	    if (*e != '\0')
+		{
+		  char *file = j;
+		  if(*file != '/')
+		  {
+			char *dirname = amname_to_dirname(disk);
+			file = vstralloc(dirname,"/",file, NULL);
+		  }
+		  
+		  if(access(file, F_OK) != 0) {
 		/* if exclude list file does not exist, ignore it.
 		 * Should not test for R_OK, because the file may be
 		 * readable by root only! */
 		dbprintf(("%s: exclude list file \"%s\" does not exist, ignoring\n",
-			  get_pname(), j));
+					  get_pname(), file));
 	        amfree(efile);
+		  }
+		  else
+			efile = newvstralloc(efile, "--exclude", e, "=", file, NULL);
 	    } else
+/* END HPS */
 	        efile = newvstralloc(efile, "--exclude", e, "=", j, NULL);
 	    k[0] = ';';
 	}
@@ -334,7 +350,7 @@ char **argv;
       }
     }
 
-    parse_options(options);
+    parse_options(options, disk);
 
 #ifdef KRB4_SECURITY
     if(krb4_auth) {
