@@ -211,6 +211,7 @@ BUILD_CLIENT_SCRIPTS_LIBEXEC="patch-system"
 BUILD_SERVER_PROGS_SBIN="amadmin amcheck amflush amlabel amtape"
 BUILD_SERVER_PROGS_LIBEXEC="amidxtaped amindexd amtrmidx driver dumper getconf planner reporter taper"
 BUILD_SERVER_SCRIPTS_SBIN="amcheckdb amcleanup amdump amoverview amrmtape amtoc amverify"
+BUILD_RECOVER_PROGS_SBIN="amrecover amrestore"
 case "$target" in
     *-hp-*)
 	BUILD_CLIENT_SCRIPTS_SBIN=amhpfixdevs
@@ -224,56 +225,76 @@ AC_SUBST(BUILD_CHANGER_PROGS_LIBEXEC)
 AC_SUBST(BUILD_CHANGER_SCRIPTS_LIBEXEC)
 AC_SUBST(BUILD_CLIENT_SCRIPTS_SBIN)
 AC_SUBST(BUILD_CLIENT_PROGS_LIBEXEC)
+AC_SUBST(BUILD_CLIENT_SCRIPTS_LIBEXEC)
 AC_SUBST(BUILD_SERVER_PROGS_SBIN)
 AC_SUBST(BUILD_SERVER_PROGS_LIBEXEC)
 AC_SUBST(BUILD_SERVER_SCRIPTS_SBIN)
-AC_SUBST(BUILD_CLIENT_SCRIPTS_LIBEXEC)
+AC_SUBST(BUILD_RECOVER_PROGS_SBIN)
 
 AC_ARG_WITH(client-only,
-    [   --with-client-only     build Amanda for a client only machine],
+    [   --with-client-only     deprecated, use --without-server],
+    [   AC_MSG_ERROR([*** --with-client-only is deprecated, use --without-server instead.])
+    ],)
+AC_ARG_WITH(server-only,
+    [   --with-server-only     deprecated, use --without-client],
+    [   AC_MSG_ERROR([*** --with-server-only is deprecated, use --without-client instead.])
+    ],)
+AC_ARG_WITH(server,
+    [   --without-server       do not build server stuff],
     [
         case "$withval" in
-        y | ye | yes)
+	y | ye | yes) : ;;
+        n | no)
 	    BUILD_CHANGER_PROGS_LIBEXEC=
 	    BUILD_CHANGER_SCRIPTS_LIBEXEC=
 	    BUILD_SERVER_PROGS_SBIN=
 	    BUILD_SERVER_PROGS_LIBEXEC=
 	    BUILD_SERVER_SCRIPTS_SBIN=
 	  ;;
-	n | no)
-	    AC_MSG_ERROR([*** use --with-server-only instead of --without-client-only])
-	  ;;
 	*)
-	    AC_MSG_ERROR([*** You must not supply an argument to --with-client-only option.])
+	    AC_MSG_ERROR([*** You must not supply an argument to --with-server option.  Maybe you meant --with-index-server=$withval])
 	  ;;
 	esac
     ]
 )
 
-AC_ARG_WITH(server-only,
-    [   --with-server-only     build Amanda for a server only machine],
+AC_ARG_WITH(client,
+    [   --without-client         do not build client stuff],
     [
 	case "$withval" in
-	y | ye | yes)
+	y | ye | yes) : ;;
+	n | no)
 	    BUILD_CLIENT_PROGS_LIBEXEC=
 	    BUILD_CLIENT_SCRIPTS_LIBEXEC=
 	  ;;
-	n | no)
-	    AC_MSG_ERROR([*** use --with-client-only instead of --without-server-only])
-	  ;;
 	*)
-	    AC_MSG_ERROR([*** You must not supply an argument to --with-server-only option.])
+	    AC_MSG_ERROR([*** You must not supply an argument to --with-client option.])
 	  ;;
 	esac
     ]
 )
 
-AC_ARG_WITH(server,
-   [   --with-server=HOST     default amanda index server [`uname -n`]],
+AC_ARG_WITH(recover,
+    [   --without-recover       do not build recover stuff],
+    [
+	case "$withval" in
+	y | ye | yes) : ;;
+	n | no)
+	    BUILD_RECOVER_PROGS_SBIN=
+	  ;;
+	*)
+	    AC_MSG_ERROR([*** You must not supply an argument to --with-recover option.])
+	  ;;
+	esac
+    ]
+)
+
+AC_ARG_WITH(indexserver,
+   [   --with-indexserver=HOST default amanda index server [`uname -n`]],
    [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
-	    AC_MSG_ERROR([*** You must supply an argument to the --with-server option.])
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-index-server option.])
 	  ;;
 	*) DEFAULT_SERVER="$withval"
 	  ;;

@@ -8,7 +8,9 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
  
 LDADD =			../common-src/libamanda.a
 
-sbin_PROGRAMS =		amrecover			amrestore
+EXTRA_PROGRAMS = 	amrecover			amrestore
+
+sbin_PROGRAMS =		@BUILD_RECOVER_PROGS_SBIN@
 
 amrecover_SOURCES =	amrecover.c			amrecover.h	\
 			display_commands.c		extract_list.c	\
