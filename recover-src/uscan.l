@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-1999 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,12 +24,13 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: uscan.l,v 1.14.2.1 1999/03/05 01:31:06 martinea Exp $
+ * $Id: uscan.l,v 1.14.2.2 1999/05/25 21:13:29 oliva Exp $
  *
  * lexer for amrecover interactive language
  */
 %{
 #include "amanda.h"
+#undef ECHO
 #include "uparse.h"
 
 #define YY_NO_UNPUT
