@@ -11,9 +11,11 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
-LDADD =	libamserver.la ../tape-src/libamtape.la ../common-src/libamanda.la \
-        libamserver.la ../common-src/libamanda.la
-# libamserver.la must be duplicated in some systems
+LDADD =	libamserver.$(LIB_EXTENSION) \
+	../tape-src/libamtape.$(LIB_EXTENSION) \
+	../common-src/libamanda.$(LIB_EXTENSION) \
+	libamserver.$(LIB_EXTENSION) \
+	../common-src/libamanda.$(LIB_EXTENSION)
 
 SUFFIXES =		.sh .pl
 
@@ -58,9 +60,11 @@ amindexd_SOURCES =	amindexd.c					\
 
 driver_SOURCES =	driver.c
 
-lib_LTLIBRARIES = 	@BUILD_SERVER_LIB@
-
+lib_LTLIBRARIES = 	@BUILD_SERVER_LTLIB@
 EXTRA_LTLIBRARIES = 	libamserver.la
+
+noinst_LIBRARIES = 	@BUILD_SERVER_LIB@
+EXTRA_LIBRARIES = 	libamserver.a
 
 libamserver_la_SOURCES=	amindex.c	changer.c	clock.c		\
 			conffile.c	diskfile.c	driverio.c	\
@@ -68,6 +72,8 @@ libamserver_la_SOURCES=	amindex.c	changer.c	clock.c		\
 			tapefile.c
 
 libamserver_la_LDFLAGS= -version-info $(libserver_version) -rpath $(libdir)
+
+libamserver_a_SOURCES=	$(libamserver_la_SOURCES)
 
 noinst_HEADERS = 	amindex.h	changer.h	clock.h		\
 			conffile.h	diskfile.h	driverio.h	\

@@ -7,9 +7,10 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
 # they cross-reference each other a bit, so need to be included twice
-LDADD = ../server-src/libamserver.la ../common-src/libamanda.la \
-	../server-src/libamserver.la ../common-src/libamanda.la
-
+LDADD = ../server-src/libamserver.$(LIB_EXTENSION) \
+	../common-src/libamanda.$(LIB_EXTENSION) \
+	../server-src/libamserver.$(LIB_EXTENSION) \
+	../common-src/libamanda.$(LIB_EXTENSION)
 
 SUFFIXES =		.pl .sh
 

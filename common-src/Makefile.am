@@ -15,7 +15,11 @@ BUILT_SOURCES = 	version.c
 
 noinst_DATA =		versuff.c
 
-lib_LTLIBRARIES =	libamanda.la libamnolog.la
+lib_LTLIBRARIES =	@BUILD_COMMON_LTLIB@
+EXTRA_LTLIBRARIES =	libamanda.la libamnolog.la
+
+noinst_LIBRARIES = 	@BUILD_COMMON_LIB@
+EXTRA_LIBRARIES =	libamanda.a libamnolog.a
 
 REGDIR = ../regex-src
 REGsrcdir = $(srcdir)/$(REGDIR)
@@ -29,13 +33,16 @@ libamanda_la_SOURCES = \
 	regfree.c	security.c	statfs.c	stream.c	\
 	token.c		version.c	versuff.c
 
-libamanda_la_LIBADD =	@LTLIBOBJS@ @ALLOCA@
-
+libamanda_la_LIBADD =	@LIBOBJS@ @ALLOCA@
 libamanda_la_LDFLAGS =  -version-info $(libamanda_version)
 
 libamnolog_la_SOURCES =	nolog.c
-
 libamnolog_la_LDFLAGS = -version-info $(libnolog_version)
+
+libamanda_a_SOURCES =	$(libamanda_la_SOURCES)
+libamanda_a_LIBADD =	$(libamanda_la_LIBADD)
+
+libamnolog_a_SOURCES =	$(libamnolog_la_SOURCES)
 
 noinst_HEADERS =	amanda.h	arglist.h	\
 			dgram.h		protocol.h	\
@@ -54,7 +61,7 @@ EXTRA_DIST = 		genversion.c	getcwd.c	memmove.c	\
 EXTRA_PROGRAMS = genversion $(TEST_PROGS)
 
 genversion_SOURCES = genversion.c
-genversion_LDADD = versuff.lo alloc.lo error.lo nolog.lo $(libamanda_la_LIBADD)
+genversion_LDADD = versuff.$(OBJ_EXTENSION) alloc.$(OBJ_EXTENSION) error.$(OBJ_EXTENSION) nolog.$(OBJ_EXTENSION) $(libamanda_a_LIBADD)
 
 genversion.o: genversion.c
 	$(COMPILE) -DCC="\"$(CC)\"" \

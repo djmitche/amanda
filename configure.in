@@ -161,9 +161,13 @@ n | no) USE_VERSION_SUFFIXES=no
 esac
 AC_SUBST(USE_VERSION_SUFFIXES)
 
+BUILD_COMMON_LIB="libamanda.a libamnolog.a"
+BUILD_COMMON_LTLIB="libamanda.la libamnolog.la"
+
 BUILD_CLIENT_PROGS_LIBEXEC="amandad calcsize rundump runtar selfcheck sendbackup sendsize"
 BUILD_CLIENT_SCRIPTS_LIBEXEC="patch-system"
-BUILD_CLIENT_LIB="libamclient.la"
+BUILD_CLIENT_LIB="libamclient.a"
+BUILD_CLIENT_LTLIB="libamclient.la"
 AMCLIENT_EXTRA_OBJS=
 
 BUILD_RECOVER_PROGS_SBIN="amrecover"
@@ -171,12 +175,14 @@ BUILD_RECOVER_PROGS_SBIN="amrecover"
 BUILD_CHANGER_PROGS_LIBEXEC="chg-chio"
 BUILD_CHANGER_SCRIPTS_LIBEXEC="chg-manual chg-multi chg-mtx chg-rth chg-chs"
 
-BUILD_TAPE_LIB="libamtape.la"
+BUILD_TAPE_LIB="libamtape.a"
+BUILD_TAPE_LTLIB="libamtape.la"
 
 BUILD_SERVER_PROGS_SBIN="amadmin amcheck amflush amlabel amtape"
 BUILD_SERVER_PROGS_LIBEXEC="amindexd amtrmidx driver dumper getconf planner reporter taper"
 BUILD_SERVER_SCRIPTS_SBIN="amcheckdb amcleanup amdump amoverview amrmtape amtoc amverify"
-BUILD_SERVER_LIB="libamserver.la"
+BUILD_SERVER_LIB="libamserver.a"
+BUILD_SERVER_LTLIB="libamserver.la"
 
 BUILD_RESTORE_PROGS_SBIN="amrestore"
 BUILD_RESTORE_PROGS_LIBEXEC="amidxtaped"
@@ -193,10 +199,13 @@ case "$target" in
 	;;
 esac
 
+AC_SUBST(BUILD_COMMON_LIB)
+AC_SUBST(BUILD_COMMON_LTLIB)
 AC_SUBST(BUILD_CLIENT_SCRIPTS_SBIN)
 AC_SUBST(BUILD_CLIENT_PROGS_LIBEXEC)
 AC_SUBST(BUILD_CLIENT_SCRIPTS_LIBEXEC)
 AC_SUBST(BUILD_CLIENT_LIB)
+AC_SUBST(BUILD_CLIENT_LTLIB)
 AC_SUBST(LIBSRCS_CLIENT)
 AC_SUBST(LIBOBJS_CLIENT)
 AC_SUBST(AMCLIENT_EXTRA_OBJS)
@@ -204,10 +213,12 @@ AC_SUBST(BUILD_RECOVER_PROGS_SBIN)
 AC_SUBST(BUILD_CHANGER_PROGS_LIBEXEC)
 AC_SUBST(BUILD_CHANGER_SCRIPTS_LIBEXEC)
 AC_SUBST(BUILD_TAPE_LIB)
+AC_SUBST(BUILD_TAPE_LTLIB)
 AC_SUBST(BUILD_SERVER_PROGS_SBIN)
 AC_SUBST(BUILD_SERVER_PROGS_LIBEXEC)
 AC_SUBST(BUILD_SERVER_SCRIPTS_SBIN)
 AC_SUBST(BUILD_SERVER_LIB)
+AC_SUBST(BUILD_SERVER_LTLIB)
 AC_SUBST(BUILD_RESTORE_PROGS_SBIN)
 AC_SUBST(BUILD_RESTORE_PROGS_LIBEXEC)
 
@@ -511,7 +522,7 @@ AC_ARG_WITH(smbclient,
 )
 if test "$SAMBA_CLIENT"; then
     LIBSRCS_CLIENT="$LIBSRCS_CLIENT findpass.c"
-    LIBOBJS_CLIENT="$LIBOBJS_CLIENT findpass.lo"
+    LIBOBJS_CLIENT="$LIBOBJS_CLIENT findpass.o"
     AC_DEFINE_UNQUOTED(SAMBA_CLIENT,"$SAMBA_CLIENT")
 fi
 
@@ -870,6 +881,34 @@ AC_DEFINE_UNQUOTED(SERVICE_SUFFIX, "$SERVICE_SUFFIX")
 AC_DEFINE_UNQUOTED(AMANDA_SERVICE_NAME,  "$AMANDA_SERVICE_NAME")
 AC_DEFINE_UNQUOTED(KAMANDA_SERVICE_NAME, "$KAMANDA_SERVICE_NAME")
 
+AC_ARG_ENABLE(libtool,
+    [  --enable-libtool        use libtool to build static/shared libraries [no]],
+    USE_LIBTOOL="$withval",
+    : ${USE_LIBTOOL=no}
+)
+case "$USE_LIBTOOL" in
+n | no)
+    LIB_EXTENSION="a"
+    OBJ_EXTENSION="o"
+    BUILD_COMMON_LTLIB=
+    BUILD_CLIENT_LTLIB=
+    BUILD_SERVER_LTLIB=
+    BUILD_TAPE_LTLIB=
+  ;;
+y |  ye | yes)
+    LIB_EXTENSION="la"
+    OBJ_EXTENSION="lo"
+    BUILD_COMMON_LIB=
+    BUILD_CLIENT_LIB=
+    BUILD_SERVER_LIB=
+    BUILD_TAPE_LIB=
+  ;;
+*) AC_MSG_ERROR([*** You must not supply an argument to --enable-libtool])
+esac
+AC_SUBST(LIBRARIES_TARGET)
+AC_SUBST(LIB_EXTENSION)
+AC_SUBST(OBJ_EXTENSION)
+
 (
     test "x$prefix" = xNONE && prefix=$ac_default_prefix
     test "x$exec_prefix" = xNONE && exec_prefix=${prefix}
@@ -1022,7 +1061,7 @@ AC_CACHE_CHECK(
 	    cat >configure.in <<EOF
 [AM_PROG_LIBTOOL]
 EOF
-	    aclocal
+	    aclocal >/dev/null 2>/dev/null
 	    if grep LIBTOOL aclocal.m4 >/dev/null 2>&1; then
 		amanda_cv_libtool_macros=yes
 	    else
@@ -2076,6 +2115,7 @@ if ${NO_SERVER_MODE-false}; then
     BUILD_SERVER_PROGS_LIBEXEC=
     BUILD_SERVER_SCRIPTS_SBIN=
     BUILD_SERVER_LIB=
+    BUILD_SERVER_LTLIB=
     BUILD_AMPLOT_SBIN=
     BUILD_AMPLOT_LIBEXEC=
 fi
@@ -2084,15 +2124,17 @@ if ${NO_CLIENT_MODE-false}; then
     BUILD_CLIENT_PROGS_LIBEXEC=
     BUILD_CLIENT_SCRIPTS_LIBEXEC=
     BUILD_CLIENT_LIB=
+    BUILD_CLIENT_LTLIB=
     BUILD_RECOVER_PROGS_SBIN=
 fi
 
 if ${NO_RESTORE_MODE-false}; then
     BUILD_RESTORE_PROGS_SBIN=
     BUILD_RESTORE_PROGS_LIBEXEC=
-    case "$BUILD_SERVER_LIB" in
-    "") BUILD_TAPE_LIB="";;
-    esac
+    if ${NO_SERVER_MODE-false}; then
+	BUILD_TAPE_LIB=
+	BUILD_TAPE_LTLIB=
+    fi
 fi
 
 if ${NO_RECOVER_MODE-false}; then
@@ -2104,8 +2146,9 @@ y |  ye | yes) AC_DEFINE(USE_RUNDUMP);;
 esac
 
 dnl for libtool support on autoconf 2.12 and earlier
-LTLIBOBJS=`echo "$LIBOBJS" | sed 's/\.o/\.lo/g'`
-AC_SUBST(LTLIBOBJS)
+LIBOBJS=`echo "$LIBOBJS" | sed 's/\.o/\.$(OBJ_EXTENSION)/g'`
+LIBOBJS_CLIENT=`echo "$LIBOBJS_CLIENT" | sed 's/\.o/\.$(OBJ_EXTENSION)/g'`
+ALLOCA=`echo "$ALLOCA" | sed 's/\.o/\.$(OBJ_EXTENSION)/g'`
 
 AC_OUTPUT( \
 	amplot/amcat.awk		amplot/amplot.sh		\

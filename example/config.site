@@ -361,6 +361,20 @@
 # TESTING=yes
 
 
+# USE_LIBTOOL		--enable-libtool
+#			Default: no
+#			Use libtool to create static/shared libraries.
+#			By default, only static libraries are created
+#			and the libtool script is only used to link and
+#			install programs.
+#			A drawback of using libtool is that it will
+#			always install libraries, even static ones,
+#			which are not necessary for the execution of
+#			programs.  The advantage of using libtool is
+#			that shared libraries may be created, which
+#			saves disk space.
+# USE_LIBTOOL=yes
+
 # with_gnu_ld		--with-gnu-ld
 #			Default: no
 #			Use GNU ld in order to build shared libraries
