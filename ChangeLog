@@ -1,5 +1,10 @@
 2001-02-03 John R. Jackson <jrj@purdue.edu>
 
+	* .cvsignore: Add entries to keep CVS quiet.
+	* */.cvsignore: Ditto.
+
+2001-02-03 John R. Jackson <jrj@purdue.edu>
+
 	* client-src/Makefile.am: Add CLEANFILES rule to remove *.test.c.
 	* common-src/Makefile.am: Add more sources as needed to the test
 	  programs so they would compile.

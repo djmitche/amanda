@@ -1,3 +1,13 @@
 .deps
-Makefile.in
+.libs
 Makefile
+Makefile.in
+amdd
+ammt
+libamtape.la
+output-file.lo
+output-null.lo
+output-rait.lo
+output-tape.lo
+tapeio.lo
+tapetype
