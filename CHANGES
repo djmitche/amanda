@@ -1,7 +1,14 @@
+	Do not let amrecover die because of SIGPIPE if the pager terminates
+	early during a long listing.  Use the PAGER environment variable if
+	available, else "more".  -JJ
+
 	Change log() calls to log_add() so it does not conflict with the math
 	function of the same name.  Replace pname global variable with two
-	functions to set/get.  Get rid of libamnolog.
-	-JJ
+	functions to set/get.  Get rid of libamnolog.  -JJ
+
+	ensure that `amadmin find' reports multiple backups performed on
+	the same day in the correct sequence.
+	-Liudvikas Bukys <bukys@cs.rochester.edu>
 
 	chg-chio was renamed to chg-scsi, and now it will support not
 	only chio.h, but also tape changer interfaces available on

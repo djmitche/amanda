@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.25 1998/02/26 19:24:50 jrj Exp $
+ * $Id: extract_list.c,v 1.26 1998/03/02 18:15:08 jrj Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -813,14 +813,26 @@ char *file;
     EXTRACT_LIST *this;
     EXTRACT_LIST_ITEM *that;
     FILE *fp;
+    char *pager;
+    char *pager_command;
 
     if (file == NULL)
     {
-	if ((fp = popen("more", "w")) == NULL)
+	if ((pager = getenv("PAGER")) == NULL)
 	{
-	    printf("Warning - can't pipe through more\n");
+	    pager = "more";
+	}
+	/*
+	 * Set up the pager command so if the pager is terminated, we do
+	 * not get a SIGPIPE back.
+	 */
+	pager_command = stralloc2(pager, " ; /bin/cat > /dev/null");
+	if ((fp = popen(pager_command, "w")) == NULL)
+	{
+	    printf("Warning - can't pipe through %s\n", pager);
 	    fp = stdout;
 	}
+	afree(pager_command);
     }
     else
     {
@@ -833,7 +845,6 @@ char *file;
 
     for (this = extract_list; this != NULL; this = this->next)
     {
-
 	fprintf(fp, "TAPE %s LEVEL %d DATE %s\n",
 		this->tape, this->level, this->date);
 	for (that = this->files; that != NULL; that = that->next)

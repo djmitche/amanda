@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: display_commands.c,v 1.9 1998/03/01 23:43:01 amcore Exp $
+ * $Id: display_commands.c,v 1.10 1998/03/02 18:15:07 jrj Exp $
  *
  * implements the directory-display related commands in amrecover
  */
@@ -259,17 +259,29 @@ void list_directory P((void))
     int i;
     DIR_ITEM *item;
     FILE *fp;
+    char *pager;
+    char *pager_command;
 
     if (disk_path == NULL) {
 	printf("Must select a disk before listing files\n");
 	return;
     }
 
-    if ((fp = popen("more", "w")) == NULL)
+    if ((pager = getenv("PAGER")) == NULL)
     {
-	printf("Warning - can't pipe through more\n");
+	pager = "more";
+    }
+    /*
+     * Set up the pager command so if the pager is terminated, we do
+     * not get a SIGPIPE back.
+     */
+    pager_command = stralloc2(pager, " ; /bin/cat > /dev/null");
+    if ((fp = popen(pager_command, "w")) == NULL)
+    {
+	printf("Warning - can't pipe through %s\n", pager);
 	fp = stdout;
     }
+    afree(pager_command);
     i = strlen(disk_path);
     if (i != 1)
 	i++;				/* so disk_path != "/" */
