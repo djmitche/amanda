@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.31 1998/04/08 16:25:29 amcore Exp $
+ * $Id: reporter.c,v 1.32 1998/05/05 22:01:30 amcore Exp $
  *
  * nightly Amanda Report generator
  */
@@ -351,11 +351,13 @@ char **argv;
 
     if(testing) {
 	afclose(mailf);
-	afclose(postscript);
+	if (postscript != NULL)
+	    afclose(postscript);
     }
     else {
 	apclose(mailf);
-	apclose(postscript);
+	if (postscript != NULL)
+	    apclose(postscript);
 	log_rename(datestamp);
     }
 
