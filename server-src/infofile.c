@@ -53,6 +53,7 @@ char *mode;
     FILE *infof;
     int rc;
     int len;
+    char *p;
 
     assert(infofile == (char *)0);
 
@@ -61,23 +62,17 @@ char *mode;
 /* XXX - need to sanitise host and disk */
     len = strlen(infodir) + strlen(host) + strlen(disk) + 7;
     infofile = alloc(len + 1);
+    sprintf(infofile, "%s/%s/%s/info", infodir, host, disk);
 
     /* create the directory structure if in write mode */
     if (writing) {
-	rc = mkdir(infodir, 0755);
-	if (rc == -1 && errno == EEXIST) rc = 0;
-
-	if (rc == 0) {
-	    sprintf(infofile, "%s/%s", infodir, host);
+	p = strchr (infofile + 1, '/');
+	do {
+	    *p = '\0';
 	    rc = mkdir(infofile, 0755);
 	    if (rc == -1 && errno == EEXIST) rc = 0;
-
-	    if (rc == 0) {
-		sprintf(infofile, "%s/%s/%s", infodir, host, disk);
-		rc = mkdir(infofile, 0755);
-		if (rc == -1 && errno == EEXIST) rc = 0;
-	    }
-	}
+	    *p++ = '/';
+	} while (rc == 0 && (p = strchr (p, '/')) != NULL);
 	if (rc == -1) {
 	    free(infofile);
 #ifdef ASSERTIONS
@@ -86,8 +81,6 @@ char *mode;
 	    return NULL;
 	}
     }
-
-    sprintf(infofile, "%s/%s/%s/info", infodir, host, disk);
 
     newinfofile = alloc(len + 4 + 1);
     sprintf(newinfofile, "%s.new", infofile);
