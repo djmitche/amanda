@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.11 1997/08/27 08:13:12 amcore Exp $
+ * $Id: driver.c,v 1.12 1997/09/11 06:28:58 amcore Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -801,10 +801,10 @@ disklist_t read_schedule(waitqp)
 disklist_t *waitqp;
 {
     sched_t *sp;
-    info_t inf;
     disk_t *dp;
     disklist_t rq;
     int rc, time, level, line, priority;
+    char dumpdate[80], degr_dumpdate[80];
     int degr_level, degr_time;
     unsigned long size, degr_size;
     char hostname[80], diskname[80], inpline[2048];
@@ -812,26 +812,17 @@ disklist_t *waitqp;
 
     rq.head = rq.tail = NULL;
 
-    /* Open the info file.
-    ** XXX - we are just after a dumpdate string.  Maybe it would be easier
-    **       if planner just passed it to us!
-    */
-    rc = open_infofile(getconf_str(CNF_INFOFILE));
-    if(rc)
-	error("could not open infofile %s: %s (%d)", getconf_str(CNF_INFOFILE),
-	      strerror(errno), rc);
-
     /* read schedule from stdin */
 
     line = 0;
     while(fgets(inpline, 2048, stdin)) {
 	line++;
 
-	rc = sscanf(inpline, "%s %s %d %d %ld %d %d %ld %d\n",
-		    hostname, diskname,
-		    &priority, &level, &size, &time,
-		    &degr_level, &degr_size, &degr_time);
-	if(rc != 6 && rc != 9) {
+	rc = sscanf(inpline, "%s %s %d %d %s %ld %d %d %s %ld %d\n",
+		    hostname, diskname, &priority,
+		    &level, dumpdate, &size, &time,
+		    &degr_level, degr_dumpdate, &degr_size, &degr_time);
+	if(rc != 7 && rc != 11) {
 	    error("schedule line %d: syntax error", line);
 	    continue;
 	}
@@ -843,20 +834,18 @@ disklist_t *waitqp;
 	    continue;
 	}
 
-	get_info(hostname, diskname, &inf);
-
 	sp = (sched_t *) alloc(sizeof(sched_t));
 	sp->level    = level;
-	sp->dumpdate = stralloc(get_dumpdate(&inf, level));
+	sp->dumpdate = stralloc(dumpdate);
 	sp->est_size = TAPE_BLOCK_SIZE + size; /* include header */
 	sp->est_time = time;
 	sp->priority = priority;
 
-	if(rc < 9)
+	if(rc < 11)
 	    sp->degr_level = -1;
 	else {
 	    sp->degr_level = degr_level;
-	    sp->degr_dumpdate = stralloc(get_dumpdate(&inf, degr_level));
+	    sp->degr_dumpdate = stralloc(degr_dumpdate);
 	    sp->degr_size = TAPE_BLOCK_SIZE + degr_size;
 	    sp->degr_time = degr_time;
 	}
@@ -885,8 +874,6 @@ disklist_t *waitqp;
     }
     if(line == 0)
 	log(L_WARNING, "WARNING: got empty schedule from planner");
-
-    close_infofile();
 
     return rq;
 }

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.34 1997/09/05 04:44:32 george Exp $
+ * $Id: planner.c,v 1.35 1997/09/11 06:28:59 amcore Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1701,19 +1701,22 @@ disk_t *dp;
     if(ep->curr_level == 0 && ep->degr_level != -1) {
 	time = ep->size / ep->fullrate;
 	degr_time = ep->degr_size / ep->incrrate;
-	sprintf(schedline, "%s %s %d %d %ld %ld %d %ld %ld\n",
+	sprintf(schedline, "%s %s %d %d %s %ld %ld %d %s %ld %ld\n",
 		dp->host->hostname, dp->name, ep->curr_priority,
-		ep->curr_level, ep->size, time,
-		ep->degr_level, ep->degr_size, degr_time);
+		ep->curr_level, ep->dumpdate[ep->curr_level],
+		ep->size, time,
+		ep->degr_level, ep->dumpdate[ep->degr_level],
+		ep->degr_size, degr_time);
     }
     else {
 	if(ep->curr_level == 0)
 	    time = ep->size / ep->fullrate;
 	else
 	    time = ep->size / ep->incrrate;
-	sprintf(schedline, "%s %s %d %d %ld %ld\n",
+	sprintf(schedline, "%s %s %d %d %s %ld %ld\n",
 		dp->host->hostname, dp->name, ep->curr_priority,
-		ep->curr_level, ep->size, time);
+		ep->curr_level, ep->dumpdate[ep->curr_level],
+		ep->size, time);
     }
 
     fputs(schedline, stdout);
