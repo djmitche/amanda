@@ -1,5 +1,13 @@
 1999-05-15 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/planner.c (pick_inclevel): check for base_level+1 if
+	we don't have estimate for base_level. Needed for FORCE_BUMP.
+	* server-src/planner.c (promote_highest_priority_incremental):
+	Don't promote if we don't have level 0 estimate. No more need
+	to check for skip_full, DS_NOFULL, DS_INCRONLY or FORCE_BUMP.
+
+1999-05-15 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amflush.c: ignore SIGPIPE
 	* server-src/driver.c: ignore SIGPIPE
 	* server-src/driverio.c (taper_cmd, dumper_cmd): return 0 on error, 

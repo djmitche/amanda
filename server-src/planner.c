@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.96 1999/05/14 21:52:51 kashmir Exp $
+ * $Id: planner.c,v 1.97 1999/05/15 20:56:13 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1360,6 +1360,9 @@ disk_t *dp;
 
     /* if we didn't get an estimate, we can't do an inc */
     if(base_size == -1) {
+	base_size = est_size(dp, base_level+1);
+	if(base_size > 0) /* FORCE_BUMP */
+	    return base_level+1;
 	fprintf(stderr,"   picklev: no estimate for level %d, so no incs\n", base_level);
 	return base_level;
     }
@@ -1720,16 +1723,15 @@ static int promote_highest_priority_incremental P((void))
 		check_days, (check_days == 1) ? "" : "s");
 
 	for(dp = schedq.head; dp != NULL; dp = dp->next) {
-	    if(dp->skip_full || dp->strategy == DS_NOFULL || 
-	       dp->strategy == DS_INCRONLY) {
-		fprintf(stderr,
-	"    promote: can't move %s:%s: no full dumps allowed.\n",
-			dp->host->hostname, dp->name);
-		continue;
-	    }
-
 	    if(est(dp)->next_level0 != check_days)
 		continue; /* totals continue here too */
+
+	    if(est_size(dp,0) <= 0) {
+		fprintf(stderr,
+		    "    promote: can't move %s:%s: no full dumps allowed.\n",
+		    dp->host->hostname, dp->name);
+		continue;
+	    }
 
 	    new_size = est_tape_size(dp, 0);
 	    new_total = total_size - est(dp)->dump_size + new_size;
