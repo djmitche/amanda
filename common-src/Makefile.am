@@ -22,11 +22,12 @@ REGsrcdir = $(srcdir)/$(REGDIR)
 INCLUDES = -I$(REGsrcdir)
 
 libamanda_la_SOURCES = \
-	alloc.c		amflock.c	debug.c		dgram.c		\
-	error.c		file.c		fileheader.c	match.c		\
-	protocol.c	regcomp.c	regerror.c	regexec.c	\
-	regfree.c	security.c	statfs.c	stream.c	\
-	token.c		version.c	versuff.c	writev.c
+	alloc.c		amflock.c	base64.c	debug.c		\
+	dgram.c		error.c		file.c		fileheader.c	\
+	krb5-security.c	match.c		protocol.c	regcomp.c	\
+	regerror.c	regexec.c	regfree.c	security.c	\
+	statfs.c	stream.c	token.c		version.c	\
+	versuff.c	writev.c
 
 libamanda_la_LIBADD =	@LIBOBJS@ @ALLOCA@
 libamanda_la_LDFLAGS =  -release $(VERSION)
@@ -35,10 +36,11 @@ libamanda_a_SOURCES =	$(libamanda_la_SOURCES)
 libamanda_a_LIBADD =	$(libamanda_la_LIBADD)
 
 noinst_HEADERS =	amanda.h	arglist.h	\
-			dgram.h		protocol.h	\
-			statfs.h	stream.h	\
-			token.h		version.h	\
-			amregex.h	fileheader.h
+			base64.h	dgram.h		\
+			protocol.h	statfs.h	\
+			stream.h	token.h		\
+			version.h	amregex.h	\
+			fileheader.h
 
 .sh:
 	cat $< > $@
