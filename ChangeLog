@@ -1,5 +1,9 @@
 2000-12-31  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* configure.in: Don't check krb5 include if krb5 is not selected.
+
+2000-12-31  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* tape-src/Makefile.am (noinst_HEADERS): Add output-rait.h
 
 2000-12-31  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>

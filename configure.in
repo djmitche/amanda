@@ -896,7 +896,9 @@ AC_ARG_WITH(krb5-security,
 )
 
 case "$KRB5_SECURITY" in
-n | no) KRB5_SECURITY=no ;;
+n | no) KRB5_SECURITY=no
+        KRB5_SPOTS=""
+	;;
 y | ye | yes) : ;;
 *) KRB5_SPOTS="$KRB5_SECURITY"
    KRB5_SECURITY=yes
