@@ -1,3 +1,26 @@
+Changes in release 2.4.4b1
+
+* New amtapetype program (replace tapetype)
+* Client compile on CYGWIN
+* amrestore -f <fileno> : amrestore can do fsf before reading the tape
+* amrestore -l <label>  : amrestore can check the label before restoring.
+* New config options:
+  amrecover_do_fsf: Amrecover will use the -f flag of amrestore to position the
+                    tape.
+  amrecover_check_label: amrecover will pass the -l flag to amrestore.
+  amrecover_changer: amrecover will use your changer.
+  maxdumpsize: The maximum size of the dumps during a run,
+               default to tapesize * runtapes
+  taperalgo: select your algo for the taper, try 'largestfit', it can improve
+             tape usage.
+* amrecover allow to retry a skip a tape.
+* New --days option to 'amadmin <config> balance' command.
+* New --date option to amstatus
+* amreport print an usage by tape.
+* Newer promote algorithm that try to reduce the number of full on a
+  single host in a run.
+* New changer: chg-juke, chg-null and chg-rait
+
 Changes in release 2.4.3
 
 * Few small bug fixed
