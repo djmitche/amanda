@@ -1,5 +1,11 @@
 1999-04-09  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/conffile.c: remove INTERFACE undef hack.  Our
+	namespace isn't polluted by krb4 headers anymore, so it's
+	unneeded.
+
+1999-04-09  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/amcheck.c: security changes:
 	(main): ignore SIGPIPE - some security drivers might get it.
 	Remove all usages of dgram.

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.61 1999/03/21 14:21:48 oliva Exp $
+ * $Id: conffile.c,v 1.62 1999/04/09 20:07:59 kashmir Exp $
  *
  * read configuration file
  */
@@ -52,14 +52,6 @@
 #define BIGINT	1000000000		/* 2 million yrs @ 1 per day */
 
 /* internal types and variables */
-
-/*
- * XXX - this is used by the krb4 stuff.
- * Hopefully nobody will need this here.  (not very likely).  -kovert
- */
-#if defined(INTERFACE)
-#  undef INTERFACE
-#endif
 
 typedef enum {
     UNKNOWN, ANY, COMMA, LBRACE, RBRACE, NL, END,
