@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.33 1997/09/11 15:16:15 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.34 1997/09/19 02:37:56 george Exp $
  *
  * send backup data using BSD dump
  */
@@ -129,6 +129,7 @@ char *dumpdate;
     char *host, dumpkeys[80];
     char device[1024];
     char cmd[4096];
+    char indexcmd[4096];
     
     host = getenv("HOSTNAME");
     if (host == NULL)
@@ -185,11 +186,13 @@ char *dumpdate;
 #endif
 	program->restore_name = XFSRESTORE;
 
+	sprintf(indexcmd,
+		"%s -t -v silent - 2>/dev/null | /sbin/sed -e 's/^/\\//'",
+		XFSRESTORE);
+
 	write_tapeheader();
 
-	start_index(createindex, dumpout, mesgf, indexf,
-		    XFSRESTORE
-		    " -t -v silent - 2>/dev/null | /sbin/sed -e 's/^/\\//'");
+	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
 	sprintf(dumpkeys, "%d", level);
 	if (no_record)
@@ -227,13 +230,15 @@ char *dumpdate;
 
 	sprintf(dumpkeys, "%d%ssf", level, no_record ? "" : "u");
 
+	sprintf(indexcmd,
+		"%s -tvf - 2>/dev/null |\
+		    awk '/^leaf/ {$1=\"\"; $2=\"\"; print}' |\
+		    cut -c4-",
+		VRESTORE);
+
 	write_tapeheader();
 
-	start_index(createindex, dumpout, mesgf, indexf,
-		    VXRESTORE
-		    " -tvf - 2>/dev/null |"
-		    " awk '/^leaf/ {$1=\"\"; $2=\"\"; print}' |"
-		    " cut -c4-");
+	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
 	dumppid = pipespawn(progname, &dumpin, dumpout, mesgf, 
 			    "vxdump", dumpkeys, "100000", "-", device,
@@ -243,25 +248,28 @@ char *dumpdate;
 #endif
 
     {
-	sprintf(dumpkeys, "%d%s"
+	sprintf(dumpkeys, "%d%s%sf", level, no_record ? "" : "u",
 #ifdef OSF1_VDUMP
 		"b"
 #else
 		"s"
 #endif
-		"f", level, no_record ? "" : "u");
+		);
 
-	write_tapeheader();
-
-	start_index(createindex, dumpout, mesgf, indexf,
+	sprintf(indexcmd,
+		"%s -tvf - 2>/dev/null |\
+		    awk '/^leaf/ {$1=\"\"; $2=\"\"; print}' |\
+		    cut -c4-",
 #ifdef RESTORE
 		    RESTORE
 #else
 		    "restore"
 #endif
-		    " -tvf - 2>/dev/null |"
-		    " awk '/^leaf/ {$1=\"\"; $2=\"\"; print}' |"
-		    " cut -c4-");
+		);
+
+	write_tapeheader();
+
+	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
 	dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf, 
 			    "dump", dumpkeys,
@@ -277,17 +285,20 @@ char *dumpdate;
     /* AIX backup program */
     sprintf(dumpkeys, "-%d%sf", level, no_record ? "" : "u");
 
+	sprintf(indexcmd,
+		"%s -B -tvf - 2>/dev/null |\
+		    awk '/^leaf/ {$1=\"\"; $2=\"\"; print}' |\
+		    cut -c4-",
+#ifdef RESTORE
+		    RESTORE
+#else
+		    "restore"
+#endif
+		);
+
     write_tapeheader();
 
-    start_index(createindex, dumpout, mesgf, indexf,
-#ifdef RESTORE
-		RESTORE
-#else
-		"restore"
-#endif
-		" -B -tvf 2>/dev/null |"
-		" awk '/^leaf/ {$1=\"\"; $2=\"\"; print}' |"
-		" cut -c4-");
+    start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
     dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf, 
 			"backup", dumpkeys, "-", device, (char *)0);

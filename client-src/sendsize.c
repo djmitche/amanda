@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.30 1997/09/18 23:47:59 george Exp $
+ * $Id: sendsize.c,v 1.31 1997/09/19 02:37:59 george Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -501,32 +501,38 @@ int level;
 #endif      
 #ifdef DUMP
     if (1) {
-#ifdef USE_RUNDUMP
-        char *name = " ("
-#ifdef AIX_BACKUP
-	  "backup"
-#else
-	  DUMP
-#endif
-	  ")";
-#else
+# ifdef USE_RUNDUMP
+#  ifdef AIX_BACKUP
+	char *name = " (backup)";
+#  else
+	char name[1024];
+	sprintf(name, " (%s)", DUMP);
+#  endif
+# else
 	char *name = "";
         sprintf(cmd, "%s", DUMP);
-#endif
-#ifndef AIX_BACKUP
-	sprintf(dumpkeys, "%d"
-#ifdef HAVE_DUMP_ESTIMATE
-		"E"
-#endif
-#ifndef OSF1_VDUMP
-		"s"
-#endif
-		"f", level);
-	dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n",
-		  pname, cmd, name, dumpkeys, device));
-#else /* AIX_BACKUP */
+# endif
+
+# ifdef AIX_BACKUP
 	sprintf(dumpkeys, "-%df", level);
 	dbprintf(("%s: running \"%s%s %s - %s\"\n",
+		  pname, cmd, name, dumpkeys, device));
+# else
+	sprintf(dumpkeys, "%d%s%sf",
+		level,
+#  ifdef HAVE_DUMP_ESTIMATE
+		"E",
+#  else
+		"",
+#  endif
+#  ifdef OSF1_VDUMP
+		""
+#  else
+		"s"
+#  endif
+		);
+
+	dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n",
 		  pname, cmd, name, dumpkeys, device));
 #endif
     }
@@ -811,29 +817,26 @@ time_t dumpsince;
     else assert(0); /* should never happen */
 
     {
-      char *spec =
-	"%s: running \"%s --create --directory %s "
-#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-	"--listed-incremental %s "
-#else
-	"--incremental --newer %s "
-#endif
-	"--sparse --one-file-system "
-#ifdef ENABLE_GNUTAR_ATIME_PRESERVE
-	"--atime-preserve "
-#endif
-	"--ignore-failed-read --totals --file /dev/null %s%s.\"\n";
+	char buf[4096];
 
-      char *name_or_time =
+	sprintf(buf, "%s --create --directory %s %s %s --sparse --one-file-system \
+%s --ignore-failed-read --totals --file /dev/null %s%s.",
+		cmd,
+		dirname,
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-	incrname
+		"--listed-incremental", incrname,
 #else
-	dumptimestr
+		"--incremental --newer", dumptimestr,
 #endif
-	;
-      
-      dbprintf((spec, pname, cmd, dirname, name_or_time,
-		efile[0] ? efile : "", efile[0] ? " " : ""));
+#ifdef ENABLE_GNUTAR_ATIME_PRESERVE
+		"--atime-preserve",
+#else
+		"",
+#endif
+		efile[0] ? efile : "",
+		efile[0] ? " " : "");
+
+	dbprintf(("%s: running \"%s\"\n", pname, buf));
     }
 
     nullfd = open("/dev/null", O_RDWR);

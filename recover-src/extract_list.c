@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.4 1997/08/27 08:12:32 amcore Exp $
+ * $Id: extract_list.c,v 1.5 1997/09/19 02:38:03 george Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -415,11 +415,14 @@ static int extract_files_setup P((void))
     struct hostent *hp;
     int tape_server_socket;
     char disk_regex[256];
+    char service_name[1024];
+
+    sprintf(service_name, "amidxtape%s", SERVICE_SUFFIX);
 
     /* get tape server details */
-    if ((sp = getservbyname("amidxtape" SERVICE_SUFFIX, "tcp")) == NULL)
+    if ((sp = getservbyname(service_name, "tcp")) == NULL)
     {
-	printf("amidxtape/tcp unknown protocol - config error?\n");
+	printf("%s/tcp unknown protocol - config error?\n", service_name);
 	return -1;
     }
     if ((hp = gethostbyname(tape_server_name)) == NULL)

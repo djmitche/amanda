@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: rundump.c,v 1.8 1997/08/27 08:11:34 amcore Exp $
+ * $Id: rundump.c,v 1.9 1997/09/19 02:37:55 george Exp $
  *
  * runs DUMP program as root
  */
@@ -60,7 +60,7 @@ char **argv;
 #endif
 
     fprintf(stderr, ERRMSG);
-    dbprintf(("%s: " ERRMSG, argv[0]));
+    dbprintf(("%s: %s", argv[0], ERRMSG));
     dbclose();
     return 1;
 

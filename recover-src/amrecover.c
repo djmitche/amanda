@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.4 1997/08/27 08:12:28 amcore Exp $
+ * $Id: amrecover.c,v 1.5 1997/09/19 02:38:01 george Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -63,6 +63,7 @@ extern int process_line P((char *line));
 
 char config[LINE_LENGTH];
 char server_name[LINE_LENGTH];
+char service_name[LINE_LENGTH];
 int server_socket;
 char server_line[LINE_LENGTH];
 char line[LINE_LENGTH];
@@ -420,12 +421,14 @@ char **argv;
 	exit(1);
     }
     
+    sprintf(service_name, "amandaidx%s", SERVICE_SUFFIX);
+
     printf("AMRECOVER Version 1.1. Contacting server on %s ...\n",
 	   server_name);  
-    if ((sp = getservbyname("amandaidx" SERVICE_SUFFIX, "tcp")) == NULL)
+    if ((sp = getservbyname(service_name, "tcp")) == NULL)
     {
 	perror("amrecover: amandaidx/tcp unknown protocol");
-	dbprintf(("amandaidx/tcp unknown protocol\n"));
+	dbprintf(("%s/tcp unknown protocol\n", service_name));
 	dbclose();
 	exit(1);
     }

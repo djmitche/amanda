@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: calcsize.c,v 1.11 1997/09/09 04:05:20 amcore Exp $
+ * $Id: calcsize.c,v 1.12 1997/09/19 02:37:54 george Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -134,11 +134,13 @@ char **argv;
 
     if(argc < 2) {
       usage:
-	error("Usage: %s [DUMP|GNUTAR "
+	error("Usage: %s [DUMP|GNUTAR%s] name dir [level date] ...",
 #ifdef BUILTIN_EXCLUDE_SUPPORT
-	      "[-X --exclude[-list]=regexp]] "
+		" [-X --exclude[-list]=regexp]",
+#else
+		"",
 #endif
-	      "name dir [level date] ...", pname);
+		pname);
 	return 1;
     }
 

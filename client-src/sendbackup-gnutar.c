@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.21 1997/08/27 08:11:39 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.22 1997/09/19 02:37:58 george Exp $
  *
  * send backup data using GNU tar
  */
@@ -83,6 +83,7 @@ char *dumpdate;
     struct tm *gmtm;
     amandates_t *amdates;
     time_t prev_dumptime;
+    char indexcmd[4096];
 
     host = getenv("HOSTNAME");
     if (host == NULL)
@@ -226,14 +227,18 @@ char *dumpdate;
 
 	program->backup_name = program->restore_name = SAMBA_CLIENT;
 	
-	write_tapeheader();
-	start_index(createindex, dumpout, mesgf, indexf,
+        sprintf(indexcmd,
+                "%s -tf - 2>/dev/null | cut -c2-",
 #ifdef GNUTAR
-		    GNUTAR
+		GNUTAR
 #else
-		    "tar"
+		"tar"
 #endif
-		    " -tf - 2>/dev/null | cut -c2-");
+                );
+
+	write_tapeheader();
+
+	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
 	dumppid = pipespawn(program->backup_name, &dumpin, dumpout, mesgf,
 			    "smbclient",
@@ -251,15 +256,18 @@ char *dumpdate;
       {
 	char sprintf_buf[512];
 
+        sprintf(indexcmd,
+                "%s -tf - 2>/dev/null | cut -c2-",
+#ifdef GNUTAR
+		GNUTAR
+#else
+		"tar"
+#endif
+                );
+
 	write_tapeheader();
 
-	start_index(createindex, dumpout, mesgf, indexf,
-#ifdef GNUTAR
-		    GNUTAR
-#else
-		    "tar"
-#endif
-		    " -tf - 2>/dev/null | cut -c2-");
+	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
 	dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf,
 			"gtar", "--create",
