@@ -616,7 +616,7 @@ char *str;
 
     tp = tmp;
     while(*str && !isdigit(*str)) str++;
-    while(*str && isdigit(*str)) *tp++ = *str++;
+    while(*str && (isdigit(*str) || (*str == '.'))) *tp++ = *str++;
     *tp = '\0';
 
     return atof(tmp);
