@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.11.2.3 1999/09/19 19:10:11 jrj Exp $
+ * $Id: dgram.c,v 1.11.2.4 2001/02/28 01:56:20 jrjackson Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -51,10 +51,21 @@ int *portp;
 {
     int s, len;
     struct sockaddr_in name;
+    struct in_addr in_addr;
+    int save_errno;
 
-    if((s = socket(AF_INET, SOCK_DGRAM, 0)) == -1) 
+    if((s = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+	save_errno = errno;
+	dbprintf(("%s: dgram_bind: socket() failed: %s\n",
+		  get_pname(),
+		  strerror(save_errno)));
+	errno = save_errno;
 	return -1;
+    }
     if(s < 0 || s >= FD_SETSIZE) {
+	dbprintf(("%s: dgram_bind: socket out of range: %d\n",
+		  get_pname(),
+		  s));
 	aclose(s);
 	errno = EMFILE;				/* out of range */
 	return -1;
@@ -83,6 +94,11 @@ int *portp;
 
     name.sin_port = INADDR_ANY;
     if (bind(s, (struct sockaddr *)&name, sizeof name) == -1) {
+	save_errno = errno;
+	dbprintf(("%s: dgram_bind: bind(INADDR_ANY) failed: %s\n",
+		  get_pname(),
+		  strerror(save_errno)));
+	errno = save_errno;
 	aclose(s);
 	return -1;
     }
@@ -91,11 +107,22 @@ out:
     /* find out what name was actually used */
 
     len = sizeof name;
-    if(getsockname(s, (struct sockaddr *)&name, &len) == -1)
+    if(getsockname(s, (struct sockaddr *)&name, &len) == -1) {
+	save_errno = errno;
+	dbprintf(("%s: dgram_bind: getsockname() failed: %s\n",
+		  get_pname(),
+		  strerror(save_errno)));
+	errno = save_errno;
+	aclose(s);
 	return -1;
+    }
     *portp = ntohs(name.sin_port);
     dgram->socket = s;
-
+    memcpy(&in_addr, &name.sin_addr, sizeof(name.sin_addr));
+    dbprintf(("%s: dgram_bind: socket bound to %s.%d\n",
+	      get_pname(),
+	      inet_ntoa(in_addr),
+	      *portp));
     return 0;
 }
 
@@ -105,28 +132,77 @@ struct sockaddr_in addr;
 dgram_t *dgram;
 {
     int s;
+    int socket_opened;
+    struct in_addr in_addr;
+    int save_errno;
+    int max_wait;
+    int wait_count;
 
-    if(dgram->socket != -1)
+    if(dgram->socket != -1) {
 	s = dgram->socket;
-    else if((s = socket(AF_INET, SOCK_DGRAM, 0)) == -1) 
-	return -1;
+	socket_opened = 0;
+    } else {
+	if((s = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+	    save_errno = errno;
+	    dbprintf(("%s: dgram_send_addr: socket() failed: %s\n",
+		      get_pname(),
+		      strerror(save_errno)));
+	    errno = save_errno;
+	    return -1;
+	}
+	socket_opened = 1;
+    }
 
     if(s < 0 || s >= FD_SETSIZE) {
-	aclose(s);
+	dbprintf(("%s: dgram_send_addr: socket out of range: %d\n",
+		  get_pname(),
+		  s));
+	if(socket_opened) {
+	    aclose(s);
+	}
 	errno = EMFILE;				/* out of range */
 	return -1;
     }
 
-    while(sendto(s, dgram->data, dgram->len, 0, 
-              (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) == -1)
+    memcpy(&in_addr, &addr.sin_addr, sizeof(addr.sin_addr));
+    max_wait = 300 / 5;				/* five minutes */
+    wait_count = 0;
+    while(sendto(s,
+		 dgram->data,
+		 dgram->len,
+		 0, 
+		 (struct sockaddr *)&addr,
+		 sizeof(struct sockaddr_in)) == -1) {
 #ifdef ECONNREFUSED
-	if (errno != ECONNREFUSED)
+	if(errno == ECONNREFUSED && wait_count++ < max_wait) {
+	    sleep(5);
+	    dbprintf(("%s: dgram_send_addr: sendto(%s.%d): retry %d after ECONNREFUSED\n",
+		      get_pname(),
+		      inet_ntoa(in_addr),
+		      (int) ntohs(addr.sin_port),
+		      wait_count));
+	    continue;
+	}
 #endif
+	save_errno = errno;
+	dbprintf(("%s: dgram_send_addr: sendto(%s.%d) failed: %s \n",
+		  get_pname(),
+		  inet_ntoa(in_addr),
+		  (int) ntohs(addr.sin_port),
+		  strerror(save_errno)));
+	errno = save_errno;
         return -1;
+    }
 
-    if(dgram->socket == -1) {
-	if(close(s) == -1)
+    if(socket_opened) {
+	if(close(s) == -1) {
+	    dbprintf(("%s: dgram_send_addr: close(%s.%d): failed: %s\n",
+		      get_pname(),
+		      inet_ntoa(in_addr),
+		      (int) ntohs(addr.sin_port),
+		      strerror(save_errno)));
 	    return -1;
+	}
 	s = -1;
     }
 
@@ -141,8 +217,16 @@ dgram_t *dgram;
 {
     struct sockaddr_in name;
     struct hostent *hp;
+    int save_errno;
 
-    if((hp = gethostbyname(hostname)) == 0) return -1;
+    if((hp = gethostbyname(hostname)) == 0) {
+	save_errno = errno;
+	dbprintf(("%s: dgram_send: gethostbyname(%s) failed\n",
+		  get_pname(),
+		  hostname));
+	errno = save_errno;
+	return -1;
+    }
     memcpy(&name.sin_addr, hp->h_addr, hp->h_length);
     name.sin_family = AF_INET;
     name.sin_port = htons(port);
@@ -152,13 +236,15 @@ dgram_t *dgram;
 
 
 int dgram_recv(dgram, timeout, fromaddr)
-int timeout;
 dgram_t *dgram;
+int timeout;
 struct sockaddr_in *fromaddr;
 {
     fd_set ready;
     struct timeval to;
     int size, addrlen, sock;
+    int nfound;
+    int save_errno;
 
     sock = dgram->socket;
 
@@ -167,16 +253,48 @@ struct sockaddr_in *fromaddr;
     to.tv_sec = timeout;
     to.tv_usec = 0;
 
-    if(select(sock+1, (SELECT_ARG_TYPE *)&ready, NULL, NULL, &to) == -1)
-	return -1;
+    nfound = select(sock+1, (SELECT_ARG_TYPE *)&ready, NULL, NULL, &to);
+    if(nfound <= 0 || !FD_ISSET(sock, &ready)) {
+	save_errno = errno;
+	if(nfound < 0) {
+	    dbprintf(("%s: dgram_recv: select() failed: %s\n",
+		      get_pname(),
+		      strerror(save_errno)));
+	} else if(nfound == 0) {
+	    dbprintf(("%s: dgram_recv: timeout after %d second%s\n",
+		      get_pname(),
+		      timeout,
+		      (timeout == 1) ? "" : "s"));
+	    nfound = 0;
+	} else if (!FD_ISSET(sock, &ready)) {
+	    int i;
 
-    if(!FD_ISSET(sock, &ready))	return 0;      	/* timed out */
+	    for(i = 0; i < sock + 1; i++) {
+		if(FD_ISSET(i, &ready)) {
+		    dbprintf(("%s: dgram_recv: got fd %d instead of %d\n",
+			      get_pname(),
+			      i,
+			      sock));
+		}
+	    }
+	    save_errno = EBADF;
+	    nfound = -1;
+	}
+	errno = save_errno;
+	return nfound;
+    }
 
     addrlen = sizeof(struct sockaddr_in);
-
     size = recvfrom(sock, dgram->data, MAX_DGRAM, 0,
 		    (struct sockaddr *)fromaddr, &addrlen);
-    if(size == -1) return -1;
+    if(size == -1) {
+	save_errno = errno;
+	dbprintf(("%s: dgram_recv: recvfrom() failed: %s\n",
+		  get_pname(),
+		  strerror(save_errno)));
+	errno = save_errno;
+	return -1;
+    }
     dgram->len = size;
     dgram->data[size] = '\0';
     dgram->cur = dgram->data;
