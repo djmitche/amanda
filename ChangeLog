@@ -1,4 +1,10 @@
 2003-02-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Christophe Kalt <kalt@taranis.org>
+
+	* client-src/sendbackup-dump.c: New AM_SIZE_RE for NetApp.
+	* client-src/sendsize.c: New re_size for NetApp.
+
+2003-02-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Fix by Colin Henein <cmh@orange-carb.org>
 
 	* common-src/amanda.h: Fix for the where S_ISDIR is not defined.

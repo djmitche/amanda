@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.84 2002/09/17 15:32:03 martinea Exp $
+ * $Id: sendbackup-dump.c,v 1.85 2003/02/05 02:11:15 martinea Exp $
  *
  * send backup data using BSD dump
  */
@@ -72,6 +72,8 @@ static regex_t re_table[] = {
   AM_SIZE_RE("   UFSDUMP: [0-9][0-9]* blocks", 512),
   /* Irix 6.2 xfs dump */
   AM_SIZE_RE("xfsdump: media file size [0-9][0-9]* bytes", 1),
+  /* NetApp dump */
+  AM_SIZE_RE("DUMP: [0-9][0-9]* KB", 1024),
 
   /* strange dump lines */
   AM_STRANGE_RE("should not happen"),

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.137 2003/01/04 17:45:46 martinea Exp $
+ * $Id: sendsize.c,v 1.138 2003/02/05 02:11:15 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -767,6 +767,7 @@ regex_t re_size[] = {
                                                               /* DU 4.0 dump */
     {"dump: Dumping [0-9][0-9]* bytes, ", 1},                /* DU 4.0 vdump */
     {"DUMP: estimated [0-9][0-9]* KB output", 1024},                 /* HPUX */
+    {"DUMP: estimated [0-9][0-9]* KB\\.", 1024},                 /* NetApp */
     {"  UFSDUMP: estimated [0-9][0-9]* blocks", 512},               /* Sinix */
 
 #ifdef HAVE_DUMP_ESTIMATE
