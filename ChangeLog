@@ -1,3 +1,7 @@
+2004-04-30  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* common-src/amanda.h: #include "amanda-int.h" only if !CONFIGURE_TEST.
+
 2004-04-29  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* config/acinclude.m4i (AX_CREATE_STDINT_H) : New macro.
