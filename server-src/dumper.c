@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.45 1998/01/13 17:11:38 blair Exp $
+/* $Id: dumper.c,v 1.46 1998/01/19 20:45:20 amcore Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -275,7 +275,8 @@ char **main_argv;
 		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
 		aclose(mesgfd);
 		aclose(datafd);
-		aclose(indexfd);
+		if (indexfd != -1)
+		    aclose(indexfd);
 		aclose(outfd);
 		break;
 	    }
@@ -284,7 +285,8 @@ char **main_argv;
 	    do_dump(mesgfd, datafd, indexfd, outfd);
 	    aclose(mesgfd);
 	    aclose(datafd);
-	    aclose(indexfd);
+	    if (indexfd != -1)
+		aclose(indexfd);
 	    aclose(outfd);
 	    if(abort_pending) putresult("ABORT-FINISHED %s\n", handle);
 	    break;
@@ -324,7 +326,8 @@ char **main_argv;
 		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
 		aclose(mesgfd);
 		aclose(datafd);
-		aclose(indexfd);
+		if (indexfd != -1)
+		    aclose(indexfd);
 		aclose(outfd);
 		break;
 	    }
@@ -333,7 +336,8 @@ char **main_argv;
 	    do_dump(mesgfd, datafd, indexfd, outfd);
 	    aclose(mesgfd);
 	    aclose(datafd);
-	    aclose(indexfd);
+	    if (indexfd != -1)
+		aclose(indexfd);
 	    aclose(outfd);
 	    if(abort_pending) putresult("ABORT-FINISHED %s\n", handle);
 	    break;
@@ -1281,7 +1285,8 @@ pkt_t *pkt;
 			     "[mutual authentication in data stream failed]");
 	aclose(datafd);
 	aclose(mesgfd);
-	aclose(indexfd);
+	if (indexfd != -1)
+	    aclose(indexfd);
 	response_error = 1;
 	afree(optionstr);
 	return;
@@ -1290,7 +1295,8 @@ pkt_t *pkt;
 	errstr = newstralloc(errstr,
 			     "[mutual authentication in mesg stream failed]");
 	aclose(datafd);
-	aclose(indexfd);
+	if (indexfd != -1)
+	    aclose(indexfd);
 	aclose(mesgfd);
 	response_error = 1;
 	afree(optionstr);
