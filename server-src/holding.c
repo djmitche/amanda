@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.17.2.11 1999/11/10 23:26:49 jrj Exp $
+ * $Id: holding.c,v 1.17.2.12 2000/06/02 14:31:47 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -256,6 +256,7 @@ holding_t *pick_datestamp()
 		    holding_t *r_holding_list, *hlist, *p;
 		    r_holding_list = p = NULL;
 		    for(ch = answer; *ch != '\0'; ch++) {
+			chupper = toupper(*ch);
 			if(chupper >= 'A' && chupper <= max_char) {
 			    hlist = malloc(sizeof(holding_t));
 			    hlist->next = NULL;
