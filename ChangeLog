@@ -1,5 +1,11 @@
 2002-10-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* restore-src/amrestore.c: New '-f <fileno>' flag, Do a rewind and
+	  'fsf <fileno>' if -f is set.
+	* man/amrestore.8: Document -f flag.
+
+2002-10-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* common-src/amfeatures.h (fe_amindexd_fileno_in_OLSD,
 	  fe_amindexd_fileno_in_ORLD): New amfeatures.
 	* common-src/amfeatures.c (am_init_feature_set): Set

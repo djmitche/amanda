@@ -24,26 +24,13 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.28.2.4.4.3.2.4 2002/03/31 21:01:33 jrjackson Exp $
+ * $Id: amrestore.c,v 1.28.2.4.4.3.2.5 2002/10/27 21:17:15 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
 /*
- * usage: amrestore [-b blocksize] [-r|-c|-C] [-p] [-h] tape-device|holdingfile [hostname [diskname [datestamp [hostname [diskname [datestamp ... ]]]]]]
- *
  * Pulls all files from the tape that match the hostname, diskname and
  * datestamp regular expressions.
- *
- * For example, specifying "rz1" as the diskname matches "rz1a",
- * "rz1g" etc on the tape.
- *
- * Command line options:
- *	-b   set tape record/block size
- *	-p   put output on stdout
- *	-c   write compressed with COMPRESS_FAST_OPT
- *	-C   write compressed with COMPRESS_BEST_OPT
- *	-r   raw, write file as it is on tape (with header, possibly compressed)
- *	-h   include the header in the output
  *
  * If the header is output, only up to DISK_BLOCK_BYTES worth of it is
  * sent, regardless of the tape blocksize.  This makes the disk image
@@ -67,6 +54,7 @@ char *compress_type = COMPRESS_FAST_OPT;
 int tapedev;
 int bytes_read;
 long blocksize = -1;
+long filefsf = -1;
 
 /* local functions */
 
@@ -460,7 +448,7 @@ void usage()
  * Print usage message and terminate.
  */
 {
-    error("Usage: amrestore [-b blocksize] [-r|-c] [-p] [-h] tape-device|holdingfile [hostname [diskname [datestamp [hostname [diskname [datestamp ... ]]]]]]");
+    error("Usage: amrestore [-b blocksize] [-r|-c] [-p] [-h] [-f fileno] tape-device|holdingfile [hostname [diskname [datestamp [hostname [diskname [datestamp ... ]]]]]]");
 }
 
 
@@ -492,6 +480,7 @@ char **argv;
     int fd;
     int r = 0;
     char *e;
+    char *err;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -511,7 +500,7 @@ char **argv;
     signal(SIGPIPE, handle_sigpipe);
 
     /* handle options */
-    while( (opt = getopt(argc, argv, "b:cCd:rpkh")) != -1) {
+    while( (opt = getopt(argc, argv, "b:cCd:rpkhf:")) != -1) {
 	switch(opt) {
 	case 'b':
 	    blocksize = strtol(optarg, &e, 10);
@@ -532,6 +521,12 @@ char **argv;
 	case 'r': rawflag = 1; break;
 	case 'p': pipeflag = 1; break;
 	case 'h': headerflag = 1; break;
+	case 'f':
+	    filefsf = strtol(optarg, &e, 10);
+	    if(e != NULL && *e != '\0') {
+		error("invalid fileno value \"%s\"", optarg);
+	    }
+	    break;
 	default:
 	    usage();
 	}
@@ -611,6 +606,24 @@ char **argv;
     }
     isafile=S_ISREG((stat_tape.st_mode));
 
+    file_number = 0;
+    if(filefsf != -1) {
+	if(isafile) {
+	    fprintf(stderr,"%s: ignoring -f flag when restoring from a file.\n",
+		    get_pname());
+	}
+	else {
+fprintf(stderr, "tapename: %s\n", tapename);
+	    if((err = tape_rewind(tapename)) != NULL) {
+		error("Could not rewind device '%s': %s", tapename, err);
+	    }
+	    if((err = tape_fsf(tapename,filefsf)) != NULL) {
+		error("Could not fsf device '%s': %s", tapename, err);
+	    }
+	    file_number = filefsf;
+	}
+    }
+
     if(isafile) {
 	tapedev = open(tapename, 0);
     } else {
@@ -619,11 +632,10 @@ char **argv;
     if(tapedev < 0) {
 	error("could not open %s: %s", tapename, strerror(errno));
     }
-    file_number = 0;
 
     read_file_header(&file, isafile);
 
-    if(file.type != F_TAPESTART && !isafile) {
+    if(file.type != F_TAPESTART && !isafile && filefsf == -1) {
 	fprintf(stderr, "%s: WARNING: not at start of tape, file numbers will be offset\n",
 			get_pname());
     }
