@@ -520,6 +520,7 @@ static void init_dumpdefaults()
 {
     dpcur.comment = "";
     dpcur.program = "DUMP";
+    dpcur.exclude = NULL;
     dpcur.priority = 1;
     dpcur.dumpcycle = conf_dumpcycle.i;
     dpcur.frequency = 1;
