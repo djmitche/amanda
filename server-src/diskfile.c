@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.20.2.2 1998/04/08 16:26:48 amcore Exp $
+ * $Id: diskfile.c,v 1.20.2.3 1998/04/10 23:49:10 amcore Exp $
  *
  * read disklist file
  */
@@ -444,6 +444,7 @@ disk_t *dp;
 
     return vstralloc(";",
 		     auth_opt,
+		     kencrypt_opt,
 		     compress_opt,
 		     record_opt,
 		     index_opt,
