@@ -504,6 +504,16 @@ y |  ye | yes) AC_DEFINE(USE_FQDN)
   ;;
 esac
 
+AC_ARG_WITH(gnutar,
+    [  --with-gnutar=PROG      use PROG as GNU tar executable [default: looks for one]],
+    [
+	case "$withval" in
+	    /*)	GNUTAR="$withval";;
+	    *)  AC_MSG_ERROR([*** You must supply a full pathname to --with-gnutar]);;
+	esac
+    ]
+)
+
 AC_ARG_WITH(smbclient,
     [  --with-smbclient[=PATH] Compile in Samba PC backup support, where PATH is the location of smbclient],
     [
