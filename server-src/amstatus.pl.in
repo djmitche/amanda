@@ -167,9 +167,9 @@ while(<AMDUMP>) {
 			$partition=$2;
 			$hostpart=&make_hostpart($host,$partition,$gdatestamp);
 			$level{"$hostpart"}=$4;
-			$size=$5;
-			$size=32 if $size<32;
-			$esize{$hostpart}=$size;
+			$esize=$5;
+			$esize=32 if $esize<32;
+			$esize{$hostpart}=$esize;
 			$degr_level{$hostpart}=-1;
 		}
 	}
@@ -180,9 +180,9 @@ while(<AMDUMP>) {
 			$datestamp=$3;
 			$hostpart=&make_hostpart($host,$partition,$datestamp);
 			$level{"$hostpart"}=$5;
-			$size=$6;
-			$size=32 if $size<32;
-			$esize{$hostpart}=$size;
+			$esize=$6;
+			$esize=32 if $esize<32;
+			$esize{$hostpart}=$esize;
 			$degr_level{$hostpart}=-1;
 		}
 	}
@@ -192,9 +192,9 @@ while(<AMDUMP>) {
 			$partition=$2;
 			$hostpart=&make_hostpart($host,$partition,$gdatestamp);
 			$level{$hostpart}=$4;
-			$size=$5;
-			$size=32 if $size<32;
-			$esize{$hostpart}=$size;
+			$esize=$5;
+			$esize=32 if $esize<32;
+			$esize{$hostpart}=$esize;
 			$degr_level{$hostpart}=$6;
 			$degr_size{$hostpart}=$7;
 			$degr_size{$hostpart}=32 if ($7 < 32);
@@ -207,9 +207,9 @@ while(<AMDUMP>) {
 			$datestamp=$3;
 			$hostpart=&make_hostpart($host,$partition,$datestamp);
 			$level{$hostpart}=$5;
-			$size=$6;
-			$size=32 if $size<32;
-			$esize{$hostpart}=$size;
+			$esize=$6;
+			$esize=32 if $esize<32;
+			$esize{$hostpart}=$esize;
 			$degr_level{$hostpart}=$7;
 			$degr_size{$hostpart}=$8;
 			$degr_size{$hostpart}=32 if ($8 < 32);
@@ -242,6 +242,7 @@ while(<AMDUMP>) {
 		$partition=$7;
 		$hostpart=&make_hostpart($host,$partition,$gdatestamp);
 		$serial=$4;
+		$serial{$serial}=$hostpart;
 		$dump_started{$hostpart}=1;
 		$dump_time{$hostpart}=$1;
 		$dump_finished{$hostpart}=0;
@@ -251,7 +252,6 @@ while(<AMDUMP>) {
 			$level{$hostpart}=$degr_level{$hostpart};
 			$esize{$hostpart}=$degr_size{$hostpart};
 		}
-		$serial{"$serial"}=$hostpart;
 		if(! defined($busy_time{$2})) {
 			$busy_time{$2}=0;
 		}
@@ -273,16 +273,16 @@ while(<AMDUMP>) {
 		$device=$device;
 		$hostpart=&make_hostpart($host,$partition,$gdatestamp);
 		$serial=$4;
+		$serial{$serial}=$hostpart;
 		$dump_started{$hostpart}=1;
 		$dump_time{$hostpart}=$1;
 		$dump_finished{$hostpart}=0;
-		$holding_file{$hostpart}=$5;
+		$holding_file{$hostpart}=$5 if $3 eq "FILE-DUMP";
 		if(     $level{$hostpart} != $9 &&
 		   $degr_level{$hostpart} == $9) {
 			$level{$hostpart}=$degr_level{$hostpart};
 			$esize{$hostpart}=$degr_size{$hostpart};
 		}
-		$serial{"$serial"}=$hostpart;
 		if(! defined($busy_time{$2})) {
 			$busy_time{$2}=0;
 		}
@@ -370,7 +370,8 @@ while(<AMDUMP>) {
 			$datestamp{$ldatestamp} = 1;
 			push @datestamp, $ldatestamp;
 		}
-		$hostpart="$host$partition$ldatestamp";
+		$hostpart=&make_hostpart($host,$partition,$ldatestamp);
+		$serial{$serial}=$hostpart;
 		if(!defined $level{$hostpart}) {
 			$level{$hostpart} = $level;
 		}
@@ -384,7 +385,7 @@ while(<AMDUMP>) {
 		$serial=$2;
 		$host=$3;
 		$partition=$4;
-		$hostpart="$host$partition";
+		$hostpart=&make_hostpart($host,$partition,$gdatestamp);
 		$serial{$serial}=$hostpart;
 		$taper_started{$hostpart}=1;
 		$taper_finished{$hostpart}=0;
