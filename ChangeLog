@@ -1,5 +1,9 @@
 1998-09-29  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* docs/DUMPER-API: remove environment variables, and mention a
+	program that will help translating disklist entries to device names, 
+	mount points and filesystem types
+
 	* recover-src/extract_list.c (extract_files_child): do not crash
 	after failing to read the dump file header
 	Reported by Jose Cheng <jcheng@math.ist.utl.pt>

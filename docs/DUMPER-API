@@ -1,6 +1,6 @@
 AMANDA DUMPER API
 
-Last modified $Date: 1998/09/27 23:38:20 $
+Last modified $Date: 1998/09/29 04:02:07 $
 
 by Alexandre Oliva <oliva@dcc.unicamp.br>
 
@@ -89,16 +89,9 @@ The DUMPER API must accomodate for all these variations.
 
 3. OVERVIEW OF THE API
 
-We are going to define a standard format of argument lists and
-environment variables that the backup driver will provide to wrapper
-programs, and the expected result of the execution of these wrappers.
-
-As a general rule, whenever a wrapper is started, there should be
-three environment variables set: DISK_DIR, DISK_DEVICE and
-DISK_FSTYPE.  Amanda should try to obtain these values based on the
-disk name in the disklist.  However, it may fail to obtain some or all
-of these values, for example, when a SAMBA share is specified.  In
-this case, the environment variables should not be defined.
+We are going to define a standard format of argument lists that the
+backup driver will provide to wrapper programs, and the expected
+result of the execution of these wrappers.
 
 The first argument to a wrapper should always be a command name.  If
 no arguments are given, or an unsupported command is requested, an
@@ -122,27 +115,18 @@ wrappers already implemented the command `support level-incrementals',
 by returning a 0 exit status, printing, say, the maximum incremental
 level it supports, i.e., 9.  A sample session would be:
 
-% env DISK_DIR=/ DISK_DEVICE=/dev/hda0 DISK_FSTYPE=ext2 \
-> /usr/local/amanda/libexec/wrappers/DUMP support level-incrementals hda0
+% /usr/local/amanda/libexec/wrappers/DUMP support level-incrementals hda0
 9
 
 Note that the result of this support command may depend on filesystem
 information, so the disklist filesystem entry should be specified as a
-command line argument, and the standard environment variables should
-be set.  Although the disklist filesystem entry is usually going to be
-equal toDISK_DIR or DISK_DEVICE, this may not hold for remote
-filesystems, such as SAMBA shares.
+command line argument.  In the next examples, we are not going to use
+full pathnames to wrapper scripts any more.
 
-We are not going to explicitly refer to the environment variables in
-command lines any more, but be aware that they are present.  So, a
-simplified version of the sample support command above would be:
+We could have defined a `support' command for full backups, but I
+can't think of a backup program that does not support full backups...
 
-	DUMP support level-incrementals hda0
-
-We could also suggest a `support' command for full backups, but can't
-think of a backup program that does not support full backups...
-
-Other `support' sub-commands are `index-from-output',
+Some other standard `support' sub-commands are `index-from-output',
 `index-from-image', `exclude' and `exclude-list'.
 
 	DUMP support index-from-output hda0
@@ -209,19 +193,29 @@ The backup driver should then arrange to re-run the script as the
 specified user/group.  Security concerns may impose restrictions on
 privileges that can be given to wrapper scripts.  For example, we may
 require that, in order to run a wrapper script as any other user or
-group, the wrapper script must be in a separate directory, and that
-the script, its containing directory and all its parents must only be
-writable by root.  The search path for wrappers could be modified in
-this case, so as to allow protected wrappers to be stored in a
-separate directory.
+group, the wrapper script must be in a separate directory, say
+/usr/local/amanda/libexec/wrappers-protected, and that the script, its
+containing directory and all its parents must only be writable by
+root.
 
-This ability causes amandad (that will incorporate all the
-functionality from selfcheck, sendsize and sendbackup) to have to be
-setuid-root.  However, it will fork a child process and drop to the
-amanda user privileges as soon as possible.  This child process will
-be driven through a pipe, and it will be able to start services as
-other users, in a way that no other user, not even the backup
-operator, will be able to run arbitrary commands.
+The need for starting programs as other users requires amandad (that
+will incorporate all the functionality from selfcheck, sendsize and
+sendbackup) to be setuid-root.  However, it will fork a child process
+and drop to the amanda user privileges as soon as possible.  This
+child process will be driven through a pipe, and it will be able to
+start services as other users, in a way that no other user, not even
+the backup operator, will be able to run arbitrary commands.
+
+
+A wrapper script will certainly have to figure out either the disk
+device name or its mount point, given a filesystem name such as
+`hda0', as specified in the disklist.  In order to help these scripts,
+Amanda provides a helper program that can guess device names, mount
+points and filesystem types, when given disklist entries.
+
+The filesystem type can be useful on some operation systems, in which
+more than one dump program is available; this information can help
+automatically selecting the appropriate dump program.
 
 
 The exit status of selfcheck and of this alternate script are probably
