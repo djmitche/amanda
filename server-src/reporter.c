@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.16 1998/01/12 22:32:55 blair Exp $
+ * $Id: reporter.c,v 1.17 1998/01/21 16:49:27 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -1112,7 +1112,7 @@ void generate_missing()
 
     for(dp = diskq->head; dp != NULL; dp = dp->next) {
 	if(data(dp)->result == L_BOGUS) {
-	    str = vstralloc("  ", prefix(hostname, diskname, -987),
+	    str = vstralloc("  ", prefix(dp->host->hostname, dp->name, -987),
 			    " ", "RESULTS MISSING",
 			    NULL);
 	    addline(&errsum, str);
