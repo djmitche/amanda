@@ -31,8 +31,8 @@ install-exec-hook:
 	@list="$(sbin_SCRIPTS)"; \
 	for p in $$list; do \
 		pa=$(sbindir)/`echo $$p|sed '$(transform)'`; \
-		echo chown $(CLIENT_LOGIN) $$pa; \
-		chown $(CLIENT_LOGIN) $$pa; \
+		echo chown $(BINARY_OWNER) $$pa; \
+		chown $(BINARY_OWNER) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \
 		chgrp $(SETUID_GROUP) $$pa; \
 	done
@@ -41,8 +41,8 @@ install-data-hook:
 	@list="$(amplot_DATA)"; \
 	for p in $$list; do \
 		pa=$(libexecdir)/$$p; \
-		echo chown $(CLIENT_LOGIN) $$pa; \
-		chown $(CLIENT_LOGIN) $$pa; \
+		echo chown $(BINARY_OWNER) $$pa; \
+		chown $(BINARY_OWNER) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \
 		chgrp $(SETUID_GROUP) $$pa; \
         done

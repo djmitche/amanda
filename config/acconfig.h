@@ -164,6 +164,9 @@
 /* Define as a the user to force to on client machines.  */
 #undef CLIENT_LOGIN
 
+/* Define as the user who owns installed binaries. */
+#undef BINARY_OWNER
+
 /* Define for backups being done on a multiple networks and FQDNs are used.  */
 #undef USE_FQDN
 
