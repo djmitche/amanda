@@ -1,4 +1,4 @@
-#! @PERL@
+#! @PERL@ -w
 
 # Catch for sh/csh on systems without #! ability.
 eval '(exit $?0)' && eval 'exec @PERL@ -S $0 ${1+"$@"}'

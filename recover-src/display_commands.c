@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: display_commands.c,v 1.12 1998/07/04 00:19:11 oliva Exp $
+ * $Id: display_commands.c,v 1.13 1999/09/05 23:27:18 jrj Exp $
  *
  * implements the directory-display related commands in amrecover
  */
@@ -121,11 +121,11 @@ void suck_dir_list_from_server P((void))
     char *cmd = NULL;
     char *err = NULL;
     int i;
-    char *l;
-    char *date, *date_undo, date_undo_ch;
+    char *l = NULL;
+    char *date, *date_undo, date_undo_ch = '\0';
     int level;
-    char *tape, *tape_undo, tape_undo_ch;
-    char *dir, *dir_undo, dir_undo_ch;
+    char *tape, *tape_undo, tape_undo_ch = '\0';
+    char *dir, *dir_undo, dir_undo_ch = '\0';
     char *disk_path_slash = NULL;
     char *disk_path_slash_dot = NULL;
     char *s;

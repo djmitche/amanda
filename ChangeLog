@@ -1,5 +1,13 @@
 1999-09-05 John R. Jackson  <jrj@purdue.edu>
 
+	* changer-src/chg-chio.pl.in: add -w to #! line to catch more errors.
+	* recover-src/display_commands.c: fix some compiler warnings.
+	* recover-src/extract_list.c: fix some compiler warnings.
+	* restore-src/amrestore.c: fix some compiler warnings.
+	* server-src/planner.c: fix some compiler warnings.
+
+1999-09-05 John R. Jackson  <jrj@purdue.edu>
+
 	* recover-src/extract_list.c: add VRESTORE and VXRESTORE support.
 
 1999-09-05 John R. Jackson  <jrj@purdue.edu>

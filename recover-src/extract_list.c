@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.49 1999/09/05 22:51:49 jrj Exp $
+ * $Id: extract_list.c,v 1.50 1999/09/05 23:27:20 jrj Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -80,7 +80,7 @@ int datafd;
 char *buffer;
 int buflen;
 {
-    int maxfd, nfound, size;
+    int maxfd, nfound, size = 0;
     fd_set readset, selectset;
     struct timeval timeout;
     char *dataptr;
@@ -431,9 +431,9 @@ char *regex;
     char *cmd = NULL;
     char *err = NULL;
     int  i;
-    char *dir, *dir_undo, dir_undo_ch;
+    char *dir, *dir_undo, dir_undo_ch = '\0';
     char *ditem_path = NULL;
-    char *l;
+    char *l = NULL;
     int  added;
     char *s, *fp;
     int ch;
@@ -692,12 +692,12 @@ char *regex;
     char *cmd = NULL;
     char *err = NULL;
     int  i;
-    char *date, *date_undo, date_undo_ch;
-    char *tape, *tape_undo, tape_undo_ch;
-    char *dir, *dir_undo, dir_undo_ch;
+    char *date, *date_undo, date_undo_ch = '\0';
+    char *tape, *tape_undo, tape_undo_ch = '\0';
+    char *dir, *dir_undo, dir_undo_ch = '\0';
     int  level;
     char *ditem_path = NULL;
-    char *l;
+    char *l = NULL;
     int  deleted;
     char *s;
     int ch;
@@ -1185,7 +1185,8 @@ static void extract_files_child(in_fd, elist)
     int in_fd;
     EXTRACT_LIST *elist;
 {
-    int no_initial_params;
+    int save_errno;
+    int no_initial_params = 0;
     int i,j=0;
     char **restore_args = NULL;
     int files_off_tape;

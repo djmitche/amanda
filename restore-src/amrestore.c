@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.31 1999/06/08 14:50:55 kashmir Exp $
+ * $Id: amrestore.c,v 1.32 1999/09/05 23:27:24 jrj Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -180,7 +180,7 @@ int isafile;
  * piped to restore).
  */
 {
-    int rc, dest, out, outpipe[2];
+    int rc = 0, dest, out, outpipe[2];
     int wc;
 
     /* adjust compression flag */
@@ -389,13 +389,13 @@ char **argv;
     struct stat stat_tape;
     dumpfile_t file;
     char *filename = NULL;
-    char *tapename;
+    char *tapename = NULL;
     struct match_list {
 	char *hostname;
 	char *diskname;
 	char *datestamp;
 	struct match_list *next;
-    } *match_list = NULL, *me;
+    } *match_list = NULL, *me = NULL;
     int found_match;
     int arg_state;
     amwait_t compress_status;
