@@ -1,5 +1,11 @@
 2000-10-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/driver.c (continue_dumps): set estimate to more than 
+	what is already use instead of setting no_hold=1 when a disk
+	don't fit on holding disk.
+
+2000-10-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/chunker.c: chunker was broken after RQ-MORE-DISK.
 
 2000-10-28  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
