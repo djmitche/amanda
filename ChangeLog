@@ -1,5 +1,11 @@
 2002-03-24  John R. Jackson (jrj@purdue.edu)
 
+	* client-src/amandad.c: Make sure argv[0] is valid before using it.
+	* restore-src/amidxtaped.c: Ditto.
+	* server-src/amindexd.c: Ditto.
+
+2002-03-24  John R. Jackson (jrj@purdue.edu)
+
 	* client-src/client_util.c: Use the Amanda memory allocation code.
 	* client-src/sendbackup-gnutar.c: Ditto.
 	* client-src/sendsize.c: Ditto.

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.32.2.4.4.1 2001/05/14 20:09:17 jrjackson Exp $
+ * $Id: amandad.c,v 1.32.2.4.4.1.2.1 2002/03/24 20:25:37 jrjackson Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -66,6 +66,8 @@ int ack_timeout     = ACK_TIMEOUT;
 #ifdef KRB4_SECURITY
 #  include "amandad-krb4.c"
 #endif
+
+static char *pgm = "amandad";		/* in case argv[0] is not set */
 
 /* local functions */
 int main P((int argc, char **argv));
@@ -111,7 +113,21 @@ char **argv;
 
     safe_cd();
 
-    set_pname("amandad");
+    /*
+     * When called via inetd, it is not uncommon to forget to put the
+     * argv[0] value on the config line.  On some systems (e.g. Solaris)
+     * this causes argv and/or argv[0] to be NULL, so we have to be
+     * careful getting our name.
+     */
+    if (argc >= 1 && argv != NULL && argv[0] != NULL) {
+	if((pgm = strrchr(argv[0], '/')) != NULL) {
+	    pgm++;
+	} else {
+	    pgm = argv[0];
+	}
+    }
+
+    set_pname(pgm);
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
@@ -150,9 +166,13 @@ char **argv;
 	dup2(db_fd, 2);
     }
 
-    dbprintf(("%s: version %s\n", argv[0], version()));
+    dbprintf(("%s: version %s\n", pgm, version()));
     for(vp = version_info; *vp != NULL; vp++)
-	dbprintf(("%s: %s", argv[0], *vp));
+	dbprintf(("%s: %s", pgm, *vp));
+
+    if (! (argc >= 1 && argv != NULL && argv[0] != NULL)) {
+	dbprintf(("%s: WARNING: argv[0] not defined: check inetd.conf\n", pgm));
+    }
 
     dgram_zero(&in_msg.dgram); 
     dgram_socket(&in_msg.dgram, 0);
@@ -296,7 +316,7 @@ char **argv;
 
 #endif  /* KRB4_SECURITY && FORCE_USERID */
 
-    dbprintf(("%s: running service \"%s\"\n", argv[0], cmd));
+    dbprintf(("%s: running service \"%s\"\n", pgm, cmd));
 
     /* spawn first child to handle the request */
 
@@ -409,21 +429,21 @@ char **argv;
 	 *
 	 * It should suffice to ACK whenever the sender is identical.
 	 */
-	dbprintf(("%s: got packet:\n----\n%s----\n\n", argv[0],
+	dbprintf(("%s: got packet:\n----\n%s----\n\n", pgm,
 		  dup_msg.dgram.data));
 	parse_pkt_header(&dup_msg);
 	if(dup_msg.peer.sin_addr.s_addr == in_msg.peer.sin_addr.s_addr &&
 	   dup_msg.peer.sin_port == in_msg.peer.sin_port) {
 	    if(dup_msg.type == P_REQ) {
-		dbprintf(("%s: received dup P_REQ packet, ACKing it\n", argv[0]));
+		dbprintf(("%s: received dup P_REQ packet, ACKing it\n", pgm));
 		sendack(&in_msg, &rej_msg);
 	    }
 	    else {
-		dbprintf(("%s: It's not a P_REQ, ignoring it\n", argv[0]));
+		dbprintf(("%s: It's not a P_REQ, ignoring it\n", pgm));
 	    }
 	}
 	else {
-	    dbprintf(("%s: received other packet, NAKing it\n", argv[0]));
+	    dbprintf(("%s: received other packet, NAKing it\n", pgm));
 	    dbprintf(("  addr: peer %s dup %s, port: peer %d dup %d\n",
 		      inet_ntoa(in_msg.peer.sin_addr),
 		      inet_ntoa(dup_msg.peer.sin_addr),
@@ -449,7 +469,7 @@ send_response:
     while(retry_count < max_retry_count) {
 	if(!retry_count)
 	    dbprintf(("%s: sending REP packet:\n----\n%s----\n\n",
-		      argv[0], out_msg.dgram.data));
+		      pgm, out_msg.dgram.data));
 	dgram_send_addr(in_msg.peer, &out_msg.dgram);
 	if((n = dgram_recv(&dup_msg.dgram, ack_timeout, &dup_msg.peer)) <= 0) {
 	    char *s;
@@ -463,7 +483,7 @@ send_response:
 	    /* timed out or error, try again */
 	    retry_count++;
 
-	    dbprintf(("%s: waiting for ack: %s", argv[0], s));
+	    dbprintf(("%s: waiting for ack: %s", pgm, s));
 	    if(retry_count < max_retry_count) 
 		dbprintf((", retrying\n"));
 	    else 
@@ -471,7 +491,7 @@ send_response:
 
 	    continue;
 	}
-	dbprintf(("%s: got packet:\n----\n%s----\n\n", argv[0],
+	dbprintf(("%s: got packet:\n----\n%s----\n\n", pgm,
 		  dup_msg.dgram.data));
 	parse_pkt_header(&dup_msg);
 
@@ -481,10 +501,10 @@ send_response:
 	    if(dup_msg.type == P_ACK)
 		break;
 	    else
-		dbprintf(("%s: It's not an ack\n", argv[0]));
+		dbprintf(("%s: It's not an ack\n", pgm));
 	}
 	else {
-	    dbprintf(("%s: weird, it's not a proper ack\n", argv[0]));
+	    dbprintf(("%s: weird, it's not a proper ack\n", pgm));
 	    dbprintf(("  addr: peer %s dup %s, port: peer %d dup %d\n",
 		      inet_ntoa(in_msg.peer.sin_addr),
 		      inet_ntoa(dup_msg.peer.sin_addr),

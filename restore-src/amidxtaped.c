@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.25.2.3.4.1.2.1 2002/03/24 19:23:23 jrjackson Exp $
+/* $Id: amidxtaped.c,v 1.25.2.3.4.1.2.2 2002/03/24 20:25:37 jrjackson Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -36,6 +36,8 @@
 #include "version.h"
 
 #include "tapeio.h"
+
+static char *pgm = "amidxtaped";	/* in case argv[0] is not set */
 
 static char *get_client_line P((void));
 
@@ -121,7 +123,21 @@ char **argv;
 
     safe_cd();
 
-    set_pname("amidxtaped");
+    /*
+     * When called via inetd, it is not uncommon to forget to put the
+     * argv[0] value on the config line.  On some systems (e.g. Solaris)
+     * this causes argv and/or argv[0] to be NULL, so we have to be
+     * careful getting our name.
+     */
+    if (argc >= 1 && argv != NULL && argv[0] != NULL) {
+	if((pgm = strrchr(argv[0], '/')) != NULL) {
+	    pgm++;
+	} else {
+	    pgm = argv[0];
+	}
+    }
+
+    set_pname(pgm);
 
 #ifdef FORCE_USERID
 
@@ -144,9 +160,9 @@ char **argv;
        chats to stderr, which we don't want going to client */
     /* if no debug file, ship to bit bucket */
     (void)close(STDERR_FILENO);
-#ifdef DEBUG_CODE
     dbopen();
-    dbprintf(("%s: version %s\n", argv[0], version()));
+    dbprintf(("%s: version %s\n", pgm, version()));
+#ifdef DEBUG_CODE
     if(dbfd() != -1 && dbfd() != STDERR_FILENO)
     {
 	if(dup2(dbfd(),STDERR_FILENO) != STDERR_FILENO)
@@ -165,6 +181,10 @@ char **argv;
 	return 1;
     }
 #endif
+
+    if (! (argc >= 1 && argv != NULL && argv[0] != NULL)) {
+	dbprintf(("%s: WARNING: argv[0] not defined: check inetd.conf\n", pgm));
+    }
 
     i = sizeof (addr);
     if (getpeername(0, (struct sockaddr *)&addr, &i) == -1)
