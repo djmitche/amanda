@@ -1,5 +1,11 @@
 2001-06-18 John R. Jackson <jrj@purdue.edu>
 
+	* common-src/dgram.c: Use a sin_addr arg to inet_ntoa() like all the
+	  other Amanda code.
+	* common-src/stream.c: Ditto.
+
+2001-06-18 John R. Jackson <jrj@purdue.edu>
+
 	* changer-src/chg-manual.sh.in: Add yet another online regex.  Found
 	  by George Herson <gherson@snet.net>.
 
