@@ -1,5 +1,8 @@
 Version 2.4.0
 
+	tape device wouldn't rewind if opened O_WRONLY.
+	-Palle Girgensohn <girgen@partitur.se> & oliva
+
 	use setpgid instead of setpgrp if available
 	-Mark Woodford <woodford@uniprise.com> & oliva
 

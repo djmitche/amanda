@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.10 1997/12/30 05:25:29 jrj Exp $
+ * $Id: tapeio.c,v 1.10.2.1 1998/01/29 11:25:51 amcore Exp $
  *
  * implements tape I/O functions
  */
@@ -186,7 +186,10 @@ int tape_open(filename, mode)
 char *filename;
 int mode;
 {
-    return open(filename, mode);
+    if (mode == 0 || mode == O_RDONLY)
+        return open(filename, O_RDONLY);
+    else
+	return open(filename, O_RDWR);
 }
 
 int tapefd_read(tapefd, buffer, count)
