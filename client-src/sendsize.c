@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.47 1997/12/31 01:32:28 jrj Exp $
+ * $Id: sendsize.c,v 1.48 1997/12/31 22:15:28 jrj Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -534,6 +534,9 @@ int level;
     char *cmd = NULL;
     char *line = NULL;
     char level_str[NUM_STR_SIZE];
+    pid_t p;
+    int sig;
+    int s;
 
     ap_snprintf(level_str, sizeof(level_str), "%d", level);
 
@@ -718,19 +721,31 @@ int level;
 #ifdef OSF1_VDUMP
     sleep(5);
 #endif
-
-    kill(-dumppid,
-#if defined(AIX_BACKUP)
-	 SIGKILL
-#elif defined(XFSDUMP)
-    /* `xfsdump' catches and ignores `SIGTERM', so make sure it dies. */
-	 strcmp(amname_to_fstype(device), "xfs")!=0 ? SIGTERM : SIGKILL
+    /*
+     * First, try to kill the dump process nicely.  If it ignores us
+     * for several seconds, hit it harder.
+     */
+#ifdef XFSDUMP
+    /*
+     * We know xfsdump ignores SIGTERM, so arrange to hit it hard.
+     */
+    sig = (strcmp(amname_to_fstype(device), "xfs") == 0 ? SIGKILL : SIGTERM;
 #else
-	 SIGTERM
+    sig = SIGTERM;
 #endif
-	 );
-#endif /* HAVE_DUMP_ESTIMATE */
+    dbprintf(("sending signal %d to process group %ld\n", sig, (long)dumppid));
+    kill(-dumppid, sig);
+    for(s = 5; s > 0 && (p = waitpid(dumppid, &status, WNOHANG)) == 0; s--) {
+	sleep(1);
+    }
+    if(p == 0) {
+        dbprintf(("sending KILL to process group %ld\n", (long)dumppid));
+	kill(-dumppid, SIGKILL);
+	wait(&status);
+    }
+#else /* HAVE_DUMP_ESTIMATE */
     wait(&status);
+#endif /* HAVE_DUMP_ESTIMATE */
 
     aclose(nullfd);
     afclose(dumpout);

@@ -1,5 +1,10 @@
 Version 2.4.0b5
 
+	Change kill logic in sendsize to try TERM first, then KILL if that
+	does not get dump's attention.  This fixes a problem on AIX 4.x
+	where dump was always getting a KILL and leaving orphaned message
+	queues, which would eventually run the system out of resources.  -JJ
+
 	Extensive buffer management, bug and defensive coding overhaul
 	including:
 	    * Use proper fgets/fread/read buffer size.
