@@ -76,7 +76,7 @@ instead of one that does not.  The `n' stands for non-rewinding.
 configuration, you'll have to label them again.
 
 
-Q: Why does `amcheck' report `selfcheck timed out'?
+Q: Why does `amcheck' report `selfcheck request timed out'?
 
 A: This can occur under several different situations.  First, make
 sure this problem is repeatable; if Amanda programs are
@@ -92,22 +92,29 @@ lacks permission to create /tmp/amanda/amandad.debug.
    In the latter case, wipe out /tmp/amanda, and amandad should create
 it next time it runs.  In the former case, check your inetd
 configuration.  Make sure you have added the Amanda services to
-/etc/services, that /etc/inetd.conf was properly configured, and that
-you have signalled inetd to reread this file.  Check section 2.2 from
-the INSTALL file for details.
+/etc/services (or the NIS services map), that /etc/inetd.conf was
+properly configured, and that you have signalled inetd to reread this
+file (some systems may need rebooting).  Check section 2.2 from the
+INSTALL file for details.  Check the inetd man-page for possible
+differences between the standard inetd.conf format and the one in your
+system.
 
    Pay special attention to typos in inetd.conf; error messages will
-probably appear in /var/adm/messages if you have typed the amandad
-program name incorrectly.  Make sure the same user that you have
-specified at configure-time (--with-user=<USERNAME>) is listed in
-inetd.conf.  Check whether this user has permission to run amandad, as
-well as any shared libraries amandad depends upon, by running the
-specified amandad command by hand, as the Amanda user.  If you type
-anything, amandad should abort because it can't read a UDP packet
-from the keyboard.
+probably appear in /var/adm/messages or /var/log/messages if you have
+typed the amandad program name incorrectly.  Make sure the same user
+that you have specified at configure-time (--with-user=<USERNAME>) is
+listed in inetd.conf.  Check whether this user has permission to run
+amandad, as well as any shared libraries amandad depends upon, by
+running the specified amandad command by hand, as the Amanda user.  It
+should just time-out after 30 seconds waiting for a UDP packet.  If
+you type anything, it will abort immediately, because it can't read a
+UDP packet from the keyboard.
 
    As soon as you have properly configured inetd.conf so as to run
-amandad, you should no longer get the `selfcheck timed out' message.
+amandad, you should no longer get the `selfcheck request timed out'
+message.  A nice tool to help make sure inetd is really listening on
+the amandad port is lsof, available at
+ftp://vic.cc.purdue.edu/pub/tools/unix/lsof.
 
 
 Q: Why does `amandad.debug' contain `error receiving message'?

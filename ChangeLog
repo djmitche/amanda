@@ -1,5 +1,8 @@
 1999-06-25  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* docs/FAQ (selfcheck time-out): NIS services, inetd rebooting,
+	keyboard time-out, lsof.
+
 	* server-src/amverify.sh.in (HEADER): Use `sed 1q'  instead of the
 	not-that-portable `head -1'.
 	Reported by Andrew Lare <lare@eos913c.gsfc.nasa.gov>
