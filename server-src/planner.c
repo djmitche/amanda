@@ -64,7 +64,8 @@ char *pname = "planner";
 
 #define minimum(x,y) ((x)<(y) ? (x) : (y))
 #define compratio(d,v) \
-    (((d)->dtype->compress_best || (d)->dtype->compress_fast) ? \
+    (((d)->dtype->compress_best || (d)->dtype->compress_fast \
+      || (d)->dtype->srvcompress) ? \
      minimum((est(d)->v),1.1) : 1.0)
 
 typedef struct est_s {
