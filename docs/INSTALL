@@ -35,7 +35,9 @@ to compile some of the Amanda programs (see section 1.2.H below).
 
 		ftp://prep.ai.mit.edu/pub/gnu/tar-1.12.tar.gz
  
-	Apply the patch from patches/tar-1.12.patch on SunOS4 hosts.
+	Apply the patch from patches/tar-1.12.patch.  The first hunk
+	may be enough, unless it's a SunOS4 host.  Read more about the
+	patches in the patch file itself.
 
 	Samba allows Unix systems to talk to PC clients.  Amanda can
 	now back up PC clients using the following package
