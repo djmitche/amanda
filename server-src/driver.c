@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.14 1999/03/02 01:08:13 martinea Exp $
+ * $Id: driver.c,v 1.58.2.15 1999/04/17 22:13:36 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -45,6 +45,7 @@
 #include "token.h"
 #include "version.h"
 #include "driverio.h"
+#include "server_util.h"
 
 disklist_t waitq, runq, stoppedq, tapeq;
 int pending_aborts, inside_dump_to_tape;
@@ -70,7 +71,6 @@ dumper_t *idle_dumper P((void));
 int some_dumps_in_progress P((void));
 int num_busy_dumpers P((void));
 dumper_t *lookup_dumper P((int fd));
-char *construct_datestamp P((void));
 void handle_dumper_result P((int fd));
 disklist_t read_schedule P((disklist_t *waitqp));
 int free_kps P((interface_t *ip));
@@ -807,19 +807,6 @@ int fd;
 	if(dumper->outfd == fd) return dumper;
 
     return NULL;
-}
-
-char *construct_datestamp()
-{
-    struct tm *tm;
-    time_t timevar;
-    char datestamp[3*NUM_STR_SIZE];
-
-    timevar = time((time_t *)NULL);
-    tm = localtime(&timevar);
-    ap_snprintf(datestamp, sizeof(datestamp),
-		"%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
-    return stralloc(datestamp);
 }
 
 void handle_dumper_result(fd)

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.7 1999/03/07 17:12:21 martinea Exp $
+/* $Id: dumper.c,v 1.75.2.8 1999/04/17 22:13:39 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -38,6 +38,7 @@
 #include "token.h"
 #include "version.h"
 #include "fileheader.h"
+#include "server_util.h"
 
 #ifdef KRB4_SECURITY
 #include "dumper-krb4.c"
@@ -116,7 +117,6 @@ static void putresult P((char *format, ...))
 int do_dump P((int mesgfd, int datafd, int indexfd, int outfd));
 void check_options P((char *options));
 void service_ports_init P((void));
-static char *construct_datestamp P((void));
 int write_tapeheader P((int outfd, dumpfile_t *type));
 int write_dataptr P((int outf));
 int update_dataptr P((int outf, int size, int split));
@@ -165,19 +165,6 @@ void service_ports_init()
     else
 	kamanda_port = ntohs(amandad->s_port);
 #endif
-}
-
-static char *construct_datestamp()
-{
-    struct tm *tm;
-    time_t timestamp;
-    char datestamp[3*NUM_STR_SIZE];
-
-    timestamp = time((time_t *)NULL);
-    tm = localtime(&timestamp);
-    ap_snprintf(datestamp, sizeof(datestamp),
-		"%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
-    return stralloc(datestamp);
 }
 
 

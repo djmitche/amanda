@@ -25,7 +25,7 @@ sbin_SCRIPTS =		amcheckdb amcleanup amdump amoverview amrmtape amtoc amverify am
 libamserver_la_SOURCES=	amindex.c	changer.c	clock.c		\
 			conffile.c	diskfile.c	driverio.c	\
 			holding.c	infofile.c	logfile.c	\
-			tapefile.c	find.c
+			tapefile.c	find.c		server_util.c
 
 libamserver_la_LDFLAGS= -release $(VERSION)
 
@@ -59,7 +59,7 @@ amreport_SOURCES =	reporter.c
 noinst_HEADERS = 	amindex.h	changer.h	clock.h		\
 			conffile.h	diskfile.h	driverio.h	\
 			holding.h	infofile.h	logfile.h	\
-			tapefile.h	find.h
+			tapefile.h	find.h		server_util.h
 
 install-exec-hook:
 	@list="$(sbin_PROGRAMS) $(sbin_SCRIPTS)"; \
