@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.27 2000/10/10 21:33:23 martinea Exp $
+ * $Id: driver.c,v 1.58.2.28 2000/10/29 18:52:52 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -756,7 +756,14 @@ dumper_t *dumper;
     if( !active_dumpers && busy_dumpers > 0 && !taper_busy && empty(tapeq) &&
 	pending_aborts == 0 ) { /* not case a */
 	if( busy_dumpers == 1 ) { /* case c */
-	    dp->no_hold = 1;
+	    assignedhd_t **holdp;
+	    int i;
+	    /* set estimate to more than what is already use */
+	    sched(dp)->est_size = 20 * TAPE_BLOCK_SIZE;
+	    holdp = sched(dp)->holdp;
+	    for(i=0; holdp[i]; i++ ) { /* for each disk */
+		sched(dp)->est_size += holdp[i]->used;
+	    }
 	}
 	/* case b */
 	/* At this time, dp points to the dump with the smallest est_size.

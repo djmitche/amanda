@@ -1,3 +1,9 @@
+2000-10-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/driver.c (continue_dumps): set estimate to more than
+	what is already use instead of setting no_hold=1 when a disk
+	don't fit on holding disk.
+
 2000-10-28  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amstatus.pl.in: add '&' when calling &usage()
@@ -1107,7 +1113,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.398 2000/10/28 21:49:41 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.399 2000/10/29 18:52:52 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
