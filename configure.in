@@ -208,10 +208,13 @@ BUILD_CHANGER_PROGS_LIBEXEC="seagate-changer"
 BUILD_CHANGER_SCRIPTS_LIBEXEC="chg-generic hp-changer no-changer rth-changer"
 BUILD_CLIENT_PROGS_LIBEXEC="amandad calcsize rundump runtar selfcheck sendbackup-dump sendbackup-gnutar sendsize"
 BUILD_CLIENT_SCRIPTS_LIBEXEC="patch-system"
+BUILD_CLIENT_LIB="libamclient.a"
 BUILD_SERVER_PROGS_SBIN="amadmin amcheck amflush amlabel amtape"
 BUILD_SERVER_PROGS_LIBEXEC="amidxtaped amindexd amtrmidx driver dumper getconf planner reporter taper"
 BUILD_SERVER_SCRIPTS_SBIN="amcheckdb amcleanup amdump amoverview amrmtape amtoc amverify"
+BUILD_SERVER_LIB="libamserver.a"
 BUILD_RECOVER_PROGS_SBIN="amrecover amrestore"
+BUILD_RECOVER_LIB="libamrecover.a"
 case "$target" in
     *-hp-*)
 	BUILD_CLIENT_SCRIPTS_SBIN=amhpfixdevs
@@ -226,10 +229,13 @@ AC_SUBST(BUILD_CHANGER_SCRIPTS_LIBEXEC)
 AC_SUBST(BUILD_CLIENT_SCRIPTS_SBIN)
 AC_SUBST(BUILD_CLIENT_PROGS_LIBEXEC)
 AC_SUBST(BUILD_CLIENT_SCRIPTS_LIBEXEC)
+AC_SUBST(BUILD_CLIENT_LIB)
 AC_SUBST(BUILD_SERVER_PROGS_SBIN)
 AC_SUBST(BUILD_SERVER_PROGS_LIBEXEC)
 AC_SUBST(BUILD_SERVER_SCRIPTS_SBIN)
+AC_SUBST(BUILD_SERVER_LIB)
 AC_SUBST(BUILD_RECOVER_PROGS_SBIN)
+AC_SUBST(BUILD_RECOVER_LIB)
 
 AC_ARG_WITH(client-only,
     [   --with-client-only     deprecated, use --without-server],
@@ -250,6 +256,7 @@ AC_ARG_WITH(server,
 	    BUILD_SERVER_PROGS_SBIN=
 	    BUILD_SERVER_PROGS_LIBEXEC=
 	    BUILD_SERVER_SCRIPTS_SBIN=
+	    BUILD_SERVER_LIB=
 	  ;;
 	*)
 	    AC_MSG_ERROR([*** You must not supply an argument to --with-server option.  Maybe you meant --with-index-server=$withval])
@@ -266,6 +273,7 @@ AC_ARG_WITH(client,
 	n | no)
 	    BUILD_CLIENT_PROGS_LIBEXEC=
 	    BUILD_CLIENT_SCRIPTS_LIBEXEC=
+	    BUILD_CLIENT_LIB=
 	  ;;
 	*)
 	    AC_MSG_ERROR([*** You must not supply an argument to --with-client option.])
@@ -281,6 +289,7 @@ AC_ARG_WITH(recover,
 	y | ye | yes) : ;;
 	n | no)
 	    BUILD_RECOVER_PROGS_SBIN=
+	    BUILD_RECOVER_LIB=
 	  ;;
 	*)
 	    AC_MSG_ERROR([*** You must not supply an argument to --with-recover option.])
@@ -1678,7 +1687,7 @@ if test $? = 0; then
     if test "$STATUS" = 0; then
 	amanda_cv_posix_filelocking=yes
     else
-	amanda_cv_posix_filelocking="no ${STATUS}"
+	amanda_cv_posix_filelocking="no (test returned ${STATUS})"
     fi
 else
     amanda_cv_posix_filelocking="no (compiler error)"

@@ -6,7 +6,7 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
  
-LDADD =			../common-src/libamserver.a ../common-src/libamanda.a
+LDADD = -L../common-src -lamrecover -lamanda
 
 EXTRA_PROGRAMS = 	amrecover			amrestore
 
@@ -19,7 +19,8 @@ amrecover_SOURCES =	amrecover.c			amrecover.h	\
 
 EXTRA_DIST =		uparse.h
 
-amrecover_LDADD =	../common-src/libamclient.a ../common-src/libamanda.a @LEXLIB@
+amrecover_LDADD =	-L../common-src -lamclient -lamanda @LEXLIB@
+
 YFLAGS =		-d
 
 install-exec-hook:

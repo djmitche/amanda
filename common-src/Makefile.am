@@ -4,18 +4,18 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
-DISTCLEANFILES =	version.c
+BUILT_SOURCES = 	version.c
+DISTCLEANFILES =	versuff.c
 
-noinst_LIBRARIES =	libamclient.a	libamserver.a	libamanda.a
+noinst_LIBRARIES =	@BUILD_CLIENT_LIB@ @BUILD_SERVER_LIB@ @BUILD_RECOVER_LIB@ libamanda.a
 
-libamanda_a_SOURCES =	alloc.c		\
-			debug.c		\
+EXTRA_LIBRARIES = 	libamclient.a	libamserver.a	libamrecover.a
+
+libamanda_a_SOURCES =	alloc.c		debug.c		\
 			dgram.c		error.c		\
 			log_dummy.c	match.c		protocol.c	\
 			regex.c		statfs.c	stralloc.c	\
-			stream.c	\
-			version.c	version.h	\
-			versuff.c	
+			stream.c	version.c	versuff.c	
 
 libamclient_a_SOURCES =	amandates.c	fnmatch.c	getfsent.c	\
 			unctime.c
@@ -23,6 +23,8 @@ libamclient_a_SOURCES =	amandates.c	fnmatch.c	getfsent.c	\
 libamserver_a_SOURCES =	amindex.c	changer.c	clock.c		\
 			conffile.c	diskfile.c	infofile.c	\
 			logfile.c	tapefile.c	tapeio.c
+
+libamrecover_a_SOURCES = tapeio.c
 
 EXTRA_DIST =		genversion.c
 
@@ -34,7 +36,9 @@ noinst_HEADERS =	amanda.h	amandates.h	arglist.h	\
 			fnmatch.h	getfsent.h	infofile.h	\
 			logfile.h	protocol.h	regex.h		\
 			statfs.h	stream.h	tapefile.h	\
-			tapeio.h	amindex.h
+			tapeio.h	amindex.h	version.h
+
+BUILT_SOURCES = 	version.c
 
 .sh:
 	cat $< > $@

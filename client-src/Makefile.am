@@ -6,7 +6,7 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
  
-LDADD =			../common-src/libamclient.a ../common-src/libamanda.a
+LDADD =			-L../common-src -lamclient -lamanda
 
 SUFFIXES =		.sh .pl
 
