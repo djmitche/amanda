@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.34 1998/07/08 05:23:33 oliva Exp $
+ * $Id: amflush.c,v 1.35 1998/09/08 17:47:26 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -196,6 +196,7 @@ char *diskdir, *datestamp;
     int filenum;
     disk_t *dp;
     sched_t sp;
+    filetype_t filetype;
 
     dirname = vstralloc(diskdir, "/", datestamp, NULL);
 
@@ -225,8 +226,10 @@ char *diskdir, *datestamp;
 
 	amfree(hostname);
 	amfree(diskname);
-	if(get_amanda_names(destname, &hostname, &diskname, &sp.level)) {
-	    log_add(L_INFO, "%s: ignoring cruft file.", entry->d_name);
+	filetype = get_amanda_names(destname, &hostname, &diskname, &sp.level);
+	if( filetype != F_DUMPFILE) {
+	    if( filetype != F_CONT_DUMPFILE )
+		log_add(L_INFO, "%s: ignoring cruft file.", entry->d_name);
 	    continue;
 	}
 

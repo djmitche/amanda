@@ -1,3 +1,15 @@
+1998-09-08  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/holding.h (get_amanda_names): return a filetype_t
+	instead of an int.
+	* server-src/holding.c (get_amanda_names): return the filetype_t
+	of the file or F_UNKNOWN if it's not an amanda file.
+	* server-src/find.c (search_holding_disk): Use the new return 
+	type of get_amanda_names.
+	* server-src/amflush.c (flush_holdingdisk): Don't write a
+	"ignoring cruft file" message for chunk files,
+	filetype is F_CONT_DUMPFILE.
+
 1998-09-04  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* recover-src/extract_list.c (extract_files_child): don't write
