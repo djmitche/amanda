@@ -184,7 +184,7 @@ int level, dataf, mesgf, indexf;
 
 	start_index(createindex, dumpout, mesgf, indexf,
 		    XFSRESTORE
-		    " tvsilent - 2>/dev/null | /sbin/sed -e 's/^/\\/'");
+		    " -t -v silent - 2>/dev/null | /sbin/sed -e 's/^/\\//'");
 
 	sprintf(dumpkeys, "%d", level);
 	if (no_record)
