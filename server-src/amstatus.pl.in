@@ -212,6 +212,7 @@ while(<AMDUMP>) {
 		if(! defined($busy_time{$2})) {
 			$busy_time{$2}=0;
 		}
+		$running_dumper{$2} = $hostpart;
 		$dumpers_active++;
 		if(! defined($dumpers_active[$dumpers_active])) {
 			$dumpers_active[$dumpers_active]=0;
@@ -227,6 +228,7 @@ while(<AMDUMP>) {
 		$hostpart=$serial{$serial};
 		$dump_finished{$hostpart}=-1;
 		$busy_time{$2}+=($1-$dump_time{$hostpart});
+		$running_dumper{$2} = "0";
 		$dump_time{$hostpart}=$1;
 		$error{$hostpart}=$error;
 		$dumpers_active--;
@@ -238,6 +240,7 @@ while(<AMDUMP>) {
 		$hostpart=$serial{$serial};
 		$dump_finished{$hostpart}=-1;
 		$busy_time{$2}+=($1-$dump_time{$hostpart});
+		$running_dumper{$2} = "0";
 		$dump_time{$hostpart}=$1;
 		$error{$hostpart}=$error;
 		$dumpers_active--;
@@ -251,6 +254,7 @@ while(<AMDUMP>) {
 		$size{$hostpart}=$outputsize;
 		$dump_finished{$hostpart}=1;
 		$busy_time{$2}+=($1-$dump_time{$hostpart});
+		$running_dumper{$2} = "0";
 		$dump_time{$hostpart}=$1;
 		$dumpers_active--;
 	}
@@ -335,6 +339,16 @@ while(<AMDUMP>) {
 }
 
 close(AMDUMP);
+
+if(defined $current_time) {
+	for ($d = 0; $d < $#dumpers_active; $d++) {
+		$the_dumper = "dumper$d";
+		if(defined($running_dumper{$the_dumper}) &&
+		   $running_dumper{$the_dumper} ne "0") {
+			$busy_time{$the_dumper}+=($current_time-$dump_time{$running_dumper{$the_dumper}});
+		}
+	}
+}
 
 print "\n\n";
 
@@ -612,7 +626,7 @@ if (defined $opt_summary) {
 		}
 		for ($d = 0; $d <= $#dumpers_active; $d++) {
 			$l = sprintf "%2d dumper%s busy%s : %8s  (%6.2f%%)",
-				$d, ($d == 1) ? "" : "s", ($d == 1) ? " " : "",
+				$d, ($d <= 1) ? "" : "s", ($d <= 1) ? " " : "",
 				&busytime($dumpers_active[$d]),
 				($dumpers_active[$d] * 1.0 / $total_time) * 100;
 			print $l;
