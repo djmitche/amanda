@@ -1,5 +1,9 @@
 1999-03-03  Ralf Fassel <ralf@akutech.de>
 
+	* changer-src/scsi-changer-driver.c (CloseDevice): wrong assignment.
+
+1999-03-03  Ralf Fassel <ralf@akutech.de>
+
 	* common-src/base64.c (base64encode): remove warning from sgi cc
 	compiler.
 

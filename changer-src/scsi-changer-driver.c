@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.8 1999/01/27 10:58:03 th Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.9 1999/03/04 00:09:50 martinea Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -595,7 +595,7 @@ int CloseDevice(char *DeviceName, int DeviceFD)
       if (pwork == pOpenFiles && pwork->next == NULL)
         {
           free(pOpenFiles);
-          pOpenFiles == NULL;
+          pOpenFiles = NULL;
           return(0);
         }
       if (pwork == pOpenFiles)
