@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.56.2.15.4.2 2001/04/23 21:12:32 jrjackson Exp $
+ * $Id: sendbackup-gnutar.c,v 1.56.2.15.4.3 2001/08/01 22:36:24 jrjackson Exp $
  *
  * send backup data using GNU tar
  */
@@ -113,6 +113,11 @@ static regex_t re_table[] = {
   { DMP_NORMAL, "^ERRDOS - ERRnoaccess opening remote file", 1},
   { DMP_NORMAL, "^ERRSRV - ERRaccess setting attributes on file", 1},
   { DMP_NORMAL, "^ERRDOS - ERRnoaccess setting attributes on file", 1},
+#endif
+
+#if SAMBA_VERSION >= 2
+  /* Backup attempt of nonexisting directory */
+  { DMP_ERROR, "ERRDOS - ERRbadpath (Directory invalid.)", 1},
 #endif
 
   /* catch-all: DMP_STRANGE is returned for all other lines */
@@ -315,8 +320,9 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 
 #ifdef SAMBA_CLIENT							/* { */
     /* Use sambatar if the disk to back up is a PC disk */
-   if (disk[0] == '/' && disk[1]=='/') {
+    if (disk[0] == '/' && disk[1]=='/') {
 	char *sharename = NULL, *user_and_password = NULL, *domain = NULL;
+	char *share = NULL, *subdir = NULL;
 	char *pwtext;
 	char *taropt;
 	int passwdf;
@@ -324,7 +330,18 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 	int pwtext_len;
 	char *pw_fd_env;
 
-	if ((user_and_password = findpass(disk, &domain)) == NULL) {
+	parsesharename(disk, &share, &subdir);
+	if (!share) {
+	     amfree(share);
+	     amfree(subdir);
+	     error("%s-smbtar: cannot parse disk entry '%s' for share/subdir", g
+	}
+	if ((subdir) && (SAMBA_VERSION < 2)) {
+	     amfree(share);
+	     amfree(subdir);
+	     error("%s-smbtar: subdirectory specified for share but samba not v2
+	}
+	if ((user_and_password = findpass(share, &domain)) == NULL) {
 	    if(domain) {
 		memset(domain, '\0', strlen(domain));
 		amfree(domain);
@@ -344,14 +361,14 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 	}
 	*pwtext++ = '\0';
 	pwtext_len = strlen(pwtext);
-	if ((sharename = makesharename(disk, 0)) == 0) {
+	if ((sharename = makesharename(share, 0)) == 0) {
 	    memset(user_and_password, '\0', lpass);
 	    amfree(user_and_password);
 	    if(domain) {
 		memset(domain, '\0', strlen(domain));
 		amfree(domain);
 	    }
-	    error("error [can't make share name of %s]", disk);
+	    error("error [can't make share name of %s]", share);
 	}
 
 	taropt = stralloc("-T");
@@ -368,7 +385,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 	    strappend(taropt, "a");
 	}
 
-	dbprintf(("%s-gnutar: backup of %s\n", get_pname(), sharename));
+	dbprintf(("%s-gnutar: backup of %s/%s\n", get_pname(), sharename, subdir));
 
 	program->backup_name = program->restore_name = SAMBA_CLIENT;
 	cmd = stralloc(program->backup_name);
@@ -391,6 +408,10 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 			    "-E",
 			    domain ? "-W" : skip_argument,
 			    domain ? domain : skip_argument,
+#if SAMBA_VERSION >= 2
+			    subdir ? "-D" : skip_argument,
+			    subdir ? subdir : skip_argument,
+#endif
 			    "-d0",
 			    taropt,
 			    "-",
@@ -412,6 +433,8 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 	amfree(user_and_password);
 	aclose(passwdf);
 	amfree(sharename);
+	amfree(share);
+	amfree(subdir);
 	amfree(taropt);
 	tarpid = dumppid;
     } else
