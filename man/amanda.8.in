@@ -387,7 +387,7 @@ size, and
 .B speed
 of the tape media and device.
 .TP
-.BN timeout int
+.BN etimeout int
 Default:
 .IR "300 seconds" .
 Amount of time per disk on a given client that
