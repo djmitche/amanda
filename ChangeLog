@@ -1,5 +1,10 @@
 2003-02-28  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* restore-src/amidxtaped.c: Remove lock 'unlink(conf_logfile)' on
+	  all failure path.
+
+2003-02-28  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/changer.c: Sync with 2.4.4.
 
 2003-02-21  Jean-Louis Martineau <martineau@iro.umontreal.ca>

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.39 2003/01/25 21:36:25 jrjackson Exp $
+/* $Id: amidxtaped.c,v 1.40 2003/02/28 19:56:47 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -76,6 +76,9 @@ get_client_line()
 	    }
 	    amfree(line);
 	    amfree(part);
+	    if(get_lock) {
+		unlink(conf_logfile);
+	    }
 	    dbclose();
 	    exit(1);
 	    /* NOTREACHED */
@@ -402,6 +405,10 @@ char **argv;
 	    if(found == 0) {
 		dbprintf(("%s: Can't find label \"%s\"\n",
 			  debug_prefix_time(NULL), searchlabel));
+		if(get_lock) {
+		    unlink(conf_logfile);
+		}
+		dbclose();
 		exit(1);
 	    }
 	    else {
@@ -470,6 +477,9 @@ char **argv;
     {
 	dbprintf(("%s: error forking amrestore child: %s\n",
 		  debug_prefix_time(NULL), strerror(errno)));
+	if(get_lock) {
+	    unlink(conf_logfile);
+	}
 	dbclose();
 	return 1;
     }
@@ -479,6 +489,9 @@ char **argv;
     {
 	dbprintf(("%s: error waiting for amrestore child: %s\n",
 		  debug_prefix_time(NULL), strerror(errno)));
+	if(get_lock) {
+	    unlink(conf_logfile);
+	}
 	dbclose();
 	return 1;
     }
@@ -513,6 +526,9 @@ char **argv;
 	{
 	    dbprintf(("%s: Couldn't find tape in arguments\n",
 		      debug_prefix_time(NULL)));
+	    if(get_lock) {
+		unlink(conf_logfile);
+	    }
 	    dbclose();
 	    return 1;
 	}
