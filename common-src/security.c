@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.c,v 1.17.2.6.4.1.2.2 2002/03/31 21:01:33 jrjackson Exp $
+ * $Id: security.c,v 1.17.2.6.4.1.2.3 2002/04/13 19:24:16 jrjackson Exp $
  *
  * wrapper file for kerberos security
  */
@@ -249,7 +249,7 @@ int bsd_security_ok(addr, str, cksum, errstr)
 			"bad bsd security line",
 			"]", NULL);
 
-#define sc "USER"
+#define sc "USER "
     if(strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
 	*errstr = bad_bsd;
 	bad_bsd = NULL;

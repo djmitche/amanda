@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.40.2.3.4.4.2.10 2002/03/31 21:01:32 jrjackson Exp $
+ * $Id: selfcheck.c,v 1.40.2.3.4.4.2.11 2002/04/13 19:24:16 jrjackson Exp $
  *
  * do self-check and send back any error messages
  */
@@ -38,6 +38,7 @@
 #include "amandates.h"
 #include "util.h"
 #include "pipespawn.h"
+#include "features.h"
 #include "client_util.h"
 
 #ifdef SAMBA_CLIENT
@@ -58,6 +59,10 @@ int need_runtar=0;
 int need_gnutar=0;
 int need_compress_path=0;
 
+static am_feature_t *our_features = NULL;
+static char *our_feature_string = NULL;
+static am_feature_t *their_features = NULL;
+
 /* local functions */
 int main P((int argc, char **argv));
 
@@ -75,12 +80,14 @@ int argc;
 char **argv;
 {
     int level;
+    char *host = NULL;
     char *line = NULL;
     char *program = NULL;
     char *disk = NULL;
     char *device = NULL;
     char *optstr = NULL;
-    char *s;
+    char *err_extra = NULL;
+    char *s, *fp;
     int ch;
     int fd;
     unsigned long malloc_hist_1, malloc_size_1;
@@ -110,14 +117,47 @@ char **argv;
     startclock();
     dbprintf(("%s: version %s\n", argv[0], version()));
 
+    our_features = am_init_feature_set();
+    our_feature_string = am_feature_to_string(our_features);
+
+    host = alloc(MAX_HOSTNAME_LENGTH+1);
+    gethostname(host, MAX_HOSTNAME_LENGTH);
+    host[MAX_HOSTNAME_LENGTH] = '\0';
+
     /* handle all service requests */
 
     for(; (line = agets(stdin)) != NULL; free(line)) {
-#define sc "OPTIONS"
+#define sc "OPTIONS "
 	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
 #undef sc
-	    /* we don't recognize any options yet */
-	    printf("OPTIONS ;\n");
+
+#define sc "features="
+	    s = strstr(line, sc);
+	    if(s != NULL) {
+		s += sizeof(sc)-1;
+#undef sc
+		am_release_feature_set(their_features);
+		if((their_features = am_string_to_feature(s)) == NULL) {
+		    err_extra = "bad features value";
+		    goto err;
+		}
+	    }
+
+#define sc "hostname="
+	    s = strstr(line, sc);
+	    if(s != NULL) {
+		s += sizeof(sc)-1;
+		ch = *s++;
+#undef sc
+		fp = s-1;
+		while(ch != '\0' && ch != ';') ch = *s++;
+		s[-1] = '\0';
+		host = newstralloc(host, fp);
+	    }
+
+	    printf("OPTIONS features=%s;hostname=%s;\n",
+		   our_feature_string, host);
+	    fflush(stdout);
 	    continue;
 	}
 
@@ -160,8 +200,8 @@ char **argv;
 	}
 	skip_integer(s, ch);
 
-#define sc "OPTIONS"
 	skip_whitespace(s, ch);
+#define sc "OPTIONS "
 	if (ch && strncmp (s - 1, sc, sizeof(sc)-1) == 0) {
 	    s += sizeof(sc)-1;
 	    ch = s[-1];
@@ -200,6 +240,11 @@ char **argv;
     check_overall();
 
     amfree(line);
+    amfree(our_feature_string);
+    am_release_feature_set(our_features);
+    our_features = NULL;
+    am_release_feature_set(their_features);
+    their_features = NULL;
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -215,9 +260,11 @@ char **argv;
     return 0;
 
  err:
-    amfree(line);
     printf("ERROR [BOGUS REQUEST PACKET]\n");
-    dbprintf(("%s: REQ packet is bogus\n", debug_prefix_time(NULL)));
+    dbprintf(("%s: REQ packet is bogus%s%s\n",
+	      debug_prefix_time(NULL),
+	      err_extra ? ": " : "",
+	      err_extra ? err_extra : ""));
     dbclose();
     return 1;
 }

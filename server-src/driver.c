@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.9 2002/04/10 02:08:07 jrjackson Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.10 2002/04/13 19:24:17 jrjackson Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -432,8 +432,9 @@ int main(main_argc, main_argv)
 	}
     }
 
-    if(taper >= 0)
+    if(taper >= 0) {
 	taper_cmd(QUIT, NULL, NULL, 0, NULL);
+    }
 
     /* wait for all to die */
 
@@ -1414,7 +1415,7 @@ disklist_t *waitqp, *runqp;
     int degr_level;
     long time, degr_time;
     unsigned long size, degr_size;
-    char *hostname, *diskname, *datestamp, *inpline = NULL;
+    char *hostname, *features, *diskname, *datestamp, *inpline = NULL;
     char *command;
     char *s;
     int ch;
@@ -1429,7 +1430,7 @@ disklist_t *waitqp, *runqp;
 
 	skip_whitespace(s, ch);			/* find the command */
 	if(ch == '\0') {
-	    error("Aschedule line %d: syntax error", line);
+	    error("schedule line %d: syntax error (no command)", line);
 	    continue;
 	}
 	command = s - 1;
@@ -1437,22 +1438,31 @@ disklist_t *waitqp, *runqp;
 	s[-1] = '\0';
 
 	if(strcmp(command,"DUMP") != 0) {
-	    error("Bschedule line %d: syntax error", line);
+	    error("schedule line %d: syntax error (%s != DUMP)", line, command);
 	    continue;
 	}
 
 	skip_whitespace(s, ch);			/* find the host name */
 	if(ch == '\0') {
-	    error("Cschedule line %d: syntax error", line);
+	    error("schedule line %d: syntax error (no host name)", line);
 	    continue;
 	}
 	hostname = s - 1;
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';
 
+	skip_whitespace(s, ch);			/* find the feature list */
+	if(ch == '\0') {
+	    error("schedule line %d: syntax error (no feature list)", line);
+	    continue;
+	}
+	features = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+
 	skip_whitespace(s, ch);			/* find the disk name */
 	if(ch == '\0') {
-	    error("Dschedule line %d: syntax error", line);
+	    error("schedule line %d: syntax error (no disk name)", line);
 	    continue;
 	}
 	diskname = s - 1;
@@ -1461,7 +1471,7 @@ disklist_t *waitqp, *runqp;
 
 	skip_whitespace(s, ch);			/* find the datestamp */
 	if(ch == '\0') {
-	    error("Eschedule line %d: syntax error", line);
+	    error("schedule line %d: syntax error (no datestamp)", line);
 	    continue;
 	}
 	datestamp = s - 1;
@@ -1470,21 +1480,21 @@ disklist_t *waitqp, *runqp;
 
 	skip_whitespace(s, ch);			/* find the priority number */
 	if(ch == '\0' || sscanf(s - 1, "%d", &priority) != 1) {
-	    error("schedule line %d: syntax error", line);
+	    error("schedule line %d: syntax error (bad priority)", line);
 	    continue;
 	}
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);			/* find the level number */
 	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
-	    error("schedule line %d: syntax error", line);
+	    error("schedule line %d: syntax error (bad level)", line);
 	    continue;
 	}
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);			/* find the dump date */
 	if(ch == '\0') {
-	    error("schedule line %d: syntax error", line);
+	    error("schedule line %d: syntax error (bad dump date)", line);
 	    continue;
 	}
 	dumpdate = s - 1;
@@ -1493,14 +1503,14 @@ disklist_t *waitqp, *runqp;
 
 	skip_whitespace(s, ch);			/* find the size number */
 	if(ch == '\0' || sscanf(s - 1, "%lu", &size) != 1) {
-	    error("schedule line %d: syntax error", line);
+	    error("schedule line %d: syntax error (bad size)", line);
 	    continue;
 	}
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);			/* find the time number */
 	if(ch == '\0' || sscanf(s - 1, "%ld", &time) != 1) {
-	    error("schedule line %d: syntax error", line);
+	    error("schedule line %d: syntax error (bad estimated time)", line);
 	    continue;
 	}
 	skip_integer(s, ch);
@@ -1509,14 +1519,14 @@ disklist_t *waitqp, *runqp;
 	skip_whitespace(s, ch);			/* find the degr level number */
 	if(ch != '\0') {
 	    if(sscanf(s - 1, "%d", &degr_level) != 1) {
-		error("schedule line %d: syntax error", line);
+		error("schedule line %d: syntax error (bad degr level)", line);
 		continue;
 	    }
 	    skip_integer(s, ch);
 
 	    skip_whitespace(s, ch);		/* find the degr dump date */
 	    if(ch == '\0') {
-		error("schedule line %d: syntax error", line);
+		error("schedule line %d: syntax error (bad degr dump date)", line);
 		continue;
 	    }
 	    degr_dumpdate = s - 1;
@@ -1525,14 +1535,14 @@ disklist_t *waitqp, *runqp;
 
 	    skip_whitespace(s, ch);		/* find the degr size number */
 	    if(ch == '\0'  || sscanf(s - 1, "%lu", &degr_size) != 1) {
-		error("schedule line %d: syntax error", line);
+		error("schedule line %d: syntax error (bad degr size)", line);
 		continue;
 	    }
 	    skip_integer(s, ch);
 
 	    skip_whitespace(s, ch);		/* find the degr time number */
 	    if(ch == '\0' || sscanf(s - 1, "%lu", &degr_time) != 1) {
-		error("schedule line %d: syntax error", line);
+		error("schedule line %d: syntax error (bad degr estimated time)", line);
 		continue;
 	    }
 	    skip_integer(s, ch);
@@ -1585,6 +1595,7 @@ disklist_t *waitqp, *runqp;
 	sp->no_space = 0;
 
 	dp->up = (char *) sp;
+	dp->host->features = am_string_to_feature(features);
 	remove_disk(waitqp, dp);
 	insert_disk(&runq, dp, sort_by_time);
     }

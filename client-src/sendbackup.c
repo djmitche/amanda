@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.44.2.9.4.4.2.4 2002/03/31 21:01:32 jrjackson Exp $
+ * $Id: sendbackup.c,v 1.44.2.9.4.4.2.5 2002/04/13 19:24:16 jrjackson Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -33,6 +33,7 @@
 #include "sendbackup.h"
 #include "clock.h"
 #include "pipespawn.h"
+#include "features.h"
 #include "stream.h"
 #include "arglist.h"
 #include "getfsent.h"
@@ -62,6 +63,10 @@ option_t *options;
 long dump_size = -1;
 
 backup_program_t *program = NULL;
+
+static am_feature_t *our_features = NULL;
+static char *our_feature_string = NULL;
+static am_feature_t *their_features = NULL;
 
 /* local functions */
 int main P((int argc, char **argv));
@@ -116,7 +121,6 @@ char *optionstr(option_t *options)
 	}
     }
     optstr = newvstralloc(optstr,
-			  ";",
 			  compress_opt,
 			  record_opt,
 			  bsd_opt,
@@ -141,6 +145,7 @@ char **argv;
     char *line = NULL;
     char *err_extra = NULL;
     char *s, *fp;
+    int i;
     int ch;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
@@ -173,6 +178,9 @@ char **argv;
     startclock();
     dbprintf(("%s: version %s\n", argv[0], version()));
 
+    our_features = am_init_feature_set();
+    our_feature_string = am_feature_to_string(our_features);
+
     if(interactive) {
 	/*
 	 * In interactive (debug) mode, the backup data is sent to
@@ -187,134 +195,154 @@ char **argv;
     host = alloc(MAX_HOSTNAME_LENGTH+1);
     gethostname(host, MAX_HOSTNAME_LENGTH);
     host[MAX_HOSTNAME_LENGTH] = '\0';
+    prog = NULL;
+    disk = NULL;
+    amdevice = NULL;
+    dumpdate = NULL;
+    stroptions = NULL;
 
     /* parse dump request */
 
-    if(interactive) {
-	fprintf(stderr, "%s> ", get_pname());
-	fflush(stderr);
-    }
-
-    if((line = agets(stdin)) == NULL) {
-	err_extra = "no input";
-	goto err;
-    }
-
-#define sc "OPTIONS"
-    if(strncmp(line, sc, sizeof(sc)-1) == 0) {
+    for(; (line = agets(stdin)) != NULL; free(line)) {
+	if(interactive) {
+	    fprintf(stderr, "%s> ", get_pname());
+	    fflush(stderr);
+	}
+#define sc "OPTIONS "
+	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
 #undef sc
+
+#define sc "features="
+	    s = strstr(line, sc);
+	    if(s != NULL) {
+		s += sizeof(sc)-1;
+#undef sc
+		am_release_feature_set(their_features);
+		if((their_features = am_string_to_feature(s)) == NULL) {
+		    err_extra = "bad features value";
+		    goto err;
+		}
+	    }
+
 #define sc "hostname="
-	s = strstr(line, sc);
-	if(s != NULL) {
-	    s += sizeof(sc)-1;
-	    ch = *s++;
+	    s = strstr(line, sc);
+	    if(s != NULL) {
+		s += sizeof(sc)-1;
+		ch = *s++;
 #undef sc
-	    fp = s-1;
-	    while(ch != '\0' && ch != ';') ch = *s++;
-	    s[-1] = '\0';
-	    host = newstralloc(host, fp);
+		fp = s-1;
+		while(ch != '\0' && ch != ';') ch = *s++;
+		s[-1] = '\0';
+		host = newstralloc(host, fp);
+	    }
+
+	    continue;
 	}
 
-	amfree(line);
-	if((line = agets(stdin)) == NULL) {
-	    err_extra = "no request after OPTIONS";
+	if (prog != NULL) {
+	    err_extra = "multiple requests";
 	    goto err;
 	}
-    }
 
-    dbprintf(("%s: got input request: %s\n", debug_prefix_time(NULL), line));
+	s = line;
+	ch = *s++;
 
-    s = line;
-    ch = *s++;
-
-    skip_whitespace(s, ch);			/* find the program name */
-    if(ch == '\0') {
-	err_extra = "no program name";
-	goto err;
-    }
-    prog = s - 1;
-    skip_non_whitespace(s, ch);
-    s[-1] = '\0';
-
-    skip_whitespace(s, ch);			/* find the disk name */
-    if(ch == '\0') {
-	err_extra = "no disk name";
-	goto err;
-    }
-    disk = s - 1;
-    skip_non_whitespace(s, ch);
-    s[-1] = '\0';
-
-    skip_whitespace(s, ch);			/* find the device or level */
-    if (ch == '\0') {
-	err_extra = "bad level";
-	goto err;
-    }
-
-    if(!isdigit((int)s[-1])) {
-	amdevice = s - 1;
+	skip_whitespace(s, ch);			/* find the program name */
+	if(ch == '\0') {
+	    err_extra = "no program name";
+	    goto err;				/* no program name */
+	}
+	prog = s - 1;
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';
-	skip_whitespace(s, ch);			/* find level number */
-    }
-    else {
-	amdevice = stralloc(disk);
-    }
+	prog = stralloc(prog);
 
-    						/* find the level number */
-    if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
-	err_extra = "bad level";
-	goto err;				/* bad level */
-    }
-    skip_integer(s, ch);
+	skip_whitespace(s, ch);			/* find the disk name */
+	if(ch == '\0') {
+	    err_extra = "no disk name";
+	    goto err;				/* no disk name */
+	}
+	amfree(disk);
+	disk = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+	disk = stralloc(disk);
 
-    skip_whitespace(s, ch);			/* find the dump date */
-    if(ch == '\0') {
-	err_extra = "no dump date";
-	goto err;				/* no dump date */
-    }
-    dumpdate = s - 1;
-    skip_non_whitespace(s, ch);
-    s[-1] = '\0';
+	skip_whitespace(s, ch);			/* find the device or level */
+	if (ch == '\0') {
+	    err_extra = "bad level";
+	    goto err;
+	}
 
-    skip_whitespace(s, ch);			/* find the options keyword */
-    if(ch == '\0') {
-	err_extra = "no options";
-	goto err;				/* no options */
-    }
-#define sc "OPTIONS"
-    if(strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
-	err_extra = "no OPTIONS keyword";
-	goto err;				/* no options */
-    }
-    s += sizeof(sc)-1;
-    ch = s[-1];
+	if(!isdigit((int)s[-1])) {
+	    amfree(amdevice);
+	    amdevice = s - 1;
+	    skip_non_whitespace(s, ch);
+	    s[-1] = '\0';
+	    amdevice = stralloc(amdevice);
+	    skip_whitespace(s, ch);		/* find level number */
+	}
+	else {
+	    amdevice = stralloc(disk);
+	}
+
+						/* find the level number */
+	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
+	    err_extra = "bad level";
+	    goto err;				/* bad level */
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);			/* find the dump date */
+	if(ch == '\0') {
+	    err_extra = "no dumpdate";
+	    goto err;				/* no dumpdate */
+	}
+	amfree(dumpdate);
+	dumpdate = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+	dumpdate = stralloc(dumpdate);
+
+	skip_whitespace(s, ch);			/* find the options keyword */
+	if(ch == '\0') {
+	    err_extra = "no options";
+	    goto err;				/* no options */
+	}
+#define sc "OPTIONS "
+	if(strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	    err_extra = "no OPTIONS keyword";
+	    goto err;				/* no options */
+	}
+	s += sizeof(sc)-1;
+	ch = s[-1];
 #undef sc
-    skip_whitespace(s, ch);			/* find the options string */
-    if(ch == '\0') {
-	err_extra = "bad options string";
-	goto err;				/* no options */
+	skip_whitespace(s, ch);			/* find the options string */
+	if(ch == '\0') {
+	    err_extra = "bad options string";
+	    goto err;				/* no options */
+	}
+	amfree(stroptions);
+	stroptions = stralloc(s - 1);
     }
-    stroptions = s - 1;
+    amfree(line);
 
     dbprintf(("  parsed request as: program `%s'\n", prog));
     dbprintf(("                     disk `%s'\n", disk));
     dbprintf(("                     device `%s'\n", amdevice));
-    dbprintf(("                     lev %d\n", level));
+    dbprintf(("                     level %d\n", level));
     dbprintf(("                     since %s\n", dumpdate));
-    dbprintf(("                     opt `%s'\n", stroptions));
+    dbprintf(("                     options `%s'\n", stroptions));
 
-    {
-      int i;
-      for(i = 0; programs[i]; ++i)
-	if (strcmp(programs[i]->name, prog) == 0)
-	  break;
-      if (programs[i]) {
-	program = programs[i];
-      } else {
-	error("ERROR [%s: unknown program %s]", get_pname(), prog);
-      }
+    for(i = 0; programs[i] != NULL; i++) {
+	if (strcmp(programs[i]->name, prog) == 0) {
+	    break;
+	}
     }
+    if (programs[i] == NULL) {
+	error("ERROR [%s: unknown program %s]", get_pname(), prog);
+    }
+    program = programs[i];
 
     options = parse_options(stroptions, disk, amdevice, 0);
 
@@ -351,8 +379,10 @@ char **argv;
 
     printf("CONNECT DATA %d MESG %d INDEX %d\n",
 	   data_port, mesg_port, index_port);
-    printf("OPTIONS %s\n", optionstr(options));
-    freopen("/dev/null","w",stdout);
+    printf("OPTIONS features=%s;hostname=%s;%s\n",
+	   our_feature_string, host, optionstr(options));
+    fflush(stdout);
+    freopen("/dev/null", "w", stdout);
 
     if (options->createindex)
       dbprintf(("%s: waiting for connect on %d, then %d, then %d\n",
@@ -438,6 +468,17 @@ char **argv;
     program->start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgpipe[1],
 			  indexf);
     parse_backup_messages(mesgpipe[0]);
+
+    amfree(prog);
+    amfree(disk);
+    amfree(amdevice);
+    amfree(dumpdate);
+    amfree(stroptions);
+    amfree(our_feature_string);
+    am_release_feature_set(our_features);
+    our_features = NULL;
+    am_release_feature_set(their_features);
+    their_features = NULL;
 
     dbclose();
 

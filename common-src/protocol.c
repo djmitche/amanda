@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.27.2.1 1999/09/05 23:17:47 jrj Exp $
+ * $Id: protocol.c,v 1.27.2.1.6.1 2002/04/13 19:24:16 jrjackson Exp $
  *
  * implements amanda protocol
  */
@@ -157,8 +157,11 @@ int socket, startseq, handles;
     int i;
 
 #ifdef PROTO_DEBUG
-    fprintf(stderr, "proto_init(socket %d, startseq %d, handles %d)\n",
-	    socket, startseq, handles);
+    dbprintf(("%s: proto_init(socket %d, startseq %d, handles %d)\n",
+	      debug_prefix_time(": protocol"),
+	      socket,
+	      startseq,
+	      handles));
 #endif
     if(socket < 0 || socket >= FD_SETSIZE) {
 	error("proto_init: socket %d out of range (0 .. %d)\n",
@@ -496,7 +499,9 @@ pkt_t *pkt;
     msg = &pkt->dgram;
 
 #ifdef PROTO_DEBUG
-    fprintf(stderr, "parsing packet:\n-------\n%s-------\n\n", msg->cur);
+    dbprintf(("%s: parsing packet:\n-------\n%s-------\n\n",
+	      debug_prefix_time(": protocol"),
+	      msg->cur));
 #endif
 
     eat_string(msg, "Amanda");	    pkt->version_major = parse_integer(msg);
@@ -513,7 +518,7 @@ pkt_t *pkt;
     eat_string(msg, "SEQ");	    pkt->sequence = parse_integer(msg);
 
     eat_string(msg, "");
-#define sc "SECURITY"
+#define sc "SECURITY "
     if(strncmp(msg->cur, sc, sizeof(sc)-1) == 0) {
 	/* got security tag */
 	eat_string(msg, sc);
@@ -528,8 +533,10 @@ pkt_t *pkt;
         eat_string(msg, "");
         pkt->cksum = kerberos_cksum(msg->cur);
 #ifdef PROTO_DEBUG
-        fprintf(stderr, "parse_pkt/cksum %ld over \'%s\'\n\n",
-		pkt->cksum, msg->cur); 
+        dbprintf(("%s: parse_pkt/cksum %ld over \'%s\'\n\n",
+		  debug_prefix_time(": protocol"),
+		  pkt->cksum,
+		  msg->cur)); 
 #endif
         fflush(stdout);
 #endif
@@ -577,8 +584,10 @@ proto_t *p;
     dgram_cat(&outmsg, p->req);
 
 #ifdef PROTO_DEBUG
-    fprintf(stderr, "time %d: send_req: len %d: packet:\n----\n%s----\n\n", 
-	    CURTIME, outmsg.len, outmsg.data);
+    dbprintf(("%s: send_req: len %d: packet:\n----\n%s----\n\n", 
+	      debug_prefix_time(": protocol"),
+	      outmsg.len,
+	      outmsg.data));
 #endif
 
     if(dgram_send_addr(p->peer, &outmsg))
@@ -593,8 +602,10 @@ proto_t *p;
     setup_dgram(p, &outmsg, NULL, "ACK");
 
 #ifdef PROTO_DEBUG
-    fprintf(stderr, "time %d: send_ack: len %d: packet:\n----\n%s----\n\n", 
-	    CURTIME, outmsg.len, outmsg.data);
+    dbprintf(("%s: send_ack: len %d: packet:\n----\n%s----\n\n", 
+	      debug_prefix_time(": protocol"),
+	      outmsg.len,
+	      outmsg.data));
 #endif
 
     if(dgram_send_addr(p->peer, &outmsg))
@@ -626,8 +637,10 @@ pkt_t *pkt;
     amfree(linebuf);
 
 #ifdef PROTO_DEBUG
-    fprintf(stderr, "time %d: send_ack_repl: len %d: packet:\n----\n%s----\n\n", 
-	    CURTIME, outmsg.len, outmsg.data);
+    dbprintf(("%s: send_ack_repl: len %d: packet:\n----\n%s----\n\n", 
+	      debug_prefix_time(": protocol"),
+	      outmsg.len,
+	      outmsg.data));
 #endif
 
     if(dgram_send_addr(pkt->peer, &outmsg))
@@ -642,11 +655,13 @@ pkt_t *pkt;
 {
 
 #ifdef PROTO_DEBUG
-    fprintf(stderr, 
-	    "time %d: state_machine: p %X state %s action %s%s%s\n",
-	    CURTIME,(int)p, prnpstate(p->state), prnaction(action),
-	    pkt == NULL? "" : " pktype ",
-	    pkt == NULL? "" : prnpktype(pkt->type));
+    dbprintf(("%s: state_machine: p %X state %s action %s%s%s\n",
+	      debug_prefix_time(": protocol"),
+	      (int)p,
+	      prnpstate(p->state),
+	      prnaction(action),
+	      pkt == NULL? "" : " pktype ",
+	      pkt == NULL? "" : prnpktype(pkt->type)));
 #endif
 
     while(1) {
@@ -691,12 +706,13 @@ pkt_t *pkt;
 	    /* got the packet with the right handle, now check it */
 
 #ifdef PROTO_DEBUG
-	    fprintf(stderr, 
-         "RESPTIME p %X pkt %s (t %d s %d) orig (t %d s %d) cur (t %d s %d)\n",
+	    dbprintf((
+         "%s: RESPTIME p %X pkt %s (t %d s %d) orig (t %d s %d) cur (t %d s %d)\n",
+		    debug_prefix_time(": protocol"),
 		    (int)p, prnpktype(pkt->type), 
-		    CURTIME, relseq(pkt->sequence),
-		    p->origtime, relseq(p->origseq), 
-		    p->curtime, relseq(p->curseq));
+		    (int)CURTIME, relseq(pkt->sequence),
+		    (int)p->origtime, relseq(p->origseq), 
+		    (int)p->curtime, relseq(p->curseq)));
 #endif
 
 	    if(pkt->type == P_ACK) {
@@ -794,8 +810,10 @@ void (*continuation) P((proto_t *p, pkt_t *pkt));
     p->datap = datap;
 
 #ifdef PROTO_DEBUG
-    fprintf(stderr, "time %d: make_request: host %s -> p %X\n", 
-	    CURTIME, hostname, (int)p);
+    dbprintf(("%s: make_request: host %s -> p %X\n", 
+	      debug_prefix_time(": protocol"),
+	      hostname,
+	      (int)p));
 #endif
 
     if((hp = gethostbyname(hostname)) == 0) return -1;
@@ -820,8 +838,10 @@ char *host_inst, *realm;
     p->security = get_krb_security(p->req, host_inst, realm, &p->auth_cksum);
 
 #ifdef PROTO_DEBUG
-    fprintf(stderr, "add_krb_security() cksum: %lu: \'%s\'\n",
-	p->auth_cksum, p->req);
+    dbprintf(("%s: add_krb_security() cksum: %lu: \'%s\'\n",
+	      debug_prefix_time(": protocol"),
+	      p->auth_cksum,
+	      p->req));
 #endif
 
     return p->security == NULL;
@@ -848,8 +868,10 @@ void (*continuation) P((proto_t *p, pkt_t *pkt));
     p->datap = datap;
 
 #ifdef PROTO_DEBUG
-    fprintf(stderr, "time %d: make_krb_request: host %s -> p %X\n", 
-	    CURTIME, hostname, req, (int)p);
+    dbprintf(("%s: make_krb_request: host %s -> p %X\n", 
+	      debug_prefix_time(": protocol"),
+	      hostname,
+	      req, (int)p));
 #endif
 
     if((hp = host2krbname(hostname, inst, realm)) == 0)
@@ -884,7 +906,9 @@ time_t waketime;
     to.tv_usec = 0;
 
     rc = select(proto_socket+1, (SELECT_ARG_TYPE *)&ready, NULL, NULL, &to);
-    if(rc == -1) error("protocol socket select: %s", strerror(errno));
+    if(rc == -1) {
+	error("protocol socket select: %s", strerror(errno));
+    }
     return rc;
 }
 
@@ -909,8 +933,9 @@ static void handle_incoming_packet()
     }
 
 #ifdef PROTO_DEBUG
-    fprintf(stderr, "time %d: got packet:\n----\n%s----\n\n",
-	    CURTIME, inpkt.dgram.data);
+    dbprintf(("%s: got packet:\n----\n%s----\n\n",
+	      debug_prefix_time(": protocol"),
+	      inpkt.dgram.data));
 #endif
 
     parse_pkt_header(&inpkt);
@@ -924,8 +949,11 @@ static void handle_incoming_packet()
     }
 
 #ifdef PROTO_DEBUG
-    fprintf(stderr, "time %d: handle %s p %X got packet type %s\n", CURTIME,
-	    inpkt.handle, (int)p, prnpktype(inpkt.type));
+    dbprintf(("%s: handle %s p %X got packet type %s\n",
+	      debug_prefix_time(": protocol"),
+	      inpkt.handle,
+	      (int)p,
+	      prnpktype(inpkt.type)));
 #endif
 
     pending_remove(p);
@@ -959,9 +987,10 @@ void run_protocol()
 	wakeup_time = pending_head->timeout;
 
 #ifdef PROTO_DEBUG
-	fprintf(stderr, 
-		"time %d: run_protocol: waiting %d secs for %d pending reqs\n",
-		CURTIME, wakeup_time - time(0), pending_qlength);
+	dbprintf(("%s: run_protocol: waiting %d secs for %d pending reqs\n",
+		  debug_prefix_time(": protocol"),
+		  (int)(wakeup_time - time(0)),
+		  pending_qlength));
 #endif
 
 	if(select_til(wakeup_time))

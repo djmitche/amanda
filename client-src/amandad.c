@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.32.2.4.4.1.2.2 2002/03/31 21:01:32 jrjackson Exp $
+ * $Id: amandad.c,v 1.32.2.4.4.1.2.3 2002/04/13 19:24:16 jrjackson Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -35,6 +35,7 @@
 #include "amanda.h"
 #include "clock.h"
 #include "dgram.h"
+#include "features.h"
 #include "version.h"
 #include "protocol.h"
 #include "util.h"
@@ -50,9 +51,11 @@ struct service_s {
     char *name;
     int flags;
 #	define NONE		0
+#	define IS_INTERNAL	1	/* service is internal */
 #	define NEED_KEYPIPE	2	/* pass kerberos key in pipe */
 #	define NO_AUTH		4	/* doesn't need authentication */
 } service_table[] = {
+    { "noop",		IS_INTERNAL },
     { "sendsize",	NONE },
     { "sendbackup",	NEED_KEYPIPE },
     { "sendfsinfo",	NONE },
@@ -93,10 +96,16 @@ char **argv;
      */
     pkt_t in_msg, out_msg, rej_msg, dup_msg;
     char *cmd = NULL, *base = NULL;
+    char *noop_file = NULL;
     char **vp;
+    char *s;
+    ssize_t s_len;
     int retry_count, rc, reqlen;
     int req_pipe[2], rep_pipe[2];
     int dglen = 0;
+    char number[NUM_STR_SIZE];
+    am_feature_t *our_features = NULL;
+    char *our_feature_string = NULL;
 
     struct service_s *servp;
     fd_set insock;
@@ -177,6 +186,9 @@ char **argv;
 		  debug_prefix(NULL)));
     }
 
+    our_features = am_init_feature_set();
+    our_feature_string = am_feature_to_string(our_features);
+
     dgram_zero(&in_msg.dgram); 
     dgram_socket(&in_msg.dgram, 0);
 
@@ -193,9 +205,6 @@ char **argv;
     dgram_socket(&rej_msg.dgram, 0);
 
     /* set up input and response pipes */
-
-    if(pipe(req_pipe) == -1 || pipe(rep_pipe) == -1)
-      error("pipe: %s", strerror(errno));
 
 #ifdef KRB4_SECURITY
     if(argc >= 2 && strcmp(argv[1], "-krb4") == 0) {
@@ -259,21 +268,25 @@ char **argv;
 	return 1;
     }
 
-    base = newstralloc(base, servp->name);
-    cmd = newvstralloc(cmd, libexecdir, "/", base, versionsuffix(), NULL);
+    if((servp->flags & IS_INTERNAL) != 0) {
+	cmd = stralloc(servp->name);
+    } else {
+	base = newstralloc(base, servp->name);
+	cmd = newvstralloc(cmd, libexecdir, "/", base, versionsuffix(), NULL);
 
-    if(access(cmd, X_OK) == -1) {
-	dbprintf(("%s: execute access to \"%s\" denied\n",
-		  debug_prefix_time(NULL), cmd));
-	errstr = newvstralloc(errstr,
-			      "service ", base, " unavailable",
-			      NULL);
+	if(access(cmd, X_OK) == -1) {
+	    dbprintf(("%s: execute access to \"%s\" denied\n",
+		      debug_prefix_time(NULL), cmd));
+	    errstr = newvstralloc(errstr,
+			          "service ", base, " unavailable",
+			          NULL);
+	    amfree(base);
+	    sendnak(&in_msg, &rej_msg, errstr);
+	    dbclose();
+	    return 1;
+	}
 	amfree(base);
-	sendnak(&in_msg, &rej_msg, errstr);
-	dbclose();
-	return 1;
     }
-    amfree(base);
 
     /* everything looks ok initially, send ACK */
 
@@ -325,65 +338,91 @@ char **argv;
 
     dbprintf(("%s: running service \"%s\"\n", debug_prefix_time(NULL), cmd));
 
-    /* spawn first child to handle the request */
+    if(strcmp(servp->name, "noop") == 0) {
+	ap_snprintf(number, sizeof(number), "%ld", (long)getpid());
+	noop_file = vstralloc(AMANDA_TMPDIR,
+			      "/",
+			      get_pname(),
+			      ".noop.",
+			      number,
+			      NULL);
+	rep_pipe[0] = open(noop_file, O_RDWR|O_EXCL|O_CREAT);
+	if(rep_pipe[0] < 0) {
+	    error("cannot open \"%s\": %s", noop_file, strerror(errno));
+	}
+	(void)unlink(noop_file);
+	s = vstralloc("OPTIONS features=", our_feature_string, ";\n", NULL);
+	s_len = strlen(s);
+	if(fullwrite(rep_pipe[0], s, s_len) != s_len) {
+	    error("cannot write %d bytes to %s", s_len, noop_file);
+	}
+	amfree(noop_file);
+	amfree(s);
+	(void)lseek(rep_pipe[0], (off_t)0, SEEK_SET);
+    } else {
+	if(pipe(req_pipe) == -1 || pipe(rep_pipe) == -1)
+	    error("pipe: %s", strerror(errno));
 
-    switch(fork()) {
-    case -1: error("could not fork for %s: %s", cmd, strerror(errno));
+	/* spawn first child to handle the request */
 
-    default:		/* parent */
+	switch(fork()) {
+	case -1: error("could not fork for %s: %s", cmd, strerror(errno));
 
-        break; 
+	default:		/* parent */
 
-    case 0:		/* child */
+	    break; 
 
-        aclose(req_pipe[1]); 
-        aclose(rep_pipe[0]);
+	case 0:		/* child */
 
-        dup2(req_pipe[0], 0);
-        dup2(rep_pipe[1], 1);
+            aclose(req_pipe[1]); 
+            aclose(rep_pipe[0]);
+
+            dup2(req_pipe[0], 0);
+            dup2(rep_pipe[1], 1);
 
 #ifdef  KRB4_SECURITY
-	transfer_session_key();
+	    transfer_session_key();
 #endif
+
+            aclose(req_pipe[0]);
+            aclose(rep_pipe[1]);
+
+	    /* run service */
+
+	    execle(cmd, cmd, NULL, safe_env());
+	    error("could not exec %s: %s", cmd, strerror(errno));
+        }
+        amfree(cmd);
 
         aclose(req_pipe[0]);
         aclose(rep_pipe[1]);
 
-	/* run service */
+        /* spawn second child to handle writing the packet to the first child */
 
-	execle(cmd, cmd, NULL, safe_env());
-	error("could not exec %s: %s", cmd, strerror(errno));
-    }
-    amfree(cmd);
+        switch(fork()) {
+        case -1: error("could not fork for %s: %s", cmd, strerror(errno));
 
-    aclose(req_pipe[0]);
-    aclose(rep_pipe[1]);
+        default:		/* parent */
 
-    /* spawn second child to handle writing the packet to the first child */
+	    break;
 
-    switch(fork()) {
-    case -1: error("could not fork for %s: %s", cmd, strerror(errno));
+        case 0:		/* child */
 
-    default:		/* parent */
-
-	break;
-
-    case 0:		/* child */
-
-        aclose(rep_pipe[0]);
-        reqlen = strlen(in_msg.dgram.cur);
-	if((rc = fullwrite(req_pipe[1], in_msg.dgram.cur, reqlen)) != reqlen) {
-	    if(rc < 0) {
-		error("write to child pipe: %s", strerror(errno));
-	    } else {
-		error("write to child pipe: %d instead of %d", rc, reqlen);
+            aclose(rep_pipe[0]);
+            reqlen = strlen(in_msg.dgram.cur);
+	    if((rc = fullwrite(req_pipe[1], in_msg.dgram.cur, reqlen)) != reqlen) {
+	        if(rc < 0) {
+		    error("write to child pipe: %s", strerror(errno));
+	        } else {
+		    error("write to child pipe: %d instead of %d", rc, reqlen);
+	        }
 	    }
-	}
-        aclose(req_pipe[1]);
-	exit(0);
-    }
+            aclose(req_pipe[1]);
+	    exit(0);
+        }
 
-    aclose(req_pipe[1]);
+        aclose(req_pipe[1]);
+    }
 
     setup_rep(&in_msg, &out_msg);
 #ifdef KRB4_SECURITY
@@ -393,13 +432,23 @@ char **argv;
     while(1) {
 
 	FD_ZERO(&insock);
-	FD_SET(0, &insock);
 	FD_SET(rep_pipe[0], &insock);
 
-	if(select(rep_pipe[0]+1, (SELECT_ARG_TYPE *)&insock, NULL, NULL, NULL) < 0)
+	if((servp->flags & IS_INTERNAL) != 0) {
+	    n = 0;
+	} else {
+	    FD_SET(0, &insock);
+	    n = select(rep_pipe[0] + 1,
+		       (SELECT_ARG_TYPE *)&insock,
+		       NULL,
+		       NULL,
+		       NULL);
+	}
+	if(n < 0) {
 	    error("select failed: %s", strerror(errno));
+	}
 
-	if(FD_ISSET(rep_pipe[0],&insock)) {
+	if(FD_ISSET(rep_pipe[0], &insock)) {
 	    if(dglen >= MAX_DGRAM) {
 		error("more than %d bytes received from child", MAX_DGRAM);
 	    }
@@ -526,6 +575,10 @@ send_response:
     /* XXX log if retry count exceeded */
 
     amfree(cmd);
+    amfree(noop_file);
+    amfree(our_feature_string);
+    am_release_feature_set(our_features);
+    our_features = NULL;
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
     if(malloc_size_1 != malloc_size_2) {

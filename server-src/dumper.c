@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.14.2.7.2.6 2002/03/24 19:23:23 jrjackson Exp $
+/* $Id: dumper.c,v 1.75.2.14.2.7.2.7 2002/04/13 19:24:17 jrjackson Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -38,6 +38,7 @@
 #include "token.h"
 #include "version.h"
 #include "fileheader.h"
+#include "features.h"
 #include "server_util.h"
 
 #ifdef KRB4_SECURITY
@@ -82,6 +83,7 @@ static FILE *errf = NULL;
 char *filename = NULL;			/* holding disk base file name */
 string_t cont_filename;
 char *hostname = NULL;
+am_feature_t *their_features = NULL;
 char *diskname = NULL;
 char *device = NULL;
 char *options = NULL;
@@ -106,6 +108,9 @@ int datafd = -1;
 int mesgfd = -1;
 int indexfd = -1;
 int amanda_port;
+
+static am_feature_t *our_features = NULL;
+static char *our_feature_string = NULL;
 
 /* local functions */
 int main P((int main_argc, char **main_argv));
@@ -177,6 +182,7 @@ char **main_argv;
     char *q = NULL;
     int fd;
     char *tmp_filename = NULL;
+    int a;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -211,6 +217,9 @@ char **main_argv;
     }
 
     safe_cd();
+
+    our_features = am_init_feature_set();
+    our_feature_string = am_feature_to_string(our_features);
 
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if(read_conffile(conffile)) {
@@ -264,24 +273,90 @@ char **main_argv;
 	    break;
 	case FILE_DUMP:
 	    /*
-	     * FILE-DUMP handle filename host disk device level dumpdate
-	     *   chunksize progname use options
+	     * FILE-DUMP
+	     *   handle
+	     *   filename
+	     *   host
+	     *   features
+	     *   disk
+	     *   device
+	     *   level
+	     *   dumpdate
+	     *   chunksize
+	     *   progname
+	     *   use
+	     *   options
 	     */
-	    if(cmdargs.argc != 12) {
-		error("error [dumper FILE-DUMP argc != 12: %d]", cmdargs.argc);
+	    cmdargs.argc++;			/* true count of args */
+	    a = 2;
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper FILE-DUMP: not enough args: handle]");
 	    }
-	    handle = newstralloc(handle, cmdargs.argv[2]);
-	    filename = newstralloc(filename, cmdargs.argv[3]);
-	    hostname = newstralloc(hostname, cmdargs.argv[4]);
-	    diskname = newstralloc(diskname, cmdargs.argv[5]);
-	    device = newstralloc(device, cmdargs.argv[6]);
-	    if(strcmp(device,"NODEVICE") == 0) amfree(device);
-	    level = atoi(cmdargs.argv[7]);
-	    dumpdate = newstralloc(dumpdate, cmdargs.argv[8]);
-	    chunksize = am_floor(atoi(cmdargs.argv[9]), DISK_BLOCK_KB);
-	    progname = newstralloc(progname, cmdargs.argv[10]);
-	    use = am_floor(atoi(cmdargs.argv[11]), DISK_BLOCK_KB);
-	    options = newstralloc(options, cmdargs.argv[12]);
+	    handle = newstralloc(handle, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper FILE-DUMP: not enough args: filename]");
+	    }
+	    filename = newstralloc(filename, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper FILE-DUMP: not enough args: hostname]");
+	    }
+	    hostname = newstralloc(hostname, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper FILE-DUMP: not enough args: features]");
+	    }
+	    am_release_feature_set(their_features);
+	    their_features = am_string_to_feature(cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper FILE-DUMP: not enough args: diskname]");
+	    }
+	    diskname = newstralloc(diskname, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper FILE-DUMP: not enough args: device]");
+	    }
+	    device = newstralloc(device, cmdargs.argv[a++]);
+	    if(strcmp(device, "NODEVICE") == 0) amfree(device);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper FILE-DUMP: not enough args: level]");
+	    }
+	    level = atoi(cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper FILE-DUMP: not enough args: dumpdate]");
+	    }
+	    dumpdate = newstralloc(dumpdate, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper FILE-DUMP: not enough args: chunksize]");
+	    }
+	    chunksize = am_floor(atoi(cmdargs.argv[a++]), DISK_BLOCK_KB);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper FILE-DUMP: not enough args: progname]");
+	    }
+	    progname = newstralloc(progname, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper FILE-DUMP: not enough args: use]");
+	    }
+	    use = am_floor(atoi(cmdargs.argv[a++]), DISK_BLOCK_KB);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper FILE-DUMP: not enough args: options]");
+	    }
+	    options = newstralloc(options, cmdargs.argv[a++]);
+
+	    if(a != cmdargs.argc) {
+		error("error [dumper FILE-DUMP: too many args: %d != %d]",
+		      cmdargs.argc, a);
+	    }
+
 	    cont_filename[0] = '\0';
 
 	    tmp_filename = newvstralloc(tmp_filename, filename, ".tmp", NULL);
@@ -304,7 +379,13 @@ char **main_argv;
 
 	    check_options(options);
 
-	    rc = startup_dump(hostname, diskname, device, level, dumpdate, progname, options);
+	    rc = startup_dump(hostname,
+			      diskname,
+			      device,
+			      level,
+			      dumpdate,
+			      progname,
+			      options);
 	    if(rc) {
 		q = squote(errstr);
 		putresult(rc == 2? FAILED : TRYAGAIN, "%s %s\n",
@@ -341,23 +422,79 @@ char **main_argv;
 
 	case PORT_DUMP:
 	    /*
-	     * PORT-DUMP handle port host disk device level dumpdate
-	     *    progname options
+	     * PORT-DUMP
+	     *   handle
+	     *   port
+	     *   host
+	     *   features
+	     *   disk
+	     *   device
+	     *   level
+	     *   dumpdate
+	     *   progname
+	     *   options
 	     */
-	    if(cmdargs.argc != 10) {
-		error("error [dumper PORT-DUMP argc != 10: %d]", cmdargs.argc);
+	    cmdargs.argc++;			/* true count of args */
+	    a = 2;
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: handle]");
 	    }
-	    handle = newstralloc(handle, cmdargs.argv[2]);
-	    taper_port = atoi(cmdargs.argv[3]);
-	    filename = newstralloc(filename, "<taper program>");
-	    hostname = newstralloc(hostname, cmdargs.argv[4]);
-	    diskname = newstralloc(diskname, cmdargs.argv[5]);
-	    device = newstralloc(device, cmdargs.argv[6]);
+	    handle = newstralloc(handle, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: port]");
+	    }
+	    taper_port = atoi(cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: hostname]");
+	    }
+	    hostname = newstralloc(hostname, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: features]");
+	    }
+	    am_release_feature_set(their_features);
+	    their_features = am_string_to_feature(cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: diskname]");
+	    }
+	    diskname = newstralloc(diskname, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: device]");
+	    }
+	    device = newstralloc(device, cmdargs.argv[a++]);
 	    if(strcmp(device,"NODEVICE") == 0) amfree(device);
-	    level = atoi(cmdargs.argv[7]);
-	    dumpdate = newstralloc(dumpdate, cmdargs.argv[8]);
-	    progname = newstralloc(progname, cmdargs.argv[9]);
-	    options = newstralloc(options, cmdargs.argv[10]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: level]");
+	    }
+	    level = atoi(cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: dumpdate]");
+	    }
+	    dumpdate = newstralloc(dumpdate, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: progname]");
+	    }
+	    progname = newstralloc(progname, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: options]");
+	    }
+	    options = newstralloc(options, cmdargs.argv[a++]);
+
+	    if(a != cmdargs.argc) {
+		error("error [dumper PORT-DUMP: too many args: %d != %d]",
+		      cmdargs.argc, a);
+	    }
+
+	    filename = newstralloc(filename, "<taper program>");
 	    cont_filename[0] = '\0';
 
 	    /* connect outf to taper port */
@@ -374,7 +511,13 @@ char **main_argv;
 
 	    check_options(options);
 
-	    rc = startup_dump(hostname, diskname, device, level, dumpdate, progname, options);
+	    rc = startup_dump(hostname,
+			      diskname,
+			      device,
+			      level,
+			      dumpdate,
+			      progname,
+			      options);
 	    if(rc) {
 		q = squote(errstr);
 		putresult(rc == 2? FAILED : TRYAGAIN, "%s %s\n",
@@ -409,7 +552,13 @@ char **main_argv;
 	    break;
 
 	default:
-	    q = squote(cmdargs.argv[1]);
+	    if(cmdargs.argc >= 1) {
+		q = squote(cmdargs.argv[1]);
+	    } else if(cmdargs.argc >= 0) {
+		q = squote(cmdargs.argv[0]);
+	    } else {
+		q = stralloc("(no input?)");
+	    }
 	    putresult(BAD_COMMAND, "%s\n", q);
 	    amfree(q);
 	}
@@ -432,6 +581,11 @@ char **main_argv;
     amfree(options);
     amfree(config_dir);
     amfree(config_name);
+    amfree(our_feature_string);
+    am_release_feature_set(our_features);
+    our_features = NULL;
+    am_release_feature_set(their_features);
+    their_features = NULL;
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -492,6 +646,7 @@ int *p_outfd, size;
 {
     int outfd = *p_outfd;
     int rc = 0;
+    char *arg_filename = NULL;
     char *new_filename = NULL;
     char *tmp_filename = NULL;
     char sequence[NUM_STR_SIZE];
@@ -500,6 +655,8 @@ int *p_outfd, size;
     cmd_t cmd;
     filetype_t save_type;
     long left_in_chunk;
+    int a;
+    char *q;
 
     datain += size;
 
@@ -516,10 +673,37 @@ int *p_outfd, size;
                 putresult(RQ_MORE_DISK, "%s\n", handle);
                 cmd = getcmd(&cmdargs);
                 if(cmd == CONTINUE) {
-		    /* CONTINUE filename chunksize use */
-		    chunksize = am_floor(atoi(cmdargs.argv[3]), DISK_BLOCK_KB);
-                    use = atoi(cmdargs.argv[4]);
-		    if(strcmp(filename, cmdargs.argv[2]) == 0) {
+		    /*
+		     * CONTINUE
+		     *   filename
+		     *   chunksize
+		     *   use
+		     */
+		    cmdargs.argc++;		/* true count of args */
+		    a = 2;
+
+		    if(a >= cmdargs.argc) {
+			error("error [dumper CONTINUE: not enough args: filename]");
+		    }
+		    arg_filename = newstralloc(arg_filename, cmdargs.argv[a++]);
+
+		    if(a >= cmdargs.argc) {
+			error("error [dumper CONTINUE: not enough args: chunksize]");
+		    }
+		    chunksize = atoi(cmdargs.argv[a++]);
+		    chunksize = am_floor(chunksize, DISK_BLOCK_KB);
+
+		    if(a >= cmdargs.argc) {
+			error("error [dumper CONTINUE: not enough args: use]");
+		    }
+                    use = atoi(cmdargs.argv[a++]);
+
+		    if(a != cmdargs.argc) {
+			error("error [dumper CONTINUE: too many args: %d != %d]",
+			      cmdargs.argc, a);
+		    }
+
+		    if(strcmp(filename, arg_filename) == 0) {
 			/*
 			 * Same disk, so use what room is left up to the
 			 * next chunk boundary or the amount we were given,
@@ -543,7 +727,7 @@ int *p_outfd, size;
 			/*
 			 * Different disk, so use new file.
 			 */
-			filename = newstralloc(filename, cmdargs.argv[2]);
+			filename = newstralloc(filename, arg_filename);
 		    }
                 } else if(cmd == ABORT) {
                     abort_pending = 1;
@@ -551,7 +735,14 @@ int *p_outfd, size;
                     rc = 1;
 		    goto common_exit;
 		} else {
-                    error("error [bad command after RQ-MORE-DISK: %d]", cmd);
+		    if(cmdargs.argc >= 1) {
+			q = squote(cmdargs.argv[1]);
+		    } else if(cmdargs.argc >= 0) {
+			q = squote(cmdargs.argv[0]);
+		    } else {
+			q = stralloc("(no input?)");
+		    }
+                    error("error [bad command after RQ-MORE-DISK: \"%s\"]", q);
                 }
 	    }
 
@@ -646,6 +837,7 @@ common_exit:
 
     amfree(new_filename);
     amfree(tmp_filename);
+    amfree(arg_filename);
     return rc;
 }
 
@@ -1386,11 +1578,18 @@ void sendbackup_response(p, pkt)
 proto_t *p;
 pkt_t *pkt;
 {
-    char *optionstr = NULL;
-    int data_port, mesg_port, index_port;
+    int data_port = -1;
+    int mesg_port = -1;
+    int index_port = -1;
+    char *line;
+    char *fp;
     char *s;
+    char *t;
     int ch;
-    char *nl;
+    int tch;
+
+    am_release_feature_set(their_features);
+    their_features = NULL;
 
     if(p->state == S_FAILED) {
 	if(pkt == NULL) {
@@ -1398,170 +1597,129 @@ pkt_t *pkt;
 	    response_error = 1;
 	    return;
 	}
-	else {
-/*	    fprintf(stderr, "got nak response:\n----\n%s----\n\n", pkt->body);*/
-#define sc "ERROR"
-	    if(strncmp(pkt->body, sc, sizeof(sc)-1) != 0) {
-		goto request_NAK;
-	    }
-	    s = pkt->body+sizeof(sc)-1;
-	    ch = *s++;
-#undef sc
-	    skip_whitespace(s, ch);
-	    if(ch == '\0') {
-		goto request_NAK;
-	    }
-	    errstr = newvstralloc(errstr, "nak error:", s - 1, NULL);
-	    if(errstr[strlen(errstr)-1] == '\n' )
-		errstr[strlen(errstr)-1] = '\0';
-	    response_error = 1;
-	    return;
-	}
     }
 
-/*     fprintf(stderr, "got response:\n----\n%s----\n\n", pkt->body); */
+#if 0
+    fprintf(stderr, "got %sresponse:\n----\n%s----\n\n",
+	    (p->state == S_FAILED) ? "NAK " : "", pkt->body);
+#endif
 
 #ifdef KRB4_SECURITY
     if(krb4_auth && !check_mutual_authenticator(&cred.session, pkt, p)) {
-	errstr = newstralloc(errstr, "[mutual-authentication failed]");
+	errstr = newstralloc(errstr, "mutual-authentication failed");
 	response_error = 2;
 	return;
     }
 #endif
 
-#define sc "ERROR"
-    if(strncmp(pkt->body, sc, sizeof(sc)-1) == 0) {
-	/* this is an error response packet */
-	s = pkt->body+sizeof(sc)-1;
-	ch = *s++;
-#undef sc
-	skip_whitespace(s, ch);
-	if(ch == '\0') {
-	    goto bogus_error_packet;
+    s = pkt->body;
+    ch = *s++;
+    while(ch) {
+	line = s - 1;
+	skip_line(s, ch);
+	if (s[-2] == '\n') {
+	    s[-2] = '\0';
 	}
-	errstr = newstralloc(errstr, s - 1);
+
+#define sc "OPTIONS "
+	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
+#undef sc
+
+#define sc "features="
+	    t = strstr(line, sc);
+	    if(t != NULL && (isspace((int)t[-1]) || t[-1] == ';')) {
+		t += sizeof(sc)-1;
+#undef sc
+		am_release_feature_set(their_features);
+		if((their_features = am_string_to_feature(t)) == NULL) {
+		    errstr = newvstralloc(errstr,
+					  "bad features value: ",
+					  line,
+					  NULL);
+		}
+	    }
+
+	    continue;
+	}
+
+#define sc "ERROR "
+	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
+	    t = line + sizeof(sc)-1;
+	    tch = t[-1];
+#undef sc
+
+	    fp = t - 1;
+	    skip_whitespace(t, tch);
+	    errstr = newvstralloc(errstr,
+	    			  (p->state == S_FAILED) ? "nak error: " : "",
+				  fp,
+				  NULL);
+	    response_error = ((p->state == S_FAILED) ? 1 : 2);
+	    return;
+	}
+
+#define sc "CONNECT "
+	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
+#undef sc
+
+#define sc "DATA "
+	    t = strstr(line, sc);
+	    if(t != NULL && isspace((int)t[-1])) {
+		t += sizeof(sc)-1;
+#undef sc
+		data_port = atoi(t);
+	    }
+
+#define sc "MESG "
+	    t = strstr(line, sc);
+	    if(t != NULL && isspace((int)t[-1])) {
+		t += sizeof(sc)-1;
+#undef sc
+		mesg_port = atoi(t);
+	    }
+
+#define sc "INDEX "
+	    t = strstr(line, sc);
+	    if(t != NULL && isspace((int)t[-1])) {
+		t += sizeof(sc)-1;
+#undef sc
+		index_port = atoi(t);
+	    }
+	    continue;
+	}
+
+	errstr = newvstralloc(errstr,
+			      "unknown response: ",
+			      line,
+			      NULL);
 	response_error = 2;
 	return;
     }
 
-    if((nl = strchr(pkt->body, '\n')) == NULL) {
-	goto parse_of_reply_message_failed;
-    }
-    *nl = '\0';
-
-    s = pkt->body;
-    ch = *s++;
-
-    skip_whitespace(s, ch);
-#define sc "CONNECT"
-    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
-	goto parse_of_reply_message_failed;
-    }
-    s += sizeof(sc)-1;
-    ch = s[-1];
-#undef sc
-
-    skip_whitespace(s, ch);
-#define sc "DATA"
-    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
-	goto parse_of_reply_message_failed;
-    }
-    s += sizeof(sc)-1;
-    ch = s[-1];
-#undef sc
-
-    skip_whitespace(s, ch);
-    if(ch == '\0' || sscanf(s - 1, "%d", &data_port) != 1) {
-	goto parse_of_reply_message_failed;
-    }
-    skip_integer(s, ch);
-
-    skip_whitespace(s, ch);
-#define sc "MESG"
-    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
-	goto parse_of_reply_message_failed;
-    }
-    s += sizeof(sc)-1;
-    ch = s[-1];
-#undef sc
-
-    skip_whitespace(s, ch);
-    if(ch == '\0' || sscanf(s - 1, "%d", &mesg_port) != 1) {
-	goto parse_of_reply_message_failed;
-    }
-    skip_integer(s, ch);
-
-    skip_whitespace(s, ch);
-#define sc "INDEX"
-    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
-	goto parse_of_reply_message_failed;
-    }
-    s += sizeof(sc)-1;
-    ch = s[-1];
-#undef sc
-
-    skip_whitespace(s, ch);
-    if(ch == '\0' || sscanf(s - 1, "%d", &index_port) != 1) {
-	goto parse_of_reply_message_failed;
-    }
-    skip_integer(s, ch);
-
-    skip_whitespace(s, ch);
-    if(ch != '\0') {
-	goto parse_of_reply_message_failed;
-    }
-
-    s = nl + 1;
-    ch = *s++;
-    *nl = '\n';
-    nl = NULL;
-
-    skip_whitespace(s, ch);
-#define sc "OPTIONS"
-    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
-	goto parse_of_reply_message_failed;
-    }
-    s += sizeof(sc)-1;
-    ch = s[-1];
-
-    skip_whitespace(s, ch);
-    if(ch == '\0') {
-	goto parse_of_reply_message_failed;
-    }
-    if ((nl = strchr(s - 1, '\n')) != NULL) {
-	*nl = '\0';
-	if(nl == s - 1) {
-	    goto parse_of_reply_message_failed;
-	}
-    }
-    optionstr = stralloc(s - 1);
-    if(nl) {
-	*nl = '\n';
-	nl = NULL;
+    if (data_port == -1 || mesg_port == -1) {
+	errstr = newvstralloc(errstr, "bad CONNECT response", NULL);
+	response_error = 2;
+	return;
     }
 
     datafd = stream_client(hostname, data_port, -1, -1, NULL);
     if(datafd == -1) {
 	errstr = newvstralloc(errstr,
-			      "[could not connect to data port: ",
+			      "could not connect to data port: ",
 			      strerror(errno),
-			      "]",
 			      NULL);
 	response_error = 1;
-	amfree(optionstr);
 	return;
     }
     mesgfd = stream_client(hostname, mesg_port, -1, -1, NULL);
     if(mesgfd == -1) {
 	errstr = newvstralloc(errstr,
-			      "[could not connect to mesg port: ",
+			      "could not connect to mesg port: ",
 			      strerror(errno),
-			      "]",
 			      NULL);
 	aclose(datafd);
 	datafd = -1;				/* redundant */
 	response_error = 1;
-	amfree(optionstr);
 	return;
     }
 
@@ -1569,15 +1727,13 @@ pkt_t *pkt;
 	indexfd = stream_client(hostname, index_port, -1, -1, NULL);
 	if (indexfd == -1) {
 	    errstr = newvstralloc(errstr,
-				  "[could not connect to index port: ",
+				  "could not connect to index port: ",
 				  strerror(errno),
-				  "]",
 				  NULL);
 	    aclose(datafd);
 	    aclose(mesgfd);
 	    datafd = mesgfd = -1;		/* redundant */
 	    response_error = 1;
-	    amfree(optionstr);
 	    return;
 	}
     }
@@ -1587,54 +1743,26 @@ pkt_t *pkt;
 #ifdef KRB4_SECURITY
     if(krb4_auth && kerberos_handshake(datafd, cred.session) == 0) {
 	errstr = newstralloc(errstr,
-			     "[mutual authentication in data stream failed]");
+			     "mutual authentication in data stream failed");
 	aclose(datafd);
 	aclose(mesgfd);
 	if (indexfd != -1)
 	    aclose(indexfd);
 	response_error = 1;
-	amfree(optionstr);
 	return;
     }
     if(krb4_auth && kerberos_handshake(mesgfd, cred.session) == 0) {
 	errstr = newstralloc(errstr,
-			     "[mutual authentication in mesg stream failed]");
+			     "mutual authentication in mesg stream failed");
 	aclose(datafd);
 	if (indexfd != -1)
 	    aclose(indexfd);
 	aclose(mesgfd);
 	response_error = 1;
-	amfree(optionstr);
 	return;
     }
 #endif
     response_error = 0;
-    amfree(optionstr);
-    return;
-
- request_NAK:
-
-#if 0
-    fprintf(stderr, "%s: got strange NAK: %s\n", get_pname(), pkt->body);
-#endif
-    errstr = newstralloc(errstr, "[request NAK]");
-    response_error = 2;
-    amfree(optionstr);
-    return;
-
- bogus_error_packet:
-
-    errstr = newstralloc(errstr, "[bogus error packet]");
-    response_error = 2;
-    amfree(optionstr);
-    return;
-
- parse_of_reply_message_failed:
-
-    if(nl) *nl = '\n';
-    errstr = newstralloc(errstr, "[parse of reply message failed]");
-    response_error = 2;
-    amfree(optionstr);
     return;
 }
 
@@ -1647,28 +1775,19 @@ int level;
     int rc;
 
     ap_snprintf(level_string, sizeof(level_string), "%d", level);
-    if(device) {
-	req = vstralloc("SERVICE sendbackup\n",
-			"OPTIONS ",
-			"hostname=", hostname, ";",
-			"\n",
-			progname, " ", disk, " ", device, " ",
-			level_string, " ", dumpdate, " ",
-			"OPTIONS ", options,
-			"\n",
-			NULL);
-    }
-    else {
-	req = vstralloc("SERVICE sendbackup\n",
-			"OPTIONS ",
-			"hostname=", hostname, ";",
-			"\n",
-			progname, " ", disk, " ",
-			level_string, " ", dumpdate, " ",
-			"OPTIONS ", options,
-			"\n",
-			NULL);
-    }
+    req = vstralloc("SERVICE sendbackup\n",
+		    "OPTIONS ",
+		    "features=", our_feature_string, ";",
+		    "hostname=", hostname, ";",
+		    "\n",
+		    progname,
+		    " ", disk,
+		    " ", device ? device : "",
+		    " ", level_string,
+		    " ", dumpdate,
+		    " ", "OPTIONS ", options,
+		    "\n",
+		    NULL);
 
     datafd = mesgfd = indexfd = -1;
 

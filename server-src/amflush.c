@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.41.2.13.4.6.2.4 2002/03/24 19:23:23 jrjackson Exp $
+ * $Id: amflush.c,v 1.41.2.13.4.6.2.5 2002/04/13 19:24:16 jrjackson Exp $
  *
  * write files from work directory onto tape
  */
@@ -243,11 +243,23 @@ char **main_argv;
 	dp = lookup_disk(file.name, file.disk);
 	if (dp->todo == 0) continue;
 
-	fprintf(stderr,"FLUSH %s %s %s %d %s\n", file.name, file.disk, file.datestamp, file.dumplevel, holding_file->name);
-	fprintf(driver_stream,"FLUSH %s %s %s %d %s\n", file.name, file.disk, file.datestamp, file.dumplevel, holding_file->name);
+	fprintf(stderr,
+		"FLUSH %s %s %s %d %s\n",
+		file.name,
+		file.disk,
+		file.datestamp,
+		file.dumplevel,
+		holding_file->name);
+	fprintf(driver_stream,
+		"FLUSH %s %s %s %d %s\n",
+		file.name,
+		file.disk,
+		file.datestamp,
+		file.dumplevel,
+		holding_file->name);
     }
-    fprintf(stderr,"ENDFLUSH\n"); fflush(stderr);
-    fprintf(driver_stream,"ENDFLUSH\n"); fflush(driver_stream);
+    fprintf(stderr, "ENDFLUSH\n"); fflush(stderr);
+    fprintf(driver_stream, "ENDFLUSH\n"); fflush(driver_stream);
     fclose(driver_stream);
 
     /* WAIT DRIVER */

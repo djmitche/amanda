@@ -1,3 +1,36 @@
+2002-04-13  John R. Jackson (jrj@purdue.edu)
+
+	* common-src/features.c: New file.  Add support for feature sets so
+	  different Amanda versions can work together.
+	* common-src/features.h: Ditto.
+	* common-src/Makefile.am: Ditto.  Add "features" test program.
+	* client-src/amandad.c: Add "noop" service to return the feature set.
+	* client-src/selfcheck.c: Accept and return a feature set in OPTIONS.
+	  Improve parsing.
+	* client-src/sendbackup.c: Ditto.
+	* client-src/sendsize.c: Ditto.
+	* common-src/error.c: Use strcasecmp.
+	* common-src/protocol.c: Use dbprintf for PROTO_DEBUG and improve
+	  messages.  Improve parsing.
+	* common-src/security.c: Improve parsing.
+	* server-src/amcheck.c: Ask for client features via "noop" before
+	  doing the real "selfcheck" service requests.  Improve parsing.
+	* server-src/amflush.c: Minor coding format cleanup.
+	* server-src/diskfile.c: Initialize the features hosttype field.
+	* server-src/diskfile.h: Add the features hosttype field.
+	* server-src/driver.c: Save the features from the schedule.  Clean
+	  up some error messages.
+	* server-src/driverio.c: Add features string to several commands.
+	* server-src/dumper.c: Deal with features string in commands.  Improve
+	  parsing.
+	* server-src/planner.c: Ask for client features via "noop" before
+	  doing the real "sendsize" service requests.  Improve parsing.
+	* server-src/server_util.c: Minor coding cleanup.
+	* server-src/server_util.h: Increase the number of args allowed on
+	  commands.
+	* server-src/taper.c: Deal with features string in commands.  Improve
+	  parsing.
+
 2002-04-11  John R. Jackson (jrj@purdue.edu)
 
 	* common-src/stream.c: Clean up an error message.
