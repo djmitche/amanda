@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.29 1998/07/04 00:19:08 oliva Exp $
+ * $Id: amrecover.c,v 1.30 1998/11/05 21:49:42 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -63,8 +63,6 @@
 #    endif
 #  endif
 #endif
-
-char *errstr = NULL;
 
 extern int process_line P((char *line));
 int guess_disk P((char *cwd, int cwd_len, char **dn_guess, char **mpt_guess));

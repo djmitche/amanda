@@ -1,5 +1,9 @@
 1998-11-05  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* recover-src/amrecover.c: remove declaration of errstr.
+
+1998-11-05  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amindexd.c (build_disk_table): call find_dump() instead
 	of popen("amadmin <conf> find ...")
 
