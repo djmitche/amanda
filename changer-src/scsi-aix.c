@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-aix.c,v 1.1.2.12 1999/06/18 20:43:25 th Exp $";
+static char rcsid[] = "$Id: scsi-aix.c,v 1.1.2.13 2000/01/17 22:26:51 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an AIX System
@@ -205,6 +205,14 @@ int Tape_Eject ( int DeviceFD)
 {
 /*
  Not yet ....
+*/
+  return(-1);
+}
+
+int Tape_Status( int DeviceFD)
+{
+/*
+  Not yet
 */
   return(-1);
 }

@@ -468,6 +468,7 @@ BreeceHill Q2.15 (EXB-120) and DLT7000 tape
 Powerstor L200 and DLT7000 
 ARCHIVE Python 28849-XXX 
 TANDBERG TDS 1420
+ADIC VLS DLT Library
 
 It is now possible with a changer that has barcode reader to load tapes faster.
 Also amdump will find tapes faster. Every time a tape is labeled the information

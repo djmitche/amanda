@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.14 1999/06/17 18:33:23 th Exp $";
+static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.15 2000/01/17 22:27:05 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on Linux
@@ -28,9 +28,20 @@ static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.14 1999/06/17 18:33:23 th Exp $
 #endif
 #include <time.h>
 
+#ifdef HAVE_SCSI_SCSI_IOCTL_H
 #include <scsi/scsi_ioctl.h>
+#endif
+
+#define HAVE_SCSI_SG_H
+
+#ifdef HAVE_SCSI_SG_H
 #include <scsi/sg.h>
+#define LINUX_SG
+#endif
+
+#ifdef HAVE_SYS_MTIO_H
 #include <sys/mtio.h>
+#endif
 
 #include <scsi-defs.h>
 
@@ -43,8 +54,8 @@ int SCSI_CloseDevice(int DeviceFD)
     ret = close(DeviceFD);
     return(ret);
 }
-#define LINUX_CHG
-#ifdef LINUX_CHG
+
+#ifdef LINUX_SG
 OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
 {
   int DeviceFD;
@@ -345,6 +356,41 @@ int Tape_Eject ( int DeviceFD)
   mtop.mt_count = 1;
   ioctl(DeviceFD, MTIOCTOP, &mtop);
   return(0);
+}
+
+int Tape_Status( int DeviceFD)
+{
+  struct mtget mtget;
+  int ret = 0;
+
+  if (ioctl(DeviceFD, MTIOCGET, &mtget) != 0)
+  {
+     dbprintf(("Tape_Status error ioctl %d\n",errno));
+     return(-1);
+  }
+
+  dbprintf(("ioctl -> mtget.mt_gstat %X\n",mtget.mt_gstat));
+  if (GMT_ONLINE(mtget.mt_gstat))
+  {
+    ret = TAPE_ONLINE;
+  }
+
+  if (GMT_BOT(mtget.mt_gstat))
+  {
+    ret = ret | TAPE_BOT;
+  }
+
+  if (GMT_EOT(mtget.mt_gstat))
+  {
+    ret = ret | TAPE_EOT;
+  }
+
+  if (GMT_WR_PROT(mtget.mt_gstat))
+  {
+    ret = ret | TAPE_WR_PROT;
+  }
+ 
+  return(ret); 
 }
 
 #endif

@@ -1,8 +1,8 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.17 1999/09/08 23:26:04 jrj Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.18 2000/01/17 22:26:49 th Exp $";
 #endif
 /*
- *  $Id: chg-scsi.c,v 1.6.2.17 1999/09/08 23:26:04 jrj Exp $
+ *  $Id: chg-scsi.c,v 1.6.2.18 2000/01/17 22:26:49 th Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -163,7 +163,7 @@ void init_changer_struct(changer_t *chg,int number_of_config)
      /* Initialize datasructures with default values */
 {
   int i;
-  
+ 
   chg->number_of_configs = number_of_config;
   chg->eject = 1;
   chg->sleep = 0;
@@ -186,6 +186,8 @@ void init_changer_struct(changer_t *chg,int number_of_config)
       chg->conf[i].changerident = NULL;
       chg->conf[i].tapeident = NULL;
     }
+  } else {
+   fprintf(stderr,"init_changer_struct malloc failed\n");
   }
 }
 
@@ -310,9 +312,11 @@ int read_config(char *configfile, changer_t *chg)
   char linebuffer[256];
   int token;
   char *value;
+  char *p;
 
   numconf = 1;  /* At least one configuration is assumed */
   /* If there are more, it should be the first entry in the configurationfile */
+
 
   if (NULL==(file=fopen(configfile,"r"))){
     return (-1);
@@ -355,6 +359,15 @@ int read_config(char *configfile, changer_t *chg)
           break;
         case CHANGERIDENT:
           chg->conf[drivenum].changerident = strdup(value);
+          p = chg->conf[drivenum].changerident;
+          while (*p != '\0')
+          {
+            if (*p == '_')
+            {
+              *p=' ';
+            }
+            p++;
+          }
           break;
         case TAPEIDENT:
           chg->conf[drivenum].tapeident = strdup(value);
@@ -614,7 +627,7 @@ typedef struct com_stru
 
 
 /* major command line args */
-#define COMCOUNT 8
+#define COMCOUNT 9
 #define COM_SLOT 0
 #define COM_INFO 1
 #define COM_RESET 2
@@ -623,6 +636,7 @@ typedef struct com_stru
 #define COM_LABEL 5
 #define COM_SEARCH 6
 #define COM_STATUS 7
+#define COM_TRACE 8
 argument argdefs[]={{"-slot",COM_SLOT,1},
                     {"-info",COM_INFO,0},
                     {"-reset",COM_RESET,0},
@@ -630,7 +644,9 @@ argument argdefs[]={{"-slot",COM_SLOT,1},
                     {"-clean",COM_CLEAN,0},
                     {"-label",COM_LABEL,1},
                     {"-search",COM_SEARCH,1},
-                    {"-status",COM_STATUS,1}};
+                    {"-status",COM_STATUS,1},
+			{"-trace",COM_TRACE,1}
+	};
 
 
 /* minor command line args */
@@ -837,16 +853,28 @@ int main(int argc, char *argv[])
   char *clean_file=NULL;
   char *time_file=NULL;
 
+
   int use_slots;
   int slot_offset;
   int confnum;
 
   int fd, slotcnt, drivecnt;
+
   int endstatus = 0;
-  char *changer_dev, *tape_device;
+
+  char *changer_dev;
+  char *tape_device = NULL;
   char *changer_file = NULL;
   char *scsitapedevice = NULL;
   int TapeEject = 0;              /* Do we have an device for ejecting the tape ? */
+
+  chg.number_of_configs = 0;
+  chg.eject = 0;
+  chg.sleep = 0;
+  chg.cleanmax = 0;
+  chg.device = NULL;
+  chg.labelfile = NULL;
+  chg.conf = NULL;
   set_pname("chg-scsi");
   dbopen();
 
@@ -877,6 +905,11 @@ int main(int argc, char *argv[])
       return 2;
     }
     confnum=atoi(tape_device);
+    if (chg.number_of_configs == 0)
+    {
+       fprintf(stderr,"%s: chg.conf[%d] == NULL\n",get_pname(), confnum);
+       return(2);
+    }
     use_slots    = chg.conf[confnum].end-chg.conf[confnum].start+1;
     slot_offset  = chg.conf[confnum].start;
     drive_num    = chg.conf[confnum].drivenum;
@@ -949,12 +982,12 @@ int main(int argc, char *argv[])
       {
         if (TapeEject == 0)
           {
-            TapeEject = 1;
+            TapeEject = 2;
           }
         if (need_eject == 1)
           {
-            dbprintf(("force need_eject to 2\n"));
-            need_eject = 2;
+            dbprintf(("need_eject set to %d\n",TapeEject));
+            need_eject = TapeEject;
           }
       }
 
@@ -1015,6 +1048,12 @@ int main(int argc, char *argv[])
   target = -1;
 
   switch(com.command_code) {
+/* This is only for the experts ;-) */
+  case COM_TRACE:
+	ChangerReplay(com.parameter);
+  break;
+/*
+*/
   case COM_STATUS:
     ChangerStatus(com.parameter, chg.labelfile, BarCode(fd),changer_file, changer_dev, tape_device);
     break;

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-bsd.c,v 1.1.2.8 1999/03/16 20:43:27 th Exp $";
+static char rcsid[] = "$Id: scsi-bsd.c,v 1.1.2.9 2000/01/17 22:26:53 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an BSD System (FreeBSD)
@@ -167,6 +167,14 @@ int Tape_Eject ( int DeviceFD)
     ioctl(DeviceFD, MTIOCTOP, &mtop);
 
     return(0);
+}
+
+int Tape_Status( int DeviceFD)
+{
+/* 
+  Not yet
+*/
+  return(-1);
 }
 
 #endif

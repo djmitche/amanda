@@ -97,6 +97,16 @@ typedef unsigned char PackedBit;
 #define TYPE_CHANGER 8
 #define TYPE_COMM 9
 
+/* Defines for Tape_Status */
+#define TAPE_ONLINE 1        /* Tape is loaded */
+#define TAPE_BOT 2           /* Tape is at begin of tape */
+#define TAPE_EOT 4           /* Tape is at end of tape */
+#define TAPE_WR_PROT 8       /* Tape is write protected */
+
+/* Defines for exit status */
+#define WARNING 1
+#define FATAL	2
+
 /* macros for building scsi msb array parameter lists */
 #define B(s,i) ((unsigned char)((s) >> i))
 #define B1(s)                           ((unsigned char)(s))
@@ -965,6 +975,7 @@ OpenFiles_T *OpenDevice(char *DeviceName, char *ConfigName, char *ident);
 int SCSI_CloseDevice(int DeviceFD); 
 int CloseDevice(int ); 
 int Tape_Eject(int);
+int Tape_Status(int);
 
 int SCSI_ExecuteCommand(int DeviceFD,
                         Direction_T Direction,

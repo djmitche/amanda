@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-solaris.c,v 1.1.2.14 1999/06/18 20:43:34 th Exp $";
+static char rcsid[] = "$Id: scsi-solaris.c,v 1.1.2.15 2000/01/17 22:27:07 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an Sun Workstation
@@ -160,6 +160,13 @@ int Tape_Eject ( int DeviceFD)
   return;
 }
 
+int Tape_Status( int DeviceFD)
+{
+/*
+  Not yet
+*/
+  return(-1);
+}
 
 #endif
 /*
