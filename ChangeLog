@@ -1,3 +1,11 @@
+2000-12-23 David Wolfskill  <dhw@whistle.com>
+
+        * server-src/amcheck.c (start_server_check): Change directory
+          writable check to be for the tapelist directory instead of
+	  the config file directory.  Remove config file directory test.
+        * man/amcheck.8.in: Add mention of tapelist directory and do
+	  some other directory writable cleanup.
+
 2000-12-12 John R. Jackson <jrj@purdue.edu>
 
 	* client-src/sendbackup-gnutar.c: Fix regex pattern to accept blanks
