@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.132 2002/04/20 01:55:44 martinea Exp $
+ * $Id: sendsize.c,v 1.133 2002/04/21 23:13:27 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -88,8 +88,6 @@ typedef struct disk_estimates_s {
 } disk_estimates_t;
 
 disk_estimates_t *est_list;
-
-char *host;				/* my hostname from the server */
 
 static am_feature_t *our_features = NULL;
 static char *our_feature_string = NULL;
@@ -159,10 +157,6 @@ char **argv;
 
     set_debug_prefix_pid(getpid());
 
-    host = alloc(MAX_HOSTNAME_LENGTH+1);
-    gethostname(host, MAX_HOSTNAME_LENGTH);
-    host[MAX_HOSTNAME_LENGTH] = '\0';
-
     /* handle all service requests */
 
     start_amandates(0);
@@ -172,13 +166,14 @@ char **argv;
 	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
 #undef sc
 	    g_options = parse_g_options(line+8, 1);
-	    if(g_options->hostname) {
-		amfree(host);
-		host = g_options->hostname;
+	    if(!g_options->hostname) {
+		g_options->hostname = alloc(MAX_HOSTNAME_LENGTH+1);
+		gethostname(g_options->hostname, MAX_HOSTNAME_LENGTH);
+		g_options->hostname[MAX_HOSTNAME_LENGTH] = '\0';
 	    }
 
 	    printf("OPTIONS features=%s;maxdumps=%d;hostname=%s;\n",
-		   our_feature_string, g_options->maxdumps, host);
+		   our_feature_string, g_options->maxdumps,g_options->hostname);
 	    fflush(stdout);
 	    continue;
 	}
@@ -416,12 +411,12 @@ char **argv;
 	est_prev = est;
     }
     amfree(est_prev);
-    amfree(host);
     amfree(our_feature_string);
     am_release_feature_set(our_features);
     our_features = NULL;
     am_release_feature_set(g_options->features);
     amfree(g_options->str);
+    amfree(g_options->hostname);
     amfree(g_options);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
@@ -1358,7 +1353,7 @@ time_t dumpsince;
 
 	basename = vstralloc(GNUTAR_LISTED_INCREMENTAL_DIR,
 			     "/",
-			     host,
+			     g_options->hostname,
 			     disk,
 			     NULL);
 	/*
