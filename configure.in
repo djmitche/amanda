@@ -2451,7 +2451,7 @@ ICE_CHECK_DECL(remove,stdio.h)
 ICE_CHECK_DECL(rename,stdio.h)
 ICE_CHECK_DECL(rewind,stdio.h)
 AC_CHECK_FUNCS(rmdir)
-ICE_CHECK_DECL(ruserok,netdb.h sys/socket.h libc.h)
+ICE_CHECK_DECL(ruserok,netdb.h sys/socket.h libc.h unistd.h)
 ICE_CHECK_DECL(select,sys/types.h sys/socket.h sys/select.h time.h sys/time.h)
 AMANDA_FUNC_SELECT_ARG_TYPE
 ICE_CHECK_DECL(sendto,sys/types.h sys/socket.h)
