@@ -1,5 +1,16 @@
 2002-03-06  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* recover-src/amrecover.h (list_disk): Prototype.
+	* recover-src/set_commands.c (list_disk): New function.
+	* recover-src/uparse.y: parse LISTDISK.
+	* recover-src/uscan.l: listdisk keyword.
+	* recover-src/help.c: help for listdisk.
+	* man/amrecover.8.in: Doc for listdisk.
+	* server-src/amindexd.c: New LISTDISK command.
+	* docs/INDEXING: Document LISTDISK command.
+
+2002-03-06  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amstatus.pl.in: Better output for autoflush.
 
 2002-03-05  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
