@@ -1,3 +1,7 @@
+Version 2.4.0
+
+	amplot no longer crashes if there's no holding disk. -oliva
+
 Version 2.4.0b6p2
 
 	fix xfsdump index generation command.
