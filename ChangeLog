@@ -1,5 +1,10 @@
 2002-03-24  John R. Jackson (jrj@purdue.edu)
 
+	* common-src/debug.c: Change dbopen() message slightly to match what
+	  amdump generates, making it easier to parse.
+
+2002-03-24  John R. Jackson (jrj@purdue.edu)
+
 	* common-src/Makefile.am: Move clock routines to common-src so
 	  everyone may use them.
 	* server-src/Makefile.am: Ditto.
