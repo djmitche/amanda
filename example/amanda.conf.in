@@ -30,7 +30,7 @@ dumporder "sssS"	# specify the priority order of each dumper
 			#   T -> biggest time
 			#   b -> smallest bandwitdh
 			#   B -> biggest bandwitdh
-			# try "KTKTKTKTKTKT" if you are not holding
+			# try "BTBTBTBTBTBT" if you are not holding
 			# disk constrained
 netusage  600 Kbps	# maximum net bandwidth for Amanda, in KB per sec
 
