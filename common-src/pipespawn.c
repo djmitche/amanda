@@ -309,7 +309,7 @@ char **my_argv;
 	if ((pipedef & PASSWD_PIPE) != 0) {
 	    for(i = 0; env[i] != NULL; i++) {}
 	    newenv = (char **)alloc((i + 1 + 1) * sizeof(*newenv));
-	    ap_snprintf(number, sizeof(number), "%d", passwdpipe[0]);
+	    snprintf(number, sizeof(number), "%d", passwdpipe[0]);
 	    newenv[0] = vstralloc(passwdvar, "=", number, NULL);
 	    for(i = 0; (newenv[i + 1] = env[i]) != NULL; i++) {}
 	    env = newenv;

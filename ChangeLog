@@ -1,5 +1,9 @@
 2002-02-12  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* common-src/pipespawn.c (pipespawnv): Typo, ap_snprintf -> snprintf.
+
+2002-02-12  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* common-src/pipespawn.c (pipespawnv): New funtion taking an 
 	  argv argument.
 	* common-src/pipespawn.h (pipespawnv): Prototype.
