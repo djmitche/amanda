@@ -1,3 +1,7 @@
+1998-10-08  John R. Jackson  <jrj@purdue.edu>
+
+	* example/amanda.conf.in: fix runspercycle example and comments
+
 1998-10-08  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* configure.in (SAMBA_CLIENT): try to find it by default; minimal

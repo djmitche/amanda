@@ -16,7 +16,8 @@ inparallel 4		# maximum dumpers that will run in parallel (max 63)
 netusage  600 Kbps	# maximum net bandwidth for Amanda, in KB per sec
 
 dumpcycle 4 weeks	# the number of days in the normal dump cycle
-runspercycle 4 weeks    # the number of amdump runs in dumpcycle days
+runspercycle 20         # the number of amdump runs in dumpcycle days
+			# (4 weeks * 5 amdump runs per week -- just weekdays)
 tapecycle 25 tapes	# the number of tapes in rotation
 			# 4 weeks (dumpcycle) times 5 tapes per week (just
 			# the weekdays) plus a few to handle errors that
