@@ -1,3 +1,8 @@
+2001-03-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* client-src/getfsent.c (search_fstab): If the device doesn't
+	exist, it will take the entry from /etc/mtab.
+
 2001-03-26 John R. Jackson <jrj@purdue.edu>
 
 	* server-src/amtape.c: Do not rewind for slot "advance".  Do not report
