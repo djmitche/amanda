@@ -1321,6 +1321,20 @@ else
   thisdir=\`\$echo "\$file" | sed 's%/[^/]*$%%'\`
   test "x\$thisdir" = "x\$file" && thisdir=.
 
+  # Follow symlinks.
+  prog=`echo $0 | sed 's%.*/%%g'`
+  dest=`ls -ld $thisdir/$prog | sed -n 's/.*-> //p'`
+  while test -n "$dest"; do
+    destdir=`echo $dest | sed 's%/[^/]*$%%'`
+    test "x$destdir" = "x$dest" && destdir=.
+    destprog=`echo $dest | sed 's%.*/%%g'`
+    case "$destdir" in
+    /*) thisdir=$destdir ;;
+    *) thisdir=$thisdir/$destdir ;;
+    esac
+    dest=`ls -ld $thisdir/$destprog | sed -n 's/.*-> //p'`
+  done
+
   # Try to get the absolute directory name.
   absdir=\`cd "\$thisdir" && pwd\`
   test -n "\$absdir" && thisdir="\$absdir"
