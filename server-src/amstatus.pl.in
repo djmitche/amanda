@@ -617,7 +617,7 @@ if (defined $opt_summary) {
 	printf "network free kps: %8d\n", $free_kps;
 	printf "holding space   : %8dk (%6.2f%%)\n", $free_space,
 		$holding_space ? ($free_space * 1.0 / $holding_space) * 100 : 0.0;
-	if(defined($current_time)) {
+	if(defined($current_time) && $current_time != $start_time) {
 		$total_time=$current_time-$start_time;
 		foreach $key (sort keys %busy_time) {
 			printf "%8s busy   : %8s  (%6.2f%%)\n",
