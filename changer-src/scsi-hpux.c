@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-hpux.c,v 1.4.4.5 1999/01/10 17:14:38 th Exp $
+ *	$Id: scsi-hpux.c,v 1.4.4.6 1999/01/26 11:23:12 th Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -24,6 +24,17 @@ char *moddesc = "@(#)" __FILE__
  */
 static struct element_addresses changer_info;
 static int changer_info_init = 0;
+
+
+/* Get the number of the first free slot
+ * return > 0 number of empty slot
+ * return = 0 no slot free
+ * return < 0 error
+ */
+int GetCurrentSlot(int fd)
+{
+
+}
 
 static int get_changer_info(fd)
 {

@@ -364,9 +364,14 @@ If this option is given on every eject/move the log pages of the tape
 device will be dumped in this file. There are 2 log pages were you
 can see how many read/write errors (corrected) are processed by the tape
 
+eject > 1
+
+Use the mtio ioctl to eject the tape, use only if the standard (1) does
+not work, and send the debug output (/tmp/amanda/chg-scsi.debug) to
+th@ant.han.de
+
 At the moment changer with tape and robot on the same SCSI id (
 but on different luns) will run on the following plattforms
-(tested with HP Surestore/Exabyte 10h/ARCHIVE Python)
 HP_UX 10.20	
 IRIX 6.x
 Solaris
@@ -378,13 +383,40 @@ Tape and robot on different IDs run native on
 Linux
 HP-UX 10.20
 Irix 6.x
+FreeBSD
 
 Tape and robot on different IDs with special modules run on
 Solaris	with sst kernel module (availabe at SUN)
 
 For HP you have to create the special device files for the pass throu
-interface.
+interface. Check if the ctl driver is installed.
+Example:
+# lsdev -C ctl
+    Character     Block       Driver          Class
+      203          -1         sctl            ctl
 
+Next check on which bus your drives are connected. (ioscan)
+
+with the Character device num form the lsdev and the card instance from
+ioscan create the special file.
+Example:
+mknod /dev/scsi/1 c 203 0x001000
+                          ||||
+                          ||| LUN of device
+                          ||SCSI ID of the device
+                          2 digit instance number from ioscan
+
+On Linux you need either sg (generic scsi) as module or it mus be compiled
+into the kernel.
+
+On IRIX you find the SCSI pass through interfaces for every device in /dev/scsi
+
+chg-scsi has been tested/run with the following devices
+Exabyte 10h and eliant tape
+HP-Surestore 1200e and C1553A tape
+BreeceHill Q2.15 (EXB-120) and DLT7000 tape
+Powerstor L200 and DLT7000 (not fully tested)
+ARCHIVE Python 28849-XXX 
 
 chg-chio: (new perl script, that replaces the original chg-chio written in C)
 

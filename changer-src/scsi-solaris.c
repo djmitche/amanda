@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-solaris.c,v 1.1.2.8 1999/01/10 17:14:46 th Exp $";
+static char rcsid[] = "$Id: scsi-solaris.c,v 1.1.2.9 1999/01/26 11:23:20 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an Sun Workstation
@@ -29,6 +29,7 @@ static char rcsid[] = "$Id: scsi-solaris.c,v 1.1.2.8 1999/01/10 17:14:46 th Exp 
 #include <sys/scsi/impl/uscsi.h>
 
 #include <scsi-defs.h>
+#include <sys/mtio.h>
 
 
 OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
@@ -48,16 +49,27 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
 
       if (Inquiry(DeviceFD, pwork->inquiry) == 0)
           {
-              for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
+          if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
+            {
+               for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
                   pwork->ident[i] = pwork->inquiry->prod_ident[i];
               pwork->ident[i] = '\0';
               pwork->SCSI = 1;
+              PrintInquiry(pwork->inquiry);
               return(pwork);
+            } else {
+              close(DeviceFD);
+              free(pwork->inquiry);
+              free(pwork);
+              return(NULL);
+            }
           } else {
               free(pwork->inquiry);
               pwork->inquiry = NULL;
               return(pwork);
           }
+    } else {
+      dbprintf(("SCSI_OpenDevice %s failed\n", DeviceName));
     }
 
   return(NULL); 
@@ -82,7 +94,11 @@ int SCSI_ExecuteCommand(int DeviceFD,
                         char *pRequestSense,
                         int RequestSenseLength)
 {
+  int ret;
+  int retries = 1;
+  extern int errno;
   struct uscsi_cmd Command;
+  ExtendedRequestSense_T pExtendedRequestSense;
   memset(&Command, 0, sizeof(struct uscsi_cmd));
   memset(pRequestSense, 0, RequestSenseLength);
   switch (Direction)
@@ -90,12 +106,19 @@ int SCSI_ExecuteCommand(int DeviceFD,
     case Input:
       if (DataBufferLength > 0)
         memset(DataBuffer, 0, DataBufferLength);
+
+      Command.uscsi_flags =  USCSI_READ | USCSI_RQENABLE;
+      /*
       Command.uscsi_flags = USCSI_DIAGNOSE | USCSI_ISOLATE
         | USCSI_READ | USCSI_RQENABLE;
+      */
       break;
     case Output:
+      Command.uscsi_flags =  USCSI_WRITE | USCSI_RQENABLE;
+      /*
       Command.uscsi_flags = USCSI_DIAGNOSE | USCSI_ISOLATE
         | USCSI_WRITE | USCSI_RQENABLE;
+      */
       break;
     }
   /* Set timeout to 5 minutes. */
@@ -106,8 +129,32 @@ int SCSI_ExecuteCommand(int DeviceFD,
   Command.uscsi_buflen = DataBufferLength;
   Command.uscsi_rqbuf = (caddr_t) pRequestSense;
   Command.uscsi_rqlen = RequestSenseLength;
-  return ioctl(DeviceFD, USCSICMD, &Command);
+  DecodeSCSI(CDB, "SCSI_ExecuteCommand : ");
+  while (retries > 0)
+  {
+    if ((ret = ioctl(DeviceFD, USCSICMD, &Command)) < 0)
+    {
+       dbprintf(("ioctl on %d failed, errno %d, ret %d\n",DeviceFD, errno, ret));
+       RequestSense(DeviceFD, &pExtendedRequestSense, 0);
+       DecodeExtSense(&pExtendedRequestSense, "SCSI_ExecuteCommand:");
+    } else {
+      return(ret);
+    }
+    retries--;
+  }
+  return(ret);
 }
+
+int Tape_Eject ( int DeviceFD)
+{
+  struct mtop mtop;
+
+  mtop.mt_op = MTOFFL;
+  mtop.mt_count = 1;
+  ioctl(DeviceFD, MTIOCTOP, &mtop);
+  return;
+}
+
 
 #endif
 /*

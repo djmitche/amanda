@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-aix.c,v 1.1.2.6 1999/01/10 17:03:06 th Exp $";
+static char rcsid[] = "$Id: scsi-aix.c,v 1.1.2.7 1999/01/26 11:23:01 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an AIX Workstation
@@ -51,11 +51,20 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
       
       if ( Inquiry(DeviceFD, pwork->inquiry) == 0)
         {
-          for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
-            pwork->ident[i] = pwork->inquiry->prod_ident[i];
-          pwork->ident[i] = '\0';
-          pwork->SCSI = 1;
-          return(pwork); 
+          if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
+            {
+              for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
+                pwork->ident[i] = pwork->inquiry->prod_ident[i];
+              pwork->ident[i] = '\0';
+              pwork->SCSI = 1;
+              PrintInquiry(pwork->inquiry);
+              return(pwork); 
+            } else {
+              free(pwork->inquiry);
+              free(pwork);
+              close(DeviceFD);
+              return(NULL);
+            }
         } else {
           free(pwork->inquiry);
           pwork->inquiry = NULL;
@@ -185,6 +194,15 @@ int SCSI_Scan()
       return(1);
   }
 }
+
+int Tape_Eject ( int DeviceFD)
+{
+/*
+ Not yet ....
+*/
+  return(-1);
+}
+
 #endif
 /*
  * Local variables:

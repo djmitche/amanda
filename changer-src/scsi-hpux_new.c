@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.1.2.5 1999/01/10 17:14:40 th Exp $";
+static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.1.2.6 1999/01/26 11:23:15 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an HP-UX Workstation
@@ -27,6 +27,8 @@ static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.1.2.5 1999/01/10 17:14:40 th Exp
 #include <sys/scsi.h>
 #endif
 
+#include <sys/mtio.h>
+
 #include <scsi-defs.h>
 
 OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
@@ -46,15 +48,24 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
       
       if (Inquiry(DeviceFD, pwork->inquiry) == 0)
           {
-              for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
+            if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
+              {
+                for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
                   pwork->ident[i] = pwork->inquiry->prod_ident[i];
-              pwork->ident[i] = '\0';
-              pwork->SCSI = 1;
-              return(pwork);
+                pwork->ident[i] = '\0';
+                pwork->SCSI = 1;
+                PrintInquiry(pwork->inquiry);
+                return(pwork);    
+              } else {
+                close(DeviceFD);
+                free(pwork->inquiry);
+                free(pwork);
+                return(NULL);
+              }
           } else {
-              free(pwork->inquiry);
-              pwork->inquiry = NULL;
-              return(pwork);
+            free(pwork->inquiry);
+            pwork->inquiry = NULL;
+            return(pwork);
           }
     }
 
@@ -119,6 +130,19 @@ int SCSI_ExecuteCommand(int DeviceFD,
       }
   }
   return(-1);
+}
+
+int Tape_Eject (int DeviceFD)
+{
+  struct mtop mtop;
+
+  mtop.mt_op = MTOFFL;
+  mtop.mt_count = 1;
+  if (ioctl(DeviceFD, MTIOCTOP, &mtop) < 0) {
+    return(-1);
+  } else {
+    return(0);
+  }
 }
 
 #endif

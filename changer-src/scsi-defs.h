@@ -250,12 +250,15 @@ typedef struct
     unsigned char ascq;
     unsigned char byte79[3];
 #ifdef LITTLE_ENDIAN_BITFIELDS        
+    PackedBit     byte10res : 6;
+    PackedBit     invert : 1;
+    PackedBit     svalid : 1;
 #else
     PackedBit     svalid : 1;
     PackedBit     invert : 1;
     PackedBit     byte10res : 6;
 #endif
-    unsigned char ssea[2];
+    unsigned char source[2];
     unsigned char byte1314[4];
 } MediumTransportElementDescriptor_T;
 
@@ -489,6 +492,7 @@ typedef struct ElementInfo
 {
     int type;       /* CHANGER - 1, STORAGE - 2, TAPE - 4 */
     int address;    /* Adress of this Element */
+    int from;       /* From where did it come */
     char status;    /* F -> Full, E -> Empty */
     int ASC;        /* Additional Sense Code from read element status */
     int ASCQ;      /* */

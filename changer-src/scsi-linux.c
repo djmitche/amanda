@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.7 1999/01/10 17:14:44 th Exp $";
+static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.8 1999/01/26 11:23:18 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on Linux
@@ -30,6 +30,7 @@ static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.7 1999/01/10 17:14:44 th Exp $"
 
 #include <scsi/scsi_ioctl.h>
 #include <scsi/sg.h>
+#include <sys/mtio.h>
 
 #include <scsi-defs.h>
 
@@ -50,11 +51,28 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
       if (strncmp("/dev/sg", DeviceName, 7) == 0)
         {
           pwork->inquiry = (SCSIInquiry_T *)malloc(sizeof(SCSIInquiry_T));
-          Inquiry(DeviceFD, pwork->inquiry);
-          for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
-             pwork->ident[i] = pwork->inquiry->prod_ident[i];
-          pwork->ident[i] = '\0';
-          pwork->SCSI = 1;
+          if ((Inquiry(DeviceFD, pwork->inquiry)) != NULL)
+            {
+              if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
+                {
+                  for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
+                    pwork->ident[i] = pwork->inquiry->prod_ident[i];
+                  pwork->ident[i] = '\0';
+                  pwork->SCSI = 1;
+                  PrintInquiry(pwork->inquiry);
+                  return(pwork);
+                } else {
+                  free(pwork->inquiry);
+                  free(pwork);
+                  close(DeviceFD);
+                  return(NULL);
+                }
+            } else {
+              free(pwork->inquiry);
+              pwork->inquiry = NULL;
+              return(pwork);
+            }
+
         }
       return(pwork); 
     }
@@ -198,6 +216,17 @@ int SCSI_ExecuteCommand(int DeviceFD,
     return Result;
 }
 #endif
+
+int Tape_Eject ( int DeviceFD)
+{
+  struct mtop mtop;
+
+  mtop.mt_op = MTUNLOAD;
+  mtop.mt_count = 1;
+  ioctl(DeviceFD, MTIOCTOP, &mtop);
+  return;
+}
+
 #endif
 /*
  * Local variables:

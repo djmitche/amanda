@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-bsd.c,v 1.1.2.3 1999/01/10 17:04:31 th Exp $";
+static char rcsid[] = "$Id: scsi-bsd.c,v 1.1.2.4 1999/01/26 11:23:03 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an SGI Workstation
@@ -28,6 +28,7 @@ static char rcsid[] = "$Id: scsi-bsd.c,v 1.1.2.3 1999/01/10 17:04:31 th Exp $";
 #endif
 
 #include <sys/scsiio.h>
+#include <sys/mtio.h>
 
 #include <scsi-defs.h>
 
@@ -53,11 +54,19 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
 
       if (Inquiry(DeviceFD, pwork->inquiry) == 0)
           {
-              for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
-                  pwork->ident[i] = pwork->inquiry->prod_ident[i];
-              pwork->ident[i] = '\0';
-              pwork->SCSI = 1;
-              return(pwork);
+              if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
+                  {
+                      for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
+                          pwork->ident[i] = pwork->inquiry->prod_ident[i];
+                      pwork->ident[i] = '\0';
+                      pwork->SCSI = 1;
+                      PrintInquiry(pwork->inquiry);
+                      return(pwork);
+                  } else {
+                      free(pwork->inquiry);
+                      free(pwork);
+                      return(NULL);
+                  }
           } else {
               free(pwork->inquiry);
               pwork->inquiry = NULL;
@@ -144,6 +153,17 @@ int SCSI_ExecuteCommand(int DeviceFD,
       }
   }   
   return(ds.retsts);
+}
+
+int Tape_Eject ( int DeviceFD)
+{
+    struct mtop mtop;
+
+    mtop.mt_op = MTOFFL;
+    mtop.mt_count = 1;
+    ioctl(DeviceFD, MTIOCTOP, &mtop);
+
+    return(0);
 }
 
 #endif

@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-chio.c,v 1.5.4.5 1999/01/10 17:09:42 th Exp $
+ *	$Id: scsi-chio.c,v 1.5.4.6 1999/01/26 11:23:09 th Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -49,6 +49,39 @@ int rc = 0;
 	changer_info_init++;
     }
     return (rc);
+}
+
+/* Get the number of the first free slot
+ * return > 0 number of empty slot
+ * return = 0 no slot free
+ * return < 0 error
+ */
+int GetCurrentSlot(int fd, int drive)
+{
+    struct changer_element_status  ces;
+    int slot;
+    int i, rc;
+
+    get_changer_info(fd);
+
+    ces.ces_type = CHET_ST;
+    ces.ces_data = malloc(changer_info.cp_nslots);
+
+    rc = ioctl(fd, CHIOGSTATUS, &ces);
+    if (rc) {
+	dbprintf(("%s: changer status query failed: 0x%x %s\n",
+			get_pname(), rc,strerror(errno)));
+	return -1;
+    }
+    for (slot = 0; slot < changer_info.cp_nslots; slot++)
+    {
+    	i = ces.ces_data[slot] & CESTATUS_FULL;
+    	dbprintf(("\tGetCurrentSlot slot %d = %d\n", slot, i));
+    	if (!i)
+            return(slot);
+    }
+
+
 }
 
 int get_clean_state(int changerfd, char *changerdev, char *dev)
