@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.50 2002/04/13 22:33:25 jrjackson Exp $
+ * $Id: diskfile.c,v 1.51 2002/04/13 23:38:27 jrjackson Exp $
  *
  * read disklist file
  */
@@ -561,6 +561,7 @@ FILE *f;
 char *optionstr(dp)
 disk_t *dp;
 {
+    char *auth_opt = NULL;
     char *kencrypt_opt = "";
     char *compress_opt = "";
     char *record_opt = "";
@@ -574,6 +575,16 @@ disk_t *dp;
     char *exc = NULL;
     char *result = NULL;
     sle_t *excl;
+
+    if(dp->host
+       && am_has_feature(dp->host->features, amanda_feature_auth_keyword)) {
+	auth_opt = vstralloc("auth=", dp->security_driver, ";", NULL);
+    } else if(strcasecmp(dp->security_driver, "bsd") == 0) {
+	auth_opt = stralloc("bsd-auth;");
+    } else if(strcasecmp(dp->security_driver, "krb4") == 0) {
+	auth_opt = stralloc("krb4-auth;");
+	if(dp->kencrypt) kencrypt_opt = "kencrypt;";
+    }
 
     switch(dp->compress) {
     case COMP_FAST:
@@ -629,9 +640,7 @@ disk_t *dp;
     if(dp->include_optional) incl_opt = "include-optional;";
 
     result = vstralloc(";",
-		       "auth=",
-		       dp->security_driver,
-		       ";",
+		       auth_opt,
 		       kencrypt_opt,
 		       compress_opt,
 		       record_opt,
@@ -643,6 +652,7 @@ disk_t *dp;
 		       excl_opt,
 		       incl_opt,
 		       NULL);
+    amfree(auth_opt);
     amfree(exclude_list);
     amfree(exclude_file);
     amfree(include_file);

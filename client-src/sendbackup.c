@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.62 2002/04/13 19:24:51 jrjackson Exp $
+ * $Id: sendbackup.c,v 1.63 2002/04/13 23:38:27 jrjackson Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -332,7 +332,7 @@ char **argv;
     }
     program = programs[i];
 
-    options = parse_options(stroptions, disk, amdevice, 0);
+    options = parse_options(stroptions, disk, amdevice, their_features, 0);
 
     if(!interactive) {
 	datafd = DATA_FD_OFFSET + 0;

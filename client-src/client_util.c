@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.17 2002/03/31 21:02:00 jrjackson Exp $
+ * $Id: client_util.c,v 1.18 2002/04/13 23:38:27 jrjackson Exp $
  *
  */
 
@@ -395,9 +395,10 @@ option_t *options;
 }
 
 
-option_t *parse_options(str, disk, device, verbose)
+option_t *parse_options(str, disk, device, fs, verbose)
 char *str;
 char *disk, *device;
+am_feature_t *fs;
 int verbose;
 {
     char *exc;
@@ -412,7 +413,19 @@ int verbose;
     tok = strtok(p,";");
 
     while (tok != NULL) {
-	if(strcmp(tok, "compress-fast") == 0) {
+	if(am_has_feature(fs, amanda_feature_auth_keyword)
+	   && strncmp(tok,"auth=", 5) == 0) {
+	    options->auth = stralloc(&tok[5]);
+	}
+	else if(! am_has_feature(fs, amanda_feature_auth_keyword)
+	   && strcmp(tok, "bsd-auth") == 0) {
+	    options->auth = stralloc("bsd");
+	}
+	else if(! am_has_feature(fs, amanda_feature_auth_keyword)
+	   && strcmp(tok, "krb4-auth") == 0) {
+	    options->auth = stralloc("krb4");
+	}
+	else if(strcmp(tok, "compress-fast") == 0) {
 	    options->compress = COMPR_FAST;
 	}
 	else if(strcmp(tok, "compress-best") == 0) {
@@ -433,9 +446,6 @@ int verbose;
 	}
 	else if(strcmp(tok, "include-optional") == 0) {
 	    options->include_optional = 1;
-	}
-	else if(strncmp(tok,"auth=", 5) == 0) {
-	    options->auth = stralloc(&tok[5]);
 	}
 	else if(strncmp(tok,"exclude-file=", 13) == 0) {
 	    exc = &tok[13];
@@ -465,4 +475,3 @@ int verbose;
     }
     return options;
 }
-

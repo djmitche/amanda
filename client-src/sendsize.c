@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.128 2002/04/13 19:24:51 jrjackson Exp $
+ * $Id: sendsize.c,v 1.129 2002/04/13 23:38:27 jrjackson Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -296,7 +296,11 @@ char **argv;
 	    skip_whitespace(s, ch);		/* find the exclusion list */
 	    if(ch != '\0') {
 		if(strncmp(s-1, "OPTIONS |;",10) == 0) {
-		    options = parse_options(s+8, disk, amdevice, 0);
+		    options = parse_options(s + 8,
+					    disk,
+					    amdevice,
+					    their_features,
+					    0);
 		}
 		else {
 		    options = alloc(sizeof(option_t));

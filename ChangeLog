@@ -1,5 +1,18 @@
 2002-04-13  John R. Jackson (jrj@purdue.edu)
 
+	* common-src/features.c: Add amanda_feature_auth_keyword feature so
+	  authorization in the OPTIONS string is backward compatible.
+	* common-src/features.h: Ditto.
+	* client-src/client_util.c: Ditto.
+	* client-src/client_util.h: Ditto.
+	* client-src/selfcheck.c: Ditto.
+	* client-src/sendbackup.c: Ditto.
+	* client-src/sendsize.c: Ditto.
+	* server-src/diskfile.c: Ditto.
+	* server-src/planner.c: Fix compiler warning.
+
+2002-04-13  John R. Jackson (jrj@purdue.edu)
+
 	* server-src/diskfile.c: Fix memory leak.
 
 2002-04-13  John R. Jackson (jrj@purdue.edu)
