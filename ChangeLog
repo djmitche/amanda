@@ -1,3 +1,7 @@
+2001-08-01 John R. Jackson (jrj@purdue.edu)
+
+	* common-src/pipespawn.c: Show empty pipespawn() args as "".
+
 2001-07-31 Ben Lewis (bhlewis@purdue.edu) via John R. Jackson (jrj@purdue.edu)
 
 	* configure.in: Add missing CAM header checks from the 2.5 branch.
