@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.53 1999/11/12 00:16:10 oliva Exp $
+ * $Id: driverio.c,v 1.54 2000/04/18 00:23:16 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -40,6 +40,8 @@
 
 #define GLOBAL		/* the global variables defined here */
 #include "driverio.h"
+
+int nb_chunker = 0;
 
 static const char *cmdstr[] = {
     "BOGUS", "QUIT", "DONE",
@@ -77,6 +79,8 @@ childstr(fd)
     for (dumper = dmptable; dumper < dmptable + MAX_DUMPERS; dumper++) {
 	if (dumper->fd == fd)
 	    return (dumper->name);
+	if (dumper->chunker->fd == fd)
+	    return (dumper->chunker->name);
     }
     snprintf(buf, sizeof(buf), "unknown child (fd %d)", fd);
     return (buf);
@@ -158,8 +162,41 @@ int inparallel;
     for(dumper = dmptable, i = 0; i < inparallel; dumper++, i++) {
 	snprintf(number, sizeof(number), "%d", i);
 	dumper->name = stralloc2("dumper", number);
+	dumper->chunker = &chktable[i];
+	chktable[i].name = stralloc2("chunker", number);
+	chktable[i].dumper = dumper;
+	chktable[i].fd = -1;
 
 	startup_dump_process(dumper, dumper_program);
+    }
+}
+
+void startup_chunk_process(chunker, chunker_program)
+chunker_t *chunker;
+char *chunker_program;
+{
+    int fd[2];
+
+    if(socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1)
+	error("%s pipe: %s", chunker->name, strerror(errno));
+
+    switch(chunker->pid = fork()) {
+    case -1:
+	error("fork %s: %s", chunker->name, strerror(errno));
+    case 0:		/* child process */
+	aclose(fd[0]);
+	if(dup2(fd[1], 0) == -1 || dup2(fd[1], 1) == -1)
+	    error("%s dup2: %s", chunker->name, strerror(errno));
+	execle(chunker_program, "chunker", config_name, (char *)0, safe_env());
+	error("exec %s (%s): %s", chunker_program,
+	      chunker->name, strerror(errno));
+    default:	/* parent process */
+	aclose(fd[1]);
+	chunker->fd = fd[0];
+	chunker->ev_read = NULL;
+	fprintf(stderr,"driver: started %s pid %d\n",
+		chunker->name, chunker->pid);
+	fflush(stderr);
     }
 }
 
@@ -275,11 +312,13 @@ disk_t *dp;
 {
     char *cmdline = NULL;
     char number[NUM_STR_SIZE];
+    char numberport[NUM_STR_SIZE];
     char chunksize[NUM_STR_SIZE];
     char *o;
 
     switch(cmd) {
     case FILE_DUMP:
+	assert(0);
 	snprintf(number, sizeof(number), "%d", sched(dp)->level);
 	snprintf(chunksize, sizeof(chunksize), "%ld",
 		    (long)sched(dp)->holdp->chunksize);
@@ -299,10 +338,11 @@ disk_t *dp;
 	break;
     case PORT_DUMP:
 	snprintf(number, sizeof(number), "%d", sched(dp)->level);
+	snprintf(numberport, sizeof(numberport), "%d", dumper->output_port);
 	o = optionstr(dp);
 	cmdline = vstralloc(cmdstr[cmd],
 			    " ", disk2serial(dp),
-			    " ", sched(dp)->destname,
+			    " ", numberport,
 			    " ", dp->host->hostname,
 			    " ", dp->name,
 			    " ", number,
@@ -335,6 +375,61 @@ disk_t *dp;
 	    fflush(stdout);
 	    return 0;
 	}
+    }
+    amfree(cmdline);
+    return 1;
+}
+
+int chunker_cmd(chunker, cmd, dp)
+chunker_t *chunker;
+tok_t cmd;
+disk_t *dp;
+{
+    char *cmdline = NULL;
+    char number[NUM_STR_SIZE];
+    char chunksize[NUM_STR_SIZE];
+    char *o;
+
+fprintf(stderr,"b1\n");
+    switch(cmd) {
+    case PORT_WRITE:
+fprintf(stderr,"b2\n");
+	snprintf(number, sizeof(number), "%d", sched(dp)->level);
+	snprintf(chunksize, sizeof(chunksize), "%ld",
+			(long)sched(dp)->holdp->chunksize);
+	o = optionstr(dp);
+fprintf(stderr,"b3\n");
+	cmdline = vstralloc(cmdstr[cmd],
+			    " ", disk2serial(dp),
+			    " ", sched(dp)->destname,
+			    " ", dp->host->hostname,
+			    " ", dp->name,
+			    " ", number,
+			    " ", sched(dp)->dumpdate,
+			    " ", chunksize,
+			    " ", dp->program,
+			    " |", o,
+			    "\n", NULL);
+fprintf(stderr,"b4\n");
+	amfree(o);
+	break;
+    case QUIT:
+	cmdline = stralloc("QUIT\n");
+	break;
+    default:
+	assert(0);
+    }
+fprintf(stderr,"b5\n");
+    /*
+     * Note: cmdline already has a '\n'.
+     */
+    printf("driver: send-cmd time %s to %s: %s",
+	   walltime_str(curclock()), chunker->name, cmdline);
+    fflush(stdout);
+    if (fullwrite(chunker->fd, cmdline, strlen(cmdline)) < 0) {
+	printf("writing %s command: %s\n", chunker->name, strerror(errno));
+	fflush(stdout);
+	return 0;
     }
     amfree(cmdline);
     return 1;

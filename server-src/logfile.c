@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.20 1999/09/15 00:33:13 jrj Exp $
+ * $Id: logfile.c,v 1.21 2000/04/18 00:23:16 martinea Exp $
  *
  * common log file writing routine
  */
@@ -48,7 +48,8 @@ char *logtype_str[] = {
 };
 
 char *program_str[] = {
-    "UNKNOWN", "planner", "driver", "reporter", "dumper", "taper", "amflush"
+    "UNKNOWN", "planner", "driver", "reporter", "dumper", "chunker",
+    "taper", "amflush"
 };
 
 int curlinenum;

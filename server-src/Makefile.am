@@ -16,7 +16,8 @@ sbin_PROGRAMS =		amadmin		amcheck		amflush		\
 
 libexec_PROGRAMS =	amindexd	amlogroll	amtrmidx	\
 			amtrmlog	driver		dumper		\
-			planner		taper		amcleanupdisk
+			planner		taper		amcleanupdisk	\
+			chunker
 
 sbin_SCRIPTS =		amcheckdb	amcleanup	amdump		\
 			amoverview	amrmtape	amtoc		\

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.61 2000/04/16 14:34:38 martinea Exp $
+/* $Id: taper.c,v 1.62 2000/04/18 00:23:16 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -797,6 +797,7 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 		char kps_str[NUM_STR_SIZE];
 		double rt;
 
+		filesize -= TAPE_BLOCK_SIZE;
 		rt = runtime.r.tv_sec+runtime.r.tv_usec/1000000.0;
 		snprintf(kb_str, sizeof(kb_str), "%ld", filesize);
 		snprintf(kps_str, sizeof(kps_str), "%3.1f",

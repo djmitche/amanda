@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.91 2000/02/01 01:25:25 martinea Exp $
+ * $Id: driver.c,v 1.92 2000/04/18 00:23:16 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -70,7 +70,9 @@ static int dump_to_tape P((disk_t *dp));
 static holdingdisk_t *find_diskspace P((unsigned long size, int *cur_idle));
 static int free_kps P((interface_t *ip));
 static unsigned long free_space P((void));
+static void dumper_result P((disk_t *dp));
 static void handle_dumper_result P((void *));
+static void handle_chunker_result P((void *));
 static void handle_idle_wait P((void *));
 static void handle_taper_result P((void *));
 static void holdingdisk_state P((char *time_str));
@@ -462,6 +464,10 @@ start_some_dumps(dumper, rq)
     disk_t *diskp, *big_degraded_diskp, *delayed_diskp;
     holdingdisk_t *holdp = NULL, *big_degraded_holdp = NULL;
     const time_t now = time(NULL);
+    tok_t tok;
+    int result_argc;
+    char *result_argv[MAX_ARGS+1];
+    chunker_t *chunker;
 
     assert(dumper->busy == 0);	/* we better not have been grabbed */
 
@@ -579,7 +585,29 @@ start_some_dumps(dumper, rq)
 	dumper->busy = 1;		/* dumper is now busy */
 	dumper->dp = diskp;		/* link disk to dumper */
 	remove_disk(rq, diskp);		/* take it off the run queue */
-	dumper_cmd(dumper, FILE_DUMP, diskp);
+/*	dumper_cmd(dumper, FILE_DUMP, diskp);*/
+
+	sched(diskp)->origsize = -1;
+	sched(diskp)->dumpsize = -1;
+	sched(diskp)->dumptime = -1;
+	sched(diskp)->tapetime = -1;
+	chunker = dumper->chunker;
+	startup_chunk_process(chunker,"/amanda/h1/linux-2.5.0/libexec/chunker");
+	chunker->dumper = dumper;
+	chunker_cmd(chunker, PORT_WRITE, diskp);
+	tok = getresult(chunker->fd, 1, &result_argc, result_argv, MAX_ARGS+1);
+	if(tok != PORT) {
+	    printf("driver: did not get PORT from %s for %s:%s\n",
+		    chunker->name, diskp->host->hostname, diskp->name);
+	    fflush(stdout);
+	    return 2;	/* fatal problem */
+	}
+	chunker->ev_read = event_register(chunker->fd, EV_READFD,
+		handle_chunker_result, chunker);
+	dumper->output_port = atoi(result_argv[2]);
+
+	dumper_cmd(dumper, PORT_DUMP, diskp);
+
 	diskp->host->start_t = now + 15;
     } else if (cur_idle != NOT_IDLE &&
 	(num_busy_dumpers() > 0 || taper_busy)) {
@@ -892,6 +920,30 @@ num_busy_dumpers()
     return n;
 }
 
+
+static void
+dumper_result(dp)
+    disk_t *dp;
+{
+    dumper_t *dumper;
+
+    dumper = sched(dp)->dumper;
+    update_info_dumper(dp, sched(dp)->origsize,
+		   sched(dp)->dumpsize, sched(dp)->dumptime);
+
+    rename_tmp_holding(sched(dp)->destname, 1);
+    deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
+    adjust_diskspace(dp, DONE);
+    dumper->busy = 0;
+    dp->host->inprogress -= 1;
+    dp->inprogress = 0;
+    sched(dp)->attempted = 0;
+
+    taper_queuedisk(dp);
+    dp = NULL;
+    start_some_dumps(dumper, &runq);
+}
+
 static void
 handle_dumper_result(cookie)
     void *cookie;
@@ -899,9 +951,6 @@ handle_dumper_result(cookie)
     static int pending_aborts = 0;
     dumper_t *dumper = cookie;
     disk_t *dp, *sdp;
-    long origsize;
-    long dumpsize;
-    long dumptime;
     tok_t tok;
     int result_argc;
     char *result_argv[MAX_ARGS+1];
@@ -931,26 +980,198 @@ handle_dumper_result(cookie)
 
 	    free_serial(result_argv[2]);
 
-	    origsize = (long)atof(result_argv[3]);
-	    dumpsize = (long)atof(result_argv[4]);
-	    dumptime = (long)atof(result_argv[5]);
-	    update_info_dumper(dp, origsize, dumpsize, dumptime);
+	    sched(dp)->origsize = (long)atof(result_argv[3]);
+	    sched(dp)->dumptime = (long)atof(result_argv[5]);
 
-	    rename_tmp_holding(sched(dp)->destname, 1);
-	    deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
-	    adjust_diskspace(dp, DONE);
-	    dumper->busy = 0;
-	    dp->host->inprogress -= 1;
-	    dp->inprogress = 0;
-	    sched(dp)->attempted = 0;
+	    if(sched(dp)->dumpsize != -1)/* chunker already finished */
+		dumper_result(dp);
+
 	    printf("driver: finished-cmd time %s %s dumped %s:%s\n",
 		   walltime_str(curclock()), dumper->name,
 		   dp->host->hostname, dp->name);
 	    fflush(stdout);
 
-	    taper_queuedisk(dp);
+	    break;
+
+	case TRYAGAIN: /* TRY-AGAIN <handle> <errstr> */
+	    /*
+	     * Requeue this disk, and fall through to the FAILED
+	     * case for cleanup.
+	     */
+	    if(sched(dp)->attempted) {
+		log_add(L_FAIL, "%s %s %d [could not connect to %s]",
+	    	    dp->host->hostname, dp->name,
+	    	    sched(dp)->level, dp->host->hostname);
+	    }
+	    else {
+		/* give it 15 seconds in case of temp problems */
+		dp->start_t = time(NULL) + 15;
+		sched(dp)->attempted++;
+		enqueue_disk(&runq, dp);
+	    }
+	    /* FALLTHROUGH */
+	case FAILED: /* FAILED <handle> <errstr> */
+	    free_serial(result_argv[2]);
+
+	    rename_tmp_holding(sched(dp)->destname, 0);
+	    deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
+	    adjust_diskspace(dp, DONE);
+	    delete_diskspace(dp);
+	    dumper->busy = 0;
+	    dp->host->inprogress -= 1;
+	    dp->inprogress = 0;
+
+	    /* no need to log this, dumper will do it */
+	    /* sleep in case the dumper failed because of a temporary network
+	       problem, as NIS or NFS... */
+	    dumper->ev_wait = event_register(15, EV_TIME, handle_idle_wait,
+					     dumper);
+	    break;
+
+	case NO_ROOM: /* NO-ROOM <handle> */
+	    if(!taper_busy && empty(tapeq) && pending_aborts == 0) {
+		/* no disk space due to be freed */
+		dumper_cmd(dumper, ABORT, NULL);
+		pending_aborts++;
+		/*
+		 * if this is the only outstanding dump, it must be too
+		 * big for the holding disk, so force it to go directly
+		 * to tape on the next attempt.
+		 */
+		if(num_busy_dumpers() <= 1)
+		dp->no_hold = 1;
+	    }
+	    else {
+		adjust_diskspace(dp, NO_ROOM);
+		enqueue_disk(&stoppedq, dp);
+	    }
+	    break;
+
+	case ABORT_FINISHED: /* ABORT-FINISHED <handle> */
+	    /*
+	     * We sent an ABORT from the NO-ROOM case because this dump
+	     * wasn't going to fit onto the holding disk.  We now need to
+	     * clean up the remains of this image, and try to finish
+	     * other dumps that are waiting on disk space.
+	     */
+	    assert(pending_aborts);
+	    free_serial(result_argv[2]);
+	    rename_tmp_holding(sched(dp)->destname, 0);
+	    deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
+	    adjust_diskspace(dp, DONE);
+	    delete_diskspace(dp);
+	    sched(dp)->attempted++;
+	    enqueue_disk(&runq, dp);	/* we'll try again later */
+	    dumper->busy = 0;
+	    dp->host->inprogress -= 1;
+	    dp->inprogress = 0;
 	    dp = NULL;
+	    pending_aborts--;
+	    while(!empty(stoppedq)) {
+		disk_t *dp2;
+		dp2 = dequeue_disk(&stoppedq);
+		dumper_cmd(sched(dp2)->dumper, CONTINUE, NULL);
+	    }
 	    start_some_dumps(dumper, &runq);
+	    break;
+
+	case BOGUS:
+	    /* either EOF or garbage from dumper.  Turn it off */
+	    log_add(L_WARNING, "%s pid %ld is messed up, ignoring it.\n",
+		    dumper->name, (long)dumper->pid);
+	    event_release(dumper->ev_read);
+	    aclose(dumper->fd);
+	    dumper->busy = 0;
+	    dumper->down = 1;	/* mark it down so it isn't used again */
+	    if(dp) {
+		/* if it was dumping something, zap it and try again */
+		rename_tmp_holding(sched(dp)->destname, 0);
+		deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
+		adjust_diskspace(dp, DONE);
+		delete_diskspace(dp);
+		dp->host->inprogress -= 1;
+		dp->inprogress = 0;
+		if(sched(dp)->attempted) {
+	    	log_add(L_FAIL, "%s %s %d [%s died]",
+	    		dp->host->hostname, dp->name,
+	    		sched(dp)->level, dumper->name);
+		}
+		else {
+	    	log_add(L_WARNING, "%s died while dumping %s:%s lev %d.",
+	    		dumper->name, dp->host->hostname, dp->name,
+	    		sched(dp)->level);
+	    	sched(dp)->attempted++;
+	    	enqueue_disk(&runq, dp);
+		}
+		dp = NULL;
+	    }
+	    break;
+
+	default:
+	    assert(0);
+	}
+	/*
+	 * Wakeup any dumpers that are sleeping because of network
+	 * or disk constraints.
+	 */
+	event_wakeup((event_id_t)handle_idle_wait);
+
+    } while(areads_dataready(dumper->fd));
+}
+
+
+static void
+handle_chunker_result(cookie)
+    void *cookie;
+{
+    static int pending_aborts = 0;
+    chunker_t *chunker = cookie;
+    dumper_t *dumper;
+    disk_t *dp, *sdp;
+    tok_t tok;
+    int result_argc;
+    char *result_argv[MAX_ARGS+1];
+
+    assert(chunker != NULL);
+    dumper = chunker->dumper;
+    assert(dumper != NULL);
+    dp = dumper->dp;
+    assert(dp != NULL && sched(dp) != NULL);
+
+    do {
+
+	short_dump_state();
+
+	tok = getresult(chunker->fd, 1, &result_argc, result_argv, MAX_ARGS+1);
+
+	if(tok != BOGUS) {
+	    /* result_argv[2] always contains the serial number */
+	    sdp = serial2disk(result_argv[2]);
+	    assert(sdp == dp);
+	}
+
+	switch(tok) {
+
+	case DONE: /* DONE <handle> <dumpsize> <errstr> */
+	    if(result_argc != 4) {
+		error("error [chunker DONE result_argc != 4: %d]", result_argc);
+	    }
+
+	    free_serial(result_argv[2]);
+
+	    event_release(chunker->ev_read);
+	    waitpid(chunker->pid, NULL, 0 );
+	    chunker->fd = -1;
+
+	    sched(dp)->dumpsize = (long)atof(result_argv[4]);
+	    if(sched(dp)->origsize != -1) /* dumper already finished */
+		dumper_result(dp);
+
+	    printf("driver: finished-cmd time %s %s chunked %s:%s\n",
+		   walltime_str(curclock()), chunker->name,
+		   dp->host->hostname, dp->name);
+	    fflush(stdout);
+
 	    break;
 
 	case TRYAGAIN: /* TRY-AGAIN <handle> <errstr> */
@@ -1530,6 +1751,7 @@ dump_to_tape(dp)
     long origsize = 0;
     long dumpsize = 0;
     long dumptime = 0;
+    float tapetime = 0;
     tok_t tok;
     int result_argc;
     char *result_argv[MAX_ARGS+1];
@@ -1561,8 +1783,7 @@ dump_to_tape(dp)
 	return 2;	/* fatal problem */
     }
     /* copy port number */
-    strncpy(sched(dp)->destname, result_argv[2], sizeof(sched(dp)->destname)-1);
-    sched(dp)->destname[sizeof(sched(dp)->destname)-1] = '\0';
+    dumper->output_port = atoi(result_argv[2]);
 
     /* tell the dumper to dump to a port */
 
@@ -1599,7 +1820,7 @@ dump_to_tape(dp)
     case DONE: /* DONE <handle> <origsize> <dumpsize> <dumptime> <errstr> */
 	/* everything went fine */
 	origsize = (long)atof(result_argv[3]);
-	dumpsize = (long)atof(result_argv[4]);
+	/*dumpsize = (long)atof(result_argv[4]);*/
 	dumptime = (long)atof(result_argv[5]);
 	break;
 
@@ -1642,6 +1863,8 @@ dump_to_tape(dp)
 
 	if(failed == 1) goto tryagain;	/* dump didn't work */
 	else if(failed == 2) goto fatal;
+
+	sscanf(result_argv[5],"[sec %f kb %ld ",&tapetime,&dumpsize);
 
 	/* every thing went fine */
 	update_info_dumper(dp, origsize, dumpsize, dumptime);

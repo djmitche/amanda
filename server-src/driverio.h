@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.23 1999/05/15 15:08:47 martinea Exp $
+ * $Id: driverio.h,v 1.24 2000/04/18 00:23:16 martinea Exp $
  *
  * driver-related helper functions
  */
@@ -39,6 +39,16 @@
 #define GLOBAL extern
 #endif
 
+/* chunker process structure */
+
+typedef struct chunker_s {
+    char *name;			/* name of this dumper */
+    int pid;			/* its pid */
+    int fd;			/* read/write */
+    event_handle_t *ev_read;	/* read event handle */
+    struct dumper_s *dumper;
+} chunker_t;
+
 /* dumper process structure */
 
 typedef struct dumper_s {
@@ -46,9 +56,11 @@ typedef struct dumper_s {
     int pid;			/* its pid */
     int busy, down;		/* state */
     int fd;			/* read/write */
+    int output_port;		/* output port */
     event_handle_t *ev_read;	/* read event handle */
     event_handle_t *ev_wait;	/* for delayed disks */
     disk_t *dp;			/* disk currently being dumped */
+    chunker_t *chunker;
 } dumper_t;
 
 /* schedule structure */
@@ -58,6 +70,8 @@ typedef struct sched_s {
     int level, degr_level;
     long est_time, degr_time;
     unsigned long est_size, degr_size, act_size;
+    unsigned long origsize, dumpsize;
+    unsigned long dumptime, tapetime;
     char *dumpdate, *degr_dumpdate;
     int est_kps, degr_kps;
     char destname[128];				/* file/port name */
@@ -79,6 +93,7 @@ typedef struct holdalloc_s {
 #define holdalloc(hp)	((holdalloc_t *) (hp)->up)
 
 GLOBAL dumper_t dmptable[MAX_DUMPERS];
+GLOBAL chunker_t chktable[MAX_DUMPERS];
 
 /* command/result tokens */
 
@@ -98,9 +113,12 @@ void init_driverio P((void));
 void startup_tape_process P((char *taper_program));
 void startup_dump_process P((dumper_t *dumper, char *dumper_program));
 void startup_dump_processes P((char *dumper_program, int inparallel));
+void startup_chunk_process P((chunker_t *chunker, char *chunker_program));
+
 tok_t getresult P((int fd, int show, int *result_argc, char **result_argv, int max_arg));
 int taper_cmd P((tok_t cmd, void *ptr, char *destname, int level, char *datestamp));
 int dumper_cmd P((dumper_t *dumper, tok_t cmd, disk_t *dp));
+int chunker_cmd P((chunker_t *chunker, tok_t cmd, disk_t *dp));
 disk_t *serial2disk P((char *str));
 void free_serial P((char *str));
 char *disk2serial P((disk_t *dp));

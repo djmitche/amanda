@@ -1,3 +1,18 @@
+2000-04-17 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/chunker.c: new file for the chunker program.
+	* server-src/Makefile.am: compile it.
+	* server-src/driver.c: many modification.
+	* server-src/driverio.c: many modification.
+	* server-src/driverio.c (startup_chunk_process, chunker_cmd):
+	new functions.
+	* server-src/driverio.h: prototype them.
+	* server-src/driverio.h (struct chunker_s): new structure.
+	* server-src/logfile.c: handle chunker log.
+	* server-src/logfile.h: ditto.
+	* server-src/reporter.c: ditto.
+	* server-src/taper.c: size reduced by TAPE_BLOCK_SIZE.
+
 2000-04-16 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/taper.c: don't crash if the tapelist file

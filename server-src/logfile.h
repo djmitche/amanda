@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.h,v 1.6 1998/07/04 00:20:08 oliva Exp $
+ * $Id: logfile.h,v 1.7 2000/04/18 00:23:16 martinea Exp $
  *
  * interface to logfile module
  */
@@ -52,7 +52,8 @@ typedef enum logtype_e {
 } logtype_t;
 
 typedef enum program_e {
-    P_UNKNOWN, P_PLANNER, P_DRIVER, P_REPORTER, P_DUMPER, P_TAPER, P_AMFLUSH
+    P_UNKNOWN, P_PLANNER, P_DRIVER, P_REPORTER, P_DUMPER, P_CHUNKER,
+    P_TAPER, P_AMFLUSH
 } program_t;
 #define P_LAST P_AMFLUSH
 

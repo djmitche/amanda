@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.59 2000/01/21 06:59:04 oliva Exp $
+ * $Id: reporter.c,v 1.60 2000/04/18 00:23:16 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -66,7 +66,7 @@ typedef struct repdata_s {
 	int datestamp;
 	float sec, kps;
 	int level, filenum;
-    } taper[MAX_TAPER], dumper;
+    } taper[MAX_TAPER], dumper, chunker;
 } repdata_t;
 
 #define data(dp) ((repdata_t *)(dp)->up)
@@ -1198,7 +1198,7 @@ output_summary()
     	ColumnInfo *cd;
 	char TimeRateBuffer[40];
 	if (data(dp)->nb_taper == 0)
-	    data(dp)->nb_taper= 1;
+	    data(dp)->nb_taper = 1;
 	for (i=0; i<data(dp)->nb_taper; i++) {
 	    int devlen;
 
@@ -1257,7 +1257,10 @@ output_summary()
 	       ((!data(dp)->taper[i].success) ||
 	        (data(dp)->dumper.datestamp == data(dp)->taper[i].datestamp))) {
 		origsize = data(dp)->dumper.origsize;
-		outsize  = data(dp)->dumper.outsize;
+		if(data(dp)->taper[i].success) 
+		    outsize  = data(dp)->taper[i].outsize;
+		else
+		    outsize  = data(dp)->dumper.outsize;
 	    }
 	    else {
 		origsize = data(dp)->taper[i].origsize;
@@ -1669,7 +1672,8 @@ handle_success()
     int datestampI;
 
 
-    if(curprog != P_TAPER && curprog != P_DUMPER && curprog != P_PLANNER) {
+    if(curprog != P_TAPER && curprog != P_DUMPER && curprog != P_PLANNER &&
+       curprog != P_CHUNKER) {
 	bogus_line();
 	return;
     }
@@ -1721,6 +1725,7 @@ handle_success()
     }
 
     skip_whitespace(s, ch);
+
 				/* Planner success messages (for skipped
 				   dumps) do not contain statistics */
     if(curprog != P_PLANNER) {
@@ -1792,13 +1797,15 @@ handle_success()
 	tapedisks[level] +=1;
 	stats[i].tapedisks +=1;
 	stats[i].tapesize += kbytes;
+	if(data(dp)->chunker.outsize == 0.0) /* dump to tape */
+	    stats[i].outsize += kbytes;
     }
 
     if(curprog == P_DUMPER) {
 	stats[i].dumper_time += sec;
 	if(dp->compress == COMP_NONE) {
-/*	    if(sp->origsize == -1 || sp->origsize == 0.0)*/
-		sp->origsize = kbytes;
+	   /* if(sp->origsize == -1 || sp->origsize == 0.0)
+		sp->origsize = kbytes;*/
 	}
 	else {
 	    stats[i].coutsize += kbytes;
@@ -1807,7 +1814,11 @@ handle_success()
 	dumpdisks[level] +=1;
 	stats[i].dumpdisks +=1;
 	stats[i].origsize += sp->origsize;
+    }
+
+    if(curprog == P_CHUNKER) {
 	stats[i].outsize += kbytes;
+	data(dp)->chunker.outsize = kbytes;
     }
 
 }
