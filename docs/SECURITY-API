@@ -1,6 +1,6 @@
 AMANDA SECURITY API
 
-$Id: SECURITY-API,v 1.7 1998/12/02 20:11:28 kashmir Exp $
+$Id: SECURITY-API,v 1.8 1999/03/01 21:39:46 kashmir Exp $
 
 by Mike Grupenhoff <kashmir@munge.com>
 
@@ -56,13 +56,14 @@ that type's security_driver_t (section 4.1), or NULL if no driver exists.
 
 3.1.2. security_connect
 
-    security_handle_t *security_connect(const security_driver_t *h,
-	const char *hostname, char **errmsg);
+    void security_connect(const security_driver_t *h, const char *hostname,
+	void (*fn)(void *arg, security_handle_t *h, security_status_t s),
+	void *arg);
 
-Given a security driver, and a hostname, returns a security_handle_t
-(section 4.2) that can be used to communicate with that host.  Returns
-NULL if no connection could be made, and sets errmsg to point to an
-error message explaining why.
+Given a security driver, and a hostname, calls back with a
+security_handle_t (section 4.2) that can be used to communicate with
+that host.  The status arg to the callback is reflects the success
+of the request.  Error messages can be had via security_geterror().
 
 This is expected to be the Amanda server's interface for setting up
 connections to clients.
@@ -101,7 +102,7 @@ security_geterror().
 3.1.6. security_recvpkt
 
     int security_recvpkt(security_handle_t *h,
-	void (*callback)(void *arg, pkt_t *pkt, security_recvpkt_status_t),
+	void (*callback)(void *arg, pkt_t *pkt, security_status_t),
 	void *arg, int timeout);
 
 Requests that when incoming packets arrive for this handle, the given
@@ -266,15 +267,16 @@ This is an object that describes a data connection to a remote host.
 It is always associated and derived from a security_handle_t.
 Arbitrary data can be passed over a security stream.
 
-4.4. security_recvpkt_status_t
+4.4. security_status_t
 
 This is an enumerated type that is passed to the callback of
-security_recvpkt.  The possible values it can have are:
+security_recvpkt and security_connect.  The possible values it can have
+are:
 
-    RECV_OK - the pkt_t was received fine
-    RECV_TIMEOUT - no pkt_t was received within the time specified in
+    S_OK - the pkt_t was received fine
+    S_TIMEOUT - no pkt_t was received within the time specified in
 	the timeout argument to security_recvpkt().
-    RECV_ERROR - an error occurred during reception.  Call
+    S_ERROR - an error occurred during reception.  Call
 	security_geterror() for more information.
 
 5. SECURITY DRIVERS
@@ -301,7 +303,8 @@ may have space at the end allocated for private storage.
 
 5.3. connect
 
-    int (*connect)(void *handle, const char *hostname);
+    void (*connect)(void *handle, const char *hostname,
+	void (*fn)(void *, security_handle_t *, security_status_t), void *);
 
 This is the implementation of security_connect().  It actually sets up
 the connection, and then returns a structure describing the connection.
@@ -339,8 +342,8 @@ usually added by the driver before transmission.
 
 5.7. recvpkt
 
-    void (*recvpkt)(void *handle, void (*callback)(void *arg, pkt_t *pkt),
-	void *arg);
+    void (*recvpkt)(void *handle,
+	void (*callback)(void *arg, pkt_t *pkt, security_status_t), void *arg);
 
 The implementation of security_recvpkt().  It will typically be layered
 onto the event interface somehow.  It can assume that a caller will
