@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.9 1998/12/03 18:36:02 kashmir Exp $
+ * $Id: bsd-security.c,v 1.10 1998/12/03 19:20:37 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -599,7 +599,9 @@ recvpkt_callback(cookie)
      */
     for (bh = handleq_first(); bh != NULL; bh = handleq_next(bh)) {
 	if (strcmp(bh->proto_handle, handle) == 0 &&
-	    memcmp(&bh->peer, &peer, sizeof(peer)) == 0) {
+	    memcmp(&bh->peer.sin_addr, &peer.sin_addr,
+	    sizeof(peer.sin_addr)) == 0 &&
+	    bh->peer.sin_port == peer.sin_port) {
 	    bh->sequence = sequence;
 
 	    /*
@@ -1126,7 +1128,7 @@ pkthdr2str(bh, pkt)
     assert(bh != NULL);
     assert(pkt != NULL);
 
-    ap_snprintf(retbuf, sizeof(retbuf), "Amanda %d.%d %s HANDLE %d SEQ %d\n",
+    ap_snprintf(retbuf, sizeof(retbuf), "Amanda %d.%d %s HANDLE %s SEQ %d\n",
 	VERSION_MAJOR, VERSION_MINOR, pkt_type2str(pkt->type),
 	bh->proto_handle, bh->sequence);
 

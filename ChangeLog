@@ -1,5 +1,13 @@
 1998-12-03  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/bsd-security.c (recvpkt_callback): only compare
+	the sin_addr and sin_port fields in the sockaddr when determining
+	what handle an incoming packet belongs to.
+	* common-src/bsd-security.c (pkthdr2str): use %s for the handle,
+	since it's a string.
+
+1998-12-03  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/bsd-security.c (bsd_sendpkt): newline-terminate
 	the 'SECURITY USER' line in the packet
 	* common-src/bsd-security.c (check_user): fix many bugs
