@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.35 2001/12/09 20:36:03 martinea Exp $
+ * $Id: holding.c,v 1.36 2001/12/30 17:42:07 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -337,7 +337,7 @@ int verbose;
     holding_t *dir, **directories;
     int i;
     int ndirs;
-    char answer[1024], *result;
+    char answer[1024];
     char max_char = '\0', *ch, chupper = '\0';
 
     holding_list = pick_all_datestamp(verbose);
@@ -367,7 +367,7 @@ int verbose;
 		max_char = 'A'+i;
 	    }
 	    printf("Select directories to flush [A..%c]: [ALL] ", 'A' + i - 1);
-	    result = fgets(answer, sizeof(answer), stdin);
+	    fgets(answer, sizeof(answer), stdin);
 	    if(strlen(answer) == 1 || !strncasecmp(answer,"ALL",3)) {
 		amfree(directories);
 		return(holding_list);

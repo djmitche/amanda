@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.22 2001/03/09 02:25:35 martinea Exp $
+ * $Id: changer.c,v 1.23 2001/12/30 17:42:07 martinea Exp $
  *
  * interface routines for tape changers
  */
@@ -263,13 +263,11 @@ int (*user_init) P((int rc, int nslots, int backwards));
 int (*user_slot) P((int rc, char *slotstr, char *device));
 {
     char *device = NULL, *curslotstr = NULL;
-    int nslots, checked, backwards, rc, done;
+    int nslots, backwards, rc, done;
 
     rc = changer_info(&nslots, &curslotstr, &backwards);
     done = user_init(rc, nslots, backwards);
     amfree(curslotstr);
-
-    checked = 0;
 
     rc = changer_loadslot("current", &curslotstr, &device);
     if(rc > 0) {

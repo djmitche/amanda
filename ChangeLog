@@ -1,3 +1,29 @@
+2001-12-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* changer-src/chg-scsi.c (get_relative_target): return -1;
+	* changer-src/scsi-irix.c (SCSI_ExecuteCommand): Remove Zero variable.
+	* common-src/amanda.h: include strings.h if HAVE_STRINGS_H is defined.
+	* server-src/amadmin.c (info_one): Remove lev0date variable.
+	* server-src/amadmin.c (import_db): Remove vers_comment variable.
+	* server-src/amindexd.c (main): Remove arg_len variable.
+	* server-src/amtrmidx.c (main): Remove level_position and
+	  datestamp_position variables.
+	* server-src/changer.c (changer_current): Remove checked variable.
+	* server-src/conffile.c (read_confline): Check value of RESERVE.
+	* server-src/conffile.c (get_tapetype): Check value of LENGTH and
+	  FILEMARK.
+	* server-src/diskfile.h: bit field of 1 bit must be unsigned.
+	* server-src/driver.c (main): Don't check the value of RESERVE.
+	* server-src/driver.c (find_diskspace): Remove as_pref variable.
+	* server-src/driverio.c (getresult): cast cmd_t.
+	* server-src/chunker.c (databuf_flush): save_type is a filetype_t.
+	* server-src/find.c (search_logfile): Remove host_undo_ch and
+	  disk_undo_ch variables.
+	* server-src/holding.c (pick_datestamp): Remove result variable.
+	* server-src/server_util.c (getcmd): Loop on a cmd_t variable.
+	* server-src/taper.c (tape_writer_side): Remove out_open variable.
+	* tape-src/tapeio.c (tapefd_close): Cast to (void *).
+
 2001-12-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* client-src/selfcheck.c: Fix compiler warning.

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.c,v 1.7 2001/12/29 21:58:00 martinea Exp $
+ * $Id: server_util.c,v 1.8 2001/12/30 17:42:07 martinea Exp $
  *
  */
 
@@ -48,7 +48,7 @@ cmd_t getcmd(cmdargs)
 struct cmdargs *cmdargs;
 {
     char *line;
-    int i;
+    cmd_t cmd_i;
 
     assert(cmdargs != NULL);
 
@@ -65,17 +65,20 @@ struct cmdargs *cmdargs;
     amfree(line);
 
 #if DEBUG
-    printf("argc = %d\n", cmdargs->argc);
-    for (i = 0; i < cmdargs->argc; i++)
-	printf("argv[%d] = \"%s\"\n", i, cmdargs->argv[i]);
+    {
+	int i;
+	printf("argc = %d\n", cmdargs->argc);
+	for (i = 0; i < cmdargs->argc; i++)
+	    printf("argv[%d] = \"%s\"\n", i, cmdargs->argv[i]);
+    }
 #endif
 
     if (cmdargs->argc < 1)
 	return (BOGUS);
 
-    for(i=0; cmdstr[i] != NULL; i++)
-	if(strcmp(cmdargs->argv[1], cmdstr[i]) == 0)
-	    return (i);
+    for(cmd_i=BOGUS; cmdstr[cmd_i] != NULL; cmd_i++)
+	if(strcmp(cmdargs->argv[1], cmdstr[cmd_i]) == 0)
+	    return (cmd_i);
     return (BOGUS);
 }
 

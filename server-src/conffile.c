@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.81 2001/11/08 18:46:26 martinea Exp $
+ * $Id: conffile.c,v 1.82 2001/12/30 17:42:07 martinea Exp $
  *
  * read configuration file
  */
@@ -917,7 +917,11 @@ static int read_confline()
     case CTIMEOUT:  get_simple(&conf_ctimeout,  &seen_ctimeout,  INT);    break;
     case TAPEBUFS:  get_simple(&conf_tapebufs,  &seen_tapebufs,  INT);    break;
     case AUTOFLUSH: get_simple(&conf_autoflush, &seen_autoflush, BOOL);   break;
-    case RESERVE:   get_simple(&conf_reserve,   &seen_reserve,	 INT);    break;
+    case RESERVE:   get_simple(&conf_reserve,   &seen_reserve,	 INT);
+		    if(conf_reserve.i < 0 || conf_reserve.i > 100) {
+			parserror("reserve must be between 0 and 100");
+		    }
+		    break;
     case COLUMNSPEC:get_simple(&conf_columnspec,&seen_columnspec,STRING); break;
 
     case LOGFILE: /* XXX - historical */
@@ -1415,6 +1419,8 @@ static void get_tapetype()
 {
     int done;
     int save_overwrites;
+    val_t value;
+
     keytab_t *save_kt;
     long blocksize_kb;
 
@@ -1463,15 +1469,21 @@ static void get_tapetype()
 	    }
 	    break;
 	case LENGTH:
-	    get_simple((val_t *)&tpcur.length, &tpcur.s_length, INT);
-	    if(tpcur.length < 0) {
+	    get_simple(&value, &tpcur.s_length, INT);
+	    if(value.i < 0) {
 		parserror("Tape length must be positive");
+	    }
+	    else {
+		tpcur.length = value.i;
 	    }
 	    break;
 	case FILEMARK:
-	    get_simple((val_t *)&tpcur.filemark, &tpcur.s_filemark, INT);
-	    if(tpcur.filemark < 0) {
+	    get_simple(&value, &tpcur.s_filemark, INT);
+	    if(value.i < 0) {
 		parserror("Tape file mark size must be positive");
+	    }
+	    else {
+		tpcur.filemark = value.i;
 	    }
 	    break;
 	case SPEED:

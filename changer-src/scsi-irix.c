@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-irix.c,v 1.17 2001/06/07 12:33:28 ant Exp $
+ * $Id: scsi-irix.c,v 1.18 2001/12/30 17:42:07 martinea Exp $
  *
  * Interface to execute SCSI commands on an SGI Workstation
  *
@@ -152,7 +152,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
   extern OpenFiles_T *pDev;
   ExtendedRequestSense_T ExtendedRequestSense;
   struct dsreq ds;
-  int Zero = 0, Result;
+  int Result;
   int retries = 5;
   
   if (pDev[DeviceFD].avail == 0)

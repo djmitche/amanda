@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.114 2001/12/09 20:36:03 martinea Exp $
+ * $Id: driver.c,v 1.115 2001/12/30 17:42:07 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -237,10 +237,6 @@ main(main_argc, main_argv)
     use_lffo	= 1;
 
     reserve = getconf_int(CNF_RESERVE);
-    if (reserve < 0 || reserve > 100) {
-	log_add(L_WARNING, "WARNING: reserve must be between 0 and 100!");
-	reserve = 100;
-    }
 
     total_disksize = 0;
     for(hdp = getconf_holdingdisks(), dsk = 0; hdp != NULL; hdp = hdp->next, dsk++) {
@@ -1910,10 +1906,8 @@ find_diskspace(size, cur_idle, pref)
     int i=0, num_holdingdisks=0; /* are we allowed to use the global thing? */
     int j, minj;
     char *used;
-    int as_pref;
     long halloc, dalloc, hfree, dfree;
 
-    as_pref = (pref!=NULL);
     size = am_round(size, DISK_BLOCK_KB);
 
 #ifdef HOLD_DEBUG

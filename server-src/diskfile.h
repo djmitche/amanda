@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.18 2000/12/30 18:29:24 martinea Exp $
+ * $Id: diskfile.h,v 1.19 2001/12/30 17:42:07 martinea Exp $
  *
  * interface for disklist file reading code
  */
@@ -68,12 +68,12 @@ typedef struct disk_s {
     int compress;			/* type of compression to use */
     float comprate[2];			/* default compression rates */
     /* flag options */
-    int record:1;			/* record dump in /etc/dumpdates ? */
-    int skip_incr:1;			/* incs done externally ? */
-    int skip_full:1;			/* fulls done externally ? */
-    int no_hold:1;			/* don't use holding disk ? */
-    int kencrypt:1;
-    int index:1;			/* produce an index ? */
+    unsigned int record:1;			/* record dump in /etc/dumpdates ? */
+    unsigned int skip_incr:1;			/* incs done externally ? */
+    unsigned int skip_full:1;			/* fulls done externally ? */
+    unsigned int no_hold:1;			/* don't use holding disk ? */
+    unsigned int kencrypt:1;
+    unsigned int index:1;			/* produce an index ? */
     int spindle;			/* spindle # - for parallel dumps */
     int inprogress;			/* being dumped now? */
     int todo;

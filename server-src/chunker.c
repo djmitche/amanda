@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.11 2001/12/04 15:42:42 martinea Exp $
+/* $Id: chunker.c,v 1.12 2001/12/30 17:42:07 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -433,7 +433,7 @@ databuf_flush(db)
     char *tmp_filename = NULL;
     char sequence[NUM_STR_SIZE];
     int newfd;
-    int save_type;
+    filetype_t save_type;
 
     /*
      * If there's no data, do nothing.

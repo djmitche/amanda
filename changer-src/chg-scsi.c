@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.35 2001/12/29 21:57:59 martinea Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.36 2001/12/30 17:42:07 martinea Exp $";
 #endif
 /*
  * 
@@ -933,6 +933,7 @@ int get_relative_target(int fd,int nslots,char *parameter,int param_index,
     exit(2);
     break;
   };
+  return(-1); /* never executed */
 }
 
 int ask_clean(char *tapedev)

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.14 2001/11/08 18:46:26 martinea Exp $
+ * $Id: find.c,v 1.15 2001/12/30 17:42:07 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -526,8 +526,8 @@ char *label, *logfile;
 int datestamp, datestamp_aux;
 {
     FILE *logf;
-    char *host, *host_undo, host_undo_ch;
-    char *disk, *disk_undo, disk_undo_ch;
+    char *host, *host_undo;
+    char *disk, *disk_undo;
     int   datestampI;
     char *rest;
     char *ck_label;
@@ -590,7 +590,6 @@ int datestamp, datestamp_aux;
 	    host = s - 1;
 	    skip_non_whitespace(s, ch);
 	    host_undo = s - 1;
-	    host_undo_ch = *host_undo;
 	    *host_undo = '\0';
 
 	    skip_whitespace(s, ch);
@@ -601,7 +600,6 @@ int datestamp, datestamp_aux;
 	    disk = s - 1;
 	    skip_non_whitespace(s, ch);
 	    disk_undo = s - 1;
-	    disk_undo_ch = *disk_undo;
 	    *disk_undo = '\0';
 
 	    skip_whitespace(s, ch);

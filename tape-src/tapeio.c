@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: tapeio.c,v 1.39 2001/07/31 23:19:58 jrjackson Exp $
+ * $Id: tapeio.c,v 1.40 2001/12/30 17:42:07 martinea Exp $
  *
  * implements generic tape I/O functions
  */
@@ -547,7 +547,7 @@ tapefd_close(fd)
 	amfree(tape_info[fd].datestamp);
 	amfree(tape_info[fd].tapetype);
 	memset(tape_info + fd, 0, sizeof(*tape_info));
-        tape_info_init(tape_info + fd);
+        tape_info_init((void *)(tape_info + fd));
     }
     return res;
 }
