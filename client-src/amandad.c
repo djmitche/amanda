@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.8 1997/08/27 08:11:25 amcore Exp $
+ * $Id: amandad.c,v 1.9 1997/08/28 16:44:20 amcore Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -462,11 +462,11 @@ send_response:
 	    break;
 	else {
 	    dbprintf(("%s: weird, it's not a proper ack\n", argv[0]));
-	    dbprintf(("  addr: peer %X dup %X, port: peer %X dup %X\n",
-		      in_msg.peer.sin_addr.s_addr,
-		      dup_msg.peer.sin_addr.s_addr,
-		      in_msg.peer.sin_port,
-		      dup_msg.peer.sin_port));
+	    dbprintf(("  addr: peer %lX dup %lX, port: peer %lX dup %lX\n",
+		      (unsigned long)in_msg.peer.sin_addr.s_addr,
+		      (unsigned long)dup_msg.peer.sin_addr.s_addr,
+		      (unsigned long)in_msg.peer.sin_port,
+		      (unsigned long)dup_msg.peer.sin_port));
 	}		
     }
     /* XXX log if retry count exceeded */
