@@ -1,3 +1,8 @@
+2002-07-02  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* common-src/file.c (debug_agets): line_free was badly set when
+	the buffer size in increased.
+
 2002-07-19  John R. Jackson (jrj@purdue.edu)
 
 	* common-src/amanda.h: Fix bad #define.
