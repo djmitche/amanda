@@ -1,7 +1,6 @@
 %!
 %%BoundingBox: 25 25 290 900
 %%Title: AMANDA ExaLabel
-%%Creator: AMANDA genlabel program
 %%Pages: 1
 %%EndComments
 
@@ -25,11 +24,11 @@
 %   |logo|     TAPE_NAME     |   <- section 'B'  (logo) <- section 'F'
 %   |    | version      date |   <- section 'C'
 %   +----+--+--------+-------+
-%   | h fs l| h fs l | h fs l|   <- section 'D'
+%   | h   fs   l | h  fs   l |   <- section 'D'
 %   +-------+--------+-------+
-%   |       |        |       |   <- section 'E'
-%   |       |        |       |
-%   v       v        v       v
+%   |            |           |   <- section 'E'
+%   |            |           |
+%   v            v           v
 %
 % Sections D and E, which hold the bulk of the information are 
 % cut into columns.
@@ -62,8 +61,8 @@
 
 /HeadingFont		{ /Palatino-Bold findfont 8 scalefont setfont } def
 /HeadingHostPos		{ 5 650 } def
-/HeadingFsPos		{ 50 650 } def
-/HeadingLvlPos		{ 75 650 } def
+/HeadingFsPos		{ 45 650 } def
+/HeadingLvlPos		{ 120 650 } def
 
 % section 'E' font, and line separation
 %
@@ -83,8 +82,8 @@
 % number of columns for section 'E,' column width, position of first 
 % entry in first column, y coordinate of top and bottom of dividing lines
 %
-/NumColumns		{ 3 } def
-/ColumnWidth		{ 88 } def
+/NumColumns		{ 2 } def
+/ColumnWidth		{ 132 } def
 /ColumnBasePos		{ 25 633 } def
 /TopColDivLine		{ 665 } def
 /BotColDivLine		{ 0 } def
@@ -238,3 +237,27 @@ ColumnBasePos /CurrColumnY exch def
 %%%%
 %%%% END OF TEMPLATE FILE
 %%%% 
+
+(March 17, 1998) DrawDate
+
+(Amanda Version 2.4.0) DrawVers
+(daily3_02) DrawTitle
+(Total Size:         60.0 MB) DrawStat
+(Tape Used (%)        1.4  %) DrawStat
+(Compression Ratio:   --   %) DrawStat
+(Filesystems Dumped:   13) DrawStat
+(allison) (/) (0) (1) (1) DrawHost
+(allison) (/opt) (0) (1) (1) DrawHost
+(allison) (/usr) (1) (1) (1) DrawHost
+(allison) (/var) (0) (1) (1) DrawHost
+(gonzo) (/) (0) (1) (1) DrawHost
+(gonzo) (/gonzo) (1) (1) (1) DrawHost
+(gonzo) (/opt) (0) (1) (1) DrawHost
+(gonzo) (/usr) (1) (1) (1) DrawHost
+(gonzo) (/usr/local) (1) (1) (1) DrawHost
+(gonzo) (/var) (0) (1) (1) DrawHost
+(shirttail) (/) (1) (1) (1) DrawHost
+(shirttail) (/usr) (1) (1) (1) DrawHost
+(shirttail) (/usr/local) (1) (1) (1) DrawHost
+
+showpage
