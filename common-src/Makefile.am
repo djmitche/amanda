@@ -12,7 +12,8 @@ REGsrcdir = $(srcdir)/$(REGDIR)
 INCLUDES = -I$(REGsrcdir)
 
 libamanda_la_SOURCES = \
-	alloc.c		amflock.c	debug.c		dgram.c		\
+	alloc.c		amflock.c	clock.c		debug.c		\
+	dgram.c		\
 	error.c		file.c		fileheader.c	match.c		\
 	protocol.c	regcomp.c	regerror.c	regexec.c	\
 	regfree.c	security.c	statfs.c	stream.c	\
@@ -26,6 +27,7 @@ libamanda_a_SOURCES =	$(libamanda_la_SOURCES)
 libamanda_a_LIBADD =	@LIBOBJS@ @ALLOCA@
 
 noinst_HEADERS =	amanda.h	arglist.h	\
+			clock.h				\
 			dgram.h		protocol.h	\
 			statfs.h	stream.h	\
 			token.h		version.h	\
