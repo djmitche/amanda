@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.45 2001/07/31 23:19:57 jrjackson Exp $
+ * $Id: amandad.c,v 1.46 2002/03/24 20:26:18 jrjackson Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -130,6 +130,8 @@ static struct {
 
 int ack_timeout     = ACK_TIMEOUT;
 
+static char *pgm = "amandad";		/* in case argv[0] is not set */
+
 int main P((int argc, char **argv));
 
 static int allocstream P((struct active_service *, int));
@@ -178,7 +180,21 @@ main(argc, argv)
 
     safe_cd();
 
-    set_pname("amandad");
+    /*
+     * When called via inetd, it is not uncommon to forget to put the
+     * argv[0] value on the config line.  On some systems (e.g. Solaris)
+     * this causes argv and/or argv[0] to be NULL, so we have to be
+     * careful getting our name.
+     */
+    if (argc >= 1 && argv != NULL && argv[0] != NULL) {
+	if((pgm = strrchr(argv[0], '/')) != NULL) {
+	    pgm++;
+	} else {
+	    pgm = argv[0];
+	}
+    }
+
+    set_pname(pgm);
 
 #ifdef USE_DBMALLOC
     dbmalloc_info.start.size = malloc_inuse(&dbmalloc_info.start.hist);
@@ -302,9 +318,13 @@ main(argc, argv)
 	extern int db_fd;
 	dup2(db_fd, 2);
     }
-    dbprintf(("%s: version %s\n", argv[0], version()));
+    dbprintf(("%s: version %s\n", pgm, version()));
     for (i = 0; version_info[i] != NULL; i++)
-	dbprintf(("%s: %s", argv[0], version_info[i]));
+	dbprintf(("%s: %s", pgm, version_info[i]));
+
+    if (! (argc >= 1 && argv != NULL && argv[0] != NULL)) {
+	dbprintf(("%s: WARNING: argv[0] not defined: check inetd.conf\n", pgm));
+    }
 
     /*
      * Schedule to call protocol_accept() when new security handles
@@ -386,7 +406,8 @@ protocol_accept(handle, pkt)
      * If pkt is NULL, then there was a problem with the new connection.
      */
     if (pkt == NULL) {
-	dbprintf(("amandad: accept error: %s\n",
+	dbprintf(("%s: accept error: %s\n",
+	    pgm,
 	    security_geterror(handle)));
 	pkt_init(&nak, P_NAK, "ERROR %s\n", security_geterror(handle));
 	do_sendpkt(handle, &nak);
@@ -401,7 +422,8 @@ protocol_accept(handle, pkt)
      * If this is not a REQ packet, just forget about it.
      */
     if (pkt->type != P_REQ) {
-	dbprintf(("amandad: received unexpected %s packet:\n<<<<<\n%s>>>>>\n\n",
+	dbprintf(("%s: received unexpected %s packet:\n<<<<<\n%s>>>>>\n\n",
+	    pgm,
 	    pkt_type2str(pkt->type), pkt->body));
 	security_close(handle);
 	return;
@@ -438,7 +460,7 @@ protocol_accept(handle, pkt)
 	if (strcmp(services[i], service) == 0)
 	    break;
     if (i == NSERVICES) {
-	dbprintf(("amandad: %s: invalid service\n", service));
+	dbprintf(("%s: %s: invalid service\n", pgm, service));
 	pkt_init(&nak, P_NAK, "ERROR %s: invalid service\n", service);
 	goto sendnak;
     }
@@ -450,7 +472,7 @@ protocol_accept(handle, pkt)
     service = tok;
 
     if (access(service, X_OK) < 0) {
-	dbprintf(("amandad: can't execute %s: %s\n", service, strerror(errno)));
+	dbprintf(("%s: can't execute %s: %s\n", pgm, service, strerror(errno)));
 	pkt_init(&nak, P_NAK, "ERROR execute access to \"%s\" denied\n",
 	    service);
 	goto sendnak;
@@ -461,8 +483,8 @@ protocol_accept(handle, pkt)
 	as = TAILQ_NEXT(as, tq)) {
 	    if (strcmp(as->cmd, service) == 0 &&
 		strcmp(as->arguments, arguments) == 0) {
-		    dbprintf(("amandad: %s %s: already running, acking req\n",
-			service, arguments));
+		    dbprintf(("%s: %s %s: already running, acking req\n",
+			pgm, service, arguments));
 		    pkt_init(&nak, P_ACK, "");
 		    goto sendnak;
 	    }
@@ -472,12 +494,12 @@ protocol_accept(handle, pkt)
      * create a new service instance, and send the arguments down
      * the request pipe.
      */
-    dbprintf(("amandad: creating new service: %s\n%s\n", service, arguments));
+    dbprintf(("%s: creating new service: %s\n%s\n", pgm, service, arguments));
     as = service_new(handle, service, arguments);
     if (writebuf(as, arguments, strlen(arguments)) < 0) {
 	const char *errmsg = strerror(errno);
-	dbprintf(("amandad: error sending arguments to %s: %s\n", service,
-	    errmsg));
+	dbprintf(("%s: error sending arguments to %s: %s\n",
+	    pgm, service, errmsg));
 	pkt_init(&nak, P_NAK, "ERROR error writing arguments to %s: %s\n",
 	    service, errmsg);
 	goto sendnak;
@@ -498,8 +520,8 @@ protocol_accept(handle, pkt)
 
 badreq:
     pkt_init(&nak, P_NAK, "ERROR invalid REQ\n");
-    dbprintf(("amandad: received invalid %s packet:\n<<<<<\n%s>>>>>\n\n",
-	pkt_type2str(pkt->type), pkt->body));
+    dbprintf(("%s: received invalid %s packet:\n<<<<<\n%s>>>>>\n\n",
+	pgm, pkt_type2str(pkt->type), pkt->body));
 
 sendnak:
     if (pktbody != NULL)
@@ -565,8 +587,8 @@ state_machine(as, action, pkt)
 	 * Send a nak, and return.
 	 */
 	case A_SENDNAK:
-	    dbprintf(("amandad: received unexpected %s packet\n",
-		pkt_type2str(pkt->type)));
+	    dbprintf(("%s: received unexpected %s packet\n",
+		pgm, pkt_type2str(pkt->type)));
 	    dbprintf(("<<<<<\n%s----\n\n", pkt->body));
 	    pkt_init(&nak, P_NAK, "ERROR unexpected packet type %s\n",
 		pkt_type2str(pkt->type));
@@ -653,7 +675,7 @@ s_repwait(as, action, pkt)
 	 * and go back and wait for more data.
 	 */
 	if (pkt->type == P_REQ) {
-	    dbprintf(("amandad: received dup P_REQ packet, ACKing it\n"));
+	    dbprintf(("%s: received dup P_REQ packet, ACKing it\n", pgm));
 	    pkt_init(&as->rep_pkt, P_ACK, "");
 	    do_sendpkt(as->security_handle, &as->rep_pkt);
 	    return (A_PENDING);

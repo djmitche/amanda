@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.64 2002/03/08 21:48:19 martinea Exp $
+ * $Id: amindexd.c,v 1.65 2002/03/24 20:26:18 jrjackson Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -79,6 +79,8 @@ char *config_dir = NULL;			/* config directory */
 char *target_date = NULL;
 disklist_t disk_list;				/* all disks in cur config */
 find_result_t *output_find = NULL;
+
+static char *pgm = "amindexd";			/* in case argv[0] is not set */
 
 static int amindexd_debug = 0;
 
@@ -787,7 +789,21 @@ char **argv;
 
     safe_cd();
 
-    set_pname("amindexd");
+    /*
+     * When called via inetd, it is not uncommon to forget to put the
+     * argv[0] value on the config line.  On some systems (e.g. Solaris)
+     * this causes argv and/or argv[0] to be NULL, so we have to be
+     * careful getting our name.
+     */
+    if (argc >= 1 && argv != NULL && argv[0] != NULL) {
+	if((pgm = strrchr(argv[0], '/')) != NULL) {
+	    pgm++;
+	} else {
+	    pgm = argv[0];
+	}
+    }
+
+    set_pname(pgm);
 
 #ifdef FORCE_USERID
 
@@ -804,6 +820,13 @@ char **argv;
     }
 
 #endif	/* FORCE_USERID */
+
+    dbopen();
+    dbprintf(("%s: version %s\n", get_pname(), version()));
+
+    if (! (argc >= 1 && argv != NULL && argv[0] != NULL)) {
+	dbprintf(("%s: WARNING: argv[0] not defined: check inetd.conf\n", pgm));
+    }
 
     /* initialize */
 
@@ -822,9 +845,6 @@ char **argv;
 	argc--;
 	argv++;
     }
-
-    dbopen();
-    dbprintf(("%s: version %s\n", get_pname(), version()));
 
     if(gethostname(local_hostname, sizeof(local_hostname)-1) == -1)
 	error("gethostname: %s", strerror(errno));
