@@ -1,5 +1,9 @@
 1998-11-24  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/amanda.h: if no writev() decl exists, declare one
+
+1998-11-24  Mike Grupenhoff <kashmir@munge.com>
+
 	* configure.in: check for <sys/uio.h>, check for a writev() decl
 	in <unistd.h> and/or <sys/uio.h>
 
