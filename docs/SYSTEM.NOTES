@@ -18,6 +18,7 @@ kind of trouble.  However, you must apply the patch in
 patches/gcc-sol26.patch for Solaris 2.6's header files to be fixed
 correctly.
 
+---------------------------------------------------------------------------
 SunOS 4.x
 ---------
 
@@ -72,6 +73,11 @@ versions of dump on most Linux sites and CD-ROMs.
 Make sure the user that runs configure has permission to run the dump
 program, otherwise configure may misdetect an ability of dump to
 accept a -E (for estimates) switch.
+
+GNUtar 1.11.8, distributed with some Linux versions, will cause index
+failures (Index returned -1).  Upgrading to GNUtar 1.12 fixes this
+problem.  This is not a Linux-specific problem, but it is quite common
+in this platform.
 
 ---------------------------------------------------------------------------
 Digital Unix 4
