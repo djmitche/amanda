@@ -928,6 +928,7 @@ static void init_dumptype_defaults()
     dpcur.comment = "";
     dpcur.program = "DUMP";
     dpcur.exclude = (char *)0;
+    dpcur.exclude_list = 0;
     dpcur.priority = 1;
     dpcur.dumpcycle = conf_dumpcycle.i;
     dpcur.maxcycle = conf_maxcycle.i;
@@ -1003,6 +1004,7 @@ static void copy_dumptype()
     dtcopy(comment, s_comment);
     dtcopy(program, s_program);
     dtcopy(exclude, s_exclude);
+    dtcopy(exclude_list, s_exclude);
     dtcopy(priority, s_priority);
     dtcopy(dumpcycle, s_dumpcycle);
     dtcopy(maxcycle, s_maxcycle);
@@ -1263,7 +1265,6 @@ static void get_dumpopts() /* XXX - for historical compatability */
 {
     int done;
     keytab_t *save_kt;
-    char efile[256];
 
     save_kt = keytable;
     keytable = dumpopts_keytable;
@@ -1276,14 +1277,14 @@ static void get_dumpopts() /* XXX - for historical compatability */
 	case EXCLUDE_FILE:
 	    ckseen(&dpcur.s_exclude);
 	    get_conftoken(STRING);
-	    sprintf(efile, "exclude-file=%s;", tokenval.s);
-	    dpcur.exclude = stralloc(efile);
+	    dpcur.exclude = stralloc(tokenval.s);
+	    dpcur.exclude_list = 0;
 	    break;
 	case EXCLUDE_LIST:
 	    ckseen(&dpcur.s_exclude);
 	    get_conftoken(STRING);
-	    sprintf(efile, "exclude-list=%s;", tokenval.s);
-	    dpcur.exclude = stralloc(efile);
+	    dpcur.exclude = stralloc(tokenval.s);
+	    dpcur.exclude_list = 1;
 	    break;
 	case KENCRYPT:   ckseen(&dpcur.s_kencrypt);  dpcur.kencrypt = 1; break;
 	case SKIP_INCR:  ckseen(&dpcur.s_skip_incr); dpcur.skip_incr= 1; break;
@@ -1496,7 +1497,8 @@ keytab_t exclude_keytable[] = {
 
 static void get_exclude()
 {
-    char *excl, efile[256];
+    char *excl;
+    int excl_list;
     keytab_t *save_kt;
 
     save_kt = keytable;
@@ -1507,20 +1509,22 @@ static void get_exclude()
     get_conftoken(ANY);
     switch(tok) {
     case STRING:
-	sprintf(efile, "exclude-file=%s;", tokenval.s);
-	excl = stralloc(efile);
+	excl = stralloc(tokenval.s);
+	excl_list = 0;
 	break;
     case LIST:
 	get_conftoken(STRING);
-	sprintf(efile, "exclude-list=%s;", tokenval.s);
-	excl = stralloc(efile);
+	excl = stralloc(tokenval.s);
+	excl_list = 1;
 	break;
     default:
 	parserror("a quoted string expected");
 	excl = (char *)0;
+	excl_list = 0;
     }
 
     dpcur.exclude = excl;
+    dpcur.exclude_list = excl_list;
 
     keytable = save_kt;
 }
@@ -1684,12 +1688,9 @@ static int get_bool()
 	val = 0;
 	break;
     case NL:
+    default:
 	unget_conftoken();
 	val = 2; /* no argument - most likely TRUE */
-	break;
-    default:
-	parserror("a YES or NO expected");
-	val = 0;
     }
 
     keytable = save_kt;

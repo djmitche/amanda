@@ -864,12 +864,19 @@ host_t *hostp;
 	remove_disk(&startq, dp);
 
 	for(i = 0; i < MAX_LEVELS; i++) {
+	    char exc[256];
 	    int lev = est(dp)->level[i];
+
 	    if(lev == -1) break;
 
-	    sprintf(line, "%s %s %d %s %d %s\n", dp->program,
+	    if(dp->exclude)
+		sprintf(exc, " exclude-%s=%s",
+			(dp->exclude_list? "list" : "file"),
+			dp->exclude);
+
+	    sprintf(line, "%s %s %d %s %d%s\n", dp->program,
 		    dp->name, lev, est(dp)->dumpdate[i], dp->platter,
-		    (dp->exclude ? dp->exclude : ""));
+		    (dp->exclude ? exc : ""));
 	    strcat(req, line);
 	    disks++;
 	}

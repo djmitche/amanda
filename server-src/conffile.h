@@ -89,6 +89,7 @@ typedef struct dumptype_s {
     char *comment;
     char *program;
     char *exclude;
+    int exclude_list;
     long priority;
     long dumpcycle;
     int maxcycle;

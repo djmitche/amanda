@@ -251,7 +251,13 @@ disk_t *dp;
 
     if(!dp->record) strcat(str,"no-record;");
     if(dp->index) strcat(str,"index;");
-    if(dp->exclude) strcat(str, dp->exclude);
+
+    if(dp->exclude) {
+	strcat(str, "exclude-");
+	strcat(str, (dp->exclude_list? "list=" : "file="));
+	strcat(str, dp->exclude);
+	strcat(str, ";");
+    }
 
     return str;
 }

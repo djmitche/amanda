@@ -259,6 +259,7 @@ static int read_diskline()
     disk->dtype_name = dtype->name;
     disk->program   = dtype->program;
     disk->exclude   = dtype->exclude;
+    disk->exclude_list = dtype->exclude_list;
     disk->priority  = dtype->priority;
     disk->dumpcycle = dtype->dumpcycle;
     disk->frequency = dtype->frequency;

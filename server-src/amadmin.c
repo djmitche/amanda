@@ -985,7 +985,7 @@ disk_t *dp;
 
     printf("        program \"%s\"\n", dp->program);
     if(dp->exclude != (char *)0)
-	printf("        exclude %s\n", dp->exclude);
+	printf("        exclude %s%s\n", dp->exclude_list? "LIST ":"", dp->exclude);
     printf("        priority %d\n", dp->priority);
     printf("        dumpcycle %d\n", dp->dumpcycle);
     printf("        maxdumps %d\n", dp->maxdumps);

@@ -53,7 +53,8 @@ typedef struct disk_s {
     char *name;				/* device name for disk, eg "sd0g" */
     char *dtype_name;			/* name of dump type   XXX shouldn't need this */
     char *program;			/* dump program, eg DUMP, GNUTAR */
-    char *exclude;			/* file exclude list */
+    char *exclude;			/* file exclude spec */
+    int exclude_list;			/* exclude list flag */
     long priority;			/* priority of disk */
     long dumpcycle;			/* days between fulls */
     long frequency;			/* XXX - not used */
