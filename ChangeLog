@@ -1,3 +1,13 @@
+1998-11-09  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/infofile.h (struct info_s): add last_level and 
+	consecutive_runs.
+	* server-src/infofile.c: support new last_level and consecutive_runs
+	* server-src/planner.c (last_level): return ip->last_level.
+	* server-src/planner.c (runs_at): return ip->consecutive_runs.
+	* server-src/driverio.c (update_info_dumper): update inf.last_level
+	and inf.consecutive_runs.
+	
 1998-11-09  Mike Grupenhoff <kashmir@munge.com>
 
 	* client-src/sendbackup-dump.c (start_backup): don't close indexf

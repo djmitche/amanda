@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.h,v 1.7 1998/07/04 00:20:03 oliva Exp $
+ * $Id: infofile.h,v 1.8 1998/11/09 18:59:41 martinea Exp $
  *
  * interface for current info file reading code
  */
@@ -64,6 +64,7 @@ typedef struct info_s {
     perf_t  full;
     perf_t  incr;
     stats_t inf[DUMP_LEVELS];
+    int last_level, consecutive_runs;
 } info_t;
 
 

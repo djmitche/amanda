@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.44 1998/07/04 00:20:00 oliva Exp $
+ * $Id: infofile.c,v 1.45 1998/11/09 18:59:39 martinea Exp $
  *
  * manage current info file
  */
@@ -41,7 +41,7 @@
   static int writing;
 #else
 #  define MAX_KEY 256
-#  define HEADER	(sizeof(info_t)-DUMP_LEVELS*sizeof(stats_t))
+/*#  define HEADER	(sizeof(info_t)-DUMP_LEVELS*sizeof(stats_t))*/
 
   static DBM *infodb = NULL;
   static lockfd = -1;
@@ -188,7 +188,11 @@ info_t *info;
 
 	if(line[0] == '/' && line[1] == '/') {
 	    rc = 0;
-	    break;				/* normal end of record */
+	    amfree(line);
+	    return 0;				/* normal end of record */
+	}
+	else if (strncmp(line,"last_level:",11) == 0) {
+	    break;				/* normal */
 	}
 	memset(&onestat, 0, sizeof(onestat));
 
@@ -254,7 +258,17 @@ info_t *info;
 
 	info->inf[level] = onestat;
     }
-    if(line == NULL) rc = -1;			/* EOF too soon */
+   
+    if(line == NULL) return -1;
+
+    rc = sscanf(line, "last_level: %d %d", 
+		&info->last_level, &info->consecutive_runs);
+		
+    amfree(line);
+    if(rc > 2) return -2;
+    rc = 0;
+
+    if((line = agets(infof)) == NULL) return -1;
     amfree(line);
 
     return rc;
@@ -313,6 +327,7 @@ info_t *info;
 	fprintf(infof, "\n");
     }
 
+    fprintf(infof, "last_level: %d %d\n", info->last_level, info->consecutive_runs);
     fprintf(infof, "//\n");
 
     return 0;
@@ -468,6 +483,9 @@ info_t *ip;
     for(i = 0; i < DUMP_LEVELS; i++) {
 	ip->inf[i].date = (time_t)-1;
     }
+
+    ip->last_level = -1;
+    ip->consecutive_runs = -1;
 
     return;
 }
@@ -632,15 +650,8 @@ info_t *record;
     k.dptr = vstralloc(hostname, ":", diskname, NULL);
     k.dsize = strlen(k.dptr)+1;
 
-    /* find last non-empty dump level */
-
-    for(maxlev = DUMP_LEVELS-1; maxlev > 0; maxlev--) {
-	if(record->inf[maxlev].date >= (time_t)0) break;
-	if(record->inf[maxlev].label[0] != '\0') break;
-    }
-
     d.dptr = (char *)record;
-    d.dsize = HEADER + (maxlev+1)*sizeof(stats_t);
+    d.size = sizeof(info_t);
 
     /* store record */
 
@@ -683,9 +694,8 @@ char *hostname, *diskname;
 
 #ifdef TEST
 
-void dump_rec(r, num)
+void dump_rec(r)
 info_t *r;
-int num;
 {
     int i;
     stats_t *sp;
@@ -699,14 +709,17 @@ int num;
 	   r->incr.rate[0],r->incr.rate[1],r->incr.rate[2]);
     printf("incr comp rate %5.1f, %5.1f, %5.1f\n",
 	   r->incr.comp[0]*100,r->incr.comp[1]*100,r->incr.comp[2]*100);
-    for(i = 0; i < num; i++) {
+    for(i = 0; i < DUMP_LEVELS; i++) {
 	sp = &r->inf[i];
+	if( sp->size != -1) {
 
-	printf("lev %d date %ld tape %s filenum %d size %ld csize %ld secs %ld\n",
-	       i, (long)sp->date, sp->label, sp->filenum,
-	       sp->size, sp->csize, sp->secs);
+	    printf("lev %d date %ld tape %s filenum %d size %ld csize %ld secs %ld\n",
+	           i, (long)sp->date, sp->label, sp->filenum,
+	           sp->size, sp->csize, sp->secs);
+	}
     }
     putchar('\n');
+   printf("last_level: %d %d\n", r->last_level, r->consecutive_runs);
 }
 
 #ifdef TEXTDB
@@ -717,7 +730,7 @@ char *host, *disk;
     int rc;
 
     if((rc = get_info(host, disk, &record)) == 0) {
-	dump_rec(&record, DUMP_LEVELS);
+	dump_rec(&record);
     } else {
 	printf("cannot fetch information for %s:%s rc=%d\n", host, disk, rc);
     }
@@ -743,7 +756,7 @@ char *str;
 	memcpy(&record, d.dptr, d.dsize);
 
 	num = (d.dsize-HEADER)/sizeof(stats_t);
-	dump_rec(&record, num);
+	dump_rec(&record);
 
 	k = dbm_nextkey(infodb);
 	rec++;
