@@ -78,7 +78,8 @@ char *filename;
 #   define dbfilename filename
 #endif
 
-    if((db_file = open(dbfilename, O_WRONLY|O_CREAT|O_TRUNC|O_APPEND,
+    unlink(dbfilename);
+    if((db_file = open(dbfilename, O_WRONLY|O_CREAT|O_EXCL|O_APPEND,
 		       0600)) == -1)
 	error("open debug file \"%s\": %s", dbfilename, strerror(errno));
 
