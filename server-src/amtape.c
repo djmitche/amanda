@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.22.2.6 1999/09/08 23:27:42 jrj Exp $
+ * $Id: amtape.c,v 1.22.2.7 2001/02/28 00:33:02 jrjackson Exp $
  *
  * tape changer interface program
  */
@@ -261,12 +261,18 @@ int argc;
 char **argv;
 {
     char *slotstr = NULL, *devicename = NULL;
+    char *errstr;
 
     if(argc != 2)
 	usage();
 
     if(changer_loadslot(argv[1], &slotstr, &devicename)) {
 	error("could not load slot %s: %s", slotstr, changer_resultstr);
+    }
+    if((errstr = tape_rewind(devicename)) != NULL) {
+	fprintf(stderr,
+		"%s: could not rewind %s: %s", get_pname(), devicename, errstr);
+	amfree(errstr);
     }
 
     fprintf(stderr, "%s: changed to slot %s on %s\n",
@@ -317,6 +323,12 @@ char *device;
 	    fprintf(stderr, " (wrong tape)\n");
 	else {
 	    fprintf(stderr, " (exact label match)\n");
+	    if((errstr = tape_rewind(device)) != NULL) {
+		fprintf(stderr,
+			"%s: could not rewind %s: %s",
+			get_pname(), device, errstr);
+		amfree(errstr);
+	    }
 	    found = 1;
 	    amfree(datestamp);
 	    amfree(label);
@@ -342,7 +354,7 @@ char **argv;
 
     found = 0;
 
-    changer_find(scan_init, loadlabel_slot,searchlabel);
+    changer_find(scan_init, loadlabel_slot, searchlabel);
 
     if(found)
 	fprintf(stderr, "%s: label %s is now loaded.\n",

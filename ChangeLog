@@ -1,5 +1,10 @@
 2001-02-27 John R. Jackson <jrj@purdue.edu>
 
+	* server-src/amtape.c: Rewind after loading a slot either by slot
+	  or by label.
+
+2001-02-27 John R. Jackson <jrj@purdue.edu>
+
 	* configure.in: Copy ssize_t type check code from main branch.
 	* client-src/.cvsignore: Remove bogus entry.
 
