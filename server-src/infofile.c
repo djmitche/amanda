@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.20 1997/11/02 23:17:39 george Exp $
+ * $Id: infofile.c,v 1.21 1997/11/17 16:39:41 amcore Exp $
  *
  * manage current info file
  */
@@ -65,7 +65,7 @@ char *mode;
     writing = (*mode == 'w');
 
     shost = stralloc(sanitise_filename(host));
-    sdisk = stralloc(sanitise_filename(disk));
+    sdisk = stralloc(disk);
 
     len = strlen(infodir) + strlen(shost) + strlen(sdisk) + 7;
     infofile = alloc(len + 1);
@@ -247,7 +247,7 @@ char *disk;
     char *shost, *sdisk;
 
     shost = stralloc(sanitise_filename(host));
-    sdisk = stralloc(sanitise_filename(disk));
+    sdisk = stralloc(disk);
 
     len = strlen(infodir) + strlen(shost) + strlen(sdisk) + 7;
     fn = alloc(len + 4 + 1);
