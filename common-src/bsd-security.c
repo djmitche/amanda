@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.33 2000/12/30 23:02:10 jrjackson Exp $
+ * $Id: bsd-security.c,v 1.34 2001/02/28 02:48:53 jrjackson Exp $
  *
  * "BSD" security module
  */
@@ -151,11 +151,6 @@ struct bsd_stream {
      */
     char databuf[TAPE_BLOCK_BYTES];
 };
-
-/*
- * This is the tcp stream buffer size
- */
-#define	STREAM_BUFSIZE	(TAPE_BLOCK_BYTES * 2)
 
 /*
  * Interface functions

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.6 1999/11/02 21:18:26 oliva Exp $
+ * $Id: rsh-security.c,v 1.7 2001/02/28 02:48:53 jrjackson Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -38,6 +38,7 @@
 #include "packet.h"
 #include "queue.h"
 #include "security.h"
+#include "stream.h"
 #include "version.h"
 
 #ifdef RSH_SECURITY
@@ -70,11 +71,6 @@
  */
 #define	H_TAKEN	-1		/* rsh_conn->tok was already read */
 #define	H_EOF	-2		/* this connection has been shut down */
-
-/*
- * This is the stream buffer size
- */
-#define	STREAM_BUFSIZE	(TAPE_BLOCK_BYTES * 2)
 
 /*
  * This is a rsh connection to a host.  We should only have

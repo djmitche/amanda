@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.54 2001/01/25 00:25:30 jrjackson Exp $
+ * $Id: sendbackup.c,v 1.55 2001/02/28 02:48:53 jrjackson Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -35,8 +35,6 @@
 #include "getfsent.h"
 #include "../tape-src/tapeio.h"
 #include "amanda.h"
-
-#define DATABUF_SIZE	TAPE_BLOCK_BYTES
 
 #define TIMEOUT 30
 

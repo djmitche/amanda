@@ -1,5 +1,15 @@
 2001-02-27 John R. Jackson <jrj@purdue.edu>
 
+	* common-src/stream.h: Move DATABUF_SIZE to stream.h.
+	* client-src/sendbackup.c: Do not ask for a big receive buffer.
+	* server-src/dumper.c: Ask for a bigger send buffer.  Minor typos.
+	* server-src/taper.c: Ask for a bigger receive buffer.
+	* recover-src/amrecover.c: Use stream_client instead of specific
+	  (and incorrect) bind() code.
+	* recover-src/extract_list.c: Ditto.
+
+2001-02-27 John R. Jackson <jrj@purdue.edu>
+
 	* common-src/dgram.c: Add lots more error logging to help track down
 	  problems.
 

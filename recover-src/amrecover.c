@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.37 2000/04/09 07:30:27 oliva Exp $
+ * $Id: amrecover.c,v 1.38 2001/02/28 02:48:53 jrjackson Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -38,6 +38,7 @@
 #ifdef HAVE_NETINET_IP_H
 #include <netinet/ip.h>
 #endif
+#include "stream.h"
 #include "amrecover.h"
 #include "getfsent.h"
 #include "dgram.h"
@@ -116,18 +117,18 @@ int get_line ()
 	    if(server_line) {
 		fputs(server_line, stderr);	/* show the last line read */
 		fputc('\n', stderr);
-		errno = save_errno;
 	    }
-	    if(errno != 0) {
-		fprintf(stderr, "%s: ", get_pname());
-		errno = save_errno;
-		perror("Error reading line from server");
+	    if(save_errno != 0) {
+		fprintf(stderr, "%s: Error reading line from server: %s\n",
+				get_pname(),
+				strerror(save_errno));
 	    } else {
 		fprintf(stderr, "%s: Unexpected server end of file\n",
 			get_pname());
 	    }
 	    amfree(line);
 	    amfree(server_line);
+	    errno = save_errno;
 	    return -1;
 	}
 	if(line) {
@@ -391,10 +392,8 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    struct sockaddr_in server;
-    struct sockaddr_in myname;
+    int my_port;
     struct servent *sp;
-    struct hostent *hp;
     int i;
     time_t timer;
     char *lineread = NULL;
@@ -417,8 +416,10 @@ char **argv;
     }
 
     set_pname("amrecover");
+    dbopen();
 
     if (geteuid() != 0) {
+	erroutput_type |= ERR_SYSLOG;
 	error("amrecover must be run by root");
     }
 
@@ -447,9 +448,7 @@ char **argv;
 	new_argv = (char **) malloc ((argc + 1 + 1) * sizeof (*new_argv));
 	if (new_argv == NULL)
 	{
-	    (void)fprintf(stderr, "%s: no memory for argument list\n",
-			  get_pname());
-	    exit(1);
+	    error("no memory for argument list");
 	}
 	new_argv[0] = argv[0];
 	new_argv[1] = "-C";
@@ -493,8 +492,6 @@ char **argv;
 	exit(1);
     }
 
-    dbopen();
-
     amfree(disk_name);
     amfree(mount_point);
     amfree(disk_path);
@@ -506,10 +503,7 @@ char **argv;
     act.sa_flags = 0;
     if (sigaction(SIGINT, &act, &oact) != 0)
     {
-	perror("amrecover: Error setting signal handler");
-	dbprintf(("Error setting signal handler\n"));
-	dbclose();
-	exit(1);
+	error("error setting signal handler: %s", strerror(errno));
     }
 
     service_name = stralloc2("amandaidx", SERVICE_SUFFIX);
@@ -518,61 +512,21 @@ char **argv;
 	   version(), server_name);  
     if ((sp = getservbyname(service_name, "tcp")) == NULL)
     {
-	perror("amrecover: amandaidx/tcp unknown protocol");
-	dbprintf(("%s/tcp unknown protocol\n", service_name));
-	dbclose();
-	exit(1);
+	error("%s/tcp unknown protocol", service_name);
     }
-    if ((hp = gethostbyname(server_name)) == NULL)
+    server_socket = stream_client(server_name,
+				  ntohs(sp->s_port),
+				  DEFAULT_SIZE,
+				  DEFAULT_SIZE,
+				  &my_port,
+				  0);
+    if (server_socket < 0)
     {
-	(void)fprintf(stderr, "%s: %s is an unknown host\n",
-		      get_pname(), server_name);
-	dbprintf(("%s is an unknown host\n", server_name));
-	dbclose();
-	exit(1);
+	error("cannot connect to %s: %s", server_name, strerror(errno));
     }
-    memset((char *)&server, 0, sizeof(server));
-    memcpy((char *)&server.sin_addr, hp->h_addr, hp->h_length);
-    server.sin_family = hp->h_addrtype;
-    server.sin_port = sp->s_port;
-    if ((server_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-
+    if (my_port >= IPPORT_RESERVED)
     {
-	perror("amrecover: Error creating socket");
-	dbprintf(("Error creating socket\n"));
-	dbclose();
-	exit(1);
-    }
-
-    /*
-     * Bind our end of the socket to a privileged port.
-     */
-    if ((hp = gethostbyname(localhost)) == NULL)
-    {
-	(void)fprintf(stderr, "%s: %s is an unknown host\n",
-		      get_pname(), localhost);
-	dbprintf(("%s is an unknown host\n", localhost));
-	dbclose();
-	exit(1);
-    }
-    memset((char *)&myname, 0, sizeof(myname));
-    memcpy((char *)&myname.sin_addr, hp->h_addr, hp->h_length);
-    myname.sin_family = hp->h_addrtype;
-    if (bind_portrange(server_socket, &myname, 512, IPPORT_RESERVED - 1) != 0)
-    {
-	int save_errno = errno;
-
-	perror("amrecover: Error binding socket");
-	dbprintf(("Error binding socket: %s\n", strerror(save_errno)));
-	dbclose();
-	exit(1);
-    }
-    if (ntohs(myname.sin_port) >= IPPORT_RESERVED) {
-	(void)fprintf(stderr, "%s: can't get a reserved udp port\n",
-		      get_pname());
-	dbprintf(("can't get a reserved udp port\n"));
-	dbclose();
-	exit(1);
+	error("did not get a reserved port: %d", my_port);
     }
 
 #if 0
@@ -584,15 +538,6 @@ char **argv;
     setegid(getgid());
     seteuid(getuid());
 #endif
-
-    if (connect(server_socket, (struct sockaddr *)&server, sizeof(server))
-	== -1)
-    {
-	perror("amrecover: Error connecting to server");
-	dbprintf(("Error connecting to server\n"));
-	dbclose();
-	exit(1);
-    }
 
     /* get server's banner */
     if (grab_reply(1) == -1)

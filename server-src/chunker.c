@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.5 2001/01/05 00:48:50 martinea Exp $
+/* $Id: chunker.c,v 1.6 2001/02/28 02:48:53 jrjackson Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -53,7 +53,6 @@
 
 #define CONNECT_TIMEOUT	5*60
 #define MAX_ARGS	11
-#define DATABUF_SIZE	TAPE_BLOCK_BYTES
 
 #define STARTUP_TIMEOUT 60
 
@@ -71,7 +70,7 @@ struct databuf {
     long split_size;		/* when to chunk */
     long chunk_size;		/* size of each chunk */
     long use;			/* size to use on thos disk */
-    char buf[DATABUF_SIZE];
+    char buf[TAPE_BLOCK_BYTES];
     char *dataptr;		/* data buffer markers */
     int spaceleft;
 };
@@ -296,7 +295,7 @@ startup_chunker(filename, use, chunksize, db)
     int data_port, data_socket;
 
     data_port = 0;
-    data_socket = stream_server(&data_port, DEFAULT_SIZE, DATABUF_SIZE);
+    data_socket = stream_server(&data_port, DEFAULT_SIZE, STREAM_BUFSIZE);
 
     if(data_socket < 0) {
 	error("AA");

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.h,v 1.7 1999/04/06 16:19:57 kashmir Exp $
+ * $Id: stream.h,v 1.8 2001/02/28 02:48:53 jrjackson Exp $
  *
  * interface to stream module
  */
@@ -34,6 +34,7 @@
 
 #include "amanda.h"
 
+#define STREAM_BUFSIZE (TAPE_BLOCK_BYTES * 2)
 #define DEFAULT_SIZE -1
 
 int stream_server P((int *port, int sendsize, int recvsize));

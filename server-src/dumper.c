@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.135 2001/01/05 00:48:50 martinea Exp $
+/* $Id: dumper.c,v 1.136 2001/02/28 02:48:53 jrjackson Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -54,7 +54,6 @@
 
 #define CONNECT_TIMEOUT	5*60
 #define MAX_ARGS	10
-#define DATABUF_SIZE	TAPE_BLOCK_BYTES
 
 #define STARTUP_TIMEOUT 60
 
@@ -68,7 +67,7 @@ struct cmdargs {
 struct databuf {
     int fd;			/* file to flush to */
     const char *filename;	/* name of what fd points to */
-    char buf[DATABUF_SIZE];
+    char buf[TAPE_BLOCK_BYTES];
     char *dataptr;		/* data buffer markers */
     int spaceleft;
     pid_t compresspid;		/* valid if fd is pipe to compress */
@@ -267,7 +266,7 @@ main(main_argc, main_argv)
 	    /* connect outf to taper port */
 
 	    outfd = stream_client("localhost", taper_port,
-				  DATABUF_SIZE, DEFAULT_SIZE, NULL, 0);
+				  STREAM_BUFSIZE, DEFAULT_SIZE, NULL, 0);
 	    if (outfd == -1) {
 		q = squotef("[taper port open: %s]", strerror(errno));
 		putresult("FAILED %s %s\n", handle, q);
@@ -508,12 +507,16 @@ process_dumpeof()
     add_msg_data(NULL, 0);
     if(!ISSET(status, GOT_SIZELINE) && dump_result < 2) {
 	/* make a note if there isn't already a failure */
-	fputs("? dumper: strange [missing size line from sendbackup]\n",errf);
+	fprintf(errf,
+		"? %s: strange [missing size line from sendbackup]\n",
+		get_pname());
 	dump_result = max(dump_result, 1);
     }
 
     if(!ISSET(status, GOT_ENDLINE) && dump_result < 2) {
-	fputs("? dumper: strange [missing end line from sendbackup]\n",errf);
+	fprintf(errf,
+		"? %s: strange [missing end line from sendbackup]\n",
+		get_pname());
 	dump_result = max(dump_result, 1);
     }
 }
@@ -663,10 +666,10 @@ add_msg_data(str, len)
     if (str == NULL) {
 	if (buflen == 0)
 	    return;
-	fprintf(errf,"? dumper: error [partial line in msgbuf: %ld bytes]\n",
-	    (long)buflen);
-	fprintf(errf,"? dumper: error [partial line in msgbuf: \"%s\"]\n",
-	    msg.buf);
+	fprintf(errf,"? %s: error [partial line in msgbuf: %ld bytes]\n",
+	    get_pname(), (long)buflen);
+	fprintf(errf,"? %s: error [partial line in msgbuf: \"%s\"]\n",
+	    get_pname(), msg.buf);
 	msg.buf[0] = '\0';
 	return;
     }
