@@ -1,5 +1,8 @@
 Version 2.4.0b4
 
+	SCO OpenServer V5 port.  -Christopher B. Olsen
+	<colsen@compus.com>
+
 	AIX support improved.  -Georg Rehfeld <georg@wmd.de>
 
 	Planner would core dump if it had to delay dumps.  -Georg
