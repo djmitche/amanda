@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.6 1998/12/22 05:12:21 oliva Exp $";
+static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.7 1999/01/10 17:14:44 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on Linux
@@ -52,8 +52,8 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
           pwork->inquiry = (SCSIInquiry_T *)malloc(sizeof(SCSIInquiry_T));
           Inquiry(DeviceFD, pwork->inquiry);
           for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
-             pwork->name[i] = pwork->inquiry->prod_ident[i];
-          pwork->name[i] = '\0';
+             pwork->ident[i] = pwork->inquiry->prod_ident[i];
+          pwork->ident[i] = '\0';
           pwork->SCSI = 1;
         }
       return(pwork); 
@@ -68,8 +68,6 @@ int SCSI_CloseDevice(int DeviceFD)
     ret = close(DeviceFD);
     return(ret);
 }
-
-
 #ifdef LINUX_CHG
 #define SCSI_OFF sizeof(struct sg_header)
 int SCSI_ExecuteCommand(int DeviceFD,
@@ -87,17 +85,22 @@ int SCSI_ExecuteCommand(int DeviceFD,
   int osize;
   int status;
 
-  if (SCSI_OFF + 12 + DataBufferLength > 4096) 
+  if (SCSI_OFF + CDB_Length + DataBufferLength > 4096) 
     {
        return(-1);
     }
 
-  buffer = (char *)malloc(SCSI_OFF + 12 + DataBufferLength);
-  memset(buffer, 0, SCSI_OFF + 12 + DataBufferLength);
+  buffer = (char *)malloc(SCSI_OFF + CDB_Length + DataBufferLength);
+  memset(buffer, 0, SCSI_OFF + CDB_Length + DataBufferLength);
   memcpy(buffer + SCSI_OFF, CDB, CDB_Length);
 
   psg_header = (struct sg_header *)buffer;
-  psg_header->twelve_byte = 12;
+  if (CDB_Length >= 12)
+    {
+      psg_header->twelve_byte = 1;
+    } else {
+      psg_header->twelve_byte = 0;
+    }
   psg_header->result = 0;
   psg_header->reply_len = SCSI_OFF + DataBufferLength;
 
@@ -111,8 +114,8 @@ int SCSI_ExecuteCommand(int DeviceFD,
       break;
   }
 
-  status = write(DeviceFD, buffer, SCSI_OFF + 12 + osize);
-  if ( status < 0 || status != SCSI_OFF + 12 + osize ||
+  status = write(DeviceFD, buffer, SCSI_OFF + CDB_Length + osize);
+  if ( status < 0 || status != SCSI_OFF + CDB_Length + osize ||
     psg_header->result ) 
     {
       dbprintf(("SCSI_ExecuteCommand error send \n"));

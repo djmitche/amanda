@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-solaris.c,v 1.1.2.7 1998/12/22 05:12:23 oliva Exp $";
+static char rcsid[] = "$Id: scsi-solaris.c,v 1.1.2.8 1999/01/10 17:14:46 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an Sun Workstation
@@ -43,14 +43,23 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
       pwork->next = NULL;
       pwork->fd = DeviceFD;
       pwork->dev = strdup(DeviceName);
+      pwork->SCSI = 0;
       pwork->inquiry = (SCSIInquiry_T *)malloc(sizeof(SCSIInquiry_T));
-      Inquiry(DeviceFD, pwork->inquiry);
-      for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
-        pwork->name[i] = pwork->inquiry->prod_ident[i];
-      pwork->name[i] = '\0';
-      pwork->SCSI = 1;
-      return(pwork);
+
+      if (Inquiry(DeviceFD, pwork->inquiry) == 0)
+          {
+              for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
+                  pwork->ident[i] = pwork->inquiry->prod_ident[i];
+              pwork->ident[i] = '\0';
+              pwork->SCSI = 1;
+              return(pwork);
+          } else {
+              free(pwork->inquiry);
+              pwork->inquiry = NULL;
+              return(pwork);
+          }
     }
+
   return(NULL); 
 }
 

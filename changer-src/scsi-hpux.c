@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-hpux.c,v 1.4.4.4 1998/12/22 05:12:14 oliva Exp $
+ *	$Id: scsi-hpux.c,v 1.4.4.5 1999/01/10 17:14:38 th Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
