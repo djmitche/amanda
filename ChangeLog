@@ -1,3 +1,7 @@
+2001-02-09 John R. Jackson <jrj@purdue.edu>
+
+	* server-src/diskfile.c: Fix core dump in test program.
+
 2001-02-04 John R. Jackson <jrj@purdue.edu>
 
 	* man/amanda.8.in: Fix mailto to space separated, not comma.
