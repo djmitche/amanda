@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.144 2004/10/21 13:09:30 martinea Exp $
+ * $Id: driver.c,v 1.145 2004/11/19 18:09:17 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -546,7 +546,10 @@ startaflush()
 	fprintf(stderr,"driver: startaflush: %s %s %s %ld %ld\n",
 		taperalgo2str(conf_taperalgo), dp->host->hostname,
 		dp->name, sched(taper_disk)->act_size, tape_left);
-	tape_left -= sched(dp)->act_size;
+	if(sched(dp)->act_size > tape_left)
+	    tape_left -= sched(dp)->act_size;
+	else
+	    tape_left = 0;
     }
     else if(!taper_busy && taper_ev_read != NULL) {
 	event_release(taper_ev_read);
