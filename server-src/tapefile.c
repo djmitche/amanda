@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: tapefile.c,v 1.15.2.6.6.2 2003/01/01 23:28:56 martinea Exp $
+ * $Id: tapefile.c,v 1.15.2.6.6.3 2003/02/12 22:29:38 martinea Exp $
  *
  * routines to read and write the amanda active tape list
  */
@@ -50,15 +50,17 @@ char *tapefile;
     char *line = NULL;
 
     tape_list = NULL;
-    if((tapef = fopen(tapefile,"r")) != NULL) {
-	while((line = agets(tapef)) != NULL) {
-	    tp = parse_tapeline(line);
-	    amfree(line);
-	    if(tp == NULL) return 1;
-	    tape_list = insert(tape_list, tp);
-	}
-	afclose(tapef);
+    if((tapef = fopen(tapefile,"r")) == NULL) {
+	return 1;
     }
+
+    while((line = agets(tapef)) != NULL) {
+	tp = parse_tapeline(line);
+	amfree(line);
+	if(tp == NULL) return 1;
+	tape_list = insert(tape_list, tp);
+    }
+    afclose(tapef);
 
     for(pos=1,tp=tape_list; tp != NULL; pos++,tp=tp->next) {
 	tp->position = pos;
