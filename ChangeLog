@@ -1,3 +1,8 @@
+2005-04-06  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* client-src/sendsize.c (generic_calc_estimates): Use amname instead
+	  of dirname in message.
+
 2005-03-29  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/conffile.h: Rename getcont_unit_divisor to
