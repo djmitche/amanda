@@ -1747,9 +1747,8 @@ AC_CACHE_CHECK(
     amanda_cv_max_file_size,
     [
 	amanda_cv_max_file_size=0
-	rm -f conftest.$ac_ext
-	cat <<EOF >conftest.$ac_ext
-#include "confdefs.h"
+	outfile=/tmp/maxsize.$$
+	AC_TRY_RUN([
 #include <stdio.h>
 #include <limits.h>
 #ifdef HAVE_SYS_TYPES_H
@@ -1761,6 +1760,9 @@ int main()
 {
     struct iovec test;
     unsigned long compare = 0, last = 0;
+    FILE *f = fopen("$outfile", "w");
+
+    if (!f) return 1;
 
     test.iov_len = 1;
     while ((test.iov_len > 0) && (test.iov_len > last)) {
@@ -1768,61 +1770,39 @@ int main()
 	    compare = test.iov_len;
 	test.iov_len = (test.iov_len << 1) | 0x01;
     }
-    printf("%ld\n", compare / 1024);
+    fprintf(f, "%ld\n", compare / 1024);
     return 0;
 }
-EOF
-	${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >/dev/null 2>/dev/null
-	if test $? = 0; then
-	    MAXFILESIZE=`./conftest`
-	    STATUS=$?
-	    if test "$STATUS" = 0; then
-		amanda_cv_max_file_size=$MAXFILESIZE
-	    fi
-	fi
-	rm -f conftest*
-    ]
-)
+], [
+	amanda_cv_max_file_size=`cat $outfile`
+], [
+], [
+	AC_MSG_WARN("cannot perform this test if cross-compiling")
+])
+	rm -f $outfile
+])
 if test "$amanda_cv_max_file_size" -gt 0; then
     AC_DEFINE_UNQUOTED(MAXFILESIZE,$amanda_cv_max_file_size)
 fi
-dnl		AC_MSG_RESULT($amanda_cv_max_file_size kB)
-dnl	else
-dnl		AC_MSG_RESULT(undefined ($STATUS))
-dnl	fi
-dnl else
-dnl	AC_MSG_RESULT(undefined (compiler error))
-dnl fi
 
 dnl lock/flock/fcntl
 AC_CACHE_CHECK(
    [whether posix fcntl locking works],
    amanda_cv_posix_filelocking,
    [
-	rm -f conftest.$ac_ext
-	cat <<EOF >conftest.$ac_ext
-#include "confdefs.h"
-
+	AC_TRY_RUN([
 #define CONFIGURE_TEST
 #define USE_POSIX_FCNTL
 #include "${srcdir-.}/common-src/amflock.c"
-EOF
-	${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >/dev/null 2>/dev/null
-	if test $? = 0; then
-	    ./conftest
-	    STATUS=$?
-	    if test "$STATUS" = 0; then
-		amanda_cv_posix_filelocking=yes
-	    else
-		amanda_cv_posix_filelocking="no (test returned ${STATUS})"
-	    fi
-	else
-	    amanda_cv_posix_filelocking="no (compiler error)"
-	fi
-	dnl cp conftest.c fcntltest.c
-	rm -f conftest* /tmp/conftest.lock
-    ]
-)
+], [
+	amanda_cv_posix_filelocking=yes
+], [
+	amanda_cv_posix_filelocking="no"
+], [
+	amanda_cv_posix_filelocking="no (cannot run test)"
+])
+    rm -f /tmp/conftest.lock
+])
 if test "$amanda_cv_posix_filelocking" = yes; then
     AC_DEFINE(USE_POSIX_FCNTL)
     HAS_WORKING_FILE_LOCK=1
@@ -1833,10 +1813,7 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 	[whether flock locking works],
 	amanda_cv_flock_filelocking,
 	[
-	    rm -f conftest.$ac_ext
-	    cat <<EOF >conftest.$ac_ext
-#include "confdefs.h"
-
+	    AC_TRY_RUN([
 #ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
 #endif
@@ -1855,23 +1832,15 @@ main()
 }
 
 #endif
-EOF
-	    ${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >/dev/null 2>/dev/null
-	    if test $? = 0; then
-		./conftest
-		STATUS=$?
-		if test "$STATUS" = 0; then
+], [
 		    amanda_cv_flock_filelocking="yes"
-		else
-		    amanda_cv_flock_filelocking="no ($STATUS)"
-		fi
-	    else
-		amanda_cv_flock_filelocking="no (compiler error)"
-	    fi
-	    dnl cp conftest.c flocktest.c
-	    rm -f conftest* /tmp/conftest.lock
-	]
-    )
+], [
+		    amanda_cv_flock_filelocking="no"
+], [
+		    amanda_cv_flock_filelocking="no (cannot run test)"
+])
+	rm -f /tmp/conftest.lock
+])
     if test "$amanda_cv_flock_filelocking" = yes; then
 	AC_DEFINE(USE_FLOCK)
 	HAS_WORKING_FILE_LOCK=1
@@ -1883,30 +1852,19 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 	[whether lockf locking works],
 	amanda_cv_lockf_filelocking,
 	[
-	    rm -f conftest.$ac_ext
-	    cat <<EOF >conftest.$ac_ext
-#include "confdefs.h"
+	    AC_TRY_RUN([
 
-#define CONFIGURE_TEST
 #define USE_LOCKF
 #include "${srcdir-.}/common-src/amflock.c"
-EOF
-	    ${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >/dev/null 2>/dev/null
-	    if test $? = 0; then
-		./conftest
-		STATUS=$?
-		if test "$STATUS" = 0; then
+], [
 		    amanda_cv_lockf_filelocking="yes"
-		else
-			amanda_cv_lockf_filelocking="no ($STATUS)"
-		fi
-	    else
-		amanda_cv_lockf_filelocking="no (compiler error)"
-	    fi
-	    dnl cp conftest.c lockftest.c
-	    rm -f conftest* /tmp/conftest.lock
-	]
-    )
+], [
+		    amanda_cv_lockf_filelocking="no"
+], [
+		    amanda_cv_lockf_filelocking="no (cannot run test)"
+])
+	rm -f /tmp/conftest.lock
+])
     if test "$amanda_cv_lockf_filelocking" = yes; then
 	AC_DEFINE(USE_LOCKF)
 	HAS_WORKING_FILE_LOCK=1
@@ -1918,10 +1876,7 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 	[whether lnlock locking works],
 	amanda_cv_lnlock_filelocking,
 	[
-	    rm -f conftest.$ac_ext
-	    cat <<EOF >conftest.$ac_ext
-#include "confdefs.h"
-
+	    AC_TRY_RUN([
 #define CONFIGURE_TEST
 #define USE_LNLOCK
 #include "${srcdir-.}/common-src/amflock.c"
@@ -1931,23 +1886,15 @@ int l;
 {
     return malloc(l);
 }
-EOF
-	    ${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >/dev/null 2>/dev/null
-	    if test $? = 0; then
-		./conftest
-		STATUS=$?
-		if test "$STATUS" = 0; then
+], [
 		    amanda_cv_lnlock_filelocking="yes"
-		else
-			amanda_cv_lnlock_filelocking="no ($STATUS)"
-		fi
-	    else
-		amanda_cv_lnlock_filelocking="no (compiler error)"
-	    fi
-	    dnl cp conftest.c lnlocktest.c
-	    rm -f conftest* /tmp/conftest.lock
-	]
-    )
+], [
+		    amanda_cv_lnlock_filelocking="no"
+], [
+		    amanda_cv_lnlock_filelocking="no (cannot run test)"
+])
+	rm -f /tmp/conftest.lock
+])
     if test "$amanda_cv_lnlock_filelocking" = yes; then
 	AC_DEFINE(USE_LNLOCK)
 	HAS_WORKING_FILE_LOCK=1
