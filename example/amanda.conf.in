@@ -43,9 +43,6 @@ tapecycle 25 tapes	# the number of tapes in rotation
 			# need amflush and so we do not overwrite the full
 			# backups performed at the beginning of the previous
 			# cycle
-### ### ###
-# WARNING: don't use `inf' for tapecycle, it's broken!
-### ### ###
 
 bumpsize 20 Mb		# minimum savings (threshold) to bump level 1 -> 2
 bumpdays 1		# minimum days at each level
