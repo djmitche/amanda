@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.59 1998/12/15 00:57:43 kashmir Exp $
+ * $Id: amadmin.c,v 1.60 1999/01/22 20:50:47 oliva Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1416,6 +1416,9 @@ disk_t *dp;
 	break;
     case DS_HANOI:
 	printf("HANOI\n");
+	break;
+    case DS_INCRONLY:
+	printf("INCRONLY\n");
 	break;
     }
 

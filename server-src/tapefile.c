@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: tapefile.c,v 1.17 1998/12/20 07:10:36 oliva Exp $
+ * $Id: tapefile.c,v 1.18 1999/01/22 20:50:56 oliva Exp $
  *
  * routines to read and write the amanda active tape list
  */
@@ -153,6 +153,7 @@ int skip;
     int count=0;
     int s;
     int tapecycle = getconf_int(CNF_TAPECYCLE);
+    char *labelstr = getconf_str (CNF_LABELSTR);
 
     /*
      * The idea here is we keep the last "several" reusable tapes we
@@ -165,7 +166,7 @@ int skip;
 	tpsave[s] = NULL;
     }
     for(tp = tape_list; tp != NULL; tp = tp->next) {
-	if(tp->reuse == 1) {
+	if(tp->reuse == 1 && match (tp->label, labelstr)) {
 	    count++;
 	    for(s = skip; s > 0; s--) {
 	        tpsave[s] = tpsave[s - 1];

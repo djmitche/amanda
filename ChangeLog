@@ -1,3 +1,18 @@
+1999-01-22  Martin Apel <apel@tecmath.de>
+
+	* example/amanda.conf.in: explanation of incronly strategy.
+	* man/amanda.8.in: explanation of incronly strategy.
+	* server-src/amadmin.c: recognize incronly strategy
+	* server-src/conffile.c: read the incronly strategy in the
+	configuration file.
+	* server-src/conffile.h: definition of DS_INCRONLY
+	* server-src/planner.c: Do planning for incronly strategy:
+	If the force flag is set perform a full dump, otherwise do
+	normal incremental processing but avoid full dumps.
+	* server-src/tapefile.c: Bugfix so only tapes which match
+	the regular expression for tape labels in the current 
+	configuration are considered for writing.
+
 1999-01-22  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* common-src/bsd-security.c (check_user): there was no uid variable

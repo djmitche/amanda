@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.83 1999/01/22 10:13:09 oliva Exp $
+ * $Id: planner.c,v 1.84 1999/01/22 20:50:54 oliva Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -656,7 +656,8 @@ disk_t *dp;
     }
 
     if( ep->last_level == -1 && ep->next_level0 > 0 && 
-	dp->strategy != DS_NOFULL && conf_reserve == 100) {
+	dp->strategy != DS_NOFULL && dp->strategy != DS_INCRONLY &&
+	conf_reserve == 100) {
 	log_add(L_WARNING,
 	     "%s:%s mismatch: no tapelist record, but curinfo next_level0: %d.",
 	        dp->host->hostname, dp->name, ep->next_level0);
@@ -677,13 +678,27 @@ disk_t *dp;
 
     i = 0;
 
-    if (!dp->skip_full && dp->strategy != DS_NOFULL &&
-	(!ISSET(info.command, FORCE_BUMP) || dp->skip_incr))
-	askfor(ep, i++, 0, &info);
+    if (!dp->skip_full &&
+	(!ISSET(info.command, FORCE_BUMP) || dp->skip_incr)) {
+	switch (dp->strategy) {
+	case DS_STANDARD: 
+	case DS_NOINC:
+	    askfor(ep, i++, 0, &info);
+	    break;
+
+	case DS_NOFULL:
+	    break;
+
+	case DS_INCRONLY:
+	    if (ISSET(info.command, FORCE_FULL))
+		askfor(ep, i++, 0, &info);
+	    break;
+	}
+    }
 
     if(!dp->skip_incr) {
 	if(ep->last_level == -1) {		/* a new disk */
-	    if(dp->strategy == DS_NOFULL) {
+	    if(dp->strategy == DS_NOFULL || dp->strategy == DS_INCRONLY) {
 		askfor(ep, i++, 1, &info);
 	    } else {
 		assert(!dp->skip_full);		/* should be handled above */
@@ -727,6 +742,7 @@ disk_t *dp;
     fprintf(stderr, "setup_estimate: %s:%s: command %d, options:",
 	    dp->host->hostname, dp->name, info.command);
     if(dp->strategy == DS_NOFULL) fputs(" no-full", stderr);
+    if(dp->strategy == DS_INCRONLY) fputs(" incr-only", stderr);
     if(dp->skip_full) fputs(" skip-full", stderr);
     if(dp->skip_incr) fputs(" skip-incr", stderr);
     fprintf(stderr, "\n    last_level %d next_level0 %d level_days %d\n",
@@ -846,8 +862,10 @@ static int next_level0(dp, info)
 disk_t *dp;
 info_t *info;
 {
-    if(dp->strategy == DS_NOFULL)
+    if(dp->strategy == DS_NOFULL || dp->strategy == DS_INCRONLY)
 	return 1;		/* fake it */
+    else if (dp->strategy == DS_NOINC)
+	return 0;
     else if(info->inf[0].date < (time_t)0)
 	return -days_diff(EPOCH, today);	/* new disk */
     else
@@ -1296,7 +1314,8 @@ disk_t *dp;
     total_size += TAPE_BLOCK_SIZE + ep->dump_size + tape_mark;
 
     /* update the balanced size */
-    if(!(dp->skip_full || dp->strategy == DS_NOFULL)) {
+    if(!(dp->skip_full || dp->strategy == DS_NOFULL || 
+	 dp->strategy == DS_INCRONLY)) {
 	long lev0size;
 
 	lev0size = est_tape_size(dp, 0);
@@ -1753,7 +1772,8 @@ static int promote_highest_priority_incremental P((void))
 		check_days, (check_days == 1) ? "" : "s");
 
 	for(dp = schedq.head; dp != NULL; dp = dp->next) {
-	    if(dp->skip_full || dp->strategy == DS_NOFULL) {
+	    if(dp->skip_full || dp->strategy == DS_NOFULL || 
+	       dp->strategy == DS_INCRONLY) {
 		fprintf(stderr,
 	"    promote: can't move %s:%s: no full dumps allowed.\n",
 			dp->host->hostname, dp->name);
@@ -1832,7 +1852,8 @@ static int promote_hills P((void))
 
     for(dp = schedq.head; dp != NULL; dp = dp->next) {
 	days = est(dp)->next_level0;   /* This is > 0 by definition */
-	if(days<tapecycle && !dp->skip_full && dp->strategy != DS_NOFULL) {
+	if(days<tapecycle && !dp->skip_full && dp->strategy != DS_NOFULL &&
+	   dp->strategy != DS_INCRONLY) {
 	    sp[days].disks++;
 	    sp[days].size += est(dp)->last_lev0size;
 	}
@@ -1855,7 +1876,8 @@ static int promote_hills P((void))
 	for(dp = schedq.head; dp != NULL; dp = dp->next) {
 	    if(est(dp)->next_level0 != hill_days ||
 	       dp->skip_full ||
-	       dp->strategy == DS_NOFULL)
+	       dp->strategy == DS_NOFULL ||
+	       dp->strategy == DS_INCRONLY)
 		continue;
 	    new_size = est_tape_size(dp, 0);
 	    new_total = total_size - est(dp)->dump_size + new_size;

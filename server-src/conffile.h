@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.25 1998/12/15 00:57:51 kashmir Exp $
+ * $Id: conffile.h,v 1.26 1999/01/22 20:50:52 oliva Exp $
  *
  * interface for config file reading code
  */
@@ -75,6 +75,7 @@ typedef struct tapetype_s {
 #define DS_4		4	/* ? (0 1 2 3 4 5 6 7 8 9 10 11 ...) */
 #define DS_5		5	/* ? (0 1 1 1 1 1 1 1 1 1 1 1 ...) */
 #define DS_HANOI	6	/* Tower of Hanoi (? ? ? ? ? ...) */
+#define DS_INCRONLY	7	/* Forced fulls (0 1 1 2 2 FORCE0 1 1 ...) */
 
 /* Compression types */
 #define COMP_NONE	0	/* No compression */

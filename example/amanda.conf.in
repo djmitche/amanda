@@ -334,6 +334,11 @@ define tapetype MIMSY-MEGATAPE {
 #			       instead.
 #		  "skip"     - skip all dumps.  Useful for sharing a single
 #			       disklist in several configurations.
+#		  "incronly" - do only incremental dumps. This is similar
+#                              to strategy 'nofull', but will increase
+#                              the dump level as usual. Full dumps will
+#                              only be performed when an 'amadmin force' 
+#                              has been issued 
 #		  Default: [strategy standard]
 #
 # Note that you may specify previously defined dumptypes as a shorthand way

@@ -901,6 +901,9 @@ Never do incremental backups, only full dumps.
 .TP
 .B skip
 Never do backups (useful when sharing the
+.TP
+.B incronly
+Only do incremental dumps, full dumps only after 'amadmin force'.
 .I disklist
 file).
 .RE
