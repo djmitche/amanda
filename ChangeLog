@@ -1,5 +1,11 @@
 1998-12-28  John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/reporter.c: do not drop core generating labels if the
+	tape label is not defined, e.g. in degraded mode (compliments of
+	Jan L. Peterson <jlp@Part.NET>).
+
+1998-12-28  John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/amtape.c: initialize two strings to NULL to avoid a
 	core dump, compliments of G. Allen Morris III <gam3@acm.org>.
 
