@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.30 2003/10/27 13:47:42 kovert Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.31 2003/10/27 16:57:27 kovert Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -333,8 +333,8 @@ char **argv;
     /*
      * do some basic sanity checking
      */
-     if(conf_tapecycle < runs_per_cycle) {
-	log_add(L_WARNING, "tapecycle (%d) < runspercycle (%d)",
+     if(conf_tapecycle <= runs_per_cycle) {
+	log_add(L_WARNING, "tapecycle (%d) <= runspercycle (%d)",
 		conf_tapecycle, runs_per_cycle);
      }
     
