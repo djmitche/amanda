@@ -1,3 +1,19 @@
+2002-04-19  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	Add many features.
+	* common-src/amfeatures.c (am_set_default_feature_set): New function 
+	  to set the default features set.
+	* common-src/amfeatures.h (am_set_default_feature_set): Prototype.
+	* common-src/amfeatures.h: Rename amanda_feature_auth_keyword to 
+	  fe_options_auth.
+	* client-src/client_util.c: Check features.
+	* server-src/amcheck.c: Ditto.
+	* server-src/diskfile.c: Ditto.
+	* server-src/driverio.c: Ditto.
+	* server-src/planner.c: Ditto.
+	* server-src/diskfile.h (optionstr): Change prototype.
+	* client-src/sendsize.c: Fix compiler warning.
+
 2002-04-18  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* common-src/amfeatures.c: Include "amfeatures.h"

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.128 2002/04/17 20:06:10 martinea Exp $
+ * $Id: planner.c,v 1.129 2002/04/19 14:24:12 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1140,8 +1140,6 @@ host_t *hostp;
 
 	    for(i = 0; i < MAX_LEVELS; i++) {
 		char *l;
-		int nb_exclude;
-		int nb_include;
 		char *exclude1 = "";
 		char *exclude2 = "";
 		char spindle[NUM_STR_SIZE];
@@ -1152,18 +1150,9 @@ host_t *hostp;
 
 		snprintf(level, sizeof(level), "%d", lev);
 		snprintf(spindle, sizeof(spindle), "%d", dp->spindle);
-		nb_exclude = 0;
-		nb_include = 0;
-		if(dp->exclude_file) nb_exclude += dp->exclude_file->nb_element;
-		if(dp->exclude_list) nb_exclude += dp->exclude_list->nb_element;
-		if(dp->include_file) nb_include += dp->include_file->nb_element;
-		if(dp->include_list) nb_include += dp->include_list->nb_element;
-		if(nb_exclude > 1 || nb_include > 0 || 
-		   (dp->exclude_list
-		    && dp->exclude_list->nb_element == 1
-		    && dp->exclude_optional)) {
+		if(am_has_feature(hostp->features, fe_sendsize_req_options)) {
 		    exclude1 = " OPTIONS |";
-		    exclude2 = optionstr(dp);
+		    exclude2 = optionstr(dp, hostp->features, NULL);
 		}
 		else {
 		    if(dp->exclude_file && dp->exclude_file->nb_element == 1) {
@@ -1189,7 +1178,7 @@ host_t *hostp;
 			      " ", level,
 			      " ", est(dp)->dumpdate[i],
 			      " ", spindle,
-			      " ", optionstr(dp),
+			      " ", exclude1, exclude2,
 			      "\n",
 			      NULL);
 		strappend(s, l);
@@ -1416,7 +1405,7 @@ security_handle_t *sech;
 	 */
 	dbprintf(("%s: no feature set from host %s\n",
 		  debug_prefix_time(NULL), hostp->hostname));
-	hostp->features = am_allocate_feature_set();
+	hostp->features = am_set_default_feature_set();
     }
 
     /* XXX what about disks that only got some estimates...  do we care? */

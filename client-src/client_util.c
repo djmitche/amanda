@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.18 2002/04/13 23:38:27 jrjackson Exp $
+ * $Id: client_util.c,v 1.19 2002/04/19 14:24:12 martinea Exp $
  *
  */
 
@@ -413,15 +413,15 @@ int verbose;
     tok = strtok(p,";");
 
     while (tok != NULL) {
-	if(am_has_feature(fs, amanda_feature_auth_keyword)
+	if(am_has_feature(fs, fe_options_auth)
 	   && strncmp(tok,"auth=", 5) == 0) {
 	    options->auth = stralloc(&tok[5]);
 	}
-	else if(! am_has_feature(fs, amanda_feature_auth_keyword)
+	else if(am_has_feature(fs, fe_options_bsd_auth)
 	   && strcmp(tok, "bsd-auth") == 0) {
 	    options->auth = stralloc("bsd");
 	}
-	else if(! am_has_feature(fs, amanda_feature_auth_keyword)
+	else if(am_has_feature(fs, fe_options_krb4_auth)
 	   && strcmp(tok, "krb4-auth") == 0) {
 	    options->auth = stralloc("krb4");
 	}

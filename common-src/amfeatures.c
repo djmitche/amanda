@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.c,v 1.3 2002/04/19 00:49:19 martinea Exp $
+ * $Id: amfeatures.c,v 1.4 2002/04/19 14:24:12 martinea Exp $
  *
  * Feature test related code.
  */
@@ -55,7 +55,91 @@ am_init_feature_set()
 	 * to be added here to show that we support it.
 	 */
 	am_add_feature(f, have_feature_support);
-	am_add_feature(f, amanda_feature_auth_keyword);
+	am_add_feature(f, fe_options_auth);
+
+	am_add_feature(f, fe_selfcheck_req);
+	am_add_feature(f, fe_selfcheck_req_device);
+	am_add_feature(f, fe_selfcheck_rep);
+	am_add_feature(f, fe_sendsize_req_no_options);
+	am_add_feature(f, fe_sendsize_req_options);
+	am_add_feature(f, fe_sendsize_req_device);
+	am_add_feature(f, fe_sendsize_rep);
+	am_add_feature(f, fe_sendbackup_req);
+	am_add_feature(f, fe_sendbackup_req_device);
+	am_add_feature(f, fe_sendbackup_rep);
+	am_add_feature(f, fe_noop_req);
+	am_add_feature(f, fe_noop_rep);
+
+	am_add_feature(f, fe_program_dump);
+	am_add_feature(f, fe_program_gnutar);
+
+	am_add_feature(f, fe_options_compress_fast);
+	am_add_feature(f, fe_options_compress_best);
+	am_add_feature(f, fe_options_srvcomp_fast);
+	am_add_feature(f, fe_options_srvcomp_best);
+	am_add_feature(f, fe_options_no_record);
+	am_add_feature(f, fe_options_bsd_auth);
+	am_add_feature(f, fe_options_index);
+	am_add_feature(f, fe_options_exclude_file);
+	am_add_feature(f, fe_options_exclude_list);
+	am_add_feature(f, fe_options_multiple_exclude);
+	am_add_feature(f, fe_options_optional_exclude);
+	am_add_feature(f, fe_options_include_file);
+	am_add_feature(f, fe_options_include_list);
+	am_add_feature(f, fe_options_multiple_include);
+	am_add_feature(f, fe_options_optional_include);
+	am_add_feature(f, fe_options_krb4_auth);
+	am_add_feature(f, fe_options_kencrypt);
+
+	am_add_feature(f, fe_g_options_maxdump);
+	am_add_feature(f, fe_g_options_hostname);
+	am_add_feature(f, fe_g_options_features);
+    }
+    return f;
+}
+
+/*
+ *=====================================================================
+ * Set a default feature set for client that doesn't have noop service.
+ * This is all the features available in 2.4.2p2.
+ *
+ * entry:	none
+ * exit: dynamically allocated feature set
+ *=====================================================================
+ */
+ 
+am_feature_t *
+am_set_default_feature_set(void)
+{
+    am_feature_t		*f;
+
+    if ((f = am_allocate_feature_set()) != NULL) {
+
+	am_add_feature(f, fe_selfcheck_req);
+	am_add_feature(f, fe_selfcheck_rep);
+	am_add_feature(f, fe_sendsize_req_no_options);
+	am_add_feature(f, fe_sendsize_rep);
+	am_add_feature(f, fe_sendbackup_req);
+	am_add_feature(f, fe_sendbackup_rep);
+
+	am_add_feature(f, fe_program_dump);
+	am_add_feature(f, fe_program_gnutar);
+
+	am_add_feature(f, fe_options_compress_fast);
+	am_add_feature(f, fe_options_compress_best);
+	am_add_feature(f, fe_options_srvcomp_fast);
+	am_add_feature(f, fe_options_srvcomp_best);
+	am_add_feature(f, fe_options_no_record);
+	am_add_feature(f, fe_options_bsd_auth);
+	am_add_feature(f, fe_options_index);
+	am_add_feature(f, fe_options_exclude_file);
+	am_add_feature(f, fe_options_exclude_list);
+	am_add_feature(f, fe_options_krb4_auth);
+	am_add_feature(f, fe_options_kencrypt);
+
+	am_add_feature(f, fe_g_options_maxdump);
+	am_add_feature(f, fe_g_options_hostname);
+	am_add_feature(f, fe_g_options_features);
     }
     return f;
 }

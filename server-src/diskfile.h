@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.25 2002/04/17 20:06:10 martinea Exp $
+ * $Id: diskfile.h,v 1.26 2002/04/19 14:24:12 martinea Exp $
  *
  * interface for disklist file reading code
  */
@@ -111,7 +111,7 @@ void remove_disk P((disklist_t *list, disk_t *disk));
 
 void dump_queue P((char *str, disklist_t q, int npr, FILE *f));
 
-char *optionstr P((disk_t *dp));
+char *optionstr P((disk_t *dp, am_feature_t *their_features, FILE *fdout));
 
 void match_disklist P((disklist_t *origqp, int sargc, char **sargv));
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.63 2002/04/13 19:24:51 jrjackson Exp $
+ * $Id: driverio.c,v 1.64 2002/04/19 14:24:12 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -351,7 +351,7 @@ disk_t *dp;
 	snprintf(number, sizeof(number), "%d", sched(dp)->level);
 	snprintf(numberport, sizeof(numberport), "%d", dumper->output_port);
 	features = am_feature_to_string(dp->host->features);
-	o = optionstr(dp);
+	o = optionstr(dp, dp->host->features, NULL);
 	cmdline = vstralloc(cmdstr[cmd],
 			    " ", disk2serial(dp),
 			    " ", numberport,
@@ -442,7 +442,7 @@ disk_t *dp;
 	snprintf(chunksize, sizeof(chunksize), "%ld", h[0]->disk->chunksize);
 	snprintf(use, sizeof(use), "%ld", h[0]->reserved );
 	features = am_feature_to_string(dp->host->features);
-	o = optionstr(dp);
+	o = optionstr(dp, dp->host->features, NULL);
 	cmdline = vstralloc(cmdstr[cmd],
 			    " ", disk2serial(dp),
 			    " ", sched(dp)->destname,

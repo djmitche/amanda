@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.89 2002/04/17 20:06:10 martinea Exp $
+ * $Id: amcheck.c,v 1.90 2002/04/19 14:24:12 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1192,6 +1192,41 @@ void start_host(hostp)
 	service = "noop";
     } else {
 	service = "selfcheck";
+
+	if(!am_has_feature(hostp->features, fe_selfcheck_req) &&
+	   !am_has_feature(hostp->features, fe_selfcheck_req_device)) {
+	    fprintf(outf,
+		    "ERROR: Client %s does not support selfcheck REQ packet.\n",
+		    hostp->hostname);
+	}
+	if(!am_has_feature(hostp->features, fe_selfcheck_rep)) {
+	    fprintf(outf,
+		    "ERROR: Client %s does not support selfcheck REP packet.\n",
+		    hostp->hostname);
+	}
+	if(!am_has_feature(hostp->features, fe_sendsize_req_options) &&
+	   !am_has_feature(hostp->features, fe_sendsize_req_no_options) &&
+	   !am_has_feature(hostp->features, fe_sendsize_req_device)) {
+	    fprintf(outf,
+		    "ERROR: Client %s does not support sendsize REQ packet.\n",
+		    hostp->hostname);
+	}
+	if(!am_has_feature(hostp->features, fe_sendsize_rep)) {
+	    fprintf(outf,
+		    "ERROR: Client %s does not support sendsize REP packet.\n",
+		    hostp->hostname);
+	}
+	if(!am_has_feature(hostp->features, fe_sendbackup_req) &&
+	   !am_has_feature(hostp->features, fe_sendbackup_req_device)) {
+	    fprintf(outf,
+		   "ERROR: Client %s does not support sendbackup REQ packet.\n",
+		   hostp->hostname);
+	}
+	if(!am_has_feature(hostp->features, fe_sendbackup_rep)) {
+	    fprintf(outf,
+		   "ERROR: Client %s does not support sendbackup REP packet.\n",
+		   hostp->hostname);
+	}
     }
 
     snprintf(number, sizeof(number), "%d", hostp->maxdumps);
@@ -1215,9 +1250,37 @@ void start_host(hostp)
 	    if(dp->up != DISK_READY || dp->todo != 1) {
 		continue;
 	    }
-	    o = optionstr(dp);
+	    o = optionstr(dp, hostp->features, outf);
+
+	    if(dp->device) {
+		if(!am_has_feature(hostp->features, fe_selfcheck_req_device)) {
+		    fprintf(outf,
+		     "ERROR: %s:%s (%s): selfcheck does not support device.\n",
+		     hostp->hostname, dp->name, dp->device);
+		}
+		if(!am_has_feature(hostp->features, fe_sendsize_req_device)) {
+		    fprintf(outf,
+		     "ERROR: %s:%s (%s): sendsize does not support device.\n",
+		     hostp->hostname, dp->name, dp->device);
+		}
+		if(!am_has_feature(hostp->features, fe_sendbackup_req_device)) {
+		    fprintf(outf,
+		     "ERROR: %s:%s (%s): sendbackup does not support device.\n",
+		     hostp->hostname, dp->name, dp->device);
+		}
+	    }
 	    if(strncmp(dp->program,"DUMP",4) == 0 || 
 	       strncmp(dp->program,"GNUTAR",6) == 0) {
+		if(strcmp(dp->program, "DUMP") == 0 &&
+		   !am_has_feature(hostp->features, fe_program_dump)) {
+		    fprintf(outf, "ERROR: %s:%s does not support DUMP.\n",
+			    hostp->hostname, dp->name);
+		}
+		if(strcmp(dp->program, "GNUTAR") == 0 &&
+		   !am_has_feature(hostp->features, fe_program_gnutar)) {
+		    fprintf(outf, "ERROR: %s:%s does not support GNUTAR.\n",
+			    hostp->hostname, dp->name);
+		}
 		if(dp->device) {
 		    l = vstralloc(dp->program, 
 				  " ",
@@ -1239,6 +1302,10 @@ void start_host(hostp)
 				  NULL);
 		}
 	    } else {
+		if(!am_has_feature(hostp->features, fe_program_dumper_api)) {
+		    fprintf(outf, "ERROR: %s:%s does not support DUMPER-API.\n",
+			    hostp->hostname, dp->name);
+		}
 		l = vstralloc("DUMPER ",
 			      dp->program, 
 			      " ",
@@ -1424,7 +1491,7 @@ security_handle_t *sech;
 	    skip_whitespace(t, tch);
 	    /*
 	     * If the "error" is that the "noop" service is unknown, it
-	     * just means the client is "old" (does not support the servie).
+	     * just means the client is "old" (does not support the service).
 	     * We can ignore this.
 	     */
 	    if(hostp->features == NULL
@@ -1454,7 +1521,7 @@ security_handle_t *sech;
 	 */
 	dbprintf(("%s: no feature set from host %s\n",
 		  debug_prefix_time(NULL), hostp->hostname));
-	hostp->features = am_allocate_feature_set();
+	hostp->features = am_set_default_feature_set();
     }
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
 	if(dp->up == DISK_ACTIVE) {
