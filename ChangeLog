@@ -1,5 +1,9 @@
 1998-11-02  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* client-src/Makefile.am (CLIENT_SCRIPTS): rename to
+ 	CLIENT_SCRIPTS_OPT, because *_SCRIPTS is interpreted by automake
+	* configure.in (CLIENT_SCRIPTS): ditto
+
 	* configure.in (LIBTOOL_M4): no longer defined
 	(LIBTOOL_M4_MACRO_DIR): defined assuming CWD is top_srcdir
 	* Makefile.am (ACLOCAL_M4_FROM_SRCDIR): relative to srcdir

@@ -164,17 +164,17 @@ AC_SUBST(USE_VERSION_SUFFIXES)
 
 case "$target" in
     *-hp-*)
-	CLIENT_SCRIPTS=amhpfixdevs
+	CLIENT_SCRIPTS_OPT=amhpfixdevs
 	;;
     *-sni-sysv4)
-	CLIENT_SCRIPTS=amsinixfixdevs
+	CLIENT_SCRIPTS_OPT=amsinixfixdevs
 	;;
     *)
-	CLIENT_SCRIPTS=
+	CLIENT_SCRIPTS_OPT=
 	;;
 esac
 
-AC_SUBST(CLIENT_SCRIPTS)
+AC_SUBST(CLIENT_SCRIPTS_OPT)
 
 AC_ARG_WITH(client-only,
     [  --with-client-only     deprecated, use --without-server],

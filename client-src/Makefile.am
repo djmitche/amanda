@@ -19,7 +19,7 @@ endif
 
 libexec_PROGRAMS =	amandad calcsize killpgrp rundump runtar selfcheck sendbackup sendsize versionsuffix
 
-sbin_SCRIPTS =		@CLIENT_SCRIPTS@
+sbin_SCRIPTS =		@CLIENT_SCRIPTS_OPT@
 
 libexec_SCRIPTS =	patch-system
 endif
