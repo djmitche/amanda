@@ -1,4 +1,8 @@
 2004-11-15  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amstatus.pl.in Fix for level -1.
+
+2004-11-15  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Daniel Widyono <widyono@seas.upenn.edu>
 
 	* changer-src/chg-zd-mtx.sh.in: Fix for library with barcode.
