@@ -1,3 +1,7 @@
+2004-11-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/reporter.c: Change 'Daily' for 'Incr.'.
+
 2004-11-15  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/amstatus.pl.in Fix for level -1.

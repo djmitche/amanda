@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.17.4.6.2.16.2.3 2004/11/11 20:23:44 martinea Exp $
+ * $Id: reporter.c,v 1.44.2.17.4.6.2.16.2.4 2004/11/16 13:06:13 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -703,7 +703,7 @@ void output_stats()
 
     fprintf(mailf,"STATISTICS:\n");
     fprintf(mailf,
-	    "                          Total       Full      Daily\n");
+	    "                          Total       Full      Incr.\n");
     fprintf(mailf,
 	    "                        --------   --------   --------\n");
 
