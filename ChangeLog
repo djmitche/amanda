@@ -1,3 +1,9 @@
+2002-04-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/conffile.c: Default dumporder set to "ttt".
+	* server-src/driver.c: If dumporder is too short, use t and T.
+	* man/amanda.8.in: Default dumporder set to "ttt".
+
 2002-04-13  John R. Jackson (jrj@purdue.edu)
 
 	* common-src/features.c: Add amanda_feature_auth_keyword feature so

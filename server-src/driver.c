@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.125 2002/04/13 19:24:51 jrjackson Exp $
+ * $Id: driver.c,v 1.126 2002/04/14 13:14:56 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -619,9 +619,9 @@ start_some_dumps(dumper, rq)
 		}
 		else {
 		    if(busy_dumpers < 3)
-			dumptype = 's';
+			dumptype = 't';
 		    else
-			dumptype = 'S';
+			dumptype = 'T';
 		}
 		switch(dumptype) {
 		  case 's': accept = (sched(diskp)->est_size < sched(diskp_accept)->est_size);
