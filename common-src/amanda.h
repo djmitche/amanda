@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.52 1998/02/22 02:04:11 amcore Exp $
+ * $Id: amanda.h,v 1.53 1998/02/23 21:47:34 jrj Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -259,7 +259,8 @@
 #define	malloc_chain_check()
 #define	malloc_dump(fd)
 #define	malloc_list(a,b,c)
-#define	malloc_inuse(hist)	(*(hist) = 0, 0)
+#define	malloc_inuse(hist)		(*(hist) = 0, 0)
+#define	dbmalloc_caller_loc(x,y)	(x)
 #endif
 
 #if !defined(HAVE_SIGACTION) && defined(HAVE_SIGVEC)
@@ -413,6 +414,9 @@ extern void  *debug_alloc           P((char *c, int l, int size));
 extern void  *debug_newalloc        P((char *c, int l, void *old, int size));
 extern char  *debug_stralloc        P((char *c, int l, char *str));
 extern char  *debug_newstralloc     P((char *c, int l, char *oldstr, char *newstr));
+extern char  *dbmalloc_caller_loc   P((char *file, int line));
+extern int   debug_alloc_push	    P((char *file, int line));
+extern void  debug_alloc_pop	    P((void));
 
 #define	alloc(s)		debug_alloc(__FILE__, __LINE__, (s))
 #define	newalloc(p,s)		debug_newalloc(__FILE__, __LINE__, (p), (s))
@@ -434,7 +438,7 @@ extern char  *debug_newstralloc     P((char *c, int l, char *oldstr, char *newst
  *
  * becomes:
  *
- *  xx = debug_alloc_save(__FILE__,__LINE__)?0:debug_vstralloc(a,b,NULL);
+ *  xx = debug_alloc_push(__FILE__,__LINE__)?0:debug_vstralloc(a,b,NULL);
  *
  * This works as long as vstralloc/newvstralloc are not part of anything
  * very complicated.  Assignment is fine, as is an argument to another
@@ -449,8 +453,8 @@ extern char  *debug_newstralloc     P((char *c, int l, char *oldstr, char *newst
  *  xx = vstralloc(x,y,NULL) + 13;		NO, but why do it?
  */
 
-#define vstralloc debug_alloc_save(__FILE__,__LINE__)?0:debug_vstralloc
-#define newvstralloc debug_alloc_save(__FILE__,__LINE__)?0:debug_newvstralloc
+#define vstralloc debug_alloc_push(__FILE__,__LINE__)?0:debug_vstralloc
+#define newvstralloc debug_alloc_push(__FILE__,__LINE__)?0:debug_newvstralloc
 
 extern char  *debug_vstralloc       P((char *str, ...));
 extern char  *debug_newvstralloc    P((char *oldstr, char *newstr, ...));
@@ -463,6 +467,9 @@ extern char  *stralloc        P((char *str));
 extern char  *newstralloc     P((char *oldstr, char *newstr));
 extern char  *vstralloc       P((char *str, ...));
 extern char  *newvstralloc    P((char *oldstr, char *newstr, ...));
+
+#define debug_alloc_push(s,l)
+#define debug_alloc_pop()
 #endif
 
 #define	stralloc2(s1,s2)      vstralloc((s1),(s2),NULL)
@@ -473,8 +480,15 @@ extern char **safe_env        P((void));
 extern char  *validate_regexp P((char *regex));
 extern int    match           P((char *regex, char *str));
 extern time_t unctime         P((char *timestr));
+#if defined(USE_DBMALLOC)
+extern char  *dbmalloc_agets  P((char *c, int l, FILE *file));
+extern char  *dbmalloc_areads P((char *c, int l, int fd));
+#define agets(f)	      dbmalloc_agets(__FILE__,__LINE__,(f))
+#define areads(f)	      dbmalloc_areads(__FILE__,__LINE__,(f))
+#else
 extern char  *agets	      P((FILE *file));
 extern char  *areads	      P((int fd));
+#endif
 
 /*
  * afree(ptr) -- if allocated, release space and set ptr to NULL.

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.74 1998/02/19 10:04:10 amcore Exp $
+ * $Id: sendsize.c,v 1.75 1998/02/23 21:47:29 jrj Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -105,7 +105,7 @@ char **argv;
     char *prog, *disk, *dumpdate, *exclude = NULL;
     disk_estimates_t *est;
     disk_estimates_t *est_prev;
-    char *line;
+    char *line = NULL;
     char *s, *fp;
     int ch;
     char *err_extra = NULL;
@@ -239,6 +239,7 @@ char **argv;
 
 	add_diskest(disk, level, exclude, spindle, prog);
     }
+    afree(line);
 
     finish_amandates();
     free_amandates();
@@ -263,9 +264,11 @@ char **argv;
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
     if(malloc_size_1 != malloc_size_2) {
+#if defined(USE_DBMALLOC)
 	extern int db_fd;
 
 	malloc_list(db_fd, malloc_hist_1, malloc_hist_2);
+#endif
     }
 
     dbclose();

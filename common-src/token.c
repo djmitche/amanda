@@ -23,7 +23,7 @@
  * Author: George Scott, Computer Centre, Monash University.
  */
 /*
- * $Id: token.c,v 1.15 1998/01/02 18:48:03 jrj Exp $
+ * $Id: token.c,v 1.16 1998/02/23 21:47:43 jrj Exp $
  *
  * token bashing routines
  */
@@ -172,7 +172,7 @@ char *str;	/* the string to quote */
 {
     register char *pi, *po;
     register int len;
-    static char *buf = (char *)0; /* XXX static buffer */
+    char *buf;
     int sep, need_quotes;
 
     /* Calculate the length of the quoted token. */
@@ -197,7 +197,7 @@ char *str;	/* the string to quote */
 
     /* Allocate some space */
 
-    buf = newalloc(buf, len+1);	/* trailing null */
+    buf = alloc(len+1);		/* trailing null */
 
     /* Copy it across */
 
@@ -312,6 +312,7 @@ int main()
 		r = split(str, t, 20, " ");
 		if (r != 1) printf("split()=%d!\n", r);
 		printf("Unquoted = \"%s\"\n", t[1]);
+		afree(sr);
 	}
 	afree(str);
 }

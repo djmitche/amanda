@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.59 1998/02/11 23:25:40 jrj Exp $
+ * $Id: planner.c,v 1.60 1998/02/23 21:47:52 jrj Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -410,6 +410,9 @@ char **argv;
     close_infofile();
     log(L_FINISH, "date %s", datestamp);
 
+    afree(msg);
+    afree(datestamp);
+
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
     if(malloc_size_1 != malloc_size_2) {
@@ -474,6 +477,7 @@ info_t *inf;	/* info block for disk */
     ep->level[seq] = lev;
 
     ep->dumpdate[seq] = stralloc(get_dumpdate(inf,lev));
+    malloc_mark(ep->dumpdate[seq]);
 
     stat = &inf->inf[lev];
     if(stat->date == EPOCH) ep->est_size[seq] = -1;
@@ -502,6 +506,7 @@ disk_t *dp;
     /* setup working data struct for disk */
 
     ep = alloc(sizeof(est_t));
+    malloc_mark(ep);
     dp->up = (void *) ep;
     ep->dump_size = -1;
     ep->dump_priority = dp->priority;

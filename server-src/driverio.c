@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.25 1998/01/26 21:16:25 jrj Exp $
+ * $Id: driverio.c,v 1.26 1998/02/23 21:47:49 jrj Exp $
  *
  * I/O-related functions for driver program
  */
@@ -160,9 +160,8 @@ int show;
 {
     int arg;
     tok_t t;
-    static char *line = NULL;
+    char *line;
 
-    afree(line);
     if((line = areads(fd)) == NULL) {
 	if(errno) {
 	    error("reading result from %s: %s", childstr(fd), strerror(errno));
@@ -171,6 +170,7 @@ int show;
     } else {
 	argc = split(line, argv, sizeof(argv) / sizeof(argv[0]), " ");
     }
+    afree(line);
 
     if(show) {
 	printf("driver: result time %s from %s:",

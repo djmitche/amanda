@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.56 1998/02/23 18:53:13 amcore Exp $
+/* $Id: dumper.c,v 1.57 1998/02/23 21:47:50 jrj Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -94,6 +94,9 @@ char *progname = NULL;
 int level;
 char *dumpdate = NULL;
 extern char *datestamp;
+char *backup_name = NULL;
+char *recover_cmd = NULL;
+char *compress_suffix = NULL;
 
 int datafd = -1;
 int mesgfd = -1;
@@ -180,6 +183,7 @@ char **main_argv;
     dgram_t *msg;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
+    char *q = NULL;
     int fd;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
@@ -260,10 +264,10 @@ char **main_argv;
 	    options = newstralloc(options, argv[9]);
 
 	    if((outfd = open(filename, O_WRONLY|O_CREAT, 0666)) == -1) {
-		putresult("FAILED %s %s\n", handle,
-			  squotef("[holding file \"%s\": %s]",
-				 filename, strerror(errno))
-			 );
+		q = squotef("[holding file \"%s\": %s]",
+			    filename, strerror(errno));
+		putresult("FAILED %s %s\n", handle, q);
+		afree(q);
 		break;
 	    }
 
@@ -271,8 +275,10 @@ char **main_argv;
 
 	    rc = startup_dump(hostname, diskname, level, dumpdate, progname, options);
 	    if(rc) {
+		q = squote(errstr);
 		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
-			  handle, squote(errstr));
+			  handle, q);
+		afree(q);
 		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
 		if (mesgfd != -1)
 		    aclose(mesgfd);
@@ -317,8 +323,9 @@ char **main_argv;
 	    outfd = stream_client("localhost", taper_port,
 				  DATABUF_SIZE, DEFAULT_SIZE);
 	    if(outfd == -1) {
-		putresult("FAILED %s %s\n", handle,
-			  squotef("[taper port open: %s]", strerror(errno)));
+		q = squotef("[taper port open: %s]", strerror(errno));
+		putresult("FAILED %s %s\n", handle, q);
+		afree(q);
 		break;
 	    }
 
@@ -326,8 +333,10 @@ char **main_argv;
 
 	    rc = startup_dump(hostname, diskname, level, dumpdate, progname, options);
 	    if(rc) {
+		q = squote(errstr);
 		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
-			  handle, squote(errstr));
+			  handle, q);
+		afree(q);
 		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
 		if (mesgfd != -1)
 		    aclose(mesgfd);
@@ -351,10 +360,26 @@ char **main_argv;
 	    break;
 
 	default:
-	    putresult("BAD-COMMAND %s\n", squote(argv[1]));
+	    q = squote(argv[1]);
+	    putresult("BAD-COMMAND %s\n", q);
+	    afree(q);
 	}
 	while(wait(NULL) != -1);
     } while(cmd != QUIT);
+
+    afree(errstr);
+    afree(msg);
+    afree(datestamp);
+    afree(backup_name);
+    afree(recover_cmd);
+    afree(compress_suffix);
+    afree(handle);
+    afree(filename);
+    afree(hostname);
+    afree(diskname);
+    afree(dumpdate);
+    afree(progname);
+    afree(options);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -367,19 +392,19 @@ char **main_argv;
 
 static cmd_t getcmd()
 {
-    static char *line = NULL;
+    char *line;
 
     if(interactive) {
 	printf("%s> ", pname);
 	fflush(stdout);
     }
 
-    afree(line);
     if((line = agets(stdin)) == NULL) {
 	return QUIT;
     }
 
     argc = split(line, argv, sizeof(argv) / sizeof(argv[0]), " ");
+    afree(line);
 
 #if DEBUG
     {
@@ -421,6 +446,7 @@ int outf, size;
  */
 {
     cmd_t cmd;
+    char *q = NULL;
 
     spaceleft -= size;
     dataptr += size;
@@ -443,8 +469,9 @@ int outf, size;
 		spaceleft += written;
 		continue;
 	    } else if(written < 0 && errno != ENOSPC) {
-		putresult("FAILED %s %s\n", handle,
-			  squotef("[data write: %s]", strerror(errno)));
+		q = squotef("[data write: %s]", strerror(errno));
+		putresult("FAILED %s %s\n", handle, q);
+		afree(q);
 		return 1;
 	    }
 	    putresult("NO-ROOM %s\n", handle);
@@ -468,7 +495,6 @@ int got_info_endline;
 int got_sizeline;
 int got_endline;
 int dump_result;
-char *backup_name, *recover_cmd, *compress_suffix;
 #define max(a,b) ((a)>(b)?(a):(b))
 
 static void process_dumpeof()
@@ -734,6 +760,8 @@ int mesgfd, datafd, indexfd, outfd;
     char kb_str[NUM_STR_SIZE];
     char kps_str[NUM_STR_SIZE];
     char orig_kb_str[NUM_STR_SIZE];
+    char *fn;
+    char *q;
 
 #ifndef DUMPER_SOCKET_BUFFERING
 #define DUMPER_SOCKET_BUFFERING 0
@@ -758,16 +786,20 @@ int mesgfd, datafd, indexfd, outfd;
     dumpsize = origsize = dump_result = 0;
     got_info_endline = got_sizeline = got_endline = 0;
     header_done = 0;
-    backup_name = recover_cmd = compress_suffix = (char *)0;
+    afree(backup_name);
+    afree(recover_cmd);
+    afree(compress_suffix);
 
     ap_snprintf(level_str, sizeof(level_str), "%d", level);
+    fn = sanitise_filename(diskname);
     errfname = newvstralloc(errfname,
 			    "/tmp",
 			    "/", hostname,
-			    ".", sanitise_filename(diskname),
+			    ".", fn,
 			    ".", level_str,
 			    ".errout",
 			    NULL);
+    afree(fn);
     if((errf = fopen(errfname, "w")) == NULL) {
 	errstr = newvstralloc(errstr,
 			      "errfile open \"", errfname, "\": ",
@@ -1021,8 +1053,10 @@ int mesgfd, datafd, indexfd, outfd;
 			  " ", "kps ", kps_str,
 			  " ", "orig-kb ", orig_kb_str,
 			  NULL);
+    q = squotef("[%s]", errstr);
     putresult("DONE %s %ld %ld %ld %s\n", handle, origsize, dumpsize,
-	      (long)(dumptime+0.5), squotef("[%s]", errstr));
+	      (long)(dumptime+0.5), q);
+    afree(q);
 
     afclose(errf);
 
@@ -1042,6 +1076,7 @@ int mesgfd, datafd, indexfd, outfd;
     }
 
     unlink(errfname);
+    afree(errfname);
 
     if (indexfile) {
 	char *tmpname = NULL;
@@ -1062,7 +1097,9 @@ int mesgfd, datafd, indexfd, outfd;
     return;
 
 failed:
-    putresult("FAILED %s %s\n", handle, squotef("[%s]", errstr));
+    q = squotef("[%s]", errstr);
+    putresult("FAILED %s %s\n", handle, q);
+    afree(q);
 
     if(errf) afclose(errf);
     /* fall through to ... */
@@ -1074,6 +1111,7 @@ failed:
     if (errfname) {
 	log_msgout(L_FAIL);
 	unlink(errfname);
+	afree(errfname);
     }
     log_end_multiline();
 

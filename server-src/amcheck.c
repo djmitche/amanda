@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.35 1998/02/20 23:16:02 martinea Exp $
+ * $Id: amcheck.c,v 1.36 1998/02/23 21:47:45 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -129,10 +129,6 @@ char **argv;
 	setgid(getgid());
 	setuid(getuid());
     }
-
-    version_string = vstralloc("\n",
-			       "(brought to you by Amanda ", version(), ")\n",
-			       NULL);
 
     mailout = overwrite = 0;
     do_serverchk = do_clientchk = 1;
@@ -264,11 +260,15 @@ char **argv;
     }
     afree(tempfname);
 
+    version_string = vstralloc("\n",
+			       "(brought to you by Amanda ", version(), ")\n",
+			       NULL);
     for(l = 0, n = strlen(version_string); l < n; l += s) {
 	if((s = write(mainfd, version_string + l, n - l)) < 0) {
 	    error("write main file: %s", strerror(errno));
 	}
     }
+    afree(version_string);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 

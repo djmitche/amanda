@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.15 1998/02/22 02:04:45 amcore Exp $
+ * $Id: tapeio.c,v 1.16 1998/02/23 21:47:59 jrj Exp $
  *
  * implements tape I/O functions
  */
@@ -301,7 +301,8 @@ char **datestamp, **label;
     char buffer[TAPE_BLOCK_BYTES];
     dumpfile_t file;
 
-    *datestamp = *label = NULL;
+    afree(*datestamp);
+    afree(*label);
 
     if(tapefd_rewind(tapefd) == -1) {
 	errstr = newstralloc2(errstr, "rewinding tape: ", strerror(errno));
@@ -322,8 +323,8 @@ char **datestamp, **label;
 	errstr = newstralloc(errstr, "not an amanda tape");
 	return errstr;
     }
-    *datestamp = newstralloc(*datestamp, file.datestamp);
-    *label = newstralloc(*label, file.name);
+    *datestamp = stralloc(file.datestamp);
+    *label = stralloc(file.name);
 
     return NULL;
 }

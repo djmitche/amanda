@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.32 1998/02/15 20:22:25 martinea Exp $
+ * $Id: driver.c,v 1.33 1998/02/23 21:47:47 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -324,8 +324,10 @@ char **main_argv;
     if(taper)
 	taper_cmd(QUIT, NULL, NULL, 0);
 
-    for(dumper = dmptable; dumper < dmptable + inparallel; dumper++)
+    for(dumper = dmptable; dumper < dmptable + inparallel; dumper++) {
 	dumper_cmd(dumper, QUIT, NULL);
+	afree(dumper->name);
+    }
 
     /* wait for all to die */
 
@@ -339,6 +341,7 @@ char **main_argv;
 	    if(rmdir(newdir) != 0)
 		log(L_WARNING, "Could not rmdir %s: %s",
 		    newdir, strerror(errno));
+	    afree(holdalloc(hdp));
 	}
     }
     afree(newdir);
@@ -346,6 +349,10 @@ char **main_argv;
     printf("driver: FINISHED time %s\n", walltime_str(curclock()));
     fflush(stdout);
     log(L_FINISH,"date %s time %s", datestamp, walltime_str(curclock()));
+    afree(datestamp);
+
+    afree(dumper_program);
+    afree(taper_program);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -591,6 +598,9 @@ void handle_taper_result()
 	printf("driver: finished-cmd time %s taper wrote %s:%s\n",
 	       walltime_str(curclock()), dp->host->hostname, dp->name);
 	fflush(stdout);
+
+	afree(sched(dp)->dumpdate);
+	afree(sched(dp));
 
 	if(empty(tapeq)) {
 	    taper_busy = 0;
@@ -1069,6 +1079,7 @@ disklist_t *waitqp;
 	remove_disk(waitqp, dp);
 	insert_disk(&rq, dp, sort_by_time);
     }
+    afree(inpline);
     if(line == 0)
 	log(L_WARNING, "WARNING: got empty schedule from planner");
 

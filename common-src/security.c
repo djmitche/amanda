@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: security.c,v 1.7 1998/01/17 15:33:40 amcore Exp $
+ * $Id: security.c,v 1.8 1998/02/23 21:47:42 jrj Exp $
  *
  * wrapper file for kerberos security
  */
@@ -292,6 +292,7 @@ char **errstr;
 	memset(pbuf, '\0', pbuf_len);		/* leave no trace */
     }
     afclose(fPerm);
+    afree(pbuf);
 
     if( amandahostsauth ) {
 	chdir("/");      /* now go someplace where I can't drop core :-) */

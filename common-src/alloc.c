@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: alloc.c,v 1.12 1998/01/26 21:15:53 jrj Exp $
+ * $Id: alloc.c,v 1.13 1998/02/23 21:47:32 jrj Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -36,9 +36,9 @@
 
 /*
  *=====================================================================
- * caller_loc -- keep track of all allocation callers
+ * dbmalloc_caller_loc -- keep track of all allocation callers
  *
- * char *caller_loc(char *s, int l)
+ * char *dbmalloc_caller_loc(char *s, int l)
  *
  * entry:	s = source file
  *		l = source line
@@ -60,12 +60,11 @@
  *=====================================================================
  */
 
-static char *
-caller_loc(s, l)
+char *
+dbmalloc_caller_loc(s, l)
 char *s;
 int l;
 {
-    static int filename_len = -1;
     struct loc_str {
 	char *str;
 	struct loc_str *next;
@@ -151,7 +150,7 @@ int l;
  *=====================================================================
  * Save the current source line for vstralloc/newvstralloc.
  *
- * int debug_alloc_save (char *s, int l)
+ * int debug_alloc_push (char *s, int l)
  *
  * entry:	s = source file
  *		l = source line
@@ -161,21 +160,50 @@ int l;
  *=====================================================================
  */
 
-static char	*saved_file;
-static int	saved_line;
+#define	DEBUG_ALLOC_SAVE_MAX	10
+
+static struct {
+	char		*file;
+	int		line;
+} debug_alloc_loc_info[DEBUG_ALLOC_SAVE_MAX];
+static int debug_alloc_ptr = 0;
+
+static char		*saved_file;
+static int		saved_line;
 
 int
-debug_alloc_save (s, l)
+debug_alloc_push (s, l)
 char *s;
 int l;
 {
-    saved_file = s;
-    saved_line = l;
+    debug_alloc_loc_info[debug_alloc_ptr].file = s;
+    debug_alloc_loc_info[debug_alloc_ptr].line = l;
+    debug_alloc_ptr = (debug_alloc_ptr + 1) % DEBUG_ALLOC_SAVE_MAX;
     return 0;
 }
 
-#else
-#define caller_loc(s,l)	__FILE__
+/*
+ *=====================================================================
+ * Pop the current source line information for vstralloc/newvstralloc.
+ *
+ * int debug_alloc_pop (void)
+ *
+ * entry:	none
+ * exit:	none
+ * 
+ * See the comments in amanda.h about what this is used for.
+ *=====================================================================
+ */
+
+void
+debug_alloc_pop ()
+{
+    debug_alloc_ptr =
+      (debug_alloc_ptr + DEBUG_ALLOC_SAVE_MAX - 1) % DEBUG_ALLOC_SAVE_MAX;
+    saved_file = debug_alloc_loc_info[debug_alloc_ptr].file;
+    saved_line = debug_alloc_loc_info[debug_alloc_ptr].line;
+}
+
 #endif
 
 /*
@@ -192,11 +220,11 @@ int size;
 {
     void *addr;
 
-    malloc_enter(caller_loc(s, l));
+    malloc_enter(dbmalloc_caller_loc(s, l));
     addr = (void *)malloc(size>0 ? size : 1);
     if(addr == NULL)
 	error("memory allocation failed");
-    malloc_leave(caller_loc(s, l));
+    malloc_leave(dbmalloc_caller_loc(s, l));
     return addr;
 }
 
@@ -216,10 +244,10 @@ int size;
 {
     char *addr;
 
-    malloc_enter(caller_loc(s, l));
+    malloc_enter(dbmalloc_caller_loc(s, l));
     afree(old);
     addr = alloc(size);
-    malloc_leave(caller_loc(s, l));
+    malloc_leave(dbmalloc_caller_loc(s, l));
     return addr;
 }
 
@@ -239,10 +267,10 @@ char *str;
 {
     char *addr;
 
-    malloc_enter(caller_loc(s, l));
+    malloc_enter(dbmalloc_caller_loc(s, l));
     addr = alloc(strlen(str)+1);
     strcpy(addr, str);
-    malloc_leave(caller_loc(s, l));
+    malloc_leave(dbmalloc_caller_loc(s, l));
     return addr;
 }
 
@@ -318,11 +346,12 @@ arglist_function(char *vstralloc, char *, str)
     va_list argp;
     char *result;
 
-    malloc_enter(caller_loc(saved_file, saved_line));
+    debug_alloc_pop();
+    malloc_enter(dbmalloc_caller_loc(saved_file, saved_line));
     arglist_start(argp, str);
     result = internal_vstralloc(str, argp);
     arglist_end(argp);
-    malloc_leave(caller_loc(saved_file, saved_line));
+    malloc_leave(dbmalloc_caller_loc(saved_file, saved_line));
     return result;
 }
 
@@ -342,10 +371,10 @@ char *newstr;
 {
     char *addr;
 
-    malloc_enter(caller_loc(s, l));
+    malloc_enter(dbmalloc_caller_loc(s, l));
     afree(oldstr);
     addr = stralloc(newstr);
-    malloc_leave(caller_loc(s, l));
+    malloc_leave(dbmalloc_caller_loc(s, l));
     return addr;
 }
 
@@ -362,12 +391,13 @@ arglist_function1(char *newvstralloc, char *, oldstr, char *, newstr)
     va_list argp;
     char *result;
 
-    malloc_enter(caller_loc(saved_file, saved_line));
+    debug_alloc_pop();
+    malloc_enter(dbmalloc_caller_loc(saved_file, saved_line));
     afree(oldstr);
     arglist_start(argp, newstr);
     result = internal_vstralloc(newstr, argp);
     arglist_end(argp);
-    malloc_leave(caller_loc(saved_file, saved_line));
+    malloc_leave(dbmalloc_caller_loc(saved_file, saved_line));
     return result;
 }
 

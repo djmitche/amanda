@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: protocol.c,v 1.22 1998/01/30 00:28:25 martinea Exp $
+ * $Id: protocol.c,v 1.23 1998/02/23 21:47:40 jrj Exp $
  *
  * implements amanda protocol
  */
@@ -170,6 +170,7 @@ int socket, startseq, handles;
     proto_handles = handles;
 
     proto_handle_table = alloc(proto_handles * sizeof(proto_t *));
+    malloc_mark(proto_handle_table);
     proto_next_handle = proto_handle_table;
     for(i = 0; i < proto_handles; i++)
 	proto_handle_table[i] = NULL;

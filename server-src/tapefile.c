@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapefile.c,v 1.11 1998/02/20 23:13:06 martinea Exp $
+ * $Id: tapefile.c,v 1.12 1998/02/23 21:47:55 jrj Exp $
  *
  * routines to read and write the amanda active tape list
  */
@@ -287,6 +287,7 @@ char *line;
     int ch;
 
     tp = (tape_t *) alloc(sizeof(tape_t));
+    malloc_mark(tp);
 
     tp->prev = NULL;
     tp->next = NULL;
@@ -306,6 +307,7 @@ char *line;
     skip_non_whitespace(s, ch);
     s[-1] = '\0';
     tp->label = stralloc(s1);
+    malloc_mark(tp->label);
     skip_whitespace(s, ch);
     tp->reuse = 1;
 #define sc "reuse"

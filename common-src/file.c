@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.9 1998/01/26 21:15:59 jrj Exp $
+ * $Id: file.c,v 1.10 1998/02/23 21:47:38 jrj Exp $
  *
  * file and directory bashing routines
  */
@@ -204,13 +204,22 @@ char *inp;
  */
 
 char *
+#if defined(USE_DBMALLOC)
+dbmalloc_agets(s, l, file)
+    char *s;
+    int l;
+    FILE *file;
+#else
 agets(file)
     FILE *file;
+#endif
 {
     char *line = NULL, *line_ptr;
     int line_size, line_free, size_save, line_len;
     char *cp;
     char *f;
+
+    malloc_enter(dbmalloc_caller_loc(s, l));
 
 #define	AGETS_LINE_INCR	128
 
@@ -251,6 +260,7 @@ agets(file)
 	    errno = 0;				/* flag EOF vs error */
 	}
     }
+    malloc_leave(dbmalloc_caller_loc(s, l));
     return line;
 }
 
@@ -270,8 +280,15 @@ agets(file)
  */
 
 char *
+#if defined(USE_DBMALLOC)
+dbmalloc_areads (s, l, fd)
+    char *s;
+    int l;
+    int fd;
+#else
 areads (fd)
     int fd;
+#endif
 {
     char *nl;
     char *line;
@@ -279,6 +296,8 @@ areads (fd)
     static char *line_buffer = NULL;
     char *t;
     int r;
+
+    malloc_enter(dbmalloc_caller_loc(s, l));
 
     while(1) {
 	/*
@@ -295,6 +314,7 @@ areads (fd)
 		}
 		afree(line_buffer);
 		line_buffer = t;
+		malloc_leave(dbmalloc_caller_loc(s, l));
 		return line;
 	    }
 	}
@@ -307,6 +327,7 @@ areads (fd)
 		errno = 0;			/* flag EOF instead of error */
 	    }
 	    afree(line_buffer);
+	    malloc_leave(dbmalloc_caller_loc(s, l));
 	    return NULL;
 	}
 	buffer[r] = '\0';

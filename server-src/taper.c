@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.25 1998/02/20 23:16:00 martinea Exp $
+/* $Id: taper.c,v 1.26 1998/02/23 21:47:56 jrj Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -121,6 +121,7 @@ char *label = NULL;
 int filenum;
 char *errstr = NULL;
 int tape_fd;
+char *tapedev = NULL;
 static unsigned long malloc_hist_1, malloc_size_1;
 static unsigned long malloc_hist_2, malloc_size_2;
 
@@ -220,6 +221,7 @@ int rdpipe, wrpipe;
     char **argv;
     char *handle = NULL, *hostname = NULL, *diskname = NULL, *result;
     char tok;
+    char *q;
     int level, fd, data_port, data_socket, wpid;
 
     procname = "reader";
@@ -253,9 +255,11 @@ int rdpipe, wrpipe;
     case 'E':
 	/* no tape, bail out */
 	result = syncpipe_getstr();
-	putresult("TAPE-ERROR %s\n",
-		  squotef("[%s]", result ? result : "(null)"));
+	q = squotef("[%s]", result ? result : "(null)");
+	putresult("TAPE-ERROR %s\n", q);
+	afree(q);
 	log(L_ERROR,"no-tape [%s]", result);
+	afree(result);
 	exit(1);
     default:
 	error("expected 'S' or 'E' for START-TAPER, got '%c'", tok);
@@ -289,8 +293,9 @@ int rdpipe, wrpipe;
 
 	    if((fd = stream_accept(data_socket, CONNECT_TIMEOUT,
 				   DEFAULT_SIZE, sizeof(buftable->buffer))) == -1) {
-		putresult("TAPE-ERROR %s %s\n", handle,
-			  squote("[port connect timeout]"));
+		q = squote("[port connect timeout]");
+		putresult("TAPE-ERROR %s %s\n", handle, q);
+		afree(q);
 		aclose(data_socket);
 		afree(handle);
 		afree(hostname);
@@ -319,8 +324,9 @@ int rdpipe, wrpipe;
 	    level = atoi(argv[6]);
 
 	    if((fd = open(argv[3], O_RDONLY)) == -1) {
-		putresult("TAPE-ERROR %s %s\n", handle,
-			  squotef("[%s]", strerror(errno)));
+		q = squotef("[%s]", strerror(errno));
+		putresult("TAPE-ERROR %s %s\n", handle, q);
+		afree(q);
 		afree(handle);
 		afree(hostname);
 		afree(diskname);
@@ -349,6 +355,11 @@ int rdpipe, wrpipe;
 
 	    detach_buffers(buftable);
 	    destroy_buffers();
+	    afree(datestamp);
+	    afree(label);
+	    afree(errstr);
+	    afree(changer_resultstr);
+	    afree(tapedev);
 
 	    malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -360,7 +371,9 @@ int rdpipe, wrpipe;
 
 	default:
 	    handle = stralloc(argv[1]);
-	    putresult("BAD-COMMAND %s\n", squote(handle));
+	    q = squote(handle);
+	    putresult("BAD-COMMAND %s\n", q);
+	    afree(q);
 	    afree(handle);
 	    break;
 	}
@@ -431,6 +444,7 @@ char *handle, *hostname, *diskname;
     long filesize;
     times_t runtime;
     char *str;
+    char *q = NULL;
 
     /* initialize */
 
@@ -504,7 +518,9 @@ char *handle, *hostname, *diskname;
 
 		errstr = newstralloc(errstr,
 				     "[fatal buffer mismanagement bug]");
-		putresult("TRY-AGAIN %s %s\n", handle, squote(errstr));
+		q = squote(errstr);
+		putresult("TRY-AGAIN %s %s\n", handle, q);
+		afree(q);
 		log(L_INFO, "retrying %s:%s.%d on new tape: %s",
 		    hostname, diskname, level, errstr);
 		closing = 1;
@@ -546,15 +562,18 @@ char *handle, *hostname, *diskname;
 	    aclose(fd);
 	    str = syncpipe_getstr();
 	    errstr = newvstralloc(errstr, "[", str ? str : "(null)", "]", NULL);
+	    afree(str);
 
+	    q = squote(errstr);
 	    if(tok == 'T') {
-		putresult("TRY-AGAIN %s %s\n", handle, squote(errstr));
+		putresult("TRY-AGAIN %s %s\n", handle, q);
 		log(L_INFO, "retrying %s:%s.%d on new tape: %s",
 		    hostname, diskname, level, errstr);
 	    } else {
-		putresult("TAPE-ERROR %s %s\n", handle, squote(errstr));
+		putresult("TAPE-ERROR %s %s\n", handle, q);
 		log(L_FAIL, "%s %s %d %s", hostname, diskname, level, errstr);
 	    }
+	    afree(q);
 	    return;
 
 
@@ -564,8 +583,10 @@ char *handle, *hostname, *diskname;
 
 	    str = syncpipe_getstr();
 	    label = newstralloc(label, str ? str : "(null)");
+	    afree(str);
 	    str = syncpipe_getstr();
 	    filenum = atoi(str ? str : "-9876");	/* ??? */
+	    afree(str);
 	    fprintf(stderr, "taper: reader-side: got label %s filenum %d\n",
 		    label, filenum);
 	    fflush(stderr);
@@ -576,9 +597,12 @@ char *handle, *hostname, *diskname;
 		errstr = newvstralloc(errstr,
 				      "[input: ", strerror(err), "]",
 				      NULL);
-		putresult("TAPE-ERROR %s %s\n", handle, squote(errstr));
+		q = squote(errstr);
+		putresult("TAPE-ERROR %s %s\n", handle, q);
+		afree(q);
 		log(L_FAIL, "%s %s %d %s", hostname, diskname, level, errstr);
 		str = syncpipe_getstr();	/* reap stats */
+		afree(str);
 	    } else {
 		char kb_str[NUM_STR_SIZE];
 		char kps_str[NUM_STR_SIZE];
@@ -596,8 +620,11 @@ char *handle, *hostname, *diskname;
 				      " ", str ? str : "(null)",
 				      "]",
 				      NULL);
+		afree(str);
+		q = squote(errstr);
 		putresult("DONE %s %s %d %s\n",
-			  handle, label, filenum, squote(errstr));
+			  handle, label, filenum, q);
+		afree(q);
 		log(L_SUCCESS, "%s %s %d %s",
 		    hostname, diskname, level, errstr);
 	    }
@@ -693,6 +720,7 @@ int getp, putp;
 	    }
 	    else
 		syncpipe_put('S');
+	    afree(str);
 
 	    break;
 
@@ -703,6 +731,12 @@ int getp, putp;
 
 	case 'Q':
 	    end_tape(0);	/* XXX check results of end tape ?? */
+	    clear_tapelist();
+	    afree(datestamp);
+	    afree(label);
+	    afree(errstr);
+	    afree(changer_resultstr);
+	    afree(tapedev);
 
 	    malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -951,7 +985,7 @@ char ***argvp;
      * them to hang around, the calling routine had better copy them to
      * storage it has allocated for that purpose.
      */
-    static char *line = NULL;
+    char *line;
     static char *argv[MAX_ARGS+1];
     int argc;
 
@@ -960,10 +994,10 @@ char ***argvp;
 	fflush(stderr);
     }
 
-    afree(line);
     if((line = agets(stdin)) == NULL) return QUIT;
 
     argc = split(line, argv, sizeof(argv) / sizeof(argv[0]), " ");
+    afree(line);
 
 #ifdef DEBUG
     {
@@ -1159,17 +1193,13 @@ char *syncpipe_getstr()
     int rc;
     int len;
     char *p;
-    static char *str = NULL;
-    static int strsize = 0;
+    char *str;
 
     if((len = syncpipe_getint()) <= 0) {
 	return NULL;
     }
 
-    if(len > strsize) {
-	strsize = ((len + 1024 - 1) / 1024) * 1024;
-	str = newalloc(str, strsize);
-    }
+    str = alloc(len);
 
     for(p = str; len > 0; len -= rc, p += rc) {
 	if ((rc = read(getpipe, p, len)) <= 0) {
@@ -1236,7 +1266,7 @@ char *item;
  */
 
 int runtapes, cur_tape, have_changer, tapedays;
-char *tapedev, *labelstr, *tapefilename;
+char *labelstr, *tapefilename;
 
 /* local functions */
 int scan_init P((int rc, int ns, int bk));
@@ -1251,6 +1281,7 @@ int label_tape()
     char *result;
     tape_t *tp;
 
+    afree(tapedev);
     if(have_changer && (tapedev = taper_scan()) == NULL) {
 	errstr = newstralloc(errstr, changer_resultstr);
 	return 0;
@@ -1264,6 +1295,7 @@ int label_tape()
 
     fprintf(stderr, "taper: read label `%s' date `%s'\n", label, olddatestamp);
     fflush(stderr);
+    afree(olddatestamp);
 
     /* check against tape list */
     tp = lookup_tapelabel(label);
@@ -1271,7 +1303,6 @@ int label_tape()
 	errstr = newvstralloc(errstr,
 			      "cannot overwrite active tape ", label,
 			      NULL);
-	afree(olddatestamp);
 	return 0;
     }
 
@@ -1280,7 +1311,6 @@ int label_tape()
 			      "label ", label,
 			      " doesn\'t match labelstr \"", labelstr, "\"",
 			      NULL);
-	afree(olddatestamp);
 	return 0;
     }
 
@@ -1292,13 +1322,11 @@ int label_tape()
 	    errstr = newstralloc2(errstr,
 				  "writing label: ", strerror(errno));
 	}
-	afree(olddatestamp);
 	return 0;
     }
 
     if((result = tapefd_wrlabel(tape_fd, datestamp, label)) != NULL) {
 	errstr = newstralloc(errstr, result);
-	afree(olddatestamp);
 	return 0;
     }
 
@@ -1329,7 +1357,6 @@ int label_tape()
     total_tape_used=0.0;
     total_tape_fm = 0;
 
-    afree(olddatestamp);
     return 1;
 }
 
@@ -1442,7 +1469,6 @@ int write_filemark()
  */
 int nslots, backwards, found, got_match, tapedays;
 char *first_match_label = NULL, *first_match = NULL, *found_device = NULL;
-char *scan_datestamp = NULL;
 char *searchlabel, *labelstr;
 tape_t *tp;
 
@@ -1467,6 +1493,7 @@ char *slotstr;
 char *device;
 {
     char *t_errstr;
+    char *scan_datestamp;
 
     if(rc == 2) {
 	fprintf(stderr, "%s: fatal slot %s: %s\n",
@@ -1481,8 +1508,8 @@ char *device;
 	return 0;
     }
     else {
-	afree(scan_datestamp);
 	if((t_errstr = tape_rdlabel(device, &scan_datestamp, &label)) != NULL) {
+	    afree(scan_datestamp);
 	    fprintf(stderr, "%s: slot %s: %s\n", pname, slotstr, t_errstr);
 	    fflush(stderr);
 	}
@@ -1491,6 +1518,7 @@ char *device;
 	    fprintf(stderr, "%s: slot %s: date %-8s label %s",
 		    pname, slotstr, scan_datestamp, label);
 	    fflush(stderr);
+	    afree(scan_datestamp);
 	    if(searchlabel != NULL && strcmp(label, searchlabel) == 0) {
 		/* it's the one we are looking for, stop here */
 		fprintf(stderr, " (exact label match)\n");
@@ -1569,5 +1597,12 @@ char *taper_scan()
 	}
     }
 
-    return found ? found_device : NULL;
+    if(found) {
+	outslot = found_device;
+	found_device = NULL;		/* forget about our copy */
+    } else {
+	outslot = NULL;
+	afree(found_device);
+    }
+    return outslot;
 }
