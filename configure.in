@@ -835,6 +835,11 @@ case "$target" in
 			esac
 			AC_DEFINE(STATFS_OSF1)
 			;;
+    *-dg-*)
+			DUMP_PROGRAMS="dump "$DUMP_PROGRAMS
+			USE_RUNDUMP=yes
+			AC_DEFINE(DUMP_RETURNS_1)
+			;;
     *-netbsd*)
 			;;
     *-freebsd*)

@@ -1,5 +1,7 @@
 Version 2.4.0
 
+	DGUX support. -Brian Harvey <bharvey@raven.phs.com>
+
 	Integrated amgetidx into dumper/sendbackup protocol. -oliva
 
 	Have sendbackup-dump and sendbackup-gnutar list the actual
