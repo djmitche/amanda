@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.12 1999/04/16 05:12:55 kashmir Exp $
+ * $Id: event.c,v 1.13 1999/04/16 18:07:17 kashmir Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
  * a uniform interface, central state storage, and centralized
@@ -46,23 +46,33 @@ struct event_handle {
     void *arg;			/* argument to pass to previous function */
     event_type_t type;		/* type of event */
     event_id_t data;		/* type data */
-    time_t lastfired;		/* timestamp of last fired (EV_WAIT only) */
+    time_t lastfired;		/* timestamp of last fired (EV_TIME only) */
     TAILQ_ENTRY(event_handle) tq;	/* queue handle */
 };
 
 /*
- * Our queue of currently active events.
+ * eventq is a queue of currently active events.
+ * cache is a queue of unused handles.  We keep a few around to avoid
+ * malloc overhead when doing a lot of register/releases.
  */
 static struct {
     TAILQ_HEAD(, event_handle) tailq;
     int qlength;
 } eventq = {
     TAILQ_HEAD_INITIALIZER(eventq.tailq), 0
+}, cache = {
+    TAILQ_HEAD_INITIALIZER(eventq.tailq), 0
 };
 #define	eventq_first()		TAILQ_FIRST(&eventq.tailq)
 #define	eventq_next(eh)		TAILQ_NEXT(eh, tq)
 #define	eventq_append(eh)	TAILQ_INSERT_TAIL(&eventq.tailq, eh, tq);
 #define	eventq_remove(eh)	TAILQ_REMOVE(&eventq.tailq, eh, tq);
+
+/*
+ * How many items we can have in the handle cache before we start
+ * freeing.
+ */
+#define	CACHEDEPTH	10
 
 /*
  * A table of currently set signal handlers.
@@ -78,6 +88,8 @@ static const char *event_type2str P((event_type_t));
 #endif
 #define	fire(eh)	(*(eh)->fn)((eh)->arg)
 static void signal_handler P((int));
+static event_handle_t *gethandle P((void));
+static void puthandle P((event_handle_t *));
 
 #undef min
 #define	min(a, b)	((a) < (b) ? (a) : (b))
@@ -104,7 +116,7 @@ event_register(data, type, fn, arg)
     /* callers can't register EV_DEAD */
     assert(type != EV_DEAD);
 
-    handle = alloc(sizeof(*handle));
+    handle = gethandle();
     handle->fn = fn;
     handle->arg = arg;
     handle->type = type;
@@ -351,7 +363,7 @@ event_loop(dontblock)
 	     */
 	    case EV_DEAD:
 		eventq_remove(eh);
-		amfree(eh);
+		puthandle(eh);
 		break;
 
 	    default:
@@ -489,6 +501,42 @@ signal_handler(signo)
 
     assert(signo >= 0 && signo < sizeof(sigtable) / sizeof(sigtable[0]));
     sigtable[signo].score++;
+}
+
+/*
+ * Return a new handle.  Take from the handle cache if not empty.  Otherwise,
+ * alloc a new one.
+ */
+static event_handle_t *
+gethandle()
+{
+    event_handle_t *eh;
+
+    if ((eh = TAILQ_FIRST(&cache.tailq)) != NULL) {
+	assert(cache.qlength > 0);
+	TAILQ_REMOVE(&cache.tailq, eh, tq);
+	cache.qlength--;
+	return (eh);
+    }
+    assert(cache.qlength == 0);
+    return (alloc(sizeof(*eh)));
+}
+
+/*
+ * Free a handle.  If there's space in the handle cache, put it there.
+ * Otherwise, free it.
+ */
+static void
+puthandle(eh)
+    event_handle_t *eh;
+{
+
+    if (cache.qlength > CACHEDEPTH) {
+	amfree(eh);
+	return;
+    }
+    TAILQ_INSERT_HEAD(&cache.tailq, eh, tq);
+    cache.qlength++;
 }
 
 #ifdef EVENT_DEBUG
