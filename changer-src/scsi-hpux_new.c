@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.1 1998/11/07 08:49:22 oliva Exp $";
+static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.1.2.2 1998/11/12 00:00:22 oliva Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an HP-UX Workstation
@@ -83,13 +83,19 @@ int SCSI_ExecuteCommand(int DeviceFD,
   while (--Retries > 0) {
     
     Result = ioctl(DeviceFD, SIOC_IO, &sctl_io);
-    if (sctl_io.cdb_status == S_GOOD && Result >= 0)
+    if (Result < 0)
+      return(Result);
+    
+    memcpy(RequestSense, sctl_io.sense, RequestSenseLength);
+
+    switch(sctl_io.cdb_status)
       {
-	/* Sense Buffer */
-	memcpy(RequestSense, sctl_io.sense, RequestSenseLength);
-	return(0);
-      } else {
-	  /* ????? */
+      case S_GOOD:
+      case S_CHECK_CONDITION:
+	return(sctl_io.cdb_status);
+	break;
+      default:
+	return(sctl_io.cdb_status);
       }
   }
   return(-1);
@@ -111,22 +117,27 @@ int Tape_Eject (int DeviceFD)
 }
 
 /* ======================================================= */
-int Tape_Ready(char *Device, int wait)
+int Tape_Ready(char *tapedev, char *changerdev, int changerfd, int wait)
 {
   struct mtget mtget;
   int true = 1;
-  time_t StartTime, EndTime;
+  int cnt;
   int DeviceFD;
 
-  if ((DeviceFD = SCSI_OpenDevice(Device)) < 0)
-  {
-     sleep(wait);
-     return;
-  }
+  if (strcmp(tapedev,changerdev) == 0) 
+    {
+      DeviceFD = changerfd;
+    } else {
+      if ((DeviceFD = SCSI_OpenDevice(tapedev)) < 0)
+	{
+	  sleep(wait);
+	  return;
+	}
+    }
   
   bzero(&mtget, sizeof(struct mtget));
-  StartTime = time(0);
-  while (true)
+
+  while (true && cnt < wait)
     {
       if(ioctl(DeviceFD,  MTIOCGET, &mtget) != -1)
 	{
@@ -136,15 +147,14 @@ int Tape_Ready(char *Device, int wait)
 	    if (GMT_ONLINE(mtget.mt_gstat))
 #endif
 	      {
-		EndTime = time(0);
-/*
-		fprintf(stderr,"BOT after %d sec\n", EndTime - StartTime);
-*/
 		true=0;
 	      }
 	}
+      cnt++;
     }
-    SCSI_CloseDevice(Device, DeviceFD);
+  
+  if (strcmp(tapedev,changerdev) != 0)
+    SCSI_CloseDevice(tapedev, DeviceFD);
 }
 
 /* ======================================================= */

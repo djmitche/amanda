@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-irix.c,v 1.1 1998/11/07 08:49:24 oliva Exp $";
+static char rcsid[] = "$Id: scsi-irix.c,v 1.1.2.2 1998/11/12 00:00:24 oliva Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an SGI Workstation
@@ -30,6 +30,7 @@ static char rcsid[] = "$Id: scsi-irix.c,v 1.1 1998/11/07 08:49:24 oliva Exp $";
 #endif
 #include <time.h>
 
+#include <sys/scsi.h>
 #include <sys/dsreq.h>
 #include <sys/mtio.h>
 #include <scsi-defs.h>
@@ -93,32 +94,36 @@ int SCSI_ExecuteCommand(int DeviceFD,
       ds.ds_flags = ds.ds_flags | DSRQ_WRITE;
       break;
     }
+
   while (--retries > 0) {
     Result = ioctl(DeviceFD, DS_ENTER, &ds);
     if (Result < 0)
       {
-	fprintf(stderr,"DSRT_DEVSCSI\n");
 	RET(&ds) = DSRT_DEVSCSI;
 	return (-1);
       }
-    if (RET(&ds) == DSRT_NOSEL) 	
-      {
-	fprintf(stderr,"DSRT_NOSEL\n");
-	continue;	
-      }
     switch (STATUS(&ds))
       {
-      case 0x08:      /*  BUSY */
-	fprintf(stderr,"BUSY\n");
+      case ST_BUSY:                /*  BUSY */
 	break;
-      case 0x18:      /*  RESERV CONFLICT */
+      case 0x18:                   /*  RESERV CONFLICT */
 	if (retries > 0)
 	  sleep(2);
 	continue;
-      case 0x00:      /*  GOOD */
-	return(STATUS(&ds));
-      case 0x02:      /*  CHECK CONDITION */ 
-      case 0x10:      /*  INTERM/GOOD */
+      case ST_GOOD:                /*  GOOD */
+	switch (RET(&ds))
+	  {
+	  case DSRT_SHORT:
+	    return(ST_GOOD);
+	    break;
+	  case DSRT_OK:
+	  default:
+	    return(STATUS(&ds));
+	  }
+      case ST_CHECK:               /*  CHECK CONDITION */ 
+	return(ST_CHECK);
+	break;
+      case ST_COND_MET:            /*  INTERM/GOOD */
       default:
 	continue;
       }
@@ -152,35 +157,39 @@ int Tape_Status( int DeviceFD)
 	}
 }
 
-int Tape_Ready(char *Device, int wait)
+int Tape_Ready(char *tapedev, char *changerdev, int changerfd, int wait)
 {
+
   struct mtget mtget;
   int true = 1;
-  time_t StartTime, EndTime;
+  int cnt;
   int DeviceFD;
   
-  if ((DeviceFD = SCSI_OpenDevice(Device)) < 0)
-    {
-      sleep(wait);
-      return;
-    }
+  if (strcmp(tapedev, changerdev) == 0) {
+    DeviceFD = changerfd;
+  } else {
+    if ((DeviceFD = SCSI_OpenDevice(tapedev)) < 0)
+      {
+	sleep(wait);
+	return;
+      }
+  }
   
   bzero(&mtget, sizeof(struct mtget));
-  StartTime = time(0);
-  while (true)
+  while (true && cnt < wait)
     {
       if(ioctl(DeviceFD,  MTIOCGET, &mtget) != -1) 
 	{
 	  if (mtget.mt_dposn & MT_ONL)
 	    {
-	      EndTime = time(0);
-/*	
-	      fprintf(stderr,"BOT after %d sec\n", EndTime - StartTime);
-*/
 	      true=0;
 	    }
 	}
+      sleep(1);
+      cnt++;
     }
-  SCSI_CloseDevice(Device, DeviceFD);
+
+  if (strcmp(tapedev, changerdev) != 0)
+    SCSI_CloseDevice(tapedev, DeviceFD);
 }
 #endif

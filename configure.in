@@ -1498,7 +1498,7 @@ dnl chio support
 dnl
 if test x"$ac_cv_header_sys_scsi_h" = x"yes"; then
    AC_CACHE_CHECK([for HP/UX-like scsi changer support],
-	amanda_cv_hpux_scsi,
+	amanda_cv_hpux_scsi_chio,
 	[AC_TRY_COMPILE([
 #include <sys/scsi.h>
 ], [
@@ -1506,8 +1506,8 @@ if test x"$ac_cv_header_sys_scsi_h" = x"yes"; then
 	int i = SIOC_ELEMENT_ADDRESSES;
 	int j = SIOC_ELEMENT_STATUS;
 	int k = SIOC_MOVE_MEDIUM;
-], amanda_cv_hpux_scsi=yes, amanda_cv_hpux_scsi=no)])
-    if test x"$amanda_cv_hpux_scsi" = x"yes"; then
+], amanda_cv_hpux_scsi_chio=yes, amanda_cv_hpux_scsi_chio=no)])
+    if test x"$amanda_cv_hpux_scsi_chio" = x"yes"; then
 	AC_DEFINE(HAVE_HPUX_SCSI_CHIO)
 	NO_SCSI_CHANGER_MODE=false
     fi

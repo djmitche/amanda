@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-hpux.c,v 1.4.4.1 1998/11/07 08:50:01 oliva Exp $
+ *	$Id: scsi-hpux.c,v 1.4.4.2 1998/11/12 00:00:20 oliva Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -266,7 +266,24 @@ int get_drive_count(int fd)
     return changer_info.num_data_transfers;
 }
 
-int Tape_Ready(char *Device, int wait)
+/* This function should ask the drive if it is ready */
+int Tape_Ready(char *tapedev, char *changerdev, int changerfd, int wait)
 {
+  FILE *out=NULL;
+  int cnt=0;
+
+  if (strcmp(tapedev, changerdev) == 0)
+    {
+      sleep(wait);
+      return(0);
+    }
+
+  while ((cnt<wait) && (NULL==(out=fopen(tapedev,"w+")))){
+    cnt++;
+    sleep(1);
+  }
+  if (out != NULL)
+    fclose(out);
+  return 0;
 }
 #endif

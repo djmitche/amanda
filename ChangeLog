@@ -1,3 +1,24 @@
+1998-11-11  Thomas Hepper <th@icem.de>
+
+	* configure.in: amanda_cv_hpux_scsi was double defined.
+	Replaced it in the chio check with amanda_cv_hpux_scsi_chio
+	* docs/TAPE.CHANGERS: update the notes about chg-scsi
+	* changer-src/chg-scsi.c: Unload the cleaning tape only
+	if it is loaded
+	Pass the changerdev and tapedev Tape_Ready, so we can check
+	if changerdev=tapedev. In this case the fd is already open.
+	* changer-src/scsi-aix.c: cleanup and first parts are running :-)
+	* changer-src/scsi-changer-driver.c: Pass back the scsi status
+	field to the calling function, not the result from the ioctl
+	if the return form the ioctl is >= 0
+	* changer-src/scsi-hpux.c: Add additional param to Tape_Ready
+	fill Tape_Ready with live 
+	* changer-src/scsi-hpux_new.c: Return the scsi status if 
+	the ioctl result is >=0. Add new Parameter to Tape_Ready
+	* changer-src/scsi-irix.c: same as scsi-hpux_new.c
+	* changer-src/scis-linux.c: Add additional param to Tape_Ready
+	* changer-src/scsi-solaris.c: same as scsi-hpux_new.c
+
 1998-11-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/driver.c (main): redo my patch about total_disksize that
