@@ -25,13 +25,14 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: alloc.c,v 1.4 1997/08/31 18:02:19 amcore Exp $
+ * $Id: alloc.c,v 1.5 1997/10/08 05:33:19 george Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
  * code
  */
 #include "amanda.h"
+
 
 /*
 ** alloc - a wrapper for malloc.
@@ -47,6 +48,19 @@ int size;
     return addr;
 }
 
+
+/*
+** newalloc - free existing buffer and then alloc a new one.
+*/
+void *newalloc(old, size)
+void *old;
+int size;
+{
+    if (old != (void *)0) free(old);
+    return alloc(size);
+}
+
+
 /*
 ** stralloc - copies the given string into newly allocated memory.
 **            Just like strdup()!
@@ -59,4 +73,16 @@ char *str;
     addr = alloc(strlen(str)+1);
     strcpy(addr, str);
     return addr;
+}
+
+
+/*
+** newstralloc - free existing string and then stralloc a new one.
+*/
+char *newstralloc(oldstr, newstr)
+char *oldstr;
+char *newstr;
+{
+    if (oldstr != (char *)0) free(oldstr);
+    return stralloc(newstr);
 }

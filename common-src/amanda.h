@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.17 1997/08/27 08:11:49 amcore Exp $
+ * $Id: amanda.h,v 1.18 1997/10/08 05:33:20 george Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -321,7 +321,9 @@ extern void   error     P((char *format, ...))
      ;
 extern int    onerror   P((void (*errf)(void)));
 extern void  *alloc     P((int size));
+extern void  *newalloc  P((void *old, int size));
 extern char  *stralloc  P((char *str));
+extern char  *newstralloc P((char *oldstr, char *newstr));
 extern char  *validate_regexp P((char *regex));
 extern int    match     P((char *regex, char *str));
 extern time_t unctime   P((char *timestr));
