@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.62 2002/04/17 20:06:10 martinea Exp $
+ * $Id: selfcheck.c,v 1.63 2002/04/20 01:55:44 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -62,7 +62,7 @@ int program_is_wrapper=0;
 
 static am_feature_t *our_features = NULL;
 static char *our_feature_string = NULL;
-static am_feature_t *their_features = NULL;
+static g_option_t *g_options = NULL;
 
 /* local functions */
 int main P((int argc, char **argv));
@@ -89,7 +89,6 @@ char **argv;
     char *optstr = NULL;
     char *err_extra = NULL;
     char *s;
-    char *fp;
     int ch;
     int fd;
     unsigned long malloc_hist_1, malloc_size_1;
@@ -132,29 +131,10 @@ char **argv;
 #define sc "OPTIONS "
 	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
 #undef sc
-
-#define sc "features="
-	    s = strstr(line, sc);
-	    if(s != NULL) {
-		s += sizeof(sc)-1;
-#undef sc
-		am_release_feature_set(their_features);
-		if((their_features = am_string_to_feature(s)) == NULL) {
-		    err_extra = "bad features value";
-		    goto err;
-		}
-	    }
-
-#define sc "hostname="
-	    s = strstr(line, sc);
-	    if(s != NULL) {
-		s += sizeof(sc)-1;
-		ch = *s++;
-#undef sc
-		fp = s-1;
-		while(ch != '\0' && ch != ';') ch = *s++;
-		s[-1] = '\0';
-		host = newstralloc(host, fp);
+	    g_options = parse_g_options(line+8, 1);
+	    if(g_options->hostname) {
+		amfree(host);
+		host = g_options->hostname;
 	    }
 
 	    printf("OPTIONS features=%s;hostname=%s;\n",
@@ -227,7 +207,7 @@ char **argv;
 	    optstr = s - 1;
 	    skip_non_whitespace(s, ch);
 	    s[-1] = '\0';			/* terminate the options */
-	    options = parse_options(optstr, disk, amdevice, their_features, 1);
+	    options = parse_options(optstr, disk, amdevice, g_options->features, 1);
 	    check_options(program, disk, amdevice, options);
 	    check_disk(program, disk, amdevice, level, &optstr[2]);
 	} else if (ch == '\0') {
@@ -257,7 +237,9 @@ char **argv;
     amfree(our_feature_string);
     am_release_feature_set(our_features);
     our_features = NULL;
-    their_features = NULL;
+    am_release_feature_set(g_options->features);
+    amfree(g_options->str);
+    amfree(g_options);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 

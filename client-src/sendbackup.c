@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.64 2002/04/17 20:06:10 martinea Exp $
+ * $Id: sendbackup.c,v 1.65 2002/04/20 01:55:44 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -60,7 +60,7 @@ backup_program_t *program = NULL;
 
 static am_feature_t *our_features = NULL;
 static char *our_feature_string = NULL;
-static am_feature_t *their_features = NULL;
+static g_option_t *g_options = NULL;
 
 /* local functions */
 int main P((int argc, char **argv));
@@ -132,7 +132,7 @@ char **argv;
     char *host;				/* my hostname from the server */
     char *line = NULL;
     char *err_extra = NULL;
-    char *s, *fp;
+    char *s;
     int i;
     int ch;
     unsigned long malloc_hist_1, malloc_size_1;
@@ -199,31 +199,11 @@ char **argv;
 #define sc "OPTIONS "
 	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
 #undef sc
-
-#define sc "features="
-	    s = strstr(line, sc);
-	    if(s != NULL) {
-		s += sizeof(sc)-1;
-#undef sc
-		am_release_feature_set(their_features);
-		if((their_features = am_string_to_feature(s)) == NULL) {
-		    err_extra = "bad features value";
-		    goto err;
-		}
+	    g_options = parse_g_options(line+8, 1);
+	    if(g_options->hostname) {
+		amfree(host);
+		host = g_options->hostname;
 	    }
-
-#define sc "hostname="
-	    s = strstr(line, sc);
-	    if(s != NULL) {
-		s += sizeof(sc)-1;
-		ch = *s++;
-#undef sc
-		fp = s-1;
-		while(ch != '\0' && ch != ';') ch = *s++;
-		s[-1] = '\0';
-		host = newstralloc(host, fp);
-	    }
-
 	    continue;
 	}
 
@@ -332,7 +312,7 @@ char **argv;
     }
     program = programs[i];
 
-    options = parse_options(stroptions, disk, amdevice, their_features, 0);
+    options = parse_options(stroptions, disk, amdevice, g_options->features, 0);
 
     if(!interactive) {
 	datafd = DATA_FD_OFFSET + 0;
@@ -393,8 +373,9 @@ char **argv;
     amfree(our_feature_string);
     am_release_feature_set(our_features);
     our_features = NULL;
-    am_release_feature_set(their_features);
-    their_features = NULL;
+    am_release_feature_set(g_options->features);
+    amfree(g_options->str);
+    amfree(g_options);
 
     dbclose();
 
