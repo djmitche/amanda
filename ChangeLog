@@ -1,3 +1,9 @@
+2004-02-13  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Reported by Jason Brooks <jason.brooks@windriver.com>
+
+	* server-src/reporter.c: Remove duplicate setting of cd to
+	  &ColumnData[Level].
+
 2004-02-12  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Philippe Charnier <charnier@xp11.frmug.org>
 

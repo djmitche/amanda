@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.85 2003/11/26 16:10:13 martinea Exp $
+ * $Id: reporter.c,v 1.86 2004/02/13 13:42:22 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -1206,7 +1206,6 @@ output_summary()
 	      continue;
 	    }
 	    
-	    cd= &ColumnData[Level];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
 	    fprintf(mailf, cd->Format, cd->Width, cd->Precision,repdata->level);
 
