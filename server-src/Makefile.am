@@ -69,7 +69,7 @@ EXTRA_LIBRARIES = 	libamserver.a
 libamserver_la_SOURCES=	amindex.c	changer.c	clock.c		\
 			conffile.c	diskfile.c	driverio.c	\
 			holding.c	infofile.c	logfile.c	\
-			tapefile.c
+			tapefile.c	find.c
 
 libamserver_la_LDFLAGS= -version-info $(libserver_version) -rpath $(libdir)
 
@@ -78,7 +78,7 @@ libamserver_a_SOURCES=	$(libamserver_la_SOURCES)
 noinst_HEADERS = 	amindex.h	changer.h	clock.h		\
 			conffile.h	diskfile.h	driverio.h	\
 			holding.h	infofile.h	logfile.h	\
-			tapefile.h
+			tapefile.h	find.h
 
 install-exec-hook:
 	@list="$(sbin_PROGRAMS) $(sbin_SCRIPTS)"; \
