@@ -1,3 +1,7 @@
+2002-02-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* changer-src/chg-zd-mtx.sh.in: Don't use '^' in expr match argument.
+
 2002-02-10 John R. Jackson (jrj@purdue.edu)
 
 	* configure.in: Add new file-pad tapetype option to take the place

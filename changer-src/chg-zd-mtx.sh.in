@@ -589,7 +589,7 @@ if [ -z "$tape" ]; then
 	Exit 2 \
 	     "<none>" \
 	     "tapedev may not be empty"
-elif [ $tape = "/dev/null" -o `expr "$tape" : '^null:'` -eq 5 ]; then
+elif [ $tape = "/dev/null" -o `expr "$tape" : 'null:'` -eq 5 ]; then
 	Exit 2 \
 	     "<none>" \
 	     "tapedev ($tape) may not be the null device"
