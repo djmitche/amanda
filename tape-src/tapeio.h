@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.h,v 1.13 2001/01/25 00:25:31 jrjackson Exp $
+ * $Id: tapeio.h,v 1.14 2001/06/29 23:41:24 jrjackson Exp $
  *
  * interface for tapeio.c
  */
@@ -66,7 +66,7 @@ struct am_mt_status {
 
 #define	FAKE_LABEL	"[fake-label]"
 
-int tape_open P((char *filename, int mode));
+int tape_open ();
 
 int tapefd_rewind P((int tapefd));
 int tapefd_unload P((int tapefd));
@@ -120,5 +120,13 @@ void tapefd_setinfo_ioctl_fork P((int fd, int v));
 #ifdef HAVE_LINUX_ZFTAPE_H
 int is_zftape P((const char *filename));
 #endif
+
+int tapeio_init_devname P((char * dev,
+			   char **dev_left,
+			   char **dev_right,
+			   char **dev_next));
+char *tapeio_next_devname P((char * dev_left,
+			     char * dev_right,
+			     char **dev_next));
 
 #endif /* ! TAPEIO_H */

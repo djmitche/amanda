@@ -1,3 +1,33 @@
+2001-06-29 John R. Jackson <jrj@purdue.edu>
+
+	* tape-src/tapeio.c: Move the device name parsing routines from the
+	  RAIT module to tapeio and make them generic.  This allows one
+	  module to open another, e.g. rait:{null:,z1,z2,z3}.  Maintain
+	  both the original open flags and mask and use them on the real open.
+	* tape-src/amdd.c: Make sure this compiles "stand-alone".  To do so,
+	  use: gcc -Wall -DNO_AMANDA amdd.c output-rait.c output-tape.c.
+	  Abort as soon as one of the open calls fails instead of waiting
+	  for read/write to report a bad file descriptor.
+	  Pass a mask to the open function in case the output is created.
+	* tape-src/ammt.c: Make sure this compiles "stand-alone".  To do so,
+	  use: gcc -Wall -DNO_AMANDA ammt.c output-rait.c output-tape.c.
+	* tape-src/output-file.c: Maintain both the original open flags and
+	  mask and use them on the real open.
+	* tape-src/output-null.c: Ditto.
+	* tape-src/output-file.h: Change to non-prototype declaration of
+	  file_tape_open() to deal with the optional mask parameter.
+	* tape-src/output-null.h: Ditto.
+	* tape-src/output-tape.h: Ditto.
+	* tape-src/tapeio.h: Ditto.  Add device name parsing prototypes.
+	* tape-src/output-rait.c: Make sure this compiles "stand-alone".
+	  Maintain both the original open flags and mask and use them on the
+	  real open.
+	* tape-src/output-rait.h: Make sure this compiles "stand-alone".
+	* tape-src/output-tape.c: Make this part of the "stand-alone" compile
+	  of ammt and amdd since it knows all the proper ioctl operations.
+	  Maintain both the original open flags and mask and use them on the
+	  real open.
+
 2001-06-27 John R. Jackson <jrj@purdue.edu>
 
 	* changer-src/chg-manual.sh.in: Add "bs=32k" to the dd command so

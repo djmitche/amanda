@@ -6,6 +6,14 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+
+#include "output-rait.h"
+
+#define	tape_open	rait_open
+#define	tapefd_read	rait_read
+#define	tapefd_write	rait_write
+#define tapefd_setinfo_length(outfd, length)
+
 #else
 #include "amanda.h"
 #include "tapeio.h"
@@ -96,6 +104,7 @@ main(int argc, char **argv) {
 		fprintf(stderr, "%s: %s: ", pgm, eq + 1);
 		errno = save_errno;
 		perror("open");
+		return 1;
 	    }
 	    read_func = tapefd_read;
             if(debug) {
@@ -103,11 +112,12 @@ main(int argc, char **argv) {
 				eq + 1, infd);
 	    }
 	} else if(0 == strncmp("of", argv[optind], len)) {
-	    if((outfd = tape_open(eq + 1, O_RDWR|O_CREAT|O_TRUNC)) < 0) {
+	    if((outfd = tape_open(eq + 1, O_RDWR|O_CREAT|O_TRUNC, 0644)) < 0) {
 		save_errno = errno;
 		fprintf(stderr, "%s: %s: ", pgm, eq + 1);
 		errno = save_errno;
 		perror("open");
+		return 1;
 	    }
 	    write_func = tapefd_write;
             if(debug) {
@@ -146,7 +156,7 @@ main(int argc, char **argv) {
 	    }
 	} else {
 	    fprintf(stderr, "%s: bad argument: \"%s\"\n", pgm, argv[optind]);
-	    exit(1);
+	    return 1;
 	}
     }
 
@@ -155,7 +165,7 @@ main(int argc, char **argv) {
 	fprintf(stderr, "%s: ", pgm);
 	errno = save_errno;
 	perror("malloc error");
-	exit(1);
+	return 1;
     }
 
     eq = "read error";
