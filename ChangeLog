@@ -1,3 +1,8 @@
+2004-09-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amadmin.c (balance): Don't core dump if DUMPCYLE is too
+	  big.
+
 2004-09-15  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* tape-src/tapetype.c: New -o option, doesn't overwrite amanda
