@@ -211,6 +211,7 @@ static int read_diskline()
     disk_t *disk;
     dumptype_t *dtype;
     interface_t *netif = 0;
+    char *hostname;
 
     line_num += 1;
 
@@ -219,6 +220,10 @@ static int read_diskline()
     if(*str == '\n') return 1;
 
     host = lookup_host(str);
+    if (host == NULL)
+      hostname = stralloc(str);
+    else
+      hostname = host->hostname;
 
     get_string();
     if(*str == '\0' || *str == '\n') {
@@ -228,7 +233,7 @@ static int read_diskline()
 
     /* check for duplicate disk */
 
-    if(host && (disk = lookup_disk(host->hostname, str)) != NULL) {
+    if(host && (disk = lookup_disk(hostname, str)) != NULL) {
 	parserror("duplicate disk record, previous on line %d", disk->line);
 	eat_line();
 	return 1;
@@ -309,7 +314,7 @@ static int read_diskline()
 	host->next = hostlist;
 	hostlist = host;
 
-	host->hostname = stralloc(str);
+	host->hostname = hostname;
 	host->disks = NULL;
 	host->up = NULL;
 	host->inprogress = 0;
@@ -426,7 +431,7 @@ dump_disklist()
     printf("DISKLIST BY HOSTNAME:\n");
 
     for(hp = hostlist; hp != NULL; hp = hp->next) {
-	printf("HOST %s, busy = %d\n", hp->hostname, hp->busy);
+	printf("HOST %s, inprogress = %d\n", hp->hostname, hp->inprogress);
 	for(dp = hp->disks; dp != NULL; dp = dp->hostnext)
 	    dump_disk(dp);
 	putchar('\n');
@@ -447,8 +452,22 @@ dump_disklist()
 dump_disk(dp)
 disk_t *dp;
 {
-    printf("  DISK %s (HOST %s, LINE %d) TYPE %s FILESYS %s\n",
+    printf("  DISK %s (HOST %s, LINE %d) TYPE %s NAME %s\n",
 	   dp->name, dp->host->hostname, dp->line, dp->dtype_name,
-	   dp->filesys == NULL? "(null)": dp->filesys);
+	   dp->name == NULL? "(null)": dp->name);
 }
+
+main(argc, argv)
+int argc;
+char *argv[];
+{
+  if (argc>1)
+    chdir(argv[1]);
+  read_conffile(CONFFILE_NAME);
+  read_diskfile(getconf_str(CNF_DISKFILE));
+  dump_disklist();
+}
+
+char *pname = "diskfile";
+
 #endif /* TEST */

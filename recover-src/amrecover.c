@@ -4,13 +4,30 @@
 * Module:        
 * Part of:       
 *
-* Revision:      $Revision: 1.1 $
-* Last Edited:   $Date: 1997/05/13 02:15:29 $
-* Author:        $Author: george $
+* Revision:      $Revision: 1.2 $
+* Last Edited:   $Date: 1997/08/15 15:14:29 $
+* Author:        $Author: amcore $
 *
 * Notes:         
 * Private Func:  
 * History:       $Log: amrecover.c,v $
+* History:       Revision 1.2  1997/08/15 15:14:29  amcore
+* History:       Updated version number to 2.4.0b2 (supposed to be the next pre-release)
+* History:
+* History:       Added optional argument to --with-testing.  If given, it will be
+* History:       appended to service names, instead of the `-test' default.
+* History:
+* History:       amrecover-related services are also affected by this switch.
+* History:
+* History:       Fixed Makefile's so that test programs can be built out of source
+* History:       code that support them with -DTEST.
+* History:
+* History:       Fixed test programs in server-src
+* History:
+* History:       disklist.c would not read hostnames correctly: fixed
+* History:
+* History:       conffile.c would not keep the main configuration file name: fixed
+* History:
 * History:       Revision 1.1  1997/05/13 02:15:29  george
 * History:       Move amrecover from client-src to recover-src.
 * History:       Affected files are:
@@ -474,7 +491,7 @@ char **argv;
     
     printf("AMRECOVER Version 1.1. Contacting server on %s ...\n",
 	   server_name);  
-    if ((sp = getservbyname("amandaidx", "tcp")) == NULL)
+    if ((sp = getservbyname("amandaidx" SERVICE_SUFFIX, "tcp")) == NULL)
     {
 	perror("amrecover: amandaidx/tcp unknown protocol");
 	dbprintf(("amandaidx/tcp unknown protocol\n"));

@@ -54,12 +54,6 @@ version.c:	$(srcdir)/genversion.c versuff.c $(srcdir)/version.h
 	./genversion > version.c
 	rm -f genversion genversion.o versuff.o
 
-statfs: $(srcdir)/statfs.c $(srcdir)/statfs.h
-	$(COMPILE) $(LDFLAGS) -DTEST -I.. $(srcdir)/statfs.c -o statfs
-
-token: $(srcdir)/token.c $(srcdir)/token.h libamanda.la libamnolog.la
-	$(COMPILE) $(LDFLAGS) -DTEST -I.. $(srcdir)/token.c libamanda.la libamnolog.la -o token
-
 .deps/regcomp.P: regex.h regcomp.ih
 .deps/regexec.P: regex.h engine.ih
 .deps/regerror.P: regex.h regerror.ih
@@ -82,3 +76,12 @@ engine.ih: $(REGsrcdir)/engine.c $(REGsrcdir)/mkh
 
 regerror.ih: $(REGsrcdir)/regerror.c $(REGsrcdir)/mkh
 	sh $(REGsrcdir)/mkh -o -p $(REGsrcdir)/regerror.c >$@
+
+
+LINK_TEST=$(COMPILE) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -DTEST
+
+statfs: $(srcdir)/statfs.c $(srcdir)/statfs.h
+	$(LINK_TEST) $(srcdir)/statfs.c -o statfs
+
+token: $(srcdir)/token.c $(srcdir)/token.h libamanda.la libamnolog.la
+	$(LINK_TEST) $(srcdir)/token.c -o token .libs/libamanda.a .libs/libamnolog.a

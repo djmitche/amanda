@@ -86,3 +86,14 @@ install-exec-hook:
 			chmod u+s,o-rwx $$pa; \
 		fi; \
 	done
+
+LINK_TEST=$(COMPILE) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -DTEST
+
+diskfile: $(srcdir)/diskfile.c conffile.o clock.o $(srcdir)/diskfile.h ../common-src/libamanda.la ../common-src/libamnolog.la
+	$(LINK_TEST) $(srcdir)/diskfile.c conffile.o clock.o -o diskfile ../common-src/.libs/libamanda.a ../common-src/.libs/libamnolog.a
+
+conffile: $(srcdir)/conffile.c $(srcdir)/conffile.h clock.o ../common-src/libamanda.la ../common-src/libamnolog.la
+	$(LINK_TEST) $(srcdir)/conffile.c clock.o -o conffile ../common-src/.libs/libamanda.a ../common-src/.libs/libamnolog.a
+
+infofile: $(srcdir)/infofile.c $(srcdir)/infofile.h ../common-src/libamanda.la ../common-src/libamnolog.la
+	$(LINK_TEST) $(srcdir)/infofile.c -o infofile ../common-src/.libs/libamanda.a ../common-src/.libs/libamnolog.a

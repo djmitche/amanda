@@ -646,10 +646,12 @@ char *filename;
     fclose(conf);
 
     /* Restore globals */
-    line_num = save_line_num;
-    conf     = save_conf;
-    free(confname);	/* Free what was allocated by init_string() above */
-    confname = save_confname;
+    if (save_confname) {
+      line_num = save_line_num;
+      conf     = save_conf;
+      free(confname);	/* Free what was allocated by init_string() above */
+      confname = save_confname;
+    }
 }
 
 static void init_string(ptrp, str)
@@ -2108,9 +2110,10 @@ dump_configuration()
 	else printf(" UNKNOWN-AUTH");
 	if(dp->skip_incr) printf(" SKIP-INCR");
 	if(dp->skip_full) printf(" SKIP-FULL");
-	if(dp->no_full) printf(" NO-FULL");
 	if(dp->no_hold) printf(" NO-HOLD");
 	if(dp->kencrypt) printf(" KENCRYPT");
+	/* an ignored disk will never reach this point */
+	assert(!dp->ignore);
 	if(dp->index) printf(" INDEX");
 	putchar('\n');
     }
@@ -2121,4 +2124,17 @@ dump_configuration()
 	printf("	USE %d\n", ip->maxusage);
     }
 }
+
+main(argc, argv)
+int argc;
+char *argv[];
+{
+  if (argc>1)
+    chdir(argv[1]);
+  read_conffile(CONFFILE_NAME);
+  dump_configuration();
+}
+
+char *pname = "conffile";
+
 #endif /* TEST */

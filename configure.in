@@ -3,7 +3,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_INIT(common-src/amanda.h)
 AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE(amanda, 2.4.0b1)
+AM_INIT_AUTOMAKE(amanda, 2.4.0b2)
 AM_CONFIG_HEADER(config/config.h)
 
 AC_PREREQ(2.12)			dnl Minimum Autoconf version required.
@@ -784,15 +784,15 @@ y |  ye | yes) AC_DEFINE(DEBUG_FILE_WITH_PID)
 esac
 
 AC_ARG_WITH(testing,
-    [   --with-testing         use an alternate service name],
+    [   --with-testing[=suffix] use alternate service names],
     TESTING="$withval",
     : ${TESTING=no}
 )
 case "$TESTING" in
-n | no) : ;;
-y |  ye | yes) AC_DEFINE(USE_TEST_SERVICE)
+n | no) AC_DEFINE(SERVICE_SUFFIX, "") ;;
+y |  ye | yes) AC_DEFINE(SERVICE_SUFFIX, "-test")
   ;;
-*) AC_MSG_ERROR([*** You must not supply an argument to --with-testing option.])
+*) AC_DEFINE(SERVICE_SUFFIX, "-$TESTING")
   ;;
 esac
 
@@ -1326,7 +1326,7 @@ case "$DB_STYLE" in
 		    DB_LIB=gdbm
 		else
 		    DB_STYLE=
-		    AC_MSG_WARN([*** gdbm database library requested but -lgdm not found.])
+		    AC_MSG_WARN([*** gdbm database library requested but -lgdbm not found.])
 		fi
 	    else
 		if test "$ac_cv_lib_c_dbm_open" = yes; then
@@ -1334,7 +1334,7 @@ case "$DB_STYLE" in
 		    DB_LIB=c
 		else
 		    DB_STYLE=
-		    AC_MSG_WARN([*** gdbm library requested but -lgdm doesn't exist and dbm_open cannot be found.])
+		    AC_MSG_WARN([*** gdbm library requested but -lgdbm doesn't exist and dbm_open cannot be found.])
 		fi
 	    fi
 	else
@@ -1353,7 +1353,7 @@ case "$DB_STYLE" in
 		    DB_LIB=ndbm
 		else
 		    DB_STYLE=
-		    AC_MSG_WARN([*** ndbm database library requested but -lgdm not found.])
+		    AC_MSG_WARN([*** ndbm database library requested but -lndbm not found.])
 		fi
 	    else
 		if test "$ac_cv_lib_c_dbm_open" = yes; then

@@ -288,19 +288,15 @@ extern void debug_printf P((char *format, ...));
 
 /* Global constants. */
 
-#ifdef USE_TEST_SERVICE
-#   define AMANDA_SERVICE_NAME "amanda-test"
-#   define AMANDA_SERVICE_DEFAULT	10090
-
-#   define KAMANDA_SERVICE_NAME "kamanda-test"
-#   define KAMANDA_SERVICE_DEFAULT	10091
-#else
-#   define AMANDA_SERVICE_NAME "amanda"
-#   define AMANDA_SERVICE_DEFAULT	10080
-
-#   define KAMANDA_SERVICE_NAME "kamanda"
-#   define KAMANDA_SERVICE_DEFAULT	10081
+#ifndef SERVICE_SUFFIX
+#define SERVICE_SUFFIX ""
 #endif
+
+#define AMANDA_SERVICE_NAME "amanda" SERVICE_SUFFIX
+#define AMANDA_SERVICE_DEFAULT	10080
+
+#define KAMANDA_SERVICE_NAME "kamanda" SERVICE_SUFFIX
+#define KAMANDA_SERVICE_DEFAULT	10081
 
 /* Size of a tape block in kbytes.  Do not change lightly. */
 #define TAPE_BLOCK_SIZE 32

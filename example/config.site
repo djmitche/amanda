@@ -374,7 +374,7 @@
 # DEBUG_FILE_WITH_PID=yes
 
 
-# TESTING		--with-testing
+# TESTING		--with-testing[=suffix]
 #			Default: no
 #			Ues alternate service names so that a new
 #			version of amanda can be tested without preventing
@@ -382,6 +382,11 @@
 #			The used service names will have `-test' appended
 #			to the original names, i.e., service `amanda'
 #			will become `amanda-test'.
+#			If anything different from `n', `no', `y', `ye' or
+#			`yes' is specified as suffix, after the equal sign,
+#			this suffix will be appended to the service names
+#			after a hyphen, i.e., --with-testing=test2 will
+#			cause service `amanda-test2' to be used.
 # TESTING=yes
 
 

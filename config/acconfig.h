@@ -174,7 +174,7 @@
 
 /* Define if you want to use an alternate service name.  This is useful when
 ** you are trying to run a test installation in parallel to a production one.  */
-#undef USE_TEST_SERVICE
+#undef SERVICE_SUFFIX
 
 /* Kerberos security defines.  */
 #undef KRB4_SECURITY

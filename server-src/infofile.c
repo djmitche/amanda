@@ -291,13 +291,13 @@ char *filename;
     /* lock the dbm file */
 
     sprintf(lockname, "%s.lck", filename);
-    if((lockfd = open(lockname, O_CREAT|O_RDWR, 0666)) == -1)
+    if((lockfd = open(lockname, O_CREAT|O_RDWR, 0644)) == -1)
 	return 2;
 
     if(amflock(lockfd, "info") == -1)
 	return 3;
 
-    infodb = dbm_open(filename, O_CREAT|O_RDWR, 0666);
+    infodb = dbm_open(filename, O_CREAT|O_RDWR, 0644);
     return (infodb == NULL);	/* return 1 on error */
 #endif
 }
@@ -587,5 +587,19 @@ char *str;
     }
     puts("--------\n");
 }
+
+main(argc, argv)
+int argc;
+char *argv[];
+{
+  int i;
+  for(i = 1; i < argc; ++i) {
+    open_infofile(argv[i]);
+    dump_db(argv[i]);
+    close_infofile();
+  }
+}
+
+char *pname = "infofile";
 
 #endif /* TEST */
