@@ -1,3 +1,7 @@
+1998-09-27  Andy Farkas  <andyf@speednet.com.au>
+
+	* man/amlabel.8.in (labelstr): fix typo
+
 1998-09-26  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* recover-src/extract_list.c (extract_files_child): fix-up
