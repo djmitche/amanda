@@ -1,5 +1,12 @@
 2005-03-31  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* man/Makefile.am (EXTRA_DIST): Add amadmin.8 amanda.8 amcheck.8
+	  amcheckdb.8 amcleanup.8 amdump.8 amflush.8 amgetconf.8 amlabel.8
+	  amoverview.8 amreport.8 amrecover.8 amrmtape.8 amstatus.8
+	  amtapetype.8 amtoc.8 amverify.8 amverifyrun.8
+
+2005-03-31  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* man/*: use man pages form xml-docs.
 	* configure.in (AC_CONFIG_FILES): Remove all man pages.
 
