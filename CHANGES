@@ -1,8 +1,26 @@
-Version 2.4.0
+Version 2.4.0b1
+
+	Improved planner backup-delaying mechanism.  -scott
+
+	Concurrent estimates are now supported.  -oliva
+
+	Shared library support included with GNU libtool.  -oliva
+
+	New hard-link-based locking mechanism for operating systems
+	that do not support standard locking system calls.  -scott
+
+	New configuration file format, simpler and easier to
+	extend.  -scott
+
+	New curinfo database format that uses only text files.  The
+	old dbm format is used by default, though.  -scott
 
 	DGUX support. -Brian Harvey <bharvey@raven.phs.com>
 
-	Integrated amgetidx into dumper/sendbackup protocol. -oliva
+	Tentative HPUX vxdump support.  -oliva
+
+	Integrated amgetidx into dumper/sendbackup protocol.  This
+	***breaks backward compatibility***!  -oliva
 
 	Have sendbackup-dump and sendbackup-gnutar list the actual
 	program that should be used to restore a file from a backup
@@ -12,8 +30,9 @@ Version 2.4.0
 	unistd.h in addition to grp.h and sys/types.h, which is where
 	some OSes have the declaration. -blair
 
-	SAMBA backups won't succeed if GNUTAR listed incrementals are
-	enabled. -oliva
+	SAMBA backups wouldn't succeed if GNUTAR listed incrementals
+	were enabled.  SAMBA password file can now specify workgroup
+	and may contain comments.  -oliva
 
 	Fixed xfsdump support. -oliva
 
