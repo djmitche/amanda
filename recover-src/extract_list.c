@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.29 1998/04/08 16:24:50 amcore Exp $
+ * $Id: extract_list.c,v 1.30 1998/04/08 16:30:22 amcore Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1051,7 +1051,7 @@ int tapedev;
 
 
 /* exec restore to do the actual restoration */
-static int extract_files_child(in_fd, elist)
+static void extract_files_child(in_fd, elist)
 int in_fd;
 EXTRACT_LIST *elist;
 {
