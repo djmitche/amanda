@@ -93,7 +93,7 @@ Driver talks via two pipes connected to each dumper's stdin and stdout.  The
 commands and responses are plain text.
 
 Driver can ask dumper to do a dump to a file on the holding disk:
-   FILE-DUMP <handle> <filename> <host> <disk> <level> <dumpdate> <chunksize> <prog> <options>
+   FILE-DUMP <handle> <filename> <host> <disk> <level> <dumpdate> <chunksize> <prog> <use> <options>
 or directly to taper:
    PORT-DUMP <handle> <port> <host> <disk> <level> <dumpdate> <prog> <options>
 or exit at the end of the run:
@@ -108,21 +108,28 @@ retried at a later time with:
 or, for fatal errors, be abandoned with:
    FAILED <handle> [<message>]
 
-If the holding disk runs out of space, dumper will give:
-   NO-ROOM <handle>
-and wait for driver to either fix the problem and say:
-   CONTINUE
-or just say:
+If the holding disk runs out of space (i. e. 'disk full'), dumper will give:
+   NO-ROOM <handle> <missing_size>
+After that, it will issue RQ_MORE_DISK (see below). The driver will correct
+its notion of free diskspace by subtracting <missing_size> from the
+holding disk's alleged size.
+
+If the dumper has used up all of its allocated holding disk space, it will 
+request more with
+   RQ-MORE-DISK <handle>
+and wait for driver to either allocate more diskspace for the dumper and say
+   CONTINUE <filename> <chunksize> <use>
+or just say
    ABORT
-in which case dumper kills the dump and replies with:
-   ABORT-FINISHED <handle>
+(see above).
 
 If driver says something that dumper doesn't recognise it responds with:
    BAD-COMMAND <message>
 
 Where:
    <handle>    Request ID
-   <filename>  Name of file (on holding disk) to write dump
+   <filename>  Name of file on holding disk to write dump (see the section
+		'Multiple Holding Disks' below)
    <port>      Port (of taper) to send dump directly
    <host>      Hostname of client
    <disk>      Disk to backup
@@ -130,6 +137,11 @@ Where:
    <prog>      Dump program to use
    <options>   Options to pass to sendbackup
    <message>   Error or status message
+   <use>       Amount of diskspace to use on the holding disk given by
+	       <filename>
+   <chunksize> Maximum size of a file on the given holding disk
+   <missing_size> Difference between the allocated space and the space
+		  actually used by a dumper when a DISK FULL occurs
 
 
 driver and taper
@@ -216,3 +228,43 @@ Close tape        C            --->
                                <--- C<label><filenum><stats>  Closing
 
 Quit              Q            --->
+
+
+Multiple Holding Disks
+======================
+
+(This section was written by Peter Conrad <conrad@opus5.de>)
+
+Since amanda version x.x.x a single dump file may be spread across multiple
+holding disks. Some changes in the driver-dumper protocol have been introduced
+for this, as well as in the allocation of holding diskspace.
+
+1. Before the dump starts, an initial amount of holding diskspace is
+   allocated for the dump. The amount is based on the estimate for the
+   disk.
+2. If there is enough space available on the holding disks a list of holding
+   disks is created. For each holding disk to be used by the dumper, the
+   space to be used by this dumper and the chunksize of that holding disk
+   are noted (and, of course, the name of the holding disk).
+3. This list is turned into an array? of structures containing the values
+   found in step 2. The first set of values is sent to the dumper.
+4. A dumper is responsible for sticking to the given values:
+    - no file created by the dumper may be larger than the corresponding
+      chunksize
+    - on any given holding disk, no more than 'use' KBytes of diskspace may
+      be used.
+5. a) When all allocated diskspace has been used and the dump still hasn't
+      finished, the dumper may request more space from the driver. The driver
+      can either send a filename and additional size to be used, possibly on
+      a different hodling disk, or tell the dumper to abort the dump.
+   b) When the disk currently in use by the dumper runs full the dumper
+      will tell the driver about this situation. The driver will react like
+      in step a), but it will correct its notion of free diskspace.
+6. If the driver supplies another list of holding disks (not necessarily as
+   much as the dumper requested), the dumper interprets the given 'use' values
+   as *additional* diskspace it may use.
+   Continue at 4.
+
+The protocol between driver and taper didn't need to be modified, because
+each chunk of a dump contains the full pathname of the succeeding chunk.
+

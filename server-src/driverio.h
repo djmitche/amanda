@@ -25,10 +25,12 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.13.2.6 1999/05/15 15:07:22 martinea Exp $
+ * $Id: driverio.h,v 1.13.2.7 1999/08/21 20:40:45 martinea Exp $
  *
  * driver-related helper functions
  */
+
+#include "holding.h"
 
 #define MAX_DUMPERS 63
 #define MAX_ARGS 10
@@ -47,6 +49,13 @@ typedef struct dumper_s {
     disk_t *dp;
 } dumper_t;
 
+typedef struct assignedhd_s {
+    holdingdisk_t	*disk;
+    long		used;
+    long		reserved;
+    char		*destname;
+} assignedhd_t;
+
 /* schedule structure */
 
 typedef struct sched_s {
@@ -56,10 +65,11 @@ typedef struct sched_s {
     unsigned long est_size, degr_size, act_size;
     char *dumpdate, *degr_dumpdate;
     int est_kps, degr_kps;
-    char destname[128];				/* file/port name */
+    char *destname;				/* file/port name */
     dumper_t *dumper;
-    holdingdisk_t *holdp;
+    assignedhd_t **holdp;
     time_t timestamp;
+    int activehd;
 } sched_t;
 
 #define sched(dp)	((sched_t *) (dp)->up)
@@ -81,7 +91,7 @@ GLOBAL dumper_t dmptable[MAX_DUMPERS];
 typedef enum {
     BOGUS, QUIT, DONE,
     FILE_DUMP, PORT_DUMP, CONTINUE, ABORT,		/* dumper cmds */
-    FAILED, TRYAGAIN, NO_ROOM, ABORT_FINISHED,		/* dumper results */
+    FAILED, TRYAGAIN, NO_ROOM, RQ_MORE_DISK, ABORT_FINISHED,/* dumper results */
     FATAL_TRYAGAIN,
     START_TAPER, FILE_WRITE, PORT_WRITE,		/* taper cmds */
     PORT, TAPE_ERROR, TAPER_OK,				/* taper results */
@@ -104,3 +114,4 @@ void free_serial P((char *str));
 char *disk2serial P((disk_t *dp));
 void update_info_dumper P((disk_t *dp, long origsize, long dumpsize, long dumptime));
 void update_info_taper P((disk_t *dp, char *label, int filenum, int level));
+void free_assignedhd P((assignedhd_t **holdp));

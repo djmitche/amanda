@@ -1,5 +1,7 @@
 Changes in release 2.4.2
 
+* amanda will never use more space than specified (use) for an holding disk.
+* a dump on holding disk can spread multiple holding disk
 * chunksize is now 1 Gb by default
 * ufsdump -S is now supported on Solaris
 * Samba 2.0.0 is now supported

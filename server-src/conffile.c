@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.6 1999/08/15 08:04:56 oliva Exp $
+ * $Id: conffile.c,v 1.54.2.7 1999/08/21 20:40:29 martinea Exp $
  *
  * read configuration file
  */
@@ -203,7 +203,7 @@ static int seen_disksize, seen_netusage, seen_inparallel, seen_timeout;
 static int seen_indexdir, seen_etimeout, seen_dtimeout;
 static int seen_tapebufs;
 static int seen_reserve;
-static seen_columnspec;
+static int seen_columnspec;
 
 static int allow_overwrites;
 static int token_pushed;
@@ -902,6 +902,7 @@ static int read_confline()
 	    int i;
 
 	    i = get_number();
+	    i = (i/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
 
 	    if(!seen_disksize) {
 		conf_disksize.i = i;
@@ -981,6 +982,7 @@ static void get_holdingdisk()
 	    break;
 	case USE:
 	    get_simple((val_t *)&hdcur.disksize, &hdcur.s_size, INT);
+	    hdcur.disksize = (hdcur.disksize/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
 	    break;
 	case CHUNKSIZE:
 	    get_simple((val_t *)&hdcur.chunksize, &hdcur.s_csize, INT);
@@ -988,6 +990,7 @@ static void get_holdingdisk()
 	        hdcur.chunksize =  ((INT_MAX/1024)-(2*TAPE_BLOCK_SIZE));
 	    else if(hdcur.chunksize == -1)
 	        hdcur.chunksize = -((INT_MAX/1024)-(2*TAPE_BLOCK_SIZE));
+	    hdcur.chunksize = (hdcur.chunksize/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
 	    break;
 	case RBRACE:
 	    done = 1;

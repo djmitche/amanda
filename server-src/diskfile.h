@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.11.4.1 1999/02/13 19:37:12 martinea Exp $
+ * $Id: diskfile.h,v 1.11.4.2 1999/08/21 20:40:36 martinea Exp $
  *
  * interface for disklist file reading code
  */
@@ -93,6 +93,7 @@ disk_t *lookup_disk P((char *hostname, char *diskname));
 
 void enqueue_disk P((disklist_t *list, disk_t *disk));
 void insert_disk P((disklist_t *list, disk_t *disk, int (*f)(disk_t *a, disk_t *b)));
+int  find_disk P((disklist_t *list, disk_t *disk));
 void sort_disk P((disklist_t *in, disklist_t *out, int (*f)(disk_t *a, disk_t *b)));
 disk_t *dequeue_disk P((disklist_t *list));
 void remove_disk P((disklist_t *list, disk_t *disk));

@@ -1,3 +1,36 @@
+1999-08-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	Patch by Peter Conrad <conrad@opus5.de>
+
+	* docs/INTERNALS: documented splitting of dumps across multiple
+	  holding disks.
+	* server-src/conffile.c: make sure that disksize and chunksize
+	  are multiple of TAPE_BLOCK_SIZE.
+	* server-src/diskfile.c (find_disk): new function to see if a
+	  given disk is contained in a list structure.
+	* server-src/diskfile.h (find_disk): prototype.
+	* server-src/driverio.h (RQ_MORE_DISK): Added message.
+	* server-src/driverio.h (free_assignedhd): prototype.
+	* server-src/driverio.h (assignedhd_t): new data structure.
+	* server-src/driverio.c (cmdstr): added comamnd RQ-MORE-DISK.
+	* server-src/driverio.c (dumper_cmd): Modified format of CONTINUE
+	* server-src/driverio.c (free_assignedhd): new function to free an
+	  array of assignedhd_t.
+	* server-src/driver.c (roomq): new queue to replace stoppedq.
+	* server-src/driver.c (find_diskspace, assign_holdingdisk, 
+	  adjust_diskspace, delete_diskspace): rewrite.
+	* server-src/driver.c (continue_dumps): new function to determine
+	  which dump should be continued.
+	* server-src/driver.c (handle_taper_result): call continue_dumps
+	  to restart a roomq dump.
+	* server-src/driver.c (handle_dumper_result): some rewrite, 
+	  modified semantics of NO_ROOM, new message RQ-MORE-DISK.
+	* server-src/dumper.c (main): Modified parsing of FILE_DUMP, 
+	  handling of use.
+	* server-src/dumper.c (write_dataptr): NO-ROOM is informational only,
+	  trucate the file to a multiple of TAPE_BLOCK_BYTES.
+	* server-src/dumper.c (update_dataptr): rewrite to emit RQ-MORE-DISK
+	  command.
+
 1999-08-16  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* common-src/Makefile.am: Replace .o with OBJEXT.  List sources
@@ -107,7 +140,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.239 1999/08/16 23:47:05 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.240 1999/08/21 20:40:15 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

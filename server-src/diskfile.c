@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.27.4.1 1999/02/13 19:37:10 martinea Exp $
+ * $Id: diskfile.c,v 1.27.4.2 1999/08/21 20:40:34 martinea Exp $
  *
  * read disklist file
  */
@@ -136,6 +136,18 @@ int (*cmp) P((disk_t *a, disk_t *b));
     else prev->next = disk;
     if(ptr == NULL) list->tail = disk;
     else ptr->prev = disk;
+}
+
+int find_disk(list, disk)
+disklist_t *list;
+disk_t *disk;
+/* check if disk is present in list. Return true if so, false otherwise. */
+{
+disk_t *t;
+
+    for( t = list->head; t && t != disk; t = t->next );
+
+    return t == disk;
 }
 
 void sort_disk(in, out, cmp)	/* sort a whole queue */

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.8 1999/04/17 22:13:39 martinea Exp $
+/* $Id: dumper.c,v 1.75.2.9 1999/08/21 20:40:47 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -57,7 +57,7 @@
 #endif
 
 #define CONNECT_TIMEOUT	5*60
-#define MAX_ARGS	10
+#define MAX_ARGS	11
 /* Note: This must be kept in sync with the DATABUF_SIZE defined in
  * client-src/sendbackup-krb4.c, or kerberos encryption won't work...
  *	- Chris Ross (cross@uu.net)  4-Jun-1998
@@ -79,7 +79,7 @@ char mesgbuf[MESGBUF_SIZE+1];
 char *errstr = NULL;
 char *dataptr;		/* data buffer markers */
 int spaceleft, abort_pending;
-long dumpsize, origsize;
+long dumpsize, origsize, filesize;
 int nb_header_block;
 static enum { srvcomp_none, srvcomp_fast, srvcomp_best } srvcompress;
 
@@ -93,7 +93,7 @@ char *options = NULL;
 char *progname = NULL;
 int level;
 char *dumpdate = NULL;
-long chunksize;
+long chunksize, use;
 char *datestamp;
 char *backup_name = NULL;
 char *recover_cmd = NULL;
@@ -248,10 +248,10 @@ char **main_argv;
 	case FILE_DUMP:
 	    /*
 	     * FILE-DUMP handle filename host disk level dumpdate chunksize
-	     *   progname options
+	     *   progname use options
 	     */
-	    if(argc != 10) {
-		error("error [dumper FILE-DUMP argc != 10: %d]", argc);
+	    if(argc != 11) {
+		error("error [dumper FILE-DUMP argc != 11: %d]", argc);
 	    }
 	    handle = newstralloc(handle, argv[2]);
 	    filename = newstralloc(filename, argv[3]);
@@ -262,7 +262,9 @@ char **main_argv;
 	    chunksize = atoi(argv[8]);
 	    chunksize = (chunksize/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
 	    progname = newstralloc(progname, argv[9]);
-	    options = newstralloc(options, argv[10]);
+	    use = atoi(argv[10]);
+	    use = (use/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
+	    options = newstralloc(options, argv[11]);
 	    cont_filename[0] = '\0';
 
 	    tmp_filename = newvstralloc(tmp_filename, filename, ".tmp", NULL);
@@ -299,7 +301,8 @@ char **main_argv;
 	    }
 
 	    abort_pending = 0;
-	    split_size = chunksize;
+	    split_size = (chunksize>use)?use:chunksize;
+	    use -= split_size;
 	    if(do_dump(mesgfd, datafd, indexfd, outfd)) {
 	    }
 	    aclose(mesgfd);
@@ -461,7 +464,6 @@ int outf;
  * written if it is full, or the remainder is zeroed if at eof.
  */
 {
-    cmd_t cmd;
     int written;
 
     do {
@@ -474,18 +476,28 @@ int outf;
 	    errstr = squotef("data write: %s", strerror(errno));
 	    return 1;
 	}
-	putresult("NO-ROOM %s\n", handle);
-	cmd = getcmd();
-	if(cmd != CONTINUE && cmd != ABORT) {
-	    error("error [bad command after NO-ROOM: %d]", cmd);
+	/* Modification by Peter Conrad:
+	 * NO-ROOM is informational only. The file will be truncated
+	 * to the last full TAPE_BLOCK. Later, RQ_MORE_DISK will be
+	 * issued to use another holding disk.
+	 */
+	spaceleft = (spaceleft / TAPE_BLOCK_BYTES) * TAPE_BLOCK_BYTES;
+	ftruncate( outf, (filesize*1024) + spaceleft );
+	if( spaceleft > 0 ) {
+	    memmove( databuf, databuf+spaceleft, sizeof(databuf)-spaceleft );
+	    dumpsize += spaceleft/1024;
+	    filesize += spaceleft/1024;
 	}
-	if(cmd == CONTINUE) continue;
-	abort_pending = 1;
-	errstr = "ERROR";
-	return 1;
+	putresult("NO-ROOM %s %lu\n", handle, use+split_size-dumpsize);
+	use = 0; /* force RQ_MORE_DISK */
+	split_size = dumpsize;
+	dataptr = databuf + spaceleft;
+	spaceleft = sizeof(databuf)-spaceleft;
+	return 0;
     } while (spaceleft != sizeof(databuf));
     dataptr = databuf;
     dumpsize += (sizeof(databuf)/1024);
+    filesize += (sizeof(databuf)/1024);
     return 0;
 }
 
@@ -497,6 +509,8 @@ int outf, size, split;
  * written if it is full, or the remainder is zeroed if at eof.
  */
 {
+int rc=0;
+
     spaceleft -= size;
     dataptr += size;
 
@@ -506,14 +520,14 @@ int outf, size, split;
 	spaceleft = 0;
     }
 
-    if(spaceleft == 0) {	/* buffer is full, write it */
+    while(spaceleft == 0 && !rc) {	/* buffer is full, write it */
 
 	NAUGHTY_BITS;
 
 	if(split && split_size > 0 && dumpsize >= split_size) {
 	    char *new_filename = NULL;
 	    char sequence[10];
-	    int save_outf;
+	    int new_outf;
 	    int save_spaceleft;
 	    char *save_dataptr;
 	    char save_databuf[DATABUF_SIZE];
@@ -526,68 +540,107 @@ int outf, size, split;
     	    spaceleft = sizeof(databuf);
 	    dataptr = databuf;
 
-	    save_outf = outf;
+	    if( use == 0 ) { /* no more space on this disk. request some more */
+	    cmd_t cmd;
 
-	    close(outf);
-
-	    filename_seq++;
-	    ap_snprintf(sequence, sizeof(sequence), "%d", filename_seq);
-	    new_filename = newvstralloc(new_filename,
-					filename,
-					".",
-					sequence,
-					NULL);
-
-	    strncpy(file.cont_filename, new_filename, 
-		    sizeof(file.cont_filename));
-	    file.cont_filename[sizeof(file.cont_filename)-1] = '\0';
-
-	    tmp_filename = newvstralloc(tmp_filename, cont_filename, ".tmp", NULL);
-	    if((outf = open(tmp_filename,O_RDWR)) == -1) {
-		errstr = squotef("holding file \"%s\": %s",
-			    tmp_filename, strerror(errno));
-		return 1;
+                putresult("RQ-MORE-DISK %s\n", handle);
+                cmd = getcmd();
+                if(cmd != CONTINUE && cmd != ABORT) {
+                    error("error [bad command after RQ-MORE-DISK: %d]", cmd);
+                }
+                if(cmd == CONTINUE) {
+		    chunksize = atoi(argv[3]);
+		    chunksize = (chunksize/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
+                    use = atoi(argv[4]);
+		    if( !strcmp( filename, argv[2] ) ) { /* same disk */
+			split_size += (chunksize-filesize>use)?use:chunksize-filesize;
+			use = (chunksize-filesize>use)?0:use-(chunksize-filesize);
+			if(chunksize>filesize)
+			    new_filename = newstralloc(new_filename, argv[2]);
+		    } else { /* different disk -> use new file */
+			filename = newstralloc(filename, argv[2]);
+		    }
+                } else {
+                    abort_pending = 1;
+                    errstr = newstralloc(errstr, "ERROR");
+                    return 1;
+                }
 	    }
-	    strncpy(file.cont_filename, new_filename, 
-		    sizeof(file.cont_filename));
-	    file.cont_filename[sizeof(file.cont_filename)-1] = '\0';
-	    write_tapeheader(outf, &file);
-	    close(outf);
 
-	    strncpy(cont_filename, new_filename, sizeof(cont_filename));
-	    cont_filename[sizeof(cont_filename)-1] = '\0';
+	    if( !new_filename ) { /* use another file */
+		int save_type, tmp_outf;
 
-	    tmp_filename = newvstralloc(tmp_filename, new_filename, ".tmp", NULL);
-	    if((outf = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600)) == -1) {
-		errstr = squotef("holding file \"%s\": %s",
-			    tmp_filename, strerror(errno));
-		return 1;
-	    }
-	    if(outf != save_outf) {
-		if(dup2(outf,save_outf) == -1) {
-		    errstr = squotef("can't dup2: %s", strerror(errno));
+		filename_seq++;
+		ap_snprintf(sequence, sizeof(sequence), "%d", filename_seq);
+		new_filename = newvstralloc(new_filename,
+					    filename,
+					    ".",
+					    sequence,
+					    NULL);
+   
+		tmp_filename = newvstralloc(tmp_filename, new_filename, ".tmp", NULL);
+		if((new_outf = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600)) == -1) {
+		    close(outf);
+		    errstr = squotef("holding file \"%s\": %s",
+		 		     tmp_filename, strerror(errno));
 		    return 1;
 		}
-		close(outf);
-		outf = save_outf;
+		save_type = file.type;
+		file.type = F_CONT_DUMPFILE;
+		file.cont_filename[0] = '\0';
+		if( write_tapeheader(new_outf, &file) ) { /*failed-disk full?*/
+		    close(new_outf);
+		    unlink(new_filename);
+		    filename_seq--;
+		    putresult("NO-ROOM %s %lu\n", handle, use);
+		    use = 0; /* force RQ_MORE_DISK */
+                } else { /* everything is fine */
+ 
+		    strncpy(file.cont_filename, new_filename, 
+			    sizeof(file.cont_filename));
+		    file.cont_filename[sizeof(file.cont_filename)-1] = '\0';
+    
+		    tmp_filename = newvstralloc(tmp_filename, cont_filename, ".tmp", NULL);
+		    close(outf);
+		    if((tmp_outf = open(tmp_filename,O_RDWR)) == -1) {
+			close(new_outf);
+			errstr = squotef("holding file \"%s\": %s",
+					 tmp_filename, strerror(errno));
+			return 1;
+		    }
+		    strncpy(file.cont_filename, new_filename, 
+			    sizeof(file.cont_filename));
+		    file.cont_filename[sizeof(file.cont_filename)-1] = '\0';
+		    file.type = save_type;
+		    write_tapeheader(tmp_outf, &file);
+		    close(tmp_outf);
+		    file.type = F_CONT_DUMPFILE;
+		    if(dup2(new_outf,outf) == -1) {
+			close(new_outf);
+ 			errstr = squotef("can't dup2: %s", strerror(errno));
+			return 1;
+		    }
+		    close(new_outf);
+ 
+		    strncpy(cont_filename, new_filename, sizeof(cont_filename));
+		    cont_filename[sizeof(cont_filename)-1] = '\0';
+    
+		    split_size += (chunksize>use)?use:chunksize;
+		    use = (chunksize>use)?0:use-chunksize;
+		    spaceleft = sizeof(databuf);
+		    dataptr = databuf;
+		    dumpsize += TAPE_BLOCK_SIZE;
+		    filesize = TAPE_BLOCK_SIZE;
+		    nb_header_block++;
+		} 
+		memcpy(databuf, save_databuf, sizeof(databuf)); 
 	    }
-	    /*outf = save_outf;*/
-	    split_size += chunksize;
-    	    spaceleft = sizeof(databuf);
-	    dataptr = databuf;
-	    file.type = F_CONT_DUMPFILE;
-	    file.cont_filename[0] = '\0';
-	    write_tapeheader(outf, &file);
-	    dumpsize += TAPE_BLOCK_SIZE;
-	    nb_header_block++;
-
-	    memcpy(databuf, save_databuf, sizeof(databuf)); 
 	    spaceleft = save_spaceleft;
 	    dataptr = save_dataptr;
 	}
-	return write_dataptr(outf);
+	rc = write_dataptr(outf);
     }
-    return 0;
+    return rc;
 }
 
 
@@ -829,13 +882,15 @@ filetype_t type;
 }
 
 /* Send an Amanda dump header to the output file.
-*/
+ * returns true if an error occured, false on success
+ */
 
 int write_tapeheader(outfd, file)
 int outfd;
 dumpfile_t *file;
 {
     char buffer[TAPE_BLOCK_BYTES];
+    int	 written=0;
 #if 0
     char *bufptr;
     int len;
@@ -874,9 +929,9 @@ dumpfile_t *file;
     }
     nb_header_block++;
 #else
-    write(outfd, buffer, sizeof(buffer));
+    written = write(outfd, buffer, sizeof(buffer));
 #endif
-    return 0;
+    return (written!=sizeof(buffer));
 }
 
 
@@ -897,7 +952,7 @@ int mesgfd, datafd, indexfd, outfd;
     char *q;
     times_t runtime;
     double dumptime;	/* Time dump took in secs */
-    int compresspid, indexpid, killerr;
+    int compresspid = -1, indexpid = -1, killerr;
 
 #ifndef DUMPER_SOCKET_BUFFERING
 #define DUMPER_SOCKET_BUFFERING 0
@@ -919,7 +974,7 @@ int mesgfd, datafd, indexfd, outfd;
 
     dataptr = databuf;
     spaceleft = sizeof(databuf);
-    dumpsize = origsize = dump_result = 0;
+    dumpsize = origsize = filesize = dump_result = 0;
     nb_header_block = 0;
     got_info_endline = got_sizeline = got_endline = 0;
     header_done = 0;
@@ -1182,6 +1237,7 @@ int mesgfd, datafd, indexfd, outfd;
 		    goto failed;
 		}
 		dumpsize += TAPE_BLOCK_SIZE;
+		filesize += TAPE_BLOCK_SIZE;
 		nb_header_block++;
 		header_done = 1;
 		strncat(cont_filename,filename,sizeof(cont_filename));
