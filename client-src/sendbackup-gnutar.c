@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.29 1997/12/03 18:20:07 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.30 1997/12/13 04:49:48 amcore Exp $
  *
  * send backup data using GNU tar
  */
@@ -74,6 +74,7 @@ static regex_t re_table[] = {
   { DMP_NORMAL, "^getting file", 1},
   { DMP_NORMAL, "^Rejected chained", 1},
   { DMP_NORMAL, "^nread=", 1},
+  { DMP_NORMAL, "^\\([0-9][0-9]* kb/s\\)", 1},
   { DMP_NORMAL, "^\\([0-9][0-9]*\\.[0-9][0-9]* kb/s\\)", 1},
   { DMP_NORMAL, "^tar: dumped [0-9][0-9]* tar files", 1},
 
