@@ -1,0 +1,351 @@
+.TH AMRECOVER 8 "29 November 1996" "Alan M. McIvor" "AMANDA INDEX" \" -*- nroff -*-
+.de CP
+.ie '\\$3'' \\fB\\$1\\fP \\fI\\$2\\fP
+.el .ie '\\$2'' \\fB\\$1\\fP [ \\fI\\$3\\fP ]
+.el \\fB\\$1\\fP \\fI\\$2\\fP [ \\fI\\$3\\fP ]
+..
+.de EX
+.if t .ft C
+.nf
+..
+.de EE
+.fi
+.if t .ft
+..
+.SH NAME
+amrecover \- Amanda index database browser
+.SH SYNOPSIS
+.B amrecover
+[
+[
+.B \-C
+]
+.I config
+]
+[
+.B \-s
+.I index-server
+]
+.SH DESCRIPTION
+.B Amrecover
+browses the database of Amanda index files to determine
+which tapes contain files to recover.
+.LP
+See the
+.IR amanda (8)
+man page for more details about Amanda.
+.SH OPTIONS
+.TP
+.CP "[ -C ]" config
+Amanda configuration
+(default: @DEFAULT_CONFIG@).
+.TP
+.CP -s index-server
+Host that runs the index daemon
+(default: @DEFAULT_SERVER@).
+.SH COMMANDS
+.B Amrecover
+connects to the index server and then presents a command line prompt.
+Usage is similar to an ftp client.
+The GNU readline library is used to provide command line history and editing
+if it was built in to
+.BR amrecover .
+.LP
+The purpose of browsing the database is to build up a
+.I restore list
+of files to be extracted from the backup system.
+The following commands are available:
+.TP
+.CP sethost hostname
+Specifies which host to look at backup files for
+(default: the local host).
+.TP
+.CP setdate YYYY-MM-DD
+Set the date
+(default: today).
+File listing commands return information only on
+files from backups for this day, for the day before with the next
+lower dump level, and so on, until the most recent level 0 backup on or before
+the specified date is encountered.
+.IP
+For example, if:
+.LP
+.RS
+.RS
+.nf
+1996-07-01 was a level 0 backup
+1996-07-02 through 1996-07-05 were level 1 backups
+1996-07-06 through 1997-07-08 were level 2 backups
+.fi
+.RE
+.RE
+.IP
+then if 1997-07-08 is the requested date,
+files from the following days would be used:
+.LP
+.RS
+.RS
+.nf
+1997-07-08
+1997-07-05
+1997-07-01
+.fi
+.RE
+.RE
+.IP
+Only the most recent version of a file will be presented.
+.IP
+The following abbreviated date specifications are accepted:
+.RS
+.RS
+.TP
+.I --MM-DD
+dates
+in the current year
+.TP
+.I ---DD
+dates in the current month of the
+current year
+.RE
+.RE
+.TP
+.CP setdisk diskname mountpoint
+Specifies which disk to consider
+(default: the disk holding the working directory where
+.B amrecover
+is started).
+It can only be set after the host is set with
+.BR sethost .
+.I Diskname
+is the device name specified in the
+.I amanda.conf
+or
+.I disklist
+configuration file.
+The disk must be local to the host.
+If
+.I mountpoint
+is not specified, all pathnames will be relative to the (unknown)
+mount point instead of full pathnames.
+.TP
+.CP history
+Show the backup history of the current disk.
+Dates and levels of each backup are displayed.
+.TP
+.CP pwd
+Print the name of the current backup working directory.
+.TP
+.CP cd dir
+Change the backup working directory to
+.I dir.
+If the mount point was specified with
+.BR setdisk ,
+this can be a full pathname or it can be
+relative to the current backup working directory.
+If the mount point was not specified,
+then paths are relative to the mount point if they start with "/",
+otherwise they are relative to the current backup working directory.
+.TP
+.CP lpwd
+Print the
+.B amrecover
+working directory.
+.TP
+.CP lcd path
+Change the
+.B amrecover
+working directory on the local file system to
+.I path.
+.TP
+.CP ls
+List the contents of the current backup working directory.
+See the description of the
+.B setdate
+command for how the view of the
+directory is built up.
+The backup date is shown for each file.
+.TP
+.CP add path1 "path2 ..."
+Add the specified files or directories to the restore list.
+.TP
+.CP delete path1 "path2 ..."
+Delete the specified files or directories from the restore list.
+.TP
+.CP list "" file
+Display the contents of the restore list.
+If a file name is specified,
+the restore list is written to that file.
+This can be used to manually extract the files from the Amanda tapes with
+.BR amrestore .
+.TP
+.CP clear
+Clear the restore list.
+.TP
+.CP quit
+Close the connection to the index server and exit.
+.TP
+.CP exit
+Close the connection to the index server and exit.
+.TP
+.CP extract
+Start the extract sequence (see the examples below).
+.TP
+.CP help
+Display a brief list of these commands.
+.SH EXAMPLES
+The following shows the recovery of an old
+.I syslog
+file.
+.LP
+.RS
+.EX
+# cd /var/log
+# ls -l syslog.7
+syslog.7: No such file or directory
+# amrecover
+AMRECOVER Version 1.1. Contacting server on @DEFAULT_SERVER@ ...
+220 @DEFAULT_SERVER@ AMANDA index server (1.0) ready.
+Setting restore date to today (1997-12-09)
+200 Working date set to 1997-12-09.
+200 Config set to @DEFAULT_CONFIG@.
+200 Dump host set to this-host.some.org.
+$CWD '/var/log' is on disk '/var' mounted at '/var'.
+200 Disk set to /var.
+amrecover> ls
+1997-12-09 daemon.log
+1997-12-09 syslog
+1997-12-08 authlog
+1997-12-08 sysidconfig.log
+1997-12-08 syslog.0
+1997-12-08 syslog.1
+1997-12-08 syslog.2
+1997-12-08 syslog.3
+1997-12-08 syslog.4
+1997-12-08 syslog.5
+1997-12-08 syslog.6
+1997-12-08 syslog.7
+amrecover> add syslog.7
+Added /log/syslog.7
+amrecover> extract
+
+Extracting files using tape drive @DEFAULT_TAPE_DEVICE@ on host @DEFAULT_TAPE_SERVER@
+
+The following tapes are needed: DMP014
+
+Restoring files into directory /var/log
+Continue? [Y/n]: y
+
+Load tape DMP014 now
+Continue? [Y/n]: y
+set owner/mode for '.'? [yn] n
+amrecover> quit
+200 Good bye.
+# ls -l syslog.7
+total 26
+-rw-r--r--   1 root     other      12678 Oct 14 16:36 syslog.7
+.EE
+.RE
+.LP
+If you do not want to overwrite existing files,
+create a subdirectory to run
+.B amrestore
+from and then move the restored files afterward.
+.LP
+.RS
+.EX
+# cd /var
+# (umask 077 ; mkdir .restore)
+# cd .restore
+# amrecover
+AMRECOVER Version 1.1. Contacting server on @DEFAULT_SERVER@ ...
+\&...
+amrecover> cd log
+/var/log
+amrecover> ls
+\&...
+amrecover> add syslog.7
+Added /log/syslog.7
+amrecover> extract
+
+Extracting files using tape drive @DEFAULT_TAPE_DEVICE@ on host @DEFAULT_TAPE_SERVER@
+\&...
+amrecover> quit
+200 Good bye.
+# mv -i log/syslog.7 ../log/syslog.7-restored
+# cd ..
+# rm -fr .restore
+.EE
+.RE
+.LP
+If you need to run
+.B amrestore
+by hand instead of letting
+.B amrecover
+control it,
+use the
+.B list
+command after browsing to display the needed tapes.
+.LP
+.RS
+.EX
+# cd /var/log
+# amrecover
+AMRECOVER Version 1.1. Contacting server on @DEFAULT_SERVER@ ...
+\&...
+amrecover> ls
+\&...
+amrecover> add syslog syslog.6 syslog.7
+Added /log/syslog
+Added /log/syslog.6
+Added /log/syslog.7
+amrecover> list
+TAPE DMP014 LEVEL 0 DATE 1997-12-08
+        /log/syslog.7
+        /log/syslog.6
+TAPE DMP015 LEVEL 1 DATE 1997-12-09
+        /log/syslog
+amrecover> quit
+.EE
+.RE
+.LP
+The
+.B history
+command shows each tape that has a backup of the
+current disk along with the date of the backup,
+the level,
+the tape label
+and the file position on the tape.
+All active tapes are listed, not just back to
+the most recent full dump.
+.LP
+Tape file position zero is a label.
+The first backup is file position one.
+.LP
+.RS
+.EX
+# cd /var/log
+# amrecover
+AMRECOVER Version 1.1. Contacting server on @DEFAULT_SERVER@ ...
+\&...
+amrecover> history
+200- Dump history for config "@DEFAULT_CONFIG@" host "this-host.some.org" disk "/var"
+201- 1997-12-09 1 DMP015 9
+201- 1997-12-08 1 DMP014 11
+201- 1997-12-07 0 DMP013 22
+201- 1997-12-06 1 DMP012 16
+201- 1997-12-05 1 DMP011 9
+201- 1997-12-04 0 DMP010 11
+201- 1997-12-03 1 DMP009 7
+201- 1997-12-02 1 DMP008 7
+201- 1997-12-01 1 DMP007 9
+201- 1997-11-30 1 DMP006 6
+\&...
+amrecover> quit
+.EE
+.RE
+.SH AUTHOR
+Alan M. McIvor <alan@kauri.auck.irl.cri.nz>
+.SH "SEE ALSO"
+amanda(8),
+amrestore(8),
+readline(3)

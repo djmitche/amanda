@@ -1,0 +1,58 @@
+.\"
+.de EX
+.if t .ft C
+.nf
+..
+.de EE
+.fi
+.if t .ft
+..
+.TH AMVERIFY 8
+.SH NAME
+amverify \- check an Amanda tape for errors
+.SH SYNOPSIS
+.B amverify
+.I config
+[
+.I slot
+]
+.SH DESCRIPTION
+.B Amverify
+reads an Amanda format tape and makes sure each backup image
+can be processed by
+.B amrestore
+and the appropriate system restore program (e.g.\&
+.BR tar ).
+.LP
+.B Amverify
+runs
+.B amrestore
+on each file of the tape and pipes the output
+to the system restore program with an option to create a catalogue
+of the backup.
+The catalogue itself is discarded.
+Only the success or failure of the operation itself is of interest.
+.LP
+If
+.I config
+is set up to use a tape changer,
+.I slot
+may be entered to choose a particular tape to process.
+Otherwise, slot
+.B 0
+is the default.
+.LP
+See the
+.IR amanda (8)
+man page for more details about Amanda.
+.SH AUTHOR
+Axel Zinser <fifi@icem.de>
+.SH "SEE ALSO"
+amrestore(8),
+amanda(8)
+.SH BUGS
+At the moment, only backup tapes created with GNU tar can be verified.
+.LP
+The
+.I slot
+parameter is assumed to be numeric.

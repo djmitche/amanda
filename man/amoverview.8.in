@@ -1,0 +1,85 @@
+.\"
+.de EX
+.if t .ft C
+.nf
+..
+.de EE
+.fi
+.if t .ft
+..
+.de OP
+\fB\\$1\fP \fI\\$2\fP
+..
+.TH AMOVERVIEW 8
+.SH NAME
+amoverview \- display file systems processed by Amanda over time
+.SH SYNOPSIS
+.B amoverview
+[
+.OP -config config
+] [
+.OP -hostwidth width
+] [
+.OP -diskwidth width
+] [
+.B -verbose
+]
+.SH DESCRIPTION
+.B Amoverview
+displays a chart showing hosts and file systems processed by Amanda
+along with the backup level performed each day.
+.LP
+See the
+.IR amanda (8)
+man page for more details about Amanda.
+.SH OPTIONS
+.TP
+.OP -config config
+Use configuration
+.I config
+instead of @DEFAULT_CONFIG@.
+.TP
+.OP -hostwidth width
+Set
+.B host
+field column width to
+.I width
+characters instead of eight.
+.TP
+.OP -diskwidth width
+Set
+.B disk
+field column width to
+.I width
+characters instead of 20.
+.TP
+.B -verbose
+.B Amoverview
+can take a long while on large systems.
+This option reports intermediate steps while it is working.
+.SH EXAMPLE
+This shows the
+.I /home
+file system on
+.I host2
+was backed up at level 3 on the 8th, 9th and 10th of December,
+had a full backup on the 11th,
+a level 1 on the 12th and a level 2 on the 13th.
+.LP
+.RS
+.EX
+# amoverview
+                         date 12 12 12 12 12 12
+host     disk                 08 09 10 11 12 13
+ 
+host1    /                     0  1  1  1  1  1
+host1    /var                  0  1  1  1  1  1
+host2    /                     1  1  1  1  1  0
+host2    /home                 3  3  3  0  1  2
+host2    /opt                  1  1  1  1  1  1
+host2    /var                  1  1  0  1  1  1
+.EE
+.RE
+.SH "SEE ALSO"
+amadmin(8),
+amanda(8)

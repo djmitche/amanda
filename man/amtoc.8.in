@@ -1,0 +1,112 @@
+.\"
+.de EX
+.if t .ft C
+.nf
+..
+.de EE
+.fi
+.if t .ft
+..
+.de OP
+\fB\\$1\fP \fI\\$2\fP
+..
+.TH AMTOC 1
+.SH NAME
+amtoc \- generate tape table of contents for an Amanda run
+.SH SYNOPSIS
+.B amtoc
+[
+.B -c
+]
+.I config
+[
+.B -l
+.I label
+] [
+.B -h
+.I host
+] [
+.B -v
+] [
+.B -i
+] [
+.B -t
+] [
+.B -f
+]
+.SH DESCRIPTION
+.B Amtoc
+generates a tape table of contents (TOC) for an Amanda run.
+It's a perl script, you need to install perl first.
+.LP
+See the
+.IR amanda (8)
+man page for more details about Amanda.
+.SH OPTIONS
+.TP
+.OP "\fR[\fP -c \fR]\fP" config
+Name of the configuration to process.
+.TP
+.OP -l label
+Label of the tape (default: last Amanda run).
+.TP
+.OP -h host
+Only process the specified host (default: all hosts).
+.TP
+.B -v
+Be verbose.
+This output is not really a TOC, but a full dump of the database.
+It may be restricted by the
+.B -l
+and
+.B -h
+options.
+.TP
+.B -i
+Add an informational text header to the beginning of the TOC
+containing a reminder about how to restore files.
+.TP
+.B -t
+Use tab rather than spaces between the output fields.
+.TP
+.B -f
+Write output to a file rather than standard output.
+The file is named:
+.LP
+.RS
+.RS
+@LOG_DIR@/\fIconfig\fP/\fIlabel\fP.toc,
+.RE
+.RE
+.IP
+where
+.I label
+is the tape label
+(any '/' characters are converted to '_').
+.RE
+.SH EXAMPLE
+.B Amtoc
+is normally run right after
+.B amflush
+or
+.BI amdump .
+.LP
+.RS
+.EX
+# amdump @DEFAULT_CONFIG@
+# amtoc @DEFAULT_CONFIG@ -f
+.SH AUTHOR
+Nicolas MAYENCOURT <nicolas@cui.unige.ch>
+.br
+University of Geneva/Switzerland
+.SH "SEE ALSO"
+amanda(8),
+amflush(8),
+perl(1)
+.SH BUGS
+.B Amtoc
+uses the Amanda database,
+which only maintains information about the last tape used
+at a given backup level.
+Generating a TOC for the most recent run should be OK,
+but generating one for an older run is usually only partially correct.

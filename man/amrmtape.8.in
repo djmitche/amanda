@@ -41,7 +41,7 @@ and database files with
 .I label
 removed, but leave them in
 .I /tmp
-and do not copy them back to /opt/amanda-2.4.0b4/var/amanda/\fIconfig\fP.
+and do not copy them back to @DB_DIR@/\fIconfig\fP.
 .TP
 .B -v
 List backups of hosts and disks that are being discarded.
@@ -49,7 +49,7 @@ List backups of hosts and disks that are being discarded.
 .B -d
 Run in debugging mode so all executed commands are shown.
 .SH EXAMPLE
-Remove tape labelled
+Remove tape labeled
 .I DailySet1.034
 from the
 .I DailySet1

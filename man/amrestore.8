@@ -1,128 +1,196 @@
 .\"
+.de EX
+.if t .ft C
+.nf
+..
+.de EE
+.fi
+.if t .ft
+..
 .TH AMRESTORE 8
 .SH NAME
 amrestore \- extract files from an Amanda tape
 .SH SYNOPSIS
 .B amrestore
-[ options ] 
+[
+.B \-r
+|
+.B \-c
+]
+[
+.B \-p
+]
+[
+.B \-h
+]
 .I tapedevice
-[ 
+[
 .I hostname
-[ 
+[
 .I diskname
 ]]
 .SH DESCRIPTION
-
 .B Amrestore
-extracts all files from the 
+extracts files from the tape mounted on
 .I tapedevice
-that match the
+that match
 .I hostname
 and
 .I diskname
-given on the command line.  The tape must be in the format as written by
-the 
+patterns given on the command line.
+The tape must be in a format written by the
 .B amdump
-program.  
-If the
+or
+.B amflush
+program.
+If
 .I diskname
-is not specified, all backups on the tape for the particular
+is not specified, all backups on the tape for
 .I hostname
-are extracted.  If the
+are candidates.
+If
 .I hostname
-is not specified, every backup on the tape is extracted.
-The 
-.I hostname
-and 
+is not specified, every backup on the tape is a candidate.
+.LP
+.I Hostname
+and
 .I diskname
-may be regular expressions that can match many dumps.  For example, if a
+are regular expressions that may match more than one backup.
+For example, if
 .I diskname
-of
-.B rz[23]a
-is given, it would match backups of disks
+is "rz[23]a", it would match disks
 .B rz2a
 and
-.B rz3a.
+.BR rz3a .
 .PP
-Matching backup files from the tape are normally extracted to files in the current directory named
-.I hostname.diskname.datestamp.dumplevel.
-
+Unless
+.B -p
+is used,
+candidate backup files are extracted to files
+in the current directory named:
 .LP
-.B Amrestore
-supports the following options:
-
+.RS
+.I hostname.diskname.datestamp.dumplevel
+.RE
+.SH OPTIONS
 .TP
-.B \-p
+.B -p
 Pipe output.
-The first matching backup file is sent to the standard output file descriptor
-(which is normally a pipe to 
-.BR restore),
+The first matching backup file is sent to standard output,
+which is normally a pipe to
+.B restore
+or
+.BR tar ,
 then
 .B amrestore
-quits.  It may be run again to continue sending successive files to
-.B restore.
-Make sure you specify the no-rewind version of the
+quits.
+It may be run again to continue selecting backups to process.
+Make sure you specify the no-rewind
 .I tapedevice
 when doing this.
 .IP
-NOTE: 
+Note:
 .B restore
-can report "short read" errors when reading from a pipe.  Most
-versions of restore support a blocking factor option to let the user
-set the read block size.  See the example below.
-
+may report "short read" errors when reading from a pipe.
+Most versions of
+.B restore
+support a blocking factor option to let you set the read block size,
+and you should set it to 2.
+See the example below.
 .TP
-.B \-c 
-Compressed output.
+.B -c
+Compress output.
 .B Amrestore
-normally writes its output files in the format understood by
-.B restore,
-even if the backup files on the tape are in compressed format.  With the
-\-c option, 
+normally writes output files in a format understood by
+.B restore
+or
+.BR tar ,
+even if the backups on the tape are compressed.
+With the
+.B -c
+option,
 .B amrestore
-will write all files in compressed format, even if the backup files on
-the tape are not compressed.  The output file names will have the
+writes all files in compressed format,
+even if the backups on the tape are not compressed.
+Output file names will have a
 .I .Z
-extension appended to them.  This option is very useful when the holding
-disk is small.  
- 
+extension.
+This option is useful when the current directory disk is small.
 .TP
-.B \-r 
-Raw output.  The backup files are output exactly as they are on the
-tape, including the
+.B -r
+Raw output.
+Backup files are output exactly as they are on the tape,
+including the
 .B amdump
-file headers.  The output file names will have the
+file headers.
+Output file names will have a
 .I .RAW
-extension appended to them.  This option is only useful for debugging and
-other strange circumstances.
-
+extension.
+This option is only useful for debugging and other strange circumstances.
 .TP
-.B \-h 
-The headers are output before each file.
-
+.B -h
+Header output.
+The tape header block is output at the beginning of each file.
+This is like
+.B \-r
+except
+.B \-c
+may also be used to compress the result.
+.B Amrecover
+uses the header to determine the restore program to use.
 .SH EXAMPLES
-.TP
+The following does an interactive restore of disk
+.I rz3g
+from host
+.IR seine ,
+to restore particular files.
+Note the use of the
+.B b
+option to
+.BR restore ,
+which causes it to read in units of two 512-byte blocks (1 Kbyte)
+at a time.
+This keeps it from complaining about short reads.
+.LP
+.RS
+.EX
 % amrestore -p /dev/nrmt9 seine rz3g | restore ivbf 2 -
-This does an interactive restore of disk /dev/rz3g from host seine, to
-restore particular files.  Note the use of the "b 2" option to
-restore, which means read in units of 2 512-byte blocks (== 1 Kbyte)
-at a time.  This keeps restore from complaining about short reads.
-
-.TP
+.EE
+.RE
+.LP
+The next example extracts all backup files for host
+.IR seine .
+This is the usual way to extract all data for a host after a disk crash.
+.LP
+.RS
+.EX
 % amrestore /dev/nrmt9 seine
-This extracts all backup files for host seine.  This is the usual way to
-extract all the data for a host after a disk crash.  If the datestamp
-for the backups is 19910125 and seine has level 0 backups of filesystems
-rz1a and rz1g on the tape; the following files will be
-created in the current directory:
-	seine.rz1a.19910125.0
-.br
-	seine.rz1g.19910125.0
-
+.EE
+.RE
+.LP
+If the backup datestamp in the above example is
+.I 19910125
+and
+.I seine
+has level 0 backups of disks
+.I rz1a
+and
+.I rz1g
+on the tape,
+these files will be created in the current directory:
+.LP
+.RS
+.EX
+seine.rz1a.19910125.0
+seine.rz1g.19910125.0
+.EE
+.RE
 .SH AUTHOR
 James da Silva <jds@cs.umd.edu>
 .br
 University of Maryland, College Park
-
 .SH "SEE ALSO"
-amanda(8), amdump(8), amflush(8), restore(8).
+amanda(8),
+amdump(8),
+amflush(8),
+restore(8)

@@ -1,51 +1,72 @@
+.\"
+.de EX
+.if t .ft C
+.nf
+..
+.de EE
+.fi
+.if t .ft
+..
 .TH AMCLEANUP 8
 .SH NAME
-amcleanup \- runs the Amanda cleanup process after a failure
+amcleanup \- run the Amanda cleanup process after a failure
 .SH SYNOPSIS
 .B amcleanup
-.I config 
-
+.I config
 .SH DESCRIPTION
-.ad
 .B Amcleanup
-generates the 
-.I Amanda Mail Report 
-and updates the Amanda databases after a system failure on the master
-host.  This cleanup process is normally done automatically as part of
-the
+generates the
+.I Amanda Mail Report
+and updates the Amanda databases after a system failure on a tape server host.
+This cleanup process is normally done automatically as part of the
 .B amdump
 program, but if
 .B amdump
 cannot complete for some reason (usually because of a host crash),
 .B amcleanup
 must be run some time later.
+.LP
 See the
-.IR amanda(8)
+.IR amanda (8)
 man page for more details about Amanda.
-
 .SH EXAMPLES
-.TP
-% amcleanup csd
-Runs the Amanda cleanup process by hand during the day after
-noticing a failure.
-
-.PP
-.nf
-if [ -s @LOG_DIR@/@DEFAULT_CONFIG@/amanda.log ]
-then
-	@libexecdir@/amcleanup csd
-fi
-.fi
-.RS .5i
-Putting the above in /etc/rc.local runs the Amanda
-cleanup process when needed as part of the reboot, eliminating the need
-to run it by hand.
+This example runs the Amanda cleanup process by hand after
+a failure.
+.LP
+.RS
+.EX
+% amcleanup @DEFAULT_CONFIG@
+.EE
 .RE
-
+.LP
+Putting the following line in a system boot script (e.g.\&
+.IR /etc/rc.local )
+runs the Amanda cleanup process as part of the reboot,
+eliminating the need to run it by hand.
+.LP
+.RS
+.EX
+.ie '@sbindir@'${exec_prefix}/sbin' \{\
+.ie '@exec_prefix@'${prefix}' .ds pr @prefix@/sbin
+.el .ds pr @exec_prefix@/sbin\}
+.el .ds pr @sbindir@
+\*(pr/amcleanup @DEFAULT_CONFIG@
+.EE
+.RE
+.LP
+If nothing needs to be done,
+.B amcleanup
+exits normally with the message:
+.LP
+.RS
+.EX
+amcleanup: no unprocessed logfile to clean up.
+.EE
+.RE
 .SH AUTHOR
 James da Silva <jds@cs.umd.edu>
 .br
 University of Maryland, College Park
-
 .SH "SEE ALSO"
-amanda(8), amdump(8).
+amanda(8),
+amdump(8)

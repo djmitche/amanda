@@ -1,434 +1,1067 @@
 .\"
+.de EX
+.if t .ft C
+.nf
+..
+.de EE
+.fi
+.if t .ft
+..
 .TH AMANDA 8
 .SH NAME
 amanda \- Advanced Maryland Automatic Network Disk Archiver
 .SH SYNOPSIS
 .B amdump
 .I config
-
+.br
 .B amflush
-.I [ -f ] config
-
+[
+.B \-f
+]
+.I config
+.br
 .B amcleanup
 .I config
-
+.B amrecover
+[
+[
+.B \-C
+]
+.I config
+] [
+.B \-s
+.I index\-server
+]
+.br
 .B amrestore
-[ options ] 
+[
+.I options
+]
 .I tapedevice
-[ 
+[
 .I hostname
-[ 
+[
 .I diskname
 ]]
-
+.br
 .B amlabel
 .I config label
-
+[
+.B slot
+.I slot
+]
+.br
 .B amcheck
-.I [ -m ] [ -w ] config
-
+[
+.I options
+]
+.I config
+.br
 .B amadmin
-.I config 
+.I config
 .I command
-[ command options ] 
-
+[
+.I options
+]
+.br
 .B amtape
-.I config 
+.I config
 .I command
-[ command options ] 
-
+[
+.I options
+]
+.br
 .B amverify
 .I config
-
+.br
 .B amrmtape
-.I config
-
+[
+.I options
+]
+.I config label
 .SH DESCRIPTION
-
 Amanda is the "Advanced Maryland Automatic Network Disk Archiver".
 This manual page gives an overview of the Amanda commands and
 configuration files for quick reference.
-
-Here are all the Amanda commands.  Each one has its own manual page;
-see those for all the gritty details.
-
-.TP 
+.LP
+Here are all the Amanda commands.
+Each one has its own manual page.
+See them for all the gritty details.
+.TP
 .B amdump
-takes care of the nightly automatic Amanda backups.  It is normally
-executed by 
-.B cron 
-on a computer called the 
-.I master host.
+Take care of automatic Amanda backups.
+It is normally executed by
+.B cron
+on a computer called the
+.I tape server host
+and requests backups of file systems located on
+.I backup
+.IR clients .
 .B Amdump
-backs up all of the disks specified in the
+backs up all disks in the
 .I disklist
-file (discussed below) to tape or, if there is a problem, to a disk called the 
-.I holding disk.  
-Once all of the night's backups are performed, 
+file (discussed below) to tape or, if there is a problem, to a special
+.I holding
+.IR disk .
+After all backups are done,
 .B amdump
-sends mail to the operators reporting on the night's failures and successes.
-
-.TP 
+sends mail reporting failures and successes.
+.TP
 .B amflush
-flushes backups from the holding disk to tape.  
-.B Amflush 
-is only used after
+Flush backups from the holding disk to tape.
+.B Amflush
+is used after
 .B amdump
-has reported that it could not write the backups to tape for some
-reason.  When this happens the backups go to the holding disk instead.
-One of the operators must then correct the problem with the tape and
+has reported it could not write backups to tape for some reason.
+When this happens, backups stay in the holding disk.
+After the tape problem is corrected,
 run
-.B amflush.
-
+.B amflush
+to write backups from the holding disk to tape.
 .TP
 .B amcleanup
-cleans up after an interrupted
-.B amdump.
+Clean up after an interrupted
+.BR amdump .
 This command is only needed if
 .B amdump
-was unable to complete for some reason, usually because the master
-host crashed in the middle of the backups.
-
+was unable to complete for some reason, usually because the
+tape server host crashed while
+.B amdump
+was running.
 .TP
 .B amrestore
-reads backup files off of Amanda tapes, searching the tape for the
-right backups.  
+Read an Amanda tape, searching for requested backups.
 .B Amrestore
-is suitable both for interactive restores of
-single files, and the full restore of all partitions on a blown disk.
-
+is suitable for everything from interactive restores of single files
+to a full restore of all partitions on a failed disk.
 .TP
 .B amlabel
-writes special Amanda labels onto tapes.  
+Write an Amanda format label onto a tape.
+All Amanda tapes must be labeled with
+.BR amlabel .
 .B Amdump
-will not write to an unlabeled tape, or to a labeled tape that should
-not be overwritten (see TAPE MANAGEMENT below).
-
+and
+.B amflush
+will not write to an unlabeled tape (see TAPE MANAGEMENT below).
 .TP
 .B amcheck
-verifies that the correct tape is in the Amanda tape drive.  Can
-optionally be run through crontab such that operators will get mail
-warning that the night's backups will fail unless corrective action is
-taken.
-
+Verify the correct tape is in the tape drive
+and all file systems on all backup client systems
+are ready to be backed up.
+Can optionally be run by
+.B cron
+before
+.B amdump
+so someone will get mail warning that backups will fail
+unless corrective action is taken.
 .TP
 .B amadmin
-takes care of various administrative tasks, like finding out which
-tapes are needed to restore a filesystem, forcing computers to do full
-backups, and looking at schedule balance information.
-
+Take care of administrative tasks, like finding out which
+tapes are needed to restore a filesystem, forcing hosts to do full
+backups of selected disks, and looking at schedule balance information.
 .TP
 .B amtape
-takes care of various tape changer control operations, like loading
-particular tapes from the tape rack into the drive, ejecting tapes,
+Take care of tape changer control operations,
+like loading particular tapes,
+ejecting tapes,
 and scanning the tape rack.
-
 .TP
 .B amverify
-checks amanda backup tapes for errors; after scanning the tape a
-report is sent (gnutar driven backup only).
-
+Check Amanda backup tapes for errors (GNU tar format backups only).
 .TP
 .B amrmtape
-deletes a tape as well from the
+Delete a tape from the
 .I tapelist
-as from the
-.I curinfo
-database.
-
+and Amanda database.
 .SH CONFIGURATION
-
-There are three user-editable files that control the behaviour of Amanda.
+There are three user\-editable files that control the behavior of Amanda.
 The first is
 .I amanda.conf,
-the main config file.  This file contains a number of parameters
-that you can use to customize Amanda for your site.  Second is the
+the main configuration file.
+It contains parameters to customize Amanda for your site.
+Second is the
 .I disklist
-file, which specifies the hosts and disk partitions to back up.
+file, which lists hosts and disk partitions to back up.
 Third is the
 .I tapelist
-file, which lists the labeled tapes that are currently in active
-rotation.  These files are described in more detail in the following
-sections.
-
-All the files are stored in a
+file, which lists tapes that are currently active.
+These files are described in more detail in the following sections.
+.LP
+All files are stored in a
 .I config
-directory under @CONFIG_DIR@.  Often a single site will have more than
-one configuration; these configurations are named by the directories
-that their config files are in.  For example, a site might have a
+directory under @CONFIG_DIR@.
+A site will often have more than
+one configuration.
+For example, a site might have a
 .I normal
-configuration for every-day backups, and a
+configuration for every\-day backups and an
 .I archive
-configuration for 6-month full archival backups.  The config files for
-these two would be stored under @CONFIG_DIR@/normal and
-@CONFIG_DIR@/archive, respectively.
-
+configuration for infrequent full archival backups.
+The configuration files would be stored under @CONFIG_DIR@/normal/ and
+@CONFIG_DIR@/archive/, respectively.
+.LP
 All log and database files generated by Amanda go in corresponding
-directories under @LOG_DIR@ (log files) and @DB_DIR@ (database files).
-In our example, the logs would go in @LOG_DIR@/normal and @LOG_DIR@/archive
-(@DB_DIR@/normal and @DB_DIR@).
-
+directories under
+'if '@LOG_DIR@'@DB_DIR@' \{\
+@LOG_DIR@.
+\}
+'el \{\
+@LOG_DIR@ (log files) and @DB_DIR@ (database files).
+\}
+In our example, the files would go in
+'if '@LOG_DIR@'@DB_DIR@' \{\
+@LOG_DIR@/normal and @LOG_DIR@/archive.
+'el \{\
+@LOG_DIR@/normal and @LOG_DIR@/archive
+(@DB_DIR@/normal and @DB_DIR@/archive).
+\}
 .SH CONFIG FILE PARAMETERS
-
+.de BS
+\fB\\$1\fP\ \fI"\\$2"\fP
+..
+.de BN
+\fB\\$1\fP\ \fI\\$2\fP
+..
 There are a number of configuration parameters that control the
-behavior of the Amanda programs.  All of them have default values, so
-you need not specify the parameter in your
+behavior of the Amanda programs.
+All have default values,
+so you need not specify the parameter in your
 .I amanda.conf
-if you like the default.
-
-.TP
-.B org
-Default:
-.I @DEFAULT_CONFIG@.
-A descriptive name for your configuration.  This string is used for
-the mail report.  It should be different for each different Amanda
-configuration you have.
-
-.TP
+if the default is suitable.
+.LP
+Lines starting with # are ignored, as are blank lines.
+Keywords are case insensitive, i.e.\&
 .B mailto
-Default:
-.I operators.
-The list of recipients for the nightly mail report.
-
+and
+.B MailTo
+are treated the same.
+.LP
+Integer arguments may have one of the following (case insensitive) suffixes,
+some of which have a multiplier effect:
+.RS
 .TP
+.B "b byte bytes"
+Some number of bytes.
+.TP
+.B "k kb kbytes kilobytes"
+Some number of kilobytes (bytes*1024).
+.TP
+.B "kps kbps"
+Some number of kilobytes per second (bytes*1024).
+.TP
+.B "m meg mbytes megabytes"
+Some number of megabytes (bytes*1024*1024).
+.TP
+.B "mps mbps"
+Some number of megabytes per second (bytes*1024*1024).
+.TP
+.B "tape tapes"
+Some number of tapes.
+.TP
+.B "day days"
+Some number of days.
+.TP
+.B "week weeks"
+Some number of weeks (days*7).
+.RE
+.LP
+You may also use the value
+.B inf
+where an integer is expected to mean an infinite amount.
+.LP
+Boolean arguments may have any of the values
+.BR y ,
+.BR yes ,
+.BR t ,
+.B true
+or
+.B on
+to indicate a true state, or
+.BR n ,
+.BR no ,
+.BR f ,
+.BR false
+or
+.B off
+to indicate a false state.
+If no argument is given,
+.B true
+is assumed.
+.LP
+.TP
+.BS org string
+Default:
+.IR @DEFAULT_CONFIG@ .
+A descriptive name for the configuration.
+This string is used for mail reports.
+Each Amanda configuration should have a different value.
+.TP
+.BS mailto string
+Default:
+.IR operators .
+A comma separated list of recipients for mail reports.
+.TP
+.BN dumpcycle int
+Default:
+.IR "10 days" .
+The number of days in the backup cycle.
+Each disk will get a full backup no less often than this many days.
+.TP
+.BN tapecycle int
+Default:
+.IR "15 tapes" .
+The number of tapes in your active tape cycle.
+This must be at least one larger than the
 .B dumpcycle
+parameter.
+In practice you should have 5 or more extra tapes
+to allow for schedule adjustments or disaster recovery.
+.TP
+.BS dumpuser string
 Default:
-.I 14.
-The number of days in the backup cycle.  Each disk will get a full
-backup in this many days.  This may be specified in weeks by adding
-"weeks" after the number.
-
+.IR @CLIENT_LOGIN@ .
+The login name Amanda uses to run the backups.
+The backup client hosts must allow access
+from the tape server host as this user via
+.I .rhosts
+or
+.IR .amandahosts ,
+depending on how the Amanda software was built.
 .TP
-.B tapecycle
+.BS tapedev string
 Default:
-.I 15.
-The number of tapes in your active tape cycle.  This number must be at
-least one larger than your 
-.B dumpcycle
-parameter.  In practice you should have 5 or more slack days in the
-tape schedule to allow time for schedule adjustments or disaster
-recovery.
-
-.TP
-.B dumpuser
-Default: 
-.I @CLIENT_LOGIN@.
-The login name that Amanda uses to run the backups.  The slave hosts must
-let the master host in as this user.
-
-.TP
-.B diskdir
-Default:
-.I /dumps/amanda.
-The path name of the holding disk.  Backups are deposited under this
-directory when no tape is available.
-
-.TP
-.B disksize
-Default: 
-.I 200.
-The size of the holding disk available to Amanda, in megabytes.  
-
-.TP
-.B tapedev
-Default:
-.I @DEFAULT_TAPE_DEVICE@.
-The path name of the tape device file.  If you have configured a tape
-changer, this option is not used.
-
-.TP
+.IR @DEFAULT_TAPE_DEVICE@ .
+The path name of the tape device.
+If you have configured a tape changer
+(see the
 .B tpchanger
-Default:
-.I none.
-The name of the tape changer that should be used.  If you do not have
-an automatic tape changer, comment this definition out of your
-configuration file.
-
+option), this option is not used
+and should be commented out of your configuration file.
 .TP
-.B runtapes
+.BS tpchanger string
 Default:
-.I 1.
-This option specifies the maximum number of tapes to be used in a
-single run of amdump.  If you do not have an automatic tapechanger,
-make sure this option is not set in your configuration file.
-
+.IR none .
+The name of the tape changer.
+If you do not have a tape changer, this option is not used
+and should be commented out of your configuration file.
 .TP
-.B labelstr
+.BS changerdev string
 Default:
-.I .*.
-The tape label constraint regular expression.  All tape labels
+.IR @DEFAULT_CHANGER_DEVICE@ .
+A tape change configuration parameter.
+Usage depends on the particular changer defined with the
+.B tpchanger
+option.
+.TP
+.BS changerfile string
+Default:
+.IR @LOG_DIR@/changer\-status .
+A tape change configuration parameter.
+Usage depends on the particular changer defined with the
+.B tpchanger
+option.
+.TP
+.BN runtapes int
+Default:
+.IR 1 .
+The maximum number of tapes used in a single run.
+If you do not have a tape changer, this option is not used
+and should be commented out of your configuration file.
+.TP
+.BS labelstr string
+Default:
+.IR .* .
+The tape label constraint regular expression.
+All tape labels
 generated and used by this configuration must match the regular
-expression.  If multiple configurations are run from the same master
-host, it is helpful to constrain their labels to different strings
-(for example, "DAILY[0-9]*" vs. "ARCHIVE[0-9]*") to avoid overwriting
+expression.
+If multiple configurations are run from the same tape server host,
+it is helpful to constrain their labels to different strings
+(for example, "DAILY[0\-9]*" vs. "ARCHIVE[0\-9]*") to avoid overwriting
 each other's tapes.
-
 .TP
-.B tapetype
+.BS tapetype string
 Default:
-.I EXABYTE.
-The type of tape drive in
-.B tapedev.
-This refers to one of the defined tapetypes in the config file, which
+.IR EXABYTE .
+The type of tape drive associated with
+.B tapedev
+or
+.BR tpchanger .
+This refers to one of the defined
+.BR tapetype s
+in the config file, which
 specify various tape parameters, like the
-.B length,
+.BR length ,
 .B filemark
 size, and
 .B speed
-of the tape device.
-
+of the tape media and device.
 .TP
-.B netusage
+.BN netusage int
 Default:
-.I 300.
-The maximum network bandwidth allocated to Amanda, in Kbytes per second.
-
+.IR "300 Kbps" .
+The maximum network bandwidth allocated to Amanda, in Kbytes per second
+(not currently implemented).
+See also the
+.B interface
+section.
 .TP
-.B inparallel
+.BN inparallel int
 Default:
-.I 10.
-The maximum number of backups that Amanda will attempt to run in
-parallel.  Amanda will stay within the constraints of network
-bandwidth and holding disk space available, so it doesn't hurt to set
-this number a bit high.  Some contention can occur with larger numbers
-of dumps, but this effect is relatively small on most systems.
-
+.IR 10 .
+The maximum number of backups that Amanda will attempt to run in parallel.
+Amanda will stay within the constraints of network bandwidth and
+holding disk space available, so it doesn't hurt to set
+this number a bit high.
+Some contention can occur with larger numbers
+of backups, but this effect is relatively small on most systems.
 .TP
-.B maxdumps
+.BN maxdumps int
 Default:
-.I 1.
+.IR 1 .
 The maximum number of backups from a single host that Amanda will
-attempt to run in parallel.  This can also be used as a dumptype
+attempt to run in parallel.
+See also the
+.B dumptype
+section and
+.B inparallel
 option.
-
 .TP
-.B bumpsize
+.BN bumpsize int
 Default:
-.I 10 MB.
+.IR "10 Mb" .
 The minimum savings required to trigger an automatic
-.I bump
-from incremental level one to level two.  If Amanda determines that a
-level two dump will be this much less than a level one, it will do a
-level two.
-
-.TP
+bump from one incremental level to the next.
+If Amanda determines that the next higher backup level
+will be this much smaller than the current level,
+it will do the next level.
+See also the
 .B bumpmult
-Default:
-.I 2.
-The 
-.I bump multiplier.
-Amanda multiplies the
-.I bumpsize
-by this factor for each level.  This prevents active filesystems from
-bumping too much by making it harder to bump to the next level.  For
-example, with the default
-.I bumpsize
-and
-.I bumpmult,
-the bump threshold will be 10 MB for level one, 20 MB for level two,
-40 MB for level three, and so on.
-
+option.
 .TP
-.B bumpdays
+.BN bumpmult float
 Default:
-.I 2.
+.IR 1.5 .
+The
+.I bump
+.IR multiplier .
+Amanda multiplies
+.B bumpsize
+by this factor for each level.
+This prevents active filesystems from
+bumping too much by making it harder to bump to the next level.
+For example, with the default
+.B bumpsize
+and
+.BR bumpmult ,
+the bump threshold will be 10 Mbytes for level one, 20 Mbytes for level two,
+40 Mbytes for level three, and so on.
+.TP
+.BN bumpdays int
+Default:
+.IR 2 .
 To insure redundancy in the dumps, Amanda will keep filesystems at the
 same incremental level for at least
-.I bumpdays
+.B bumpdays
 days, even if the bump threshold criteria are met.
-
 .TP
-.B diskfile
+.BS diskfile string
 Default:
-.I disklist.
-The file name for the disklist file.
-
+.IR disklist .
+The file name for the
+.I disklist
+file.
 .TP
-.B infofile
+.BS infofile string
 Default:
-.I @DB_DIR@/curinfo.
-The file name for the historical information database file.
-
+.IR @DB_DIR@/curinfo .
+The file or directory name for the historical information database.
 .TP
-.B logfile
+.BS logfile string
 Default:
-.I @LOG_DIR@/log.
-The file name for the nightly log file.
-
+.IR @LOG_DIR@/log .
+The file name for the
+.B amdump
+log file.
 .TP
-.B indexdir
+.BS indexdir string
 Default
-.I @INDEX_DIR@.
-The directory where index files should be stored.  Index files are
-only generated for filesystems whose dumptypes have the index option
-enabled.
-
+.IR @INDEX_DIR@ .
+The directory where index files are stored.
+Index files are
+only generated for filesystems whose
+.B dumptype
+has the
+.B index
+option enabled.
 .TP
-.B tapefile
+.BS tapelist string
 Default:
-.I tapelist.
-The file name for the active tape list file.
-
-
+.IR tapelist .
+The file name for the active
+.I tapelist
+file.
+.TP
+.B holdingdisk
+Define parameters for a holding disk.
+The syntax is:
+.LP
+.RS
+.EX
+holdingdisk \fIname\fP {
+    \fIholdingdisk\-option\fP \fIholdingdisk\-value\fP
+    \fI...\fP
+}
+.EE
+.LP
+The options and values are:
+.LP
+.RS
+.TP
+.BS comment string
+Default:
+.IR none .
+A comment string describing this holding disk.
+.TP
+.BS directory disk
+Default:
+.IR /dumps/amanda .
+The path to this holding area.
+.TP
+.BN use int
+Default:
+.IR "10 Mb" .
+Amount of space that can be used in this holding disk area.
+.RE
+.RE
+.SH DUMPTYPE SECTION
+The config file may define multiple sets of backup options and
+refer to them by name from the
+.B disklist
+file.
+For instance, you might define one set of options for file systems
+that can benefit from high compression,
+another set that does not compress well,
+another set for file systems that should always get a full backup
+and so on.
+.LP
+A set of backup options are entered in a
+.B dumptype
+section, which looks like this:
+.LP
+.RS
+.EX
+define dumptype \fIname\fP {
+    \fIdumptype\-option\fP \fIdumptype\-value\fP
+    \fI...\fP
+}
+.EE
+.RE
+.LP
+.I Name
+is the name of this set of backup options.
+It is referenced from the
+.I disklist
+file.
+.LP
+Some of the options in a
+.B dumptype
+section are the same as global options.
+The global option value is used to set the default for all
+.B dumptype
+sections.
+For instance, setting
+.B dumpcycle
+to 50 in the main part of the config file causes all the
+.B dumptype
+sections to start with that value, and then you may change
+it on a section by section basis.
+.LP
+The dumptype options and values are:
+.LP
+.TP
+.BS auth string
+Default:
+.IR bsd .
+Type of authorization to perform between tape server and backup client hosts.
+May be
+.B krb4
+to use Kerberos\-IV authorization.
+.TP
+.BS comment string
+Default:
+.IR none .
+A comment string describing this set of backup options.
+.TP
+\fBcomprate\fP \fIfloat\fP [, \fIfloat\fP ]
+Default:
+.IR 0.50 ,
+.IR 0.50 .
+The expected full and incremental compression factor for dumps.
+Normally you should not set this because Amanda keeps the actual full
+and partial dump compression rates in the historical database.
+.TP
+.BS "compress [client|server]" string
+Default:
+.IR "client fast" .
+If Amanda does compression of the backup images,
+it can do so either on the backup client host before it goes to the
+holding disk or on the tape server host as it goes from the
+holding disk to tape.
+Which place to do compression (if at all) depends on how well the
+dump image usually compresses, the speed and load on the client or
+server, network capacity, holding disk capacity,
+tape hardware compression, etc.
+.IP
+For either type of compression, Amanda also allows you to select
+one of two styles of compression.
+.B Best
+is the best compression available, often at the expense of CPU overhead.
+.B Fast
+is often not as good a compression as
+.BR best ,
+but usually less CPU overhead.
+.IP
+So the
+.B compress
+options line may be one of:
+.LP
+.RS
+.RS
+.nf
+compress none
+compress [client] fast
+compress [client] best
+compress server fast
+compress server best
+.fi
+.RE
+.RE
+.IP
+Note that some tape devices do compression and this option has nothing
+to do with whether that is enabled, although you may want to disable
+Amanda compression if the drive is also going to do it.
+The
+.B tapedev
+path usually determines whether hardware compression is enabled.
+.TP
+.BN dumpcycle int
+Default:
+.IR "10 days" .
+The number of days in the backup cycle.
+Each disk using this set of options
+will get a full backup no less often than this many days.
+Setting this to zero forces a full backup each run.
+.TP
+.BS "exclude [list]" string
+Default:
+.IR none .
+The string is passed as a value to the GNU tar
+.B \-\-exclude
+or
+.B \-\-exclude\-list
+option.
+In the case of
+.BR "exclude list" ,
+the file must be available on the backup client host.
+.TP
+.BS holdingdisk boolean
+Default:
+.IR yes .
+Whether a holding disk should be used for these backups or whether
+they should go directly to tape.
+.TP
+.BS ignore boolean
+Default:
+.IR no .
+Whether disks associated with this backup type should be backed up or not.
+This option is useful when you share a
+.I disklist
+file among several configurations, some of which should not back up
+all the listed file systems.
+.TP
+.BS index boolean
+Default:
+.IR no .
+Whether an index (catalogue) of the backup should be generated and
+saved in
+.BR indexdir .
+.TP
+.BS kencrypt boolean
+Default:
+.IR no .
+Whether the backup image should be encrypted by Kerberos as it is sent
+across the network from the backup client host to the tape server host.
+.TP
+.BS maxdumps int
+Default:
+.IR 1 .
+The maximum number of backups from a single host that Amanda will
+attempt to run in parallel.
+See also the
+.B inparallel
+option.
+.TP
+.BS priority string
+Default:
+.IR medium .
+When there is no tape to write to, Amanda will do incremental backups
+in priority order to the holding disk.
+The priority may be
+.BR high ,
+.B medium
+or
+.BR low .
+.TP
+.BS program string
+Default:
+.IR DUMP .
+The type of backup to perform.
+Valid values are
+.B DUMP
+for the native operating system backup program, and
+.B GNUTAR
+to use GNU tar.
+.TP
+.BS record boolean
+Default:
+.IR yes .
+Whether to ask the backup program to update its
+database (e.g.\&
+.IR /etc/dumpdates )
+of time stamps.
+You normally want this enabled for daily backups and turned off
+for periodic archival runs.
+.TP
+.BS skip\-full boolean
+Default:
+.IR no .
+If
+.I true
+and
+.B planner
+has scheduled a full backup, these disks will be skipped.
+.TP
+.BS skip\-incr boolean
+Default:
+.IR no .
+If
+.I true
+and
+.B planner
+has scheduled an incremental backup, these disks will be skipped.
+.TP
+.BS starttime int
+Default:
+.IR none .
+Backups will not start until after this time of day.
+The value should be hh*100+mm, e.g. 6:30PM (18:30) would be entered as
+.BR 1830 .
+.TP
+.BS strategy string
+Default:
+.IR standard .
+Strategy to use when planning what level of backup to run next.
+Values are:
+.LP
+.RS
+.TP
+.B standard
+The standard Amanda schedule.
+.TP
+.B nofull
+Never do full backups, only incrementals.
+.TP
+.B noinc
+Never do incremental backups, only full dumps.
+.TP
+.B skip
+Never do backups (useful when sharing the
+.I disklist
+file).
+.RE
+.LP
+The following
+.B dumptype
+entries are predefined by Amanda:
+.LP
+.RS
+.EX
+define dumptype no-compress {
+    compress none
+}
+define dumptype compress-fast {
+    compress client fast
+}
+define dumptype compress-best {
+    compress client best
+}
+define dumptype srvcompress {
+    compress server fast
+}
+define dumptype bsd-auth {
+    auth bsd
+}
+define dumptype krb4-auth {
+    auth krb4
+}
+define dumptype no-record {
+    record no
+}
+define dumptype no-hold {
+    holdingdisk no
+}
+define dumptype no-full {
+    skip-full yes
+}
+.EE
+.RE
+.LP
+In addition to options in a
+.B disktype
+section, you may also put one or more other
+.B disktype
+names, which make this
+.B disktype
+inherit options from other
+.BR disktype s.
+For instance, you might want two sections that are the same except for the
+.B record
+option:
+.LP
+.RS
+.EX
+define dumptype normal {
+    comment "Normal backup, no compression, do indexing"
+    no-compress
+    index yes
+    maxdumps 2
+}
+define dumptype testing {
+    comment "Test backup, no compression, do indexing, no recording"
+    normal
+    no-record
+}
+.EE
+.RE
+.SH TAPETYPE SECTION
+The config file may define multiple types of tape media and devices.
+The information is entered in a
+.B tapetype
+section, which looks like this in the config file:
+.LP
+.RS
+.EX
+define tapetype \fIname\fP {
+    \fItapetype\-option\fP \fItapetype\-value\fP
+    \fI...\fP
+}
+.EE
+.RE
+.LP
+.I Name
+is the name of this type of tape medium/device.
+It is referenced from the
+.B tapetype
+option in the main part of the config file.
+.LP
+The tapetype options and values are:
+.TP
+.BS comment string
+Default:
+.IR none .
+A comment string describing this set of tape information.
+.TP
+.BS filemark int
+Default:
+.IR "1000 bytes" .
+How large a file mark (tape mark) is, measured in bytes.
+If you only know the size in some linear measurement (e.g. inches),
+convert it to bytes using the device density.
+.TP
+.BS length int
+Default:
+.IR "2000 kbytes" .
+How much data will fit on a tape.
+.TP
+.BS speed int
+Default:
+.IR 200 .
+How fast the drive will accept data, in bytes per second.
+.LP
+In addition to options, you may also put another
+.B tapetype
+name, which makes this
+.B tapetype
+inherit options from another
+.BR tapetype .
+For instance, the only difference between a DLT4000 tape drive using
+Compact\-III tapes and one using Compact\-IV tapes is the length of
+the tape.
+So they could be entered as:
+.LP
+.RS
+.EX
+define tapetype DLT4000\-III {
+    comment "DLT4000 tape drives with Compact\-III tapes"
+    length 12500 mbytes         # 10 Gig tapes with some compression
+    filemark 2000 kbytes
+    speed 1536 kps
+}
+define tapetype DLT4000\-IV {
+    comment "DLT4000 tape drives with Compact\-IV tapes"
+    DLT4000\-III
+    length 25000 mbytes         # 20 Gig tapes with some compression
+}
+.EE
+.RE
+.SH INTERFACE SECTION
+The config file may define multiple types of network interfaces.
+The information is entered in an
+.B interface
+section, which looks like this:
+.LP
+.RS
+.EX
+define interface \fIname\fP {
+    \fIinterface\-option\fP \fIinterface\-value\fP
+    \fI...\fP
+}
+.EE
+.RE
+.LP
+.I Name
+is the name of this type of network interface.
+It is referenced from the
+.I disklist
+file.
+.LP
+Note that these sections define network interface characteristics,
+not the actual interface that will be used.
+.LP
+The interface options and values are:
+.TP
+.BS comment string
+Default:
+.IR none .
+A comment string describing this set of network information.
+.TP
+.BS use int
+Default:
+.IR "300 bytes/second" .
+The speed of the interface.
+.LP
+In addition to options, you may also put another
+.B interface
+name, which makes this
+.B interface
+inherit options from another
+.BR interface .
+At the moment, this is of little use.
 .SH DISKLIST FILE
 The
 .I disklist
-file determines which disks will be backed up by Amanda.  Disks are
-initially added to the file by the operators.
-The disklist file contains a one-line entry per disk, of the
-form:
-
+file determines which disks will be backed up by Amanda.
+The file contains one line per disk:
+.LP
+.RS
 .I hostname diskdevice dumptype
-
-Lines starting with # are ignored, as are blank lines.  The fields
-have the following meanings:
-
+[
+.I platter
+[
+.I interface
+] ]
+.RE
+.LP
+Lines starting with # are ignored, as are blank lines.
+The fields have the following meanings:
 .TP
-.B hostname
-is the local name of the host to be backed up.
-
+.I hostname
+The name of the host to be backed up.
 .TP
-.B diskdevice
-is the name of the disk device to be backed up, without the /dev/ prefix.
-
+.I diskdevice
+The name of the disk device to be backed up.
+It may be a full device name,
+a device name without the
+.I /dev/
+prefix, e.g.\&
+.IR sd0a ,
+or a mount point such as
+.IR /usr .
 .TP
-.B dumptype
-
-refers to one of the dumptypes defined in the config file.  These
-dumptypes specify various parameters, like whether or not to compress
-the dumps, whether to record the dump results in /etc/dumpdates, and
-the disk's relative priority.
-
+.I dumptype
+Refers to a
+.I dumptype
+defined in the
+.I amanda.conf
+.IR file .
+.IR Dumptype s
+specify backup related parameters,
+such as whether to compress the backups,
+whether to record backup results in
+.IR /etc/dumpdates ,
+the disk's relative priority,
+etc.
+.TP
+.I platter
+Default:
+.IR \-1 .
+A number used to balance backup load on a host.
+Amanda will try not to run multiple backups on a given platter.
+.TP
+.I interface
+Default:
+.IR local .
+The name of a network interface definition in the
+.I config
+.IR file ,
+used to balance network load.
 .SH TAPE MANAGEMENT
-
 The
 .I tapelist
-file contains the list of tapes that are in active rotation.  This
-file is maintained entirely by Amanda and does not need to be created
-or edited by the operators for normal operation.
+file contains the list of tapes in active use.
+This file is maintained entirely by Amanda and should not be created
+or edited for normal operation.
 It contains lines of the form:
-
-.I		YYYYMMDD  LABEL
-
+.LP
+.RS
+.I YYYYMMDD label
+.RE
+.LP
 Where
 .I YYYYMMDD
-is the date that the tape was written, and
-.I LABEL
-is the user-supplied label of the tape, as written by the
-.B amlabel
-program.  This file is maintained by the Amanda programs and should
-not be edited by hand.
-
-Amanda will refuse to write to any unlabeled tape, or to a labeled
-tape that is considered active and should not be overwritten.  There
-need to be more tapes in active rotation than there are days in the
-backup cycle to prevent the overwriting of a needed backup file when a
-problem occurs.
-
+is the date the tape was written, and
+.I label
+is a label for the tape as written by
+.BR amlabel .
+.LP
+.B Amdump
+and
+.B amflush
+will refuse to write to an unlabeled tape,
+or to a labeled tape that is considered active.
+There must be more tapes in active rotation
+(see the
+.B tapecycle
+option)
+than there are runs in the backup cycle
+(see the
+.B dumpcycle
+option)
+to prevent overwriting a needed backup file when a problem occurs.
 .SH AUTHOR
 James da Silva <jds@cs.umd.edu>
 .br
 University of Maryland, College Park
-
 .SH "SEE ALSO"
-amadmin(8), amdump(8), amflush(8), amcleanup(8), amrestore(8), amlabel(8), amcheck(8), dump(8)
+amadmin(8),
+amcheck(8),
+amcheckdb(8),
+amcleanup(8),
+amdump(8),
+amflush(8),
+amlabel(8),
+amoverview(8),
+amrecover(8),
+amrestore(8),
+amtoc(8),

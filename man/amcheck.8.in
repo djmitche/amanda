@@ -1,55 +1,74 @@
 .\"
+.de EX
+.if t .ft C
+.nf
+..
+.de EE
+.fi
+.if t .ft
+..
 .TH AMCHECK 8
 .SH NAME
-amcheck \- Amanda pre-run self-check
+amcheck \- run Amanda self\-checks
 .SH SYNOPSIS
 .B amcheck
-.I [ -mwsc ] config
-
+[
+.B -mwsc
+]
+.I config
 .SH DESCRIPTION
-
 .B Amcheck
-runs a number of self-checks on both the Amanda Tape Server Host and
-the Amanda Backup Client Hosts.
-.PP
-On the Tape Server,
+runs a number of self\-checks on both the Amanda tape server host and
+the Amanda backup client hosts.
+.LP
+On the tape server host,
 .B amcheck
-goes through the same tape checking used at the start of the
-nightly
-.B amdump
-process.  This verifies that the correct tape for the next run is in the
-correct drive.  The holding disks are also checked to insure that they
-have enough free space for the next
+goes through the same tape checking used at the start of the nightly
 .B amdump
 run.
-.PP
+This verifies the correct tape for the next run is in the
+correct drive.
+Holding disks are checked to insure they have enough free space.
+.LP
 .B Amcheck
-also causes a self-check to be run on all of the Backup Clients.  This
-check makes sure each host is up and running, and that the permissions
-on all the filesystems to be backed-up are correct.
-.PP
-With the -s option only the Tape Server checks to be run, and with the
--c option only the Backup Client checks are run.
-.PP
-The -w option enables a destructive check for write-protection on the
-tape (which would cause the subsequent amdump to fail).  If the tape
+also causes a self\-check to be run on all backup client hosts.
+This makes sure each host is up and running and that permissions
+on filesystems to be backed up are correct.
+.LP
+See the
+.IR amanda (8)
+man page for more details about Amanda.
+.SH OPTIONS
+.TP
+.B -s
+Only the tape server host checks are run.
+.TP
+.B -c
+Only the backup client host checks are run.
+.TP
+.B -w
+Enables a destructive check for write\-protection on the
+tape (which would cause the subsequent
+.B amdump
+to fail).
+If the tape
 is writeable, this check causes all data after the tape label to be
 erased (actually depends on the device driver: there is no portable
-non-destructive way to check for write-protection).  The check is only
-made if the tape is otherwise correct.
-.PP
-If the -m option is given, nothing is printed, but  mail is sent to the
-"mailto" address (as specified by the
+non\-destructive way to check for write\-protection).
+The check is only made if the tape is otherwise correct.
+.TP
+.B -m
+Nothing is printed, but mail is sent to the
+.B mailto
+address as specified in the
 .I amanda.conf
-file in @CONFIG_DIR@/\fIconfig\fR) if any errors are detected.  
-.PP
-See the
-.IR amanda(8)
-man page for more details about Amanda.
-
-
+file if any errors are detected.
 .SH EXAMPLES
-.nf
+In this example, both the tape server and backup client tests are run.
+The results are displayed on standard output.
+.LP
+.RS
+.EX
 % amcheck @DEFAULT_CONFIG@
 Amanda Tape Server Host Check
 -----------------------------
@@ -65,19 +84,264 @@ WARNING: drinkme: selfcheck request timed out.  Host down?
 WARNING: scruffy: selfcheck request timed out.  Host down?
 Client check: 136 hosts checked in 51.945 seconds, 3 problems found.
 
-(brought to you by Amanda 2.2.1)
-.fi
-
-.TP
-% amcheck -m @DEFAULT_CONFIG@
-If the line "mailto csd-amanda" is in
-@CONFIG_DIR@/@DEFAULT_CONFIG@/amanda.conf, mail will be sent to csd-amanda
+(brought to you by Amanda 2.4.0)
+.EE
+.RE
+.LP
+In this example, if the line
+.B mailto csd-amanda
+is in
+.IR amanda.conf ,
+mail will be sent to
+.B csd-amanda
 if the tape check returns an error.
-
+.LP
+.RS
+.EX
+% amcheck \-s \-m @DEFAULT_CONFIG@
+.EE
+.RE
+.SH MESSAGES
+.TP
+fatal slot \fIslot\fP: \fIerror message\fP
+(error)
+The tape changer detected some kind of fatal error
+while trying to load slot
+.IR slot .
+.TP
+slot \fIslot\fP: \fIerror message\fP
+(warning)
+The tape changer detected some kind of non-fatal error
+(e.g. an empty slot was detected)
+while trying to load slot
+.IR slot ,
+or an error was detected trying to read the tape label.
+.TP
+slot \fIslot\fP: date \fIYYYYMMDD\fP label \fIlabel\fP (\fIresult\fP)
+(info)
+Tape
+.I label
+in slot
+.I slot
+was loaded and found to have been last written on
+.IR YYYYMMDD .
+If the tape is new, the date field will be an
+.IR X .
+The
+.I result
+may be one of:
+.RS
+.TP
+exact label match
+This is the expected tape.
+.TP
+no match
+This label does not match the
+.B labelstr
+pattern in
+.IR amanda.conf .
+Tape scanning will continue.
+.TP
+active tape
+This tape is still active and cannot be overwritten.
+Tape scanning will continue.
+.TP
+first labelstr match
+This tape is the first one that matches the
+.B labelstr
+pattern in
+.IR amanda.conf .
+Tape scanning will continue if necessary.
+.TP
+labelstr match
+This tape is the next one that matches the
+.B labelstr
+pattern in
+.IR amanda.conf .
+Tape scanning will continue.
+.RE
+.TP
+ERROR: statfs \fIdisk\fP: \fIerror message\fP
+(error)
+An error was returned from the
+.I statfs
+system call on holding disk
+.I disk
+(maybe because it does not exist).
+.TP
+ERROR: \fIdisk\fP is unwriteable: \fIerror message\fP
+(error)
+An error was returned from the
+.I access
+system call on holding disk
+.IR disk ,
+probably because the caller does not have write permission.
+.TP
+WARNING: avail disk space unknown for \fIdisk\fP. \fIN\fP KB requested.
+(warning)
+.B Amcheck
+could not determine the amount of available space on holding disk
+.I disk
+to see if there were at least
+.I N
+KBytes available.
+.TP
+WARNING: \fIdisk\fP: only \fIF\fP KB free (\fIR\fP KB requested).
+(warning)
+.I Amanda.conf
+requested
+.I R
+KBytes of free space on holding disk
+.IR disk ,
+but only
+.I F
+KBytes were available.
+10 MBytes is subtracted for each backup process
+(see the
+.B inparallel
+.I amanda.conf
+option)
+to allow for unexpected overruns.
+.IP
+Note:
+even though this message is listed as a warning, it causes
+.B amcheck
+to exit with a non-zero status.
+.TP
+\fIdisk\fP: \fIN\fP KB disk space available, that's plenty.
+(info)
+There was sufficient free space on holding disk
+.IR disk .
+.TP
+WARNING: if a tape changer is not available, runtapes must be set to 1.
+(warning)
+The
+.B runtapes
+.I amanda.conf
+option must be set to 1 if the
+.B tpchanger
+.I amanda.conf
+option is not set.
+.TP
+ERROR: \fIerror message\fP.
+(error)
+An error was detected while initializing the tape changer.
+.TP
+ERROR: \fItape device\fP: \fIerror message\fP.
+(error)
+An error was detected while processing the tape label.
+.TP
+ERROR: cannot overwrite active tape \fIlabel\fP.
+(error)
+Tape
+.I label
+is still active and cannot be used.
+.TP
+ERROR: label \fIlabel\fP doesn't match labelstr "\fIpattern\fP".
+(error)
+The label on tape
+.I label
+does not match the
+.B labelstr
+.I amanda.conf
+option.
+.TP
+(expecting a new tape)
+(info)
+The tape is not OK and a new tape was expected.
+.TP
+(expecting tape \fIlabel\fP or a new tape)
+(info)
+The tape is not OK and either tape
+.I label
+or a new tape was expected.
+.TP
+ERROR: tape \fIlabel\fP label ok, but is not writeable.
+(error)
+Tape
+.I label
+is OK, but the write enable test failed.
+.TP
+Tape \fIlabel\fP is writeable.
+(info)
+Tape
+.I label
+is OK and the write enable test succeeded.
+.TP
+NOTE: skipping tape-writeable test.
+(info)
+The tape write test (see the
+.B -w
+option) was not enabled.
+.TP
+Tape \fIlabel\fP label ok.
+(info)
+Tape
+.I label
+is OK for the next
+run.
+.TP
+Index dir "\fIdirectory\fP" doesn't exist or is not writeable.
+(warning)
+The directory used to collect backup index files
+(from the
+.B indexdir
+.I amanda.conf
+option)
+is not accessible.
+.TP
+Server check took \fIS\fP seconds.
+(info)
+Reports how long the tape server host checks took.
+.TP
+ERROR: \fIhost\fP: couldn't resolve hostname
+(error)
+Could not look up backup client hostname
+.IR host .
+.TP
+Client check: \fIH\fP hosts checked in \fIS\fP seconds, \fIN\fP problems found.
+(info)
+Reports the number of backup client hosts checked,
+how long it took and the number of errors detected.
+.TP
+WARNING: \fIhost\fP: selfcheck request timed out.  Host down?
+(warning)
+There was no response from
+.I host
+when trying to do the client checks.
+.TP
+ERROR: \fIhost\fP NAK: \fImessage\fP
+(error)
+.I Host
+reported a negative acknowledgment error of
+.I message
+to the status check request.
+.TP
+ERROR: \fIhost\fP NAK: [NAK parse failed]
+(error)
+.B Amcheck
+could not parse the negative acknowledgment error from
+.IR host .
+There might be an Amanda version mismatch between the host running
+.B amcheck
+and
+.IR host .
+.TP
+ERROR: \fIhost\fP [mutual-authentication failed]
+(error)
+Kerberos authentication failed while contacting
+.IR host .
+.TP
+ERROR: \fIhost\fP: \fImessage\fP
+(error)
+Error
+.I message
+was reported by the status check on
+.IR host .
 .SH AUTHOR
 James da Silva <jds@cs.umd.edu>
 .br
 University of Maryland, College Park
-
 .SH "SEE ALSO"
-amanda(8), amdump(8).
+amanda(8),
+amdump(8)

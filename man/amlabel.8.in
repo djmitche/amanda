@@ -1,49 +1,66 @@
 .\"
+.de EX
+.if t .ft C
+.nf
+..
+.de EE
+.fi
+.if t .ft
+..
 .TH AMLABEL 8
 .SH NAME
-amlabel \- labels an Amanda tape
+amlabel \- label an Amanda tape
 .SH SYNOPSIS
 .B amlabel
-.I config label [
+.I config label
+[
 .B slot
-.I number ]
-
+.I slot
+]
 .SH DESCRIPTION
-
 .B Amlabel
-writes an Amanda label on the tape in the tape drive specified by the
+writes an Amanda label on the tape in the device specified by the
 .I amanda.conf
-file in @CONFIG_DIR@/\fIconfig\fR.  The
-.I label
-can be any string that does not contain whitespace, and that matches the
-.I amanda.conf 
+file in @CONFIG_DIR@/\fIconfig\fR.
+.I Label
+may be any string that does not contain whitespace and that matches the
+.I amanda.conf
 .B labelstr
-regular expression parameter.  It is up to the
-system administrators to define a naming convention.
-
-An optional slot number may be specified after the tape label.  If a
-tape changer is in use, amlabel will label the tape in the specified
-slot, instead of labeling the currently loaded tape.
-
+regular expression option.
+It is up to the system administrator to define a naming convention.
+.LP
+An optional slot may be specified after the tape label.
+If a tape changer is in use,
+.I amlabel
+will label the tape in the specified slot
+instead of the currently loaded tape.
+.LP
 See the
-.IR amanda(8)
+.IR amanda (8)
 man page for more details about Amanda.
-
 .SH EXAMPLE
-.TP
+Write an Amanda label with the string "VOL1" on
+the tape loaded in the device named in the
+.B tapedev
+option in @CONFIG_DIR@/@DEFAULT_CONFIG@/amanda.conf:
+.LP
+.RS
+.EX
 % amlabel @DEFAULT_CONFIG@ VOL1
-If the line "tapedev /dev/tape/1n" is in
-@CONFIG_DIR@/@DEFAULT_CONFIG@/amanda.conf, an Amanda label with the name "VOL1" is
-written on the /dev/tape/1n device.
-
-.TP
+.EE
+.RE
+.LP
+Label the tape in slot 3 of the currently configured tape changer
+with the string "VOL2":
+.LP
+.RS
+.EX
 % amlabel @DEFAULT_CONFIG@ VOL2 slot 3
-Labels the tape in slot 3 of the currently configured tape changer.
-
+.EE
+.RE
 .SH AUTHOR
 James da Silva <jds@cs.umd.edu>
 .br
 University of Maryland, College Park
-
 .SH "SEE ALSO"
-amanda(8).
+amanda(8)

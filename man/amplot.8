@@ -1,110 +1,166 @@
 .TH AMPLOT 8
 .UC 4
-.SH NAME 
-amplot \- program to visualize the behavior of Amanda
+.SH NAME
+amplot \- visualize the behavior of Amanda
 .SH SYNOPSIS
-.B amplot 
-[-c] [-e] [-g] [-l] [-p] [-t HOURS] <amdump_files> 
-     -c     Compress the input amdump files after plotting
-     -e     Extends X (time) axes if needed
-     -g     Directs gnuplot output directly to screen 
-            [Default on]
-     -l     Landscape mode suitable for printing
-     -p     Postscript output
-     -t T   Set the right edge of the plot to be T hours
-
-amdump_files can be in various compressed formats, (compress, gzip, pact, compact). 
+.B amplot
+[
+.B -c
+]
+[
+.B -e
+]
+[
+.B -g
+]
+[
+.B -l
+]
+[
+.B -p
+]
+[
+.B -t
+.I T
+]
+.I amdump_files
 .br
 .SH DESCRIPTION
-.I Amplot 
-reads an amdump file that
-.I Amanda 
-generates each night and translates the information in it into a 
-nice picture format that can be used to determine how your installation 
+.B Amplot
+reads an
+.B amdump
+output file that Amanda generates each run (e.g.
+.IR amdump.1 )
+and translates the information into a
+picture format that may be used to determine how your installation
 is doing and if any parameters need to be changed.
-.I Amplot 
-also prints out the amdump lines that it either does not 
-understand or knows to be warning/error lines. 
-.I Amplot 
-is a shell script that executes an 
-.I AWK 
-program (amplot.awk) to scan the amdump file and then executes a 
-.I GNUPLOT 
-program (amplot.g) to generate the graph. The 
-.I AWK 
-program is written in the enhanced version of awk, this program has been 
-run with gawk (version 2.15 and nawk)
-
-This tool was developed to examine how well Amanda was doing and to assist
-in the search of problems, and it has helped in finding many of them. 
-
-Unless the -g flag is supplied 
-.I Amplot
-generates a Postscript output file from named 
-.I date.ps
-Example: 
-.I 19930128.ps 
-.br
-During it's execution 
-.I amplot 
-generates a few temporary files that gnuplot uses, these files are deleted
-at the end of execution. If the files supplied to amdump are not 
-compressed they are compressed after all the graphs have 
-been generated, unless the -n flag is supplied.
-
-.SH INTERPRETATION 
-The figure is divided into number of regions. 
-On the top there are titles that shows important statistical information
-about the configuration and statistics from this execution of 
-.I Amanda
-
-In the figure X axis is time, 0 is the moment 
-.I Amanda 
-was started. 
-.br
-The Y axes is divided into 5 regions:
-.HP 1
-.br
-.I    Active Dumpers: 
-This shows percentage of dumpers that are dumping disks.
-.HP 1
-.br
-.I    Tape Status: 
-This shows when the tape drive is in use.
-.HP 1
-.br
-.I    Holding Disk Allocation: 
-The "higher" line depicts the space allocated on the holding disk to 
-dumps in progress and completed dumps waiting to be written to the tape. 
-The "lower" line depicts the fraction of holding disk containing completed 
-dumps waiting to be written to tape including the file currently being 
-written to tape. The scale is percentage of the holding disk. 
-.HP 1
-.br
-.I    Bandwidth allocation: 
-Percentage of allowed network bandwidth that is allocated. 
-.HP 1
-.I    Queues:
-Amanda Driver maintains few queues and this region shows how many dumps
-have not been started, how many waiting on the holding disk, and how many
-have been transferred successfully to tape. 
-
-The idle period in the beginning of the graph is while 
-.I Amanda 
-is asking the machines how much data they are going to dump. This
-process can take a while if any host is down, or it takes hosts long time to
-generate estimates. 
-
+.B Amplot
+also prints out
+.B amdump
+lines that it either does not
+understand or knows to be warning or error lines
+and a summary of the start, end and total time for each backup image.
+.LP
+.B Amplot
+is a shell script that executes an
+.B awk
+program
+.IR \fR(\fPamplot.awk )
+to scan the
+.B amdump
+output file.
+It then executes a
+.B gnuplot
+program
+.IR \fR(\fPamplot.g )
+to generate the graph.
+The
+.B awk
+program is written in an enhanced version of awk,
+such as GNU awk
+.B \fR(\fPgawk
+version 2.15 or later) or
+.BR nawk .
+.LP
+During execution,
+.B amplot
+generates a few temporary files that
+.B gnuplot
+uses.
+These files are deleted at the end of execution.
+.LP
+See the
+.IR amanda (8)
+man page for more details about Amanda.
+.SH OPTIONS
+.TP
+.B -c
+Compress
+.I amdump_files
+after plotting.
+.TP
+.B -e
+Extend the X (time) axis if needed.
+.TP
+.B -g
+Direct
+.I gnuplot
+output directly to the X11 display (default).
+.TP
+.B -p
+Direct postscript output to file
+.B \fIYYYYMMDD\fP.ps
+(opposite of
+.BR -g ).
+.TP
+.B -l
+Generate landscape oriented output.
+.TP
+.B "-t \fIT\fR"
+Set the right edge of the plot to be
+.I T
+hours.
+.LP
+The
+.I amdump_files
+may be in various compressed formats
+.BR \fR(\fPcompress ,
+.BR gzip ,
+.BR pact ,
+.BR compact ).
+.SH INTERPRETATION
+The figure is divided into a number of regions.
+There are titles on the top that show important statistical information
+about the configuration and from this execution of
+.BR amdump .
+In the figure, the X axis is time, with 0 being the moment
+.B amdump
+was started.
+The Y axis is divided into 5 regions:
+.IP
+.I QUEUES:
+How many backups have not been started,
+how many are waiting on space in the holding disk
+and how many have been transferred successfully to tape.
+.IP
+.I %BANDWIDTH:
+Percentage of allowed network bandwidth in use.
+.IP
+.I HOLDING DISK:
+The higher line depicts space allocated on the holding disk to
+backups in progress and completed backups waiting to be written to tape.
+The lower line depicts the fraction of the holding disk containing completed
+backups waiting to be written to tape including the file currently being
+written to tape.
+The scale is percentage of the holding disk.
+.IP
+.I TAPE:
+Tape drive usage.
+.IP
+.I %DUMPERS:
+Percentage of active dumpers.
+.LP
+The idle period at the left of the graph is time
+.B amdump
+is asking the machines how much data they are going to dump.
+This process can take a while if hosts are down
+or it takes them a long time to generate estimates.
 .SH AUTHOR
 Olafur Gudmundsson ogud@tis.com
 .br
-Trusted Information Systems, formerly at 
-University of Maryland, College Park
-
+Trusted Information Systems
+.br
+formerly at University of Maryland, College Park
 .SH BUGS
 Reports lines it does not recognize, mainly error cases but some are
-legitimate lines the program does not recognize.
-
+legitimate lines the program needs to be taught about.
 .SH SEE ALSO
-	gawk(1), nawk(1), awk(1), gnuplot(1), sh(1), compress(1), 
+amanda(8),
+amdump(8),
+gawk(1),
+nawk(1),
+awk(1),
+gnuplot(1),
+sh(1),
+compress(1),
 gzip(1)

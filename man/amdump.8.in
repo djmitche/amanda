@@ -1,46 +1,66 @@
 .\"
+.de EX
+.if t .ft C
+.nf
+..
+.de EE
+.fi
+.if t .ft
+..
 .TH AMDUMP 8
 .SH NAME
-amdump \- backs up all disks in an Amanda configuration
+amdump \- back up all disks in an Amanda configuration
 .SH SYNOPSIS
 .B amdump
 .I config
-
 .SH DESCRIPTION
-
 .B Amdump
-switches to the appropriate Amanda configuration directory, usually
-@CONFIG_DIR@/\fIconfig\fR, then attempts to back up every disk as
-specified by the 
+switches to the appropriate Amanda configuration directory,
+e.g. @CONFIG_DIR@/\fIconfig\fR,
+then attempts to back up every disk specified by the
 .I amanda.conf
 file.
 .B Amdump
 is normally run by
-.B cron.
+.BR cron .
+.LP
+If file @CONFIG_DIR@/\fIconfig\fR/hold exists,
+.B amdump
+will wait until it is removed before starting the backups.
+This allows scheduled backups to be delayed when
+circumstances warrant, for example, if the tape device is being
+used for some other purpose.
+While waiting,
+.B amdump
+checks for the hold file every five minutes.
+.LP
 See the
-.IR amanda(8)
+.IR amanda (8)
 man page for more details about Amanda.
-
-If the file @CONFIG_DIR@/\fIconfig\fR/hold exists on startup,
-.B amdump
-will wait until the file is removed before proceeding with the night's backups.
-This allows the operators to delay the scheduled backups when the
-circumstances warrant, for example, if the backup tape device is being
-used for some other purpose.  When on hold, 
-.B amdump
-checks for the deletion of the hold file every 5 minutes.
-
 .SH EXAMPLE
-Here is a typical crontab entry.  It runs
+Here is a typical crontab entry.
+It runs
 .B amdump
-every weeknight at 1 a.m.:
-.TP
-	0 1 * * 1-5	bin	@sbindir@/amdump @DEFAULT_CONFIG@
-
+every weeknight at 1 a.m. as user
+.BR bin :
+.LP
+.RS
+.EX
+.ie '@sbindir@'${exec_prefix}/sbin' \{\
+.ie '@exec_prefix@'${prefix}' .ds pr @prefix@/sbin
+.el .ds pr @exec_prefix@/sbin\}
+.el .ds pr @sbindir@
+0 1 * * 1-5 bin \*(pr/amdump @DEFAULT_CONFIG@
+.EE
+.RE
 .SH AUTHOR
 James da Silva <jds@cs.umd.edu>
 .br
 University of Maryland, College Park
-
 .SH "SEE ALSO"
-amanda(8), amrestore(8), amflush(8), cron(8).
+amanda(8),
+amcheck(8),
+amcleanup(8),
+amrestore(8),
+amflush(8),
+cron(8)
