@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.92 2000/04/18 00:23:16 martinea Exp $
+ * $Id: driver.c,v 1.93 2000/05/03 23:45:33 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -56,6 +56,7 @@ int degraded_mode;
 unsigned long reserved_space;
 unsigned long total_disksize;
 char *dumper_program;
+char *chunker_program;
 int  inparallel;
 static time_t sleep_time;
 
@@ -198,6 +199,8 @@ main(main_argc, main_argv)
 
     taper_program = vstralloc(libexecdir, "/", "taper", versionsuffix(), NULL);
     dumper_program = vstralloc(libexecdir, "/", "dumper", versionsuffix(),
+			       NULL);
+    chunker_program = vstralloc(libexecdir, "/", "chunker", versionsuffix(),
 			       NULL);
 
     /* taper takes a while to get going, so start it up right away */
@@ -592,7 +595,7 @@ start_some_dumps(dumper, rq)
 	sched(diskp)->dumptime = -1;
 	sched(diskp)->tapetime = -1;
 	chunker = dumper->chunker;
-	startup_chunk_process(chunker,"/amanda/h1/linux-2.5.0/libexec/chunker");
+	startup_chunk_process(chunker,chunker_program);
 	chunker->dumper = dumper;
 	chunker_cmd(chunker, PORT_WRITE, diskp);
 	tok = getresult(chunker->fd, 1, &result_argc, result_argv, MAX_ARGS+1);
