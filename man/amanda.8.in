@@ -191,22 +191,12 @@ Default:
 The list of recipients for the nightly mail report.
 
 .TP
-.B mincycle
+.B dumpcycle
 Default:
-.I 10.
+.I 14.
 The number of days in the backup cycle.  Each disk will get a full
-backup in this many days.
-
-.TP
-.B maxcycle
-Default:
-.I 12.
-Amanda dynamically adjusts the backup schedule, moving full dumps of
-disks forward to keep the dump schedule in balance, and delaying full
-dumps if the tape would otherwise overflow.  Amanda will not delay a
-full dump of a disk if that would cause it to go more than
-.B maxcycle
-days between full dumps.
+backup in this many days.  This may be specified in weeks by adding
+"weeks" after the number.
 
 .TP
 .B tapecycle
@@ -214,7 +204,7 @@ Default:
 .I 15.
 The number of tapes in your active tape cycle.  This number must be at
 least one larger than your 
-.B mincycle
+.B dumpcycle
 parameter.  In practice you should have 5 or more slack days in the
 tape schedule to allow time for schedule adjustments or disaster
 recovery.
