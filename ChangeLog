@@ -1,4 +1,9 @@
 2005-02-09  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Phil Homewood <pdh@snapgear.com>
+
+	* server-src/amoverview.pl.in: Add -skipmissed option.
+
+2005-02-09  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/driver.c: Print the chunksize to the log.
 
