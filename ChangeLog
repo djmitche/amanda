@@ -1,5 +1,16 @@
 2004-08-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* client-src/calcsize.c: Support exclude and include like gnutar,
+	  change in program argument.
+	* client-src/sendsize.c: Execute calcsize as requested.
+	* common-src/amfeatures.h (fe_calcsize_estimate): New feature.
+	* common-src/amfeatures.c (am_init_feature_set): set
+	  fe_calcsize_estimate.
+	* server-src/amcheck.c (start_host): Check if client support CALCSIZE
+	  estimate.
+
+2004-08-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/conffile.h (ES_CLIENT, ES_SERVER, ES_CALCSIZE): New define
 	  for estimate type.
 	* server-src/conffile.h (dumptype_t): Add 'estimate' and 's_estimate'

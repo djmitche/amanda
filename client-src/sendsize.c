@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.13.4.6.2.23 2003/10/24 20:38:23 kovert Exp $
+ * $Id: sendsize.c,v 1.97.2.13.4.6.2.23.2.1 2004/08/03 12:13:35 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -79,6 +79,7 @@ typedef struct disk_estimates_s {
     char *amdevice;
     char *dirname;
     char *program;
+    char *calcprog;
     int spindle;
     pid_t child;
     int done;
@@ -95,7 +96,7 @@ static g_option_t *g_options = NULL;
 /* local functions */
 int main P((int argc, char **argv));
 void add_diskest P((char *disk, char *amdevice, int level, int spindle,
-		    char *prog, option_t *options));
+		    char *prog, char *calcprog, option_t *options));
 void calc_estimates P((disk_estimates_t *est));
 void free_estimates P((disk_estimates_t *est));
 void dump_calc_estimates P((disk_estimates_t *));
@@ -109,7 +110,7 @@ int argc;
 char **argv;
 {
     int level, spindle;
-    char *prog, *disk, *amdevice, *dumpdate;
+    char *prog, *calcprog, *disk, *amdevice, *dumpdate;
     option_t *options = NULL;
     disk_estimates_t *est;
     disk_estimates_t *est1;
@@ -196,6 +197,20 @@ char **argv;
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';
 
+	if(strncmp(prog, "CALCSIZE", 8) == 0) {
+	    skip_whitespace(s, ch);		/* find the program name */
+	    if(ch == '\0') {
+		err_extra = "no program name";
+		goto err;
+	    }
+	    calcprog = s - 1;
+	    skip_non_whitespace(s, ch);
+	    s[-1] = '\0';
+	}
+	else {
+	    calcprog = NULL;
+	}
+
 	skip_whitespace(s, ch);			/* find the disk name */
 	if(ch == '\0') {
 	    err_extra = "no disk name";
@@ -281,7 +296,7 @@ char **argv;
 	    }
 	}
 
-	add_diskest(disk, amdevice, level, spindle, prog, options);
+	add_diskest(disk, amdevice, level, spindle, prog, calcprog, options);
 	amfree(amdevice);
     }
     amfree(line);
@@ -437,8 +452,8 @@ char **argv;
 }
 
 
-void add_diskest(disk, amdevice, level, spindle, prog, options)
-char *disk, *amdevice, *prog;
+void add_diskest(disk, amdevice, level, spindle, prog, calcprog, options)
+char *disk, *amdevice, *prog, *calcprog;
 int level, spindle;
 option_t *options;
 {
@@ -471,6 +486,10 @@ option_t *options;
     newp->amdevice = stralloc(amdevice);
     newp->dirname = amname_to_dirname(newp->amdevice);
     newp->program = stralloc(prog);
+    if(calcprog != NULL)
+	newp->calcprog = stralloc(calcprog);
+    else
+	newp->calcprog = NULL;
     newp->spindle = spindle;
     newp->est[level].needestimate = 1;
     newp->options = options;
@@ -546,23 +565,47 @@ void generic_calc_estimates(est)
 disk_estimates_t *est;
 {
     char *cmd;
-    char *argv[DUMP_LEVELS*2+10];
+    char *argv[DUMP_LEVELS*2+20];
     char number[NUM_STR_SIZE];
     int i, level, argc, calcpid;
+    int nb_exclude = 0;
+    int nb_include = 0;
+    char *file_exclude = NULL;
+    char *file_include = NULL;
 
     cmd = vstralloc(libexecdir, "/", "calcsize", versionsuffix(), NULL);
 
     argc = 0;
     argv[argc++] = stralloc("calcsize");
-    argv[argc++] = stralloc(est->program);
-#ifdef BUILTIN_EXCLUDE_SUPPORT
-    if(est->exclude && *est->exclude) {
-	argv[argc++] = stralloc("-X");
-	argv[argc++] = stralloc(est->exclude);
-    }
-#endif
-    argv[argc++] = stralloc(est->amdevice);
+    argv[argc++] = stralloc(est->calcprog);
+
+    argv[argc++] = stralloc(est->amname);
     argv[argc++] = stralloc(est->dirname);
+
+
+    if(est->options->exclude_file)
+	nb_exclude += est->options->exclude_file->nb_element;
+    if(est->options->exclude_list)
+	nb_exclude += est->options->exclude_list->nb_element;
+    if(est->options->include_file)
+	nb_include += est->options->include_file->nb_element;
+    if(est->options->include_list)
+	nb_include += est->options->include_list->nb_element;
+
+    if(nb_exclude > 0)
+	file_exclude = build_exclude(est->amname, est->amdevice,est->options,0);
+    if(nb_include > 0)
+	file_include = build_include(est->amname, est->amdevice,est->options,0);
+
+    if(file_exclude) {
+	argv[argc++] = stralloc("-X");
+	argv[argc++] = file_exclude;
+    }
+
+    if(file_include) {
+	argv[argc++] = stralloc("-I");
+	argv[argc++] = file_include;
+    }
 
     dbprintf(("%s: running cmd: %s", debug_prefix_time(NULL), argv[0]));
     for(i=0; i<argc; ++i)
@@ -594,16 +637,17 @@ disk_estimates_t *est;
 	error("%s: execve returned: %s", cmd, strerror(errno));
 	exit(1);
     }
-    for(i = 0; i < argc; i++) {
-	amfree(argv[i]);
-    }
-    amfree(cmd);
 
     dbprintf(("%s: waiting for %s \"%s\" child\n",
 	      debug_prefix_time(NULL), argv[0], est->amdevice));
     wait(NULL);
     dbprintf(("%s: after %s \"%s\" wait\n",
 	      debug_prefix_time(NULL), argv[0], est->amdevice));
+
+    for(i = 0; i < argc; i++) {
+	amfree(argv[i]);
+    }
+    amfree(cmd);
 }
 
 

@@ -24,12 +24,13 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: calcsize.c,v 1.24.2.3.6.1 2002/03/31 21:01:32 jrjackson Exp $
+ * $Id: calcsize.c,v 1.24.2.3.6.1.2.1 2004/08/03 12:13:35 martinea Exp $
  *
  * traverse directory tree to get backup size estimates
  */
 #include "amanda.h"
 #include "statfs.h"
+#include "sl.h"
 
 #define ROUND(n,x)	((x) + (n) - 1 - (((x) + (n) - 1) % (n)))
 
@@ -73,7 +74,7 @@ long (*final_size) P((int, char *));
 
 
 int main P((int, char **));
-void traverse_dirs P((char *));
+void traverse_dirs P((char *, char *));
 
 
 void add_file_dump P((int, struct stat *));
@@ -85,11 +86,11 @@ long final_size_gnutar P((int, char *));
 void add_file_unknown P((int, struct stat *));
 long final_size_unknown P((int, char *));
 
-#ifdef BUILTIN_EXCLUDE_SUPPORT
+sl_t *calc_load_file P((char *filename));
+int calc_check_exclude P((char *filename));
+
 int use_gtar_excl = 0;
-char exclude_string[] = "--exclude=";
-char exclude_list_string[] = "--exclude-list=";
-#endif
+sl_t *include_sl=NULL, *exclude_sl=NULL;
 
 int main(argc, argv)
 int argc;
@@ -135,7 +136,7 @@ char **argv;
     return 0;
 #else
     int i;
-    char *dirname=NULL, *amname=NULL;
+    char *dirname=NULL, *amname=NULL, *filename=NULL;
     int fd;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
@@ -165,17 +166,8 @@ char **argv;
     /* need at least program, amname, and directory name */
 
     if(argc < 3) {
-#ifdef BUILTIN_EXCLUDE_SUPPORT
-      usage:
-#endif
-	error("Usage: %s [DUMP|GNUTAR%s] name dir [level date] ...",
-	      get_pname(),
-#ifdef BUILTIN_EXCLUDE_SUPPORT
-	      " [-X --exclude[-list]=regexp]"
-#else
-	      ""
-#endif
-	      );
+	error("Usage: %s [DUMP|GNUTAR%s] name dir [-X exclude-file] [-I include-file] [level date]*",
+	      get_pname());
 	return 1;
     }
 
@@ -197,9 +189,7 @@ char **argv;
 #else
 	add_file = add_file_gnutar;
 	final_size = final_size_gnutar;
-#ifdef BUILTIN_EXCLUDE_SUPPORT
 	use_gtar_excl++;
-#endif
 #endif
     }
     else {
@@ -207,41 +197,6 @@ char **argv;
 	final_size = final_size_unknown;
     }
     argc--, argv++;
-#ifdef BUILTIN_EXCLUDE_SUPPORT
-    if ((argc > 1) && strcmp(*argv,"-X") == 0) {
-	char *result = NULL;
-	char *cp = NULL;
-	argv++;
-
-	if (!use_gtar_excl) {
-	  error("exclusion specification not supported");
-	  return 1;
-	}
-
-	result = stralloc(*argv);
-	if (*result && (cp = strrchr(result,';')))
-	    /* delete trailing ; */
-	    *cp = 0;
-	if (strncmp(result, exclude_string, sizeof(exclude_string)-1) == 0)
-	  add_exclude(result+sizeof(exclude_string)-1);
-	else if (strncmp(result, exclude_list_string,
-			 sizeof(exclude_list_string)-1) == 0) {
-	  if (access(result + sizeof(exclude_list_string)-1, R_OK) != 0) {
-	    fprintf(stderr,"Cannot open exclude file %s\n",cp+1);
-	    use_gtar_excl = 0;
-	  } else {
-	    add_exclude_file(result + sizeof(exclude_list_string)-1);
-	  }
-	} else {
-	  amfree(result);
-	  goto usage;
-	}
-	amfree(result);
-	argc -= 2;
-	argv++;
-    } else
-	use_gtar_excl = 0;
-#endif
 
     /* the amanda name can be different from the directory name */
 
@@ -258,6 +213,42 @@ char **argv;
     } else
 	error("missing <dir>");
 
+    if ((argc > 1) && strcmp(*argv,"-X") == 0) {
+	argv++;
+
+	if (!use_gtar_excl) {
+	  error("exclusion specification not supported");
+	  return 1;
+	}
+	
+	filename = stralloc(*argv);
+	if (access(filename, R_OK) != 0) {
+	    fprintf(stderr,"Cannot open exclude file %s\n",filename);
+	    use_gtar_excl = 0;
+	} else {
+	  exclude_sl = calc_load_file(filename);
+	}
+	amfree(filename);
+	argc -= 2;
+	argv++;
+    } else
+	use_gtar_excl = 0;
+
+    if ((argc > 1) && strcmp(*argv,"-I") == 0) {
+	argv++;
+	
+	filename = stralloc(*argv);
+	if (access(filename, R_OK) != 0) {
+	    fprintf(stderr,"Cannot open include file %s\n",filename);
+	    use_gtar_excl = 0;
+	} else {
+	  include_sl = calc_load_file(filename);
+	}
+	amfree(filename);
+	argc -= 2;
+	argv++;
+    }
+
     /* the dump levels to calculate sizes for */
 
     ndumps = 0;
@@ -273,7 +264,21 @@ char **argv;
     if(argc)
 	error("leftover arg \"%s\", expected <level> and <date>", *argv);
 
-    traverse_dirs(dirname);
+    if(is_empty_sl(include_sl)) {
+	traverse_dirs(dirname,".");
+    }
+    else {
+	sle_t *an_include = include_sl->first;
+	while(an_include != NULL) {
+/*
+	    char *adirname = stralloc2(dirname, an_include->name+1);
+	    traverse_dirs(adirname);
+	    amfree(adirname);
+*/
+	    traverse_dirs(dirname, an_include->name);
+	    an_include = an_include->next;
+	}
+    }
     for(i = 0; i < ndumps; i++) {
 
 	amflock(1, "size");
@@ -316,8 +321,9 @@ char *file;
 void push_name P((char *str));
 char *pop_name P((void));
 
-void traverse_dirs(parent_dir)
+void traverse_dirs(parent_dir, include)
 char *parent_dir;
+char *include;
 {
     DIR *d;
     struct dirent *f;
@@ -327,22 +333,22 @@ char *parent_dir;
     dev_t parent_dev = 0;
     int i;
     int l;
+    int parent_len;
+    int has_exclude = !is_empty_sl(exclude_sl) && use_gtar_excl;
+
+    char *aparent = vstralloc(parent_dir, "/", include, NULL);
 
     if(parent_dir && stat(parent_dir, &finfo) != -1)
 	parent_dev = finfo.st_dev;
 
-    push_name(parent_dir);
+    parent_len = strlen(parent_dir);
+
+    push_name(aparent);
 
     for(dirname = pop_name(); dirname; free(dirname), dirname = pop_name()) {
-
-#ifdef BUILTIN_EXCLUDE_SUPPORT
-	if(use_gtar_excl &&
-	   (check_exclude(basename(dirname)) ||
-	    check_exclude(dirname)))
-	    /* will not be added by gnutar */
+	if(has_exclude && calc_check_exclude(dirname+parent_len+1)) {
 	    continue;
-#endif
-
+	}
 	if((d = opendir(dirname)) == NULL) {
 	    perror(dirname);
 	    continue;
@@ -371,30 +377,43 @@ char *parent_dir;
 		continue;
 	    }
 
-	    if((finfo.st_mode & S_IFMT) == S_IFDIR) {
-		push_name(newname);
+	    {
+		int is_symlink = 0;
+#ifdef S_IFLNK
+		is_symlink = ((finfo.st_mode & S_IFMT) == S_IFLNK);
+#endif
+		if (   /* regular files */
+		    !((finfo.st_mode & S_IFMT) == S_IFREG
+		       /* directories */
+		       || (finfo.st_mode & S_IFMT) == S_IFDIR
+		       /* symbolic links */
+		       || is_symlink)) {
+		    continue;
+		}
 	    }
 
-	    for(i = 0; i < ndumps; i++) {
-		if(finfo.st_ctime >= dumpdate[i]) {
-		    int exclude = 0;
-		    int is_symlink = 0;
+	    {
+		int is_excluded = -1;
+		int added_file = 0;
+		for(i = 0; i < ndumps; i++) {
+		    if(finfo.st_ctime >= dumpdate[i]) {
 
-#ifdef BUILTIN_EXCLUDE_SUPPORT
-		    exclude = check_exclude(f->d_name);
-#endif
-#ifdef S_IFLNK
-		    is_symlink = ((finfo.st_mode & S_IFMT) == S_IFLNK);
-#endif
-		    if (! exclude &&
-			  /* regular files */
-			((finfo.st_mode & S_IFMT) == S_IFREG
-			  /* directories */
-			  || (finfo.st_mode & S_IFMT) == S_IFDIR
-			  /* symbolic links */
-			  || is_symlink)) {
+			if(has_exclude) {
+			    if(is_excluded == -1)
+				is_excluded =
+				       calc_check_exclude(newname+parent_len+1);
+			    if(is_excluded == 1) {
+				i = ndumps;
+				continue;
+			    }
+			}
 			add_file(i, &finfo);
+			added_file = 1;
 		    }
+		}
+		if((added_file == 1) &&
+		   (finfo.st_mode & S_IFMT) == S_IFDIR) {
+		    push_name(newname);
 		}
 	    }
 	}
@@ -408,6 +427,7 @@ char *parent_dir;
     }
     amfree(newbase);
     amfree(newname);
+    amfree(aparent);
 }
 
 void push_name(str)
@@ -535,4 +555,42 @@ char *topdir;
 {
     /* divide by two to get kbytes, rounded up */
     return (dumpstats[level].total_size + 1) / 2;
+}
+
+/*
+ * =========================================================================
+ */
+sl_t *calc_load_file(filename)
+char *filename;
+{
+    char pattern[1025];
+
+    sl_t *sl_list = new_sl();
+
+    FILE *file = fopen(filename, "r");
+
+    while(fgets(pattern, 1025, file)) {
+	if(strlen(pattern)>0 && pattern[strlen(pattern)-1] == '\n')
+	    pattern[strlen(pattern)-1] = '\0';
+	sl_list = append_sl(sl_list, pattern);
+    }  
+    fclose(file);
+
+    return sl_list;
+}
+
+int calc_check_exclude(filename)
+char *filename;
+{
+    sle_t *an_exclude;
+    if(is_empty_sl(exclude_sl)) return 0;
+
+    an_exclude=exclude_sl->first;
+    while(an_exclude != NULL) {
+	if(match_tar(an_exclude->name, filename)) {
+	    return 1;
+	}
+	an_exclude=an_exclude->next;
+    }
+    return 0;
 }
