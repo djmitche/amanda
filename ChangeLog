@@ -1,3 +1,8 @@
+2000-01-21  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* config/acinclude.m4i (CF_WAIT): Simplify the test.  Declare wait()
+	in the global scope.
+
 2000-01-21  Garrett Wollman  <wollman@khavrinen.lcs.mit.edu>
 
 	* config/acinclude.m4i (CF_WAIT): Avoid warnings on systems
@@ -716,7 +721,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.322 2000/01/21 05:43:00 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.323 2000/01/21 05:54:57 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
