@@ -1,5 +1,8 @@
 Version 2.4.0
 
+	removed all uses of #elif, because some C compilers won't
+	handle it correctly. -Gunther Felkel <G.Felkel@edelmann.de>
+
 	fixed VDUMP-only (no DUMP defined) estimates.
 	-Joern Behrens <jbehren@umpa05.gwdg.de>
 

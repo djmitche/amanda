@@ -1664,10 +1664,14 @@ else
 		[
 #if defined(USE_DB_H)
 #  include <db.h>
-#elif defined(USE_DBM_H)
-#  include <dbm.h>
-#elif defined(USE_NDBM_H)
-#  include <ndbm.h>
+#else
+#  if defined(USE_DBM_H)
+#    include <dbm.h>
+#  else
+#    if defined(USE_NDBM_H)
+#      include <ndbm.h>
+#    endif
+#  endif
 #endif
 		],
 		[

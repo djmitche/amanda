@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: rundump.c,v 1.14.2.3 1998/03/12 07:11:37 amcore Exp $
+ * $Id: rundump.c,v 1.14.2.4 1998/03/14 13:40:37 amcore Exp $
  *
  * runs DUMP program as root
  */
@@ -118,12 +118,16 @@ char **argv;
 
 #if defined(DUMP)
         dump_program = DUMP;
-#elif defined(XFSDUMP)
+#else
+#if defined(XFSDUMP)
         dump_program = XFSDUMP;
-#elif defined(VXDUMP)
+#else
+#if defined(VXDUMP)
 	dump_program = VXDUMP;
 #else
         dump_program = "dump";
+#endif
+#endif
 #endif
 
     dbprintf(("running: %s: ",dump_program));

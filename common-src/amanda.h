@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.40.2.9 1998/03/01 23:57:45 amcore Exp $
+ * $Id: amanda.h,v 1.40.2.10 1998/03/14 13:40:42 amcore Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -88,12 +88,18 @@
 
 #if defined(USE_DB_H)
 #  include <db.h>
-#elif defined(USE_DBM_H)
+#else
+#if defined(USE_DBM_H)
 #  include <dbm.h>
-#elif defined(USE_GDBM_H)
+#else
+#if defined(USE_GDBM_H)
 #  include <gdbm.h>
-#elif defined(USE_NDBM_H)
+#else
+#if defined(USE_NDBM_H)
 #  include <ndbm.h>
+#endif
+#endif
+#endif
 #endif
 
 #ifdef HAVE_NETDB_H

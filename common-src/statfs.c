@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: statfs.c,v 1.5 1998/01/02 18:48:00 jrj Exp $
+ * $Id: statfs.c,v 1.5.2.1 1998/03/14 13:40:44 amcore Exp $
  *
  * a generic statfs-like routine
  */
@@ -49,7 +49,8 @@
 #   define STATFS_FFREE(buf)	(buf).fd_gfree
 #   define STATFS_SCALE(buf)	1024
 #   define STATFS(path, buffer)	statfs(path, &buffer)
-#elif defined(HAVE_SYS_STATVFS_H) && !defined(STATFS_SCO_OS5)
+#else /* () line 0 */
+#  if defined(HAVE_SYS_STATVFS_H) && !defined(STATFS_SCO_OS5)
 /*
 ** System V.4 (STATFS_SVR4)
 */
@@ -64,12 +65,15 @@
 #   define STATFS_FFREE(buf)	(buf).f_ffree
 #   define STATFS_SCALE(buf)	(buf).f_frsize
 #   define STATFS(path, buffer)	statvfs(path, &buffer)
-#elif HAVE_SYS_VFS_H
+#  else
+#    if HAVE_SYS_VFS_H
 /*
 ** (STATFS_AIX, STATFS_VFS, STATFS_NEXT)
 */
 # ifdef HAVE_SYS_STATFS_H /* AIX */
 #   include <sys/statfs.h>
+#    endif
+#  endif
 # endif
 #   include <sys/vfs.h>
 #   define STATFS_TYP		"Posix (NeXTstep, AIX, Linux, HP-UX)"
@@ -82,7 +86,8 @@
 #   define STATFS_FFREE(buf)	(buf).f_ffree
 #   define STATFS_SCALE(buf)	(buf).f_bsize
 #   define STATFS(path, buffer)	statfs(path, &buffer)
-#elif HAVE_SYS_STATFS_H
+# else
+# if HAVE_SYS_STATFS_H
 /*
 ** System V.3 (STATFS_SVR3)
 */
@@ -97,13 +102,16 @@
 #   define STATFS_FFREE(buf)	(buf).f_ffree
 #   define STATFS_SCALE(buf)	(buf).f_bsize
 #   define STATFS(path, buffer)	statfs(path, &buffer, sizeof(STATFS_STRUCT), 0)
-#elif HAVE_SYS_MOUNT_H
+# else
+#  if HAVE_SYS_MOUNT_H
 /*
 ** BSD (STATFS_BSD43, STATFS_BSD44)
 */
-# ifdef HAVE_SYS_PARAM_H /* BSD-4.4 */
-#   include <sys/param.h>
-# endif
+#   ifdef HAVE_SYS_PARAM_H /* BSD-4.4 */
+#     include <sys/param.h>
+#   endif
+#   endif
+#   endif
 #   include <sys/mount.h>
 #   define STATFS_TYP		"BSD43/44"
 #   define STATFS_STRUCT	struct statfs
@@ -115,10 +123,10 @@
 #   define STATFS_FFREE(buf)	(buf).f_ffree
 #   define STATFS_SCALE(buf)	(buf).f_bsize
 #   define STATFS(path, buffer)	statfs(path, &buffer)
-# ifdef STATFS_OSF1
+#  ifdef STATFS_OSF1
 #   define STATFS(path, buffer)	statfs(path, &buffer, sizeof(STATFS_STRUCT))
+#  endif
 # endif
-#endif
 
 #define scale(r,s)	( (r) == -1? -1 : (int)((r)*(double)(s)/1024.0) )
 
