@@ -1,3 +1,9 @@
+1999-03-17  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* client-src/sendbackup-dump.c (re_table): generalize a bit some of
+	the regular expressions, so as to make us more adaptable to future
+	minor changes and bugfixes the the output format of some dumps
+
 1999-03-16 Thomas Hepper <th@ant.han.de>
 	* changer-src/chg-scsi.c: If the open of the TapeDevice fails
 	the programm is not terminated.
