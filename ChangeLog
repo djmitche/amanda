@@ -1,5 +1,7 @@
 1998-07-10  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* man/Makefile.am (EXTRA_DIST): amreport.8 is built from .8.in
+
 	* configure.in (AC_OUTPUT): generate chg-chio.pl
 	* changer-src/Makefile.am (EXTRA_DIST): removed chg-chio.c
 	* changer-src/chg-chio.c: removed, as it was confusing make
