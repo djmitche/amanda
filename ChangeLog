@@ -1,5 +1,12 @@
 1999-04-15  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/event.c (release): nuke, and inline into event_loop.
+	* common-src/event.c (event_loop): flesh out the timeout comment.
+	Combone the EV_WAIT and EV_DEAD empty cases in the post-select loop.
+	* common-src/event.h: flesh out the event_type_t comment.
+
+1999-04-15  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/event.c (fire): inline this with a macro.  Remove
 	timestamp arg.  eh->lastfired is now only valid for EV_TIME
 	events.  Removes several time() systems from the critical path.

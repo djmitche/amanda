@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.9 1999/04/15 21:40:17 kashmir Exp $
+ * $Id: event.c,v 1.10 1999/04/15 23:28:35 kashmir Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
  * a uniform interface, central state storage, and centralized
@@ -77,7 +77,6 @@ static struct sigtabent {
 static const char *event_type2str P((event_type_t));
 #endif
 #define	fire(eh)	(*(eh)->fn)((eh)->arg)
-static void release P((event_handle_t *));
 static void signal_handler P((int));
 
 #undef min
@@ -163,26 +162,6 @@ event_release(handle)
      * Mark it as dead and leave it for the loop to remove.
      */
     handle->type = EV_DEAD;
-}
-
-/*
- * Release an event.
- */
-static void
-release(handle)
-    event_handle_t *handle;
-{
-
-    assert(handle != NULL);
-    assert(handle->type == EV_DEAD);
-
-#ifdef EVENT_DEBUG
-    fprintf(stderr, "event: release (actual): %X data=%d, type=%s\n",
-	(int)handle, handle->data, event_type2str(handle->type));
-#endif
-
-    eventq_remove(handle);
-    amfree(handle);
 }
 
 /*
@@ -274,7 +253,9 @@ event_loop(dontblock)
 	/*
 	 * If we can block, initially set the tvptr to NULL.  If
 	 * we come across timeout events in the loop below, they
-	 * will set it to an appropriate buffer.
+	 * will set it to an appropriate buffer.  If we don't
+	 * see any timeout events, then tvptr will remain NULL
+	 * and the select will properly block indefinately.
 	 *
 	 * If we can't block, set it to point to the timeout buf above.
 	 */
@@ -370,7 +351,8 @@ event_loop(dontblock)
 	     * Prune dead events
 	     */
 	    case EV_DEAD:
-		release(eh);
+		eventq_remove(eh);
+		amfree(eh);
 		break;
 
 	    default:
@@ -473,19 +455,17 @@ event_loop(dontblock)
 	    case EV_TIME:
 		if (eh->lastfired == -1)
 		    eh->lastfired = curtime;
-		if (curtime - eh->lastfired >= eh->data)
+		if (curtime - eh->lastfired >= eh->data) {
+		    eh->lastfired = curtime;
 		    fire(eh);
+		}
 		break;
 
 	    /*
 	     * Wait events are handled immediately by event_wakeup()
+	     * Dead events are handled by the pre-select loop.
 	     */
 	    case EV_WAIT:
-		break;
-
-	    /*
-	     * Dead events require another scan for removal.
-	     */
 	    case EV_DEAD:
 		break;
 

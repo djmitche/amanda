@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.h,v 1.2 1999/03/01 21:37:39 kashmir Exp $
+ * $Id: event.h,v 1.3 1999/04/15 23:28:37 kashmir Exp $
  */
 #ifndef EVENT_H
 #define EVENT_H
@@ -50,10 +50,15 @@ typedef void (*event_fn_t) P((void *));
 
 /*
  * The types of events we can register.
- * EV_DEAD is for internal use only.
  */
-typedef enum { EV_READFD, EV_WRITEFD, EV_SIG, EV_TIME, EV_WAIT,
-    EV_DEAD } event_type_t;
+typedef enum {
+    EV_READFD,			/* file descriptor is ready for reading */
+    EV_WRITEFD,			/* file descriptor is ready for writing */
+    EV_SIG,			/* signal has fired */
+    EV_TIME,			/* n seconds have elapsed */
+    EV_WAIT,			/* event_wakeup() was called with this id */
+    EV_DEAD,			/* internal use only */
+} event_type_t;
 
 /*
  * Register an event handler.
