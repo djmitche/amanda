@@ -1,3 +1,8 @@
+2002-09-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* amverify.sh.in: Don't check that the device is a character device,
+	  it could be a file: or rait:
+
 2002-09-06  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* common-src/amfeatures.c (am_set_default_feature_set):

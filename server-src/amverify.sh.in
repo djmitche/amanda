@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.7.2.13.4.5.2.1 2001/12/12 23:01:51 martinea Exp $
+#	$Id: amverify.sh.in,v 1.7.2.13.4.5.2.2 2002/09/10 12:08:35 martinea Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -263,9 +263,6 @@ if [ X"$TPCHANGER" = X"" ]; then
 	DEVICE=`getparm tapedev`
 	[ X"$DEVICE" = X"" ] \
 		&& $Echoe "No tape device..." \
-		&& exit 1
-	[ ! -c $DEVICE ] \
-		&& $Echoe "Not a character special device: $DEVICE" \
 		&& exit 1
 	$Echoe "Tape device is $DEVICE..."
 	SLOTS=1
