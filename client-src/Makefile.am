@@ -33,6 +33,8 @@ libamclient_la_SOURCES=	amandates.c		getfsent.c	\
 
 libamclient_la_LDFLAGS = -release $(VERSION)
 
+libamclient_a_SOURCES=  $(libamclient_la_SOURCES)
+
 LDADD =	libamclient.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
 
