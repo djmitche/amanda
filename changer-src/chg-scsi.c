@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.24 2001/04/28 19:17:58 ant Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.25 2001/05/01 18:19:49 ant Exp $";
 #endif
 /*
  * 
@@ -792,17 +792,20 @@ argument argdefs[]={{"-slot",COM_SLOT,1},
 
 
 /* minor command line args */
-#define SLOTCOUNT 5
 #define SLOT_CUR 0
 #define SLOT_NEXT 1
 #define SLOT_PREV 2
 #define SLOT_FIRST 3
 #define SLOT_LAST 4
+#define SLOT_ADVANCE 5
 argument slotdefs[]={{"current",SLOT_CUR,0},
                      {"next",SLOT_NEXT,0},
                      {"prev",SLOT_PREV,0},
                      {"first",SLOT_FIRST,0},
-                     {"last",SLOT_LAST,0}};
+                     {"last",SLOT_LAST,0},
+                     {"advance",SLOT_ADVANCE,0},
+	};
+#define SLOTCOUNT (sizeof(slotdefs) / sizeof(slotdefs[0]))
 
 int is_positive_number(char *tmp) /* is the string a valid positive int? */
 {
@@ -858,10 +861,11 @@ void parse_args(int argc, char *argv[],command *rval)
 }
 
 /* used to find actual slot number from keywords next, prev, first, etc */
-int get_relative_target(int fd,int nslots,char *parameter,int loaded, 
-                        char *changer_file,int slot_offset,int maxslot)
+int get_relative_target(int fd,int nslots,char *parameter,int param_index,
+			int loaded,char *changer_file,
+			int slot_offset,int maxslot)
 {
-  int current_slot,i;
+  int current_slot;
   
   current_slot = get_current_slot(changer_file);
 
@@ -872,15 +876,12 @@ int get_relative_target(int fd,int nslots,char *parameter,int loaded,
     current_slot = slot_offset;
   }
 
-  i=0;
-  while((i<SLOTCOUNT)&&(strcmp(slotdefs[i].str,parameter)))
-    i++;
-
-  switch(i) {
+  switch(param_index) {
   case SLOT_CUR:
     return current_slot;
     break;
   case SLOT_NEXT:
+  case SLOT_ADVANCE:
     if (++current_slot==nslots+slot_offset)
       return slot_offset;
     else
@@ -1020,6 +1021,8 @@ int main(int argc, char *argv[])
   char *changer_file = NULL;
   char *scsitapedevice = NULL;
 
+  int param_index;
+
   chg.number_of_configs = 0;
   chg.eject = 0;
   chg.sleep = 0;
@@ -1048,7 +1051,6 @@ int main(int argc, char *argv[])
 
   pDev = (OpenFiles_T *)malloc(sizeof(OpenFiles_T) * 3);
   memset(pDev, 0, sizeof(OpenFiles_T) * 3 );
-
 
 
   switch(com.command_code) 
@@ -1292,11 +1294,18 @@ int main(int argc, char *argv[])
           } else {
             target = target+slot_offset;
           }
-        } else
+        } else {
+          param_index=0;
+          while((param_index<SLOTCOUNT)
+		&&(strcmp(slotdefs[param_index].str,com.parameter))) {
+            param_index++;
+	  }
           target=get_relative_target(fd, use_slots,
-                                     com.parameter,
+                                     com.parameter,param_index,
                                      loaded, 
-                                     changer_file,slot_offset,slot_offset+use_slots);
+                                     changer_file,
+				     slot_offset,slot_offset+use_slots);
+        }
       }
 
     if (loaded) {
@@ -1363,7 +1372,7 @@ int main(int argc, char *argv[])
       endstatus = 1;
       break;
     }
-    if (!loaded)
+    if (!loaded && param_index != SLOT_ADVANCE)
       {
         if (ask_clean(scsitapedevice))
           clean_tape(fd,tape_device,clean_file,drive_num,

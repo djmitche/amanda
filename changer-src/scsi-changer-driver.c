@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.25 2001/04/28 19:17:58 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.26 2001/05/01 18:19:49 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -79,7 +79,7 @@ int GenericSearch();
 void Inventory(char *labelfile, int drive, int eject, int start, int stop, int clean);
 
 int TreeFrogBarCode(int DeviceFD);
-int EXB120BarCode(int DeviceFD);
+int EXB_BarCode(int DeviceFD);
 int GenericSenseHandler(int fd, int flags, unsigned char SenseKey, unsigned char AdditionalSenseCode, unsigned char AdditionalSenseCodeQualifier, char *);
 
 ElementInfo_T *LookupElement(int address);
@@ -208,7 +208,7 @@ ChangerCMD_T ChangerIO[] = {
    GenericEject,
    GenericClean,
    GenericRewind,
-   EXB120BarCode,
+   EXB_BarCode,
    GenericSearch,
    GenericSenseHandler},
   {"EXB-210",   
@@ -220,7 +220,7 @@ ChangerCMD_T ChangerIO[] = {
    GenericEject,
    GenericClean,
    GenericRewind,
-   EXB120BarCode,
+   EXB_BarCode,
    GenericSearch,
    GenericSenseHandler},
   {"EXB-85058HE-0000",        
@@ -1502,24 +1502,24 @@ int TreeFrogBarCode(int DeviceFD)
   return(0);
 }
 
-int EXB120BarCode(int DeviceFD)
+int EXB_BarCode(int DeviceFD)
 {
   extern OpenFiles_T *pDev;
 
   ModePageEXB120VendorUnique_T *pVendor;
   ModePageEXB120VendorUnique_T *pVendorWork;
 
-  DebugPrint(DEBUG_INFO, SECTION_BARCODE,"##### START EXB120BarCode\n");
+  DebugPrint(DEBUG_INFO, SECTION_BARCODE,"##### START EXB_BarCode\n");
   if (pModePage == NULL && LibModeSenseValid == 0)
     {
       if ((pModePage = malloc(0xff)) == NULL)
         {
-          DebugPrint(DEBUG_ERROR, SECTION_BARCODE,"EXB120BarCode : malloc failed\n");
+          DebugPrint(DEBUG_ERROR, SECTION_BARCODE,"EXB_BarCode : malloc failed\n");
           return(-1);
         }
       if (SCSI_ModeSense(DeviceFD, pModePage, 0xff, 0x8, 0x3f) == 0)
 	{
-	  DecodeModeSense(pModePage, 0, "EXB120BarCode :", 0, debug_file);
+	  DecodeModeSense(pModePage, 0, "EXB_BarCode :", 0, debug_file);
 	  LibModeSenseValid = 1;
 	} else {
 	  LibModeSenseValid = -1;
@@ -1530,28 +1530,28 @@ int EXB120BarCode(int DeviceFD)
     {
       if (pVendorUnique == NULL)
 	{
-         DebugPrint(DEBUG_INFO, SECTION_BARCODE,"EXB120BarCode : no pVendorUnique\n");
+         DebugPrint(DEBUG_INFO, SECTION_BARCODE,"EXB_BarCode : no pVendorUnique\n");
          return(0);
       }
       pVendor = ( ModePageEXB120VendorUnique_T *)pVendorUnique;
     
-      DebugPrint(DEBUG_INFO, SECTION_BARCODE,"EXB120BarCode : NBL %d\n", pVendor->NBL);
-      DebugPrint(DEBUG_INFO, SECTION_BARCODE,"EXB120BarCode : PS  %d\n", pVendor->PS);
+      DebugPrint(DEBUG_INFO, SECTION_BARCODE,"EXB_BarCode : NBL %d\n", pVendor->NBL);
+      DebugPrint(DEBUG_INFO, SECTION_BARCODE,"EXB_BarCode : PS  %d\n", pVendor->PS);
       if (pVendor->NBL == 1 && pVendor->PS == 1 )
         {
           if ((pVendorWork = ( ModePageEXB120VendorUnique_T *)malloc(pVendor->ParameterListLength + 2)) == NULL)
             {
-              DebugPrint(DEBUG_ERROR, SECTION_BARCODE,"EXB120BarCode : malloc failed\n");
+              DebugPrint(DEBUG_ERROR, SECTION_BARCODE,"EXB_BarCode : malloc failed\n");
               return(-1);
             }
-          DebugPrint(DEBUG_INFO, SECTION_BARCODE,"EXB120BarCode : setting NBL to 1\n");
+          DebugPrint(DEBUG_INFO, SECTION_BARCODE,"EXB_BarCode : setting NBL to 1\n");
           memcpy(pVendorWork, pVendor, pVendor->ParameterListLength + 2);
           pVendorWork->NBL = 0;
           pVendorWork->PS = 0;
           pVendorWork->RSVD0 = 0;
           if (SCSI_ModeSelect(DeviceFD, (char *)pVendorWork, pVendorWork->ParameterListLength + 2, 0, 1, 0) == 0)
             {
-              DebugPrint(DEBUG_INFO, SECTION_BARCODE,"EXB120BarCode : SCSI_ModeSelect OK\n");
+              DebugPrint(DEBUG_INFO, SECTION_BARCODE,"EXB_BarCode : SCSI_ModeSelect OK\n");
               /* Hack !!!!!!
                */
               pVendor->NBL = 0;
@@ -1560,11 +1560,11 @@ int EXB120BarCode(int DeviceFD)
                */
               GenericResetStatus(DeviceFD);
             } else {
-              DebugPrint(DEBUG_INFO, SECTION_BARCODE,"EXB120BarCode : SCSI_ModeSelect failed\n");
+              DebugPrint(DEBUG_INFO, SECTION_BARCODE,"EXB_BarCode : SCSI_ModeSelect failed\n");
             }
         }
       dump_hex((char *)pDev[INDEX_CHANGER].inquiry, INQUIRY_SIZE, DEBUG_INFO, SECTION_BARCODE);
-      DebugPrint(DEBUG_INFO, SECTION_BARCODE,"EXB120BarCode : vendor_specific[19] %x\n",
+      DebugPrint(DEBUG_INFO, SECTION_BARCODE,"EXB_BarCode : vendor_specific[19] %x\n",
 		 pDev[INDEX_CHANGER].inquiry->vendor_specific[19]);
     }
   

@@ -1,3 +1,8 @@
+2001-05-01 Thomas Hepper <th@ant.han.de>
+	* changer-src/chg-scsi.c : Added patch for the slot advance command from John R. Jackson
+	* changer-src/scsi-changer-driver.c : Renamed EXB120BarCode to EXB_BarCode. The currently
+	known Exabyte libs handles the reader in the same way.
+	
 2001-04-28 Thomas Hepper <th@ant.han.de>
 	* changer-scsi/chg-scsi.c : Added missing break in MapBarCode
 	Changed the way an tape label is read, use tape_open to open the
