@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.13 1997/08/27 08:13:32 amcore Exp $
+/* $Id: taper.c,v 1.14 1997/11/17 12:41:34 amcore Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -120,7 +120,7 @@ buffer_t *buftable;
 char *pname = "taper";
 char *procname = "parent";
 
-char datestamp[80];
+extern char datestamp[];
 char label[80];
 int filenum;
 char errstr[256];

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.7 1997/08/27 08:13:27 amcore Exp $
+ * $Id: reporter.c,v 1.8 1997/11/17 12:41:33 amcore Exp $
  *
  * nightly Amanda Report generator
  */
@@ -94,7 +94,8 @@ logtype_t curlog;
 program_t curprog;
 char *curstr;
 char logline[MAX_LINE], tmpstr[MAX_LINE];
-char datestamp[80], tape_labels[256];
+extern char datestamp[];
+char tape_labels[256];
 int last_run_tapes = 0;
 int degraded_mode = 0;
 int normal_run = 0;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.11 1997/11/11 06:39:43 amcore Exp $
+ * $Id: amflush.c,v 1.12 1997/11/17 12:41:26 amcore Exp $
  *
  * write files from work directory onto tape
  */
@@ -82,9 +82,8 @@ disklist_t *diskqp;
 int result_argc;
 char *result_argv[MAX_ARGS];
 static char *config;
-char datestamp[80];
 char confdir[1024];
-char taper_program[80], reporter_program[80];
+extern char datestamp[], taper_program[], reporter_program[];
 
 /* local functions */
 int main P((int argc, char **argv));

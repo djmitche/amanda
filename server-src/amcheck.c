@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.16 1997/11/12 08:20:55 amcore Exp $
+ * $Id: amcheck.c,v 1.17 1997/11/17 12:41:24 amcore Exp $
  *
  * checks for common problems in server and clients
  */
@@ -248,7 +248,8 @@ char **argv;
 /* --------------------------------------------------- */
 
 int nslots, backwards, found, got_match, tapedays;
-char first_match_label[64], first_match[256],found_device[1024], datestamp[80];
+extern char datestamp[];
+char first_match_label[64], first_match[256],found_device[1024];
 char label[80];
 char *searchlabel, *labelstr;
 tape_t *tp;
