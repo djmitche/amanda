@@ -1,3 +1,16 @@
+1998-12-18  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/dumper.c (struct databuf): add 'filename', 'filename_seq',
+	and 'split_size' members to replace the equivalent globals.  Nuke
+	those globals.
+	* server-src/dumper.c (databuf_init): add 'filename' and 'split_size'
+	args to init those members.  Init filename_seq to 0.
+	* server-src/dumper.c (main): declare and init the databuf here
+	* server-src/dumper.c (databuf_flush): refer to split_size, filename,
+	and filename_seq in the databuf instead of the globals.
+	* server-src/dumper.c (do_dump): now takes a databuf instead of an
+	output file descriptor.
+
 1998-12-18  John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/amstatus.pl.in: fix two perl warnings.

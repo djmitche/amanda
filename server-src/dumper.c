@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.88 1998/12/18 01:24:56 kashmir Exp $
+/* $Id: dumper.c,v 1.89 1998/12/19 01:33:34 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -75,6 +75,9 @@ struct cmdargs {
 
 struct databuf {
     int fd;			/* file to flush to */
+    const char *filename;	/* name of what fd points to */
+    int filename_seq;		/* for chunking */
+    long split_size;		/* when to chunk */
     char buf[DATABUF_SIZE];
     char *dataptr;		/* data buffer markers */
     int spaceleft;
@@ -92,7 +95,6 @@ static enum { srvcomp_none, srvcomp_fast, srvcomp_best } srvcompress;
 
 char *errfname = NULL;
 FILE *errf = NULL;
-char *filename = NULL;
 char *hostname = NULL;
 char *diskname = NULL;
 char *options = NULL;
@@ -107,8 +109,6 @@ char *compress_suffix = NULL;
 int conf_dtimeout;
 
 dumpfile_t file;
-int filename_seq;
-long split_size;
 
 int datafd = -1;
 int mesgfd = -1;
@@ -120,12 +120,12 @@ int main P((int main_argc, char **main_argv));
 static cmd_t getcmd P((struct cmdargs *));
 static void putresult P((char *format, ...))
     __attribute__ ((format (printf, 1, 2)));
-int do_dump P((int mesgfd, int datafd, int indexfd, int outfd));
+int do_dump P((int mesgfd, int datafd, int indexfd, struct databuf *db));
 void check_options P((char *options));
 void service_ports_init P((void));
 static char *construct_datestamp P((void));
 int write_tapeheader P((int outfd, dumpfile_t *type));
-static void databuf_init P((struct databuf *, int));
+static void databuf_init P((struct databuf *, int, const char *, long));
 static int databuf_write P((struct databuf *, const void *, int));
 static int databuf_flush P((struct databuf *));
 static void process_dumpeof P((void));
@@ -194,6 +194,7 @@ main(main_argc, main_argv)
     int main_argc;
     char **main_argv;
 {
+    static struct databuf db;
     struct cmdargs cmdargs;
     cmd_t cmd;
     int outfd, protocol_port, taper_port, rc;
@@ -201,7 +202,7 @@ main(main_argc, main_argv)
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     char *q = NULL;
-    char *tmp_filename = NULL;
+    char *filename, *tmp_filename = NULL;
 
     for (outfd = 3; outfd < FD_SETSIZE; outfd++) {
 	/*
@@ -275,7 +276,7 @@ main(main_argc, main_argv)
 	    if (cmdargs.argc != 10)
 		error("error [dumper FILE-DUMP argc != 10: %d]", cmdargs.argc);
 	    handle = newstralloc(handle, cmdargs.argv[2]);
-	    filename = newstralloc(filename, cmdargs.argv[3]);
+	    filename = cmdargs.argv[3];
 	    hostname = newstralloc(hostname, cmdargs.argv[4]);
 	    diskname = newstralloc(diskname, cmdargs.argv[5]);
 	    level = atoi(cmdargs.argv[6]);
@@ -293,7 +294,7 @@ main(main_argc, main_argv)
 		amfree(q);
 		break;
 	    }
-	    filename_seq = 0;
+	    databuf_init(&db, outfd, filename, chunksize);
 
 	    check_options(options);
 
@@ -309,8 +310,7 @@ main(main_argc, main_argv)
 		amfree(q);
 	    } else {
 		abort_pending = 0;
-		split_size = chunksize;
-		if (do_dump(mesgfd, datafd, indexfd, outfd)) {
+		if (do_dump(mesgfd, datafd, indexfd, &db)) {
 		}
 		if (abort_pending)
 		    putresult("ABORT-FINISHED %s\n", handle);
@@ -325,7 +325,6 @@ main(main_argc, main_argv)
 		error("error [dumper PORT-DUMP argc != 9: %d]", cmdargs.argc);
 	    handle = newstralloc(handle, cmdargs.argv[2]);
 	    taper_port = atoi(cmdargs.argv[3]);
-	    filename = newstralloc(filename, "<taper program>");
 	    hostname = newstralloc(hostname, cmdargs.argv[4]);
 	    diskname = newstralloc(diskname, cmdargs.argv[5]);
 	    level = atoi(cmdargs.argv[6]);
@@ -343,7 +342,7 @@ main(main_argc, main_argv)
 		amfree(q);
 		break;
 	    }
-	    filename_seq = 0;
+	    databuf_init(&db, outfd, "<taper program>", -1);
 
 	    check_options(options);
 
@@ -359,8 +358,7 @@ main(main_argc, main_argv)
 		amfree(q);
 	    } else {
 		abort_pending = 0;
-		split_size = -1;
-		if (do_dump(mesgfd, datafd, indexfd, outfd)) {
+		if (do_dump(mesgfd, datafd, indexfd, &db)) {
 		}
 		if (abort_pending)
 		    putresult("ABORT-FINISHED %s\n", handle);
@@ -394,7 +392,6 @@ main(main_argc, main_argv)
     amfree(recover_cmd);
     amfree(compress_suffix);
     amfree(handle);
-    amfree(filename);
     amfree(hostname);
     amfree(diskname);
     amfree(dumpdate);
@@ -470,12 +467,17 @@ arglist_function(static void putresult, char *, format)
  * Initialize a databuf.  Takes a writeable file descriptor.
  */
 static void
-databuf_init(db, fd)
+databuf_init(db, fd, filename, split_size)
     struct databuf *db;
     int fd;
+    const char *filename;
+    long split_size;
 {
 
     db->fd = fd;
+    db->filename = filename;
+    db->filename_seq = 0;
+    db->split_size = split_size;
     db->dataptr = db->buf;
     db->spaceleft = sizeof(db->buf);
 }
@@ -540,7 +542,7 @@ databuf_flush(db)
     /*
      * See if we need to split this file.
      */
-    if (split_size > 0 && dumpsize >= split_size) {
+    if (db->split_size > 0 && dumpsize >= db->split_size) {
 	/*
 	 * First, update the header of the current file to point
 	 * to the next chunk, and then close it.
@@ -551,7 +553,7 @@ databuf_flush(db)
 	    return (-1);
 	}
 	ap_snprintf(file.cont_filename, sizeof(file.cont_filename),
-	    "%s.%d", filename, ++filename_seq);
+	    "%s.%d", db->filename, ++db->filename_seq);
 	write_tapeheader(fd, &file);
 	aclose(fd);
 
@@ -585,7 +587,7 @@ databuf_flush(db)
 	/*
 	 * Update when we need to chunk again
 	 */
-	split_size += chunksize;
+	db->split_size += chunksize;
     }
 
     /*
@@ -872,10 +874,11 @@ write_tapeheader(outfd, file)
 }
 
 
-int do_dump(mesgfd, datafd, indexfd, outfd)
-int mesgfd, datafd, indexfd, outfd;
+int
+do_dump(mesgfd, datafd, indexfd, db)
+    int mesgfd, datafd, indexfd;
+    struct databuf *db;
 {
-    static struct databuf db;
     static char buf[DATABUF_SIZE];
     int maxfd, nfound, eof1, eof2;
     fd_set readset, selectset;
@@ -911,7 +914,6 @@ int mesgfd, datafd, indexfd, outfd;
 
     startclock();
 
-    databuf_init(&db, outfd);
     dumpsize = origsize = dump_result = 0;
     dumpsize = TAPE_BLOCK_SIZE;
     nb_header_block = 1;
@@ -1143,13 +1145,13 @@ int mesgfd, datafd, indexfd, outfd;
 		goto failed;
 	    case 0:
 		/* flush */
-		if (databuf_flush(&db) < 0)
+		if (databuf_flush(db) < 0)
 		    goto failed;
 		eof1 = 1;
 		FD_CLR(datafd, &readset);
 		break;
 	    default:
-		if (databuf_write(&db, buf, size1) < 0)
+		if (databuf_write(db, buf, size1) < 0)
 			goto failed;
 		break;
 	    }
@@ -1174,7 +1176,7 @@ int mesgfd, datafd, indexfd, outfd;
 
 	    if (got_info_endline && !header_done) { /* time to do the header */
 		make_tapeheader(&file, F_DUMPFILE);
-		if (write_tapeheader(db.fd, &file)) {
+		if (write_tapeheader(db->fd, &file)) {
 		    errstr = newstralloc2(errstr, "write_tapeheader: ", 
 					  strerror(errno));
 		    goto failed;
