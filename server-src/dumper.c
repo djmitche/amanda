@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.126 1999/05/14 19:08:59 kashmir Exp $
+/* $Id: dumper.c,v 1.127 1999/05/14 19:38:12 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -806,16 +806,13 @@ process_dumpline(str)
 	}
 	/* else we fall through to bad line */
     default:
-	goto bad_line;
-    }
-
-    fprintf(errf, "%s\n", str);
-    amfree(buf);
-    return;
-
 bad_line:
-    fprintf(errf, "??%s", str);
-    dump_result = max(dump_result, 1);
+	/* prefix with ?? */
+	fprintf(errf, "??");
+	dump_result = max(dump_result, 1);
+	break;
+    }
+    fprintf(errf, "%s\n", str);
     amfree(buf);
 }
 
@@ -907,18 +904,22 @@ add_msg_data(str, len)
 }
 
 
-static void log_msgout(typ)
-logtype_t typ;
+static void
+log_msgout(typ)
+    logtype_t typ;
 {
-    char *line = NULL;
+    char *line;
+    FILE *fp;
 
-    if((errf = fopen(errfname, "r")) == NULL)
+    if ((fp = fopen(errfname, "r")) == NULL)
 	error("opening msg output: %s", strerror(errno));
 
-    for(; (line = agets(errf)) != NULL; free(line)) {
+    while ((line = agets(fp)) != NULL) {
 	log_add(typ, "%s", line);
+	amfree(line);
     }
-    afclose(errf);
+
+    afclose(fp);
 }
 
 /* ------------- */

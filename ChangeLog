@@ -1,5 +1,12 @@
 1999-05-14  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c (process_dumpline): clean up the error
+	return code
+	* server-src/dumper.c (log_msgout): no need to reuse errf global,
+	it makes me nervous.  Also, use amfree instead of free.
+
+1999-05-14  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/packet.c (pkt_cat): remove a bogus assert - len is
 	a size_t, which is unsigned, so it will always be >= 0.
 
