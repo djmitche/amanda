@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.29.4.7.4.2 2001/06/19 19:34:55 jrjackson Exp $
+ * $Id: amrecover.c,v 1.29.4.7.4.3 2001/07/30 20:08:05 jrjackson Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -531,8 +531,8 @@ char **argv;
     }
     server_socket = stream_client(server_name,
 				  ntohs(sp->s_port),
-				  DEFAULT_SIZE,
-				  DEFAULT_SIZE,
+				  -1,
+				  -1,
 				  &my_port);
     if (server_socket < 0)
     {
