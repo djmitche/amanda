@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.56 1998/10/26 00:01:44 martinea Exp $
+ * $Id: driver.c,v 1.57 1998/11/02 22:27:05 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -53,6 +53,7 @@ disk_t *taper_disk;
 int big_dumpers;
 int degraded_mode;
 unsigned long reserved_space;
+unsigned long total_disksize;
 
 int driver_main P((int argc, char **argv));
 int client_constrained P((disk_t *dp));
@@ -195,6 +196,7 @@ char **main_argv;
 	reserve = 100;
     }
 
+    total_disksize = 0;
     for(hdp = getconf_holdingdisks(), dsk = 0; hdp != NULL; hdp = hdp->next, dsk++) {
 	struct stat stat_hdp;
 	hdp->up = (void *)alloc(sizeof(holdalloc_t));
@@ -252,10 +254,11 @@ char **main_argv;
 		log_add(L_WARNING, "WARNING: directory %s is not writable",
 			newdir);
 	    }
+	    total_disksize += hdp->disksize;
 	}
     }
 
-    reserved_space = free_space() / 100 * reserve;
+    reserved_space = total_disksize * (reserve / 100.0);
 
     printf("reserving %ld out of %ld for degraded-mode dumps\n",
 		reserved_space, free_space());
@@ -570,11 +573,13 @@ disklist_t *queuep;
 {
     disk_t *dp;
     disklist_t newq;
+    unsigned long est_full_size;
 
     newq.head = newq.tail = 0;
 
     dump_schedule(queuep, "before start degraded mode");
 
+    est_full_size = 0;
     while(!empty(*queuep)) {
 	dp = dequeue_disk(queuep);
 
@@ -582,8 +587,10 @@ disklist_t *queuep;
 	    /* go ahead and do the disk as-is */
 	    insert_disk(&newq, dp, sort_by_priority_reversed);
 	else {
-	    if (free_space() > reserved_space) {
+	    if (reserved_space + est_full_size + sched(dp)->est_size
+		<= total_disksize) {
 		insert_disk(&newq, dp, sort_by_priority_reversed);
+		est_full_size += sched(dp)->est_size;
 	    }
 	    else if(sched(dp)->degr_level != -1) {
 		sched(dp)->level = sched(dp)->degr_level;

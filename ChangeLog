@@ -1,3 +1,10 @@
+1998-11-02  John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/driver.c (main, start_degraded_mode): fix rounding problem
+	that made the code think there was a little room for full dumps in
+	degraded mode, and fix the code that decides whether to do a full dump
+	in degraded mode.
+
 1998-11-02  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amstatus.pl.in: initialize variable to remove warning.
