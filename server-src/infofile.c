@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.15 1997/09/25 04:13:39 george Exp $
+ * $Id: infofile.c,v 1.16 1997/09/26 14:36:49 george Exp $
  *
  * manage current info file
  */
@@ -210,7 +210,7 @@ info_t *info;
 	rc = sscanf(line, "stats: %d %d %d %d %ld %d %80[^\n]",
 		    &level, &onestat.size, &onestat.csize, &onestat.secs,
 		    &onedate, &onestat.filenum, onestat.label);
-	if(rc < 6) return -2;
+	if(rc != 7) return -2;
 
 	/* time_t not guarranteed to be long */
 	onestat.date = onedate;
@@ -389,60 +389,61 @@ int get_info(hostname, diskname, record)
 char *hostname, *diskname;
 info_t *record;
 {
-#ifdef TEXTDB
-    FILE *infof;
     int rc;
-    int i;
 
     memset(record, '\0', sizeof(info_t));
 
-    infof = open_txinfofile(hostname, diskname, "r");
+    {
+#ifdef TEXTDB
+	FILE *infof;
 
-    if(infof == NULL) {
-	rc = -1; /* record not found */
-    }
-    else {
-	rc = read_txinfofile(infof, record);
+	infof = open_txinfofile(hostname, diskname, "r");
 
-	close_txinfofile(infof);
+	if(infof == NULL) {
+	    rc = -1; /* record not found */
+	}
+	else {
+	    rc = read_txinfofile(infof, record);
+
+	    close_txinfofile(infof);
+	}
+#else
+	char key[MAX_KEY];
+	datum k, d;
+
+	/* setup key */
+
+	sprintf(key, "%s:%s", hostname, diskname);
+	k.dptr = key;
+	k.dsize = strlen(key)+1;
+
+	/* lookup record */
+
+	d = dbm_fetch(infodb, k);
+	if(d.dptr == NULL) {
+	    rc = -1; /* record not found */
+	}
+	else {
+	    memcpy(record, d.dptr, d.dsize);
+	    rc = 0;
+	}
+#endif
     }
 
     if (rc != 0) {
+	int i;
+
 	for(i = 0; i < AVG_COUNT; i++) {
 	    record->full.comp[i] = record->incr.comp[i] = -1.0;
 	    record->full.rate[i] = record->incr.rate[i] = -1.0;
+	}
+
+	for(i = 0; i < DUMP_LEVELS; i++) {
+	    strcpy(record->inf[i].label, "-NONE-");
 	}
     }
 
     return rc;
-#else
-    char key[MAX_KEY];
-    datum k, d;
-    int i;
-
-    /* setup key */
-
-    sprintf(key, "%s:%s", hostname, diskname);
-    k.dptr = key;
-    k.dsize = strlen(key)+1;
-
-    memset(record, '\0', sizeof(info_t));
-
-    /* lookup record */
-
-    d = dbm_fetch(infodb, k);
-    if(d.dptr == NULL)	{		/* doesn't exist */
-	for(i = 0; i < AVG_COUNT; i++) {
-	    record->full.comp[i] = record->incr.comp[i] = -1.0;
-	    record->full.rate[i] = record->incr.rate[i] = -1.0;
-	}
-	return -1;
-    }
-
-    /* return record */
-    memcpy(record, d.dptr, d.dsize);
-    return 0;
-#endif
 }
 
 
