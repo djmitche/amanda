@@ -1,5 +1,14 @@
 2001-07-19 John R. Jackson <jrj@purdue.edu>
 
+	* common-src/error.c: Add new function errordump() that acts like
+	  error() but calls abort() to (try to) drop core.  Bring in change
+	  from other branches that logs errors to the debug file, if open.
+	* common-src/amanda.h: Prototype.
+	* common-src/alloc.c: Call errordump() instead of error() for some
+	  memory allocation failures to aid traceback.
+
+2001-07-19 John R. Jackson <jrj@purdue.edu>
+
 	* server-src/amadmin.c: Improve the error message when read_conffile()
 	  fails.
 	* server-src/amcheck.c: Ditto.
