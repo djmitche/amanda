@@ -1785,6 +1785,9 @@ ICE_CHECK_DECL(sendto,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(setegid,unistd.h)
 ICE_CHECK_DECL(seteuid,unistd.h)
 
+ICE_CHECK_DECL(setresgid,unistd.h)
+ICE_CHECK_DECL(setresuid,unistd.h)
+
 dnl arguments for setpgrp or not
 AC_CHECK_FUNC(setpgrp,[AC_FUNC_SETPGRP])
 ICE_CHECK_DECL(setpgrp,sys/types.h unistd.h libc.h)
@@ -1823,9 +1826,15 @@ if test "$ac_cv_func_mmap_fixed_mapped" != yes; then
     esac
 fi
 
-AC_CHECK_FUNCS(sigaction sigemptyset sigvec)
-AC_REPLACE_FUNCS(snprintf)
+dnl Some systems have snprintf but not vsnprintf.  If either snprintf or
+dnl vsnprintf are missing, then use the snprintf.c we provide.
 ICE_CHECK_DECL(snprintf,stdio.h)
+ICE_CHECK_DECL(vsnprintf,stdio.h)
+if test $ice_have_snprintf = no || test $ice_have_vsnprintf = no; then
+    LIBOBJS="$LIBOBJS snprintf.o"
+fi
+
+AC_CHECK_FUNCS(sigaction sigemptyset sigvec)
 ICE_CHECK_DECL(socket,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(socketpair,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(sscanf,stdio.h)
@@ -1846,7 +1855,6 @@ ICE_CHECK_DECL(ungetc,stdio.h)
 AC_FUNC_VPRINTF
 ICE_CHECK_DECL(vfprintf,stdio.h)
 ICE_CHECK_DECL(vprintf,stdio.h)
-ICE_CHECK_DECL(vsprintf,stdio.h)
 
 dnl disk device prefixes
 AC_MSG_CHECKING(disk device prefixes)

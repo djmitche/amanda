@@ -61,7 +61,7 @@
 #include "arglist.h"
 #include <math.h>
 
-#ifndef HAVE_SNPRINTF
+#if !(defined(HAVE_SNPRINTF) && defined(HAVE_VSNPRINTF))
 
 /*
 #include <stdio.h>

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.39 1998/01/17 14:59:32 amcore Exp $
+ * $Id: amanda.h,v 1.40 1998/01/21 01:06:42 jrj Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -780,12 +780,26 @@ extern int sendto P((int s, const char *msg, int len, int flags,
 		     const struct sockaddr *to, int tolen));
 #endif
 
+#ifdef HAVE_SETRESGID
+#define	setegid(x)	setresgid(-1,(x),-1)
+#ifndef HAVE_SETRESGID_DECL
+extern int setresgid P((gid_t rgid, gid_t egid, gid_t sgid));
+#endif
+#else
 #ifndef HAVE_SETEGID_DECL
 extern int setegid P((gid_t egid));
 #endif
+#endif
 
+#ifdef HAVE_SETRESUID
+#define	seteuid(x)	setresuid(-1,(x),-1)
+#ifndef HAVE_SETRESUID_DECL
+extern int setresuid P((uid_t ruid, uid_t euid, uid_t suid));
+#endif
+#else
 #ifndef HAVE_SETEUID_DECL
 extern int seteuid P((uid_t euid));
+#endif
 #endif
 
 #ifndef HAVE_SETPGRP_DECL
@@ -819,7 +833,7 @@ extern int shmget P((key_t key, size_t size, int shmflg));
 #endif
 #endif
 
-#ifdef HAVE_SNPRINTF
+#if defined(HAVE_SNPRINTF) && defined(HAVE_VSNPRINTF)
 #define ap_snprintf	snprintf
 #define ap_vsnprintf	vsnprintf
 #endif
@@ -827,6 +841,9 @@ extern int shmget P((key_t key, size_t size, int shmflg));
 #include "arglist.h"
 int ap_snprintf  P((char *buf, size_t len, const char *format,...))
 		    __attribute__((format(printf,3,4)));
+#endif
+#ifndef HAVE_VSNPRINTF_DECL
+#include "arglist.h"
 int ap_vsnprintf P((char *buf, size_t len, const char *format, va_list ap));
 #endif
 
