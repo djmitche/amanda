@@ -1,3 +1,7 @@
+2004-04-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* changer-src/chg-disk.sh.in: Fix for sh compatibility.
+
 2004-04-14  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Fix by John Koyle <jkoyle@rfpdepot.com>
 
