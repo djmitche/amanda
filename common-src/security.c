@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.c,v 1.17.2.3 1999/09/08 23:26:50 jrj Exp $
+ * $Id: security.c,v 1.17.2.4 1999/09/11 01:14:09 jrj Exp $
  *
  * wrapper file for kerberos security
  */
@@ -204,15 +204,15 @@ int bsd_security_ok(addr, str, cksum, errstr)
 	     if ( strcmp(hp->h_aliases[j],inet_ntoa(addr->sin_addr)) == 0)
 	         break;                          /* name is good, keep it */
         }
-    }
-    if( !hp->h_addr_list[i] && !hp->h_aliases[j] ) {
-	*errstr = vstralloc("[",
-			    "ip address ", inet_ntoa(addr->sin_addr),
-			    " is not in the ip list for ", remotehost,
-			    "]",
-			    NULL);
-	amfree(remotehost);
-	return 0;
+	if( !hp->h_aliases[j] ) {
+	    *errstr = vstralloc("[",
+			        "ip address ", inet_ntoa(addr->sin_addr),
+			        " is not in the ip list for ", remotehost,
+			        "]",
+			        NULL);
+	    amfree(remotehost);
+	    return 0;
+	}
     }
 
     /* next, make sure the remote port is a "reserved" one */

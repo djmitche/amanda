@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: rundump.c,v 1.23.2.2 1999/09/10 23:27:11 jrj Exp $
+ * $Id: rundump.c,v 1.23.2.3 1999/09/11 01:14:05 jrj Exp $
  *
  * runs DUMP program as root
  */
@@ -54,9 +54,9 @@ char **argv;
 #ifndef ERRMSG
     char *dump_program;
     int i;
+    char *e;
 #endif /* ERRMSG */
     int fd;
-    char *e;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*

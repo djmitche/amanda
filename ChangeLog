@@ -1,5 +1,12 @@
 1999-09-10 John R. Jackson  <jrj@purdue.edu>
 
+	* client-src/rundump.c: minor compiler warnings.
+	* common-src/security.c: minor compiler warnings.
+	* server-src/amindexd.c: minor compiler warnings.
+	* server-src/conffile.c: minor compiler warnings.
+
+1999-09-10 John R. Jackson  <jrj@purdue.edu>
+
 	* client-src/sendsize.c: typo in previous patch and pick a better
 	  variable name (ala other similar code).
 
@@ -339,7 +346,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.260 1999/09/11 00:38:16 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.261 1999/09/11 01:13:55 jrj Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.39.2.6 1999/09/08 23:27:33 jrj Exp $
+ * $Id: amindexd.c,v 1.39.2.7 1999/09/11 01:14:14 jrj Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -350,7 +350,6 @@ int is_disk_valid(disk)
 char *disk;
 {
     char *fn;
-    char *last_slash;
     struct stat dir_stat;
 
     if (config_name == NULL || dump_hostname == NULL) {
