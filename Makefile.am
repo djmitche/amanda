@@ -7,8 +7,8 @@ SUBDIRS=config		\
 	example
 
 EXTRA_DIST = \
-	CHANGES				COPYRIGHT			\
-	COPYRIGHT-GNU			COPYRIGHT-REGEX 		\
+	CHANGES								\
+	COPYRIGHT			COPYRIGHT-REGEX 		\
 	docs/INDEXING			docs/INSTALL			\
 	docs/INTERNALS			docs/KERBEROS			\
 	docs/MULTITAPE			docs/SAMBA			\
