@@ -6,13 +6,17 @@
 
 	Numerous bugs/errors were fixed in chg-chio/chg-scsi.  it now
 	properly responds to -eject requests, among other things.
-	- Eric Schnoebelen <eric@cirr.com>
+	-Eric Schnoebelen <eric@cirr.com>
 
-	use vdump to dump advfs filesystems only.  -oliva
+	use vdump to dump advfs filesystems only.
+	-Martyn Johnson <Martyn.Johnson@cl.cam.ac.uk> & oliva
 
 	new index generation commands.  -oliva
 
 Version 2.4.0
+
+	chg-mtx will check whether slot 6 is a cleaning tape or not.
+	-Martyn Johnson <Martyn.Johnson@cl.cam.ac.uk>
 
 	amrmtape updated to text database.  -oliva
 

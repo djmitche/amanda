@@ -43,22 +43,28 @@ accessfile=$changerfile-access
 cleancount=`cat $cleanfile`
 accesscount=`cat $accessfile`
 #
-eject() { 
-  used=`$MTX -s | grep "Drive: tape [1-5] loaded"`
-  if [ ! -z "$used" ];then
-    $MTX -u `echo $used | sed 's/.*\([1-5]\).*/\1/'`
-    echo "`echo $used | sed 's/.*\([1-5]\).*/\1/'` $tape"
+
+readstatus() {
+  used=`$MTX -s | sed -n 's/Drive: No tape Loaded/-1/p;s/Drive: tape \(.\) loaded/\1/p'`
+}
+
+
+eject() {
+  readstatus 
+  if [ $used -gt 0 ];then
+    $MTX -u $used
+    echo 0 $tape
     exit 0
   else
     echo "0 Drive was not loaded"
     exit 1
   fi
 }
-#
+
 reset() {
-  used=`$MTX -s | grep "Drive: tape [1-5] loaded"`
-  if [ ! -z "$used" ];then
-    $MTX -u `echo $used | sed 's/.*\([1-5]\).*/\1/'`
+  readstatus
+  if [ $used -gt 0 ];then
+    $MTX -u $used
   fi
   res=`$MTX -l 1`
   if [ $? -eq 0 ];then
@@ -72,7 +78,7 @@ reset() {
 #
 #
 loadslot() {
-  used=`$MTX -s | sed -n 's/Drive: No tape Loaded/-1/p;s/Drive: tape \(.\) loaded/\1/p'`
+  readstatus
   echo "     -> loaded $used" >> /tmp/changer.debug
   whichslot=$1
   case $whichslot in
@@ -111,7 +117,7 @@ loadslot() {
        exit 1
        ;;
     esac
-#
+
     if [ $load = $used ]; then
         echo "$used $tape"
         exit 0
@@ -124,11 +130,16 @@ loadslot() {
 	expr $accesscount + 1 > $accessfile
 	if [ $accesscount -gt 9 ]; then
 		$myname -slot clean >/dev/null
-		used=0
 	fi
-    fi	
+    fi
+
+    # Slot 6 might contain an ordinary tape rather than a cleaning
+    # tape. A cleaning tape auto-ejects; an ordinary tape does not.
+    # We therefore have to read the status again to check what
+    # actually happened.
+    readstatus
 	
-#
+
     if [ $used -gt 0 ];then
       echo "     -> unload $used" >> /tmp/changer.debug
       res=`$MTX -u $used`
@@ -162,7 +173,7 @@ loadslot() {
 }
 #
 info() {
-  used=`$MTX -s | sed -n 's/Drive: No tape Loaded/-1/p;s/Drive: tape \(.\) loaded/\1/p'`
+  readstatus
   echo "     -> info   $used" >> /tmp/changer.debug
   if [ $used -lt 0 ];then
     echo "0 $lastslot 1"
