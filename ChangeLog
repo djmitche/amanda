@@ -1,5 +1,27 @@
 2002-02-10 John R. Jackson (jrj@purdue.edu)
 
+	* common-src/alloc.c: Fix type mismatch issues discovered by splint
+	  (www.splint.org).  Compliments of jens persson <jens@persson.cx>.
+	* common-src/bsd-security.c: Ditto.
+	* common-src/debug.c: Ditto.
+	* common-src/dgram.c: Ditto.
+	* common-src/file.c: Ditto.
+	* common-src/fileheader.c: Ditto.
+	* common-src/fileheader.h: Ditto.
+	* common-src/genversion.c: Ditto.
+	* common-src/getcwd.c: Ditto.
+	* common-src/match.c: Ditto.
+	* common-src/stream.c: Ditto.
+	* common-src/strstr.c: Ditto.
+	* common-src/token.c: Ditto.
+	* recover-src/amrecover.c: Ditto.
+	* recover-src/display_commands.c: Ditto.
+	* recover-src/extract_list.c: Ditto.
+	* recover-src/set_commands.c: Ditto.
+	* server-src/reporter.c: Ditto.
+
+2002-02-10 John R. Jackson (jrj@purdue.edu)
+
 	* changer-src/chg-zd-mtx.sh.in: Major cleanup and general overhaul.
 	* docs/TAPE.CHANGERS: Cleanup.
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.23 2001/08/14 22:38:26 jrjackson Exp $
+ * $Id: stream.c,v 1.24 2002/02/11 01:32:10 jrjackson Exp $
  *
  * functions for managing stream sockets
  */
@@ -41,7 +41,8 @@ int stream_server(portp, sendsize, recvsize)
 int *portp;
 int sendsize, recvsize;
 {
-    int server_socket, len;
+    int server_socket;
+    size_t len;
 #ifdef SO_KEEPALIVE
     int on = 1;
     int r;
@@ -95,7 +96,7 @@ int sendsize, recvsize;
 	goto out;
 
     server.sin_port = INADDR_ANY;
-    if (bind(server_socket, (struct sockaddr *)&server, sizeof(server)) == -1) {
+    if (bind(server_socket, (struct sockaddr *)&server, (socklen_t) sizeof(server)) == -1) {
 	save_errno = errno;
 	dbprintf(("%s: stream_server: bind(INADDR_ANY) failed: %s\n",
 		  get_pname(),
@@ -123,7 +124,7 @@ out:
 
 #ifdef SO_KEEPALIVE
     r = setsockopt(server_socket, SOL_SOCKET, SO_KEEPALIVE,
-	(void *)&on, sizeof(on));
+	(void *)&on, (socklen_t)sizeof(on));
     if(r == -1) {
 	save_errno = errno;
 	dbprintf(("%s: stream_server: setsockopt(SO_KEEPALIVE) failed: %s\n",

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: display_commands.c,v 1.13 1999/09/05 23:27:18 jrj Exp $
+ * $Id: display_commands.c,v 1.14 2002/02/11 01:32:10 jrjackson Exp $
  *
  * implements the directory-display related commands in amrecover
  */
@@ -255,7 +255,7 @@ void suck_dir_list_from_server P((void))
 
 void list_directory P((void))
 {
-    int i;
+    size_t i;
     DIR_ITEM *item;
     FILE *fp;
     char *pager;

@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.26 2001/12/18 20:12:09 martinea Exp $
+ * $Id: file.c,v 1.27 2002/02/11 01:32:10 jrjackson Exp $
  *
  * file and directory bashing routines
  */
@@ -370,7 +370,8 @@ agets(file)
     FILE *file;
 {
     char *line = NULL, *line_ptr;
-    int line_size, line_free, size_save, line_len;
+    size_t line_size, size_save;
+    int line_free, line_len;
     char *cp;
     char *f;
 
@@ -489,7 +490,7 @@ areads_dataready(fd)
     ssize_t r = 0;
 
     if(fd >= 0 && fd < areads_bufcount && areads_buffer[fd].buffer != NULL) {
-	r = areads_buffer[fd].endptr - areads_buffer[fd].buffer;
+	r = (ssize_t) (areads_buffer[fd].endptr - areads_buffer[fd].buffer);
     }
     return r;
 }

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.42 2001/08/14 22:38:26 jrjackson Exp $
+ * $Id: amrecover.c,v 1.43 2002/02/11 01:32:10 jrjackson Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -63,7 +63,7 @@
 #endif
 
 extern int process_line P((char *line));
-int guess_disk P((char *cwd, int cwd_len, char **dn_guess, char **mpt_guess));
+int guess_disk P((char *cwd, size_t cwd_len, char **dn_guess, char **mpt_guess));
 
 #define USAGE "Usage: amrecover [[-C] <config>] [-s <index-server>] [-t <tape-server>] [-d <tape-device>]\n"
 
@@ -108,7 +108,7 @@ int get_line ()
 {
     char *line = NULL;
     char *part = NULL;
-    int len;
+    size_t len;
 
     while(1) {
 	if((part = areads(server_socket)) == NULL) {
@@ -204,7 +204,8 @@ int server_happy ()
 int send_command(cmd)
 char *cmd;
 {
-    int l, n, s;
+    size_t l, n;
+    ssize_t s;
     char *end;
 
     /*
@@ -272,7 +273,7 @@ int signum;
 void clean_pathname(s)
 char *s;
 {
-    int length;
+    size_t length;
     length = strlen(s);
 
     /* remove "/" at end of path */
@@ -296,11 +297,11 @@ char *s;
    current directory */
 int guess_disk (cwd, cwd_len, dn_guess, mpt_guess)
      char *cwd, **dn_guess, **mpt_guess;
-     int cwd_len;
+     size_t cwd_len;
 {
-    int longest_match = 0;
-    int current_length;
-    int cwd_length;
+    size_t longest_match = 0;
+    size_t current_length;
+    size_t cwd_length;
     int local_disk = 0;
     generic_fsent_t fsent;
     char *fsname = NULL;
@@ -318,7 +319,7 @@ int guess_disk (cwd, cwd_len, dn_guess, mpt_guess)
 
     while (get_fstab_nextentry(&fsent))
     {
-	current_length = fsent.mntdir ? strlen(fsent.mntdir) : 0;
+	current_length = fsent.mntdir ? strlen(fsent.mntdir) : (size_t)0;
 	dbprintf(("guess_disk: %d: %d: \"%s\": \"%s\"\n",
 		  longest_match,
 		  current_length,

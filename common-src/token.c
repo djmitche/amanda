@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: token.c,v 1.24 2002/02/10 03:34:04 jrjackson Exp $
+ * $Id: token.c,v 1.25 2002/02/11 01:32:10 jrjackson Exp $
  *
  * token bashing routines
  */
@@ -55,7 +55,7 @@ char *sep;	/* Token separators - usually " " */
 {
     register char *pi, *po;
     register int fld;
-    register int len;
+    register size_t len;
     static char *buf = (char *)0; /* XXX - static buffer */
     int in_quotes;
 
@@ -172,7 +172,7 @@ char *sepchr;	/* separators that also need quoting */
 char *str;	/* the string to quote */
 {
     register char *pi, *po;
-    register int len;
+    register size_t len;
     char *buf;
     int sep, need_quotes;
 
@@ -234,7 +234,7 @@ char *rxquote(str)
 char *str;	/* the string to quote */
 {
     char *pi, *po;
-    int len;
+    size_t len;
     char *buf;
 
     /* Calculate the length of the quoted token. */
@@ -299,7 +299,7 @@ char *shquote(str)
 char *str;	/* the string to quote */
 {
     char *pi, *po;
-    int len;
+    size_t len;
     char *buf;
 
     /* Calculate the length of the quoted token. */

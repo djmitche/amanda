@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.70 2001/12/09 20:36:03 martinea Exp $
+ * $Id: reporter.c,v 1.71 2002/02/11 01:32:11 jrjackson Exp $
  *
  * nightly Amanda Report generator
  */
@@ -350,7 +350,9 @@ sDivZero(a, b, cn)
 static int
 contline_next()
 {
-    int ch = getc(logfile);
+    int ch;
+
+    ch = getc(logfile);
     ungetc(ch, logfile);
 
     return ch == ' ';

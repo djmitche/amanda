@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.23 2002/02/10 03:34:04 jrjackson Exp $
+ * $Id: dgram.c,v 1.24 2002/02/11 01:32:10 jrjackson Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -50,7 +50,8 @@ int dgram_bind(dgram, portp)
 dgram_t *dgram;
 int *portp;
 {
-    int s, len;
+    int s;
+    socklen_t len;
     struct sockaddr_in name;
     int save_errno;
 
@@ -93,7 +94,7 @@ int *portp;
 	goto out;
 
     name.sin_port = INADDR_ANY;
-    if (bind(s, (struct sockaddr *)&name, sizeof name) == -1) {
+    if (bind(s, (struct sockaddr *)&name, (socklen_t)sizeof name) == -1) {
 	save_errno = errno;
 	dbprintf(("%s: dgram_bind: bind(INADDR_ANY) failed: %s\n",
 		  get_pname(),
@@ -106,7 +107,7 @@ int *portp;
 out:
     /* find out what name was actually used */
 
-    len = sizeof name;
+    len = (socklen_t) sizeof name;
     if(getsockname(s, (struct sockaddr *)&name, &len) == -1) {
 	save_errno = errno;
 	dbprintf(("%s: dgram_bind: getsockname() failed: %s\n",
@@ -171,7 +172,7 @@ dgram_t *dgram;
 		 dgram->len,
 		 0, 
 		 (struct sockaddr *)&addr,
-		 sizeof(struct sockaddr_in)) == -1) {
+		 (socklen_t) sizeof(struct sockaddr_in)) == -1) {
 #ifdef ECONNREFUSED
 	if(errno == ECONNREFUSED && wait_count++ < max_wait) {
 	    sleep(5);
@@ -243,7 +244,9 @@ struct sockaddr_in *fromaddr;
 {
     fd_set ready;
     struct timeval to;
-    int size, addrlen, sock;
+    ssize_t size;
+    int sock;
+    size_t addrlen;
     int nfound;
     int save_errno;
 

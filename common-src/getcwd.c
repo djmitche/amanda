@@ -25,10 +25,10 @@
  * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-/* $Id: getcwd.c,v 1.3 1997/12/16 17:55:01 jrj Exp $ */
+/* $Id: getcwd.c,v 1.4 2002/02/11 01:32:10 jrjackson Exp $ */
 
 #ifndef lint
-static char rcsid[] = "$Header: /home/dustin/code/amanda/svn/cvs-conversion/sf-rsync/amanda/common-src/Attic/getcwd.c,v 1.3 1997/12/16 17:55:01 jrj Exp $ SPRITE (Berkeley)";
+static char rcsid[] = "$Header: /home/dustin/code/amanda/svn/cvs-conversion/sf-rsync/amanda/common-src/Attic/getcwd.c,v 1.4 2002/02/11 01:32:10 jrjackson Exp $ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -41,7 +41,7 @@ extern int errno;
 char *
 getcwd(buf, size)
     char *buf;			/* Where to put path for current directory. */
-    int size;	          	/* Number of bytes at buf. */
+    size_t size;	          	/* Number of bytes at buf. */
 {
     char realBuffer[MAXPATHLEN+1];
     int length;

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.37 2001/12/31 02:23:27 martinea Exp $
+ * $Id: bsd-security.c,v 1.38 2002/02/11 01:32:10 jrjackson Exp $
  *
  * "BSD" security module
  */
@@ -644,7 +644,7 @@ netfd_read_callback(cookie)
 	return;
 
     he = gethostbyaddr((void *)&netfd.peer.sin_addr,
-	sizeof(netfd.peer.sin_addr), AF_INET);
+	(int)sizeof(netfd.peer.sin_addr), AF_INET);
     if (he == NULL)
 	return;
     bh = alloc(sizeof(*bh));

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.22 2002/02/01 01:04:13 martinea Exp $
+ * $Id: fileheader.c,v 1.23 2002/02/11 01:32:10 jrjackson Exp $
  */
 
 #include "amanda.h"
@@ -45,7 +45,7 @@ void
 parse_file_header(buffer, file, buflen)
     const char *buffer;
     dumpfile_t *file;
-    int buflen;
+    size_t buflen;
 {
     char *buf, *line, *tok;
 
@@ -223,7 +223,7 @@ parse_file_header(buffer, file, buflen)
 
 weird_header:
     fprintf(stderr, "%s: strange amanda header: \"%.*s\"\n", get_pname(),
-	buflen, buffer);
+	(int) buflen, buffer);
     file->type = F_WEIRD;
     amfree(buf);
 }
@@ -232,7 +232,7 @@ void
 build_header(buffer, file, buflen)
     char *buffer;
     const dumpfile_t *file;
-    int buflen;
+    size_t buflen;
 {
     int n;
 

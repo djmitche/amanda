@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: strstr.c,v 1.4 1998/07/04 00:19:01 oliva Exp $
+ * $Id: strstr.c,v 1.5 2002/02/11 01:32:10 jrjackson Exp $
  *
  * replacement for missing ANSI-C strstr function
  */
@@ -34,7 +34,7 @@
 char *strstr(a, b)
 char *a, *b;
 {
-        int alen, blen, i;
+        size_t alen, blen, i;
 
         alen = strlen(a);
         blen = strlen(b);
