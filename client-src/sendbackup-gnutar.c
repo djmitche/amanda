@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.77 2001/08/02 03:53:30 jrjackson Exp $
+ * $Id: sendbackup-gnutar.c,v 1.78 2002/02/13 14:47:47 martinea Exp $
  *
  * send backup data using GNU tar
  */
@@ -60,6 +60,9 @@ static regex_t re_table[] = {
   { DMP_NORMAL, ": File .* shrunk by [0-9][0-9]* bytes, padding with zeros", 1 },
   { DMP_NORMAL, ": Cannot add file .*: No such file or directory$", 1},
   { DMP_NORMAL, ": Error exit delayed from previous errors", 1},
+  { DMP_NORMAL, ": Cannot stat: Stale NFS file handle$", 1 },
+  { DMP_NORMAL, ": .*: Warning: Cannot stat: No such file or directory$", 1 },
+  { DMP_NORMAL, ": .*: Cannot savedir: Permission denied", 1 },
 #endif
   
   /* samba may produce these output messages */
@@ -106,6 +109,10 @@ static regex_t re_table[] = {
   { DMP_NORMAL, "^ERRDOS - ERRnoaccess opening remote file", 1},
   { DMP_NORMAL, "^ERRSRV - ERRaccess setting attributes on file", 1},
   { DMP_NORMAL, "^ERRDOS - ERRnoaccess setting attributes on file", 1},
+  { DMP_NORMAL, "^ERRDOS - 123 opening remote file", 1},
+  { DMP_NORMAL, "^ERRDOS - ERRnoaccess listing", 1},
+  { DMP_NORMAL, "^Unknown parameter encountered: \"ssl CA certFile\"", 1},
+  { DMP_NORMAL, "^Ignoring unknown parameter \"ssl CA certFile\"", 1},
 #endif
 
 #if SAMBA_VERSION >= 2
@@ -149,11 +156,11 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
     fprintf(stderr, "%s: start [%s:%s level %d]\n",
 	    get_pname(), host, disk, level);
 
-    if(compress) {
+    if(options->compress) {
 	char *compopt = skip_argument;
 
 #if defined(COMPRESS_BEST_OPT) && defined(COMPRESS_FAST_OPT)
-	if(compress == COMPR_BEST) {
+	if(options->compress == COMPR_BEST) {
 	    compopt = COMPRESS_BEST_OPT;
 	} else {
 	    compopt = COMPRESS_FAST_OPT;
@@ -369,7 +376,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 	}
 
 	taropt = stralloc("-T");
-	if (estr != NULL && *estr != '\0') {
+	if(options->exclude_file && options->exclude_file->nb_element == 1) {
 	    strappend(taropt, "X");
 	}
 #if SAMBA_VERSION >= 2
@@ -378,7 +385,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 	strappend(taropt, "c");
 	if (level != 0) {
 	    strappend(taropt, "g");
-	} else if (!no_record) {
+	} else if (!options->no_record) {
 	    strappend(taropt, "a");
 	}
 
@@ -388,7 +395,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 	cmd = stralloc(program->backup_name);
 	info_tapeheader();
 
-	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
+	start_index(options->createindex, dumpout, mesgf, indexf, indexcmd);
 
 	if (pwtext_len > 0) {
 	    pw_fd_env = "PASSWD_FD";
@@ -412,7 +419,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 			    "-d0",
 			    taropt,
 			    "-",
-			    estr ? estr : skip_argument,
+			    options->exclude_file && options->exclude_file->nb_element == 1 ? options->exclude_file->first->name : skip_argument,
 			    NULL);
 	if(domain) {
 	    memset(domain, '\0', strlen(domain));
@@ -437,42 +444,71 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
     } else
 #endif									/* } */
     {
+
+	int nb_exclude = 0;
+	char **my_argv;
+	int i = 0;
+	sle_t *excl;
+
+	if(options->exclude_file) nb_exclude+=options->exclude_file->nb_element;
+	if(options->exclude_list) nb_exclude+=options->exclude_list->nb_element;
+
+	my_argv = malloc(sizeof(char *) * (17 + (nb_exclude *2)));
+
 	cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
 	info_tapeheader();
 
-	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
+	start_index(options->createindex, dumpout, mesgf, indexf, indexcmd);
 
-	dumppid = pipespawn(cmd, STDIN_PIPE,
-			    &dumpin, &dumpout, &mesgf,
-			    "gtar",
-			    "--create",
-			    "--file", "-",
-			    "--directory", dirname,
-			    "--one-file-system",
+	my_argv[i++] = "gtar";
+	my_argv[i++] = "--create";
+	my_argv[i++] = "--file";
+	my_argv[i++] = "-";
+	my_argv[i++] = "--directory";
+	my_argv[i++] = dirname;
+	my_argv[i++] = "--one-file-system";
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-			    "--listed-incremental", incrname,
+	my_argv[i++] = "--listed-incremental";
+	my_argv[i++] = incrname;
 #else
-			    "--incremental",
-			    "--newer", dumptimestr,
+	my_argv[i++] = "--incremental";
+	my_argv[i++] = "--newer";
+	my_argv[i++] = dumptimestr;
 #endif
 #ifdef ENABLE_GNUTAR_ATIME_PRESERVE
-			    /* --atime-preserve causes gnutar to call
-			     * utime() after reading files in order to
-			     * adjust their atime.  However, utime()
-			     * updates the file's ctime, so incremental
-			     * dumps will think the file has changed. */
-			    "--atime-preserve",
+	/* --atime-preserve causes gnutar to call
+	 * utime() after reading files in order to
+	 * adjust their atime.  However, utime()
+	 * updates the file's ctime, so incremental
+	 * dumps will think the file has changed. */
+	my_argv[i++] = "--atime-preserve";
 #endif
-			    "--sparse",
-			    "--ignore-failed-read",
-			    "--totals",
-			    efile ? "--exclude-from" : skip_argument,
-			    efile ? efile : skip_argument,
-			    estr ? "--exclude" : skip_argument,
-			    estr ? estr : skip_argument,
-			    ".",
-			    NULL);
+	my_argv[i++] = "--sparse";
+	my_argv[i++] = "--ignore-failed-read";
+	my_argv[i++] = "--totals";
+	if(options->exclude_file) {
+	    for(excl = options->exclude_file->first; excl != NULL;
+		excl = excl->next) {
+		my_argv[i++] = "--exclude";
+		my_argv[i++] = excl->name;
+	    }
+	}
+	if(options->exclude_list) {
+	    for(excl = options->exclude_list->first; excl != NULL;
+		excl = excl->next) {
+		my_argv[i++] = "--exclude";
+		my_argv[i++] = excl->name;
+	    }
+	}
+	my_argv[i++] = ".";
+	my_argv[i++] = NULL;
+	if(i >= 17 + 2*nb_exclude) {
+	    error("i = %d",i);
+	}
+	dumppid = pipespawnv(cmd, STDIN_PIPE,
+			     &dumpin, &dumpout, &mesgf, my_argv);
 	tarpid = dumppid;
+	amfree(my_argv);
     }
     dbprintf(("%s-gnutar: %s: pid %ld\n", get_pname(), cmd, (long)dumppid));
 
@@ -486,14 +522,14 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
     aclose(dumpout);
     aclose(dataf);
     aclose(mesgf);
-    if (createindex)
+    if (options->createindex)
 	aclose(indexf);
 }
 
 static void end_backup(goterror)
 int goterror;
 {
-    if(!no_record && !goterror) {
+    if(!options->no_record && !goterror) {
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
       if (incrname != NULL && strlen(incrname) > 4) {
         char *nodotnew;

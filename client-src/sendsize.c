@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.115 2001/09/01 20:50:57 jrjackson Exp $
+ * $Id: sendsize.c,v 1.116 2002/02/13 14:47:47 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -35,6 +35,7 @@
 #include "util.h"
 #include "getfsent.h"
 #include "version.h"
+#include "client_util.h"
 
 #ifdef SAMBA_CLIENT
 #include "findpass.h"
@@ -74,11 +75,10 @@ typedef struct disk_estimates_s {
     struct disk_estimates_s *next;
     char *amname;
     char *dirname;
-    char *exclude;
     char *program;
     int program_is_wrapper;
-    char *optstr;
     int spindle;
+    option_t *options;
     level_estimate_t est[DUMP_LEVELS];
 } disk_estimates_t;
 
@@ -93,8 +93,8 @@ char *prefix_line;			/* debug line prefix if maxdumps */
 
 /* local functions */
 int main P((int argc, char **argv));
-void add_diskest P((char *disk, int level, char *exclude, int spindle, 
-		    int program_is_wrapper, char *prog));
+void add_diskest P((char *disk, int level, int spindle, 
+		    int program_is_wrapper, char *prog, option_t *options));
 void calc_estimates P((disk_estimates_t *est));
 void free_estimates P((disk_estimates_t *est));
 void dump_calc_estimates P((disk_estimates_t *));
@@ -110,7 +110,8 @@ int argc;
 char **argv;
 {
     int level, new_maxdumps, spindle;
-    char *prog, *disk, *dumpdate, *exclude = NULL;
+    char *prog, *disk, *dumpdate;
+    option_t *options = NULL;
     int program_is_wrapper;
     disk_estimates_t *est;
     disk_estimates_t *est_prev;
@@ -242,7 +243,6 @@ char **argv;
 	s[-1] = '\0';
 
 	spindle = 0;				/* default spindle */
-	amfree(exclude);			/* default is no exclude */
 
 	skip_whitespace(s, ch);			/* find the spindle */
 	if(ch != '\0') {
@@ -254,16 +254,36 @@ char **argv;
 
 	    skip_whitespace(s, ch);		/* find the exclusion list */
 	    if(ch != '\0') {
-		exclude = newstralloc2(exclude, "--", s - 1);
-		skip_non_whitespace(s, ch);
-		if(ch) {
-		    err_extra = "extra text at end";
-		    goto err;			/* should have gotten to end */
+		if(strncmp(s-1, "OPTIONS |;",10) == 0) {
+		    options = parse_options(s+8, disk, 0);
+		}
+		else {
+		    options = malloc(sizeof(option_t));
+		    options->compress = NO_COMPR;
+		    options->no_record = 0;
+		    options->bsd_auth = 0;
+		    options->createindex = 0;
+		    options->exclude_file = NULL;
+		    options->exclude_list = NULL;
+		    if(strncmp(s-1, "exclude-file=", 13) == 0) {
+			options->exclude_file =
+				append_sl(options->exclude_file, s+12);
+		    }
+		    if(strncmp(s-1, "exclude-list=", 13) == 0) {
+			options->exclude_list =
+				append_sl(options->exclude_list, s+12);
+		    }
+		
+		    skip_non_whitespace(s, ch);
+		    if(ch) {
+			err_extra = "extra text at end";
+			goto err;		/* should have gotten to end */
+		    }
 		}
 	    }
 	}
 
-	add_diskest(disk, level, exclude, spindle, program_is_wrapper, prog);
+	add_diskest(disk, level, spindle, program_is_wrapper, prog, options);
     }
     amfree(line);
 
@@ -311,10 +331,10 @@ char **argv;
 }
 
 
-void add_diskest(disk, level, exclude, spindle, program_is_wrapper, prog)
+void add_diskest(disk, level, spindle, program_is_wrapper, prog, options)
 char *disk, *prog;
-char *exclude;
 int level, spindle, program_is_wrapper;
+option_t *options;
 {
     disk_estimates_t *newp, *curp;
     amandates_t *amdp;
@@ -335,12 +355,11 @@ int level, spindle, program_is_wrapper;
     est_list = newp;
     newp->amname = stralloc(disk);
     newp->dirname = amname_to_dirname(newp->amname);
-    newp->exclude = exclude ? stralloc(exclude) : NULL;
-    newp->optstr  = exclude ? stralloc(exclude) : "";
     newp->program = stralloc(prog);
     newp->program_is_wrapper = program_is_wrapper;
     newp->spindle = spindle;
     newp->est[level].needestimate = 1;
+    newp->options = options;
 
     /* fill in dump-since dates */
 
@@ -362,8 +381,12 @@ disk_estimates_t *est;
 {
     amfree(est->amname);
     amfree(est->dirname);
-    amfree(est->exclude);
     amfree(est->program);
+    if(est->options) {
+	free_sl(est->options->exclude_file);
+	free_sl(est->options->exclude_list);
+    }
+    amfree(est->options);
 }
 
 /*
@@ -429,12 +452,12 @@ disk_estimates_t *est;
  */
 
 /* local functions */
-long getsize_dump P((char *disk, int level));
-long getsize_smbtar P((char *disk, int level, char *exclude));
+long getsize_dump P((char *disk, int level, option_t *options));
+long getsize_smbtar P((char *disk, int level, option_t *options));
 long getsize_gnutar P((char *disk, int level,
-		       char *exclude, time_t dumpsince));
+		       option_t *options, time_t dumpsince));
 long getsize_wrapper P((char *program, char *disk, int level,
-			char *optstr, time_t dumpsince));
+			option_t *options, time_t dumpsince));
 long handle_dumpline P((char *str));
 double first_num P((char *str));
 
@@ -448,7 +471,7 @@ disk_estimates_t *est;
       if (est->est[level].needestimate) {
 	  dbprintf(("%s: getting size via wrapper for %s level %d\n",
 		    get_pname(), est->amname, level));
-	  size = getsize_wrapper(est->program, est->amname, level, est->optstr,
+	  size = getsize_wrapper(est->program, est->amname, level, est->options,
 				 est->est[level].dumpsince);
 
 	  amflock(1, "size");
@@ -535,7 +558,7 @@ disk_estimates_t *est;
 	if(est->est[level].needestimate) {
 	    dbprintf(("%s: getting size via dump for %s level %d\n",
 		      prefix, est->amname, level));
-	    size = getsize_dump(est->amname, level);
+	    size = getsize_dump(est->amname, level, est->options);
 
 	    amflock(1, "size");
 
@@ -560,7 +583,7 @@ disk_estimates_t *est;
 	if(est->est[level].needestimate) {
 	    dbprintf(("%s: getting size via smbclient for %s level %d\n",
 		      prefix, est->amname, level));
-	    size = getsize_smbtar(est->amname, level, est->exclude);
+	    size = getsize_smbtar(est->amname, level, est->options);
 
 	    amflock(1, "size");
 
@@ -587,7 +610,7 @@ disk_estimates_t *est;
 	  dbprintf(("%s: getting size via gnutar for %s level %d\n",
 		    prefix, est->amname, level));
 	  size = getsize_gnutar(est->amname, level,
-				est->exclude, est->est[level].dumpsince);
+				est->options, est->est[level].dumpsince);
 
 	  amflock(1, "size");
 
@@ -664,9 +687,10 @@ regex_t re_size[] = {
 };
 
 
-long getsize_dump(disk, level)
+long getsize_dump(disk, level, options)
     char *disk;
     int level;
+    option_t *options;
 {
     int pipefd[2], nullfd, stdoutfd, killctl[2];
     pid_t dumppid;
@@ -979,10 +1003,10 @@ long getsize_dump(disk, level)
 }
 
 #ifdef SAMBA_CLIENT
-long getsize_smbtar(disk, level, exclude_spec)
+long getsize_smbtar(disk, level, optionns)
     char *disk;
     int level;
-    char *exclude_spec;
+    option_t *optionns;
 {
     int pipefd = -1, nullfd = -1, passwdfd = -1;
     int dumppid;
@@ -1128,10 +1152,10 @@ long getsize_smbtar(disk, level, exclude_spec)
 #endif
 
 #ifdef GNUTAR
-long getsize_gnutar(disk, level, exclude_spec, dumpsince)
+long getsize_gnutar(disk, level, options, dumpsince)
 char *disk;
 int level;
-char *exclude_spec;
+option_t *options;
 time_t dumpsince;
 {
     int pipefd = -1, nullfd = -1, dumppid;
@@ -1143,12 +1167,20 @@ time_t dumpsince;
     char *inputname = NULL;
     FILE *in = NULL;
     FILE *out = NULL;
-    char *exclude_arg = NULL;
-    char *efile = NULL, *estr = NULL;
     char *line = NULL;
     char *cmd = NULL;
     char dumptimestr[80];
     struct tm *gmtm;
+    sle_t *excl;
+    int nb_exclude = 0;
+    char **my_argv;
+    int i;
+
+    if(options->exclude_file) nb_exclude += options->exclude_file->nb_element;
+    if(options->exclude_list) nb_exclude += options->exclude_list->nb_element;
+
+    my_argv = malloc(sizeof(char *) * (17 + (nb_exclude *2)));
+    i = 0;
 
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
     {
@@ -1255,74 +1287,57 @@ time_t dumpsince;
 
     cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
 
-    if (exclude_spec == NULL) {
-	amfree(exclude_arg);
-	estr = NULL;
-	efile = NULL;
-	/* do nothing */
-#define sc "--exclude-list="
-    } else if (strncmp(exclude_spec, sc, sizeof(sc)-1)==0) {
-	char *file = exclude_spec + sizeof(sc)-1;
-/* BEGIN HPS */
-	if(*file != '/')
-	  file = vstralloc(dirname,"/",file, NULL);
-/* END HPS */
-	estr = NULL;
-	if (access(file, F_OK) == 0)
-	    efile = newstralloc(efile, file);
-	else {
-	    dbprintf(("%s: missing exclude list file \"%s\" discarded\n",
-		      prefix, file));
-	    amfree(efile);
-	}
-#undef sc
-#define sc "--exclude-file="
-    } else if (strncmp(exclude_spec, sc, sizeof(sc)-1)==0) {
-	efile = NULL;
-	estr = newstralloc(estr, exclude_spec+sizeof(sc)-1);
-#undef sc
-    } else {
-	error("exclude_spec is neither --exclude-list nor --exclude-file: %s",
-	      exclude_spec);
-    }
-
-    nullfd = open("/dev/null", O_RDWR);
-    dumppid = pipespawn(cmd, STDERR_PIPE, &nullfd, &nullfd, &pipefd,
 #ifdef GNUTAR
-	      GNUTAR,
+    my_argv[i++] = GNUTAR;
 #else
-	      "tar",
+    my_argv[i++] = "tar";
 #endif
-	      "--create",
-	      "--file", "/dev/null",
-	      "--directory", dirname,
-	      "--one-file-system",
+    my_argv[i++] = "--create";
+    my_argv[i++] = "--file";
+    my_argv[i++] = "/dev/null";
+    my_argv[i++] = "--directory";
+    my_argv[i++] = dirname;
+    my_argv[i++] = "--one-file-system";
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-	      "--listed-incremental", incrname,
+    my_argv[i++] = "--listed-incremental";
+    my_argv[i++] = incrname;
 #else
-	      "--incremental",
-	      "--newer", dumptimestr,
+    my_argv[i++] = "--incremental";
+    my_argv[i++] = "--newer";
+    my_argv[i++] = dumptimestr;
 #endif
 #ifdef ENABLE_GNUTAR_ATIME_PRESERVE
-	      /* --atime-preserve causes gnutar to call
-	       * utime() after reading files in order to
-	       * adjust their atime.  However, utime()
-	       * updates the file's ctime, so incremental
-	       * dumps will think the file has changed. */
-	      "--atime-preserve",
+    /* --atime-preserve causes gnutar to call
+     * utime() after reading files in order to
+     * adjust their atime.  However, utime()
+     * updates the file's ctime, so incremental
+     * dumps will think the file has changed. */
+    my_argv[i++] = "--atime-preserve";
 #endif
-	      "--sparse",
-	      "--ignore-failed-read",
-	      "--totals",
-	      efile ? "--exclude-from" : skip_argument,
-	      efile ? efile : skip_argument,
-	      estr ? "--exclude" : skip_argument,
-	      estr ? estr : skip_argument,
-	      ".",
-	      NULL);
-    amfree(efile);
-    amfree(estr);
+    my_argv[i++] = "--sparse";
+    my_argv[i++] = "--ignore-failed-read";
+    my_argv[i++] = "--totals";
+    if(options->exclude_file) {
+	for(excl = options->exclude_file->first; excl != NULL; excl = excl->next) {
+	    my_argv[i++] = "--exclude";
+	    my_argv[i++] = excl->name;
+	}
+    }
+    if(options->exclude_list) {
+	for(excl = options->exclude_list->first; excl != NULL; excl = excl->next) {
+	    my_argv[i++] = "--exclude-from";
+	    my_argv[i++] = excl->name;
+	}
+    }
+    my_argv[i++] = ".";
+    my_argv[i++] = NULL;
+    if(i >= 17+2*nb_exclude) {
+	error("i = %d (17 + 2*%d)",i,nb_exclude);
+    }
+    nullfd = open("/dev/null", O_RDWR);
+    dumppid = pipespawnv(cmd, STDERR_PIPE, &nullfd, &nullfd, &pipefd, my_argv);
     amfree(cmd);
+    amfree(my_argv);
 
     dumpout = fdopen(pipefd,"r");
 
@@ -1369,10 +1384,10 @@ common_exit:
 }
 #endif
 
-long getsize_wrapper(program, disk, level, optstr, dumpsince)
+long getsize_wrapper(program, disk, level, options, dumpsince)
 char *program, *disk;
 int level;
-char *optstr;
+option_t *options;
 time_t dumpsince;
 {
     int pipefd[2], nullfd, dumppid;
@@ -1407,7 +1422,7 @@ time_t dumpsince;
 	argvchild[i++] = levelstr;
     }
     argvchild[i++] = disk;
-    newoptstr = vstralloc(optstr,"estimate-direct;", NULL);
+    newoptstr = vstralloc(options->str,"estimate-direct;", NULL);
     argvchild[i++] = newoptstr;
 
     dbprintf(("%s: running \"%s", get_pname(), cmd));

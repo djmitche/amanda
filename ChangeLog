@@ -1,3 +1,22 @@
+2002-02-13  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* client_src/client_util.c (parse_options): Function to parse 
+	  the option string. 
+	* client_src/client_util.h (parse_options): Prototype.
+	* client_src/client_util.h (option_t): Struct for options.
+	* client_src/Makefile.am: Compile client_util.
+	* client_src/selfcheck.c: Use new option_t and multiple exclude.
+	* client_src/sendbackup.h: Use new option_t and multiple exclude.
+	* client_src/sendbackup.c: Use new option_t and multiple exclude.
+	* client_src/sendbackup-dump.c: Use new option_t and multiple exclude.
+	* client_src/sendbackup-gnutar.c: Use new option_t and multiple exclude.
+	* client_src/sendsize.c: Use new option_t and multiple exclude.
+	* server-src/conffile.h: Use sl_t for exclude_file and exclude_list.
+	* server-src/conffile.c: Multiple exclude.
+	* server-src/diskfile.h: Use sl_t for exclude_file and exclude_list.
+	* server-src/diskfile.c: Multiple exclude.
+	* server-src/planner.c: Multiple exclude.
+
 2002-02-12  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* common-src/pipespawn.c (pipespawnv): Typo, ap_snprintf -> snprintf.

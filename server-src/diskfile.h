@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.19 2001/12/30 17:42:07 martinea Exp $
+ * $Id: diskfile.h,v 1.20 2002/02/13 14:47:47 martinea Exp $
  *
  * interface for disklist file reading code
  */
@@ -56,8 +56,8 @@ typedef struct disk_s {
     char *name;				/* device name for disk, eg "sd0g" */
     char *dtype_name;			/* name of dump type   XXX shouldn't need this */
     char *program;			/* dump program, eg DUMP, GNUTAR */
-    char *exclude;			/* file exclude spec */
-    int exclude_list;			/* exclude list flag */
+    sl_t *exclude_file;			/* file exclude spec */
+    sl_t *exclude_list;			/* exclude list */
     long priority;			/* priority of disk */
     long dumpcycle;			/* days between fulls */
     long frequency;			/* XXX - not used */

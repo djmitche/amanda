@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.77 2001/06/07 12:33:28 ant Exp $
+ * $Id: sendbackup-dump.c,v 1.78 2002/02/13 14:47:46 martinea Exp $
  *
  * send backup data using BSD dump
  */
@@ -147,11 +147,11 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
     fprintf(stderr, "%s: start [%s:%s level %d]\n",
 	    get_pname(), host, disk, level);
 
-    if(compress) {
+    if(options->compress) {
 	char *compopt = skip_argument;
 
 #if defined(COMPRESS_BEST_OPT) && defined(COMPRESS_FAST_OPT)
-	if(compress == COMPR_BEST) {
+	if(options->compress == COMPR_BEST) {
 	    compopt = COMPRESS_BEST_OPT;
 	} else {
 	    compopt = COMPRESS_FAST_OPT;
@@ -204,7 +204,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 			     NULL);
 	info_tapeheader();
 
-	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
+	start_index(options->createindex, dumpout, mesgf, indexf, indexcmd);
 
 	dumpkeys = stralloc(level_str);
 	dumppid = pipespawn(progname, STDIN_PIPE,
@@ -249,7 +249,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 			     NULL);
 	info_tapeheader();
 
-	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
+	start_index(options->createindex, dumpout, mesgf, indexf, indexcmd);
 
 	dumppid = pipespawn(progname, STDIN_PIPE,
 			    &dumpin, &dumpout, &mesgf, 
@@ -290,7 +290,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 			     NULL);
 	info_tapeheader();
 
-	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
+	start_index(options->createindex, dumpout, mesgf, indexf, indexcmd);
 
 	dumppid = pipespawn(cmd, STDIN_PIPE,
 			    &dumpin, &dumpout, &mesgf, 
@@ -310,7 +310,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 #endif
 
 	dumpkeys = vstralloc(level_str,
-			     no_record ? "" : "u",
+			     options->no_record ? "" : "u",
 			     "s",
 #ifdef HAVE_HONOR_NODUMP
 			     "h",
@@ -327,7 +327,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 			     NULL);
 	info_tapeheader();
 
-	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
+	start_index(options->createindex, dumpout, mesgf, indexf, indexcmd);
 
 	dumppid = pipespawn(cmd, STDIN_PIPE,
 			    &dumpin, &dumpout, &mesgf, 
@@ -358,7 +358,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 			 NULL);
     info_tapeheader();
 
-    start_index(createindex, dumpout, mesgf, indexf, indexcmd);
+    start_index(options->createindex, dumpout, mesgf, indexf, indexcmd);
 
     dumppid = pipespawn(cmd, STDIN_PIPE,
 			&dumpin, &dumpout, &mesgf, 
@@ -380,7 +380,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
     aclose(dumpout);
     aclose(dataf);
     aclose(mesgf);
-    if (createindex)
+    if (options->createindex)
 	aclose(indexf);
 }
 

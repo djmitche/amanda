@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.56 2001/03/15 02:25:50 jrjackson Exp $
+ * $Id: sendbackup.c,v 1.57 2002/02/13 14:47:47 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -50,12 +50,7 @@ int datafd;
 int mesgfd;
 int indexfd;
 
-char *efile = NULL;
-char *estr = NULL;
-int compress, no_record, bsd_auth;
-int createindex;
-#define COMPR_FAST 1
-#define COMPR_BEST 2
+option_t *options;
 
 long dump_size = -1;
 
@@ -63,8 +58,7 @@ backup_program_t *program = NULL;
 
 /* local functions */
 int main P((int argc, char **argv));
-void parse_options P((char *str, char *disk));
-char *optionstr P((void));
+char *optionstr P((option_t *options));
 char *childstr P((int pid));
 int check_status P((int pid, amwait_t w));
 
@@ -75,104 +69,53 @@ static void process_dumpline P((char *str));
 static void index_closed P((int));
 static void save_fd P((int *, int));
 
-void parse_options(str, disk)
-char *str;
-char *disk;
-{
-    char *e, *i, *j, *k;
-    int ch;
-
-    /* only a few options, no need to get fancy */
-
-    if(strstr(str, "compress") != NULL) {
-	if(strstr(str, "compress-best") != NULL)
-	    compress = COMPR_BEST;
-	else
-	    compress = COMPR_FAST;	/* the default */
-    }
-
-    if((i=strstr(str, "exclude")) != NULL) {
-	if((j = strchr(i, '=')) != NULL && (k = strchr(j, ';')) != NULL) {
-	    j++;				/* advance to after the '=' */
-
-	    ch = k[1];				/* character after ';' */
-	    k[1] = '\0';
-	    estr = newstralloc(estr, i);	/* save the whole option */
-	    k[1] = ch;
-
-	    k[0] = '\0';			/* zap the ';' */
-
-#define sc "exclude-list"
-	    if(strncmp(sc, estr, sizeof(sc)-1) == 0) {
-		e = "-from";
-	    } else {
-		e = "";
-	    }
-#undef sc
-/* BEGIN HPS */
-	    if (*e != '\0')
-		{
-		  char *file = j;
-		  if(*file != '/')
-		  {
-			char *dirname = amname_to_dirname(disk);
-			efile = vstralloc(dirname,"/",file, NULL);
-		  }
-		  else
-			efile = stralloc(file);
-		  
-		  if(access(file, F_OK) != 0) {
-			/* if exclude list file does not exist, ignore it.
-			 * Should not test for R_OK, because the file may be
-			 * readable by root only! */
-			dbprintf(("%s: exclude list file \"%s\" does not exist, ignoring\n",
-				  get_pname(), file));
-			amfree(efile);
-		  }
-		  estr = NULL;
-	    } else
-/* END HPS */
-	    {
-		  estr = stralloc(j);
-		  amfree(efile);
-	    }
-	    k[0] = ';';
-	}
-    }
-
-    no_record = strstr(str, "no-record") != NULL;
-    bsd_auth = strstr(str, "bsd-auth") != NULL;
-    createindex = strstr(str, "index") != NULL;
-}
-
-char *optionstr()
+char *optionstr(options)
+option_t *options;
 {
     static char *optstr = NULL;
     char *compress_opt = "";
     char *record_opt = "";
     char *bsd_opt = "";
-    char *kencrypt_opt = "";
     char *index_opt = "";
+    char *exclude_file_opt;
+    char *exclude_list_opt;
+    char *exc = NULL;
+    sle_t *excl;
 
-    if(compress == COMPR_BEST)
+    if(options->compress == COMPR_BEST)
 	compress_opt = "compress-best;";
-    else if(compress == COMPR_FAST)
+    else if(options->compress == COMPR_FAST)
 	compress_opt = "compress-fast;";
-    if(no_record) record_opt = "no-record;";
-    if(bsd_auth) bsd_opt = "bsd-auth;";
-    if(createindex) index_opt = "index;";
+    if(options->no_record) record_opt = "no-record;";
+    if(options->bsd_auth) bsd_opt = "bsd-auth;";
+    if(options->createindex) index_opt = "index;";
 
+    exclude_file_opt = stralloc("");
+    if(options->exclude_file) {
+	for(excl = options->exclude_file->first; excl != NULL; excl=excl->next){
+	    exc = newvstralloc(exc, "exclude-file=", excl->name, ";", NULL);
+	    strappend(exclude_file_opt, exc);
+	}
+    }
+    exclude_list_opt = stralloc("");
+    if(options->exclude_list) {
+	for(excl = options->exclude_list->first; excl != NULL; excl=excl->next){
+	    exc = newvstralloc(exc, "exclude-list=", excl->name, ";", NULL);
+	    strappend(exclude_list_opt, exc);
+	}
+    }
     optstr = newvstralloc(optstr,
 			  ";",
 			  compress_opt,
 			  record_opt,
 			  bsd_opt,
-			  kencrypt_opt,
 			  index_opt,
-			  estr ? estr : "",
+			  exclude_file_opt,
+			  exclude_list_opt,
 			  NULL);
     return optstr;
 }
+
 
 int main(argc, argv)
 int argc;
@@ -180,7 +123,7 @@ char **argv;
 {
     int interactive = 0;
     int level, mesgpipe[2];
-    char *prog, *disk, *dumpdate, *options;
+    char *prog, *disk, *dumpdate, *stroptions;
     char *host;				/* my hostname from the server */
     char *line = NULL;
     char *err_extra = NULL;
@@ -324,13 +267,13 @@ char **argv;
 	err_extra = "bad options string";
 	goto err;				/* no options */
     }
-    options = s - 1;
+    stroptions = s - 1;
 
     dbprintf(("  parsed request as: program `%s'\n", prog));
     dbprintf(("                     disk `%s'\n", disk));
     dbprintf(("                     lev %d\n", level));
     dbprintf(("                     since %s\n", dumpdate));
-    dbprintf(("                     opt `%s'\n", options));
+    dbprintf(("                     opt `%s'\n", stroptions));
 
     {
       int i;
@@ -344,19 +287,19 @@ char **argv;
       }
     }
 
-    parse_options(options, disk);
+    options = parse_options(stroptions, disk, 0);
 
     if(!interactive) {
 	datafd = DATA_FD_OFFSET + 0;
 	mesgfd = DATA_FD_OFFSET + 1;
 	indexfd = DATA_FD_OFFSET + 2;
     }
-    if (!createindex)
+    if (!options->createindex)
 	indexfd = -1;
 
     printf("CONNECT DATA %d MESG %d INDEX %d\n",
 	   datafd, mesgfd, indexfd);
-    printf("OPTIONS %s\n", optionstr());
+    printf("OPTIONS %s\n", optionstr(options));
     freopen("/dev/null","w",stdout);
 
     if(interactive) {
@@ -370,7 +313,7 @@ char **argv;
     }
 
     if(!interactive) {
-      if(datafd == -1 || mesgfd == -1 || (createindex && indexfd == -1)) {
+      if(datafd == -1 || mesgfd == -1 || (options->createindex && indexfd == -1)) {
         dbclose();
         exit(1);
       }
@@ -428,7 +371,6 @@ int pid;
 {
     if(pid == dumppid) return program->backup_name;
     if(pid == comppid) return "compress";
-    if(pid == encpid)  return "kencrypt";
     if(pid == indexpid) return "index";
     return "unknown";
 }
@@ -534,7 +476,7 @@ void info_tapeheader()
     fprintf(stderr, "%s: info BACKUP=%s\n", get_pname(), program->backup_name);
 
     fprintf(stderr, "%s: info RECOVER_CMD=", get_pname());
-    if (compress)
+    if (options->compress)
 	fprintf(stderr, "%s %s |", UNCOMPRESS_PATH,
 #ifdef UNCOMPRESS_OPT
 		UNCOMPRESS_OPT
@@ -545,7 +487,7 @@ void info_tapeheader()
 
     fprintf(stderr, "%s -f... -\n", program->restore_name);
 
-    if (compress)
+    if (options->compress)
 	fprintf(stderr, "%s: info COMPRESS_SUFFIX=%s\n",
 			get_pname(), COMPRESS_SUFFIX);
 

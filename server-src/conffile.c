@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.85 2002/02/11 04:44:30 jrjackson Exp $
+ * $Id: conffile.c,v 1.86 2002/02/13 14:47:47 martinea Exp $
  *
  * read configuration file
  */
@@ -100,7 +100,7 @@ typedef enum {
     SKIP, STANDARD, NOFULL, NOINC, HANOI, INCRONLY,
 
     /* exclude list */
-    LIST,
+    LIST, EFILE, APPEND,
 
     /* numbers */
     INFINITY, MULT1, MULT7, MULT1K, MULT1M, MULT1G,
@@ -1368,8 +1368,8 @@ static void init_dumptype_defaults()
 {
     dpcur.comment = "";
     dpcur.program = "DUMP";
-    dpcur.exclude = (char *)0;
-    dpcur.exclude_list = 0;
+    dpcur.exclude_file = NULL;
+    dpcur.exclude_list = NULL;
     dpcur.priority = 1;
     dpcur.dumpcycle = conf_dumpcycle.i;
     dpcur.maxcycle = conf_maxcycle.i;
@@ -1391,7 +1391,8 @@ static void init_dumptype_defaults()
 
     dpcur.s_comment = 0;
     dpcur.s_program = 0;
-    dpcur.s_exclude = 0;
+    dpcur.s_exclude_file = 0;
+    dpcur.s_exclude_list = 0;
     dpcur.s_priority = 0;
     dpcur.s_dumpcycle = 0;
     dpcur.s_maxcycle = 0;
@@ -1444,8 +1445,8 @@ static void copy_dumptype()
 
     dtcopy(comment, s_comment);
     dtcopy(program, s_program);
-    dtcopy(exclude, s_exclude);
-    dtcopy(exclude_list, s_exclude);
+    dpcur.exclude_file = duplicate_sl(dt->exclude_file);
+    dpcur.exclude_list = duplicate_sl(dt->exclude_list);
     dtcopy(priority, s_priority);
     dtcopy(dumpcycle, s_dumpcycle);
     dtcopy(maxcycle, s_maxcycle);
@@ -1771,16 +1772,14 @@ static void get_dumpopts() /* XXX - for historical compatability */
 	switch(tok) {
 	case COMPRESS:   ckseen(&dpcur.s_compress);  dpcur.compress = COMP_FAST; break;
 	case EXCLUDE_FILE:
-	    ckseen(&dpcur.s_exclude);
+	    ckseen(&dpcur.s_exclude_file);
 	    get_conftoken(STRING);
-	    dpcur.exclude = stralloc(tokenval.s);
-	    dpcur.exclude_list = 0;
+	    dpcur.exclude_file = append_sl(dpcur.exclude_file, stralloc(tokenval.s));
 	    break;
 	case EXCLUDE_LIST:
-	    ckseen(&dpcur.s_exclude);
+	    ckseen(&dpcur.s_exclude_list);
 	    get_conftoken(STRING);
-	    dpcur.exclude = stralloc(tokenval.s);
-	    dpcur.exclude_list = 1;
+	    dpcur.exclude_list = append_sl(dpcur.exclude_list, stralloc(tokenval.s));
 	    break;
 	case KENCRYPT:   ckseen(&dpcur.s_kencrypt);  dpcur.kencrypt = 1; break;
 	case SKIP_INCR:  ckseen(&dpcur.s_skip_incr); dpcur.skip_incr= 1; break;
@@ -1977,39 +1976,55 @@ static void get_strategy()
 
 keytab_t exclude_keytable[] = {
     { "LIST", LIST },
+    { "FILE", EFILE },
+    { "APPEND", APPEND },
     { NULL, IDENT }
 };
 
 static void get_exclude()
 {
-    char *excl;
-    int excl_list;
+    int list, got_one = 0;
     keytab_t *save_kt;
+    sl_t *exclude;
 
     save_kt = keytable;
     keytable = exclude_keytable;
 
-    ckseen(&dpcur.s_exclude);
-
     get_conftoken(ANY);
-    switch(tok) {
-    case STRING:
-	excl = stralloc(tokenval.s);
-	excl_list = 0;
-	break;
-    case LIST:
-	get_conftoken(STRING);
-	excl = stralloc(tokenval.s);
-	excl_list = 1;
-	break;
-    default:
-	parserror("a quoted string expected");
-	excl = (char *)0;
-	excl_list = 0;
+    if(tok == LIST) {
+	list = 1;
+	exclude = dpcur.exclude_list;
+	ckseen(&dpcur.s_exclude_list);
+	get_conftoken(ANY);
+    }
+    else {
+	list = 0;
+	exclude = dpcur.exclude_file;
+	ckseen(&dpcur.s_exclude_file);
+	if(tok == EFILE) get_conftoken(ANY);
     }
 
-    dpcur.exclude = excl;
-    dpcur.exclude_list = excl_list;
+    if(tok == APPEND) {
+	get_conftoken(ANY);
+    }
+    else {
+	free_sl(exclude);
+	exclude = NULL;
+    }
+
+    while(tok == STRING) {
+	exclude = append_sl(exclude, tokenval.s);
+	got_one = 1;
+	get_conftoken(ANY);
+    }
+    unget_conftoken();
+
+    if(got_one == 0) { free_sl(exclude); exclude = NULL; }
+
+    if(list == 0)
+	dpcur.exclude_file = exclude;
+    else
+	dpcur.exclude_list = exclude;
 
     keytable = save_kt;
 }
