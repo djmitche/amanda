@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: genversion.c,v 1.7 1997/08/27 08:12:00 amcore Exp $
+ * $Id: genversion.c,v 1.8 1997/08/29 17:56:08 amcore Exp $
  *
  * dump the current Amanda version info
  */
@@ -154,19 +154,19 @@ int main()
 #ifdef HAVE_SYSVSHM
     prstr(" HAVE_SYSVSHM");
 #endif
-#ifdef HAVE_POSIX_FCNTL
+#ifdef USE_POSIX_FCNTL
     prstr(" LOCKING=POSIX_FCNTL");
 #endif
-#ifdef HAVE_FLOCK
+#ifdef USE_FLOCK
     prstr(" LOCKING=FLOCK");
 #endif
-#ifdef HAVE_LOCKF
+#ifdef USE_LOCKF
     prstr(" LOCKING=LOCKF");
 #endif
-#ifdef HAVE_LNLOCK
+#ifdef USE_LNLOCK
     prstr(" LOCKING=LNLOCK");
 #endif
-#if !defined(HAVE_POSIX_FCNTL) && !defined(HAVE_FLOCK) && !defined(HAVE_LOCK) && !defined(HAVE_LNLOCK)
+#if !defined(USE_POSIX_FCNTL) && !defined(USE_FLOCK) && !defined(USE_LOCK) && !defined(USE_LNLOCK)
     prstr(" LOCKING=**NONE**");
 #endif
 #ifdef OSF1_VDUMP

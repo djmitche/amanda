@@ -1,3 +1,6 @@
+	genversion now correctly recognizes the selected locking scheme.
+	-Thomas Schmeidl <schmeidl@nwp.kwu.siemens.de>
+
 Version 2.4.0b2
 
 	Several bugfixes by John R. Jackson <jrj@cc.purdue.edu>
