@@ -1,3 +1,5 @@
+Please read the CHANGES file for news since release 2.3.0.4
+
 Changes in release 2.3.0.4
 * New chg-generic.conf option 'multieject' added which lets
   chg-generic work on tape drives that need multiple 'mt offline'
