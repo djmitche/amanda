@@ -20,11 +20,11 @@
 # N.B.  amrmtape must be run as a user that can read the tape database
 # files and rewrite them.
 #
-# Usage: amrmtape [-q] [-v] [-n] [-d] <configuration> <tape name>
-#          -v Verbose mode.  Enabled by default.
-#          -q Quiet (opposite of -v).
+# Usage: amrmtape [-n] [-v] [-q] [-d] <configuration> <label>
 #          -n Do nothing to original files, leave new ones in --with-tmpdir
 #	      directory.
+#          -v Verbose mode.  Enabled by default.
+#          -q Quiet (opposite of -v).
 #          -d Enable debug tracing.
 #
 # Credits: The what-to-do algorithm was provided by Cedric Scott,
@@ -205,9 +205,10 @@ log () {
 
 
 usage () {
-  echo "${Program} [-v] [-n] [-d] <configuration> <tape name>"
-  echo "  -v Verbose mode."
+  echo "${Program} [-n] [-v] [-q] [-d] <configuration> <label>"
   echo "  -n Do nothing to original files, leave new ones in database directory."
+  echo "  -v Verbose, list backups of hosts and disks that are being discarded."
+  echo "  -q Quiet, opposite of -v."
   echo "  -d Enable debug tracing."  
   echo "This program allows you to invalidate the contents of an existing"
   echo "backup tape within the Amanda current tape database.  This is meant as"

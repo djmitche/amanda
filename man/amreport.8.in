@@ -31,24 +31,14 @@ amreport \- generate a formatted output of statistics for an amdump run
 generates a summary report of an
 .IR amanda (8)
 backup run.  If no configuration name is specified, amanda.conf is
-read from the current directory, and log files are rotated, i.e.,
-after the report is generated, the log file
-.I log
-will be renamed to 
-\fIlog\fP.\fIdate\fP.\fIversion\fP
-where 
-.I date
-is the current date in the form YYYYMMDD and
-.I version
-is the next higher version of the logfile with the same date stamp 
-starting with 0.
+read from the current directory.
 .LP
 See the
 .IR amanda (8)
 man page for more details about Amanda.
 .SH OPTIONS
 .TP
-.OP config
+.I config
 Name of the configuration to process.
 .TP
 .OP -l "log file"
@@ -129,8 +119,3 @@ It may be used to make a hardcopy log of the tapes.
 .SH "SEE ALSO"
 amanda(8),
 amflush(8)
-.SH BUGS
-The function of rotating logs probably should not be part of
-.B amreport
-since it is a different funtion and really has nothing to
-do with generating the report.

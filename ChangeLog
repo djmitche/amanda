@@ -1,5 +1,13 @@
 2000-09-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* man/amreport.8.in: amreport does not rotate the log.
+	* man/amrestore.8: note on holdingdisk.
+	* restore-src/amrestore.c: update usage.
+	* server-src/amrmtape.sh.in: update usage.
+	* server-src/amverify.sh.in.usage: update usage.
+
+2000-09-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amoverview.pl.in: update usage information,
 	-config is no longer needed for ccompatibility with other program.
 	* man/amoverview.8.in: -config is no longer needed.
@@ -952,7 +960,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.371 2000/09/24 18:01:02 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.372 2000/09/24 22:35:33 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
