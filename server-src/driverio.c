@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.31 1998/05/05 21:47:43 martinea Exp $
+ * $Id: driverio.c,v 1.32 1998/06/01 19:19:18 jrj Exp $
  *
  * I/O-related functions for driver program
  */
@@ -270,7 +270,8 @@ disk_t *dp;
     switch(cmd) {
     case FILE_DUMP:
 	ap_snprintf(number, sizeof(number), "%d", sched(dp)->level);
-	ap_snprintf(chunksize, sizeof(chunksize), "%d", sched(dp)->holdp->chunksize);
+	ap_snprintf(chunksize, sizeof(chunksize), "%ld",
+		    (long)sched(dp)->holdp->chunksize);
 	o = optionstr(dp);
 	cmdline = vstralloc(cmdstr[cmd],
 			    " ", disk2serial(dp),
