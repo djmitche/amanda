@@ -4,7 +4,7 @@ amtoc \- generate TOC (Table Of Content) for an amanda run
 .SH SYNOPSIS
 .B
 .I amtoc
-[-a] [-f file] [-s subs] [--] logfile
+[-a] [-i] [-t] [-f file] [-s subs] [--] logfile
 
 .br
 .SH DESCRIPTION
@@ -16,6 +16,12 @@ It's a perl script (If you don't have perl, install it first!).
 .TP
 .B \-a
 output file name defined to `label_of_the_tape`.toc. In the same directory of logfile.
+.TP
+.B \-i
+include a little help on top of TOC
+.TP
+.B \-t
+output in tabular format
 .TP
 .B \-f file
 write output to file ('-' for stdout)
@@ -30,22 +36,39 @@ last option, next parameter used as logfile
 use '-' for stdin.
 
 .SH OUTPUT FORMAT
-4 fields separated by two spaces. exemple:
-
-.RS
-#  Server:/partition  level  size[Kb]
+5 fields separated by two spaces. exemple (std format):
 .br
-0  all-26.janvier.1999:  -  -
+#  Server:/partition  date  level  size[Kb]
 .br
-1  cuisun49:/cuisun49/home  0  288
+0  daily-05:  19991005  -  -
 .br
-2  cuisun31:/cuisun31/home  0  29216
+1  cuisun15:/cuisun15/home  19991005  1  96
+.br
+2  cuinfs:/export/dentiste  19991005  1  96
 .br
   ...
 .br
-51  total:  -  35796768
+103  cuisg11:/  19991005  0  4139136
 .br
-.RE
+103  total:  -  -  16716288
+.br
+
+or in tabular format
+.br
+  #  Server:/partition           date      lev  size[Kb]
+.br
+  0  daily-05:                   19991005    -         -
+.br
+  1  cuisun15:/cuisun15/home     19991005    1        96
+.br
+  2  cuinfs:/export/dentiste     19991005    1        96
+.br
+  ...
+.br
+103  cuisg11:/                   19991005    0   4139136
+.br
+103  total:                      -           -  16716288
+.br
 
 .SH USAGE
 The easiest way to use it, is to patch

@@ -4,11 +4,45 @@
 
 # Author: Nicolas.Mayencourt@cui.unige.ch
 
+# release 3.1.2
+
+# HISTORY
+# 1.0 19??-??-?? nicolas@cui.unige.ch
+#	don't remember :-)
+# 2.0 1996-??-?? nicolas@cui.unige.ch
+#	amanda 2.2.6 support
+# 3.0 1999-02-17 Nicolas.Mayencourt@cui.unige.ch
+#	major rewrite, incompatible with release 2.0, amanda 2.4 support
+# 3.0.1 1999-02-17 oliva@dcc.unicamp.br
+#	minor fixes for multi-tape runs
+# 3.0.2 1999-02-28 martineau@IRO.UMontreal.CA
+#	output the datestamp of each dump
+# 3.0.3 1999-09-01 jrj@purdue.edu
+#	allow multiple -s entries
+# 3.0.4 1999-09-15 jrj@purdue.edu
+#	handle an image failing on one tape...
+# 3.1.0 1999-10-06 Nicolas.Mayencourt@cui.unige.ch
+#	add new options (-i -t)
+# 3.1.1 1999-10-08 Nicolas.Mayencourt@cui.unige.ch
+#	print original size, instead of size-on-tape
+# 3.1.2 1999-10-11 Nicolas.Mayencourt@cui.unige.ch
+#	really print original size, instead of size-on-tape
+
 #--------------------------------------------------------
 sub pr($$$$$$) { 
 # you can update these proc if you want another formating
-# format: filenumber  host:part  level  size
-  print $OF "$_[0]  $_[1]:$_[2]  $_[3]  $_[4]  $_[5]\n";
+# format: filenumber  host:part  date  level  size
+# If you use tabular option, modifie the format at the end of the code
+  if (defined($tabular)) {
+	$fnbr=$_[0];
+	$hstprt=$_[1] . ":" . $_[2];
+	$dt=$_[3];
+	$lvl=$_[4];
+	$sz=$_[5];
+    write($OF);
+  } else {
+    print $OF "$_[0]  $_[1]:$_[2]  $_[3]  $_[4]  $_[5]\n";
+  }
 }
 #--------------------------------------------------------
 
@@ -29,10 +63,12 @@ sub tfn($) {
 #--------------------------------------------------------
 sub usage($) {
   print STDERR "@_\n\n";
-  print STDERR "usage: amtoc [-a] [-f file] [-s subs] [--] logfile\n";
+  print STDERR "usage: amtoc [-a] [-i] [-t] [-f file] [-s subs] [--] logfile\n";
   print STDERR "         -a      : file output to `label`.toc\n";
-  print STDERR "         -f file : file output to file\n";
-  print STDERR "         -s subs : file output evaluated to `eval \$subs`\n";
+  print STDERR "         -i      : Start TOC with a small help message\n";
+  print STDERR "         -t      : tabular output\n";
+  print STDERR "         -f file : output to file\n";
+  print STDERR "         -s subs : output file name evaluated to `eval \$subs`\n";
   print STDERR "         --      : last option\n";
   print STDERR "         logfile : input file ('-' for stdin)\n";
   exit;
@@ -47,6 +83,12 @@ sub init() {
   for ($i=0;$i<=$#ARGV;$i++) {
     if ($ARGV[$i] eq '-a') {
         push (@subs, "s/\$/.toc/");
+      }
+    elsif ($ARGV[$i] eq '-i') {
+        $info=1;
+      }
+    elsif ($ARGV[$i] eq '-t') {
+        $tabular=1;
       }
     elsif ($ARGV[$i] eq '-f') {
         $i++;
@@ -85,17 +127,26 @@ if ($logfile eq '-') {$IF=STDIN} else
   {die ("Cannot open logfile $logfile") unless open (IF,"$logfile");$IF=IF;}
 
 $filenumber=0;
+$tot_or_size=0;
 
 while ( <$IF> ) {
+  $line = $_;
   if ( /^FAIL dumper (\S+) (\S+)/ ) {
-    $fail{$1}{$2} = 1;
     next;
   }
   if ( /^SUCCESS dumper (\S+) (\S+)/ ) {
-    $fail{$1}{$2} = 0;
+    $host = $1;
+    $part = $2;
+    $line =~ /orig-kb (\d+)/;
+    $osize{$host}{$part} = $1;
+    $tot_or_size += $osize{$host}{$part};
+    $fail{$host}{$part} = 0;
     next;
   }
-  $line = $_;
+  if ( /^START amflush/ ) {
+    $flash_mode = 1;
+    next;
+  }
   if ( ! /^([A-Z]+) taper (\S+) (\S+) (\S+) (\S+)/) { next;}
   # $_ = $1;
   $host = $2;
@@ -110,6 +161,17 @@ while ( <$IF> ) {
           die ("Cannot open tocfile $tocfilename") unless open(OF,">$tocfilename");
           $OF=OF;
         }
+
+	if (defined($info)) {
+	  print $OF "AMANDA: To restore:\n";
+	  print $OF "    position tape at start of file and run:\n";
+	  print $OF "        dd if=<tape> bs=32k skip=1 [ | zcat ] | restore -...f\n";
+	  print $OF "    or run: amrestore -p <tape> [host [partition]] | restore -...f\n";
+	  print $OF "\n";
+	}
+
+
+
       $filenumber=0;
       &pr("#","Server","/partition","date", "level","size[Kb]");
       &pr("$filenumber","$level","","$part","-","-");
@@ -119,7 +181,16 @@ while ( <$IF> ) {
       if ( $fail{$host}{$part} ) {
         &pr("$filenumber","${host}","${part}","${date}","${level}","FAIL");
       } else {
-        &pr("$filenumber","${host}","${part}","${date}","${level}","$1");
+  	if (defined($flash_mode)) {
+          &pr("$filenumber","${host}","${part}","${date}","${level}","$1");
+	} else {
+  	  if (defined($osize{$host}{$part})) {
+            &pr("$filenumber","${host}","${part}","${date}","${level}","$osize{$host}{$part}");
+	  } else {
+		# this case should never happend: 
+            &pr("$filenumber","${host}","${part}","${date}","${level}","*$1");
+	  }
+	}
       }
       last switch;};
     /INFO taper retrying/ && do {
@@ -129,7 +200,12 @@ while ( <$IF> ) {
       $line =~ / kb (\d+) /;
       $size = $1;
       $line =~ / fm (\d+) /;
-      &pr("$1","total","","-","-","$size");
+      &pr("$1","total","on_tape","-","-","$size");
+      if (defined($flash_mode)) {
+	&pr("$1","total","origin","-","not","available");
+      } else {
+	&pr("$1","total","origin","-","-","$tot_or_size");
+      }
       last switch; };
     /FAIL taper/ && do { next; };
   }
@@ -137,3 +213,14 @@ while ( <$IF> ) {
 }
 close $IF;
 close OF;
+
+
+format OF =
+@>>  @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< @<<<<<<<< @>> @>>>>>>>>
+$fnbr,$hstprt,$dt,$lvl,$sz
+.
+
+format STDOUT =
+@>>  @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< @<<<<<<<< @>> @>>>>>>>>
+$fnbr,$hstprt,$dt,$lvl,$sz
+.

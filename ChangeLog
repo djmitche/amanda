@@ -1,3 +1,8 @@
+1999-10-11  Nicolas Mayencourt  <Nicolas.Mayencourt@cui.unige.ch>
+
+	* server-src/amtoc.pl.in: Add new options -i and -t.  Print original
+	size, instead of size on tape.
+
 1999-10-07 John R. Jackson  <jrj@purdue.edu>
 
 	* common-src/stream.c (stream_server): remove reference to portrange
@@ -542,7 +547,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.293 1999/10/07 18:31:01 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.294 1999/10/11 10:33:46 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
