@@ -1,3 +1,8 @@
+2001-02-03 John R. Jackson <jrj@purdue.edu>
+
+	* .cvsignore: Add entries to keep CVS quiet.
+	* */.cvsignore: Ditto.
+
 2001-02-02 John R. Jackson <jrj@purdue.edu>
 
 	* server-src/reporter.c: Fix problem with enum being unsigned on

@@ -1,8 +1,9 @@
+Makefile
+Makefile.in
 acinclude.m4
 aclocal.m4
-configure
-Makefile.in
-Makefile
 config.cache
 config.log
 config.status
+configure
+libtool
