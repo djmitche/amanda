@@ -172,21 +172,104 @@ generic_fsent_t *fsent;
 
 #endif /* } */
 
-int search_fstab(fsname, mntdir, fsent)
-char *fsname, *mntdir;
+#ifdef DEV_ROOT
+static char dev_root[] = "/dev/root";
+static char dev_rroot[] = "/dev/rroot";
+#endif
+
+static char *dev2rdev(name)
+char *name;
+{
+  static char fname[1024];
+  
+  if (strncmp(name, DEV_PREFIX, strlen(DEV_PREFIX)) == 0)
+    sprintf(fname, "%s%s", RDEV_PREFIX, name+strlen(DEV_PREFIX));
+#ifdef DEV_ROOT
+  else if (strncmp(name, dev_root, strlen(dev_root)) == 0)
+    sprintf(fname, "%s%s", dev_rroot, name+strlen(dev_root));
+#endif
+  else
+    return name;
+
+  return fname;
+}  
+
+static char *rdev2dev2rdev(name)
+char *name;
+{
+  static char fname[1024];
+  if (strncmp(name, RDEV_PREFIX, strlen(RDEV_PREFIX)) == 0)
+    sprintf(fname, "%s%s", DEV_PREFIX, name+strlen(RDEV_PREFIX));
+#ifdef DEV_ROOT
+  else if (strncmp(name, dev_rroot, strlen(dev_rroot)) == 0)
+    sprintf(fname, "%s%s", dev_root, name+strlen(dev_rroot));
+#endif
+  else
+    return dev2rdev(name);
+
+  return fname;
+}
+
+static int samefile(stats, estat)
+struct stat stats[3], *estat;
+{
+  int i;
+  for(i = 0; i < 3; ++i) {
+    if (stats[i].st_dev == -1)
+      continue;
+    if (stats[i].st_dev == estat->st_dev &&
+	stats[i].st_ino == estat->st_ino)
+      return 1;
+  }
+  return 0;
+}
+
+int search_fstab(name, fsent)
+char *name;
 generic_fsent_t *fsent;
 {
-    int fsname_ok, mntdir_ok;
+  struct stat stats[3];
+  char fullname[1024];
 
-    while(get_fstab_nextentry(fsent)) {
-	fsname_ok = fsname == NULL || fsent->fsname == NULL ||
-	            !strcmp(fsname, fsent->fsname);
-	mntdir_ok = mntdir == NULL || fsent->mntdir == NULL ||
-	            !strcmp(mntdir, fsent->mntdir);
-	if(mntdir_ok && fsname_ok)
-	    return 1;
-    }
+  if (!name)
     return 0;
+
+  stats[0].st_dev = stats[1].st_dev = stats[2].st_dev = -1;
+
+  if (stat(name, &stats[0]) == -1)
+    stats[0].st_dev = -1;
+  if (name[0] != '/') {
+    sprintf(fullname, "%s%s", DEV_PREFIX, name);
+    if (stat(fullname, &stats[1]) == -1)
+      stats[1].st_dev = -1;
+    sprintf(fullname, "%s%s", RDEV_PREFIX, name);
+    if (stat(fullname, &stats[2]) == -1)
+      stats[2].st_dev = -1;
+  }
+  else if (stat(rdev2dev2rdev(name), &stats[1]) == -1)
+    stats[1].st_dev = -1;
+  
+  if (!open_fstab())
+    return 0;
+  
+  while(get_fstab_nextentry(fsent)) {
+    struct stat estat;
+    if ((fsent->mntdir != NULL
+	 && stat(fsent->mntdir, &estat) != -1
+	 && samefile(stats, &estat)) ||
+	(fsent->fsname != NULL
+	 && stat(fsent->fsname, &estat) != -1
+	 && samefile(stats, &estat)) ||
+	(fsent->fsname != NULL
+	 && stat(rdev2dev2rdev(fsent->fsname), &estat) != -1
+	 && samefile(stats, &estat))) {
+      close_fstab();
+      return 1;
+    }
+  }
+
+  close_fstab();
+  return 0;
 }
 
 int is_local_fstype(fsent)
@@ -209,56 +292,25 @@ char *amname_to_devname(str)
 char *str;
 {
     generic_fsent_t fsent;
-    static char devname[1024];
 
-    if(str[0] != '/') {
-	sprintf(devname, "%s%s", RDEV_PREFIX, str);
-    }
-    else {
-	if(!open_fstab())
-	    return str;
-	if(!search_fstab(NULL, str, &fsent) || fsent.fsname == NULL) {
-	    close_fstab();
-	    return str;
-	}
-
-	/* convert block to raw */
-	if(!strncmp(fsent.fsname, DEV_PREFIX, strlen(DEV_PREFIX)))
-	    sprintf(devname, "%s%s", RDEV_PREFIX, 
-		    fsent.fsname + strlen(DEV_PREFIX));
-	else
-	    strcpy(devname, fsent.fsname);
-	close_fstab();
-
-    }
-
-    return devname;
+    if(search_fstab(str, &fsent))
+      if (fsent.fsname != NULL)
+	str = fsent.fsname;
+    
+    return dev2rdev(str);
 }
 
 char *amname_to_dirname(str)
 char *str;
 {
     generic_fsent_t fsent;
-    char devname[1024];
     static char dirname[1024];
 
-    if(str[0] == '/') {
-	strcpy(dirname, str);
-    }
-    else {
-	sprintf(devname, "%s%s", DEV_PREFIX, str);
+    if(search_fstab(str, &fsent))
+      if (fsent.mntdir != NULL)
+	str = fsent.mntdir;
 
-	if(!open_fstab())
-	    return str;
-	if(!search_fstab(devname, NULL, &fsent) || fsent.mntdir == NULL) {
-	    close_fstab();  
-	    return str;
-	}
-
-	strcpy(dirname, fsent.mntdir);
-	close_fstab();
-
-    }
+    strcpy(dirname, str);
     return dirname;
 }
 
@@ -268,21 +320,10 @@ char *str;
     generic_fsent_t fsent;
     static char fstype[1024];
 
-    if(!open_fstab())
-       return "";
-    if(!search_fstab(str, NULL, &fsent) || fsent.mntdir == NULL) {
-       close_fstab();  
-       if(!open_fstab())
-          return "";
-       if(!search_fstab(NULL, str, &fsent) || fsent.mntdir == NULL) {
-          close_fstab();  
-          return "";
-       }
-    }
+    if (!search_fstab(str, &fsent))
+      return "";
 
     strcpy(fstype, fsent.fstype);
-    close_fstab();
-
     return fstype;
 }
 
@@ -314,12 +355,9 @@ int main()
     }
     printf("--------\n");
 
-    if(!open_fstab()) {
-	fprintf(stderr, "getfsent_test: could not open fstab\n");
-	return 1;
-    }
-
-    if(search_fstab(NULL, "/usr", &fsent)) {
+    close_fstab();
+    
+    if(search_fstab("/usr", &fsent)) {
 	printf("Found %s mount for /usr:\n",
 	       is_local_fstype(&fsent)? "local" : "remote");
 	print_entry(&fsent);
@@ -327,11 +365,17 @@ int main()
     else 
 	printf("Mount for /usr not found\n");
 
-    close_fstab();
-
     printf("fstype of `/': %s\n", amname_to_fstype("/"));
     printf("fstype of `/dev/root': %s\n", amname_to_fstype("/dev/root"));
     printf("fstype of `/usr': %s\n", amname_to_fstype("/usr"));
+    printf("fstype of `c0t3d0s0': %s\n", amname_to_fstype("c0t3d0s0"));
+
+    printf("device of `/tmp/foo': %s\n", amname_to_devname("/tmp/foo"));
+    printf("dirname of `/tmp/foo': %s\n", amname_to_dirname("/tmp/foo"));
+    printf("fstype of `/tmp/foo': %s\n", amname_to_fstype("/tmp/foo"));
+    printf("device of `./foo': %s\n", amname_to_devname("./foo"));
+    printf("dirname of `./foo': %s\n", amname_to_dirname("./foo"));
+    printf("fstype of `./foo': %s\n", amname_to_fstype("./foo"));
 
     return 0;
 }

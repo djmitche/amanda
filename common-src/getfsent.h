@@ -50,7 +50,7 @@ int open_fstab P((void));
 void close_fstab P((void));
 
 int get_fstab_nextentry P((generic_fsent_t *fsent));
-int search_fstab P((char *fsname, char *mntdir, generic_fsent_t *fsent));
+int search_fstab P((char *name, generic_fsent_t *fsent));
 int is_local_fstype P((generic_fsent_t *fsent));
 
 char *amname_to_devname P((char *str));

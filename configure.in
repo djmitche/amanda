@@ -1317,7 +1317,7 @@ ICE_CHECK_DECL(pclose,stdio.h)
 ICE_CHECK_DECL(perror,stdio.h)
 ICE_CHECK_DECL(printf,stdio.h)
 ICE_CHECK_DECL(puts,stdio.h)
-ICE_CHECK_DECL(recvfrom,sys/types sys/socket.h)
+ICE_CHECK_DECL(recvfrom,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(remove,stdio.h)
 ICE_CHECK_DECL(rename,stdio.h)
 ICE_CHECK_DECL(rewind,stdio.h)
@@ -1453,6 +1453,14 @@ fi
 
 AC_DEFINE_UNQUOTED(DEV_PREFIX,"${DEV_PREFIX}")
 AC_DEFINE_UNQUOTED(RDEV_PREFIX,"${RDEV_PREFIX}")
+
+AC_MSG_CHECKING(whether /dev/root and /dev/rroot exist)
+if [[ -b /dev/root ] && [ -c /dev/rroot ]]; then
+    AC_DEFINE_UNQUOTED(DEV_ROOT)
+    AC_MSG_RESULT(yes)
+else
+    AC_MSG_RESULT(no)
+fi
 
 case $mount in
     /dev/vg*)

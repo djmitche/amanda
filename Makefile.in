@@ -165,7 +165,7 @@ stamp-h: $(CONFIG_HEADER_IN) $(top_builddir)/config.status
 	  && CONFIG_FILES= CONFIG_HEADERS=$(CONFIG_HEADER_FULL) \
 	     $(SHELL) ./config.status
 	@echo timestamp > stamp-h
-$(srcdir)/$(CONFIG_HEADER_IN): stamp-h.in
+$(srcdir)/$(CONFIG_HEADER_IN): $(srcdir)/stamp-h.in
 $(srcdir)/stamp-h.in: $(top_srcdir)/configure.in $(ACLOCAL_M4) acconfig.h
 	cd $(top_srcdir) && $(AUTOHEADER)
 	echo timestamp > $(srcdir)/stamp-h.in

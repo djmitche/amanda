@@ -34,9 +34,12 @@ noinst_HEADERS =	amanda.h	amandates.h	arglist.h	\
 	cat $< > $@
 	chmod a+x $@
 
-version.c:	genversion.c versuff.c version.h
+version.c:	$(srcdir)/genversion.c versuff.c $(srcdir)/version.h
 	$(COMPILE) -DCC="\"$(CC)\"" -DBUILT_DATE="\"`date`\"" -DBUILT_MACH="\"`uname -a`\"" -c $(srcdir)/genversion.c
-	$(COMPILE) -c $(srcdir)/versuff.c
+	$(COMPILE) -c versuff.c
 	 $(CC) $(LDFLAGS) genversion.o versuff.o -o genversion
 	./genversion > version.c
 	rm -f genversion genversion.o versuff.o
+
+getfsent: $(srcdir)/getfsent.c $(srcdir)/getfsent.h
+	$(CC) $(LDFLAGS) -DTEST -I.. -g $(srcdir)/getfsent.c -o getfsent

@@ -131,6 +131,9 @@
 /* Define as the prefix for raw disk devices, commonly /dev/r or /dev/rdsk/  */
 #undef RDEV_PREFIX
 
+/* Define if /dev/root-/dev/rroot support is intended */
+#undef DEV_ROOT
+
 /* Define to use BSD .rhosts security.  */
 #undef BSD_SECURITY
 

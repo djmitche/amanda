@@ -10505,8 +10505,8 @@ fi
 done
 
 if test "${ice_have_recvfrom}" = yes; then
-echo $ac_n "checking for recvfrom declaration in sys/types sys/socket.h""... $ac_c" 1>&6
-echo "configure:10510: checking for recvfrom declaration in sys/types sys/socket.h" >&5
+echo $ac_n "checking for recvfrom declaration in sys/types.h sys/socket.h""... $ac_c" 1>&6
+echo "configure:10510: checking for recvfrom declaration in sys/types.h sys/socket.h" >&5
 if eval "test \"`echo '$''{'ice_cv_have_recvfrom_decl'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -10514,7 +10514,7 @@ else
 ice_cv_have_recvfrom_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
 ice_re_word='(^|[^a-zA-Z0-9_])'
-for header in sys/types sys/socket.h; do
+for header in sys/types.h sys/socket.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
 #line 10521 "configure"
@@ -14592,13 +14592,25 @@ cat >> confdefs.h <<EOF
 EOF
 
 
+echo $ac_n "checking whether /dev/root and /dev/rroot exist""... $ac_c" 1>&6
+echo "configure:14597: checking whether /dev/root and /dev/rroot exist" >&5
+if [ -b /dev/root ] && [ -c /dev/rroot ]; then
+  cat >> confdefs.h <<EOF
+#define DEV_ROOT 1
+EOF
+
+  echo "$ac_t""yes" 1>&6
+else
+  echo "$ac_t""no" 1>&6
+fi
+
 case $mount in
     /dev/vg*)
 	echo "configure: warning: "*** Run amhpfixdevs on HP-UX systems using /dev/vg??."" 1>&2
 	;;
 esac
 echo $ac_n "checking maximum file size""... $ac_c" 1>&6
-echo "configure:14602: checking maximum file size" >&5
+echo "configure:14614: checking maximum file size" >&5
 if eval "test \"`echo '$''{'amanda_cv_max_file_size'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -14643,7 +14655,7 @@ EOF
 fi
 
 echo $ac_n "checking whether posix fcntl flock works""... $ac_c" 1>&6
-echo "configure:14647: checking whether posix fcntl flock works" >&5
+echo "configure:14659: checking whether posix fcntl flock works" >&5
 if eval "test \"`echo '$''{'amanda_cv_posix_filelocking'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -14712,7 +14724,7 @@ fi
 
 if test -z "$HAS_RUNNING_FLOCK"; then
 echo $ac_n "checking whether flock works""... $ac_c" 1>&6
-echo "configure:14716: checking whether flock works" >&5
+echo "configure:14728: checking whether flock works" >&5
 rm -f conftest.$ac_ext
 cat <<EOF >conftest.$ac_ext
 #include "confdefs.h"
@@ -14766,7 +14778,7 @@ fi
 
 if test -z "$HAS_RUNNING_FLOCK"; then
 echo $ac_n "checking whether an lockf flock replacement works""... $ac_c" 1>&6
-echo "configure:14770: checking whether an lockf flock replacement works" >&5
+echo "configure:14782: checking whether an lockf flock replacement works" >&5
 rm -f conftest.$ac_ext
 cat <<EOF >conftest.$ac_ext
 #include "confdefs.h"
