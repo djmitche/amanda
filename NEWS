@@ -27,7 +27,7 @@ Changes in release 2.4.1
   (but they won't span across tapes yet).
 * A total estimate time-out may be specified.
 * Fixed skip-incr and skip-full support.
-* amcheck now accents -Maddress to send e-mail to the specified address.
+* amcheck now accepts -Maddress to send e-mail to the specified address.
 * amdump, amflush and amcheck will use the log files as locks, so as
   to avoid running concurrently.
 * driver now supports configurable level-0 dumps in degraded mode via
