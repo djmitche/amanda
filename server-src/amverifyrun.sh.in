@@ -55,4 +55,8 @@ fi
 
 NBTAPES=`grep -c "taper: wrote label " $AMLOG`
 
-$AMVERIFY $CONFIG $FIRST_SLOT $NBTAPES
+if [ X"$NBTAPES" != X"0" ]; then
+  $AMVERIFY $CONFIG $FIRST_SLOT $NBTAPES
+else
+  echo "Nothing to verify"
+fi
