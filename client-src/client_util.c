@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.1.2.4 2002/02/15 14:19:53 martinea Exp $
+ * $Id: client_util.c,v 1.1.2.5 2002/02/15 17:59:20 martinea Exp $
  *
  */
 
@@ -201,9 +201,9 @@ int verbose;
 	for(excl = options->exclude_list->first; excl != NULL;
 	    excl = excl->next) {
 	    exclude = fopen(excl->name, "r");
-	    while (!feof(file_exclude)) {
-		fgets(aexc, MAXPATHLEN, exclude); /* \n might not be there */
-		add_exclude(file_exclude, aexc, verbose);
+	    while (!feof(exclude)) {
+		if(fgets(aexc, MAXPATHLEN, exclude))
+		    add_exclude(file_exclude, aexc, verbose);
 	    }
 	    fclose(exclude);
 	}
@@ -247,9 +247,9 @@ int verbose;
 	for(incl = options->include_list->first; incl != NULL;
 	    incl = incl->next) {
 	    include = fopen(incl->name, "r");
-	    while (!feof(file_include)) {
-		fgets(ainc, MAXPATHLEN, include); /* \n might not be there */
-		add_include(file_include, ainc, verbose);
+	    while (!feof(include)) {
+		if(fgets(ainc, MAXPATHLEN, include))
+		    add_include(file_include, ainc, verbose);
 	    }
 	    fclose(include);
 	}

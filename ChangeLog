@@ -1,5 +1,10 @@
 2002-02-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* client-src/client_util.c (build_include, build_exclude): Fix for
+	  bad eof detection.
+
+2002-02-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* client-src/client_util.c (get_name): Create a file name.
 	* client-src/client_util.c (build_name): Remove old files,
 	  build an unused file name.
