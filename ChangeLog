@@ -1,3 +1,7 @@
+2001-07-30 John R. Jackson (jrj@purdue.edu)
+
+	* configure.in: Add CAM SCSI support section from the 2.5 branch.
+
 2001-07-30 Ben Lewis (bhlewis@purdue.edu) via John R. Jackson (jrj@purdue.edu)
 
 	* recover-src/amrecover.c: Improve the "Unexpected server end of file"
