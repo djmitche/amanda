@@ -1,3 +1,9 @@
+1999-04-22  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/SYSTEM.NOTES: Typo
+	* docs/SAMBA: Update on samba-largefs patch.
+	* docs/FAQ: New FAQ about promotion of full dumps.
+
 1999-04-20  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* tape-src/tapeio.c (tape_open): Retry after EBUSY and EINTR too.

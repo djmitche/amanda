@@ -250,5 +250,5 @@ problems.  Backing up page files is pointless, but registry files are
 quite important to back up.  It is possible to create regular files
 that contain registry information by using the Regback utility, from
 the Windows NT Resource Kit.  Unfortunately, is not part of the
-Windows NT standard distribution, you have to parchase it separately.
+Windows NT standard distribution, you have to purchase it separately.
 Thanks to Ernie Oporto <ernie_oporto@mentorg.com> for the tip.

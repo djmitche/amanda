@@ -17,11 +17,8 @@ estimate sizes are printed correctly.  Amanda will report an estimate
 failure in this case.
 
 This problem may also occur if you have large (>2GB) filesystems to
-back up with Samba.  In this case, apply samba-largefs.patch, after
-making sure your C compiler supports `unsigned long long's, and that
-printf() in your C library understands that "%llu" means `unsigned
-long long'.  gcc may help you getting unsigned long longs, in case
-your platform doesn't, but it will not help printf understand "%llu".
+back up with Samba prior to 2.0.4.  In this case, apply
+samba-largefs.patch.
 
 After building and installing samba with the selected patches, Amanda
 must be configured with smbclient support - when you run configure,
