@@ -1,3 +1,7 @@
+2002-01-31  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/driver.c: Init code to 0.
+
 2002-01-29 John R. Jackson (jrj@purdue.edu)
 
 	* tape-src/output-tape.c (tape_tapefd_fsf): Some systems cannot deal
