@@ -1,5 +1,9 @@
 2002-11-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* tape-src/tapetype.c: Cast time_t to long for printing.
+
+2002-11-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amflush.c: Write a "amflush: start at ???" line.
 	* server-src/amstatus.pl.in: parse the "amflush: start at ???" line.
 
