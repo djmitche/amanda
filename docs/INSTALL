@@ -49,7 +49,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
 		latest release of Perl.
 
     C.  One of the programs included in this package is amplot,
-	which reads a data file that Amanada generates for each dump
+	which reads a data file that Amanda generates for each dump
 	and translates that information in it into a nice picture that
 	can be used to determine how your installation is doing and if
 	any parameters need to be changed.  To use amplot, you need a

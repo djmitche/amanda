@@ -1,4 +1,4 @@
-# Makefile for Amanada server programs.
+# Makefile for Amanda server programs.
 
 INCLUDES =		-I$(top_srcdir)/common-src
 

@@ -4,7 +4,7 @@
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy, distribute and modify it.
 
-# Makefile for Amanada server programs.
+# Makefile for Amanda server programs.
 
 
 SHELL = /bin/sh
