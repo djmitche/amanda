@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.42 2002/04/13 19:24:51 jrjackson Exp $
+ * $Id: bsd-security.c,v 1.43 2002/11/26 23:54:40 martinea Exp $
  *
  * "BSD" security module
  */
@@ -1138,7 +1138,7 @@ static void *
 bsd_stream_server(h)
     void *h;
 {
-    struct bsd_stream *bs;
+    struct bsd_stream *bs = NULL;
 #ifndef TEST							/* { */
     struct bsd_handle *bh = h;
 
@@ -1192,7 +1192,7 @@ bsd_stream_client(h, id)
     void *h;
     int id;
 {
-    struct bsd_stream *bs;
+    struct bsd_stream *bs = NULL;
 #ifndef TEST							/* { */
     struct bsd_handle *bh = h;
 #ifdef DUMPER_SOCKET_BUFFERING
@@ -1511,6 +1511,52 @@ bind_portrange(s, addrp, first_port, last_port)
     int first_port, last_port;
 {
     return 0;
+}
+
+/*
+ * Construct a datestamp (YYYYMMDD) from a time_t.
+ */
+char *
+construct_datestamp(t)
+    time_t *t;
+{
+    struct tm *tm;
+    char datestamp[3*NUM_STR_SIZE];
+    time_t when;
+
+    if(t == NULL) {
+	when = time((time_t *)NULL);
+    } else {
+	when = *t;
+    }
+    tm = localtime(&when);
+    snprintf(datestamp, sizeof(datestamp),
+             "%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
+    return stralloc(datestamp);
+}
+
+/*
+ * Construct a timestamp (YYYYMMDDHHMMSS) from a time_t.
+ */
+char *
+construct_timestamp(t)
+    time_t *t;
+{
+    struct tm *tm;
+    char timestamp[6*NUM_STR_SIZE];
+    time_t when;
+
+    if(t == NULL) {
+	when = time((time_t *)NULL);
+    } else {
+	when = *t;
+    }
+    tm = localtime(&when);
+    snprintf(timestamp, sizeof(timestamp),
+	     "%04d%02d%02d%02d%02d%02d",
+	     tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday,
+	     tm->tm_hour, tm->tm_min, tm->tm_sec);
+    return stralloc(timestamp);
 }
 
 /*

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.155 2002/11/05 01:58:52 martinea Exp $
+/* $Id: dumper.c,v 1.156 2002/11/26 23:54:40 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1267,6 +1267,7 @@ runcompress(outfd, pid, comptype)
 	error("error: couldn't exec %s: %s", COMPRESS_PATH, strerror(errno));
     }
     /* NOTREACHED */
+    return (-1);
 }
 
 /* -------------------- */

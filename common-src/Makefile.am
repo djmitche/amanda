@@ -121,9 +121,10 @@ bsdsecurity_LDADD = $(libamanda_a_LIBADD) \
 		    alloc.$(OBJEXT) \
 		    clock.$(OBJEXT) \
 		    debug.$(OBJEXT) \
-		    error.$(OBJEXT) \
 		    dgram.$(OBJEXT) \
+		    error.$(OBJEXT) \
 		    event.$(OBJEXT) \
+		    file.$(OBJEXT) \
 		    packet.$(OBJEXT) \
 		    security.$(OBJEXT) \
 		    versuff.$(OBJEXT)

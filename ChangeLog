@@ -1,5 +1,15 @@
 2002-11-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* client-src/amandad.c: Fix compiler warning.
+	* common-src/Makefile.am (bsdsecurity): Link with file.o.
+	* common-src/bsd-security.c: Fix compiler warning.
+	* common-src/bsd-security.c (construct_datestamp, construct_timestamp):
+	  Add function if TEST.
+	* server-src/chunker.c: Fix compiler warning.
+	* server-src/dumper.c: Fix compiler warning.
+
+2002-11-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* tape-src/tapetype.c: Cast time_t to long for printing.
 
 2002-11-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
