@@ -1353,7 +1353,6 @@ AC_HEADER_TIME
 AC_CHECK_HEADERS(\
 	arpa/inet.h \
 	chio.h \
-	sys/chio.h \
 	db.h \
 	dbm.h \
 	fcntl.h \
@@ -1374,6 +1373,7 @@ AC_CHECK_HEADERS(\
 	stdlib.h \
 	string.h \
 	strings.h \
+	sys/chio.h \
 	sys/fcntl.h \
 	sys/file.h \
 	sys/ioctl.h \
