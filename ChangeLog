@@ -1,3 +1,8 @@
+2000-04-09  Stan Brown  <stanb@awod.com>
+
+	* recover-src/amrecover.c (guess_disk): Omit DEV_PREFIX only if
+	it is actually a prefix of fsname.
+
 2000-04-09  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
 	* server-src/amlabel.c (main): Check label *after* writing end mark.
@@ -794,7 +799,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.340 2000/04/09 07:11:56 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.341 2000/04/09 07:32:31 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

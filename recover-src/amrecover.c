@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.29.4.6 2000/01/21 05:08:31 oliva Exp $
+ * $Id: amrecover.c,v 1.29.4.7 2000/04/09 07:32:32 oliva Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -297,8 +297,8 @@ char *s;
 /* do this by looking for the longest mount point which matches the
    current directory */
 int guess_disk (cwd, cwd_len, dn_guess, mpt_guess)
-char *cwd, **dn_guess, **mpt_guess;
-int cwd_len;
+     char *cwd, **dn_guess, **mpt_guess;
+     int cwd_len;
 {
     int longest_match = 0;
     int current_length;
@@ -327,7 +327,14 @@ int cwd_len;
 	    longest_match = current_length;
 	    amfree(*mpt_guess);
 	    *mpt_guess = stralloc(fsent.mntdir);
-	    fsname = newstralloc(fsname, fsent.fsname+strlen(DEV_PREFIX));
+	    if(strncmp(fsent.fsname,DEV_PREFIX,(strlen(DEV_PREFIX))))
+	    {
+	        fsname = newstralloc(fsname, fsent.fsname);
+            }
+	    else
+	    {
+	        fsname = newstralloc(fsname,fsent.fsname+strlen(DEV_PREFIX));
+	    }
 	    local_disk = is_local_fstype(&fsent);
 	}
     }
