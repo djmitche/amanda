@@ -1,5 +1,10 @@
 1999-01-14  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/dumper.c (databuf_write): Egads!  Also increment the
+	source pointer doing a partial buf copy
+
+1999-01-14  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/bsd-security.c (check_user): use getpwnam(CLIENT_LOGIN)
 	instead of getpwuid(getuid()), in case our caller has not done
 	the setuid().

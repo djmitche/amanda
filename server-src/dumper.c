@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.95 1999/01/12 20:36:52 kashmir Exp $
+/* $Id: dumper.c,v 1.96 1999/01/14 22:28:31 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -595,6 +595,7 @@ databuf_write(db, buf, size)
 	size -= nwritten;
 	db->spaceleft -= nwritten;
 	db->dataptr += nwritten;
+	(char *)buf += nwritten;
 
 	/* If the buffer is full, write it */
 	if (db->spaceleft == 0 && databuf_flush(db) < 0)
