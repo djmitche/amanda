@@ -25,15 +25,15 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.13.2.7.4.1 2001/01/26 22:43:14 jrjackson Exp $
+ * $Id: driverio.h,v 1.13.2.7.4.2 2001/11/03 13:43:40 martinea Exp $
  *
  * driver-related helper functions
  */
 
 #include "holding.h"
+#include "server_util.h"
 
 #define MAX_DUMPERS 63
-#define MAX_ARGS 10
 
 #ifndef GLOBAL
 #define GLOBAL extern
@@ -87,18 +87,6 @@ typedef struct holdalloc_s {
 
 GLOBAL dumper_t dmptable[MAX_DUMPERS];
 
-/* command/result tokens */
-
-typedef enum {
-    BOGUS, QUIT, DONE,
-    FILE_DUMP, PORT_DUMP, CONTINUE, ABORT,		/* dumper cmds */
-    FAILED, TRYAGAIN, NO_ROOM, RQ_MORE_DISK, ABORT_FINISHED,/* dumper results */
-    FATAL_TRYAGAIN,
-    START_TAPER, FILE_WRITE, PORT_WRITE,		/* taper cmds */
-    PORT, TAPE_ERROR, TAPER_OK,				/* taper results */
-    LAST_TOK
-} tok_t;
-
 GLOBAL int maxfd;
 GLOBAL fd_set readset;
 GLOBAL int taper, taper_busy, taper_pid;
@@ -107,9 +95,9 @@ void init_driverio();
 void startup_tape_process P((char *taper_program));
 void startup_dump_process P((dumper_t *dumper, char *dumper_program));
 void startup_dump_processes P((char *dumper_program, int inparallel));
-tok_t getresult P((int fd, int show, int *result_argc, char **result_argv, int max_arg));
-int taper_cmd P((tok_t cmd, void *ptr, char *destname, int level, char *datestamp));
-int dumper_cmd P((dumper_t *dumper, tok_t cmd, disk_t *dp));
+cmd_t getresult P((int fd, int show, int *result_argc, char **result_argv, int max_arg));
+int taper_cmd P((cmd_t cmd, void *ptr, char *destname, int level, char *datestamp));
+int dumper_cmd P((dumper_t *dumper, cmd_t cmd, disk_t *dp));
 disk_t *serial2disk P((char *str));
 void free_serial P((char *str));
 char *disk2serial P((disk_t *dp));

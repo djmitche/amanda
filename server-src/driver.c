@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.4 2001/07/31 22:38:39 jrjackson Exp $
+ * $Id: driver.c,v 1.58.2.31.2.5 2001/11/03 13:43:40 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -42,7 +42,6 @@
 #include "infofile.h"
 #include "logfile.h"
 #include "statfs.h"
-#include "token.h"
 #include "version.h"
 #include "driverio.h"
 #include "server_util.h"
@@ -80,7 +79,7 @@ unsigned long free_space P((void));
 assignedhd_t **find_diskspace P((unsigned long size, int *cur_idle, assignedhd_t *preferred));
 char *diskname2filename P((char *dname));
 int assign_holdingdisk P((assignedhd_t **holdp, disk_t *diskp));
-static void adjust_diskspace P((disk_t *diskp, tok_t tok));
+static void adjust_diskspace P((disk_t *diskp, cmd_t cmd));
 static void delete_diskspace P((disk_t *diskp));
 void holdingdisk_state P((char *time_str));
 int dump_to_tape P((disk_t *dp));
@@ -141,7 +140,7 @@ int main(main_argc, main_argv)
     unsigned long reserve = 100;
     char *conffile;
     char *conf_diskfile;
-    tok_t tok;
+    cmd_t cmd;
     int result_argc;
     char *result_argv[MAX_ARGS+1];
     char *taper_program;
@@ -337,9 +336,9 @@ int main(main_argc, main_argv)
 
     /* ok, planner is done, now lets see if the tape is ready */
 
-    tok = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
+    cmd = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
 
-    if(tok != TAPER_OK) {
+    if(cmd != TAPER_OK) {
 	/* no tape, go into degraded mode: dump to holding disk */
 	start_degraded_mode(&runq);
 	FD_CLR(taper,&readset);
@@ -776,13 +775,13 @@ void handle_taper_result()
 {
     disk_t *dp;
     int filenum;
-    tok_t tok;
+    cmd_t cmd;
     int result_argc;
     char *result_argv[MAX_ARGS+1];
 
-    tok = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
+    cmd = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
 
-    switch(tok) {
+    switch(cmd) {
 
     case DONE:	/* DONE <handle> <label> <tape file> <err mess> */
 	if(result_argc != 5) {
@@ -876,11 +875,11 @@ void handle_taper_result()
 	taper_busy = 0;
 	taper_disk = NULL;
 	FD_CLR(taper,&readset);
-	if(tok != TAPE_ERROR) aclose(taper);
+	if(cmd != TAPE_ERROR) aclose(taper);
 	continue_dumps();
 	break;
     default:
-	error("driver received unexpected token (%d) from taper", tok);
+	error("driver received unexpected token (%d) from taper", cmd);
     }
 }
 
@@ -938,7 +937,7 @@ void handle_dumper_result(fd)
     long origsize;
     long dumpsize;
     long dumptime;
-    tok_t tok;
+    cmd_t cmd;
     int result_argc;
     char *result_argv[MAX_ARGS+1];
     int i, dummy;
@@ -953,14 +952,14 @@ void handle_dumper_result(fd)
 	activehd = sched(dp)->activehd;
     }
 
-    tok = getresult(fd, 1, &result_argc, result_argv, MAX_ARGS+1);
+    cmd = getresult(fd, 1, &result_argc, result_argv, MAX_ARGS+1);
 
-    if(tok != BOGUS) {
+    if(cmd != BOGUS) {
 	sdp = serial2disk(result_argv[2]); /* result_argv[2] always contains the serial number */
 	assert(sdp == dp);
     }
 
-    switch(tok) {
+    switch(cmd) {
 
     case DONE: /* DONE <handle> <origsize> <dumpsize> <dumptime> <err str> */
 	if(result_argc != 6) {
@@ -1039,7 +1038,7 @@ void handle_dumper_result(fd)
 	}
 	continue_dumps();
 
-	if(tok == FATAL_TRYAGAIN) {
+	if(cmd == FATAL_TRYAGAIN) {
 	    /* dumper is confused, start another */
 	    log_add(L_WARNING, "%s (pid %ld) confused, restarting it.",
 		    dumper->name, (long)dumper->pid);
@@ -1608,9 +1607,9 @@ disk_t *diskp;
     return l;
 }
 
-static void adjust_diskspace(diskp, tok)
+static void adjust_diskspace(diskp, cmd)
 disk_t *diskp;
-tok_t tok;
+cmd_t cmd;
 {
 /* Re-write by Peter Conrad <conrad@opus5.de>, March '99
  * Modifications for splitting dumps across holding disks:
@@ -1732,7 +1731,7 @@ int dump_to_tape(dp)
     long origsize = 0;
     long dumpsize = 0;
     long dumptime = 0;
-    tok_t tok;
+    cmd_t cmd;
     int result_argc;
     char *result_argv[MAX_ARGS+1];
 
@@ -1758,8 +1757,8 @@ int dump_to_tape(dp)
     /* tell the taper to read from a port number of its choice */
 
     taper_cmd(PORT_WRITE, dp, NULL, sched(dp)->level, datestamp);
-    tok = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
-    if(tok != PORT) {
+    cmd = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
+    if(cmd != PORT) {
 	printf("driver: did not get PORT from taper for %s:%s\n",
 		dp->host->hostname, dp->name);
 	fflush(stdout);
@@ -1787,12 +1786,12 @@ int dump_to_tape(dp)
 
     /* wait for result from dumper */
 
-    tok = getresult(dumper->outfd, 1, &result_argc, result_argv, MAX_ARGS+1);
+    cmd = getresult(dumper->outfd, 1, &result_argc, result_argv, MAX_ARGS+1);
 
-    if(tok != BOGUS)
+    if(cmd != BOGUS)
 	free_serial(result_argv[2]);
 
-    switch(tok) {
+    switch(cmd) {
     case BOGUS:
 	/* either eof or garbage from dumper */
 	log_add(L_WARNING, "%s pid %ld is messed up, ignoring it.\n",
@@ -1810,10 +1809,10 @@ int dump_to_tape(dp)
 
     case NO_ROOM: /* NO-ROOM <handle> */
 	dumper_cmd(dumper, ABORT, dp);
-	tok = getresult(dumper->outfd, 1, &result_argc, result_argv, MAX_ARGS+1);
-	if(tok != BOGUS)
+	cmd = getresult(dumper->outfd, 1, &result_argc, result_argv, MAX_ARGS+1);
+	if(cmd != BOGUS)
 	    free_serial(result_argv[2]);
-	assert(tok == ABORT_FINISHED);
+	assert(cmd == ABORT_FINISHED);
 
     case TRYAGAIN: /* TRY-AGAIN <handle> <err str> */
     default:
@@ -1835,9 +1834,9 @@ int dump_to_tape(dp)
      * "no space on device", etc., since taper closed the port first.
      */
 
-    tok = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
+    cmd = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
 
-    switch(tok) {
+    switch(cmd) {
     case DONE: /* DONE <handle> <label> <tape file> <err mess> */
 	if(result_argc != 5) {
 	    error("error [dump to tape DONE result_argc != 5: %d]", result_argc);

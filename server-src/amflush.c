@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.41.2.13.4.3 2001/11/03 13:38:36 martinea Exp $
+ * $Id: amflush.c,v 1.41.2.13.4.4 2001/11/03 13:43:40 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -399,7 +399,7 @@ char *diskdir, *datestamp;
     char *destname = NULL;
     int filenum;
     disk_t *dp;
-    tok_t tok;
+    cmd_t cmd;
     int result_argc;
     char *result_argv[MAX_ARGS+1];
     dumpfile_t file;
@@ -456,14 +456,14 @@ char *diskdir, *datestamp;
 	dp->up = NULL;
 	taper_cmd(FILE_WRITE, dp, destname, file.dumplevel, file.datestamp);
 
-	tok = getresult(taper, 0, &result_argc, result_argv, MAX_ARGS+1);
-	if(tok == TRYAGAIN) {
+	cmd = getresult(taper, 0, &result_argc, result_argv, MAX_ARGS+1);
+	if(cmd == TRYAGAIN) {
 	    /* we'll retry one time */
 	    taper_cmd(FILE_WRITE, dp, destname,file.dumplevel,file.datestamp);
-	    tok = getresult(taper, 0, &result_argc, result_argv, MAX_ARGS+1);
+	    cmd = getresult(taper, 0, &result_argc, result_argv, MAX_ARGS+1);
 	}
 
-	switch(tok) {
+	switch(cmd) {
 	case DONE: /* DONE <handle> <label> <tape file> <err mess> */
 	    if(result_argc != 5) {
 		error("error [DONE result_argc != 5: %d]", result_argc);
@@ -517,7 +517,7 @@ void run_dumps()
 {
     holdingdisk_t *hdisk;
     holding_t *dir;
-    tok_t tok;
+    cmd_t cmd;
     int result_argc;
     char *result_argv[MAX_ARGS+1];
     char *taper_program;
@@ -529,9 +529,9 @@ void run_dumps()
     init_driverio();
     startup_tape_process(taper_program);
     taper_cmd(START_TAPER, datestamp, NULL, 0, NULL);
-    tok = getresult(taper, 0, &result_argc, result_argv, MAX_ARGS+1);
+    cmd = getresult(taper, 0, &result_argc, result_argv, MAX_ARGS+1);
 
-    if(tok != TAPER_OK) {
+    if(cmd != TAPER_OK) {
 	/* forget it */
 	sleep(5);	/* let taper log first, but not really necessary */
 	log_add(L_ERROR, "Cannot flush without tape.  Try again.");

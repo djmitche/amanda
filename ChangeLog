@@ -1,5 +1,18 @@
 2001-11-03  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/taper.c: Backport from 2.5.0 the change to use only
+	one cmd_t type for all program.
+	* server-src/server_util.h: Likewise.
+	* server-src/server_util.c: Likewise.
+	* server-src/dumper.c.orig: Likewise.
+	* server-src/dumper.c: Likewise.
+	* server-src/driverio.h: Likewise.
+	* server-src/driverio.c: Likewise.
+	* server-src/driver.c: Likewise.
+	* server-src/amflush.c: Likewise.
+
+2001-11-03  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/reporter.c: Backport from 2.5.0 the change to allow
 	the "[host [disk]*]*" arguments on command.
 	* server-src/planner.c: Likewise.

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.35.2.14.4.1 2001/07/19 21:32:29 jrjackson Exp $
+ * $Id: driverio.c,v 1.35.2.14.4.2 2001/11/03 13:43:40 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -36,21 +36,10 @@
 #include "infofile.h"
 #include "logfile.h"
 #include "token.h"
+#include "server_util.h"
 
 #define GLOBAL		/* the global variables defined here */
 #include "driverio.h"
-
-char *cmdstr[] = {
-    "BOGUS", "QUIT", "DONE",
-    "FILE-DUMP", "PORT-DUMP", "CONTINUE", "ABORT",	/* dumper cmds */
-    "FAILED", "TRY-AGAIN", "NO-ROOM", "RQ-MORE-DISK",
-    "ABORT-FINISHED",	/* dumper results */
-    "FATAL-TRY-AGAIN",
-    "START-TAPER", "FILE-WRITE", "PORT-WRITE",		/* taper cmds */
-    "PORT", "TAPE-ERROR", "TAPER-OK",			/* taper results */
-    NULL
-};
-
 
 void init_driverio()
 {
@@ -180,7 +169,7 @@ int inparallel;
     }
 }
 
-tok_t getresult(fd, show, result_argc, result_argv, max_arg)
+cmd_t getresult(fd, show, result_argc, result_argv, max_arg)
 int fd;
 int show;
 int *result_argc;
@@ -188,7 +177,7 @@ char **result_argv;
 int max_arg;
 {
     int arg;
-    tok_t t;
+    cmd_t t;
     char *line;
 
     if((line = areads(fd)) == NULL) {
@@ -227,7 +216,7 @@ int max_arg;
 
 
 int taper_cmd(cmd, /* optional */ ptr, destname, level, datestamp)
-tok_t cmd;
+cmd_t cmd;
 void *ptr;
 char *destname;
 int level;
@@ -240,12 +229,12 @@ char *datestamp;
 
     switch(cmd) {
     case START_TAPER:
-	cmdline = vstralloc("START-TAPER ", (char *)ptr, "\n", NULL);
+	cmdline = vstralloc(cmdstr[cmd], " ", (char *)ptr, "\n", NULL);
 	break;
     case FILE_WRITE:
 	dp = (disk_t *) ptr;
 	ap_snprintf(number, sizeof(number), "%d", level);
-	cmdline = vstralloc("FILE-WRITE",
+	cmdline = vstralloc(cmdstr[cmd],
 			    " ", disk2serial(dp),
 			    " ", destname,
 			    " ", dp->host->hostname,
@@ -257,7 +246,7 @@ char *datestamp;
     case PORT_WRITE:
 	dp = (disk_t *) ptr;
 	ap_snprintf(number, sizeof(number), "%d", level);
-	cmdline = vstralloc("PORT-WRITE",
+	cmdline = vstralloc(cmdstr[cmd],
 			    " ", disk2serial(dp),
 			    " ", dp->host->hostname,
 			    " ", dp->name,
@@ -266,10 +255,10 @@ char *datestamp;
 			    "\n", NULL);
 	break;
     case QUIT:
-	cmdline = stralloc("QUIT\n");
+	cmdline = stralloc2(cmdstr[cmd], "\n");
 	break;
     default:
-	assert(0);
+	error("Don't know how to send %s command to taper", cmdstr[cmd]);
     }
     /*
      * Note: cmdline already has a '\n'.
@@ -290,7 +279,7 @@ char *datestamp;
 
 int dumper_cmd(dumper, cmd, /* optional */ dp)
 dumper_t *dumper;
-tok_t cmd;
+cmd_t cmd;
 disk_t *dp;
 {
     char *cmdline = NULL;
@@ -370,7 +359,7 @@ disk_t *dp;
 	}
 	break;
     default:
-	assert(0);
+	error("Don't know how to send %s command to dumper", cmdstr[cmd]);
     }
     /*
      * Note: cmdline already has a '\n'.

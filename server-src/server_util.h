@@ -24,12 +24,34 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.h,v 1.1.2.1.4.1 2001/03/20 00:25:23 jrjackson Exp $
+ * $Id: server_util.h,v 1.1.2.1.4.2 2001/11/03 13:43:40 martinea Exp $
  *
  */
 #ifndef SERVER_UTIL_H
 #define	SERVER_UTIL_H
 
 #include "util.h"
+
+#define MAX_ARGS 11
+
+typedef enum {
+    BOGUS, QUIT, QUITTING, DONE,
+    FILE_DUMP, PORT_DUMP, CONTINUE, ABORT,		/* dumper cmds */
+    FAILED, TRYAGAIN, NO_ROOM, RQ_MORE_DISK,		/* dumper results */
+    ABORT_FINISHED, FATAL_TRYAGAIN, BAD_COMMAND,	/* dumper results */
+    START_TAPER, FILE_WRITE, PORT_WRITE,		/* taper cmds */
+    PORT, TAPE_ERROR, TAPER_OK,				/* taper results */
+    LAST_TOK
+} cmd_t;
+extern const char *cmdstr[];
+
+struct cmdargs {
+    int argc;
+    char *argv[MAX_ARGS + 1];
+};
+
+cmd_t getcmd P((struct cmdargs *cmdargs));
+void putresult P((cmd_t result, const char *, ...))
+     __attribute__ ((format (printf, 2, 3)));
 
 #endif	/* SERVER_UTIL_H */

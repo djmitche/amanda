@@ -24,8 +24,69 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.c,v 1.1.2.1.4.1 2001/03/20 00:25:23 jrjackson Exp $
+ * $Id: server_util.c,v 1.1.2.1.4.2 2001/11/03 13:43:40 martinea Exp $
  *
  */
 
 #include "amanda.h"
+#include "server_util.h"
+#include "arglist.h"
+#include "token.h"
+
+const char *cmdstr[] = {
+    "BOGUS", "QUIT", "QUITTING", "DONE",
+    "FILE-DUMP", "PORT-DUMP", "CONTINUE", "ABORT",	/* dumper cmds */
+    "FAILED", "TRY-AGAIN", "NO-ROOM", "RQ-MORE-DISK",	/* dumper results */
+    "ABORT-FINISHED", "FATAL-TRYAGAIN", "BAD-COMMAND",	/* dumper results */
+    "START-TAPER", "FILE-WRITE", "PORT-WRITE",		/* taper cmds */
+    "PORT", "TAPE-ERROR", "TAPER-OK",			/* taper results */
+    NULL
+};
+
+cmd_t getcmd(cmdargs)
+struct cmdargs *cmdargs;
+{
+    char *line;
+    int i;
+
+    assert(cmdargs != NULL);
+
+    if (isatty(0)) {
+	printf("%s> ", get_pname());
+	fflush(stdout);
+    }
+
+    if ((line = agets(stdin)) == NULL)
+	return (QUIT);
+
+    cmdargs->argc = split(line, cmdargs->argv,
+	sizeof(cmdargs->argv) / sizeof(cmdargs->argv[0]), " ");
+    amfree(line);
+
+#if DEBUG
+    printf("argc = %d\n", cmdargs->argc);
+    for (i = 0; i < cmdargs->argc; i++)
+	printf("argv[%d] = \"%s\"\n", i, cmdargs->argv[i]);
+#endif
+
+    if (cmdargs->argc < 1)
+	return (BOGUS);
+
+    for(i=0; cmdstr[i] != NULL; i++)
+	if(strcmp(cmdargs->argv[1], cmdstr[i]) == 0)
+	    return (i);
+    return (BOGUS);
+}
+
+
+arglist_function1(void putresult, cmd_t, result, const char *, format)
+{
+    va_list argp;
+
+    arglist_start(argp, format);
+    printf("%s ",cmdstr[result]);
+    vprintf(format, argp);
+    fflush(stdout);
+    arglist_end(argp);
+}
+

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.14.2.5 2001/09/17 22:18:08 jrjackson Exp $
+/* $Id: dumper.c,v 1.75.2.14.2.6 2001/11/03 13:43:40 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -57,15 +57,10 @@
 #endif
 
 #define CONNECT_TIMEOUT	5*60
-#define MAX_ARGS	11
 #define MESGBUF_SIZE	4*1024
 
 #define STARTUP_TIMEOUT 60
 
-typedef enum { BOGUS, FILE_DUMP, PORT_DUMP, CONTINUE, ABORT, QUIT } cmd_t;
-
-char *argv[MAX_ARGS+1];
-int argc;
 int interactive;
 char *handle = NULL;
 
@@ -113,9 +108,6 @@ int amanda_port;
 
 /* local functions */
 int main P((int main_argc, char **main_argv));
-static cmd_t getcmd P((void));
-static void putresult P((char *format, ...))
-    __attribute__ ((format (printf, 1, 2)));
 int do_dump P((int mesgfd, int datafd, int indexfd, int outfd));
 void check_options P((char *options));
 void service_ports_init P((void));
@@ -174,6 +166,7 @@ int main(main_argc, main_argv)
 int main_argc;
 char **main_argv;
 {
+    struct cmdargs cmdargs;
     cmd_t cmd;
     int outfd, protocol_port, taper_port, rc;
     dgram_t *msg;
@@ -263,7 +256,7 @@ char **main_argv;
     proto_init(msg->socket, time(0), 16);
 
     do {
-	cmd = getcmd();
+	cmd = getcmd(&cmdargs);
 
 	switch(cmd) {
 	case QUIT:
@@ -273,19 +266,19 @@ char **main_argv;
 	     * FILE-DUMP handle filename host disk level dumpdate chunksize
 	     *   progname use options
 	     */
-	    if(argc != 11) {
-		error("error [dumper FILE-DUMP argc != 11: %d]", argc);
+	    if(cmdargs.argc != 11) {
+		error("error [dumper FILE-DUMP argc != 11: %d]", cmdargs.argc);
 	    }
-	    handle = newstralloc(handle, argv[2]);
-	    filename = newstralloc(filename, argv[3]);
-	    hostname = newstralloc(hostname, argv[4]);
-	    diskname = newstralloc(diskname, argv[5]);
-	    level = atoi(argv[6]);
-	    dumpdate = newstralloc(dumpdate, argv[7]);
-	    chunksize = am_floor(atoi(argv[8]), DISK_BLOCK_KB);
-	    progname = newstralloc(progname, argv[9]);
-	    use = am_floor(atoi(argv[10]), DISK_BLOCK_KB);
-	    options = newstralloc(options, argv[11]);
+	    handle = newstralloc(handle, cmdargs.argv[2]);
+	    filename = newstralloc(filename, cmdargs.argv[3]);
+	    hostname = newstralloc(hostname, cmdargs.argv[4]);
+	    diskname = newstralloc(diskname, cmdargs.argv[5]);
+	    level = atoi(cmdargs.argv[6]);
+	    dumpdate = newstralloc(dumpdate, cmdargs.argv[7]);
+	    chunksize = am_floor(atoi(cmdargs.argv[8]), DISK_BLOCK_KB);
+	    progname = newstralloc(progname, cmdargs.argv[9]);
+	    use = am_floor(atoi(cmdargs.argv[10]), DISK_BLOCK_KB);
+	    options = newstralloc(options, cmdargs.argv[11]);
 	    cont_filename[0] = '\0';
 
 	    tmp_filename = newvstralloc(tmp_filename, filename, ".tmp", NULL);
@@ -295,11 +288,11 @@ char **main_argv;
 		q = squotef("[main holding file \"%s\": %s]",
 			    tmp_filename, strerror(errno));
 		if(save_errno == ENOSPC) {
-		    putresult("NO-ROOM %s %lu\n", handle, use);
-		    putresult("TRY-AGAIN %s %s\n", handle, q);
+		    putresult(NO_ROOM, "%s %lu\n", handle, use);
+		    putresult(TRY_AGAIN, "%s %s\n", handle, q);
 		}
 		else {
-		    putresult("FAILED %s %s\n", handle, q);
+		    putresult(FAILED, "%s %s\n", handle, q);
 		}
 		amfree(q);
 		break;
@@ -311,7 +304,7 @@ char **main_argv;
 	    rc = startup_dump(hostname, diskname, level, dumpdate, progname, options);
 	    if(rc) {
 		q = squote(errstr);
-		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
+		putresult(rc == 2? FAILED : TRY_AGAIN, "%s %s\n",
 			  handle, q);
 		if(rc == 2) {
 		    log_add(L_FAIL, "%s %s %d [%s]", hostname, diskname, level, errstr);
@@ -339,25 +332,25 @@ char **main_argv;
 	    if (indexfd != -1)
 		aclose(indexfd);
 	    aclose(outfd);
-	    if(abort_pending) putresult("ABORT-FINISHED %s\n", handle);
+	    if(abort_pending) putresult(ABORT_FINISHED, "%s\n", handle);
 	    break;
 
 	case PORT_DUMP:
 	    /*
 	     * PORT-DUMP handle port host disk level dumpdate progname options
 	     */
-	    if(argc != 9) {
-		error("error [dumper PORT-DUMP argc != 9: %d]", argc);
+	    if(cmdargs.argc != 9) {
+		error("error [dumper PORT-DUMP argc != 9: %d]", cmdargs.argc);
 	    }
-	    handle = newstralloc(handle, argv[2]);
-	    taper_port = atoi(argv[3]);
+	    handle = newstralloc(handle, cmdargs.argv[2]);
+	    taper_port = atoi(cmdargs.argv[3]);
 	    filename = newstralloc(filename, "<taper program>");
-	    hostname = newstralloc(hostname, argv[4]);
-	    diskname = newstralloc(diskname, argv[5]);
-	    level = atoi(argv[6]);
-	    dumpdate = newstralloc(dumpdate, argv[7]);
-	    progname = newstralloc(progname, argv[8]);
-	    options = newstralloc(options, argv[9]);
+	    hostname = newstralloc(hostname, cmdargs.argv[4]);
+	    diskname = newstralloc(diskname, cmdargs.argv[5]);
+	    level = atoi(cmdargs.argv[6]);
+	    dumpdate = newstralloc(dumpdate, cmdargs.argv[7]);
+	    progname = newstralloc(progname, cmdargs.argv[8]);
+	    options = newstralloc(options, cmdargs.argv[9]);
 	    cont_filename[0] = '\0';
 
 	    /* connect outf to taper port */
@@ -366,7 +359,7 @@ char **main_argv;
 				  STREAM_BUFSIZE, -1, NULL);
 	    if(outfd == -1) {
 		q = squotef("[taper port open: %s]", strerror(errno));
-		putresult("FAILED %s %s\n", handle, q);
+		putresult(FAILED, "%s %s\n", handle, q);
 		amfree(q);
 		break;
 	    }
@@ -377,7 +370,7 @@ char **main_argv;
 	    rc = startup_dump(hostname, diskname, level, dumpdate, progname, options);
 	    if(rc) {
 		q = squote(errstr);
-		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
+		putresult(rc == 2? FAILED : TRY_AGAIN, "%s %s\n",
 			  handle, q);
 		if(rc == 2) {
 		    log_add(L_FAIL, "%s %s %d [%s]", hostname, diskname, level, errstr);
@@ -404,12 +397,12 @@ char **main_argv;
 	    if (indexfd != -1)
 		aclose(indexfd);
 	    aclose(outfd);
-	    if(abort_pending) putresult("ABORT-FINISHED %s\n", handle);
+	    if(abort_pending) putresult(ABORT_FINISHED, "%s\n", handle);
 	    break;
 
 	default:
-	    q = squote(argv[1]);
-	    putresult("BAD-COMMAND %s\n", q);
+	    q = squote(cmdargs.argv[1]);
+	    putresult(BAD_COMMAND, "%s\n", q);
 	    amfree(q);
 	}
 	while(wait(NULL) != -1);
@@ -440,53 +433,6 @@ char **main_argv;
     return 0;
 }
 
-static cmd_t getcmd()
-{
-    char *line;
-
-    if(interactive) {
-	printf("%s> ", get_pname());
-	fflush(stdout);
-    }
-
-    if((line = agets(stdin)) == NULL) {
-	return QUIT;
-    }
-
-    argc = split(line, argv, sizeof(argv) / sizeof(argv[0]), " ");
-    amfree(line);
-
-#if DEBUG
-    {
-      int arg;
-      printf("argc = %d\n", argc);
-      for(arg = 0; arg < sizeof(argv) / sizeof(argv[0]); arg++)
-	printf("argv[%d] = \"%s\"\n", arg, argv[arg]);
-    }
-#endif
-
-    /* not enough commands for a table lookup */
-
-    if(argc < 1) return BOGUS;
-    if(strcmp(argv[1],"FILE-DUMP") == 0) return FILE_DUMP;
-    if(strcmp(argv[1],"PORT-DUMP") == 0) return PORT_DUMP;
-    if(strcmp(argv[1],"CONTINUE") == 0) return CONTINUE;
-    if(strcmp(argv[1],"ABORT") == 0) return ABORT;
-    if(strcmp(argv[1],"QUIT") == 0) return QUIT;
-    return BOGUS;
-}
-
-
-arglist_function(static void putresult, char *, format)
-{
-    va_list argp;
-
-    arglist_start(argp, format);
-    vprintf(format, argp);
-    fflush(stdout);
-    arglist_end(argp);
-}
-
 
 int write_dataptr(outf)
 int outf;
@@ -515,7 +461,7 @@ int outf;
 	 * NO-ROOM is informational only.  Later, RQ_MORE_DISK will be
 	 * issued to use another holding disk.
 	 */
-	putresult("NO-ROOM %s %lu\n", handle, use+split_size-dumpsize);
+	putresult(NO_ROOM, "%s %lu\n", handle, use+split_size-dumpsize);
 	use = 0;				/* force RQ_MORE_DISK */
 	split_size = dumpsize;
     }
@@ -541,6 +487,7 @@ int *p_outfd, size;
     char *tmp_filename = NULL;
     char sequence[NUM_STR_SIZE];
     int new_outfd = -1;
+    struct cmdargs cmdargs;
     cmd_t cmd;
     int save_type;
     long left_in_chunk;
@@ -557,13 +504,13 @@ int *p_outfd, size;
 		/*
 		 * Probably no more space on this disk.  Request more.
 		 */
-                putresult("RQ-MORE-DISK %s\n", handle);
-                cmd = getcmd();
+                putresult(RQ_MORE_DISK, "%s\n", handle);
+                cmd = getcmd(&cmdargs);
                 if(cmd == CONTINUE) {
 		    /* CONTINUE filename chunksize use */
-		    chunksize = am_floor(atoi(argv[3]), DISK_BLOCK_KB);
-                    use = atoi(argv[4]);
-		    if(strcmp(filename, argv[2]) == 0) {
+		    chunksize = am_floor(atoi(cmdargs.argv[3]), DISK_BLOCK_KB);
+                    use = atoi(cmdargs.argv[4]);
+		    if(strcmp(filename, cmdargs.argv[2]) == 0) {
 			/*
 			 * Same disk, so use what room is left up to the
 			 * next chunk boundary or the amount we were given,
@@ -587,7 +534,7 @@ int *p_outfd, size;
 			/*
 			 * Different disk, so use new file.
 			 */
-			filename = newstralloc(filename, argv[2]);
+			filename = newstralloc(filename, cmdargs.argv[2]);
 		    }
                 } else if(cmd == ABORT) {
                     abort_pending = 1;
@@ -617,7 +564,7 @@ int *p_outfd, size;
 		 		 tmp_filename,
 				 strerror(save_errno));
 		if(save_errno == ENOSPC) {
-		    putresult("NO-ROOM %s %lu\n",
+		    putresult(NO_ROOM, "%s %lu\n",
 			      handle, 
 			      use + split_size - dumpsize);
 		    use = 0;		/* force RQ_MORE_DISK */
@@ -637,7 +584,7 @@ int *p_outfd, size;
 		aclose(new_outfd);
 		unlink(tmp_filename);
 		if(save_errno == ENOSPC) {
-		    putresult("NO-ROOM %s %lu\n",
+		    putresult(NO_ROOM, "%s %lu\n",
 			      handle, 
 			      use + split_size - dumpsize);
 		    use = 0;			/* force RQ_MORE_DISK */
@@ -1270,7 +1217,7 @@ int mesgfd, datafd, indexfd, outfd;
 		    errstr = newstralloc2(errstr, "write_tapeheader: ", 
 					  strerror(errno));
 		    if(save_errno == ENOSPC) {
-			putresult("NO-ROOM %s %lu\n", handle, 
+			putresult(NO_ROOM, "%s %lu\n", handle, 
 				  use+split_size-dumpsize);
 			use = 0; /* force RQ_MORE_DISK */
 			split_size = dumpsize;
@@ -1324,7 +1271,7 @@ int mesgfd, datafd, indexfd, outfd;
 			  " ", "orig-kb ", orig_kb_str,
 			  NULL);
     q = squotef("[%s]", errstr);
-    putresult("DONE %s %ld %ld %ld %s\n", handle, origsize, dumpsize,
+    putresult(DONE, "%s %ld %ld %ld %s\n", handle, origsize, dumpsize,
 	      (long)(dumptime+0.5), q);
     amfree(q);
 
@@ -1369,9 +1316,9 @@ int mesgfd, datafd, indexfd, outfd;
     if(!abort_pending) {
 	q = squotef("[%s]", errstr);
 	if(rc==2)
-	    putresult("FAILED %s %s\n", handle, q);
+	    putresult(FAILED, "%s %s\n", handle, q);
 	else
-	    putresult("TRY-AGAIN %s %s\n", handle, q);
+	    putresult(TRY_AGAIN, "%s %s\n", handle, q);
 	amfree(q);
     }
 
