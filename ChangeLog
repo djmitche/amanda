@@ -1,3 +1,8 @@
+2003-04-05  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* tape-src/output-file.c (file_tapefd_write): Call file_release(fd)
+	  before opening the file for writing.
+
 2003-04-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* changer-src/chg-zd-mtx.sh.in: Default for driveslot is 0.
