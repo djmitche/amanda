@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.14.2.7.2.14 2003/01/17 22:34:42 martinea Exp $
+/* $Id: dumper.c,v 1.75.2.14.2.7.2.15 2003/04/27 01:17:50 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -860,13 +860,13 @@ static void process_dumpeof()
 	/* make a note if there isn't already a failure */
 	fprintf(errf,"? %s: strange [missing size line from sendbackup]\n",
 		get_pname());
-	dump_result = max(dump_result, 1);
+	dump_result = max(dump_result, 2);
     }
 
     if(!got_endline && dump_result < 2) {
 	fprintf(errf,"? %s: strange [missing end line from sendbackup]\n",
 		get_pname());
-	dump_result = max(dump_result, 1);
+	dump_result = max(dump_result, 2);
     }
 }
 

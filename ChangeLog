@@ -1,3 +1,10 @@
+2003-04-26  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* common-src/error.c (output_error_message): Always prepend program
+	  name.
+	* server-src/dumper.c (process_dumpeof): 'missing size line' and
+	  'missing end line' should be failed, not strange.
+
 2003-04-15  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/amstatus.pl.in: Fix for estimate disk.
