@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.h,v 1.17 1999/02/14 21:56:06 martinea Exp $
+ * $Id: holding.h,v 1.18 1999/02/26 22:08:21 martinea Exp $
  *
  */
 
@@ -35,20 +35,19 @@
 #include "diskfile.h"
 #include "fileheader.h"
 
-extern struct dirname {
-    struct dirname *next;
+typedef struct holding_s {
+    struct holding_s *next;
     char *name;
-} *holding_list;
+} holding_t;
 
 /* local functions */
 int is_dir P((char *fname));
 int is_emptyfile P((char *fname));
 int is_datestr P((char *fname));
 int non_empty P((char *fname));
-struct dirname *insert_dirname P((char *name));
-void scan_holdingdisk P((char *diskdir,int verbose));
-char **pick_datestamp P((void));
-char **pick_all_datestamp P((void));
+void free_holding_list P(( holding_t *holding_list));
+holding_t *pick_datestamp P((void));
+holding_t *pick_all_datestamp P((void));
 filetype_t get_amanda_names P((char *fname,
 			       char **hostname,
 			       char **diskname,

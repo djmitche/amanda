@@ -1,3 +1,22 @@
+1999-02-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/holding.h: declare struct holding_t.  Remove 
+	declaration of insert_dirname, scan_holdingdisk.  Declare 
+	new function free_holding_list.  pick_datestamp and 
+	pick_all_datestamp now return (holding_t *).
+	* server-src/holding.c (insert_dirname): new parameter holding_list
+	where we add the name. Can add more than MAX_DIRS name.
+	* server-src/holding.c (free_holding_list): new function to free
+	a holding list.
+	* server-src/holding.c (scan_holdingdisk): new parameter holding_list.
+	* server-src/holding.c (pick_all_datestamp, pick_datestamp): return
+	a list instead of a (char **).
+	* server-src/find.c (search_holding_disk): use the list return by
+	pick_all_datestamp.
+	* server-src/amflush.c: use the list return by pick_datestamp.
+	* server-src/amcleanupdisk.c (check_disks): use the list return by
+	pick_all_datestamp.
+
 1999-02-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/driverio.c (addfd): bug fixe.
