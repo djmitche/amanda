@@ -26,7 +26,7 @@ EGREP=@EGREP@
 MT=@MT@
 MTF=@MT_FILE_FLAG@
 DD=@DD@
-ONLINEREGEX="ONLINE|READY|sense_key\\(0x0\\)|sense key error = 0"
+ONLINEREGEX="ONLINE|READY|sense[_ ]key[(]0x0[)]|sense key error = 0"
 tape=`getconf$SUF tapedev`
 
 changerfile=`getconf$SUF changerfile`
