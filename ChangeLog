@@ -1,3 +1,8 @@
+2004-04-26  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	  * server-src/driver.c (continue_dumps): Fix deadlock if holding disk
+	  fill up when in degraded mode.
+
 2004-04-23  Eric Siegerman <eric_97@pobox.com>
 
 	Bug fix: amflush would run, and consume a tape, even if there

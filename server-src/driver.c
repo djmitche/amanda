@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.138 2004/04/05 17:22:24 martinea Exp $
+ * $Id: driver.c,v 1.139 2004/04/26 15:02:29 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -930,7 +930,8 @@ static void continue_dumps()
 	    }
 	}
     }
-    if( !active_dumpers && busy_dumpers > 0 && !taper_busy && empty(tapeq) &&
+    if( !active_dumpers && busy_dumpers > 0 && 
+        ((!taper_busy && empty(tapeq)) || degraded_mode) &&
 	pending_aborts == 0 ) { /* not case a */
 	if( busy_dumpers == 1 ) { /* case c */
 	    sched(dp)->no_space = 1;
