@@ -215,11 +215,16 @@
 #			which does the backing up of Samba PC clients.
 #			Look in the patches/ directory for patches to
 #			apply to Samba for this to work properly.
-# SAMBA_CLIENT=/usr/local/lib/smbclient
+# SAMBA_CLIENT=/usr/local/bin/smbclient
 
+
+# GNUTAR		--with-gnutar=PROG
+#			Default: look for program named gtar, gnutar or tar
+#			that prints GNU tar when run with --version.
+# GNUTAR=/usr/local/bin/gnutar
 
 # GNUTAR_LISTDIR	--with-gnutar-listdir[=DIR]
-#			Default: $localstatedir/amanda-gnutar-lists =
+#			Default: $localstatedir/amanda/gnutar-lists =
 #				/usr/local/var/amanda/gnutar-lists
 #			This specifies the directory where gnutar should
 #			place the listed incrementals directory lists it 
