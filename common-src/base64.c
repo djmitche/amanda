@@ -41,7 +41,7 @@
  */
 
 /*
- * $Id: base64.c,v 1.1 1998/12/02 20:19:27 kashmir Exp $
+ * $Id: base64.c,v 1.2 1999/03/04 00:05:55 martinea Exp $
  *
  * Routines for encoding and decoding data into base64
  */
@@ -50,10 +50,11 @@
 #include "base64.h"
 
 const char *
-base64encode(src, srclength)
-	const void *src;
-	size_t srclength;
+base64encode(isrc, srclength)
+      const void *isrc;
+      size_t srclength;
 {
+    char *src = (char *)isrc;
 	/* this array maps a 6 bit value to a character */
 	static const char Base64[] =
 	    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
