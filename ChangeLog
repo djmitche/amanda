@@ -1,3 +1,8 @@
+1998-11-20  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* config/ltmain.sh, config/ltconfig, config/libtool/libtool.m4:
+	updated to current CVS libtool
+
 1998-11-19  John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/conffile.c (get_holdingdisk, init_holdingdisk_defaults):
