@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.33 1998/05/15 12:10:30 amcore Exp $
+ * $Id: reporter.c,v 1.34 1998/06/02 18:29:02 jrj Exp $
  *
  * nightly Amanda Report generator
  */
@@ -176,6 +176,7 @@ char **argv;
     int fd;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
+    char *mail_cmd, *printer_cmd;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -282,29 +283,29 @@ char **argv;
 	}
     }
     else {
-	char *cmd = NULL;
-
-	cmd = vstralloc(MAILER,
-			" -s", " \"", subj_str, "\"",
-			" ", getconf_str(CNF_MAILTO),
-			NULL);
-	if((mailf = popen(cmd, "w")) == NULL)
-	    error("could not open pipe to \"%s\": %s", cmd, strerror(errno));
+	mail_cmd = vstralloc(MAILER,
+			     " -s", " \"", subj_str, "\"",
+			     " ", getconf_str(CNF_MAILTO),
+			     NULL);
+	if((mailf = popen(mail_cmd, "w")) == NULL)
+	    error("could not open pipe to \"%s\": %s",
+		  mail_cmd, strerror(errno));
 
 	if (strcmp(printer,"") != 0)	/* alternate printer is defined */
-	  /* print to the specified printer */
+	    /* print to the specified printer */
 #ifdef LPRFLAG
-	  cmd = newvstralloc(cmd, LPRCMD, " ", LPRFLAG, printer, NULL);
+	    printer_cmd = vstralloc(LPRCMD, " ", LPRFLAG, printer, NULL);
 #else
-	  cmd = newvstralloc(cmd, LPRCMD, NULL);
+	    printer_cmd = vstralloc(LPRCMD, NULL);
 #endif
 	else
-	  /* print to the default printer */
-	  cmd = newvstralloc(cmd, LPRCMD, NULL);
+	    /* print to the default printer */
+	    printer_cmd = vstralloc(LPRCMD, NULL);
 
 	if ((strcmp(tp->lbl_templ,"")) != 0)
-	  if ((postscript = popen(cmd,"w")) == NULL)
-	    error("could not open pipe to \"%s\": %s", cmd, strerror(errno));
+	    if ((postscript = popen(printer_cmd,"w")) == NULL)
+		error("could not open pipe to \"%s\": %s",
+		      printer_cmd, strerror(errno));
     }
     amfree(subj_str);
 
@@ -355,9 +356,12 @@ char **argv;
 	    afclose(postscript);
     }
     else {
-	apclose(mailf);
-	if (postscript != NULL)
-	    apclose(postscript);
+	if(pclose(mailf) != 0)
+	    error("mail command failed: %s", mail_cmd);
+	mailf = NULL;
+	if (postscript != NULL && pclose(postscript) != 0)
+	    error("printer command failed: %s", printer_cmd);
+	postscript = NULL;
 	log_rename(datestamp);
     }
 

@@ -1,3 +1,15 @@
+1998-06-02  John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/amcheck.c (main), server-src/reporter.c (main): make
+	sure internal errors, such as the mail command failing, get
+	reported.  In the case of amcheck, they go to stderr even if -m is
+	set since there didn't seem to be anyplace better to do so and if
+	this is running from a cron job it might get back to a real user.
+	For reporter, the errors go to .../amdump along with everything
+	else from the amdump script, and they should also go to .../log,
+	except since it's reporter that's having the trouble, they probably
+	will not make it into the mail report.
+
 1998-06-01  John R. Jackson  <jrj@purdue.edu>
 
 	* client-src/killpgrp.c: clean up minor compiler warnings by not

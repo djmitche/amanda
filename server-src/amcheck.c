@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.42 1998/05/28 15:24:09 jrj Exp $
+ * $Id: amcheck.c,v 1.43 1998/06/02 18:28:59 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -189,12 +189,6 @@ char **argv;
     else
 	/* just use stdout */
 	mainfd = 1;
-
-    /* in parent, errors go to the main output file */
-
-    dup2(mainfd, 1);
-    dup2(mainfd, 2);
-    set_pname("amcheck-parent");
 
     /* start server side checks */
 
@@ -432,14 +426,18 @@ int fd;
     int pid, tapebad, disklow, logbad;
     int inparallel;
 
-    set_pname("amcheck-server");
-
     switch(pid = fork()) {
     case -1: error("could not fork server check: %s", strerror(errno));
     case 0: break;
     default:
 	return pid;
     }
+
+    dup2(fd, 1);
+    dup2(fd, 2);
+
+    set_pname("amcheck-server");
+
     amfree(msg);
     amfree(tempfname);
 
@@ -646,14 +644,18 @@ int fd;
     int kamanda_port;
 #endif
 
-    set_pname("amcheck-clients");
-
     switch(pid = fork()) {
     case -1: error("could not fork client check: %s", strerror(errno));
     case 0: break;
     default:
 	return pid;
     }
+
+    dup2(fd, 1);
+    dup2(fd, 2);
+
+    set_pname("amcheck-clients");
+
     amfree(tempfname);
 
     startclock();
