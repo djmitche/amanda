@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.37 1999/05/11 14:47:26 kashmir Exp $
+ * $Id: amandad.c,v 1.38 1999/05/14 19:30:06 kashmir Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -50,7 +50,7 @@
  * These are the actions for entering the state machine
  */
 typedef enum { A_START, A_RECVPKT, A_RECVREP, A_PENDING, A_FINISH, A_CONTINUE,
-    A_SENDNAK, A_PKTTIMEOUT, A_REPTIMEOUT } action_t;
+    A_SENDNAK, A_TIMEOUT } action_t;
 
 /*
  * This is a state in the state machine.  It is a function pointer to
@@ -681,7 +681,7 @@ s_repwait(as, action, pkt)
 	return (A_SENDNAK);
     }
 
-    if (action == A_REPTIMEOUT) {
+    if (action == A_TIMEOUT) {
 	pkt_init(&as->rep_pkt, P_NAK, "ERROR timeout on reply pipe\n");
 	dbprintf(("%s timed out waiting for REP data\n", as->cmd));
 	security_sendpkt(as->security_handle, &as->rep_pkt);
@@ -845,7 +845,7 @@ s_ackwait(as, action, pkt)
     /*
      * If we got a timeout, try again, but eventually give up.
      */
-    if (action == A_PKTTIMEOUT) {
+    if (action == A_TIMEOUT) {
 	if (--as->repretry > 0) {
 	    as->state = s_sendrep;
 	    return (A_CONTINUE);
@@ -924,7 +924,7 @@ timeout_repfd(cookie)
     assert(as != NULL);
     assert(as->ev_reptimeout != NULL);
 
-    state_machine(as, A_REPTIMEOUT, NULL);
+    state_machine(as, A_TIMEOUT, NULL);
 }
 
 /*
@@ -949,7 +949,7 @@ protocol_recv(cookie, pkt, status)
 	state_machine(as, A_RECVPKT, pkt);
 	break;
     case S_TIMEOUT:
-	state_machine(as, A_PKTTIMEOUT, NULL);
+	state_machine(as, A_TIMEOUT, NULL);
 	break;
     case S_ERROR:
 	dbprintf(("receive error: %s\n",
@@ -1286,8 +1286,7 @@ action2str(action)
 	X(A_FINISH),
 	X(A_CONTINUE),
 	X(A_SENDNAK),
-	X(A_PKTTIMEOUT),
-	X(A_REPTIMEOUT),
+	X(A_TIMEOUT),
 #undef X
     };
     int i;
