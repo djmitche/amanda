@@ -1,3 +1,8 @@
+2003-02-21  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* client-src/client_util.c: Print error except ENOENT for 
+	  exclude/include files.
+
 2003-02-20  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* tape-src/tapetype.c: Use %ld to print some variable.

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.1.2.24 2003/01/03 01:05:56 martinea Exp $
+ * $Id: client_util.c,v 1.1.2.25 2003/02/21 19:51:06 martinea Exp $
  *
  */
 
@@ -267,7 +267,8 @@ int verbose;
 				  debug_prefix(NULL),
 				  exclname,
 				  strerror(errno)));
-			if(verbose && options->exclude_optional==0)
+			if(verbose && (options->exclude_optional == 0 ||
+				       errno != ENOENT))
 			    printf("ERROR [Can't open exclude file '%s': %s]\n",
 				   exclname, strerror(errno));
 		    }
@@ -281,7 +282,7 @@ int verbose;
 		      debug_prefix(NULL),
 		      filename,
 		      strerror(errno)));
-	    if(verbose && options->exclude_optional == 0)
+	    if(verbose)
 		printf("ERROR [Can't create exclude file '%s': %s]\n", filename,
 			strerror(errno));
 	}
@@ -339,7 +340,8 @@ int verbose;
 				  debug_prefix(NULL),
 				  inclname,
 				  strerror(errno)));
-			if(verbose && options->include_optional == 0)
+			if(verbose && (options->include_optional == 0 ||
+                                       errno != ENOENT))
 			    printf("ERROR [Can't open include file '%s': %s]\n",
 				   inclname, strerror(errno));
 		   }
@@ -349,12 +351,12 @@ int verbose;
             fclose(file_include);
 	}
 	else {
-	    dbprintf(("%s: Can't open include file '%s': %s\n",
+	    dbprintf(("%s: Can't create include file '%s': %s\n",
 		      debug_prefix(NULL),
 		      filename,
 		      strerror(errno)));
-	    if(verbose && options->include_optional == 0)
-		printf("ERROR [Can't open include file '%s': %s]\n", filename,
+	    if(verbose)
+		printf("ERROR [Can't create include file '%s': %s]\n", filename,
 			strerror(errno));
 	}
     }
