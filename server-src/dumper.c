@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.85 1998/12/10 23:39:58 kashmir Exp $
+/* $Id: dumper.c,v 1.86 1998/12/18 00:42:08 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -74,7 +74,7 @@ struct cmdargs {
 };
 
 struct databuf {
-    int fd;
+    int fd;			/* file to flush to */
     char buf[DATABUF_SIZE];
     char *dataptr;		/* data buffer markers */
     int spaceleft;
@@ -125,7 +125,8 @@ void check_options P((char *options));
 void service_ports_init P((void));
 static char *construct_datestamp P((void));
 int write_tapeheader P((int outfd, dumpfile_t *type));
-int update_dataptr P((struct databuf *, int size));
+static void databuf_init P((struct databuf *, int));
+static int databuf_write P((struct databuf *, const void *, int));
 static void process_dumpeof P((void));
 static void process_dumpline P((char *str));
 static void add_msg_data P((char *str, int len));
@@ -464,25 +465,46 @@ arglist_function(static void putresult, char *, format)
     arglist_end(argp);
 }
 
+/*
+ * Initialize a databuf.  Takes a writeable file descriptor.
+ */
+static void
+databuf_init(db, fd)
+    struct databuf *db;
+    int fd;
+{
+
+    db->fd = fd;
+    db->dataptr = db->buf;
+    db->spaceleft = sizeof(db->buf);
+}
+
 
 /*
  * Updates the buffer pointer for the input data buffer.  The buffer is
  * written if it is full, or the remainder is zeroed if at eof.
+ * Returns negative on error, else the number of bytes 'written'.
  */
-int
-update_dataptr(db, size)
+static int
+databuf_write(db, buf,size)
     struct databuf *db;
+    const void *buf;
     int size;
 {
     struct cmdargs cmdargs;
     int written;
     cmd_t cmd;
 
+    /* Short write if we can't fit it all in */
+    if (size > db->spaceleft)
+	size = db->spaceleft;
+
     if (size == 0) {
 	/* eof, zero rest of buffer */
 	memset(db->dataptr, 0, db->spaceleft);
 	db->spaceleft = 0;
-    } else { 
+    } else {
+	memcpy(db->dataptr, buf, size);
 	db->spaceleft -= size;
 	db->dataptr += size;
     }
@@ -533,7 +555,7 @@ update_dataptr(db, size)
 		    errstr = squotef("can't dup2: %s", strerror(errno));
 		    return (-1);
 		}
-		close(fd);
+		aclose(fd);
 	    }
 
 	    /*
@@ -572,7 +594,7 @@ update_dataptr(db, size)
 	db->dataptr = db->buf;
 	dumpsize += (sizeof(db->buf) / 1024);
     }
-    return (0);
+    return (size);
 }
 
 
@@ -832,7 +854,8 @@ int do_dump(mesgfd, datafd, indexfd, outfd)
 int mesgfd, datafd, indexfd, outfd;
 {
     static struct databuf db;
-    int maxfd, nfound, size1, size2, eof1, eof2;
+    static char buf[DATABUF_SIZE];
+    int maxfd, nfound, eof1, eof2;
     fd_set readset, selectset;
     struct timeval timeout;
     int outpipe[2];
@@ -866,9 +889,7 @@ int mesgfd, datafd, indexfd, outfd;
 
     startclock();
 
-    db.fd = outfd;
-    db.dataptr = db.buf;
-    db.spaceleft = sizeof(db.buf);
+    databuf_init(&db, outfd);
     dumpsize = origsize = dump_result = 0;
     dumpsize = TAPE_BLOCK_SIZE;
     nb_header_block = 1;
@@ -1092,24 +1113,35 @@ int mesgfd, datafd, indexfd, outfd;
 	/* read/write any data */
 
 	if(datafd >= 0 && FD_ISSET(datafd, &selectset)) {
-	    size1 = read(datafd, db.dataptr, db.spaceleft);
+	    char *p;
+	    int n, size1 = read(datafd, buf, sizeof(buf));
+
 	    switch(size1) {
 	    case -1:
 		errstr = newstralloc2(errstr, "data read: ", strerror(errno));
 		goto failed;
 	    case 0:
-		if(update_dataptr(&db, size1)) goto failed;
+		/* flush */
+		if (databuf_write(&db, NULL, 0) < 0)
+		    goto failed;
 		eof1 = 1;
 		FD_CLR(datafd, &readset);
 		aclose(datafd);
 		break;
 	    default:
-		if(update_dataptr(&db, size1)) goto failed;
+		p = buf;
+		while (size1 > 0) {
+		    n = databuf_write(&db, p, size1);
+		    if (n < 0)
+			goto failed;
+		    p += n;
+		    size1 -= n;
+		}
 	    }
 	}
 
 	if(mesgfd >= 0 && FD_ISSET(mesgfd, &selectset)) {
-	    size2 = read(mesgfd, mesgbuf, sizeof(mesgbuf)-1);
+	    int size2 = read(mesgfd, mesgbuf, sizeof(mesgbuf)-1);
 	    switch(size2) {
 	    case -1:
 		errstr = newstralloc2(errstr, "mesg read: ", strerror(errno));

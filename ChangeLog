@@ -1,3 +1,14 @@
+1998-12-17  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/dumper.c (databuf_init): new function, initializes
+	a struct databuf.
+	* server-src/dumper.c (update_dataptr): rename to databuf_write,
+	and have it take a buffer and a size, and return how many bytes
+	of the buffer were written
+	* server-src/dumper.c (do_dump): use databuf_init to initialize db.
+	Use databuf_write to add incomign data to the databuf.
+	Make size1 and size2 local to the blocks they are used in.
+
 1998-12-17  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* common-src/Makefile.am (noinst_DATA): removed; bogus
