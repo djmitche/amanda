@@ -1,5 +1,10 @@
 2004-11-19  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* restore-src/amrestore.c: Undo patch from 2004-11-11, it break
+	  the file: dirver.
+
+2004-11-19  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/amstatus.pl.in: Remove trace.
 
 2004-11-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>

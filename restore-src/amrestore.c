@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.28.2.4.4.3.2.8.2.1 2004/11/11 19:57:25 martinea Exp $
+ * $Id: amrestore.c,v 1.28.2.4.4.3.2.8.2.2 2004/11/19 13:17:10 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -667,7 +667,7 @@ char **argv;
 			get_pname());
     }
 
-    while(1) {
+    while(file.type == F_TAPESTART || file.type == F_DUMPFILE) {
 	amfree(filename);
 	filename = make_filename(&file);
 	found_match = 0;
