@@ -1,3 +1,8 @@
+1999-11-02  Ricardo Malta  <rmalta@bigfoot.com>
+	
+	* contrib/set_prod_link.pl: Create the links for a configuration
+	with --with-suffix.
+
 1999-11-02  David M. Olsen  <David.M.Olsen@boeing.com>
 
 	* common-src/rsh-security.c (net_writev): The result of a cast is
