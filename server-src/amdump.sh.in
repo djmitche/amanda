@@ -93,7 +93,7 @@ echo "amdump: end at `date`"
 
 # Send out a report on the dumps.
 exec </dev/null >/dev/null 2>&1
-$libexecdir/reporter$SUF
+$sbindir/amreport$SUF
 
 # Keep a debug log through the tapecycle plus a couple of days.
 maxdays=`expr $tapecycle + 2`

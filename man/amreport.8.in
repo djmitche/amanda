@@ -1,0 +1,136 @@
+.\"
+.de EX
+.if t .ft C
+.nf
+..
+.de EE
+.fi
+.if t .ft
+..
+.de OP
+\fB\\$1\fP \fI\\$2\fP
+..
+.TH AMREPORT 1
+.SH NAME
+amreport \- generate a formatted output of statistics for an amdump run
+.SH SYNOPSIS
+.B amtoc
+.I config
+[
+.B -l
+.I log file
+] [
+.B -f
+.I output file
+] [
+.B -p
+.I postscript file
+] 
+.SH DESCRIPTION
+.B Amreport
+generates a summary report of an
+.IR amanda (8)
+backup run.  If no configuration name is specified, amanda.conf is
+read from the current directory, and log files are rotated, i.e.,
+after the report is generated, the log file
+.I log
+will be renamed to 
+\fIlog\fP.\fIdate\fP.\fIversion\fP
+where 
+.I date
+is the current date in the form YYYYMMDD and
+.I version
+is the next higher version of the logfile with the same date stamp 
+starting with 0.
+.LP
+See the
+.IR amanda (8)
+man page for more details about Amanda.
+.SH OPTIONS
+.TP
+.OP config
+Name of the configuration to process.
+.TP
+.OP -l "log file"
+Name of the log file to parse to generate the report. If
+a log file is not specified, then it defaults to the file:
+.LP
+.RS
+.RS
+\fIlogdir\fP/log,
+.RE  
+.RE  
+.IP  
+.I logdir
+is the log directory defined in amanda.conf.
+.TP
+.OP -f "output file"
+Normally,
+.B amreport
+sends the report via e-mail to the
+.I mailto
+user as defined in the amanda.conf file. If
+.I output file
+is specified, then the report is put in
+.I output file.
+.TP
+.OP -p "postscript file"
+Send the postscript output to the file
+.I postscript file
+instead of to the
+.IR lpr (1)
+command. This option has an effect only if the
+.I lbl-templ
+directive is specified in amanda.conf. See
+.B LABEL PRINTING
+below.
+.TP
+
+.SS LABEL PRINTING
+.LP
+Amanda has the ability to print postscript labels which describe the contents
+of the tape being written to.  The labels are designed to be folded and
+inserted into the tape case along with the tape or hole punched and put 
+in a 3-ring binder. Various label templates have been provided which
+format data in ways that are ideal for each tape size. The information
+provided varies slightly from one label template to the next, due to 
+size constraints. The labels contain one line for each host/file-system
+pair and can also contain the file number on the tape, the level of the
+dump, the original size of the dump and the size of the (possibly compressed)
+file written to the tape.
+The ability to print these labels is achieved by adding the lbl-templ field to the
+tapetype definition in amanda.conf. If you don't add this line to your
+tapetype definition, then 
+.B amreport
+will not print a tape label.
+.LP
+You can also specify an alternate "printer" definition to print the
+label to other than the system default printer.
+.LP
+.B Labels Provided
+.sp
+The authors have provided label templates for the following tape types.
+These are pretty generic labels, and should be easy to customize for
+other tape types. Others are encouraged to do so.
+.RS
+.RS
+.sp
+.nf
+* exabyte 8mm tapes
+* dat 4mm tapes
+* DLT tapes
+* 8.5x11 3-ring binder
+.fi
+.sp
+.RE
+.RE
+The 8.5x11 3-ring binder type is the most generic. It can be used to make a
+hardcopy log of the tapes which can be kept in a 3-ring binder.
+.SH "SEE ALSO"
+amanda(8),
+amflush(8)
+.SH BUGS
+.B The function of rotating logs probably should not be part of
+.B amreport
+since they are 2 different funtions and really have nothing to
+do with each other.

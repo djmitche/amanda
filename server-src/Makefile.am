@@ -41,7 +41,7 @@ EXTRA_PROGRAMS =	amadmin				amcheck		\
 			amlabel				amtape		\
 			amtrmidx			driver		\
 			dumper				getconf		\
-			planner				reporter	\
+			planner				amreport	\
 			taper						\
 			$(TEST_PROGS)
 
@@ -58,7 +58,7 @@ amindexd_SOURCES =	amindexd.c					\
 			disk_history.c			disk_history.h	\
 			list_dir.c			list_dir.h
 
-driver_SOURCES =	driver.c
+amreport_SOURCES =	reporter.c
 
 lib_LTLIBRARIES = 	@BUILD_SERVER_LTLIB@
 EXTRA_LTLIBRARIES = 	libamserver.la

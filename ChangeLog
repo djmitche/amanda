@@ -1,3 +1,38 @@
+1998-07-08  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/reporter.c (main): if no arguments are given, preserve
+	original behavior; require config name otherwise.  Perform better
+	argument checking.
+	* example/DLT.ps (DrawHost): discard additional argument introduced
+	in Steven Freed's modification
+	* example/EXB-8500.ps (DrawHost): ditto
+	* example/HP-DAT.ps (DrawHost): ditto
+
+	* server-src/Makefile.am (amreport_SOURCES): build from reporter.c
+	(driver_SOURCES) removed, no longer needed
+	* man/Makefile.am (EXTRA_DIST): added amreport.8
+
+1998-07-08  Steven Freed  <sfreed@gilasoft.com>
+
+	* server-src/reporter.c (usage): new function
+	(main): accept command-line arguments for selecting config name,
+	output file, log file name to read from, postscript file to write
+	to.
+	(output_summary): print tape labels list, tape section numbers and
+	dump sizes.
+	* server-src/amdump.sh.in: run amreport
+	* server-src/amflush.c (main): ditto
+	(run_dumps): ditto
+	* configure.in (BUILD_SERVER_PROGS_SBIN): add amreport
+	(BUILD_SERVER_PROGS_LIBEXEC): remove reporter
+	* man/amreport.8.in: new file
+	* man/Makefile.am (man_MANS): added amreport.8
+	* example/8.5x11.ps: new file
+
+1998-07-08  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* Makefile.am (ACLOCAL_M4): fix ||/&& precedence problem
+
 1998-07-07  John R. Jackson  <jrj@purdue.edu>
 
 	* changer-src/scsi-chio.c: move #include's so this will compile on

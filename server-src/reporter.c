@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.36 1998/07/04 00:20:13 oliva Exp $
+ * $Id: reporter.c,v 1.37 1998/07/08 05:23:34 oliva Exp $
  *
  * nightly Amanda Report generator
  */
@@ -59,6 +59,7 @@ typedef struct line_s {
 typedef struct repdata_s {
     logtype_t result;
     int level;
+    int filenum;
     float origsize, outsize;
     int nb_taper;
     struct timedata_s {
@@ -80,6 +81,9 @@ int disks[10];	/* by-level breakdown of disk count */
 
 float total_time, startup_time;
 
+/* count files to tape */
+int tapefcount = 0;
+
 int curlinenum;
 logtype_t curlog;
 program_t curprog;
@@ -90,14 +94,12 @@ int last_run_tapes = 0;
 static int degraded_mode = 0; /* defined in driverio too */
 int normal_run = 0;
 int amflush_run = 0;
-int testing = 0;
 int got_finish = 0;
 
 char *tapestart_error = NULL;
 
 FILE *logfile, *mailf;
 
-#define PSLOGFILE "/tmp/reporter.out.ps"
 FILE *template_file, *postscript;
 char *printer;
 
@@ -113,6 +115,7 @@ char *hostname = NULL, *diskname = NULL;
 /* local functions */
 int contline_next P((void));
 void addline P((line_t **lp, char *str));
+void usage P((void));
 int main P((int argc, char **argv));
 
 void copy_template_file P((char *lbl_templ));
@@ -165,15 +168,20 @@ char *str;
     else q->next = new;
 }
 
+void usage()
+{
+    error("Usage: amreport conf [-f output-file] [-l logfile] [-p postscript-file]");
+}
 
 
 int main(argc, argv)
 int argc;
 char **argv;
 {
-    char *logfname, *subj_str = NULL;
+    char *confname, *conffname;
+    char *logfname, *psfname, *outfname, *subj_str = NULL;
     tapetype_t *tp;
-    int fd;
+    int fd, rename, opt;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     char *mail_cmd, *printer_cmd;
@@ -188,29 +196,72 @@ char **argv;
 	close(fd);
     }
 
-    set_pname("reporter");
+    set_pname("amreport");
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
-    /* open input log file */
-
+    /* Process options */
+    
     erroutput_type = ERR_INTERACTIVE;
+    confname = NULL;
+    outfname = NULL;
+    psfname = NULL;
     logfname = NULL;
+    rename = 0;
 
-    if(argc == 2) {
-	testing = 1;
-	logfname = argv[1];
-    } else if(argc > 1) {
-	error("Usage: reporter [<logfile>]");
+    if (argc < 2) {
+	rename = 1;
+
+	conffname = stralloc(CONFFILE_NAME);
     } else {
-	erroutput_type |= ERR_AMANDALOG;
-	set_logerror(logerror);
+	if (argv[1][0] == '-') {
+	    usage();
+	    return 1;
+	}
+	confname = stralloc(argv[1]);
+	--argc; ++argv;
+	while((opt = getopt(argc, argv, "f:l:p:")) != EOF) {
+	    switch(opt) {
+            case 'f':
+		if (outfname != NULL)
+		    error("you may specify at most one -f\n");
+                outfname = stralloc(optarg);
+                break;
+            case 'l':
+		if (logfname != NULL)
+		    error("you may specify at most one -l\n");
+                logfname = stralloc(optarg);
+                break;
+            case 'p':
+		if (psfname != NULL)
+		    error("you may specify at most one -p\n");
+                psfname = stralloc(optarg);
+                break;
+            case '?':
+            default:
+		usage();
+		return 1;
+	    }
+	}
+
+	argc -= optind;
+	argv += optind;
+
+	if (argc > 1) {
+	    usage();
+	    return 1;
+	}
+
+	conffname = vstralloc(CONFIG_DIR, "/", confname,
+			      "/", CONFFILE_NAME, NULL);
     }
 
     /* read configuration files */
 
-    if(read_conffile(CONFFILE_NAME))
-	error("could not read amanda config file\n");
+    if(read_conffile(conffname)) {
+        fprintf(stderr,"%s: could not find config file %s\n", argv[0], conffname);
+        error("could not read amanda config file\n");
+    }
     if((diskq = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
 	error("could not read disklist file\n");
     if(read_tapelist(getconf_str(CNF_TAPELIST)))
@@ -218,12 +269,17 @@ char **argv;
     if(open_infofile(getconf_str(CNF_INFOFILE)))
 	error("could not read info database file\n");
 
-    if(!testing) {
+    if(!logfname) {
 	logfname = vstralloc(getconf_str(CNF_LOGDIR), "/log", NULL);
     }
 
     if((logfile = fopen(logfname, "r")) == NULL)
 	error("could not open log %s: %s", logfname, strerror(errno));
+
+    if (rename != 0) {
+	erroutput_type |= ERR_AMANDALOG;
+	set_logerror(logerror);
+    }
 
     setup_data();    /* setup per-disk data */
 
@@ -264,23 +320,15 @@ char **argv;
     tp = lookup_tapetype(getconf_str(CNF_TAPETYPE));
     printer = getconf_str(CNF_PRINTER);
 
-   /* open pipe to mailer (and print spooler if necessary) */
+   /* open pipe to mailer */
 
-    if(testing) {
-	/* just output to a temp file when testing */
-	/* if((mailf = fopen("/tmp/reporter.out","w")) == NULL) */
-	if((mailf = fdopen(1, "w")) == NULL)
-	    error("could not open tmpfile: %s", strerror(errno));
+    if(outfname) {
+	/* output to a file */
+	if((mailf = fopen(outfname,"w")) == NULL)
+	    error("could not open output file: %s %s", outfname, strerror(errno));
 	fprintf(mailf, "To: %s\n", getconf_str(CNF_MAILTO));
 	fprintf(mailf, "Subject: %s\n\n", subj_str);
 
-	/* if the postscript_label_template (tp->lbl_templ) field is not */
-	/* the empty string (i.e. it is set to something), open the      */
-	/* postscript debugging file for writing.                        */
-	if ((strcmp(tp->lbl_templ,"")) != 0) {
-	  if ((postscript = fopen(PSLOGFILE,"w")) == NULL)
-	    error("could not open %s: %s", PSLOGFILE, strerror(errno));
-	}
     }
     else {
 	mail_cmd = vstralloc(MAILER,
@@ -291,6 +339,20 @@ char **argv;
 	    error("could not open pipe to \"%s\": %s",
 		  mail_cmd, strerror(errno));
 
+    }
+
+   /* open pipe to print spooler if necessary) */
+
+    if(psfname) {
+	/* if the postscript_label_template (tp->lbl_templ) field is not */
+	/* the empty string (i.e. it is set to something), open the      */
+	/* postscript debugging file for writing.                        */
+	if ((strcmp(tp->lbl_templ,"")) != 0) {
+	  if ((postscript = fopen(psfname,"w")) == NULL)
+	    error("could not open %s: %s", psfname, strerror(errno));
+	}
+    }
+    else {
 	if (strcmp(printer,"") != 0)	/* alternate printer is defined */
 	    /* print to the specified printer */
 #ifdef LPRFLAG
@@ -307,6 +369,7 @@ char **argv;
 		error("could not open pipe to \"%s\": %s",
 		      printer_cmd, strerror(errno));
     }
+
     amfree(subj_str);
 
     if (postscript) {
@@ -350,21 +413,33 @@ char **argv;
 
     if (postscript) fprintf(postscript,"\nshowpage\n");
 
-    if(testing) {
-	afclose(mailf);
-	if (postscript != NULL)
-	    afclose(postscript);
+
+    /* close postscript file */
+    if (psfname) {
+        afclose(postscript);
     }
     else {
-	if(pclose(mailf) != 0)
-	    error("mail command failed: %s", mail_cmd);
-	mailf = NULL;
 	if (postscript != NULL && pclose(postscript) != 0)
 	    error("printer command failed: %s", printer_cmd);
 	postscript = NULL;
-	log_rename(datestamp);
     }
 
+    /* close output file */
+    if(outfname) {
+        afclose(mailf);
+    }
+    else {
+        if(pclose(mailf) != 0)
+            error("mail command failed: %s", mail_cmd);
+        mailf = NULL;
+    }
+
+  
+    /* rotate log only if requested */
+    if(rename)
+	log_rename(datestamp);
+
+    
     amfree(hostname);
     amfree(diskname);
     amfree(datestamp);
@@ -628,6 +703,13 @@ void output_summary()
  "HOSTNAME  DISK           L  ORIG-KB   OUT-KB COMP%%  MMM:SS   KB/s  MMM:SS   KB/s\n");
     fprintf(mailf,
  "-------------------------- -------------------------------------- --------------\n");
+
+    /* print out postscript line for Amanda label file */
+     if (postscript) {
+         fprintf(postscript,"(-) (%s) (-) (  0) (      32) (      32) DrawHost\n",
+                 tape_labels);
+     }
+
     for(dp = sortq.head; dp != NULL; free(dp->up), dp = dp->next) {
 #if 0
 	/* should we skip missing dumps for amflush? */
@@ -684,8 +766,9 @@ void output_summary()
 		fprintf(mailf, "    N/A    N/A ");
 
 	    if ((postscript) && (data(dp)->taper[i].success)) {
-		fprintf(postscript,"(%s) (%s) (%d) (1) (1) DrawHost\n",
-			dp->host->hostname, dp->name, data(dp)->level);
+		fprintf(postscript,"(%s) (%s) (%d) (%3.0d) (%8.0f) (%8.0f) DrawHost\n",
+			dp->host->hostname, dp->name, data(dp)->level,
+                        data(dp)->filenum, data(dp)->origsize, data(dp)->outsize);
 	    }
 
 	    if(data(dp)->taper[i].success)
@@ -1103,6 +1186,7 @@ void handle_success()
 
     if(amflush_run || curprog == P_DUMPER) {
 	data(dp)->outsize = kbytes;
+        data(dp)->filenum = ++tapefcount;
 
 	if(curprog == P_DUMPER) stats[i].dumper_time += sec;
 	disks[level] += 1;

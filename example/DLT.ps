@@ -214,7 +214,7 @@ ColumnBasePos /CurrColumnY exch def
 %
 /DrawHost {
 	HostFont
-	pop pop 			% discard size and fileno
+	pop pop pop 			% discard sizes and fileno
 	CurrColumnX HeadingLvlPos pop add CurrColumnY moveto
 	show
 	CurrColumnX HeadingFsPos pop add CurrColumnY moveto

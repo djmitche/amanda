@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.33 1998/07/04 00:19:27 oliva Exp $
+ * $Id: amflush.c,v 1.34 1998/07/08 05:23:33 oliva Exp $
  *
  * write files from work directory onto tape
  */
@@ -116,7 +116,7 @@ char **main_argv;
     amfree(logfile);
     
     taper_program = vstralloc(libexecdir, "/", "taper", versionsuffix(), NULL);
-    reporter_program = vstralloc(libexecdir, "/", "reporter", versionsuffix(),
+    reporter_program = vstralloc(sbindir, "/", "amreport", versionsuffix(),
 				 NULL);
 
     datestamps = pick_datestamp();
@@ -344,7 +344,7 @@ void run_dumps()
     /* now, have reporter generate report and send mail */
 
     chdir(confdir);
-    execle(reporter_program, "reporter", (char *)0, safe_env());
+    execle(reporter_program, "amreport", (char *)0, safe_env());
 }
 
 static char *construct_datestamp()
