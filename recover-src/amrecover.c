@@ -4,13 +4,17 @@
 * Module:        
 * Part of:       
 *
-* Revision:      $Revision: 1.2 $
-* Last Edited:   $Date: 1997/08/15 15:14:29 $
+* Revision:      $Revision: 1.3 $
+* Last Edited:   $Date: 1997/08/26 21:46:51 $
 * Author:        $Author: amcore $
 *
 * Notes:         
 * Private Func:  
 * History:       $Log: amrecover.c,v $
+* History:       Revision 1.3  1997/08/26 21:46:51  amcore
+* History:       amrecover prints whatever error message amindexd sends to it before
+* History:       quitting.  by John R. Jackson.
+* History:
 * History:       Revision 1.2  1997/08/15 15:14:29  amcore
 * History:       Updated version number to 2.4.0b2 (supposed to be the next pre-release)
 * History:
@@ -194,13 +198,35 @@ char *prompt;
 int get_line ()
 {
     int l;
+    int r;
     
     l = 0;
     do
     {
-	if (read(server_socket, server_line+l, 1) != 1)
+	if ((r = read(server_socket, server_line+l, 1)) != 1)
 	{
-	    perror("amrecover: Error reading line from server");
+	    while (--l >= 0
+		   && (server_line[l] == '\r' || server_line[l] == '\n'))
+	    {
+		server_line[l] = '\0';
+	    }
+	    if (l > 0)
+	    {
+		int save_errno;
+
+		save_errno = errno;
+		fputs(server_line, stderr);
+		fputc('\n', stderr);
+		errno = save_errno;
+	    }
+	    if (r < 0)
+	    {
+		perror("amrecover: Error reading line from server");
+	    }
+	    else
+	    {
+		fprintf(stderr, "amrecover: Unexpected server end of file\n");
+	    }
 	    return -1;
 	}
 	l++;
