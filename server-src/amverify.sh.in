@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.7.2.6 1999/09/08 23:27:49 jrj Exp $
+#	$Id: amverify.sh.in,v 1.7.2.7 1999/09/13 21:20:06 jrj Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -177,7 +177,7 @@ DD=@DD@
 MT=@MT@
 MTOPT=@MT_FILE_FLAG@
 MAIL=@MAILER@
-if [ `/bin/uname -s 2>/dev/null` = AIX ]; then
+if [ X"`/bin/uname -s 2>/dev/null`" = X"AIX" ]; then
 	IS_AIX=1
 else
 	IS_AIX=0
