@@ -41,7 +41,7 @@ pkgdata_DATA = \
 	COPYRIGHT-APACHE		\
 	COPYRIGHT-REGEX
 
-EXTRA_DIST = \
+EXTRA_DIST = $(SNAPSHOT_STAMP) \
 	contrib/README			\
 	contrib/dbbackup.README		\
 	contrib/dbbackup.ksh		\
@@ -86,3 +86,9 @@ $(ACINCLUDE_M4): $(ACINCLUDE_M4_DEPS)
 
 libtool: $(LIBTOOL_DEPS)
 	$(SHELL) ./config.status --recheck
+
+## This is only meaningful for snapshots, but it won't hurt releases.
+CONFIG_STATUS = config.status
+$(CONFIG_STATUS): $(SNAPSHOT_STAMP)
+SNAPSHOT:
+	: SNAPSHOT file was removed, will reconfigure...

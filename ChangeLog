@@ -1,5 +1,12 @@
 1999-09-14  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* configure.in: Get snapshot date from SNAPSHOT file, if it exists.
+	(VERSION): Add the date to it.
+	(SNAPSHOT_STAMP): AC_SUBST to the SNAPSHOT file, if it exists.
+	* Makefile.am (EXTRA_DIST): Added $(SNAPSHOT_STAMP).
+	(config.status): Depend on $(SNAPSHOT_STAMP).
+	(SNAPSHOT): Dummy rule to allow reconfigure if it's removed.
+
 	* config/Makefile.am: Remove all traces of acconfig.h.
 
 	* server-src/changer.c (changer_command): Fix for amwait_t != int.
