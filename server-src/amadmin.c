@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.35 1998/03/07 18:07:18 martinea Exp $
+ * $Id: amadmin.c,v 1.36 1998/03/08 16:00:07 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -548,7 +548,7 @@ void balance()
 	    seq = 0;
 	}
 	if(seq >= total) {
-	    printf("bogus seq number %d for %s:%s", seq,
+	    printf("bogus seq number %d for %s:%s\n", seq,
 		  dp->host->hostname, dp->name);
 	    seq = total-1;
 	}
