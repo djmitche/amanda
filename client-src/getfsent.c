@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getfsent.c,v 1.15 1998/03/14 11:59:25 amcore Exp $
+ * $Id: getfsent.c,v 1.16 1998/03/14 13:48:28 amcore Exp $
  *
  * generic version of code to read fstab
  */
@@ -81,17 +81,20 @@ generic_fsent_t *fsent;
 #ifdef STATFS_ULTRIX
     fsent->fstype  = xfstype  = newstralloc(xfstype,  sys_fsent->fs_name);
     fsent->mntopts = xmntopts = newstralloc(xmntopts, sys_fsent->fs_opts);
-#elif defined(_AIX)
+#else
+#if defined(_AIX)
     fsent->fstype  = xfstype  = newstralloc(xfstype,  "unknown");
     fsent->mntopts = xmntopts = newstralloc(xmntopts, sys_fsent->fs_type);
 #else
     fsent->fstype  = xfstype  = newstralloc(xfstype,  sys_fsent->fs_vfstype);
     fsent->mntopts = xmntopts = newstralloc(xmntopts, sys_fsent->fs_mntops);
 #endif
+#endif
     return 1;
 }
 
-#elif defined(HAVE_SYS_VFSTAB_H) /* } { */
+#else
+#if defined(HAVE_SYS_VFSTAB_H) /* } { */
 /*
 ** SVR4 (GETFSENT_SOLARIS)
 */
@@ -131,7 +134,8 @@ generic_fsent_t *fsent;
     return 1;
 }
 
-#elif defined(HAVE_MNTENT_H) /* } { */
+#else /* () line 0 */
+#  if defined(HAVE_MNTENT_H) /* } { */
 
 /*
 ** System V.3 (GETFSENT_SVR3, GETFSENT_LINUX)
@@ -171,7 +175,8 @@ generic_fsent_t *fsent;
     return 1;
 }
 
-#elif defined(HAVE_SYS_MNTTAB_H) || defined(STATFS_SCO_OS5) /* } { */
+#  else /* () line 0 */
+#    if defined(HAVE_SYS_MNTTAB_H) || defined(STATFS_SCO_OS5) /* } { */
 
 /* we won't actually include mnttab.h, since it contains nothing useful.. */
 
@@ -255,7 +260,8 @@ generic_fsent_t *fsent;
 
 /* PAG97 - begin */
 
-#elif defined(HAVE_MNTTAB_H) /* } { */
+#    else /* () line 0 */
+#      if defined(HAVE_MNTTAB_H) /* } { */
 
 #define GETFSENT_TYPE "SVR3 (SCO UNIX)"
 
@@ -324,10 +330,14 @@ generic_fsent_t *fsent;
 }
 
 /* PAG97 - end */
-#else /* } { */
+#      else /* } { */
 
 #define GETFSENT_TYPE "undefined"
 
+#      endif
+#    endif
+#  endif
+#endif
 #endif /* } */
 
 /*

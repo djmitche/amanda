@@ -42,11 +42,9 @@
    and possibly change all the ioctl() calls in this program.  
    */
 #if defined(HAVE_CHIO_H)
-# include <chio.h>
-#elif defined(HAVE_SYS_CHIO_H)
-# include <sys/chio.h>
-#else
-# error "Inside CHIO code without HAVE_CHIO_H or HAVE_SYS_CHIO_H defined"
+#  include <chio.h>
+#else /* HAVE_SYS_CHIO_H must be defined */
+#  include <sys/chio.h>
 #endif
 
 int loaded;

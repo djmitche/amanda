@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-chio.c,v 1.2 1998/02/26 19:24:04 jrj Exp $
+ *	$Id: scsi-chio.c,v 1.3 1998/03/14 13:48:22 amcore Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -22,11 +22,9 @@
  */
 
 #if defined(HAVE_CHIO_H)
-# include <chio.h>
-#elif defined(HAVE_SYS_CHIO_H)
-# include <sys/chio.h>
-#else
-# error "Inside CHIO code without CHIO_H or SYS_CHIO_H defined"
+#  include <chio.h>
+#else /* HAVE_SYS_CHIO_H must be defined */
+#  include <sys/chio.h>
 #endif
 
 char *modname = "@(#)" __FILE__ 

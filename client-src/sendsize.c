@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.78 1998/03/14 13:10:02 amcore Exp $
+ * $Id: sendsize.c,v 1.79 1998/03/14 13:48:34 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -45,7 +45,8 @@
     dbprintf(("setpgid(0,0) failed: %s\n", strerror(errno)));		\
 } while(0)
 
-#elif defined(SETPGRP_VOID)
+#else /* () line 0 */
+#if defined(SETPGRP_VOID)
 #  define SETPGRP	setpgrp()
 #  define SETPGRP_FAILED() do {						\
     dbprintf(("setpgrp() failed: %s\n", strerror(errno)));		\
@@ -58,6 +59,7 @@
 	      (long)getpid(), strerror(errno)));			\
 } while(0)
 
+#endif
 #endif
 
 typedef struct level_estimates_s {
