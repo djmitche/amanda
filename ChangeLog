@@ -1,3 +1,8 @@
+1999-09-01 John R. Jackson  <jrj@purdue.edu>
+
+	* common-src/dgram.h: expressions in #define should be protected by
+	  parenthesis.
+
 1999-08-25  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* changer-src/chg-chs.sh.in (changerdev): Pass it as -f flag to CHS.
@@ -162,7 +167,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.243 1999/08/25 07:42:19 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.244 1999/09/01 17:58:29 jrj Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
