@@ -75,6 +75,9 @@
 
 #include <sys/scsi/scsi.h>
 #include <sys/file.h>
+#ifdef __GNUC__
+#include <stdarg.h>
+#endif
 
 #include "sst_def.h"
 
