@@ -59,6 +59,31 @@ characters instead of 20.
 .B Amoverview
 can take a long while on large systems.
 This option reports intermediate steps while it is working.
+.SH RESULTS
+.B amoverview
+is a summary of the output of "
+.B amadmin <config> find
+".
+When the last column of 
+.B amadmin find
+contains anything other than "OK",
+amoverview translates this into 'E' for that day.
+
+A number indicates the level of backup and it succeeded.
+An "E" indicates an error for that day.
+You get an 'E' for all errors, like failed to connect, datatimeout,
+computer crashed, etc, but also for failing to write to tape.
+
+You can have an "E" followed by a number if a filesystem ran into
+end-of-tape once (gives an 'E', and later that day, you flush it to a
+second tape (a number: the level, indicating success).  If the flush
+failed too, you get a double "EE" for that day.
+
+You can also have a double code if you have two tapes in the changer and
+amanda failed to write to tape the first time because it hit end of tape
+(resulting in "E0", for a full, "E1" for an incremental etc)
+or twice with error ("EE"), and may a successfull flush afterwards
+giving maybe "EE0".  (Only the latest 2 characters are printed).
 .SH EXAMPLE
 This shows the
 .I /home
