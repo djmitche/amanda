@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.16 1998/09/21 11:55:47 oliva Exp $
+ * $Id: amlabel.c,v 1.17 1998/10/27 04:01:40 martinea Exp $
  *
  * write an Amanda label on a tape
  */
@@ -39,8 +39,6 @@
 static int vtbl_no      = -1;
 static char *datestr    = NULL;
 #endif /* HAVE_LIBVTBLC */
-
-char *pname = "amlabel";
 
 int slotcommand;
 
