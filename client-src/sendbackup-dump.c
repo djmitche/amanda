@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.65.2.6 2001/03/15 02:17:34 jrjackson Exp $
+ * $Id: sendbackup-dump.c,v 1.65.2.7 2001/05/07 20:29:29 jrjackson Exp $
  *
  * send backup data using BSD dump
  */
@@ -204,7 +204,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 			     " -v", " silent",
 			     " -",
 			     " 2>/dev/null",
-			     " | /sbin/sed",
+			     " | sed",
 			     " -e", " \'s/^/\\//\'",
 			     NULL);
 	write_tapeheader();
