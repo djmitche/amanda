@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmlog.c,v 1.5 2000/09/23 00:27:51 martinea Exp $
+ * $Id: amtrmlog.c,v 1.6 2001/07/19 22:20:36 jrjackson Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -104,7 +104,7 @@ char **argv;
     config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if (read_conffile(conffile))
-	error("could not find amanda config file \"%s\"", conffile);
+	error("errors processing amanda config file \"%s\"", conffile);
     amfree(conffile);
 
     conf_diskfile = getconf_str(CNF_DISKFILE);

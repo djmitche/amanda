@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.72 2001/01/09 00:07:06 martinea Exp $
+ * $Id: amadmin.c,v 1.73 2001/07/19 22:20:36 jrjackson Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -167,7 +167,7 @@ int main(argc, argv)
     conffile = stralloc2(config_dir, CONFFILE_NAME);
 
     if(read_conffile(conffile))
-	error("could not find config file \"%s\"", conffile);
+	error("errors processing config file \"%s\"", conffile);
     amfree(conffile);
 
     conf_diskfile = getconf_str(CNF_DISKFILE);

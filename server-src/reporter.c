@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.66 2001/05/29 23:14:52 jrjackson Exp $
+ * $Id: reporter.c,v 1.67 2001/07/19 22:20:37 jrjackson Exp $
  *
  * nightly Amanda Report generator
  */
@@ -497,7 +497,7 @@ main(argc, argv)
 
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if(read_conffile(conffile))
-        error("could not read config file \"%s\"", conffile);
+        error("errors processing config file \"%s\"", conffile);
     amfree(conffile);
 
     conf_diskfile = getconf_str(CNF_DISKFILE);

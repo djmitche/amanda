@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.32 2001/01/25 00:25:30 jrjackson Exp $
+ * $Id: amlabel.c,v 1.33 2001/07/19 22:20:36 jrjackson Exp $
  *
  * write an Amanda label on a tape
  */
@@ -125,7 +125,7 @@ int main(argc, argv)
     config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if (read_conffile(conffile)) {
-	error("could not read config file \"%s\"", conffile);
+	error("errors processing config file \"%s\"", conffile);
     }
 
     conf_tapelist = getconf_str(CNF_TAPELIST);
