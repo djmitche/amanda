@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.11 1997/10/30 14:49:07 amcore Exp $
+ * $Id: selfcheck.c,v 1.12 1997/11/04 22:32:03 blair Exp $
  *
  * do self-check and send back any error messages
  */
@@ -97,7 +97,6 @@ static void check_disk(program, disk, level)
 char *program, *disk;
 int level;
 {
-    int tstfd;
     char device[1024];
 
     if (strcmp(program, "GNUTAR") == 0) {
@@ -139,13 +138,16 @@ int level;
     }
 
 #else
-    /* XXX better check in this case */
-    if((tstfd = open(device, O_RDONLY)) == -1)
-	printf("ERROR [could not open %s (%s): %s]\n",
-	       device, disk, strerror(errno));
-    else
-	printf("OK %s\n", device);
-    close(tstfd);
+    {
+	/* XXX better check in this case */
+	int tstfd;
+	if((tstfd = open(device, O_RDONLY)) == -1)
+	    printf("ERROR [could not open %s (%s): %s]\n",
+		   device, disk, strerror(errno));
+	else
+	    printf("OK %s\n", device);
+	close(tstfd);
+    }
 #endif
 
     /* XXX perhaps do something with level: read dumpdates and sanity check */
