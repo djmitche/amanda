@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.21 1998/01/08 19:33:44 jrj Exp $
+ * $Id: amindexd.c,v 1.22 1998/01/11 21:14:19 jrj Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -876,7 +876,7 @@ char **argv;
 	if (getpeername(0, (struct sockaddr *)&his_addr, &i) == -1)
 	    error("getpeername: %s", strerror(errno));
     }
-    if (his_addr.sin_family != AF_INET || htons(his_addr.sin_port) == 20)
+    if (his_addr.sin_family != AF_INET || ntohs(his_addr.sin_port) == 20)
     {
 	error("connection rejected from %s family %d port %d",
 	      inet_ntoa(his_addr.sin_addr), his_addr.sin_family,

@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: amidxtaped.c,v 1.15 1998/01/08 19:33:42 jrj Exp $
+/* $Id: amidxtaped.c,v 1.16 1998/01/11 21:14:17 jrj Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -158,7 +158,7 @@ char **argv;
     i = sizeof (addr);
     if (getpeername(0, (struct sockaddr *)&addr, &i) == -1)
 	error("getpeername: %s", strerror(errno));
-    if (addr.sin_family != AF_INET || htons(addr.sin_port) == 20) {
+    if (addr.sin_family != AF_INET || ntohs(addr.sin_port) == 20) {
 	error("connection rejected from %s family %d port %d",
 	      inet_ntoa(addr.sin_addr), addr.sin_family, htons(addr.sin_port));
     }

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.5 1998/01/02 18:48:01 jrj Exp $
+ * $Id: stream.c,v 1.6 1998/01/11 21:14:15 jrj Exp $
  *
  * functions for managing stream sockets
  */
@@ -165,7 +165,7 @@ int server_socket, timeout, sendsize, recvsize;
 	 * Make certain we got an inet connection and that it is not
 	 * from port 20 (a favorite unauthorized entry tool).
 	 */
-	if(addr.sin_family == AF_INET && htons(addr.sin_port) != 20) {
+	if(addr.sin_family == AF_INET && ntohs(addr.sin_port) != 20) {
 	    break;
 	}
 	aclose(connected_socket);
