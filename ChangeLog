@@ -1,5 +1,23 @@
 2002-03-23  John R. Jackson (jrj@purdue.edu)
 
+	* changer-src/chg-scsi-chio.c: Use agets instead of fgets.
+	* changer-src/chg-scsi.c: Use agets instead of fgets.
+	* client-src/client_util.c: Use agets instead of fgets.
+	* recover-src/amrecover.c: Clean up output on EOF.
+	* recover-src/extract_list.c: Use agets instead of direct stdio.
+	  Clean up output on EOF.  Add '?' help.
+	* recover-src/set_commands.c: Quote the new device in the verify
+	  output to make it stand out.
+	* server-src/amflush.c: Clean up output on EOF.  Clean up output
+	  when multiple holding disk areas selected.  Clean up parsing.
+	  Loop until valid user response.
+	* server-src/find.c: Do not complain if log file is missing for
+	  a new (datestamp == 0) tape.
+	* server-src/holding.c: Use agets instead of fgets. Clean up
+	  interactive input and output.
+
+2002-03-23  John R. Jackson (jrj@purdue.edu)
+
 	* client-src/selfcheck.c: Fix a compiler warning.
 	* client-src/sendbackup.c: Ditto.
 	* client-src/sendsize.c: Ditto.

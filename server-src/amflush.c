@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.69 2002/02/11 22:48:53 martinea Exp $
+ * $Id: amflush.c,v 1.70 2002/03/24 04:12:55 jrjackson Exp $
  *
  * write files from work directory onto tape
  */
@@ -369,8 +369,8 @@ static int get_letter_from_user()
 	if(islower(r)) r = toupper(r);
 	while((ch = getchar()) != EOF && ch != '\n') {}
     } else {
-	printf("\nGot EOF.  Goodbye.\n");
-	exit(1);
+	r = ch;
+	clearerr(stdin);
     }
     return r;
 }
@@ -382,22 +382,25 @@ void confirm()
     tape_t *tp;
     char *tpchanger;
     sle_t *dir;
+    int ch;
+    char *extra;
 
     if(datestamp_list == NULL) {
 	printf("Could not find any Amanda directories to flush.\n");
 	exit(1);
     }
-    printf("\nFlushing dumps in");
+    printf("\nToday is: %s\n",datestamp);
+    printf("Flushing dumps in");
+    extra = "";
     for(dir = datestamp_list->first; dir != NULL; dir = dir->next) {
-	printf(" %s,",dir->name);
+	printf("%s %s", extra, dir->name);
+	extra = ",";
     }
-    printf("\n");
-    printf("today: %s\n",datestamp);
     tpchanger = getconf_str(CNF_TPCHANGER);
     if(*tpchanger != '\0') {
-	printf("using tape changer \"%s\".\n", tpchanger);
+	printf(" using tape changer \"%s\".\n", tpchanger);
     } else {
-	printf("to tape drive %s.\n", getconf_str(CNF_TAPEDEV));
+	printf(" to tape drive \"%s\".\n", getconf_str(CNF_TAPEDEV));
     }
 
     printf("Expecting ");
@@ -407,8 +410,17 @@ void confirm()
     tp = lookup_tapepos(1);
     if(tp != NULL) printf("  (The last dumps were to tape %s)", tp->label);
 
-    printf("\nAre you sure you want to do this? ");
-    if(get_letter_from_user() == 'Y') return;
+    while (1) {
+	printf("\nAre you sure you want to do this [yN]? ");
+	if((ch = get_letter_from_user()) == 'Y') {
+	    return;
+	} else if (ch == 'N' || ch == '\0' || ch == EOF) {
+	    if (ch == EOF) {
+		putchar('\n');
+	    }
+	    break;
+	}
+    }
 
     printf("Ok, quitting.  Run amflush again when you are ready.\n");
     exit(1);
