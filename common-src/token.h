@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: token.h,v 1.10.8.1 2002/02/10 03:31:53 jrjackson Exp $
+ * $Id: token.h,v 1.10.8.2 2003/10/22 17:32:33 kovert Exp $
  *
  * interface to token module
  */
@@ -43,7 +43,9 @@ extern char *quotef P((char *sep, char *format, ...))
     __attribute__ ((format (printf, 2, 3)));
 extern char *quote P((char *sep, char *str));
 extern char *rxquote P((char *str));
+#ifndef HAVE_SHQUOTE
 extern char *shquote P((char *str));
+#endif
 extern int table_lookup P((table_t *table, char *str));
 extern char *table_lookup_r P((table_t *table, int val));
 
