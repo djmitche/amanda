@@ -1,5 +1,9 @@
 2004-11-08  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/amstatus.pl.in: Display partial estimate.
+
+2004-11-08  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/diskfile.c (read_diskline): A spindle must be numerical.
 
 2004-10-21  Jean-Louis Martineau <martineau@iro.umontreal.ca>
