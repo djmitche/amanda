@@ -2,8 +2,8 @@
 
 ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
 
-# last updated on amanda 2.4.0
-libclient_version = 0:4:0
+# last updated on amanda 2.4.1
+libclient_version = 0:5:0
 
 INCLUDES =		-I$(top_srcdir)/common-src
 

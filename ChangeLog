@@ -1,5 +1,10 @@
 1998-06-13  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* common-src/Makefile.am (libamanda_version): updated
+	* tape-src/Makefile.am (libtape_version): updated
+	* client-src/Makefile.am (libclient_version): updated
+	* server-src/Makefile.am (libserver_version): updated
+
 	* server-src/taper.c (read_file): if switching to the next file
  	fails or there's no next file, do not send a `W' to taper writer.
 
