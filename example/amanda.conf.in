@@ -36,7 +36,13 @@ etimeout 300		# number of seconds per filesystem for estimates.
 # a positive number will be multiplied by the number of filesystems on
 # each host; a negative number will be taken as an absolute total time-out.
 # The default is 5 minutes per filesystem.
-			
+
+
+tapebufs 20
+# A positive integer telling taper how many 32k buffers to allocate.
+# WARNING! If this is set too high, taper will not be able to allocate
+# the memory and will die.  The default is 20 (640k).
+
 
 # Specify tape device and/or tape changer.  If you don't have a tape
 # changer, and you don't want to use more than one tape per run of

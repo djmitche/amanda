@@ -1,3 +1,14 @@
+1998-09-21  Kelly Setzer  <setzer@telalink.net>
+
+	* server-src/taper.c (NBUFS): replaced with conf_tapebufs
+	(THRESHOLD): now means `empty bufs' instead of `full bufs'
+	* server-src/conffile.c: add support for the "tapebufs" option
+	* server-src/planner.c: ditto
+	* examples/amanda.conf.in: add sample "tapebufs" entry
+
+	* server-src/amlabel.c (main): adds entry to tapelist with date
+ 	19700101
+
 1998-09-20  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/taper.c (getcmd): print DEBUGging output to stderr

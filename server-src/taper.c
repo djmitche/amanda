@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.40 1998/09/20 09:06:57 oliva Exp $
+/* $Id: taper.c,v 1.41 1998/09/21 11:55:54 oliva Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -65,10 +65,16 @@ static vtbl_lbls vtbl_entry[MAX_VOLUMES];
  * XXX label is being read twice?
  */
 #define MAX_ARGS	7
-#define NBUFS		20
+
+/* NBUFS replaced by conf_tapebufs */
+/* #define NBUFS		20 */
+int conf_tapebufs;
+
+/* This is now the number of empties, not full bufs */
+#define THRESHOLD	1
+
 #define CONNECT_TIMEOUT 2*60
 
-#define THRESHOLD	(NBUFS-1)
 
 
 typedef enum { BOGUS, START_TAPER, FILE_WRITE, PORT_WRITE, QUIT } cmd_t;
@@ -82,8 +88,8 @@ typedef struct buffer_s {
     char buffer[TAPE_BLOCK_BYTES];
 } buffer_t;
 
-#define nextbuf(p)    ((p) == buftable+NBUFS-1? buftable : (p)+1)
-#define prevbuf(p)    ((p) == buftable? buftable+NBUFS-1 : (p)-1)
+#define nextbuf(p)    ((p) == buftable+conf_tapebufs-1? buftable : (p)+1)
+#define prevbuf(p)    ((p) == buftable? buftable+conf_tapebufs-1 : (p)-1)
 
 /* major modules */
 int main P((int main_argc, char **main_argv));
@@ -423,9 +429,9 @@ char *str1;
     long v;
 
     fprintf(stderr, "%s: state", str1);
-    for(i = j = 0; i < NBUFS; i = j+1) {
+    for(i = j = 0; i < conf_tapebufs; i = j+1) {
 	v = buftable[i].status;
-	for(j = i; j < NBUFS && buftable[j].status == v; j++);
+	for(j = i; j < conf_tapebufs && buftable[j].status == v; j++);
 	j--;
 	if(i == j) fprintf(stderr, " %d:", i);
 	else fprintf(stderr, " %d-%d:", i, j);
@@ -503,7 +509,7 @@ char *handle, *hostname, *diskname, *datestamp;
 	fflush(stderr);
     }
 
-    for(bp = buftable; bp < buftable + NBUFS; bp++) {
+    for(bp = buftable; bp < buftable + conf_tapebufs; bp++) {
 	bp->status = EMPTY;
 	if(interactive || bufdebug) dumpstatus(bp);
     }
@@ -966,7 +972,7 @@ void write_file()
      * Tell the reader that the tape is open, and give it all the buffers.
      */
     syncpipe_put('O');
-    for(i = 0; i < NBUFS; i++) {
+    for(i = 0; i < conf_tapebufs; i++) {
 	if(bufdebug) {
 	    fprintf(stderr, "taper: w: put R%d\n", i);
 	    fflush(stderr);
@@ -1002,7 +1008,7 @@ void write_file()
 
 	if(interactive) fputs("[WS]", stderr);
 	startclock();
-	while(full_buffers < THRESHOLD) {
+	while(full_buffers < conf_tapebufs - THRESHOLD) {
 	    tok = syncpipe_get();
 	    if(tok != 'W') break;
 	    bufnum = syncpipe_getint();
@@ -1241,9 +1247,11 @@ buffer_t *attach_buffers()
 {
     buffer_t *result;
 
-    shmid = shmget(IPC_PRIVATE, sizeof(buffer_t)*NBUFS, IPC_CREAT|0700);
+    conf_tapebufs = getconf_int(CNF_TAPEBUFS);
+    shmid = shmget(IPC_PRIVATE, sizeof(buffer_t)*conf_tapebufs, IPC_CREAT|0700);
+    
     if(shmid == -1)
-	error("shmget: %s", strerror(errno));
+	error("shmget: (%d tapebufs) %s", sizeof(buffer_t)*conf_tapebufs,strerror(errno));
 
     result = (buffer_t *)shmat(shmid, (SHM_ARG_TYPE *)NULL, 0);
 
@@ -1292,6 +1300,7 @@ buffer_t *attach_buffers()
 {
     buffer_t *shmbuf;
 
+    conf_tapebufs = getconf_int(CNF_TAPEBUFS);
 #ifdef ZERO_FILE
     shmfd = open(ZERO_FILE, O_RDWR);
     if(shmfd == -1)
@@ -1300,7 +1309,7 @@ buffer_t *attach_buffers()
 #endif
 
     shmbuf = (buffer_t *) mmap((void *) 0,
-			       sizeof(buffer_t)*NBUFS,
+			       sizeof(buffer_t)*conf_tapebufs,
 			       PROT_READ|PROT_WRITE,
 			       MAP_ANON|MAP_SHARED,
 			       shmfd, 0);
@@ -1313,7 +1322,7 @@ buffer_t *attach_buffers()
 void detach_buffers(bufp)
 buffer_t *bufp;
 {
-    if(munmap((void *)bufp, sizeof(buffer_t)*NBUFS) == -1)
+    if(munmap((void *)bufp, sizeof(buffer_t)*conf_tapebufs) == -1)
 	error("detach_buffers: munmap: %s", strerror(errno));
 
     if(shmfd != -1) aclose(shmfd);

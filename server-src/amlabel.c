@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.15 1998/07/04 00:19:32 oliva Exp $
+ * $Id: amlabel.c,v 1.16 1998/09/21 11:55:47 oliva Exp $
  *
  * write an Amanda label on a tape
  */
@@ -57,13 +57,14 @@ char *argv0;
 }
 
 int main(argc, argv)
-int argc;
-char **argv;
+    int argc;
+    char **argv;
 {
     char *confdir, *outslot = NULL;
     char *errstr, *confname, *label, *oldlabel=NULL, *tapename = NULL;
     char *labelstr, *slotstr;
     char *olddatestamp=NULL, *tapefilename;
+    char *oldtapefilename;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     int fd;
@@ -234,7 +235,17 @@ char **argv;
 	if((errstr = tape_wrlabel(tapename, "X", label)) != NULL) {
 	    putchar('\n');
 	    error(errstr);
-	}
+	} else {
+	/* write tape list */
+
+    	/* XXX add cur_tape number to tape list structure */
+    	add_tapelabel(atoi("19700101"), label);
+       	oldtapefilename = stralloc2(tapefilename, ".amlabel");
+	rename(tapefilename, oldtapefilename);
+	amfree(oldtapefilename);
+	if(write_tapelist(tapefilename))
+	error("couldn't write tapelist: %s", strerror(errno));
+	} /* write tape list */
 
 #ifdef HAVE_LINUX_ZFTAPE_H
 	if (is_zftape(tapename) == 1){

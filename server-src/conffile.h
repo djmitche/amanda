@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.21 1998/07/15 00:10:59 martinea Exp $
+ * $Id: conffile.h,v 1.22 1998/09/21 11:55:51 oliva Exp $
  *
  * interface for config file reading code
  */
@@ -44,7 +44,7 @@ typedef enum conf_e {
     CNF_MAXCYCLE, CNF_TAPECYCLE,
     CNF_DISKSIZE, CNF_NETUSAGE, CNF_INPARALLEL, CNF_TIMEOUT,
     CNF_BUMPSIZE, CNF_BUMPMULT, CNF_BUMPDAYS, CNF_TPCHANGER, CNF_RUNTAPES,
-    CNF_MAXDUMPS, CNF_ETIMEOUT, CNF_RAWTAPEDEV, CNF_PRINTER, CNF_RESERVE
+    CNF_MAXDUMPS, CNF_ETIMEOUT, CNF_TAPEBUFS, CNF_RAWTAPEDEV, CNF_PRINTER, CNF_RESERVE
 } confparm_t;
 
 typedef enum auth_e {
