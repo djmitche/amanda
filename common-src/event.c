@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.17 2000/11/26 15:55:45 martinea Exp $
+ * $Id: event.c,v 1.18 2002/01/04 21:26:28 martinea Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
  * a uniform interface, central state storage, and centralized
@@ -227,7 +227,7 @@ void
 event_loop(dontblock)
     const int dontblock;
 {
-#ifdef ASSERT
+#ifdef ASSERTIONS
     static int entry = 0;
 #endif
     fd_set readfds, writefds, errfds, werrfds;
