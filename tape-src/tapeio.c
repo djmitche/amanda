@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.20.4.6 2000/12/12 21:59:26 jrjackson Exp $
+ * $Id: tapeio.c,v 1.20.4.7 2000/12/13 18:33:31 jrjackson Exp $
  *
  * implements tape I/O functions
  */
@@ -38,323 +38,9 @@
 #define W_OK 2
 #endif
 
-extern int plain_tape_access(), plain_tape_open(), plain_tape_stat(), 
-	plain_tapefd_close(), plain_tapefd_fsf(), plain_tapefd_fsf(),
-	plain_tapefd_read(), plain_tapefd_rewind(), 
-	plain_tapefd_unload(), plain_tapefd_status(), plain_tapefd_weof(),
-        plain_tapefd_write();
-
-extern void plain_tapefd_resetofs();
-
-#include "output-rait.h"
-
-static struct virtualtape {
-    char *prefix;
-    int (*xxx_tape_access)(char *, int);
-    int (*xxx_tape_open)(char *, int);
-    int (*xxx_tape_stat)(char *, struct stat *);
-    int (*xxx_tapefd_close)(int);
-    int (*xxx_tapefd_fsf)(int, int);
-    int (*xxx_tapefd_read)(int, void *, int);
-    int (*xxx_tapefd_rewind)(int);
-    void (*xxx_tapefd_resetofs)(int);
-    int (*xxx_tapefd_unload)(int);
-    int (*xxx_tapefd_status)(int);
-    int (*xxx_tapefd_weof)(int, int);
-    int (*xxx_tapefd_write)(int, const void *, int);
-} vtable[] = {
-  /* note: "plain" has to be the zeroth entry, its the
-  **        default if no prefix match is found.
-  */
-  {"plain", plain_tape_access, plain_tape_open, plain_tape_stat, 
-	plain_tapefd_close, plain_tapefd_fsf, 
-	plain_tapefd_read, plain_tapefd_rewind, plain_tapefd_resetofs,
-	plain_tapefd_unload, plain_tapefd_status, plain_tapefd_weof,
-        plain_tapefd_write },
-  {"rait", rait_access, rait_tape_open, rait_stat, 
-	rait_close, rait_tapefd_fsf, 
-	rait_read, rait_tapefd_rewind, rait_tapefd_resetofs,
-	rait_tapefd_unload, rait_tapefd_status, rait_tapefd_weof,
-        rait_write },
-  {0,},
-};
-
-/*
-** When we manufacture pseudo-file-descriptors to be indexes into
-** the fdtrans table below, here's the offset we add/subtract.
-*/
-#define TAPE_OFFSET 1024
-
-/*
-** if this is increased, make the initializer longer below.
-*/
-#define MAXTAPEFDS 10
-
-static struct fdtrans {
-   int virtslot;
-   int descriptor;
-} fdtable[MAXTAPEFDS] = {
-  { 0, -1 },
-  { 0, -1 },
-  { 0, -1 },
-  { 0, -1 },
-  { 0, -1 },
-  { 0, -1 },
-  { 0, -1 },
-  { 0, -1 },
-  { 0, -1 },
-  { 0, -1 },
-};
-
-static int name2slot(char *name, char **ntrans) {
-    char *pc;
-    int len, i;
-
-    if (0 != (pc = strchr(name, ':'))) {
-        len = pc - name;
-	for( i = 0 ; vtable[i].prefix && vtable[i].prefix[0]; i++ ) {
-	    if (0 == strncmp(vtable[i].prefix, name , len)) {
-		*ntrans = pc + 1;
-		return i;
-            }
-        }
-    }
-    *ntrans = name;
-    return 0;
-}
-
-int tape_access(char *filename, int mode) {
-    char *tname;
-    return vtable[name2slot(filename, &tname)].xxx_tape_access(tname, mode);
-}
-
-int tape_stat(char *filename, struct stat *buf) {
-    char *tname;
-    return vtable[name2slot(filename, &tname)].xxx_tape_stat(tname, buf);
-}
-
-int tape_open(char *filename, int mode) {
-    char *tname;
-    int vslot;
-    int i;
-
-    for( i = 0; i < MAXTAPEFDS ; i++ ) {
-        if ( -1 == fdtable[i].descriptor ) {
-            break;
-        }
-    }
-    if ( i == MAXTAPEFDS ) {
-	/* no slot in the fdtable available */
-	return -1;
-    } else {
-	vslot = fdtable[i].virtslot = name2slot(filename, &tname);
-	if ( vslot > 0 ) {
-	    fdtable[i].descriptor = vtable[vslot].xxx_tape_open(tname, mode);
-	    return TAPE_OFFSET + i;
-        } else {
-	    /* don't redirect if it's plain tape anyway... */
-            return plain_tape_open(tname, mode);
-        }
-   }
-}
-
-int tapefd_close(int tapefd) {
-    int tfd;
-    int vslot, i, res;
-
-    if (tapefd >= TAPE_OFFSET) {
-	i = tapefd - TAPE_OFFSET;
-	vslot = fdtable[i].virtslot;
-        res = vtable[vslot].xxx_tapefd_close(fdtable[i].descriptor);
-        if ( 0 == res ) {
-	    /* it closed, so free the slot */
-	    fdtable[i].descriptor = -1;
-        }
-        return res;
-    } else {
-	return plain_tapefd_close(tapefd);
-    }
-}
-
-int tapefd_fsf(int tapefd, int count) {
-    int tfd;
-    int vslot, i;
-
-    if (tapefd >= TAPE_OFFSET) {
-	i = tapefd - TAPE_OFFSET;
-	vslot = fdtable[i].virtslot;
-        return  vtable[vslot].xxx_tapefd_fsf(fdtable[i].descriptor, count);
-    } else {
-	return plain_tapefd_fsf(tapefd, count);
-    }
-}
-
-int tapefd_rewind(tapefd) {
-    int tfd;
-    int vslot, i;
-
-    if (tapefd >= TAPE_OFFSET) {
-	i = tapefd - TAPE_OFFSET;
-	vslot = fdtable[i].virtslot;
-        return  vtable[vslot].xxx_tapefd_rewind(fdtable[i].descriptor);
-    } else {
-	return plain_tapefd_rewind(tapefd);
-    }
-}
-
-void tapefd_resetofs(tapefd) {
-    int tfd;
-    int vslot, i;
-
-    if (tapefd >= TAPE_OFFSET) {
-	i = tapefd - TAPE_OFFSET;
-	vslot = fdtable[i].virtslot;
-        vtable[vslot].xxx_tapefd_resetofs(fdtable[i].descriptor);
-    } else {
-	plain_tapefd_resetofs(tapefd);
-    }
-}
-
-int tapefd_unload(tapefd) {
-    int tfd;
-    int vslot, i;
-
-    if (tapefd >= TAPE_OFFSET) {
-	i = tapefd - TAPE_OFFSET;
-	vslot = fdtable[i].virtslot;
-        return  vtable[vslot].xxx_tapefd_unload(fdtable[i].descriptor);
-    } else {
-	return plain_tapefd_unload(tapefd);
-    }
-}
-
-int tapefd_status(tapefd) {
-    int tfd;
-    int vslot, i;
-
-    if (tapefd >= TAPE_OFFSET) {
-	i = tapefd - TAPE_OFFSET;
-	vslot = fdtable[i].virtslot;
-        return  vtable[vslot].xxx_tapefd_status(fdtable[i].descriptor);
-    } else {
-	return plain_tapefd_status(tapefd);
-    }
-}
-
-int tapefd_weof(tapefd, count){
-    int tfd;
-    int vslot, i;
-
-    if (tapefd >= TAPE_OFFSET) {
-	i = tapefd - TAPE_OFFSET;
-	vslot = fdtable[i].virtslot;
-        return  vtable[vslot].xxx_tapefd_weof(fdtable[i].descriptor, count);
-    } else {
-	return plain_tapefd_weof(tapefd, count);
-    }
-}
-
-int tapefd_read(int tapefd, void *buffer, int count) {
-    int tfd;
-    int vslot, i;
-
-    if (tapefd >= TAPE_OFFSET) {
-	i = tapefd - TAPE_OFFSET;
-	vslot = fdtable[i].virtslot;
-        return  vtable[vslot].xxx_tapefd_read(fdtable[i].descriptor, buffer, count);
-    } else {
-	return plain_tapefd_read(tapefd, buffer, count);
-    }
-}
-int tapefd_write(int tapefd, const void *buffer, int count){
-    int tfd;
-    int vslot, i;
-
-    if (tapefd >= TAPE_OFFSET) {
-	i = tapefd - TAPE_OFFSET;
-	vslot = fdtable[i].virtslot;
-        return  vtable[vslot].xxx_tapefd_write(fdtable[i].descriptor, buffer, count);
-    } else {
-	return plain_tapefd_write(tapefd, buffer, count);
-    }
-}
-
-/*
-=======================================================================
-** implement ioctl based plain tape routines in terms of ioctl an 
-** tapefd_xxx_ioctl() routines.  This way code like the RAIT code 
-** can use the same code but pass in rait_ioctl instead of ioctl.
-=======================================================================
-*/
-int plain_tapefd_fsf(int plain_tapefd, int count) {
-    return tapefd_fsf_ioctl(plain_tapefd, count, &ioctl);
-}
-
-int plain_tapefd_weof(int plain_tapefd, int count) {
-    return tapefd_weof_ioctl(plain_tapefd, count, &ioctl);
-}
-
-int plain_tapefd_rewind(int plain_tapefd) {
-    return tapefd_rewind_ioctl(plain_tapefd, &ioctl);
-}
-
-int plain_tapefd_unload(int plain_tapefd) {
-    return tapefd_unload_ioctl(plain_tapefd, &ioctl);
-}
-
-int plain_tapefd_status(int plain_tapefd) {
-    return tapefd_status_ioctl(plain_tapefd, &ioctl);
-}
-
-
-/*
-=======================================================================
-** Now the really plain plain tape routines
-=======================================================================
-*/
+static char *errstr = NULL;
 
 static int no_op_tapefd = -1;
-
-int plain_tapefd_read(tapefd, buffer, count)
-int tapefd, count;
-void *buffer;
-{
-    return read(tapefd, buffer, count);
-}
-
-int plain_tapefd_write(tapefd, buffer, count)
-int tapefd, count;
-const void *buffer;
-{
-    return write(tapefd, buffer, count);
-}
-
-int plain_tapefd_close(tapefd)
-int tapefd;
-{
-    if (tapefd == no_op_tapefd) {
-	no_op_tapefd = -1;
-    }
-    return close(tapefd);
-}
-
-void plain_tapefd_resetofs(tapefd)
-int tapefd;
-{
-    /* 
-     * this *should* be a no-op on the tape, but resets the kernel's view
-     * of the file offset, preventing it from barfing should we pass the
-     * filesize limit (eg OSes with 2 GB filesize limits) on a long tape.
-     */
-    lseek(tapefd, (off_t) 0L, SEEK_SET);
-}
-/*
-=======================================================================
-** Now the tapefd_xxx_ioctl() routines, which are #ifdef-ed
-** heavily by platform.
-=======================================================================
-*/
-static char *errstr = NULL;
 
 #if defined(HAVE_BROKEN_FSF)
 /*
@@ -364,10 +50,9 @@ static char *errstr = NULL;
  */
 
 static int
-tapefd_fsf_broken_ioctl(tapefd, count, ioctl)
+tapefd_fsf_broken(tapefd, count)
 int tapefd;
 int count;
-int (*ioctl)();
 {
     char buffer[TAPE_BLOCK_BYTES];
     int len = 0;
@@ -389,32 +74,21 @@ int (*ioctl)();
 
 #include <sys/tape.h>
 
-int tapefd_rewind_ioctl(tapefd, ioctl)
+int tapefd_rewind(tapefd)
 int tapefd;
-int (*ioctl)();
 {
     int st;
     return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, T_RWD, &st);
 }
 
-int tapefd_unload_ioctl(tapefd, ioctl)
-int tapefd;
-int (*ioctl)();
-{
-    int st;
-    return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, T_OFFL, &st);
-                           /* not sure of spelling here ^^^^^^ */
-}
-
-int tapefd_fsf_ioctl(tapefd, count, ioctl)
+int tapefd_fsf(tapefd, count)
 int tapefd, count;
-int (*ioctl)();
 /*
  * fast-forwards the tape device count files.
  */
 {
 #if defined(HAVE_BROKEN_FSF)
-    return tapefd_fsf_broken_ioctl(tapefd, count, ioctl);
+    return tapefd_fsf_broken(tapefd, count);
 #else
     int st;
     int c;
@@ -428,9 +102,8 @@ int (*ioctl)();
 #endif
 }
 
-int tapefd_weof_ioctl(tapefd, count, ioctl)
+int tapefd_weof(tapefd, count)
 int tapefd, count;
-int (*ioctl)();
 /*
  * write <count> filemarks on the tape.
  */
@@ -451,9 +124,8 @@ int (*ioctl)();
 
 #include <sys/tape.h>
 
-int tapefd_rewind_ioctl(tapefd, ioctl)
+int tapefd_rewind(tapefd)
 int tapefd;
-int (*ioctl)();
 {
     struct stop st;
 
@@ -463,21 +135,8 @@ int (*ioctl)();
     return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, STIOCTOP, &st);
 }
 
-int tapefd_unload_ioctl(tapefd, ioctl)
-int tapefd;
-int (*ioctl)();
-{
-    struct stop st;
-
-    st.st_op = STOFFL;
-    st.st_count = 1;
-
-    return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, STIOCTOP, &st);
-}
-
-int tapefd_fsf_ioctl(tapefd, count, ioctl)
+int tapefd_fsf(tapefd, count)
 int tapefd, count;
-int (*ioctl)();
 /*
  * fast-forwards the tape device count files.
  */
@@ -494,9 +153,8 @@ int (*ioctl)();
 #endif
 }
 
-int tapefd_weof_ioctl(tapefd, count, ioctl)
+int tapefd_weof(tapefd, count)
 int tapefd, count;
-int (*ioctl)();
 /*
  * write <count> filemarks on the tape.
  */
@@ -514,35 +172,21 @@ int (*ioctl)();
 
 #include <sys/tape.h>
 
-int tapefd_rewind_ioctl(tapefd, ioctl)
+int tapefd_rewind(tapefd)
 int tapefd;
-int (*ioctl)();
 {
     int st;
     return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, MT_REWIND, &st);
 }
 
-int tapefd_unload_ioctl(tapefd, ioctl)
-int tapefd;
-int (*ioctl)();
-{
-    int st;
-#ifdef MT_OFFLINE
-    return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, MT_OFFLINE, &st);
-#else
-    return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, MT_UNLOAD, &st);
-#endif
-}
-
-int tapefd_fsf_ioctl(tapefd, count, ioctl)
+int tapefd_fsf(tapefd, count)
 int tapefd, count;
-int (*ioctl)();
 /*
  * fast-forwards the tape device count files.
  */
 {
 #if defined(HAVE_BROKEN_FSF)
-    return tapefd_fsf_broken_ioctl(tapefd, count, ioctl);
+    return tapefd_fsf_broken(tapefd, count);
 #else
     int st;
     int c;
@@ -556,9 +200,8 @@ int (*ioctl)();
 #endif
 }
 
-int tapefd_weof_ioctl(tapefd, count, ioctl)
+int tapefd_weof(tapefd, count)
 int tapefd, count;
-int (*ioctl)();
 /*
  * write <count> filemarks on the tape.
  */
@@ -580,9 +223,8 @@ int (*ioctl)();
 
 #include <sys/mtio.h>
 
-int tapefd_rewind_ioctl(tapefd, ioctl)
+int tapefd_rewind(tapefd)
 int tapefd;
-int (*ioctl)();
 {
     struct mtop mt;
     int rc, cnt;
@@ -601,38 +243,8 @@ int (*ioctl)();
     return rc;
 }
 
-int tapefd_unload_ioctl(tapefd, ioctl)
-int tapefd;
-int (*ioctl)();
-{
-    struct mtop mt;
-    int rc, cnt;
-
-#ifdef MTUNLOAD
-    mt.mt_op = MTUNLOAD;
-#else
-#ifdef MTOFFL
-    mt.mt_op = MTOFFL;
-#else
-    mt.mt_op = syntax error;
-#endif
-#endif
-    mt.mt_count = 1;
-
-    /* EXB-8200 drive on FreeBSD can fail to rewind, but retrying
-     * won't hurt, and it will usually even work! */
-    for(cnt = 0; cnt < 10; ++cnt) {
-	rc = (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, MTIOCTOP, &mt);
-	if (rc == 0)
-	    break;
-	sleep(3);
-    }
-    return rc;
-}
-
-int tapefd_fsf_ioctl(tapefd, count, ioctl)
+int tapefd_fsf(tapefd, count)
 int tapefd, count;
-int (*ioctl)();
 /*
  * fast-forwards the tape device count files.
  */
@@ -649,9 +261,8 @@ int (*ioctl)();
 #endif
 }
 
-int tapefd_weof_ioctl(tapefd, count, ioctl)
+int tapefd_weof(tapefd, count)
 int tapefd, count;
-int (*ioctl)();
 /*
  * write <count> filemarks on the tape.
  */
@@ -671,68 +282,9 @@ int (*ioctl)();
 #endif /* !AIX_TAPEIO */
 #endif /* !UWARE_TAPEIO */
 
-int
-tapefd_status_ioctl(fd, ioctl) 
-int fd;
-int (*ioctl)();
-{
-   int res = 0;
 
-#if defined(MTIOCGET)
-   struct mtget buf;
 
-   res = ioctl(fd,MTIOCGET,&buf);
-
-#ifdef MT_ONL
-   /* IRIX-ish system */
-   printf("status: %s %s %s %s\n",
-		(buf.mt.dposn & MT_ONL) ? "ONLINE" : "OFFLINE",
-		(buf.mt.dposn & MT_EOT) ? "EOT" : "",
-		(buf.mt.dposn & MT_BOT) ? "BOT" : "",
-		(buf.mt.dposn & MT_WRPROT) ? "PROTECTED" : ""
-        );
-#endif
-#ifdef GMT_ONLINE
-   /* Linux-ish system */
-   printf("status: %s %s %s %s\n",
-		GMT_ONLINE(buf.mt_gstat) ? "ONLINE" : "OFFLINE",
-		GMT_EOT(buf.mt_gstat) ? "EOT" : "",
-		GMT_BOT(buf.mt_gstat) ? "BOT" : "",
-		GMT_WR_PROT(buf.mt_gstat) ? "PROTECTED" : ""
-        );
-#endif
-
-#ifdef DEV_BOM
-   /* OSF1-ish system */
-   printf("status: %s %s %s\n",
-		~(DEV_OFFLINE & buf.mt_dsreg) ? "ONLINE" : "OFFLINE",
-		(DEV_BOM & buf.mt_dsreg) ? "BOT" : "",
-		(DEV_WRTLCK & buf.mt_dsreg) ? "PROTECTED" : ""
-        );
-#endif
-
-   /* Solaris, minix, etc. */
-   printf( "dsreg == 0x%x\n", buf.mt_dsreg  );
-#endif
-
-  return res;
-}
-
-int plain_tape_stat(filename, buf) 
-     char *filename;
-     struct stat *buf;
-{
-     return stat(filename, buf);
-}
-
-int plain_tape_access(filename, mode) 
-     char *filename;
-     int mode;
-{
-     return access(filename, mode);
-}
-
-int plain_tape_open(filename, mode)
+int tape_open(filename, mode)
      char *filename;
      int mode;
 {
@@ -740,9 +292,10 @@ int plain_tape_open(filename, mode)
     struct mtop mt;
 #endif /* HAVE_LINUX_ZFTAPE_H */
     int ret = 0, delay = 2, timeout = 200;
-    if (mode != O_RDONLY) {
+    if (mode == 0 || mode == O_RDONLY)
+	mode = O_RDONLY;
+    else
 	mode = O_RDWR;
-    }
 #if 0
     /* Since we're no longer using a special name for no-tape, we no
        longer need this */
@@ -751,7 +304,7 @@ int plain_tape_open(filename, mode)
     }
 #endif
     do {
-	ret = open(filename, mode, 0644);
+	ret = open(filename, mode);
 	/* if tape open fails with errno==EAGAIN, EBUSY or EINTR, it
 	 * is worth retrying a few seconds later.  */
 	if (ret >= 0 ||
@@ -793,12 +346,39 @@ int plain_tape_open(filename, mode)
     return ret;
 }
 
+int tapefd_read(tapefd, buffer, count)
+int tapefd, count;
+void *buffer;
+{
+    return read(tapefd, buffer, count);
+}
 
-/*
-=======================================================================
-** now the generic routines
-=======================================================================
-*/
+int tapefd_write(tapefd, buffer, count)
+int tapefd, count;
+void *buffer;
+{
+    return write(tapefd, buffer, count);
+}
+
+int tapefd_close(tapefd)
+int tapefd;
+{
+    if (tapefd == no_op_tapefd) {
+	no_op_tapefd = -1;
+    }
+    return close(tapefd);
+}
+
+void tapefd_resetofs(tapefd)
+int tapefd;
+{
+    /* 
+     * this *should* be a no-op on the tape, but resets the kernel's view
+     * of the file offset, preventing it from barfing should we pass the
+     * filesize limit (eg OSes with 2 GB filesize limits) on a long tape.
+     */
+    lseek(tapefd, (off_t) 0L, SEEK_SET);
+}
 
 char *tape_rewind(devname)
 char *devname;
@@ -806,7 +386,7 @@ char *devname;
     int fd;
 
     if((fd = tape_open(devname, O_RDONLY)) == -1) {
-	errstr = newstralloc(errstr, "tape offline");
+	errstr = newstralloc(errstr, "no tape online");
 	return errstr;
     }
 
@@ -820,25 +400,6 @@ char *devname;
     return NULL;
 }
 
-char *tape_unload(devname)
-char *devname;
-{
-    int fd;
-
-    if((fd = tape_open(devname, O_RDONLY)) == -1) {
-	errstr = newstralloc(errstr, "tape offline");
-	return errstr;
-    }
-
-    if(tapefd_unload(fd) == -1) {
-	errstr = newstralloc2(errstr, "unloading tape: ", strerror(errno));
-	tapefd_close(fd);
-	return errstr;
-    }
-
-    tapefd_close(fd);
-    return NULL;
-}
 
 char *tape_fsf(devname, count)
 char *devname;
@@ -848,12 +409,12 @@ int count;
     char count_str[NUM_STR_SIZE];
 
     if((fd = tape_open(devname, O_RDONLY)) == -1) {
-	errstr = newstralloc(errstr, "tape offline");
+	errstr = newstralloc(errstr, "no tape online");
 	return errstr;
     }
 
     if(tapefd_fsf(fd, count) == -1) {
-	snprintf(count_str, sizeof(count_str), "%d", count);
+	ap_snprintf(count_str, sizeof(count_str), "%d", count);
 	errstr = newvstralloc(errstr,
 			      "fast-forward ", count_str, "files: ",
 			      strerror(errno),
@@ -914,7 +475,7 @@ char *devname, **datestamp, **label;
     int fd;
 
     if((fd = tape_open(devname, O_RDONLY)) == -1) {
-	errstr = newstralloc(errstr, "tape offline");
+	errstr = newstralloc(errstr, "no tape online");
 	return errstr;
     }
 
@@ -1038,7 +599,7 @@ char *devname;
 
     /* first, make sure the file exists and the permissions are right */
 
-    if(tape_access(devname, R_OK|W_OK) == -1) {
+    if(access(devname, R_OK|W_OK) == -1) {
 	errstr = newstralloc(errstr, strerror(errno));
 	return errstr;
     }
@@ -1072,23 +633,3 @@ int is_zftape(filename)
 }
 #endif /* HAVE_LINUX_ZFTAPE_H */
 
-
-char *tape_status(devname)
-char *devname;
-{
-    int fd;
-
-    if((fd = tape_open(devname, O_RDONLY)) == -1) {
-	errstr = newstralloc(errstr, "tape offline or not readable");
-	return errstr;
-    }
-
-    if(tapefd_status(fd) == -1) {
-	errstr = newstralloc2(errstr, "tape status: ", strerror(errno));
-	tapefd_close(fd);
-	return errstr;
-    }
-
-    tapefd_close(fd);
-    return NULL;
-}
