@@ -1,5 +1,9 @@
 2002-07-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amstatus.pl.in: Works with features.
+
+2002-07-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* common-src/amfeatures.c (am_feature_to_string): Return the string
 	  "UNKNOWNFEATURE" if no features.
 	* common-src/amfeatures.c (am_string_to_feature): Return NULL if the
