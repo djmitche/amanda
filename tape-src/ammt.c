@@ -27,6 +27,8 @@ extern char *getenv();
 #include "tapeio.h"
 #endif
 
+extern int optind;
+
 static int do_asf();
 static int do_bsf();
 static int do_status();
