@@ -33,14 +33,24 @@ EXTRA_PROGRAMS = 	tapetype $(TEST_PROGS)
 
 sbin_PROGRAMS=          ammt amdd
 
-tapetype_LDADD = libamtape.$(LIB_EXTENSION) \
-	../common-src/libamanda.$(LIB_EXTENSION)
+###
+# Because libamanda includes routines (e.g. regex) provided by some system
+# libraries, and because of the way libtool sets up the command line, we
+# need to list libamanda twice here, first to override the system library
+# routines, and second to pick up any references in the other libraries.
+###
 
-ammt_LDADD = libamtape.$(LIB_EXTENSION) \
-	../common-src/libamanda.$(LIB_EXTENSION)
+tapetype_LDADD =	../common-src/libamanda.$(LIB_EXTENSION) \
+			libamtape.$(LIB_EXTENSION) \
+			../common-src/libamanda.$(LIB_EXTENSION)
 
-amdd_LDADD = libamtape.$(LIB_EXTENSION) \
-	../common-src/libamanda.$(LIB_EXTENSION)
+ammt_LDADD =		../common-src/libamanda.$(LIB_EXTENSION) \
+			libamtape.$(LIB_EXTENSION) \
+			../common-src/libamanda.$(LIB_EXTENSION)
+
+amdd_LDADD = 		../common-src/libamanda.$(LIB_EXTENSION) \
+			libamtape.$(LIB_EXTENSION) \
+			../common-src/libamanda.$(LIB_EXTENSION)
 
 ## So that we can tell people to `cd tape-src && make tapetype':
 ../common-src/libamanda.$(LIB_EXTENSION):
@@ -49,8 +59,9 @@ amdd_LDADD = libamtape.$(LIB_EXTENSION) \
 # used for testing only
 
 amtapeio_SOURCES = amtapeio.test.c
-amtapeio_LDADD = libamtape.$(LIB_EXTENSION) \
-	../common-src/libamanda.$(LIB_EXTENSION)
+amtapeio_LDADD =	../common-src/libamanda.$(LIB_EXTENSION) \
+			libamtape.$(LIB_EXTENSION) \
+			../common-src/libamanda.$(LIB_EXTENSION)
 
 amtapeio.test.c: $(srcdir)/tapeio.c
 	echo '#define TEST' >$@

@@ -11,7 +11,15 @@ endif
 
 sbin_PROGRAMS =		amrecover
 
-LDADD = @LEXLIB@ \
+###
+# Because libamanda includes routines (e.g. regex) provided by some system
+# libraries, and because of the way libtool sets up the command line, we
+# need to list libamanda twice here, first to override the system library
+# routines, and second to pick up any references in the other libraries.
+###
+
+LDADD = ../common-src/libamanda.$(LIB_EXTENSION) \
+	@LEXLIB@ \
 	../client-src/libamclient.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
 
