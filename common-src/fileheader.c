@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.20 2002/01/14 00:27:44 martinea Exp $
+ * $Id: fileheader.c,v 1.21 2002/01/31 19:14:07 martinea Exp $
  */
 
 #include "amanda.h"
@@ -274,10 +274,6 @@ build_header(buffer, file, buflen)
 	    buflen -= n;
 	}
 
-	n = snprintf(buffer, buflen, "BLOCKSIZE=%ld\n", file->blocksize);
-	buffer += n;
-	buflen -= n;
-
 	n = snprintf(buffer, buflen, 
 	    "To restore, position tape at start of file and run:\n");
 	buffer += n;
@@ -287,6 +283,10 @@ build_header(buffer, file, buflen)
 	n = snprintf(buffer, buflen,
 	    "\tdd if=<tape> bs=%ldk skip=1 |%s %s\n\014\n",
 	    file->blocksize / 1024, file->uncompress_cmd, file->recover_cmd);
+	buffer += n;
+	buflen -= n;
+
+	n = snprintf(buffer, buflen, "BLOCKSIZE=%ld\n", file->blocksize);
 	buffer += n;
 	buflen -= n;
 	break;
