@@ -31,6 +31,8 @@ TEST_PROGS =		amtapeio
 
 EXTRA_PROGRAMS = 	tapetype $(TEST_PROGS)
 
+CLEANFILES = *.test.c
+
 sbin_PROGRAMS=          ammt amdd
 
 ###
