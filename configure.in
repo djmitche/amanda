@@ -721,6 +721,7 @@ if test "${KRB4_SECURITY}" = yes -a -f  ${srcdir-.}/common-src/krb4-security.c ;
 		KRB4LIBS="-lkrb4 -lkrb5 -lcrypto -ldes425 -lcom_err"
 	    else
 		KRB4LIBS="-lkrb4 -lcrypto -ldes425"
+	    fi
 	    break
 	fi
     done
