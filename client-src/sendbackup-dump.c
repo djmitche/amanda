@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.82 2002/03/31 21:02:00 jrjackson Exp $
+ * $Id: sendbackup-dump.c,v 1.83 2002/05/27 19:55:53 martinea Exp $
  *
  * send backup data using BSD dump
  */
@@ -126,7 +126,7 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
     fprintf(stderr, "%s: start [%s:%s level %d]\n",
 	    get_pname(), host, disk, level);
 
-    if(options->compress) {
+    if(options->compress == COMPR_FAST || options->compress == COMPR_BEST) {
 	char *compopt = skip_argument;
 
 #if defined(COMPRESS_BEST_OPT) && defined(COMPRESS_FAST_OPT)
