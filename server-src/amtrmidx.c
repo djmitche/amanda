@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmidx.c,v 1.21.4.1.4.2.2.5 2003/10/27 18:33:03 martinea Exp $
+ * $Id: amtrmidx.c,v 1.21.4.1.4.2.2.6 2004/02/12 18:28:42 martinea Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -160,7 +160,7 @@ char **argv;
 	    amfree(host);
 	    amfree(disk);
 	    if((d = opendir(indexdir)) == NULL) {
-		dbprintf(("could not open index directory \"%s\"", indexdir));
+		dbprintf(("could not open index directory \"%s\"\n", indexdir));
 		amfree(indexdir);
 		continue;
 	    }
