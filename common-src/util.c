@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.2.2.2.4.2 2001/03/20 00:25:22 jrjackson Exp $
+ * $Id: util.c,v 1.2.2.2.4.3 2001/05/11 18:43:34 jrjackson Exp $
  */
 
 #include "amanda.h"
@@ -98,6 +98,7 @@ bind_portrange(s, addrp, first_port, last_port)
 {
     int port, cnt;
     const int num_ports = last_port - first_port + 1;
+    int save_errno;
 
     assert(first_port > 0 && first_port <= last_port && last_port < 65536);
 
@@ -124,7 +125,18 @@ bind_portrange(s, addrp, first_port, last_port)
 	    port = first_port;
     }
     if (cnt == num_ports) {
+	dbprintf(("%s: bind_portrange: all ports between %d and %d busy\n",
+		  get_pname(),
+		  first_port,
+		  last_port));
 	errno = EAGAIN;
+    } else {
+	save_errno = errno;
+	dbprintf(("%s: bind_portrange: port %d: %s\n",
+		  get_pname(),
+		  port,
+		  strerror(errno)));
+	errno = save_errno;
     }
     return -1;
 }
