@@ -1,3 +1,40 @@
+2000-12-08 Marc Mengel <mengel@fnal.gov>
+	* docs/RAIT: New file.
+	* docs/VTAPE-API: New file.
+	* tape-src/rait.c: New File providing RAIT virtual tape type.
+	* tape-src/tapeio.c: Major Surgery.
+	  (vtable): New static table of virtual tape types.
+	  (fdtable): New static table mapping file descriptors.
+	  (tapefd_fsf_ioctl): Renamed tapefd_fsf, with added ioctl argument.
+	  (tapefd_rewind_ioctl): Likewise.
+	  (tapefd_unload_ioctl): Likewise.
+	  (tapefd_weof_ioctl): Likewise.
+	  (tapefd_status_ioctl): Likewise.
+	  (tape_open): Now is a virtual tape table lookup and call.
+	  (tape_access): Now is a switch through virtual tape table.
+	  (tape_stat): Likewise.
+	  (tapefd_close): Likewise.
+	  (tapefd_fsf): Likewise.
+	  (tapefd_read): Likewise.
+	  (tapefd_rewind): Likewise.
+	  (tapefd_resetofs): Likewise.
+	  (tapefd_unload): Likewise.
+	  (tapefd_status): Likewise.
+	  (tapefd_weof): Likewise.
+	  (tapefd_write): Likewise.
+	  (plain_tape_access): Rename of tape_access.
+	  (plain_tape_open): Likewise.
+	  (plain_tapefd_read): Likewise.
+	  (plain_tape_stat): Likewise.
+	  (plain_tapefd_write): Likewise.
+	  (plain_tapefd_close): Likewise.
+	  (plain_tapefd_fsf): Now calls tapefd_fsf_ioctl with &ioctl().
+	  (plain_tapefd_rewind): Likewise.
+	  (plain_tapefd_resetofs): Likewise.
+	  (plain_tapefd_unload): Likewise.
+	  (plain_tapefd_status): Likewise.
+	  (plain_tapefd_weof): Likewise.
+
 2000-12-04 John R. Jackson  <jrj@purdue.edu>
 
 	server-src/amdump.sh.in: Temporary fix for $LOGNAME vs whoami problem.
@@ -15,6 +52,7 @@
 	* man/amrestore.8: Document the new option, the compression level,
 	  and clean up some nroff issues.
 
+>>>>>>> 1.787
 2000-11-30 Marc Mengel <mengel@fnal.gov>
 	* changer-src/chg-chio.pl.in: Use am-mt and am-dd versus mt and dd.
 	* changer-src/chg-chs.sh.in: Likewise.
