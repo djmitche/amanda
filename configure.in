@@ -1764,6 +1764,8 @@ AC_CHECK_HEADERS(\
 	ndbm.h \
 	netdb.h \
 	netinet/in_systm.h \
+	sys/socket.h \
+	sys/types.h \
 	netinet/ip.h \
 	readline.h \
 	readline/history.h \
@@ -1796,7 +1798,6 @@ AC_CHECK_HEADERS(\
 	sys/statvfs.h \
 	sys/tape.h \
 	sys/time.h \
-	sys/types.h \
 	sys/uio.h \
 	sys/vfs.h \
 	sys/vfstab.h \
