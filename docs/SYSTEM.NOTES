@@ -167,6 +167,14 @@ your system restore program is:
 
     dd if=/dev/whatever bs=4k skip=8 | ...
 
+
+Jean-Francois Malouin <Jean-Francois.Malouin@bic.mni.mcgill.ca>
+reports that, if you are going to use an IRIX host as the tape server,
+you *must* patch your system with *all* kernel and scsi rollup
+patches, otherwise you may end up with useless tapes, due to tape
+rewinding after short periods of inactivity.  See
+http://www-viz.tamu.edu/~sgi-faq/ for more details.
+
 ---------------------------------------------------------------------------
 IRIX 6
 ------
