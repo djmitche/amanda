@@ -1,3 +1,8 @@
+2002-03-23  John R. Jackson (jrj@purdue.edu)
+
+	* configure.in: Add -R$dir as well as -L$dir on Solaris when processing
+	  --with-libraries to support shared libraries of support products.
+
 2002-03-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/chunker.c: Get result from dumper.

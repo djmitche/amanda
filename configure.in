@@ -114,6 +114,11 @@ AC_ARG_WITH(libraries,
 if test "$LIBRARY_DIRS"; then
 	for dir in $LIBRARY_DIRS; do
 	    if test -d "$dir"; then
+		case "$target" in
+		  *-solaris2*)
+			AMANDA_LDFLAGS="$AMANDA_LDFLAGS -R$dir"
+			;;
+		esac
 		AMANDA_LDFLAGS="$AMANDA_LDFLAGS -L$dir"
 	    else
 		AC_MSG_WARN([*** Library directory $dir does not exist.])
