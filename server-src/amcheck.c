@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.34 1998/02/19 10:04:24 amcore Exp $
+ * $Id: amcheck.c,v 1.35 1998/02/20 23:16:02 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -358,7 +358,7 @@ char *device;
 		/* not an exact label match, but a labelstr match */
 		/* check against tape list */
 		tp = lookup_tapelabel(label);
-		if(tp != NULL && tp->position < tapedays)
+		if(tp != NULL && !reusable_tape(tp))
 		    fprintf(errf, " (active tape)\n");
 		else if(got_match)
 		    fprintf(errf, " (labelstr match)\n");
@@ -383,7 +383,7 @@ char *taper_scan()
 {
     char *outslot = NULL;
 
-    if((tp = lookup_tapepos(getconf_int(CNF_TAPECYCLE))) == NULL)
+    if((tp = lookup_last_reusable_tape()) == NULL)
 	searchlabel = NULL;
     else
 	searchlabel = tp->label;
@@ -557,7 +557,7 @@ int fd;
 	tapebad = 1;
     } else {
 	tp = lookup_tapelabel(label);
-	if(tp != NULL && tp->position < tapedays) {
+	if(tp != NULL && !reusable_tape(tp)) {
 	    fprintf(outf, "ERROR: cannot overwrite active tape %s.\n", label);
 	    tapebad = 1;
 	}
@@ -570,7 +570,7 @@ int fd;
     }
 
     if(tapebad) {
-	tape_t *exptape = lookup_tapepos(tapedays);
+	tape_t *exptape = lookup_last_reusable_tape();
 	fprintf(outf, "       (expecting ");
 	if(exptape != NULL) fprintf(outf, "tape %s or ", exptape->label);
 	fprintf(outf, "a new tape)\n");

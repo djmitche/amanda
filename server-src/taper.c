@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.24 1998/02/19 10:04:26 amcore Exp $
+/* $Id: taper.c,v 1.25 1998/02/20 23:16:00 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1267,7 +1267,7 @@ int label_tape()
 
     /* check against tape list */
     tp = lookup_tapelabel(label);
-    if(tp != NULL && tp->position < tapedays) {
+    if(tp != NULL && !reusable_tape(tp)) {
 	errstr = newvstralloc(errstr,
 			      "cannot overwrite active tape ", label,
 			      NULL);
@@ -1308,7 +1308,8 @@ int label_tape()
     /* write tape list */
 
     /* XXX add cur_tape number to tape list structure */
-    shift_tapelist(atoi(datestamp), label, tapedays);
+    remove_tapelabel(label);
+    add_tapelabel(atoi(datestamp), label);
 
     if(cur_tape == 0) {
 	oldtapefilename = stralloc2(tapefilename, ".yesterday");
@@ -1506,7 +1507,7 @@ char *device;
 		/* not an exact label match, but a labelstr match */
 		/* check against tape list */
 		tp = lookup_tapelabel(label);
-		if(tp != NULL && tp->position < tapedays) {
+		if(tp != NULL && !reusable_tape(tp)) {
 		    fprintf(stderr, " (active tape)\n");
 		    fflush(stderr);
 		}
@@ -1536,7 +1537,7 @@ char *taper_scan()
 {
     char *outslot = NULL;
 
-    if((tp = lookup_tapepos(getconf_int(CNF_TAPECYCLE))) == NULL)
+    if((tp = lookup_last_reusable_tape()) == NULL)
 	searchlabel = NULL;
     else
 	searchlabel = tp->label;

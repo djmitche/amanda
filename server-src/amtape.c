@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtape.c,v 1.13 1998/01/26 21:16:15 jrj Exp $
+ * $Id: amtape.c,v 1.14 1998/02/20 23:16:03 martinea Exp $
  *
  * tape changer interface program
  */
@@ -369,7 +369,7 @@ char *device;
 		/* not an exact label match, but a labelstr match */
 		/* check against tape list */
 		tp = lookup_tapelabel(label);
-		if(tp != NULL && tp->position < tapedays)
+		if(tp != NULL && !reusable_tape(tp))
 		    fprintf(stderr, " (active tape)\n");
 		else if(got_match)
 		    fprintf(stderr, " (labelstr match)\n");
@@ -402,7 +402,7 @@ char **argv;
     if(read_tapelist(getconf_str(CNF_TAPELIST)))
 	error("could not load \"%s\"\n", getconf_str(CNF_TAPELIST));
 
-    if((tp = lookup_tapepos(getconf_int(CNF_TAPECYCLE))) == NULL)
+    if((tp = lookup_last_reusable_tape()) == NULL)
 	searchlabel = NULL;
     else
 	searchlabel = stralloc(tp->label);

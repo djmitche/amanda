@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.20 1998/02/10 01:36:58 martinea Exp $
+ * $Id: amflush.c,v 1.21 1998/02/20 23:16:06 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -132,7 +132,7 @@ void confirm()
     else printf("to tape drive %s.\n", getconf_str(CNF_TAPEDEV));
 
     printf("Expecting ");
-    tp = lookup_tapepos(getconf_int(CNF_TAPECYCLE));
+    tp = lookup_last_reusable_tape();
     if(tp != NULL) printf("tape %s or ", tp->label);
     printf("a new tape.");
     tp = lookup_tapepos(1);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.19 1998/01/26 21:16:34 jrj Exp $
+ * $Id: reporter.c,v 1.20 1998/02/20 23:16:05 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -437,7 +437,7 @@ void output_stats()
 void output_tapeinfo()
 {
     tape_t *tp;
-    int run_tapes, pos;
+    int run_tapes;
 
     if(degraded_mode) {
 	fprintf(mailf,
@@ -454,11 +454,11 @@ void output_tapeinfo()
 	    fputs("THESE DUMPS WERE TO DISK.  Flush them onto", mailf);
 	}
 
-	tp = lookup_tapepos(getconf_int(CNF_TAPECYCLE));
+	tp = lookup_last_reusable_tape();
 	if(tp != NULL) fprintf(mailf, " tape %s or", tp->label);
 	fputs(" a new tape.\n", mailf);
+	if(tp != NULL) tp = lookup_previous_reusable_tape(tp);
 
-	pos = getconf_int(CNF_TAPECYCLE)-1;
     }
     else {
 	if(amflush_run)
@@ -470,7 +470,7 @@ void output_tapeinfo()
 		    last_run_tapes == 1 ? "" : "s",
 		    tape_labels ? tape_labels : "");
 
-	pos = getconf_int(CNF_TAPECYCLE);
+	tp = lookup_last_reusable_tape();
     }
 
     run_tapes = getconf_int(CNF_RUNTAPES);
@@ -479,7 +479,6 @@ void output_tapeinfo()
 	    run_tapes == 1? "" : "s");
 
     while(run_tapes > 0) {
-	tp = lookup_tapepos(pos);
 	if(tp != NULL)
 	    fprintf(mailf, "%s", tp->label);
 	else
@@ -487,7 +486,8 @@ void output_tapeinfo()
 
 	if(run_tapes > 1) fputs(", ", mailf);
 
-	run_tapes -= 1, pos -= 1;
+	run_tapes -= 1;
+	tp = lookup_previous_reusable_tape(tp);
     }
     fputs(".\n", mailf);
 }
