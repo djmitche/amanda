@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.56.2.11 2000/05/28 11:35:17 oliva Exp $
+ * $Id: sendbackup-gnutar.c,v 1.56.2.12 2000/08/01 05:22:45 oliva Exp $
  *
  * send backup data using GNU tar
  */
@@ -127,10 +127,10 @@ static char *incrname = NULL;
 #endif
 
 static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
-char *host;
-char *disk;
-int level, dataf, mesgf, indexf;
-char *dumpdate;
+     char *host;
+     char *disk;
+     int level, dataf, mesgf, indexf;
+     char *dumpdate;
 {
     int dumpin, dumpout;
     char *cmd = NULL;
@@ -311,25 +311,32 @@ notincremental:
 	    error("[can't make share name of %s]", disk);
 	}
 
-	strcpy(taropt, "-T\0\0\0\0\0");
-        tarcount = 2;
+	strcpy(taropt, "-T");
+        tarcount = strlen(taropt);
         if (estr != NULL && *estr != '\0') {
+	  assert (tarcount < sizeof (taropt));
 	  taropt[tarcount] = 'X';
 	  tarcount ++;
 	}
 #if SAMBA_VERSION >= 2
+	assert (tarcount < sizeof (taropt));
         taropt[tarcount] = 'q';
         tarcount ++;
 #endif
+	assert (tarcount < sizeof (taropt));
 	taropt[tarcount] = 'c';
         tarcount ++;
 	if (level != 0) {
+	  assert (tarcount < sizeof (taropt));
 	  taropt[tarcount] = 'g';
           tarcount ++;
         } else if (!no_record) {
+	  assert (tarcount < sizeof (taropt));
           taropt[tarcount] = 'a';
           tarcount ++;
 	}
+	assert (tarcount < sizeof (taropt));
+	taropt[tarcount] = '\0';
 
 	dbprintf(("backup from %s, user %s, pass %s\n", 
 		  sharename, SAMBA_USER, "XXXXX"));
