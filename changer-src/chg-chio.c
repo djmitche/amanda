@@ -1,4 +1,4 @@
-/* seagate-changer
+/* chg-chio
 
    This program was written to control the Seagate/Conner/Archive
    autoloading DAT drive.  This drive normally has 4 tape capacity
@@ -17,10 +17,6 @@
    should also work for NetBSD, although I have not tried it.
    It may be necessary to change the IOCTL calls to work on other
    OS's.  
-
-   Compiling:  
-   1. define CHANGER, and COUNTFILE below to match your system.
-   2. cc -o seagate-changer seagate-changer.c
 
 
    (c) 1897 Larry Pyeatt,  pyeatt@cs.colostate.edu 
@@ -42,7 +38,7 @@
  * This is referenced off in libam*'s and won't build on some systems
  * unless the pname definition is out here..
  */
-char *pname = "seagate-changer";
+char *pname = "chg-chio";
 
 #if defined(HAVE_CHIO_H) || defined(HAVE_SYS_CHIO_H)
 
@@ -169,7 +165,7 @@ void unload(int fd, int drive, int slot)
     struct changer_move  move;
     int rc;
 
-    if (!loaded) {
+    if (loaded) {
       move.cm_fromtype = CHET_DT;
       move.cm_fromunit = drive;
       move.cm_totype = CHET_ST;
@@ -297,7 +293,7 @@ void parse_args(int argc, char *argv[],command *rval)
 /* used to find actual slot number from keywords next, prev, first, etc */
 int get_relative_target(fd, nslots, parameter, loaded, changer_file)
     int fd, nslots, loaded;
-    char *parameter, changer_file;
+    char *parameter, *changer_file;
 {
     int current_slot,i;
     current_slot=get_current_slot(changer_file);
@@ -463,7 +459,7 @@ int main(argc, argv)
     char *argv[];
 {
 	fprintf(stderr, "%s: no changer support compiled in.\n", argv[0]);
-	fprintf(stderr, "See seagate-changer.c for more information.\n");
+	fprintf(stderr, "See chg-chio.c for more information.\n");
 	return 2;
 }
 #endif /* HAVE_CHIO_H */
