@@ -1,3 +1,9 @@
+1998-06-01  Dan Swartzendruber <dswartz@druber.com>
+	    via John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/amlabel.c (main): check argc before referencing too
+	far into argv for "-f".
+
 1998-06-01  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/SYSTEM.NOTES: advise Linux users to use dump without

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlabel.c,v 1.13 1998/04/08 16:25:04 amcore Exp $
+ * $Id: amlabel.c,v 1.14 1998/06/01 17:30:30 jrj Exp $
  *
  * write an Amanda label on a tape
  */
@@ -91,9 +91,9 @@ char **argv;
 
     erroutput_type = ERR_INTERACTIVE;
 
-    if(strcmp(argv[1],"-f"))
-	 force=0;
-    else force=1;
+    if(argc > 1 && strcmp(argv[1],"-f") == 0)
+	 force=1;
+    else force=0;
 
     if(argc != 3+force && argc != 5+force)
 	usage(argv[0]);
