@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.25 2001/05/01 18:19:49 ant Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.26 2001/05/07 17:57:12 ant Exp $";
 #endif
 /*
  * 
@@ -179,7 +179,8 @@ void dump_changer_struct(changer_t chg)
   dbprintf(("Number of configurations: %d\n",chg.number_of_configs));
   dbprintf(("Tapes need eject: %s\n",(chg.eject>0?"Yes":"No")));
   dbprintf(("barcode reader  : %s\n",(chg.havebarcode>0?"Yes":"No")));
-  dbprintf(("debug level     : %s\n", chg.debuglevel));
+  if (chg.debuglevel != NULL)
+     dbprintf(("debug level     : %s\n", chg.debuglevel));
   dbprintf(("Tapes need sleep: %d seconds\n",chg.sleep));
   dbprintf(("Cleancycles     : %d\n",chg.cleanmax));
   dbprintf(("Changerdevice   : %s\n",chg.device));

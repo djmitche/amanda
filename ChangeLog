@@ -1,6 +1,21 @@
+2001-05-07 Thomas Hepper <th@ant.han.de>
+	* changer-src/chg-scsi.c : Fixed NULL pointer in debug print of the config.
+	* changer-src/scsi-canger-driver.c : Try to get and set the status of the tape drive in
+	GenericElementStatus if there is an error condition. Move from tape to tape to get the
+	tape loaded if it is only ejected.
+	* changer-src/scsi-defs.h : New define for the Tape_Status fucntion, TAPE_NOT_LOADED
+	* changer-src/scsi-linux.c : Added return type for tape not loaded
+	* changer-src/scsi-solaris.c : In SCSI_ExecuteCommand force the direction to write if the
+	databuffersize is 0, if the direction is input the ioctl returns with errno 22, invalid argument.
+	The function Tape_Status will now return either tape loaded or not.
+	* example/chg-scsi-solaris.conf.in : Added pointer to doc/TAPE.CHANGERS on how to configure
+	the sgen driver.
+	* doc/TAPE.CHANGERS : Updated the description of the chg-scsi.conf options, short description on
+	how to confgure the sgen driver on solaris 2.8
+	
 2001-05-04 John R. Jackson <jrj@purdue.edu>
 
-	* config/depcomp: Fix problem with argument processing and update to
+	* config/depcomp: Fix problem with argument*  processing and update to
 	  latest version.
 
 2001-05-01 Thomas Hepper <th@ant.han.de>

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.26 2001/05/01 18:19:49 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.27 2001/05/07 17:57:12 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -1609,11 +1609,15 @@ int SenseHandler(int DeviceFD, unsigned char flag, unsigned char SenseKey, unsig
   return(ret);
 }
 
-/* Try to get information about the tape,    */
-/* Tape loaded ? Online etc                  */
-/* At the moment quick and dirty with ioctl  */
-/* Hack for AIT                              */
-/*                                           */
+/*
+ * Try to get information about the tape,
+ * Tape loaded ? Online etc
+ * Use the mtio ioctl to get the information
+ *
+ * TODO:
+ * Pass an parameter to identify which unit to use
+ * if there are more than one
+*/
 void TapeStatus()
 {
   int ret;
@@ -2600,6 +2604,8 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
   int DTEError = 0;
   int STEEmpty = 0;
 
+  extern OpenFiles_T *pDev;
+
   int error = 0;   /* If set do an INIT ELEMENT STATUS */
   int x;           /* The standard loop counter :-) */
   int loop = 2;    /* Redo it if an error has been reset */
@@ -2706,17 +2712,17 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
 	  error = 0;
 	}
 
-      /* OK, this is dirty i know
-       * But i have at the moment no idea how to check if there 
-       * is an tape in the drive on all plattforms.
-       * So i assume that if one STE Slot is empty
-       * there must be an tape loaded
-       */
       if (DTEError == 1)
 	{
-	  if ( STEEmpty == 0)
+	  TapeStatus();
+	  /*
+	   * If the status is empty to an move from tape to tape
+	   * This is if the tape is ejected, but not unloaded
+	   */
+	  if (pDTE[0].status == 'E')
 	    {
-	      pDTE[0].status = 'E';
+	      DebugPrint(DEBUG_INFO, SECTION_ELEMENT, "GenericElementStatus : try to move tape to tape drive\n");
+	      pDev[DeviceFD].functions->function_move(DeviceFD, pDTE[0].address, pDTE[0].address);
 	    }
 	}
 	  /* Done GetElementStatus */

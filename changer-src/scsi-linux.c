@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-linux.c,v 1.19 2001/04/28 19:17:58 ant Exp $
+ * $Id: scsi-linux.c,v 1.20 2001/05/07 17:57:12 ant Exp $
  *
  * Interface to execute SCSI commands on Linux
  *
@@ -523,25 +523,30 @@ int Tape_Status( int DeviceFD)
 
   dbprintf(("ioctl -> mtget.mt_gstat %lX\n",mtget.mt_gstat));
   if (GMT_ONLINE(mtget.mt_gstat))
-  {
-    ret = TAPE_ONLINE;
-  }
-
+    {
+      ret = TAPE_ONLINE;
+    }
+  
   if (GMT_BOT(mtget.mt_gstat))
-  {
-    ret = ret | TAPE_BOT;
-  }
-
+    {
+      ret = ret | TAPE_BOT;
+    }
+  
   if (GMT_EOT(mtget.mt_gstat))
-  {
-    ret = ret | TAPE_EOT;
-  }
-
+    {
+      ret = ret | TAPE_EOT;
+    }
+  
   if (GMT_WR_PROT(mtget.mt_gstat))
-  {
-    ret = ret | TAPE_WR_PROT;
-  }
-
+    {
+      ret = ret | TAPE_WR_PROT;
+    }
+  
+  if (GMT_DR_OPEN(mtget.mt_gstat))
+    {
+      ret = ret | TAPE_NOT_LOADED;
+    }
+  
   SCSI_CloseDevice(DeviceFD);
   return(ret); 
 }

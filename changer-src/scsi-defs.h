@@ -120,6 +120,7 @@ typedef unsigned char PackedBit;
 #define TAPE_BOT 2           /* Tape is at begin of tape */
 #define TAPE_EOT 4           /* Tape is at end of tape */
 #define TAPE_WR_PROT 8       /* Tape is write protected */
+#define TAPE_NOT_LOADED 16   /* Tape is not loaded */
 
 /* Defines for exit status */
 #define WARNING 1

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-solaris.c,v 1.18 2001/04/15 12:05:24 ant Exp $
+ * $Id: scsi-solaris.c,v 1.19 2001/05/07 17:57:12 ant Exp $
  *
  * Interface to execute SCSI commands on an Sun Workstation
  *
@@ -160,26 +160,34 @@ int SCSI_ExecuteCommand(int DeviceFD,
       if (DataBufferLength > 0)
         memset(DataBuffer, 0, DataBufferLength);
 
-      Command.uscsi_flags =  USCSI_READ | USCSI_RQENABLE;
-      /*
+      /* Command.uscsi_flags =  USCSI_READ | USCSI_RQENABLE;    */
       Command.uscsi_flags = USCSI_DIAGNOSE | USCSI_ISOLATE
         | USCSI_READ | USCSI_RQENABLE;
-      */
       break;
     case Output:
-      Command.uscsi_flags =  USCSI_WRITE | USCSI_RQENABLE;
-      /*
+      /* Command.uscsi_flags =  USCSI_WRITE | USCSI_RQENABLE;   */
       Command.uscsi_flags = USCSI_DIAGNOSE | USCSI_ISOLATE
         | USCSI_WRITE | USCSI_RQENABLE;
-      */
       break;
     }
   /* Set timeout to 5 minutes. */
   Command.uscsi_timeout = 300;
   Command.uscsi_cdb = (caddr_t) CDB;
   Command.uscsi_cdblen = CDB_Length;
-  Command.uscsi_bufaddr = DataBuffer;
-  Command.uscsi_buflen = DataBufferLength;
+
+  if (DataBufferLength > 0)
+    {  
+      Command.uscsi_bufaddr = DataBuffer;
+      Command.uscsi_buflen = DataBufferLength;
+    } else {
+/*
+ * If there is no data buffer force the direction to write, read with
+ * a null buffer will fail (errno 22)
+ */
+      Command.uscsi_flags = USCSI_DIAGNOSE | USCSI_ISOLATE
+        | USCSI_WRITE | USCSI_RQENABLE;
+   }
+
   Command.uscsi_rqbuf = (caddr_t) pRequestSense;
   Command.uscsi_rqlen = RequestSenseLength;
   DecodeSCSI(CDB, "SCSI_ExecuteCommand : ");
@@ -193,9 +201,11 @@ int SCSI_ExecuteCommand(int DeviceFD,
       ret = Command.uscsi_status;
       break;
     }
-    dbprintf(("ioctl on %d failed, errno %d, ret %d\n",DeviceFD, errno, ret));
-    RequestSense(DeviceFD, &pExtendedRequestSense, 0);
-    DecodeExtSense(&pExtendedRequestSense, "SCSI_ExecuteCommand:", debug_file);
+    dbprintf(("ioctl on %d failed, errno %d, ret %d\n",pDev[DeviceFD].fd, errno, ret));
+    /*
+     * RequestSense(DeviceFD, &pExtendedRequestSense, 0);
+    */
+    DecodeSense(RequestSense, "SCSI_ExecuteCommand:", debug_file);
     retries--;
   }
   --depth;
@@ -229,7 +239,40 @@ int Tape_Eject ( int DeviceFD)
 
 int Tape_Status( int DeviceFD)
 {
-  return(-1); 
+  extern OpenFiles_T *pDev;
+  struct mtget mtget;
+  int ret = -1;
+
+  if (pDev[DeviceFD].devopen == 0)
+    {
+      SCSI_OpenDevice(DeviceFD);
+    }
+  
+  if (ioctl(pDev[DeviceFD].fd , MTIOCGET, &mtget) != 0)
+    {
+      dbprintf(("Tape_Status error ioctl %d\n",errno));
+      SCSI_CloseDevice(DeviceFD);
+      return(-1);
+    }
+
+  /*
+   * I have no idea what is the meaning of the bits in mt_erreg
+   * I assume that nothing set is tape loaded
+   * 0x2 is no tape online
+   */
+  if (mtget.mt_erreg == 0)
+    {
+      ret = ret | TAPE_ONLINE;
+    }
+
+  if (mtget.mt_erreg & 0x2)
+    {
+      ret = ret | TAPE_NOT_LOADED;
+    }
+
+  SCSI_CloseDevice(DeviceFD);
+
+  return(ret); 
 }
 
 int ScanBus(int print)
