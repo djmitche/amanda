@@ -1,5 +1,9 @@
 1998-06-10  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* client-src/sendsize.c (getsize_dump): use killpgrp
+	unconditionally, so we're not bitten by setuid dump programs.
+	* client-src/killpgrp.c: enable unconditionally.
+
 	* tape-src/tapetype.c: new program: calculates tapetype parameters.
 	* tape-src/Makefile.am (EXTRA_PROGRAMS): added tapetype.
 	* example/amanda.conf.in: point to tapetype program.

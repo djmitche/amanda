@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.90 1998/05/28 23:04:02 amcore Exp $
+ * $Id: sendsize.c,v 1.91 1998/06/10 13:58:53 oliva Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -716,7 +716,7 @@ int level;
     case 0:	/* child process */
 	if(SETPGRP == -1)
 	    SETPGRP_FAILED();
-	else if (strcmp(rundump_cmd, cmd) == 0) {
+	else {
 	    switch(fork()) {
 	    case -1:
 		dbprintf(("fork failed, trying without killpgrp\n"));

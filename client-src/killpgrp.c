@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: killpgrp.c,v 1.6 1998/06/01 19:13:13 jrj Exp $
+ * $Id: killpgrp.c,v 1.7 1998/06/10 13:58:51 oliva Exp $
  *
  * if it is the process group leader, it kills all processes in its
  * process group when it is killed itself.
@@ -44,25 +44,15 @@
 #define AM_GETPGRP() getpid()
 #endif
  
-#if defined(USE_RUNDUMP) || defined(VDUMP) || defined(XFSDUMP)
-#  undef ERRMSG
-#else
-#  define ERRMSG "killpgrp not enabled on this system.\n"
-#endif
-
 int main P((int argc, char **argv));
-#ifndef ERRMSG
 static void term_kill_soft P((int sig));
 static void term_kill_hard P((int sig));
-#endif
 
 int main(argc, argv)
 int argc;
 char **argv;
 {
-#ifndef ERRMSG
     amwait_t status;
-#endif
     int fd;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
@@ -79,15 +69,6 @@ char **argv;
 
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
-
-#ifdef ERRMSG							/* { */
-
-    fprintf(stderr, ERRMSG);
-    dbprintf(("%s: %s", argv[0], ERRMSG));
-    dbclose();
-    return 1;
-
-#else								/* } { */
 
     /* we should be invoked by CLIENT_LOGIN */
     {
@@ -131,10 +112,8 @@ char **argv;
     dbprintf(("child process exited with status %d\n", WEXITSTATUS(status)));
 
     return WEXITSTATUS(status);
-#endif								/* } */
 }
 
-#ifndef ERRMSG							/* { */
 static void term_kill_soft(sig)
 int sig;
 {
@@ -170,4 +149,3 @@ int sig;
 	dbprintf(("waiting until child terminates\n"));
     }
 }
-#endif								/* } */
