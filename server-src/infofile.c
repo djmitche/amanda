@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.51 2004/08/02 18:53:31 martinea Exp $
+ * $Id: infofile.c,v 1.52 2005/03/16 18:15:05 martinea Exp $
  *
  * manage current info file
  */
@@ -335,6 +335,15 @@ info_t *info;
 
 	onehistory.date = date;	/* time_t not guarranteed to be long */
 
+	onehistory.secs = -1;
+	skip_whitespace(s, ch);
+	if(ch != '\0') {
+	    if(sscanf((s - 1), "%ld", &onehistory.secs) != 1) {
+		break;
+	    }
+	    skip_integer(s, ch);
+	}
+
 	info->history[nb_history++] = onehistory;
     }
 
@@ -400,9 +409,9 @@ info_t *info;
     fprintf(infof, "last_level: %d %d\n", info->last_level, info->consecutive_runs);
 
     for(i=0;info->history[i].level > -1;i++) {
-	fprintf(infof, "history: %d %ld %ld %ld\n",info->history[i].level,
+	fprintf(infof, "history: %d %ld %ld %ld %ld\n",info->history[i].level,
 		info->history[i].size, info->history[i].csize,
-		info->history[i].date);
+		info->history[i].date, info->history[i].secs);
     }
     fprintf(infof, "//\n");
 
