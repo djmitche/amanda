@@ -1,3 +1,8 @@
+2002-03-07 John R. Jackson (jrj@purdue.edu)
+
+	* changer-src/chg-zd-mtx.sh.in: Allow whitespace on a VolumeTag line.
+	  Compliments of Christopher McCrory <chrismcc@pricegrabber.com>.
+
 2002-03-06  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* recover-src/amrecover.h (list_disk): Prototype.
