@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.73 2002/04/07 20:01:12 jrjackson Exp $
+ * $Id: reporter.c,v 1.74 2002/06/10 21:53:15 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -344,7 +344,7 @@ main(argc, argv)
 		if (*optarg == '/') {
                     psfname = stralloc(optarg);
 		} else {
-                    psfname = stralloc2(my_cwd, optarg);
+                    psfname = vstralloc(my_cwd, "/", optarg, NULL);
 		}
                 break;
             case '?':
