@@ -1,3 +1,7 @@
+2000-06-02 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/holding.c (pick_datestamp): convert ch to upper.
+
 2000-05-29 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/driver.c (handle_dumper_result, handle_chunker_result):
