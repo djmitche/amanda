@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.16.2.5.2.1 2001/12/30 17:26:22 martinea Exp $
+ * $Id: conffile.c,v 1.54.2.16.2.5.2.2 2001/12/30 23:07:59 martinea Exp $
  *
  * read configuration file
  */
@@ -40,6 +40,7 @@
 
 #include "conffile.h"
 #include "diskfile.h"
+#include "driverio.h"
 #include "clock.h"
 
 #ifdef HAVE_LIMITS_H
@@ -899,11 +900,27 @@ static int read_confline()
     case MAILTO:    get_simple(&conf_mailto,    &seen_mailto,    STRING); break;
     case DUMPUSER:  get_simple(&conf_dumpuser,  &seen_dumpuser,  STRING); break;
     case PRINTER:   get_simple(&conf_printer,   &seen_printer,   STRING); break;
-    case DUMPCYCLE: get_simple(&conf_dumpcycle, &seen_dumpcycle, INT);    break;
-    case RUNSPERCYCLE: get_simple(&conf_runspercycle, &seen_runspercycle, INT);    break;
+    case DUMPCYCLE: get_simple(&conf_dumpcycle, &seen_dumpcycle, INT);
+		    if(conf_dumpcycle.i < 0) {
+			parserror("dumpcycle must be positive");
+		    }
+		    break;
+    case RUNSPERCYCLE: get_simple(&conf_runspercycle, &seen_runspercycle, INT);
+		    if(conf_runspercycle.i < -1) {
+			parserror("runspercycle must be >= -1");
+		    }
+		    break;
     case MAXCYCLE:  get_simple(&conf_maxcycle,  &seen_maxcycle,  INT);    break;
-    case TAPECYCLE: get_simple(&conf_tapecycle, &seen_tapecycle, INT);    break;
-    case RUNTAPES:  get_simple(&conf_runtapes,  &seen_runtapes,  INT);    break;
+    case TAPECYCLE: get_simple(&conf_tapecycle, &seen_tapecycle, INT);
+		    if(conf_tapecycle.i < 1) {
+			parserror("tapecycle must be positive");
+		    }
+		    break;
+    case RUNTAPES:  get_simple(&conf_runtapes,  &seen_runtapes,  INT);
+		    if(conf_runtapes.i < 1) {
+			parserror("runtapes must be positive");
+		    }
+		    break;
     case TAPEDEV:   get_simple(&conf_tapedev,   &seen_tapedev,   STRING); break;
     case RAWTAPEDEV:get_simple(&conf_rawtapedev,&seen_rawtapedev,STRING); break;
     case TPCHANGER: get_simple(&conf_tpchanger, &seen_tpchanger, STRING); break;
@@ -914,20 +931,58 @@ static int read_confline()
     case INFOFILE:  get_simple(&conf_infofile,  &seen_infofile,  STRING); break;
     case LOGDIR:    get_simple(&conf_logdir,    &seen_logdir,    STRING); break;
     case DISKFILE:  get_simple(&conf_diskfile,  &seen_diskfile,  STRING); break;
-    case BUMPMULT:  get_simple(&conf_bumpmult,  &seen_bumpmult,  REAL);   break;
-    case BUMPSIZE:  get_simple(&conf_bumpsize,  &seen_bumpsize,  INT);    break;
-    case BUMPDAYS:  get_simple(&conf_bumpdays,  &seen_bumpdays,  INT);    break;
-    case NETUSAGE:  get_simple(&conf_netusage,  &seen_netusage,  INT);    break;
-    case INPARALLEL:get_simple(&conf_inparallel,&seen_inparallel,INT);    break;
+    case BUMPMULT:  get_simple(&conf_bumpmult,  &seen_bumpmult,  REAL);
+		    if(conf_bumpmult.r < 0.999) {
+			parserror("bumpmult must be positive");
+		    }
+		    break;
+    case BUMPSIZE:  get_simple(&conf_bumpsize,  &seen_bumpsize,  INT);
+		    if(conf_bumpsize.i < 1) {
+			parserror("bumpsize must be positive");
+		    }
+		    break;
+    case BUMPDAYS:  get_simple(&conf_bumpdays,  &seen_bumpdays,  INT);
+		    if(conf_bumpdays.i < 1) {
+			parserror("bumpdays must be positive");
+		    }
+		    break;
+    case NETUSAGE:  get_simple(&conf_netusage,  &seen_netusage,  INT);
+		    if(conf_netusage.i < 1) {
+			parserror("netusage must be positive");
+		    }
+		    break;
+    case INPARALLEL:get_simple(&conf_inparallel,&seen_inparallel,INT);
+		    if(conf_inparallel.i < 1 || conf_inparallel.i >MAX_DUMPERS){
+			parserror(
+			    "inparallel must be between 1 and MAX_DUMPERS (%d)",
+			    MAX_DUMPERS);
+		    }
+		    break;
     case DUMPORDER: get_simple(&conf_dumporder, &seen_dumporder, STRING); break;
     case TIMEOUT:   get_simple(&conf_timeout,   &seen_timeout,   INT);    break;
-    case MAXDUMPS:  get_simple(&conf_maxdumps,  &seen_maxdumps,  INT);    break;
+    case MAXDUMPS:  get_simple(&conf_maxdumps,  &seen_maxdumps,  INT);
+		    if(conf_maxdumps.i < 1) {
+			parserror("maxdumps must be positive");
+		    }
+		    break;
     case TAPETYPE:  get_simple(&conf_tapetype,  &seen_tapetype,  IDENT);  break;
     case INDEXDIR:  get_simple(&conf_indexdir,  &seen_indexdir,  STRING); break;
     case ETIMEOUT:  get_simple(&conf_etimeout,  &seen_etimeout,  INT);    break;
-    case DTIMEOUT:  get_simple(&conf_dtimeout,  &seen_dtimeout,  INT);    break;
-    case CTIMEOUT:  get_simple(&conf_ctimeout,  &seen_ctimeout,  INT);    break;
-    case TAPEBUFS:  get_simple(&conf_tapebufs,  &seen_tapebufs,  INT);    break;
+    case DTIMEOUT:  get_simple(&conf_dtimeout,  &seen_dtimeout,  INT);
+		    if(conf_dtimeout.i < 1) {
+			parserror("dtimeout must be positive");
+		    }
+		    break;
+    case CTIMEOUT:  get_simple(&conf_ctimeout,  &seen_ctimeout,  INT);
+		    if(conf_ctimeout.i < 1) {
+			parserror("ctimeout must be positive");
+		    }
+		    break;
+    case TAPEBUFS:  get_simple(&conf_tapebufs,  &seen_tapebufs,  INT);
+		    if(conf_tapebufs.i < 1) {
+			parserror("tapebufs must be positive");
+		    }
+		    break;
     case AUTOFLUSH: get_simple(&conf_autoflush, &seen_autoflush, BOOL);   break;
     case RESERVE:   get_simple(&conf_reserve,   &seen_reserve,	 INT);
 		    if(conf_reserve.i < 0 || conf_reserve.i > 100) {
@@ -1211,6 +1266,9 @@ dumptype_t *read_dumptype(name, from, fname, linenum)
 	    break;
 	case DUMPCYCLE:
 	    get_simple((val_t *)&dpcur.dumpcycle, &dpcur.s_dumpcycle, INT);
+	    if(dpcur.dumpcycle < 0) {
+		parserror("dumpcycle must be positive");
+	    }
 	    break;
 	case EXCLUDE:
 	    get_exclude();
@@ -1239,6 +1297,9 @@ dumptype_t *read_dumptype(name, from, fname, linenum)
 	    break;
 	case MAXDUMPS:
 	    get_simple((val_t *)&dpcur.maxdumps, &dpcur.s_maxdumps, INT);
+	    if(dpcur.maxdumps < 1) {
+		parserror("maxdumps must be positive");
+	    }
 	    break;
 	case OPTIONS:
 	    get_dumpopts();
@@ -1503,6 +1564,9 @@ static void get_tapetype()
 	    break;
 	case SPEED:
 	    get_simple((val_t *)&tpcur.speed, &tpcur.s_speed, INT);
+	    if(tpcur.speed < 0) {
+		parserror("Speed must be positive");
+	    }
 	    break;
 	case IDENT:
 	    copy_tapetype();
@@ -1622,6 +1686,9 @@ static void get_interface()
 	    break;
 	case USE:
 	    get_simple((val_t *)&ifcur.maxusage, &ifcur.s_maxusage, INT);
+	    if(ifcur.maxusage <1) {
+		parserror("use must bbe positive");
+	    }
 	    break;
 	case IDENT:
 	    copy_interface();

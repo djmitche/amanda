@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.3 2001/12/30 17:26:22 martinea Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.4 2001/12/30 23:08:01 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -907,8 +907,11 @@ void handle_taper_result()
 	 * checks. If there are dumps waiting for diskspace to be freed,
 	 * cancel one.
 	 */
-	log_add(L_WARNING, "going into degraded mode because of tape error.");
-	start_degraded_mode(&runq);
+	if(!nodump) {
+	    log_add(L_WARNING,
+		    "going into degraded mode because of tape error.");
+	    start_degraded_mode(&runq);
+	}
 	tapeq.head = tapeq.tail = NULL;
 	taper_busy = 0;
 	taper_disk = NULL;
