@@ -1,4 +1,16 @@
 2001-12-31  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* config/ltconfig: Remove
+	* config/ltmain.sh, config/libtool.m4i: Update from libtool 1.4.2.
+	* config/config.guess: Update from
+	  ftp://ftp.gnu.org/gnu/config/config.guess
+	* config/config.sub: Update from 
+	  ftp://ftp.gnu.org/gnu/config/config.sub
+	* config/depcomp, config/install-sh, config/missing, 
+	  config/mkinstalldirs: Update from automake 1.5
+	* config/Makefile.am (EXTRA_DIST): Remove ltconfig.
+
+2001-12-31  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	Patch by Harlan Stenn <Harlan.Stenn@pfcs.com>
 
 	* configure.in: Add missing [.

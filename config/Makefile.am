@@ -5,7 +5,6 @@ EXTRA_DIST =	acinclude.m4i	\
 		config.sub	\
 		install-sh	\
 		libtool.m4i	\
-		ltconfig	\
 		ltmain.sh	\
 		missing		\
 		mkinstalldirs
