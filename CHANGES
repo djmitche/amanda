@@ -1,15 +1,20 @@
-Version 2.4.0
+Version 2.4.0 (non-bugfixes)
 
 	use vdump to dump advfs filesystems only.  -oliva
 
-	chg-multi updates and bugfixes.
-	-Liudvikas Bukys <bukys@cs.rochester.edu>
+	incorrect NO-ROOM error when dumping directly to tape fixed.
+	-oliva
 
-	incorrect NO-ROOM when dumping directly to tape fixed.  -oliva
+	new index generation commands.  -oliva
+
+	bsd-security is now enabled by default.  -oliva
 
 	patch-system script much more configurable.  -oliva
 
-	new index generation commands.  -oliva
+Version 2.4.0
+
+	chg-multi updates and bugfixes.
+	-Liudvikas Bukys <bukys@cs.rochester.edu>
 
 Version 2.4.0b6
 
