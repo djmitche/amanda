@@ -1,7 +1,5 @@
 # Makefile for amplot.
 
-ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
-
 SUFFIXES =		.sh
 
 .sh:

@@ -24,12 +24,13 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: genversion.c,v 1.18 1998/07/04 00:18:46 oliva Exp $
+ * $Id: genversion.c,v 1.18.4.1 1999/05/25 06:59:55 oliva Exp $
  *
  * dump the current Amanda version info
  */
 #include "amanda.h"
 #include "version.h"
+#include "genversion.h"
 
 int main P((void));
 

@@ -1,11 +1,5 @@
 # Makefile for Amanda library.
 
-ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
-
-AMANDA_CFLAGS =		@AMANDA_CFLAGS@
-
-COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
-
 if WANT_LIBTOOL
 lib_LTLIBRARIES =	libamanda.la
 OBJ_EXTENSION = lo
@@ -48,13 +42,15 @@ genversion_SOURCES = genversion.c
 genversion_LDADD = versuff.$(OBJ_EXTENSION) $(libamanda_a_LIBADD) \
 	alloc.$(OBJ_EXTENSION) error.$(OBJ_EXTENSION)
 
-genversion.o: genversion.c
-	$(COMPILE) -DCC="\"$(CC)\"" \
-		   -DBUILT_DATE="\"`date`\"" \
-		   -DBUILT_MACH="\"`uname -a || echo UNKNOWN HOST`\"" \
-		   -c $(srcdir)/genversion.c
+genversion.o: genversion.h
+genversion.h: $(top_builddir)/config.status
+	-rm -f $@ $@.new
+	echo '#define CC "$(CC)"' > $@.new
+	echo '#define BUILT_DATE "'`date`'"' >> $@.new
+	echo '#define BUILT_MACH "'`uname -a || echo UNKNOWN HOST`'"' >> $@.new
+	mv $@.new $@
 
-version.c:	genversion
+version.c:	genversion$(EXEEXT)
 	-rm -f version.c
 	./genversion > version.c
 

@@ -4,7 +4,7 @@ AC_INIT(common-src/amanda.h)
 AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_SYSTEM
 AC_VALIDATE_CACHED_SYSTEM_TUPLE
-AM_INIT_AUTOMAKE(amanda, 2.4.2)
+AM_INIT_AUTOMAKE(amanda, 2.4.2-19990525)
 AM_CONFIG_HEADER(config/config.h)
 
 AC_PREREQ(2.13)		dnl Minimum Autoconf version required.
@@ -968,11 +968,8 @@ AM_CONDITIONAL(WANT_LIBTOOL, test x"$USE_LIBTOOL" = x"yes")
     AC_DEFINE_UNQUOTED(mandir,"$tmp")
 )
 
-AC_CHECK_PROG(CC, gcc, gcc)
-if test -z "$CC"; then
-  AC_CHECK_PROG(CC, cc, cc, , , /usr/ucb/cc)
-  test -z "$CC" && AC_MSG_ERROR([no acceptable cc found in \$PATH])
-fi
+AC_PROG_CC
+AC_EXEEXT
 
 dnl Set the order of dump programs to look for.  Finding the proper file
 dnl system dumping program is problematic.  Some systems, notably HP-UX
@@ -1076,18 +1073,14 @@ END
 		;;
 esac
 
-dnl Set the default CFLAGS to -g if CFLAGS has not been set.
-if test "x" = "x$CFLAGS"; then
-    CFLAGS=-g
-fi
-OLD_CFLAGS="$CFLAGS"
 AMANDA_CFLAGS="$AMANDA_CFLAGS $KRB4INCLUDES"
 AMANDA_CPPFLAGS="$AMANDA_CPPFLAGS $KRB4INCLUDES"
 AMANDA_LDFLAGS="$AMANDA_LDFLAGS $KRB4LDFLAGS"
-CFLAGS="$CFLAGS $AMANDA_CPPFLAGS $AMANDA_CFLAGS"
+AMANDA_LIBS="$KRB4LIBS $AMANDA_LIBS"
+CFLAGS="$CFLAGS $AMANDA_CFLAGS"
 CPPFLAGS="$CPPFLAGS $AMANDA_CPPFLAGS"
 LDFLAGS="$LDFLAGS $AMANDA_LDFLAGS"
-AC_SUBST(AMANDA_CFLAGS)
+LIBS="$AMANDA_LIBS $LIBS"
 
 
 dnl This specifies the flag for mt that tells mt the proper tape drive
@@ -1420,7 +1413,7 @@ LIBS="$amanda_cv_LFS_LIBS $LIBS"
 
 AM_PROG_LIBTOOL
 AC_SUBST(LIBTOOL_DEPS)
-AC_PROG_CC
+
 AC_PROG_GCC_TRADITIONAL
 AC_C_CONST
 AMANDA_C_VOLATILE
@@ -2371,10 +2364,6 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
     AC_MSG_WARN([*** No working file locking capability found!])
     AC_MSG_WARN([*** Be VERY VERY careful.])
 fi
-
-dnl restore the old CFLAGS
-CFLAGS="$OLD_CFLAGS"
-LIBS="$LIBS $KRB4LIBS"
 
 dnl extra substitution parameters
 AC_SUBST(CHS)

@@ -1,13 +1,7 @@
 # Makefile for Amanda file recovery programs.
 
-ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
-
 INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/client-src \
 			-I$(top_srcdir)/tape-src
-
-AMANDA_CFLAGS =		@AMANDA_CFLAGS@
-
-COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
 if WANT_LIBTOOL
 LIB_EXTENSION = la

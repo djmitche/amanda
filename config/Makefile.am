@@ -1,10 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
-ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
-AUTOHEADER = @AUTOHEADER@ --localdir=config
-
-EXTRA_DIST =	acinclude.m4i	\
-		aclocal.m4	\
+EXTRA_DIST =	acconfig.h	\
+		acinclude.m4i	\
 		config.guess	\
 		config.sub	\
 		install-sh	\
@@ -13,3 +10,7 @@ EXTRA_DIST =	acinclude.m4i	\
 		ltmain.sh	\
 		missing		\
 		mkinstalldirs
+
+$(top_srcdir)/acconfig.h: $(srcdir)/acconfig.h
+	@-rm -f $@
+	cd $(top_srcdir) && $(LN_S) config/acconfig.h acconfig.h
