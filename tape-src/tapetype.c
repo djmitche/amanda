@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.17 2003/10/30 18:12:37 martinea Exp $
+ * $Id: tapetype.c,v 1.18 2003/11/28 12:34:48 martinea Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -34,6 +34,8 @@
 #include "tapeio.h"
 
 #define NBLOCKS 32			/* number of random blocks */
+
+extern int optind;
 
 static char *sProgName;
 static char *tapedev;

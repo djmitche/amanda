@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: tapeio.c,v 1.48 2003/03/07 20:55:01 martinea Exp $
+ * $Id: tapeio.c,v 1.49 2003/11/28 12:34:48 martinea Exp $
  *
  * implements generic tape I/O functions
  */
@@ -1060,6 +1060,8 @@ usage()
 #define TEST_BLOCKSIZE	(32 * 1024)
 
 #define MAX_TOKENS	10
+
+extern int optind;
 
 static char *token_area[MAX_TOKENS + 1];
 static char **token;
