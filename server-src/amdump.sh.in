@@ -95,6 +95,7 @@ umask 077
 # Plan and drive the dumps.
 exec </dev/null >$errfile 2>&1
 echo "amdump: start at `date`"
+echo "amdump: datestamp `date +%Y%m%d`"
 $libexecdir/planner$SUF "$@" | $libexecdir/driver$SUF $conf
 echo "amdump: end at `date`"
 

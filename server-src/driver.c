@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.111 2001/11/08 18:46:26 martinea Exp $
+ * $Id: driver.c,v 1.112 2001/11/10 19:31:06 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1471,6 +1471,8 @@ read_flush()
     disk_t *dp;
     int line;
     dumpfile_t file;
+    char *hostname, *diskname, *datestamp;
+    int level;
     char *destname;
     disk_t *dp1;
     char *inpline = NULL;
@@ -1505,7 +1507,41 @@ read_flush()
 	    continue;
 	}
 
-	skip_whitespace(s, ch);                 /* find the filename */
+	skip_whitespace(s, ch);			/* find the hostname */
+	if(ch == '\0') {
+	    error("Cflush line %d: syntax error", line);
+	    continue;
+	}
+	hostname = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+
+	skip_whitespace(s, ch);			/* find the diskname */
+	if(ch == '\0') {
+	    error("Cflush line %d: syntax error", line);
+	    continue;
+	}
+	diskname = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+
+	skip_whitespace(s, ch);			/* find the datestamp */
+	if(ch == '\0') {
+	    error("Cflush line %d: syntax error", line);
+	    continue;
+	}
+	datestamp = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+
+	skip_whitespace(s, ch);			/* find the level number */
+	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
+	    error("Cflush line %d: syntax error", line);
+	    continue;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);			/* find the filename */
 	if(ch == '\0') {
 	    error("Cflush line %d: syntax error", line);
 	    continue;
@@ -1518,6 +1554,14 @@ read_flush()
 	if( file.type != F_DUMPFILE) {
 	    if( file.type != F_CONT_DUMPFILE )
 		log_add(L_INFO, "%s: ignoring cruft file.", destname);
+	    continue;
+	}
+
+	if(strcmp(hostname, file.name) != 0 ||
+	   strcmp(diskname, file.disk) != 0 ||
+	   strcmp(datestamp, file.datestamp) != 0) {
+	    log_add(L_INFO, "disk %s:%s not consistent with file %s",
+		    hostname, diskname, destname);
 	    continue;
 	}
 
@@ -1577,7 +1621,7 @@ read_schedule(waitqp)
     int degr_level;
     long time, degr_time;
     unsigned long size, degr_size;
-    char *hostname, *diskname, *inpline = NULL;
+    char *hostname, *diskname, *datestamp, *inpline = NULL;
     char *command;
     char *s;
     int ch;
@@ -1622,6 +1666,15 @@ read_schedule(waitqp)
 	    continue;
 	}
 	diskname = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+
+	skip_whitespace(s, ch);			/* find the datestamp */
+	if(ch == '\0') {
+	    error("Eschedule line %d: syntax error", line);
+	    continue;
+	}
+	datestamp = s - 1;
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';
 

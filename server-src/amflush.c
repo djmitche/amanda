@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.66 2001/11/08 18:46:26 martinea Exp $
+ * $Id: amflush.c,v 1.67 2001/11/10 19:31:06 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -209,6 +209,7 @@ char **main_argv;
     if(!foreground) detach();
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
     set_logerror(logerror);
+    fprintf(stderr, "amflush: datestamp %s\n", datestamp);
     run_dumps();
 
     if(!foreground) { /* rename errfile */
