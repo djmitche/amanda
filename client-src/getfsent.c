@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getfsent.c,v 1.2 1997/08/27 08:11:32 amcore Exp $
+ * $Id: getfsent.c,v 1.3 1997/10/07 21:34:53 amcore Exp $
  *
  * generic version of code to read fstab
  */
@@ -69,22 +69,23 @@ int get_fstab_nextentry(fsent)
 generic_fsent_t *fsent;
 {
     struct fstab *sys_fsent = getfsent();
+    static char xfsname[256], xmntdir[1024], xfstype[256], xmntopts[256];
 
     if(!sys_fsent)
 	return 0;
-    fsent->fsname  = sys_fsent->fs_spec;
-    fsent->mntdir  = sys_fsent->fs_file;
+    fsent->fsname  = strcpy(xfsname, ys_fsent->fs_spec);
+    fsent->mntdir  = strcpy(xmntdir, sys_fsent->fs_file);
     fsent->freq    = sys_fsent->fs_freq;
     fsent->passno  = sys_fsent->fs_passno;
 #ifdef STATFS_ULTRIX
-    fsent->fstype  = sys_fsent->fs_name;
-    fsent->mntopts = sys_fsent->fs_opts;
+    fsent->fstype  = strcpy(xfstype, sys_fsent->fs_name);
+    fsent->mntopts = strcpy(xmntopts, sys_fsent->fs_opts);
 #elif defined(_AIX)
     fsent->fstype  = "unknown";
-    fsent->mntopts = sys_fsent->fs_type;
+    fsent->mntopts = strcpy(xmntopts, sys_fsent->fs_type);
 #else
-    fsent->fstype  = sys_fsent->fs_vfstype;
-    fsent->mntopts = sys_fsent->fs_mntops;
+    fsent->fstype  = strcpy(xfstype, sys_fsent->fs_vfstype);
+    fsent->mntopts = strcpy(xmntopts, sys_fsent->fs_mntops);
 #endif
     return 1;
 }
