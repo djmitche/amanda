@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.59 2002/03/11 01:00:04 martinea Exp $
+ * $Id: sendbackup.c,v 1.60 2002/03/24 03:46:16 jrjackson Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -239,7 +239,7 @@ char **argv;
 	goto err;
     }
 
-    if(!isdigit(s[-1])) {
+    if(!isdigit((int)s[-1])) {
 	amdevice = s - 1;
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.123 2002/03/13 01:06:47 martinea Exp $
+ * $Id: sendsize.c,v 1.124 2002/03/24 03:46:16 jrjackson Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -232,7 +232,7 @@ char **argv;
 	    err_extra = "bad level";
 	    goto err;
 	}
-	if(!isdigit(s[-1])) {
+	if(!isdigit((int)s[-1])) {
 	    amdevice = s - 1;
 	    skip_non_whitespace(s, ch);
 	    s[-1] = '\0';

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.56 2002/03/03 17:10:32 martinea Exp $
+ * $Id: selfcheck.c,v 1.57 2002/03/24 03:46:16 jrjackson Exp $
  *
  * do self-check and send back any error messages
  */
@@ -155,7 +155,7 @@ char **argv;
 	if (ch == '\0') {
 	    goto err;				/* no device or level */
 	}
-	if(!isdigit(s[-1])) {
+	if(!isdigit((int)s[-1])) {
 	    amdevice = s - 1;
 	    skip_non_whitespace(s, ch);
 	     s[-1] = '\0';			/* terminate the device */

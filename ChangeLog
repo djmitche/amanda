@@ -1,5 +1,11 @@
 2002-03-23  John R. Jackson (jrj@purdue.edu)
 
+	* client-src/selfcheck.c: Fix a compiler warning.
+	* client-src/sendbackup.c: Ditto.
+	* client-src/sendsize.c: Ditto.
+
+2002-03-23  John R. Jackson (jrj@purdue.edu)
+
 	* client-src/getfsent.c (close_fstab()): Call endfsent() instead
 	  of fclose(), if available.
 
