@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.17.4.6.2.15 2003/11/18 16:44:34 martinea Exp $
+ * $Id: reporter.c,v 1.44.2.17.4.6.2.16 2003/11/26 16:10:23 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -898,7 +898,7 @@ void output_tapeinfo()
 		    lasttp->label);
 	    lasttp = lasttp->prev;
 	    c--;
-	    while(lasttp && run_tapes > 0 && lasttp->datestamp == 0) {
+	    while(lasttp && c > 0 && lasttp->datestamp == 0) {
 		fprintf(mailf, ", %s", lasttp->label);
 		lasttp = lasttp->prev;
 		c--;
