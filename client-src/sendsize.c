@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.8 1999/09/10 23:27:18 jrj Exp $
+ * $Id: sendsize.c,v 1.97.2.9 1999/09/11 00:38:25 jrj Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -828,14 +828,13 @@ long getsize_dump(disk, level)
 # endif
 #endif
 	{
-	  char *s;
+	  char *e;
 
-	  s = strerror(errno);
+	  e = strerror(errno);
 	  dbprintf(("%s: exec %s failed or no dump program available: %s\n",
-		    get_pname(), cmd, s));
-	  errno = save_errno;
+		    get_pname(), cmd, e));
 	  error("%s: exec %s failed or no dump program available: %s",
-		get_pname(), cmd, s);
+		get_pname(), cmd, e);
 	  exit(1);
 	}
     }
