@@ -1,3 +1,7 @@
+1998-11-05  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/amstatus.pl.in: remove warning.
+
 1998-11-04  John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/amverify.sh.in: tolerate extra amtape output.
