@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.129 2003/01/01 23:28:19 martinea Exp $
+ * $Id: driver.c,v 1.130 2003/06/03 20:14:28 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -242,7 +242,6 @@ main(main_argc, main_argv)
 
     total_disksize = 0;
     for(hdp = getconf_holdingdisks(), dsk = 0; hdp != NULL; hdp = hdp->next, dsk++) {
-	struct stat stat_hdp;
 	hdp->up = (void *)alloc(sizeof(holdalloc_t));
 	holdalloc(hdp)->allocated_dumpers = 0;
 	holdalloc(hdp)->allocated_space = 0L;
@@ -281,27 +280,8 @@ main(main_argc, main_argv)
 	newdir = newvstralloc(newdir,
 			      hdp->diskdir, "/", datestamp,
 			      NULL);
-	if (mkpdir(newdir, 0770, (uid_t)-1, (gid_t)-1) != 0) {
-	    log_add(L_WARNING, "WARNING: could not create parents of %s: %s",
-		    newdir, strerror(errno));
+	if(!mkholdingdir(newdir)) {
 	    hdp->disksize = 0L;
-	} else if (mkdir(newdir, 0770) != 0 && errno != EEXIST) {
-	    log_add(L_WARNING, "WARNING: could not create %s: %s",
-		    newdir, strerror(errno));
-	    hdp->disksize = 0L;
-	} else if (stat(newdir, &stat_hdp) == -1) {
-	    log_add(L_WARNING, "WARNING: could not stat %s: %s",
-		    newdir, strerror(errno));
-	    hdp->disksize = 0L;
-	} else {
-	    if (!S_ISDIR((stat_hdp.st_mode))) {
-		log_add(L_WARNING, "WARNING: %s is not a directory",
-			newdir);
-		hdp->disksize = 0L;
-	    } else if (access(newdir,W_OK) != 0) {
-		log_add(L_WARNING, "WARNING: directory %s is not writable",
-			newdir);
-	    }
 	}
 	total_disksize += hdp->disksize;
     }

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.42 2003/01/01 23:28:20 martinea Exp $
+ * $Id: holding.c,v 1.43 2003/06/03 20:14:28 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -578,3 +578,39 @@ int verbose;
      closedir(topdir);
 }
 
+
+int mkholdingdir(diskdir)
+char *diskdir;
+{
+    struct stat stat_hdp;
+    int success = 1;
+
+    if (mkpdir(diskdir, 0770, (uid_t)-1, (gid_t)-1) != 0 && errno != EEXIST) {
+	log_add(L_WARNING, "WARNING: could not create parents of %s: %s",
+		diskdir, strerror(errno));
+	success = 0;
+    }
+    else if (mkdir(diskdir, 0770) != 0 && errno != EEXIST) {
+	log_add(L_WARNING, "WARNING: could not create %s: %s",
+		diskdir, strerror(errno));
+	success = 0;
+    }
+    else if (stat(diskdir, &stat_hdp) == -1) {
+	log_add(L_WARNING, "WARNING: could not stat %s: %s",
+		diskdir, strerror(errno));
+	success = 0;
+    }
+    else {
+	if (!S_ISDIR((stat_hdp.st_mode))) {
+	    log_add(L_WARNING, "WARNING: %s is not a directory",
+		    diskdir);
+	    success = 0;
+	}
+	else if (access(diskdir,W_OK) != 0) {
+	    log_add(L_WARNING, "WARNING: directory %s is not writable",
+		    diskdir);
+	    success = 0;
+	}
+    }
+    return success;
+}

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.18 2002/11/26 23:54:40 martinea Exp $
+/* $Id: chunker.c,v 1.19 2003/06/03 20:14:28 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -43,6 +43,7 @@
 #include "amfeatures.h"
 #include "server_util.h"
 #include "util.h"
+#include "holding.h"
 
 #ifndef SEEK_SET
 #define SEEK_SET 0
@@ -382,7 +383,7 @@ startup_chunker(filename, use, chunksize, db)
     struct databuf *db;
 {
     int infd, outfd;
-    char *tmp_filename;
+    char *tmp_filename, *pc;
     int data_port, data_socket;
 
     data_port = 0;
@@ -402,6 +403,10 @@ startup_chunker(filename, use, chunksize, db)
     }
 
     tmp_filename = vstralloc(filename, ".tmp", NULL);
+    pc = strrchr(tmp_filename, '/');
+    *pc = '\0';
+    mkholdingdir(tmp_filename);
+    *pc = '/';
     if ((outfd = open(tmp_filename, O_RDWR|O_CREAT|O_TRUNC, 0600)) < 0) {
 	int save_errno = errno;
 
@@ -539,6 +544,7 @@ databuf_flush(db)
     filetype_t save_type;
     char *q;
     int a;
+    char *pc;
 
     /*
      * If there's no data, do nothing.
@@ -657,6 +663,10 @@ databuf_flush(db)
 				    new_filename,
 				    ".tmp",
 				    NULL);
+	pc = strrchr(tmp_filename, '/');
+	*pc = '\0';
+	mkholdingdir(tmp_filename);
+	*pc = '/';
 	newfd = open(tmp_filename, O_RDWR|O_CREAT|O_TRUNC, 0600);
 	if (newfd == -1) {
 	    int save_errno = errno;
