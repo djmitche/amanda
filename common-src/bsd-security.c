@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.4 1998/11/06 22:25:06 kashmir Exp $
+ * $Id: bsd-security.c,v 1.5 1998/11/11 20:32:45 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -155,8 +155,10 @@ static void bsd_recvpkt P((void *,
 static void bsd_recvpkt_cancel P((void *));
 
 static void *bsd_stream_server P((void *));
+static int bsd_stream_accept P((void *));
 static void *bsd_stream_client P((void *, int));
 static void bsd_stream_close P((void *));
+static int bsd_stream_auth P((void *));
 static int bsd_stream_id P((void *));
 static int bsd_stream_write P((void *, const void *, size_t));
 static void bsd_stream_read P((void *, void (*)(void *, void *, int),
@@ -175,8 +177,10 @@ const security_driver_t bsd_security_driver = {
     bsd_recvpkt,
     bsd_recvpkt_cancel,
     bsd_stream_server,
+    bsd_stream_accept,
     bsd_stream_client,
     bsd_stream_close,
+    bsd_stream_auth,
     bsd_stream_id,
     bsd_stream_write,
     bsd_stream_read,
@@ -235,7 +239,6 @@ static void *accept_fn_arg;
 /*
  * These are the internal helper functions
  */
-static int accept_connection P((struct bsd_stream *));
 static int check_user P((struct bsd_handle *, const char *));
 static void *gethandle P((struct hostent *, int, int));
 static const char *pkthdr2str P((const struct bsd_handle *, const pkt_t *));
@@ -888,6 +891,29 @@ bsd_stream_server(h)
 }
 
 /*
+ * Accepts a new connection on unconnected streams.  Assumes it is ok to
+ * block on accept()
+ */
+static int
+bsd_stream_accept(s)
+    void *s;
+{
+    struct bsd_stream *bs = s;
+
+    assert(bs != NULL);
+    assert(bs->socket != -1);
+    assert(bs->fd < 0);
+
+    bs->fd = stream_accept(bs->socket, 30, DEFAULT_SIZE, DEFAULT_SIZE);
+    if (bs->fd < 0) {
+	security_seterror(&bs->bsd_handle->security_handle,
+	    "can't accept new stream connection: %s", strerror(errno));
+	return (-1);
+    }
+    return (0);
+}
+
+/*
  * Return a connected stream
  */
 static void *
@@ -942,6 +968,17 @@ bsd_stream_close(s)
 }
 
 /*
+ * Authenticate a stream.  bsd streams have no authentication
+ */
+static int
+bsd_stream_auth(s)
+    void *s;
+{
+
+    return (0);	/* success */
+}
+
+/*
  * Returns the stream id for this stream.  This is just the local port.
  */
 static int
@@ -969,14 +1006,6 @@ bsd_stream_write(s, vbuf, size)
     int n;
 
     assert(bs != NULL);
-
-    /*
-     * If the IO fd is not yet open, this had better be a server socket
-     */
-    if (bs->fd == -1) {
-	if (accept_connection(bs) < 0)
-	    return (-1);
-    }
 
     /*
      * Write out all the data
@@ -1044,34 +1073,6 @@ bsd_stream_read_cancel(s)
 }
 
 /*
- * Accepts a new connection on unconnected streams.  Assumes it is ok to
- * block on accept()
- */
-static int
-accept_connection(bs)
-    struct bsd_stream *bs;
-{
-
-    assert(bs != NULL);
-    assert(bs->socket != -1);
-    assert(bs->fd < 0);
-
-    bs->fd = stream_accept(bs->socket, 30, DEFAULT_SIZE, DEFAULT_SIZE);
-    if (bs->fd < 0) {
-	security_seterror(&bs->bsd_handle->security_handle,
-	    "can't accept new stream connection: %s", strerror(errno));
-	return (-1);
-    }
-#if 0
-    /*
-     * XXX we should check for a reserved port here, but traditionally we
-     * haven't.  Yikes.
-     */
-#endif
-    return (0);
-}
-
-/*
  * Callback for bsd_stream_read
  */
 static void
@@ -1082,19 +1083,6 @@ stream_read_callback(arg)
     size_t n;
 
     assert(bs != NULL);
-
-    /*
-     * If the IO fd is not yet open, this had better be a server socket
-     */
-    if (bs->fd == -1) {
-	if (accept_connection(bs) < 0)
-	    return;
-	/* reschedule our new fd for reads */
-	bsd_stream_read_cancel(bs);
-	bs->ev_read = event_register(bs->fd, EV_READFD,
-	    stream_read_callback, bs);
-	return;
-    }
 
     /*
      * Remove the event first, in case they reschedule it in the callback.

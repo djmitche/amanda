@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.h,v 1.3 1998/11/06 22:22:37 kashmir Exp $
+ * $Id: security.h,v 1.4 1998/11/11 20:32:43 kashmir Exp $
  *
  * security api
  */
@@ -101,6 +101,11 @@ typedef struct security_driver {
     void *(*stream_server) P((void *));
 
     /*
+     * Accept a stream created by stream_server
+     */
+    int (*stream_accept) P((void *));
+
+    /*
      * Get a stream and connect it to a remote given a security handle
      * and a stream id.
      */
@@ -110,6 +115,11 @@ typedef struct security_driver {
      * Close a stream opened with stream_server or stream_client
      */
     void (*stream_close) P((void *));
+
+    /*
+     * Authenticate a stream.
+     */
+    int (*stream_auth) P((void *));
 
     /*
      * Return a numeric id for a stream.
@@ -183,8 +193,18 @@ void security_close P((security_handle_t *));
     (*(handle)->driver->recvpkt_cancel)(handle)
 
 security_stream_t *security_stream_server P((security_handle_t *));
+
+/* int security_stream_accept P((security_stream_t *)); */
+#define	security_stream_accept(stream)		\
+    (*(stream)->security_handle->driver->stream_accept)(stream)
+
 security_stream_t *security_stream_client P((security_handle_t *, int));
+
 void security_stream_close P((security_stream_t *));
+
+/* int security_stream_auth P((security_stream_t *)); */
+#define	security_stream_auth(stream)		\
+    (*(stream)->security_handle->driver->stream_auth)(stream)
 
 /* int security_stream_id P((security_stream_t *)); */
 #define	security_stream_id(stream)		\
