@@ -41,7 +41,7 @@
  */
 
 /*
- * $Id: base64.c,v 1.2 1999/03/04 00:05:55 martinea Exp $
+ * $Id: base64.c,v 1.3 1999/03/04 19:20:00 kashmir Exp $
  *
  * Routines for encoding and decoding data into base64
  */
@@ -50,15 +50,15 @@
 #include "base64.h"
 
 const char *
-base64encode(isrc, srclength)
-      const void *isrc;
-      size_t srclength;
+base64encode(vsrc, srclength)
+	const void *vsrc;
+	size_t srclength;
 {
-    char *src = (char *)isrc;
 	/* this array maps a 6 bit value to a character */
 	static const char Base64[] =
 	    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 	static char *target = NULL;
+	const unsigned char *src = vsrc;
 	size_t datalength = 0;
 	unsigned char input[3];
 	unsigned char output[4];
@@ -68,18 +68,16 @@ base64encode(isrc, srclength)
 	assert(src != NULL);
 	assert(srclength > 0);
 
-	if (target != NULL) {
+	if (target != NULL)
 		amfree(target);
-		target = NULL;
-	}
 
 	targsize = (srclength * 4) / 3 + 5;
 	target = alloc(targsize);
 
 	while (2 < srclength) {
-		input[0] = *(char *)src++;
-		input[1] = *(char *)src++;
-		input[2] = *(char *)src++;
+		input[0] = *src++;
+		input[1] = *src++;
+		input[2] = *src++;
 		srclength -= 3;
 
 		output[0] = input[0] >> 2;
@@ -98,7 +96,7 @@ base64encode(isrc, srclength)
 		/* Get what's left. */
 		input[0] = input[1] = input[2] = '\0';
 		for (i = 0; i < srclength; i++)
-			input[i] = *(char *)src++;
+			input[i] = *src++;
 
 		output[0] = input[0] >> 2;
 		output[1] = ((input[0] & 0x03) << 4) + (input[1] >> 4);

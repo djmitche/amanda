@@ -1,3 +1,8 @@
+1999-03-05  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/base64.c (base64encode): don't cast away a const
+	needlessly.
+
 1999-03-04  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* common-src/bsd-security.c (stream_read_callback): change n to int
