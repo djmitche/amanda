@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1997-1998 University of Maryland at College Park
+ * Copyright (c) 1991,1993 University of Maryland
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -20,33 +20,39 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * Authors: the Amanda Development Team.  Its members are listed in a
- * file named AUTHORS, in the root directory of this distribution.
+ * Author: James da Silva, Systems Design and Analysis Group
+ *			   Computer Science Department
+ *			   University of Maryland at College Park
  */
 /*
- * $Id: token.h,v 1.10.8.3 2003/12/16 22:36:45 martinea Exp $
- *
- * interface to token module
+ * sendbackup-krb4.h - those bits of sendbackup defines that deal with 
+ *		       encrypting data streams over the network.  Even
+ *		       though these just call the underlying DES
+ *		       routines, the U.S. government considers this a
+ *		       munition.  Go figure.
  */
-#ifndef TOKEN_H
-#define TOKEN_H
 
-#include "amanda.h"
+#if !defined(SENDBACKUP_KRB4_H)
+#define	SENDBACKUP_KRB4_H
 
-typedef struct {char *word; int value;} table_t;
+#include "krb4-security.h"
 
-extern int split P((char *str, char **token, int toklen, char *sep));
-extern char *squotef P((char *format, ...))
-    __attribute__ ((format (printf, 1, 2)));
-extern char *squote P((char *str));
-extern char *quotef P((char *sep, char *format, ...))
-    __attribute__ ((format (printf, 2, 3)));
-extern char *quote P((char *sep, char *str));
-extern char *rxquote P((char *str));
-#ifndef HAVE_SHQUOTE_DECL
-extern char *shquote P((char *str));
-#endif
-extern int table_lookup P((table_t *table, char *str));
-extern char *table_lookup_r P((table_t *table, int val));
+#define KEY_PIPE	3
+
+int encpid;
+
+void kencrypt_stream();
+
+    /* modification by BIS@BBN 4/25/2003:
+     * with the option processing changes in amanda 2.4.4, must change
+     * the conditional from kencrypt to options->kencrypt */
+#define NAUGHTY_BITS							      \
+    if(options->kencrypt) {						      \
+	int encinf;							      \
+	encpid = pipefork(kencrypt_stream,"kencrypt",&encinf,dataf,mesgf);    \
+	dataf = encinf;							      \
+    }									      \
+    else								      \
+	encpid = -1;
 
 #endif

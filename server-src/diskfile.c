@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.27.4.6.4.3.2.14 2003/10/27 18:33:03 martinea Exp $
+ * $Id: diskfile.c,v 1.27.4.6.4.3.2.15 2003/12/16 22:36:45 martinea Exp $
  *
  * read disklist file
  */
@@ -571,8 +571,26 @@ FILE *fdout;
     int nb_exclude_file;
     int nb_include_file;
 
-    if(dp->host
-       && am_has_feature(dp->host->features, fe_options_auth)) {
+    /* modification by BIS@BBN 4/25/2003:
+     * The first "if" statement has a number of problems, so I removed the
+     * am_has_feature(dp->host->features, fe_options_auth)
+     * condition and caused the first case to always fail.
+     * 1) If dp->host is a NULL pointer, subsequent tests which look
+     *    at dp->host->features or dp->host->hostname will cause a dump.
+     *    It appears that there should be an assertion that dp->host
+     *    is NOT NULL.
+     * 2) The code which checks for the kencrypt feature is only executed
+     *    in the case where dp->auth == AUTH_KRB4.  If we enable Kerberos IV
+     *    in the first case, then the code checking for kencrypt will never
+     *    be executed.
+     * 3) The option processing code in server-src/dumper.c and
+     *    client-src/sendbackup.c do not yet handle the "auth=krb4"
+     *    option style of specifying Kerberos IV.
+     * Getting rid of the whole first case seems to take care of problems
+     * 2 and 3, but not problem 1.
+     */
+    if(dp->host && 0)
+       /* && am_has_feature(dp->host->features, fe_options_auth)) */ {
 	auth_opt = stralloc("auth=");
 	if(dp->auth == AUTH_BSD) {
 	    strappend(auth_opt, "bsd");

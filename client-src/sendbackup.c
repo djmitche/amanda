@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.44.2.9.4.4.2.14 2003/01/04 17:46:08 martinea Exp $
+ * $Id: sendbackup.c,v 1.44.2.9.4.4.2.15 2003/12/16 22:36:45 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -328,7 +328,10 @@ char **argv;
     options = parse_options(stroptions, disk, amdevice, g_options->features, 0);
 
 #ifdef KRB4_SECURITY
-    if(krb4_auth) {
+    /* modification by BIS@BBN 4/25/2003:
+     * with the option processing changes in amanda 2.4.4, must change
+     * the conditional from krb4_auth to options->krb4_auth */
+    if(options->krb4_auth) {
 	if(read(KEY_PIPE, session_key, sizeof session_key) 
 	   != sizeof session_key) {
 	  error("ERROR [%s: could not read session key]", get_pname());
@@ -420,7 +423,10 @@ char **argv;
 
 #ifdef KRB4_SECURITY
     if(!interactive) {
-      if (krb4_auth) {
+      /* modification by BIS@BBN 4/25/2003:
+       * with the option processing changes in amanda 2.4.4, must change
+       * the conditional from krb4_auth to options->krb4_auth */
+      if (options->krb4_auth) {
         if(kerberos_handshake(dataf, session_key) == 0) {
 	    dbprintf(("%s: kerberos_handshake on data socket failed\n",
 		      debug_prefix_time(NULL)));

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.8.4.2.2.2.2.3 2003/01/01 23:28:55 martinea Exp $
+ * $Id: getconf.c,v 1.8.4.2.2.2.2.4 2003/12/16 22:36:45 martinea Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -33,6 +33,8 @@
 #include "version.h"
 #include "genversion.h"
 #include "conffile.h"
+
+#define HOSTNAME_INSTANCE "host_inst"
 
 int main P((int argc, char **argv));
 

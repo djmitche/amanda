@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.32.2.4.4.1.2.5 2003/01/04 17:46:08 martinea Exp $
+ * $Id: amandad.c,v 1.32.2.4.4.1.2.6 2003/12/16 22:36:45 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -382,12 +382,19 @@ char **argv;
             dup2(req_pipe[0], 0);
             dup2(rep_pipe[1], 1);
 
+	    /* modification by BIS@BBN 4/25/2003:
+	     * close these file descriptors BEFORE doing pipe magic
+	     * for transferring session key; inside transfer_session_key
+	     * is a dup2 to move a pipe to KEY_PIPE, which collided
+	     * with req_pipe[0]; when req_pipe[0] was closed after the
+	     * call to transfer_session_key, then KEY_PIPE ended up
+	     * being closed. */
+            aclose(req_pipe[0]);
+            aclose(rep_pipe[1]);
+
 #ifdef  KRB4_SECURITY
 	    transfer_session_key();
 #endif
-
-            aclose(req_pipe[0]);
-            aclose(rep_pipe[1]);
 
 	    /* run service */
 

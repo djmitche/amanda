@@ -1,4 +1,22 @@
 2003-12-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	patch by Greg Troxel <gdt@ir.bbn.com>
+
+	Add kerberos 4 support.
+	* client-src/amandad-krb4.c: New file.
+	* client-src/amandad.c: Fix close of req_pipe[0]/rep_pipe[1].
+	* client-src/sendbackup-krb4.c: New file.
+	* client-src/sendbackup-krb4.h: New file.
+	* client-src/sendbackup.c: Use options->krb4_auth.
+	* common-src/amanda.h: Fix for initgroups.
+	* common-src/krb4-security.c: New file.
+	* common-src/krb4-security.h: New file.
+	* common-src/token.h: Use HAVE_SHQUOTE_DECL.
+	* configure.in: Enhance finding krb libs.
+	* server-src/diskfile.c: Fix.
+	* server-src/dumper-krb4.c: New file.
+	* server-src/getconf.c: Define HOSTNAME_INSTANCE.
+
+2003-12-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* docs/HOWTO-FILE-DRIVER: New file.
 	* docs/TAPE.CHANGERS: Explain chg-disk.

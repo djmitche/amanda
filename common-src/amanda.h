@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.66.2.7.4.5.2.10 2003/02/05 02:07:58 martinea Exp $
+ * $Id: amanda.h,v 1.66.2.7.4.5.2.11 2003/12/16 22:36:45 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -902,7 +902,19 @@ extern int gettimeofday P((struct timeval *tp));
 # define initgroups(name,basegid) 0
 #else
 # ifndef HAVE_INITGROUPS_DECL
+/* modification by BIS@BBN 5/20/2003:
+ * In some Unix systems, basegid is defined as a gid_t; in others
+ * it is defined as an int.  On Mac OS X, there is a "pre-compiled"
+ * unistd.h which causes the gcc -E command in the ICE_CHECK_DECL
+ * autoconf macro to not succeed.  Thus, on Mac OS X, configure thinks
+ * we don't have this declaration when we actually do.  Since Mac OS X
+ * defines basegid as an int, this declaration causes a compilation
+ * failure.  The path of least resistance for fixing this problem
+ * is to just change the basegid declaration from gid_t to int, since
+ * other (but not all) UNIX flavors also defined basegid as an int.
 extern int initgroups P((const char *name, gid_t basegid));
+ */
+extern int initgroups P((const char *name, int basegid));
 # endif
 #endif
 
