@@ -68,7 +68,7 @@ $nb_options = defined( $opt_summary ) +
 				  defined( $opt_failed );
 
 if($nb_options == 0 ) {
-	$opt_summary      = 1;
+	$opt_summary     = 1;
 	$opt_dumping     = 1;
 	$opt_waitdumping = 1;
 	$opt_waittaper   = 1;
@@ -101,6 +101,8 @@ $status_taper = 0;
 $qlen_tapeq = 0;
 $free_kps = 0;
 $free_space = 0;
+$estimate_done=0;
+
 
 while(<AMDUMP>) {
 	chomp;
@@ -390,7 +392,7 @@ foreach $host (sort @hosts) {
 					printf "%8dk", $esize{$hostpart};
 					printf " dumping %8dk", $size/1024;
 					if($size{$hostpart} != 0) {
-						printf " (%6.2f\%)", 
+						printf " (%6.2f%%)", 
 								 (100.0*$size)/(1024.0*$esize{$hostpart});
 					}
 					if( defined $starttime ) {
@@ -481,7 +483,7 @@ foreach $host (sort @hosts) {
 	}
 }
 
-if ($opt_summary == 1) {
+if (defined $opt_summary) {
 	print "\n";
 	print  "SUMMARY          part     real estimated\n";
 	print  "                          size      size\n";
