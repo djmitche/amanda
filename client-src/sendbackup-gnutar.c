@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.56.2.15.4.4.2.11 2003/10/30 18:04:45 martinea Exp $
+ * $Id: sendbackup-gnutar.c,v 1.56.2.15.4.4.2.11.2.1 2004/08/31 13:39:08 martinea Exp $
  *
  * send backup data using GNU tar
  */
@@ -552,25 +552,29 @@ int goterror;
 {
     if(!options->no_record && !goterror) {
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-      if (incrname != NULL && strlen(incrname) > 4) {
-        char *nodotnew;
+	if (incrname != NULL && strlen(incrname) > 4) {
+	    char *nodotnew;
 	
-	nodotnew = stralloc(incrname);
-        nodotnew[strlen(nodotnew)-4] = '\0';
-        if (rename(incrname, nodotnew) != 0) {
-            error("error [renaming %s to %s: %s]", 
-		  incrname, nodotnew, strerror(errno));
+	    nodotnew = stralloc(incrname);
+	    nodotnew[strlen(nodotnew)-4] = '\0';
+	    if (rename(incrname, nodotnew) != 0) {
+		fprintf(stderr, "%s: warning [renaming %s to %s: %s]\n",
+			get_pname(), incrname, nodotnew, strerror(errno));
+	    }
+	    amfree(nodotnew);
+	    amfree(incrname);
 	}
-	amfree(nodotnew);
-	amfree(incrname);
-      }
 #endif
 
-        if(!start_amandates(1))
-	    error("error [opening %s: %s]", AMANDATES_FILE, strerror(errno));
-	amandates_updateone(cur_disk, cur_level, cur_dumptime);
-	finish_amandates();
-	free_amandates();
+        if(!start_amandates(1)) {
+	    fprintf(stderr, "%s: warning [opening %s: %s]\n", get_pname(),
+		    AMANDATES_FILE, strerror(errno));
+	}
+	else {
+	    amandates_updateone(cur_disk, cur_level, cur_dumptime);
+	    finish_amandates();
+	    free_amandates();
+	}
     }
 }
 

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.14.2.7.2.17.2.1 2004/08/03 18:06:14 martinea Exp $
+/* $Id: dumper.c,v 1.75.2.14.2.7.2.17.2.2 2004/08/31 13:39:08 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -953,6 +953,12 @@ char *str;
 #define sc "sendbackup: end"
 	if(strncmp(str, sc, sizeof(sc)-1) == 0) {
 	    got_endline = 1;
+	    break;
+	}
+#undef sc
+#define sc "sendbackup: warning"
+	if(strncmp(str, sc, sizeof(sc)-1) == 0) {
+	    dump_result = max(dump_result, 1);
 	    break;
 	}
 #undef sc
