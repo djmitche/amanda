@@ -1,5 +1,9 @@
 1999-01-28  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* man/amanda.8.in (comprate): it is not used when there is history
+ 	information; useful for large disks that compress little
+	Reported by job bogan <job@piquin.uchicago.edu>
+
 	* Makefile.am: select which SUBDIRS to descend to here
 	* client-src/Makefile.am: removed if WANT_CLIENT
 	* tape-src/Makefile.am: removed if WANT_TAPE
