@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.51 1998/02/19 16:03:30 amcore Exp $
+ * $Id: amanda.h,v 1.52 1998/02/22 02:04:11 amcore Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -167,10 +167,10 @@
 #ifdef WAIT_USES_UNION
   typedef union wait amwait_t;
 # ifndef WEXITSTATUS
-#  define WEXITSTATUS(stat_val) ((amwait_t*)&(stat_val) ->w_retcode)
+#  define WEXITSTATUS(stat_val) (((amwait_t*)&(stat_val))->w_retcode)
 # endif
 # ifndef WTERMSIG
-#  define WTERMSIG(stat_val) ((amwait_t*)&(stat_val) ->w_termsig)
+#  define WTERMSIG(stat_val) (((amwait_t*)&(stat_val))->w_termsig)
 # endif
 # ifndef WIFEXITED
 #  define WIFEXITED(stat_val) (WTERMSIG(stat_val) == 0)
