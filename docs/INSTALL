@@ -144,6 +144,11 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	    $prefix/man			Directory for manual pages
 					--mandir=
 
+	Note that the GNU tar listdir should be a local filesystem on
+	each client that is going to be backed up with GNU tar.  If it 
+	really must be NFS-mounted, make sure the filesystem is
+	exported so that the client has root access to it.
+
     H.  Decide if you are compiling Amanda on a server only or a
 	client only platform.  If you have a particular operating system
 	that will only be a Amanda client and will never run as the
