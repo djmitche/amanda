@@ -25,7 +25,7 @@
  *                         University of Maryland at College Park
  */
 /*
- * $Id: sl.h,v 1.2 2002/02/11 20:51:52 martinea Exp $
+ * $Id: sl.h,v 1.3 2004/04/23 11:44:46 martinea Exp $
  *
  * A doubly linked list of string (char *)
  */
@@ -59,5 +59,6 @@ sl_t *insert_sort_sl P((sl_t *sl, char *name));
 void free_sl P((sl_t *sl));
 void remove_sl P((sl_t *sl,sle_t *elem));
 sl_t *duplicate_sl P((sl_t *sl));
+int  is_empty_sl P((sl_t *sl));
 
 #endif

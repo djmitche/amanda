@@ -25,7 +25,7 @@
  *                         University of Maryland at College Park
  */
 /*
- * $Id: sl.c,v 1.3 2002/07/02 14:00:18 martinea Exp $
+ * $Id: sl.c,v 1.4 2004/04/23 11:44:46 martinea Exp $
  *
  * A doubly linked list of string (char *)
  */
@@ -181,4 +181,16 @@ sl_t *sl;
     }
 
     return new_sl;
+}
+
+/*
+ * Return "true" iff sl is empty (i.e. contains no elements).
+ */
+int is_empty_sl(sl)
+sl_t *sl;
+{
+    if (sl == NULL)
+	return 1;
+
+    return (sl->nb_element == 0);
 }

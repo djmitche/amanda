@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.76 2003/06/05 17:05:08 martinea Exp $
+ * $Id: amflush.c,v 1.77 2004/04/23 11:44:46 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -220,7 +220,7 @@ char **main_argv;
 	}
     }
 
-    if(datestamp_list == NULL) {
+    if(is_empty_sl(datestamp_list)) {
 	printf("Could not find any Amanda directories to flush.\n");
 	exit(1);
     }
