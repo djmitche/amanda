@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.17 1998/01/21 16:49:27 martinea Exp $
+ * $Id: reporter.c,v 1.18 1998/01/22 17:42:53 jrj Exp $
  *
  * nightly Amanda Report generator
  */
@@ -239,7 +239,7 @@ char **argv;
     subj_str = vstralloc(getconf_str(CNF_ORG),
 			 " ", amflush_run ? "AMFLUSH" : "AMANDA",
 			 " ", "MAIL REPORT FOR",
-			 " ", nicedate(atoi(datestamp)),
+			 " ", nicedate(datestamp ? atoi(datestamp) : 0),
 			 NULL);
 
    /* open pipe to mailer */
