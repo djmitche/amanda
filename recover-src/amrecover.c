@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.31 1998/11/19 17:08:24 jrj Exp $
+ * $Id: amrecover.c,v 1.32 1998/11/19 23:05:05 kashmir Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -41,10 +41,6 @@
 #include "amrecover.h"
 #include "getfsent.h"
 #include "dgram.h"
-
-#if defined(KRB4_SECURITY)
-#include "krb4-security.h"
-#endif
 
 #ifdef HAVE_LIBREADLINE
 #  ifdef HAVE_READLINE_READLINE_H
@@ -596,17 +592,7 @@ char **argv;
     }
 
     /* do the security thing */
-#if defined(KRB4_SECURITY)
-#if 0 /* not yet implemented */
-    if(krb4_auth)
-    {
-	line = get_krb_security();
-    } else
-#endif /* 0 */
-#endif
-    {
-	line = get_bsd_security();
-    }
+    line = get_security();
     if (converse(line) == -1)
 	exit(1);
     if (!server_happy())
@@ -687,4 +673,14 @@ char **argv;
 
     aclose(server_socket);
     return 0;
+}
+
+char *
+get_security()
+{
+    struct passwd *pwptr;
+
+    if((pwptr = getpwuid(getuid())) == NULL)
+	error("can't get login name for my uid %ld", (long)getuid());
+    return stralloc2("SECURITY USER ", pwptr->pw_name);
 }

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43 1998/09/29 03:42:12 oliva Exp $
+ * $Id: extract_list.c,v 1.44 1998/11/19 23:05:09 kashmir Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -36,10 +36,6 @@
 #include "dgram.h"
 #ifdef SAMBA_CLIENT
 #include "findpass.h"
-#endif
-
-#if defined(KRB4_SECURITY)
-#include "krb4-security.h"
 #endif
 
 typedef struct EXTRACT_LIST_ITEM
@@ -1081,17 +1077,7 @@ static int extract_files_setup P((void))
     }
 
     /* do the security thing */
-#if defined(KRB4_SECURITY)
-#if 0 /* not yet implemented */
-    if(krb4_auth)
-    {
-	line = get_krb_security();
-    }
-#endif /* 0 */
-#endif
-    {
-	line = get_bsd_security();
-    }
+    line = get_security();
     send_to_tape_server(tape_server_socket, line);
     memset(line, '\0', strlen(line));
     amfree(line);

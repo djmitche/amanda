@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.h,v 1.8 1998/07/04 00:19:09 oliva Exp $
+ * $Id: amrecover.h,v 1.9 1998/11/19 23:05:08 kashmir Exp $
  *
  * data structures and declarations for amrecover
  */
@@ -90,3 +90,5 @@ extern void delete_regex P((char *regex));
 extern void delete_file P((char *path, char *regex));
 
 extern void extract_files P((void));
+
+extern char *get_security P((void));

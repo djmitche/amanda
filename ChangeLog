@@ -1,5 +1,19 @@
 1998-11-19  Mike Grupenhoff <kashmir@munge.com>
 
+	Give amrecover its own security bits.  It has different needs
+	and a different protocol than the rest of amanda, so it shouldn't
+	try to reuse the security bits
+	* recover-src/amrecover.c (get_security): new function, implements
+	bsd security
+	* recover-src/amrecover.c (main): call get_security()
+	* recover-src/amrecover.h: get_security() prototype
+	* recover-src/extract_list.c (extract_files_setup): call
+	get_security()
+	* restore-src/amidxtaped.c (check_security): new function, implements
+	* restore-src/amidxtaped.c (main): call check_security()
+
+1998-11-19  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/stream.c (stream_server, stream_client): cast 4th
 	arg of setsockopt() to (void *) to quash a compiler warning
 	under solaris.
