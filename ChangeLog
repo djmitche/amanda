@@ -1,5 +1,11 @@
 1999-09-05 John R. Jackson  <jrj@purdue.edu>
 
+	* common-src/genversion.c: CLIENT_LOGIN has to be defined so there
+	  is no point testing for it.
+	* server-src/conffile.c: ditto.
+
+1999-09-05 John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/amverify.sh.in: add SMBCLIENT, VRESTORE, VXRESTORE
 	  and XFSRESTORE support.
 

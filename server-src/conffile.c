@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.69 1999/09/05 21:06:11 jrj Exp $
+ * $Id: conffile.c,v 1.70 1999/09/05 21:30:16 jrj Exp $
  *
  * read configuration file
  */
@@ -551,12 +551,7 @@ static void init_defaults()
     malloc_mark(conf_org.s);
     conf_mailto.s = newstralloc(conf_mailto.s, "operators");
     malloc_mark(conf_mailto.s);
-#ifdef CLIENT_LOGIN
-    s = CLIENT_LOGIN;
-#else
-    s = "bin";
-#endif
-    conf_dumpuser.s = newstralloc(conf_dumpuser.s, s);
+    conf_dumpuser.s = newstralloc(conf_dumpuser.s, CLIENT_LOGIN);
     malloc_mark(conf_dumpuser.s);
 #ifdef DEFAULT_TAPE_DEVICE
     s = DEFAULT_TAPE_DEVICE;

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: genversion.c,v 1.24 1999/05/25 07:00:50 oliva Exp $
+ * $Id: genversion.c,v 1.25 1999/09/05 21:30:12 jrj Exp $
  *
  * dump the current Amanda version info
  */
@@ -278,9 +278,7 @@ main()
     prstr("USE_RUNDUMP");
 #endif
 
-#ifdef CLIENT_LOGIN
     prvar("CLIENT_LOGIN", CLIENT_LOGIN);
-#endif
 
 #ifdef FORCE_USERID
     prstr("FORCE_USERID");
