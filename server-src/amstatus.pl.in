@@ -186,6 +186,21 @@ while(<AMDUMP>) {
 			$degr_level{$hostpart}=-1;
 		}
 	}
+	elsif(/^DUMP (\S+) (\S+) (\S+) (\S+) (\d+) (\d+) \d+:\d+:\d+:\d+:\d+:\d+ (\d+) \d+/) {
+		if($generating_schedule == 1 ) {
+			$host=$1;
+			$features=$2;
+			$features=$features;
+			$partition=$3;
+			$datestamp=$4;
+			$hostpart=&make_hostpart($host,$partition,$datestamp);
+			$level{"$hostpart"}=$6;
+			$esize=$7;
+			$esize=32 if $esize<32;
+			$esize{$hostpart}=$esize;
+			$degr_level{$hostpart}=-1;
+		}
+	}
 	elsif(/^(\S+) (\S+) (\d+) (\d+) \d+:\d+:\d+:\d+:\d+:\d+ (\d+) \d+ (\d+) \d+:\d+:\d+:\d+:\d+:\d+ ([-]*\d+) \d+/) {
 		if($generating_schedule == 1 ) {
 			$host=$1;
@@ -276,6 +291,20 @@ while(<AMDUMP>) {
 		#$chunk_finished{$hostpart}=0;
 		$holding_file{$hostpart}=$5;
 	}
+	elsif(/driver: send-cmd time (\S+) to (chunker\d*): (PORT-WRITE) (\d+-\d+) (\S+) (\S+) (\S+) (\S+) (\d+)/) {
+		$current_time=$1;
+		$host=$6;
+		$features=$7;
+		$features=$features;
+		$partition=$8;
+		$hostpart=&make_hostpart($host,$partition,$gdatestamp);
+		$serial=$4;
+		$serial{$serial}=$hostpart;
+		#$chunk_started{$hostpart}=1;
+		#$chunk_time{$hostpart}=$1;
+		#$chunk_finished{$hostpart}=0;
+		$holding_file{$hostpart}=$5;
+	}
 	elsif(/driver: send-cmd time (\S+) to (dumper\d*): (FILE-DUMP|PORT-DUMP) (\d+-\d+) (\S+) (\S+) (\S+) (\S+) (\d+)/) {
 		$current_time=$1;
 		$host=$6;
@@ -291,6 +320,39 @@ while(<AMDUMP>) {
 		$holding_file{$hostpart}=$5 if $3 eq "FILE-DUMP";
 		if(     $level{$hostpart} != $9 &&
 		   $degr_level{$hostpart} == $9) {
+			$level{$hostpart}=$degr_level{$hostpart};
+			$esize{$hostpart}=$degr_size{$hostpart};
+		}
+		if(! defined($busy_time{$2})) {
+			$busy_time{$2}=0;
+		}
+		$running_dumper{$2} = $hostpart;
+		$error{$hostpart}="";
+		$dumpers_active++;
+		if(! defined($dumpers_active[$dumpers_active])) {
+			$dumpers_active[$dumpers_active]=0;
+		}
+		if(! defined($dumpers_held[$dumpers_active])) {
+			$dumpers_held[$dumpers_active]={};
+		}
+	}
+	elsif(/driver: send-cmd time (\S+) to (dumper\d*): (FILE-DUMP|PORT-DUMP) (\d+-\d+) (\S+) (\S+) (\S+) (\S+) (\S+) (\d+)/) {
+		$current_time=$1;
+		$host=$6;
+		$features=$7;
+		$features=$features;
+		$partition=$8;
+		$device=$9;
+		$device=$device;
+		$hostpart=&make_hostpart($host,$partition,$gdatestamp);
+		$serial=$4;
+		$serial{$serial}=$hostpart;
+		$dump_started{$hostpart}=1;
+		$dump_time{$hostpart}=$1;
+		$dump_finished{$hostpart}=0;
+		$holding_file{$hostpart}=$5 if $3 eq "FILE-DUMP";
+		if(     $level{$hostpart} != $10 &&
+		   $degr_level{$hostpart} == $10) {
 			$level{$hostpart}=$degr_level{$hostpart};
 			$esize{$hostpart}=$degr_size{$hostpart};
 		}
@@ -377,6 +439,30 @@ while(<AMDUMP>) {
 		$partition=$5;
 		$level=$6;
 		$ldatestamp=$7;
+		if(!defined $datestamp{$ldatestamp}) {
+			$datestamp{$ldatestamp} = 1;
+			push @datestamp, $ldatestamp;
+		}
+		$hostpart=&make_hostpart($host,$partition,$ldatestamp);
+		$serial{$serial}=$hostpart;
+		if(!defined $level{$hostpart}) {
+			$level{$hostpart} = $level;
+		}
+		$serial{$serial}=$hostpart;
+		$taper_started{$hostpart}=1;
+		$taper_finished{$hostpart}=0;
+		$taper_time{$hostpart}=$1;
+	}
+	#features (maybe missing features)
+	elsif(/driver: send-cmd time (\S+) to taper: FILE-WRITE (\d+-\d+) (\S+) (\S+) (\S*) (\S+) (\d*) (\S+)/){
+		$current_time=$1;
+		$serial=$2;
+		$host=$4;
+		$features=$5;
+		$features=$features;
+		$partition=$6;
+		$level=$7;
+		$ldatestamp=$8;
 		if(!defined $datestamp{$ldatestamp}) {
 			$datestamp{$ldatestamp} = 1;
 			push @datestamp, $ldatestamp;
