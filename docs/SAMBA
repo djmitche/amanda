@@ -1,23 +1,22 @@
 README for adding PC hosts to the Amanda backup system.
 
 Release 2. 28/Jan/1997
-$Id: SAMBA,v 1.6.2.1 1998/01/31 19:34:14 amcore Exp $
+$Id: SAMBA,v 1.6.2.2 1998/02/28 23:59:53 amcore Exp $
 
 Installation
 
-If you're running a version of samba up to 1.9.16p11, or some alpha
-and beta-versions of 1.9.17, you must patch it with the file
-samba-1.9.16p2.patch - this is a patch for 1.9.16p2 of samba, and
-modifies the way the 'dir' command works, and adds totals to both the
-dir command and the tar command, via stderr.  These are used by Amanda
-to estimate and count backup sizes.  This should be installed on an
-Amanda 'client' host, that will act as the 'samba server' host.  This
-will most likely be the same machine as the Amanda master server.
-This patch also works fine with newer releases of samba, but it is
-unnecessary for releases of samba newer than 1.9.17.  In version
-1.9.17 or higher, make sure you don't set a low logging/debuggin level
-in the samba configuration file, because this flag may prevent that
-estimate sizes are printed correctly.
+Amanda is able to back up Microsoft Windows shared disks by using
+SAMBA, a package that implements a SMB client and server for Unix.
+This version of amanda is reported to work with samba 1.9.18p3; it
+will not work with versions previous to 1.9.17.  If you already have
+samba 1.9.16p2 or some beta versions of 1.9.17 already installed with
+a patch that used to be provided with amanda, there's probably no
+reason for you to upgrade.
+
+Make sure you don't set a low logging/debugging level in the samba
+configuration file, because this flag may prevent that estimate sizes
+are printed correctly.  Amanda will report an estimate failure in this
+case.
 
 If you have very long pathnames or very deep directory trees in the PC
 filesystems, you may have to upgrade samba to 1.9.18 (currently in
