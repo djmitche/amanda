@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43.2.13.4.6.2.13 2002/11/12 21:24:20 martinea Exp $
+ * $Id: extract_list.c,v 1.43.2.13.4.6.2.14 2002/11/23 21:13:50 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -64,6 +64,9 @@ typedef struct EXTRACT_LIST
 }
 EXTRACT_LIST;
 
+#define SKIP_TAPE 2
+#define RETRY_TAPE 3
+
 char *dump_device_name = NULL;
 
 extern char *localhost;
@@ -80,7 +83,7 @@ unsigned short samba_extract_method = SAMBA_TAR;
 
 #define READ_TIMEOUT	240*60
 
-static int okay_to_continue P((int));
+static int okay_to_continue P((int, int,  int));
 
 ssize_t read_buffer(datafd, buffer, buflen)
 int datafd;
@@ -997,8 +1000,10 @@ int is_extract_list_nonempty P((void))
 
 /* prints continue prompt and waits for response,
    returns 0 if don't, non-0 if do */
-static int okay_to_continue(allow_tape)
+static int okay_to_continue(allow_tape, allow_skip, allow_retry)
     int allow_tape;
+    int allow_skip;
+    int allow_retry;
 {
     int ch;
     int ret = -1;
@@ -1011,8 +1016,12 @@ static int okay_to_continue(allow_tape)
     while (ret < 0) {
 	if (get_tape) {
 	    prompt = "New tape device [?]: ";
-	} else if (allow_tape) {
+	} else if (allow_tape && allow_skip) {
+	    prompt = "Continue [?/Y/n/s/t]? ";
+	} else if (allow_tape && !allow_skip) {
 	    prompt = "Continue [?/Y/n/t]? ";
+	} else if (allow_retry) {
+	    prompt = "Continue [?/Y/n/r]? ";
 	} else {
 	    prompt = "Continue [?/Y/n]? ";
 	}
@@ -1036,6 +1045,12 @@ static int okay_to_continue(allow_tape)
 		printf("Enter a new device ([host:]device) or \"default\"\n");
 	    } else {
 		printf("Enter \"y\"es to continue, \"n\"o to stop");
+		if(allow_skip) {
+		    printf(", \"s\"kip this tape");
+		}
+		if(allow_retry) {
+		    printf(" or \"r\"etry this tape");
+		}
 		if (allow_tape) {
 		    printf(" or \"t\"ape to change tape drives");
 		}
@@ -1050,6 +1065,10 @@ static int okay_to_continue(allow_tape)
 	    get_tape = 1;
 	} else if (ch == 'N' || ch == 'n') {
 	    ret = 0;
+	} else if (allow_retry && (ch == 'R' || ch == 'r')) {
+	    ret = RETRY_TAPE;
+	} else if (allow_skip && (ch == 'S' || ch == 's')) {
+	    ret = SKIP_TAPE;
 	}
     }
     amfree(line);
@@ -1571,6 +1590,7 @@ void extract_files P((void))
     char *l;
     int tape_server_socket;
     int first;
+    int otc;
 
     if (!is_extract_list_nonempty())
     {
@@ -1636,7 +1656,7 @@ void extract_files P((void))
     if (samba_extract_method == SAMBA_SMBCLIENT)
       printf("(unless it is a Samba backup, that will go through to the SMB server)\n");
 #endif
-    if (!okay_to_continue(0))
+    if (!okay_to_continue(0,0,0))
 	return;
     printf("\n");
 
@@ -1650,8 +1670,13 @@ void extract_files P((void))
 	    printf("Extracting files using tape drive %s on host %s.\n",
 		   tape_device_name, tape_server_name);
 	    printf("Load tape %s now\n", elist->tape);
-	    if (!okay_to_continue(1))
+	    otc = okay_to_continue(1,1,0);
+	    if (otc == 0)
 	        return;
+	    else if (otc == SKIP_TAPE) {
+		delete_tape_list(elist); /* skip this tape */
+		continue;
+	    }
 	    dump_device_name = newstralloc(dump_device_name, tape_device_name);
 	}
 	dump_datestamp = newstralloc(dump_datestamp, elist->date);
@@ -1703,11 +1728,17 @@ void extract_files P((void))
 	    fprintf(stderr,
 		    "extract_list - child returned non-zero status: %d\n",
 		    WEXITSTATUS(child_stat));
-	    if (!okay_to_continue(0))
+	    otc = okay_to_continue(0,0,1);
+	    if(otc == 0)
 		return;
+	    else if(otc == 1) {
+		delete_tape_list(elist); /* tape failed so delete from list */
+	    }
+	    else { /* TAPE_RETRY */
+	    }
 	}
-
-	/* finish up */
-	delete_tape_list(elist);	/* tape done so delete from list */
+	else {
+	    delete_tape_list(elist);	/* tape done so delete from list */
+	}
     }
 }
