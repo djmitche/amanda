@@ -25,6 +25,11 @@ This will cause shared libraries to be built correctly.  Another
 option is to upgrade libtool (amanda-2.4.0b4 is distributed with
 libtool-1.0f, available from ftp://alpha.gnu.org/pub).
 
+
+A bug in GNU tar 1.12 causes it to miscalculate (in fact, to
+misreport) the size of filesystems.  A patch for GNU tar is available
+in the patches directory.
+
 ---------------------------------------------------------------------------
 Ultrix
 ------
