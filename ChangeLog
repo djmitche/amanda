@@ -1,3 +1,10 @@
+1999-01-22  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/planner.c (output_scheduleline): removed `or historical
+	data' from `no estimate' message; historical data doesn't matter any 
+	more
+	Reported by Giorgos Vlachos <Giorgos.Vlachos@eurodyn.com>
+
 1999-01-20  Todd Pfaff  <pfaff@mcmaster.ca>
 	
 	* client-src/sendbackup-gnutar.c: more Samba 2.0.0 messages
