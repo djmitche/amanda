@@ -14,6 +14,7 @@ amtapetype \- generate a tapetype definition.
 .B amtapetype
 [-h]
 [-c]
+[-o]
 [-b blocksize]
 [-e estsize]
 [-f tapedev]
@@ -30,6 +31,9 @@ Display an help message.
 .B \-c
 Run only the hardware compression detection heuristic test and stop.
 This takes a few minutes only.
+.TP
+.B \-o
+Overwrite the tape, even if it's an amanda tape.
 .TP
 .BI \-b "\| blocksize\^"
 record block size (default: 32k)

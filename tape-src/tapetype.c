@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.3.2.3.4.3.2.9 2003/11/28 12:34:52 martinea Exp $
+ * $Id: tapetype.c,v 1.3.2.3.4.3.2.9.2.1 2004/09/15 13:46:48 martinea Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -146,8 +146,9 @@ void usage()
 {
   fputs("usage: ", stderr);
   fputs(sProgName, stderr);
-  fputs(" -h", stderr);
+  fputs(" [-h]", stderr);
   fputs(" [-c]", stderr);
+  fputs(" [-o]", stderr);
   fputs(" [-b blocksize]", stderr);
   fputs(" [-e estsize]", stderr);
   fputs(" [-f tapedev]", stderr);
@@ -161,6 +162,7 @@ void help()
   fputs("\
   -h			display this message\n\
   -c			run hardware compression detection test only\n\
+  -o			overwrite amanda tape\n\
   -b blocksize		record block size (default: 32k)\n\
   -e estsize		estimated tape size (default: 1g == 1024m)\n\
   -f tapedev		tape device name (default: $TAPE)\n\
@@ -307,6 +309,12 @@ int main(argc, argv)
   time_t now;
   int hwcompr = 0;
   int comprtstonly = 0;
+  int overwrite_label = 0;
+  int is_labeled = 0;
+  char *result;
+  char *datestamp = NULL;
+  char *label = NULL;
+
 
   if ((sProgName = strrchr(*argv, '/')) == NULL) {
     sProgName = *argv;
@@ -318,7 +326,7 @@ int main(argc, argv)
   tapedev = getenv("TAPE");
   typename = "unknown-tapetype";
 
-  while ((ch = getopt(argc, argv, "b:e:f:t:hc")) != EOF) {
+  while ((ch = getopt(argc, argv, "b:e:f:t:hco")) != EOF) {
     switch (ch) {
     case 'b':
       blockkb = strtol(optarg, &suffix, 0);
@@ -357,6 +365,9 @@ int main(argc, argv)
       help();
       return 1;
       break;
+    case 'o':
+      overwrite_label=1;
+      break;
     default:
       fprintf(stderr, "%s: unknown option \'%c\'\n", sProgName, ch);
       /* fall through to ... */
@@ -370,6 +381,41 @@ int main(argc, argv)
 
   if (tapedev == NULL || optind < argc) {
     usage();
+    return 1;
+  }
+
+/* verifier tape */
+
+
+  fd = tape_open(tapedev, O_RDONLY);
+  if (fd == -1) {
+    fprintf(stderr, "%s: could not open %s: %s\n",
+	    sProgName, tapedev, strerror(errno));
+    return 1;
+  }
+
+  if((result = tapefd_rdlabel(fd, &datestamp, &label)) == NULL) {
+    is_labeled = 1;
+  }
+  else if (strcmp(result,"not an amanda tape") != 0) {
+    fprintf(stderr, "%s: %s: %s\n",
+	    sProgName, tapedev, result);
+    tapefd_close(fd);
+    return 1;
+  }
+
+  if(tapefd_rewind(fd) == -1) {
+    fprintf(stderr, "%s: could not rewind %s: %s\n",
+	    sProgName, tapedev, strerror(errno));
+    tapefd_close(fd);
+    return 1;
+  }
+
+  tapefd_close(fd);
+
+  if(is_labeled == 1 && overwrite_label == 0) {
+    fprintf(stderr, "%s: The tape is an amanda tape, use -o to overwrite the tape\n",
+	    sProgName);
     return 1;
   }
 
