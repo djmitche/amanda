@@ -1,3 +1,7 @@
+2004-09-15  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amstatus.pl.in: Works with failed dump to tape.
+
 2004-08-31  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* client-src/sendbackup-gnutar.c (end_backup): Write warning message
