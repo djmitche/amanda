@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: statfs.c,v 1.5.2.2 1998/03/14 13:55:57 amcore Exp $
+ * $Id: statfs.c,v 1.5.2.3 1998/04/01 11:33:11 amcore Exp $
  *
  * a generic statfs-like routine
  */
@@ -194,7 +194,7 @@ char **argv;
 	    perror(*argv);
 	    continue;
 	}
-	printf("%-30.30s %7d %7d %7d %6d %6d %6d\n", *argv,
+	printf("%-30.30s %7ld %7ld %7ld %6ld %6ld %6ld\n", *argv,
 	       statbuf.total, statbuf.free, statbuf.avail,
 	       statbuf.files, statbuf.ffree, statbuf.favail);
     } while(argc > 1);
