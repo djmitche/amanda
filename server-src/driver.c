@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.127 2002/11/05 01:58:52 martinea Exp $
+ * $Id: driver.c,v 1.128 2002/12/27 19:39:21 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -51,7 +51,6 @@
 
 static disklist_t waitq, runq, tapeq, roomq;
 static int pending_aborts;
-static int use_lffo;
 static disk_t *taper_disk;
 static int degraded_mode;
 static unsigned long reserved_space;
@@ -60,6 +59,8 @@ static char *dumper_program;
 static char *chunker_program;
 static int  inparallel;
 static int nodump = 0;
+static long tape_length, tape_left = 0;
+static int conf_taperalgo;
 static time_t sleep_time;
 static int idle_reason;
 static char *datestamp;
@@ -90,11 +91,10 @@ static int queue_length P((disklist_t q));
 static disklist_t read_flush P((void));
 static disklist_t read_schedule P((disklist_t *waitqp));
 static void short_dump_state P((void));
-static int sort_by_size_reversed P((disk_t *a, disk_t *b));
+static void startaflush P((void));
 static void start_degraded_mode P((disklist_t *queuep));
 static void start_some_dumps P((dumper_t *dumper, disklist_t *rq));
 static void continue_dumps();
-static void taper_queuedisk P((disk_t *));
 static void update_failed_dump_to_tape P((disk_t *));
 #if 0
 static void dump_state P((const char *str));
@@ -144,6 +144,8 @@ main(main_argc, main_argv)
     char *result_argv[MAX_ARGS+1];
     char *taper_program;
     amwait_t retstat;
+    char *conf_tapetype;
+    tapetype_t *tape;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -208,6 +210,11 @@ main(main_argc, main_argv)
     chunker_program = vstralloc(libexecdir, "/", "chunker", versionsuffix(),
 			       NULL);
 
+    conf_taperalgo = getconf_int(CNF_TAPERALGO);
+    conf_tapetype = getconf_str(CNF_TAPETYPE);
+    tape = lookup_tapetype(conf_tapetype);
+    tape_length = tape->length;
+
     /* taper takes a while to get going, so start it up right away */
 
     init_driverio();
@@ -229,7 +236,6 @@ main(main_argc, main_argv)
     /* set up any configuration-dependent variables */
 
     inparallel	= getconf_int(CNF_INPARALLEL);
-    use_lffo	= 1;
 
     reserve = getconf_int(CNF_RESERVE);
 
@@ -332,7 +338,8 @@ main(main_argc, main_argv)
 	   walltime_str(curclock()), inparallel, free_kps((interface_t *)0),
 	   free_space());
     printf(" dir %s datestamp %s driver: drain-ends tapeq %s big-dumpers %s\n",
-	   "OBSOLETE", datestamp,  use_lffo? "LFFO" : "FIFO", getconf_str(CNF_DUMPORDER));
+	   "OBSOLETE", datestamp, taperalgo2str(conf_taperalgo),
+	   getconf_str(CNF_DUMPORDER));
     fflush(stdout);
 
     /* ok, planner is done, now lets see if the tape is ready */
@@ -343,21 +350,11 @@ main(main_argc, main_argv)
 	/* no tape, go into degraded mode: dump to holding disk */
 	start_degraded_mode(&runq);
     }
-    else if(empty(tapeq)) {
-	taper_busy = 0;
-	taper_disk = NULL;
-	assert(taper_ev_read == NULL);
-    }
-    else {
-	disk_t *dp = dequeue_disk(&tapeq);
-	assert(taper_ev_read == NULL);
-	taper_ev_read = event_register(taper, EV_READFD,
-	    handle_taper_result, NULL);
-	taper_disk = dp;
-	taper_busy = 1;
-	taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level,
-	    sched(dp)->datestamp);
-    }
+    tape_left = tape_length;
+    taper_busy = 0;
+    taper_disk = NULL;
+    taper_ev_read = NULL;
+    startaflush();
 
     /*
      * Assume we'll schedule this dumper, and default to idle no-dumpers.
@@ -484,6 +481,98 @@ main(main_argc, main_argv)
 
     return 0;
 }
+
+static void
+startaflush()
+{
+    disk_t *dp = NULL;
+    disk_t *fit = NULL;
+    char *datestamp;
+
+    if(!degraded_mode && !taper_busy && !empty(tapeq)) {
+	
+	datestamp = sched(tapeq.head)->datestamp;
+	switch(conf_taperalgo) {
+	case ALGO_FIRST:
+		dp = dequeue_disk(&tapeq);
+		break;
+	case ALGO_FIRSTFIT:
+		fit = tapeq.head;
+		while (fit != NULL) {
+		    if(sched(fit)->act_size <= tape_left &&
+		       strcmp(sched(fit)->datestamp, datestamp) <= 0) {
+			dp = fit;
+			fit = NULL;
+		    }
+		    else {
+			fit = fit->next;
+		    }
+		}
+		if(dp) remove_disk(&tapeq, dp);
+		break;
+	case ALGO_LARGEST:
+		fit = dp = tapeq.head;
+		while (fit != NULL) {
+		    if(sched(fit)->act_size > sched(dp)->act_size &&
+		       strcmp(sched(fit)->datestamp, datestamp) <= 0) {
+			dp = fit;
+		    }
+		    fit = fit->next;
+		}
+		if(dp) remove_disk(&tapeq, dp);
+		break;
+	case ALGO_LARGESTFIT:
+		fit = tapeq.head;
+		while (fit != NULL) {
+		    if(sched(fit)->act_size <= tape_left &&
+		       (!dp || sched(fit)->act_size > sched(dp)->act_size) &&
+		       strcmp(sched(fit)->datestamp, datestamp) <= 0) {
+			dp = fit;
+		    }
+		    fit = fit->next;
+		}
+		if(dp) remove_disk(&tapeq, dp);
+		break;
+	case ALGO_SMALLEST:
+		fit = dp = tapeq.head;
+		while (fit != NULL) {
+		    if(sched(fit)->act_size < sched(dp)->act_size &&
+		       strcmp(sched(fit)->datestamp, datestamp) <= 0) {
+			dp = fit;
+		    }
+		    fit = fit->next;
+		}
+		if(dp) remove_disk(&tapeq, dp);
+		break;
+	case ALGO_LAST:
+		dp = tapeq.tail;
+		remove_disk(&tapeq, dp);
+		break;
+	}
+	if(!dp) {
+	    dp = dequeue_disk(&tapeq); /* first if nothing fit */
+	    fprintf(stderr,
+		    "driver: startaflush: Using first because nothing fit\n");
+	}
+	if(taper_ev_read == NULL) {
+	    taper_ev_read = event_register(taper, EV_READFD,
+					   handle_taper_result, NULL);
+	}
+	taper_disk = dp;
+	taper_busy = 1;
+	taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level,
+		  sched(dp)->datestamp);
+	fprintf(stderr,"driver: startaflush: %s %s %s %ld %ld\n",
+		taperalgo2str(conf_taperalgo), dp->host->hostname,
+		dp->name, sched(taper_disk)->act_size, tape_left);
+	tape_left -= sched(dp)->act_size;
+    }
+    else if(!taper_busy && taper_ev_read != NULL) {
+	event_release(taper_ev_read);
+	taper_ev_read = NULL;
+    }
+}
+
 
 static int
 client_constrained(dp)
@@ -739,26 +828,6 @@ handle_idle_wait(cookie)
     start_some_dumps(dumper, &runq);
 }
 
-static int
-sort_by_size_reversed(a, b)
-    disk_t *a, *b;
-{
-    long diff;
-
-    if ((diff = strcmp(sched(a)->datestamp, sched(b)->datestamp)) < 0) {
-	return -1;
-    } else if (diff >0) {
-	return 1;
-    }
-    else if ((diff = sched(a)->est_size - sched(b)->est_size) < 0) {
-	return -1;
-    } else if (diff > 0) {
-	return 1;
-    } else {
-	return 0;
-    }
-}
-
 static void
 dump_schedule(qp, str)
     disklist_t *qp;
@@ -942,20 +1011,9 @@ handle_taper_result(cookie)
 	    amfree(sched(dp)->dumpdate);
 	    amfree(dp->up);
 
-	    if(empty(tapeq)) {
-		taper_busy = 0;
-		taper_disk = NULL;
-		if(taper_ev_read != NULL) {
-		    event_release(taper_ev_read);
-		    taper_ev_read = NULL;
-		}
-	    }
-	    else {
-		dp = dequeue_disk(&tapeq);
-		taper_disk = dp;
-		taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level,
-			  sched(dp)->datestamp);
-	    }
+	    taper_busy = 0;
+	    taper_disk = NULL;
+	    startaflush();
 
 	    /* continue with those dumps waiting for diskspace */
 	    continue_dumps();
@@ -982,25 +1040,17 @@ handle_taper_result(cookie)
 	    }
 	    else {
 		sched(dp)->attempted++;
-		taper_queuedisk(dp);
+		headqueue_disk(&tapeq, dp);
+		startaflush();
 	    }
+
+	    tape_left = tape_length;
 
 	    /* run next thing from queue */
 
-	    if(empty(tapeq)) {
-		taper_busy = 0;
-		taper_disk = NULL;
-		if(taper_ev_read != NULL) {
-		    event_release(taper_ev_read);
-		    taper_ev_read = NULL;
-		}
-	    }
-	    else {
-		dp = dequeue_disk(&tapeq);
-		taper_disk = dp;
-		taper_cmd(FILE_WRITE, dp, sched(dp)->destname,
-			  sched(dp)->level, sched(dp)->datestamp);
-	    }
+	    taper_busy = 0;
+	    taper_disk = NULL;
+	    startaflush();
 	    break;
 
 	case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
@@ -1118,7 +1168,8 @@ dumper_result(dp)
 	enqueue_disk(&runq, dp);
     }
     else if(size > DISK_BLOCK_KB) {
-	taper_queuedisk(dp);
+	enqueue_disk(&tapeq, dp);
+	startaflush();
     }
     else {
 	delete_diskspace(dp);
@@ -1438,35 +1489,6 @@ handle_chunker_result(cookie)
     } while(areads_dataready(chunker->fd));
 }
 
-
-/*
- * Tell the taper to write a disk dump to tape.  If the taper
- * is busy, queue the disk in the tapeq.
- * If we're in degraded mode, do nothing, and leave the dump image
- * in the holding disk.
- */
-static void
-taper_queuedisk(dp)
-    disk_t *dp;
-{
-
-    if (taper_busy) {
-	if(sched(dp)->attempted)
-	    headqueue_disk(&tapeq, dp);
-	else if (use_lffo)
-	    insert_disk(&tapeq, dp, sort_by_size_reversed);
-	else
-	    enqueue_disk(&tapeq, dp);
-    } else if (!degraded_mode) {
-	assert(taper_ev_read == NULL);
-	taper_ev_read = event_register(taper, EV_READFD,
-	    handle_taper_result, NULL);
-	taper_disk = dp;
-	taper_busy = 1;
-	taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level,
-	    sched(dp)->datestamp);
-    }
-}
 
 static disklist_t
 read_flush()
@@ -2408,7 +2430,8 @@ dump_to_tape(dp)
     tryagain:
 	update_failed_dump_to_tape(dp);
 	free_serial(result_argv[2]);
-	enqueue_disk(&runq, dp);
+	headqueue_disk(&runq, dp);
+	tape_left = tape_length;
 	break;
 
 
