@@ -22,7 +22,7 @@ amidxtaped_SOURCES = 	amidxtaped.c
 install-exec-hook:
 	@list="$(sbin_PROGRAMS)"; \
 	for p in $$list; do \
-		pa=$(sbindir)/`echo $$p|sed '$(transform)'`; \
+		pa=$(DESTDIR)$(sbindir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(BINARY_OWNER) $$pa; \
 		chown $(BINARY_OWNER) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \
@@ -30,7 +30,7 @@ install-exec-hook:
 	done
 	@list="$(libexec_PROGRAMS)"; \
 	for p in $$list; do \
-		pa=$(libexecdir)/`echo $$p|sed '$(transform)'`; \
+		pa=$(DESTDIR)$(libexecdir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(BINARY_OWNER) $$pa; \
 		chown $(BINARY_OWNER) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \

@@ -1,4 +1,11 @@
-1998-07-25  Michael Graff  <<explorer@vix.com>>
+1998-07-25  Michael Graff  <explorer@vix.com>
+
+	* changer-src/Makefile.am (install-exec-hook): support $(DESTDIR)
+	* client-src/Makefile.am (install-exec-hook): ditto
+	* man/Makefile.am (install-data-hook): ditto
+	* recover-src/Makefile.am (install-exec-hook): ditto
+	* restore-src/Makefile.am (install-exec-hook): ditto
+	* server-src/Makefile.am (install-exec-hook): ditto
 
 	* configure.in: link krb5 and com_err in for Kerberos support, if
  	they exist

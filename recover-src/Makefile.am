@@ -30,7 +30,7 @@ YFLAGS =		-d
 install-exec-hook:
 	@list="$(sbin_PROGRAMS)"; \
 	for p in $$list; do \
-		pa=$(sbindir)/`echo $$p|sed '$(transform)'`; \
+		pa=$(DESTDIR)$(sbindir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(BINARY_OWNER) $$pa; \
 		chown $(BINARY_OWNER) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \

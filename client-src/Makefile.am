@@ -74,7 +74,7 @@ noinst_HEADERS	= 	amandates.h	getfsent.h	findpass.h
 install-exec-hook:
 	@list="$(sbin_SCRIPTS)"; \
 	for p in $$list; do \
-		pa=$(sbindir)/`echo $$p|sed '$(transform)'`; \
+		pa=$(DESTDIR)$(sbindir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(BINARY_OWNER) $$pa; \
 		chown $(BINARY_OWNER) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \
@@ -82,7 +82,7 @@ install-exec-hook:
 	done
 	@list="$(libexec_PROGRAMS) $(libexec_SCRIPTS)"; \
 	for p in $$list; do \
-		pa=$(libexecdir)/`echo $$p|sed '$(transform)'`; \
+		pa=$(DESTDIR)$(libexecdir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(BINARY_OWNER) $$pa; \
 		chown $(BINARY_OWNER) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \
@@ -91,7 +91,7 @@ install-exec-hook:
 	@list="$(libexecdir)/calcsize $(libexecdir)/killpgrp $(libexecdir)/rundump $(libexecdir)/runtar"; \
 	for p in $$list; do \
 		if echo "$(sbin_SCRIPTS) $(libexec_PROGRAMS) $(libexec_SCRIPTS)" | grep `basename $$p` >/dev/null 2>&1; then \
-			pa=`echo $$p|sed '$(transform)'`; \
+			pa=$(DESTDIR)`echo $$p|sed '$(transform)'`; \
 			echo chown root $$pa; \
 			chown root $$pa; \
 			echo chmod u+s,o-rwx $$pa; \
