@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.31 1998/04/12 22:29:11 amcore Exp $
+ * $Id: extract_list.c,v 1.32 1998/04/12 22:35:51 amcore Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -35,7 +35,7 @@
 #include "amrecover.h"
 #include "fileheader.h"
 #include "dgram.h"
-#ifndef SAMBA_CLIENT
+#ifdef SAMBA_CLIENT
 #include "findpass.h"
 #endif
 
