@@ -1,3 +1,9 @@
+1999-08-15  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* README (platforms): Added OpenBSD.
+	Reported by Ian Darwin <ian@sq.com>
+	(platforms): Added SunOS 5.7.
+
 1999-08-15  Derek Ney <derek@hipgraphics.com>, Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* client-src/sendsize.c (SAMBA_DEBUG_LEVEL): New macro, "0" for
