@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.29 1999/06/02 21:42:45 kashmir Exp $
+ * $Id: bsd-security.c,v 1.30 1999/09/14 06:45:36 oliva Exp $
  *
  * "BSD" security module
  */
@@ -130,7 +130,7 @@ struct bsd_stream {
      * This is the function and argument that is called when this stream
      * is readable.  It is passed a buffer of data read.
      */
-    void (*fn) P((void *, void *, int));
+    void (*fn) P((void *, void *, ssize_t));
     void *arg;
 
     /*
@@ -164,7 +164,7 @@ static void bsd_stream_close P((void *));
 static int bsd_stream_auth P((void *));
 static int bsd_stream_id P((void *));
 static int bsd_stream_write P((void *, const void *, size_t));
-static void bsd_stream_read P((void *, void (*)(void *, void *, int),
+static void bsd_stream_read P((void *, void (*)(void *, void *, ssize_t),
     void *));
 static void bsd_stream_read_cancel P((void *));
 

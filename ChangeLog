@@ -1,5 +1,12 @@
 1999-09-14  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* common-src/bsd-security.c (bsd_stream): fn should take an ssize_t.
+	(bsd_stream_read): Likewise, declaration.
+	* common-src/rsh-security.c (rsh_stream): Likewise.
+	(rsh_stream_read): Likewise, declaration and definition.
+	* common-src/krb4-security.c (dummy): Compile when disabled.
+	* common-src/krb5-security.c (dummy): Likewise.
+
 	* server-src/reporter.c (sDivZero): Change from float to double, to
 	build with DEC cc.
 

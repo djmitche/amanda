@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.4 1999/05/14 19:08:49 kashmir Exp $
+ * $Id: rsh-security.c,v 1.5 1999/09/14 06:45:41 oliva Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -128,7 +128,7 @@ struct rsh_stream {
     struct rsh_conn *rc;		/* physical connection */
     int handle;				/* protocol handle */
     event_handle_t *ev_read;		/* read (EV_WAIT) event handle */
-    void (*fn) P((void *, void *, int));	/* read event fn */
+    void (*fn) P((void *, void *, ssize_t));	/* read event fn */
     void *arg;				/* arg for previous */
 };
 
@@ -151,7 +151,7 @@ static void rsh_recvpkt P((void *,
     void (*)(void *, pkt_t *, security_status_t), void *, int));
 static void rsh_recvpkt_cancel P((void *));
 static void rsh_stream_close P((void *));
-static void rsh_stream_read P((void *, void (*)(void *, void *, int),
+static void rsh_stream_read P((void *, void (*)(void *, void *, ssize_t),
     void *));
 static void rsh_stream_read_cancel P((void *));
 
@@ -835,7 +835,7 @@ rsh_stream_write(s, buf, size)
 static void
 rsh_stream_read(s, fn, arg)
     void *s, *arg;
-    void (*fn) P((void *, void *, int));
+    void (*fn) P((void *, void *, ssize_t));
 {
     struct rsh_stream *rs = s;
 

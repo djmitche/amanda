@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: krb4-security.c,v 1.4 1999/04/16 05:12:59 kashmir Exp $
+ * $Id: krb4-security.c,v 1.5 1999/09/14 06:45:38 oliva Exp $
  *
  * Stub file that pulls in the krb4 module from the export-restricted
  * tree.
@@ -33,4 +33,6 @@
 #include "config.h"
 #ifdef KRB4_SECURITY
 #include "../../amanda-krb-2/common-src/krb4-security.c"
+#else
+static int dummy () {}
 #endif
