@@ -92,8 +92,8 @@ BEGIN{
 			  file_dump++;
 			  dmpr_strt[$6]=$4;
 			  host[$6]=$10;
-			  if( $10 in disk) disk[$10]=disk[$10]"\n";
-			  disk[$10] = disk[$10] $10 ":"$11"/"$12"\t" pr_time($4);
+			  disk[$6]=$11;
+			  level[$6]=$12;
 			}
 			else if( $7=="FILE-WRITE")file_wirte++;
 			else if( $7 == "START-TAPE") fil = $8;
@@ -250,8 +250,15 @@ function do_result(){		# process lines driver: result
 		  tsize += (int($12/32)+1)*32; 	# in tape blocks 
 		  tcnt++;	done++;
 		  xx = host[$6];
+		  d = disk[$6];
+		  l = level[$6];
 		  host_time[xx]+= ( tt = $4 - dmpr_strt[$6]);
-		  disk[xx] = disk[xx] " - " pr_time($4)" = "  pr_time(tt);
+		  if(xx in disk_list) disk_list[xx] = disk_list[xx] "\n";
+		  disk_list[xx] = disk_list[xx] \
+				  xx ":" d "/" l "\t" \
+				  pr_time(dmpr_strt[$6]) \
+				  " - " pr_time($4) \
+				  " = "  pr_time(tt);
 #		  print host[$6], disk[host[$6]];
 #			print host[$6], $4, dmpr_strt[$6], host_time[host[$6]]
 		}
@@ -261,7 +268,7 @@ function do_result(){		# process lines driver: result
 			tape_err= 1;
 			err_time=$4/time_scale;
 		}
-		else if ($7=="TAPE-OK") tape_err=0;
+		else if ($7=="TAPER-OK") tape_err=0;
 		else if ($7=="PORT")    tape_err=0;
 		else print fil, "UNKNOWN STATUS# "$0 ;
 	}
@@ -321,7 +328,7 @@ END {
 	      t = host_time[d=j];
 	    }
 	  }
-	  printf "%s\t=> %s\n\n", disk[d], pr_time(host_time[d]);
+	  printf "%s\t=> %s\n\n", disk_list[d], pr_time(host_time[d]);
 #	  printf "%-20.20s Total Dump time %s\n", d, pr_time(host_time[d]);
 	  old_t = t;
 	}
