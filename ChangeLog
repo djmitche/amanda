@@ -1,3 +1,7 @@
+1998-10-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* configure.in (SAMBA_CLIENT): fix typo
+
 1998-10-14  John R. Jackson  <jrj@purdue.edu>
 
 	* restore-src/amrestore.c (read_file_header): make a couple of error
