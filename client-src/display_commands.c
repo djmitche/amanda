@@ -4,15 +4,21 @@
 * Module:        
 * Part of:       
 *
-* Revision:      $Revision: 1.1 $
-* Last Edited:   $Date: 1997/03/15 21:29:58 $
+* Revision:      $Revision: 1.2 $
+* Last Edited:   $Date: 1997/04/21 08:48:27 $
 * Author:        $Author: amcore $
 *
 * Notes:         
 * Private Func:  
 * History:       $Log: display_commands.c,v $
-* History:       Revision 1.1  1997/03/15 21:29:58  amcore
-* History:       Initial revision
+* History:       Revision 1.2  1997/04/21 08:48:27  amcore
+* History:       These changes cleanup a number of problems related to getting
+* History:       and maintaining a consistent directory listing as the disk, host,
+* History:       and date are changed. Thanks to Bob Ramstad <rramstad@nfic.com>
+* History:       for pointing out the date problems.
+* History:
+* History:       Revision 1.1.1.1  1997/03/15 21:29:58  amcore
+* History:       Mass import of 2.3.0.4 as-is.  We can remove generated files later.
 * History:
 * History:       Revision 1.7  1996/12/14 09:21:04  alan
 * History:       removed point where list_directory() could sleep for ever waiting for
@@ -56,7 +62,7 @@ DIR_ITEM *this;
 }
 
 
-static void clear_dir_list P((void))
+void clear_dir_list P((void))
 {
     DIR_ITEM *this;
 
@@ -138,7 +144,7 @@ void list_disk_history P((void))
 }
 
 
-void list_directory P((void))
+void suck_dir_list_from_server P((void))
 {
     char cmd[LINE_LENGTH];
     int i;
@@ -147,12 +153,11 @@ void list_directory P((void))
     int level;
     char tape[256];
     char dir[1024];
-    DIR_ITEM *item;
-    FILE *fp;
 
     if (strlen(disk_path) == 0) 
     {
-	printf("Must select directory before listing\n");
+	printf("Directory must be set before getting listing\n");
+	printf("This is a coding error. Please report\n");
 	return;
     }
     
@@ -184,6 +189,22 @@ void list_directory P((void))
 	}
 	sscanf(l+5, "%s %d %s %s", date, &level, tape, dir);
 	add_dir_list_item(date, level, tape, dir);
+    }
+}
+
+
+
+void list_directory P((void))
+{
+    int i;
+    DIR_ITEM *item;
+    FILE *fp;
+
+    if (strlen(disk_path) == 0) 
+    {
+	printf("Directory should have been set already but wasn't\n");
+	printf("This is a coding error. Please report\n");
+	return;
     }
     
     if ((fp = popen("more", "w")) == NULL)

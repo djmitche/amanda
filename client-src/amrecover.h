@@ -4,13 +4,19 @@
 * Module:        
 * Part of:       
 *
-* Revision:      $Revision: 1.2 $
-* Last Edited:   $Date: 1997/04/17 09:17:00 $
+* Revision:      $Revision: 1.3 $
+* Last Edited:   $Date: 1997/04/21 08:48:29 $
 * Author:        $Author: amcore $
 *
 * Description:   
 * Public Func:   
 * History:       $Log: amrecover.h,v $
+* History:       Revision 1.3  1997/04/21 08:48:29  amcore
+* History:       These changes cleanup a number of problems related to getting
+* History:       and maintaining a consistent directory listing as the disk, host,
+* History:       and date are changed. Thanks to Bob Ramstad <rramstad@nfic.com>
+* History:       for pointing out the date problems.
+* History:
 * History:       Revision 1.2  1997/04/17 09:17:00  amcore
 * History:       amrecover failed to restore from an uncompressed dump image
 * History:       because I read the amrestore man page incorrectly. It now
@@ -112,6 +118,8 @@ extern void list_disk_history P((void));
 extern void list_directory P((void));
 extern DIR_ITEM *get_dir_list P((void));
 extern DIR_ITEM *get_next_dir_item P((DIR_ITEM *this));
+extern void suck_dir_list_from_server P((void));
+extern void clear_dir_list P((void));
 
 extern void display_extract_list P((char *file));
 extern void clear_extract_list P((void));

@@ -4,15 +4,21 @@
 * Module:        
 * Part of:       
 *
-* Revision:      $Revision: 1.1 $
-* Last Edited:   $Date: 1997/03/15 21:29:58 $
+* Revision:      $Revision: 1.2 $
+* Last Edited:   $Date: 1997/04/21 08:48:26 $
 * Author:        $Author: amcore $
 *
 * Notes:         
 * Private Func:  
 * History:       $Log: set_commands.c,v $
-* History:       Revision 1.1  1997/03/15 21:29:58  amcore
-* History:       Initial revision
+* History:       Revision 1.2  1997/04/21 08:48:26  amcore
+* History:       These changes cleanup a number of problems related to getting
+* History:       and maintaining a consistent directory listing as the disk, host,
+* History:       and date are changed. Thanks to Bob Ramstad <rramstad@nfic.com>
+* History:       for pointing out the date problems.
+* History:
+* History:       Revision 1.1.1.1  1997/03/15 21:29:58  amcore
+* History:       Mass import of 2.3.0.4 as-is.  We can remove generated files later.
 * History:
 * History:       Revision 1.10  1996/11/08 09:57:03  alan
 * History:       set_disk and set_host now check for non-zero extract list
@@ -60,6 +66,28 @@ char *date;
     sprintf(cmd, "DATE %s", date);
     if (converse(cmd) == -1)
 	exit(1);
+
+    /* if a host/disk/directory is set, then check if that directory
+       is still valid at the new date, and if not set directory to
+       mount_point */
+    if (strlen(disk_path) != 0)
+    {
+	sprintf(cmd, "OISD %s", disk_path);
+	if (exchange(cmd) == -1)
+	    exit(1);
+	if (server_happy())
+	{
+	    suck_dir_list_from_server();
+	}
+	else
+	{
+	    printf("No index records for cwd on new date\n");
+	    printf("Setting cwd to mount point\n");
+	    strcpy(disk_path, "/");		/* fake it */
+	    clear_dir_list();
+	}
+    }
+    
     return 0;
 }
 
@@ -84,6 +112,7 @@ char *host;
 	strcpy(disk_name, "");
 	strcpy(mount_point, "");
 	strcpy(disk_path, "");
+	clear_dir_list();
     }
 }
     
@@ -136,7 +165,27 @@ char *mtpt;
     }
 
     /* set the working directory to the mount point */
-    strcpy(disk_path, "/");
+    /* there is the possibility that there are no index records for the
+       disk for the given date, hence setting the directory to the
+       mount point will fail. Preempt this by checking first so we can write
+       a more informative message. */
+    sprintf(cmd, "OISD /");
+    if (exchange(cmd) == -1)
+	exit(1);
+    if (exchange(cmd) == -1)
+	exit(1);
+    if (server_happy())
+    {
+	strcpy(disk_path, "/");
+	suck_dir_list_from_server();	/* get list of directory contents */
+    }
+    else
+    {
+	printf("No index records for disk for specified date\n");
+	printf("If date correct, notify system administrator\n");
+	strcpy(disk_path, "/");		/* fake it */
+	clear_dir_list();
+    }
 }
 
 
@@ -146,6 +195,12 @@ char *dir;
     char cmd[LINE_LENGTH];
     char new_dir[LINE_LENGTH];
     char *dp, *de;
+
+    if (strlen(disk_name) == 0)
+    {
+	printf("Must select disk before setting directory\n");
+	return;
+    }
 
     /* convert directory into absolute path relative to disk mount point */
     if (dir[0] == '/')
@@ -222,7 +277,8 @@ char *dir;
     if (server_happy())
     {
 	strcpy(disk_path, new_dir);
-	show_directory();
+	suck_dir_list_from_server();	/* get list of directory contents */
+	show_directory();		/* say where we moved to */
     }
     else
     {
