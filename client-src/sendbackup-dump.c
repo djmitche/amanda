@@ -33,11 +33,14 @@
  * File:	$RCSFile: sendbackup-dump.c,v $
  * Part of:	
  *
- * Revision:	$Revision: 1.4 $
- * Last Edited:	$data: 1997/03/24 10:10:10 $
+ * Revision:	$Revision: 1.5 $
+ * Last Edited:	$Date: 1997/04/17 00:41:02 $
  * Author:	$Author: oliva $
  *
  * History:	$Log: sendbackup-dump.c,v $
+ * History:	Revision 1.5  1997/04/17 00:41:02  oliva
+ * History:	Fixed typo
+ * History:
  * History:	Revision 1.4  1997/04/01 20:50:11  oliva
  * History:	Make rundump xfsdump-aware.
  * History:	Fix sendbackup-dump so that it invokes rundump for xfsdumps.
