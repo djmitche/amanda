@@ -40,6 +40,11 @@
 	properly responds to -eject requests, among other things.
 	-Eric Schnoebelen <eric@cirr.com>
 
+Version 2.4.0p1
+
+	fixed dump estimate regular expression for DU 4.0.
+	-Andreas Schmitz <schmitz@theorie.physik.uni-wuppertal.de>
+
 Version 2.4.0
 
 	fixed memory corruption error in amtape.
