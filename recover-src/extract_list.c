@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.76 2002/11/12 19:18:54 martinea Exp $
+ * $Id: extract_list.c,v 1.77 2002/11/12 21:24:03 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -700,7 +700,7 @@ char *regex;
     char *cmd = NULL;
     char *err = NULL;
     int i;
-    size_t j;
+    int j;
     char *date, *date_undo, date_undo_ch = '\0';
     char *tape, *tape_undo, tape_undo_ch = '\0';
     char *dir, *dir_undo, dir_undo_ch = '\0';

@@ -541,8 +541,8 @@ rait_lseek(int fd, long pos, int whence) {
 ** otherwise compute an xor sum, and do several
 ** writes...
 */
-int 
-rait_write(int fd, const void *bufptr, int len) {
+ssize_t 
+rait_write(int fd, const void *bufptr, size_t len) {
     const char *buf = bufptr;
     int i = 0, j;	/* drive number, byte offset */
     RAIT *pr;		/* RAIT structure for this RAIT */
@@ -660,8 +660,8 @@ rait_write(int fd, const void *bufptr, int len) {
 ** you read with a bigger buffer size than you wrote with, you just 
 ** garble the data...
 */
-int 
-rait_read(int fd, void *bufptr, int len) {
+ssize_t 
+rait_read(int fd, void *bufptr, size_t len) {
     char *buf = bufptr;
     int nerrors, 
         neofs, 

@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-tape.c,v 1.9 2002/10/29 19:00:56 martinea Exp $
+ * $Id: output-tape.c,v 1.10 2002/11/12 21:24:03 martinea Exp $
  *
  * tapeio.c virtual tape interface for normal tape drives.
  */
@@ -489,16 +489,18 @@ int tape_tape_open(filename, flags, mask)
     return ret;
 }
 
-int tape_tapefd_read(fd, buffer, count)
-    int fd, count;
+ssize_t tape_tapefd_read(fd, buffer, count)
+    int fd;
     void *buffer;
+    size_t count;
 {
     return read(fd, buffer, count);
 }
 
-int tape_tapefd_write(fd, buffer, count)
-    int fd, count;
+ssize_t tape_tapefd_write(fd, buffer, count)
+    int fd;
     const void *buffer;
+    size_t count;
 {
     return write(fd, buffer, count);
 }

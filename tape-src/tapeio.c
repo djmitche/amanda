@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: tapeio.c,v 1.43 2002/08/22 17:42:48 martinea Exp $
+ * $Id: tapeio.c,v 1.44 2002/11/12 21:24:03 martinea Exp $
  *
  * implements generic tape I/O functions
  */
@@ -53,13 +53,13 @@ static struct virtualtape {
     int (*xxx_tape_stat) P((char *, struct stat *));
     int (*xxx_tapefd_close) P((int));
     int (*xxx_tapefd_fsf) P((int, int));
-    int (*xxx_tapefd_read) P((int, void *, int));
+    ssize_t (*xxx_tapefd_read) P((int, void *, size_t));
     int (*xxx_tapefd_rewind) P((int));
     void (*xxx_tapefd_resetofs) P((int));
     int (*xxx_tapefd_unload) P((int));
     int (*xxx_tapefd_status) P((int, struct am_mt_status *));
     int (*xxx_tapefd_weof) P((int, int));
-    int (*xxx_tapefd_write) P((int, const void *, int));
+    ssize_t (*xxx_tapefd_write) P((int, const void *, size_t));
 } vtable[] = {
   /* note: "tape" has to be the first entry because it is the
   **        default if no prefix match is found.
@@ -645,11 +645,11 @@ tapefd_weof(fd, count)
     return vtable[vslot].xxx_tapefd_weof(fd, count);
 }
 
-int
+ssize_t
 tapefd_read(fd, buffer, count)
     int fd;
     void *buffer;
-    int count;
+    size_t count;
 {
     int vslot;
 
@@ -662,11 +662,11 @@ tapefd_read(fd, buffer, count)
     return vtable[vslot].xxx_tapefd_read(fd, buffer, count);
 }
 
-int
+ssize_t
 tapefd_write(fd, buffer, count)
     int fd;
     const void *buffer;
-    int count;
+    size_t count;
 {
     int vslot;
 
