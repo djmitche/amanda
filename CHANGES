@@ -17,6 +17,11 @@
 
 Version 2.4.0
 
+	check whether exclude-list file exists before calling gnutar.
+	If it does not, log a message to debugging file and discard it.
+	selfcheck should check for that too, and print a warning message,
+	but this is left for a future version.  -oliva
+
 	fix sendbackup-gnutar crashing problem.  -oliva
 
 	ensure that, in case of tape failure when dumping to tape, no
