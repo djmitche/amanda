@@ -1,3 +1,10 @@
+2000-06-03 Thomas Hepper <th@ant.han.de>
+
+	* changer-src/scsi-defs.h: Add missing defines which are used by the
+	sense handler
+	* changer-src/scsi-solaris.c: Added patch to limit the recursion
+	in Scsi_ExecuteCommand.
+
 2000-06-02 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/holding.c (pick_datestamp): convert ch to upper.
@@ -848,7 +855,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.350 2000/06/02 14:31:47 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.351 2000/06/05 19:28:59 ant Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
