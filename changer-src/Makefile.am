@@ -18,7 +18,8 @@ EXTRA_PROGRAMS =	$(CHIO_SCSI)
 libexec_SCRIPTS =	chg-manual	chg-multi	chg-mtx		\
 			chg-rth		chg-chs		chg-chio	\
 			chg-zd-mtx	chg-juke	chg-rait	\
-			chg-null	chg-mcutil	chg-disk
+			chg-null	chg-mcutil	chg-disk	\
+			chg-iomega
 
 ###
 # Because libamanda includes routines (e.g. regex) provided by some system
