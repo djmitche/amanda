@@ -984,7 +984,6 @@ AC_CHECK_HEADERS(\
 	dbm.h \
 	fcntl.h \
 	fstab.h \
-	gdbm.h \
 	grp.h \
 	history.h \
 	mntent.h \
@@ -1119,12 +1118,12 @@ case "$DB_STYLE" in
 	;;
 
     gdbm)
-	if test "$ac_cv_header_gdbm_h" = yes; then
+	if test "$ac_cv_header_ndbm_h" = yes; then
 	    AC_CHECK_LIB(gdbm,main)
 	    if test "$ac_cv_lib_gdbm_main" = yes; then
 		AC_CHECK_LIB(gdbm,dbm_open)
 		if test "$ac_cv_lib_gdbm_dbm_open" = yes; then
-		    DB_HEADER=gdbm.h
+		    DB_HEADER=ndbm.h
 		    DB_LIB=gdbm
 		else
 		    DB_STYLE=
@@ -1132,7 +1131,7 @@ case "$DB_STYLE" in
 		fi
 	    else
 		if test "$ac_cv_lib_c_dbm_open" = yes; then
-		    DB_HEADER=gdbm.h
+		    DB_HEADER=ndbm.h
 		    DB_LIB=c
 		else
 		    DB_STYLE=
@@ -1141,7 +1140,7 @@ case "$DB_STYLE" in
 	    fi
 	else
 	    DB_STYLE=
-	    AC_MSG_WARN([*** gdbm database library requested but gdbm.h not found.])
+	    AC_MSG_WARN([*** gdbm database library requested but ndbm.h not found.])
 	fi
 	;;
 
@@ -1205,13 +1204,13 @@ if test -z "$DB_STYLE"; then
 		DB_LIB=c
 	    else
 		AC_CHECK_LIB(gdbm,dbm_open)
-		if test "$ac_cv_lib_gdbm_dbm_open" = yes && test "$ac_cv_header_gdbm_h" = yes; then
+		if test "$ac_cv_lib_gdbm_dbm_open" = yes && test "$ac_cv_header_ndbm_h" = yes; then
 		    DB_STYLE=gdbm
-		    DB_HEADER=gdbm.h
+		    DB_HEADER=ndbm.h
 		    DB_LIB=gdbm
-		elif test "$ac_cv_lib_c_dbm_open" = yes && test "$ac_cv_header_gdbm_h" = yes; then
+		elif test "$ac_cv_lib_c_dbm_open" = yes && test "$ac_cv_header_ndbm_h" = yes; then
 		    DB_STYLE=gdbm
-		    DB_HEADER=gdbm.h
+		    DB_HEADER=ndbm.h
 		    DB_LIB=c
 		else
 		    if test "$ac_cv_lib_c_dbm_open" = yes; then
@@ -1235,7 +1234,7 @@ if test "$DB_STYLE"; then
     case "$DB_STYLE" in
 	db)	AC_DEFINE(USE_DB_H)   ;;
 	dbm)	AC_DEFINE(USE_DBM_H)  ;;
-	gdbm)	AC_DEFINE(USE_GDBM_H) ;;
+	gdbm)	AC_DEFINE(USE_NDBM_H) ;;
 	ndbm)	AC_DEFINE(USE_NDBM_H) ;;
     esac
 fi
@@ -1250,8 +1249,6 @@ AC_CACHE_CHECK(
 		#  include <db.h>
 		#elif defined(USE_DBM_H)
 		#  include <dbm.h>
-		#elif defined(USE_GDBM_H)
-		#  include <gdbm.h>
 		#elif defined(USE_NDBM_H)
 		#  include <ndbm.h>
 		#endif
