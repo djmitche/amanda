@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.84 1998/12/10 21:03:41 kashmir Exp $
+/* $Id: dumper.c,v 1.85 1998/12/10 23:39:58 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -74,6 +74,7 @@ struct cmdargs {
 };
 
 struct databuf {
+    int fd;
     char buf[DATABUF_SIZE];
     char *dataptr;		/* data buffer markers */
     int spaceleft;
@@ -92,7 +93,6 @@ static enum { srvcomp_none, srvcomp_fast, srvcomp_best } srvcompress;
 char *errfname = NULL;
 FILE *errf = NULL;
 char *filename = NULL;
-string_t cont_filename;
 char *hostname = NULL;
 char *diskname = NULL;
 char *options = NULL;
@@ -125,8 +125,7 @@ void check_options P((char *options));
 void service_ports_init P((void));
 static char *construct_datestamp P((void));
 int write_tapeheader P((int outfd, dumpfile_t *type));
-int write_dataptr P((int outf, struct databuf *));
-int update_dataptr P((int outf, struct databuf *, int size));
+int update_dataptr P((struct databuf *, int size));
 static void process_dumpeof P((void));
 static void process_dumpline P((char *str));
 static void add_msg_data P((char *str, int len));
@@ -283,7 +282,6 @@ main(main_argc, main_argv)
 	    chunksize = (chunksize/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
 	    progname = newstralloc(progname, cmdargs.argv[9]);
 	    options = newstralloc(options, cmdargs.argv[10]);
-	    cont_filename[0] = '\0';
 
 	    tmp_filename = newvstralloc(tmp_filename, filename, ".tmp", NULL);
 	    if((outfd = open(tmp_filename, O_WRONLY|O_CREAT, 0666)) == -1) {
@@ -332,7 +330,6 @@ main(main_argc, main_argv)
 	    dumpdate = newstralloc(dumpdate, cmdargs.argv[7]);
 	    progname = newstralloc(progname, cmdargs.argv[8]);
 	    options = newstralloc(options, cmdargs.argv[9]);
-	    cont_filename[0] = '\0';
 
 	    /* connect outf to taper port */
 
@@ -473,60 +470,21 @@ arglist_function(static void putresult, char *, format)
  * written if it is full, or the remainder is zeroed if at eof.
  */
 int
-write_dataptr(outf, db)
-    int outf;
+update_dataptr(db, size)
     struct databuf *db;
+    int size;
 {
     struct cmdargs cmdargs;
     int written;
     cmd_t cmd;
 
-    do {
-	written = write(outf, db->buf + db->spaceleft,
-	sizeof(db->buf) - db->spaceleft);
-	if (written > 0) {
-	    db->spaceleft += written;
-	    continue;
-	} else if (written < 0 && errno != ENOSPC) {
-	    errstr = squotef("data write: %s", strerror(errno));
-	    return (1);
-	}
-
-	putresult("NO-ROOM %s\n", handle);
-	cmd = getcmd(&cmdargs);
-	switch (cmd) {
-	case ABORT:
-	    abort_pending = 1;
-	    errstr = "ERROR";
-	    return (1);
-	case CONTINUE:
-	    continue;
-	default:
-	    error("error [bad command after NO-ROOM: %d]", cmd);
-	}
-    } while (db->spaceleft != sizeof(db->buf));
-    db->dataptr = db->buf;
-    dumpsize += (sizeof(db->buf) / 1024);
-    return (0);
-}
-
-
-/*
- * Updates the buffer pointer for the input data buffer.  The buffer is
- * written if it is full, or the remainder is zeroed if at eof.
- */
-int
-update_dataptr(outf, db, size)
-    int outf, size;
-    struct databuf *db;
-{
-    db->spaceleft -= size;
-    db->dataptr += size;
-
-    if (size == 0) {	/* eof, zero rest of buffer */
-	memset(db->dataptr, '\0', db->spaceleft);
-	/* db->dataptr still points to the point where padding started */
+    if (size == 0) {
+	/* eof, zero rest of buffer */
+	memset(db->dataptr, 0, db->spaceleft);
 	db->spaceleft = 0;
+    } else { 
+	db->spaceleft -= size;
+	db->dataptr += size;
     }
 
     if (db->spaceleft == 0) {	/* buffer is full, write it */
@@ -534,63 +492,87 @@ update_dataptr(outf, db, size)
 	NAUGHTY_BITS;
 
 	if (split_size > 0 && dumpsize >= split_size) {
-	    char *new_filename = NULL;
-	    char sequence[10];
-	    int save_outf;
-	    char *tmp_filename = NULL;
+	    char *tmp_filename;
+	    int fd;
 
-	    save_outf = outf;
+	    /*
+	     * First, update the header of the current file to point
+	     * to the next chunk, and then close it.
+	     */
+	    fd = db->fd;
+	    if (lseek(fd, (off_t)0, 0) < 0) {
+		errstr = squotef("lseek holding file: %s", strerror(errno));
+		return (-1);
+	    }
+	    ap_snprintf(file.cont_filename, sizeof(file.cont_filename),
+		"%s.%d", filename, ++filename_seq);
+	    write_tapeheader(fd, &file);
+	    aclose(fd);
 
-	    close(outf);
-
-	    filename_seq++;
-	    ap_snprintf(sequence, sizeof(sequence), "%d", filename_seq);
-	    new_filename = newvstralloc(new_filename,
-					filename,
-					".",
-					sequence,
-					NULL);
-
-	    strncpy(file.cont_filename, new_filename, 
-		    sizeof(file.cont_filename));
-	    file.cont_filename[sizeof(file.cont_filename)-1] = '\0';
-
-	    tmp_filename = newvstralloc(tmp_filename, cont_filename,
-		".tmp", NULL);
-	    if((outf = open(tmp_filename, O_RDWR)) == -1) {
+	    /*
+	     * Now, open the new chunk file, and give it a new header
+	     * that has no cont_filename pointer.
+	     */
+	    tmp_filename = vstralloc(file.cont_filename, ".tmp", NULL);
+	    if ((fd = open(tmp_filename, O_WRONLY|O_CREAT, 0666)) == -1) {
 		errstr = squotef("holding file \"%s\": %s",
 			    tmp_filename, strerror(errno));
-		return 1;
+		amfree(tmp_filename);
+		return (-1);
 	    }
-	    write_tapeheader(outf, &file);
-	    close(outf);
-
-	    strncpy(cont_filename, new_filename, sizeof(cont_filename));
-	    cont_filename[sizeof(cont_filename)-1] = '\0';
-
-	    tmp_filename = newvstralloc(tmp_filename, new_filename, ".tmp", NULL);
-	    if((outf = open(tmp_filename, O_WRONLY|O_CREAT, 0666)) == -1) {
-		errstr = squotef("holding file \"%s\": %s",
-			    tmp_filename, strerror(errno));
-		return 1;
-	    }
-	    if(outf != save_outf) {
-		if(dup2(outf,save_outf) == -1) {
-		    errstr = squotef("can't dup2: %s", strerror(errno));
-		    return 1;
-		}
-		close(outf);
-		outf = save_outf;
-	    }
-	    /*outf = save_outf;*/
-	    split_size += chunksize;
 	    file.type = F_CONT_DUMPFILE;
 	    file.cont_filename[0] = '\0';
-	    write_tapeheader(outf, &file);
+	    write_tapeheader(fd, &file);
+	    amfree(tmp_filename);
+
+	    /*
+	     * Now put give the new file the old file's descriptor
+	     */
+	    if (fd != db->fd) {
+		if (dup2(fd, db->fd) == -1) {
+		    errstr = squotef("can't dup2: %s", strerror(errno));
+		    return (-1);
+		}
+		close(fd);
+	    }
+
+	    /*
+	     * Update when we need to chunk again
+	     */
+	    split_size += chunksize;
 	}
-	return write_dataptr(outf, db);
+
+	/*
+	 * Write out the buffer
+	 */
+	do {
+	    written = write(db->fd, db->buf + db->spaceleft,
+	    sizeof(db->buf) - db->spaceleft);
+	    if (written > 0) {
+		db->spaceleft += written;
+		continue;
+	    } else if (written < 0 && errno != ENOSPC) {
+		errstr = squotef("data write: %s", strerror(errno));
+		return (-1);
+	    }
+
+	    putresult("NO-ROOM %s\n", handle);
+	    cmd = getcmd(&cmdargs);
+	    switch (cmd) {
+	    case ABORT:
+		abort_pending = 1;
+		errstr = "ERROR";
+		return (-1);
+	    case CONTINUE:
+		continue;
+	    default:
+		error("error [bad command after NO-ROOM: %d]", cmd);
+	    }
+	} while (db->spaceleft != sizeof(db->buf));
+	db->dataptr = db->buf;
+	dumpsize += (sizeof(db->buf) / 1024);
     }
-    return 0;
+    return (0);
 }
 
 
@@ -827,8 +809,7 @@ filetype_t type;
 	    file->comp_suffix[sizeof(file->comp_suffix)-1] = '\0';
 	}
     }
-    strncpy(file->cont_filename, cont_filename, sizeof(file->cont_filename)-1);
-    file->cont_filename[sizeof(file->cont_filename)-1] = '\0';
+    file->cont_filename[0] = '\0';
 }
 
 /* Send an Amanda dump header to the output file.
@@ -885,6 +866,7 @@ int mesgfd, datafd, indexfd, outfd;
 
     startclock();
 
+    db.fd = outfd;
     db.dataptr = db.buf;
     db.spaceleft = sizeof(db.buf);
     dumpsize = origsize = dump_result = 0;
@@ -1116,13 +1098,13 @@ int mesgfd, datafd, indexfd, outfd;
 		errstr = newstralloc2(errstr, "data read: ", strerror(errno));
 		goto failed;
 	    case 0:
-		if(update_dataptr(outfd, &db, size1)) goto failed;
+		if(update_dataptr(&db, size1)) goto failed;
 		eof1 = 1;
 		FD_CLR(datafd, &readset);
 		aclose(datafd);
 		break;
 	    default:
-		if(update_dataptr(outfd, &db, size1)) goto failed;
+		if(update_dataptr(&db, size1)) goto failed;
 	    }
 	}
 
@@ -1145,14 +1127,12 @@ int mesgfd, datafd, indexfd, outfd;
 
 	    if (got_info_endline && !header_done) { /* time to do the header */
 		make_tapeheader(&file, F_DUMPFILE);
-		if (write_tapeheader(outfd, &file)) {
+		if (write_tapeheader(db.fd, &file)) {
 		    errstr = newstralloc2(errstr, "write_tapeheader: ", 
 					  strerror(errno));
 		    goto failed;
 		}
 		header_done = 1;
-		strncat(cont_filename,filename,sizeof(cont_filename));
-		cont_filename[sizeof(cont_filename)-1] = '\0';
 
 		if (datafd != -1)
 		    FD_SET(datafd, &readset);	/* now we can read the data */

@@ -1,3 +1,15 @@
+1998-12-10  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/dumper.c (struct databuf): add a fd member - the file
+	descriptor that we are buffering
+	* server-src/dumper.c (update_dataptr): remove
+	outf arguments, use the fd in the passed databuf.  Return 0 on
+	success, and -1 on error.
+	* server-src/dumper.c (update_dataptr): rework and comment the
+	chunk code a bit.  Get rid of the cont_filename global.
+	* server-src/dumper.c (do_dump): init the fd member of the databuf
+	* server-src/dumper.c (write_dataptr): fold back into update_dataptr
+
 1998-12-10  John R. Jackson  <jrj@purdue.edu>
 
 	* common-src/amflock.c (main): report CONFIGURE_TEST error messages to
