@@ -1,5 +1,8 @@
 1999-01-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* docs/INSTALL: updated URLs for GNU packages and Samba
+	* docs/SAMBA: note that Samba 2.0.0 is supported
+
 	* docs/SYSTEM.NOTES (HP/UX): what does `Link severed' mean?
 
 1999-01-27  Thomas Hepper <th@ant.han.de>
