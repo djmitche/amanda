@@ -1,3 +1,8 @@
+2004-08-31  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Orion Poplawski <orion@cora.nwra.com>
+
+	* server-src/conffile.c (copy_dumptype): Copy maxpromoteday.
+
 2004-08-12  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* client-src/selfcheck.c (check_disk): More check for CALCSIZE.

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.106 2004/08/03 11:27:04 martinea Exp $
+ * $Id: conffile.c,v 1.107 2004/08/31 12:38:36 martinea Exp $
  *
  * read configuration file
  */
@@ -1646,6 +1646,7 @@ static void copy_dumptype()
     dtcopy(maxcycle, s_maxcycle);
     dtcopy(frequency, s_frequency);
     dtcopy(maxdumps, s_maxdumps);
+    dtcopy(maxpromoteday, s_maxpromoteday);
     dtcopy(bumppercent, s_bumppercent);
     dtcopy(bumpsize, s_bumpsize);
     dtcopy(bumpdays, s_bumpdays);
