@@ -1,3 +1,15 @@
+1998-06-26  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* config/ltmain.sh: install official patch to libtool 1.2a
+
+	* configure.in: do not set max file size for Solaris 2.6, it is no
+	longer used.
+
+1998-06-26  Tim McNerney  <mumbly@netcom.com>
+
+	* common-src/fileheader.c (parse_file_header): accept missing
+	PROGRAM in tape section header, for backward compatibility.
+
 1998-06-25  Blair Zajac  <blair@gps.caltech.edu>
 
 	* server-src/amflush.c: fix mismatch arguments to error()
