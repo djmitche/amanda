@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.44 2002/03/22 15:00:13 martinea Exp $
+ * $Id: conffile.h,v 1.45 2002/04/07 20:01:12 jrjackson Exp $
  *
  * interface for config file reading code
  */
@@ -215,6 +215,30 @@ typedef struct holdingdisk_s {
     void *up;			/* generic user pointer */
 } holdingdisk_t;
 
+/* for each column we define some values on how to
+ * format this column element
+ */
+typedef struct {
+    char *Name;		/* column name */
+    char PrefixSpace;	/* the blank space to print before this
+   			 * column. It is used to get the space
+			 * between the colums
+			 */
+    char Width;		/* the widht of the column itself */
+    char Precision;	/* the precision if its a float */
+    char MaxWidth;	/* if set, Width will be recalculated
+    			 * to the space needed */
+    char *Format;	/* the printf format string for this
+   			 * column element
+			 */
+    char *Title;	/* the title to use for this column */
+} ColumnInfo;
+
+/* this corresponds to the normal output of amanda, but may
+ * be adapted to any spacing as you like.
+ */
+extern ColumnInfo ColumnData[];
+
 extern char *config_name;
 extern char *config_dir;
 
@@ -232,5 +256,10 @@ dumptype_t *read_dumptype P((char *name, FILE *from, char *fname, int *linenum))
 tapetype_t *lookup_tapetype P((char *identifier));
 interface_t *lookup_interface P((char *identifier));
 holdingdisk_t *getconf_holdingdisks P((void));
+
+int ColumnDataCount P((void));
+int StringToColumn P((char *s));
+char LastChar P((char *s));
+int SetColumDataFromString P((ColumnInfo* ci, char *s, char **errstr));
 
 #endif /* ! CONFFILE_H */

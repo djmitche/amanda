@@ -1,5 +1,15 @@
 2002-04-07  John R. Jackson (jrj@purdue.edu)
 
+	* server-src/reporter.c: Move column routines to conffile.c so amcheck
+	  can use them in its tests.  Do not abort on several failures, but
+	  generate messages in the FAILURE AND STRANGE DUMP SUMMARY section.
+	* server-src/conffile.c: Move column routines to here.
+	* server-src/conffile.h: Ditto.
+	* server-src/amcheck.c: Add several config file tests.
+	* server-src/logfile.c: Change "reporter" to "amreport".
+
+2002-04-07  John R. Jackson (jrj@purdue.edu)
+
 	* configure.in: Add /usr/local/sbin to LOCPATH.
 
 2002-03-31  John R. Jackson (jrj@purdue.edu)

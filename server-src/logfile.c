@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.25 2002/03/23 19:58:09 martinea Exp $
+ * $Id: logfile.c,v 1.26 2002/04/07 20:01:12 jrjackson Exp $
  *
  * common log file writing routine
  */
@@ -49,7 +49,7 @@ char *logtype_str[] = {
 };
 
 char *program_str[] = {
-    "UNKNOWN", "planner", "driver", "reporter", "dumper", "chunker",
+    "UNKNOWN", "planner", "driver", "amreport", "dumper", "chunker",
     "taper", "amflush"
 };
 
