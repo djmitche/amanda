@@ -1,3 +1,10 @@
+2000-12-03 John R. Jackson  <jrj@purdue.edu>
+
+	* restore-src/amrestore.c: Fix header when compression is included.
+	  Use "fast" option for -c and add new -C option to get "best".
+	* man/amrestore.8: Document the new option, the compression level,
+	  and clean up some nroff issues.
+
 2000-11-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* Amanda 2.4.2 released
@@ -1213,7 +1220,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.415 2000/11/25 13:52:14 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.416 2000/12/03 20:56:18 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

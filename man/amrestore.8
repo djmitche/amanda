@@ -16,6 +16,8 @@ amrestore \- extract backup images from an Amanda tape
 .B \-r
 |
 .B \-c
+|
+.B \-C
 ]
 [
 .B \-p
@@ -101,7 +103,7 @@ is useful if
 writes multiple backup runs to a single tape.
 .PP
 Unless
-.B -p
+.B \-p
 is used,
 candidate backup images are extracted to files
 in the current directory named:
@@ -111,7 +113,7 @@ in the current directory named:
 .RE
 .SH OPTIONS
 .TP
-.B -p
+.B \-p
 Pipe output.
 The first matching backup image is sent to standard output,
 which is normally a pipe to
@@ -135,8 +137,8 @@ support a blocking factor option to let you set the read block size,
 and you should set it to 2.
 See the example below.
 .TP
-.B -c
-Compress output.
+.B \-c
+Compress output using the fastest method the compression program provides.
 .B Amrestore
 normally writes output files in a format understood by
 .B restore
@@ -144,7 +146,9 @@ or
 .BR tar ,
 even if the backups on the tape are compressed.
 With the
-.B -c
+.B \-c
+or
+.B \-C
 option,
 .B amrestore
 writes all files in compressed format,
@@ -160,7 +164,14 @@ or
 is the preferred compression program.
 This option is useful when the current directory disk is small.
 .TP
-.B -r
+.B \-C
+Compress output using the best method the compression program provides
+(may be very CPU intensive).
+See the notes above about the
+.B \-c
+option.
+.TP
+.B \-r
 Raw output.
 Backup images are output exactly as they are on the tape,
 including the
@@ -171,13 +182,15 @@ Output file names will have a
 extension.
 This option is only useful for debugging and other strange circumstances.
 .TP
-.B -h
+.B \-h
 Header output.
 The tape header block is output at the beginning of each file.
 This is like
 .B \-r
 except
 .B \-c
+or
+.B \-C
 may also be used to compress the result.
 .B Amrecover
 uses the header to determine the restore program to use.
@@ -197,7 +210,7 @@ This helps keep it from complaining about short reads.
 .LP
 .RS
 .EX
-% amrestore -p /dev/nrmt9 seine rz3g | restore -ivbf 2 -
+% amrestore \-p /dev/nrmt9 seine rz3g | restore \-ivbf 2 \-
 .EE
 .RE
 .LP
@@ -234,7 +247,7 @@ file that has not yet been flushed to tape:
 .LP
 .RS
 .EX
-% amrestore -p /amanda/20001119/seine.rz1a.2 | restore -ivbf 2 -
+% amrestore \-p /amanda/20001119/seine.rz1a.2 | restore \-ivbf 2 \-
 .EE
 .RE
 .SH AUTHOR
