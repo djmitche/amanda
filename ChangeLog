@@ -1,5 +1,10 @@
 1999-09-05 John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/amverify.sh.in: add SMBCLIENT, VRESTORE, VXRESTORE
+	  and XFSRESTORE support.
+
+1999-09-05 John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/conffile.c: add several common abbreviations to config
 	  file processing.
 
