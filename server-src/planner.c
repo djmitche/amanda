@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.19 2002/11/14 18:15:37 martinea Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.20 2002/11/26 03:27:55 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1827,7 +1827,7 @@ static void delay_dumps P((void))
 	}
 
         /* Format dumpsize for messages */
-	sprintf(est_kb, "%ld KB,", est(dp)->dump_size);
+	ap_snprintf(est_kb, 20, "%ld KB,", est(dp)->dump_size);
 
 	if(est(dp)->dump_level == 0) {
 	    if(est(dp)->last_level == -1 || dp->skip_incr) {
@@ -1882,7 +1882,7 @@ static void delay_dumps P((void))
 	if(est(dp)->dump_level == 0 && dp != preserve) {
 
             /* Format dumpsize for messages */
-	    sprintf(est_kb, "%ld KB,", est(dp)->dump_size);
+	    ap_snprintf(est_kb, 20, "%ld KB,", est(dp)->dump_size);
 
 	    if(est(dp)->last_level == -1 || dp->skip_incr) {
 		delay_one_dump(dp, 1,
@@ -1919,7 +1919,7 @@ static void delay_dumps P((void))
 	if(est(dp)->dump_level != 0) {
 
             /* Format dumpsize for messages */
-	    sprintf(est_kb, "%ld KB,", est(dp)->dump_size);
+	    ap_snprintf(est_kb, 20, "%ld KB,", est(dp)->dump_size);
 
 	    delay_one_dump(dp, 1,
 			   "dumps way too big,",

@@ -1,5 +1,9 @@
 2002-11-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/planner.c (delay_dumps): Use ap_snprintf.
+
+2002-11-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* common-src/debug.c: Most of the code must in #ifdef DEBUG_CODE.
 	* client-src/client_util.c: Use AMANDA_TMPDIR instead of AMANDA_DBGDIR.
 
