@@ -3,12 +3,6 @@ Changes in release 2.5.0
 * New SECURITY API (see docs/SECURITY.API for details)
 * New DUMPER API (see docs/DUMPER.API for details)
 
-Changes in release 2.4.2 that haven't been updated to 2.5.0:
-
-* Amanda will never use more space than specified (use) for an holding
-  disk
-* A dump on holding disk can spread multiple holding disks
-
 Changes in release 2.4.2
 
 * dumptypes can be specialized in the disklist file
@@ -29,6 +23,7 @@ Changes in release 2.4.2
 * A new `dtimeout' keyword in amanda.conf to replace the READ_TIMEOUT
   constant in dumper.c.
 * new amtrmlog command
+* --with-samba-user is deprecated, the username go in the amandapass file
 
 Changes in release 2.4.1
 

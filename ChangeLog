@@ -1,5 +1,16 @@
 2000-10-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* configure.in: --with-samba-user is deprecated.
+	* docs/SAMBA: the username is now on the amandapass file.
+	* NEWS: the username is now on the amandapass file.
+	* client-src/findpass.c (findpass): accept "*" as diskname.
+	* client-src/selfcheck.c (check_disk): call to samba changed.
+	* client-src/sendsize.c (getsize_smbtar): ditto.
+	* client-src/sendbackup-gnutar.c (start_backup): ditto.
+	* recover-src/extract_list.c (extract_files_child): ditto.
+
+2000-10-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/taper.c: give better message when failing 
 	to open a chunk.
 

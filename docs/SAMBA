@@ -55,7 +55,8 @@ e.g.
 
 Amanda client software, and the patched samba is installed onto a host
 'pcserver'.  A share to be backed up is called 'backupc' on host
-'thepc'.  It has a password on the share of 'f00bar'.
+'thepc'.  The share will be accessed with the user 'bozo' and
+password 'f00bar'.
 
 The entry in the disklist file is:
 
@@ -67,11 +68,11 @@ pcserver	//thepc/backupc		nocomp-user-gnutar
 
 And in /etc/amandapass on the machine 'pcserver', this line must be
 present :
-//thepc/backupc f00bar
+//thepc/backupc bozo%f00bar
 
 If smbclient would require a workgroup specification (-W), you may add
 it as a third argument in /etc/amandapass line:
-//thepc/backupc f00bar NTGROUP
+//thepc/backupc bozo%f00bar NTGROUP
 
 This way, smbclient will be invoked with -W NTGROUP
 

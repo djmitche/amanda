@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.43 1999/09/15 00:31:33 jrj Exp $
+ * $Id: selfcheck.c,v 1.44 2000/10/11 02:23:33 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -325,9 +325,8 @@ char *optstr;
 	    }
 	    cmd = vstralloc(SAMBA_CLIENT,
 			    " ", device,
-			    " \'", pass, "\'",
 			    " -E",
-			    " -U ", SAMBA_USER,
+			    " -U ", " \'", pass, "\'",
 			    /* if domain is NULL, just quit */
 			    domain ? " -W " : " -c quit",
 			    domain ? domain : NULL,
@@ -335,8 +334,8 @@ char *optstr;
 			    NULL);
 	    memset(pass, '\0', strlen(pass));
 	    amfree(pass);
-	    printf("running %s %s XXXX -E -U %s%s%s -c quit\n",
-		   SAMBA_CLIENT, device, SAMBA_USER,
+	    printf("running %s %s -E -U %s%s%s -c quit\n",
+		   SAMBA_CLIENT, device, "(see amandapass)",
 		   domain ? " -W " : "", domain ? domain : "");
 	    if(domain) {
 		memset(domain, '\0', strlen(domain));

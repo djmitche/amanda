@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: findpass.c,v 1.10 1998/07/04 00:18:12 oliva Exp $
+ * $Id: findpass.c,v 1.11 2000/10/11 02:23:33 martinea Exp $
  *
  * Support routines for Amanda SAMBA support
  */
@@ -59,7 +59,7 @@ char *disk, **domain;
       skip_non_whitespace_cs(s, ch);
       if (ch && ch != '#') {
 	s[-1] = '\0';				/* terminate disk name */
-	if (strcmp(disk, d) == 0) {
+	if ((strcmp(d,"*") == 0) || (strcmp(disk, d) == 0)) {
 	  skip_whitespace(s, ch);		/* find start of password */
 	  if (ch && ch != '#') {
 	    pw = s - 1;				/* start of password */
