@@ -134,6 +134,26 @@ after they are taped, for faster restore of recently backed up data.
 It should also be possible to store a single backup in multiple tapes, 
 for redundancy.
 
+* We need a better protocol between the driver and dumpers.
+  - setup terminated (to not start to dump onn the same host at the same time).
+  - dumper should ask for holding space if the dump is larger that estimated.
+    it is needed if we want to write a dump on multiple holding disks.
+  - driver should ask periodicaly if the dumper is still alive (in case       
+    the dumper hang).
+
+* From: "John R. Jackson" <jrj@gandalf.cc.purdue.edu>
+Here's an idea for someone to think about.  What if we made the                 
+"length" in a tapetype definition always be the "no compression" value?
+Then change the dumptype "compress" option to accept "hardware" as              
+another type (ala "client" and "server") and let planner do its normal          
+thing with that information (including "comprate", which at the current
+default of 50% is the usual first guess for hardware compression).              
+ 
+This would make setting the tape length value less confusing, and make          
+the tapetype program easier to run.  You could even get more accurate
+planning than what is currently available by setting the comprate to            
+what you know the data is like on a dumptype by dumptype basis.
+
 * Insert your favorite feature here, and send us e-mail telling about what
 you'd like to see!  Of course, we can't please everyone, and can't implement
 everything, but we are very interested in how other sites operate so that we
