@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindex.h,v 1.5.4.1 1999/05/23 23:03:03 oliva Exp $
+ * $Id: amindex.h,v 1.5.4.2 1999/09/08 23:27:30 jrj Exp $
  *
  * headers for index control
  */
@@ -33,6 +33,7 @@
 #define AMINDEX_H
 
 #include "amanda.h"
+#include "conffile.h"
 
 char *getindexfname P((char *host, char *disk, char *date, int level));
 

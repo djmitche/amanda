@@ -27,6 +27,9 @@ use Getopt::Long;
 
 $pname = "rth-changer";
 
+$prefix="@prefix@";
+$exec_prefix="@exec_prefix@";
+$sbindir="@sbindir@";
 $libexecdir="@libexecdir@";
 if ("@USE_VERSION_SUFFIXES@" eq "yes") {
     $suf = "-@VERSION@";
@@ -37,7 +40,7 @@ if ("@USE_VERSION_SUFFIXES@" eq "yes") {
 $MT="@MT@";
 $MTF="@MT_FILE_FLAG@";
 
-$tapeDevice=`$libexecdir/getconf$SUF tapedev`;
+$tapeDevice=`$sbindir/amgetconf$SUF tapedev`;
 
 sub getCurrentTape {
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.32.2.2 1999/09/05 23:17:43 jrj Exp $
+ * $Id: amandad.c,v 1.32.2.3 1999/09/08 23:26:11 jrj Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -90,8 +90,7 @@ char **argv;
      */
     pkt_t in_msg, out_msg, rej_msg, dup_msg;
     char *cmd = NULL, *base = NULL;
-    char *pwname, **vp;
-    struct passwd *pwptr;
+    char **vp;
     int retry_count, rc, reqlen;
     int req_pipe[2], rep_pipe[2];
     int dglen = 0;
@@ -109,41 +108,40 @@ char **argv;
 	close(fd);
     }
 
+    safe_cd();
+
     set_pname("amandad");
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
 
-    pwname = CLIENT_LOGIN;
-    pwptr = getpwnam(pwname);
-
 #ifdef FORCE_USERID
 
     /* we'd rather not run as root */
     if(geteuid() == 0) {
 #ifdef KRB4_SECURITY
-        if(pwptr == NULL)
-	    error("error [cannot find user %s in passwd file]\n", pwname);
+        if(client_uid == (uid_t) -1) {
+	    error("error [cannot find user %s in passwd file]\n", CLIENT_LOGIN);
+	}
+
         /*
 	 * if we're using kerberos security, we'll need to be root in
 	 * order to get at the machine's srvtab entry, so we hang on to
 	 * some root privledges for now.  We give them up entirely later.
 	 */
-	setegid(pwptr->pw_gid);
-	seteuid(pwptr->pw_uid);
+	setegid(client_gid);
+	seteuid(client_uid);
 #else
-	initgroups(pwname, pwptr->pw_gid);
-	setgid(pwptr->pw_gid);
-	setuid(pwptr->pw_uid);
+	initgroups(CLIENT_LOGIN, client_gid);
+	setgid(client_gid);
+	setuid(client_uid);
 #endif  /* KRB4_SECURITY */
     }
 #endif	/* FORCE_USERID */
 
     /* initialize */
 
-    chdir("/");		/* someplace not world writable */
-    umask(077);
     dbopen();
     {
 	extern int db_fd;
@@ -287,12 +285,12 @@ char **argv;
      */
 
     if(geteuid() == 0) {
-	pwname = CLIENT_LOGIN;
-	if((pwptr = getpwnam(pwname)) == NULL)
-	    error("error [cannot find user %s in passwd file]\n", pwname);
-	initgroups(pwname, pwptr->pw_gid);
-	setgid(pwptr->pw_gid);
-	setuid(pwptr->pw_uid);
+	if(client_uid == (uid_t) -1) {
+	    error("error [cannot find user %s in passwd file]\n", CLIENT_LOGIN);
+	}
+	initgroups(CLIENT_LOGIN, client_gid);
+	setgid(client_gid);
+	setuid(client_uid);
     }
 
 #endif  /* KRB4_SECURITY && FORCE_USERID */

@@ -24,12 +24,13 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.h,v 1.6.4.2 1999/03/16 20:43:50 th Exp $
+ * $Id: changer.h,v 1.6.4.3 1999/09/08 23:27:53 jrj Exp $
  *
  * interface routines for tape changers
  */
 #include "amanda.h"
 
+extern int changer_debug;
 extern char *changer_resultstr;
 
 int changer_init P((void));

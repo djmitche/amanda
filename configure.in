@@ -899,33 +899,52 @@ y |  ye | yes) AC_DEFINE(ASSERTIONS)
   ;;
 esac
 
-AC_ARG_WITH(debugging,
-    [  --with[out]-debugging[=/debug/dir] [do not] record runtime debugging information in specified directory [/tmp/amanda]],
-    DEBUGGING="$withval",
-    : ${DEBUGGING=yes}
+AC_ARG_WITH(tmpdir,
+    [  --with-tmpdir[=/temp/dir] area Amanda can use for temp files [/tmp/amanda]],
+    tmpdir="$withval",
+    : ${tmpdir=yes}
 )
-DEBUGGING=`(
+tmpdir=`(
     test "x$prefix" = xNONE && prefix=$ac_default_prefix
     test "x$exec_prefix" = xNONE && exec_prefix=${prefix}
-    eval echo "$DEBUGGING"
+    eval echo "$tmpdir"
 )`
-case "$DEBUGGING" in
-n | no) DEBUG_DIR="";;
+case "$tmpdir" in
+n | no) AC_MSG_ERROR([*** --without-tmpdir is not allowed.]);;
 y |  ye | yes)
-	DEBUG_DIR="/tmp/amanda"
-	AC_DEFINE(DEBUG_CODE)
-  ;;
+	AMANDA_TMPDIR="/tmp/amanda";;
 /*)
-	DEBUG_DIR="$DEBUGGING"
-	AC_DEFINE(DEBUG_CODE)
-  ;;
+	AMANDA_TMPDIR="$tmpdir";;
+*) AC_MSG_ERROR([*** You must supply a full pathname to --with-tmpdir option.]);;
+esac
+AC_DEFINE_UNQUOTED(AMANDA_TMPDIR,"$AMANDA_TMPDIR")
+AC_SUBST(AMANDA_TMPDIR)
+
+AC_ARG_WITH(debugging,
+    [  --with[out]-debugging[=/debug/dir] [do not] record runtime debugging information in specified directory [--with-tmpdir]],
+    debugging="$withval",
+    : ${debugging=yes}
+)
+debugging=`(
+    test "x$prefix" = xNONE && prefix=$ac_default_prefix
+    test "x$exec_prefix" = xNONE && exec_prefix=${prefix}
+    eval echo "$debugging"
+)`
+case "$debugging" in
+n | no) AMANDA_DBGDIR="";;
+y |  ye | yes)
+	AMANDA_DBGDIR="$AMANDA_TMPDIR"
+	AC_DEFINE(DEBUG_CODE);;
+/*)
+	AMANDA_DBGDIR="$debugging"
+	AC_DEFINE(DEBUG_CODE);;
 *) AC_MSG_ERROR([*** You must supply a full pathname to --with-debugging option.])
   ;;
 esac
-case "$DEBUG_DIR" in
+case "$AMANDA_DBGDIR" in
 "") :;;
-*) AC_DEFINE_UNQUOTED(DEBUG_DIR,"$DEBUG_DIR")
-   AC_SUBST(DEBUG_DIR);;
+*) AC_DEFINE_UNQUOTED(AMANDA_DBGDIR,"$AMANDA_DBGDIR")
+   AC_SUBST(AMANDA_DBGDIR);;
 esac
 
 AC_ARG_WITH(pid-debug-files,

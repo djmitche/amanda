@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflock.c,v 1.17.4.3 1998/12/10 23:54:57 jrj Exp $
+ * $Id: amflock.c,v 1.17.4.4 1999/09/08 23:26:40 jrj Exp $
  *
  * file locking routines, put here to hide the system dependant stuff
  * from the rest of the code
@@ -277,7 +277,7 @@ int op;    /* true to lock; false to unlock */
 
 	mypid = (long)getpid();
 
-	lockfile = vstralloc("/tmp", "/am", res, ".lock", NULL);
+	lockfile = vstralloc(AMANDA_TMPDIR, "/am", res, ".lock", NULL);
 
 	if (!op) {
 		/* unlock the resource */
@@ -291,7 +291,7 @@ int op;    /* true to lock; false to unlock */
 	/* lock the resource */
 
 	ap_snprintf(pid_str, sizeof(pid_str), "%ld", mypid);
-	tlockfile = vstralloc("/tmp", "am", res, ".", pid_str, NULL);
+	tlockfile = vstralloc(AMANDA_TMPDIR, "am", res, ".", pid_str, NULL);
 
 	(void)create_lock(tlockfile, mypid);
 

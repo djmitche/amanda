@@ -23,7 +23,8 @@
 # Usage: amrmtape [-q] [-v] [-n] [-d] <configuration> <tape name>
 #          -v Verbose mode.  Enabled by default.
 #          -q Quiet (opposite of -v).
-#          -n Do nothing to original files, leave new ones in /tmp directory.
+#          -n Do nothing to original files, leave new ones in --with-tmpdir
+#	      directory.
 #          -d Enable debug tracing.
 #
 # Credits: The what-to-do algorithm was provided by Cedric Scott,
@@ -37,7 +38,7 @@ libexecdir=@libexecdir@
 
 ConfigDir=@CONFIG_DIR@
 
-PATH=$libexecdir:$sbindir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
+PATH=$sbindir:$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
 export PATH
 
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
@@ -67,7 +68,7 @@ CleanTapelist () {
     return 1
   fi
 
-  dumpuser=`$libexecdir/getconf$SUF dumpuser`
+  dumpuser=`amgetconf$SUF dumpuser`
   runuser=`whoami`
   if [ $runuser != $dumpuser ]; then
     log "${Program}: must be run as user $dumpuser"
@@ -77,7 +78,7 @@ CleanTapelist () {
   # Get the location and name of the tapelist filename.  If tapelist is not
   # specified in the amanda.conf file, then use tapelist in the config
   # directory.
-  TapeList=`getconf${SUF} tapelist`
+  TapeList=`amgetconf${SUF} tapelist`
   if [ ! "$TapeList" ]; then
     TapeList="$ConfigDir/$Config/tapelist"
   fi
@@ -87,7 +88,7 @@ CleanTapelist () {
   fi
 
   # Get the location and name of the database filename.
-  InfoFile=`getconf${SUF} infofile`
+  InfoFile=`amgetconf${SUF} infofile`
   if [ ! "$InfoFile" ]; then
     log "${Program}: unable to find name of infofile from ${ConfigDir}/${Config}/amanda.conf."
     return 1
@@ -106,7 +107,7 @@ CleanTapelist () {
     fi
   done
 
-  NewTapelist=/tmp/tapelist
+  NewTapelist=@AMANDA_TMPDIR@/tapelist
   rm -f ${NewTapelist}
   awk "\$2 == \"${Tape}\" { next; } { print; }" \
       > ${NewTapelist} < $TapeList ||

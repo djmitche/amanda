@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.24.2.6 1999/08/25 06:53:13 oliva Exp $
+ * $Id: conffile.h,v 1.24.2.7 1999/09/08 23:27:56 jrj Exp $
  *
  * interface for config file reading code
  */
@@ -175,6 +175,12 @@ typedef struct holdingdisk_s {
 
     void *up;			/* generic user pointer */
 } holdingdisk_t;
+
+extern char *config_name;
+extern char *config_dir;
+
+extern holdingdisk_t *holdingdisks;
+extern int num_holdingdisks;
 
 int read_conffile P((char *filename));
 int getconf_seen P((confparm_t parameter));

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.17 1998/07/04 00:20:07 oliva Exp $
+ * $Id: logfile.c,v 1.17.4.1 1999/09/08 23:28:20 jrj Exp $
  *
  * common log file writing routine
  */
@@ -157,6 +157,7 @@ void log_end_multiline()
 void log_rename(datestamp)
 char *datestamp;
 {
+    char *conf_logdir;
     char *logfile;
     char *fname = NULL;
     char seq_str[NUM_STR_SIZE];
@@ -165,7 +166,13 @@ char *datestamp;
 
     if(datestamp == NULL) datestamp = "error";
 
-    logfile = vstralloc(getconf_str(CNF_LOGDIR), "/log", NULL);
+    conf_logdir = getconf_str(CNF_LOGDIR);
+    if (*conf_logdir == '/') {
+	conf_logdir = stralloc(conf_logdir);
+    } else {
+	conf_logdir = stralloc2(config_dir, conf_logdir);
+    }
+    logfile = vstralloc(conf_logdir, "/log", NULL);
 
     for(seq = 0; 1; seq++) {	/* if you've got MAXINT files in your dir... */
 	ap_snprintf(seq_str, sizeof(seq_str), "%d", seq);
@@ -177,8 +184,10 @@ char *datestamp;
 	if(stat(fname, &statbuf) == -1 && errno == ENOENT) break;
     }
 
-    if(rename(logfile, fname) == -1)
-	error("could not rename log file to `%s': %s", fname, strerror(errno));
+    if(rename(logfile, fname) != 0) {
+	error("could not rename \"%s\" to \"%s\": %s",
+	      logfile, fname, strerror(errno));
+    }
 
     amfree(fname);
     amfree(logfile);
@@ -187,12 +196,21 @@ char *datestamp;
 
 static void open_log()
 {
-    logfile = vstralloc(getconf_str(CNF_LOGDIR), "/log", NULL);
+    char *conf_logdir;
+
+    conf_logdir = getconf_str(CNF_LOGDIR);
+    if (*conf_logdir == '/') {
+	conf_logdir = stralloc(conf_logdir);
+    } else {
+	conf_logdir = stralloc2(config_dir, conf_logdir);
+    }
+    logfile = vstralloc(conf_logdir, "/log", NULL);
 
     logfd = open(logfile, O_WRONLY|O_CREAT|O_APPEND, 0600);
 
-    if(logfd == -1)
+    if(logfd == -1) {
 	error("could not open log file %s: %s", logfile, strerror(errno));
+    }
 
     if(amflock(logfd, "log") == -1)
 	error("could not lock log file %s: %s", logfile, strerror(errno));

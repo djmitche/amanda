@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.18.2.9 1999/03/16 20:43:43 th Exp $
+ * $Id: amlabel.c,v 1.18.2.10 1999/09/08 23:27:35 jrj Exp $
  *
  * write an Amanda label on a tape
  */
@@ -37,6 +37,9 @@
 #ifdef HAVE_LIBVTBLC
 #include <vtblc.h>
 #endif /* HAVE_LIBVTBLC */
+
+char *config_name = NULL;
+char *config_dir = NULL;
 
 /* local functions */
 
@@ -54,14 +57,17 @@ int main(argc, argv)
     int argc;
     char **argv;
 {
-    char *confdir, *outslot = NULL;
-    char *errstr, *confname, *label, *oldlabel=NULL, *tapename = NULL;
+    char *conffile;
+    char *conf_tapelist;
+    char *outslot = NULL;
+    char *errstr, *label, *oldlabel=NULL, *tapename = NULL;
     char *labelstr, *slotstr;
-    char *olddatestamp=NULL, *tapefilename;
-    char *oldtapefilename;
+    char *olddatestamp=NULL;
+    char *conf_tapelist_old;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     int fd;
+    int have_changer;
     int force, tape_ok;
     tape_t *tp;
     int slotcommand;
@@ -87,6 +93,8 @@ int main(argc, argv)
 	close(fd);
     }
 
+    safe_cd();
+
     set_pname("amlabel");
     dbopen();
 
@@ -101,7 +109,7 @@ int main(argc, argv)
     if(argc != 3+force && argc != 5+force)
 	usage(argv[0]);
 
-    confname = argv[1+force];
+    config_name = argv[1+force];
     label = argv[2+force];
 
     if(argc == 5+force) {
@@ -109,18 +117,25 @@ int main(argc, argv)
 	    usage(argv[0]);
 	slotstr = argv[4+force];
 	slotcommand = 1;
-    }
-    else {
+    } else {
 	slotstr = "current";
 	slotcommand = 0;
     }
 
-    confdir = vstralloc(CONFIG_DIR, "/", confname, NULL);
-    if(chdir(confdir) != 0)
-	error("could not cd to confdir %s: %s", confdir, strerror(errno));
-
-    if(read_conffile(CONFFILE_NAME))
-	error("could not read amanda config file");
+    config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
+    conffile = stralloc2(config_dir, CONFFILE_NAME);
+    if (read_conffile(conffile)) {
+	error("could not read config file \"%s\"", conffile);
+    }
+    conf_tapelist = getconf_str(CNF_TAPELIST);
+    if (*conf_tapelist == '/') {
+	conf_tapelist = stralloc(conf_tapelist);
+    } else {
+	conf_tapelist = stralloc2(config_dir, conf_tapelist);
+    }
+    if (read_tapelist(conf_tapelist)) {
+	error("could not load tapelist \"%s\"", conf_tapelist);
+    }
 
     uid_me = getuid();
     uid_dumpuser = uid_me;
@@ -143,10 +158,6 @@ int main(argc, argv)
 
     labelstr = getconf_str(CNF_LABELSTR);
 
-    tapefilename = getconf_str(CNF_TAPELIST);
-    if(read_tapelist(tapefilename))
-	error("parse error in %s", tapefilename);
-
     if(!match(labelstr, label))
 	error("label %s doesn't match labelstr \"%s\"", label, labelstr);
 
@@ -155,19 +166,20 @@ int main(argc, argv)
 	    error("label %s already on a tape\n",label);
     }
 
-    if(!changer_init()) {
+    if((have_changer = changer_init()) == 0) {
 	if(slotcommand) {
 	    fprintf(stderr,
-	     "%s: no tpchanger specified in %s/%s, so slot command invalid\n",
-		    argv[0], confdir, CONFFILE_NAME);
+	     "%s: no tpchanger specified in \"%s\", so slot command invalid\n",
+		    argv[0], conffile);
 	    usage(argv[0]);
 	}
 	tapename = stralloc(getconf_str(CNF_TAPEDEV));
 #ifdef HAVE_LIBVTBLC
 	rawtapedev = stralloc(getconf_str(CNF_RAWTAPEDEV));
 #endif /* HAVE_LIBVTBLC */
-    }
-    else {
+    } else if(have_changer != 1) {
+	error("changer initialization failed: %s", strerror(errno));
+    } else {
 	if(changer_loadslot(slotstr, &outslot, &tapename)) {
 	    error("could not load slot \"%s\": %s", slotstr, changer_resultstr);
 	}
@@ -280,10 +292,13 @@ int main(argc, argv)
     	    /* XXX add cur_tape number to tape list structure */
 	    remove_tapelabel(label);
     	    add_tapelabel(0, label);
-       	    oldtapefilename = stralloc2(tapefilename, ".amlabel");
-	    rename(tapefilename, oldtapefilename);
-	    amfree(oldtapefilename);
-	    if(write_tapelist(tapefilename)) {
+       	    conf_tapelist_old = stralloc2(conf_tapelist, ".amlabel");
+	    if (rename(conf_tapelist, conf_tapelist_old) != 0) {
+		error("could not rename \"%s\" to \"%s\": %s",
+		      conf_tapelist, conf_tapelist_old, strerror(errno));
+	    }
+	    amfree(conf_tapelist_old);
+	    if(write_tapelist(conf_tapelist)) {
 	        error("couldn't write tapelist: %s", strerror(errno));
 	    }
 	} /* write tape list */
@@ -385,19 +400,21 @@ int main(argc, argv)
 	}
 #endif /* HAVE_LINUX_ZFTAPE_H */
 
-        if(changer_init()) {
-/*	Now we try to inform the changer, about the new label */
-	  changer_label(outslot,label); 
+        if(have_changer) {
+	    /* Now we try to inform the changer, about the new label */
+	    changer_label(outslot,label); 
 	}
 	printf(", done.\n");
-    }
-    else {
+    } else {
 	printf("\ntape not labeled\n");
     }
 
     amfree(outslot);
     amfree(tapename);
-    amfree(confdir);
+    amfree(conffile);
+    amfree(conf_tapelist);
+    amfree(config_dir);
+    amfree(config_name);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 

@@ -61,11 +61,11 @@ fi
 
 cd $confdir/$conf
 
-logdir=`getconf$SUF logdir`
+logdir=`amgetconf$SUF logdir`
 logfile=$logdir/log
 errfile=$logdir/amdump
 erramflush=$logdir/amflush
-tapecycle=`getconf$SUF tapecycle`
+tapecycle=`amgetconf$SUF tapecycle`
 
 if [ -f $logfile ]; then
 	lognotfound=0

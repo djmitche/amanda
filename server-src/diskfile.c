@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.27.4.4 1999/09/05 23:18:07 jrj Exp $
+ * $Id: diskfile.c,v 1.27.4.5 1999/09/08 23:27:58 jrj Exp $
  *
  * read disklist file
  */
@@ -524,6 +524,9 @@ disk_t *dp;
 
 #ifdef TEST
 
+char *config_name = NULL;
+char *config_dir = NULL;
+
 void
 dump_disk(dp)
 disk_t *dp;
@@ -574,6 +577,8 @@ main(argc, argv)
 int argc;
 char *argv[];
 {
+  char *conffile;
+  char *conf_diskfile;
   int result;
   int fd;
   unsigned long malloc_hist_1, malloc_size_1;
@@ -593,15 +598,33 @@ char *argv[];
 
   malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
-  if (argc>1)
-    if (chdir(argv[1])) {
-       perror(argv[1]);
-       return 1;
+  if (argc>1) {
+    config_name = stralloc(argv[1]);
+    if (strchr(config_name, '/') != NULL) {
+      config_dir = stralloc2(argv[1], "/");
+      config_name = strrchr(config_name, '/') + 1;
+    } else {
+      config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
     }
-  if((result = read_conffile(CONFFILE_NAME)) == 0) {
-    result = (read_diskfile(getconf_str(CNF_DISKFILE)) == NULL);
+  } else {
+    config_dir = stralloc("");
   }
-  dump_disklist();
+  conffile = stralloc2(config_dir, CONFFILE_NAME);
+  if((result = read_conffile(conffile)) == 0) {
+    conf_diskfile = getconf_str(CNF_DISKFILE);
+    if (*conf_diskfile == '/') {
+      conf_diskfile = stralloc(conf_diskfile);
+    } else {
+      conf_diskfile = stralloc2(config_dir, conf_diskfile);
+    }
+    if((result = (read_diskfile(conf_diskfile) == NULL)) == 0) {
+      dump_disklist();
+    }
+    amfree(conf_diskfile);
+  }
+  amfree(conffile);
+  amfree(config_dir);
+  amfree(config_name);
 
   malloc_size_2 = malloc_inuse(&malloc_hist_2);
 

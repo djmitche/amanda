@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.40 1998/09/23 03:03:18 oliva Exp $
+ * $Id: selfcheck.c,v 1.40.2.1 1999/09/08 23:26:23 jrj Exp $
  *
  * do self-check and send back any error messages
  */
@@ -92,13 +92,13 @@ char **argv;
 	close(fd);
     }
 
+    safe_cd();
+
     set_pname("selfcheck");
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
-    chdir("/tmp");
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
-    umask(0007);
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 
@@ -510,8 +510,9 @@ static void check_overall()
 	}
     }
 
-    if( need_compress_path )
+    if( need_compress_path ) {
 	check_file(COMPRESS_PATH, X_OK);
+    }
 
     if( need_dump || need_xfsdump )
 	check_file("/etc/dumpdates",
@@ -522,14 +523,15 @@ static void check_overall()
 #endif
 		   );
 
-    if (need_vdump)
+    if (need_vdump) {
         check_file("/etc/vdumpdates", F_OK);
+    }
 
     check_file("/dev/null", R_OK|W_OK);
-    check_space("/tmp", 64);		/* for amandad i/o */
+    check_space(AMANDA_TMPDIR, 64);	/* for amandad i/o */
 
-#ifdef DEBUG_DIR
-    check_space(DEBUG_DIR, 64);		/* for amandad i/o */
+#ifdef AMANDA_DBGDIR
+    check_space(AMANDA_DBGDIR, 64);	/* for amandad i/o */
 #endif
 
     check_space("/etc", 64);		/* for /etc/dumpdates writing */

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.8 1998/07/04 00:19:56 oliva Exp $
+ * $Id: getconf.c,v 1.8.4.1 1999/09/08 23:28:13 jrj Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -33,6 +33,9 @@
 #include "conffile.h"
 
 int main P((int argc, char **argv));
+
+char *config_name = NULL;
+char *config_dir = NULL;
 
 int main(argc, argv)
 int argc;
@@ -42,6 +45,8 @@ char **argv;
     int fd;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
+    char *conffile;
+    char *parmname;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -53,30 +58,51 @@ char **argv;
 	close(fd);
     }
 
-    set_pname("getconf");
+    set_pname("amgetconf");
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
-    if(argc != 2) {
-	fprintf(stderr, "Usage: %s <parmname>\n", argv[0]);
+    if(argc < 2) {
+	fprintf(stderr, "Usage: %s [config] <parmname>\n", argv[0]);
 	exit(1);
     }
 
-    if(read_conffile(CONFFILE_NAME)) {
-	perror(CONFFILE_NAME);
-	exit(1);
+    if (argc > 2) {
+	config_name = stralloc(argv[1]);
+	config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
+	parmname = argv[2];
+    } else {
+	char my_cwd[STR_SIZE];
+
+	if (getcwd(my_cwd, sizeof(my_cwd)) == NULL) {
+	    error("cannot determine current working directory");
+	}
+	config_dir = stralloc2(my_cwd, "/");
+	if ((config_name = strrchr(my_cwd, '/')) != NULL) {
+	    config_name = stralloc(config_name + 1);
+	}
+	parmname = argv[1];
     }
 
-    result = getconf_byname(argv[1]);
+    safe_cd();
+
+    conffile = stralloc2(config_dir, CONFFILE_NAME);
+    if(read_conffile(conffile)) {
+	error("could not find config file \"%s\"", conffile);
+    }
+
+    result = getconf_byname(parmname);
     if(result == NULL) {
 	result = "BUGGY";
-	fprintf(stderr, "%s: no such parameter \"%s\"\n", argv[0], argv[1]);
+	fprintf(stderr, "%s: no such parameter \"%s\"\n", argv[0], parmname);
 	fflush(stderr);
     }
 
     puts(result);
 
     amfree(result);
+    amfree(config_dir);
+    amfree(config_name);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 

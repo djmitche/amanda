@@ -1,8 +1,8 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.16 1999/06/20 17:28:13 th Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.17 1999/09/08 23:26:04 jrj Exp $";
 #endif
 /*
- *  $Id: chg-scsi.c,v 1.6.2.16 1999/06/20 17:28:13 th Exp $
+ *  $Id: chg-scsi.c,v 1.6.2.17 1999/09/08 23:26:04 jrj Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -73,6 +73,9 @@ static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.16 1999/06/20 17:28:13 th Exp $";
 
 char *tapestatfile = NULL;
 FILE *debug_file = NULL;
+
+char *config_name = NULL;
+char *config_dir = NULL;
 
 /* So we have 3 devices, here will all the infos be stored after an
  * successfull open 

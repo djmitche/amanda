@@ -1,5 +1,5 @@
 /*
- *  $Id: chg-scsi-chio.c,v 1.1.2.2 1999/06/17 18:33:09 th Exp $
+ *  $Id: chg-scsi-chio.c,v 1.1.2.3 1999/09/08 23:26:02 jrj Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -638,7 +638,8 @@ int main(int argc, char *argv[])
   parse_args(argc,argv,&com);
 
   if(read_conffile(CONFFILE_NAME)) {
-    perror(CONFFILE_NAME);
+    fprintf(stderr, "%s: could not find config file \"%s\"",
+		    changer_dev, conffile);
     exit(1);
   }
 

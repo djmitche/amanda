@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: tapefile.c,v 1.15.2.5 1999/06/09 02:37:46 oliva Exp $
+ * $Id: tapefile.c,v 1.15.2.6 1999/09/08 23:28:29 jrj Exp $
  *
  * routines to read and write the amanda active tape list
  */
@@ -296,7 +296,6 @@ char *line;
     int ch;
 
     tp = (tape_t *) alloc(sizeof(tape_t));
-    malloc_mark(tp);
 
     tp->prev = NULL;
     tp->next = NULL;
@@ -316,7 +315,6 @@ char *line;
     skip_non_whitespace(s, ch);
     s[-1] = '\0';
     tp->label = stralloc(s1);
-    malloc_mark(tp->label);
     skip_whitespace(s, ch);
     tp->reuse = 1;
 #define sc "reuse"

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.41.2.10 1999/05/15 15:07:14 martinea Exp $
+ * $Id: amflush.c,v 1.41.2.11 1999/09/08 23:27:24 jrj Exp $
  *
  * write files from work directory onto tape
  */
@@ -40,8 +40,9 @@
 #include "driverio.h"
 #include "server_util.h"
 
-static char *config;
-char *confdir;
+char *config_name = NULL;
+char *config_dir = NULL;
+static char *conf_logdir;
 char *reporter_program;
 holding_t *holding_list;
 char *datestamp;
@@ -62,7 +63,10 @@ char **main_argv;
     struct passwd *pw;
     char *dumpuser;
     int fd;
-    char *logfile;
+    char *conffile;
+    char *conf_diskfile;
+    char *conf_tapelist;
+    char *conf_logfile;
     disklist_t *diskqp;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
@@ -74,6 +78,8 @@ char **main_argv;
 	 */
 	close(fd);
     }
+
+    safe_cd();
 
     set_pname("amflush");
 
@@ -87,24 +93,40 @@ char **main_argv;
 	main_argc--,main_argv++;
     }
 
-    if(main_argc != 2)
+    if(main_argc != 2) {
 	error("Usage: amflush%s [-f] <confdir>", versionsuffix());
+    }
 
-    config = main_argv[1];
-    confdir = vstralloc(CONFIG_DIR, "/", main_argv[1], NULL);
-    if(chdir(confdir) != 0)
-	error("could not cd to confdir %s: %s",	confdir, strerror(errno));
+    config_name = main_argv[1];
 
-    if(read_conffile(CONFFILE_NAME))
-	error("could not read amanda config file\n");
+    config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
+    conffile = stralloc2(config_dir, CONFFILE_NAME);
+    if(read_conffile(conffile)) {
+	error("could not read config file \"%s\"", conffile);
+    }
+    amfree(conffile);
+    conf_diskfile = getconf_str(CNF_DISKFILE);
+    if (*conf_diskfile == '/') {
+	conf_diskfile = stralloc(conf_diskfile);
+    } else {
+	conf_diskfile = stralloc2(config_dir, conf_diskfile);
+    }
+    if((diskqp = read_diskfile(conf_diskfile)) == NULL) {
+	error("could not read disklist file \"%s\"", conf_diskfile);
+    }
+    amfree(conf_diskfile);
+    conf_tapelist = getconf_str(CNF_TAPELIST);
+    if (*conf_tapelist == '/') {
+	conf_tapelist = stralloc(conf_tapelist);
+    } else {
+	conf_tapelist = stralloc2(config_dir, conf_tapelist);
+    }
+    if(read_tapelist(conf_tapelist)) {
+	error("could not load tapelist \"%s\"", conf_tapelist);
+    }
+    amfree(conf_tapelist);
 
     datestamp = construct_datestamp();
-
-    if((diskqp = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
-	error("could not read disklist file\n");
-
-    if(read_tapelist(getconf_str(CNF_TAPELIST)))
-	error("parse error in %s", getconf_str(CNF_TAPELIST));
 
     dumpuser = getconf_str(CNF_DUMPUSER);
     if((pw = getpwnam(dumpuser)) == NULL)
@@ -112,11 +134,18 @@ char **main_argv;
     if(pw->pw_uid != getuid())
 	error("must run amflush as user %s", dumpuser);
 
-    logfile = vstralloc(getconf_str(CNF_LOGDIR), "/log", NULL);
-    if (access(logfile, F_OK) == 0)
-	error("%s exists: amdump or amflush is already running, or you must run amcleanup", logfile);
-    amfree(logfile);
-    
+    conf_logdir = getconf_str(CNF_LOGDIR);
+    if (*conf_logdir == '/') {
+	conf_logdir = stralloc(conf_logdir);
+    } else {
+	conf_logdir = stralloc2(config_dir, conf_logdir);
+    }
+    conf_logfile = vstralloc(conf_logdir, "/log", NULL);
+    if (access(conf_logfile, F_OK) == 0) {
+	error("%s exists: amdump or amflush is already running, or you must run amcleanup", conf_logfile);
+    }
+    amfree(conf_logfile);
+ 
     reporter_program = vstralloc(sbindir, "/", "amreport", versionsuffix(),
 				 NULL);
 
@@ -134,7 +163,7 @@ char **main_argv;
 		
 	struct stat stat_buf;
 
-	errfile = vstralloc(getconf_str(CNF_LOGDIR), "/amflush", NULL);
+	errfile = vstralloc(conf_logdir, "/amflush", NULL);
 	errfilex = NULL;
 	nerrfilex = NULL;
 	tapecycle = getconf_int(CNF_TAPECYCLE);
@@ -159,10 +188,16 @@ char **main_argv;
 	    days--;
 	    ap_snprintf(number,100,"%d",days);
 	    errfilex = vstralloc(errfile, ".", number, NULL);
-	    rename(errfilex, nerrfilex);
+	    if (rename(errfilex, nerrfilex) != 0) {
+		error("cannot rename \"%s\" to \"%s\": %s",
+		      errfilex, nerrfilex, strerror(errno));
+	    }
 	}
 	errfilex = newvstralloc(errfilex, errfile, ".1", NULL);
-	rename(errfile,errfilex);
+	if (rename(errfile,errfilex) != 0) {
+	    error("cannot rename \"%s\" to \"%s\": %s",
+		  errfilex, nerrfilex, strerror(errno));
+	}
 	amfree(errfile);
 	amfree(errfilex);
 	amfree(nerrfilex);
@@ -170,16 +205,15 @@ char **main_argv;
 
     /* now, have reporter generate report and send mail */
 
-    chdir(confdir);
-    execle(reporter_program, "amreport", (char *)0, safe_env());
+    execle(reporter_program, "amreport", config_name, (char *)0, safe_env());
 
     return 0;
 }
 
 
-char get_letter_from_user()
+int get_letter_from_user()
 {
-    char r;
+    int r = '\0';
     int ch;
 
     fflush(stdout); fflush(stderr);
@@ -206,17 +240,21 @@ void confirm()
     holding_t *dir;
 
     if(holding_list == NULL) {
-	printf("Could not find any Amanda directories to flush.");
+	printf("Could not find any Amanda directories to flush.\n");
 	exit(1);
     }
     printf("\nFlushing dumps in");
-    for(dir = holding_list; dir != NULL; dir = dir->next)
+    for(dir = holding_list; dir != NULL; dir = dir->next) {
 	printf(" %s,",dir->name);
+    }
     printf("\n");
     printf("today: %s\n",datestamp);
     tpchanger = getconf_str(CNF_TPCHANGER);
-    if(*tpchanger != '\0') printf("using tape changer \"%s\".\n", tpchanger);
-    else printf("to tape drive %s.\n", getconf_str(CNF_TAPEDEV));
+    if(*tpchanger != '\0') {
+	printf("using tape changer \"%s\".\n", tpchanger);
+    } else {
+	printf("to tape drive %s.\n", getconf_str(CNF_TAPEDEV));
+    }
 
     printf("Expecting ");
     tp = lookup_last_reusable_tape(0);
@@ -246,7 +284,7 @@ void detach()
     case 0:
 	dup2(fd,0);
 	aclose(fd);
-	errfile = vstralloc(getconf_str(CNF_LOGDIR), "/amflush", NULL);
+	errfile = vstralloc(conf_logdir, "/amflush", NULL);
 	if((fderr = open(errfile, O_WRONLY| O_CREAT | O_TRUNC, 0600)) == -1)
 	    error("could not open %s: %s", errfile, strerror(errno));
 	dup2(fderr,1);
@@ -285,23 +323,24 @@ char *diskdir, *datestamp;
 	amfree(dirname);
 	return;
     }
-    chdir(dirname);
 
     while((entry = readdir(workdir)) != NULL) {
-	if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-	    continue;
-
-	if(is_emptyfile(entry->d_name)) {
-	    if(unlink(entry->d_name) == -1)
-		log_add(L_INFO,"%s: ignoring zero length file.", entry->d_name);
-	    else
-		log_add(L_INFO,"%s: removed zero length file.", entry->d_name);
+	if(is_dot_or_dotdot(entry->d_name)) {
 	    continue;
 	}
 
 	destname = newvstralloc(destname,
 				dirname, "/", entry->d_name,
 				NULL);
+
+	if(is_emptyfile(destname)) {
+	    if(unlink(entry->d_name) == -1) {
+		log_add(L_INFO,"%s: ignoring zero length file.", entry->d_name);
+	    } else {
+		log_add(L_INFO,"%s: removed zero length file.", entry->d_name);
+	    }
+	    continue;
+	}
 
 	get_dumpfile(destname, &file);
 	if( file.type != F_DUMPFILE) {
@@ -377,7 +416,6 @@ char *diskdir, *datestamp;
     closedir(workdir);
 
     /* try to zap the now (hopefully) empty working dir */
-    chdir(confdir);
     if(rmdir(dirname))
 	log_add(L_WARNING, "Could not rmdir %s.  Check for cruft.",
 	        dirname);
@@ -398,7 +436,6 @@ void run_dumps()
     startclock();
     log_add(L_START, "date %s", datestamp);
 
-    chdir(confdir);
     init_driverio();
     startup_tape_process(taper_program);
     taper_cmd(START_TAPER, datestamp, NULL, 0, NULL);
@@ -410,9 +447,7 @@ void run_dumps()
 	log_add(L_ERROR, "Cannot flush without tape.  Try again.");
 	log_add(L_FINISH, "date %s time %s",
 		datestamp, walltime_str(curclock()));
-    }
-    else {
-
+    } else {
 	for(dir = holding_list; dir !=NULL; dir = dir->next) {
 	    for(hdisk = getconf_holdingdisks(); hdisk != NULL; hdisk = hdisk->next)
 		flush_holdingdisk(hdisk->diskdir, dir->name);

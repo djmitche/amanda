@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.22.2.5 1999/03/16 20:43:45 th Exp $
+ * $Id: amtape.c,v 1.22.2.6 1999/09/08 23:27:42 jrj Exp $
  *
  * tape changer interface program
  */
@@ -58,6 +58,9 @@ int taperscan_slot P((int rc, char *slotstr, char *device));
 int update_one_slot P((int rc, char *slotstr, char *device));
 void update_labeldb P((int argc, char **argv));
 
+char *config_name = NULL;
+char *config_dir = NULL;
+
 void usage()
 {
     fprintf(stderr, "Usage: amtape%s <conf> <command>\n", versionsuffix());
@@ -85,12 +88,13 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    char *confdir;
-    char *confname;
+    char *conffile;
+    char *conf_tapelist;
     char *argv0 = argv[0];
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     int fd;
+    int have_changer;
     uid_t uid_me;
     uid_t uid_dumpuser;
     char *dumpuser;
@@ -106,6 +110,8 @@ char **argv;
 	close(fd);
     }
 
+    safe_cd();
+
     set_pname("amtape");
     dbopen();
 
@@ -115,14 +121,23 @@ char **argv;
 
     if(argc < 3) usage();
 
-    confname = argv[1];
+    config_name = argv[1];
 
-    confdir = vstralloc(CONFIG_DIR, "/", confname, NULL);
-    if(chdir(confdir) != 0)
-	error("could not cd to confdir %s: %s", confdir, strerror(errno));
-
-    if(read_conffile(CONFFILE_NAME))
-	error("could not read amanda config file");
+    config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
+    conffile = stralloc2(config_dir, CONFFILE_NAME);
+    if (read_conffile(conffile)) {
+	error("could not read config file \"%s\"", conffile);
+    }
+    conf_tapelist = getconf_str(CNF_TAPELIST);
+    if (*conf_tapelist == '/') {
+	conf_tapelist = stralloc(conf_tapelist);
+    } else {
+	conf_tapelist = stralloc2(config_dir, conf_tapelist);
+    }
+    if (read_tapelist(conf_tapelist)) {
+	error("could not load tapelist \"%s\"", conf_tapelist);
+    }
+    amfree(conf_tapelist);
 
     uid_me = getuid();
     uid_dumpuser = uid_me;
@@ -143,8 +158,11 @@ char **argv;
 	/* NOTREACHED */
     }
 
-    if(!changer_init())
-	error("no tpchanger specified in %s/%s", confdir, CONFFILE_NAME);
+    if((have_changer = changer_init()) == 0) {
+	error("no tpchanger specified in \"%s\"", conffile);
+    } else if (have_changer != 1) {
+	error("changer initialization failed: %s", strerror(errno));
+    }
 
     /* switch on command name */
 
@@ -165,7 +183,8 @@ char **argv;
     }
 
     amfree(changer_resultstr);
-    amfree(confdir);
+    amfree(conffile);
+    amfree(config_dir);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -503,9 +522,6 @@ int argc;
 char **argv;
 {
     char *slotstr = NULL, *device = NULL;
-
-    if(read_tapelist(getconf_str(CNF_TAPELIST)))
-	error("could not load \"%s\"\n", getconf_str(CNF_TAPELIST));
 
     if((tp = lookup_last_reusable_tape(0)) == NULL)
 	searchlabel = NULL;

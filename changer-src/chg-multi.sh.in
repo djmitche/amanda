@@ -32,11 +32,12 @@
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
+sbindir=@sbindir@
 libexecdir=@libexecdir@
 
 pname="chg-multi"
 
-PATH=$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
+PATH=$sbindir:$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
 export PATH
 
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
@@ -46,7 +47,7 @@ else
 	SUF=
 fi
 
-ourconf=`getconf$SUF changerfile`
+ourconf=`amgetconf$SUF changerfile`
 
 MT=@MT@
 MTF=@MT_FILE_FLAG@

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.6 1999/08/15 10:09:53 oliva Exp $
+ * $Id: sendsize.c,v 1.97.2.7 1999/09/08 23:26:30 jrj Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -125,13 +125,13 @@ char **argv;
 	close(fd);
     }
 
+    safe_cd();
+
     set_pname("sendsize");
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
-    chdir("/tmp");
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
-    umask(0007);
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 
@@ -1078,7 +1078,6 @@ time_t dumpsince;
       ap_snprintf(number, sizeof(number), "%d", level);
       incrname = vstralloc(basename, "_", number, ".new", NULL);
       unlink(incrname);
-      umask(0007);
 
       if (level == 0) {
 	FILE *out;

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.44.2.3 1999/09/05 22:28:23 jrj Exp $
+ * $Id: sendbackup.c,v 1.44.2.4 1999/09/08 23:26:27 jrj Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -216,14 +216,14 @@ char **argv;
 		close(fd);
     }
 
+    safe_cd();
+
     set_pname("sendbackup");
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
-    chdir("/tmp");
     interactive = (argc > 1 && strcmp(argv[1],"-t") == 0);
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
-    umask(0007);
     dbopen();
 
     if(interactive) {

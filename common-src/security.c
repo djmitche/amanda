@@ -24,14 +24,28 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.c,v 1.17.2.2 1999/04/06 23:16:41 kashmir Exp $
+ * $Id: security.c,v 1.17.2.3 1999/09/08 23:26:50 jrj Exp $
  *
  * wrapper file for kerberos security
  */
 
 #include "amanda.h"
 
-#if defined(TEST)
+/*
+ * If we don't have the new-style wait access functions, use our own,
+ * compatible with old-style BSD systems at least.  Note that we don't
+ * care about the case w_stopval == WSTOPPED since we don't ask to see
+ * stopped processes, so should never get them from wait.
+ */
+#ifndef WEXITSTATUS
+#   define WEXITSTATUS(r)       (((union wait *) &(r))->w_retcode)
+#   define WTERMSIG(r)          (((union wait *) &(r))->w_termsig)
+
+#   undef  WIFSIGNALED
+#   define WIFSIGNALED(r)       (((union wait *) &(r))->w_termsig != 0)
+#endif
+
+#if defined(TEST)						/* { */
 #undef dbprintf
 #define dbprintf(p)	printf p
 
@@ -69,11 +83,11 @@ void show_stat_info(a, b)
     amfree(owner);
     amfree(group);
 }
-#endif
+#endif								/* } */
 
-#ifdef KRB4_SECURITY
+#ifdef KRB4_SECURITY						/* { */
 #include "krb4-security.c"
-#endif
+#endif								/* } */
 
 int bsd_security_ok P((struct sockaddr_in *addr,
 		       char *str, unsigned long cksum, char **errstr));
@@ -93,15 +107,15 @@ char *str;
 unsigned long cksum;
 char **errstr;
 {
-#ifdef KRB4_SECURITY
+#ifdef KRB4_SECURITY						/* { */
     if(krb4_auth)
 	return krb4_security_ok(addr, str, cksum, errstr);
     else
-#endif
+#endif								/* } */
 	return bsd_security_ok(addr, str, cksum, errstr);
 }
 
-#ifdef BSD_SECURITY
+#ifdef BSD_SECURITY						/* { */
 
 int bsd_security_ok(addr, str, cksum, errstr)
      struct sockaddr_in *addr;
@@ -116,15 +130,20 @@ int bsd_security_ok(addr, str, cksum, errstr)
     int myuid, i, j;
     char *s, *fp;
     int ch;
-#ifdef USE_AMANDAHOSTS
+    char number[NUM_STR_SIZE];
+#ifdef USE_AMANDAHOSTS						/* { */
     FILE *fPerm;
     char *pbuf = NULL;
     char *ptmp;
     int pbuf_len;
     int amandahostsauth = 0;
-#else
+#else								/* } { */
+    FILE *fError;
     int saved_stderr;
-#endif
+    int fd[2];
+    amwait_t exitcode;
+    pid_t pid, ruserok_pid;
+#endif								/* } */
 
     *errstr = NULL;
 
@@ -199,8 +218,6 @@ int bsd_security_ok(addr, str, cksum, errstr)
     /* next, make sure the remote port is a "reserved" one */
 
     if(ntohs(addr->sin_port) >= IPPORT_RESERVED) {
-	char number[NUM_STR_SIZE];
-
 	ap_snprintf(number, sizeof(number), "%d", ntohs(addr->sin_port));
 	*errstr = vstralloc("[",
 			    "host ", remotehost, ": ",
@@ -248,18 +265,20 @@ int bsd_security_ok(addr, str, cksum, errstr)
     /* lookup our local user name */
 
     myuid = getuid();
-    if((pwptr = getpwuid(myuid)) == NULL)
+    if((pwptr = getpwuid(myuid)) == NULL) {
         error("error [getpwuid(%d) fails]", myuid);
+    }
 
     localuser = stralloc(pwptr->pw_name);
 
     dbprintf(("bsd security: remote host %s user %s local user %s\n",
 	      remotehost, remoteuser, localuser));
 
+#ifndef USE_AMANDAHOSTS						/* { */
     /*
-     * note that some versions of ruserok (eg SunOS 3.2) look in
+     * Note that some versions of ruserok (eg SunOS 3.2) look in
      * "./.rhosts" rather than "~localuser/.rhosts", so we have to
-     * chdir ourselves.  Sigh.
+     * change directories ourselves.  Sigh.
      *
      * And, believe it or not, some ruserok()'s try an initgroup just
      * for the hell of it.  Since we probably aren't root at this point
@@ -267,13 +286,24 @@ int bsd_security_ok(addr, str, cksum, errstr)
      * into our stderr output even though the initgroup failure is not a
      * problem and is expected.  Thanks a lot.  Not.
      */
-    chdir(pwptr->pw_dir);       /* pamper braindead ruserok's */
-#ifndef USE_AMANDAHOSTS
-    saved_stderr = dup(2);
-    close(2);			/*  " */
+    if (pipe(fd) != 0) {
+	error("error [pipe() fails]");
+    }
+    if ((ruserok_pid = fork ()) < 0) {
+	error("error [fork() fails]");
+    } else if (ruserok_pid == 0) {
+	close(fd[0]);
+	fError = fdopen(fd[1], "w");
+	/* pamper braindead ruserok's */
+	if(chdir(pwptr->pw_dir) != 0) {
+	    fprintf(fError, "[chdir(%s) failed: %s]",
+		    pwptr->pw_dir, strerror(errno));
+	    fclose(fError);
+	    exit(1);
+	}
 
-#if defined(TEST)
-    {
+#if defined(TEST)						/* { */
+	{
 	char *dir = stralloc(pwptr->pw_dir);
 
 	dbprintf(("calling ruserok(%s, %d, %s, %s)\n",
@@ -286,61 +316,107 @@ int bsd_security_ok(addr, str, cksum, errstr)
 	}
 	show_stat_info(dir, "/.rhosts");
 	amfree(dir);
-    }
-#endif
+	}
+#endif								/* } */
 
-    if(ruserok(remotehost, myuid == 0, remoteuser, localuser) == -1) {
+	saved_stderr = dup(2);
+	close(2);
+	(void)open("/dev/null", 2);
+
+	if(ruserok(remotehost, myuid == 0, remoteuser, localuser) == -1) {
+	    char *fmt;
+
+	    dup2(saved_stderr,2);
+	    close(saved_stderr);
+	    fmt = "[access as %s not allowed from %s@%s] ruserok failed\n";
+	    fprintf(fError, fmt, localuser, remoteuser, remotehost);
+	    fclose(fError);
+	    fmt = stralloc2("check failed: ", fmt);
+	    dbprintf((fmt, localuser, remoteuser, remotehost));
+	    exit(1);
+	}
+
 	dup2(saved_stderr,2);
 	close(saved_stderr);
+	dbprintf(("bsd security check to %s from %s@%s passed\n",
+		  localuser, remoteuser, remotehost));
+	exit(0);
+    }
+    close(fd[1]);
+    fError = fdopen(fd[0], "r");
+
+    while((pid = wait(&exitcode)) == (pid_t)-1 && errno == EINTR) {}
+    if (pid == (pid_t)-1) {
 	*errstr = vstralloc("[",
 			    "access as ", localuser, " not allowed",
 			    " from ", remoteuser, "@", remotehost,
-			    "] ruserok failed", NULL);
-	dbprintf(("check failed: %s\n", *errstr));
-	amfree(remotehost);
-	amfree(localuser);
-	amfree(remoteuser);
-	return 0;
+			    "] wait failed: ",
+			    strerror(errno),
+			    NULL);
+	exitcode = 0;
+    } else if (pid != ruserok_pid) {
+	ap_snprintf(number, sizeof(number), "%ld", (long)pid);
+	*errstr = vstralloc("[",
+			    "access as ", localuser, " not allowed",
+			    " from ", remoteuser, "@", remotehost,
+			    "] wait got pid ",
+			    number,
+			    NULL);
+	exitcode = 0;
+    } else if (WIFSIGNALED(exitcode)) {
+	ap_snprintf(number, sizeof(number), "%d", WTERMSIG(exitcode));
+	*errstr = vstralloc("[",
+			    "access as ", localuser, " not allowed",
+			    " from ", remoteuser, "@", remotehost,
+			    "] got signal ", number,
+			    NULL);
+	exitcode = 0;
+    } else {
+	exitcode = WEXITSTATUS(exitcode);
     }
-
-    dup2(saved_stderr,2);
-    close(saved_stderr);
-    chdir("/");		/* now go someplace where I can't drop core :-) */
-    dbprintf(("bsd security check passed\n"));
-    amfree(remotehost);
-    amfree(localuser);
-    amfree(remoteuser);
-    return 1;
-#else
-    /* We already chdired to ~amandauser */
-
-#if defined(TEST)
+    if(exitcode) {
+	if((*errstr = agets(fError)) == NULL) {
+	    *errstr = vstralloc("[",
+			        "access as ", localuser, " not allowed",
+			        " from ", remoteuser, "@", remotehost,
+			        "] could not get result",
+			        NULL);
+	}
+    }
+    fclose(fError);
+    return *errstr == NULL;
+#else								/* } { */
+#if defined(TEST)						/* { */
     show_stat_info(pwptr->pw_dir, "/.amandahosts");
-#endif
+#endif								/* } */
 
-    if((fPerm = fopen(".amandahosts", "r")) == NULL) {
-      /*
-       * put an explanation in the /tmp/amanda/amandad.debug log that will
-       * help a system administrator fix the problem, but don't send a
-       * clue back to the other end to tell them what to fix in order to
-       * be able to hack our system.
-       */
-      
-	dbprintf(("fopen of .amandahosts failed: %s\n", strerror(errno)));
+    ptmp = stralloc2(pwptr->pw_dir, "/.amandahosts");
+    if((fPerm = fopen(ptmp, "r")) == NULL) {
+	/*
+	 * Put an explanation in the amandad.debug log that will help a
+	 * system administrator fix the problem, but don't send a clue
+	 * back to the other end to tell them what to fix in order to
+	 * be able to hack our system.
+         */
+	dbprintf(("fopen of %s failed: %s\n", ptmp, strerror(errno)));
 	*errstr = vstralloc("[",
 			    "access as ", localuser, " not allowed",
 			    " from ", remoteuser, "@", remotehost,
-			    "] .amandahosts failed", NULL);
+			    "] open of ",
+			    ptmp,
+			    " failed", NULL);
+	amfree(ptmp);
 	amfree(remotehost);
 	amfree(localuser);
 	amfree(remoteuser);
 	return 0;
     }
+    amfree(ptmp);
 
     for(; (pbuf = agets(fPerm)) != NULL; free(pbuf)) {
-#if defined(TEST)
+#if defined(TEST)						/* { */
 	dbprintf(("processing line: <%s>\n", pbuf));
-#endif
+#endif								/* } */
 	pbuf_len = strlen(pbuf);
 	s = pbuf;
 	ch = *s++;
@@ -364,7 +440,7 @@ int bsd_security_ok(addr, str, cksum, errstr)
 	    skip_non_whitespace(s, ch);
 	    s[-1] = '\0';			/* terminate remoteuser field */
 	}
-#if defined(TEST)
+#if defined(TEST)						/* { */
 	dbprintf(("comparing %s with\n", pbuf));
 	dbprintf(("          %s (%s)\n",
 		  remotehost,
@@ -373,8 +449,9 @@ int bsd_security_ok(addr, str, cksum, errstr)
 	dbprintf(("          %s (%s)\n",
 		  remoteuser,
 		  (strcasecmp(ptmp, remoteuser) == 0) ? "match" : "no match"));
-#endif
-	if(strcasecmp(pbuf, remotehost) == 0 && strcasecmp(ptmp, remoteuser) == 0) {
+#endif								/* } */
+	if(strcasecmp(pbuf, remotehost) == 0
+	   && strcasecmp(ptmp, remoteuser) == 0) {
 	    amandahostsauth = 1;
 	    break;
 	}
@@ -383,8 +460,7 @@ int bsd_security_ok(addr, str, cksum, errstr)
     afclose(fPerm);
     amfree(pbuf);
 
-    if( amandahostsauth ) {
-	chdir("/");      /* now go someplace where I can't drop core :-) */
+    if(amandahostsauth) {
 	dbprintf(("amandahosts security check passed\n"));
 	amfree(remotehost);
 	amfree(localuser);
@@ -403,10 +479,10 @@ int bsd_security_ok(addr, str, cksum, errstr)
     amfree(remoteuser);
     return 0;
 
-#endif
+#endif								/* } */
 }
 
-#else	/* ! BSD_SECURITY */
+#else	/* ! BSD_SECURITY */					/* } { */
 
 int bsd_security_ok(addr, str, cksum, errstr)
 struct sockaddr_in *addr;
@@ -414,18 +490,18 @@ char *str;
 unsigned long cksum;
 char **errstr;
 {
-#if defined(TEST)
+#if defined(TEST)						/* { */
     dbprintf(("You configured Amanda using --without-bsd-security, so it\n"));
     dbprintf(("will let anyone on the Internet connect and do dumps of\n"));
     dbprintf(("your system unless you have some other kind of protection,\n"));
     dbprintf(("such as a firewall or TCP wrappers.\n"));
-#endif
+#endif								/* } */
     return 1;
 }
 
-#endif /* ! BSD_SECURITY */
+#endif /* ! BSD_SECURITY */					/* } */
 
-#if defined(TEST)
+#if defined(TEST)						/* { */
 
 int
 main (argc, argv)
@@ -466,4 +542,4 @@ main (argc, argv)
     return r;
 }
 
-#endif
+#endif								/* } */

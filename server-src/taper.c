@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.47.2.6 1999/09/05 22:28:38 jrj Exp $
+/* $Id: taper.c,v 1.47.2.7 1999/09/08 23:28:33 jrj Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -148,6 +148,15 @@ int tape_fd;
 char *tapedev = NULL;
 static unsigned long malloc_hist_1, malloc_size_1;
 static unsigned long malloc_hist_2, malloc_size_2;
+char *config_name = NULL;
+char *config_dir = NULL;
+
+int runtapes, cur_tape, have_changer, tapedays;
+char *labelstr, *conf_tapelist;
+#ifdef HAVE_LIBVTBLC
+char *rawtapedev;
+int first_seg, last_seg;
+#endif /* HAVE_LIBVTBLC */
 
 /*
  * ========================================================================
@@ -159,6 +168,7 @@ int main_argc;
 char **main_argv;
 {
     int p2c[2], c2p[2];		/* parent-to-child, child-to-parent pipes */
+    char *conffile;
     int fd;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
@@ -189,8 +199,48 @@ char **main_argv;
 	    get_pname(), (long) getpid(), main_argv[0], version());
     fflush(stderr);
 
-    if(read_conffile(CONFFILE_NAME))
-	error("parse error in %s", CONFFILE_NAME);
+    if (main_argc > 1) {
+	config_name = stralloc(main_argv[1]);
+	config_dir = vstralloc(CONFIG_DIR, "/", main_argv[1], "/", NULL);
+    } else {
+	char my_cwd[STR_SIZE];
+
+	if (getcwd(my_cwd, sizeof(my_cwd)) == NULL) {
+	    error("cannot determine current working directory");
+	}
+	config_dir = stralloc2(my_cwd, "/");
+	if ((config_name = strrchr(my_cwd, '/')) != NULL) {
+	    config_name = stralloc(config_name + 1);
+	}
+    }
+
+    safe_cd();
+
+    conffile = stralloc2(config_dir, CONFFILE_NAME);
+    if(read_conffile(conffile)) {
+	error("could not find config file \"%s\"", conffile);
+    }
+    amfree(conffile);
+
+    conf_tapelist = getconf_str(CNF_TAPELIST);
+    if (*conf_tapelist == '/') {
+	conf_tapelist = stralloc(conf_tapelist);
+    } else {
+	conf_tapelist = stralloc2(config_dir, conf_tapelist);
+    }
+    if(read_tapelist(conf_tapelist)) {
+	error("could not load tapelist \"%s\"", conf_tapelist);
+    }
+
+    tapedev	= getconf_str(CNF_TAPEDEV);
+#ifdef HAVE_LIBVTBLC
+    rawtapedev = getconf_str(CNF_RAWTAPEDEV);
+#endif /* HAVE_LIBVTBLC */
+    tapedays	= getconf_int(CNF_TAPECYCLE);
+    labelstr	= getconf_str(CNF_LABELSTR);
+
+    runtapes	= getconf_int(CNF_RUNTAPES);
+    cur_tape	= 0;
 
     if(interactive) {
 	fprintf(stderr,"taper: running in interactive test mode\n");
@@ -419,6 +469,8 @@ int rdpipe, wrpipe;
 	    amfree(errstr);
 	    amfree(changer_resultstr);
 	    amfree(tapedev);
+	    amfree(config_dir);
+	    amfree(config_name);
 
 	    malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -955,6 +1007,8 @@ int getp, putp;
 	    amfree(errstr);
 	    amfree(changer_resultstr);
 	    amfree(tapedev);
+	    amfree(config_dir);
+	    amfree(config_name);
 
 	    malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -1508,13 +1562,6 @@ char *item;
  *
  */
 
-int runtapes, cur_tape, have_changer, tapedays;
-char *labelstr, *tapefilename;
-#ifdef HAVE_LIBVTBLC
-char *rawtapedev;
-int first_seg, last_seg;
-#endif /* HAVE_LIBVTBLC */
-
 /* local functions */
 int scan_init P((int rc, int ns, int bk));
 int taperscan_slot P((int rc, char *slotstr, char *device));
@@ -1523,7 +1570,7 @@ int label_tape P((void));
 
 int label_tape()
 {
-    char *oldtapefilename = NULL;
+    char *conf_tapelist_old = NULL;
     char *olddatestamp = NULL;
     char *result;
     tape_t *tp;
@@ -1621,17 +1668,22 @@ int label_tape()
 	add_tapelabel(atoi(taper_datestamp), label);
 
 	if(cur_tape == 0) {
-	    oldtapefilename = stralloc2(tapefilename, ".yesterday");
+	    conf_tapelist_old = stralloc2(conf_tapelist, ".yesterday");
 	} else {
 	    char cur_str[NUM_STR_SIZE];
 
 	    ap_snprintf(cur_str, sizeof(cur_str), "%d", cur_tape - 1);
-	    oldtapefilename = vstralloc(tapefilename, ".today.", cur_str, NULL);
+	    conf_tapelist_old = vstralloc(conf_tapelist,
+					".today.", cur_str, NULL);
 	}
-	rename(tapefilename, oldtapefilename);
-	amfree(oldtapefilename);
-	if(write_tapelist(tapefilename))
-	    error("couldn't write tapelist: %s", strerror(errno));
+	if(rename(conf_tapelist, conf_tapelist_old) != 0) {
+	    error("could not rename \"%s\" to \"%s\": %s",
+		  conf_tapelist, conf_tapelist_old, strerror(errno));
+	}
+	amfree(conf_tapelist_old);
+	if(write_tapelist(conf_tapelist)) {
+	    error("could not write tapelist: %s", strerror(errno));
+	}
     }
 
     log_add(L_START, "datestamp %s label %s tape %d",
@@ -1646,23 +1698,10 @@ int label_tape()
 int first_tape(new_datestamp)
 char *new_datestamp;
 {
-
-    tapefilename = getconf_str(CNF_TAPELIST);
-
-    tapedev	= getconf_str(CNF_TAPEDEV);
-#ifdef HAVE_LIBVTBLC
-    rawtapedev = getconf_str(CNF_RAWTAPEDEV);
-#endif /* HAVE_LIBVTBLC */
-    tapedays	= getconf_int(CNF_TAPECYCLE);
-    labelstr	= getconf_str(CNF_LABELSTR);
-
-    runtapes	= getconf_int(CNF_RUNTAPES);
-    cur_tape	= 0;
-
-    if(read_tapelist(tapefilename))
-	error("parse error in %s", tapefilename);
-
-    have_changer = changer_init();
+    if((have_changer = changer_init()) < 0) {
+	error("changer initialization failed: %s", strerror(errno));
+    }
+    changer_debug = 1;
 
     taper_datestamp = newstralloc(taper_datestamp, new_datestamp);
 

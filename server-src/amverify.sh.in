@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.7.2.5 1999/09/05 21:12:08 jrj Exp $
+#	$Id: amverify.sh.in,v 1.7.2.6 1999/09/08 23:27:49 jrj Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -13,7 +13,7 @@ exec_prefix=@exec_prefix@
 sbindir=@sbindir@
 libexecdir=@libexecdir@
 
-PATH=$libexecdir:$sbindir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
+PATH=$sbindir:$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
 export PATH
 
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
@@ -161,7 +161,7 @@ CONFIG_DIR=@CONFIG_DIR@
 libexecdir=$libexecdir
 sbindir=$sbindir
 AMRESTORE=$sbindir/amrestore$SUF
-AMGETCONF=$libexecdir/getconf$SUF
+AMGETCONF=$sbindir/amgetconf$SUF
 AMTAPE=$sbindir/amtape$SUF
 TAR=@GNUTAR@
 SAMBA_CLIENT=@SAMBA_CLIENT@
@@ -256,7 +256,7 @@ fi
 #	DEFECTS		defect list
 #	REPORT		report for mail
 
-TEMP=/tmp/amverify.$$
+TEMP=@AMANDA_TMPDIR@/amverify.$$
 trap 'rm -fr $TEMP' 0
 if ( umask 077 ; mkdir $TEMP ) ; then
 	:
@@ -341,10 +341,6 @@ while [ $SLOT -lt $SLOTS ]; do
 	ERG=0
 	ERRORS=0
 	while [ $ERG = 0 ]; do
-		pecho "Waiting for device...\r" >&2
-		until $MT $MTOPT $DEVICE stat >/dev/null 2>&1; do
-			sleep 3
-		done
 		pecho "Reading...           \r" >&2
 		RESULT=`$AMRESTORE -h -p $DEVICE 2> $TEMP/amrestore.out \
 			| doonefile 2> $TEMP/onefile.errors`

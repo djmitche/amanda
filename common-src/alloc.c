@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: alloc.c,v 1.17 1998/11/04 00:43:18 kashmir Exp $
+ * $Id: alloc.c,v 1.17.2.1 1999/09/08 23:26:35 jrj Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -246,8 +246,8 @@ int size;
     char *addr;
 
     malloc_enter(dbmalloc_caller_loc(s, l));
-    amfree(old);
     addr = alloc(size);
+    amfree(old);
     malloc_leave(dbmalloc_caller_loc(s, l));
     return addr;
 }
@@ -374,8 +374,8 @@ const char *newstr;
     char *addr;
 
     malloc_enter(dbmalloc_caller_loc(s, l));
-    amfree(oldstr);
     addr = stralloc(newstr);
+    amfree(oldstr);
     malloc_leave(dbmalloc_caller_loc(s, l));
     return addr;
 }
@@ -396,10 +396,10 @@ arglist_function1(char *newvstralloc, char *, oldstr, const char *, newstr)
 
     debug_alloc_pop();
     malloc_enter(dbmalloc_caller_loc(saved_file, saved_line));
-    amfree(oldstr);
     arglist_start(argp, newstr);
     result = internal_vstralloc(newstr, argp);
     arglist_end(argp);
+    amfree(oldstr);
     malloc_leave(dbmalloc_caller_loc(saved_file, saved_line));
     return result;
 }

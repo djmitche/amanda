@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: runtar.c,v 1.11 1998/07/04 00:18:18 oliva Exp $
+ * $Id: runtar.c,v 1.11.4.1 1999/09/08 23:26:21 jrj Exp $
  *
  * runs GNUTAR program as root
  */
@@ -52,35 +52,37 @@ char **argv;
 	close(fd);
     }
 
+    safe_cd();
+
     set_pname("runtar");
 
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 
 #ifndef GNUTAR
+
     fprintf(stderr,"gnutar not available on this system.\n");
     dbprintf(("%s: gnutar not available on this system.\n", argv[0]));
     dbclose();
     return 1;
+
 #else
 
-    /* we should be invoked by CLIENT_LOGIN */
-    {
-	struct passwd *pwptr;
-	char *pwname = CLIENT_LOGIN;
-	if((pwptr = getpwnam(pwname)) == NULL)
-	    error("error [cannot find user %s in passwd file]\n", pwname);
+    if(client_uid == (uid_t) -1) {
+	error("error [cannot find user %s in passwd file]\n", CLIENT_LOGIN);
+    }
 
 #ifdef FORCE_USERID
-	if (getuid() != pwptr->pw_uid)
-	    error("error [must be invoked by %s]\n", pwname);
+    if (getuid() != client_uid) {
+	error("error [must be invoked by %s]\n", CLIENT_LOGIN);
+    }
 
-	if (geteuid() != 0)
-	    error("error [must be setuid root]\n");
+    if (geteuid() != 0) {
+	error("error [must be setuid root]\n");
+    }
 #endif
 
-	setuid(0);
-    }
+    setuid(0);
 
     dbprintf(("running: %s: ",GNUTAR));
     for (i=0; argv[i]; i++)

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.18 1999/08/21 20:40:39 martinea Exp $
+ * $Id: driver.c,v 1.58.2.19 1999/09/08 23:28:01 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -123,6 +123,8 @@ char *idle_strings[] = {
 struct timeval sleep_time = { SLEEP_MAX, 0 };
 /* enabled if any disks are in start-wait: */
 int any_delayed_disk = 0;
+char *config_name = NULL;
+char *config_dir = NULL;
 
 int main(main_argc, main_argv)
      int main_argc;
@@ -139,6 +141,8 @@ int main(main_argc, main_argv)
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     unsigned long reserve = 100;
+    char *conffile;
+    char *conf_diskfile;
     tok_t tok;
     int result_argc;
     char *result_argv[MAX_ARGS+1];
@@ -169,8 +173,28 @@ int main(main_argc, main_argv)
     printf("%s: pid %ld executable %s version %s\n",
 	   get_pname(), (long) getpid(), main_argv[0], version());
 
-    if(read_conffile(CONFFILE_NAME))
-	error("could not read amanda config file\n");
+    if (main_argc > 1) {
+	config_name = stralloc(main_argv[1]);
+	config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
+    } else {
+	char my_cwd[STR_SIZE];
+
+	if (getcwd(my_cwd, sizeof(my_cwd)) == NULL) {
+	    error("cannot determine current working directory");
+	}
+	config_dir = stralloc2(my_cwd, "/");
+	if ((config_name = strrchr(my_cwd, '/')) != NULL) {
+	    config_name = stralloc(config_name + 1);
+	}
+    }
+
+    safe_cd();
+
+    conffile = stralloc2(config_dir, CONFFILE_NAME);
+    if(read_conffile(conffile)) {
+	error("could not find config file \"%s\"", conffile);
+    }
+    amfree(conffile);
 
     amfree(datestamp);
     datestamp = construct_datestamp();
@@ -188,8 +212,16 @@ int main(main_argc, main_argv)
 
     /* start initializing: read in databases */
 
-    if((origqp = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
-	error("could not read disklist file\n");
+    conf_diskfile = getconf_str(CNF_DISKFILE);
+    if (*conf_diskfile == '/') {
+	conf_diskfile = stralloc(conf_diskfile);
+    } else {
+	conf_diskfile = stralloc2(config_dir, conf_diskfile);
+    }
+    if((origqp = read_diskfile(conf_diskfile)) == NULL) {
+	error("could not load disklist \"%s\"", conf_diskfile);
+    }
+    amfree(conf_diskfile);
 
     /* set up any configuration-dependent variables */
 
@@ -244,20 +276,24 @@ int main(main_argc, main_argv)
 	newdir = newvstralloc(newdir,
 			      hdp->diskdir, "/", datestamp,
 			      NULL);
-	if (stat(newdir, &stat_hdp) == -1) {
-	    if (mkdir(newdir, 0770) == -1) {
-		log_add(L_WARNING, "WARNING: could not create %s: %s",
-			newdir, strerror(errno));
-		hdp->disksize = 0L;
-	    }
-	}
-	else {
+	if (mkpdir(newdir, 0770, (uid_t)-1, (gid_t)-1) != 0) {
+	    log_add(L_WARNING, "WARNING: could not create parents of %s: %s",
+		    newdir, strerror(errno));
+	    hdp->disksize = 0L;
+	} else if (mkdir(newdir, 0770) != 0) {
+	    log_add(L_WARNING, "WARNING: could not create %s: %s",
+		    newdir, strerror(errno));
+	    hdp->disksize = 0L;
+	} else if (stat(newdir, &stat_hdp) == -1) {
+	    log_add(L_WARNING, "WARNING: could not stat %s: %s",
+		    newdir, strerror(errno));
+	    hdp->disksize = 0L;
+	} else {
 	    if (!S_ISDIR((stat_hdp.st_mode))) {
 		log_add(L_WARNING, "WARNING: %s is not a directory",
 			newdir);
 		hdp->disksize = 0L;
-	    }
-	    else if (access(newdir,W_OK) == -1) {
+	    } else if (access(newdir,W_OK) != 0) {
 		log_add(L_WARNING, "WARNING: directory %s is not writable",
 			newdir);
 	    }
@@ -396,6 +432,8 @@ int main(main_argc, main_argv)
 
     amfree(dumper_program);
     amfree(taper_program);
+    amfree(config_dir);
+    amfree(config_name);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 

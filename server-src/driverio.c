@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.35.2.11 1999/08/21 20:40:42 martinea Exp $
+ * $Id: driverio.c,v 1.35.2.12 1999/09/08 23:28:05 jrj Exp $
  *
  * I/O-related functions for driver program
  */
@@ -120,6 +120,9 @@ char *taper_program;
 	aclose(fd[0]);
 	if(dup2(fd[1], 0) == -1 || dup2(fd[1], 1) == -1)
 	    error("taper dup2: %s", strerror(errno));
+	if(chdir(config_dir) == -1) {
+	    error("taper chdir(%s): %s", config_dir, strerror(errno));
+	}
 	execle(taper_program, "taper", (char *)0, safe_env());
 	error("exec %s: %s", taper_program, strerror(errno));
     default:	/* parent process */
@@ -145,6 +148,9 @@ char *dumper_program;
 	aclose(fd[0]);
 	if(dup2(fd[1], 0) == -1 || dup2(fd[1], 1) == -1)
 	    error("%s dup2: %s", dumper->name, strerror(errno));
+	if(chdir(config_dir) == -1) {
+	    error("%s chdir(%s): %s", dumper->name, config_dir, strerror(errno));
+	}
 	execle(dumper_program, "dumper", (char *)0, safe_env());
 	error("exec %s (%s): %s", dumper_program,
 	      dumper->name, strerror(errno));
@@ -471,14 +477,20 @@ long dumptime;
     info_t info;
     stats_t *infp;
     perf_t *perfp;
-    int rc;
+    char *conf_infofile;
 
     level = sched(dp)->level;
 
-    rc = open_infofile(getconf_str(CNF_INFOFILE));
-    if(rc)
-	error("could not open infofile %s: %s (%d)", getconf_str(CNF_INFOFILE),
-	      strerror(errno), rc);
+    conf_infofile = getconf_str(CNF_INFOFILE);
+    if (*conf_infofile == '/') {
+	conf_infofile = stralloc(conf_infofile);
+    } else {
+	conf_infofile = stralloc2(config_dir, conf_infofile);
+    }
+    if (open_infofile(conf_infofile)) {
+	error("could not open info db \"%s\"", conf_infofile);
+    }
+    amfree(conf_infofile);
 
     get_info(dp->host->hostname, dp->name, &info);
 

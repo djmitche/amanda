@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.17.4.1 1999/06/17 18:33:27 th Exp $
+ * $Id: debug.c,v 1.17.4.2 1999/09/08 23:26:43 jrj Exp $
  *
  * debug log subroutines
  */
@@ -45,8 +45,8 @@ int debug = 1;
   static FILE *db_file = stderr;
 #endif
 
-#ifndef DEBUG_DIR
-#  define DEBUG_DIR "/tmp"
+#ifndef AMANDA_DBGDIR
+#  define AMANDA_DBGDIR		AMANDA_TMPDIR
 #endif
 
 arglist_function(void debug_printf, char *, format)
@@ -74,36 +74,32 @@ void debug_open()
     int i;
     int fd_close[MIN_DB_FD+1];
     struct passwd *pwent;
-    uid_t uid;
-    gid_t gid;
 #ifdef DEBUG_FILE_WITH_PID
     char pid_str[NUM_STR_SIZE];
 #endif
 
-    if((pwent = getpwnam(CLIENT_LOGIN)) != NULL) {
-	uid = pwent->pw_uid;
-	gid = pwent->pw_gid;
-    }
-    else {
-	uid = (uid_t)-1;
-	gid = (gid_t)-1;
+    if(client_uid == (uid_t) -1 && (pwent = getpwnam(CLIENT_LOGIN)) != NULL) {
+	client_uid = pwent->pw_uid;
+	client_gid = pwent->pw_gid;
     }
 
 #ifdef DEBUG_FILE_WITH_PID
     ap_snprintf(pid_str, sizeof(pid_str), "%ld", (long)getpid());
-    dbfilename = vstralloc(DEBUG_DIR, "/", get_pname(),
+    dbfilename = vstralloc(AMANDA_DBGDIR, "/", get_pname(),
 			   ".", pid_str, ".debug", NULL);
 #else
-    dbfilename = vstralloc(DEBUG_DIR, "/", get_pname(), ".debug", NULL);
+    dbfilename = vstralloc(AMANDA_DBGDIR, "/", get_pname(), ".debug", NULL);
 #endif
 
-    if(mkpdir(dbfilename, 0700, uid, gid) == -1)
+    if(mkpdir(dbfilename, 02700, client_uid, client_gid) == -1) {
         error("open debug file \"%s\": %s", dbfilename, strerror(errno));
+    }
 
     maxtries = 50;
     do {
-	if (--maxtries == 0)
+	if (--maxtries == 0) {
 	    error("open debug file \"%s\": %s", dbfilename, strerror(errno));
+	}
 	unlink(dbfilename);
 	fd = open(dbfilename, O_WRONLY|O_CREAT|O_EXCL|O_APPEND, 0600);
     } while(fd == -1);
@@ -122,7 +118,7 @@ void debug_open()
     }
     db_file = fdopen(db_fd, "a");
 
-    chown(dbfilename, uid, gid);
+    chown(dbfilename, client_uid, client_gid);
 
     time(&curtime);
     saved_debug = debug; debug = 1;

@@ -1,3 +1,80 @@
+1999-09-07 John R. Jackson  <jrj@purdue.edu>
+
+	* configure.in: Add --with-tmpdir to ./configure and use it for
+	  all Amanda temporary files.  Default --with-dbgdir to --with-tmpdir.
+	  Move libexec/getconf to sbin/amgetconf and add an optional
+	  config parameter.  Add optional config parameter to several
+	  other programs.
+	  Add debugging to chg-chio.
+	  Call new safe_cd() function in most programs to cd to --with-tmpdir
+	  so if they drop core, it goes to a known spot.  Rename existing
+	  core files so more than one failure may be tracked.  Remove most
+	  chdir() and umask() calls (umask is set in safe_cd).
+	* amplot/amplot.sh.in: ditto.
+	* changer-src/chg-chio.pl.in: ditto.
+	* changer-src/chg-chs.sh.in: ditto.
+	* changer-src/chg-manual.sh.in: ditto.
+	* changer-src/chg-mtx.sh.in: ditto.
+	* changer-src/chg-multi.sh.in: ditto.
+	* changer-src/chg-rth.pl.in: ditto.
+	* changer-src/chg-scsi-chio.c: ditto.
+	* changer-src/chg-scsi.c: ditto.
+	* changer-src/chg-zd-mtx.sh.in: ditto.
+	* client-src/amandad.c: ditto.
+	* client-src/calcsize.c: ditto.
+	* client-src/killpgrp.c: ditto.
+	* client-src/rundump.c: ditto.
+	* client-src/runtar.c: ditto.
+	* client-src/selfcheck.c: ditto.
+	* client-src/sendbackup-gnutar.c: ditto.
+	* client-src/sendbackup.c: ditto.
+	* client-src/sendsize.c: ditto.
+	* common-src/alloc.c: ditto.
+	* common-src/amanda.h: ditto.
+	* common-src/amflock.c: ditto.
+	* common-src/debug.c: ditto.
+	* common-src/file.c: ditto.
+	* common-src/genversion.c: ditto.
+	* common-src/security.c: ditto.
+	* config/acconfig.h: ditto.
+	* dumper-src/gnutar.pl.in: ditto.
+	* restore-src/amidxtaped.c: ditto.
+	* server-src/Makefile.am: ditto.
+	* server-src/amadmin.c: ditto.
+	* server-src/amcheck.c: ditto.
+	* server-src/amcheckdb.sh.in: ditto.
+	* server-src/amcleanup.sh.in: ditto.
+	* server-src/amcleanupdisk.c: ditto.
+	* server-src/amdump.sh.in: ditto.
+	* server-src/amflush.c: ditto.
+	* server-src/amfreetapes.sh.in: ditto.
+	* server-src/amindex.c: ditto.
+	* server-src/amindex.h: ditto.
+	* server-src/amindexd.c: ditto.
+	* server-src/amlabel.c: ditto.
+	* server-src/amrmtape.sh.in: ditto.
+	* server-src/amstatus.pl.in: ditto.
+	* server-src/amtape.c: ditto.
+	* server-src/amtrmidx.c: ditto.
+	* server-src/amtrmlog.c: ditto.
+	* server-src/amverify.sh.in: ditto.
+	* server-src/changer.c: ditto.
+	* server-src/changer.h: ditto.
+	* server-src/conffile.h: ditto.
+	* server-src/diskfile.c: ditto.
+	* server-src/driver.c: ditto.
+	* server-src/driverio.c: ditto.
+	* server-src/dumper.c: ditto.
+	* server-src/find.c: ditto.
+	* server-src/getconf.c: ditto.
+	* server-src/holding.c: ditto.
+	* server-src/infofile.c: ditto.
+	* server-src/logfile.c: ditto.
+	* server-src/planner.c: ditto.
+	* server-src/reporter.c: ditto.
+	* server-src/tapefile.c: ditto.
+	* server-src/taper.c: ditto.
+
 1999-09-05 John R. Jackson  <jrj@purdue.edu>
 
 	* common-src/Makefile.am: change OBJ_EXTENSION to OBJEXT in line
@@ -246,7 +323,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.257 1999/09/05 23:39:43 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.258 1999/09/08 23:25:31 jrj Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

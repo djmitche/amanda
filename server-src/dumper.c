@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.9 1999/08/21 20:40:47 martinea Exp $
+/* $Id: dumper.c,v 1.75.2.10 1999/09/08 23:28:08 jrj Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -83,8 +83,7 @@ long dumpsize, origsize, filesize;
 int nb_header_block;
 static enum { srvcomp_none, srvcomp_fast, srvcomp_best } srvcompress;
 
-char *errfname = NULL;
-FILE *errf = NULL;
+static FILE *errf = NULL;
 char *filename = NULL;
 string_t cont_filename;
 char *hostname = NULL;
@@ -98,6 +97,8 @@ char *datestamp;
 char *backup_name = NULL;
 char *recover_cmd = NULL;
 char *compress_suffix = NULL;
+char *config_name = NULL;
+char *config_dir = NULL;
 int conf_dtimeout;
 
 dumpfile_t file;
@@ -177,6 +178,7 @@ char **main_argv;
     dgram_t *msg;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
+    char *conffile;
     char *q = NULL;
     int fd;
     char *tmp_filename = NULL;
@@ -198,8 +200,28 @@ char **main_argv;
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
     set_logerror(logerror);
 
-    if(read_conffile(CONFFILE_NAME))
-	error("could not read conf file");
+    if (main_argc > 1) {
+	config_name = stralloc(main_argv[1]);
+	config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
+    } else {
+	char my_cwd[STR_SIZE];
+
+	if (getcwd(my_cwd, sizeof(my_cwd)) == NULL) {
+	    error("cannot determine current working directory");
+	}
+	config_dir = stralloc2(my_cwd, "/");
+	if ((config_name = strrchr(my_cwd, '/')) != NULL) {
+	    config_name = stralloc(config_name + 1);
+	}
+    }
+
+    safe_cd();
+
+    conffile = stralloc2(config_dir, CONFFILE_NAME);
+    if(read_conffile(conffile)) {
+	error("could not find config file \"%s\"", conffile);
+    }
+    amfree(conffile);
 
     /* set up dgram port first thing */
 
@@ -399,6 +421,8 @@ char **main_argv;
     amfree(dumpdate);
     amfree(progname);
     amfree(options);
+    amfree(config_dir);
+    amfree(config_name);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -823,9 +847,8 @@ logtype_t typ;
 {
     char *line = NULL;
 
-    if((errf = fopen(errfname, "r")) == NULL)
-	error("opening msg output: %s", strerror(errno));
-
+    fflush(errf);
+    (void) fseek(errf, 0L, SEEK_SET);
     for(; (line = agets(errf)) != NULL; free(line)) {
 	log_add(typ, "%s", line);
     }
@@ -943,7 +966,8 @@ int mesgfd, datafd, indexfd, outfd;
     struct timeval timeout;
     int outpipe[2];
     int header_done;	/* flag - header has been written */
-    char *indexfile = NULL;
+    char *indexfile_tmp = NULL;
+    char *indexfile_real = NULL;
     char level_str[NUM_STR_SIZE];
     char kb_str[NUM_STR_SIZE];
     char kps_str[NUM_STR_SIZE];
@@ -953,6 +977,7 @@ int mesgfd, datafd, indexfd, outfd;
     times_t runtime;
     double dumptime;	/* Time dump took in secs */
     int compresspid = -1, indexpid = -1, killerr;
+    char *errfname = NULL;
 
 #ifndef DUMPER_SOCKET_BUFFERING
 #define DUMPER_SOCKET_BUFFERING 0
@@ -985,21 +1010,24 @@ int mesgfd, datafd, indexfd, outfd;
     ap_snprintf(level_str, sizeof(level_str), "%d", level);
     fn = sanitise_filename(diskname);
     errfname = newvstralloc(errfname,
-			    "/tmp",
+			    AMANDA_TMPDIR,
 			    "/", hostname,
 			    ".", fn,
 			    ".", level_str,
 			    ".errout",
 			    NULL);
     amfree(fn);
-    if((errf = fopen(errfname, "w")) == NULL) {
+    if((errf = fopen(errfname, "w+")) == NULL) {
 	errstr = newvstralloc(errstr,
 			      "errfile open \"", errfname, "\": ",
 			      strerror(errno),
 			      NULL);
 	amfree(errfname);
 	goto failed;
+    } else {
+	unlink(errfname);			/* so it goes away on close */
     }
+    amfree(errfname);
 
     /* insert pipe in the *READ* side, if server-side compression is desired */
     compresspid = -1;
@@ -1048,21 +1076,18 @@ int mesgfd, datafd, indexfd, outfd;
     if (indexfd != -1) {
 	int tmpfd;
 
-	indexfile = vstralloc(getconf_str(CNF_INDEXDIR),
-			      "/",
-			      getindexfname(hostname, diskname,
-					    datestamp, level),
-			      ".tmp",
-			      NULL);
+	indexfile_real = getindexfname(hostname, diskname, datestamp, level),
+	indexfile_tmp = stralloc2(indexfile_real, ".tmp");
 
-	if (mkpdir(indexfile, 0755, (uid_t)-1, (gid_t)-1) == -1) {
+	if (mkpdir(indexfile_tmp, 02755, (uid_t)-1, (gid_t)-1) == -1) {
 	   errstr = newvstralloc(errstr,
 				 "err create ",
-				 indexfile,
+				 indexfile_tmp,
 				 ": ",
 				 strerror(errno),
 				 NULL);
-	   amfree(indexfile);
+	   amfree(indexfile_real);
+	   amfree(indexfile_tmp);
 	   goto failed;
 	}
 
@@ -1075,11 +1100,12 @@ int mesgfd, datafd, indexfd, outfd;
 	    indexfd = -1;			/* redundant */
 	    break;
 	case 0:
-	    if (dup2(indexfd, 0) == -1)
+	    if (dup2(indexfd, 0) == -1) {
 		error("err dup2 in: %s", strerror(errno));
-	    indexfd = open(indexfile, O_WRONLY | O_CREAT | O_TRUNC, 0600);
+	    }
+	    indexfd = open(indexfile_tmp, O_WRONLY | O_CREAT | O_TRUNC, 0600);
 	    if (indexfd == -1)
-		error("err open %s: %s", indexfile, strerror(errno));
+		error("err open %s: %s", indexfile_tmp, strerror(errno));
 	    if (dup2(indexfd,1) == -1)
 		error("err dup2 out: %s", strerror(errno));
 	    for(tmpfd = 3; tmpfd <= FD_SETSIZE; ++tmpfd) {
@@ -1273,8 +1299,6 @@ int mesgfd, datafd, indexfd, outfd;
 	      (long)(dumptime+0.5), q);
     amfree(q);
 
-    afclose(errf);
-
     switch(dump_result) {
     case 0:
 	log_add(L_SUCCESS, "%s %s %s %d [%s]", hostname, diskname, datestamp, level, errstr);
@@ -1290,23 +1314,15 @@ int mesgfd, datafd, indexfd, outfd;
 	break;
     }
 
-    unlink(errfname);
-    amfree(errfname);
+    if(errf) afclose(errf);
 
-    if (indexfile) {
-	char *tmpname = NULL;
-	int len;
-
-	if((len = strlen(indexfile)) < 4) {
-	    errstr = newstralloc2(errstr, "bad indexfile name: ", indexfile);
-	    goto log_failed;
+    if (indexfile_tmp) {
+	if(rename(indexfile_tmp, indexfile_real) != 0) {
+	    log_add(L_WARNING, "could not rename \"%s\" to \"%s\": %s",
+		    indexfile_tmp, indexfile_real, strerror(errno));
 	}
-	tmpname = stralloc(indexfile);
-	indexfile[len-4] = '\0';
-	unlink(indexfile);
-	rename(tmpname, indexfile);
-	amfree(tmpname);
-	amfree(indexfile);
+	amfree(indexfile_tmp);
+	amfree(indexfile_real);
     }
 
     return 1;
@@ -1346,23 +1362,22 @@ int mesgfd, datafd, indexfd, outfd;
 	}
     }
 
- log_failed:
-
     if(!abort_pending) {
 	log_start_multiline();
 	log_add(L_FAIL, "%s %s %d [%s]", hostname, diskname, level, errstr);
-	if (errfname) {
+	if (errf) {
 	    log_msgout(L_FAIL);
 	}
 	log_end_multiline();
     }
-    if (errfname) {
-	unlink(errfname);
-	amfree(errfname);
-    }
 
-    if (indexfile)
-	unlink(indexfile);
+    if(errf) afclose(errf);
+
+    if (indexfile_tmp) {
+	unlink(indexfile_tmp);
+	amfree(indexfile_tmp);
+	amfree(indexfile_real);
+    }
 
     return 0;
 }

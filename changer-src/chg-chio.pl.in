@@ -36,18 +36,28 @@ eval '(exit $?0)' && eval 'exec @PERL@ -S $0 ${1+"$@"}'
 
 require 5.001;
 
-$progname = $0;
-$progname =~ s#/.*/##;
+($progname = $0) =~ s#/.*/##;
 
+use English;
 use Getopt::Long;
 
 $| = 1;
 
+if (-d "@AMANDA_DBGDIR@") {
+	$logfile = "@AMANDA_DBGDIR@/changer.debug";
+} else {
+	$logfile = "/dev/null";
+}
+die "$progname: cannot open $logfile: $ERRNO\n"
+	unless (open (LOG, ">> $logfile"));
 
 #
 # get the information from the configuration file
 #
 
+$prefix="@prefix@";
+$exec_prefix="@exec_prefix@";
+$sbindir="@sbindir@";
 $libexecdir = "@libexecdir@";
 if ( "@USE_VERSION_SUFFIXES@" eq "yes" ) {
     $SUF = "-@VERSION@";
@@ -55,11 +65,10 @@ if ( "@USE_VERSION_SUFFIXES@" eq "yes" ) {
     $SUF = "";
 }
 
-$tapeDevice = `$libexecdir/getconf$SUF tapedev`;
-chomp $tapeDevice;
+chomp ($tapeDevice = `$sbindir/amgetconf$SUF tapedev 2>&1`);
 die "tapedev not found in amanda.conf"
 	if !$tapeDevice or $tapeDevice =~ m/BUGGY/;
-$changerDevice = `$libexecdir/getconf$SUF changerdev`;
+chomp ($changerDevice = `$sbindir/amgetconf$SUF changerdev 2>&1`);
 chomp $changerDevice;
 die "changerdev not found in amanda.conf"
 	if !$changerDevice or $changerDevice =~ m/BUGGY/;
@@ -75,8 +84,33 @@ $max_slot = 0;
 $max_drive = 0;
 $nr_tapes = 0;
 
+@dow = ("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat");
+@moy = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec");
+
+sub do_time {
+	my (@t);
+
+	###
+	# Get the local time for the value.
+	###
+
+	@t = localtime (time ());
+
+	###
+	# Print the result.
+	###
+
+	printf "%s %s %2d %2d:%02d:%02d %4d",
+	  $dow[$t[6]],
+	  $moy[$t[4]],
+	  $t[3],
+	  $t[2], $t[1], $t[0],
+	  1900 + $t[5];
+}
 
 sub getCurrentTape {
+	print LOG &do_time(), ": enter: getCurrentTape\n";
 
 	#
 	# Determines the slot number for the tape that is currently in the
@@ -87,25 +121,31 @@ sub getCurrentTape {
 	my($slot, $i);
 
 	if ( !$drives[0] ) {		# drive empty
-		return(0);
+		$i = 0;
 	} elsif ( $nr_tapes == 1 ) {	# one tape -> comes from slot max_slot
-		return ($max_slot);
+		$i = $max_slot;
 	} else {			# find first empty slot
 		$i = 0;
 		while ( $i < $#slots and $slots[$i] ) {
 			$i++
 		}
-		return ($i+1);
+		$i++;
 	}
+
+	print LOG &do_time(), ": leave: getCurrentTape: $i\n";
+	return $i;
 }
 
 sub getTapeStatus {
+	print LOG &do_time(), ": enter: getTapeStatus\n";
+
 	#
 	# Sets $nr_tapes, @slots, @drives, $current_tape
 	#
 
 	my($type,$num,$status);
 
+	print LOG &do_time(), ": running: @CHIO@ -f $changerDevice status\n";
 	if ( !(open(FH,"@CHIO@ -f $changerDevice status|")) ) {
 		print "$progname: '@CHIO@ -f $changerDevice status' failed, $!\n";
 		exit(2);
@@ -125,7 +165,9 @@ sub getTapeStatus {
 	@slots=();
 	@drives=();
 
-	while( $line = <FH> ) {
+	while( defined ($line = <FH>) ) {
+		chomp( $line );
+		print LOG &do_time(), ": $line\n";
 		next unless $line =~ m/(\w+)\s+(\d+):\s*<([^>]+)>/;
 		($type,$num,$status) = ($1,$2,$3);
 		if ( $type =~ m/slot/i ) {
@@ -149,10 +191,12 @@ sub getTapeStatus {
 
 	$currentTape = &getCurrentTape(); 
 
+	print LOG &do_time(), ": leave: getTapeStatus: $nr_tapes\n";
 	return($nr_tapes);
 }
 
 sub getTapeParams {
+	print LOG &do_time(), ": enter: getTapeParams\n";
   
 	#
 	# Requests information on the number of slots, pickers and drives
@@ -161,6 +205,7 @@ sub getTapeParams {
 
 	my($max_slot,$max_drive,$max_picker);
   
+	print LOG &do_time(), ": running: @CHIO@ -f $changerDevice params\n";
 	if ( !open(FH,"@CHIO@ -f $changerDevice params|") ) {
 		print "$progname: '@CHIO@ -f $changerDevice params' failed, $!\n";
 		exit(2);
@@ -172,23 +217,25 @@ sub getTapeParams {
 	#  /dev/ch0: current picker: 0
 	#
 
-	$line = <FH>;
-	chomp $line;
-	if ($line =~ m/:\s+(\d+)\s+slots,\s+(\d+)\s+drive,\s+(\d+)\s+picker/i) {
+	$max_slot = 0;
+	$max_picker = 0;
+	$max_drive = 0;
+
+	while( defined ($line = <FH>) ) {
+		chomp $line;
+		print LOG, &do_time(), ": $line\n";
 		$max_slot 	= $1 if $line =~ m/(\d+) slot/i;
 		$max_drive	= $1 if $line =~ m/(\d+) drive/i;
 		$max_picker 	= $1 if $line =~ m/(\d+) picker/i;
-		close(FH);
 
-		if ( $max_drive == r or $max_picker == 0 ) {
-			print "$progname: No drive or picker ? ($max_drive/$max_picker)\n";
-			exit(2);
-		}
-	} else {
-		print "$progname: @CHIO@ -f $changerDevice params failed: $line";
+	}
+	close(FH);
+	if ( $max_drive == r or $max_picker == 0 ) {
+		print "$progname: No drive or picker ? ($max_drive/$max_picker)\n";
 		exit(2);
 	}
 
+	print LOG &do_time(), ": leave: getTapeParams: $max_slot, $max_drive, $max_picker\n";
 	return ($max_slot, $max_drive, $max_picker);
 }
 
@@ -219,19 +266,23 @@ sub testTape {
 
 sub Load {
 	my($tape) = @_;
+	print LOG &do_time(), ": enter: Load: $tape\n";
 
 	#
 	# Load tape $tape into drive 0
 	#
 
+	print LOG &do_time(), ": running: @CHIO@ -f $changerDevice move slot ", $tape - 1, " drive 0\n";
 	if ( system("@CHIO@ -f $changerDevice move slot ".($tape-1)." drive 0") ) {
-		print "$progname: cannot '$chiocommand -f $changerDevice move' tape $tape into drive 0\n";
+		print "$progname: cannot '@CHIO@ -f $changerDevice move' tape $tape into drive 0\n";
 		exit(2);
 	}
+	print LOG &do_time(), ": leave: Load\n";
 }
 
 sub Unload {
 	my($tape) = @_;
+	print LOG &do_time(), ": enter: Unload: $tape\n";
 
 	#
 	# Unload the tape from drive 0 and put it into the slot specified by
@@ -242,29 +293,28 @@ sub Unload {
 		print "$progname: cannot '@CHIO@ -f $changerDevice move' tape $tape from drive 0\n";
 		exit(2);
 	}
+	print LOG &do_time(), ": leave: Unload\n";
 }
 
 sub changeTape {
 	my($tape) = @_;
+	print LOG &do_time(), ": enter: changeTape: $tape\n";
 
 	#
 	# Unload current tape and load a new tape from slot $tape.
 	#
 
-	return
-		if $tape == $currentTape;
+	if ($tape != $currentTape) {
 
-	&testTape($tape);
+		&testTape($tape);
 
-	if( $currentTape == 0 ) {
+		if( $currentTape != 0 ) {
+			&Unload($currentTape);
+		}
 		&Load($tape);
 		$currentTape = $tape;
-		return;
-	} else {
-		Unload($currentTape);
-		Load($tape);
-		$currentTape=$tape;
 	}
+	print LOG &do_time(), ": leave: changeTape\n";
 }
 
 
@@ -278,7 +328,12 @@ sub changeTape {
 
 ($max_slot, $max_drive) = &getTapeParams();
 
-$result = &GetOptions("slot=s", "info", "reset", "eject"); 
+$opt_slot = 0;					# perl -w fodder
+$opt_info = 0;					# perl -w fodder
+$opt_reset = 0;					# perl -w fodder
+$opt_eject = 0;					# perl -w fodder
+
+GetOptions("slot=s", "info", "reset", "eject"); 
 
 $nr_tapes = &getTapeStatus();
 
@@ -293,48 +348,55 @@ system ("@MT@ @MT_FILE_FLAG@ $tapeDevice rewind")
 if ( $opt_slot ) {
 	if ( $opt_slot =~ /first/ ) {
 		&changeTape(1);
+		print LOG &do_time(), ": $currentTape $tapeDevice\n";
 		print "$currentTape $tapeDevice\n";
 	}
 	if ( $opt_slot =~ /last/ ) {
 		&changeTape($max_slot);
+		print LOG &do_time(), ": $currentTape $tapeDevice\n";
 		print "$currentTape $tapeDevice\n";
 	}
 	if ( $opt_slot =~ /current/ ) {
 		&changeTape($currentTape);
+		print LOG &do_time(), ": $currentTape $tapeDevice\n";
 		print "$currentTape $tapeDevice\n";
 	}
 	if ( $opt_slot =~ /next/ ) {
 		$tape = $currentTape+1;
-      while ( $slots[$tape-1] == 0 ) {        # there is at least 1 
-         if ( ++$tape > $max_slot ) {
-            $tape = 1;
-         }
-      }
+		while ( $slots[$tape-1] == 0 ) {        # there is at least 1 
+			if ( ++$tape > $max_slot ) {
+				$tape = 1;
+			}
+		}
 		&changeTape($tape);
+		print LOG &do_time(), ": $currentTape $tapeDevice\n";
 		print "$currentTape $tapeDevice\n";
 	}
 	if ( $opt_slot =~ /prev/ ) {
 		$tape = $currentTape-1;
-      while ( $slots[$tape-1] == 0 ) {        # there is at least 1
-         if ( --$tape < 1 ) {
-            $tape = $max_slot;
-         }
-      }
+		while ( $slots[$tape-1] == 0 ) {        # there is at least 1
+			if ( --$tape < 1 ) {
+				$tape = $max_slot;
+			}
+		}
 		&changeTape($tape);
+		print LOG &do_time(), ": $currentTape $tapeDevice\n";
 		print "$currentTape $tapeDevice\n";
 	}
-	if ( $opt_slot =~ /\d/ ) {
+	if ( $opt_slot =~ /^\d+$/ ) {
 		&changeTape($opt_slot);
+		print LOG &do_time(), ": $currentTape $tapeDevice\n";
 		print "$currentTape $tapeDevice\n";
 	}
 	if ( $opt_slot =~ /advance/ ) {
 		$tape=$currentTape+1;
 		if ( $tape > $max_slot ) {
-		   $tape = 1;
+			$tape = 1;
 		}
 		if ( $currentTape ) { 
-		&Unload($currentTape);
+			&Unload($currentTape);
 		}
+		print LOG &do_time(), ": $currentTape $tapeDevice\n";
 		print "$currentTape , /dev/null\n";
 	}
 
@@ -343,16 +405,18 @@ if ( $opt_slot ) {
 
 if ( $opt_info ) {
 	if ( $currentTape == 0 ) {
-		&Load(1);	# load random tape
+		&Load(1);			# load random tape
 		$currentTape = 1;
 	}
 
+	print LOG &do_time(), ": $currentTape $max_slot 1\n";
 	print "$currentTape $max_slot 1\n";
 	exit 0;
 }
 
 if ( $opt_reset ) {
 	&changeTape(1);
+	print LOG &do_time(), ": $currentTape $tapeDevice\n";
 	print "$currentTape $tapeDevice\n";
 	exit 0;
 }

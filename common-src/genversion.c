@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: genversion.c,v 1.18.4.3 1999/09/05 21:42:13 jrj Exp $
+ * $Id: genversion.c,v 1.18.4.4 1999/09/08 23:26:48 jrj Exp $
  *
  * dump the current Amanda version info
  */
@@ -119,6 +119,11 @@ int main()
     prvar(" sbindir", sbindir);
     prvar(" libexecdir", libexecdir);
     prvar(" mandir", mandir);
+    prvar(" AMANDA_TMPDIR", AMANDA_TMPDIR);
+#ifdef AMANDA_DBGDIR
+    prvar(" AMANDA_DBGDIR", AMANDA_DBGDIR);
+#endif
+
     prvar(" CONFIG_DIR", CONFIG_DIR);
 
 #ifdef DEV_PREFIX

@@ -37,7 +37,7 @@ libexecdir=@libexecdir@
 
 confdir=@CONFIG_DIR@
 
-PATH=$libexecdir:@sbindir@:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
+PATH=$sbindir:$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
 export PATH
 
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
@@ -58,12 +58,12 @@ if [ ! -d $confdir/$conf ]; then
     exit 1
 fi
 
-cd $confdir/$conf
+cd $confdir/$conf || exit 1
 
-logdir=`$libexecdir/getconf$SUF logdir`
+logdir=`amgetconf$SUF logdir`
 errfile=$logdir/amdump
-tapecycle=`$libexecdir/getconf$SUF tapecycle`
-dumpuser=`$libexecdir/getconf$SUF dumpuser`
+tapecycle=`amgetconf$SUF tapecycle`
+dumpuser=`amgetconf$SUF dumpuser`
 runuser=${LOGNAME-`whoami`}
 
 if [ $runuser != $dumpuser ]; then

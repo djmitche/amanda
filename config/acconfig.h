@@ -19,7 +19,8 @@
 #undef libexecdir
 #undef mandir
 #undef CONFIG_DIR
-#undef DEBUG_DIR
+#undef AMANDA_TMPDIR
+#undef AMANDA_DBGDIR
 
 /* This is the default Amanda index server.  */
 #undef DEFAULT_SERVER
@@ -204,8 +205,8 @@
 /* Define if you want debugging.  */
 #undef DEBUG_CODE
 
-/* Define if you want the debugging files that appear in /tmp to have
- * the process ID appended to the filename.  */
+/* Define if you want the debugging files that appear in the --with-debugging
+ * directory to have the process ID appended to the filename.  */
 #undef DEBUG_FILE_WITH_PID
 
 /* Define if you want assertion checking.  */

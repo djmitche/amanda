@@ -10,7 +10,7 @@ libexecdir=@libexecdir@
 
 ConfigDir=@CONFIG_DIR@
 
-PATH=$libexecdir:$sbindir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
+PATH=$sbindir:$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
 export PATH
 
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
@@ -51,7 +51,7 @@ fi
 # Get the location and name of the tapelist filename.  If tapelist is not
 # specified in the amanda.conf file, then use tapelist in the config
 # directory.
-TapeList=`getconf${SUF} tapelist`
+TapeList=`amgetconf${SUF} tapelist`
 if [ ! "$TapeList" ]; then
 	TapeList="$ConfigDir/$Config/tapelist"
 fi

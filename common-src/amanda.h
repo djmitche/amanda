@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.66.2.2 1999/06/20 17:28:27 th Exp $
+ * $Id: amanda.h,v 1.66.2.3 1999/09/08 23:26:38 jrj Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -246,7 +246,7 @@
  *
  *  malloc_enter(char *) -- stack trace for malloc reports
  *  malloc_leave(char *) -- stack trace for malloc reports
- *  malloc_leave(void *) -- mark an area as never to be free-d
+ *  malloc_mark(void *) -- mark an area as never to be free-d
  *  malloc_chain_check(void) -- check the malloc area now
  *  malloc_dump(int fd) -- report the malloc contents to a file descriptor
  *  malloc_list(int fd, ulong a, ulong b) -- report memory activated since
@@ -485,6 +485,10 @@ extern char  *newvstralloc    P((char *oldstr, const char *newstr, ...));
 #define	newstralloc2(p,s1,s2) newvstralloc((p),(s1),(s2),NULL)
 
 extern void  *sbuf_man        P((void *bufs, void *ptr));
+extern uid_t  client_uid;
+extern gid_t  client_gid;
+extern void   safe_cd	      P((void));
+extern void   save_core	      P((void));
 extern char **safe_env        P((void));
 extern char  *validate_regexp P((char *regex));
 extern char  *validate_glob   P((char *glob));
@@ -679,6 +683,11 @@ extern char  *areads	      P((int fd));
     }									\
     if(fp) *fp = '\0';							\
 } while(0)
+
+#define is_dot_or_dotdot(s)						\
+    ((s)[0] == '.'							\
+     && ((s)[1] == '\0'							\
+	 || ((s)[1] == '.' && (s)[2] == '\0')))
 
 /* from amflock.c */
 extern int    amflock   P((int fd, char *resource));

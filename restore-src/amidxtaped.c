@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.25 1998/09/02 03:40:17 oliva Exp $
+/* $Id: amidxtaped.c,v 1.25.2.1 1999/09/08 23:27:02 jrj Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -93,10 +93,6 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-#ifdef FORCE_USERID
-    char *pwname;
-    struct passwd *pwptr;
-#endif	/* FORCE_USERID */
     int amrestore_nargs;
     char **amrestore_args;
     char *buf = NULL;
@@ -123,6 +119,8 @@ char **argv;
 	close(fd);
     }
 
+    safe_cd();
+
     set_pname("amidxtaped");
 
 #ifdef FORCE_USERID
@@ -130,13 +128,13 @@ char **argv;
     /* we'd rather not run as root */
 
     if(geteuid() == 0) {
-	pwname = CLIENT_LOGIN;
-	if((pwptr = getpwnam(pwname)) == NULL)
-	    error("error [cannot find user %s in passwd file]\n", pwname);
+	if(client_uid == (uid_t) -1) {
+	    error("error [cannot find user %s in passwd file]\n", CLIENT_LOGIN);
+	}
 
-	initgroups(pwname, pwptr->pw_gid);
-	setgid(pwptr->pw_gid);
-	setuid(pwptr->pw_uid);
+	initgroups(CLIENT_LOGIN, client_gid);
+	setgid(client_gid);
+	setuid(client_uid);
     }
 
 #endif	/* FORCE_USERID */

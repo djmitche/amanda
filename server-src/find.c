@@ -25,11 +25,12 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.6.2.3 1999/03/28 21:31:34 martinea Exp $
+ * $Id: find.c,v 1.6.2.4 1999/09/08 23:28:11 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
 #include "amanda.h"
+#include "conffile.h"
 #include "tapefile.h"
 #include "logfile.h"
 #include "holding.h"
@@ -53,7 +54,7 @@ char *lfind_hostname;
 int lfind_ndisks;
 char **lfind_diskstrs;
 {
-    char *conflogdir, *logfile = NULL;
+    char *conf_logdir, *logfile = NULL;
     int tape, maxtape, seq, logs;
     tape_t *tp;
     find_result_t *output_find = NULL;
@@ -66,7 +67,12 @@ char **lfind_diskstrs;
     else
 	find_nhosts=1;
 
-    conflogdir = getconf_str(CNF_LOGDIR);
+    conf_logdir = getconf_str(CNF_LOGDIR);
+    if (*conf_logdir == '/') {
+	conf_logdir = stralloc(conf_logdir);
+    } else {
+	conf_logdir = stralloc2(config_dir, conf_logdir);
+    }
     maxtape = lookup_nb_tape();
 
     for(tape = 1; tape <= maxtape; tape++) {
@@ -87,7 +93,7 @@ char **lfind_diskstrs;
 
 	    ap_snprintf(seq_str, sizeof(seq_str), "%d", seq);
 	    logfile = newvstralloc(logfile,
-			conflogdir, "/log.", ds_str, ".", seq_str, NULL);
+			conf_logdir, "/log.", ds_str, ".", seq_str, NULL);
 	    if(access(logfile, R_OK) != 0) break;
 	    logs += search_logfile(&output_find, tp->label, tp->datestamp, seq, logfile);
 	}
@@ -95,14 +101,14 @@ char **lfind_diskstrs;
 	/* search old-style amflush log, if any */
 
 	logfile = newvstralloc(logfile,
-			       conflogdir, "/log.", ds_str, ".amflush", NULL);
+			       conf_logdir, "/log.", ds_str, ".amflush", NULL);
 	if(access(logfile,R_OK) == 0) {
 	    logs += search_logfile(&output_find, tp->label, tp->datestamp, 1000, logfile);
 	}
 
 	/* search old-style main log, if any */
 
-	logfile = newvstralloc(logfile, conflogdir, "/log.", ds_str, NULL);
+	logfile = newvstralloc(logfile, conf_logdir, "/log.", ds_str, NULL);
 	if(access(logfile,R_OK) == 0) {
 	    logs += search_logfile(&output_find, tp->label, tp->datestamp, -1, logfile);
 	}
@@ -118,13 +124,18 @@ char **lfind_diskstrs;
 
 char **find_log()
 {
-    char *conflogdir, *logfile = NULL;
+    char *conf_logdir, *logfile = NULL;
     int tape, maxtape, seq, logs;
     tape_t *tp;
     char **output_find_log = NULL;
     char **current_log;
 
-    conflogdir = getconf_str(CNF_LOGDIR);
+    conf_logdir = getconf_str(CNF_LOGDIR);
+    if (*conf_logdir == '/') {
+	conf_logdir = stralloc(conf_logdir);
+    } else {
+	conf_logdir = stralloc2(config_dir, conf_logdir);
+    }
     maxtape = lookup_nb_tape();
 
     output_find_log = alloc((maxtape*5+10) * sizeof(char *));
@@ -148,7 +159,7 @@ char **find_log()
 
 	    ap_snprintf(seq_str, sizeof(seq_str), "%d", seq);
 	    logfile = newvstralloc(logfile,
-			conflogdir, "/log.", ds_str, ".", seq_str, NULL);
+			conf_logdir, "/log.", ds_str, ".", seq_str, NULL);
 	    if(access(logfile, R_OK) != 0) break;
 	    if( search_logfile(NULL, tp->label, tp->datestamp, seq, logfile)) {
 		*current_log = vstralloc("log.", ds_str, ".", seq_str, NULL);
@@ -161,7 +172,7 @@ char **find_log()
 	/* search old-style amflush log, if any */
 
 	logfile = newvstralloc(logfile,
-			       conflogdir, "/log.", ds_str, ".amflush", NULL);
+			       conf_logdir, "/log.", ds_str, ".amflush", NULL);
 	if(access(logfile,R_OK) == 0) {
 	    if( search_logfile(NULL, tp->label, tp->datestamp, 1000, logfile)) {
 		*current_log = vstralloc("log.", ds_str, ".amflush", NULL);
@@ -172,7 +183,7 @@ char **find_log()
 
 	/* search old-style main log, if any */
 
-	logfile = newvstralloc(logfile, conflogdir, "/log.", ds_str, NULL);
+	logfile = newvstralloc(logfile, conf_logdir, "/log.", ds_str, NULL);
 	if(access(logfile,R_OK) == 0) {
 	    if(search_logfile(NULL, tp->label, tp->datestamp, -1, logfile)) {
 		*current_log = vstralloc("log.", ds_str, NULL);
@@ -214,16 +225,16 @@ find_result_t **output_find;
 	        continue;
 	    }
 
-	    chdir(sdirname);
 	    while((entry = readdir(workdir)) != NULL) {
-		if(strcmp(entry->d_name, ".") == 0
-			  || strcmp(entry->d_name, "..") == 0)
+		if(is_dot_or_dotdot(entry->d_name)) {
 		    continue;
-		if(is_emptyfile(entry->d_name))
-		    continue;
+		}
 		destname = newvstralloc(destname,
 					sdirname, "/", entry->d_name,
 					NULL);
+		if(is_emptyfile(destname)) {
+		    continue;
+		}
 		amfree(hostname);
 		amfree(diskname);
 		if(get_amanda_names(destname, &hostname, &diskname, &level) != F_DUMPFILE) {

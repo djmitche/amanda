@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.39.2.5 1999/06/07 06:10:23 oliva Exp $
+ * $Id: amindexd.c,v 1.39.2.6 1999/09/08 23:27:33 jrj Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -76,7 +76,8 @@ char local_hostname[MAX_HOSTNAME_LENGTH+1];	/* me! */
 char *remote_hostname = NULL;			/* the client */
 char *dump_hostname = NULL;			/* machine we are restoring */
 char *disk_name;				/* disk we are restoring */
-char *config = NULL;				/* config we are restoring */
+char *config_name = NULL;			/* config we are restoring */
+char *config_dir = NULL;			/* config directory */
 char *target_date = NULL;
 disklist_t *disk_list;				/* all disks in cur config */
 find_result_t *output_find = NULL;
@@ -186,12 +187,14 @@ char **emsg;
 	dir_slash = stralloc2(dir, "/");
     }
 
-    filename_gz=getindexfname(dump_hostname, disk_name, dump_item->date,
-			      dump_item->level);
+    filename_gz = getindexfname(dump_hostname, disk_name, dump_item->date,
+			        dump_item->level);
     if((filename = uncompress_file(filename_gz, emsg)) == NULL) {
+	amfree(filename_gz);
 	amfree(dir_slash);
 	return -1;
     }
+    amfree(filename_gz);
 
     if((fp = fopen(filename,"r"))==0) {
 	amfree(*emsg);
@@ -309,8 +312,9 @@ int is_dump_host_valid(host)
 char *host;
 {
     struct stat dir_stat;
+    char *fn;
 
-    if (config == NULL) {
+    if (config_name == NULL) {
 	reply(501, "Must set config before setting host.");
 	return -1;
     }
@@ -330,13 +334,14 @@ char *host;
 
     /* check that the config actually handles that host */
     /* assume in index dir already */
-    if (stat (sanitise_filename(host), &dir_stat) != 0 || 
-        !S_ISDIR(dir_stat.st_mode))
-    {
+    fn = getindexfname(host, NULL, NULL, 0);
+    if (stat (fn, &dir_stat) != 0 || !S_ISDIR(dir_stat.st_mode)) {
 	reply(501, "No index records for host: %s. Invalid?", host);
+	amfree(fn);
 	return -1;
     }
 
+    amfree(fn);
     return 0;
 }
 
@@ -344,32 +349,24 @@ char *host;
 int is_disk_valid(disk)
 char *disk;
 {
-    char *search_str;
+    char *fn;
     char *last_slash;
     struct stat dir_stat;
 
-    if (config == NULL || dump_hostname == NULL) {
+    if (config_name == NULL || dump_hostname == NULL) {
 	reply(501, "Must set config,host before setting disk.");
 	return -1;
     }
 
-    search_str = getindexfname(dump_hostname, disk, "00000000", 0);
-    last_slash = strrchr (search_str, '/');
-    if (last_slash == NULL)
-    {
-	reply(599, "Cannot convert host/disk to index directory.");
-	return -1;
-    }
+    fn = getindexfname(dump_hostname, disk, NULL, 0);
 
-    /* check that the config actually handles that host and disk */
-    /* assume in index dir already */
-    *last_slash = '\0';
-    if (stat (search_str, &dir_stat) != 0 || !S_ISDIR(dir_stat.st_mode))
-    {
+    if (stat (fn, &dir_stat) != 0 || !S_ISDIR(dir_stat.st_mode)) {
 	reply(501, "No index records for disk: %s. Invalid?", disk);
+	amfree(fn);
 	return -1;
     }
 
+    amfree(fn);
     return 0;
 }
 
@@ -377,7 +374,11 @@ char *disk;
 int is_config_valid(config)
 char *config;
 {
-    char *conf_dir = NULL;
+    char *conffile;
+    char *conf_diskfile;
+    char *conf_tapelist;
+    char *conf_indexdir;
+    struct stat dir_stat;
 
     /* check that the config actually exists */
     if (config == NULL) {
@@ -385,43 +386,52 @@ char *config;
 	return -1;
     }
 
-    /* cd to confdir */
-    conf_dir = vstralloc(CONFIG_DIR, "/", config, NULL);
-    if (chdir(conf_dir) == -1)
-    {
-	reply(501, "Couldn't cd into %s.  Misconfiguration?", conf_dir);
-	amfree(conf_dir);
-	return -1;
-    }
-
     /* read conffile */
-    if (read_conffile(CONFFILE_NAME))
-    {
-	reply(501, "Couldn't read config file %s/%s!", conf_dir, CONFFILE_NAME);
-	amfree(conf_dir);
+    conffile = stralloc2(config_dir, CONFFILE_NAME);
+    if (read_conffile(conffile)) {
+	reply(501, "Could not read config file %s!", conffile);
+	amfree(conffile);
 	return -1;
     }
-    amfree(conf_dir);
-
-    /* read the disk file while we are here - just in case we need it */
-    if ((disk_list = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
-    {
-	reply(501, "Couldn't read disk file");
+    amfree(conffile);
+    conf_diskfile = getconf_str(CNF_DISKFILE);
+    if (*conf_diskfile == '/') {
+	conf_diskfile = stralloc(conf_diskfile);
+    } else {
+	conf_diskfile = stralloc2(config_dir, conf_diskfile);
+    }
+    if ((disk_list = read_diskfile(conf_diskfile)) == NULL) {
+	reply(501, "Could not read disk file %s!", conf_diskfile);
+	amfree(conf_diskfile);
 	return -1;
     }
-
-    /* read the tapelist file, needed by find_dump() */
-    if(read_tapelist(getconf_str(CNF_TAPELIST))) {
-	reply(501, "Couldn't read tapelist file");
+    amfree(conf_diskfile);
+    conf_tapelist = getconf_str(CNF_TAPELIST);
+    if (*conf_tapelist == '/') {
+	conf_tapelist = stralloc(conf_tapelist);
+    } else {
+	conf_tapelist = stralloc2(config_dir, conf_tapelist);
+    }
+    if(read_tapelist(conf_tapelist)) {
+	reply(501, "Could not read tapelist file %s!", conf_tapelist);
+	amfree(conf_tapelist);
 	return -1;
     }
+    amfree(conf_tapelist);
 
     /* okay, now look for the index directory */
-    if (chdir(getconf_str(CNF_INDEXDIR)) == -1)
-    {
-	reply(501, "Index directory %s does not exist", getconf_str(CNF_INDEXDIR));
+    conf_indexdir = getconf_str(CNF_INDEXDIR);
+    if(*conf_indexdir == '/') {
+	conf_indexdir = stralloc(conf_indexdir);
+    } else {
+	conf_indexdir = stralloc2(config_dir, conf_indexdir);
+    }
+    if (stat (conf_indexdir, &dir_stat) != 0 || !S_ISDIR(dir_stat.st_mode)) {
+	reply(501, "Index directory %s does not exist", conf_indexdir);
+	amfree(conf_indexdir);
 	return -1;
     }
+    amfree(conf_indexdir);
 
     return 0;
 }
@@ -432,17 +442,13 @@ int build_disk_table P((void))
     char date[100];
     find_result_t *find_output;
 
-    if (config == NULL || dump_hostname == NULL || disk_name == NULL) {
+    if (config_name == NULL || dump_hostname == NULL || disk_name == NULL) {
 	reply(590, "Must set config,host,disk before building disk table");
 	return -1;
     }
 
     if(output_find == NULL) { /* do it the first time only */
 	output_find = find_dump(NULL,0,NULL);
-	if (chdir(getconf_str(CNF_INDEXDIR)) == -1) {
-	    reply(501, "Index directory %s does not exist", getconf_str(CNF_INDEXDIR));
-	    return -1;
-	}
 	sort_find_result("DLKHB", &output_find);
     }
 
@@ -468,20 +474,20 @@ int disk_history_list P((void))
 {
     DUMP_ITEM *item;
 
-    if (config == NULL || dump_hostname == NULL || disk_name == NULL) {
+    if (config_name == NULL || dump_hostname == NULL || disk_name == NULL) {
 	reply(502, "Must set config,host,disk before listing history");
 	return -1;
     }
 
     lreply(200, " Dump history for config \"%s\" host \"%s\" disk \"%s\"",
-	  config, dump_hostname, disk_name);
+	  config_name, dump_hostname, disk_name);
 
     for (item=first_dump(); item!=NULL; item=next_dump(item))
 	lreply(201, " %s %d %s %d", item->date, item->level, item->tape,
 	       item->file);
 
     reply(200, "Dump history for config \"%s\" host \"%s\" disk \"%s\"",
-	  config, dump_hostname, disk_name);
+	  config_name, dump_hostname, disk_name);
 
     return 0;
 }
@@ -498,12 +504,12 @@ char *dir;
     FILE *fp;
     int last_level;
     char *ldir = NULL;
-    char *filename_gz;
+    char *filename_gz = NULL;
     char *filename = NULL;
     int ldir_len;
     static char *emsg = NULL;
 
-    if (config == NULL || dump_hostname == NULL || disk_name == NULL) {
+    if (config_name == NULL || dump_hostname == NULL || disk_name == NULL) {
 	reply(502, "Must set config,host,disk before asking about directories");
 	return -1;
     }
@@ -534,15 +540,17 @@ char *dir;
     /* go back till we hit a level 0 dump */
     do
     {
-	filename_gz=getindexfname(dump_hostname, disk_name,
-				  item->date, item->level);
 	amfree(filename);
+	filename_gz = getindexfname(dump_hostname, disk_name,
+				    item->date, item->level);
 	if((filename = uncompress_file(filename_gz, &emsg)) == NULL) {
 	    reply(599, "System error %s", emsg);
+	    amfree(filename_gz);
 	    amfree(emsg);
 	    amfree(ldir);
 	    return -1;
 	}
+	amfree(filename_gz);
 	dbprintf(("f %s\n", filename));
 	if ((fp = fopen(filename, "r")) == NULL) {
 	    reply(599, "System error %s", strerror(errno));
@@ -585,7 +593,7 @@ int  recursive;
 
     clear_dir_list();
 
-    if (config == NULL || dump_hostname == NULL || disk_name == NULL) {
+    if (config_name == NULL || dump_hostname == NULL || disk_name == NULL) {
 	reply(502, "Must set config,host,disk before listing a directory");
 	return -1;
     }
@@ -661,7 +669,7 @@ int tapedev_is P((void))
     char *result;
 
     /* check state okay to do this */
-    if (config == NULL) {
+    if (config_name == NULL) {
 	reply(501, "Must set config before asking about tapedev.");
 	return -1;
     }
@@ -684,7 +692,7 @@ int are_dumps_compressed P((void))
     disk_t *diskp;
 
     /* check state okay to do this */
-    if (config == NULL || dump_hostname == NULL || disk_name == NULL) {
+    if (config_name == NULL || dump_hostname == NULL || disk_name == NULL) {
 	reply(501, "Must set config,host,disk name before asking about dumps.");
 	return -1;
     }
@@ -714,10 +722,6 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-#ifdef FORCE_USERID
-    char *pwname;
-    struct passwd *pwptr;
-#endif	/* FORCE_USERID */
     char *line = NULL, *part = NULL;
     char *s, *fp;
     int ch;
@@ -743,6 +747,8 @@ char **argv;
 	close(fd);
     }
 
+    safe_cd();
+
     set_pname("amindexd");
 
 #ifdef FORCE_USERID
@@ -750,13 +756,13 @@ char **argv;
     /* we'd rather not run as root */
 
     if(geteuid() == 0) {
-	pwname = CLIENT_LOGIN;
-	if((pwptr = getpwnam(pwname)) == NULL)
-	    error("error [cannot find user %s in passwd file]\n", pwname);
+	if(client_uid == (uid_t) -1) {
+	    error("error [cannot find user %s in passwd file]\n", CLIENT_LOGIN);
+	}
 
-	initgroups(pwname, pwptr->pw_gid);
-	setgid(pwptr->pw_gid);
-	setuid(pwptr->pw_uid);
+	initgroups(CLIENT_LOGIN, client_gid);
+	setgid(client_gid);
+	setuid(client_uid);
     }
 
 #endif	/* FORCE_USERID */
@@ -772,14 +778,13 @@ char **argv;
 	argv++;
     }
 
-    amfree(config);
     if (argc > 0) {
-	config = newstralloc(config, *argv);
+	config_name = stralloc(*argv);
+	config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
 	argc--;
 	argv++;
     }
 
-    umask(0007);
     dbopen();
     dbprintf(("%s: version %s\n", get_pname(), version()));
 
@@ -836,7 +841,9 @@ char **argv;
     amfree(disk_name);
     amfree(target_date);
 
-    if (config != NULL && is_config_valid(config) != -1) return 1;
+    if (config_name != NULL && is_config_valid(config_name) != -1) {
+	return 1;
+    }
 
     reply(220, "%s AMANDA index server (%s) ready.", local_hostname,
 	  version());
@@ -959,11 +966,17 @@ char **argv;
 	    s[-1] = ch;
 	} else if (strcmp(cmd, "SCNF") == 0 && arg) {
 	    s[-1] = '\0';
+	    amfree(config_name);
+	    amfree(config_dir);
+	    config_name = newstralloc(config_name, arg);
+	    config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
 	    if (is_config_valid(arg) != -1) {
-		config = newstralloc(config, arg);
 		amfree(dump_hostname);		/* invalidate any value */
 		amfree(disk_name);		/* invalidate any value */
-		reply(200, "Config set to %s.", config);
+		reply(200, "Config set to %s.", config_name);
+	    } else {
+		amfree(config_name);
+		amfree(config_dir);
 	    }
 	    s[-1] = ch;
 	} else if (strcmp(cmd, "DATE") == 0 && arg) {

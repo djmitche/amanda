@@ -25,52 +25,69 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindex.c,v 1.10 1998/07/04 00:19:28 oliva Exp $
+ * $Id: amindex.c,v 1.10.4.1 1999/09/08 23:27:28 jrj Exp $
  *
  * index control
  */
 
+#include "conffile.h"
 #include "amindex.h"
 
 char *getindexfname(host, disk, date, level)
 char *host, *disk, *date;
 int level;
 {
-  static char *buf = NULL;
+  char *conf_indexdir;
+  char *buf;
   char level_str[NUM_STR_SIZE];
   char datebuf[8 + 1];
-  char *dc;
+  char *dc = NULL;
   char *pc;
   int ch;
 
-  dc = date;
-  pc = datebuf;
-  while (pc < datebuf + sizeof (datebuf))
-  {
-    if ((*pc++ = ch = *dc++) == '\0')
-    {
-      break;
+  if (date != NULL) {
+    dc = date;
+    pc = datebuf;
+    while (pc < datebuf + sizeof (datebuf)) {
+      if ((*pc++ = ch = *dc++) == '\0') {
+        break;
+      }
+      else if (! isdigit (ch))
+      {
+        pc--;
+      }
     }
-    else if (! isdigit (ch))
-    {
-      pc--;
-    }
-  }
-  datebuf[sizeof(datebuf)-1] = '\0';
+    datebuf[sizeof(datebuf)-1] = '\0';
+    dc = datebuf;
 
-  ap_snprintf(level_str, sizeof(level_str), "%d", level);
+    ap_snprintf(level_str, sizeof(level_str), "%d", level);
+  }
 
   host = stralloc(sanitise_filename(host));
-  disk = stralloc(sanitise_filename(disk));
+  if (disk != NULL) {
+    disk = stralloc(sanitise_filename(disk));
+  }
 
-  buf = newvstralloc(buf,
-		     host, "/",
-		     disk, "/",
-		     datebuf, "_",
-		     level_str, COMPRESS_SUFFIX,
-		     NULL);
+  conf_indexdir = stralloc(getconf_str(CNF_INDEXDIR));
+  if (*conf_indexdir == '/') {
+    conf_indexdir = stralloc(conf_indexdir);
+  } else {
+    conf_indexdir = stralloc2(config_dir, conf_indexdir);
+  }
+  /*
+   * Note: vstralloc() will stop at the first NULL, which might be
+   * "disk" or "dc" (datebuf) rather than the full file name.
+   */
+  buf = vstralloc(conf_indexdir, "/",
+		  host, "/",
+		  disk, "/",
+		  dc, "_",
+		  level_str, COMPRESS_SUFFIX,
+		  NULL);
 
-  amfree(host); amfree(disk);
+  amfree(conf_indexdir);
+  amfree(host);
+  amfree(disk);
 
   return buf;
 }

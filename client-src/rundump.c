@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: rundump.c,v 1.23 1998/09/19 00:04:04 oliva Exp $
+ * $Id: rundump.c,v 1.23.2.1 1999/09/08 23:26:19 jrj Exp $
  *
  * runs DUMP program as root
  */
@@ -67,6 +67,8 @@ char **argv;
 	close(fd);
     }
 
+    safe_cd();
+
     set_pname("rundump");
 
     dbopen();
@@ -81,23 +83,21 @@ char **argv;
 
 #else								/* } { */
 
-    /* we should be invoked by CLIENT_LOGIN */
-    {
-	struct passwd *pwptr;
-	char *pwname = CLIENT_LOGIN;
-	if((pwptr = getpwnam(pwname)) == NULL)
-	    error("error [cannot find user %s in passwd file]\n", pwname);
+    if(client_uid == (uid_t) -1) {
+	error("error [cannot find user %s in passwd file]\n", CLIENT_LOGIN);
+    }
 
 #ifdef FORCE_USERID
-	if (getuid() != pwptr->pw_uid)
-	    error("error [must be invoked by %s]\n", pwname);
+    if (getuid() != client_uid) {
+	error("error [must be invoked by %s]\n", CLIENT_LOGIN);
+    }
 
-	if (geteuid() != 0)
-	    error("error [must be setuid root]\n");
+    if (geteuid() != 0) {
+	error("error [must be setuid root]\n");
+    }
 #endif	/* FORCE_USERID */
 
-	setuid(0);
-    }
+    setuid(0);
 
 #ifdef XFSDUMP
 
