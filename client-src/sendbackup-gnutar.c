@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.56.2.15.4.4.2.8 2002/03/31 21:01:32 jrjackson Exp $
+ * $Id: sendbackup-gnutar.c,v 1.56.2.15.4.4.2.9 2002/05/27 19:56:07 martinea Exp $
  *
  * send backup data using GNU tar
  */
@@ -156,7 +156,7 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 
     NAUGHTY_BITS;
 
-    if(options->compress) {
+    if(options->compress == COMPR_FAST || options->compress == COMPR_BEST) {
 	char *compopt = skip_argument;
 
 #if defined(COMPRESS_BEST_OPT) && defined(COMPRESS_FAST_OPT)
