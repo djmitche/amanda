@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-bsd.c,v 1.12 2001/06/04 12:07:40 ant Exp $
+ * $Id: scsi-bsd.c,v 1.13 2001/09/16 18:08:52 ant Exp $
  *
  * Interface to execute SCSI commands on an BSD System (FreeBSD)
  *
@@ -60,51 +60,82 @@
  * Check if the device is already open,
  * if no open it and save it in the list 
  * of open files.
+ * 
+ * Return:
+ * 0  -> device not opened
+ * 1  -> sucess , device open
+ * -1 -> fatal error
  */
-int SCSI_OpenDevice(OpenFiles_T *pwork, char *DeviceName)
+int SCSI_OpenDevice(int ip)
 {
-  int DeviceFD;
+  extern OpenFiles_T *pDev;
   int i;
-  
-  if ((DeviceFD = open(DeviceName, O_RDWR)) > 0)
-    {
-      pwork->fd = DeviceFD;
-      pwork->SCSI = 0;
-      pwork->dev = strdup(DeviceName);
-      pwork->inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
+  char * DeviceName;
 
-      if (SCSI_Inquiry(DeviceFD, pwork->inquiry, INQUIRY_SIZE) == 0)
-        {
-          if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
-            {
-              for (i=0;i < 16 ;i++)
-                pwork->ident[i] = pwork->inquiry->prod_ident[i];
-              for (i=15; i >= 0 && !isalnum(pwork->ident[i]); i--)
-                {
-                  pwork->ident[i] = '\0';
-                }
-              pwork->SCSI = 1;
-              PrintInquiry(pwork->inquiry);
-              return(1);
-            } else {
-              free(pwork->inquiry);
-              return(0);
-            }
-        } else {
-          free(pwork->inquiry);
-          pwork->inquiry = NULL;
-          return(1);
-        }
-      return(1);
-    } 
-  return(0); 
+
+  /*
+   * If the SCSI inquiry was not done lets try to get
+   * some infos about the device
+   */
+  if (pDev[ip].inqdone == 0) {
+    pDev[ip].inqdone = 1;                                                     /* Set it to 1, so the inq is done */
+    pDev[ip].SCSI = 0;                                                        /* This will only be set if the inquiry works */
+    pDev[ip].inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
+    
+    if (( pDev[ip].fd = open(pDev[ip].dev, O_RDWR)) > 0)                      /* We need the device in read/write mode */
+      {
+        pDev[ip].devopen = 1;                                                 /* The device is open for use */
+        pDev[ip].avail = 1;                                                   /* And it is available, it could be opened */
+        if (SCSI_Inquiry(ip, pDev[ip].inquiry, INQUIRY_SIZE) == 0)            /* Lets try to get the result of an SCSI inquiry */
+          {
+            if (pDev[ip].inquiry->type == TYPE_TAPE || pDev[ip].inquiry->type == TYPE_CHANGER)  /* If it worked and we got an type of */
+                                                                                                /* either tape or changer continue */
+              {
+                for (i=0;i < 16 ;i++)                                         /* Copy the product ident to the pDev struct */
+                  pDev[ip].ident[i] = pDev[ip].inquiry->prod_ident[i];
+                for (i=15; i >= 0 && !isalnum(pDev[ip].ident[i]); i--)        /* And terminate it with an \0, remove all white space */
+                  {
+                    pDev[ip].ident[i] = '\0';
+                  }
+                pDev[ip].SCSI = 1;                                            /* OK, its an SCSI device ... */
+                PrintInquiry(pDev[ip].inquiry);                               /* Some debug output */
+                return(1);                                                    /* All done */
+              } else {
+                free(pDev[ip].inquiry);                                       /* The SCSI was ok, but not an TAPE/CHANGER device ... */
+                pDev[ip].devopen = 0;
+                pDev[ip].avail = 0;
+                close(pDev[ip].fd); 
+                return(0);                                                    /*Might be an ChgExit is better */
+              }
+          } else { /* if SCSI_Inquiry */                                      /* The inquiry failed */
+            free(pDev[ip].inquiry);                                           /* free the allocated memory */
+            pDev[ip].inquiry = NULL;
+            return(1);                                                        /* Its not an SCSI device, but can be used for read/write */
+          }
+      }  /* open() */
+    return(0);                                                                /* Open failed .... */
+  } else { /* pDev[ip].inqdone */                                             /* OK this is the way we go if the device */
+    if (( pDev[ip].fd = open(pDev[ip].dev, O_RDWR)) > 0)                      /* was opened successfull before */
+      {
+        pDev[ip].devopen = 1;
+        return(1);
+      } 
+  }
+  return(0);                                                                 /* Default, return device not available */
 }
 
+/*
+ * Close the device 
+ * abd set the flags in the device struct 
+ *
+ */
 int SCSI_CloseDevice(int DeviceFD)
 {
   int ret;
-    
-  ret = close(DeviceFD) ;
+  extern OpenFiles_T *pDev;
+  
+  ret = close(pDev[DeviceFD].fd) ;
+  pDev[DeviceFD].devopen = 0;
   return(ret);
 }
 
