@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.61.2.5 1998/02/15 04:33:33 amcore Exp $
+ * $Id: sendsize.c,v 1.61.2.6 1998/02/15 06:53:16 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -555,11 +555,7 @@ int level;
 
     ap_snprintf(level_str, sizeof(level_str), "%d", level);
 
-#ifdef VDUMP
-    device = stralloc(amname_to_dirname(disk));
-#else
     device = stralloc(amname_to_devname(disk));
-#endif
 
     cmd = vstralloc(libexecdir, "/", "rundump", versionsuffix(), NULL);
 

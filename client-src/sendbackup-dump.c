@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.44.2.4 1998/02/15 04:33:28 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.44.2.5 1998/02/15 06:53:14 amcore Exp $
  *
  * send backup data using BSD dump
  */
@@ -163,11 +163,7 @@ char *dumpdate;
     }
 
     /* invoke dump */
-#ifdef VDUMP
-    device = stralloc(amname_to_dirname(disk));
-#else
     device = stralloc(amname_to_devname(disk));
-#endif
 
 #if defined(USE_RUNDUMP) || !defined(DUMP)
     cmd = vstralloc(libexecdir, "/", "rundump", versionsuffix(), NULL);
@@ -266,6 +262,7 @@ char *dumpdate;
     {
         char *progname = cmd = newvstralloc(cmd, libexecdir, "/", "rundump",
 					    versionsuffix(), NULL);
+	device = newstralloc(device, amname_to_dirname(disk));
 	program->backup_name  = VDUMP;
 #ifndef VRESTORE
 #define VRESTORE "vrestore"
