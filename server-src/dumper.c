@@ -809,7 +809,7 @@ int mesgfd, datafd, indexfd, outfd;
     runtime = stopclock();
     dumptime = runtime.r.tv_sec + runtime.r.tv_usec/1000000.0;
 
-    sprintf(errstr, "sec %s kb %ld kps %3.1f orig-kb %ld ",
+    sprintf(errstr, "sec %s kb %ld kps %3.1f orig-kb %ld",
 	      walltime_str(runtime), dumpsize, 
 	      dumpsize/dumptime, origsize);
     putresult("DONE %s %ld %ld %ld %s\n", handle, origsize, dumpsize,

@@ -788,7 +788,7 @@ void write_file()
 
     strcpy(rdstr, walltime_str(rdwait));
     strcpy(wrstr, walltime_str(wrwait));
-    sprintf(errstr, "{wr: writes %ld rdwait %s wrwait %s filemark %s }",
+    sprintf(errstr, "{wr: writes %ld rdwait %s wrwait %s filemark %s}",
 	    total_writes, rdstr, wrstr, walltime_str(fmwait));
     syncpipe_putstr(errstr);
 
