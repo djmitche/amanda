@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.9 1999/09/11 16:55:08 jrj Exp $
+ * $Id: amcheck.c,v 1.50.2.10 1999/09/11 18:42:47 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1033,33 +1033,6 @@ int fd;
 
     fprintf(outf, "\nAmanda Backup Client Hosts Check\n");
     fprintf(outf,   "--------------------------------\n");
-
-    /*
-     * Make sure we are running as the dump user.
-     */
-    {
-	uid_t uid_me = getuid();
-	uid_t uid_dumpuser = uid_me;
-	char *dumpuser = getconf_str(CNF_DUMPUSER);
-	struct passwd *pw;
-
-	if ((pw = getpwnam(dumpuser)) == NULL) {
-	    fprintf(outf, "ERROR: cannot look up dump user \"%s\"\n", dumpuser);
-	    userbad = 1;
-	} else {
-	    uid_dumpuser = pw->pw_uid;
-	}
-	if ((pw = getpwuid(uid_me)) == NULL) {
-	    fprintf(outf, "ERROR: cannot look up my own uid %ld\n",
-		    (long)uid_me);
-	    userbad = 1;
-	}
-	if (uid_me != uid_dumpuser) {
-	    fprintf(outf, "ERROR: running as user \"%s\" instead of \"%s\"\n",
-		    pw->pw_name, dumpuser);
-	    userbad = 1;
-	}
-    }
 
     /*
      * Make sure we are running as the dump user.
