@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.9 1998/09/10 01:31:43 oliva Exp $
+ * $Id: stream.c,v 1.10 1998/10/27 22:02:11 kashmir Exp $
  *
  * functions for managing stream sockets
  */
@@ -115,9 +115,9 @@ int *portp;
     return server_socket;
 }
 
-int stream_client(hostname, port, sendsize, recvsize)
+int stream_client(hostname, port, sendsize, recvsize, localport)
 char *hostname;
-int port, sendsize, recvsize;
+int port, sendsize, recvsize, *localport;
 {
     int client_socket;
     int on = 1;
@@ -148,13 +148,20 @@ int port, sendsize, recvsize;
     }
 #endif
 
+    memset(&claddr, 0, sizeof(claddr));
+    claddr.sin_family = AF_INET;
+    claddr.sin_addr.s_addr = INADDR_ANY;
     if(geteuid() == 0) {	
 	/* bind client side to reserved port before connect */
-	memset(&claddr, 0, sizeof(claddr));
-	claddr.sin_family = AF_INET;
-	claddr.sin_addr.s_addr = INADDR_ANY;
-
 	if(bind_reserved(client_socket, &claddr) == -1) {
+	    aclose(client_socket);
+	    return -1;
+	}
+    } else {
+	/* pick any available non-reserved port */
+	claddr.sin_port = INADDR_ANY;
+	if(bind(client_socket, (struct sockaddr *)&claddr,
+	    sizeof claddr) == -1) {
 	    aclose(client_socket);
 	    return -1;
 	}
@@ -170,6 +177,9 @@ int port, sendsize, recvsize;
 	try_socksize(client_socket, SO_SNDBUF, sendsize);
     if(recvsize != DEFAULT_SIZE) 
 	try_socksize(client_socket, SO_RCVBUF, recvsize);
+
+    if (localport != NULL)
+	*localport = ntohs(claddr.sin_port);
 
     return client_socket;
 }

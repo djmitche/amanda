@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.h,v 1.3 1998/07/04 00:19:00 oliva Exp $
+ * $Id: stream.h,v 1.4 1998/10/27 22:02:14 kashmir Exp $
  *
  * interface to stream module
  */
@@ -38,6 +38,7 @@
 
 int stream_server P((int *port));
 int stream_accept P((int sock, int timeout, int sendsize, int recvsize));
-int stream_client P((char *hostname, int port, int sendsize, int recvsize));
+int stream_client P((char *hostname, int port, int sendsize, int recvsize,
+    int *localport));
 
 #endif
