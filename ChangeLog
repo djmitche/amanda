@@ -1,5 +1,9 @@
 1999-11-02  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* common-src/amflock.c (struct flock): Do not assume the fields are
+	declared in any particular order.
+	Reported by Sean Kelly <kelly@plutotech.com>
+
 	* Makefile.am (EXTRA_DIST): Added contrib/set_prod_link.pl.
 	* docs/INSTALL: Likewise.
 
