@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.68 2000/12/31 18:20:36 martinea Exp $
+ * $Id: amadmin.c,v 1.69 2000/12/31 18:37:26 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -325,9 +325,9 @@ void (*func) P((disk_t *dp));
 	usage();
     }
 
-    match_disklist(diskqp,argc-3,argv+3);
+    match_disklist(&diskq,argc-3,argv+3);
 
-    for(dp = diskqp->head; dp != NULL; dp = dp->next) {
+    for(dp = diskq.head; dp != NULL; dp = dp->next) {
 	if(dp->todo) {
 	    count++;
 	    func(dp);
