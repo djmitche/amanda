@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.25 1997/08/27 08:11:43 amcore Exp $
+ * $Id: sendsize.c,v 1.26 1997/09/04 06:13:24 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -756,6 +756,14 @@ time_t dumpsince;
 
     sprintf(cmd, "%s/runtar%s", libexecdir, versionsuffix());
 
+    if (strncmp(efile, "--exclude-list", strlen("--exclude-list"))==0)
+      strncpy(&efile[strlen("--exclude-")], "from", strlen("from"));
+    else if (strncmp(efile, "--exclude-file", strlen("--exclude-file"))==0)
+      memmove(&efile[strlen("--exclude")],
+	      &efile[strlen("--exclude-file")],
+	      strlen(&efile[strlen("--exclude-file")])+1);
+    else assert(0); /* should never happen */
+
     {
       char *spec =
 	"%s: running \"%s --create --directory %s "
@@ -768,7 +776,7 @@ time_t dumpsince;
 #ifdef ENABLE_GNUTAR_ATIME_PRESERVE
 	"--atime-preserve "
 #endif
-	"--ignore-failed-read --totals --file /dev/null %s.\"\n";
+	"--ignore-failed-read --totals --file /dev/null %s%s.\"\n";
 
       char *name_or_time =
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
@@ -778,7 +786,8 @@ time_t dumpsince;
 #endif
 	;
       
-      dbprintf((spec, pname, cmd, dirname, name_or_time));
+      dbprintf((spec, pname, cmd, dirname, name_or_time,
+		efile[0] ? efile : "", efile[0] ? " " : ""));
     }
 
     nullfd = open("/dev/null", O_RDWR);
