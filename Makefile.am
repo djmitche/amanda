@@ -40,5 +40,5 @@ EXTRA_DIST = \
 $(ACLOCAL_M4): $(srcdir)/config/acinclude.m4 $(LIBTOOL_M4)
 	rm -f $(srcdir)/aclocal.m4 $(ACLOCAL_M4)
 	cd $(srcdir) && $(ACLOCAL) --output=$(ACLOCAL_M4)
-	test -f $(srcdir)/aclocal.m4 && \
+	test ! -f $(srcdir)/aclocal.m4 || \
 	mv $(srcdir)/aclocal.m4 $(ACLOCAL_M4)
