@@ -1,5 +1,15 @@
 2000-11-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/diskfile.c (add_disk): New function.
+	* server-src/diskfile.h (add_disk): Prototype.
+	* server-src/logfile.h (logtype_e): add L_DISK.
+	* server-src/logfile.c (logtype_str): add "DISK".
+	* server-src/amflush.c (main): log DISK.
+	* server-src/planner.c (main): log DISK.
+	* server-src/reporter.c: use DISK if available.
+
+2000-11-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amcheck.c: New [host disk]* pair arguments.
 	* server-src/amflush.c: Ditto.
 	* server-src/planner.c: Ditto.

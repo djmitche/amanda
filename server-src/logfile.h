@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.h,v 1.7 2000/04/18 00:23:16 martinea Exp $
+ * $Id: logfile.h,v 1.8 2000/12/30 18:29:24 martinea Exp $
  *
  * interface to logfile module
  */
@@ -45,6 +45,7 @@ typedef enum logtype_e {
     L_FATAL,		/* program died for some reason, used by error() */
     L_ERROR, L_WARNING,	L_INFO, L_SUMMARY,	 /* information messages */
     L_START, L_FINISH,				     /* start/end of run */
+    L_DISK,							 /* disk */
     L_SUCCESS, L_FAIL, L_STRANGE,		    /* the end of a dump */
     L_STATS,						   /* statistics */
     L_MARKER,					  /* marker for reporter */

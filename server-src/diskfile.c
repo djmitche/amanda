@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.36 2000/12/30 15:30:27 martinea Exp $
+ * $Id: diskfile.c,v 1.37 2000/12/30 18:29:24 martinea Exp $
  *
  * read disklist file
  */
@@ -157,6 +157,44 @@ int (*cmp) P((disk_t *a, disk_t *b));
     else prev->next = disk;
     if(ptr == NULL) list->tail = disk;
     else ptr->prev = disk;
+}
+
+disk_t *add_disk(list, hostname, diskname)
+disklist_t *list;
+char *hostname;
+char *diskname;
+{
+    disk_t *disk;
+    host_t *host;
+
+    disk = alloc(sizeof(disk_t));
+    disk->line = 0;
+    disk->name = stralloc(diskname);
+    disk->spindle = -1;
+    disk->up = NULL;
+    disk->compress = COMP_NONE;
+    disk->start_t = 0;
+
+    host = lookup_host(hostname);
+    if(host == NULL) {
+	host = alloc(sizeof(host_t));
+	host->next = hostlist;
+	hostlist = host;
+
+	host->hostname = stralloc(hostname);
+	host->disks = NULL;
+	host->up = NULL;
+	host->inprogress = 0;
+	host->maxdumps = 1;
+	host->start_t = 0;
+    }
+    enqueue_disk(list, disk);
+
+    disk->host = host;
+    disk->hostnext = host->disks;
+    host->disks = disk;
+
+    return disk;
 }
 
 int find_disk(list, disk)

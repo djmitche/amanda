@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.63 2000/09/27 00:30:17 martinea Exp $
+ * $Id: reporter.c,v 1.64 2000/12/30 18:29:24 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -177,6 +177,7 @@ static void bogus_line P((void));
 static int contline_next P((void));
 static void copy_template_file P((char *));
 static void generate_missing P((void));
+static void handle_disk P((void));
 static void handle_error P((void));
 static void handle_failed P((void));
 static void handle_finish P((void));
@@ -587,17 +588,19 @@ main(argc, argv)
 
     while(get_logline(logfile)) {
 	switch(curlog) {
-	case L_START: handle_start(); break;
-	case L_FINISH: handle_finish(); break;
+	case L_START:   handle_start(); break;
+	case L_FINISH:  handle_finish(); break;
 
-	case L_INFO: handle_note(); break;
+	case L_INFO:    handle_note(); break;
 	case L_WARNING: handle_note(); break;
 
 	case L_SUMMARY: handle_summary(); break;
-	case L_STATS: handle_stats(); break;
+	case L_STATS:   handle_stats(); break;
 
-	case L_ERROR: handle_error(); break;
-	case L_FATAL: handle_error(); break;
+	case L_ERROR:   handle_error(); break;
+	case L_FATAL:   handle_error(); break;
+
+	case L_DISK:    handle_disk(); break;
 
 	case L_SUCCESS: handle_success(); break;
 	case L_STRANGE: handle_strange(); break;
@@ -1089,6 +1092,7 @@ CalcMaxWidth()
     float f;
 
     for(dp = sortq.head; dp != NULL; dp = dp->next) {
+      if(dp->todo) {
 	int i;
 	for (i=0; i<data(dp)->nb_taper; i++) {
 	    ColumnInfo *cd;
@@ -1144,6 +1148,7 @@ CalcMaxWidth()
 	    else
 		CheckStringMax(cd, "N/A ");
 	}
+      }
     }
 }
 
@@ -1204,6 +1209,7 @@ output_summary()
     }
 
     for(dp = sortq.head; dp != NULL; free(dp->up), dp = dp->next) {
+      if(dp->todo) {
     	ColumnInfo *cd;
 	char TimeRateBuffer[40];
 	if (data(dp)->nb_taper == 0)
@@ -1360,6 +1366,7 @@ output_summary()
 		}
 	    }
 	}
+      }
     }
 }
 
@@ -1668,6 +1675,60 @@ setup_data()
 
 static int level;
 
+static int nb_disk=0;
+
+static void
+handle_disk()
+{
+    disk_t *dp;
+    char *s, *fp;
+    int ch;
+
+    if(curprog != P_PLANNER && curprog != P_AMFLUSH) {
+	bogus_line();
+	return;
+    }
+
+    if(nb_disk==0) {
+	for(dp = diskq.head; dp != NULL; dp = dp->next)
+	    dp->todo = 0;
+    }
+    nb_disk++;
+
+    s = curstr;
+    ch = *s++;
+
+    skip_whitespace(s, ch);
+    if(ch == '\0') {
+	bogus_line();
+	return;
+    }
+    fp = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    hostname = newstralloc(hostname, fp);
+    s[-1] = ch;
+
+    skip_whitespace(s, ch);
+    if(ch == '\0') {
+	bogus_line();
+	return;
+    }
+    fp = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    diskname = newstralloc(diskname, fp);
+    s[-1] = ch;
+
+    dp = lookup_disk(hostname, diskname);
+    if(dp == NULL) {
+	dp = add_disk(&diskq, hostname, diskname);
+	setup_disk(dp);
+    }
+
+    dp->todo = 1;
+}
+
 static void
 handle_success()
 {
@@ -1956,7 +2017,7 @@ generate_missing()
     char *str = NULL;
 
     for(dp = diskq.head; dp != NULL; dp = dp->next) {
-	if(data(dp)->result == L_BOGUS) {
+	if(dp->todo && data(dp)->result == L_BOGUS) {
 	    str = vstralloc("  ", prefix(dp->host->hostname, dp->name, -987),
 			    " ", "RESULTS MISSING",
 			    NULL);

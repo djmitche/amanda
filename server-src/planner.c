@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.102 2000/12/30 16:13:55 martinea Exp $
+ * $Id: planner.c,v 1.103 2000/12/30 18:29:24 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -136,6 +136,7 @@ int argc;
 char **argv;
 {
     disklist_t origq;
+    disk_t *dp;
     int moved_one;
     char *datestamp = NULL;
     unsigned long malloc_hist_1, malloc_size_1;
@@ -240,6 +241,10 @@ char **argv;
 	error("could not load disklist \"%s\"", conf_diskfile);
     }
     match_disklist(&origq, argc-2, argv+2);
+    for(dp = origq.head; dp != NULL; dp = dp->next) {
+	if(dp->todo)
+	    log_add(L_DISK, "%s %s", dp->host->hostname, dp->name);
+    }
     amfree(conf_diskfile);
 
     conf_tapelist = getconf_str(CNF_TAPELIST);
