@@ -74,7 +74,7 @@ char *sep;	/* Token separators - usually " " */
 	/* Allocate some space */
 
 	if (buf != (char *)0) free(buf); /* Clean up from last time */
-	buf = malloc(len+1);
+	buf = alloc(len+1);
 
 	/* Copy it across and tokenise it */
 
@@ -136,7 +136,7 @@ char *str;	/* The string to quote */
 	/* Allocate some space */
 
 	if (buf != (char *)0) free(buf); /* Clean up from last time */
-	buf = malloc(len+1);	/* trailing null */
+	buf = alloc(len+1);	/* trailing null */
 
 	/* Copy it across */
 
