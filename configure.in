@@ -1274,6 +1274,7 @@ case "$target" in
 			AC_DEFINE(IGNORE_UID_CHECK,1,[Define on Cygwin. ])
 			AC_DEFINE(IGNORE_FSTAB,1,[Define on Cygwin. ])
 			AC_DEFINE(DONT_SUID_ROOT,1,[Define on Cygwin. ])
+			NEED_SETUID_CLIENT=false
 			NEED_RUNTIME_PSEUDO_RELOC=true
 			;;
   *)
@@ -2792,6 +2793,7 @@ AM_CONDITIONAL(WANT_AMPLOT, test x"$NO_AMPLOT_MODE" != x"true")
 AM_CONDITIONAL(WANT_CHG_SCSI, test x"$NO_SCSI_CHANGER_MODE" != x"true")
 AM_CONDITIONAL(WANT_CHIO_SCSI, test x"$NO_CHIO_CHANGER_MODE" != x"true")
 AM_CONDITIONAL(WANT_RUNTIME_PSEUDO_RELOC, test x"$NEED_RUNTIME_PSEUDO_RELOC" == x"true")
+AM_CONDITIONAL(WANT_SETUID_CLIENT, test x"$NEED_SETUID_CLIENT" != x"false")
 
 case "${FORCE_USE_RUNDUMP-${USE_RUNDUMP}}" in
 y |  ye | yes) AC_DEFINE(USE_RUNDUMP,1,[Define to invoke rundump (setuid-root) instead of DUMP program directly. ]);;

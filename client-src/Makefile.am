@@ -84,6 +84,7 @@ install-exec-hook:
 		echo chgrp $(SETUID_GROUP) $$pa; \
 		chgrp $(SETUID_GROUP) $$pa; \
 	done
+if WANT_SETUID_CLIENT
 	@list="calcsize killpgrp rundump runtar"; \
 	for p in $$list; do \
 		if echo "$(libexec_PROGRAMS)" | grep $$p >/dev/null 2>&1; then \
@@ -95,6 +96,7 @@ install-exec-hook:
 		else true; \
 		fi; \
 	done
+endif
 
 getfsent_SOURCES = getfsent.test.c
 

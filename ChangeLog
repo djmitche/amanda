@@ -1,4 +1,11 @@
 2003-02-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Doug Kingston <dpk@randomnotes.org>
+
+	* configure.in (NEED_SETUID_CLIENT): Set to false on *-pc-cygwin.
+	* configure.in (WANT_SETUID_CLIENT): Set if NEED_SETUID_CLIENT != false.
+	* client-src/Makefile.am: Don't chmod u+s if WANT_SETUID_CLIENT.
+
+2003-02-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Andrew Rucker Jones <arjones@simultan.dyndns.org>
 
 	* man/amtapetype.8.in: Fix example.
