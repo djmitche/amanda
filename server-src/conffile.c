@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.23 1997/11/12 23:06:31 blair Exp $
+ * $Id: conffile.c,v 1.24 1997/12/14 20:07:31 jrj Exp $
  *
  * read configuration file
  */
@@ -906,7 +906,7 @@ static void get_holdingdisk()
 static void init_holdingdisk_defaults()
 {
     hdcur.comment = "";
-    hdcur.diskdir = (char *)0;
+    hdcur.diskdir = stralloc(conf_diskdir.s);
     hdcur.disksize = 0;
 
     hdcur.s_comment = 0;
@@ -2062,19 +2062,16 @@ tok_t exp;
 
 
 #ifdef TEST
-dump_configuration()
+dump_configuration(filename)
 {
     tapetype_t *tp;
     dumptype_t *dp;
     interface_t *ip;
     holdingdisk_t *hp;
+    time_t st;
+    struct tm *stm;
 
-    if(confname == NULL) {
-	printf("NO AMANDA CONFIGURATION READ YET\n");
-	return;
-    }
-
-    printf("AMANDA CONFIGURATION FROM FILE \"%s\":\n\n", confname);
+    printf("AMANDA CONFIGURATION FROM FILE \"%s\":\n\n", filename);
 
     printf("conf_org = \"%s\"\n", getconf_str(CNF_ORG));
     printf("conf_mailto = \"%s\"\n", getconf_str(CNF_MAILTO));
@@ -2105,8 +2102,12 @@ dump_configuration()
     /*printf("conf_disksize = %d\n", getconf_int(CNF_DISKSIZE));*/
     printf("conf_indexdir = \"%s\"\n", getconf_str(CNF_INDEXDIR));
     printf("num_holdingdisks = %d\n", num_holdingdisks);
-    for(hp = holdingdisks; hp != NULL; hp = hp->next)
-	printf("  holddisk: dir \"%s\" size %d\n", hp->diskdir, hp->disksize);
+    for(hp = holdingdisks; hp != NULL; hp = hp->next) {
+	printf("\nHOLDINGDISK %s:\n", hp->name);
+	printf("	COMMENT \"%s\"\n", hp->comment);
+	printf("	DISKDIR \"%s\"\n", hp->diskdir);
+	printf("	SIZE %d\n", hp->disksize);
+    }
 
     for(tp = tapelist; tp != NULL; tp = tp->next) {
 	printf("\nTAPETYPE %s:\n", tp->name);
@@ -2122,8 +2123,42 @@ dump_configuration()
 	printf("	PROGRAM \"%s\"\n", dp->program);
 	printf("	PRIORITY %d\n", dp->priority);
 	printf("	DUMPCYCLE %d\n", dp->dumpcycle);
+	st = dp->start_t;
+	if(st) {
+	    stm = localtime(&st);
+	    printf("	STARTTIME %d:%02d:%02d\n",
+	      stm->tm_hour, stm->tm_min, stm->tm_sec);
+	}
+	if(dp->exclude) {
+	    printf("	EXCLUDE");
+	    if(dp->exclude_list) {
+		printf("-LIST");
+	    }
+	    printf(" \"%s\"\n", dp->exclude);
+	}
 	printf("	FREQUENCY %d\n", dp->frequency);
 	printf("	MAXDUMPS %d\n", dp->maxdumps);
+	printf("	STRATEGY ");
+	switch(dp->strategy) {
+	case DS_SKIP:
+	    printf("SKIP");
+	    break;
+	case DS_STANDARD:
+	    printf("STANDARD");
+	    break;
+	case DS_NOFULL:
+	    printf("NOFULL");
+	    break;
+	case DS_NOINC:
+	    printf("NOINC");
+	    break;
+	case DS_HANOI:
+	    printf("HANOI");
+	    break;
+	}
+	putchar('\n');
+	printf("	COMPRATE %f, %f\n", dp->comprate[0], dp->comprate[1]);
+
 	printf("	OPTIONS: ");
 
 	switch(dp->compress) {
@@ -2137,7 +2172,10 @@ dump_configuration()
 	    printf("COMPRESS-BEST ");
 	    break;
 	case COMP_SERV_FAST:
-	    printf("SRVCOMPRESS ");
+	    printf("SRVCOMP-FAST ");
+	    break;
+	case COMP_SERV_BEST:
+	    printf("SRVCOMP-BEST ");
 	    break;
 	}
 
@@ -2167,10 +2205,11 @@ main(argc, argv)
 int argc;
 char *argv[];
 {
+  startclock();
   if (argc>1)
     chdir(argv[1]);
   read_conffile(CONFFILE_NAME);
-  dump_configuration();
+  dump_configuration(CONFFILE_NAME);
 }
 
 char *pname = "conffile";
