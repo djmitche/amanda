@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.29.4.7.2.2 2001/06/19 19:35:26 jrjackson Exp $
+ * $Id: amrecover.c,v 1.29.4.7.2.3 2001/07/30 20:13:03 jrjackson Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -127,8 +127,9 @@ int get_line ()
 				get_pname(),
 				strerror(save_errno));
 	    } else {
-		fprintf(stderr, "%s: Unexpected server end of file\n",
-			get_pname());
+		fprintf(stderr, "%s: Unexpected end of file, check amindexd*debug on server %s\n",
+			get_pname(),
+			server_name);
 	    }
 	    amfree(line);
 	    amfree(server_line);

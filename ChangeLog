@@ -1,4 +1,9 @@
-2001-07-25 Ben Lewis (bhlewis@purdue.edu) via John R. Jackson (jrj@purdue.edu)
+2001-07-30 Ben Lewis (bhlewis@purdue.edu) via John R. Jackson (jrj@purdue.edu)
+
+	* recover-src/amrecover.c: Improve the "Unexpected server end of file"
+	  message.
+
+2001-07-30 Ben Lewis (bhlewis@purdue.edu) via John R. Jackson (jrj@purdue.edu)
 
 	* man/amanda.8.in: Document includefile.
 	* man/amdump.8.in: Add note that local crontab documention should be
