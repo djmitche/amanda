@@ -1,3 +1,8 @@
+2002-01-01  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	Reported by <ian.willis@sge.net>
+
+	* common-src/rsh-security.c: Fix for RSH_DEBUG.
+
 2001-12-31  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* config/ltconfig: Remove

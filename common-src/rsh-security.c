@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.8 2001/07/31 23:19:57 jrjackson Exp $
+ * $Id: rsh-security.c,v 1.9 2002/01/01 16:55:37 martinea Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -906,7 +906,7 @@ stream_read_callback(arg)
 	(*rs->fn)(rs->arg, NULL, 0);
 	return;
     }
-    rshprintf(("rsh: stream_read_callback: read %d bytes from %s:%d\n",
+    rshprintf(("rsh: stream_read_callback: read %ld bytes from %s:%d\n",
 	rs->rc->pktlen, rs->rc->hostname, rs->handle));
     (*rs->fn)(rs->arg, rs->rc->pkt, rs->rc->pktlen);
 }
@@ -931,7 +931,7 @@ conn_read_callback(cookie)
 
     /* Read the data off the wire.  If we get errors, shut down. */
     rval = recv_token(rc, 5);
-    rshprintf(("rsh: conn_read_callback: recv_token returned %d\n", rc));
+    rshprintf(("rsh: conn_read_callback: recv_token returned %d\n", rval));
     if (rval <= 0) {
 	rc->pktlen = 0;
 	rc->handle = H_EOF;
@@ -946,7 +946,7 @@ conn_read_callback(cookie)
 
     /* If there are events waiting on this handle, we're done */
     rval = event_wakeup((event_id_t)rc);
-    rshprintf(("rsh: conn_read_callback: event_wakeup return %d\n", rc));
+    rshprintf(("rsh: conn_read_callback: event_wakeup return %d\n", rval));
     if (rval > 0)
 	return;
 
@@ -1007,7 +1007,7 @@ send_token(rc, handle, buf, len)
     unsigned int netlength, nethandle;
     struct iovec iov[3];
 
-    rshprintf(("rsh: send_token: writing %d bytes to %s\n", tok->length,
+    rshprintf(("rsh: send_token: writing %d bytes to %s\n", len,
 	rc->hostname));
 
     assert(sizeof(netlength) == 4);
@@ -1092,7 +1092,7 @@ recv_token(rc, timeout)
 	break;
     }
 
-    rshprintf(("rsh: recv_token: read %d bytes from %s\n", rc->pktlen,
+    rshprintf(("rsh: recv_token: read %ld bytes from %s\n", rc->pktlen,
 	rc->hostname));
     return (rc->pktlen);
 }
