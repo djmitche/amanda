@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.37 2000/12/30 18:29:24 martinea Exp $
+ * $Id: diskfile.c,v 1.38 2001/01/08 02:02:01 martinea Exp $
  *
  * read disklist file
  */
@@ -586,30 +586,74 @@ disk_t *dp;
 		     NULL);
 }
 
-
+ 
 void match_disklist(disklist_t *origqp, int sargc, char **sargv)
 {
+    char *prevhost = NULL;
+    int i;
+    int match_a_host;
+    int match_a_disk;
+    int prev_match;
+    disk_t *dp;
 
-    if(sargc > 0) {
-	disk_t *dp;
+    for(dp = origqp->head; dp != NULL; dp = dp->next) {
+	if(dp->todo == 1)
+	    dp->todo = -1;
+    }
+
+    prev_match = 0;
+    for(i=0;i<sargc;i++) {
+	match_a_host = 0;
 	for(dp = origqp->head; dp != NULL; dp = dp->next) {
-	    int c;
-	    int matched=0;
-	    host_t *hostp = dp->host;
-
-	    for(c=0;c<sargc && matched==0;c+=2) {
-		if(match_host(sargv[c], hostp->hostname)) {
-		    if(c+1>=sargc || match_disk(sargv[c+1], dp->name)) {
-			matched=1;
-			break;
+	    if(match_host(sargv[i], dp->host->hostname))
+		match_a_host = 1;
+	}
+	match_a_disk = 0;
+	for(dp = origqp->head; dp != NULL; dp = dp->next) {
+	    if(prevhost != NULL &&
+	       match_host(prevhost, dp->host->hostname) &&
+	       match_disk(sargv[i], dp->name)) {
+		if(match_a_host) {
+		    error("Argument %s match a host and a disk",sargv[i]);
+		}
+		else {
+		    if(dp->todo == -1) {
+			dp->todo = 1;
+			match_a_disk = 1;
+			prev_match = 0;
 		    }
 		}
 	    }
-
-	    if(!matched) {
-		dp->todo = 0;
+	}
+	if(!match_a_disk) {
+	    if(match_a_host == 1) {
+		if(prev_match == 1) { /* all disk of the previous host */
+		    for(dp = origqp->head; dp != NULL; dp = dp->next) {
+			if(match_host(prevhost,dp->host->hostname))
+			    if(dp->todo == -1)
+				dp->todo = 1;
+		    }
+		}
+		prevhost = sargv[i];
+		prev_match = 1;
+	    }
+	    else {
+		/* Matched nothing */
 	    }
 	}
+    }
+
+    if(prev_match == 1) { /* all disk of the previous host */
+	for(dp = origqp->head; dp != NULL; dp = dp->next) {
+	    if(match_host(prevhost,dp->host->hostname))
+		if(dp->todo == -1)
+		    dp->todo = 1;
+	}
+    }
+
+    for(dp = origqp->head; dp != NULL; dp = dp->next) {
+	if(dp->todo == -1)
+	    dp->todo = 0;
     }
 }
 
