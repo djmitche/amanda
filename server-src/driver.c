@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.27 1998/01/26 21:16:23 jrj Exp $
+ * $Id: driver.c,v 1.28 1998/01/30 01:38:21 blair Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1285,6 +1285,19 @@ disk_t *dp;
 	   dp->host->hostname, dp->name);
     fflush(stdout);
 
+    /* pick a dumper and fail if there are no idle dumpers */
+
+    dumper = idle_dumper();
+    if (!dumper) {
+	printf("driver: no idle dumpers for %s:%s.\n", 
+		dp->host->hostname, dp->name);
+	fflush(stdout);
+	log(L_WARNING, "no idle dumpers for %s:%s.\n",
+		dp->host->hostname, dp->name);
+	inside_dump_to_tape = 0;
+	return 2;	/* fatal problem */
+    }
+
     /* tell the taper to read from a port number of its choice */
 
     taper_cmd(PORT_WRITE, dp, NULL, sched(dp)->level);
@@ -1300,9 +1313,8 @@ disk_t *dp;
     strncpy(sched(dp)->destname, argv[2], sizeof(sched(dp)->destname)-1);
     sched(dp)->destname[sizeof(sched(dp)->destname)-1] = '\0';
 
-    /* pick a dumper, then tell it to dump to a port */
+    /* tell the dumper to dump to a port */
 
-    dumper = idle_dumper();
     dumper_cmd(dumper, PORT_DUMP, dp);
 
     /* update statistics & print state */
