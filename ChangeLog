@@ -1,5 +1,10 @@
 2000-10-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/driver.c (handle_chunker_result): The dumpsize is
+	the third argument, not the fourth.
+
+2000-10-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/driver.c (handle_chunker_result): don't check
 	pending_aborts, call event_release() ob ABORT-FINISHED.
 

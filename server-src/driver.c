@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.99 2000/10/29 19:08:09 martinea Exp $
+ * $Id: driver.c,v 1.100 2000/10/29 21:28:13 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1236,7 +1236,7 @@ handle_chunker_result(cookie)
 	    waitpid(chunker->pid, NULL, 0 );
 	    chunker->fd = -1;
 
-	    sched(dp)->dumpsize = (long)atof(result_argv[4]);
+	    sched(dp)->dumpsize = (long)atof(result_argv[3]);
 
 	    dummy = 0;
 	    for( i = 0, h = sched(dp)->holdp; i < activehd; i++ ) {
