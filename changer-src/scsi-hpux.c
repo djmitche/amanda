@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-hpux.c,v 1.13 2000/11/26 15:55:45 martinea Exp $
+ * $Id: scsi-hpux.c,v 1.14 2001/02/08 19:19:08 ant Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -336,4 +336,5 @@ int CloseDevice(int DeviceFD)
   ret = close(DeviceFD);
   return(ret);
 }
+
 #endif

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-aix.c,v 1.12 2001/01/17 17:08:57 ant Exp $
+ * $Id: scsi-aix.c,v 1.13 2001/02/08 19:19:08 ant Exp $
  *
  * Interface to execute SCSI commands on an AIX System
  *
@@ -245,6 +245,14 @@ int Tape_Eject ( int DeviceFD)
 }
 
 int Tape_Status( int DeviceFD)
+{
+/*
+  Not yet
+*/
+  return(-1);
+}
+
+int ScanBus()
 {
 /*
   Not yet

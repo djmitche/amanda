@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-cam.c,v 1.4 2000/11/26 15:55:45 martinea Exp $
+ * $Id: scsi-cam.c,v 1.5 2001/02/08 19:19:08 ant Exp $
  *
  * Interface to execute SCSI commands on an system with cam support
  * Current support is for FreeBSD 4.x
@@ -322,6 +322,14 @@ int Tape_Eject ( int DeviceFD)
 int Tape_Status( int DeviceFD)
 {
 /* 
+  Not yet
+*/
+  return(-1);
+}
+
+int ScanBus()
+{
+/*
   Not yet
 */
   return(-1);
