@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.38 1997/09/26 11:24:37 george Exp $
+ * $Id: planner.c,v 1.39 1997/10/03 06:39:45 george Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1098,6 +1098,7 @@ disk_t *dp;
     }
     else {
 	fprintf(stderr,"(not due for a full dump, picking an incr level)\n");
+	/* XXX - if this returns -1 may be we should force a total? */
 	ep->dump_level = pick_inclevel(dp);
 	ep->dump_size = est_tape_size(dp, ep->dump_level);
     }
@@ -1204,6 +1205,13 @@ disk_t *dp;
     }
 
     base_size = est_size(dp, base_level);
+
+    /* if we didn't get an estimate, we can't do an inc */
+    if(base_size == -1) {
+	fprintf(stderr,"   picklev: no estimate for level %d, so no incs\n", base_level);
+	return -1;
+    }
+
     thresh = bump_thresh(base_level);
 
     fprintf(stderr,
