@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.21 2001/06/18 22:25:21 jrjackson Exp $
+ * $Id: dgram.c,v 1.22 2001/07/09 20:32:15 jrjackson Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -195,11 +195,13 @@ dgram_t *dgram;
 
     if(socket_opened) {
 	if(close(s) == -1) {
+	    save_errno = errno;
 	    dbprintf(("%s: dgram_send_addr: close(%s.%d): failed: %s\n",
 		      get_pname(),
 		      inet_ntoa(addr_save.sin_addr),
 		      (int) ntohs(addr.sin_port),
 		      strerror(save_errno)));
+	    errno = save_errno;
 	    return -1;
 	}
 	s = -1;
