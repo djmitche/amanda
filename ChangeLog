@@ -1,3 +1,12 @@
+2001-01-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/driverio.h (sched_t): new field no_space.
+	* server-src/driver.c (start_some_dumps): don't start a disk if
+	  no_space is set.
+	* server-src/driver.c (continue_dumps): set no_space if it's the
+	  only active dumpers, case c.
+	* server-src/driver.c (read_schedule): set no_space to 0.
+
 2001-01-23 John R. Jackson <jrj@purdue.edu>
 
 	* configure.in: Test for setmntent.
@@ -1396,7 +1405,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.440 2001/01/23 22:46:55 jrjackson Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.441 2001/01/24 04:02:31 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
