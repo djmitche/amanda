@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: versuff.c.in,v 1.6.4.1 1999/04/26 02:43:37 oliva Exp $
+ * $Id: versuff.c.in,v 1.6.4.1.2.1 2001/07/20 19:38:21 jrjackson Exp $
  *
  * provide amanda version number and suffix appended to program names
  */
@@ -56,9 +56,9 @@ char *
 version()
 {
 	static char *vsuff = NULL;
-	char major_str[32];
-	char minor_str[32];
-	char patch_str[32];
+	char major_str[NUM_STR_SIZE];
+	char minor_str[NUM_STR_SIZE];
+	char patch_str[NUM_STR_SIZE];
 
 	if(vsuff) return vsuff;			/* been here once already */
 
