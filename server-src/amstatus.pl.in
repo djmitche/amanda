@@ -100,13 +100,15 @@ $runq = 0;						# -w fodder
 $stoppedq = 0;					# -w fodder
 $wakeup = 0;					# -w fodder
 $idle_dumpers = 0;
-$status_driver = 0;
+$status_driver = "";
 $status_taper = 0;
 $qlen_tapeq = 0;
 $free_kps = 0;
 $free_space = 0;
 $estimate_done = 0;
 $holding_space = 0;
+$start_time = 0;
+@dumpers_active = ();
 
 while(<AMDUMP>) {
 	chomp;
@@ -174,54 +176,96 @@ while(<AMDUMP>) {
 			$degr_size{$hostpart}=32 if ($7 < 32);
 		}
 	}
+	elsif(/^driver: start time (\S+)/) {
+		$start_time=$1;
+		$current_time=$1;
+		$dumpers_active[0]=0;
+		$dumpers_time=$current_time;
+		$dumpers_active=0;
+	}
 	elsif(/^driver: adding holding disk \d+ dir \S+ size (\d+)/) {
 		$holding_space += $1;
 	}
-	elsif(/driver: send-cmd time (\S+) to dumper\d*: (FILE-DUMP|PORT-DUMP) (\d+-\d+) (\S+) (\S+) (\S+) (\d+)/) {
-		$host=$5;
-		$partition=$6;
+	elsif(/driver: send-cmd time (\S+) to (dumper\d*): (FILE-DUMP|PORT-DUMP) (\d+-\d+) (\S+) (\S+) (\S+) (\d+)/) {
+		$current_time=$1;
+		$host=$6;
+		$partition=$7;
 		$hostpart="$host$partition";
-		$serial=$3;
+		$serial=$4;
 		$dump_started{$hostpart}=1;
 		$dump_time{$hostpart}=$1;
 		$dump_finished{$hostpart}=0;
-		$holding_file{$hostpart}=$4;
-		if(     $level{$hostpart} != $7 &&
-		   $degr_level{$hostpart} == $7) {
+		$holding_file{$hostpart}=$5;
+		if(     $level{$hostpart} != $8 &&
+		   $degr_level{$hostpart} == $8) {
 			$level{$hostpart}=$degr_level{$hostpart};
 			$size{$hostpart} =$degr_size{$hostpart};
 			$esize{$hostpart}=$degr_size{$hostpart};
 		}
 		$serial{"$serial"}=$hostpart;
+		if(! defined($busy_time{$2})) {
+			$busy_time{$2}=0;
+		}
+		$dumpers_active[$dumpers_active]+=$current_time-$dumpers_time;
+		$dumpers_active++;
+		if(! defined($dumpers_active[$dumpers_active])) {
+			$dumpers_active[$dumpers_active]=0;
+		}
+		$dumpers_time=$current_time;
+		if(defined($dumpers_idle_time)) {
+			$dumpers_idle{$status_driver}
+				+=$current_time-$dumpers_idle_time;
+		}
+		undef($dumpers_idle_time);
 	}
-	elsif(/driver: result time (\S+) from dumper\d+: FAILED (\d+-\d+) (.*)/) {
-		$serial=$2;
-		$error=$3;
+	elsif(/driver: result time (\S+) from (dumper\d+): FAILED (\d+-\d+) (.*)/) {
+		$current_time=$1;
+		$serial=$3;
+		$error=$4;
 		$hostpart=$serial{$serial};
 		$dump_finished{$hostpart}=-1;
+		$busy_time{$2}+=($1-$dump_time{$hostpart});
 		$dump_time{$hostpart}=$1;
 		$error{$hostpart}=$error;
+		$dumpers_active[$dumpers_active]+=$current_time-$dumpers_time;
+		$dumpers_active--;
+		$dumpers_time=$current_time;
+		$dumpers_idle_time=$current_time if ($dumpers_active == 0);
 	}
-	elsif(/driver: result time (\S+) from dumper\d+: TRY-AGAIN (\d+-\d+) (.*)/) {
-		$serial=$2;
-		$error=$3;
+	elsif(/driver: result time (\S+) from (dumper\d+): TRY-AGAIN (\d+-\d+) (.*)/) {
+		$current_time=$1;
+		$serial=$3;
+		$error=$4;
 		$hostpart=$serial{$serial};
 		$dump_finished{$hostpart}=-1;
+		$busy_time{$2}+=($1-$dump_time{$hostpart});
 		$dump_time{$hostpart}=$1;
 		$error{$hostpart}=$error;
+		$dumpers_active[$dumpers_active]+=$current_time-$dumpers_time;
+		$dumpers_active--;
+		$dumpers_time=$current_time;
+		$dumpers_idle_time=$current_time if ($dumpers_active == 0);
 	}
-	elsif(/driver: result time (\S+) from dumper\d+: DONE (\d+-\d+) (\d+) (\d+) (\d+) \[.*\]/) {
-		$serial=$2;
-		$origsize=$3;
-		$outputsize=$4;
+	elsif(/driver: result time (\S+) from (dumper\d+): DONE (\d+-\d+) (\d+) (\d+) (\d+) \[.*\]/) {
+		$current_time=$1;
+		$serial=$3;
+		$origsize=$4;
+		$outputsize=$5;
 		$hostpart=$serial{$serial};
 		$size{$hostpart}=$outputsize;
 		$dump_finished{$hostpart}=1;
+		$busy_time{$2}+=($1-$dump_time{$hostpart});
 		$dump_time{$hostpart}=$1;
+		$dumpers_active[$dumpers_active]+=$current_time-$dumpers_time;
+		$dumpers_active--;
+		$dumpers_time=$current_time;
+		$dumpers_idle_time=$current_time if ($dumpers_active == 0);
 	}
 	elsif(/driver: finished-cmd time (\S+) dumper\d+ dumped (\S+):(\S+)/){
+		$current_time=$1;
 	}
 	elsif(/driver: send-cmd time (\S+) to taper: FILE-WRITE (\d+-\d+) (\S+) (\S+) (\S+) \d*/){
+		$current_time=$1;
 		$serial=$2;
 		$host=$4;
 		$partition=$5;
@@ -232,6 +276,7 @@ while(<AMDUMP>) {
 		$taper_time{$hostpart}=$1;
 	}
 	elsif(/driver: send-cmd time (\S+) to taper: PORT-WRITE (\d+-\d+) (\S+) (\S+) \d*( \d*|)/){
+		$current_time=$1;
 		$serial=$2;
 		$host=$3;
 		$partition=$4;
@@ -242,17 +287,21 @@ while(<AMDUMP>) {
 		$taper_time{$hostpart}=$1;
 	}
 	elsif(/driver: result time (\S+) from taper: DONE (\d+-\d+) (\S+)/) {
+		$current_time=$1;
 		$serial=$2;
 		$label=$3;
 		$hostpart=$serial{$serial};
 		$taper_finished{$hostpart}=1;
+		$busy_time{"taper"}+=($1-$taper_time{$hostpart});
 		$taper_time{$hostpart}=$1;
 	}
 	elsif(/driver: result time (\S+) from taper: TAPE-ERROR (\d+-\d+) (.+)/) {
+		$current_time=$1;
 		$serial=$2;
 		$error=$3;
 		$hostpart=$serial{$serial};
 		$taper_finished{$hostpart}=-1;
+		$busy_time{"taper"}+=($1-$taper_time{$hostpart});
 		$taper_time{$hostpart}=$1;
 		$error{$hostpart}=$error;
 	}
@@ -268,6 +317,7 @@ while(<AMDUMP>) {
 		$start_degraded_mode=1;
 	}
 	elsif(/driver: state time (\S+) free kps: (\d+) space: (\d+) taper: (\S+) idle-dumpers: (\d+) qlen tapeq: (\d+) runq: (\d+) stoppedq: (\d+) wakeup: (\d+) driver-idle: (\S+)/) {
+		$current_time=$1;
 		$free_kps=$2;
 		$free_space=$3;
 		$status_taper=$4;
@@ -277,6 +327,14 @@ while(<AMDUMP>) {
 		$stoppedq=$8;
 		$wakeup=$9;
 		$status_driver=$10;
+		if($dumpers_active == 0) {
+			if(! defined($dumpers_idle{$status_driver})) {
+				$dumpers_idle{$status_driver}=0;
+			}
+			$dumpers_idle{$status_driver}
+				+=$current_time-$dumpers_idle_time;
+			$dumpers_idle_time=$current_time;
+		}
 	}
 }
 
@@ -549,6 +607,36 @@ if (defined $opt_summary) {
 	printf "network free kps: %8d\n", $free_kps;
 	printf "holding space   : %8dk (%6.2f%%)\n", $free_space,
 		$holding_space ? ($free_space * 1.0 / $holding_space) * 100 : 0.0;
+	if(defined($current_time)) {
+		$total_time=$current_time-$start_time;
+		foreach $key (sort keys %busy_time) {
+			printf "%8s busy   : %8s  (%6.2f%%)\n",
+				$key, &busytime($busy_time{$key}),
+				($busy_time{$key} * 1.0 / $total_time) * 100;
+		}
+		for ($d = 0; $d <= $#dumpers_active; $d++) {
+			$l = sprintf "%2d dumper%s busy%s : %8s  (%6.2f%%)",
+				$d, ($d == 1) ? "" : "s", ($d == 1) ? " " : "",
+				&busytime($dumpers_active[$d]),
+				($dumpers_active[$d] * 1.0 / $total_time) * 100;
+			print $l;
+			$s1 = "";
+			if($d == 0) {
+				$s2 = " " x length($l);
+				foreach $key (sort keys %dumpers_idle) {
+					printf "%s%20s: %8s  (%6.2f%%)\n",
+						$s1,
+						$key,
+						&busytime($dumpers_idle{$key}),
+						($dumpers_idle{$key} * 1.0 / $dumpers_active[$d]) * 100;
+					$s1 = $s2;
+				}
+			}
+			if ($s1 eq "") {
+				print "\n";
+			}
+		}
+	}
 }
 
 sub dump_size() {
@@ -651,6 +739,26 @@ sub showtime() {
 		$result="";
 	}
 	$result.=sprintf("%d:%02d:%02d",$now[2],$now[1],$now[0]);
+	return $result;
+}
+
+sub busytime() {
+	my($busy)=shift;
+	my($oneday)=24*60*60;
+
+	if($busy > $oneday) {
+		$days=int($busy/$oneday);
+		$result=sprintf("%d+",$busy/$oneday);
+		$busy-=$days*$oneday;
+	} else {
+		$result="";
+	}
+	$hours=int($busy/60/60);
+	$busy-=$hours*60*60;
+	$minutes=int($busy/60);
+	$busy-=$minutes*60;
+	$seconds=$busy;
+	$result.=sprintf("%d:%02d:%02d",$hours,$minutes,$seconds);
 	return $result;
 }
 

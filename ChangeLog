@@ -1,5 +1,11 @@
 1998-12-18  John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/amstatus.pl.in: add statistics about how much time
+	taper and each dumper is busy, how much time N dumpers are busy
+	and why no dumpers were busy.
+
+1998-12-18  John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/amstatus.pl.in: fix two perl warnings.
 
 1998-12-18  John R. Jackson  <jrj@purdue.edu>
