@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.94 2001/07/19 23:02:28 jrjackson Exp $
+ * $Id: amanda.h,v 1.95 2001/07/31 23:19:57 jrjackson Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -394,9 +394,18 @@ extern FILE *  debug_fp P((void));
 #define KAMANDA_SERVICE_DEFAULT	10081
 #endif
 
-/* Size of a tape block in kbytes.  Do not change lightly.  */
-#define TAPE_BLOCK_SIZE 32
-#define TAPE_BLOCK_BYTES (TAPE_BLOCK_SIZE*1024)
+#define am_round(v,u)	((((v) + (u) - 1) / (u)) * (u))
+#define am_floor(v,u)	(((v) / (u)) * (u))
+
+/* Holding disk block size.  Do not even think about changint this!  :-) */
+#define DISK_BLOCK_KB		32
+#define DISK_BLOCK_BYTES	(DISK_BLOCK_KB * 1024)
+
+/* Maximum size of a tape block in kbytes. */
+#if !defined(MAX_TAPE_BLOCK_KB)
+#define MAX_TAPE_BLOCK_KB (4 * 1024)			/* 4 MBytes */
+#endif
+#define MAX_TAPE_BLOCK_BYTES (MAX_TAPE_BLOCK_KB*1024)
 
 /* Define miscellaneous amanda functions.  */
 #define ERR_INTERACTIVE	1
@@ -481,11 +490,12 @@ extern char  *newvstralloc    P((char *oldstr, const char *newstr, ...));
 #define	newstralloc2(p,s1,s2) newvstralloc((p),(s1),(s2),NULL)
 
 extern int amtable_alloc      P((void **table,
+				 int *current,
 				 size_t elsize,
 				 int count,
-				 int *current,
 				 int bump,
 				 void (*init_func)(void *)));
+extern void amtable_free      P((void **table, int *current));
 
 extern uid_t  client_uid;
 extern gid_t  client_gid;

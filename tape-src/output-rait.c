@@ -122,9 +122,9 @@ static int rait_table_count;
  * amtable_alloc -- (re)allocate enough space for some number of elements.
  *
  * input:	table -- pointer to pointer to table
+ *		current -- pointer to current number of elements
  *		elsize -- size of a table element
  *		count -- desired number of elements
- *		current -- pointer to current number of elements
  *		bump -- round up factor
  * output:	table -- possibly adjusted to point to new table area
  *		current -- possibly adjusted to new number of elements
@@ -132,9 +132,9 @@ static int rait_table_count;
 
 static int
 amtable_alloc(void **table,
+	      int *current,
 	      size_t elsize,
 	      int count,
-	      int *current,
 	      int bump,
 	      int dummy) {
     void *table_new;
@@ -159,12 +159,30 @@ amtable_alloc(void **table,
     }
     return 0;
 }
+
+/*
+ * amtable_free -- release a table.
+ *
+ * input:	table -- pointer to pointer to table
+ *		current -- pointer to current number of elements
+ * output:	table -- possibly adjusted to point to new table area
+ *		current -- possibly adjusted to new number of elements
+ */
+
+void
+amtable_free(table, current)
+    void **table;
+    int *current;
+{
+    amfree(*table);
+    *current = 0;
+}
 #endif
 
 #define rait_table_alloc(fd)	amtable_alloc((void **)&rait_table,	\
+					      &rait_table_count,	\
 					      sizeof(*rait_table),	\
 					      (fd),			\
-					      &rait_table_count,	\
 					      10,			\
 					      NULL)
 
@@ -176,7 +194,6 @@ rait_open(char *dev, int flags, int mask) {
     char *dev_right;		/* string after } */
     char *dev_next;		/* string inside {} */
     char *dev_real;		/* parsed device name */
-    int fd_count;		/* number of file descriptors allocated */
     int rait_flag;		/* true if RAIT syntax in dev */
     int save_errno;
     int r;
@@ -207,7 +224,7 @@ rait_open(char *dev, int flags, int mask) {
 	return fd;
     }
 
-    if(0 != rait_table_alloc(fd)) {
+    if(0 != rait_table_alloc(fd + 1)) {
 	save_errno = errno;
 	(void)tapefd_close(fd);
 	errno = save_errno;
@@ -222,7 +239,7 @@ rait_open(char *dev, int flags, int mask) {
     memset(res, 0, sizeof(*res));
     res->nopen = 1;
 
-    fd_count = 0;
+    res->fd_count = 0;
     if (rait_flag) {
 
 	/* copy and parse the dev string so we can scribble on it */
@@ -242,9 +259,9 @@ rait_open(char *dev, int flags, int mask) {
 
 	while (0 != (dev_real = tapeio_next_devname(dev_left, dev_right, &dev_next))) {
 	    r = amtable_alloc((void **)&res->fds,
+			    &res->fd_count,
 			    sizeof(*res->fds),
-			    res->nfds,
-			    &fd_count,
+			    res->nfds + 1,
 			    10,
 			    NULL);
 	    if (0 != r) {
@@ -278,11 +295,11 @@ rait_open(char *dev, int flags, int mask) {
 	** come in here again
 	*/
 
-	res->nfds = 1;
+	res->nfds = 0;
 	r = amtable_alloc((void **)&res->fds,
+			  &res->fd_count,
 			  sizeof(*res->fds),
-			  res->nfds,
-			  &fd_count,
+			  res->nfds + 1,
 			  1,
 			  NULL);
 	if (0 != r) {
@@ -291,7 +308,8 @@ rait_open(char *dev, int flags, int mask) {
 	    errno = ENOMEM;
 	    fd = -1;
 	} else {
-	    res->fds[0] = fd;
+	    res->fds[res->nfds] = fd;
+	    res->nfds++;
 	}
     }
 
@@ -446,16 +464,13 @@ rait_close(int fd) {
 	(void)close(fd);	/* close the dummy /dev/null descriptor */
     }
     if (0 != pr->fds) {
-	amfree(pr->fds);
-	pr->fds = 0;
+	amtable_free((void **)&pr->fds, &pr->fd_count);
     }
     if (0 != pr->readres) {
 	amfree(pr->readres);
-	pr->readres = 0;
     }
     if (0 != pr->xorbuf) {
 	amfree(pr->xorbuf);
-	pr->xorbuf = 0;
     }
     pr->nopen = 0;
     errno = save_errno;

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.70 2001/07/19 22:20:37 jrjackson Exp $
+/* $Id: taper.c,v 1.71 2001/07/31 23:19:58 jrjackson Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -84,7 +84,8 @@ int conf_tapebufs;
 
 typedef struct buffer_s {
     long status;
-    char buffer[TAPE_BLOCK_BYTES];
+    unsigned int size;
+    char *buffer;
 } buffer_t;
 
 #define nextbuf(p)    ((p) == buftable+conf_tapebufs-1? buftable : (p)+1)
@@ -96,8 +97,8 @@ void file_reader_side P((int rdpipe, int wrpipe));
 void tape_writer_side P((int rdpipe, int wrpipe));
 
 /* shared-memory routines */
-buffer_t *attach_buffers P((void));
-void detach_buffers P((buffer_t *bufp));
+char *attach_buffers P((unsigned int size));
+void detach_buffers P((char *bufp));
 void destroy_buffers P((void));
 
 /* synchronization pipe routines */
@@ -129,7 +130,8 @@ int bufdebug = 1;
 int bufdebug = 0;
 #endif
 
-buffer_t *buftable;
+char *buffers = NULL;
+buffer_t *buftable = NULL;
 
 char *procname = "parent";
 
@@ -140,6 +142,10 @@ char *errstr = NULL;
 int tape_fd = -1;
 char *tapedev = NULL;
 char *tapetype = NULL;
+tapetype_t *tt = NULL;
+long tt_blocksize;
+long tt_blocksize_kb;
+int pad_tape_blocksize;
 static unsigned long malloc_hist_1, malloc_size_1;
 static unsigned long malloc_hist_2, malloc_size_2;
 char *config_name = NULL;
@@ -164,6 +170,8 @@ char **main_argv;
     int p2c[2], c2p[2];		/* parent-to-child, child-to-parent pipes */
     char *conffile;
     int fd;
+    unsigned int size;
+    int i;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -230,6 +238,7 @@ char **main_argv;
 
     tapedev	= getconf_str(CNF_TAPEDEV);
     tapetype    = getconf_str(CNF_TAPETYPE);
+    tt		= lookup_tapetype(tapetype);
 #ifdef HAVE_LIBVTBLC
     rawtapedev = getconf_str(CNF_RAWTAPEDEV);
 #endif /* HAVE_LIBVTBLC */
@@ -238,6 +247,16 @@ char **main_argv;
 
     runtapes	= getconf_int(CNF_RUNTAPES);
     cur_tape	= 0;
+
+    conf_tapebufs = getconf_int(CNF_TAPEBUFS);
+
+    if((tt_blocksize_kb = tt->blocksize) < 0) {
+	pad_tape_blocksize = 1;
+	tt_blocksize_kb = -tt_blocksize_kb;
+    } else {
+	pad_tape_blocksize = 0;
+    }
+    tt_blocksize = tt_blocksize_kb * 1024;
 
     if(interactive) {
 	fprintf(stderr,"taper: running in interactive test mode\n");
@@ -251,7 +270,26 @@ char **main_argv;
 
     /* create shared memory segment */
 
-    buftable = attach_buffers();
+    while(conf_tapebufs > 0) {
+	size = conf_tapebufs * tt_blocksize + conf_tapebufs * sizeof(buffer_t);
+	if((buffers = attach_buffers(size)) != NULL) {
+	    break;
+	}
+	log_add(L_INFO, "attach_buffers: (%d tapebuf%s: %d bytes) %s",
+			conf_tapebufs,
+			(conf_tapebufs == 1) ? "" : "s",
+			size,
+			strerror(errno));
+	conf_tapebufs--;
+    }
+    if(buffers == NULL) {
+	error("cannot allocate shared memory");
+    }
+    buftable = (buffer_t *)(buffers + conf_tapebufs * tt_blocksize);
+    memset(buftable, 0, conf_tapebufs * sizeof(buffer_t));
+    for(i = 0; i < conf_tapebufs; i++) {
+	buftable[i].buffer = buffers + i * tt_blocksize;
+    }
 
     /* fork off child writer process, parent becomes reader process */
 
@@ -287,7 +325,7 @@ char **main_argv;
 void read_file P((int fd, char *handle,
 		  char *host, char *disk, char *datestamp, 
 		  int level, int port_flag));
-int taper_fill_buffer P((int fd, char *buffer, int size));
+int taper_fill_buffer P((int fd, buffer_t *bp, int buflen));
 void dumpbufs P((char *str1));
 void dumpstatus P((buffer_t *bp));
 
@@ -374,9 +412,7 @@ int rdpipe, wrpipe;
 	    datestamp = stralloc(cmdargs.argv[6]);
 
 	    data_port = 0;
-	    data_socket = stream_server(&data_port,
-					DEFAULT_SIZE,
-					STREAM_BUFSIZE);	
+	    data_socket = stream_server(&data_port, -1, STREAM_BUFSIZE);	
 	    if(data_socket < 0) {
 		char *m;
 
@@ -396,7 +432,7 @@ int rdpipe, wrpipe;
 	    putresult(PORT, "%d\n", data_port);
 
 	    if((fd = stream_accept(data_socket, CONNECT_TIMEOUT,
-				   DEFAULT_SIZE, sizeof(buftable->buffer))) == -1) {
+				   -1, NETWORK_BLOCK_BYTES)) == -1) {
 		q = squote("[port connect timeout]");
 		putresult(TAPE_ERROR, "%s %s\n", handle, q);
 		amfree(q);
@@ -467,7 +503,7 @@ int rdpipe, wrpipe;
 		fflush(stderr);
 	    }
 
-	    detach_buffers(buftable);
+	    detach_buffers(buffers);
 	    destroy_buffers();
 	    if (datestamp != NULL)
 		amfree(datestamp);
@@ -530,7 +566,7 @@ buffer_t *bp;
 {
     char pn[2];
     char bt[NUM_STR_SIZE];
-    char status[NUM_STR_SIZE];
+    char status[NUM_STR_SIZE + 1];
     char *str = NULL;
 
     pn[0] = procname[0];
@@ -538,7 +574,8 @@ buffer_t *bp;
     snprintf(bt, sizeof(bt), "%d", (int)(bp-buftable));
 
     switch(bp->status) {
-    case FULL:		status[0] = 'F'; status[1] = '\0'; break;
+    case FULL:		snprintf(status, sizeof(status), "F%d", bp->size);
+			break;
     case FILLING:	status[0] = 'f'; status[1] = '\0'; break;
     case EMPTY:		status[0] = 'E'; status[1] = '\0'; break;
     default:
@@ -564,6 +601,7 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
     char *strclosing = NULL;
     char *str;
     int header_read = 0;
+    int buflen;
     dumpfile_t file;
 
     char *q = NULL;
@@ -588,10 +626,10 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 
     for(bp = buftable; bp < buftable + conf_tapebufs; bp++) {
 	bp->status = EMPTY;
-	if(interactive || bufdebug) dumpstatus(bp);
     }
 
     bp = buftable;
+    if(interactive || bufdebug) dumpstatus(bp);
 
     /* tell writer to open tape */
 
@@ -668,83 +706,86 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 	    }
 
 	    bp->status = FILLING;
+	    buflen = header_read ? tt_blocksize : DISK_BLOCK_BYTES;
 	    if(interactive || bufdebug) dumpstatus(bp);
-	    if((rc = taper_fill_buffer(fd, bp->buffer, 
-				       sizeof(bp->buffer))) < 0) {
-		err = (rc < 0)? errno : 0;
+	    if((rc = taper_fill_buffer(fd, bp, buflen)) < 0) {
+		err = errno;
 		closing = 1;
 		strclosing = newvstralloc(strclosing,"Can't read data: ",NULL);
 		syncpipe_put('C');
-	    }
-	    else {
+	    } else {
 		if(rc == 0) { /* switch to next file */
 		    int save_fd;
+
 		    save_fd = fd;
 		    close(fd);
-		    if(file.cont_filename[0] == '\0' ||  /* no more file */
-		       strlen(file.cont_filename) ==0) { /* no more file */
+		    if(file.cont_filename[0] == '\0') {	/* no more file */
 			err = 0;
 			closing = 1;
 			syncpipe_put('C');
-		    }
-		    else if((fd = open(file.cont_filename,O_RDONLY)) == -1) {
+		    } else if((fd = open(file.cont_filename,O_RDONLY)) == -1) {
 			err = errno;
 			closing = 1;
 			strclosing = newvstralloc(strclosing,"can't open: ",file.cont_filename,NULL);
 			syncpipe_put('C');
-			rc = 0;
-		    }
-		    else if((fd != save_fd) && dup2(fd, save_fd) == -1) {
+		    } else if((fd != save_fd) && dup2(fd, save_fd) == -1) {
 			err = errno;
 			closing = 1;
 			strclosing = newvstralloc(strclosing,"can't dup2: ",file.cont_filename,NULL);
 			syncpipe_put('C');
-		    }
-		    else {
+		    } else {
 			if(fd != save_fd) {
 			    close(fd);
 			    fd = save_fd;
 			}
-			if((rc = taper_fill_buffer(fd, bp->buffer, 
-						   sizeof(bp->buffer))) <= 0) {
-			    err = (rc < 0)? errno : 0;
+			rc = taper_fill_buffer(fd, bp, DISK_BLOCK_BYTES);
+			if(rc <= 0) {
+			    err = (rc < 0) ? errno : 0;
 			    closing = 1;
-			    strclosing = newvstralloc(strclosing,"Can't read header: ",file.cont_filename,NULL);
+			    strclosing = newvstralloc(strclosing,
+						      "Can't read header: ",
+						      file.cont_filename,
+						      NULL);
 			    syncpipe_put('C');
-			}
-			else {
+			} else {
 			    parse_file_header(bp->buffer, &file, rc);
 
-			    if((rc = taper_fill_buffer(fd, bp->buffer, 
-						   sizeof(bp->buffer))) <= 0) {
-				err = (rc < 0)? errno : 0;
+			    rc = taper_fill_buffer(fd, bp, tt_blocksize);
+			    if(rc <= 0) {
+				err = (rc < 0) ? errno : 0;
 				closing = 1;
-				if(rc<0)
-			    	    strclosing = newvstralloc(strclosing,"Can't read data: ",NULL);
+				if(rc < 0) {
+			    	    strclosing = newvstralloc(strclosing,
+							      "Can't read data: ",
+							      file.cont_filename,
+							      NULL);
+				}
 				syncpipe_put('C');
 			    }
 			}
 		    }
 		}
 		if(rc > 0) {
+		    bp->status = FULL;
 		    if(header_read == 0) {
 			char *cont_filename;
 
 			parse_file_header(bp->buffer, &file, rc);
 			cont_filename = stralloc(file.cont_filename);
-			memset(file.cont_filename,'\0',sizeof(file.cont_filename));
-			write_header(bp->buffer,&file,rc);
+			file.cont_filename[0] = '\0';
+			build_header(bp->buffer, &file, rc, tt_blocksize);
 
-			/* add CONT_FILENAME to header */
+			/* add CONT_FILENAME back to in-memory header */
 			strncpy(file.cont_filename, cont_filename, 
 				sizeof(file.cont_filename));
+			if(interactive || bufdebug) dumpstatus(bp);
+			bp->size = tt_blocksize; /* output a full tape block */
 			header_read = 1;
 		    }
-		    bp->status = FULL;
 		    if(interactive || bufdebug) dumpstatus(bp);
-			filesize += rc / 1024;
+		    filesize += am_round(rc, 1024) / 1024;
 		    if(bufdebug) {
-			fprintf(stderr,"taper: r: put W%d\n",(int)(bp-buftable));
+			fprintf(stderr,"taper: r: put W%d\n",(bp-buftable));
 			fflush(stderr);
 		    }
 		    syncpipe_put('W');
@@ -816,7 +857,7 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 		char kps_str[NUM_STR_SIZE];
 		double rt;
 
-		filesize -= TAPE_BLOCK_SIZE;
+		filesize -= tt_blocksize_kb;
 		rt = runtime.r.tv_sec+runtime.r.tv_usec/1000000.0;
 		snprintf(kb_str, sizeof(kb_str), "%ld", filesize);
 		snprintf(kps_str, sizeof(kps_str), "%3.1f",
@@ -905,39 +946,42 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
     }
 }
 
-int taper_fill_buffer(fd, buffer, size)
-int fd, size;
-char *buffer;
+int taper_fill_buffer(fd, bp, buflen)
+int fd;
+buffer_t *bp;
+int buflen;
 {
-    int cnt;
+    char *curptr;
+    int spaceleft, cnt;
 
-    cnt = fullread(fd, buffer, size);
-    switch (cnt) {
-    case 0:	/* eof */
-	if (interactive)
-	    fputs("r0", stderr);
-	return (0);
-    case -1:	/* error on read, punt */
-	if (interactive)
-	    fputs("rE", stderr);
-	return (-1);
-    default:
-	assert(cnt <= size);
-	if (cnt < size) {
-	    /* partial buffer, zero rest */
-	    memset(buffer + cnt, '\0', size - cnt);
-	    if (interactive)
-		fputs("rP", stderr);
-	} else {
-	    /* filled buffer */
-	    if (interactive)
-		fputs("R", stderr);
+    curptr = bp->buffer;
+    bp->size = 0;
+    spaceleft = buflen;
+
+    do {
+	cnt = read(fd, curptr, spaceleft);
+	switch(cnt) {
+	case 0:	/* eof */
+	    if(interactive) fputs("r0", stderr);
+	    if(pad_tape_blocksize && curptr > bp->buffer) {
+		memset(curptr, 0, spaceleft);
+		bp->size += spaceleft;
+	    }
+	    return bp->size;
+	case -1:	/* error on read, punt */
+	    if(interactive) fputs("rE", stderr);
+	    return -1;
+	default:
+	    spaceleft -= cnt;
+	    curptr += cnt;
+	    bp->size += cnt;
 	}
-	return (size);
-    }
-    /* NOTREACHED */
-}
 
+    } while(spaceleft > 0);
+
+    if(interactive) fputs("R", stderr);
+    return bp->size;
+}
 
 
 /*
@@ -1101,7 +1145,6 @@ void write_file()
 	    fflush(stderr);
 	}
 	syncpipe_put('R'); syncpipe_putint(i);
-
     }
 
     /*
@@ -1265,8 +1308,8 @@ buffer_t *bp;
     assert(bp->status == FULL);
 
     startclock();
-    rc = tapefd_write(tape_fd, bp->buffer, sizeof(bp->buffer));
-    if(rc == sizeof(bp->buffer)) {
+    rc = tapefd_write(tape_fd, bp->buffer, bp->size);
+    if(rc == bp->size) {
 #if defined(NEED_RESETOFS)
 	static double tape_used_modulus_2gb = 0;
 
@@ -1289,13 +1332,12 @@ buffer_t *bp;
 	if(interactive) fputs("W", stderr);
 
 	if(bufdebug) {
-	    fprintf(stderr, "taper: w: put R%d\n", (int)(bp-buftable));
+	    fprintf(stderr, "taper: w: put R%d\n", (bp-buftable));
 	    fflush(stderr);
 	}
 	syncpipe_put('R'); syncpipe_putint(bp-buftable);
 	return 1;
-    }
-    else {
+    } else {
 	errstr = newvstralloc(errstr,
 			      "writing file: ",
 			      (rc != -1) ? "short write" : strerror(errno),
@@ -1317,20 +1359,23 @@ buffer_t *bp;
 
 int shmid = -1;
 
-buffer_t *attach_buffers()
+char *attach_buffers(size)
+    unsigned int size;
 {
-    buffer_t *result;
+    char *result;
 
-    conf_tapebufs = getconf_int(CNF_TAPEBUFS);
-    shmid = shmget(IPC_PRIVATE, sizeof(buffer_t)*conf_tapebufs, IPC_CREAT|0700);
-    
-    if(shmid == -1)
-	error("shmget: (%d tapebufs) %s", sizeof(buffer_t)*conf_tapebufs,strerror(errno));
+    shmid = shmget(IPC_PRIVATE, size, IPC_CREAT|0700);
+    if(shmid == -1) {
+	return NULL;
+    }
 
-    result = (buffer_t *)shmat(shmid, (SHM_ARG_TYPE *)NULL, 0);
+    result = (char *)shmat(shmid, (SHM_ARG_TYPE *)NULL, 0);
 
-    if(result == (buffer_t *)-1) {
+    if(result == (char *)-1) {
+	int save_errno = errno;
+
 	destroy_buffers();
+	errno = save_errno;
 	error("shmat: %s", strerror(errno));
     }
 
@@ -1339,17 +1384,19 @@ buffer_t *attach_buffers()
 
 
 void detach_buffers(bufp)
-     buffer_t *bufp;
+    char *bufp;
 {
-    if(shmdt((SHM_ARG_TYPE *)bufp) == -1)
+    if(shmdt((SHM_ARG_TYPE *)bufp) == -1) {
 	error("shmdt: %s", strerror(errno));
+    }
 }
 
 void destroy_buffers()
 {
     if(shmid == -1) return;	/* nothing to destroy */
-    if(shmctl(shmid, IPC_RMID, NULL) == -1)
+    if(shmctl(shmid, IPC_RMID, NULL) == -1) {
 	error("shmctl: %s", strerror(errno));
+    }
 }
 
 #else
@@ -1369,37 +1416,40 @@ void destroy_buffers()
 #endif
 
 int shmfd = -1;
+unsigned int saved_size;
 
-buffer_t *attach_buffers()
+char *attach_buffers(size)
+    unsigned int size;
 {
-    buffer_t *shmbuf;
+    char *shmbuf;
 
-    conf_tapebufs = getconf_int(CNF_TAPEBUFS);
 #ifdef ZERO_FILE
     shmfd = open(ZERO_FILE, O_RDWR);
-    if(shmfd == -1)
+    if(shmfd == -1) {
 	error("attach_buffers: could not open %s: %s",
-	      ZERO_FILE, strerror(errno));
+	      ZERO_FILE,
+	      strerror(errno));
+    }
 #endif
 
-    shmbuf = (buffer_t *) mmap((void *) 0,
-			       sizeof(buffer_t)*conf_tapebufs,
-			       PROT_READ|PROT_WRITE,
-			       MAP_ANON|MAP_SHARED,
-			       shmfd, 0);
-    if((long)shmbuf == -1)
-	error("attach_buffer: mmap: %s", strerror(errno));
+    saved_size = size;
+    shmbuf = (char *) mmap((void *) 0,
+			   size,
+			   PROT_READ|PROT_WRITE,
+			   MAP_ANON|MAP_SHARED,
+			   shmfd, 0);
 
     return shmbuf;
 }
 
 void detach_buffers(bufp)
-buffer_t *bufp;
+char *bufp;
 {
-    if(munmap((void *)bufp, sizeof(buffer_t)*conf_tapebufs) == -1)
+    if(munmap((void *)bufp, saved_size)*conf_tapebufs) == -1) {
 	error("detach_buffers: munmap: %s", strerror(errno));
+    }
 
-    if(shmfd != -1) aclose(shmfd);
+    aclose(shmfd);
 }
 
 void destroy_buffers()
@@ -1529,7 +1579,6 @@ int label_tape()
     char *result;
     tape_t *tp;
     static int first_call = 1;
-    tapetype_t *tt;
 
     if(have_changer) {
 	amfree(tapedev);
@@ -1600,12 +1649,12 @@ int label_tape()
 	return 0;
     }
 
-    tt = lookup_tapetype(tapetype);
     tapefd_setinfo_length(tape_fd, tt->length);
 
     tapefd_setinfo_datestamp(tape_fd, taper_datestamp);
     tapefd_setinfo_disk(tape_fd, label);
-    if((result = tapefd_wrlabel(tape_fd, taper_datestamp, label)) != NULL) {
+    result = tapefd_wrlabel(tape_fd, taper_datestamp, label, tt_blocksize);
+    if(result != NULL) {
 	errstr = newstralloc(errstr, result);
 	return 0;
     }
@@ -1720,7 +1769,8 @@ int writerror;
 		goto common_exit;
 	    }
 
-	    if((result = tapefd_wrendmark(tape_fd, taper_datestamp)) != NULL) {
+	    result = tapefd_wrendmark(tape_fd, taper_datestamp, tt_blocksize);
+	    if(result != NULL) {
 		errstr = newstralloc(errstr, result);
 		rc = 1;
 		goto common_exit;

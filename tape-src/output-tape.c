@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-tape.c,v 1.5 2001/06/29 23:41:24 jrjackson Exp $
+ * $Id: output-tape.c,v 1.6 2001/07/31 23:19:58 jrjackson Exp $
  *
  * tapeio.c virtual tape interface for normal tape drives.
  */
@@ -76,7 +76,7 @@ tape_tapefd_fsf(fd, count)
     int fd;
     int count;
 {
-    char buffer[TAPE_BLOCK_BYTES];
+    char buffer[MAX_TAPE_BLOCK_BYTES];
     int len = 0;
 
     while(--count >= 0) {
@@ -470,14 +470,14 @@ int tape_tape_open(filename, flags, mask)
 #ifdef HAVE_LINUX_ZFTAPE_H
     /*
      * switch the block size for the zftape driver (3.04d)
-     * (its default is 10kb and not TAPE_BLOCK_BYTES=32kb)
+     * (its default is 10kb and not 32kb)
      *        A. Gebhardt <albrecht.gebhardt@uni-klu.ac.at>
      */
     if (ret >= 0 && is_zftape(filename) == 1) {
 	struct mtop mt;
 
 	mt.mt_op = MTSETBLK;
-	mt.mt_count = TAPE_BLOCK_BYTES;
+	mt.mt_count = 32 * 1024;		/* should be blocksize ??? */
 	ioctl(ret, MTIOCTOP, &mt);
     }
 #endif /* HAVE_LINUX_ZFTAPE_H */

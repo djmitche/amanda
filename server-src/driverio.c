@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.58 2001/07/19 21:33:41 jrjackson Exp $
+ * $Id: driverio.c,v 1.59 2001/07/31 23:19:57 jrjackson Exp $
  *
  * I/O-related functions for driver program
  */
@@ -183,7 +183,11 @@ char *chunker_program;
 	aclose(fd[0]);
 	if(dup2(fd[1], 0) == -1 || dup2(fd[1], 1) == -1)
 	    error("%s dup2: %s", chunker->name, strerror(errno));
-	execle(chunker_program, "chunker", config_name, (char *)0, safe_env());
+	execle(chunker_program,
+	       chunker->name ? chunker->name : "chunker",
+	       config_name,
+	       (char *)0,
+	       safe_env());
 	error("exec %s (%s): %s", chunker_program,
 	      chunker->name, strerror(errno));
     default:	/* parent process */
@@ -215,17 +219,22 @@ int max_arg;
     } else {
 	*result_argc = split(line, result_argv, max_arg, " ");
     }
-    amfree(line);
 
     if(show) {
 	printf("driver: result time %s from %s:",
 	       walltime_str(curclock()),
 	       childstr(fd));
-	for(arg = 1; arg <= *result_argc; arg++)
-	    printf(" %s", result_argv[arg]);
-	printf("\n");
+	if(line) {
+	    for(arg = 1; arg <= *result_argc; arg++) {
+		printf(" %s", result_argv[arg]);
+	    }
+	    putchar('\n');
+	} else {
+	    printf(" (eof)\n");
+	}
 	fflush(stdout);
     }
+    amfree(line);
 
 #ifdef DEBUG
     printf("argc = %d\n", *result_argc);

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.17 1999/06/02 21:42:47 kashmir Exp $
+ * $Id: fileheader.c,v 1.18 2001/07/31 23:19:57 jrjackson Exp $
  */
 
 #include "amanda.h"
@@ -228,10 +228,11 @@ weird_header:
 }
 
 void
-write_header(buffer, file, buflen)
+build_header(buffer, file, buflen, blocksize)
     char *buffer;
     const dumpfile_t *file;
     int buflen;
+    long blocksize;
 {
     int n;
 
@@ -271,7 +272,7 @@ write_header(buffer, file, buflen)
 	/* \014 == ^L */
 	n = snprintf(buffer, buflen,
 	    "\tdd if=<tape> bs=%dk skip=1 |%s %s\n\014\n",
-	    TAPE_BLOCK_SIZE, file->uncompress_cmd, file->recover_cmd);
+	    blocksize / 1024, file->uncompress_cmd, file->recover_cmd);
 	buffer += n;
 	buflen -= n;
 	break;

@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-file.c,v 1.4 2001/06/29 23:41:24 jrjackson Exp $
+ * $Id: output-file.c,v 1.5 2001/07/31 23:19:58 jrjackson Exp $
  *
  * tapeio.c virtual tape interface for a file device.
  *
@@ -52,16 +52,21 @@
 #define SEEK_END 2
 #endif
 
-#define	MAX_TOKENS	10
+#define	MAX_TOKENS		10
 
-struct file_info {
+#define	DATA_INDICATOR		"."
+#define	RECORD_INDICATOR	"-"
+
+static
+struct volume_info {
+    char *basename;			/* filename from open */
+    struct file_info *fi;		/* file info array */
+    int fi_limit;			/* length of file info array */
     int flags;				/* open flags */
     int mask;				/* open mask */
-    int file_current;			/* current file position */
     int file_count;			/* number of files */
-    char *basename;			/* filename from open */
-    char **filename;			/* list of file names */
-    int file_limit;			/* length of filename array */
+    int file_current;			/* current file position */
+    int record_current;			/* current record position */
     int fd;				/* data file descriptor */
     int is_online;			/* true if "tape" is "online" */
     int at_bof;				/* true if at begining of file */
@@ -69,7 +74,21 @@ struct file_info {
     int at_eom;				/* true if at end of medium */
     int last_operation_write;		/* true if last op was a write */
     long amount_written;		/* KBytes written since open/rewind */
-} *file_info = NULL;
+} *volume_info = NULL;
+
+struct file_info {
+    char *name;				/* file name (tapefd_getinfo_...) */
+    struct record_info *ri;		/* record info array */
+    int ri_count;			/* number of record info entries */
+    int ri_limit;			/* length of record info array */
+    int ri_altered;			/* true if record info altered */
+};
+
+struct record_info {
+    int record_size;			/* record size */
+    int start_record;			/* first record in range */ 
+    int end_record;			/* last record in range */ 
+};
 
 static int open_count = 0;
 
@@ -100,19 +119,20 @@ check_online(fd)
     char *token[MAX_TOKENS];
     DIR *tapedir;
     struct dirent *entry;
+    struct file_info *fi;
     char *line;
     int f;
-    int fn;
+    int pos;
     int rc = 0;
 
     /*
      * If we are already online, there is nothing else to do.
      */
-    if (file_info[fd].is_online) {
+    if (volume_info[fd].is_online) {
 	goto common_exit;
     }
 
-    if ((tapedir = opendir(file_info[fd].basename)) == NULL) {
+    if ((tapedir = opendir(volume_info[fd].basename)) == NULL) {
 	/*
 	 * We have already opened the info file which is in the same
 	 * directory as the data directory, so ENOENT has to mean the data
@@ -137,22 +157,24 @@ check_online(fd)
 	    /*
 	     * This is a "tape file".
 	     */
-	    fn = atoi(entry->d_name);
-	    amtable_alloc((void **)&file_info[fd].filename,
-			  sizeof(*file_info[fd].filename),
-			  fn,
-			  &file_info[fd].file_limit,
+	    pos = atoi(entry->d_name);
+	    amtable_alloc((void **)&volume_info[fd].fi,
+			  &volume_info[fd].fi_limit,
+			  sizeof(*volume_info[fd].fi),
+			  pos + 1,
 			  10,
 			  NULL);
-	    if (file_info[fd].filename[fn] != NULL) {
+	    fi = &volume_info[fd].fi[pos];
+	    if (fi->name != NULL) {
 		/*
 		 * Two files with the same position???
 		 */
-		amfree(file_info[fd].filename[fn]);
+		amfree(fi->name);
+		fi->ri_count = 0;
 	    }
-	    file_info[fd].filename[fn] = stralloc(entry->d_name);
-	    if (fn + 1 > file_info[fd].file_count) {
-		file_info[fd].file_count = fn + 1;
+	    fi->name = stralloc(&entry->d_name[6]);
+	    if (pos + 1 > volume_info[fd].file_count) {
+		volume_info[fd].file_count = pos + 1;
 	    }
 	}
     }
@@ -166,21 +188,23 @@ check_online(fd)
     for (; (line = areads(fd)) != NULL; free(line)) {
 	f = split(line, token, sizeof(token) / sizeof(token[0]), " ");
 	if (f == 2 && strcmp(token[1], "position") == 0) {
-	    file_info[fd].file_current = atoi(token[2]);
+	    volume_info[fd].file_current = atoi(token[2]);
+	    volume_info[fd].record_current = 0;
 	}
     }
 
     /*
      * Set EOM and make sure we are not pre-BOI.
      */
-    if (file_info[fd].file_current >= file_info[fd].file_count) {
-	file_info[fd].at_eom = 1;
+    if (volume_info[fd].file_current >= volume_info[fd].file_count) {
+	volume_info[fd].at_eom = 1;
     }
-    if (file_info[fd].file_current < 0) {
-	file_info[fd].file_current = 0;
+    if (volume_info[fd].file_current < 0) {
+	volume_info[fd].file_current = 0;
+	volume_info[fd].record_current = 0;
     }
 
-    file_info[fd].is_online = 1;
+    volume_info[fd].is_online = 1;
 
 common_exit:
 
@@ -198,7 +222,9 @@ static int
 file_open(fd)
     int fd;
 {
-    char *filename = NULL;
+    struct file_info *fi;
+    char *datafilename = NULL;
+    char *recordfilename = NULL;
     char *f = NULL;
     int pos;
     char *host;
@@ -206,29 +232,37 @@ file_open(fd)
     int level;
     char number[NUM_STR_SIZE];
     int flags;
+    int rfd;
+    int n;
+    char *line = NULL;
+    struct record_info *ri;
+    int start_record;
+    int end_record;
+    int record_size;
 
-    if (file_info[fd].fd < 0) {
-	flags = file_info[fd].flags;
-	pos = file_info[fd].file_current;
-	amtable_alloc((void **)&file_info[fd].filename,
-		      sizeof(*file_info[fd].filename),
-		      pos,
-		      &file_info[fd].file_limit,
+    if (volume_info[fd].fd < 0) {
+	flags = volume_info[fd].flags;
+	pos = volume_info[fd].file_current;
+	amtable_alloc((void **)&volume_info[fd].fi,
+		      &volume_info[fd].fi_limit,
+		      sizeof(*volume_info[fd].fi),
+		      pos + 1,
 		      10,
 		      NULL);
+	fi = &volume_info[fd].fi[pos];
 
 	/*
 	 * See if we are creating a new file.
 	 */
-	if (pos >= file_info[fd].file_count) {
-	    file_info[fd].file_count = pos + 1;
+	if (pos >= volume_info[fd].file_count) {
+	    volume_info[fd].file_count = pos + 1;
 	}
 
 	/*
 	 * Generate the file name to open.
 	 */
-	if (file_info[fd].filename[pos] == NULL) {
-	    if ((file_info[fd].flags & 3) != O_RDONLY) {
+	if (fi->name == NULL) {
+	    if ((volume_info[fd].flags & 3) != O_RDONLY) {
 
 		/*
 		 * This is a new file, so make sure we create/truncate
@@ -263,33 +297,121 @@ file_open(fd)
 		if (f == NULL) {
 		    f = stralloc("unknown");
 		}
-		snprintf(number, sizeof(number), "%05d", pos);
-		amfree(file_info[fd].filename[pos]);
-		file_info[fd].filename[pos] = vstralloc(number,
-							".",
-							f,
-							NULL);
+		amfree(fi->name);
+		fi->name = stralloc(f);
+		fi->ri_count = 0;
 		amfree(f);
 	    } else {
 
 		/*
 		 * This is a missing file, so set up to read nothing.
 		 */
-		filename = stralloc("/dev/null");
+		datafilename = stralloc("/dev/null");
+		recordfilename = stralloc("/dev/null");
 	    }
 	}
-	if (filename == NULL) {
-	    filename = stralloc2(file_info[fd].basename,
-				 file_info[fd].filename[pos]);
+	if (datafilename == NULL) {
+	    snprintf(number, sizeof(number), "%05d", pos);
+	    datafilename = vstralloc(volume_info[fd].basename,
+				     number,
+				     DATA_INDICATOR,
+				     volume_info[fd].fi[pos].name,
+				     NULL);
+	    recordfilename = vstralloc(volume_info[fd].basename,
+				       number,
+				       RECORD_INDICATOR,
+				       volume_info[fd].fi[pos].name,
+				       NULL);
 	}
 
 	/*
 	 * Do the data file open.
 	 */
-	file_info[fd].fd = open(filename, flags, file_info[fd].mask);
-	amfree(filename);
+	volume_info[fd].fd = open(datafilename, flags, volume_info[fd].mask);
+	amfree(datafilename);
+
+	/*
+	 * Load the record information.
+	 */
+	if (volume_info[fd].fd >= 0
+	    && fi->ri_count == 0
+	    && (rfd = open(recordfilename, O_RDONLY)) >= 0) {
+	    for (; (line = areads(rfd)) != NULL; free(line)) {
+		n = sscanf(line,
+			   "%d %d %d",
+			   &start_record,
+			   &end_record,
+			   &record_size);
+		if (n == 3) {
+		    amtable_alloc((void **)&fi->ri,
+				  &fi->ri_limit,
+				  sizeof(*fi->ri),
+				  fi->ri_count + 1,
+				  10,
+				  NULL);
+		    ri = &fi->ri[fi->ri_count];
+		    ri->start_record = start_record;
+		    ri->end_record = end_record;
+		    ri->record_size = record_size;
+		    fi->ri_count++;
+		}
+	    }
+	    aclose(rfd);
+	}
+	amfree(recordfilename);
     }
-    return file_info[fd].fd;
+    return volume_info[fd].fd;
+}
+
+/*
+ * Close the current data file, if open.  Dump the record information
+ * if it has been altered.
+ */
+
+static void
+file_close(fd)
+    int fd;
+{
+    struct file_info *fi;
+    int pos;
+    char number[NUM_STR_SIZE];
+    char *filename = NULL;
+    int r;
+    FILE *f;
+
+    aclose(volume_info[fd].fd);
+    pos = volume_info[fd].file_current;
+    amtable_alloc((void **)&volume_info[fd].fi,
+		  &volume_info[fd].fi_limit,
+		  sizeof(*volume_info[fd].fi),
+		  pos + 1,
+		  10,
+		  NULL);
+    fi = &volume_info[fd].fi[pos];
+    if (fi->ri_altered) {
+	snprintf(number, sizeof(number), "%05d", pos);
+	filename = vstralloc(volume_info[fd].basename,
+			     number,
+			     RECORD_INDICATOR,
+			     fi->name,
+			     NULL);
+	if ((f = fopen(filename, "w")) == NULL) {
+	    goto common_exit;
+	}
+	for (r = 0; r < fi->ri_count; r++) {
+	    fprintf(f,
+		    "%d %d %d\n",
+		    fi->ri[r].start_record,
+		    fi->ri[r].end_record,
+		    fi->ri[r].record_size);
+	}
+	afclose(f);
+	fi->ri_altered = 0;
+    }
+
+common_exit:
+
+    amfree(filename);
 }
 
 /*
@@ -304,32 +426,130 @@ file_release(fd)
     int position;
     char *filename;
     int pos;
+    char number[NUM_STR_SIZE];
 
     /*
      * If the current file is open, release everything beyond it.
      * If it is not open, release everything from current.
      */
-    if (file_info[fd].fd >= 0) {
-	position = file_info[fd].file_current + 1;
+    if (volume_info[fd].fd >= 0) {
+	position = volume_info[fd].file_current + 1;
     } else {
-	position = file_info[fd].file_current;
+	position = volume_info[fd].file_current;
     }
-    for (pos = position; pos < file_info[fd].file_count; pos++) {
-	amtable_alloc((void **)&file_info[fd].filename,
-		      sizeof(*file_info[fd].filename),
-		      pos,
-		      &file_info[fd].file_limit,
+    for (pos = position; pos < volume_info[fd].file_count; pos++) {
+	amtable_alloc((void **)&volume_info[fd].fi,
+		      &volume_info[fd].fi_limit,
+		      sizeof(*volume_info[fd].fi),
+		      pos + 1,
 		      10,
 		      NULL);
-	if (file_info[fd].filename[pos] != NULL) {
-	    filename = stralloc2(file_info[fd].basename,
-				 file_info[fd].filename[pos]);
+	if (volume_info[fd].fi[pos].name != NULL) {
+	    snprintf(number, sizeof(number), "%05d", pos);
+	    filename = vstralloc(volume_info[fd].basename,
+				 number,
+				 DATA_INDICATOR,
+				 volume_info[fd].fi[pos].name,
+				 NULL);
 	    unlink(filename);
 	    amfree(filename);
-	    amfree(file_info[fd].filename[pos]);
+	    filename = vstralloc(volume_info[fd].basename,
+				 number,
+				 RECORD_INDICATOR,
+				 volume_info[fd].fi[pos].name,
+				 NULL);
+	    unlink(filename);
+	    amfree(filename);
+	    amfree(volume_info[fd].fi[pos].name);
+	    volume_info[fd].fi[pos].ri_count = 0;
 	}
     }
-    file_info[fd].file_count = position;
+    volume_info[fd].file_count = position;
+}
+
+/*
+ * Get the size of a particular record.  We assume the record information is
+ * sorted, does not overlap and does not have gaps.
+ */
+
+static int
+get_record_size(fi, record)
+    struct file_info *fi;
+    int record;
+{
+    int r;
+    struct record_info *ri;
+
+    for(r = 0; r < fi->ri_count; r++) {
+	ri = &fi->ri[r];
+	if (record <= ri->end_record) {
+	    return ri->record_size;
+	}
+    }
+
+    /*
+     * For historical reasons, the default record size is 32 KBytes.
+     * This allows us to read files written by Amanda with that block
+     * size before the record information was being kept.
+     */
+    return 32 * 1024;
+}
+
+/*
+ * Update the record information.  We assume the record information is
+ * sorted, does not overlap and does not have gaps.
+ */
+
+static void
+put_record_size(fi, record, size)
+    struct file_info *fi;
+    int record;
+    int size;
+{
+    int r;
+    struct record_info *ri;
+
+    fi->ri_altered = 1;
+    if (record == 0) {
+	fi->ri_count = 0;			/* start over */
+    }
+    for(r = 0; r < fi->ri_count; r++) {
+	ri = &fi->ri[r];
+	if (record - 1 <= ri->end_record) {
+	    /*
+	     * If this record is the same size as the rest of the records
+	     * in this entry, or it would replace the entire entry,
+	     * reset the end record number and size, then zap the chain
+	     * beyond this point.
+	     */
+	    if (record == ri->start_record || ri->record_size == size) {
+		ri->end_record = record;
+		ri->record_size = size;
+		fi->ri_count = r + 1;
+		return;
+	    }
+	    /*
+	     * This record needs a new entry right after the current one.
+	     */
+	    ri->end_record = record - 1;
+	    fi->ri_count = r + 1;
+	    break;
+	}
+    }
+    /*
+     * Add a new entry.
+     */
+    amtable_alloc((void **)&fi->ri,
+		  &fi->ri_limit,
+		  sizeof(*fi->ri),
+		  fi->ri_count + 1,
+		  10,
+		  NULL);
+    ri = &fi->ri[fi->ri_count];
+    ri->start_record = record;
+    ri->end_record = record;
+    ri->record_size = size;
+    fi->ri_count++;
 }
 
 /*
@@ -355,6 +575,16 @@ file_tape_open(filename, flags, mask)
     }
 
     /*
+     * If the caller did not set O_CREAT (and thus, pass a mask
+     * parameter), we may still end up creating data files and need a
+     * "reasonable" value.  Pick a "tight" value on the "better safe
+     * than sorry" theory.
+     */
+    if ((flags & O_CREAT) == 0) {
+	mask = 0600;
+    }
+
+    /*
      * Open/create the info file for this "tape".
      */
     info_file = stralloc2(filename, "/info");
@@ -365,33 +595,34 @@ file_tape_open(filename, flags, mask)
     /*
      * Create the internal info structure for this "tape".
      */
-    amtable_alloc((void **)&file_info,
-		  sizeof(*file_info),
-		  fd,
+    amtable_alloc((void **)&volume_info,
 		  &open_count,
+		  sizeof(*volume_info),
+		  fd + 1,
 		  10,
 		  NULL);
-    file_info[fd].flags = flags;
-    file_info[fd].mask = mask;
-    file_info[fd].file_current = 0;
-    file_info[fd].file_count = 0;
-    file_info[fd].fd = -1;
-    file_info[fd].is_online = 0;		/* true when .../data found */
-    file_info[fd].at_bof = 1;			/* by definition */
-    file_info[fd].at_eof = 0;			/* do not know yet */
-    file_info[fd].at_eom = 0;			/* may get reset below */
-    file_info[fd].last_operation_write = 0;
-    file_info[fd].amount_written = 0;
+    volume_info[fd].flags = flags;
+    volume_info[fd].mask = mask;
+    volume_info[fd].file_count = 0;
+    volume_info[fd].file_current = 0;
+    volume_info[fd].record_current = 0;
+    volume_info[fd].fd = -1;
+    volume_info[fd].is_online = 0;		/* true when .../data found */
+    volume_info[fd].at_bof = 1;			/* by definition */
+    volume_info[fd].at_eof = 0;			/* do not know yet */
+    volume_info[fd].at_eom = 0;			/* may get reset below */
+    volume_info[fd].last_operation_write = 0;
+    volume_info[fd].amount_written = 0;
 
     /*
      * Save the base directory name and see if we are "online".
      */
-    file_info[fd].basename = stralloc2(filename, "/data/");
+    volume_info[fd].basename = stralloc2(filename, "/data/");
     if (check_online(fd)) {
 	save_errno = errno;
 	aclose(fd);
 	fd = -1;
-	amfree(file_info[fd].basename);
+	amfree(volume_info[fd].basename);
 	errno = save_errno;
 	goto common_exit;
     }
@@ -414,6 +645,9 @@ file_tapefd_read(fd, buffer, count)
 {
     int result;
     int file_fd;
+    int pos;
+    int record_size;
+    int read_size;
 
     /*
      * Make sure we are online.
@@ -421,7 +655,7 @@ file_tapefd_read(fd, buffer, count)
     if ((result = check_online(fd)) != 0) {
 	return result;
     }
-    if (! file_info[fd].is_online) {
+    if (! volume_info[fd].is_online) {
 	errno = EIO;
 	return -1;
     }
@@ -429,7 +663,7 @@ file_tapefd_read(fd, buffer, count)
     /*
      * Do not allow any more reads after we find EOF.
      */
-    if (file_info[fd].at_eof) {
+    if (volume_info[fd].at_eof) {
 	errno = EIO;
 	return -1;
     }
@@ -437,8 +671,8 @@ file_tapefd_read(fd, buffer, count)
     /*
      * If we are at EOM, set EOF and return a zero length result.
      */
-    if (file_info[fd].at_eom) {
-	file_info[fd].at_eof = 1;
+    if (volume_info[fd].at_eom) {
+	volume_info[fd].at_eof = 1;
 	return 0;
     }
 
@@ -450,14 +684,30 @@ file_tapefd_read(fd, buffer, count)
     }
 
     /*
-     * Do a simple read.  Note that this does not emulate tape record
-     * boundaries.
+     * Make sure we do not read too much.
      */
-    result = read(file_fd, buffer, count);
+    pos = volume_info[fd].file_current;
+    record_size = get_record_size(&volume_info[fd].fi[pos],
+				  volume_info[fd].record_current);
+    if (record_size <= count) {
+	read_size = record_size;
+    } else {
+	read_size = count;
+    }
+
+    /*
+     * Read the data.  If we ask for less than the record size, skip to
+     * the next record boundary.
+     */
+    result = read(file_fd, buffer, read_size);
     if (result > 0) {
-	file_info[fd].at_bof = 0;
+	volume_info[fd].at_bof = 0;
+	if (result < record_size) {
+	    (void)lseek(file_fd, record_size - result, SEEK_CUR);
+	}
+	volume_info[fd].record_current++;
     } else if (result == 0) {
-	file_info[fd].at_eof = 1;
+	volume_info[fd].at_eof = 1;
     }
     return result;
 }
@@ -472,6 +722,7 @@ file_tapefd_write(fd, buffer, count)
     long length;
     long kbytes_left;
     int result;
+    int pos;
 
     /*
      * Make sure we are online.
@@ -479,7 +730,7 @@ file_tapefd_write(fd, buffer, count)
     if ((result = check_online(fd)) != 0) {
 	return result;
     }
-    if (! file_info[fd].is_online) {
+    if (! volume_info[fd].is_online) {
 	errno = EIO;
 	return -1;
     }
@@ -487,7 +738,7 @@ file_tapefd_write(fd, buffer, count)
     /*
      * Check for write access first.
      */
-    if ((file_info[fd].flags & 3) == O_RDONLY) {
+    if ((volume_info[fd].flags & 3) == O_RDONLY) {
 	errno = EBADF;
 	return -1;
     }
@@ -502,15 +753,15 @@ file_tapefd_write(fd, buffer, count)
     /*
      * If we are at EOM, it takes precedence over EOF.
      */
-    if (file_info[fd].at_eom) {
-	file_info[fd].at_eof = 0;
+    if (volume_info[fd].at_eom) {
+	volume_info[fd].at_eof = 0;
     }
 
 #if 0 /*JJ*/
     /*
      * Writes are only allowed at BOF and EOM.
      */
-    if (! (file_info[fd].at_bof || file_info[fd].at_eom)) {
+    if (! (volume_info[fd].at_bof || volume_info[fd].at_eom)) {
 	errno = EIO;
 	return -1;
     }
@@ -519,7 +770,7 @@ file_tapefd_write(fd, buffer, count)
     /*
      * Writes are only allowed if we are not at EOF.
      */
-    if (file_info[fd].at_eof) {
+    if (volume_info[fd].at_eof) {
 	errno = EIO;
 	return -1;
     }
@@ -535,16 +786,16 @@ file_tapefd_write(fd, buffer, count)
      * Truncate the write if requested and return a simulated ENOSPC.
      */
     if ((length = tapefd_getinfo_length(fd)) > 0) {
-	kbytes_left = length - file_info[fd].amount_written;
+	kbytes_left = length - volume_info[fd].amount_written;
 	if (write_count / 1024 > kbytes_left) {
 	    write_count = kbytes_left * 1024;
 	}
     }
-    file_info[fd].amount_written += (write_count + 1023) / 1024;
+    volume_info[fd].amount_written += (write_count + 1023) / 1024;
     if (write_count <= 0) {
 	file_release(fd);
-	file_info[fd].at_bof = 0;
-	file_info[fd].at_eom = 1;
+	volume_info[fd].at_bof = 0;
+	volume_info[fd].at_eom = 1;
 	errno = ENOSPC;
 	return -1;
     }
@@ -554,15 +805,20 @@ file_tapefd_write(fd, buffer, count)
      * last_operation_write is an optimization so we only truncate
      * once.
      */
-    if (! file_info[fd].last_operation_write) {
+    if (! volume_info[fd].last_operation_write) {
 	(void)ftruncate(file_fd, lseek(file_fd, 0, SEEK_CUR));
 	file_release(fd);
-	file_info[fd].at_bof = 0;
-	file_info[fd].at_eom = 1;
+	volume_info[fd].at_bof = 0;
+	volume_info[fd].at_eom = 1;
     }
     result = write(file_fd, buffer, write_count);
     if (result >= 0) {
-	file_info[fd].last_operation_write = 1;
+	volume_info[fd].last_operation_write = 1;
+	pos = volume_info[fd].file_current;
+	put_record_size(&volume_info[fd].fi[pos],
+			volume_info[fd].record_current,
+			result);
+	volume_info[fd].record_current++;
     }
 
     return result;
@@ -582,7 +838,7 @@ file_tapefd_close(fd)
     /*
      * If our last operation was a write, write a tapemark.
      */
-    if (file_info[fd].last_operation_write) {
+    if (volume_info[fd].last_operation_write) {
 	if ((result = file_tapefd_weof(fd, 1)) != 0) {
 	    return result;
 	}
@@ -592,7 +848,7 @@ file_tapefd_close(fd)
      * If we are not at BOF, fsf to the next file unless we
      * are already at end of tape.
      */
-    if (! file_info[fd].at_bof && ! file_info[fd].at_eom) {
+    if (! volume_info[fd].at_bof && ! volume_info[fd].at_eom) {
 	if ((result = file_tapefd_fsf(fd, 1)) != 0) {
 	    return result;
 	}
@@ -601,23 +857,25 @@ file_tapefd_close(fd)
     /*
      * Close the file if it is still open.
      */
-    if (file_info[fd].fd >= 0) {
-	close(file_info[fd].fd);
-	file_info[fd].fd = -1;
-    }
+    file_close(fd);
 
     /*
      * Release the info structure areas.
      */
-    for (pos = 0; pos < file_info[fd].file_limit; pos++) {
-	amfree(file_info[fd].filename[pos]);
+    for (pos = 0; pos < volume_info[fd].fi_limit; pos++) {
+	amfree(volume_info[fd].fi[pos].name);
+	amtable_free((void **)&volume_info[fd].fi[pos].ri,
+		     &volume_info[fd].fi[pos].ri_limit);
+	volume_info[fd].fi[pos].ri_count = 0;
     }
-    amfree(file_info[fd].basename);
+    amtable_free((void **)&volume_info[fd].fi, &volume_info[fd].fi_limit);
+    volume_info[fd].file_count = 0;
+    amfree(volume_info[fd].basename);
 
     /*
      * Update the status file if we were online.
      */
-    if (file_info[fd].is_online) {
+    if (volume_info[fd].is_online) {
 	if (lseek(fd, 0, SEEK_SET) != 0) {
 	    save_errno = errno;
 	    aclose(fd);
@@ -631,7 +889,7 @@ file_tapefd_close(fd)
 	    return -1;
 	}
 	snprintf(number, sizeof(number),
-		 "%d", file_info[fd].file_current);
+		 "%d", volume_info[fd].file_current);
 	line = vstralloc("position ", number, "\n", NULL);
 	len = strlen(line);
 	result = write(fd, line, len);
@@ -647,6 +905,7 @@ file_tapefd_close(fd)
 	}
     }
 
+    areads_relbuf(fd);
     return close(fd);
 }
 
@@ -671,7 +930,7 @@ file_tapefd_status(fd, stat)
     }
     memset((void *)stat, 0, sizeof(*stat));
     stat->online_valid = 1;
-    stat->online = file_info[fd].is_online;
+    stat->online = volume_info[fd].is_online;
     return 0;
 }
 
@@ -703,7 +962,7 @@ file_tapefd_rewind(fd)
     if ((result = check_online(fd)) != 0) {
 	return result;
     }
-    if (! file_info[fd].is_online) {
+    if (! volume_info[fd].is_online) {
 	errno = EIO;
 	return -1;
     }
@@ -711,7 +970,7 @@ file_tapefd_rewind(fd)
     /*
      * If our last operation was a write, write a tapemark.
      */
-    if (file_info[fd].last_operation_write) {
+    if (volume_info[fd].last_operation_write) {
 	if ((result = file_tapefd_weof(fd, 1)) != 0) {
 	    return result;
 	}
@@ -720,21 +979,20 @@ file_tapefd_rewind(fd)
     /*
      * Close the file if it is still open.
      */
-    if (file_info[fd].fd >= 0) {
-	close(file_info[fd].fd);
-	file_info[fd].fd = -1;
-    }
+    file_close(fd);
 
     /*
      * Adjust the position and reset the flags.
      */
-    file_info[fd].file_current = 0;
+    volume_info[fd].file_current = 0;
+    volume_info[fd].record_current = 0;
 
-    file_info[fd].at_bof = 1;
-    file_info[fd].at_eof = 0;
-    file_info[fd].at_eom
-      = (file_info[fd].file_current >= file_info[fd].file_count);
-    file_info[fd].last_operation_write = 0;
+    volume_info[fd].at_bof = 1;
+    volume_info[fd].at_eof = 0;
+    volume_info[fd].at_eom
+      = (volume_info[fd].file_current >= volume_info[fd].file_count);
+    volume_info[fd].last_operation_write = 0;
+    volume_info[fd].amount_written = 0;
 
     return result;
 }
@@ -751,7 +1009,7 @@ file_tapefd_unload(fd)
     if ((result = check_online(fd)) != 0) {
 	return result;
     }
-    if (! file_info[fd].is_online) {
+    if (! volume_info[fd].is_online) {
 	errno = EIO;
 	return -1;
     }
@@ -772,7 +1030,7 @@ file_tapefd_fsf(fd, count)
     if ((result = check_online(fd)) != 0) {
 	return result;
     }
-    if (! file_info[fd].is_online) {
+    if (! volume_info[fd].is_online) {
 	errno = EIO;
 	return -1;
     }
@@ -781,7 +1039,7 @@ file_tapefd_fsf(fd, count)
      * If our last operation was a write and we are going to move
      * backward, write a tapemark.
      */
-    if (file_info[fd].last_operation_write && count < 0) {
+    if (volume_info[fd].last_operation_write && count < 0) {
 	if ((result = file_tapefd_weof(fd, 1)) != 0) {
 	    errno = EIO;
 	    return -1;
@@ -791,16 +1049,13 @@ file_tapefd_fsf(fd, count)
     /*
      * Close the file if it is still open.
      */
-    if (file_info[fd].fd >= 0) {
-	close(file_info[fd].fd);
-	file_info[fd].fd = -1;
-    }
+    file_close(fd);
 
     /*
      * If we are at EOM and moving backward, adjust the count to go
      * one more file.
      */
-    if (file_info[fd].at_eom && count < 0) {
+    if (volume_info[fd].at_eom && count < 0) {
 	count--;
     }
 
@@ -808,33 +1063,37 @@ file_tapefd_fsf(fd, count)
      * Adjust the position and return an error if we go beyond either
      * end of the tape.
      */
-    file_info[fd].file_current += count;
-
-    if (file_info[fd].file_current > file_info[fd].file_count) {
-        file_info[fd].file_current = file_info[fd].file_count;
+    volume_info[fd].file_current += count;
+    if (volume_info[fd].file_current > volume_info[fd].file_count) {
+        volume_info[fd].file_current = volume_info[fd].file_count;
 	errno = EIO;
 	result = -1;
-    } else if (file_info[fd].file_current < 0) {
-        file_info[fd].file_current = 0;
+    } else if (volume_info[fd].file_current < 0) {
+        volume_info[fd].file_current = 0;
 	errno = EIO;
 	result = -1;
     }
+    volume_info[fd].record_current = 0;
 
     /*
      * Set BOF to true so we can write.  Set to EOF to false if the
      * fsf succeeded or if it failed but we were moving backward (and
      * thus we are at beginning of tape), otherwise set it to true so
      * a subsequent read will fail.  Set EOM to whatever is right.
+     * Reset amount_written if we ended up back at BOM.
      */
-    file_info[fd].at_bof = 1;
+    volume_info[fd].at_bof = 1;
     if (result == 0 || count < 0) {
-	file_info[fd].at_eof = 0;
+	volume_info[fd].at_eof = 0;
     } else {
-	file_info[fd].at_eof = 1;
+	volume_info[fd].at_eof = 1;
     }
-    file_info[fd].at_eom
-      = (file_info[fd].file_current >= file_info[fd].file_count);
-    file_info[fd].last_operation_write = 0;
+    volume_info[fd].at_eom
+      = (volume_info[fd].file_current >= volume_info[fd].file_count);
+    volume_info[fd].last_operation_write = 0;
+    if (volume_info[fd].file_current == 0) {
+	volume_info[fd].amount_written = 0;
+    }
 
     return result;
 }
@@ -856,7 +1115,7 @@ file_tapefd_weof(fd, count)
     if ((result = check_online(fd)) != 0) {
 	return result;
     }
-    if (! file_info[fd].is_online) {
+    if (! volume_info[fd].is_online) {
 	errno = EIO;
 	return -1;
     }
@@ -864,7 +1123,7 @@ file_tapefd_weof(fd, count)
     /*
      * Check for write access first.
      */
-    if ((file_info[fd].flags & 3) == O_RDONLY) {
+    if ((volume_info[fd].flags & 3) == O_RDONLY) {
 	errno = EACCES;
 	return -1;
     }
@@ -887,15 +1146,15 @@ file_tapefd_weof(fd, count)
     /*
      * Close out the current file if open.
      */
-    if ((file_fd = file_info[fd].fd) >= 0) {
+    if ((file_fd = volume_info[fd].fd) >= 0) {
 	(void)ftruncate(file_fd, lseek(file_fd, 0, SEEK_CUR));
-	close(file_info[fd].fd);
-	file_info[fd].fd = -1;
-	file_info[fd].file_current++;
-	file_info[fd].at_bof = 1;
-	file_info[fd].at_eof = 0;
-	file_info[fd].at_eom = 1;
-	file_info[fd].last_operation_write = 0;
+	file_close(fd);
+	volume_info[fd].file_current++;
+	volume_info[fd].record_current = 0;
+	volume_info[fd].at_bof = 1;
+	volume_info[fd].at_eof = 0;
+	volume_info[fd].at_eom = 1;
+	volume_info[fd].last_operation_write = 0;
 	count--;
     }
 
@@ -922,14 +1181,14 @@ file_tapefd_weof(fd, count)
 	if (file_open(fd) < 0) {
 	    break;
 	}
-	close(file_info[fd].fd);
-	file_info[fd].fd = -1;
-	file_info[fd].file_current++;
-	file_info[fd].file_count = file_info[fd].file_current;
-	file_info[fd].at_bof = 1;
-	file_info[fd].at_eof = 0;
-	file_info[fd].at_eom = 1;
-	file_info[fd].last_operation_write = 0;
+	file_close(fd);
+	volume_info[fd].file_current++;
+	volume_info[fd].file_count = volume_info[fd].file_current;
+	volume_info[fd].record_current = 0;
+	volume_info[fd].at_bof = 1;
+	volume_info[fd].at_eof = 0;
+	volume_info[fd].at_eom = 1;
+	volume_info[fd].last_operation_write = 0;
 
 	/*
 	 * Only the first "file" terminated by an EOF gets the naming

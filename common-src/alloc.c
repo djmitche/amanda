@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: alloc.c,v 1.29 2001/07/19 23:02:28 jrjackson Exp $
+ * $Id: alloc.c,v 1.30 2001/07/31 23:19:57 jrjackson Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * errordump() is called, relieving the caller from checking the return
@@ -431,20 +431,21 @@ safe_env()
  * amtable_alloc -- (re)allocate enough space for some number of elements.
  *
  * input:	table -- pointer to pointer to table
+ *		current -- pointer to current number of elements
  *		elsize -- size of a table element
  *		count -- desired number of elements
- *		current -- pointer to current number of elements
  *		bump -- round up factor
+ *		init_func -- optional element initialization function
  * output:	table -- possibly adjusted to point to new table area
  *		current -- possibly adjusted to new number of elements
  */
 
 int
-amtable_alloc(table, elsize, count, current, bump, init_func)
+amtable_alloc(table, current, elsize, count, bump, init_func)
     void **table;
+    int *current;
     size_t elsize;
     int count;
-    int *current;
     int bump;
     void (*init_func)(void *);
 {
@@ -475,4 +476,22 @@ amtable_alloc(table, elsize, count, current, bump, init_func)
 	*current = table_count_new;
     }
     return 0;
+}
+
+/*
+ * amtable_free -- release a table.
+ *
+ * input:	table -- pointer to pointer to table
+ *		current -- pointer to current number of elements
+ * output:	table -- possibly adjusted to point to new table area
+ *		current -- possibly adjusted to new number of elements
+ */
+
+void
+amtable_free(table, current)
+    void **table;
+    int *current;
+{
+    amfree(*table);
+    *current = 0;
 }

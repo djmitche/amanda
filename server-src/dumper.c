@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.141 2001/07/19 22:20:36 jrjackson Exp $
+/* $Id: dumper.c,v 1.142 2001/07/31 23:19:58 jrjackson Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -59,9 +59,10 @@
 struct databuf {
     int fd;			/* file to flush to */
     const char *filename;	/* name of what fd points to */
-    char buf[TAPE_BLOCK_BYTES];
-    char *dataptr;		/* data buffer markers */
-    int spaceleft;
+    char *buf;
+    char *datain;		/* data buffer markers */
+    char *dataout;
+    char *datalimit;
     pid_t compresspid;		/* valid if fd is pipe to compress */
 };
 
@@ -70,6 +71,7 @@ char *handle = NULL;
 
 char *errstr = NULL;
 int abort_pending;
+static long dumpbytes;
 static long dumpsize, headersize, origsize;
 
 static comp_t srvcompress = COMP_NONE;
@@ -256,7 +258,7 @@ main(main_argc, main_argv)
 	    /* connect outf to taper port */
 
 	    outfd = stream_client("localhost", taper_port,
-				  STREAM_BUFSIZE, DEFAULT_SIZE, NULL, 0);
+				  STREAM_BUFSIZE, -1, NULL, 0);
 	    if (outfd == -1) {
 		q = squotef("[taper port open: %s]", strerror(errno));
 		putresult(FAILED, "%s %s\n", handle, q);
@@ -332,16 +334,16 @@ databuf_init(db, fd, filename)
 
     db->fd = fd;
     db->filename = filename;
-    db->dataptr = db->buf;
-    db->spaceleft = sizeof(db->buf);
+    db->datain = db->dataout = db->datalimit = NULL;
     db->compresspid = -1;
 }
 
 
 /*
  * Updates the buffer pointer for the input data buffer.  The buffer is
- * written if it is full, or the remainder is zeroed if at eof.
- * Returns negative on error, else 0.
+ * written regardless of how much data is present, since we know we
+ * are writing to a socket (to chunker) and there is no need to maintain
+ * any boundaries.
  */
 static int
 databuf_write(db, buf, size)
@@ -349,81 +351,50 @@ databuf_write(db, buf, size)
     const void *buf;
     int size;
 {
-    int nwritten;
-
-    while (size > 0) {
-	nwritten = min(size, db->spaceleft);
-	memcpy(db->dataptr, buf, nwritten);
-	size -= nwritten;
-	db->spaceleft -= nwritten;
-	db->dataptr += nwritten;
-	(char *)buf += nwritten;
-
-	/* If the buffer is full, write it */
-	if (db->spaceleft == 0 && databuf_flush(db) < 0)
-	    return (-1);
-    }
-
-    return (0);
+    db->buf = (char *)buf;
+    db->datain = db->datalimit = db->buf + size;
+    db->dataout = db->buf;
+    return databuf_flush(db);
 }
 
 /*
- * Write out the buffer to the backing file
+ * Write out the buffer to chunker.
  */
 static int
 databuf_flush(db)
     struct databuf *db;
 {
-    struct cmdargs cmdargs;
-    int written, off;
-    cmd_t cmd;
+    int written, w;
 
     /*
      * If there's no data, do nothing.
      */
-    if (db->dataptr == db->buf)
-	return (0);
-
-    /*
-     * If buffer isn't full, zero out the rest.
-     */
-    if (db->spaceleft > 0) {
-	memset(db->dataptr, 0, db->spaceleft);
-	db->spaceleft = 0;
+    if (db->dataout >= db->datain) {
+	return 0;
     }
 
     /*
      * Write out the buffer
      */
-    off = 0;
-    do {
-	written = write(db->fd, db->buf + off,
-	    sizeof(db->buf) - db->spaceleft);
-	if (written > 0) {
-	    db->spaceleft += written;
-	    off += written;
-	    continue;
-	} else if (written < 0 && errno != ENOSPC) {
-	    errstr = squotef("data write: %s", strerror(errno));
-	    return (-1);
+    written = w = 0;
+    while (db->dataout < db->datain) {
+	if ((w = write(db->fd, db->dataout, db->datain - db->dataout)) < 0) {
+	    break;
 	}
-
-	putresult(NO_ROOM, "%s\n", handle);
-	cmd = getcmd(&cmdargs);
-	switch (cmd) {
-	case ABORT:
-	    abort_pending = 1;
-	    errstr = "ERROR";
-	    return (-1);
-	case CONTINUE:
-	    continue;
-	default:
-	    error("error [bad command after NO-ROOM: %d]", cmd);
-	}
-    } while (db->spaceleft != sizeof(db->buf));
-    db->dataptr = db->buf;
-    dumpsize += (sizeof(db->buf) / 1024);
-    return (0);
+	db->dataout += w;
+	written += w;
+    }
+    dumpbytes += written;
+    if (dumpbytes >= 1024) {
+	dumpsize += (dumpbytes / 1024);
+	dumpbytes %= 1024;
+    }
+    if (w < 0) {
+	errstr = squotef("data write: %s", strerror(errno));
+	return -1;
+    }
+    db->datain = db->dataout = db->buf;
+    return 0;
 }
 
 static int dump_result;
@@ -730,10 +701,10 @@ write_tapeheader(outfd, file)
     int outfd;
     dumpfile_t *file;
 {
-    char buffer[TAPE_BLOCK_BYTES];
+    char buffer[DISK_BLOCK_BYTES];
     int written;
 
-    write_header(buffer, file, sizeof(buffer));
+    build_header(buffer, file, sizeof(buffer), sizeof(buffer));
 
     written = write(outfd, buffer, sizeof(buffer));
     if(written == sizeof(buffer)) return 0;
@@ -759,7 +730,7 @@ do_dump(db)
 
     startclock();
 
-    dumpsize = headersize = origsize = dump_result = 0;
+    dumpbytes = dumpsize = headersize = origsize = dump_result = 0;
     status = 0;
     fh_init(&file);
 
@@ -987,8 +958,8 @@ read_mesgfd(cookie, buf, size)
 	    stop_dump();
 	    return;
 	}
-	dumpsize += TAPE_BLOCK_SIZE;
-	headersize += TAPE_BLOCK_SIZE;
+	dumpsize += DISK_BLOCK_KB;
+	headersize += DISK_BLOCK_KB;
 
 	/*
 	 * Now, setup the compress for the data output, and start
@@ -1041,6 +1012,9 @@ read_datafd(cookie, buf, size)
      */
     if (size == 0) {
 	databuf_flush(db);
+	if (dumpbytes) {
+	    dumpsize++;
+	}
 	security_stream_close(streams[DATAFD].fd);
 	streams[DATAFD].fd = NULL;
 	/*

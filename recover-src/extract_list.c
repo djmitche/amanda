@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.62 2001/06/18 22:29:24 jrjackson Exp $
+ * $Id: extract_list.c,v 1.63 2001/07/31 23:19:57 jrjackson Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1047,7 +1047,7 @@ static int extract_files_setup P((void))
     setegid(0);
     tape_server_socket = stream_client(tape_server_name,
 				       ntohs(sp->s_port),
-				       DEFAULT_SIZE,
+				       -1,
 				       STREAM_BUFSIZE,
 				       &my_port,
 				       0);
@@ -1168,7 +1168,7 @@ static void extract_files_child(in_fd, elist)
     int files_off_tape;
     EXTRACT_LIST_ITEM *fn;
     enum dumptypes dumptype = IS_UNKNOWN;
-    char buffer[TAPE_BLOCK_BYTES];
+    char buffer[DISK_BLOCK_BYTES];
     dumpfile_t file;
     int buflen;
     int len_program;

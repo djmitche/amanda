@@ -712,7 +712,7 @@ Mbytes for level two, 40 Mbytes for level three, and so on.
 .TP
 .BN bumpdays int
 Default:
-.IR 2 .
+.IR "2 days" .
 To insure redundancy in the dumps, Amanda keeps filesystems at the
 same incremental level for at least
 .B bumpdays
@@ -1334,11 +1334,45 @@ Note that this value is only used by Amanda to schedule which backups
 will be run.
 Once the backups start, Amanda will continue to write to a tape until
 it gets an error, regardless of what value is entered for
-.BI length .
+.B length
+(but see the
+.B OUTPUT DRIVERS
+section later for exceptions).
+.TP
+.BS blocksize int
+Default:
+.IR "-32 kbytes" .
+How much data will be written in each tape record.
+.IP
+If the value is negative, every record, including the last one in the
+file, will have the same length, the absolute
+.B blocksize
+value.
+This matches the way Amanda wrote tapes prior to the availability
+of this parameter.
+It may also be useful on devices that only support a fixed blocksize.
+.IP
+Note that the last record on the tape probably includes trailing
+null byte padding, which will be passed back to
+.BR gzip ,
+.B compress
+or the restore program.
+Most programs just ignore this (although possibly with a warning).
+.IP
+If the
+.B blocksize
+value is positive, the last record in a file may be shorter
+than the block size.
+The file will contain the same amount of data the dump program generated,
+without trailing null byte padding.
+When read, the same amount of data that was written will be returned.
+.IP
+The minimum absolute blocksize value is 32 KBytes.
+The maximum absolute blocksize value is 4 MBytes.
 .TP
 .BS speed int
 Default:
-.IR 200 .
+.IR "200 bps" .
 How fast the drive will accept data, in bytes per second.
 This parameter is not currently used by Amanda.
 .TP
@@ -1694,9 +1728,11 @@ The driver will test for a subdirectory of that named
 and return
 .B offline
 until it is present.
-When present, the driver uses one file in the
+When present, the driver uses two files in the
 .I data
 subdirectory for each tape file.
+One contains the actual data.
+The other contains record length information.
 .IP
 The driver uses a file named
 .I status
@@ -1740,10 +1776,6 @@ mount it and create the
 symlink in the
 .B file
 device directory.
-.IP
-NOTE: record size information is not saved by this driver.
-This is OK for Amanda use,
-but may cause problems for other applications.
 .SH AUTHORIZATION
 Amanda processes on the tape server host run as the
 .B dumpuser

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.44 2001/05/14 23:44:57 jrjackson Exp $
+ * $Id: amandad.c,v 1.45 2001/07/31 23:19:57 jrjackson Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -41,6 +41,7 @@
 #include "version.h"
 #include "queue.h"
 #include "security.h"
+#include "stream.h"
 #include "util.h"
 
 #define	REP_TIMEOUT	(6*60*60)	/* secs for service to reply */
@@ -92,7 +93,7 @@ struct active_service {
 	security_stream_t *netfd;	/* stream to amanda server */
 	struct active_service *as;	/* pointer back to our enclosure */
     } data[DATA_FD_COUNT];
-    char databuf[TAPE_BLOCK_BYTES];	/* buffer to relay netfd data in */
+    char databuf[NETWORK_BLOCK_BYTES];	/* buffer to relay netfd data in */
     TAILQ_ENTRY(active_service) tq;	/* queue handle */
 };
 

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.7 2001/02/28 02:48:53 jrjackson Exp $
+ * $Id: rsh-security.c,v 1.8 2001/07/31 23:19:57 jrjackson Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -79,7 +79,7 @@
 struct rsh_conn {
     int read, write;				/* pipes to rsh */
     pid_t pid;					/* pid of rsh process */
-    char pkt[TAPE_BLOCK_BYTES];			/* last pkt read */
+    char pkt[NETWORK_BLOCK_BYTES];		/* last pkt read */
     unsigned long pktlen;			/* len of above */
     struct {					/* buffer read() calls */
 	char buf[STREAM_BUFSIZE];		/* buffer */

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.110 2001/07/19 22:20:37 jrjackson Exp $
+ * $Id: planner.c,v 1.111 2001/07/31 23:19:58 jrjackson Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -99,6 +99,8 @@ double total_lev0, balanced_size, balance_threshold;
 unsigned long tape_length, tape_mark;
 
 tapetype_t *tape;
+long tt_blocksize;
+long tt_blocksize_kb;
 int runs_per_cycle;
 time_t today;
 
@@ -309,6 +311,10 @@ char **argv;
     tape = lookup_tapetype(conf_tapetype);
     tape_length = tape->length * conf_runtapes;
     tape_mark   = tape->filemark;
+    if((tt_blocksize_kb = tape->blocksize) < 0) {
+	tt_blocksize_kb = -tt_blocksize_kb;
+    }
+    tt_blocksize = tt_blocksize_kb * 1024;
 
     fprintf(stderr, "startup took %s secs\n", walltime_str(curclock()));
 
@@ -379,7 +385,7 @@ char **argv;
     startclock();
 
 			/* an empty tape still has a label and an endmark */
-    total_size = (TAPE_BLOCK_SIZE + tape_mark) * 2;
+    total_size = (tt_blocksize_kb + tape_mark) * 2;
     total_lev0 = 0.0;
     balanced_size = 0.0;
 
@@ -1426,7 +1432,7 @@ disk_t *dp;
 
     insert_disk(&schedq, dp, schedule_order);
 
-    total_size += TAPE_BLOCK_SIZE + ep->dump_size + tape_mark;
+    total_size += tt_blocksize_kb + ep->dump_size + tape_mark;
 
     /* update the balanced size */
     if(!(dp->skip_full || dp->strategy == DS_NOFULL || 
@@ -1742,7 +1748,7 @@ static void delay_dumps P((void))
 	dp = bi->dp;
 
 	if(bi->deleted)
-	    new_total = total_size + TAPE_BLOCK_SIZE + est(dp)->dump_size + tape_mark;
+	    new_total = total_size + tt_blocksize_kb + est(dp)->dump_size + tape_mark;
 	else
 	    new_total = total_size - est(dp)->dump_size + bi->size;
 
@@ -1814,7 +1820,7 @@ char *errstr;
 {
     bi_t *bi;
 
-    total_size -= TAPE_BLOCK_SIZE + est(dp)->dump_size + tape_mark;
+    total_size -= tt_blocksize_kb + est(dp)->dump_size + tape_mark;
     if(est(dp)->dump_level == 0)
 	total_lev0 -= (double) est(dp)->dump_size;
 

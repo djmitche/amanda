@@ -24,12 +24,12 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.39 2001/02/25 17:00:49 martinea Exp $
+ * $Id: amrestore.c,v 1.40 2001/07/31 23:19:57 jrjackson Exp $
  *
  * retrieves files from an amanda tape
  */
 /*
- * usage: amrestore [-r|-c|-C] [-p] [-h] tape-device|holdingfile [hostname [diskname [datestamp [hostname [diskname [datestamp ... ]]]]]]
+ * usage: amrestore [-b blocksize] [-r|-c|-C] [-p] [-h] tape-device|holdingfile [hostname [diskname [datestamp [hostname [diskname [datestamp ... ]]]]]]
  *
  * Pulls all files from the tape that match the hostname, diskname and
  * datestamp regular expressions.
@@ -38,11 +38,17 @@
  * "rz1g" etc on the tape.
  *
  * Command line options:
+ *	-b   set tape record/block size
  *	-p   put output on stdout
  *	-c   write compressed with COMPRESS_FAST_OPT
  *	-C   write compressed with COMPRESS_BEST_OPT
- *	-r   raw, write file as is on tape (with header, possibly compressed)
- *	-h   write the header too
+ *	-r   raw, write file as it is on tape (with header, possibly compressed)
+ *	-h   include the header in the output
+ *
+ * If the header is output, only up to DISK_BLOCK_BYTES worth of it is
+ * sent, regardless of the tape blocksize.  This makes the disk image
+ * look like a holding disk image, and also makes it easier to remove
+ * the header (e.g. in amrecover) since it has a fixed size.
  */
 
 #include "amanda.h"
@@ -52,8 +58,7 @@
 
 #define CREAT_MODE	0640
 
-char buffer[TAPE_BLOCK_BYTES];
-
+char *buffer;
 
 int compflag, rawflag, pipeflag, headerflag;
 int got_sigpipe, file_number;
@@ -61,6 +66,7 @@ pid_t compress_pid = -1;
 char *compress_type = COMPRESS_FAST_OPT;
 int tapedev;
 int bytes_read;
+long blocksize = -1;
 
 /* local functions */
 
@@ -69,8 +75,8 @@ void handle_sigpipe P((int sig));
 int disk_match P((dumpfile_t *file, char *datestamp, 
 		  char *hostname, char *diskname));
 char *make_filename P((dumpfile_t *file));
-void read_file_header P((char *buffer, dumpfile_t *file,
-			int buflen, int isafile));
+void read_file_header P((dumpfile_t *file, int isafile));
+static int get_block P((int isafile));
 void restore P((dumpfile_t *file, char *filename, int isafile));
 void usage P((void));
 int main P((int argc, char **argv));
@@ -139,24 +145,62 @@ dumpfile_t *file;
 }
 
 
-void read_file_header(buffer, file, buflen, isafile)
-char *buffer;
+static int get_block(isafile)
+int isafile;
+{
+    static int test_blocksize = 1;
+    int buflen;
+
+    /*
+     * If this is the first call, set the blocksize if it was not on
+     * the command line.  Allocate the I/O buffer in any case.
+     *
+     * For files, the blocksize is always DISK_BLOCK_BYTES.  For tapes,
+     * we allocate a large buffer and set the size to the length of the
+     * first (successful) record.
+     */
+    buflen = blocksize;
+    if(test_blocksize) {
+	if(blocksize < 0) {
+	    if(isafile) {
+		blocksize = buflen = DISK_BLOCK_BYTES;
+	    } else {
+		buflen = MAX_TAPE_BLOCK_BYTES;
+	    }
+	}
+	buffer = newalloc(buffer, buflen);
+    }
+    if(isafile) {
+	bytes_read = fullread(tapedev, buffer, buflen);
+    } else {
+	bytes_read = tapefd_read(tapedev, buffer, buflen);
+	if(blocksize < 0 && bytes_read > 0 && bytes_read < buflen) {
+	    char *new_buffer;
+
+	    blocksize = bytes_read;
+	    new_buffer = alloc(blocksize);
+	    memcpy(new_buffer, buffer, bytes_read);
+	    amfree(buffer);
+	    buffer = new_buffer;
+	}
+    }
+    if(blocksize > 0) {
+	test_blocksize = 0;
+    }
+    return bytes_read;
+}
+
+void read_file_header(file, isafile)
 dumpfile_t *file;
-int buflen;
 int isafile;
 /*
  * Reads the first block of a tape file.
  */
 {
-    if(isafile) {
-	bytes_read = fullread(tapedev, buffer, buflen);
-    } else {
-	bytes_read = tapefd_read(tapedev, buffer, buflen);
-    }
+    bytes_read = get_block(isafile);
     if(bytes_read < 0) {
 	error("error reading file header: %s", strerror(errno));
-    }
-    else if(bytes_read < buflen) {
+    } else if(bytes_read < blocksize) {
 	if(bytes_read == 0) {
 	    fprintf(stderr, "%s: missing file header block\n", get_pname());
 	} else {
@@ -164,8 +208,7 @@ int isafile;
 		    get_pname(), bytes_read, (bytes_read == 1) ? "" : "s");
 	}
 	file->type = F_UNKNOWN;
-    }
-    else {
+    } else {
 	parse_file_header(buffer, file, bytes_read);
     }
     return;
@@ -223,8 +266,15 @@ int isafile;
 
     out = dest;
 
-    /* if -r or -h, write the header before compress or uncompress pipe */
+    /*
+     * If -r or -h, write the header before compress or uncompress pipe.
+     * Only write DISK_BLOCK_BYTES, regardless of how much was read.
+     * This makes the output look like a holding disk image, and also
+     * makes it easier to remove the header (e.g. in amrecover) since
+     * it has a fixed size.
+     */
     if(rawflag || headerflag) {
+	int w;
 	char *cont_filename;
 
 	if(compflag && !file_is_compressed) {
@@ -246,10 +296,15 @@ int isafile;
 	/* remove CONT_FILENAME from header */
 	cont_filename = stralloc(file->cont_filename);
 	memset(file->cont_filename,'\0',sizeof(file->cont_filename));
-	write_header(buffer,file,bytes_read);
+	build_header(buffer, file, bytes_read, DISK_BLOCK_BYTES);
 
-	if (fullwrite(out, buffer, bytes_read) < 0) {
-	    error("write error: %s", strerror(errno));
+	w = fullwrite(out, buffer, DISK_BLOCK_BYTES);
+	if (w != DISK_BLOCK_BYTES) {
+	    if(w < 0) {
+		error("write error: %s", strerror(errno));
+	    } else {
+		error("write error: %d instead of %d", w, DISK_BLOCK_BYTES);
+	    }
 	}
 	/* add CONT_FILENAME to header */
 	strncpy(file->cont_filename, cont_filename, sizeof(file->cont_filename));
@@ -332,11 +387,7 @@ int isafile;
     got_sigpipe = 0;
     wc = 0;
     do {
-	if(isafile) {
-	    bytes_read = fullread(tapedev, buffer, sizeof(buffer));
-	} else {
-	    bytes_read = tapefd_read(tapedev, buffer, sizeof(buffer));
-	}
+	bytes_read = get_block(isafile);
 	if(bytes_read < 0) {
 	    error("read error: %s", strerror(errno));
 	}
@@ -351,7 +402,7 @@ int isafile;
 	    if((tapedev = open(file->cont_filename, O_RDONLY)) == -1) {
 		error("cannot open %s: %s",file->cont_filename,strerror(errno));
 	    }
-	    read_file_header(buffer, file, sizeof(buffer), isafile);
+	    read_file_header(file, isafile);
 	    if(file->type != F_DUMPFILE && file->type != F_CONT_DUMPFILE) {
 		fprintf(stderr, "unexpected header type: ");
 		print_header(stderr, file);
@@ -387,7 +438,7 @@ void usage()
  * Print usage message and terminate.
  */
 {
-    error("Usage: amrestore [-r|-c] [-p] [-h] tape-device|holdingfile [hostname [diskname [datestamp [hostname [diskname [datestamp ... ]]]]]]");
+    error("Usage: amrestore [-b blocksize] [-r|-c] [-p] [-h] tape-device|holdingfile [hostname [diskname [datestamp [hostname [diskname [datestamp ... ]]]]]]");
 }
 
 
@@ -418,6 +469,7 @@ char **argv;
     amwait_t compress_status;
     int fd;
     int r = 0;
+    char *e;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -437,8 +489,24 @@ char **argv;
     signal(SIGPIPE, handle_sigpipe);
 
     /* handle options */
-    while( (opt = getopt(argc, argv, "cCd:rpkh")) != -1) {
+    while( (opt = getopt(argc, argv, "b:cCd:rpkh")) != -1) {
 	switch(opt) {
+	case 'b':
+	    blocksize = strtol(optarg, &e, 10);
+	    if(e == NULL) {
+		error("%s: cannot convert \"%s\"", get_pname(), optarg);
+	    }
+	    if(strcasecmp(e, "k") == 0) {
+		blocksize *= 1024;
+	    } else if(strcasecmp(e, "m") == 0) {
+		blocksize *= 1024 * 1024;
+	    }
+	    if(blocksize < DISK_BLOCK_BYTES) {
+		error("%s: minimum block size is %dk",
+		      get_pname(),
+		      DISK_BLOCK_BYTES / 1024);
+	    }
+	    break;
 	case 'c': compflag = 1; break;
 	case 'C': compflag = 1; compress_type = COMPRESS_BEST_OPT; break;
 	case 'r': rawflag = 1; break;
@@ -533,7 +601,7 @@ char **argv;
     }
     file_number = 0;
 
-    read_file_header(buffer, &file, sizeof(buffer), isafile);
+    read_file_header(&file, isafile);
 
     if(file.type != F_TAPESTART && !isafile) {
 	fprintf(stderr, "%s: WARNING: not at start of tape, file numbers will be offset\n",
@@ -566,6 +634,7 @@ char **argv;
 		compress_pid = -1;
 	    }
 	    if(pipeflag) {
+		file_number++;			/* for the last message */
 		break;
 	    }
 	}
@@ -599,8 +668,8 @@ char **argv;
 		error("could not fsf %s: %s", tapename, strerror(errno));
 	    }
 	}
-	file_number += 1;
-	read_file_header(buffer, &file, sizeof(buffer), isafile);
+	file_number++;
+	read_file_header(&file, isafile);
     }
     if(isafile) {
 	close(tapedev);

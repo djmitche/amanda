@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.35 2001/05/14 23:44:57 jrjackson Exp $
+ * $Id: bsd-security.c,v 1.36 2001/07/31 23:19:57 jrjackson Exp $
  *
  * "BSD" security module
  */
@@ -149,7 +149,7 @@ struct bsd_stream {
      * This is the buffer that we read data into that will be passed
      * to the read callback.
      */
-    char databuf[TAPE_BLOCK_BYTES];
+    char databuf[NETWORK_BLOCK_BYTES];
 };
 
 /*
@@ -1152,7 +1152,7 @@ bsd_stream_accept(s)
     assert(bs->socket != -1);
     assert(bs->fd < 0);
 
-    bs->fd = stream_accept(bs->socket, 30, DEFAULT_SIZE, DEFAULT_SIZE);
+    bs->fd = stream_accept(bs->socket, 30, -1, -1);
     if (bs->fd < 0) {
 	security_stream_seterror(&bs->secstr,
 	    "can't accept new stream connection: %s", strerror(errno));
