@@ -30,14 +30,15 @@ $= =1000;
 
 $stats_t='i3 l i A80 ';
 $template='i f3f3 f3f3' . ($stats_t x 10);
-$info_readed=0;
 
 &init;
 
 foreach $current_disk (keys(%method)) {
-    &read_info($current_disk)
-	|| print "no such partition ($current_disk) in database\n" ;
-    &print_info;
+    if (&read_info($current_disk)) {
+      &print_info;
+    } else {
+      print "no such partition ($current_disk) in database\n" ;
+    }
 }
 
 dbmclose(%curinfo) if ($use_dbm);
@@ -53,6 +54,7 @@ if (!defined($verbose)) {
 # ------------------------------------------------------------------------
 sub read_info {
 # ------------------------------------------------------------------------
+    my($info_readed) = 0;
     if (! $use_dbm) {
 	($host, $fs)=split (':', $_[0]);
 	$fs =~ s,_,__,g;
@@ -119,7 +121,6 @@ sub read_info {
 # ------------------------------------------------------------------------
 sub print_info {
 # ------------------------------------------------------------------------
-    return unless $info_readed;
     if ($verbose) {
 	print "$current_disk:";
 	print "\tcommand=$com";
