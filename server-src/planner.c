@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.70.2.2 1998/09/08 17:59:15 martinea Exp $
+ * $Id: planner.c,v 1.70.2.3 1998/09/09 16:53:10 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -798,21 +798,30 @@ static int last_level(ip)
 info_t *ip;
 {
     int min_pos, min_level, i;
-    time_t lev0_date;
+    time_t lev0_date, last_date;
     tape_t *tp;
 
     min_pos = 1000000000;
     min_level = -1;
     lev0_date = EPOCH;
+    last_date = EPOCH;
     for(i = 0; i < 9; i++) {
-	if((tp = lookup_tapelabel(ip->inf[i].label)) == NULL) continue;
-	/* cull any entries from previous cycles */
-	if(i == 0) lev0_date = ip->inf[0].date;
-	else if(ip->inf[i].date < lev0_date) continue;
+	if(conf_reserve < 100) {
+	    if(i == 0) lev0_date = ip->inf[0].date;
+	    else if(ip->inf[i].date < lev0_date) continue;
+	    if(ip->inf[i].date > last_date)
+		min_level = i;
+	}
+	else {
+	    if((tp = lookup_tapelabel(ip->inf[i].label)) == NULL) continue;
+	    /* cull any entries from previous cycles */
+	    if(i == 0) lev0_date = ip->inf[0].date;
+	    else if(ip->inf[i].date < lev0_date) continue;
 
-	if(tp->position < min_pos) {
-	    min_pos = tp->position;
-	    min_level = i;
+	    if(tp->position < min_pos) {
+		min_pos = tp->position;
+		min_level = i;
+	    }
 	}
     }
     return min_level;
