@@ -1,5 +1,9 @@
 1999-05-25  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* recover-src/uscan.l: #undef `ECHO' after #include amanda.h; some
+	system header files may define it.
+	Reported by Dan Lipofsky <danlip@cyc.com>
+
 	* */Makefile.am: Do not define ACLOCAL_M4, COMPILE or
 	AMANDA_CFLAGS.
 	* Makefile.am: Create acinclude.m4 in the top-level directory.
