@@ -1,3 +1,9 @@
+2004-12-21  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Christopher Pascoe <c.pascoe@itee.uq.edu.au>
+
+	* common-src/match.c (match_glob): Don't amfree(regex)
+	  before calling error().
+
 2004-11-22  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/driver.c (startaflush): Use ALGO_SMALLEST if nothing fit.

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: match.c,v 1.10.4.1.4.1.2.4 2002/11/12 18:01:19 martinea Exp $
+ * $Id: match.c,v 1.10.4.1.4.1.2.5 2004/12/21 14:20:47 martinea Exp $
  *
  * functions for checking and matching regular expressions
  */
@@ -125,14 +125,12 @@ char *glob, *str;
     if((result = regcomp(&regc, regex,
 			 REG_EXTENDED|REG_NOSUB|REG_NEWLINE)) != 0) {
         regerror(result, &regc, errmsg, sizeof(errmsg));
-	amfree(regex);
 	error("glob \"%s\" -> regex \"%s\": %s", glob, regex, errmsg);
     }
 
     if((result = regexec(&regc, str, 0, 0, 0)) != 0
        && result != REG_NOMATCH) {
         regerror(result, &regc, errmsg, sizeof(errmsg));
-	amfree(regex);
 	error("glob \"%s\" -> regex \"%s\": %s", glob, regex, errmsg);
     }
 
