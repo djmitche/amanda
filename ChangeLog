@@ -1,5 +1,10 @@
 1999-04-09  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/Makefile.am (libamanda_la_SOURCES): build
+	krb4-security.c
+
+1999-04-09  Mike Grupenhoff <kashmir@munge.com>
+
 	* configure.in: implement --with-dbmalloc=[dir], where dir is
 	where the dist is unpacked and built.  This could be improved on,
 	because it doesn't handle the case where it's installed.
