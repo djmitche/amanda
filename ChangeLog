@@ -1,3 +1,10 @@
+2001-08-01 John R. Jackson (jrj@purdue.edu)
+
+	* client-src/selfcheck.c: Fix typos I introduced into the PC subdir
+	  patch.
+	* client-src/sendbackup-gnutar.c: Ditto.
+	* client-src/sendsize.c: Ditto.
+
 2001-08-01 Marko Injac <marko.injac@mail.insert.si> via John R. Jackson (jrj@purdue.edu)
 
 	* client-src/findpass.c: Allow backup of subdirs of PC shares for

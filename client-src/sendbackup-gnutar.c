@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.76 2001/08/01 22:37:32 jrjackson Exp $
+ * $Id: sendbackup-gnutar.c,v 1.77 2001/08/02 03:53:30 jrjackson Exp $
  *
  * send backup data using GNU tar
  */
@@ -330,12 +330,13 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 	if (!share) {
 	     amfree(share);
 	     amfree(subdir);
-	     error("%s-smbtar: cannot parse disk entry '%s' for share/subdir", g
+	     error("%s-smbtar: cannot parse disk entry '%s' for share/subdir",
+		   get_pname(), disk);
 	}
 	if ((subdir) && (SAMBA_VERSION < 2)) {
 	     amfree(share);
 	     amfree(subdir);
-	     error("%s-smbtar: subdirectory specified for share but samba not v2
+	     error("%s-smbtar: subdirectory specified for share '%s' but samba not v2 or better", get_pname(), disk);
 	}
 	if ((user_and_password = findpass(share, &domain)) == NULL) {
 	    if(domain) {
