@@ -4,7 +4,7 @@
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy, distribute and modify it.
 
-# Makefile for amplot.
+# Makefile for Amanda file recovery programs.
 
 
 SHELL = /bin/sh
@@ -58,7 +58,6 @@ host_triplet = @host@
 target_alias = @target_alias@
 target_triplet = @target@
 ACLOCAL = @ACLOCAL@
-AMANDA_CFLAGS = @AMANDA_CFLAGS@
 AMPLOT_CAT_COMPRESS = @AMPLOT_CAT_COMPRESS@
 AMPLOT_CAT_GZIP = @AMPLOT_CAT_GZIP@
 AMPLOT_CAT_PACK = @AMPLOT_CAT_PACK@
@@ -131,25 +130,21 @@ YACC = @YACC@
 ac_c = @ac_c@
 ac_n = @ac_n@
 
-SUFFIXES =		.sh
+INCLUDES =		-I$(top_srcdir)/common-src
 
-sbin_SCRIPTS =		@BUILD_AMPLOT_SBIN@
+AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
-EXTRA_SCRIPTS =		amplot
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
-amplotdir =		$(libexecdir)
-amplot_DATA =		@BUILD_AMPLOT_LIBEXEC@
+LDADD =			../common-src/libamanda.a
 
-EXTRA_DATA =		amplot.awk		amplot.g
-EXTRA_DIST =		$(EXTRA_DATA)
+sbin_PROGRAMS =
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = ../config.h
-CONFIG_CLEAN_FILES =  amcat.awk amplot.sh
-SCRIPTS =  $(sbin_SCRIPTS)
+CONFIG_CLEAN_FILES = 
+PROGRAMS =  $(sbin_PROGRAMS)
 
-DATA =  $(amplot_DATA)
-
-DIST_COMMON =  Makefile.am Makefile.in amcat.awk.in amplot.sh.in
+DIST_COMMON =  Makefile.am Makefile.in
 
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
@@ -158,55 +153,37 @@ TAR = gnutar
 default: all
 
 .SUFFIXES:
-.SUFFIXES: .sh
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
-	cd $(top_srcdir) && $(AUTOMAKE) --foreign amplot/Makefile
+	cd $(top_srcdir) && $(AUTOMAKE) --foreign recover-src/Makefile
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status $(BUILT_SOURCES)
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
-amcat.awk: $(top_builddir)/config.status amcat.awk.in
-	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
-amplot.sh: $(top_builddir)/config.status amplot.sh.in
-	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
 
-install-sbinSCRIPTS: $(sbin_SCRIPTS)
+mostlyclean-sbinPROGRAMS:
+
+clean-sbinPROGRAMS:
+	test -z "$(sbin_PROGRAMS)" || rm -f $(sbin_PROGRAMS)
+
+distclean-sbinPROGRAMS:
+
+maintainer-clean-sbinPROGRAMS:
+
+install-sbinPROGRAMS: $(sbin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(sbindir)
-	@list='$(sbin_SCRIPTS)'; for p in $$list; do \
+	@list='$(sbin_PROGRAMS)'; for p in $$list; do \
 	  if test -f $$p; then \
-	    echo " $(INSTALL_SCRIPT) $$p $(sbindir)/`echo $$p|sed '$(transform)'`"; \
-	    $(INSTALL_SCRIPT) $$p $(sbindir)/`echo $$p|sed '$(transform)'`; \
-	  else if test -f $(srcdir)/$$p; then \
-	    echo " $(INSTALL_SCRIPT) $(srcdir)/$$p $(sbindir)/`echo $$p|sed '$(transform)'`"; \
-	    $(INSTALL_SCRIPT) $(srcdir)/$$p $(sbindir)/`echo $$p|sed '$(transform)'`; \
-	  else :; fi; fi; \
+	    echo "  $(INSTALL_PROGRAM) $$p $(sbindir)/`echo $$p|sed '$(transform)'`"; \
+	     $(INSTALL_PROGRAM) $$p $(sbindir)/`echo $$p|sed '$(transform)'`; \
+	  else :; fi; \
 	done
 
-uninstall-sbinSCRIPTS:
+uninstall-sbinPROGRAMS:
 	$(NORMAL_UNINSTALL)
-	list='$(sbin_SCRIPTS)'; for p in $$list; do \
+	list='$(sbin_PROGRAMS)'; for p in $$list; do \
 	  rm -f $(sbindir)/`echo $$p|sed '$(transform)'`; \
-	done
-
-install-amplotDATA: $(amplot_DATA)
-	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(amplotdir)
-	@list='$(amplot_DATA)'; for p in $$list; do \
-	  if test -f $(srcdir)/$$p; then \
-	    echo " $(INSTALL_DATA) $(srcdir)/$$p $(amplotdir)/$$p"; \
-	    $(INSTALL_DATA) $(srcdir)/$$p $(amplotdir)/$$p; \
-	  else if test -f $$p; then \
-	    echo " $(INSTALL_DATA) $$p $(amplotdir)/$$p"; \
-	    $(INSTALL_DATA) $$p $(amplotdir)/$$p; \
-	  fi; fi; \
-	done
-
-uninstall-amplotDATA:
-	$(NORMAL_UNINSTALL)
-	list='$(amplot_DATA)'; for p in $$list; do \
-	  rm -f $(amplotdir)/$$p; \
 	done
 tags: TAGS
 TAGS:
@@ -214,8 +191,11 @@ TAGS:
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
-subdir = amplot
+subdir = recover-src
 distdir: $(DISTFILES)
+	here=`cd $(top_builddir) && pwd`; top_distdir=`cd $$top_distdir && pwd` \
+	  && cd $(top_srcdir) \
+	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --foreign recover-src/Makefile
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  test -f $(distdir)/$$file \
@@ -227,25 +207,24 @@ dvi:
 check: all
 	$(MAKE)
 installcheck:
-install-exec: install-sbinSCRIPTS
+install-exec: install-sbinPROGRAMS
 	@$(NORMAL_INSTALL)
 	$(MAKE) install-exec-hook
 
-install-data: install-amplotDATA
+install-data: 
 	@$(NORMAL_INSTALL)
-	$(MAKE) install-data-hook
 
 install: install-exec install-data all
 	@:
 
-uninstall: uninstall-sbinSCRIPTS uninstall-amplotDATA
+uninstall: uninstall-sbinPROGRAMS
 
-all: Makefile $(SCRIPTS) $(DATA)
+all: Makefile $(PROGRAMS)
 
 install-strip:
 	$(MAKE) INSTALL_PROGRAM='$(INSTALL_PROGRAM) -s' install
 installdirs:
-	$(mkinstalldirs)  $(sbindir) $(amplotdir)
+	$(mkinstalldirs)  $(sbindir)
 
 
 mostlyclean-generic:
@@ -262,50 +241,35 @@ distclean-generic:
 maintainer-clean-generic:
 	test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 	test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
-mostlyclean:  mostlyclean-generic
+mostlyclean:  mostlyclean-sbinPROGRAMS mostlyclean-generic
 
-clean:  clean-generic mostlyclean
+clean:  clean-sbinPROGRAMS clean-generic mostlyclean
 
-distclean:  distclean-generic clean
+distclean:  distclean-sbinPROGRAMS distclean-generic clean
 	rm -f config.status
 
-maintainer-clean:  maintainer-clean-generic distclean
+maintainer-clean:  maintainer-clean-sbinPROGRAMS \
+		maintainer-clean-generic distclean
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 
-.PHONY: default uninstall-sbinSCRIPTS install-sbinSCRIPTS \
-uninstall-amplotDATA install-amplotDATA tags distdir info dvi \
-installcheck install-exec install-data install uninstall all \
-installdirs mostlyclean-generic distclean-generic clean-generic \
-maintainer-clean-generic clean mostlyclean distclean maintainer-clean
+.PHONY: default mostlyclean-sbinPROGRAMS distclean-sbinPROGRAMS \
+clean-sbinPROGRAMS maintainer-clean-sbinPROGRAMS uninstall-sbinPROGRAMS \
+install-sbinPROGRAMS tags distdir info dvi installcheck install-exec \
+install-data install uninstall all installdirs mostlyclean-generic \
+distclean-generic clean-generic maintainer-clean-generic clean \
+mostlyclean distclean maintainer-clean
 
-
-.sh:
-			cat $< > $@
-			chmod a+x $@
-
-amplot.gp:		amplot.g
-			rm -f amplot.gp
-			cat $(srcdir)/amplot.g > amplot.gp
-			echo "pause -1;" >> amplot.gp
 
 install-exec-hook:
-	@list="$(sbin_SCRIPTS)"; for p in $$list; do \
+	@list="$(sbin_PROGRAMS)";
+	for p in $$list; do \
 		pa=$(sbindir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(CLIENT_LOGIN) $$pa; \
 		chown $(CLIENT_LOGIN) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \
 		chgrp $(SETUID_GROUP) $$pa; \
 	done
-
-install-data-hook:
-	@list="$(amplot_DATA)"; for p in $$list; do \
-		pa=$(libexecdir)/$$p; \
-		echo chown $(CLIENT_LOGIN) $$pa; \
-		chown $(CLIENT_LOGIN) $$pa; \
-		echo chgrp $(SETUID_GROUP) $$pa; \
-		chgrp $(SETUID_GROUP) $$pa; \
-        done
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -1837,18 +1837,29 @@ AC_SUBST(KRB4CLIENT_O)
 
 AC_OUTPUT( \
 	amplot/amcat.awk		amplot/amplot.sh		\
-	amplot/Makefile			changer-src/chg-generic.sh	\
-	changer-src/hp-changer.sh	changer-src/no-changer.sh	\
-	changer-src/rth-changer.pl	changer-src/Makefile		\
+	amplot/Makefile							\
+									\
+	changer-src/chg-generic.sh	changer-src/hp-changer.sh	\
+	changer-src/no-changer.sh	changer-src/rth-changer.pl	\
+	changer-src/Makefile						\
+									\
 	client-src/patch-system.sh	client-src/Makefile		\
+									\
 	common-src/versuff.c		common-src/Makefile		\
+									\
 	example/amanda.conf		example/Makefile		\
+									\
 	man/amadmin.8			man/amanda.8			\
 	man/amcheck.8			man/amcleanup.8			\
 	man/amdump.8			man/amflush.8			\
 	man/amlabel.8			man/Makefile			\
+									\
+	recover-src/Makefile						\
+									\
 	server-src/amcheckdb.sh		server-src/amcleanup.sh		\
 	server-src/amdump.sh		server-src/amfreetapes.sh	\
 	server-src/amoverview.pl	server-src/amrmtape.sh		\
 	server-src/amtoc.pl		server-src/amverify.sh		\
-	server-src/Makefile		Makefile)
+	server-src/Makefile						\
+									\
+	Makefile)

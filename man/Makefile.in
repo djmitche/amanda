@@ -149,7 +149,7 @@ amcheck.8.in amcleanup.8.in amdump.8.in amflush.8.in amlabel.8.in
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
-TAR = tar
+TAR = gnutar
 default: all
 
 .SUFFIXES:

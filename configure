@@ -15037,21 +15037,32 @@ ac_given_INSTALL="$INSTALL"
 
 trap 'rm -fr `echo "\
 	amplot/amcat.awk		amplot/amplot.sh		\
-	amplot/Makefile			changer-src/chg-generic.sh	\
-	changer-src/hp-changer.sh	changer-src/no-changer.sh	\
-	changer-src/rth-changer.pl	changer-src/Makefile		\
+	amplot/Makefile							\
+									\
+	changer-src/chg-generic.sh	changer-src/hp-changer.sh	\
+	changer-src/no-changer.sh	changer-src/rth-changer.pl	\
+	changer-src/Makefile						\
+									\
 	client-src/patch-system.sh	client-src/Makefile		\
+									\
 	common-src/versuff.c		common-src/Makefile		\
+									\
 	example/amanda.conf		example/Makefile		\
+									\
 	man/amadmin.8			man/amanda.8			\
 	man/amcheck.8			man/amcleanup.8			\
 	man/amdump.8			man/amflush.8			\
 	man/amlabel.8			man/Makefile			\
+									\
+	recover-src/Makefile						\
+									\
 	server-src/amcheckdb.sh		server-src/amcleanup.sh		\
 	server-src/amdump.sh		server-src/amfreetapes.sh	\
 	server-src/amoverview.pl	server-src/amrmtape.sh		\
 	server-src/amtoc.pl		server-src/amverify.sh		\
-	server-src/Makefile		Makefile config.h" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
+	server-src/Makefile						\
+									\
+	Makefile config.h" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
 EOF
 cat >> $CONFIG_STATUS <<EOF
 
@@ -15221,21 +15232,32 @@ cat >> $CONFIG_STATUS <<EOF
 
 CONFIG_FILES=\${CONFIG_FILES-"\
 	amplot/amcat.awk		amplot/amplot.sh		\
-	amplot/Makefile			changer-src/chg-generic.sh	\
-	changer-src/hp-changer.sh	changer-src/no-changer.sh	\
-	changer-src/rth-changer.pl	changer-src/Makefile		\
+	amplot/Makefile							\
+									\
+	changer-src/chg-generic.sh	changer-src/hp-changer.sh	\
+	changer-src/no-changer.sh	changer-src/rth-changer.pl	\
+	changer-src/Makefile						\
+									\
 	client-src/patch-system.sh	client-src/Makefile		\
+									\
 	common-src/versuff.c		common-src/Makefile		\
+									\
 	example/amanda.conf		example/Makefile		\
+									\
 	man/amadmin.8			man/amanda.8			\
 	man/amcheck.8			man/amcleanup.8			\
 	man/amdump.8			man/amflush.8			\
 	man/amlabel.8			man/Makefile			\
+									\
+	recover-src/Makefile						\
+									\
 	server-src/amcheckdb.sh		server-src/amcleanup.sh		\
 	server-src/amdump.sh		server-src/amfreetapes.sh	\
 	server-src/amoverview.pl	server-src/amrmtape.sh		\
 	server-src/amtoc.pl		server-src/amverify.sh		\
-	server-src/Makefile		Makefile"}
+	server-src/Makefile						\
+									\
+	Makefile"}
 EOF
 cat >> $CONFIG_STATUS <<\EOF
 for ac_file in .. $CONFIG_FILES; do if test "x$ac_file" != x..; then
