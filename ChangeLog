@@ -1,3 +1,8 @@
+1999-06-08  Mike Grupenhoff <kashmir@munge.com>
+
+	* restore-src/amrestore.c: second arg to restore() is a char *, not
+	a string_t.  Adjust prototype accordingly.
+
 1999-06-07  Mike Grupenhoff <kashmir@munge.com>
 
 	* common-src/util.c (bind_portrange): function that attempts
