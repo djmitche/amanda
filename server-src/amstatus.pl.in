@@ -550,6 +550,20 @@ while(<AMDUMP>) {
 		$taper_time{$hostpart}=$1;
 		$error{$hostpart}="driver: $error";
 	}
+	elsif(/driver: dump failed (\S+) (\S+) (\S+), too many dumper retry/) {
+		$serial=$1;
+		$hostpart=$serial{$serial};
+		$dump_started{$hostpart}=-1;
+		$dump_finished{$hostpart}=-2;
+		$error{$hostpart} .= "(too many dumper retry)";
+	}
+	elsif(/driver: tape failed (\S+) (\S+) (\S+), too many taper retry/) {
+		$serial=$1;
+		$hostpart=$serial{$serial};
+		$taper_started{$hostpart}=-1;
+		$taper_finished{$hostpart}=-2;
+		$error{$hostpart} .= "(too many taper retry)";
+	}
 	elsif(/planner: FAILED (\S+) (\S+) (\S+) (\d+) (.*)/) {
 		$host=$1;
 		$partition=$2;

@@ -105,9 +105,11 @@ BEGIN{
 			else if( $7 == "START-TAPER") fil = $8;
 		}
 		else if( $2=="finished-cmd") cmd_fin++;
-		else if ($2=="started")      forked++;
+		else if( $2=="started")      forked++;
 		else if( $2=="QUITTING")     do_quit();
 		else if( $2=="tape" && $3=="size") ; #eat this line
+		else if( $2=="dump" && $3=="failed") ; #eat this line
+		else if( $2=="taper" && $3=="failed") ; #eat this line
 		else if( $2=="dumping" || $2 == "adding" || $2 == "holding-disks:") 
 		  dumping++; # eat this line
 		else if( $2!="FINISHED" && $2 != "pid" && $2 != "taper-tryagain"&& $2!="startaflush:")

@@ -1,5 +1,11 @@
 2004-10-21  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/driver.c: Print message when too many retry.
+	* server-src/amstatus.pl.in: Detect a failed dump after too many retry.
+	* amplot/amplot.awk: Parse these message.
+
+2004-10-21  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/driver.c (dump_to_tape): Don't retry a dump indefinitely
 	  if dumper returns DONE and taper returns TRYAGAIN.
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.20.2.6 2004/10/21 12:31:41 martinea Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.20.2.7 2004/10/21 13:09:35 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -963,6 +963,7 @@ void handle_taper_result()
 	    log_add(L_FAIL, "%s %s %d %s [too many taper retries]",
 		    dp->host->hostname, dp->name, sched(dp)->level,
 		    sched(dp)->datestamp);
+	    printf("driver: taper failed %s %s %s, too many taper retry\n", result_argv[2], dp->host->hostname, dp->name);
 	}
 	else {
 	    sched(dp)->attempted++;
@@ -1153,9 +1154,10 @@ void handle_dumper_result(fd)
 	dp->inprogress = 0;
 
 	if(sched(dp)->attempted) {
-	    log_add(L_FAIL, "%s %s %d %s[could not connect to %s]",
+	    log_add(L_FAIL, "%s %s %d %s [too many dumper retry]",
 		    dp->host->hostname, dp->name,
-		    sched(dp)->level, sched(dp)->datestamp, dp->host->hostname);
+		    sched(dp)->level, sched(dp)->datestamp);
+	    printf("driver: dump failed %s %s %s, too many dumper retry\n", result_argv[2], dp->host->hostname, dp->name);
 	} else {
 	    sched(dp)->attempted++;
 	    enqueue_disk(&runq, dp);
