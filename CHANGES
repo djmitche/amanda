@@ -95,7 +95,7 @@ Version 2.4.0p1
 
 	updated to libtool 1.2a.  -oliva
 
-	fix kerberos encryption to work.  -kovert
+	fix kerberos encryption to work.  -Chris Ross <cross@uu.net>
 
 	add --with-owner option to optionally not have things owned by
 	the amanda user.  (meant to be in 2.4.0) -kovert
