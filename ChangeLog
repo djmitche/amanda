@@ -1,5 +1,9 @@
 2004-02-13  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/driver.c (dump_schedule): Print complete name.
+
+2004-02-13  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	The estimate send a PREP (partial REP) packet after each estimate.
 	* client-src/amandad.c: Send PREP packet if sendsize.
 	* common-src/amfeatures.c (am_init_feature_set): Add
