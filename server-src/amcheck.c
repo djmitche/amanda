@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.10 1999/09/11 18:42:47 jrj Exp $
+ * $Id: amcheck.c,v 1.50.2.11 1999/09/12 20:38:47 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -621,8 +621,8 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	} else if(access(tapefile, F_OK) == 0 && access(tapefile, W_OK) != 0) {
 	    fprintf(outf, "ERROR: tape list %s: not writable\n", tapefile);
 	    tapebad = 1;
-	} else if(read_tapelist(conf_tapelist)) {
-	    fprintf(outf, "ERROR: tape list %s: parse error\n", conf_tapelist);
+	} else if(read_tapelist(tapefile)) {
+	    fprintf(outf, "ERROR: tape list %s: parse error\n", tapefile);
 	    tapebad = 1;
 	}
 	if(access(holdfile, F_OK) != -1) {
