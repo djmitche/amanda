@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcleanupdisk.c,v 1.4 1999/04/10 06:19:32 kashmir Exp $
+ * $Id: amcleanupdisk.c,v 1.5 1999/04/17 22:20:03 martinea Exp $
  */
 #include "amanda.h"
 
@@ -34,6 +34,7 @@
 #include "version.h"
 #include "holding.h"
 #include "infofile.h"
+#include "server_util.h"
 
 static char *config;
 char *confdir;
@@ -44,7 +45,6 @@ char *datestamp;
 int main P((int argc, char **argv));
 void check_holdingdisk P((char *diskdir, char *datestamp));
 void check_disks P((void));
-static char *construct_datestamp P((void));
 
 int main(main_argc, main_argv)
 int main_argc;
@@ -192,15 +192,3 @@ void check_disks()
 
 }
 
-static char *construct_datestamp()
-{
-    struct tm *tm;
-    char datestamp[3*NUM_STR_SIZE];
-    time_t today;
-
-    today = time((time_t *)NULL);
-    tm = localtime(&today);
-    snprintf(datestamp, sizeof(datestamp),
-                "%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
-    return stralloc(datestamp);
-}

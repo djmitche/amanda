@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.122 1999/04/16 23:01:51 kashmir Exp $
+/* $Id: dumper.c,v 1.123 1999/04/17 22:20:11 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -41,6 +41,7 @@
 #include "token.h"
 #include "version.h"
 #include "fileheader.h"
+#include "server_util.h"
 
 #ifndef SEEK_SET
 #define SEEK_SET 0
@@ -119,7 +120,6 @@ static void putresult P((char *format, ...))
     __attribute__ ((format (printf, 1, 2)));
 static int do_dump P((struct databuf *));
 void check_options P((char *options));
-static char *construct_datestamp P((void));
 static void finish_tapeheader P((dumpfile_t *));
 static int write_tapeheader P((int outfd, dumpfile_t *type));
 static void databuf_init P((struct databuf *, int, const char *, long));
@@ -153,19 +153,6 @@ char *options;
       srvcompress = COMP_FAST;
     else
       srvcompress = COMP_NONE;
-}
-
-static char *construct_datestamp()
-{
-    struct tm *tm;
-    time_t timestamp;
-    char datestamp[3*NUM_STR_SIZE];
-
-    timestamp = time((time_t *)NULL);
-    tm = localtime(&timestamp);
-    snprintf(datestamp, sizeof(datestamp),
-		"%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
-    return stralloc(datestamp);
 }
 
 

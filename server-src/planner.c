@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.91 1999/04/16 04:59:02 kashmir Exp $
+ * $Id: planner.c,v 1.92 1999/04/17 22:20:13 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -39,6 +39,7 @@
 #include "security.h"
 #include "protocol.h"
 #include "version.h"
+#include "server_util.h"
 
 #define MAX_LEVELS		    3	/* max# of estimates per filesys */
 
@@ -120,7 +121,6 @@ bilist_t biq;			/* The BI queue itself */
  *
  */
 
-static char *construct_datestamp P((void));  /* subroutines */
 static void setup_estimate P((disk_t *dp));
 static void get_estimates P((void));
 static void analyze_estimate P((disk_t *dp));
@@ -220,6 +220,7 @@ char **argv;
     conf_reserve  = getconf_int(CNF_RESERVE);
 
     amfree(datestamp);
+    today = time(0);
     datestamp = construct_datestamp();
     log_add(L_START, "date %s", datestamp);
 
@@ -419,18 +420,6 @@ char **argv;
     }
 
     return 0;
-}
-
-static char *construct_datestamp()
-{
-    struct tm *tm;
-    char datestamp[3*NUM_STR_SIZE];
-
-    today = time((time_t *)NULL);
-    tm = localtime(&today);
-    snprintf(datestamp, sizeof(datestamp),
-		"%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
-    return stralloc(datestamp);
 }
 
 

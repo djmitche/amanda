@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.50 1999/04/10 06:19:34 kashmir Exp $
+ * $Id: amflush.c,v 1.51 1999/04/17 22:20:05 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -38,6 +38,7 @@
 #include "version.h"
 #include "holding.h"
 #include "driverio.h"
+#include "server_util.h"
 
 static char *config;
 char *confdir;
@@ -51,7 +52,6 @@ void flush_holdingdisk P((char *diskdir, char *datestamp));
 void confirm P((void));
 void detach P((void));
 void run_dumps P((void));
-static char *construct_datestamp P((void));
 
 
 int main(main_argc, main_argv)
@@ -425,15 +425,3 @@ void run_dumps()
     log_add(L_FINISH, "date %s time %s", datestamp, walltime_str(curclock()));
 }
 
-static char *construct_datestamp()
-{
-    struct tm *tm;
-    char datestamp[3*NUM_STR_SIZE];
-    time_t today;
-
-    today = time((time_t *)NULL);
-    tm = localtime(&today);
-    snprintf(datestamp, sizeof(datestamp),
-                "%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
-    return stralloc(datestamp);
-}
