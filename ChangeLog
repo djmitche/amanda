@@ -1,4 +1,9 @@
-2001-07-10 John R. Jackson <jrj@purdue.edu>
+2001-07-11 John R. Jackson <jrj@purdue.edu>
+
+	* common-src/file.c: Fix a memory leak.  Grab exponentially larger
+	  chunks of memory up to a point, then level out.
+
+2001-07-11 John R. Jackson <jrj@purdue.edu>
 
 	* tape-src/tapetype.c: Only report a pass summary when stderr is not
 	  a tty.  Deal with some obscure end cases.
