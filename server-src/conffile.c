@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.28 1997/12/19 17:23:40 george Exp $
+ * $Id: conffile.c,v 1.29 1997/12/23 22:55:00 jrj Exp $
  *
  * read configuration file
  */
@@ -1915,6 +1915,7 @@ tok_t exp;
 {
     int ch, i, d;
     char *buf;
+    int token_overflow;
 
     if(token_pushed) {
 	token_pushed = 0;
@@ -1941,10 +1942,18 @@ tok_t exp;
 
 	if(isalpha(ch)) {		/* identifier */
 	    buf = tkbuf;
+	    token_overflow = 0;
 	    do {
-		if(islower(ch)) *buf = toupper(ch);
-		else *buf = ch;
-		buf++;
+		if(islower(ch)) ch = toupper(ch);
+		if(buf < tkbuf+sizeof(tkbuf)-1) {
+		    *buf++ = ch;
+		} else {
+		    *buf = '\0';
+		    if(!token_overflow) {
+			parserror("token too long: %.20s...", tkbuf);
+		    }
+		    token_overflow = 1;
+		}
 		ch = getc(conf);
 	    } while(isalnum(ch) || ch == '_' || ch == '-');
 
@@ -1953,7 +1962,8 @@ tok_t exp;
 
 	    tokenval.s = tkbuf;
 
-	    if(exp == IDENT) tok = IDENT;
+	    if(token_overflow) tok = UNKNOWN;
+	    else if(exp == IDENT) tok = IDENT;
 	    else tok = lookup_keyword(tokenval.s);
 	}
 	else if(isdigit(ch)) {	/* integer */
@@ -1992,9 +2002,18 @@ tok_t exp;
 
 	case '"':			/* string */
 	    buf = tkbuf;
-	    ch =  getc(conf);
+	    token_overflow = 0;
+	    ch = getc(conf);
 	    while(ch != '"' && ch != '\n' && ch != EOF) {
-		*buf++ = ch;
+		if(buf < tkbuf+sizeof(tkbuf)-1) {
+		    *buf++ = ch;
+		} else {
+		    *buf = '\0';
+		    if(!token_overflow) {
+			parserror("string too long: %.20s...", tkbuf);
+		    }
+		    token_overflow = 1;
+		}
 		ch = getc(conf);
 	    }
 	    if(ch != '"') {
@@ -2003,7 +2022,8 @@ tok_t exp;
 	    }
 	    *buf = '\0';
 	    tokenval.s = tkbuf;
-	    tok = STRING;
+	    if(token_overflow) tok = UNKNOWN;
+	    else tok = STRING;
 	    break;
 
 	case ',':  tok = COMMA; break;
@@ -2193,11 +2213,14 @@ main(argc, argv)
 int argc;
 char *argv[];
 {
+  int result;
+
   startclock();
   if (argc>1)
     chdir(argv[1]);
-  read_conffile(CONFFILE_NAME);
+  result = read_conffile(CONFFILE_NAME);
   dump_configuration(CONFFILE_NAME);
+  return result;
 }
 
 char *pname = "conffile";

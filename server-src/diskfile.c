@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.15 1997/12/16 18:02:26 jrj Exp $
+ * $Id: diskfile.c,v 1.16 1997/12/23 22:55:02 jrj Exp $
  *
  * read disklist file
  */
@@ -357,6 +357,7 @@ static void get_string()
 {
     int ch;
     char *p;
+    int string_overflow;
 
     ch = getc(diskf);
 
@@ -369,16 +370,26 @@ static void get_string()
     } while(ch != '\n' && ch != EOF);
 
     p = str;
+    string_overflow = 0;
     if(ch == '\n') *p++ = ch;
     else if(ch != EOF) {
 	while(ch!=' ' && ch!='\t' && ch!='#' && ch!='\n' && ch!=EOF) {
-	    *p++ = ch;
+	    if(p < str+sizeof(str)-1) {
+		*p++ = ch;
+	    } else {
+		string_overflow = 1;
+	    }
 	    ch = getc(diskf);
 	}
 	ungetc(ch, diskf);
     }
 
     *p = '\0';
+
+    if(string_overflow) {
+	parserror("string too long: %.20s...", str);
+	*str = '\0';			/* cause an abort upline */
+    }
 }
 
 
@@ -469,7 +480,10 @@ dump_disklist()
     printf("DISKLIST BY HOSTNAME:\n");
 
     for(hp = hostlist; hp != NULL; hp = hp->next) {
-	printf("HOST %s, inprogress = %d\n", hp->hostname, hp->inprogress);
+	printf("HOST %s INTERFACE %s\n",
+	       hp->hostname,
+	       (hp->netif == NULL||hp->netif->name == NULL) ? "(null)"
+							    : hp->netif->name);
 	for(dp = hp->disks; dp != NULL; dp = dp->hostnext)
 	    dump_disk(dp);
 	putchar('\n');
@@ -490,20 +504,25 @@ dump_disklist()
 dump_disk(dp)
 disk_t *dp;
 {
-    printf("  DISK %s (HOST %s, LINE %d) TYPE %s NAME %s\n",
+    printf("  DISK %s (HOST %s, LINE %d) TYPE %s NAME %s PLATTER %d\n",
 	   dp->name, dp->host->hostname, dp->line, dp->dtype_name,
-	   dp->name == NULL? "(null)": dp->name);
+	   dp->name == NULL? "(null)": dp->name,
+	   dp->platter);
 }
 
 main(argc, argv)
 int argc;
 char *argv[];
 {
+  int result;
+
   if (argc>1)
     chdir(argv[1]);
-  read_conffile(CONFFILE_NAME);
-  read_diskfile(getconf_str(CNF_DISKFILE));
+  if((result = read_conffile(CONFFILE_NAME)) == 0) {
+    result = (read_diskfile(getconf_str(CNF_DISKFILE)) == NULL);
+  }
   dump_disklist();
+  return result;
 }
 
 char *pname = "diskfile";
