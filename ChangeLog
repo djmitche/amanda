@@ -1,3 +1,9 @@
+2002-01-04  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* Amanda 2.4.3b2 released
+	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.4.3b2)
+	* NEWS: New feature of amanda-2.4.3b2
+
 2002-01-01  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* tape-src/output-tape.c (tape_tapefd_rewind, tape_tapefd_unload):

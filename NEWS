@@ -1,3 +1,9 @@
+Changes in release 2.4.3b2
+
+* amrestore try to find the next chunk in the current directory.
+* amrecover: You can change the tape device between each tape.
+* amstatus work with amflush.
+
 Changes in release 2.4.3b1
 
 * tapeio.
