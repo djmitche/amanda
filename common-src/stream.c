@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.3 1997/12/30 05:24:23 jrj Exp $
+ * $Id: stream.c,v 1.4 1997/12/31 01:56:24 jrj Exp $
  *
  * functions for managing stream sockets
  */
@@ -146,8 +146,20 @@ int server_socket, timeout, sendsize, recvsize;
     if(nfound <= 0 || !FD_ISSET(server_socket, &readset))
 	return -1;
 
-    addrlen = sizeof(struct sockaddr);
-    connected_socket = accept(server_socket,(struct sockaddr *)&addr,&addrlen);
+    while(1) {
+	addrlen = sizeof(struct sockaddr);
+	connected_socket = accept(server_socket,
+				  (struct sockaddr *)&addr,
+				  &addrlen);
+	/*
+	 * Make certain we got an inet connection and that it is not
+	 * from port 20 (a favorite unauthorized entry tool).
+	 */
+	if(addr.sin_family == AF_INET && htons(addr.sin_port) != 20) {
+	    break;
+	}
+	aclose(connected_socket);
+    }
 
     if(sendsize != DEFAULT_SIZE) 
 	try_socksize(connected_socket, SO_SNDBUF, sendsize);
