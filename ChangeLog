@@ -1,3 +1,13 @@
+1999-02-03  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* configure.in (amanda_cv_dump_estimate): check for support for -S
+	too, and define HAVE_DUMP_ESTIMATE as the estimate switch, if any
+	* client-src/sendsize.c (re_size): new regexps for Solaris ufsdump
+	-S and Samba `du'.  Restrict regexp that matched Digital Unix'
+	dump -E so that it doesn't match smbclient's output any more.
+	Move some regexps around, and only define them if the corresponding
+	dump program is available
+
 1999-02-01  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* example/amanda.conf.in: document the behavior of relative
