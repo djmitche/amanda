@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.26 1997/09/04 06:13:24 amcore Exp $
+ * $Id: sendsize.c,v 1.27 1997/09/09 14:39:44 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -756,7 +756,8 @@ time_t dumpsince;
 
     sprintf(cmd, "%s/runtar%s", libexecdir, versionsuffix());
 
-    if (strncmp(efile, "--exclude-list", strlen("--exclude-list"))==0)
+    if (*efile == 0) /* do nothing */;
+    else if (strncmp(efile, "--exclude-list", strlen("--exclude-list"))==0)
       strncpy(&efile[strlen("--exclude-")], "from", strlen("from"));
     else if (strncmp(efile, "--exclude-file", strlen("--exclude-file"))==0)
       memmove(&efile[strlen("--exclude")],
