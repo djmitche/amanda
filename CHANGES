@@ -1,3 +1,8 @@
+	new `killpgrp' setuid-root program.  It is used to kill
+	VDUMP, VXDUMP and XFSDUMP or with-rundump DUMP estimates in a
+	safe manner.
+	-Joerg Behrens <jbehren@umpa06.gwdg.de> & oliva
+
 	fixed amrmtape so that it will delete from tapelist only the
 	entry that corresponds to the specified tape, not others that
 	contain the tape name as a substring.

@@ -30,6 +30,7 @@ libexec_PROGRAMS =	versionsuffix		@BUILD_CLIENT_PROGS_LIBEXEC@
 TEST_PROGS = getfsent
 
 EXTRA_PROGRAMS =	amandad			calcsize	\
+			killpgrp				\
 			rundump			runtar		\
 			selfcheck		sendbackup	\
 			sendsize				\
@@ -87,7 +88,7 @@ install-exec-hook:
 		echo chgrp $(SETUID_GROUP) $$pa; \
 		chgrp $(SETUID_GROUP) $$pa; \
 	done
-	@list="$(libexecdir)/calcsize $(libexecdir)/rundump $(libexecdir)/runtar"; \
+	@list="$(libexecdir)/calcsize $(libexecdir)/killpgrp $(libexecdir)/rundump $(libexecdir)/runtar"; \
 	for p in $$list; do \
 		if echo "$(sbin_SCRIPTS) $(libexec_PROGRAMS) $(libexec_SCRIPTS)" | grep `basename $$p` >/dev/null 2>&1; then \
 			pa=`echo $$p|sed '$(transform)'`; \

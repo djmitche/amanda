@@ -93,24 +93,9 @@ PATH.
 
 If you have vxfs filesystems to back up, amanda will pick vxdump
 automatically.  However, since it must be run as root, amanda will use
-a setuid-root program called rundump to call it.  Unfortunately, this
-makes it impossible for amanda to kill it after it has printed an
-estimate line, as amanda usually does with other backup programs,
-unless the sendsize program is run as root.  So, vxdump users have
-three alternatives:
-
-1) configure --with-user=root, so that all backup runs as user root.
-You shouldn't usually want lots of unknown code running as root, so
-you might prefer not to do this.
-
-2) make sendsize setuid-root.  This reduces the amount of code run as
-root (as compared with option 1), but sendsize may not be what you'd
-call a safe program.
-
-3) let it the way it is.  Estimates will take a bit longer, since
-vxdump will dump the complete filesystem to /dev/null, but you may
-live with that, as long as you increase the estimate time-out
-(etimeout) in amanda.conf.
+a setuid-root program called rundump to call it, and another
+setuid-root program called killpgrp to kill it after it has printed an
+estimate line.
 
 ---------------------------------------------------------------------------
 Linux
@@ -162,23 +147,8 @@ Since vdump must be run as root, amanda will use the rundump program
 for running it, even if USE_RUNDUMP is not defined.  If you want vdump
 to be used for all filesystems, #undef DUMP in config/config.h.
 
-Unfortunately, running vdump as root makes it impossible for amanda to
-kill it after it has printed an estimate line, as amanda usually does
-with other backup programs, unless the sendsize program is run as
-root.  So, vdump users have four alternatives:
-
-1) configure --with-user=root, so that all backup runs as user root.
-You shouldn't usually want lots of unknown code running as root, so
-you might prefer not to do this.
-
-2) make sendsize setuid-root.  This reduces the amount of code run as
-root (as compared with option 1), but sendsize may not be what you'd
-call a safe program.
-
-3) let it the way it is.  Estimates will take a bit longer, since
-vdump will dump the complete filesystem to /dev/null, but you may live
-with that, as long as you increase the estimate time-out (etimeout) in
-amanda.conf.
+Another setuid-root program called killpgrp is used to kill vdump
+after it has printed an estimate line.
 
 
 According to Oren Laadan <orenl@cs.huji.ac.il>, DEC compiler version
@@ -220,24 +190,8 @@ again.  Using GNU make fixes this problem.
 
 If you have xfs filesystems to back up, amanda will pick xfsdump
 automatically.  However, since it must be run as root, amanda will use
-a setuid-root program called rundump to call it.  Unfortunately, this
-makes it impossible for amanda to kill it after it has printed an
-estimate line, as amanda usually does with other backup programs,
-unless the sendsize program is run as root.  So, xfsdump users have
-three alternatives:
-
-1) configure --with-user=root, so that all backup runs as user root.
-You shouldn't usually want lots of unknown code running as root, so
-you might prefer not to do this.
-
-2) make sendsize setuid-root.  This reduces the amount of code run as
-root (as compared with option 1), but sendsize may not be what you'd
-call a safe program.
-
-3) let it the way it is.  Estimates will take a bit longer, since
-xfsdump will dump the complete filesystem to /dev/null, but you may
-live with that, as long as you increase the estimate time-out
-(etimeout) in amanda.conf.
+a setuid-root program called rundump to call it, and another setuid-root program called killpgrp to kill it after it has printed an
+estimate line.
 
 ---------------------------------------------------------------------------
 SCO

@@ -164,7 +164,7 @@ AC_SUBST(USE_VERSION_SUFFIXES)
 BUILD_COMMON_LIB="libamanda.a"
 BUILD_COMMON_LTLIB="libamanda.la"
 
-BUILD_CLIENT_PROGS_LIBEXEC="amandad calcsize rundump runtar selfcheck sendbackup sendsize"
+BUILD_CLIENT_PROGS_LIBEXEC="amandad calcsize killpgrp rundump runtar selfcheck sendbackup sendsize"
 BUILD_CLIENT_SCRIPTS_LIBEXEC="patch-system"
 BUILD_CLIENT_LIB="libamclient.a"
 BUILD_CLIENT_LTLIB="libamclient.la"
@@ -1883,6 +1883,8 @@ AC_CHECK_FUNCS(getfsent)
 ICE_CHECK_DECL(gethostname,unistd.h)
 AC_FUNC_GETMNTENT
 ICE_CHECK_DECL(getopt,stdlib.h unistd.h libc.h)
+AC_CHECK_FUNCS(getpgrp)
+AC_FUNC_GETPGRP
 ICE_CHECK_DECL(getpeername,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(getsockname,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(getsockopt,sys/types.h sys/socket.h)
