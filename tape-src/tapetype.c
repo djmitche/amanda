@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.3.2.3.4.1 2001/07/11 19:39:45 jrjackson Exp $
+ * $Id: tapetype.c,v 1.3.2.3.4.2 2001/07/11 21:38:52 jrjackson Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -72,7 +72,7 @@ int writeblock(fd)
 {
   size_t w;
 
-  if ((w = write(fd, getrandombytes(), BLOCKSIZE)) == BLOCKSIZE) {
+  if ((w = tapefd_write(fd, getrandombytes(), BLOCKSIZE)) == BLOCKSIZE) {
     return 1;
   }
   if (w >= 0) {
