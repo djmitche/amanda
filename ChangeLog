@@ -1,6 +1,11 @@
 2000-10-28  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	reported by The Hermit Hacker <scrappy@hub.org>
 
+	* changer-src/chg-chio.pl.in: remove unused $libexecdir.
+
+2000-10-28  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	reported by The Hermit Hacker <scrappy@hub.org>
+
 	* changer-src/chg-chio.pl.in: remove comma after LOG, 
 	typo: r should be 0.
 
