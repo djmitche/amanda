@@ -1,3 +1,8 @@
+2001-02-02 John R. Jackson <jrj@purdue.edu>
+
+	* server-src/reporter.c: Fix problem with enum being unsigned on
+	  some systems.
+
 2001-01-29 John R. Jackson <jrj@purdue.edu>
 
 	* tape-src/tapeio.c (tape_fsf): Go back to using snprintf as this
