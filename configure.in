@@ -1267,6 +1267,8 @@ fi
 
 AC_PATH_PROGS(MT,mt,,$LOCSYSPATH)
 
+AC_PATH_PROGS(CHIO,chio,chio,$LOCSYSPATH)
+
 AC_PATH_PROGS(CHS,chs,,$LOCSYSPATH)
 if test "$CHS"; then
     CHS=chs
@@ -2262,6 +2264,7 @@ LIBS="$LIBS $KRB4LIBS"
 
 dnl extra substitution parameters
 AC_SUBST(CHS)
+AC_SUBST(CHIO)
 AC_SUBST(MTX)
 AC_SUBST(ac_n)
 AC_SUBST(ac_c)
