@@ -66,10 +66,6 @@ perl -pi -e 'BEGIN { $/ = "/dev/tty" } s-$/-/dev/nul-' restore
 HP/UX
 -----
 
-If you use logical volumes, you may refer to mountpoints or full
-device pathnames instead of device names in the disk list file.
- 
-
 You may run into an internal /bin/sh limit when running the configure
 script.  The error message is:
 
@@ -78,6 +74,14 @@ script.  The error message is:
 Using /bin/posix/sh usually works around the problem.  Another
 solution is to install GNU bash and use it instead of /bin/sh.
 
+
+If `configure' complains about not finding `lex', you'll have to get
+`flex' installed.  Look for its URL in docs/INSTALL.
+
+
+If you use logical volumes, you may refer to mountpoints or full
+device pathnames instead of device names in the disk list file.
+ 
 
 If you have vxfs filesystems to back up, amanda will pick vxdump
 automatically.  However, since it must be run as root, amanda will use

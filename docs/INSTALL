@@ -86,7 +86,10 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	install the following tools.  Autoconf and automake are
 	required if you are going to rebuild the Makefiles and auto
 	configuration scripts.  Bison is only needed if you are going
-	to work on the index server and client code.
+	to work on the index server and client code.  Flex is required
+	if your home system does not provide a `lex' program.
+	Although it shouldn't be used at all, the `configure' script
+	will break if it is missing :-(
 	    ftp://ftp.gnu.org/pub/gnu/autoconf-2.12.tar.gz
 	    ftp://ftp.cygnus.com/pub/tromey/automake-1.2f.tar.gz
 	    ftp://ftp.gnu.org/pub/gnu/bison-1.25.tar.gz
