@@ -25,6 +25,8 @@ libexec_SCRIPTS =	@BUILD_CHANGER_SCRIPTS_LIBEXEC@
 EXTRA_SCRIPTS =		chg-generic	hp-changer	no-changer	\
 			rth-changer	chs-changer
 
+CLEANFILES = $(EXTRA_SCRIPTS)
+
 install-exec-hook:
 	@list="$(sbin_PROGRAMS) $(sbin_SCRIPTS)"; for p in $$list; do \
 		pa=$(sbindir)/`echo $$p|sed '$(transform)'`; \

@@ -65,6 +65,8 @@ REGEXHSRC =	$(REGsrcdir)/regex2.h \
 		$(REGsrcdir)/regerror.c \
 		$(REGsrcdir)/regfree.c
 
+CLEANFILES = regex.h regcomp.ih engine.ih regerror.ih
+
 regex.h: $(REGEXHSRC) $(REGsrcdir)/mkh
 	sh $(REGsrcdir)/mkh -o -i _REGEX_H_ $(REGEXHSRC) >$@
 
