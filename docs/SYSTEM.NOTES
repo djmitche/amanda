@@ -240,6 +240,16 @@ live with that, as long as you increase the estimate time-out
 (etimeout) in amanda.conf.
 
 ---------------------------------------------------------------------------
+SCO
+---
+
+Jens Krause <jens@transcom.de> has reported some problems with GNU tar
+1.12 on SCO Release 5.  Although the `sparse' files patch was applied,
+GNU tar would consistently crash.  GNU tar had to be built linked with
+malloc-libraries, and the `--sparse' switches had to be removed from
+client-src/sendbackup-gnutar.c and client-src/sendsize.c.
+
+---------------------------------------------------------------------------
 Microsoft Windows
 -----------------
 
