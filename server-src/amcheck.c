@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.79 2001/03/15 02:36:07 jrjackson Exp $
+ * $Id: amcheck.c,v 1.80 2001/07/10 20:58:27 jrjackson Exp $
  *
  * checks for common problems in server and clients
  */
@@ -52,6 +52,8 @@ char *config_name = NULL;
 char *config_dir = NULL;
 
 static disklist_t origq;
+
+static uid_t uid_dumpuser;
 
 /* local functions */
 
@@ -95,7 +97,10 @@ char **argv;
     char *tempfname = NULL;
     char *conffile;
     char *conf_diskfile;
-    
+    char *dumpuser;
+    struct passwd *pw;
+    uid_t uid_me;
+
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
 	 * Make sure nobody spoofs us with a lot of extra open files
@@ -121,6 +126,7 @@ char **argv;
     if(geteuid() == 0) {
 	seteuid(getuid());
     }
+    uid_me = getuid();
 
     mailout = overwrite = 0;
     do_localchk = do_tapechk = do_clientchk = 0;
@@ -191,6 +197,23 @@ char **argv;
     }
     match_disklist(&origq, argc-1, argv+1);
     amfree(conf_diskfile);
+
+    /*
+     * Make sure we are running as the dump user.
+     */
+    dumpuser = getconf_str(CNF_DUMPUSER);
+    if ((pw = getpwnam(dumpuser)) == NULL) {
+	error("cannot look up dump user \"%s\"", dumpuser);
+    }
+    uid_dumpuser = pw->pw_uid;
+    if ((pw = getpwuid(uid_me)) == NULL) {
+	error("cannot look up my own uid (%ld)", (long)uid_me);
+    }
+    if (uid_me != uid_dumpuser) {
+	error("running as user \"%s\" instead of \"%s\"",
+	      pw->pw_name,
+	      dumpuser);
+    }
 
     /*
      * If both server and client side checks are being done, the server
@@ -481,8 +504,6 @@ int start_server_check(fd, do_localchk, do_tapechk)
     int tapebad = 0, disklow = 0, logbad = 0;
     int userbad = 0, infobad = 0, indexbad = 0, pgmbad = 0;
     int testtape = do_tapechk;
-    uid_t uid_me = getuid();
-    uid_t uid_dumpuser = uid_me;
 
     switch(pid = fork()) {
     case -1: error("could not fork server check: %s", strerror(errno));
@@ -504,31 +525,6 @@ int start_server_check(fd, do_localchk, do_tapechk)
 
     fprintf(outf, "Amanda Tape Server Host Check\n");
     fprintf(outf, "-----------------------------\n");
-
-    /*
-     * Make sure we are running as the dump user.
-     */
-    {
-	char *dumpuser = getconf_str(CNF_DUMPUSER);
-	struct passwd *pw;
-
-	if ((pw = getpwnam(dumpuser)) == NULL) {
-	    fprintf(outf, "ERROR: cannot look up dump user \"%s\"\n", dumpuser);
-	    userbad = 1;
-	} else {
-	    uid_dumpuser = pw->pw_uid;
-	}
-	if ((pw = getpwuid(uid_me)) == NULL) {
-	    fprintf(outf, "ERROR: cannot look up my own uid (%ld)\n",
-		    (long)uid_me);
-	    userbad = 1;
-	}
-	if (uid_me != uid_dumpuser) {
-	    fprintf(outf, "ERROR: running as user \"%s\" instead of \"%s\"\n",
-		    pw->pw_name, dumpuser);
-	    userbad = 1;
-	}
-    }
 
     /*
      * Look up the programs used on the server side.
@@ -1050,33 +1046,6 @@ int fd;
 
     fprintf(outf, "\nAmanda Backup Client Hosts Check\n");
     fprintf(outf,   "--------------------------------\n");
-
-    /*
-     * Make sure we are running as the dump user.
-     */
-    {
-	uid_t uid_me = geteuid();
-	uid_t uid_dumpuser = uid_me;
-	char *dumpuser = getconf_str(CNF_DUMPUSER);
-	struct passwd *pw;
-
-	if ((pw = getpwnam(dumpuser)) == NULL) {
-	    fprintf(outf, "ERROR: cannot look up dump user \"%s\"\n", dumpuser);
-	    userbad = 1;
-	} else {
-	    uid_dumpuser = pw->pw_uid;
-	}
-	if ((pw = getpwuid(uid_me)) == NULL) {
-	    fprintf(outf, "ERROR: cannot look up my own uid %ld\n",
-		    (long)uid_me);
-	    userbad = 1;
-	}
-	if (uid_me != uid_dumpuser) {
-	    fprintf(outf, "ERROR: running as user \"%s\" instead of \"%s\"\n",
-		    pw->pw_name, dumpuser);
-	    userbad = 1;
-	}
-    }
 
     protocol_init();
 
