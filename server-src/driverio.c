@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.55 2000/05/27 22:45:28 martinea Exp $
+ * $Id: driverio.c,v 1.56 2000/10/23 20:09:48 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -466,6 +466,9 @@ disk_t *dp;
 	} else {
 	    cmdline = stralloc2(cmdstr[cmd], "\n");
 	}
+	break;
+    case ABORT:
+	cmdline = stralloc("ABORT\n");
 	break;
     case QUIT:
 	cmdline = stralloc("QUIT\n");
