@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.22 1999/02/13 21:10:04 martinea Exp $
+ * $Id: holding.c,v 1.23 1999/02/14 15:25:58 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -322,18 +322,40 @@ int *level;
 	aclose(fd);
 	return F_UNKNOWN;
     }
+    aclose(fd);
 
     parse_file_header(buffer,&file,sizeof(buffer));
     if(file.type != F_DUMPFILE && file.type != F_CONT_DUMPFILE) {
-	aclose(fd);
 	return file.type;
     }
     *hostname = stralloc(file.name);
     *diskname = stralloc(file.disk);
     *level = file.dumplevel;
 
-    aclose(fd);
     return file.type;
+}
+
+
+void get_dumpfile(fname, file)
+char *fname;
+dumpfile_t *file;
+{
+    char buffer[TAPE_BLOCK_BYTES];
+    int fd;
+
+    fh_init(file);
+    file->type = F_UNKNOWN;
+    if((fd = open(fname, O_RDONLY)) == -1)
+	return;
+
+    if(read(fd, buffer, sizeof(buffer)) != sizeof(buffer)) {
+	aclose(fd);
+	return;
+    }
+    aclose(fd);
+
+    parse_file_header(buffer,file,sizeof(buffer));
+    return;
 }
 
 
