@@ -1,5 +1,9 @@
 2001-12-09  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amstatus.pl.in: Work with amflush log.
+
+2001-12-09  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/driver.c (nodump): new argument, Don't start the dumpers
 	  if set.
 	* server-src/holding.c (get_flush): chdir to original cwd.
