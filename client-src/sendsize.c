@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.51 1998/01/02 18:47:50 jrj Exp $
+ * $Id: sendsize.c,v 1.52 1998/01/05 10:32:37 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -777,7 +777,7 @@ int level;
     char *tarkeys, *sharename, *pass, *domain = NULL;
     char *line;
 
-    if ((pass = findpass(disk, &domain) == NULL) {
+    if ((pass = findpass(disk, &domain)) == NULL) {
 	error("[sendsize : error in smbtar diskline, unable to find password]");
     }
     if ((sharename = makesharename(disk, 0)) == NULL) {

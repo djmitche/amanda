@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.23 1998/01/02 18:47:47 jrj Exp $
+ * $Id: selfcheck.c,v 1.24 1998/01/05 10:30:11 amcore Exp $
  *
  * do self-check and send back any error messages
  */
@@ -262,7 +262,7 @@ int level;
         if(disk[0] == '/' && disk[1] == '/') {
 	    char *cmd, *pass, *domain = NULL;
 
-	    if ((pass = findpass(disk, &domain) == NULL) {
+	    if ((pass = findpass(disk, &domain)) == NULL) {
 		printf("ERROR [can't find password for %s]\n", disk);
 		return;
 	    }

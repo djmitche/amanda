@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: findpass.c,v 1.6 1997/12/30 05:23:51 jrj Exp $
+ * $Id: findpass.c,v 1.7 1998/01/05 10:28:09 amcore Exp $
  *
  * Support routines for Amanda SAMBA support
  */
@@ -49,7 +49,7 @@ char *disk, **domain;
   *domain = NULL;				/* just to be sure */
   if ( (fp = fopen("/etc/amandapass", "r")) ) {
     afree(buffer);
-    for (; (buffer = agets(fp) != NULL; free(buffer)) {
+    for (; (buffer = agets(fp)) != NULL; free(buffer)) {
       s = buffer;
       ch = *s++;
       skip_whitespace(s, ch);			/* find start of disk name */
