@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.90 2002/04/19 14:24:12 martinea Exp $
+ * $Id: amcheck.c,v 1.91 2002/04/22 19:38:57 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1237,11 +1237,11 @@ void start_host(hostp)
 		    "hostname=", hostp->hostname, ";",
 		    "\n",
 		    NULL);
+    disk_count = 0;
     if(hostp->features != NULL) {
 	req_len = strlen(req);
 	req_len += 128;                         /* room for SECURITY ... */
 	req_len += 256;                         /* room for non-disk answers */
-	disk_count = 0;
 	for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
 	    char *l;
 	    int l_len;
@@ -1332,12 +1332,20 @@ void start_host(hostp)
 	    dp->up = DISK_ACTIVE;
 	    disk_count++;
 	}
-
-	if(disk_count == 0) {
-	    amfree(req);
-	    hostp->up = HOST_DONE;
-	    return;
+    }
+    else {
+	for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	    if(dp->up != DISK_READY || dp->todo != 1) {
+		continue;
+	    }
+	    disk_count++;
 	}
+    }
+
+    if(disk_count == 0) {
+	amfree(req);
+	hostp->up = HOST_DONE;
+	return;
     }
 
     secdrv = security_getdriver(hostp->disks->security_driver);

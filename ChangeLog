@@ -1,3 +1,8 @@
+2002-04-22  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/amcheck.c (start_host): Check the todo bit before 
+	  sending noop REQ.
+
 2002-04-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* client-src/client_util.c (parse_options, parse_g_options): Check
