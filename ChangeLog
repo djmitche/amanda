@@ -1,3 +1,10 @@
+2001-01-04 John R. Jackson <jrj@purdue.edu>
+
+	* man/amanda.8.in: Try to make it clearer that dumpcycle and maxdumps
+	  changes in the main part of the config file must appear before any
+	  dumptype definitions, and also that inherited dumptypes must appear
+	  before their reference.
+
 2001-01-04  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/driver.c (continue_dumps): Don't reduce est_size if
@@ -8,7 +15,7 @@
 2001-01-04 John R. Jackson <jrj@purdue.edu>
 
 	* server-src/conffile.c (main): Fix conffile test program so it builds
-	and works again.
+	  and works again.
 
 2001-01-03  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
@@ -1351,7 +1358,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.432 2001/01/05 00:49:27 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.433 2001/01/05 01:37:41 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

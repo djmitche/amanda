@@ -423,9 +423,17 @@ Default:
 The number of days in the backup cycle.
 Each disk will get a full backup at least this often.
 Setting this to zero tries to do a full backup each run.
+.IP
 Note that this parameter may also be set in a specific
 .B dumptype
 (see below).
+This value sets the default for all
+.BR dumptype s
+so must appear in
+.B amanda.conf
+before any
+.BR dumptype s
+are defined.
 .TP
 .BN runspercycle int
 Default:
@@ -648,10 +656,19 @@ Default:
 The maximum number of backups from a single host that Amanda will
 attempt to run in parallel.
 See also the
-.B dumptype
-section and the
 .B inparallel
 option.
+.IP
+Note that this parameter may also be set in a specific
+.B dumptype
+(see below).
+This value sets the default for all
+.BR dumptype s
+so must appear in
+.B amanda.conf
+before any
+.BR dumptype s
+are defined.
 .TP
 .BN bumpsize int
 Default:
@@ -916,10 +933,14 @@ The main option value is used to set the default for all
 sections.
 For instance, setting
 .B dumpcycle
-to 50 in the main part of the config file causes all the
+to 50 in the main part of the config file causes all following
 .B dumptype
 sections to start with that value,
-but may be changed on a section by section basis.
+but the value may be changed on a section by section basis.
+Changes to variables in the main part of the config file must be
+done before (earlier in the file) any
+.BR dumptype s
+are defined.
 .LP
 The dumptype options and values are:
 .LP
@@ -1213,6 +1234,7 @@ section, one or more other
 names may be entered, which make this
 .B dumptype
 inherit options from other
+previously defined
 .BR dumptype s.
 For instance, two sections might be the same except for the
 .B record
