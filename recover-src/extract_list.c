@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43.2.10 2000/01/21 05:08:36 oliva Exp $
+ * $Id: extract_list.c,v 1.43.2.11 2000/09/23 15:33:58 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -458,8 +458,11 @@ char *regex;
     /* convert path (assumed in cwd) to one on disk */
     if (strcmp(disk_path, "/") == 0)
 	path_on_disk = stralloc2("/", regex);
-    else
-	path_on_disk = vstralloc(disk_path, "/", regex, NULL);
+    else {
+	char *clean_disk_path = clean_regex(disk_path);
+	path_on_disk = vstralloc(clean_disk_path, "/", regex, NULL);
+	amfree(clean_disk_path);
+    }
 
     path_on_disk_slash = stralloc2(path_on_disk, "/");
 
@@ -721,8 +724,11 @@ char *regex;
     /* convert path (assumed in cwd) to one on disk */
     if (strcmp(disk_path, "/") == 0)
 	path_on_disk = stralloc2("/", regex);
-    else
-	path_on_disk = vstralloc(disk_path, "/", regex, NULL);
+    else {
+	char *clean_disk_path = clean_regex(disk_path);
+	path_on_disk = vstralloc(clean_disk_path, "/", regex, NULL);
+	amfree(clean_disk_path);
+    }
 
     path_on_disk_slash = stralloc2(path_on_disk, "/");
 

@@ -1,5 +1,12 @@
 2000-09-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* common-src/amanda.h: prototype clean_regex().
+	* common-src/match.c: new function clean_regex() that escape
+	all non-alphanumeric character.
+	* recover-src/extract_list.c (add_file, delete_file): use clean_regex().
+
+2000-09-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amcheck.c: (start_server_check): check for the oldlog
 	directory.
 
@@ -906,7 +913,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.363 2000/09/23 13:05:15 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.364 2000/09/23 15:33:57 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
