@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.73 1998/09/09 16:59:07 martinea Exp $
+ * $Id: planner.c,v 1.74 1998/10/15 02:43:11 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -83,11 +83,11 @@ typedef struct est_s {
 #define est(dp)	((est_t *)(dp)->up)
 
 disklist_t startq, waitq, estq, failq, schedq;
-long total_size, initial_size;
+long total_size;
 double total_lev0, balanced_size, balance_threshold;
 unsigned long tape_length, tape_mark;
-int result_port, result_socket, amanda_port;
-int total_waiting, max_disks;
+int result_port, amanda_port;
+int max_disks;
 
 #ifdef KRB4_SECURITY
 int kamanda_port;
@@ -145,6 +145,7 @@ char **argv;
     char *datestamp = NULL, **vp;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
+    long initial_size;
     int fd;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
