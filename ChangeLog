@@ -1,5 +1,12 @@
 1999-06-25  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* Makefile.am (pkgdata_DATA): Install COPYRIGHTs.
+	(EXTRA_DIST): Remove docs/*.
+	* docs/Makefile.am: New file.
+	(pkgdata_DATA): Install all docs.
+	* configure.in: Output docs/Makefile.
+	Suggested by Paul L. Lussier <plussier@baynetworks.com>
+
 	* docs/FAQ (selfcheck time-out): NIS services, inetd rebooting,
 	keyboard time-out, lsof.
 
@@ -37,7 +44,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.223 1999/06/25 22:17:37 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.224 1999/06/25 22:50:45 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

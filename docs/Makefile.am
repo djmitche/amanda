@@ -1,7 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 pkgdata_DATA = \
 	DUMPER-API		\
-	EVENT-API		\
 	FAQ			\
 	INDEXING		\
 	INSTALL			\
@@ -12,8 +11,6 @@ pkgdata_DATA = \
 	RESTORE			\
 	SAMBA			\
 	SECURITY		\
-	SECURITY-API		\
-	STRATEGY-API		\
 	SYSTEM.NOTES		\
 	TAPE.CHANGERS		\
 	TAPETYPES		\

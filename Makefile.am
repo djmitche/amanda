@@ -34,12 +34,14 @@ SUBDIRS = \
 	$(RESTORE_SUBDIRS) \
 	$(RECOVER_SUBDIRS) \
 	$(PLOT_SUBDIRS) \
-	man example
+	man docs example
 
-EXTRA_DIST = \
+pkgdata_DATA = \
 	COPYRIGHT			\
 	COPYRIGHT-APACHE		\
-	COPYRIGHT-REGEX 		\
+	COPYRIGHT-REGEX
+
+EXTRA_DIST = \
 	contrib/README			\
 	contrib/dbbackup.README		\
 	contrib/dbbackup.ksh		\
@@ -51,25 +53,6 @@ EXTRA_DIST = \
 	contrib/sst/sst.conf		\
 	contrib/sst/sst_def.h		\
 	contrib/sst/sstest.c		\
-	docs/DUMPER-API			\
-	docs/FAQ			\
-	docs/INDEXING			\
-	docs/INSTALL			\
-	docs/INTERNALS			\
-	docs/KERBEROS			\
-	docs/LABEL.PRINTING		\
-	docs/MULTITAPE			\
-	docs/RESTORE			\
-	docs/SAMBA			\
-	docs/SECURITY			\
-	docs/SYSTEM.NOTES		\
-	docs/TAPE.CHANGERS		\
-	docs/TAPETYPES			\
-	docs/UPGRADE			\
-	docs/WHATS.NEW			\
-	docs/WISHLIST			\
-	docs/YEAR2000			\
-	docs/ZFTAPE			\
 	patches/regex-3.6alpha.patch	\
 	patches/samba-largefs.patch	\
 	patches/tar-1.12.patch		\
