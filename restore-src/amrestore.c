@@ -24,12 +24,12 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.34 2000/09/24 22:35:20 martinea Exp $
+ * $Id: amrestore.c,v 1.35 2000/12/03 21:52:17 jrjackson Exp $
  *
  * retrieves files from an amanda tape
  */
 /*
- * usage: amrestore [-r|-c] [-p] [-h] tape-device|holdingfile [hostname [diskname [datestamp [hostname [diskname [datestamp ... ]]]]]]
+ * usage: amrestore [-r|-c|-C] [-p] [-h] tape-device|holdingfile [hostname [diskname [datestamp [hostname [diskname [datestamp ... ]]]]]]
  *
  * Pulls all files from the tape that match the hostname, diskname and
  * datestamp regular expressions.
@@ -39,7 +39,8 @@
  *
  * Command line options:
  *	-p   put output on stdout
- *	-c   write compressed
+ *	-c   write compressed with COMPRESS_FAST_OPT
+ *	-C   write compressed with COMPRESS_BEST_OPT
  *	-r   raw, write file as is on tape (with header, possibly compressed)
  *	-h   write the header too
  */
@@ -57,6 +58,7 @@ char buffer[TAPE_BLOCK_BYTES];
 int compflag, rawflag, pipeflag, headerflag;
 int buflen, got_sigpipe, file_number;
 pid_t compress_pid = -1;
+char *compress_type = COMPRESS_FAST_OPT;
 
 /* local functions */
 
@@ -182,10 +184,12 @@ int isafile;
 {
     int rc = 0, dest, out, outpipe[2];
     int wc;
+    int file_is_compressed;
 
     /* adjust compression flag */
 
-    if(!compflag && file->compressed && !known_compress_type(file)) {
+    file_is_compressed = file->compressed;
+    if(!compflag && file_is_compressed && !known_compress_type(file)) {
 	fprintf(stderr, 
 		"%s: unknown compression suffix %s, can't uncompress\n",
 		get_pname(), file->comp_suffix);
@@ -200,8 +204,8 @@ int isafile;
 	char *filename_ext = NULL;
 
 	if(compflag) {
-	    filename_ext = file->compressed ? file->comp_suffix
-					    : COMPRESS_SUFFIX;
+	    filename_ext = file_is_compressed ? file->comp_suffix
+					      : COMPRESS_SUFFIX;
 	} else if(rawflag) {
 	    filename_ext = ".RAW";
 	} else {
@@ -220,6 +224,22 @@ int isafile;
     if(rawflag || headerflag) {
 	char *cont_filename;
 
+	if(compflag && !file_is_compressed) {
+	    file->compressed = 1;
+	    snprintf(file->uncompress_cmd, sizeof(file->uncompress_cmd),
+		     " %s %s |", UNCOMPRESS_PATH,
+#ifdef UNCOMPRESS_OPT
+		     UNCOMPRESS_OPT
+#else
+		     ""
+#endif
+		     );
+	    strncpy(file->comp_suffix,
+		    COMPRESS_SUFFIX,
+		    sizeof(file->comp_suffix)-1);
+	    file->comp_suffix[sizeof(file->comp_suffix)-1] = '\0';
+	}
+
 	/* remove CONT_FILENAME from header */
 	cont_filename = stralloc(file->cont_filename);
 	memset(file->cont_filename,'\0',sizeof(file->cont_filename));
@@ -233,7 +253,7 @@ int isafile;
 
     /* if -c and file not compressed, insert compress pipe */
 
-    if(compflag && !file->compressed) {
+    if(compflag && !file_is_compressed) {
 	if(pipe(outpipe) < 0) error("error [pipe: %s]", strerror(errno));
 	out = outpipe[1];
 	switch(compress_pid = fork()) {
@@ -255,14 +275,17 @@ int isafile;
 		    error("error [dup2 dest: %s]", strerror(errno));
 		aclose(dest);
 	    }
-	    execlp(COMPRESS_PATH, COMPRESS_PATH, (char *)0);
+	    if (*compress_type == '\0') {
+		compress_type = NULL;
+	    }
+	    execlp(COMPRESS_PATH, COMPRESS_PATH, compress_type, (char *)0);
 	    error("could not exec %s: %s", COMPRESS_PATH, strerror(errno));
 	}
     }
 
     /* if not -r or -c, and file is compressed, insert uncompress pipe */
 
-    else if(!rawflag && !compflag && file->compressed) {
+    else if(!rawflag && !compflag && file_is_compressed) {
 	/* 
 	 * XXX for now we know that for the two compression types we
 	 * understand, .Z and optionally .gz, UNCOMPRESS_PATH will take
@@ -420,9 +443,10 @@ char **argv;
     signal(SIGPIPE, handle_sigpipe);
 
     /* handle options */
-    while( (opt = getopt(argc, argv, "cd:rpkh")) != -1) {
+    while( (opt = getopt(argc, argv, "cCd:rpkh")) != -1) {
 	switch(opt) {
 	case 'c': compflag = 1; break;
+	case 'C': compflag = 1; compress_type = COMPRESS_BEST_OPT; break;
 	case 'r': rawflag = 1; break;
 	case 'p': pipeflag = 1; break;
 	case 'h': headerflag = 1; break;

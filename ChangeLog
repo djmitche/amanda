@@ -1,3 +1,10 @@
+2000-12-03 John R. Jackson  <jrj@purdue.edu>
+
+	* restore-src/amrestore.c: Fix header when compression is included.
+	  Use "fast" option for -c and add new -C option to get "best".
+	* man/amrestore.8: Document the new option, the compression level,
+	  and clean up some nroff issues.
+
 2000-11-30 Marc Mengel <mengel@fnal.gov>
 	* changer-src/chg-chio.pl.in: Use am-mt and am-dd versus mt and dd.
 	* changer-src/chg-chs.sh.in: Likewise.
