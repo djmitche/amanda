@@ -8,7 +8,8 @@ pkgdata_DATA = \
 	INDEXING		\
 	INSTALL			\
 	INTERNALS		\
-	KERBEROS		\
+	KRB4			\
+	KRB5			\
 	LABEL.PRINTING		\
 	MULTITAPE		\
 	PORT.USAGE		\

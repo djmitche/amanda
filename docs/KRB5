@@ -1,0 +1,66 @@
+$Id: KRB5,v 1.1 2003/03/29 23:59:06 kovert Exp $
+
+Amanda 2.5.0 - KERBEROS v5 SUPPORT NOTES
+
+1. CONFIGURATION
+
+The krb5 driver script defaults to:
+
+/*
+ * Where the keytab lives.  This should be configurable.
+ */
+#define AMANDA_KEYTAB   "/.amanda-v5-keytab"
+
+/*
+ * The name of the principal we authenticate with.  This should also
+ * be configurable.
+ */
+#define AMANDA_PRINCIPAL        "service/amanda"
+
+/*
+ * The lifetime of our tickets in minutes.  This may or may not need to be
+ * configurable.
+ */
+#define AMANDA_TKT_LIFETIME     (12*60)
+
+/*
+ * The name of the service in /etc/services.  This probably shouldn't be
+ * configurable.
+ */
+#define AMANDA_KRB5_SERVICE_NAME        "k5amanda"
+
+
+You can currently only override these by editing the source.
+
+The configure script will search under /usr/kerberos/lib,
+/usr/cygnus/lib, /usr/lib, and /opt/kerberos/lib for libkrb.a.  (in
+that order) for the kerberos bits.  If it finds them, kerberos support
+will be added in, if it doesn't, it won't.  If the kerberos bits are
+found under some other hierarchy, you can specify this via the
+--with-krb5-security=DIR, where DIR is where the kerberos bits live.
+It'll look under the 'lib' directory under this hierarchy for
+libkrb.a.
+
+2. INSTALLATION
+
+The kerberized Amanda service uses a different port on the client hosts.
+The /etc/services line is:
+
+    k5amanda      10082/tcp
+
+And the /etc/inetd.conf line is:
+
+    k5amanda stream tcp nowait root /usr/local/libexec/amanda/amandad amandad -auth=krb5
+
+Note that you're running this as root, rather than as your dump user.
+Amanda will set it's uid down to the dump user at times it doesn't need
+to read the srvtab file, and give up root permissions entirely before
+it goes off and runs dump.  Alternately you can change your srvtab files
+to be readable by user amanda.
+
+3. CONF FILE
+
+The following dumptype options apply to krb5:
+
+	auth "krb5"	use krb5 auth for this host
+			(you can mingle krb hosts & bsd .rhosts in one conf)
