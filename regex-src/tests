@@ -367,6 +367,7 @@ a*		&	b	@b
 /\*([^*]|\*+[^*/])*\*+/	-	/*x***x/y/*z*/	/*x***x/y/*z*/
 
 # subexpressions
+.*		-	abc	abc	-
 a(b)(c)d	-	abcd	abcd	b,c
 a(((b)))c	-	abc	abc	b,b,b
 a(b|(c))d	-	abd	abd	b,-

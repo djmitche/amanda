@@ -580,7 +580,6 @@ static void
 p_bracket(p)
 register struct parse *p;
 {
-	register char c;
 	register cset *cs = allocset(p);
 	register int invert = 0;
 
@@ -796,7 +795,6 @@ int endc;			/* name ended by endc,']' */
 	register char *sp = p->next;
 	register struct cname *cp;
 	register int len;
-	register char c;
 
 	while (MORE() && !SEETWO(endc, ']'))
 		NEXT();
