@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.15 1997/11/23 23:43:20 amcore Exp $
+ * $Id: amadmin.c,v 1.16 1997/11/25 08:17:56 george Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -337,7 +337,7 @@ disk_t *dp;
     printf("  Dumps: lev datestmp  tape             file   origK   compK secs\n");
     lev0date = inf.inf[0].date;
     for(lev = 0, sp = &inf.inf[0]; lev < 9; lev++, sp++) {
-	if(sp->date == EPOCH) continue;
+	if(sp->date < (time_t)0 && sp->label[0] == '\0') continue;
 	tm = localtime(&sp->date);
 	printf("          %d  %04d%02d%02d  %-15s  %4d %7ld %7ld %4ld\n",
 	       lev, tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday,
@@ -401,7 +401,7 @@ info_t *ip;
 {
     if(dp->strategy == DS_NOFULL)
 	return 1;	/* fake it */
-    else if(ip->inf[0].date == EPOCH)
+    else if(ip->inf[0].date < (time_t)0)
 	return 0;	/* new disk */
     else
 	return dp->dumpcycle - days_diff(ip->inf[0].date, today);
@@ -1089,7 +1089,7 @@ disk_t *dp;
     for(i=0;i<AVG_COUNT;i++) printf(" %f", info.incr.comp[i]);
     printf("\n");
     for(l=0;l<DUMP_LEVELS;l++) {
-	if(info.inf[l].date == EPOCH) continue;
+	if(info.inf[l].date < (time_t)0 && info.inf[l].label[0] == '\0') continue;
 	printf("stats: %d %ld %ld %ld %ld %d %s\n", l,
 	       info.inf[l].size, info.inf[l].csize, info.inf[l].secs,
 	       (long)info.inf[l].date, info.inf[l].filenum,
@@ -1150,6 +1150,10 @@ int import_one P((void))
 
     memset(&info, 0, sizeof(info_t));
 
+    for(level = 0; level < DUMP_LEVELS; level++) {
+        info.inf[level].date = (time_t)-1;
+    }
+
     /* get host: disk: command: lines */
 
     if(!impget_line()) return 0;	/* nothing there */
@@ -1197,7 +1201,7 @@ int import_one P((void))
 	rc = sscanf(line, "stats: %d %ld %ld %ld %ld %d %80[^\n]",
 		    &level, &onestat.size, &onestat.csize, &onestat.secs,
 		    &onedate, &onestat.filenum, onestat.label);
-	if(rc != 7) goto parse_err;
+	if(rc < 5 || rc > 7) goto parse_err;
 
 	/* time_t not guarranteed to be long */
 	onestat.date = onedate;

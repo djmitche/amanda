@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.22 1997/11/20 19:50:03 jrj Exp $
+ * $Id: infofile.c,v 1.23 1997/11/25 08:17:58 george Exp $
  *
  * manage current info file
  */
@@ -135,71 +135,77 @@ FILE *infof;
     return rc;
 }
 
-int read_txinfofile(infof, info)
+int read_txinfofile(infof, info) /* XXX - code assumes AVG_COUNT == 3 */
 FILE *infof;
 info_t *info;
 {
     char line[1024];
     int version;
-    int rc, level;
-    stats_t onestat;
-    long onedate;
+    int rc;
+    stats_t *sp;
+    perf_t *pp;
 
     /* get version: command: lines */
 
     if(!fgets(line, 1024, infof)) return -1;
-    if(sscanf(line, "version: %d", &version) != 1) return -2;
+    rc = sscanf(line, "version: %d", &version);
+    if(rc != 1) return -2;
 
     if(!fgets(line, 1024, infof)) return -1;
-    if(sscanf(line, "command: %d", &info->command) != 1) return -2;
+    rc = sscanf(line, "command: %d", &info->command);
+    if(rc != 1) return -2;
 
     /* get rate: and comp: lines for full dumps */
 
+    pp = &info->full;
+
     if(!fgets(line, 1024, infof)) return -1;
     rc = sscanf(line, "full-rate: %f %f %f",
-		&info->full.rate[0], &info->full.rate[1], &info->full.rate[2]);
-    if(rc != 3) return -2;
+		&pp->rate[0], &pp->rate[1], &pp->rate[2]);
+    if(rc > 3) return -2;
 
     if(!fgets(line, 1024, infof)) return -1;
     rc = sscanf(line, "full-comp: %f %f %f",
-		&info->full.comp[0], &info->full.comp[1], &info->full.comp[2]);
-    if(rc != 3) return -2;
+		&pp->comp[0], &pp->comp[1], &pp->comp[2]);
+    if(rc > 3) return -2;
 
     /* get rate: and comp: lines for incr dumps */
 
+    pp = &info->incr;
+
     if(!fgets(line, 1024, infof)) return -1;
     rc = sscanf(line, "incr-rate: %f %f %f",
-		&info->incr.rate[0], &info->incr.rate[1], &info->incr.rate[2]);
-    if(rc != 3) return -2;
+		&pp->rate[0], &pp->rate[1], &pp->rate[2]);
+    if(rc > 3) return -2;
 
     if(!fgets(line, 1024, infof)) return -1;
     rc = sscanf(line, "incr-comp: %f %f %f",
-		&info->incr.comp[0], &info->incr.comp[1], &info->incr.comp[2]);
-    if(rc != 3) return -2;
+		&pp->comp[0], &pp->comp[1], &pp->comp[2]);
+    if(rc > 3) return -2;
 
     /* get stats for dump levels */
 
     while(1) {
+	stats_t s;	/* one stat record */
+	long date;
+	int level;
+
 	if(!fgets(line, 1024, infof)) return -1;
 	if(!strncmp(line, "//", 2)) {
 	    /* end of record */
 	    break;
 	}
-	memset(&onestat, 0, sizeof(onestat));
+	memset(&s, 0, sizeof(s));
 	rc = sscanf(line, "stats: %d %ld %ld %ld %ld %d %80[^\n]",
-		    &level, &onestat.size, &onestat.csize, &onestat.secs,
-		    &onedate, &onestat.filenum, onestat.label);
-	/*
-	 * Note: the label field might be empty.  That just means
-	 * the dump got done but it has not made it to tape yet.
-	 */
-	if(rc < 6) return -2;
+		    &level, &s.size, &s.csize, &s.secs,
+		    &date, &s.filenum, s.label);
+	if(rc < 5 || rc > 7) return -2;	/* filenum and label are optional */
 
-	/* time_t not guarranteed to be long */
-	onestat.date = onedate;
+	s.date = date;	/* time_t not guarranteed to be long */
+
 	if(level < 0 || level > DUMP_LEVELS-1) return -2;
 
-	info->inf[level] = onestat;
+	info->inf[level] = s;
     }
 
     return 0;
@@ -209,33 +215,55 @@ int write_txinfofile(infof, info)
 FILE *infof;
 info_t *info;
 {
-    int i,l;
+    int i, l;
+    stats_t *sp;
+    perf_t *pp;
+    int level;
 
     fprintf(infof, "version: %d\n", 0);
+
     fprintf(infof, "command: %d\n", info->command);
+
+    pp = &info->full;
 
     fprintf(infof, "full-rate:");
     for(i=0; i<AVG_COUNT; i++)
-	fprintf(infof, " %f", info->full.rate[i]);
-    fprintf(infof, "\nfull-comp:");
-    for(i=0; i<AVG_COUNT; i++)
-	fprintf(infof, " %f", info->full.comp[i]);
-
-    fprintf(infof, "\nincr-rate:");
-    for(i=0; i<AVG_COUNT; i++)
-	fprintf(infof, " %f", info->incr.rate[i]);
-    fprintf(infof, "\nincr-comp:");
-    for(i=0; i<AVG_COUNT; i++)
-	fprintf(infof, " %f", info->incr.comp[i]);
-
+	if(pp->rate[i] >= 0.0)
+	    fprintf(infof, " %f", pp->rate[i]);
     fprintf(infof, "\n");
-    for(l=0; l<DUMP_LEVELS; l++) {
-	if(info->inf[l].date == EPOCH) continue;
-	fprintf(infof, "stats: %d %ld %ld %ld %ld %d %s\n", l,
-	       info->inf[l].size, info->inf[l].csize, info->inf[l].secs,
-	       (long)info->inf[l].date, info->inf[l].filenum,
-	       info->inf[l].label);
+
+    fprintf(infof, "full-comp:");
+    for(i=0; i<AVG_COUNT; i++)
+	if(pp->comp[i] >= 0.0)
+	    fprintf(infof, " %f", pp->comp[i]);
+    fprintf(infof, "\n");
+
+    pp = &info->incr;
+
+    fprintf(infof, "incr-rate:");
+    for(i=0; i<AVG_COUNT; i++)
+	if(pp->rate[i] >= 0.0)
+	    fprintf(infof, " %f", pp->rate[i]);
+    fprintf(infof, "\n");
+
+    fprintf(infof, "incr-comp:");
+    for(i=0; i<AVG_COUNT; i++)
+	if(pp->comp[i] >= 0.0)
+	    fprintf(infof, " %f", pp->comp[i]);
+    fprintf(infof, "\n");
+
+    for(level=0; level<DUMP_LEVELS; level++) {
+	sp = &info->inf[level];
+
+	if(sp->date < (time_t)0 && sp->label[0] == '\0') continue;
+
+	fprintf(infof, "stats: %d %ld %ld %ld %ld", level,
+	       sp->size, sp->csize, sp->secs, (long)sp->date);
+	if(sp->label[0] != '\0')
+	    fprintf(infof, " %d %s", sp->filenum, sp->label);
+	fprintf(infof, "\n");
     }
+
     fprintf(infof, "//\n");
 
     return 0;
@@ -367,13 +395,32 @@ double d;
     return avg / total;
 }
 
+void zero_info(ip)
+info_t *ip;
+{
+    int i;
+
+    memset(ip, '\0', sizeof(info_t));
+
+    for(i = 0; i < AVG_COUNT; i++) {
+	ip->full.comp[i] = ip->incr.comp[i] = -1.0;
+	ip->full.rate[i] = ip->incr.rate[i] = -1.0;
+    }
+
+    for(i = 0; i < DUMP_LEVELS; i++) {
+	ip->inf[i].date = (time_t)-1;
+    }
+
+    return;
+}
+
 int get_info(hostname, diskname, record)
 char *hostname, *diskname;
 info_t *record;
 {
     int rc;
 
-    memset(record, '\0', sizeof(info_t));
+    (void) zero_info(record);
 
     {
 #ifdef TEXTDB
@@ -410,19 +457,6 @@ info_t *record;
 	    rc = 0;
 	}
 #endif
-    }
-
-    if (rc != 0) {
-	int i;
-
-	for(i = 0; i < AVG_COUNT; i++) {
-	    record->full.comp[i] = record->incr.comp[i] = -1.0;
-	    record->full.rate[i] = record->incr.rate[i] = -1.0;
-	}
-
-	for(i = 0; i < DUMP_LEVELS; i++) {
-	    strcpy(record->inf[i].label, "-NONE-");
-	}
     }
 
     return rc;
@@ -497,8 +531,10 @@ info_t *record;
 
     /* find last non-empty dump level */
 
-    for(maxlev = DUMP_LEVELS-1; maxlev > 0; maxlev--)
-	if(record->inf[maxlev].date != EPOCH) break;
+    for(maxlev = DUMP_LEVELS-1; maxlev > 0; maxlev--) {
+	if(record->inf[maxlev].date >= (time_t)0) break;
+	if(record->inf[maxlev].label[0] != '\0') break;
+    }
 
     d.dptr = (char *)record;
     d.dsize = HEADER + (maxlev+1)*sizeof(stats_t);
@@ -542,6 +578,7 @@ info_t *r;
 int num;
 {
     int i;
+    stats_t *sp;
 
     printf("command word: %d\n", r->command);
     printf("full dump rate (K/s) %5.1f, %5.1f, %5.1f\n",
@@ -553,9 +590,11 @@ int num;
     printf("incr comp rate %5.1f, %5.1f, %5.1f\n",
 	   r->incr.comp[0]*100,r->incr.comp[1]*100,r->incr.comp[2]*100);
     for(i = 0; i < num; i++) {
+	sp = &r->inf[i];
+
 	printf("lev %d date %d tape %s filenum %d size %ld csize %ld secs %ld\n",
-	       i, r->inf[i].date, r->inf[i].label, r->inf[i].filenum,
-	       r->inf[i].size, r->inf[i].csize, r->inf[i].secs);
+	       i, sp->date, sp->label, sp->filenum,
+	       sp->size, sp->csize, sp->secs);
     }
     putchar('\n');
 }

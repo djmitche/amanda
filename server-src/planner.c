@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.41 1997/11/03 22:40:42 george Exp $
+ * $Id: planner.c,v 1.42 1997/11/25 08:18:01 george Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -770,7 +770,7 @@ info_t *ip;
 {
     if(dp->strategy == DS_NOFULL)
 	return 1;		/* fake it */
-    else if(ip->inf[0].date == EPOCH)
+    else if(ip->inf[0].date < (time_t)0)
 	return -days_diff(EPOCH, today);	/* new disk */
     else
 	return dp->dumpcycle - days_diff(ip->inf[0].date, today);
