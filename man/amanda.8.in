@@ -599,6 +599,11 @@ Also note that as of this release, Amanda does not support true tape overflow.
 When it reaches the end of one tape,
 the backup image Amanda was processing starts over again on the next tape.
 .TP
+.BN maxdumpsize int
+Default:
+.IR runtapes * tape_lenght .
+Maximum number of bytes the planner will schedule for a run.
+.TP
 .BS labelstr string
 Default:
 .IR .* .

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.24.2.8.4.4.2.6 2002/11/07 02:12:58 martinea Exp $
+ * $Id: conffile.h,v 1.24.2.8.4.4.2.7 2002/11/07 23:20:22 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -75,6 +75,7 @@ typedef enum conf_e {
     CNF_PRINTER,
     CNF_AUTOFLUSH,
     CNF_RESERVE,
+    CNF_MAXDUMPSIZE,
     CNF_COLUMNSPEC,
     CNF_AMRECOVER_DO_FSF,
     CNF_AMRECOVER_CHECK_LABEL,

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.17 2002/11/05 01:59:24 martinea Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.18 2002/11/07 23:20:22 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -53,6 +53,7 @@
 /* configuration file stuff */
 
 char *conf_tapetype;
+int conf_maxdumpsize;
 int conf_runtapes;
 int conf_dumpcycle;
 int conf_runspercycle;
@@ -297,6 +298,7 @@ char **argv;
     amfree(conf_infofile);
 
     conf_tapetype = getconf_str(CNF_TAPETYPE);
+    conf_maxdumpsize = getconf_int(CNF_MAXDUMPSIZE);
     conf_runtapes = getconf_int(CNF_RUNTAPES);
     conf_dumpcycle = getconf_int(CNF_DUMPCYCLE);
     conf_runspercycle = getconf_int(CNF_RUNSPERCYCLE);
@@ -327,7 +329,12 @@ char **argv;
     }
     
     tape = lookup_tapetype(conf_tapetype);
-    tape_length = tape->length * conf_runtapes;
+    if(conf_maxdumpsize > 0) {
+	tape_length = conf_maxdumpsize;
+    }
+    else {
+	tape_length = tape->length * conf_runtapes;
+    }
     tape_mark   = tape->filemark;
     tt_blocksize_kb = tape->blocksize;
     tt_blocksize = tt_blocksize_kb * 1024;

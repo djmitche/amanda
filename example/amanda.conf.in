@@ -95,6 +95,8 @@ changerfile "/usr/adm/amanda/@DEFAULT_CONFIG@/changer-status"
 changerfile "@CONFIG_DIR@/@DEFAULT_CONFIG@/changer.conf"
 changerdev "@DEFAULT_CHANGER_DEVICE@"
 
+maxdumpsize -1		# Maximum number of bytes the planner will schedule
+			# for a run (default: runtapes * tape_length).
 tapetype HP-DAT		# what kind of tape it is (see tapetypes below)
 labelstr "^@DEFAULT_CONFIG@[0-9][0-9]*$"	# label constraint regex: all tapes must match
 
