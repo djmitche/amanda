@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.35.2.14.4.2.2.5.2.2 2004/08/03 18:06:14 martinea Exp $
+ * $Id: driverio.c,v 1.35.2.14.4.2.2.5.2.3 2004/08/31 12:53:49 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -457,6 +457,7 @@ char *str;
 	printf("driver: error time %s serial gen mismatch\n",
 	       walltime_str(curclock()));
     stable[s].gen = 0;
+    stable[s].dp = NULL;
 }
 
 
@@ -474,7 +475,9 @@ disk_t *dp;
     }
 
     /* find unused serial number */
-    for(s = 0; s < MAX_SERIAL; s++) if(stable[s].gen == 0) break;
+    for(s = 0; s < MAX_SERIAL; s++)
+	if(stable[s].gen == 0 && stable[s].dp == NULL)
+	    break;
     if(s >= MAX_SERIAL) {
 	printf("driver: error time %s bug: out of serial numbers\n",
 	       walltime_str(curclock()));
