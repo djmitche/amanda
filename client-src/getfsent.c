@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: getfsent.c,v 1.21 1999/05/14 21:52:13 kashmir Exp $
+ * $Id: getfsent.c,v 1.22 2001/01/23 22:48:22 jrjackson Exp $
  *
  * generic version of code to read fstab
  */
@@ -146,28 +146,48 @@ generic_fsent_t *fsent;
 
 #include <mntent.h>
 
-static FILE *fstabf = NULL;
+static FILE *fstabf1 = NULL;		/* /proc/mounts */
+static FILE *fstabf2 = NULL;		/* MNTTAB */
 
 int open_fstab()
 {
     close_fstab();
-    return (fstabf = fopen(MNTTAB, "r")) != NULL;
+#if defined(HAVE_SETMNTENT)
+    fstabf1 = setmntent("/proc/mounts", "r");
+    fstabf2 = setmntent(MNTTAB, "r");
+#else
+    fstabf2 = fopen(MNTTAB, "r");
+#endif
+    return (fstabf1 != NULL || fstabf2 != NULL);
 }
 
 void close_fstab()
 {
-    if(fstabf)
-	afclose(fstabf);
-    fstabf = NULL;
+    afclose(fstabf1);
+    afclose(fstabf2);
 }
 
 int get_fstab_nextentry(fsent)
 generic_fsent_t *fsent;
 {
-    struct mntent *sys_fsent = getmntent(fstabf);
+    struct mntent *sys_fsent = NULL;
 
-    if(!sys_fsent)
+    if(fstabf1) {
+	sys_fsent = getmntent(fstabf1);
+	if(!sys_fsent) {
+	    afclose(fstabf1);
+	}
+    }
+    if(!sys_fsent && fstabf2) {
+	sys_fsent = getmntent(fstabf2);
+	if(!sys_fsent) {
+	    afclose(fstabf2);
+	}
+    }
+    if(!sys_fsent) {
 	return 0;
+    }
+
     fsent->fsname  = sys_fsent->mnt_fsname;
     fsent->fstype  = sys_fsent->mnt_type;
     fsent->mntdir  = sys_fsent->mnt_dir;

@@ -2346,6 +2346,7 @@ AMANDA_FUNC_SELECT_ARG_TYPE
 ICE_CHECK_DECL(sendto,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(setegid,unistd.h)
 ICE_CHECK_DECL(seteuid,unistd.h)
+AC_CHECK_FUNCS(setmntent)
 
 ICE_CHECK_DECL(setresgid,unistd.h)
 ICE_CHECK_DECL(setresuid,unistd.h)

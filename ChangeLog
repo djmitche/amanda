@@ -1,3 +1,9 @@
+2001-01-23 John R. Jackson <jrj@purdue.edu>
+
+	* configure.in: Test for setmntent.
+	* client-src/getfsent.c: Add some support for Redhat 7 /etc/fstab
+	  changes that indirectly reference the device for a file system.
+
 2001-01-22  Marc W. Mengel <mengel@fnal.gov>
 
 	* recover-src/extract_list.c: Added -U to tar recover options
