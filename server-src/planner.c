@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.130 2002/04/22 23:36:12 martinea Exp $
+ * $Id: planner.c,v 1.131 2002/04/23 14:26:40 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1108,9 +1108,12 @@ host_t *hostp;
      * (and subsequent) pass(es).
      */
     if(hostp->features != NULL) { /* sendsize service */
-	int has_features=am_has_feature(hostp->features, fe_g_options_features);
-	int has_hostname=am_has_feature(hostp->features, fe_g_options_hostname);
-	int has_maxdumps=am_has_feature(hostp->features, fe_g_options_maxdump);
+	int has_features = am_has_feature(hostp->features,
+					  fe_req_options_features);
+	int has_hostname = am_has_feature(hostp->features,
+					  fe_req_options_hostname);
+	int has_maxdumps = am_has_feature(hostp->features,
+					  fe_req_options_maxdumps);
 
 	snprintf(number, sizeof(number), "%d", hostp->maxdumps);
 	req = vstralloc("SERVICE ", "sendsize", "\n",

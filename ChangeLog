@@ -1,3 +1,14 @@
+2002-04-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* common-src/amfeatures.h:
+	     Rename fe_g_options_maxdump  to fe_req_options_maxdumps
+	     Rename fe_g_options_hostname to fe_req_options_hostname
+	     Rename fe_g_options_features to fe_req_options_features
+	* common-src/amfeatures.c: Ditto
+	* server-src/amcheck.c: Ditto
+	* server-src/dumper.c: Ditto
+	* server-src/planner.c: Ditto
+
 2002-04-22  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amcheck.c: Check if it can send features, hostname or

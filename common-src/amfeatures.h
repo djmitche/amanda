@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.h,v 1.3 2002/04/19 14:24:12 martinea Exp $
+ * $Id: amfeatures.h,v 1.4 2002/04/23 14:26:40 martinea Exp $
  *
  * Define feature test related items.
  */
@@ -113,9 +113,9 @@ typedef enum {
     fe_options_krb4_auth,
     fe_options_kencrypt,
 
-    fe_g_options_maxdump,
-    fe_g_options_hostname,
-    fe_g_options_features,
+    fe_req_options_maxdumps,
+    fe_req_options_hostname,
+    fe_req_options_features,
 
     /*
      * All new features must be inserted immediately *before* this entry.

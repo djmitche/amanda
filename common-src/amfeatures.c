@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.c,v 1.4 2002/04/19 14:24:12 martinea Exp $
+ * $Id: amfeatures.c,v 1.5 2002/04/23 14:26:40 martinea Exp $
  *
  * Feature test related code.
  */
@@ -91,9 +91,9 @@ am_init_feature_set()
 	am_add_feature(f, fe_options_krb4_auth);
 	am_add_feature(f, fe_options_kencrypt);
 
-	am_add_feature(f, fe_g_options_maxdump);
-	am_add_feature(f, fe_g_options_hostname);
-	am_add_feature(f, fe_g_options_features);
+	am_add_feature(f, fe_req_options_maxdumps);
+	am_add_feature(f, fe_req_options_hostname);
+	am_add_feature(f, fe_req_options_features);
     }
     return f;
 }
@@ -137,9 +137,9 @@ am_set_default_feature_set(void)
 	am_add_feature(f, fe_options_krb4_auth);
 	am_add_feature(f, fe_options_kencrypt);
 
-	am_add_feature(f, fe_g_options_maxdump);
-	am_add_feature(f, fe_g_options_hostname);
-	am_add_feature(f, fe_g_options_features);
+	am_add_feature(f, fe_req_options_maxdumps);
+	am_add_feature(f, fe_req_options_hostname);
+	am_add_feature(f, fe_req_options_features);
     }
     return f;
 }
