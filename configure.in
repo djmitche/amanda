@@ -1077,6 +1077,8 @@ case "$target" in
 			;;
   sparc-*-linux-*)
 			;;
+  powerpc-*-linux-*)
+			;;
   *-sgi-irix3*)
 			dnl The old cc won't work!
 			CC=gcc

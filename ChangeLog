@@ -1,3 +1,9 @@
+1999-03-14  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* configure.in (powerpc-*-linux-*): supported platform
+	* README: ditto
+	Reported by Jon Stevens <jon@clearink.com>
+
 1999-03-07 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* configure.in: new option --with-dumperdir=DIR to specify the 
