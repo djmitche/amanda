@@ -72,7 +72,10 @@ if [ -f $logfile ]; then
 
 	echo "amcleanup: processing outstanding log file."
 	exec </dev/null >/dev/null 2>&1
-	amreport$SUF
+	amreport$SUF $conf
+
+	# Roll the log file to its datestamped name.
+	amlogroll$SUF $conf
 
 	# Trim the index file to those for dumps that still exist.
 	amtrmidx$SUF $conf

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.35.2.12 1999/09/08 23:28:05 jrj Exp $
+ * $Id: driverio.c,v 1.35.2.13 1999/09/11 16:55:18 jrj Exp $
  *
  * I/O-related functions for driver program
  */
@@ -120,10 +120,7 @@ char *taper_program;
 	aclose(fd[0]);
 	if(dup2(fd[1], 0) == -1 || dup2(fd[1], 1) == -1)
 	    error("taper dup2: %s", strerror(errno));
-	if(chdir(config_dir) == -1) {
-	    error("taper chdir(%s): %s", config_dir, strerror(errno));
-	}
-	execle(taper_program, "taper", (char *)0, safe_env());
+	execle(taper_program, "taper", config_name, (char *)0, safe_env());
 	error("exec %s: %s", taper_program, strerror(errno));
     default:	/* parent process */
 	aclose(fd[1]);
@@ -148,10 +145,7 @@ char *dumper_program;
 	aclose(fd[0]);
 	if(dup2(fd[1], 0) == -1 || dup2(fd[1], 1) == -1)
 	    error("%s dup2: %s", dumper->name, strerror(errno));
-	if(chdir(config_dir) == -1) {
-	    error("%s chdir(%s): %s", dumper->name, config_dir, strerror(errno));
-	}
-	execle(dumper_program, "dumper", (char *)0, safe_env());
+	execle(dumper_program, "dumper", config_name, (char *)0, safe_env());
 	error("exec %s (%s): %s", dumper_program,
 	      dumper->name, strerror(errno));
     default:	/* parent process */

@@ -1,3 +1,18 @@
+1999-09-11 John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/Makefile.am: use new amlogroll utility to rename the log
+	  file to the datestamped name.
+	* server-src/amcheck.c: ditto.
+	* server-src/amcleanup.sh.in: ditto and call all utilities with the
+	  config file name as an argument.
+	* server-src/amdump.sh.in: ditto and call all utilities with the
+	  config file name as an argument.
+	* server-src/amflush.c: ditto.
+	* server-src/amlogroll.c: new utility.
+	* server-src/driverio.c: ditto and call all utilities with the
+	  config file name as an argument.
+	* server-src/reporter.c: ditto.
+
 1999-09-10 John R. Jackson  <jrj@purdue.edu>
 
 	* client-src/rundump.c: minor compiler warnings.
@@ -346,7 +361,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.261 1999/09/11 01:13:55 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.262 1999/09/11 16:54:56 jrj Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

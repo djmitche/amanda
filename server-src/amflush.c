@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.41.2.12 1999/09/10 23:27:27 jrj Exp $
+ * $Id: amflush.c,v 1.41.2.13 1999/09/11 16:55:16 jrj Exp $
  *
  * write files from work directory onto tape
  */
@@ -44,6 +44,7 @@ char *config_name = NULL;
 char *config_dir = NULL;
 static char *conf_logdir;
 char *reporter_program;
+char *logroll_program;
 holding_t *holding_list;
 char *datestamp;
 
@@ -68,6 +69,8 @@ char **main_argv;
     char *conf_tapelist;
     char *conf_logfile;
     disklist_t *diskqp;
+    pid_t pid, child_pid;
+    amwait_t exitcode;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -148,6 +151,8 @@ char **main_argv;
  
     reporter_program = vstralloc(sbindir, "/", "amreport", versionsuffix(),
 				 NULL);
+    logroll_program = vstralloc(libexecdir, "/", "amlogroll", versionsuffix(),
+				NULL);
 
     holding_list = pick_datestamp();
     confirm();
@@ -203,12 +208,45 @@ char **main_argv;
 	amfree(nerrfilex);
     }
 
-    /* now, have reporter generate report and send mail */
+    /*
+     * Have amreport generate report and send mail.  Note that we do
+     * not bother checking the exit status.  If it does not work, it
+     * can be rerun.
+     */
 
-    execle(reporter_program, "amreport", config_name, (char *)0, safe_env());
-    error("cannot exec %s: %s", reporter_program, strerror(errno));
+    if((child_pid = fork()) == 0) {
+	/*
+	 * This is the child process.
+	 */
+	execle(reporter_program,
+	       "amreport", config_name, (char *)0,
+	       safe_env());
+	error("cannot exec %s: %s", reporter_program, strerror(errno));
+    } else if(child_pid == -1) {
+	error("cannot fork for %s: %s", reporter_program, strerror(errno));
+    }
+    while(1) {
+	if((pid = wait(&exitcode)) == -1) {
+	    if(errno == EINTR) {
+		continue;
+	    } else {
+		error("wait for %s: %s", reporter_program, strerror(errno));
+	    }
+	} else if (pid == child_pid) {
+	    break;
+	}
+    }
 
-    return 0;
+    /*
+     * Call amlogroll to rename the log file to its datestamped version.
+     * Since we exec at this point, our exit code will be that of amlogroll.
+     */
+
+    execle(logroll_program,
+	   "amreport", config_name, (char *)0,
+	   safe_env());
+    error("cannot exec %s: %s", logroll_program, strerror(errno));
+    return 0;				/* keep the compiler happy */
 }
 
 

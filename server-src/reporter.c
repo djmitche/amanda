@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.10 1999/09/08 23:28:26 jrj Exp $
+ * $Id: reporter.c,v 1.44.2.11 1999/09/11 16:55:21 jrj Exp $
  *
  * nightly Amanda Report generator
  */
@@ -381,7 +381,7 @@ char **argv;
     char *conf_infofile;
     char *logfname, *psfname, *outfname, *subj_str = NULL;
     tapetype_t *tp;
-    int fd, do_rename, opt;
+    int fd, opt;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     char *mail_cmd = NULL, *printer_cmd = NULL;
@@ -408,7 +408,6 @@ char **argv;
     outfname = NULL;
     psfname = NULL;
     logfname = NULL;
-    do_rename = 0;
 
     if (getcwd(my_cwd, sizeof(my_cwd)) == NULL) {
 	error("cannot determine current working directory");
@@ -419,7 +418,6 @@ char **argv;
 	if ((config_name = strrchr(my_cwd, '/')) != NULL) {
 	    config_name = stralloc(config_name + 1);
 	}
-	do_rename = 1;
     } else {
 	if (argv[1][0] == '-') {
 	    usage();
@@ -545,11 +543,6 @@ char **argv;
 
     if((logfile = fopen(logfname, "r")) == NULL) {
 	error("could not open log %s: %s", logfname, strerror(errno));
-    }
-
-    if (do_rename) {
-	erroutput_type |= ERR_AMANDALOG;
-	set_logerror(logerror);
     }
 
     setup_data();    /* setup per-disk data */
@@ -711,12 +704,6 @@ char **argv;
         if(pclose(mailf) != 0)
             error("mail command failed: %s", mail_cmd);
         mailf = NULL;
-    }
-
-  
-    /* rotate log only if requested */
-    if(do_rename) {
-	log_rename(datestamp);
     }
 
     amfree(hostname);

@@ -60,10 +60,10 @@ fi
 
 cd $confdir/$conf || exit 1
 
-logdir=`amgetconf$SUF logdir`
+logdir=`amgetconf$SUF $conf logdir`
 errfile=$logdir/amdump
-tapecycle=`amgetconf$SUF tapecycle`
-dumpuser=`amgetconf$SUF dumpuser`
+tapecycle=`amgetconf$SUF $conf tapecycle`
+dumpuser=`amgetconf$SUF $conf dumpuser`
 runuser=${LOGNAME-`whoami`}
 
 if [ $runuser != $dumpuser ]; then
@@ -88,12 +88,15 @@ umask 077
 # Plan and drive the dumps.
 exec </dev/null >$errfile 2>&1
 echo "amdump: start at `date`"
-$libexecdir/planner$SUF | $libexecdir/driver$SUF
+$libexecdir/planner$SUF $conf | $libexecdir/driver$SUF $conf
 echo "amdump: end at `date`"
 
 # Send out a report on the dumps.
 exec </dev/null >/dev/null 2>&1
-$sbindir/amreport$SUF
+$sbindir/amreport$SUF $conf
+
+# Roll the log file to its datestamped name.
+$libexecdir/amlogroll$SUF $conf
 
 # Keep a debug log through the tapecycle plus a couple of days.
 maxdays=`expr $tapecycle + 2`

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.8 1999/09/08 23:27:12 jrj Exp $
+ * $Id: amcheck.c,v 1.50.2.9 1999/09/11 16:55:08 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -572,6 +572,9 @@ int start_server_check(fd, do_localchk, do_tapechk)
 					0, uid_dumpuser);
 	    pgmbad = pgmbad \
 		     || test_server_pgm(outf, libexecdir, "amtrmidx",
+					0, uid_dumpuser);
+	    pgmbad = pgmbad \
+		     || test_server_pgm(outf, libexecdir, "amlogroll",
 					0, uid_dumpuser);
 	}
 	if(access(sbindir, X_OK) == -1) {
