@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.33 1999/06/07 16:05:28 kashmir Exp $
+ * $Id: amrecover.c,v 1.34 1999/08/27 23:03:18 jrj Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -562,7 +562,7 @@ char **argv;
 	dbclose();
 	exit(1);
     }
-    if (myname.sin_port >= IPPORT_RESERVED) {
+    if (ntohs(myname.sin_port) >= IPPORT_RESERVED) {
 	(void)fprintf(stderr, "%s: can't get a reserved udp port\n",
 		      get_pname());
 	dbprintf(("can't get a reserved udp port\n"));

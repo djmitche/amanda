@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.46 1999/06/07 16:05:34 kashmir Exp $
+ * $Id: extract_list.c,v 1.47 1999/08/27 23:03:20 jrj Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1071,7 +1071,7 @@ static int extract_files_setup P((void))
 	perror("amrecover: Error binding socket");
 	exit(2);
     }
-    if (myname.sin_port >= IPPORT_RESERVED) {
+    if (ntohs(myname.sin_port) >= IPPORT_RESERVED) {
 	(void)fprintf(stderr, "%s: can't get a reserved udp port\n",
 		      get_pname());
 	dbprintf(("can't get a reserved udp port\n"));

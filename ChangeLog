@@ -1,3 +1,8 @@
+1999-08-23 John R. Jackson  <jrj@purdue.edu>
+
+	* recover-src/amrecover.c (main): fix test for IPPORT_RESERVED.
+	* recover-src/extract_list.c (extract_files_setup): ditto.
+
 1999-08-25  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* changer-src/chg-chs.sh.in (changerdev): Pass it as -f flag to CHS.
