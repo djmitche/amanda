@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.87 1998/05/05 15:24:22 jrj Exp $
+ * $Id: sendsize.c,v 1.88 1998/05/23 18:01:20 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -718,7 +718,7 @@ int level;
 		/* FIXME */
 		exit(-1);
 
-	    case 0:
+	    default:
 	    {
 		char *killpgrp_cmd = vstralloc(libexecdir, "/killpgrp",
 					       versionsuffix(), NULL);
@@ -728,7 +728,7 @@ int level;
 		exit(-1);
 	    }
 
-	    default:
+	    case 0:
 		break;
 	    }
 	}

@@ -1,5 +1,10 @@
 1998-05-23  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* client-src/sendsize.c (getsize_dump): killpgrp must be direct
+ 	child of sendsize, otherwise sendsize won't be able to kill it.
+
+1998-05-23  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
 	* configure.in (bcopy, bzero, fread, fwrite, vfprintf, vprintf,
 	vsprintf): check for these in stdlib.h
 	(memmove): check for it in strings.h
