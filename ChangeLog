@@ -1,3 +1,9 @@
+2001-07-20 John R. Jackson <jrj@purdue.edu>
+
+	* common-src/security.c: Use NUM_STR_SIZE instead of hard coded
+	  constant.
+	* common-src/versuff.c.in: Ditto.
+
 2001-07-19 John R. Jackson <jrj@purdue.edu>
 
 	* common-src/error.c: Add new function errordump() that acts like
