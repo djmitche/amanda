@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.54 1998/07/04 00:18:22 oliva Exp $
+ * $Id: sendbackup-gnutar.c,v 1.54.2.1 1998/09/11 20:51:50 oliva Exp $
  *
  * send backup data using GNU tar
  */
@@ -91,6 +91,7 @@ static regex_t re_table[] = {
   { DMP_NORMAL, "^\\([0-9][0-9]* kb/s\\)", 1},
   { DMP_NORMAL, "^\\([0-9][0-9]*\\.[0-9][0-9]* kb/s\\)", 1},
   { DMP_NORMAL, "^tar: dumped [0-9][0-9]* tar files", 1},
+  { DMP_NORMAL, "^load_client_codepage", 1},
 #ifdef IGNORE_SMBCLIENT_ERRORS
   /* This will cause amanda to ignore real errors, but that may be
    * unavoidable when you're backing up system disks.  Add this at
