@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.19 2003/11/24 18:16:36 martinea Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.20 2003/11/27 18:08:23 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -212,6 +212,7 @@ int main(main_argc, main_argv)
     conf_tapetype = getconf_str(CNF_TAPETYPE);
     tape = lookup_tapetype(conf_tapetype);
     tape_length = tape->length;
+    printf("driver: tape size %ld\n", tape_length);
 
     /* taper takes a while to get going, so start it up right away */
 
