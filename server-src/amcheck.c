@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.12 1999/11/09 18:01:31 jrj Exp $
+ * $Id: amcheck.c,v 1.50.2.13 1999/11/11 00:21:05 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -633,7 +633,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	tapename = getconf_str(CNF_TAPEDEV);
 	if (strcmp(tapename, "/dev/null") == 0) {
 	    fprintf(outf,
-		    "WARNING: tapedev is set to %s, dumps will be thrown away\n",
+		    "WARNING: tapedev is %s, dumps will be thrown away\n",
 		    tapename);
 	}
     }
