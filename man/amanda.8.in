@@ -387,6 +387,16 @@ size, and
 .B speed
 of the tape media and device.
 .TP
+.BN timeout int
+Default:
+.IR "300 seconds" .
+Amount of time per disk on a given client that
+.B planner
+will wait to get the dump size estimates.
+For instance, with the default of 300 seconds and four disks on client A, 
+.B planner
+will wait up to 20 minutes for that machine.
+.TP
 .BN netusage int
 Default:
 .IR "300 Kbps" .

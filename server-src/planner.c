@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.51 1998/01/08 04:56:05 george Exp $
+ * $Id: planner.c,v 1.52 1998/01/11 21:59:22 jrj Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -43,7 +43,6 @@
 char *pname = "planner";
 
 #define MAX_LEVELS		    3	/* max# of estimates per filesys */
-#define ONE_TIMEOUT		  240	/* # seconds to wait for one est */
 
 #define RUNS_REDZONE		    5	/* should be in conf file? */
 
@@ -60,6 +59,7 @@ int conf_dumpcycle;
 int conf_tapecycle;
 int conf_bumpdays;
 int conf_bumpsize;
+int conf_etimeout;
 double conf_bumpmult;
 
 typedef struct est_s {
@@ -219,6 +219,7 @@ char **argv;
     conf_bumpdays = getconf_int(CNF_BUMPDAYS);
     conf_bumpsize = getconf_int(CNF_BUMPSIZE);
     conf_bumpmult = getconf_real(CNF_BUMPMULT);
+    conf_etimeout = getconf_int(CNF_ETIMEOUT);
 
     afree(datestamp);
     datestamp = construct_datestamp();
@@ -928,11 +929,11 @@ host_t *hostp;
 #ifdef KRB4_SECURITY
     if(hostp->disks->auth == AUTH_KRB4)
 	rc = make_krb_request(hostp->hostname, kamanda_port, req,
-			      hostp, disks*ONE_TIMEOUT, handle_result);
+			      hostp, disks*conf_etimeout, handle_result);
     else
 #endif
 	rc = make_request(hostp->hostname, amanda_port, req,
-			  hostp, disks*ONE_TIMEOUT, handle_result);
+			  hostp, disks*conf_etimeout, handle_result);
 
     req = NULL;					/* do not own this any more */
 

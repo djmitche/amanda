@@ -1,5 +1,8 @@
 Version 2.4.0b5
 
+	Add a TIMEOUT config file parameter to replace the hard coded value
+	in planner.  -Daniel David Benson <bensond@ucdavis.edu>
+
 	Change amrecover/amindexd/amidxtaped to require a SECURITY
 	exchange if --with-bsd-security is enabled.  It is done on a
 	reserved port, which means amrecover must be run as root and that

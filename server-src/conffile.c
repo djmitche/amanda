@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.32 1998/01/05 06:03:23 george Exp $
+ * $Id: conffile.c,v 1.33 1998/01/11 21:59:24 jrj Exp $
  *
  * read configuration file
  */
@@ -61,7 +61,7 @@ typedef enum {
     INCLUDEFILE,
     ORG, MAILTO, DUMPUSER,
     TAPECYCLE, TAPEDEV, CHNGRDEV, CHNGRFILE, LABELSTR,
-    BUMPSIZE, BUMPDAYS, BUMPMULT,
+    BUMPSIZE, BUMPDAYS, BUMPMULT, ETIMEOUT,
     TAPELIST, DISKFILE, INFOFILE, LOGDIR, LOGFILE,
     DISKDIR, DISKSIZE, INDEXDIR, NETUSAGE, INPARALLEL, TIMEOUT,
     TPCHANGER, RUNTAPES,
@@ -158,6 +158,7 @@ static val_t conf_timeout;
 static val_t conf_maxdumps;
 static val_t conf_bumpsize;
 static val_t conf_bumpdays;
+static val_t conf_etimeout;
 
 /* reals */
 static val_t conf_bumpmult;
@@ -178,7 +179,7 @@ static int seen_tapelist, seen_infofile, seen_diskfile, seen_diskdir;
 static int seen_logdir, seen_bumpsize, seen_bumpmult, seen_bumpdays;
 static int seen_tapetype, seen_dumpcycle, seen_maxcycle, seen_tapecycle;
 static int seen_disksize, seen_netusage, seen_inparallel, seen_timeout;
-static int seen_indexdir;
+static int seen_indexdir, seen_etimeout;
 
 static int allow_overwrites;
 static int token_pushed;
@@ -307,6 +308,7 @@ struct byname {
     { "INPARALLEL", CNF_INPARALLEL, INT },
     /*{ "TIMEOUT", CNF_TIMEOUT, INT },*/
     { "MAXDUMPS", CNF_MAXDUMPS, INT },
+    { "ETIMEOUT", CNF_ETIMEOUT, INT },
     { NULL }
 };
 
@@ -375,6 +377,7 @@ confparm_t parm;
     case CNF_INPARALLEL: return seen_inparallel;
     /*case CNF_TIMEOUT: return seen_timeout;*/
     case CNF_INDEXDIR: return seen_indexdir;
+    case CNF_ETIMEOUT: return seen_etimeout;
     default: return 0;
     }
 }
@@ -396,6 +399,7 @@ confparm_t parm;
     case CNF_INPARALLEL: r = conf_inparallel.i; break;
     /*case CNF_TIMEOUT: r = conf_timeout.i; break;*/
     case CNF_MAXDUMPS: r = conf_maxdumps.i; break;
+    case CNF_ETIMEOUT: r = conf_etimeout.i; break;
 
     default:
 	error("error [unknown getconf_int parm: %d]", parm);
@@ -548,6 +552,7 @@ static void init_defaults()
     conf_bumpsize.i	= 10*1024;
     conf_bumpdays.i	= 2;
     conf_bumpmult.r	= 1.5;
+    conf_etimeout.i     = 300;
 
     /* defaults for internal variables */
 
@@ -558,7 +563,7 @@ static void init_defaults()
     seen_logdir = seen_bumpsize = seen_bumpmult = seen_bumpdays = 0;
     seen_tapetype = seen_dumpcycle = seen_maxcycle = seen_tapecycle = 0;
     seen_disksize = seen_netusage = seen_inparallel = seen_timeout = 0;
-    seen_indexdir = 0;
+    seen_indexdir = seen_etimeout =  0;
     line_num = got_parserror = 0;
     allow_overwrites = 0;
     token_pushed = 0;
@@ -711,6 +716,7 @@ keytab_t main_keytable[] = {
     { "TPCHANGER", TPCHANGER },
     { "CHANGERDEV", CHNGRDEV },
     { "CHANGERFILE", CHNGRFILE },
+    { "ETIMEOUT", ETIMEOUT },
     { NULL, IDENT }
 };
 
@@ -756,6 +762,7 @@ static int read_confline()
     case MAXDUMPS:  get_simple(&conf_maxdumps,  &seen_maxdumps,  INT);    break;
     case TAPETYPE:  get_simple(&conf_tapetype,  &seen_tapetype,  IDENT);  break;
     case INDEXDIR:  get_simple(&conf_indexdir,  &seen_indexdir,  STRING); break;
+    case ETIMEOUT:  get_simple(&conf_etimeout,  &seen_etimeout,  INT);    break;
 
     case LOGFILE: /* XXX - historical */
 	/* truncate the filename part and pretend he said "logdir" */
@@ -2110,6 +2117,7 @@ dump_configuration(filename)
     printf("conf_inparallel = %d\n", getconf_int(CNF_INPARALLEL));
     /*printf("conf_timeout = %d\n", getconf_int(CNF_TIMEOUT));*/
     printf("conf_maxdumps = %d\n", getconf_int(CNF_MAXDUMPS));
+    printf("conf_etimeout = %d\n", getconf_int(CNF_ETIMEOUT));
 
     /*printf("conf_diskdir = \"%s\"\n", getconf_str(CNF_DISKDIR));*/
     /*printf("conf_disksize = %d\n", getconf_int(CNF_DISKSIZE));*/
