@@ -1,0 +1,356 @@
+---
+
+	AMANDA FILE-DRIVER-USAGE HOWTO.
+
+---
+
+	This document covers the use of the file-driver in AMANDA
+	2.4.3 and higher. Examples given here have been taken from a 
+	SuSe-Linux-8.2-Pro-environment, using AMANDA 2.4.4p1 and the
+	snapshot 2.4.4p1-20031202.
+
+	Please adjust paths, configuration names and other parameters 
+	to your system.
+
+	Stefan G. Weichinger, November - December, 2003
+
+---
+
+	Since release 2.4.3 AMANDA supports the usage of a output
+	driver called "file".  See the AMANDA-man page, section
+	OUTPUT DRIVERS, for more information on its implementation. 
+	As the name suggests, this driver uses files as virtual (or file)
+	tapes.  Once created and labeled, these file tapes can be selected
+	and changed with the standard tape-changer-interface of the AMANDA
+	server.
+
+---
+
+POSSIBLE USES
+	
+---
+
+	- test installations.
+	You can easily explore the rich features of AMANDA on
+	systems without tape drives.
+	
+	- cheap installations.
+	Without buying a tape drive you can enjoy the benefits
+	of AMANDA and backup to a bunch of harddisks. You can
+	create CD/DVD-sized backups which you can burn onto optical 
+	disks later.
+	
+	- raid installations.
+	You can use the file-driver to backup onto a set of
+	file tapes hosted on a raid-system. Combined with
+	another AMANDA-configuration that dumps the file tapes to
+	real tapes, you can provide reliable backup with faster
+	tapeless recovery.
+	
+---
+
+SETUP
+
+---
+
+BASICS
+
+	This guide assumes you have setup the basic AMANDA-services
+	as described in the "INSTALL"-file.
+
+	The configuration in this HOWTO is called "daily".
+	The file tapes are also called "vtapes" in this document, which 
+	stands for "virtual tapes".
+
+	Please be sure to understand the differences between holding disks and
+	file tapes. The two serve different purposes; holding disks allow for
+	parallelism of multiple DLE's being backed up while file tapes are a 
+	replacement for physical tapes.
+
+	Before beginning you will need to decide on (a) dedicated part(s)
+	of your hard disk(s) for your file tape storage.  While this space
+	could be spread among several file systems and hard disks, I
+	recommend to dedicate at least a specific partition, better a specific 
+	physical harddisk to the task of keeping your vtapes.
+	The use of a dedicated disk will speed things up definitely.
+
+	The disk space you dedicate for your vtapes should NOT
+	be backed up by AMANDA.  Also, for performance reasons there
+	should be NO holding disks on the same partition as the
+	vtapes, preferably not even on the same physical drive.
+
+	If you only have one harddisk, it will work out, too, but
+	you will suffer low performance due to massive head-moving
+	in your harddisk, resulting from copying data between the
+	filesystems.
+
+---
+
+STEPS
+
+Step 0.  Prepare the filesystem(s) used for the tapes.
+
+	Decide on where to put your files, create the
+	appropriate partition(s) and filesystem(s) and mount them.
+
+	In our example we have the dedicated partition "hdc1", 
+	mounted on /amandatapes for vtape storage.
+
+	$ mount
+	...
+	/dev/hdc1 on /amandatapes type reiserfs (rw)
+	...
+
+	Make sure there is space left.
+	Determine the amount of space you will use.
+
+	$ df -h /amandatapes
+	Filesystem      Size  Used  Avail  Use%   Mounted on
+	/dev/hdc1        20G    0G    20G    0%   /amandatapes
+
+	In our example we have 20GB diskspace left on /amandatapes.
+
+Step 1.  Determine length and number of tapes
+
+	After deciding on the number of vtapes you want to create,
+	evenly allocate the available space among them.
+
+	Look at the following rule of thumb:
+
+	As many types file systems exhibit dramatically reduced performance
+	when they are nearly full I have chosen to allocate
+	only 90% of the available space. So we have:
+
+	(Available Space * 0.9) >= tapelength * tapecycle
+
+
+	This is a very conservative approach to make sure you don´t suffer
+	any performance drop due to a nearly-full-filesystem.
+
+	As it is uncommon for AMANDA to fill, or almost fill an entire tape 
+	you may also wish to use more space than that.
+
+	So you could determine possible combinations of tapelength/tapecycle
+	with the more general formula:
+
+	Available Space >= tapelength * tapecycle
+
+
+	In our example we take the conservative approach:
+
+	20 GB * 0.9 = 18 GB to use and so we could create the
+	following combinations:
+
+	18 GB = 18 GB * 1
+	18 GB =  9 GB * 2
+	18 GB =  6 GB * 3
+	18 GB =  3 GB * 6
+	18 GB = .........   you get the picture. 
+
+	Using only one tape is generally considered a bad idea
+	when it comes to backup, so we should use at least 3
+	tapes (for testing purposes), better 6 or more tapes.
+
+	18 GB =  3 GB * 6   so we get the value 3GB for the
+	tapelength if we want to use 6 tapes.
+
+Step 2.  Create a tapetype definition.
+
+	Add a new tapetype definition similar to the following to your amanda.conf.
+	I named my definition "HARD-DISK".  Choose whatever name you
+	consider appropriate.
+
+	define tapetype HARD-DISK {
+		comment "Dump onto hard disk"
+		length 3072 mbytes 	# specified in mbytes to get the exact size of 3GB
+	}
+
+	You don´t have to specify the "speed"-parameter (as it is
+	commonly listed in tapetype definitions and reported by 
+	the program "amtapetype"). AMANDA does not use this parameter.
+
+	There is also an optional "filemark"-parameter, which indicates
+	the amount of space wasted after each tape-section. Leave it
+	blank and AMANDA uses the default of 1KB.
+
+Step 3. Think about tapechangers. 
+
+	As you will use a set of vtapes, you have to also use a kind of vtape-changer.
+	There are several tape-changer-scripts included in the AMANDA-tarball.
+	Read more about tape-changer-scripts in TAPE.CHANGERS.
+
+	Right now there are two scripts that can be used with vtapes.
+	These scripts take different approaches to the handling of tapes.
+
+	The script chg-multi handles many drives with a tape in each drive.
+	The script chg-disk handles a library with one drive and multiple tapes.
+
+	So with vtapes you could look at it this way:
+
+	chg-multi simulates multiple tape drives with one tape in each drive.
+	chg-disk simulates one tape-library with multiple tapes in.
+
+	As chg-multi exists for a much longer time than chg-disk, it is still
+	used in many AMANDA-vtape-installations.
+
+	chg-disk was introduced with the snapshot 20031202.
+	Contrary to chg-multi, which is a generic changer-script that must
+	be somewhat adjusted to the use of the file-driver, chg-disk offers
+	exactly the behavior needed for handling vtapes
+
+	IMHO the approach is much more logical, so I recommend to use chg-disk
+	in new AMANDA-vtape-installations.
+
+	To use chg-disk you need to have at least amanda-2.4.4p1-20031202.
+
+	Choose the one that fits your way of vtape-handling and -maintenance.
+
+	In this HOWTO I only cover the use of chg-disk.
+	Usage of chg-multi is pretty similar and will maybe covered in a later
+	version of this document.
+
+Step 4. Set up your tape-config.
+
+	In the general section you have to set the parameters tapecycle,
+        tapetype, tpchanger, changerfile, tapedev, rawtapedev and changerdev.
+
+        Example:
+
+        $ vi /usr/local/etc/amanda/daily/amanda.conf
+        ...
+
+        tapecycle 6
+        tapetype HARD-DISK
+        tpchanger "chg-disk"
+        changerfile "/usr/local/etc/amanda/daily/changer"
+	tapedev  "file:/amandatapes/daily"
+
+        This reflects the use of your defined tapetype.
+
+        The "tapecycle"-parameter tells AMANDA how much tapes can be used.
+        Set this value according to the number of tapes you want to use.
+
+        The "tapetype"-parameter points to the tapetype definition you have
+        created in Step 2.
+
+        The "tpchanger"-parameter tells AMANDA to use the generic
+        tape-changer-script to handle the virtual tapes. You
+        can think of it as a virtual tape-changer-device.
+
+        The "changerfile"-parameter is used to give chg-disk the "prefix"
+	for the "%s-changer, %s-clean, %s-slot" files it needs.
+	Use something like "changer" in your config-dir.
+	Please note that this file does NOT have to exist, but it won't
+	hurt anyway.
+
+	The "tapedev"-parameter tells the chg-disk-script where the 
+	root-dir for your vtapes is. 
+	In our example the vtape-files go to
+	/amandatapes, and to separate multiple configurations we decided
+	to use subdirectories according to the configuration name "daily".
+
+Step 5. Create the virtual tapes.
+
+	Now you have to create the tape-directories. 
+	chg-disk needs a directory structure like:
+
+	slot_root_dir -|
+	               |- info
+	               |- data -> slot1/
+	               |- slot1/
+	               |- slot2/
+	               |- ...
+	               |- slotn/
+
+	where 'slot_root_dir' is the tapedev 'file:xxx' parameter 
+	and 'n' is the tapecycle parameter.
+
+	So in our example we do:
+
+	$ mkdir /amandatapes/daily
+
+	for the 'slot_root_dir' and
+
+	$ mkdir /amandatapes/daily/slot1
+	$ mkdir /amandatapes/daily/slot2
+	....
+
+	for the virtual slots that will later contain the vtapes.
+
+        If you have many vtapes to create and their names follow a pattern
+        you may be able to do them all with a single loop such as:
+
+        $ for n in 1 2 3 4 5 6 7 8 9 10 11 12
+        > do
+        >    mkdir /amandatapes/daily/slot${n}
+        > done
+
+	Create the info-file:
+
+	$ touch /amandatapes/daily/info
+	
+	and link the first slot to the data-file (to "load" the vtape
+	in the first slot):
+
+	$ ln -s /amandatapes/daily/slot1 /amandatapes/daily/data
+
+	Make sure the AMANDA-user has write-permissions on these directories:
+
+	$ chown -R <amanda_user> /amandatapes
+	$ chgrp -R <amanda_group> /amandatapes
+	$ chmod -R 750 /amandatapes
+
+Step 8. Label the virtual tapes.
+
+	As the virtual tapes are handled just like physical
+	tapes by the AMANDA-Server they have to be labeled
+	before use.
+
+	Usage: amlabel [-f] <conf> <label> [slot <slot-number>]
+
+	Example:
+
+	$ amlabel daily daily1 slot 1
+	....
+	$ amlabel daily daily2 slot 2
+	....
+
+	If you have many vtapes to label and their names follow a pattern
+	you may be able to do them all with a single loop such as:
+
+	$ for n in 01 02 03 04 05 06 07 08 09 10 11 12
+	> do
+	>    amlabel daily daily${n} slot ${n}
+	> done
+
+	Label all your created tapes according to the
+	"labelstr"-parameter in your amanda.conf.  Consult the
+	amlabel-man-page for details.
+
+Step 9. Test your setup with amcheck.
+
+	Run amcheck daily (or, more general, amcheck <config>)
+	and look for anything AMANDA complains about.
+
+	A proper output looks like:
+
+	$ amcheck daily
+	Amanda Tape Server Host Check
+	-----------------------------
+	Holding disk /amhold: 6924940 KB disk space available,
+	that's plenty
+	amcheck-server: slot 2: date 20031115 label daily02
+	(exact label match)
+	NOTE: skipping tape-writable test
+	Tape daily02 label ok
+	Server check took 0.377 seconds
+
+	Recheck your files if errors occur.
+
+----
+
+
+THAT'S IT!  YOU ARE READY TO RUN, UNLESS WE FORGOT
+SOMETHING.  PLEASE send mail to amanda-users@amanda.org if
+you have any comments or questions.  We're not afraid of
+negative reviews, so let us have it!
