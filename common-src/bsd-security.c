@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.12 1998/12/14 19:41:58 kashmir Exp $
+ * $Id: bsd-security.c,v 1.13 1999/01/14 20:09:58 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -783,20 +783,16 @@ check_user(bh, remoteuser)
     struct bsd_handle *bh;
     const char *remoteuser;
 {
-    uid_t uid;
     struct passwd *pwd;
     int saved_stderr;
-    char *localuser;
 
     /* lookup our local user name */
-    uid = getuid();
-    if ((pwd = getpwuid(uid)) == NULL)
-        error("error [getpwuid(%ld) fails]", uid);
-    localuser = stralloc(pwd->pw_name);
+    if ((pwd = getpwnam(CLIENT_LOGIN)) == NULL)
+        error("error [getpwnam(%s) fails]", CLIENT_LOGIN);
 
     /*
      * note that some versions of ruserok (eg SunOS 3.2) look in
-     * "./.rhosts" rather than "~localuser/.rhosts", so we have to
+     * "./.rhosts" rather than "~CLIENT_LOGIN/.rhosts", so we have to
      * chdir ourselves.  Sigh.
      *
      * And, believe it or not, some ruserok()'s try an initgroup just
@@ -809,10 +805,9 @@ check_user(bh, remoteuser)
     saved_stderr = dup(2);
     close(2);
 
-    if (ruserok(bh->hostname, uid == 0, remoteuser, localuser) < 0) {
+    if (ruserok(bh->hostname, uid == 0, remoteuser, CLIENT_LOGIN) < 0) {
 	dup2(saved_stderr,2);
 	close(saved_stderr);
-	amfree(localuser);
 	return (-1);
     }
 
@@ -827,7 +822,6 @@ check_user(bh, remoteuser)
      */
     chdir("/");	
 
-    amfree(localuser);
     return (0);
 }
 
@@ -842,19 +836,16 @@ check_user(bh, remoteuser)
     struct bsd_handle *bh;
     const char *remoteuser;
 {
-    char buf[256], *localuser, *filehost;
+    char buf[256], *filehost;
     const char *fileuser;
-    uid_t uid;
     struct passwd *pwd;
     FILE *fp;
     int rval;
 
     /* lookup our local user name */
 
-    uid = getuid();
-    if ((pwd = getpwuid(uid)) == NULL)
-        error("error [getpwuid(%ld) fails]", (long)uid);
-    localuser = pwd->pw_name;
+    if ((pwd = getpwnam(CLIENT_LOGIN)) == NULL)
+        error("error [getpwnam(%s) fails]", CLIENT_LOGIN);
 
     chdir(pwd->pw_dir);
     if ((fp = fopen(".amandahosts", "r")) == NULL)
