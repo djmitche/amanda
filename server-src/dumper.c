@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.46.2.2 1998/01/27 19:10:04 amcore Exp $
+/* $Id: dumper.c,v 1.46.2.3 1998/01/29 22:42:03 jrj Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -771,6 +771,23 @@ int mesgfd, datafd, indexfd, outfd;
     header_done = 0;
     backup_name = recover_cmd = compress_suffix = (char *)0;
 
+    ap_snprintf(level_str, sizeof(level_str), "%d", level);
+    errfname = newvstralloc(errfname,
+			    "/tmp",
+			    "/", hostname,
+			    ".", sanitise_filename(diskname),
+			    ".", level_str,
+			    ".errout",
+			    NULL);
+    if((errf = fopen(errfname, "w")) == NULL) {
+	errstr = newvstralloc(errstr,
+			      "errfile open \"", errfname, "\": ",
+			      strerror(errno),
+			      NULL);
+	afree(errfname);
+	goto failed;
+    }
+
     /* insert pipe in the *READ* side, if server-side compression is desired */
     if (srvcompress) {
 	int tmpfd;
@@ -845,22 +862,6 @@ int mesgfd, datafd, indexfd, outfd;
 	    execlp(COMPRESS_PATH, COMPRESS_PATH, COMPRESS_BEST_OPT, (char *)0);
 	    error("error: couldn't exec %s.", COMPRESS_PATH);
 	}
-    }
-
-    ap_snprintf(level_str, sizeof(level_str), "%d", level);
-    errfname = newvstralloc(errfname,
-			    "/tmp",
-			    "/", hostname,
-			    ".", sanitise_filename(diskname),
-			    ".", level_str,
-			    ".errout",
-			    NULL);
-    if((errf = fopen(errfname, "w")) == NULL) {
-	errstr = newvstralloc(errstr,
-			      "errfile open \"", errfname, "\": ",
-			      strerror(errno),
-			      NULL);
-	goto failed;
     }
 
     NAUGHTY_BITS_INITIALIZE;
@@ -1081,10 +1082,11 @@ failed:
 
     log_start_multiline();
     log(L_FAIL, "%s %s %d [%s]", hostname, diskname, level, errstr);
-    log_msgout(L_FAIL);
+    if (errfname) {
+	log_msgout(L_FAIL);
+	unlink(errfname);
+    }
     log_end_multiline();
-
-    unlink(errfname);
 
     if (indexfile)
 	unlink(indexfile);
