@@ -42,6 +42,9 @@
 
 Version 2.4.0p1
 
+	pass kerberos encryption switch to client.
+	-Fredrik Jönsson <fjo@nada.kth.se>
+
 	rename afree to amfree, to work around IRIX 6.4's afree.
 	-oliva, reported Stephan P. Martin <smartin@schlund.de>
 
