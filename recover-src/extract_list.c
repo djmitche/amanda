@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43.2.13.4.6.2.14 2002/11/23 21:13:50 martinea Exp $
+ * $Id: extract_list.c,v 1.43.2.13.4.6.2.15 2002/12/19 19:35:21 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1311,7 +1311,7 @@ int tapedev;
     return((size_t)bytes_read);
 }
 
-enum dumptypes {IS_UNKNOWN, IS_DUMP, IS_GNUTAR, IS_TAR, IS_SAMBA};
+enum dumptypes {IS_UNKNOWN, IS_DUMP, IS_GNUTAR, IS_TAR, IS_SAMBA, IS_SAMBA_TAR};
 
 /* exec restore to do the actual restoration */
 static void extract_files_child(in_fd, elist)
@@ -1370,7 +1370,7 @@ static void extract_files_child(in_fd, elist)
 #ifdef SAMBA_CLIENT
 	if (dumptype == IS_UNKNOWN && strcmp(file.program, SAMBA_CLIENT) ==0) {
 	    if (samba_extract_method == SAMBA_TAR)
-	      dumptype = IS_TAR;
+	      dumptype = IS_SAMBA_TAR;
 	    else
 	      dumptype = IS_SAMBA;
 	}
@@ -1387,6 +1387,7 @@ static void extract_files_child(in_fd, elist)
 #endif
     case IS_TAR:
     case IS_GNUTAR:
+    case IS_SAMBA_TAR:
         extra_params = 3;
         break;
     case IS_UNKNOWN:
@@ -1436,6 +1437,11 @@ static void extract_files_child(in_fd, elist)
 	restore_args[j++] = stralloc("-xpGvf");
 	restore_args[j++] = stralloc("-");	/* data on stdin */
 	break;
+    case IS_SAMBA_TAR:
+    	restore_args[j++] = stralloc("tar");
+	restore_args[j++] = stralloc("-xpvf");
+	restore_args[j++] = stralloc("-");	/* data on stdin */
+	break;
     case IS_UNKNOWN:
     case IS_DUMP:
         restore_args[j++] = stralloc("restore");
@@ -1467,6 +1473,7 @@ static void extract_files_child(in_fd, elist)
 	switch (dumptype) {
     	case IS_TAR:
     	case IS_GNUTAR:
+    	case IS_SAMBA_TAR:
     	case IS_SAMBA:
 	    restore_args[j++] = stralloc2(".", fn->path);
 	    break;
@@ -1505,6 +1512,7 @@ static void extract_files_child(in_fd, elist)
 #endif
     case IS_TAR:
     case IS_GNUTAR:
+    case IS_SAMBA_TAR:
 #ifndef GNUTAR
 	fprintf(stderr, "warning: GNUTAR program not available.\n");
 	cmd = stralloc("tar");
