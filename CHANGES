@@ -14,6 +14,9 @@
 
 Version 2.4.0
 
+	retry tape open on AIX if it fails with EAGAIN errno.
+	-Francois Morris <Francois.Morris@lmcp.jussieu.fr>
+
 	fix amrmtape so that it behaves well when files to amflush
 	remain.  Reported by Dietmar Goldbeck <dietmar@telemedia.de>
 
