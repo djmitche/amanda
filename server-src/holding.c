@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.17.2.1 1998/11/05 21:03:33 martinea Exp $
+ * $Id: holding.c,v 1.17.2.2 1998/12/07 01:34:51 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -312,6 +312,39 @@ int *level;
 
     aclose(fd);
     return file.type;
+}
+
+
+long size_holding_files(holding_file)
+char *holding_file;
+{
+    int fd;
+    int buflen;
+    char buffer[TAPE_BLOCK_BYTES];
+    dumpfile_t file;
+    char *filename;
+    long size=0;
+    struct stat finfo;
+
+    filename = stralloc(holding_file);
+    while(filename != NULL && filename[0] != '\0') {
+	if((fd = open(filename,O_RDONLY)) == -1) {
+	    fprintf(stderr,"open of %s failed: %s\n",filename,strerror(errno));
+	    amfree(filename);
+	    return -1;
+	}
+	buflen=fill_buffer(fd, buffer, sizeof(buffer));
+	parse_file_header(buffer, &file, buflen);
+	close(fd);
+	if(stat(filename, &finfo) == -1) {
+	    printf("stat %s: %s\n", filename, strerror(errno));
+	    finfo.st_size = 0;
+	}
+	size += finfo.st_size;
+	filename = newstralloc(filename, file.cont_filename);
+    }
+    amfree(filename);
+    return size;
 }
 
 
