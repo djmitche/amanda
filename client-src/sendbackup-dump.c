@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.28 1997/09/04 03:25:09 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.29 1997/09/07 14:48:41 kovert Exp $
  *
  * send backup data using BSD dump
  */
@@ -44,6 +44,10 @@ static regex_t re_table[] = {
   /* the various encodings of dump size */
   { DMP_SIZE, 
 	"DUMP: [0-9][0-9]* tape blocks",				1024},
+
+  /* this is for BSDI <3.0 */
+  { DMP_SIZE, 
+	"DUMP: DUMP: [0-9][0-9]* tape blocks",				1024},
 
   { DMP_SIZE,
 	"dump: Actual: [0-9][0-9]* tape blocks",			1024},
