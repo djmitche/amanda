@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.10 1997/12/16 18:02:40 jrj Exp $
+ * $Id: reporter.c,v 1.11 1997/12/19 11:49:11 george Exp $
  *
  * nightly Amanda Report generator
  */
@@ -105,7 +105,7 @@ int got_finish = 0;
 
 char tapestart_error[80], subj_str[256];
 
-FILE *logf, *mailf;
+FILE *logfile, *mailf;
 
 disklist_t *diskq;
 disklist_t sortq;
@@ -146,7 +146,7 @@ int get_logline()
 {
     char *cp, *logstr, *progstr;
 
-    if(fgets(logline, MAX_LINE, logf) == NULL)
+    if(fgets(logline, MAX_LINE, logfile) == NULL)
 	return 0;
     curlinenum++;
     cp = logline;
@@ -190,8 +190,8 @@ int get_logline()
 
 int contline_next()
 {
-    int ch = getc(logf);
-    ungetc(ch, logf);
+    int ch = getc(logfile);
+    ungetc(ch, logfile);
 
     return ch == ' ';
 }
@@ -248,7 +248,7 @@ char **argv;
 
     if(!testing) logfname = getconf_str(CNF_LOGFILE);
 
-    if((logf = fopen(logfname, "r")) == NULL)
+    if((logfile = fopen(logfname, "r")) == NULL)
 	error("could not open log %s: %s", logfname, strerror(errno));
 
     setup_data();    /* setup per-disk data */
@@ -275,7 +275,7 @@ char **argv;
 	    printf("reporter: unexpected log line\n");
 	}
     }
-    fclose(logf);
+    fclose(logfile);
     close_infofile();
     if(!amflush_run)
 	generate_missing();
