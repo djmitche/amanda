@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: holding.h,v 1.8 1998/03/09 22:44:28 blair Exp $
+ * $Id: holding.h,v 1.9 1998/05/05 21:47:48 martinea Exp $
  *
  */
 
@@ -54,5 +54,6 @@ int get_amanda_names P((char *fname,
 			char **hostname,
 			char **diskname,
 			int *level));
+int unlink_holding_files P((char *filename));
 
 #endif /* HOLDING_H */

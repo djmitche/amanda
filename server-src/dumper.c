@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.62 1998/04/22 18:30:22 jrj Exp $
+/* $Id: dumper.c,v 1.63 1998/05/05 21:47:45 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -78,6 +78,7 @@ char *dataptr;		/* data buffer markers */
 int spaceleft, abort_pending;
 pid_t pid;
 long dumpsize, origsize;
+int nb_header_block;
 times_t runtime;
 double dumptime;	/* Time dump took in secs */
 static enum { srvcomp_none, srvcomp_fast, srvcomp_best } srvcompress;
@@ -85,16 +86,22 @@ static enum { srvcomp_none, srvcomp_fast, srvcomp_best } srvcompress;
 char *errfname = NULL;
 FILE *errf = NULL;
 char *filename = NULL;
+string_t cont_filename;
 char *hostname = NULL;
 char *diskname = NULL;
 char *options = NULL;
 char *progname = NULL;
 int level;
 char *dumpdate = NULL;
+long chunksize;
 extern char *datestamp;
 char *backup_name = NULL;
 char *recover_cmd = NULL;
 char *compress_suffix = NULL;
+
+dumpfile_t file;
+int filename_seq;
+long split_size;
 
 int datafd = -1;
 int mesgfd = -1;
@@ -111,7 +118,9 @@ static void do_dump P((int mesgfd, int datafd, int indexfd, int outfd));
 void check_options P((char *options));
 void service_ports_init P((void));
 static char *construct_datestamp P((void));
-int update_dataptr P((int outf, int size));
+int write_tapeheader P((int outfd, dumpfile_t *type));
+int write_dataptr P((int outf));
+int update_dataptr P((int outf, int size, int split));
 static void process_dumpeof P((void));
 static void process_dumpline P((char *str));
 static void add_msg_data P((char *str, int len));
@@ -251,11 +260,11 @@ char **main_argv;
 	    break;
 	case FILE_DUMP:
 	    /*
-	     * FILE-DUMP handle filename host disk level dumpdate
+	     * FILE-DUMP handle filename host disk level dumpdate chunksize
 	     *   progname options
 	     */
-	    if(argc != 9) {
-		error("error [dumper FILE-DUMP argc != 9: %d]", argc);
+	    if(argc != 10) {
+		error("error [dumper FILE-DUMP argc != 10: %d]", argc);
 	    }
 	    handle = newstralloc(handle, argv[2]);
 	    filename = newstralloc(filename, argv[3]);
@@ -263,8 +272,11 @@ char **main_argv;
 	    diskname = newstralloc(diskname, argv[5]);
 	    level = atoi(argv[6]);
 	    dumpdate = newstralloc(dumpdate, argv[7]);
-	    progname = newstralloc(progname, argv[8]);
-	    options = newstralloc(options, argv[9]);
+	    chunksize = atoi(argv[8]);
+	    chunksize = (((int)(chunksize/TAPE_BLOCK_SIZE))-1)*TAPE_BLOCK_SIZE;
+	    progname = newstralloc(progname, argv[9]);
+	    options = newstralloc(options, argv[10]);
+	    cont_filename[0] = '\0';
 
 	    if((outfd = open(filename, O_WRONLY|O_CREAT, 0666)) == -1) {
 		q = squotef("[holding file \"%s\": %s]",
@@ -273,6 +285,7 @@ char **main_argv;
 		amfree(q);
 		break;
 	    }
+	    filename_seq = 0;
 
 	    check_options(options);
 
@@ -295,6 +308,7 @@ char **main_argv;
 	    }
 
 	    abort_pending = 0;
+	    split_size = chunksize;
 	    do_dump(mesgfd, datafd, indexfd, outfd);
 	    aclose(mesgfd);
 	    aclose(datafd);
@@ -320,6 +334,7 @@ char **main_argv;
 	    dumpdate = newstralloc(dumpdate, argv[7]);
 	    progname = newstralloc(progname, argv[8]);
 	    options = newstralloc(options, argv[9]);
+	    cont_filename[0] = '\0';
 
 	    /* connect outf to taper port */
 
@@ -331,6 +346,7 @@ char **main_argv;
 		amfree(q);
 		break;
 	    }
+	    filename_seq = 0;
 
 	    check_options(options);
 
@@ -353,6 +369,7 @@ char **main_argv;
 	    }
 
 	    abort_pending = 0;
+	    split_size = -1;
 	    do_dump(mesgfd, datafd, indexfd, outfd);
 	    aclose(mesgfd);
 	    aclose(datafd);
@@ -441,16 +458,49 @@ arglist_function(static void putresult, char *, format)
 }
 
 
-int update_dataptr(outf, size)
-int outf, size;
+int write_dataptr(outf)
+int outf;
 /*
  * Updates the buffer pointer for the input data buffer.  The buffer is
  * written if it is full, or the remainder is zeroed if at eof.
  */
 {
     cmd_t cmd;
-    char *q = NULL;
+    int written;
 
+    do {
+	written = write(outf, databuf + spaceleft,
+	sizeof(databuf) - spaceleft);
+	if(written > 0) {
+	    spaceleft += written;
+	    continue;
+	} else if(written < 0 && errno != ENOSPC) {
+	    errstr = squotef("data write: %s", strerror(errno));
+	    return 1;
+	}
+	putresult("NO-ROOM %s\n", handle);
+	cmd = getcmd();
+	if(cmd != CONTINUE && cmd != ABORT) {
+	    error("error [bad command after NO-ROOM: %d]", cmd);
+	}
+	if(cmd == CONTINUE) continue;
+	abort_pending = 1;
+	errstr = "ERROR";
+	return 1;
+    } while (spaceleft != sizeof(databuf));
+    dataptr = databuf;
+    dumpsize += (sizeof(databuf)/1024);
+    return 0;
+}
+
+
+int update_dataptr(outf, size, split)
+int outf, size, split;
+/*
+ * Updates the buffer pointer for the input data buffer.  The buffer is
+ * written if it is full, or the remainder is zeroed if at eof.
+ */
+{
     spaceleft -= size;
     dataptr += size;
 
@@ -461,33 +511,75 @@ int outf, size;
     }
 
     if(spaceleft == 0) {	/* buffer is full, write it */
-	int written;
 
 	NAUGHTY_BITS;
 
-	do {
-	    written = write(outf, databuf + spaceleft,
-			    sizeof(databuf) - spaceleft);
-	    if(written > 0) {
-		spaceleft += written;
-		continue;
-	    } else if(written < 0 && errno != ENOSPC) {
-		q = squotef("[data write: %s]", strerror(errno));
-		putresult("FAILED %s %s\n", handle, q);
-		amfree(q);
+	if(split && split_size > 0 && dumpsize >= split_size) {
+	    char *new_filename = NULL;
+	    char sequence[10];
+	    int save_outf;
+	    int save_spaceleft;
+	    char *save_dataptr;
+	    char save_databuf[DATABUF_SIZE];
+
+	    memcpy(save_databuf, databuf, sizeof(databuf)); 
+	    save_spaceleft = spaceleft;
+	    save_dataptr = dataptr;
+    	    spaceleft = sizeof(databuf);
+	    dataptr = databuf;
+
+	    save_outf = outf;
+
+	    close(outf);
+
+	    filename_seq++;
+	    ap_snprintf(sequence, sizeof(sequence), "%d", filename_seq);
+	    new_filename = newvstralloc(new_filename,filename,".",sequence,NULL);
+
+	    strncpy(file.cont_filename, new_filename, 
+		    sizeof(file.cont_filename));
+	    file.cont_filename[sizeof(file.cont_filename)-1] = '\0';
+
+	    if((outf = open(cont_filename,O_RDWR)) == -1) {
+		errstr = squotef("holding file \"%s\": %s",
+			    cont_filename, strerror(errno));
 		return 1;
 	    }
-	    putresult("NO-ROOM %s\n", handle);
-	    cmd = getcmd();
-	    if(cmd != CONTINUE && cmd != ABORT) {
-		error("error [bad command after NO-ROOM: %d]", cmd);
+	    strncpy(file.cont_filename, new_filename, 
+		    sizeof(file.cont_filename));
+	    file.cont_filename[sizeof(file.cont_filename)-1] = '\0';
+	    write_tapeheader(outf, &file);
+	    close(outf);
+
+	    strncpy(cont_filename, new_filename, sizeof(cont_filename));
+	    cont_filename[sizeof(cont_filename)-1] = '\0';
+
+	    if((outf = open(new_filename, O_WRONLY|O_CREAT, 0666)) == -1) {
+		errstr = squotef("holding file \"%s\": %s",
+			    filename, strerror(errno));
+		return 1;
 	    }
-	    if(cmd == CONTINUE) continue;
-	    abort_pending = 1;
-	    return 1;
-	} while (spaceleft != sizeof(databuf));
-	dataptr = databuf;
-	dumpsize += (sizeof(databuf)/1024);
+	    if(outf != save_outf) {
+		if(dup2(outf,save_outf) == -1) {
+		    errstr = squotef("can't dup2: %s", strerror(errno));
+		    return 1;
+		}
+		close(outf);
+		outf = save_outf;
+	    }
+	    /*outf = save_outf;*/
+	    split_size += chunksize;
+    	    spaceleft = sizeof(databuf);
+	    dataptr = databuf;
+	    file.type = F_CONT_DUMPFILE;
+	    file.cont_filename[0] = '\0';
+	    write_tapeheader(outf, &file);
+
+	    memcpy(databuf, save_databuf, sizeof(databuf)); 
+	    spaceleft = save_spaceleft;
+	    dataptr = save_dataptr;
+	}
+	return write_dataptr(outf);
     }
     return 0;
 }
@@ -683,33 +775,27 @@ logtype_t typ;
 
 /* ------------- */
 
-/* Send an Amanda dump header to the output file.
-*/
-int write_tapeheader(outfd)
-int outfd;
+void make_tapeheader(file, type)
+dumpfile_t *file;
+filetype_t type;
 {
-    char buffer[TAPE_BLOCK_BYTES], *bufptr;
-    dumpfile_t file;
-    int len;
-    int count;
-
-    fh_init(&file);
-    file.type=F_DUMPFILE;
-    strncpy(file.datestamp  , datestamp  , sizeof(file.datestamp)-1);
-    file.datestamp[sizeof(file.datestamp)-1] = '\0';
-    strncpy(file.name       , hostname   , sizeof(file.name)-1);
-    file.name[sizeof(file.name)-1] = '\0';
-    strncpy(file.disk       , diskname   , sizeof(file.disk)-1);
-    file.disk[sizeof(file.disk)-1] = '\0';
-    file.dumplevel = level;
-    strncpy(file.program    , backup_name, sizeof(file.program)-1);
-    file.program[sizeof(file.program)-1] = '\0';
-    strncpy(file.recover_cmd, recover_cmd, sizeof(file.recover_cmd)-1);
-    file.recover_cmd[sizeof(file.recover_cmd)-1] = '\0';
+    fh_init(file);
+    file->type = type;
+    strncpy(file->datestamp  , datestamp  , sizeof(file->datestamp)-1);
+    file->datestamp[sizeof(file->datestamp)-1] = '\0';
+    strncpy(file->name       , hostname   , sizeof(file->name)-1);
+    file->name[sizeof(file->name)-1] = '\0';
+    strncpy(file->disk       , diskname   , sizeof(file->disk)-1);
+    file->disk[sizeof(file->disk)-1] = '\0';
+    file->dumplevel = level;
+    strncpy(file->program    , backup_name, sizeof(file->program)-1);
+    file->program[sizeof(file->program)-1] = '\0';
+    strncpy(file->recover_cmd, recover_cmd, sizeof(file->recover_cmd)-1);
+    file->recover_cmd[sizeof(file->recover_cmd)-1] = '\0';
 
     if (srvcompress) {
-	file.compressed=1;
-	ap_snprintf(file.uncompress_cmd, sizeof(file.uncompress_cmd),
+	file->compressed=1;
+	ap_snprintf(file->uncompress_cmd, sizeof(file->uncompress_cmd),
 		    " %s %s |", UNCOMPRESS_PATH,
 #ifdef UNCOMPRESS_OPT
 		    UNCOMPRESS_OPT
@@ -717,35 +803,49 @@ int outfd;
 		    ""
 #endif
 		    );
-	strncpy(file.comp_suffix, COMPRESS_SUFFIX, sizeof(file.comp_suffix)-1);
-	file.comp_suffix[sizeof(file.comp_suffix)-1] = '\0';
+	strncpy(file->comp_suffix, COMPRESS_SUFFIX,sizeof(file->comp_suffix)-1);
+	file->comp_suffix[sizeof(file->comp_suffix)-1] = '\0';
     }
     else {
-	file.uncompress_cmd[0] = '\0';
-	file.compressed=compress_suffix!=NULL;
+	file->uncompress_cmd[0] = '\0';
+	file->compressed=compress_suffix!=NULL;
 	if(compress_suffix) {
-	    strncpy(file.comp_suffix, compress_suffix,
-		    sizeof(file.comp_suffix)-1);
-	    file.comp_suffix[sizeof(file.comp_suffix)-1] = '\0';
+	    strncpy(file->comp_suffix, compress_suffix,
+		    sizeof(file->comp_suffix)-1);
+	    file->comp_suffix[sizeof(file->comp_suffix)-1] = '\0';
 	} else {
-	    strncpy(file.comp_suffix, "N", sizeof(file.comp_suffix)-1);
-	    file.comp_suffix[sizeof(file.comp_suffix)-1] = '\0';
+	    strncpy(file->comp_suffix, "N", sizeof(file->comp_suffix)-1);
+	    file->comp_suffix[sizeof(file->comp_suffix)-1] = '\0';
 	}
     }
+    strncpy(file->cont_filename, cont_filename, sizeof(file->cont_filename)-1);
+    file->cont_filename[sizeof(file->cont_filename)-1] = '\0';
+}
 
-    write_header(buffer, &file,sizeof(buffer));
+/* Send an Amanda dump header to the output file.
+*/
+
+int write_tapeheader(outfd, file)
+int outfd;
+dumpfile_t *file;
+{
+    char buffer[TAPE_BLOCK_BYTES], *bufptr;
+    int len;
+    int count;
+
+    write_header(buffer, file, sizeof(buffer));
 
     bufptr = buffer;
     for (count = sizeof(buffer); count > 0; ) {
 	len = count > spaceleft ? spaceleft : count;
 	memcpy(dataptr, bufptr, len);
 
-	if (update_dataptr(outfd, len)) return 1;
+	if (update_dataptr(outfd, len, 0)) return 1;
 
 	bufptr += len;
 	count -= len;
     }
-
+    nb_header_block++;
     return 0;
 }
 
@@ -787,6 +887,8 @@ int mesgfd, datafd, indexfd, outfd;
     dataptr = databuf;
     spaceleft = sizeof(databuf);
     dumpsize = origsize = dump_result = 0;
+    dumpsize = TAPE_BLOCK_SIZE;
+    nb_header_block = 1;
     got_info_endline = got_sizeline = got_endline = 0;
     header_done = 0;
     amfree(backup_name);
@@ -1011,21 +1113,13 @@ int mesgfd, datafd, indexfd, outfd;
 		errstr = newstralloc2(errstr, "data read: ", strerror(errno));
 		goto failed;
 	    case 0:
-		if(update_dataptr(outfd, size1)) {
-		    errstr = newstralloc2(errstr, "update_dataptr: ", 
-					  strerror(errno));
-		    goto failed;
-		}
+		if(update_dataptr(outfd, size1, 1)) goto failed;
 		eof1 = 1;
 		FD_CLR(datafd, &readset);
 		aclose(datafd);
 		break;
 	    default:
-		if(update_dataptr(outfd, size1)) {
-		    errstr = newstralloc2(errstr, "update_dataptr: ", 
-					  strerror(errno));
-		    goto failed;
-		}
+		if(update_dataptr(outfd, size1, 1)) goto failed;
 	    }
 	}
 
@@ -1047,12 +1141,15 @@ int mesgfd, datafd, indexfd, outfd;
 	    }
 
 	    if (got_info_endline && !header_done) { /* time to do the header */
-		if (write_tapeheader(outfd)) {
+		make_tapeheader(&file, F_DUMPFILE);
+		if (write_tapeheader(outfd, &file)) {
 		    errstr = newstralloc2(errstr, "write_tapeheader: ", 
 					  strerror(errno));
 		    goto failed;
 		}
 		header_done = 1;
+		strncat(cont_filename,filename,sizeof(cont_filename));
+		cont_filename[sizeof(cont_filename)-1] = '\0';
 
 		if (datafd != -1)
 		    FD_SET(datafd, &readset);	/* now we can read the data */
@@ -1065,7 +1162,7 @@ int mesgfd, datafd, indexfd, outfd;
     runtime = stopclock();
     dumptime = runtime.r.tv_sec + runtime.r.tv_usec/1000000.0;
 
-    dumpsize -= TAPE_BLOCK_SIZE;	/* don't count the header */
+    dumpsize -= (nb_header_block * TAPE_BLOCK_SIZE);/* don't count the header */
     if (dumpsize < 0) dumpsize = 0;	/* XXX - maybe this should be fatal? */
 
     ap_snprintf(kb_str, sizeof(kb_str), "%ld", dumpsize);

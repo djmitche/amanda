@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: fileheader.c,v 1.8 1998/04/11 13:10:04 martinea Exp $
+ * $Id: fileheader.c,v 1.9 1998/05/05 21:47:28 martinea Exp $
  *
  */
 
@@ -46,17 +46,18 @@ dumpfile_t *file;
 int buflen;
 {
     string_t line, save_line;
-    char *bp, *str;
+    char *bp, *str, *ptr_buf, *start_buf;
     int nchars;
     char *verify;
-    char *s;
+    char *s, *s1, *s2;
     int ch;
+    int done;
 
     /* isolate first line */
 
     nchars = buflen<sizeof(line)? buflen : sizeof(line) - 1;
-    for(s=line, bp=buffer; bp < buffer+nchars; bp++, s++) {
-	ch = *bp;
+    for(s=line, ptr_buf=buffer; ptr_buf < buffer+nchars; ptr_buf++, s++) {
+	ch = *ptr_buf;
 	if(ch == '\n') {
 	    *s = '\0';
 	    break;
@@ -130,8 +131,12 @@ int buflen;
 	if(bp == NULL) {
 	    goto weird_header;
 	}
-    } else if(strcmp(str, "FILE") == 0) {
-	file->type = F_DUMPFILE;
+    } else if(strcmp(str, "FILE") == 0 || 
+	      strcmp(str, "CONT_FILE") == 0) {
+	if(strcmp(str, "FILE") == 0)
+	    file->type = F_DUMPFILE;
+	else if(strcmp(str, "CONT_FILE") == 0)
+	    file->type = F_CONT_DUMPFILE;
 
 	skip_whitespace(s, ch);
 	if(ch == '\0') {
@@ -228,6 +233,64 @@ int buflen;
 	    strncpy(file->program, "RESTORE", sizeof(file->program)-1);
 	    file->program[sizeof(file->program)-1] = '\0';
 	}
+
+	done=0;
+	do {	
+	    /* isolate the next line */
+	    ptr_buf++;
+	    start_buf = ptr_buf;
+	    for(s=line ; ptr_buf < start_buf+nchars; ptr_buf++, s++) {
+		ch = *ptr_buf;
+		if(ch == '\n') {
+		    *s = '\0';
+		    break;
+		}
+		*s = ch;
+	    }
+	    if(ptr_buf >= buffer+nchars) done = 1;
+	    line[sizeof(line)-1] = '\0';
+	    s = line;
+	    ch = *s++;
+#define SC "CONT_FILENAME="
+	    if(strncmp(line,SC,strlen(SC)) == 0) {
+		s = line + strlen(SC);
+		ch = *s++;
+		copy_string(s, ch, file->cont_filename, 
+			    sizeof(file->cont_filename), bp);
+	    }
+#undef SC
+#define SC "To restore, position tape at start of file and run:"
+	    else if(strncmp(line,SC,strlen(SC)) == 0) {
+	    }
+#undef SC
+#define SC "\tdd if=<tape> bs="
+	    else if(strncmp(line,SC,strlen(SC)) == 0) {
+		s = strtok(line, "|");
+		s1 = strtok(NULL, "|");
+		s2 = strtok(NULL, "|");
+		if(!s1) {
+		    strncpy(file->recover_cmd,"BUG",sizeof(file->recover_cmd));
+		    file->recover_cmd[sizeof(file->recover_cmd)-1] = '\0';
+		}
+		else if(!s2) {
+		    strncpy(file->recover_cmd,s1+1,sizeof(file->recover_cmd));
+		    file->recover_cmd[sizeof(file->recover_cmd)-1] = '\0';
+		}
+		else {
+		    strncpy(file->uncompress_cmd,s1,
+			    sizeof(file->uncompress_cmd));
+		    file->uncompress_cmd[sizeof(file->uncompress_cmd)-2] = '\0';
+		    strcat(file->uncompress_cmd,"|");
+		    strncpy(file->recover_cmd,s2+1,sizeof(file->recover_cmd));
+		    file->recover_cmd[sizeof(file->recover_cmd)-1] = '\0';
+		}
+		done = 1;
+	    }
+	    else {
+		done = 1;
+	    }
+#undef SC
+	} while(!done);
     } else if(strcmp(str, "TAPEEND") == 0) {
 	file->type = F_TAPEEND;
 
@@ -278,18 +341,33 @@ int buflen;
 				  "AMANDA: TAPESTART DATE %s TAPE %s\n\014\n",
 				  file->datestamp, file->name);
 		      break;
-    case F_DUMPFILE : ap_snprintf(buffer, buflen,
+    case F_CONT_DUMPFILE:
+    case F_DUMPFILE : if( file->type == F_DUMPFILE) {
+			ap_snprintf(buffer, buflen,
 				  "AMANDA: FILE %s %s %s lev %d comp %s program %s\n",
 				  file->datestamp, file->name, file->disk,
 				  file->dumplevel, file->comp_suffix,
 				  file->program);
+		      }
+		      else if( file->type == F_CONT_DUMPFILE) {
+			ap_snprintf(buffer, buflen,
+				  "AMANDA: CONT_FILE %s %s %s lev %d comp %s program %s\n",
+				  file->datestamp, file->name, file->disk,
+				  file->dumplevel, file->comp_suffix,
+				  file->program);
+		      }
 		      buffer[buflen-1] = '\0';
+		      if(strlen(file->cont_filename) != 0) {
+			line = newvstralloc(line, "CONT_FILENAME=",
+					    file->cont_filename, "\n", NULL);
+		        strncat(buffer,line,buflen-strlen(buffer));
+		      }
 		      strncat(buffer,
 			"To restore, position tape at start of file and run:\n",
 			buflen-strlen(buffer));
 		      ap_snprintf(number, sizeof(number),
 				  "%d", TAPE_BLOCK_SIZE);
-		      line = vstralloc("\t",
+		      line = newvstralloc(line, "\t",
 				       "dd",
 				       " if=<tape>",
 				       " bs=", number, "k",
@@ -301,6 +379,7 @@ int buflen;
 				       NULL);
 		      strncat(buffer, line, buflen-strlen(buffer));
 		      amfree(line);
+		      buffer[buflen-1] = '\0';
 		      break;
     case F_TAPEEND  : ap_snprintf(buffer, buflen,
 				  "AMANDA: TAPEEND DATE %s\n\014\n",
@@ -339,6 +418,15 @@ dumpfile_t *file;
 	else
 	    printf("\n");
 	break;
+    case F_CONT_DUMPFILE:
+	fprintf(outf, "cont dumpfile: date %s host %s disk %s lev %d comp %s",
+		file->datestamp, file->name, file->disk, file->dumplevel, 
+		file->comp_suffix);
+	if(*file->program)
+	    printf(" program %s\n",file->program);
+	else
+	    printf("\n");
+	break;
     case F_TAPEEND:
 	fprintf(outf, "end of tape: date %s\n", file->datestamp);
 	break;
@@ -356,4 +444,35 @@ dumpfile_t *file;
 	return 1;
 #endif
     return 0;
+}
+
+
+int fill_buffer(fd, buffer, size)
+int fd, size;
+char *buffer;
+{
+    char *curptr;
+    int spaceleft, cnt;
+
+    curptr = buffer;
+    spaceleft = size;
+
+    do {
+	cnt = read(fd, curptr, spaceleft);
+	switch(cnt) {
+	case 0:
+	    if(spaceleft ==  size) {
+		return 0;
+	    }
+	    else {
+		return size;
+	    }
+	case -1:
+	    return -1;
+	default:
+	    spaceleft -= cnt;
+	    curptr +=cnt;
+	}
+    } while(spaceleft > 0);
+    return size;
 }

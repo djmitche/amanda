@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.34 1998/04/08 16:25:32 amcore Exp $
+/* $Id: taper.c,v 1.35 1998/05/05 21:47:49 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -40,6 +40,7 @@
 #include "version.h"
 #include "arglist.h"
 #include "token.h"
+#include "fileheader.h"
 #ifdef HAVE_LIBVTBLC
 #include <vtblc.h>
 #include <strings.h>
@@ -233,7 +234,7 @@ char **main_argv;
 void read_file P((int fd, char *handle,
 		  char *host, char *disk, char *datestamp, 
 		  int level, int port_flag));
-int fill_buffer P((int fd, char *buffer, int size));
+int taper_fill_buffer P((int fd, char *buffer, int size));
 void dumpbufs P((char *str1));
 void dumpstatus P((buffer_t *bp));
 
@@ -248,6 +249,7 @@ int rdpipe, wrpipe;
     char tok;
     char *q;
     int level, fd, data_port, data_socket, wpid;
+    struct stat stat_file;
 
     procname = "reader";
     syncpipe_init(rdpipe, wrpipe);
@@ -349,12 +351,20 @@ int rdpipe, wrpipe;
 	    level = atoi(argv[6]);
 	    datestamp = stralloc(argv[7]);
 
-	    if((fd = open(argv[3], O_RDONLY)) == -1) {
+	    if(stat(argv[3],&stat_file)!=0) {
 		q = squotef("[%s]", strerror(errno));
 		putresult("TAPE-ERROR %s %s\n", handle, q);
 		amfree(q);
 		amfree(handle);
 		amfree(hostname);
+		amfree(diskname);
+		break;
+	    }
+	    if((fd = open(argv[3], O_RDONLY)) == -1) {
+		q = squotef("[%s]", strerror(errno));
+		putresult("TAPE-ERROR %s %s\n", handle, q);
+		amfree(q);
+		amfree(handle);
 		amfree(diskname);
 		break;
 	    }
@@ -470,6 +480,8 @@ char *handle, *hostname, *diskname, *datestamp;
     long filesize;
     times_t runtime;
     char *str;
+    int header_read = 0;
+    dumpfile_t file;
 
     char *q = NULL;
 
@@ -570,21 +582,82 @@ char *handle, *hostname, *diskname, *datestamp;
 
 	    bp->status = FILLING;
 	    if(interactive || bufdebug) dumpstatus(bp);
-	    if((rc = fill_buffer(fd, bp->buffer, sizeof(bp->buffer))) <= 0) {
+	    if((rc = taper_fill_buffer(fd, bp->buffer, 
+				       sizeof(bp->buffer))) < 0) {
 		err = (rc < 0)? errno : 0;
 		closing = 1;
 		syncpipe_put('C');
 	    }
 	    else {
-		bp->status = FULL;
-		if(interactive || bufdebug) dumpstatus(bp);
-		filesize += rc / 1024;
-		if(bufdebug) {
-		    fprintf(stderr,"taper: r: put W%d\n",(int)(bp-buftable));
-		    fflush(stderr);
-		}
-		syncpipe_put('W'); syncpipe_putint(bp-buftable);
+		if(rc == 0) { /* switch to next file */
+		    int save_fd;
+		    save_fd = fd;
+		    close(fd);
+		    if(file.cont_filename[0] == '\0' ||  /* no more file */
+		       strlen(file.cont_filename) ==0) { /* no more file */
+			err = 0;
+			closing = 1;
+			syncpipe_put('C');
+		    }
+		    else if((fd = open(file.cont_filename,O_RDONLY)) == -1) {
+			err = errno;
+			closing = 1;
+			syncpipe_put('C');
+			rc = 0;
+		    }
+		    else if((fd != save_fd) && dup2(fd, save_fd) == -1) {
+			err = errno;
+			closing = 1;
+			syncpipe_put('C');
+			fprintf(stderr,"can't dup2\n");
+		    }
+		    else {
+			if(fd != save_fd) {
+			    close(fd);
+			    fd = save_fd;
+			}
+			if((rc = taper_fill_buffer(fd, bp->buffer, 
+						   sizeof(bp->buffer))) <= 0) {
+			    err = (rc < 0)? errno : 0;
+			    closing = 1;
+			    syncpipe_put('C');
+			}
+			else {
+			    parse_file_header(bp->buffer, &file, rc);
 
+			    if((rc = taper_fill_buffer(fd, bp->buffer, 
+						   sizeof(bp->buffer))) <= 0) {
+				err = (rc < 0)? errno : 0;
+				closing = 1;
+				syncpipe_put('C');
+			    }
+			}
+		    }
+		}
+		if(rc > 0) {
+		    if(header_read == 0) {
+			char *cont_filename;
+
+			parse_file_header(bp->buffer, &file, rc);
+			cont_filename = stralloc(file.cont_filename);
+			memset(file.cont_filename,'\0',sizeof(file.cont_filename));
+			write_header(bp->buffer,&file,rc);
+
+			/* add CONT_FILENAME to header */
+			strncpy(file.cont_filename, cont_filename, 
+				sizeof(file.cont_filename));
+			header_read = 1;
+		    }
+		    bp->status = FULL;
+		    if(interactive || bufdebug) dumpstatus(bp);
+			filesize += rc / 1024;
+		    if(bufdebug) {
+			fprintf(stderr,"taper: r: put W%d\n",(int)(bp-buftable));
+			fflush(stderr);
+		    }
+		}
+		syncpipe_put('W');
+		syncpipe_putint(bp-buftable);
 		bp = nextbuf(bp);
 	    }
 	    break;
@@ -732,7 +805,7 @@ char *handle, *hostname, *diskname, *datestamp;
     }
 }
 
-int fill_buffer(fd, buffer, size)
+int taper_fill_buffer(fd, buffer, size)
 int fd, size;
 char *buffer;
 {

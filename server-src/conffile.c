@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.42 1998/04/29 07:11:57 amcore Exp $
+ * $Id: conffile.c,v 1.43 1998/05/05 21:47:38 martinea Exp $
  *
  * read configuration file
  */
@@ -69,7 +69,7 @@ typedef enum {
     PRINTER,
 
     /* holding disk */
-    COMMENT, DIRECTORY, USE,
+    COMMENT, DIRECTORY, USE, CHUNKSIZE,
 
     /* dump type */
     /*COMMENT,*/ PROGRAM, DUMPCYCLE, MAXCYCLE, MAXDUMPS,
@@ -884,6 +884,7 @@ keytab_t holding_keytable[] = {
     { "DIRECTORY", DIRECTORY },
     { "COMMENT", COMMENT },
     { "USE", USE },
+    { "CHUNKSIZE", CHUNKSIZE },
     { NULL, IDENT }
 };
 
@@ -924,6 +925,11 @@ static void get_holdingdisk()
 	case USE:
 	    get_simple((val_t *)&hdcur.disksize, &hdcur.s_size, INT);
 	    break;
+	case CHUNKSIZE:
+	    get_simple((val_t *)&hdcur.chunksize, &hdcur.s_csize, INT);
+	    if(hdcur.chunksize == 0)
+		hdcur.chunksize = MAXFILESIZE;
+	    break;
 
 	case RBRACE:
 	    done = 1;
@@ -950,10 +956,12 @@ static void init_holdingdisk_defaults()
     hdcur.diskdir = stralloc(conf_diskdir.s);
     malloc_mark(hdcur.diskdir);
     hdcur.disksize = 0;
+    hdcur.chunksize = -1;
 
     hdcur.s_comment = 0;
     hdcur.s_disk = 0;
     hdcur.s_size = 0;
+    hdcur.s_csize = 0;
 
     hdcur.up = (void *)0;
 }
@@ -2207,6 +2215,7 @@ dump_configuration(filename)
 	printf("	COMMENT \"%s\"\n", hp->comment);
 	printf("	DISKDIR \"%s\"\n", hp->diskdir);
 	printf("	SIZE %d\n", hp->disksize);
+	printf("	CHUNKSIZE %d\n", hp->chunksize);
     }
 
     for(tp = tapelist; tp != NULL; tp = tp->next) {

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: holding.c,v 1.13 1998/03/09 23:03:57 blair Exp $
+ * $Id: holding.c,v 1.14 1998/05/05 21:47:47 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -313,4 +313,31 @@ int *level;
 
     aclose(fd);
     return 0;
+}
+
+
+int unlink_holding_files( holding_file )
+char *holding_file;
+{
+    int fd;
+    int buflen;
+    char buffer[TAPE_BLOCK_BYTES];
+    dumpfile_t file;
+    char *filename;
+
+    filename = stralloc(holding_file);
+    while(filename != NULL && filename[0] != '\0') {
+	if((fd = open(filename,O_RDONLY)) == -1) {
+	    fprintf(stderr,"open of %s failed: %s\n",filename,strerror(errno));
+	    amfree(filename);
+	    return 0;
+	}
+	buflen=fill_buffer(fd, buffer, sizeof(buffer));
+	parse_file_header(buffer, &file, buflen);
+	close(fd);
+	unlink(filename);
+	filename = newstralloc(filename,file.cont_filename);
+    }
+    amfree(filename);
+    return 1;
 }

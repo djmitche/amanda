@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.39 1998/04/08 16:25:15 amcore Exp $
+ * $Id: driver.c,v 1.40 1998/05/05 21:47:41 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -72,7 +72,7 @@ int free_kps P((interface_t *ip));
 void allocate_bandwidth P((interface_t *ip, int kps));
 void deallocate_bandwidth P((interface_t *ip, int kps));
 unsigned long free_space P((void));
-holdingdisk_t *find_diskspace P((unsigned long size));
+holdingdisk_t *find_diskspace P((unsigned long size, int *cur_idle));
 char *diskname2filename P((char *dname));
 void assign_holdingdisk P((holdingdisk_t *holdp, disk_t *diskp));
 void adjust_diskspace P((disk_t *diskp, tok_t tok));
@@ -444,9 +444,7 @@ disklist_t *rq;
 		sleep_time.tv_sec = min(diskp->start_t - now, sleep_time.tv_sec);
 	    } else if(sched(diskp)->est_kps > free_kps(diskp->host->netif))
 		cur_idle = max(cur_idle, IDLE_NO_BANDWIDTH);
-	    else if(sched(diskp)->est_size > MAXFILESIZE)
-		cur_idle = max(cur_idle, IDLE_TOO_LARGE);
-	    else if((holdp = find_diskspace(sched(diskp)->est_size)) == NULL)
+	    else if((holdp = find_diskspace(sched(diskp)->est_size,&cur_idle)) == NULL)
 		cur_idle = max(cur_idle, IDLE_NO_DISKSPACE);
 	    else if(diskp->no_hold)
 		cur_idle = max(cur_idle, IDLE_NO_HOLD);
@@ -1141,23 +1139,28 @@ unsigned long free_space()
     return total_free;
 }
 
-holdingdisk_t *find_diskspace(size)
+holdingdisk_t *find_diskspace(size, cur_idle)
 unsigned long size;
+int *cur_idle;
     /* find holding disk with enough space + minimal # of dumpers */
 {
     holdingdisk_t *minp, *hdp;
 
     minp = NULL;
-    for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next)
+    for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next) {
+	if(hdp->chunksize == -1 && size > MAXFILESIZE) {
+	    *cur_idle = max(*cur_idle, IDLE_TOO_LARGE);
+	}
 	/* We add 10 MB per active dumper to give a bit of protection
 	 * against under-estimated dump sizes.  */
-	if(holdalloc(hdp)->allocated_space + size +
+	else if(holdalloc(hdp)->allocated_space + size +
 	   ((holdalloc(hdp)->allocated_dumpers + 1) * 10*1024)
 	   <= hdp->disksize) {
 	    if(!minp || (holdalloc(minp)->allocated_dumpers >
 			 holdalloc(hdp)->allocated_dumpers))
 		minp = hdp;
 	}
+    }
 #ifdef HOLD_DEBUG
     printf("find %lu K space: selected %s size %ld allocated %ld dumpers %d\n",
 	   size,

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.30 1998/05/05 01:45:45 martinea Exp $
+ * $Id: driverio.c,v 1.31 1998/05/05 21:47:43 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -263,11 +263,28 @@ disk_t *dp;
 {
     char *cmdline = NULL;
     char number[NUM_STR_SIZE];
+    char chunksize[NUM_STR_SIZE];
     int l, n, s;
     char *o;
 
     switch(cmd) {
     case FILE_DUMP:
+	ap_snprintf(number, sizeof(number), "%d", sched(dp)->level);
+	ap_snprintf(chunksize, sizeof(chunksize), "%d", sched(dp)->holdp->chunksize);
+	o = optionstr(dp);
+	cmdline = vstralloc(cmdstr[cmd],
+			    " ", disk2serial(dp),
+			    " ", sched(dp)->destname,
+			    " ", dp->host->hostname,
+			    " ", dp->name,
+			    " ", number,
+			    " ", sched(dp)->dumpdate,
+			    " ", chunksize,
+			    " ", dp->program,
+			    " |", o,
+			    "\n", NULL);
+	amfree(o);
+	break;
     case PORT_DUMP:
 	ap_snprintf(number, sizeof(number), "%d", sched(dp)->level);
 	o = optionstr(dp);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.23 1998/04/14 17:11:29 jrj Exp $
+ * $Id: amrestore.c,v 1.24 1998/05/05 21:47:34 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -216,12 +216,20 @@ int isafile;
     /* if -r or -h, write the header before compress or uncompress pipe */
     if(rawflag || headerflag) {
 	int l, s;
+	char *cont_filename;
+
+	/* remove CONT_FILENAME from header */
+	cont_filename = stralloc(file->cont_filename);
+	memset(file->cont_filename,'\0',sizeof(file->cont_filename));
+	write_header(buffer,file,buflen);
 
 	for(l = 0; l < buflen; l += s) {
 	    if((s = write(out, buffer + l, buflen - l)) < 0) {
 		error("write error: %s", strerror(errno));
 	    }
 	}
+	/* add CONT_FILENAME to header */
+	strncpy(file->cont_filename, cont_filename, sizeof(file->cont_filename));
     }
 
     /* if -c and file not compressed, insert compress pipe */
@@ -285,7 +293,33 @@ int isafile;
     /* copy the rest of the file from tape to the output */
     got_sigpipe = 0;
     wc = 0;
-    while((buflen = tapefd_read(tapedev, buffer, sizeof(buffer))) > 0) {
+    do {
+	buflen = fill_buffer(tapedev, buffer, sizeof(buffer));
+	if(buflen == 0 && isafile) { /* switch to next file */
+	    int save_tapedev;
+
+	    save_tapedev = tapedev;
+	    close(tapedev);
+	    if(file->cont_filename[0] == '\0') break; /* no more file */
+	    if((tapedev = open(file->cont_filename,O_RDONLY)) == -1) {
+		error("can't open %s: %s",file->cont_filename,strerror(errno));
+	    }
+	    if(tapedev != save_tapedev) {
+		if(dup2(tapedev, save_tapedev) == -1) {
+		    error("can't dup2: %s",strerror(errno));
+		}
+		close(tapedev);
+		tapedev = save_tapedev;
+	    }
+	    buflen=read_file_header(buffer, file, sizeof(buffer), tapedev);
+/* should be validated */
+	    
+	    buflen = fill_buffer(tapedev, buffer, sizeof(buffer));
+	}
+	if(buflen == 0 && !isafile) break; /* EOF */
+
+	if(buflen < 0) break;
+
 	for(l = 0; l < buflen; l += s) {
 	    if((s = write(out, buffer + l, buflen - l)) < 0) {
 		if(got_sigpipe) {
@@ -309,7 +343,7 @@ int isafile;
 	    }
 	}
 	wc += buflen;
-    }
+    } while (buflen > 0);
     if(buflen < 0)
 	error("read error: %s", strerror(errno));
     aclose(out);
@@ -453,8 +487,9 @@ char **argv;
 	file_number += 1;
 	if(isafile)
 	    file.type = F_TAPEEND;
-	else
+	else {
 	    buflen=read_file_header(buffer, &file, sizeof(buffer), tapedev);
+	}
     }
     tapefd_close(tapedev);
 

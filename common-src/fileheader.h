@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: fileheader.h,v 1.4 1998/02/26 19:24:37 jrj Exp $
+ * $Id: fileheader.h,v 1.5 1998/05/05 21:47:29 martinea Exp $
  *
  */
 
@@ -38,7 +38,8 @@
 
 typedef char string_t[STRMAX];
 typedef enum {
-    F_UNKNOWN, F_WEIRD, F_TAPESTART, F_TAPEEND, F_DUMPFILE 
+    F_UNKNOWN, F_WEIRD, F_TAPESTART, F_TAPEEND, 
+    F_DUMPFILE, F_CONT_DUMPFILE
 } filetype_t;
 
 typedef struct file_s {
@@ -52,6 +53,7 @@ typedef struct file_s {
     string_t program;
     string_t recover_cmd;
     string_t uncompress_cmd;
+    string_t cont_filename;
 } dumpfile_t;
 
 /* local functions */
@@ -61,5 +63,6 @@ void  parse_file_header   P((char *buffer, dumpfile_t *file, int buflen));
 void  write_header        P((char *buffer, dumpfile_t *file, int buflen));
 void  print_header        P((FILE *outf, dumpfile_t *file));
 int   known_compress_type P((dumpfile_t *file));
+int   fill_buffer         P((int fd, char *buffer, int size));
 
 #endif /* !FILEHEADER_H */

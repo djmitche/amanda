@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.17 1998/03/16 14:36:17 amcore Exp $
+ * $Id: conffile.h,v 1.18 1998/05/05 21:47:40 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -162,10 +162,12 @@ typedef struct holdingdisk_s {
     char *comment;
     char *diskdir;
     long disksize;
+    long chunksize;
 
     int s_comment;
     int s_disk;
     int s_size;
+    int s_csize;
 
     void *up;			/* generic user pointer */
 } holdingdisk_t;
