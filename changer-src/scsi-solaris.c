@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-solaris.c,v 1.17 2001/02/17 18:48:42 ant Exp $
+ * $Id: scsi-solaris.c,v 1.18 2001/04/15 12:05:24 ant Exp $
  *
  * Interface to execute SCSI commands on an Sun Workstation
  *
@@ -141,14 +141,16 @@ int SCSI_ExecuteCommand(int DeviceFD,
   ExtendedRequestSense_T pExtendedRequestSense;
   static int depth = 0;
 
-  if (pDev[DeviceFD].devopen == 0)
-    SCSI_OpenDevice(DeviceFD);
-
+  if (pDev[DeviceFD].avail == 0)
+    {
+      return(SCSI_ERROR);
+    }
+  
   if (depth++ > 2)
   {
      --depth;
      SCSI_CloseDevice(DeviceFD);
-     return -1;
+     return SCSI_ERROR;
   }
   memset(&Command, 0, sizeof(struct uscsi_cmd));
   memset(pRequestSense, 0, RequestSenseLength);
@@ -183,7 +185,10 @@ int SCSI_ExecuteCommand(int DeviceFD,
   DecodeSCSI(CDB, "SCSI_ExecuteCommand : ");
   while (retries > 0)
   {
-    if ((ret = ioctl(DeviceFD, USCSICMD, &Command)) >= 0)
+    if (pDev[DeviceFD].devopen == 0)
+      SCSI_OpenDevice(DeviceFD);
+
+    if ((ret = ioctl(pDev[DeviceFD].fd, USCSICMD, &Command)) >= 0)
     {
       ret = Command.uscsi_status;
       break;
@@ -195,7 +200,14 @@ int SCSI_ExecuteCommand(int DeviceFD,
   }
   --depth;
   SCSI_CloseDevice(DeviceFD);
-  return(ret);
+
+  switch (ret)
+    {
+    default:
+      DebugPrint(DEBUG_INFO, SECTION_SCSI,"ioctl ret (%d)\n",ret);
+      return(SCSI_OK);
+      break;
+    }
 }
 
 int Tape_Eject ( int DeviceFD)
@@ -209,7 +221,7 @@ int Tape_Eject ( int DeviceFD)
 
   mtop.mt_op = MTOFFL;
   mtop.mt_count = 1;
-  ret = ioctl(DeviceFD, MTIOCTOP, &mtop);
+  ret = ioctl(pDev[DeviceFD].fd, MTIOCTOP, &mtop);
 
   SCSI_CloseDevice(DeviceFD);
   return ret;

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-bsd.c,v 1.10 2001/02/17 18:48:42 ant Exp $
+ * $Id: scsi-bsd.c,v 1.11 2001/04/15 12:05:24 ant Exp $
  *
  * Interface to execute SCSI commands on an BSD System (FreeBSD)
  *
@@ -117,12 +117,18 @@ int SCSI_ExecuteCommand(int DeviceFD,
                         char *pRequestSense,
                         int RequestSenseLength)
 {
+  extern OpenFiles_T *pDev;
   ExtendedRequestSense_T ExtendedRequestSense;
   scsireq_t ds;
   int Zero = 0, Result;
   int retries = 5;
   extern int errno;
   
+  if (pDev[DeviceFD].avail == 0)
+    {
+      return(SCSI_ERROR);
+    }
+
   memset(&ds, 0, sizeof(scsireq_t));
   memset(pRequestSense, 0, RequestSenseLength);
   memset(&ExtendedRequestSense, 0 , sizeof(ExtendedRequestSense_T)); 
@@ -134,8 +140,11 @@ int SCSI_ExecuteCommand(int DeviceFD,
   memcpy(ds.cmd, CDB, CDB_Length);
   ds.cmdlen = CDB_Length;
   /* Data buffer for results */
-  ds.databuf = (caddr_t)DataBuffer;
-  ds.datalen = DataBufferLength;
+  if (DataBufferLength > 0)
+    {
+      ds.databuf = (caddr_t)DataBuffer;
+      ds.datalen = DataBufferLength;
+    }
   /* Sense Buffer */
   /*
     ds.sense = (u_char)pRequestSense;
@@ -153,12 +162,19 @@ int SCSI_ExecuteCommand(int DeviceFD,
     }
     
   while (--retries > 0) {
+    
+    if (pDev[DeviceFD].devopen == 0)
+      {
+        SCSI_OpenDevice(DeviceFD);
+      }
     Result = ioctl(DeviceFD, SCIOCCOMMAND, &ds);
+    SCSI_CloseDevice(DeviceFD);
+   
     memcpy(pRequestSense, ds.sense, RequestSenseLength);
     if (Result < 0)
       {
         dbprintf(("errno : %d\n",errno));
-        return (-1);
+        return (SCSI_ERROR);
       }
     dbprintf(("SCSI_ExecuteCommand(BSD) %02X STATUS(%02X) \n", CDB[0], ds.retsts));
     switch (ds.retsts)
@@ -166,16 +182,16 @@ int SCSI_ExecuteCommand(int DeviceFD,
       case SCCMD_BUSY:                /*  BUSY */
         break;
       case SCCMD_OK:                /*  GOOD */
-        return(SCCMD_OK);
+        return(SCSI_OK);
         break;
-      case SCCMD_SENSE:               /*  CHECK CONDITION */ 
-        return(SCCMD_SENSE);
+      case SCCMD_SENSE:               /*  CHECK CONDITION */
+        return(SCSI_SENSE);
         break;
       default:
         continue;
       }
   }   
-  return(ds.retsts);
+  return(SCSI_SENSE);
 }
 
 int Tape_Eject ( int DeviceFD)

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.22 2001/04/10 16:17:42 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.23 2001/04/15 12:05:24 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -900,8 +900,6 @@ int OpenDevice(int ip , char *DeviceName, char *ConfigName, char *ident)
 
   if (SCSI_OpenDevice(ip) != 0 )
     {
-      
-   
       if (ident != NULL)   /* Override by config */
       {
         while(p->ident != NULL)
@@ -2304,7 +2302,10 @@ int CheckMove(ElementInfo_T *from, ElementInfo_T *to)
         }
     } else {
 	    dbprintf(("CheckMove : pDeviceCapabilitiesPage == NULL"));
+	    /*
 	    ChgExit("CheckMove", "DeviceCapabilitiesPage == NULL", FATAL);
+	    */
+	    moveok=1;
     }
     return(moveok);
 }
@@ -4253,8 +4254,8 @@ void DumpDev(OpenFiles_T *p, char *device)
 	{
 		printf("%s Devicefd   %d\n", device, p->fd);
 		printf("%s Can SCSI   %d\n", device, p->SCSI);
-		printf("%s Device     %s\n", device, p->dev);
-		printf("%s ConfigName %s\n", device, p->ConfigName);
+		printf("%s Device     %s\n", device, (p->dev != NULL)? p->dev:"No set");
+		printf("%s ConfigName %s\n", device, (p->ConfigName != NULL) ? p->ConfigName:"Not ser");
 	} else {
 		printf("%s Null Pointer ....\n", device);
 	}
@@ -4526,16 +4527,17 @@ int SCSI_Run(int DeviceFD,
   int ok = 0;
   int maxtries = 0;
   
-  DebugPrint(DEBUG_INFO, SECTION_SCSI, "SCSI_Run Unit START (TestUnitReady)\n");
+  DebugPrint(DEBUG_INFO, SECTION_SCSI, "SCSI_Run TestUnitReady\n");
   while (!ok && maxtries < MAXTRIES)
     {
       ret = SCSI_TestUnitReady(DeviceFD, (RequestSense_T *)pRequestSense );
-      DebugPrint(DEBUG_INFO, SECTION_SCSI, "SCSI_Run Unit START (TestUnitReady) ret %d\n",ret);
-      if (ret)
+      DebugPrint(DEBUG_INFO, SECTION_SCSI, "SCSI_Run TestUnitReady ret %d\n",ret);
+      switch (ret)
 	{
+	case SCSI_OK:
 	  ok=1;
 	  break;
-	} else {
+	case SCSI_SENSE:
 	  switch (SenseHandler(DeviceFD, 0, pRequestSense))
 	    {
 	    case SENSE_NO:
@@ -4562,12 +4564,26 @@ int SCSI_Run(int DeviceFD,
 	      ok=1;
 	      break;
 	    }
+	  break;
+	case SCSI_ERROR:
+	  DebugPrint(DEBUG_ERROR, SECTION_SCSI,"SCSI_Run (TestUnitReady) SCSI_ERROR\n");
+	  return(-1);
+	  break;
+	case SCSI_BUSY:
+	  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_Run (TestUnitReady) SCSI_BUSY\n");
+	  break;
+	case SCSI_CHECK:
+	  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_Run (TestUnitReady) SCSI_CHECK\n");
+	  break;
+	default:
+	  DebugPrint(DEBUG_ERROR, SECTION_SCSI,"SCSI_Run (TestUnitReady) unknown (%d)\n",ret);
+	  break;
 	}
       maxtries++;
       sleep(1);
     }
   
-  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_Run Unit Ready after %d sec:\n",maxtries);
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_Run TestUnitReady after %d sec:\n",maxtries);
   
   if (ok != 1)
     {
@@ -4575,17 +4591,77 @@ int SCSI_Run(int DeviceFD,
       return(-1);
     }
 
-  ret = SCSI_ExecuteCommand(DeviceFD,
-			    Direction,
-			    CDB,
-			    CDB_Length,
-			    DataBuffer,
-			    DataBufferLength,
-			    pRequestSense,
-			    RequestSenseLength);
+  ok = 0;
+  maxtries = 0;
+  while (!ok && maxtries < MAXTRIES)
+    {
+      ret = SCSI_ExecuteCommand(DeviceFD,
+				Direction,
+				CDB,
+				CDB_Length,
+				DataBuffer,
+				DataBufferLength,
+				pRequestSense,
+				RequestSenseLength);
+      
+      DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_Run Exit %d\n",ret);
+      switch (ret)
+	{
+	case SCSI_OK:
+	  ok=1;
+	  break;
+	case SCSI_SENSE:
+	  switch (SenseHandler(DeviceFD, 0, pRequestSense))
+	    {
+	    case SENSE_NO:
+	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_Run SENSE_NO\n");
+	      ok=1;
+	      break;
+	    case SENSE_TAPE_NOT_ONLINE:
+	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_Run SENSE_TAPE_NOT_ONLINE\n");
+	      ok=1;
+	      break;
+	    case SENSE_IGNORE:
+	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_Run SENSE_IGNORE\n");
+	      ok=1;
+	      break;
+	    case SENSE_ABORT:
+	      DebugPrint(DEBUG_ERROR, SECTION_SCSI,"SCSI_Run SENSE_ABORT\n");
+	      return(-1);
+	      break;
+	    case SENSE_RETRY:
+	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_Run SENSE_RETRY\n");
+	      break;
+	    default:
+	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_Run default (SENSE)\n");
+	      ok=1;
+	      break;
+	    }
+	  break;
+	case SCSI_ERROR:
+	  DebugPrint(DEBUG_ERROR, SECTION_SCSI,"SCSI_Run SCSI_ERROR\n");
+	  return(-1);
+	  break;
+	case SCSI_BUSY:
+	  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_Run SCSI_BUSY\n");
+	  break;
+	case SCSI_CHECK:
+	  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_Run (TestUnitReady) SCSI_CHECK\n");
+	  break;
+	default:
+	  DebugPrint(DEBUG_ERROR, SECTION_SCSI,"SCSI_Run (TestUnitReady) unknown (%d)\n",ret);
+	  break;
+	}
+      maxtries++;
+      sleep(1);
+    }
   
-  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_Run Exit %d\n",ret);
-  return(ret);
+  if (ok == 1)
+    {
+      return(0);
+    } else {
+      return(-1);
+    }
 }
 
 /*                                       

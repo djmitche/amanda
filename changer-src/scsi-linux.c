@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-linux.c,v 1.16 2001/02/25 16:54:08 martinea Exp $
+ * $Id: scsi-linux.c,v 1.17 2001/04/15 12:05:24 ant Exp $
  *
  * Interface to execute SCSI commands on Linux
  *
@@ -88,6 +88,12 @@ int SCSI_CloseDevice(int DeviceFD)
   return(ret);
 }
 
+/* Open a device to talk to an scsi device, either per ioctl, or
+ * direct writing....
+ * Return:
+ * 0 -> error
+ * 1 -> OK
+ */
 #ifdef LINUX_SG
 int SCSI_OpenDevice(int ip)
 {
@@ -104,15 +110,15 @@ int SCSI_OpenDevice(int ip)
       pDev[ip].inqdone = 1;
       if (strncmp("/dev/sg", pDev[ip].dev, 7) != 0) /* Check if no sg device for an link .... */
         {
-          dbprintf(("SCSI_OpenDevice : checking if %s is a sg device\n", pDev[ip].dev));
+          DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_OpenDevice : checking if %s is a sg device\n", pDev[ip].dev);
           if (lstat(pDev[ip].dev, &pstat) != -1)
             {
               if (S_ISLNK(pstat.st_mode) == 1)
                 {
-                  dbprintf(("SCSI_OpenDevice : is a link, checking destination\n"));
+                  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_OpenDevice : is a link, checking destination\n");
                   if ((buffer = (char *)malloc(512)) == NULL)
                     {
-                      dbprintf(("SCSI_OpenDevice : malloc failed\n"));
+                      DebugPrint(DEBUG_ERROR, SECTION_SCSI,"SCSI_OpenDevice : malloc failed\n");
                       return(0);
                     }
                   memset(buffer, 0, 512);
@@ -128,16 +134,16 @@ int SCSI_OpenDevice(int ip)
                     {
                       if (strncmp("/dev/sg", buffer, 7) == 0)
                         {
-                          dbprintf(("SCSI_OpenDevice : link points to %s\n", buffer));
+                          DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_OpenDevice : link points to %s\n", buffer) ;
                           pDev[ip].flags = 1;
                         }
                     }
                 } else {/* S_ISLNK(pstat.st_mode) == 1 */
-                  dbprintf(("No link %s\n", pDev[ip].dev));
+                  DebugPrint(DEBUG_INFO, SECTION_SCSI,"No link %s\n", pDev[ip].dev) ;
                   buffer = strdup(pDev[ip].dev);
                 }
             } else {/* lstat(DeviceName, &pstat) != -1 */ 
-              dbprintf(("can't stat device %s\n", pDev[ip].dev));
+              DebugPrint(DEBUG_ERROR, SECTION_SCSI,"can't stat device %s\n", pDev[ip].dev);
               return(0);
             }
         } else {
@@ -167,14 +173,14 @@ int SCSI_OpenDevice(int ip)
       pDev[ip].dev = strdup(buffer);
       if (pDev[ip].SCSI == 1)
         {
-          dbprintf(("SCSI_OpenDevice : use SG interface\n"));
+          DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_OpenDevice : use SG interface\n");
           if ((timeout = ioctl(DeviceFD, SG_GET_TIMEOUT)) > 0) 
             {
-              dbprintf(("SCSI_OpenDevice : current timeout %d\n", timeout));
+              DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_OpenDevice : current timeout %d\n", timeout);
               timeout = 60000;
               if (ioctl(DeviceFD, SG_SET_TIMEOUT, &timeout) == 0)
                 {
-                  dbprintf(("SCSI_OpenDevice : timeout set to %d\n", timeout));
+                  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_OpenDevice : timeout set to %d\n", timeout);
                 }
             }
           pDev[ip].inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
@@ -219,11 +225,11 @@ int SCSI_OpenDevice(int ip)
             {
               if ((timeout = ioctl(DeviceFD, SG_GET_TIMEOUT)) > 0) 
                 {
-                  dbprintf(("SCSI_OpenDevice : current timeout %d\n", timeout));
+                  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_OpenDevice : current timeout %d\n", timeout);
                   timeout = 60000;
                   if (ioctl(DeviceFD, SG_SET_TIMEOUT, &timeout) == 0)
                     {
-                      dbprintf(("SCSI_OpenDevice : timeout set to %d\n", timeout));
+                      DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_OpenDevice : timeout set to %d\n", timeout);
                     }
                 }
             }
@@ -299,7 +305,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
     {
       dbprintf(("SCSI_ExecuteCommand error send \n"));
       SCSI_CloseDevice(DeviceFD);
-      return(-1);
+      return(SCSI_ERROR);
     }
   
   memset(buffer, 0, SCSI_OFF + DataBufferLength);
@@ -313,7 +319,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
       dbprintf(("SCSI_ExecuteCommand error read \n"));
       dbprintf(("Status %d (%d) %2X\n", status, SCSI_OFF + DataBufferLength, psg_header->result ));
       SCSI_CloseDevice(DeviceFD);
-      return(-1);
+      return(SCSI_ERROR);
     }
 
   if (DataBufferLength)
@@ -323,7 +329,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
 
   free(buffer);
   SCSI_CloseDevice(DeviceFD);
-  return(0);
+  return(SCSI_OK);
 }
 
 #else
@@ -406,7 +412,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
  
   if (pDev[DeviceFD].avail == 0)
     {
-      return(-1);
+      return(SCSI_ERROR);
     }
 
   if (pDev[DeviceFD].devopen == 0)
@@ -442,8 +448,17 @@ int SCSI_ExecuteCommand(int DeviceFD,
   else if (Direction == Input)
     memcpy(DataBuffer, &Command[8], DataBufferLength);
   free(Command);
-  SCSI_Close(DeviceFD);
-  return Result;
+  SCSI_CloseDevice(DeviceFD);
+
+  switch(Result)
+    {
+      case 0:
+        return(SCSI_OK);
+        break;
+    default:
+      return(SCSI_SENSE);
+      break;
+    }
 }
 #endif
 

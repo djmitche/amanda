@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-cam.c,v 1.7 2001/02/26 01:38:58 martinea Exp $
+ * $Id: scsi-cam.c,v 1.8 2001/04/15 12:05:24 ant Exp $
  *
  * Interface to execute SCSI commands on an system with cam support
  * Current support is for FreeBSD 4.x
@@ -202,15 +202,15 @@ int SCSI_ExecuteCommand(int DeviceFD,
   u_int32_t ccb_flags;
   OpenFiles_T *pwork = NULL;
 
+  if (pDev[DeviceFD].avail == 0)
+    {
+      return(SCSI_ERROR);
+    }
+
   /* 
    * CLear the SENSE buffer
    */
   bzero(pRequestSense, RequestSenseLength);
-
-  if (pDev[DeviceFD].devopen == 0)
-    {
-      SCSI_OpenDevice(DeviceFD);
-    }
 
   DecodeSCSI(CDB, "SCSI_ExecuteCommand : ");
 
@@ -254,11 +254,19 @@ int SCSI_ExecuteCommand(int DeviceFD,
                 /* cdb_len */ CDB_Length,
                 /* timeout */ 600 * 1000);
   
-  if (( ret = cam_send_ccb(pDev[DeviceFD].curdev, ccb)) == -1)
+
+  if (pDev[DeviceFD].devopen == 0)
     {
-      SCSI_CloseDevice(DeviceFD);
+      SCSI_OpenDevice(DeviceFD);
+    }
+  
+  ret = cam_send_ccb(pDev[DeviceFD].curdev, ccb);
+  SCSI_CloseDevice(DeviceFD);
+
+  if ( ret == -1)
+    {
       cam_freeccb(ccb);
-      return(-1);
+      return(SCSI_ERROR);
     }
   
   /* 
@@ -269,14 +277,12 @@ int SCSI_ExecuteCommand(int DeviceFD,
   /* ToDo add error handling */
   if ((ccb->ccb_h.status & CAM_STATUS_MASK) != CAM_REQ_CMP)
     {
-      SCSI_CloseDevice(DeviceFD);
       dbprintf(("SCSI_ExecuteCommand return %d\n", (ccb->ccb_h.status & CAM_STATUS_MASK)));
-      return(-1);
+      return(SCSI_ERROR);
     }
 
-  SCSI_CloseDevice(DeviceFD);
   cam_freeccb(ccb);
-  return(0);
+  return(SCSI_OK);
 }
 
 int Tape_Eject ( int DeviceFD)

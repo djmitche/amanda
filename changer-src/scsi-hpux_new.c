@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-hpux_new.c,v 1.12 2001/02/17 18:48:42 ant Exp $
+ * $Id: scsi-hpux_new.c,v 1.13 2001/04/15 12:05:24 ant Exp $
  *
  * Interface to execute SCSI commands on an HP-UX Workstation
  *
@@ -135,9 +135,11 @@ int SCSI_ExecuteCommand(int DeviceFD,
   int Retries = 3;
   int Zero = 0, Result;
   
+  if (pDev[DeviceFD].avail == 0)
+    {
+      return(SCSI_ERROR);
+    }
 
-  if (pDev[DeviceFD].devopen == 0)
-    SCSI_OpenDevice(DeviceFD);
 
   memset(&sctl_io, '\0', sizeof(struct sctl_io));
 
@@ -160,12 +162,16 @@ int SCSI_ExecuteCommand(int DeviceFD,
     }
 
   while (--Retries > 0) {
+
+    if (pDev[DeviceFD].devopen == 0)
+      SCSI_OpenDevice(DeviceFD);
+
     DecodeSCSI(CDB, "SCSI_ExecuteCommand : ");
     Result = ioctl(pDev[DeviceFD].fd, SIOC_IO, &sctl_io);
+    SCSI_CloseDevice(DeviceFD);
     if (Result < 0)
       {
-        SCSI_CloseDevice(DeviceFD);
-        return(Result);
+        return(SCSI_ERROR);
       }
     
     SCSI_CloseDevice(DeviceFD);
@@ -175,14 +181,16 @@ int SCSI_ExecuteCommand(int DeviceFD,
     switch(sctl_io.cdb_status)
       {
       case S_GOOD:
+        return(SCSI_OK);
       case S_CHECK_CONDITION:
-        return(sctl_io.cdb_status);
+        return(SCSI_CHECK);
         break;
       default:
-        return(sctl_io.cdb_status);
+        return(SCSI_ERROR);
+        break;
       }
   }
-  return(-1);
+  return(SCSI_ERROR);
 }
 
 int Tape_Eject (int DeviceFD)

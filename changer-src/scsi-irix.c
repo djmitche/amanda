@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-irix.c,v 1.14 2001/02/17 18:48:42 ant Exp $
+ * $Id: scsi-irix.c,v 1.15 2001/04/15 12:05:24 ant Exp $
  *
  * Interface to execute SCSI commands on an SGI Workstation
  *
@@ -138,11 +138,11 @@ int SCSI_ExecuteCommand(int DeviceFD,
   int Zero = 0, Result;
   int retries = 5;
   
-  if (pDev[DeviceFD].devopen == 0)
+  if (pDev[DeviceFD].avail == 0)
     {
-      SCSI_OpenDevice(DeviceFD);
+      return(SCSI_ERROR);
     }
-
+  
   memset(&ds, 0, sizeof(struct dsreq));
   memset(pRequestSense, 0, RequestSenseLength);
   memset(&ExtendedRequestSense, 0 , sizeof(ExtendedRequestSense_T)); 
@@ -171,12 +171,18 @@ int SCSI_ExecuteCommand(int DeviceFD,
     }
   
   while (--retries > 0) {
+    if (pDev[DeviceFD].devopen == 0)
+      {
+        SCSI_OpenDevice(DeviceFD);
+      }
     Result = ioctl(pDev[DeviceFD].fd, DS_ENTER, &ds);
+    SCSI_CloseDevice(DeviceFD);
+
     if (Result < 0)
       {
         RET(&ds) = DSRT_DEVSCSI;
         SCSI_CloseDevice(DeviceFD);
-        return (-1);
+        return (SCSI_ERROR);
       }
     DecodeSCSI(CDB, "SCSI_ExecuteCommand : ");
     dbprintf(("\t\t\tSTATUS(%02X) RET(%02X)\n", STATUS(&ds), RET(&ds)));
@@ -192,22 +198,21 @@ int SCSI_ExecuteCommand(int DeviceFD,
         switch (RET(&ds))
           {
           case DSRT_SHORT:
-            return(ST_GOOD);
+            return(SCSI_OK);
             break;
           case DSRT_OK:
           default:
-            return(STATUS(&ds));
+            return(SCSI_OK);
           }
       case ST_CHECK:               /*  CHECK CONDITION */ 
-        return(ST_CHECK);
+        return(SCSI_CHECK);
         break;
       case ST_COND_MET:            /*  INTERM/GOOD */
       default:
         continue;
       }
   }     
-  SCSI_CloseDevice(DeviceFD);
-  return(STATUS(&ds));
+  return(SCSI_ERROR);
 }
 
 int Tape_Eject ( int DeviceFD)

@@ -1,4 +1,26 @@
 2001-04-15 Thomas Hepper <th@ant.han.de>
+	* changer-src/scsi-aix.c: Rework of the SCSI interface, support
+	to talk to an device handled by the gsc driver (not tested yet)
+	* changer-src/scsi-bsd.c (SCSI_ExecuteCommand): Fix error in
+	device handling, Changed the return codes in case of an error
+	* changer-src/scsi-cam.c (SCSI_ExecuteCommand): Fix error in 
+	device handling, Changed the return codes in case of an error
+	* changer-src/scsi-changer-driver.c: Changed the way 
+	SCSI_ExecuteCommand passes error conditions back, error handling
+	should now be done by the calling function, SCSI_Run for example.
+	* changer-src/scsi-changer-driver.c (CheckMove): If the 
+	DeviceCapabilitiesPage is not set do not return an error, print
+	an warning to the debug file.
+	* changer-src/scsi-defs.h: New define for AIX_USE_GSC
+	New defines for the return codes of SCSI_ExecuteCommand
+	* changer-src/scsi-hpux_new.c: Fix error in device handling.
+	Changed the return codes in case of an error
+	* changer-src/scsi-irix.c: Fix error in device handling.
+	Changed the return codes in case of an error
+	* changer-src/scsi-solaris.c: Fix error in device handling.
+	Changed the return codes in case of an error
+	
+2001-04-15 Thomas Hepper <th@ant.han.de>
 	*contrib/gsc: Generic SCSI interface for AIX, used by chg-scsi
 
 2001-04-13 John R. Jackson <jrj@purdue.edu>

@@ -11,6 +11,7 @@ typedef unsigned char CDB_T[12];
 
 #ifdef _AIX
 typedef unsigned int PackedBit;
+#define AIX_USE_GSC 1
 #else
 typedef unsigned char PackedBit;
 #endif
@@ -50,8 +51,17 @@ typedef unsigned char PackedBit;
 
 #define INQUIRY_SIZE sizeof(SCSIInquiry_T)
 
+/*
+ * Return values from the OS dependent part
+ * of the SCSI interface
+ *
+ * The underlaying functions must decide what to do
+ */
+#define SCSI_ERROR -1
 #define SCSI_OK 0
 #define SCSI_SENSE 1
+#define SCSI_BUSY 2
+#define SCSI_CHECK 3
 
 
 /*
