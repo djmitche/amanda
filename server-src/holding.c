@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: holding.c,v 1.1 1997/11/11 06:41:14 amcore Exp $
+ * $Id: holding.c,v 1.2 1997/11/11 20:36:06 blair Exp $
  *
  * Fucntions to access holding disk
  */
@@ -49,9 +49,7 @@ disklist_t *diskqp;
 
 int result_argc;
 char *result_argv[MAX_ARGS];
-static char *config;
 char datestamp[80];
-char confdir[256];
 char taper_program[80], reporter_program[80];
 char host[MAX_HOSTNAME_LENGTH], *domain;
 
