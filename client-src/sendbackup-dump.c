@@ -33,11 +33,14 @@
  * File:	$RCSFile: sendbackup-dump.c,v $
  * Part of:	
  *
- * Revision:	$Revision: 1.7 $
- * Last Edited:	$Date: 1997/04/23 07:32:20 $
+ * Revision:	$Revision: 1.8 $
+ * Last Edited:	$Date: 1997/04/25 22:04:09 $
  * Author:	$Author: oliva $
  *
  * History:	$Log: sendbackup-dump.c,v $
+ * History:	Revision 1.8  1997/04/25 22:04:09  oliva
+ * History:	removed doubled DUMP: from BSDI dump size regexp
+ * History:
  * History:	Revision 1.7  1997/04/23 07:32:20  oliva
  * History:	if DUMP is not defined, force usage of XFSDUMP arguments.
  * History:
@@ -75,7 +78,7 @@
 regex_t re_table[] = {
   /* the various encodings of dump size */
   { DMP_SIZE, 
-	"DUMP: DUMP: [0-9][0-9]* tape blocks",				1024},
+	"DUMP: [0-9][0-9]* tape blocks",				1024},
 
   { DMP_SIZE,
 	"dump: Actual: [0-9][0-9]* tape blocks",			1024},
