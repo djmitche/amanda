@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.74 2002/11/26 22:51:09 martinea Exp $
+ * $Id: amflush.c,v 1.75 2002/12/30 15:52:10 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -192,8 +192,6 @@ char **main_argv;
 	    }
 	    if(ok == 0) { /* remove dir */
 		remove_sl(datestamp_list, dir);
-		amfree(dir->name);
-		amfree(dir);
 	    }
 	    dir = next_dir;
 	}

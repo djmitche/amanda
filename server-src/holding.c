@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.40 2002/03/24 04:12:55 jrjackson Exp $
+ * $Id: holding.c,v 1.41 2002/12/30 15:52:10 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -248,8 +248,6 @@ int amflush, verbose;
 	    }
 	    if(ok == 0) { /* remove dir */
 		remove_sl(date_list, date);
-		amfree(date->name);
-		amfree(date);
 	    }
 	    date = next_date;
 	}
