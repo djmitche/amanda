@@ -1,3 +1,8 @@
+2001-03-08  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	Reported by Eric Schnoebelen <eric@cirr.com>
+
+	* server-src/changer.c (changer_command): Fix fd leak.
+
 2001-03-05  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/server_util.c (cmdstr, getcmd, putresult): New.

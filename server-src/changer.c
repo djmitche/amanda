@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.21 1999/09/15 00:32:46 jrj Exp $
+ * $Id: changer.c,v 1.22 2001/03/09 02:25:35 martinea Exp $
  *
  * interface routines for tape changers
  */
@@ -320,7 +320,7 @@ static int changer_command(cmd, arg)
 				       strerror(errno),
 				       NULL);
 	exitcode = 2;
-	goto done;
+	goto failed;
     }
     if(fd[0] < 0 || fd[0] >= FD_SETSIZE) {
 	snprintf(num1, sizeof(num1), "%d", fd[0]);
@@ -457,7 +457,10 @@ static int changer_command(cmd, arg)
     }
 
 done:
+    aclose(fd[0]);
+    aclose(fd[1]);
 
+failed:
     dbprintf(("changer: got exit: %d str: %s\n", exitcode, changer_resultstr)); 
 
     amfree(cmdstr);
