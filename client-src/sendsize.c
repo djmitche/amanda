@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.59 1998/01/14 22:44:11 amcore Exp $
+ * $Id: sendsize.c,v 1.60 1998/01/20 03:09:55 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -1066,7 +1066,7 @@ notincremental:
 #endif
 			 " --ignore-failed-read",
 			 " --totals",
-			 " --file", "/dev/null",
+			 " --file", " /dev/null",
 			 " ", efile ? efile : ".",
 			 efile ? " ." : "",
 			 NULL);
