@@ -1,3 +1,9 @@
+1999-06-08  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/tapefile.c (lookup_last_reusable_tape): Fix order of
+	arguments in match() invocation.
+	From Anthony Worrall <Anthony.Worrall@reading.ac.uk>
+
 1999-06-08  Mike Grupenhoff <kashmir@munge.com>
 
 	* restore-src/amrestore.c: second arg to restore() is a char *, not
