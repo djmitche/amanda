@@ -1,3 +1,9 @@
+Changes in release 2.4.3b4
+
+* new noop packet type. It allow the server to know the client features.
+* exclude list with relative path is working again.
+* amstatus is working again.
+
 Changes in release 2.4.3b3
 
 * --with-maxtapeblocksize configure options
