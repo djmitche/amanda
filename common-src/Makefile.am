@@ -22,12 +22,12 @@ REGsrcdir = $(srcdir)/$(REGDIR)
 
 INCLUDES = -I$(REGsrcdir)
 
-libamanda_la_SOURCES =	alloc.c		debug.c		dgram.c		\
-			error.c		match.c		protocol.c	\
-			statfs.c	stream.c	token.c		\
-			version.c	versuff.c	amflock.c	\
-			regcomp.c	regexec.c	security.c	\
-			regerror.c	regfree.c	file.c
+libamanda_la_SOURCES = \
+	alloc.c		amflock.c	debug.c		dgram.c		\
+	error.c		file.c		match.c		protocol.c	\
+	security.c	statfs.c	stream.c	token.c		\
+	version.c	versuff.c					\
+	regcomp.c	regerror.c	regexec.c	regfree.c
 
 libamanda_la_LIBADD =	@LTLIBOBJS@
 
