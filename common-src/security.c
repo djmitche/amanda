@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.c,v 1.17.2.6 2000/12/04 22:44:59 jrjackson Exp $
+ * $Id: security.c,v 1.17.2.6.4.1 2001/07/20 19:37:20 jrjackson Exp $
  *
  * wrapper file for kerberos security
  */
@@ -74,14 +74,14 @@ void show_stat_info(a, b)
 	return;
     }
     if ((pwptr = getpwuid(sbuf.st_uid)) == NULL) {
-	owner = alloc(32);
-	ap_snprintf(owner, 32, "%ld", (long)sbuf.st_uid);
+	owner = alloc(NUM_STR_SIZE);
+	ap_snprintf(owner, NUM_STR_SIZE, "%ld", (long)sbuf.st_uid);
     } else {
 	owner = stralloc(pwptr->pw_name);
     }
     if ((grptr = getgrgid(sbuf.st_gid)) == NULL) {
-	group = alloc(32);
-	ap_snprintf(owner, 32, "%ld", (long)sbuf.st_gid);
+	group = alloc(NUM_STR_SIZE);
+	ap_snprintf(owner, NUM_STR_SIZE, "%ld", (long)sbuf.st_gid);
     } else {
 	group = stralloc(grptr->gr_name);
     }
