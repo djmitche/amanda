@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.40.2.8 1998/02/22 02:04:07 amcore Exp $
+ * $Id: amanda.h,v 1.40.2.9 1998/03/01 23:57:45 amcore Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -587,7 +587,12 @@ extern char *get_bsd_security P((void));
  * stops gcc -Wall and lint from complaining.
  */
 
-#ifndef HAVE_ACCEPT_DECL
+/*
+ * AIX #defines accept and some other functions to something else.
+ * Until we get this fixed in autoconf, simply discard the declaration.
+ * getpeername and getsockname are affected too.
+ */
+#if !defined(HAVE_ACCEPT_DECL) && !defined(accept)
 extern int accept P((int s, struct sockaddr *addr, int *addrlen));
 #endif
 
@@ -683,15 +688,15 @@ extern int gethostname P((char *name, int namelen));
 extern int getopt P((int argc, char * const *argv, const char *optstring));
 #endif
 
-#ifndef HAVE_GETPEERNAME_DECL
+#if !defined(HAVE_GETPEERNAME_DECL) && !defined(getpeername)
 extern int getpeername P((int s, struct sockaddr *name, int *namelen));
 #endif
 
-#ifndef HAVE_GETSOCKNAME_DECL
+#if !defined(HAVE_GETSOCKNAME_DECL) && !defined(getsockname)
 extern int getsockname P((int s, struct sockaddr *name, int *namelen));
 #endif
 
-#ifndef HAVE_GETSOCKOPT_DECL
+#if !defined(HAVE_GETSOCKOPT_DECL) && !defined(getsockopt)
 extern int getsockopt P((int s, int level, int optname, char *optval,
 			 int *optlen));
 #endif
