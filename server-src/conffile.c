@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.102 2003/04/26 02:02:24 kovert Exp $
+ * $Id: conffile.c,v 1.103 2003/11/26 16:12:13 martinea Exp $
  *
  * read configuration file
  */
@@ -1570,10 +1570,22 @@ static void copy_dumptype()
 	dpcur.program = newstralloc(dpcur.program, dt->program);
 	dpcur.s_program = dt->s_program;
     }
-    dpcur.exclude_file = duplicate_sl(dt->exclude_file);
-    dpcur.exclude_list = duplicate_sl(dt->exclude_list);
-    dpcur.include_file = duplicate_sl(dt->include_file);
-    dpcur.include_list = duplicate_sl(dt->include_list);
+    if(dt->s_exclude_file) {
+	dpcur.exclude_file = duplicate_sl(dt->exclude_file);
+	dpcur.s_exclude_file = dt->s_exclude_file;
+    }
+    if(dt->s_exclude_list) {
+	dpcur.exclude_list = duplicate_sl(dt->exclude_list);
+	dpcur.s_exclude_list = dt->s_exclude_list;
+    }
+    if(dt->s_include_file) {
+	dpcur.include_file = duplicate_sl(dt->include_file);
+	dpcur.s_include_file = dt->s_include_file;
+    }
+    if(dt->s_include_list) {
+	dpcur.include_list = duplicate_sl(dt->include_list);
+	dpcur.s_include_list = dt->s_include_list;
+    }
     dtcopy(priority, s_priority);
     dtcopy(dumpcycle, s_dumpcycle);
     dtcopy(maxcycle, s_maxcycle);
