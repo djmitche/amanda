@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.21.2.3 2001/07/10 22:16:27 jrjackson Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.21.2.4 2001/08/13 22:23:32 jrjackson Exp $";
 #endif
 /*
  * 
@@ -107,6 +107,8 @@ extern int IEE;
 extern int DTE;
 
 changer_t chg;
+
+int do_inventory = 0;     /* Set if load/unload functions thinks an inventory should be done */
 int clean_slot = -1;
 
 typedef enum{
@@ -534,6 +536,11 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
              slot,
              from);
   
+  if (labelfile == NULL)
+    {
+      DebugPrint(DEBUG_ERROR,SECTION_MAP_BARCODE,"Got empty labelfile (NULL)\n");
+      return(NULL);
+    }
   if (access(labelfile, F_OK) == -1)
     {
       DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE, "MapBarCode : creating %s", labelfile);
@@ -652,10 +659,12 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
      while(fread(plabelv2, 1, sizeof(LabelV2_T), fp) > 0)
        {
          record++;
-         DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : (%d) VolTag %s, BarCode %s, inuse %d\n",record,
+         DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : (%d) VolTag %s, BarCode %s, inuse %d, slot %d, from %d\n",record,
                    plabelv2->voltag,
                    plabelv2->barcode,
-                   plabelv2->valid);
+                   plabelv2->valid,
+		   plabelv2->slot,
+		   plabelv2->from);
          switch (action)
            {
            case BARCODE_DUMP:
@@ -704,8 +713,7 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
                }
              break;
            case UPDATE_SLOT:
-             /*             if (strcmp(plabelv2->voltag, vol) == 0) */
-               if (plabelv2->slot == slot)
+             if (strcmp(plabelv2->voltag, vol) == 0)
                {
                  DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode UPDATE_SLOT : update entry\n");
                  fseek(fp, pos, SEEK_SET);
@@ -1404,6 +1412,7 @@ int main(int argc, char *argv[])
               }          
         }
       }
+
     printf("%d %s\n", target-slot_offset, tape_device);
     break;
 
@@ -1545,8 +1554,14 @@ int main(int argc, char *argv[])
 /*   if (pTapeDevCtl != NULL) */
 /*     close(pTapeDevCtl->fd); */
 
-  dbclose();
+
 #endif
+  if (do_inventory == 1 && endstatus == 0 && chg.labelfile != NULL)
+    {
+      Inventory(chg.labelfile, drive_num , chg.eject, 0, 0, clean_slot);
+    }
+
+  dbclose();
   return endstatus;
 }
 /*
