@@ -152,7 +152,7 @@ int argc;
 char **argv;
 {
     int level, mesgpipe[2];
-    char prog[80], disk[1024], options[4096], datestamp[80];
+    char prog[80], disk[1024], options[4096];
     char dumpdate[256];
 
     /* initialize */
@@ -171,11 +171,11 @@ char **argv;
     if(fgets(line, MAX_LINE, stdin) == NULL)
 	goto err;
     dbprintf(("%s: got input request: %s", argv[0], line));
-    if(sscanf(line, "%s %s %d %s DATESTAMP %s OPTIONS %[^\n]\n", 
-	      prog, disk, &level, dumpdate, datestamp, options) != 6)
+    if(sscanf(line, "%s %s %d %s OPTIONS %[^\n]\n", 
+	      prog, disk, &level, dumpdate, options) != 6)
 	goto err;
-    dbprintf(("  parsed request as: program `%s' disk `%s' lev %d since %s stamp `%s' opt `%s'\n",
-	      prog, disk, level, dumpdate, datestamp, options));
+    dbprintf(("  parsed request as: program `%s' disk `%s' lev %d since %s opt `%s'\n",
+	      prog, disk, level, dumpdate, options));
 
     {
       int i;
@@ -276,7 +276,7 @@ char **argv;
       error("error [opening mesg pipe: %s]", strerror(errno));
     }
 
-    program->start_backup(disk, level, dumpdate, datestamp, dataf, mesgpipe[1], indexf);
+    program->start_backup(disk, level, dumpdate, dataf, mesgpipe[1], indexf);
     parse_backup_messages(mesgpipe[0]);
 
     dbclose();
@@ -341,9 +341,8 @@ int pid, w;
 
 /* Send header info to the message file.
 */
-void write_tapeheader(host, disk, level, compress, datestamp, outf)
-char *host, *disk, *datestamp;
-int outf, compress, level;
+void write_tapeheader(compress)
+int compress;
 {
     fprintf(stderr, "%s: info BACKUP=%s\n", pname, program->backup_name);
 

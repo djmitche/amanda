@@ -65,8 +65,8 @@ time_t cur_dumptime;
 char *incrname;
 #endif
 
-static void start_backup(disk, level, dumpdate, datestamp, dataf, mesgf, indexf)
-char *disk, *datestamp;
+static void start_backup(disk, level, dumpdate, dataf, mesgf, indexf)
+char *disk;
 int level, dataf, mesgf, indexf;
 char *dumpdate;
 {
@@ -84,8 +84,8 @@ char *dumpdate;
     if (host == NULL)
       error("environment variable HOSTNAME must be set");
 
-    fprintf(stderr, "%s: start [%s:%s level %d datestamp %s]\n",
-	    pname, host, disk, level, datestamp);
+    fprintf(stderr, "%s: start [%s:%s level %d]\n",
+	    pname, host, disk, level);
 
     NAUGHTY_BITS;
 
@@ -221,7 +221,7 @@ char *dumpdate;
 
 	program->backup_name = program->restore_name = SAMBA_CLIENT;
 	
-	write_tapeheader(host, disk, level, compress, datestamp, dataf);
+	write_tapeheader(compress);
 	start_index(createindex, dumpout, mesgf, indexf,
 #ifdef GNUTAR
 		    GNUTAR
@@ -246,7 +246,7 @@ char *dumpdate;
       {
 	char sprintf_buf[512];
 
-	write_tapeheader(host, disk, level, compress, datestamp, dataf);
+	write_tapeheader(compress);
 
 	start_index(createindex, dumpout, mesgf, indexf,
 #ifdef GNUTAR

@@ -116,8 +116,8 @@ static regex_t re_table[] = {
   { DMP_STRANGE, NULL, 0}
 };
 
-static void start_backup(disk, level, dumpdate, datestamp, dataf, mesgf, indexf)
-char *disk, *datestamp;
+static void start_backup(disk, level, dumpdate, dataf, mesgf, indexf)
+char *disk;
 int level, dataf, mesgf, indexf;
 char *dumpdate;
 {
@@ -130,8 +130,8 @@ char *dumpdate;
     if (host == NULL)
       error("environment variable HOSTNAME must be set");
 
-    fprintf(stderr, "%s: start [%s:%s level %d datestamp %s]\n",
-	    pname, host, disk, level, datestamp);
+    fprintf(stderr, "%s: start [%s:%s level %d]\n",
+	    pname, host, disk, level);
 
     NAUGHTY_BITS;
 
@@ -179,7 +179,7 @@ char *dumpdate;
 	program->backup_name  = XFSDUMP;
 	program->restore_name = XFSRESTORE;
 
-	write_tapeheader(host, disk, level, compress, datestamp, dataf);
+	write_tapeheader(compress);
 
 	start_index(createindex, dumpout, mesgf, indexf,
 		    XFSRESTORE
@@ -204,7 +204,7 @@ char *dumpdate;
     {
 	sprintf(dumpkeys, "%d%ssf", level, no_record ? "" : "u");
 
-	write_tapeheader(host, disk, level, compress, datestamp, dataf);
+	write_tapeheader(compress);
 
 	start_index(createindex, dumpout, mesgf, indexf,
 #ifdef RESTORE
@@ -224,7 +224,7 @@ char *dumpdate;
     /* AIX backup program */
     sprintf(dumpkeys, "-%d%sf", level, no_record ? "" : "u");
 
-    write_tapeheader(host, disk, level, compress, datestamp, dataf);
+    write_tapeheader(compress);
 
     start_index(createindex, dumpout, mesgf, indexf,
 #ifdef RESTORE

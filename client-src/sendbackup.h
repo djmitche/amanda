@@ -29,8 +29,7 @@
  */
 #include "amanda.h"
 
-void write_tapeheader P((char *host, char *disk, int level, int compress, \
-			 char *datestamp, int outf));
+void write_tapeheader P((int compress));
 int pipespawn P((char *prog, int *stdinfd, int stdoutfd, int stderrfd, ...));
 void start_index P((int createindex, int input, int mesg, \
 		    int index, char *cmd));
@@ -69,7 +68,7 @@ extern int indexpid, createindex;
 typedef struct backup_program_s {
     char *name, *backup_name, *restore_name;
     regex_t *re_table;
-    void (*start_backup) P((char *disk, int level, char *dumpdate, char *datestamp, \
+    void (*start_backup) P((char *disk, int level, char *dumpdate, \
 			    int dataf, int mesgf, int indexf));
     void (*end_backup) P((int goterror));
 } backup_program_t;

@@ -1072,8 +1072,8 @@ int level;
     int rc;
 
     sprintf(req,
-	    "SERVICE sendbackup\n%s %s %d %s DATESTAMP %s OPTIONS %s\n",
-            progname, disk, level, dumpdate, datestamp, options);
+	    "SERVICE sendbackup\n%s %s %d %s OPTIONS %s\n",
+            progname, disk, level, dumpdate, options);
 
     datafd = mesgfd = indexfd = -1;
 
