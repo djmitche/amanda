@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43.2.13.4.6.2.7 2002/04/30 01:43:05 martinea Exp $
+ * $Id: extract_list.c,v 1.43.2.13.4.6.2.8 2002/09/10 12:53:47 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1584,6 +1584,8 @@ void extract_files P((void))
 	    printf("Extracting from file %s\n",dump_device_name);
 	}
 	else {
+	    printf("Extracting files using tape drive %s on host %s.\n",
+		   tape_device_name, tape_server_name);
 	    printf("Load tape %s now\n", elist->tape);
 	    if (!okay_to_continue(1))
 	        return;
