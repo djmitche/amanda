@@ -1,5 +1,9 @@
 2002-09-19  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* NEWS: Changes in release 2.4.3.
+
+2002-09-19  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amverifyrun.sh.in: New program.
 	* man/amverifyrun.8.in: Man page for amverifyrun.
 	* configure.in (AC_OUTPUT): add man/amverifyrun.8 and
