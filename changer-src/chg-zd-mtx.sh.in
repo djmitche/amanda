@@ -447,35 +447,44 @@ get_loaded_info() {
 	get_mtx_status
 
 	set x `sed -n '
-/^Data Transfer Element:Empty/				{
+/^Data Transfer Element:Empty/                          {
     s/.*/-1/p
     q
 }
-/^Data Transfer Element '$driveslot':Empty/		{
+/^Data Transfer Element '$driveslot':Empty/             {
     s/.*/-1/p
     q
 }
-/^Data Transfer Element:Full.*:VolumeTag/		{
-    s/.*(Storage Element \([0-9][0-9]*\) Loaded):VolumeTag *= *\([^ 	]*\)/\1 \2/p
+/^Data Transfer Element:Full (Storage Element \([0-9][0-9]*\) Loaded):VolumeTag *= *\([^     ]*\)/               {
+    s/.*(Storage Element \([0-9][0-9]*\) Loaded):VolumeTag *= *\([^     ]*\)/\1 \2/p
     q
 }
-/^Data Transfer Element '$driveslot':Full.*:VolumeTag/	{
-    s/.*(Storage Element \([0-9][0-9]*\) Loaded):VolumeTag *= *\([^ 	]*\)/\1 \2/p
+/^Data Transfer Element '$driveslot':Full (Storage Element \([0-9][0-9]*\) Loaded):VolumeTag *= *\([^     ]*\)/  {
+    s/.*(Storage Element \([0-9][0-9]*\) Loaded):VolumeTag *= *\([^     ]*\)/\1 \2/p
     q
 }
-/^Data Transfer Element:Full/				{
-    s/.*(Storage Element \([0-9][0-9]*\) Loaded)\(.*\)/\1/p
+/^Data Transfer Element:Full (Storage Element \([0-9][0-9]*\) Loaded)/                           {
+    s/.*(Storage Element \([0-9][0-9]*\) Loaded).*/\1/p
     q
 }
-/^Data Transfer Element '$driveslot':Full/		{
-    s/.*(Storage Element \([0-9][0-9]*\) Loaded)\(.*\)/\1/p
+/^Data Transfer Element '$driveslot':Full (Storage Element \([0-9][0-9]*\) Loaded)/              {
+    s/.*Storage Element \([0-9][0-9]*\) Loaded.*/\1/p
     q
+}
+/^Data Transfer Element '$driveslot':Full (Unknown Storage Element Loaded)/	{
+    : loop
+    n
+    /^.*Storage Element \([0-9][0-9]*\):Empty/ {
+	s/.*Storage Element \([0-9][0-9]*\):Empty/\1/p
+        q
+    }
+    s/.*/-2/p
+    b loop
 }
 ' < $mtx_status 2>&1`
 	shift					# get rid of the "x"
 	loadedslot=$1
 	loadedbarcode=$2
-
 	if [ -z "$loadedslot" ]; then
 		Exit 2 "<none>" "could not determine current slot, are you sure your drive slot is $driveslot"
 		return $?			# in case we are internal
@@ -506,14 +515,25 @@ get_slot_list() {
 	fi
 	get_mtx_status
 	slot_list=`sed -n '
-/^Data Transfer Element:Full/				{
-    s/.*(Storage Element \([0-9][0-9]*\) Loaded)\(.*\)/\1/p
+/^Data Transfer Element:Full (Storage Element \([0-9][0-9]*\) Loaded)/ {
+    s/.*(Storage Element \([0-9][0-9]*\) Loaded).*/\1/p
 }
-/^Data Transfer Element '$driveslot':Full/		{
-    s/.*(Storage Element \([0-9][0-9]*\) Loaded)\(.*\)/\1/p
+/^Data Transfer Element '$driveslot':Full (Storage Element \([0-9][0-9]*\) Loaded)/ {
+    s/.*Storage Element \([0-9][0-9]*\) Loaded.*/\1/p
 }
-/^[ 	]*Storage Element \([0-9][0-9]*\):Full/		{
-    s/.*Storage Element \([0-9][0-9]*\):.*/\1/p
+/^Data Transfer Element '$driveslot':Full (Unknown Storage Element Loaded)/ {
+    : loop
+    n
+    /^.*Storage Element \([0-9][0-9]*\):Full/ {
+        s/.*Storage Element \([0-9][0-9]*\):Full/\1/p
+        b loop
+    }
+    /^.*Storage Element \([0-9][0-9]*\):Empty/ {
+	s/.*Storage Element \([0-9][0-9]*\):Empty/\1/p
+    }
+}
+/^.*Storage Element \([0-9][0-9]*\):Full/ {
+    s/.*Storage Element \([0-9][0-9]*\):Full/\1/p
 }
 ' < $mtx_status 2>&1 | grep -v "^${cleanslot}\$" | sort -n`
 	slot_list=`echo $slot_list`		# remove the newlines
@@ -946,6 +966,10 @@ loadslot() {
 		Exit 0 "$loadedslot" "$tape"
 		return $?			# in case we are internal
 	fi
+	if [ $loadedslot -eq -2 ]; then
+		Exit 0 "$loadedslot" "$tape"
+		return $?			# in case we are internal
+        fi
 
 	# If we are loading the cleaning tape, bump the cleaning count
 	# and reset the access count.  Otherwise, bump the access count
