@@ -1012,15 +1012,14 @@ if test "$DUMP"; then
 	amanda_cv_dump_estimate,
 	[
 	    $DUMP 9Ef /dev/null /dev/null/invalid/fs >conftest.d-E 2>&1
-	    if `$DUMP 9f /dev/null /dev/null/invalid/fs 2>&1 |
-	    	$EGREP -v '^dump: (Dumping from host|Date of (this|last) level [0-9])' |
-	    	{ diff - conftest.d-E >/dev/null 2>&1 && echo true || echo false; }
-		`; then
+	    $DUMP 9f /dev/null /dev/null/invalid/fs 2>&1 |
+	      $EGREP -v ['^dump: (Dumping from host|Date of (this|last) level [0-9])'] >conftest.d
+	    if diff conftest.d-E conftest.d >/dev/null 2>&1; then
 		amanda_cv_dump_estimate=yes
 	    else
 		amanda_cv_dump_estimate=no
 	    fi
-	    rm -f conftest.d-E
+	    rm -f conftest.d conftest.d-E
 	])
     if test "$amanda_cv_dump_estimate" = yes; then
 	AC_DEFINE(HAVE_DUMP_ESTIMATE)
