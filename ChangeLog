@@ -1,5 +1,12 @@
 2000-09-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* common-src/amanda.h: prototype clean_regex().
+	* common-src/match.c: new function clean_regex() that escape
+	all non-alphanumeric character.
+	* recover-src/extract_list.c (add_file, delete_file): use clean_regex().
+
+2000-09-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amcheck.c: (start_server_check): check for the oldlog
 	directory.
 
