@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.34 1998/06/02 18:29:02 jrj Exp $
+ * $Id: reporter.c,v 1.35 1998/06/28 06:39:32 oliva Exp $
  *
  * nightly Amanda Report generator
  */
@@ -522,7 +522,7 @@ void output_tapeinfo()
 	}
 	else {
 	    fputs(
-	"*** PERFORMED ALL DUMPS AS INCREMENTAL DUMPS TO HOLDING DISK.\n\n",
+	"*** PERFORMED ALL DUMPS TO HOLDING DISK.\n\n",
 		  mailf);
 	    fputs("THESE DUMPS WERE TO DISK.  Flush them onto", mailf);
 	}

@@ -1,3 +1,9 @@
+1998-06-28  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/reporter.c (output_tapeinfo): degraded mode no longer
+	implies incremental dumps only.
+	Reported by Randy Dees <rrd@amherst.com>
+
 1998-06-26  John R. Jackson  <jrj@purdue.edu>
 
 	* configure.in: fix BSD/OS Kerberos include file location.
