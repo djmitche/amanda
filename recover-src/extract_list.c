@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.65 2001/12/07 22:10:04 martinea Exp $
+ * $Id: extract_list.c,v 1.66 2002/01/05 19:00:01 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1016,6 +1016,8 @@ static int okay_to_continue_tape P((void))
 	printf("Tape device: ");
 	fflush(stdout); fflush(stderr);
 	fgets(device, 100, stdin);
+	if( device[strlen(device)-1] == '\n')
+	    device[strlen(device)-1] = '\0';
 	set_tape(device);
 	return okay_to_continue_tape();
     } else {
