@@ -31,11 +31,12 @@ slithy rz3g comp-user
 
 # We don't run compression on the master host since it is going to be
 # busy enough running amanda.
-master sd0a nocomp-root local
-master sd0g nocomp-user local
+master sd0a nocomp-root -1 local
+master sd0g nocomp-user -1 local
+# note: -1 is a placeholder for the platter number
 # the holding disk can't be dumped to itself, it uses a disktype that
 # specifies the "no-hold" option (see amanda.conf).
-master sd1c holding-disk local
+master sd1c holding-disk -1 local
 
 # The chairman's disk is high priority to make sure it gets done.
 bigwig	sd0a comp-root
