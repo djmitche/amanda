@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.20 1998/07/04 00:20:19 oliva Exp $
+ * $Id: tapeio.c,v 1.21 1999/02/10 19:14:32 oliva Exp $
  *
  * implements tape I/O functions
  */
@@ -494,7 +494,7 @@ char *datestamp;
 
 
 char *tape_wrendmark(devname, datestamp)
-char *devname, *datestamp;
+    char *devname, *datestamp;
 {
     int fd;
 
@@ -510,6 +510,7 @@ char *devname, *datestamp;
 	return errstr;
     }
 
+    tapefd_close(fd);
     return NULL;
 }
 
