@@ -1,5 +1,10 @@
 2003-10-14  John R. Jackson (jrj@purdue.edu)
 
+	* docs/SYSTEM.NOTES: Add FreeBSD 5.1 note about setting the UDP packet
+	  size, compliments of Nicolas Ecarnot <nicolas.ecarnot@accim.com>.
+
+2003-10-14  John R. Jackson (jrj@purdue.edu)
+
 	* client-src/sendsize.c: Handle case where PID's get re-used.
 
 2003-10-14  John R. Jackson (jrj@purdue.edu)

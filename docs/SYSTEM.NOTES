@@ -257,6 +257,29 @@ may use chg-chio instead.
 
 
 ---------------------------------------------------------------------------
+FreeBSD 5.1
+-----------
+
+Nicolas Ecarnot <nicolas.ecarnot@accim.com> discovered that for
+FreeBSD 5.1 (maybe earlier, and surely further), you have to set the
+net.inet.udp.maxdgram TCP/IP variable to 65535.  The default is 9216,
+and this is a problem when trying to backup a large number of clients
+as indicated by errors in during amcheck or the estimate phase.
+
+You can just run the command:
+
+  sysctl net.inet.udp.maxdgram=63535
+
+but this won't last until the next reboot.
+
+To make it permanent, just add this line:
+
+  net.inet.udp.maxdgram=65535
+
+in the /etc/sysctl.conf file.
+
+
+---------------------------------------------------------------------------
 Microsoft Windows
 -----------------
 
