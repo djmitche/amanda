@@ -1,3 +1,14 @@
+2001-06-19 John R. Jackson <jrj@purdue.edu>
+
+	* recover-src/amrecover.c: Add more debugging to guess_disk()
+	  function to better track how the disk is determined from the
+	  current working directory.  Report current working directory in
+	  error message.  Change "Trying" to "Trying disk" to distinguish
+	  this from host attempts.
+	* recover-src/set_commands.c: Remove redundant amfree() call.  Remove
+	  redundant "OISD /" exchange.  Change "Trying" to "Trying host" to
+	  distinguish this from disk attempts.
+
 2001-06-19 Thomas Hepper <th@ant.han.de>
 	* changer-src/chg-scsi.c: Made clean_slot a global var. Removed
 	the label db update stuff from the COM_SLOT part (moved to unload

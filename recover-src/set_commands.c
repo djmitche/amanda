@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: set_commands.c,v 1.14 2000/01/21 05:08:24 oliva Exp $
+ * $Id: set_commands.c,v 1.15 2001/06/19 19:36:04 jrjackson Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -55,7 +55,6 @@ char *date;
 	cmd = newstralloc2(cmd, "OISD ", disk_path);
 	if (exchange(cmd) == -1)
 	    exit(1);
-	amfree(cmd);
 	if (server_happy())
 	{
 	    suck_dir_list_from_server();
@@ -103,7 +102,7 @@ char *host;
 	 */
 	if ((hp = gethostbyname(host)) != NULL) {
 	    host = hp->h_name;
-	    printf("Trying %s ...\n", host);
+	    printf("Trying host %s ...\n", host);
 	    cmd = newstralloc2(cmd, "HOST ", host);
 	    if (converse(cmd) == -1)
 		exit(1);
@@ -115,7 +114,7 @@ char *host;
 	    {
 	        for (hostp = hp->h_aliases; (host = *hostp) != NULL; hostp++)
 	        {
-		    printf("Trying %s ...\n", host);
+		    printf("Trying host %s ...\n", host);
 		    cmd = newstralloc2(cmd, "HOST ", host);
 		    if (converse(cmd) == -1)
 		        exit(1);
@@ -194,8 +193,6 @@ char *mtpt;
        disk for the given date, hence setting the directory to the
        mount point will fail. Preempt this by checking first so we can write
        a more informative message. */
-    if (exchange("OISD /") == -1)
-	exit(1);
     if (exchange("OISD /") == -1)
 	exit(1);
     if (server_happy())
