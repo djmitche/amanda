@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.20.2.3 1998/03/16 10:18:43 amcore Exp $
+ * $Id: amrecover.c,v 1.20.2.4 1998/03/18 08:25:49 amcore Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -670,12 +670,8 @@ char **argv;
 			   cwd, dn_guess, mpt_guess);
 		    set_disk(dn_guess, mpt_guess);
 		    set_directory(cwd);
-		    if (server_happy()) {
-			if (chdir(mpt_guess) == 0)
-			    printf("$LCWD '%s'.\n", mpt_guess);
-			else
-			    printf("Cannot lcd to '%s'.\n", mpt_guess);
-		    }
+		    if (server_happy() && strcmp(cwd, mpt_guess) != 0)
+		        printf("WARNING: not on root of selected filesystem, check man-page!\n");
 		    afree(mpt_guess);
 		    break;
 
