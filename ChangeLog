@@ -1,3 +1,8 @@
+2003-05-27  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/tapefile.c (read_tapelist,parse_tapeline): Fix for
+	  previous patch.
+
 2003-05-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* example/amanda.conf.in: Add more amrecover_changer doc.
