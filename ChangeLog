@@ -1,5 +1,9 @@
 1999-09-05 John R. Jackson  <jrj@purdue.edu>
 
+	* recover-src/extract_list.c: add VRESTORE and VXRESTORE support.
+
+1999-09-05 John R. Jackson  <jrj@purdue.edu>
+
 	* common-src/stream.c: make sure errno is returned properly from
 	  stream_client() and stream_server().
 	* server-src/taper.c: report errors from stream_server() and

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.48 1999/09/05 22:42:47 jrj Exp $
+ * $Id: extract_list.c,v 1.49 1999/09/05 22:51:49 jrj Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1336,24 +1336,41 @@ static void extract_files_child(in_fd, elist)
 #ifdef SAMBA_CLIENT
     	cmd = stralloc(SAMBA_CLIENT);
     	break;
+#else
+	/* fall through to ... */
 #endif
     case IS_TAR:
     case IS_GNUTAR:
 #ifndef GNUTAR
 	fprintf(stderr, "warning: GNUTAR program not available.\n");
-	cmd = "tar";
+	cmd = stralloc("tar");
 #else
   	cmd = stralloc(GNUTAR);
 #endif
     	break;
     case IS_UNKNOWN:
     case IS_DUMP:
-#ifndef RESTORE
-	fprintf(stderr, "RESTORE program not available.\n");
-	cmd = "restore";
-#else
-    	cmd = stralloc(RESTORE);
+	cmd = NULL;
+#if defined(DUMP)
+	if (strcmp(file.program, DUMP) == 0) {
+    	    cmd = stralloc(RESTORE);
+	}
 #endif
+#if defined(VDUMP)
+	if (strcmp(file.program, VDUMP) == 0) {
+    	    cmd = stralloc(VRESTORE);
+	}
+#endif
+#if defined(VXDUMP)
+	if (strcmp(file.program, VXDUMP) == 0) {
+    	    cmd = stralloc(VXRESTORE);
+	}
+#endif
+	if (cmd == NULL) {
+	    fprintf(stderr, "warning: restore program for %s not available.\n",
+		    file.program);
+	    cmd = stralloc("restore");
+	}
     }
     if (cmd) {
         dbprintf(("Exec'ing %s with arguments:\n", cmd));
