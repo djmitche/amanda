@@ -80,6 +80,7 @@ typedef struct est_s {
     int level_days;
     float fullrate, incrrate;
     float fullcomp, incrcomp;
+    char *errstr;
     int level[MAX_LEVELS];
     int est_size[MAX_LEVELS];
 } est_t;
@@ -434,6 +435,7 @@ disklist_t *qp;
     dp->up = (void *) ep;
     ep->size = -1;
     ep->curr_priority = dp->dtype->priority;
+    ep->errstr = 0;
 
     /* calculated fields */
 
@@ -767,6 +769,7 @@ static void get_estimates P((void))
 
     while(!empty(waitq)) {
 	disk_t *dp = dequeue_disk(&waitq);
+	est(dp)->errstr = "hmm, disk was stranded on waitq";
 	enqueue_disk(&failq, dp);
     }
 }
@@ -776,7 +779,7 @@ host_t *hostp;
 {
     disklist_t *destqp;
     disk_t *dp;
-    char req[8192], line[1024];
+    char req[8192], line[1024], *errstr;
     int i, disks, rc;
 
     assert(hostp->disks != NULL);
@@ -815,15 +818,20 @@ host_t *hostp;
 			  hostp, disks*ONE_TIMEOUT, handle_result);
 
     if(rc) {
-	log(L_ERROR, "could not resolve hostname \"%s\"", hostp->hostname);
+	char str[1024];
+	sprintf(str, "could not resolve hostname \"%s\"", hostp->hostname);
+	errstr = stralloc(str);
 	destqp = &failq;
     }
     else {
+	errstr = 0;
 	destqp = &waitq;
     }
 
-    for(dp = hostp->disks; dp != NULL; dp = dp->hostnext)
-	    enqueue_disk(destqp, dp);
+    for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	est(dp)->errstr = errstr;
+	enqueue_disk(destqp, dp);
+    }
 }
 
 static disk_t *lookup_hostdisk(hp, str)
@@ -846,7 +854,7 @@ pkt_t *pkt;
     int rc, level, size, i;
     disk_t *dp;
     host_t *hostp;
-    char *resp, msgdisk[256], errstr[256];
+    char *resp, msgdisk[256], remoterr[256], errbuf[1024], *errstr;
 
 #define eatline(p) while(*(p) && *(p) != '\n') (p)++; if(*(p)) (p)++;
 
@@ -854,24 +862,22 @@ pkt_t *pkt;
 
     if(p->state == S_FAILED) {
 	if(pkt == NULL)
-	    log(L_WARNING, "Request to %s timed out.", hostp->hostname);
-	else if(sscanf(pkt->body, "ERROR %[^\n]", errstr) == 1) 
-	    log(L_ERROR, "%s NAK: %s", hostp->hostname, errstr);
+	    sprintf(errbuf, "Request to %s timed out.", hostp->hostname);
+	else if(sscanf(pkt->body, "ERROR %[^\n]", remoterr) == 1) 
+	    sprintf(errbuf, "%s NAK: %s", hostp->hostname, remoterr);
 	else {
-	    log(L_ERROR, "%s NAK: [NAK parse failed]", hostp->hostname);
+	    sprintf(errbuf, "%s NAK: [NAK parse failed]", hostp->hostname);
 	    fprintf(stderr, "got strange nak from %s:\n----\n%s----\n",
 		    hostp->hostname, pkt->body);
 	}
-	/* XXX really should fail all the disks for this host on NAK */
-
-	return;
+	goto error_return;
     }
 
 #ifdef KRB4_SECURITY
     if(hostp->disks->dtype->auth == AUTH_KRB4 &&
        !check_mutual_authenticator(host2key(hostp), pkt, p)) {
-	log(L_ERROR, "%s [mutual-authentication failed]", hostp->hostname);
-	return;
+	sprintf(errbuf, "%s [mutual-authentication failed]", hostp->hostname);
+	goto error_return;
     }
 #endif
 
@@ -879,11 +885,10 @@ pkt_t *pkt;
 
     if(!strncmp(resp, "ERROR", 5)) {
 	/* this is an error response packet */
-	if(sscanf(resp, "ERROR %[^\n]", errstr) != 1)
-	    sprintf(errstr, "[bogus error packet]");
-	log(L_ERROR, "%s: %s", hostp->hostname, errstr);
-	/* XXX really fail all the disks for this host */
-	return;
+	if(sscanf(resp, "ERROR %[^\n]", remoterr) != 1)
+	    sprintf(remoterr, "[bogus error packet]");
+	sprintf(errstr, "%s: %s", hostp->hostname, remoterr);
+	goto error_return;
     }
 
     if(!strncmp(resp, "OPTIONS", 7)) {
@@ -915,10 +920,17 @@ pkt_t *pkt;
     /* XXX amanda 2.1 treated that case as a bad msg */
 
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	remove_disk(&waitq, dp);
 	if(est(dp)->got_estimate) {
-	    if(est(dp)->est_size[0] >= 0) { /* Fail for off line disks */
-		remove_disk(&waitq, dp);
+	    if(est(dp)->est_size[0] >= 0) {
 		enqueue_disk(&estq, dp);
+	    }
+	    else {
+		enqueue_disk(&failq, dp);
+
+		sprintf(errbuf, "disk %s offline on %s?",
+		    dp->name, dp->host->hostname);
+		est(dp)->errstr = stralloc(errbuf);
 	    }
 
 	    fprintf(stderr,"got result for host %s disk %s:",
@@ -928,13 +940,34 @@ pkt_t *pkt;
 		    est(dp)->level[1], est(dp)->est_size[1],
 		    est(dp)->level[2], est(dp)->est_size[2]);
 	}
+	else {
+	    enqueue_disk(&failq, dp);
+
+	    fprintf(stderr, "error result for host %s disk %s: missing estimate\n",
+		dp->host->hostname, dp->name);
+
+	    sprintf(errbuf, "missing result for %s in %s response",
+		dp->name, dp->host->hostname);
+	    est(dp)->errstr = stralloc(errbuf);
+	}
     }
     return;
 
 bad_msg:
     fprintf(stderr,"got a bad message, stopped at:\n");
     fprintf(stderr,"----\n%s----\n", resp);
-    return;
+    sprintf(errbuf, "badly formatted response from %s", hostp->hostname);
+
+error_return:
+    errstr = stralloc(errbuf);
+    for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	remove_disk(&waitq, dp);
+	enqueue_disk(&failq, dp);
+
+	est(dp)->errstr = errstr;
+	fprintf(stderr, "error result for host %s disk %s: %s\n",
+	    dp->host->hostname, dp->name, errstr);
+    }
 }
 
 
@@ -1009,30 +1042,42 @@ static void handle_failed(qp)
 disklist_t *qp;
 {
     disk_t *dp;
+    char *errstr;
 
     dp = qp->head;
 
-    if(est(dp)->last_level == -1) {
-	fprintf(stderr,
-		"planner: FAILED %s %s 0 [no estimate or historical data]\n",
-		dp->host->hostname, dp->name);
-	log(L_FAIL, "%s %s 0 [no estimate or historical data]",
+/*
+ * From George Scott <George.Scott@cc.monash.edu.au>:
+ * --------
+ * If a machine is down when the planner is run it guesses from historical
+ * data what the size of tonights dump is likely to be and schedules a
+ * dump anyway.  The dumper then usually discovers that that machine is
+ * still down and ends up with a half full tape.  Unfortunately the
+ * planner had to delay another dump because it thought that the tape was
+ * full.  The fix here is for the planner to ignore unavailable machines
+ * rather than ignore the fact that they are unavailable.
+ * --------
+ */
+
+#ifdef old_behavior
+    if(est(dp)->last_level != -1) {
+	log(L_WARNING,
+	    "Could not get estimate for %s:%s, using historical data.",
 	    dp->host->hostname, dp->name);
-	dequeue_disk(qp);
+	analyze_estimates(qp);
+	return;
     }
-    else {
-	/*log(L_WARNING, 
-	 *    "Could not get estimate for %s:%s, using historical data.",
-	 *    dp->host->hostname, dp->name);
-	 *analyze_estimates(qp);
-	 */
-	fprintf(stderr,
-		"planner: FAILED %s %s 0 [no estimate]\n",
-		dp->host->hostname, dp->name);
-	log(L_FAIL, "%s %s 0 [no estimate]",
-	    dp->host->hostname, dp->name);
-	dequeue_disk(qp);
-    }
+#endif
+
+    errstr = est(dp)->errstr? est(dp)->errstr : "hmm, no error indicator!";
+
+    fprintf(stderr, "planner: FAILED %s %s 0 [%s]\n",
+	dp->host->hostname, dp->name, errstr);
+
+    log(L_FAIL, "%s %s 0 [%s]",
+	dp->host->hostname, dp->name, errstr);
+
+    dequeue_disk(qp);
 }
 
 
