@@ -2,6 +2,7 @@
 pkgdata_DATA = \
 	DUMPER-API		\
 	EVENT-API		\
+	EXCLUDE			\
 	FAQ			\
 	INDEXING		\
 	INSTALL			\
@@ -9,6 +10,7 @@ pkgdata_DATA = \
 	KERBEROS		\
 	LABEL.PRINTING		\
 	MULTITAPE		\
+	PORT.USAGE		\
 	RAIT			\
 	RESTORE			\
 	SAMBA			\

@@ -1,5 +1,11 @@
 2001-08-14 John R. Jackson (jrj@purdue.edu)
 
+	* docs/EXCLUDE: New document from Andrew Hall <ahall@secureworks.net>
+	  describing how to set up and use GNU tar exclusions.
+	* docs/Makefile.am: Added EXCLUDE and PORT.USAGE.
+
+2001-08-14 John R. Jackson (jrj@purdue.edu)
+
 	* docs/PORT.USAGE: New document about how Amanda ports are used.
 
 2001-08-14 John R. Jackson (jrj@purdue.edu)
