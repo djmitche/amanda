@@ -1,3 +1,8 @@
+2003-02-09  John R. Jackson (jrj@purdue.edu)
+
+	* tape-src/tapetype.c: Allocate the I/O buffers on page boundaries.
+	  This helps performance on some OS's.
+
 2003-02-08  John R. Jackson (jrj@purdue.edu)
 
 	* restore-src/amrestore.c: Clean up strtol() argument processing.

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.3.2.3.4.3.2.2 2002/11/26 22:53:33 martinea Exp $
+ * $Id: tapetype.c,v 1.3.2.3.4.3.2.3 2003/02/09 20:39:17 jrjackson Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -53,14 +53,34 @@ static char *randombytes = (char *) NULL;
 #define srandom(seed) srand(seed)
 #endif
 
+static void allocrandombytes() {
+  int i, j, page_size;
+  char *p;
+
+  if (randombytes == (char *)NULL) {
+#if defined(HAVE_GETPAGESIZE)
+    page_size = getpagesize();
+#else
+    page_size = 1024;
+#endif
+    j = (NBLOCKS * blocksize) + page_size;	/* buffer space plus one page */
+    j = am_round(j, page_size);			/* even number of pages */
+    p = alloc(j);
+    i = (p - (char *)0) & (page_size - 1);	/* page boundary offset */
+    if(i != 0) {
+      randombytes = p + page_size - i;		/* round up to page boundary */
+    } else {
+      randombytes = p;				/* alloc already on boundary */
+    }
+  }
+}
+
 static void initnotrandombytes() {
   int i, j;
   char *p;
 
+  allocrandombytes();
   j =NBLOCKS * blocksize;
-  if (randombytes == (char *)NULL) {
-    randombytes = alloc(j);
-  }
   p = randombytes;
   for(i=0; i < j; ++i) {
     *p++ = (char) (i % 256);
@@ -71,10 +91,8 @@ static void initrandombytes() {
   int i, j;
   char *p;
 
+  allocrandombytes();
   j = NBLOCKS * blocksize;
-  if (randombytes == (char *)NULL) {
-    randombytes = alloc(j);
-  }
   p = randombytes;
   for(i=0; i < j; ++i) {
     *p++ = (char)random();
