@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.3 1997/11/07 10:05:55 george Exp $
+ * $Id: file.c,v 1.4 1997/11/17 13:05:06 amcore Exp $
  *
  * file and directory bashing routines
  */
@@ -110,7 +110,9 @@ char *topdir;	/* where to stop removing */
     rc = rmdir(file);
     if (rc != 0) switch(errno) {
 #ifdef ENOTEMPTY
+#if ENOTEMPTY != EEXIST			/* AIX makes these the same */
 	case ENOTEMPTY:
+#endif
 #endif
 	case EEXIST:	/* directory not empty */
 	    return 0; /* cant do much more */
