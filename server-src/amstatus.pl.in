@@ -198,7 +198,6 @@ while(<AMDUMP>) {
 		$dump_started{$hostpart}=1;
 		$dump_time{$hostpart}=$1;
 		$dump_finished{$hostpart}=0;
-		$holding_file{$hostpart}=$5;
 		if(     $level{$hostpart} != $8 &&
 		   $degr_level{$hostpart} == $8) {
 			$level{$hostpart}=$degr_level{$hostpart};
@@ -217,6 +216,17 @@ while(<AMDUMP>) {
 		if(! defined($dumpers_held[$dumpers_active])) {
 			$dumpers_held[$dumpers_active]={};
 		}
+	}
+	elsif(/driver: send-cmd time (\S+) to (chunker\d*): (PORT-WRITE) (\d+-\d+) (\S+) (\S+) (\S+) (\d+)/) {
+		$current_time=$1;
+		$host=$6;
+		$partition=$7;
+		$hostpart="$host$partition";
+		$serial=$4;
+		#$chunk_started{$hostpart}=1;
+		#$chunk_time{$hostpart}=$1;
+		#$chunk_finished{$hostpart}=0;
+		$holding_file{$hostpart}=$5;
 	}
 	elsif(/driver: result time (\S+) from (dumper\d+): FAILED (\d+-\d+) (.*)/) {
 		$current_time=$1;
@@ -633,7 +643,7 @@ if(defined $opt_stats) {
 		}
 		for ($d = 0; $d <= $#dumpers_active; $d++) {
 			$l = sprintf "%2d dumper%s busy%s : %8s  (%6.2f%%)",
-				$d, ($d <= 1) ? "" : "s", ($d =< 1) ? " " : "",
+				$d, ($d <= 1) ? "" : "s", ($d <= 1) ? " " : "",
 				&busytime($dumpers_active[$d]),
 				($dumpers_active[$d] * 1.0 / $total_time) * 100;
 			print $l;
