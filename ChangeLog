@@ -1,3 +1,12 @@
+1999-11-29  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* client-src/sendbackup-gnutar.c (re_table): #if out the debugging
+	Samba messages unless SAMBA_VERSION < 2.
+
+1999-11-29  John E.P.Hynes  <john@hytronix.ne.mediaone.net>
+
+	* client-src/sendbackup-gnutar.c (re_table): Update for Samba 2.0.6.
+
 1999-11-10 John R. Jackson  <jrj@purdue.edu>
 
 	* recover-src/extract_list.c: report the tape server host in the
@@ -626,7 +635,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.309 1999/11/12 00:53:54 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.310 1999/11/29 19:21:31 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
