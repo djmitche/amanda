@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.16 1997/11/25 08:17:56 george Exp $
+ * $Id: amadmin.c,v 1.17 1997/11/26 00:18:20 blair Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -685,7 +685,9 @@ void search_holding_disk()
     }
 }
 
-int find_compare(const void *i1, const void *j1)
+static int find_compare(i1, j1)
+const void *i1;
+const void *j1;
 {
     int compare=0;
     struct find_result **i = (struct find_result **)i1;
