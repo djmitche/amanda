@@ -1,5 +1,10 @@
 2000-07-18 John R. Jackson  <jrj@purdue.edu>
 
+	* changer-src/chg-chio.pl.in (do_time): fix chg-chio.pl timestamp
+	function to return a string instead of writing to stdout.
+
+2000-07-18 John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/taper.c (file_reader_side): detach and destroy shared
 	memory areas on an error condition.  Found by Patrik Andersin
 	<cat@iki.fi>.
