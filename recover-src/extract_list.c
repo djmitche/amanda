@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.33 1998/04/14 17:11:26 jrj Exp $
+ * $Id: extract_list.c,v 1.34 1998/04/14 19:13:58 blair Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1092,7 +1092,9 @@ EXTRACT_LIST *elist;
     int buflen;
     int len_program;
     char *cmd = NULL;
+#ifdef SAMBA_CLIENT
     char *domain = NULL, *smbpass = NULL;
+#endif
 
     /* code executed by child to do extraction */
     /* never returns */
