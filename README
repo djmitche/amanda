@@ -106,7 +106,8 @@ on the following systems:
 	GNU/Linux on x86, alpha, sparc, arm and powerpc
 	NetBSD 1.0
 	Nextstep 3 (*)
-	SunOS 4.1.x (x >= 1) and 5.[56]
+	OpenBSD 2.5 x86, sparc, etc (ports available)
+	SunOS 4.1.x (x >= 1) and 5.[567]
 	Ultrix 4.2
 	HP-UX 9.x and 10.x (x >= 01)
 
