@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: tapeio.c,v 1.20.4.7.4.4.2.2 2002/01/14 00:27:28 martinea Exp $
+ * $Id: tapeio.c,v 1.20.4.7.4.4.2.3 2002/01/29 16:43:00 jrjackson Exp $
  *
  * implements generic tape I/O functions
  */
@@ -774,19 +774,22 @@ tapefd_rdlabel(fd, datestamp, label)
     char **label;
 {
     int rc;
-    char buffer[MAX_TAPE_BLOCK_BYTES + 1];
+    size_t buflen;
+    char *buffer = NULL;
     dumpfile_t file;
     char *r = NULL;
 
     amfree(*datestamp);
     amfree(*label);
+    buflen = MAX_TAPE_BLOCK_BYTES;
+    buffer = alloc(buflen + 1);
 
     if(tapefd_getinfo_fake_label(fd)) {
 	*datestamp = stralloc("X");
 	*label = stralloc(FAKE_LABEL);
     } else if(tapefd_rewind(fd) == -1) {
 	r = errstr = newstralloc2(errstr, "rewinding tape: ", strerror(errno));
-    } else if((rc = tapefd_read(fd, buffer, sizeof(buffer) - 1)) == -1) {
+    } else if((rc = tapefd_read(fd, buffer, buflen)) == -1) {
 	r = errstr = newstralloc2(errstr, "reading label: ", strerror(errno));
     } else {
 
@@ -801,6 +804,7 @@ tapefd_rdlabel(fd, datestamp, label)
 	    *label = stralloc(file.name);
 	}
     }
+    amfree(buffer);
     return r;
 }
 

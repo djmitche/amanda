@@ -1,3 +1,9 @@
+2002-01-29 John R. Jackson (jrj@purdue.edu)
+
+	* tape-src/output-tape.c (tape_tapefd_fsf): Some systems cannot deal
+	  with large stack variables, so allocate tape I/O buffers dynamically.
+	* tape-src/tapeio.c (tapefd_rdlabel): Ditto.
+
 2002-01-25 John R. Jackson (jrj@purdue.edu)
 
 	* server-src/driver.c: Log non-zero exit codes and signals from all
