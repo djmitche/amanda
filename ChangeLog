@@ -1,5 +1,11 @@
 1999-05-14  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/find.h: properly prototype find_log()
+	* server-src/amtrmlog.c (main): prototype.  find_log() takes
+	no arguments.
+
+1999-05-14  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/reporter.c: make all functions and globals
 	static.  Prototype all functions, and make them consistent wrt
 	K&R.  Place all prototypes together.  Place data type

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmlog.c,v 1.2 1999/04/28 21:48:20 kashmir Exp $
+ * $Id: amtrmlog.c,v 1.3 1999/05/14 21:34:03 kashmir Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -41,6 +41,8 @@
 #include "tapefile.h"
 #include "find.h"
 #include "version.h"
+
+int main P((int, char **));
 
 int main(argc, argv)
 int argc;
@@ -99,7 +101,7 @@ char **argv;
 
     if(read_tapelist(getconf_str(CNF_TAPELIST)))
 	error("could not load \"%s\"\n", getconf_str(CNF_TAPELIST));
-    output_find_log = find_log(NULL,0,NULL);
+    output_find_log = find_log();
 
     /* change into the log directory */
     if (chdir(getconf_str(CNF_LOGDIR)) == -1)
