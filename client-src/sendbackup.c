@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.28.2.2 1998/02/12 21:05:34 jrj Exp $
+ * $Id: sendbackup.c,v 1.28.2.3 1998/02/15 03:58:27 amcore Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -124,7 +124,14 @@ char *str;
 		e = "";
 	    }
 #undef sc
-	    efile = newvstralloc(efile, "--exclude", e, "=", j, NULL);
+	    if (*e != '\0' && access(j, F_OK) != 0) {
+		/* if exclude list file does not exist, ignore it.
+		 * Should not test for R_OK, because the file may be
+		 * readable by root only! */
+		dbprintf(("%s: exclude list file \"%s\" does not exist, ignoring\n", pname, j));
+	        afree(efile);
+	    } else
+	        efile = newvstralloc(efile, "--exclude", e, "=", j, NULL);
 	    k[0] = ';';
 	}
     }

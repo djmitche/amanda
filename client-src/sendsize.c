@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.61.2.3 1998/02/04 21:53:54 amcore Exp $
+ * $Id: sendsize.c,v 1.61.2.4 1998/02/15 03:58:30 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -101,7 +101,7 @@ int argc;
 char **argv;
 {
     int level, new_maxdumps, spindle;
-    char *prog, *disk, *dumpdate, *exclude;
+    char *prog, *disk, *dumpdate, *exclude = NULL;
     disk_estimates_t *est;
     char *line;
     char *s, *fp;
@@ -210,7 +210,7 @@ char **argv;
 	s[-1] = '\0';
 
 	spindle = 0;				/* default spindle */
-	exclude = "";				/* default is no exclude list */
+	afree(exclude);				/* default is no exclude */
 
 	skip_whitespace(s, ch);			/* find the spindle */
 	if(ch != '\0') {
@@ -222,7 +222,7 @@ char **argv;
 
 	    skip_whitespace(s, ch);		/* find the exclusion list */
 	    if(ch != '\0') {
-		exclude = stralloc2("--", s - 1);
+		exclude = newstralloc2(exclude, "--", s - 1);
 		skip_non_whitespace(s, ch);
 		if(ch) {
 		    err_extra = "extra text at end";
@@ -283,7 +283,7 @@ int level, spindle;
     est_list = newp;
     newp->amname = stralloc(disk);
     newp->dirname = stralloc(amname_to_dirname(newp->amname));
-    newp->exclude = stralloc(exclude);
+    newp->exclude = exclude ? stralloc(exclude) : NULL;
     newp->program = stralloc(prog);
     newp->spindle = spindle;
     newp->est[level].needestimate = 1;
@@ -880,10 +880,10 @@ int level;
 #endif
 
 #ifdef GNUTAR
-long getsize_gnutar(disk, level, efile, dumpsince)
+long getsize_gnutar(disk, level, exclude_spec, dumpsince)
 char *disk;
 int level;
-char *efile;
+char *exclude_spec;
 time_t dumpsince;
 {
     int pipefd[2], nullfd, dumppid;
@@ -891,6 +891,7 @@ time_t dumpsince;
     FILE *dumpout;
     char *incrname;
     char *dirname;
+    char *exclude_arg = NULL;
     char *line = NULL;
     char *cmd = NULL;
     char *cmd_line;
@@ -1026,19 +1027,27 @@ notincremental:
 
     cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
 
-    if (efile == NULL || *efile == '\0') {
+    if (exclude_spec == NULL) {
+	afree(exclude_arg);
 	/* do nothing */
-#define sc "--exclude-list"
-    } else if (strncmp(efile, sc, sizeof(sc)-1)==0) {
-        efile = stralloc2("--exclude-from", efile+sizeof(sc)-1);
+#define sc "--exclude-list="
+    } else if (strncmp(exclude_spec, sc, sizeof(sc)-1)==0) {
+	char *file = exclude_spec + sizeof(sc)-1;
+	if (access(file, F_OK) == 0)
+	    exclude_arg = newstralloc2(exclude_arg, "--exclude-from=", file);
+	else {
+	    dbprintf(("%s: missing exclude list file \"%s\" discarded\n", pname, file));
+	    afree(exclude_arg);
+	}
 #undef sc
-#define sc "--exclude-file"
-    } else if (strncmp(efile, sc, sizeof(sc)-1)==0) {
-	efile = stralloc2("--exclude", efile+sizeof(sc)-1);
+#define sc "--exclude-file="
+    } else if (strncmp(exclude_spec, sc, sizeof(sc)-1)==0) {
+	exclude_arg = newstralloc2(exclude_arg, "--exclude=",
+				   exclude_spec+sizeof(sc)-1);
 #undef sc
     } else {
-	dbprintf(("error [efile is neither --exclude-list nor --exclude-file: %s]\n", efile));
-	error("error: efile is neither --exclude-list nor --exclude-file: %s]", efile);
+	dbprintf(("error [exclude_spec is neither --exclude-list nor --exclude-file: %s]\n", exclude_spec));
+	error("error: exclude_spec is neither --exclude-list nor --exclude-file: %s]", exclude_spec);
     }
 
     cmd_line = vstralloc(cmd,
@@ -1058,8 +1067,8 @@ notincremental:
 			 " --ignore-failed-read",
 			 " --totals",
 			 " --file", " /dev/null",
-			 " ", efile && efile[0] ? efile : ".",
-			 efile && efile[0] ? " ." : "",
+			 " ", exclude_arg ? exclude_arg : ".",
+			 exclude_arg ? " ." : "",
 			 NULL);
 
     dbprintf(("%s: running \"%s\"\n", pname, cmd_line));
@@ -1100,14 +1109,15 @@ notincremental:
 	     "--ignore-failed-read",
 	     "--totals",
 	     "--file", "/dev/null",
-	     efile && efile[0] ? efile : ".",
-	     efile && efile[0] ? "." : (char *)0,
+	     exclude_arg ? exclude_arg : ".",
+	     exclude_arg ? "." : (char *)0,
 	     (char *)0,
 	     safe_env());
 
       exit(1);
       break;
     }
+    afree(exclude_arg);
     afree(cmd);
 
     aclose(pipefd[1]);
