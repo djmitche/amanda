@@ -1,3 +1,8 @@
+1999-10-07 John R. Jackson  <jrj@purdue.edu>
+
+	* common-src/stream.c (stream_server): remove reference to portrange
+	  variable.  Compliments of Randy Dees <rrd@amherst.com>.
+
 1999-10-03 John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/driver.c (main): now that multiple results can come back
@@ -537,7 +542,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.292 1999/10/03 21:29:43 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.293 1999/10/07 18:31:01 jrj Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
