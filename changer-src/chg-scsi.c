@@ -1,8 +1,8 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.19 2000/01/30 12:31:37 th Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.20 2000/10/18 17:02:19 ant Exp $";
 #endif
 /*
- *  $Id: chg-scsi.c,v 1.6.2.19 2000/01/30 12:31:37 th Exp $
+ *  $Id: chg-scsi.c,v 1.6.2.20 2000/10/18 17:02:19 ant Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -97,6 +97,8 @@ extern int STE;
 extern int IEE;
 extern int DTE;
 
+extern int BarCode(int);
+void ChangerReplay(char *string);
 
 /*----------------------------------------------------------------------------*/
 /* Some stuff for our own configurationfile */

@@ -923,6 +923,38 @@ typedef struct ModePageEXB120VendorUnique
     unsigned char DisplayMessage[60];
 } ModePageEXB120VendorUnique_T;
 /* ======================================================= */
+/* ModePageTreeFrogVendorUnique_T */
+/* ======================================================= */
+typedef struct ModePageTreeFrogVendorUnique
+{
+#ifdef  LITTLE_ENDIAN_BITFIELDS
+    PackedBit PageCode : 6;
+    PackedBit res0     : 1;
+    PackedBit PS       : 1;
+#else
+    PackedBit PS       : 1;
+    PackedBit res0     : 1;
+    PackedBit PageCode : 6;
+#endif
+    unsigned char ParameterListLength;
+#ifdef LITTLE_ENDIAN_BITFIELDS
+    PackedBit EBARCO  : 1;
+    PackedBit CHKSUM  : 1;
+    PackedBit res2    : 6;
+#else
+    PackedBit res2    : 6;
+    PackedBit CHKSUM  : 1;
+    PackedBit EBARCO  : 1;
+#endif
+    unsigned char res3;
+    unsigned char res4;
+    unsigned char res5;
+    unsigned char res6;
+    unsigned char res7;
+    unsigned char res8;
+    unsigned char res9;
+} ModePageTreeFrogVendorUnique_T;
+/* ======================================================= */
 /* ElementInfo_T */
 /* ======================================================= */
 typedef struct ElementInfo

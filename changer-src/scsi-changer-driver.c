@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.21 2000/02/08 18:38:37 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.22 2000/10/18 17:02:19 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -75,6 +75,7 @@ int NoBarCode(int DeviceFD);
 
 int GenericSearch();
 
+int TreeFrogBarCode(int DeviceFD);
 int EXB120BarCode(int DeviceFD);
 int EXB120SenseHandler(int DeviceFD, int, char *);
 int GenericSenseHandler(int DeviceFD, int, char *);
@@ -147,6 +148,9 @@ SC_COM_T SCSICommand[] = {
   {0x1B,
    6,
    "UNLOAD"},
+  {0x4D,
+   10,
+   "LOG SENSE"}, 
   {0xA5,
    12,
    "MOVE MEDIUM"},
@@ -160,6 +164,7 @@ SC_COM_T SCSICommand[] = {
 };
 
 ChangerCMD_T ChangerIO[] = {
+	/* HP Devices */
   {"C1553A",
    "HP Auto Loader [C1553A]",
    {GenericMove,
@@ -172,6 +177,7 @@ ChangerCMD_T ChangerIO[] = {
     NoBarCode,
     GenericSearch,
     GenericSenseHandler}},
+	/* Exabyte Devices */
   {"EXB-10e",      
     "Exabyte Robot [EXB-10e]",
    {GenericMove,
@@ -196,18 +202,6 @@ ChangerCMD_T ChangerIO[] = {
     EXB120BarCode,
     GenericSearch,
     EXB120SenseHandler}},
-  {"TDS 1420",              
-   "Tandberg Robot (TDS 1420)",
-   {GenericMove,
-    GenericElementStatus,
-    GenericResetStatus,
-    GenericFree,
-    GenericEject,
-    GenericClean,
-    GenericRewind,
-    GenericBarCode,
-    GenericSearch,
-    TDS1420SenseHandler}},
   {"EXB-85058HE-0000",        
    "Exabyte Tape [EXB-85058HE-0000]",
    {DoNothing,
@@ -220,6 +214,20 @@ ChangerCMD_T ChangerIO[] = {
     GenericBarCode,
     GenericSearch,
     EXB85058SenseHandler}},
+    /* Tandberg Devices */
+  {"TDS 1420",              
+   "Tandberg Robot (TDS 1420)",
+   {GenericMove,
+    GenericElementStatus,
+    GenericResetStatus,
+    GenericFree,
+    GenericEject,
+    GenericClean,
+    GenericRewind,
+    GenericBarCode,
+    GenericSearch,
+    TDS1420SenseHandler}},
+
   {"DLT7000",        
    "DLT Tape [DLT7000]",
    {DoNothing,
@@ -244,6 +252,7 @@ ChangerCMD_T ChangerIO[] = {
     NoBarCode,
     GenericSearch,
     DLTSenseHandler}},
+    /* ADIC Devices */
   {"VLS DLT",               
     "ADIC VLS DLT Library [VLS DLT]",
    {GenericMove,
@@ -280,7 +289,21 @@ ChangerCMD_T ChangerIO[] = {
     NoBarCode,
     GenericSearch,
     GenericSenseHandler}},
-  {"generic",
+    /* Sepctra Logic Devices */
+  {"215",
+    "Spectra Logic TreeFrog[215]",
+   {GenericMove,
+    GenericElementStatus,
+    GenericResetStatus,
+    GenericFree,
+    GenericEject,
+    GenericClean,
+    GenericRewind,
+    TreeFrogBarCode,
+    GenericSearch,
+    GenericSenseHandler}},
+    /* The generic handler if nothing matches */
+   {"generic",
     "Generic driver tape/robot [generic]",
    {GenericMove,
     GenericElementStatus,
@@ -1166,6 +1189,41 @@ int GenericSearch()
   return(0);
 }
 
+int TreeFrogBarCode(int DeviceFD)
+{
+  ModePageTreeFrogVendorUnique_T *pVendor;
+/*   ModePageTreeFrogVendorUnique_T *pVendorWork; */
+
+  dbprintf(("##### START TreeFrogBarCode\n"));
+  if (pModePage == NULL)
+    {
+      if ((pModePage = malloc(0xff)) == NULL)
+        {
+          dbprintf(("TreeFrogBarCode : malloc failed\n"));
+          return(-1);
+        }
+    }
+  
+  if (SCSI_ModeSense(DeviceFD, pModePage, 0xff, 0x0, 0x3f) == 0)
+    {
+      DecodeModeSense(pModePage, 0, "TreeFrogBarCode :", 0, debug_file);
+      
+      if (pVendorUnique == NULL)
+      {
+         dbprintf(("TreeFrogBarCode : no pVendorUnique\n"));
+         return(0);
+      }
+      pVendor = ( ModePageTreeFrogVendorUnique_T *)pVendorUnique;
+    
+      dbprintf(("TreeFrogBarCode : EBARCO %d\n", pVendor->EBARCO));
+      dbprintf(("TreeFrogCheckSum : CHKSUM  %d\n", pVendor->CHKSUM));
+
+      dump_hex((char *)pChangerDev->inquiry, INQUIRY_SIZE);
+      return(pVendor->EBARCO);
+    }
+  return(0);
+}
+
 int EXB120BarCode(int DeviceFD)
 {
   ModePageEXB120VendorUnique_T *pVendor;
@@ -1292,7 +1350,6 @@ int SenseHandler(int DeviceFD, int flag, char *buffer)
 /*                                           */
 int TapeStatus()
 {
-  RequestSense_T *pRequestSense;
   int ret;
 
   dbprintf(("##### START TapeStatus\n"));
@@ -1309,6 +1366,7 @@ int TapeStatus()
     }
   }
   dbprintf(("##### STOP TapeStatus\n"));
+  return(0);
 }
 
 int DLT4000Eject(char *Device, int type)
@@ -2405,7 +2463,6 @@ int GenericMove(int DeviceFD, int from, int to)
   ElementInfo_T *pfrom;
   ElementInfo_T *pto;
   int ret = 0;
-  int moveok = 0;
 
   dbprintf(("##### START GenericMove\n"));
 
@@ -3293,7 +3350,6 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
 /* */
 int SDXElementStatus(int DeviceFD, int InitStatus)
 {
-	ElementInfo_T *pwork; 
 	int count;
 	int error;
 	int retry = 2;
@@ -4589,9 +4645,10 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
 {
   int x;
   FILE *out;
+  char *label;
   ExtendedRequestSense_T ExtRequestSense;
   ChangerCMD_T *p = (ChangerCMD_T *)&ChangerIO;
-
+  extern char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action);
 
   if ((pModePage = (char *)malloc(0xff)) == NULL)
     {
@@ -4643,10 +4700,15 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
         for ( x = 0; x < MTE; x++)
 	if (HasBarCode)
 	{
-          printf("%07d MTE  %s  %04d %s %s\n",pMTE[x].address,
+          printf("%07d MTE  %s  %04d %s ",pMTE[x].address,
                  (pMTE[x].full ? "Full " :"Empty"),
-                 pMTE[x].from, pMTE[x].VolTag, 
-		MapBarCode(labelfile, pMTE[x].VolTag, "",  BARCODE_VOL));
+                 pMTE[x].from, pMTE[x].VolTag);
+          if ((label = (char *)MapBarCode(labelfile, pMTE[x].VolTag, "",  BARCODE_VOL)) == NULL)
+          { 
+		printf("No mapping\n");
+          } else {
+                printf("%s \n",label);
+          }
 	} else {
           printf("%07d MTE  %s  %04d \n",pMTE[x].address,
                  (pMTE[x].full ? "Full " :"Empty"),
@@ -4657,10 +4719,15 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
         for ( x = 0; x < STE; x++)
 	if (HasBarCode)
 	{
-          printf("%07d STE  %s  %04d %s %s\n",pSTE[x].address,  
+          printf("%07d STE  %s  %04d %s ",pSTE[x].address,  
                  (pSTE[x].full ? "Full ":"Empty"),
-                 pSTE[x].from, pSTE[x].VolTag,
-		MapBarCode(labelfile, pSTE[x].VolTag, "",  BARCODE_VOL));
+                 pSTE[x].from, pSTE[x].VolTag);
+	  if ((label = (char *)MapBarCode(labelfile, pSTE[x].VolTag, "",  BARCODE_VOL)) == NULL)
+          {
+                printf("No mapping\n");
+          } else {
+                printf("%s \n",label);
+          }
 	} else {
           printf("%07d STE  %s  %04d %s\n",pSTE[x].address,  
                  (pSTE[x].full ? "Full ":"Empty"),
@@ -4671,10 +4738,15 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
         for ( x = 0; x < DTE; x++)
 	if (HasBarCode)
 	{
-          printf("%07d DTE  %s  %04d %s %s\n",pDTE[x].address,  
+          printf("%07d DTE  %s  %04d %s ",pDTE[x].address,  
                  (pDTE[x].full ? "Full " : "Empty"),
-                 pDTE[x].from, pDTE[x].VolTag,
-		MapBarCode(labelfile, pDTE[x].VolTag, "",  BARCODE_VOL));
+                 pDTE[x].from, pDTE[x].VolTag);
+	  if (( label = (char *)MapBarCode(labelfile, pDTE[x].VolTag, "",  BARCODE_VOL)) == NULL)
+          {
+                printf("No mapping\n");
+          } else {
+                printf("%s \n",label);
+          }
 	} else {
           printf("%07d DTE  %s  %04d %s\n",pDTE[x].address,  
                  (pDTE[x].full ? "Full " : "Empty"),
@@ -4684,10 +4756,15 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
         for ( x = 0; x < IEE; x++)
 	if (HasBarCode)
 	{	
-          printf("%07d IEE  %s  %04d %s %s\n",pIEE[x].address,  
+          printf("%07d IEE  %s  %04d %s ",pIEE[x].address,  
                  (pIEE[x].full ? "Full " : "Empty"),
-                 pIEE[x].from, pIEE[x].VolTag,
-		MapBarCode(labelfile, pIEE[x].VolTag, "",  BARCODE_VOL));
+                 pIEE[x].from, pIEE[x].VolTag);
+	  if ((label = (char *)MapBarCode(labelfile, pIEE[x].VolTag, "",  BARCODE_VOL)) == NULL)
+          {
+                printf("No mapping\n");
+          } else {
+                printf("%s \n",label);
+          }
 	} else {
           printf("%07d IEE  %s  %04d %s\n",pIEE[x].address,  
                  (pIEE[x].full ? "Full " : "Empty"),
