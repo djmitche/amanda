@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.60 1998/04/08 16:25:18 amcore Exp $
+/* $Id: dumper.c,v 1.61 1998/04/20 18:47:16 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -100,6 +100,7 @@ int datafd = -1;
 int mesgfd = -1;
 int indexfd = -1;
 int amanda_port;
+int compresspid, indexpid, killerr;
 
 /* local functions */
 int main P((int main_argc, char **main_argv));
@@ -812,6 +813,7 @@ int mesgfd, datafd, indexfd, outfd;
     }
 
     /* insert pipe in the *READ* side, if server-side compression is desired */
+    compresspid = -1;
     if (srvcompress) {
 	int tmpfd;
 
@@ -825,7 +827,7 @@ int mesgfd, datafd, indexfd, outfd;
 	    errno = EMFILE;
 	    goto failed;
 	}
-	switch(fork()) {
+	switch(compresspid=fork()) {
 	case -1:
 	    errstr = newstralloc2(errstr, "couldn't fork: ", strerror(errno));
 	    goto failed;
@@ -853,6 +855,7 @@ int mesgfd, datafd, indexfd, outfd;
 	/* Now the pipe has been inserted. */
     }
 
+    indexpid = -1;
     if (indexfd != -1) {
 	int tmpfd;
 
@@ -863,7 +866,7 @@ int mesgfd, datafd, indexfd, outfd;
 			      ".tmp",
 			      NULL);
 
-	switch(fork()) {
+	switch(indexpid=fork()) {
 	case -1:
 	    errstr = newstralloc2(errstr, "couldn't fork: ", strerror(errno));
 	    goto failed;
@@ -999,13 +1002,21 @@ int mesgfd, datafd, indexfd, outfd;
 		errstr = newstralloc2(errstr, "data read: ", strerror(errno));
 		goto failed;
 	    case 0:
-		if(update_dataptr(outfd, size1)) return;
+		if(update_dataptr(outfd, size1)) {
+		    errstr = newstralloc2(errstr, "update_dataptr: ", 
+					  strerror(errno));
+		    goto failed;
+		}
 		eof1 = 1;
 		FD_CLR(datafd, &readset);
 		aclose(datafd);
 		break;
 	    default:
-		if(update_dataptr(outfd, size1)) return;
+		if(update_dataptr(outfd, size1)) {
+		    errstr = newstralloc2(errstr, "update_dataptr: ", 
+					  strerror(errno));
+		    goto failed;
+		}
 	    }
 	}
 
@@ -1027,7 +1038,11 @@ int mesgfd, datafd, indexfd, outfd;
 	    }
 
 	    if (got_info_endline && !header_done) { /* time to do the header */
-		if (write_tapeheader(outfd)) return;
+		if (write_tapeheader(outfd)) {
+		    errstr = newstralloc2(errstr, "write_tapeheader: ", 
+					  strerror(errno));
+		    goto failed;
+		}
 		header_done = 1;
 
 		if (datafd != -1)
@@ -1105,6 +1120,31 @@ failed:
 
     if(errf) afclose(errf);
     /* fall through to ... */
+
+    /* kill all child process */
+    if(compresspid != -1) {
+	killerr = kill(compresspid,SIGTERM);
+	if(killerr == 0) {
+	    fprintf(stderr,"%s: kill compress command\n",get_pname());
+	}
+	else if ( killerr == -1 ) {
+	    if(errno != ESRCH)
+		fprintf(stderr,"%s: can't kill compress command: %s\n", 
+			       get_pname(), strerror(errno));
+	}
+    }
+
+    if(indexpid != -1) {
+	killerr = kill(indexpid,SIGTERM);
+	if(killerr == 0) {
+	    fprintf(stderr,"%s: kill index command\n",get_pname());
+	}
+	else if ( killerr == -1 ) {
+	    if(errno != ESRCH)
+		fprintf(stderr,"%s: can't kill index command: %s\n", 
+			       get_pname(),strerror(errno));
+	}
+    }
 
  log_failed:
 
