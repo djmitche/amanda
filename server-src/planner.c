@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.94 1999/04/28 21:48:28 kashmir Exp $
+ * $Id: planner.c,v 1.95 1999/04/30 01:08:51 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -736,6 +736,8 @@ char *label;
 
     if((tp = lookup_tapelabel(label)) == NULL)
 	return 1;	/* "shouldn't happen", but trigger warning message */
+    else if(!reusable_tape(tp))
+	return 1024;
     else if(lookup_nb_tape() > conf_tapecycle)
 	return (lookup_nb_tape() - tp->position) / conf_runtapes;
     else

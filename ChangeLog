@@ -1,3 +1,8 @@
+1999-04-29 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/planner.c (when_overwrite): return a big number (1024)
+	if the tape is not reusable.
+
 1999-04-29  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* config/ltconfig, config/ltmain.sh, config/libtool.m4i: Updated
