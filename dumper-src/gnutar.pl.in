@@ -14,7 +14,7 @@ use IPC::Open3;
 use Sys::Hostname;
 
 
-open(DEBUG,">>/tmp/amanda/gnutar.$$.debug") if ($debug==1);
+open(DEBUG,">>@AMANDA_DBGDIR@/gnutar.$$.debug") if ($debug==1);
 
 $prefix='@prefix@';
 $exec_prefix="@exec_prefix@";
