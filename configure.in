@@ -1858,6 +1858,7 @@ ICE_CHECK_DECL(ungetc,stdio.h)
 AC_FUNC_VPRINTF
 ICE_CHECK_DECL(vfprintf,stdio.h)
 ICE_CHECK_DECL(vprintf,stdio.h)
+ICE_CHECK_DECL(vsprintf,stdio.h)
 
 dnl disk device prefixes
 AC_MSG_CHECKING(disk device prefixes)
@@ -2017,24 +2018,10 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 	amanda_cv_flock_filelocking,
 	[
 	    AC_TRY_RUN([
-#ifdef HAVE_SYS_FILE_H
-#include <sys/file.h>
-#endif
-
-#if defined(LOCK_EX) && defined(LOCK_UN)
-
 #undef  ASSERTIONS
 #define CONFIGURE_TEST
 #define USE_FLOCK
 #include "${srcdir-.}/common-src/amflock.c"
-
-#else
-
-main()
-{
-    exit(42);
-}
-
 #endif
 ], [
 		    amanda_cv_flock_filelocking="yes"
@@ -2057,7 +2044,8 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 	amanda_cv_lockf_filelocking,
 	[
 	    AC_TRY_RUN([
-
+#undef  ASSERTIONS
+#define CONFIGURE_TEST
 #define USE_LOCKF
 #include "${srcdir-.}/common-src/amflock.c"
 ], [
