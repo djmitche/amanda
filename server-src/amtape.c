@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.22.2.6.2.3 2001/03/26 22:23:43 jrjackson Exp $
+ * $Id: amtape.c,v 1.22.2.6.2.4 2001/06/19 19:59:19 jrjackson Exp $
  *
  * tape changer interface program
  */
@@ -74,6 +74,7 @@ void usage()
     fprintf(stderr, "\t\tslot current         load tape from current slot\n");
     fprintf(stderr, "\t\tslot prev            load tape from previous slot\n");
     fprintf(stderr, "\t\tslot next            load tape from next slot\n");
+    fprintf(stderr, "\t\tslot advance         advance to next slot but do not load\n");
     fprintf(stderr, "\t\tslot first           load tape from first slot\n");
     fprintf(stderr, "\t\tslot last            load tape from last slot\n");
     fprintf(stderr, "\t\tlabel <label>        find and load labeled tape\n");
