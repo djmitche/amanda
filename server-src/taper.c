@@ -936,7 +936,9 @@ buffer_t *attach_buffers()
     if(shmid == -1)
 	error("shmget: %s", strerror(errno));
 
-    if((int)(result = (buffer_t *)shmat(shmid, (SHM_ARG_TYPE *)NULL, 0)) == -1)
+    result = (buffer_t *)shmat(shmid, (SHM_ARG_TYPE *)NULL, 0);
+
+    if(result == (buffer_t *)-1)
 	error("shmat: %s", strerror(errno));
 
     return result;
