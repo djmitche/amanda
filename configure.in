@@ -3,7 +3,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_INIT(common-src/amanda.h)
 AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE(amanda, 2.4.0)
+AM_INIT_AUTOMAKE(amanda, 2.4.1)
 AM_CONFIG_HEADER(config/config.h)
 
 AC_PREREQ(2.12)			dnl Minimum Autoconf version required.
@@ -1270,16 +1270,6 @@ if test "$RESTORE"; then
     AC_DEFINE_UNQUOTED(RESTORE,"$RESTORE")
 fi
 
-AC_PATH_PROGS(VDUMP,vdump,,$SYSLOCPATH)
-if test "$VDUMP"; then
-    AC_DEFINE_UNQUOTED(VDUMP,"$VDUMP")
-fi
-
-AC_PATH_PROGS(VRESTORE,vrestore,,$SYSLOCPATH)
-if test "$VRESTORE"; then
-    AC_DEFINE_UNQUOTED(VRESTORE,"$VRESTORE")
-fi
-
 AC_PATH_PROGS(XFSDUMP,xfsdump,,$SYSLOCPATH)
 if test "$XFSDUMP"; then
     AC_DEFINE_UNQUOTED(XFSDUMP,"$XFSDUMP")
@@ -1298,6 +1288,16 @@ fi
 AC_PATH_PROGS(VXRESTORE,vxrestore,,$SYSLOCPATH)
 if test "$VXRESTORE"; then
     AC_DEFINE_UNQUOTED(VXRESTORE,"$VXRESTORE")
+fi
+
+AC_PATH_PROGS(VDUMP,vdump,,$SYSLOCPATH)
+if test "$VDUMP"; then
+    AC_DEFINE_UNQUOTED(VDUMP,"$VDUMP")
+fi
+
+AC_PATH_PROGS(VRESTORE,vrestore,,$SYSLOCPATH)
+if test "$VRESTORE"; then
+    AC_DEFINE_UNQUOTED(VRESTORE,"$VRESTORE")
 fi
 
 dnl Handle all of the substitutions to make amplot work.
