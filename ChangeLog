@@ -1,3 +1,9 @@
+1999-05-24  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/queue.h: move the multiple-inclusion #defines
+	into application namespace.  #undef each macro before defining
+	it, in case the OS has an identical macro.
+
 1999-05-23  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/amindex.h: Keep P macro expression in a single line.
