@@ -16,7 +16,8 @@ libamanda_la_SOURCES = \
 	error.c		file.c		fileheader.c	match.c		\
 	protocol.c	regcomp.c	regerror.c	regexec.c	\
 	regfree.c	security.c	statfs.c	stream.c	\
-	token.c		util.c		version.c	versuff.c
+	token.c		util.c		version.c	versuff.c       \
+        pipespawn.c
 
 libamanda_la_LIBADD =	@LTLIBOBJS@ @LTALLOCA@
 libamanda_la_LDFLAGS =  -release $(VERSION)
@@ -29,7 +30,7 @@ noinst_HEADERS =	amanda.h	arglist.h	\
 			statfs.h	stream.h	\
 			token.h		version.h	\
 			amregex.h	fileheader.h	\
-			util.h
+			util.h          pipespawn.h
 
 .sh:
 	cat $< > $@

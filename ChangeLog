@@ -1,3 +1,13 @@
+2000-05-27 Ian Turner <vectro@pipeline.com>
+	* client-src/sendbackup.c (pipespawn): Moved to...
+	* common-src/pipespawn.c: ... new file.  Redirect all std
+	streams.  Support skipping arguments.
+	* common-src/pipespawn.h (pipespawn, skip_argument): Declare.
+	* common-src/Makefile.am (noinst_HEADERS): Added pipespawn.h.
+	(libamanda_la_SOURCES): Added pipespawn.c.
+	* client-src/sendbackup-dump.c, client-src/sendbackup-gnutar.c:
+	Adjust.
+
 2000-04-20 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amstatus.pl.in: typo
@@ -829,7 +839,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.347 2000/04/21 03:07:32 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.348 2000/05/27 21:20:32 vectro Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

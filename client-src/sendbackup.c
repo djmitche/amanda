@@ -24,12 +24,13 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.44.2.6 1999/09/18 19:19:47 jrj Exp $
+ * $Id: sendbackup.c,v 1.44.2.7 2000/05/27 21:20:32 vectro Exp $
  *
  * common code for the sendbackup-* programs.
  */
 
 #include "sendbackup.h"
+#include "pipespawn.h"
 #include "stream.h"
 #include "arglist.h"
 #include "getfsent.h"
@@ -125,18 +126,25 @@ char *disk;
 		  }
 		  
 		  if(access(file, F_OK) != 0) {
-		/* if exclude list file does not exist, ignore it.
-		 * Should not test for R_OK, because the file may be
-		 * readable by root only! */
-		dbprintf(("%s: exclude list file \"%s\" does not exist, ignoring\n",
-					  get_pname(), file));
-	        amfree(efile);
+		        /* if exclude list file does not exist, ignore it.
+		         * Should not test for R_OK, because the file may be
+		         * readable by root only! */
+		        dbprintf(("%s: exclude list file \"%s\" does not exist, ignoring\n",
+				  get_pname(), file));
+	                amfree(efile);
 		  }
 		  else
-			efile = newvstralloc(efile, "--exclude", e, "=", file, NULL);
+		  {
+	        	/* efile stays the same. */
+			estr = NULL;
+		  }
 	    } else
 /* END HPS */
-	        efile = newvstralloc(efile, "--exclude", e, "=", j, NULL);
+	    {
+		  estr = stralloc(j);
+                  amfree(efile);
+		  efile = NULL;
+	    }
 	    k[0] = ';';
 	}
     }
@@ -629,87 +637,6 @@ void write_tapeheader()
 
     fprintf(stderr, "%s: info end\n", get_pname());
 }
-
-#ifdef STDC_HEADERS
-int pipespawn(char *prog, int *stdinfd, int stdoutfd, int stderrfd, ...)
-#else
-int pipespawn(prog, stdinfd, stdoutfd, stderrfd, va_alist)
-char *prog;
-int *stdinfd;
-int stdoutfd, stderrfd;
-va_dcl
-#endif
-{
-    va_list ap;
-#define MAX_PIPESPAWN_ARGS	32
-    char *argv[MAX_PIPESPAWN_ARGS+1];
-    int pid, i, inpipe[2];
-    char *e;
-
-    dbprintf(("%s: spawning \"%s\" in pipeline\n", get_pname(), prog));
-    dbprintf(("%s: argument list:", get_pname()));
-    arglist_start(ap, stderrfd);		/* setup argv */
-    for(i = 0; i < MAX_PIPESPAWN_ARGS; i++) {
-	char *arg = arglist_val(ap, char *);
-	if (arg == NULL)
-	    break;
-	dbprintf((" \"%s\"", arg));
-    }
-    arglist_end(ap);
-    dbprintf(("\n"));
-
-    if(pipe(inpipe) == -1) {
-      e = strerror(errno);
-      dbprintf(("error [open pipe to %s: %s]\n", prog, e));
-      error("error [open pipe to %s: %s]", prog, e);
-    }
-
-    switch(pid = fork()) {
-    case -1:
-      e = strerror(errno);
-      dbprintf(("error [fork %s: %s]\n", prog, e));
-      error("error [fork %s: %s]", prog, e);
-    default:	/* parent process */
-	aclose(inpipe[0]);	/* close input side of pipe */
-	*stdinfd = inpipe[1];
-	break;
-    case 0:		/* child process */
-	aclose(inpipe[1]);	/* close output side of pipe */
-
-	if(dup2(inpipe[0], 0) == -1) {
-	  e = strerror(errno);
-	  dbprintf(("error [spawn %s: dup2 in: %s]\n", prog, e));
-	  error("error [spawn %s: dup2 in: %s]", prog, e);
-	}
-	if(dup2(stdoutfd, 1) == -1) {
-	  e = strerror(errno);
-	  dbprintf(("error [spawn %s: dup2 out: %s]\n", prog, e));
-	  error("error [spawn %s: dup2 out: %s]", prog, e);
-	}
-	if(dup2(stderrfd, 2) == -1) {
-	  e = strerror(errno);
-	  dbprintf(("error [spawn %s: dup2 err: %s]\n", prog, e));
-	  error("error [spawn %s: dup2 err: %s]", prog, e);
-	}
-
-	arglist_start(ap, stderrfd);		/* setup argv */
-	for(i = 0; i < MAX_PIPESPAWN_ARGS; i++) {
-            if ((argv[i] = arglist_val(ap, char *)) == NULL) {
-		break;
-	    }
-	}
-	argv[i] = NULL;
-	arglist_end(ap);
-
-	execve(prog, argv, safe_env());
-	e = strerror(errno);
-	dbprintf(("error [exec %s: %s]\n", prog, e));
-	error("error [exec %s: %s]", prog, e);
-	/* NOTREACHED */
-    }
-    return pid;
-}
-
 
 int pipefork(func, fname, stdinfd, stdoutfd, stderrfd)
 void (*func) P((void));

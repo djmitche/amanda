@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.56.2.9 1999/11/29 19:21:40 oliva Exp $
+ * $Id: sendbackup-gnutar.c,v 1.56.2.10 2000/05/27 21:20:32 vectro Exp $
  *
  * send backup data using GNU tar
  */
@@ -114,8 +114,6 @@ static regex_t re_table[] = {
   { DMP_STRANGE, NULL, 0}
 };
 
-extern char *efile;
-
 int cur_level;
 char *cur_disk;
 time_t cur_dumptime;
@@ -153,8 +151,8 @@ char *dumpdate;
 #else
 	const char compopt[] = "";
 #endif
-	comppid = pipespawn(COMPRESS_PATH, &dumpout, dataf, mesgf,
-			    COMPRESS_PATH, compopt, (char *)0);
+	comppid = pipespawn(COMPRESS_PATH, STDIN_PIPE, &dumpout, &dataf, 
+			    &mesgf, COMPRESS_PATH, compopt, (char *)0);
 	dbprintf(("sendbackup-gnutar: pid %d: %s %s\n",
 		comppid, COMPRESS_PATH, compopt));
     } else {
@@ -292,7 +290,9 @@ notincremental:
     /* Use sambatar if the disk to back up is a PC disk */
    if (disk[0] == '/' && disk[1]=='/') {
 	char *sharename = NULL, *pass, *domain = NULL;
-	char *tarcmd, *taropt;
+	char *tarcmd;
+        char taropt[8];
+        int tarcount;
 
 	if ((pass = findpass(disk, &domain)) == NULL) {
 	    error("[invalid samba host or password not found?]");
@@ -306,23 +306,27 @@ notincremental:
 	    }
 	    error("[can't make share name of %s]", disk);
 	}
+
+	strcpy(taropt, "-T\0\0\0\0\0");
+        tarcount = 2;
+        if (estr != NULL && *estr != '\0') {
+	  taropt[tarcount] = 'X';
+	  tarcount ++;
+	}
 #if SAMBA_VERSION >= 2
-	if (level==0) {
-	    if (no_record)
-		taropt = "-Tqc";
-	    else
-		taropt = "-Tqca";
-	} else
-	    taropt = "-Tqcg";
-#else
-	if (level==0) {
-	    if (no_record)
-		taropt = "-Tc";
-	    else
-		taropt = "-Tca";
-	} else
-	    taropt = "-Tcg";
+        taropt[tarcount] = 'q';
+        tarcount ++;
 #endif
+	taropt[tarcount] = 'c';
+        tarcount ++;
+	if (level != 0) {
+	  taropt[tarcount] = 'g';
+          tarcount ++;
+        } else if (!no_record) {
+          taropt[tarcount] = 'a';
+          tarcount ++;
+	}
+
 	dbprintf(("backup from %s, user %s, pass %s\n", 
 		  sharename, SAMBA_USER, "XXXXX"));
 
@@ -343,14 +347,13 @@ notincremental:
 
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
-	dumppid = pipespawn(program->backup_name, &dumpin, dumpout, mesgf,
-			    "smbclient",
+	dumppid = pipespawn(program->backup_name, STDIN_PIPE, &dumpin,
+			    &dumpout, &mesgf, "smbclient",
 			    sharename, pass, "-U", SAMBA_USER, "-E",
-			    domain ? "-W" : "-d0",
-			    domain ? domain : taropt,
-			    domain ? "-d0" : "-",
-			    domain ? taropt : (char *)0,
-			    domain ? "-" : (char *)0,
+			    domain ? "-W" : skip_argument, 
+			    domain ? domain : skip_argument,
+			    "-d0", taropt, "-",
+			    estr ? estr : skip_argument,
 			    (char *) 0);
 	tarpid = dumppid;
 	memset(pass, '\0', strlen(pass));
@@ -368,6 +371,7 @@ notincremental:
 	char *format_buf;
 	char *a00, *a01, *a02, *a03, *a04, *a05;
 	char *a06, *a07, *a08, *a09, *a10, *a11;
+        char *a12, *a13, *a14;
 	char *incr;
 	char *tarcmd;
 
@@ -386,29 +390,32 @@ notincremental:
 
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
-	dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf,
-			"gtar",
-			"--create",
-			"--directory", dirname,
+	dumppid = pipespawn(cmd, STDIN_PIPE, &dumpin, &dumpout, &mesgf,
+			    "gtar",
+			    "--create",
+			    "--directory", dirname,
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-			"--listed-incremental", incrname,
+			    "--listed-incremental", incrname,
 #else
-			"--incremental", "--newer", dumptimestr,
+			    "--incremental", "--newer", dumptimestr,
 #endif
-			"--sparse","--one-file-system",
+			    "--sparse","--one-file-system",
 #ifdef ENABLE_GNUTAR_ATIME_PRESERVE
-			/* --atime-preserve causes gnutar to call
-			 * utime() after reading files in order to
-			 * adjust their atime.  However, utime()
-			 * updates the file's ctime, so incremental
-			 * dumps will think the file has changed. */
-			"--atime-preserve",
+			    /* --atime-preserve causes gnutar to call
+			     * utime() after reading files in order to
+			     * adjust their atime.  However, utime()
+			     * updates the file's ctime, so incremental
+			     * dumps will think the file has changed. */
+			    "--atime-preserve",
 #endif
-			"--ignore-failed-read", "--totals",
-			"--file", "-",
-			efile ? efile : ".",
-			efile ? "." : (char *)0,
-			(char *) 0);
+			    "--ignore-failed-read", "--totals",
+			    "--file", "-",
+			    efile ? "--exclude-from" : skip_argument,
+			    efile ? efile : skip_argument,
+			    estr ? "--exclude" : skip_argument, 
+			    estr ? "estr" : skip_argument,
+			    ".",
+			    (char *) 0);
 	tarpid = dumppid;
 	
 	a00 = "sendbackup-gnutar: pid %d: %s";
@@ -430,11 +437,15 @@ notincremental:
 	a08 = " --totals";
 	a09 = " --file -";
 	a10 = " %s";
-	a11 = efile ? " ." : "";
+	a11 = efile ? "--exclude-from" : "";
+        a12 = efile ? efile : "";
+	a13 = estr ? "--exclude" : "";
+        a14 = estr ? estr : "";
 
 	format_buf = vstralloc(a00, a01, a02, a03,
 			       a04, a05, a06, a07,
 			       a08, a09, a10, a11,
+			       a12, a13, a14,
 			       "\n", NULL);
 
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR

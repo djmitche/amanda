@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.65.2.4 1999/09/05 21:42:09 jrj Exp $
+ * $Id: sendbackup-dump.c,v 1.65.2.5 2000/05/27 21:20:32 vectro Exp $
  *
  * send backup data using BSD dump
  */
@@ -153,8 +153,8 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
     NAUGHTY_BITS;
 
     if(compress)
-	comppid = pipespawn(COMPRESS_PATH, &dumpout, dataf, mesgf,
-			    COMPRESS_PATH,
+	comppid = pipespawn(COMPRESS_PATH, STDIN_PIPE, &dumpout, &dataf,
+			    &mesgf, COMPRESS_PATH,
 #if defined(COMPRESS_BEST_OPT) && defined(COMPRESS_FAST_OPT)
 			    compress == COMPR_BEST? 
 			        COMPRESS_BEST_OPT : COMPRESS_FAST_OPT,
@@ -203,14 +203,14 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 	dumpkeys = stralloc(level_str);
 	if (no_record)
 	{
-	    dumppid = pipespawn(progname, &dumpin, dumpout, mesgf,
-				"xfsdump", "-J", "-F", "-l", dumpkeys, "-",
-				device, (char *)0);
+	    dumppid = pipespawn(progname, STDIN_PIPE, &dumpin, &dumpout,
+				&mesgf, "xfsdump", "-J", "-F", "-l", dumpkeys,
+				"-", device, (char *)0);
 	}
 	else
 	{
-	    dumppid = pipespawn(progname, &dumpin, dumpout, mesgf,
-				"xfsdump", "-F", "-l", dumpkeys, "-",
+	    dumppid = pipespawn(progname, STDIN_PIPE, &dumpin, &dumpout,
+				&mesgf, "xfsdump", "-F", "-l", dumpkeys, "-",
 				device, (char *)0);
 	}
     }
@@ -244,7 +244,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
-	dumppid = pipespawn(progname, &dumpin, dumpout, mesgf, 
+	dumppid = pipespawn(progname, STDIN_PIPE, &dumpin, &dumpout, &mesgf, 
 			    "vxdump", dumpkeys, "1048576", "-", device,
 			    (char *)0);
     }
@@ -276,7 +276,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
-	dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf, 
+	dumppid = pipespawn(cmd, STDIN_PIPE, &dumpin, &dumpout, &mesgf, 
 			    "vdump", dumpkeys,
 			    "60",
 			    "-", device,
@@ -307,7 +307,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
-	dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf, 
+	dumppid = pipespawn(cmd, STDIN_PIPE, &dumpin, &dumpout, &mesgf, 
 			    "dump", dumpkeys,
 			    "1048576",
 #ifdef HAVE_HONOR_NODUMP
@@ -331,7 +331,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 
     start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
-    dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf, 
+    dumppid = pipespawn(cmd, STDIN_PIPE, &dumpin, &dumpout, &mesgf, 
 			"backup", dumpkeys, "-", device, (char *)0);
 #endif							/* } */
 
