@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.13.4.6.2.22 2003/10/14 19:10:53 jrjackson Exp $
+ * $Id: sendsize.c,v 1.97.2.13.4.6.2.23 2003/10/24 20:38:23 kovert Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -742,6 +742,10 @@ regex_t re_size[] = {
 #ifdef XFSDUMP
     {"xfsdump: estimated dump size: [0-9][0-9]* bytes", 1},  /* Irix 6.2 xfs */
 #endif
+
+#ifdef USE_QUICK_AND_DIRTY_ESTIMATES
+    {"amqde estimate: [0-9][0-9]* kb", 1024},		    	    /* amqde */
+#endif
     
 #ifdef GNUTAR
     {"Total bytes written: [0-9][0-9]*", 1},		    /* Gnutar client */
@@ -1425,9 +1429,27 @@ time_t dumpsince;
 
     dirname = amname_to_dirname(amdevice);
 
+
+
+#ifdef USE_QUICK_AND_DIRTY_ESTIMATES
+    ap_snprintf(dumptimestr, sizeof(dumptimestr), "%ld", dumpsince);
+
+    cmd = vstralloc(libexecdir, "/", "amqde", versionsuffix(), NULL);
+
+    my_argv[i++] = vstralloc(libexecdir, "/", "amqde", versionsuffix(), NULL);
+    my_argv[i++] = "-s";
+    my_argv[i++] = dumptimestr;
+    if(file_exclude) {	/* at present, this is not used... */
+	my_argv[i++] = "-x";
+	my_argv[i++] = file_exclude;
+    }
+    /* [XXX] need to also consider implementation of --files-from */
+    my_argv[i++] = dirname;
+    my_argv[i++] = NULL;
+#else
+#ifdef GNUTAR
     cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
 
-#ifdef GNUTAR
     my_argv[i++] = GNUTAR;
 #else
     my_argv[i++] = "tar";
@@ -1470,6 +1492,7 @@ time_t dumpsince;
     else {
 	my_argv[i++] = ".";
     }
+#endif /* USE_QUICK_AND_DIRTY_ESTIMATES */
     my_argv[i++] = NULL;
 
     start_time = curclock();

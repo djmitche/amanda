@@ -5,7 +5,7 @@ INCLUDES =		-I$(top_srcdir)/common-src
 lib_LTLIBRARIES =	libamclient.la
 LIB_EXTENSION = la
 
-libexec_PROGRAMS =	amandad calcsize killpgrp rundump runtar selfcheck sendbackup sendsize versionsuffix
+libexec_PROGRAMS =	amandad calcsize killpgrp rundump runtar amqde selfcheck sendbackup sendsize versionsuffix
 
 sbin_SCRIPTS =		@CLIENT_SCRIPTS_OPT@
 
@@ -84,7 +84,7 @@ install-exec-hook:
 		chgrp $(SETUID_GROUP) $$pa; \
 	done
 if WANT_SETUID_CLIENT
-	@list="calcsize killpgrp rundump runtar"; \
+	@list="calcsize killpgrp rundump runtar amqde"; \
 	for p in $$list; do \
 		if echo "$(libexec_PROGRAMS)" | grep $$p >/dev/null 2>&1; then \
 			pa=$(DESTDIR)$(libexecdir)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`; \

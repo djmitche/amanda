@@ -4,6 +4,7 @@ Makefile
 Makefile.in
 amandad
 amandates.lo
+amqde
 calcize
 calcsize
 getfsent

@@ -14,7 +14,7 @@ AC_DEFINE_UNQUOTED(CONFIGURE_COMMAND,"$CONFIGURE_COMMAND",
 	  [Saves the original ./configure command line arguments])
 AC_SUBST(CONFIGURE_COMMAND)
 
-AM_INIT_AUTOMAKE(amanda, 2.4.4.1p2-pre)
+AM_INIT_AUTOMAKE(amanda, 2.4.4p1)
 AM_CONFIG_HEADER(config/config.h)
 
 AC_PREREQ(2.53)		dnl Minimum Autoconf version required.
@@ -577,6 +577,21 @@ AC_ARG_WITH(gnutar,
 	esac
     ]
 )
+
+AC_ARG_WITH(qde,
+    [   --with-qde                use quick-and-dirty estimates for gnutar ],
+    USE_QUICK_AND_DIRTY_ESTIMATES=$withval,
+    : ${USE_QUICK_AND_DIRTY_ESTIMATES=no}
+)
+case "$USE_QUICK_AND_DIRTY_ESTIMATES" in
+n | no) : ;;
+y |  ye | yes) :
+	AC_DEFINE(USE_QUICK_AND_DIRTY_ESTIMATES,1,[ Define if you want to use amqde instead of gnutar for estimates ])
+  ;;
+*) AC_MSG_ERROR([*** You must not supply an argument to --with-qde option.])
+  ;;
+esac
+
 
 AC_ARG_WITH(smbclient,
     [  --with-smbclient[=PROG]   use PROG as Samba's smbclient executable [default: looks for one]],
@@ -1564,6 +1579,11 @@ pushdef([AC_DEFINE_SAVED],defn([AC_DEFINE]))
 pushdef([AC_DEFINE],[AC_DEFINE_SAVED([$1],[$2],[Define to $2 if $1 is not defined])])
 
 AC_CHECK_TYPE(ssize_t, int)
+
+dnl there is a push to avoid depending on long longs, so in general it's
+dnl better to convert numbers to kilobytes for consistancies sake.  This
+dnl is primarily checked for for client-src/amqde.c
+AC_CHECK_TYPES(unsigned long long)
 
 popdef([AC_DEFINE])
 popdef([AC_DEFINE_SAVED])
