@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.31 1997/09/11 14:42:30 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.32 1997/09/11 15:06:48 amcore Exp $
  *
  * send backup data using BSD dump
  */
@@ -42,12 +42,10 @@
 
 static regex_t re_table[] = {
   /* the various encodings of dump size */
+  /* this should also match BSDI pre-3.0's buggy dump program, that
+     produced doubled DUMP: DUMP: messages */
   { DMP_SIZE, 
 	"DUMP: [0-9][0-9]* tape blocks",				1024},
-
-  /* this is for BSDI <3.0 */
-  { DMP_SIZE, 
-	"DUMP: DUMP: [0-9][0-9]* tape blocks",				1024},
 
   { DMP_SIZE,
 	"dump: Actual: [0-9][0-9]* tape blocks",			1024},
