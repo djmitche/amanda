@@ -1,7 +1,7 @@
 Changes in release 2.4.3
 
 * Few small bug fixed
-* New runrapes argument to amverify.
+* New runtapes argument to amverify.
 * New amverifyrun program.
 * 2.4.3 client works with older server.
 
