@@ -1,4 +1,7 @@
 1999-01-26	Thomas Hepper <th@ant.han.de>	
+	* Makefile.am Added sst driver files to EXTAR_DIST
+
+1999-01-26	Thomas Hepper <th@ant.han.de>	
 	* changer-src/chg-scsi.c If statfile is not set try to get the info
 	about the current loaded tape direct from the changer.
 	Fixed debug output for the eject value if > 1
