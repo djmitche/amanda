@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43.2.13.4.6.2.8 2002/09/10 12:53:47 martinea Exp $
+ * $Id: extract_list.c,v 1.43.2.13.4.6.2.9 2002/10/18 20:53:16 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -77,7 +77,7 @@ static EXTRACT_LIST *extract_list = NULL;
 unsigned short samba_extract_method = SAMBA_TAR;
 #endif /* SAMBA_CLIENT */
 
-#define READ_TIMEOUT	30*60
+#define READ_TIMEOUT	240*60
 
 static int okay_to_continue P((int));
 
