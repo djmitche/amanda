@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.32 2004/01/07 12:56:13 martinea Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.33 2004/04/22 19:05:05 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -736,7 +736,7 @@ setup_estimate(dp)
 
     /* handle external level 0 dumps */
 
-    if(dp->skip_full) {
+    if(dp->skip_full && dp->strategy != DS_NOINC) {
 	if(ep->next_level0 <= 0) {
 	    /* update the date field */
 	    info.inf[0].date = today;
@@ -814,8 +814,12 @@ setup_estimate(dp)
 
     i = 0;
 
-    if(!dp->skip_full &&
-       (!(info.command & FORCE_BUMP) || dp->skip_incr || ep->last_level == -1)){
+    if(dp->strategy == DS_NOINC ||
+       (!dp->skip_full &&
+        (!(info.command & FORCE_BUMP) ||
+         dp->skip_incr ||
+         ep->last_level == -1))){
+
 	if(info.command & FORCE_BUMP && ep->last_level == -1) {
 	    log_add(L_INFO,
 		  "Remove force-bump command of %s:%s because it's a new disk.",
@@ -825,6 +829,17 @@ setup_estimate(dp)
 	case DS_STANDARD: 
 	case DS_NOINC:
 	    askfor(ep, i++, 0, &info);
+	    if(dp->skip_full) {
+		log_add(L_INFO,
+                  "Ignoring skip_full for %s:%s because the strategy is NOINC.",
+			dp->host->hostname, dp->name);
+	    }
+	    if(info.command & FORCE_BUMP) {
+		log_add(L_INFO,
+		 "Ignoring FORCE_BUMP for %s:%s because the strategy is NOINC.",
+			dp->host->hostname, dp->name);
+	    }
+	    
 	    break;
 
 	case DS_NOFULL:
@@ -837,7 +852,7 @@ setup_estimate(dp)
 	}
     }
 
-    if(!dp->skip_incr) {
+    if(!dp->skip_incr && !dp->strategy == DS_NOINC) {
 	if(ep->last_level == -1) {		/* a new disk */
 	    if(dp->strategy == DS_NOFULL || dp->strategy == DS_INCRONLY) {
 		askfor(ep, i++, 1, &info);
