@@ -40,7 +40,7 @@ foreach $current_disk (keys(%method)) {
     &print_info;
 }
 
-dbmclose(%curinfo);
+dbmclose(%curinfo) if ($use_dbm);
 
 if (!defined($verbose)) {
     close(TMP);
@@ -53,7 +53,42 @@ if (!defined($verbose)) {
 # ------------------------------------------------------------------------
 sub read_info {
 # ------------------------------------------------------------------------
-    if (!defined($curinfo{$_[0]."\0"})) {$info_readed=0;}
+    if (! $use_dbm) {
+	($host, $fs)=split (':', $_[0]);
+	if (open (I, "$admdir/$conf_name/curinfo/$host/$fs/info")) {
+	    while (<I>) {
+		chomp;
+		@field=split;
+		if ($field[0] eq "full-rate:") {
+		    $full_rate[0]=$field[1];
+		    $full_rate[1]=$field[2];
+		    $full_rate[2]=$field[3];
+		} elsif ($field[0] eq "full-comp:") {
+		    $full_comp[0]=$field[1];
+		    $full_comp[1]=$field[2];
+		    $full_comp[2]=$field[3];
+		} elsif ($field[0] eq "incr-rate:") {
+		    $incr_rate[0]=$field[1];
+		    $incr_rate[1]=$field[2];
+		    $incr_rate[2]=$field[3];
+		} elsif ($field[0] eq "incr-comp:") {
+		    $incr_comp[0]=$field[1];
+		    $incr_comp[1]=$field[2];
+		    $incr_comp[2]=$field[3];
+		} elsif ($field[0] eq "stats:") {
+		    $size[$field[1]]=$field[2];
+		    $csize[$field[1]]=$field[3];
+		    $secs[$field[1]]=$field[4];
+		    $time[$field[1]]=$field[5];
+		    $file_no[$field[1]]=$field[6];
+		    $label[$field[1]]=$field[7];
+		}
+	    }
+	    $com="unknown";			# ???
+	    close (I);
+	    $info_readed=1;
+	}
+    } elsif (!defined($curinfo{$_[0]."\0"})) {$info_readed=0;}
     else {
 	$info_readed=1;
 	($com,
@@ -85,7 +120,7 @@ sub print_info {
     return unless $info_readed;
     if ($verbose) {
 	print "$current_disk:";
-	print "\tcommande=$com";
+	print "\tcommand=$com";
 	print "\t$comments{$current_disk}\n";
 	printf ("\tfull_rate=\t%3.1f\t%3.1f\t%3.1f\n",$full_rate[0],$full_rate[1],$full_rate[2]);
 	printf ("\tincr_rate=\t%3.1f\t%3.1f\t%3.1f\n",$incr_rate[0],$incr_rate[1],$incr_rate[2]);
@@ -136,9 +171,11 @@ sub init {
     &usage("amtoc required at least '-c config' option") if ($#ARGV==-1) ;
 
     for ($i=0;$i<=$#ARGV;$i++) {
-	if ($ARGV[$i] eq '-c') {
-	    $i++;
-	    &usage("'-c' option require 'config' parameter") if ($i > $#ARGV);
+	if ($ARGV[$i] eq '-c' || ($i == 0 && $ARGV[0] !~ /^-/)) {
+	    if ($ARGV[$i] eq '-c') {
+		$i++;
+		&usage("'-c' option require 'config' parameter") if ($i > $#ARGV);
+	    }
 	    $conf_name=$ARGV[$i];
 
             # where to find the directories which hold the
@@ -147,8 +184,15 @@ sub init {
 	    chomp $admdir;
             $admdir =~ s!(.*)(/.*){2}!$1!o;
 
-	    dbmopen(%curinfo,"$admdir/$conf_name/curinfo",400)
-		|| die ("cannot open dbm_file $admdir/$conf_name/curinfo\n");
+	    if (-d "$admdir/$conf_name/curinfo") {
+		$use_dbm = 0;
+	    } else {
+		$use_dbm = 1;
+	    }
+	    if ($use_dbm) {
+		dbmopen(%curinfo,"$admdir/$conf_name/curinfo",400)
+		    || die ("cannot open dbm_file $admdir/$conf_name/curinfo\n");
+	    }
 	}
 	elsif ($ARGV[$i] eq '-l') {
 	    $i++;
@@ -167,7 +211,7 @@ sub init {
 	else {&usage("no such option $ARGV[$i]");}
     } # all options have been readed
 
-    # if (! defined (%curinfo)) {&usage("dbmfile empty ?")};
+    # if ($use_dbm && ! defined (%curinfo)) {&usage("dbmfile empty ?")};
 
     open(TAPELIST,"< $confdir/$conf_name/tapelist")
 	|| warn "WARNING: cannot open tapelist\n";
@@ -205,7 +249,9 @@ sub init {
 
     if (defined($to_file)) {
 	close(STDOUT);
-	$toc="$admdir/$conf_name/$tape_name.toc";
+	$t=$tape_name;
+	$t=~s,[\s/],_,g;
+	$toc="$admdir/$conf_name/$t.toc";
 	open(FOUT,"> $toc") || die "Cannot open toc file ($toc)\n";
 	select(FOUT) || die "Cannot select output file\n";
 	$| = 1; $= =10000; $- = 10000;
@@ -216,7 +262,8 @@ sub init {
 	print "AMANDA: To restore:\n";
 	print "    position tape at start of file and run:\n";
 	print "        dd if=<tape> bs=32k skip=1 [ | zcat ] | restore -...f\n";
-	print "    or run: amrestore -p <tape> [host [partition]] | restore -...f\n";
+	print "    or run:\n";
+	print "        amrestore -p <tape> [host [partition]] | restore -...f\n";
 	print "\n";
     }
 
@@ -227,7 +274,7 @@ sub init {
 	}
 	else {
            print "  #  partition                               lvl  size[Kb]  method\n";
-	   printf("  0  $tape_name                                  -         -  %-15s\n",$date);
+	   printf("  0  %-41s -         -  %-15s\n",$tape_name,$date);
 	}
 	open(TMP,"|sort -n > $tmpFile") || die "cannot open temporary file\n";
 	$| = 1;
@@ -239,7 +286,7 @@ sub init {
 sub usage {
 # ------------------------------------------------------------------------
 	print "@_\n";
-    die "USAGE: amtoc -c config [-l label] [-h host] [-v] [-i] [-t] [-f]\n";
+    die "USAGE: amtoc [-c] config [-l label] [-h host] [-v] [-i] [-t] [-f]\n";
 } # usage
 
 # ------------------------------------------------------------------------

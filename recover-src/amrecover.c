@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.6 1997/10/30 14:49:27 amcore Exp $
+ * $Id: amrecover.c,v 1.7 1997/11/11 20:48:16 amcore Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -59,7 +59,7 @@ char *pname = "amrecover";
 
 extern int process_line P((char *line));
 
-#define USAGE "Usage: amrecover [-C <config>] [-s <index-server>] [-t <tape-server>] [-d <tape-device>]\n"
+#define USAGE "Usage: amrecover [[-C] <config>] [-s <index-server>] [-t <tape-server>] [-d <tape-device>]\n"
 
 char config[LINE_LENGTH];
 char server_name[LINE_LENGTH];
@@ -370,6 +370,31 @@ char **argv;
     tape_server_name[0] = '\0';
     tape_device_name[0] = '\0';
 #endif
+    if (argc > 1 && argv[1][0] != '-')
+    {
+	/*
+	 * If the first argument is not an option flag, then we assume
+	 * it is a configuration name to match the syntax of the other
+	 * Amanda utilities.
+	 */
+	char **new_argv;
+
+	new_argv = (char **) malloc ((argc + 1 + 1) * sizeof (*new_argv));
+	if (new_argv == NULL)
+	{
+	    (void)fprintf(stderr, "amrecover: no memory for argument list\n");
+	    exit(1);
+	}
+	new_argv[0] = argv[0];
+	new_argv[1] = "-C";
+	for (i = 1; i < argc; i++)
+	{
+	    new_argv[i + 1] = argv[i];
+	}
+	new_argv[i + 1] = NULL;
+	argc++;
+	argv = new_argv;
+    }
     while ((i = getopt(argc, argv, "C:s:t:d:U")) != EOF)
     {
 	switch (i)
