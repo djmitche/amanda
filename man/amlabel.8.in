@@ -4,7 +4,9 @@
 amlabel \- labels an Amanda tape
 .SH SYNOPSIS
 .B amlabel
-.I config label
+.I config label [
+.B slot
+.I number ]
 
 .SH DESCRIPTION
 
@@ -18,6 +20,11 @@ can be any string that does not contain whitespace, and that matches the
 .B labelstr
 regular expression parameter.  It is up to the
 system administrators to define a naming convention.
+
+An optional slot number may be specified after the tape label.  If a
+tape changer is in use, amlabel will label the tape in the specified
+slot, instead of labeling the currently loaded tape.
+
 See the
 .IR amanda(8)
 man page for more details about Amanda.
@@ -28,6 +35,10 @@ man page for more details about Amanda.
 If the line "tapedev /dev/tape/1n" is in
 @CONFIG_DIR@/@DEFAULT_CONFIG@/amanda.conf, an Amanda label with the name "VOL1" is
 written on the /dev/tape/1n device.
+
+.TP
+% amlabel @DEFAULT_CONFIG@ VOL2 slot 3
+Labels the tape in slot 3 of the currently configured tape changer.
 
 .SH AUTHOR
 James da Silva <jds@cs.umd.edu>
