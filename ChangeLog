@@ -1,5 +1,9 @@
 1998-07-31  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* example/Makefile.am (EXTRA_DIST): add 8.5x11.ps to the
+	distribution
+	Reported by Jason L Tibbitts III <tibbs@hpc.uh.edu>
+
 	* server-src/conffile.c (get_holdingdisk): define chunksize 0 as
 	INT_MAX/1024, and chunksize -1 as -INT_MAX/1024
 	* server-src/driver.c (find_diskspace): accept negative chunksizes
