@@ -1,3 +1,7 @@
+1999-01-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/SYSTEM.NOTES (HP/UX): what does `Link severed' mean?
+
 1999-01-27  Thomas Hepper <th@ant.han.de>
 	* changer-src/scsi-changer-driver.c SCSI_ReadElementStatus
 	A while loop has to start with while, not if .....
