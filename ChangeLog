@@ -1,5 +1,10 @@
 1999-04-08  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c (sendbackup_response): don't krb4 authenticate
+	streams if krb4_auth if false.
+
+1999-04-08  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c (do_dump): some formatting cleanups.  Nuke
 	'killerr' - we can do without it.
 

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.113 1999/04/08 20:36:37 kashmir Exp $
+/* $Id: dumper.c,v 1.114 1999/04/08 23:11:52 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1612,18 +1612,21 @@ bad_nak:
 	if (streams[i].fd == -1)
 	    continue;
 #ifdef KRB4_SECURITY
-	/*
-	 * XXX krb4 historically never authenticated the index stream!
-	 * We need to reproduce this lossage here to preserve compatibility
-	 * with old clients.
-	 */
-	if (krb4_auth && i == INDEXFD)
-	    continue;
+	if (krb4_auth) {
+	    /*
+	     * XXX krb4 historically never authenticated the index stream!
+	     * We need to reproduce this lossage here to preserve
+	     * compatibility with old clients.
+	     */
+	    if (i == INDEXFD)
+		continue;
 
-	if (kerberos_handshake(streams[i].fd, cred.session) == 0) {
-	    errstr = newstralloc(errstr,
-		"[mutual authentication in data stream failed]");
-	    goto connect_error;
+	    if (kerberos_handshake(streams[i].fd, cred.session) == 0) {
+		errstr = newvstralloc(errstr,
+		    "[mutual authentication in ", streams[i].name,
+		    " stream failed]", NULL);
+		goto connect_error;
+	    }
 	}
 #endif
     }
