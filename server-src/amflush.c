@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.7 1997/08/27 08:12:48 amcore Exp $
+ * $Id: amflush.c,v 1.8 1997/09/11 06:02:20 amcore Exp $
  *
  * write files from work directory onto tape
  */
@@ -82,7 +82,7 @@ int result_argc;
 char *result_argv[MAX_ARGS];
 static char *config;
 char datestamp[80];
-char confdir[256];
+char confdir[1024];
 char taper_program[80], reporter_program[80];
 char host[MAX_HOSTNAME_LENGTH], *domain;
 
@@ -559,6 +559,7 @@ void run_dumps()
 
     /* now, have reporter generate report and send mail */
 
+    chdir(confdir);
     execl(reporter_program, "reporter", (char *)0);
 }
 
