@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.7.2.11 2000/10/13 20:22:14 martinea Exp $
+#	$Id: amverify.sh.in,v 1.7.2.12 2000/10/13 20:48:20 martinea Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -362,7 +362,7 @@ while [ $SLOT -lt $SLOTS ]; do
 		&& report "** Error reading label on tape" \
 		&& cat $TEMP/errors >> $DEFECTS \
 		&& continue
-	TAPENDATE=`grep AMANDA: $TEMP/header | sed 's/^AMANDA: TAPESTART //'`
+	TAPENDATE=`head -1 $TEMP/header | grep AMANDA: | sed 's/^AMANDA: TAPESTART //'`
 	[ X"$TAPENDATE" = X"" ] \
 		&& report "** No amanda tape in slot" \
 		&& continue

@@ -1,5 +1,9 @@
 2000-10-13  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amverify.sh.in: grep only the first line of the header.
+
+2000-10-13  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amverify.sh.in: verify with tar even if the
 	server and the client are not configured with the same path.
 
@@ -1050,7 +1054,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.389 2000/10/13 20:22:11 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.390 2000/10/13 20:48:20 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
