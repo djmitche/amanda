@@ -1,3 +1,7 @@
+1998-07-13  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* configure.in: version number set to 2.4.1b1
+
 1998-07-11  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/FAQ: new entries: how to label tapes, (not) spanning large
