@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-linux.c,v 1.1.2.18.4.1.2.4 2003/06/05 20:44:23 martinea Exp $
+ * $Id: scsi-linux.c,v 1.1.2.18.4.1.2.5 2003/07/05 16:59:01 ant Exp $
  *
  * Interface to execute SCSI commands on Linux
  *
@@ -82,7 +82,7 @@
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.18.4.1.2.4 2003/06/05 20:44:23 martinea Exp $";
+   static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.18.4.1.2.5 2003/07/05 16:59:01 ant Exp $";
    DebugPrint(DEBUG_ERROR, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -118,6 +118,8 @@ int SCSI_OpenDevice(int ip)
   int DeviceFD;
   int i;
   int timeout;
+  int sg_info = 0;                /* Used to get some infos about the sg interface */
+  int ret = 0;                    /* To store return results from ioctl etc */
   struct stat pstat;
   char *buffer = NULL ;           /* Will contain the device name after checking */
   int openmode = O_RDONLY;
@@ -194,6 +196,20 @@ int SCSI_OpenDevice(int ip)
       pDev[ip].dev = stralloc(buffer);
       if (pDev[ip].SCSI == 1)
         {
+          if ((ret = ioctl(DeviceFD, SG_GET_VERSION_NUM, &sg_info)) == 0)
+            {
+              DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_OpenDevice : SG_VERSION %d\n",sg_info);  
+            } else {
+              DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_OpenDevice : SG_VERSION ioctl returned %d\n", ret);
+            }
+
+          if ((ret = ioctl(DeviceFD, SG_GET_RESERVED_SIZE, &sg_info)) == 0)
+            {
+              DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_OpenDevice : SG_RESERVED_SIZE %d\n",sg_info);  
+            } else {
+              DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_OpenDevice : SG_RESERVED_SIZE ioctl returned %d\n", ret);
+            }
+
           DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_OpenDevice : use SG interface\n");
           if ((timeout = ioctl(pDev[ip].fd, SG_GET_TIMEOUT)) > 0) 
             {
@@ -313,11 +329,12 @@ int SCSI_ExecuteCommand(int DeviceFD,
       SCSI_OpenDevice(DeviceFD);
     }
   
-  if (SCSI_OFF + CDB_Length + DataBufferLength > 4096) 
-    {
-      SCSI_CloseDevice(DeviceFD);
-      return(-1);
-    }
+/*   if (SCSI_OFF + CDB_Length + DataBufferLength > 4096)  */
+/*     { */
+/*       SCSI_CloseDevice(DeviceFD); */
+/*       DebugPrint(DEBUG_ERROR, SECTION_SCSI,"##### SCSI_ExecuteCommand error, SCSI_OFF + CDB_Length + DataBufferLength > 4096\n"); */
+/*       return(-1); */
+/*     } */
 
   buffer = (char *)malloc(SCSI_OFF + CDB_Length + DataBufferLength);
   memset(buffer, 0, SCSI_OFF + CDB_Length + DataBufferLength);

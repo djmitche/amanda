@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.22.2.7.2.8 2003/01/26 19:20:56 martinea Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.22.2.7.2.9 2003/07/05 16:59:01 ant Exp $";
 #endif
 /*
  * 
@@ -1043,6 +1043,7 @@ int main(int argc, char *argv[])
   char *clean_file=NULL;
   char *time_file=NULL;
 
+  char *ptr;         /* a public pointer .... */
   /*
    * For the emubarcode stuff
    */
@@ -1071,6 +1072,7 @@ int main(int argc, char *argv[])
   chg.device = NULL;
   chg.labelfile = NULL;
   chg.conf = NULL;
+  chg.debuglevel = NULL;
 #ifdef CHG_SCSI_STANDALONE
   printf("Ups standalone\n");
 #else
@@ -1090,6 +1092,11 @@ int main(int argc, char *argv[])
   pDev = (OpenFiles_T *)malloc(sizeof(OpenFiles_T) * CHG_MAXDEV);
   memset(pDev, 0, sizeof(OpenFiles_T) * CHG_MAXDEV );
 
+
+  if ((ptr=getenv("CHG_DEBUG")) != NULL)
+    {
+      chg.debuglevel = strdup(ptr);
+    }
 
   switch(com.command_code) 
     {
@@ -1594,7 +1601,7 @@ int main(int argc, char *argv[])
       
     printf("%d %d 1", loaded, use_slots);
 
-    if (BarCode(fd) == 1 || emubarcode == 1)
+    if (BarCode(fd) == 1 || emubarcode == 1 || chg.havebarcode == 1)
       {
         printf(" 1\n");
       } else {

@@ -1,3 +1,10 @@
+2003-07-06  Thomas Hepper <th@ant.han.de>
+	* changer-src/chg-scsi.c: Added debug Information to see which sg
+	 version is used
+	* changer-src/scsi-linux.c: Added debug Information to see which sg
+	version is used.
+	Removed check if an data packet is larger than 4096 byte.
+
 2003-07-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	patch by Paul Bijnens <paul.bijnens@xplanation.com>
 
