@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.79 2002/12/09 18:49:38 martinea Exp $
+ * $Id: reporter.c,v 1.80 2002/12/11 15:51:04 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -840,7 +840,7 @@ output_stats()
 	for(current_tape = stats_by_tape; current_tape != NULL;
 	    current_tape = current_tape->next) {
 	    fprintf(mailf, "  %-*s", label_length, current_tape->label);
-	    fprintf(mailf, " %2d:%2d", hrmn(current_tape->taper_time));
+	    fprintf(mailf, " %2d:%02d", hrmn(current_tape->taper_time));
 	    fprintf(mailf, " %9.1f  ", mb(current_tape->size));
 	    divzero(mailf, pct(current_tape->size + 
 			       marksize * current_tape->tapedisks),
