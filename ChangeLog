@@ -1,5 +1,9 @@
 2001-06-19 John R. Jackson <jrj@purdue.edu>
 
+	* server-src/amverify.sh.in: Better cross platform tar detection.
+
+2001-06-19 John R. Jackson <jrj@purdue.edu>
+
 	* server-src/amverify.sh.in: More of the vrestore vs. 'b' flag change.
 
 2001-06-19 John R. Jackson <jrj@purdue.edu>
