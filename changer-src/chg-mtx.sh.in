@@ -171,7 +171,7 @@ loadslot() {
     echo "     -> res    $res" >> /tmp/changer.debug
     if [ $status -eq 0 ];then
       echo "     -> rew $load" >> /tmp/changer.debug
-      $MT $MTF $tape rew
+      $MT $MTF $tape rewind
       $DD if=$tape count=1 >> /tmp/changer.debug 2>&1
       echo "$load $tape"
       exit 0
