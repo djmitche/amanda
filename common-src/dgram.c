@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.11 1998/10/12 20:03:11 kashmir Exp $
+ * $Id: dgram.c,v 1.11.2.1 1999/06/01 21:04:19 oliva Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -39,8 +39,15 @@ struct sockaddr_in *addrp;
 /*
  * When using kerberos, we don't care about reserved ports or not.
  */
+#ifndef UDPPORTRANGE
 #   define FIRST_PORT 512
 #   define NUM_PORTS		(IPPORT_RESERVED-FIRST_PORT)
+#else
+    static unsigned udpportrange[2] = { UDPPORTRANGE };
+    assert (udpportrange[0] <= udpportrange [1]);
+#   define FIRST_PORT udpportrange[0]
+#   define NUM_PORTS  udpportrange[1]-udpportrange[0]
+#endif
     int port, count;
     static int port_base = FIRST_PORT;
 

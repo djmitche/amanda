@@ -1,3 +1,9 @@
+1999-06-01  Jens Persson  <jens.persson@btj.se>
+
+	* configure.in (UDPPORTRANGE): Set from --with-udpportrange.
+	* config/acconfig.h: Add UDPPORTRANGE.
+	* common-src/dgram.c: Implement it.
+
 1999-05-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* config/ltconfig, config/ltmain.sh, config/libtool.m4i: Updated

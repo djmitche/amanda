@@ -802,6 +802,7 @@ AC_ARG_WITH(ticket-lifetime,
 )
 AC_DEFINE_UNQUOTED(TICKET_LIFETIME,$TICKET_LIFETIME)
 
+
 AC_ARG_WITH(portrange,
     [  --with-portrange=low,high  bind unreserved TCP server sockets to ports within this range [unlimited]],
     [
@@ -818,6 +819,24 @@ if test x"${PORTRANGE+set}" = x"set"; then
 	AC_MSG_ERROR([*** the second port number must be greater than the first one in --with-portrange])
     fi
     AC_DEFINE_UNQUOTED(PORTRANGE,$PORTRANGE)
+fi
+
+AC_ARG_WITH(udpportrange,
+    [  --with-udpportrange=low,high  bind unreserved UDP server sockets to ports within this range [unlimited]],
+    [
+	UDPPORTRANGE="$withval"
+    ]
+)
+if test x"${UDPPORTRANGE+set}" = x"set"; then
+    if test x`echo "$UDPPORTRANGE" | sed 's/[[0-9]]*,[[0-9]]*//'` != x""; then
+    	AC_MSG_ERROR([*** --with-udpportrange requires two comma-separated non-negative numbers])
+    fi
+    if echo "$UDPPORTRANGE" | sed s/,/\ / | {
+       read min max && test "$min" -le "$max"; }; then :
+    else
+	AC_MSG_ERROR([*** the second port number must be greater than the first one in --with-udpportrange])
+    fi
+    AC_DEFINE_UNQUOTED(UDPPORTRANGE,$UDPPORTRANGE)
 fi
 
 AC_ARG_WITH(db,

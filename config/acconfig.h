@@ -353,4 +353,9 @@
    to.  */
 #undef PORTRANGE
 
+/* A comma-separated list of two integers, determining the minimum and
+   maximum port number unreserved UDP server sockets should be bound
+   to.  */
+#undef UDPPORTRANGE
+
 #endif
