@@ -1,3 +1,12 @@
+1998-08-11  John R. Jackson  <jrj@purdue.edu>
+
+	* changer-src/chg-manual.sh.in: put the debug file in DEBUG_DIR for
+	security.  Clean up and enhance logging.  Fix locations of the
+	changer files.	Source the changerfile into the script so it can
+	override the request() function and allow alternatives to /dev/tty
+	(e.g. E-mail, syslog).	Issue rewind before status (Solaris does
+	not give a good status report right after a tape is loaded).
+
 1998-08-10  Nick Hibma  <nick.hibma@jrc.it>
 
 	* changer-src/chg-chio.pl.in: move to first slot if last is unused
