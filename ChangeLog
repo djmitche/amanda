@@ -1,5 +1,9 @@
 1998-12-21  John R. Jackson  <jrj@purdue.edu>
 
+	* man/amanda.8.in: document the lbl-templ tapetype option.
+
+1998-12-21  John R. Jackson  <jrj@purdue.edu>
+
 	* man/amreport.8.in: fix formatting problem.
 
 1998-12-20  John R. Jackson  <jrj@purdue.edu>
