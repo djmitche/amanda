@@ -8,6 +8,37 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
+if WANT_CLIENT
+if WANT_LIBTOOL
+lib_LTLIBRARIES =	libamclient.la
+OBJ_EXTENSION = lo
+LIB_EXTENSION = la
+else
+noinst_LIBRARIES =	libamclient.a
+OBJ_EXTENSION = o
+LIB_EXTENSION = a
+endif
+
+libexec_PROGRAMS =	amandad calcsize killpgrp rundump runtar selfcheck sendbackup sendsize versionsuffix
+
+sbin_SCRIPTS =		@CLIENT_SCRIPTS@
+
+libexec_SCRIPTS =	patch-system
+endif
+
+libamclient_la_SOURCES=	amandates.c		getfsent.c	\
+			unctime.c		@LIBSRCS_CLIENT@
+
+EXTRA_libamclient_la_SOURCES = findpass.c
+libamclient_la_DEPENDENCIES =	@LIBOBJS_CLIENT@
+libamclient_la_LIBADD =	@LIBOBJS_CLIENT@
+libamclient_la_LDFLAGS = -release $(VERSION)
+
+libamclient_a_SOURCES = $(libamclient_la_SOURCES)
+EXTRA_libamclient_a_SOURCES = $(EXTRA_libamclient_la_SOURCES)
+libamclient_a_DEPENDENCIES = $(libamclient_la_DEPENDENCIES)
+libamclient_a_LIBADD = $(libamclient_la_LIBADD)
+
 LDADD =	libamclient.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
 
@@ -21,50 +52,19 @@ SUFFIXES =		.sh .pl
 			cat $< > $@
 			chmod a+x $@
 
-libexec_PROGRAMS =	versionsuffix		@BUILD_CLIENT_PROGS_LIBEXEC@
-
 # these are used for testing only:
 TEST_PROGS = getfsent
 
-EXTRA_PROGRAMS =	amandad			calcsize	\
-			killpgrp				\
-			rundump			runtar		\
-			selfcheck		sendbackup	\
-			sendsize				\
-			$(TEST_PROGS)
+EXTRA_PROGRAMS =	$(TEST_PROGS)
 
-sbin_SCRIPTS =		@BUILD_CLIENT_SCRIPTS_SBIN@
+EXTRA_SCRIPTS =		amhpfixdevs		amsinixfixdevs
 
-libexec_SCRIPTS =	@BUILD_CLIENT_SCRIPTS_LIBEXEC@
-
-EXTRA_SCRIPTS =		amhpfixdevs		patch-system	\
-			amsinixfixdevs
-
-DISTCLEANFILES = $(EXTRA_SCRIPTS)
+DISTCLEANFILES = 	$(EXTRA_SCRIPTS)
 
 EXTRA_DIST =		amhpfixdevs.sh		amsinixfixdevs.sh
 
 sendbackup_SOURCES = 	sendbackup.c		sendbackup.h	\
 			sendbackup-dump.c	sendbackup-gnutar.c
-
-lib_LTLIBRARIES =	@BUILD_CLIENT_LTLIB@
-EXTRA_LTLIBRARIES = 	libamclient.la
-
-noinst_LIBRARIES =	@BUILD_CLIENT_LIB@
-EXTRA_LIBRARIES =	libamclient.a
-
-libamclient_la_SOURCES=	amandates.c		getfsent.c	\
-			unctime.c		@LIBSRCS_CLIENT@
-
-EXTRA_libamclient_la_SOURCES = findpass.c
-libamclient_la_DEPENDENCIES =	@LIBOBJS_CLIENT@
-libamclient_la_LIBADD =	@LIBOBJS_CLIENT@
-libamclient_la_LDFLAGS = -release $(VERSION) -rpath $(libdir)
-
-libamclient_a_SOURCES = $(libamclient_la_SOURCES)
-EXTRA_libamclient_a_SOURCES = $(EXTRA_libamclient_la_SOURCES)
-libamclient_a_DEPENDENCIES = $(libamclient_la_DEPENDENCIES)
-libamclient_a_LIBADD = $(libamclient_la_LIBADD)
 
 noinst_HEADERS	= 	amandates.h	getfsent.h	findpass.h
 

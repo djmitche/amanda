@@ -4,14 +4,25 @@ ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
 
 transform =	s,x,x,;
 
-man_MANS =	amadmin.8	amanda.8	amcheck.8	\
-		amcheckdb.8	amcleanup.8	amdump.8	\
-		amflush.8	amlabel.8	amoverview.8	\
-		amplot.8	amrecover.8	amrestore.8	\
-		amrmtape.8	amtape.8	amtoc.8		\
-		amverify.8	amstatus.8	amreport.8
+if WANT_AMPLOT
+AMPLOT_MAN_PAGES = amplot.8
+endif
 
-EXTRA_DIST = amplot.8 amrestore.8 amtape.8
+COMMON_MAN_PAGES = amanda.8
+
+if WANT_SERVER
+SERVER_MAN_PAGES = amadmin.8 amcheck.8 amcheckdb.8 amcleanup.8 amdump.8 amflush.8 amlabel.8 amoverview.8 amrmtape.8 amtape.8 amtoc.8 amverify.8 amstatus.8 amreport.8
+endif
+
+if WANT_RECOVER
+RECOVER_MAN_PAGES = amrecover.8
+endif
+
+if WANT_RESTORE
+RESTORE_MAN_PAGES = amrestore.8
+endif
+
+man_MANS = $(AMPLOT_MAN_PAGES) $(COMMON_MAN_PAGES) $(SERVER_MAN_PAGES) $(RECOVER_MAN_PAGES) $(RESTORE_MAN_PAGES)
 
 install-data-hook:
 	@list="$(man_MANS)"; \

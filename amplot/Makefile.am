@@ -8,12 +8,15 @@ SUFFIXES =		.sh
 			cat $< > $@
 			chmod a+x $@
 
-sbin_SCRIPTS =		@BUILD_AMPLOT_SBIN@
+if WANT_AMPLOT
 
-EXTRA_SCRIPTS =		amplot
+sbin_SCRIPTS =		amplot
+
+amplot_DATA =		amcat.awk amplot.awk amplot.g amplot.gp
+
+endif
 
 amplotdir =		$(libexecdir)
-amplot_DATA =		@BUILD_AMPLOT_LIBEXEC@
 
 EXTRA_DATA =		amplot.awk		amplot.g
 EXTRA_DIST =		$(EXTRA_DATA)

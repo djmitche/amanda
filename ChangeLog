@@ -1,5 +1,20 @@
 1998-09-29  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* configure.in (WANT_CLIENT, WANT_RESTORE, WANT_SERVER, 
+	WANT_RECOVER, WANT_TAPE, WANT_AMPLOT, WANT_CHG_SCSI): automake
+	conditionals
+	* amplot/Makefile.am: use them
+	* changer-src/Makefile.am: ditto
+	* client-src/Makefile.am: ditto
+	* common-src/Makefile.am: ditto
+	* man/Makefile.am: ditto
+	* recover-src/Makefile.am: ditto
+	* restore-src/Makefile.am: ditto
+	* server-src/Makefile.am: ditto
+	* tape-src/Makefile.am: ditto
+
+	* Makefile.am: don't print commands that work around old aclocal bug
+
 	* docs/DUMPER-API: remove environment variables, and mention a
 	program that will help translating disklist entries to device names, 
 	mount points and filesystem types

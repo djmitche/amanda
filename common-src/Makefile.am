@@ -8,11 +8,13 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
 noinst_DATA =		versuff.c
 
-lib_LTLIBRARIES =	@BUILD_COMMON_LTLIB@
-EXTRA_LTLIBRARIES =	libamanda.la
-
-noinst_LIBRARIES = 	@BUILD_COMMON_LIB@
-EXTRA_LIBRARIES =	libamanda.a
+if WANT_LIBTOOL
+lib_LTLIBRARIES =	libamanda.la
+OBJ_EXTENSION = lo
+else
+noinst_LIBRARIES = 	libamanda.a
+OBJ_EXTENSION = o
+endif
 
 REGDIR = ../regex-src
 REGsrcdir = $(srcdir)/$(REGDIR)
@@ -27,7 +29,7 @@ libamanda_la_SOURCES = \
 	token.c		version.c	versuff.c
 
 libamanda_la_LIBADD =	@LIBOBJS@ @ALLOCA@
-libamanda_la_LDFLAGS =  -release $(VERSION) -rpath $(libdir)
+libamanda_la_LDFLAGS =  -release $(VERSION)
 
 libamanda_a_SOURCES =	$(libamanda_la_SOURCES)
 libamanda_a_LIBADD =	$(libamanda_la_LIBADD)

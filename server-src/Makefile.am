@@ -8,6 +8,35 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
+if WANT_SERVER
+
+if WANT_LIBTOOL
+lib_LTLIBRARIES = 	libamserver.la
+LIB_EXTENSION = la
+else
+noinst_LIBRARIES = 	libamserver.a
+LIB_EXTENSION = a
+endif
+
+sbin_PROGRAMS =		amadmin amcheck amflush amlabel amtape amreport
+
+libexec_PROGRAMS =	amindexd amtrmidx driver dumper \
+			getconf planner taper
+
+sbin_SCRIPTS =		amcheckdb amcleanup amdump amoverview \
+			amrmtape amtoc amverify amstatus
+
+endif
+
+libamserver_la_SOURCES=	amindex.c	changer.c	clock.c		\
+			conffile.c	diskfile.c	driverio.c	\
+			holding.c	infofile.c	logfile.c	\
+			tapefile.c	find.c
+
+libamserver_la_LDFLAGS= -release $(VERSION)
+
+libamserver_a_SOURCES=	$(libamserver_la_SOURCES)
+
 LDADD =	libamserver.$(LIB_EXTENSION) \
 	../tape-src/libamtape.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
@@ -22,53 +51,16 @@ SUFFIXES =		.sh .pl
 			cat $< > $@
 			chmod a+x $@
 
-sbin_PROGRAMS =		@BUILD_SERVER_PROGS_SBIN@
-
-libexec_PROGRAMS =	@BUILD_SERVER_PROGS_LIBEXEC@
-
-sbin_SCRIPTS =		@BUILD_SERVER_SCRIPTS_SBIN@
-
 # there are used for testing only:
-TEST_PROGS = diskfile conffile infofile
-
-EXTRA_PROGRAMS =	amadmin				amcheck		\
-			amflush				amindexd	\
-			amlabel				amtape		\
-			amtrmidx			driver		\
-			dumper				getconf		\
-			planner				amreport	\
-			taper						\
-			$(TEST_PROGS)
-
-EXTRA_SCRIPTS =		amcheckdb			amcleanup	\
-			amdump				amoverview	\
-			amrmtape			amtoc		\
-			amverify			amstatus
+EXTRA_PROGRAMS = diskfile conffile infofile
 
 CLEANFILES = *.test.c
-
-DISTCLEANFILES = $(EXTRA_SCRIPTS)
 
 amindexd_SOURCES =	amindexd.c					\
 			disk_history.c			disk_history.h	\
 			list_dir.c			list_dir.h
 
 amreport_SOURCES =	reporter.c
-
-lib_LTLIBRARIES = 	@BUILD_SERVER_LTLIB@
-EXTRA_LTLIBRARIES = 	libamserver.la
-
-noinst_LIBRARIES = 	@BUILD_SERVER_LIB@
-EXTRA_LIBRARIES = 	libamserver.a
-
-libamserver_la_SOURCES=	amindex.c	changer.c	clock.c		\
-			conffile.c	diskfile.c	driverio.c	\
-			holding.c	infofile.c	logfile.c	\
-			tapefile.c	find.c
-
-libamserver_la_LDFLAGS= -release $(VERSION) -rpath $(libdir)
-
-libamserver_a_SOURCES=	$(libamserver_la_SOURCES)
 
 noinst_HEADERS = 	amindex.h	changer.h	clock.h		\
 			conffile.h	diskfile.h	driverio.h	\

@@ -6,19 +6,32 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
+if WANT_LIBTOOL
+LIB_EXTENSION = la
+else
+LIB_EXTENSION = a
+endif
+
+if WANT_SERVER
+if WANT_CHG_SCSI
+
+libexec_PROGRAMS =	chg-scsi
+
+libexec_SCRIPTS =	chg-manual	chg-multi	chg-mtx		\
+			chg-rth		chg-chs		chg-chio	\
+			chg-zd-mtx
+
+endif
+endif
+
 LDADD = ../server-src/libamserver.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
 
 SUFFIXES =		.pl .sh
 
-noinst_LIBRARIES =	libscsi.a
+chg_scsi_SOURCES =	chg-scsi.c scsi-hpux.c scsi-chio.c libscsi.h
 
-libscsi_a_SOURCES =	scsi-hpux.c scsi-chio.c
 EXTRA_DIST = scsi-proto.c
-
-chg_scsi_SOURCES =	chg-scsi.c libscsi.h
-
-chg_scsi_LDADD =	libscsi.a $(LDADD)
 
 .pl:
 			cat $< > $@
@@ -27,18 +40,6 @@ chg_scsi_LDADD =	libscsi.a $(LDADD)
 .sh:
 			cat $< > $@
 			chmod a+x $@
-
-libexec_PROGRAMS =	@BUILD_CHANGER_PROGS_LIBEXEC@
-
-EXTRA_PROGRAMS =	chg-scsi
-
-libexec_SCRIPTS =	@BUILD_CHANGER_SCRIPTS_LIBEXEC@
-
-EXTRA_SCRIPTS =		chg-manual	chg-multi	chg-mtx		\
-			chg-rth		chg-chs		chg-chio	\
-			chg-zd-mtx
-
-DISTCLEANFILES = $(EXTRA_SCRIPTS)
 
 install-exec-hook:
 	@list="$(sbin_PROGRAMS) $(sbin_SCRIPTS)"; \

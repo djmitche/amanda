@@ -8,20 +8,27 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
-lib_LTLIBRARIES = 	@BUILD_TAPE_LTLIB@
-EXTRA_LTLIBRARIES = 	libamtape.la
+if WANT_TAPE
 
-noinst_LIBRARIES = 	@BUILD_TAPE_LIB@
-EXTRA_LIBRARIES = 	libamtape.a
+if WANT_LIBTOOL
+lib_LTLIBRARIES = 	libamtape.la
+LIB_EXTENSION = la
+else
+noinst_LIBRARIES = 	libamtape.a
+LIB_EXTENSION = a
+endif
+
+endif
 
 libamtape_la_SOURCES = 	tapeio.c
 
-libamtape_la_LDFLAGS =  -release $(VERSION) -rpath $(libdir)
+libamtape_la_LDFLAGS =  -release $(VERSION)
 
 libamtape_a_SOURCES =	$(libamtape_la_SOURCES)
 
 noinst_HEADERS = 	tapeio.h
 
 EXTRA_PROGRAMS = 	tapetype
+
 tapetype_LDADD = libamtape.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)

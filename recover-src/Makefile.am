@@ -8,15 +8,23 @@ INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/client-src \
 AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
- 
+
+if WANT_RECOVER
+
+if WANT_LIBTOOL
+LIB_EXTENSION = la
+else
+LIB_EXTENSION = a
+endif
+
+sbin_PROGRAMS =		amrecover
+
+endif
+
 LDADD = @LEXLIB@ \
 	../client-src/libamclient.$(LIB_EXTENSION) \
 	../tape-src/libamtape.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
-
-EXTRA_PROGRAMS = 	amrecover
-
-sbin_PROGRAMS =		@BUILD_RECOVER_PROGS_SBIN@
 
 amrecover_SOURCES =	amrecover.c					\
 			display_commands.c		extract_list.c	\
