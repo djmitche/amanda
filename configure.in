@@ -2088,50 +2088,6 @@ case $mount in
 	;;
 esac
 
-dnl maximum file size on holding disk
-AC_CACHE_CHECK(
-    [maximum file size],
-    amanda_cv_max_file_size,
-    [
-	amanda_cv_max_file_size=0
-	outfile=/tmp/maxsize.$$
-	AC_TRY_RUN([
-#include <stdio.h>
-#include <limits.h>
-#ifdef HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#endif
-#include <sys/uio.h>
-
-int main()
-{
-    struct iovec test;
-    unsigned long compare = 0, last = 0;
-    FILE *f = fopen("$outfile", "w");
-
-    if (!f) return 1;
-
-    test.iov_len = 1;
-    while ((test.iov_len > 0) && (test.iov_len > last)) {
-	if ((last = test.iov_len) > compare)
-	    compare = test.iov_len;
-	test.iov_len = (test.iov_len << 1) | 0x01;
-    }
-    fprintf(f, "%ld\n", compare / 1024);
-    return 0;
-}
-], [
-	amanda_cv_max_file_size=`cat $outfile`
-], [
-], [
-	AC_MSG_WARN("cannot perform this test if cross-compiling")
-])
-	rm -f $outfile
-])
-if test "$amanda_cv_max_file_size" -gt 0; then
-    AC_DEFINE_UNQUOTED(MAXFILESIZE,$amanda_cv_max_file_size)
-fi
-
 dnl lock/flock/fcntl
 AC_CACHE_CHECK(
    [whether posix fcntl locking works],
