@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.8 1999/08/23 20:31:02 jrj Exp $
+ * $Id: reporter.c,v 1.44.2.9 1999/09/01 21:19:10 jrj Exp $
  *
  * nightly Amanda Report generator
  */
@@ -253,6 +253,11 @@ static int SetColumDataFromString(ColumnInfo* ci, char *s) {
 	int Space, Width;
 	ColumnName cn;
     	char *eon= strchr(s, '=');
+
+	if (eon == NULL) {
+	    fprintf(stderr, "%s: invalid columnspec: %s\n", myname, s);
+	    return -1;
+	}
 	*eon= '\0';
 	if ((cn=StringToColumnName(s)) < 0) {
 	    fprintf(stderr, "%s: invalid ColumnName: %s\n", myname, s);
