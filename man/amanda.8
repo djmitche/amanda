@@ -23,8 +23,110 @@ amanda \- Advanced Maryland Automatic Network Disk Archiver
 .SH "SYNOPSIS"
 .ad l
 .hy 0
-.HP 1
-\fB\fR \fIamdump\fR \fIconfig\fR \fIamflush\fR [\-f] \fIconfig\fR \fIamcleanup\fR \fIconfig\fR \fIamrecover\fR [\fIconfig\fR] [\fIoptions\fR] \fIamrestore\fR [\fIoptions\fR] \fItapedevice\fR [\fIhostname\fR\ [\fIdiskname\fR]] \fIamlabel\fR \fIconfig\fR \fIlabel\fR [\fIslot\fR\ \fIslot\fR] \fIamcheck\fR [\fIoptions\fR] \fIconfig\fR \fIamadmin\fR \fIconfig\fR \fIcommand\fR [\fIoptions\fR] \fIamtape\fR \fIconfig\fR \fIcommand\fR [\fIoptions\fR] \fIamverify\fR \fIconfig\fR \fIamrmtape\fR [\fIoptions\fR] \fIconfig\fR \fIlabel\fR \fIamstatus\fR \fIconfig\fR [\fIoptions\fR] \fIamoverview\fR \fIconfig\fR [\fIoptions\fR] \fIamplot\fR [\fIoptions\fR] \fIamdump\-files\fR \fIamreport\fR [\fIconfig\fR] [\fIoptions\fR] \fIamtoc\fR [\fIoptions\fR] \fIlogfile\fR \fIamcheckdb\fR \fIconfig\fR \fIamgetconf\fR [\fIconfig\fR] \fIparameter\fR
+.HP 7
+\fBamdump\fR \fIconfig\fR
+.ad
+.hy
+.ad l
+.hy 0
+.HP 8
+\fBamflush\fR [\-f] \fIconfig\fR
+.ad
+.hy
+.ad l
+.hy 0
+.HP 10
+\fBamcleanup\fR \fIconfig\fR
+.ad
+.hy
+.ad l
+.hy 0
+.HP 10
+\fBamrecover\fR [\fIconfig\fR] [\fIoptions\fR]
+.ad
+.hy
+.ad l
+.hy 0
+.HP 10
+\fBamrestore\fR [\fIoptions\fR] \fItapedevice\fR [\fIhostname\fR\ [\fIdiskname\fR]]
+.ad
+.hy
+.ad l
+.hy 0
+.HP 8
+\fBamlabel\fR \fIconfig\fR \fIlabel\fR [\fIslot\fR\ \fIslot\fR]
+.ad
+.hy
+.ad l
+.hy 0
+.HP 8
+\fBamcheck\fR [\fIoptions\fR] \fIconfig\fR
+.ad
+.hy
+.ad l
+.hy 0
+.HP 8
+\fBamadmin\fR \fIconfig\fR \fIcommand\fR [\fIoptions\fR]
+.ad
+.hy
+.ad l
+.hy 0
+.HP 7
+\fBamtape\fR \fIconfig\fR \fIcommand\fR [\fIoptions\fR]
+.ad
+.hy
+.ad l
+.hy 0
+.HP 9
+\fBamverify\fR \fIconfig\fR
+.ad
+.hy
+.ad l
+.hy 0
+.HP 9
+\fBamrmtape\fR [\fIoptions\fR] \fIconfig\fR \fIlabel\fR
+.ad
+.hy
+.ad l
+.hy 0
+.HP 9
+\fBamstatus\fR \fIconfig\fR [\fIoptions\fR]
+.ad
+.hy
+.ad l
+.hy 0
+.HP 11
+\fBamoverview\fR \fIconfig\fR [\fIoptions\fR]
+.ad
+.hy
+.ad l
+.hy 0
+.HP 7
+\fBamplot\fR [\fIoptions\fR] \fIamdump\-files\fR
+.ad
+.hy
+.ad l
+.hy 0
+.HP 9
+\fBamreport\fR [\fIconfig\fR] [\fIoptions\fR]
+.ad
+.hy
+.ad l
+.hy 0
+.HP 6
+\fBamtoc\fR [\fIoptions\fR] \fIlogfile\fR
+.ad
+.hy
+.ad l
+.hy 0
+.HP 10
+\fBamcheckdb\fR \fIconfig\fR
+.ad
+.hy
+.ad l
+.hy 0
+.HP 10
+\fBamgetconf\fR [\fIconfig\fR] \fIparameter\fR
 .ad
 .hy
 
@@ -188,25 +290,25 @@ Some number of weeks (days*7)\&.
  .RS .Sh "Note" The value \fBinf\fR may be used in most places where an integer is expected to mean an infinite amount\&. Boolean arguments may have any of the values \fBy\fR, \fByes\fR, \fBt\fR, \fBtrue\fR or \fBon\fR to indicate a true state, or \fBn\fR, \fBno\fR, \fBf\fR, \fBfalse\fR or \fBoff\fR to indicate a false state\&. If no argument is given, \fBtrue\fR is assumed\&. .RE 
 
 .TP
-\fBorg\fR \fB string\fR
+\fBorg\fR \fB string\fR
 Default: \fBdaily\fR\&. A descriptive name for the configuration\&. This string appears in the Subject line of mail reports\&. Each \fBAMANDA\fR configuration should have a different string to keep mail reports distinct\&.
 
 .TP
-\fBmailto\fR \fB string\fR
+\fBmailto\fR \fB string\fR
 Default: \fBoperators\fR\&. A space separated list of recipients for mail reports\&.
 
 .TP
-\fBdumpcycle\fR \fB int\fR
+\fBdumpcycle\fR \fB int\fR
 Default: \fB10 days\fR\&. The number of days in the backup cycle\&. Each disk will get a full backup at least this often\&. Setting this to zero tries to do a full backup each run\&.
 
  .RS .Sh "Note" This parameter may also be set in a specific \fBdumptype\fR (see below)\&. This value sets the default for all \fBdumptype\fRs so must appear in \fBamanda\&.conf\fR before any \fBdumptype\fRs are defined\&. .RE 
 
 .TP
-\fBrunspercycle\fR \fB int\fR
+\fBrunspercycle\fR \fB int\fR
 Default: \fBsame as dumpcycle\fR\&. The number of amdump runs in \fBdumpcycle\fR days\&. A value of 0 means the same value as \fBdumpcycle\fR\&. A value of \-1 means guess the number of runs from the \fBtapelist\fR file, which is the number of tapes used in the last \fBdumpcycle\fR days / \fBruntapes\fR\&.
 
 .TP
-\fBtapecycle\fR \fB int\fR
+\fBtapecycle\fR \fB int\fR
 Default: \fB15 tapes\fR\&. Typically tapes are used by \fBAMANDA\fR in an ordered rotation\&. The \fBtapecycle\fR parameter defines the size of that rotation\&. The number of tapes in rotation must be larger than the number of tapes required for a complete dump cycle (see the \fBdumpcycle\fR parameter)\&.
 
 This is calculated by multiplying the number of \fBamdump\fR runs per dump cycle (\fBrunspercycle\fR parameter) times the number of tapes used per run (\fBruntapes\fR parameter)\&. Typically two to four times this calculated number of tapes are in rotation\&. While \fBAMANDA\fR is always willing to use a new tape in its rotation, it refuses to reuse a tape until at least '\fBtapecycle\fR \-1' number of other tapes have been used\&.
@@ -214,7 +316,7 @@ This is calculated by multiplying the number of \fBamdump\fR runs per dump cycle
 It is considered good administrative practice to set the \fBtapecycle\fR parameter slightly lower than the actual number of tapes in rotation\&. This allows the administrator to more easily cope with damaged or misplaced tapes or schedule adjustments that call for slight adjustments in the rotation order\&.
 
 .TP
-\fBdumpuser\fR \fB string\fR
+\fBdumpuser\fR \fB string\fR
 Default: \fBamanda\fR\&. The login name \fBAMANDA\fR uses to run the backups\&. The backup client hosts must allow access from the tape server host as this user via \&.rhosts or \&.amandahosts, depending on how the \fBAMANDA\fR software was built\&.
 
 .TP
@@ -295,11 +397,11 @@ Last in, first out\&.
 .IP
 
 .TP
-\fBlabelstr\fR \fB string\fR
+\fBlabelstr\fR \fB string\fR
 Default: \fB\&.*\fR\&. The tape label constraint regular expression\&. All tape labels generated (see \fBamlabel(8)\fR) and used by this configuration must match the regular expression\&. If multiple configurations are run from the same tape server host, it is helpful to set their labels to different strings (for example, ``\fBDAILY[0\-9][0\-9]*\fR'' vs\&. ``\fBARCHIVE[0\-9][0\-9]*\fR'') to avoid overwriting each other's tapes\&.
 
 .TP
-\fBtapetype\fR \fB string\fR
+\fBtapetype\fR \fB string\fR
 Default: \fBEXABYTE\fR\&. The type of tape drive associated with \fBtapedev\fR or \fBtpchanger\fR\&. This refers to one of the defined \fBtapetype\fRs in the config file (see below), which specify various tape parameters, like the \fBlength\fR, \fBfilemark\fR size, and \fBspeed\fR of the tape media and device\&.
 
 .TP
@@ -364,59 +466,59 @@ Note that this parameter may also be set in a specific \fBdumptype\fR (see below
 Default: \fB10 Mbytes\fR\&. The minimum savings required to trigger an automatic bump from one incremental level to the next\&. If \fBAMANDA\fR determines that the next higher backup level will be this much smaller than the current level, it will do the next level\&. See also the \fBbumpmult\fR option\&.
 
 .TP
-\fBbumpmult\fR \fB float\fR
+\fBbumpmult\fR \fB float\fR
 Default: 1\&.5\&. The bump size multiplier\&. \fBAMANDA\fR multiplies \fBbumpsize\fR by this factor for each level\&. This prevents active filesystems from bumping too much by making it harder to bump to the next level\&. For example, with the default \fBbumpsize\fR and \fBbumpmult\fR set to 2\&.0, the bump threshold will be 10 Mbytes for level one, 20 Mbytes for level two, 40 Mbytes for level three, and so on\&.
 
 .TP
-\fBbumpdays\fR \fB int\fR
+\fBbumpdays\fR \fB int\fR
 Default: \fB2 days\fR\&. To insure redundancy in the dumps, \fBAMANDA\fR keeps filesystems at the same incremental level for at least \fBbumpdays\fR days, even if the other bump threshold criteria are met\&.
 
 .TP
-\fBdiskfile\fR \fB string\fR
+\fBdiskfile\fR \fB string\fR
 Default: \fBdisklist\fR\&. The file name for the \fBdisklist\fR file holding client hosts, disks and other client dumping information\&.
 
 .TP
-\fBinfofile\fR \fB string\fR
+\fBinfofile\fR \fB string\fR
 Default: \fI/usr/adm/amanda/curinfo\fR\&. The file or directory name for the historical information database\&. If \fBAMANDA\fR was configured to use DBM databases, this is the base file name for them\&. If it was configured to use text formated databases (the default), this is the base directory and within here will be a directory per client, then a directory per disk, then a text file of data\&.
 
 .TP
-\fBlogdir\fR \fB string\fR
+\fBlogdir\fR \fB string\fR
 Default: \fI/usr/adm/amanda\fR\&. The directory for the \fBamdump\fR and \fBlog\fR files\&.
 
 .TP
-\fBindexdir\fR \fB string\fR
+\fBindexdir\fR \fB string\fR
 Default \fI/usr/adm/amanda/index\fR\&. The directory where index files (backup image catalogues) are stored\&. Index files are only generated for filesystems whose \fBdumptype\fR has the \fBindex\fR option enabled\&.
 
 .TP
-\fBtapelist\fR \fB string\fR
+\fBtapelist\fR \fB string\fR
 Default: \fBtapelist\fR\&. The file name for the active \fBtapelist\fR file\&. \fBAMANDA\fR maintains this file with information about the active set of tapes\&.
 
 .TP
-\fBtapebufs\fR \fB int\fR
+\fBtapebufs\fR \fB int\fR
 Default: 20\&. The number of buffers used by the \fBtaper\fR process run by \fBamdump\fR and \fBamflush\fR to hold data as it is read from the network or disk before it is written to tape\&. Each buffer is a little larger than 32 KBytes and is held in a shared memory region\&.
 
 .TP
-\fBreserve\fR \fB number\fR
+\fBreserve\fR \fB number\fR
 Default: 100\&. The part of holding\-disk space that should be reserved for incremental backups if no tape is available, expressed as a percentage of the available holding\-disk space (0\-100)\&. By default, when there is no tape to write to, degraded mode (incremental) backups will be performed to the holding disk\&. If full backups should also be allowed in this case, the amount of holding disk space reserved for incrementals should be lowered\&.
 
 .TP
-\fBautoflush\fR \fB bool\fR
+\fBautoflush\fR \fB bool\fR
 Default: \fBoff\fR\&. Whether an amdump run will flush the dump already on holding disk to tape\&.
 
 .TP
-\fBamrecover_do_fsf\fR \fB bool\fR
+\fBamrecover_do_fsf\fR \fB bool\fR
 Default: \fBoff\fR\&. Amrecover will call amrestore with the \-f flag for faster positioning of the tape\&.
 
 .TP
-\fBamrecover_check_label\fR \fB bool\fR
+\fBamrecover_check_label\fR \fB bool\fR
 Default: \fBoff\fR\&. Amrecover will call amrestore with the \-l flag to check the label\&.
 
 .TP
-\fBamrecover_changer\fR \fB string\fR
+\fBamrecover_changer\fR \fB string\fR
 Default: ''\&. Amrecover will use the changer if you use 'settape <string>' and that string is the same as the amrecover_changer setting\&.
 
 .TP
-\fBcolumnspec\fR \fB string\fR
+\fBcolumnspec\fR \fB string\fR
 Defines the width of columns \fBamreport\fR should use\&. \fBString\fR is a comma (',') separated list of triples\&. Each triple consists of three parts which are separated by a equal sign ('=') and a colon (':') (see the example)\&. These three parts specify:
 
 
@@ -477,7 +579,7 @@ columnspec "Disk=1:18,HostName=0:10,OutKB=1:7"
 The above will display the disk information in 18 characters and put one space before it\&. The hostname column will be 10 characters wide with no space to the left\&. The output KBytes column is seven characters wide with one space before it\&.
 
 .TP
-\fBincludefile\fR \fB string\fR
+\fBincludefile\fR \fB string\fR
 Default: \fBnone\fR\&. The name of an \fBAMANDA\fR configuration file to include within the current file\&. Useful for sharing dumptypes, tapetypes and interface definitions among several configurations\&.
 
 .SH "HOLDINGDISK SECTION"
@@ -499,19 +601,19 @@ holdingdisk \fBname\fR {
 The options and values are:
 
 .TP
-\fBcomment\fR \fB string\fR
+\fBcomment\fR \fB string\fR
 Default: \fBnone\fR\&. A comment string describing this holding disk\&.
 
 .TP
-\fBdirectory\fR \fB disk\fR
+\fBdirectory\fR \fB disk\fR
 Default: \fI/dumps/amanda\fR\&. The path to this holding area\&.
 
 .TP
-\fBuse\fR \fB int\fR
+\fBuse\fR \fB int\fR
 Default: \fB0 Gb\fR\&. Amount of space that can be used in this holding disk area\&. If the value is zero, all available space on the file system is used\&. If the value is negative, \fBAMANDA\fR will use all available space minus that value\&.
 
 .TP
-\fBchunksize\fR \fB int\fR
+\fBchunksize\fR \fB int\fR
 Default: \fB1 Gb\fR\&. Holding disk chunk size\&. Dumps larger than the specified size will be stored in multiple holding disk files\&. The size of each chunk will not exceed the specified value\&. However, even though dump images are split in the holding disk, they are concatenated as they are written to tape, so each dump image still corresponds to a single continuous tape section\&.
 
 If 0 is specified, \fBAMANDA\fR will create holding disk chunks as large as ((INT_MAX/1024)\-64) Kbytes\&.
@@ -545,11 +647,11 @@ Some of the options in a \fBdumptype\fR section are the same as those in the mai
 The dumptype options and values are:
 
 .TP
-\fBauth\fR \fB string\fR
+\fBauth\fR \fB string\fR
 Default: \fBbsd\fR\&. Type of authorization to perform between tape server and backup client hosts\&. May be \fBkrb4\fR to use Kerberos\-IV authorization\&.
 
 .TP
-\fBcomment\fR \fB string\fR
+\fBcomment\fR \fB string\fR
 Default: \fBnone\fR\&. A comment string describing this set of backup options\&.
 
 .TP
@@ -557,7 +659,7 @@ Default: \fBnone\fR\&. A comment string describing this set of backup options\&.
 Default: 0\&.50, 0\&.50\&. The expected full and incremental compression factor for dumps\&. It is only used if \fBAMANDA\fR does not have any history information on compression rates for a filesystem, so should not usually need to be set\&. However, it may be useful for the first time a very large filesystem that compresses very little is backed up\&.
 
 .TP
-\fBcompress [client|server]\fR \fB string\fR
+\fBcompress [client|server]\fR \fB string\fR
 Default: \fBclient fast\fR\&. If \fBAMANDA\fR does compression of the backup images, it can do so either on the backup client host before it crosses the network or on the tape server host as it goes from the network into the holding disk or to tape\&. Which place to do compression (if at all) depends on how well the dump image usually compresses, the speed and load on the client or server, network capacity, holding disk capacity, availability of tape hardware compression, etc\&.
 
 For either type of compression, \fBAMANDA\fR also allows the selection of two styles of compression\&. \fBBest\fR is the best compression available, often at the expense of CPU overhead\&. \fBFast\fR is often not as good a compression as \fBbest\fR, but usually less CPU overhead\&.
@@ -587,7 +689,7 @@ compress server best
 Note that some tape devices do compression and this option has nothing to do with whether that is used\&. If hardware compression is used (usually via a particular tape device name or \fBmt\fR option), \fBAMANDA\fR (software) compression should be disabled\&.
 
 .TP
-\fBdumpcycle\fR \fB int\fR
+\fBdumpcycle\fR \fB int\fR
 Default: \fB10 days\fR\&. The number of days in the backup cycle\&. Each disk using this set of options will get a full backup at least this often\&. Setting this to zero tries to do a full backup each run\&.
 
 .TP
@@ -609,11 +711,11 @@ For \fBexclude list\fR, if the file name is relative, the disk name being backed
 the actual file used would be \fI/var/\&.amanda\&.excludes\fR for a backup of \fI/var\fR, \fI/usr/local/\&.amanda\&.excludes\fR for a backup of \fI/usr/local\fR, and so on\&.
 
 .TP
-\fBholdingdisk\fR \fB boolean\fR
+\fBholdingdisk\fR \fB boolean\fR
 Default: \fByes\fR\&. Whether a holding disk should be used for these backups or whether they should go directly to tape\&. If the holding disk is a portion of another file system that \fBAMANDA\fR is backing up, that file system should refer to a dumptype with \fBholdingdisk\fR set to \fBno\fR to avoid backing up the holding disk into itself\&.
 
 .TP
-\fBignore\fR \fB boolean\fR
+\fBignore\fR \fB boolean\fR
 Default: \fBno\fR\&. Whether disks associated with this backup type should be backed up or not\&. This option is useful when the \fBdisklist\fR file is shared among several configurations, some of which should not back up all the listed file systems\&.
 
 .TP
@@ -629,47 +731,47 @@ If \fBoptional\fR is specified for \fBinclude list,\fR then amcheck will not com
 For \fBinclude list\fR, If the file name is relative, the disk name being backed up is prepended\&.
 
 .TP
-\fBindex\fR \fB boolean\fR
+\fBindex\fR \fB boolean\fR
 Default: \fBno\fR\&. Whether an index (catalogue) of the backup should be generated and saved in \fBindexdir\fR\&. These catalogues are used by the \fBamrecover\fR utility\&.
 
 .TP
-\fBkencrypt\fR \fB boolean\fR
+\fBkencrypt\fR \fB boolean\fR
 Default: \fBno\fR\&. Whether the backup image should be encrypted by Kerberos as it is sent across the network from the backup client host to the tape server host\&.
 
 .TP
-\fBmaxdumps\fR \fB int\fR
+\fBmaxdumps\fR \fB int\fR
 Default: 1\&. The maximum number of backups from a single host that \fBAMANDA\fR will attempt to run in parallel\&. See also the main section parameter \fBinparallel\fR\&.
 
 .TP
-\fBmaxpromoteday\fR \fB int\fR
+\fBmaxpromoteday\fR \fB int\fR
 Default: 10000\&. The maximum number of day for a promotion, set it 0 if you don't want promotion, set it to 1 or 2 if your disks get overpromoted\&.
 
 .TP
-\fBpriority\fR \fB string\fR
+\fBpriority\fR \fB string\fR
 Default: \fBmedium\fR\&. When there is no tape to write to, \fBAMANDA\fR will do incremental backups in priority order to the holding disk\&. The priority may be high (2)\&. medium (1), low (0) or a number of your choice\&.
 
 .TP
-\fBprogram\fR \fB string\fR
+\fBprogram\fR \fB string\fR
 Default: \fBDUMP\fR\&. The type of backup to perform\&. Valid values are \fBDUMP\fR for the native operating system backup program, and \fBGNUTAR\fR to use \fBGNU\-tar\fR or to do PC backups using Samba\&.
 
 .TP
-\fBrecord\fR \fB boolean\fR
+\fBrecord\fR \fB boolean\fR
 Default: \fByes\fR\&. Whether to ask the backup program to update its database (e\&.g\&. \fI/etc/dumpdates\fR for DUMP or \fI/usr/local/var/amanda/gnutar\-lists\fR for GNUTAR) of time stamps\&. This is normally enabled for daily backups and turned off for periodic archival runs\&.
 
 .TP
-\fBskip\-full\fR \fB boolean\fR
+\fBskip\-full\fR \fB boolean\fR
 Default: \fBno\fR\&. If \fBtrue\fR and \fBplanner\fR has scheduled a full backup, these disks will be skipped, and full backups should be run off\-line on these days\&. It was reported that \fBAMANDA\fR only schedules level 1 incrementals in this configuration; this is probably a bug\&.
 
 .TP
-\fBskip\-incr\fR \fB boolean\fR
+\fBskip\-incr\fR \fB boolean\fR
 Default: \fBno\fR\&. If \fBtrue\fR and \fBplanner\fR has scheduled an incremental backup, these disks will be skipped\&.
 
 .TP
-\fBstarttime\fR \fB int\fR
+\fBstarttime\fR \fB int\fR
 Default: \fBnone\fR\&. Backups will not start until after this time of day\&. The value should be hh*100+mm, e\&.g\&. 6:30PM (18:30) would be entered as 1830\&.
 
 .TP
-\fBstrategy\fR \fB string\fR
+\fBstrategy\fR \fB string\fR
 Default: \fBstandard\fR\&. Strategy to use when planning what level of backup to run next\&. Values are:
 
 .TP
@@ -764,25 +866,25 @@ define tapetype \fBname\fR {
 The tapetype options and values are:
 
 .TP
-\fBcomment\fR \fB string\fR
+\fBcomment\fR \fB string\fR
 Default: \fBnone\fR\&. A comment string describing this set of tape information\&.
 
 .TP
-\fBfilemark\fR \fB int\fR
+\fBfilemark\fR \fB int\fR
 Default: \fB1000 bytes\fR\&. How large a file mark (tape mark) is, measured in bytes\&. If the size is only known in some linear measurement (e\&.g\&. inches), convert it to bytes using the device density\&.
 
 .TP
-\fBlength\fR \fB int\fR
+\fBlength\fR \fB int\fR
 Default: \fB2000 kbytes\fR\&. How much data will fit on a tape\&.
 
 Note that this value is only used by \fBAMANDA\fR to schedule which backups will be run\&. Once the backups start, \fBAMANDA\fR will continue to write to a tape until it gets an error, regardless of what value is entered for \fBlength\fR (but see the OUTPUT DRIVERS section later for exceptions)\&.
 
 .TP
-\fBblocksize\fR \fB int\fR
+\fBblocksize\fR \fB int\fR
 Default: \fB32\fR\&. How much data will be written in each tape record expressed in KiloBytes\&. The tape record size (= blocksize) can not be reduced below the default 32 KBytes\&. The parameter blocksize can only be raised if \fBAMANDA\fR was compiled with the configure option \-\-with\-maxtapeblocksize=N set with "N" greater than 32 during \fBconfigure\fR\&.
 
 .TP
-\fBfile\-pad\fR \fB boolean\fR
+\fBfile\-pad\fR \fB boolean\fR
 Default: \fBtrue\fR\&. If true, every record, including the last one in the file, will have the same length\&. This matches the way \fBAMANDA\fR wrote tapes prior to the availability of this parameter\&. It may also be useful on devices that only support a fixed blocksize\&.
 
 Note that the last record on the tape probably includes trailing null byte padding, which will be passed back to \fBgzip\fR, \fBcompress\fR or the restore program\&. Most programs just ignore this (although possibly with a warning)\&.
@@ -790,11 +892,11 @@ Note that the last record on the tape probably includes trailing null byte paddi
 If this parameter is false, the last record in a file may be shorter than the block size\&. The file will contain the same amount of data the dump program generated, without trailing null byte padding\&. When read, the same amount of data that was written will be returned\&.
 
 .TP
-\fBspeed\fR \fB int\fR
+\fBspeed\fR \fB int\fR
 Default: \fB200 bps\fR\&. How fast the drive will accept data, in bytes per second\&. This parameter is NOT currently used by \fBAMANDA\fR\&.
 
 .TP
-\fBlbl\-templ\fR \fB string\fR
+\fBlbl\-templ\fR \fB string\fR
 A PostScript template file used by \fBamreport\fR to generate labels\&. Several sample files are provided with the \fBAMANDA\fR sources in the \fBexample\fR directory\&. See the \fBamreport\fR(8) man page for more information\&.
 
 .PP
@@ -836,11 +938,11 @@ Note that these sections define network interface characteristics, not the actua
 The interface options and values are:
 
 .TP
-\fBcomment\fR \fB string\fR
+\fBcomment\fR \fB string\fR
 Default: \fBnone\fR\&. A comment string describing this set of network information\&.
 
 .TP
-\fBuse\fR \fB int\fR
+\fBuse\fR \fB int\fR
 Default: \fB300 Kbps\fR\&. The speed of the interface in Kbytes per second\&.
 
 .PP

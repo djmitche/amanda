@@ -1,3 +1,7 @@
+2005-04-01  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* man/amanda.8, man/amdd.8, man/ammt.8: Updated.
+
 2005-03-31  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* man/Makefile.am (EXTRA_DIST): Add amadmin.8 amanda.8 amcheck.8

@@ -46,15 +46,15 @@ See the \fBamanda\fR(8) man page for more details about \fBAMANDA\fR\&. See the 
 Turn on debugging output\&.
 
 .TP
-\fB\-f\fR\fI device\fR
+\fB\-f\fR\fI device\fR
 Access tape device \fBdevice\fR\&. If not specified, the \fBTAPE\fR environment variable is used\&.
 
 .TP
-\fB\-t\fR\fI device\fR
+\fB\-t\fR\fI device\fR
 Same as \fB\-f\fR\&.
 
 .TP
-\fBcommand\fR\fB count\fR
+\fBcommand\fR\fB count\fR
 Which command to issue, and an optional count of operations\&.
 
 .SH "COMMANDS"
@@ -63,19 +63,19 @@ Which command to issue, and an optional count of operations\&.
 Each command may be abbreviated to whatever length makes it unique\&.
 
 .TP
-\fBeof|weof\fR\fB count\fR
+\fBeof|weof\fR\fB count\fR
 Write \fBcount\fR (default: 1) end of file marks (tapemarks)\&.
 
 .TP
-\fBfsf\fR\fB count\fR
+\fBfsf\fR\fB count\fR
 Skip forward \fBcount\fR (default: 1) files\&.
 
 .TP
-\fBbsf\fR\fB count\fR
+\fBbsf\fR\fB count\fR
 Skip backward \fBcount\fR (default: 1) files\&.
 
 .TP
-\fBasf\fR\fB count\fR
+\fBasf\fR\fB count\fR
 Position to file number \fBcount\fR (default: 0) where zero is beginning of tape\&. This is the same as a \fBrewind\fR followed by a \fBfsf\fR  \fBcount\fR\&.
 
 .TP
