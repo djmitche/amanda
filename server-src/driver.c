@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.146 2004/11/22 13:32:31 martinea Exp $
+ * $Id: driver.c,v 1.147 2004/11/22 13:48:08 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -515,25 +515,26 @@ startaflush()
 		if(dp) remove_disk(&tapeq, dp);
 		break;
 	case ALGO_SMALLEST:
-		fit = dp = tapeq.head;
-		while (fit != NULL) {
-		    if(sched(fit)->act_size < sched(dp)->act_size &&
-		       strcmp(sched(fit)->datestamp, datestamp) <= 0) {
-			dp = fit;
-		    }
-		    fit = fit->next;
-		}
-		if(dp) remove_disk(&tapeq, dp);
 		break;
 	case ALGO_LAST:
 		dp = tapeq.tail;
 		remove_disk(&tapeq, dp);
 		break;
 	}
-	if(!dp) {
-	    dp = dequeue_disk(&tapeq); /* first if nothing fit */
-	    fprintf(stderr,
-		    "driver: startaflush: Using first because nothing fit\n");
+	if(!dp) { /* ALGO_SMALLEST, or default if nothing fit. */
+	    if(conf_taperalgo != ALGO_SMALLEST)  {
+		fprintf(stderr,
+		   "driver: startaflush: Using SMALLEST because nothing fit\n");
+	    }
+	    fit = dp = tapeq.head;
+	    while (fit != NULL) {
+		if(sched(fit)->act_size < sched(dp)->act_size &&
+		   strcmp(sched(fit)->datestamp, datestamp) <= 0) {
+		    dp = fit;
+		}
+	        fit = fit->next;
+	    }
+	    if(dp) remove_disk(&tapeq, dp);
 	}
 	if(taper_ev_read == NULL) {
 	    taper_ev_read = event_register(taper, EV_READFD,
