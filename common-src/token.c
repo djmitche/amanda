@@ -200,6 +200,35 @@ char *str;	/* the string to quote */
 	return buf;
 }
 
+/* Table lookup.
+*/
+int table_lookup(table, str)
+table_t *table;
+char *str;
+{
+	while(table->word != (char *)0) {
+		if (*table->word == *str &&
+		    !strcmp(table->word, str)) return table->value;
+		table++;
+	}
+
+	return table->value;
+}
+
+/* Reverse table lookup.
+*/
+char *table_lookup_r(table, val)
+table_t *table;
+int val;
+{
+	while(table->word != (char *)0) {
+		if (table->value == val) return table->word;
+		table++;
+	}
+
+	return (char *)0;
+}
+
 #ifdef TEST
 
 char pname[] = "token test";

@@ -25,10 +25,14 @@
 #ifndef TOKEN_H
 #define TOKEN_H
 
+typedef struct {char *word; int value;} table_t;
+
 extern int split P((char *str, char **token, int toklen, char *sep));
 extern char *squotef P((char *format, ...));
 extern char *squote P((char *str));
 extern char *quotef P((char *sep, char *format, ...));
 extern char *quote P((char *sep, char *str));
+extern int table_lookup P((table_t *table, char *str));
+extern char *table_lookup_r P((table_t *table, int val));
 
 #endif
