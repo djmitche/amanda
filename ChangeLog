@@ -1,4 +1,20 @@
 2003-01-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	Add new maxpromoteday option in a dumptype.
+	* NEWS: Document it.
+	* example/amanda.conf.in: Give an example
+	* man/amanda.8.in: Document it.
+	* server-src/amadmin.c: Print it in the disklist subcommand.
+	* server-src/conffile.c: read it.
+	* server-src/conffile.h (dumptype_t): Add maxpromoteday and
+	  s_maxpromoteday.
+	* server-src/diskfile.c (read_diskline): Copy maxpromoteday from
+	  dumptype_t to disk_t.
+	* server-src/diskfile.h (disk_t):  Add maxpromoteday.
+	* server-src/planner.c (promote_highest_priority_incr): Don't promote
+	  a disk if est(dp)->next_level0 > dp->maxpromoteday.
+
+2003-01-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Reported by Josh More <jmore@remote-print.com>
 
 	* client-src/client_util.c (add_exclude, add_include): Remove the

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.16.2.5.2.16 2003/01/01 23:28:53 martinea Exp $
+ * $Id: conffile.c,v 1.54.2.16.2.5.2.17 2003/01/04 03:35:54 martinea Exp $
  *
  * read configuration file
  */
@@ -87,7 +87,7 @@ typedef enum {
 
     /* dump type */
     /*COMMENT,*/ PROGRAM, DUMPCYCLE, RUNSPERCYCLE, MAXCYCLE, MAXDUMPS,
-    OPTIONS, PRIORITY, FREQUENCY, INDEX,
+    OPTIONS, PRIORITY, FREQUENCY, INDEX, MAXPROMOTEDAY,
     STARTTIME, COMPRESS, AUTH, STRATEGY,
     SKIP_INCR, SKIP_FULL, RECORD, HOLDING,
     EXCLUDE, INCLUDE, KENCRYPT, IGNORE, COMPRATE,
@@ -1258,6 +1258,7 @@ keytab_t dumptype_keytable[] = {
     { "KENCRYPT", KENCRYPT },
     { "MAXCYCLE", MAXCYCLE },	/* XXX - historical */
     { "MAXDUMPS", MAXDUMPS },
+    { "MAXPROMOTEDAY", MAXPROMOTEDAY },
     { "OPTIONS", OPTIONS },	/* XXX - historical */
     { "PRIORITY", PRIORITY },
     { "PROGRAM", PROGRAM },
@@ -1376,6 +1377,12 @@ dumptype_t *read_dumptype(name, from, fname, linenum)
 		parserror("maxdumps must be positive");
 	    }
 	    break;
+	case MAXPROMOTEDAY:
+	    get_simple((val_t *)&dpcur.maxpromoteday, &dpcur.s_maxpromoteday, INT);
+	    if(dpcur.maxpromoteday < 0) {
+		parserror("dpcur.maxpromoteday must be >= 0");
+	    }
+	    break;
 	case OPTIONS:
 	    get_dumpopts();
 	    break;
@@ -1466,6 +1473,7 @@ static void init_dumptype_defaults()
     dpcur.maxcycle = conf_maxcycle.i;
     dpcur.frequency = 1;
     dpcur.maxdumps = conf_maxdumps.i;
+    dpcur.maxpromoteday = 10000;
     dpcur.start_t = 0;
 
     dpcur.auth = AUTH_BSD;
@@ -1492,6 +1500,7 @@ static void init_dumptype_defaults()
     dpcur.s_maxcycle = 0;
     dpcur.s_frequency = 0;
     dpcur.s_maxdumps = 0;
+    dpcur.s_maxpromoteday = 0;
     dpcur.s_start_t = 0;
     dpcur.s_auth = 0;
     dpcur.s_record = 0;
@@ -1554,6 +1563,7 @@ static void copy_dumptype()
     dtcopy(maxcycle, s_maxcycle);
     dtcopy(frequency, s_frequency);
     dtcopy(maxdumps, s_maxdumps);
+    dtcopy(maxpromoteday, s_maxpromoteday);
     dtcopy(start_t, s_start_t);
     dtcopy(auth, s_auth);
     dtcopy(record, s_record);
@@ -2933,6 +2943,7 @@ dump_configuration(filename)
 	}
 	printf("	FREQUENCY %ld\n", (long)dp->frequency);
 	printf("	MAXDUMPS %d\n", dp->maxdumps);
+	printf("	MAXPROMOTEDAY %d\n", dp->maxpromoteday);
 	printf("	STRATEGY ");
 	switch(dp->strategy) {
 	case DS_SKIP:

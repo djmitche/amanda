@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.13.2.3.2.11 2003/01/02 04:00:28 martinea Exp $
+ * $Id: amadmin.c,v 1.49.2.13.2.3.2.12 2003/01/04 03:35:54 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1490,6 +1490,7 @@ disk_t *dp;
     printf("        priority %ld\n", dp->priority);
     printf("        dumpcycle %ld\n", dp->dumpcycle);
     printf("        maxdumps %d\n", dp->maxdumps);
+    printf("        maxpromoteday %d\n", dp->maxpromoteday);
 
     printf("        strategy ");
     switch(dp->strategy) {

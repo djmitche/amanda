@@ -1265,6 +1265,12 @@ See also the main section
 .B inparallel
 option.
 .TP
+.BS maxpromoteday int
+Default:
+.IR 10000 .
+The Maximum number of day for a promotion, set it 0 if you don't want
+promotion, set it to 1 or 2 if your disk get overpromoted.
+.TP
 .BS priority string
 Default:
 .IR medium .

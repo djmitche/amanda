@@ -361,6 +361,10 @@ define tapetype MIMSY-MEGATAPE {
 #		  Default: [kencrypt no]
 #   maxdumps	- max number of concurrent dumps to run on the client.
 #		  Default: [maxdumps 1]
+#   maxpromoteday - max number of day for a promotion, set it 0 if you don't
+#		  want promotion, set it to 1 or 2 if your disk get
+#		  overpromoted.
+#		  Default: [10000]
 #   priority	- priority level of the dump.  Valid levels are "low", "medium"
 #		  or "high".  These are really only used when Amanda has no
 #		  tape to write to because of some error.  In that "degraded
