@@ -1,6 +1,11 @@
 2003-06-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Paul Bijnens <paul.bijnens@xplanation.com>
 
+	* server-src/amstatus.pl.in: Fix for missing amdump.1 or amflush.1.
+
+2003-06-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Paul Bijnens <paul.bijnens@xplanation.com>
+
 	* server-src/amstatus.pl.in: If nothing is active, it now gives the
 	  status of the last run (amdump or amflush).
 	* man/amstatus.8.in: Document it.
