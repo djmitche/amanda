@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.32.2.3 1999/09/08 23:26:11 jrj Exp $
+ * $Id: amandad.c,v 1.32.2.4 1999/09/10 23:27:08 jrj Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -300,7 +300,7 @@ char **argv;
     /* spawn child to handle request */
 
     switch(fork()) {
-    case -1: error("could not fork service: %s", strerror(errno));
+    case -1: error("could not fork for %s: %s", cmd, strerror(errno));
 
     default:		/* parent */
 
@@ -332,7 +332,7 @@ char **argv;
 	/* run service */
 
 	execle(cmd, cmd, NULL, safe_env());
-	error("could not exec service: %s", strerror(errno));
+	error("could not exec %s: %s", cmd, strerror(errno));
     }
     amfree(cmd);
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.7 1999/09/08 23:26:30 jrj Exp $
+ * $Id: sendsize.c,v 1.97.2.8 1999/09/10 23:27:18 jrj Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -735,6 +735,7 @@ long getsize_dump(disk, level)
 
     switch(dumppid = fork()) {
     case -1:
+	dbprintf(("cannot fork for killpgrp: %s\n", strerror(errno)));
 	amfree(dumpkeys);
 	amfree(cmd);
 	amfree(rundump_cmd);
@@ -827,10 +828,14 @@ long getsize_dump(disk, level)
 # endif
 #endif
 	{
-	  dbprintf(("%s: exec %s failed or no dump program available",
-		    get_pname(), cmd));
-	  error("%s: exec %s failed or no dump program available",
-		get_pname(), cmd);
+	  char *s;
+
+	  s = strerror(errno);
+	  dbprintf(("%s: exec %s failed or no dump program available: %s\n",
+		    get_pname(), cmd, s));
+	  errno = save_errno;
+	  error("%s: exec %s failed or no dump program available: %s",
+		get_pname(), cmd, s);
 	  exit(1);
 	}
     }
@@ -957,6 +962,7 @@ long getsize_smbtar(disk, level)
 
     switch(dumppid = fork()) {
     case -1:
+	dbprintf(("fork for %s failed: %s\n", SAMBA_CLIENT, strerror(errno)));
 	memset(pass, '\0', strlen(pass));
 	amfree(pass);
 	if(domain) {
@@ -985,6 +991,7 @@ long getsize_smbtar(disk, level)
 	       (char *)0,
 	       safe_env());
 	/* should not get here */
+	dbprintf(("execle of %s failed: %s\n", SAMBA_CLIENT, strerror(errno)));
 	memset(pass, '\0', strlen(pass));
 	amfree(pass);
 	if(domain) {
@@ -1245,6 +1252,7 @@ notincremental:
 
     switch(dumppid = fork()) {
     case -1:
+      dbprintf(("fork for %s failed: %s\n", GNUTAR, strerror(errno)));
       amfree(cmd);
       amfree(dirname);
       return -1;
@@ -1281,6 +1289,7 @@ notincremental:
 	     exclude_arg ? "." : (char *)0,
 	     (char *)0,
 	     safe_env());
+      dbprintf(("execle of %s failed: %s\n", GNUTAR, strerror(errno)));
 
       exit(1);
       break;

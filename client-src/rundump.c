@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: rundump.c,v 1.23.2.1 1999/09/08 23:26:19 jrj Exp $
+ * $Id: rundump.c,v 1.23.2.2 1999/09/10 23:27:11 jrj Exp $
  *
  * runs DUMP program as root
  */
@@ -56,6 +56,7 @@ char **argv;
     int i;
 #endif /* ERRMSG */
     int fd;
+    char *e;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -144,11 +145,11 @@ char **argv;
 
     execve(dump_program, argv, safe_env());
 
-    dbprintf(("failed (%s)\n", strerror(errno)));
+    e = strerror(errno);
+    dbprintf(("execve of %s failed (%s)\n", dump_program, e));
     dbclose();
 
-    fprintf(stderr, "rundump: could not exec %s: %s\n",
-	    dump_program, strerror(errno));
+    fprintf(stderr, "rundump: could not exec %s: %s\n", dump_program, e);
     return 1;
 #endif								/* } */
 }

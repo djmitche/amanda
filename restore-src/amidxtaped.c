@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.25.2.1 1999/09/08 23:27:02 jrj Exp $
+/* $Id: amidxtaped.c,v 1.25.2.2 1999/09/10 23:27:23 jrj Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -235,7 +235,9 @@ char **argv;
 	(void)execv(amrestore_path, amrestore_args);
 
 	/* only get here if exec failed */
-	dbprintf(("Child couldn't exec amrestore\n"));
+	dbprintf(("Child could not exec %s: %s\n",
+		  amrestore_path,
+		  strerror(errno)));
 	return 1;
 	/*NOT REACHED*/
     }

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: runtar.c,v 1.11.4.1 1999/09/08 23:26:21 jrj Exp $
+ * $Id: runtar.c,v 1.11.4.2 1999/09/10 23:27:13 jrj Exp $
  *
  * runs GNUTAR program as root
  */
@@ -41,6 +41,7 @@ char **argv;
     int i;
 #endif
     int fd;
+    char *e;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -91,11 +92,11 @@ char **argv;
 
     execve(GNUTAR, argv, safe_env());
 
-    dbprintf(("failed (%s)\n", strerror(errno)));
+    e = strerror(errno);
+    dbprintf(("execve of %s failed (%s)\n", GNUTAR, e));
     dbclose();
 
-    fprintf(stderr, "runtar: could not exec %s: %s\n",
-	    GNUTAR, strerror(errno));
+    fprintf(stderr, "runtar: could not exec %s: %s\n", GNUTAR, e);
     return 1;
 #endif
 }

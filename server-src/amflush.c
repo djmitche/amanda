@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.41.2.11 1999/09/08 23:27:24 jrj Exp $
+ * $Id: amflush.c,v 1.41.2.12 1999/09/10 23:27:27 jrj Exp $
  *
  * write files from work directory onto tape
  */
@@ -206,6 +206,7 @@ char **main_argv;
     /* now, have reporter generate report and send mail */
 
     execle(reporter_program, "amreport", config_name, (char *)0, safe_env());
+    error("cannot exec %s: %s", reporter_program, strerror(errno));
 
     return 0;
 }

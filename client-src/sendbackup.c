@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.44.2.4 1999/09/08 23:26:27 jrj Exp $
+ * $Id: sendbackup.c,v 1.44.2.5 1999/09/10 23:27:15 jrj Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -705,18 +705,18 @@ int stdoutfd, stderrfd;
 
 	if(dup2(inpipe[0], 0) == -1) {
 	  e = strerror(errno);
-	  dbprintf(("error [fork %s: dup2 in: %s]\n", fname, e));
-	  error("error [fork %s: dup2 in: %s]", fname, e);
+	  dbprintf(("error [dup2 0 %s: dup2 in: %s]\n", fname, e));
+	  error("error [dup2 0 %s: dup2 in: %s]", fname, e);
 	}
 	if(dup2(stdoutfd, 1) == -1) {
 	  e = strerror(errno);
-	  dbprintf(("error [fork %s: dup2 out: %s]\n", fname, e));
-	  error("error [fork %s: dup2 out: %s]", fname, e);
+	  dbprintf(("error [dup2 1 %s: dup2 out: %s]\n", fname, e));
+	  error("error [dup2 1 %s: dup2 out: %s]", fname, e);
 	}
 	if(dup2(stderrfd, 2) == -1) {
 	  e = strerror(errno);
-	  dbprintf(("error [fork %s: dup2 err: %s]\n", fname, e));
-	  error("error [fork %s: dup2 err: %s]", fname, e);
+	  dbprintf(("error [dup2 2 %s: dup2 err: %s]\n", fname, e));
+	  error("error [dup2 2 %s: dup2 err: %s]", fname, e);
 	}
 
 	func();
