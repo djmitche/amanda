@@ -202,7 +202,7 @@ time_t dumpdate;
 
     if(dumpdate < amdp->dates[level]) {
 	/* this is not allowed, but we can ignore it */
-        dbprintf(("amandates botch: %s lev %d: new dumpdate %ld old %ld",
+        dbprintf(("amandates botch: %s lev %d: new dumpdate %ld old %ld\n",
 		  name, level, (long) dumpdate, (long) amdp->dates[level]));
 	return;
     }
