@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.25 1998/04/08 16:24:18 amcore Exp $
+ * $Id: amandad.c,v 1.26 1998/04/14 16:28:31 jrj Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -200,8 +200,16 @@ char **argv;
 
     /* get request packet and attempt to parse it */
 
-    if(dgram_recv(&in_msg.dgram, RECV_TIMEOUT, &in_msg.peer) <= 0)
-	error("error receiving message: %s", strerror(errno));
+    if((n = dgram_recv(&in_msg.dgram, RECV_TIMEOUT, &in_msg.peer)) <= 0) {
+	char *s;
+
+	if (n == 0) {
+	    s = "timeout";
+	} else {
+	    s = strerror(errno);
+	}
+	error("error receiving message: %s", s);
+    }
 
     dbprintf(("got packet:\n--------\n%s--------\n\n", in_msg.dgram.cur));
 
@@ -350,8 +358,16 @@ char **argv;
 	if(select(1, (SELECT_ARG_TYPE *)&insock, NULL, NULL, NULL) < 0)
 	    error("select failed: %s", strerror(errno));
 
-	if(dgram_recv(&dup_msg.dgram, RECV_TIMEOUT, &dup_msg.peer) <= 0)
-	    error("error receiving message: %s", strerror(errno));
+	if((n = dgram_recv(&dup_msg.dgram, RECV_TIMEOUT, &dup_msg.peer)) <= 0) {
+	    char *s;
+
+	    if (n == 0) {
+		s = "timeout";
+	    } else {
+		s = strerror(errno);
+	    }
+	    error("error receiving message: %s", s);
+	}
 
 	/* 
 	 * Under normal conditions, the master will resend the REQ packet
@@ -404,11 +420,19 @@ send_response:
 	    dbprintf(("%s: sending REP packet:\n----\n%s----\n\n",
 		      argv[0], out_msg.dgram.data));
 	dgram_send_addr(in_msg.peer, &out_msg.dgram);
-	if(dgram_recv(&dup_msg.dgram, ack_timeout, &dup_msg.peer) <= 0) {
+	if((n = dgram_recv(&dup_msg.dgram, ack_timeout, &dup_msg.peer)) <= 0) {
+	    char *s;
+
+	    if (n == 0) {
+		s = "timeout";
+	    } else {
+		s = strerror(errno);
+	    }
+
 	    /* timed out or error, try again */
 	    retry_count++;
 
-	    dbprintf(("%s: timeout waiting for ack", argv[0]));
+	    dbprintf(("%s: waiting for ack: %s", argv[0], s));
 	    if(retry_count < max_retry_count) 
 		dbprintf((", retrying\n"));
 	    else 
