@@ -31,7 +31,7 @@ regular expression option.
 It is up to the system administrator to define a naming convention.
 .LP
 .B Amlabel
-will not write the label if the tape contain an active
+will not write the label if the tape contains an active
 amanda tape or if the label specified is on an active tape. The
 .B -f
 (force) flag bypass these verification.
