@@ -1118,23 +1118,26 @@ static int rait_tapefd_ioctl(int (*func0)(int),
 	    } else {
 		j = (*func1)(pr->fds[i], count);
 	    }
-	    if( j != 0)
-		res = j;
+	    if( j != 0) {
+		errors++;
+	    }
 	    pr->readres[i] = -1;
 	}
     }
     for( i = 0; i < pr->nfds ; i++ ) {
-        rait_debug((stderr, "in parent, waiting for %d\n", pr->readres[i]));
-	waitpid( pr->readres[i], &stat, 0);
-	if( WEXITSTATUS(stat) != 0 ) {
-	    res = WEXITSTATUS(stat);
-	    if( res == 255 ) 
-		res = -1;
-        }
-        rait_debug((stderr, "in parent, return code was %d\n", res));
-	if ( res != 0 ) { 
-	    errors++;
-	    res = 0;
+	if(tapefd_can_fork(pr->fds[i])) {
+            rait_debug((stderr, "in parent, waiting for %d\n", pr->readres[i]));
+	    waitpid( pr->readres[i], &stat, 0);
+	    if( WEXITSTATUS(stat) != 0 ) {
+		res = WEXITSTATUS(stat);
+		if( res == 255 ) 
+		    res = -1;
+            }
+            rait_debug((stderr, "in parent, return code was %d\n", res));
+	    if ( res != 0 ) { 
+		errors++;
+		res = 0;
+	    }
 	}
     }
     if (errors > 0) {
