@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflock.c,v 1.17.4.5 1999/10/03 16:06:01 jrj Exp $
+ * $Id: amflock.c,v 1.17.4.6 1999/11/02 21:52:08 oliva Exp $
  *
  * file locking routines, put here to hide the system dependant stuff
  * from the rest of the code
@@ -48,12 +48,7 @@
 #include "amanda.h"
 
 #if defined(USE_POSIX_FCNTL)
-   static struct flock lock = {
-	F_UNLCK,	/* Lock type, will be set below. */
-	SEEK_SET,	/* Offset below starts at beginning, */
-	0,		/* thus lock region starts at byte 0 */
-	0		/* and goes to EOF. */
-   };			/* Don't need other field(s). */
+     static struct flock lock; /* zero-initialized */
 #endif
 
 #if !defined(USE_POSIX_FCNTL) && defined(USE_FLOCK)
@@ -329,6 +324,7 @@ char *resource;
 
 #ifdef USE_POSIX_FCNTL
 	lock.l_type = F_RDLCK;
+	lock.l_whence = SEEK_SET;
 	r = fcntl(fd, F_SETLKW, &lock);
 #else
 	r = amflock(fd, resource);
@@ -348,6 +344,7 @@ char *resource;
 
 #ifdef USE_POSIX_FCNTL
 	lock.l_type = F_WRLCK;
+	lock.l_whence = SEEK_SET;
 	r = fcntl(fd, F_SETLKW, &lock);
 #else
 #ifdef USE_FLOCK
@@ -379,6 +376,7 @@ char *resource;
 
 #ifdef USE_POSIX_FCNTL
 	lock.l_type = F_UNLCK;
+	lock.l_whence = SEEK_SET;
 	r = fcntl(fd, F_SETLK, &lock);
 #else
 #ifdef USE_FLOCK
