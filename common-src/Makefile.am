@@ -3,7 +3,7 @@
 ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
 
 # last updated on amanda 2.4.0b5
-libamanda_version = 3:0:1
+libamanda_version = 3:0:0
 # last updated on amanda 2.4.0b1
 libnolog_version = 0:0:0
 
