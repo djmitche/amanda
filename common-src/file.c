@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.29 2002/03/31 21:02:00 jrjackson Exp $
+ * $Id: file.c,v 1.30 2002/08/19 19:04:14 martinea Exp $
  *
  * file and directory bashing routines
  */
@@ -404,7 +404,7 @@ debug_agets(s, l, file)
 	free (line);				/* and release the old */
 	line = cp;
 	line_ptr = line + size_save - 1;	/* start at the null byte */
-	line_free = AGETS_LINE_INCR + 1;	/* and we get to use it */
+	line_free = line_size - line_len;	/* and we get to use it */
     }
     /*
      * Return what we got even if there was not a newline.  Only
