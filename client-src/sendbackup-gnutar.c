@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.83 2002/03/03 17:10:32 martinea Exp $
+ * $Id: sendbackup-gnutar.c,v 1.84 2002/03/21 00:53:31 martinea Exp $
  *
  * send backup data using GNU tar
  */
@@ -379,7 +379,11 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 	    strappend(taropt, "a");
 	}
 
-	dbprintf(("%s-gnutar: backup of %s/%s\n", get_pname(), sharename, subdir));
+	dbprintf(("%s-gnutar: backup of %s", get_pname(), sharename));
+	if (subdir) {
+	    dbprintf(("/%s",subdir));
+	}
+	dbprintf(("\n"));
 
 	program->backup_name = program->restore_name = SAMBA_CLIENT;
 	cmd = stralloc(program->backup_name);
