@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.h,v 1.5 1998/01/02 01:05:20 jrj Exp $
+ * $Id: amrecover.h,v 1.6 1998/03/07 18:11:50 martinea Exp $
  *
  * data structures and declarations for amrecover
  */
@@ -45,6 +45,7 @@ DIR_ITEM;
 
 extern char *server_name;
 extern char *config;
+extern char *dump_datestamp;		/* date we are restoring */
 extern char *dump_hostname;		/* which machine we are restoring */
 extern char *disk_name;			/* disk we are restoring */
 extern char *mount_point;		/* where disk was mounted */

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.23 1998/03/01 23:43:15 amcore Exp $
+ * $Id: amrecover.c,v 1.24 1998/03/07 18:11:49 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -76,6 +76,7 @@ char *config = NULL;
 char *server_name = NULL;
 int server_socket;
 char *server_line = NULL;
+char *dump_datestamp = NULL;		/* date we are restoring */
 char *dump_hostname;			/* which machine we are restoring */
 char *disk_name = NULL;			/* disk we are restoring */
 char *mount_point = NULL;		/* where disk was mounted */

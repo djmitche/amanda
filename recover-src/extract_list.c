@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.26 1998/03/02 18:15:08 jrj Exp $
+ * $Id: extract_list.c,v 1.27 1998/03/07 18:11:52 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -922,6 +922,7 @@ static int extract_files_setup P((void))
     char *disk_regex = NULL;
     char *service_name = NULL;
     char *line = NULL;
+    char *clean_datestamp, *ch, *ch1;
 
     service_name = stralloc2("amidxtape", SERVICE_SUFFIX);
 
@@ -995,17 +996,27 @@ static int extract_files_setup P((void))
     /* we want to force amrestore to only match disk_name exactly */
     disk_regex = vstralloc("^", disk_name, "$", NULL);
 
+    clean_datestamp = stralloc(dump_datestamp);
+    for(ch=ch1=clean_datestamp;*ch1 != '\0';ch1++) {
+	if(*ch1 != '-') {
+	    *ch = *ch1;
+	    ch++;
+	}
+    }
+    *ch = '\0';
     /* send to the tape server what tape file we want */
-    /* 5 args: "-h ", "-p", "tape device", "hostname", "diskname" */
-    send_to_tape_server(tape_server_socket, "5");
+    /* 7 args: "-h ", "-p", "-d", "datestamp", "tape device", "hostname", "diskname" */
+    send_to_tape_server(tape_server_socket, "7");
     send_to_tape_server(tape_server_socket, "-h");
     send_to_tape_server(tape_server_socket, "-p");
+    send_to_tape_server(tape_server_socket, "-d");
+    send_to_tape_server(tape_server_socket, clean_datestamp);
     send_to_tape_server(tape_server_socket, dump_device_name);
     send_to_tape_server(tape_server_socket, dump_hostname);
     send_to_tape_server(tape_server_socket, disk_regex);
 
-    dbprintf(("Started amidxtaped with arguments \"5 -h -p %s %s %s\"\n",
-	      dump_device_name, dump_hostname, disk_regex));
+    dbprintf(("Started amidxtaped with arguments \"7 -h -p -d %s %s %s %s\"\n",
+	      clean_datestamp, dump_device_name, dump_hostname, disk_regex));
 
     afree(disk_regex);
 
@@ -1269,6 +1280,7 @@ void extract_files P((void))
 	}
 	else {
 	    dump_device_name = newstralloc(dump_device_name, tape_device_name);
+	    dump_datestamp = newstralloc(dump_datestamp, elist->date);
 	    printf("Load tape %s now\n", elist->tape);
 	    if (!okay_to_continue())
 	        return;
