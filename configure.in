@@ -2814,7 +2814,8 @@ AC_CONFIG_FILES([\
 	changer-src/chg-mtx.sh		changer-src/chg-chs.sh		\
 	changer-src/chg-rth.pl		changer-src/chg-chio.pl		\
 	changer-src/chg-zd-mtx.sh	changer-src/Makefile		\
-	changer-src/chg-juke.sh						\
+	changer-src/chg-juke.sh		changer-src/chg-rait.sh		\
+	changer-src/chg-null.sh						\
 									\
 	client-src/patch-system.sh	client-src/Makefile		\
 									\
