@@ -1,3 +1,8 @@
+2001-03-08  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	Reported by Eric Schnoebelen <eric@cirr.com>
+
+	* server-src/changer.c (): Fix fd leak.
+
 2001-02-28  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amadmin.c (info_one): typo.
