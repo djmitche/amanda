@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.100 1999/03/07 17:11:45 martinea Exp $
+/* $Id: dumper.c,v 1.101 1999/03/07 17:44:32 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1714,14 +1714,26 @@ int level;
     int rc;
 
     ap_snprintf(level_string, sizeof(level_string), "%d", level);
-    req = vstralloc("SERVICE sendbackup\n",
-		    "OPTIONS ",
-		    "hostname=", hostname, ";",
-		    "\n",
-		    progname, " ", disk, " ", level_string, " ", dumpdate, " ",
-		    "OPTIONS ", options,
-		    "\n",
-		    NULL);
+    if(strncmp(progname,"DUMP",4) == 0 || strncmp(progname,"GNUTAR",6) == 0)
+	req = vstralloc("SERVICE sendbackup\n",
+		        "OPTIONS ",
+		        "hostname=", hostname, ";",
+		        "\n",
+			progname, " ", disk, " ", level_string, " ", 
+			dumpdate, " ",
+		        "OPTIONS ", options,
+		        "\n",
+		        NULL);
+    else
+	req = vstralloc("SERVICE sendbackup\n",
+		        "OPTIONS ",
+		        "hostname=", hostname, ";",
+		        "\n",
+			"DUMPER ", progname, " ", disk, " ", level_string, " ",
+			dumpdate, " ",
+		        "OPTIONS ", options,
+		        "\n",
+		        NULL);
 
     datafd = mesgfd = indexfd = -1;
 

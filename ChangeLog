@@ -1,5 +1,13 @@
 1999-03-07 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/conffile.c: accept any string for the program.
+	* server-src/amcheck.c: add the keyword DUMPER to the request if 
+	the program is not DUMP or GNUTAR.
+	* server-src/planner.c: ditto
+	* server-src/dumper.c: ditto
+
+1999-03-07 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/dumper.c (startup_dump): rename dumpname to progname.
 	the function will use the parameter progname instead of the
 	global variable.

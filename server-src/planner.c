@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.85 1999/01/23 14:11:09 martinea Exp $
+ * $Id: planner.c,v 1.86 1999/03/07 17:44:35 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -992,13 +992,23 @@ host_t *hostp;
 		exclude1 = dp->exclude_list ? " exclude-list=" : " exclude-file=";
 		exclude2 = dp->exclude;
 	    }
-	    t = vstralloc(req,
-			  dp->program, " ", dp->name, " ", level, " ",
-			  est(dp)->dumpdate[i], " ", spindle,
-			  exclude1,
-			  exclude2,
-			  "\n",
-			  NULL);
+	    if(strncmp(dp->program,"DUMP",4) == 0 || 
+	       strncmp(dp->program,"GNUTAR",6) == 0)
+		t = vstralloc(req,
+			      dp->program, " ", dp->name, " ", level, " ",
+			      est(dp)->dumpdate[i], " ", spindle,
+			      exclude1,
+			      exclude2,
+			      "\n",
+			      NULL);
+	    else
+		t = vstralloc(req, "DUMPER ",
+			      dp->program, " ", dp->name, " ", level, " ",
+			      est(dp)->dumpdate[i], " ", spindle,
+			      exclude1,
+			      exclude2,
+			      "\n",
+			      NULL);
 	    amfree(req);
 	    req = t;
 	    disks++;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.59 1999/02/03 13:05:51 oliva Exp $
+ * $Id: conffile.c,v 1.60 1999/03/07 17:44:29 martinea Exp $
  *
  * read configuration file
  */
@@ -1130,9 +1130,6 @@ static void get_dumptype()
 	    break;
 	case PROGRAM:
 	    get_simple((val_t *)&dpcur.program, &dpcur.s_program, STRING);
-	    if(strcmp(dpcur.program, "DUMP")
-	       && strcmp(dpcur.program, "GNUTAR"))
-		parserror("backup program \"%s\" unknown", dpcur.program);
 	    break;
 	case RECORD:
 	    get_simple(&tmpval, &dpcur.s_record, BOOL);

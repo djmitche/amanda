@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.55 1998/12/15 00:57:46 kashmir Exp $
+ * $Id: amcheck.c,v 1.56 1999/03/07 17:44:26 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1051,14 +1051,26 @@ int fd;
 
 	    remove_disk(origqp, dp);
 	    o = optionstr(dp);
-	    t = vstralloc(req,
-			  dp->program, 
-			  " ",
-			  dp->name,
-			  " 0 OPTIONS |",
-			  o,
-			  "\n",
-			  NULL);
+	    if(strncmp(dp->program,"DUMP",4) == 0 || 
+	       strncmp(dp->program,"GNUTAR",6) == 0)
+		t = vstralloc(req,
+			      dp->program, 
+			      " ",
+			      dp->name,
+			      " 0 OPTIONS |",
+			      o,
+			      "\n",
+			      NULL);
+	    else
+		t = vstralloc(req,
+			      "DUMPER ",
+			      dp->program, 
+			      " ",
+			      dp->name,
+			      " 0 OPTIONS |",
+			      o,
+			      "\n",
+			      NULL);
 	    amfree(req);
 	    amfree(o);
 	    req = t;
