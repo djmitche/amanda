@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.69 1998/01/31 03:28:38 amcore Exp $
+ * $Id: sendsize.c,v 1.70 1998/01/31 04:22:02 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -584,7 +584,6 @@ int level;
     char *cmd = NULL;
     char *line = NULL;
     char level_str[NUM_STR_SIZE];
-    pid_t p;
     int s;
     int killerr;
 
@@ -777,19 +776,19 @@ int level;
 	dbprintf(("kill failed: %s\n", strerror(errno)));
     }
     /* Now check whether it dies */
-    for(s = 5; s > 0 && (p = kill(dumppid, 0)) == 0; s--) {
+    for(s = 5; s > 0 && (killerr = kill(dumppid, 0)) == 0; s--) {
 	sleep(1);
     }
-    if(p == 0) {
+    if(killerr == 0) {
         dbprintf(("it won\'t die with SIGTERM, but SIGKILL should do\n"));
 	killerr = kill(-dumppid, SIGKILL);
 	if (killerr == -1) {
 	    dbprintf(("kill failed: %s\n", strerror(errno)));
 	}
-	for(s = 5; s > 0 && (p = kill(dumppid, 0)) == 0; s--) {
+	for(s = 5; s > 0 && (killerr = kill(dumppid, 0)) == 0; s--) {
 	    sleep(1);
 	}
-	if(p == 0) {
+	if(killerr == 0) {
 	    dbprintf(("oh well, seems like it won\'t die; amanda may have to run as root then\n"));
 	}
     }
