@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.10 1997/12/09 07:11:28 amcore Exp $
+ * $Id: extract_list.c,v 1.11 1997/12/14 21:03:27 jrj Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -801,7 +801,11 @@ EXTRACT_LIST *elist;
 	error("bad header");
     }
 
+#ifdef GNUTAR
     istar = !strcmp(file.program, GNUTAR);
+#else
+    istar = 0;
+#endif
     if (!istar) {
 	len_program=strlen(file.program);
 	if(len_program<3)
