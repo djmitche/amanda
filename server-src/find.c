@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.20 2004/02/02 20:29:00 martinea Exp $
+ * $Id: find.c,v 1.21 2004/02/02 21:29:53 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -675,7 +675,7 @@ int datestamp, datestamp_aux;
 		    new_output_find->next=*output_find;
 		    new_output_find->datestamp=datestampI;
 		    new_output_find->timestamp = alloc(15);
-		    ap_snprintf(new_output_find->timestamp, 15, "%d000000", datestampI);
+		    snprintf(new_output_find->timestamp, 15, "%d000000", datestampI);
 		    new_output_find->datestamp_aux=datestamp_aux;
 		    new_output_find->hostname=stralloc(host);
 		    new_output_find->diskname=stralloc(disk);
@@ -695,7 +695,7 @@ int datestamp, datestamp_aux;
 		    new_output_find->datestamp=datestamp;
 		    new_output_find->datestamp_aux=datestamp_aux;
 		    new_output_find->timestamp = alloc(15);
-		    ap_snprintf(new_output_find->timestamp, 15, "%d000000", datestamp);
+		    snprintf(new_output_find->timestamp, 15, "%d000000", datestamp);
 		    new_output_find->hostname=stralloc(host);
 		    new_output_find->diskname=stralloc(disk);
 		    new_output_find->level=level;

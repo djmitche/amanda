@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.140 2003/10/24 21:08:32 kovert Exp $
+ * $Id: sendsize.c,v 1.141 2004/02/02 21:29:52 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -1480,7 +1480,7 @@ time_t dumpsince;
 
 
 #ifdef USE_QUICK_AND_DIRTY_ESTIMATES
-    ap_snprintf(dumptimestr, sizeof(dumptimestr), "%ld", dumpsince);
+    snprintf(dumptimestr, sizeof(dumptimestr), "%ld", dumpsince);
 
     cmd = vstralloc(libexecdir, "/", "amqde", versionsuffix(), NULL);
 
