@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.158 2004/05/10 16:43:31 martinea Exp $
+ * $Id: planner.c,v 1.159 2004/08/03 13:09:03 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1189,6 +1189,7 @@ am_host_t *hostp;
     int i, estimates, timeout, req_len;
     const security_driver_t *secdrv;
     char *dumper;
+    char *calcsize;
 
     assert(hostp->disks != NULL);
 
@@ -1204,6 +1205,9 @@ am_host_t *hostp;
      * (and subsequent) pass(es).
      */
     if(hostp->features != NULL) { /* sendsize service */
+	int nb_client = 0;
+	int nb_server = 0;
+
 	int has_features = am_has_feature(hostp->features,
 					  fe_req_options_features);
 	int has_hostname = am_has_feature(hostp->features,
@@ -1233,76 +1237,200 @@ am_host_t *hostp;
 	    int s_len = 0;
 
 	    if(dp->todo == 0) continue;
+
 	    if(est(dp)->state != DISK_READY) continue;
+
 	    est(dp)->got_estimate = 0;
 	    if(est(dp)->level[0] == -1) {
 		est(dp)->state = DISK_DONE;
 		continue;
 	    }
 
-	    for(i = 0; i < MAX_LEVELS; i++) {
-		char *l;
-		char *exclude1 = "";
-		char *exclude2 = "";
-		char *excludefree = NULL;
-		char spindle[NUM_STR_SIZE];
-		char level[NUM_STR_SIZE];
-		int lev = est(dp)->level[i];
+	    if(dp->estimate == ES_CLIENT ||
+	       dp->estimate == ES_CALCSIZE) {
+		nb_client++;
 
-		if(lev == -1) break;
+		for(i = 0; i < MAX_LEVELS; i++) {
+		    char *l;
+		    char *exclude1 = "";
+		    char *exclude2 = "";
+		    char *excludefree = NULL;
+		    char spindle[NUM_STR_SIZE];
+		    char level[NUM_STR_SIZE];
+		    int lev = est(dp)->level[i];
 
-		snprintf(level, sizeof(level), "%d", lev);
-		snprintf(spindle, sizeof(spindle), "%d", dp->spindle);
-		if(am_has_feature(hostp->features, fe_sendsize_req_options)) {
-		    exclude1 = " OPTIONS |";
-		    exclude2 = optionstr(dp, hostp->features, NULL);
-		    excludefree = exclude2;
-		}
-		else {
-		    if(dp->exclude_file && dp->exclude_file->nb_element == 1) {
-			exclude1 = " exclude-file=";
-			exclude2 = dp->exclude_file->first->name;
+		    if(lev == -1) break;
+
+		    snprintf(level, sizeof(level), "%d", lev);
+		    snprintf(spindle, sizeof(spindle), "%d", dp->spindle);
+		    if(am_has_feature(hostp->features,fe_sendsize_req_options)){
+			exclude1 = " OPTIONS |";
+			exclude2 = optionstr(dp, hostp->features, NULL);
+			excludefree = exclude2;
 		    }
-		    else if(dp->exclude_list
-			    && dp->exclude_list->nb_element == 1) {
-			exclude1 = " exclude-list=";
-			exclude2 = dp->exclude_list->first->name;
+		    else {
+			if(dp->exclude_file &&
+			   dp->exclude_file->nb_element == 1) {
+			    exclude1 = " exclude-file=";
+			    exclude2 = dp->exclude_file->first->name;
+			}
+			else if(dp->exclude_list &&
+				dp->exclude_list->nb_element == 1) {
+			    exclude1 = " exclude-list=";
+			    exclude2 = dp->exclude_list->first->name;
+			}
 		    }
+
+		    if(dp->estimate == ES_CALCSIZE &&
+		       !am_has_feature(hostp->features, fe_calcsize_estimate)) {
+			log_add(L_WARNING,"%s:%s does not support CALCSIZE for estimate, using CLIENT.\n",
+				hostp->hostname, dp->name);
+			dp->estimate = ES_CLIENT;
+		    }
+		    if(dp->estimate == ES_CLIENT)
+			calcsize = "";
+		    else
+			calcsize = "CALCSIZE ";
+
+		    if(strncmp(dp->program,"DUMP",4) == 0 || 
+		       strncmp(dp->program,"GNUTAR",6) == 0) {
+			dumper = "";
+		    } else {
+			dumper = "DUMPER ";
+		    }
+		    l = vstralloc(calcsize,
+				  dumper,
+				  dp->program,
+				  " ", dp->name,
+				  " ", dp->device ? dp->device : "",
+				  " ", level,
+				  " ", est(dp)->dumpdate[i],
+				  " ", spindle,
+				  " ", exclude1, exclude2,
+				  "\n",
+				  NULL);
+		    strappend(s, l);
+		    s_len += strlen(l);
+		    amfree(l);
+		    amfree(excludefree);
 		}
-		if(strncmp(dp->program,"DUMP",4) == 0 || 
-		   strncmp(dp->program,"GNUTAR",6) == 0) {
-		    dumper = "";
-		} else {
-		    dumper = "DUMPER ";
+		/*
+		 * Allow 2X for err response.
+		 */
+		if(req_len + s_len > MAX_PACKET / 2) {
+		    amfree(s);
+		    break;
 		}
-		l = vstralloc(dumper,
-			      dp->program,
-			      " ", dp->name,
-			      " ", dp->device ? dp->device : "",
-			      " ", level,
-			      " ", est(dp)->dumpdate[i],
-			      " ", spindle,
-			      " ", exclude1, exclude2,
-			      "\n",
-			      NULL);
-		strappend(s, l);
-		s_len += strlen(l);
-		amfree(l);
-		amfree(excludefree);
-	    }
-	    /*
-	     * Allow 2X for err response.
-	     */
-	    if(req_len + s_len > MAX_PACKET / 2) {
+		estimates += i;
+		strappend(req, s);
+		req_len += s_len;
 		amfree(s);
-		break;
+		est(dp)->state = DISK_ACTIVE;
+		remove_disk(&startq, dp);
 	    }
-	    estimates += i;
-	    strappend(req, s);
-	    req_len += s_len;
-	    amfree(s);
-	    est(dp)->state = DISK_ACTIVE;
-	    remove_disk(&startq, dp);
+	    else if (dp->estimate == ES_SERVER) {
+		info_t info;
+		nb_server++;
+		get_info(dp->host->hostname, dp->name, &info);
+		for(i = 0; i < MAX_LEVELS; i++) {
+		    int j;
+		    int lev = est(dp)->level[i];
+
+		    if(lev == -1) break;
+		    if(lev == 0) { /* use latest level 0, should do extrapolation */
+			long est_size = 0;
+			int nb_est = 0;
+
+			for(j=0;j<NB_HISTORY;j++) {
+			    if(info.history[j].level == 0) {
+				est_size = info.history[j].size;
+				nb_est++;
+			    }
+			}
+			if(nb_est > 0) {
+			    est(dp)->est_size[i] = est_size;
+			}
+			else if(info.inf[lev].size > 1000) { /* stats */
+			    est(dp)->est_size[i] = info.inf[lev].size;
+			}
+			else {
+			    est(dp)->est_size[i] = 1000000;
+			}
+		    }
+		    else if(lev == est(dp)->last_level) {
+			/* means of all X day at the same level */
+			#define NB_DAY 30
+			int nb_day = 0;
+			long est_size_day[NB_DAY];
+			int nb_est_day[NB_DAY];
+			for(j=0;j<NB_DAY;j++) {
+			    est_size_day[j]=0;
+			    nb_est_day[j]=0;
+			}
+
+			for(j=NB_HISTORY-2;j>=0;j--) {
+			    if(info.history[j].level <= 0) continue;
+			    if(info.history[j].level==info.history[j+1].level) {
+				if(nb_day <NB_DAY-1) nb_day++;
+				est_size_day[nb_day] += info.history[j].size;
+				nb_est_day[nb_day]++;
+			    }
+			    else {
+				nb_day=0;
+			    }
+			}
+			nb_day = info.consecutive_runs + 1;
+			if(nb_day > NB_DAY-1) nb_day = NB_DAY-1;
+
+			while(nb_day > 0 && nb_est_day[nb_day] > 0) nb_day--;
+
+			if(nb_est_day[nb_day] > 0) {
+			    est(dp)->est_size[i] =
+				    est_size_day[nb_day] / nb_est_day[nb_day];
+			}
+			else if(info.inf[lev].size > 1000) { /* stats */
+			    est(dp)->est_size[i] = info.inf[lev].size;
+			}
+			else {
+			    est(dp)->est_size[i] = 10000;
+			}
+		    }
+		    else if(lev == est(dp)->last_level + 1) {
+			/* means of all first day at a new level */
+			long est_size = 0;
+			int nb_est = 0;
+
+			for(j=NB_HISTORY-2;j>=0;j--) {
+			    if(info.history[j].level < 0) continue;
+			    if(info.history[j].level == info.history[j+1].level
++ 1 ) {
+				est_size += info.history[j].size;
+				nb_est++;
+			    }
+			}
+			if(nb_est > 0) {
+			    est(dp)->est_size[i] = est_size / nb_est;
+			}
+			else if(info.inf[lev].size > 1000) { /* stats */
+			    est(dp)->est_size[i] = info.inf[lev].size;
+			}
+			else {
+			    est(dp)->est_size[i] = 100000;
+			}
+		    }
+	        }
+		fprintf(stderr,"%s time %s:server estimate for host %s disk %s:"
+,
+			get_pname(), walltime_str(curclock()),
+			dp->host->hostname, dp->name);
+		fprintf(stderr," %d -> %ldK, %d -> %ldK, %d -> %ldK\n",
+			est(dp)->level[0], est(dp)->est_size[0],
+			est(dp)->level[1], est(dp)->est_size[1],
+			est(dp)->level[2], est(dp)->est_size[2]);
+		est(dp)->state = DISK_DONE;
+		remove_disk(&startq, dp);
+		enqueue_disk(&estq, dp);
+	    }
 	}
 
 	if(estimates == 0) {

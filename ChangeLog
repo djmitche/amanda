@@ -1,5 +1,10 @@
 2004-08-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/planner.c (getsize): Do SERVER estimate, call sendsize with
+	  CALCSIZE estimate.
+
+2004-08-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* client-src/calcsize.c: Support exclude and include like gnutar,
 	  change in program argument.
 	* client-src/sendsize.c: Execute calcsize as requested.
