@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.66.2.7.4.5.2.2 2002/02/01 01:08:54 martinea Exp $
+ * $Id: amanda.h,v 1.66.2.7.4.5.2.3 2002/02/15 01:47:55 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -548,17 +548,17 @@ extern void     areads_relbuf     P((int fd));
 
 #define	amfree(ptr) do {						\
     if(ptr) {								\
-	int e = errno;							\
+	int e__errno = errno;						\
 	free(ptr);							\
 	(ptr) = NULL;							\
-	errno = e;							\
+	errno = e__errno;						\
     }									\
 } while(0)
 
 #define strappend(s1,s2) do {						\
-    char *t = (s1) ? stralloc2((s1),(s2)) : stralloc((s2));		\
+    char *t_t_t = (s1) ? stralloc2((s1),(s2)) : stralloc((s2));		\
     amfree((s1));							\
-    (s1) = t;								\
+    (s1) = t_t_t;							\
 } while(0)
 
 /*
