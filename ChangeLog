@@ -1,7 +1,12 @@
+2001-12-31  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	Patch by Harlan Stenn <Harlan.Stenn@pfcs.com>
+
+	* configure.in: Add missing [.
+
 2001-12-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/driver.c: Do not go in degraded mode in nodump mode.
-	* server-src/conffile.c: Check many options to be sure they are positive.
+	* server-src/conffile.c:Check many options to be sure they are positive.
 
 2001-12-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
