@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: changer.c,v 1.9 1998/01/29 20:18:51 jrj Exp $
+ * $Id: changer.c,v 1.10 1998/03/09 22:28:11 blair Exp $
  *
  * interface routines for tape changers
  */
@@ -128,7 +128,7 @@ char **slotstr;
 {
     char *rest;
 
-    return run_changer_command("-reset", NULL, slotstr, &rest);
+    return run_changer_command("-reset", (char *) NULL, slotstr, &rest);
 }
 
 int changer_eject(slotstr)
@@ -136,7 +136,7 @@ char **slotstr;
 {
     char *rest;
 
-    return run_changer_command("-eject", NULL, slotstr, &rest);
+    return run_changer_command("-eject", (char *) NULL, slotstr, &rest);
 }
 
 int changer_loadslot(inslotstr, outslotstr, devicename)
@@ -161,7 +161,7 @@ char **curslotstr;
     char *rest;
     int rc;
 
-    rc = run_changer_command("-info", NULL, curslotstr, &rest);
+    rc = run_changer_command("-info", (char *) NULL, curslotstr, &rest);
     if(rc) return rc;
 
     if (sscanf(rest, "%d %d", nslotsp, backwardsp) != 2) {
