@@ -1,5 +1,9 @@
 2004-11-10  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/driver.c (selectset): Make only one declaration in main.
+
+2004-11-10  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* tape-src/tapetype.c: Use new tape.
 
 2004-11-08  Jean-Louis Martineau <martineau@iro.umontreal.ca>

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.20.2.8 2004/11/08 18:37:42 martinea Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.20.2.9 2004/11/10 20:02:54 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -128,6 +128,7 @@ int main(main_argc, main_argv)
 {
     disklist_t *origqp;
     disk_t *diskp;
+    fd_set selectset;
     int fd, dsk;
     dumper_t *dumper;
     char *newdir = NULL;
@@ -349,8 +350,6 @@ int main(main_argc, main_argv)
 
 	    /* Process taper results until the schedule arrives */
 	    while (1) {
-		fd_set selectset;
-
 		FD_ZERO(&selectset);
 		FD_SET(0, &selectset);
 		FD_SET(taper, &selectset);
@@ -374,8 +373,6 @@ int main(main_argc, main_argv)
 
     while(start_some_dumps(&runq) || some_dumps_in_progress() ||
 	  any_delayed_disk) {
-	fd_set selectset;
-
 	short_dump_state();
 
 	/* wait for results */
