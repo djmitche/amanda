@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.20.2.5 2004/10/21 12:06:16 martinea Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.20.2.6 2004/10/21 12:31:41 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -2123,6 +2123,7 @@ int dump_to_tape(dp)
     cmd_t cmd;
     int result_argc;
     char *result_argv[MAX_ARGS+1];
+    int dumper_tryagain = 0;
 
     inside_dump_to_tape = 1;	/* for simulator */
 
@@ -2209,6 +2210,7 @@ int dump_to_tape(dp)
 	/* problem with dump, possibly nonfatal, retry one time */
 	sched(dp)->attempted++;
 	failed = sched(dp)->attempted;
+	dumper_tryagain = 1;
 	break;
 	
     case FAILED: /* FAILED <handle> <errstr> */
@@ -2249,6 +2251,11 @@ int dump_to_tape(dp)
 	break;
 
     case TRYAGAIN: /* TRY-AGAIN <handle> <err mess> */
+	if(dumper_tryagain == 0) {
+	    sched(dp)->attempted++;
+	    if(sched(dp)->attempted > failed)
+		failed = sched(dp)->attempted;
+	}
     tryagain:
 	if(failed <= 1)
 	    headqueue_disk(&runq, dp);

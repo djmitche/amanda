@@ -1,6 +1,11 @@
 2004-10-21  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/driver.c (dump_to_tape): Don't retry a dump indefinitely
+	  if dumper returns DONE and taper returns TRYAGAIN.
+
+2004-10-21  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/driver.c (dump_to_tape): Don't retry a dump indefinitely
 	  if dumper returns TRYAGAIN and taper returns DONE.
 
 2004-10-20  Jean-Louis Martineau <martineau@iro.umontreal.ca>
