@@ -1,3 +1,8 @@
+2004-02-12  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Philippe Charnier <charnier@xp11.frmug.org>
+
+	* server-src/amtrmidx.c: Add '\n'.
+
 2004-02-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* recover-src/set_commands.c (cd_glob): Fix memory leak.
