@@ -158,6 +158,17 @@ while(<AMDUMP>) {
 		$taper_finished{$hostpart}=0;
 		$partialestimate{$hostpart}=0;
 		$error{$hostpart}="";
+		$_ = <AMDUMP>;
+		while (! /getting estimates/) { $_ = <AMDUMP>; }
+		chomp;
+		if(/getting estimates (-*\d) \(-2\) (-*\d) \(-2\) (-*\d) \(-2\)/) {
+			if($1 != -1) { $getest{$hostpart} .= ":$1:" };
+			if($2 != -1) { $getest{$hostpart} .= ":$2:" };
+			if($3 != -1) { $getest{$hostpart} .= ":$3:" };
+		}
+		else {
+			die("ERROR $_");
+		}
 	}
 	elsif(/got result for host (\S+) disk (\S+): (\d+) -> (\d+)K,/) {
 		$host=$1;
@@ -167,15 +178,23 @@ while(<AMDUMP>) {
 		$level{$hostpart}=$3;
 		$esize{$hostpart}=$4;
 		$partialestimate{$hostpart}=0;
+		$getest{$hostpart} = "";
 	}
-	elsif(/got partial result for host (\S+) disk (\S+): (\d+) -> (\d+)K,/) {
+	elsif(/got partial result for host (\S+) disk (\S+): (-*\d+) -> (-*\d+)K, (-*\d+) -> (-*\d+)K, (-*\d+) -> (-*\d+)K/) {
 		$host=$1;
 		$partition=$2;
 		$hostpart=&make_hostpart($host,$partition,$gdatestamp);
-		$estimate{$hostpart}=1;
-		$level{$hostpart}=$3;
-		$esize{$hostpart}=$4;
-		$partialestimate{$hostpart}=1;
+		if($4 > 0 || $6 > 0 || $8 > 0) {
+			$estimate{$hostpart}=1;
+			$level{$hostpart}=$3;
+			$esize{$hostpart}=$4;
+			$partialestimate{$hostpart}=1;
+			if($4 > 0) { $getest{$hostpart} =~ s/:$3://; }
+			if($6 > 0) { $getest{$hostpart} =~ s/:$5://; }
+			if($8 > 0) { $getest{$hostpart} =~ s/:$7://; }
+
+			if($getest{$hostpart} eq "") { $partialestimate{$hostpart}=0; }
+		}
 	}
 	elsif(/getting estimates took/) {
 		$estimate_done=1;
@@ -604,6 +623,9 @@ while(<AMDUMP>) {
 		$ntsize{$nb_tape} = 0;
 		$ntesize{$nb_tape} = 0;
 	}
+	else {
+		#print "Ignoring: $_\n";
+	}
 }
 
 close(AMDUMP);
@@ -689,7 +711,8 @@ foreach $host (sort @hosts) {
 						}
 					}
 					else {
-						if(defined $opt_estimate) {
+						if(defined $opt_estimate ||
+							(defined $opt_gestimate && $partialestimate{$hostpart} == 1)) {
 							printf "%8s ", $datestamp if defined $opt_date;
 							printf "%-${maxnamelength}s", "$host:$partition";
 							printf "%2d",  $level{$hostpart};
