@@ -1,3 +1,9 @@
+Version 2.4.0b4
+
+	amrestore should wait for the child process to die before
+	re-opening the tape device.  -Dietmar Braun
+	<dietmar@tin-lizzy.hig>
+
 Version 2.4.0b3 
 
 	fixed race condition in debug file open operation.  -oliva and
