@@ -64,7 +64,7 @@ logdir=`$libexecdir/getconf$SUF logdir`
 errfile=$logdir/amdump
 tapecycle=`$libexecdir/getconf$SUF tapecycle`
 dumpuser=`$libexecdir/getconf$SUF dumpuser`
-runuser=`whoami`
+runuser=${LOGNAME-`whoami`}
 
 if [ $runuser != $dumpuser ]; then
 	echo "amdump: must be run as user $dumpuser"
