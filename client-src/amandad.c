@@ -142,17 +142,24 @@ char **argv;
 #ifdef FORCE_USERID
 
     /* we'd rather not run as root */
-
     if(geteuid() == 0) {
 	pwname = CLIENT_LOGIN;
 	if((pwptr = getpwnam(pwname)) == NULL)
 	    error("error [cannot find user %s in passwd file]\n", pwname);
-
+#ifdef KRB4_SECURITY
+        /*
+	 * if we're using kerberos security, we'll need to be root in
+	 * order to get at the machine's srvtab entry, so we hang on to
+	 * some root privledges for now.  We give them up entirely later.
+	 */
+	seteuid(pwptr->pw_uid);
+	setegid(pwptr->pw_gid);
+#else
 	initgroups(pwname, pwptr->pw_gid);
 	setgid(pwptr->pw_gid);
 	setuid(pwptr->pw_uid);
+#endif  /* KRB4_SECURITY */
     }
-
 #endif	/* FORCE_USERID */
 
     /* initialize */
@@ -255,10 +262,20 @@ char **argv;
 
     sendack(&in_msg, &out_msg);
 
+
     /* 
      * handle security check: this could take a long time, so it is 
      * done after the initial ack.
      */
+
+#if defined(KRB4_SECURITY)
+    /*
+     * we need to be root to access the srvtab file, but only if we started
+     * out that way.
+     */
+    seteuid(getuid());
+    setegid(getgid());
+#endif /* KRB4_SECURITY */
 
     if(!(servp->flags & NO_AUTH) && !security_ok(&in_msg)) {
 	/* XXX log on authlog? */
@@ -267,6 +284,24 @@ char **argv;
 	out_msg.dgram.len = strlen(out_msg.dgram.data);
 	goto send_response;
     }
+
+#if defined(KRB4_SECURITY) && defined(FORCE_USERID)
+
+    /*
+     * we held on to a root uid earlier for accessing files; since we're
+     * done doing anything requiring root, we can completely give it up.
+     */
+
+    if(geteuid() == 0) {
+	pwname = CLIENT_LOGIN;
+	if((pwptr = getpwnam(pwname)) == NULL)
+	    error("error [cannot find user %s in passwd file]\n", pwname);
+	initgroups(pwname, pwptr->pw_gid);
+	setgid(pwptr->pw_gid);
+	setuid(pwptr->pw_uid);
+    }
+
+#endif  /* KRB4_SECURITY && FORCE_USERID */
 
     dbprintf(("%s: running service \"%s\"\n", argv[0], cmd));
 
