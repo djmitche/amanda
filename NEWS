@@ -1,3 +1,7 @@
+Changes in release 2.4.4
+
+* New -a option to amcheck to always send an email.
+
 Changes in release 2.4.4b1
 
 * maxpromoteday: New option for a dumptype.

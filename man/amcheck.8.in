@@ -90,6 +90,11 @@ value if
 .B \-M
 is set.
 .TP
+.B \-a
+Like
+.B \-m
+but the mail is always sent.
+.TP
 .BI \-M address
 Mail the report to
 .I address
