@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-changer-driver.c,v 1.1.2.28 2001/02/21 18:24:45 ant Exp $
+ * $Id: scsi-changer-driver.c,v 1.1.2.29 2001/02/25 16:29:57 martinea Exp $
  *
  * Interface to control a tape robot/library connected to the SCSI bus
  *
@@ -1583,7 +1583,7 @@ int GenericRewind(int DeviceFD)
 {
   CDB_T CDB;
   RequestSense_T *pRequestSense;
-  int ret;
+  int ret = 0;
   int cnt = 0;
   int true = 1;
 

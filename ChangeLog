@@ -1,5 +1,10 @@
 2001-02-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* changer-src/scsi-changer-driver.c (GenericRewind): init ret to 0
+	to remove compiler warning.
+
+2001-02-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/planner.c (setup_estimate): ask for level 0 for
 	a new disk if force-bump is set,
 	log force-bump and force-nobump command.
