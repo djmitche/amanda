@@ -1,8 +1,15 @@
+2000-07-18 John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/taper.c (file_reader_side): detach and destroy shared
+	memory areas on an error condition.  Found by Patrik Andersin
+	<cat@iki.fi>.
+
 2000-07-17 Thomas Hepper <th@ant.han.de>
 	* docs/TAPE.CHANGERS: Added some notes for the cam driver
 	* changer-src/scsi-cam.c: New syntax for telling scsi ids
 	(bus:target:lun)
 	SCSI_ExecuteCommand now returns the correct sense buffer.
+
 2000-07-17 Thomas Hepper <th@ant.han.de>
 	* configure.in: Added check for BSD SCSI CAM Support
 	* changer-src/scsi-cam.c: New, functions for SCSI CAM Support
@@ -12,6 +19,7 @@
 	allocated in chg-scsi and passed to OpenDevice.
 	* changer-src/scsi-changer-driver.c: New Parameter for OpenDevice
 	(OpenFiles_T)
+
 2000-07-10 Marc Mengel <mengel@fnal.gov>
 	* tape-src/tapeio.c -- add tape_{stat,access}, allow "plain:" prefix
 		on tape device names
