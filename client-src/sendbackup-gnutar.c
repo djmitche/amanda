@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.40.2.1 1998/01/31 18:42:54 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.40.2.2 1998/02/04 22:20:22 amcore Exp $
  *
  * send backup data using GNU tar
  */
@@ -70,6 +70,7 @@ static regex_t re_table[] = {
   { DMP_NORMAL, "^Added interface", 1},
   { DMP_NORMAL, "^Opening", 1},
   { DMP_NORMAL, "^Connect", 1},
+  { DMP_NORMAL, "^Domain=", 1},
   { DMP_NORMAL, "^max", 1},
   { DMP_NORMAL, "^security=", 1},
   { DMP_NORMAL, "^capabilities", 1},
@@ -89,6 +90,12 @@ static regex_t re_table[] = {
   { DMP_NORMAL, "^\\([0-9][0-9]* kb/s\\)", 1},
   { DMP_NORMAL, "^\\([0-9][0-9]*\\.[0-9][0-9]* kb/s\\)", 1},
   { DMP_NORMAL, "^tar: dumped [0-9][0-9]* tar files", 1},
+#if 0
+  /* This will cause amanda to ignore real errors, but that may be
+   * unavoidable when you're backing up system disks.  Add this at
+   * your own risk! */
+  { DMP_NORMAL, "^ERRDOS - ERRbadshare opening remote file", 1},
+#endif
 
   /* catch-all: DMP_STRANGE is returned for all other lines */
   { DMP_STRANGE, NULL, 0}
