@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.24 1998/01/05 10:30:11 amcore Exp $
+ * $Id: selfcheck.c,v 1.25 1998/01/14 22:44:09 amcore Exp $
  *
  * do self-check and send back any error messages
  */
@@ -276,18 +276,21 @@ int level;
 		printf("ERROR [can't make share name of %s]\n", disk);
 		return;
 	    }
-	    cmd = vstralloc(device,
-			    " ", SAMBA_CLIENT,
+	    cmd = vstralloc(SAMBA_CLIENT,
+			    " ", device,
 			    " \'", pass, "\'",
 			    " -E",
 			    " -U ", SAMBA_USER,
-			    domain ? " -W " : "", domain,
+			    /* if domain is NULL, just quit */
+			    domain ? " -W " : " -c quit",
+			    domain ? domain : NULL,
 			    " -c quit",
 			    NULL);
 	    memset(pass, '\0', strlen(pass));
 	    afree(pass);
 	    printf("running %s %s XXXX -E -U %s%s%s -c quit\n",
-		   SAMBA_CLIENT, device, SAMBA_USER, domain[0] ? " -W " : "", domain);
+		   SAMBA_CLIENT, device, SAMBA_USER,
+		   domain ? " -W " : "", domain ? domain : "");
 	    if(domain) {
 		memset(domain, '\0', strlen(domain));
 		afree(domain);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.58 1998/01/14 18:24:06 amcore Exp $
+ * $Id: sendsize.c,v 1.59 1998/01/14 22:44:11 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -797,7 +797,7 @@ int level;
 
     dbprintf(("%s: running \"%s \'%s\' %s -d 3 -U %s -E%s%s -c \'%s\'\"\n",
 	      pname, SAMBA_CLIENT, sharename, "XXXXX", SAMBA_USER,
-	      domain ? " -W " : "", domain,
+	      domain ? " -W " : "", domain ? domain : "",
 	      tarkeys));
 
     switch(dumppid = fork()) {

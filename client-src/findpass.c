@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: findpass.c,v 1.7 1998/01/05 10:28:09 amcore Exp $
+ * $Id: findpass.c,v 1.8 1998/01/14 22:44:08 amcore Exp $
  *
  * Support routines for Amanda SAMBA support
  */
@@ -66,11 +66,13 @@ char *disk, **domain;
 	    pw = s - 1;				/* start of password */
 	    skip_non_whitespace_cs(s, ch);
 	    s[-1] = '\0';			/* terminate password */
+	    pw = stralloc(pw);
 	    skip_whitespace(s, ch);		/* find start of domain */
 	    if (ch && ch != '#') {
 	      *domain = s - 1;			/* start of domain */
 	      skip_non_whitespace_cs(s, ch);
 	      s[-1] = '\0';			/* terminate domain */
+	      *domain = stralloc(*domain);
 	    }
 	  }
 	  break;
