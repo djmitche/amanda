@@ -149,9 +149,10 @@ define tapetype EXB-8200 {
 
 define tapetype HP-DAT {
     comment "DAT tape drives"
-    length 1900 mbytes		# these numbers are not accurate
-    filemark 100 kbytes		# but you get the idea
-    speed 500 kbytes
+    # data provided by Rob Browning <rlb@cs.utexas.edu>
+    length 1930 mbytes
+    filemark 111 kbytes
+    speed 468 kbytes
 }
 
 define tapetype DAT {
