@@ -22,6 +22,7 @@ amanda \- Advanced Maryland Automatic Network Disk Archiver
 .br
 .B amcleanup
 .I config
+.br
 .B amrecover
 [
 [
@@ -29,8 +30,7 @@ amanda \- Advanced Maryland Automatic Network Disk Archiver
 ]
 .I config
 ] [
-.B \-s
-.I index\-server
+.I options
 ]
 .br
 .B amrestore
@@ -134,6 +134,16 @@ was unable to complete for some reason, usually because the
 tape server host crashed while
 .B amdump
 was running.
+.TP
+.B amrecover
+Provides an interactive interface to browse the Amanda index files
+and select which tapes to recover files from.
+Can also run
+.B amrestore
+and the system restore program
+(e.g.
+.BR tar )
+in some cases.
 .TP
 .B amrestore
 Read an Amanda tape, searching for requested backups.
