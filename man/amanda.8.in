@@ -574,11 +574,11 @@ a shared memory region.
 Default:
 .IR 100 (percent)
 The amount of holding-disk space that should not be used for full
-backups if no tape is available.  By default, when there is not tape
-to write to, degraded mode (incremental) backups will be performed to
-the holding disk.  If you wish to allow for full backups in this case,
-you may reduce the amount of holding disk space reserved for
-incrementals.
+backups if no tape is available.
+By default, when there is no tape to write to,
+degraded mode (incremental) backups will be performed to the holding disk.
+If you wish to also allow full backups in this case,
+you may reduce the amount of holding disk space reserved for incrementals.
 .TP
 .B holdingdisk
 Define parameters for a holding disk.
