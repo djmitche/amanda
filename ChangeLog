@@ -1,3 +1,9 @@
+1998-10-14  John R. Jackson  <jrj@purdue.edu>
+
+	* restore-src/amrestore.c (read_file_header): make a couple of error
+	messages clearer that they refer to problems with a header rather
+	than the image data.
+
 1998-10-13  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* client-src/Makefile.am (libamclient_a_SOURCES): missing since
