@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.28 2002/02/16 17:38:08 martinea Exp $
+ * $Id: debug.c,v 1.29 2002/03/23 22:51:47 jrjackson Exp $
  *
  * debug log subroutines
  */
@@ -50,12 +50,21 @@ static char *db_filename = NULL;
 #  define AMANDA_DBGDIR		AMANDA_TMPDIR
 #endif
 
-printf_arglist_function(void debug_printf, const char *, format)
 /*
- * Formats and writes a debug message to the process's debug file.
+ * Format and write a debug message to the process debug file.
  */
+printf_arglist_function(void debug_printf, const char *, format)
 {
     va_list argp;
+    int save_errno;
+
+    /*
+     * It is common in the code to call dbprintf to write out
+     * syserrno(errno) and then turn around and try to do something else
+     * with errno (e.g. printf() or log()), so we make sure errno goes
+     * back out with the same value it came in with.
+     */
+    save_errno = errno;
 
     if(db_file == NULL && db_fd == 2) {
 	db_file = stderr;
@@ -66,6 +75,8 @@ printf_arglist_function(void debug_printf, const char *, format)
 	fflush(db_file);
 	arglist_end(argp);
     }
+
+    errno = save_errno;
 }
 
 /*
