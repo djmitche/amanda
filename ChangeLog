@@ -1,3 +1,10 @@
+2001-06-27 John R. Jackson <jrj@purdue.edu>
+
+	* changer-src/chg-manual.sh.in: Add "bs=32k" to the dd command so
+	  some kernels would not complain about the tape block being larger
+	  than the buffer.
+	* changer-src/chg-mtx.sh.in: Ditto.
+
 2001-06-21 John R. Jackson <jrj@purdue.edu>
 
 	* server-src/planner.c: If the compression rate is very small (such
