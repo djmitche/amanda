@@ -33,8 +33,8 @@ GNU ld.  Make sure config.cache does not exist, then run:
 % CC="gcc -B/bin/" ./configure --whatever-arguments-you-want...
 
 This will cause shared libraries to be built correctly.  Another
-option is to upgrade libtool (amanda-2.4.0b4 is distributed with
-libtool-1.0f, available from ftp://alpha.gnu.org/pub).
+option is to upgrade libtool (amanda-2.4.0b5 is distributed with
+libtool-1.0h, available from ftp://alpha.gnu.org/pub).
 
 
 A bug in GNU tar 1.12 causes it to miscalculate (in fact, to
@@ -70,7 +70,7 @@ AIX
 ---
 
 People have found problems regarding shared libraries support on AIX.
-We hope libtool 1.0f, distributed with amanda-2.4.0b4, fixes this
+We hope libtool 1.0h, distributed with amanda-2.4.0b5, fixes this
 problem.  If it does not, --disable-shared at configure time.
 
 ---------------------------------------------------------------------------

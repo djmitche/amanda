@@ -55,7 +55,7 @@ progname=`$echo "$0" | sed 's%^.*/%%'`
 # Constants:
 PROGRAM=ltconfig
 PACKAGE=libtool
-VERSION=1.0g
+VERSION=1.0h
 ac_compile='${CC-cc} -c $CFLAGS $CPPFLAGS conftest.c 1>&5'
 ac_link='${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.c $LIBS 1>&5'
 rm="rm -f"
@@ -1262,10 +1262,10 @@ echo "$ac_t$objdir" 1>&6
 
 # Copy echo and quote the copy, instead of the original, because it is
 # used later.
-echoq="$echo"
+ltecho="$echo"
 
 # Now quote all the things that may contain metacharacters.
-for var in echoq old_CC old_CFLAGS old_CPPFLAGS old_LD old_NM old_RANLIB \
+for var in ltecho old_CC old_CFLAGS old_CPPFLAGS old_LD old_NM old_RANLIB \
   old_LN_S AR CC LD LN_S NM reload_flag reload_cmds wl pic_flag \
   link_static_flag no_builtin_flag export_dynamic_flag_spec \
   profile_flag_pattern libname_spec library_names_spec soname_spec RANLIB \
@@ -1282,9 +1282,8 @@ for var in echoq old_CC old_CFLAGS old_CPPFLAGS old_LD old_NM old_RANLIB \
     # Double-quote double-evaled strings.
     eval "$var=\`\$echo \"\$$var\" | sed -e \"\$double_quote_subst\" -e \"\$sed_quote_subst\"\`"
     ;;
-
   *)
-    eval "$var=\`\$echo \"\$$var\" | sed \"\\\$sed_quote_subst\"\`"
+    eval "$var=\`\$echo \"\$$var\" | sed \"\$sed_quote_subst\"\`"
     ;;
   esac
 done
@@ -1310,7 +1309,7 @@ cat <<EOF > $ofile
 # debugging $progname, is in ./config.log if it exists.
 
 # An echo program that doesn't interpret backslashes.
-echo="$echoq"
+echo="$ltecho"
 
 # The version of $progname that generated this script.
 LTCONFIG_VERSION="$VERSION"

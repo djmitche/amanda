@@ -29,7 +29,7 @@ modename="$progname"
 # Constants.
 PROGRAM=ltmain.sh
 PACKAGE=libtool
-VERSION=1.0g
+VERSION=1.0h
 
 default_mode=
 help="Try \`$progname --help' for more information."
