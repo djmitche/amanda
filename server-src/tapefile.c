@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapefile.c,v 1.10 1998/01/26 21:16:35 jrj Exp $
+ * $Id: tapefile.c,v 1.11 1998/02/20 23:13:06 martinea Exp $
  *
  * routines to read and write the amanda active tape list
  */
@@ -78,7 +78,10 @@ char *tapefile;
 	return 1;
 
     for(tp = tape_list; tp != NULL; tp = tp->next) {
-	fprintf(tapef, "%d %s\n", tp->datestamp, tp->label);
+	fprintf(tapef, "%d %s", tp->datestamp, tp->label);
+	if(tp->reuse) fprintf(tapef, " reuse");
+	else fprintf(tapef, " no-reuse");
+	fprintf(tapef, "\n");
     }
 
     afclose(tapef);
@@ -94,6 +97,7 @@ void clear_tapelist()
 	next = tp->next;
 	afree(tp);
     }
+    tape_list = NULL;
 }
 
 tape_t *lookup_tapelabel(label)
@@ -132,13 +136,85 @@ int datestamp;
     return NULL;
 }
 
+int lookup_nb_tape()
+{
+    tape_t *tp;
+    int pos;
 
-tape_t *shift_tapelist(datestamp, label, tapedays)
+    for(tp = tape_list; tp != NULL; tp = tp->next) {
+	pos=tp->position;
+    }
+    return pos;
+}
+
+tape_t *lookup_last_reusable_tape()
+{
+    tape_t *tp, *tp1;
+    int count=0;
+    int tapecycle = getconf_int(CNF_TAPECYCLE);
+
+    for(tp = tape_list; tp != NULL; tp = tp->next) {
+	if(tp->reuse == 1) {
+	    count++;
+	    tp1 = tp;
+	}
+    }
+    if(count < tapecycle) return NULL;
+    else return tp1;
+}
+
+tape_t *lookup_previous_reusable_tape(tp)
+tape_t *tp;
+{
+    while(tp != NULL) {
+	tp = tp->prev;
+	if(tp == NULL) return NULL;
+	if(tp->reuse == 1 ) return tp;
+    }
+    return NULL;
+}
+
+int reusable_tape(tp)
+tape_t *tp;
+{
+    int count = 0;
+
+    if(tp == NULL) return 0;
+    if(tp->reuse == 0) return 0;
+    while(tp != NULL) {
+	if(tp->reuse == 1) count++;
+	tp = tp->prev;
+    }
+    return (count >= getconf_int(CNF_TAPECYCLE));
+}
+
+void remove_tapelabel(label)
+char *label;
+{
+    tape_t *tp, *prev, *next;
+
+    tp = lookup_tapelabel(label);
+    if(tp != NULL) {
+	prev = tp->prev;
+	next = tp->next;
+	if(prev != NULL)
+	    prev->next = next;
+	else /* begin of list */
+	    tape_list = next;
+	if(next != NULL)
+	    next->prev = prev;
+	while (next != NULL) {
+	    next->position--;
+	    next = next->next;
+	}
+    }
+}
+
+tape_t *add_tapelabel(datestamp, label)
 int datestamp;
 char *label;
-int tapedays;
 {
-    tape_t *prev, *cur, *new;
+    tape_t *cur, *new;
 
     /* insert a new record to the front of the list */
 
@@ -146,25 +222,22 @@ int tapedays;
 
     new->datestamp = datestamp;
     new->position = 0;
+    new->reuse = 1;
     new->label = stralloc(label);
 
+    new->prev  = NULL;
+    if(tape_list != NULL) tape_list->prev = new;
     new->next = tape_list;
     tape_list = new;
 
-    /* scan list, updating positions and looking for cutoff */
-    prev = NULL;
+    /* scan list, updating positions */
     cur = tape_list;
-    while(cur != NULL && cur->position < tapedays) {
+    while(cur != NULL) {
 	cur->position++;
-	prev = cur;
 	cur = cur->next;
     }
 
-    /* new list cuts off at prev */
-    if(prev) prev->next = NULL;
-    else tape_list = NULL;
-
-    return cur;
+    return new;
 }
 
 int guess_runs_from_tapelist()
@@ -210,11 +283,12 @@ static tape_t *parse_tapeline(line)
 char *line;
 {
     tape_t *tp = NULL;
-    char *s;
+    char *s, *s1;
     int ch;
 
     tp = (tape_t *) alloc(sizeof(tape_t));
 
+    tp->prev = NULL;
     tp->next = NULL;
 
     s = line;
@@ -228,12 +302,26 @@ char *line;
     skip_integer(s, ch);
 
     skip_whitespace(s, ch);
-    tp->label = stralloc(s - 1);
+    s1 = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    tp->label = stralloc(s1);
+    skip_whitespace(s, ch);
+    tp->reuse = 1;
+#define sc "reuse"
+    if(strncmp(s - 1, sc, sizeof(sc)-1) == 0)
+	tp->reuse = 1;
+#undef sc
+#define sc "no-reuse"
+    if(strncmp(s - 1, sc, sizeof(sc)-1) == 0)
+	tp->reuse = 0;
+#undef sc
 
     return tp;
 }
 
 
+/* insert in reversed datestamp order */
 static tape_t *insert(list, tp)
 tape_t *list, *tp;
 {
@@ -246,9 +334,11 @@ tape_t *list, *tp;
 	prev = cur;
 	cur = cur->next;
     }
+    tp->prev = prev;
     tp->next = cur;
     if(prev == NULL) list = tp;
     else prev->next = tp;
+    if(cur !=NULL) cur->prev = tp;
 
     return list;
 }
