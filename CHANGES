@@ -1,5 +1,18 @@
 Version 2.4.0b2
 
+	AIX's restore support added to amrecover.  -David B. Anderson
+	<dbanders@mail.physics.utah.edu>
+
+	Dump process would not be killed unless it supported the -E
+	flag (flipped #ifdef): fixed.  -Steve Bower <sbower@raytheon.com>
+
+	--with-testing now supports a trailing argument, that
+	specifies the a string to be appended to service names.  -oliva
+
+	Samba is now invoked with -E, so that error messages are
+	logged to stdout, not to syslog.  -Ernie Oporto
+	<ernie_oporto@MENTORG.COM>
+
 Version 2.4.0b1
 
 	Improved planner backup-delaying mechanism.  -scott
