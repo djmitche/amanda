@@ -1,3 +1,8 @@
+1998-06-08  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* configure.in (amanda_cv_print_command): removed; using PRINT
+ 	instead.
+
 1998-06-07 Todd Kover <kovert@omniscient.com>
 
 	* add --with-owner option to allow installed binaries to be owned
