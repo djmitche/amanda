@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-defs.h,v 1.1.2.17 2001/01/04 01:51:41 martinea Exp $
+ * $Id: scsi-defs.h,v 1.1.2.18 2001/01/08 20:08:05 ant Exp $
  *
  */
 /*
@@ -159,6 +159,33 @@ typedef unsigned char PackedBit;
 #define BARCODE_PUT 1
 #define BARCODE_VOL 2
 #define BARCODE_BARCODE 3
+
+/* Some stuff for our own configurationfile */
+typedef struct {  /* The information we can get for any drive (configuration) */
+  int drivenum;      /* Which drive to use in the library */
+  int start;         /* Which is the first slot we may use */
+  int end;           /* The last slot we are allowed to use */
+  int cleanslot;     /* Where the cleaningcartridge stays */
+  char *scsitapedev; /* Where can we send raw SCSI commands to the tape */
+  char *device;      /* Which device is associated to the drivenum */
+  char *slotfile;    /* Where we should have our memory */   
+  char *cleanfile;   /* Where we count how many cleanings we did */
+  char *timefile;    /* Where we count the time the tape was used*/
+  char *tapestatfile;/* Where can we place some drive stats */
+  char *changerident;/* Config to use foe changer control, ovverride result from inquiry */
+  char *tapeident;   /* Same as above for the tape device */
+}config_t; 
+
+typedef struct {
+  int number_of_configs; /* How many different configurations are used */
+  int eject;             /* Do the drives need an eject-command */
+  int havebarcode;	 /* Do we have an barcode reader installed */
+  int sleep;             /* How many seconds to wait for the drive to get ready */
+  int cleanmax;          /* How many runs could be done with one cleaning tape */
+  char *device;          /* Which device is our changer */
+  char *labelfile;       /* Mapping from Barcode labels to volume labels */
+  config_t *conf;
+}changer_t;
 
 typedef struct {
   char voltag[128];
@@ -1062,7 +1089,7 @@ void ChangerStatus(char * option, char * labelfile, int HasBarCode, char *change
 int BarCode(int fd);
 char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action);
 
-int Tape_Ready(char *tapedev, int wait);
+int Tape_Ready(char *tapedev, int wait_time);
 
 /*
  * Local variables:

@@ -1,5 +1,5 @@
 /*
- *  $Id: chg-scsi.c,v 1.6.2.21 2000/10/24 23:49:39 martinea Exp $
+ *  $Id: chg-scsi.c,v 1.6.2.22 2001/01/08 20:08:04 ant Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -96,38 +96,13 @@ extern int DTE;
 
 extern int BarCode(int);
 void ChangerReplay(char *string);
+changer_t chg;
 
-/*----------------------------------------------------------------------------*/
-/* Some stuff for our own configurationfile */
-typedef struct {  /* The information we can get for any drive (configuration) */
-  int drivenum;      /* Which drive to use in the library */
-  int start;         /* Which is the first slot we may use */
-  int end;           /* The last slot we are allowed to use */
-  int cleanslot;     /* Where the cleaningcartridge stays */
-  char *scsitapedev; /* Where can we send raw SCSI commands to the tape */
-  char *device;      /* Which device is associated to the drivenum */
-  char *slotfile;    /* Where we should have our memory */   
-  char *cleanfile;   /* Where we count how many cleanings we did */
-  char *timefile;    /* Where we count the time the tape was used*/
-  char *tapestatfile;/* Where can we place some drive stats */
-  char *changerident;/* Config to use foe changer control, ovverride result from inquiry */
-  char *tapeident;   /* Same as above for the tape device */
-}config_t; 
-
-typedef struct {
-  int number_of_configs; /* How many different configurations are used */
-  int eject;             /* Do the drives need an eject-command */
-  int sleep;             /* How many seconds to wait for the drive to get ready */
-  int cleanmax;          /* How many runs could be done with one cleaning tape */
-  char *device;          /* Which device is our changer */
-  char *labelfile;       /* Mapping from Barcode labels to volume labels */
-  config_t *conf;
-}changer_t;
 
 typedef enum{
   NUMDRIVE,EJECT,SLEEP,CLEANMAX,DRIVE,START,END,CLEAN,DEVICE,STATFILE,CLEANFILE,DRIVENUM,
     CHANGERDEV,USAGECOUNT,SCSITAPEDEV, TAPESTATFILE, LABELFILE, CHANGERIDENT,
-    TAPEIDENT
+    TAPEIDENT, HAVEBARCODE
     } token_t;
 
 typedef struct {
@@ -155,6 +130,7 @@ tokentable_t t_table[]={
   { "labelfile", LABELFILE},
   { "changerident" , CHANGERIDENT},
   { "tapeident", TAPEIDENT},
+  { "havebarcode", HAVEBARCODE},
   { NULL,-1 }
 };
 
@@ -166,6 +142,7 @@ void init_changer_struct(changer_t *chg,int number_of_config)
   chg->number_of_configs = number_of_config;
   chg->eject = 1;
   chg->sleep = 0;
+  chg->havebarcode = 0;
   chg->cleanmax = 0;
   chg->device = NULL;
   chg->labelfile = NULL;
@@ -197,6 +174,7 @@ void dump_changer_struct(changer_t chg)
 
   dbprintf(("Number of configurations: %d\n",chg.number_of_configs));
   dbprintf(("Tapes need eject: %s\n",(chg.eject>0?"Yes":"No")));
+  dbprintf(("barcode reader  : %s\n",(chg.havebarcode>0?"Yes":"No")));
   dbprintf(("Tapes need sleep: %d seconds\n",chg.sleep));
   dbprintf(("Cleancycles     : %d\n",chg.cleanmax));
   dbprintf(("Changerdevice   : %s\n",chg.device));
@@ -340,6 +318,9 @@ int read_config(char *configfile, changer_t *chg)
         break;
         case EJECT:
           chg->eject = atoi(value);
+          break;
+        case HAVEBARCODE:
+          chg->havebarcode = atoi(value);
           break;
         case SLEEP:
           chg->sleep = atoi(value);
@@ -834,7 +815,6 @@ int main(int argc, char *argv[])
 {
   int loaded,target,oldtarget;
   command com;   /* a little DOS joke */
-  changer_t chg;
   char *volstr;
   int x;
 

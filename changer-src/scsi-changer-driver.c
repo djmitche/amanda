@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-changer-driver.c,v 1.1.2.26 2001/01/04 01:51:41 martinea Exp $
+ * $Id: scsi-changer-driver.c,v 1.1.2.27 2001/01/08 20:08:04 ant Exp $
  *
  * Interface to control a tape robot/library connected to the SCSI bus
  *
@@ -227,17 +227,17 @@ ChangerCMD_T ChangerIO[] = {
    GenericSearch,
    EXB120SenseHandler},
   {"EXB-230D",   
-   "Exabyte Robot [EXB-230D]",
-   GenericMove,
-   EXB230DElementStatus,
-   GenericResetStatus,
-   GenericFree,
-   GenericEject,
-   GenericClean,
-   GenericRewind,
-   GenericBarCode,
-   GenericSearch,
-   GenericSenseHandler},
+    "Exabyte Robot [EXB-230D]",
+    GenericMove,
+    GenericElementStatus,
+    GenericResetStatus,
+    GenericFree,
+    GenericEject,
+    GenericClean,
+    GenericRewind,
+    GenericBarCode,
+    GenericSearch,
+    EXB10eSenseHandler},
   {"EXB-85058HE-0000",        
    "Exabyte Tape [EXB-85058HE-0000]",
    DoNothing,
@@ -348,7 +348,7 @@ ChangerCMD_T ChangerIO[] = {
     GenericEject,
     GenericClean,
     GenericRewind,
-    NoBarCode,
+    GenericBarCode,
     GenericSearch,
     GenericSenseHandler},
   {NULL, NULL, NULL,NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}
@@ -1330,17 +1330,15 @@ int NoBarCode(int DeviceFD)
 
 int GenericBarCode(int DeviceFD)
 {
-
+  extern changer_t chg;
   dbprintf(("##### START GenericBarCode\n"));
   dump_hex((char *)pChangerDev->inquiry, INQUIRY_SIZE);
-  dbprintf(("GenericBarCode : vendor_specific[19] %x\n",
-            pChangerDev->inquiry->vendor_specific[19]));
-  if ((pChangerDev->inquiry->vendor_specific[19] & 1) == 1)
+  if ( chg.havebarcode  >= 1)
     {
+      dbprintf(("##### STOP GenericBarCode (havebarcode) => %d\n",chg.havebarcode));
       return(1);
-    } else {
-      return(0);
     }
+  dbprintf(("##### STOP GenericBarCode => 0\n"));
   return(0);
 }
 
@@ -1822,6 +1820,9 @@ int GenericSenseHandler(int DeviceFD, int flag, char *buffer)
       DecodeSense(pRequestSense, "GenericSenseHandler : ", debug_file);
       switch (pRequestSense->SenseKey)
         {
+	case SENSE_NULL:
+		ret = SENSE_NO;
+		break;
         case NOT_READY:
           dbprintf(("GenericSenseHandler : NOT_READY ASC = %x ASCQ = %x\n",
                     pRequestSense->AdditionalSenseCode,
@@ -2368,9 +2369,9 @@ int SDXMove(int DeviceFD, int from, int to)
   int ret;
   int tapestat;
   int moveok = 0;
-  int MTE = 0;      /* This are parameters  passed */
-  int STE = -1;     /* to                          */
-  int DTE = -1;     /* AlignElements               */
+  int SDX_MTE = 0;      /* This are parameters  passed */
+  int SDX_STE = -1;     /* to                          */
+  int SDX_DTE = -1;     /* AlignElements               */
 
   dbprintf(("##### START SDXMove\n"));
 
@@ -2432,39 +2433,39 @@ int SDXMove(int DeviceFD, int from, int to)
   switch (pto->type)
   {
     case TAPETYPE:
-      DTE = pto->address;
+      SDX_DTE = pto->address;
       break;
     case STORAGE:
-     STE = pto->address;
+     SDX_STE = pto->address;
      break;
     case IMPORT:
-     STE = pto->address;
+     SDX_STE = pto->address;
      break;
   }
 
   switch (pfrom->type)
   {
     case TAPETYPE:
-      DTE = pfrom->address;
+      SDX_DTE = pfrom->address;
       break;
     case STORAGE:
-     STE = pfrom->address;
+     SDX_STE = pfrom->address;
      break;
     case IMPORT:
-     STE = pfrom->address;
+     SDX_STE = pfrom->address;
      break;
   }
 
-  if (DTE >= 0 && STE >= 0)
+  if (SDX_DTE >= 0 && SDX_STE >= 0)
   {
-    ret = SCSI_AlignElements(DeviceFD, MTE, DTE, STE);
+    ret = SCSI_AlignElements(DeviceFD, SDX_MTE, SDX_DTE, SDX_STE);
     dbprintf(("##### SCSI_AlignElemnts ret = %d\n",ret));
     if (ret != 0 )
     {
        return(-1);
     }
   } else {
-    dbprintf(("##### Error setting STE/DTE %d/%d\n", STE, DTE));
+    dbprintf(("##### Error setting STE/DTE %d/%d\n", SDX_STE, SDX_DTE));
     return(-1);
   }
 
@@ -3383,224 +3384,6 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
   return(0);
 }
 
-int EXB230DElementStatus(int DeviceFD, int InitStatus)
-{
-  unsigned char *DataBuffer = NULL;
-  int DataBufferLength;
-  ElementStatusData_T *ElementStatusData;
-  ElementStatusPage_T *ElementStatusPage;
-  MediumTransportElementDescriptor_T *MediumTransportElementDescriptor;
-  StorageElementDescriptor_T *StorageElementDescriptor;
-  DataTransferElementDescriptor_T *DataTransferElementDescriptor;
-
-  int x = 0;
-  int offset = 0;
-  int NoOfElements;
-
-  dbprintf(("##### START EXB230DElementStatus\n"));
-
-      if (pModePage == NULL)
-        {
-          if ((pModePage = malloc(0xff)) == NULL)
-            {
-              dbprintf(("EXB230DElementStatus : malloc failed\n"));
-              return(-1);
-            }
-        }
-      if (SCSI_ModeSense(DeviceFD, pModePage, 0xff, 0x8, 0x3f) == 0)
-        DecodeModeSense(pModePage, 0, "EXB230DElementStatus :", 0, debug_file);
-
-      if (SCSI_ReadElementStatus(DeviceFD, 
-                                 0, 
-                                 0,
-                                 BarCode(DeviceFD),
-                                 0,
-                                 0xffff,
-                                 (char **)&DataBuffer) != 0)
-        {
-              if (DataBuffer != 0)
-              {
-                free(DataBuffer);
-              }
-          ChgExit("EXB230DElementStatus","Can't get ElementStatus", FATAL);
-        }
-      
-      ElementStatusData = (ElementStatusData_T *)DataBuffer;
-      DataBufferLength = V3(ElementStatusData->count);
-      
-      offset = sizeof(ElementStatusData_T);
-      
-      if (DataBufferLength <= 0) 
-        {
-          dbprintf(("DataBufferLength %d\n",DataBufferLength));
-          return(1);
-        }
-      
-      while (offset < DataBufferLength) 
-        {
-          ElementStatusPage = (ElementStatusPage_T *)&DataBuffer[offset];
-          NoOfElements = V3(ElementStatusPage->count) / V2(ElementStatusPage->length);
-          offset = offset + sizeof(ElementStatusPage_T);
-          
-          switch (ElementStatusPage->type)
-            {
-            case 1:
-              MTE = NoOfElements;
-              if ((pMTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * MTE)) == NULL)
-                {
-                  dbprintf(("EXB230DElementStatus : malloc failed\n"));
-                  return(-1);
-                }
-              memset(pMTE, 0, sizeof(ElementInfo_T) * MTE);
-              for (x = 0; x < NoOfElements; x++)
-                {
-                  /*               dbprintf(("PVolTag %d, AVolTag %d\n", */
-                  /*                         ElementStatusPage->pvoltag, */
-                  /*                         ElementStatusPage->avoltag)); */
-                  
-                  MediumTransportElementDescriptor = (MediumTransportElementDescriptor_T *)&DataBuffer[offset];
-                  if (ElementStatusPage->pvoltag == 1)
-                    {
-                      strncpy(pMTE[x].VolTag, 
-                              MediumTransportElementDescriptor->res4,
-                              TAG_SIZE);
-                      TerminateString(pMTE[x].VolTag, TAG_SIZE+1);
-                    }
-                  pMTE[x].type = ElementStatusPage->type;
-                  pMTE[x].address = V2(MediumTransportElementDescriptor->address);
-                  pMTE[x].except = MediumTransportElementDescriptor->except;
-                  pMTE[x].ASC = MediumTransportElementDescriptor->asc;
-                  pMTE[x].ASCQ = MediumTransportElementDescriptor->ascq;
-                  pMTE[x].status = (MediumTransportElementDescriptor->full > 0) ? 'F':'E';
-                  pMTE[x].full = MediumTransportElementDescriptor->full;
-                  
-                  if (MediumTransportElementDescriptor->svalid == 1)
-                    {
-                      pMTE[x].from = V2(MediumTransportElementDescriptor->source);
-                    } else {
-                      pMTE[x].from = -1;
-                    }
-                  
-                  offset = offset + V2(ElementStatusPage->length); 
-                }
-              break;
-            case 2:
-              STE = NoOfElements;
-              if ((pSTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * STE)) == NULL)
-                {
-                  dbprintf(("EXB230DElementStatus : malloc failed\n"));
-                  return(-1);
-                }
-              memset(pSTE, 0, sizeof(ElementInfo_T) * STE);
-              for (x = 0; x < NoOfElements; x++)
-                {
-                  StorageElementDescriptor = (StorageElementDescriptor_T *)&DataBuffer[offset];
-                  if (ElementStatusPage->pvoltag == 1)
-                    {
-                      strncpy(pSTE[x].VolTag, 
-                              StorageElementDescriptor->res4,
-                              TAG_SIZE);
-                      TerminateString(pSTE[x].VolTag, TAG_SIZE+1);
-                    }
-                  
-                  pSTE[x].type = ElementStatusPage->type;
-                  pSTE[x].address = V2(StorageElementDescriptor->address);
-                  pSTE[x].except = StorageElementDescriptor->except;
-                  pSTE[x].ASC = StorageElementDescriptor->asc;
-                  pSTE[x].ASCQ = StorageElementDescriptor->ascq;
-                  pSTE[x].status = (StorageElementDescriptor->full > 0) ? 'F':'E';
-                  pSTE[x].full = StorageElementDescriptor->full;
-                            
-                  if (StorageElementDescriptor->svalid == 1)
-                    {
-                      pSTE[x].from = V2(StorageElementDescriptor->source);
-                    } else {
-                      pSTE[x].from = -1;
-                    }
-                            
-                  offset = offset + V2(ElementStatusPage->length); 
-                }
-              break;
-            case 4:
-              DTE = NoOfElements;
-              if ((pDTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * DTE)) == NULL)
-                {
-                  dbprintf(("EXB230DElementStatus : malloc failed\n"));
-                  return(-1);
-                }
-              memset(pDTE, 0, sizeof(ElementInfo_T) * DTE);
-                        
-              for (x = 0; x < NoOfElements; x++)
-                {
-                  /*               dbprintf(("PVolTag %d, AVolTag %d\n", */
-                  /*                         ElementStatusPage->pvoltag, */
-                  /*                         ElementStatusPage->avoltag)); */
-                            
-                  DataTransferElementDescriptor = (DataTransferElementDescriptor_T *)&DataBuffer[offset];
-                  if (ElementStatusPage->pvoltag == 1)
-                    {
-                      strncpy(pSTE[x].VolTag, 
-                              DataTransferElementDescriptor->res4,
-                              TAG_SIZE);
-                      TerminateString(pSTE[x].VolTag, TAG_SIZE+1);
-                    }
-                  pDTE[x].type = ElementStatusPage->type;
-                  pDTE[x].address = V2(DataTransferElementDescriptor->address);
-                  pDTE[x].except = DataTransferElementDescriptor->except;
-                  pDTE[x].ASC = DataTransferElementDescriptor->asc;
-                  pDTE[x].ASCQ = DataTransferElementDescriptor->ascq;
-                  pDTE[x].scsi = DataTransferElementDescriptor->scsi;
-                  pDTE[x].status = (DataTransferElementDescriptor->full > 0) ? 'F':'E';
-                  pDTE[x].full = DataTransferElementDescriptor->full;
-                            
-                  if (DataTransferElementDescriptor->svalid == 1)
-                    {
-                      pDTE[x].from = V2(DataTransferElementDescriptor->source);
-                    } else {
-                      pDTE[x].from = -1;
-                    }
-                            
-                  offset = offset + V2(ElementStatusPage->length); 
-                }
-              break;
-            default:
-              offset = offset + V2(ElementStatusPage->length); 
-              break;
-            }
-        }
-
-  dbprintf(("\n\n\tMedia Transport Elements (robot arms) :\n"));
-
-  for ( x = 0; x < MTE; x++)
-    dbprintf(("\t\tElement #%04d %c\n\t\t\tEXCEPT = %02x\n\t\t\tASC = %02X ASCQ = %02X\n\t\t\tType %d From = %04d\n\t\t\tTAG = %s\n",
-              pMTE[x].address, pMTE[x].status, pMTE[x].except, pMTE[x].ASC,
-              pMTE[x].ASCQ, pMTE[x].type, pMTE[x].from, pMTE[x].VolTag));
-
-  dbprintf(("\n\n\tStorage Elements (Media slots) :\n"));
-
-  for ( x = 0; x < STE; x++)
-    dbprintf(("\t\tElement #%04d %c\n\t\t\tEXCEPT = %02X\n\t\t\tASC = %02X ASCQ = %02X\n\t\t\tType %d From = %04d\n\t\t\tTAG = %s\n",
-              pSTE[x].address, pSTE[x].status, pSTE[x].except, pSTE[x].ASC,
-              pSTE[x].ASCQ, pSTE[x].type, pSTE[x].from, pSTE[x].VolTag));
-
-  dbprintf(("\n\n\tData Transfer Elements (tape drives) :\n"));
- 
-  for ( x = 0; x < DTE; x++)
-    dbprintf(("\t\tElement #%04d %c\n\t\t\tEXCEPT = %02X\n\t\t\tASC = %02X ASCQ = %02X\n\t\t\tType %d From = %04d\n\t\t\tTAG = %s\n\t\t\tSCSI ADDRESS = %d\n",
-              pDTE[x].address, pDTE[x].status, pDTE[x].except, pDTE[x].ASC,
-              pDTE[x].ASCQ, pDTE[x].type, pDTE[x].from, pDTE[x].VolTag,pDTE[x].scsi));
-
-  dbprintf(("\n\n\tImport/Export Elements  :\n"));
-
-  for ( x = 0; x < IEE; x++)
-    dbprintf(("\t\tElement #%04d %c\n\t\t\tEXCEPT = %02X\n\t\t\t\tASC = %02X ASCQ = %02X\n\t\t\tType %d From = %04d\n\t\t\tTAG = %s\n",
-              pIEE[x].address, pIEE[x].status, pIEE[x].except, pIEE[x].ASC,
-              pIEE[x].ASCQ, pIEE[x].type, pIEE[x].from, pIEE[x].VolTag));
-
-  ElementStatusValid = 1;
-  free(DataBuffer);
-  return(0);
-}
 
 /* */
 int SDXElementStatus(int DeviceFD, int InitStatus)
@@ -5137,7 +4920,7 @@ void ChgExit(char *where, char *reason, int level)
 /* This a vendor specific command !!!!!! */
 /* First seen at AIT :-)                 */
 /*                                       */
-int SCSI_AlignElements(int DeviceFD, int MTE, int DTE, int STE)
+int SCSI_AlignElements(int DeviceFD, int AE_MTE, int AE_DTE, int AE_STE)
 {
   RequestSense_T *pRequestSense;
   int retry = 1;
@@ -5157,9 +4940,9 @@ int SCSI_AlignElements(int DeviceFD, int MTE, int DTE, int STE)
     {
       CDB[0]  = 0xE5;
       CDB[1]  = 0;
-      MSB2(&CDB[2],MTE);	/* Which MTE to use, default 0 */
-      MSB2(&CDB[4],DTE);	/* Which DTE to use, no range check !! */
-      MSB2(&CDB[6],STE);	/* Which STE to use, no range check !! */
+      MSB2(&CDB[2],AE_MTE);	/* Which MTE to use, default 0 */
+      MSB2(&CDB[4],AE_DTE);	/* Which DTE to use, no range check !! */
+      MSB2(&CDB[6],AE_STE);	/* Which STE to use, no range check !! */
       CDB[8]  = 0;
       CDB[9]  = 0;
       CDB[10] = 0;
