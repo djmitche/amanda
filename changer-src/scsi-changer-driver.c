@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-changer-driver.c,v 1.1.2.29 2001/02/25 16:29:57 martinea Exp $
+ * $Id: scsi-changer-driver.c,v 1.1.2.30 2001/04/16 17:54:23 ant Exp $
  *
  * Interface to control a tape robot/library connected to the SCSI bus
  *
@@ -108,6 +108,7 @@ int EXB10eSenseHandler(int DeviceFD, int, char *);
 int EXB85058SenseHandler(int DeviceFD, int, char *);
 int DLTSenseHandler(int DeviceFD, int, char *);
 int TDS1420SenseHandler(int DeviceFD, int, char *);
+int SLRSenseHandler(int DeviceFD, int, char *);
 
 ElementInfo_T *LookupElement(int address);
 
@@ -288,6 +289,18 @@ ChangerCMD_T ChangerIO[] = {
    NoBarCode,
    GenericSearch,
    DLTSenseHandler},
+  {"SLR AUTOLOADER",              
+   "Tandberg Robot (SLR Autoloader)",
+   GenericMove,
+   GenericElementStatus,
+   GenericResetStatus,
+   GenericFree,
+   GenericEject,
+   GenericClean,
+   GenericRewind,
+   GenericBarCode,
+   GenericSearch,
+   SLRSenseHandler},
     /* ADIC Devices */
   {"VLS DLT",               
    "ADIC VLS DLT Library [VLS DLT]",
@@ -2064,6 +2077,140 @@ int DLTSenseHandler(int DeviceFD, int flag, char *buffer)
   return(ret);
 }
 
+int SLRSenseHandler(int DeviceFD, int flag, char *buffer)
+{ 
+  RequestSense_T *pRequestSense = (RequestSense_T *)buffer;
+  int ret = 0;
+  InErrorHandler = 1;
+
+  dbprintf(("##### START SLRSenseHandler\n"));
+
+  if (flag == 2) {
+      DecodeSense(pRequestSense, "SLRSenseHandler : ", debug_file);
+      switch (pRequestSense->SenseKey)
+	{
+		case SENSE_NULL:
+			ret = SENSE_NO;
+			break;
+	        case NOT_READY:
+			dbprintf(("SLRSenseHandler : NOT_READY ASC = %x ASCQ = %x\n",
+         			pRequestSense->AdditionalSenseCode,
+                    		pRequestSense->AdditionalSenseCodeQualifier));
+          		switch (pRequestSense->AdditionalSenseCode)
+            		{
+            			case 0x4:
+              				if (pRequestSense->AdditionalSenseCodeQualifier == 00)
+                			{
+                  				dbprintf(("SLRSenseHandler : Logical Unit not ready, No additional sense\n"));
+                  				ret = SENSE_RETRY;
+                			}
+              				if (pRequestSense->AdditionalSenseCodeQualifier == 02)
+                			{
+                  				dbprintf(("SLRSenseHandler : Logical Unit not ready, in progress becoming ready\n"));
+                  				ret = SENSE_NO_TAPE_ONLINE;
+                			}
+              				break;
+            			case 0x30:
+              				if (pRequestSense->AdditionalSenseCodeQualifier == 0x3)
+                			{
+                  				dbprintf(("SLRSenseHandler : The tape drive is being cleaned\n"));
+                			} else {
+                  				dbprintf(("SLRSenseHandler : Unknown ASCQ %x\n",
+                            				pRequestSense->AdditionalSenseCodeQualifier));
+                			}
+             				 ret = SENSE_RETRY;
+             				 break;
+				case 0x3A:
+					dbprintf(("GenericSenseHandler : No tape online/loaded\n"));
+					ret = SENSE_NO_TAPE_ONLINE;
+					break;
+            			default:
+              				ret = SENSE_RETRY;
+              				break;
+            		}
+          		break;
+        	case UNIT_ATTENTION:
+          		dbprintf(("SLRSenseHandler : UNIT_ATTENTION ASC = %x ASCQ = %x\n",
+                    		pRequestSense->AdditionalSenseCode,
+                    		pRequestSense->AdditionalSenseCodeQualifier));
+          		switch (pRequestSense->AdditionalSenseCode)
+            		{
+            			default:
+              				ret = SENSE_RETRY;
+              				break;
+            		}
+          		break;
+        	case ILLEGAL_REQUEST:
+          		dbprintf(("SLRSenseHandler : ILLEGAL_REQUEST  ASC = %x ASCQ = %x\n",
+                    		pRequestSense->AdditionalSenseCode,
+ 				pRequestSense->AdditionalSenseCodeQualifier));
+			switch (pRequestSense->AdditionalSenseCode)
+            		{
+            			default:
+              				ret = SENSE_ABORT;
+              				break;
+            		}
+          		break;
+        	default:
+          		dbprintf(("SLRSenseHandler : Unknown %x ASC = %x ASCQ = %x\n",
+				pRequestSense->SenseKey,
+				pRequestSense->AdditionalSenseCode,
+				pRequestSense->AdditionalSenseCodeQualifier));
+			ret = SENSE_ABORT;
+			break;
+	}
+    } else {
+	DecodeSense(pRequestSense, "SLRSenseHandler : ", debug_file);
+	switch (pRequestSense->SenseKey)
+	{
+		case SENSE_NULL:
+			ret = SENSE_NO;
+			break;
+		case NOT_READY:
+			dbprintf(("SLRSenseHandler : NOT_READY ASC = %x ASCQ = %x\n",
+				pRequestSense->AdditionalSenseCode,
+				pRequestSense->AdditionalSenseCodeQualifier));
+			switch (pRequestSense->AdditionalSenseCode)
+			{
+				default:
+					ret = SENSE_RETRY;
+					break;
+			}
+			break;
+		case UNIT_ATTENTION:
+			dbprintf(("SLRSenseHandler : UNIT_ATTENTION ASC = %x ASCQ = %x\n",
+				pRequestSense->AdditionalSenseCode,
+				pRequestSense->AdditionalSenseCodeQualifier));
+			switch (pRequestSense->AdditionalSenseCode)
+			{
+				default:
+					ret = SENSE_RETRY;
+					break;
+			}
+			break;
+		case ILLEGAL_REQUEST:
+			dbprintf(("SLRSenseHandler : ILLEGAL_REQUEST  ASC = %x ASCQ = %x\n",
+				pRequestSense->AdditionalSenseCode,
+				pRequestSense->AdditionalSenseCodeQualifier));
+			switch (pRequestSense->AdditionalSenseCode)
+			{
+				default:
+					ret = SENSE_ABORT;
+					break;
+			}
+			break;
+		default:
+			dbprintf(("SLRSenseHandler : Unknown %x ASC = %x ASCQ = %x\n",
+				pRequestSense->SenseKey,
+				pRequestSense->AdditionalSenseCode,
+				pRequestSense->AdditionalSenseCodeQualifier));
+			ret = SENSE_ABORT;
+			break;
+	}
+    }
+  InErrorHandler=0;
+  return(ret);
+}
 int EXB85058SenseHandler(int DeviceFD, int flag, char *buffer)
 { 
   RequestSense_T *pRequestSense = (RequestSense_T *)buffer;
@@ -4777,7 +4924,7 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
           printf("%07d MTE  %s  %04d %s ",pMTE[x].address,
                  (pMTE[x].full ? "Full " :"Empty"),
                  pMTE[x].from, pMTE[x].VolTag);
-          if ((label = (char *)MapBarCode(labelfile, pMTE[x].VolTag, "",  BARCODE_VOL)) == NULL)
+          if ((label = (char *)MapBarCode(labelfile, "", pMTE[x].VolTag,  BARCODE_BARCODE)) == NULL)
           { 
 		printf("No mapping\n");
           } else {
@@ -4796,7 +4943,7 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
           printf("%07d STE  %s  %04d %s ",pSTE[x].address,  
                  (pSTE[x].full ? "Full ":"Empty"),
                  pSTE[x].from, pSTE[x].VolTag);
-	  if ((label = (char *)MapBarCode(labelfile, pSTE[x].VolTag, "",  BARCODE_VOL)) == NULL)
+          if ((label = (char *)MapBarCode(labelfile, "", pSTE[x].VolTag,  BARCODE_BARCODE)) == NULL)
           {
                 printf("No mapping\n");
           } else {
@@ -4815,7 +4962,7 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
           printf("%07d DTE  %s  %04d %s ",pDTE[x].address,  
                  (pDTE[x].full ? "Full " : "Empty"),
                  pDTE[x].from, pDTE[x].VolTag);
-	  if (( label = (char *)MapBarCode(labelfile, pDTE[x].VolTag, "",  BARCODE_VOL)) == NULL)
+          if ((label = (char *)MapBarCode(labelfile, "", pDTE[x].VolTag,  BARCODE_BARCODE)) == NULL)
           {
                 printf("No mapping\n");
           } else {
@@ -4833,7 +4980,7 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
           printf("%07d IEE  %s  %04d %s ",pIEE[x].address,  
                  (pIEE[x].full ? "Full " : "Empty"),
                  pIEE[x].from, pIEE[x].VolTag);
-	  if ((label = (char *)MapBarCode(labelfile, pIEE[x].VolTag, "",  BARCODE_VOL)) == NULL)
+          if ((label = (char *)MapBarCode(labelfile, "", pIEE[x].VolTag,  BARCODE_BARCODE)) == NULL)
           {
                 printf("No mapping\n");
           } else {

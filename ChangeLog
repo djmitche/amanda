@@ -1,3 +1,9 @@
+2001-04-16 Thomas Hepper <th@ant.han.de>
+	* example/chg-scsi-tandberg-slr.conf.in: New example for an Tandberg
+	config on linux (contrib by Martin Seine <m.seine@buelow-masiak.de> )
+	* changer-src/chg-scsi.c: Fix in BarCode handling, new definition for
+	an tandberg SLR100 autloader (Martin Seine <m.seine@buelow-masiak.de> 
+	
 2001-04-13 John R. Jackson <jrj@purdue.edu>
 
 	* example/amanda.conf.in: Fix multiple holding disks comment.

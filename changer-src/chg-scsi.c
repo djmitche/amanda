@@ -1,5 +1,5 @@
 /*
- *  $Id: chg-scsi.c,v 1.6.2.23 2001/02/21 18:24:45 ant Exp $
+ *  $Id: chg-scsi.c,v 1.6.2.24 2001/04/16 17:54:23 ant Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -515,6 +515,14 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
 
   pos = ftell(fp);
 
+  if(!barcode) {
+  	/* let it point somewhere */
+  	barcode = "";
+  }
+  if(action == BARCODE_BARCODE && !(*barcode)) {
+  	/* seek for nothing ? */
+  	return NULL;
+  }
   while(fread(plabel, 1, sizeof(LabelV1_T), fp) > 0)
     {
       record++;

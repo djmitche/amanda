@@ -1,0 +1,33 @@
+#
+# Demo-config for
+# TANDBERG SLR100 AUTOLOADER
+# with linux 2.4
+#
+# Configuration on Robot:
+# - start slot with 0 (default is start with 1)
+# - use cleaning slot (is automatically slot 8, resp. 7)
+# - automatic cleaning
+# - enable bar-code (default ist disabled)
+# - enable check-char (default is disabled)
+#
+number_configs	1
+eject		0	# Tapedrives need an eject command
+sleep		10	# Seconds to wait until the tape gets ready
+cleanmax	100 	# How many times could a cleaning tape get used
+changerdev	/dev/sg0 # generic device, the changer is on
+havebarcode	1
+#
+# Next comes the data for drive 0
+#
+config		0
+drivenum	0
+dev		/dev/nst0	# the tape device, chage, if you have more than one
+startuse	0	# The slots associated with the drive 0
+enduse		6	# This loader has 7 slots (1 for the cleaning cartridge)
+statfile 	@CONFIG_DIR@/@DEFAULT_CONFIG@/tape0-slot  # The file where the actual slot is stored
+# These two are void, because of automatic cleaning
+#cleancart	7	# the slot where the cleaningcartridge for drive 0 is located
+#cleanfile	@CONFIG_DIR@/@DEFAULT_CONFIG@/tape0-clean # The file where the cleanings are recorded
+usagecount	@CONFIG_DIR@/@DEFAULT_CONFIG@/totaltime
+tapestatus	@CONFIG_DIR@/@DEFAULT_CONFIG@/tapestatus # here will some status infos be stored
+labelfile	@CONFIG_DIR@/@DEFAULT_CONFIG@/labelfile # Use this if you have an barcode reader
