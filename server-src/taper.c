@@ -611,6 +611,8 @@ char *buffer;
  */
 times_t idlewait, rdwait, wrwait, fmwait;
 long total_writes;
+double total_tape_used;
+int total_tape_fm;
 
 void write_file P((void));
 int write_buffer P((buffer_t *bp));
@@ -850,6 +852,7 @@ buffer_t *bp;
 	tapefd_resetofs(tape_fd);
 	wrwait = timesadd(wrwait, stopclock());
 	total_writes += 1;
+	total_tape_used += (double)BUFFER_SIZE;
 	bp->status = EMPTY;
 	if(interactive || bufdebug) dumpstatus(bp);
 	if(interactive)write(2, "W", 1);
@@ -1278,6 +1281,9 @@ int label_tape()
 
     log(L_START, "datestamp %s label %s tape %d", datestamp, label, cur_tape);
 
+    total_tape_used=0.0;
+    total_tape_fm = 0;
+
     return 1;
 }
 
@@ -1330,7 +1336,11 @@ int writerror;
 { 
     char *result;
 
-    fprintf(stderr, "taper: writing end marker.\n");
+    fprintf(stderr, "taper: writing end marker. [%s %s kb %ld fm %d]\n",
+	label,
+	writerror? "ERR" : "OK",
+	(long) ((total_tape_used+1023.0) / 1024.0),
+	total_tape_fm);
     fflush(stderr);
 
     if(!writerror) {
@@ -1374,6 +1384,7 @@ int write_filemark()
 	sprintf(errstr, "writing filemark: %s", strerror(errno));
 	return 0;
     }
+    total_tape_fm++;
     return 1;
 }
 
