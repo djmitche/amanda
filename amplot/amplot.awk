@@ -133,10 +133,11 @@ function do_state(){		# state line is printed out after driver
 # $2 = "state" 		# $3 = "time" 		# $4 = time_val
 # $5 = "free"		# $6 = "kps:"		# $7 =  free_kps
 # $8 = "space:"		# $9 = space		# $10 = "taper:"
-# $11 = "writing"/"idle"# $12 = "idle"		# $13 = "dumpers:"
-# $14 = #idle 		# $15 = "qlen"		# $16 = "tapeq:"
-# $17 = #waiting	# $18 = "runq:"		# $19 = #not started 
-# $20 = "stoppedq:"	# $21 = #stopped
+# $11 = "writing"/"idle"# $12 = "idle-dumpers:"
+# $13 = #idle 		# $14 = "qlen"		# $15 = "tapeq:"
+# $16 = #waiting	# $17 = "runq:"		# $18 = #not started 
+# $19 = "stoppedq:"	# $20 = #stopped
+
 	cnt++;					# number of event
 	time = $4/time_scale;
 	unused = (bandw - $7)*bandw_scale+bandw_raise;
@@ -154,7 +155,7 @@ function do_state(){		# state line is printed out after driver
 		printf plot_fmt, time, twait_old, time, twait >> "tape_wait";
 	twait_old = twait;
 
-	active = (dumpers-$14)*dump_shift+dump_raise;
+	active = (dumpers-$13)*dump_shift+dump_raise;
 	if( active != active_old )
 		printf plot_fmt, time, active_old, time, active >> "dump_idle";
 	active_old = active;
@@ -166,7 +167,7 @@ function do_state(){		# state line is printed out after driver
 		printf plot_fmt, time, state_old, time, state >> "tape_idle";
 	state_old = state;
 
-	run = $19*count_scale+que_raise;
+	run = $18*count_scale+que_raise;
 	if( run != run_old )
 		printf plot_fmt, time, run_old, time, run >> "run_queue";
 	run_old = run;
@@ -176,7 +177,7 @@ function do_state(){		# state line is printed out after driver
 		printf plot_fmt, time, finish_old, time, finish >> "finished";
 	finish_old = finish;
 
-	tapeQ = $17 * count_scale+que_raise;
+	tapeQ = $16 * count_scale+que_raise;
 	if( tapeQ != tapeQ_old )
 		printf plot_fmt, time, tapeQ_old, time, tapeQ >> "tape_queue";
 	tapeQ_old = tapeQ;
