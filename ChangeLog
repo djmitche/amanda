@@ -1,5 +1,7 @@
 1999-09-20  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* amlogroll.c: It was missing; copied from the 2.4.2 branch.
+
 	* configure.in (AMANDA_TMPDIR): Added comment for config.h.in.
 
 1999-09-19 John R. Jackson  <jrj@purdue.edu>
