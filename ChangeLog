@@ -1,4 +1,11 @@
 2003-01-01  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Undo patch of 2002-11-27. That doesn't work well for the planner.
+
+	* common-src/amanda.h (days_diff): Revert to old macro.
+	* server-src/amadmin.c: Undo Fix for newer days_diff.
+	* server-src/planner.c: Undo Fix for newer days_diff.
+
+2003-01-01  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* client-src/client_util.c: Fix memory leak reported by valgrind.
 	* client-src/selfcheck.c: Ditto.
