@@ -1,7 +1,7 @@
 2001-07-05 John R. Jackson <jrj@purdue.edu>
 
-	docs/TAPE.CHANGERS: Minor docs/TAPE.CHANGERS update to clarify
-	that -slot and -eject unload and put the current tape away.
+	* docs/TAPE.CHANGERS: Minor docs/TAPE.CHANGERS update to clarify
+	  that -slot and -eject unload and put the current tape away.
 
 2001-07-02 John R. Jackson <jrj@purdue.edu>
 
