@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-null.c,v 1.1.2.3.2.1 2002/08/23 13:12:46 martinea Exp $
+ * $Id: output-null.c,v 1.1.2.3.2.2 2002/11/12 21:24:20 martinea Exp $
  *
  * tapeio.c virtual tape interface for a null device.
  */
@@ -69,18 +69,20 @@ null_tape_open(filename, flags, mask)
     return fd;
 }
 
-int
+ssize_t
 null_tapefd_read(fd, buffer, count)
-    int fd, count;
+    int fd;
     void *buffer;
+    size_t count;
 {
     return read(fd, buffer, count);
 }
 
-int
+ssize_t
 null_tapefd_write(fd, buffer, count)
-    int fd, count;
+    int fd;
     const void *buffer;
+    size_t count;
 {
     int write_count = count;
     long length;

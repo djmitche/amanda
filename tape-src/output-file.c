@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-file.c,v 1.1.2.4 2001/07/31 22:38:39 jrjackson Exp $
+ * $Id: output-file.c,v 1.1.2.4.2.1 2002/11/12 21:24:20 martinea Exp $
  *
  * tapeio.c virtual tape interface for a file device.
  *
@@ -638,10 +638,11 @@ common_exit:
     return fd;
 }
 
-int
+ssize_t
 file_tapefd_read(fd, buffer, count)
-    int fd, count;
+    int fd;
     void *buffer;
+    size_t count;
 {
     int result;
     int file_fd;
@@ -712,10 +713,11 @@ file_tapefd_read(fd, buffer, count)
     return result;
 }
 
-int
+ssize_t
 file_tapefd_write(fd, buffer, count)
-    int fd, count;
+    int fd;
     const void *buffer;
+    size_t count;
 {
     int file_fd;
     int write_count = count;

@@ -55,8 +55,8 @@ main(int argc, char **argv) {
     char *eq;
     int length = 0;
     int have_length = 0;
-    ssize_t (*read_func)();
-    ssize_t (*write_func)();
+    ssize_t (*read_func)(int, void *, size_t);
+    ssize_t (*write_func)(int, const void *, size_t);
 
     if((pgm = strrchr(argv[0], '/')) != NULL) {
 	pgm++;

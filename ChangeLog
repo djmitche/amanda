@@ -1,5 +1,27 @@
 2002-11-12  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* recover-src/extract_list.c (delete_file): j is int.
+	* changer-src/scsi-defs.h (B, B1): Check if already defined.
+	* server-src/taper.c: Some cast to int.
+	* tape-src/amdd.c (read_func, write_func): Complete prototype.
+	* tape-src/tapeio.h (tapefd_read, tapefd_write): return ssize_t, 
+	  third argument is size_t.
+	* tape-src/tapeio.c: Ditto.
+	* tape-src/output-file.h (file_tapefd_read, file_tapefd_write): return 
+	  ssize_t, third argument is size_t.
+	* tape-src/output-file.c: Ditto.
+	* tape-src/output-null.h (null_tapefd_read, null_tapefd_write): return 
+	  ssize_t, third argument is size_t.
+	* tape-src/output-null.c: Ditto.
+	* tape-src/output-rait.h (rait_read, rait__write): return ssize_t,
+	  third argument is size_t.
+	* tape-src/output-rait.c: Ditto.
+	* tape-src/output-tape.h (tape_tapefd_read, tape_tapefd_write): return 
+	  ssize_t, third argument is size_t.
+	* tape-src/output-tape.c: Ditto.
+
+2002-11-12  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* configure.in: socklen_t default to int.
 	* common-src/dgram.c (dgram_recv): addrlen is socklen_t.
 	* common-src/stream.c (stream_server): len is socklen_t.

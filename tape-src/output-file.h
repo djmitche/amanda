@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-file.h,v 1.1.2.2 2001/06/29 23:36:18 jrjackson Exp $
+ * $Id: output-file.h,v 1.1.2.2.2.1 2002/11/12 21:24:20 martinea Exp $
  *
  * tapeio.c virtual tape interface for a file device.
  */
@@ -41,12 +41,12 @@ extern int file_tape_open ();
 extern int file_tape_stat P((char *, struct stat *));
 extern int file_tapefd_close P((int));
 extern int file_tapefd_fsf P((int, int));
-extern int file_tapefd_read P((int, void *, int));
+extern ssize_t file_tapefd_read P((int, void *, size_t));
 extern int file_tapefd_rewind P((int));
 extern void file_tapefd_resetofs P((int));
 extern int file_tapefd_unload P((int));
 extern int file_tapefd_status P((int, struct am_mt_status *));
 extern int file_tapefd_weof P((int, int));
-extern int file_tapefd_write P((int, const void *, int));
+extern ssize_t file_tapefd_write P((int, const void *, size_t));
 
 #endif /* OUTPUT_FILE_H */

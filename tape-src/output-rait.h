@@ -52,8 +52,8 @@ extern int rait_access P((char *, int));
 extern int rait_stat P((char *, struct stat *));
 extern int rait_close P((int ));
 extern int rait_lseek P((int , long, int));
-extern int rait_write P((int , const void *, int));
-extern int rait_read P((int , void *, int));
+extern ssize_t rait_write P((int , const void *, size_t));
+extern ssize_t rait_read P((int , void *, size_t));
 extern int rait_ioctl P((int , int, void *));
 extern int rait_copy P((char *f1, char *f2, int buflen));
 

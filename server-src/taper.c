@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.47.2.14.4.8.2.11 2002/11/12 18:01:19 martinea Exp $
+/* $Id: taper.c,v 1.47.2.14.4.8.2.12 2002/11/12 21:24:20 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -327,7 +327,7 @@ char **main_argv;
     fprintf(stderr, "%s: buffer structures at %p for %d bytes\n",
 	    get_pname(),
 	    buftable,
-	    conf_tapebufs * sizeof(buffer_t));
+	    (int)(conf_tapebufs * sizeof(buffer_t)));
 
     /* fork off child writer process, parent becomes reader process */
 
@@ -897,7 +897,7 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 		    if(interactive || bufdebug) dumpstatus(bp);
 		    filesize += am_round(rc, 1024) / 1024;
 		    if(bufdebug) {
-			fprintf(stderr,"taper: r: put W%d\n",(bp-buftable));
+			fprintf(stderr,"taper: r: put W%d\n",(int)(bp-buftable));
 			fflush(stderr);
 		    }
 		    syncpipe_put('W');
@@ -1445,7 +1445,7 @@ buffer_t *bp;
 	if(interactive) fputs("W", stderr);
 
 	if(bufdebug) {
-	    fprintf(stderr, "taper: w: put R%d\n", (bp-buftable));
+	    fprintf(stderr, "taper: w: put R%d\n", (int)(bp-buftable));
 	    fflush(stderr);
 	}
 	syncpipe_put('R'); syncpipe_putint(bp-buftable);

@@ -133,8 +133,12 @@ typedef unsigned char PackedBit;
 #define FATAL	2
 
 /* macros for building scsi msb array parameter lists */
+#ifndef B
 #define B(s,i) ((unsigned char)((s) >> i))
+#endif
+#ifndef B1
 #define B1(s)                           ((unsigned char)(s))
+#endif
 #define B2(s)                       B((s),8),   B1(s)
 #define B3(s)            B((s),16), B((s),8),   B1(s)
 #define B4(s) B((s),24), B((s),16), B((s),8),   B1(s)
