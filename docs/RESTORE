@@ -1,10 +1,10 @@
 This document was originally written by Daniel Moore
-<dmoore@jeffco.k12.co.us>, on Jan 12, 1998.  It descripts how to
+<dmoore@jeffco.k12.co.us>, on Jan 12, 1998.  It describes how to
 restore files backed up with amanda either with or without amanda
-tools.  Comments, criticism are welcome.
+tools.
 
 I considered 6 cases.
-1)  Client machine fails, non-system critical. 
+1)  Client machine fails, non-system critical.
 2)  Client machine fails, system critical disk.
 3)  Server machine fails, non-system critical, non-amanda disk.
 4)  Server machine fails, system critical, non-amanda disk.
@@ -41,14 +41,35 @@ This tells us that we will need four tapes to do a full restore
 Log into Barney.  Cd to the /home directory.  Insert the tape with the 
 level 0 dump on it into the tape drive of Aaron.
 
-Use rsh in order to pipe the output from amrestore on the server 
-machine to restore on the client machine, after su'ing to bin (the amanda 
-user?) (or does the user need to be root?).
+Become super-user in the client host and run (replace <amanda> with
+the username under which amanda runs):
 
-rsh -n Aaron amrestore -p /dev/rmt/0cn Barney '/home$' | restore -ivbf 2 -
+rsh -n Aaron -l <amanda> amrestore -p /dev/rmt/0cn Barney '/home$' |
+restore -ivbf 2 -
 
-Repeat until, incrementing the level of the dump, until out of tapes.
-y
+This requires client root to have login access to <amanda>@Aaron, with
+a .rhosts entry (.amandahosts won't do).  If you use ssh, you may be
+able to type a password in order to be authenticated.  Another
+alternative is to start the operation in the server, and rsh to the
+client.  You should be the amanda user or root in the tape server and run:
+
+amrestore -p /dev/rmt/0cn Barney '/home$' |
+rsh Barney -l root /usr/etc/restore -ivbf 2 -
+
+If you don't want to use rsh at all, you may run:
+
+amrestore /dev/rmt/0cn Barney '/home$'
+
+This should create a file whose name contains the hostname, directory
+name, dump level and dump date of the backup.  Now you have to move
+this file to the client somehow: you may use NFS, rcp, ftp, floppy
+disks :-), whatever.  Suppose you rename that file to `home.0'.  Then,
+on the client, you should becore root and run:
+
+restore -ivfb 2 home.0
+
+Repeat one of these steps, incrementing the level of the dump, until
+there are no more available backups.
 
 2)  Client machine fails, system critical disk.
 Example: / fails on Barney.
@@ -59,29 +80,8 @@ Scenario 1.
 
 
 3)  Server machine fails, non-system critical, non-amanda disk.
-Example: /var/opt on Aaron
 
-First, use amadmin to find the tapes most recently used to backup the 
-partition.
-
-amadmin <config> info Aaron /var
-
-Current info for Aaron /var:
-  Stats: dump rates (kps), Full:  427.4, 428.8, 434.6
-                    Incremental:  156.6, 258.1, 165.1
-          compressed size, Full:  36.0%, 37.1%, 38.8%
-                    Incremental:  14.1%, 21.3%, 15.1%
-  Dumps: lev datestmp  tape             file   origK   compK secs
-          0  19980107  Barney15            5   66527   23936   56
-          1  19980108  Barney16           12   21055    2976   19
-
-This tells us that we will need two tapes to do a full restore 
-(Barney16 and Barney15).
-
-Use amrestore directly, after cd'ing to /var and su'ing to root(bin?).
-
-amrestore /dev/rmt/0cn Aaron /var
-
+Proceed just as described in Scenario 1.
 
 4)  Server machine fails, system critical, non-amanda disk.
 Example: / on Aaron
@@ -100,6 +100,9 @@ the database.  The easiest way to do it is to take the text file that you
 had mailed to you via the 'amadmin export' command, and import via the 
 'amadmin import' command.  Then you should be able to follow the steps 
 outlined in Scenario 4.
+
+Note that amanda does not mail the exported database automatically;
+you may add this to the crontab entry that runs amanda.
 
 6)  Server machine fails, non-system critical, amanda disk, with binaries.
 Example: /usr/local on Aaron
@@ -120,14 +123,14 @@ a) Find out the device name used by amanda, by looking in amanda.conf.
 Turns out to be /dev/rmt/0cn for this system.
 
 b) Look over the copy of the output of 'amadmin <config> export', and find
-out which tapes /opt was backed up on. 
+out which tapes /opt was backed up on.
 
 c) Grab the tapes that /opt was backed up on, and stick the level 0 into 
 the drive.  cd to /opt.
 
 d) Start at the second record, by using the appropriate tape command.
 
-mt -f /dev/rmt/0cn fsf 2
+mt -f /dev/rmt/0cn asf 2
 
 
 e) Now you want to start looking for /opt on this tape.
@@ -145,4 +148,4 @@ and try the dd/restore command shown above.  Do this until you find /opt
 on the disk.
 
 g) Restore the amanda binaries (what else do you need??), and then bail 
-out of ufsrestore.  You can use amrestore, as in Scenario 3.
+out of ufsrestore.  You can use amrestore, as in Scenario 1.
