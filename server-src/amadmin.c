@@ -985,18 +985,27 @@ disk_t *dp;
 
     printf("        program \"%s\"\n", dp->program);
     if(dp->exclude != (char *)0)
-	printf("        exclude %s%s\n", dp->exclude_list? "LIST ":"", dp->exclude);
+	printf("        exclude %s\"%s\"\n", dp->exclude_list? "list ":"", dp->exclude);
     printf("        priority %d\n", dp->priority);
     printf("        dumpcycle %d\n", dp->dumpcycle);
     printf("        maxdumps %d\n", dp->maxdumps);
 
     printf("        strategy ");
     switch(dp->strategy) {
-    case DS_NORMAL:
-	printf("NORMAL\n");
+    case DS_SKIP:
+	printf("SKIP\n");
+	break;
+    case DS_STANDARD:
+	printf("STANDARD\n");
 	break;
     case DS_NOFULL:
 	printf("NOFULL\n");
+	break;
+    case DS_NOINC:
+	printf("NOINC\n");
+	break;
+    case DS_HANOI:
+	printf("HANOI\n");
 	break;
     }
 
@@ -1015,27 +1024,31 @@ disk_t *dp;
 	printf("SERVER FAST\n");
 	break;
     case COMP_SERV_BEST:
-	printf("SERVER BEST\n"); /* XXX */
+	printf("SERVER BEST\n");
 	break;
     }
-    if (dp->compress != COMP_NONE) {
+    if(dp->compress != COMP_NONE) {
 	printf("        comprate %.2f %.2f\n",
 	       dp->comprate[0], dp->comprate[1]);
     }
 
-    printf("        options: ");
-    if(!dp->record) printf("NO-");
-    printf("RECORD");
+    printf("        auth ");
+    switch(dp->auth) {
+    case AUTH_BSD:
+	printf("BSD\n");
+	break;
+    case AUTH_KRB4:
+	printf("KRB4\n");
+	break;
+    }
+    printf("        kencrypt %s\n", (dp->kencrypt? "YES" : "NO"));
 
-    if(dp->auth == AUTH_BSD) printf(" BSD-AUTH");
-    else if(dp->auth == AUTH_KRB4) printf(" KRB4-AUTH");
-    else printf(" UNKNOWN-AUTH");
+    printf("        holdingdisk %s\n", (!dp->no_hold? "YES" : "NO"));
+    printf("        record %s\n", (dp->record? "YES" : "NO"));
+    printf("        index %s\n", (dp->index? "YES" : "NO"));
+    printf("        skip-incr %s\n", (dp->skip_incr? "YES" : "NO"));
+    printf("        skip-full %s\n", (dp->skip_full? "YES" : "NO"));
 
-    if(dp->skip_incr) printf(" SKIP-INCR");
-    if(dp->skip_full) printf(" SKIP-FULL");
-    if(dp->no_hold) printf(" NO-HOLD");
-    if(dp->kencrypt) printf(" KENCRYPT");
-    if(dp->index) printf(" INDEX");
     printf("\n");
 }
 

@@ -53,6 +53,7 @@ typedef enum {
     UNKNOWN, ANY, COMMA, LBRACE, RBRACE, NL, END,
     IDENT, INT, BOOL, REAL, STRING, TIME,
 
+    /* config parameters */
     INCLUDEFILE,
     ORG, MAILTO, DUMPUSER,
     TAPECYCLE, TAPEDEV, LABELSTR,
@@ -62,30 +63,41 @@ typedef enum {
     TPCHANGER, RUNTAPES,
     DEFINE, DUMPTYPE, TAPETYPE, INTERFACE,
 
+    /* dump type */
     COMMENT, PROGRAM, DUMPCYCLE, MAXCYCLE, MAXDUMPS,
     OPTIONS, PRIORITY, FREQUENCY, INDEX,
     STARTTIME, COMPRESS, AUTH, STRATEGY,
     SKIP_INCR, SKIP_FULL, RECORD, HOLDING,
     EXCLUDE, KENCRYPT, IGNORE, COMPRATE,
 
+    /* tape type */
     FILEMARK, LENGTH, SPEED,
 
+    /* network interface */
     USAGE,
 
+    /* dump options (obsolete) */
     EXCLUDE_FILE, EXCLUDE_LIST,
 
+    /* compress */
     NONE, FAST, BEST, SERVER, CLIENT,
 
+    /* priority */
     LOW, MEDIUM, HIGH,
 
+    /* authentication */
     KRB4_AUTH, BSD_AUTH,
 
-    NORMAL, NOFULL,
+    /* dump strategy */
+    SKIP, STANDARD, NOFULL, NOINC, HANOI,
 
+    /* exclude list */
     LIST,
 
+    /* numbers */
     INFINITY, MULT1, MULT7, MULT1K, MULT1M,
 
+    /* boolean */
     ATRUE, AFALSE
 
 } tok_t;
@@ -940,7 +952,7 @@ static void init_dumptype_defaults()
 
     /* options */
     dpcur.record = 1;
-    dpcur.strategy = DS_NORMAL;
+    dpcur.strategy = DS_STANDARD;
     dpcur.compress = COMP_FAST;
     dpcur.comprate[0] = dpcur.comprate[1] = 0.50;
     dpcur.skip_incr = dpcur.skip_full = 0;
@@ -1458,8 +1470,11 @@ static void get_auth()
 }
 
 keytab_t strategy_keytable[] = {
-    { "NORMAL", NORMAL },
+    { "HANOI", HANOI },
     { "NOFULL", NOFULL },
+    { "NOINC", NOINC },
+    { "SKIP", SKIP },
+    { "STANDARD", STANDARD },
     { NULL, IDENT }
 };
 
@@ -1475,15 +1490,24 @@ static void get_strategy()
 
     get_conftoken(ANY);
     switch(tok) {
-    case NORMAL:
-	strat = DS_NORMAL;
+    case SKIP:
+	strat = DS_SKIP;
+	break;
+    case STANDARD:
+	strat = DS_STANDARD;
 	break;
     case NOFULL:
 	strat = DS_NOFULL;
 	break;
+    case NOINC:
+	strat = DS_NOINC;
+	break;
+    case HANOI:
+	strat = DS_HANOI;
+	break;
     default:
-	parserror("NORMAL or NOFULL expected");
-	strat = DS_NORMAL;
+	parserror("STANDARD or NOFULL expected");
+	strat = DS_STANDARD;
     }
     dpcur.strategy = strat;
 
