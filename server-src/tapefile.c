@@ -190,7 +190,7 @@ int guess_runs_from_tapelist()
 	ntapes = dumpcycle * runtapes;
     }
 
-    return ntapes / runtapes;
+    return (ntapes + runtapes - 1) / runtapes;
 }
 
 static tape_t *parse_tapeline(line)

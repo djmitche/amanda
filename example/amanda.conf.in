@@ -20,7 +20,7 @@ bumpsize 20 MB		# minimum savings (threshold) to bump level 1 -> 2
 bumpdays     1		# minimum days at each level
 bumpmult     4		# threshold = bumpsize * (level-1)**bumpmult
 
-runtapes     9
+runtapes     1		# number of tapes to be used in a single run of amdump
 tpchanger "no-changer" # the tape-changer glue script
 # tapedev "/dev/nst0"	# Linux @ tuck
 # tapedev "@DEFAULT_TAPE_DEVICE@"	# or use the (no-rewind!) tape device directly
