@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.69 2000/04/09 07:59:04 oliva Exp $
+ * $Id: amcheck.c,v 1.70 2000/07/10 19:50:23 mengel Exp $
  *
  * checks for common problems in server and clients
  */
@@ -706,7 +706,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	if(changer_init() && (tapename = taper_scan()) == NULL) {
 	    fprintf(outf, "ERROR: %s\n", changer_resultstr);
 	    tapebad = 1;
-	} else if(access(tapename,F_OK|R_OK|W_OK) == -1) {
+	} else if(tape_access(tapename,F_OK|R_OK|W_OK) == -1) {
 	    fprintf(outf, "ERROR: %s: %s\n", tapename, strerror(errno));
 	    tapebad = 1;
 	} else if((errstr = tape_rdlabel(tapename, &datestamp, &label)) != NULL) {

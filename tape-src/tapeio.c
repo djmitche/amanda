@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.26 1999/04/22 22:13:38 jrj Exp $
+ * $Id: tapeio.c,v 1.27 2000/07/10 19:50:24 mengel Exp $
  *
  * implements tape I/O functions
  */
@@ -37,6 +37,15 @@
 #define R_OK 4
 #define W_OK 2
 #endif
+
+static char *namefix( name )
+   char *name;
+{
+    if (strncmp(name, "plain:", 6)) {
+ 	return name+6;
+    }
+    return name;
+}
 
 static char *errstr = NULL;
 
@@ -283,6 +292,21 @@ int tapefd, count;
 #endif /* !UWARE_TAPEIO */
 
 
+int tape_stat(filename, buf) 
+     char *filename;
+     struct stat *buf;
+{
+     filename = namefix(filename);
+     return stat(filename, buf);
+}
+
+int tape_access(filename, mode) 
+     char *filename;
+     int mode;
+{
+     filename = namefix(filename);
+     return access(filename, mode);
+}
 
 int tape_open(filename, mode)
      char *filename;
@@ -292,6 +316,7 @@ int tape_open(filename, mode)
     struct mtop mt;
 #endif /* HAVE_LINUX_ZFTAPE_H */
     int ret = 0, delay = 2, timeout = 200;
+    filename = namefix(filename);
     if (mode == 0 || mode == O_RDONLY)
 	mode = O_RDONLY;
     else
@@ -632,4 +657,3 @@ int is_zftape(filename)
     return(0);
 }
 #endif /* HAVE_LINUX_ZFTAPE_H */
-

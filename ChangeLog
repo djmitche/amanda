@@ -1,3 +1,12 @@
+2000-07-10 Marc Mengel <mengel@fnal.gov>
+	* tape-src/tapeio.c -- add tape_{stat,access}, allow "plain:" prefix
+		on tape device names
+	* tape-src/tapeio.h -- add tape_{stat,access} prototypes
+	* common-src/util.c -- call tape_{read,write}() in full{read,write}()
+	* restore-src/amidxtaped.c -- use tape_stat() on tapename
+	* restore-src/amrestore.c -- use tape_stat() on tapename
+	* server-src/amcheck.c -- use tape_access() on tapename
+
 2000-07-05 Thomas Hepper <th@ant.han.de>
 	* changer-src/chg-scsi.c: fixed an core dump if tapeident was set
 	* changer-src/scsi-changer-driver.c (OpenFile):

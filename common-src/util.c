@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.3 1999/09/19 19:17:39 jrj Exp $
+ * $Id: util.c,v 1.4 2000/07/10 19:50:23 mengel Exp $
  */
 
 #include "amanda.h"
@@ -33,6 +33,9 @@
 /*
  * Keep calling read() until we've read buflen's worth of data, or EOF,
  * or we get an error.
+ *
+ * Actually use tape_read() because sometimes we get used reading
+ * from tape, but tape_read() also works on sockets, etc.
  *
  * Returns the number of bytes read, 0 on EOF, or negative on error.
  */
@@ -46,7 +49,7 @@ fullread(fd, vbuf, buflen)
     char *buf = vbuf;	/* cast to char so we can ++ it */
 
     while (buflen > 0) {
-	nread = read(fd, buf, buflen);
+	nread = tape_read(fd, buf, buflen);
 	if (nread < 0)
 	    return (nread);
 	if (nread == 0)
@@ -62,6 +65,9 @@ fullread(fd, vbuf, buflen)
  * Keep calling write() until we've written buflen's worth of data,
  * or we get an error.
  *
+ * Actually use tape_write() because sometimes we get used writing
+ * to tape, but tape_write() also works on sockets, etc.
+ *
  * Returns the number of bytes written, or negative on error.
  */
 ssize_t
@@ -74,7 +80,7 @@ fullwrite(fd, vbuf, buflen)
     const char *buf = vbuf;	/* cast to char so we can ++ it */
 
     while (buflen > 0) {
-	nwritten = write(fd, buf, buflen);
+	nwritten = tape_write(fd, buf, buflen);
 	if (nwritten < 0)
 	    return (nwritten);
 	tot += nwritten;
