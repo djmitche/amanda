@@ -399,6 +399,32 @@ loaded slot.
 There are lots of comments at the start of the script describing how to
 set it up.
 
+========
+chg-disk
+========
+
+Clone of the chg-zd-mtx, but modified to be applied on local directories
+instead of tapes. This changer emulates a robotic that uses virtual
+tapes instead of real ones, where the virtual tapes are real directories
+on a hard disk.
+
+The directory tree should be:
+slot_root_dir -|
+               |- info
+               |- data -> slot1/
+               |- slot1/
+	       |- slot2/
+	       |- ...
+	       |- slotn/
+
+Where "slot_root_dir" is the tapedev "file:xxx" parameter and "n" the
+tapecycle parameter.
+
+Please refer to the HOWTO-FILE-DRIVER for details of usage.
+
+
+
+
 =======================================================
 chg-scsi-chio (formerly seagate-changer, then chg-chio)
 =======================================================
