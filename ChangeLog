@@ -1,3 +1,7 @@
+2002-12-18  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* amplot/amplot.awk: Parse line with features, parse ENDFLUSH line.
+
 2002-12-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/planner.c (promote_highest_priority_incremental): Newer
