@@ -14,7 +14,7 @@ KERBEROS.HOW-TO-GET on ftp.amanda.org in the /pub/amanda directory.
 The configure script defaults to:
 
 #  define SERVER_HOST_PRINCIPLE "amanda"
-#  define SERVER_HOST_INSTANCE  "amanda"
+#  define SERVER_HOST_INSTANCE  ""
 #  define SERVER_HOST_KEY_FILE  "/.amanda"
 
 #  define CLIENT_HOST_PRINCIPLE "rcmd"
@@ -26,7 +26,7 @@ The configure script defaults to:
 you can override these with configure options if you so desire, with:
 
     --with-server-principal=ARG    server host principal  [amanda]
-     --with-server-instance=ARG     server host instance   [amanda]
+     --with-server-instance=ARG     server host instance   []
      --with-server-keyfile=ARG      server host key file   [/.amanda]
      --with-client-principal=ARG    client host principal  [rcmd]
      --with-client-instance=ARG     client host instance   [HOSTNAME_INSTANCE]
@@ -42,9 +42,6 @@ bits are found under some other hierarchy, you can specify this
 via the --with-krb4=DIR, where DIR is where the kerberos bits live.
 It'll look under the 'lib' directory under this hierarchy for
 libkrb.a.
-
-Future versions of amanda will likely use a null instance; this makes
-.klogin file management easier in some situations.
 
 2. INSTALLATION
 
