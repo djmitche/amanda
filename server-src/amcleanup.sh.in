@@ -67,35 +67,42 @@ errfile=$logdir/amdump
 tapecycle=`getconf$SUF tapecycle`
 
 if [ -f $logfile ]; then
+	lognotfound=0
+
 	echo "amcleanup: processing outstanding log file."
 	exec </dev/null >/dev/null 2>&1
 	amreport$SUF
 
-	if [ -f $errfile ]; then
-	    # Keep debug log through the tapecycle plus a couple days
-	    maxdays=`expr $tapecycle + 2`
-
-	    days=1
-	    # First, find out the last existing errfile,
-	    # to avoid ``infinite'' loops if tapecycle is infinite
-	    while [ $days -lt $maxdays ] && [ -f $errfile.$days ]; do
-		days=`expr $days + 1`
-	    done
-	    # Now, renumber the existing log files
-	    while [ $days -ge 2 ]; do
-		ndays=`expr $days - 1`
-		mv $errfile.$ndays $errfile.$days
-		days=$ndays
-	    done
-	    mv $errfile $errfile.1
-	fi
-	
 	# Trim the index file to those for dumps that still exist.
 	amtrmidx$SUF $conf
 
 else
 	echo "amcleanup: no unprocessed logfile to clean up."
-	exit 1
+
+	lognotfound=1
 fi
 
-exit 0
+if [ -f $errfile ]; then
+    # if log was found, this will have been directed to /dev/null,
+    # which is fine.
+    echo "amcleanup: $errfile exists, renaming it."
+
+    # Keep debug log through the tapecycle plus a couple days
+    maxdays=`expr $tapecycle + 2`
+
+    days=1
+    # First, find out the last existing errfile,
+    # to avoid ``infinite'' loops if tapecycle is infinite
+    while [ $days -lt $maxdays ] && [ -f $errfile.$days ]; do
+	days=`expr $days + 1`
+    done
+    # Now, renumber the existing log files
+    while [ $days -ge 2 ]; do
+	ndays=`expr $days - 1`
+	mv $errfile.$ndays $errfile.$days
+	days=$ndays
+    done
+    mv $errfile $errfile.1
+fi
+	
+exit $lognotfound

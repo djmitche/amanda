@@ -1,3 +1,8 @@
+1998-11-20  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/amcleanup.sh.in (logdir/amdump): arrange that it is
+	renamed if it exists, even if no log file could be found.
+
 1998-11-19  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* config/ltmain.sh, config/ltconfig, config/libtool/libtool.m4:
