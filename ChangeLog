@@ -1,3 +1,10 @@
+1998-09-24  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* config/acinclude.m4 (AC_VALIDATE_CACHE_SYSTEM_TYPE): make sure
+ 	cached values for host, build and target system types match with the
+ 	guessed ones
+	* configure.in: use it
+
 1998-09-23  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/taper.c (getcmd): typo in last DEBUGging patch
