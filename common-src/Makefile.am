@@ -44,7 +44,8 @@ noinst_HEADERS =	amanda.h	arglist.h	\
 			amregex.h	fileheader.h
 
 EXTRA_DIST = 		getcwd.c	mktime.c	strerror.c	\
-			strstr.c	genversion.c	memmove.c
+			strstr.c	genversion.c	memmove.c	\
+			snprintf.c
 
 .sh:
 	cat $< > $@

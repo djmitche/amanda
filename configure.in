@@ -1797,6 +1797,8 @@ ICE_CHECK_DECL(ungetc,stdio.h)
 AC_FUNC_VPRINTF
 ICE_CHECK_DECL(vfprintf,stdio.h)
 ICE_CHECK_DECL(vsprintf,stdio.h)
+AC_REPLACE_FUNCS(snprintf)
+ICE_CHECK_DECL(snprintf,stdio.h)
 
 dnl disk device prefixes
 AC_MSG_CHECKING(disk device prefixes)
