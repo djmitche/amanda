@@ -63,6 +63,17 @@ Version 2.4.0b5
 	incremental backup, so any incremental will be a level 1.
 	-martineau
 
+	Add a LOGDIR option to amanda.conf and use it to replace the
+	--with-logdir option to configure (this was only used for the
+	amdump files) and the logfile option in amanda.conf.  Log
+	files are now LOGDIR/log and amdump files are LOGDIR/amdump.
+	Note: if there is a LOGFILE option in amanda.conf it has its
+	filename removed and is used as the LOGDIR (eg, if you have
+	"logfile /usr/adm/amanda/log" in amanda.conf it is translated to
+	"logdir /usr/adm/amanda" instead).  This should not cause a
+	problem for most sites.
+	-scott
+
 	Remove --with-dbdir option from configure.  This was only used
 	to setup things for the man pages and example files.  Oh.. and
 	amrmtape.  Fix this as well.

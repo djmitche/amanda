@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.9 1998/01/02 01:05:50 jrj Exp $
+ * $Id: logfile.c,v 1.10 1998/01/05 06:03:27 george Exp $
  *
  * common log file writing routine
  */
@@ -56,6 +56,7 @@ program_t curprog;
 char *curstr;
 
 int multiline = -1;
+static char *logfile;
 static int logfd = -1;
 
  /*
@@ -157,46 +158,56 @@ void log_end_multiline()
 void log_rename(datestamp)
 char *datestamp;
 {
+    char *logfile;
     char *fname = NULL;
     char seq_str[NUM_STR_SIZE];
     unsigned int seq;
     struct stat statbuf;
 
+    logfile = vstralloc(getconf_str(CNF_LOGDIR), "/log");
+
     for(seq = 0; 1; seq++) {	/* if you've got MAXINT files in your dir... */
 	ap_snprintf(seq_str, sizeof(seq_str), "%d", seq);
 	fname = newvstralloc(fname,
-			     getconf_str(CNF_LOGFILE),
+			     logfile,
 			     ".", datestamp,
 			     ".", seq_str,
 			     NULL);
 	if(stat(fname, &statbuf) == -1 && errno == ENOENT) break;
     }
-    if(rename(getconf_str(CNF_LOGFILE), fname) == -1)
+
+    if(rename(logfile, fname) == -1)
 	error("could not rename log file to `%s': %s", fname, strerror(errno));
+
     afree(fname);
+    afree(logfile);
 }
 
 
 static void open_log()
 {
-    logfd = open(getconf_str(CNF_LOGFILE), O_WRONLY|O_CREAT|O_APPEND, 0666);
+    logfile = vstralloc(getconf_str(CNF_LOGDIR), "/log");
+
+    logfd = open(logfile, O_WRONLY|O_CREAT|O_APPEND, 0666);
+
     if(logfd == -1)
-	error("could not open log file %s: %s",
-	      getconf_str(CNF_LOGFILE),strerror(errno));
+	error("could not open log file %s: %s", logfile, strerror(errno));
+
     if(amflock(logfd, "log") == -1)
-	error("could not lock log file %s: %s", getconf_str(CNF_LOGFILE),
-	      strerror(errno));
+	error("could not lock log file %s: %s", logfile, strerror(errno));
 }
 
 
 static void close_log()
 {
     if(amfunlock(logfd, "log") == -1)
-	error("could not unlock log file %s: %s", getconf_str(CNF_LOGFILE),
-	      strerror(errno));
+	error("could not unlock log file %s: %s", logfile, strerror(errno));
+
     if(close(logfd) == -1)
 	error("close log file: %s", strerror(errno));
+
     logfd = -1;
+    afree(logfile);
 }
 
 

@@ -20,7 +20,6 @@
 #undef mandir
 #undef CONFIG_DIR
 #undef DEBUG_DIR
-#undef LOG_DIR
 
 /* This is the default Amanda index server.  */
 #undef DEFAULT_SERVER

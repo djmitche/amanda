@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.14 1998/01/02 18:48:37 jrj Exp $
+ * $Id: reporter.c,v 1.15 1998/01/05 06:03:28 george Exp $
  *
  * nightly Amanda Report generator
  */
@@ -200,7 +200,9 @@ char **argv;
     if(open_infofile(getconf_str(CNF_INFOFILE)))
 	error("could not read info database file\n");
 
-    if(!testing) logfname = getconf_str(CNF_LOGFILE);
+    if(!testing) {
+	logfname = vstralloc(getconf_str(CNF_LOGDIR), "/log", NULL);
+    }
 
     if((logfile = fopen(logfname, "r")) == NULL)
 	error("could not open log %s: %s", logfname, strerror(errno));

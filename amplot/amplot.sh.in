@@ -42,7 +42,6 @@ sbindir=@sbindir@
 libexecdir=@libexecdir@
  
 confdir=@CONFIG_DIR@
-logdir=@LOG_DIR@
  
 PATH=$libexecdir:@sbindir@:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb:$PATH
 export PATH

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.22 1998/01/02 18:48:14 jrj Exp $
+ * $Id: amadmin.c,v 1.23 1998/01/05 06:03:17 george Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -516,7 +516,7 @@ void find(argc, argv)
 int argc;
 char **argv;
 {
-    char *conflog, *logfile = NULL;
+    char *conflogdir, *logfile = NULL;
     host_t *hp;
     int tape, maxtape, seq, logs;
     tape_t *tp;
@@ -574,7 +574,7 @@ char **argv;
     find_ndisks = argc - start_argc;
 
 
-    conflog = getconf_str(CNF_LOGFILE);
+    conflogdir = getconf_str(CNF_LOGDIR);
     maxtape = getconf_int(CNF_TAPECYCLE);
 
     for(tape = 1; tape <= maxtape; tape++) {
@@ -595,7 +595,7 @@ char **argv;
 
 	    ap_snprintf(seq_str, sizeof(seq_str), "%d", seq);
 	    logfile = newvstralloc(logfile,
-				   conflog, ".", ds_str, ".", seq_str, NULL);
+			conflogdir, "/log.", ds_str, ".", seq_str, NULL);
 	    if(access(logfile, R_OK) != 0) break;
 	    logs += search_logfile(tp->label, tp->datestamp, logfile);
 	}
@@ -603,14 +603,14 @@ char **argv;
 	/* search old-style amflush log, if any */
 
 	logfile = newvstralloc(logfile,
-			       conflog, ".", ds_str, ".", "amflush", NULL);
+			       conflogdir, "/log.", ds_str, ".amflush", NULL);
 	if(access(logfile,R_OK) == 0) {
 	    logs += search_logfile(tp->label, tp->datestamp, logfile);
 	}
 
 	/* search old-style main log, if any */
 
-	logfile = newvstralloc(logfile, conflog, ".", ds_str, NULL);
+	logfile = newvstralloc(logfile, conflogdir, "/log.", ds_str, NULL);
 	if(access(logfile,R_OK) == 0) {
 	    logs += search_logfile(tp->label, tp->datestamp, logfile);
 	}

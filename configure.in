@@ -120,25 +120,9 @@ AC_ARG_WITH(dbdir,
     ],)
 
 AC_ARG_WITH(logdir,
-    [  --with-logdir=DIR      log files go in DIR [localstatedir/amanda]],
-    [
-	case "$withval" in
-	"" | y | ye | yes | n | no)
-	    AC_MSG_ERROR([*** You must supply an argument to the --with-logdir option.])
-	  ;;
-	*) LOG_DIR="$withval"
-	  ;;
-	esac
-    ],
-    : ${LOG_DIR=$localstatedir/amanda}
-)
-LOG_DIR=`(
-    test "x$prefix" = xNONE && prefix=$ac_default_prefix
-    test "x$exec_prefix" = xNONE && exec_prefix=${prefix}
-    eval echo "$LOG_DIR"
-)`
-AC_DEFINE_UNQUOTED(LOG_DIR,"$LOG_DIR")
-AC_SUBST(LOG_DIR)
+    [  --with-logdir          deprecated, use logfile in amanda.conf],
+    [   AC_MSG_ERROR([*** --with-logdir is deprecated, use logdir in amanda.conf instead.])
+    ],)
 
 AC_ARG_WITH(suffixes,
     [  --with-suffixes        install binaries with version string appended to name],

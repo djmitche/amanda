@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.28 1998/01/02 18:48:16 jrj Exp $
+ * $Id: amcheck.c,v 1.29 1998/01/05 06:03:19 george Exp $
  *
  * checks for common problems in server and clients
  */
@@ -410,7 +410,6 @@ int fd;
     holdingdisk_t *hdp;
     int pid, tapebad, disklow, logbad;
     int inparallel;
-    char *logfile;
 
     pname = "amcheck-server";
 
@@ -471,12 +470,27 @@ int fd;
 
     /* check that the log file is writable if it already exists */
 
-    logbad = 0;
+    {
+	char *logdir;
+	char *logfile;
 
-    logfile = getconf_str(CNF_LOGFILE);
-    if(access(logfile, F_OK) == 0 && access(logfile, W_OK) != 0) {
-	fprintf(outf, "ERROR: %s is not writable\n", logfile);
-	logbad = 1;
+	logbad = 0;
+
+	logdir = getconf_str(CNF_LOGDIR);
+	logfile = vstralloc(logdir, "/log", NULL);
+
+	if(access(logdir, W_OK) == -1) {
+	    fprintf(outf, "ERROR: %s is unwritable: %s\n",
+		logdir, strerror(errno));
+	    logbad = 1;
+	}
+
+	if(access(logfile, F_OK) == 0 && access(logfile, W_OK) != 0) {
+	    fprintf(outf, "ERROR: %s is not writable\n", logfile);
+	    logbad = 1;
+	}
+
+	afree(logfile);
     }
 
     /* check that the tape is a valid amanda tape */

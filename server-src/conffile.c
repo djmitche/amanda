@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.31 1998/01/02 18:48:24 jrj Exp $
+ * $Id: conffile.c,v 1.32 1998/01/05 06:03:23 george Exp $
  *
  * read configuration file
  */
@@ -62,7 +62,7 @@ typedef enum {
     ORG, MAILTO, DUMPUSER,
     TAPECYCLE, TAPEDEV, CHNGRDEV, CHNGRFILE, LABELSTR,
     BUMPSIZE, BUMPDAYS, BUMPMULT,
-    TAPELIST, DISKFILE, INFOFILE, LOGFILE,
+    TAPELIST, DISKFILE, INFOFILE, LOGDIR, LOGFILE,
     DISKDIR, DISKSIZE, INDEXDIR, NETUSAGE, INPARALLEL, TIMEOUT,
     TPCHANGER, RUNTAPES,
     DEFINE, DUMPTYPE, TAPETYPE, INTERFACE,
@@ -140,7 +140,7 @@ static val_t conf_chngrfile;
 static val_t conf_labelstr;
 static val_t conf_tapelist;
 static val_t conf_infofile;
-static val_t conf_logfile;
+static val_t conf_logdir;
 static val_t conf_diskfile;
 static val_t conf_diskdir;
 static val_t conf_tapetype;
@@ -175,7 +175,7 @@ static int seen_org, seen_mailto, seen_dumpuser;
 static int seen_tapedev, seen_tpchanger, seen_chngrdev, seen_chngrfile;
 static int seen_labelstr, seen_runtapes, seen_maxdumps;
 static int seen_tapelist, seen_infofile, seen_diskfile, seen_diskdir;
-static int seen_logfile, seen_bumpsize, seen_bumpmult, seen_bumpdays;
+static int seen_logdir, seen_bumpsize, seen_bumpmult, seen_bumpdays;
 static int seen_tapetype, seen_dumpcycle, seen_maxcycle, seen_tapecycle;
 static int seen_disksize, seen_netusage, seen_inparallel, seen_timeout;
 static int seen_indexdir;
@@ -290,7 +290,8 @@ struct byname {
     { "TAPELIST", CNF_TAPELIST, STRING },
     { "DISKFILE", CNF_DISKFILE, STRING },
     { "INFOFILE", CNF_INFOFILE, STRING },
-    { "LOGFILE", CNF_LOGFILE, STRING },
+    { "LOGDIR", CNF_LOGDIR, STRING },
+    /*{ "LOGFILE", CNF_LOGFILE, STRING },*/
     /*{ "DISKDIR", CNF_DISKDIR, STRING },*/
     { "INDEXDIR", CNF_INDEXDIR, STRING },
     { "TAPETYPE", CNF_TAPETYPE, STRING },
@@ -360,7 +361,8 @@ confparm_t parm;
     case CNF_INFOFILE: return seen_infofile;
     case CNF_DISKFILE: return seen_diskfile;
     /*case CNF_DISKDIR: return seen_diskdir;*/
-    case CNF_LOGFILE: return seen_logfile;
+    case CNF_LOGDIR: return seen_logdir;
+    /*case CNF_LOGFILE: return seen_logfile;*/
     case CNF_BUMPSIZE: return seen_bumpsize;
     case CNF_BUMPMULT: return seen_bumpmult;
     case CNF_BUMPDAYS: return seen_bumpdays;
@@ -435,7 +437,8 @@ confparm_t parm;
     case CNF_LABELSTR: r = conf_labelstr.s; break;
     case CNF_TAPELIST: r = conf_tapelist.s; break;
     case CNF_INFOFILE: r = conf_infofile.s; break;
-    case CNF_LOGFILE: r = conf_logfile.s; break;
+    case CNF_LOGDIR: r = conf_logdir.s; break;
+    /*case CNF_LOGFILE: r = conf_logfile.s; break;*/
     case CNF_DISKFILE: r = conf_diskfile.s; break;
     /*case CNF_DISKDIR: r = conf_diskdir.s; break;*/
     case CNF_TAPETYPE: r = conf_tapetype.s; break;
@@ -523,23 +526,12 @@ static void init_defaults()
 				  "/dev/null"
 #endif
 				  );
-    conf_chngrfile.s = newvstralloc(conf_chngrfile.s,
-#ifdef LOG_DIR
-				    LOG_DIR,
-#else
-				    "/usr/adm/amanda",
-#endif
-				    "/changer-status", NULL);
+    conf_chngrfile.s =
+		newstralloc(conf_chngrfile.s, "/usr/adm/amanda/changer-status");
     conf_labelstr.s = newstralloc(conf_labelstr.s, ".*");
     conf_tapelist.s = newstralloc(conf_tapelist.s, "tapelist");
     conf_infofile.s = newstralloc(conf_infofile.s, "/usr/adm/amanda/curinfo");
-    conf_logfile.s = newvstralloc(conf_logfile.s,
-#ifdef LOG_DIR
-				  LOG_DIR,
-#else
-				  "/usr/adm/amanda",
-#endif
-				  "/log", NULL);
+    conf_logdir.s = newstralloc(conf_logdir.s, "/usr/adm/amanda");
     conf_diskfile.s = newstralloc(conf_diskfile.s, "disklist");
     conf_diskdir.s  = newstralloc(conf_diskdir.s,  "/dumps/amanda");
     conf_tapetype.s = newstralloc(conf_tapetype.s, "EXABYTE");
@@ -563,7 +555,7 @@ static void init_defaults()
     seen_tpchanger = seen_chngrdev = seen_chngrfile = 0;
     seen_labelstr = seen_runtapes = seen_maxdumps = 0;
     seen_tapelist = seen_infofile = seen_diskfile = seen_diskdir = 0;
-    seen_logfile = seen_bumpsize = seen_bumpmult = seen_bumpdays = 0;
+    seen_logdir = seen_bumpsize = seen_bumpmult = seen_bumpdays = 0;
     seen_tapetype = seen_dumpcycle = seen_maxcycle = seen_tapecycle = 0;
     seen_disksize = seen_netusage = seen_inparallel = seen_timeout = 0;
     seen_indexdir = 0;
@@ -702,7 +694,8 @@ keytab_t main_keytable[] = {
     { "INPARALLEL", INPARALLEL },
     { "INTERFACE", INTERFACE },
     { "LABELSTR", LABELSTR },
-    { "LOGFILE", LOGFILE },
+    { "LOGDIR", LOGDIR },
+    { "LOGFILE", LOGFILE },	/* XXX - historical */
     { "MAILTO", MAILTO },
     { "MAXCYCLE", MAXCYCLE },	/* XXX - historical */
     { "MAXDUMPS", MAXDUMPS },
@@ -752,7 +745,7 @@ static int read_confline()
     case LABELSTR:  get_simple(&conf_labelstr,  &seen_labelstr,  STRING); break;
     case TAPELIST:  get_simple(&conf_tapelist,  &seen_tapelist,  STRING); break;
     case INFOFILE:  get_simple(&conf_infofile,  &seen_infofile,  STRING); break;
-    case LOGFILE:   get_simple(&conf_logfile,   &seen_logfile,   STRING); break;
+    case LOGDIR:    get_simple(&conf_logdir,    &seen_logdir,    STRING); break;
     case DISKFILE:  get_simple(&conf_diskfile,  &seen_diskfile,  STRING); break;
     case BUMPMULT:  get_simple(&conf_bumpmult,  &seen_bumpmult,  REAL);   break;
     case BUMPSIZE:  get_simple(&conf_bumpsize,  &seen_bumpsize,  INT);    break;
@@ -763,6 +756,18 @@ static int read_confline()
     case MAXDUMPS:  get_simple(&conf_maxdumps,  &seen_maxdumps,  INT);    break;
     case TAPETYPE:  get_simple(&conf_tapetype,  &seen_tapetype,  IDENT);  break;
     case INDEXDIR:  get_simple(&conf_indexdir,  &seen_indexdir,  STRING); break;
+
+    case LOGFILE: /* XXX - historical */
+	/* truncate the filename part and pretend he said "logdir" */
+	{
+	    char *p;
+
+	    get_simple(&conf_logdir, &seen_logdir, STRING);
+
+	    p = strrchr(conf_logdir.s, '/');
+	    if (p != (char *)0) *p = '\0';
+	}
+	break;
 
     case DISKDIR:
 	{
@@ -2091,7 +2096,7 @@ dump_configuration(filename)
     printf("conf_labelstr = \"%s\"\n", getconf_str(CNF_LABELSTR));
     printf("conf_tapelist = \"%s\"\n", getconf_str(CNF_TAPELIST));
     printf("conf_infofile = \"%s\"\n", getconf_str(CNF_INFOFILE));
-    printf("conf_logfile = \"%s\"\n", getconf_str(CNF_LOGFILE));
+    printf("conf_logdir = \"%s\"\n", getconf_str(CNF_LOGDIR));
     printf("conf_diskfile = \"%s\"\n", getconf_str(CNF_DISKFILE));
     printf("conf_tapetype = \"%s\"\n", getconf_str(CNF_TAPETYPE));
 

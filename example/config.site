@@ -74,14 +74,6 @@
 # CONFIG_DIR=/usr/local/etc/amanda
 
 
-# LOG_DIR		--with-logdir=DIR
-#			Default: $localstatedir/amanda = /usr/local/var/amanda
-#			Directory containing the log files.  Amanda
-#			supports multiple configurations per site;
-#			these are contained in subdirectories of LOG_DIR.
-# LOG_DIR=/usr/adm/amanda
-
-
 # USE_VERSION_SUFFIXES	--with-suffixes
 #			Default: no
 #			All the Amanda binaries will be installed with a
