@@ -25,7 +25,8 @@ SERVER_MAN_PAGES = amadmin.8 \
 		   amstatus.8 \
 		   amtape.8 \
 		   amtoc.8 \
-		   amverify.8
+		   amverify.8 \
+		   amverifyrun.8
 endif
 
 if WANT_RECOVER

@@ -67,4 +67,5 @@ man page for more details about Amanda.
 Axel Zinser <fifi@icem.de>
 .SH "SEE ALSO"
 amrestore(8),
-amanda(8)
+amanda(8),
+amverifyrun(8)

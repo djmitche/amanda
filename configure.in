@@ -2707,7 +2707,7 @@ AC_OUTPUT( \
 	man/amrmtape.8			man/amtoc.8			\
 	man/amverify.8			man/Makefile			\
 	man/amstatus.8			man/amreport.8			\
-	man/amgetconf.8							\
+	man/amgetconf.8			man/amverifyrun.8		\
 									\
 	docs/Makefile							\
 									\
@@ -2720,6 +2720,7 @@ AC_OUTPUT( \
 	server-src/amoverview.pl	server-src/amrmtape.sh		\
 	server-src/amtoc.pl		server-src/amverify.sh		\
 	server-src/Makefile		server-src/amstatus.pl		\
+	server-src/amverifyrun.sh					\
 									\
 	tape-src/Makefile						\
 									\
