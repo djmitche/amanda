@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.39.2.11.4.4.2.11 2003/01/04 17:46:09 martinea Exp $
+ * $Id: amindexd.c,v 1.39.2.11.4.4.2.12 2003/02/12 02:09:08 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -474,6 +474,7 @@ int build_disk_table P((void))
     char date[3 * NUM_STR_SIZE + 2 + 1];
     long last_datestamp;
     int last_filenum;
+    int last_level;
     find_result_t *find_output;
 
     if (config_name == NULL || dump_hostname == NULL || disk_name == NULL) {
@@ -489,6 +490,7 @@ int build_disk_table P((void))
     clear_list();
     last_datestamp = -1;
     last_filenum = -1;
+    last_level = -1;
     for(find_output = output_find;
 	find_output != NULL; 
 	find_output = find_output->next) {
@@ -501,11 +503,13 @@ int build_disk_table P((void))
 	     * for the same datestamp after we see a holding disk entry
 	     * (as indicated by a filenum of zero).
 	     */
-	    if(find_output->datestamp == last_datestamp && last_filenum == 0) {
+	    if(find_output->datestamp == last_datestamp &&
+	       find_output->level == last_level && last_filenum == 0) {
 		continue;
 	    }
 	    last_datestamp = find_output->datestamp;
 	    last_filenum = find_output->filenum;
+	    last_level = find_output->level;
 	    ap_snprintf(date, sizeof(date), "%04d-%02d-%02d",
 			find_output->datestamp/10000,
 			(find_output->datestamp/100) %100,
