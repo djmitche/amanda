@@ -1,3 +1,8 @@
+2004-04-21  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Paul Bijnens <paul.bijnens@xplanation.com>
+
+	* server-src/amoverview.pl.in: Print last two characters.
+
 2004-04-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* changer-src/chg-disk.sh.in: Fix for sh compatibility.
