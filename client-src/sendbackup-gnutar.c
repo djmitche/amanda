@@ -51,6 +51,9 @@ static regex_t re_table[] = {
   { DMP_SIZE, 
 	"^Total bytes written: [0-9][0-9]*",				1},
 
+  /* samba 1.9.17 has introduced this output message */
+  { DMP_NORMAL, "^tar: dumped [0-9][0-9]* tar files" },
+
   /* catch-all: DMP_STRANGE is returned for all other lines */
   { DMP_STRANGE, NULL, 0}
 };
