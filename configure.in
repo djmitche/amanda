@@ -1102,6 +1102,7 @@ case "$target" in
 			esac
 			;;
   *-ibm-aix*)
+			GETCONF_LFS="XBS5_ILP32_OFFBIG"
 			DUMP_PROGRAMS="backup "$DUMP_PROGRAMS
 			AC_DEFINE(AIX_TAPEIO,1,[Define on AIX. ])
 			AC_DEFINE(AIX_BACKUP,1,[Define on AIX. ])
