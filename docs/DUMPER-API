@@ -41,7 +41,9 @@ interaction between dumper and taper is beyond the scope of this text.
 
 We are going to focus on the interaction between the Amanda client
 program and wrappers of dump programs.  These wrappers must implement
-the DUMPER API.
+the DUMPER API.  The dumptype option `program' should name the wrapper
+that will be used to back up filesystems of that dumptype.  One
+wrapper may call another, so as to extend its functionality.
 
 2. THE PROBLEM
 
@@ -135,10 +137,19 @@ simplified version of the sample support command above would be:
 We could also suggest a `support' command for full backups, but can't
 think of a backup program that does not support full backups...
 
-Other `support' sub-commands are `index', `exclude' and
-`exclude-list':
+Other `support' sub-commands are `index-from-output',
+`index-from-image', `exclude' and `exclude-list'.
 
-	DUMP support index hda0
+	DUMP support index-from-output hda0
+
+`index-from-output' means that an index file can be generated from the
+output produced by the backup program (for example, from tar -v).
+Index from image means that an index file can be generated from the
+backup image.  `index-from-output' will be used when available, since
+it's likely to be cheaper.  Even if `index-from-output' is supported,
+`index-from-image' should be supported too, if possible, since it can
+be used in the future to create index files from previously backed up
+filesystems.
 
 3.2. The `selfcheck' command
 
@@ -226,12 +237,13 @@ pair of numbers that, multiplied, yield the total backup size, or by
 nothing, implying that the wrapper cannot obtain this information from
 the output of the backup program.
 
-3.5. The `index' command
+3.5. The `index' commands
 
-The syntax of the `index' command is identical to the one of `backup'.
-It is fed the backup image, and it must produce a list of files and
-directories, one per line, to the standard output.  Directories must
-be identified by the `/' termination.
+The syntax of the `index-from-output' and `index-from-image' commands
+is identical to the one of `backup'.  They are fed the backup output
+of image, and they must produce a list of files and directories, one
+per line, to the standard output.  Directories must be identified by
+the `/' termination.
 
 3.6. The `restore' command
 
