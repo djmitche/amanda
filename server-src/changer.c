@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.19 1999/05/14 21:52:41 kashmir Exp $
+ * $Id: changer.c,v 1.20 1999/09/14 03:21:51 oliva Exp $
  *
  * interface routines for tape changers
  */
@@ -292,11 +292,12 @@ int (*user_slot) P((int rc, char *slotstr, char *device));
 /* ---------------------------- */
 
 static int changer_command(cmdstr)
-char *cmdstr;
+     char *cmdstr;
 {
     FILE *cmdpipe;
     char *cmd = NULL;
     char *cmd_and_io = NULL;
+    amwait_t wait_exitcode;
     int exitcode;
     char number[NUM_STR_SIZE];
 
@@ -338,8 +339,8 @@ char *cmdstr;
     exitcode = pclose(cmdpipe);
     cmdpipe = NULL;
     /* mark out-of-control changers as fatal error */
-    if(WIFSIGNALED(exitcode)) {
-	snprintf(number, sizeof(number), "%d", WTERMSIG(exitcode));
+    if(WIFSIGNALED(wait_exitcode)) {
+	snprintf(number, sizeof(number), "%d", WTERMSIG(wait_exitcode));
 	cmd = newvstralloc(cmd,
 			   "<error> ",
 			   changer_resultstr,
@@ -350,7 +351,7 @@ char *cmdstr;
 	cmd = NULL;
 	exitcode = 2;
     } else {
-	exitcode = WEXITSTATUS(exitcode);
+	exitcode = WEXITSTATUS(wait_exitcode);
     }
 
 /* fprintf(stderr, "changer: got exit: %d str: %s\n", exitcode, resultstr); */

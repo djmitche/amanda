@@ -1,3 +1,7 @@
+1999-09-14  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* server-src/changer.c (changer_command): Fix for amwait_t != int.
+
 1999-09-13  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
 	* config/acinclude.m4i: Added comments for config/config.h.in to all
