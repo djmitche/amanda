@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.39 1997/11/12 10:49:27 amcore Exp $
+ * $Id: sendsize.c,v 1.40 1997/11/12 12:17:43 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -666,7 +666,7 @@ int level;
     else
 	tarkeys = "archive 1;recurse;dir";
 
-    dbprintf(("%s: running \"%s %s %s -d 3 -U backup -E%s%s -c %s\"\n",
+    dbprintf(("%s: running \"%s \'%s\' %s -d 3 -U backup -E%s%s -c \'%s\'\"\n",
 	      pname, SAMBA_CLIENT, sharename, "XXXXX",
 	      domain[0] ? " -W " : "", domain,
 	      tarkeys));
