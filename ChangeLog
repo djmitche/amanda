@@ -1,5 +1,10 @@
 2002-03-23  John R. Jackson (jrj@purdue.edu)
 
+	* common-src/dbprintf (debug_printf): Make sure errno is preserved
+	  across dbprint() calls.
+
+2002-03-23  John R. Jackson (jrj@purdue.edu)
+
 	* configure.in: Add -R$dir as well as -L$dir on Solaris when processing
 	  --with-libraries to support shared libraries of support products.
 
