@@ -1,5 +1,9 @@
 2001-01-04 John R. Jackson <jrj@purdue.edu>
 
+	* client-src/killpgrp.c: Calls to error() do not need a newline.
+
+2001-01-04 John R. Jackson <jrj@purdue.edu>
+
 	* man/amanda.8.in: Try to make it clearer that dumpcycle and maxdumps
 	  changes in the main part of the config file must appear before any
 	  dumptype definitions, and also that inherited dumptypes must appear
