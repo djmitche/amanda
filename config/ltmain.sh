@@ -1,6 +1,6 @@
 # ltmain.sh - Provide generalized library-building support services.
 # Generated automatically from ltmain.in by configure.
-# Copyright (C) 1996, 1997 Free Software Foundation, Inc.
+# Copyright (C) 1996-1998 Free Software Foundation, Inc.
 # Gordon Matzigkeit <gord@gnu.ai.mit.edu>, 1996
 #
 # This program is free software; you can redistribute it and/or modify
@@ -29,7 +29,7 @@ modename="$progname"
 # Constants.
 PROGRAM=ltmain.sh
 PACKAGE=libtool
-VERSION=1.0h
+VERSION=1.0i
 
 default_mode=
 help="Try \`$progname --help' for more information."
@@ -40,6 +40,7 @@ rm="rm -f"
 
 # Sed substitution that helps us do robust quoting.  It backslashifies
 # metacharacters that are still active within double-quoted strings.
+Xsed='sed -e s/^X//'
 sed_quote_subst='s/\([\\`\\"$\\\\]\)/\\\1/g'
 
 # NLS nuisances.
@@ -78,7 +79,7 @@ do
   shift
 
   case "$arg" in
-  -*=*) optarg=`$echo "$arg" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+  -*=*) optarg=`$echo "X$arg" | $Xsed -e 's/[-_a-zA-Z0-9]*=//'` ;;
   *) optarg= ;;
   esac
 
@@ -166,7 +167,7 @@ if test -z "$show_help"; then
   # Infer the operation mode.
   if test -z "$mode"; then
     case "$nonopt" in
-    *cc | *++)
+    *cc | *++ | gcc* | *-gcc*)
       mode=link
       for arg
       do
@@ -181,7 +182,7 @@ if test -z "$show_help"; then
     *db | *dbx)
       mode=execute
       ;;
-    *install*|cp)
+    *install*|cp|mv)
       mode=install
       ;;
     *rm)
@@ -243,7 +244,7 @@ if test -z "$show_help"; then
       # Backslashify any backslashes, double quotes, and dollar signs.
       # These are the only characters that are still specially
       # interpreted inside of double-quoted scrings.
-      lastarg=`$echo "$lastarg" | sed "$sed_quote_subst"`
+      lastarg=`$echo "X$lastarg" | $Xsed -e "$sed_quote_subst"`
 
       # Double-quote args containing other shell metacharacters.
       # Many Bourne shells cannot handle close brackets correctly in scan
@@ -263,11 +264,12 @@ if test -z "$show_help"; then
     done
 
     # Get the name of the library object.
-    libobj=`$echo "$srcfile" | sed -e 's%^.*/%%'`
+    libobj=`$echo "X$srcfile" | $Xsed -e 's%^.*/%%'`
 
     # Recognize several different file suffixes.
-    xform='[cCFsSfm]'
+    xform='[cCFSfms]'
     case "$libobj" in
+    *.asm) xform=asm ;;
     *.c++) xform=c++ ;;
     *.cc) xform=cc ;;
     *.cpp) xform=cpp ;;
@@ -276,10 +278,10 @@ if test -z "$show_help"; then
     *.for) xform=for ;;
     esac
 
-    libobj=`$echo "$libobj" | sed -e "s/\.$xform$/.lo/"`
+    libobj=`$echo "X$libobj" | $Xsed -e "s/\.$xform$/.lo/"`
 
     case "$libobj" in
-    *.lo) obj=`$echo "$libobj" | sed -e 's/\.lo$/.o/'` ;;
+    *.lo) obj=`$echo "X$libobj" | $Xsed -e 's/\.lo$/.o/'` ;;
     *)
       $echo "$modename: cannot determine name of library object from \`$srcfile'" 1>&2
       exit 1
@@ -371,6 +373,7 @@ if test -z "$show_help"; then
     objs=
     prev=
     prevarg=
+    release=
     rpath=
     perm_rpath=
     temp_rpath=
@@ -417,6 +420,11 @@ if test -z "$show_help"; then
             ;;
           esac
           ;;
+	release)
+	  release="-$arg"
+	  prev=
+	  continue
+	  ;;
         rpath)
           rpath="$rpath $arg"
 	  prev=
@@ -473,7 +481,7 @@ if test -z "$show_help"; then
         ;;
 
       -L*)
-        dir=`$echo "$arg" | sed 's%^-L\(.*\)$%\1%'`
+        dir=`$echo "X$arg" | $Xsed -e 's%^-L\(.*\)$%\1%'`
         case "$dir" in
         /*)
 	  # Add the corresponding hardcode_libdir_flag, if it is not identical.
@@ -494,6 +502,11 @@ if test -z "$show_help"; then
 	;;
 
       -o) prev=output ;;
+
+      -release)
+	prev=release
+	continue
+	;;
 
       -rpath)
         prev=rpath
@@ -518,7 +531,7 @@ if test -z "$show_help"; then
       -* | +*)
 	# Unknown arguments in both finalize_command and compile_command need
 	# to be aesthetically quoted because they are evaled later.
-	arg=`$echo "$arg" | sed "$sed_quote_subst"`
+	arg=`$echo "X$arg" | $Xsed -e "$sed_quote_subst"`
 	case "$arg" in
 	*[\[\~\#\^\&\*\(\)\{\}\|\;\<\>\?\'\ \	]*|*]*)
 	  arg="\"$arg\""
@@ -546,7 +559,7 @@ if test -z "$show_help"; then
 
 	if test "$prev" = dlprefiles; then
 	  # Preload the old-style object.
-	  dlprefiles="$dlprefiles "`$echo "$arg" | sed 's/\.lo$/\.o/'`
+	  dlprefiles="$dlprefiles "`$echo "X$arg" | $Xsed -e 's/\.lo$/\.o/'`
 	  prev=
 	fi
 	libobjs="$libobjs $arg"
@@ -590,8 +603,8 @@ if test -z "$show_help"; then
         fi
 
         # Find the relevant object directory and library name.
-        name=`$echo "$arg" | sed -e 's%^.*/%%' -e 's/\.la$//' -e 's/^lib//'`
-        dir=`$echo "$arg" | sed 's%/[^/]*$%%'`
+        name=`$echo "X$arg" | $Xsed -e 's%^.*/%%' -e 's/\.la$//' -e 's/^lib//'`
+        dir=`$echo "X$arg" | $Xsed -e 's%/[^/]*$%%'`
         if test "X$dir" = "X$arg"; then
           dir="$objdir"
         else
@@ -605,7 +618,10 @@ if test -z "$show_help"; then
             # If there is no dlname, we need to preload.
             prev=dlprefiles
           else
-            # We should not create a dependency on this library.
+            # We should not create a dependency on this library, but we
+	    # may need any libraries it requires.
+	    compile_command="$compile_command$dependency_libs"
+	    finalize_command="$finalize_command$dependency_libs"
             prev=
             continue
           fi
@@ -659,7 +675,7 @@ if test -z "$show_help"; then
               compile_command="$compile_command $flag"
               finalize_command="$finalize_command $flag"
             fi
-          elif test "$hardcode_runpath_var" = yes; then
+          elif test -n "$runpath_var"; then
             # Do the same for the permanent run path.
             case "$perm_rpath " in
             *" $libdir "*) ;;
@@ -741,6 +757,10 @@ if test -z "$show_help"; then
 	    finalize_command="$finalize_command -L$dir -l$name"
 	  fi
         fi
+
+	# Add in any libraries that this one depends upon.
+	compile_command="$compile_command$dependency_libs"
+	finalize_command="$finalize_command$dependency_libs"
 	continue
         ;;
 
@@ -748,7 +768,7 @@ if test -z "$show_help"; then
       *)
 	# Unknown arguments in both finalize_command and compile_command need
 	# to be aesthetically quoted because they are evaled later.
-	arg=`$echo "$arg" | sed "$sed_quote_subst"`
+	arg=`$echo "X$arg" | $Xsed -e "$sed_quote_subst"`
 	case "$arg" in
 	*[\[\~\#\^\&\*\(\)\{\}\|\;\<\>\?\'\ \	]*|*]*)
 	  arg="\"$arg\""
@@ -784,6 +804,15 @@ if test -z "$show_help"; then
       exit 1
       ;;
 
+    *.a)
+      # Now set the variables for building old libraries.
+      build_libtool_libs=no
+      build_old_libs=yes
+      oldlib="$output"
+      $show "$rm $oldlib"
+      $run $rm $oldlib
+      ;;
+
     *.la)
       # Make sure we only generate libraries of the form `libNAME.la'.
       case "$output" in
@@ -795,7 +824,7 @@ if test -z "$show_help"; then
 	;;
       esac
 
-      name=`$echo "$output" | sed -e 's/\.la$//' -e 's/^lib//'`
+      name=`$echo "X$output" | $Xsed -e 's/\.la$//' -e 's/^lib//'`
       libname=`eval \\$echo \"$libname_spec\"`
 
       # All the library-specific variables (install_libdir is set above).
@@ -818,13 +847,14 @@ if test -z "$show_help"; then
       fi
 
       # Add libc to deplibs on all systems.
+      dependency_libs="$deplibs"
       deplibs="$deplibs -lc"
 
       if test -n "$dlfiles$dlprefiles"; then
         $echo "$modename: warning: \`-dlopen' is ignored while creating libtool libraries" 1>&2
         # Nullify the symbol file.
-        compile_command=`$echo "$compile_command" | sed "s% @SYMFILE@%%"`
-        finalize_command=`$echo "$finalize_command" | sed "s% @SYMFILE@%%"`
+        compile_command=`$echo "X$compile_command" | $Xsed -e "s% @SYMFILE@%%"`
+        finalize_command=`$echo "X$finalize_command" | $Xsed -e "s% @SYMFILE@%%"`
       fi
 
       if test -z "$rpath"; then
@@ -932,8 +962,8 @@ if test -z "$show_help"; then
 
       # Create the output directory, or remove our outputs if we need to.
       if test -d $objdir; then
-        $show "$rm $objdir/$output $objdir/$libname.*"
-        $run $rm $objdir/$output $objdir/$libname.*
+        $show "$rm $objdir/$output $objdir/$libname.* $objdir/${libname}${release}.*"
+        $run $rm $objdir/$output $objdir/$libname.* $objdir/${libname}${release}.*
       else
         $show "$mkdir $objdir"
         $run $mkdir $objdir
@@ -976,7 +1006,7 @@ if test -z "$show_help"; then
 	done
 
         # Use standard objects if they are PIC.
-        test -z "$pic_flag" && libobjs=`$echo "$libobjs " | sed -e 's/\.lo /.o /g' -e 's/ $//g'`
+        test -z "$pic_flag" && libobjs=`$echo "X$libobjs " | $Xsed -e 's/\.lo /.o /g' -e 's/ $//g'`
 
         # Do each of the archive commands.
         cmds=`eval \\$echo \"$archive_cmds\"`
@@ -1000,6 +1030,9 @@ if test -z "$show_help"; then
           dlname="$soname"
         fi
       fi
+
+      # Now set the variables for building old libraries.
+      oldlib="$objdir/$libname.a"
       ;;
 
     *.lo | *.o)
@@ -1015,8 +1048,8 @@ if test -z "$show_help"; then
       if test -n "$dlfiles$dlprefiles"; then
         $echo "$modename: warning: \`-dlopen' is ignored while creating objects" 1>&2
         # Nullify the symbol file.
-        compile_command=`$echo "$compile_command" | sed "s% @SYMFILE@%%"`
-        finalize_command=`$echo "$finalize_command" | sed "s% @SYMFILE@%%"`
+        compile_command=`$echo "X$compile_command" | $Xsed -e "s% @SYMFILE@%%"`
+        finalize_command=`$echo "X$finalize_command" | $Xsed -e "s% @SYMFILE@%%"`
       fi
 
       if test -n "$rpath"; then
@@ -1027,6 +1060,10 @@ if test -z "$show_help"; then
         $echo "$modename: warning: \`-version-info' is ignored while creating objects" 1>&2
       fi
 
+      if test -n "$release"; then
+        $echo "$modename: warning: \`-release' is ignored while creating objects" 1>&2
+      fi
+
       case "$output" in
       *.lo)
         if test -n "$objs"; then
@@ -1034,7 +1071,7 @@ if test -z "$show_help"; then
           exit 1
         fi
         libobj="$output"
-        obj=`$echo "$output" | sed 's/\.lo$/.o/'`
+        obj=`$echo "X$output" | $Xsed -e 's/\.lo$/.o/'`
         ;;
       *)
         libobj=
@@ -1046,7 +1083,7 @@ if test -z "$show_help"; then
       $run $rm $obj $libobj
 
       # Create the old-style object.
-      reload_objs="$objs"`$echo "$libobjs " | sed -e 's/[^       ]*\.a //g' -e 's/\.lo /.o /g' -e 's/ $//g'`
+      reload_objs="$objs"`$echo "X$libobjs " | $Xsed -e 's/[^       ]*\.a //g' -e 's/\.lo /.o /g' -e 's/ $//g'`
 
       output="$obj"
       cmds=`eval \\$echo \"$reload_cmds\"`
@@ -1095,6 +1132,10 @@ if test -z "$show_help"; then
         $echo "$modename: warning: \`-version-info' is ignored while linking programs" 1>&2
       fi
 
+      if test -n "$release"; then
+        $echo "$modename: warning: \`-release' is ignored while creating objects" 1>&2
+      fi
+
       if test -n "$rpath"; then
 	# If the user specified any rpath flags, then add them.
 	for libdir in $rpath; do
@@ -1123,7 +1164,7 @@ if test -z "$show_help"; then
               compile_command="$compile_command $flag"
               finalize_command="$finalize_command $flag"
             fi
-          elif test "$hardcode_runpath_var" = yes; then
+          elif test -n "$runpath_var"; then
             case "$perm_rpath " in
             *" $libdir "*) ;;
             *) perm_rpath="$perm_rpath $libdir" ;;
@@ -1134,14 +1175,14 @@ if test -z "$show_help"; then
 
       # Substitute the hardcoded libdirs into the compile commands.
       if test -n "$hardcode_libdir_separator"; then
-	compile_command=`$echo "$compile_command" | sed "s%@HARDCODE_LIBDIRS@%$hardcode_libdirs%g"`
-	finalize_command=`$echo "$finalize_command" | sed "s%@HARDCODE_LIBDIRS@%$hardcode_libdirs%g"`
+	compile_command=`$echo "X$compile_command" | $Xsed -e "s%@HARDCODE_LIBDIRS@%$hardcode_libdirs%g"`
+	finalize_command=`$echo "X$finalize_command" | $Xsed -e "s%@HARDCODE_LIBDIRS@%$hardcode_libdirs%g"`
       fi
 
       if test -n "$libobjs" && test "$build_old_libs" = yes; then
         # Transform all the library objects into standard objects.
-        compile_command=`$echo "$compile_command " | sed -e 's/\.lo /.o /g' -e 's/ $//'`
-        finalize_command=`$echo "$finalize_command " | sed -e 's/\.lo /.o /g' -e 's/ $//'`
+        compile_command=`$echo "X$compile_command " | $Xsed -e 's/\.lo /.o /g' -e 's/ $//'`
+        finalize_command=`$echo "X$finalize_command " | $Xsed -e 's/\.lo /.o /g' -e 's/ $//'`
       fi
 
       if test "$export_dynamic" = yes && test -n "$NM" && test -n "$global_symbol_pipe"; then
@@ -1152,7 +1193,7 @@ if test -z "$show_help"; then
 
       if test -n "$dlsyms"; then
         # Add our own program objects to the preloaded list.
-        dlprefiles=`$echo "$objs$dlprefiles " | sed -e 's/\.lo /.o /g' -e 's/ $//'`
+        dlprefiles=`$echo "X$objs$dlprefiles " | $Xsed -e 's/\.lo /.o /g' -e 's/ $//'`
 
 	# Discover the nlist of each of the dlfiles.
         nlist="$objdir/${output}.nm"
@@ -1185,7 +1226,7 @@ if test -z "$show_help"; then
 	  if sort "$nlist" | uniq > "$nlist"T; then
 	    mv -f "$nlist"T "$nlist"
 	    wcout=`wc "$nlist" 2>/dev/null`
-	    count=`echo "$wcout" | sed 's/^[ 	]*\([0-9][0-9]*\).*$/\1/'`
+	    count=`echo "X$wcout" | $Xsed -e 's/^[ 	]*\([0-9][0-9]*\).*$/\1/'`
 	    (test "$count" -ge 0) 2>/dev/null || count=-1
 	  else
 	    $rm "$nlist"T
@@ -1244,7 +1285,7 @@ EOF
 	    fi
 
 	    cat <<\EOF >> "$objdir/$dlsyms"
-  {0},
+  {0, (__ptr_t) 0}
 };
 
 #ifdef __cplusplus
@@ -1265,8 +1306,8 @@ EOF
         $run eval '(cd $objdir && $CC -c$no_builtin_flag "$dlsyms")' || exit $?
 
         # Transform the symbol file into the correct name.
-        compile_command=`$echo "$compile_command" | sed "s%@SYMFILE@%$objdir/${output}S.o%"`
-        finalize_command=`$echo "$finalize_command" | sed "s%@SYMFILE@%$objdir/${output}S.o%"`
+        compile_command=`$echo "X$compile_command" | $Xsed -e "s%@SYMFILE@%$objdir/${output}S.o%"`
+        finalize_command=`$echo "X$finalize_command" | $Xsed -e "s%@SYMFILE@%$objdir/${output}S.o%"`
       elif test "$export_dynamic" != yes; then
         test -n "$dlfiles$dlprefiles" && $echo "$modename: warning: \`-dlopen' and \`-dlpreopen' are ignored without \`-export-dynamic'" 1>&2
       else
@@ -1276,14 +1317,14 @@ EOF
         $echo "$modename: not configured to extract global symbols from dlpreopened files" 1>&2
 
         # Nullify the symbol file.
-        compile_command=`$echo "$compile_command" | sed "s% @SYMFILE@%%"`
-        finalize_command=`$echo "$finalize_command" | sed "s% @SYMFILE@%%"`
+        compile_command=`$echo "X$compile_command" | $Xsed -e "s% @SYMFILE@%%"`
+        finalize_command=`$echo "X$finalize_command" | $Xsed -e "s% @SYMFILE@%%"`
       fi
 
       if test -z "$link_against_libtool_libs" || test "$build_libtool_libs" != yes; then
         # Replace the output file specification.
-        compile_command=`$echo "$compile_command" | sed 's%@OUTPUT@%'"$output"'%g'`
-        finalize_command=`$echo "$finalize_command" | sed 's%@OUTPUT@%'"$output"'%g'`
+        compile_command=`$echo "X$compile_command" | $Xsed -e 's%@OUTPUT@%'"$output"'%g'`
+        finalize_command=`$echo "X$finalize_command" | $Xsed -e 's%@OUTPUT@%'"$output"'%g'`
 
         # We have no uninstalled library dependencies, so finalize right now.
         $show "$compile_command"
@@ -1292,8 +1333,8 @@ EOF
       fi
 
       # Replace the output file specification.
-      compile_command=`$echo "$compile_command" | sed 's%@OUTPUT@%'"$objdir/$output"'%g'`
-      finalize_command=`$echo "$finalize_command" | sed 's%@OUTPUT@%'"$objdir/$output"'T%g'`
+      compile_command=`$echo "X$compile_command" | $Xsed -e 's%@OUTPUT@%'"$objdir/$output"'%g'`
+      finalize_command=`$echo "X$finalize_command" | $Xsed -e 's%@OUTPUT@%'"$objdir/$output"'T%g'`
 
       # Create the binary in the object directory, then wrap it.
       if test -d $objdir; then :
@@ -1330,7 +1371,7 @@ EOF
         finalize_command="$shlibpath_var=\"$finalize_shlibpath\$$shlibpath_var\" $finalize_command"
       fi
 
-      if test -n "$perm_rpath"; then
+      if test -n "$runpath_var"; then
         # We should set the runpath_var.
         rpath=
         for dir in $perm_rpath; do
@@ -1355,7 +1396,10 @@ EOF
       $show "creating $output"
 
       # Quote the finalize command for shipping.
-      finalize_command=`$echo "$finalize_command" | sed "$sed_quote_subst"`
+      finalize_command=`$echo "X$finalize_command" | $Xsed -e "$sed_quote_subst"`
+
+      # Quote $echo for shipping.
+      qecho=`$echo "X$echo" | $Xsed -e "$sed_quote_subst"`
 
       # Only actually do things if our run command is non-null.
       if test -z "$run"; then
@@ -1374,6 +1418,15 @@ EOF
 # This wrapper script should never be moved out of \``pwd`'.
 # If it is, it will not operate correctly.
 
+# Sed substitution that helps us do robust quoting.  It backslashifies
+# metacharacters that are still active within double-quoted strings.
+Xsed='sed -e s/^X//'
+sed_quote_subst='$sed_quote_subst'
+
+# The HP-UX ksh and POSIX shell print the target directory to stdout
+# if CDPATH is set.
+if test "\${CDPATH+set}" = set; then CDPATH=; export CDPATH; fi
+
 # This environment variable determines our operation mode.
 if test "\$libtool_install_magic" = "$magic"; then
   # install mode needs the following variables:
@@ -1383,18 +1436,18 @@ else
   # When we are sourced in execute mode, \$file and \$echo are already set.
   if test "\$libtool_execute_magic" = "$magic"; then :
   else
-    echo='$echo'
+    echo="$qecho"
     file="\$0"
   fi
 
   # Find the directory that this script lives in.
-  thisdir=\`\$echo "\$file" | sed 's%/[^/]*$%%'\`
+  thisdir=\`\$echo "X\$file" | \$Xsed -e 's%/[^/]*$%%'\`
   test "x\$thisdir" = "x\$file" && thisdir=.
 
   # Follow symbolic links until we get to the real thisdir.
   file=\`ls -ld "\$file" | sed -n 's/.*-> //p'\`
   while test -n "\$file"; do
-    destdir=\`\$echo "\$file" | sed 's%/[^/]*\$%%'\`
+    destdir=\`\$echo "X\$file" | \$Xsed -e 's%/[^/]*\$%%'\`
 
     # If there was a directory component, then change thisdir.
     if test "x\$destdir" != "x\$file"; then
@@ -1404,7 +1457,7 @@ else
       esac
     fi
 
-    file=\`\$echo "\$file" | sed 's%^.*/%%'\`
+    file=\`\$echo "X\$file" | \$Xsed -e 's%^.*/%%'\`
     file=\`ls -ld "\$thisdir/\$file" | sed -n 's/.*-> //p'\`
   done
 
@@ -1425,7 +1478,7 @@ EOF
     $shlibpath_var="$temp_rpath\$$shlibpath_var"
 
     # Some systems cannot cope with colon-terminated $shlibpath_var
-    $shlibpath_var=\`\$echo \$$shlibpath_var | sed -e 's/:*\$//'\`
+    $shlibpath_var=\`\$echo "X\$$shlibpath_var" | \$Xsed -e 's/:*\$//'\`
 
     export $shlibpath_var
 
@@ -1439,8 +1492,7 @@ EOF
       for arg
       do
         # Quote arguments (to preserve shell metacharacters).
-	sed_quote_subst='$sed_quote_subst'
-	arg=\`\$echo "\$arg" | sed "\$sed_quote_subst"\`
+	arg=\`\$echo "X\$arg" | \$Xsed -e "\$sed_quote_subst"\`
         args="\$args \\"\$arg\\""
       done
 
@@ -1468,22 +1520,10 @@ EOF
       ;;
     esac
 
-
     # See if we need to build an old-fashioned archive.
     if test "$build_old_libs" = "yes"; then
-      # Now set the variables for building old libraries.
-      oldlib="$objdir/$libname.a"
-
       # Transform .lo files to .o files.
-      oldobjs="$objs"`$echo "$libobjs " | sed -e 's/[^   ]*\.a //g' -e 's/\.lo /.o /g' -e 's/ $//g'`
-
-      if test -d "$objdir"; then
-        $show "$rm $oldlib"
-        $run $rm $oldlib
-      else
-        $show "$mkdir $objdir"
-        $run $mkdir $objdir
-      fi
+      oldobjs="$objs"`$echo "X$libobjs " | $Xsed -e 's/[^   ]*\.a //g' -e 's/\.lo /.o /g' -e 's/ $//g'`
 
       # Do each command in the archive commands.
       if test -n "$old_archive_from_new_cmds" && test "$build_libtool_libs" = yes; then
@@ -1523,6 +1563,9 @@ library_names='$library_names'
 # The name of the static archive.
 old_library='$old_library'
 
+# Libraries that this one depends upon.
+dependency_libs='$dependency_libs'
+
 # Version information for $libname.
 current=$current
 age=$age
@@ -1550,7 +1593,7 @@ EOF
     # install_prog (especially on Windows NT).
     if test "$nonopt" = "$SHELL"; then
       # Aesthetically quote it.
-      arg=`$echo "$nonopt" | sed "$sed_quote_subst"`
+      arg=`$echo "X$nonopt" | $Xsed -e "$sed_quote_subst"`
       case "$arg" in
       *[\[\~\#\^\&\*\(\)\{\}\|\;\<\>\?\'\ \	]*|*]*)
 	arg="\"$arg\""
@@ -1566,7 +1609,7 @@ EOF
 
     # The real first argument should be the name of the installation program.
     # Aesthetically quote it.
-    arg=`$echo "$arg" | sed "$sed_quote_subst"`
+    arg=`$echo "X$arg" | $Xsed -e "$sed_quote_subst"`
     case "$arg" in
     *[\[\~\#\^\&\*\(\)\{\}\|\;\<\>\?\'\ \	]*|*]*)
       arg="\"$arg\""
@@ -1614,7 +1657,7 @@ EOF
       esac
 
       # Aesthetically quote the argument.
-      arg=`$echo "$arg" | sed "$sed_quote_subst"`
+      arg=`$echo "X$arg" | $Xsed -e "$sed_quote_subst"`
       case "$arg" in
       *[\[\~\#\^\&\*\(\)\{\}\|\;\<\>\?\'\ \	]*|*]*)
 	arg="\"$arg\""
@@ -1646,7 +1689,7 @@ EOF
     fi
 
     # Strip any trailing slash from the destination.
-    dest=`$echo "$dest" | sed 's%/$%%'`
+    dest=`$echo "X$dest" | $Xsed -e 's%/$%%'`
 
     # Check to see that the destination is a directory.
     test -d "$dest" && isdir=yes
@@ -1654,9 +1697,9 @@ EOF
       destdir="$dest"
       destname=
     else
-      destdir=`$echo "$dest" | sed 's%/[^/]*$%%'`
+      destdir=`$echo "X$dest" | $Xsed -e 's%/[^/]*$%%'`
       test "X$destdir" = "X$dest" && destdir=.
-      destname=`$echo "$dest" | sed 's%^.*/%%'`
+      destname=`$echo "X$dest" | $Xsed -e 's%^.*/%%'`
 
       # Not a directory, so check to see that there is only one file specified.
       set dummy $files
@@ -1729,7 +1772,7 @@ EOF
           esac
         fi
 
-        dir="`$echo "$file" | sed 's%/[^/]*$%%'`/"
+        dir="`$echo "X$file" | $Xsed -e 's%/[^/]*$%%'`/"
         test "X$dir" = "X$file/" && dir=
         dir="$dir$objdir"
 
@@ -1746,13 +1789,9 @@ EOF
           test "X$dlname" = "X$realname" && dlname=
 
           # Support stripping libraries.
-          if test -n "$stripme"; then
-            if test -n "$striplib"; then
-              $show "$striplib $destdir/$realname"
-              $run $striplib $destdir/$realname || exit $?
-            else
-              $echo "$modename: warning: no library stripping program" 1>&2
-            fi
+          if test -n "$stripme" && test -n "$striplib"; then
+            $show "$striplib $destdir/$realname"
+            $run $striplib $destdir/$realname || exit $?
           fi
 
           if test $# -gt 0; then
@@ -1793,7 +1832,7 @@ EOF
         fi
 
         # Install the pseudo-library for information purposes.
-        name=`$echo "$file" | sed 's%^.*/%%'`
+        name=`$echo "X$file" | $Xsed -e 's%^.*/%%'`
         $show "$install_prog $file $destdir/$name"
         $run eval "$install_prog $file $destdir/$name" || exit $?
 
@@ -1808,14 +1847,14 @@ EOF
         if test -n "$destname"; then
           destfile="$destdir/$destname"
         else
-          destfile=`$echo "$file" | sed 's%^.*/%%'`
+          destfile=`$echo "X$file" | $Xsed -e 's%^.*/%%'`
           destfile="$destdir/$destfile"
         fi
 
         # Deduce the name of the destination old-style object file.
         case "$destfile" in
         *.lo)
-          staticdest=`$echo "$destfile" | sed 's/\.lo$/\.o/'`
+          staticdest=`$echo "X$destfile" | $Xsed -e 's/\.lo$/\.o/'`
           ;;
         *.o)
           staticdest="$destfile"
@@ -1837,7 +1876,7 @@ EOF
         # Install the old object if enabled.
         if test "$build_old_libs" = yes; then
           # Deduce the name of the old-style object file.
-          staticobj=`$echo "$file" | sed 's/\.lo$/\.o/'`
+          staticobj=`$echo "X$file" | $Xsed -e 's/\.lo$/\.o/'`
 
           $show "$install_prog $staticobj $staticdest"
           $run eval "$install_prog \$staticobj \$staticdest" || exit $?
@@ -1874,7 +1913,7 @@ EOF
               *) . ./$lib ;;
               esac
             fi
-            libfile="$libdir/`$echo "$lib" | sed 's%^.*/%%g'`"
+            libfile="$libdir/`$echo "X$lib" | $Xsed -e 's%^.*/%%g'`"
             if test -z "$libdir"; then
               $echo "$modename: warning: \`$lib' contains no -rpath information" 1>&2
             elif test -f "$libfile"; then :
@@ -1899,7 +1938,7 @@ EOF
             fi
           else
             # Install the binary that we compiled earlier.
-	    file=`$echo "$file" | sed "s%\([^/]*\)$%$objdir/\1%"`
+	    file=`$echo "X$file" | $Xsed -e "s%\([^/]*\)$%$objdir/\1%"`
           fi
         fi
 
@@ -1910,7 +1949,7 @@ EOF
     done
 
     for file in $staticlibs; do
-      name=`$echo "$file" | sed 's%^.*/%%'`
+      name=`$echo "X$file" | $Xsed -e 's%^.*/%%'`
 
       # Set up the ranlib parameters.
       oldlib="$destdir/$name"
@@ -1919,13 +1958,9 @@ EOF
       $run eval "$install_prog \$file \$oldlib" || exit $?
 
       # Support stripping libraries.
-      if test -n "$stripme"; then
-        if test -n "$old_striplib"; then
-          $show "$old_striplib $oldlib"
-          $run $old_striplib $oldlib || exit $?
-        else
-          $echo "$modename: warning: no static library stripping program" 1>&2
-        fi
+      if test -n "$stripme" && test -n "$old_striplib"; then
+        $show "$old_striplib $oldlib"
+        $run $old_striplib $oldlib || exit $?
       fi
 
       # Do each command in the postinstall commands.
@@ -1984,11 +2019,37 @@ EOF
       done
     fi
 
-    echo "To link against installed libraries in LIBDIR, users may have to:"
+    echo "------------------------------------------------------------------------------"
+    echo "Libraries have been installed in:"
+    for libdir in $libdirs; do
+      echo "   $libdir"
+    done
+    echo
+    echo "To link against installed libraries in a given directory, LIBDIR,"
+    echo "you must use the \`-LLIBDIR' flag during linking."
+    echo
+    echo " You will also need to do one of the following:"
     if test -n "$shlibpath_var"; then
-      echo "   - add LIBDIR to their \`$shlibpath_var' environment variable"
+      echo "   - add LIBDIR to the \`$shlibpath_var' environment variable"
+      echo "     during execution"
     fi
-    echo "   - use the \`-LLIBDIR' linker flag"
+    if test -n "$runpath_var"; then
+      echo "   - add LIBDIR to the \`$runpath_var' environment variable"
+      echo "     during linking"
+    fi
+    if test -n "$hardcode_libdir_flag_spec"; then
+      libdir=LIBDIR
+      flag=`eval \\$echo \"$hardcode_libdir_flag_spec\"`
+
+      echo "   - use the \`$flag' linker flag"
+    fi
+    if test -f /etc/ld.so.conf; then
+      echo "   - have your system administrator add LIBDIR to \`/etc/ld.so.conf'"
+    fi
+    echo
+    echo "See any operating system documentation about shared libraries for"
+    echo "more information, such as the ld(1) and ld.so(8) manual pages."
+    echo "------------------------------------------------------------------------------"
     exit 0
     ;;
 
@@ -2041,7 +2102,7 @@ EOF
 	  continue
 	fi
 
-	dir=`$echo "$file" | sed 's%/[^/]*$%%'`
+	dir=`$echo "X$file" | $Xsed -e 's%/[^/]*$%%'`
 	test "X$dir" = "X$file" && dir=.
 
 	if test -f "$dir/$objdir/$dlname"; then
@@ -2054,7 +2115,7 @@ EOF
 
       *.lo)
 	# Just add the directory containing the .lo file.
-	dir=`$echo "$file" | sed 's%/[^/]*$%%'`
+	dir=`$echo "X$file" | $Xsed -e 's%/[^/]*$%%'`
 	test "X$dir" = "X$file" && dir=.
 	;;
 
@@ -2100,7 +2161,7 @@ EOF
         ;;
       esac
       # Quote arguments (to preserve shell metacharacters).
-      file=`$echo "$file" | sed "$sed_quote_subst"`
+      file=`$echo "X$file" | $Xsed -e "$sed_quote_subst"`
       args="$args \"$file\""
     done
 
@@ -2143,9 +2204,9 @@ EOF
     fi
 
     for file in $files; do
-      dir=`$echo "$file" | sed -e 's%/[^/]*$%%'`
+      dir=`$echo "X$file" | $Xsed -e 's%/[^/]*$%%'`
       test "X$dir" = "X$file" && dir=.
-      name=`$echo "$file" | sed -e 's%^.*/%%'`
+      name=`$echo "X$file" | $Xsed -e 's%^.*/%%'`
 
       rmfiles="$file"
 
@@ -2196,7 +2257,7 @@ EOF
 
       *.lo)
         if test "$build_old_libs" = yes; then
-          oldobj=`$echo "$name" | sed 's/\.lo$/\.o/'`
+          oldobj=`$echo "X$name" | $Xsed -e 's/\.lo$/\.o/'`
           rmfiles="$rmfiles $dir/$oldobj"
         fi
 	$show "$rm $rmfiles"
@@ -2252,6 +2313,7 @@ MODE must be one of the following:
 MODE-ARGS vary depending on the MODE.  Try \`$modename --help --mode=MODE' for
 a more detailed description of MODE.
 EOF
+  exit 0
   ;;
 
 compile)
@@ -2337,6 +2399,7 @@ The following components of LINK-COMMAND are treated specially:
   -lNAME            OUTPUT-FILE requires the installed library libNAME
   -no-undefined     declare that a library does not refer to external symbols
   -o OUTPUT-FILE    create OUTPUT-FILE from the specified objects
+  -release RELEASE  specify package release information
   -rpath LIBDIR     the created library will eventually be installed in LIBDIR
   -static           do not do any dynamic linking of libtool libraries
   -version-info CURRENT[:REVISION[:AGE]]
