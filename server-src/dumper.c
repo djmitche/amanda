@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.93 1998/12/30 18:43:23 martinea Exp $
+/* $Id: dumper.c,v 1.94 1999/01/12 00:25:33 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -130,7 +130,7 @@ static int databuf_write P((struct databuf *, const void *, int));
 static int databuf_flush P((struct databuf *));
 static void process_dumpeof P((void));
 static void process_dumpline P((char *str));
-static void add_msg_data P((char *str, int len));
+static void add_msg_data P((const char *str));
 static void log_msgout P((logtype_t typ));
 
 static int runcompress P((int, pid_t *));
@@ -859,33 +859,42 @@ char *str;
     fprintf(errf, "%s\n", str);
 }
 
-static void add_msg_data(str, len)
-char *str;
-int len;
+static void
+add_msg_data(str)
+    const char *str;
 {
-    char *t;
-    char *nl;
+    char *line, *nl;
 
-    while(len > 0) {
-	if((nl = strchr(str, '\n')) != NULL) {
-	    *nl = '\0';
-	}
-	if(msgbuf) {
-	    t = stralloc2(msgbuf, str);
-	    amfree(msgbuf);
-	    msgbuf = t;
-	} else if(nl == NULL) {
-	    msgbuf = stralloc(str);
-	} else {
-	    msgbuf = str;
-	}
-	if(nl == NULL) break;
-	process_dumpline(msgbuf);
-	if(msgbuf != str) free(msgbuf);
-	msgbuf = NULL;
-	len -= nl + 1 - str;
-	str = nl + 1;
+    /*
+     * If there was a partial line from the last call, then
+     * prepend it to the front.
+     */
+    if (msgbuf != NULL) {
+	char *t = stralloc2(msgbuf, str);
+	amfree(msgbuf);
+	msgbuf = t;
+    } else
+	msgbuf = stralloc(str);
+
+    /*
+     * Process all lines in the buffer
+     */
+    for (line = msgbuf;;) {
+
+	/*
+	 * If there's no newline, then we've only got a partial line.
+	 * We go back for more.
+	 */
+	if ((nl = strchr(line, '\n')) == NULL)
+	    break;
+	*nl = '\0';
+	process_dumpline(line);
+	line = nl + 1;
     }
+
+    line = stralloc(line);
+    amfree(msgbuf);
+    msgbuf = line;
 }
 
 
@@ -986,7 +995,8 @@ do_dump(mesgfd, datafd, indexfd, db)
     char *q;
     times_t runtime;
     double dumptime;	/* Time dump took in secs */
-    int compresspid, indexpid, killerr;
+    int killerr;
+    pid_t compresspid, indexpid;
 
 #ifndef DUMPER_SOCKET_BUFFERING
 #define DUMPER_SOCKET_BUFFERING 0
@@ -1222,7 +1232,7 @@ do_dump(mesgfd, datafd, indexfd, db)
 		break;
 	    default:
 		mesgbuf[size2] = '\0';
-		add_msg_data(mesgbuf, size2);
+		add_msg_data(mesgbuf);
 	    }
 
 	    if (got_info_endline && !header_done) { /* time to do the header */

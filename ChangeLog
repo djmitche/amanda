@@ -1,5 +1,12 @@
 1999-01-11  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c (add_msg_data): clarify and comment.  Remove
+	'len' arg.  Const 'str' arg.
+	* server-src/dumper.c (do_dump): compresspid and indexpid should
+	be pid_t's.  Also, remove len from add_msg_data call.
+
+1999-01-11  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/fileheader.c (parse_file_header): const the buffer
 	argument
 	* server-src/fileheader.h: update parse_file_header proto for const
