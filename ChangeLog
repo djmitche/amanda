@@ -1,5 +1,14 @@
 1999-04-08  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c (parse_info_line): parse info lines
+	from sendbackup directly into the 'file' global.  Eliminate
+	the backup_name, recover_cmd, and compress_suffix globals.
+	* server-src/dumper.c (finish_tapeheader): nuke usage
+	of above globals.  Nuke unneeded explicit nul terminations (we
+	memset the whole thing in fn_init).
+
+1999-04-08  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c (process_dumpline): rewrite to use strtok
 	and const the argument.
 	* server-src/dumper.c (make_tapeheader): rename to finish_tapeheader

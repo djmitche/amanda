@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.110 1999/04/08 15:17:39 kashmir Exp $
+/* $Id: dumper.c,v 1.111 1999/04/08 16:09:04 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -101,9 +101,6 @@ char *progname = NULL;
 int level;
 char *dumpdate = NULL;
 char *datestamp;
-char *backup_name = NULL;
-char *recover_cmd = NULL;
-char *compress_suffix = NULL;
 int conf_dtimeout;
 
 static dumpfile_t file;
@@ -427,9 +424,6 @@ main(main_argc, main_argv)
     amfree(errstr);
     amfree(msg);
     amfree(datestamp);
-    amfree(backup_name);
-    amfree(recover_cmd);
-    amfree(compress_suffix);
     amfree(handle);
     amfree(hostname);
     amfree(diskname);
@@ -756,38 +750,46 @@ static void process_dumpeof()
     }
 }
 
-/* Parse an information line from the client.
-** We ignore unknown parameters and only remember the last
-** of any duplicates.
-*/
-static void parse_info_line(str)
-char *str;
+/*
+ * Parse an information line from the client.
+ * We ignore unknown parameters and only remember the last
+ * of any duplicates.
+ */
+static void
+parse_info_line(str)
+    char *str;
 {
-    if(strcmp(str, "end") == 0) {
+    static const struct {
+	const char *name;
+	char *value;
+	size_t len;
+    } fields[] = {
+	{ "BACKUP", file.program, sizeof(file.program) },
+	{ "RECOVER_CMD", file.recover_cmd, sizeof(file.recover_cmd) },
+	{ "COMPRESS_SUFFIX", file.comp_suffix, sizeof(file.comp_suffix) },
+    };
+    char *name, *value;
+    int i;
+
+    if (strcmp(str, "end") == 0) {
 	SET(status, GOT_INFO_ENDLINE);
 	return;
     }
 
-#define sc "BACKUP="
-    if(strncmp(str, sc, sizeof(sc)-1) == 0) {
-	backup_name = newstralloc(backup_name, str + sizeof(sc)-1);
+    name = strtok(str, "=");
+    if (name == NULL)
 	return;
-    }
-#undef sc
+    value = strtok(NULL, "");
+    if (value == NULL)
+	return;
 
-#define sc "RECOVER_CMD="
-    if(strncmp(str, sc, sizeof(sc)-1) == 0) {
-	recover_cmd = newstralloc(recover_cmd, str + sizeof(sc)-1);
-	return;
+    for (i = 0; i < sizeof(fields) / sizeof(fields[0]); i++) {
+	if (strcmp(name, fields[i].name) == 0) {
+	    strncpy(fields[i].value, value, fields[i].len - 1);
+	    fields[i].value[fields[i].len - 1] = '\0';
+	    break;
+	}
     }
-#undef sc
-
-#define sc "COMPRESS_SUFFIX="
-    if(strncmp(str, sc, sizeof(sc)-1) == 0) {
-	compress_suffix = newstralloc(compress_suffix, str + sizeof(sc)-1);
-	return;
-    }
-#undef sc
 }
 
 static void
@@ -983,45 +985,37 @@ static void
 finish_tapeheader(file)
     dumpfile_t *file;
 {
-    file->type = F_DUMPFILE;
-    strncpy(file->datestamp  , datestamp  , sizeof(file->datestamp)-1);
-    file->datestamp[sizeof(file->datestamp)-1] = '\0';
-    strncpy(file->name       , hostname   , sizeof(file->name)-1);
-    file->name[sizeof(file->name)-1] = '\0';
-    strncpy(file->disk       , diskname   , sizeof(file->disk)-1);
-    file->disk[sizeof(file->disk)-1] = '\0';
-    file->dumplevel = level;
-    strncpy(file->program    , backup_name, sizeof(file->program)-1);
-    file->program[sizeof(file->program)-1] = '\0';
-    strncpy(file->recover_cmd, recover_cmd, sizeof(file->recover_cmd)-1);
-    file->recover_cmd[sizeof(file->recover_cmd)-1] = '\0';
 
+    assert(ISSET(status, HEADER_DONE));
+
+    file->type = F_DUMPFILE;
+    strncpy(file->datestamp, datestamp, sizeof(file->datestamp) - 1);
+    strncpy(file->name, hostname, sizeof(file->name) - 1);
+    strncpy(file->disk, diskname, sizeof(file->disk) - 1);
+    file->dumplevel = level;
+
+    /*
+     * If we're doing the compression here, we need to override what
+     * sendbackup told us the compression was.
+     */
     if (srvcompress != srvcomp_none) {
-	file->compressed=1;
-	ap_snprintf(file->uncompress_cmd, sizeof(file->uncompress_cmd),
-		    " %s %s |", UNCOMPRESS_PATH,
-#ifdef UNCOMPRESS_OPT
-		    UNCOMPRESS_OPT
-#else
-		    ""
+	file->compressed = 1;
+#ifndef UNCOMPRESS_OPT
+#define	UNCOMPRESS_OPT	""
 #endif
-		    );
+	ap_snprintf(file->uncompress_cmd, sizeof(file->uncompress_cmd),
+	    " %s %s |", UNCOMPRESS_PATH, UNCOMPRESS_OPT);
 	strncpy(file->comp_suffix, COMPRESS_SUFFIX,sizeof(file->comp_suffix)-1);
 	file->comp_suffix[sizeof(file->comp_suffix)-1] = '\0';
-    }
-    else {
-	file->uncompress_cmd[0] = '\0';
-	file->compressed=compress_suffix!=NULL;
-	if(compress_suffix) {
-	    strncpy(file->comp_suffix, compress_suffix,
-		    sizeof(file->comp_suffix)-1);
-	    file->comp_suffix[sizeof(file->comp_suffix)-1] = '\0';
+    } else {
+	if (file->comp_suffix[0] == '\0') {
+	    file->compressed = 0;
+	    assert(sizeof(file->comp_suffix) >= 2);
+	    strcpy(file->comp_suffix, "N");
 	} else {
-	    strncpy(file->comp_suffix, "N", sizeof(file->comp_suffix)-1);
-	    file->comp_suffix[sizeof(file->comp_suffix)-1] = '\0';
+	    file->compressed = 1;
 	}
     }
-    file->cont_filename[0] = '\0';
 }
 
 /*
@@ -1078,9 +1072,6 @@ do_dump(db)
     dumpsize = origsize = dump_result = 0;
     nb_header_block = 0;
     status = 0;
-    amfree(backup_name);
-    amfree(recover_cmd);
-    amfree(compress_suffix);
     fh_init(&file);
 
     ap_snprintf(level_str, sizeof(level_str), "%d", level);
@@ -1295,6 +1286,7 @@ do_dump(db)
 
 	    if (ISSET(status, GOT_INFO_ENDLINE) &&
 		!ISSET(status, HEADER_DONE)) { /* time to do the header */
+		SET(status, HEADER_DONE);
 		finish_tapeheader(&file);
 		if (write_tapeheader(db->fd, &file)) {
 		    errstr = newstralloc2(errstr, "write_tapeheader: ", 
@@ -1303,7 +1295,6 @@ do_dump(db)
 		}
 		dumpsize += TAPE_BLOCK_SIZE;
 		nb_header_block++;
-		SET(status, HEADER_DONE);
 
 		if (streams[DATAFD].fd != -1)
 		    FD_SET(streams[DATAFD].fd, &readset);	/* now we can read the data */
