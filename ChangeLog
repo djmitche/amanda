@@ -4,6 +4,7 @@
 	* server-src/holding.c (is_datestr): Check also for timestamp.
 	* server-src/planner.c: Flush today's dump with autoflush.
 	* server-src/find.c: Find holding disk with timestamp.
+	* server-src/find.h (find_result_t): Add timestamp field.
 
 2004-02-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
