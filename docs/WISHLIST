@@ -83,6 +83,14 @@ run unattended for long periods of time (1-2 weeks), a cron job should
 be configured to check whether those files exist and, if they do, run
 amcleanup before amdump.
 
+* it should be possible to enable full backups on degraded mode.
+There should be a way to specify the maximum amount of holding disk
+space to use for full backups on a single run.  This could be either
+an absolute value or a percentage of the total amount of available
+holding disk space.
+
+* amflush should be able to flush several runs into a single tape.
+
 * Ports to non-Unix platforms, specifically Macs and PCs.  The hooks are in
 the Amanda protocol to support non-dump backup programs, but no-one has
 volunteered to implement the client side.  Sorry, I'm not a Mac programmer!
