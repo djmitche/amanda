@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.47 1998/02/18 16:15:51 amcore Exp $
+ * $Id: amanda.h,v 1.48 1998/02/18 19:18:46 jrj Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -647,7 +647,8 @@ extern char *get_bsd_security P((void));
  * stops gcc -Wall and lint from complaining.
  */
 
-#ifndef HAVE_ACCEPT_DECL
+/* AIX #defines accept, and provides a prototype for the alternate name */
+#if !defined(HAVE_ACCEPT_DECL) && !defined(accept)
 extern int accept P((int s, struct sockaddr *addr, int *addrlen));
 #endif
 
@@ -743,11 +744,13 @@ extern int gethostname P((char *name, int namelen));
 extern int getopt P((int argc, char * const *argv, const char *optstring));
 #endif
 
-#ifndef HAVE_GETPEERNAME_DECL
+/* AIX #defines getpeername, and provides a prototype for the alternate name */
+#if !defined(HAVE_GETPEERNAME_DECL) && !defined(getpeername)
 extern int getpeername P((int s, struct sockaddr *name, int *namelen));
 #endif
 
-#ifndef HAVE_GETSOCKNAME_DECL
+/* AIX #defines getsockname, and provides a prototype for the alternate name */
+#if !defined(HAVE_GETSOCKNAME_DECL) && !defined(getsockname)
 extern int getsockname P((int s, struct sockaddr *name, int *namelen));
 #endif
 
