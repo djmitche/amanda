@@ -65,16 +65,16 @@ install-exec-hook:
 		chown $(CLIENT_LOGIN) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \
 		chgrp $(SETUID_GROUP) $$pa; \
-	done; \
-	list="$(libexec_PROGRAMS) $(libexec_SCRIPTS)"; \
+	done
+	@list="$(libexec_PROGRAMS) $(libexec_SCRIPTS)"; \
 	for p in $$list; do \
 		pa=$(libexecdir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(CLIENT_LOGIN) $$pa; \
 		chown $(CLIENT_LOGIN) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \
 		chgrp $(SETUID_GROUP) $$pa; \
-	done; \
-	list="$(libexecdir)/calcsize $(libexecdir)/rundump $(libexecdir)/runtar"; \
+	done
+	@list="$(libexecdir)/calcsize $(libexecdir)/rundump $(libexecdir)/runtar"; \
 	for p in $$list; do \
 		if echo "$(sbin_SCRIPTS) $(libexec_PROGRAMS) $(libexec_SCRIPTS)" | grep `basename $$p` >/dev/null 2>&1; then \
 			pa=`echo $$p|sed '$(transform)'`; \
@@ -82,6 +82,7 @@ install-exec-hook:
 			chown root $$pa; \
 			echo chmod u+s,o-rwx $$pa; \
 			chmod u+s,o-rwx $$pa; \
+		else true; \
 		fi; \
 	done
 

@@ -67,27 +67,31 @@ noinst_HEADERS = 	amindex.h	changer.h	clock.h		\
 			logfile.h	tapefile.h
 
 install-exec-hook:
-	@list="$(sbin_PROGRAMS) $(sbin_SCRIPTS)"; for p in $$list; do \
+	@list="$(sbin_PROGRAMS) $(sbin_SCRIPTS)"; \
+	for p in $$list; do \
 		pa=$(sbindir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(CLIENT_LOGIN) $$pa; \
 		chown $(CLIENT_LOGIN) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \
 		chgrp $(SETUID_GROUP) $$pa; \
-	done; \
-	list="$(libexec_PROGRAMS) $(libexec_SCRIPTS)"; for p in $$list; do \
+	done
+	@list="$(libexec_PROGRAMS) $(libexec_SCRIPTS)"; \
+	for p in $$list; do \
 		pa=$(libexecdir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(CLIENT_LOGIN) $$pa; \
 		chown $(CLIENT_LOGIN) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \
 		chgrp $(SETUID_GROUP) $$pa; \
-	done; \
-	list="$(sbindir)/amcheck $(libexecdir)/dumper $(libexecdir)/planner"; for p in $$list; do \
+	done
+	@list="$(sbindir)/amcheck $(libexecdir)/dumper $(libexecdir)/planner"; \
+	for p in $$list; do \
 		if echo "$(sbin_PROGRAMS) $(sbin_SCRIPTS) $(libexec_PROGRAMS) $(libexec_SCRIPTS)" | grep `basename $$p` >/dev/null 2>&1; then \
 			pa=`echo $$p|sed '$(transform)'`; \
 			echo chown root $$pa; \
 			chown root $$pa; \
 			echo chmod u+s,o-rwx $$pa; \
 			chmod u+s,o-rwx $$pa; \
+		else true; \
 		fi; \
 	done
 

@@ -28,7 +28,8 @@ amplot.gp:		amplot.g
 			mv amplot.gp.new amplot.gp
 
 install-exec-hook:
-	@list="$(sbin_SCRIPTS)"; for p in $$list; do \
+	@list="$(sbin_SCRIPTS)"; \
+	for p in $$list; do \
 		pa=$(sbindir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(CLIENT_LOGIN) $$pa; \
 		chown $(CLIENT_LOGIN) $$pa; \
@@ -37,7 +38,8 @@ install-exec-hook:
 	done
 
 install-data-hook:
-	@list="$(amplot_DATA)"; for p in $$list; do \
+	@list="$(amplot_DATA)"; \
+	for p in $$list; do \
 		pa=$(libexecdir)/$$p; \
 		echo chown $(CLIENT_LOGIN) $$pa; \
 		chown $(CLIENT_LOGIN) $$pa; \

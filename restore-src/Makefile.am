@@ -20,17 +20,19 @@ EXTRA_PROGRAMS = 	amrestore	amidxtaped
 amidxtaped_SOURCES = 	amidxtaped.c
 
 install-exec-hook:
-	@list="$(sbin_PROGRAMS)"; for p in $$list; do \
+	@list="$(sbin_PROGRAMS)"; \
+	for p in $$list; do \
 		pa=$(sbindir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(CLIENT_LOGIN) $$pa; \
 		chown $(CLIENT_LOGIN) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \
 		chgrp $(SETUID_GROUP) $$pa; \
-	done; \
-	list="$(libexec_PROGRAMS)"; for p in $$list; do \
+	done
+	@list="$(libexec_PROGRAMS)"; \
+	for p in $$list; do \
 		pa=$(libexecdir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(CLIENT_LOGIN) $$pa; \
 		chown $(CLIENT_LOGIN) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \
 		chgrp $(SETUID_GROUP) $$pa; \
-	done; \
+	done
