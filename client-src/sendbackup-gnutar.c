@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.32 1997/12/16 01:01:56 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.33 1997/12/16 17:52:51 jrj Exp $
  *
  * send backup data using GNU tar
  */
@@ -139,18 +139,30 @@ char *dumpdate;
 #endif
     {
 	int i;
-	int len = sizeof(GNUTAR_LISTED_INCREMENTAL_DIR) +
+	/*
+	 * Note: sizeof includes the null byte.  "len" is used later
+	 * as an offset into inputname (a copy of incrname) to reset
+	 * the suffix.  We subtract one for the null byte then add
+	 * one for the '/'.
+	 */
+	int len = sizeof(GNUTAR_LISTED_INCREMENTAL_DIR) - 1 + 1 +
 	    strlen(host) + strlen(disk);
+	int incrnamelen = len + 32;		/* room for suffix and null */
 
-	incrname = alloc(len+11);
-	sprintf(incrname, "%s/%s", GNUTAR_LISTED_INCREMENTAL_DIR, host);
-	i = strlen(incrname);
-	strcat(incrname, disk);
-	for (i = sizeof(GNUTAR_LISTED_INCREMENTAL_DIR); i<len; ++i)
+	incrname = alloc(incrnamelen);
+	ap_snprintf(incrname, incrnamelen,
+		    "%s/%s", GNUTAR_LISTED_INCREMENTAL_DIR, host);
+	strncat(incrname, disk, incrnamelen-strlen(incrname));
+	/*
+	 * The loop starts at the first character of the host name,
+	 * not the '/'.
+	 */
+	for (i = sizeof(GNUTAR_LISTED_INCREMENTAL_DIR); incrname[i]; ++i)
 	    if (incrname[i] == '/' || incrname[i] == ' ')
 		incrname[i] = '_';
 
-	sprintf(incrname + len, "_%d.new", level);
+	len = strlen(incrname);			/* set up for inputname below */
+	ap_snprintf(incrname+len, incrnamelen-len, "_%d.new", level);
 	unlink(incrname);
 	umask(0007);
 
@@ -168,12 +180,14 @@ char *dumpdate;
 		    pname, level, incrname));
 	} else {
 	    FILE *in = NULL, *out;
-	    char *inputname = stralloc(incrname);
+	    char *inputname = alloc(incrnamelen);
 	    char buf[512];
 	    int baselevel = level;
 
+	    strncpy(inputname, incrname, incrnamelen-1);
+	    inputname[incrnamelen-1] = '\0';
 	    while (in == NULL && --baselevel >= 0) {
-	      sprintf(inputname+len, "_%d", baselevel);
+	      ap_snprintf(inputname+len, incrnamelen-len, "_%d", baselevel);
 	      in = fopen(inputname, "r");
 	    }
 
@@ -226,9 +240,10 @@ char *dumpdate;
     }
 
     gmtm = gmtime(&prev_dumptime);
-    sprintf(dumptimestr, "%04d-%02d-%02d %2d:%02d:%02d GMT",
-	    gmtm->tm_year + 1900, gmtm->tm_mon+1, gmtm->tm_mday,
-	    gmtm->tm_hour, gmtm->tm_min, gmtm->tm_sec);
+    ap_snprintf(dumptimestr, sizeof(dumptimestr),
+		"%04d-%02d-%02d %2d:%02d:%02d GMT",
+		gmtm->tm_year + 1900, gmtm->tm_mon+1, gmtm->tm_mday,
+		gmtm->tm_hour, gmtm->tm_min, gmtm->tm_sec);
 
     dbprintf(("%s: doing level %d dump from date: %s\n",
 	      pname, level, dumptimestr));
@@ -256,14 +271,14 @@ char *dumpdate;
 
 	program->backup_name = program->restore_name = SAMBA_CLIENT;
 	
-        sprintf(indexcmd,
-                "%s -tf - 2>/dev/null | cut -c2-",
+        ap_snprintf(indexcmd, sizeof(indexcmd),
+		    "%s -tf - 2>/dev/null | cut -c2-",
 #ifdef GNUTAR
-		GNUTAR
+		 GNUTAR
 #else
-		"tar"
+		 "tar"
 #endif
-                );
+                 );
 
 	write_tapeheader();
 
@@ -280,19 +295,19 @@ char *dumpdate;
 			    (char *) 0);
     } else {
 #endif
-      sprintf(cmd, "%s/runtar%s", libexecdir, versionsuffix());
+      ap_snprintf(cmd, sizeof(cmd), "%s/runtar%s", libexecdir, versionsuffix());
 
       {
 	char sprintf_buf[512];
 
-        sprintf(indexcmd,
-                "%s -tf - 2>/dev/null | cut -c2-",
+        ap_snprintf(indexcmd, sizeof(indexcmd),
+		    "%s -tf - 2>/dev/null | cut -c2-",
 #ifdef GNUTAR
-		GNUTAR
+		    GNUTAR
 #else
-		"tar"
+		    "tar"
 #endif
-                );
+		    );
 
 	write_tapeheader();
 
@@ -321,28 +336,34 @@ char *dumpdate;
 			*efile ? "." : (char *)0,
 			(char *) 0);
 
-	strcpy(sprintf_buf,
-	       "sendbackup-gnutar: pid %d: %s --create --directory %s ");
+	strncpy(sprintf_buf,
+	        "sendbackup-gnutar: pid %d: %s --create --directory %s ",
+		sizeof(sprintf_buf)-1);
+	sprintf_buf[sizeof(sprintf_buf)-1] = '\0';
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-	strcat(sprintf_buf, "--listed-incremental %s ");
+	strncat(sprintf_buf, "--listed-incremental %s ",
+		sizeof(sprintf_buf)-strlen(sprintf_buf));
 #else
-	strcat(sprintf_buf, "--incremental --newer %s ");
+	strncat(sprintf_buf, "--incremental --newer %s ",
+		sizeof(sprintf_buf)-strlen(sprintf_buf));
 #endif
-	strcat(sprintf_buf, "--sparse --one-file-system ");
+	strncat(sprintf_buf, "--sparse --one-file-system ",
+		sizeof(sprintf_buf)-strlen(sprintf_buf));
 #ifdef ENABLE_GNUTAR_ATIME_PRESERVE
-	strcat(sprintf_buf, "--atime-preserve ");
+	strncat(sprintf_buf, "--atime-preserve ",
+		sizeof(sprintf_buf)-strlen(sprintf_buf));
 #endif
-	strcat(sprintf_buf, "--ignore-failed-read --totals --file - %s .\n");
+	strncat(sprintf_buf, "--ignore-failed-read --totals --file - %s .\n",
+		sizeof(sprintf_buf)-strlen(sprintf_buf));
 
-	sprintf(dbprintf_buf, sprintf_buf, 
-			dumppid, cmd, dirname,
+	ap_snprintf(dbprintf_buf, sizeof(dbprintf_buf), sprintf_buf, 
+		    dumppid, cmd, dirname,
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-			incrname,
+		    incrname,
 #else
-			dumptimestr,
+		    dumptimestr,
 #endif
-		        efile
-		);
+		    efile);
 	dbprintf((dbprintf_buf));
       }
 #ifdef SAMBA_CLIENT

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.17 1997/11/26 00:18:20 blair Exp $
+ * $Id: amadmin.c,v 1.18 1997/12/16 18:02:11 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -99,7 +99,7 @@ char **argv;
 	for(argc=0; version_info[argc]; printf("%s",version_info[argc++]));
 	return 0;
     }
-    sprintf(confdir, "%s/%s", CONFIG_DIR, argv[1]);
+    ap_snprintf(confdir, sizeof(confdir), "%s/%s", CONFIG_DIR, argv[1]);
     if(chdir(confdir)) {
 	fprintf(stderr,"%s: could not find config dir %s\n", argv[0], confdir);
 	usage();
@@ -389,7 +389,8 @@ int seq;
 
     tm = localtime(&t);
 
-    sprintf(str, "%2d/%02d %3s", tm->tm_mon+1, tm->tm_mday, dow[tm->tm_wday]);
+    ap_snprintf(str, sizeof(str),
+		"%2d/%02d %3s", tm->tm_mon+1, tm->tm_mday, dow[tm->tm_wday]);
     return str;
 }
 
@@ -555,11 +556,13 @@ char **argv;
 	    default: valid_sort=0;
 	    }
 	}
-	if(valid_sort)
-	    strcpy(sort_order,argv[4]);
-	else
+	if(valid_sort) {
+	    strncpy(sort_order, argv[4], sizeof(sort_order)-1);
+	    sort_order[sizeof(sort_order)-1] = '\0';
+	} else {
 	    printf("Invalid sort order: %s\nUse default sort order: %s\n",
 		    argv[4],sort_order);
+	}
 	start_argc=6;
     } else {
 	start_argc=4;
@@ -593,21 +596,23 @@ char **argv;
 	/* new-style log.<date>.<seq> */
 
 	for(seq = 0; 1; seq++) {
-	    sprintf(logfile, "%s.%d.%d", conflog, tp->datestamp, seq);
+	    ap_snprintf(logfile, sizeof(logfile),
+			"%s.%d.%d", conflog, tp->datestamp, seq);
 	    if(access(logfile, R_OK) != 0) break;
 	    logs += search_logfile(tp->label, tp->datestamp, logfile);
 	}
 
 	/* search old-style amflush log, if any */
 
-	sprintf(logfile, "%s.%d.amflush", conflog, tp->datestamp);
+	ap_snprintf(logfile, sizeof(logfile),
+		    "%s.%d.amflush", conflog, tp->datestamp);
 	if(access(logfile,R_OK) == 0) {
 	    logs += search_logfile(tp->label, tp->datestamp, logfile);
 	}
 
 	/* search old-style main log, if any */
 
-	sprintf(logfile, "%s.%d", conflog, tp->datestamp);
+	ap_snprintf(logfile, sizeof(logfile), "%s.%d", conflog, tp->datestamp);
 	if(access(logfile,R_OK) == 0) {
 	    logs += search_logfile(tp->label, tp->datestamp, logfile);
 	}
@@ -638,7 +643,8 @@ void search_holding_disk()
 
     for(hdisk = holdingdisks; hdisk != NULL; hdisk = hdisk->next) {
 	for(dir = dir_list; dir != NULL; dir = dir->next) {
-            sprintf(sdirname, "%s/%s", hdisk->diskdir,dir->name);
+            ap_snprintf(sdirname, sizeof(sdirname),
+			"%s/%s", hdisk->diskdir,dir->name);
 	    if((workdir = opendir(sdirname)) == NULL) {
 	        continue;
 	    }
@@ -649,7 +655,8 @@ void search_holding_disk()
 		    continue;
 		if(is_emptyfile(entry->d_name))
 		    continue;
-		sprintf(destname, "%s/%s", sdirname, entry->d_name);
+		ap_snprintf(destname, sizeof(destname),
+			    "%s/%s", sdirname, entry->d_name);
 		if(get_amanda_names(destname, hostname, diskname, &level))
 		    continue;
 		dp = NULL;
@@ -857,7 +864,7 @@ int datestamp;
     month = (datestamp / 100) % 100;
     day   = datestamp % 100;
 
-    sprintf(nice, "%4d-%02d-%02d", year, month, day);
+    ap_snprintf(nice, sizeof(nice), "%4d-%02d-%02d", year, month, day);
 
     return nice;
 }
@@ -929,6 +936,8 @@ int datestamp;
 		    output_find=new_output_find;
 		}
 		else if(curlog == L_FAIL) {	/* print other failures too */
+		    int len;
+
 		    struct find_result *new_output_find=
 			alloc(sizeof(struct find_result));
 		    new_output_find->next=output_find;
@@ -938,9 +947,10 @@ int datestamp;
 		    new_output_find->level=level;
 		    new_output_find->label=stralloc("---");
 		    new_output_find->filenum=0;
-		    new_output_find->status=(char*)alloc(11+strlen(program_str[(int)curprog])+strlen(rest));
-		    sprintf(new_output_find->status,"FAILED (%s) %s", 
-			    program_str[(int)curprog], rest);
+		    len = 11+strlen(program_str[(int)curprog])+strlen(rest);
+		    new_output_find->status=(char*)alloc(len);
+		    ap_snprintf(new_output_find->status, len, "FAILED (%s) %s", 
+				program_str[(int)curprog], rest);
 		    output_find=new_output_find;
 		}
 	    }

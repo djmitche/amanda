@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.6 1997/08/27 08:13:23 amcore Exp $
+ * $Id: logfile.c,v 1.7 1997/12/16 18:02:37 jrj Exp $
  *
  * common log file writing routine
  */
@@ -81,12 +81,18 @@ arglist_function(void log, logtype_t, typ)
 
     if((int)typ <= (int)L_BOGUS || (int)typ > (int)L_MARKER) typ = L_BOGUS;
 
-    if(multiline > 0) strcpy(linebuf, "  ");	/* continuation line */
-    else sprintf(linebuf, "%s %s ", logtype_str[(int)typ], pname);
+    if(multiline > 0) {
+	strncpy(linebuf, "  ", sizeof(linebuf)-1);	/* continuation line */
+	linebuf[sizeof(linebuf)-1] = '\0';
+    } else {
+	ap_snprintf(linebuf, sizeof(linebuf),
+		    "%s %s ", logtype_str[(int)typ], pname);
+    }
 
+    len = strlen(linebuf);
     arglist_start(argp, typ);
     format = arglist_val(argp, char *);
-    vsprintf(linebuf+strlen(linebuf), format, argp);
+    ap_vsnprintf(linebuf+len, sizeof(linebuf)-len, format, argp);
     arglist_end(argp);
 
     len = strlen(linebuf);
@@ -136,7 +142,8 @@ char *datestamp;
     struct stat statbuf;
 
     for(seq = 0; 1; seq++) {	/* if you've got MAXINT files in your dir... */
-	sprintf(fname, "%s.%s.%d", getconf_str(CNF_LOGFILE), datestamp, seq);
+	ap_snprintf(fname, sizeof(fname),
+		    "%s.%s.%d", getconf_str(CNF_LOGFILE), datestamp, seq);
 	if(stat(fname, &statbuf) == -1 && errno == ENOENT) break;
     }
     if(rename(getconf_str(CNF_LOGFILE), fname) == -1)

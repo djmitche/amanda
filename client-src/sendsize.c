@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.43 1997/12/13 05:12:23 amcore Exp $
+ * $Id: sendsize.c,v 1.44 1997/12/16 17:52:53 jrj Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -129,7 +129,7 @@ char **argv;
 	    if(str != NULL)
 		sscanf(str, "hostname=%[^;]", host);
 
-	    sprintf(opt, "OPTIONS maxdumps=%d;\n", maxdumps);
+	    ap_snprintf(opt, sizeof(opt), "OPTIONS maxdumps=%d;\n", maxdumps);
 	    write(1, opt, strlen(opt));
 	    continue;
 	}
@@ -272,7 +272,7 @@ disk_estimates_t *est;
     char *argv[DUMP_LEVELS*2+10];
     int i=0, level, argc, calcpid;
 
-    sprintf(cmd, "%s/calcsize%s", libexecdir,versionsuffix());
+    ap_snprintf(cmd, sizeof(cmd), "%s/calcsize%s", libexecdir,versionsuffix());
 
     argv[i++] = "calcsize";
     argv[i++] = est->program;
@@ -294,11 +294,12 @@ disk_estimates_t *est;
 
     for(level = 0; level < DUMP_LEVELS; level++) {
 	if(est->est[level].needestimate) {
-	    sprintf(str, "%d", level);
+	    ap_snprintf(str, sizeof(line) - strlen(line), "%d", level);
 	    argv[argc++] = str; 
 	    dbprintf((" %s", str));
 	    str += strlen(str) + 1;
-	    sprintf(str, "%ld", (long)est->est[level].dumpsince);
+	    ap_snprintf(str, sizeof(line) - strlen(line),
+			"%ld", (long)est->est[level].dumpsince);
 	    dbprintf((" %s", str));
 	    argv[argc++] = str;
 	    str += strlen(str) + 1;
@@ -350,7 +351,8 @@ disk_estimates_t *est;
 	    dbprintf(("%s: getting size via dump for %s level %d\n",
 		      pname, est->amname, level));
 	    size = getsize_dump(est->amname, level);
-	    sprintf(result, "%s %d SIZE %ld\n", est->amname, level, size);
+	    ap_snprintf(result, sizeof(result),
+			"%s %d SIZE %ld\n", est->amname, level, size);
 
 	    amflock(1, "size");
 
@@ -375,7 +377,8 @@ disk_estimates_t *est;
 	    dbprintf(("%s: getting size via smbclient for %s level %d\n",
 		      pname, est->amname, level));
 	    size = getsize_smbtar(est->amname, level);
-	    sprintf(result, "%s %d SIZE %ld\n", est->amname, level, size);
+	    ap_snprintf(result, sizeof(result),
+			"%s %d SIZE %ld\n", est->amname, level, size);
 
 	    amflock(1, "size");
 
@@ -402,7 +405,8 @@ disk_estimates_t *est;
 		    pname, est->amname, level));
 	  size = getsize_gnutar(est->amname, level,
 				est->exclude, est->est[level].dumpsince);
-	  sprintf(result, "%s %d SIZE %ld\n", est->amname, level, size);
+	  ap_snprintf(result, sizeof(result),
+		      "%s %d SIZE %ld\n", est->amname, level, size);
 
 	  amflock(1, "size");
 
@@ -464,12 +468,14 @@ int level;
     char cmd[4096];
 
 #ifdef OSF1_VDUMP
-    strcpy(device, amname_to_dirname(disk));
+    strncpy(device, amname_to_dirname(disk), sizeof(device)-1);
+    device[sizeof(device)-1] = '\0';
 #else
-    strcpy(device, amname_to_devname(disk));
+    strncpy(device, amname_to_devname(disk), sizeof(device)-1);
+    device[sizeof(device)-1] = '\0';
 #endif
 
-    sprintf(cmd, "%s/rundump%s", libexecdir, versionsuffix());
+    ap_snprintf(cmd, sizeof(cmd), "%s/rundump%s", libexecdir, versionsuffix());
 
     nullfd = open("/dev/null", O_RDWR);
     pipe(pipefd);
@@ -484,9 +490,9 @@ int level;
         char *name = " (xfsdump)";
 #else
         char *name = "";
-	sprintf(cmd, "%s", XFSDUMP);
+	ap_snprintf(cmd, sizeof(cmd), "%s", XFSDUMP);
 #endif
-        sprintf(dumpkeys, "%d", level);
+        ap_snprintf(dumpkeys, sizeof(dumpkeys), "%d", level);
 	dbprintf(("%s: running \"%s%s -F -J -l %s - %s\"\n",
 		  pname, cmd, name, dumpkeys, device));
     }
@@ -503,9 +509,9 @@ int level;
         char *name = " (vxdump)";
 #else
 	char *name = "";
-	sprintf(cmd, "%s", VXDUMP);
+	ap_snprintf(cmd, sizeof(cmd), "%s", VXDUMP);
 #endif
-	sprintf(dumpkeys, "%dsf", level);
+	ap_snprintf(dumpkeys, sizeof(dumpkeys), "%dsf", level);
         dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n",
 		  pname, cmd, name, dumpkeys, device));
     }
@@ -518,19 +524,19 @@ int level;
 	char *name = " (backup)";
 #  else
 	char name[1024];
-	sprintf(name, " (%s)", DUMP);
+	ap_snprintf(name, sizeof(name), " (%s)", DUMP);
 #  endif
 # else
 	char *name = "";
-        sprintf(cmd, "%s", DUMP);
+        ap_snprintf(cmd, sizeof(cmd), "%s", DUMP);
 # endif
 
 # ifdef AIX_BACKUP
-	sprintf(dumpkeys, "-%df", level);
+	ap_snprintf(dumpkeys, sizeof(dumpkeys), "-%df", level);
 	dbprintf(("%s: running \"%s%s %s - %s\"\n",
 		  pname, cmd, name, dumpkeys, device));
 # else
-	sprintf(dumpkeys, "%d%s%sf",
+	ap_snprintf(dumpkeys, sizeof(dumpkeys), "%d%s%sf",
 		level,
 #  ifdef HAVE_DUMP_ESTIMATE
 		"E",
@@ -746,18 +752,30 @@ time_t dumpsince;
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
     {
       int i;
-      int len = sizeof(GNUTAR_LISTED_INCREMENTAL_DIR) +
-	strlen(host) + strlen(disk);
+      /*
+       * Note: sizeof includes the null byte.  "len" is used later
+       * as an offset into inputname (a copy of incrname) to reset
+       * the suffix.  We subtract one for the null byte then add
+       * one for the '/'.
+       */
+      int len = sizeof(GNUTAR_LISTED_INCREMENTAL_DIR) - 1 + 1 +
+		strlen(host) + strlen(disk);
+      int incrnamelen = len + 32;		/* room for suffix and null */
 
-      incrname = alloc(len+11);
-      sprintf(incrname, "%s/%s", GNUTAR_LISTED_INCREMENTAL_DIR, host);
-      i = strlen(incrname);
-      strcat(incrname, disk);
-      for (i = sizeof(GNUTAR_LISTED_INCREMENTAL_DIR); i<len; ++i)
+      incrname = alloc(incrnamelen);
+      ap_snprintf(incrname, incrnamelen,
+		  "%s/%s", GNUTAR_LISTED_INCREMENTAL_DIR, host);
+      strncat(incrname, disk, incrnamelen-strlen(incrname));
+      /*
+       * The loop starts at the first character of the host name,
+       * not the '/'.
+       */
+      for (i = sizeof(GNUTAR_LISTED_INCREMENTAL_DIR); incrname[i]; ++i)
 	if (incrname[i] == '/' || incrname[i] == ' ')
 	  incrname[i] = '_';
 
-      sprintf(incrname + len, "_%d.new", level);
+      len = strlen(incrname);			/* set up for inputname below */
+      ap_snprintf(incrname+len, incrnamelen-len, "_%d.new", level);
       unlink(incrname);
       umask(0007);
 
@@ -778,12 +796,14 @@ time_t dumpsince;
 
       } else {
 	FILE *in = NULL, *out;
-	char *inputname = stralloc(incrname);
+	char *inputname = alloc(incrnamelen);
 	char buf[512];
 	int baselevel = level;
 
+	strncpy(inputname, incrname, incrnamelen-1);
+	inputname[incrnamelen-1] = '\0';
 	while (in == NULL && --baselevel >= 0) {
-	  sprintf(inputname+len, "_%d", baselevel);
+	  ap_snprintf(inputname+len, incrnamelen-len, "_%d", baselevel);
 	  in = fopen(inputname, "r");
 	}
 
@@ -829,13 +849,14 @@ time_t dumpsince;
 #endif
 
     gmtm = gmtime(&dumpsince);
-    sprintf(dumptimestr, "%04d-%02d-%02d %2d:%02d:%02d GMT",
-	    gmtm->tm_year + 1900, gmtm->tm_mon+1, gmtm->tm_mday,
-	    gmtm->tm_hour, gmtm->tm_min, gmtm->tm_sec);
+    ap_snprintf(dumptimestr, sizeof(dumptimestr),
+		"%04d-%02d-%02d %2d:%02d:%02d GMT",
+		gmtm->tm_year + 1900, gmtm->tm_mon+1, gmtm->tm_mday,
+		gmtm->tm_hour, gmtm->tm_min, gmtm->tm_sec);
 
     dirname = amname_to_dirname(disk);
 
-    sprintf(cmd, "%s/runtar%s", libexecdir, versionsuffix());
+    ap_snprintf(cmd, sizeof(cmd), "%s/runtar%s", libexecdir, versionsuffix());
 
     if (*efile == 0) /* do nothing */;
     else if (strncmp(efile, "--exclude-list", strlen("--exclude-list"))==0)
@@ -849,22 +870,23 @@ time_t dumpsince;
     {
 	char buf[4096];
 
-	sprintf(buf, "%s --create --directory %s %s %s --sparse --one-file-system \
-%s --ignore-failed-read --totals --file /dev/null %s%s.",
-		cmd,
-		dirname,
+	ap_snprintf(buf, sizeof(buf),
+"%s --create --directory %s %s %s --sparse --one-file-system \
+ %s --ignore-failed-read --totals --file /dev/null %s%s.",
+		    cmd,
+		    dirname,
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-		"--listed-incremental", incrname,
+		    "--listed-incremental", incrname,
 #else
-		"--incremental --newer", dumptimestr,
+		    "--incremental --newer", dumptimestr,
 #endif
 #ifdef ENABLE_GNUTAR_ATIME_PRESERVE
-		"--atime-preserve",
+		    "--atime-preserve",
 #else
-		"",
+		    "",
 #endif
-		efile[0] ? efile : "",
-		efile[0] ? " " : "");
+		    efile[0] ? efile : "",
+		    efile[0] ? " " : "");
 
 	dbprintf(("%s: running \"%s\"\n", pname, buf));
     }

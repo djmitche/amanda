@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: changer.c,v 1.3 1997/08/27 08:13:00 amcore Exp $
+ * $Id: changer.c,v 1.4 1997/12/16 18:02:21 jrj Exp $
  *
  * interface routines for tape changers
  */
@@ -50,8 +50,6 @@
 #endif
 
 
-#define ERRSTR_LEN	1024
-
 char changer_resultstr[ERRSTR_LEN];
 
 static char *tapechanger = NULL;
@@ -72,11 +70,13 @@ char *slotstr;
     int exitcode, rc;
     char result_copy[256];
 
-    exitcode = changer_command("-reset", changer_resultstr, ERRSTR_LEN);
+    exitcode = changer_command("-reset",
+			       changer_resultstr, sizeof(changer_resultstr));
     if(exitcode) {
 	rc=sscanf(changer_resultstr,"%[^ \n\t] %[^\n]",slotstr,result_copy);
 	if(rc != 2) goto bad_resultstr;
-	strcpy(changer_resultstr, result_copy);
+	strncpy(changer_resultstr, result_copy, sizeof(changer_resultstr)-1);
+	changer_resultstr[sizeof(changer_resultstr)-1] = '\0';
 	return exitcode;
     }
 
@@ -85,10 +85,10 @@ char *slotstr;
     return 0;
 
 bad_resultstr:
-    strncpy(result_copy, changer_resultstr, 256);
-    result_copy[255] = '\0';
-    sprintf(changer_resultstr,
-	    "badly formed result from changer: \"%s\"", result_copy);
+    strncpy(result_copy, changer_resultstr, sizeof(result_copy)-1);
+    result_copy[sizeof(result_copy)-1] = '\0';
+    ap_snprintf(changer_resultstr, sizeof(changer_resultstr),
+		"badly formed result from changer: \"%s\"", result_copy);
     return 2;
 }
 
@@ -98,11 +98,13 @@ char *slotstr;
     int exitcode, rc;
     char result_copy[256];
 
-    exitcode = changer_command("-eject", changer_resultstr, ERRSTR_LEN);
+    exitcode = changer_command("-eject",
+			       changer_resultstr, sizeof(changer_resultstr));
     if(exitcode) {
 	rc=sscanf(changer_resultstr,"%[^ \n\t] %[^\n]",slotstr,result_copy);
 	if(rc != 2) goto bad_resultstr;
-	strcpy(changer_resultstr, result_copy);
+	strncpy(changer_resultstr, result_copy, sizeof(changer_resultstr)-1);
+	changer_resultstr[sizeof(changer_resultstr)-1] = '\0';
 	return exitcode;
     }
 
@@ -111,10 +113,10 @@ char *slotstr;
     return 0;
 
 bad_resultstr:
-    strncpy(result_copy, changer_resultstr, 256);
-    result_copy[255] = '\0';
-    sprintf(changer_resultstr,
-	    "badly formed result from changer: \"%s\"", result_copy);
+    strncpy(result_copy, changer_resultstr, sizeof(result_copy)-1);
+    result_copy[sizeof(result_copy)-1] = '\0';
+    ap_snprintf(changer_resultstr, sizeof(changer_resultstr),
+		"badly formed result from changer: \"%s\"", result_copy);
     return 2;
 }
 
@@ -124,12 +126,15 @@ char *inslotstr, *outslotstr, *devicename;
     char cmd[64], result_copy[256];
     int exitcode, rc;
 
-    sprintf(cmd, "-slot %s", inslotstr);
+    ap_snprintf(cmd, sizeof(cmd), "-slot %s", inslotstr);
 
-    if((exitcode = changer_command(cmd, changer_resultstr, ERRSTR_LEN)) != 0) {
+    exitcode = changer_command(cmd,
+			       changer_resultstr, sizeof(changer_resultstr));
+    if(exitcode != 0) {
 	rc=sscanf(changer_resultstr,"%[^ \n\t] %[^\n]",outslotstr,result_copy);
 	if(rc != 2) goto bad_resultstr;
-	strcpy(changer_resultstr, result_copy);
+	strncpy(changer_resultstr, result_copy, sizeof(changer_resultstr)-1);
+	changer_resultstr[sizeof(changer_resultstr)-1] = '\0';
 	return exitcode;
     }
 
@@ -138,10 +143,10 @@ char *inslotstr, *outslotstr, *devicename;
     return 0;
 
 bad_resultstr:
-    strncpy(result_copy, changer_resultstr, 256);
-    result_copy[255] = '\0';
-    sprintf(changer_resultstr,
-	    "badly formed result from changer: \"%s\"", result_copy);
+    strncpy(result_copy, changer_resultstr, sizeof(result_copy)-1);
+    result_copy[sizeof(result_copy)-1] = '\0';
+    ap_snprintf(changer_resultstr, sizeof(changer_resultstr),
+		"badly formed result from changer: \"%s\"", result_copy);
     return 2;
 }
 
@@ -152,11 +157,13 @@ char *curslotstr;
     char result_copy[256];
     int rc, exitcode;
 
-    exitcode = changer_command("-info", changer_resultstr, ERRSTR_LEN);
+    exitcode = changer_command("-info",
+			       changer_resultstr, sizeof(changer_resultstr));
     if(exitcode != 0) {
 	rc=sscanf(changer_resultstr,"%[^ \n\t] %[^\n]",curslotstr,result_copy);
 	if(rc != 2) goto bad_resultstr;
-	strcpy(changer_resultstr, result_copy);
+	strncpy(changer_resultstr, result_copy, sizeof(changer_resultstr)-1);
+	changer_resultstr[sizeof(changer_resultstr)-1] = '\0';
 	return exitcode;
     }
 
@@ -166,10 +173,10 @@ char *curslotstr;
     return 0;
 
 bad_resultstr:
-    strncpy(result_copy, changer_resultstr, 256);
-    result_copy[255] = '\0';
-    sprintf(changer_resultstr,
-	    "badly formed result from changer: \"%s\"", result_copy);
+    strncpy(result_copy, changer_resultstr, sizeof(result_copy)-1);
+    result_copy[sizeof(result_copy)-1] = '\0';
+    ap_snprintf(changer_resultstr, sizeof(changer_resultstr),
+		"badly formed result from changer: \"%s\"", result_copy);
     return 2;
 }
 
@@ -233,12 +240,13 @@ int resultlen;
     FILE *cmdpipe;
     char cmd[ERRSTR_LEN], *chp;
     int exitcode;
+    int len;
 
     if (*tapechanger != '/')
-	sprintf(cmd, "%s/%s%s %s", libexecdir, tapechanger, versionsuffix(),
-	    cmdstr);
+	ap_snprintf(cmd, sizeof(cmd), "%s/%s%s %s",
+		    libexecdir, tapechanger, versionsuffix(), cmdstr);
     else
-	sprintf(cmd, "%s %s", tapechanger, cmdstr);
+	ap_snprintf(cmd, sizeof(cmd), "%s %s", tapechanger, cmdstr);
 
 /* fprintf(stderr, "changer: opening pipe from: %s\n", cmd); */
 
@@ -249,14 +257,15 @@ int resultlen;
 	error("could not read result from \"%s\": %s", cmd, strerror(errno));
 
     /* clip newline */
-    chp = resultstr + strlen(resultstr) - 1;
-    if(*chp == '\n') *chp = '\0';
+    len = strlen(resultstr);
+    chp = resultstr + len - 1;
+    if(len > 0 && *chp == '\n') *chp = '\0';
 
     exitcode = pclose(cmdpipe);
     /* mask out-of-control changers as fatal error */
     if(WIFSIGNALED(exitcode)) {
-	sprintf(cmd, " (got signal %d)", WTERMSIG(exitcode));
-	strcat(resultstr, cmd);
+	ap_snprintf(cmd, sizeof(cmd), " (got signal %d)", WTERMSIG(exitcode));
+	strncat(resultstr, cmd, resultlen-strlen(resultstr));
 	exitcode = 2;
     }
     else exitcode = WEXITSTATUS(exitcode);
@@ -265,4 +274,3 @@ int resultlen;
 
     return exitcode;
 }
-

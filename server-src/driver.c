@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.19 1997/12/04 22:40:15 jrj Exp $
+ * $Id: driver.c,v 1.20 1997/12/16 18:02:28 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -111,11 +111,13 @@ char **main_argv;
     if(read_conffile(CONFFILE_NAME))
 	error("could not read amanda config file\n");
 
-    construct_datestamp(datestamp);
+    construct_datestamp(datestamp, sizeof(datestamp));
     log(L_START,"date %s", datestamp);
 
-    sprintf(taper_program, "%s/taper%s", libexecdir, versionsuffix());
-    sprintf(dumper_program, "%s/dumper%s", libexecdir, versionsuffix());
+    ap_snprintf(taper_program, sizeof(taper_program),
+		"%s/taper%s", libexecdir, versionsuffix());
+    ap_snprintf(dumper_program, sizeof(dumper_program),
+		"%s/dumper%s", libexecdir, versionsuffix());
 
     /* taper takes a while to get going, so start it up right away */
 
@@ -171,7 +173,8 @@ char **main_argv;
 	    printf("driver: adding holding disk %d dir %s size %ld\n",
 		   dsk, hdp->diskdir, hdp->disksize);
 
-	    sprintf(newdir, "%s/%s", hdp->diskdir, datestamp);
+	    ap_snprintf(newdir, sizeof(newdir),
+			"%s/%s", hdp->diskdir, datestamp);
 	    mkdir(newdir, 0770);
 	}
     }
@@ -272,7 +275,8 @@ fflush(stdout);
 
     if(!degraded_mode) {
 	for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next) {
-	    sprintf(newdir, "%s/%s", hdp->diskdir, datestamp);
+	    ap_snprintf(newdir, sizeof(newdir),
+			"%s/%s", hdp->diskdir, datestamp);
 	    if(rmdir(newdir) != 0)
 		log(L_WARNING,"Could not rmdir%s: %s", newdir,strerror(errno));
 	}
@@ -646,15 +650,17 @@ int fd;
     return NULL;
 }
 
-void construct_datestamp(buf)
+void construct_datestamp(buf, len)
 char *buf;
+int len;
 {
     struct tm *tm;
     time_t timevar;
 
     timevar = time((time_t *)NULL);
     tm = localtime(&timevar);
-    sprintf(buf, "%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
+    ap_snprintf(buf, len,
+		"%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
 }
 
 void handle_dumper_result(fd)
@@ -1003,9 +1009,10 @@ disk_t *diskp;
     sched(diskp)->holdp = holdp;
     sched(diskp)->act_size = sched(diskp)->est_size;
 
-    sprintf(sched(diskp)->destname, "%s/%s/%s.%s.%d",
-	    holdp->diskdir, datestamp, diskp->host->hostname,
-	    sanitise_filename(diskp->name), sched(diskp)->level);
+    ap_snprintf(sched(diskp)->destname, sizeof(sched(diskp)->destname),
+		"%s/%s/%s.%s.%d",
+		holdp->diskdir, datestamp, diskp->host->hostname,
+		sanitise_filename(diskp->name), sched(diskp)->level);
 
     holdalloc(holdp)->allocated_space += sched(diskp)->act_size;
     holdalloc(holdp)->allocated_dumpers += 1;
@@ -1130,7 +1137,9 @@ disk_t *dp;
 	inside_dump_to_tape = 0;
 	return 2;	/* fatal problem */
     }
-    strcpy(sched(dp)->destname, argv[2]);	/* copy port number */
+    /* copy port number */
+    strncpy(sched(dp)->destname, argv[2], sizeof(sched(dp)->destname)-1);
+    sched(dp)->destname[sizeof(sched(dp)->destname)-1] = '\0';
 
     /* pick a dumper, then tell it to dump to a port */
 

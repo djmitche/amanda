@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.15 1997/12/13 05:12:20 amcore Exp $
+ * $Id: selfcheck.c,v 1.16 1997/12/16 17:52:48 jrj Exp $
  *
  * do self-check and send back any error messages
  */
@@ -150,9 +150,11 @@ char *program, *disk, *str;
 #endif
 #ifndef AIX_BACKUP
 #ifdef OSF1_VDUMP
-	strcpy(device, amname_to_dirname(disk));
+	strncpy(device, amname_to_dirname(disk), sizeof(device)-1);
+	device[sizeof(device)-1] = '\0';
 #else
-	strcpy(device, amname_to_devname(disk));
+	strncpy(device, amname_to_devname(disk), sizeof(device)-1);
+	device[sizeof(device)-1] = '\0';
 #endif
 
 #ifdef XFSDUMP
@@ -215,8 +217,10 @@ int level;
 		return;
 	    }
 	    makesharename(disk, device, 1);
-	    sprintf(cmd, "%s %s '%s' -E -U %s%s%s -c quit", SAMBA_CLIENT,
-		    device, pass, SAMBA_USER, domain[0] ? " -W " : "", domain);
+	    ap_snprintf(cmd, sizeof(cmd),
+			"%s %s '%s' -E -U %s%s%s -c quit", SAMBA_CLIENT,
+			device, pass, SAMBA_USER,
+			domain[0] ? " -W " : "", domain);
 	    printf("running %s %s XXXX -E -U %s%s%s -c quit\n",
 		   SAMBA_CLIENT, device, SAMBA_USER, domain[0] ? " -W " : "", domain);
 	    if (system(cmd) & 0xff00)
@@ -226,12 +230,15 @@ int level;
 	    return;
 	}
 #endif
-	strcpy(device, amname_to_dirname(disk));
+	strncpy(device, amname_to_dirname(disk), sizeof(device)-1);
+	device[sizeof(device)-1] = '\0';
     } else {
 #ifdef OSF1_VDUMP
-        strcpy(device, amname_to_dirname(disk));
+        strncpy(device, amname_to_dirname(disk), sizeof(device)-1);
+	device[sizeof(device)-1] = '\0';
 #else
-        strcpy(device, amname_to_devname(disk));
+        strncpy(device, amname_to_devname(disk), sizeof(device)-1);
+	device[sizeof(device)-1] = '\0';
 #endif
     }
     
@@ -270,13 +277,15 @@ static void check_overall()
 
     if( need_runtar )
     {
-	sprintf(cmd,"%s/runtar%s",libexecdir,versionsuffix());
+	ap_snprintf(cmd, sizeof(cmd),
+		    "%s/runtar%s", libexecdir, versionsuffix());
 	check_file(cmd,X_OK);
     }
 
     if( need_rundump )
     {
-	sprintf(cmd,"%s/rundump%s",libexecdir,versionsuffix());
+	ap_snprintf(cmd, sizeof(cmd),
+		    "%s/rundump%s", libexecdir, versionsuffix());
 	check_file(cmd,X_OK);
     }
 

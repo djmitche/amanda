@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: holding.c,v 1.5 1997/11/23 23:43:24 amcore Exp $
+ * $Id: holding.c,v 1.6 1997/12/16 18:02:34 jrj Exp $
  *
  * Functions to access holding disk
  */
@@ -262,7 +262,8 @@ void pick_datestamp()
     for(dir = dir_list; dir != NULL; dir = dir->next)
 	if(picked-- == 0) break;
 
-    strcpy(datestamp, dir->name);
+    strncpy(datestamp, dir->name, sizeof(datestamp)-1);
+    datestamp[sizeof(datestamp)-1] = '\0';
 }
 
 int get_amanda_names(fname, hostname, diskname, level)

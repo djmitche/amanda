@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.45 1997/12/11 11:24:22 george Exp $
+ * $Id: planner.c,v 1.46 1997/12/16 18:02:38 jrj Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -128,7 +128,7 @@ bilist_t biq;			/* The BI queue itself */
  *
  */
 
-static void construct_datestamp P((char *buf));		  /* subroutines */
+static void construct_datestamp P((char *buf, int len));  /* subroutines */
 static void setup_estimate P((disk_t *dp));
 static void get_estimates P((void));
 static void analyze_estimate P((disk_t *dp));
@@ -185,7 +185,8 @@ char **argv;
 
     if((pwptr = getpwuid(getuid())) == NULL)
 	error("can't get login name for my uid %ld", (long)getuid());
-    strcpy(loginid, pwptr->pw_name);
+    strncpy(loginid, pwptr->pw_name, sizeof(loginid)-1);
+    loginid[sizeof(loginid)-1] = '\0';
 
 
     /*
@@ -210,7 +211,7 @@ char **argv;
     conf_bumpsize = getconf_int(CNF_BUMPSIZE);
     conf_bumpmult = getconf_real(CNF_BUMPMULT);
 
-    construct_datestamp(datestamp);
+    construct_datestamp(datestamp, sizeof(datestamp));
     log(L_START, "date %s", datestamp);
 
     if((origqp = read_diskfile(conf_diskfile)) == NULL)
@@ -400,14 +401,16 @@ char **argv;
     return 0;
 }
 
-static void construct_datestamp(buf)
+static void construct_datestamp(buf, len)
 char *buf;
+int len;
 {
     struct tm *tm;
 
     today = time((time_t *)NULL);
     tm = localtime(&today);
-    sprintf(buf, "%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
+    ap_snprintf(buf, len,
+		"%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
 }
 
 
@@ -860,8 +863,9 @@ host_t *hostp;
 
     assert(hostp->disks != NULL);
 
-    sprintf(req, "SERVICE sendsize\nOPTIONS maxdumps=%d;hostname=%s;\n",
-	hostp->maxdumps, hostp->hostname);
+    ap_snprintf(req, sizeof(req),
+		"SERVICE sendsize\nOPTIONS maxdumps=%d;hostname=%s;\n",
+		hostp->maxdumps, hostp->hostname);
 
     disks = 0;
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
@@ -877,14 +881,14 @@ host_t *hostp;
 	    if(lev == -1) break;
 
 	    if(dp->exclude)
-		sprintf(exc, " exclude-%s=%s",
-			(dp->exclude_list? "list" : "file"),
-			dp->exclude);
+		ap_snprintf(exc, sizeof(exc), " exclude-%s=%s",
+			    (dp->exclude_list? "list" : "file"),
+			    dp->exclude);
 
-	    sprintf(line, "%s %s %d %s %d%s\n", dp->program,
-		    dp->name, lev, est(dp)->dumpdate[i], dp->platter,
-		    (dp->exclude ? exc : ""));
-	    strcat(req, line);
+	    ap_snprintf(line, sizeof(line), "%s %s %d %s %d%s\n", dp->program,
+			dp->name, lev, est(dp)->dumpdate[i], dp->platter,
+			(dp->exclude ? exc : ""));
+	    strncat(req, line, sizeof(req)-strlen(req));
 	    disks++;
 	}
     }
@@ -901,8 +905,9 @@ host_t *hostp;
 
     if(rc) {
 	char str[1024];
-	sprintf(str, "could not resolve hostname \"%s\": %s", hostp->hostname,
-			strerror(errno));
+	ap_snprintf(str, sizeof(str),
+		    "could not resolve hostname \"%s\": %s", hostp->hostname,
+		    strerror(errno));
 	errstr = stralloc(str);
 	destqp = &failq;
     }
@@ -946,11 +951,14 @@ pkt_t *pkt;
 
     if(p->state == S_FAILED) {
 	if(pkt == NULL)
-	    sprintf(errbuf, "Request to %s timed out.", hostp->hostname);
+	    ap_snprintf(errbuf, sizeof(errbuf),
+			"Request to %s timed out.", hostp->hostname);
 	else if(sscanf(pkt->body, "ERROR %[^\n]", remoterr) == 1)
-	    sprintf(errbuf, "%s NAK: %s", hostp->hostname, remoterr);
+	    ap_snprintf(errbuf, sizeof(errbuf),
+			"%s NAK: %s", hostp->hostname, remoterr);
 	else {
-	    sprintf(errbuf, "%s NAK: [NAK parse failed]", hostp->hostname);
+	    ap_snprintf(errbuf, sizeof(errbuf),
+			"%s NAK: [NAK parse failed]", hostp->hostname);
 	    fprintf(stderr, "got strange nak from %s:\n----\n%s----\n\n",
 		    hostp->hostname, pkt->body);
 	}
@@ -960,7 +968,8 @@ pkt_t *pkt;
 #ifdef KRB4_SECURITY
     if(hostp->disks->auth == AUTH_KRB4 &&
        !check_mutual_authenticator(host2key(hostp->hostname), pkt, p)) {
-	sprintf(errbuf, "%s [mutual-authentication failed]", hostp->hostname);
+	ap_snprintf(errbuf, sizeof(errbuf),
+		    "%s [mutual-authentication failed]", hostp->hostname);
 	goto error_return;
     }
 #endif
@@ -970,8 +979,9 @@ pkt_t *pkt;
     if(!strncmp(resp, "ERROR", 5)) {
 	/* this is an error response packet */
 	if(sscanf(resp, "ERROR %[^\n]", remoterr) != 1)
-	    sprintf(remoterr, "[bogus error packet]");
-	sprintf(errbuf, "%s: %s", hostp->hostname, remoterr);
+	    ap_snprintf(remoterr, sizeof(remoterr), "[bogus error packet]");
+	ap_snprintf(errbuf, sizeof(errbuf),
+		    "%s: %s", hostp->hostname, remoterr);
 	goto error_return;
     }
 
@@ -1013,8 +1023,8 @@ pkt_t *pkt;
 	    else {
 		enqueue_disk(&failq, dp);
 
-		sprintf(errbuf, "disk %s offline on %s?",
-		    dp->name, dp->host->hostname);
+		ap_snprintf(errbuf, sizeof(errbuf), "disk %s offline on %s?",
+			    dp->name, dp->host->hostname);
 		est(dp)->errstr = stralloc(errbuf);
 	    }
 
@@ -1031,8 +1041,9 @@ pkt_t *pkt;
 	    fprintf(stderr, "error result for host %s disk %s: missing estimate\n",
 		dp->host->hostname, dp->name);
 
-	    sprintf(errbuf, "missing result for %s in %s response",
-		dp->name, dp->host->hostname);
+	    ap_snprintf(errbuf, sizeof(errbuf),
+			"missing result for %s in %s response",
+			dp->name, dp->host->hostname);
 	    est(dp)->errstr = stralloc(errbuf);
 	}
     }
@@ -1041,7 +1052,8 @@ pkt_t *pkt;
 bad_msg:
     fprintf(stderr,"got a bad message, stopped at:\n");
     fprintf(stderr,"----\n%s----\n\n", resp);
-    sprintf(errbuf, "badly formatted response from %s", hostp->hostname);
+    ap_snprintf(errbuf, sizeof(errbuf),
+		"badly formatted response from %s", hostp->hostname);
 
 error_return:
     errstr = stralloc(errbuf);
@@ -1300,26 +1312,26 @@ static void delay_dumps P((void))
 
 	if(est(dp)->dump_level == 0 && est(dp)->dump_size > tape->length) {
 	    if(est(dp)->last_level == -1 || dp->skip_incr) {
-		sprintf(errbuf,
+		ap_snprintf(errbuf, sizeof(errbuf),
 "%s %s 0 [dump larger than tape, but cannot incremental dump %s disk]",
-		    dp->host->hostname, dp->name,
-		    dp->skip_incr? "skip-incr": "new");
+			    dp->host->hostname, dp->name,
+			    dp->skip_incr? "skip-incr": "new");
 
 		delay_remove_dump(dp, errbuf);
 	    }
 	    else {
-		sprintf(errbuf,
-		    "Dump larger than tape: full dump of %s:%s delayed.",
-		    dp->host->hostname, dp->name);
+		ap_snprintf(errbuf, sizeof(errbuf),
+"Dump larger than tape: full dump of %s:%s delayed.",
+			    dp->host->hostname, dp->name);
 
 		delay_modify_dump(dp, errbuf);
 	    }
 	}
 
 	if(est(dp)->dump_level != 0 && est(dp)->dump_size > tape->length) {
-	    sprintf(errbuf,
-		"%s %s %d [dump larger than tape, skipping incremental]",
-		dp->host->hostname, dp->name, est(dp)->dump_level);
+	    ap_snprintf(errbuf, sizeof(errbuf),
+"%s %s %d [dump larger than tape, skipping incremental]",
+			dp->host->hostname, dp->name, est(dp)->dump_level);
 
 	    delay_remove_dump(dp, errbuf);
 	}
@@ -1350,17 +1362,17 @@ static void delay_dumps P((void))
 
 	if(est(dp)->dump_level == 0 && dp != preserve) {
 	    if(est(dp)->last_level == -1 || dp->skip_incr) {
-		sprintf(errbuf,
+		ap_snprintf(errbuf, sizeof(errbuf),
 "%s %s 0 [dumps too big, but cannot incremental dump %s disk]",
-		    dp->host->hostname, dp->name,
-		    dp->skip_incr? "skip-incr": "new");
+			    dp->host->hostname, dp->name,
+			    dp->skip_incr? "skip-incr": "new");
 
 		delay_remove_dump(dp, errbuf);
 	    }
 	    else {
-		sprintf(errbuf,
-		    "Dumps too big for tape: full dump of %s:%s delayed.",
-		    dp->host->hostname, dp->name);
+		ap_snprintf(errbuf, sizeof(errbuf),
+"Dumps too big for tape: full dump of %s:%s delayed.",
+			    dp->host->hostname, dp->name);
 
 		delay_modify_dump(dp, errbuf);
 	    }
@@ -1381,9 +1393,9 @@ static void delay_dumps P((void))
 	ndp = dp->prev;
 
 	if(est(dp)->dump_level != 0) {
-	    sprintf(errbuf,
-		"%s %s %d [dumps way too big, must skip incremental dumps]",
-		dp->host->hostname, dp->name, est(dp)->dump_level);
+	    ap_snprintf(errbuf, sizeof(errbuf),
+"%s %s %d [dumps way too big, must skip incremental dumps]",
+			dp->host->hostname, dp->name, est(dp)->dump_level);
 
 	    delay_remove_dump(dp, errbuf);
 	}
@@ -1733,18 +1745,19 @@ disk_t *dp;
     }
 
     if(ep->dump_level == 0 && ep->degr_level != -1) {
-	sprintf(schedline, "%s %s %d %d %s %ld %ld %d %s %ld %ld\n",
-		dp->host->hostname, dp->name, ep->dump_priority,
-		ep->dump_level, dump_date,
-		ep->dump_size, dump_time,
-		ep->degr_level, degr_date,
-		ep->degr_size, degr_time);
+	ap_snprintf(schedline, sizeof(schedline),
+		    "%s %s %d %d %s %ld %ld %d %s %ld %ld\n",
+		    dp->host->hostname, dp->name, ep->dump_priority,
+		    ep->dump_level, dump_date,
+		    ep->dump_size, dump_time,
+		    ep->degr_level, degr_date,
+		    ep->degr_size, degr_time);
     }
     else {
-	sprintf(schedline, "%s %s %d %d %s %ld %ld\n",
-		dp->host->hostname, dp->name, ep->dump_priority,
-		ep->dump_level, dump_date,
-		ep->dump_size, dump_time);
+	ap_snprintf(schedline, sizeof(schedline), "%s %s %d %d %s %ld %ld\n",
+		    dp->host->hostname, dp->name, ep->dump_priority,
+		    ep->dump_level, dump_date,
+		    ep->dump_size, dump_time);
     }
 
     fputs(schedline, stdout);

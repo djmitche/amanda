@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.14 1997/12/15 21:27:43 blair Exp $
+ * $Id: diskfile.c,v 1.15 1997/12/16 18:02:26 jrj Exp $
  *
  * read disklist file
  */
@@ -416,37 +416,39 @@ disk_t *dp;
 {
     static char str[512];
 
-    strcpy(str,";");
+    strncpy(str, ";", sizeof(str)-1);
+    str[sizeof(str)-1] = '\0';
 
-    if(dp->auth == AUTH_BSD) strcat(str, "bsd-auth;");
+    if(dp->auth == AUTH_BSD) strncat(str, "bsd-auth;", sizeof(str)-strlen(str));
     else if(dp->auth == AUTH_KRB4) {
-	strcat(str, "krb4-auth;");
-	if(dp->kencrypt) strcat(str, "kencrypt;");
+	strncat(str, "krb4-auth;", sizeof(str)-strlen(str));
+	if(dp->kencrypt) strncat(str, "kencrypt;", sizeof(str)-strlen(str));
     }
 
     switch(dp->compress) {
     case COMP_FAST:
-	strcat(str, "compress-fast;");
+	strncat(str, "compress-fast;", sizeof(str)-strlen(str));
 	break;
     case COMP_BEST:
-	strcat(str, "compress-best;");
+	strncat(str, "compress-best;", sizeof(str)-strlen(str));
 	break;
     case COMP_SERV_FAST:
-	strcat(str, "srvcomp-fast;");
+	strncat(str, "srvcomp-fast;", sizeof(str)-strlen(str));
 	break;
     case COMP_SERV_BEST:
-        strcat(str, "srvcomp-best;");
+        strncat(str, "srvcomp-best;", sizeof(str)-strlen(str));
 	break;
     }
 
-    if(!dp->record) strcat(str,"no-record;");
-    if(dp->index) strcat(str,"index;");
+    if(!dp->record) strncat(str,"no-record;", sizeof(str)-strlen(str));
+    if(dp->index) strncat(str,"index;", sizeof(str)-strlen(str));
 
     if(dp->exclude) {
-	strcat(str, "exclude-");
-	strcat(str, (dp->exclude_list? "list=" : "file="));
-	strcat(str, dp->exclude);
-	strcat(str, ";");
+	strncat(str, "exclude-", sizeof(str)-strlen(str));
+	strncat(str, (dp->exclude_list? "list=" : "file="),
+		sizeof(str)-strlen(str));
+	strncat(str, dp->exclude, sizeof(str)-strlen(str));
+	strncat(str, ";", sizeof(str)-strlen(str));
     }
 
     return str;

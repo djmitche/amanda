@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: display_commands.c,v 1.3 1997/12/09 06:59:40 amcore Exp $
+ * $Id: display_commands.c,v 1.4 1997/12/16 17:57:32 jrj Exp $
  *
  * implements the directory-display related commands in amrecover
  */
@@ -79,10 +79,13 @@ char *path;
 	if ((dir_list = (DIR_ITEM *)malloc(sizeof(DIR_ITEM))) == NULL)
 	    return -1;
 	dir_list->next = NULL;
-	strcpy(dir_list->date, date);
+	strncpy(dir_list->date, date, sizeof(dir_list->date)-1);
+	dir_list->date[sizeof(dir_list->date)-1] = '\0';
 	dir_list->level = level;
-	strcpy(dir_list->tape, tape);
-	strcpy(dir_list->path, path);
+	strncpy(dir_list->tape, tape, sizeof(dir_list->tape)-1);
+	dir_list->tape[sizeof(dir_list->tape)-1] = '\0';
+	strncpy(dir_list->path, path, sizeof(dir_list->path)-1);
+	dir_list->path[sizeof(dir_list->path)-1] = '\0';
 
 	return 0;
     }
@@ -96,10 +99,13 @@ char *path;
     if ((last->next = (DIR_ITEM *)malloc(sizeof(DIR_ITEM))) == NULL)
 	return -1;
     last->next->next = NULL;
-    strcpy(last->next->date, date);
+    strncpy(last->next->date, date, sizeof(last->next->date)-1);
+    last->next->date[sizeof(last->next->date)-1] = '\0';
     last->next->level = level;
-    strcpy(last->next->tape, tape);
-    strcpy(last->next->path, path);
+    strncpy(last->next->tape, tape, sizeof(last->next->tape)-1);
+    last->next->tape[sizeof(last->next->tape)-1] = '\0';
+    strncpy(last->next->path, path, sizeof(last->next->path)-1);
+    last->next->path[sizeof(last->next->path)-1] = '\0';
 
     return 0;
 }
@@ -109,7 +115,8 @@ void list_disk_history P((void))
 {
     char cmd[LINE_LENGTH];
 
-    sprintf(cmd, "DHST");
+    strncpy(cmd, "DHST", sizeof(cmd)-1);
+    cmd[sizeof(cmd)-1] = '\0';
     if (converse(cmd) == -1)
 	exit(1);
 }
@@ -126,9 +133,12 @@ void suck_dir_list_from_server P((void))
     char dir[1024];
     char disk_path_slash[1024];
 
-    strcpy(disk_path_slash,disk_path);
-    if(strcmp(disk_path,"/")!=0)
-        strcat(disk_path_slash,"/");
+    strncpy(disk_path_slash, disk_path, sizeof(disk_path_slash)-1);
+    disk_path_slash[sizeof(disk_path_slash)-1] = '\0';
+    if(strcmp(disk_path,"/")!=0) {
+        strncat(disk_path_slash, "/",
+		sizeof(disk_path_slash)-strlen(disk_path_slash));
+    }
 
     if (strlen(disk_path) == 0) 
     {
@@ -139,7 +149,7 @@ void suck_dir_list_from_server P((void))
     
     clear_dir_list();
 
-    sprintf(cmd, "OLSD %s", disk_path);
+    ap_snprintf(cmd, sizeof(cmd), "OLSD %s", disk_path);
     if (send_command(cmd) == -1)
 	exit(1);
     /* skip preamble */
@@ -166,8 +176,9 @@ void suck_dir_list_from_server P((void))
 	sscanf(l+5, "%s %d %s %s", date, &level, tape, dir);
 	/* add a '.' if it a the entry for the current directory */
 	if(strcmp(disk_path,dir)==0 || strcmp(disk_path_slash,dir)==0) {
-	    strcpy(dir,disk_path_slash);
-	    strcat(dir,".");
+	    strncpy(dir, disk_path_slash, sizeof(dir)-1);
+	    dir[sizeof(dir)-1] = '\0';
+	    strncat(dir, ".", sizeof(dir)-strlen(dir));
 	}
 	add_dir_list_item(date, level, tape, dir);
     }

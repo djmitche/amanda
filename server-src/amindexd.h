@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.h,v 1.4 1997/12/09 06:59:46 amcore Exp $
+ * $Id: amindexd.h,v 1.5 1997/12/16 18:02:18 jrj Exp $
  *
  * interface for amindexd variables
  */
@@ -52,6 +52,6 @@ extern void fast_lreply P((int n, char *fmt, ...));
 extern int opaque_ls P((char *dir, int recursive));
 extern int translucent_ls P((char *dir));
 
-extern int uncompress_file P((char *filename_gz, char *filename));
+extern int uncompress_file P((char *filename_gz, char *filename, int len));
 
 #endif /* AMINDEXD */

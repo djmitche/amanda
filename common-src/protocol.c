@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: protocol.c,v 1.12 1997/11/12 03:56:09 amcore Exp $
+ * $Id: protocol.c,v 1.13 1997/12/16 17:55:02 jrj Exp $
  *
  * implements amanda protocol
  */
@@ -111,7 +111,7 @@ pstate_t s;
     case S_SUCCEEDED:  return "S_SUCCEEDED";
     case S_FAILED: return "S_FAILED";
     default:
-	sprintf(str, "<bad state %d>", s);
+	ap_snprintf(str, sizeof(str), "<bad state %d>", s);
 	return str;
     }
 }
@@ -127,7 +127,7 @@ action_t s;
     case A_TIMEOUT:  return "A_TIMEOUT";
     case A_RCVDATA: return "A_RCVDATA";
     default:
-	sprintf(str, "<bad action %d>", s);
+	ap_snprintf(str, sizeof(str), "<bad action %d>", s);
 	return str;
     }
 }
@@ -146,7 +146,7 @@ pktype_t s;
     case P_ACK: return "P_ACK";
     case P_NAK: return "P_NAK";
     default:
-	sprintf(str, "<bad pktype %d>", s);
+	ap_snprintf(str, sizeof(str), "<bad pktype %d>", s);
 	return str;
     }
 }
@@ -377,8 +377,9 @@ char *str;
     /* if we didn't eat all of str, we've failed */
     if(*str) {
 	int len = strlen(saved_str);
-	sprintf(parse_errmsg, "expected \"%s\", got \"%-.*s\"", saved_str, 
-		len, saved_msg);
+	ap_snprintf(parse_errmsg, sizeof(parse_errmsg),
+		    "expected \"%s\", got \"%-.*s\"",
+		    saved_str, len, saved_msg);
 	longjmp(parse_failed,1);
     }
 }
@@ -393,7 +394,8 @@ dgram_t *msg;
 
     /* must have at least one digit */
     if(*msg->cur < '0' || *msg->cur > '9') {
-	sprintf(parse_errmsg, "expected digit, got \"%c\"", *msg->cur);
+	ap_snprintf(parse_errmsg, sizeof(parse_errmsg),
+		    "expected digit, got \"%c\"", *msg->cur);
 	longjmp(parse_failed,1);
     }
 
@@ -420,7 +422,8 @@ dgram_t *msg;
 
     /* empty fields not allowed */
     if(msg->cur == str) {
-	sprintf(parse_errmsg, "expected string, got empty field");
+	ap_snprintf(parse_errmsg, sizeof(parse_errmsg),
+		    "expected string, got empty field");
 	longjmp(parse_failed,1);
     }
     
@@ -446,7 +449,8 @@ dgram_t *msg;
 
     /* empty fields not allowed */
     if(msg->cur == str) {
-	sprintf(parse_errmsg, "expected string, got empty field");
+	ap_snprintf(parse_errmsg, sizeof(parse_errmsg),
+		    "expected string, got empty field");
 	longjmp(parse_failed,1);
     }
     
@@ -521,10 +525,11 @@ char *security, *typestr;
 
     dgram_zero(msg);
     dgram_socket(msg,proto_socket);
-    sprintf(linebuf, "Amanda %d.%d %s HANDLE %s SEQ %d\n%s",
-	    VERSION_MAJOR, VERSION_MINOR, typestr,
-	    ptr2handle(p), p->curseq,
-	    security == NULL? "" : security);
+    ap_snprintf(linebuf, sizeof(linebuf),
+		"Amanda %d.%d %s HANDLE %s SEQ %d\n%s",
+		VERSION_MAJOR, VERSION_MINOR, typestr,
+		ptr2handle(p), p->curseq,
+		security == NULL? "" : security);
     dgram_cat(msg, linebuf);
 }
 
@@ -570,9 +575,10 @@ pkt_t *pkt;
     dgram_zero(&outmsg);
     dgram_socket(&outmsg,proto_socket);
 
-    sprintf(linebuf, "Amanda %d.%d ACK HANDLE %s SEQ %d\n",
-	    VERSION_MAJOR, VERSION_MINOR, 
-	    pkt->handle, pkt->sequence);
+    ap_snprintf(linebuf, sizeof(linebuf),
+		"Amanda %d.%d ACK HANDLE %s SEQ %d\n",
+		VERSION_MAJOR, VERSION_MINOR, 
+		pkt->handle, pkt->sequence);
     dgram_cat(&outmsg, linebuf);
 
 #ifdef PROTO_DEBUG
@@ -714,7 +720,7 @@ proto_t *p;
 
     if((pwptr = getpwuid(getuid())) == NULL)
 	error("can't get login name for my uid %ld", (long)getuid());
-    sprintf(line, "SECURITY USER %s\n", pwptr->pw_name);
+    ap_snprintf(line, sizeof(line), "SECURITY USER %s\n", pwptr->pw_name);
     p->security = stralloc(line);
 }
 
@@ -784,7 +790,8 @@ char *host_inst, *realm;
 	}
 	if(rc) return rc;
     }
-    sprintf(line, "SECURITY TICKET %s\n", bin2astr(ticket.dat, ticket.length));
+    ap_snprintf(line, sizeof(line),
+		"SECURITY TICKET %s\n", bin2astr(ticket.dat, ticket.length));
     p->security = stralloc(line);
     return 0;
 }

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.h,v 1.11 1997/11/17 13:00:18 amcore Exp $
+ * $Id: driver.h,v 1.12 1997/12/16 18:02:29 jrj Exp $
  *
  * defines and globals for the Amanda driver
  */
@@ -124,7 +124,7 @@ dumper_t *idle_dumper P((void));
 int some_dumps_in_progress P((void));
 int num_busy_dumpers P((void));
 dumper_t *lookup_dumper P((int fd));
-void construct_datestamp P((char *buf));
+void construct_datestamp P((char *buf, int len));
 void handle_dumper_result P((int fd));
 disklist_t read_schedule P((disklist_t *waitqp));
 int free_kps P((interface_t *ip));

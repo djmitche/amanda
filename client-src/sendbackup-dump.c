@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.41 1997/12/09 06:59:31 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.42 1997/12/16 17:52:49 jrj Exp $
  *
  * send backup data using BSD dump
  */
@@ -159,15 +159,18 @@ char *dumpdate;
 
     /* invoke dump */
 #ifdef OSF1_VDUMP
-    strcpy(device, amname_to_dirname(disk));
+    strncpy(device, amname_to_dirname(disk), sizeof(device)-1);
+    device[sizeof(device)-1] = '\0';
 #else
-    strcpy(device, amname_to_devname(disk));
+    strncpy(device, amname_to_devname(disk), sizeof(device)-1);
+    device[sizeof(device)-1] = '\0';
 #endif
 
 #if defined(USE_RUNDUMP) || !defined(DUMP)
-    sprintf(cmd, "%s/rundump%s", libexecdir, versionsuffix());
+    ap_snprintf(cmd, sizeof(cmd), "%s/rundump%s", libexecdir, versionsuffix());
 #else
-    sprintf(cmd, "%s", DUMP);
+    strncpy(cmd, DUMP, sizeof(cmd)-1);
+    cmd[sizeof(cmd)-1] = '\0';
 #endif
 
 #ifndef AIX_BACKUP
@@ -190,15 +193,15 @@ char *dumpdate;
 #endif
 	program->restore_name = XFSRESTORE;
 
-	sprintf(indexcmd,
-		"%s -t -v silent - 2>/dev/null | /sbin/sed -e 's/^/\\//'",
-		XFSRESTORE);
+	ap_snprintf(indexcmd, sizeof(indexcmd),
+		    "%s -t -v silent - 2>/dev/null | /sbin/sed -e 's/^/\\//'",
+		    XFSRESTORE);
 
 	write_tapeheader();
 
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
-	sprintf(dumpkeys, "%d", level);
+	ap_snprintf(dumpkeys, sizeof(dumpkeys), "%d", level);
 	if (no_record)
 	{
 	    dumppid = pipespawn(progname, &dumpin, dumpout, mesgf,
@@ -232,14 +235,15 @@ char *dumpdate;
 #endif
 	program->restore_name = VXRESTORE;
 
-	sprintf(dumpkeys, "%d%ssf", level, no_record ? "" : "u");
+	ap_snprintf(dumpkeys, sizeof(dumpkeys),
+		    "%d%ssf", level, no_record ? "" : "u");
 
-	sprintf(indexcmd,
-		"%s -tvf - 2>/dev/null |\
-		    awk '/^[leaf|dir]/ {print $3$1}' |\
-		    sed -e 's/leaf$//' -e 's/dir$/\\//' |\
-		    cut -c2-",
-		VXRESTORE);
+	ap_snprintf(indexcmd, sizeof(indexcmd),
+"%s -tvf - 2>/dev/null |\
+ awk '/^[leaf|dir]/ {print $3$1}' |\
+ sed -e 's/leaf$//' -e 's/dir$/\\//' |\
+ cut -c2-",
+		    VXRESTORE);
 
 	write_tapeheader();
 
@@ -253,25 +257,26 @@ char *dumpdate;
 #endif
 
     {
-	sprintf(dumpkeys, "%d%s%sf", level, no_record ? "" : "u",
+	ap_snprintf(dumpkeys, sizeof(dumpkeys),
+		    "%d%s%sf", level, no_record ? "" : "u",
 #ifdef OSF1_VDUMP
-		"b"
+		    "b"
 #else
-		"s"
+		    "s"
 #endif
-		);
+		    );
 
-	sprintf(indexcmd,
-		"%s -tvf - 2>/dev/null |\
-		    awk '/^[leaf|dir]/ {print $3$1}' |\
-		    sed -e 's/leaf$//' -e 's/dir$/\\//' |\
-		    cut -c2-",
+	ap_snprintf(indexcmd, sizeof(indexcmd),
+"%s -tvf - 2>/dev/null |\
+ awk '/^[leaf|dir]/ {print $3$1}' |\
+ sed -e 's/leaf$//' -e 's/dir$/\\//' |\
+ cut -c2-",
 #ifdef RESTORE
 		    RESTORE
 #else
 		    "restore"
 #endif
-		);
+		 );
 
 	write_tapeheader();
 
@@ -289,17 +294,18 @@ char *dumpdate;
     }
 #else
     /* AIX backup program */
-    sprintf(dumpkeys, "-%d%sf", level, no_record ? "" : "u");
+    ap_snprintf(dumpkeys, sizeof(dumpkeys),
+		"-%d%sf", level, no_record ? "" : "u");
 
-	sprintf(indexcmd,
-		"%s -B -tvf - 2>/dev/null |\
-		    awk '/^[leaf|dir]/ {print $3$1}' |\
-		    sed -e 's/leaf$//' -e 's/dir$/\\//' |\
-		    cut -c2-",
+    ap_snprintf(indexcmd, sizeof(indexcmd),
+"%s -B -tvf - 2>/dev/null |\
+ awk '/^[leaf|dir]/ {print $3$1}' |\
+ sed -e 's/leaf$//' -e 's/dir$/\\//' |\
+ cut -c2-",
 #ifdef RESTORE
-		    RESTORE
+		RESTORE
 #else
-		    "restore"
+		"restore"
 #endif
 		);
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.8 1997/11/07 10:08:30 george Exp $
+ * $Id: debug.c,v 1.9 1997/12/16 17:54:56 jrj Exp $
  *
  * debug log subroutines
  */
@@ -59,7 +59,7 @@ arglist_function(void debug_printf, char *, format)
     /* format error message */
 
     arglist_start(argp, format);
-    vsprintf(linebuf, format, argp);
+    ap_vsnprintf(linebuf, sizeof(linebuf), format, argp);
     arglist_end(argp);
 
     /*
@@ -91,9 +91,11 @@ void debug_open()
     }
 
 #ifdef DEBUG_FILE_WITH_PID
-    sprintf(dbfilename, "%s/%s.%ld.debug", DEBUG_DIR, pname, (long)getpid());
+    ap_snprintf(dbfilename, sizeof(dbfilename),
+		"%s/%s.%ld.debug", DEBUG_DIR, pname, (long)getpid());
 #else
-    sprintf(dbfilename, "%s/%s.debug", DEBUG_DIR, pname);
+    ap_snprintf(dbfilename, sizeof(dbfilename),
+		"%s/%s.debug", DEBUG_DIR, pname);
 #endif
 
     if(mkpdir(dbfilename, 0700, uid, gid) == -1)

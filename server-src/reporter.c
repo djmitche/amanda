@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.9 1997/11/26 15:55:37 jrj Exp $
+ * $Id: reporter.c,v 1.10 1997/12/16 18:02:40 jrj Exp $
  *
  * nightly Amanda Report generator
  */
@@ -280,10 +280,10 @@ char **argv;
     if(!amflush_run)
 	generate_missing();
 
-    sprintf(subj_str, "%s %s MAIL REPORT FOR %s",
-	    getconf_str(CNF_ORG),
-	    amflush_run? "AMFLUSH" : "AMANDA",
-	    nicedate(atoi(datestamp)));
+    ap_snprintf(subj_str, sizeof(subj_str), "%s %s MAIL REPORT FOR %s",
+		getconf_str(CNF_ORG),
+		amflush_run? "AMFLUSH" : "AMANDA",
+		nicedate(atoi(datestamp)));
 
    /* open pipe to mailer */
 
@@ -296,8 +296,8 @@ char **argv;
 	fprintf(mailf, "Subject: %s\n\n", subj_str);
     }
     else {
-	sprintf(str, "%s -s \"%s\" %s", MAILER,
-		subj_str, getconf_str(CNF_MAILTO));
+	ap_snprintf(str, sizeof(str), "%s -s \"%s\" %s", MAILER,
+		    subj_str, getconf_str(CNF_MAILTO));
 	if((mailf = popen(str, "w")) == NULL)
 	    error("could not open pipe to \"%s\": %s", str, strerror(errno));
     }
@@ -641,11 +641,11 @@ int datestamp;
 /*
  * Formats an integer of the form YYYYMMDD into the string
  * "Monthname DD, YYYY".  A pointer to the statically allocated string
- * is returned, so it must be strcpy'ed to other storage (or just printed)
+ * is returned, so it must be copied to other storage (or just printed)
  * before calling nicedate() again.
  */
 {
-    static char nice[20];
+    static char nice[64];
     static char *months[13] = { "BogusMonth",
 	"January", "February", "March", "April", "May", "June",
 	"July", "August", "September", "October", "November", "December"
@@ -656,7 +656,7 @@ int datestamp;
     day   = datestamp % 100;
     month = (datestamp / 100) % 100;
 
-    sprintf(nice, "%s %d, %d", months[month], day, year);
+    ap_snprintf(nice, sizeof(nice), "%s %d, %d", months[month], day, year);
 
     return nice;
 }
@@ -671,10 +671,10 @@ void handle_start()
     case P_TAPER:
 	sscanf(curstr, "datestamp %s label %s", datestamp, label);
 	if(last_run_tapes > 0)
-	    strcat(tape_labels, ", ");
+	    strncat(tape_labels, ", ", sizeof(tape_labels)-strlen(tape_labels));
 
 	last_run_tapes++;
-	strcat(tape_labels, label);
+	strncat(tape_labels, label, sizeof(tape_labels)-strlen(tape_labels));
 	return;
     case P_PLANNER:
     case P_DRIVER:
@@ -718,7 +718,8 @@ void handle_stats()
 
 void handle_note()
 {
-    sprintf(tmpstr, "  %s: %s", program_str[curprog], curstr);
+    ap_snprintf(tmpstr, sizeof(tmpstr),
+		"  %s: %s", program_str[curprog], curstr);
     addline(&notes, tmpstr);
 }
 
@@ -737,8 +738,8 @@ void handle_error()
 	}
 	/* else some other tape error, handle like other errors */
     }
-    sprintf(tmpstr, "  %s: %s %s", program_str[curprog],
-	    logtype_str[curlog], curstr);
+    ap_snprintf(tmpstr, sizeof(tmpstr), "  %s: %s %s", program_str[curprog],
+	     logtype_str[curlog], curstr);
     addline(&errsum, tmpstr);
 }
 
@@ -788,8 +789,9 @@ void handle_success()
 	   hostname, diskname, &level, &sec, &kbytes, &kps);
     dp = lookup_disk(hostname, diskname);
     if(dp == NULL) {
-	sprintf(tmpstr,"  %-10.10s %s lev %d ERROR [not in disklist]\n",
-		hostname, diskname, level);
+	ap_snprintf(tmpstr, sizeof(tmpstr),
+		    "  %-10.10s %s lev %d ERROR [not in disklist]\n",
+		    hostname, diskname, level);
 	addline(&errsum,tmpstr);
 	return;
     }
@@ -837,13 +839,13 @@ void handle_strange()
 {
     handle_success();
 
-    sprintf(tmpstr, "  %-10.10s %s lev %d STRANGE\n",
-	    hostname, diskname, level);
+    ap_snprintf(tmpstr, sizeof(tmpstr), "  %-10.10s %s lev %d STRANGE\n",
+		hostname, diskname, level);
     addline(&errsum, tmpstr);
 
     addline(&errdet,"\n");
-    sprintf(tmpstr, "/-- %-10.10s %s lev %d STRANGE\n",
-	    hostname, diskname, level);
+    ap_snprintf(tmpstr, sizeof(tmpstr), "/-- %-10.10s %s lev %d STRANGE\n",
+		hostname, diskname, level);
     addline(&errdet, tmpstr);
 
     while(contline_next()) {
@@ -862,8 +864,9 @@ void handle_failed()
     sscanf(curstr,"%s %s %d %[^\n]", hostname, diskname, &level, errstr);
     dp = lookup_disk(hostname, diskname);
     if(dp == NULL) {
-	sprintf(tmpstr, "  %-10.10s %s lev %d ERROR [not in disklist]\n",
-		hostname, diskname, level);
+	ap_snprintf(tmpstr, sizeof(tmpstr),
+		    "  %-10.10s %s lev %d ERROR [not in disklist]\n",
+		    hostname, diskname, level);
 	addline(&errsum, tmpstr);
     }
     else {
@@ -873,16 +876,16 @@ void handle_failed()
 	}
     }
 
-    sprintf(tmpstr, "  %-10.10s %s lev %d FAILED %s\n",
-	    hostname, diskname, level, errstr);
+    ap_snprintf(tmpstr, sizeof(tmpstr), "  %-10.10s %s lev %d FAILED %s\n",
+		hostname, diskname, level, errstr);
     addline(&errsum, tmpstr);
 
     if(curprog != P_DUMPER)
 	return;
 
     addline(&errdet,"\n");
-    sprintf(tmpstr, "/-- %-10.10s %s lev %d FAILED %s\n",
-	    hostname, diskname, level, errstr);
+    ap_snprintf(tmpstr, sizeof(tmpstr), "/-- %-10.10s %s lev %d FAILED %s\n",
+		hostname, diskname, level, errstr);
     addline(&errdet,tmpstr);
     while(contline_next()) {
 	get_logline();
@@ -897,8 +900,9 @@ void generate_missing()
 
     for(dp = diskq->head; dp != NULL; dp = dp->next) {
 	if(data(dp)->result == L_BOGUS) {
-	    sprintf(tmpstr, "  %-10.10s %s  RESULTS MISSING\n",
-		dp->host->hostname, dp->name);
+	    ap_snprintf(tmpstr, sizeof(tmpstr),
+			"  %-10.10s %s  RESULTS MISSING\n",
+			dp->host->hostname, dp->name);
 	    addline(&errsum, tmpstr);
 	}
     }

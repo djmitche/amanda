@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getfsent.c,v 1.6 1997/11/27 09:18:22 amcore Exp $
+ * $Id: getfsent.c,v 1.7 1997/12/16 17:52:47 jrj Exp $
  *
  * generic version of code to read fstab
  */
@@ -73,19 +73,27 @@ generic_fsent_t *fsent;
 
     if(!sys_fsent)
 	return 0;
-    fsent->fsname  = strcpy(xfsname, sys_fsent->fs_spec);
-    fsent->mntdir  = strcpy(xmntdir, sys_fsent->fs_file);
+    fsent->fsname  = strncpy(xfsname, sys_fsent->fs_spec, sizeof(xfsname)-1);
+    xfsname[sizeof(xfsname)-1] = '\0';
+    fsent->mntdir  = strncpy(xmntdir, sys_fsent->fs_file, sizeof(xmntdir)-1);
+    xmntdir[sizeof(xmntdir)-1] = '\0';
     fsent->freq    = sys_fsent->fs_freq;
     fsent->passno  = sys_fsent->fs_passno;
 #ifdef STATFS_ULTRIX
-    fsent->fstype  = strcpy(xfstype, sys_fsent->fs_name);
-    fsent->mntopts = strcpy(xmntopts, sys_fsent->fs_opts);
+    fsent->fstype  = strncpy(xfstype, sys_fsent->fs_name, sizeof(xfstype)-1);
+    xfstype[sizeof(xfstype)-1] = '\0';
+    fsent->mntopts = strncpy(xmntopts, sys_fsent->fs_opts, sizeof(xmntopts)-1);
+    xmntopts[sizeof(xmntopts)-1] = '\0';
 #elif defined(_AIX)
     fsent->fstype  = "unknown";
-    fsent->mntopts = strcpy(xmntopts, sys_fsent->fs_type);
+    fsent->mntopts = strncpy(xmntopts, sys_fsent->fs_type, sizeof(xmntopts)-1);
+    xmntopts[sizeof(xmntopts)-1] = '\0';
 #else
-    fsent->fstype  = strcpy(xfstype, sys_fsent->fs_vfstype);
-    fsent->mntopts = strcpy(xmntopts, sys_fsent->fs_mntops);
+    fsent->fstype  = strncpy(xfstype, sys_fsent->fs_vfstype, sizeof(xfstype)-1);
+    xfstype[sizeof(xfstype)-1] = '\0';
+    fsent->mntopts = strncpy(xmntopts, sys_fsent->fs_mntops,
+			     sizeof(xmntopts)-1);
+    xmntopts[sizeof(xmntopts)-1] = '\0';
 #endif
     return 1;
 }
@@ -226,9 +234,10 @@ generic_fsent_t *fsent;
     }
     if (dp = strchr(fsent->fstype, ',')) {
 	*dp++ = '\0';
-	strcpy(opts, fsent->mntopts);
-	strcat(opts, ",");
-	strcat(opts, dp);
+	strncpy(opts, fsent->mntopts, sizeof(opts)-1);
+	opts[sizeof(opts)-1] = '\0';
+	strncat(opts, ",", sizeof(opts)-strlen(opts));
+	strncat(opts, dp, sizeof(opts)-strlen(opts));
 	fsent->mntopts = opts;
     }
 
@@ -309,9 +318,10 @@ generic_fsent_t *fsent;
     }
 
     if ( mnt.mt_ro_flg == MNT_READONLY )
-         strcpy(opts, "ro");
+	strncpy(opts, "ro", sizeof(opts)-1);
     else 
-         strcpy(opts, "rw");
+	strncpy(opts, "rw", sizeof(opts)-1);
+    opts[sizeof(opts)-1] = '\0';
 
     fsent->mntopts=opts;
 
@@ -341,10 +351,12 @@ char *name;
 #endif
   
   if (strncmp(name, DEV_PREFIX, strlen(DEV_PREFIX)) == 0)
-    sprintf(fname, "%s%s", RDEV_PREFIX, name+strlen(DEV_PREFIX));
+    ap_snprintf(fname, sizeof(fname),
+		"%s%s", RDEV_PREFIX, name+strlen(DEV_PREFIX));
 #ifdef DEV_ROOT
   else if (strncmp(name, dev_root, strlen(dev_root)) == 0
-	   && (sprintf(fname, "%s%s", dev_rroot, name+strlen(dev_root)),
+	   && (ap_snprintf(fname, sizeof(fname),
+			   "%s%s", dev_rroot, name+strlen(dev_root)),
 	       stat(fname, &st) == 0))
       ;
 #endif
@@ -363,10 +375,12 @@ char *name;
 #endif
 
   if (strncmp(name, RDEV_PREFIX, strlen(RDEV_PREFIX)) == 0)
-    sprintf(fname, "%s%s", DEV_PREFIX, name+strlen(RDEV_PREFIX));
+    ap_snprintf(fname, sizeof(fname),
+		"%s%s", DEV_PREFIX, name+strlen(RDEV_PREFIX));
 #ifdef DEV_ROOT
   else if (strncmp(name, dev_rroot, strlen(dev_rroot)) == 0
-	   && (sprintf(fname, "%s%s", dev_root, name+strlen(dev_rroot)),
+	   && (ap_snprintf(fname, sizeof(fname),
+			   "%s%s", dev_root, name+strlen(dev_rroot)),
 	       stat(fname, &st) == 0))
     ;
 #endif
@@ -403,10 +417,14 @@ generic_fsent_t *fsent;
   if (stat(name, &stats[0]) == -1)
     stats[0].st_dev = -1;
   if (name[0] != '/') {
-    sprintf(fullname, "%s%s", DEV_PREFIX, name);
+    strncpy(fullname, DEV_PREFIX, sizeof(fullname)-1);
+    fullname[sizeof(fullname)-1] = '\0';
+    strncat(fullname, name, sizeof(fullname)-strlen(fullname));
     if (stat(fullname, &stats[1]) == -1)
       stats[1].st_dev = -1;
-    sprintf(fullname, "%s%s", RDEV_PREFIX, name);
+    strncpy(fullname, RDEV_PREFIX, sizeof(fullname)-1);
+    fullname[sizeof(fullname)-1] = '\0';
+    strncat(fullname, name, sizeof(fullname)-strlen(fullname));
     if (stat(fullname, &stats[2]) == -1)
       stats[2].st_dev = -1;
   }
@@ -475,7 +493,8 @@ char *str;
       if (fsent.mntdir != NULL)
 	str = fsent.mntdir;
 
-    strcpy(dirname, str);
+    strncpy(dirname, str, sizeof(dirname)-1);
+    dirname[sizeof(dirname)-1] = '\0';
     return dirname;
 }
 
@@ -488,7 +507,8 @@ char *str;
     if (!search_fstab(str, &fsent))
       return "";
 
-    strcpy(fstype, fsent.fstype);
+    strncpy(fstype, fsent.fstype, sizeof(fstype)-1);
+    fstype[sizeof(fstype)-1] = '\0';
     return fstype;
 }
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.18 1997/12/09 07:16:11 amcore Exp $
+ * $Id: driverio.c,v 1.19 1997/12/16 18:02:31 jrj Exp $
  *
  * I/O-related functions for driver program
  */
@@ -78,7 +78,7 @@ int fd;
     for(dumper = dmptable; dumper < dmptable+inparallel; dumper++)
 	if(dumper->outfd == fd) return dumper->name;
 
-    sprintf(str, "unknown child (fd %d)", fd);
+    ap_snprintf(str, sizeof(str), "unknown child (fd %d)", fd);
     return str;
 }
 
@@ -143,7 +143,7 @@ void startup_dump_processes()
     char buff[128];
 
     for(dumper = dmptable, i = 0; i < inparallel; dumper++, i++) {
-	sprintf(buff, "dumper%d", i);
+	ap_snprintf(buff, sizeof(buff), "dumper%d", i);
 	dumper->name = stralloc(buff);
 
 	startup_dump_process(dumper);
@@ -198,21 +198,24 @@ void *ptr;
 
     switch(cmd) {
     case START_TAPER:
-	sprintf(cmdline, "START-TAPER %s\n", (char *) ptr);
+	ap_snprintf(cmdline, sizeof(cmdline), "START-TAPER %s\n", (char *) ptr);
 	break;
     case FILE_WRITE:
 	dp = (disk_t *) ptr;
-	sprintf(cmdline, "FILE-WRITE %s %s %s %s %d\n", disk2serial(dp),
-		sched(dp)->destname, dp->host->hostname, dp->name,
-		sched(dp)->level);
+	ap_snprintf(cmdline, sizeof(cmdline),
+		    "FILE-WRITE %s %s %s %s %d\n", disk2serial(dp),
+		    sched(dp)->destname, dp->host->hostname, dp->name,
+		    sched(dp)->level);
 	break;
     case PORT_WRITE:
 	dp = (disk_t *) ptr;
-	sprintf(cmdline, "PORT-WRITE %s %s %s %d\n", disk2serial(dp),
-		dp->host->hostname, dp->name, sched(dp)->level);
+	ap_snprintf(cmdline, sizeof(cmdline),
+		    "PORT-WRITE %s %s %s %d\n", disk2serial(dp),
+		    dp->host->hostname, dp->name, sched(dp)->level);
 	break;
     case QUIT:
-	sprintf(cmdline, "QUIT\n");
+	strncpy(cmdline, "QUIT\n", sizeof(cmdline)-1);
+	cmdline[sizeof(cmdline)-1] = '\0';
 	break;
     default:
 	assert(0);
@@ -239,15 +242,16 @@ disk_t *dp;
     case FILE_DUMP:
     case PORT_DUMP:
 	lev = sched(dp)->level;
-	sprintf(cmdline, "%s %s %s %s %s %d %s %s |%s\n", cmdstr[cmd],
-		disk2serial(dp), sched(dp)->destname, dp->host->hostname,
-		dp->name, lev, sched(dp)->dumpdate, dp->program,
-		optionstr(dp));
+	ap_snprintf(cmdline, sizeof(cmdline),
+		    "%s %s %s %s %s %d %s %s |%s\n", cmdstr[cmd],
+		    disk2serial(dp), sched(dp)->destname, dp->host->hostname,
+		    dp->name, lev, sched(dp)->dumpdate, dp->program,
+		    optionstr(dp));
 	break;
     case QUIT:
     case ABORT:
     case CONTINUE:
-	sprintf(cmdline, "%s\n", cmdstr[cmd]);
+	ap_snprintf(cmdline, sizeof(cmdline), "%s\n", cmdstr[cmd]);
 	break;
     default:
 	assert(0);
@@ -323,7 +327,7 @@ disk_t *dp;
     stable[s].gen = generation++;
     stable[s].dp = dp;
 
-    sprintf(str, "%02d-%05ld", s, stable[s].gen);
+    ap_snprintf(str, sizeof(str), "%02d-%05ld", s, stable[s].gen);
     return str;
 }
 
@@ -392,7 +396,8 @@ int filenum;
 
     infp = &inf.inf[level];
     /* XXX - should we record these two if no-record? */
-    strcpy(infp->label, label);
+    strncpy(infp->label, label, sizeof(infp->label)-1);
+    infp->label[sizeof(infp->label)-1] = '\0';
     infp->filenum = filenum;
 
     inf.command = NO_COMMAND;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapefile.c,v 1.5 1997/11/30 23:50:56 amcore Exp $
+ * $Id: tapefile.c,v 1.6 1997/12/16 18:02:42 jrj Exp $
  *
  * routines to read and write the amanda active tape list
  */
@@ -219,7 +219,8 @@ char *line;
     if(len) line[len-1] = '\0';
 
     tp->label = alloc(len);
-    strcpy(tp->label,line);
+    strncpy(tp->label, line, len-1);
+    tp->label[len-1] = '\0';
 
     return tp;
 }

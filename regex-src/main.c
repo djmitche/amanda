@@ -223,7 +223,8 @@ int opts;			/* may not match f1 */
 	char f0copy[1000];
 	char f2copy[1000];
 
-	strcpy(f0copy, f0);
+	strncpy(f0copy, f0, sizeof(f0copy)-1);
+	f0copy[sizeof(f0copy)-1] = '\0';
 	re.re_endp = (opts&REG_PEND) ? f0copy + strlen(f0copy) : NULL;
 	fixstr(f0copy);
 	err = regcomp(&re, f0copy, opts);
@@ -247,7 +248,8 @@ int opts;			/* may not match f1 */
 		return;
 	}
 
-	strcpy(f2copy, f2);
+	strncpy(f2copy, f2, sizeof(f2copy)-1);
+	f2copy[sizeof(f2copy)-1] = '\0';
 	fixstr(f2copy);
 
 	if (options('e', f1)&REG_STARTEND) {

@@ -23,7 +23,7 @@
  * Author: George Scott, Computer Centre, Monash University.
  */
 /*
- * $Id: token.c,v 1.12 1997/11/01 09:21:38 george Exp $
+ * $Id: token.c,v 1.13 1997/12/16 17:55:05 jrj Exp $
  *
  * token bashing routines
  */
@@ -140,7 +140,7 @@ arglist_function(char *squotef, char *, format)
 	/* Format the token */
 
 	arglist_start(argp, format);
-	vsprintf(linebuf, format, argp);
+	ap_vsnprintf(linebuf, sizeof(linebuf), format, argp);
 	arglist_end(argp);
 
 	return quote(" ", linebuf);
@@ -154,7 +154,7 @@ arglist_function1(char *quotef, char *, sep, char *, format)
 	/* Format the token */
 
 	arglist_start(argp, format);
-	vsprintf(linebuf, format, argp);
+	ap_vsnprintf(linebuf, sizeof(linebuf), format, argp);
 	arglist_end(argp);
 
 	return quote(sep, linebuf);
@@ -294,7 +294,9 @@ int main()
 		}
 		sr = squote(str);
 		printf("Quoted   = \"%s\"\n", sr);
-		r = split(strcpy(str,sr), t, 20, " ");
+		strncpy(str,sr,sizeof(str)-1);
+		str[sizeof(str)-1] = '\0';
+		r = split(str, t, 20, " ");
 		if (r != 1) printf("split()=%d!\n", r);
 		printf("Unquoted = \"%s\"\n", t[1]);
 	}

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.9 1997/12/16 01:26:57 amcore Exp $
+ * $Id: amrecover.c,v 1.10 1997/12/16 17:57:31 jrj Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -323,8 +323,9 @@ char *s;
    2 if disk local but can't guess name */
 /* do this by looking for the longest mount point which matches the
    current directory */
-int guess_disk (cwd, dn_guess, mpt_guess)
+int guess_disk (cwd, cwd_len, dn_guess, dn_guess_len, mpt_guess, mpt_guess_len)
 char *cwd, *dn_guess, *mpt_guess;
+int cwd_len, dn_guess_len, mpt_guess_len;
 {
     int longest_match = 0;
     int current_length;
@@ -348,8 +349,12 @@ char *cwd, *dn_guess, *mpt_guess;
 	    && (strncmp(fsent.mntdir, cwd, current_length) == 0))
 	{
 	    longest_match = current_length;
-	    strcpy(mpt_guess, fsent.mntdir);
-	    strcpy(fsname, (fsent.fsname+strlen(DEV_PREFIX)));
+	    strncpy(mpt_guess, fsent.mntdir, mpt_guess_len-1);
+	    mpt_guess[mpt_guess_len-1] = '\0';
+	    strncpy(fsname,
+		    (fsent.fsname+strlen(DEV_PREFIX)),
+		    sizeof(fsname)-1);
+	    fsname[sizeof(fsname)-1] = '\0';
 	    local_disk = is_local_fstype(&fsent);
 	}
     }
@@ -364,20 +369,23 @@ char *cwd, *dn_guess, *mpt_guess;
     /* have mount point now */
     /* disk name may be specified by mount point (logical name) or
        device name, have to determine */
-    sprintf(line, "DISK %s", mpt_guess); /* try logical name */
+    ap_snprintf(line, sizeof(line),
+		"DISK %s", mpt_guess);			/* try logical name */
     if (exchange(line) == -1)
 	exit(1);
     if (server_happy())
     {
-	strcpy(dn_guess, mpt_guess);	/* logical is okay */
+	strncpy(dn_guess, mpt_guess, dn_guess_len-1);	/* logical is okay */
+	dn_guess[dn_guess_len-1] = '\0';
 	return 1;
     }
-    sprintf(line, "DISK %s", fsname); /* try device name */
+    ap_snprintf(line, sizeof(line), "DISK %s", fsname);	/* try device name */
     if (exchange(line) == -1)
 	exit(1);
     if (server_happy())
     {
-	strcpy(dn_guess, fsname);	/* device name is okay */
+	strncpy(dn_guess, fsname, dn_guess_len-1);	/* dev name is okay */
+	dn_guess[dn_guess_len-1] = '\0';
 	return 1;
     }
 
@@ -408,11 +416,19 @@ char **argv;
     extern int optind;
     char cwd[LINE_LENGTH], dn_guess[LINE_LENGTH], mpt_guess[LINE_LENGTH];
 
-    strcpy(config, DEFAULT_CONFIG);
-    strcpy(server_name, DEFAULT_SERVER);
+    strncpy(config, DEFAULT_CONFIG, sizeof(config)-1);
+    config[sizeof(config)-1] = '\0';
+    strncpy(server_name, DEFAULT_SERVER, sizeof(server_name)-1);
+    server_name[sizeof(server_name)-1] = '\0';
 #ifdef RECOVER_DEFAULT_TAPE_SERVER
-    strcpy(tape_server_name, RECOVER_DEFAULT_TAPE_SERVER);
-    strcpy(tape_device_name, RECOVER_DEFAULT_TAPE_DEVICE);
+    strncpy(tape_server_name,
+	    RECOVER_DEFAULT_TAPE_SERVER,
+	    sizeof(tape_server_name)-1);
+    tape_server_name[sizeof(tape_server_name)-1] = '\0';
+    strncpy(tape_device_name,
+	    RECOVER_DEFAULT_TAPE_DEVICE,
+	    sizeof(tape_device_name)-1);
+    tape_device_name[sizeof(tape_device_name)-1] = '\0';
 #else
     tape_server_name[0] = '\0';
     tape_device_name[0] = '\0';
@@ -447,19 +463,23 @@ char **argv;
 	switch (i)
 	{
 	    case 'C':
-		strcpy(config, optarg);
+		strncpy(config, optarg, sizeof(config)-1);
+		config[sizeof(config)-1] = '\0';
 		break;
 
 	    case 's':
-		strcpy(server_name, optarg);
+		strncpy(server_name, optarg, sizeof(server_name)-1);
+		server_name[sizeof(server_name)-1] = '\0';
 		break;
 
 	    case 't':
-		strcpy(tape_server_name, optarg);
+		strncpy(tape_server_name, optarg, sizeof(tape_server_name)-1);
+		tape_server_name[sizeof(tape_server_name)-1] = '\0';
 		break;
 
 	    case 'd':
-		strcpy(tape_device_name, optarg);
+		strncpy(tape_device_name, optarg, sizeof(tape_device_name)-1);
+		tape_device_name[sizeof(tape_device_name)-1] = '\0';
 		break;
 
 	    case 'U':
@@ -493,7 +513,8 @@ char **argv;
 	exit(1);
     }
     
-    sprintf(service_name, "amandaidx%s", SERVICE_SUFFIX);
+    ap_snprintf(service_name, sizeof(service_name),
+		"amandaidx%s", SERVICE_SUFFIX);
 
     printf("AMRECOVER Version 1.1. Contacting server on %s ...\n",
 	   server_name);  
@@ -548,11 +569,11 @@ char **argv;
     (void)time(&timer);
     strftime(dump_date, LINE_LENGTH, "%Y-%m-%d", localtime(&timer));
     printf("Setting restore date to today (%s)\n", dump_date);
-    sprintf(line, "DATE %s", dump_date);
+    ap_snprintf(line, sizeof(line), "DATE %s", dump_date);
     if (converse(line) == -1)
 	exit(1);
 
-    sprintf(line, "SCNF %s", config);
+    ap_snprintf(line, sizeof(line), "SCNF %s", config);
     if (converse(line) == -1)
 	exit(1);
     
@@ -577,7 +598,7 @@ char **argv;
 		    break;
 		}
 #endif
-	    sprintf(line, "HOST %s", dump_hostname);
+	    ap_snprintf(line, sizeof(line), "HOST %s", dump_hostname);
 	    if (converse(line) == -1)
 		exit(1);
 	}
@@ -586,7 +607,9 @@ char **argv;
 	{
             /* get a starting disk and directory based on where
 	       we currently are */
-	    switch (guess_disk(cwd, dn_guess, mpt_guess))
+	    switch (guess_disk(cwd, sizeof(cwd),
+			       dn_guess, sizeof(dn_guess),
+			       mpt_guess, sizeof(mpt_guess)))
 	    {
 		case 1:
 		    /* okay, got a guess. Set disk accordingly */

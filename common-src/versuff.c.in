@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: versuff.c.in,v 1.2 1997/08/27 08:12:26 amcore Exp $
+ * $Id: versuff.c.in,v 1.3 1997/12/16 17:55:06 jrj Exp $
  *
  * provide amanda version number and suffix appended to program names
  */
@@ -41,10 +41,11 @@ char *
 versionsuffix()
 {
 #ifdef USE_VERSION_SUFFIXES
-	static char vsuff[15];
+	static char vsuff[256];
 
-	sprintf(vsuff,"-%d.%d.%d%s", 
-		VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_COMMENT);
+	ap_snprintf(vsuff, sizeof(vsuff), "-%d.%d.%d%s", 
+		    VERSION_MAJOR, VERSION_MINOR,
+		    VERSION_PATCH, VERSION_COMMENT);
 	return vsuff;
 #else
 	return "";
@@ -54,9 +55,10 @@ versionsuffix()
 char *
 version()
 {
-	static char vsuff[15];
+	static char vsuff[256];
 
-	sprintf(vsuff,"%d.%d.%d%s", 
-		VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_COMMENT);
+	ap_snprintf(vsuff, sizeof(vsuff), "%d.%d.%d%s", 
+		    VERSION_MAJOR, VERSION_MINOR,
+		    VERSION_PATCH, VERSION_COMMENT);
 	return vsuff;
 }

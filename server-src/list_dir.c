@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: list_dir.c,v 1.8 1997/12/13 05:08:31 amcore Exp $
+/* $Id: list_dir.c,v 1.9 1997/12/16 18:02:36 jrj Exp $
  *
  * obtains directory listings from index files
  */
@@ -149,14 +149,16 @@ int  recursive;
     char *p;
     int len_dir_slash;
 
-    if (strcmp(dir, "/") == 0)
-	strcpy(dir_slash, dir);
-    else
-	sprintf(dir_slash, "%s/", dir);
+    if (strcmp(dir, "/") == 0) {
+	strncpy(dir_slash, dir, sizeof(dir_slash)-1);
+	dir_slash[sizeof(dir_slash)-1] = '\0';
+    } else {
+	ap_snprintf(dir_slash, sizeof(dir_slash), "%s/", dir);
+    }
 
     filename_gz=getindexfname(dump_hostname, disk_name, dump_item->date,
 			      dump_item->level);
-    if(uncompress_file(filename_gz,filename)!=0)
+    if(uncompress_file(filename_gz, filename, sizeof(filename))!=0)
     {
 	reply(599, "System error %d", errno);
 	return -1;
@@ -181,7 +183,8 @@ int  recursive;
 	    *p = '\0'; /* overwire '\n' or cut the line */
 	    if(strcmp(line,old_line)!=0)
 	    {
-		strcpy(old_line,line);
+		strncpy(old_line, line, sizeof(old_line)-1);
+		old_line[sizeof(old_line)-1] = '\0';
 		add_dir_list_item(dump_item, line);
 	    }
 	}

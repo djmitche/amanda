@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: fileheader.c,v 1.1 1997/12/01 01:05:56 amcore Exp $
+ * $Id: fileheader.c,v 1.2 1997/12/16 17:54:59 jrj Exp $
  *
  */
 
@@ -106,19 +106,24 @@ int buflen;
 	    file->type=F_WEIRD;
 	    return;
 	}
-	strcpy(file->datestamp, eatword(&lp));
+	strncpy(file->datestamp, eatword(&lp), sizeof(file->datestamp)-1);
+	file->datestamp[sizeof(file->datestamp)-1] = '\0';
 	verify=eatword(&lp);			/* ignore "TAPE" */
 	if(strcmp(verify,"TAPE")) {
 	    file->type=F_WEIRD;
 	    return;
 	}
-	strcpy(file->name, eatword(&lp));
+	strncpy(file->name, eatword(&lp), sizeof(file->name)-1);
+	file->name[sizeof(file->name)-1] = '\0';
     }
     else if(!strcmp(str, "FILE")) {
 	file->type = F_DUMPFILE;
-	strcpy(file->datestamp, eatword(&lp));
-	strcpy(file->name, eatword(&lp));
-	strcpy(file->disk, eatword(&lp));
+	strncpy(file->datestamp, eatword(&lp), sizeof(file->datestamp)-1);
+	file->datestamp[sizeof(file->datestamp)-1] = '\0';
+	strncpy(file->name, eatword(&lp), sizeof(file->name)-1);
+	file->name[sizeof(file->name)-1] = '\0';
+	strncpy(file->disk, eatword(&lp), sizeof(file->disk)-1);
+	file->disk[sizeof(file->disk)-1] = '\0';
 	verify=eatword(&lp);			/* ignore "lev" */
 	if(strcmp(verify,"lev")) {
 	    file->type=F_WEIRD;
@@ -130,18 +135,24 @@ int buflen;
 	    file->type=F_WEIRD;
 	    return;
 	}
-	strcpy(file->comp_suffix, eatword(&lp));
+	strncpy(file->comp_suffix, eatword(&lp), sizeof(file->comp_suffix)-1);
+	file->comp_suffix[sizeof(file->comp_suffix)-1] = '\0';
 	file->compressed = strcmp(file->comp_suffix, "N");
 	/* compatibility with pre-2.2 amanda */
-	if(!strcmp(file->comp_suffix, "C"))
-	    strcpy(file->comp_suffix, ".Z");
+	if(!strcmp(file->comp_suffix, "C")) {
+	    strncpy(file->comp_suffix, ".Z", sizeof(file->comp_suffix)-1);
+	    file->comp_suffix[sizeof(file->comp_suffix)-1] = '\0';
+	}
 	verify=eatword(&lp);			/* ignore "program" */
 	if(strcmp(verify,"program")) {		/* "program" is optionnal */
 	    return;
 	}
-	strcpy(file->program, eatword(&lp));
-	if(file->program[0]=='\0')
-	    strcpy(file->program,"RESTORE");
+	strncpy(file->program, eatword(&lp), sizeof(file->program)-1);
+	file->program[sizeof(file->program)-1] = '\0';
+	if(file->program[0]=='\0') {
+	    strncpy(file->program, "RESTORE", sizeof(file->program)-1);
+	    file->program[sizeof(file->program)-1] = '\0';
+	}
     }
     else if(!strcmp(str, "TAPEEND")) {
 	file->type = F_TAPEEND;
@@ -150,7 +161,8 @@ int buflen;
 	    file->type=F_WEIRD;
 	    return;
 	}
-	strcpy(file->datestamp, eatword(&lp));
+	strncpy(file->datestamp, eatword(&lp), sizeof(file->datestamp)-1);
+	file->datestamp[sizeof(file->datestamp)-1] = '\0';
     }
     else {
 	fprintf(stderr, "%s: strange amanda header: \"%s\"\n", pname, line);
@@ -169,21 +181,29 @@ int buflen;
     memset(buffer,'\0',buflen);
 
     switch (file->type) {
-    case F_TAPESTART: sprintf(buffer, "AMANDA: TAPESTART DATE %s TAPE %s\n\014\n",
-			      file->datestamp, file->name);
+    case F_TAPESTART: ap_snprintf(buffer, buflen,
+				  "AMANDA: TAPESTART DATE %s TAPE %s\n\014\n",
+				  file->datestamp, file->name);
 		      break;
-    case F_DUMPFILE : sprintf(buffer, "AMANDA: FILE %s %s %s lev %d comp %s program %s\n",
-			      file->datestamp, file->name, file->disk,
-			      file->dumplevel, file->comp_suffix,
-			      file->program);
-		      strcat(buffer,"To restore, position tape at start of file and run:\n");
-		      sprintf(line, "\tdd if=<tape> bs=%dk skip=1 |%s %s\n\014\n",
-			      TAPE_BLOCK_SIZE, file->uncompress_cmd,
-			      file->recover_cmd);
-		      strcat(buffer, line);
+    case F_DUMPFILE : ap_snprintf(buffer, buflen,
+				  "AMANDA: FILE %s %s %s lev %d comp %s program %s\n",
+				  file->datestamp, file->name, file->disk,
+				  file->dumplevel, file->comp_suffix,
+				  file->program);
+		      buffer[sizeof(buffer)-1] = '\0';
+		      strncat(buffer,
+			"To restore, position tape at start of file and run:\n",
+			sizeof(buffer)-strlen(buffer));
+		      ap_snprintf(line, sizeof(line),
+				  "\tdd if=<tape> bs=%dk skip=1 |%s %s\n\014\n",
+				  TAPE_BLOCK_SIZE, file->uncompress_cmd,
+				  file->recover_cmd);
+		      line[sizeof(line)-1] = '\0';
+		      strncat(buffer, line, sizeof(line)-strlen(line));
 		      break;
-    case F_TAPEEND  : sprintf(buffer, "AMANDA: TAPEEND DATE %s\n\014\n",
-			      file->datestamp);
+    case F_TAPEEND  : ap_snprintf(buffer, buflen,
+				  "AMANDA: TAPEEND DATE %s\n\014\n",
+				  file->datestamp);
 		      break;
     case F_UNKNOWN  : break;
     case F_WEIRD    : break;

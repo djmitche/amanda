@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: amidxtaped.c,v 1.7 1997/11/11 06:39:36 amcore Exp $
+/* $Id: amidxtaped.c,v 1.8 1997/12/16 17:59:50 jrj Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -149,7 +149,8 @@ char **argv;
 	dbclose();
 	return 1;
     }
-    (void)strcpy(amrestore_args[0], "amrestore");
+    strncpy(amrestore_args[0], "amrestore", BUF_LEN-1);
+    amrestore_args[0][BUF_LEN-1] = '\0';
 
     for (i = 1; i <= amrestore_nargs; i++)
     {
@@ -163,7 +164,8 @@ char **argv;
     }
     amrestore_args[amrestore_nargs+1] = NULL;
 
-    sprintf(amrestore_path, "%s/%s", sbindir, "amrestore");
+    ap_snprintf(amrestore_path, sizeof(amrestore_path),
+		"%s/%s", sbindir, "amrestore");
     
     /* so got all the arguments, now ready to execv */
     dbprintf(("Ready to execv amrestore with:\n"));
@@ -228,18 +230,19 @@ char **argv;
 	return 1;
     }
 
-    strcpy(tapename, amrestore_args[i]);
+    strncpy(tapename, amrestore_args[i], sizeof(tapename)-1);
+    tapename[sizeof(tapename)-1] = '\0';
     if (stat(tapename, &stat_tape) != 0)
       error("could not stat %s", tapename);
     isafile = S_ISREG((stat_tape.st_mode));
     if (!isafile) {
-	sprintf(buf, "mt %s %s rewind",
+	ap_snprintf(buf, sizeof(buf), "mt %s %s rewind",
 #ifdef MT_FILE_FLAG
-		MT_FILE_FLAG,
+		    MT_FILE_FLAG,
 #else
-		"-f",
+		    "-f",
 #endif
-		tapename);
+		    tapename);
 	dbprintf(("Rewinding tape: %s\n", buf));
 	system(buf);
     }

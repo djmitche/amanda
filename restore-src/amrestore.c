@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.9 1997/12/01 01:06:08 amcore Exp $
+ * $Id: amrestore.c,v 1.10 1997/12/16 17:59:52 jrj Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -175,10 +175,11 @@ int isafile;
 	dest = 1;		/* standard output */
     else {
 	if(compflag) 
-	    strcat(filename, 
-		   file->compressed? file->comp_suffix : COMPRESS_SUFFIX);
+	    strncat(filename, 
+		    file->compressed? file->comp_suffix : COMPRESS_SUFFIX,
+		    sizeof(filename)-strlen(filename));
 	else if(rawflag) 
-	    strcat(filename, ".RAW");
+	    strncat(filename, ".RAW", sizeof(filename)-strlen(filename));
 
 	if((dest = creat(filename, CREAT_MODE)) < 0)
 	    error("could not create output file: %s", strerror(errno));

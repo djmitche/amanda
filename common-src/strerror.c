@@ -15,7 +15,7 @@
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-/* $Id: strerror.c,v 1.2 1997/08/27 08:12:20 amcore Exp $ */
+/* $Id: strerror.c,v 1.3 1997/12/16 17:55:04 jrj Exp $ */
 
 #include "amanda.h"
 
@@ -28,10 +28,10 @@ strerror(e)
 {
 	extern int sys_nerr;
 	extern char *sys_errlist[];
-	static char unknown[30];
+	static char unknown[40];
 
 	if ((unsigned)e < sys_nerr)
 		return sys_errlist[e];
-	(void) sprintf(unknown, "Unknown error: %d", e);
+	(void) ap_snprintf(unknown, sizeof(unknown), "Unknown error: %d", e);
 	return unknown;
 }

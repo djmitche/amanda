@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: disk_history.c,v 1.3 1997/08/27 08:13:07 amcore Exp $
+/* $Id: disk_history.c,v 1.4 1997/12/16 18:02:25 jrj Exp $
  *
  * functions for obtaining backup history
  */
@@ -60,9 +60,11 @@ int file;
     if ((new = (DUMP_ITEM *)malloc(sizeof(DUMP_ITEM))) == NULL)
 	return;				/* naughty naughty */
 
-    strcpy(new->date, date);
+    strncpy(new->date, date, sizeof(new->date)-1);
+    new->date[sizeof(new->date)-1] = '\0';
     new->level = level;
-    strcpy(new->tape, tape);
+    strncpy(new->tape, tape, sizeof(new->tape)-1);
+    new->tape[sizeof(new->tape)-1] = '\0';
     new->file = file;
 
     if (disk_hist == NULL)

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.19 1997/11/20 19:58:28 jrj Exp $
+ * $Id: sendbackup.c,v 1.20 1997/12/16 17:52:52 jrj Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -114,10 +114,12 @@ char *str;
 	j = strchr(i, '=') + 1;
 	k = strchr(i, ';');
 	strncpy(estr,i,abs(k-i)+1);
+	estr[sizeof(estr)-1] = '\0';
 	strncpy(f,j,abs(k-j));
-	sprintf(efile, "--exclude%s=%s",
-		strncmp("exclude-list",estr,strlen("exclude-list")) ? 
-		"" : "-from", f);
+	f[sizeof(f)-1] = '\0';
+	ap_snprintf(efile, sizeof(efile), "--exclude%s=%s",
+		    strncmp("exclude-list",estr,strlen("exclude-list")) ? 
+		    "" : "-from", f);
     }
 
     no_record = strstr(str, "no-record") != NULL;
@@ -133,20 +135,21 @@ char *optionstr()
 {
     static char optstr[256];
 
-    strcpy(optstr,";");
+    strncpy(optstr, ";", sizeof(optstr)-1);
+    optstr[sizeof(optstr)-1] = '\0';
     if(compress == COMPR_BEST)
-	strcat(optstr, "compress-best;");
+	strncat(optstr, "compress-best;", sizeof(optstr)-strlen(optstr));
     else if(compress == COMPR_FAST)
-	strcat(optstr, "compress-fast;");
+	strncat(optstr, "compress-fast;", sizeof(optstr)-strlen(optstr));
 
-    if(no_record) strcat(optstr, "no-record;");
-    if(bsd_auth) strcat(optstr, "bsd-auth;");
+    if(no_record) strncat(optstr, "no-record;", sizeof(optstr)-strlen(optstr));
+    if(bsd_auth) strncat(optstr, "bsd-auth;", sizeof(optstr)-strlen(optstr));
 #ifdef KRB4_SECURITY
-    if(krb4_auth) strcat(optstr, "krb4-auth;");
-    if(kencrypt) strcat(optstr, "kencrypt;");
+    if(krb4_auth) strncat(optstr, "krb4-auth;", sizeof(optstr)-strlen(optstr));
+    if(kencrypt) strncat(optstr, "kencrypt;", sizeof(optstr)-strlen(optstr));
 #endif
-    if (createindex) strcat(optstr, "index;");
-    if(*estr) strcat(optstr, estr);
+    if (createindex) strncat(optstr, "index;", sizeof(optstr)-strlen(optstr));
+    if(*estr) strncat(optstr, estr, sizeof(optstr)-strlen(optstr));
 
     return optstr;
 }
@@ -346,11 +349,14 @@ int pid, w;
         if(ret == 1) return 0;
 #endif
 
-    if(ret == 0) sprintf(thiserr, "%s got signal %d", str, sig);
-    else sprintf(thiserr, "%s returned %d", str, ret);
+    if(ret == 0)
+	ap_snprintf(thiserr, sizeof(thiserr), "%s got signal %d", str, sig);
+    else
+	ap_snprintf(thiserr, sizeof(thiserr), "%s returned %d", str, ret);
 
-    if(*errorstr != '\0') strcat(errorstr, ", ");
-    strcat(errorstr, thiserr);
+    if(*errorstr != '\0')
+	strncat(errorstr, ", ", sizeof(errorstr)-strlen(errorstr));
+    strncat(errorstr, thiserr, sizeof(errorstr)-strlen(errorstr));
     return 1;
 }
 

@@ -25,13 +25,15 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: changer.h,v 1.2 1997/08/27 08:13:01 amcore Exp $
+ * $Id: changer.h,v 1.3 1997/12/16 18:02:22 jrj Exp $
  *
  * interface routines for tape changers
  */
 #include "amanda.h"
 
-extern char changer_resultstr[];
+#define ERRSTR_LEN	1024
+
+extern char changer_resultstr[ERRSTR_LEN];
 
 int changer_init P((void));
 int changer_reset P((char *slotstr));

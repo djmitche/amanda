@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.10 1997/12/16 01:27:00 amcore Exp $
+ * $Id: amindexd.c,v 1.11 1997/12/16 18:02:17 jrj Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assummed that this is launched from inetd instead of being
@@ -88,8 +88,8 @@ arglist_function1(void reply, int, n, char *, fmt)
     char buf[LONG_LINE];
 
     arglist_start(args, fmt);
-    (void)sprintf(buf, "%03d ", n);
-    (void)vsprintf(buf+4, fmt, args);
+    ap_snprintf(buf, sizeof(buf), "%03d ", n);
+    ap_vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
     arglist_end(args);
 
     if (printf("%s\r\n", buf) <= 0)
@@ -115,8 +115,8 @@ arglist_function1(void lreply, int, n, char *, fmt)
     char buf[LONG_LINE];
 
     arglist_start(args, fmt);
-    (void)sprintf(buf, "%03d-", n);
-    (void)vsprintf(buf+4, fmt, args);
+    ap_snprintf(buf, sizeof(buf), "%03d-", n);
+    ap_vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
     arglist_end(args);
 
     if (printf("%s\r\n", buf) <= 0)
@@ -143,8 +143,8 @@ arglist_function1(void fast_lreply, int, n, char *, fmt)
     char buf[LONG_LINE];
 
     arglist_start(args, fmt);
-    (void)sprintf(buf, "%03d-", n);
-    (void)vsprintf(buf+4, fmt, args);
+    ap_snprintf(buf, sizeof(buf), "%03d-", n);
+    ap_vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
     arglist_end(args);
 
     if (printf("%s\r\n", buf) <= 0)
@@ -156,15 +156,17 @@ arglist_function1(void fast_lreply, int, n, char *, fmt)
 }
 
 
-int uncompress_file(filename_gz, filename)
+int uncompress_file(filename_gz, filename, filename_len)
 char *filename_gz;
 char *filename;
+int filename_len;
 {
     char cmd[2048];
     struct stat stat_filename;
     int result;
 
-    strcpy(filename,filename_gz);
+    strncpy(filename, filename_gz, filename_len-1);
+    filename[filename_len-1] = '\0';
     if(strcmp(&(filename[strlen(filename)-3]),".gz")==0)
 	filename[strlen(filename)-3]='\0';
     if(strcmp(&(filename[strlen(filename)-2]),".Z")==0)
@@ -175,21 +177,23 @@ char *filename;
     if(result==-1 && errno==ENOENT) /* file does not exist */
     {
 	REMOVE_ITEM *remove_file;
-	sprintf(cmd, "%s %s '%s' 2>/dev/null | sort > '%s'",
-		UNCOMPRESS_PATH,
+	ap_snprintf(cmd, sizeof(cmd), "%s %s '%s' 2>/dev/null | sort > '%s'",
+		    UNCOMPRESS_PATH,
 #ifdef UNCOMPRESS_OPT
-		UNCOMPRESS_OPT,
+		    UNCOMPRESS_OPT,
 #else
-		"",
+		    "",
 #endif
-		filename_gz, filename);
+		    filename_gz, filename);
 	dbprintf(("Uncompress command: %s\n",cmd));
 	if (system(cmd)!=0)
 	    return -1;
 
 	/* add at beginning */
 	remove_file = (REMOVE_ITEM *)alloc(sizeof(REMOVE_ITEM));
-	strcpy(remove_file->filename,filename);
+	strncpy(remove_file->filename,
+		filename, sizeof(remove_file->filename)-1);
+	remove_file->filename[sizeof(remove_file->filename)-1] = '\0';
 	remove_file->next = to_remove;
 	to_remove = remove_file;
     }
@@ -309,7 +313,7 @@ char *config;
     }
 
     /* cd to confdir */
-    sprintf(conf_dir, "%s/%s", CONFIG_DIR, config);
+    ap_snprintf(conf_dir, sizeof(conf_dir), "%s/%s", CONFIG_DIR, config);
     if (chdir(conf_dir) == -1)
     {
 	reply(501, "Couldn't cd into config dir. Misconfiguration?");
@@ -357,14 +361,16 @@ int build_disk_table P((void))
 	return -1;
     }
 
-    sprintf(cmd, "%s/amadmin%s %s find %s %s", sbindir, versionsuffix(),
-	    config, dump_hostname, disk_name);
+    ap_snprintf(cmd, sizeof(cmd),
+		"%s/amadmin%s %s find %s %s", sbindir, versionsuffix(),
+		config, dump_hostname, disk_name);
     if ((fp = popen(cmd, "r")) == NULL)
     {
 	reply(599, "System error %d", errno);
 	return -1;
     }
-    sprintf(format, "%%s %s %s %%d %%s %%d %%s", dump_hostname, disk_name);
+    ap_snprintf(format, sizeof(format),
+		"%%s %s %s %%d %%s %%d %%s", dump_hostname, disk_name);
     clear_list();
     while (fgets(cmd, LONG_LINE, fp) != NULL)
     {
@@ -417,10 +423,11 @@ char *dir;
     char *filename_gz;
     char filename[LONG_LINE];
 
-    strcpy(ldir,dir);
+    strncpy(ldir, dir, sizeof(ldir)-1);
+    ldir[sizeof(ldir)-1] = '\0';
     /* add a "/" at the end of the path */
     if(strcmp(ldir,"/"))
-	strcat(ldir,"/");
+	strncat(ldir, "/", sizeof(ldir)-strlen(ldir));
 
     if (strlen(disk_name) == 0)
     {
@@ -449,13 +456,13 @@ char *dir;
     {
 	filename_gz=getindexfname(dump_hostname, disk_name,
 				  item->date, item->level);
-	if(uncompress_file(filename_gz,filename)!=0)
+	if(uncompress_file(filename_gz, filename, sizeof(filename))!=0)
 	{
 	    reply(599, "System error %d", errno);
 	    return -1;
 	}
-	sprintf(cmd, "grep \"^%s\" %s 2>/dev/null",
-		ldir, filename);
+	ap_snprintf(cmd, sizeof(cmd), "grep \"^%s\" %s 2>/dev/null",
+		    ldir, filename);
 	dbprintf(("c %s\n", cmd));
 	if ((fp = popen(cmd, "r")) == NULL)
 	{
@@ -504,7 +511,7 @@ int tapedev_is P((void))
     (void)getcwd(orig_dir, 1024);
 
     /* cd to confdir */
-    sprintf(conf_dir, "%s/%s", CONFIG_DIR, config);
+    ap_snprintf(conf_dir, sizeof(conf_dir), "%s/%s", CONFIG_DIR, config);
     if (chdir(conf_dir) == -1)
     {
 	reply(501, "Couldn't cd into config dir. Misconfiguration?");
@@ -566,7 +573,7 @@ int are_dumps_compressed P((void))
     (void)getcwd(orig_dir, 1024);
 
     /* cd to confdir */
-    sprintf(conf_dir, "%s/%s", CONFIG_DIR, config);
+    ap_snprintf(conf_dir, sizeof(conf_dir), "%s/%s", CONFIG_DIR, config);
     if (chdir(conf_dir) == -1)
     {
 	reply(501, "Couldn't cd into config dir. Misconfiguration?");
@@ -692,10 +699,12 @@ char **argv;
     disk_name[0] = '\0';
     date[0] = '\0';
 
-    if (argc == 2)
-	strcpy(config, argv[1]);
-    else
+    if (argc == 2) {
+	strncpy(config, argv[1], sizeof(config)-1);
+	config[sizeof(config)-1] = '\0';
+    } else {
 	config[0] = '\0';
+    }
 
     /* a real simple parser since there are only a few commands */
     while (1)
@@ -736,7 +745,8 @@ char **argv;
 	    /* set host we are restoring */
 	    if (is_dump_host_valid(buf1) != -1)
 	    {
-		strcpy(dump_hostname, buf1);
+		strncpy(dump_hostname, buf1, sizeof(dump_hostname)-1);
+		dump_hostname[sizeof(dump_hostname)-1] = '\0';
 		reply(200, "Dump host set to %s.", dump_hostname);
 		disk_name[0] = '\0';	/* invalidate any value */
 	    }
@@ -745,7 +755,8 @@ char **argv;
 	{
 	    if (is_disk_valid(buf1) != -1)
 	    {
-		strcpy(disk_name, buf1);
+		strncpy(disk_name, buf1, sizeof(disk_name)-1);
+		disk_name[sizeof(disk_name)-1] = '\0';
 		if (build_disk_table() != -1)
 		    reply(200, "Disk set to %s.", disk_name);
 	    }
@@ -754,7 +765,8 @@ char **argv;
 	{
 	    if (is_config_valid(buf1) != -1)
 	    {
-		strcpy(config, buf1);
+		strncpy(config, buf1, sizeof(config)-1);
+		config[sizeof(config)-1] = '\0';
 		dump_hostname[0] = '\0';
 		disk_name[0] = '\0';	/* invalidate any value */
 		reply(200, "Config set to %s.", config);
@@ -762,7 +774,8 @@ char **argv;
 	}
 	else if (sscanf(buffer, "DATE %s", buf1) == 1)
 	{
-	    strcpy(date, buf1);
+	    strncpy(date, buf1, sizeof(date)-1);
+	    date[sizeof(date)-1] = '\0';
 	    reply(200, "Working date set to %s.", date);
 	}
 	else if (strcmp(buffer, "DHST") == 0)
@@ -771,7 +784,8 @@ char **argv;
 	}
 	else if (strncmp(buffer, "OISD ", 5) == 0)
 	{
-	    strcpy(buf1, buffer+5);
+	    strncpy(buf1, buffer+5, sizeof(buf1)-1);
+	    buf1[sizeof(buf1)-1] = '\0';
 	    if (is_dir_valid_opaque(buf1) != -1)
 	    {
 		reply(200, "\"%s\" is a valid directory", buf1);
@@ -779,12 +793,14 @@ char **argv;
 	}
 	else if (strncmp(buffer, "OLSD ", 5) == 0)
 	{
-	    strcpy(buf1, buffer+5);
+	    strncpy(buf1, buffer+5, sizeof(buf1)-1);
+	    buf1[sizeof(buf1)-1] = '\0';
 	    (void)opaque_ls(buf1,0);
 	}
 	else if (strncmp(buffer, "ORLD ", 5) == 0)
 	{
-	    strcpy(buf1, buffer+5);
+	    strncpy(buf1, buffer+5, sizeof(buf1)-1);
+	    buf1[sizeof(buf1)-1] = '\0';
 	    (void)opaque_ls(buf1,1);
 	}
 	else if (strcmp(buffer, "TAPE") == 0)

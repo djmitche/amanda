@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.20 1997/12/14 20:09:02 jrj Exp $
+ * $Id: amcheck.c,v 1.21 1997/12/16 18:02:13 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -105,8 +105,8 @@ char **argv;
 	setuid(getuid());
     }
 
-    sprintf(version_string, "\n(brought to you by Amanda %s)\n",
-	    version());
+    ap_snprintf(version_string, sizeof(version_string),
+		"\n(brought to you by Amanda %s)\n", version());
 
     mailout = overwrite = 0;
     do_serverchk = do_clientchk = 1;
@@ -132,7 +132,7 @@ char **argv;
 
     confname = *argv;
 
-    sprintf(confdir, "%s/%s", CONFIG_DIR, confname);
+    ap_snprintf(confdir, sizeof(confdir), "%s/%s", CONFIG_DIR, confname);
     if(chdir(confdir) != 0)
 	error("could not cd to confdir %s: %s", confdir, strerror(errno));
 
@@ -149,14 +149,16 @@ char **argv;
      */
     if(do_clientchk && do_serverchk) {
 	/* we need the temp file */
-	sprintf(tempfname, "/tmp/amcheck.temp.%ld", (long) getpid());
+	ap_snprintf(tempfname, sizeof(tempfname),
+		    "/tmp/amcheck.temp.%ld", (long) getpid());
 	if((tempfd = open(tempfname, O_RDWR|O_CREAT|O_TRUNC, 0600)) == -1)
 	    error("could not open %s: %s", tempfname, strerror(errno));
     }
 
     if(mailout) {
 	/* the main fd is a file too */
-	sprintf(mainfname, "/tmp/amcheck.main.%ld", (long) getpid());
+	ap_snprintf(mainfname, sizeof(mainfname),
+		    "/tmp/amcheck.main.%ld", (long) getpid());
 	if((mainfd = open(mainfname, O_RDWR|O_CREAT|O_TRUNC, 0600)) == -1)
 	    error("could not open %s: %s", mainfname, strerror(errno));
     }
@@ -201,7 +203,8 @@ char **argv;
 	    serverchk_pid = 0;
 	}
 	else {
-	    sprintf(buffer, "parent: reaped bogus pid %d\n", pid);
+	    ap_snprintf(buffer, sizeof(buffer),
+			"parent: reaped bogus pid %d\n", pid);
 	    write(mainfd, buffer, strlen(buffer));
 	}
     }
@@ -233,10 +236,10 @@ char **argv;
 	if(close(mainfd) == -1)
 	    error("close main file: %s", strerror(errno));
 
-	sprintf(cmd,
-	   "%s -s \"%s AMANDA PROBLEM: FIX BEFORE RUN, IF POSSIBLE\" %s < %s",
-		MAILER, getconf_str(CNF_ORG), getconf_str(CNF_MAILTO),
-		mainfname);
+	ap_snprintf(cmd, sizeof(cmd),
+"%s -s \"%s AMANDA PROBLEM: FIX BEFORE RUN, IF POSSIBLE\" %s < %s",
+		    MAILER, getconf_str(CNF_ORG), getconf_str(CNF_MAILTO),
+		    mainfname);
 	if(system(cmd) != 0)
 	    error("mail command failed: %s", cmd);
     }
@@ -293,7 +296,8 @@ char *device;
 	    if(searchlabel != NULL && !strcmp(label, searchlabel)) {
 		/* it's the one we are looking for, stop here */
 		fprintf(errf, " (exact label match)\n");
-		strcpy(found_device, device);
+		strncpy(found_device, device, sizeof(found_device)-1);
+		found_device[sizeof(found_device)-1] = '\0';
 		found = 1;
 		return 1;
 	    }
@@ -309,12 +313,16 @@ char *device;
 		    fprintf(errf, " (labelstr match)\n");
 		else {
 		    got_match = 1;
-		    strcpy(first_match, slotstr);
-		    strcpy(first_match_label, label);
+		    strncpy(first_match, slotstr, sizeof(first_match)-1);
+		    first_match[sizeof(first_match)-1] = '\0';
+		    strncpy(first_match_label, label,
+			    sizeof(first_match_label)-1);
+		    first_match_label[sizeof(first_match_label)-1] = '\0';
 		    fprintf(errf, " (first labelstr match)\n");
 		    if(!backwards || !searchlabel) {
 			found = 2;
-			strcpy(found_device, device);
+			strncpy(found_device, device, sizeof(found_device)-1);
+			found_device[sizeof(found_device)-1] = '\0';
 			return 1;
 		    }
 		}
@@ -346,11 +354,14 @@ char *taper_scan()
 	    found = 1;
     }
     else if(!found) {
-	if(searchlabel)
-	    sprintf(changer_resultstr,
-		    "label %s or new tape not found in rack", searchlabel);
-	else
-	    strcpy(changer_resultstr, "new tape not found in rack");
+	if(searchlabel) {
+	    ap_snprintf(changer_resultstr, sizeof(changer_resultstr),
+			"label %s or new tape not found in rack", searchlabel);
+	} else {
+	    strncpy(changer_resultstr, "new tape not found in rack",
+		    sizeof(changer_resultstr)-1);
+	    changer_resultstr[sizeof(changer_resultstr)-1] = '\0';
+	}
     }
 
     return found? found_device : NULL;
@@ -562,13 +573,17 @@ int fd;
 
     while(!empty(*origqp)) {
 	hostp = origqp->head->host;
-	sprintf(req, "SERVICE selfcheck\n");
-	strcat(req, "OPTIONS ;\n");	/* no options yet */
+	strncpy(req, "SERVICE selfcheck\n", sizeof(req)-1);
+	req[sizeof(req)-1] = '\0';
+	strncat(req, "OPTIONS ;\n", sizeof(req)-strlen(req));
+						/* no options yet */
 
 	for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
 	    remove_disk(origqp, dp);
-	    sprintf(line, "%s %s 0 OPTIONS |%s\n", dp->program, dp->name,optionstr(dp));
-	    strcat(req, line);
+	    ap_snprintf(line, sizeof(line),
+			"%s %s 0 OPTIONS |%s\n",
+			dp->program, dp->name,optionstr(dp));
+	    strncat(req, line, sizeof(req)-strlen(req));
 	}
 	hostcount++;
 

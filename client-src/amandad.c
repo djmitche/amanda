@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.12 1997/11/20 19:58:25 jrj Exp $
+ * $Id: amandad.c,v 1.13 1997/12/16 17:52:44 jrj Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -64,12 +64,6 @@ int ack_timeout     = ACK_TIMEOUT;
 
 char response_fname[256];
 char input_fname[256];
-/*
- * FIXME: Amandad is sprintfing into this tiny buffer information that
- * could potentially very easily overflow it.  This may not be big
- * security risk since the variable is a global one, but damned messy
- * if it does strike.
- */
 char errstr[30720];
 char *pname = "amandad";
 
@@ -178,8 +172,12 @@ char **argv;
 
     /* set up input and response filenames */
 
-    strcpy(input_fname, "/tmp/amandad.inpXXXXXX");     mktemp(input_fname);
-    strcpy(response_fname, "/tmp/amandad.outXXXXXX");  mktemp(response_fname);
+    strncpy(input_fname, "/tmp/amandad.inpXXXXXX", sizeof(input_fname)-1);
+    input_fname[sizeof(input_fname)-1] = '\0';
+    mktemp(input_fname);
+    strncpy(response_fname, "/tmp/amandad.outXXXXXX", sizeof(response_fname)-1);
+    response_fname[sizeof(response_fname)-1] = '\0';
+    mktemp(response_fname);
 
 #ifdef KRB4_SECURITY
     if(argc >= 2 && !strcmp(argv[1], "-krb4")) {
@@ -220,19 +218,21 @@ char **argv;
 	if(!strcmp(servp->name, in_msg.service)) break;
 
     if(servp->name == NULL) {
-	sprintf(errstr, "unknown service: %s", in_msg.service);
+	ap_snprintf(errstr, sizeof(errstr),
+		    "unknown service: %s", in_msg.service);
 	sendnak(&in_msg, &out_msg, errstr);
 	dbclose();
 	return 1;
     }
 
-    strcpy(base, servp->name);
+    strncpy(base, servp->name, sizeof(base)-1);
+    base[sizeof(base)-1] = '\0';
 
-    sprintf(cmd, "%s/%s%s", libexecdir, base, versionsuffix());
+    ap_snprintf(cmd, sizeof(cmd), "%s/%s%s", libexecdir, base, versionsuffix());
 
     if(access(cmd, X_OK) == -1) {
 	dbprintf(("execute access to \"%s\" denied\n", cmd));
-	sprintf(errstr, "service %s unavailable", base);
+	ap_snprintf(errstr, sizeof(errstr), "service %s unavailable", base);
 	sendnak(&in_msg, &out_msg, errstr);
 	dbclose();
 	return 1;
@@ -259,7 +259,9 @@ char **argv;
     if(!(servp->flags & NO_AUTH) && !security_ok(&in_msg)) {
 	/* XXX log on authlog? */
 	setup_rep(&in_msg, &out_msg);
-	sprintf(out_msg.dgram.cur, "ERROR %s\n", errstr);
+	ap_snprintf(out_msg.dgram.cur,
+		    sizeof(out_msg.dgram.data)-out_msg.dgram.len,
+		    "ERROR %s\n", errstr);
 	out_msg.dgram.len = strlen(out_msg.dgram.data);
 	goto send_response;
     }
@@ -449,11 +451,11 @@ pkt_t *hdr;
 pkt_t *msg;
 {
     /* XXX this isn't very safe either: handle could be bogus */
-    sprintf(msg->dgram.data, 
-	    "Amanda %d.%d ACK HANDLE %s SEQ %d\n",
-	    VERSION_MAJOR, VERSION_MINOR,
-	    hdr->handle ? hdr->handle : "",
-	    hdr->sequence);
+    ap_snprintf(msg->dgram.data, sizeof(msg->dgram.data),
+		"Amanda %d.%d ACK HANDLE %s SEQ %d\n",
+		VERSION_MAJOR, VERSION_MINOR,
+		hdr->handle ? hdr->handle : "",
+		hdr->sequence);
     msg->dgram.len = strlen(msg->dgram.data);
     dbprintf(("sending ack:\n----\n%s----\n\n", msg->dgram.data));
     dgram_send_addr(hdr->peer, &msg->dgram);
@@ -465,10 +467,11 @@ pkt_t *msg;
 char *str;
 {
     /* XXX this isn't very safe either: handle could be bogus */
-    sprintf(msg->dgram.data, "Amanda %d.%d NAK HANDLE %s SEQ %d\nERROR %s\n",
-	    VERSION_MAJOR, VERSION_MINOR,
-	    hdr->handle ? hdr->handle : "",
-	    hdr->sequence, str);
+    ap_snprintf(msg->dgram.data, sizeof(msg->dgram.data),
+		"Amanda %d.%d NAK HANDLE %s SEQ %d\nERROR %s\n",
+		VERSION_MAJOR, VERSION_MINOR,
+		hdr->handle ? hdr->handle : "",
+		hdr->sequence, str);
 
     msg->dgram.len = strlen(msg->dgram.data);
     dbprintf(("sending nack:\n----\n%s----\n\n", msg->dgram.data));
@@ -480,10 +483,11 @@ pkt_t *hdr;
 pkt_t *msg;
 {
     /* XXX this isn't very safe either: handle could be bogus */
-    sprintf(msg->dgram.data, "Amanda %d.%d REP HANDLE %s SEQ %d\n",
-	    VERSION_MAJOR, VERSION_MINOR,
-	    hdr->handle ? hdr->handle : "",
-	    hdr->sequence);
+    ap_snprintf(msg->dgram.data, sizeof(msg->dgram.data),
+		"Amanda %d.%d REP HANDLE %s SEQ %d\n",
+		VERSION_MAJOR, VERSION_MINOR,
+		hdr->handle ? hdr->handle : "",
+		hdr->sequence);
 
     msg->dgram.len = strlen(msg->dgram.data);
     msg->dgram.cur = msg->dgram.data + msg->dgram.len;
@@ -526,7 +530,8 @@ struct in_addr addr;
     } u;
 
     u.i = (int) addr.s_addr;
-    sprintf(str, "%d.%d.%d.%d", u.c[0], u.c[1], u.c[2], u.c[3]);
+    ap_snprintf(str, sizeof(str),
+		"%d.%d.%d.%d", u.c[0], u.c[1], u.c[2], u.c[3]);
     return str;
 }
 
@@ -552,8 +557,9 @@ pkt_t *msg;
 		       sizeof(msg->peer.sin_addr), AF_INET);
     if(hp == NULL) {
 	/* XXX include remote address in message */
-	sprintf(errstr, "[addr %s: hostname lookup failed]", 
-		addrstr(msg->peer.sin_addr));
+	ap_snprintf(errstr, sizeof(errstr),
+		    "[addr %s: hostname lookup failed]", 
+		    addrstr(msg->peer.sin_addr));
 	return 0;
     }
     strncpy(remotehost, hp->h_name, sizeof(remotehost));
@@ -562,15 +568,16 @@ pkt_t *msg;
     hp = gethostbyname( remotehost );
     if(hp == NULL) {
 	/* XXX include remote hostname in message */
-	sprintf(errstr, "[addr %s: hostname lookup failed]", 
-		remotehost);
+	ap_snprintf(errstr, sizeof(errstr),
+		    "[addr %s: hostname lookup failed]", 
+		    remotehost);
 	return 0;
     }
 
     /* Verify that the hostnames match -- they should theoretically */
     if( strcmp( remotehost, hp->h_name ) ) {
-	sprintf(errstr, "[hostnames do not match: %s %s]", remotehost,
-		hp->h_name );
+	ap_snprintf(errstr, sizeof(errstr),
+		    "[hostnames do not match: %s %s]", remotehost, hp->h_name);
 	return 0;
     }
 
@@ -588,24 +595,25 @@ pkt_t *msg;
      * to pull a fast one on you. :(
      */
     if( !hp->h_addr_list[i] ) {
-	sprintf(errstr, "[ip address %s is not found in %s's ip list]",
-		addrstr(msg->peer.sin_addr), remotehost );
+	ap_snprintf(errstr, sizeof(errstr),
+		    "[ip address %s is not found in %s's ip list]",
+		    addrstr(msg->peer.sin_addr), remotehost );
 	return 0;
     }
 
     /* next, make sure the remote port is a "reserved" one */
 
     if(ntohs(msg->peer.sin_port) >= IPPORT_RESERVED) {
-	sprintf(errstr, "[host %s: port %d not secure]",
-		remotehost, ntohs(msg->peer.sin_port));
+	ap_snprintf(errstr, sizeof(errstr), "[host %s: port %d not secure]",
+		    remotehost, ntohs(msg->peer.sin_port));
 	return 0;
     }
 
     /* extract the remote user name from the message */
 
     if((rc = sscanf(msg->security, "USER %[^ \n]", remoteuser)) != 1) {
-	sprintf(errstr, "[host %s: bad bsd security line]",
-		remotehost);
+	ap_snprintf(errstr, sizeof(errstr), "[host %s: bad bsd security line]",
+		    remotehost);
 	return 0;
     }
 
@@ -637,8 +645,9 @@ pkt_t *msg;
 
     if(ruserok(remotehost, myuid == 0, remoteuser, localuser) == -1) {
 	dup2(1,2);
-	sprintf(errstr, "[access as %s not allowed from %s@%s]",
-		localuser, remoteuser, remotehost);
+	ap_snprintf(errstr, sizeof(errstr),
+		    "[access as %s not allowed from %s@%s]",
+		    localuser, remoteuser, remotehost);
 	dbprintf(("check failed: %s\n", errstr));
 	return 0;
     }
@@ -651,9 +660,9 @@ pkt_t *msg;
     /* We already chdired to ~amandauser */
     fPerm = fopen(".amandahosts", "r");
     if(!fPerm) {
-	sprintf(errstr, 
-	    "[access as %s not allowed from %s@%s] could not open .amandahosts", 
-		localuser, remoteuser, remotehost);
+	ap_snprintf(errstr, sizeof(errstr),
+"[access as %s not allowed from %s@%s] could not open .amandahosts", 
+		    localuser, remoteuser, remotehost);
 	dbprintf(("check failed: %s\n", errstr));
 	return 0;
     }
@@ -693,8 +702,9 @@ pkt_t *msg;
 	return 1;
     }
 
-    sprintf(errstr, "[access as %s not allowed from %s@%s]",
-	    localuser, remoteuser, remotehost);
+    ap_snprintf(errstr, sizeof(errstr),
+		"[access as %s not allowed from %s@%s]",
+		localuser, remoteuser, remotehost);
     dbprintf(("check failed: %s\n", errstr));
 
     return 0;

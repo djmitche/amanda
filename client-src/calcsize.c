@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: calcsize.c,v 1.13 1997/11/12 21:45:04 blair Exp $
+ * $Id: calcsize.c,v 1.14 1997/12/16 17:52:46 jrj Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -183,8 +183,9 @@ char **argv;
 	  error("%s: exclusion specification not supported", pname);
 	  return 1;
 	}
-	
-	strcpy(result,*argv);
+
+	strncpy(result, *argv, sizeof(result)-1);
+	result[sizeof(result)-1] = '\0';
 	if (*result && (cp = strrchr(result,';')))
 	    /* delete trailing ; */
 	    *cp = 0;
@@ -232,8 +233,8 @@ char **argv;
 	
     traverse_dirs(dirname);
     for(i = 0; i < ndumps; i++) {
-	sprintf(result, "%s %d SIZE %ld\n", amname,
-		dumplevel[i], final_size(i, dirname));
+	ap_snprintf(result, sizeof(result), "%s %d SIZE %ld\n", amname,
+		    dumplevel[i], final_size(i, dirname));
 
 	amflock(1, "size");
 
@@ -298,10 +299,13 @@ char *parent_dir;
 	    continue;
 	}
 
-	strcpy(newname, dirname);
-	newdir = newname + strlen(dirname) - 1;
-	if(*newdir++ != '/')
+	strncpy(newname, dirname, sizeof(newname)-1-1);	/* allow for '/' */
+	newname[sizeof(newname)-1-1] = '\0';
+	newdir = newname + strlen(newname) - 1;
+	if(*newdir++ != '/') {
 	    *newdir++ = '/';
+	    *newdir = '\0';
+	}
 
 	while((f = readdir(d)) != NULL) {
 	    if(f->d_name[0] == '.' && f->d_name[1] == '\0')
@@ -320,8 +324,9 @@ char *parent_dir;
 		continue;
 
 	    if((finfo.st_mode & S_IFMT) == S_IFDIR) {
-		strcpy(newdir, f->d_name);
-		push_name(newname);
+		newdir = stralloc2(newname, f->d_name);
+		push_name(newdir);
+		free(newdir);
 	    }
 
 	    for(i = 0; i < ndumps; i++) {

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflock.c,v 1.9 1997/08/27 08:11:50 amcore Exp $
+ * $Id: amflock.c,v 1.10 1997/12/16 17:54:55 jrj Exp $
  *
  * file locking routines, put here to hide the system dependant stuff
  * from the rest of the code
@@ -141,7 +141,7 @@ char *fn;
 	fd = open(fn, O_WRONLY|O_CREAT|O_EXCL, 0644);
 	if (fd == -1) return -1;
 
-	sprintf(buff, "%ld\n", pid);
+	ap_snprintf(buff, sizeof(buff), "%ld\n", pid);
 	len = strlen(buff);
 	assert(len > 0 && len < sizeof(buff));
 
@@ -288,7 +288,7 @@ int op;    /* true to lock; false to unlock */
 
 	len = resl + 12 + 1/*null*/;
 	lockf = alloc(len);
-	sprintf(lockf, "/tmp/am%s.lock", res);
+	ap_snprintf(lockf, len, "/tmp/am%s.lock", res);
 	rc = strlen(lockf);
 	assert(rc > 0 && rc < len);
 
@@ -305,7 +305,7 @@ int op;    /* true to lock; false to unlock */
 
 	len = resl + 8 + 10/*pid*/ + 1/*null*/;
 	tlockf = alloc(len);
-	sprintf(tlockf, "/tmp/am%s.%ld", res, mypid);
+	ap_snprintf(tlockf, len, "/tmp/am%s.%ld", res, mypid);
 	rc = strlen(tlockf);
 	assert(rc > 0 && rc < len);
 
@@ -313,7 +313,7 @@ int op;    /* true to lock; false to unlock */
 
 	len = resl + 1 + 1/*null*/;
 	mres = alloc(len);
-	sprintf(mres, "%s.", res);
+	ap_snprintf(mres, len, "%s.", res);
 	rc = strlen(mres);
 	assert(rc > 0 && rc < len);
 

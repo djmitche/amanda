@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: genversion.c,v 1.8 1997/08/29 17:56:08 amcore Exp $
+ * $Id: genversion.c,v 1.9 1997/12/16 17:55:00 jrj Exp $
  *
  * dump the current Amanda version info
  */
@@ -36,21 +36,24 @@ int main P((void));
 
 #define MARGIN 	70
 
-#define newline()				\
-{						\
-    printf("  \"%s\\n\",\n", line);		\
-    *line = '\0', linelen = 0;			\
+#define newline()							\
+{									\
+    printf("  \"%s\\n\",\n", line);					\
+    *line = '\0';							\
+    linelen = 0;							\
 }
 
-#define prstr(string)				\
-{						\
-    len = strlen(string);			\
-    if(linelen+len >= MARGIN) { 		\
-	newline(); 				\
-	sprintf(line, "%*s", indent, "");	\
-	linelen = indent;			\
-    }						\
-    strcat(line, (string)); linelen += len;	\
+#define prstr(string)							\
+{									\
+    len = strlen(string);						\
+    if(linelen+len >= MARGIN) { 					\
+	newline(); 							\
+	ap_snprintf(line, sizeof(line), "%*s", indent, "");		\
+	linelen = indent;						\
+    }									\
+    line[sizeof(line)-1] = '\0';					\
+    strncat(line, (string), sizeof(line)-strlen(line));			\
+    linelen += len;							\
 }
 
 int main()
@@ -63,72 +66,90 @@ int main()
 
     *line = '\0', linelen = 0, indent = 0;
     prstr("build:"); indent = linelen;
-    sprintf(str, " VERSION=\\\"Amanda-%d.%d.%d%s\\\"", VERSION_MAJOR,
-    	VERSION_MINOR, VERSION_PATCH, VERSION_COMMENT); prstr(str);
+    ap_snprintf(str, sizeof(str),
+		" VERSION=\\\"Amanda-%d.%d.%d%s\\\"", VERSION_MAJOR,
+		VERSION_MINOR, VERSION_PATCH, VERSION_COMMENT); prstr(str);
 #ifdef BUILT_DATE
-    sprintf(str, " BUILT_DATE=\\\"%s\\\"", BUILT_DATE); prstr(str);
+    ap_snprintf(str, sizeof(str),
+		" BUILT_DATE=\\\"%s\\\"", BUILT_DATE); prstr(str);
 #endif
 #ifdef BUILT_MACH
-    sprintf(str, " BUILT_MACH=\\\"%s\\\"", BUILT_MACH); prstr(str);
+    ap_snprintf(str, sizeof(str),
+		" BUILT_MACH=\\\"%s\\\"", BUILT_MACH); prstr(str);
 #endif
 #ifdef CC
-    sprintf(str, " CC=\\\"%s\\\"", CC); prstr(str);
+    ap_snprintf(str, sizeof(str), " CC=\\\"%s\\\"", CC); prstr(str);
 #endif
     newline();
     prstr("paths:"); indent = linelen;
 #ifdef DEV_PREFIX
-    sprintf(str, " DEV_PREFIX=\\\"%s\\\"", DEV_PREFIX); prstr(str);
+    ap_snprintf(str, sizeof(str),
+		" DEV_PREFIX=\\\"%s\\\"", DEV_PREFIX); prstr(str);
 #endif
 #ifdef RDEV_PREFIX
-    sprintf(str, " RDEV_PREFIX=\\\"%s\\\"", RDEV_PREFIX); prstr(str);
+    ap_snprintf(str, sizeof(str),
+		" RDEV_PREFIX=\\\"%s\\\"", RDEV_PREFIX); prstr(str);
 #endif
 #ifdef DUMP
-    sprintf(str, " DUMP=\\\"%s\\\"", DUMP); prstr(str);
+    ap_snprintf(str, sizeof(str), " DUMP=\\\"%s\\\"", DUMP); prstr(str);
 #endif
 #ifdef RESTORE
-    sprintf(str, " RESTORE=\\\"%s\\\"", RESTORE); prstr(str);
+    ap_snprintf(str, sizeof(str), " RESTORE=\\\"%s\\\"", RESTORE); prstr(str);
 #endif
 #ifdef XFSDUMP
-    sprintf(str, " XFSDUMP=\\\"%s\\\"", XFSDUMP); prstr(str);
+    ap_snprintf(str, sizeof(str), " XFSDUMP=\\\"%s\\\"", XFSDUMP); prstr(str);
 #endif
 #ifdef XFSRESTORE
-    sprintf(str, " XFSRESTORE=\\\"%s\\\"", XFSRESTORE); prstr(str);
+    ap_snprintf(str, sizeof(str),
+		" XFSRESTORE=\\\"%s\\\"", XFSRESTORE); prstr(str);
 #endif
 #ifdef VXDUMP
-    sprintf(str, " VXDUMP=\\\"%s\\\"", VXDUMP); prstr(str);
+    ap_snprintf(str, sizeof(str), " VXDUMP=\\\"%s\\\"", VXDUMP); prstr(str);
 #endif
 #ifdef VXRESTORE
-    sprintf(str, " VXRESTORE=\\\"%s\\\"", VXRESTORE); prstr(str);
+    ap_snprintf(str, sizeof(str),
+		" VXRESTORE=\\\"%s\\\"", VXRESTORE); prstr(str);
 #endif
 #ifdef SAMBA_CLIENT
-    sprintf(str, " SAMBA_CLIENT=\\\"%s\\\"", SAMBA_CLIENT); prstr(str);
+    ap_snprintf(str, sizeof(str),
+		" SAMBA_CLIENT=\\\"%s\\\"", SAMBA_CLIENT); prstr(str);
 #endif
 #ifdef GNUTAR
-    sprintf(str, " GNUTAR=\\\"%s\\\"", GNUTAR); prstr(str);
+    ap_snprintf(str, sizeof(str), " GNUTAR=\\\"%s\\\"", GNUTAR); prstr(str);
 #endif
 #ifdef COMPRESS_PATH
-    sprintf(str, " COMPRESS_PATH=\\\"%s\\\"", COMPRESS_PATH); prstr(str);
+    ap_snprintf(str, sizeof(str),
+		" COMPRESS_PATH=\\\"%s\\\"", COMPRESS_PATH); prstr(str);
 #endif
 #ifdef UNCOMPRESS_PATH
-    sprintf(str, " UNCOMPRESS_PATH=\\\"%s\\\"", UNCOMPRESS_PATH); prstr(str);
+    ap_snprintf(str, sizeof(str),
+		" UNCOMPRESS_PATH=\\\"%s\\\"", UNCOMPRESS_PATH); prstr(str);
 #endif
-    sprintf(str, " MAILER=\\\"%s\\\"", MAILER); prstr(str);
-    sprintf(str, " bindir=\\\"%s\\\"", bindir); prstr(str);
-    sprintf(str, " libexecdir=\\\"%s\\\"", libexecdir); prstr(str);
-    sprintf(str, " CONFIG_DIR=\\\"%s\\\"", CONFIG_DIR); prstr(str);
-    sprintf(str, " mandir=\\\"%s\\\"", mandir); prstr(str);
+    ap_snprintf(str, sizeof(str), " MAILER=\\\"%s\\\"", MAILER); prstr(str);
+    ap_snprintf(str, sizeof(str), " bindir=\\\"%s\\\"", bindir); prstr(str);
+    ap_snprintf(str, sizeof(str),
+		" libexecdir=\\\"%s\\\"", libexecdir); prstr(str);
+    ap_snprintf(str, sizeof(str),
+		" CONFIG_DIR=\\\"%s\\\"", CONFIG_DIR); prstr(str);
+    ap_snprintf(str, sizeof(str), " mandir=\\\"%s\\\"", mandir); prstr(str);
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-    sprintf(str, " listed_incr_dir=\\\"%s\\\"",
-	    GNUTAR_LISTED_INCREMENTAL_DIR); prstr(str);
+    ap_snprintf(str, sizeof(str), " listed_incr_dir=\\\"%s\\\"",
+		GNUTAR_LISTED_INCREMENTAL_DIR); prstr(str);
 #endif
     newline();
 
     prstr("defs: ");
     indent = linelen;
-    sprintf(str, " DEFAULT_SERVER=\\\"%s\\\"", DEFAULT_SERVER); prstr(str);
-    sprintf(str, " DEFAULT_CONFIG=\\\"%s\\\"", DEFAULT_CONFIG); prstr(str);
-    sprintf(str, " DEFAULT_TAPE_SERVER=\\\"%s\\\"", DEFAULT_TAPE_SERVER); prstr(str);
-    sprintf(str, " DEFAULT_TAPE_DEVICE=\\\"%s\\\"", DEFAULT_TAPE_DEVICE); prstr(str);
+    ap_snprintf(str, sizeof(str),
+		" DEFAULT_SERVER=\\\"%s\\\"", DEFAULT_SERVER); prstr(str);
+    ap_snprintf(str, sizeof(str),
+		" DEFAULT_CONFIG=\\\"%s\\\"", DEFAULT_CONFIG); prstr(str);
+    ap_snprintf(str, sizeof(str),
+		" DEFAULT_TAPE_SERVER=\\\"%s\\\"",
+		DEFAULT_TAPE_SERVER); prstr(str);
+    ap_snprintf(str, sizeof(str),
+		" DEFAULT_TAPE_DEVICE=\\\"%s\\\"",
+		DEFAULT_TAPE_DEVICE); prstr(str);
     
 #ifdef AIX_BACKUP
     prstr(" AIX_BACKUP");
@@ -205,23 +226,30 @@ int main()
 #ifdef KRB4_SECURITY
 #define HOSTNAME_INSTANCE	"<hostname>"
     prstr(" KRB4_SECURITY");
-    sprintf(str, " SERVER_HOST_PRINCIPLE=\\\"%s\\\"", SERVER_HOST_PRINCIPLE);
+    ap_snprintf(str, sizeof(str),
+		" SERVER_HOST_PRINCIPLE=\\\"%s\\\"", SERVER_HOST_PRINCIPLE);
     prstr(str);
-    sprintf(str, " SERVER_HOST_INSTANCE=\\\"%s\\\"", SERVER_HOST_INSTANCE);
+    ap_snprintf(str, sizeof(str),
+		" SERVER_HOST_INSTANCE=\\\"%s\\\"", SERVER_HOST_INSTANCE);
     prstr(str);
-    sprintf(str, " SERVER_HOST_KEY_FILE=\\\"%s\\\"", SERVER_HOST_KEY_FILE);
+    ap_snprintf(str, sizeof(str),
+		" SERVER_HOST_KEY_FILE=\\\"%s\\\"", SERVER_HOST_KEY_FILE);
     prstr(str);
-    sprintf(str, " CLIENT_HOST_PRINCIPLE=\\\"%s\\\"", CLIENT_HOST_PRINCIPLE);
+    ap_snprintf(str, sizeof(str),
+		" CLIENT_HOST_PRINCIPLE=\\\"%s\\\"", CLIENT_HOST_PRINCIPLE);
     prstr(str);
-    sprintf(str, " CLIENT_HOST_INSTANCE=\\\"%s\\\"", CLIENT_HOST_INSTANCE);
+    ap_snprintf(str, sizeof(str),
+		" CLIENT_HOST_INSTANCE=\\\"%s\\\"", CLIENT_HOST_INSTANCE);
     prstr(str);
-    sprintf(str, " CLIENT_HOST_KEY_FILE=\\\"%s\\\"", CLIENT_HOST_KEY_FILE);
+    ap_snprintf(str, sizeof(str),
+		" CLIENT_HOST_KEY_FILE=\\\"%s\\\"", CLIENT_HOST_KEY_FILE);
     prstr(str);
-    sprintf(str, " TICKET_LIFETIME=%d", TICKET_LIFETIME);
+    ap_snprintf(str, sizeof(str),
+		" TICKET_LIFETIME=%d", TICKET_LIFETIME);
     prstr(str);
 #endif
 #ifdef CLIENT_LOGIN
-    sprintf(str, " CLIENT_LOGIN=\\\"%s\\\"", CLIENT_LOGIN);
+    ap_snprintf(str, sizeof(str), " CLIENT_LOGIN=\\\"%s\\\"", CLIENT_LOGIN);
     prstr(str);
 #endif
 #ifdef FORCE_USERID
@@ -234,19 +262,23 @@ int main()
     prstr(" HAVE_GZIP");
 #endif
 #ifdef COMPRESS_SUFFIX
-    sprintf(str, " COMPRESS_SUFFIX=\\\"%s\\\"", COMPRESS_SUFFIX);
+    ap_snprintf(str, sizeof(str),
+		" COMPRESS_SUFFIX=\\\"%s\\\"", COMPRESS_SUFFIX);
     prstr(str);
 #endif
 #ifdef COMPRESS_FAST_OPT
-    sprintf(str, " COMPRESS_FAST_OPT=\\\"%s\\\"", COMPRESS_FAST_OPT);
+    ap_snprintf(str, sizeof(str),
+		" COMPRESS_FAST_OPT=\\\"%s\\\"", COMPRESS_FAST_OPT);
     prstr(str);
 #endif
 #ifdef COMPRESS_BEST_OPT
-    sprintf(str, " COMPRESS_BEST_OPT=\\\"%s\\\"", COMPRESS_BEST_OPT);
+    ap_snprintf(str, sizeof(str),
+		" COMPRESS_BEST_OPT=\\\"%s\\\"", COMPRESS_BEST_OPT);
     prstr(str);
 #endif
 #ifdef UNCOMPRESS_OPT
-    sprintf(str, " UNCOMPRESS_OPT=\\\"%s\\\"", UNCOMPRESS_OPT);
+    ap_snprintf(str, sizeof(str),
+		" UNCOMPRESS_OPT=\\\"%s\\\"", UNCOMPRESS_OPT);
     prstr(str);
 #endif
 

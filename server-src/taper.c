@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.15 1997/12/15 21:27:46 blair Exp $
+/* $Id: taper.c,v 1.16 1997/12/16 18:02:43 jrj Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -117,7 +117,7 @@ buffer_t *buftable;
 char *pname = "taper";
 char *procname = "parent";
 
-extern char datestamp[];
+extern char datestamp[80];
 char label[80];
 int filenum;
 char errstr[256];
@@ -221,7 +221,8 @@ int rdpipe, wrpipe;
 
     /* pass start command on to tape writer */
 
-    strcpy(datestamp, argv[2]);
+    strncpy(datestamp, argv[2], sizeof(datestamp)-1);
+    datestamp[sizeof(datestamp)-1] = '\0';
 
     syncpipe_put('S');
     syncpipe_putstr(datestamp);
@@ -337,26 +338,26 @@ char *str1;
     char str[1024], str2[256];
     int i,j;
     long v;
-    sprintf(str, "%s: state", str1);
+    ap_snprintf(str, sizeof(str), "%s: state", str1);
     for(i = j = 0; i < NBUFS; i = j+1) {
 	v = buftable[i].status;
 	for(j = i; j < NBUFS && buftable[j].status == v; j++);
 	j--;
-	if(i == j) sprintf(str2, " %d:", i);
-	else sprintf(str2, " %d-%d:",i,j);
-	strcat(str, str2);
+	if(i == j) ap_snprintf(str2, sizeof(str2), " %d:", i);
+	else ap_snprintf(str2, sizeof(str2), " %d-%d:",i,j);
+	strncat(str, str2, sizeof(str)-strlen(str));
 	switch(v) {
-	case FULL:	strcat(str, "F"); break;
-	case FILLING:	strcat(str, "f"); break;
-	case EMPTY:	strcat(str, "E"); break;
+	case FULL:	strncat(str, "F", sizeof(str)-strlen(str)); break;
+	case FILLING:	strncat(str, "f", sizeof(str)-strlen(str)); break;
+	case EMPTY:	strncat(str, "E", sizeof(str)-strlen(str)); break;
 	default:
-	    sprintf(str2, "%ld", v);
-	    strcat(str, str2);
+	    ap_snprintf(str2, sizeof(str2), "%ld", v);
+	    strncat(str, str2, sizeof(str)-strlen(str));
 	    break;
 	}
 
     }
-    strcat(str, "\n");
+    strncat(str, "\n", sizeof(str)-strlen(str));
     fflush(stderr);
     write(2, str, strlen(str));
 }
@@ -366,17 +367,18 @@ buffer_t *bp;
 {
     char str[1024],str2[256];
 
-    sprintf(str, "taper: %c: [buf %d:=", *procname, (int)(bp-buftable));
+    ap_snprintf(str, sizeof(str),
+		"taper: %c: [buf %d:=", *procname, (int)(bp-buftable));
     switch(bp->status) {
-    case FULL:		strcat(str, "F"); break;
-    case FILLING:	strcat(str, "f"); break;
-    case EMPTY:		strcat(str, "E"); break;
+    case FULL:		strncat(str, "F", sizeof(str)-strlen(str)); break;
+    case FILLING:	strncat(str, "f", sizeof(str)-strlen(str)); break;
+    case EMPTY:		strncat(str, "E", sizeof(str)-strlen(str)); break;
     default:
-	sprintf(str2, "%ld", bp->status);
-	strcat(str, str2);
+	ap_snprintf(str2, sizeof(str2), "%ld", bp->status);
+	strncat(str, str2, sizeof(str)-strlen(str));
 	break;
     }
-    strcat(str,"]");
+    strncat(str, "]", sizeof(str)-strlen(str));
     dumpbufs(str);
 }
 
@@ -461,7 +463,9 @@ char *handle, *hostname, *diskname;
 		    fprintf(stderr, "taper: result now correct!\n");
 		fflush(stderr);
 
-		strcpy(errstr, "[fatal buffer mismanagement bug]");
+		strncpy(errstr, "[fatal buffer mismanagement bug]",
+			sizeof(errstr)-1);
+		errstr[sizeof(errstr)-1] = '\0';
 		putresult("TRY-AGAIN %s %s\n", handle, squote(errstr));
 		log(L_INFO, "retrying %s:%s.%d on new tape: %s",
 		    hostname, diskname, level, errstr);
@@ -502,7 +506,7 @@ char *handle, *hostname, *diskname;
 	    syncpipe_put('e');	/* ACK error */
 
 	    close(fd);
-	    sprintf(errstr, "[%s]", syncpipe_getstr());
+	    ap_snprintf(errstr, sizeof(errstr), "[%s]", syncpipe_getstr());
 
 	    if(tok == 'T') {
 		putresult("TRY-AGAIN %s %s\n", handle, squote(errstr));
@@ -520,7 +524,8 @@ char *handle, *hostname, *diskname;
 	    assert(!opening);
 	    assert(closing);
 
-	    strcpy(label, syncpipe_getstr());
+	    strncpy(label, syncpipe_getstr(), sizeof(label)-1);
+	    label[sizeof(label)-1] = '\0';
 	    filenum = atoi(syncpipe_getstr());
 	    fprintf(stderr, "taper: reader-side: got label %s filenum %d\n",
 		    label, filenum);
@@ -529,13 +534,15 @@ char *handle, *hostname, *diskname;
 	    close(fd);
 	    runtime = stopclock();
 	    if(err) {
-		sprintf(errstr, "[input: %s]", strerror(err));
+		ap_snprintf(errstr, sizeof(errstr),
+			    "[input: %s]", strerror(err));
 		putresult("TAPE-ERROR %s %s\n", handle, squote(errstr));
 		log(L_FAIL, "%s %s %d %s", hostname, diskname, level, errstr);
 		syncpipe_getstr();	/* reap stats */
 	    }
 	    else {
-		sprintf(errstr, "[sec %s kb %ld kps %3.1f %s]",
+		ap_snprintf(errstr, sizeof(errstr),
+			    "[sec %s kb %ld kps %3.1f %s]",
 			walltime_str(runtime), filesize,
 			filesize/(runtime.r.tv_sec+runtime.r.tv_usec/1000000.0),
 			syncpipe_getstr());
@@ -789,13 +796,16 @@ void write_file()
     /* tell reader the tape and file number */
 
     syncpipe_putstr(label);
-    sprintf(errstr, "%d", filenum);
+    ap_snprintf(errstr, sizeof(errstr), "%d", filenum);
     syncpipe_putstr(errstr);
 
-    strcpy(rdstr, walltime_str(rdwait));
-    strcpy(wrstr, walltime_str(wrwait));
-    sprintf(errstr, "{wr: writes %ld rdwait %s wrwait %s filemark %s}",
-	    total_writes, rdstr, wrstr, walltime_str(fmwait));
+    strncpy(rdstr, walltime_str(rdwait), sizeof(rdstr)-1);
+    rdstr[sizeof(rdstr)-1] = '\0';
+    strncpy(wrstr, walltime_str(wrwait), sizeof(wrstr)-1);
+    wrstr[sizeof(wrstr)-1] = '\0';
+    ap_snprintf(errstr, sizeof(errstr),
+		"{wr: writes %ld rdwait %s wrwait %s filemark %s}",
+		total_writes, rdstr, wrstr, walltime_str(fmwait));
     syncpipe_putstr(errstr);
 
     /* XXX go to next tape if past tape size? */
@@ -853,8 +863,8 @@ buffer_t *bp;
 	return 1;
     }
     else {
-	sprintf(errstr, "writing file: %s",
-		rc != -1? "short write" : strerror(errno));
+	ap_snprintf(errstr, sizeof(errstr), "writing file: %s",
+		    rc != -1? "short write" : strerror(errno));
 
 	wrwait = timesadd(wrwait, stopclock());
 	if(interactive)write(2,"[WE]",4);
@@ -921,7 +931,7 @@ arglist_function(void putresult, char *, format)
     char result[MAX_LINE];
 
     arglist_start(argp, format);
-    vsprintf(result, format, argp);
+    ap_vsnprintf(result, sizeof(result), format, argp);
     arglist_end(argp);
     write(1, result, strlen(result));
 }
@@ -1155,12 +1165,14 @@ int label_tape()
     tape_t *tp;
 
     if(have_changer && (tapedev = taper_scan()) == NULL) {
-	strcpy(errstr, changer_resultstr);
+	strncpy(errstr, changer_resultstr, sizeof(errstr)-1);
+	errstr[sizeof(errstr)-1] = '\0';
 	return 0;
     }
 
     if((result = tape_rdlabel(tapedev, olddatestamp, label)) != NULL) {
-	strcpy(errstr, result);
+	strncpy(errstr, result, sizeof(errstr)-1);
+	errstr[sizeof(errstr)-1] = '\0';
 	return 0;
     }
 
@@ -1170,26 +1182,31 @@ int label_tape()
     /* check against tape list */
     tp = lookup_tapelabel(label);
     if(tp != NULL && tp->position < tapedays) {
-	sprintf(errstr, "cannot overwrite active tape %s", label);
+	ap_snprintf(errstr, sizeof(errstr),
+		    "cannot overwrite active tape %s", label);
 	return 0;
     }
 
     if(!match(labelstr, label)) {
-	sprintf(errstr,"label %s doesn't match labelstr \"%s\"",
-		label, labelstr);
+	ap_snprintf(errstr, sizeof(errstr),
+		    "label %s doesn't match labelstr \"%s\"",
+		    label, labelstr);
 	return 0;
     }
 
     if((tape_fd = tape_open(tapedev, O_WRONLY)) == -1) {
 	if(errno == EACCES)
-	    sprintf(errstr, "writing label: tape is write protected");
+	    ap_snprintf(errstr, sizeof(errstr),
+			"writing label: tape is write protected");
 	else
-	    sprintf(errstr, "writing label: %s", strerror(errno));
+	    ap_snprintf(errstr, sizeof(errstr),
+			"writing label: %s", strerror(errno));
 	return 0;
     }
 
     if((result = tapefd_wrlabel(tape_fd, datestamp, label)) != NULL) {
-	strcpy(errstr, result);
+	strncpy(errstr, result, sizeof(errstr)-1);
+	errstr[sizeof(errstr)-1] = '\0';
 	return 0;
     }
 
@@ -1202,9 +1219,11 @@ int label_tape()
     shift_tapelist(atoi(datestamp), label, tapedays);
 
     if(cur_tape == 0)
-	sprintf(oldtapefilename, "%s.yesterday", tapefilename);
+	ap_snprintf(oldtapefilename, sizeof(oldtapefilename),
+		    "%s.yesterday", tapefilename);
     else
-	sprintf(oldtapefilename, "%s.today.%d", tapefilename, cur_tape-1);
+	ap_snprintf(oldtapefilename, sizeof(oldtapefilename),
+		    "%s.today.%d", tapefilename, cur_tape-1);
     rename(tapefilename, oldtapefilename);
     if(write_tapelist(tapefilename))
 	error("couldn't write tapelist: %s", strerror(errno));
@@ -1235,7 +1254,8 @@ char *new_datestamp;
 
     have_changer = changer_init();
 
-    strcpy(datestamp, new_datestamp);
+    strncpy(datestamp, new_datestamp, sizeof(datestamp)-1);
+    datestamp[sizeof(datestamp)-1] = '\0';
 
     if(!label_tape())
 	return 0;
@@ -1281,7 +1301,8 @@ int writerror;
 
 	if((result = tapefd_wrendmark(tape_fd, datestamp)) != NULL) {
 	    tapefd_close(tape_fd);
-	    strcpy(errstr, result);
+	    strncpy(errstr, result, sizeof(errstr)-1);
+	    errstr[sizeof(errstr)-1] = '\0';
 	    goto tape_error;
 	}
     }
@@ -1289,14 +1310,16 @@ int writerror;
     /* write the final filemarks */
 
     if(tapefd_close(tape_fd) == -1) {
-	sprintf(errstr, "closing tape: %s", strerror(errno));
+	ap_snprintf(errstr, sizeof(errstr),
+		    "closing tape: %s", strerror(errno));
 	goto tape_error;
     }
 
     /* rewind the tape */
 
     if((result = tape_rewind(tapedev)) != NULL) {
-	strcpy(errstr, result);
+	strncpy(errstr, result, sizeof(errstr)-1);
+	errstr[sizeof(errstr)-1] = '\0';
 	goto tape_error;
     }
 
@@ -1311,7 +1334,8 @@ tape_error:
 int write_filemark()
 {
     if(tapefd_weof(tape_fd, 1) == -1) {
-	sprintf(errstr, "writing filemark: %s", strerror(errno));
+	ap_snprintf(errstr, sizeof(errstr),
+		    "writing filemark: %s", strerror(errno));
 	return 0;
     }
     total_tape_fm++;
@@ -1375,7 +1399,8 @@ char *device;
 		/* it's the one we are looking for, stop here */
 		fprintf(stderr, " (exact label match)\n");
 		fflush(stderr);
-		strcpy(found_device, device);
+		strncpy(found_device, device, sizeof(found_device)-1);
+		found_device[sizeof(found_device)-1] = '\0';
 		found = 1;
 		return 1;
 	    }
@@ -1397,13 +1422,17 @@ char *device;
 		}
 		else {
 		    got_match = 1;
-		    strcpy(first_match, slotstr);
-		    strcpy(first_match_label, label);
+		    strncpy(first_match, slotstr, sizeof(first_match)-1);
+		    first_match[sizeof(first_match)-1] = '\0';
+		    strncpy(first_match_label, label,
+			    sizeof(first_match_label)-1);
+		    first_match_label[sizeof(first_match_label)-1] = '\0';
 		    fprintf(stderr, " (first labelstr match)\n");
 		    fflush(stderr);
 		    if(!backwards || !searchlabel) {
 			found = 2;
-			strcpy(found_device, device);
+			strncpy(found_device, device, sizeof(found_device)-1);
+			found_device[sizeof(found_device)-1] = '\0';
 			return 1;
 		    }
 		}
@@ -1436,10 +1465,11 @@ char *taper_scan()
     }
     else if(!found) {
 	if(searchlabel)
-	    sprintf(changer_resultstr,
-		    "label %s or new tape not found in rack", searchlabel);
+	    ap_snprintf(changer_resultstr, sizeof(changer_resultstr),
+			"label %s or new tape not found in rack", searchlabel);
 	else
-	    sprintf(changer_resultstr, "new tape not found in rack");
+	    ap_snprintf(changer_resultstr, sizeof(changer_resultstr),
+			"new tape not found in rack");
     }
 
     return found? found_device : NULL;

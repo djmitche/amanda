@@ -43,19 +43,19 @@ noinst_HEADERS =	amanda.h	arglist.h	\
 			token.h		version.h	\
 			amregex.h	fileheader.h
 
-EXTRA_DIST = 		getcwd.c	mktime.c	strerror.c	\
-			strstr.c	genversion.c	memmove.c	\
-			snprintf.c
+EXTRA_DIST = 		genversion.c	getcwd.c	memmove.c	\
+			mktime.c	snprintf.c	strerror.c	\
+			strstr.c
 
 .sh:
 	cat $< > $@
 	chmod a+x $@
 
 
-version.c:	$(srcdir)/genversion.c versuff.c $(srcdir)/version.h
+version.c:	$(srcdir)/genversion.c versuff.c $(srcdir)/version.h $(libamanda_la_LIBADD)
 	$(COMPILE) -DCC="\"$(CC)\"" -DBUILT_DATE="\"`date`\"" -DBUILT_MACH="\"`uname -a`\"" -c $(srcdir)/genversion.c
 	$(COMPILE) -c versuff.c
-	$(CC) $(LDFLAGS) genversion.o versuff.o -o genversion $(LIBS)
+	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) $(libamanda_la_LIBADD) genversion.o versuff.o -o genversion $(LIBS)
 	./genversion > version.c
 	rm -f genversion genversion.o versuff.o
 

@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.36 1997/12/15 21:27:44 blair Exp $
+/* $Id: dumper.c,v 1.37 1997/12/16 18:02:32 jrj Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -97,7 +97,7 @@ char *options = NULL;
 char *progname = NULL;
 int level;
 char *dumpdate = NULL;
-extern char datestamp[];
+extern char datestamp[80];
 
 int datafd = -1;
 int mesgfd = -1;
@@ -112,7 +112,7 @@ static void putresult P((char *format, ...))
 static void do_dump P((int mesgfd, int datafd, int indexfd, int outfd));
 void check_options P((char *options));
 void service_ports_init P((void));
-static void construct_datestamp P((char *buf));
+static void construct_datestamp P((char *buf, int len));
 int update_dataptr P((int outf, int size));
 static void process_dumpeof P((void));
 static void process_dumpline P((char *str));
@@ -161,15 +161,17 @@ void service_ports_init()
 #endif
 }
 
-static void construct_datestamp(buf)
+static void construct_datestamp(buf, len)
 char *buf;
+int len;
 {
     struct tm *tm;
     time_t timestamp;
 
     timestamp = time((time_t *)NULL);
     tm = localtime(&timestamp);
-    sprintf(buf, "%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
+    ap_snprintf(buf, len,
+		"%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
 }
 
 
@@ -211,7 +213,8 @@ char **main_argv;
 
     if((pwptr = getpwuid(getuid())) == NULL)
 	error("can't get login name for my uid %ld", (long)getuid());
-    strcpy(loginid, pwptr->pw_name);
+    strncpy(loginid, pwptr->pw_name, sizeof(loginid));
+    loginid[sizeof(loginid)] = '\0';
 
     signal(SIGPIPE, SIG_IGN);
     signal(SIGCHLD, SIG_IGN);
@@ -219,7 +222,7 @@ char **main_argv;
     interactive = isatty(0);
     pid = getpid();
 
-    construct_datestamp(datestamp);
+    construct_datestamp(datestamp, sizeof(datestamp));
 
     service_ports_init();
     proto_init(msg->socket, time(0), 16);
@@ -366,7 +369,7 @@ arglist_function(static void putresult, char *, format)
     char result[MAX_LINE];
 
     arglist_start(argp, format);
-    vsprintf(result, format, argp);
+    ap_vsnprintf(result, sizeof(result), format, argp);
     arglist_end(argp);
     write(1, result, strlen(result));
 }
@@ -514,7 +517,8 @@ char *str;
 	    got_endline = 1;
 	    dump_result = max(dump_result, 2);
 	    if(sscanf(str+18, "[%[^]]]", errstr) != 1)
-		sprintf(errstr, "bad remote error: %s", str);
+		ap_snprintf(errstr, sizeof(errstr),
+			    "bad remote error: %s", str);
 	    break;
 	}
 	if(!strncmp(str, "sendbackup: info ", 17)) {
@@ -554,8 +558,8 @@ int len;
 	}
 
 	/* but don't overwrite the buffer */
-	if(len1 + msgofs >= MAX_LINE) {
-	    len1 = MAX_LINE-1 - msgofs;
+	if(len1 + msgofs >= sizeof(msgbuf)) {
+	    len1 = sizeof(msgbuf)-1 - msgofs;
 	    str[len1-1] = '\n';			/* force newline */
 	    got_newline = 1;
 	}
@@ -602,31 +606,42 @@ int outfd;
 
     fh_init(&file);
     file.type=F_DUMPFILE;
-    strcpy(file.datestamp, datestamp);
-    strcpy(file.name     , hostname);
-    strcpy(file.disk     , diskname);
+    strncpy(file.datestamp  , datestamp  , sizeof(file.datestamp)-1);
+    file.datestamp[sizeof(file.datestamp)-1] = '\0';
+    strncpy(file.name       , hostname   , sizeof(file.name)-1);
+    file.name[sizeof(file.name)-1] = '\0';
+    strncpy(file.disk       , diskname   , sizeof(file.disk)-1);
+    file.disk[sizeof(file.disk)-1] = '\0';
     file.dumplevel = level;
-    strcpy(file.program  , backup_name);
-    strcpy(file.recover_cmd,recover_cmd);
+    strncpy(file.program    , backup_name, sizeof(file.program)-1);
+    file.program[sizeof(file.program)-1] = '\0';
+    strncpy(file.recover_cmd, recover_cmd, sizeof(file.recover_cmd)-1);
+    file.recover_cmd[sizeof(file.recover_cmd)-1] = '\0';
 
     if (srvcompress) {
 	file.compressed=1;
-	sprintf(file.uncompress_cmd, " %s %s |", UNCOMPRESS_PATH,
+	ap_snprintf(file.uncompress_cmd, sizeof(file.uncompress_cmd),
+		    " %s %s |", UNCOMPRESS_PATH,
 #ifdef UNCOMPRESS_OPT
-		UNCOMPRESS_OPT
+		    UNCOMPRESS_OPT
 #else
-		""
+		    ""
 #endif
-		);
-	strcpy(file.comp_suffix, COMPRESS_SUFFIX);
+		    );
+	strncpy(file.comp_suffix, COMPRESS_SUFFIX, sizeof(file.comp_suffix)-1);
+	file.comp_suffix[sizeof(file.comp_suffix)-1] = '\0';
     }
     else {
 	file.uncompress_cmd[0] = '\0';
 	file.compressed=compress_suffix!=NULL;
-	if(compress_suffix) 
-	    strcpy(file.comp_suffix, compress_suffix);
-	else
-	    strcpy(file.comp_suffix, "N");
+	if(compress_suffix) {
+	    strncpy(file.comp_suffix, compress_suffix,
+		    sizeof(file.comp_suffix)-1);
+	    file.comp_suffix[sizeof(file.comp_suffix)-1] = '\0';
+	} else {
+	    strncpy(file.comp_suffix, "N", sizeof(file.comp_suffix)-1);
+	    file.comp_suffix[sizeof(file.comp_suffix)-1] = '\0';
+	}
     }
 
     write_header(buffer, &file,sizeof(buffer));
@@ -716,10 +731,11 @@ int mesgfd, datafd, indexfd, outfd;
     /* start the index reader */
     if (indexfd != -1) {
 	int tmpfd;
+	int len;
 
 	indexfile = getindexname(getconf_str(CNF_INDEXDIR),
-				 hostname, diskname, datestamp, level);
-	strcat(indexfile, ".tmp");
+				 hostname, diskname, datestamp, level, &len);
+	strncat(indexfile, ".tmp", len-strlen(indexfile));
 	switch(fork()) {
 	case -1: fprintf(stderr, "couldn't fork\n");
 	default:
@@ -741,10 +757,11 @@ int mesgfd, datafd, indexfd, outfd;
 	}
     }
 
-    sprintf(errfname, "/tmp/%s.%s.%d.errout", hostname,
-	    sanitise_filename(diskname), level);
+    ap_snprintf(errfname, sizeof(errfname), "/tmp/%s.%s.%d.errout", hostname,
+		sanitise_filename(diskname), level);
     if((errf = fopen(errfname, "w")) == NULL) {
-	sprintf(errstr,"errfile open \"%s\": %s", errfname, strerror(errno));
+	ap_snprintf(errstr, sizeof(errstr),
+		    "errfile open \"%s\": %s", errfname, strerror(errno));
 	goto failed;
     }
 
@@ -843,11 +860,12 @@ int mesgfd, datafd, indexfd, outfd;
 #endif
 
 	if(nfound == 0)  {
-	    strcpy(errstr,"data timeout");
+	    strncpy(errstr, "data timeout", sizeof(errstr)-1);
+	    errstr[sizeof(errstr)-1] = '\0';
 	    goto failed;
 	}
 	if(nfound == -1) {
-	    sprintf(errstr,  "select: %s", strerror(errno));
+	    ap_snprintf(errstr, sizeof(errstr),  "select: %s", strerror(errno));
 	    goto failed;
 	}
 
@@ -857,7 +875,8 @@ int mesgfd, datafd, indexfd, outfd;
 	    size1 = read(datafd, dataptr, spaceleft);
 	    switch(size1) {
 	    case -1:
-		sprintf(errstr, "data read: %s", strerror(errno));
+		ap_snprintf(errstr, sizeof(errstr),
+			    "data read: %s", strerror(errno));
 		goto failed;
 	    case 0:
 		if(update_dataptr(outfd, size1)) return;
@@ -874,7 +893,8 @@ int mesgfd, datafd, indexfd, outfd;
 	    size2 = read(mesgfd, mesgbuf, MESGBUF_SIZE);
 	    switch(size2) {
 	    case -1:
-		sprintf(errstr, "mesg read: %s", strerror(errno));
+		ap_snprintf(errstr, sizeof(errstr),
+			    "mesg read: %s", strerror(errno));
 		goto failed;
 	    case 0:
 		eof2 = 1;
@@ -904,9 +924,9 @@ int mesgfd, datafd, indexfd, outfd;
     dumpsize -= TAPE_BLOCK_SIZE;	/* don't count the header */
     if (dumpsize < 0) dumpsize = 0;	/* XXX - maybe this should be fatal? */
 
-    sprintf(errstr, "sec %s kb %ld kps %3.1f orig-kb %ld",
-	    walltime_str(runtime), dumpsize,
-	    dumpsize/dumptime, origsize);
+    ap_snprintf(errstr, sizeof(errstr), "sec %s kb %ld kps %3.1f orig-kb %ld",
+		walltime_str(runtime), dumpsize,
+		dumpsize/dumptime, origsize);
     putresult("DONE %s %ld %ld %ld %s\n", handle, origsize, dumpsize,
 	      (long)(dumptime+0.5), squotef("[%s]", errstr));
 
@@ -931,8 +951,10 @@ int mesgfd, datafd, indexfd, outfd;
 
     if (indexfile) {
 	char tmpname[1024];
-	strcpy(tmpname, indexfile);
-	indexfile[strlen(indexfile)-4] = 0;
+
+	strncpy(tmpname, indexfile, sizeof(tmpname)-1);
+	tmpname[sizeof(tmpname)-1] = '\0';
+	indexfile[strlen(indexfile)-4] = '\0';
 	unlink(indexfile);
 	rename(tmpname, indexfile);
     }
@@ -971,7 +993,7 @@ pkt_t *pkt;
 
     if(p->state == S_FAILED) {
 	if(pkt == NULL) {
-	    sprintf(errstr, "[request timeout]");
+	    ap_snprintf(errstr, sizeof(errstr), "[request timeout]");
 	    response_error = 1;
 	    return;
 	}
@@ -979,7 +1001,8 @@ pkt_t *pkt;
 /*	    fprintf(stderr, "got nak response:\n----\n%s----\n\n", pkt->body); */
 	    if(sscanf(pkt->body, "ERROR %[^\n]", errstr) != 1) {
 /*		fprintf(stderr, "dumper: got strange NAK: %s", pkt->body); */
-		strcpy(errstr, "[request NAK]");
+		strncpy(errstr, "[request NAK]", sizeof(errstr)-1);
+		errstr[sizeof(errstr)-1] = '\0';
 	    }
 	    response_error = 2;
 	    return;
@@ -990,7 +1013,7 @@ pkt_t *pkt;
 
 #ifdef KRB4_SECURITY
     if(krb4_auth && !check_mutual_authenticator(&cred.session, pkt, p)) {
-	sprintf(errstr, "[mutual-authentication failed]");
+	ap_snprintf(errstr, sizeof(errstr), "[mutual-authentication failed]");
 	response_error = 2;
 	return;
     }
@@ -999,7 +1022,7 @@ pkt_t *pkt;
     if(!strncmp(pkt->body, "ERROR", 5)) {
 	/* this is an error response packet */
 	if(sscanf(pkt->body, "ERROR %[^\n]", errstr) != 1)
-	    sprintf(errstr, "[bogus error packet]");
+	    ap_snprintf(errstr, sizeof(errstr), "[bogus error packet]");
 	response_error = 2;
 	return;
     }
@@ -1007,7 +1030,7 @@ pkt_t *pkt;
     if(sscanf(pkt->body,
 	      "CONNECT DATA %d MESG %d INDEX %d\nOPTIONS %[^\n]\n",
 	      &data_port, &mesg_port, &index_port, optionstr) != 4) {
-	sprintf(errstr, "[parse of reply message failed]");
+	ap_snprintf(errstr, sizeof(errstr), "[parse of reply message failed]");
 	response_error = 2;
 	return;
     }
@@ -1015,16 +1038,16 @@ pkt_t *pkt;
     datafd = stream_client(hostname, data_port,
 			   DEFAULT_SIZE, DEFAULT_SIZE);
     if(datafd == -1) {
-	sprintf(errstr,
-		"[could not connect to data port: %s]", strerror(errno));
+	ap_snprintf(errstr, sizeof(errstr),
+		    "[could not connect to data port: %s]", strerror(errno));
 	response_error = 1;
 	return;
     }
     mesgfd = stream_client(hostname, mesg_port,
 			   DEFAULT_SIZE, DEFAULT_SIZE);
     if(mesgfd == -1) {
-	sprintf(errstr,
-		"[could not connect to mesg port: %s]", strerror(errno));
+	ap_snprintf(errstr, sizeof(errstr),
+		    "[could not connect to mesg port: %s]", strerror(errno));
 	close(datafd);
 	datafd = -1;
 	response_error = 1;
@@ -1035,8 +1058,9 @@ pkt_t *pkt;
 	indexfd = stream_client(hostname, index_port,
 				DEFAULT_SIZE, DEFAULT_SIZE);
 	if (indexfd == -1) {
-	    sprintf(errstr,
-		"[could not connect to index port: %s]", strerror(errno));
+	    ap_snprintf(errstr, sizeof(errstr),
+			"[could not connect to index port: %s]",
+			strerror(errno));
 	    close(datafd);
 	    close(mesgfd);
 	    datafd = mesgfd = -1;
@@ -1049,8 +1073,9 @@ pkt_t *pkt;
 
 #ifdef KRB4_SECURITY
     if(krb4_auth && kerberos_handshake(datafd, cred.session) == 0) {
-	sprintf(errstr,
-		"[mutual authentication in data stream failed]");
+	strncat(errstr, "[mutual authentication in data stream failed]"
+		sizeof(errstr)-1);
+	errstr[sizeof(errstr)-1] = '\0';
 	close(datafd);
 	close(mesgfd);
 	close(indexfd);
@@ -1058,8 +1083,8 @@ pkt_t *pkt;
 	return;
     }
     if(krb4_auth && kerberos_handshake(mesgfd, cred.session) == 0) {
-	sprintf(errstr,
-		"[mutual authentication in mesg stream failed]");
+	strncat(errstr, "[mutual authentication in mesg stream failed]",
+		sizeof(errstr)-1);
 	close(datafd);
 	close(indexfd);
 	close(mesgfd);
@@ -1077,9 +1102,9 @@ int level;
     char req[8192];
     int rc;
 
-    sprintf(req,
-	    "SERVICE sendbackup\nOPTIONS hostname=%s;\n%s %s %d %s OPTIONS %s\n",
-	    hostname, progname, disk, level, dumpdate, options);
+    ap_snprintf(req, sizeof(req),
+"SERVICE sendbackup\nOPTIONS hostname=%s;\n%s %s %d %s OPTIONS %s\n",
+		hostname, progname, disk, level, dumpdate, options);
 
     datafd = mesgfd = indexfd = -1;
 
@@ -1103,14 +1128,16 @@ int level;
 		rc = krb_get_cred(CLIENT_HOST_PRINCIPLE, CLIENT_HOST_INSTANCE,
 				  realm, &cred);
 	    if(rc > 0 ) {
-		sprintf(errstr, "[host %s: krb4 error (krb_get_cred) %d: %s]",
-			hostname, rc, krb_err_txt[rc]);
+		ap_snprintf(errstr, sizeof(errstr),
+			    "[host %s: krb4 error (krb_get_cred) %d: %s]",
+			    hostname, rc, krb_err_txt[rc]);
 		return 2;
 	    }
 	}
 	if(rc > 0) {
-	    sprintf(errstr, "[host %s: krb4 error (make_krb_req) %d: %s]",
-		    hostname, rc, krb_err_txt[rc]);
+	    ap_snprintf(errstr, sizeof(errstr),
+			"[host %s: krb4 error (make_krb_req) %d: %s]",
+			hostname, rc, krb_err_txt[rc]);
 	    return 2;
 	}
     } else
@@ -1118,8 +1145,8 @@ int level;
 	rc = make_request(hostname, amanda_port, req, NULL,
 			  STARTUP_TIMEOUT, sendbackup_response);
     if(rc) {
-	sprintf(errstr, "[could not resolve name \"%s\": error %d]",
-		hostname, rc);
+	ap_snprintf(errstr, sizeof(errstr),
+		    "[could not resolve name \"%s\": error %d]", hostname, rc);
 	return 2;
     }
     run_protocol();

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: alloc.c,v 1.7 1997/11/20 19:58:32 jrj Exp $
+ * $Id: alloc.c,v 1.8 1997/12/16 17:54:54 jrj Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -42,7 +42,7 @@ int size;
 {
     void *addr;
 
-    addr = (void *)malloc(size ? size : 1);
+    addr = (void *)malloc(size>0 ? size : 1);
     if(addr == NULL)
 	error("memory allocation failed");
     return addr;
@@ -69,9 +69,12 @@ char *stralloc(str)
 char *str;
 {
     char *addr;
+    int len;
 
-    addr = alloc(strlen(str)+1);
-    strcpy(addr, str);
+    len = strlen(str)+1;
+    addr = alloc(len);
+    strncpy(addr, str, len-1);
+    addr[len-1] = '\0';
     return addr;
 }
 
@@ -84,10 +87,17 @@ char *str1;
 char *str2;
 {
     char *addr;
+    int len1;
+    int len2;
+    int len;
 
-    addr = alloc(strlen(str1)+strlen(str2)+1);
-    strcpy(addr, str1);
-    strcat(addr, str2);
+    len1 = strlen(str1);
+    len2 = strlen(str2);
+    len = len1+len2+1;
+    addr = alloc(len);
+    strncpy(addr, str1, len-1);
+    addr[len-1] = '\0';
+    strncat(addr, str2, len-len1);
     return addr;
 }
 

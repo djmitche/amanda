@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtape.c,v 1.6 1997/11/17 12:41:28 amcore Exp $
+ * $Id: amtape.c,v 1.7 1997/12/16 18:02:19 jrj Exp $
  *
  * tape changer interface program
  */
@@ -89,7 +89,7 @@ char **argv;
 
     confname = argv[1];
 
-    sprintf(confdir, "%s/%s", CONFIG_DIR, confname);
+    ap_snprintf(confdir, sizeof(confdir), "%s/%s", CONFIG_DIR, confname);
     if(chdir(confdir) != 0)
 	error("could not cd to confdir %s: %s", confdir, strerror(errno));
 
@@ -336,8 +336,11 @@ char *device;
 		    fprintf(stderr, " (labelstr match)\n");
 		else {
 		    got_match = 1;
-		    strcpy(first_match, slotstr);
-		    strcpy(first_match_label, label);
+		    strncpy(first_match, slotstr, sizeof(first_match)-1);
+		    first_match[sizeof(first_match)-1] = '\0';
+		    strncpy(first_match_label, label,
+			    sizeof(first_match_label)-1);
+		    first_match_label[sizeof(first_match_label)-1] = '\0';
 		    fprintf(stderr, " (first labelstr match)\n");
 		    if(!backwards || !searchlabel) {
 			found = 2;
