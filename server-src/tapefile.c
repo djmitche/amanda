@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: tapefile.c,v 1.21 1999/09/15 00:33:21 jrj Exp $
+ * $Id: tapefile.c,v 1.22 2002/03/23 17:39:55 martinea Exp $
  *
  * routines to read and write the amanda active tape list
  */
@@ -72,9 +72,15 @@ char *tapefile;
 {
     tape_t *tp;
     FILE *tapef;
+    char *newtapefile;
+    int rc;
 
-    if((tapef = fopen(tapefile,"w")) == NULL)
+    newtapefile = stralloc2(tapefile, ".new");
+
+    if((tapef = fopen(newtapefile,"w")) == NULL) {
+	amfree(newtapefile);
 	return 1;
+    }
 
     for(tp = tape_list; tp != NULL; tp = tp->next) {
 	fprintf(tapef, "%d %s", tp->datestamp, tp->label);
@@ -84,7 +90,11 @@ char *tapefile;
     }
 
     afclose(tapef);
-    return 0;
+
+    rc = rename(newtapefile, tapefile);
+    amfree(newtapefile);
+
+    return(rc != 0);
 }
 
 void clear_tapelist()
