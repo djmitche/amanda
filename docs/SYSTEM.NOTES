@@ -15,25 +15,22 @@ Solaris 2.6 host, a gcc that was not build on a Solaris 2.6 host.
 This happens because gcc stores fixed copies of some Solaris header
 files on an internal directory.  You must rebuild gcc if you get this
 kind of trouble.  Note, however, that gcc 2.7.2.3 does not support
-Solaris 2.6, you should upgrade to 2.8.0 or higher.
+Solaris 2.6, you should upgrade to 2.8.0 or higher, or egcs.
 
 ---------------------------------------------------------------------------
 SunOS 4.x
 ---------
 
-Many people see problems with "No buffer space available" when running
-the server under 4.1.x (although we have not here).  Read the file
-SUNOS4.BUG if you encounter this problem.
-
 A bug in GNU tar 1.12 causes it to miscalculate (in fact, to
 misreport) the size of filesystems.  A patch for GNU tar is available
 in the patches directory.
 
+
 If you have shared libraries of other versions of amanda lying around,
 gcc may pick them up instead of the locally built ones.  A few
-possible solutions are not to remove the old libraries, configure
-amanda not to build shared libraries, or to specify different
-directories when running configure.
+possible solutions are to remove the old libraries, configure amanda
+not to build shared libraries, or specify a different library
+directory when running configure.
 
 ---------------------------------------------------------------------------
 Ultrix
@@ -81,7 +78,7 @@ If `configure' complains about not finding `lex', you'll have to get
 
 If you use logical volumes, you may refer to mountpoints or full
 device pathnames instead of device names in the disk list file.
- 
+
 
 According to Stan Brown <stanb@awod.com>, amverify won't work with
 HP/UX's stock `mt'.  The work-around is to install GNU cpio, that
@@ -98,14 +95,19 @@ automatically.
 GNU tar 1.12 will incorrectly report the size of backups.  There's a
 patch in the patches directory that fixes this problem.
 
+
+The use of `amhpfixdevs' is deprecated, since you can list
+mount-points or full device names in the disklist.  The script may be
+removed in future releases of Amanda.
+
 ---------------------------------------------------------------------------
 Linux
 -----
 
 Linux hosts intended to back up efs partitions with dump should
-install the dump package, as it is not installed by default on the
-Linux distributions I know of.  It is possible to find compiled
-versions of dump on most Linux sites and CD-ROMs.
+install the dump package, as it is not installed by default on most
+Linux distributions.  It is possible to find compiled versions of dump
+on most Linux sites and CD-ROMs.
 
 Make sure the user that runs configure has permission to run the dump
 program, otherwise configure may misdetect an ability of dump to
@@ -116,45 +118,23 @@ failures (Index returned -1).  Upgrading to GNUtar 1.12 fixes this
 problem.  This is not a Linux-specific problem, but it is quite common
 in this platform.
 
-Configure may incorrectly determine the maximum file size on
-Linux/i386; it may find 4194303 while the maximum was reported to be
-2097151 by Dietmar Goldbeck <dietmar@telemedia.de>.  If you have large
-filesystems to back up and your holding disk is larger than the
-maximum file size, you may have to overwrite the value determined by
-configure.  You may either set amanda_cv_max_file_size in config.site,
-or in the environment, before running configure, or you may edit
-config.cache and change amanda_cv_max_file_size there, and run
-configure again, or you may set MAXFILESIZE in config/config.h after
-running configure (and make sure you do that whenever config/config.h
-is rebuilt!)
-
-Amanda now supports the ftape driver version 3.04d. It adjusts the 
-blocksize automatically to 32k and supports QIC volume tables.
-More details con be found in the file ZFTAPE in this directory.
-
-Estimates may take longer if dump are setuid-root.  There's no reason
-for this, and it can even open up security holes.  Nevertheless, Linux
-RedHat 5.0 installs both dump and restore as setuid-root.  You should
-disable both setuid and setgid bits of these programs.
+Amanda now supports the ftape driver version 3.04d.  It adjusts the
+blocksize automatically to 32k and supports QIC volume tables.  More
+details con be found in the file ZFTAPE in this directory.
 
 ---------------------------------------------------------------------------
 Digital Unix 4
 --------------
 
 According to Michael Galloway <mgx@spruce.lsd.ornl.gov>, the stock
-DUX4 dump is broken.  There is a patch available:
-
+DUX4 dump is broken.  There is a patch available at
 ftp://ftp.service.digital.com/public/dunix/v4.0b/duv40bas00005-19970926.README
 
 
 When both dump and vdump are available, amanda will use vdump for
 backing up advfs filesystems only, and dump will be used for the rest.
-Since vdump must be run as root, amanda will use the rundump program
-for running it, even if USE_RUNDUMP is not defined.  If you want vdump
-to be used for all filesystems, #undef DUMP in config/config.h.
-
-Another setuid-root program called killpgrp is used to kill vdump
-after it has printed an estimate line.
+If you'd rather back up all filesystems with vdump, #undef DUMP in
+config/config.h after running configure.
 
 
 According to Oren Laadan <orenl@cs.huji.ac.il>, DEC compiler version
@@ -165,25 +145,11 @@ does not build Amanda properly, in particular, taper.c.  Using gcc is OK.
 Sinix 5.43 (Reliant Unix)
 -------------------------
 
-The port to Sinix was originally done by Michael Schmitz <mschmitz@iname.com>.
+The use of `amsinixfixdevs' is deprecated, since you can list
+mount-points or full device names in the disklist.  The script may be
+removed in future releases of Amanda.
 
-You'll find a perl script 'amsinixfixdevs' in the client-src directory of
-the source distribution. Call this script before you start Amanda for the
-first time and any time you add a new disk. This script will create two new
-directories (/dev/dsk and /dev/rdsk) and lots of symbolic links to the disk
-device files.
-
-Suppose you have a device '/dev/ios0/sdisk000s2' and a virtual disk
-'/dev/vd/vdisk0'. Calling the script will create the following symbolic
-links:
- 
-	/dev/ios0/sdisk000s2   --> /dev/dsk/ios0_sdisk000s2
-	/dev/ios0/rsdisk000s2  --> /dev/rdsk/ios0_sdisk000s2
- 	/dev/vd/vdisk0         --> /dev/dsk/vd_vdisk0
- 	/dev/vd/rvdisk0        --> /dev/rdsk/vd_vdisk0
-
-Michael Schmitz (mschmitz@iname.com)
-Thu Jul 31 16:36:03 MET DST 1997
+Sinix port originally by Michael Schmitz <mschmitz@iname.com>.
 
 ---------------------------------------------------------------------------
 IRIX 6
@@ -195,9 +161,7 @@ again.  Using GNU make fixes this problem.
 
 
 If you have xfs filesystems to back up, amanda will pick xfsdump
-automatically.  However, since it must be run as root, amanda will use
-a setuid-root program called rundump to call it, and another setuid-root program called killpgrp to kill it after it has printed an
-estimate line.
+automatically.
 
 ---------------------------------------------------------------------------
 SCO
