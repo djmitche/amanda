@@ -610,8 +610,8 @@ if (defined $opt_summary) {
 		printf "all dumpers active\n";
 	}
 	else {
-		$c1 = ($idle_dumpers <= 1) ? "" : "s";
-		$c2 = ($idle_dumpers <= 1) ? " " : "";
+		$c1 = ($idle_dumpers == 1) ? "" : "s";
+		$c2 = ($idle_dumpers == 1) ? " " : "";
 		printf "%d dumper%s idle%s  : %s\n", $idle_dumpers, $c1, $c2, $status_driver;
 	}
 	if($status_taper eq "writing" && defined($qlen{"tapeq:"})) {
@@ -643,7 +643,7 @@ if(defined $opt_stats) {
 		}
 		for ($d = 0; $d <= $#dumpers_active; $d++) {
 			$l = sprintf "%2d dumper%s busy%s : %8s  (%6.2f%%)",
-				$d, ($d <= 1) ? "" : "s", ($d <= 1) ? " " : "",
+				$d, ($d == 1) ? "" : "s", ($d == 1) ? " " : "",
 				&busytime($dumpers_active[$d]),
 				($dumpers_active[$d] * 1.0 / $total_time) * 100;
 			print $l;

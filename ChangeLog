@@ -1,5 +1,9 @@
 2000-09-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amstatus.pl.in: fix plural misuse.
+
+2000-09-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* man/amanda.8.in: add all pages in the SEE ALSO section.
 
 2000-09-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
