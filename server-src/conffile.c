@@ -74,7 +74,7 @@ typedef enum {
     FILEMARK, LENGTH, SPEED,
 
     /* network interface */
-    USAGE,
+    USE,
 
     /* dump options (obsolete) */
     EXCLUDE_FILE, EXCLUDE_LIST,
@@ -676,7 +676,7 @@ keytab_t main_keytable[] = {
     { "MAXCYCLE", MAXCYCLE },	/* XXX - historical */
     { "MAXDUMPS", MAXDUMPS },
     { "MINCYCLE", DUMPCYCLE },	/* XXX - historical */
-    { "NETUSAGE", NETUSAGE },
+    { "NETUSAGE", NETUSAGE },	/* XXX - historical */
     { "ORG", ORG },
     { "RUNTAPES", RUNTAPES },
     { "TAPECYCLE", TAPECYCLE },
@@ -1156,7 +1156,7 @@ static void copy_tapetype()
 
 keytab_t interface_keytable[] = {
     { "COMMENT", COMMENT },
-    { "USAGE", USAGE },
+    { "USE", USE },
     { NULL, IDENT }
 };
 
@@ -1193,7 +1193,7 @@ static void get_interface()
 	case COMMENT:
 	    get_simple((val_t *)&ifcur.comment, &ifcur.s_comment, STRING);
 	    break;
-	case USAGE:
+	case USE:
 	    get_simple((val_t *)&ifcur.maxusage, &ifcur.s_maxusage, INT);
 	    break;
 	case IDENT:
@@ -1618,13 +1618,17 @@ keytab_t numb_keytable[] = {
     { "INF", INFINITY },
     { "K", MULT1K },
     { "KB", MULT1K },
+    { "KBPS", MULT1K },
     { "KBYTES", MULT1K },
     { "KILOBYTES", MULT1K },
+    { "KPS", MULT1K },
     { "M", MULT1M },
     { "MB", MULT1M },
+    { "MBPS", MULT1M },
     { "MBYTES", MULT1M },
     { "MEG", MULT1M },
     { "MEGABYTES", MULT1M },
+    { "MPS", MULT1M },
     { "TAPE", MULT1 },
     { "TAPES", MULT1 },
     { "WEEK", MULT7 },
@@ -2004,7 +2008,7 @@ dump_configuration()
     for(ip = interface_list; ip != NULL; ip = ip->next) {
 	printf("\nINTERFACE %s:\n", ip->name);
 	printf("	COMMENT \"%s\"\n", ip->comment);
-	printf("	USAGE %d\n", ip->maxusage);
+	printf("	USE %d\n", ip->maxusage);
     }
 }
 #endif /* TEST */
