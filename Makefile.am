@@ -34,12 +34,12 @@ EXTRA_DIST = \
 	contrib/dbbackup.ksh		\
 	contrib/dbbackup.sql		\
 	contrib/dbbackup.tcl		\
-	sst/Makefile			\
-	sst/README			\
-	sst/sst.c			\
-	sst/sst.conf			\
-	sst/sst_def.h			\
-	sst/sstest.c			\
+	contrib/sst/Makefile		\
+	contrib/sst/README		\
+	contrib/sst/sst.c		\
+	contrib/sst/sst.conf		\
+	contrib/sst/sst_def.h		\
+	contrib/sst/sstest.c		\
 	docs/DUMPER-API			\
 	docs/EVENT-API			\
 	docs/FAQ			\
