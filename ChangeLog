@@ -1,5 +1,15 @@
 2002-04-07  John R. Jackson (jrj@purdue.edu)
 
+	* common-src/clock.c: Move definition of amanda_gettimeofday() macro
+	  to the header file so it could be used other places.  Use new
+	  amanda_timezone macro to avoid some #ifdef's.
+	* common-src/clock.h: Ditto.
+	* common-src/bsd-security.c: Fix compatibility problems with pre-2.5
+	  servers trying to talk to 2.5 clients.  The HANDLE value was not
+	  being properly handled, and the sequence number was being ignored.
+
+2002-04-07  John R. Jackson (jrj@purdue.edu)
+
 	* server-src/reporter.c: Move column routines to conffile.c so amcheck
 	  can use them in its tests.  Do not abort on several failures, but
 	  generate messages in the FAILURE AND STRANGE DUMP SUMMARY section.

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clock.c,v 1.4 2002/03/31 21:02:00 jrjackson Exp $
+ * $Id: clock.c,v 1.5 2002/04/08 00:16:18 jrjackson Exp $
  *
  * timing functions
  */
@@ -41,12 +41,6 @@ times_t times_zero = {{0,0}};
 times_t start_time;
 static int clock_running = 0;
 
-#ifdef HAVE_TWO_ARG_GETTIMEOFDAY
-#  define amanda_gettimeofday(x, y) gettimeofday((x), (y))
-#else
-#  define amanda_gettimeofday(x, y) gettimeofday((x))
-#endif
-
 int clock_is_running()
 {
     return clock_running;
@@ -54,9 +48,7 @@ int clock_is_running()
 
 void startclock()
 {
-#ifdef HAVE_TWO_ARG_GETTIMEOFDAY
-    struct timezone dontcare;
-#endif
+    amanda_timezone dontcare;
 
     clock_running = 1;
     amanda_gettimeofday(&start_time.r, &dontcare);
@@ -66,10 +58,7 @@ times_t stopclock()
 {
     times_t diff;
     struct timeval end_time;
-
-#ifdef HAVE_TWO_ARG_GETTIMEOFDAY
-    struct timezone dontcare;
-#endif
+    amanda_timezone dontcare;
 
     if(!clock_running) {
 	fprintf(stderr,"stopclock botch\n");
@@ -85,10 +74,7 @@ times_t curclock()
 {
     times_t diff;
     struct timeval end_time;
-
-#ifdef HAVE_TWO_ARG_GETTIMEOFDAY
-    struct timezone dontcare;
-#endif
+    amanda_timezone dontcare;
 
     if(!clock_running) {
 	fprintf(stderr,"curclock botch\n");

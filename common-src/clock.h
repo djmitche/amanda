@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clock.h,v 1.4 2002/03/31 21:02:00 jrjackson Exp $
+ * $Id: clock.h,v 1.5 2002/04/08 00:16:18 jrjackson Exp $
  *
  * interface for timing functions
  */
@@ -43,6 +43,14 @@ typedef struct times_s {
 } times_t;
 
 extern times_t times_zero, start_time;
+
+#ifdef HAVE_TWO_ARG_GETTIMEOFDAY
+#  define amanda_timezone struct timezone
+#  define amanda_gettimeofday(x, y) gettimeofday((x), (y))
+#else
+#  define amanda_timezone int
+#  define amanda_gettimeofday(x, y) gettimeofday((x))
+#endif
 
 void startclock P((void));
 times_t stopclock P((void));
