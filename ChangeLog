@@ -1,3 +1,9 @@
+2005-01-23  Stefan G. Weichinger <monitor@oops.co.at>
+        Patch by Jon LaBadie <jon@jgcomp.com>
+	
+	* changer-src/chg-multi.sh.in: New header to explain the meaning
+	  of the "multi" in "chg-multi".
+			  
 2004-12-21  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Christopher Pascoe <c.pascoe@itee.uq.edu.au>
 
