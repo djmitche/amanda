@@ -1,5 +1,10 @@
 2000-09-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* client-src/sendbackup-gnutar.c: use exclude string estr 
+	instead of "estr".
+
+2000-09-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* man/amreport.8.in: amreport does not rotate the log.
 	* man/amrestore.8: note on holdingdisk.
 	* restore-src/amrestore.c: update usage.
@@ -960,7 +965,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.372 2000/09/24 22:35:33 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.373 2000/09/24 23:42:09 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

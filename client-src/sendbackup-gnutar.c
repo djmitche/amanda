@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.56.2.12 2000/08/01 05:22:45 oliva Exp $
+ * $Id: sendbackup-gnutar.c,v 1.56.2.13 2000/09/24 23:42:10 martinea Exp $
  *
  * send backup data using GNU tar
  */
@@ -424,7 +424,7 @@ notincremental:
 			    efile ? "--exclude-from" : skip_argument,
 			    efile ? efile : skip_argument,
 			    estr ? "--exclude" : skip_argument, 
-			    estr ? "estr" : skip_argument,
+			    estr ? estr : skip_argument,
 			    ".",
 			    (char *) 0);
 	tarpid = dumppid;
