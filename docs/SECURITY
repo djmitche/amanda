@@ -1,10 +1,11 @@
 AMANDA TEAM RESPONSE TO CPIO Security Notice Issue 11:
 
-The Amanda development confirms the existence of the amrecover security
-hole in recent versions of Amanda.  We have made a new release, Amanda
-2.4.0b5, that fixes the amrecover problem and other potential security
-holes, and is the product of a security audit conducted in conjunction with
-the OpenBSD effort.  The new version is available at:
+The Amanda development team confirms the existence of the amrecover
+security hole in recent versions of Amanda.  We have made a new
+release, Amanda 2.4.0b5, that fixes the amrecover problem and other
+potential security holes, and is the product of a security audit
+conducted in conjunction with the OpenBSD effort.  The new version is
+available at:
 
 	ftp://ftp.amanda.org/pub/amanda/amanda-2.4.0b5.tar.gz
 
@@ -37,8 +38,9 @@ upgrading to the new release as soon as practicable.
 ACKNOWLEGMENTS:
 
 This release (2.4.0) has addressed a number of security concerns with
-the assistance of Theo de Raadt and Ejovi Nuwere of the OpenBSD
-project.  Thanks guys!  Any problems that remain are of course, ours.
+the assistance of Theo de Raadt, Ejovi Nuwere and David Sacerdote of
+the OpenBSD project.  Thanks guys!  Any problems that remain are our
+own fault, of course.
 
 The Amanda Team would also like to thank the many other people who have
 contributed suggestions, patches, and new subsystems for Amanda.  We're
