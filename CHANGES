@@ -1,9 +1,3 @@
-	Fix buffer use and write() error handling in the index pipeline.
-	-Dietmar Goldbeck <dietmar@telemedia.de>
-
-	Use "a" mode instead of "w" for the fdopen of the debug file.
-	-David Lamkin <drl@net-tel.co.uk>
-
 	ensure that `amadmin find' reports multiple backups performed on
 	the same day in the correct sequence.
 	-Liudvikas Bukys <bukys@cs.rochester.edu>
@@ -21,9 +15,21 @@
 	use vdump to dump advfs filesystems only.
 	-Martyn Johnson <Martyn.Johnson@cl.cam.ac.uk> & oliva
 
+Version 2.4.0
+
+	fix sendbackup-gnutar crashing problem.  -oliva
+
+	ensure that, in case of tape failure when dumping to tape, no
+	incremental relative to the failed backup is performed.
+	-oliva & Liudvikas Bukys <bukys@cs.rochester.edu>
+
+	Fix buffer use and write() error handling in the index pipeline.
+	-Dietmar Goldbeck <dietmar@telemedia.de>
+	& Lars Fenneberg <lf@elemental.net>
+
 	new index generation commands.  -oliva
 
-Version 2.4.0
+Version 2.4.0b6p3
 
 	accept curses and ncurses in addition to termcap for readline
 	support, just as readline itself does.  -oliva
