@@ -1,4 +1,11 @@
 2001-02-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	Patch by Alex Pilosov <alex@pilosoft.com>
+
+	* changer-src/scsi-cam.c: Clean up some SCSI CAM code,
+	and permit use of both bus:target:lun(btl) and a full
+	device name (/dev/ch0) as changerdev.
+	
+2001-02-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	Patch by Joe Rhett <jrhett@isite.net>
 	and Jason Hollinden <jhollind@sammg.com>
 
