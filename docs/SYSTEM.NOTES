@@ -149,6 +149,11 @@ must fix the RESTORE index command so that it does not redirect
 lists to stderr, according to Martyn Johnson
 <Martyn.Johnson@cl.cam.ac.uk>.
 
+
+According to Oren Laadan <orenl@cs.huji.ac.il>, DEC compiler version
+"DEC C V5.2-033 on Digital UNIX V4.0 (Rev. 564)" (obtained with "cc -V")
+does not build Amanda properly, in particular, taper.c.  Using gcc is OK.
+
 ---------------------------------------------------------------------------
 Sinix 5.43 (Reliant Unix)
 -------------------------
