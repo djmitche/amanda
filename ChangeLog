@@ -1,4 +1,9 @@
 2000-09-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	patch by jason Thomas <jet@users.sourceforge.net>
+
+	* tape-src/tapetype.c: fix help message.
+
+2000-09-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	patch by Rudolf Cejka <cejkar@users.sourceforge.net>
 
 	* common-src/file.c (mkpdir): check p != NULL
@@ -925,7 +930,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.366 2000/09/24 01:57:19 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.367 2000/09/24 02:00:33 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
