@@ -26,7 +26,7 @@ libamanda_la_SOURCES = \
 	alloc.c		amflock.c	debug.c		dgram.c		\
 	error.c		file.c		match.c		protocol.c	\
 	security.c	statfs.c	stream.c	token.c		\
-	version.c	versuff.c					\
+	version.c	versuff.c	fileheader.c			\
 	regcomp.c	regerror.c	regexec.c	regfree.c
 
 libamanda_la_LIBADD =	@LTLIBOBJS@
@@ -41,7 +41,7 @@ noinst_HEADERS =	amanda.h	arglist.h	\
 			dgram.h		protocol.h	\
 			statfs.h	stream.h	\
 			token.h		version.h	\
-			amregex.h
+			amregex.h	fileheader.h
 
 EXTRA_DIST = 		getcwd.c	mktime.c	strerror.c	\
 			strstr.c	genversion.c	memmove.c

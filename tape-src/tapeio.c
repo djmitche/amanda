@@ -25,13 +25,14 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.3 1997/08/27 08:13:34 amcore Exp $
+ * $Id: tapeio.c,v 1.4 1997/12/01 01:06:13 amcore Exp $
  *
  * implements tape I/O functions
  */
 #include "amanda.h"
 
 #include "tapeio.h"
+#include "fileheader.h"
 
 #ifndef R_OK
 #define R_OK 4
@@ -268,6 +269,7 @@ char *datestamp, *label;
 {
     int rc;
     char buffer[TAPE_BLOCK_BYTES];
+    dumpfile_t file;
 
     if(tapefd_rewind(tapefd) == -1) {
 	sprintf(errstr, "rewinding tape: %s", strerror(errno));
@@ -283,13 +285,13 @@ char *datestamp, *label;
     if(rc == sizeof(buffer)) rc--;
     buffer[rc] = '\0';
 
-    rc = sscanf(buffer, "AMANDA: TAPESTART DATE %[0-9X.] TAPE %s\n", 
-		datestamp, label);
-
-    if(rc != 2) {
+    parse_file_header(buffer, &file, sizeof(buffer));
+    if(file.type != F_TAPESTART) {
 	sprintf(errstr, "not an amanda tape");
 	return errstr;
     }
+    strcpy(datestamp, file.datestamp);
+    strcpy(label, file.name);
 
     return NULL;
 }
@@ -321,15 +323,18 @@ char *datestamp, *label;
 {
     int rc;
     char buffer[TAPE_BLOCK_BYTES];
+    dumpfile_t file;
 
     if(tapefd_rewind(tapefd) == -1) {
 	sprintf(errstr, "rewinding tape: %s", strerror(errno));
 	return errstr;
     }
 
-    memset(buffer, '\0', sizeof(buffer));
-    sprintf(buffer, "AMANDA: TAPESTART DATE %s TAPE %s\n\014\n", 
-	    datestamp, label);
+    fh_init(&file);
+    file.type=F_TAPESTART;
+    strcpy(file.datestamp,datestamp);
+    strcpy(file.name,label);
+    write_header(buffer,&file,sizeof(buffer));
 
     if((rc = tapefd_write(tapefd, buffer, sizeof(buffer))) != sizeof(buffer)) {
 	sprintf(errstr, "writing label: %s",
@@ -371,9 +376,12 @@ char *datestamp;
 {
     int rc;
     char buffer[TAPE_BLOCK_BYTES];
+    dumpfile_t file;
 
-    memset(buffer, '\0', sizeof(buffer));
-    sprintf(buffer, "AMANDA: TAPEEND DATE %s\n\014\n", datestamp);
+    fh_init(&file);
+    file.type=F_TAPEEND;
+    strcpy(file.datestamp,datestamp);
+    write_header(buffer, &file,sizeof(buffer));
 
     if((rc = tapefd_write(tapefd, buffer, sizeof(buffer))) != sizeof(buffer)) {
 	sprintf(errstr, "writing endmark: %s", 

@@ -2,14 +2,15 @@
 
 ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
 
-INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/client-src
+INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/client-src \
+			-I$(top_srcdir)/tape-src
 
 AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
  
 LDADD = ../client-src/libamclient.la ../common-src/libamanda.la \
-	../common-src/libamnolog.la @LEXLIB@
+	../common-src/libamnolog.la ../tape-src/libamtape.la @LEXLIB@
 
 EXTRA_PROGRAMS = 	amrecover
 

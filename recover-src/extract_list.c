@@ -25,13 +25,16 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.6 1997/11/11 06:39:33 amcore Exp $
+ * $Id: extract_list.c,v 1.7 1997/12/01 01:06:06 amcore Exp $
  *
  * implements the "extract" command in amrecover
  */
 
 #include "amanda.h"
+#include "version.h"
 #include "amrecover.h"
+#include "fileheader.h"
+#include "tapeio.h"
 
 typedef struct EXTRACT_LIST_ITEM
 {
@@ -60,6 +63,79 @@ pid_t extract_restore_child_pid = -1;
 
 static EXTRACT_LIST *extract_list = NULL;
 
+
+#define READ_TIMEOUT	30*60
+
+#define STARTUP_TIMEOUT 60 */
+
+
+
+
+int read_buffer(datafd, buffer, buflen)
+int datafd;
+char *buffer;
+int buflen;
+{
+    int maxfd, nfound, size;
+    fd_set readset, selectset;
+    struct timeval timeout;
+    char *dataptr;
+    int spaceleft;
+    int eof;
+
+    dataptr = buffer;
+    spaceleft = buflen;
+
+    maxfd = datafd + 1;
+    eof = 0;
+
+    FD_ZERO(&readset);
+    FD_SET(datafd, &readset);
+
+    do {
+
+	timeout.tv_sec = READ_TIMEOUT;
+	timeout.tv_usec = 0;
+	memcpy(&selectset, &readset, sizeof(fd_set));
+
+	nfound = select(maxfd, (SELECT_ARG_TYPE *)(&selectset), NULL, NULL, &timeout);
+
+	/* check for errors or timeout */
+
+	if(nfound == 0)  {
+	    size=-2;
+	    /*strcpy(errstr,"data timeout");*/
+	}
+	if(nfound == -1) {
+	    size=-3;
+	    /*sprintf(errstr,  "select: %s", strerror(errno));*/
+	}
+
+	/* read/write any data */
+
+	if(FD_ISSET(datafd, &selectset)) {
+	    size = read(datafd, dataptr, spaceleft);
+	    switch(size) {
+	    case -1:
+		/*sprintf(errstr, "data read: %s", strerror(errno));*/
+		break;
+	    case 0:
+		spaceleft -= size;
+		dataptr += size;
+		break;
+	    default:
+		spaceleft -= size;
+		dataptr += size;
+		break;
+	    }
+	}
+    } while (spaceleft>0 && size>0);
+
+    if(size<0) {
+	return -1;
+    }
+    return(buflen-spaceleft);
+}
 
 EXTRACT_LIST *first_tape_list P((void))
 {
@@ -455,20 +531,47 @@ static int extract_files_setup P((void))
     sprintf(disk_regex, "^%s$", disk_name);
 
     /* send to the tape server what tape file we want */
-    /* 4 args: "-p", "tape device", "hostname", "diskname" */
-    send_to_tape_server(tape_server_socket, "4");
+    /* 5 args: "-h ", "-p", "tape device", "hostname", "diskname" */
+    send_to_tape_server(tape_server_socket, "5");
+    send_to_tape_server(tape_server_socket, "-h");
     send_to_tape_server(tape_server_socket, "-p");
     send_to_tape_server(tape_server_socket, dump_device_name);
     send_to_tape_server(tape_server_socket, dump_hostname);
     send_to_tape_server(tape_server_socket, disk_regex);
 		
-    dbprintf(("Started amidxtaped with arguments \"4 -p %s %s %s\"\n",
+    dbprintf(("Started amidxtaped with arguments \"5 -h -p %s %s %s\"\n",
 	      dump_device_name, dump_hostname, disk_regex));
 
     return tape_server_socket;
 }
 
-    
+
+int read_file_header(buffer, file, buflen, tapedev)
+char *buffer;
+dumpfile_t *file;
+int buflen;
+int tapedev;
+/*
+ * Reads the first block of a tape file.
+ */
+{
+    int bytes_read;
+    bytes_read=read_buffer(tapedev,buffer,buflen);
+    if(bytes_read < 0) {
+	error("error reading tape: %s", strerror(errno));
+    }
+    else if(bytes_read < buflen) {
+	fprintf(stderr, "%s: short block %d bytes\n", pname, bytes_read);
+	print_header(stdout, file);
+	error("Can't read file header");
+    }
+    else { /* bytes_read == buflen */
+	parse_file_header(buffer, file, bytes_read);
+    }
+    return(bytes_read);
+}
+
+
 /* exec restore to do the actual restoration */
 static int extract_files_child(in_fd, elist)
 int in_fd;
@@ -479,6 +582,10 @@ EXTRACT_LIST *elist;
     char **restore_args;
     int files_off_tape;
     EXTRACT_LIST_ITEM *fn;
+    int istar;
+    char buffer[TAPE_BLOCK_BYTES];
+    dumpfile_t file;
+    int buflen;
 
     /* code executed by child to do extraction */
     /* never returns */
@@ -490,11 +597,23 @@ EXTRACT_LIST *elist;
 	exit(1);
     }
 
+    /* read the file header */
+    buflen=read_file_header(buffer, &file, sizeof(buffer), STDIN_FILENO);
+
+    if(file.type != F_DUMPFILE) {
+	print_header(stdout, &file);
+	error("bad header");
+    }
+    istar=!strcmp(file.program,GNUTAR);
+
     /* form the arguments to restore */
+    if(istar)
+        no_initial_params = 3;
+    else
 #ifdef AIX_BACKUP
-    no_initial_params = 2;
+        no_initial_params = 2;
 #else
-    no_initial_params = 4;
+        no_initial_params = 4;
 #endif
     files_off_tape = length_of_tape_list(elist);
     if ((restore_args
@@ -510,29 +629,44 @@ EXTRACT_LIST *elist;
 	perror("Couldn't malloc restore_args[0]");
 	exit(4);
     }
-    strcpy(restore_args[0], "restore");
+    if(istar)
+	strcpy(restore_args[0], "tar");
+    else
+        strcpy(restore_args[0], "restore");
     if ((restore_args[1] = (char *)malloc(1024)) == NULL)
     {
 	perror("Couldn't malloc restore_args[1]");
 	exit(5);
     }
+    if(istar) {
+	strcpy(restore_args[1], "-xpvf");
+        if ((restore_args[2] = (char *)malloc(1024)) == NULL)
+        {
+	    perror("Couldn't malloc restore_args[2]");
+	    exit(6);
+        }
+        strcpy(restore_args[2], "-");	/* data on stdin */
+    }
+    else {
 #ifdef AIX_BACKUP
-    strcpy(restore_args[1], "-xB");
+        strcpy(restore_args[1], "-xB");
 #else
-    strcpy(restore_args[1], "xbf");
-    if ((restore_args[2] = (char *)malloc(1024)) == NULL)
-    {
-	perror("Couldn't malloc restore_args[2]");
-	exit(6);
-    }
-    strcpy(restore_args[2], "2");	/* read in units of 1K */
-    if ((restore_args[3] = (char *)malloc(1024)) == NULL)
-    {
-	perror("Couldn't malloc restore_args[3]");
-	exit(61);
-    }
-    strcpy(restore_args[3], "-");	/* data on stdin */
+        strcpy(restore_args[1], "xbf");
+        if ((restore_args[2] = (char *)malloc(1024)) == NULL)
+        {
+	    perror("Couldn't malloc restore_args[2]");
+	    exit(6);
+        }
+        strcpy(restore_args[2], "2");	/* read in units of 1K */
+        if ((restore_args[3] = (char *)malloc(1024)) == NULL)
+        {
+	    perror("Couldn't malloc restore_args[3]");
+	    exit(61);
+        }
+        strcpy(restore_args[3], "-");	/* data on stdin */
 #endif
+    }
+
     for (i = 0, fn = elist->files; i < files_off_tape; i++, fn = fn->next)
     {
 	if ((restore_args[no_initial_params+i]
@@ -541,24 +675,44 @@ EXTRACT_LIST *elist;
 	    perror("Couldn't malloc restore_args[no_initial_params+i]");
 	    exit(7);
 	}
-	strcpy(restore_args[no_initial_params+i], fn->path);
+	if(istar) {
+	    restore_args[no_initial_params+i][0]='.';
+	    strcpy(&(restore_args[no_initial_params+i][1]), fn->path);
+	}
+	else
+	    strcpy(restore_args[no_initial_params+i], fn->path);
     }
 
     restore_args[no_initial_params + files_off_tape] = NULL;
-	    
-#ifndef RESTORE
-    fprintf(stderr, "RESTORE program not available.\n");
+
+    if(istar) {
+	char cmd[1024];
+#ifndef GNUTAR
+        fprintf(stderr, "GNUTAR program not available.\n");
 #else
-    dbprintf(("Exec'ing %s with arguments:\n", RESTORE));
-    for (i = 0; i < no_initial_params + files_off_tape; i++)
-	dbprintf(("\t%s\n", restore_args[i]));
-
-    /* then exec to it */
-    (void)execv(RESTORE, restore_args);
-
-    /* only get here if exec failed */
-    perror("amrecover couldn't exec restore");
+	sprintf(cmd, "%s/runtar%s", libexecdir, versionsuffix());
+	/* strcpy(cmd,GNUTAR); */
+        dbprintf(("Exec'ing %s with arguments:\n", cmd));
+        for (i = 0; i < no_initial_params + files_off_tape; i++)
+	    dbprintf(("\t%s\n", restore_args[i]));
+        (void)execv(cmd, restore_args);
+        /* only get here if exec failed */
+        perror("amrecover couldn't exec tar");
 #endif
+    }
+    else {
+#ifndef RESTORE
+        fprintf(stderr, "RESTORE program not available.\n");
+#else
+        dbprintf(("Exec'ing %s with arguments:\n", RESTORE));
+        for (i = 0; i < no_initial_params + files_off_tape; i++)
+	    dbprintf(("\t%s\n", restore_args[i]));
+        (void)execv(RESTORE, restore_args);
+        /* only get here if exec failed */
+        perror("amrecover couldn't exec restore");
+#endif
+    }
+
     exit(1);
     /*NOT REACHED */
 }
@@ -615,12 +769,12 @@ void extract_files P((void))
 	strcpy(tape_device_name, l+4);	/* skip reply number */
     }
 
-    printf("\nExtracting files using tape drive %s on host %s.\n",
-	   tape_device_name, tape_server_name);
     first=1;
     for (elist = first_tape_list(); elist != NULL; elist = next_tape_list(elist))
 	if(elist->tape[0]!='/') {
 	    if(first) {
+		printf("\nExtracting files using tape drive %s on host %s.\n",
+			tape_device_name, tape_server_name);
 		printf("\nThe following tapes are needed:");
 		first=0;
 	    }
@@ -632,6 +786,8 @@ void extract_files P((void))
     for (elist = first_tape_list(); elist != NULL; elist = next_tape_list(elist))
 	if(elist->tape[0]=='/') {
 	    if(first) {
+		printf("\nExtracting files from holding disk on host %s.\n",
+			tape_server_name);
 		printf("\nThe following files are needed:");
 		first=0;
 	    }

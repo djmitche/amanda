@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.33 1997/11/17 12:41:30 amcore Exp $
+/* $Id: dumper.c,v 1.34 1997/12/01 01:06:10 amcore Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -38,7 +38,7 @@
 #include "stream.h"
 #include "token.h"
 #include "version.h"
-
+#include "fileheader.h"
 
 #ifdef KRB4_SECURITY
 #include "dumper-krb4.c"
@@ -60,7 +60,7 @@
 #define READ_TIMEOUT	30*60
 #define MAX_LINE	1024
 #define MAX_ARGS	10
-#define DATABUF_SIZE	32*1024
+#define DATABUF_SIZE	TAPE_BLOCK_BYTES
 #define MESGBUF_SIZE	4*1024
 
 #define STARTUP_TIMEOUT 60
@@ -596,41 +596,41 @@ logtype_t typ;
 int write_tapeheader(outfd)
 int outfd;
 {
-    char line[128], unc[256];
     char buffer[TAPE_BLOCK_BYTES], *bufptr;
+    dumpfile_t file;
     int len;
-    char *comp_suf;
     int count;
 
+    fh_init(&file);
+    file.type=F_DUMPFILE;
+    strcpy(file.datestamp, datestamp);
+    strcpy(file.name     , hostname);
+    strcpy(file.disk     , diskname);
+    file.dumplevel = level;
+    strcpy(file.program  , backup_name);
+    strcpy(file.recover_cmd,recover_cmd);
+
     if (srvcompress) {
-	sprintf(unc, " %s %s |", UNCOMPRESS_PATH,
+	file.compressed=1;
+	sprintf(file.uncompress_cmd, " %s %s |", UNCOMPRESS_PATH,
 #ifdef UNCOMPRESS_OPT
 		UNCOMPRESS_OPT
 #else
 		""
 #endif
 		);
-	comp_suf = COMPRESS_SUFFIX;
+	strcpy(file.comp_suffix, COMPRESS_SUFFIX);
     }
     else {
-	unc[0] = '\0';
-	if(compress_suffix)
-	    comp_suf = compress_suffix;
+	file.uncompress_cmd[0] = '\0';
+	file.compressed=compress_suffix!=NULL;
+	if(compress_suffix) 
+	    strcpy(file.comp_suffix, compress_suffix);
 	else
-	    comp_suf = "N";
+	    strcpy(file.comp_suffix, "N");
     }
 
-    sprintf(buffer, "AMANDA: FILE %s %s %s lev %d comp %s program %s\n",
-	    datestamp, hostname, diskname, level, comp_suf, backup_name);
-
-    strcat(buffer,"To restore, position tape at start of file and run:\n");
-
-    sprintf(line, "\tdd if=<tape> bs=%dk skip=1 |%s %s\n\014\n",
-	    TAPE_BLOCK_SIZE, unc, recover_cmd);
-    strcat(buffer, line);
-
-    len = strlen(buffer);
-    memset(buffer + len, '\0', sizeof(buffer) - len);
+    write_header(buffer, &file,sizeof(buffer));
 
     bufptr = buffer;
     for (count = sizeof(buffer); count > 0; ) {

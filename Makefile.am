@@ -6,8 +6,8 @@ ACLOCAL = @ACLOCAL@ -I config @LIBTOOL_M4_MACRO_DIR@
 AUTOCONF = @AUTOCONF@ --localdir=config
 
 SUBDIRS=config		\
-	common-src	client-src	recover-src	\
-	tape-src	server-src	restore-src	\
+	common-src	client-src	tape-src	\
+	server-src	restore-src	recover-src	\
 	changer-src	amplot		man		\
 	example
 

@@ -25,12 +25,12 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.8 1997/11/11 06:39:37 amcore Exp $
+ * $Id: amrestore.c,v 1.9 1997/12/01 01:06:08 amcore Exp $
  *
  * retrieves files from an amanda tape
  */
 /*
- * usage: amrestore [-p] [-r|-c] tape-device [hostname [diskname]]
+ * usage: amrestore [-p] [-h] [-r|-c] tape-device [hostname [diskname]]
  *
  * Pulls all files from the tape that match the hostname and diskname regular
  * expressions.  For example, specifying "rz1" as the diskname matches "rz1a",
@@ -40,50 +40,31 @@
  *	-p   put output on stdout
  *	-c   write compressed
  *	-r   raw, write file as is on tape (with header, possibly compressed)
+ *	-h   write the header too
  */
 
 #include "amanda.h"
 #include "tapeio.h"
+#include "fileheader.h"
 
-#define STRMAX		256
 #define CREAT_MODE	0640
 
-typedef char string_t[STRMAX];
-typedef enum {
-    F_UNKNOWN, F_WEIRD, F_TAPESTART, F_TAPEEND, F_DUMPFILE 
-} filetype_t;
-
-typedef struct file_s {
-    filetype_t type;
-    int datestamp;
-    int dumplevel;
-    int compressed;
-    string_t comp_suffix;
-    string_t name;	/* hostname or label */
-    string_t disk;
-} dumpfile_t;
-
 char *pname = "amrestore";
-dumpfile_t file;
-string_t filename, line;
 char buffer[TAPE_BLOCK_BYTES];
-char *tapename, *hostname, *diskname;
 
-int compflag, rawflag, pipeflag;
-int buflen, tapedev, got_sigpipe, file_number;
+
+int compflag, rawflag, pipeflag, headerflag;
+int buflen, got_sigpipe, file_number;
 pid_t compress_pid = -1;
-int compress_status;
 
 /* local functions */
 
 void errexit P((void));
-char *eatword P((char **linep));
-void read_file_header P((void));
-void print_header P((FILE *outf));
-int disk_match P((void));
 void handle_sigpipe P((int sig));
-int known_compress_type P((void));
-void restore P((void));
+int disk_match P((dumpfile_t *file, char *hostname, char *diskname));
+void make_filename P((string_t filename, dumpfile_t *file));
+int read_file_header P((char *buffer, dumpfile_t *file, int buflen, int tapedev));
+void restore P((dumpfile_t *file, string_t filename, int tapedev, int isafile));
 void usage P((void));
 int main P((int argc, char **argv));
 
@@ -93,160 +74,6 @@ void errexit()
  */
 {
     exit(2);
-}
-
-
-char *eatword(linep)
-char **linep;
-/*
- * Given a pointer into a character string, eatword advances the pointer
- * past the next word (possibly preceeded by whitespace) in the string.
- * The first space after the word is set to '\0'.  A pointer to the start
- * of the word is returned.
- */
-{
-    char *str, *lp;
-
-    lp = *linep;
-
-    while(*lp && isspace(*lp)) lp++;	/* eat leading whitespace */
-
-    str = lp;
-    while(*lp && !isspace(*lp)) lp++;	/* eat word */
-
-    if(*lp) {				/* zero char after word, if needed */
-	*lp = '\0';
-	lp++;
-    }
-    *linep = lp;
-    return str;
-}
-
-
-void read_file_header()
-/*
- * Reads the first block of a tape file and parses the amanda header line
- * contained therein, setting up the file structure and filename string.
- */
-{
-    char *lp, *bp, *str;
-    int nchars;
-
-    buflen = tapefd_read(tapedev, buffer, sizeof(buffer));
-    if(buflen < 0)
-	error("error reading tape: %s", strerror(errno));
-
-    else if(buflen < sizeof(buffer)) {
-	fprintf(stderr, "amrestore: short block %d bytes\n", buflen);
-	  /* GH: no simple return, but set file.type to F_TAPEEND, so that
-	     the loop in main() stops... */
-	if (buflen == 0) {
-	    file.type = F_TAPEEND;
-	    return;
-	}
-    }
-
-    /* isolate first line */
-
-    nchars = buflen<sizeof(line)? buflen : sizeof(line) - 1;
-    for(lp=line, bp=buffer; bp < buffer+nchars; bp++, lp++) {
-	*lp = *bp;
-	if(*bp == '\n') {
-	    *lp = '\0';
-	    break;
-	}
-    }
-    line[STRMAX-1] = '\0';
-
-
-    lp = line;
-    str = eatword(&lp);
-    if(strcmp(str, "NETDUMP:") && strcmp(str,"AMANDA:")) {
-	file.type = F_UNKNOWN;
-	return;
-    }
-    
-    str = eatword(&lp);
-    if(!strcmp(str, "TAPESTART")) {
-	file.type = F_TAPESTART;
-	eatword(&lp);				/* ignore "DATE" */
-	file.datestamp = atoi(eatword(&lp));
-	eatword(&lp);				/* ignore "TAPE" */
-	strcpy(file.name, eatword(&lp));
-    }
-    else if(!strcmp(str, "FILE")) {
-	file.type = F_DUMPFILE;
-	file.datestamp = atoi(eatword(&lp));
-	strcpy(file.name, eatword(&lp));
-	strcpy(file.disk, eatword(&lp));
-	eatword(&lp);				/* ignore "lev" */
-	file.dumplevel = atoi(eatword(&lp));
-	eatword(&lp);				/* ignore "comp" */
-	strcpy(file.comp_suffix, eatword(&lp));
-	file.compressed = strcmp(file.comp_suffix, "N");
-	/* compatibility with pre-2.2 amanda */
-	if(!strcmp(file.comp_suffix, "C"))
-	    strcpy(file.comp_suffix, ".Z");
-
-	sprintf(filename, "%s.%s.%d.%d", file.name, 
-		sanitise_filename(file.disk),
-		file.datestamp, file.dumplevel);
-    }
-    else if(!strcmp(str, "TAPEEND")) {
-	file.type = F_TAPEEND;
-	eatword(&lp);				/* ignore "DATE" */
-	file.datestamp = atoi(eatword(&lp));
-    }
-    else {
-	fprintf(stderr, "amrestore: strange amanda header: \"%s\"\n", line);
-	file.type = F_WEIRD;
-	return;
-    }
-}
-
-void print_header(outf)
-FILE *outf;
-/*
- * Prints the contents of the file structure.
- */
-{
-    switch(file.type) {
-    case F_UNKNOWN:
-	fprintf(outf, "UNKNOWN file\n");
-	break;
-    case F_WEIRD:
-	fprintf(outf, "WEIRD file\n");
-	break;
-    case F_TAPESTART:
-	fprintf(outf, "start of tape: date %d label %s\n",
-	       file.datestamp, file.name);
-	break;
-    case F_DUMPFILE:
-	fprintf(outf, "dumpfile: date %d host %s disk %s lev %d comp %s\n",
-		file.datestamp, file.name, file.disk, file.dumplevel, 
-		file.comp_suffix);
-	break;
-    case F_TAPEEND:
-	fprintf(outf, "end of tape: date %d\n", file.datestamp);
-	break;
-    }
-}
-
-
-int disk_match()
-/*
- * Returns 1 if the current dump file matches the hostname and diskname
- * regular expressions given on the command line, 0 otherwise.  As a 
- * special case, empty regexs are considered equivalent to ".*": they 
- * match everything.
- */
-{
-    if(file.type != F_DUMPFILE) return 0;
-
-    if(*hostname == '\0' || match(hostname, file.name)) {
-	return (*diskname == '\0' || match(diskname, file.disk));
-    }
-    return 0;
 }
 
 
@@ -261,19 +88,66 @@ int sig;
     got_sigpipe++;
 }
 
-int known_compress_type()
+int disk_match(file, hostname, diskname)
+dumpfile_t *file;
+char *hostname, *diskname;
+
+/*
+ * Returns 1 if the current dump file matches the hostname and diskname
+ * regular expressions given on the command line, 0 otherwise.  As a 
+ * special case, empty regexs are considered equivalent to ".*": they 
+ * match everything.
+ */
 {
-    if(!strcmp(file.comp_suffix, ".Z"))
-	return 1;
-#ifdef HAVE_GZIP
-    if(!strcmp(file.comp_suffix, ".gz"))
-	return 1;
-#endif
+    if(file->type != F_DUMPFILE) return 0;
+
+    if(*hostname == '\0' || match(hostname, file->name)) {
+	return (*diskname == '\0' || match(diskname, file->disk));
+    }
     return 0;
 }
 
 
-void restore()
+void make_filename(filename, file)
+string_t filename;
+dumpfile_t *file;
+{
+    sprintf(filename, "%s.%s.%s.%d", file->name,
+	    sanitise_filename(file->disk),
+	    file->datestamp, file->dumplevel);
+}
+
+
+int read_file_header(buffer, file, buflen, tapedev)
+char *buffer;
+dumpfile_t *file;
+int buflen;
+int tapedev;
+/*
+ * Reads the first block of a tape file.
+ */
+{
+    int bytes_read;
+    bytes_read = tapefd_read(tapedev, buffer, buflen);
+    if(bytes_read < 0) {
+	error("error reading tape: %s", strerror(errno));
+    }
+    else if(bytes_read < buflen) {
+	fprintf(stderr, "%s: short block %d bytes\n", pname, bytes_read);
+	file->type = F_TAPEEND;
+    }
+    else {
+	parse_file_header(buffer, file, bytes_read);
+    }
+    return(bytes_read);
+}
+
+
+void restore(file, filename, tapedev, isafile)
+dumpfile_t *file;
+string_t filename;
+int tapedev;
+int isafile;
 /*
  * Restore the current file from tape.  Depending on the settings of
  * the command line flags, the file might need to be compressed or
@@ -288,10 +162,10 @@ void restore()
 
     /* adjust compression flag */
 
-    if(!compflag && file.compressed && !known_compress_type()) {
+    if(!compflag && file->compressed && !known_compress_type(file)) {
 	fprintf(stderr, 
-		"amrestore: unknown compression suffix %s, can't uncompress\n",
-		file.comp_suffix);
+		"%s: unknown compression suffix %s, can't uncompress\n",
+		pname, file->comp_suffix);
 	compflag = 1;
     }
 
@@ -302,7 +176,7 @@ void restore()
     else {
 	if(compflag) 
 	    strcat(filename, 
-		   file.compressed? file.comp_suffix : COMPRESS_SUFFIX);
+		   file->compressed? file->comp_suffix : COMPRESS_SUFFIX);
 	else if(rawflag) 
 	    strcat(filename, ".RAW");
 
@@ -312,9 +186,15 @@ void restore()
 
     out = dest;
 
+    /* if -r or -h, write the header before compress or uncompress pipe */
+    if(rawflag || headerflag) {
+	if((rc = write(out, buffer, buflen)) < buflen)
+	    error("short write: %s", strerror(errno));
+    }
+    
     /* if -c and file not compressed, insert compress pipe */
 
-    if(compflag && !file.compressed) {
+    if(compflag && !file->compressed) {
 	pipe(outpipe);
 	out = outpipe[1];
 	switch(compress_pid = fork()) {
@@ -337,7 +217,7 @@ void restore()
 
     /* if not -r or -c, and file is compressed, insert uncompress pipe */
 
-    else if(!rawflag && !compflag && file.compressed) {
+    else if(!rawflag && !compflag && file->compressed) {
 	/* 
 	 * XXX for now we know that for the two compression types we
 	 * understand, .Z and optionally .gz, UNCOMPRESS_PATH will take
@@ -348,7 +228,7 @@ void restore()
 	out = outpipe[1];
 	switch(compress_pid = fork()) {
 	case -1: 
-	    error("amrestore: could not fork for %s: %s", 
+	    error("%s: could not fork for %s: %s", pname, 
 		  UNCOMPRESS_PATH, strerror(errno));
 	default:
 	    close(outpipe[0]);
@@ -369,13 +249,6 @@ void restore()
 	}
     }
 
-    /* if -r, write the header too */
-    
-    if(rawflag) {
-	if((rc = write(out, buffer, buflen)) < buflen)
-	    error("short write: %s", strerror(errno));
-    }
-    
 
     /* copy the rest of the file from tape to the output */
     got_sigpipe = 0;
@@ -386,11 +259,12 @@ void restore()
 		fprintf(stderr,"Error %d offset %d+%d, wrote %d\n",
 			errno, wc, buflen, rc);
 		fprintf(stderr,  
-		       "amrestore: pipe reader has quit in middle of file.\n");
+		       "%s: pipe reader has quit in middle of file.\n",pname);
 		fprintf(stderr,
-	"amrestore: skipping ahead to start of next file, please wait...\n");
-		if(tapefd_fsf(tapedev, 1) == -1)
-		    error("fast-forward: %s", strerror(errno));
+	"%s: skipping ahead to start of next file, please wait...\n",pname);
+		if(!isafile)
+		    if(tapefd_fsf(tapedev, 1) == -1)
+		        error("fast-forward: %s", strerror(errno));
 	    }
 	    else perror("amrestore: short write");
 
@@ -409,7 +283,7 @@ void usage()
  * Print usage message and terminate.
  */
 {
-    error("Usage: amrestore [-r|-c] [-p] tapedev [host [disk]]");
+    error("Usage: amrestore [-r|-c] [-h] [-p] tapedev [host [disk]]");
 }
 
 
@@ -422,10 +296,15 @@ char **argv;
  */
 {
     extern int optind;
-    int opt, last_match, this_match;
+    int opt;
     char *errstr;
     int isafile;
     struct stat stat_tape;
+    dumpfile_t file;
+    string_t filename;
+    char *tapename, *hostname, *diskname;
+    int compress_status;
+    int tapedev;
 
     erroutput_type = ERR_INTERACTIVE;
 
@@ -433,11 +312,12 @@ char **argv;
     signal(SIGPIPE, handle_sigpipe);
 
     /* handle options */
-    while( (opt = getopt(argc, argv, "crpk")) != -1) {
+    while( (opt = getopt(argc, argv, "crpkh")) != -1) {
 	switch(opt) {
 	case 'c': compflag = 1; break;
 	case 'r': rawflag = 1; break;
 	case 'p': pipeflag = 1; break;
+	case 'h': headerflag = 1; break;
 	default:
 	    usage();
 	}
@@ -450,7 +330,7 @@ char **argv;
     }
 
     if(optind >= argc) {
-	fprintf(stderr, "amrestore: Must specify tape device\n");
+	fprintf(stderr, "%s: Must specify tape device\n", pname);
 	usage();
     }
     else tapename = argv[optind++];
@@ -462,8 +342,8 @@ char **argv;
     else {
 	hostname = argv[optind++];
 	if((errstr=validate_regexp(hostname)) != NULL) {
-	    fprintf(stderr, "amrestore: bad hostname regex \"%s\": %s\n",
-		    hostname, errstr);
+	    fprintf(stderr, "%s: bad hostname regex \"%s\": %s\n",
+		    pname, hostname, errstr);
 	    usage();
 	}
     }
@@ -472,8 +352,8 @@ char **argv;
     else {
 	diskname = argv[optind++];
 	if((errstr=validate_regexp(diskname)) != NULL) {
-	    fprintf(stderr, "amrestore: bad diskname regex \"%s\": %s\n",
-		    diskname, errstr);
+	    fprintf(stderr, "%s: bad diskname regex \"%s\": %s\n",
+		    pname, diskname, errstr);
 	    usage();
 	}
     }
@@ -481,19 +361,19 @@ char **argv;
     if(stat(tapename,&stat_tape)!=0)
 	error("could not stat %s",tapename);
     isafile=S_ISREG((stat_tape.st_mode));
-    last_match = 0;
     file_number = 0;
-    read_file_header();
+    buflen=read_file_header(buffer, &file, sizeof(buffer), tapedev);
 
     if(file.type != F_TAPESTART && !isafile)
 	fprintf(stderr,
-    "amrestore: WARNING: not at start of tape, file numbers will be offset\n");
+    "%s: WARNING: not at start of tape, file numbers will be offset\n", pname);
 
-    while(file.type != F_TAPEEND) {
-	if((this_match = disk_match()) != 0) {
-	    fprintf(stderr, "amrestore: %3d: restoring %s\n", 
-		    file_number, filename);
-	    restore();
+    while(file.type == F_TAPESTART || file.type == F_DUMPFILE) {
+	if(disk_match(&file,hostname,diskname) != 0) {
+	    make_filename(filename, &file);
+	    fprintf(stderr, "%s: %3d: restoring %s\n", 
+		    pname, file_number, filename);
+	    restore(&file, filename, tapedev, isafile);
 	    if(pipeflag) break;
 	      /* GH: close and reopen the tape device, so that the
 		 read_file_header() below reads the next file on the
@@ -509,24 +389,23 @@ char **argv;
 		error("could not open tape %s: %s", tapename, strerror(errno));
 	}
 	else {
-	    fprintf(stderr, "amrestore: %3d: skipping ", file_number);
-	    if(file.type != F_DUMPFILE) print_header(stderr);
+	    fprintf(stderr, "%s: %3d: skipping ", pname, file_number);
+	    if(file.type != F_DUMPFILE) print_header(stderr,&file);
 	    else fprintf(stderr, "%s\n", filename);
 	    if(tapefd_fsf(tapedev, 1) == -1)
 		error("fast-forward: %s", strerror(errno));
 	}
-	last_match = this_match;
 	file_number += 1;
 	if(isafile)
 	    file.type = F_TAPEEND;
 	else
-	    read_file_header();
+	    buflen=read_file_header(buffer, &file, sizeof(buffer), tapedev);
     }
     tapefd_close(tapedev);
 
     if(file.type == F_TAPEEND && !isafile) {
-	fprintf(stderr, "amrestore: %3d: reached ", file_number);
-	print_header(stderr);
+	fprintf(stderr, "%s: %3d: reached ", pname, file_number);
+	print_header(stderr,&file);
 	return 1;
     }
     return 0;
