@@ -245,7 +245,7 @@ uscan.c
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
-TAR = gnutar
+TAR = tar
 SOURCES = amandad.c calcsize.c rundump.c runtar.c selfcheck.c $(sendbackup_dump_SOURCES) $(sendbackup_gnutar_SOURCES) sendsize.c versionsuffix.c $(amrecover_SOURCES) amrestore.c
 OBJECTS = amandad.o calcsize.o rundump.o runtar.o selfcheck.o $(sendbackup_dump_OBJECTS) $(sendbackup_gnutar_OBJECTS) sendsize.o versionsuffix.o $(amrecover_OBJECTS) amrestore.o
 

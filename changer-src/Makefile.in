@@ -170,7 +170,7 @@ hp-changer.sh.in no-changer.sh.in rth-changer.pl.in
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
-TAR = gnutar
+TAR = tar
 SOURCES = seagate-changer.c
 OBJECTS = seagate-changer.o
 

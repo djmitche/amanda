@@ -154,7 +154,7 @@ DIST_COMMON =  Makefile.am Makefile.in amcat.awk.in amplot.sh.in
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
-TAR = gnutar
+TAR = tar
 default: all
 
 .SUFFIXES:

@@ -185,7 +185,7 @@ strdup.c strerror.c strstr.c versuff.c.in
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
-TAR = gnutar
+TAR = tar
 SOURCES = $(libamanda_a_SOURCES)
 OBJECTS = $(libamanda_a_OBJECTS)
 

@@ -26,7 +26,6 @@
  */
 
 #include "amanda.h"
-#include "logfile.h"
 #include "getfsent.h"
 
 #include "amandates.h"
@@ -203,9 +202,8 @@ time_t dumpdate;
 
     if(dumpdate < amdp->dates[level]) {
 	/* this is not allowed, but we can ignore it */
-	log(L_WARNING,
-	    "amandates botch: %s lev %d: new dumpdate %ld old %ld",
-	    name, level, (long) dumpdate, (long) amdp->dates[level]);
+        dbprintf(("amandates botch: %s lev %d: new dumpdate %ld old %ld",
+		  name, level, (long) dumpdate, (long) amdp->dates[level]));
 	return;
     }
 
@@ -227,9 +225,8 @@ time_t dumpdate;
 
     if(dumpdate < amdp->dates[level]) {
 	/* this is not allowed, but we can ignore it */
-	log(L_WARNING,
-	    "amandates updateone: %s lev %d: new dumpdate %ld old %ld",
-	    name, level, (long) dumpdate, (long) amdp->dates[level]);
+	dbprintf(("amandates updateone: %s lev %d: new dumpdate %ld old %ld",
+		  name, level, (long) dumpdate, (long) amdp->dates[level]));
 	return;
     }
 

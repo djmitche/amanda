@@ -256,7 +256,7 @@ amtoc.pl.in amverify.sh.in
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
-TAR = gnutar
+TAR = tar
 SOURCES = amadmin.c amcheck.c amflush.c amidxtaped.c $(amindexd_SOURCES) amlabel.c amtape.c amtrmidx.c $(driver_SOURCES) dumper.c getconf.c planner.c reporter.c taper.c
 OBJECTS = amadmin.o amcheck.o amflush.o amidxtaped.o $(amindexd_OBJECTS) amlabel.o amtape.o amtrmidx.o $(driver_OBJECTS) dumper.o getconf.o planner.o reporter.o taper.o
 
