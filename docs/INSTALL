@@ -178,7 +178,8 @@ to compile some of the Amanda programs (see section 1.2.H below).
 		ln -s amdump-x.y.z amdump
 	This is not done automatically by the install process, so that
 	you can have multiple Amanda versions co-existing, and choose
-	yourself which to make the default version.
+	yourself which to make the default version.  The script
+	contrib/set_prod_link.pl may save you some keystrokes.
 
 2. SETTING UP YOUR AMANDA CONFIGURATION
 

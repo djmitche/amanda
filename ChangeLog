@@ -1,3 +1,8 @@
+1999-11-02  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* Makefile.am (EXTRA_DIST): Added contrib/set_prod_link.pl.
+	* docs/INSTALL: Likewise.
+
 1999-11-02  Ricardo Malta  <rmalta@bigfoot.com>
 	
 	* contrib/set_prod_link.pl: Create the links for a configuration
@@ -571,7 +576,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.299 1999/11/02 21:29:47 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.300 1999/11/02 21:34:14 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
