@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.44 1997/12/16 17:52:53 jrj Exp $
+ * $Id: sendsize.c,v 1.45 1997/12/30 05:24:02 jrj Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -41,19 +41,19 @@
 
 #ifdef SETPGRP_VOID
 #  define SETPGRP	setpgrp()
-#  define SETPGRP_FAILED() \
-	    dbprintf(("setpgrp() failed: %s\n", strerror(errno)));
+#  define SETPGRP_FAILED() do {						\
+    dbprintf(("setpgrp() failed: %s\n", strerror(errno)));		\
+} while(0)
 
 #else
 #  define SETPGRP	setpgrp(0, getpid())
-#  define SETPGRP_FAILED() \
-	    dbprintf(("setpgrp(0,%ld) failed: %s\n", (long) getpid(), \
-		      strerror(errno)));
+#  define SETPGRP_FAILED() do {						\
+    dbprintf(("setpgrp(0,%ld) failed: %s\n",				\
+	      (long)getpid(), strerror(errno)));			\
+} while(0)
 
 #endif
 
-#define MAXLINE 4096
-char line[MAXLINE];
 char *pname = "sendsize";
 
 typedef struct level_estimates_s {
@@ -77,7 +77,7 @@ disk_estimates_t *est_list;
 #define MAXMAXDUMPS 16
 
 int maxdumps = 1, dumpsrunning = 0;
-char host[MAX_HOSTNAME_LENGTH];		/* my hostname from the server */
+char *host;				/* my hostname from the server */
 
 /* local functions */
 int main P((int argc, char **argv));
@@ -95,10 +95,13 @@ int argc;
 char **argv;
 {
     int level, new_maxdumps, platter;
-    char exclude[256], disk[256], prog[256], opt[256], *str;
-    char dumpdate[256];
+    char *prog, *disk, *dumpdate, *exclude;
     disk_estimates_t *est;
     int scanres;
+    char *line;
+    char *s, *fp;
+    int ch;
+    char *err_extra = NULL;
 
     /* initialize */
 
@@ -108,47 +111,110 @@ char **argv;
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 
-    gethostname(host, sizeof(host)-1);
+    host = alloc(MAX_HOSTNAME_LENGTH);
+    gethostname(host, MAX_HOSTNAME_LENGTH-1);
+    host[MAX_HOSTNAME_LENGTH-1] = '\0';
 
     /* handle all service requests */
 
     start_amandates(0);
 
-    while(fgets(line, MAXLINE, stdin)) {
-	if(!strncmp(line, "OPTIONS", 7)) {
-	    str = strstr(line, "maxdumps=");
-	    if(str != NULL
-	       && sscanf(str, "maxdumps=%d;", &new_maxdumps) == 1) {
-		if (new_maxdumps > MAXMAXDUMPS)
+    for(; (line = agets(stdin)) != NULL; free(line)) {
+#define sc "OPTIONS"
+	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
+#undef sc
+#define sc "maxdumps="
+	    s = strstr(line, sc);
+	    if(s != NULL) {
+		s += sizeof(sc)-1;
+#undef sc
+		if(sscanf(s, "%d;", &new_maxdumps) != 1) {
+		    err_extra = "bad maxdumps value";
+		    goto err;
+		}
+		if (new_maxdumps > MAXMAXDUMPS) {
 		    maxdumps = MAXMAXDUMPS;
-		else if (new_maxdumps > 0)
+		} else if (new_maxdumps > 0) {
 		    maxdumps = new_maxdumps;
+		}
 	    }
 
-	    str = strstr(line, "hostname=");
-	    if(str != NULL)
-		sscanf(str, "hostname=%[^;]", host);
+#define sc "hostname="
+	    s = strstr(line, sc);
+	    if(s != NULL) {
+		s += sizeof(sc)-1;
+		ch = *s++;
+#undef sc
+		fp = s-1;
+		while(ch != '\0' && ch != ';') ch = *s++;
+		s[-1] = '\0';
+		host = newstralloc(host, fp);
+	    }
 
-	    ap_snprintf(opt, sizeof(opt), "OPTIONS maxdumps=%d;\n", maxdumps);
-	    write(1, opt, strlen(opt));
+	    printf("OPTIONS maxdumps=%d;\n", maxdumps);
+	    fflush(stdout);
 	    continue;
 	}
 
-	scanres = sscanf(line, "%s %s %d %s %d %s\n",
-			 prog, disk, &level, dumpdate, &platter, exclude+2);
-	switch(scanres) {
-	case 4:
-	  platter = 0;
-	  /* do not break; */
-	case 5:
-	  *exclude = 0;
-	  break;
-	case 6:
-	  exclude[0] = exclude[1] = '-';
-	  break;
-	default:
-	  goto err;
+	s = line;
+	ch = *s++;
+
+	skip_whitespace(s, ch);			/* find the program name */
+	if(ch == '\0') {
+	    err_extra = "no program name";
+	    goto err;				/* no program name */
 	}
+	prog = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+
+	skip_whitespace(s, ch);			/* find the disk name */
+	if(ch == '\0') {
+	    err_extra = "no disk name";
+	    goto err;				/* no disk name */
+	}
+	disk = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+
+	skip_whitespace(s, ch);			/* find the level number */
+	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
+	    err_extra = "bad level";
+	    goto err;				/* bad level */
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);			/* find the dump date */
+	if(ch == '\0') {
+	    err_extra = "no dumpdate";
+	    goto err;				/* no dumpdate */
+	}
+	dumpdate = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+
+	platter = 0;				/* default platter */
+	exclude = "";				/* default is no exclude list */
+
+	skip_whitespace(s, ch);			/* find the platter */
+	if(ch != '\0') {
+	    if(sscanf(s - 1, "%d", &platter) != 1) {
+		err_extra = "bad platter";
+		goto err;			/* bad platter */
+	    }
+	    skip_integer(s, ch);
+
+	    skip_whitespace(s, ch);		/* find the exclusion list */
+	    if(ch != '\0') {
+		exclude = stralloc2("--", s - 1);
+		skip_non_whitespace(s, ch);
+		if(ch) {
+		    err_extra = "extra text at end";
+		    goto err;			/* should have gotten to end */
+		}
+	    }
+	}
+
 	add_diskest(disk, level, exclude, platter, prog);
     }
 
@@ -167,7 +233,11 @@ char **argv;
     return 0;
  err:
     printf("FORMAT ERROR IN REQUEST PACKET\n");
-    dbprintf(("REQ packet is bogus\n"));
+    if(err_extra) {
+	dbprintf(("REQ packet is bogus: %s\n", err_extra));
+    } else {
+	dbprintf(("REQ packet is bogus\n"));
+    }
     dbclose();
     return 1;
 }
@@ -184,7 +254,7 @@ int level, platter;
     time_t dumpdate;
 
     for(curp = est_list; curp != NULL; curp = curp->next) {
-	if(!strcmp(curp->amname, disk)) {
+	if(strcmp(curp->amname, disk) == 0) {
 	    /* already have disk info, just note the level request */
 	    curp->est[level].needestimate = 1;
 	    return;
@@ -236,27 +306,27 @@ disk_estimates_t *est;
       switch(fork()) {
       case 0:
 	break;
-      
       case -1:
+        error("calc_estimates: fork returned: %s", strerror(errno));
       default:
 	return;
       }
     }
-    
+
     /* Now in the child process */
 #ifndef USE_GENERIC_CALCSIZE
-    if(!strcmp(est->program, "DUMP"))
+    if(strcmp(est->program, "DUMP") == 0)
 	dump_calc_estimates(est);
     else
 #endif
 #ifdef SAMBA_CLIENT
-      if (!strcmp(est->program, "GNUTAR") &&
+      if (strcmp(est->program, "GNUTAR") == 0 &&
 	  est->amname[0] == '/' && est->amname[1] == '/')
 	smbtar_calc_estimates(est);
       else
 #endif
 #ifdef GNUTAR
-	if (!strcmp(est->program, "GNUTAR"))
+	if (strcmp(est->program, "GNUTAR") == 0)
 	  gnutar_calc_estimates(est);
 	else
 #endif
@@ -268,25 +338,24 @@ disk_estimates_t *est;
 void generic_calc_estimates(est)
 disk_estimates_t *est;
 {
-    char cmd[256], line[2048], *str;
+    char *cmd;
     char *argv[DUMP_LEVELS*2+10];
-    int i=0, level, argc, calcpid;
+    char number[NUM_STR_SIZE];
+    int i, level, argc, calcpid;
 
-    ap_snprintf(cmd, sizeof(cmd), "%s/calcsize%s", libexecdir,versionsuffix());
+    cmd = vstralloc(libexecdir, "/", "calcsize", versionsuffix(), NULL);
 
-    argv[i++] = "calcsize";
-    argv[i++] = est->program;
+    argc = 0;
+    argv[argc++] = stralloc("calcsize");
+    argv[argc++] = stralloc(est->program);
 #ifdef BUILTIN_EXCLUDE_SUPPORT
     if(est->exclude && *est->exclude) {
-	argv[i++] = "-X";
-	argv[i++] = est->exclude;
+	argv[argc++] = stralloc("-X");
+	argv[argc++] = stralloc(est->exclude);
     }
 #endif
-    argv[i++] = est->amname;
-    argv[i++] = est->dirname;
-    
-    argc = i;
-    str = line;
+    argv[argc++] = stralloc(est->amname);
+    argv[argc++] = stralloc(est->dirname);
 
     dbprintf(("%s: running cmd:", argv[0]));
     for(i=0; i<argc; ++i)
@@ -294,18 +363,16 @@ disk_estimates_t *est;
 
     for(level = 0; level < DUMP_LEVELS; level++) {
 	if(est->est[level].needestimate) {
-	    ap_snprintf(str, sizeof(line) - strlen(line), "%d", level);
-	    argv[argc++] = str; 
-	    dbprintf((" %s", str));
-	    str += strlen(str) + 1;
-	    ap_snprintf(str, sizeof(line) - strlen(line),
+	    ap_snprintf(number, sizeof(number), "%d", level);
+	    argv[argc++] = stralloc(number); 
+	    dbprintf((" %s", number));
+	    ap_snprintf(number, sizeof(number),
 			"%ld", (long)est->est[level].dumpsince);
-	    dbprintf((" %s", str));
-	    argv[argc++] = str;
-	    str += strlen(str) + 1;
+	    argv[argc++] = stralloc(number); 
+	    dbprintf((" %s", number));
 	}
     }
-    argv[argc] = 0;
+    argv[argc] = NULL;
     dbprintf(("\n"));
 
     fflush(stderr); fflush(stdout);
@@ -320,6 +387,10 @@ disk_estimates_t *est;
 	dbprintf(("%s: execve %s returned: %s", pname, cmd, strerror(errno)));
 	exit(1);
     }
+    for(i = 0; i < argc; i++) {
+	afree(argv[i]);
+    }
+    afree(cmd);
 
     wait(NULL);
 }
@@ -344,20 +415,19 @@ disk_estimates_t *est;
 {
     int level;
     long size;
-    char result[1024];
 
     for(level = 0; level < DUMP_LEVELS; level++) {
 	if(est->est[level].needestimate) {
 	    dbprintf(("%s: getting size via dump for %s level %d\n",
 		      pname, est->amname, level));
 	    size = getsize_dump(est->amname, level);
-	    ap_snprintf(result, sizeof(result),
-			"%s %d SIZE %ld\n", est->amname, level, size);
 
 	    amflock(1, "size");
 
-	    lseek(1, (off_t)0, SEEK_END);
-	    write(1, result, strlen(result));
+	    fseek(stdout, (off_t)0, SEEK_SET);
+
+	    printf("%s %d SIZE %ld\n", est->amname, level, size);
+	    fflush(stdout);
 
 	    amfunlock(1, "size");
 	}
@@ -370,20 +440,19 @@ disk_estimates_t *est;
 {
     int level;
     long size;
-    char result[1024];
 
     for(level = 0; level < DUMP_LEVELS; level++) {
 	if(est->est[level].needestimate) {
 	    dbprintf(("%s: getting size via smbclient for %s level %d\n",
 		      pname, est->amname, level));
 	    size = getsize_smbtar(est->amname, level);
-	    ap_snprintf(result, sizeof(result),
-			"%s %d SIZE %ld\n", est->amname, level, size);
 
 	    amflock(1, "size");
 
-	    lseek(1, (off_t)0, SEEK_END);
-	    write(1, result, strlen(result));
+	    fseek(stdout, (off_t)0, SEEK_SET);
+
+	    printf("%s %d SIZE %ld\n", est->amname, level, size);
+	    fflush(stdout);
 
 	    amfunlock(1, "size");
 	}
@@ -397,7 +466,6 @@ disk_estimates_t *est;
 {
   int level;
   long size;
-  char result[1024];
 
   for(level = 0; level < DUMP_LEVELS; level++) {
       if (est->est[level].needestimate) {
@@ -405,20 +473,20 @@ disk_estimates_t *est;
 		    pname, est->amname, level));
 	  size = getsize_gnutar(est->amname, level,
 				est->exclude, est->est[level].dumpsince);
-	  ap_snprintf(result, sizeof(result),
-		      "%s %d SIZE %ld\n", est->amname, level, size);
 
 	  amflock(1, "size");
 
-	  lseek(1, (off_t)0, SEEK_END);
-	  write(1, result, strlen(result));
+	  fseek(stdout, (off_t)0, SEEK_SET);
+
+	  printf("%s %d SIZE %ld\n", est->amname, level, size);
+	  fflush(stdout);
 
 	  amfunlock(1, "size");
       }
   }
 }
 #endif
-	    
+
 typedef struct regex_s {
     char *regex;
     int scale;
@@ -453,9 +521,6 @@ regex_t re_size[] = {
 };
 
 
-char line[MAXLINE];
-
-
 long getsize_dump(disk, level)
 char *disk;
 int level;
@@ -463,112 +528,122 @@ int level;
     int pipefd[2], nullfd, dumppid;
     long size;
     FILE *dumpout;
-    char dumpkeys[10], device[1024];
+    char *dumpkeys = NULL;
+    char *device = NULL;
     int status;
-    char cmd[4096];
+    char *cmd = NULL;
+    char *line = NULL;
+    char level_str[NUM_STR_SIZE];
+
+    ap_snprintf(level_str, sizeof(level_str), "%d", level);
 
 #ifdef OSF1_VDUMP
-    strncpy(device, amname_to_dirname(disk), sizeof(device)-1);
-    device[sizeof(device)-1] = '\0';
+    device = stralloc(amname_to_dirname(disk));
 #else
-    strncpy(device, amname_to_devname(disk), sizeof(device)-1);
-    device[sizeof(device)-1] = '\0';
+    device = stralloc(amname_to_devname(disk));
 #endif
 
-    ap_snprintf(cmd, sizeof(cmd), "%s/rundump%s", libexecdir, versionsuffix());
+    cmd = vstralloc(libexecdir, "/", "rundump", versionsuffix(), NULL);
 
     nullfd = open("/dev/null", O_RDWR);
     pipe(pipefd);
-#ifdef XFSDUMP
-#ifdef DUMP
-    if (!strcmp(amname_to_fstype(device), "xfs"))
-#else
+#ifdef XFSDUMP						/* { */
+#ifdef DUMP						/* { */
+    if (strcmp(amname_to_fstype(device), "xfs") == 0)
+#else							/* } { */
     if (1)
-#endif
+#endif							/* } */
     {
-#ifdef USE_RUNDUMP
+#ifdef USE_RUNDUMP					/* { */
         char *name = " (xfsdump)";
-#else
+#else							/* } { */
         char *name = "";
-	ap_snprintf(cmd, sizeof(cmd), "%s", XFSDUMP);
-#endif
-        ap_snprintf(dumpkeys, sizeof(dumpkeys), "%d", level);
+	cmd = newstralloc(cmd, XFSDUMP);
+#endif							/* } */
 	dbprintf(("%s: running \"%s%s -F -J -l %s - %s\"\n",
-		  pname, cmd, name, dumpkeys, device));
+		  pname, cmd, name, level_str, device));
     }
     else
-#endif
-#ifdef VXDUMP
-#ifdef DUMP
-    if (!strcmp(amname_to_fstype(device), "vxfs"))
-#else
+#endif							/* } */
+#ifdef VXDUMP						/* { */
+#ifdef DUMP						/* { */
+    if (strcmp(amname_to_fstype(device), "vxfs") == 0)
+#else							/* } { */
     if (1)
-#endif
+#endif							/* } */
     {
-#ifdef USE_RUNDUMP
+#ifdef USE_RUNDUMP					/* { */
         char *name = " (vxdump)";
-#else
+#else							/* } { */
 	char *name = "";
-	ap_snprintf(cmd, sizeof(cmd), "%s", VXDUMP);
-#endif
-	ap_snprintf(dumpkeys, sizeof(dumpkeys), "%dsf", level);
+
+	cmd = newstralloc(cmd, VXDUMP);
+#endif							/* } */
+	dumpkeys = vstralloc(level_str, "s", "f", NULL);
         dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n",
 		  pname, cmd, name, dumpkeys, device));
     }
     else
-#endif      
-#ifdef DUMP
+#endif							/* } */
+#ifdef DUMP						/* { */
     if (1) {
-# ifdef USE_RUNDUMP
-#  ifdef AIX_BACKUP
-	char *name = " (backup)";
-#  else
-	char name[1024];
-	ap_snprintf(name, sizeof(name), " (%s)", DUMP);
-#  endif
-# else
-	char *name = "";
-        ap_snprintf(cmd, sizeof(cmd), "%s", DUMP);
-# endif
+	char *name = NULL;
 
-# ifdef AIX_BACKUP
-	ap_snprintf(dumpkeys, sizeof(dumpkeys), "-%df", level);
+# ifdef USE_RUNDUMP					/* { */
+#  ifdef AIX_BACKUP					/* { */
+	name = stralloc(" (backup)");
+#  else							/* } { */
+	name = vstralloc(" (", DUMP, ")", NULL);
+#  endif						/* } */
+# else							/* } { */
+	name = stralloc("");
+	cmd = newstralloc(cmd, DUMP);
+# endif							/* } */
+
+# ifdef AIX_BACKUP					/* { */
+	dumpkeys = vstralloc("-", level_str, "f", NULL);
 	dbprintf(("%s: running \"%s%s %s - %s\"\n",
 		  pname, cmd, name, dumpkeys, device));
-# else
-	ap_snprintf(dumpkeys, sizeof(dumpkeys), "%d%s%sf",
-		level,
-#  ifdef HAVE_DUMP_ESTIMATE
-		"E",
-#  else
-		"",
-#  endif
-#  ifdef OSF1_VDUMP
-		"b"
-#  else
-		"s"
-#  endif
-		);
+# else							/* } { */
+	dumpkeys = vstralloc(level_str,
+#  ifdef HAVE_DUMP_ESTIMATE				/* { */
+			     "E",
+#  else							/* } { */
+			     "",
+#  endif						/* } */
+#  ifdef OSF1_VDUMP					/* { */
+			     "b"
+#  else							/* } { */
+			     "s"
+#  endif						/* } */
+			     "f",
+			     NULL);
 
-#  ifdef OSF1_VDUMP
+#  ifdef OSF1_VDUMP					/* { */
 	dbprintf(("%s: running \"%s%s %s 60 - %s\"\n",
 		  pname, cmd, name, dumpkeys, device));
-#  else
+#  else							/* } { */
 	dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n",
 		  pname, cmd, name, dumpkeys, device));
-#  endif
-# endif
+#  endif						/* } */
+# endif							/* } */
+	afree(name);
     }
     else
-#endif
+#endif							/* } */
     {
         dbprintf(("%s: no dump program available", pname));
 	error("%s: no dump program available", pname);
     }
 
     switch(dumppid = fork()) {
-    case -1: return -1;
-    default: break; 
+    case -1:
+	afree(dumpkeys);
+	afree(cmd);
+	afree(device);
+	return -1;
+    default:
+	break; 
     case 0:	/* child process */
 #ifndef HAVE_DUMP_ESTIMATE
 	if(SETPGRP == -1)
@@ -578,16 +653,16 @@ int level;
 	dup2(nullfd, 0);
 	dup2(nullfd, 1);
 	dup2(pipefd[1], 2);
-	close(pipefd[0]);
+	aclose(pipefd[0]);
 
 #ifdef XFSDUMP
-	if (!strcmp(amname_to_fstype(device), "xfs"))
+	if (strcmp(amname_to_fstype(device), "xfs") == 0)
 	    execle(cmd, "xfsdump", "-F", "-J", "-l", dumpkeys, "-", device,
 		   (char *)0, safe_env());
 	else
 #endif
 #ifdef VXDUMP
-	if (!strcmp(amname_to_fstype(device), "vxfs"))
+	if (strcmp(amname_to_fstype(device), "vxfs") == 0)
 	    execle(cmd, "vxdump", dumpkeys, "100000", "-", device, (char *)0,
 		   safe_env());
 	else
@@ -613,19 +688,25 @@ int level;
 	  exit(1);
 	}
     }
-    close(pipefd[1]);
+
+    afree(dumpkeys);
+    afree(cmd);
+
+    aclose(pipefd[1]);
     dumpout = fdopen(pipefd[0],"r");
 
-    size = -1;
-    while(fgets(line,MAXLINE,dumpout) != NULL) {
-	dbprintf(("%s",line));
+    for(size = -1; (line = agets(dumpout)) != NULL; free(line)) {
+	dbprintf(("%s\n",line));
 	size = handle_dumpline(line);
 	if(size > -1) {
-	    if(fgets(line, MAXLINE, dumpout) != NULL)
-		dbprintf(("%s",line));
+	    afree(line);
+	    if((line = agets(dumpout)) != NULL) {
+		dbprintf(("%s\n",line));
+	    }
 	    break;
 	}
     }
+    afree(line);
 
     dbprintf((".....\n"));
     if(size == -1)
@@ -651,8 +732,10 @@ int level;
 #endif /* HAVE_DUMP_ESTIMATE */
     wait(&status);
 
-    close(nullfd);
-    fclose(dumpout);
+    aclose(nullfd);
+    afclose(dumpout);
+
+    afree(device);
 
     return size;
 }
@@ -665,11 +748,15 @@ int level;
     int pipefd[2], nullfd, dumppid;
     long size;
     FILE *dumpout;
-    char *tarkeys, sharename[256], pass[256], domain[256];
+    char *tarkeys, *sharename, *pass, *domain;
+    char *line;
 
-    if (findpass(disk, pass, domain) == 0)
+    if ((pass = findpass(disk, &domain) == NULL) {
 	error("[sendsize : error in smbtar diskline, unable to find password]");
-    makesharename(disk, sharename, 0);
+    }
+    if ((sharename = makesharename(disk, 0)) == 0) {
+	error("[sendsize : can't make share name of %s]", disk);
+    }
     nullfd = open("/dev/null", O_RDWR);
     pipe(pipefd);
     if (level == 0)
@@ -679,45 +766,52 @@ int level;
 
     dbprintf(("%s: running \"%s \'%s\' %s -d 3 -U %s -E%s%s -c \'%s\'\"\n",
 	      pname, SAMBA_CLIENT, sharename, "XXXXX", SAMBA_USER,
-	      domain[0] ? " -W " : "", domain,
+	      domain ? " -W " : "", domain,
 	      tarkeys));
 
     switch(dumppid = fork()) {
-	case -1:
-	    return -1;
-	    break;
-	default:
-	    break; 
-	case 0:   /* child process */
-	    dup2(nullfd, 0);
-	    dup2(nullfd, 1);
-	    dup2(pipefd[1], 2);
-	    close(pipefd[0]);
+    case -1:
+	afree(sharename);
+	return -1;
+    default:
+	afree(sharename);
+	break; 
+    case 0:   /* child process */
+	dup2(nullfd, 0);
+	dup2(nullfd, 1);
+	dup2(pipefd[1], 2);
+	aclose(pipefd[0]);
 
-	    execle(SAMBA_CLIENT, "smbclient", sharename, pass,
-		   "-d", "3", "-U", SAMBA_USER, "-E",
-		   domain[0] ? "-W" : "-c",
-		   domain[0] ? domain : tarkeys,
-		   domain[0] ? "-c" : (char *)0,
-		   domain[0] ? tarkeys : (char *)0,
-		   (char *)0,
-		   safe_env());
-	    exit(1);
-	    break;
+	execle(SAMBA_CLIENT, "smbclient", sharename, pass,
+	       "-d", "3",
+	       "-U", SAMBA_USER,
+	       "-E",
+	       domain ? "-W" : "-c",
+	       domain ? domain : tarkeys,
+	       domain ? "-c" : (char *)0,
+	       domain ? tarkeys : (char *)0,
+	       (char *)0,
+	       safe_env());
+	exit(1);
+	break;
     }
-    close(pipefd[1]);
+    memset(pass, '\0', strlen(pass));
+    if(domain) memset(domain, '\0', strlen(domain));
+    aclose(pipefd[1]);
     dumpout = fdopen(pipefd[0],"r");
 
-    size = -1;
-    while(fgets(line,MAXLINE,dumpout) != NULL) {
-	dbprintf(("%s",line));
+    for(size = -1; (line = agets(dumpout)) != NULL; free(line)) {
+	dbprintf(("%s\n",line));
 	size = handle_dumpline(line);
 	if(size > -1) {
-	    if(fgets(line, MAXLINE, dumpout) != NULL)
+	    afree(line);
+	    if((line = agets(dumpout)) != NULL) {
 		dbprintf(("%s",line));
+	    }
 	    break;
 	}
     }
+    afree(line);
 
     dbprintf((".....\n"));
     if(size == -1)
@@ -727,8 +821,8 @@ int level;
 
     kill(-dumppid, SIGTERM);
 
-    close(nullfd);
-    fclose(dumpout);
+    aclose(nullfd);
+    afclose(dumpout);
 
     return size;
 }
@@ -746,76 +840,84 @@ time_t dumpsince;
     FILE *dumpout;
     char *incrname;
     char *dirname;
-    char cmd[256], dumptimestr[80];
+    char *line = NULL;
+    char *cmd = NULL
+    char *cmd_line;
+    char dumptimestr[80];
     struct tm *gmtm;
 
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
     {
       int i;
-      /*
-       * Note: sizeof includes the null byte.  "len" is used later
-       * as an offset into inputname (a copy of incrname) to reset
-       * the suffix.  We subtract one for the null byte then add
-       * one for the '/'.
-       */
-      int len = sizeof(GNUTAR_LISTED_INCREMENTAL_DIR) - 1 + 1 +
-		strlen(host) + strlen(disk);
-      int incrnamelen = len + 32;		/* room for suffix and null */
+      char *basename;
+      char number[NUM_STR_SIZE];
+      char *s;
+      int ch;
 
-      incrname = alloc(incrnamelen);
-      ap_snprintf(incrname, incrnamelen,
-		  "%s/%s", GNUTAR_LISTED_INCREMENTAL_DIR, host);
-      strncat(incrname, disk, incrnamelen-strlen(incrname));
+      basename = vstralloc(GNUTAR_LISTED_INCREMENTAL_DIR,
+			   "/",
+			   host,
+			   disk,
+			   NULL);
       /*
        * The loop starts at the first character of the host name,
        * not the '/'.
        */
-      for (i = sizeof(GNUTAR_LISTED_INCREMENTAL_DIR); incrname[i]; ++i)
-	if (incrname[i] == '/' || incrname[i] == ' ')
-	  incrname[i] = '_';
+      s = basename + sizeof(GNUTAR_LISTED_INCREMENTAL_DIR);
+      while((ch = *s++) != '\0') {
+	if(ch == '/' || isspace(ch)) s[-1] = '_';
+      }
 
-      len = strlen(incrname);			/* set up for inputname below */
-      ap_snprintf(incrname+len, incrnamelen-len, "_%d.new", level);
+      ap_snprintf(number, sizeof(number), "%d", level);
+      incrname = vstralloc(basename, "_", number, ".new", NULL);
       unlink(incrname);
       umask(0007);
 
       if (level == 0) {
 	FILE *out;
-	
-      notincremental:
+
+notincremental:
+
 	out = fopen(incrname, "w");
 	if (out == NULL) {
 	  dbprintf(("error [opening %s: %s]\n", incrname, strerror(errno)));
+	  afree(incrname);
+	  afree(basename);
 	  return -1;
 	}
 
 	if (fclose(out) == EOF) {
 	  dbprintf(("error [closing %s: %s]\n", incrname, strerror(errno)));
+	  out = NULL;
+	  afree(incrname);
+	  afree(basename);
 	  return -1;
 	}
+	out = NULL;
 
       } else {
 	FILE *in = NULL, *out;
-	char *inputname = alloc(incrnamelen);
-	char buf[512];
+	char *inputname = NULL;
+	char buf[BUFSIZ];
 	int baselevel = level;
 
-	strncpy(inputname, incrname, incrnamelen-1);
-	inputname[incrnamelen-1] = '\0';
 	while (in == NULL && --baselevel >= 0) {
-	  ap_snprintf(inputname+len, incrnamelen-len, "_%d", baselevel);
+	  ap_snprintf(number, sizeof(number), "%d", baselevel);
+	  inputname = newvstralloc(inputname, basename, "_", number, NULL);
 	  in = fopen(inputname, "r");
 	}
 
 	if (in == NULL) {
-	  free(inputname);
-	  inputname = 0;
+	  afree(inputname);
 	  goto notincremental;
 	}
-	    
+
 	out = fopen(incrname, "w");
 	if (out == NULL) {
 	  dbprintf(("error [opening %s: %s]\n", incrname, strerror(errno)));
+	  afree(incrname);
+	  afree(basename);
+	  afree(inputname);
 	  return -1;
 	}
 
@@ -823,28 +925,44 @@ time_t dumpsince;
 	  if (fputs(buf, out) == EOF) {
 	    dbprintf(("error [writing to %s: %s]\n", incrname,
 		      strerror(errno)));
+	    afree(incrname);
+	    afree(basename);
+	    afree(inputname);
 	    return -1;
 	  }
 
 	if (ferror(in)) {
-	  incrname[len] = '\0';
 	  dbprintf(("error [reading from %s: %s]\n", inputname,
 		    strerror(errno)));
+	  afree(incrname);
+	  afree(basename);
+	  afree(inputname);
 	  return -1;
 	}
 
 	if (fclose(in) == EOF) {
 	  dbprintf(("error [closing %s: %s]\n", inputname, strerror(errno)));
+	  in = NULL;
+	  afree(incrname);
+	  afree(basename);
+	  afree(inputname);
 	  return -1;
 	}
+	in = NULL;
 
 	if (fclose(out) == EOF) {
 	  dbprintf(("error [closing %s: %s]\n", incrname, strerror(errno)));
+	  out = NULL;
+	  afree(incrname);
+	  afree(basename);
+	  afree(inputname);
 	  return -1;
 	}
+	out = NULL;
 
-	free(inputname);
+	afree(inputname);
       }
+      afree(basename);
     }
 #endif
 
@@ -856,56 +974,65 @@ time_t dumpsince;
 
     dirname = amname_to_dirname(disk);
 
-    ap_snprintf(cmd, sizeof(cmd), "%s/runtar%s", libexecdir, versionsuffix());
+    cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
 
-    if (*efile == 0) /* do nothing */;
-    else if (strncmp(efile, "--exclude-list", strlen("--exclude-list"))==0)
-      strncpy(&efile[strlen("--exclude-")], "from", strlen("from"));
-    else if (strncmp(efile, "--exclude-file", strlen("--exclude-file"))==0)
-      memmove(&efile[strlen("--exclude")],
-	      &efile[strlen("--exclude-file")],
-	      strlen(&efile[strlen("--exclude-file")])+1);
-    else assert(0); /* should never happen */
+    if (efile == NULL) {
+	/* do nothing */
+#define sc "--exclude-list"
+    } else if (strncmp(efile, sc, sizeof(sc)-1)==0) {
+	efile = newstralloc(efile, "--exclude-from");
+#undef sc
+#define sc "--exclude-file"
+    } else if (strncmp(efile, "--exclude-file", strlen("--exclude-file"))==0) {
+	char *t;
 
-    {
-	char buf[4096];
-
-	ap_snprintf(buf, sizeof(buf),
-"%s --create --directory %s %s %s --sparse --one-file-system \
- %s --ignore-failed-read --totals --file /dev/null %s%s.",
-		    cmd,
-		    dirname,
-#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-		    "--listed-incremental", incrname,
-#else
-		    "--incremental --newer", dumptimestr,
-#endif
-#ifdef ENABLE_GNUTAR_ATIME_PRESERVE
-		    "--atime-preserve",
-#else
-		    "",
-#endif
-		    efile[0] ? efile : "",
-		    efile[0] ? " " : "");
-
-	dbprintf(("%s: running \"%s\"\n", pname, buf));
+	t = stralloc2("--exclude", efile+sizeof(sc)-1);
+	afree(efile);
+	efile = t;
+	t = NULL;
+#undef sc
+    } else {
+	dbprintf(("error [efile not --exclude-list or -file: %s]\n", efile);
+	error("error: efile not --exclude-list or -file: %s]", efile);
     }
+
+    cmd_line = vstralloc(cmd,
+			 " --create",
+			 " --directory ", dirname,
+#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
+			 " --listed-incremental ", incrname,
+#else
+			 " --incremental",
+			 " --newer ", dumptimestr,
+#endif
+			 " --sparse",
+			 " --one-file-system",
+#ifdef ENABLE_GNUTAR_ATIME_PRESERVE
+			 " --atime-preserve",
+#endif
+			 " --ignore-failed-read",
+			 " --totals",
+			 " --file", "/dev/null",
+			 " ", efile ? efile : ".",
+			 efile ? " ." : "",
+			 NULL);
+
+    dbprintf(("%s: running \"%s\"\n", pname, buf));
 
     nullfd = open("/dev/null", O_RDWR);
     pipe(pipefd);
 
     switch(dumppid = fork()) {
     case -1:
+      afree(cmd);
       return -1;
-      break;
-
     default:
       break;
     case 0:
       dup2(nullfd, 0);
       dup2(nullfd, 1);
       dup2(pipefd[1], 2);
-      close(pipefd[0]);
+      aclose(pipefd[0]);
 
       execle(cmd,
 #ifdef GNUTAR
@@ -913,17 +1040,21 @@ time_t dumpsince;
 #else
 	     "tar",
 #endif
-	     "--create", "--directory", dirname,
+	     "--create",
+	     "--directory", dirname,
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
 	     "--listed-incremental", incrname,
 #else
 	     "--incremental", "--newer", dumptimestr,
 #endif
-	     "--sparse", "--one-file-system",
+	     "--sparse",
+	     "--one-file-system",
 #ifdef ENABLE_GNUTAR_ATIME_PRESERVE
 	     "--atime-preserve",
 #endif
-	     "--ignore-failed-read", "--totals", "--file", "/dev/null",
+	     "--ignore-failed-read",
+	     "--totals",
+	     "--file", "/dev/null",
 	     efile[0] ? efile : ".",
 	     efile[0] ? "." : (char *)0,
 	     (char *)0,
@@ -932,19 +1063,23 @@ time_t dumpsince;
       exit(1);
       break;
     }
-    close(pipefd[1]);
+    afree(cmd);
+
+    aclose(pipefd[1]);
     dumpout = fdopen(pipefd[0],"r");
 
-    size = -1;
-    while(fgets(line,MAXLINE,dumpout) != NULL) {
-	dbprintf(("%s",line));
+    for(size = -1; (line = agets(dumpout)) != NULL; free(line)) {
+	dbprintf(("%s\n",line));
 	size = handle_dumpline(line);
 	if(size > -1) {
-	    if(fgets(line, MAXLINE, dumpout) != NULL)
-		dbprintf(("%s",line));
+	    afree(line);
+	    if((line = agets(dumpout)) != NULL) {
+		dbprintf(("%s\n",line));
+	    }
 	    break;
 	}
     }
+    afree(line);
 
     dbprintf((".....\n"));
     if(size == -1)
@@ -955,14 +1090,15 @@ time_t dumpsince;
     kill(-dumppid, SIGTERM);
 
     unlink(incrname);
-    free(incrname);
+    afree(incrname);
 
-    close(nullfd);
-    fclose(dumpout);
+    aclose(nullfd);
+    afclose(dumpout);
 
     return size;
 }
 #endif
+
 
 double first_num(str)
 char *str;
@@ -970,14 +1106,18 @@ char *str;
  * Returns the value of the first integer in a string.
  */
 {
-    char tmp[16], *tp;
+    char *start, *tp;
+    int ch;
+    double d;
 
-    tp = tmp;
-    while(*str && !isdigit(*str)) str++;
-    while(*str && (isdigit(*str) || (*str == '.'))) *tp++ = *str++;
-    *tp = '\0';
-
-    return atof(tmp);
+    ch = *str++;
+    while(ch && !isdigit(ch)) ch = *str++;
+    start = str-1;
+    while(isdigit(ch) || (ch == '.')) ch = *str++;
+    str[-1] = '\0';
+    d = atof(start);
+    str[-1] = ch;
+    return d;
 }
 
 
@@ -988,7 +1128,7 @@ char *str;
  */
 {
     regex_t *rp;
-    
+
     /* check for size match */
     for(rp = re_size; rp->regex != NULL; rp++) {
 	if(match(rp->regex, str))

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.18 1997/12/19 20:35:06 amcore Exp $
+ * $Id: selfcheck.c,v 1.19 1997/12/30 05:23:56 jrj Exp $
  *
  * do self-check and send back any error messages
  */
@@ -52,9 +52,6 @@ int need_runtar=0;
 int need_gnutar=0;
 int need_compress_path=0;
 
-#define MAXLINE 4096
-
-char line[MAXLINE];
 char *pname = "selfcheck";
 
 /* local functions */
@@ -71,8 +68,12 @@ int argc;
 char **argv;
 {
     int level;
-    char program[128], disk[256];
-    char optstr[1024];
+    char *line = NULL;
+    char *program = NULL;
+    char *disk = NULL;
+    char *optstr = NULL;
+    char *s;
+    int ch;
 
     /* initialize */
 
@@ -84,21 +85,56 @@ char **argv;
 
     /* handle all service requests */
 
-    while(fgets(line, MAXLINE, stdin)) {
-	if(!strncmp(line, "OPTIONS", 7)) {
+    for(; (line = agets(stdin)) != NULL; free(line)) {
+#define sc "OPTIONS"
+	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
+#undef sc
 	    /* we don't recognize any options yet */
 	    printf("OPTIONS ;\n");
 	    continue;
 	}
 
-	if(sscanf(line, "%s %s %d OPTIONS %s[^\n]\n", 
-		  program, disk, &level, optstr) == 4)
-	{
+	s = line;
+	ch = *s++;
+
+	skip_whitespace(s, ch);			/* find program name */
+	if (ch == '\0') {
+	    goto err;				/* no program */
+	}
+	program = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';				/* terminate the program name */
+
+	skip_whitespace(s, ch);			/* find disk name */
+	if (ch == '\0') {
+	    goto err;				/* no disk */
+	}
+	disk = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';				/* terminate the disk name */
+
+	skip_whitespace(s, ch);			/* find level number */
+	if (ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
+	    goto err;				/* bad level */
+	}
+	skip_integer(s, ch);
+
+#define sc "OPTIONS"
+	skip_whitespace(s, ch);
+	if (ch && strncmp (s - 1, sc, sizeof(sc)-1) == 0) {
+	    s += sizeof(sc)-1;
+	    ch = s[-1];
+#undef sc
+	    skip_whitespace(s, ch);		/* find the option string */
+	    if(ch == '\0') {
+		goto err;			/* bad options string */
+	    }
+	    optstr = s - 1;
+	    skip_non_whitespace(s, ch);
+	    s[-1] = '\0';			/* terminate the options */
 	    check_options(program, disk, optstr);
 	    check_disk(program, disk, level);
-	}
-	else if(sscanf(line, "%s %s %d\n", program, disk, &level) == 3)
-	{
+	} else if (ch == '\0') {
 	    /* check all since no option */
 	    need_samba=1;
 	    need_rundump=1;
@@ -112,17 +148,19 @@ char **argv;
 	    need_gnutar=1;
 	    need_compress_path=1;
 	    check_disk(program, disk, level);
+	} else {
+	    goto err;				/* bad syntax */
 	}
-	else
-	    goto err;
     }
 
     check_overall();
 
+    afree(line);
     dbclose();
     return 0;
 
  err:
+    afree(line);
     printf("ERROR [BOGUS REQUEST PACKET]\n");
     dbprintf(("REQ packet is bogus\n"));
     dbclose();
@@ -134,7 +172,7 @@ static void check_options(program, disk, str)
 char *program, *disk, *str;
 {
     int as_index = 0;
-    char device[1024];
+    char *device = NULL;
 
     if(strstr(str,"index") != NULL)
 	as_index=1;
@@ -150,16 +188,14 @@ char *program, *disk, *str;
 #endif
 #ifndef AIX_BACKUP
 #ifdef OSF1_VDUMP
-	strncpy(device, amname_to_dirname(disk), sizeof(device)-1);
-	device[sizeof(device)-1] = '\0';
+	device = stralloc(amname_to_dirname(disk));
 #else
-	strncpy(device, amname_to_devname(disk), sizeof(device)-1);
-	device[sizeof(device)-1] = '\0';
+	device = stralloc(amname_to_devname(disk));
 #endif
 
 #ifdef XFSDUMP
 #ifdef DUMP
-	if (!strcmp(amname_to_fstype(device), "xfs"))
+	if (strcmp(amname_to_fstype(device), "xfs") == 0)
 #else
 	if (1)
 #endif
@@ -172,7 +208,7 @@ char *program, *disk, *str;
 #endif /* XFSDUMP */
 #ifdef VXDUMP
 #ifdef DUMP
-	if (!strcmp(amname_to_fstype(device), "vxfs"))
+	if (strcmp(amname_to_fstype(device), "vxfs") == 0)
 #else
 	if (1)
 #endif
@@ -198,50 +234,60 @@ char *program, *disk, *str;
     if(strstr(str, "compress") != NULL)
 	need_compress_path=1;
     if(strstr(str, "index") != NULL) {
+	/* do nothing */
     }
+    afree(device);
 }
 
 static void check_disk(program, disk, level)
 char *program, *disk;
 int level;
 {
-    char device[1024];
+    char *device = NULL;
 
     if (strcmp(program, "GNUTAR") == 0) {
 #ifdef SAMBA_CLIENT
         if(disk[0] == '/' && disk[1] == '/') {
-	    char cmd[256], pass[256], domain[256];
+	    char *cmd, *pass, *domain;
 
-	    if (!findpass(disk, pass, domain)) {
+	    if ((pass = findpass(disk, &domain) == NULL) {
 		printf("ERROR [can't find password for %s]\n", disk);
 		return;
 	    }
-	    makesharename(disk, device, 1);
-	    ap_snprintf(cmd, sizeof(cmd),
-			"%s %s '%s' -E -U %s%s%s -c quit", SAMBA_CLIENT,
-			device, pass, SAMBA_USER,
-			domain[0] ? " -W " : "", domain);
+	    if ((device = makesharename(disk, 1)) == NULL) {
+		printf("ERROR [can't make share name of %s]\n", disk);
+		return;
+	    }
+	    cmd = vstralloc(device,
+			    " ", SAMBA_CLIENT,
+			    " \'", pass, "\'",
+			    " -E",
+			    " -U ", SAMBA_USER,
+			    domain ? " -W " : "", domain,
+			    " -c quit",
+			    NULL);
+	    memset(pass, '\0', strlen(pass));
+	    if(domain) memset(domain, '\0', strlen(domain));
 	    printf("running %s %s XXXX -E -U %s%s%s -c quit\n",
 		   SAMBA_CLIENT, device, SAMBA_USER, domain[0] ? " -W " : "", domain);
 	    if (system(cmd) & 0xff00)
 		printf("ERROR [PC SHARE %s access error: host down or invalid password?]\n", disk);
 	    else
 		printf("OK %s\n", disk);
+	    memset(cmd, '\0', strlen(cmd));
+	    afree(cmd);
 	    return;
 	}
 #endif
-	strncpy(device, amname_to_dirname(disk), sizeof(device)-1);
-	device[sizeof(device)-1] = '\0';
+	device = stralloc(amname_to_dirname(disk));
     } else {
 #ifdef OSF1_VDUMP
-        strncpy(device, amname_to_dirname(disk), sizeof(device)-1);
-	device[sizeof(device)-1] = '\0';
+        device = stralloc(amname_to_dirname(disk));
 #else
-        strncpy(device, amname_to_devname(disk), sizeof(device)-1);
-	device[sizeof(device)-1] = '\0';
+        device = stralloc(amname_to_devname(disk));
 #endif
     }
-    
+
 #ifndef CHECK_FOR_ACCESS_WITH_OPEN
     if(access(device, R_OK) == -1)
 	    printf("ERROR [can not access %s (%s): %s]\n",
@@ -254,21 +300,23 @@ int level;
     {
 	/* XXX better check in this case */
 	int tstfd;
-	if((tstfd = open(device, O_RDONLY)) == -1)
+	if((tstfd = open(device, O_RDONLY)) == -1) {
 	    printf("ERROR [could not open %s (%s): %s]\n",
 		   device, disk, strerror(errno));
-	else
+	} else {
 	    printf("OK %s\n", device);
-	close(tstfd);
+	}
+	aclose(tstfd);
     }
 #endif
+    afree(device);
 
     /* XXX perhaps do something with level: read dumpdates and sanity check */
 }
 
 static void check_overall()
 {
-    char cmd[1024];
+    char *cmd;
 
 #ifdef SAMBA_CLIENT
     struct stat buf;
@@ -277,16 +325,16 @@ static void check_overall()
 
     if( need_runtar )
     {
-	ap_snprintf(cmd, sizeof(cmd),
-		    "%s/runtar%s", libexecdir, versionsuffix());
+	cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
 	check_file(cmd,X_OK);
+	afree(cmd);
     }
 
     if( need_rundump )
     {
-	ap_snprintf(cmd, sizeof(cmd),
-		    "%s/rundump%s", libexecdir, versionsuffix());
+	cmd = vstralloc(libexecdir, "/", "rundump", versionsuffix(), NULL);
 	check_file(cmd,X_OK);
+	afree(cmd);
     }
 
 #ifdef DUMP
@@ -341,12 +389,13 @@ static void check_overall()
 		    printf("ERROR [/etc/amandapass is world readable!]\n");
 		else
 		    printf("OK [/etc/amandapass is readable, but not by all]\n");
-	    } else
+	    } else {
 		printf("OK [unable to access /etc/amandapass?]\n");
-	    close(testfd);
-	}
-	else
+	    }
+	    aclose(testfd);
+	} else {
 	    printf("ERROR [unable to access /etc/amandapass?]\n");
+	}
     }
 #endif
     if( need_compress_path )
@@ -400,4 +449,3 @@ int mode;
     else
 	printf("OK %s %s\n", filename, adjective);
 }
-

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.42 1997/12/16 17:52:49 jrj Exp $
+ * $Id: sendbackup-dump.c,v 1.43 1997/12/30 05:23:57 jrj Exp $
  *
  * send backup data using BSD dump
  */
@@ -134,11 +134,14 @@ int level, dataf, mesgf, indexf;
 char *dumpdate;
 {
     int dumpin, dumpout;
-    char dumpkeys[80];
-    char device[1024];
-    char cmd[4096];
-    char indexcmd[4096];
-    
+    char *dumpkeys = NULL;
+    char *device = NULL;
+    char *cmd = NULL;
+    char *indexcmd = NULL;
+    char level_str[NUM_STR_SIZE];
+
+    ap_snprintf(level_str, sizeof(level_str), "%d", level);
+
     fprintf(stderr, "%s: start [%s:%s level %d]\n",
 	    pname, host, disk, level);
 
@@ -159,28 +162,25 @@ char *dumpdate;
 
     /* invoke dump */
 #ifdef OSF1_VDUMP
-    strncpy(device, amname_to_dirname(disk), sizeof(device)-1);
-    device[sizeof(device)-1] = '\0';
+    device = stralloc(amname_to_dirname(disk));
 #else
-    strncpy(device, amname_to_devname(disk), sizeof(device)-1);
-    device[sizeof(device)-1] = '\0';
+    device = stralloc(amname_to_devname(disk));
 #endif
 
 #if defined(USE_RUNDUMP) || !defined(DUMP)
-    ap_snprintf(cmd, sizeof(cmd), "%s/rundump%s", libexecdir, versionsuffix());
+    cmd = vstralloc(libexecdir, "/", "rundump", versionsuffix(), NULL);
 #else
-    strncpy(cmd, DUMP, sizeof(cmd)-1);
-    cmd[sizeof(cmd)-1] = '\0';
+    cmd = stralloc(DUMP);
 #endif
 
-#ifndef AIX_BACKUP
+#ifndef AIX_BACKUP					/* { */
     /* normal dump */
-#ifdef XFSDUMP
-#ifdef DUMP
-    if (!strcmp(amname_to_fstype(device), "xfs"))
-#else
+#ifdef XFSDUMP						/* { */
+#ifdef DUMP						/* { */
+    if (strcmp(amname_to_fstype(device), "xfs") == 0)
+#else							/* } { */
     if (1)
-#endif
+#endif							/* } */
     {
 #ifdef USE_RUNDUMP
         char *progname = cmd;
@@ -193,15 +193,19 @@ char *dumpdate;
 #endif
 	program->restore_name = XFSRESTORE;
 
-	ap_snprintf(indexcmd, sizeof(indexcmd),
-		    "%s -t -v silent - 2>/dev/null | /sbin/sed -e 's/^/\\//'",
-		    XFSRESTORE);
-
+	indexcmd = vstralloc(XFSRESTORE,
+			     " -t",
+			     " -v", " silent",
+			     " -",
+			     " 2>/dev/null",
+			     " | /sbin/sed",
+			     " -e", "\'s/^/\\//\'",
+			     NULL);
 	write_tapeheader();
 
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
-	ap_snprintf(dumpkeys, sizeof(dumpkeys), "%d", level);
+	dumpkeys = stralloc(level_str);
 	if (no_record)
 	{
 	    dumppid = pipespawn(progname, &dumpin, dumpout, mesgf,
@@ -216,10 +220,10 @@ char *dumpdate;
 	}
     }
     else
-#endif
-#ifdef VXDUMP
+#endif							/* } */
+#ifdef VXDUMP						/* { */
 #ifdef DUMP
-    if (!strcmp(amname_to_fstype(device), "vxfs"))
+    if (strcmp(amname_to_fstype(device), "vxfs") == 0)
 #else
     if (1)
 #endif
@@ -235,16 +239,19 @@ char *dumpdate;
 #endif
 	program->restore_name = VXRESTORE;
 
-	ap_snprintf(dumpkeys, sizeof(dumpkeys),
-		    "%d%ssf", level, no_record ? "" : "u");
+	dumpkeys = vstralloc(level_str, no_record ? "" : "u", "s", "f", NULL);
 
-	ap_snprintf(indexcmd, sizeof(indexcmd),
-"%s -tvf - 2>/dev/null |\
- awk '/^[leaf|dir]/ {print $3$1}' |\
- sed -e 's/leaf$//' -e 's/dir$/\\//' |\
- cut -c2-",
-		    VXRESTORE);
-
+	indexcmd = vstralloc(VXRESTORE,
+			     " -tvf", " -",
+			     " 2>/dev/null",
+			     " | awk",
+			     " \'/^[leaf|dir]/ {print $3$1}\'",
+			     " | sed",
+			     " -e", " \'s/leaf$//\'",
+			     " -e", " \'s/dir$/\\//\'",
+			     " | cut",
+			     " -c2-",
+			     NULL);
 	write_tapeheader();
 
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
@@ -254,30 +261,35 @@ char *dumpdate;
 			    (char *)0);
     }
     else
-#endif
+#endif							/* } */
 
     {
-	ap_snprintf(dumpkeys, sizeof(dumpkeys),
-		    "%d%s%sf", level, no_record ? "" : "u",
+	char *bs;
+
 #ifdef OSF1_VDUMP
-		    "b"
+	bs = "b";
 #else
-		    "s"
+	bs = "s";
 #endif
-		    );
 
-	ap_snprintf(indexcmd, sizeof(indexcmd),
-"%s -tvf - 2>/dev/null |\
- awk '/^[leaf|dir]/ {print $3$1}' |\
- sed -e 's/leaf$//' -e 's/dir$/\\//' |\
- cut -c2-",
+	dumpkeys = vstralloc(level_str, no_record ? "" : "u", bs, "f", NULL);
+
+	indexcmd = vstralloc(
 #ifdef RESTORE
-		    RESTORE
+			     RESTORE,
 #else
-		    "restore"
+			     "restore",
 #endif
-		 );
-
+			     " -tvf", " -",
+			     " 2>/dev/null",
+			     " | awk",
+			     " \'/^[leaf|dir]/ {print $3$1}\'",
+			     " | sed",
+			     " -e", " \'s/leaf$//\'",
+			     " -e", " \'s/dir$/\\//\'",
+			     " | cut",
+			     " -c2-",
+			     NULL);
 	write_tapeheader();
 
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
@@ -292,38 +304,47 @@ char *dumpdate;
 			    "-", device,
 			    (char *)0);
     }
-#else
+#else							/* } { */
     /* AIX backup program */
-    ap_snprintf(dumpkeys, sizeof(dumpkeys),
-		"-%d%sf", level, no_record ? "" : "u");
+    dumpkeys = vstralloc("-", level_str, no_record ? "" : "u", "f", NULL);
 
-    ap_snprintf(indexcmd, sizeof(indexcmd),
-"%s -B -tvf - 2>/dev/null |\
- awk '/^[leaf|dir]/ {print $3$1}' |\
- sed -e 's/leaf$//' -e 's/dir$/\\//' |\
- cut -c2-",
+    indexcmd = vstralloc(
 #ifdef RESTORE
-		RESTORE
+			 RESTORE,
 #else
-		"restore"
+			 "restore",
 #endif
-		);
-
+			 " -B",
+			 " -tvf", " -",
+			 " 2>/dev/null",
+			 " | awk",
+			 " \'/^[leaf|dir]/ {print $3$1}\'",
+			 " | sed",
+			 " -e", " \'s/leaf$//\'",
+			 " -e", " \'s/dir$/\\//\'",
+			 " | cut",
+			 " -c2-",
+			 NULL);
     write_tapeheader();
 
     start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
     dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf, 
 			"backup", dumpkeys, "-", device, (char *)0);
-#endif
+#endif							/* } */
+
+    afree(dumpkeys);
+    afree(device);
+    afree(cmd);
+    afree(indexcmd);
 
     /* close the write ends of the pipes */
 
-    close(dumpin);
-    close(dumpout);
-    close(dataf);
-    close(mesgf);
-    close(indexf);
+    aclose(dumpin);
+    aclose(dumpout);
+    aclose(dataf);
+    aclose(mesgf);
+    aclose(indexf);
 }
 
 static void end_backup(status)

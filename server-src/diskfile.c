@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.16 1997/12/23 22:55:02 jrj Exp $
+ * $Id: diskfile.c,v 1.17 1997/12/30 05:25:06 jrj Exp $
  *
  * read disklist file
  */
@@ -40,15 +40,12 @@ static FILE *diskf;
 static char *diskfname = NULL;
 static host_t *hostlist;
 static int line_num, got_parserror;
-static char str[1024];
 
 /* local functions */
 static char *upcase P((char *st));
 static int read_diskline P((void));
-static void get_string P((void));
 static void parserror P((char *format, ...))
     __attribute__ ((format (printf, 1, 2)));
-static void eat_line P((void));
 
 
 disklist_t *read_diskfile(filename)
@@ -68,7 +65,7 @@ char *filename;
 	      filename, strerror(errno));
 
     while(read_diskline());
-    fclose(diskf);
+    afclose(diskf);
 
     if(got_parserror) return NULL;
     else return &lst;
@@ -99,7 +96,7 @@ char *hostname, *diskname;
     if(host == NULL) return NULL;
 
     for(disk = host->disks; disk != NULL; disk = disk->hostnext) {
-	if(!strcmp(disk->name, diskname)) return disk;
+	if(strcmp(disk->name, diskname) == 0) return disk;
     }
     return NULL;
 }
@@ -207,100 +204,124 @@ static int read_diskline()
     dumptype_t *dtype;
     interface_t *netif = 0;
     char *hostname;
+    static char *line = NULL;
+    char *s, *fp;
+    int ch;
 
-    line_num += 1;
+    afree(line);
+    for(; (line = agets(diskf)) != NULL; free(line)) {
+	line_num += 1;
+	s = line;
+	ch = *s++;
 
-    get_string();
-    if(*str == '\0') return 0;
-    if(*str == '\n') return 1;
+	skip_whitespace(s, ch);
+	if(ch != '\0' && ch != '#') break;
+    }
+    if(line == NULL) return 0;
 
-    host = lookup_host(str);
-    if (host == NULL)
-      hostname = stralloc(str);
-    else
+    fp = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    host = lookup_host(fp);
+    if (host == NULL) {
+      hostname = stralloc(fp);
+    } else {
       hostname = host->hostname;
+    }
 
-    get_string();
-    if(*str == '\0' || *str == '\n') {
+    skip_whitespace(s, ch);
+    if(ch == '\0' || ch == '#') {
 	parserror("disk device name expected");
 	return 1;
     }
+    fp = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
 
     /* check for duplicate disk */
 
-    if(host && (disk = lookup_disk(hostname, str)) != NULL) {
+    if(host && (disk = lookup_disk(hostname, fp)) != NULL) {
 	parserror("duplicate disk record, previous on line %d", disk->line);
-	eat_line();
 	return 1;
     }
 
     disk = alloc(sizeof(disk_t));
     disk->line = line_num;
-    disk->name = stralloc(str);
+    disk->name = stralloc(fp);
     disk->platter = -1;
     disk->up = NULL;
     disk->inprogress = 0;
 
-    get_string();
-    if(*str == '\0' || *str == '\n') {
+    skip_whitespace(s, ch);
+    if(ch == '\0' || ch == '#') {
 	parserror("disk dumptype expected");
-	free(disk->name);
-	free(disk);
+	if(host == NULL) afree(hostname);
+	afree(disk->name);
+	afree(disk);
 	return 1;
     }
-
-    if((dtype = lookup_dumptype(upcase(str))) == NULL) {
-	parserror("undefined dumptype `%s'", str);
-	free(disk->name);
-	free(disk);
-	eat_line();
+    fp = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    if((dtype = lookup_dumptype(upcase(fp))) == NULL) {
+	parserror("undefined dumptype `%s'", fp);
+	if(host == NULL) afree(hostname);
+	afree(disk->name);
+	afree(disk);
 	return 1;
     }
-    disk->dtype_name = dtype->name;
-    disk->program   = dtype->program;
-    disk->exclude   = dtype->exclude;
-    disk->exclude_list = dtype->exclude_list;
-    disk->priority  = dtype->priority;
-    disk->dumpcycle = dtype->dumpcycle;
-    disk->frequency = dtype->frequency;
-    disk->auth      = dtype->auth;
-    disk->maxdumps  = dtype->maxdumps;
-    disk->start_t   = dtype->start_t;
-    disk->strategy  = dtype->strategy;
-    disk->compress  = dtype->compress;
-    disk->comprate[0]=dtype->comprate[0];
-    disk->comprate[1]=dtype->comprate[1];
-    disk->record    = dtype->record;
-    disk->skip_incr = dtype->skip_incr;
-    disk->skip_full = dtype->skip_full;
-    disk->no_hold   = dtype->no_hold;
-    disk->kencrypt  = dtype->kencrypt;
-    disk->index     = dtype->index;
+    disk->dtype_name	= dtype->name;
+    disk->program	= dtype->program;
+    disk->exclude	= dtype->exclude;
+    disk->exclude_list	= dtype->exclude_list;
+    disk->priority	= dtype->priority;
+    disk->dumpcycle	= dtype->dumpcycle;
+    disk->frequency	= dtype->frequency;
+    disk->auth		= dtype->auth;
+    disk->maxdumps	= dtype->maxdumps;
+    disk->start_t	= dtype->start_t;
+    disk->strategy	= dtype->strategy;
+    disk->compress	= dtype->compress;
+    disk->comprate[0]	= dtype->comprate[0];
+    disk->comprate[1]	= dtype->comprate[1];
+    disk->record	= dtype->record;
+    disk->skip_incr	= dtype->skip_incr;
+    disk->skip_full	= dtype->skip_full;
+    disk->no_hold	= dtype->no_hold;
+    disk->kencrypt	= dtype->kencrypt;
+    disk->index		= dtype->index;
 
-    get_string();
-    if(*str != '\n' && *str != '\0') {	/* got optional platter number */
-	disk->platter = atoi(str);
-	get_string();
+    skip_whitespace(s, ch);
+    fp = s - 1;
+    if(ch && ch != '#') {		/* get optional platter number */
+	disk->platter = atoi(fp);
+	skip_integer(s, ch);
     }
 
-    if(*str != '\n' && *str != '\0') {	/* got optional network interface */
-	if((netif = lookup_interface(upcase(str))) == NULL) {
-	    parserror("undefined network interface `%s'", str);
-	    free(disk->name);
-	    free(disk);
-	    eat_line();
+    skip_whitespace(s, ch);
+    fp = s - 1;
+    if(ch && ch != '#') {		/* get optional network interface */
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+	if((netif = lookup_interface(upcase(fp))) == NULL) {
+	    parserror("undefined network interface `%s'", fp);
+	    if(host == NULL) afree(hostname);
+	    afree(disk->name);
+	    afree(disk);
 	    return 1;
 	}
-	get_string();
-    }
-    else
+    } else {
 	netif = lookup_interface("");
+    }
 
-    if(*str != '\n' && *str != '\0')	/* now we have garbage, ignore it */
+    skip_whitespace(s, ch);
+    if(ch && ch != '#') {		/* now we have garbage, ignore it */
 	parserror("end of line expected");
+    }
 
-    if(dtype->ignore)
+    if(dtype->ignore) {
 	return 1;
+    }
 
     /* success, add disk to lists */
 
@@ -310,10 +331,11 @@ static int read_diskline()
 	hostlist = host;
 
 	host->hostname = hostname;
+	hostname = NULL;
 	host->disks = NULL;
 	host->up = NULL;
 	host->inprogress = 0;
-	host->maxdumps = 1;	/* will be overwritten */
+	host->maxdumps = 1;		/* will be overwritten */
     }
 
     host->netif = netif;
@@ -342,54 +364,6 @@ arglist_function(static void parserror, char *, format)
     fputc('\n', stderr);
 
     got_parserror = 1;
-}
-
-static void eat_line()
-{
-    int ch;
-
-    do {
-	ch = getc(diskf);
-    } while(ch != '\n' && ch != EOF);
-}
-
-static void get_string()
-{
-    int ch;
-    char *p;
-    int string_overflow;
-
-    ch = getc(diskf);
-
-    /* eat whitespace */
-    while(ch == ' ' || ch == '\t') ch = getc(diskf);
-
-    /* eat comment - everything but eol/eof */
-    if(ch == '#') do {
-	ch = getc(diskf);
-    } while(ch != '\n' && ch != EOF);
-
-    p = str;
-    string_overflow = 0;
-    if(ch == '\n') *p++ = ch;
-    else if(ch != EOF) {
-	while(ch!=' ' && ch!='\t' && ch!='#' && ch!='\n' && ch!=EOF) {
-	    if(p < str+sizeof(str)-1) {
-		*p++ = ch;
-	    } else {
-		string_overflow = 1;
-	    }
-	    ch = getc(diskf);
-	}
-	ungetc(ch, diskf);
-    }
-
-    *p = '\0';
-
-    if(string_overflow) {
-	parserror("string too long: %.20s...", str);
-	*str = '\0';			/* cause an abort upline */
-    }
 }
 
 
@@ -425,44 +399,58 @@ FILE *f;
 char *optionstr(dp)
 disk_t *dp;
 {
-    static char str[512];
+    static char *str = NULL;
+    char *auth_opt = "";
+    char *kencrypt_opt = "";
+    char *compress_opt = "";
+    char *record_opt = "";
+    char *index_opt = "";
+    char *exclude_opt1 = "";
+    char *exclude_opt2 = "";
+    char *exclude_opt3 = "";
 
-    strncpy(str, ";", sizeof(str)-1);
-    str[sizeof(str)-1] = '\0';
+    afree(str);
 
-    if(dp->auth == AUTH_BSD) strncat(str, "bsd-auth;", sizeof(str)-strlen(str));
-    else if(dp->auth == AUTH_KRB4) {
-	strncat(str, "krb4-auth;", sizeof(str)-strlen(str));
-	if(dp->kencrypt) strncat(str, "kencrypt;", sizeof(str)-strlen(str));
+    if(dp->auth == AUTH_BSD) {
+	auth_opt = "bsd-auth;";
+    } else if(dp->auth == AUTH_KRB4) {
+	auth_opt = "krb4-auth;";
+	if(dp->kencrypt) kencrypt_opt = "kencrypt;";
     }
 
     switch(dp->compress) {
     case COMP_FAST:
-	strncat(str, "compress-fast;", sizeof(str)-strlen(str));
+	compress_opt = "compress-fast;";
 	break;
     case COMP_BEST:
-	strncat(str, "compress-best;", sizeof(str)-strlen(str));
+	compress_opt = "compress-best;";
 	break;
     case COMP_SERV_FAST:
-	strncat(str, "srvcomp-fast;", sizeof(str)-strlen(str));
+	compress_opt = "srvcomp-fast;";
 	break;
     case COMP_SERV_BEST:
-        strncat(str, "srvcomp-best;", sizeof(str)-strlen(str));
+        compress_opt = "srvcomp-best;";
 	break;
     }
 
-    if(!dp->record) strncat(str,"no-record;", sizeof(str)-strlen(str));
-    if(dp->index) strncat(str,"index;", sizeof(str)-strlen(str));
+    if(!dp->record) record_opt = "no-record;";
+    if(dp->index) index_opt = "index;";
 
     if(dp->exclude) {
-	strncat(str, "exclude-", sizeof(str)-strlen(str));
-	strncat(str, (dp->exclude_list? "list=" : "file="),
-		sizeof(str)-strlen(str));
-	strncat(str, dp->exclude, sizeof(str)-strlen(str));
-	strncat(str, ";", sizeof(str)-strlen(str));
+	exclude_opt1 = dp->exclude_list ? "exclude-list=" : "exclude-file=";
+	exclude_opt2 = dp->exclude;
+	exclude_opt3 = ";";
     }
 
-    return str;
+    return vstralloc(";",
+		     auth_opt,
+		     compress_opt,
+		     record_opt,
+		     index_opt,
+		     exclude_opt1,
+		     exclude_opt2,
+		     exclude_opt3,
+		     NULL);
 }
 
 #ifdef TEST

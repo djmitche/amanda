@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: rundump.c,v 1.12 1997/11/20 19:58:26 jrj Exp $
+ * $Id: rundump.c,v 1.13 1997/12/30 05:23:54 jrj Exp $
  *
  * runs DUMP program as root
  */
@@ -83,7 +83,7 @@ char **argv;
     }
 
 #ifdef XFSDUMP
-    
+
     if (strcmp(argv[0], "xfsdump") == 0)
         dump_program = XFSDUMP;
     else /* strcmp(argv[0], "xfsdump") != 0 */

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandates.c,v 1.8 1997/09/18 23:47:56 george Exp $
+ * $Id: amandates.c,v 1.9 1997/12/30 05:23:49 jrj Exp $
  *
  * manage amandates file, that mimics /etc/dumpdates, but stores
  * GNUTAR dates
@@ -48,7 +48,9 @@ int open_readwrite;
 {
     int rc, level;
     long ldate;
-    char line[4096], name[1024];
+    char *line = NULL, *name = NULL;
+    char *s;
+    int ch;
 
     /* clean up from previous invocation */
 
@@ -63,14 +65,14 @@ int open_readwrite;
     readonly = !open_readwrite;
     amdf = NULL;
     amandates_list = NULL;
-    
+
     /* open the file */
 
     if (access(AMANDATES_FILE,F_OK))
 	/* not yet existing */
 	if ( (rc = open(AMANDATES_FILE,(O_CREAT|O_RDWR),0644)) )
 	    /* open/create successfull */
-	    close(rc);
+	    aclose(rc);
 
     if(open_readwrite)
 	amdf = fopen(AMANDATES_FILE, "r+");
@@ -93,12 +95,26 @@ int open_readwrite;
     if(rc == -1)
 	error("could not lock %s: %s", AMANDATES_FILE, strerror(errno));
 
-    while(fgets(line, 4096, amdf)) {
-	if((rc = sscanf(line, "%s %d %ld", name, &level, &ldate)) != 3)
-	    continue;
+    for(; (line = agets(amdf)) != NULL; free(line)) {
+	s = line;
+	ch = *s++;
 
-	if(level < 0 || level >= DUMP_LEVELS)
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    continue;				/* no name field */
+	}
+	name = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';				/* terminate the name */
+
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf(s - 1, "%d %ld", &level, &ldate) != 2) {
+	    continue;				/* no more fields */
+	}
+
+	if(level < 0 || level >= DUMP_LEVELS) {
 	    continue;
+	}
 
 	enter_record(name, level, (time_t) ldate);
     }
@@ -134,7 +150,7 @@ void finish_amandates()
 
     if(amfunlock(fileno(amdf), "amandates") == -1)
 	error("could not unlock %s: %s", AMANDATES_FILE, strerror(errno));
-    fclose(amdf);
+    afclose(amdf);
 }
 
 void free_amandates()
@@ -143,8 +159,8 @@ void free_amandates()
 
     for(amdp = amandates_list; amdp != NULL; amdp = nextp) {
 	nextp = amdp->next;
-	if(amdp->name) free(amdp->name);
-	free(amdp);
+	afree(amdp->name);
+	afree(amdp);
     }
 }
 
@@ -190,11 +206,9 @@ time_t dumpdate;
 {
     amandates_t *amdp;
 
-    assert(level >= 0 && level < DUMP_LEVELS);
-
     amdp = lookup(name, 0);
 
-    if(dumpdate < amdp->dates[level]) {
+    if(level < 0 || level >= DUMP_LEVELS || dumpdate < amdp->dates[level]) {
 	/* this is not allowed, but we can ignore it */
         dbprintf(("amandates botch: %s lev %d: new dumpdate %ld old %ld\n",
 		  name, level, (long) dumpdate, (long) amdp->dates[level]));
@@ -212,12 +226,11 @@ time_t dumpdate;
 {
     amandates_t *amdp;
 
-    assert(level >= 0 && level < DUMP_LEVELS);
     assert(!readonly);
 
     amdp = lookup(name, 1);
 
-    if(dumpdate < amdp->dates[level]) {
+    if(level < 0 || level >= DUMP_LEVELS || dumpdate < amdp->dates[level]) {
 	/* this is not allowed, but we can ignore it */
 	dbprintf(("amandates updateone: %s lev %d: new dumpdate %ld old %ld",
 		  name, level, (long) dumpdate, (long) amdp->dates[level]));
@@ -234,28 +247,49 @@ time_t dumpdate;
 static void import_dumpdates(amdp)
 amandates_t *amdp;
 {
-    char *devname, line[4096], fname[1024], datestr[1024];
-    int level, rc;
+    char *devname = NULL, *line = NULL, *fname = NULL;
+    int level;
     time_t dumpdate;
     FILE *dumpdf;
+    char *s;
+    int ch;
 
     devname = amname_to_devname(amdp->name);
-    
+
     if((dumpdf = fopen("/etc/dumpdates", "r")) == NULL)
 	return;
-    while(fgets(line, 4096, dumpdf)) {
-	if((rc = sscanf(line, "%s %d %[^\n]", fname, &level, datestr)) != 3)
-	    continue;
-	dumpdate = unctime(datestr);
+    for(; (line = agets(dumpdf)) != NULL; free(line)) {
+	s = line;
+	ch = *s++;
 
-	if(strcmp(fname, devname) || level < 0 || level >= DUMP_LEVELS)
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    continue;				/* no fname field */
+	}
+	fname = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';				/* terminate fname */
+
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
+	    continue;				/* no level field */
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    continue;				/* no dumpdate field */
+	}
+	dumpdate = unctime(s-1);
+
+	if(strcmp(fname, devname) != 0 || level < 0 || level >= DUMP_LEVELS) {
 	    continue;
-	
+	}
+
 	if(dumpdate != -1 && dumpdate > amdp->dates[level]) {
 	    if(!readonly) updated = 1;
 	    amdp->dates[level] = dumpdate;
 	}
     }
-    fclose(dumpdf);
+    afclose(dumpdf);
 }
-

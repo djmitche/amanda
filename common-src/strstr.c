@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: strstr.c,v 1.2 1997/08/27 08:12:21 amcore Exp $
+ * $Id: strstr.c,v 1.3 1997/12/30 05:24:26 jrj Exp $
  *
  * replacement for missing ANSI-C strstr function
  */
@@ -40,7 +40,7 @@ char *a, *b;
         blen = strlen(b);
 
         for(i=0; i <= alen-blen; i++, a++)
-            if(!strncmp(a,b,blen)) return a;
+            if(strncmp(a, b, blen) == 0) return a;
 
         return NULL;
 }

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.9 1997/12/17 23:30:51 jrj Exp $
+ * $Id: tapeio.c,v 1.10 1997/12/30 05:25:29 jrj Exp $
  *
  * implements tape I/O functions
  */
@@ -39,8 +39,7 @@
 #define W_OK 2
 #endif
 
-#define MAX_LINE 1024
-static char errstr[MAX_LINE];
+static char *errstr = NULL;
 
 #ifdef AIX_TAPEIO
 
@@ -227,14 +226,12 @@ char *devname;
     int fd;
 
     if((fd = tape_open(devname, O_RDONLY)) == -1) {
-	strncpy(errstr, "no tape online", sizeof(errstr)-1);
-	errstr[sizeof(errstr)-1] = '\0';
+	errstr = newstralloc(errstr, "no tape online");
 	return errstr;
     }
 
     if(tapefd_rewind(fd) == -1) {
-	ap_snprintf(errstr, sizeof(errstr),
-		    "rewinding tape: %s", strerror(errno));
+	errstr = newstralloc2(errstr, "rewinding tape: ", strerror(errno));
 	tapefd_close(fd);
 	return errstr;
     }
@@ -249,16 +246,19 @@ char *devname;
 int count;
 {
     int fd;
+    char count_str[NUM_STR_SIZE];
 
     if((fd = tape_open(devname, O_RDONLY)) == -1) {
-	strncpy(errstr, "no tape online", sizeof(errstr)-1);
-	errstr[sizeof(errstr)-1] = '\0';
+	errstr = newstralloc(errstr, "no tape online");
 	return errstr;
     }
 
     if(tapefd_fsf(fd, count) == -1) {
-	ap_snprintf(errstr, sizeof(errstr),
-		    "fast-forward %d files: %s", count, strerror(errno));
+	ap_snprintf(count_str, sizeof(count_str), "%d", count);
+	errstr = newvstralloc(errstr,
+			      "fast-forward ", count_str, "files: ",
+			      strerror(errno),
+			      NULL);
 	tapefd_close(fd);
 	return errstr;
     }
@@ -267,25 +267,23 @@ int count;
     return NULL;
 }
 
-char *tapefd_rdlabel(tapefd, datestamp, datestampsize, label, labsize)
+char *tapefd_rdlabel(tapefd, datestamp, label)
 int tapefd;
-char *datestamp, *label;
-unsigned datestampsize;
-unsigned labsize;
+char **datestamp, **label;
 {
     int rc;
     char buffer[TAPE_BLOCK_BYTES];
     dumpfile_t file;
 
+    *datestamp = *label = NULL;
+
     if(tapefd_rewind(tapefd) == -1) {
-	ap_snprintf(errstr, sizeof(errstr),
-		    "rewinding tape: %s", strerror(errno));
+	errstr = newstralloc2(errstr, "rewinding tape: ", strerror(errno));
 	return errstr;
     }
 
     if((rc = tapefd_read(tapefd, buffer, sizeof(buffer))) == -1) {
-	ap_snprintf(errstr, sizeof(errstr),
-		    "reading label: %s", strerror(errno));
+	errstr = newstralloc2(errstr, "reading label: ", strerror(errno));
 	return errstr;
     }
 
@@ -295,33 +293,27 @@ unsigned labsize;
 
     parse_file_header(buffer, &file, sizeof(buffer));
     if(file.type != F_TAPESTART) {
-	strncpy(errstr, "not an amanda tape", sizeof(errstr)-1);
-	errstr[sizeof(errstr)-1] = '\0';
+	errstr = newstralloc(errstr, "not an amanda tape");
 	return errstr;
     }
-    strncpy(datestamp, file.datestamp, datestampsize-1);
-    datestamp[datestampsize-1] = '\0';
-    strncpy(label, file.name, labsize-1);
-    label[labsize-1] = '\0';
+    *datestamp = stralloc(file.datestamp);
+    *label = stralloc(file.name);
 
     return NULL;
 }
 
 
-char *tape_rdlabel(devname, datestamp, datestampsize, label, bufsize)
-char *devname, *datestamp, *label;
-unsigned datestampsize;
-unsigned bufsize;
+char *tape_rdlabel(devname, datestamp, label)
+char *devname, **datestamp, **label;
 {
     int fd;
 
     if((fd = tape_open(devname, O_RDONLY)) == -1) {
-	strncpy(errstr, "no tape online", sizeof(errstr)-1);
-	errstr[sizeof(errstr)-1] = '\0';
+	errstr = newstralloc(errstr, "no tape online");
 	return errstr;
     }
 
-    if(tapefd_rdlabel(fd, datestamp, datestampsize, label, bufsize) != NULL) {
+    if(tapefd_rdlabel(fd, datestamp, label) != NULL) {
 	tapefd_close(fd);
 	return errstr;
     }
@@ -340,8 +332,7 @@ char *datestamp, *label;
     dumpfile_t file;
 
     if(tapefd_rewind(tapefd) == -1) {
-	ap_snprintf(errstr, sizeof(errstr),
-		    "rewinding tape: %s", strerror(errno));
+	errstr = newstralloc2(errstr, "rewinding tape: ", strerror(errno));
 	return errstr;
     }
 
@@ -354,8 +345,8 @@ char *datestamp, *label;
     write_header(buffer,&file,sizeof(buffer));
 
     if((rc = tapefd_write(tapefd, buffer, sizeof(buffer))) != sizeof(buffer)) {
-	ap_snprintf(errstr, sizeof(errstr), "writing label: %s",
-		    rc != -1? "short write" : strerror(errno));
+	errstr = newstralloc2(errstr, "writing label: ",
+			      (rc != -1) ? "short write" : strerror(errno));
 	return errstr;
     }
 
@@ -370,12 +361,10 @@ char *devname, *datestamp, *label;
 
     if((fd = tape_open(devname, O_WRONLY)) == -1) {
 	if(errno == EACCES) {
-	    strncpy(errstr, "writing label: tape is write-protected",
-		    sizeof(errstr)-1);
-	    errstr[sizeof(errstr)-1] = '\0';
+	    errstr = newstralloc(errstr,
+				 "writing label: tape is write-protected");
 	} else {
-	    ap_snprintf(errstr, sizeof(errstr),
-			"writing label: %s", strerror(errno));
+	    errstr = newstralloc2(errstr, "writing label: ", strerror(errno));
 	}
 	tapefd_close(fd);
 	return errstr;
@@ -406,8 +395,8 @@ char *datestamp;
     write_header(buffer, &file,sizeof(buffer));
 
     if((rc = tapefd_write(tapefd, buffer, sizeof(buffer))) != sizeof(buffer)) {
-	ap_snprintf(errstr, sizeof(errstr), "writing endmark: %s", 
-		    rc != -1? "short write" : strerror(errno));
+	errstr = newstralloc2(errstr, "writing endmark: ",
+			      (rc != -1) ? "short write" : strerror(errno));
 	return errstr;
     }
 
@@ -421,9 +410,9 @@ char *devname, *datestamp;
     int fd;
 
     if((fd = tape_open(devname, O_WRONLY)) == -1) {
-	ap_snprintf(errstr, sizeof(errstr), "writing endmark: %s",
-		    errno == EACCES ? "tape is write-protected"
-				    : strerror(errno));
+	errstr = newstralloc2(errstr, "writing endmark: ",
+			      (errno == EACCES) ? "tape is write-protected"
+						: strerror(errno));
 	return errstr;
     }
 
@@ -444,22 +433,19 @@ char *devname;
     /* first, make sure the file exists and the permissions are right */
 
     if(access(devname, R_OK|W_OK) == -1) {
-	strncpy(errstr, strerror(errno), sizeof(errstr)-1);
-	errstr[sizeof(errstr)-1] = '\0';
+	errstr = newstralloc(errstr, strerror(errno));
 	return errstr;
     }
 
     if((fd = tape_open(devname, O_WRONLY)) == -1) {
-	strncpy(errstr,
-		errno == EACCES? "tape write-protected" : strerror(errno),
-		sizeof(errstr)-1);
-	errstr[sizeof(errstr)-1] = '\0';
+	errstr = newstralloc(errstr,
+			     (errno == EACCES) ? "tape write-protected"
+					       : strerror(errno));
 	return errstr;
     }
 
     if(tapefd_close(fd) == -1) {
-	strncpy(errstr, strerror(errno), sizeof(errstr)-1);
-	errstr[sizeof(errstr)-1] = '\0';
+	errstr = newstralloc(errstr, strerror(errno));
 	return errstr;
     }
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.9 1997/12/16 17:54:56 jrj Exp $
+ * $Id: debug.c,v 1.10 1997/12/30 05:24:09 jrj Exp $
  *
  * debug log subroutines
  */
@@ -37,9 +37,11 @@ int debug = 1;
 extern char *pname;
 
 #ifdef DEBUG_CODE
-  int db_file = -1;
+  int db_fd = -1;
+  static FILE *db_file = NULL;
 #else
-  int db_file = 2;
+  int db_fd = 2;
+  static FILE *db_file = stderr;
 #endif
 
 #ifndef DEBUG_DIR
@@ -52,23 +54,13 @@ arglist_function(void debug_printf, char *, format)
  */
 {
     va_list argp;
-    char linebuf[16384];
 
-    if(db_file == -1) return;
-
-    /* format error message */
+    if(db_fd == -1) return;
 
     arglist_start(argp, format);
-    ap_vsnprintf(linebuf, sizeof(linebuf), format, argp);
+    vfprintf(db_file, format, argp);
+    fflush(db_file);
     arglist_end(argp);
-
-    /*
-     * write it with no stdio buffering, since we want the output
-     * to appear immediately.
-     */
-
-    write(db_file, linebuf, strlen(linebuf));
-
 }
 
 void debug_open()
@@ -76,10 +68,13 @@ void debug_open()
     time_t curtime;
     int saved_debug;
     int maxtries;
-    char dbfilename[256];
+    char *dbfilename;
     struct passwd *pwent;
     uid_t uid;
     gid_t gid;
+#ifdef DEBUG_FILE_WITH_PID
+    char pid_str[NUM_STR_SIZE];
+#endif
 
     if((pwent = getpwnam(CLIENT_LOGIN)) != NULL) {
 	uid = pwent->pw_uid;
@@ -91,11 +86,10 @@ void debug_open()
     }
 
 #ifdef DEBUG_FILE_WITH_PID
-    ap_snprintf(dbfilename, sizeof(dbfilename),
-		"%s/%s.%ld.debug", DEBUG_DIR, pname, (long)getpid());
+    ap_snprintf(pid_str, sizeof(pid_str), "%ld", (long)getpid());
+    dbfilename = vstralloc(DEBUG_DIR, "/", pname, ".", pid_str, ".debug", NULL);
 #else
-    ap_snprintf(dbfilename, sizeof(dbfilename),
-		"%s/%s.debug", DEBUG_DIR, pname);
+    dbfilename = vstralloc(DEBUG_DIR, "/", pname, ".debug", NULL);
 #endif
 
     if(mkpdir(dbfilename, 0700, uid, gid) == -1)
@@ -106,8 +100,9 @@ void debug_open()
 	if (--maxtries == 0)
 	    error("open debug file \"%s\": %s", dbfilename, strerror(errno));
 	unlink(dbfilename);
-	db_file = open(dbfilename, O_WRONLY|O_CREAT|O_EXCL|O_APPEND, 0600);
-    } while(db_file == -1);
+	db_fd = open(dbfilename, O_WRONLY|O_CREAT|O_EXCL|O_APPEND, 0600);
+    } while(db_fd == -1);
+    db_file = fdopen(db_fd, "w");
 
     chown(dbfilename, uid, gid);
 
@@ -117,6 +112,7 @@ void debug_open()
 		 pname, debug, (long)getpid(), (long)getuid(),
 		 (long)geteuid(), ctime(&curtime));
     debug = saved_debug;
+    afree(dbfilename);
 }
 
 void debug_close()
@@ -128,6 +124,8 @@ void debug_close()
     debug_printf("%s: pid %ld finish time %s", pname, (long)getpid(),
 		 ctime(&curtime));
 
-    if(close(db_file) == -1)
+    if(fclose(db_file) == EOF)
 	error("close debug file: %s", strerror(errno));
+    db_fd = -1;
+    db_file = NULL;
 }

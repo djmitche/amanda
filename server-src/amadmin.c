@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.18 1997/12/16 18:02:11 jrj Exp $
+ * $Id: amadmin.c,v 1.19 1997/12/30 05:24:49 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -76,7 +76,6 @@ int find_match P((char *host, char *disk));
 char *nicedate P((int datestamp));
 int bump_thresh P((int level));
 int search_logfile P((char *label, int datestamp, char *logfile));
-int get_logline P((FILE *logf));
 void export_db P((int argc, char **argv));
 void import_db P((int argc, char **argv));
 void disklist P((int argc, char **argv));
@@ -89,21 +88,23 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    char confdir[256];
+    char *confdir;
 
     erroutput_type = ERR_INTERACTIVE;
 
     if(argc < 3) usage();
 
-    if(!strcmp(argv[2],"version")) {
+    if(strcmp(argv[2],"version") == 0) {
 	for(argc=0; version_info[argc]; printf("%s",version_info[argc++]));
 	return 0;
     }
-    ap_snprintf(confdir, sizeof(confdir), "%s/%s", CONFIG_DIR, argv[1]);
+    confdir = vstralloc(CONFIG_DIR, "/", argv[1], NULL);
     if(chdir(confdir)) {
 	fprintf(stderr,"%s: could not find config dir %s\n", argv[0], confdir);
+	afree(confdir);
 	usage();
     }
+    afree(confdir);
 
     if(read_conffile(CONFFILE_NAME))
 	error("could not find \"%s\" in this directory.\n", CONFFILE_NAME);
@@ -117,17 +118,17 @@ char **argv;
     if(open_infofile(getconf_str(CNF_INFOFILE)))
 	error("could not open info db \"%s\"\n", getconf_str(CNF_INFOFILE));
 
-    if(!strcmp(argv[2],"force")) force(argc, argv);
-    else if(!strcmp(argv[2],"unforce")) unforce(argc, argv);
-    else if(!strcmp(argv[2],"info")) info(argc, argv);
-    else if(!strcmp(argv[2],"find")) find(argc, argv);
-    else if(!strcmp(argv[2],"delete")) delete(argc, argv);
-    else if(!strcmp(argv[2],"balance")) balance();
-    else if(!strcmp(argv[2],"tape")) tape();
-    else if(!strcmp(argv[2],"bumpsize")) bumpsize();
-    else if(!strcmp(argv[2],"import")) import_db(argc, argv);
-    else if(!strcmp(argv[2],"export")) export_db(argc, argv);
-    else if(!strcmp(argv[2],"disklist")) disklist(argc, argv);
+    if(strcmp(argv[2],"force") == 0) force(argc, argv);
+    else if(strcmp(argv[2],"unforce") == 0) unforce(argc, argv);
+    else if(strcmp(argv[2],"info") == 0) info(argc, argv);
+    else if(strcmp(argv[2],"find") == 0) find(argc, argv);
+    else if(strcmp(argv[2],"delete") == 0) delete(argc, argv);
+    else if(strcmp(argv[2],"balance") == 0) balance();
+    else if(strcmp(argv[2],"tape") == 0) tape();
+    else if(strcmp(argv[2],"bumpsize") == 0) bumpsize();
+    else if(strcmp(argv[2],"import") == 0) import_db(argc, argv);
+    else if(strcmp(argv[2],"export") == 0) export_db(argc, argv);
+    else if(strcmp(argv[2],"disklist") == 0) disklist(argc, argv);
     else {
 	fprintf(stderr, "%s: unknown command \"%s\"\n", argv[0], argv[2]);
 	usage();
@@ -491,40 +492,20 @@ void balance()
 
 /* ----------------------------------------------- */
 
-#define MAX_LINE 2048
-
-
-typedef enum program_e {
-    P_UNKNOWN, P_PLANNER, P_DRIVER, P_REPORTER, P_DUMPER, P_TAPER, P_AMFLUSH
-} program_t;
-#define P_LAST P_AMFLUSH
-
-char *program_str[] = {
-    "UNKNOWN", "planner", "driver", "reporter", "dumper", "taper", "amflush"
-};
-
-typedef struct line_s {
-    struct line_s *next;
-    char *str;
-} line_t;
-
-int curlinenum;
-logtype_t curlog;
-program_t curprog;
-char *curstr;
-char logline[MAX_LINE];
 
 char *find_hostname;
 char **find_diskstrs;
 int  find_ndisks;
 int  find_nhosts;
-char sort_order[10]="hkdlb";
+
+#define DEFAULT_SORT_ORDER	"hkdlb"
+static char *sort_order = NULL;
 
 void find(argc, argv)
 int argc;
 char **argv;
 {
-    char *conflog, logfile[1024];
+    char *conflog, *logfile = NULL;
     host_t *hp;
     int tape, maxtape, seq, logs;
     tape_t *tp;
@@ -536,10 +517,11 @@ char **argv;
 	usage();
     }
 
-	
-    if(argc > 3 && !strcmp(argv[3],"--sort")) {
+
+    sort_order = newstralloc(sort_order, DEFAULT_SORT_ORDER);
+    if(argc > 4 && strcmp(argv[3],"--sort") == 0) {
 	int i, valid_sort=1;
-	argv[4][9]=0; /* trunc */
+
 	for(i=strlen(argv[4])-1;i>=0;i--) {
 	    switch (argv[4][i]) {
 	    case 'h':
@@ -557,11 +539,10 @@ char **argv;
 	    }
 	}
 	if(valid_sort) {
-	    strncpy(sort_order, argv[4], sizeof(sort_order)-1);
-	    sort_order[sizeof(sort_order)-1] = '\0';
+	    sort_order = newstralloc(sort_order, argv[4]);
 	} else {
-	    printf("Invalid sort order: %s\nUse default sort order: %s\n",
-		    argv[4],sort_order);
+	    printf("Invalid sort order: %s\n", argv[4]);
+	    printf("Use default sort order: %s\n", sort_order);
 	}
 	start_argc=6;
     } else {
@@ -586,8 +567,11 @@ char **argv;
     maxtape = getconf_int(CNF_TAPECYCLE);
 
     for(tape = 1; tape <= maxtape; tape++) {
+	char ds_str[NUM_STR_SIZE];
+
 	tp = lookup_tapepos(tape);
 	if(tp == NULL) continue;
+	ap_snprintf(ds_str, sizeof(ds_str), "%d", tp->datestamp);
 
 	/* search log files */
 
@@ -596,23 +580,26 @@ char **argv;
 	/* new-style log.<date>.<seq> */
 
 	for(seq = 0; 1; seq++) {
-	    ap_snprintf(logfile, sizeof(logfile),
-			"%s.%d.%d", conflog, tp->datestamp, seq);
+	    char seq_str[NUM_STR_SIZE];
+
+	    ap_snprintf(seq_str, sizeof(seq_str), "%d", seq);
+	    logfile = newvstralloc(logfile,
+				   conflog, ".", ds_str, ".", seq_str, NULL);
 	    if(access(logfile, R_OK) != 0) break;
 	    logs += search_logfile(tp->label, tp->datestamp, logfile);
 	}
 
 	/* search old-style amflush log, if any */
 
-	ap_snprintf(logfile, sizeof(logfile),
-		    "%s.%d.amflush", conflog, tp->datestamp);
+	logfile = newvstralloc(logfile,
+			       conflog, ".", ds_str, ".", "amflush", NULL);
 	if(access(logfile,R_OK) == 0) {
 	    logs += search_logfile(tp->label, tp->datestamp, logfile);
 	}
 
 	/* search old-style main log, if any */
 
-	ap_snprintf(logfile, sizeof(logfile), "%s.%d", conflog, tp->datestamp);
+	logfile = newvstralloc(logfile, conflog, ".", ds_str, NULL);
 	if(access(logfile,R_OK) == 0) {
 	    logs += search_logfile(tp->label, tp->datestamp, logfile);
 	}
@@ -620,6 +607,7 @@ char **argv;
 	    printf("Warning: no log files found for tape %s written %s\n",
 		   tp->label, nicedate(tp->datestamp));
     }
+    afree(logfile);
 
     search_holding_disk();
 
@@ -632,33 +620,42 @@ void search_holding_disk()
 {
     holdingdisk_t *hdisk;
     struct dirname *dir;
-    char sdirname[80], destname[128], hostname[256], diskname[80];
+    char *sdirname = NULL;
+    char *destname = NULL;
+    char *hostname = NULL;
+    char *diskname = NULL;
     DIR *workdir;
     struct dirent *entry;
     int level;
     disk_t *dp;
-	
+
     for(hdisk = holdingdisks; hdisk != NULL; hdisk = hdisk->next)
 	scan_holdingdisk(hdisk->diskdir,0);
 
     for(hdisk = holdingdisks; hdisk != NULL; hdisk = hdisk->next) {
 	for(dir = dir_list; dir != NULL; dir = dir->next) {
-            ap_snprintf(sdirname, sizeof(sdirname),
-			"%s/%s", hdisk->diskdir,dir->name);
+	    sdirname = newvstralloc(sdirname,
+				    hdisk->diskdir, "/", dir->name,
+				    NULL);
 	    if((workdir = opendir(sdirname)) == NULL) {
 	        continue;
 	    }
 
 	    chdir(sdirname);
 	    while((entry = readdir(workdir)) != NULL) {
-		if(!strcmp(entry->d_name, ".") ||  !strcmp(entry->d_name, ".."))
+		if(strcmp(entry->d_name, ".") == 0
+			  || strcmp(entry->d_name, "..") == 0)
 		    continue;
 		if(is_emptyfile(entry->d_name))
 		    continue;
-		ap_snprintf(destname, sizeof(destname),
-			    "%s/%s", sdirname, entry->d_name);
-		if(get_amanda_names(destname, hostname, diskname, &level))
+		destname = newvstralloc(destname,
+					sdirname, "/", entry->d_name,
+					NULL);
+		afree(hostname);
+		afree(diskname);
+		if(get_amanda_names(destname, &hostname, &diskname, &level)) {
 		    continue;
+		}
 		dp = NULL;
 		for(;;) {
 		    char *s;
@@ -672,14 +669,16 @@ void search_holding_disk()
 		    continue;
 		if(level < 0 || level > 9)
 		    continue;
-		    
+
 		if(find_match(hostname,diskname)) {
 		    struct find_result *new_output_find=
 			alloc(sizeof(struct find_result));
 		    new_output_find->next=output_find;
 		    new_output_find->datestamp=stralloc(nicedate(atoi(dir->name)));
-		    new_output_find->hostname=stralloc(hostname);
-		    new_output_find->diskname=stralloc(diskname);
+		    new_output_find->hostname=hostname;
+		    hostname = NULL;
+		    new_output_find->diskname=diskname;
+		    diskname = NULL;
 		    new_output_find->level=level;
 		    new_output_find->label=stralloc(destname);
 		    new_output_find->filenum=0;
@@ -690,6 +689,10 @@ void search_holding_disk()
 	    closedir(workdir);
 	}	
     }
+    afree(destname);
+    afree(sdirname);
+    afree(hostname);
+    afree(diskname);
 }
 
 static int find_compare(i1, j1)
@@ -869,14 +872,71 @@ int datestamp;
     return nice;
 }
 
+static parse_taper_datestamp_log(logline, datestamp, label)
+char *logline;
+int *datestamp;
+char **label;
+{
+    char *s;
+    int ch;
+
+    s = logline;
+    ch = *s++;
+
+    skip_whitespace(s, ch);
+    if(ch == '\0') {
+	return 0;
+    }
+#define sc "datestamp"
+    if(strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	return 0;
+    }
+    s += sizeof(sc)-1;
+    ch = s[-1];
+#undef sc
+
+    skip_whitespace(s, ch);
+    if(ch == '\0' || sscanf(s - 1, "%d", datestamp) != 1) {
+	return 0;
+    }
+    skip_integer(s, ch);
+
+    skip_whitespace(s, ch);
+    if(ch == '\0') {
+	return 0;
+    }
+#define sc "label"
+    if(strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	return 0;
+    }
+    s += sizeof(sc)-1;
+    ch = s[-1];
+#undef sc
+
+    skip_whitespace(s, ch);
+    if(ch == '\0') {
+	return 0;
+    }
+    *label = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+
+    return 1;
+}
+
 int search_logfile(label, datestamp, logfile)
 char *label, *logfile;
 int datestamp;
 {
     FILE *logf;
-    char host[80], disk[80], ck_label[80], rest[MAX_LINE];
+    char *host, *host_undo, host_undo_ch;
+    char *disk, *disk_undo, disk_undo_ch;
+    char *rest;
+    char *ck_label;
     int level, rc, filenum, ck_datestamp, tapematch;
     int passlabel, ck_datestamp2;
+    char *s;
+    int ch;
 
     if((logf = fopen(logfile, "r")) == NULL)
 	error("could not open logfile %s: %s", logfile, strerror(errno));
@@ -885,17 +945,18 @@ int datestamp;
     tapematch = 0;
     while(!tapematch && get_logline(logf)) {
 	if(curlog == L_START && curprog == P_TAPER) {
-	    rc = sscanf(curstr, " datestamp %d label %s",
-			&ck_datestamp, ck_label);
-	    if(rc != 2)
+	    if(parse_taper_datestamp_log(curstr,
+					 &ck_datestamp, &ck_label) == 0) {
 		printf("strange log line \"start taper %s\"\n", curstr);
-	    else if(ck_datestamp == datestamp && !strcmp(ck_label,label))
+	    } else if(ck_datestamp == datestamp
+		      && strcmp(ck_label, label) == 0) {
 		tapematch = 1;
+	    }
 	}
     }
 
     if(tapematch == 0) {
-	fclose(logf);
+	afclose(logf);
 	return 0;
     }
 
@@ -904,24 +965,60 @@ int datestamp;
     while(get_logline(logf) && passlabel) {
 	if(curlog == L_SUCCESS && curprog == P_TAPER && passlabel) filenum++;
 	if(curlog == L_START && curprog == P_TAPER) {
-	    rc = sscanf(curstr, " datestamp %d label %s",
-			&ck_datestamp2, ck_label);
-	    if(rc != 2)
+	    if(parse_taper_datestamp_log(curstr,
+					 &ck_datestamp2, &ck_label) == 0) {
 		printf("strange log line \"start taper %s\"\n", curstr);
-	    else
-		if (strcmp(ck_label,label))
-		    passlabel = !passlabel;
+	    } else if (strcmp(ck_label, label)) {
+		passlabel = !passlabel;
+	    }
 	}
 	if(curlog == L_SUCCESS || curlog == L_FAIL) {
-	    rc =sscanf(curstr,"%s %s %d %[^\n]", host, disk, &level, rest);
-	    if(rc != 4) {
+	    s = curstr;
+	    ch = *s++;
+
+	    skip_whitespace(s, ch);
+	    if(ch == '\0') {
 		printf("strange log line \"%s\"\n", curstr);
 		continue;
 	    }
+	    host = s - 1;
+	    skip_non_whitespace(s, ch);
+	    host_undo = s - 1;
+	    host_undo_ch = *host_undo;
+	    *host_undo = '\0';
+
+	    skip_whitespace(s, ch);
+	    if(ch == '\0') {
+		printf("strange log line \"%s\"\n", curstr);
+		continue;
+	    }
+	    disk = s - 1;
+	    skip_non_whitespace(s, ch);
+	    disk_undo = s - 1;
+	    disk_undo_ch = *disk_undo;
+	    *disk_undo = '\0';
+
+	    skip_whitespace(s, ch);
+	    if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
+		printf("strange log line \"%s\"\n", curstr);
+		continue;
+	    }
+	    skip_integer(s, ch);
+
+	    skip_whitespace(s, ch);
+	    if(ch == '\0') {
+		printf("strange log line \"%s\"\n", curstr);
+		continue;
+	    }
+	    rest = s - 1;
+	    if((s = strchr(s, '\n')) != NULL) {
+		*s = '\0';
+	    }
+
 	    if(find_match(host, disk)) {
 		if(curprog == P_TAPER) {
 		    struct find_result *new_output_find=
-			alloc(sizeof(struct find_result));
+			(struct find_result *)alloc(sizeof(struct find_result));
 		    new_output_find->next=output_find;
 		    new_output_find->datestamp=stralloc(nicedate(datestamp));
 		    new_output_find->hostname=stralloc(host);
@@ -947,68 +1044,22 @@ int datestamp;
 		    new_output_find->level=level;
 		    new_output_find->label=stralloc("---");
 		    new_output_find->filenum=0;
-		    len = 11+strlen(program_str[(int)curprog])+strlen(rest);
-		    new_output_find->status=(char*)alloc(len);
-		    ap_snprintf(new_output_find->status, len, "FAILED (%s) %s", 
-				program_str[(int)curprog], rest);
+		    new_output_find->status=newvstralloc(
+			 new_output_find->status,
+			 "FAILED (",
+			 program_str[(int)curprog],
+			 ") ",
+			 rest,
+			 NULL);
 		    output_find=new_output_find;
 		}
 	    }
 	}
     }
-    fclose(logf);
+    afclose(logf);
     return 1;
 }
 
-
-/* shared code with reporter.c -- should generalize into log-reading library */
-
-int get_logline(logf)
-FILE *logf;
-{
-    char *cp, *logstr, *progstr;
-
-    if(fgets(logline, MAX_LINE, logf) == NULL)
-	return 0;
-    curlinenum++;
-    cp = logline;
-
-    /* continuation lines are special */
-
-    if(*cp == ' ') {
-	curlog = L_CONT;
-	/* curprog stays the same */
-	curstr = cp + 2;
-	return 1;
-    }
-
-    /* isolate logtype field */
-
-    logstr = cp;
-    while(*cp && *cp != ' ') cp++;
-    if(*cp) *cp++ = '\0';
-
-    /* isolate program name field */
-
-    while(*cp == ' ') cp++;	/* skip blanks */
-    progstr = cp;
-    while(*cp && *cp != ' ') cp++;
-    if(*cp) *cp++ = '\0';
-
-    /* rest of line is logtype dependent string */
-
-    curstr = cp;
-
-    /* lookup strings */
-
-    for(curlog = L_MARKER; curlog != L_BOGUS; curlog--)
-	if(!strcmp(logtype_str[curlog], logstr)) break;
-
-    for(curprog = P_LAST; curprog != P_UNKNOWN; curprog--)
-	if(!strcmp(program_str[curprog], progstr)) break;
-
-    return 1;
-}
 
 /* ------------------------ */
 
@@ -1059,8 +1110,8 @@ char **argv;
     printf("CURINFO Version %s CONF %s\n", version(), getconf_str(CNF_ORG));
 
     curtime = time(0);
-    hostname[sizeof(hostname)-1] = '\0';
     gethostname(hostname, sizeof(hostname)-1);
+    hostname[sizeof(hostname)-1] = '\0';
     printf("# Generated by:\n#    host: %s\n#    date: %s",
 	   hostname, ctime(&curtime));
 
@@ -1112,27 +1163,80 @@ disk_t *dp;
 
 /* ----------------------------------------------- */
 
-char line[1024];
-
 int import_one P((void));
-int impget_line P((void));
+char *impget_line P((void));
 
 void import_db(argc, argv)
 int argc;
 char **argv;
 {
     int vers_maj, vers_min, vers_patch, newer;
-    char org[256], vers_comment[256];
+    char *org, *vers_comment;
+    char *line;
+    char *hdr;
+    char *s;
+    int ch;
 
     /* process header line */
 
-    fgets(line, 1024, stdin);
-    if(sscanf(line, "CURINFO Version %d.%d.%d%s CONF %[^\n]\n",
-	      &vers_maj, &vers_min, &vers_patch, vers_comment, org) != 5) {
-	fprintf(stderr, "%s: bad CURINFO header line in input.\n", pname);
-	fprintf(stderr, "    Was the input in \"amadmin export\" format?\n");
+    if((line = agets(stdin)) == NULL) {
+	fprintf(stderr, "%s: empty input.\n", pname);
 	return;
     }
+
+    s = line;
+    ch = *s++;
+
+    hdr = "version";
+#define sc "CURINFO Version"
+    if(strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	goto bad_header;
+    }
+    s += sizeof(sc)-1;
+    ch = *s++;
+#undef sc
+    skip_whitespace(s, ch);
+    if(ch == '\0'
+       || sscanf(s - 1, "%d.%d.%d", &vers_maj, &vers_min, &vers_patch) != 3) {
+	goto bad_header;
+    }
+
+    skip_integer(s, ch);			/* skip over major */
+    if(ch != '.') {
+	goto bad_header;
+    }
+    ch = *s++;
+    skip_integer(s, ch);			/* skip over minor */
+    if(ch != '.') {
+	goto bad_header;
+    }
+    ch = *s++;
+    skip_integer(s, ch);			/* skip over patch */
+
+    hdr = "comment";
+    if(ch == '\0') {
+	goto bad_header;
+    }
+    vers_comment = s - 1;			/* note: right next to patch */
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+
+    hdr = "CONF";
+    skip_whitespace(s, ch);			/* find the org keyword */
+#define sc "CONF"
+    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	goto bad_header;
+    }
+    s += sizeof(sc)-1;
+    ch = *s++;
+#undef sc
+
+    hdr = "org";
+    skip_whitespace(s, ch);			/* find the org string */
+    if(ch == '\0') {
+	goto bad_header;
+    }
+    org = s - 1;
 
     newer = (vers_maj != VERSION_MAJOR)? vers_maj > VERSION_MAJOR :
 	    (vers_min != VERSION_MINOR)? vers_min > VERSION_MINOR :
@@ -1142,11 +1246,22 @@ char **argv;
 	     "%s: WARNING: input is from newer Amanda version: %d.%d.%d.\n",
 		pname, vers_maj, vers_min, vers_patch);
 
-    if(strcmp(org, getconf_str(CNF_ORG)))
+    if(strcmp(org, getconf_str(CNF_ORG)) != 0) {
 	fprintf(stderr, "%s: WARNING: input is from different org: %s\n",
 		pname, org);
+    }
 
     while(import_one());
+
+    afree(line);
+    return;
+
+ bad_header:
+
+    afree(line);
+    fprintf(stderr, "%s: bad CURINFO header line in input: %s.\n", pname, hdr);
+    fprintf(stderr, "    Was the input in \"amadmin export\" format?\n");
+    return;
 }
 
 
@@ -1156,9 +1271,11 @@ int import_one P((void))
     stats_t onestat;
     int rc, level;
     long onedate;
-
-    char hostname[256];
-    char diskname[256];
+    char *line;
+    char *s, *fp;
+    int ch;
+    char *hostname;
+    char *diskname;
 
     memset(&info, 0, sizeof(info_t));
 
@@ -1168,35 +1285,68 @@ int import_one P((void))
 
     /* get host: disk: command: lines */
 
-    if(!impget_line()) return 0;	/* nothing there */
-    if(sscanf(line, "host: %255[^\n]", hostname) != 1) goto parse_err;
+    hostname = diskname = NULL;
 
-    if(!impget_line()) goto shortfile_err;
-    if(sscanf(line, "disk: %255[^\n]", diskname) != 1) goto parse_err;
+    if((line = impget_line()) == NULL) return 0;	/* nothing there */
+    s = line;
+    ch = *s++;
 
-    if(!impget_line()) goto shortfile_err;
+    skip_whitespace(s, ch);
+#define sc "host:"
+    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) goto parse_err;
+    s += sizeof(sc)-1;
+    ch = s[-1];
+#undef sc
+    skip_whitespace(s, ch);
+    if(ch == '\0') goto parse_err;
+    fp = s-1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    hostname = stralloc(fp - 1);
+    s[-1] = ch;
+
+    skip_whitespace(s, ch);
+#define sc "disk:"
+    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) goto parse_err;
+    s += sizeof(sc)-1;
+    ch = s[-1];
+#undef sc
+    skip_whitespace(s, ch);
+    if(ch == '\0') goto parse_err;
+    fp = s-1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    diskname = stralloc(s - 1);
+    s[-1] = ch;
+
+    afree(line);
+    if((line = impget_line()) == NULL) goto shortfile_err;
     if(sscanf(line, "command: %d", &info.command) != 1) goto parse_err;
 
     /* get rate: and comp: lines for full dumps */
 
-    if(!impget_line()) goto shortfile_err;
+    afree(line);
+    if((line = impget_line()) == NULL) goto shortfile_err;
     rc = sscanf(line, "full-rate: %f %f %f",
 		&info.full.rate[0], &info.full.rate[1], &info.full.rate[2]);
     if(rc != 3) goto parse_err;
 
-    if(!impget_line()) goto shortfile_err;
+    afree(line);
+    if((line = impget_line()) == NULL) goto shortfile_err;
     rc = sscanf(line, "full-comp: %f %f %f",
 		&info.full.comp[0], &info.full.comp[1], &info.full.comp[2]);
     if(rc != 3) goto parse_err;
 
     /* get rate: and comp: lines for incr dumps */
 
-    if(!impget_line()) goto shortfile_err;
+    afree(line);
+    if((line = impget_line()) == NULL) goto shortfile_err;
     rc = sscanf(line, "incr-rate: %f %f %f",
 		&info.incr.rate[0], &info.incr.rate[1], &info.incr.rate[2]);
     if(rc != 3) goto parse_err;
 
-    if(!impget_line()) goto shortfile_err;
+    afree(line);
+    if((line = impget_line()) == NULL) goto shortfile_err;
     rc = sscanf(line, "incr-comp: %f %f %f",
 		&info.incr.comp[0], &info.incr.comp[1], &info.incr.comp[2]);
     if(rc != 3) goto parse_err;
@@ -1204,16 +1354,70 @@ int import_one P((void))
     /* get stats for dump levels */
 
     while(1) {
-	if(!impget_line()) goto shortfile_err;
-	if(!strncmp(line, "//", 2)) {
+	afree(line);
+	if((line = impget_line()) == NULL) goto shortfile_err;
+	if(strncmp(line, "//", 2) == 0) {
 	    /* end of record */
 	    break;
 	}
 	memset(&onestat, 0, sizeof(onestat));
-	rc = sscanf(line, "stats: %d %ld %ld %ld %ld %d %80[^\n]",
-		    &level, &onestat.size, &onestat.csize, &onestat.secs,
-		    &onedate, &onestat.filenum, onestat.label);
-	if(rc < 5 || rc > 7) goto parse_err;
+
+	s = line;
+	ch = *s++;
+
+	skip_whitespace(s, ch);
+#define sc "stats:"
+	if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	    goto parse_err;
+	}
+	s += sizeof(sc)-1;
+	ch = s[-1];
+#undef sc
+
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
+	    goto parse_err;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf(s - 1, "%ld", &onestat.size) != 1) {
+	    goto parse_err;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf(s - 1, "%ld", &onestat.csize) != 1) {
+	    goto parse_err;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf(s - 1, "%ld", &onestat.secs) != 1) {
+	    goto parse_err;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf(s - 1, "%ld", &onedate) != 1) {
+	    goto parse_err;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);
+	if(ch != '\0') {
+	    if(sscanf(s - 1, "%d", &onestat.filenum) != 1) {
+		goto parse_err;
+	    }
+	    skip_integer(s, ch);
+
+	    skip_whitespace(s, ch);
+	    if(ch == '\0') {
+		goto parse_err;
+	    }
+	    strncpy(onestat.label, s - 1, sizeof(onestat.label)-1);
+	    onestat.label[sizeof(onestat.label)-1] = '\0';
+	}
 
 	/* time_t not guarranteed to be long */
 	onestat.date = onedate;
@@ -1221,6 +1425,7 @@ int import_one P((void))
 
 	info.inf[level] = onestat;
     }
+    afree(line);
 
     /* got a full record, now write it out to the database */
 
@@ -1228,45 +1433,50 @@ int import_one P((void))
 	fprintf(stderr, "%s: error writing record for %s:%s\n",
 		pname, hostname, diskname);
     }
+    afree(hostname);
+    afree(diskname);
     return 1;
 
  parse_err:
+    afree(line);
+    afree(hostname);
+    afree(diskname);
     fprintf(stderr, "%s: parse error reading import record.\n", pname);
     return 0;
 
  shortfile_err:
+    afree(line);
+    afree(hostname);
+    afree(diskname);
     fprintf(stderr, "%s: short file reading import record.\n", pname);
     return 0;
 }
 
-int impget_line P((void))
+char *
+impget_line ()
 {
-    char *p;
+    char *line;
+    char *s;
+    int ch;
 
-    while(1) {
+    for(; (line = agets(stdin)) != NULL; free(line)) {
+	s = line;
+	ch = *s++;
 
-	if(!fgets(line, 1024, stdin)) {
-	    /* EOF or error */
-	    if(ferror(stdin))
-		fprintf(stderr, "%s: reading stdin: %s\n",
-			pname, strerror(errno));
-	    return 0;
-	}
-
-	if(*line == '#') {
+	skip_whitespace(s, ch);
+	if(ch == '#') {
 	    /* ignore comment lines */
 	    continue;
-	}
-
-	/* find first non-blank */
-
-	for(p = line; isspace(*p); p++);
-	if(*p) {
+	} else if(ch) {
 	    /* found non-blank, return line */
-	    return 1;
+	    return line;
 	}
 	/* otherwise, a blank line, so keep going */
     }
+    if(ferror(stdin)) {
+	fprintf(stderr, "%s: reading stdin: %s\n", pname, strerror(errno));
+    }
+    return NULL;
 }
 
 /* ----------------------------------------------- */

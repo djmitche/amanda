@@ -45,6 +45,6 @@ strncasecmp(s1, s2, n)
 
       n--;
   }
-  
+
   return(0);
 }

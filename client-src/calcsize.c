@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: calcsize.c,v 1.14 1997/12/16 17:52:46 jrj Exp $
+ * $Id: calcsize.c,v 1.15 1997/12/30 05:23:50 jrj Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -103,6 +103,8 @@ char **argv;
     struct stat finfo;
     int i;
     unsigned long dump_total=0, gtar_total=0;
+    char *d;
+    int l, w;
 
     if (argc < 2) {
 	fprintf(stderr,"Usage: %s file[s]\n",argv[0]);
@@ -124,7 +126,7 @@ char **argv;
 #else
     int i;
     char *dirname, *amname;
-    char result[1024];
+    char *result = NULL;
 
 #if 0
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
@@ -139,34 +141,37 @@ char **argv;
       usage:
 #endif
 	error("Usage: %s [DUMP|GNUTAR%s] name dir [level date] ...",
+	      pname,
 #ifdef BUILTIN_EXCLUDE_SUPPORT
-		" [-X --exclude[-list]=regexp]",
+	      " [-X --exclude[-list]=regexp]"
 #else
-		"",
+	      ""
 #endif
-		pname);
+	      );
 	return 1;
     }
 
     /* parse backup program name */
 
-    if(!strcmp(*argv, "DUMP")) {
+    if(strcmp(*argv, "DUMP") == 0) {
 #if !defined(DUMP) && !defined(XFSDUMP)
 	error("%s: dump not available on this system", pname);
 	return 1;
-#endif
+#else
 	add_file = add_file_dump;
 	final_size = final_size_dump;
+#endif
     }
-    else if(!strcmp(*argv, "GNUTAR")) {
+    else if(strcmp(*argv, "GNUTAR") == 0) {
 #ifndef GNUTAR
 	error("%s: gnutar not available on this system", pname);
 	return 1;
-#endif
+#else
 	add_file = add_file_gnutar;
 	final_size = final_size_gnutar;
 #ifdef BUILTIN_EXCLUDE_SUPPORT
 	use_gtar_excl++;
+#endif
 #endif
     }
     else {
@@ -175,7 +180,7 @@ char **argv;
     }
     argc--, argv++;
 #ifdef BUILTIN_EXCLUDE_SUPPORT
-    if ((argc > 1) && !strcmp(*argv,"-X")) {
+    if ((argc > 1) && strcmp(*argv,"-X") == 0) {
 	char *cp = (char *)0;
 	argv++;
 
@@ -184,8 +189,7 @@ char **argv;
 	  return 1;
 	}
 
-	strncpy(result, *argv, sizeof(result)-1);
-	result[sizeof(result)-1] = '\0';
+	result = stralloc(*argv);
 	if (*result && (cp = strrchr(result,';')))
 	    /* delete trailing ; */
 	    *cp = 0;
@@ -199,8 +203,11 @@ char **argv;
 	  } else {
 	    add_exclude_file(result + sizeof(exclude_list_string)-1);
 	  }
-	} else
+	} else {
+	  afree(result);
 	  goto usage;
+	}
+	afree(result);
 	argc -= 2;
 	argv++;
     } else
@@ -230,16 +237,17 @@ char **argv;
 
     if(argc)
 	error("leftover arg \"%s\", expected <level> and <date>", *argv);
-	
+
     traverse_dirs(dirname);
     for(i = 0; i < ndumps; i++) {
-	ap_snprintf(result, sizeof(result), "%s %d SIZE %ld\n", amname,
-		    dumplevel[i], final_size(i, dirname));
 
 	amflock(1, "size");
 
 	lseek(1, (off_t)0, SEEK_END);
-	write(1, result, strlen(result));
+
+	printf("%s %d SIZE %ld\n",
+	       amname, dumplevel[i], final_size(i, dirname));
+	fflush(stdout);
 
 	amfunlock(1, "size");
     }
@@ -274,10 +282,10 @@ char *parent_dir;
     struct dirent *f;
     struct stat finfo;
     char *dirname, *newdir;
-    char newname[1024];
+    char *newname = NULL;
     dev_t parent_dev = 0;
     int i;
-
+    int l;
 
     if(parent_dir && chdir(parent_dir) != -1 && stat(".", &finfo) != -1)
 	parent_dev = finfo.st_dev;
@@ -299,12 +307,11 @@ char *parent_dir;
 	    continue;
 	}
 
-	strncpy(newname, dirname, sizeof(newname)-1-1);	/* allow for '/' */
-	newname[sizeof(newname)-1-1] = '\0';
-	newdir = newname + strlen(newname) - 1;
-	if(*newdir++ != '/') {
-	    *newdir++ = '/';
-	    *newdir = '\0';
+	l = strlen(dirname);
+	if(l > 0 && dirname[l - 1] != '/') {
+	    newname = newstralloc2(newname, dirname, "/");
+	} else {
+	    newname = newstralloc(newname, dirname);
 	}
 
 	while((f = readdir(d)) != NULL) {
@@ -326,7 +333,7 @@ char *parent_dir;
 	    if((finfo.st_mode & S_IFMT) == S_IFDIR) {
 		newdir = stralloc2(newname, f->d_name);
 		push_name(newdir);
-		free(newdir);
+		afree(newdir);
 	    }
 
 	    for(i = 0; i < ndumps; i++) {
@@ -350,6 +357,7 @@ char *parent_dir;
 	if(closedir(d) == -1)
 	    perror(dirname);
     }
+    afree(newname);
 }
 
 void push_name(str)
@@ -373,7 +381,7 @@ char *pop_name()
 
     name_stack = newp->next;
     str = newp->str;
-    free(newp);
+    afree(newp);
     return str;
 }
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: alloc.c,v 1.8 1997/12/16 17:54:54 jrj Exp $
+ * $Id: alloc.c,v 1.9 1997/12/30 05:24:05 jrj Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -56,7 +56,7 @@ void *newalloc(old, size)
 void *old;
 int size;
 {
-    if (old != (void *)0) free(old);
+    afree(old);
     return alloc(size);
 }
 
@@ -69,36 +69,83 @@ char *stralloc(str)
 char *str;
 {
     char *addr;
-    int len;
 
-    len = strlen(str)+1;
-    addr = alloc(len);
-    strncpy(addr, str, len-1);
-    addr[len-1] = '\0';
+    addr = alloc(strlen(str)+1);
+    strcpy(addr, str);
     return addr;
 }
 
 
 /*
-** stralloc2 - copies the two given strings into newly allocated memory.
+** vstralloc - copies up to MAX_STR_ARGS strings into newly allocated memory.
+**
+** The MAX_STR_ARGS limit is purely an efficiency issue so we do not have
+** to scan the strings more than necessary.
 */
-char *stralloc2(str1, str2)
-char *str1;
-char *str2;
-{
-    char *addr;
-    int len1;
-    int len2;
-    int len;
 
-    len1 = strlen(str1);
-    len2 = strlen(str2);
-    len = len1+len2+1;
-    addr = alloc(len);
-    strncpy(addr, str1, len-1);
-    addr[len-1] = '\0';
-    strncat(addr, str2, len-len1);
-    return addr;
+#define	MAX_VSTRALLOC_ARGS	32
+
+static char *internal_vstralloc(str, argp)
+char *str;
+va_list argp;
+{
+    char *next;
+    char *result;
+    int a;
+    int total_len;
+    char *arg[MAX_VSTRALLOC_ARGS+1];
+    int len[MAX_VSTRALLOC_ARGS+1];
+    int l;
+    char *s;
+
+    if (str == NULL) {
+	return NULL;				/* probably will not happen */
+    }
+
+    a = 0;
+    arg[a] = str;
+    l = strlen(str);
+    total_len = len[a] = l;
+    a++;
+
+    while ((next = arglist_val(argp, char *)) != NULL) {
+	if ((l = strlen(next)) == 0) {
+	    continue;				/* minor optimisation */
+	}
+	if (a >= MAX_VSTRALLOC_ARGS) {
+	    error ("more than %d args to vstralloc", MAX_VSTRALLOC_ARGS);
+	}
+	arg[a] = next;
+	len[a] = l;
+	total_len += l;
+	a++;
+    }
+    arg[a] = NULL;
+    len[a] = 0;
+
+    next = result = alloc(total_len+1);
+    for (a = 0; (s = arg[a]) != NULL; a++) {
+	memcpy(next, s, len[a]);
+	next += len[a];
+    }
+    *next = '\0';
+
+    return result;
+}
+
+
+/*
+** vstralloc - copies multiple strings into newly allocated memory.
+*/
+arglist_function(char *vstralloc, char *, str)
+{
+    va_list argp;
+    char *result;
+
+    arglist_start(argp, str);
+    result = internal_vstralloc(str, argp);
+    arglist_end(argp);
+    return result;
 }
 
 
@@ -109,21 +156,24 @@ char *newstralloc(oldstr, newstr)
 char *oldstr;
 char *newstr;
 {
-    if (oldstr != (char *)0) free(oldstr);
+    afree(oldstr);
     return stralloc(newstr);
 }
 
 
 /*
-** newstralloc2 - free existing string and then stralloc2 a new one.
+** newvstralloc - free existing string and then vstralloc a new one.
 */
-char *newstralloc2(oldstr, newstr1, newstr2)
-char *oldstr;
-char *newstr1;
-char *newstr2;
+arglist_function1(char *newvstralloc, char *, oldstr, char *, newstr)
 {
-    if (oldstr != (char *)0) free(oldstr);
-    return stralloc2(newstr1, newstr2);
+    va_list argp;
+    char *result;
+
+    afree(oldstr);
+    arglist_start(argp, newstr);
+    result = internal_vstralloc(newstr, argp);
+    arglist_end(argp);
+    return result;
 }
 
 

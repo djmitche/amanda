@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.46 1997/12/16 18:02:38 jrj Exp $
+ * $Id: planner.c,v 1.47 1997/12/30 05:25:22 jrj Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -89,7 +89,7 @@ double total_lev0, balanced_size, balance_threshold;
 unsigned long tape_length, tape_mark;
 int result_port, result_socket, amanda_port;
 int total_waiting, max_disks;
-char loginid[80];
+char *loginid = NULL;
 
 #ifdef KRB4_SECURITY
 int kamanda_port;
@@ -128,7 +128,7 @@ bilist_t biq;			/* The BI queue itself */
  *
  */
 
-static void construct_datestamp P((char *buf, int len));  /* subroutines */
+static char *construct_datestamp P((void));  /* subroutines */
 static void setup_estimate P((disk_t *dp));
 static void get_estimates P((void));
 static void analyze_estimate P((disk_t *dp));
@@ -144,7 +144,7 @@ char **argv;
 {
     disklist_t *origqp;
     int moved_one;
-    char datestamp[80], **vp;
+    char *datestamp = NULL, **vp;
     struct passwd *pwptr;
 
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
@@ -185,9 +185,7 @@ char **argv;
 
     if((pwptr = getpwuid(getuid())) == NULL)
 	error("can't get login name for my uid %ld", (long)getuid());
-    strncpy(loginid, pwptr->pw_name, sizeof(loginid)-1);
-    loginid[sizeof(loginid)-1] = '\0';
-
+    loginid = newstralloc(loginid, pwptr->pw_name);
 
     /*
      * 2. Read in Configuration Information
@@ -211,7 +209,8 @@ char **argv;
     conf_bumpsize = getconf_int(CNF_BUMPSIZE);
     conf_bumpmult = getconf_real(CNF_BUMPMULT);
 
-    construct_datestamp(datestamp, sizeof(datestamp));
+    afree(datestamp);
+    datestamp = construct_datestamp();
     log(L_START, "date %s", datestamp);
 
     if((origqp = read_diskfile(conf_diskfile)) == NULL)
@@ -401,16 +400,16 @@ char **argv;
     return 0;
 }
 
-static void construct_datestamp(buf, len)
-char *buf;
-int len;
+static char *construct_datestamp()
 {
     struct tm *tm;
+    char datestamp[3*NUM_STR_SIZE];
 
     today = time((time_t *)NULL);
     tm = localtime(&today);
-    ap_snprintf(buf, len,
+    ap_snprintf(datestamp, sizeof(datestamp),
 		"%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
+    return stralloc(datestamp);
 }
 
 
@@ -437,8 +436,14 @@ info_t *inf;	/* info block for disk */
 {
     stats_t *stat;
 
-    assert(seq >= 0 && seq < MAX_LEVELS);
-    assert(lev >= -1 && lev < DUMP_LEVELS);
+    if(seq < 0 || seq >= MAX_LEVELS) {
+	error("error [planner askfor: seq out of range 0..%d: %d]",
+	      MAX_LEVELS, seq);
+    }
+    if(lev < -1 || lev >= DUMP_LEVELS) {
+	error("error [planner askfor: lev out of range -1..%d: %d]",
+	      DUMP_LEVELS, lev);
+    }
 
     if (lev == -1) {
 	ep->level[seq] = -1;
@@ -635,11 +640,12 @@ disk_t *dp;
 
     if(!dp->skip_incr) {
 	if(ep->last_level == -1) {		/* a new disk */
-	    if(dp->strategy == DS_NOFULL)
+	    if(dp->strategy == DS_NOFULL) {
 		askfor(ep, i++, 1, &inf);
-	    else assert(!dp->skip_full);	/* should be handled above */
-	}
-	else {					/* not new, pick normally */
+	    } else {
+		assert(!dp->skip_full);		/* should be handled above */
+	    }
+	} else {				/* not new, pick normally */
 	    int curr_level;
 
 	    curr_level = ep->last_level;
@@ -858,15 +864,19 @@ host_t *hostp;
 {
     disklist_t *destqp;
     disk_t *dp;
-    char req[8192], line[2048], *errstr;
+    char *req, *errstr;
     int i, disks, rc;
+    char number[NUM_STR_SIZE];
 
     assert(hostp->disks != NULL);
 
-    ap_snprintf(req, sizeof(req),
-		"SERVICE sendsize\nOPTIONS maxdumps=%d;hostname=%s;\n",
-		hostp->maxdumps, hostp->hostname);
-
+    ap_snprintf(number, sizeof(number), "%d", hostp->maxdumps);
+    req = vstralloc("SERVICE sendsize\n",
+		    "OPTIONS "
+		    "maxdumps=", number, ";",
+		    "hostname=", hostp->hostname, ";",
+		    "\n",
+		    NULL);
     disks = 0;
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
 	est(dp)->got_estimate = 0;
@@ -875,20 +885,30 @@ host_t *hostp;
 	remove_disk(&startq, dp);
 
 	for(i = 0; i < MAX_LEVELS; i++) {
-	    char exc[1040];
+	    char *t;
+	    char *exclude1 = "";
+	    char *exclude2 = "";
+	    char platter[NUM_STR_SIZE];
+	    char level[NUM_STR_SIZE];
 	    int lev = est(dp)->level[i];
 
 	    if(lev == -1) break;
 
-	    if(dp->exclude)
-		ap_snprintf(exc, sizeof(exc), " exclude-%s=%s",
-			    (dp->exclude_list? "list" : "file"),
-			    dp->exclude);
-
-	    ap_snprintf(line, sizeof(line), "%s %s %d %s %d%s\n", dp->program,
-			dp->name, lev, est(dp)->dumpdate[i], dp->platter,
-			(dp->exclude ? exc : ""));
-	    strncat(req, line, sizeof(req)-strlen(req));
+	    ap_snprintf(level, sizeof(level), "%d", lev);
+	    ap_snprintf(platter, sizeof(platter), "%d", dp->platter);
+	    if(dp->exclude) {
+		exclude1 = dp->exclude_list ? " exclude-list" : " exclude-file";
+		exclude2 = dp->exclude;
+	    }
+	    t = vstralloc(req,
+			  dp->program, " ", dp->name, " ", level, " ",
+			  est(dp)->dumpdate[i], " ", platter,
+			  exclude1,
+			  exclude2,
+			  "\n",
+			  NULL);
+	    afree(req);
+	    req = t;
 	    disks++;
 	}
     }
@@ -896,30 +916,34 @@ host_t *hostp;
 
 #ifdef KRB4_SECURITY
     if(hostp->disks->auth == AUTH_KRB4)
-	rc = make_krb_request(hostp->hostname, kamanda_port, stralloc(req),
+	rc = make_krb_request(hostp->hostname, kamanda_port, req,
 			      hostp, disks*ONE_TIMEOUT, handle_result);
     else
 #endif
-	rc = make_request(hostp->hostname, amanda_port, stralloc(req),
+	rc = make_request(hostp->hostname, amanda_port, req,
 			  hostp, disks*ONE_TIMEOUT, handle_result);
 
+    req = NULL;					/* do not own this any more */
+
     if(rc) {
-	char str[1024];
-	ap_snprintf(str, sizeof(str),
-		    "could not resolve hostname \"%s\": %s", hostp->hostname,
-		    strerror(errno));
-	errstr = stralloc(str);
+	errstr = vstralloc("could not resolve hostname \"",
+			   hostp->hostname,
+			   "\"",
+			   ": ", strerror(errno),
+			   NULL);
 	destqp = &failq;
     }
     else {
-	errstr = 0;
+	errstr = NULL;
 	destqp = &waitq;
     }
 
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
 	est(dp)->errstr = errstr;
+	errstr = NULL;
 	enqueue_disk(destqp, dp);
     }
+    afree(errstr);
 }
 
 static disk_t *lookup_hostdisk(hp, str)
@@ -929,7 +953,7 @@ char *str;
     disk_t *dp;
 
     for(dp = hp->disks; dp != NULL; dp = dp->hostnext)
-	if(!strcmp(str, dp->name)) return dp;
+	if(strcmp(str, dp->name) == 0) return dp;
 
     return NULL;
 }
@@ -943,24 +967,34 @@ pkt_t *pkt;
     long size;
     disk_t *dp;
     host_t *hostp;
-    char *resp, msgdisk[256], remoterr[256], errbuf[1024], *errstr;
-
-#define eatline(p) while(*(p) && *(p) != '\n') (p)++; if(*(p)) (p)++;
+    char *resp;
+    char *msgdisk, *msgdisk_undo, msgdisk_undo_ch;
+    char *remoterr, *errbuf = NULL;
+    char *s, *fp;
+    int ch;
 
     hostp = (host_t *) p->datap;
 
     if(p->state == S_FAILED) {
-	if(pkt == NULL)
-	    ap_snprintf(errbuf, sizeof(errbuf),
-			"Request to %s timed out.", hostp->hostname);
-	else if(sscanf(pkt->body, "ERROR %[^\n]", remoterr) == 1)
-	    ap_snprintf(errbuf, sizeof(errbuf),
-			"%s NAK: %s", hostp->hostname, remoterr);
-	else {
-	    ap_snprintf(errbuf, sizeof(errbuf),
-			"%s NAK: [NAK parse failed]", hostp->hostname);
-	    fprintf(stderr, "got strange nak from %s:\n----\n%s----\n\n",
-		    hostp->hostname, pkt->body);
+	if(pkt == NULL) {
+	    errbuf = vstralloc("Request to ", hostp->hostname, " timed out.",
+			       NULL);
+#define sc "ERROR"
+	} else if(strncmp(pkt->body, sc, sizeof(sc)-1) == 0) {
+	    s = pkt->body + sizeof(sc)-1;
+	    ch = *s++;
+#undef sc
+	    skip_whitespace(s, ch);
+	    if(ch == '\0') goto NAK_parse_failed;
+	    remoterr = s - 1;
+	    if((s = strchr(remoterr, '\n')) != NULL) {
+		if(s == remoterr) goto NAK_parse_failed;
+		*s = '\0';
+	    }
+	    errbuf = vstralloc(hostp->hostname, " NAK: ", remoterr, NULL);
+	    if(s) *s = '\n';
+	} else {
+	    goto NAK_parse_failed;
 	}
 	goto error_return;
     }
@@ -968,39 +1002,70 @@ pkt_t *pkt;
 #ifdef KRB4_SECURITY
     if(hostp->disks->auth == AUTH_KRB4 &&
        !check_mutual_authenticator(host2key(hostp->hostname), pkt, p)) {
-	ap_snprintf(errbuf, sizeof(errbuf),
-		    "%s [mutual-authentication failed]", hostp->hostname);
+	errbuf = vstralloc(hostp->hostname,
+			   "[mutual-authentication failed]",
+			   NULL);
 	goto error_return;
     }
 #endif
 
-    resp = pkt->body;
+    s = pkt->body;
+    ch = *s++;
 
-    if(!strncmp(resp, "ERROR", 5)) {
+#define sc "ERROR"
+    if(strncmp(s - 1, sc, sizeof(sc)-1) == 0) {
 	/* this is an error response packet */
-	if(sscanf(resp, "ERROR %[^\n]", remoterr) != 1)
-	    ap_snprintf(remoterr, sizeof(remoterr), "[bogus error packet]");
-	ap_snprintf(errbuf, sizeof(errbuf),
-		    "%s: %s", hostp->hostname, remoterr);
+	s += sizeof(sc)-1;
+	ch = s[-1];
+#undef sc
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') goto bogus_error_packet;
+	remoterr = s - 1;
+	skip_line(s, ch);
+	s[-1] = '\0';
+	errbuf = vstralloc(hostp->hostname, ": ", remoterr, NULL);
 	goto error_return;
     }
 
-    if(!strncmp(resp, "OPTIONS", 7)) {
+#define sc "OPTIONS"
+    if(strncmp(s - 1, sc, sizeof(sc)-1) == 0) {
+#undef sc
 	/* got options back from other side, ignore them */
-	eatline(resp);
+	skip_line(s, ch);
     }
 
-    while(*resp) {
-	rc = sscanf(resp, "%s %d SIZE %ld\n", msgdisk, &level, &size);
-	if(rc < 3) goto bad_msg;
-	eatline(resp);
+    msgdisk_undo = NULL;
+    while(ch) {
+	resp = s - 1;
+	skip_whitespace(s, ch);
+	if (ch == '\0') goto bad_msg;
+	msgdisk = s - 1;
+	skip_non_whitespace(s, ch);
+	msgdisk_undo = s - 1;
+	msgdisk_undo_ch = *msgdisk_undo;
+	s[-1] = '\0';
+
+	skip_whitespace(s, ch);
+	if (ch == '\0' || sscanf(s - 1, "%d SIZE %ld", &level, &size) != 2) {
+	    goto bad_msg;
+	}
+	skip_line(s, ch);
 
 	dp = lookup_hostdisk(hostp, msgdisk);
 
-	if(dp == NULL)
+	*msgdisk_undo = msgdisk_undo_ch;	/* for error message */
+	msgdisk_undo = NULL;
+
+	if(dp == NULL) {
+	    char tmp;
+
+	    tmp = s[-1];
+	    s[-1] = '\0';			/* for error message */
 	    log(L_ERROR, "%s: invalid reply from sendsize: `%s'\n",
 		hostp->hostname, resp);
-	else {
+	    s[-1] = tmp;
+	} else {
 	    for(i = 0; i < MAX_LEVELS; i++)
 		if(est(dp)->level[i] == level) {
 		    est(dp)->est_size[i] = size;
@@ -1019,13 +1084,13 @@ pkt_t *pkt;
 	if(est(dp)->got_estimate) {
 	    if(est(dp)->est_size[0] >= 0) {
 		enqueue_disk(&estq, dp);
-	    }
-	    else {
+	    } else {
 		enqueue_disk(&failq, dp);
 
-		ap_snprintf(errbuf, sizeof(errbuf), "disk %s offline on %s?",
-			    dp->name, dp->host->hostname);
-		est(dp)->errstr = stralloc(errbuf);
+		est(dp)->errstr = vstralloc("disk ", dp->name,
+					    " offline on ", dp->host->hostname,
+					    "?",
+					    NULL);
 	    }
 
 	    fprintf(stderr,"got result for host %s disk %s:",
@@ -1041,30 +1106,55 @@ pkt_t *pkt;
 	    fprintf(stderr, "error result for host %s disk %s: missing estimate\n",
 		dp->host->hostname, dp->name);
 
-	    ap_snprintf(errbuf, sizeof(errbuf),
-			"missing result for %s in %s response",
-			dp->name, dp->host->hostname);
-	    est(dp)->errstr = stralloc(errbuf);
+	    est(dp)->errstr = vstralloc("missing result for ", dp->name,
+					" in ", dp->host->hostname, " response",
+					NULL);
 	}
     }
     return;
 
-bad_msg:
+ NAK_parse_failed:
+
+    if(msgdisk_undo) {
+	*msgdisk_undo = msgdisk_undo_ch;
+	msgdisk_undo = NULL;
+    }
+    errbuf = vstralloc(hostp->hostname, " NAK: ", "[NAK parse failed]", NULL);
+    fprintf(stderr, "got strange nak from %s:\n----\n%s----\n\n",
+	    hostp->hostname, pkt->body);
+    goto error_return;
+
+ bogus_error_packet:
+
+    errbuf = vstralloc(hostp->hostname, ": [bogus error packet]", NULL);
+    goto error_return;
+
+ bad_msg:
+
+    if(msgdisk_undo) {
+	*msgdisk_undo = msgdisk_undo_ch;
+	msgdisk_undo = NULL;
+    }
     fprintf(stderr,"got a bad message, stopped at:\n");
     fprintf(stderr,"----\n%s----\n\n", resp);
-    ap_snprintf(errbuf, sizeof(errbuf),
-		"badly formatted response from %s", hostp->hostname);
+    errbuf = vstralloc("badly formatted response from ", hostp->hostname, NULL);
+    goto error_return;
 
-error_return:
-    errstr = stralloc(errbuf);
+ error_return:
+
+    if(msgdisk_undo) {
+	*msgdisk_undo = msgdisk_undo_ch;
+	msgdisk_undo = NULL;
+    }
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
 	remove_disk(&waitq, dp);
 	enqueue_disk(&failq, dp);
 
-	est(dp)->errstr = errstr;
+	est(dp)->errstr = stralloc(errbuf);
 	fprintf(stderr, "error result for host %s disk %s: %s\n",
-	    dp->host->hostname, dp->name, errstr);
+	    dp->host->hostname, dp->name, errbuf);
     }
+    afree(errbuf);
 }
 
 
@@ -1290,7 +1380,7 @@ static void delay_dumps P((void))
 /* delay any dumps that will not fit */
 {
     disk_t *dp, *ndp, *preserve;
-    char errbuf[1024];
+    char *errbuf = NULL;
     bi_t *bi, *nbi;
     long new_total;	/* New total_size */
 
@@ -1312,27 +1402,36 @@ static void delay_dumps P((void))
 
 	if(est(dp)->dump_level == 0 && est(dp)->dump_size > tape->length) {
 	    if(est(dp)->last_level == -1 || dp->skip_incr) {
-		ap_snprintf(errbuf, sizeof(errbuf),
-"%s %s 0 [dump larger than tape, but cannot incremental dump %s disk]",
-			    dp->host->hostname, dp->name,
-			    dp->skip_incr? "skip-incr": "new");
-
+		errbuf = vstralloc(dp->host->hostname,
+				   " ", dp->name,
+				   " ", "0",
+				   " [dump larger than tape,",
+				   " but cannot incremental dump",
+				   " ", dp->skip_incr ? "skip-incr": "new",
+				   " disk]",
+				   NULL);
 		delay_remove_dump(dp, errbuf);
 	    }
 	    else {
-		ap_snprintf(errbuf, sizeof(errbuf),
-"Dump larger than tape: full dump of %s:%s delayed.",
-			    dp->host->hostname, dp->name);
-
+		errbuf = vstralloc("Dump larger than tape:",
+				   " full dump of ", dp->host->hostname,
+				   ":", dp->name, " delayed.",
+				   NULL);
 		delay_modify_dump(dp, errbuf);
 	    }
 	}
 
 	if(est(dp)->dump_level != 0 && est(dp)->dump_size > tape->length) {
-	    ap_snprintf(errbuf, sizeof(errbuf),
-"%s %s %d [dump larger than tape, skipping incremental]",
-			dp->host->hostname, dp->name, est(dp)->dump_level);
+	    char level_str[NUM_STR_SIZE];
 
+	    ap_snprintf(level_str, sizeof(level_str),
+			"%d", est(dp)->dump_level);
+	    errbuf = vstralloc(dp->host->hostname,
+			       " ", dp->name,
+			       " ", level_str,
+			       " ", "[dump larger than tape,"
+			       " ", "skipping incremental]",
+			       NULL);
 	    delay_remove_dump(dp, errbuf);
 	}
     }
@@ -1362,18 +1461,21 @@ static void delay_dumps P((void))
 
 	if(est(dp)->dump_level == 0 && dp != preserve) {
 	    if(est(dp)->last_level == -1 || dp->skip_incr) {
-		ap_snprintf(errbuf, sizeof(errbuf),
-"%s %s 0 [dumps too big, but cannot incremental dump %s disk]",
-			    dp->host->hostname, dp->name,
-			    dp->skip_incr? "skip-incr": "new");
-
+		errbuf = vstralloc(dp->host->hostname,
+				   " ", dp->name,
+				   " ", "0",
+				   " [dumps too bug,",
+				   " but cannot incremental dump",
+				   " ", dp->skip_incr ? "skip-incr": "new",
+				   " disk]",
+				   NULL);
 		delay_remove_dump(dp, errbuf);
 	    }
 	    else {
-		ap_snprintf(errbuf, sizeof(errbuf),
-"Dumps too big for tape: full dump of %s:%s delayed.",
-			    dp->host->hostname, dp->name);
-
+		errbuf = vstralloc("Dump too big for tape:",
+				   " full dump of ", dp->host->hostname,
+				   ":", dp->name, " delayed.",
+				   NULL);
 		delay_modify_dump(dp, errbuf);
 	    }
 	}
@@ -1393,10 +1495,16 @@ static void delay_dumps P((void))
 	ndp = dp->prev;
 
 	if(est(dp)->dump_level != 0) {
-	    ap_snprintf(errbuf, sizeof(errbuf),
-"%s %s %d [dumps way too big, must skip incremental dumps]",
-			dp->host->hostname, dp->name, est(dp)->dump_level);
+	    char level_str[NUM_STR_SIZE];
 
+	    ap_snprintf(level_str, sizeof(level_str),
+			"%d", est(dp)->dump_level);
+	    errbuf = vstralloc(dp->host->hostname,
+			       " ", dp->name,
+			       " ", level_str,
+			       " ", "[dumps way too big,"
+			       " ", "must skipp incremental dumps]",
+			       NULL);
 	    delay_remove_dump(dp, errbuf);
 	}
     }
@@ -1440,8 +1548,8 @@ static void delay_dumps P((void))
 		biq.head = bi->next;
 	    else
 		(bi->prev)->next = bi->next;
-	    free(bi->errstr);
-	    free(bi);
+	    afree(bi->errstr);
+	    afree(bi);
 	}
     }
 
@@ -1468,9 +1576,11 @@ static void delay_dumps P((void))
 	}
 
 	/* Clean up - dont be too fancy! */
-	free(bi->errstr);
-	free(bi);
+	afree(bi->errstr);
+	afree(bi);
     }
+
+    afree(errbuf);
 
     fprintf(stderr, "  delay: Total size now %ld.\n", total_size);
 
@@ -1685,14 +1795,14 @@ static int promote_hills P((void))
 		"Full dump of %s:%s specially promoted from %d days ahead.",
 		dp->host->hostname, dp->name, hill_days);
 
-	    free(sp);
+	    afree(sp);
 	    return 1;
 	}
 	/* All the disks in that hill were unsuitable. */
 	sp[hill_days].disks = 0;	/* Don't get tricked again */
     }
 
-    free(sp);
+    afree(sp);
     return 0;
 }
 
@@ -1707,7 +1817,14 @@ disk_t *dp;
 {
     est_t *ep;
     long dump_time, degr_time;
-    char schedline[1024];
+    char *schedline = NULL, *degr_str = NULL;
+    char dump_priority_str[NUM_STR_SIZE];
+    char dump_level_str[NUM_STR_SIZE];
+    char dump_size_str[NUM_STR_SIZE];
+    char dump_time_str[NUM_STR_SIZE];
+    char degr_level_str[NUM_STR_SIZE];
+    char degr_size_str[NUM_STR_SIZE];
+    char degr_time_str[NUM_STR_SIZE];
     char *dump_date, *degr_date;
     int i;
 
@@ -1745,21 +1862,38 @@ disk_t *dp;
     }
 
     if(ep->dump_level == 0 && ep->degr_level != -1) {
-	ap_snprintf(schedline, sizeof(schedline),
-		    "%s %s %d %d %s %ld %ld %d %s %ld %ld\n",
-		    dp->host->hostname, dp->name, ep->dump_priority,
-		    ep->dump_level, dump_date,
-		    ep->dump_size, dump_time,
-		    ep->degr_level, degr_date,
-		    ep->degr_size, degr_time);
+	ap_snprintf(degr_level_str, sizeof(degr_level_str),
+		    "%d", ep->degr_level);
+	ap_snprintf(degr_size_str, sizeof(degr_size_str),
+		    "%ld", ep->degr_size);
+	ap_snprintf(degr_time_str, sizeof(degr_time_str),
+		    "%ld", degr_time);
+	degr_str = vstralloc(" ", degr_level_str,
+			     " ", degr_date,
+			     " ", degr_size_str,
+			     " ", degr_time_str,
+			     NULL);
     }
-    else {
-	ap_snprintf(schedline, sizeof(schedline), "%s %s %d %d %s %ld %ld\n",
-		    dp->host->hostname, dp->name, ep->dump_priority,
-		    ep->dump_level, dump_date,
-		    ep->dump_size, dump_time);
-    }
+    ap_snprintf(dump_priority_str, sizeof(dump_priority_str),
+		"%d", ep->dump_priority);
+    ap_snprintf(dump_level_str, sizeof(dump_level_str),
+		"%d", ep->dump_level);
+    ap_snprintf(dump_size_str, sizeof(dump_size_str),
+		"%ld", ep->dump_size);
+    ap_snprintf(dump_time_str, sizeof(dump_time_str),
+		"%ld", dump_time);
+    schedline = vstralloc(dp->host->hostname,
+			  " ", dp->name,
+			  " ", dump_priority_str,
+			  " ", dump_level_str,
+			  " ", dump_date,
+			  " ", dump_size_str,
+			  " ", dump_time_str,
+			  degr_str ? degr_str : "",
+			  "\n", NULL);
 
     fputs(schedline, stdout);
     fputs(schedline, stderr);
+    afree(schedline);
+    afree(degr_str);
 }

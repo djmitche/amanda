@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.25 1997/12/16 20:44:58 jrj Exp $
+ * $Id: infofile.c,v 1.26 1997/12/30 05:25:16 jrj Exp $
  *
  * manage current info file
  */
@@ -56,37 +56,26 @@ char *mode;
 {
     FILE *infof;
     int rc;
-    int len;
-    char *p;
-    char *shost, *sdisk;
 
     assert(infofile == (char *)0);
 
     writing = (*mode == 'w');
 
-    shost = stralloc(sanitise_filename(host));
-    sdisk = stralloc(disk);
-
-    len = strlen(infodir) + strlen(shost) + strlen(sdisk) + 7;
-    infofile = alloc(len + 1);
-    ap_snprintf(infofile, len + 1, "%s/%s/%s/info", infodir, shost, sdisk);
-
-    free(sdisk);
-    free(shost);
+    infofile = vstralloc(infodir,
+			 "/", sanitise_filename(host),
+			 "/", disk,
+			 "/info",
+			 NULL);
 
     /* create the directory structure if in write mode */
     if (writing) {
         if (mkpdir(infofile, 0755, (uid_t)-1, (gid_t)-1) == -1) {
-	    free(infofile);
-#ifdef ASSERTIONS
-	    infofile = (char *)0;
-#endif
+	    afree(infofile);
 	    return NULL;
 	}
     }
 
-    newinfofile = alloc(len + 4 + 1);
-    ap_snprintf(newinfofile, len + 4 + 1, "%s.new", infofile);
+    newinfofile = stralloc2(infofile, ".new");
 
     if(writing) {
 	infof = fopen(newinfofile, mode);
@@ -98,11 +87,8 @@ char *mode;
     }
 
     if(infof == (FILE *)0) {
-	free(infofile);
-	free(newinfofile);
-#ifdef ASSERTIONS
-	infofile = (char *)0;
-#endif
+	afree(infofile);
+	afree(newinfofile);
 	return NULL;
     }
 
@@ -122,14 +108,11 @@ FILE *infof;
 	amfunlock(fileno(infof), "info");
     }
 
-    free(infofile);
-    free(newinfofile);
-
-#ifdef ASSERTIONS
-    infofile = (char *)0;
-#endif
+    afree(infofile);
+    afree(newinfofile);
 
     rc = fclose(infof);
+    infof = NULL;
     if (rc == EOF) rc = -1;
 
     return rc;
@@ -139,76 +122,137 @@ int read_txinfofile(infof, info) /* XXX - code assumes AVG_COUNT == 3 */
 FILE *infof;
 info_t *info;
 {
-    char line[1024];
+    char *line = NULL;
     int version;
     int rc;
     stats_t *sp;
     perf_t *pp;
+    char *s;
+    int ch;
 
     /* get version: command: lines */
 
-    if(!fgets(line, 1024, infof)) return -1;
+    if((line = agets(infof)) == NULL) return -1;
     rc = sscanf(line, "version: %d", &version);
+    afree(line);
     if(rc != 1) return -2;
 
-    if(!fgets(line, 1024, infof)) return -1;
+    if((line = agets(infof)) == NULL) return -1;
     rc = sscanf(line, "command: %d", &info->command);
+    afree(line);
     if(rc != 1) return -2;
 
     /* get rate: and comp: lines for full dumps */
 
     pp = &info->full;
 
-    if(!fgets(line, 1024, infof)) return -1;
+    if((line = agets(infof)) == NULL) return -1;
     rc = sscanf(line, "full-rate: %f %f %f",
 		&pp->rate[0], &pp->rate[1], &pp->rate[2]);
+    afree(line);
     if(rc > 3) return -2;
 
-    if(!fgets(line, 1024, infof)) return -1;
+    if((line = agets(infof)) == NULL) return -1;
     rc = sscanf(line, "full-comp: %f %f %f",
 		&pp->comp[0], &pp->comp[1], &pp->comp[2]);
+    afree(line);
     if(rc > 3) return -2;
 
     /* get rate: and comp: lines for incr dumps */
 
     pp = &info->incr;
 
-    if(!fgets(line, 1024, infof)) return -1;
+    if((line = agets(infof)) == NULL) return -1;
     rc = sscanf(line, "incr-rate: %f %f %f",
 		&pp->rate[0], &pp->rate[1], &pp->rate[2]);
+    afree(line);
     if(rc > 3) return -2;
 
-    if(!fgets(line, 1024, infof)) return -1;
+    if((line = agets(infof)) == NULL) return -1;
     rc = sscanf(line, "incr-comp: %f %f %f",
 		&pp->comp[0], &pp->comp[1], &pp->comp[2]);
+    afree(line);
     if(rc > 3) return -2;
 
     /* get stats for dump levels */
 
-    while(1) {
-	stats_t s;	/* one stat record */
+    for(rc = -2; (line = agets(infof)) != NULL; free(line)) {
+	stats_t onestat;	/* one stat record */
 	long date;
 	int level;
 
-	if(!fgets(line, 1024, infof)) return -1;
-	if(!strncmp(line, "//", 2)) {
-	    /* end of record */
+	if(line[0] == '/' && line[1] == '/') {
+	    rc = 0;
+	    break;				/* normal end of record */
+	}
+	memset(&onestat, 0, sizeof(onestat));
+
+	s = line;
+	ch = *s++;
+
+#define sc "stats:"
+	if(strncmp(line, sc, sizeof(sc)-1) != 0) {
 	    break;
 	}
-	memset(&s, 0, sizeof(s));
-	rc = sscanf(line, "stats: %d %ld %ld %ld %ld %d %80[^\n]",
-		    &level, &s.size, &s.csize, &s.secs,
-		    &date, &s.filenum, s.label);
-	if(rc < 5 || rc > 7) return -2;	/* filenum and label are optional */
+	s += sizeof(sc)-1;
+	ch = s[-1];
+#undef sc
 
-	s.date = date;	/* time_t not guarranteed to be long */
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf((s - 1), "%d", &level) != 1) {
+	    break;
+	}
+	skip_integer(s, ch);
 
-	if(level < 0 || level > DUMP_LEVELS-1) return -2;
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf((s - 1), "%ld", &onestat.size) != 1) {
+	    break;
+	}
+	skip_integer(s, ch);
 
-	info->inf[level] = s;
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf((s - 1), "%ld", &onestat.csize) != 1) {
+	    break;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf((s - 1), "%ld", &onestat.secs) != 1) {
+	    break;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf((s - 1), "%ld", &date) != 1) {
+	    break;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);
+	if(ch != '\0') {
+	    if(sscanf((s - 1), "%d", &onestat.filenum) != 1) {
+		break;
+	    }
+	    skip_integer(s, ch);
+
+	    skip_whitespace(s, ch);
+	    if(ch == '\0') {
+		break;
+	    }
+	    strncpy(onestat.label, s-1, sizeof(onestat.label)-1);
+	    onestat.label[sizeof(onestat.label)-1] = '\0';
+	}
+
+	onestat.date = date;	/* time_t not guarranteed to be long */
+
+	if(level < 0 || level > DUMP_LEVELS-1) break;
+
+	info->inf[level] = onestat;
     }
+    if(line == NULL) rc = -1;			/* EOF too soon */
+    afree(line);
 
-    return 0;
+    return rc;
 }
 
 int write_txinfofile(infof, info)
@@ -273,35 +317,26 @@ int delete_txinfofile(host, disk)
 char *host;
 char *disk;
 {
-    int len;
-    char *fn;
+    char *fn, *fn_new;
     int rc, rc2;
-    char *shost, *sdisk;
 
-    shost = stralloc(sanitise_filename(host));
-    sdisk = stralloc(disk);
+    fn = vstralloc(infodir,
+		   "/", sanitise_filename(host),
+		   "/", disk,
+		   "/info",
+		   NULL);
+    fn_new = stralloc2(fn, ".new");
 
-    len = strlen(infodir) + strlen(shost) + strlen(sdisk) + 7;
-    fn = alloc(len + 4 + 1);
-
-    ap_snprintf(fn, len + 4 + 1, "%s/%s/%s/info.new", infodir, shost, sdisk);
-
-    free(sdisk);
-    free(shost);
-
-    rc = unlink(fn);
-
-    fn[len] = '\0';	/* remove the '.new' */
-
+    unlink(fn_new);
+    afree(fn_new);
     rc = rmpdir(fn, infodir);
-
-    free(fn);
+    afree(fn);
 
     return rc;
 }
 #endif
 
-static char lockname[1024];
+static char *lockname = NULL;
 
 int open_infofile(filename)
 char *filename;
@@ -315,7 +350,7 @@ char *filename;
 #else
     /* lock the dbm file */
 
-    ap_snprintf(lockname, sizeof(lockname), "%s.lck", filename);
+    lockname = newstralloc2(lockname, filename, ".lck");
     if((lockfd = open(lockname, O_CREAT|O_RDWR, 0644)) == -1)
 	return 2;
 
@@ -332,17 +367,14 @@ void close_infofile()
 #ifdef TEXTDB
     assert(infodir != (char *)0);
 
-    free(infodir);
-#ifdef ASSERTIONS
-    infodir = (char *)0;
-#endif
+    afree(infodir);
 #else
     dbm_close(infodb);
 
     if(amfunlock(lockfd, "info") == -1)
 	error("could not unlock infofile: %s", strerror(errno));
 
-    close(lockfd);
+    aclose(lockfd);
     lockfd = -1;
 
     unlink(lockname);
@@ -358,7 +390,6 @@ int lev;
     int l;
     time_t this, last;
     struct tm *t;
-    int len;
 
     last = EPOCH;
 
@@ -368,11 +399,9 @@ int lev;
     }
 
     t = gmtime(&last);
-    len = ap_snprintf(stamp, sizeof(stamp), "%d:%d:%d:%d:%d:%d",
-	t->tm_year+1900, t->tm_mon+1, t->tm_mday,
-	t->tm_hour, t->tm_min, t->tm_sec);
-
-    assert(len < sizeof(stamp));
+    ap_snprintf(stamp, sizeof(stamp), "%d:%d:%d:%d:%d:%d",
+		t->tm_year+1900, t->tm_mon+1, t->tm_mday,
+		t->tm_hour, t->tm_min, t->tm_sec);
 
     return stamp;
 }
@@ -444,18 +473,17 @@ info_t *record;
 	    close_txinfofile(infof);
 	}
 #else
-	char key[MAX_KEY];
 	datum k, d;
 
 	/* setup key */
 
-	ap_snprintf(key, sizeof(key), "%s:%s", hostname, diskname);
-	k.dptr = key;
+	k.dptr = vstralloc(hostname, ":", diskname, NULL);
 	k.dsize = strlen(key)+1;
 
 	/* lookup record */
 
 	d = dbm_fetch(infodb, k);
+	afree(k.dptr);
 	if(d.dptr == NULL) {
 	    rc = -1; /* record not found */
 	}
@@ -470,39 +498,85 @@ info_t *record;
 }
 
 
-int get_firstkey(hostname, diskname)
+int get_firstkey(hostname, hostname_size, diskname, diskname_size)
 char *hostname, *diskname;
+int hostname_size, diskname_size;
 {
 #ifdef TEXTDB
     assert(0);
 #else
     datum k;
     int rc;
+    char *s, *fp;
+    int ch;
 
     k = dbm_firstkey(infodb);
     if(k.dptr == NULL) return 0;
 
-    rc = sscanf(k.dptr, "%[^:]:%s", hostname, diskname);
-    if(rc != 2) return 0;
+    s = k.dptr;
+    ch = *s++;
+
+    skip_whitespace(s, ch);
+    if(ch == '\0') return 0;
+    fp = hostname;
+    while(ch && ch != ':') {
+	if(fp >= hostname+hostname_size-1) {
+	    fp = NULL;
+	    break;
+	}
+	*fp = ch;
+	ch = *s++;
+    }
+    if(fp == NULL) return 0;
+    *fp = '\0';
+
+    if(ch != ':') return 0;
+    ch = *s++;
+    copy_string(s, ch, diskname, diskname_size, fp);
+    if(fp == NULL) return 0;
+
     return 1;
 #endif
 }
 
 
-int get_nextkey(hostname, diskname)
+int get_nextkey(hostname, hostname_size, diskname, diskname_size)
 char *hostname, *diskname;
+int hostname_size, diskname_size;
 {
 #ifdef TEXTDB
     assert(0);
 #else
     datum k;
     int rc;
+    char *s, *fp;
+    int ch;
 
     k = dbm_nextkey(infodb);
     if(k.dptr == NULL) return 0;
 
-    rc = sscanf(k.dptr, "%[^:]:%s", hostname, diskname);
-    if(rc != 2) return 0;
+    s = k.dptr;
+    ch = *s++;
+
+    skip_whitespace(s, ch);
+    if(ch == '\0') return 0;
+    fp = hostname;
+    while(ch && ch != ':') {
+	if(fp >= hostname+hostname_size-1) {
+	    fp = NULL;
+	    break;
+	}
+	*fp = ch;
+	ch = *s++;
+    }
+    if(fp == NULL) return 0;
+    *fp = '\0';
+
+    if(ch != ':') return 0;
+    ch = *s++;
+    copy_string(s, ch, diskname, diskname_size, fp);
+    if(fp == NULL) return 0;
+
     return 1;
 #endif
 }
@@ -526,14 +600,12 @@ info_t *record;
 
     return rc;
 #else
-    char key[MAX_KEY];
     datum k, d;
     int maxlev;
 
     /* setup key */
 
-    ap_snprintf(key, sizeof(key), "%s:%s", hostname, diskname);
-    k.dptr = key;
+    k.dptr = vstralloc(hostname, ":", diskname, NULL);
     k.dsize = strlen(key)+1;
 
     /* find last non-empty dump level */
@@ -548,8 +620,12 @@ info_t *record;
 
     /* store record */
 
-    if(dbm_store(infodb, k, d, DBM_REPLACE) != 0) return -1;
+    if(dbm_store(infodb, k, d, DBM_REPLACE) != 0) {
+	afree(k.dptr);
+	return -1;
+    }
 
+    afree(k.dptr);
     return 0;
 #endif
 }
@@ -566,13 +642,16 @@ char *hostname, *diskname;
 
     /* setup key */
 
-    ap_snprintf(key, sizeof(key), "%s:%s", hostname, diskname);
-    k.dptr = key;
+    k.dptr = vstralloc(hostname, ":", diskname, NULL);
     k.dsize = strlen(key)+1;
 
     /* delete key and record */
 
-    if(dbm_delete(infodb, k) != 0) return -1;
+    if(dbm_delete(infodb, k) != 0) {
+	afree(k.dptr);
+	return -1;
+    }
+    afree(k.dptr);
     return 0;
 #endif
 }
@@ -606,6 +685,20 @@ int num;
     putchar('\n');
 }
 
+#ifdef TEXTDB
+void dump_db(host, disk)
+char *host, *disk;
+{
+    info_t record;
+    int rc;
+
+    if((rc = get_info(host, disk, &record)) == 0) {
+	dump_rec(&record, DUMP_LEVELS);
+    } else {
+	printf("cannot fetch information for %s:%s rc=%d\n", host, disk, rc);
+    }
+}
+#else
 void dump_db(str)
 char *str;
 {
@@ -633,6 +726,7 @@ char *str;
     }
     puts("--------\n");
 }
+#endif
 
 main(argc, argv)
 int argc;
@@ -640,8 +734,14 @@ char *argv[];
 {
   int i;
   for(i = 1; i < argc; ++i) {
+#ifdef TEXTDB
+    open_infofile("curinfo");
+    dump_db(argv[i], argv[i+1]);
+    i++;
+#else
     open_infofile(argv[i]);
     dump_db(argv[i]);
+#endif
     close_infofile();
   }
 }

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtrmidx.c,v 1.12 1997/12/19 11:54:55 george Exp $
+ * $Id: amtrmidx.c,v 1.13 1997/12/30 05:24:58 jrj Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -47,8 +47,8 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    char buf[1024];
-    char cmd[1024];
+    char *line;
+    char *cmd;
     disk_t *diskp;
     disklist_t *diskl;
     int no_keep;			/* files per system to keep */
@@ -67,9 +67,9 @@ char **argv;
     dbprintf(("%s: version %s\n", argv[0], version()));
 
     /* read the config file */
-    ap_snprintf(buf, sizeof(buf), "%s/%s", CONFIG_DIR, argv[1]);
-    if (chdir(buf) != 0)
-	error("could not cd to confdir \"%s\": %s", buf, strerror(errno));
+    ptr = vstralloc(CONFIG_DIR, "/", argv[1], NULL);
+    if (chdir(ptr) != 0)
+	error("could not cd to confdir \"%s\": %s", ptr, strerror(errno));
 
     if (read_conffile(CONFFILE_NAME))
 	error("could not read amanda config file");
@@ -87,9 +87,10 @@ char **argv;
     no_keep = getconf_int(CNF_TAPECYCLE) + 1;
     dbprintf(("Keeping %d index files\n", no_keep));
 
-    level_position = strlen(COMPRESS_SUFFIX)+1;
+    level_position = strlen(COMPRESS_SUFFIX);
 
     /* now go through the list of disks and find which have indexes */
+    cmd = NULL;
     for (diskp = diskl->head; diskp != NULL; diskp = diskp->next)
     {
 	if (diskp->index)
@@ -102,47 +103,46 @@ char **argv;
 		    *ptr = '_';
 
 	    /* get listing of indices, newest first */
-	    /* We have to be careful here of
-	     * trigraph replacement by some compilers.  */
-	    ap_snprintf(cmd, sizeof(buf), "ls -r '%s_%s_'????%s-??_?%s",
-			diskp->host->hostname, diskp->name,
-			"-??", COMPRESS_SUFFIX);
-	    if ((fp = popen(cmd, "r")) == NULL)
+	    cmd = newvstralloc(cmd,
+			       "ls", " -r",
+			       " ", "\'", diskp->host->hostname, "\'",
+			       "_", "\'", diskp->name, "\'",
+			       "_", "????????",
+			       "_", "?",
+			       COMPRESS_SUFFIX,
+			       NULL);
+	    if ((fp = popen(cmd, "r")) == NULL) {
 		error("couldn't open cmd \"%s\".", cmd);
-
-	    /* skip over the first no_keep indices */
-	    for (i = 0; i < no_keep; i++)
-		if (fgets(buf, 1024, fp) == NULL)
-		    break;
-	    if (i < no_keep)
-	    {
-		(void)pclose(fp);
-		continue;		/* not enough to consider */
 	    }
 
+	    /* skip over the first no_keep indices */
+	    for (i = 0; i < no_keep && (line = agets(fp)) != NULL; i++) {}
+
 	    /* skip indices until find a level 0 */
-	    while (fgets(buf, 1024, fp) != NULL)
-	    {
-		if (strlen(buf) < 11+level_position)
-		    error("file name \"%s\" too short.", buf);
-		buf[strlen(buf)-1] = '\0'; /* get rid of \n */
-		if (buf[strlen(buf)-level_position] == '0')
+	    while ((line = agets(fp)) != NULL) {
+		int len;
+
+		if ((len = strlen(line)) < level_position + 1) {
+		    error("file name \"%s\" too short.", line);
+		}
+		if (line[len - level_position - 1] == '0') {
 		    break;
+		}
 	    }
 
 	    /* okay, delete the rest */
-	    while (fgets(buf, 1024, fp) != NULL)
-	    {
-		buf[strlen(buf)-1] = '\0'; /* get rid of \n */
-		dbprintf(("rm %s\n", buf));
-		if (remove(buf) == -1)
-		    dbprintf(("Error %d removing \"%s\"\n", errno, buf));
+	    while ((line = agets(fp)) != NULL) {
+		dbprintf(("rm %s\n", line));
+		if (remove(line) == -1) {
+		    dbprintf(("Error removing \"%s\": %s\n",
+			      line, strerror(errno)));
+		}
 	    }
-
-	    (void)pclose(fp);
+	    apclose(fp);
 	}
     }
 
+    afree(cmd);
     dbclose();
 
     return 0;

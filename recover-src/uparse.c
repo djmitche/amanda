@@ -29,7 +29,7 @@
 
 #include "amanda.h"
 #include "amrecover.h"
-    
+
 void yyerror P((char *s));
 extern int yylex P((void));
 
@@ -176,7 +176,7 @@ static const short yycheck[] = {     3,
     20,    20,    20,    20,    20,    20,     0,     0
 };
 /* -*-C-*-  Note some compilers choke on comments on `#line' lines.  */
-#line 3 "/n/gnu/bison-1.25/share/bison.simple"
+#line 3 "/opt/bison-1.25/share/bison.simple"
 
 /* Skeleton output parser for bison,
    Copyright (C) 1984, 1989, 1990 Free Software Foundation, Inc.
@@ -369,7 +369,7 @@ __yy_memcpy (char *to, char *from, int count)
 #endif
 #endif
 
-#line 196 "/n/gnu/bison-1.25/share/bison.simple"
+#line 196 "/opt/bison-1.25/share/bison.simple"
 
 /* The user can define YYPARSE_PARAM as the name of an argument to be passed
    into yyparse.  The argument should have type void *.
@@ -739,7 +739,7 @@ case 26:
     break;}
 case 27:
 #line 112 "uparse.y"
-{ char buf[1024]; printf("%s\n", getcwd(buf, 1024)); ;
+{ char buf[STR_SIZE]; puts(getcwd(buf, sizeof(buf))); ;
     break;}
 case 28:
 #line 113 "uparse.y"
@@ -755,7 +755,7 @@ case 30:
     break;}
 }
    /* the action file gets copied in in place of this dollarsign */
-#line 498 "/n/gnu/bison-1.25/share/bison.simple"
+#line 498 "/opt/bison-1.25/share/bison.simple"
 
   yyvsp -= yylen;
   yyssp -= yylen;
@@ -959,4 +959,3 @@ char *s;
 {
   printf("Invalid command - %s\n", s);
 }
-

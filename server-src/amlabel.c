@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlabel.c,v 1.5 1997/12/16 20:44:54 jrj Exp $
+ * $Id: amlabel.c,v 1.6 1997/12/30 05:24:56 jrj Exp $
  *
  * write an Amanda label on a tape
  */
@@ -54,8 +54,8 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    char confdir[256], tapedev[256], outslot[256];
-    char *errstr, *confname, *label, *tapename, *labelstr, *slotstr;
+    char *confdir, *outslot = NULL;
+    char *errstr, *confname, *label, *tapename = NULL, *labelstr, *slotstr;
 
     erroutput_type = ERR_INTERACTIVE;
 
@@ -76,7 +76,7 @@ char **argv;
 	slotcommand = 0;
     }
 
-    ap_snprintf(confdir, sizeof(confdir), "%s/%s", CONFIG_DIR, confname);
+    confdir = vstralloc(CONFIG_DIR, "/", confname, NULL);
     if(chdir(confdir) != 0)
 	error("could not cd to confdir %s: %s", confdir, strerror(errno));
 
@@ -95,30 +95,39 @@ char **argv;
 		    argv[0], confdir, CONFFILE_NAME);
 	    usage(argv[0]);
 	}
-	tapename = getconf_str(CNF_TAPEDEV);
+	tapename = stralloc(getconf_str(CNF_TAPEDEV));
     }
     else {
-	if(changer_loadslot(slotstr, outslot, tapedev))
-	    error("could not load slot \"%s\": %s", slotstr,changer_resultstr);
-	tapename = tapedev;
+	if(changer_loadslot(slotstr, &outslot, &tapename)) {
+	    error("could not load slot \"%s\": %s", slotstr, changer_resultstr);
+	}
 
 	printf("labeling tape in slot %s (%s):\n", outslot, tapename);
     }
 
     printf("rewinding"); fflush(stdout);
 
-    if((errstr = tape_rewind(tapename)) != NULL)
+    if((errstr = tape_rewind(tapename)) != NULL) {
+	putchar('\n');
 	error(errstr);
+    }
 
     printf(", writing label %s", label); fflush(stdout);
 
-    if((errstr = tape_wrlabel(tapename, "X", label)) != NULL)
+    if((errstr = tape_wrlabel(tapename, "X", label)) != NULL) {
+	putchar('\n');
 	error(errstr);
+    }
 
     printf(", writing end marker"); fflush(stdout);
 
-    if((errstr = tape_wrendmark(tapename, "X")) != NULL)
+    if((errstr = tape_wrendmark(tapename, "X")) != NULL) {
+	putchar('\n');
 	error(errstr);
+    }
+
+    afree(outslot);
+    afree(tapename);
 
     printf(", done.\n");
     return 0;

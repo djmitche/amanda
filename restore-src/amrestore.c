@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.13 1997/12/17 23:30:49 jrj Exp $
+ * $Id: amrestore.c,v 1.14 1997/12/30 05:24:47 jrj Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -62,11 +62,10 @@ pid_t compress_pid = -1;
 void errexit P((void));
 void handle_sigpipe P((int sig));
 int disk_match P((dumpfile_t *file, char *hostname, char *diskname));
-void make_filename P((string_t filename, unsigned filename_len,
-		      dumpfile_t *file));
+char *make_filename P((dumpfile_t *file));
 int read_file_header P((char *buffer, dumpfile_t *file,
 			int buflen, int tapedev));
-void restore P((dumpfile_t *file, string_t filename, unsigned filename_len,
+void restore P((dumpfile_t *file, string_t filename,
 		int tapedev, int isafile));
 void usage P((void));
 int main P((int argc, char **argv));
@@ -111,14 +110,20 @@ char *hostname, *diskname;
 }
 
 
-void make_filename(filename, filename_len, file)
-string_t filename;
+char *make_filename(file)
 dumpfile_t *file;
-unsigned filename_len;
 {
-    ap_snprintf(filename, filename_len, "%s.%s.%s.%d", file->name,
-		sanitise_filename(file->disk),
-		file->datestamp, file->dumplevel);
+    char number[NUM_STR_SIZE];
+
+    ap_snprintf(number, sizeof(number), "%d", file->dumplevel);
+    return vstralloc(file->name,
+		     ".",
+		     sanitise_filename(file->disk), 
+		     ".",
+		     file->datestamp,
+		     ".",
+		     number,
+		     NULL);
 }
 
 
@@ -147,10 +152,9 @@ int tapedev;
 }
 
 
-void restore(file, filename, filename_len, tapedev, isafile)
+void restore(file, filename, tapedev, isafile)
 dumpfile_t *file;
-string_t filename;
-unsigned filename_len;
+char *filename;
 int tapedev;
 int isafile;
 /*
@@ -164,6 +168,7 @@ int isafile;
 {
     int rc, dest, out, outpipe[2];
     int wc;
+    int l, n, s;
 
     /* adjust compression flag */
 
@@ -179,25 +184,36 @@ int isafile;
     if(pipeflag)
 	dest = 1;		/* standard output */
     else {
-	if(compflag) 
-	    strncat(filename, 
-		    file->compressed? file->comp_suffix : COMPRESS_SUFFIX,
-		    filename_len-strlen(filename));
-	else if(rawflag) 
-	    strncat(filename, ".RAW", filename_len-strlen(filename));
+	char *filename_ext;
+
+	if(compflag) {
+	    filename_ext = file->compressed ? file->comp_suffix
+					    : COMPRESS_SUFFIX;
+	} else if(rawflag) {
+	    filename_ext = ".RAW";
+	} else {
+	    filename_ext = "";
+	}
+	filename_ext = stralloc2(filename, filename_ext);
 
 	if((dest = creat(filename, CREAT_MODE)) < 0)
 	    error("could not create output file: %s", strerror(errno));
+	afree(filename_ext);
     }
 
     out = dest;
 
     /* if -r or -h, write the header before compress or uncompress pipe */
     if(rawflag || headerflag) {
-	if((rc = write(out, buffer, buflen)) < buflen)
-	    error("short write: %s", strerror(errno));
+	int l, s;
+
+	for(l = 0; l < buflen; l += s) {
+	    if((s = write(out, buffer + l, buflen - l)) < 0) {
+		error("write error: %s", strerror(errno));
+	    }
+	}
     }
-    
+
     /* if -c and file not compressed, insert compress pipe */
 
     if(compflag && !file->compressed) {
@@ -207,11 +223,11 @@ int isafile;
 	case -1: error("could not fork for %s: %s",
 		       COMPRESS_PATH, strerror(errno));
 	default:
-	    close(outpipe[0]);
-	    close(dest);
+	    aclose(outpipe[0]);
+	    aclose(dest);
 	    break;
 	case 0:
-	    close(outpipe[1]);
+	    aclose(outpipe[1]);
 	    if(dup2(outpipe[0], 0) == -1)
 		error("error [dup2 pipe: %s]", strerror(errno));
 	    if(dup2(dest, 1) == -1)
@@ -237,11 +253,11 @@ int isafile;
 	    error("%s: could not fork for %s: %s", pname, 
 		  UNCOMPRESS_PATH, strerror(errno));
 	default:
-	    close(outpipe[0]);
-	    close(dest);
+	    aclose(outpipe[0]);
+	    aclose(dest);
 	    break;
 	case 0:
-	    close(outpipe[1]);
+	    aclose(outpipe[1]);
 	    if(dup2(outpipe[0], 0) < 0)
 		error("dup2 pipe: %s", strerror(errno));
 	    if(dup2(dest, 1) < 0)
@@ -260,27 +276,33 @@ int isafile;
     got_sigpipe = 0;
     wc = 0;
     while((buflen = tapefd_read(tapedev, buffer, sizeof(buffer))) > 0) {
-	if((rc = write(out, buffer, buflen)) < buflen) {
-	    if(got_sigpipe) {
-		fprintf(stderr,"Error %d offset %d+%d, wrote %d\n",
-			errno, wc, buflen, rc);
-		fprintf(stderr,  
-		       "%s: pipe reader has quit in middle of file.\n",pname);
-		fprintf(stderr,
-	"%s: skipping ahead to start of next file, please wait...\n",pname);
-		if(!isafile)
-		    if(tapefd_fsf(tapedev, 1) == -1)
-		        error("fast-forward: %s", strerror(errno));
+	for(l = 0; l < buflen; l += s) {
+	    if((s = write(out, buffer + l, buflen - l)) < 0) {
+		if(got_sigpipe) {
+		    fprintf(stderr,"Error %d (%s) offset %d+%d, wrote %d\n",
+				   errno, strerror(errno), wc, buflen, rc);
+		    fprintf(stderr,  
+			    "%s: pipe reader has quit in middle of file.\n",
+			    pname);
+		    fprintf(stderr,
+			    "%s: skipping ahead to start of next file, please wait...\n",
+			    pname);
+		    if(!isafile) {
+			if(tapefd_fsf(tapedev, 1) == -1) {
+			    error("fast-forward: %s", strerror(errno));
+			}
+		    }
+		} else {
+		    perror("amrestore: write error");
+		}
+		exit(2);
 	    }
-	    else perror("amrestore: short write");
-
-	    exit(2);
 	}
 	wc += buflen;
     }
     if(buflen < 0)
 	error("read error: %s", strerror(errno));
-    close(out);
+    aclose(out);
 }
 
 
@@ -307,7 +329,7 @@ char **argv;
     int isafile;
     struct stat stat_tape;
     dumpfile_t file;
-    string_t filename;
+    char *filename = NULL;
     char *tapename, *hostname, *diskname;
     int compress_status;
     int tapedev;
@@ -340,7 +362,7 @@ char **argv;
 	usage();
     }
     else tapename = argv[optind++];
-    
+
     if((tapedev = tape_open(tapename, 0)) < 0)
 	error("could not open tape %s: %s", tapename, strerror(errno));
 
@@ -375,11 +397,12 @@ char **argv;
     "%s: WARNING: not at start of tape, file numbers will be offset\n", pname);
 
     while(file.type == F_TAPESTART || file.type == F_DUMPFILE) {
-	make_filename(filename, sizeof(filename), &file);
+	afree(filename);
+	filename = make_filename(&file);
 	if(disk_match(&file,hostname,diskname) != 0) {
 	    fprintf(stderr, "%s: %3d: restoring %s\n", 
 		    pname, file_number, filename);
-	    restore(&file, filename, sizeof(filename), tapedev, isafile);
+	    restore(&file, filename, tapedev, isafile);
 	    if(pipeflag) break;
 	      /* GH: close and reopen the tape device, so that the
 		 read_file_header() below reads the next file on the

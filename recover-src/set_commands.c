@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: set_commands.c,v 1.4 1997/12/16 17:57:35 jrj Exp $
+ * $Id: set_commands.c,v 1.5 1997/12/30 05:24:36 jrj Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -38,21 +38,22 @@
 int set_date(date)
 char *date;
 {
-    char cmd[LINE_LENGTH];
+    char *cmd;
 
     clear_dir_list();
-    ap_snprintf(cmd, sizeof(cmd), "DATE %s", date);
+
+    cmd = stralloc2("DATE ", date);
     if (converse(cmd) == -1)
 	exit(1);
 
     /* if a host/disk/directory is set, then check if that directory
        is still valid at the new date, and if not set directory to
        mount_point */
-    if (strlen(disk_path) != 0)
-    {
-	ap_snprintf(cmd, sizeof(cmd), "OISD %s", disk_path);
+    if (disk_path != NULL) {
+	cmd = newstralloc2(cmd, "OISD ", disk_path);
 	if (exchange(cmd) == -1)
 	    exit(1);
+	afree(cmd);
 	if (server_happy())
 	{
 	    suck_dir_list_from_server();
@@ -61,12 +62,12 @@ char *date;
 	{
 	    printf("No index records for cwd on new date\n");
 	    printf("Setting cwd to mount point\n");
-	    strncpy(disk_path, "/", sizeof(disk_path)-1);	/* fake it */
-	    disk_path[sizeof(disk_path)-1] = '\0';
+	    disk_path = newstralloc(disk_path, "/");	/* fake it */
 	    clear_dir_list();
 	}
     }
-    
+    afree(cmd);
+
     return 0;
 }
 
@@ -74,7 +75,7 @@ char *date;
 void set_host(host)
 char *host;
 {
-    char cmd[LINE_LENGTH];
+    char *cmd;
 
     if (is_extract_list_nonempty())
     {
@@ -83,26 +84,27 @@ char *host;
     }
 
     clear_dir_list();
-    ap_snprintf(cmd, sizeof(cmd), "HOST %s", host);
+    cmd = stralloc2("HOST ", host);
     if (converse(cmd) == -1)
 	exit(1);
     if (server_happy())
     {
 	strncpy(dump_hostname, host, sizeof(dump_hostname)-1);
 	dump_hostname[sizeof(dump_hostname)-1] = '\0';
-	disk_name[0] = '\0';
-	mount_point[0] = '\0';
-	disk_path[0] = '\0';
+	afree(disk_name);
+	afree(mount_point);
+	afree(disk_path);
 	clear_dir_list();
     }
+    afree(cmd);
 }
-    
+
 
 void set_disk(dsk, mtpt)
 char *dsk;
 char *mtpt;
 {
-    char cmd[LINE_LENGTH];
+    char *cmd;
 
     if (is_extract_list_nonempty())
     {
@@ -116,38 +118,35 @@ char *mtpt;
 	printf("Mount point \"%s\" invalid - must start with /\n", mtpt);
 	return;
     }
-    
+
     clear_dir_list();
-    ap_snprintf(cmd, sizeof(cmd), "DISK %s", dsk);
+    cmd = stralloc2("DISK ", dsk);
     if (converse(cmd) == -1)
 	exit(1);
+    afree(cmd);
 
     if (!server_happy())
 	return;
 
-    strncpy(disk_name, dsk, sizeof(disk_name)-1);
-    disk_name[sizeof(disk_name)-1] = '\0';
+    disk_name = newstralloc(disk_name, dsk);
     if (mtpt == NULL)
     {
 	/* mount point not specified */
 	if (*dsk == '/')
 	{
 	    /* disk specified by mount point, hence use it */
-	    strncpy(mount_point, dsk, sizeof(mount_point)-1);
-	    mount_point[sizeof(mount_point)-1] = '\0';
+	    mount_point = newstralloc(mount_point, dsk);
 	}
 	else
 	{
 	    /* device name given, use '/' because nothing better */
-	    mount_point[0] = '/';
-	    mount_point[1] = '\0';
+	    mount_point = newstralloc(mount_point, "/");
 	}
     }
     else
     {
 	/* mount point specified */
-	strncpy(mount_point, mtpt, sizeof(mount_point)-1);
-	mount_point[sizeof(mount_point)-1] = '\0';
+	mount_point = newstralloc(mount_point, mtpt);
     }
 
     /* set the working directory to the mount point */
@@ -155,24 +154,20 @@ char *mtpt;
        disk for the given date, hence setting the directory to the
        mount point will fail. Preempt this by checking first so we can write
        a more informative message. */
-    strncpy(cmd, "OISD /", sizeof(cmd)-1);
-    cmd[sizeof(cmd)-1] = '\0';
-    if (exchange(cmd) == -1)
+    if (exchange("OISD /") == -1)
 	exit(1);
-    if (exchange(cmd) == -1)
+    if (exchange("OISD /") == -1)
 	exit(1);
     if (server_happy())
     {
-	disk_path[0] = '/';
-	disk_path[1] = '\0';
+	disk_path = newstralloc(disk_path, "/");
 	suck_dir_list_from_server();	/* get list of directory contents */
     }
     else
     {
 	printf("No index records for disk for specified date\n");
 	printf("If date correct, notify system administrator\n");
-	disk_path[0] = '/';		/* fake it */
-	disk_path[1] = '\0';
+	disk_path = newstralloc(disk_path, "/");	/* fake it */
 	clear_dir_list();
     }
 }
@@ -181,10 +176,10 @@ char *mtpt;
 void set_directory(dir)
 char *dir;
 {
-    char cmd[LINE_LENGTH];
-    char new_dir[LINE_LENGTH];
+    char *cmd;
+    char *new_dir;
     char *dp, *de;
-    char ldir[LINE_LENGTH];
+    char *ldir;
 
     /* do nothing if "." */
     if(strcmp(dir,".")==0) {
@@ -192,15 +187,13 @@ char *dir;
 	return;
     }
 
-    strncpy(ldir, dir, sizeof(ldir)-1);
-    ldir[sizeof(ldir)-1] = '\0';
-    clean_pathname(ldir);
-
-    if (strlen(disk_name) == 0)
-    {
+    if (disk_name == NULL) {
 	printf("Must select disk before setting directory\n");
 	return;
     }
+
+    ldir = stralloc(dir);
+    clean_pathname(ldir);
 
     /* convert directory into absolute path relative to disk mount point */
     if (ldir[0] == '/')
@@ -208,8 +201,7 @@ char *dir;
 	/* absolute path specified, must start with mount point */
 	if (strcmp(mount_point, "/") == 0)
 	{
-	    strncpy(new_dir, ldir, sizeof(new_dir)-1);
-	    new_dir[sizeof(new_dir)-1] = '\0';
+	    new_dir = stralloc(ldir);
 	}
 	else
 	{
@@ -217,20 +209,19 @@ char *dir;
 	    {
 		printf("Invalid directory - Can't cd outside mount point \"%s\"\n",
 		       mount_point);
+		afree(ldir);
 		return;
 	    }
-	    strncpy(new_dir, ldir+strlen(mount_point), sizeof(new_dir)-1);
-	    new_dir[sizeof(new_dir)-1] = '\0';
+	    new_dir = stralloc(ldir+strlen(mount_point));
 	    if (strlen(new_dir) == 0) {
-		new_dir[0] = '/';	/* i.e. ldir == mount_point */
-		new_dir[1] = '\0';
+		new_dir = newstralloc(new_dir, "/");
+					/* i.e. ldir == mount_point */
 	    }
 	}
     }
     else
     {
-	strncpy(new_dir, disk_path, sizeof(new_dir)-1);
-	new_dir[sizeof(new_dir)-1] = '\0';
+	new_dir = stralloc(disk_path);
 	dp = ldir;
 	/* strip any leading ..s */
 	while (strncmp(dp, "../", 3) == 0)
@@ -248,13 +239,12 @@ char *dir;
 		dp = dp + 3;
 	    }
 	}
-	if (strcmp(dp, "..") == 0)
-	{
-	    if (strcmp(new_dir, "/") == 0)
-	    {
+	if (strcmp(dp, "..") == 0) {
+	    if (strcmp(new_dir, "/") == 0) {
 		/* at top of disk */
 		printf("Invalid directory - Can't cd outside mount point \"%s\"\n",
 		       mount_point);
+		afree(ldir);
 		return;
 	    }
 	    de = strrchr(new_dir, '/');	/* always at least 1 */
@@ -267,23 +257,25 @@ char *dir;
 	    {
 		*de = '\0';
  	    }
-	}
-	else
-	{
+	} else {
+	    char *tmp;
+
 	    if (strcmp(new_dir, "/") != 0) {
-		strncat(new_dir, "/", sizeof(new_dir)-strlen(new_dir));
+		tmp = "/";
+	    } else {
+		tmp = "";
 	    }
-	    strncat(new_dir, ldir, sizeof(new_dir)-strlen(new_dir));
+	    new_dir = newvstralloc(new_dir, tmp, ldir, NULL);
 	}
     }
 
-    ap_snprintf(cmd, sizeof(cmd), "OISD %s", new_dir);
+    cmd = stralloc2("OISD ", new_dir);
     if (exchange(cmd) == -1)
 	exit(1);
+    afree(cmd);
     if (server_happy())
     {
-	strncpy(disk_path, new_dir, sizeof(disk_path)-1);
-	disk_path[sizeof(disk_path)-1] = '\0';
+	disk_path = newstralloc(disk_path, new_dir);
 	suck_dir_list_from_server();	/* get list of directory contents */
 	show_directory();		/* say where we moved to */
     }
@@ -291,8 +283,11 @@ char *dir;
     {
 	printf("Invalid directory - %s\n", dir);
     }
+
+    afree(new_dir);
+    afree(ldir);
 }
- 
+
 
 /* prints the current working directory */
 void show_directory P((void))

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: findpass.h,v 1.3 1997/08/27 08:11:31 amcore Exp $
+ * $Id: findpass.h,v 1.4 1997/12/30 05:23:52 jrj Exp $
  *
  * interface to findpass module
  */
@@ -34,8 +34,7 @@
 
 #include "amanda.h"
 
-extern char *findpass P((char *disk, char *pass, char *domain));
-extern char *makesharename P((char *disk, char *buffer, int shell));
+extern char *findpass P((char *disk, char **domain));
+extern char *makesharename P((char *disk, int shell));
 
 #endif
-

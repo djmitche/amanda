@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.11 1997/12/19 23:16:08 jrj Exp $
+ * $Id: amrecover.c,v 1.12 1997/12/30 05:24:30 jrj Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -65,36 +65,32 @@ extern int process_line P((char *line));
 
 #define USAGE "Usage: amrecover [[-C] <config>] [-s <index-server>] [-t <tape-server>] [-d <tape-device>]\n"
 
-char config[LINE_LENGTH];
-char server_name[LINE_LENGTH];
-char service_name[LINE_LENGTH];
+char *config = NULL;
+char *server_name = NULL;
 int server_socket;
-char server_line[LINE_LENGTH];
-char line[LINE_LENGTH];
+char *server_line = NULL;
 char dump_hostname[MAX_HOSTNAME_LENGTH];/* which machine we are restoring */
-char disk_name[LINE_LENGTH];		/* disk we are restoring */
-char mount_point[LINE_LENGTH];		/* where disk was mounted */
-char disk_path[LINE_LENGTH];		/* path relative to mount point */
-char dump_date[LINE_LENGTH];		/* date on which we are restoring */
+char *disk_name = NULL;			/* disk we are restoring */
+char *mount_point = NULL;		/* where disk was mounted */
+char *disk_path = NULL;			/* path relative to mount point */
+char dump_date[STR_SIZE];		/* date on which we are restoring */
 int quit_prog;				/* set when time to exit parser */
-char tape_server_name[LINE_LENGTH];
+char *tape_server_name = NULL;
 int tape_server_socket;
-char tape_device_name[LINE_LENGTH];
+char *tape_device_name = NULL;
 
 #ifndef HAVE_LIBREADLINE
 /*
  * simple readline() replacements
  */
 
-static char readline_buffer[1024];
-
 char *
 readline(prompt)
 char *prompt;
 {
     printf("%s",prompt);
-    fflush(stdout);
-    return fgets(readline_buffer, sizeof(readline_buffer), stdin);
+    fflush(stdout); fflush(stderr);
+    return agets(stdin);
 }
 
 #define add_history(x)                /* add_history((x)) */
@@ -104,106 +100,71 @@ char *prompt;
 /* gets a "line" from server and put in server_line */
 /* server_line is terminated with \0, \r\n is striped */
 /* returns -1 if error */
-/* NOTE server sends at least 6 chars: 3 for code, 1 for cont, 2 for \r\n */
-static char get_line_buffer[1024];
-static int  p_get_line_buffer=0;
-static int  size_get_line_buffer=0;
+
 int get_line ()
 {
-    int l=0,m,r;
+    char *line = NULL;
+    char *part;
+    int len;
 
     while(1) {
+	if((part = areads(server_socket)) == NULL) {
+	    int save_errno = errno;
 
-	/* parse the buffer */
-	while(p_get_line_buffer<size_get_line_buffer-2 &&
-	    (get_line_buffer[p_get_line_buffer] != '\r' ||
-	     get_line_buffer[p_get_line_buffer+1] != '\n')) {
-	    server_line[l++]=get_line_buffer[p_get_line_buffer++];
+	    if(server_line) {
+		fputs(server_line, stderr);	/* show the last line read */
+		fputc('\n', stderr);
+		errno = save_errno;
+	    }
+	    if(errno != 0) {
+		fprintf(stderr, "%s: ", pname);
+		errno = save_errno;
+		perror("Error reading line from server");
+	    } else {
+		fprintf(stderr, "%s: Unexpected server end of file\n", pname);
+	    }
+	    afree(line);
+	    afree(server_line);
+	    return -1;
 	}
-
-	/* a line is read */
-	if(p_get_line_buffer<size_get_line_buffer-1 &&
-	   get_line_buffer[p_get_line_buffer] == '\r' &&
-	   get_line_buffer[p_get_line_buffer+1] == '\n') {
-	    server_line[l++]='\0';
-	    p_get_line_buffer+=2;
+	if(line) {
+	    strappend(line, part);
+	    afree(part);
+	} else {
+	    line = part;
+	    part = NULL;
+	}
+	if((len = strlen(line)) > 0 && line[len-1] == '\r') {
+	    line[len-1] = '\0';
+	    server_line = newstralloc(server_line, line);
+	    afree(line);
 	    return 0;
 	}
-
-	/* shift the buffer */
-	if(p_get_line_buffer!=0) {
-	    for(m=0;p_get_line_buffer<size_get_line_buffer;m++,p_get_line_buffer++)
-		get_line_buffer[m]=get_line_buffer[p_get_line_buffer];
-	    p_get_line_buffer=0;
-	    size_get_line_buffer = m;
-	}
-
-	/* read a buffer */
-	if(size_get_line_buffer<p_get_line_buffer+2 ||
-	   (size_get_line_buffer==p_get_line_buffer+2 &&
-	    (get_line_buffer[p_get_line_buffer] != '\r' ||
-	     get_line_buffer[p_get_line_buffer+1] != '\n'))) {
-	    m = size_get_line_buffer;
-	    r = read(server_socket, get_line_buffer+m, 1024-m);
-	    size_get_line_buffer+=r;
-	    if (r <=0 ) {
-		while (--l >= 0
-			&& (server_line[l] == '\r' || server_line[l] == '\n'))
-		{
-		    server_line[l] = '\0';
-		}
-		if (l > 0)
-		{
-		    int save_errno;
-
-		    save_errno = errno;
-		    fputs(server_line, stderr);
-		    fputc('\n', stderr);
-		    errno = save_errno;
-		}
-		if (r < 0) {
-		    perror("amrecover: Error reading line from server");
-		}
-		else if (r == 0) {
-		    fprintf(stderr,"%s: Unexpected server end of file\n",pname);
-		}
-		return -1;
-	    }
-	}
+	/*
+	 * Hmmm.  We got a "line" from areads(), which means it saw
+	 * a '\n' (or EOF, etc), but there was not a '\r' before it.
+	 * Put a '\n' back in the buffer and loop for more.
+	 */
+	strappend(line, "\n");
     }
 }
-    
+
 
 /* get reply from server and print to screen */
 /* handle multi-line reply */
 /* return -1 if error */
 /* return code returned by server always occupies first 3 bytes of global
    variable server_line */
-int print_reply ()
+int grab_reply (show)
+int show;
 {
-    do
-    {
-	if (get_line() == -1)
+    do {
+	if (get_line() == -1) {
 	    return -1;
-	printf("%s\n", server_line);
-    }
-    while (server_line[3] == '-');
-    fflush(stdout);
-
-    return 0;
-}
-
-
-/* same as print_reply() but doesn't print reply on stdout */
-/* NOTE: reply still written to server_line[] */
-int grab_reply ()
-{
-    do
-    {
-	if (get_line() == -1)
-	    return -1;
-    }
-    while (server_line[3] == '-');
+	}
+	if(show) puts(server_line);
+    } while (server_line[3] == '-');
+    if(show) fflush(stdout);
 
     return 0;
 }
@@ -215,9 +176,7 @@ int get_reply_line ()
 {
     if (get_line() == -1)
 	return -1;
-    if (server_line[3] == '-')
-	return 1;
-    return 0;
+    return server_line[3] == '-';
 }
 
 
@@ -226,23 +185,22 @@ char *reply_line ()
 {
     return server_line;
 }
-    
+
 
 
 /* returns 0 if server returned an error code (ie code starting with 5)
    and non-zero otherwise */
 int server_happy ()
 {
-    if (server_line[0] == '5')
-	return 0;
-    return 1;
+    return server_line[0] != '5';
 }
 
-    
+
 int send_command(cmd)
 char *cmd;
 {
     int l, n, s;
+    char *end;
 
     /*
      * NOTE: this routine is called from sigint_handler, so we must be
@@ -251,16 +209,16 @@ char *cmd;
      * do not use any stdio routines here.
      */
     for (l = 0, n = strlen(cmd); l < n; l += s)
-	if ((s = write(server_socket, cmd + l, n - l)) == -1)
-	{
+	if ((s = write(server_socket, cmd + l, n - l)) < 0) {
 	    perror("amrecover: Error writing to server");
 	    return -1;
 	}
-    if (write(server_socket, "\r\n", 2) == -1)
-    {
-	perror("amrecover: Error writing to server");
-	return -1;
-    }
+    end = "\r\n";
+    for (l = 0, n = strlen(end); l < n; l += s)
+	if ((s = write(server_socket, end + l, n - l)) < 0) {
+	    perror("amrecover: Error writing to server");
+	    return -1;
+	}
     return 0;
 }
 
@@ -269,10 +227,8 @@ char *cmd;
 int converse(cmd)
 char *cmd;
 {
-    if (send_command(cmd) == -1)
-	return -1;
-    if (print_reply() == -1)
-	return -1;
+    if (send_command(cmd) == -1) return -1;
+    if (grab_reply(1) == -1) return -1;
     return 0;
 }
 
@@ -281,10 +237,8 @@ char *cmd;
 int exchange(cmd)
 char *cmd;
 {
-    if (send_command(cmd) == -1)
-	return -1;
-    if (grab_reply() == -1)
-	return -1;
+    if (send_command(cmd) == -1) return -1;
+    if (grab_reply(0) == -1) return -1;
     return 0;
 }
 
@@ -309,7 +263,7 @@ int signum;
     _exit(1);
 }
 
-    
+
 void clean_pathname(s)
 char *s;
 {
@@ -335,21 +289,24 @@ char *s;
    2 if disk local but can't guess name */
 /* do this by looking for the longest mount point which matches the
    current directory */
-int guess_disk (cwd, cwd_len, dn_guess, dn_guess_len, mpt_guess, mpt_guess_len)
-char *cwd, *dn_guess, *mpt_guess;
-int cwd_len, dn_guess_len, mpt_guess_len;
+int guess_disk (cwd, cwd_len, dn_guess, mpt_guess)
+char *cwd, **dn_guess, **mpt_guess;
+int cwd_len;
 {
     int longest_match = 0;
     int current_length;
     int cwd_length;
     int local_disk = 0;
     generic_fsent_t fsent;
-    char fsname[LINE_LENGTH];
+    char *fsname = NULL;
+    char *disk_try = NULL;
 
-    if (getcwd(cwd, LINE_LENGTH) == NULL)
+    *dn_guess = *mpt_guess = NULL;
+
+    if (getcwd(cwd, cwd_len) == NULL)
 	return -1;
     cwd_length = strlen(cwd);
-    
+
     if (open_fstab() == 0)
 	return -1;
 
@@ -361,47 +318,49 @@ int cwd_len, dn_guess_len, mpt_guess_len;
 	    && (strncmp(fsent.mntdir, cwd, current_length) == 0))
 	{
 	    longest_match = current_length;
-	    strncpy(mpt_guess, fsent.mntdir, mpt_guess_len-1);
-	    mpt_guess[mpt_guess_len-1] = '\0';
-	    strncpy(fsname,
-		    (fsent.fsname+strlen(DEV_PREFIX)),
-		    sizeof(fsname)-1);
-	    fsname[sizeof(fsname)-1] = '\0';
+	    *mpt_guess = stralloc(fsent.mntdir);
+	    fsname = newstralloc(fsname, fsent.fsname+strlen(DEV_PREFIX));
 	    local_disk = is_local_fstype(&fsent);
 	}
     }
     close_fstab();
 
-    if (longest_match == 0)
+    if (longest_match == 0) {
+	afree(fsname);
 	return -1;			/* ? at least / should match */
+    }
 
-    if (!local_disk)
+    if (!local_disk) {
+	afree(fsname);
 	return 0;
+    }
 
     /* have mount point now */
     /* disk name may be specified by mount point (logical name) or
        device name, have to determine */
-    ap_snprintf(line, sizeof(line),
-		"DISK %s", mpt_guess);			/* try logical name */
-    if (exchange(line) == -1)
+    disk_try = stralloc2("DISK ", *mpt_guess);		/* try logical name */
+    if (exchange(disk_try) == -1)
 	exit(1);
+    afree(disk_try);
     if (server_happy())
     {
-	strncpy(dn_guess, mpt_guess, dn_guess_len-1);	/* logical is okay */
-	dn_guess[dn_guess_len-1] = '\0';
+	*dn_guess = stralloc(*mpt_guess);		/* logical is okay */
+	afree(fsname);
 	return 1;
     }
-    ap_snprintf(line, sizeof(line), "DISK %s", fsname);	/* try device name */
-    if (exchange(line) == -1)
+    disk_try = stralloc2("DISK ", fsname);		/* try device name */
+    if (exchange(disk_try) == -1)
 	exit(1);
+    afree(disk_try);
     if (server_happy())
     {
-	strncpy(dn_guess, fsname, dn_guess_len-1);	/* dev name is okay */
-	dn_guess[dn_guess_len-1] = '\0';
+	*dn_guess = stralloc(fsname);			/* dev name is okay */
+	afree(fsname);
 	return 1;
     }
 
     /* neither is okay */
+    afree(fsname);
     return 1;
 }
 
@@ -426,24 +385,20 @@ char **argv;
     struct sigaction act, oact;
     extern char *optarg;
     extern int optind;
-    char cwd[LINE_LENGTH], dn_guess[LINE_LENGTH], mpt_guess[LINE_LENGTH];
+    char cwd[STR_SIZE], *dn_guess, *mpt_guess;
+    char *service_name;
+    char *line;
 
-    strncpy(config, DEFAULT_CONFIG, sizeof(config)-1);
-    config[sizeof(config)-1] = '\0';
-    strncpy(server_name, DEFAULT_SERVER, sizeof(server_name)-1);
-    server_name[sizeof(server_name)-1] = '\0';
+    config = newstralloc(config, DEFAULT_CONFIG);
+    server_name = newstralloc(server_name, DEFAULT_SERVER);
 #ifdef RECOVER_DEFAULT_TAPE_SERVER
-    strncpy(tape_server_name,
-	    RECOVER_DEFAULT_TAPE_SERVER,
-	    sizeof(tape_server_name)-1);
-    tape_server_name[sizeof(tape_server_name)-1] = '\0';
-    strncpy(tape_device_name,
-	    RECOVER_DEFAULT_TAPE_DEVICE,
-	    sizeof(tape_device_name)-1);
-    tape_device_name[sizeof(tape_device_name)-1] = '\0';
+    tape_server_name = newstralloc(tape_server_name,
+				   RECOVER_DEFAULT_TAPE_SERVER);
+    tape_device_name = newstralloc(tape_device_name,
+				   RECOVER_DEFAULT_TAPE_DEVICE);
 #else
-    tape_server_name[0] = '\0';
-    tape_device_name[0] = '\0';
+    afree(tape_server_name);
+    afree(tape_device_name);
 #endif
     if (argc > 1 && argv[1][0] != '-')
     {
@@ -475,23 +430,19 @@ char **argv;
 	switch (i)
 	{
 	    case 'C':
-		strncpy(config, optarg, sizeof(config)-1);
-		config[sizeof(config)-1] = '\0';
+		config = newstralloc(config, optarg);
 		break;
 
 	    case 's':
-		strncpy(server_name, optarg, sizeof(server_name)-1);
-		server_name[sizeof(server_name)-1] = '\0';
+		server_name = newstralloc(server_name, optarg);
 		break;
 
 	    case 't':
-		strncpy(tape_server_name, optarg, sizeof(tape_server_name)-1);
-		tape_server_name[sizeof(tape_server_name)-1] = '\0';
+		tape_server_name = newstralloc(tape_server_name, optarg);
 		break;
 
 	    case 'd':
-		strncpy(tape_device_name, optarg, sizeof(tape_device_name)-1);
-		tape_device_name[sizeof(tape_device_name)-1] = '\0';
+		tape_device_name = newstralloc(tape_device_name, optarg);
 		break;
 
 	    case 'U':
@@ -507,12 +458,12 @@ char **argv;
     }
 
     dbopen();
-    
-    disk_name[0] = '\0';
-    mount_point[0] = '\0';
-    disk_path[0] = '\0';
+
+    afree(disk_name);
+    afree(mount_point);
+    afree(disk_path);
     dump_date[0] = '\0';
-    
+
     /* set up signal handler */
     act.sa_handler = sigint_handler;
     sigemptyset(&act.sa_mask);
@@ -524,9 +475,8 @@ char **argv;
 	dbclose();
 	exit(1);
     }
-    
-    ap_snprintf(service_name, sizeof(service_name),
-		"amandaidx%s", SERVICE_SUFFIX);
+
+    service_name = stralloc2("amandaidx", SERVICE_SUFFIX);
 
     printf("AMRECOVER Version 1.1. Contacting server on %s ...\n",
 	   server_name);  
@@ -566,41 +516,44 @@ char **argv;
 	dbclose();
 	exit(1);
     }
-    
+
     /* get server's banner */
-    if (print_reply() == -1)
+    if (grab_reply(1) == -1)
 	exit(1);
     if (!server_happy())
     {
 	dbclose();
-	close(server_socket);
+	aclose(server_socket);
 	exit(1);
     }
-    
+
     /* set the date of extraction to be today */
     (void)time(&timer);
-    strftime(dump_date, LINE_LENGTH, "%Y-%m-%d", localtime(&timer));
+    strftime(dump_date, sizeof(dump_date), "%Y-%m-%d", localtime(&timer));
     printf("Setting restore date to today (%s)\n", dump_date);
-    ap_snprintf(line, sizeof(line), "DATE %s", dump_date);
+    line = stralloc2("DATE ", dump_date);
     if (converse(line) == -1)
 	exit(1);
+    afree(line);
 
-    ap_snprintf(line, sizeof(line), "SCNF %s", config);
+    line = stralloc2("SCNF ", config);
     if (converse(line) == -1)
 	exit(1);
-    
+    afree(line);
+
     if (server_happy())
     {
 	/* set host we are restoring to this host by default */
-	/* dump_hostname[sizeof(dump_hostname)-1] = '\0'; */ /* static var */
 	if (gethostname(dump_hostname, sizeof(dump_hostname)-1) == -1)
 	{
+	    dump_hostname[0] = '\0';		/* just to be sure */
 	    perror("amrecover: Can't get local host name");
 	    /* fake an unhappy server */
 	    server_line[0] = '5';
 	}
 	else
 	{
+	    dump_hostname[sizeof(dump_hostname)-1] = '\0';
 #ifndef USE_FQDN
 	    /* trim domain off name */
 	    for (i = 0; i < strlen(dump_hostname); i++)
@@ -610,24 +563,24 @@ char **argv;
 		    break;
 		}
 #endif
-	    ap_snprintf(line, sizeof(line), "HOST %s", dump_hostname);
+	    line = stralloc2("HOST ", dump_hostname);
 	    if (converse(line) == -1)
 		exit(1);
+	    afree(line);
 	}
 
 	if (server_happy())
 	{
             /* get a starting disk and directory based on where
 	       we currently are */
-	    switch (guess_disk(cwd, sizeof(cwd),
-			       dn_guess, sizeof(dn_guess),
-			       mpt_guess, sizeof(mpt_guess)))
+	    switch (guess_disk(cwd, sizeof(cwd), dn_guess, &mpt_guess))
 	    {
 		case 1:
 		    /* okay, got a guess. Set disk accordingly */
 		    printf("$CWD '%s' is on disk '%s' mounted at '%s'.\n",
 			   cwd, dn_guess, mpt_guess);
 		    set_disk(dn_guess, mpt_guess);
+		    afree(mpt_guess);
 		    set_directory(cwd);
 		    break;
 
@@ -657,16 +610,15 @@ char **argv;
 	    break;
 	if (lineread[0] != '\0') 
 	{
-	    
+
 	    add_history(lineread);
 	    process_line(lineread);	/* act on line's content */
 	}
-	free(lineread);
-    }
-    while (!quit_prog);
+	afree(lineread);
+    } while (!quit_prog);
 
     dbclose();
 
-    close(server_socket);
+    aclose(server_socket);
     return 0;
 }

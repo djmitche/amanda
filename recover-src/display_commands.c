@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: display_commands.c,v 1.4 1997/12/16 17:57:32 jrj Exp $
+ * $Id: display_commands.c,v 1.5 1997/12/30 05:24:33 jrj Exp $
  *
  * implements the directory-display related commands in amrecover
  */
@@ -57,9 +57,8 @@ void clear_dir_list P((void))
     {
 	this = dir_list;
 	dir_list = dir_list->next;
-	free(this);
-    }
-    while (dir_list != NULL);
+	afree(this);
+    } while (dir_list != NULL);
 }
 
 /* add item to list if path not already on list */
@@ -89,13 +88,13 @@ char *path;
 
 	return 0;
     }
-    
+
     last = dir_list;
     while (last->next != NULL)
     {
 	last = last->next;
     }
-    
+
     if ((last->next = (DIR_ITEM *)malloc(sizeof(DIR_ITEM))) == NULL)
 	return -1;
     last->next->next = NULL;
@@ -113,77 +112,151 @@ char *path;
 
 void list_disk_history P((void))
 {
-    char cmd[LINE_LENGTH];
-
-    strncpy(cmd, "DHST", sizeof(cmd)-1);
-    cmd[sizeof(cmd)-1] = '\0';
-    if (converse(cmd) == -1)
+    if (converse("DHST") == -1)
 	exit(1);
 }
 
 
 void suck_dir_list_from_server P((void))
 {
-    char cmd[LINE_LENGTH];
+    char *cmd = NULL;
+    char *err = NULL;
     int i;
     char *l;
-    char date[11];
+    char *date, *date_undo, date_undo_ch;
     int level;
-    char tape[256];
-    char dir[1024];
-    char disk_path_slash[1024];
+    char *tape, *tape_undo, tape_undo_ch;
+    char *dir, *dir_undo, dir_undo_ch;
+    char *disk_path_slash;
+    char *disk_path_slash_dot;
+    char *s, *fp;
+    int ch;
 
-    strncpy(disk_path_slash, disk_path, sizeof(disk_path_slash)-1);
-    disk_path_slash[sizeof(disk_path_slash)-1] = '\0';
-    if(strcmp(disk_path,"/")!=0) {
-        strncat(disk_path_slash, "/",
-		sizeof(disk_path_slash)-strlen(disk_path_slash));
-    }
-
-    if (strlen(disk_path) == 0) 
-    {
+    if (disk_path == NULL) {
 	printf("Directory must be set before getting listing\n");
 	printf("This is a coding error. Please report\n");
 	return;
+    } else if(strcmp(disk_path, "/") == 0) {
+	disk_path_slash = stralloc(disk_path);
+    } else {
+	disk_path_slash = stralloc2(disk_path, "/");
     }
-    
+
     clear_dir_list();
 
-    ap_snprintf(cmd, sizeof(cmd), "OLSD %s", disk_path);
-    if (send_command(cmd) == -1)
+    cmd = stralloc2("OLSD ", disk_path);
+    if (send_command(cmd) == -1) {
+	afree(cmd);
+	afree(disk_path_slash);
 	exit(1);
+    }
+    afree(cmd);
     /* skip preamble */
-    if ((i = get_reply_line()) == -1)
+    if ((i = get_reply_line()) == -1) {
+	afree(disk_path_slash);
 	exit(1);
+    }
     if (i == 0)				/* assume something wrong! */
     {
+	afree(disk_path_slash);
 	l = reply_line();
 	printf("%s\n", l);
 	return;
     }
-    /* miss last line too */
+    disk_path_slash_dot = stralloc2(disk_path_slash, ".");
+    afree(cmd);
+    afree(err);
+    date_undo = tape_undo = dir_undo = NULL;
+    /* skip the last line -- duplicate of the preamble */
     while ((i = get_reply_line()) != 0)
     {
-	if (i == -1)
+	if (i == -1) {
+	    afree(disk_path_slash_dot);
+	    afree(disk_path_slash);
 	    exit(1);
+	}
+	if(err) {
+	    if(cmd == NULL) {
+		if(tape_undo) *tape_undo = tape_undo_ch;
+		if(dir_undo) *dir_undo = dir_undo_ch;
+		date_undo = tape_undo = dir_undo = NULL;
+		cmd = stralloc(l);	/* save for the error report */
+	    }
+	    continue;			/* throw the rest of the lines away */
+	}
 	l = reply_line();
 	if (!server_happy())
 	{
 	    printf("%s\n", l);
-	    clear_dir_list();
-	    return;
+	    continue;
 	}
-	sscanf(l+5, "%s %d %s %s", date, &level, tape, dir);
+#define sc "201-"
+	if (strncmp(l, sc, sizeof(sc)-1) != 0) {
+	    err = "bad reply: not 201-";
+	    continue;
+	}
+	s = l + sizeof(sc)-1;
+	ch = *s++;
+#undef sc
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    err = "bad reply: missing date field";
+	    continue;
+	}
+	date = s - 1;
+	skip_non_whitespace(s, ch);
+	date_undo = s - 1;
+	date_undo_ch = *date_undo;
+	*date_undo = '\0';
+
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
+	    err = "bad reply: cannot parse level field";
+	    continue;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    err = "bad reply: missing tape field";
+	    continue;
+	}
+	tape = s - 1;
+	skip_non_whitespace(s, ch);
+	tape_undo = s - 1;
+	tape_undo_ch = *tape_undo;
+	*tape_undo = '\0';
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    err = "bad reply: missing directory field";
+	    continue;
+	}
+	dir = s - 1;
+	skip_non_whitespace(s, ch);
+	dir_undo = s - 1;
+	dir_undo_ch = *dir_undo;
+	*dir_undo = '\0';
+
 	/* add a '.' if it a the entry for the current directory */
 	if(strcmp(disk_path,dir)==0 || strcmp(disk_path_slash,dir)==0) {
-	    strncpy(dir, disk_path_slash, sizeof(dir)-1);
-	    dir[sizeof(dir)-1] = '\0';
-	    strncat(dir, ".", sizeof(dir)-strlen(dir));
+	    dir = disk_path_slash_dot;
 	}
 	add_dir_list_item(date, level, tape, dir);
     }
+    afree(disk_path_slash_dot);
+    afree(disk_path_slash);
+    if(!server_happy()) {
+	puts(reply_line());
+    } else if(err) {
+	if(*err) {
+	    puts(err);
+	}
+	puts(cmd);
+	clear_dir_list();
+    }
+    afree(cmd);
 }
-
 
 
 void list_directory P((void))
@@ -192,13 +265,12 @@ void list_directory P((void))
     DIR_ITEM *item;
     FILE *fp;
 
-    if (strlen(disk_path) == 0) 
-    {
+    if (disk_path == NULL) {
 	printf("Directory should have been set already but wasn't\n");
 	printf("This is a coding error. Please report\n");
 	return;
     }
-    
+
     if ((fp = popen("more", "w")) == NULL)
     {
 	printf("Warning - can't pipe through more\n");
@@ -209,5 +281,5 @@ void list_directory P((void))
 	i++;				/* so disk_path != "/" */
     for (item = get_dir_list(); item != NULL; item=get_next_dir_item(item))
 	fprintf(fp, "%s %s\n", item->date, item->path+i);
-    pclose(fp);
+    apclose(fp);
 }

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: statfs.c,v 1.3 1997/11/25 07:26:19 amcore Exp $
+ * $Id: statfs.c,v 1.4 1997/12/30 05:24:22 jrj Exp $
  *
  * a generic statfs-like routine
  */
@@ -130,7 +130,7 @@ generic_fs_stats_t *sp;
 
     if(STATFS(dir, statbuf) == -1)
 	return -1;
-    
+
     /* total, avail, free: converted to kbytes, rounded down */
 
     sp->total = scale(STATFS_TOTAL(statbuf), STATFS_SCALE(statbuf));

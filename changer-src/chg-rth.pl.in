@@ -243,6 +243,16 @@ if($opt_slot) {
     changeTape($opt_slot);
     print $currentTape, " ", $tapeDevice,"\n";
   }
+  if($opt_slot =~ /advance/) {
+    $tape=$currentTape+1;
+    if ($tape>6) {
+      $tape=1;
+    }
+    if($currentTape) { 
+      rthUnload($currentTape);
+    }
+    print $currentTape, " ", "/dev/null","\n";
+  }
 
   exit 0;
 }

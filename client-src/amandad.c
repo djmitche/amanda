@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.15 1997/12/17 04:21:05 jrj Exp $
+ * $Id: amandad.c,v 1.16 1997/12/30 05:23:47 jrj Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -62,7 +62,7 @@ struct service_s {
 int max_retry_count = MAX_RETRIES;
 int ack_timeout     = ACK_TIMEOUT;
 
-char errstr[30720];
+char *errstr = NULL;
 char *pname = "amandad";
 
 #ifdef KRB4_SECURITY
@@ -107,7 +107,7 @@ int sig;
 struct service_s *servp;
 fd_set insock;
 pkt_t in_msg, out_msg, dup_msg;
-char cmd[256], base[256];
+char *cmd = NULL, *base = NULL;
 char *pwname, **vp;
 struct passwd *pwptr;
 int retry_count, rc, reqlen;
@@ -117,6 +117,7 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
+    int l, n, s;
 
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
 
@@ -151,9 +152,9 @@ char **argv;
     umask(077);
     dbopen();
     {
-	extern int db_file;
-	dup2(db_file, 1);
-	dup2(db_file, 2);
+	extern int db_fd;
+	dup2(db_fd, 1);
+	dup2(db_fd, 2);
     }
 
     dbprintf(("%s: version %s\n", argv[0], version()));
@@ -175,7 +176,7 @@ char **argv;
       error("pipe: %s", strerror(errno));
 
 #ifdef KRB4_SECURITY
-    if(argc >= 2 && !strcmp(argv[1], "-krb4")) {
+    if(argc >= 2 && strcmp(argv[1], "-krb4") == 0) {
 	krb4_auth = 1;
 	dbprintf(("using krb4 security\n"));
     }
@@ -210,24 +211,23 @@ char **argv;
     /* lookup service */
 
     for(servp = service_table; servp->name != NULL; servp++)
-	if(!strcmp(servp->name, in_msg.service)) break;
+	if(strcmp(servp->name, in_msg.service) == 0) break;
 
     if(servp->name == NULL) {
-	ap_snprintf(errstr, sizeof(errstr),
-		    "unknown service: %s", in_msg.service);
+	errstr = newstralloc2(errstr, "unknown service: ", in_msg.service);
 	sendnak(&in_msg, &out_msg, errstr);
 	dbclose();
 	return 1;
     }
 
-    strncpy(base, servp->name, sizeof(base)-1);
-    base[sizeof(base)-1] = '\0';
-
-    ap_snprintf(cmd, sizeof(cmd), "%s/%s%s", libexecdir, base, versionsuffix());
+    base = newstralloc(base, servp->name);
+    cmd = newvstralloc(cmd, libexecdir, "/", base, versionsuffix(), NULL);
 
     if(access(cmd, X_OK) == -1) {
 	dbprintf(("execute access to \"%s\" denied\n", cmd));
-	ap_snprintf(errstr, sizeof(errstr), "service %s unavailable", base);
+	errstr = newvstralloc(errstr,
+			      "service ", base, " unavailable",
+			      NULL);
 	sendnak(&in_msg, &out_msg, errstr);
 	dbclose();
 	return 1;
@@ -290,21 +290,24 @@ char **argv;
 
     default:		/* parent */
 
-        close(req_pipe[0]);
-        close(rep_pipe[1]);
+        aclose(req_pipe[0]);
+        aclose(rep_pipe[1]);
 
         reqlen = strlen(in_msg.dgram.cur);
-        if(write(req_pipe[1], in_msg.dgram.cur, reqlen) < reqlen)
-            error("short write to child pipe");
-        close(req_pipe[1]);
+	for(l = 0, n = reqlen; l < n; l += s) {
+            if((s = write(req_pipe[1], in_msg.dgram.cur + l, n - l)) < 0) {
+		error("write to child pipe: %s", strerror(errno));
+	    }
+	}
+        aclose(req_pipe[1]);
 
         break; 
 
     case 0:		/* child */
 
-        close(req_pipe[1]); 
-        close(rep_pipe[0]);
-        
+        aclose(req_pipe[1]); 
+        aclose(rep_pipe[0]);
+
         dup2(req_pipe[0], 0);
         dup2(rep_pipe[1], 1);
 
@@ -370,10 +373,10 @@ char **argv;
     if((rc = read(rep_pipe[0], out_msg.dgram.cur,
                   MAX_DGRAM-out_msg.dgram.len)) < 0)
         error("reading response pipe: %s", strerror(errno));
-    
+
     out_msg.dgram.len += rc;
     out_msg.dgram.data[out_msg.dgram.len] = '\0';
-    close(rep_pipe[0]);
+    aclose(rep_pipe[0]);
 
 send_response:
 
@@ -393,13 +396,13 @@ send_response:
 		dbprintf((", retrying\n"));
 	    else 
 		dbprintf((", giving up!\n"));
-			 
+
 	    continue;
 	}
 	dbprintf(("%s: got ack:\n----\n%s----\n\n", argv[0],
 		  dup_msg.dgram.data));
 	parse_pkt_header(&dup_msg);
-		
+
 	if(dup_msg.type == P_ACK && 
 	   dup_msg.peer.sin_addr.s_addr == in_msg.peer.sin_addr.s_addr &&
 	   dup_msg.peer.sin_port == in_msg.peer.sin_port)
@@ -467,7 +470,7 @@ pkt_t *msg;
 
     msg->dgram.len = strlen(msg->dgram.data);
     msg->dgram.cur = msg->dgram.data + msg->dgram.len;
-    
+
 }
 
 /* -------- */
@@ -499,7 +502,7 @@ pkt_t *msg;
 char *addrstr(addr)
 struct in_addr addr;
 {
-    static char str[32];
+    static char str[4*NUM_STR_SIZE];
     union {			/* XXX we rely on inet addrs being 32 bits */
 	unsigned char c[4];	/*   but not on fields of struct in_addr   */
 	int i;			/*   so we use our own union		   */
@@ -516,14 +519,17 @@ struct in_addr addr;
 int bsd_security_ok(msg)
 pkt_t *msg;
 {
-    char remotehost[256], remoteuser[80], localuser[80];
+    char *remotehost = NULL, *remoteuser = NULL, *localuser = NULL;
     struct hostent *hp;
     struct passwd *pwptr;
     int myuid, rc, i;
+    char *s, *fp;
+    int ch;
 #ifdef USE_AMANDAHOSTS
     FILE *fPerm;
-    char pbuf[512];
+    char *pbuf = NULL;
     char *ptmp;
+    int pbuf_len;
     int amandahostsauth = 0;
 #endif
 
@@ -533,28 +539,36 @@ pkt_t *msg;
 		       sizeof(msg->peer.sin_addr), AF_INET);
     if(hp == NULL) {
 	/* XXX include remote address in message */
-	ap_snprintf(errstr, sizeof(errstr),
-		    "[addr %s: hostname lookup failed]", 
-		    addrstr(msg->peer.sin_addr));
+	errstr = newvstralloc(errstr,
+			      "[",
+			      "addr ", addrstr(msg->peer.sin_addr), ": ",
+			      "hostname lookup failed",
+			      "]", NULL);
 	return 0;
     }
-    strncpy(remotehost, hp->h_name, sizeof(remotehost)-1);
-    remotehost[sizeof(remotehost)-1] = '\0';
+    remotehost = stralloc(hp->h_name);
 
     /* Now let's get the hostent for that hostname */
     hp = gethostbyname( remotehost );
     if(hp == NULL) {
 	/* XXX include remote hostname in message */
-	ap_snprintf(errstr, sizeof(errstr),
-		    "[addr %s: hostname lookup failed]", 
-		    remotehost);
+	errstr = newvstralloc(errstr,
+			      "[",
+			      "addr ", remotehost, ": ",
+			      "hostname lookup failed",
+			      "]", NULL);
+	afree(remotehost);
 	return 0;
     }
 
     /* Verify that the hostnames match -- they should theoretically */
     if( strcmp( remotehost, hp->h_name ) ) {
-	ap_snprintf(errstr, sizeof(errstr),
-		    "[hostnames do not match: %s %s]", remotehost, hp->h_name);
+	errstr = newvstralloc(errstr,
+			      "[",
+			      "hostnames do not match: ",
+			      remotehost, " ", hp->h_name,
+			      "]", NULL);
+	afree(remotehost);
 	return 0;
     }
 
@@ -572,27 +586,66 @@ pkt_t *msg;
      * to pull a fast one on you. :(
      */
     if( !hp->h_addr_list[i] ) {
-	ap_snprintf(errstr, sizeof(errstr),
-		    "[ip address %s is not found in %s's ip list]",
-		    addrstr(msg->peer.sin_addr), remotehost );
+	errstr = newvstralloc(errstr
+			      "[",
+			      "ip address ", addrstr(msg->peer.sin_addr),
+			      " is not in the ip list for ", remotehost,
+			      "]",
+			      NULL);
+	afree(remotehost);
 	return 0;
     }
 
     /* next, make sure the remote port is a "reserved" one */
 
     if(ntohs(msg->peer.sin_port) >= IPPORT_RESERVED) {
-	ap_snprintf(errstr, sizeof(errstr), "[host %s: port %d not secure]",
-		    remotehost, ntohs(msg->peer.sin_port));
+	char number[NUM_STR_SIZE];
+
+	ap_snprintf(number, sizeof(number), "%d", ntohs(msg->peer.sin_port));
+	errstr = newvstralloc(errstr,
+			      "[",
+			      "host ", remotehost, ": ",
+			      "port ", number, " not secure",
+			      "]", NULL);
+	afree(remotehost);
 	return 0;
     }
 
     /* extract the remote user name from the message */
 
-    if((rc = sscanf(msg->security, "USER %[^ \n]", remoteuser)) != 1) {
-	ap_snprintf(errstr, sizeof(errstr), "[host %s: bad bsd security line]",
-		    remotehost);
+    s = msg->security;
+    ch = *s++;
+
+    bad_bsd = vstralloc(errstr,
+			"[",
+			"host ", remotehost, ": ",
+			"bad bsd security line",
+			"]", NULL);
+
+#define sc "USER"
+    if(strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	errstr = bad_bsd;
+	bad_bsd = NULL;
+	afree(remotehost);
 	return 0;
     }
+    s += sizeof(sc)-1;
+    ch = s[-1];
+#undef sc
+
+    skip_whitespace(s, ch);
+    if(ch == '\0') {
+	errstr = bad_bsd;
+	bad_bsd = NULL;
+	afree(remotehost);
+	return 0;
+    }
+    fp = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    remoteuser = stralloc(fp);
+    s[-1] = ch;
+    afree(bad_bsd);
 
     /* lookup our local user name */
 
@@ -600,8 +653,7 @@ pkt_t *msg;
     if((pwptr = getpwuid(myuid)) == NULL)
         error("error [getpwuid(%d) fails]", myuid);
 
-    strncpy(localuser, pwptr->pw_name, sizeof(localuser)-1);
-    localuser[sizeof(localuser)-1] = '\0';
+    localuser = stralloc(pwptr->pw_name);
 
     dbprintf(("bsd security: remote host %s user %s local user %s\n",
 	      remotehost, remoteuser, localuser));
@@ -619,72 +671,99 @@ pkt_t *msg;
      */
     chdir(pwptr->pw_dir);       /* pamper braindead ruserok's */
 #ifndef USE_AMANDAHOSTS
-    close(2);                   /*  " */
+    aclose(2);			/*  " */
 
     if(ruserok(remotehost, myuid == 0, remoteuser, localuser) == -1) {
 	dup2(1,2);
-	ap_snprintf(errstr, sizeof(errstr),
-		    "[access as %s not allowed from %s@%s]",
-		    localuser, remoteuser, remotehost);
+	errstr = newvstralloc(errstr,
+			      "[",
+			      "access as ", localuser, " not allowed",
+			      " from ", remoteuser, "@", remotehost,
+			      "]", NULL);
 	dbprintf(("check failed: %s\n", errstr));
+	afree(remotehost);
+	afree(localuser);
+	afree(remoteuser);
 	return 0;
     }
 
     dup2(1,2);
     chdir("/");		/* now go someplace where I can't drop core :-) */
     dbprintf(("bsd security check passed\n"));
+    afree(remotehost);
+    afree(localuser);
+    afree(remoteuser);
     return 1;
 #else
     /* We already chdired to ~amandauser */
-    fPerm = fopen(".amandahosts", "r");
-    if(!fPerm) {
-	ap_snprintf(errstr, sizeof(errstr),
-"[access as %s not allowed from %s@%s] could not open .amandahosts", 
-		    localuser, remoteuser, remotehost);
+    if((fPerm = fopen(".amandahosts", "r")) == NULL) {
+	errstr = newvstralloc(errstr,
+			      "[",
+			      "access as ", localuser, " not allowed",
+			      " from ", remoteuser, "@", remotehost,
+			      "]", NULL);
 	dbprintf(("check failed: %s\n", errstr));
+	afree(remotehost);
+	afree(localuser);
+	afree(remoteuser);
 	return 0;
     }
 
-    while(fgets(pbuf, sizeof(pbuf), fPerm)) {
-   	/* Wipe out \n */
-	if( (ptmp = strchr(pbuf, '\n')) )
-	    *ptmp = '\0';
+    for(; (pbuf = agets(fPerm)) != NULL; free(pbuf)) {
+	pbuf_len = strlen(pbuf);
+	s = pbuf;
+	ch = *s++;
 
-	/* Find first non white space */
-	for(ptmp = pbuf; *ptmp && *ptmp!=' ' && *ptmp!='\t' ; ptmp++ )
-	    ;
+	/* Find end of remote host */
+	skip_non_whitespace(s, ch);
+	if(ch == '\0') {
+	    memset(pbuf, '\0', pbuf_len);	/* leave no trace */
+	    continue;				/* no remoteuser field */
+	}
+	s[-1] = '\0';				/* terminate remotehost field */
 
-	/* If there is no whitespace skip this line */
-	if( !*ptmp )
-	    continue;
-	*ptmp = '\0';
+	/* Find start of remote user */
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    memset(pbuf, '\0', pbuf_len);	/* leave no trace */
+	    continue;				/* no remoteuser field */
+	}
+	ptmp = s-1;				/* start of remoteuser field */
 
-	/* Find first non-white space */
-	for( ptmp++; *ptmp == ' ' || *ptmp == '\t' ; ptmp++ )
-	    ;
+	/* Find end of remote user */
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';				/* terminate remoteuser field */
 
-	/* If we reach the NUL terminator first, skip this line */
-	if( !*ptmp )
-	    continue;
-
-	if( !strcmp(pbuf, remotehost) && !strcmp(ptmp, remoteuser) ) {
+	if(strcmp(pbuf, remotehost) && strcmp(ptmp, remoteuser) == 0) {
 	    amandahostsauth = 1;
 	    break;
 	}
+	memset(pbuf, '\0', pbuf_len);		/* leave no trace */
     }
-    fclose(fPerm);
+    afclose(fPerm);
 
     if( amandahostsauth ) {
 	chdir("/");      /* now go someplace where I can't drop core :-) */
 	dbprintf(("amandahosts security check passed\n"));
+	afree(pbuf);
+	afree(remotehost);
+	afree(localuser);
+	afree(remoteuser);
 	return 1;
     }
 
-    ap_snprintf(errstr, sizeof(errstr),
-		"[access as %s not allowed from %s@%s]",
-		localuser, remoteuser, remotehost);
+    errstr = newvstralloc(errstr,
+			  "[",
+			  "access as ", localuser, " not allowed",
+			  " from ", remoteuser, "@", remotehost,
+			  "]", NULL);
     dbprintf(("check failed: %s\n", errstr));
 
+    memset(pbuf, '\0', pbuf_len);		/* leave no trace */
+    afree(pbuf);
+    afree(remotehost);
+    afree(localuser);
+    afree(remoteuser);
     return 0;
 
 #endif
@@ -699,4 +778,3 @@ pkt_t *msg;
 }
 
 #endif /* ! BSD_SECURITY */
-

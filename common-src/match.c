@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: match.c,v 1.7 1997/12/02 23:58:18 amcore Exp $
+ * $Id: match.c,v 1.8 1997/12/30 05:24:17 jrj Exp $
  *
  * functions for checking and matching regular expressions
  */
@@ -38,8 +38,8 @@ char *regex;
 {
     regex_t regc;
     int result;
-    static char errmsg[1024];
-    
+    static char errmsg[STR_SIZE];
+
     if ((result = regcomp(&regc, regex,
 			  REG_EXTENDED|REG_NOSUB|REG_NEWLINE)) != 0) {
       regerror(result, &regc, errmsg, sizeof(errmsg));
@@ -56,7 +56,7 @@ char *regex, *str;
 {
     regex_t regc;
     int result;
-    char errmsg[1024];
+    char errmsg[STR_SIZE];
 
     if((result = regcomp(&regc, regex,
 			 REG_EXTENDED|REG_NOSUB|REG_NEWLINE)) != 0) {

@@ -23,7 +23,7 @@
  * Author: George Scott, Computer Centre, Monash University.
  */
 /*
- * $Id: token.c,v 1.13 1997/12/16 17:55:05 jrj Exp $
+ * $Id: token.c,v 1.14 1997/12/30 05:24:27 jrj Exp $
  *
  * token bashing routines
  */
@@ -236,7 +236,7 @@ char *str;
 {
 	while(table->word != (char *)0) {
 		if (*table->word == *str &&
-		    !strcmp(table->word, str)) return table->value;
+		    strcmp(table->word, str) == 0) return table->value;
 		table++;
 	}
 
@@ -263,7 +263,7 @@ char *pname = "token test";
 
 int main()
 {
-	char str[1024];
+	char *str = NULL;
 	char *t[20];
 	int r;
 	char *sr;
@@ -274,7 +274,8 @@ int main()
 	printf("Testing split() with \" \" token separator\n");
 	while(1) {
 		printf("Input string: ");
-		if (gets(str) == NULL) {
+		afree(str);
+		if ((str = agets(stdin)) == NULL) {
 			printf("\n");
 			break;
 		}
@@ -282,13 +283,14 @@ int main()
 		printf("%d tokens:\n", r);
 		for (i=0; i <= r; i++) printf("tok[%d] = \"%s\"\n", i, t[i]);
 	}
-
+	afree(str);
 	printf("\n");
 
 	printf("Testing quote()\n");
 	while(1) {
 		printf("Input string: ");
-		if (gets(str) == NULL) {
+		afree(str);
+		if ((str = agets(stdin)) == NULL) {
 			printf("\n");
 			break;
 		}
@@ -300,6 +302,7 @@ int main()
 		if (r != 1) printf("split()=%d!\n", r);
 		printf("Unquoted = \"%s\"\n", t[1]);
 	}
+	afree(str);
 }
 
 #endif

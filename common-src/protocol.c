@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: protocol.c,v 1.13 1997/12/16 17:55:02 jrj Exp $
+ * $Id: protocol.c,v 1.14 1997/12/30 05:24:19 jrj Exp $
  *
  * implements amanda protocol
  */
@@ -44,8 +44,6 @@
 
 #define MAX_HANDLES	4096
 #define OFS_DIGITS	   3	/* log2(MAX_HANDLES)/4 */
-
-#undef PROTO_DEBUG		/* define this to see lots of output */
 
 proto_t *pending_head = NULL;
 proto_t *pending_tail = NULL;
@@ -221,7 +219,7 @@ static proto_t *pending_dequeue()
 	    pending_tail = NULL;
 	pending_qlength--;
     }
-    
+
     return p;
 }
 
@@ -281,7 +279,7 @@ int digits;
 unsigned int v;
 {
     str = str + digits - 1;
-    
+
     while(digits--) {
 	*str-- = "0123456789ABCDEF"[v % 16];
 	v /= 16;
@@ -302,7 +300,7 @@ int digits;
     return v;
 }
 
-    
+
 static proto_t *handle2ptr(str)
 char *str;
 {
@@ -341,11 +339,11 @@ proto_t *p;
     assert(p->handleofs != -1 && proto_handle_table[p->handleofs] == p);
 
     hu.p = p;
-    
+
     hex(hstr, OFS_DIGITS, p->handleofs);
     s = &hstr[OFS_DIGITS];
     *s++ = '-';
-    
+
     for(i=0;i<PTR_CHARS;i++) {
 	hex(s, CHAR_DIGITS, hu.c[i]);
 	s += CHAR_DIGITS;
@@ -357,7 +355,7 @@ proto_t *p;
 /* -------- */
 
 jmp_buf parse_failed;
-char parse_errmsg[2048];
+char *parse_errmsg = NULL;
 
 static void eat_string(msg, str)
 dgram_t *msg;
@@ -377,9 +375,15 @@ char *str;
     /* if we didn't eat all of str, we've failed */
     if(*str) {
 	int len = strlen(saved_str);
-	ap_snprintf(parse_errmsg, sizeof(parse_errmsg),
-		    "expected \"%s\", got \"%-.*s\"",
-		    saved_str, len, saved_msg);
+	char *tmp = alloc(len+1);
+
+	strncpy(tmp, saved_msg, len);
+	tmp[len] = '\0';
+	parse_errmsg = newvstralloc(parse_errmsg,
+				    "expected \"", saved_str, "\",",
+				    " got \"", tmp, "\"",
+				    NULL);
+	afree(tmp);
 	longjmp(parse_failed,1);
     }
 }
@@ -394,8 +398,13 @@ dgram_t *msg;
 
     /* must have at least one digit */
     if(*msg->cur < '0' || *msg->cur > '9') {
-	ap_snprintf(parse_errmsg, sizeof(parse_errmsg),
-		    "expected digit, got \"%c\"", *msg->cur);
+	char non_digit[2];
+
+	non_digit[0] = *msg->cur;
+	non_digit[1] = '\0';
+	parse_errmsg = newvstralloc(parse_errmsg,
+				    "expected digit, got \"", non_digit, "\"",
+				    NULL);
 	longjmp(parse_failed,1);
     }
 
@@ -422,11 +431,11 @@ dgram_t *msg;
 
     /* empty fields not allowed */
     if(msg->cur == str) {
-	ap_snprintf(parse_errmsg, sizeof(parse_errmsg),
-		    "expected string, got empty field");
+	parse_errmsg = newstralloc(parse_errmsg,
+				   "expected string, got empty field");
 	longjmp(parse_failed,1);
     }
-    
+
     /* mark end of string in the packet, but don't fall off the end of it */
     if(*msg->cur) *msg->cur++ = '\0';
 
@@ -449,11 +458,11 @@ dgram_t *msg;
 
     /* empty fields not allowed */
     if(msg->cur == str) {
-	ap_snprintf(parse_errmsg, sizeof(parse_errmsg),
-		    "expected string, got empty field");
+	parse_errmsg = newstralloc(parse_errmsg,
+				   "expected string, got empty field");
 	longjmp(parse_failed,1);
     }
-    
+
     /* mark end of string in the packet, but don't fall off the end of it */
     if(*msg->cur) *msg->cur++ = '\0';
 
@@ -475,37 +484,40 @@ pkt_t *pkt;
     msg = &pkt->dgram;
 
 #ifdef PROTO_DEBUG
-    dbprintf(("parsing packet:\n-------\n%s-------\n\n", msg->cur));
+    fprintf(stderr, "parsing packet:\n-------\n%s-------\n\n", msg->cur);
 #endif
 
     eat_string(msg, "Amanda");	    pkt->version_major = parse_integer(msg);
     eat_string(msg, ".");	    pkt->version_minor = parse_integer(msg);
     typestr = parse_string(msg);
 
-    if(!strcmp(typestr, "REQ")) pkt->type = P_REQ;
-    else if(!strcmp(typestr, "REP")) pkt->type = P_REP;
-    else if(!strcmp(typestr, "ACK")) pkt->type = P_ACK;
-    else if(!strcmp(typestr, "NAK")) pkt->type = P_NAK;
+    if(strcmp(typestr, "REQ") == 0) pkt->type = P_REQ;
+    else if(strcmp(typestr, "REP") == 0) pkt->type = P_REP;
+    else if(strcmp(typestr, "ACK") == 0) pkt->type = P_ACK;
+    else if(strcmp(typestr, "NAK") == 0) pkt->type = P_NAK;
     else pkt->type = P_BOGUS;
 
     eat_string(msg, "HANDLE");	    pkt->handle = parse_string(msg);
     eat_string(msg, "SEQ");	    pkt->sequence = parse_integer(msg);
 
     eat_string(msg, "");
-    if(!strncmp(msg->cur, "SECURITY", 8)) {
+#define sc "SECURITY"
+    if(strncmp(msg->cur, sc, sizeof(sc)-1) == 0) {
 	/* got security tag */
-	eat_string(msg, "SECURITY");
+	eat_string(msg, sc);
+#undef sc
 	pkt->security = parse_line(msg);
     }
     else pkt->security = NULL;
 
     if(pkt->type == P_REQ) {
-	
+
 #ifdef KRB4_SECURITY
         eat_string(msg, "");
         pkt->cksum = kerberos_cksum(msg->cur);
 #ifdef PROTO_DEBUG
-        printf("parse_pkt/cksum %ld over \'%s\'\n\n", pkt->cksum, msg->cur); 
+        fprintf(stderr, "parse_pkt/cksum %ld over \'%s\'\n\n",
+		pkt->cksum, msg->cur); 
 #endif
         fflush(stdout);
 #endif
@@ -521,16 +533,26 @@ proto_t *p;
 dgram_t *msg;
 char *security, *typestr;
 {
-    char linebuf[2048];
+    char *linebuf;
+    char major_str[NUM_STR_SIZE];
+    char minor_str[NUM_STR_SIZE];
+    char seq_str[NUM_STR_SIZE];
+
+    ap_snprintf(major_str, sizeof(major_str), "%d", VERSION_MAJOR);
+    ap_snprintf(minor_str, sizeof(minor_str), "%d", VERSION_MINOR);
+    ap_snprintf(seq_str, sizeof(seq_str), "%d", p->curseq);
 
     dgram_zero(msg);
     dgram_socket(msg,proto_socket);
-    ap_snprintf(linebuf, sizeof(linebuf),
-		"Amanda %d.%d %s HANDLE %s SEQ %d\n%s",
-		VERSION_MAJOR, VERSION_MINOR, typestr,
-		ptr2handle(p), p->curseq,
-		security == NULL? "" : security);
+    linebuf = vstralloc("Amanda ", major_str, ".", minor_str,
+			" ", typestr,
+			" HANDLE ", ptr2handle(p),
+			" SEQ ", seq_str,
+			"\n",
+			security ? security : "",
+			NULL);
     dgram_cat(msg, linebuf);
+    afree(linebuf);
 }
 
 static void send_req(p)
@@ -542,8 +564,8 @@ proto_t *p;
     dgram_cat(&outmsg, p->req);
 
 #ifdef PROTO_DEBUG
-    fprintf(stderr, "time %d: send_req: packet:\n----\n%s----\n\n", 
-	    CURTIME, outmsg.data);
+    fprintf(stderr, "time %d: send_req: len %d: packet:\n----\n%s----\n\n", 
+	    CURTIME, outmsg.len, outmsg.data);
 #endif
 
     if(dgram_send_addr(p->peer, &outmsg))
@@ -558,8 +580,8 @@ proto_t *p;
     setup_dgram(p, &outmsg, NULL, "ACK");
 
 #ifdef PROTO_DEBUG
-    fprintf(stderr, "time %d: send_ack: packet:\n----\n%s----\n\n", 
-	    CURTIME, outmsg.data);
+    fprintf(stderr, "time %d: send_ack: len %d: packet:\n----\n%s----\n\n", 
+	    CURTIME, outmsg.len, outmsg.data);
 #endif
 
     if(dgram_send_addr(p->peer, &outmsg))
@@ -570,20 +592,29 @@ static void send_ack_repl(pkt)
 pkt_t *pkt;
 {
     dgram_t outmsg;
-    char linebuf[2048];
+    char *linebuf;
+    char major_str[NUM_STR_SIZE];
+    char minor_str[NUM_STR_SIZE];
+    char seq_str[NUM_STR_SIZE];
+
+    ap_snprintf(major_str, sizeof(major_str), "%d", VERSION_MAJOR);
+    ap_snprintf(minor_str, sizeof(minor_str), "%d", VERSION_MINOR);
+    ap_snprintf(seq_str, sizeof(seq_str), "%d", pkt->sequence);
 
     dgram_zero(&outmsg);
     dgram_socket(&outmsg,proto_socket);
 
-    ap_snprintf(linebuf, sizeof(linebuf),
-		"Amanda %d.%d ACK HANDLE %s SEQ %d\n",
-		VERSION_MAJOR, VERSION_MINOR, 
-		pkt->handle, pkt->sequence);
+    linebuf = vstralloc("Amanda ", major_str, ".", minor_str,
+			" ACK HANDLE ", pkt->handle,
+			" SEQ ", seq_str,
+			"\n", NULL);
+
     dgram_cat(&outmsg, linebuf);
+    afree(linebuf);
 
 #ifdef PROTO_DEBUG
-    fprintf(stderr, "time %d: send_ack_repl: packet:\n----\n%s----\n\n", 
-	    CURTIME, outmsg.data);
+    fprintf(stderr, "time %d: send_ack_repl: len %d: packet:\n----\n%s----\n\n", 
+	    CURTIME, outmsg.len, outmsg.data);
 #endif
 
     if(dgram_send_addr(pkt->peer, &outmsg))
@@ -715,13 +746,11 @@ pkt_t *pkt;
 static void add_bsd_security(p)
 proto_t *p;
 {
-    char line[4096];
     struct passwd *pwptr;
 
     if((pwptr = getpwuid(getuid())) == NULL)
 	error("can't get login name for my uid %ld", (long)getuid());
-    ap_snprintf(line, sizeof(line), "SECURITY USER %s\n", pwptr->pw_name);
-    p->security = stralloc(line);
+    p->security = vstralloc("SECURITY USER ", pwptr->pw_name, "\n", NULL);
 }
 
 int make_request(hostname, port, req, datap, repwait, continuation)
@@ -768,7 +797,6 @@ proto_t *p;
 char *host_inst, *realm;
 {
     KTEXT_ST ticket;
-    char line[4096];
     int rc;
 
     p->auth_cksum = kerberos_cksum(p->req);
@@ -790,9 +818,9 @@ char *host_inst, *realm;
 	}
 	if(rc) return rc;
     }
-    ap_snprintf(line, sizeof(line),
-		"SECURITY TICKET %s\n", bin2astr(ticket.dat, ticket.length));
-    p->security = stralloc(line);
+    p->security = vstralloc("SECURITY TICKET ",
+			    bin2astr(ticket.dat, ticket.length),
+			    "\n", NULL);
     return 0;
 }
 
@@ -866,7 +894,7 @@ static void handle_incoming_packet()
 {
     pkt_t inpkt;
     proto_t *p;
-    
+
     dgram_zero(&inpkt.dgram);
     dgram_socket(&inpkt.dgram, proto_socket);
     if(dgram_recv(&inpkt.dgram, 0, &inpkt.peer) == -1)

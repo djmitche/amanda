@@ -1,5 +1,50 @@
 Version 2.4.0b5
 
+	Extensive buffer management, bug and defensive coding overhaul
+	including:
+	    * Use proper fgets/fread/read buffer size.
+	    * Wrote agets and areads to get a line without buffer overflow
+	      and changed most gets/fgets and some read calls to use it.
+	    * Replaced all *scanf("...%s...") with explicit pointer work.
+	    * Replaced most fixed size buffers with dynamic ones.  This has
+	      no doubt introduced some memory leaks.
+	    * Replaced most sprintf calls with vstralloc (new routine).
+	    * Added overflow checks to some remaining explicit buffer
+	      management.
+	    * Made almost all read() and write() calls into loops to handle
+	      short and broken up transfers.
+	    * Fixed potentially uninitialized fstype field.
+	    * Added more sanity checks when parsing various things, including
+	      converting some assert() calls to real code.
+	    * The pattern amtrmidx used to find old index files to delete
+	      thought the date field was YYYY-MM-DD, but it is YYYYMMDD,
+	      so no files were being deleted.
+	    * Limited the number of directories listed by amflush to 26 to
+	      avoid funny characters in the user prompt.
+	    * Changed some of the amrecover routines to soak up the rest of
+	      the continuation lines after an error.
+	    * If a dumper dies, driver still tries to send a QUIT command
+	      which fails because the file descriptor has been closed.
+	    * Wrote afree macro that calls free and then sets the pointer
+	      to NULL.  Changed most free calls to afree.
+	    * Wrote aclose/afclose/apclose macros to do the associated close
+	      and then set the argument to something invalid (-1 or NULL).
+	    * Check the file descriptor before calling FD_ISSET in dumper.
+	      Otherwise it goes to -1 on EOF and FD_* doesn't like that.
+	    * Call aclose() after FD_CLR (so the descriptor is not -1).
+	Odds and ends:
+	    * Added some TEXTDB support code to the infofile test program.
+	    * Set it up so -DPROTO_DEBUG could come from the compiler command
+	      line instead of having to modify the source.
+	    * Added -t command line flag code to sendbackup.c to support some
+	      limited debugging.
+	    * Added a test to amcheck to see if the log file is writable
+	      (if it already exists).  During debugging, I keep leaving one
+	      around owned by root :-).
+	    * Changed upper limit on close loops from 255 to FD_SETSIZE.
+	      This probably needs some more study.
+	-JJ
+
 	If krb4 auth was compiled in but not enabled, clients would hang
 	forever.  -Aidan Cully <aidan@panix.com>
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: error.c,v 1.5 1997/12/16 17:54:58 jrj Exp $
+ * $Id: error.c,v 1.6 1997/12/30 05:24:11 jrj Exp $
  *
  * error handling common to Amanda programs
  */
@@ -50,7 +50,7 @@ arglist_function(void error, char *, format)
     va_list argp;
     extern char *pname;
     int i;
-    char linebuf[1024];
+    char linebuf[STR_SIZE];
 
     /* format error message */
 

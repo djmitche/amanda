@@ -25,14 +25,14 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: uparse.y,v 1.2 1997/08/27 08:12:37 amcore Exp $
+ * $Id: uparse.y,v 1.3 1997/12/30 05:24:38 jrj Exp $
  *
  * parser for amrecover interactive language
  */
 %{
 #include "amanda.h"
 #include "amrecover.h"
-    
+
 void yyerror P((char *s));
 extern int yylex P((void));
 %}
@@ -109,7 +109,7 @@ delete_path:
   ;
 
 local_command:
-	LPWD { char buf[1024]; printf("%s\n", getcwd(buf, 1024)); }
+	LPWD { char buf[STR_SIZE]; puts(getcwd(buf, sizeof(buf))); }
   |     LCD PATH { if (chdir($2) == -1) printf("%s: No such directory\n", $2); }
 
 help_command:
@@ -127,4 +127,3 @@ char *s;
 {
   printf("Invalid command - %s\n", s);
 }
-

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: changer.c,v 1.4 1997/12/16 18:02:21 jrj Exp $
+ * $Id: changer.c,v 1.5 1997/12/30 05:24:59 jrj Exp $
  *
  * interface routines for tape changers
  */
@@ -50,12 +50,12 @@
 #endif
 
 
-char changer_resultstr[ERRSTR_LEN];
+char *changer_resultstr = NULL;
 
 static char *tapechanger = NULL;
 
 /* local functions */
-static int changer_command P((char *cmdstr, char *resultstr, int resultlen));
+static int changer_command P((char *cmdstr));
 
 int changer_init()
 {
@@ -64,120 +64,110 @@ int changer_init()
 }
 
 
-int changer_reset(slotstr)
-char *slotstr;
+static int report_bad_resultstr()
+{
+    char *s;
+
+    s = vstralloc("badly formed result from changer: ",
+		  "\"", changer_resultstr, "\"",
+		  NULL);
+    afree(changer_resultstr);
+    changer_resultstr = s;
+    return 2;
+}
+
+static int run_changer_command(cmd, arg, slotstr, rest)
+char *cmd;
+char *arg;
+char **slotstr;
+char **rest;
 {
     int exitcode, rc;
-    char result_copy[256];
+    char *changer_cmd;
+    char *result_copy;
+    char *slot;
+    char *s;
+    int ch;
 
-    exitcode = changer_command("-reset",
-			       changer_resultstr, sizeof(changer_resultstr));
+    *slotstr = NULL;
+    *rest = NULL;
+    if(arg) {
+	changer_cmd = vstralloc(cmd, " ", arg, NULL);
+    } else {
+	changer_cmd = cmd;
+    }
+    exitcode = changer_command(changer_cmd);
+    if(changer_cmd != cmd) {
+	afree(changer_cmd);
+    }
+    s = changer_resultstr;
+    ch = *s++;
+
+    skip_whitespace(s, ch);
+    if(ch == '\0') return report_bad_resultstr();
+    slot = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    *slotstr = stralloc(slot);
+    s[-1] = ch;
+
+    skip_whitespace(s, ch);
+    *rest = s - 1;
+
     if(exitcode) {
-	rc=sscanf(changer_resultstr,"%[^ \n\t] %[^\n]",slotstr,result_copy);
-	if(rc != 2) goto bad_resultstr;
-	strncpy(changer_resultstr, result_copy, sizeof(changer_resultstr)-1);
-	changer_resultstr[sizeof(changer_resultstr)-1] = '\0';
+	if(ch == '\0') return report_bad_resultstr();
+	result_copy = s - 1;
+	changer_resultstr = newstralloc(changer_resultstr, result_copy);
 	return exitcode;
     }
-
-    rc = sscanf(changer_resultstr, "%[^ \t\n] ", slotstr);
-    if(rc != 1) goto bad_resultstr;
     return 0;
+}
 
-bad_resultstr:
-    strncpy(result_copy, changer_resultstr, sizeof(result_copy)-1);
-    result_copy[sizeof(result_copy)-1] = '\0';
-    ap_snprintf(changer_resultstr, sizeof(changer_resultstr),
-		"badly formed result from changer: \"%s\"", result_copy);
-    return 2;
+int changer_reset(slotstr)
+char **slotstr;
+{
+    char *rest;
+
+    return run_changer_command("-reset", NULL, slotstr, &rest);
 }
 
 int changer_eject(slotstr)
-char *slotstr;
+char **slotstr;
 {
-    int exitcode, rc;
-    char result_copy[256];
+    char *rest;
 
-    exitcode = changer_command("-eject",
-			       changer_resultstr, sizeof(changer_resultstr));
-    if(exitcode) {
-	rc=sscanf(changer_resultstr,"%[^ \n\t] %[^\n]",slotstr,result_copy);
-	if(rc != 2) goto bad_resultstr;
-	strncpy(changer_resultstr, result_copy, sizeof(changer_resultstr)-1);
-	changer_resultstr[sizeof(changer_resultstr)-1] = '\0';
-	return exitcode;
-    }
-
-    rc = sscanf(changer_resultstr, "%[^ \t\n] ", slotstr);
-    if(rc != 1) goto bad_resultstr;
-    return 0;
-
-bad_resultstr:
-    strncpy(result_copy, changer_resultstr, sizeof(result_copy)-1);
-    result_copy[sizeof(result_copy)-1] = '\0';
-    ap_snprintf(changer_resultstr, sizeof(changer_resultstr),
-		"badly formed result from changer: \"%s\"", result_copy);
-    return 2;
+    return run_changer_command("-eject", NULL, slotstr, &rest);
 }
 
 int changer_loadslot(inslotstr, outslotstr, devicename)
-char *inslotstr, *outslotstr, *devicename;
+char *inslotstr, **outslotstr, **devicename;
 {
-    char cmd[64], result_copy[256];
-    int exitcode, rc;
+    char *rest;
+    int rc;
 
-    ap_snprintf(cmd, sizeof(cmd), "-slot %s", inslotstr);
+    rc = run_changer_command("-slot", inslotstr, outslotstr, &rest);
+    if(rc) return rc;
 
-    exitcode = changer_command(cmd,
-			       changer_resultstr, sizeof(changer_resultstr));
-    if(exitcode != 0) {
-	rc=sscanf(changer_resultstr,"%[^ \n\t] %[^\n]",outslotstr,result_copy);
-	if(rc != 2) goto bad_resultstr;
-	strncpy(changer_resultstr, result_copy, sizeof(changer_resultstr)-1);
-	changer_resultstr[sizeof(changer_resultstr)-1] = '\0';
-	return exitcode;
-    }
+    if(*rest == '\0') return report_bad_resultstr();
 
-    rc = sscanf(changer_resultstr, "%[^ \t\n] %[^\n]", outslotstr, devicename);
-    if(rc != 2) goto bad_resultstr;
+    *devicename = stralloc(rest);
     return 0;
-
-bad_resultstr:
-    strncpy(result_copy, changer_resultstr, sizeof(result_copy)-1);
-    result_copy[sizeof(result_copy)-1] = '\0';
-    ap_snprintf(changer_resultstr, sizeof(changer_resultstr),
-		"badly formed result from changer: \"%s\"", result_copy);
-    return 2;
 }
 
 int changer_info(nslotsp, curslotstr, backwardsp)
 int *nslotsp, *backwardsp;
-char *curslotstr;
+char **curslotstr;
 {
-    char result_copy[256];
-    int rc, exitcode;
+    char *rest;
+    int rc;
 
-    exitcode = changer_command("-info",
-			       changer_resultstr, sizeof(changer_resultstr));
-    if(exitcode != 0) {
-	rc=sscanf(changer_resultstr,"%[^ \n\t] %[^\n]",curslotstr,result_copy);
-	if(rc != 2) goto bad_resultstr;
-	strncpy(changer_resultstr, result_copy, sizeof(changer_resultstr)-1);
-	changer_resultstr[sizeof(changer_resultstr)-1] = '\0';
-	return exitcode;
+    rc = run_changer_command("-info", NULL, curslotstr, &rest);
+    if(rc) return rc;
+
+    if (sscanf(rest, "%d %d", nslotsp, backwardsp) != 2) {
+	return report_bad_resultstr();
     }
-
-    rc = sscanf(changer_resultstr, "%[^ \t\n] %d %d",
-		curslotstr, nslotsp, backwardsp);
-    if(rc != 3) goto bad_resultstr;
     return 0;
-
-bad_resultstr:
-    strncpy(result_copy, changer_resultstr, sizeof(result_copy)-1);
-    result_copy[sizeof(result_copy)-1] = '\0';
-    ap_snprintf(changer_resultstr, sizeof(changer_resultstr),
-		"badly formed result from changer: \"%s\"", result_copy);
-    return 2;
 }
 
 
@@ -187,21 +177,22 @@ void changer_scan(user_init, user_slot)
 int (*user_init) P((int rc, int nslots, int backwards));
 int (*user_slot) P((int rc, char *slotstr, char *device));
 {
-    char *slotstr, device[1024], curslotstr[80];
+    char *slotstr, *device, *curslotstr = NULL;
     int nslots, checked, backwards, rc, done;
 
-    rc = changer_info(&nslots, curslotstr, &backwards);
+    rc = changer_info(&nslots, &curslotstr, &backwards);
     done = user_init(rc, nslots, backwards);
 
     slotstr = "current";
     checked = 0;
 
-    while(!done && checked < nslots) {
-	rc = changer_loadslot(slotstr, curslotstr, device);
+    for(; !done && checked < nslots; free(curslotstr)) {
+	rc = changer_loadslot(slotstr, &curslotstr, &device);
 	if(rc > 0)
 	    done = user_slot(rc, curslotstr, device);
 	else if(!done)
 	    done = user_slot(0,  curslotstr, device);
+	afree(device);
 
 	checked += 1;
 	slotstr = "next";
@@ -215,62 +206,74 @@ void changer_current(user_init, user_slot)
 int (*user_init) P((int rc, int nslots, int backwards));
 int (*user_slot) P((int rc, char *slotstr, char *device));
 {
-    char *slotstr, device[1024], curslotstr[80];
+    char *slotstr, *device, *curslotstr = NULL;
     int nslots, checked, backwards, rc, done;
 
-    rc = changer_info(&nslots, curslotstr, &backwards);
+    rc = changer_info(&nslots, &curslotstr, &backwards);
     done = user_init(rc, nslots, backwards);
 
     slotstr = "current";
     checked = 0;
 
-    rc = changer_loadslot(slotstr, curslotstr, device);
-    if(rc > 0)
+    rc = changer_loadslot(slotstr, &curslotstr, &device);
+    if(rc > 0) {
 	done = user_slot(rc, curslotstr, device);
-    else if(!done)
+    } else if(!done) {
 	done = user_slot(0,  curslotstr, device);
+    }
+    afree(curslotstr);
+    afree(device);
 }
 
 /* ---------------------------- */
 
-static int changer_command(cmdstr, resultstr, resultlen)
-char *cmdstr, *resultstr;
-int resultlen;
+static int changer_command(cmdstr)
+char *cmdstr;
 {
     FILE *cmdpipe;
-    char cmd[ERRSTR_LEN], *chp;
+    char *cmd;
     int exitcode;
     int len;
+    int ch;
+    char number[NUM_STR_SIZE];
 
-    if (*tapechanger != '/')
-	ap_snprintf(cmd, sizeof(cmd), "%s/%s%s %s",
-		    libexecdir, tapechanger, versionsuffix(), cmdstr);
-    else
-	ap_snprintf(cmd, sizeof(cmd), "%s %s", tapechanger, cmdstr);
+    if (*tapechanger != '/') {
+	cmd = vstralloc(libexecdir, "/", tapechanger, versionsuffix(),
+			" ", cmdstr,
+			NULL);
+    } else {
+	cmd = vstralloc(tapechanger, " ", cmdstr, NULL);
+    }
 
 /* fprintf(stderr, "changer: opening pipe from: %s\n", cmd); */
 
     if((cmdpipe = popen(cmd, "r")) == NULL)
 	error("could not open pipe to \"%s\": %s", cmd, strerror(errno));
 
-    if(fgets(resultstr, resultlen, cmdpipe) == NULL)
+    afree(changer_resultstr);
+    if((changer_resultstr = agets(cmdpipe)) == NULL) {
 	error("could not read result from \"%s\": %s", cmd, strerror(errno));
-
-    /* clip newline */
-    len = strlen(resultstr);
-    chp = resultstr + len - 1;
-    if(len > 0 && *chp == '\n') *chp = '\0';
+    }
 
     exitcode = pclose(cmdpipe);
-    /* mask out-of-control changers as fatal error */
+    cmdpipe = NULL;
+    /* mark out-of-control changers as fatal error */
     if(WIFSIGNALED(exitcode)) {
-	ap_snprintf(cmd, sizeof(cmd), " (got signal %d)", WTERMSIG(exitcode));
-	strncat(resultstr, cmd, resultlen-strlen(resultstr));
+	ap_snprintf(number, sizeof(number), "%d", WTERMSIG(exitcode));
+	cmd = newvstralloc(cmd,
+			   changer_resultstr,
+			   " (got signal ", number, ")",
+			   NULL);
+	afree(changer_resultstr);
+	changer_resultstr = cmd;
+	cmd = NULL;
 	exitcode = 2;
+    } else {
+	exitcode = WEXITSTATUS(exitcode);
     }
-    else exitcode = WEXITSTATUS(exitcode);
 
 /* fprintf(stderr, "changer: got exit: %d str: %s\n", exitcode, resultstr); */
 
+    afree(cmd);
     return exitcode;
 }

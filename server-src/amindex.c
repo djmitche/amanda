@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindex.c,v 1.7 1997/12/19 14:39:58 george Exp $
+ * $Id: amindex.c,v 1.8 1997/12/30 05:24:53 jrj Exp $
  *
  * index control
  */
@@ -36,7 +36,8 @@ char *getindexfname(host, disk, date, level)
 char *host, *disk, *date;
 int level;
 {
-  static char buf[1024];
+  static char *buf = NULL;
+  char level_str[NUM_STR_SIZE];
   char datebuf[8 + 1];
   char *dc;
   char *pc;
@@ -55,9 +56,15 @@ int level;
       pc--;
     }
   }
-  datebuf[sizeof (datebuf) - 1] = '\0';
-  ap_snprintf(buf, sizeof(buf),
-    "%s_%s_%s_%d%s", host, disk, datebuf, level, COMPRESS_SUFFIX);
+  datebuf[sizeof(datebuf)-1] = '\0';
+
+  ap_snprintf(level_str, sizeof(level_str), "%d", level);
+  buf = newvstralloc(buf,
+		     host, "_",
+		     disk, "_",
+		     datebuf, "_",
+		     level_str, COMPRESS_SUFFIX,
+		     NULL);
 
   for (pc = buf; *pc != '\0'; pc++)
     if ((*pc == '/') || (*pc == ' '))

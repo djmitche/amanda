@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.h,v 1.3 1997/08/27 08:13:24 amcore Exp $
+ * $Id: logfile.h,v 1.4 1997/12/30 05:25:21 jrj Exp $
  *
  * interface to logfile module
  */
@@ -51,11 +51,23 @@ typedef enum logtype_e {
     L_CONT			 /* continuation line, used when reading */
 } logtype_t;
 
+typedef enum program_e {
+    P_UNKNOWN, P_PLANNER, P_DRIVER, P_REPORTER, P_DUMPER, P_TAPER, P_AMFLUSH
+} program_t;
+#define P_LAST P_AMFLUSH
+
 extern char *logtype_str[];
+
+extern int curlinenum;
+extern logtype_t curlog;
+extern program_t curprog;
+extern char *curstr;
+extern char *program_str[];
 
 void log P((logtype_t typ, ...));
 void log_start_multiline P((void));
 void log_end_multiline P((void));
 void log_rename P((char *datestamp));
+int get_logline P((FILE *));
 
 #endif  /* ! LOGFILE_H */

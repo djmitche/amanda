@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: uscan.l,v 1.5 1997/12/16 20:44:42 jrj Exp $
+ * $Id: uscan.l,v 1.6 1997/12/30 05:24:42 jrj Exp $
  *
  * lexer for amrecover interactive language
  */
@@ -46,8 +46,7 @@ extern int  yyparse P((void));
 %%
 
 %{
-char string_buf[1024];
-char *string_buf_ptr;
+static char *string_buf = NULL;
 %}
 
     /* literal keyword tokens */
@@ -90,39 +89,37 @@ extract { return EXTRACT; }
                           ap_snprintf(yylval.strval, DATE_ALLOC_SIZE,
 				   "%04d%s", 1900+t->tm_year, yytext+1);
                           return DATE; }
-                        
+
 [1-2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] { yylval.strval = stralloc(yytext); return DATE; }
 
     /* file names */
 
 [-A-Za-z0-9_/.]* { yylval.strval = stralloc(yytext); return PATH; }
-\"               { string_buf_ptr = string_buf; BEGIN(quotedstring); }
+\"               { afree(string_buf); BEGIN(quotedstring); }
 
 <quotedstring>\"        { /* saw closing quote - all done */
   BEGIN(INITIAL);
-  *string_buf_ptr = '\0';
-  yylval.strval = stralloc(string_buf);
+  if(string_buf) {
+    yylval.strval = string_buf;
+  } else {
+    yylval.strval = "";
+  }
   return PATH;
 }
 
 <quotedstring>\\\" {
   /* escaped quote */
-  *string_buf_ptr++ = '\\';
-  *string_buf_ptr++ = '"';
+  strappend(string_buf, "\\\"");
 }
 
 <quotedstring>\n        {
   /* error - unterminated string constant */
   yyerror("unterminated string");
+  afree(string_buf);
 }
 
-<quotedstring>[^\\\n\"]+        {
-  char *yptr = yytext;
-     
-  while ( *yptr )
-    *string_buf_ptr++ = *yptr++;
-}
-  
+<quotedstring>[^\\\n\"]+        { strappend(string_buf, yytext); }
+
     /* whitespace */
 
 [ \t\r]+	;     /* whitespace */

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflock.c,v 1.10 1997/12/16 17:54:55 jrj Exp $
+ * $Id: amflock.c,v 1.11 1997/12/30 05:24:08 jrj Exp $
  *
  * file locking routines, put here to hide the system dependant stuff
  * from the rest of the code
@@ -130,27 +130,25 @@ char *fn;
 */
 int create_lock(fn, pid)
 char *fn;
+long pid;
 {
-	int rc;
 	int fd;
-	char buff[64];
-	int len;
+	FILE *f;
+	int mask;
 
-	rc = delete_lock(fn);  /* that's MY file! */
+	(void)delete_lock(fn);			/* that's MY file! */
 
+	mask = umask(022);
 	fd = open(fn, O_WRONLY|O_CREAT|O_EXCL, 0644);
+	umask(mask);
 	if (fd == -1) return -1;
 
-	ap_snprintf(buff, sizeof(buff), "%ld\n", pid);
-	len = strlen(buff);
-	assert(len > 0 && len < sizeof(buff));
-
-	rc = write(fd, buff, len);
-
-	rc = close(fd);
-
-	rc = chmod(fn, 0644);
-
+	if((f = fdopen(fd, "w")) == NULL) {
+	    aclose(fd);
+	    return -1;
+	}
+	fprintf(f, "%ld\n", pid);
+	afclose(f);
 	return 0;
 }
 
@@ -160,27 +158,24 @@ char *fn;
 long read_lock(fn)
 char *fn; /* name of lock file */
 {
-	int rc;
-	int fd;
-	char buff[64];
+	int save_errno;
+	FILE *f;
 	long pid;
 
-	fd = open(fn, O_RDONLY);
-	if (fd == -1) return -1;
-
-	rc = read(fd, buff, sizeof(buff));
-	if (rc < 1) {
-		/* XXX should preserve errno */
-		rc = close(fd);
+	if ((f = fopen(fn, "r")) == NULL) {
 		return -1;
 	}
-
-	rc = close(fd);
-	if (rc != 0) return -1;
-
-	rc = sscanf(buff, "%ld\n", &pid);
-	if (rc != 1) return -1; /* XXX need to set errno */
-
+	if (fscanf(f, "%ld", &pid) != 1) {
+		save_errno = errno;
+		afclose(f);
+		errno = save_errno;
+		return -1;
+	}
+	if (fclose(f) != 0) {
+		f = NULL;
+		return -1;
+	}
+	f = NULL;
 	return pid;
 }
 
@@ -274,48 +269,34 @@ int ln_lock(res, op)
 char *res; /* name of resource to lock */
 int op;    /* true to lock; false to unlock */
 {
-	int resl;
 	long mypid;
-	int len;
 	char *lockf;
 	char *tlockf;
 	char *mres;
 	int rc;
-
-	resl = strlen(res);
+	char pid_str[NUM_STR_SIZE];
 
 	mypid = (long)getpid();
 
-	len = resl + 12 + 1/*null*/;
-	lockf = alloc(len);
-	ap_snprintf(lockf, len, "/tmp/am%s.lock", res);
-	rc = strlen(lockf);
-	assert(rc > 0 && rc < len);
+	lockf = vstralloc("/tmp", "/am", res, ".lock", NULL);
 
 	if (!op) {
 		/* unlock the resource */
 		assert(read_lock(lockf) == mypid);
 
-		rc = delete_lock(lockf);
-		free(lockf);
+		(void)delete_lock(lockf);
+		afree(lockf);
 		return 0;
 	}
 
 	/* lock the resource */
 
-	len = resl + 8 + 10/*pid*/ + 1/*null*/;
-	tlockf = alloc(len);
-	ap_snprintf(tlockf, len, "/tmp/am%s.%ld", res, mypid);
-	rc = strlen(tlockf);
-	assert(rc > 0 && rc < len);
+	ap_snprintf(pid_str, sizeof(pid_str), "%ld", mypid);
+	tlockf = vstralloc("/tmp", "am", res, ".", pid_str, NULL);
 
-	rc = create_lock(tlockf, mypid);
+	(void)create_lock(tlockf, mypid);
 
-	len = resl + 1 + 1/*null*/;
-	mres = alloc(len);
-	ap_snprintf(mres, len, "%s.", res);
-	rc = strlen(mres);
-	assert(rc > 0 && rc < len);
+	mres = stralloc2(res, ".")
 
 	while(1) {
 		rc = link_lock(lockf, tlockf);
@@ -330,9 +311,9 @@ int op;    /* true to lock; false to unlock */
 
 	(void) delete_lock(tlockf);
 
-	free(mres);
-	free(tlockf);
-	free(lockf);
+	afree(mres);
+	afree(tlockf);
+	afree(lockf);
 
 	return rc;
 }
@@ -445,7 +426,7 @@ main()
     if (amfunlock(lockfd, resn) != 0)
 	exit(2);
 
-    close(lockfd);
+    aclose(lockfd);
 
     unlink(filen);
     if ((lockfd = open(filen, O_WRONLY|O_CREAT|O_EXCL, 0600)) == -1)
@@ -456,7 +437,7 @@ main()
     if (amfunlock(lockfd, resn) != 0)
 	exit(4);
 
-    close(lockfd);
+    aclose(lockfd);
 
     exit(0);
 }

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.25 1997/12/22 00:13:13 amcore Exp $
+ * $Id: amcheck.c,v 1.26 1997/12/30 05:24:51 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -82,13 +82,19 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    char buffer[BUFFER_SIZE], cmd[1024];
-    char mainfname[256], tempfname[256], confdir[256], version_string[256];
+    char buffer[BUFFER_SIZE], *cmd;
+    char *confdir, *version_string;
+    char *mainfname = NULL, *tempfname = NULL;
+    char pid_str[NUM_STR_SIZE];
     char *confname;
     int do_clientchk, clientchk_pid, client_probs;
     int do_serverchk, serverchk_pid, server_probs;
-    int opt, size, rc, retstat, result_port, tempfd, mainfd, pid;
+    int opt, size, rc, retstat, result_port, tempfd, mainfd;
+    pid_t pid;
     extern int optind;
+    int l, n, s;
+
+    ap_snprintf(pid_str, sizeof(pid_str), "%ld", (long)getpid());
 
     erroutput_type = ERR_INTERACTIVE;
 
@@ -105,8 +111,9 @@ char **argv;
 	setuid(getuid());
     }
 
-    ap_snprintf(version_string, sizeof(version_string),
-		"\n(brought to you by Amanda %s)\n", version());
+    version_string = vstralloc("\n",
+			       "(brought to you by Amanda ", version(), ")\n",
+			       NULL);
 
     mailout = overwrite = 0;
     do_serverchk = do_clientchk = 1;
@@ -132,7 +139,7 @@ char **argv;
 
     confname = *argv;
 
-    ap_snprintf(confdir, sizeof(confdir), "%s/%s", CONFIG_DIR, confname);
+    confdir = vstralloc(CONFIG_DIR, "/", confname, NULL);
     if(chdir(confdir) != 0)
 	error("could not cd to confdir %s: %s", confdir, strerror(errno));
 
@@ -149,16 +156,14 @@ char **argv;
      */
     if(do_clientchk && do_serverchk) {
 	/* we need the temp file */
-	ap_snprintf(tempfname, sizeof(tempfname),
-		    "/tmp/amcheck.temp.%ld", (long) getpid());
+	tempfname = vstralloc("/tmp/amcheck.temp.", pid_str, NULL);
 	if((tempfd = open(tempfname, O_RDWR|O_CREAT|O_TRUNC, 0600)) == -1)
 	    error("could not open %s: %s", tempfname, strerror(errno));
     }
 
     if(mailout) {
 	/* the main fd is a file too */
-	ap_snprintf(mainfname, sizeof(mainfname),
-		    "/tmp/amcheck.main.%ld", (long) getpid());
+	mainfname = vstralloc("/tmp/amcheck.main.", pid_str, NULL);
 	if((mainfd = open(mainfname, O_RDWR|O_CREAT|O_TRUNC, 0600)) == -1)
 	    error("could not open %s: %s", mainfname, strerror(errno));
     }
@@ -203,9 +208,17 @@ char **argv;
 	    serverchk_pid = 0;
 	}
 	else {
-	    ap_snprintf(buffer, sizeof(buffer),
-			"parent: reaped bogus pid %d\n", pid);
-	    write(mainfd, buffer, strlen(buffer));
+	    char number[NUM_STR_SIZE];
+	    char *msg;
+
+	    ap_snprintf(number, sizeof(number), "%ld", (long)pid);
+	    msg = vstralloc("parent: reaped bogus pid ", number, "\n", NULL);
+	    for(l = 0, n = strlen(buffer); l < n; l += s) {
+		if((s = write(mainfd, buffer + l, n - l)) < 0) {
+		    error("write main file: %s", strerror(errno));
+		}
+	    }
+	    afree(msg);
 	}
     }
 
@@ -216,18 +229,24 @@ char **argv;
 	if(lseek(tempfd, 0, 0) == -1)
 	    error("seek temp file: %s", strerror(errno));
 
-	while((size=read(tempfd, buffer, BUFFER_SIZE)) > 0) {
-	    if((rc=write(mainfd, buffer, size)) < size)
-		error("write main file: %s",
-		      rc == -1? strerror(errno) : "short write");
+	while((size=read(tempfd, buffer, sizeof(buffer))) > 0) {
+	    for(l = 0; l < size; l += s) {
+		if((s = write(mainfd, buffer + l, size - l)) < 0) {
+		    error("write main file: %s", strerror(errno));
+		}
+	    }
 	}
 	if(size < 0)
 	    error("read temp file: %s", strerror(errno));
-	close(tempfd);
+	aclose(tempfd);
 	unlink(tempfname);
     }
 
-    write(mainfd, version_string, strlen(version_string));
+    for(l = 0, n = strlen(version_string); l < n; l += s) {
+	if((s = write(mainfd, version_string + l, n - l)) < 0) {
+	    error("write main file: %s", strerror(errno));
+	}
+    }
 
     /* send mail if requested, but only if there were problems */
 
@@ -235,13 +254,18 @@ char **argv;
 	fflush(stdout);
 	if(close(mainfd) == -1)
 	    error("close main file: %s", strerror(errno));
+	mainfd = -1;
 
-	ap_snprintf(cmd, sizeof(cmd),
-"%s -s \"%s AMANDA PROBLEM: FIX BEFORE RUN, IF POSSIBLE\" %s < %s",
-		    MAILER, getconf_str(CNF_ORG), getconf_str(CNF_MAILTO),
-		    mainfname);
+	cmd = vstralloc(MAILER,
+			" -s ", "\"",
+			  getconf_str(CNF_ORG),
+			  " AMANDA PROBLEM: FIX BEFORE RUN, IF POSSIBLE\"",
+			" ", getconf_str(CNF_MAILTO),
+			" < ", mainfname,
+			NULL);
 	if(system(cmd) != 0)
 	    error("mail command failed: %s", cmd);
+	afree(cmd);
     }
     if(mailout)
 	unlink(mainfname);
@@ -251,9 +275,9 @@ char **argv;
 /* --------------------------------------------------- */
 
 int nslots, backwards, found, got_match, tapedays;
-extern char datestamp[80];
-char first_match_label[64], first_match[256],found_device[1024];
-char label[80];
+extern char *datestamp;
+char *first_match_label = NULL, *first_match = NULL, *found_device = NULL;
+char *label;
 char *searchlabel, *labelstr;
 tape_t *tp;
 FILE *errf;
@@ -283,23 +307,20 @@ char *device;
 	return 1;
     }
     else if(rc == 1) {
-	fprintf(errf, "%s: slot %s: %s\n", pname, slotstr,changer_resultstr);
+	fprintf(errf, "%s: slot %s: %s\n", pname, slotstr, changer_resultstr);
 	return 0;
     }
     else {
-	if((errstr = tape_rdlabel(device,
-				  datestamp, sizeof(datestamp),
-				  label, sizeof(label))) != NULL)
+	if((errstr = tape_rdlabel(device, &datestamp, &label)) != NULL) {
 	    fprintf(errf, "%s: slot %s: %s\n", pname, slotstr, errstr);
-	else {
+	} else {
 	    /* got an amanda tape */
 	    fprintf(errf, "%s: slot %s: date %-8s label %s",
 		    pname, slotstr, datestamp, label);
-	    if(searchlabel != NULL && !strcmp(label, searchlabel)) {
+	    if(searchlabel != NULL && strcmp(label, searchlabel) == 0) {
 		/* it's the one we are looking for, stop here */
 		fprintf(errf, " (exact label match)\n");
-		strncpy(found_device, device, sizeof(found_device)-1);
-		found_device[sizeof(found_device)-1] = '\0';
+		found_device = newstralloc(found_device, device);
 		found = 1;
 		return 1;
 	    }
@@ -315,16 +336,12 @@ char *device;
 		    fprintf(errf, " (labelstr match)\n");
 		else {
 		    got_match = 1;
-		    strncpy(first_match, slotstr, sizeof(first_match)-1);
-		    first_match[sizeof(first_match)-1] = '\0';
-		    strncpy(first_match_label, label,
-			    sizeof(first_match_label)-1);
-		    first_match_label[sizeof(first_match_label)-1] = '\0';
+		    first_match = newstralloc(first_match, slotstr);
+		    first_match_label = newstralloc(first_match_label, label);
 		    fprintf(errf, " (first labelstr match)\n");
 		    if(!backwards || !searchlabel) {
 			found = 2;
-			strncpy(found_device, device, sizeof(found_device)-1);
-			found_device[sizeof(found_device)-1] = '\0';
+			found_device = newstralloc(found_device, device);
 			return 1;
 		    }
 		}
@@ -336,7 +353,7 @@ char *device;
 
 char *taper_scan()
 {
-    char outslot[32];
+    char *outslot = NULL;
 
     if((tp = lookup_tapepos(getconf_int(CNF_TAPECYCLE))) == NULL)
 	searchlabel = NULL;
@@ -352,21 +369,24 @@ char *taper_scan()
 	searchlabel = first_match_label;
     else if(!found && got_match) {
 	searchlabel = first_match_label;
-	if(changer_loadslot(first_match, outslot, found_device) == 0)
+	afree(found_device);
+	if(changer_loadslot(first_match, &outslot, &found_device) == 0) {
 	    found = 1;
-    }
-    else if(!found) {
+	}
+    } else if(!found) {
 	if(searchlabel) {
-	    ap_snprintf(changer_resultstr, sizeof(changer_resultstr),
-			"label %s or new tape not found in rack", searchlabel);
+	    changer_resultstr = newvstralloc(changer_resultstr,
+					     "label ", searchlabel,
+					     " or new tape not found in rack",
+					     NULL);
 	} else {
-	    strncpy(changer_resultstr, "new tape not found in rack",
-		    sizeof(changer_resultstr)-1);
-	    changer_resultstr[sizeof(changer_resultstr)-1] = '\0';
+	    changer_resultstr = newstralloc(changer_resultstr,
+					    "new tape not found in rack");
 	}
     }
+    afree(outslot);
 
-    return found? found_device : NULL;
+    return found ? found_device : NULL;
 }
 
 int start_server_check(fd)
@@ -377,8 +397,9 @@ int fd;
     tape_t *tp;
     FILE *outf;
     holdingdisk_t *hdp;
-    int pid, tapebad, disklow;
+    int pid, tapebad, disklow, logbad;
     int inparallel;
+    char *logfile;
 
     pname = "amcheck-server";
 
@@ -437,6 +458,16 @@ int fd;
 		    hdp->diskdir, avail);
     }
 
+    /* check that the log file is writable if it already exists */
+
+    logbad = 0;
+
+    logfile = getconf_str(CNF_LOGFILE);
+    if(access(logfile, F_OK) == 0 && access(logfile, W_OK) != 0) {
+	fprintf(outf, "ERROR: %s is not writable\n", logfile);
+	logbad = 1;
+    }
+
     /* check that the tape is a valid amanda tape */
 
     tapebad = 0;
@@ -456,9 +487,7 @@ int fd;
     } else if(access(tapename,F_OK|R_OK|W_OK) == -1) {
 	fprintf(outf, "ERROR: %s: %s\n",tapename,strerror(errno));
 	tapebad = 1;
-    } else if((errstr = tape_rdlabel(tapename,
-				     datestamp, sizeof(datestamp),
-				     label, sizeof(label))) != NULL) {
+    } else if((errstr = tape_rdlabel(tapename, &datestamp, &label)) != NULL) {
 	fprintf(outf, "ERROR: %s: %s.\n", tapename, errstr);
 	tapebad = 1;
     } else {
@@ -509,7 +538,7 @@ int fd;
     fprintf(outf, "Server check took %s seconds.\n", walltime_str(curclock()));
 
     fflush(outf);
-    exit(tapebad || disklow);
+    exit(tapebad || disklow || logbad);
     /* NOTREACHED */
     return 0;
 }
@@ -527,7 +556,7 @@ int fd;
     disklist_t *origqp;
     disk_t *dp;
     host_t *hostp;
-    char req[8192], line[1024];
+    char *req;
     int hostcount, rc, pid;
     int amanda_port;
     struct servent *amandad;
@@ -579,29 +608,38 @@ int fd;
     hostcount = remote_errors = 0;
 
     while(!empty(*origqp)) {
+	req = vstralloc("SERVICE selfcheck\n",
+			"OPTIONS ;\n",
+			NULL);
 	hostp = origqp->head->host;
-	strncpy(req, "SERVICE selfcheck\n", sizeof(req)-1);
-	req[sizeof(req)-1] = '\0';
-	strncat(req, "OPTIONS ;\n", sizeof(req)-strlen(req));
-						/* no options yet */
-
 	for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	    char *t;
+
 	    remove_disk(origqp, dp);
-	    ap_snprintf(line, sizeof(line),
-			"%s %s 0 OPTIONS |%s\n",
-			dp->program, dp->name,optionstr(dp));
-	    strncat(req, line, sizeof(req)-strlen(req));
+	    t = vstralloc(req,
+			  dp->program, 
+			  " ",
+			  dp->name,
+			  " 0 OPTIONS |",
+			  optionstr(dp),
+			  "\n",
+			  NULL);
+	    afree(req);
+	    req = t;
 	}
 	hostcount++;
 
 #ifdef KRB4_SECURITY
 	if(hostp->disks->auth == AUTH_KRB4)
-	    rc = make_krb_request(hostp->hostname, kamanda_port, stralloc(req),
+	    rc = make_krb_request(hostp->hostname, kamanda_port, req,
 				  hostp, CHECK_TIMEOUT, handle_response);
 	else
 #endif
-	    rc = make_request(hostp->hostname, amanda_port, stralloc(req),
+	    rc = make_request(hostp->hostname, amanda_port, req,
 			      hostp, CHECK_TIMEOUT, handle_response);
+
+	req = NULL;				/* do not own this any more */
+
 	if(rc) {
 	    /* couldn't resolve hostname */
 	    fprintf(outf,
@@ -626,22 +664,30 @@ proto_t *p;
 pkt_t *pkt;
 {
     host_t *hostp;
-    char *resp, errstr[256];
-
-#define eatline(p) while(*(p) && *(p) != '\n') (p)++; if(*(p)) (p)++;
+    char *errstr;
+    char *s;
+    int ch;
 
     hostp = (host_t *) p->datap;
 
     if(p->state == S_FAILED) {
-	if(pkt == NULL)
+	if(pkt == NULL) {
 	    fprintf(outf,
 		    "WARNING: %s: selfcheck request timed out.  Host down?\n",
 		    hostp->hostname);
-	else if(sscanf(pkt->body, "ERROR %[^\n]", errstr) == 1)
+#define sc "ERROR"
+	} else if(strncmp(pkt->body, sc, sizeof(sc)-1) == 0) {
+	    s = pkt->body + sizeof(sc)-1;
+	    ch = *s++;
+#undef sc
+	    skip_whitespace(s, ch);
+	    errstr = s - 1;
+
 	    fprintf(outf, "ERROR: %s NAK: %s\n", hostp->hostname, errstr);
-	else
+	} else {
 	    fprintf(outf, "ERROR: %s NAK: [NAK parse failed]\n",
 		    hostp->hostname);
+	}
 	remote_errors++;
 	return;
     }
@@ -656,22 +702,36 @@ pkt_t *pkt;
     }
 #endif
 
-    resp = pkt->body;
+    s = pkt->body;
+    ch = *s++;
 /*
     fprintf(errf, "got response from %s:\n----\n%s----\n\n",
 	    hostp->hostname, resp);
 */
 
-    if(!strncmp(resp, "OPTIONS", 7)) {
+#define sc "OPTIONS"
+    if(strncmp(s - 1, sc, sizeof(sc)-1) == 0) {
 	/* no options yet */
-	eatline(resp);
+	skip_line(s, ch);
     }
+#undef sc
 
-    while(*resp) {
-	if(sscanf(resp, "ERROR %[^\n]", errstr) == 1) {
+    while(ch) {
+#define sc "ERROR"
+	if(strncmp(s - 1, sc, sizeof(sc)-1) == 0) {
+	    s += sizeof(sc)-1;
+	    ch = s[-1];
+#undef sc
+
+	    skip_whitespace(s, ch);
+	    errstr = s - 1;
+	    skip_line(s, ch);
+	    s[-1] = '\0';
+
 	    fprintf(outf, "ERROR: %s: %s\n", hostp->hostname, errstr);
 	    remote_errors++;
+	} else {
+	    skip_line(s, ch);
 	}
-	eatline(resp);
     }
 }

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapefile.c,v 1.6 1997/12/16 18:02:42 jrj Exp $
+ * $Id: tapefile.c,v 1.7 1997/12/30 05:25:25 jrj Exp $
  *
  * routines to read and write the amanda active tape list
  */
@@ -33,7 +33,6 @@
 #include "tapefile.h"
 #include "conffile.h"
 
-#define MAXLINE 4096
 static tape_t *tape_list = NULL;
 
 /* local functions */
@@ -49,18 +48,17 @@ char *tapefile;
     tape_t *tp;
     FILE *tapef;
     int pos;
-    char buffer[MAXLINE];
+    char *line = NULL;
 
     tape_list = NULL;
     if((tapef = fopen(tapefile,"r")) != NULL) {
-
-	while(fgets(buffer, MAXLINE, tapef) != NULL) {
-	    tp = parse_tapeline(buffer);
+	while((line = agets(tapef)) != NULL) {
+	    tp = parse_tapeline(line);
+	    afree(line);
 	    if(tp == NULL) return 1;
 	    tape_list = insert(tape_list, tp);
 	}
-
-	fclose(tapef);
+	afclose(tapef);
     }
 
     for(pos=1,tp=tape_list; tp != NULL; pos++,tp=tp->next) {
@@ -83,7 +81,7 @@ char *tapefile;
 	fprintf(tapef, "%d %s\n", tp->datestamp, tp->label);
     }
 
-    fclose(tapef);
+    afclose(tapef);
     return 0;
 }
 
@@ -94,7 +92,7 @@ char *label;
     tape_t *tp;
 
     for(tp = tape_list; tp != NULL; tp = tp->next) {
-	if(!strcmp(label, tp->label)) return tp;
+	if(strcmp(label, tp->label) == 0) return tp;
     }
     return NULL;
 }
@@ -203,24 +201,25 @@ char *line;
 {
     tape_t *tp;
     int len;
+    char *s;
+    int ch;
 
     tp = (tape_t *) alloc(sizeof(tape_t));
 
     tp->next = NULL;
-    tp->datestamp = atoi(line);
-    /* skip past blanks */
-    while(isspace(*line)) line++;
-    /* skip past number */
-    while(isdigit(*line)) line++;
-    /* skip past blanks */
-    while(isspace(*line)) line++;
 
-    len = strlen(line);
-    if(len) line[len-1] = '\0';
+    s = line;
+    ch = *s++;
 
-    tp->label = alloc(len);
-    strncpy(tp->label, line, len-1);
-    tp->label[len-1] = '\0';
+    skip_whitespace(s, ch);
+    if (ch == '\0' || sscanf(s - 1, "%d", &tp->datestamp) != 1) {
+	afree(tp);
+	return NULL;
+    }
+    skip_integer(s, ch);
+
+    skip_whitespace(s, ch);
+    tp->label = stralloc(s - 1);
 
     return tp;
 }

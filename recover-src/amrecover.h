@@ -25,14 +25,12 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.h,v 1.3 1997/12/09 06:59:38 amcore Exp $
+ * $Id: amrecover.h,v 1.4 1997/12/30 05:24:32 jrj Exp $
  *
  * data structures and declarations for amrecover
  */
 
 #include "amanda.h"
-
-#define LINE_LENGTH 1024
 
 typedef struct DIR_ITEM
 {
@@ -45,16 +43,16 @@ typedef struct DIR_ITEM
 }
 DIR_ITEM;
 
-extern char server_name[LINE_LENGTH];
-extern char config[LINE_LENGTH];
+extern char *server_name;
+extern char *config;
 extern char dump_hostname[MAX_HOSTNAME_LENGTH];	/* which machine we are restoring */
-extern char disk_name[LINE_LENGTH];	/* disk we are restoring */
-extern char mount_point[LINE_LENGTH];	/* where disk was mounted */
-extern char disk_path[LINE_LENGTH];	/* path relative to mount point */
-extern char dump_date[LINE_LENGTH];	/* date on which we are restoring */
+extern char *disk_name;			/* disk we are restoring */
+extern char *mount_point;		/* where disk was mounted */
+extern char *disk_path;			/* path relative to mount point */
+extern char dump_date[STR_SIZE];	/* date on which we are restoring */
 extern int quit_prog;			/* set when time to exit parser */
-extern char tape_server_name[LINE_LENGTH];
-extern char tape_device_name[LINE_LENGTH];
+extern char *tape_server_name;
+extern char *tape_device_name;
 extern pid_t extract_restore_child_pid;
 
 extern int converse P((char *cmd));

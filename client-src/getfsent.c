@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getfsent.c,v 1.8 1997/12/17 04:21:07 jrj Exp $
+ * $Id: getfsent.c,v 1.9 1997/12/30 05:23:53 jrj Exp $
  *
  * generic version of code to read fstab
  */
@@ -69,31 +69,24 @@ int get_fstab_nextentry(fsent)
 generic_fsent_t *fsent;
 {
     struct fstab *sys_fsent = getfsent();
-    static char xfsname[256], xmntdir[1024], xfstype[256], xmntopts[256];
+    static char *xfsname = NULL, *xmntdir = NULL;
+    static char *xfstype = NULL, *xmntopts = NULL;
 
     if(!sys_fsent)
 	return 0;
-    fsent->fsname  = strncpy(xfsname, sys_fsent->fs_spec, sizeof(xfsname)-1);
-    xfsname[sizeof(xfsname)-1] = '\0';
-    fsent->mntdir  = strncpy(xmntdir, sys_fsent->fs_file, sizeof(xmntdir)-1);
-    xmntdir[sizeof(xmntdir)-1] = '\0';
+    fsent->fsname  = xfsname  = newstralloc(xfsname,  sys_fsent->fs_spec);
+    fsent->mntdir  = xmntdir  = newstralloc(xmntdir,  sys_fsent->fs_file);
     fsent->freq    = sys_fsent->fs_freq;
     fsent->passno  = sys_fsent->fs_passno;
 #ifdef STATFS_ULTRIX
-    fsent->fstype  = strncpy(xfstype, sys_fsent->fs_name, sizeof(xfstype)-1);
-    xfstype[sizeof(xfstype)-1] = '\0';
-    fsent->mntopts = strncpy(xmntopts, sys_fsent->fs_opts, sizeof(xmntopts)-1);
-    xmntopts[sizeof(xmntopts)-1] = '\0';
+    fsent->fstype  = xfstype  = newstralloc(xfstype,  sys_fsent->fs_name);
+    fsent->mntopts = xmntopts = newstralloc(xmntopts, sys_fsent->fs_opts);
 #elif defined(_AIX)
-    fsent->fstype  = "unknown";
-    fsent->mntopts = strncpy(xmntopts, sys_fsent->fs_type, sizeof(xmntopts)-1);
-    xmntopts[sizeof(xmntopts)-1] = '\0';
+    fsent->fstype  = xfstype  = newstralloc(xfstype,  "unknown");
+    fsent->mntopts = xmntopts = newstralloc(xmntopts, sys_fsent->fs_type);
 #else
-    fsent->fstype  = strncpy(xfstype, sys_fsent->fs_vfstype, sizeof(xfstype)-1);
-    xfstype[sizeof(xfstype)-1] = '\0';
-    fsent->mntopts = strncpy(xmntopts, sys_fsent->fs_mntops,
-			     sizeof(xmntopts)-1);
-    xmntopts[sizeof(xmntopts)-1] = '\0';
+    fsent->fstype  = xfstype  = newstralloc(xfstype,  sys_fsent->fs_vfstype);
+    fsent->mntopts = xmntopts = newstralloc(xmntopts, sys_fsent->fs_mntops);
 #endif
     return 1;
 }
@@ -117,7 +110,7 @@ int open_fstab()
 void close_fstab()
 {
     if(fstabf)
-	fclose(fstabf);
+	afclose(fstabf);
     fstabf = NULL;
 }
 
@@ -158,7 +151,7 @@ int open_fstab()
 void close_fstab()
 {
     if(fstabf)
-	fclose(fstabf);
+	afclose(fstabf);
     fstabf = NULL;
 }
 
@@ -201,7 +194,7 @@ int open_fstab()
 void close_fstab()
 {
     if(fstabf)
-	fclose(fstabf);
+	afclose(fstabf);
     fstabf = NULL;
 }
 
@@ -210,45 +203,49 @@ static generic_fsent_t _fsent;
 int get_fstab_nextentry(fsent)
 generic_fsent_t *fsent;
 {
-    static char lfsnam[32];
-    static char opts[512];
-    static char line[1024];
-    char *cp, *dp, *ep=lfsnam;
+    static char *lfsnam = NULL;
+    static char *opts = NULL;
+    static char *cp = NULL;
+    char *s;
+    int ch;
 
-    while (cp = fgets(line, sizeof(line), fstabf)) {
-	fsent->fsname = strtok(cp, " \t\n");
+    afree(cp);
+    for (; (cp = agets(fstabf) != NULL; free(cp)) {
+	fsent->fsname = strtok(cp, " \t");
 	if ( fsent->fsname && *fsent->fsname != '#' )
 	    break;
     }
-    if (!cp) return 0;
+    if (cp == NULL) return 0;
 
-    fsent->mntdir = strtok((char *)NULL, " \t\n");
-    fsent->mntopts = strtok((char *)NULL, " \t\n");
+    fsent->mntdir = strtok((char *)NULL, " \t");
+    fsent->mntopts = strtok((char *)NULL, " \t");
     if ( *fsent->mntopts != '-' )  {
 	fsent->fstype = fsent->mntopts;
 	fsent->mntopts = "rw";
     } else {
-	if (!strcmp(fsent->mntopts, "-r")) {
+	fsent->fstype = "";
+	if (strcmp(fsent->mntopts, "-r") == 0) {
 	    fsent->mntopts = "ro";
 	}
     }
-    if (dp = strchr(fsent->fstype, ',')) {
-	*dp++ = '\0';
-	strncpy(opts, fsent->mntopts, sizeof(opts)-1);
-	opts[sizeof(opts)-1] = '\0';
-	strncat(opts, ",", sizeof(opts)-strlen(opts));
-	strncat(opts, dp, sizeof(opts)-strlen(opts));
-	fsent->mntopts = opts;
+    if ((s = strchr(fsent->fstype, ',')) != NULL) {
+	*s++ = '\0';
+	strappend(fsent->mntopts, ",");
+	strappend(fsent->mntopts, s);
     }
 
-    dp = fsent->fstype;
-    while (*dp) 
-	*ep++ = tolower(*dp++);
-
+    lfsnam = newstralloc(lfsnam, fsent->fstype);
+    s = lfsnam;
+    while((ch = *s++) != '\0') {
+	if(isupper(ch)) ch = tolower(ch);
+	s[-1] = ch;
+    }
     fsent->fstype = lfsnam;
 
-    if (!strncmp(fsent->fstype, "hs", 2))
+#define sc "hs"
+    if (strncmp(fsent->fstype, sc, sizeof(sc)-1) == 0)
 	fsent->fstype = "iso9660";
+#undef sc
 
     fsent->freq = 0;
     fsent->passno = 0;
@@ -286,7 +283,7 @@ int open_fstab()
 void close_fstab()
 {
     if(fstabf)
-	fclose(fstabf);
+	afclose(fstabf);
     fstabf = NULL;
 }
 
@@ -295,8 +292,6 @@ static generic_fsent_t _fsent;
 int get_fstab_nextentry(fsent)
 generic_fsent_t *fsent;
 {
-
-    static char opts[512];
     struct statfs fsd;
     char typebuf[FSTYPSZ];
     struct mnttab mnt;
@@ -318,14 +313,10 @@ generic_fsent_t *fsent;
     }
 
     if ( mnt.mt_ro_flg == MNT_READONLY ) {
-	strncpy(opts, "ro", sizeof(opts)-1);
-	opts[sizeof(opts)-1] = '\0';
+	fsent->mntopts = "ro";
     } else {
-	strncpy(opts, "rw", sizeof(opts)-1);
-	opts[sizeof(opts)-1] = '\0';
+	fsent->mntopts = "rw";
     }
-
-    fsent->mntopts=opts;
 
     fsent->freq = 0;
     fsent->passno = 0;
@@ -347,48 +338,46 @@ static char dev_rroot[] = "/dev/r";
 static char *dev2rdev(name)
 char *name;
 {
-  static char fname[1024];
+  static char *fname = NULL;
 #ifdef DEV_ROOT
   struct stat st;
 #endif
-  
-  if (strncmp(name, DEV_PREFIX, strlen(DEV_PREFIX)) == 0)
-    ap_snprintf(fname, sizeof(fname),
-		"%s%s", RDEV_PREFIX, name+strlen(DEV_PREFIX));
-#ifdef DEV_ROOT
-  else if (strncmp(name, dev_root, strlen(dev_root)) == 0
-	   && (ap_snprintf(fname, sizeof(fname),
-			   "%s%s", dev_rroot, name+strlen(dev_root)),
-	       stat(fname, &st) == 0))
-      ;
-#endif
-  else
-    return name;
+  int len;
 
+  if (strncmp(name, DEV_PREFIX, (len = strlen(DEV_PREFIX))) == 0) {
+    fname = newstralloc2(fname, RDEV_PREFIX, name+len);
+#ifdef DEV_ROOT
+  } else if (strncmp(name, dev_root, (len = strlen(dev_root))) == 0
+	     && (fname = newstralloc2(fname, dev_rroot, name+len))
+	     && stat(fname, &st) == 0) {
+    /* do nothing else */;
+#endif
+  } else {
+    return name;
+  }
   return fname;
 }  
 
 static char *rdev2dev2rdev(name)
 char *name;
 {
-  static char fname[1024];
+  static char *fname = NULL;
 #ifdef DEV_ROOT
   struct stat st;
 #endif
+  int len;
 
-  if (strncmp(name, RDEV_PREFIX, strlen(RDEV_PREFIX)) == 0)
-    ap_snprintf(fname, sizeof(fname),
-		"%s%s", DEV_PREFIX, name+strlen(RDEV_PREFIX));
+  if (strncmp(name, RDEV_PREFIX, (len = strlen(RDEV_PREFIX))) == 0) {
+    fname = newstralloc2(fname, DEV_PREFIX, name+len);
 #ifdef DEV_ROOT
-  else if (strncmp(name, dev_rroot, strlen(dev_rroot)) == 0
-	   && (ap_snprintf(fname, sizeof(fname),
-			   "%s%s", dev_root, name+strlen(dev_rroot)),
-	       stat(fname, &st) == 0))
-    ;
+  } else if (strncmp(name, dev_rroot, (len = strlen(dev_rroot))) == 0
+	     && (fname = newstralloc2(fname, dev_root, name+len))
+	     && stat(fname, &st) == 0) {
+    /* do nothing else */;
 #endif
-  else
+  } else {
     return dev2rdev(name);
-
+  }
   return fname;
 }
 
@@ -409,7 +398,7 @@ char *name;
 generic_fsent_t *fsent;
 {
   struct stat stats[3];
-  char fullname[1024];
+  char *fullname = NULL;
 
   if (!name)
     return 0;
@@ -419,23 +408,20 @@ generic_fsent_t *fsent;
   if (stat(name, &stats[0]) == -1)
     stats[0].st_dev = -1;
   if (name[0] != '/') {
-    strncpy(fullname, DEV_PREFIX, sizeof(fullname)-1);
-    fullname[sizeof(fullname)-1] = '\0';
-    strncat(fullname, name, sizeof(fullname)-strlen(fullname));
+    fullname = stralloc2(DEV_PREFIX, name);
     if (stat(fullname, &stats[1]) == -1)
       stats[1].st_dev = -1;
-    strncpy(fullname, RDEV_PREFIX, sizeof(fullname)-1);
-    fullname[sizeof(fullname)-1] = '\0';
-    strncat(fullname, name, sizeof(fullname)-strlen(fullname));
+    fullname = newstralloc2(fullname, RDEV_PREFIX, name);
     if (stat(fullname, &stats[2]) == -1)
       stats[2].st_dev = -1;
+    afree(fullname);
   }
   else if (stat(rdev2dev2rdev(name), &stats[1]) == -1)
     stats[1].st_dev = -1;
-  
+
   if (!open_fstab())
     return 0;
-  
+
   while(get_fstab_nextentry(fsent)) {
     struct stat estat;
     if ((fsent->mntdir != NULL
@@ -481,7 +467,7 @@ char *str;
     if(search_fstab(str, &fsent))
       if (fsent.fsname != NULL)
 	str = fsent.fsname;
-    
+
     return dev2rdev(str);
 }
 
@@ -489,14 +475,13 @@ char *amname_to_dirname(str)
 char *str;
 {
     generic_fsent_t fsent;
-    static char dirname[1024];
+    static char *dirname = NULL;
 
     if(search_fstab(str, &fsent))
       if (fsent.mntdir != NULL)
 	str = fsent.mntdir;
 
-    strncpy(dirname, str, sizeof(dirname)-1);
-    dirname[sizeof(dirname)-1] = '\0';
+    dirname = newstralloc(dirname, str);
     return dirname;
 }
 
@@ -504,13 +489,12 @@ char *amname_to_fstype(str)
 char *str;
 {
     generic_fsent_t fsent;
-    static char fstype[1024];
+    static char *fstype = NULL;
 
     if (!search_fstab(str, &fsent))
       return "";
 
-    strncpy(fstype, fsent.fstype, sizeof(fstype)-1);
-    fstype[sizeof(fstype)-1] = '\0';
+    fstype = newstralloc(fstype, fsent.fstype);
     return fstype;
 }
 
@@ -543,7 +527,7 @@ int main()
     printf("--------\n");
 
     close_fstab();
-    
+
     if(search_fstab("/usr", &fsent)) {
 	printf("Found %s mount for /usr:\n",
 	       is_local_fstype(&fsent)? "local" : "remote");

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.11 1997/12/19 11:49:11 george Exp $
+ * $Id: reporter.c,v 1.12 1997/12/30 05:25:24 jrj Exp $
  *
  * nightly Amanda Report generator
  */
@@ -46,19 +46,8 @@ report format
 #include "logfile.h"
 #include "version.h"
 
-#define MAX_LINE 2048
-
 /* don't have (or need) a skipped type except internally to reporter */
 #define L_SKIPPED	L_MARKER
-
-typedef enum program_e {
-    P_UNKNOWN, P_PLANNER, P_DRIVER, P_REPORTER, P_DUMPER, P_TAPER, P_AMFLUSH
-} program_t;
-#define P_LAST P_AMFLUSH
-
-char *program_str[] = {
-    "UNKNOWN", "planner", "driver", "reporter", "dumper", "taper", "amflush"
-};
 
 typedef struct line_s {
     struct line_s *next;
@@ -93,9 +82,8 @@ int curlinenum;
 logtype_t curlog;
 program_t curprog;
 char *curstr;
-char logline[MAX_LINE], tmpstr[MAX_LINE];
-extern char datestamp[];
-char tape_labels[256];
+extern char *datestamp;
+char *tape_labels = NULL;
 int last_run_tapes = 0;
 int degraded_mode = 0;
 int normal_run = 0;
@@ -103,7 +91,7 @@ int amflush_run = 0;
 int testing = 0;
 int got_finish = 0;
 
-char tapestart_error[80], subj_str[256];
+char *tapestart_error = NULL;
 
 FILE *logfile, *mailf;
 
@@ -115,7 +103,6 @@ line_t *errdet = NULL;
 line_t *notes = NULL;
 
 /* local functions */
-int get_logline P((void));
 int contline_next P((void));
 void addline P((line_t **lp, char *str));
 int main P((int argc, char **argv));
@@ -141,52 +128,8 @@ int sort_by_name P((disk_t *a, disk_t *b));
 void bogus_line P((void));
 char *nicedate P((int datestamp));
 void setup_disk P((disk_t *dp));
+static char *prefix P((char *host, char *disk, int level));
 
-int get_logline()
-{
-    char *cp, *logstr, *progstr;
-
-    if(fgets(logline, MAX_LINE, logfile) == NULL)
-	return 0;
-    curlinenum++;
-    cp = logline;
-
-    /* continuation lines are special */
-
-    if(*cp == ' ') {
-	curlog = L_CONT;
-	/* curprog stays the same */
-	curstr = cp + 2;
-	return 1;
-    }
-
-    /* isolate logtype field */
-
-    logstr = cp;
-    while(*cp && *cp != ' ') cp++;
-    if(*cp) *cp++ = '\0';
-
-    /* isolate program name field */
-
-    while(*cp == ' ') cp++;	/* skip blanks */
-    progstr = cp;
-    while(*cp && *cp != ' ') cp++;
-    if(*cp) *cp++ = '\0';
-
-    /* rest of line is logtype dependent string */
-
-    curstr = cp;
-
-    /* lookup strings */
-
-    for(curlog = L_MARKER; curlog != L_BOGUS; curlog--)
-	if(!strcmp(logtype_str[curlog], logstr)) break;
-
-    for(curprog = P_LAST; curprog != P_UNKNOWN; curprog--)
-	if(!strcmp(program_str[curprog], progstr)) break;
-
-    return 1;
-}
 
 int contline_next()
 {
@@ -219,7 +162,7 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    char *logfname, str[256];
+    char *logfname, *subj_str;
 
     /* open input log file */
 
@@ -253,7 +196,7 @@ char **argv;
 
     setup_data();    /* setup per-disk data */
 
-    while(get_logline()) {
+    while(get_logline(logfile)) {
 	switch(curlog) {
 	case L_START: handle_start(); break;
 	case L_FINISH: handle_finish(); break;
@@ -275,15 +218,16 @@ char **argv;
 	    printf("reporter: unexpected log line\n");
 	}
     }
-    fclose(logfile);
+    afclose(logfile);
     close_infofile();
     if(!amflush_run)
 	generate_missing();
 
-    ap_snprintf(subj_str, sizeof(subj_str), "%s %s MAIL REPORT FOR %s",
-		getconf_str(CNF_ORG),
-		amflush_run? "AMFLUSH" : "AMANDA",
-		nicedate(atoi(datestamp)));
+    subj_str = vstralloc(getconf_str(CNF_ORG),
+			 " ", amflush_run ? "AMFLUSH" : "AMANDA",
+			 " ", "MAIL REPORT FOR",
+			 " ", nicedate(atoi(datestamp)),
+			 NULL);
 
    /* open pipe to mailer */
 
@@ -296,11 +240,17 @@ char **argv;
 	fprintf(mailf, "Subject: %s\n\n", subj_str);
     }
     else {
-	ap_snprintf(str, sizeof(str), "%s -s \"%s\" %s", MAILER,
-		    subj_str, getconf_str(CNF_MAILTO));
-	if((mailf = popen(str, "w")) == NULL)
-	    error("could not open pipe to \"%s\": %s", str, strerror(errno));
+	char *cmd;
+
+	cmd = vstralloc(MAILER,
+			" -s", " \"", subj_str, "\"",
+			" ", getconf_str(CNF_MAILTO),
+			NULL);
+	if((mailf = popen(cmd, "w")) == NULL)
+	    error("could not open pipe to \"%s\": %s", cmd, strerror(errno));
+	afree(cmd);
     }
+    afree(subj_str);
 
     if(!got_finish) fputs("*** THE DUMPS DID NOT FINISH PROPERLY!\n\n", mailf);
 
@@ -331,9 +281,9 @@ char **argv;
 	    version());
 
     if(testing)
-	fclose(mailf);
+	afclose(mailf);
     else {
-	pclose(mailf);
+	apclose(mailf);
 	log_rename(datestamp);
     }
     return 0;
@@ -482,10 +432,12 @@ void output_tapeinfo()
     else {
 	if(amflush_run)
 	    fprintf(mailf, "The dumps were flushed to tape%s %s.\n",
-		    last_run_tapes == 1? "" : "s", tape_labels);
+		    last_run_tapes == 1 ? "" : "s",
+		    tape_labels ? tape_labels : "");
 	else
 	    fprintf(mailf, "These dumps were to tape%s %s.\n",
-		    last_run_tapes == 1? "" : "s", tape_labels);
+		    last_run_tapes == 1 ? "" : "s",
+		    tape_labels ? tape_labels : "");
 
 	pos = getconf_int(CNF_TAPECYCLE);
     }
@@ -516,7 +468,8 @@ line_t *lp;
 FILE *f;
 {
     while(lp) {
-	fputs(lp->str,f);
+	fputs(lp->str, f);
+	fputc('\n', f);
 	lp = lp->next;
     }
 }
@@ -664,17 +617,64 @@ int datestamp;
 void handle_start()
 {
     static int started = 0;
-    char label[80];
+    char *label;
     int rc;
+    char *s, *fp;
+    int ch;
 
     switch(curprog) {
     case P_TAPER:
-	sscanf(curstr, "datestamp %s label %s", datestamp, label);
-	if(last_run_tapes > 0)
-	    strncat(tape_labels, ", ", sizeof(tape_labels)-strlen(tape_labels));
+	s = curstr;
+	ch = *s++;
+
+	skip_whitespace(s, ch);
+#define sc "datestamp"
+	if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	    bogus_line();
+	    return;
+	}
+	s += sizeof(sc)-1;
+	ch = s[-1];
+#undef sc
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    bogus_line();
+	    return;
+	}
+	fp = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+	datestamp = newstralloc(datestamp, fp);
+	s[-1] = ch;
+
+	skip_whitespace(s, ch);
+#define sc "label"
+	if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	    bogus_line();
+	    return;
+	}
+	s += sizeof(sc)-1;
+	ch = s[-1];
+#undef sc
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    bogus_line();
+	    return;
+	}
+	label = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+
+	if(tape_labels) {
+	    fp = vstralloc(tape_labels, ", ", label, NULL);
+	    afree(tape_labels);
+	    tape_labels = fp;
+	} else {
+	    tape_labels = stralloc(label);
+	}
+	s[-1] = ch;
 
 	last_run_tapes++;
-	strncat(tape_labels, label, sizeof(tape_labels)-strlen(tape_labels));
 	return;
     case P_PLANNER:
     case P_DRIVER:
@@ -688,39 +688,127 @@ void handle_start()
     }
 
     if(!started) {
-	rc = sscanf(curstr, "date %s", datestamp);
-	if(rc == 0) return;	/* ignore bogus line */
+	s = curstr;
+	ch = *s++;
+
+	skip_whitespace(s, ch);
+#define sc "date"
+	if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	    return;				/* ignore bogus line */
+	}
+	s += sizeof(sc)-1;
+	ch = s[-1];
+#undef sc
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    bogus_line();
+	    return;
+	}
+	fp = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+	datestamp = newstralloc(datestamp, fp);
+	s[-1] = ch;
+
 	started = 1;
     }
     if(amflush_run && normal_run) {
 	amflush_run = 0;
 	addline(&notes,
-     "  reporter: both amflush and driver output in log, ignoring amflush.\n");
+     "  reporter: both amflush and driver output in log, ignoring amflush.");
     }
 }
 
 
 void handle_finish()
 {
+    char *s;
+    int ch;
+
     if(curprog == P_DRIVER || curprog == P_AMFLUSH) {
+	s = curstr;
+	ch = *s++;
+
+	skip_whitespace(s, ch);
+#define sc "date"
+	if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	    bogus_line();
+	    return;
+	}
+	s += sizeof(sc)-1;
+	ch = s[-1];
+#undef sc
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    bogus_line();
+	    return;
+	}
+	skip_non_whitespace(s, ch);	/* ignore the date string */
+
+	skip_whitespace(s, ch);
+#define sc "time"
+	if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	    bogus_line();
+	    return;
+	}
+	s += sizeof(sc)-1;
+	ch = s[-1];
+#undef sc
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    bogus_line();
+	    return;
+	}
+	if(sscanf(s - 1, "%f", &total_time) != 1) {
+	    bogus_line();
+	    return;
+	}
+
 	got_finish = 1;
-	sscanf(curstr,"date %*s time %f", &total_time);
     }
 }
 
 void handle_stats()
 {
+    char *s;
+    int ch;
+
     if(curprog == P_DRIVER) {
-	sscanf(curstr,"startup time %f", &startup_time);
+	s = curstr;
+	ch = *s++;
+
+	skip_whitespace(s, ch);
+#define sc "startup time"
+	if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	    bogus_line();
+	    return;
+	}
+	s += sizeof(sc)-1;
+	ch = s[-1];
+#undef sc
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    bogus_line();
+	    return;
+	}
+	if(sscanf(s - 1, "%f", &startup_time) != 1) {
+	    bogus_line();
+	    return;
+	}
     }
 }
 
 
 void handle_note()
 {
-    ap_snprintf(tmpstr, sizeof(tmpstr),
-		"  %s: %s", program_str[curprog], curstr);
-    addline(&notes, tmpstr);
+    char *str;
+
+    str = vstralloc("  ", program_str[curprog], ": ", curstr, NULL);
+    addline(&notes, str);
+    afree(str);
 }
 
 
@@ -729,18 +817,39 @@ void handle_note()
 void handle_error()
 {
     int rc;
+    char *s, *nl;
+    int ch;
 
     if(curlog == L_ERROR && curprog == P_TAPER) {
-	rc = sscanf(curstr, "no-tape %[^\n]", tapestart_error);
-	if(rc == 1) {
+	s = curstr;
+	ch = *s++;
+
+	skip_whitespace(s, ch);
+#define sc "no-tape"
+	if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	    bogus_line();
+	    return;
+	}
+	s += sizeof(sc)-1;
+	ch = s[-1];
+#undef sc
+
+	skip_whitespace(s, ch);
+	if(ch != '\0') {
+	    if((nl = strchr(s - 1, '\n')) != NULL) {
+		*nl = '\0';
+	    }
+	    tapestart_error = newstralloc(tapestart_error, s - 1);
+	    if(nl) *nl = '\n';
 	    degraded_mode = 1;
 	    return;
 	}
 	/* else some other tape error, handle like other errors */
     }
-    ap_snprintf(tmpstr, sizeof(tmpstr), "  %s: %s %s", program_str[curprog],
-	     logtype_str[curlog], curstr);
-    addline(&errsum, tmpstr);
+    s = vstralloc("  ", program_str[curprog], ": ",
+		  logtype_str[curlog], " ", curstr, NULL);
+    addline(&errsum, s);
+    afree(s);
 }
 
 /* ----- */
@@ -769,7 +878,7 @@ void setup_data()
 	setup_disk(dp);
 }
 
-char hostname[80], diskname[80];
+char *hostname = NULL, *diskname = NULL;
 int level;
 
 void handle_success()
@@ -779,20 +888,55 @@ void handle_success()
     struct timedata_s *sp;
     info_t inf;
     int i;
+    char *s, *fp;
+    int ch;
 
     if(curprog != P_TAPER && curprog != P_DUMPER && curprog != P_PLANNER) {
 	bogus_line();
 	return;
     }
 
-    sscanf(curstr,"%s %s %d [sec %f kb %f kps %f",
-	   hostname, diskname, &level, &sec, &kbytes, &kps);
+    s = curstr;
+    ch = *s++;
+
+    skip_whitespace(s, ch);
+    if(ch == '\0') {
+	bogus_line();
+	return;
+    }
+    fp = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    hostname = newstralloc(hostname, fp);
+    s[-1] = ch;
+
+    skip_whitespace(s, ch);
+    if(ch == '\0') {
+	bogus_line();
+	return;
+    }
+    fp = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    diskname = newstralloc(diskname, fp);
+    s[-1] = ch;
+
+    skip_whitespace(s, ch);
+    if(sscanf(s - 1,"%d [sec %f kb %f kps %f",
+	      &level, &sec, &kbytes, &kps) != 4) {
+	bogus_line();
+	return;
+    }
+
     dp = lookup_disk(hostname, diskname);
     if(dp == NULL) {
-	ap_snprintf(tmpstr, sizeof(tmpstr),
-		    "  %-10.10s %s lev %d ERROR [not in disklist]\n",
-		    hostname, diskname, level);
-	addline(&errsum,tmpstr);
+	char *str;
+
+	str = vstralloc("  ", prefix(hostname, diskname, level),
+			" ", "ERROR [not in disklist]",
+			NULL);
+	addline(&errsum, str);
+	afree(str);
 	return;
     }
 
@@ -837,73 +981,161 @@ void handle_success()
 
 void handle_strange()
 {
+    char *str;
+
     handle_success();
 
-    ap_snprintf(tmpstr, sizeof(tmpstr), "  %-10.10s %s lev %d STRANGE\n",
-		hostname, diskname, level);
-    addline(&errsum, tmpstr);
+    str = vstralloc("  ", prefix(hostname, diskname, level),
+		    " ", "STRANGE",
+		    NULL);
+    addline(&errsum, str);
+    afree(str);
 
-    addline(&errdet,"\n");
-    ap_snprintf(tmpstr, sizeof(tmpstr), "/-- %-10.10s %s lev %d STRANGE\n",
-		hostname, diskname, level);
-    addline(&errdet, tmpstr);
+    addline(&errdet,"");
+    str = vstralloc("/-- ", prefix(hostname, diskname, level),
+		    " ", "STRANGE",
+		    NULL);
+    addline(&errdet, str);
+    afree(str);
 
     while(contline_next()) {
-	get_logline();
+	get_logline(logfile);
 	addline(&errdet, curstr);
     }
-    addline(&errdet,"\\--------\n");
+    addline(&errdet,"\\--------");
 }
 
 void handle_failed()
 {
     disk_t *dp;
-    char hostname[80], diskname[80], errstr[MAX_LINE];
+    char *hostname;
+    char *diskname;
+    char *errstr;
     int level;
+    char *s;
+    int ch;
+    char *str;
 
-    sscanf(curstr,"%s %s %d %[^\n]", hostname, diskname, &level, errstr);
+    hostname = NULL;
+    diskname = NULL;
+
+    s = curstr;
+    ch = *s++;
+
+    skip_whitespace(s, ch);
+    if(ch == '\0') {
+	bogus_line();
+	return;
+    }
+    hostname = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+
+    skip_whitespace(s, ch);
+    if(ch == '\0') {
+	bogus_line();
+	return;
+    }
+    diskname = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+
+    skip_whitespace(s, ch);
+    if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
+	bogus_line();
+	return;
+    }
+    skip_integer(s, ch);
+
+    skip_whitespace(s, ch);
+    if(ch == '\0') {
+	bogus_line();
+	return;
+    }
+    errstr = s - 1;
+    if((s = strchr(errstr, '\n')) != NULL) {
+	*s = '\0';
+    }
+
     dp = lookup_disk(hostname, diskname);
     if(dp == NULL) {
-	ap_snprintf(tmpstr, sizeof(tmpstr),
-		    "  %-10.10s %s lev %d ERROR [not in disklist]\n",
-		    hostname, diskname, level);
-	addline(&errsum, tmpstr);
-    }
-    else {
+	str = vstralloc("  ", prefix(hostname, diskname, level),
+			" ", "ERROR [not in disklist]",
+			NULL);
+	addline(&errsum, str);
+	afree(str);
+    } else {
 	if(data(dp)->result != L_SUCCESS) {
 	    data(dp)->result = L_FAIL;
 	    data(dp)->level = level;
 	}
     }
 
-    ap_snprintf(tmpstr, sizeof(tmpstr), "  %-10.10s %s lev %d FAILED %s\n",
-		hostname, diskname, level, errstr);
-    addline(&errsum, tmpstr);
+    str = vstralloc("  ", prefix(hostname, diskname, level),
+		    " ", "FAILED",
+		    " ", errstr,
+		    NULL);
+    addline(&errsum, str);
+    afree(str);
 
-    if(curprog != P_DUMPER)
-	return;
-
-    addline(&errdet,"\n");
-    ap_snprintf(tmpstr, sizeof(tmpstr), "/-- %-10.10s %s lev %d FAILED %s\n",
-		hostname, diskname, level, errstr);
-    addline(&errdet,tmpstr);
-    while(contline_next()) {
-	get_logline();
-	addline(&errdet, curstr);
+    if(curprog == P_DUMPER) {
+        addline(&errdet,"");
+	str = vstralloc("/-- ", prefix(hostname, diskname, level),
+			" ", "FAILED",
+			" ", errstr,
+			NULL);
+        addline(&errdet, str);
+        while(contline_next()) {
+	    get_logline(logfile);
+	    addline(&errdet, curstr);
+        }
+        addline(&errdet,"\\--------");
     }
-    addline(&errdet,"\\--------\n");
+    return;
 }
 
 void generate_missing()
 {
     disk_t *dp;
+    char *str;
 
     for(dp = diskq->head; dp != NULL; dp = dp->next) {
 	if(data(dp)->result == L_BOGUS) {
-	    ap_snprintf(tmpstr, sizeof(tmpstr),
-			"  %-10.10s %s  RESULTS MISSING\n",
-			dp->host->hostname, dp->name);
-	    addline(&errsum, tmpstr);
+	    str = vstralloc("  ", prefix(hostname, diskname, -987),
+			    " ", "RESULTS MISSING",
+			    NULL);
+	    addline(&errsum, str);
+	    afree(str);
 	}
     }
+}
+
+static char *
+prefix (host, disk, level)
+    char *host;
+    char *disk;
+    int level;
+{
+    char h[10+1];
+    int l;
+    char number[NUM_STR_SIZE];
+    static char *str = NULL;
+
+    ap_snprintf(number, sizeof(number), "%d", level);
+    if(host) {
+	strncpy(h, host, sizeof(h)-1);
+    } else {
+	strncpy(h, "(host?)", sizeof(h)-1);
+    }
+    h[sizeof(h)-1] = '\0';
+    for(l = strlen(h); l < sizeof(h)-1; l++) {
+	h[l] = ' ';
+    }
+    str = newvstralloc(str,
+		       h,
+		       " ", disk ? disk : "(disk?)",
+		       level != -987 ? " lev " : "",
+		       level != -987 ? number : "",
+		       NULL);
+    return str;
 }

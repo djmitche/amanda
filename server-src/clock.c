@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clock.c,v 1.3 1997/12/16 20:44:57 jrj Exp $
+ * $Id: clock.c,v 1.4 1997/12/30 05:25:02 jrj Exp $
  *
  * timing functions
  */
@@ -115,7 +115,7 @@ times_t a,b;
 char *times_str(t)
 times_t t;
 {
-    static char str[256];
+    static char str[NUM_STR_SIZE+10];
 
     /* tv_sec/tv_usec are longs on some systems */
     ap_snprintf(str, sizeof(str),
@@ -126,7 +126,7 @@ times_t t;
 char *walltime_str(t)
 times_t t;
 {
-    static char str[256];
+    static char str[NUM_STR_SIZE+10];
 
     /* tv_sec/tv_usec are longs on some systems */
     ap_snprintf(str, sizeof(str),

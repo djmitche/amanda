@@ -52,12 +52,25 @@ EXTRA_DIST = 		genversion.c	getcwd.c	memmove.c	\
 	chmod a+x $@
 
 
-version.c:	$(srcdir)/genversion.c versuff.c $(srcdir)/version.h $(libamanda_la_LIBADD)
-	$(COMPILE) -DCC="\"$(CC)\"" -DBUILT_DATE="\"`date`\"" -DBUILT_MACH="\"`uname -a`\"" -c $(srcdir)/genversion.c
+version.c:	$(srcdir)/genversion.c versuff.c $(srcdir)/version.h \
+		$(srcdir)/alloc.c $(srcdir)/error.c $(srcdir)/nolog.c \
+		$(libamanda_la_LIBADD)
+	$(COMPILE) -DCC="\"$(CC)\"" \
+		   -DBUILT_DATE="\"`date`\"" \
+		   -DBUILT_MACH="\"`uname -a`\"" \
+		   -c $(srcdir)/genversion.c
 	$(COMPILE) -c versuff.c
-	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) $(libamanda_la_LIBADD) genversion.o versuff.o -o genversion $(LIBS)
+	$(COMPILE) -c alloc.c
+	$(COMPILE) -c error.c
+	$(COMPILE) -c nolog.c
+	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) \
+			       $(libamanda_la_LIBADD) \
+			       alloc.o error.o nolog.o \
+			       genversion.o versuff.o \
+			       -o genversion \
+			       $(LIBS)
 	./genversion > version.c
-	rm -f genversion genversion.o versuff.o
+	rm -f genversion nolog.o genversion.o versuff.o
 
 .deps/match.P match.o match.lo: regex.h
 .deps/regcomp.P regcomp.o regcomp.lo: regex.h regcomp.ih

@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: list_dir.c,v 1.10 1997/12/19 16:04:32 george Exp $
+/* $Id: list_dir.c,v 1.11 1997/12/30 05:25:19 jrj Exp $
  *
  * manage directory listings from index files
  */
@@ -48,10 +48,9 @@ void clear_dir_list P((void))
     {
 	this = dir_list;
 	dir_list = dir_list->next;
-	free(this->path);
-	free(this);
-    }
-    while (dir_list != NULL);
+	afree(this->path);
+	afree(this);
+    } while (dir_list != NULL);
 
     dir_last = NULL;
     cur_list = NULL;

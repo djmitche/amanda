@@ -25,75 +25,95 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: findpass.c,v 1.5 1997/09/25 10:49:50 amcore Exp $
+ * $Id: findpass.c,v 1.6 1997/12/30 05:23:51 jrj Exp $
  *
  * Support routines for Amanda SAMBA support
  */
 
 #include "findpass.h"
 
-char *findpass(disk, pass, domain)
-char *disk, *pass, *domain;
+/*
+ * Find the Samba password and optional domain for a given disk.
+ * Returns pointers into an alloc-ed area.  The caller should clear them
+ * as soon as reasonable.
+ */
+
+char *findpass(disk, domain)
+char *disk, **domain;
 {
   FILE *fp;
-  static char buffer[256];
-  char *ptr, *ret=0;
-  
+  static char *buffer = NULL;
+  char *s, *d, *pw = NULL;
+  int ch;
+
+  *domain = NULL;				/* just to be sure */
   if ( (fp = fopen("/etc/amandapass", "r")) ) {
-    while (fgets(buffer, sizeof(buffer)-1, fp)) {
-      ptr = buffer;
-      while (*ptr && isspace(*ptr))
-	ptr++;
-      if (!*ptr || *ptr == '#')
+    afree(buffer);
+    for (; (buffer = agets(fp) != NULL; free(buffer)) {
+      s = buffer;
+      ch = *s++;
+      skip_whitespace(s, ch);			/* find start of disk name */
+      if (!ch || ch == '#') {
 	continue;
-      while (*ptr && !isspace(*ptr) && *ptr != '#')
-	ptr++;
-      if (*ptr) {
-	*ptr++=0;
-	if (!strcmp(disk, buffer)) {
-	  while (*ptr && isspace(*ptr) && *ptr != '#')
-	    ptr++;
-	  if (*ptr && *ptr != '#') {
-	    ret=pass;
-	    while (*ptr && !isspace(*ptr) && *ptr != '#')
-	      *pass++=*ptr++;
-	    *pass=0;
-	    while(*ptr && isspace(*ptr) && *ptr != '#')
-	      ptr++;
-	    if (*ptr && *ptr != '#') {
-	      while (*ptr && !isspace(*ptr) && *ptr != '#')
-		*domain++=*ptr++;
+      }
+      d = s-1;					/* start of disk name */
+      skip_non_whitespace_cs(s, ch);
+      if (ch && ch != '#') {
+	s[-1] = '\0';				/* terminate disk name */
+	if (strcmp(disk, d) == 0) {
+	  skip_whitespace(s, ch);		/* find start of password */
+	  if (ch && ch != '#') {
+	    pw = s - 1;				/* start of password */
+	    skip_non_whitespace_cs(s, ch);
+	    s[-1] = '\0';			/* terminate password */
+	    skip_whitespace(s, ch);		/* find start of domain */
+	    if (ch && ch != '#') {
+	      *domain = s - 1;			/* start of domain */
+	      skip_non_whitespace_cs(s, ch);
+	      s[-1] = '\0';			/* terminate domain */
 	    }
-	    *domain = 0;
 	  }
 	  break;
 	}
       }
     }
-    fclose(fp);
+    afclose(fp);
   }
-  return ret;
+  return pw;
 }
 
 /* 
- * Expand an amanda disk-name into a samba sharename,
+ * Convert an amanda disk-name into a Samba sharename,
  * optionally for a shell execution (\'s are escaped).
+ * Returns a new name alloc-d that the caller is responsible
+ * for free-ing.
  */
-char *makesharename(disk, buffer, shell)
-char *disk, *buffer;
+char *makesharename(disk, shell)
+char *disk;
 int shell;
 {
-  int c;
-  char *ret = buffer;
+  char *buffer;
+  int buffer_size;
+  char *s;
+  int ch;
+  
+  buffer_size = 2 * strlen(disk) + 1;		/* worst case */
+  buffer = alloc(buffer_size);
 
-  do {
-    c=*disk++;
-    if (c=='/') {
-      c='\\';
-      if (shell)
-	*buffer++=c;
+  s = buffer;
+  while ((ch = *disk++) != '\0') {
+    if (s >= buffer+buffer_size-2) {		/* room for escape */
+      afree(buffer);				/* should never happen */
+      return NULL;				/* buffer not big enough */
     }
-  } while ((*buffer++ = c));
-
-  return ret;
+    if (ch == '/') {
+      ch = '\\';				/* convert '/' to '\\' */
+    }
+    if (ch == '\\' && shell) {
+      *s++ = '\\';				/* add escape for shell */
+    }
+    *s++ = ch;
+  }
+  *s = '\0';					/* terminate the share name */
+  return buffer;
 }

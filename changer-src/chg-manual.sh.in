@@ -86,11 +86,12 @@ loadslot() {
 	$MT $MTF $tape rewind
 	used=`$MT $MTF $tape status 2>&1 | $EGREP "$ONLINEREGEX"`
 	echo "     -> loaded $used" >> /tmp/changer.debug
-	case $1 in
+	whichslot=$1
+	case $whichslot in
 	current)
 		load=$slot
 		;;
-	next)
+	next|advance)
 		load=`expr $slot + 1`
 		;;
 	prev)
@@ -137,15 +138,19 @@ loadslot() {
 		$MT $MTF $tape offline
 		used=""
 	fi
-	echo "     -> load   $load" >> /tmp/changer.debug
-	while [ -z "$used" ]; do
-		request $load
-		used=`$MT $MTF $tape status 2>&1 | $EGREP "$ONLINEREGEX"`
-	done
+	if [ $whichslot = advance ]; then
+		tape=/dev/null
+	else
+		echo "     -> load   $load" >> /tmp/changer.debug
+		while [ -z "$used" ]; do
+			request $load
+			used=`$MT $MTF $tape status 2>&1 | $EGREP "$ONLINEREGEX"`
+		done
+		echo "     -> rew $load" >> /tmp/changer.debug
+		$MT $MTF $tape rewind
+		$DD if=$tape count=1 >> /tmp/changer.debug 2>&1
+	fi
 	echo $load > $slotfile
-	echo "     -> rew $load" >> /tmp/changer.debug
-	$MT $MTF $tape rewind
-	$DD if=$tape count=1 >> /tmp/changer.debug 2>&1
 	echo "$load $tape"
 	exit 0
 }

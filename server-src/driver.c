@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.21 1997/12/23 11:50:57 amcore Exp $
+ * $Id: driver.c,v 1.22 1997/12/30 05:25:08 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -65,7 +65,7 @@ dumper_t *idle_dumper P((void));
 int some_dumps_in_progress P((void));
 int num_busy_dumpers P((void));
 dumper_t *lookup_dumper P((int fd));
-void construct_datestamp P((char *buf, int len));
+char *construct_datestamp P((void));
 void handle_dumper_result P((int fd));
 disklist_t read_schedule P((disklist_t *waitqp));
 int free_kps P((interface_t *ip));
@@ -137,7 +137,7 @@ char **main_argv;
     fd_set selectset;
     int fd, dsk;
     dumper_t *dumper;
-    char newdir[80];
+    char *newdir = NULL;
     generic_fs_stats_t fs;
     holdingdisk_t *hdp;
 
@@ -152,13 +152,13 @@ char **main_argv;
     if(read_conffile(CONFFILE_NAME))
 	error("could not read amanda config file\n");
 
-    construct_datestamp(datestamp, sizeof(datestamp));
+    afree(datestamp);
+    datestamp = construct_datestamp();
     log(L_START,"date %s", datestamp);
 
-    ap_snprintf(taper_program, sizeof(taper_program),
-		"%s/taper%s", libexecdir, versionsuffix());
-    ap_snprintf(dumper_program, sizeof(dumper_program),
-		"%s/dumper%s", libexecdir, versionsuffix());
+    taper_program = vstralloc(libexecdir, "/", "taper", versionsuffix(), NULL);
+    dumper_program = vstralloc(libexecdir, "/", "dumper", versionsuffix(),
+			       NULL);
 
     /* taper takes a while to get going, so start it up right away */
 
@@ -214,11 +214,13 @@ char **main_argv;
 	    printf("driver: adding holding disk %d dir %s size %ld\n",
 		   dsk, hdp->diskdir, hdp->disksize);
 
-	    ap_snprintf(newdir, sizeof(newdir),
-			"%s/%s", hdp->diskdir, datestamp);
+	    newdir = newvstralloc(newdir,
+				  hdp->diskdir, "/", datestamp,
+				  NULL);
 	    mkdir(newdir, 0770);
 	}
     }
+    afree(newdir);
 
     if(inparallel > MAX_DUMPERS) inparallel = MAX_DUMPERS;
 
@@ -242,11 +244,12 @@ char **main_argv;
 
     log(L_STATS, "startup time %s", walltime_str(curclock()));
 
-printf("driver: start time %s inparallel %d bandwidth %d diskspace %lu",
-       walltime_str(curclock()), inparallel, free_kps((interface_t *)0), free_space());
-printf(" dir %s datestamp %s driver: drain-ends tapeq %s big-dumpers %d\n",
-       "OBSOLETE", datestamp,  use_lffo? "LFFO" : "FIFO", big_dumpers);
-fflush(stdout);
+    printf("driver: start time %s inparallel %d bandwidth %d diskspace %lu",
+	   walltime_str(curclock()), inparallel, free_kps((interface_t *)0),
+	   free_space());
+    printf(" dir %s datestamp %s driver: drain-ends tapeq %s big-dumpers %d\n",
+	   "OBSOLETE", datestamp,  use_lffo? "LFFO" : "FIFO", big_dumpers);
+    fflush(stdout);
 
     /* ok, planner is done, now lets see if the tape is ready */
 
@@ -316,12 +319,14 @@ fflush(stdout);
 
     if(!degraded_mode) {
 	for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next) {
-	    ap_snprintf(newdir, sizeof(newdir),
-			"%s/%s", hdp->diskdir, datestamp);
+	    newdir = newvstralloc(newdir,
+				  hdp->diskdir, "/", datestamp,
+				  NULL);
 	    if(rmdir(newdir) != 0)
 		log(L_WARNING,"Could not rmdir%s: %s", newdir,strerror(errno));
 	}
     }
+    afree(newdir);
 
     printf("driver: FINISHED time %s\n", walltime_str(curclock()));
     fflush(stdout);
@@ -493,7 +498,7 @@ char *str;
     printf("dump of driver schedule %s:\n--------\n", str);
 
     for(dp = qp->head; dp != NULL; dp = dp->next) {
-	printf("  %-10.10s %-4.4s lv %d t %5ld s %8lu p %d\n",
+	printf("  %-10.10s %.16s lv %d t %5ld s %8lu p %d\n",
 	       dp->host->hostname, dp->name, sched(dp)->level,
 	       sched(dp)->est_time, sched(dp)->est_size, sched(dp)->priority);
     }
@@ -550,7 +555,9 @@ void handle_taper_result()
     switch(tok) {
 
     case DONE:	/* DONE <handle> <label> <tape file> <err mess> */
-	assert(argc == 5);
+	if(argc != 5) {
+	    error("error: [taper DONE argc != 5: %d", argc);
+	}
 
 	dp = serial2disk(argv[2]);
 	free_serial(argv[2]);
@@ -590,7 +597,9 @@ void handle_taper_result()
 	break;
 
     case TRYAGAIN:  /* TRY-AGAIN <handle> <err mess> */
-	assert(argc >= 2);
+	if (argc < 2) {
+	    error("error [taper TRYAGAIN argc < 2: %d]", argc);
+	}
 	dp = serial2disk(argv[2]);
 	free_serial(argv[2]);
 	printf("driver: taper-tryagain time %s disk %s:%s\n",
@@ -640,7 +649,7 @@ void handle_taper_result()
 	taper_busy = 0;
 	taper_disk = NULL;
 	FD_CLR(taper,&readset);
-	close(taper);
+	aclose(taper);
 	break;
     default:
 	error("driver received unexpected token (%d) from taper", tok);
@@ -691,17 +700,17 @@ int fd;
     return NULL;
 }
 
-void construct_datestamp(buf, len)
-char *buf;
-int len;
+char *construct_datestamp()
 {
     struct tm *tm;
     time_t timevar;
+    char datestamp[3*NUM_STR_SIZE];
 
     timevar = time((time_t *)NULL);
     tm = localtime(&timevar);
-    ap_snprintf(buf, len,
+    ap_snprintf(datestamp, sizeof(datestamp),
 		"%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
+    return stralloc(datestamp);
 }
 
 void handle_dumper_result(fd)
@@ -727,7 +736,9 @@ int fd;
     switch(tok) {
 
     case DONE: /* DONE <handle> <origsize> <dumpsize> <dumptime> <err str> */
-	assert(argc == 6);
+	if(argc != 6) {
+	    error("error [dumper DONE argc != 6: %d]", argc);
+	}
 
 	free_serial(argv[2]);
 
@@ -784,7 +795,7 @@ int fd;
 	    log(L_WARNING, "%s (pid %ld) confused, restarting it.",
 		dumper->name, (long)dumper->pid);
 	    FD_CLR(fd,&readset);
-	    close(fd);
+	    aclose(fd);
 	    startup_dump_process(dumper);
 	}
 	break;
@@ -845,7 +856,7 @@ int fd;
 	log(L_WARNING, "%s pid %ld is messed up, ignoring it.\n",
 	    dumper->name, (long)dumper->pid);
 	FD_CLR(fd,&readset);
-	close(fd);
+	aclose(fd);
 	dumper->busy = 0;
 	dumper->down = 1;	/* mark it down so it isn't used again */
 	if(dp) {
@@ -885,28 +896,111 @@ disklist_t *waitqp;
     disk_t *dp;
     disklist_t rq;
     int rc, level, line, priority;
-    char dumpdate[80], degr_dumpdate[80];
+    char *dumpdate, *degr_dumpdate;
     int degr_level;
     long time, degr_time;
     unsigned long size, degr_size;
-    char hostname[80], diskname[80], inpline[2048];
+    char *hostname, *diskname, *inpline = NULL;
+    char *s;
+    int ch;
 
 
     rq.head = rq.tail = NULL;
 
     /* read schedule from stdin */
 
-    line = 0;
-    while(fgets(inpline, 2048, stdin)) {
+    for(line = 0; (inpline = agets(stdin)) != NULL; free(inpline)) {
 	line++;
 
-	rc = sscanf(inpline, "%s %s %d %d %s %lu %ld %d %s %lu %ld\n",
-		    hostname, diskname, &priority,
-		    &level, dumpdate, &size, &time,
-		    &degr_level, degr_dumpdate, &degr_size, &degr_time);
-	if(rc != 7 && rc != 11) {
+	s = inpline;
+	ch = *s++;
+
+	skip_whitespace(s, ch);			/* find the host name */
+	if(ch == '\0') {
 	    error("schedule line %d: syntax error", line);
 	    continue;
+	}
+	hostname = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+
+	skip_whitespace(s, ch);			/* find the disk name */
+	if(ch == '\0') {
+	    error("schedule line %d: syntax error", line);
+	    continue;
+	}
+	diskname = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+
+	skip_whitespace(s, ch);			/* find the priority number */
+	if(ch == '\0' || sscanf(s - 1, "%d", &priority) != 1) {
+	    error("schedule line %d: syntax error", line);
+	    continue;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);			/* find the level number */
+	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
+	    error("schedule line %d: syntax error", line);
+	    continue;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);			/* find the dump date */
+	if(ch == '\0') {
+	    error("schedule line %d: syntax error", line);
+	    continue;
+	}
+	dumpdate = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+
+	skip_whitespace(s, ch);			/* find the size number */
+	if(ch == '\0' || sscanf(s - 1, "%lu", &size) != 1) {
+	    error("schedule line %d: syntax error", line);
+	    continue;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);			/* find the time number */
+	if(ch == '\0' || sscanf(s - 1, "%ld", &time) != 1) {
+	    error("schedule line %d: syntax error", line);
+	    continue;
+	}
+	skip_integer(s, ch);
+
+	degr_dumpdate = NULL;			/* flag if degr fields found */
+	skip_whitespace(s, ch);			/* find the degr level number */
+	if(ch != '\0') {
+	    if(sscanf(s - 1, "%d", &degr_level) != 1) {
+		error("schedule line %d: syntax error", line);
+		continue;
+	    }
+	    skip_integer(s, ch);
+
+	    skip_whitespace(s, ch);		/* find the degr dump date */
+	    if(ch == '\0') {
+		error("schedule line %d: syntax error", line);
+		continue;
+	    }
+	    degr_dumpdate = s - 1;
+	    skip_non_whitespace(s, ch);
+	    s[-1] = '\0';
+
+	    skip_whitespace(s, ch);		/* find the degr size number */
+	    if(ch == '\0'  || sscanf(s - 1, "%lu", &degr_size) != 1) {
+		error("schedule line %d: syntax error", line);
+		continue;
+	    }
+	    skip_integer(s, ch);
+
+	    skip_whitespace(s, ch);		/* find the degr time number */
+	    if(ch == '\0' || sscanf(s - 1, "%lu", &degr_time) != 1) {
+		error("schedule line %d: syntax error", line);
+		continue;
+	    }
+	    skip_integer(s, ch);
 	}
 
 	dp = lookup_disk(hostname, diskname);
@@ -923,13 +1017,13 @@ disklist_t *waitqp;
 	sp->est_time = time;
 	sp->priority = priority;
 
-	if(rc < 11)
-	    sp->degr_level = -1;
-	else {
+	if(degr_dumpdate) {
 	    sp->degr_level = degr_level;
 	    sp->degr_dumpdate = stralloc(degr_dumpdate);
 	    sp->degr_size = TAPE_BLOCK_SIZE + degr_size;
 	    sp->degr_time = degr_time;
+	} else {
+	    sp->degr_level = -1;
 	}
 
 	if(time == 0)
@@ -1248,7 +1342,9 @@ disk_t *dp;
 
     switch(tok) {
     case DONE: /* DONE <handle> <label> <tape file> <err mess> */
-	assert(argc == 5);
+	if(argc != 5) {
+	    error("error [dump to tape DONE argc != 5: %d]", argc);
+	}
 
 	free_serial(argv[2]);
 

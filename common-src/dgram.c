@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.4 1997/09/05 02:45:53 amcore Exp $
+ * $Id: dgram.c,v 1.5 1997/12/30 05:24:10 jrj Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -104,7 +104,7 @@ int *portp;
 #ifndef KRB4_SECURITY
     if(geteuid() == 0) {
 	if(bind_reserved(s, &name) == -1) {
-	    close(s);
+	    aclose(s);
 	    return -1;
 	}
     }
@@ -115,11 +115,11 @@ int *portp;
 	/* pick any available non-reserved port */
 	name.sin_port = INADDR_ANY;
 	if(bind(s, (struct sockaddr *)&name, sizeof name) == -1) {
-	    close(s);
+	    aclose(s);
 	    return -1;
 	}
     }
- 
+
     /* find out what name was actually used */
 
     len = sizeof name;
@@ -147,9 +147,11 @@ dgram_t *dgram;
               (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) == -1)
         return -1;
 
-    if(dgram->socket == -1)
+    if(dgram->socket == -1) {
 	if(close(s) == -1)
 	    return -1;
+	s = -1;
+    }
 
     return 0;
 }
@@ -182,6 +184,7 @@ struct sockaddr_in *fromaddr;
     int size, addrlen, sock;
 
     sock = dgram->socket;
+    assert(sock >= 0);
 
     FD_ZERO(&ready);
     FD_SET(sock, &ready);

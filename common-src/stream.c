@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.2 1997/08/27 08:12:17 amcore Exp $
+ * $Id: stream.c,v 1.3 1997/12/30 05:24:23 jrj Exp $
  *
  * functions for managing stream sockets
  */
@@ -51,7 +51,7 @@ int *portp;
 
     if(geteuid() == 0) {
 	if(bind_reserved(server_socket, &server) == -1) {
-	    close(server_socket);
+	    aclose(server_socket);
 	    return -1;
 	}
     }
@@ -61,7 +61,7 @@ int *portp;
 
 	if(bind(server_socket, (struct sockaddr *)&server, sizeof(server)) 
 	   == -1) {
-	    close(server_socket);
+	    aclose(server_socket);
 	    return -1;
 	}
     }
@@ -72,7 +72,7 @@ int *portp;
 
     len = sizeof(server);
     if(getsockname(server_socket, (struct sockaddr *)&server, &len) == -1) {
-	close(server_socket);
+	aclose(server_socket);
 	return -1;
     }
 
@@ -106,14 +106,14 @@ int port, sendsize, recvsize;
 	claddr.sin_addr.s_addr = INADDR_ANY;
 
 	if(bind_reserved(client_socket, &claddr) == -1) {
-	    close(client_socket);
+	    aclose(client_socket);
 	    return -1;
 	}
     }
 
     if(connect(client_socket, (struct sockaddr *)&svaddr, sizeof(svaddr))
        == -1) {
-	close(client_socket);
+	aclose(client_socket);
 	return -1;
     }
 
@@ -135,6 +135,8 @@ int server_socket, timeout, sendsize, recvsize;
     fd_set readset;
     struct timeval tv;
     int nfound, connected_socket;
+
+    assert(server_socket >= 0);
 
     tv.tv_sec = timeout;
     tv.tv_usec = 0;

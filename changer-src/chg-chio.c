@@ -3,7 +3,7 @@
    This program was written to control the Seagate/Conner/Archive
    autoloading DAT drive.  This drive normally has 4 tape capacity
    but can be expanded to 12 tapes with an optional tape cartridge.
-   This program may also work on onther drives.  Try it and let me
+   This program may also work on other drives.  Try it and let me
    know of successes/failures.
 
    I have attempted to conform to the requirements for Amanda tape
@@ -25,7 +25,7 @@
 
    (c) 1897 Larry Pyeatt,  pyeatt@cs.colostate.edu 
    All Rights Reserved.
-   
+
    Permission to use, copy, modify, distribute, and sell this software and its
    documentation for any purpose is hereby granted without fee, provided that
    the above copyright notice appear in all copies and that both that
@@ -69,7 +69,7 @@ int get_current_slot(count_file)
 	return 0;
     }
     fscanf(inf,"%d",&retval);
-    fclose(inf);
+    afclose(inf);
     return retval;
 }
 
@@ -83,7 +83,7 @@ void put_current_slot(count_file, slot)
 	exit(2);
     }
     fprintf(inf,"%d",slot);
-    fclose(inf);
+    afclose(inf);
 }
 
 
@@ -106,7 +106,7 @@ int isempty(fd, slot, nslots)
 
     i = ces.ces_data[slot] & CESTATUS_FULL;
 
-    free(ces.ces_data);
+    afree(ces.ces_data);
     return !i;
 }
 
@@ -130,7 +130,7 @@ int find_empty(fd, count)
     i = 0; 
     while ((i < count)&&(ces.ces_data[i] & CESTATUS_FULL))
 	i++;
-    free(ces.ces_data);
+    afree(ces.ces_data);
     return i;
 }
 
@@ -153,7 +153,7 @@ int drive_loaded(fd, drivenum)
 
     i = (ces.ces_data[0] & CESTATUS_FULL);
 
-    free(ces.ces_data);
+    afree(ces.ces_data);
     return i;
 }
 
@@ -239,11 +239,13 @@ argument argdefs[]={{"-slot",COM_SLOT,1},
 #define SLOT_PREV 2
 #define SLOT_FIRST 3
 #define SLOT_LAST 4
+#define SLOT_ADVANCE 5
 argument slotdefs[]={{"current",SLOT_CUR,0},
 		     {"next",SLOT_NEXT,0},
 		     {"prev",SLOT_PREV,0},
 		     {"first",SLOT_FIRST,0},
-		     {"last",SLOT_LAST,0}};
+		     {"last",SLOT_LAST,0},
+		     {"advance",SLOT_ADVANCE,0}};
 
 int is_positive_number(char *tmp) /* is the string a valid positive int? */
 {
@@ -303,6 +305,7 @@ int get_relative_target(fd, nslots, parameter, loaded, changer_file)
 	case SLOT_CUR:
 	    return current_slot;
 	    break;
+	case SLOT_ADVANCE:
 	case SLOT_NEXT:
 	    if (++current_slot==nslots)
 		return 0;
@@ -323,7 +326,7 @@ int get_relative_target(fd, nslots, parameter, loaded, changer_file)
 	    break;
 	default: 
 	    printf("<none> no slot `%s'\n",parameter);
-	    close(fd);
+	    aclose(fd);
 	    exit(2);
     };
 }
@@ -336,7 +339,7 @@ int main(argc, argv)
 {
     int target,oldtarget;
     command com;   /* a little DOS joke */
-  
+
     struct changer_params params;
     int    fd,rc;
     char *changer_dev, *changer_file, *tape_device;
@@ -351,13 +354,13 @@ int main(argc, argv)
     changer_dev = getconf_str(CNF_CHNGRDEV);
     changer_file = getconf_str(CNF_CHNGRFILE);
     tape_device = getconf_str(CNF_TAPEDEV);
-    
+
     /* get info about the changer */
     if (-1 == (fd = open(changer_dev,O_RDWR))) {
 	perror("open");
 	return 2;
     }
-    
+
     rc = ioctl(fd,CHIOGPARAMS,&params);
     if (rc) {
 	fprintf(stderr,"ioctl failed: 0x%x %s\n",rc,strerror(errno));
@@ -371,7 +374,7 @@ int main(argc, argv)
 	    if (is_positive_number(com.parameter)) {
 		if ((target = atoi(com.parameter))>=params.cp_nslots) {
 		    printf("<none> no slot `%d'\n",target);
-		    close(fd);
+		    aclose(fd);
 		    return 2;
 		}
 	    } else
@@ -387,11 +390,16 @@ int main(argc, argv)
 	    put_current_slot(changer_file, target);
 	    if (!loaded&&isempty(fd,target,params.cp_nslots)) {
 		printf("%d slot %d is empty\n",target,target);
-		close(fd);
+		aclose(fd);
 		return 1;
 	    }
-	    if (!loaded)
-		load(fd,0,target);
+	    if (strcmp(com.parameter,"advance")==0) {
+		tape_device = "/dev/null";
+	    } else {
+		if (!loaded) {
+		    load(fd,0,target);
+		}
+	    }
 	    printf("%d %s\n", target, tape_device);
 	    break;
 
@@ -410,7 +418,7 @@ int main(argc, argv)
 
 	    if (isempty(fd,0,params.cp_nslots)) {
 		printf("0 slot 0 is empty\n");
-		close(fd);
+		aclose(fd);
 		return 1;
 	    }
 
@@ -430,7 +438,7 @@ int main(argc, argv)
 	    break;
       };
 
-    close(fd);
+    aclose(fd);
     return 0;
 }
 

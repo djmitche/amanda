@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.15 1997/12/23 11:50:55 amcore Exp $
+ * $Id: amflush.c,v 1.16 1997/12/30 05:24:52 jrj Exp $
  *
  * write files from work directory onto tape
  */
@@ -45,8 +45,8 @@ char *pname = "amflush";
 disklist_t *diskqp;
 
 static char *config;
-char confdir[1024];
-char reporter_program[1024];
+char *confdir;
+char *reporter_program;
 
 /* local functions */
 int main P((int argc, char **argv));
@@ -67,7 +67,7 @@ char **main_argv;
     erroutput_type = ERR_INTERACTIVE;
     foreground = 0;
 
-    if(main_argc > 1 && !strcmp(main_argv[1], "-f")) {
+    if(main_argc > 1 && strcmp(main_argv[1], "-f") == 0) {
 	foreground = 1;
 	main_argc--,main_argv++;
     }
@@ -76,7 +76,7 @@ char **main_argv;
 	error("Usage: amflush%s [-f] <confdir>", versionsuffix());
 
     config = main_argv[1];
-    ap_snprintf(confdir, sizeof(confdir), "%s/%s", CONFIG_DIR, main_argv[1]);
+    confdir = vstralloc(CONFIG_DIR, "/", main_argv[1], NULL);
     if(chdir(confdir) != 0)
 	error("could not cd to confdir %s: %s",	confdir, strerror(errno));
 
@@ -95,10 +95,9 @@ char **main_argv;
     if(pw->pw_uid != getuid())
 	error("must run amflush as user %s", dumpuser);
 
-    ap_snprintf(taper_program, sizeof(taper_program),
-		"%s/taper%s", libexecdir, versionsuffix());
-    ap_snprintf(reporter_program, sizeof(reporter_program),
-		"%s/reporter%s", libexecdir, versionsuffix());
+    taper_program = vstralloc(libexecdir, "/", "taper", versionsuffix(), NULL);
+    reporter_program = vstralloc(libexecdir, "/", "reporter", versionsuffix(),
+				 NULL);
 
     pick_datestamp();
     confirm();
@@ -148,7 +147,7 @@ void detach()
 	dup2(fd,0);
 	dup2(fd,1);
 	dup2(fd,2);
-	close(fd);
+	aclose(fd);
 	setsid();
 	return;
     }
@@ -164,21 +163,25 @@ char *diskdir;
 {
     DIR *workdir;
     struct dirent *entry;
-    char dirname[80], destname[128], hostname[256], diskname[80];
+    char *dirname;
+    char *destname = NULL;
+    char *hostname = NULL;
+    char *diskname = NULL;
     int level;
     disk_t *dp;
 
-    ap_snprintf(dirname, sizeof(dirname), "%s/%s", diskdir, datestamp);
+    dirname = vstralloc(diskdir, "/", datestamp, NULL);
 
     if((workdir = opendir(dirname)) == NULL) {
 	log(L_INFO, "%s: could not open working dir: %s",
 	    dirname, strerror(errno));
+	afree(dirname);
 	return;
     }
     chdir(dirname);
 
     while((entry = readdir(workdir)) != NULL) {
-	if(!strcmp(entry->d_name, ".") ||  !strcmp(entry->d_name, ".."))
+	if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
 	    continue;
 
 	if(is_emptyfile(entry->d_name)) {
@@ -189,10 +192,13 @@ char *diskdir;
 	    continue;
 	}
 
-	ap_snprintf(destname, sizeof(destname),
-		    "%s/%s", dirname, entry->d_name);
+	destname = newvstralloc(destname,
+				dirname, "/", entry->d_name,
+				NULL);
 
-	if(get_amanda_names(destname, hostname, diskname, &level)) {
+	afree(hostname);
+	afree(diskname);
+	if(get_amanda_names(destname, &hostname, &diskname, &level)) {
 	    log(L_INFO, "%s: ignoring cruft file.", entry->d_name);
 	    continue;
 	}
@@ -221,10 +227,12 @@ char *diskdir;
 
 	switch(tok) {
 	case DONE: /* DONE <handle> <label> <tape file> <err mess> */
-	    assert(argc == 5);
+	    if(argc != 5) {
+		error("error [DONE argc != 5: %d]", argc);
+	    }
 
 	    update_info_taper(dp, argv[3], atoi(argv[4]));
-	    
+
 	    unlink(destname);
 	    break;
 	case TRYAGAIN:
@@ -245,6 +253,10 @@ char *diskdir;
     if(rmdir(dirname))
 	log(L_WARNING, "Could not rmdir %s.  Check for cruft.",
 	    dirname);
+    afree(diskname);
+    afree(hostname);
+    afree(destname);
+    afree(dirname);
 }
 
 void run_dumps()

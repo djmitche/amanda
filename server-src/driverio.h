@@ -25,14 +25,13 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.1 1997/12/23 11:51:01 amcore Exp $
+ * $Id: driverio.h,v 1.2 1997/12/30 05:25:11 jrj Exp $
  *
  * driver-related helper functions
  */
 
 #define MAX_DUMPERS 15
 #define MAX_ARGS 10
-#define MAX_LINE 1024
 
 #ifndef GLOBAL
 #define GLOBAL extern
@@ -102,8 +101,8 @@ GLOBAL int taper, taper_busy, taper_pid;
 
 GLOBAL int argc;
 GLOBAL char *argv[MAX_ARGS+1];
-GLOBAL char datestamp[80];
-GLOBAL char taper_program[1024], dumper_program[1024];
+GLOBAL char *datestamp;
+GLOBAL char *taper_program, *dumper_program;
 
 void addfd P((int fd));
 char *childstr P((int fd));

@@ -74,7 +74,8 @@ reset() {
 loadslot() {
   used=`$MTX -s | sed -n 's/Drive: No tape Loaded/-1/p;s/Drive: tape \(.\) loaded/\1/p'`
   echo "     -> loaded $used" >> /tmp/changer.debug
-  case $1 in
+  whichslot=$1
+  case $whichslot in
     current)
 	     if [ $used -lt 0 ];then
 	       $MTX -l 1
@@ -85,7 +86,7 @@ loadslot() {
 	       exit 0
 	     fi
 	     ;;
-    next)
+    next|advance)
 	  load=`expr $used + 1`
 	  [ $load -gt $lastslot ] && load=$firstslot
 	  ;;
@@ -138,6 +139,10 @@ loadslot() {
         echo "$res"
         exit 2
       fi
+    fi
+    if [ $whichslot = advance ];then
+      echo "$load /dev/null"
+      exit 0
     fi
     echo "     -> load   $load" >> /tmp/changer.debug
     res=`$MTX -l $load`

@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.40 1997/12/28 01:42:47 kovert Exp $
+/* $Id: dumper.c,v 1.41 1997/12/30 05:25:12 jrj Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -58,7 +58,6 @@
 
 #define CONNECT_TIMEOUT	5*60
 #define READ_TIMEOUT	30*60
-#define MAX_LINE	1024
 #define MAX_ARGS	10
 #define DATABUF_SIZE	TAPE_BLOCK_BYTES
 #define MESGBUF_SIZE	4*1024
@@ -69,16 +68,15 @@ typedef enum { BOGUS, FILE_DUMP, PORT_DUMP, CONTINUE, ABORT, QUIT } cmd_t;
 
 char *pname = "dumper";
 
-char line[MAX_LINE];
 char *argv[MAX_ARGS+1];
 int argc;
 int interactive;
 char *handle = NULL;
-char loginid[80];
+char *loginid = NULL;
 
 char databuf[DATABUF_SIZE];
-char mesgbuf[MESGBUF_SIZE];
-char errstr[256];
+char mesgbuf[MESGBUF_SIZE+1];
+char *errstr = NULL;
 char *dataptr;		/* data buffer markers */
 int spaceleft, abort_pending;
 pid_t pid;
@@ -87,7 +85,7 @@ times_t runtime;
 double dumptime;	/* Time dump took in secs */
 static enum { srvcomp_none, srvcomp_fast, srvcomp_best } srvcompress;
 
-char errfname[MAX_LINE];
+char *errfname = NULL;
 FILE *errf;
 char *filename = NULL;
 char *hostname = NULL;
@@ -96,7 +94,7 @@ char *options = NULL;
 char *progname = NULL;
 int level;
 char *dumpdate = NULL;
-extern char datestamp[80];
+extern char *datestamp;
 
 int datafd = -1;
 int mesgfd = -1;
@@ -111,7 +109,7 @@ static void putresult P((char *format, ...))
 static void do_dump P((int mesgfd, int datafd, int indexfd, int outfd));
 void check_options P((char *options));
 void service_ports_init P((void));
-static void construct_datestamp P((char *buf, int len));
+static char *construct_datestamp P((void));
 int update_dataptr P((int outf, int size));
 static void process_dumpeof P((void));
 static void process_dumpline P((char *str));
@@ -160,17 +158,17 @@ void service_ports_init()
 #endif
 }
 
-static void construct_datestamp(buf, len)
-char *buf;
-int len;
+static char *construct_datestamp()
 {
     struct tm *tm;
     time_t timestamp;
+    char datestamp[3*NUM_STR_SIZE];
 
     timestamp = time((time_t *)NULL);
     tm = localtime(&timestamp);
-    ap_snprintf(buf, len,
+    ap_snprintf(datestamp, sizeof(datestamp),
 		"%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
+    return stralloc(datestamp);
 }
 
 
@@ -212,8 +210,7 @@ char **main_argv;
 
     if((pwptr = getpwuid(getuid())) == NULL)
 	error("can't get login name for my uid %ld", (long)getuid());
-    strncpy(loginid, pwptr->pw_name, sizeof(loginid));
-    loginid[sizeof(loginid)] = '\0';
+    loginid = newstralloc(loginid, pwptr->pw_name);
 
     signal(SIGPIPE, SIG_IGN);
     signal(SIGCHLD, SIG_IGN);
@@ -221,7 +218,8 @@ char **main_argv;
     interactive = isatty(0);
     pid = getpid();
 
-    construct_datestamp(datestamp, sizeof(datestamp));
+    afree(datestamp);
+    datestamp = construct_datestamp();
 
     service_ports_init();
     proto_init(msg->socket, time(0), 16);
@@ -233,9 +231,13 @@ char **main_argv;
 	case QUIT:
 	    break;
 	case FILE_DUMP:
-	    /* FILE-DUMP handle filename host disk level dumpdate progname options */
-
-	    assert(argc == 9);
+	    /*
+	     * FILE-DUMP handle filename host disk level dumpdate
+	     *   progname options
+	     */
+	    if(argc != 9) {
+		error("error [dumper FILE-DUMP argc != 9: %d]", argc);
+	    }
 	    handle = newstralloc(handle, argv[2]);
 	    filename = newstralloc(filename, argv[3]);
 	    hostname = newstralloc(hostname, argv[4]);
@@ -260,26 +262,29 @@ char **main_argv;
 		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
 			  handle, squote(errstr));
 		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
-		close(mesgfd);
-		close(datafd);
-		close(indexfd);
-		close(outfd);
+		aclose(mesgfd);
+		aclose(datafd);
+		aclose(indexfd);
+		aclose(outfd);
 		break;
 	    }
 
 	    abort_pending = 0;
 	    do_dump(mesgfd, datafd, indexfd, outfd);
-	    close(mesgfd);
-	    close(datafd);
-	    close(indexfd);
-	    close(outfd);
+	    aclose(mesgfd);
+	    aclose(datafd);
+	    aclose(indexfd);
+	    aclose(outfd);
 	    if(abort_pending) putresult("ABORT-FINISHED %s\n", handle);
 	    break;
 
 	case PORT_DUMP:
-
-	    /* PORT-DUMP handle port host disk level dumpdate progname options */
-	    assert(argc == 9);
+	    /*
+	     * PORT-DUMP handle port host disk level dumpdate progname options
+	     */
+	    if(argc != 9) {
+		error("error [dumper PORT-DUMP argc != 9: %d]", argc);
+	    }
 	    handle = newstralloc(handle, argv[2]);
 	    taper_port = atoi(argv[3]);
 	    hostname = newstralloc(hostname, argv[4]);
@@ -306,19 +311,19 @@ char **main_argv;
 		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
 			  handle, squote(errstr));
 		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
-		close(mesgfd);
-		close(datafd);
-		close(indexfd);
-		close(outfd);
+		aclose(mesgfd);
+		aclose(datafd);
+		aclose(indexfd);
+		aclose(outfd);
 		break;
 	    }
 
 	    abort_pending = 0;
 	    do_dump(mesgfd, datafd, indexfd, outfd);
-	    close(mesgfd);
-	    close(datafd);
-	    close(indexfd);
-	    close(outfd);
+	    aclose(mesgfd);
+	    aclose(datafd);
+	    aclose(indexfd);
+	    aclose(outfd);
 	    if(abort_pending) putresult("ABORT-FINISHED %s\n", handle);
 	    break;
 
@@ -331,21 +336,25 @@ char **main_argv;
 
 static cmd_t getcmd()
 {
+    static char *line = NULL;
+
     if(interactive) {
 	printf("%s> ", pname);
 	fflush(stdout);
     }
 
-    if(fgets(line, MAX_LINE, stdin) == NULL)
+    afree(line);
+    if((line = agets(stdin)) == NULL) {
 	return QUIT;
+    }
 
-    argc = split(line, argv, MAX_ARGS+1, " ");
+    argc = split(line, argv, sizeof(argv) / sizeof(argv[0]), " ");
 
 #if DEBUG
     {
       int arg;
       printf("argc = %d\n", argc);
-      for(arg = 0; arg < MAX_ARGS+1; arg++)
+      for(arg = 0; arg < sizeof(argv) / sizeof(argv[0]); arg++)
 	printf("argv[%d] = \"%s\"\n", arg, argv[arg]);
     }
 #endif
@@ -353,11 +362,11 @@ static cmd_t getcmd()
     /* not enough commands for a table lookup */
 
     if(argc < 1) return BOGUS;
-    if(!strcmp(argv[1],"FILE-DUMP")) return FILE_DUMP;
-    if(!strcmp(argv[1],"PORT-DUMP")) return PORT_DUMP;
-    if(!strcmp(argv[1],"CONTINUE")) return CONTINUE;
-    if(!strcmp(argv[1],"ABORT")) return ABORT;
-    if(!strcmp(argv[1],"QUIT")) return QUIT;
+    if(strcmp(argv[1],"FILE-DUMP") == 0) return FILE_DUMP;
+    if(strcmp(argv[1],"PORT-DUMP") == 0) return PORT_DUMP;
+    if(strcmp(argv[1],"CONTINUE") == 0) return CONTINUE;
+    if(strcmp(argv[1],"ABORT") == 0) return ABORT;
+    if(strcmp(argv[1],"QUIT") == 0) return QUIT;
     return BOGUS;
 }
 
@@ -365,12 +374,11 @@ static cmd_t getcmd()
 arglist_function(static void putresult, char *, format)
 {
     va_list argp;
-    char result[MAX_LINE];
 
     arglist_start(argp, format);
-    ap_vsnprintf(result, sizeof(result), format, argp);
+    vprintf(format, argp);
+    fflush(stdout);
     arglist_end(argp);
-    write(1, result, strlen(result));
 }
 
 
@@ -398,7 +406,7 @@ int outf, size;
 	NAUGHTY_BITS;
 
 	pos = lseek(outf, 0L, SEEK_CUR);
-	while((rc = write(outf, databuf, DATABUF_SIZE)) < DATABUF_SIZE) {
+	while((rc = write(outf, databuf, sizeof(databuf))) < sizeof(databuf)) {
 	    if(rc >= 0) {
 		/*
 		 * Assuming this means we ran out of space part way through,
@@ -415,21 +423,22 @@ int outf, size;
 	    }
 	    putresult("NO-ROOM %s\n", handle);
 	    cmd = getcmd();
-	    assert(cmd == CONTINUE || cmd == ABORT);
+	    if(cmd != CONTINUE && cmd != ABORT) {
+		error("error [bad command after NO-ROOM: %d]", cmd);
+	    }
 	    if(cmd == CONTINUE) continue;
 	    abort_pending = 1;
 	    return 1;
 	}
-	spaceleft = DATABUF_SIZE;
+	spaceleft = sizeof(databuf);
 	dataptr = databuf;
-	dumpsize += (DATABUF_SIZE/1024);
+	dumpsize += (sizeof(databuf)/1024);
     }
     return 0;
 }
 
 
-static char msgbuf[MAX_LINE];
-static int msgofs = 0;
+static char *msgbuf = NULL;
 int got_info_endline;
 int got_sizeline;
 int got_endline;
@@ -440,9 +449,11 @@ char *backup_name, *recover_cmd, *compress_suffix;
 static void process_dumpeof()
 {
     /* process any partial line in msgbuf? !!! */
-    if(msgofs != 0) {
+    if(msgbuf != NULL) {
 	fprintf(errf,"? dumper: error [partial line in msgbuf: %d bytes]\n",
-		msgofs);
+		strlen(msgbuf));
+	fprintf(errf,"? dumper: error [partial line in msgbuf: \"%s\"]\n",
+		msgbuf);
     }
     if(!got_sizeline && dump_result < 2) {
 	/* make a note if there isn't already a failure */
@@ -463,34 +474,43 @@ static void process_dumpeof()
 static void parse_info_line(str)
 char *str;
 {
-    if(!strcmp(str, "end\n")) {
+    if(strcmp(str, "end") == 0) {
 	got_info_endline = 1;
 	return;
     }
 
-    if(!strncmp(str, "BACKUP=", 7)) {
-	backup_name = newstralloc(backup_name, str + 7);
-	backup_name[strlen(backup_name)-1] = '\0';
+#define sc "BACKUP="
+    if(strncmp(str, sc, sizeof(sc)-1) == 0) {
+	backup_name = newstralloc(backup_name, str + sizeof(sc)-1);
 	return;
     }
+#undef sc
 
-    if(!strncmp(str, "RECOVER_CMD=", 12)) {
-	recover_cmd = newstralloc(recover_cmd, str + 12);
-	recover_cmd[strlen(recover_cmd)-1] = '\0';
+#define sc "RECOVER_CMD="
+    if(strncmp(str, sc, sizeof(sc)-1) == 0) {
+	recover_cmd = newstralloc(recover_cmd, str + sizeof(sc)-1);
 	return;
     }
+#undef sc
 
-    if(!strncmp(str, "COMPRESS_SUFFIX=", 16)) {
-	compress_suffix = newstralloc(compress_suffix, str + 16);
-	compress_suffix[strlen(compress_suffix)-1] = '\0';
+#define sc "COMPRESS_SUFFIX="
+    if(strncmp(str, sc, sizeof(sc)-1) == 0) {
+	compress_suffix = newstralloc(compress_suffix, str + sizeof(sc)-1);
 	return;
     }
+#undef sc
 }
 
 static void process_dumpline(str)
 char *str;
 {
-    switch(str[0]) {
+    char *s, *fp;
+    int ch;
+
+    s = str;
+    ch = *s++;
+
+    switch(ch) {
     case '|':
 	/* normal backup output line */
 	break;
@@ -500,78 +520,95 @@ char *str;
 	break;
     case 's':
 	/* a sendbackup line, just check them all since there are only 5 */
-	if(!strncmp(str, "sendbackup: start", 17)) {
+#define sc "sendbackup: start"
+	if(strncmp(str, sc, sizeof(sc)-1) == 0) {
 	    break;
 	}
-	if(!strncmp(str, "sendbackup: size", 16)) {
-	    origsize = (long)atof(str + 16);
-	    got_sizeline = 1;
-	    break;
+#undef sc
+#define sc "sendbackup: size"
+	if(strncmp(str, sc, sizeof(sc)-1) == 0) {
+	    s += sizeof(sc)-1;
+	    ch = s[-1];
+	    skip_whitespace(s, ch);
+	    if(ch) {
+		origsize = (long)atof(str + sizeof(sc)-1);
+		got_sizeline = 1;
+		break;
+	    }
 	}
-	if(!strncmp(str, "sendbackup: end", 15)) {
+#undef sc
+#define sc "sendbackup: end"
+	if(strncmp(str, sc, sizeof(sc)-1) == 0) {
 	    got_endline = 1;
 	    break;
 	}
-	if(!strncmp(str, "sendbackup: error", 17)) {
+#undef sc
+#define sc "sendbackup: error"
+	if(strncmp(str, sc, sizeof(sc)-1) == 0) {
+	    s += sizeof(sc)-1;
+	    ch = s[-1];
+#undef sc
 	    got_endline = 1;
 	    dump_result = max(dump_result, 2);
-	    if(sscanf(str+18, "[%[^]]]", errstr) != 1)
-		ap_snprintf(errstr, sizeof(errstr),
-			    "bad remote error: %s", str);
+	    skip_whitespace(s, ch);
+	    if(ch == '\0' || ch != '[') {
+		errstr = newvstralloc(errstr,
+				      "bad remote error: ", str,
+				      NULL);
+	    } else {
+		ch = *s++;
+		fp = s - 1;
+		while(ch && ch != ']') ch = *s++;
+		s[-1] = '\0';
+		errstr = newstralloc(errstr, fp);
+		s[-1] = ch;
+	    }
 	    break;
 	}
-	if(!strncmp(str, "sendbackup: info ", 17)) {
-	    parse_info_line(str + 17);
+#define sc "sendbackup: info"
+	if(strncmp(str, sc, sizeof(sc)-1) == 0) {
+	    s += sizeof(sc)-1;
+	    ch = s[-1];
+	    skip_whitespace(s, ch);
+	    parse_info_line(s - 1);
 	    break;
 	}
+#undef sc
 	/* else we fall through to bad line */
     default:
 	fprintf(errf, "??%s", str);
 	dump_result = max(dump_result, 1);
 	return;
     }
-    fprintf(errf, "%s", str);
+    fprintf(errf, "%s\n", str);
 }
 
 static void add_msg_data(str, len)
 char *str;
 int len;
 {
-    char *nlpos;
-    int len1, got_newline;
+    char *t;
+    char *nl;
 
-    while(len) {
-
-	/* find a newline, if any */
-	for(nlpos = str; nlpos < str + len; nlpos++)
-	    if(*nlpos == '\n') break;
-
-	/* copy up to newline (or whole string if none) into buffer */
-	if(nlpos < str+len && *nlpos == '\n') {
-	    got_newline = 1;
-	    len1 = nlpos - str + 1;
+    while(len > 0) {
+	if((nl = strchr(str, '\n')) != NULL) {
+	    *nl = '\0';
 	}
-	else {
-	    got_newline = 0;
-	    len1 = len;
+	if(msgbuf) {
+	    t = stralloc2(msgbuf, str);
+	    afree(msgbuf);
+	    msgbuf = t;
+	} else if(nl == NULL) {
+	    msgbuf = stralloc(str);
+	} else {
+	    msgbuf = str;
 	}
-
-	/* but don't overwrite the buffer */
-	if(len1 + msgofs >= sizeof(msgbuf)) {
-	    len1 = sizeof(msgbuf)-1 - msgofs;
-	    str[len1-1] = '\n';			/* force newline */
-	    got_newline = 1;
-	}
-	strncpy(msgbuf + msgofs, str, len1);
-	msgofs += len1;
-	msgbuf[msgofs] = '\0';
-
-	if(got_newline) {
-	    process_dumpline(msgbuf);
-	    msgofs = 0;
-	}
-	len -= len1;
-	str += len1;
+	if(nl == NULL) break;
+	process_dumpline(msgbuf);
+	if(msgbuf != str) free(msgbuf);
+	msgbuf = NULL;
+	len -= nl + 1 - str;
+	str = nl + 1;
     }
 }
 
@@ -579,16 +616,15 @@ int len;
 static void log_msgout(typ)
 logtype_t typ;
 {
-    char str[MAX_LINE];
+    char *line = NULL;
 
     if((errf = fopen(errfname, "r")) == NULL)
 	error("opening msg output: %s", strerror(errno));
 
-    while(fgets(str, MAX_LINE, errf)) {
-	str[strlen(str)-1] = '\0';
-	log(typ, "%s", str);
+    for(; (line = agets(errf)) != NULL; free(line)) {
+	log(typ, "%s", line);
     }
-    fclose(errf);
+    afclose(errf);
 }
 
 /* ------------- */
@@ -668,7 +704,11 @@ int mesgfd, datafd, indexfd, outfd;
     struct timeval timeout;
     int outpipe[2];
     int header_done;	/* flag - header has been written */
-    char indexfile[1024];
+    char *indexfile = NULL;
+    char level_str[NUM_STR_SIZE];
+    char kb_str[NUM_STR_SIZE];
+    char kps_str[NUM_STR_SIZE];
+    char orig_kb_str[NUM_STR_SIZE];
 
 #ifndef DUMPER_SOCKET_BUFFERING
 #define DUMPER_SOCKET_BUFFERING 0
@@ -689,8 +729,8 @@ int mesgfd, datafd, indexfd, outfd;
     startclock();
 
     dataptr = databuf;
-    spaceleft = DATABUF_SIZE;
-    dumpsize = origsize = dump_result = msgofs = 0;
+    spaceleft = sizeof(databuf);
+    dumpsize = origsize = dump_result = 0;
     got_info_endline = got_sizeline = got_endline = 0;
     header_done = 0;
     backup_name = recover_cmd = compress_suffix = (char *)0;
@@ -703,46 +743,46 @@ int mesgfd, datafd, indexfd, outfd;
 	pipe(outpipe); /* outpipe[0] is pipe's stdin, outpipe[1] is stdout. */
 	datafd = outpipe[0];
 	switch(fork()) {
-	    case -1: fprintf(stderr, "couldn't fork\n");
-	    default:
-		close(outpipe[1]);
+	case -1: fprintf(stderr, "couldn't fork: %s\n", strerror(errno));
+	default:
+	    aclose(outpipe[1]);
+	    aclose(tmpfd);
+	    break;
+	case 0:
+	    aclose(outpipe[0]);
+	    /* child acts on stdin/stdout */
+	    if (dup2(outpipe[1],1) == -1)
+		fprintf(stderr, "err dup2 out: %s\n", strerror(errno));
+	    if (dup2(tmpfd, 0) == -1)
+		fprintf(stderr, "err dup2 in: %s\n", strerror(errno));
+	    for(tmpfd = 3; tmpfd <= FD_SETSIZE; ++tmpfd) {
 		close(tmpfd);
-		break;
-	    case 0:
-		close(outpipe[0]);
-		/* child acts on stdin/stdout */
-		if (dup2(outpipe[1],1) == -1)
-		    fprintf(stderr, "err dup2 out: %s\n", strerror(errno));
-		if (dup2(tmpfd, 0) == -1)
-		    fprintf(stderr, "err dup2 in: %s\n", strerror(errno));
-		for(tmpfd = 3; tmpfd <= 255; ++tmpfd)
-		    close(tmpfd);
-		/* now spawn gzip -1 to take care of the rest */
-		execlp(COMPRESS_PATH, COMPRESS_PATH,
-		       (srvcompress == srvcomp_best
-			? COMPRESS_BEST_OPT
-			: COMPRESS_FAST_OPT),
-		       (char *)0);
-		error("error: couldn't exec %s.\n", COMPRESS_PATH);
+	    }
+	    /* now spawn gzip -1 to take care of the rest */
+	    execlp(COMPRESS_PATH, COMPRESS_PATH,
+		   (srvcompress == srvcomp_best ? COMPRESS_BEST_OPT
+						: COMPRESS_FAST_OPT),
+		   (char *)0);
+	    error("error: couldn't exec %s.\n", COMPRESS_PATH);
 	}
 	/* Now the pipe has been inserted. */
     }
 
-    if (indexfd == -1) {
-	indexfile[0] = '\0';
-	}
-    else {	/* start the index reader */
+    if (indexfd != -1) {
 	int tmpfd;
 
-	ap_snprintf(indexfile, sizeof(indexfile), "%s/%s.tmp",
-		getconf_str(CNF_INDEXDIR),
-		getindexfname(hostname, diskname, datestamp, level));
+	indexfile = vstralloc(getconf_str(CNF_INDEXDIR),
+			      "/",
+			      getindexfname(hostname, diskname,
+					    datestamp, level),
+			      ".tmp",
+			      NULL);
 
 	switch(fork()) {
-	case -1: fprintf(stderr, "couldn't fork\n");
+	case -1: fprintf(stderr, "couldn't fork: %s\n", strerror(errno));
 	default:
-	    close(indexfd);
-	    indexfd = -1;
+	    aclose(indexfd);
+	    indexfd = -1;			/* redundant */
 	    break;
 	case 0:
 	    if (dup2(indexfd, 0) == -1)
@@ -752,18 +792,27 @@ int mesgfd, datafd, indexfd, outfd;
 		error("err open %s: %s", indexfile, strerror(errno));
 	    if (dup2(indexfd,1) == -1)
 		error("err dup2 out: %s", strerror(errno));
-	    for(tmpfd = 3; tmpfd <= 255; ++tmpfd)
+	    for(tmpfd = 3; tmpfd <= FD_SETSIZE; ++tmpfd) {
 		close(tmpfd);
+	    }
 	    execlp(COMPRESS_PATH, COMPRESS_PATH, COMPRESS_BEST_OPT, (char *)0);
 	    error("error: couldn't exec %s.", COMPRESS_PATH);
 	}
     }
 
-    ap_snprintf(errfname, sizeof(errfname), "/tmp/%s.%s.%d.errout", hostname,
-		sanitise_filename(diskname), level);
+    ap_snprintf(level_str, sizeof(level_str), "%d", level);
+    errfname = newvstralloc(errfname,
+			    "/tmp",
+			    "/", hostname,
+			    ".", sanitise_filename(diskname),
+			    ".", level_str,
+			    ".errout",
+			    NULL);
     if((errf = fopen(errfname, "w")) == NULL) {
-	ap_snprintf(errstr, sizeof(errstr),
-		    "errfile open \"%s\": %s", errfname, strerror(errno));
+	errstr = newvstralloc(errstr,
+			      "errfile open \"", errfname, "\": ",
+			      strerror(errno),
+			      NULL);
 	goto failed;
     }
 
@@ -862,49 +911,47 @@ int mesgfd, datafd, indexfd, outfd;
 #endif
 
 	if(nfound == 0)  {
-	    strncpy(errstr, "data timeout", sizeof(errstr)-1);
-	    errstr[sizeof(errstr)-1] = '\0';
+	    errstr = newstralloc(errstr, "data timeout");
 	    goto failed;
 	}
 	if(nfound == -1) {
-	    ap_snprintf(errstr, sizeof(errstr),  "select: %s", strerror(errno));
+	    errstr = newstralloc2(errstr, "select: ", strerror(errno));
 	    goto failed;
 	}
 
 	/* read/write any data */
 
-	if(FD_ISSET(datafd, &selectset)) {
+	if(datafd >= 0 && FD_ISSET(datafd, &selectset)) {
 	    size1 = read(datafd, dataptr, spaceleft);
 	    switch(size1) {
 	    case -1:
-		ap_snprintf(errstr, sizeof(errstr),
-			    "data read: %s", strerror(errno));
+		errstr = newstralloc2(errstr, "data read: ", strerror(errno));
 		goto failed;
 	    case 0:
 		if(update_dataptr(outfd, size1)) return;
 		eof1 = 1;
-		close(datafd);
 		FD_CLR(datafd, &readset);
+		aclose(datafd);
 		break;
 	    default:
 		if(update_dataptr(outfd, size1)) return;
 	    }
 	}
 
-	if(FD_ISSET(mesgfd, &selectset)) {
-	    size2 = read(mesgfd, mesgbuf, MESGBUF_SIZE);
+	if(mesgfd >= 0 && FD_ISSET(mesgfd, &selectset)) {
+	    size2 = read(mesgfd, mesgbuf, sizeof(mesgbuf)-1);
 	    switch(size2) {
 	    case -1:
-		ap_snprintf(errstr, sizeof(errstr),
-			    "mesg read: %s", strerror(errno));
+		errstr = newstralloc2(errstr, "mesg read: ", strerror(errno));
 		goto failed;
 	    case 0:
 		eof2 = 1;
 		process_dumpeof();
-		close(mesgfd);
 		FD_CLR(mesgfd, &readset);
+		aclose(mesgfd);
 		break;
 	    default:
+		mesgbuf[size2] = '\0';
 		add_msg_data(mesgbuf, size2);
 	    }
 
@@ -926,13 +973,21 @@ int mesgfd, datafd, indexfd, outfd;
     dumpsize -= TAPE_BLOCK_SIZE;	/* don't count the header */
     if (dumpsize < 0) dumpsize = 0;	/* XXX - maybe this should be fatal? */
 
-    ap_snprintf(errstr, sizeof(errstr), "sec %s kb %ld kps %3.1f orig-kb %ld",
-		walltime_str(runtime), dumpsize,
-		dumpsize/dumptime, origsize);
+    ap_snprintf(kb_str, sizeof(kb_str), "%ld", dumpsize);
+    ap_snprintf(kps_str, sizeof(kps_str),
+		"%3.1f",
+		dumptime ? dumpsize / dumptime : 0.0);
+    ap_snprintf(orig_kb_str, sizeof(orig_kb_str), "%ld", origsize);
+    errstr = newvstralloc(errstr,
+			  "sec ", walltime_str(runtime),
+			  " ", "kb ", kb_str,
+			  " ", "kps ", kps_str,
+			  " ", "orig-kb ", orig_kb_str,
+			  NULL);
     putresult("DONE %s %ld %ld %ld %s\n", handle, origsize, dumpsize,
 	      (long)(dumptime+0.5), squotef("[%s]", errstr));
 
-    fclose(errf);
+    afclose(errf);
 
     switch(dump_result) {
     case 0:
@@ -951,14 +1006,19 @@ int mesgfd, datafd, indexfd, outfd;
 
     unlink(errfname);
 
-    if (indexfile[0]) {
-	char tmpname[1024];
+    if (indexfile) {
+	char *tmpname;
+	int len;
 
-	strncpy(tmpname, indexfile, sizeof(tmpname)-1);
-	tmpname[sizeof(tmpname)-1] = '\0';
-	indexfile[strlen(indexfile)-4] = '\0';
+	if((len = strlen(indexfile)) < 4) {
+	    errstr = newstralloc2(errstr, "bad indexfile name: ", indexfile);
+	    goto log_failed;
+	}
+	tmpname = stralloc(indexfile);
+	indexfile[len-4] = '\0';
 	unlink(indexfile);
 	rename(tmpname, indexfile);
+	afree(tmpname);
     }
 
     return;
@@ -966,7 +1026,10 @@ int mesgfd, datafd, indexfd, outfd;
 failed:
     putresult("FAILED %s %s\n", handle, squotef("[%s]", errstr));
 
-    fclose(errf);
+    afclose(errf);
+    /* fall through to ... */
+
+ log_failed:
 
     log_start_multiline();
     log(L_FAIL, "%s %s %d [%s]", hostname, diskname, level, errstr);
@@ -975,7 +1038,7 @@ failed:
 
     unlink(errfname);
 
-    if (indexfile[0])
+    if (indexfile)
 	unlink(indexfile);
 
     return;
@@ -990,22 +1053,32 @@ void sendbackup_response(p, pkt)
 proto_t *p;
 pkt_t *pkt;
 {
-    char optionstr[512];
+    char *optionstr = NULL;
     int data_port, mesg_port, index_port;
+    char *s;
+    int ch;
+    char *nl;
 
     if(p->state == S_FAILED) {
 	if(pkt == NULL) {
-	    ap_snprintf(errstr, sizeof(errstr), "[request timeout]");
+	    errstr = newstralloc(errstr, "[request timeout]");
 	    response_error = 1;
 	    return;
 	}
 	else {
-/*	    fprintf(stderr, "got nak response:\n----\n%s----\n\n", pkt->body); */
-	    if(sscanf(pkt->body, "ERROR %[^\n]", errstr) != 1) {
-/*		fprintf(stderr, "dumper: got strange NAK: %s", pkt->body); */
-		strncpy(errstr, "[request NAK]", sizeof(errstr)-1);
-		errstr[sizeof(errstr)-1] = '\0';
+/*	    fprintf(stderr, "got nak response:\n----\n%s----\n\n", pkt->body);*/
+#define sc "ERROR"
+	    if(strncmp(pkt->body, sc, sizeof(sc)-1) != 0) {
+		goto request_NAK;
 	    }
+	    s = pkt->body+sizeof(sc)-1;
+	    ch = *s++;
+#undef sc
+	    skip_whitespace(s, ch);
+	    if(ch == '\0') {
+		goto request_NAK;
+	    }
+	    errstr = newvstralloc(errstr, s - 1, NULL);
 	    response_error = 2;
 	    return;
 	}
@@ -1015,44 +1088,147 @@ pkt_t *pkt;
 
 #ifdef KRB4_SECURITY
     if(krb4_auth && !check_mutual_authenticator(&cred.session, pkt, p)) {
-	ap_snprintf(errstr, sizeof(errstr), "[mutual-authentication failed]");
+	errstr = newalloc(errstr, "[mutual-authentication failed]");
 	response_error = 2;
 	return;
     }
 #endif
 
-    if(!strncmp(pkt->body, "ERROR", 5)) {
+#define sc "ERROR"
+    if(strncmp(pkt->body, sc, sizeof(sc)-1) == 0) {
 	/* this is an error response packet */
-	if(sscanf(pkt->body, "ERROR %[^\n]", errstr) != 1)
-	    ap_snprintf(errstr, sizeof(errstr), "[bogus error packet]");
+	s = pkt->body+sizeof(sc)-1;
+	ch = *s++;
+#undef sc
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    goto bogus_error_packet;
+	}
+	errstr = newstralloc(errstr, s - 1);
 	response_error = 2;
 	return;
     }
 
-    if(sscanf(pkt->body,
-	      "CONNECT DATA %d MESG %d INDEX %d\nOPTIONS %[^\n]\n",
-	      &data_port, &mesg_port, &index_port, optionstr) != 4) {
-	ap_snprintf(errstr, sizeof(errstr), "[parse of reply message failed]");
-	response_error = 2;
-	return;
+    if((nl = strchr(pkt->body, '\n')) == NULL) {
+	goto parse_of_reply_message_failed;
+    }
+    *nl = '\0';
+
+    s = pkt->body;
+    ch = *s++;
+
+    skip_whitespace(s, ch);
+#define sc "CONNECT"
+    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	goto parse_of_reply_message_failed;
+    }
+    s += sizeof(sc)-1;
+    ch = s[-1];
+#undef sc
+
+    skip_whitespace(s, ch);
+#define sc "DATA"
+    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	goto parse_of_reply_message_failed;
+    }
+    s += sizeof(sc)-1;
+    ch = s[-1];
+#undef sc
+
+    skip_whitespace(s, ch);
+    if(ch == '\0' || sscanf(s - 1, "%d", &data_port) != 1) {
+	goto parse_of_reply_message_failed;
+    }
+    skip_integer(s, ch);
+
+    skip_whitespace(s, ch);
+#define sc "MESG"
+    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	goto parse_of_reply_message_failed;
+    }
+    s += sizeof(sc)-1;
+    ch = s[-1];
+#undef sc
+
+    skip_whitespace(s, ch);
+    if(ch == '\0' || sscanf(s - 1, "%d", &mesg_port) != 1) {
+	goto parse_of_reply_message_failed;
+    }
+    skip_integer(s, ch);
+
+    skip_whitespace(s, ch);
+#define sc "INDEX"
+    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	goto parse_of_reply_message_failed;
+    }
+    s += sizeof(sc)-1;
+    ch = s[-1];
+#undef sc
+
+    skip_whitespace(s, ch);
+    if(ch == '\0' || sscanf(s - 1, "%d", &index_port) != 1) {
+	goto parse_of_reply_message_failed;
+    }
+    skip_integer(s, ch);
+
+    skip_whitespace(s, ch);
+    if(ch != '\0') {
+	goto parse_of_reply_message_failed;
+    }
+
+    s = nl + 1;
+    ch = *s++;
+    *nl = '\n';
+    nl = NULL;
+
+    skip_whitespace(s, ch);
+#define sc "OPTIONS"
+    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	goto parse_of_reply_message_failed;
+    }
+    s += sizeof(sc)-1;
+    ch = s[-1];
+
+    skip_whitespace(s, ch);
+    if(ch == '\0') {
+	goto parse_of_reply_message_failed;
+    }
+    if ((nl = strchr(s - 1, '\n')) != NULL) {
+	*nl = '\0';
+	if(nl == s - 1) {
+	    goto parse_of_reply_message_failed;
+	}
+    }
+    optionstr = stralloc(s - 1);
+    if(nl) {
+	*nl = '\n';
+	nl = NULL;
     }
 
     datafd = stream_client(hostname, data_port,
 			   DEFAULT_SIZE, DEFAULT_SIZE);
     if(datafd == -1) {
-	ap_snprintf(errstr, sizeof(errstr),
-		    "[could not connect to data port: %s]", strerror(errno));
+	errstr = newvstralloc(errstr,
+			      "[could not connect to data port: ",
+			      strerror(errno),
+			      "]",
+			      NULL);
 	response_error = 1;
+	afree(optionstr);
 	return;
     }
     mesgfd = stream_client(hostname, mesg_port,
 			   DEFAULT_SIZE, DEFAULT_SIZE);
     if(mesgfd == -1) {
-	ap_snprintf(errstr, sizeof(errstr),
-		    "[could not connect to mesg port: %s]", strerror(errno));
-	close(datafd);
-	datafd = -1;
+	errstr = newvstralloc(errstr,
+			      "[could not connect to mesg port: ",
+			      strerror(errno),
+			      "]",
+			      NULL);
+	aclose(datafd);
+	datafd = -1;				/* redundant */
 	response_error = 1;
+	afree(optionstr);
 	return;
     }
 
@@ -1060,13 +1236,16 @@ pkt_t *pkt;
 	indexfd = stream_client(hostname, index_port,
 				DEFAULT_SIZE, DEFAULT_SIZE);
 	if (indexfd == -1) {
-	    ap_snprintf(errstr, sizeof(errstr),
-			"[could not connect to index port: %s]",
-			strerror(errno));
-	    close(datafd);
-	    close(mesgfd);
-	    datafd = mesgfd = -1;
+	    errstr = newvstralloc(errstr,
+				  "[could not connect to index port: ",
+				  strerror(errno),
+				  "]",
+				  NULL);
+	    aclose(datafd);
+	    aclose(mesgfd);
+	    datafd = mesgfd = -1;		/* redundant */
 	    response_error = 1;
+	    afree(optionstr);
 	    return;
 	}
     }
@@ -1075,38 +1254,72 @@ pkt_t *pkt;
 
 #ifdef KRB4_SECURITY
     if(krb4_auth && kerberos_handshake(datafd, cred.session) == 0) {
-	strncpy(errstr, "[mutual authentication in data stream failed]",
-		sizeof(errstr)-1);
-	errstr[sizeof(errstr)-1] = '\0';
-	close(datafd);
-	close(mesgfd);
-	close(indexfd);
+	errstr = newstralloc(errstr,
+			     "[mutual authentication in data stream failed]");
+	aclose(datafd);
+	aclose(mesgfd);
+	aclose(indexfd);
 	response_error = 1;
+	afree(optionstr);
 	return;
     }
     if(krb4_auth && kerberos_handshake(mesgfd, cred.session) == 0) {
-	strncpy(errstr, "[mutual authentication in mesg stream failed]",
-		sizeof(errstr)-1);
-	close(datafd);
-	close(indexfd);
-	close(mesgfd);
+	errstr = newstralloc(errstr,
+			     "[mutual authentication in mesg stream failed]");
+	aclose(datafd);
+	aclose(indexfd);
+	aclose(mesgfd);
 	response_error = 1;
+	afree(optionstr);
 	return;
     }
 #endif
     response_error = 0;
+    afree(optionstr);
+    return;
+
+ request_NAK:
+
+/*  fprintf(stderr, "dumper: got strange NAK: %s", pkt->body); */
+    errstr = newstralloc(errstr, "[request NAK]");
+    response_error = 2;
+    afree(optionstr);
+    return;
+
+ bogus_error_packet:
+
+    errstr = newstralloc(errstr, "[bogus error packet]");
+    response_error = 2;
+    afree(optionstr);
+    return;
+
+ parse_of_reply_message_failed:
+
+    if(nl) *nl = '\n';
+    errstr = newstralloc(errstr, "[parse of reply message failed]");
+    response_error = 2;
+    afree(optionstr);
+    return;
 }
 
 int startup_dump(hostname, disk, level, dumpdate, dumpname, options)
 char *hostname, *disk, *dumpdate, *dumpname, *options;
 int level;
 {
-    char req[8192];
+    char level_string[NUM_STR_SIZE];
+    char rc_str[NUM_STR_SIZE];
+    char *req;
     int rc;
 
-    ap_snprintf(req, sizeof(req),
-"SERVICE sendbackup\nOPTIONS hostname=%s;\n%s %s %d %s OPTIONS %s\n",
-		hostname, progname, disk, level, dumpdate, options);
+    ap_snprintf(level_string, sizeof(level_string), "%d", level);
+    req = vstralloc("SERVICE sendbackup\n",
+		    "OPTIONS ",
+		    "hostname=", hostname, ";",
+		    "\n",
+		    progname, " ", disk, " ", level_string, " ", dumpdate, " ",
+		    "OPTIONS ", options,
+		    "\n",
+		    NULL);
 
     datafd = mesgfd = indexfd = -1;
 
@@ -1130,25 +1343,41 @@ int level;
 		rc = krb_get_cred(CLIENT_HOST_PRINCIPLE, CLIENT_HOST_INSTANCE,
 				  realm, &cred);
 	    if(rc > 0 ) {
-		ap_snprintf(errstr, sizeof(errstr),
-			    "[host %s: krb4 error (krb_get_cred) %d: %s]",
-			    hostname, rc, krb_err_txt[rc]);
+		ap_snprintf(rc_str, sizeof(rc_str), "%d", rc);
+		errstr = newvstralloc(errstr,
+				      "[host ", hostname,
+				      ": krb4 error (krb_get_cred) ",
+				      rc_str,
+				      ": ", krb_err_txt[rc],
+				      NULL);
+		afree(req);
 		return 2;
 	    }
 	}
 	if(rc > 0) {
-	    ap_snprintf(errstr, sizeof(errstr),
-			"[host %s: krb4 error (make_krb_req) %d: %s]",
-			hostname, rc, krb_err_txt[rc]);
+	    ap_snprintf(rc_str, sizeof(rc_str), "%d", rc);
+	    errstr = newvstralloc(errstr,
+				  "[host ", hostname,
+				  ": krb4 error (make_krb_req) ",
+				  rc_str,
+				  ": ", krb_err_txt[rc],
+				  NULL);
+	    afree(req);
 	    return 2;
 	}
     } else
 #endif
 	rc = make_request(hostname, amanda_port, req, NULL,
 			  STARTUP_TIMEOUT, sendbackup_response);
+
+    req = NULL;					/* do not own this any more */
+
     if(rc) {
-	ap_snprintf(errstr, sizeof(errstr),
-		    "[could not resolve name \"%s\": error %d]", hostname, rc);
+	ap_snprintf(rc_str, sizeof(rc_str), "%d", rc);
+	errstr = newvstralloc(errstr,
+			      "[could not resolve name \"", hostname, "\"",
+			      ": error ", rc_str, "]",
+			      NULL);
 	return 2;
     }
     run_protocol();

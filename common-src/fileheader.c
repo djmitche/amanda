@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: fileheader.c,v 1.3 1997/12/17 21:03:38 jrj Exp $
+ * $Id: fileheader.c,v 1.4 1997/12/30 05:24:14 jrj Exp $
  *
  */
 
@@ -40,135 +40,225 @@ dumpfile_t *file;
 }
 
 
-char *eatword(linep)
-char **linep;
-/*
- * Given a pointer into a character string, eatword advances the pointer
- * past the next word (possibly preceeded by whitespace) in the string.
- * The first space after the word is set to '\0'.  A pointer to the start
- * of the word is returned.
- */
-{
-    char *str, *lp;
-
-    lp = *linep;
-
-    while(*lp && isspace(*lp)) lp++;	/* eat leading whitespace */
-
-    str = lp;
-    while(*lp && !isspace(*lp)) lp++;	/* eat word */
-
-    if(*lp) {				/* zero char after word, if needed */
-	*lp = '\0';
-	lp++;
-    }
-    *linep = lp;
-    return str;
-}
-
-
 void parse_file_header(buffer, file, buflen)
 char *buffer;
 dumpfile_t *file;
 int buflen;
 {
     string_t line;
-    char *lp, *bp, *str;
+    char *bp, *str;
     int nchars;
     char *verify;
+    char *s;
+    int ch;
 
     /* isolate first line */
 
     nchars = buflen<sizeof(line)? buflen : sizeof(line) - 1;
-    for(lp=line, bp=buffer; bp < buffer+nchars; bp++, lp++) {
-	*lp = *bp;
-	if(*bp == '\n') {
-	    *lp = '\0';
+    for(s=line, bp=buffer; bp < buffer+nchars; bp++, s++) {
+	ch = *bp;
+	if(ch == '\n') {
+	    *s = '\0';
 	    break;
 	}
+	*s = ch;
     }
-    line[STRMAX-1] = '\0';
-
+    line[sizeof(line)-1] = '\0';
 
     fh_init(file); 
-    lp = line;
-    str = eatword(&lp);
-    if(strcmp(str, "NETDUMP:") && strcmp(str,"AMANDA:")) {
+    s = line;
+    ch = *s++;
+
+    skip_whitespace(s, ch);
+    str = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+
+    if(strcmp(str, "NETDUMP:") != 0 && strcmp(str,"AMANDA:") != 0) {
 	file->type = F_UNKNOWN;
 	return;
     }
-   
-    str = eatword(&lp);
-    if(!strcmp(str, "TAPESTART")) {
-	file->type = F_TAPESTART;
-	verify=eatword(&lp);			/* ignore "DATE" */
-	if(strcmp(verify,"DATE")) {
-	    file->type=F_WEIRD;
-	    return;
-	}
-	strncpy(file->datestamp, eatword(&lp), sizeof(file->datestamp)-1);
-	file->datestamp[sizeof(file->datestamp)-1] = '\0';
-	verify=eatword(&lp);			/* ignore "TAPE" */
-	if(strcmp(verify,"TAPE")) {
-	    file->type=F_WEIRD;
-	    return;
-	}
-	strncpy(file->name, eatword(&lp), sizeof(file->name)-1);
-	file->name[sizeof(file->name)-1] = '\0';
+
+    skip_whitespace(s, ch);
+    if(ch == '\0') {
+	goto weird_header;
     }
-    else if(!strcmp(str, "FILE")) {
+    str = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+
+    if(strcmp(str, "TAPESTART") == 0) {
+	file->type = F_TAPESTART;
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    goto weird_header;
+	}
+	verify = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+	if(strcmp(verify, "DATE") != 0) {
+	    goto weird_header;
+	}
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    goto weird_header;
+	}
+	copy_string(s, ch, file->datestamp, sizeof(file->datestamp), bp);
+	if(bp == NULL) {
+	    goto weird_header;
+	}
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    goto weird_header;
+	}
+	verify = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+	if(strcmp(verify, "TAPE") != 0) {
+	    goto weird_header;
+	}
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    goto weird_header;
+	}
+	copy_string(s, ch, file->name, sizeof(file->name), bp);
+	if(bp == NULL) {
+	    goto weird_header;
+	}
+    } else if(strcmp(str, "FILE") == 0) {
 	file->type = F_DUMPFILE;
-	strncpy(file->datestamp, eatword(&lp), sizeof(file->datestamp)-1);
-	file->datestamp[sizeof(file->datestamp)-1] = '\0';
-	strncpy(file->name, eatword(&lp), sizeof(file->name)-1);
-	file->name[sizeof(file->name)-1] = '\0';
-	strncpy(file->disk, eatword(&lp), sizeof(file->disk)-1);
-	file->disk[sizeof(file->disk)-1] = '\0';
-	verify=eatword(&lp);			/* ignore "lev" */
-	if(strcmp(verify,"lev")) {
-	    file->type=F_WEIRD;
-	    return;
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    goto weird_header;
 	}
-	file->dumplevel = atoi(eatword(&lp));
-	verify=eatword(&lp);			/* ignore "comp" */
-	if(strcmp(verify,"comp")) {
-	    file->type=F_WEIRD;
-	    return;
+	copy_string(s, ch, file->datestamp, sizeof(file->datestamp), bp);
+	if(bp == NULL) {
+	    goto weird_header;
 	}
-	strncpy(file->comp_suffix, eatword(&lp), sizeof(file->comp_suffix)-1);
-	file->comp_suffix[sizeof(file->comp_suffix)-1] = '\0';
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    goto weird_header;
+	}
+	copy_string(s, ch, file->name, sizeof(file->name), bp);
+	if(bp == NULL) {
+	    goto weird_header;
+	}
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    goto weird_header;
+	}
+	copy_string(s, ch, file->disk, sizeof(file->disk), bp);
+	if(bp == NULL) {
+	    goto weird_header;
+	}
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    goto weird_header;
+	}
+	verify = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+	if(strcmp(verify, "lev") != 0) {
+	    goto weird_header;
+	}
+
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf(s - 1, "%d", &file->dumplevel) != 1) {
+	    goto weird_header;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    goto weird_header;
+	}
+	verify = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+	if(strcmp(verify, "comp") != 0) {
+	    goto weird_header;
+	}
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    goto weird_header;
+	}
+	copy_string(s, ch, file->comp_suffix, sizeof(file->comp_suffix), bp);
+	if(bp == NULL) {
+	    goto weird_header;
+	}
+
 	file->compressed = strcmp(file->comp_suffix, "N");
 	/* compatibility with pre-2.2 amanda */
-	if(!strcmp(file->comp_suffix, "C")) {
+	if(strcmp(file->comp_suffix, "C") == 0) {
 	    strncpy(file->comp_suffix, ".Z", sizeof(file->comp_suffix)-1);
 	    file->comp_suffix[sizeof(file->comp_suffix)-1] = '\0';
 	}
-	verify=eatword(&lp);			/* ignore "program" */
-	if(strcmp(verify,"program")) {		/* "program" is optionnal */
-	    return;
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    goto weird_header;
 	}
-	strncpy(file->program, eatword(&lp), sizeof(file->program)-1);
-	file->program[sizeof(file->program)-1] = '\0';
+	verify = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+	if(strcmp(verify, "program") != 0) {
+	    return;				/* "program" is optional */
+	}
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    goto weird_header;
+	}
+	copy_string(s, ch, file->program, sizeof(file->program), bp);
+	if(bp == NULL) {
+	    goto weird_header;
+	}
+
 	if(file->program[0]=='\0') {
 	    strncpy(file->program, "RESTORE", sizeof(file->program)-1);
 	    file->program[sizeof(file->program)-1] = '\0';
 	}
-    }
-    else if(!strcmp(str, "TAPEEND")) {
+    } else if(strcmp(str, "TAPEEND") == 0) {
 	file->type = F_TAPEEND;
-	verify=eatword(&lp);				/* ignore "DATE" */
-	if(strcmp(verify,"DATE")) {
-	    file->type=F_WEIRD;
-	    return;
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    goto weird_header;
 	}
-	strncpy(file->datestamp, eatword(&lp), sizeof(file->datestamp)-1);
-	file->datestamp[sizeof(file->datestamp)-1] = '\0';
+	verify = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+	if(strcmp(verify, "DATE") != 0) {
+	    return;				/* "program" is optional */
+	}
+
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    goto weird_header;
+	}
+	copy_string(s, ch, file->datestamp, sizeof(file->datestamp), bp);
+	if(bp == NULL) {
+	    goto weird_header;
+	}
+    } else {
+	goto weird_header;
     }
-    else {
-	fprintf(stderr, "%s: strange amanda header: \"%s\"\n", pname, line);
-	file->type = F_WEIRD;
-	return;
-    }
+    return;
+
+ weird_header:
+
+    fprintf(stderr, "%s: strange amanda header: \"%s\"\n", pname, line);
+    file->type = F_WEIRD;
+    return;
 }
 
 
@@ -177,7 +267,9 @@ char *buffer;
 dumpfile_t *file;
 int buflen;
 {
-    char line[256];
+    char *line;
+    char number[NUM_STR_SIZE];
+
     memset(buffer,'\0',buflen);
 
     switch (file->type) {
@@ -194,11 +286,20 @@ int buflen;
 		      strncat(buffer,
 			"To restore, position tape at start of file and run:\n",
 			buflen-strlen(buffer));
-		      ap_snprintf(line, sizeof(line),
-				  "\tdd if=<tape> bs=%dk skip=1 |%s %s\n\014\n",
-				  TAPE_BLOCK_SIZE, file->uncompress_cmd,
-				  file->recover_cmd);
+		      ap_snprintf(number, sizeof(number),
+				  "%d", TAPE_BLOCK_SIZE);
+		      line = vstralloc("\t",
+				       "dd",
+				       " if=<tape>",
+				       " bs=", number, "k",
+				       " skip=1",
+				       " |", file->uncompress_cmd,
+				       " ", file->recover_cmd,
+				       "\n",
+				       "\014\n",	/* ?? */
+				       NULL);
 		      strncat(buffer, line, buflen-strlen(buffer));
+		      afree(line);
 		      break;
     case F_TAPEEND  : ap_snprintf(buffer, buflen,
 				  "AMANDA: TAPEEND DATE %s\n\014\n",
@@ -232,7 +333,7 @@ dumpfile_t *file;
 	fprintf(outf, "dumpfile: date %s host %s disk %s lev %d comp %s",
 		file->datestamp, file->name, file->disk, file->dumplevel, 
 		file->comp_suffix);
-	if(strcmp(file->program,"")) 
+	if(*file->program)
 	    printf(" program %s\n",file->program);
 	else
 	    printf("\n");
@@ -247,12 +348,11 @@ dumpfile_t *file;
 int known_compress_type(file)
 dumpfile_t *file;
 {
-    if(!strcmp(file->comp_suffix, ".Z"))
+    if(strcmp(file->comp_suffix, ".Z") == 0)
 	return 1;
 #ifdef HAVE_GZIP
-    if(!strcmp(file->comp_suffix, ".gz"))
+    if(strcmp(file->comp_suffix, ".gz") == 0)
 	return 1;
 #endif
     return 0;
 }
-

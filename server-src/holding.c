@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: holding.c,v 1.6 1997/12/16 18:02:34 jrj Exp $
+ * $Id: holding.c,v 1.7 1997/12/30 05:25:14 jrj Exp $
  *
  * Functions to access holding disk
  */
@@ -34,7 +34,6 @@
 #include "holding.h"
 
 #define MAX_ARGS 10
-#define MAX_LINE 1024
 
 /* define schedule structure */
 
@@ -48,19 +47,12 @@ typedef struct sched_s {
 disklist_t *diskqp;
 
 int result_argc;
-char *result_argv[MAX_ARGS];
-char datestamp[80];
-char taper_program[80], reporter_program[80];
+char *datestamp = NULL;
+char *taper_program, *reporter_program;
 char host[MAX_HOSTNAME_LENGTH], *domain;
 
 /* local functions */
 int main P((int argc, char **argv));
-char get_letter_from_user P((void));
-int select_dir P((void));
-void scan_holdingdisk P((char *diskdir,int verbose));
-void pick_datestamp P((void));
-int get_amanda_names P((char *fname, char *hostname, char *diskname,
-			int *level));
 void get_host_and_domain();
 
 
@@ -159,19 +151,22 @@ char *name;
 
 char get_letter_from_user()
 {
-    char ch;
-    char line[MAX_LINE];
+    char r;
+    int ch;
 
     fflush(stdout); fflush(stderr);
-    if(fgets(line, MAX_LINE, stdin) == NULL) {
+    while((ch = getchar()) != EOF && ch != '\n' && isspace(ch)) {}
+    if(ch == '\n') {
+	ch = '\0';
+    } else if (ch != EOF) {
+	r = ch;
+	if(islower(r)) r = toupper(r);
+	while((ch = getchar()) != EOF && ch != '\n') {}
+    } else {
 	printf("\nGot EOF.  Goodbye.\n");
 	exit(1);
     }
-    /* zap leading whitespace */
-    if(sscanf(line, " %c", &ch) < 1) ch = '\0';	/* no char on line */
-
-    if(islower(ch)) ch = toupper(ch);
-    return ch;
+    return r;
 }
 
 int select_dir()
@@ -182,11 +177,11 @@ int select_dir()
 
     while(1) {
 	puts("\nMultiple Amanda directories, please pick one by letter:");
-	for(dir = dir_list, i = 0; dir != NULL; dir = dir->next, i++)
+	for(dir = dir_list, i = 0; dir != NULL && i < 26; dir = dir->next, i++)
 	    printf("  %c. %s\n", 'A'+i, dir->name);
-	printf("Select a directory to flush [A..%c]: ", 'A' + ndirs - 1);
+	printf("Select a directory to flush [A..%c]: ", 'A' + i - 1);
 	ch = get_letter_from_user();
-	if(ch < 'A' || ch > 'A' + ndirs - 1)
+	if(ch < 'A' || ch > 'A' + i - 1)
 	    printf("That is not a valid answer.  Try again, or ^C to quit.\n");
 	else
 	    return ch - 'A';
@@ -201,7 +196,8 @@ int verbose;
     struct dirent *workdir;
 
     if((topdir = opendir(diskdir)) == NULL) {
-	printf("Warning: could not open holding dir %s: %s\n", diskdir, strerror(errno));
+	printf("Warning: could not open holding dir %s: %s\n",
+	       diskdir, strerror(errno));
 	return;
     }
 
@@ -210,9 +206,9 @@ int verbose;
     printf("Scanning %s...\n", diskdir);
     chdir(diskdir);
     while((workdir = readdir(topdir)) != NULL) {
-	if(!strcmp(workdir->d_name, ".")
-	   || !strcmp(workdir->d_name, "..")
-	   || !strcmp(workdir->d_name, "lost+found"))
+	if(strcmp(workdir->d_name, ".") == 0
+	   || strcmp(workdir->d_name, "..") == 0
+	   || strcmp(workdir->d_name, "lost+found") == 0)
 	    continue;
 
 	if(verbose)
@@ -262,31 +258,95 @@ void pick_datestamp()
     for(dir = dir_list; dir != NULL; dir = dir->next)
 	if(picked-- == 0) break;
 
-    strncpy(datestamp, dir->name, sizeof(datestamp)-1);
-    datestamp[sizeof(datestamp)-1] = '\0';
+    datestamp = newstralloc(datestamp, dir->name);
 }
 
 int get_amanda_names(fname, hostname, diskname, level)
-char *fname, *hostname, *diskname;
+char *fname, **hostname, **diskname;
 int *level;
 {
-    char buffer[TAPE_BLOCK_BYTES], datestamp[80];
+    char buffer[TAPE_BLOCK_BYTES], *datestamp = NULL;
     int fd;
+    char *s, *fp;
+    int ch;
+
+    *hostname = *diskname = NULL;
 
     if((fd = open(fname, O_RDONLY)) == -1)
 	return 1;
 
     if(read(fd, buffer, sizeof(buffer)) != sizeof(buffer)) {
-	close(fd);
+	aclose(fd);
 	return 1;
     }
 
-    if(sscanf(buffer, "AMANDA: FILE %s %s %s lev %d",
-	    datestamp, hostname, diskname, level) != 4) {
-	close(fd);
+    s = buffer;
+    ch = *s++;
+
+    skip_whitespace(s, ch);
+#define sc "AMANDA: FILE"
+    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	aclose(fd);
+	return 1;
+    }
+    s += sizeof(sc)-1;
+    ch = s[-1];
+#undef sc
+
+    skip_whitespace(s, ch);
+    if(ch == '\0') {
+	aclose(fd);
+	return 1;
+    }
+    fp = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    datestamp = stralloc(fp);
+    s[-1] = ch;
+
+    skip_whitespace(s, ch);
+    if(ch == '\0') {
+	aclose(fd);
+	afree(datestamp);
+	return 1;
+    }
+    fp = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    *hostname = stralloc(fp);
+    s[-1] = ch;
+
+    skip_whitespace(s, ch);
+    if(ch == '\0') {
+	aclose(fd);
+	afree(datestamp);
+	return 1;
+    }
+    fp = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    *diskname = stralloc(fp);
+    s[-1] = ch;
+
+    skip_whitespace(s, ch);
+#define sc "lev"
+    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	aclose(fd);
+	afree(datestamp);
+	return 1;
+    }
+    s += sizeof(sc)-1;
+    ch = s[-1];
+#undef sc
+
+    skip_whitespace(s, ch);
+    if(ch == '\0' || sscanf(s - 1, "%d", level) != 1) {
+	aclose(fd);
+	afree(datestamp);
 	return 1;
     }
 
-    close(fd);
+    aclose(fd);
+    afree(datestamp);
     return 0;
 }

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.7 1997/12/16 18:02:37 jrj Exp $
+ * $Id: logfile.c,v 1.8 1997/12/30 05:25:20 jrj Exp $
  *
  * common log file writing routine
  */
@@ -45,6 +45,15 @@ char *logtype_str[] = {
     "MARKER",					  /* marker for reporter */
     "CONT"				   /* continuation line; special */
 };
+
+char *program_str[] = {
+    "UNKNOWN", "planner", "driver", "reporter", "dumper", "taper", "amflush"
+};
+
+int curlinenum;
+logtype_t curlog;
+program_t curprog;
+char *curstr;
 
 int multiline = -1;
 static int logfd = -1;
@@ -73,8 +82,10 @@ arglist_function(void log, logtype_t, typ)
     va_list argp;
     char *format;
     extern char *pname;
-    int rc, len, saved_errout;
-    char linebuf[1024];
+    int rc, saved_errout;
+    char *leader;
+    char linebuf[STR_SIZE];
+    int l, n, s;
 
 
     /* format error message */
@@ -82,22 +93,16 @@ arglist_function(void log, logtype_t, typ)
     if((int)typ <= (int)L_BOGUS || (int)typ > (int)L_MARKER) typ = L_BOGUS;
 
     if(multiline > 0) {
-	strncpy(linebuf, "  ", sizeof(linebuf)-1);	/* continuation line */
-	linebuf[sizeof(linebuf)-1] = '\0';
+	leader = stralloc("  ");		/* continuation line */
     } else {
-	ap_snprintf(linebuf, sizeof(linebuf),
-		    "%s %s ", logtype_str[(int)typ], pname);
+	leader = vstralloc(logtype_str[(int)typ], " ", pname, " ", NULL);
     }
 
-    len = strlen(linebuf);
     arglist_start(argp, typ);
     format = arglist_val(argp, char *);
-    ap_vsnprintf(linebuf+len, sizeof(linebuf)-len, format, argp);
+    ap_vsnprintf(linebuf, sizeof(linebuf)-1, format, argp);
+						/* -1 to allow for '\n' */
     arglist_end(argp);
-
-    len = strlen(linebuf);
-    linebuf[len++] = '\n';
-    linebuf[len]   = '\0';
 
     /* avoid recursive call from error() */
 
@@ -108,8 +113,23 @@ arglist_function(void log, logtype_t, typ)
 
     if(multiline == -1) open_log();
 
-    if((rc = write(logfd, linebuf, len)) < len)
-	error("short write to log file: %s", strerror(errno));
+    for(l = 0, n = strlen(leader); l < n; l += s) {
+	if((s = write(logfd, leader + l, n - l)) < 0) {
+	    error("log file write error: %s", strerror(errno));
+	}
+    }
+
+    afree(leader);
+
+    n = strlen(linebuf);
+    if(n == 0 || linebuf[n-1] != '\n') linebuf[n++] = '\n';
+    linebuf[n] = '\0';
+
+    for(l = 0; l < n; l += s) {
+	if((s = write(logfd, linebuf + l, n - l)) < 0) {
+	    error("log file write error: %s", strerror(errno));
+	}
+    }
 
     if(multiline != -1) multiline++;
     else close_log();
@@ -137,17 +157,23 @@ void log_end_multiline()
 void log_rename(datestamp)
 char *datestamp;
 {
-    char fname[1024];
+    char *fname = NULL;
+    char seq_str[NUM_STR_SIZE];
     unsigned int seq;
     struct stat statbuf;
 
     for(seq = 0; 1; seq++) {	/* if you've got MAXINT files in your dir... */
-	ap_snprintf(fname, sizeof(fname),
-		    "%s.%s.%d", getconf_str(CNF_LOGFILE), datestamp, seq);
+	ap_snprintf(seq_str, sizeof(seq_str), "%d", seq);
+	fname = newvstralloc(fname,
+			     getconf_str(CNF_LOGFILE),
+			     ".", datestamp,
+			     ".", seq_str,
+			     NULL);
 	if(stat(fname, &statbuf) == -1 && errno == ENOENT) break;
     }
     if(rename(getconf_str(CNF_LOGFILE), fname) == -1)
 	error("could not rename log file to `%s': %s", fname, strerror(errno));
+    afree(fname);
 }
 
 
@@ -170,4 +196,60 @@ static void close_log()
 	      strerror(errno));
     if(close(logfd) == -1)
 	error("close log file: %s", strerror(errno));
+    logfd = -1;
+}
+
+
+int get_logline(logf)
+FILE *logf;
+{
+    static char *logline = NULL;
+    char *logstr, *progstr;
+    char *s;
+    int ch;
+
+    afree(logline);
+    if((logline = agets(logf)) == NULL) return 0;
+    curlinenum++;
+    s = logline;
+    ch = *s++;
+
+    /* continuation lines are special */
+
+    if(logline[0] == ' ' && logline[1] == ' ') {
+	curlog = L_CONT;
+	/* curprog stays the same */
+	skip_whitespace(s, ch);
+	curstr = s-1;
+	return 1;
+    }
+
+    /* isolate logtype field */
+
+    skip_whitespace(s, ch);
+    logstr = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+
+    /* isolate program name field */
+
+    skip_whitespace(s, ch);
+    progstr = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+
+    /* rest of line is logtype dependent string */
+
+    skip_whitespace(s, ch);
+    curstr = s - 1;
+
+    /* lookup strings */
+
+    for(curlog = L_MARKER; curlog != L_BOGUS; curlog--)
+	if(strcmp(logtype_str[curlog], logstr) == 0) break;
+
+    for(curprog = P_LAST; curprog != P_UNKNOWN; curprog--)
+	if(strcmp(program_str[curprog], progstr) == 0) break;
+
+    return 1;
 }

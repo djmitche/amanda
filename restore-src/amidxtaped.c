@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: amidxtaped.c,v 1.8 1997/12/16 17:59:50 jrj Exp $
+/* $Id: amidxtaped.c,v 1.9 1997/12/30 05:24:46 jrj Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -36,48 +36,58 @@
 #include "amanda.h"
 #include "version.h"
 
-#define BUF_LEN 1024
 char *pname = "amidxtaped";
 
+static char *get_client_line P((void));
+
 /* get a line from client - line terminated by \r\n */
-void get_client_line(buf, len)
-char *buf;
-int len;
+static char *
+get_client_line()
 {
-    int i, j;
-    
-    for (j = 0; j < len; j++)
-    {
-	if ((i = getchar()) == EOF)
-	{
-	    dbprintf(("EOF received\n"));
+    static char *line = NULL;
+    char *part = NULL;
+    int len;
+
+    afree(line);
+    while(1) {
+	if((part = agets(stdin)) == NULL) {
+	    if(errno != 0) {
+		dbprintf(("read error: %s\n", strerror(errno)));
+	    } else {
+		dbprintf(("EOF reached\n"));
+	    }
+	    if(line) {
+		dbprintf(("unprocessed input:\n"));
+		dbprintf(("-----\n"));
+		dbprintf(("%s\n", line));
+		dbprintf(("-----\n"));
+	    }
+	    afree(line);
+	    afree(part);
 	    dbclose();
-	    exit(1);		/* they hung up? */
+	    exit(1);
+	    /* NOTREACHED */
 	}
-	
-	if ((char)i == '\r') 
-	{
-	    if ((i = getchar()) == EOF)
-	    {
-		dbprintf(("EOF received\n"));
-		dbclose();
-		exit(1);		/* they hung up? */
-	    }
-	    if ((char)i == '\n')
-	    {
-		buf[j] = '\0';
-		dbprintf(("> %s\n", buf));
-		return;
-	    }
+	if(line) {
+	    strappend(line, part);
+	    afree(part);
+	} else {
+	    line = part;
+	    part = NULL;
 	}
-
-	buf[j] = (char)i;
+	if((len = strlen(line)) > 0 && line[len-1] == '\r') {
+	    line[len-1] = '\0';		/* zap the '\r' */
+	    break;
+	}
+	/*
+	 * Hmmm.  We got a "line" from areads(), which means it saw
+	 * a '\n' (or EOF, etc), but there was not a '\r' before it.
+	 * Put a '\n' back in the buffer and loop for more.
+	 */
+	strappend(line, "\n");
     }
-
-    dbprintf(("Buffer overflow in get_client_line()\n"));
-    dbclose();
-    exit(1);
-    /*NOT REACHED*/
+    dbprintf(("> %s\n", line));
+    return line;
 }
 
 int main(argc, argv)
@@ -90,13 +100,13 @@ char **argv;
 #endif	/* FORCE_USERID */
     int amrestore_nargs;
     char **amrestore_args;
-    char buf[BUF_LEN];
+    char *buf = NULL;
     int i;
-    char amrestore_path[BUF_LEN];
+    char *amrestore_path;
     pid_t pid;
     int isafile;
     struct stat stat_tape;
-    char tapename[BUF_LEN];
+    char *tapename;
 
 #ifdef FORCE_USERID
 
@@ -129,9 +139,10 @@ char **argv;
 	return 1;
     }
 #endif
-    
+
     /* get the number of arguments */
-    get_client_line(buf, BUF_LEN);
+    afree(buf);
+    buf = get_client_line();
     amrestore_nargs = atoi(buf);
     dbprintf(("amrestore_nargs=%d\n", amrestore_nargs));
 
@@ -143,30 +154,23 @@ char **argv;
 	return 1;
     }
 
-    if ((amrestore_args[0] = (char *)malloc(BUF_LEN)) == NULL)
-    {
-	dbprintf(("Couldn't malloc amrestore_args[0]\n"));
-	dbclose();
-	return 1;
-    }
-    strncpy(amrestore_args[0], "amrestore", BUF_LEN-1);
-    amrestore_args[0][BUF_LEN-1] = '\0';
+    amrestore_args[0] = "amrestore";
 
     for (i = 1; i <= amrestore_nargs; i++)
     {
-	if ((amrestore_args[i] = (char *)malloc(BUF_LEN)) == NULL)
+	if ((amrestore_args[i] = (char *)malloc(STR_SIZE)) == NULL)
 	{
 	    dbprintf(("Couldn't malloc amrestore_args[%d]\n", i));
 	    dbclose();
 	    return 1;
 	}
-	get_client_line(amrestore_args[i], BUF_LEN);
+	afree(buf);
+	buf = get_client_line();
     }
     amrestore_args[amrestore_nargs+1] = NULL;
 
-    ap_snprintf(amrestore_path, sizeof(amrestore_path),
-		"%s/%s", sbindir, "amrestore");
-    
+    amrestore_path = vstralloc(sbindir, "/", "amrestore", NULL);
+
     /* so got all the arguments, now ready to execv */
     dbprintf(("Ready to execv amrestore with:\n"));
     dbprintf(("path = %s\n", amrestore_path));
@@ -185,11 +189,11 @@ char **argv;
 	return 1;
 	/*NOT REACHED*/
     }
-    
+
     /* this is the parent */
     if (pid == -1)
     {
-	dbprintf(("Error forking child\n"));
+	dbprintf(("Error forking child: %s\n", strerror(errno)));
 	dbclose();
 	return 1;
     }
@@ -209,7 +213,7 @@ char **argv;
        tape if we can so that a retry starts from the correct place */
     if (WIFEXITED(i) != 0)
     {
-	
+
 	dbprintf(("amidxtaped: amrestore terminated normally with status: %d\n",
 		  WEXITSTATUS(i)));
     }
@@ -217,7 +221,7 @@ char **argv;
     {
 	dbprintf(("amidxtaped: amrestore terminated abnormally.\n"));
     }
-    
+
     /* rewind tape */
     /* the first non-option argument is the tape device */
     for (i = 1; i <= amrestore_nargs; i++)
@@ -230,22 +234,27 @@ char **argv;
 	return 1;
     }
 
-    strncpy(tapename, amrestore_args[i], sizeof(tapename)-1);
-    tapename[sizeof(tapename)-1] = '\0';
+    tapename = stralloc(amrestore_args[i]);
     if (stat(tapename, &stat_tape) != 0)
       error("could not stat %s", tapename);
     isafile = S_ISREG((stat_tape.st_mode));
     if (!isafile) {
-	ap_snprintf(buf, sizeof(buf), "mt %s %s rewind",
+	char *cmd;
+
+	cmd = vstralloc("mt",
 #ifdef MT_FILE_FLAG
-		    MT_FILE_FLAG,
+			" ", MT_FILE_FLAG,
 #else
-		    "-f",
+			" -f",
 #endif
-		    tapename);
-	dbprintf(("Rewinding tape: %s\n", buf));
-	system(buf);
+			" ", tapename,
+			"rewind",
+			NULL);
+	dbprintf(("Rewinding tape: %s\n", cmd));
+	system(cmd);
+	afree(cmd);
     }
+    afree(tapename);
     dbclose();
     return 0;
 }

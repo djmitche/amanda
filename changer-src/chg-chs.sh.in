@@ -184,10 +184,13 @@ case "$command" in
 	last)
 		newslot=$lastslot
 		;;
-	next)
+	next|advance)
 		newslot=`expr $curslot + 1`
 		if [ $newslot -gt $lastslot ]; then
 			newslot=$firstslot
+		fi
+		if [ $slotparm = advance ]; then
+			loadslot=0
 		fi
 		;;
 	prev)
@@ -209,7 +212,7 @@ esac
 
 
 if [ $usage -eq 1 ]; then
-	echo "<none> usage: $pname {-reset | -slot [<slot-number>|current|next|prev]}"
+	echo "<none> usage: $pname {-reset | -slot [<slot-number>|current|next|prev|advance]}"
 	exit 2
 fi
 
@@ -331,6 +334,10 @@ echo curloaded $curloaded			   >> $ourstate
 if [ $slotempty -eq 1 ]; then
 	echo "$newslot slot is empty"
 	exit 1
+fi
+
+if [ $command = -slot -a $slotparm = advance ]; then
+	device=/dev/null
 fi
 
 echo $newslot $device

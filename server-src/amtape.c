@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtape.c,v 1.9 1997/12/17 21:03:45 jrj Exp $
+ * $Id: amtape.c,v 1.10 1997/12/30 05:24:57 jrj Exp $
  *
  * tape changer interface program
  */
@@ -79,7 +79,7 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    char confdir[256];
+    char *confdir;
     char *confname;
     char *argv0 = argv[0];
 
@@ -89,7 +89,7 @@ char **argv;
 
     confname = argv[1];
 
-    ap_snprintf(confdir, sizeof(confdir), "%s/%s", CONFIG_DIR, confname);
+    confdir = vstralloc(CONFIG_DIR, "/", confname, NULL);
     if(chdir(confdir) != 0)
 	error("could not cd to confdir %s: %s", confdir, strerror(errno));
 
@@ -102,13 +102,13 @@ char **argv;
     /* switch on command name */
 
     argc -= 2; argv += 2;
-    if(!strcmp(argv[0], "reset")) reset_changer(argc, argv);
-    else if(!strcmp(argv[0], "eject")) eject_tape(argc, argv);
-    else if(!strcmp(argv[0], "slot")) load_slot(argc, argv);
-    else if(!strcmp(argv[0], "label")) load_label(argc, argv);
-    else if(!strcmp(argv[0], "current"))  show_current(argc, argv);
-    else if(!strcmp(argv[0], "show"))  show_slots(argc, argv);
-    else if(!strcmp(argv[0], "taper")) taper_scan(argc, argv);
+    if(strcmp(argv[0], "reset") == 0) reset_changer(argc, argv);
+    else if(strcmp(argv[0], "eject") == 0) eject_tape(argc, argv);
+    else if(strcmp(argv[0], "slot") == 0) load_slot(argc, argv);
+    else if(strcmp(argv[0], "label") == 0) load_label(argc, argv);
+    else if(strcmp(argv[0], "current") == 0)  show_current(argc, argv);
+    else if(strcmp(argv[0], "show") == 0)  show_slots(argc, argv);
+    else if(strcmp(argv[0], "taper") == 0) taper_scan(argc, argv);
     else {
 	fprintf(stderr, "%s: unknown command \"%s\"\n", argv0, argv[0]);
 	usage();
@@ -122,8 +122,9 @@ void reset_changer(argc, argv)
 int argc;
 char **argv;
 {
-    char slotstr[256];
-    switch(changer_reset(slotstr)) {
+    char *slotstr = NULL;
+
+    switch(changer_reset(&slotstr)) {
     case 0:
 	fprintf(stderr, "%s: changer is reset, slot %s is loaded.\n",
 		pname, slotstr);
@@ -135,7 +136,7 @@ char **argv;
     default:
 	error("could not reset changer: %s", changer_resultstr);
     }
-
+    afree(slotstr);
 }
 
 
@@ -144,13 +145,15 @@ void eject_tape(argc, argv)
 int argc;
 char **argv;
 {
-    char slotstr[256];
+    char *slotstr = NULL;
 
-    if(changer_eject(slotstr) == 0)
+    if(changer_eject(&slotstr) == 0) {
 	fprintf(stderr, "%s: slot %s is ejected.\n", pname, slotstr);
-    else
+    } else {
 	fprintf(stderr, "%s: slot %s not ejected: %s\n",
-		pname, slotstr, changer_resultstr);
+		pname, slotstr ? slotstr : "??", changer_resultstr);
+    }
+    afree(slotstr);
 }
 
 
@@ -160,24 +163,27 @@ void load_slot(argc, argv)
 int argc;
 char **argv;
 {
-    char slotstr[1024], devicename[1024];
+    char *slotstr = NULL, *devicename;
 
     if(argc != 2)
 	usage();
 
-    if(changer_loadslot(argv[1], slotstr, devicename))
+    if(changer_loadslot(argv[1], &slotstr, &devicename)) {
 	error("could not load slot %s: %s", slotstr, changer_resultstr);
+    }
 
     fprintf(stderr, "%s: changed to slot %s on %s\n",
 	    pname, slotstr, devicename);
+    afree(slotstr);
+    afree(devicename);
 }
 
 
 /* ---------------------------- */
 
 int nslots, backwards, found, got_match, tapedays;
-extern char datestamp[80];
-char label[80], first_match_label[64], first_match[256];
+extern char *datestamp;
+char *label = NULL, *first_match_label = NULL, *first_match = NULL;
 char *searchlabel, *labelstr;
 tape_t *tp;
 
@@ -203,10 +209,8 @@ char *device;
     if(rc > 1)
 	error("could not load slot %s: %s", slotstr, changer_resultstr);
     else if(rc == 1)
-	fprintf(stderr, "%s: slot %s: %s\n", pname, slotstr,changer_resultstr);
-    else if((errstr = tape_rdlabel(device,
-				   datestamp, sizeof(datestamp),
-				   label, sizeof(label))) != NULL)
+	fprintf(stderr, "%s: slot %s: %s\n", pname, slotstr, changer_resultstr);
+    else if((errstr = tape_rdlabel(device, &datestamp, &label)) != NULL)
 	fprintf(stderr, "%s: slot %s: %s\n", pname, slotstr, errstr);
     else {
 	fprintf(stderr, "%s: slot %s: date %-8s label %s",
@@ -270,9 +274,7 @@ char *slotstr, *device;
 	error("could not load slot %s: %s", slotstr, changer_resultstr);
     else if(rc == 1)
 	fprintf(stderr, "slot %s: %s\n", slotstr, changer_resultstr);
-    else if((errstr = tape_rdlabel(device,
-				   datestamp, sizeof(datestamp),
-				   label, sizeof(label))) != NULL)
+    else if((errstr = tape_rdlabel(device, &datestamp, &label)) != NULL)
 	fprintf(stderr, "slot %s: %s\n", slotstr, errstr);
     else {
 	fprintf(stderr, "slot %s: date %-8s label %s\n",
@@ -314,17 +316,15 @@ char *device;
     if(rc == 2)
 	error("could not load slot %s: %s", slotstr, changer_resultstr);
     else if(rc == 1)
-	fprintf(stderr, "%s: slot %s: %s\n", pname, slotstr,changer_resultstr);
+	fprintf(stderr, "%s: slot %s: %s\n", pname, slotstr, changer_resultstr);
     else {
-	if((errstr = tape_rdlabel(device,
-				  datestamp, sizeof(datestamp),
-				  label, sizeof(label))) != NULL)
+	if((errstr = tape_rdlabel(device, &datestamp, &label)) != NULL) {
 	    fprintf(stderr, "%s: slot %s: %s\n", pname, slotstr, errstr);
-	else {
+	} else {
 	    /* got an amanda tape */
 	    fprintf(stderr, "%s: slot %s: date %-8s label %s",
 		    pname, slotstr, datestamp, label);
-	    if(searchlabel != NULL && !strcmp(label, searchlabel)) {
+	    if(searchlabel != NULL && strcmp(label, searchlabel) == 0) {
 		/* it's the one we are looking for, stop here */
 		fprintf(stderr, " (exact label match)\n");
 		found = 1;
@@ -342,11 +342,8 @@ char *device;
 		    fprintf(stderr, " (labelstr match)\n");
 		else {
 		    got_match = 1;
-		    strncpy(first_match, slotstr, sizeof(first_match)-1);
-		    first_match[sizeof(first_match)-1] = '\0';
-		    strncpy(first_match_label, label,
-			    sizeof(first_match_label)-1);
-		    first_match_label[sizeof(first_match_label)-1] = '\0';
+		    first_match = newstralloc(first_match, slotstr);
+		    first_match_label = newstralloc(first_match_label, label);
 		    fprintf(stderr, " (first labelstr match)\n");
 		    if(!backwards || !searchlabel) {
 			found = 2;
@@ -363,7 +360,7 @@ void taper_scan(argc, argv)
 int argc;
 char **argv;
 {
-    char slotstr[32], device[1024];
+    char *slotstr = NULL, *device;
 
     if(read_tapelist(getconf_str(CNF_TAPELIST)))
 	error("could not load \"%s\"\n", getconf_str(CNF_TAPELIST));
@@ -394,12 +391,14 @@ char **argv;
 		"%s: %s not found, going back to first labelstr match %s\n",
 		pname, searchlabel, first_match_label);
 	searchlabel = first_match_label;
-	if(changer_loadslot(first_match, slotstr, device) == 0)
+	if(changer_loadslot(first_match, &slotstr, &device) == 0) {
 	    found = 1;
-	else {
+	} else {
 	    fprintf(stderr, "%s: could not load labelstr match in slot %s: %s\n",
 		    pname, first_match, changer_resultstr);
 	}
+	afree(device);
+	afree(slotstr);
     }
     else if(!found) {
 	fprintf(stderr, "%s: could not find ", pname);

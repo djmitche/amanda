@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.h,v 1.6 1997/12/17 21:03:50 jrj Exp $
+ * $Id: tapeio.h,v 1.7 1997/12/30 05:25:30 jrj Exp $
  *
  * interface for tapeio.c
  */
@@ -44,10 +44,8 @@ void tapefd_resetofs P((int tapefd));
 int tapefd_read P((int tapefd, void *buffer, int count));
 int tapefd_write P((int tapefd, void *buffer, int count));
 
-char *tapefd_rdlabel P((int tapefd,
-			char *datestamp, unsigned datestampsize,
-			char *label, unsigned bufsize));
-char *tapefd_wrlabel P((int tapefd, char *datestamp, char *label));
+char *tapefd_rdlabel P((int tapefd, char **datestamp, char **label));
+char *tapefd_wrlabel P((int tapefd, char  *datestamp, char  *label));
 char *tapefd_wrendmark P((int tapefd, char *datestamp));
 
 int tapefd_eof P((int tapefd));		/* just used in tapeio-test */
@@ -55,10 +53,8 @@ int tapefd_close P((int tapefd));
 
 char *tape_rewind P((char *dev));
 char *tape_fsf P((char *dev, int count));
-char *tape_rdlabel P((char *dev,
-		      char *datestamp, unsigned datestampsize,
-		      char *label, unsigned bufsize));
-char *tape_wrlabel P((char *dev, char *datestamp, char *label));
+char *tape_rdlabel P((char *dev, char **datestamp, char **label));
+char *tape_wrlabel P((char *dev, char  *datestamp, char  *label));
 char *tape_wrendmark P((char *dev, char *datestamp));
 char *tape_writable P((char *dev));
 

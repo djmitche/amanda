@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.31 1997/12/17 03:13:21 amcore Exp $
+ * $Id: amanda.h,v 1.32 1997/12/30 05:24:07 jrj Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -281,7 +281,7 @@ extern int errno;
  * This if the file descriptor for the debugging output.  If debugging
  * output is not on, then it is set to stderr.
  */
-extern int db_file;
+extern int db_fd;
 
 #ifdef DEBUG_CODE
 #   define dbopen()    debug_open()
@@ -336,13 +336,194 @@ extern int    onerror         P((void (*errf)(void)));
 extern void  *alloc           P((int size));
 extern void  *newalloc        P((void *old, int size));
 extern char  *stralloc        P((char *str));
+extern char  *vstralloc       P((char *str, ...));
+#define	stralloc2(s1,s2)      vstralloc((s1),(s2),NULL)
 extern char  *stralloc2       P((char *str1, char *str2));
 extern char  *newstralloc     P((char *oldstr, char *newstr));
-extern char  *newstralloc2    P((char *oldstr, char *newstr1, char *newstr2));
+extern char  *newvstralloc    P((char *oldstr, char *newstr, ...));
+#define	newstralloc2(p,s1,s2) newvstralloc((p),(s1),(s2),NULL)
 extern char **safe_env        P((void));
 extern char  *validate_regexp P((char *regex));
 extern int    match           P((char *regex, char *str));
 extern time_t unctime         P((char *timestr));
+extern char  *agets	      P((FILE *file));
+extern char  *areads	      P((int fd));
+
+/*
+ * afree(ptr) -- if allocated, release space and set ptr to NULL.
+ *
+ * In general, this should be called instead of just free(), unless
+ * the very next source line sets the pointer to a new value.
+ */
+
+#define	afree(ptr) do {							\
+    if(ptr) {								\
+	free(ptr);							\
+	(ptr) = NULL;							\
+    }									\
+} while(0)
+
+#define strappend(s1,s2) do {						\
+    char *t = stralloc2((s1),(s2));					\
+    afree(s1);								\
+    (s1) = t;								\
+} while(0)
+
+/*
+ * "Safe" close macros.  Close the object then set it to a value that
+ * will cause an error if referenced.
+ *
+ * aclose(fd) -- close a file descriptor and set it to -1.
+ * afclose(f) -- close a stdio file and set it to NULL.
+ * apclose(p) -- close a stdio pipe file and set it to NULL.
+ *
+ * Note: be careful not to do the following:
+ *
+ *  for(fd = low; fd < high; fd++) {
+ *      aclose(fd);
+ *  }
+ *
+ * Since aclose() sets the argument to -1, this will loop forever.
+ */
+
+#define aclose(fd) do {							\
+    assert(fd >= 0);							\
+    close(fd);								\
+    (fd) = -1;								\
+} while(0)
+
+#define afclose(f) do {							\
+    assert(f != NULL);							\
+    fclose(f);								\
+    (f) = NULL;								\
+} while(0)
+
+#define apclose(p) do {							\
+    assert(p != NULL);							\
+    pclose(p);								\
+    (p) = NULL;								\
+} while(0)
+
+/*
+ * Utility string macros.  All assume a variable holds the current
+ * character and the string pointer points to the next character to
+ * be processed.  Typical setup is:
+ *
+ *  s = buffer;
+ *  ch = *s++;
+ *  skip_whitespace(s, ch);
+ *  ...
+ *
+ * If you advance the pointer "by hand" to skip over something, do
+ * it like this:
+ *
+ *  s += some_amount;
+ *  ch = s[-1];
+ *
+ * Note that ch has the character at the end of the just skipped field.
+ * It is often useful to terminate a string, make a copy, then restore
+ * the input like this:
+ *
+ *  skip_whitespace(s, ch);
+ *  fp = s-1;			## save the start
+ *  skip_nonwhitespace(s, ch);	## find the end
+ *  p[-1] = '\0';		## temporary terminate
+ *  field = stralloc(fp);	## make a copy
+ *  p[-1] = ch;			## restore the input
+ *
+ * The scanning macros are:
+ *
+ *  skip_whitespace (ptr, var)
+ *    -- skip whitespace, but stops at a newline
+ *  skip_non_whitespace (ptr, var)
+ *    -- skip non whitespace
+ *  skip_non_whitespace_cs (ptr, var)
+ *    -- skip non whitespace, stop at comment
+ *  skip_integer (ptr, var)
+ *    -- skip an integer field
+ *  skip_line (ptr, var)
+ *    -- skip just past the next newline
+ *
+ * where:
+ *
+ *  ptr -- string pointer
+ *  var -- current character
+ *
+ * These macros copy a non-whitespace field to a new buffer, and should
+ * only be used if dynamic allocation is impossible (fixed size buffers
+ * are asking for trouble):
+ *
+ *  copy_string (ptr, var, field, len, fldptr)
+ *    -- copy a non-whitespace field
+ *  copy_string_cs (ptr, var, field, len, fldptr)
+ *    -- copy a non-whitespace field, stop at comment
+ *
+ * where:
+ *
+ *  ptr -- string pointer
+ *  var -- current character
+ *  field -- area to copy to
+ *  len -- length of area (needs room for null byte)
+ *  fldptr -- work pointer used in move
+ *	      if NULL on exit, the field was too small for the input
+ */
+
+#define	STR_SIZE	1024		/* a generic string buffer size */
+#define	NUM_STR_SIZE	32		/* a generic number buffer size */
+
+#define	skip_whitespace(ptr,c) do {					\
+    while((c) != '\n' && isspace(c)) (c) = *(ptr)++;			\
+} while(0)
+
+#define	skip_non_whitespace(ptr,c) do {					\
+    while((c) != '\0' && !isspace(c)) (c) = *(ptr)++;			\
+} while(0)
+
+#define	skip_non_whitespace_cs(ptr,c) do {				\
+    while((c) != '\0' && (c) != '#' && !isspace(c)) (c) = *(ptr)++;	\
+} while(0)
+
+#define	skip_non_integer(ptr,c) do {					\
+    while((c) != '\0' && !isdigit(c)) (c) = *(ptr)++;			\
+} while(0)
+
+#define	skip_integer(ptr,c) do {					\
+    if((c) == '+' || (c) == '-') (c) = *(ptr)++;			\
+    while(isdigit(c)) (c) = *(ptr)++;					\
+} while(0)
+
+#define	skip_line(ptr,c) do {						\
+    while((c) && (c) != '\n') (c) = *(ptr)++;				\
+    if(c) (c) = *(ptr)++;						\
+} while(0)
+
+#define	copy_string(ptr,c,f,l,fp) do {					\
+    (fp) = (f);								\
+    while((c) != '\0' && !isspace(c)) {					\
+	if((fp) >= (f) + (l) - 1) {					\
+	    *(fp) = '\0';						\
+	    (fp) = NULL;						\
+	    break;							\
+	}								\
+	*(fp)++ = (c);							\
+	(c) = *(ptr)++;							\
+    }									\
+    if(fp) *fp = '\0';							\
+} while(0)
+
+#define	copy_string_cs(ptr,c,f,l,fp) do {				\
+    (fp) = (f);								\
+    while((c) != '\0' && (c) != '#' && !isspace(c)) {			\
+	if((fp) >= (f) + (l) - 1) {					\
+	    *(fp) = '\0';						\
+	    (fp) = NULL;						\
+	    break;							\
+	}								\
+	*(fp)++ = (c);							\
+	(c) = *(ptr)++;							\
+    }									\
+    if(fp) *fp = '\0';							\
+} while(0)
 
 /* from amflock.c */
 extern int    amflock   P((int fd, char *resource));

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: holding.h,v 1.2 1997/11/17 13:06:01 amcore Exp $
+ * $Id: holding.h,v 1.3 1997/12/30 05:25:15 jrj Exp $
  *
  */
 
@@ -53,7 +53,9 @@ char get_letter_from_user P((void));
 int select_dir P((void));
 void scan_holdingdisk P((char *diskdir,int verbose));
 void pick_datestamp P((void));
-int get_amanda_names P((char *fname, char *hostname, char *diskname,
+int get_amanda_names P((char *fname,
+			char **hostname,
+			char **diskname,
 			int *level));
 
 #endif /* HOLDING_H */

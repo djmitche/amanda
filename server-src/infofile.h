@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.h,v 1.5 1997/10/03 07:01:13 george Exp $
+ * $Id: infofile.h,v 1.6 1997/12/30 05:25:17 jrj Exp $
  *
  * interface for current info file reading code
  */
@@ -73,8 +73,10 @@ void close_infofile P((void));
 char *get_dumpdate P((info_t *record, int level));
 double perf_average P((float *array, double def));
 int get_info P((char *hostname, char *diskname, info_t *record));
-int get_firstkey P((char *hostname, char *diskname));
-int get_nextkey  P((char *hostname, char *diskname));
+int get_firstkey P((char *hostname, int hostname_size,
+		    char *diskname, int diskname_size));
+int get_nextkey  P((char *hostname, int hostname_size,
+		    char *diskname, int diskname_size));
 int put_info P((char *hostname, char *diskname, info_t *record));
 int del_info P((char *hostname, char *diskname));
 

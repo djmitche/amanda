@@ -25,21 +25,19 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: changer.h,v 1.3 1997/12/16 18:02:22 jrj Exp $
+ * $Id: changer.h,v 1.4 1997/12/30 05:25:00 jrj Exp $
  *
  * interface routines for tape changers
  */
 #include "amanda.h"
 
-#define ERRSTR_LEN	1024
-
-extern char changer_resultstr[ERRSTR_LEN];
+extern char *changer_resultstr;
 
 int changer_init P((void));
-int changer_reset P((char *slotstr));
-int changer_eject P((char *slotstr));
-int changer_info P((int *nslotsp, char *curslotstr, int *backwards));
-int changer_loadslot P((char *inslotstr, char *outslotstr, char *devicename));
+int changer_reset P((char **slotstr));
+int changer_eject P((char **slotstr));
+int changer_info P((int *nslotsp, char **curslotstr, int *backwards));
+int changer_loadslot P((char *inslotstr, char **outslotstr, char **devicename));
 void changer_current P((int (*user_init)(int rc, int nslots, int backwards),
 		     int (*user_slot)(int rc, char *slotstr, char *device)));
 void changer_scan P((int (*user_init)(int rc, int nslots, int backwards),

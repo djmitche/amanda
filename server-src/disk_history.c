@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: disk_history.c,v 1.4 1997/12/16 18:02:25 jrj Exp $
+/* $Id: disk_history.c,v 1.5 1997/12/30 05:25:05 jrj Exp $
  *
  * functions for obtaining backup history
  */
@@ -43,7 +43,7 @@ void clear_list P((void))
     {
 	this = item;
 	item = item->next;
-	free(this);
+	afree(this);
     }
     disk_hist = NULL;
 }

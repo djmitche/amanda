@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.29 1997/12/23 22:55:00 jrj Exp $
+ * $Id: conffile.c,v 1.30 1997/12/30 05:25:03 jrj Exp $
  *
  * read configuration file
  */
@@ -312,28 +312,31 @@ struct byname {
 char *getconf_byname(str)
 char *str;
 {
-    char *p;
-    static char tmpstr[256];
+    static char *tmpstr;
+    char number[NUM_STR_SIZE];
     struct byname *np;
+    char *s;
+    char ch;
 
-    for(p = tmpstr; *str; p++, str++) {
-	if(islower(*str)) *p = toupper(*str);
-	else *p = *str;
+    tmpstr = stralloc(str);
+    s = tmpstr;
+    while((ch = *s++) != '\0') {
+	if(islower(ch)) s[-1] = toupper(ch);
     }
-    *p = '\0';
 
     for(np = byname_table; np->name != NULL; np++)
-	if(!strcmp(np->name, tmpstr)) break;
+	if(strcmp(np->name, tmpstr) == 0) break;
 
     if(np->name == NULL) return NULL;
 
     if(np->typ == INT) {
-	ap_snprintf(tmpstr, sizeof(tmpstr), "%d", getconf_int(np->parm));
+	ap_snprintf(number, sizeof(number), "%d", getconf_int(np->parm));
+	tmpstr = newstralloc(tmpstr, number);
     } else if(np->typ == REAL) {
-	ap_snprintf(tmpstr, sizeof(tmpstr), "%f", getconf_real(np->parm));
+	ap_snprintf(number, sizeof(number), "%f", getconf_real(np->parm));
+	tmpstr = newstralloc(tmpstr, number);
     } else {
-	strncpy(tmpstr, getconf_str(np->parm), sizeof(tmpstr)-1);
-	tmpstr[sizeof(tmpstr)-1] = '\0';
+	tmpstr = newstralloc(tmpstr, getconf_str(np->parm));
     }
 
     return tmpstr;
@@ -393,7 +396,7 @@ confparm_t parm;
     case CNF_MAXDUMPS: r = conf_maxdumps.i; break;
 
     default:
-	assert(0);
+	error("error [unknown getconf_int parm: %d]", parm);
 	/* NOTREACHED */
     }
     return r;
@@ -409,7 +412,7 @@ confparm_t parm;
     case CNF_BUMPMULT: r = conf_bumpmult.r; break;
 
     default:
-	assert(0);
+	error("error [unknown getconf_real parm: %d]", parm);
 	/* NOTREACHED */
     }
     return r;
@@ -439,7 +442,7 @@ confparm_t parm;
     case CNF_INDEXDIR: r = conf_indexdir.s; break;
 
     default:
-	assert(0);
+	error("error [unknown getconf_str parm: %d]", parm);
 	/* NOTREACHED */
     }
     return r;
@@ -451,7 +454,7 @@ char *str;
     dumptype_t *p;
 
     for(p = dumplist; p != NULL; p = p->next) {
-	if(!strcmp(p->name, str)) return p;
+	if(strcmp(p->name, str) == 0) return p;
     }
     return NULL;
 }
@@ -462,7 +465,7 @@ char *str;
     tapetype_t *p;
 
     for(p = tapelist; p != NULL; p = p->next) {
-	if(!strcmp(p->name, str)) return p;
+	if(strcmp(p->name, str) == 0) return p;
     }
     return NULL;
 }
@@ -473,7 +476,7 @@ char *str;
     interface_t *p;
 
     for(p = interface_list; p != NULL; p = p->next) {
-	if(!strcmp(p->name, str)) return p;
+	if(strcmp(p->name, str) == 0) return p;
     }
     return NULL;
 }
@@ -520,27 +523,23 @@ static void init_defaults()
 				  "/dev/null"
 #endif
 				  );
-    conf_chngrfile.s =
+    conf_chngrfile.s = newvstralloc(conf_chngrfile.s,
 #ifdef LOG_DIR
-			newstralloc2(conf_chngrfile.s,
-				     LOG_DIR, "/changer-status"
+				    LOG_DIR,
 #else
-			newstralloc (conf_chngrfile.s,
-				     "/usr/adm/amanda/changer-status"
+				    "/usr/adm/amanda",
 #endif
-				     );
+				    "/changer-status", NULL);
     conf_labelstr.s = newstralloc(conf_labelstr.s, ".*");
     conf_tapelist.s = newstralloc(conf_tapelist.s, "tapelist");
     conf_infofile.s = newstralloc(conf_infofile.s, "/usr/adm/amanda/curinfo");
-    conf_logfile.s =
+    conf_logfile.s = newvstralloc(conf_logfile.s,
 #ifdef LOG_DIR
-		     newstralloc2(conf_logfile.s,
-				  LOG_DIR, "/log"
+				  LOG_DIR,
 #else
-		     newstralloc (conf_logfile.s,
-				  "/usr/adm/amanda/log"
+				  "/usr/adm/amanda",
 #endif
-				  );
+				  "/log", NULL);
     conf_diskfile.s = newstralloc(conf_diskfile.s, "disklist");
     conf_diskdir.s  = newstralloc(conf_diskdir.s,  "/dumps/amanda");
     conf_tapetype.s = newstralloc(conf_tapetype.s, "EXABYTE");
@@ -577,7 +576,7 @@ static void init_defaults()
 
 	hp = holdingdisks;
 	holdingdisks = holdingdisks->next;
-	free(hp);
+	afree(hp);
     }
     num_holdingdisks = 0;
 
@@ -588,21 +587,21 @@ static void init_defaults()
 
 	dp = dumplist;
 	dumplist = dumplist->next;
-	free(dp);
+	afree(dp);
     }
     while(tapelist != NULL) {
 	tapetype_t *tp;
 
 	tp = tapelist;
 	tapelist = tapelist->next;
-	free(tp);
+	afree(tp);
     }
     while(interface_list != NULL) {
 	interface_t *ip;
 
 	ip = interface_list;
 	interface_list = interface_list->next;
-	free(ip);
+	afree(ip);
     }
 
     /* create some predefined dumptypes for backwards compatability */
@@ -671,9 +670,9 @@ char *filename;
 
     /* read_confline() can invoke us recursively via "includefile" */
     while(read_confline());
-    fclose(conf);
+    afclose(conf);
 
-    free(confname);
+    afree(confname);
 
     /* Restore globals */
     line_num = save_line_num;
@@ -771,7 +770,7 @@ static int read_confline()
 
 	    get_conftoken(STRING);
 	    s = tokenval.s;
-	
+
 	    if(!seen_diskdir) {
 		conf_diskdir.s = newstralloc(conf_diskdir.s, s);
 		seen_diskdir = line_num;
@@ -1260,7 +1259,7 @@ static void save_tapetype()
     tp = lookup_tapetype(tpcur.name);
 
     if(tp != (tapetype_t *)0) {
-	free(tpcur.name);
+	afree(tpcur.name);
 	parserror("tapetype %s already defined on line %d", tp->name, tp->seen);
 	return;
     }
@@ -1720,7 +1719,7 @@ tok_t type;
 	var->i = get_time();
 	break;
     default:
-	assert(0);
+	error("error [unknown get_simple type: %d]", type);
 	/* NOTREACHED */
     }
     return;
@@ -1894,7 +1893,7 @@ char *str;
     /* switch to binary search if performance warrants */
 
     for(kwp = keytable; kwp->keyword != NULL; kwp++) {
-	if(!strcmp(kwp->keyword, str)) break;
+	if(strcmp(kwp->keyword, str) == 0) break;
     }
     return kwp->token;
 }
@@ -1936,9 +1935,10 @@ tok_t exp;
     else {
 	ch = getc(conf);
 
-	while(ch == ' ' || ch == '\t') ch = getc(conf);
-	if(ch == '#') /* comment - eat everything but eol/eof */
-	    do { ch = getc(conf); } while(ch != '\n' && ch != EOF);
+	while(ch != EOF && ch != '\n' && isspace(ch)) ch = getc(conf);
+	if(ch == '#') {		/* comment - eat everything but eol/eof */
+	    while((ch = getc(conf)) != EOF && ch != '\n') {}
+	}
 
 	if(isalpha(ch)) {		/* identifier */
 	    buf = tkbuf;
@@ -1992,7 +1992,7 @@ tok_t exp;
 		    i = i * 10 + (ch - '0');
 		    d = d * 10;
 		    ch = getc(conf);
-		};
+		}
 		tokenval.r += ((double)i)/d;
 		tok = REAL;
 	    }

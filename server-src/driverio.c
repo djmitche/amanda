@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.20 1997/12/23 11:51:00 amcore Exp $
+ * $Id: driverio.c,v 1.21 1997/12/30 05:25:10 jrj Exp $
  *
  * I/O-related functions for driver program
  */
@@ -60,7 +60,8 @@ int fd;
 char *childstr(fd)
 int fd;
 {
-    static char str[80];
+    static char *str = NULL;
+    char fd_str[NUM_STR_SIZE];
     dumper_t *dumper;
 
     if(fd == taper) return "taper";
@@ -68,7 +69,8 @@ int fd;
     for(dumper = dmptable; dumper < dmptable+inparallel; dumper++)
 	if(dumper->outfd == fd) return dumper->name;
 
-    ap_snprintf(str, sizeof(str), "unknown child (fd %d)", fd);
+    ap_snprintf(fd_str, sizeof(fd_str), "%d", fd);
+    str = newvstralloc(str, "unknown child (fd ", fd_str, ")", NULL);
     return str;
 }
 
@@ -84,13 +86,13 @@ void startup_tape_process()
     case -1:
 	error("fork taper: %s", strerror(errno));
     case 0:	/* child process */
-	close(fd[0]);
+	aclose(fd[0]);
 	if(dup2(fd[1], 0) == -1 || dup2(fd[1], 1) == -1)
 	    error("taper dup2: %s", strerror(errno));
 	execle(taper_program, "taper", (char *)0, safe_env());
 	error("exec %s: %s", taper_program, strerror(errno));
     default:	/* parent process */
-	close(fd[1]);
+	aclose(fd[1]);
 	taper = fd[0];
 	addfd(taper);
     }
@@ -108,14 +110,14 @@ dumper_t *dumper;
     case -1:
 	error("fork %s: %s", dumper->name, strerror(errno));
     case 0:		/* child process */
-	close(fd[0]);
+	aclose(fd[0]);
 	if(dup2(fd[1], 0) == -1 || dup2(fd[1], 1) == -1)
 	    error("%s dup2: %s", dumper->name, strerror(errno));
 	execle(dumper_program, "dumper", (char *)0, safe_env());
 	error("exec %s (%s): %s", dumper_program,
 	      dumper->name, strerror(errno));
     default:	/* parent process */
-	close(fd[1]);
+	aclose(fd[1]);
 	dumper->infd = dumper->outfd = fd[0];
 	addfd(dumper->outfd);
 	dumper->busy = dumper->down = 0;
@@ -130,30 +132,32 @@ void startup_dump_processes()
 {
     int i;
     dumper_t *dumper;
-    char buff[128];
+    char number[NUM_STR_SIZE];
 
     for(dumper = dmptable, i = 0; i < inparallel; dumper++, i++) {
-	ap_snprintf(buff, sizeof(buff), "dumper%d", i);
-	dumper->name = stralloc(buff);
+	ap_snprintf(number, sizeof(number), "%d", i);
+	dumper->name = stralloc2("dumper", number);
 
 	startup_dump_process(dumper);
     }
 }
-
-char line[MAX_LINE];
 
 tok_t getresult(fd)
 int fd;
 {
     int arg, len;
     tok_t t;
+    static char *line = NULL;
 
-    if((len = read(fd, line, MAX_LINE)) == -1)
-	error("reading result from %s: %s", childstr(fd), strerror(errno));
-
-    line[len] = '\0';
-
-    argc = split(line, argv, MAX_ARGS+1, " ");
+    afree(line);
+    if((line = areads(fd)) == NULL) {
+	if(errno) {
+	    error("reading result from %s: %s", childstr(fd), strerror(errno));
+	}
+	argc = 0;				/* EOF */
+    } else {
+	argc = split(line, argv, sizeof(argv) / sizeof(argv[0]), " ");
+    }
 
     printf("driver: result time %s from %s:",
 	   walltime_str(curclock()),
@@ -165,14 +169,14 @@ int fd;
 
 #ifdef DEBUG
     printf("argc = %d\n", argc);
-    for(arg = 0; arg < MAX_ARGS+1; arg++)
+    for(arg = 0; arg < sizeof(argv) / sizeof(argv[0]); arg++)
 	printf("argv[%d] = \"%s\"\n", arg, argv[arg]);
 #endif
 
     if(argc < 1) return BOGUS;
 
     for(t = BOGUS+1; t < LAST_TOK; t++)
-	if(!strcmp(argv[1], cmdstr[t])) return t;
+	if(strcmp(argv[1], cmdstr[t]) == 0) return t;
 
     return BOGUS;
 }
@@ -182,41 +186,54 @@ void taper_cmd(cmd, /* optional */ ptr)
 tok_t cmd;
 void *ptr;
 {
-    char cmdline[MAX_LINE];
+    char *cmdline = NULL;
+    char number[NUM_STR_SIZE];
     disk_t *dp;
-    int len;
+    int l, n, s;
 
     switch(cmd) {
     case START_TAPER:
-	ap_snprintf(cmdline, sizeof(cmdline), "START-TAPER %s\n", (char *) ptr);
+	cmdline = vstralloc("START-TAPER ", (char *)ptr, "\n", NULL);
 	break;
     case FILE_WRITE:
 	dp = (disk_t *) ptr;
-	ap_snprintf(cmdline, sizeof(cmdline),
-		    "FILE-WRITE %s %s %s %s %d\n", disk2serial(dp),
-		    sched(dp)->destname, dp->host->hostname, dp->name,
-		    sched(dp)->level);
+	ap_snprintf(number, sizeof(number), "%d", sched(dp)->level);
+	cmdline = vstralloc("FILE-WRITE",
+			    " ", disk2serial(dp),
+			    " ", sched(dp)->destname,
+			    " ", dp->host->hostname,
+			    " ", dp->name,
+			    " ", number,
+			    "\n", NULL);
 	break;
     case PORT_WRITE:
 	dp = (disk_t *) ptr;
-	ap_snprintf(cmdline, sizeof(cmdline),
-		    "PORT-WRITE %s %s %s %d\n", disk2serial(dp),
-		    dp->host->hostname, dp->name, sched(dp)->level);
+	ap_snprintf(number, sizeof(number), "%d", sched(dp)->level);
+	cmdline = vstralloc("PORT-WRITE",
+			    " ", disk2serial(dp),
+			    " ", dp->host->hostname,
+			    " ", dp->name,
+			    " ", number,
+			    "\n", NULL);
 	break;
     case QUIT:
-	strncpy(cmdline, "QUIT\n", sizeof(cmdline)-1);
-	cmdline[sizeof(cmdline)-1] = '\0';
+	cmdline = stralloc("QUIT\n");
 	break;
     default:
 	assert(0);
     }
-    len = strlen(cmdline);
-printf("driver: send-cmd time %s to taper: %*.*s\n",
-       walltime_str(curclock()),
-       len-1, len-1, cmdline);
-fflush(stdout);
-    if(write(taper, cmdline, len) < len)
-	error("writing taper command");
+    /*
+     * Note: cmdline already has a '\n'.
+     */
+    printf("driver: send-cmd time %s to taper: %s",
+	   walltime_str(curclock()), cmdline);
+    fflush(stdout);
+    for(l = 0, n = strlen(cmdline); l < n; l += s) {
+	if((s = write(taper, cmdline + l, n - l)) < 0) {
+	    error("writing taper command: %s", strerror(errno));
+	}
+    }
+    afree(cmdline);
 }
 
 void dumper_cmd(dumper, cmd, /* optional */ dp)
@@ -224,35 +241,50 @@ dumper_t *dumper;
 tok_t cmd;
 disk_t *dp;
 {
-    char cmdline[MAX_LINE];
-    int len;
-    int lev;
+    char *cmdline = NULL;
+    char number[NUM_STR_SIZE];
+    int l, n, s;
 
     switch(cmd) {
     case FILE_DUMP:
     case PORT_DUMP:
-	lev = sched(dp)->level;
-	ap_snprintf(cmdline, sizeof(cmdline),
-		    "%s %s %s %s %s %d %s %s |%s\n", cmdstr[cmd],
-		    disk2serial(dp), sched(dp)->destname, dp->host->hostname,
-		    dp->name, lev, sched(dp)->dumpdate, dp->program,
-		    optionstr(dp));
+	ap_snprintf(number, sizeof(number), "%d", sched(dp)->level);
+	cmdline = vstralloc(cmdstr[cmd],
+			    " ", disk2serial(dp),
+			    " ", sched(dp)->destname,
+			    " ", dp->host->hostname,
+			    " ", dp->name,
+			    " ", number,
+			    " ", sched(dp)->dumpdate,
+			    " ", dp->program,
+			    " |", optionstr(dp),
+			    "\n", NULL);
 	break;
     case QUIT:
     case ABORT:
     case CONTINUE:
-	ap_snprintf(cmdline, sizeof(cmdline), "%s\n", cmdstr[cmd]);
+	cmdline = stralloc2(cmdstr[cmd], "\n");
 	break;
     default:
 	assert(0);
     }
-    len = strlen(cmdline);
-printf("driver: send-cmd time %s to %s: %*.*s\n",
-       walltime_str(curclock()), dumper->name,
-       len-1, len-1, cmdline);
-fflush(stdout);
-    if(write(dumper->infd, cmdline, len) < len)
-	error("writing %s command: %s", dumper->name, strerror(errno));
+    /*
+     * Note: cmdline already has a '\n'.
+     */
+    if(dumper->down) {
+	printf("driver: send-cmd time %s ignored to down dumper %s: %s",
+	       walltime_str(curclock()), dumper->name, cmdline);
+    } else {
+	printf("driver: send-cmd time %s to %s: %s",
+	       walltime_str(curclock()), dumper->name, cmdline);
+	fflush(stdout);
+	for(l = 0, n = strlen(cmdline); l < n; l += s) {
+	    if((s = write(dumper->infd, cmdline + l, n - l)) < 0) {
+		error("writing %s command: %s", dumper->name, strerror(errno));
+	    }
+	}
+    }
+    afree(cmdline);
 }
 
 #define MAX_SERIAL MAX_DUMPERS+1	/* one for the taper */
@@ -271,7 +303,11 @@ char *str;
     long gen;
 
     rc = sscanf(str, "%d-%ld", &s, &gen);
-    assert(rc == 2 && s >= 0 && s < MAX_SERIAL);
+    if(rc != 2) {
+	error("error [serial2disk \"%s\" parse error]", str);
+    } else if (s < 0 || s >= MAX_SERIAL) {
+	error("error [serial out of range 0..%d: %d]", MAX_SERIAL, s);
+    }
     if(gen != stable[s].gen)
 	printf("driver: error time %s serial gen mismatch\n",
 	       walltime_str(curclock()));
@@ -304,7 +340,7 @@ char *disk2serial(dp)
 disk_t *dp;
 {
     int s;
-    static char str[80];
+    static char str[NUM_STR_SIZE];
 
     /* find unused serial number */
     for(s = 0; s < MAX_SERIAL; s++) if(stable[s].gen == 0) break;

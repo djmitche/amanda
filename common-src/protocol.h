@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: protocol.h,v 1.6 1997/09/26 11:24:32 george Exp $
+ * $Id: protocol.h,v 1.7 1997/12/30 05:24:21 jrj Exp $
  *
  * interfaces for amanda protocol
  */
@@ -92,6 +92,6 @@ int make_krb_request P((char *hostname, int port, char *req,
 			));
 #endif
 
-extern char parse_errmsg[];
+extern char *parse_errmsg;
 
 #endif /* PROTOCOL_H */

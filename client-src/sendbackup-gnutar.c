@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.35 1997/12/19 20:38:01 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.36 1997/12/30 05:23:58 jrj Exp $
  *
  * send backup data using GNU tar
  */
@@ -83,14 +83,14 @@ static regex_t re_table[] = {
   { DMP_STRANGE, NULL, 0}
 };
 
-extern char efile[256];
+extern char *efile;
 
 int cur_level;
 char *cur_disk;
 time_t cur_dumptime;
 
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-char *incrname;
+static char *incrname = NULL;
 #endif
 
 static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
@@ -100,15 +100,14 @@ int level, dataf, mesgf, indexf;
 char *dumpdate;
 {
     int dumpin, dumpout;
-    char cmd[256];
+    char *cmd = NULL;
+    char *indexcmd = NULL;
     char *dirname;
-    char dbprintf_buf[1024];
     int l;
     char dumptimestr[80];
     struct tm *gmtm;
     amandates_t *amdates;
     time_t prev_dumptime;
-    char indexcmd[4096];
 
     fprintf(stderr, "%s: start [%s:%s level %d]\n",
 	    pname, host, disk, level);
@@ -135,69 +134,69 @@ char *dumpdate;
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
 #ifdef SAMBA_CLIENT
     if (disk[0] == '/' && disk[1]=='/')
-      incrname = NULL;
+      afree(incrname);
     else
 #endif
     {
 	int i;
-	/*
-	 * Note: sizeof includes the null byte.  "len" is used later
-	 * as an offset into inputname (a copy of incrname) to reset
-	 * the suffix.  We subtract one for the null byte then add
-	 * one for the '/'.
-	 */
-	int len = sizeof(GNUTAR_LISTED_INCREMENTAL_DIR) - 1 + 1 +
-	    strlen(host) + strlen(disk);
-	int incrnamelen = len + 32;		/* room for suffix and null */
+	char *basename;
+	char number[NUM_STR_SIZE];
+	char *s;
+	int ch;
 
-	incrname = alloc(incrnamelen);
-	ap_snprintf(incrname, incrnamelen,
-		    "%s/%s", GNUTAR_LISTED_INCREMENTAL_DIR, host);
-	strncat(incrname, disk, incrnamelen-strlen(incrname));
+	basename = vstralloc(GNUTAR_LISTED_INCREMENTAL_DIR,
+			     "/",
+			     host,
+			     disk,
+			     NULL);
 	/*
 	 * The loop starts at the first character of the host name,
 	 * not the '/'.
 	 */
-	for (i = sizeof(GNUTAR_LISTED_INCREMENTAL_DIR); incrname[i]; ++i)
-	    if (incrname[i] == '/' || incrname[i] == ' ')
-		incrname[i] = '_';
+	s = basename + sizeof(GNUTAR_LISTED_INCREMENTAL_DIR);
+	while((ch = *s++) != '\0') {
+	    if(ch == '/' || isspace(ch)) s[-1] = '_';
+	}
 
-	len = strlen(incrname);			/* set up for inputname below */
-	ap_snprintf(incrname+len, incrnamelen-len, "_%d.new", level);
+	ap_snprintf(number, sizeof(number), "%d", level);
+	incrname = vstralloc(basename, "_", number, ".new", NULL);
 	unlink(incrname);
 	umask(0007);
 
 	if (level == 0) {
 	  FILE *out;
-	notincremental:
+
+notincremental:
+
 	  out = fopen(incrname, "w");
 	  if (out == NULL)
 	    error("error [opening %s: %s]", incrname, strerror(errno));
 
 	  if (fclose(out) == EOF)
 	    error("error [closing %s: %s]", incrname, strerror(errno));
+	  out = NULL;
 
 	  dbprintf(("%s: doing level %d dump as listed-incremental: %s\n",
 		    pname, level, incrname));
 	} else {
 	    FILE *in = NULL, *out;
-	    char *inputname = alloc(incrnamelen);
-	    char buf[512];
+	    char *inputname = NULL;
+	    char buf[BUFSIZ];
 	    int baselevel = level;
 
-	    strncpy(inputname, incrname, incrnamelen-1);
-	    inputname[incrnamelen-1] = '\0';
 	    while (in == NULL && --baselevel >= 0) {
-	      ap_snprintf(inputname+len, incrnamelen-len, "_%d", baselevel);
-	      in = fopen(inputname, "r");
+		ap_snprintf(number, sizeof(number), "%d", baselevel);
+		inputname = newvstralloc(inputname,
+					 basename, "_", number,
+					 NULL);
+		in = fopen(inputname, "r");
 	    }
 
 	    if (in == NULL) {
-	      free(inputname);
-	      inputname = 0;
+	      afree(inputname);
 	      goto notincremental;
 	    }
-	    
+
 	    out = fopen(incrname, "w");
 	    if (out == NULL)
 		error("error [opening %s: %s]", incrname, strerror(errno));
@@ -208,22 +207,24 @@ char *dumpdate;
 			  strerror(errno));
 
 	    if (ferror(in)) {
-		incrname[len] = '\0';
 		error("error [reading from %s: %s]", inputname,
 		      strerror(errno));
 	    }
 
 	    if (fclose(in) == EOF)
 		error("error [closing %s: %s]", inputname, strerror(errno));
+	    in = NULL;
 
 	    if (fclose(out) == EOF)
 		error("error [closing %s: %s]", incrname, strerror(errno));
+	    out = NULL;
 
 	    dbprintf(("%s: doing level %d dump as listed-incremental from %s, updating to %s\n",
 		      pname, level, inputname, incrname));
 
-	    free(inputname);
+	    afree(inputname);
 	}
+	afree(basename);
     }
 #endif
 
@@ -258,11 +259,14 @@ char *dumpdate;
 #ifdef SAMBA_CLIENT
     /* Use sambatar if the disk to back up is a PC disk */
    if (disk[0] == '/' && disk[1]=='/') {
-	char sharename[256], pass[256], domain[256], *taropt;
+	char *sharename, *pass, *domain, *tarcmd, *taropt;
 
-	if (findpass(disk, pass, domain) == 0)
+	if ((pass = findpass(disk, &domain)) == NULL) {
 	    error("[invalid samba host or password not found?]");
-	makesharename(disk, sharename, 0);
+	}
+	if ((sharename = makesharename(disk, 0)) == 0) {
+	    error("[can't make share name of %s]", disk);
+	}
 	if (level==0)
 	    taropt = "-Tca";
 	else
@@ -271,16 +275,18 @@ char *dumpdate;
 		  sharename, SAMBA_USER, "XXXXX"));
 
 	program->backup_name = program->restore_name = SAMBA_CLIENT;
-	
-        ap_snprintf(indexcmd, sizeof(indexcmd),
-		    "%s -tf - 2>/dev/null | cut -c2-",
-#ifdef GNUTAR
-		 GNUTAR
-#else
-		 "tar"
-#endif
-                 );
 
+#ifdef GNUTAR
+	tarcmd = GNUTAR;
+#else
+	tarcmd = "tar";
+#endif
+	indexcmd = vstralloc(tarcmd,
+			     " -tf", " -",
+			     " 2>/dev/null",
+			     " | cut",
+			     " -c2-",
+			     NULL);
 	write_tapeheader();
 
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
@@ -288,34 +294,44 @@ char *dumpdate;
 	dumppid = pipespawn(program->backup_name, &dumpin, dumpout, mesgf,
 			    "smbclient",
 			    sharename, pass, "-U", SAMBA_USER, "-E",
-			    domain[0] ? "-W" : "-d0",
-			    domain[0] ? domain : taropt,
-			    domain[0] ? "-d0" : "-",
-			    domain[0] ? taropt : (char *)0,
-			    domain[0] ? "-" : (char *)0,
+			    domain ? "-W" : "-d0",
+			    domain ? domain : taropt,
+			    domain ? "-d0" : "-",
+			    domain ? taropt : (char *)0,
+			    domain ? "-" : (char *)0,
 			    (char *) 0);
+	memset(pass, '\0', strlen(pass));
+	if(domain) memset(domain, '\0', strlen(domain));
+	afree(sharename);
     } else {
 #endif
-      ap_snprintf(cmd, sizeof(cmd), "%s/runtar%s", libexecdir, versionsuffix());
+      cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
 
       {
-	char sprintf_buf[512];
+	char *format_buf;
+	char *a00, *a01, *a02, *a03, *a04, *a05;
+	char *a06, *a07, *a08, *a09, *a10, *a11;
+	char *incr;
+	char *tarcmd;
 
-        ap_snprintf(indexcmd, sizeof(indexcmd),
-		    "%s -tf - 2>/dev/null | cut -c2-",
 #ifdef GNUTAR
-		    GNUTAR
+	tarcmd = GNUTAR;
 #else
-		    "tar"
+	tarcmd = "tar";
 #endif
-		    );
-
+	indexcmd = vstralloc(tarcmd,
+			     " -tf", " -",
+			     " 2>/dev/null",
+			     " | cut",
+			     " -c2-",
+			     NULL);
 	write_tapeheader();
 
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
 	dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf,
-			"gtar", "--create",
+			"gtar",
+			"--create",
 			"--directory", dirname,
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
 			"--listed-incremental", incrname,
@@ -333,51 +349,59 @@ char *dumpdate;
 #endif
 			"--ignore-failed-read", "--totals",
 			"--file", "-",
-			*efile ? efile : ".",
-			*efile ? "." : (char *)0,
+			efile ? efile : ".",
+			efile ? "." : (char *)0,
 			(char *) 0);
 
-	strncpy(sprintf_buf,
-	        "sendbackup-gnutar: pid %d: %s --create --directory %s ",
-		sizeof(sprintf_buf)-1);
-	sprintf_buf[sizeof(sprintf_buf)-1] = '\0';
+	a00 = "sendbackup-gnutar: pid %d: %s";
+	a01 = " --create";
+	a02 = " --directory %s";
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-	strncat(sprintf_buf, "--listed-incremental %s ",
-		sizeof(sprintf_buf)-strlen(sprintf_buf));
+	a03 = " --listed-incremental %s";
 #else
-	strncat(sprintf_buf, "--incremental --newer %s ",
-		sizeof(sprintf_buf)-strlen(sprintf_buf));
+	a03 = " --incremental --newer %s";
 #endif
-	strncat(sprintf_buf, "--sparse --one-file-system ",
-		sizeof(sprintf_buf)-strlen(sprintf_buf));
+	a04 = " --sparse";
+	a05 = " --one-file-system";
 #ifdef ENABLE_GNUTAR_ATIME_PRESERVE
-	strncat(sprintf_buf, "--atime-preserve ",
-		sizeof(sprintf_buf)-strlen(sprintf_buf));
-#endif
-	strncat(sprintf_buf, "--ignore-failed-read --totals --file - %s .\n",
-		sizeof(sprintf_buf)-strlen(sprintf_buf));
-
-	ap_snprintf(dbprintf_buf, sizeof(dbprintf_buf), sprintf_buf, 
-		    dumppid, cmd, dirname,
-#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-		    incrname,
+	a06 = " --atime-preserve";
 #else
-		    dumptimestr,
+	a06 = "";
 #endif
-		    efile);
-	dbprintf((dbprintf_buf));
+	a07 = " --ignore-failed-read";
+	a08 = " --totals";
+	a09 = " --file -";
+	a10 = " %s";
+	a11 = efile ? "." : "";
+
+	format_buf = vstralloc(a00, a01, a02, a03,
+			       a04, a05, a06, a07,
+			       a08, a09, a10, a11,
+			       "\n", NULL);
+
+#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
+	incr = incrname;
+#else
+	incr = dumptimestr;
+#endif
+	dbprintf((format_buf, dumppid, cmd, dirname, incr,
+		  efile ? efile : "."));
+	afree(format_buf);
       }
 #ifdef SAMBA_CLIENT
     }
 #endif
 
+    afree(cmd);
+    afree(indexcmd);
+
     /* close the write ends of the pipes */
 
-    close(dumpin);
-    close(dumpout);
-    close(dataf);
-    close(mesgf);
-    close(indexf);
+    aclose(dumpin);
+    aclose(dumpout);
+    aclose(dataf);
+    aclose(mesgf);
+    aclose(indexf);
 }
 
 static void end_backup(goterror)
@@ -394,8 +418,8 @@ int goterror;
         if (rename(incrname, nodotnew))
             error("error [renaming %s to %s: %s]", 
 		  incrname, nodotnew, strerror(errno));
-	free(nodotnew);
-	free(incrname);
+	afree(nodotnew);
+	afree(incrname);
 #ifdef SAMBA_CLIENT
       }
 #endif
