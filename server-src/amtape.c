@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.24 1998/11/25 00:00:41 jrj Exp $
+ * $Id: amtape.c,v 1.25 1998/12/07 21:38:55 kashmir Exp $
  *
  * tape changer interface program
  */
@@ -56,25 +56,50 @@ int show_init_current P((int rc, int ns, int bk));
 int show_slot P((int rc, char *slotstr, char *device));
 int taperscan_slot P((int rc, char *slotstr, char *device));
 
+static const struct {
+    const char *name;
+    void (*fn) P((int, char **));
+    const char *usage;
+} cmdtab[] = {
+    { "reset", reset_changer,
+	"reset                Reset changer to known state" },
+    { "eject", eject_tape,
+	"eject                Eject current tape from drive" },
+    { "clean", clean_tape,
+	"clean                Clean the drive" },
+    { "show", show_slots,
+	"show                 Show contents of all slots" },
+    { "current", show_current,
+	"current              Show contents of current slot" },
+    { "slot" , load_slot,
+	"slot <slot #>        load tape from slot <slot #>" },
+    { "slot" , load_slot,
+	"slot current         load tape from current slot" },
+    { "slot" , load_slot,
+	"slot prev            load tape from previous slot" },
+    { "slot" , load_slot,
+	"slot next            load tape from next slot" },
+    { "slot" , load_slot,
+	"slot first           load tape from first slot" },
+    { "slot" , load_slot,
+	"slot last            load tape from last slot" },
+    { "label", load_label,
+	"label <label>        find and load labeled tape" },
+    { "taper", taper_scan,
+	"taper                perform taper's scan alg." },
+    { "device", show_device,
+	"device               show current tape device" },
+};
+#define	NCMDS	(sizeof(cmdtab) / sizeof(cmdtab[0]))
+
 void usage()
 {
+    int i;
+
     fprintf(stderr, "Usage: amtape%s <conf> <command>\n", versionsuffix());
     fprintf(stderr, "\tValid commands are:\n");
-    fprintf(stderr, "\t\treset                Reset changer to known state\n");
-    fprintf(stderr, "\t\teject                Eject current tape from drive\n");
-    fprintf(stderr, "\t\tclean                Clean the drive\n");
-    fprintf(stderr, "\t\tshow                 Show contents of all slots\n");
-    fprintf(stderr, "\t\tcurrent              Show contents of current slot\n");
-    fprintf(stderr, "\t\tslot <slot #>        load tape from slot <slot #>\n");
-    fprintf(stderr, "\t\tslot current         load tape from current slot\n");
-    fprintf(stderr, "\t\tslot prev            load tape from previous slot\n");
-    fprintf(stderr, "\t\tslot next            load tape from next slot\n");
-    fprintf(stderr, "\t\tslot first           load tape from first slot\n");
-    fprintf(stderr, "\t\tslot last            load tape from last slot\n");
-    fprintf(stderr, "\t\tlabel <label>        find and load labeled tape\n");
-    fprintf(stderr, "\t\ttaper                perform taper's scan alg.\n");
-    fprintf(stderr, "\t\tdevice               show current tape device\n");
-
+    for (i = 0; i < NCMDS; i++)
+	fprintf(stderr, "\t\t%s\n", cmdtab[i].usage);
     exit(1);
 }
 
@@ -87,7 +112,7 @@ char **argv;
     char *argv0 = argv[0];
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
-    int fd;
+    int fd, i;
     uid_t uid_me;
     uid_t uid_dumpuser;
     char *dumpuser;
@@ -145,16 +170,12 @@ char **argv;
     /* switch on command name */
 
     argc -= 2; argv += 2;
-    if(strcmp(argv[0], "reset") == 0) reset_changer(argc, argv);
-    else if(strcmp(argv[0], "clean") == 0) clean_tape(argc, argv);
-    else if(strcmp(argv[0], "eject") == 0) eject_tape(argc, argv);
-    else if(strcmp(argv[0], "slot") == 0) load_slot(argc, argv);
-    else if(strcmp(argv[0], "label") == 0) load_label(argc, argv);
-    else if(strcmp(argv[0], "current") == 0)  show_current(argc, argv);
-    else if(strcmp(argv[0], "show") == 0)  show_slots(argc, argv);
-    else if(strcmp(argv[0], "taper") == 0) taper_scan(argc, argv);
-    else if(strcmp(argv[0], "device") == 0) show_device(argc, argv);
-    else {
+    for (i = 0; i < NCMDS; i++)
+	if (strcmp(argv[0], cmdtab[i].name) == 0) {
+	    (*cmdtab[i].fn)(argc, argv);
+	    break;
+	}
+    if (i == NCMDS) {
 	fprintf(stderr, "%s: unknown command \"%s\"\n", argv0, argv[0]);
 	usage();
     }

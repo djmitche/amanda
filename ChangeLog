@@ -1,5 +1,10 @@
 1998-12-07  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/amtape.c (main, usage): make command lookup and usage
+	table-driven
+
+1998-12-07  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/amadmin.c: make command lookup and usage table-driven
 	* server-src/amadmin.c (balance, tape, bumpsize): add
 	argc/argv arguments to make them like the rest
