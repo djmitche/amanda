@@ -1,3 +1,7 @@
+2002-04-07  John R. Jackson (jrj@purdue.edu)
+
+	* configure.in: Add /usr/local/sbin to LOCPATH.
+
 2002-03-31  John R. Jackson (jrj@purdue.edu)
 
 	* server-src/amcheck.c: Send maxdumps and hostname in packet OPTIONS.
