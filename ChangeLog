@@ -1,3 +1,8 @@
+2002-02-18  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* man/amanda.8.in: Document multiple exclude.
+	* man/amanda.8.in: Document include.
+
 2002-02-16  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* client-src/client-util.c (add_include): Include are glob expression.
