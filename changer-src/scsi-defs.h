@@ -1142,6 +1142,7 @@ int PrintInquiry(SCSIInquiry_T *);
 int DecodeSCSI(CDB_T CDB, char *string);
 
 int RequestSense P((int fd, ExtendedRequestSense_T *s, int ClearErrorCounters));
+int DecodeSense P((RequestSense_T *sense, char *pstring, FILE *out));
 int DecodeExtSense P((ExtendedRequestSense_T *sense, char *pstring, FILE *out));
 
 void ChgExit(char *, char *, int);
