@@ -27,6 +27,9 @@ in the amanda.conf file.  Example entry:
 	tpchanger "chg-generic"		# use generic tape changer script
 
 The older tapedev parameter is ignored if a tpchanger program is specified.
+If the tpchanger program does not begin with a '/', then amanda will expect
+it to reside in libexecdir, and possibly have the version suffix appended
+depending on how amanda was configured.
 
 
 3. DEVICE-SPECIFIC TAPE CHANGER SCRIPT
