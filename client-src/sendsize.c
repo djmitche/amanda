@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.61.2.10 1998/03/14 13:40:39 amcore Exp $
+ * $Id: sendsize.c,v 1.61.2.11 1998/03/18 21:22:31 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -40,9 +40,10 @@
 #endif
 
 #ifdef HAVE_SETPGID
-#  define SETPGRP	setpgid(0, 0)
+#  define SETPGRP	setpgid(getpid(), getpid())
 #  define SETPGRP_FAILED() do {						\
-    dbprintf(("setpgid(0,0) failed: %s\n", strerror(errno)));		\
+    dbprintf(("setpgid(%ld,%ld) failed: %s\n",				\
+	      (long)getpid(), (long)getpid(), strerror(errno)));	\
 } while(0)
 
 #else /* () line 0 */
