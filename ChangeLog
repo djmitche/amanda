@@ -3,6 +3,10 @@
 	* man/amanda.8.in: fix amrecover synopsis and add a short description.
 	Noted by Brendan M Coffey <bcoffey@connix.com>.
 
+	* example/amanda.conf.in: make tapecycle example fit dumpcycle value
+	better.  Noted by Tom.Croll@radisys.com and suggested comments from
+	Alexandre Oliva <oliva@dcc.unicamp.br>.
+
 1998-06-30  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/amdump.sh.in (maxdays): set up with tapecycle+2
