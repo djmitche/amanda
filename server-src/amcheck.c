@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50 1998/10/24 03:01:59 martinea Exp $
+ * $Id: amcheck.c,v 1.50.2.1 1998/11/18 07:37:04 oliva Exp $
  *
  * checks for common problems in server and clients
  */
@@ -388,7 +388,7 @@ char *taper_scan()
     found = 0;
     got_match = 0;
 
-    changer_scan(scan_init, taperscan_slot);
+    changer_find(scan_init, taperscan_slot,searchlabel);
 
     if(found == 2)
 	searchlabel = first_match_label;

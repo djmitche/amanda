@@ -1,3 +1,15 @@
+1998-11-18  Michael Povel  <mcp@ladyada.han.de>
+
+	* server-src/changer.h added new functions:changer_query
+	,changer_search,changer_find, changer_label
+	* server-src/changer.c added changer_query, changer_search,
+	changer_find, changer_label
+	* server-src/amcheck.c (taper_scan) now uses changer_find 
+	* server-src/amtape.c (load_label and taper_scan) now use changer_find
+	* server-src/taper.c (taper_scan) now uses changer_find
+	* server-src/amlabel.c (main) added call to changer_label
+	which is only an empty dummy at the moment
+
 1998-11-18  Thomas Hepper <th@icem.de>
 
 	* changer-src/chg-scsi.c Added debug print option

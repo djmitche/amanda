@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.47.2.1 1998/11/17 18:10:10 jrj Exp $
+/* $Id: taper.c,v 1.47.2.2 1998/11/18 07:37:15 oliva Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1944,7 +1944,10 @@ char *taper_scan()
     found = 0;
     got_match = 0;
 
-    changer_scan(scan_init, taperscan_slot);
+    if (searchlabel != NULL)
+      changer_find(scan_init, taperscan_slot,searchlabel);
+    else
+      changer_scan(scan_init, taperscan_slot);
 
     if(found == 2)
 	searchlabel = first_match_label;
