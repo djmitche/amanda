@@ -29,7 +29,7 @@ else
   # This makes it impossible to quote backslashes using
   #   echo "$something" | sed 's/\\/\\\\/g'
   # So, we emulate echo with printf '%s\n'
-  echo="printf '%s\n'"
+  echo='printf %s\n'
   if test "X`$echo '\t'`" = 'X\t'; then :
   else
     # Oops.  We have no working printf.  Try to find a not-so-buggy echo.
@@ -1260,6 +1260,9 @@ EOF
         $rm $output
         trap "$rm $output; exit 1" 1 2 15
 
+	quoted_echo=`$echo "$echo" | sed "$sed_quote_subst"`
+	quoted_quoted_echo=`$echo "$quoted_echo" | sed "$sed_quote_subst"`
+
         cat > $output <<EOF
 #! /bin/sh
 
@@ -1282,7 +1285,7 @@ else
   test "\$libtool_execute_magic" = "$magic" || file="\$0"
 
   # Find the directory that this script lives in.
-  thisdir=\`$echo "\$file" | sed 's%/[^/]*$%%'\`
+  thisdir=\`$quoted_quoted_echo "\$file" | sed 's%/[^/]*$%%'\`
   test "x\$thisdir" = "x\$file" && thisdir=.
 
   # Try to get the absolute directory name.
@@ -1310,7 +1313,7 @@ EOF
     $shlibpath_var="$temp_rpath\$$shlibpath_var"
 
     # Some systems cannot cope with colon-terminated $shlibpath_var
-    $shlibpath_var=\`$echo \$$shlibpath_var | sed -e 's/:*\$//'\`
+    $shlibpath_var=\`$quoted_quoted_echo \$$shlibpath_var | sed -e 's/:*\$//'\`
 
     export $shlibpath_var
 
@@ -1325,7 +1328,7 @@ EOF
       do
         # Quote arguments (to preserve shell metacharacters).
 	sed_quote_subst='$sed_quote_subst'
-	arg=\`$echo "\$arg" | sed "\$sed_quote_subst"\`
+	arg=\`$quoted_quoted_echo "\$arg" | sed "\$sed_quote_subst"\`
         args="\$args \\"\$arg\\""
       done
 
@@ -1335,14 +1338,14 @@ EOF
 
       eval "exec \$program \$args"
 
-      $echo "\$0: cannot exec \$program \$args"
+      $quoted_echo "\$0: cannot exec \$program \$args"
       exit 1
     fi
   else
     # The program doesn't exist.
-    $echo "\$0: error: neither \$oprogdir/\$program nor \$progdir/\$program exists" 1>&2
-    $echo "This script is just a wrapper for \$program." 1>&2
-    $echo "See the $PACKAGE documentation for more information." 1>&2
+    $quoted_echo "\$0: error: neither \$oprogdir/\$program nor \$progdir/\$program exists" 1>&2
+    $quoted_echo "This script is just a wrapper for \$program." 1>&2
+    $quoted_echo "See the $PACKAGE documentation for more information." 1>&2
     exit 1
   fi
 fi
