@@ -210,6 +210,7 @@ static int read_diskline()
     host_t *host;
     disk_t *disk;
     dumptype_t *dtype;
+    interface_t *netif = 0;
 
     line_num += 1;
 
@@ -218,18 +219,6 @@ static int read_diskline()
     if(*str == '\n') return 1;
 
     host = lookup_host(str);
-    if(host == NULL) {			/* new host */
-	host = alloc(sizeof(host_t));
-	host->next = hostlist;
-	hostlist = host;
-
-	host->hostname = stralloc(str);
-	host->disks = NULL;
-	host->up = NULL;
-	host->inprogress = 0;
-	host->maxdumps = 1;	/* will be overwritten */
-	host->netif = lookup_interface("");
-    }
 
     get_string();
     if(*str == '\0' || *str == '\n') {
@@ -239,7 +228,7 @@ static int read_diskline()
 
     /* check for duplicate disk */
 
-    if((disk = lookup_disk(host->hostname, str)) != NULL) {
+    if(host && (disk = lookup_disk(host->hostname, str)) != NULL) {
 	parserror("duplicate disk record, previous on line %d", disk->line);
 	eat_line();
 	return 1;
@@ -292,7 +281,7 @@ static int read_diskline()
     }
 
     if(*str != '\n' && *str != '\0') {	/* got optional network interface */
-	if((host->netif = lookup_interface(upcase(str))) == NULL) {
+	if((netif = lookup_interface(upcase(str))) == NULL) {
 	    parserror("undefined network interface `%s'", str);
 	    free(disk->name);
 	    free(disk);
@@ -300,12 +289,30 @@ static int read_diskline()
 	    return 1;
 	    }
 	get_string();
-    }
+    } else
+      netif = lookup_interface("");
 
     if(*str != '\n' && *str != '\0')	/* now we have garbage, ignore it */
 	parserror("end of line expected");
 
+    if(dtype->ignore)
+      return 1;
+
     /* success, add disk to lists */
+
+    if(host == NULL) {			/* new host */
+	host = alloc(sizeof(host_t));
+	host->next = hostlist;
+	hostlist = host;
+
+	host->hostname = stralloc(str);
+	host->disks = NULL;
+	host->up = NULL;
+	host->inprogress = 0;
+	host->maxdumps = 1;	/* will be overwritten */
+    }
+
+    host->netif = netif;
 
     enqueue_disk(&lst, disk);
 

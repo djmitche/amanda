@@ -102,6 +102,7 @@ typedef struct dumptype_s {
     int skip_full:1;
     int no_hold:1;
     int kencrypt:1;
+    int ignore:1;
     int index:1;
 
     /* seen flags */
@@ -122,6 +123,7 @@ typedef struct dumptype_s {
     int s_skip_full;
     int s_no_hold;
     int s_kencrypt;
+    int s_ignore;
     int s_index;
 } dumptype_t;
 

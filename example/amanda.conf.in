@@ -151,6 +151,8 @@ define tapetype MIMSY-MEGATAPE {
 #			  example, for small root filesystems that only change
 #			  slightly relative to a site-wide prototype.  Amanda
 #			  then backs up just the changes.
+#	ignore		- Do not back this filesystem up.  Useful for sharing
+#			  a single disklist in several configurations.
 #
 # Also, the dumptype specifies the priority level, where "low", "medium" and
 # "high" are the allowed levels.  These are only really used when Amanda has

@@ -66,7 +66,7 @@ typedef enum {
     OPTIONS, PRIORITY, FREQUENCY, INDEX,
     STARTTIME, COMPRESS, AUTH, STRATEGY,
     SKIP_INCR, SKIP_FULL, RECORD, HOLDING,
-    EXCLUDE, KENCRYPT,
+    EXCLUDE, KENCRYPT, IGNORE,
 
     FILEMARK, LENGTH, SPEED,
 
@@ -776,6 +776,7 @@ keytab_t dumptype_keytable[] = {
     { "EXCLUDE", EXCLUDE },
     { "FREQUENCY", FREQUENCY },	/* XXX - historical */
     { "HOLDINGDISK", HOLDING },
+    { "IGNORE", IGNORE },
     { "INDEX", INDEX },
     { "KENCRYPT", KENCRYPT },
     { "MAXCYCLE", MAXCYCLE },	/* XXX - historical */
@@ -840,6 +841,10 @@ static void get_dumptype()
 	case HOLDING:
 	    get_simple(&tmpval, &dpcur.s_no_hold, BOOL);
 	    dpcur.no_hold = (tmpval.i == 0);
+	    break;
+	case IGNORE:
+	    get_simple(&tmpval, &dpcur.s_ignore, BOOL);
+	    dpcur.ignore = (tmpval.i != 0);
 	    break;
 	case INDEX:
 	    get_simple(&tmpval, &dpcur.s_index, BOOL);
@@ -934,6 +939,7 @@ static void init_dumptype_defaults()
     dpcur.skip_incr = dpcur.skip_full = 0;
     dpcur.no_hold = 0;
     dpcur.kencrypt = 0;
+    dpcur.ignore = 0;
     dpcur.index = 0;
 
     dpcur.s_comment = 0;
@@ -953,6 +959,7 @@ static void init_dumptype_defaults()
     dpcur.s_skip_full = 0;
     dpcur.s_no_hold = 0;
     dpcur.s_kencrypt = 0;
+    dpcur.s_ignore = 0;
     dpcur.s_index = 0;
 }
 
@@ -1003,6 +1010,7 @@ static void copy_dumptype()
     dtcopy(skip_full, s_skip_full);
     dtcopy(no_hold, s_no_hold);
     dtcopy(kencrypt, s_kencrypt);
+    dtcopy(ignore, s_ignore);
     dtcopy(index, s_index);
 }
 
