@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.2 1999/04/16 04:30:54 kashmir Exp $
+ * $Id: rsh-security.c,v 1.3 1999/04/27 16:40:33 kashmir Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -941,7 +941,7 @@ conn_read_callback(cookie)
     if (rval <= 0) {
 	rc->pktlen = 0;
 	rc->handle = H_EOF;
-	rval = event_wakeup((int)rc);
+	rval = event_wakeup((event_id_t)rc);
 	rshprintf(("rsh: conn_read_callback: event_wakeup return %d\n", rval));
 	/* delete our 'accept' reference */
 	if (accept_fn != NULL)
@@ -951,7 +951,7 @@ conn_read_callback(cookie)
     }
 
     /* If there are events waiting on this handle, we're done */
-    rval = event_wakeup((int)rc);
+    rval = event_wakeup((event_id_t)rc);
     rshprintf(("rsh: conn_read_callback: event_wakeup return %d\n", rc));
     if (rval > 0)
 	return;
