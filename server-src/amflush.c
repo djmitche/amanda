@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.37 1998/10/15 21:31:30 martinea Exp $
+ * $Id: amflush.c,v 1.38 1998/10/17 02:00:05 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -38,8 +38,6 @@
 #include "version.h"
 #include "holding.h"
 #include "driverio.h"
-
-disklist_t *diskqp;
 
 static char *config;
 char *confdir;
@@ -64,6 +62,7 @@ char **main_argv;
     char *dumpuser;
     int fd;
     char *logfile;
+    disklist_t *diskqp;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
