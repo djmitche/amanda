@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.35 1998/01/26 21:16:19 jrj Exp $
+ * $Id: conffile.c,v 1.36 1998/01/28 15:49:27 jrj Exp $
  *
  * read configuration file
  */
@@ -499,43 +499,41 @@ char *str;
 
 static void init_defaults()
 {
+    char *s;
+
     /* defaults for exported variables */
 
-    conf_org.s = newstralloc(conf_org.s,
 #ifdef DEFAULT_CONFIG
-		DEFAULT_CONFIG
+    s = DEFAULT_CONFIG;
 #else
-		"YOUR ORG"
+    s = "YOUR ORG";
 #endif
-		);
+    conf_org.s = newstralloc(conf_org.s, s);
     malloc_mark(conf_org.s);
     conf_mailto.s = newstralloc(conf_mailto.s, "operators");
     malloc_mark(conf_mailto.s);
-    conf_dumpuser.s = newstralloc(conf_dumpuser.s,
 #ifdef CLIENT_LOGIN
-		CLIENT_LOGIN
+    s = CLIENT_LOGIN;
 #else
-		"bin"
+    s = "bin";
 #endif
-		);
+    conf_dumpuser.s = newstralloc(conf_dumpuser.s, s);
     malloc_mark(conf_dumpuser.s);
-    conf_tapedev.s = newstralloc(conf_tapedev.s,
 #ifdef DEFAULT_TAPE_DEVICE
-		DEFAULT_TAPE_DEVICE
+    s = DEFAULT_TAPE_DEVICE;
 #else
-		"/dev/rmt8"
+    s = "/dev/rmt8";
 #endif
-		);
+    conf_tapedev.s = newstralloc(conf_tapedev.s, s);
     malloc_mark(conf_tapedev.s);
     conf_tpchanger.s = newstralloc(conf_tpchanger.s, "");
     malloc_mark(conf_tpchanger.s);
-    conf_chngrdev.s = newstralloc(conf_chngrdev.s,
 #ifdef DEFAULT_CHANGER_DEVICE
-				  DEFAULT_CHANGER_DEVICE
+    s = DEFAULT_CHANGER_DEVICE;
 #else
-				  "/dev/null"
+    s = "/dev/null";
 #endif
-				  );
+    conf_chngrdev.s = newstralloc(conf_chngrdev.s, s);
     malloc_mark(conf_chngrdev.s);
     conf_chngrfile.s =
 		newstralloc(conf_chngrfile.s, "/usr/adm/amanda/changer-status");
