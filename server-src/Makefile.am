@@ -1,6 +1,6 @@
 # Makefile for Amanda server programs.
 
-libserver_version = 0:0:0
+libserver_version = 0:1:0
 
 INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/tape-src
 
