@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.38 1998/10/17 02:00:05 martinea Exp $
+ * $Id: amflush.c,v 1.39 1998/10/23 20:28:37 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -196,6 +196,7 @@ char *diskdir, *datestamp;
     disk_t *dp;
     sched_t sp;
     filetype_t filetype;
+    tok_t tok;
 
     dirname = vstralloc(diskdir, "/", datestamp, NULL);
 
@@ -312,6 +313,7 @@ void run_dumps()
 {
     holdingdisk_t *hdisk;
     char **dss;
+    tok_t tok;
 
     startclock();
     log_add(L_START, "date %s", datestamp);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.10 1998/10/15 02:27:58 martinea Exp $
+ * $Id: driverio.h,v 1.11 1998/10/23 20:28:41 martinea Exp $
  *
  * driver-related helper functions
  */
@@ -91,8 +91,6 @@ typedef enum {
 } tok_t;
 
 extern char *cmdstr[];
-
-GLOBAL tok_t tok;
 
 GLOBAL int maxfd;
 GLOBAL fd_set readset;

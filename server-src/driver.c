@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.52 1998/10/15 21:31:36 martinea Exp $
+ * $Id: driver.c,v 1.53 1998/10/23 20:28:39 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -134,6 +134,7 @@ char **main_argv;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     unsigned long reserve = 100;
+    tok_t tok;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -607,6 +608,7 @@ void handle_taper_result()
 {
     disk_t *dp;
     int filenum;
+    tok_t tok;
 
     tok = getresult(taper, 1);
 
@@ -782,6 +784,7 @@ int fd;
     long origsize;
     long dumpsize;
     long dumptime;
+    tok_t tok;
 
     dumper = lookup_dumper(fd);
     dp = dumper->dp;
@@ -1366,6 +1369,7 @@ disk_t *dp;
     long origsize;
     long dumpsize;
     long dumptime;
+    tok_t tok;
 
     inside_dump_to_tape = 1;	/* for simulator */
 
