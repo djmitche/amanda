@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.17 1997/11/11 05:27:18 amcore Exp $
+ * $Id: driver.c,v 1.18 1997/11/17 13:00:16 amcore Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -158,7 +158,7 @@ char **main_argv;
 
 		if(hdp->disksize > avail) {
 		    log(L_WARNING,
-			"WARNING: %s: %d KB requested, but only %d KB available.",
+			"WARNING: %s: %ld KB requested, but only %ld KB available.",
 			hdp->diskdir, hdp->disksize, avail);
 
 		    hdp->disksize = avail;
@@ -195,7 +195,7 @@ char **main_argv;
 
     log(L_STATS, "startup time %s", walltime_str(curclock()));
 
-printf("driver: start time %s inparallel %d bandwidth %d diskspace %ld",
+printf("driver: start time %s inparallel %d bandwidth %d diskspace %lu",
        walltime_str(curclock()), inparallel, free_kps((interface_t *)0), free_space());
 printf(" dir %s datestamp %s driver: drain-ends tapeq %s big-dumpers %d\n",
        "OBSOLETE", datestamp,  use_lffo? "LFFO" : "FIFO", big_dumpers);
@@ -411,13 +411,29 @@ disk_t *a, *b;
 int sort_by_time(a, b)
 disk_t *a, *b;
 {
-    return sched(a)->est_time - sched(b)->est_time;
+    long diff;
+
+    if ((diff = sched(a)->est_time - sched(b)->est_time) < 0) {
+	return -1;
+    } else if (diff > 0) {
+	return 1;
+    } else {
+	return 0;
+    }
 }
 
 int sort_by_size_reversed(a, b)
 disk_t *a, *b;
 {
-    return sched(b)->est_size - sched(a)->est_size;
+    long diff;
+
+    if ((diff = sched(a)->est_size - sched(b)->est_size) < 0) {
+	return -1;
+    } else if (diff > 0) {
+	return 1;
+    } else {
+	return 0;
+    }
 }
 
 void dump_schedule(qp, str)
@@ -429,7 +445,7 @@ char *str;
     printf("dump of driver schedule %s:\n--------\n", str);
 
     for(dp = qp->head; dp != NULL; dp = dp->next) {
-	printf("  %-10.10s %-4.4s lv %d t %5d s %8ld p %d\n",
+	printf("  %-10.10s %-4.4s lv %d t %5ld s %8lu p %d\n",
 	       dp->host->hostname, dp->name, sched(dp)->level,
 	       sched(dp)->est_time, sched(dp)->est_size, sched(dp)->priority);
     }
@@ -715,8 +731,8 @@ int fd;
 
 	if(tok == FATAL_TRYAGAIN) {
 	    /* dumper is confused, start another */
-	    log(L_WARNING, "%s (pid %d) confused, restarting it.",
-		dumper->name, dumper->pid);
+	    log(L_WARNING, "%s (pid %ld) confused, restarting it.",
+		dumper->name, (long)dumper->pid);
 	    FD_CLR(fd,&readset);
 	    close(fd);
 	    startup_dump_process(dumper);
@@ -776,8 +792,8 @@ int fd;
 
     case BOGUS:
 	/* either EOF or garbage from dumper.  Turn it off */
-	log(L_WARNING, "%s pid %d is messed up, ignoring it.\n",
-	    dumper->name, dumper->pid);
+	log(L_WARNING, "%s pid %ld is messed up, ignoring it.\n",
+	    dumper->name, (long)dumper->pid);
 	FD_CLR(fd,&readset);
 	close(fd);
 	dumper->busy = 0;
@@ -818,9 +834,10 @@ disklist_t *waitqp;
     sched_t *sp;
     disk_t *dp;
     disklist_t rq;
-    int rc, time, level, line, priority;
+    int rc, level, line, priority;
     char dumpdate[80], degr_dumpdate[80];
-    int degr_level, degr_time;
+    int degr_level;
+    long time, degr_time;
     unsigned long size, degr_size;
     char hostname[80], diskname[80], inpline[2048];
 
@@ -833,7 +850,7 @@ disklist_t *waitqp;
     while(fgets(inpline, 2048, stdin)) {
 	line++;
 
-	rc = sscanf(inpline, "%s %s %d %d %s %ld %d %d %s %ld %d\n",
+	rc = sscanf(inpline, "%s %s %d %d %s %lu %ld %d %s %lu %ld\n",
 		    hostname, diskname, &priority,
 		    &level, dumpdate, &size, &time,
 		    &degr_level, degr_dumpdate, &degr_size, &degr_time);
@@ -959,11 +976,11 @@ unsigned long size;
 		minp = hdp;
 	}
 #ifdef HOLD_DEBUG
-    printf("find %d K space: selected %s size %ld allocated %ld dumpers %d\n",
+    printf("find %lu K space: selected %s size %ld allocated %ld dumpers %d\n",
 	   size,
 	   minp? minp->diskdir : "NO FIT",
-	   minp? minp->disksize : (unsigned long)-1,
-	   minp? holdalloc(minp)->allocated_space : (unsigned long)-1,
+	   minp? minp->disksize : (long)-1,
+	   minp? holdalloc(minp)->allocated_space : (long)-1,
 	   minp? holdalloc(minp)->allocated_dumpers : -1);
 #endif
     return minp;
@@ -975,7 +992,7 @@ holdingdisk_t *holdp;
 disk_t *diskp;
 {
 #ifdef HOLD_DEBUG
-    printf("assigning disk %s:%s size %ld to disk %s\n",
+    printf("assigning disk %s:%s size %lu to disk %s\n",
 	   diskp->host->hostname, diskp->name,
 	   sched(diskp)->est_size, holdp->diskdir);
 #endif
@@ -1018,7 +1035,7 @@ tok_t tok;
 	/* the dump is done, adjust to actual size and decrease dumpers */
 
 #ifdef HOLD_DEBUG
-	printf("adjust: disk %s:%s done, act %d prev est %ld diff %ld\n",
+	printf("adjust: disk %s:%s done, act %lu prev est %lu diff %ld\n",
 	       diskp->host->hostname, diskp->name, kbytes,
 	       sched(diskp)->act_size, diff);
 #endif
@@ -1031,7 +1048,7 @@ tok_t tok;
 	/* dump still active, but adjust size up iff already > estimate */
 
 #ifdef HOLD_DEBUG
-	printf("adjust: disk %s:%s no_room, act %d prev est %ld diff %ld\n",
+	printf("adjust: disk %s:%s no_room, act %lu prev est %lu diff %ld\n",
 	       diskp->host->hostname, diskp->name, kbytes,
 	       sched(diskp)->act_size, diff);
 #endif
@@ -1054,7 +1071,7 @@ void delete_diskspace(diskp)
 disk_t *diskp;
 {
 #ifdef HOLD_DEBUG
-    printf("delete: file %s size %ld hdisk %s\n",
+    printf("delete: file %s size %lu hdisk %s\n",
 	   sched(diskp)->destname, sched(diskp)->act_size,
 	   sched(diskp)->holdp->diskdir);
 #endif
@@ -1138,8 +1155,8 @@ disk_t *dp;
     switch(tok) {
     case BOGUS:
 	/* either eof or garbage from dumper */
-	log(L_WARNING, "%s pid %d is messed up, ignoring it.\n",
-	    dumper->name, dumper->pid);
+	log(L_WARNING, "%s pid %ld is messed up, ignoring it.\n",
+	    dumper->name, (long)dumper->pid);
 	dumper->down = 1;	/* mark it down so it isn't used again */
 	failed = 1;	/* dump failed, must still finish up with taper */
 	break;
@@ -1234,7 +1251,7 @@ void short_dump_state()
     wall_time = walltime_str(curclock());
 
     printf("driver: state time %s ", wall_time);
-    printf("free kps: %d space: %ld taper: ",
+    printf("free kps: %d space: %lu taper: ",
 	   free_kps((interface_t *)0), free_space());
     if(degraded_mode) printf("DOWN");
     else if(!taper_busy) printf("idle");
@@ -1259,10 +1276,10 @@ char *str;
 
     printf("================\n");
     printf("driver state at time %s: %s\n", walltime_str(curclock()), str);
-    printf("free kps: %d, space: %ld\n", free_kps((interface_t *)0), free_space());
+    printf("free kps: %d, space: %lu\n", free_kps((interface_t *)0), free_space());
     if(degraded_mode) printf("taper: DOWN\n");
     else if(!taper_busy) printf("taper: idle\n");
-    else printf("taper: writing %s:%s.%d est size %ld\n",
+    else printf("taper: writing %s:%s.%d est size %lu\n",
 		taper_disk->host->hostname, taper_disk->name,
 		sched(taper_disk)->level,
 		sched(taper_disk)->est_size);
@@ -1271,7 +1288,7 @@ char *str;
 	if(!dmptable[i].busy)
 	  printf("%s: idle\n", dmptable[i].name);
 	else
-	  printf("%s: dumping %s:%s.%d est kps %d size %ld time %d\n",
+	  printf("%s: dumping %s:%s.%d est kps %d size %lu time %ld\n",
 		dmptable[i].name, dp->host->hostname, dp->name, sched(dp)->level,
 		sched(dp)->est_kps, sched(dp)->est_size, sched(dp)->est_time);
     }

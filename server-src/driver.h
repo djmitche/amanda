@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.h,v 1.10 1997/09/23 02:41:08 george Exp $
+ * $Id: driver.h,v 1.11 1997/11/17 13:00:18 amcore Exp $
  *
  * defines and globals for the Amanda driver
  */
@@ -52,7 +52,7 @@ typedef struct dumper_s {
 typedef struct sched_s {
     int attempted, priority;
     int level, degr_level;
-    int est_time, degr_time;
+    long est_time, degr_time;
     unsigned long est_size, degr_size, act_size;
     char *dumpdate, *degr_dumpdate;
     int est_kps, degr_kps;
@@ -69,7 +69,7 @@ typedef struct sched_s {
 
 typedef struct holdalloc_s {
     int allocated_dumpers;
-    unsigned long allocated_space;
+    long allocated_space;
 } holdalloc_t;
 
 #define holdalloc(hp)	((holdalloc_t *) (hp)->up)
