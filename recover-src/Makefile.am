@@ -3,11 +3,7 @@
 INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/client-src \
 			-I$(top_srcdir)/tape-src
 
-if WANT_LIBTOOL
 LIB_EXTENSION = la
-else
-LIB_EXTENSION = a
-endif
 
 sbin_PROGRAMS =		amrecover
 

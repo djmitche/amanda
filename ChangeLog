@@ -1,5 +1,10 @@
 2002-11-04  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+        * configure.in: Remove --disable-libtool.
+        * */Makefile.am: Remove WANT_LIBTOOL.
+
+2002-11-04  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* changer-src/chg-scsi.c (config_name, config_dir): Remove declaration.
 	* server-src/amadmin.c: Ditto.
 	* server-src/amcheck.c: Ditto.

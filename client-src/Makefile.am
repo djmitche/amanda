@@ -2,13 +2,8 @@
 
 INCLUDES =		-I$(top_srcdir)/common-src
 
-if WANT_LIBTOOL
 lib_LTLIBRARIES =	libamclient.la
 LIB_EXTENSION = la
-else
-noinst_LIBRARIES =	libamclient.a
-LIB_EXTENSION = a
-endif
 
 libexec_PROGRAMS =	amandad calcsize killpgrp rundump runtar selfcheck sendbackup sendsize versionsuffix
 
@@ -25,8 +20,6 @@ libamclient_la_SOURCES=	amandates.c		getfsent.c	\
 			$(samba_sources)
 
 libamclient_la_LDFLAGS = -release $(VERSION)
-
-libamclient_a_SOURCES=  $(libamclient_la_SOURCES)
 
 ###
 # Because libamanda includes routines (e.g. regex) provided by some system

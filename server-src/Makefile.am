@@ -9,13 +9,8 @@ INCLUDES =		-I$(top_srcdir)/common-src \
 			-I../common-src \
 			-I$(top_srcdir)/tape-src
 
-if WANT_LIBTOOL
 lib_LTLIBRARIES = 	libamserver.la
 LIB_EXTENSION = la
-else
-noinst_LIBRARIES = 	libamserver.a
-LIB_EXTENSION = a
-endif
 
 sbin_PROGRAMS =		amadmin		amcheck		amflush		\
 			amgetconf	amlabel		amtape		\
@@ -35,8 +30,6 @@ libamserver_la_SOURCES=	amindex.c	changer.c			\
 			tapefile.c	find.c		server_util.c
 
 libamserver_la_LDFLAGS= -release $(VERSION)
-
-libamserver_a_SOURCES=	$(libamserver_la_SOURCES)
 
 ###
 # Because libamanda includes routines (e.g. regex) provided by some system

@@ -2,13 +2,8 @@
 
 INCLUDES =		-I$(top_srcdir)/common-src
 
-if WANT_LIBTOOL
 lib_LTLIBRARIES = 	libamtape.la
 LIB_EXTENSION = la
-else
-noinst_LIBRARIES = 	libamtape.a
-LIB_EXTENSION = a
-endif
 
 sbin_PROGRAMS=          ammt amdd
 
@@ -19,8 +14,6 @@ libamtape_la_SOURCES = 	output-file.c \
 			tapeio.c
 
 libamtape_la_LDFLAGS =  -release $(VERSION)
-
-libamtape_a_SOURCES =	$(libamtape_la_SOURCES)
 
 ###
 # Because libamanda includes routines (e.g. regex) provided by some system

@@ -2,11 +2,7 @@
 
 INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/server-src -I$(top_srcdir)/tape-src
 
-if WANT_LIBTOOL
 LIB_EXTENSION = la
-else
-LIB_EXTENSION = a
-endif
 
 if WANT_CHIO_SCSI
 CHIO_SCSI = chg-scsi-chio
