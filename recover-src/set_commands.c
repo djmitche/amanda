@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: set_commands.c,v 1.11 1998/10/28 19:27:01 jrj Exp $
+ * $Id: set_commands.c,v 1.11.2.1 1998/11/19 17:05:24 jrj Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -85,7 +85,6 @@ char *host;
 	return;
     }
 
-    clear_dir_list();
     cmd = stralloc2("HOST ", host);
     if (converse(cmd) == -1)
 	exit(1);
@@ -96,10 +95,12 @@ char *host;
     else
     {
 	/*
-	 * Try converting the given host to a fully qualified name.
+	 * Try converting the given host to a fully qualified name
+	 * and then try each of the aliases.
 	 */
 	if ((hp = gethostbyname(host)) != NULL) {
 	    host = hp->h_name;
+	    printf("Trying %s ...\n", host);
 	    cmd = newstralloc2(cmd, "HOST ", host);
 	    if (converse(cmd) == -1)
 		exit(1);
@@ -111,6 +112,7 @@ char *host;
 	    {
 	        for (hostp = hp->h_aliases; (host = *hostp) != NULL; hostp++)
 	        {
+		    printf("Trying %s ...\n", host);
 		    cmd = newstralloc2(cmd, "HOST ", host);
 		    if (converse(cmd) == -1)
 		        exit(1);
