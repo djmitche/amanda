@@ -1,5 +1,11 @@
 1998-12-02  Mike Grupenhoff <kashmir@munge.com>
 
+	* configure.in: if we're doing krb4 and -lcom_err is there, pull
+	it in
+	* configure.in: implement --with-krb5-security.
+
+1998-12-02  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/dgram.c (dgram_cat): now can take printf-style
 	arguments
 	* common-src/dgram.g (dgram_cat): update prototype
