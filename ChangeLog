@@ -1,3 +1,7 @@
+2001-10-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* man/Makefile.am: add amdd.8 and ammt.8 to EXTRA_DIST.
+
 2001-09-26 John R. Jackson (jrj@purdue.edu)
 
 	* server-src/reporter.c: Fix problem when column sizes are negative.

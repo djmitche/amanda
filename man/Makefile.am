@@ -37,7 +37,7 @@ RESTORE_MAN_PAGES = amrestore.8
 endif
 
 # not autoconf-generated:
-EXTRA_DIST = amplot.8 amrestore.8 amtape.8
+EXTRA_DIST = amplot.8 amrestore.8 amtape.8 amdd.8 ammt.8
 
 man_MANS = $(AMPLOT_MAN_PAGES) \
 	   $(COMMON_MAN_PAGES) \
