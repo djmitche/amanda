@@ -1,5 +1,7 @@
 Version 2.4.0b4
 
+	Added VXDUMP support to estimate program.  -oliva
+
 	Fixed amflush so that it cd's to the configuration directory
 	before invoking reporter.  -oliva
 
