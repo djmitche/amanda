@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.h,v 1.7.4.2 1998/11/12 13:19:36 martinea Exp $
+ * $Id: infofile.h,v 1.7.4.3 1998/11/28 22:55:00 martinea Exp $
  *
  * interface for current info file reading code
  */
@@ -58,9 +58,11 @@ typedef struct perf_s {
 } perf_t;
 
 typedef struct info_s {
-    int  command;		/* command word */
+    unsigned int  command;		/* command word */
 #	define NO_COMMAND	0	/* no outstanding commands */
-#	define PLANNER_FORCE	1	/* force level 0 tonight */
+#	define PLANNER_FORCE	1	/* force level 0 at next run */
+#	define FORCE_BUMP	2	/* force bump at next run */
+#	define FORCE_NO_BUMP	4	/* force no-bump at next run */
     perf_t  full;
     perf_t  incr;
     stats_t inf[DUMP_LEVELS];
