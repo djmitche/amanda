@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: killpgrp.c,v 1.3 1998/03/30 23:25:03 blair Exp $
+ * $Id: killpgrp.c,v 1.4 1998/03/31 00:05:21 blair Exp $
  *
  * if it is the process group leader, it kills all processes in its
  * process group when it is killed itself.
@@ -126,7 +126,7 @@ char **argv;
 #endif								/* } */
 }
 
-void term_kill_soft(sig)
+static void term_kill_soft(sig)
 int sig;
 {
     pid_t dumppid = getpid();
@@ -146,7 +146,7 @@ int sig;
     }
 }
 
-void term_kill_hard(sig)
+static void term_kill_hard(sig)
 int sig;
 {
     pid_t dumppid = getpid();
