@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.35.2.8 1999/03/02 00:58:24 martinea Exp $
+ * $Id: driverio.c,v 1.35.2.9 1999/03/02 01:08:16 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -479,17 +479,15 @@ long dumptime;
     close_infofile();
 }
 
-void update_info_taper(dp, label, filenum)
+void update_info_taper(dp, label, filenum, level)
 disk_t *dp;
 char *label;
 int filenum;
+int level;
 {
-    int level;
     info_t info;
     stats_t *infp;
     int rc;
-
-    level = sched(dp)->level;
 
     rc = open_infofile(getconf_str(CNF_INFOFILE));
     if(rc)
