@@ -1,3 +1,7 @@
+2003-05-20  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* common-src/versuff.c.in: Use @VERSION_SUFFIX@.
+
 2003-05-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* example/amanda.conf.in: Add more amrecover_changer doc.
