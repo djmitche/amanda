@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.70 1999/04/16 05:12:41 kashmir Exp $
+ * $Id: sendbackup-dump.c,v 1.71 1999/04/24 20:48:03 martinea Exp $
  *
  * send backup data using BSD dump
  */
@@ -190,7 +190,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 			     " | /sbin/sed",
 			     " -e", " \'s/^/\\//\'",
 			     NULL);
-	write_tapeheader();
+	info_tapeheader();
 
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
@@ -237,7 +237,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 			     " | ",
 			     LEAF_AND_DIRS,
 			     NULL);
-	write_tapeheader();
+	info_tapeheader();
 
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
@@ -272,7 +272,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 			     " | ",
 			     "sed -e \'\n/^\\./ {\ns/^\\.//\ns/, [0-9]*$//\ns/^\\.//\ns/ @-> .*$//\nt\n}\nd\n\'",
 			     NULL);
-	write_tapeheader();
+	info_tapeheader();
 
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
@@ -303,7 +303,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 			     " | ",
 			     LEAF_AND_DIRS,
 			     NULL);
-	write_tapeheader();
+	info_tapeheader();
 
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
@@ -327,7 +327,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 			 " | ",
 			 LEAF_AND_DIRS,
 			 NULL);
-    write_tapeheader();
+    info_tapeheader();
 
     start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.49 1999/04/16 05:12:46 kashmir Exp $
+ * $Id: sendbackup.c,v 1.50 1999/04/24 20:48:07 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -488,7 +488,7 @@ amwait_t w;
 
 /* Send header info to the message file.
 */
-void write_tapeheader()
+void info_tapeheader()
 {
     fprintf(stderr, "%s: info BACKUP=%s\n", get_pname(), program->backup_name);
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.66 1999/04/16 05:12:43 kashmir Exp $
+ * $Id: sendbackup-gnutar.c,v 1.67 1999/04/24 20:48:06 martinea Exp $
  *
  * send backup data using GNU tar
  */
@@ -327,7 +327,7 @@ notincremental:
 			     " | sed", " -e", 
 			     " \'s/^\\.//\'",
 			     NULL);
-	write_tapeheader();
+	info_tapeheader();
 
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
@@ -370,7 +370,7 @@ notincremental:
 			     " | sed", " -e",
 			     " \'s/^\\.//\'",
 			     NULL);
-	write_tapeheader();
+	info_tapeheader();
 
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 

@@ -1,3 +1,11 @@
+1999-04-24 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* client-src/sendbackup.c: rename write_tapeheader to info_taperheader
+	we already have a write_tapeheader function in dumper.c
+	* client-src/sendbackup.h: ditto
+	* client-src/sendbackup-dump.c: ditto
+	* client-src/sendbackup-gnutar.c: ditto
+
 1999-04-23 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* dumper-src/gnutar.pl.in: add debuging code.
