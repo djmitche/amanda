@@ -193,7 +193,7 @@ info_t *info;
 	rc = sscanf(line, "stats: %d %d %d %d %ld %d %80[^\n]",
 		    &level, &onestat.size, &onestat.csize, &onestat.secs,
 		    &onedate, &onestat.filenum, onestat.label);
-	if(rc != 7) return -2;
+	if(rc < 6) return -2;
 
 	/* time_t not guarranteed to be long */
 	onestat.date = onedate;
