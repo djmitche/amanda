@@ -8,6 +8,8 @@
 	* server-src/diskfile.h: Define.
 	* server-src/planner.c: Use.
 	* man/amanda.8.in: Document.
+	* NEWS: bumpsize, bumppercent, bumpdays and bumpmult can be in a
+	  dumptype.
 
 2004-04-22  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Fix by Paul Bijnens <paul.bijnens@xplanation.com>

@@ -8,6 +8,7 @@ Change in release 2.4.5b1
 * new bumppercent global option, this should improve bumping criteria,
   the bumpsize is set to a fixed value which can be adequate for small
   and large disk.
+* bumpsize, bumppercent, bumpdays and bumpmult can be in a dumptype.
 
 Changes in release 2.4.4p2
 
