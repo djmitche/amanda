@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.16 1999/05/15 15:07:17 martinea Exp $
+ * $Id: driver.c,v 1.58.2.17 1999/06/04 01:08:08 oliva Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1504,6 +1504,12 @@ disk_t *dp;
     default:
 	/* dump failed, but we must still finish up with taper */
 	failed = 1;	/* problem with dump, possibly nonfatal */
+	break;
+	
+    case FAILED: /* FAILED <handle> <errstr> */
+	/* dump failed, but we must still finish up with taper */
+	failed = 2;     /* fatal problem with dump */
+	break;
     }
 
     /*
@@ -1524,7 +1530,8 @@ disk_t *dp;
 
 	free_serial(result_argv[2]);
 
-	if(failed) break;	/* dump didn't work */
+	if(failed == 1) goto tryagain;	/* dump didn't work */
+	else if(failed == 2) goto fatal;
 
 	/* every thing went fine */
 	update_info_dumper(dp, origsize, dumpsize, dumptime);
@@ -1534,6 +1541,7 @@ disk_t *dp;
 	break;
 
     case TRYAGAIN: /* TRY-AGAIN <handle> <err mess> */
+    tryagain:
 	update_failed_dump_to_tape(dp);
 	free_serial(result_argv[2]);
 	enqueue_disk(&runq, dp);
@@ -1541,12 +1549,11 @@ disk_t *dp;
 
 
     case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
-	update_failed_dump_to_tape(dp);
-	free_serial(result_argv[2]);
-	/* fall through */
-
     case BOGUS:
     default:
+    fatal:
+	update_failed_dump_to_tape(dp);
+	free_serial(result_argv[2]);
 	failed = 2;	/* fatal problem */
     }
 

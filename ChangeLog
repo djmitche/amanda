@@ -1,5 +1,9 @@
 1999-06-03  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* server-src/driver.c (dump_to_tape): Tell hard from soft
+	(retryable) failures in both dumper and taper results, and behave
+	accordingly.
+
 	* docs/SYSTEM.NOTES: On Trusted Solaris, the format of inetd.conf is 
 	slightly different.
 	Reported by Julian Stevens <julian.stevens@baedsl.co.uk>
