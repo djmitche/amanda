@@ -65,6 +65,14 @@ it may be a transitory gcc (2.7.2) or libtool (1.0) bug.
 If you use logical volumes, you may refer to mountpoints or full
 device pathnames instead of device names in the disk list file.
  
+You may run into an internal /bin/sh limit when running the configure
+script.  The error message is:
+
+	./configure: sh internal 2K buffer overflow
+
+Using /bin/posix/sh usually works around the problem.  Another
+solution is to install GNU bash and use it instead of /bin/sh.
+
 ---------------------------------------------------------------------------
 AIX
 ---
