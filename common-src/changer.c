@@ -233,7 +233,7 @@ int resultlen;
     int exitcode;
 
     if (*tapechanger != '/')
-	sprintf(cmd, "%s/%s %s", libexecdir, tapechanger, versionsuffix(),
+	sprintf(cmd, "%s/%s%s %s", libexecdir, tapechanger, versionsuffix(),
 	    cmdstr);
     else
 	sprintf(cmd, "%s %s", tapechanger, cmdstr);
