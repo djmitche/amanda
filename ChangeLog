@@ -1,5 +1,10 @@
 2005-02-09  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* client-src/calcsize.c: Improve estimate for sparse file and count
+	  space for filenames.
+
+2005-02-09  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/planner.c: Improve message if no incremental estimate.
 
 2005-01-23  Stefan G. Weichinger <monitor@oops.co.at> 
