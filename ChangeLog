@@ -1,5 +1,9 @@
 1998-12-17  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c (databuf_flush): return 0 on success
+
+1998-12-17  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c (databuf_flush): new function.  Writes
 	the contents of the databuf out to its backing file, doing splitting
 	if necessary
