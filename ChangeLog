@@ -1,5 +1,10 @@
 2001-02-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amindexd.c (uncompress_file): remove uncompressed
+	index file if the command failed.
+
+2001-02-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* changer-src/scsi-changer-driver.c (GenericRewind): init ret to 0
 	to remove compiler warning.
 
