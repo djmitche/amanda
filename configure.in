@@ -1726,7 +1726,7 @@ EOF
 	else
 	    amanda_cv_posix_filelocking="no (compiler error)"
 	fi
-	cp conftest.c fcntltest.c
+	dnl cp conftest.c fcntltest.c
 	rm -f conftest* /tmp/conftest.lock
     ]
 )
@@ -1790,7 +1790,7 @@ EOF
 	    else
 		amanda_cv_flock_filelocking="no (compiler error)"
 	    fi
-	    cp conftest.c flocktest.c
+	    dnl cp conftest.c flocktest.c
 	    rm -f conftest* /tmp/conftest.lock
 	]
     )
@@ -1844,7 +1844,7 @@ EOF
 	    else
 		amanda_cv_lockf_filelocking="no (compiler error)"
 	    fi
-	    cp conftest.c lockftest.c
+	    dnl cp conftest.c lockftest.c
 	    rm -f conftest* /tmp/conftest.lock
 	]
     )
