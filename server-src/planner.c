@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.40 1997/10/05 04:02:45 amcore Exp $
+ * $Id: planner.c,v 1.41 1997/11/03 22:40:42 george Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1231,7 +1231,7 @@ disk_t *dp;
 
     fprintf(stderr, "   pick: next size %ld... ", bump_size);
 
-    if(base_size - bump_size >= thresh) {
+    if(base_size - bump_size < thresh) {
 	fprintf(stderr, "not bumped\n");
 	return base_level;
     }
