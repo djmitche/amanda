@@ -1,5 +1,9 @@
 1999-09-01 John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/amtoc.pl.in: allow multiple -s entries.
+
+1999-09-01 John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/reporter.c: handle/report a common columnspec syntax
 	  error instead of dumping core.
 
