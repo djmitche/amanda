@@ -1,3 +1,10 @@
+1999-01-11  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/fileheader.c (parse_file_header): const the buffer
+	argument
+	* server-src/fileheader.h: update parse_file_header proto for const
+	change
+
 1999-01-05  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amstatus.pl.in: report the current dump when reporting

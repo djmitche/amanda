@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.12 1998/12/07 23:52:53 martinea Exp $
+ * $Id: fileheader.c,v 1.13 1999/01/11 21:38:16 kashmir Exp $
  *
  */
 
@@ -40,12 +40,13 @@ dumpfile_t *file;
 
 
 void parse_file_header(buffer, file, buflen)
-char *buffer;
+const char *buffer;
 dumpfile_t *file;
 int buflen;
 {
     string_t line, save_line;
-    char *bp, *str, *ptr_buf, *start_buf;
+    char *bp, *str;
+    const char *start_buf, *ptr_buf;
     int nchars;
     char *verify;
     char *s, *s1, *s2;
