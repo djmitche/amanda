@@ -1,3 +1,9 @@
+1999-12-12 John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/taper.c (file_reader_side): detach and destroy shared
+	memory areas on an error condition.  Found by Patrik Andersin
+	<cat@iki.fi>.
+
 2000-07-17  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* client-src/sendsize.c (getsize_dump,getsize_gnutar): set 
@@ -872,7 +878,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.355 2000/07/18 01:45:07 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.356 2000/07/19 00:17:37 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
