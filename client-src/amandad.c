@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.27 1998/05/19 15:00:16 martinea Exp $
+ * $Id: amandad.c,v 1.28 1998/06/24 05:05:21 oliva Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -508,7 +508,7 @@ char *str;
 		"Amanda %d.%d NAK HANDLE %s SEQ %d\nERROR %s\n",
 		VERSION_MAJOR, VERSION_MINOR,
 		hdr->handle ? hdr->handle : "",
-		hdr->sequence, str);
+		hdr->sequence, str ? str : "UNKNOWN");
 
     msg->dgram.len = strlen(msg->dgram.data);
     dbprintf(("sending nack:\n----\n%s----\n\n", msg->dgram.data));

@@ -1,5 +1,8 @@
 1998-06-24  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* client-src/amandad.c (sendnak): report `UNKNOWN' error if str is
+	NULL.
+
 	* amplot/amplot.awk: ignore `interface-state'
 	Reported by Peter Walker <peter.walker@talarian.com>
 
