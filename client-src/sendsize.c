@@ -114,12 +114,9 @@ char **argv;
 	    continue;
 	}
 
-	scanres = sscanf(line, "%s %d %d %s %s\n", disk, &level, &platter, prog, exclude+2);
+	scanres = sscanf(line, "%s %s %d %d %s\n",
+			 prog, disk, &level, &platter, exclude+2);
 	switch(scanres) {
-	case 2:
-	  platter = -1;
-	case 3:
-	  strcpy(prog, "DUMP");
 	case 4:
 	  *exclude = 0;
 	  break;

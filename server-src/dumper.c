@@ -983,7 +983,7 @@ char *hostname, *disk, *levelstr, *dumpname, *options;
 
     sprintf(req,
 	    "SERVICE sendbackup\n%s %s %s DATESTAMP %s OPTIONS %s\n",
-            disk, levelstr, progname, datestamp, options);
+            progname, disk, levelstr, datestamp, options);
 
     datafd = mesgfd = indexfd = -1;
 

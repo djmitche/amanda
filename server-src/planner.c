@@ -800,9 +800,7 @@ host_t *hostp;
 
     assert(hostp->disks != NULL);
 
-    sprintf(req, "SERVICE sendsize\nOPTIONS MAXDUMPS=%d;\n",
-	    /* XXX assumes all same PROGRAM */
-	    hostp->disks->dtype->program, hostp->maxdumps);
+    sprintf(req, "SERVICE sendsize\nOPTIONS MAXDUMPS=%d;\n", hostp->maxdumps);
 
     disks = 0;
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
@@ -814,8 +812,8 @@ host_t *hostp;
 	for(i=0;i<MAX_LEVELS;i++) {
 	    if(est(dp)->level[i] == -1) break;
 
-	    sprintf(line, "%s %d %d %s %s\n", dp->name, est(dp)->level[i],
-		    dp->platter, dp->dtype->program,
+	    sprintf(line, "%s %s %d %d %s\n", dp->dtype->program,
+		    dp->name, est(dp)->level[i], dp->platter,
 		    (dp->dtype->exclude ? dp->dtype->exclude : ""));
 	    strcat(req, line);
 	    disks++;
