@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.46 1998/01/22 03:04:16 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.47 1998/01/22 15:00:30 amcore Exp $
  *
  * send backup data using BSD dump
  */
@@ -246,6 +246,7 @@ char *dumpdate;
 	indexcmd = vstralloc(VXRESTORE,
 			     " -tvf", " -",
 			     " 2>/dev/null",
+			     " | ",
 			     LEAF_AND_DIRS,
 			     NULL);
 	write_tapeheader();
@@ -278,6 +279,7 @@ char *dumpdate;
 #endif
 			     " -tvf", " -",
 			     " 2>/dev/null",
+			     " | ",
 			     LEAF_AND_DIRS,
 			     NULL);
 	write_tapeheader();
