@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.28.2.4.4.3 2001/11/03 13:38:36 martinea Exp $
+ * $Id: amrestore.c,v 1.28.2.4.4.3.2.1 2001/12/07 22:05:38 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -401,7 +401,24 @@ int isafile;
 	    }
 	    close(tapedev);
 	    if((tapedev = open(file->cont_filename, O_RDONLY)) == -1) {
-		error("cannot open %s: %s",file->cont_filename,strerror(errno));
+		char *cont_filename = strrchr(file->cont_filename,'/');
+		if(cont_filename) {
+		    cont_filename++;
+		    if((tapedev = open(cont_filename,O_RDONLY)) == -1) {
+			error("can't open %s: %s", file->cont_filename,
+			      strerror(errno));
+		    }
+		    else {
+			fprintf(stderr, "cannot open %s: %s\n",
+				file->cont_filename, strerror(errno));
+			fprintf(stderr, "using %s\n",
+				cont_filename);
+		    }
+		}
+		else {
+		    error("can't open %s: %s", file->cont_filename,
+			  strerror(errno));
+		}
 	    }
 	    read_file_header(file, isafile);
 	    if(file->type != F_DUMPFILE && file->type != F_CONT_DUMPFILE) {
