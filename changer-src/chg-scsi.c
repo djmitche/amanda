@@ -1,8 +1,8 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.18 2000/01/17 22:26:49 th Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.19 2000/01/30 12:31:37 th Exp $";
 #endif
 /*
- *  $Id: chg-scsi.c,v 1.6.2.18 2000/01/17 22:26:49 th Exp $
+ *  $Id: chg-scsi.c,v 1.6.2.19 2000/01/30 12:31:37 th Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -898,6 +898,8 @@ int main(int argc, char *argv[])
   tape_device = getconf_str(CNF_TAPEDEV);
 
   /* Get the configuration parameters */
+  /* Attention, this will not support more than 10 tape devices 0-9 */
+  /* */
   if (strlen(tape_device)==1){
     if (read_config(changer_file,&chg) == -1)
     {
@@ -1005,24 +1007,10 @@ int main(int argc, char *argv[])
     }
     free_changer_struct(&chg);
   } else {
-    /* get info about the changer */
-    if (NULL == (pChangerDev = OpenDevice(changer_dev, "dev", NULL))) {
-      int localerr = errno;
-      fprintf(stderr, "%s: open: %s: %s\n", get_pname(), 
-              changer_dev, strerror(localerr));
-      printf("%s open: %s: %s\n", "<none>", changer_dev, strerror(localerr));
-      dbprintf(("%s: open: %s: %s\n", get_pname(),
-                changer_dev, strerror(localerr)));
+      printf("Please specify a number as tape_device [0-9]\n");
+      dbprintf(("tape_device is not a number %s\n", tape_device));
       return 2;
     }
-    fd = pChangerDev->fd;
-    slotcnt = get_slot_count(fd);
-    use_slots    = slotcnt;
-    slot_offset  = 0;
-    drive_num    = 0;
-    need_eject   = 0;
-    need_sleep   = 0;
-  }
 
   drivecnt = get_drive_count(fd);
 
