@@ -1,5 +1,10 @@
 1999-03-30  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* patches/tar-1.12.patch: patch the configure script so that it
+	requires autoconf and autoheader to be run; improve the
+	printf_long_long test so that it doesn't get false positives because 
+	of endianness
+
 	* changer-src/scsi-chio.c: since we do not support FreeBSD 3's
 	camlib.h interface, #ifdef out all the code
 	Reported by Francis Lam <Francis.Lam@Leitch.com>
