@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: tapeio.c,v 1.20.4.7.4.4.2.5 2002/12/05 19:27:53 martinea Exp $
+ * $Id: tapeio.c,v 1.20.4.7.4.4.2.6 2003/01/25 23:00:59 jrjackson Exp $
  *
  * implements generic tape I/O functions
  */
@@ -485,8 +485,10 @@ tape_access(filename, mode)
     int mode;
 {
     char *tname;
+    int vslot;
 
-    return vtable[name2slot(filename, &tname)].xxx_tape_access(tname, mode);
+    vslot = name2slot(filename, &tname);
+    return vtable[vslot].xxx_tape_access(tname, mode);
 }
 
 int
@@ -495,8 +497,10 @@ tape_stat(filename, buf)
     struct stat *buf;
 {
     char *tname;
+    int vslot;
 
-    return vtable[name2slot(filename, &tname)].xxx_tape_stat(tname, buf);
+    vslot = name2slot(filename, &tname);
+    return vtable[vslot].xxx_tape_stat(tname, buf);
 }
 
 int
