@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.47.2.12 2000/07/19 00:17:38 jrjackson Exp $
+/* $Id: taper.c,v 1.47.2.13 2000/10/11 00:35:03 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -558,6 +558,7 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
     int rc, err, opening, closing, bufnum;
     long filesize;
     times_t runtime;
+    char *strclosing = NULL;
     char *str;
     int header_read = 0;
     dumpfile_t file;
@@ -665,6 +666,7 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 				       sizeof(bp->buffer))) < 0) {
 		err = (rc < 0)? errno : 0;
 		closing = 1;
+		strclosing = newvstralloc(strclosing,"Can't read data: ",NULL);
 		syncpipe_put('C');
 	    }
 	    else {
@@ -681,14 +683,15 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 		    else if((fd = open(file.cont_filename,O_RDONLY)) == -1) {
 			err = errno;
 			closing = 1;
+			strclosing = newvstralloc(strclosing,"can't open: ",file.cont_filename,NULL);
 			syncpipe_put('C');
 			rc = 0;
 		    }
 		    else if((fd != save_fd) && dup2(fd, save_fd) == -1) {
 			err = errno;
 			closing = 1;
+			strclosing = newvstralloc(strclosing,"can't dup2: ",file.cont_filename,NULL);
 			syncpipe_put('C');
-			fprintf(stderr,"can't dup2\n");
 		    }
 		    else {
 			if(fd != save_fd) {
@@ -699,6 +702,7 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 						   sizeof(bp->buffer))) <= 0) {
 			    err = (rc < 0)? errno : 0;
 			    closing = 1;
+			    strclosing = newvstralloc(strclosing,"Can't read header: ",file.cont_filename,NULL);
 			    syncpipe_put('C');
 			}
 			else {
@@ -708,6 +712,8 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 						   sizeof(bp->buffer))) <= 0) {
 				err = (rc < 0)? errno : 0;
 				closing = 1;
+				if(rc<0)
+			    	    strclosing = newvstralloc(strclosing,"Can't read data: ",NULL);
 				syncpipe_put('C');
 			    }
 			}
@@ -781,9 +787,14 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 	    aclose(fd);
 	    runtime = stopclock();
 	    if(err) {
-		errstr = newvstralloc(errstr,
-				      "[input: ", strerror(err), "]",
-				      NULL);
+		if(strclosing)
+		    errstr = newvstralloc(errstr,
+				          "[input: ", strclosing, ": ",
+					  strerror(err), "]", NULL);
+		else
+		    errstr = newvstralloc(errstr,
+				          "[input: ", strerror(err), "]",
+				          NULL);
 		q = squote(errstr);
 		putresult("TAPE-ERROR %s %s\n", handle, q);
 		amfree(q);

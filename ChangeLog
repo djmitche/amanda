@@ -1,5 +1,10 @@
 2000-10-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/taper.c: give better message when failing
+	to open a chunk.
+
+2000-10-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/diskfile.c (headqueue_disk): new function to
 	insert at the head of the queue.
 	* server-src/diskfile.h (headqueue_disk): prototype.
@@ -1010,7 +1015,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.382 2000/10/10 21:33:22 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.383 2000/10/11 00:35:02 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
