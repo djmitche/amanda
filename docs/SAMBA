@@ -4,7 +4,7 @@ Installation
 
 Amanda is able to back up Microsoft Windows shared disks by using
 SAMBA, a package that implements a SMB client and server for Unix.
-This version of amanda is reported to work with samba 1.9.18p7.  It
+This version of amanda is reported to work with samba 1.9.18p8.  It
 will not work with versions prior to 1.9.17, unless you have samba
 1.9.16p2 or some beta versions of 1.9.17 already installed with a
 patch that used to be provided with amanda.
@@ -15,12 +15,11 @@ are printed correctly.  Amanda will report an estimate failure in this
 case.
 
 If you have very long pathnames or very deep directory trees in the PC
-filesystems, you may have to upgrade samba to 1.9.18 (currently in
-alpha development stage; it is reported to be able to produce
-GNUTAR-compatible filesystems, that do not have a hardcoded limit on
-pathname length).  There used to be a patch in the amanda distribution
-that would enlarge the maximum filename size; unfortunately, this
-patch caused samba to produce invalid tar files.
+filesystems, you may need samba to 1.9.18 or higher.  It produces
+GNUTAR-compatible tar files, without a hardcoded limit on pathname
+length.  There used to be a patch in the amanda distribution that
+would enlarge the maximum filename size; unfortunately, this patch
+caused samba to produce invalid tar files.
 
 If you wish to back up large (>2GB) filesystems with samba, apply
 samba-largefs.patch, after making sure your C compiler supports
