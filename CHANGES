@@ -1,3 +1,9 @@
+	fixed race condition in debug file open operation.  -oliva and
+	Thomas Schmeidl
+
+	exclude-list and exclude-file are correctly handled by
+	sendsize.  -oliva and Johann Klasek <jk@auto.tuwien.ac.at>
+
 	fix some kerberos4 problems; no longer require low ports for
 	kerberized connections; now use amanda@REALM instead of
 	amanda.amanda@REALM in .klogin's.  -kovert
