@@ -1,3 +1,8 @@
+1999-08-15  Jon LaBadie  <jon@jgcomp.com>
+
+	* tape-src/tapetype.c: Speed it up by using larger sections in the
+	second pass.
+
 1999-08-15  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* man/amanda.8.in (skip-full, incronly): Document existing bugs.
@@ -69,7 +74,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.232 1999/08/15 08:12:11 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.233 1999/08/15 09:41:30 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
