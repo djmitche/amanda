@@ -1,3 +1,9 @@
+2005-03-31  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/dumper.c (update_dataptr): Open a new chunk file even if
+	  size==0, the test must be (dataout < datain), which means we have
+	  something to write.
+
 2005-03-29  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* NEWS: new amoverview -skipmissed option.
