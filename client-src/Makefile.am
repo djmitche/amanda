@@ -42,9 +42,15 @@ noinst_LIBRARIES =	@BUILD_CLIENT_LIB@
 EXTRA_LIBRARIES = 	libamclient.a
 
 libamclient_a_SOURCES =	amandates.c	fnmatch.c	getfsent.c	\
-			unctime.c	add_exclude.c	check_exclude.c
+			unctime.c	add_exclude.c	check_exclude.c \
+			@LIBSRCS_CLIENT@
 
-noinst_HEADERS	= 	amandates.h	fnmatch.h	getfsent.h
+EXTRA_libamclient_a_SOURCES = findpass.c
+libamclient_a_DEPENDENCIES = @LIBOBJS_CLIENT@
+libamclient_a_LIBADD =	@LIBOBJS_CLIENT@
+
+noinst_HEADERS	= 	amandates.h	fnmatch.h	getfsent.h	\
+			findpass.h
 
 install-exec-hook:
 	@list="$(sbin_SCRIPTS)"; \

@@ -21,7 +21,7 @@ libamnolog_a_SOURCES = 	nolog.c
 EXTRA_DIST =		genversion.c
 
 noinst_HEADERS =	amanda.h	arglist.h	\
-			dgram.h		findpass.h	protocol.h	\
+			dgram.h		protocol.h	\
 			regex.h		statfs.h	stream.h	\
 			version.h
 
