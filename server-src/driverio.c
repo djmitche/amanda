@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.35.2.4 1999/02/16 03:12:26 martinea Exp $
+ * $Id: driverio.c,v 1.35.2.5 1999/02/16 03:19:22 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -79,7 +79,8 @@ int fd;
 }
 
 
-void startup_tape_process()
+void startup_tape_process(taper_program)
+char *taper_program;
 {
     int fd[2];
 

@@ -1,5 +1,17 @@
 1999-02-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/driverio.c (startup_tape_process): new taper_program 
+	argument.
+	* server-src/driverio.h: remove declaration of taper_program.
+	* server-src/driver.c (main): declare taper_program.
+	* server-src/driver.c: call startup_tape_process with the new 
+	taper_program argument.
+	* server-src/amflush.c (run_dumps): declare taper_program.
+	* server-src/amflush.c (run_dumps): call startup_tape_process with 
+	the new taper_program argument.
+
+1999-02-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/driverio.c (startup_dump_process, startup_dump_processes):
 	new dumper_program argument.
 	* server-src/driverio.h: remove declaration of dumper_program.
