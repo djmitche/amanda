@@ -822,6 +822,14 @@ no space to the left.
 The output KBytes column is seven characters wide
 with one space before it.
 .RE
+.TP
+.BS includefile string
+Default:
+.IR none .
+The name of an amanda configuration file to include within
+the current file.
+Useful for sharing dumptypes, tapetypes and
+interface definitions among several configurations.
 .SH "HOLDINGDISK SECTION"
 The
 .B amanda.conf
