@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.25.2.5 1998/04/24 17:14:45 amcore Exp $
+ * $Id: selfcheck.c,v 1.25.2.6 1998/07/13 14:58:17 oliva Exp $
  *
  * do self-check and send back any error messages
  */
@@ -377,11 +377,8 @@ int level;
 static void check_overall()
 {
     char *cmd;
-
-#ifdef SAMBA_CLIENT
     struct stat buf;
     int testfd;
-#endif
 
     if( need_runtar )
     {
@@ -397,61 +394,90 @@ static void check_overall()
 	amfree(cmd);
     }
 
+    if( need_dump ) {
 #ifdef DUMP
-    if( need_dump )
 	check_file(DUMP, X_OK);
+#else
+	printf("ERROR [DUMP program not available]\n");
 #endif
+    }
 
+    if( need_restore ) {
 #ifdef RESTORE
-    if( need_restore )
 	check_file(RESTORE, X_OK);
+#else
+	printf("ERROR [RESTORE program not available]\n");
 #endif
+    }
 
+    if ( need_vdump ) {
 #ifdef VDUMP
-    if ( need_vdump )
 	check_file(VDUMP, X_OK);
+#else
+	printf("ERROR [VDUMP program not available]\n");
 #endif
+    }
 
+    if ( need_vrestore ) {
 #ifdef VRESTORE
-    if ( need_vrestore )
 	check_file(VRESTORE, X_OK);
+#else
+	printf("ERROR [VRESTORE program not available]\n");
 #endif
+    }
 
+    if( need_xfsdump ) {
 #ifdef XFSDUMP
-    if( need_xfsdump )
 	check_file(XFSDUMP, F_OK);
+#else
+	printf("ERROR [XFSDUMP program not available]\n");
 #endif
+    }
 
+    if( need_xfsrestore ) {
 #ifdef XFSRESTORE
-    if( need_xfsrestore )
 	check_file(XFSRESTORE, X_OK);
+#else
+	printf("ERROR [XFSRESTORE program not available]\n");
 #endif
+    }
 
+    if( need_vxdump ) {
 #ifdef VXDUMP
-    if( need_vxdump )
 	check_file(VXDUMP, X_OK);
+#else
+	printf("ERROR [VXDUMP program not available]\n");
 #endif
+    }
 
+    if( need_vxrestore ) {
 #ifdef VXRESTORE
-    if( need_vxrestore )
 	check_file(VXRESTORE, X_OK);
+#else
+	printf("ERROR [VXRESTORE program not available]\n");
 #endif
+    }
 
+    if( need_gnutar ) {
 #ifdef GNUTAR
-    if( need_gnutar )
-    {
 	check_file(GNUTAR, X_OK);
+#else
+	printf("ERROR [GNUTAR program not available]\n");
+#endif
+#ifdef AMANDATES_FILE
 	check_file(AMANDATES_FILE, R_OK|W_OK);
+#endif
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
 	check_dir(GNUTAR_LISTED_INCREMENTAL_DIR,R_OK|W_OK);
 #endif
     }
-#endif
 
+    if( need_samba ) {
 #ifdef SAMBA_CLIENT
-    if( need_samba )
-    {
 	check_file(SAMBA_CLIENT, X_OK);
+#else
+	printf("ERROR [SMBCLIENT program not available]\n");
+#endif
 	testfd = open("/etc/amandapass", R_OK);
 	if (testfd >= 0) {
 	    if(!fstat(testfd, &buf)) {
@@ -467,10 +493,10 @@ static void check_overall()
 	    printf("ERROR [unable to access /etc/amandapass?]\n");
 	}
     }
-#endif
+
     if( need_compress_path )
 	check_file(COMPRESS_PATH, X_OK);
-#if defined(DUMP) || defined(XFSDUMP)
+
     if( need_dump || need_xfsdump )
 	check_file("/etc/dumpdates",
 #ifdef USE_RUNDUMP
@@ -479,16 +505,17 @@ static void check_overall()
 		   R_OK|W_OK
 #endif
 		   );
-#endif
-#ifdef VDUMP
+
     if (need_vdump)
         check_file("/etc/vdumpdates", F_OK);
-#endif
+
     check_file("/dev/null", R_OK|W_OK);
     check_space("/tmp", 64);		/* for amandad i/o */
+
 #ifdef DEBUG_DIR
     check_space(DEBUG_DIR, 64);		/* for amandad i/o */
 #endif
+
     check_space("/etc", 64);		/* for /etc/dumpdates writing */
 }
 
