@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.17 1998/10/27 04:01:40 martinea Exp $
+ * $Id: amlabel.c,v 1.18 1998/10/27 04:15:03 martinea Exp $
  *
  * write an Amanda label on a tape
  */
@@ -33,14 +33,10 @@
 #include "tapefile.h"
 #include "tapeio.h"
 #include "changer.h"
+
 #ifdef HAVE_LIBVTBLC
 #include <vtblc.h>
-
-static int vtbl_no      = -1;
-static char *datestr    = NULL;
 #endif /* HAVE_LIBVTBLC */
-
-int slotcommand;
 
 /* local functions */
 
@@ -68,7 +64,11 @@ int main(argc, argv)
     int fd;
     int force, tape_ok;
     tape_t *tp;
+    int slotcommand;
+
 #ifdef HAVE_LIBVTBLC
+    int vtbl_no      = -1;
+    char *datestr    = NULL;
     char *rawtapedev = NULL;
     int first_seg, last_seg;
 #endif /* HAVE_LIBVTBLC */

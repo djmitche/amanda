@@ -1,5 +1,10 @@
 1998-10-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amlabel.c: move declaration of vtbl_no, datestr
+	and slotcommand to the main function.
+
+1998-10-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amlabel.c: remove declaration of pname.
 
 1998-10-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
