@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.25 1998/12/07 21:38:55 kashmir Exp $
+ * $Id: amtape.c,v 1.26 1998/12/28 18:47:41 jrj Exp $
  *
  * tape changer interface program
  */
@@ -550,7 +550,7 @@ void show_device(argc, argv)
 int argc;
 char **argv;
 {
-    char *slot, *device;
+    char *slot = NULL, *device = NULL;
 
     if(changer_loadslot("current", &slot, &device))
 	error("Could not load current slot.\n");

@@ -1,3 +1,8 @@
+1998-12-28  John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/amtape.c: initialize two strings to NULL to avoid a
+	core dump, compliments of G. Allen Morris III <gam3@acm.org>.
+
 1998-12-27  John R. Jackson  <jrj@purdue.edu>
 
 	* man/amreport.8.in: remove reference to 8.5x11 paper size for the
