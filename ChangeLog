@@ -1,3 +1,8 @@
+1999-09-22 John R. Jackson  <jrj@purdue.edu>
+
+	* configure.in: wrong variable when processing LIBRARY_DIRS.  Fix
+	  compliments of John M. Vogtle <jmvogtle@kodak.com>.
+
 1999-09-20 John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/Makefile.am: use new amlogroll utility to rename the log

@@ -103,7 +103,7 @@ AC_ARG_WITH(libraries,
     ])
 
 if test "$LIBRARY_DIRS"; then
-	for dir in $withval; do
+	for dir in $LIBRARY_DIRS; do
 	    if test -d "$dir"; then
 		AMANDA_LDFLAGS="$AMANDA_LDFLAGS -L$dir"
 	    else
