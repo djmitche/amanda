@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.67 1999/08/15 08:04:37 oliva Exp $
+ * $Id: conffile.c,v 1.68 1999/08/25 06:46:14 oliva Exp $
  *
  * read configuration file
  */
@@ -39,6 +39,7 @@
 #include "arglist.h"
 
 #include "conffile.h"
+#include "diskfile.h"
 #include "clock.h"
 
 #ifdef HAVE_LIMITS_H
@@ -1051,12 +1052,31 @@ keytab_t dumptype_keytable[] = {
     { NULL, IDENT }
 };
 
-static void get_dumptype()
+dumptype_t *read_dumptype(name, from, fname, linenum)
+     char *name;
+     FILE *from;
+     char *fname;
+     int *linenum;
 {
     int done;
     int save_overwrites;
     keytab_t *save_kt;
     val_t tmpval;
+    FILE *saved_conf;
+    char *saved_fname;
+
+    if (from) {
+	saved_conf = conf;
+	conf = from;
+    }
+
+    if (fname) {
+	saved_fname = confname;
+	confname = fname;
+    }
+
+    if (linenum)
+	line_num = *linenum;
 
     save_overwrites = allow_overwrites;
     allow_overwrites = 1;
@@ -1066,13 +1086,20 @@ static void get_dumptype()
 
     init_dumptype_defaults();
 
-    get_conftoken(IDENT);
-    dpcur.name = stralloc(tokenval.s);
-    malloc_mark(dpcur.name);
+    if (name) {
+	dpcur.name = name;
+    } else {
+	get_conftoken(IDENT);
+	dpcur.name = stralloc(tokenval.s);
+	malloc_mark(dpcur.name);
+    }
+
     dpcur.seen = line_num;
 
-    get_conftoken(LBRACE);
-    get_conftoken(NL);
+    if (! name) {
+	get_conftoken(LBRACE);
+	get_conftoken(NL);
+    }
 
     done = 0;
     do {
@@ -1166,7 +1193,11 @@ static void get_dumptype()
 	default:
 	    parserror("dump type parameter expected");
 	}
-	if(tok != NL && tok != END) get_conftoken(NL);
+	if(tok != NL && tok != END &&
+	   /* When a name is specified, we shouldn't consume the NL
+	      after the RBRACE.  */
+	   (tok != RBRACE || name == 0))
+	    get_conftoken(NL);
     } while(!done);
 
     /* XXX - there was a stupidity check in here for skip-incr and
@@ -1176,8 +1207,23 @@ static void get_dumptype()
 
     allow_overwrites = save_overwrites;
     keytable = save_kt;
+
+    if (linenum)
+	*linenum = line_num;
+
+    if (fname)
+	confname = saved_fname;
+
+    if (from)
+	conf = saved_conf;
+
+    return lookup_dumptype(dpcur.name);
 }
 
+static void get_dumptype()
+{
+    read_dumptype(NULL, NULL, NULL, NULL);
+}
 
 static void init_dumptype_defaults()
 {
@@ -2341,8 +2387,8 @@ dump_configuration(filename)
 
 int
 main(argc, argv)
-int argc;
-char *argv[];
+    int argc;
+    char *argv[];
 {
   int result;
   int fd;
@@ -2370,6 +2416,13 @@ char *argv[];
       return 1;
     }
   result = read_conffile(CONFFILE_NAME);
+  if (result == 0) {
+      char *diskfile = getconf_str(CNF_DISKFILE);
+      if (diskfile != NULL && access(diskfile, R_OK) == 0) {
+	  disklist_t lst;
+	  result = read_diskfile(diskfile, &lst);
+      }
+  }
   dump_configuration(CONFFILE_NAME);
 
   malloc_size_2 = malloc_inuse(&malloc_hist_2);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.31 1999/05/14 21:57:39 kashmir Exp $
+ * $Id: diskfile.c,v 1.32 1999/08/25 06:46:20 oliva Exp $
  *
  * read disklist file
  */
@@ -38,7 +38,7 @@ static host_t *hostlist;
 
 /* local functions */
 static char *upcase P((char *st));
-static int parse_diskline P((disklist_t *, const char *, int, char *));
+static int parse_diskline P((disklist_t *, const char *, FILE *, int *, char **));
 static void parserror P((const char *, int, const char *, ...))
     __attribute__ ((format (printf, 3, 4)));
 
@@ -65,7 +65,7 @@ read_diskfile(filename, lst)
 
     while ((line = agets(diskf)) != NULL) {
 	line_num++;
-	if (parse_diskline(lst, filename, line_num, line) < 0) {
+	if (parse_diskline(lst, filename, diskf, &line_num, &line) < 0) {
 	    amfree(line);
 	    afclose(diskf);
 	    return (-1);
@@ -208,11 +208,12 @@ char *st;
 
 
 static int
-parse_diskline(lst, filename, line_num, line)
+parse_diskline(lst, filename, diskf, line_num_p, line_p)
     disklist_t *lst;
     const char *filename;
-    int line_num;
-    char *line;
+    FILE *diskf;
+    int *line_num_p;
+    char **line_p;
 {
     host_t *host;
     disk_t *disk;
@@ -220,7 +221,9 @@ parse_diskline(lst, filename, line_num, line)
     interface_t *netif = 0;
     char *hostname = NULL;
     char *s, *fp;
-    int ch;
+    int ch, dup = 0;
+    char *line = *line_p;
+    int line_num = *line_num_p;
 
     assert(filename != NULL);
     assert(line_num > 0);
@@ -257,36 +260,87 @@ parse_diskline(lst, filename, line_num, line)
     if(host && (disk = lookup_disk(hostname, fp)) != NULL) {
 	parserror(filename, line_num,
 	    "duplicate disk record, previous on line %d", disk->line);
-	return (-1);
+	dup = 1;
+    } else {
+	disk = alloc(sizeof(disk_t));
+	malloc_mark(disk);
+	disk->line = line_num;
+	disk->name = stralloc(fp);
+	malloc_mark(disk->name);
+	disk->spindle = -1;
+	disk->up = NULL;
+	disk->inprogress = 0;
     }
-
-    disk = alloc(sizeof(disk_t));
-    malloc_mark(disk);
-    disk->line = line_num;
-    disk->name = stralloc(fp);
-    malloc_mark(disk->name);
-    disk->spindle = -1;
-    disk->up = NULL;
-    disk->inprogress = 0;
 
     skip_whitespace(s, ch);
     if(ch == '\0' || ch == '#') {
 	parserror(filename, line_num, "disk dumptype expected");
 	if(host == NULL) amfree(hostname);
-	amfree(disk->name);
-	amfree(disk);
+	if(!dup) {
+	    amfree(disk->name);
+	    amfree(disk);
+	}
 	return (-1);
     }
     fp = s - 1;
     skip_non_whitespace(s, ch);
     s[-1] = '\0';
-    if((dtype = lookup_dumptype(upcase(fp))) == NULL) {
+    if (fp[0] == '{') {
+	s[-1] = ch;
+	s = fp+2;
+	skip_whitespace(s, ch);
+	if (ch != '\0' && ch != '#') {
+	    parserror(filename, line_num,
+		      "expected line break after `{\', ignoring rest of line");
+	}
+
+	if (strchr(s-1, '}') &&
+	    (strchr(s-1, '#') == NULL ||
+	     strchr(s-1, '}') < strchr(s-1, '#'))) {
+	    if(host == NULL) amfree(hostname);
+	    if(!dup) {
+		amfree(disk->name);
+		amfree(disk);
+	    }
+	    return (-1);
+	}
+	amfree(line);
+
+	dtype = read_dumptype(vstralloc("custom(", hostname,
+					":", disk->name, ")", 0),
+			      diskf, (char*)filename, line_num_p);
+
+	*line_p = line = agets(diskf);
+	line_num = *line_num_p; /* no incr, read_dumptype did it already */
+
+	if (dtype == NULL || dup) {
+	    if(host == NULL) amfree(hostname);
+	    if(!dup) {
+	      amfree(disk->name);
+	      amfree(disk);
+	    }
+	    return (-1);
+	}
+
+	if (line == NULL)
+	    *line_p = line = stralloc("");
+	s = line;
+	ch = *s++;
+    } else if((dtype = lookup_dumptype(upcase(fp))) == NULL) {
 	parserror(filename, line_num, "undefined dumptype `%s'", fp);
 	if(host == NULL) amfree(hostname);
-	amfree(disk->name);
-	amfree(disk);
+	if (!dup) {
+	    amfree(disk->name);
+	    amfree(disk);
+	}
 	return (-1);
     }
+
+    if (dup) {
+	if (host == NULL) amfree(hostname);
+	return (-1);
+    }
+
     disk->dtype_name	= dtype->name;
     disk->program	= dtype->program;
     disk->exclude	= dtype->exclude;
@@ -523,14 +577,14 @@ dump_disklist(lst)
 
 int
 main(argc, argv)
-int argc;
-char *argv[];
+     int argc;
+     char *argv[];
 {
   int result;
   int fd;
   unsigned long malloc_hist_1, malloc_size_1;
   unsigned long malloc_hist_2, malloc_size_2;
-  disklist_t *lst;
+  disklist_t lst;
 
   for(fd = 3; fd < FD_SETSIZE; fd++) {
     /*
@@ -552,11 +606,10 @@ char *argv[];
        return 1;
     }
   if((result = read_conffile(CONFFILE_NAME)) == 0) {
-    lst = read_diskfile(getconf_str(CNF_DISKFILE));
-    result = (lst == NULL);
+    result = read_diskfile(getconf_str(CNF_DISKFILE), &lst);
   }
-  if (lst != NULL)
-      dump_disklist(lst);
+  if (result == 0)
+      dump_disklist(&lst);
 
   malloc_size_2 = malloc_inuse(&malloc_hist_2);
 

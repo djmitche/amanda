@@ -1,3 +1,18 @@
+1999-08-25  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/conffile.c (read_dumptype): Renamed from get_dumptype.
+	Extended to support reading a named dumptype from a specified FILE.
+	(get_dumptype): Use read_dumptype.
+	(main): Read disklist, so that custom dumptypes are shown.
+	* server-src/conffile.h (read_dumptype): Declare.
+	* server-src/diskfile.c (parse_diskline): Get line_num and line by
+	reference.  New argument diskf.  Use read_dumptype if dumptype
+	starts with `{'.
+	(main): Update.
+	* man/amanda.8.in (disklist): Document it.
+	* NEWS: Likewise.
+	* example/disklist: Exemplify it.
+
 1999-08-23 John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/reporter.c (copy_template_file): make sure all data is

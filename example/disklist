@@ -7,8 +7,7 @@
 #
 #	hostname diskdev dumptype [spindle [interface]]
 #
-# where the dumptypes are defined by you in amanda.conf.
-
+# where the dumptypes are defined by you in amanda.conf or in-line.
 
 # At our site, root partitions have a different dumptype because they
 # are of lower priority; they don't contain user data, and don't change
@@ -37,6 +36,18 @@ master sd0g nocomp-user -1 local
 # the holding disk can't be dumped to itself, it uses a disktype that
 # specifies the "no-hold" option (see amanda.conf).
 master sd1c holding-disk -1 local
+
+# Compress data from a slow server on the tape server.
+# Example of inline dumptype specialization
+slowsrv / { # the line break here is mandatory
+  root-tar # copy properties of root-tar
+  compress server fast # but change the compression mode
+} # spindle and interface omitted here
+slowsrv /usr {
+  user-tar
+  exclude list ".exclude"
+  compress server fast
+} 2 le0 # no line break before spindle and interface
 
 # The chairman's disk is high priority to make sure it gets done.
 bigwig	sd0a comp-root

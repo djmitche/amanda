@@ -1,9 +1,20 @@
 Changes in release 2.5.0
 
 * New SECURITY API (see docs/SECURITY.API for details)
+* New DUMPER API (see docs/DUMPER.API for details)
+
+Changes in release 2.4.2 that haven't been updated to 2.5.0:
+
+* Amanda will never use more space than specified (use) for an holding
+  disk
+* A dump on holding disk can spread multiple holding disks
 
 Changes in release 2.4.2
 
+* dumptypes can be specialized in the disklist file
+* Amanda will never use more space than specified (use) for an holding
+  disk
+* A dump on holding disk can spread multiple holding disks
 * chunksize is now 1 Gb by default
 * ufsdump -S is now supported on Solaris
 * Samba 2.0.0 is now supported
