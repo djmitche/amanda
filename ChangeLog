@@ -1,3 +1,9 @@
+2001-02-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/planner.c (setup_estimate): ask for level 0 for
+	a new disk if force-bump is set,
+	log force-bump and force-nobump command.
+
 2001-02-21 Thomas Hepper <thqant.han.de>
 	* changer-src/scsi-changer-driver.c: Do an Test Unit Ready
 	  before sending SCSI commands in GenericRewind

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.14 1999/09/08 23:28:23 jrj Exp $
+ * $Id: planner.c,v 1.76.2.14.2.1 2001/02/28 00:01:24 jrjackson Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -714,7 +714,12 @@ setup_estimate(dp)
     i = 0;
 
     if(!dp->skip_full &&
-       (!(info.command & FORCE_BUMP) || dp->skip_incr)) {
+       (!(info.command & FORCE_BUMP) || dp->skip_incr || ep->last_level == -1)){
+	if(info.command & FORCE_BUMP && ep->last_level == -1) {
+	    log_add(L_INFO,
+		  "Remove force-bump command of %s:%s because it's a new disk.",
+		    dp->host->hostname, dp->name);
+	}
 	switch (dp->strategy) {
 	case DS_STANDARD: 
 	case DS_NOINC:
@@ -747,9 +752,13 @@ setup_estimate(dp)
 		if(curr_level >= 0) { /* level 0 already asked for */
 		    askfor(ep, i++, curr_level, &info);
 		}
+		log_add(L_INFO,"Preventing bump of %s:%s as directed.",
+			dp->host->hostname, dp->name);
 	    }
 	    else if(info.command & FORCE_BUMP) {
 		askfor(ep, i++, curr_level+1, &info);
+		log_add(L_INFO,"Bumping of %s:%s at level %d as directed.",
+			dp->host->hostname, dp->name, curr_level+1);
 	    }
 	    else if(curr_level == 0) {
 		askfor(ep, i++, 1, &info);
