@@ -51,19 +51,22 @@ char *sep;	/* Token separators - usually " " */
 	register int fld;
 	register int len;
 
-	if (toklen <= 0) abort();	/* You gotta be kidding! */
+	if (str == (char *)0 || token == (char **)0 ||
+	    toklen <= 0 || sep == (char *)0)
+		abort();	/* You gotta be kidding! */
 
 	token[0] = str;
+
 	for (fld = 1; fld < toklen; fld++) token[fld] = (char *)0;
 
 	fld = 0;
 
-	if (sep[0] == '\0' || str[0] == '\0' || toklen == 1) return fld;
+	if (*sep == '\0' || *str == '\0' || toklen == 1) return fld;
 
 	/* Calculate the length of the unquoted string. */
 
 	len = 0;
-	for (pi = str; *pi; pi++) {
+	for (pi = str; *pi && *pi != '\n'; pi++) {
 		if (*pi == '\\') pi++; /* Had better not be trailing... */
 		len++;
 	}
@@ -77,7 +80,7 @@ char *sep;	/* Token separators - usually " " */
 
 	po = buf;
 	token[++fld] = po;
-	for (pi = str; *pi; pi++) {
+	for (pi = str; *pi && *pi != '\n'; pi++) {
 		if (*pi == '\\') {
 			*po++ = *++pi;	/* escaped */
 		}
