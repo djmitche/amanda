@@ -1,4 +1,9 @@
 2003-01-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Fix by Josh More <jmore@remote-print.com>
+
+	* tape-src/output-tape.c: Add a ; after f = MT_UNLOAD
+
+2003-01-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/amcheck.c (handle_response): Print 'request timed out' or
 	  'reply timed out'.
