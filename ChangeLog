@@ -1,5 +1,8 @@
 2000-01-21  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* configure.in (MAILER): Warn or print an error if not found,
+	depending on whether server code is disabled or not.
+
 	* server-src/reporter.c (output_tapeinfo): Report used tapes
 	regardless of tape errors.
 
@@ -724,7 +727,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.324 2000/01/21 06:59:10 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.325 2000/01/21 07:22:26 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

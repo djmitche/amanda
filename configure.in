@@ -1270,9 +1270,15 @@ AC_DEFINE_UNQUOTED(UNCOMPRESS_PATH,"$UNCOMPRESS_PATH",[Define as the exact path 
 AC_DEFINE_UNQUOTED(UNCOMPRESS_OPT,"$UNCOMPRESS_OPT",[Define as any optional arguments to get UNCOMPRESS_PATH to uncompress. ])
 
 AC_PATH_PROGS(MAILER,Mail mailx mail)
-if test "$MAILER"; then
-    AC_DEFINE_UNQUOTED(MAILER,"$MAILER",[Define to a program that understands -s "subject" user < message_file])
+if test -z "$MAILER"; then
+    if $NO_SERVER_MODE; then
+	MAILER="NONE"
+	AC_MSG_WARN([*** WARNING: Amanda cannot send mail reports without these programs.])
+    else
+	AC_MSG_ERROR([Set MAILER to some program that accepts -s subject user < message_file.])
+    fi
 fi
+AC_DEFINE_UNQUOTED(MAILER,"$MAILER",[Define to a program that understands -s "subject" user < message_file])
 
 AC_PATH_PROGS(MT,mt,mt,$LOCSYSPATH)
 
