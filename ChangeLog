@@ -1,5 +1,9 @@
 2003-10-14  John R. Jackson (jrj@purdue.edu)
 
+	* client-src/sendsize.c: Handle case where PID's get re-used.
+
+2003-10-14  John R. Jackson (jrj@purdue.edu)
+
 	* configure.in: Need to check for sys/gscdds.h on AIX to enable
 	  SCSI changer.
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.13.4.6.2.21 2003/02/05 02:11:26 martinea Exp $
+ * $Id: sendsize.c,v 1.97.2.13.4.6.2.22 2003/10/14 19:10:53 jrjackson Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -303,8 +303,9 @@ char **argv;
 	    amwait_t child_status;
 	    int exit_code;
 
-	    dbprintf(("%s: waiting for any estimate child\n",
-		      debug_prefix_time(NULL)));
+	    need_wait = 0;
+	    dbprintf(("%s: waiting for any estimate child: %d running\n",
+		      debug_prefix_time(NULL), dumpsrunning));
 	    child_pid = wait(&child_status);
 	    if(child_pid == -1) {
 		error("wait failed: %s", strerror(errno));
@@ -337,6 +338,7 @@ char **argv;
 			  debug_prefix_time(NULL), (long)child_pid));
 	    } else {
 		est->done = 1;
+		est->child = 0;
 		dumpsrunning--;
 	    }
 	}
@@ -356,7 +358,7 @@ char **argv;
 	    if(est->done == 0) {
 		done = 0;			/* more to do */
 	    }
-	    if(est->child != 0) {
+	    if(est->child != 0 || est->done) {
 		continue;			/* child is running or done */
 	    }
 	    /*
@@ -364,14 +366,12 @@ char **argv;
 	     */
 	    if(est->spindle != -1) {
 		for(est1 = est_list; est1 != NULL; est1 = est1->next) {
-		    if(est1->child == 0) {
+		    if(est1->child == 0 || est == est1 || est1->done) {
 			/*
-			 * Ignore anything not yet started, including us.
+			 * Ignore anything not yet started, ourself,
+			 * and anything completed.
 			 */
 			continue;
-		    }
-		    if(est1->done) {
-			continue;		/* ignore completed disks */
 		    }
 		    if(est1->spindle == est->spindle) {
 			break;			/* oops -- they match */
