@@ -17,7 +17,7 @@ libamanda_la_SOURCES = \
 	protocol.c	regcomp.c	regerror.c	regexec.c	\
 	regfree.c	security.c	statfs.c	stream.c	\
 	token.c		util.c		version.c	versuff.c       \
-        pipespawn.c
+        pipespawn.c	sl.c
 
 libamanda_la_LIBADD =	@LTLIBOBJS@ @LTALLOCA@
 libamanda_la_LDFLAGS =  -release $(VERSION)
@@ -30,7 +30,8 @@ noinst_HEADERS =	amanda.h	arglist.h	\
 			statfs.h	stream.h	\
 			token.h		version.h	\
 			amregex.h	fileheader.h	\
-			util.h          pipespawn.h
+			util.h          pipespawn.h	\
+			sl.h
 
 STANDARD_COMMON_STUFF_NOT_FILE = \
 	alloc.$(OBJEXT) \
