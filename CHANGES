@@ -1,3 +1,27 @@
+	split big dumps ( > MAXFILESIZE ) in multiple files on holding disk. 
+	new chunksize parameter in holdingdisk description of 
+	the amanda.conf file.
+	-J-L Martineau <martineau@IRO.UMontreal.CA>
+
+	an amstatus command that give the current state of a run.
+	-J-L Martineau <martineau@IRO.UMontreal.CA>
+
+	possibility to amflush multiple runs on one tape.
+	possibility to select dump by datestamp in amrestore (-d datestamp).
+	-J-L Martineau <martineau@IRO.UMontreal.CA>
+
+	amidxtrm keep index of all active tapes as listed in tapelist file.
+	-J-L Martineau <martineau@IRO.UMontreal.CA>
+
+	the tapelist file keep every active tapes.
+	"amadmin reuse" and "amadmin no-reuse" to mark tapes you want
+	to keep for a long time.
+	-J-L Martineau <martineau@IRO.UMontreal.CA>
+
+	amlabel will not overwrite an amanda tape.
+	The -f flag allow to overwriting an amanda tape.
+	-J-L Martineau <martineau@IRO.UMontreal.CA>
+
 	be consistent and use 1048576 as a dump size everyplace instead of
 	100000 in some places (mostly cosmetic).  -JJ
 
