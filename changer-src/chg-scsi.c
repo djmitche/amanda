@@ -1,5 +1,5 @@
 /*
- *  $Id: chg-scsi.c,v 1.6.2.5 1998/12/22 05:11:59 oliva Exp $
+ *  $Id: chg-scsi.c,v 1.6.2.6 1999/01/10 16:59:11 th Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -169,7 +169,7 @@ void dump_changer_struct(changer_t chg)
     if (chg.conf[i].tapestatfile != NULL)
       dbprintf((" statfile       : %s\n", chg.conf[i].tapestatfile));
     else
-      dbprintf((" statfile       : none\n"));
+      dbprintf(("  statfile      : none\n"));
     if (chg.conf[i].slotfile != NULL)
       dbprintf(("  Slotfile      : %s\n",chg.conf[i].slotfile));
     else
@@ -666,7 +666,7 @@ int main(int argc, char *argv[])
       tapestatfile = strdup(chg.conf[confnum].tapestatfile);
     dump_changer_struct(chg);
     /* get info about the changer */
-    if (-1 == (fd = OpenDevice(changer_dev))) {
+    if (-1 == (fd = OpenDevice(changer_dev, "changer_dev"))) {
       int localerr = errno;
       fprintf(stderr, "%s: open: %s: %s\n", get_pname(), 
               changer_dev, strerror(localerr));
@@ -685,6 +685,10 @@ int main(int argc, char *argv[])
       {
          scsitapedevice = strdup(tape_device);
       }
+#if !defined(HAVE_CHIO_H) && !defined(HAVE_SYS_CHIO_H)
+    OpenDevice(tape_device, "tape_device"); 
+    OpenDevice(scsitapedevice, "scsitapedevice");
+#endif
 
     if ((chg.conf[confnum].end == -1) || (chg.conf[confnum].start == -1)){
       slotcnt = get_slot_count(fd);
@@ -771,7 +775,7 @@ int main(int argc, char *argv[])
         break;
       }
     if (need_sleep)
-      Tape_Ready(tape_device, changer_dev, fd, need_sleep);
+      Tape_Ready(scsitapedevice, need_sleep);
     printf("%d %s\n", target-slot_offset, tape_device);
     break;
 
@@ -809,7 +813,7 @@ int main(int argc, char *argv[])
     }
     put_current_slot(changer_file, slot_offset);
     if (need_sleep)
-      Tape_Ready(tape_device, changer_dev, fd, need_sleep);
+      Tape_Ready(scsitapedevice, need_sleep);
     printf("%d %s\n", get_current_slot(changer_file), tape_device);
     break;
 
