@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-1999 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.h,v 1.8 1999/01/11 21:38:18 kashmir Exp $
+ * $Id: fileheader.h,v 1.9 1999/05/10 22:01:55 kashmir Exp $
  *
  */
 
@@ -60,9 +60,9 @@ typedef struct file_s {
 
 void  fh_init             P((dumpfile_t *file));
 void  parse_file_header   P((const char *buffer, dumpfile_t *file, int buflen));
-void  write_header        P((char *buffer, dumpfile_t *file, int buflen));
-void  print_header        P((FILE *outf, dumpfile_t *file));
-int   known_compress_type P((dumpfile_t *file));
+void  write_header        P((char *buffer, const dumpfile_t *file, int buflen));
+void  print_header        P((FILE *outf, const dumpfile_t *file));
+int   known_compress_type P((const dumpfile_t *file));
 int   fill_buffer         P((int fd, char *buffer, int size));
 
 #endif /* !FILEHEADER_H */

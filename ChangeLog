@@ -1,5 +1,12 @@
 1999-05-10  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/fileheader.c, common-src/fileheader.h: rework the
+	fileheader parse and format code to remove a lot of duplicated
+	code (in the F_DUMPFILE and F_CONT_DUMPFILE cases), consting
+	arguments, and simplifying parse code.
+
+1999-05-10  Mike Grupenhoff <kashmir@munge.com>
+
 	* client-src/sendsize.c (getsize_dump): print out the strerror
 	if we can't exec killpgrp.
 
