@@ -1,3 +1,7 @@
+2000-11-21 John R. Jackson  <jrj@purdue.edu>
+
+	* contrib/sst/sst.c (sst_ioctl): Allow non-root users to use sst.
+
 2000-11-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amdump.sh.in: exit if amgetconf exit with status != 0.
