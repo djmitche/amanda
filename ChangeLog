@@ -1,5 +1,10 @@
 2005-03-31  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* man/*: use man pages form xml-docs.
+	* configure.in (AC_CONFIG_FILES): Remove all man pages.
+
+2005-03-31  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/dumper.c (update_dataptr): Open a new chunk file even if
 	  size==0, the test must be (dataout < datain), which means we have
 	  something to write.
