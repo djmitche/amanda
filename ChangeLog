@@ -1,3 +1,10 @@
+1999-01-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/conffile.c (init_defaults): default value of runspercycle
+	is 0.
+	* server-src/amadmin.c (balance): use default value of runspercycle.
+	* server-src/planner.c (main): use default value of runspercycle.
+
 1999-01-22  Martin Apel <apel@tecmath.de>
 
 	* example/amanda.conf.in: explanation of incronly strategy.

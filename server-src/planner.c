@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.6 1999/01/22 20:51:24 oliva Exp $
+ * $Id: planner.c,v 1.76.2.7 1999/01/23 14:11:53 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -219,8 +219,7 @@ char **argv;
     conf_tapetype = getconf_str(CNF_TAPETYPE);
     conf_runtapes = getconf_int(CNF_RUNTAPES);
     conf_dumpcycle = getconf_int(CNF_DUMPCYCLE);
-    conf_runspercycle = !getconf_seen(CNF_RUNSPERCYCLE) ? 0 :
-			getconf_int(CNF_RUNSPERCYCLE);
+    conf_runspercycle = getconf_int(CNF_RUNSPERCYCLE);
     conf_tapecycle = getconf_int(CNF_TAPECYCLE);
     conf_bumpdays = getconf_int(CNF_BUMPDAYS);
     conf_bumpsize = getconf_int(CNF_BUMPSIZE);
