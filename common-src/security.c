@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.c,v 1.15 1998/07/06 18:06:30 jrj Exp $
+ * $Id: security.c,v 1.16 1998/07/06 18:17:29 jrj Exp $
  *
  * wrapper file for kerberos security
  */
@@ -343,9 +343,9 @@ char **errstr;
 
 	/* Find end of remote host */
 	skip_non_whitespace(s, ch);
-	if(ch == '\0') {
+	if(s - 1 == pbuf) {
 	    memset(pbuf, '\0', pbuf_len);	/* leave no trace */
-	    continue;				/* no remoteuser field */
+	    continue;				/* no remotehost field */
 	}
 	s[-1] = '\0';				/* terminate remotehost field */
 

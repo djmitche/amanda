@@ -9,6 +9,9 @@
 	to track down why they are getting "access as XXX not allowed from
 	YYY@ZZZ".
 
+	* common-src/security.c (bsd_security_ok): allow the remote user
+	field in .amandahosts to be empty ala .rhosts.
+
 1998-07-04  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amcheck.c (start_server_check): report space use for
