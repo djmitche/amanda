@@ -107,6 +107,23 @@ hostname does not map back to the incoming IP address, the request is
 denied.
 
 
+Q: Why does `amcheck' say `cannot overwrite active tape'?
+
+A: Because, if you configure Amanda to use N tapes, by setting
+tapecycle to N in `amanda.conf', before Amanda overwrites a tape, it
+must write to at least other N-1 tapes.  Of course, Amanda will always
+refuse to overwrite a tape marked for `noreuse' with `amadmin'.
+Furthermore, such tapes are not counted when Amanda computes `N-1'
+tapes.
+
+   If, for some reason, you want to tell Amanda to overwrite a
+particular tape, regardless of its position in the cycle, use
+`amrmtape'.  This command will remove this tape from the `tapelist'
+file, that is used to manage the tape cycle, and will delete
+information about backups stored in that tape from the Amanda
+database.
+
+
 Q: How can I configure Amanda so that it performs full backups on the
 week-end and incrementals on weekdays?
 
@@ -178,3 +195,19 @@ for whose disks indexes should be generated.
    Indexes are currently generated at backup-time only, so, if a
 backup was performed without creating an index, you won't be able to
 use `amrecover' to restore it, 'll have to use `amrestore'.
+
+
+Q: Ok, I'm done with testing Amanda, now I want to put it in
+production.  How can I reset its databases so as to start from
+scratch?
+
+A: First, remove the `curinfo' database.  By default, it is a
+directory, but, if you have selected any other database format (don't,
+they're deprecated), they may be files with extensions such as .dir
+and .pag.
+
+   Then, remove any log files from the log directory:
+log.<TIMESTAMP>.<count> and amdump.<count>.  Finally, remove the
+tapelist file, stored in the directory that contains amanda.conf,
+unless amanda.conf specifies otherwise.  Depending on the tape changer
+you have selected, you may also want to reset its state file.
