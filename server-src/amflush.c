@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.41.2.13.4.6.2.6 2002/11/05 01:59:23 martinea Exp $
+ * $Id: amflush.c,v 1.41.2.13.4.6.2.7 2002/11/26 22:51:39 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -79,6 +79,8 @@ char **main_argv;
     sl_t *holding_list=NULL;
     sle_t *holding_file;
     int driver_pipe[2];
+    char date_string[100];
+    time_t today;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -211,6 +213,9 @@ char **main_argv;
     if(!foreground) detach();
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
     set_logerror(logerror);
+    today = time(NULL);
+    strftime(date_string, 100, "%a %b %e %H:%M:%S %Z %Y", localtime (&today));
+    fprintf(stderr, "amflush: start at %s\n", date_string);
     fprintf(stderr, "amflush: datestamp %s\n", datestamp);
     log_add(L_START, "date %s", datestamp);
 
