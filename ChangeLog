@@ -1,3 +1,7 @@
+2001-09-26 John R. Jackson (jrj@purdue.edu)
+
+	* server-src/reporter.c: Fix problem when column sizes are negative.
+
 2001-09-21 John R. Jackson (jrj@purdue.edu)
 
 	* server-src/Makefile.am: Add -I../common-src so genversion.h can be
