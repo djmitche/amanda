@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.11.2.3.4.3.2.3 2002/03/31 21:01:33 jrjackson Exp $
+ * $Id: dgram.c,v 1.11.2.3.4.3.2.4 2002/11/12 19:19:03 martinea Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -245,7 +245,7 @@ struct sockaddr_in *fromaddr;
     struct timeval to;
     ssize_t size;
     int sock;
-    size_t addrlen;
+    socklen_t addrlen;
     int nfound;
     int save_errno;
 
@@ -287,7 +287,7 @@ struct sockaddr_in *fromaddr;
 	return nfound;
     }
 
-    addrlen = sizeof(struct sockaddr_in);
+    addrlen = (socklen_t) sizeof(struct sockaddr_in);
     size = recvfrom(sock, dgram->data, MAX_DGRAM, 0,
 		    (struct sockaddr *)fromaddr, &addrlen);
     if(size == -1) {

@@ -1587,7 +1587,7 @@ if test $ac_cv_type_$1 = no; then
   AC_DEFINE($1, $2, [Define if $1 is not a standard system type])
 fi
 ])
-AMANDA_CHECK_TYPE(socklen_t, unsigned int, sys/socket.h)
+AMANDA_CHECK_TYPE(socklen_t, int, sys/socket.h)
 
 dnl Checks for header files.
 AC_HEADER_STDC

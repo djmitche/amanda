@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.10.2.6.4.4.2.3 2002/04/12 00:58:44 jrjackson Exp $
+ * $Id: stream.c,v 1.10.2.6.4.4.2.4 2002/11/12 19:19:03 martinea Exp $
  *
  * functions for managing stream sockets
  */
@@ -43,7 +43,7 @@ int *portp;
 int sendsize, recvsize;
 {
     int server_socket;
-    size_t len;
+    socklen_t len;
 #ifdef SO_KEEPALIVE
     int on = 1;
     int r;
