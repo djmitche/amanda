@@ -1,3 +1,8 @@
+1998-12-10  John R. Jackson  <jrj@purdue.edu>
+
+	* common-src/amflock.c (main): remove call set_pname() for
+	CONFIGURE_TEST since error.o is not linked in.
+
 1998-12-10  Mike Grupenhoff <kashmir@munge.com>
 
 	* server-src/dumper.c (struct databuf): add a fd member - the file
