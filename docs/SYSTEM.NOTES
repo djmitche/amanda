@@ -200,3 +200,20 @@ call a safe program.
 xfsdump will dump the complete filesystem to /dev/null, but you may
 live with that, as long as you increase the estimate time-out
 (etimeout) in amanda.conf.
+
+---------------------------------------------------------------------------
+Microsoft Windows
+-----------------
+
+Although amanda won't run standalone on MS-Windows hosts, it is
+possible to use it to back up their disks, by using SAMBA.  Please
+read docs/SAMBA for more information.
+
+SAMBA may be unable to back up some files due to file locking
+restrictions.  Particularly, paging and registry files usually present
+problems.  Backing up page files is pointless, but registry files are
+quite important to back up.  It is possible to create regular files
+that contain registry information by using the Regback utility, from
+the Windows NT Resource Kit.  Unfortunately, is not part of the
+Windows NT standard distribution, you have to parchase it separately.
+Thanks to Ernie Oporto <ernie_oporto@mentorg.com> for the tip.
