@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.113 2001/08/02 03:53:30 jrjackson Exp $
+ * $Id: sendsize.c,v 1.114 2001/08/14 22:40:09 jrjackson Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -393,7 +393,7 @@ disk_estimates_t *est;
       default:
 	return;
       }
-      ap_snprintf(my_pid, sizeof(my_pid), "%d", getpid());
+      snprintf(my_pid, sizeof(my_pid), "%d", getpid());
       prefix = newvstralloc(prefix, prefix, ": ", my_pid, NULL);
       prefix_line = newstralloc2(prefix_line, prefix, ": ");
     }

@@ -1,5 +1,9 @@
 2001-08-14 John R. Jackson (jrj@purdue.edu)
 
+	* client-src/sendsize.c: Fix patch merge goof (ap_snprintf -> snprintf).
+
+2001-08-14 John R. Jackson (jrj@purdue.edu)
+
 	* common-src/stream.c: Add stream_client_privileged() function to
 	  get a privileged port and fail if one is not available.  The older
 	  stream_client() function gets a (non-privileged) port in the
