@@ -1,5 +1,9 @@
 1998-10-01  John R. Jackson  <jrj@purdue.edu>
 
+	* common-src/protocol.c (parse_integer): allow negative numbers.
+
+1998-10-01  John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/amstatus.pl.in: add timestamps.
 
 1998-10-01  Alexandre Oliva  <oliva@dcc.unicamp.br>

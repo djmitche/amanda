@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.26 1998/09/03 22:11:26 oliva Exp $
+ * $Id: protocol.c,v 1.27 1998/10/01 21:21:46 jrj Exp $
  *
  * implements amanda protocol
  */
@@ -397,9 +397,16 @@ static int parse_integer(msg)
 dgram_t *msg;
 {
     int i = 0;
+    int sign = 1;
 
     /* eat leading whitespace */
     while(isspace(*msg->cur)) msg->cur++;
+
+    /* handle negative values */
+    if(*msg->cur == '-') {
+	sign = -1;
+	msg->cur++;
+    }
 
     /* must have at least one digit */
     if(*msg->cur < '0' || *msg->cur > '9') {
@@ -417,7 +424,7 @@ dgram_t *msg;
 	i = i * 10 + (*msg->cur - '0');
 	msg->cur++;
     }
-    return i;
+    return sign * i;
 }
 
 static char *parse_string(msg)
