@@ -3,6 +3,8 @@ eval '(exit $?0)' && eval 'exec perl -x -S $0 ${1+"$@"}'
 	& eval 'exec perl -x -S $0 $argv:q'
 		if 0;
 
+#!perl
+
 # Check whether we're on a HP-UX system.
 $uname=`uname`;
 chomp $uname;
