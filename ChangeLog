@@ -1,3 +1,8 @@
+1999-02-10  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* client-src/sendsize.c (getsize_dump): do not redirect standard
+	output of estimator to /dev/null if we HAVE_DUMP_ESTIMATE
+
 1999-02-03  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* NEWS: fix description of incronly: it won't really perform full

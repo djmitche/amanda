@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.3 1999/02/03 12:31:50 oliva Exp $
+ * $Id: sendsize.c,v 1.97.2.4 1999/02/10 06:01:08 oliva Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -602,7 +602,7 @@ long getsize_dump(disk, level)
     char *disk;
     int level;
 {
-    int pipefd[2], nullfd, killctl[2];
+    int pipefd[2], nullfd, stdoutfd, killctl[2];
     pid_t dumppid;
     long size;
     FILE *dumpout;
@@ -623,7 +623,7 @@ long getsize_dump(disk, level)
     cmd = vstralloc(libexecdir, "/rundump", versionsuffix(), NULL);
     rundump_cmd = stralloc(cmd);
 
-    nullfd = open("/dev/null", O_RDWR);
+    stdoutfd = nullfd = open("/dev/null", O_RDWR);
     pipefd[0] = pipefd[1] = killctl[0] = killctl[1] = -1;
     pipe(pipefd);
 
@@ -705,6 +705,10 @@ long getsize_dump(disk, level)
 #  endif						/* } */
 			     "s", "f", NULL);
 
+#  ifdef HAVE_DUMP_ESTIMATE
+	stdoutfd = pipefd[1];
+#  endif
+
 #  ifdef HAVE_HONOR_NODUMP				/* { */
 	dbprintf(("%s: running \"%s%s %s 0 1048576 - %s\"\n",
 		  get_pname(), cmd, name, dumpkeys, device));
@@ -767,7 +771,7 @@ long getsize_dump(disk, level)
 	}
 
 	dup2(nullfd, 0);
-	dup2(nullfd, 1);
+	dup2(stdoutfd, 1);
 	dup2(pipefd[1], 2);
 	aclose(pipefd[0]);
 	if (killctl[0] != -1)
