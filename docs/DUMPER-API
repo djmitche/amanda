@@ -1,5 +1,7 @@
 AMANDA DUMPER API
 
+Last modified $Date: 1998/09/27 22:22:55 $
+
 by Alexandre Oliva <oliva@dcc.unicamp.br>
 
 1. INTRODUCTION
@@ -124,9 +126,12 @@ level it supports, i.e., 9.  A sample session would be:
 > /usr/local/amanda/libexec/wrappers/DUMP support level-incrementals hda0
 9
 
-Note that the result of the support command may depend on filesystem
-information, so the disklist entry should be specified as a command
-line argument, and the standard environment variables should be set.
+Note that the result of this support command may depend on filesystem
+information, so the disklist filesystem entry should be specified as a
+command line argument, and the standard environment variables should
+be set.  Although the disklist filesystem entry is usually going to be
+equal toDISK_DIR or DISK_DEVICE, this may not hold for remote
+filesystems, such as SAMBA shares.
 
 We are not going to explicitly refer to the environment variables in
 command lines any more, but be aware that they are present.  So, a
@@ -143,13 +148,33 @@ Other `support' sub-commands are `index-from-output',
 	DUMP support index-from-output hda0
 
 `index-from-output' means that an index file can be generated from the
-output produced by the backup program (for example, from tar -v).
+output produced by the backup program (for example, from `tar -cv').
 Index from image means that an index file can be generated from the
-backup image.  `index-from-output' will be used when available, since
-it's likely to be cheaper.  Even if `index-from-output' is supported,
-`index-from-image' should be supported too, if possible, since it can
-be used in the future to create index files from previously backed up
-filesystems.
+backup image (for example, `tar -t').  `index-from-output' will be
+used when available, since it's likely to be cheaper.  Even if
+`index-from-output' is supported, `index-from-image' should be
+supported too, if possible, since it can be used in the future to
+create index files from previously backed up filesystems.
+
+
+One may think (and several people did :-) that there should be only
+one support command, that would print information about all supported
+commands.  The main arguments against this proposal have to do with
+extensibility:
+
+1) the supportedness of commands might vary from filesystem to
+filesystem.  No, I don't have an example, I just want to keep it as
+open as possible :-)
+
+2) one support subcommand may require command line arguments that
+others don't, and we can't know in advance what these command line
+arguments are going to be
+
+3) the output format and exit status conventions of a support command
+may vary from command to command; the only pre-defined convention is
+that, if a wrapper does not know about a support subcommand, it should
+return exit status 1, implying that the inquired feature is not
+supported.
 
 3.2. The `selfcheck' command
 
@@ -162,8 +187,9 @@ A selfcheck request would go like this:
 	DUMP selfcheck hda0 option option=value ...
 
 The options specified as command-line arguments are dumptype options
-enabled for that disk, such as `index', `norecord', etc.  For each
-successful check, a message such as:
+enabled for that disk, such as `index', `norecord', etc.  Unknown
+options should be ignored.  For each successful check, a message such
+as:
 
 OK [/dev/hda0 is readable]
 OK [/usr/sbin/dump is executable]
@@ -213,12 +239,13 @@ that, multiplied by one another, yield the estimated size in bytes, or
 the word PARSE.
 
 If the first line of output of the estimate command contains only the
-word PIPE, any further output will be fed to the `estimate-parse'
+word PARSE, any further output will be fed to the `estimate-parse'
 command, that should extract from its input the estimated size.  The
 syntax of `estimate-parse' is identical to that of `estimate'.
 
 If `estimate' or `estimate-parse' succeed, they should exit 0,
-otherwise exit 1.
+otherwise exit 1, except for the already listed cases of exit status 2
+and 3.
 
 3.4. The `backup' and `backup-parse' commands
 
@@ -230,20 +257,35 @@ messages.
 The standard error of `backup' will *always* be fed to the command
 `backup-parse', started with the same syntax as that of `backup'.
 This command must edit its input so that it prints in standard output
-only lines that start with either `!' for normal output, `?' for
-strange output or `&' for error output.  It must also print a line
-starting with `#', followed by the total backup size in bytes, by a
-pair of numbers that, multiplied, yield the total backup size, or by
-nothing, implying that the wrapper cannot obtain this information from
-the output of the backup program.
+only lines that start with either `| ' for normal output, `? ' for
+strange output or `& ' for error output.  If the wrapper can determine
+the total backup size from the output of the backup program, it should
+print a line starting with `# ', followed by the total backup size in
+bytes or by a pair of numbers that, multiplied, yield the total backup
+size; this number will be used for consistency check.
 
-3.5. The `index' commands
+If the wrapper program supports features `index-direct' or
+`index-direct-in-parse', the option `index-direct' should cause
+commands `backup' and `backup-parse', respectively, to output the
+index directly to file descriptor 3.  In this case, the `index-from-*'
+commands will not be used.
+
+3.5. The `index-from-output' and `index-from-image' commands
 
 The syntax of the `index-from-output' and `index-from-image' commands
 is identical to the one of `backup'.  They are fed the backup output
-of image, and they must produce a list of files and directories, one
+or image, and they must produce a list of files and directories, one
 per line, to the standard output.  Directories must be identified by
 the `/' termination.
+
+After the file name and a blank space, any additional information
+about the file or directory, such as permission data, size, etc, can
+be added.  For this reason, blanks and backslashes within filenames
+should be quoted with backslashes.  Linefeeds should be represented as
+`\n', although it is not always possible to distinguish linefeeds in
+the middle of filenames from ones that separate one file from another,
+in the output of, say `restore -t'.  It is not clear whether we should
+also support quoting mechanisms such as `\xHH', `\OOO' or `\uXXXX'.
 
 3.6. The `restore' command
 
