@@ -1,3 +1,18 @@
+2000-06-24 Thomas Hepper <th@ant.han.de>
+	* changer-src/chg-scsi-chio.c: Merged changes from 2.4.2 
+	* changer-src/chg-scsi.c: Merged changes from 2.4.2
+	* changer-src/sense.c: New file. Contains an table and function for the 
+          mapping of sense/ASC/ASCQ conditions from the SCSI sense.
+	* changer-src/scsi-changer-driver.c: Merged changes from 2.4.2
+	  Changed handling for the sense keys. Now there is only one function
+          to decide what to do with an sense/ASC/ASCQ conditon (abort,retry ..)
+	* changer-src/Makefile.am: Added sense.c to the source list.
+	* changer-src/scsi-solaris.c: Merged changes from 2.4.2 
+	* changer-src/scsi-linux.c: Merged changes from 2.4.2 
+	* changer-src/scsi-irix.c: Merged changes from 2.4.2 
+	* changer-src/scsi-hpux_new.c: Merged changes from 2.4.2 
+	* changer-src/scsi-defs.h: Merged changes from 2.4.2 
+	
 2000-06-12  Jeroen Ruigrok van der Werven  <asmodai@wxs.nl>
 
 	* server-src/amlabel.c (main): Do not amfree(config_name).

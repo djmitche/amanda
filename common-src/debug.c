@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.21 1999/10/24 17:52:16 oliva Exp $
+ * $Id: debug.c,v 1.22 2000/06/25 18:48:12 ant Exp $
  *
  * debug log subroutines
  */
@@ -148,3 +148,9 @@ int debug_fd()
 {
     return db_fd;
 }
+
+FILE *debug_fp()
+{
+    return db_file;
+}
+

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-aix.c,v 1.8 1999/03/16 21:20:58 th Exp $";
+static char rcsid[] = "$Id: scsi-aix.c,v 1.9 2000/06/25 18:48:11 ant Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an AIX System
@@ -96,6 +96,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
                         char *RequestSenseBuf,
                         int RequestSenseLength)
 {
+  extern FILE * debug_file;
   CDB_T CDBSENSE;
   ExtendedRequestSense_T ExtendedRequestSense;
   struct sc_iocmd ds;
@@ -139,13 +140,13 @@ int SCSI_ExecuteCommand(int DeviceFD,
           break;
         case SC_CHECK_CONDITION:
           RequestSense(DeviceFD, &ExtendedRequestSense, 0);
-          DecodeExtSense(&ExtendedRequestSense);
+          DecodeExtSense(&ExtendedRequestSense, "SCSI_ExecuteCommand:", debug_file);
           bcopy(&ExtendedRequestSense, RequestSenseBuf, RequestSenseLength); 
           return(SC_CHECK_CONDITION);
           break;
         default:
           RequestSense(DeviceFD, &ExtendedRequestSense, 0);
-          DecodeExtSense(&ExtendedRequestSense);
+          DecodeExtSense(&ExtendedRequestSense, "SCSI_ExecuteCommand:", debug_file);
           bcopy(&ExtendedRequestSense, RequestSenseBuf, RequestSenseLength); 
           dbprintf(("ioctl on %d return %d\n", DeviceFD, Result));
           dbprintf(("ret: %d errno: %d (%s)\n", Result, errno, ""));
@@ -204,6 +205,14 @@ int Tape_Eject ( int DeviceFD)
 {
 /*
  Not yet ....
+*/
+  return(-1);
+}
+
+int Tape_Status( int DeviceFD)
+{
+/*
+  Not yet
 */
   return(-1);
 }

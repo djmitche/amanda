@@ -20,10 +20,25 @@ typedef unsigned char PackedBit;
 
 #define TAG_SIZE 36
 
+/*
+ * Sense Key definitions
+*/
+#define SENSE_NULL 0
+#define SENSE_RECOVERED_ERROR 1
 #define NOT_READY 2
+#define SENSE_NOT_READY 2
+#define SENSE_MEDIUM_ERROR 3
+#define SENSE_HARDWARE_ERROR 4
 #define HARDWARE_ERROR 4
 #define ILLEGAL_REQUEST 5
+#define SENSE_ILLEGAL_REQUEST 5
 #define UNIT_ATTENTION 6
+#define SENSE_UNIT_ATTENTION 6
+#define SENSE_DATA_PROTECT 7
+#define SENSE_BLANK_CHECK 8
+#define SENSE_VENDOR_SPECIFIC 0x9
+#define SENSE_ABORTED_COMMAND 0xb
+#define SENSE_VOLUME_OVERFLOW 0xd
 
 #define MAX_RETRIES 100
 
@@ -32,10 +47,6 @@ typedef unsigned char PackedBit;
 #define SCSI_OK 0
 #define SCSI_SENSE 1
 
-/*
- * Sense Key definitions
-*/
-#define SENSE_NOT_READY 0x2
 
 /*
  *  SCSI Commands
@@ -66,10 +77,14 @@ typedef unsigned char PackedBit;
  */
 #define SENSE_ABORT -1
 #define SENSE_IGNORE 0
-#define SENSE_NO_TAPE_ONLINE 1
+#define SENSE_NO_TAPE 1
 #define SENSE_RETRY 2
 #define SENSE_IES 3
-#define SENSE_TAPE_NOT_UNLOADED 4
+#define SENSE_TAPE_NOT_ONLINE 4
+#define SENSE_TAPE_NOT_LOADED 5
+#define SENSE_NO 6
+#define SENSE_TAPE_NOT_UNLOADED 7
+#define SENSE_CHM_FULL 8
 /*
  * Defines for the function types in Changer_CMD_T
  */
@@ -96,6 +111,16 @@ typedef unsigned char PackedBit;
 #define TYPE_OPTICAL 7
 #define TYPE_CHANGER 8
 #define TYPE_COMM 9
+
+/* Defines for Tape_Status */
+#define TAPE_ONLINE 1        /* Tape is loaded */
+#define TAPE_BOT 2           /* Tape is at begin of tape */
+#define TAPE_EOT 4           /* Tape is at end of tape */
+#define TAPE_WR_PROT 8       /* Tape is write protected */
+
+/* Defines for exit status */
+#define WARNING 1
+#define FATAL	2
 
 /* macros for building scsi msb array parameter lists */
 #define B(s,i) ((unsigned char)((s) >> i))
@@ -625,7 +650,80 @@ typedef struct {
     unsigned char SenseDataLength;
     char res[3];
 } ParameterListHeader_T;
+/* ======================================================= */
+/* ReadWriteErrorRecoveryPage_T */
+/* ======================================================= */
+typedef struct 
+{
+#ifdef LITTLE_ENDIAN_BITFIELDS
+    PackedBit PageCode : 6;
+    PackedBit res      : 1;
+    PackedBit PS       : 1;
+#else
+    PackedBit PS       : 1;
+    PackedBit res      : 1;
+    PackedBit PageCode : 6;
+#endif
+    unsigned char ParameterListLength;
+#ifdef LITTLE_ENDIAN_BITFIELDS
+    PackedBit dcr  :1;  /* Disable ECC Correction */
+    PackedBit dte  :1;  /* Disable Transfer on Error */
+    PackedBit per  :1;  /* Enable Post  Error reporting */
+    PackedBit eer  :1;  /* Enable early recovery */
+    PackedBit res1 :1;
+    PackedBit tb   :1;  /* Transfer block (when not fully recovered) */
+    PackedBit res2 :1;
+    PackedBit res3 :1;
+#else
+    PackedBit res3 :1;
+    PackedBit res2 :1;
+    PackedBit tb   :1;
+    PackedBit res1 :1;
+    PackedBit eer  :1;
+    PackedBit per  :1;
+    PackedBit dte  :1;
+    PackedBit dcr  :1;
+#endif
+    unsigned char ReadRetryCount;
+    unsigned char res4[4];
+    unsigned char WriteRetryCount;
+    unsigned char res5[3];
+} ReadWriteErrorRecoveryPage_T; 
+/* ======================================================= */
+/* EDisconnectReconnectPage_T */
+/* ======================================================= */
+typedef struct 
+{
+#ifdef LITTLE_ENDIAN_BITFIELDS
+    PackedBit PageCode : 6;
+    PackedBit RSVD     : 1;
+    PackedBit PS       : 1;
+#else
+    PackedBit PS       : 1;
+    PackedBit RSVD     : 1;
+    PackedBit PageCode : 6;
+#endif
 
+    unsigned char BufferFullRatio;
+    unsigned char BufferEmptyRatio;
+    unsigned char BusInactivityLimit[2];
+    unsigned char DisconnectTimeLimit[2];
+    unsigned char ConnectTimeLimit[2];
+    unsigned char MaximumBurstSize[2];
+
+#ifdef LITTLE_ENDIAN_BITFIELDS
+    PackedBit DTDC :2;
+    PackedBit res  :6;
+#else
+    PackedBit res  :6;
+    PackedBit DTDC :2;
+#endif
+    unsigned char res1[3];
+} DisconnectReconnectPage_T;
+
+/* ======================================================= */
+/* EAAPage_T */
+/* ======================================================= */
 typedef struct 
 {
 #ifdef LITTLE_ENDIAN_BITFIELDS
@@ -648,7 +746,9 @@ typedef struct
     unsigned char NoDataTransferElements[2];
     unsigned char res[2];
 } EAAPage_T;    
-
+/* ======================================================= */
+/* TransPortGeometryDescriptorPage_T */
+/* ======================================================= */
 typedef struct {
 #ifdef LITTLE_ENDIAN_BITFIELDS
     PackedBit PageCode : 6;
@@ -669,7 +769,9 @@ typedef struct {
 #endif
     unsigned char MemberNumber;
 } TransportGeometryDescriptorPage_T;  
-
+/* ======================================================= */
+/* DeviceCapabilitiesPage_T */
+/* ======================================================= */
 typedef struct
 {
 #ifdef LITTLE_ENDIAN_BITFIELDS
@@ -753,7 +855,9 @@ typedef struct
 #endif
     unsigned char res0819[12];
 } DeviceCapabilitiesPage_T;  
-
+/* ======================================================= */
+/* ModePageEXB10hLCD_T */
+/* ======================================================= */
 typedef struct ModePageEXB10hLCD
 {
   unsigned char PageCode;
@@ -778,14 +882,18 @@ typedef struct ModePageEXB10hLCD
   unsigned char line3[20];
   unsigned char line4[20];
 } ModePageEXB10hLCD_T;
-
+/* ======================================================= */
+/* ModePageEXBBaudRatePage_T */
+/* ======================================================= */
 typedef struct ModePageEXBBaudRatePage
 {
   unsigned char PageCode;
   unsigned char ParameterListLength;
   unsigned char BaudRate[2];
 } ModePageEXBBaudRatePage_T;
-
+/* ======================================================= */
+/* ModePageEXB120VendorUnique_T */
+/* ======================================================= */
 typedef struct ModePageEXB120VendorUnique
 {
 #ifdef  LITTLE_ENDIAN_BITFIELDS
@@ -819,6 +927,38 @@ typedef struct ModePageEXB120VendorUnique
     unsigned char DisplayMessage[60];
 } ModePageEXB120VendorUnique_T;
 /* ======================================================= */
+/* ModePageTreeFrogVendorUnique_T */
+/* ======================================================= */
+typedef struct ModePageTreeFrogVendorUnique
+{
+#ifdef  LITTLE_ENDIAN_BITFIELDS
+    PackedBit PageCode : 6;
+    PackedBit res0     : 1;
+    PackedBit PS       : 1;
+#else
+    PackedBit PS       : 1;
+    PackedBit res0     : 1;
+    PackedBit PageCode : 6;
+#endif
+    unsigned char ParameterListLength;
+#ifdef LITTLE_ENDIAN_BITFIELDS
+    PackedBit EBARCO  : 1;
+    PackedBit CHKSUM  : 1;
+    PackedBit res2    : 6;
+#else
+    PackedBit res2    : 6;
+    PackedBit CHKSUM  : 1;
+    PackedBit EBARCO  : 1;
+#endif
+    unsigned char res3;
+    unsigned char res4;
+    unsigned char res5;
+    unsigned char res6;
+    unsigned char res7;
+    unsigned char res8;
+    unsigned char res9;
+} ModePageTreeFrogVendorUnique_T;
+/* ======================================================= */
 /* ElementInfo_T */
 /* ======================================================= */
 typedef struct ElementInfo
@@ -847,6 +987,7 @@ typedef struct ElementInfo
 
 typedef struct {
     char *ident;                  /* Name of the device from inquiry */
+    char *type;                   /* Device Type, tape|robot */
     int (*function[10])();        /* New way to call the device dependend functions move/eject ... */
 } ChangerCMD_T ;
 
@@ -872,14 +1013,29 @@ typedef struct LogPageDecode {
     void (*decode)(LogParameter_T *, int);
 } LogPageDecode_T;
 
+typedef struct {
+    char *ident;                    /* Ident as returned from the inquiry */
+    char *vendor;                   /* Vendor as returned from the inquiry */
+    unsigned char type;             /* removable .... */
+    int sense;                      /* Sense key as returned from the device */
+    int asc;                        /* ASC as set in the sense struct */
+    int ascq;                       /* ASCQ as set in the sense struct */
+   int  ret;                       /* What we think that we should return on this conditon */
+    char text[80];                  /* A short text describing this condition */
+} SenseType_T;                                                                                    
+
 /* ======================================================= */
 /* Funktion-Declaration */
 /* ======================================================= */
 OpenFiles_T *SCSI_OpenDevice(char *DeviceName);
-OpenFiles_T *OpenDevice(char *DeviceName, char *ConfigName);
+OpenFiles_T *OpenDevice(char *DeviceName, char *ConfigName, char *ident);
 
 int SCSI_CloseDevice(int DeviceFD); 
 int CloseDevice(int ); 
+int Tape_Eject(int);
+int Tape_Status(int);
+int DumpSense();
+int Sense2Action(char *ident, unsigned char type, unsigned char ignsense, unsigned char sense, unsigned char asc, unsigned char ascq, char *text) ;
 
 int SCSI_ExecuteCommand(int DeviceFD,
                         Direction_T Direction,
@@ -889,6 +1045,10 @@ int SCSI_ExecuteCommand(int DeviceFD,
                         int DataBufferLength,
                         char *RequestSense,
                         int RequestSenseLength);
+
+void ChangerStatus(char * option, char * labelfile, int HasBarCode, char *changer_file, char *changer_dev, char *tape_device);
+
+int Tape_Ready(char *tapedev, int wait);
 
 /*
  * Local variables:

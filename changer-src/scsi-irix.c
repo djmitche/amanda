@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-irix.c,v 1.8 1999/03/16 21:21:04 th Exp $";
+static char rcsid[] = "$Id: scsi-irix.c,v 1.9 2000/06/25 18:48:11 ant Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an SGI Workstation
@@ -176,6 +176,14 @@ int Tape_Eject ( int DeviceFD)
   mtop.mt_count = 1;
   ioctl(DeviceFD, MTIOCTOP, &mtop);
   return(0);
+}
+
+int Tape_Status( int DeviceFD)
+{
+/*
+  Not yet
+*/
+  return(-1);
 }
 
 #endif

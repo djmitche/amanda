@@ -28,7 +28,7 @@ SUFFIXES =		.pl .sh
 
 chg_scsi_SOURCES =	chg-scsi.c libscsi.h scsi-defs.h \
 	scsi-aix.c scsi-changer-driver.c scsi-hpux_new.c scsi-irix.c \
-	scsi-linux.c scsi-solaris.c scsi-bsd.c
+	scsi-linux.c scsi-solaris.c scsi-bsd.c sense.c 
 
 chg_scsi_chio_SOURCES = chg-scsi-chio.c scsi-hpux.c scsi-chio.c libscsi.h
 

@@ -1,5 +1,5 @@
 /*
- *  $Id: chg-scsi.c,v 1.15 1999/09/15 00:31:17 jrj Exp $
+ *  $Id: chg-scsi.c,v 1.16 2000/06/25 18:48:11 ant Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -69,6 +69,7 @@
 #include "scsi-defs.h"
 
 char *tapestatfile = NULL;
+FILE *debug_file = NULL;
 
 char *config_name = NULL;
 char *config_dir = NULL;
@@ -107,6 +108,8 @@ typedef struct {  /* The information we can get for any drive (configuration) */
   char *cleanfile;   /* Where we count how many cleanings we did */
   char *timefile;    /* Where we count the time the tape was used*/
   char *tapestatfile;/* Where can we place some drive stats */
+  char *changerident;/* Config to use foe changer control, ovverride result from inquiry */
+  char *tapeident;   /* Same as above for the tape device */
 }config_t; 
 
 typedef struct {
@@ -121,7 +124,8 @@ typedef struct {
 
 typedef enum{
   NUMDRIVE,EJECT,SLEEP,CLEANMAX,DRIVE,START,END,CLEAN,DEVICE,STATFILE,CLEANFILE,DRIVENUM,
-    CHANGERDEV,USAGECOUNT,SCSITAPEDEV, TAPESTATFILE, LABELFILE
+    CHANGERDEV,USAGECOUNT,SCSITAPEDEV, TAPESTATFILE, LABELFILE, CHANGERIDENT,
+    TAPEIDENT
     } token_t;
 
 typedef struct {
@@ -147,6 +151,8 @@ tokentable_t t_table[]={
   { "scsitapedev", SCSITAPEDEV},
   { "tapestatus", TAPESTATFILE},
   { "labelfile", LABELFILE},
+  { "changerident" , CHANGERIDENT},
+  { "tapeident", TAPEIDENT},
   { NULL,-1 }
 };
 
@@ -154,7 +160,7 @@ void init_changer_struct(changer_t *chg,int number_of_config)
      /* Initialize datasructures with default values */
 {
   int i;
-  
+ 
   chg->number_of_configs = number_of_config;
   chg->eject = 1;
   chg->sleep = 0;
@@ -174,7 +180,11 @@ void init_changer_struct(changer_t *chg,int number_of_config)
       chg->conf[i].timefile  = NULL;
       chg->conf[i].scsitapedev = NULL;
       chg->conf[i].tapestatfile = NULL;
+      chg->conf[i].changerident = NULL;
+      chg->conf[i].tapeident = NULL;
     }
+  } else {
+   fprintf(stderr,"init_changer_struct malloc failed\n");
   }
 }
 
@@ -196,26 +206,42 @@ void dump_changer_struct(changer_t chg)
     dbprintf(("  Startslot     : %d\n",chg.conf[i].start));
     dbprintf(("  Endslot       : %d\n",chg.conf[i].end));
     dbprintf(("  Cleanslot     : %d\n",chg.conf[i].cleanslot));
+
     if (chg.conf[i].device != NULL)
       dbprintf(("  Devicename    : %s\n",chg.conf[i].device));
     else
       dbprintf(("  Devicename    : none\n"));
+
+    if (chg.conf[i].changerident != NULL)
+      dbprintf(("  changerident  : %s\n",chg.conf[i].changerident));
+    else
+      dbprintf(("  changerident  : none\n"));
+
     if (chg.conf[i].scsitapedev != NULL)
       dbprintf(("  SCSITapedev   : %s\n",chg.conf[i].scsitapedev));
     else
       dbprintf(("  SCSITapedev   : none\n"));
+
+    if (chg.conf[i].tapeident != NULL)
+      dbprintf(("  tapeident     : %s\n",chg.conf[i].changerident));
+    else
+      dbprintf(("  tapeident     : none\n"));
+
     if (chg.conf[i].tapestatfile != NULL)
       dbprintf(("  statfile      : %s\n", chg.conf[i].tapestatfile));
     else
       dbprintf(("  statfile      : none\n"));
+
     if (chg.conf[i].slotfile != NULL)
       dbprintf(("  Slotfile      : %s\n",chg.conf[i].slotfile));
     else
       dbprintf(("  Slotfile      : none\n"));
+
     if (chg.conf[i].cleanfile != NULL)
       dbprintf(("  Cleanfile     : %s\n",chg.conf[i].cleanfile));
     else
       dbprintf(("  Cleanfile     : none\n"));
+
     if (chg.conf[i].timefile != NULL)
       dbprintf(("  Usagecount    : %s\n",chg.conf[i].timefile));
     else
@@ -283,9 +309,11 @@ int read_config(char *configfile, changer_t *chg)
   char linebuffer[256];
   int token;
   char *value;
+  char *p;
 
   numconf = 1;  /* At least one configuration is assumed */
   /* If there are more, it should be the first entry in the configurationfile */
+
 
   if (NULL==(file=fopen(configfile,"r"))){
     return (-1);
@@ -325,6 +353,21 @@ int read_config(char *configfile, changer_t *chg)
           break;
         case TAPESTATFILE:
           chg->conf[drivenum].tapestatfile = strdup(value);
+          break;
+        case CHANGERIDENT:
+          chg->conf[drivenum].changerident = strdup(value);
+          p = chg->conf[drivenum].changerident;
+          while (*p != '\0')
+          {
+            if (*p == '_')
+            {
+              *p=' ';
+            }
+            p++;
+          }
+          break;
+        case TAPEIDENT:
+          chg->conf[drivenum].tapeident = strdup(value);
           break;
         case CLEANMAX:
           chg->cleanmax = atoi(value);
@@ -581,7 +624,7 @@ typedef struct com_stru
 
 
 /* major command line args */
-#define COMCOUNT 8
+#define COMCOUNT 9
 #define COM_SLOT 0
 #define COM_INFO 1
 #define COM_RESET 2
@@ -590,6 +633,7 @@ typedef struct com_stru
 #define COM_LABEL 5
 #define COM_SEARCH 6
 #define COM_STATUS 7
+#define COM_TRACE 8
 argument argdefs[]={{"-slot",COM_SLOT,1},
                     {"-info",COM_INFO,0},
                     {"-reset",COM_RESET,0},
@@ -597,7 +641,9 @@ argument argdefs[]={{"-slot",COM_SLOT,1},
                     {"-clean",COM_CLEAN,0},
                     {"-label",COM_LABEL,1},
                     {"-search",COM_SEARCH,1},
-                    {"-status",COM_STATUS,1}};
+                    {"-status",COM_STATUS,1},
+			{"-trace",COM_TRACE,1}
+	};
 
 
 /* minor command line args */
@@ -718,7 +764,15 @@ int get_relative_target(int fd,int nslots,char *parameter,int loaded,
 int ask_clean(char *tapedev)
      /* This function should ask the drive if it wants to be cleaned */
 {
-  return get_clean_state(tapedev);
+  int ret;
+
+  ret = get_clean_state(tapedev);
+
+  if (ret < 0) /* < 0 means query does not work ... */
+  {
+    return(0);
+  }
+  return ret;
 }
 
 void clean_tape(int fd,char *tapedev,char *cnt_file, int drivenum, 
@@ -796,20 +850,41 @@ int main(int argc, char *argv[])
   char *clean_file=NULL;
   char *time_file=NULL;
 
+
   int use_slots;
   int slot_offset;
   int confnum;
 
   int fd, slotcnt, drivecnt;
+
   int endstatus = 0;
-  char *changer_dev, *tape_device;
+
+  char *changer_dev;
+  char *tape_device = NULL;
   char *changer_file = NULL;
   char *scsitapedevice = NULL;
+  int TapeEject = 0;              /* Do we have an device for ejecting the tape ? */
 
+  chg.number_of_configs = 0;
+  chg.eject = 0;
+  chg.sleep = 0;
+  chg.cleanmax = 0;
+  chg.device = NULL;
+  chg.labelfile = NULL;
+  chg.conf = NULL;
   set_pname("chg-scsi");
   dbopen();
-  parse_args(argc,argv,&com);
 
+  if (debug_file == NULL)
+    {
+        /*
+      debug_file = fdopen((int)debug_fd(), "a");
+        */
+        debug_file = debug_fp();
+    }
+  
+  parse_args(argc,argv,&com);
+  
   if(read_conffile(CONFFILE_NAME)) {
     perror(CONFFILE_NAME);
     exit(1);
@@ -820,9 +895,20 @@ int main(int argc, char *argv[])
   tape_device = getconf_str(CNF_TAPEDEV);
 
   /* Get the configuration parameters */
+  /* Attention, this will not support more than 10 tape devices 0-9 */
+  /* */
   if (strlen(tape_device)==1){
-    read_config(changer_file,&chg);
+    if (read_config(changer_file,&chg) == -1)
+    {
+      fprintf(stderr, "%s open: of %s failed\n", get_pname(), changer_file);
+      return 2;
+    }
     confnum=atoi(tape_device);
+    if (chg.number_of_configs == 0)
+    {
+       fprintf(stderr,"%s: chg.conf[%d] == NULL\n",get_pname(), confnum);
+       return(2);
+    }
     use_slots    = chg.conf[confnum].end-chg.conf[confnum].start+1;
     slot_offset  = chg.conf[confnum].start;
     drive_num    = chg.conf[confnum].drivenum;
@@ -847,7 +933,7 @@ int main(int argc, char *argv[])
       tapestatfile = strdup(chg.conf[confnum].tapestatfile);
     dump_changer_struct(chg);
     /* get info about the changer */
-    if (NULL == (pChangerDev = OpenDevice(changer_dev, "changer_dev"))) {
+    if (NULL == (pChangerDev = OpenDevice(changer_dev, "changer_dev", chg.conf[confnum].changerident))) {
       int localerr = errno;
       fprintf(stderr, "%s: open: %s: %s\n", get_pname(), 
               changer_dev, strerror(localerr));
@@ -861,29 +947,54 @@ int main(int argc, char *argv[])
 
     if (tape_device != NULL)
       {
-        if ((pTapeDev = OpenDevice(tape_device, "tape_device")) == NULL)
+        if ((pTapeDev = OpenDevice(tape_device, "tape_device", chg.conf[confnum].tapeident)) == NULL)
           {
             dbprintf(("warning open of %s: failed\n",  tape_device));
           }
       }
+    /*
+      if (pTapeDev != NULL)
+      close(pTapeDev->fd);
+    */
 
     if (scsitapedevice != NULL)
       {
-        if ((pTapeDevCtl = OpenDevice(scsitapedevice, "scsitapedevice")) == NULL)
+        if ((pTapeDevCtl = OpenDevice(scsitapedevice, "scsitapedevice", chg.conf[confnum].tapeident)) == NULL)
           {
             printf("open: %s: failed\n", scsitapedevice);
             return(2);
           }
       } else {
-        if (pTapeDev != NULL && pTapeDev->SCSI == 1)
+	if (pTapeDev != NULL && pTapeDev->SCSI == 1)
+	{
+		pTapeDevCtl = pTapeDev;
+	}
+     }
+    
+
+    if (pTapeDevCtl != NULL)
+      {
+        TapeEject = 1;
+      }
+
+    if (pTapeDev != NULL)
+      {
+        if (TapeEject == 0)
           {
-            pTapeDevCtl = pTapeDev;
-          } else { 
-            if (pChangerDev != NULL && pChangerDev->SCSI == 1)
-              {
-                pTapeDevCtl = pChangerDev;
-              }
+            TapeEject = 2;
           }
+        if (need_eject == 1)
+          {
+            dbprintf(("need_eject set to %d\n",TapeEject));
+            need_eject = TapeEject;
+          }
+      }
+
+
+    if (need_eject != 0 && TapeEject == 0)
+      {
+        printf("No device found for tape eject");
+        return(2);
       }
 
     if ((chg.conf[confnum].end == -1) || (chg.conf[confnum].start == -1)){
@@ -893,24 +1004,10 @@ int main(int argc, char *argv[])
     }
     free_changer_struct(&chg);
   } else {
-    /* get info about the changer */
-    if (NULL == (pChangerDev = OpenDevice(changer_dev, "dev"))) {
-      int localerr = errno;
-      fprintf(stderr, "%s: open: %s: %s\n", get_pname(), 
-              changer_dev, strerror(localerr));
-      printf("%s open: %s: %s\n", "<none>", changer_dev, strerror(localerr));
-      dbprintf(("%s: open: %s: %s\n", get_pname(),
-                changer_dev, strerror(localerr)));
+      printf("Please specify a number as tape_device [0-9]\n");
+      dbprintf(("tape_device is not a number %s\n", tape_device));
       return 2;
     }
-    fd = pChangerDev->fd;
-    slotcnt = get_slot_count(fd);
-    use_slots    = slotcnt;
-    slot_offset  = 0;
-    drive_num    = 0;
-    need_eject   = 0;
-    need_sleep   = 0;
-  }
 
   drivecnt = get_drive_count(fd);
 
@@ -936,8 +1033,14 @@ int main(int argc, char *argv[])
   target = -1;
 
   switch(com.command_code) {
+/* This is only for the experts ;-) */
+  case COM_TRACE:
+	ChangerReplay(com.parameter);
+  break;
+/*
+*/
   case COM_STATUS:
-    ChangerStatus(com.parameter);
+    ChangerStatus(com.parameter, chg.labelfile, BarCode(fd),changer_file, changer_dev, tape_device);
     break;
   case COM_LABEL: /* Update BarCode/Label mapping file */
     MapBarCode(chg.labelfile, com.parameter, pDTE[drive_num].VolTag, BARCODE_PUT);
@@ -987,6 +1090,12 @@ int main(int argc, char *argv[])
       }
     if (loaded) {
       oldtarget = get_current_slot(changer_file);
+      if (oldtarget < 0)
+        {
+          dbprintf(("COM_SLOT: get_current_slot %d\n", oldtarget));
+          oldtarget = find_empty(fd, slot_offset, use_slots);
+          dbprintf(("COM_SLOT: find_empty %d\n", oldtarget));
+        }
       
       if ((oldtarget)!=target) {
         if (need_eject)
@@ -1033,8 +1142,14 @@ int main(int argc, char *argv[])
     break;
 
   case COM_INFO:
-    loaded = get_current_slot(changer_file)-slot_offset;
+    loaded = get_current_slot(changer_file);
 
+    if (loaded < 0)
+      {
+        loaded = find_empty(fd, slot_offset, use_slots);
+      }
+    loaded = loaded - slot_offset;
+      
     printf("%d %d 1", loaded, use_slots);
 
     if (BarCode(fd) == 1)
@@ -1048,9 +1163,16 @@ int main(int argc, char *argv[])
   case COM_RESET:
     target=get_current_slot(changer_file);
 
+    if (target < 0)
+    {
+	    	dbprintf(("COM_RESET: get_current_slot %d\n", target));
+		target=find_empty(fd, slot_offset, use_slots);
+		dbprintf(("COM_RESET: find_empty %d\n", target));
+    }
+
     if (loaded) {
       if (!isempty(fd, target))
-        target=find_empty(fd);
+        target=find_empty(fd, slot_offset, use_slots);
       if (need_eject)
         eject_tape(scsitapedevice, need_eject);
       (void)unload(fd, drive_num, target);
@@ -1090,6 +1212,12 @@ int main(int argc, char *argv[])
   case COM_EJECT:
     if (loaded) {
       target=get_current_slot(changer_file);
+      if (target < 0)
+        {
+          dbprintf(("COM_EJECT: get_current_slot %d\n", target));
+          target = find_empty(fd, slot_offset, use_slots);
+          dbprintf(("COM_EJECT: find_empty %d\n", target));
+        }
       
       if (need_eject)
         eject_tape(scsitapedevice, need_eject);
@@ -1106,6 +1234,13 @@ int main(int argc, char *argv[])
   case COM_CLEAN:
     if (loaded) {
       target=get_current_slot(changer_file);
+      if (target < 0)
+        {
+          dbprintf(("COM_CLEAN: get_current_slot %d\n", target));
+          target = find_empty(fd, slot_offset, use_slots);
+          dbprintf(("COM_CLEAN: find_empty %d\n",target));
+        }
+
       if (need_eject)
         eject_tape(scsitapedevice, need_eject);
       (void)unload(fd, drive_num, target);

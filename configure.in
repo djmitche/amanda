@@ -1670,6 +1670,7 @@ AC_CHECK_HEADERS(\
 	readline.h \
 	readline/history.h \
 	readline/readline.h \
+	scsi/sg.h \
 	scsi/scsi_ioctl.h \
 	stdlib.h \
 	string.h \
@@ -1732,11 +1733,11 @@ if test x"$ac_cv_header_sys_scsi_h" = x"yes"; then
 fi
 
 dnl
-dnl Linux SCSI
+dnl Linux SCSI based on ioctl
 dnl
 if test x"$ac_cv_header_sys_mtio_h" = x"yes" &&
    test x"$ac_cv_header_scsi_scsi_ioctl_h" = x"yes"; then 
-	AC_CACHE_CHECK([for Linux like scsi support],
+	AC_CACHE_CHECK([for Linux like scsi support (ioctl)],
 	amanda_cv_linux_scsi,
 	[AC_TRY_COMPILE([
 #include <scsi/scsi_ioctl.h>
@@ -1746,11 +1747,32 @@ if test x"$ac_cv_header_sys_mtio_h" = x"yes" &&
 	char *Command;
 	ioctl(device, SCSI_IOCTL_SEND_COMMAND, Command);
 ], amanda_cv_linux_scsi=yes, amanda_cv_linux_scsi=no)])
-	if test x"$amanda_cv_linux_scsi" = x"yes";then
-		AC_DEFINE(HAVE_LINUX_LIKE_SCSI,1,[Define to enable Linux tape-changer support.])
-		NO_SCSI_CHANGER_MODE=false
-	fi
 fi
+
+dnl
+dnl Linux SCSI based on sg
+dnl
+if test x"$ac_cv_header_sys_mtio_h" = x"yes" &&
+   test x"$ac_cv_header_scsi_sg_h" = x"yes"; then 
+	AC_CACHE_CHECK([for Linux like scsi support (sg)],
+	amanda_cv_linux_sg_scsi,
+	[AC_TRY_COMPILE([
+#include <scsi/sg.h>
+#include <sys/mtio.h>
+],[
+	int device;
+	struct sg_header *psg_header;
+	char *buffer;
+	write(device, buffer, 1);
+], amanda_cv_linux_sg_scsi=yes, amanda_cv_linux_sg_scsi=no)])
+fi
+
+if test x"$amanda_cv_linux_scsi" = x"yes" ||
+ test x"$amanda_cv_linux_sg_scsi" = x"yes";then
+	AC_DEFINE(HAVE_LINUX_LIKE_SCSI,1,[Define to enable Linux tape-changer support.])
+	NO_SCSI_CHANGER_MODE=false
+fi
+
 dnl
 dnl HP-UX SCSI
 dnl

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.6 1999/03/06 09:09:33 th Exp $";
+static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.7 2000/06/25 18:48:11 ant Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an HP-UX Workstation
@@ -114,6 +114,8 @@ int SCSI_ExecuteCommand(int DeviceFD,
     case Input:
       sctl_io.flags = sctl_io.flags | SCTL_READ;
       break;
+    case Output:
+      break;
     }
 
   while (--Retries > 0) {
@@ -150,6 +152,41 @@ int Tape_Eject (int DeviceFD)
   }
 }
 
+
+int Tape_Status( int DeviceFD)
+{
+  struct mtget mtget;
+  int ret = 0;
+
+  if (ioctl(DeviceFD, MTIOCGET, &mtget) != 0)
+  {
+     dbprintf(("Tape_Status error ioctl %d\n",errno));
+     return(-1);
+  }
+
+  dbprintf(("ioctl -> mtget.mt_gstat %X\n",mtget.mt_gstat));
+  if (GMT_ONLINE(mtget.mt_gstat))
+  {
+    ret = TAPE_ONLINE;
+  }
+
+  if (GMT_BOT(mtget.mt_gstat))
+  {
+    ret = ret | TAPE_BOT;
+  }
+
+  if (GMT_EOT(mtget.mt_gstat))
+  {
+    ret = ret | TAPE_EOT;
+  }
+
+  if (GMT_WR_PROT(mtget.mt_gstat))
+  {
+    ret = ret | TAPE_WR_PROT;
+  }
+ 
+  return(ret); 
+}
 #endif
 /*
  * Local variables:

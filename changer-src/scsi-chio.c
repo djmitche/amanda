@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-chio.c,v 1.12 1999/03/30 10:08:12 oliva Exp $
+ *	$Id: scsi-chio.c,v 1.13 2000/06/25 18:48:11 ant Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -146,7 +146,7 @@ int type=CHET_ST;
 /*
  * find the first empty slot 
  */
-int find_empty(int fd)
+int find_empty(int fd, int start, int count)
 {
 struct changer_element_status  ces;
 int                            i,rc;
