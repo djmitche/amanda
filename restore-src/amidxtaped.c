@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: amidxtaped.c,v 1.10 1997/12/31 23:35:00 jrj Exp $
+/* $Id: amidxtaped.c,v 1.11 1998/01/01 01:13:42 jrj Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -241,7 +241,7 @@ char **argv;
 			" -f",
 #endif
 			" ", tapename,
-			"rewind",
+			" ", "rewind",
 			NULL);
 	dbprintf(("Rewinding tape: %s\n", cmd));
 	system(cmd);
