@@ -1,3 +1,10 @@
+2001-01-29 John R. Jackson <jrj@purdue.edu>
+
+	* tape-src/output-tape.c (tape_tapefd_status): Convert flag values
+	  to booleans (compliments of Marc W. Mengel <mengel@fnal.gov>).
+	* tape-src/tapeio.c (tape_fsf): Use ap_snprintf instead of snprintf
+	  (also compliments of Marc).
+
 2001-01-26 John R. Jackson <jrj@purdue.edu>
 
 	* changer-src/Makefile.am: Double up the references to libamanda to

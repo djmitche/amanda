@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-tape.c,v 1.1.4.1 2001/01/24 22:12:18 jrjackson Exp $
+ * $Id: output-tape.c,v 1.1.4.2 2001/01/29 22:16:00 jrjackson Exp $
  *
  * tapeio.c virtual tape interface for normal tape drives.
  */
@@ -520,35 +520,35 @@ tape_tapefd_status(fd, stat)
         /* IRIX-ish system */
 	anything_valid = 1;
 	stat->online_valid = 1;
-	stat->online = (buf.mt.dposn & MT_ONL);
+	stat->online = (0 != (buf.mt.dposn & MT_ONL));
 	stat->bot_valid = 1;
-	stat->bot = (buf.mt.dposn & MT_BOT);
+	stat->bot = (0 != (buf.mt.dposn & MT_BOT));
 	stat->eot_valid = 1;
-	stat->eot = (buf.mt.dposn & MT_EOT);
+	stat->eot = (0 != (buf.mt.dposn & MT_EOT));
 	stat->protected_valid = 1;
-	stat->protected = (buf.mt.dposn & MT_WRPROT);
+	stat->protected = (0 != (buf.mt.dposn & MT_WRPROT));
 #else									/* }{ */
 #ifdef GMT_ONLINE							/* { */
         /* Linux-ish system */
 	anything_valid = 1;
 	stat->online_valid = 1;
-	stat->online = GMT_ONLINE(buf.mt_gstat);
+	stat->online = (0 != GMT_ONLINE(buf.mt_gstat));
 	stat->bot_valid = 1;
-	stat->bot = GMT_BOT(buf.mt_gstat);
+	stat->bot = (0 != GMT_BOT(buf.mt_gstat));
 	stat->eot_valid = 1;
-	stat->eot = GMT_EOT(buf.mt_gstat);
+	stat->eot = (0 != GMT_EOT(buf.mt_gstat));
 	stat->protected_valid = 1;
-	stat->protected = GMT_WR_PROT(buf.mt_gstat);
+	stat->protected = (0 != GMT_WR_PROT(buf.mt_gstat));
 #else									/* }{ */
 #ifdef DEV_BOM								/* { */
         /* OSF1-ish system */
 	anything_valid = 1;
 	stat->online_valid = 1;
-	stat->online = ((DEV_OFFLINE & buf.mt_dsreg) == 0);
+	stat->online = (0 == (DEV_OFFLINE & buf.mt_dsreg));
 	stat->bot_valid = 1;
-	stat->bot = (DEV_BOM & buf.mt_dsreg);
+	stat->bot = (0 != (DEV_BOM & buf.mt_dsreg));
 	stat->protected_valid = 1;
-	stat->protected = (DEV_WRTLCK & buf.mt_dsreg);
+	stat->protected = (0 != (DEV_WRTLCK & buf.mt_dsreg));
 #else									/* }{ */
         /* Solaris, minix, etc. */
 	anything_valid = 1;
