@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: list_dir.h,v 1.2 1998/07/04 00:20:06 oliva Exp $
+ * $Id: list_dir.h,v 1.3 1999/02/15 02:30:26 martinea Exp $
  *
  */
 
@@ -34,7 +34,7 @@ typedef struct DIR_ITEM {
     struct DIR_ITEM *next;
 } DIR_ITEM;
 
-extern DIR_ITEM *dir_list;
 
+extern DIR_ITEM *get_dir_list P((void));
 extern void clear_dir_list P((void));
 extern int add_dir_list_item P((DUMP_ITEM *dump, char *path));
