@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: calcsize.c,v 1.31 2005/02/09 14:10:22 martinea Exp $
+ * $Id: calcsize.c,v 1.32 2005/02/09 17:55:59 martinea Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -293,7 +293,7 @@ char **argv;
 
 	lseek(1, (off_t)0, SEEK_END);
 
-	printf("%s %d SIZE %ld\n",
+	fprintf(stderr, "%s %d SIZE %ld\n",
 	       amname, dumplevel[i], final_size(i, dirname));
 	fflush(stdout);
 
