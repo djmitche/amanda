@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.14 2000/11/08 01:49:01 martinea Exp $
+ * $Id: conffile.c,v 1.54.2.15 2000/12/04 22:33:56 jrjackson Exp $
  *
  * read configuration file
  */
@@ -743,7 +743,11 @@ char *filename;
     FILE *save_conf     = conf;
     char *save_confname = confname;
 
-    confname = stralloc(filename);
+    if (*filename == '/' || config_dir == NULL) {
+	confname = stralloc(filename);
+    } else {
+	confname = stralloc2(config_dir, filename);
+    }
 
     if((conf = fopen(confname, "r")) == NULL)
 	error("could not open conf file \"%s\": %s", confname, strerror(errno));

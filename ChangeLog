@@ -1,3 +1,9 @@
+2000-12-04 John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/conffile.c (read_conffile_recursively): If the file name
+	  for the includefile directive is not absolute, make it relative to
+	  the configuration directory.
+
 2000-12-03 John R. Jackson  <jrj@purdue.edu>
 
 	* restore-src/amrestore.c: Fix header when compression is included.
@@ -1220,7 +1226,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.416 2000/12/03 20:56:18 jrjackson Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.417 2000/12/04 22:33:54 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
