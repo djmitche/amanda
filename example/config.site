@@ -271,15 +271,17 @@
 # BSD_SECURITY=no
 
 
-# USE_AMANDAHOSTS	--with-amandahosts
-#			Default: no
+# USE_AMANDAHOSTS	--without-amandahosts
+#			Default: yes
 #			When BSD_SECURITY is used, by default it will use
-#			the .rhosts file to make sure that the remote user
-#			can tell the Amanda client what to do.  If you wish
-#			to use a file named .amandahosts instead, then
-#			define this.  The file must have the list both the
-#			remote host and the remote username.
-# USE_AMANDAHOSTS=yes
+#			the .amandahosts file to make sure that the remote
+#			user can tell the Amanda client what to do.  If you
+#			wish to use the more standard .rhosts and
+#			/etc/hosts.equiv files instead, then define this to
+#			no.  Unlike .rhosts, .amandahosts cannot contain
+#			lines with hostnames only; the username must always
+#			be specified.
+# USE_AMANDAHOSTS=no
 
 
 # PORTRANGE             --with-portrange=min,max
