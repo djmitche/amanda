@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.17 1998/10/15 21:31:41 martinea Exp $
+ * $Id: holding.c,v 1.18 1998/11/05 21:02:41 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -100,7 +100,7 @@ char *fname;
 
 #define MAX_DIRS 26	/* so we can select them A .. Z */
 
-struct dirname *dir_list = NULL;
+struct dirname *holding_list = NULL;
 int ndirs = 0;
 
 struct dirname *insert_dirname(name)
@@ -109,7 +109,7 @@ char *name;
     struct dirname *d, *p, *n;
     int cmp;
 
-    for(p = NULL, d = dir_list; d != NULL; p = d, d = d->next)
+    for(p = NULL, d = holding_list; d != NULL; p = d, d = d->next)
 	if((cmp = strcmp(name, d->name)) > 0) continue;
 	else if(cmp == 0) return d;
 	else break;
@@ -122,7 +122,7 @@ char *name;
     n->name = stralloc(name);
     n->next = d;
     if(p) p->next = n;
-    else dir_list = n;
+    else holding_list = n;
     return n;
 }
 
@@ -154,7 +154,7 @@ int select_dir()
 
     while(1) {
 	puts("\nMultiple Amanda directories, please pick multiple by letter:");
-	for(dir = dir_list, i = 0; dir != NULL && i < 26; dir = dir->next, i++)
+	for(dir = holding_list, i = 0; dir != NULL && i < 26; dir = dir->next, i++)
 	    printf("  %c. %s\n", 'A'+i, dir->name);
 	printf("Select a directory to flush [A..%c]: [ALL] ", 'A' + i - 1);
 	ch = get_letter_from_user();
@@ -231,7 +231,7 @@ char **pick_datestamp()
 
     directories_names = alloc((ndirs+1) * sizeof(char *));
     directories = alloc((ndirs) * sizeof(struct dirname *));
-    for(dir = dir_list, i=0; dir != NULL; dir = dir->next,i++) {
+    for(dir = holding_list, i=0; dir != NULL; dir = dir->next,i++) {
 	directories[i] = dir;
     }
 
@@ -241,20 +241,20 @@ char **pick_datestamp()
 	exit(1);
     }
     else if(ndirs == 1) {
-	directories_names[0] = stralloc(dir_list->name);
+	directories_names[0] = stralloc(holding_list->name);
 	directories_names[1] = NULL;
     }
     else {
 	while(1) {
 	    puts("\nMultiple Amanda directories, please pick one by letter:");
-	    for(dir = dir_list, i = 0; dir != NULL && i < 26; dir = dir->next, i++) {
+	    for(dir = holding_list, i = 0; dir != NULL && i < 26; dir = dir->next, i++) {
 		printf("  %c. %s\n", 'A'+i, dir->name);
 		max_char = 'A'+i;
 	    }
 	    printf("Select directories to flush [A..%c]: [ALL] ", 'A' + i - 1);
 	    result = fgets(answer, 1000, stdin);
 	    if(strlen(answer) == 1 || !strncasecmp(answer,"ALL",3)) {
-		for(dir = dir_list, i = 0; dir != NULL; dir = dir->next)
+		for(dir = holding_list, i = 0; dir != NULL; dir = dir->next)
 		    directories_names[i++] = stralloc(dir->name);
 		directories_names[i] = NULL;
 		break;
