@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.93 1998/07/04 00:18:26 oliva Exp $
+ * $Id: sendsize.c,v 1.94 1998/07/06 15:38:33 jrj Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -547,7 +547,7 @@ typedef struct regex_s {
 } regex_t;
 
 regex_t re_size[] = {
-    {"  DUMP: estimated [0-9][0-9]* tape blocks", 1024},
+    {"  DUMP: estimated -*[0-9][0-9]* tape blocks", 1024},
     {"  DUMP: [Ee]stimated [0-9][0-9]* blocks", 512},
     {"  DUMP: [Ee]stimated [0-9][0-9]* bytes", 1},	       /* Ultrix 4.4 */
     {" UFSDUMP: estimated [0-9][0-9]* blocks", 512},           /* NEC EWS-UX */
@@ -1311,11 +1311,15 @@ char *str;
  */
 {
     regex_t *rp;
+    double size;
 
     /* check for size match */
     for(rp = re_size; rp->regex != NULL; rp++) {
-	if(match(rp->regex, str))
-	    return (long) ((first_num(str)*rp->scale+1023.0)/1024.0);
+	if(match(rp->regex, str)) {
+	    size = ((first_num(str)*rp->scale+1023.0)/1024.0);
+	    if(size < 0) size = 1;		/* found on NeXT -- sigh */
+	    return (long) size;
+	}
     }
     return -1;
 }
