@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcleanupdisk.c,v 1.11 2001/07/19 22:20:36 jrjackson Exp $
+ * $Id: amcleanupdisk.c,v 1.12 2001/11/08 18:46:26 martinea Exp $
  */
 #include "amanda.h"
 
@@ -112,7 +112,7 @@ char **main_argv;
     if(pw->pw_uid != getuid())
 	error("must run amcleanupdisk as user %s", dumpuser);
 
-    holding_list = pick_all_datestamp();
+    holding_list = pick_all_datestamp(1);
 
     check_disks();
 

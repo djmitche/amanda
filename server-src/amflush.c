@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.65 2001/07/19 22:20:36 jrjackson Exp $
+ * $Id: amflush.c,v 1.66 2001/11/08 18:46:26 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -103,12 +103,13 @@ char **main_argv;
 	case 'f': foreground = 1;
 		  break;
 	case 'D': if (datearg == NULL)
-		      datearg = malloc(20*sizeof(char *));
+		      datearg = malloc(21*sizeof(char *));
 		  if(nb_datearg == 20) {
 		      fprintf(stderr,"maximum of 20 -D arguments.\n");
 		      exit(1);
 		  }
 		  datearg[nb_datearg++] = stralloc(optarg);
+		  datearg[nb_datearg] = NULL;
 		  break;
 	}
     }
@@ -174,7 +175,7 @@ char **main_argv;
 	holding_t *dir, *prev_dir = NULL, *next_dir;
 	int i, ok;
 
-	holding_list = pick_all_datestamp();
+	holding_list = pick_all_datestamp(1);
 	for(dir = holding_list; dir != NULL;) {
 	    next_dir = dir->next;
 	    ok = 0;
@@ -195,7 +196,7 @@ char **main_argv;
 	}
     }
     else {
-	holding_list = pick_datestamp();
+	holding_list = pick_datestamp(1);
     }
 
     confirm();

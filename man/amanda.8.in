@@ -780,7 +780,7 @@ The file name for the active
 file.
 Amanda maintains this file with information about the active set of tapes.
 .TP
-.BS tapebufs int
+.BN tapebufs int
 Default:
 .IR 20 .
 The number of buffers used by the
@@ -803,6 +803,11 @@ By default, when there is no tape to write to,
 degraded mode (incremental) backups will be performed to the holding disk.
 If full backups should also be allowed in this case,
 the amount of holding disk space reserved for incrementals should be lowered.
+.TP
+.BN autoflush bool
+Default:
+.IR off .
+Whether an amdump run will flush the dump already on holding disk to tape.
 .TP
 .BS columnspec string
 Defines the width of columns

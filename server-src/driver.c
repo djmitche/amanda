@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.110 2001/11/08 01:22:11 martinea Exp $
+ * $Id: driver.c,v 1.111 2001/11/08 18:46:26 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -65,6 +65,7 @@ static void allocate_bandwidth P((interface_t *ip, int kps));
 static int assign_holdingdisk P((assignedhd_t **holdp, disk_t *diskp));
 static void adjust_diskspace P((disk_t *diskp, cmd_t cmd));
 static void delete_diskspace P((disk_t *diskp));
+static assignedhd_t **build_diskspace P((char *destname));
 static int client_constrained P((disk_t *dp));
 static void deallocate_bandwidth P((interface_t *ip, int kps));
 static void dump_schedule P((disklist_t *qp, char *str));
@@ -83,6 +84,7 @@ static dumper_t *idle_dumper P((void));
 static void interface_state P((char *time_str));
 static int num_busy_dumpers P((void));
 static int queue_length P((disklist_t q));
+static disklist_t read_flush P((void));
 static disklist_t read_schedule P((disklist_t *waitqp));
 static void short_dump_state P((void));
 static int sort_by_priority_reversed P((disk_t *a, disk_t *b));
@@ -320,9 +322,9 @@ main(main_argc, main_argv)
      */
 
     waitq = origq;
+    tapeq = read_flush();
     runq = read_schedule(&waitq);
 
-    tapeq.head = tapeq.tail = NULL;
     roomq.head = roomq.tail = NULL;
 
     log_add(L_STATS, "startup time %s", walltime_str(curclock()));
@@ -377,14 +379,16 @@ main(main_argc, main_argv)
 			diskp->name,
 			sched(diskp)->level);
 	    else if(rc == 2)
-		log_add(L_FAIL, "%s %s %d [dump to tape failed]",
+		log_add(L_FAIL, "%s %s %s %d [dump to tape failed]",
 		        diskp->host->hostname,
 			diskp->name,
+			sched(diskp)->datestamp,
 			sched(diskp)->level);
 	}
 	else
-	    log_add(L_FAIL, "%s %s %d [%s]",
-		    diskp->host->hostname, diskp->name, sched(diskp)->level,
+	    log_add(L_FAIL, "%s %s %s %d [%s]",
+		diskp->host->hostname, diskp->name, sched(diskp)->datestamp,
+		sched(diskp)->level,
 		diskp->no_hold ?
 		    "can't dump no-hold disk in degraded mode" :
 		    "no more holding disk space");
@@ -408,16 +412,9 @@ main(main_argc, main_argv)
 
     while(wait(NULL) != -1);
 
-    if(!degraded_mode) {
-	for(hdp = getconf_holdingdisks(); hdp != NULL; hdp = hdp->next) {
-	    newdir = newvstralloc(newdir,
-				  hdp->diskdir, "/", datestamp,
-				  NULL);
-	    if(rmdir(newdir) != 0)
-		log_add(L_WARNING, "Could not rmdir %s: %s",
-		        newdir, strerror(errno));
-	    amfree(hdp->up);
-	}
+    for(hdp = getconf_holdingdisks(); hdp != NULL; hdp = hdp->next) {
+	cleanup_holdingdisk(hdp->diskdir, 0);
+	amfree(hdp->up);
     }
     amfree(newdir);
 
@@ -785,8 +782,9 @@ start_degraded_mode(queuep)
 		enqueue_disk(&newq, dp);
 	    }
 	    else {
-		log_add(L_FAIL, "%s %s %d [can't switch to incremental dump]",
-		        dp->host->hostname, dp->name, sched(dp)->level);
+		log_add(L_FAIL,"%s %s %s %d [can't switch to incremental dump]",
+		        dp->host->hostname, dp->name, sched(dp)->datestamp,
+			sched(dp)->level);
 	    }
 	}
     }
@@ -917,7 +915,7 @@ handle_taper_result(cookie)
 		dp = dequeue_disk(&tapeq);
 		taper_disk = dp;
 		taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level,
-			  datestamp);
+			  sched(dp)->datestamp);
 	    }
 	    /* continue with those dumps waiting for diskspace */
 	    continue_dumps();
@@ -937,8 +935,9 @@ handle_taper_result(cookie)
 	    /* re-insert into taper queue */
 
 	    if(sched(dp)->attempted) {
-		log_add(L_FAIL, "%s %s %d [too many taper retries]",
-	    	    dp->host->hostname, dp->name, sched(dp)->level);
+		log_add(L_FAIL, "%s %s %s %d [too many taper retries]",
+	    	    dp->host->hostname, dp->name, sched(dp)->datestamp,
+		    sched(dp)->level);
 		continue_dumps();
 	    }
 	    else {
@@ -958,7 +957,7 @@ handle_taper_result(cookie)
 		dp = dequeue_disk(&tapeq);
 		taper_disk = dp;
 		taper_cmd(FILE_WRITE, dp, sched(dp)->destname,
-			  sched(dp)->level, datestamp);
+			  sched(dp)->level, sched(dp)->datestamp);
 	    }
 	    break;
 
@@ -1105,8 +1104,8 @@ handle_dumper_result(cookie)
 	     * case for cleanup.
 	     */
 	    if(sched(dp)->attempted) {
-		log_add(L_FAIL, "%s %s %d [could not connect to %s]",
-	    	    dp->host->hostname, dp->name,
+		log_add(L_FAIL, "%s %s %s %d [could not connect to %s]",
+	    	    dp->host->hostname, dp->name, sched(dp)->datestamp,
 	    	    sched(dp)->level, dp->host->hostname);
 	    }
 	    else {
@@ -1177,8 +1176,8 @@ handle_dumper_result(cookie)
 		dp->host->inprogress -= 1;
 		dp->inprogress = 0;
 		if(sched(dp)->attempted) {
-	    	log_add(L_FAIL, "%s %s %d [%s died]",
-	    		dp->host->hostname, dp->name,
+	    	log_add(L_FAIL, "%s %s %s %d [%s died]",
+	    		dp->host->hostname, dp->name, sched(dp)->datestamp,
 	    		sched(dp)->level, dumper->name);
 		}
 		else {
@@ -1289,8 +1288,8 @@ handle_chunker_result(cookie)
 	     * case for cleanup.
 	     */
 	    if(sched(dp)->attempted) {
-		log_add(L_FAIL, "%s %s %d [could not connect to %s]",
-	    	    dp->host->hostname, dp->name,
+		log_add(L_FAIL, "%s %s %s %d [could not connect to %s]",
+	    	    dp->host->hostname, dp->name, sched(dp)->datestamp,
 	    	    sched(dp)->level, dp->host->hostname);
 	    }
 	    else {
@@ -1407,8 +1406,8 @@ handle_chunker_result(cookie)
 		dp->inprogress = 0;
 		*/
 		if(sched(dp)->attempted) {
-	    	log_add(L_FAIL, "%s %s %d [%s died]",
-	    		dp->host->hostname, dp->name,
+	    	log_add(L_FAIL, "%s %s %s %d [%s died]",
+	    		dp->host->hostname, dp->name, sched(dp)->datestamp,
 	    		sched(dp)->level, dumper->name);
 		}
 		else {
@@ -1461,8 +1460,109 @@ taper_queuedisk(dp)
 	taper_disk = dp;
 	taper_busy = 1;
 	taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level,
-	    datestamp);
+	    sched(dp)->datestamp);
     }
+}
+
+static disklist_t
+read_flush()
+{
+    sched_t *sp;
+    disk_t *dp;
+    int line;
+    dumpfile_t file;
+    char *destname;
+    disk_t *dp1;
+    char *inpline = NULL;
+    char *command;
+    char *s;
+    int ch;
+    disklist_t tq;
+
+    tq.head = tq.tail = NULL;
+
+	for(line = 0; (inpline = agets(stdin)) != NULL; free(inpline)) {
+	line++;
+
+	s = inpline;
+	ch = *s++;
+
+	skip_whitespace(s, ch);                 /* find the command */
+	if(ch == '\0') {
+	    error("Aflush line %d: syntax error", line);
+	    continue;
+	}
+	command = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+
+	if(strcmp(command,"ENDFLUSH") == 0) {
+	    break;
+	}
+
+	if(strcmp(command,"FLUSH") != 0) {
+	    error("Bflush line %d: syntax error", line);
+	    continue;
+	}
+
+	skip_whitespace(s, ch);                 /* find the filename */
+	if(ch == '\0') {
+	    error("Cflush line %d: syntax error", line);
+	    continue;
+	}
+	destname = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+
+	get_dumpfile(destname, &file);
+	if( file.type != F_DUMPFILE) {
+	    if( file.type != F_CONT_DUMPFILE )
+		log_add(L_INFO, "%s: ignoring cruft file.", destname);
+	    continue;
+	}
+
+	dp = lookup_disk(file.name, file.disk);
+
+	if (dp == NULL) {
+	    log_add(L_INFO, "%s: disk %s:%s not in database, skipping it.",
+		    destname, file.name, file.disk);
+	    continue;
+	}
+
+	if(file.dumplevel < 0 || file.dumplevel > 9) {
+	    log_add(L_INFO, "%s: ignoring file with bogus dump level %d.",
+		    destname, file.dumplevel);
+	    continue;
+	}
+
+	dp1 = (disk_t *)alloc(sizeof(disk_t));
+	*dp1 = *dp;
+	dp1->next = dp1->prev = NULL;
+
+	sp = (sched_t *) alloc(sizeof(sched_t));
+	sp->destname = stralloc(destname);
+	sp->level = file.dumplevel;
+	sp->dumpdate = NULL;
+	sp->datestamp = stralloc(file.datestamp);
+	sp->est_size = 0;
+	sp->est_time = 0;
+	sp->priority = 0;
+	sp->degr_level = -1;
+	sp->est_kps = 10;
+	sp->attempted = 0;
+	sp->act_size = size_holding_files(destname);
+	sp->holdp = build_diskspace(destname);
+	if(sp->holdp == NULL) continue;
+	sp->dumper = NULL;
+	sp->timestamp = (time_t)0;
+
+	dp1->up = (char *)sp;
+
+	enqueue_disk(&tq, dp1);
+    }
+    amfree(inpline);
+
+    return tq;
 }
 
 static disklist_t
@@ -1478,6 +1578,7 @@ read_schedule(waitqp)
     long time, degr_time;
     unsigned long size, degr_size;
     char *hostname, *diskname, *inpline = NULL;
+    char *command;
     char *s;
     int ch;
 
@@ -1492,9 +1593,23 @@ read_schedule(waitqp)
 	s = inpline;
 	ch = *s++;
 
+	skip_whitespace(s, ch);			/* find the command */
+	if(ch == '\0') {
+	    error("Aschedule line %d: syntax error", line);
+	    continue;
+	}
+	command = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+
+	if(strcmp(command,"DUMP") != 0) {
+	    error("Bschedule line %d: syntax error", line);
+	    continue;
+	}
+
 	skip_whitespace(s, ch);			/* find the host name */
 	if(ch == '\0') {
-	    error("schedule line %d: syntax error", line);
+	    error("Cschedule line %d: syntax error", line);
 	    continue;
 	}
 	hostname = s - 1;
@@ -1503,7 +1618,7 @@ read_schedule(waitqp)
 
 	skip_whitespace(s, ch);			/* find the disk name */
 	if(ch == '\0') {
-	    error("schedule line %d: syntax error", line);
+	    error("Dschedule line %d: syntax error", line);
 	    continue;
 	}
 	diskname = s - 1;
@@ -1594,6 +1709,7 @@ read_schedule(waitqp)
 	sp->est_size = DISK_BLOCK_KB + size; /* include header */
 	sp->est_time = time;
 	sp->priority = priority;
+	sp->datestamp = stralloc(datestamp);
 
 	if(degr_dumpdate) {
 	    sp->degr_level = degr_level;
@@ -1969,6 +2085,77 @@ delete_diskspace(diskp)
     amfree(sched(diskp)->destname);
 }
 
+static assignedhd_t **build_diskspace(destname)
+char *destname;
+{
+    int i, j;
+    int fd;
+    int buflen;
+    char buffer[DISK_BLOCK_BYTES];
+    dumpfile_t file;
+    assignedhd_t **result;
+    holdingdisk_t *hdp;
+    int *used;
+    int num_holdingdisks=0;
+    char dirname[1000], *ch;
+    struct stat finfo;
+    char *filename = destname;
+
+    for(hdp = getconf_holdingdisks(); hdp != NULL; hdp = hdp->next) {
+        num_holdingdisks++;
+    }
+    used = alloc(sizeof(int) * num_holdingdisks);
+    for(i=0;i<num_holdingdisks;i++)
+	used[i] = 0;
+    result = alloc( sizeof(assignedhd_t *) * (num_holdingdisks+1) );
+    result[0] = NULL;
+    while(filename != NULL && filename[0] != '\0') {
+	strncpy(dirname, filename, 999);
+	dirname[999]='\0';
+	ch = strrchr(dirname,'/');
+        *ch = '\0';
+	ch = strrchr(dirname,'/');
+        *ch = '\0';
+
+	for(j = 0, hdp = getconf_holdingdisks(); hdp != NULL;
+						 hdp = hdp->next, j++ ) {
+	    if(strcmp(dirname,hdp->diskdir)==0) {
+		break;
+	    }
+	}
+
+	if(stat(filename, &finfo) == -1) {
+	    fprintf(stderr, "stat %s: %s\n", filename, strerror(errno));
+	    finfo.st_size = 0;
+	}
+	used[j] += (finfo.st_size+1023)/1024;
+	if((fd = open(filename,O_RDONLY)) == -1) {
+	    fprintf(stderr,"build_diskspace: open of %s failed: %s\n",
+		    filename, strerror(errno));
+	    return NULL;
+	}
+	buflen = fullread(fd, buffer, sizeof(buffer));
+	parse_file_header(buffer, &file, buflen);
+	close(fd);
+	filename = file.cont_filename;
+    }
+
+    for(j = 0, i=0, hdp = getconf_holdingdisks(); hdp != NULL;
+						  hdp = hdp->next, j++ ) {
+	if(used[j]) {
+	    result[i] = alloc(sizeof(assignedhd_t));
+	    result[i]->disk = hdp;
+	    result[i]->reserved = used[j];
+	    result[i]->used = used[j];
+	    result[i]->destname = stralloc(destname);
+	    result[i+1] = NULL;
+	    i++;
+	}
+    }
+
+    return result;
+}
+
 static void
 holdingdisk_state(time_str)
     char *time_str;
@@ -2036,7 +2223,7 @@ dump_to_tape(dp)
 
     /* tell the taper to read from a port number of its choice */
 
-    taper_cmd(PORT_WRITE, dp, NULL, sched(dp)->level, datestamp);
+    taper_cmd(PORT_WRITE, dp, NULL, sched(dp)->level, sched(dp)->datestamp);
     cmd = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
     if(cmd != PORT) {
 	printf("driver: did not get PORT from taper for %s:%s\n",

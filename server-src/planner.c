@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.113 2001/09/17 19:00:00 jrjackson Exp $
+ * $Id: planner.c,v 1.114 2001/11/08 18:46:26 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -40,6 +40,7 @@
 #include "protocol.h"
 #include "version.h"
 #include "server_util.h"
+#include "holding.h"
 
 #define MAX_LEVELS		    3	/* max# of estimates per filesys */
 
@@ -61,6 +62,7 @@ int conf_bumpdays;
 int conf_bumpsize;
 int conf_etimeout;
 int conf_reserve;
+int conf_autoflush;
 double conf_bumpmult;
 
 #define HOST_READY				((void *)0)
@@ -103,6 +105,7 @@ long tt_blocksize;
 long tt_blocksize_kb;
 int runs_per_cycle;
 time_t today;
+char *datestamp = NULL;
 
 /* We keep a LIFO queue of before images for all modifications made
  * to schedq in our attempt to make the schedule fit on the tape.
@@ -148,7 +151,6 @@ char **argv;
     disklist_t origq;
     disk_t *dp;
     int moved_one;
-    char *datestamp = NULL;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     long initial_size;
@@ -289,6 +291,7 @@ char **argv;
     conf_bumpmult = getconf_real(CNF_BUMPMULT);
     conf_etimeout = getconf_int(CNF_ETIMEOUT);
     conf_reserve  = getconf_int(CNF_RESERVE);
+    conf_autoflush = getconf_int(CNF_AUTOFLUSH);
 
     amfree(datestamp);
     today = time(0);
@@ -473,6 +476,19 @@ char **argv;
      * The schedule goes to stdout, presumably to driver.  A copy is written
      * on stderr for the debug file.
      */
+
+    if(conf_autoflush) {
+	holding_t *holding_list=NULL, *holding_file;
+	get_flush(NULL, &holding_list, datestamp, 0, 0);
+	for(holding_file=holding_list; holding_file != NULL;
+				       holding_file = holding_file->next) {
+	    fprintf(stderr,"FLUSH %s\n", holding_file->name);
+	    fprintf(stdout,"FLUSH %s\n", holding_file->name);
+	}
+    }
+    fprintf(stderr,"ENDFLUSH\n");
+    fprintf(stdout,"ENDFLUSH\n");
+    fflush(stdout);
 
     fprintf(stderr,"\nGENERATING SCHEDULE:\n--------\n");
     while(!empty(schedq)) output_scheduleline(dequeue_disk(&schedq));
@@ -669,8 +685,8 @@ setup_estimate(dp)
 	    askfor(ep, 2, -1, &info);
 	    fprintf(stderr, "planner: SKIPPED %s %s 0 [skip-full]\n",
 		    dp->host->hostname, dp->name);
-	    log_add(L_SUCCESS, "%s %s 0 [skipped: skip-full]",
-		    dp->host->hostname, dp->name);
+	    log_add(L_SUCCESS, "%s %s %s 0 [skipped: skip-full]",
+		    dp->host->hostname, datestamp, dp->name);
 	    return;
 	}
 
@@ -698,8 +714,8 @@ setup_estimate(dp)
 	fprintf(stderr, "planner: SKIPPED %s %s 1 [skip-incr]\n",
 		dp->host->hostname, dp->name);
 
-	log_add(L_SUCCESS, "%s %s 1 [skipped: skip-incr]",
-	        dp->host->hostname, dp->name);
+	log_add(L_SUCCESS, "%s %s %s 1 [skipped: skip-incr]",
+	        dp->host->hostname, datestamp, dp->name);
 	return;
     }
 
@@ -1481,10 +1497,11 @@ disk_t *dp;
 
     errstr = est(dp)->errstr? est(dp)->errstr : "hmm, no error indicator!";
 
-    fprintf(stderr, "planner: FAILED %s %s 0 [%s]\n",
-	dp->host->hostname, dp->name, errstr);
+    fprintf(stderr, "planner: FAILED %s %s %s 0 [%s]\n",
+	dp->host->hostname, dp->name, datestamp, errstr);
 
-    log_add(L_FAIL, "%s %s 0 [%s]", dp->host->hostname, dp->name, errstr);
+    log_add(L_FAIL, "%s %s %s 0 [%s]", dp->host->hostname, dp->name, 
+	    datestamp, errstr);
 
     /* XXX - memory leak with *dp */
 }
@@ -1631,6 +1648,7 @@ static void delay_dumps P((void))
 	    if(est(dp)->last_level == -1 || dp->skip_incr) {
 		errbuf = vstralloc(dp->host->hostname,
 				   " ", dp->name,
+				   " ", datestamp,
 				   " ", "0",
 				   " [dump larger than tape,",
 				   " but cannot incremental dump",
@@ -1655,6 +1673,7 @@ static void delay_dumps P((void))
 			"%d", est(dp)->dump_level);
 	    errbuf = vstralloc(dp->host->hostname,
 			       " ", dp->name,
+			       " ", datestamp,
 			       " ", level_str,
 			       " ", "[dump larger than tape,",
 			       " ", "skipping incremental]",
@@ -1690,6 +1709,7 @@ static void delay_dumps P((void))
 	    if(est(dp)->last_level == -1 || dp->skip_incr) {
 		errbuf = vstralloc(dp->host->hostname,
 				   " ", dp->name,
+				   " ", datestamp,
 				   " ", "0",
 				   " [dumps too big,",
 				   " but cannot incremental dump",
@@ -1728,6 +1748,7 @@ static void delay_dumps P((void))
 			"%d", est(dp)->dump_level);
 	    errbuf = vstralloc(dp->host->hostname,
 			       " ", dp->name,
+			       " ", datestamp,
 			       " ", level_str,
 			       " ", "[dumps way too big,",
 			       " ", "must skip incremental dumps]",
@@ -2066,10 +2087,10 @@ static void output_scheduleline(dp)
     if(ep->dump_size == -1) {
 	/* no estimate, fail the disk */
 	fprintf(stderr,
-		"planner: FAILED %s %s %d [no estimate]\n",
-		dp->host->hostname, dp->name, ep->dump_level);
-	log_add(L_FAIL, "%s %s %d [no estimate]",
-	        dp->host->hostname, dp->name, ep->dump_level);
+		"planner: FAILED %s %s %s %d [no estimate]\n",
+		dp->host->hostname, dp->name, datestamp, ep->dump_level);
+	log_add(L_FAIL, "%s %s %s %d [no estimate]",
+	        dp->host->hostname, dp->name, datestamp, ep->dump_level);
 	return;
     }
 
@@ -2115,7 +2136,7 @@ static void output_scheduleline(dp)
 		"%ld", ep->dump_size);
     snprintf(dump_time_str, sizeof(dump_time_str),
 		"%ld", dump_time);
-    schedline = vstralloc(dp->host->hostname,
+    schedline = vstralloc("DUMP ",dp->host->hostname,
 			  " ", dp->name,
 			  " ", dump_priority_str,
 			  " ", dump_level_str,

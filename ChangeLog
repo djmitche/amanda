@@ -1,3 +1,34 @@
+2001-11-08  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/conffile.c (autoflush): New configuration options.
+	* server-src/conffile.h (autoflush): New configuration options.
+	* man/amanda.8.in: Document it.
+	* example/amanda.conf.in: Document it.
+	* server-src/holding.h (get_flush, pick_datestamp, pick_all_datestamp,
+	cleanup_holdingdisk): New prototype.
+	* server-src/holding.c (scan_holdingdir, cleanup_holdingdisk,
+	get_flush): New function.
+	* server-src/holding.c (pick_datestamp, pick_all_datestamp): New
+	verbose argument.
+	* server-src/amcleanupdisk.c: Change call to pick_all_datestamp.
+	* server-src/amflush.c: Change call to pick_all_datestamp.
+	* server-src/find.c: Change call to pick_all_datestamp.
+	* server-src/planner.c: Write FLUSH line to driver, the schedule
+	line contain the keyword DUMP.
+	* server-src/planner.c: Add datestamp to SUCCESS and FAIL line.
+	* server-src/amstatus.pl.in: New parsing of DUMP line.
+	* server-src/driverio.h: New datestamp field in sched_t;
+	* server-src/driver.c (build_diskspace): New function to build a
+	assignedhd_t from an holding file.
+	* server-src/driver.c (read_flush): New function to read the list
+	of files to flush.
+	* server-src/driver.c (read_schedule): Parse the keyword DUMP.
+	* server-src/driver.c: Add datestamp to FAIL line.
+	* server-src/dumper.c: Add datestamp to FAIL line.
+	* server-src/reporter.c (timedata_t, repdata_t) : Major change of
+	structure.
+	* server-src/taper.c: Add datestamp to FAIL line.
+
 2001-11-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/conffile.c: New dumporder configuration.

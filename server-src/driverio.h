@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.27 2001/03/05 23:52:39 martinea Exp $
+ * $Id: driverio.h,v 1.28 2001/11/08 18:46:26 martinea Exp $
  *
  * driver-related helper functions
  */
@@ -89,6 +89,7 @@ typedef struct sched_s {
     dumper_t *dumper;
     assignedhd_t **holdp;
     time_t timestamp;
+    char *datestamp;
     int activehd;
     int no_space;
 } sched_t;
