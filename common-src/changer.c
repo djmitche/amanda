@@ -232,7 +232,11 @@ int resultlen;
     char cmd[ERRSTR_LEN], *chp;
     int exitcode;
 
-    sprintf(cmd, "%s/%s%s %s", libexecdir, tapechanger, versionsuffix(), cmdstr);
+    if (*tapechanger != '/')
+	sprintf(cmd, "%s/%s %s", libexecdir, tapechanger, versionsuffix(),
+	    cmdstr);
+    else
+	sprintf(cmd, "%s %s", tapechanger, cmdstr);
 
 /* fprintf(stderr, "changer: opening pipe from: %s\n", cmd); */
 
