@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.h,v 1.7.4.4.8.1 2004/08/02 18:54:00 martinea Exp $
+ * $Id: infofile.h,v 1.7.4.4.8.2 2005/03/16 18:15:28 martinea Exp $
  *
  * interface for current info file reading code
  */
@@ -58,6 +58,7 @@ typedef struct history_s {
     long size;			/* original size of dump in kbytes */
     long csize;			/* compressed size of dump in kbytes */
     time_t date;		/* time of dump */
+    long secs;			/* time of dump in secs */
 } history_t;
 
 typedef struct perf_s {
