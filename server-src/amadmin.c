@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.80 2002/11/05 01:58:52 martinea Exp $
+ * $Id: amadmin.c,v 1.81 2002/11/23 21:27:47 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -110,7 +110,7 @@ static const struct {
     { "due", due,
 	" [<hostname> [<disks>]* ]*\t# Show due date." },
     { "balance", balance,
-	"\t\t\t\t# Show nightly dump size balance." },
+	" [-days <num>]\t\t# Show nightly dump size balance." },
     { "tape", tape,
 	"\t\t\t\t# Show which tape is due next." },
     { "bumpsize", bumpsize,
@@ -258,6 +258,8 @@ int seq;
     return str;
 }
 
+#undef days_diff
+#define days_diff(a, b)        (((b) - (a) + SECS_PER_DAY) / SECS_PER_DAY)
 
 /* when is next level 0 due? 0 = tonight, 1 = tommorrow, etc*/
 static int next_level0(dp, info)
@@ -266,7 +268,7 @@ info_t *info;
 {
     if(dp->strategy == DS_NOFULL)
 	return 1;	/* fake it */
-    else if(info->inf[0].date < (time_t)0)
+    if(info->inf[0].date < (time_t)0)
 	return 0;	/* new disk */
     else
 	return dp->dumpcycle - days_diff(info->inf[0].date, today);
@@ -776,18 +778,24 @@ char **argv;
 	int disks;
 	long origsize, outsize;
     } *sp;
-    int seq, max_seq, total, balanced, runs_per_cycle, overdue, max_overdue;
-    int runspercycle;
+    int seq, later, total, balanced, runs_per_cycle, overdue, max_overdue;
+    int runspercycle, balance, distinct;
+    float fseq, disk_dumpcycle;
     info_t info;
+    long int total_balan, balance_balan;
 
-    total = getconf_int(CNF_TAPECYCLE);
-    max_seq = getconf_int(CNF_DUMPCYCLE)-1;	/* print at least this many */
     time(&today);
     runtapes = getconf_int(CNF_RUNTAPES);
     dumpcycle = getconf_int(CNF_DUMPCYCLE);
     runspercycle = getconf_int(CNF_RUNSPERCYCLE);
+    later = dumpcycle;
     overdue = 0;
     max_overdue = 0;
+
+    if(argc > 4 && strcmp(argv[3],"--days") == 0) {
+	later = atoi(argv[4]);
+	if(later < 0) later = dumpcycle;
+	}
 
     if(runspercycle == 0) {
 	runs_per_cycle = dumpcycle;
@@ -800,13 +808,14 @@ char **argv;
 	runs_per_cycle = 1;
     }
 
-    if(dumpcycle > total)
-	total = dumpcycle;
+    total = later + 1;
+    balance = later + 2;
+    distinct = later + 3;
 
     sp = (struct balance_stats *)
-	alloc(sizeof(struct balance_stats) * (total+1));
+	alloc(sizeof(struct balance_stats) * (distinct+1));
 
-    for(seq=0; seq <= total; seq++)
+    for(seq=0; seq <= distinct; seq++)
 	sp[seq].disks = sp[seq].origsize = sp[seq].outsize = 0;
 
     for(dp = diskq.head; dp != NULL; dp = dp->next) {
@@ -814,29 +823,55 @@ char **argv;
 	    printf("new disk %s:%s ignored.\n", dp->host->hostname, dp->name);
 	    continue;
 	}
+	if (dp->strategy == DS_NOFULL) {
+	    continue;
+	}
+	sp[distinct].disks++;
+	sp[distinct].origsize += info.inf[0].size;
+	sp[distinct].outsize += info.inf[0].csize;
+
+	sp[balance].disks++;
+	if(dp->dumpcycle == 0) {
+	    sp[balance].origsize += info.inf[0].size * runs_per_cycle;
+	    sp[balance].outsize += info.inf[0].csize * runs_per_cycle;
+	}
+	else {
+	    sp[balance].origsize += info.inf[0].size *(dumpcycle/dp->dumpcycle);
+	    sp[balance].outsize += info.inf[0].csize *(dumpcycle/dp->dumpcycle);
+	}
+
+	disk_dumpcycle = dp->dumpcycle;
+	if(dp->dumpcycle <= 0)
+	    disk_dumpcycle = ((float)dumpcycle) / ((float)runs_per_cycle);
+
 	seq = next_level0(dp, &info);
-	if(seq < 0) {
-	    overdue++;
-	    if (-seq > max_overdue)
-		max_overdue = -seq;
-	    seq = 0;
-	}
-	if(seq >= total) {
-	    if(seq > total) /* next_level0() can return dumpcycle if run */
-			    /* immediately  after amdump */
-		printf("bogus seq number %d for %s:%s\n", seq,
-			dp->host->hostname, dp->name);
-	    seq = total-1;
-	}
-	if(seq > max_seq) max_seq = seq;
+	fseq = seq + 0.0001;
+	do {
+	    if(seq < 0) {
+		overdue++;
+		if (-seq > max_overdue)
+		    max_overdue = -seq;
+		seq = 0;
+		fseq = seq + 0.0001;
+	    }
+	    if(seq > later) {
+	       	seq = later;
+	    }
+	    
+	    sp[seq].disks++;
+	    sp[seq].origsize += info.inf[0].size;
+	    sp[seq].outsize += info.inf[0].csize;
 
-	sp[seq].disks++;
-	sp[seq].origsize += info.inf[0].size;
-	sp[seq].outsize += info.inf[0].csize;
-
-	sp[total].disks++;
-	sp[total].origsize += info.inf[0].size;
-	sp[total].outsize += info.inf[0].csize;
+	    if(seq < later) {
+		sp[total].disks++;
+		sp[total].origsize += info.inf[0].size;
+		sp[total].outsize += info.inf[0].csize;
+	    }
+	    
+	    /* See, if there's another run in this dumpcycle */
+	    fseq += disk_dumpcycle;
+	    seq = fseq;
+	} while (seq < later);
     }
 
     if(sp[total].outsize == 0) {
@@ -845,21 +880,42 @@ char **argv;
 	return;
     }
 
-    balanced = sp[total].outsize / runs_per_cycle;
+    balanced = sp[balance].outsize / runs_per_cycle;
 
-    printf("\n due-date  #fs   orig KB    out KB  balance\n");
-    printf("-------------------------------------------\n");
-    for(seq = 0; seq <= max_seq; seq++) {
-	printf("%-9.9s  %3d %9ld %9ld ",
+    printf("\n due-date  #fs    orig KB     out KB   balance\n");
+    printf("----------------------------------------------\n");
+    for(seq = 0; seq < later; seq++) {
+	printf("%-9.9s  %3d %10ld %10ld ",
 	       seqdatestr(seq), sp[seq].disks,
 	       sp[seq].origsize, sp[seq].outsize);
-	if(!sp[seq].outsize) printf("    --- \n");
-	else printf("%+7.1f%%\n",
+	if(!sp[seq].outsize) printf("     --- \n");
+	else printf("%+8.1f%%\n",
 		    (sp[seq].outsize-balanced)*100.0/(double)balanced);
     }
-    printf("-------------------------------------------\n");
-    printf("TOTAL      %3d %9ld %9ld %8d", sp[total].disks,
-	   sp[total].origsize, sp[total].outsize, balanced);
+    if(sp[later].disks != 0) {
+	printf("later      %3d %10ld %10ld ",
+	       sp[later].disks,
+	       sp[later].origsize, sp[later].outsize);
+	if(!sp[later].outsize) printf("     --- \n");
+	else printf("%+8.1f%%\n",
+		    (sp[later].outsize-balanced)*100.0/(double)balanced);
+    }
+    printf("----------------------------------------------\n");
+    total_balan = 1024*(((sp[total].outsize/1024) * dumpcycle)
+			/ (runs_per_cycle * later));
+    printf("TOTAL      %3d %10ld %10ld %9ld\n", sp[total].disks,
+	   sp[total].origsize, sp[total].outsize, total_balan);
+    balance_balan = sp[balance].outsize/ runs_per_cycle;
+    if (sp[balance].origsize != sp[total].origsize ||
+        sp[balance].outsize != sp[total].outsize ||
+	total_balan != balance_balan) {
+	printf("BALANCED       %10ld %10ld %9ld\n",
+	       sp[balance].origsize, sp[balance].outsize, balance_balan);
+    }
+    if (sp[distinct].disks != sp[total].disks) {
+	printf("DISTINCT   %3d %10ld %10ld\n", sp[distinct].disks,
+	       sp[distinct].origsize, sp[distinct].outsize);
+    }
     printf("  (estimated %d run%s per dumpcycle)\n",
 	   runs_per_cycle, (runs_per_cycle == 1) ? "" : "s");
     if (overdue) {
