@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.13 1997/12/09 07:16:03 amcore Exp $
+ * $Id: selfcheck.c,v 1.14 1997/12/10 10:24:21 amcore Exp $
  *
  * do self-check and send back any error messages
  */
@@ -133,7 +133,7 @@ char **argv;
 static void check_options(program, disk, str)
 char *program, *disk, *str;
 {
-    int as_index;
+    int as_index = 0;
     char device[1024];
 
     if(strstr(str,"index") != NULL)
