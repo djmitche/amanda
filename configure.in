@@ -865,6 +865,10 @@ case "$target" in
 			;;
   *-pc-linux-*)
 			;;
+  *-sco3.2v5*)
+			AC_DEFINE(XENIX_TAPEIO)
+			AMANDA_CFLAGS="-belf $AMANDA_CFLAGS"
+			;;
   *-sgi-irix3*)
 			dnl The old cc won't work!
 			CC=gcc
