@@ -25,6 +25,10 @@ fi
 myname=$0
 tape=`getconf$SUF tapedev`
 TAPE=`getconf$SUF changerdev`; export TAPE # for mtx command
+if [ "$tape" = "/dev/null" -o "$TAPE" = "/dev/null" ]; then
+  echo "Both tapedev and changerdev must be specified in config file";
+  exit 2;
+fi
 MT=@MT@
 MTF=@MT_FILE_FLAG@
 MTX=@MTX@

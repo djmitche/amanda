@@ -247,10 +247,12 @@ chg-mtx: (former hp-changer)
 
 A mtx-based tape changer script.  `changerdev' must specify the tape
 device controlled by the mtx program, and `tapedev' must point to
-no-rewind tape device to be used.  `changerfile' must specify a prefix
-for status files maintained by this script.  If `changerfile' is
-defined as `/usr/adm/amanda/csd/changer', this script will maintain
-files named `changer-clean' and `changer-access' in the log directory.
+no-rewind tape device to be used.  More than likely, both `changerdev'
+and `tapedev' will reference the same device file.  `changerfile' must
+specify a prefix for status files maintained by this script.  If
+`changerfile' is defined as `/usr/adm/amanda/csd/changer', this script
+will maintain files named `changer-clean' and `changer-access' in the
+log directory.
 
 chg-chio: (former seagate-changer)
 

@@ -1186,11 +1186,7 @@ if test "$CHS"; then
     CHS=chs
 fi
 
-AC_PATH_PROGS(MTX,mtx,,$LOCSYSPATH)
-if test "$MTX"; then
-    MTX=mtx
-fi
-
+AC_PATH_PROGS(MTX,mtx,mtx,$LOCSYSPATH)
 AC_PATH_PROGS(PCAT,pcat,,$LOCSYSPATH)
 AC_PATH_PROGS(PERL,perl5 perl,,$LOCSYSPATH)
 
