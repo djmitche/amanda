@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.18 2003/11/24 16:41:23 martinea Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.19 2003/11/24 18:16:36 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -998,6 +998,7 @@ void handle_taper_result()
 	start_degraded_mode(&runq);
 	taper_busy = 0;
 	taper_disk = NULL;
+	tapeq.head = tapeq.tail = NULL;
 	FD_CLR(taper,&readset);
 	if(cmd != TAPE_ERROR) aclose(taper);
 	continue_dumps();
