@@ -1,3 +1,9 @@
+2002-12-30  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+Patch by Brad Roberts <braddr@puremagic.com>
+
+	* server-src/amflush.c: Remove 2 redundant amfree call after remove_sl.
+	* server-src/holding.c (get)flush): Ditto.
+
 2002-12-27  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/conffile.c: New taperalgo configuration keyword.
