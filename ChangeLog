@@ -1,3 +1,7 @@
+2003-06-20  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amstatus.pl.in: Fix to failed tape.
+
 2003-06-18  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/planner.c (delay_dumps): Delay not delay forced full

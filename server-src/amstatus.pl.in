@@ -731,7 +731,8 @@ foreach $host (sort @hosts) {
 						}
 					}
 					elsif($taper_finished{$hostpart} < 0) {
-						if( defined $opt_failed ) {
+						if( defined $opt_failed  ||
+							 (defined $opt_waittaper && ($taper_finished{$hostpart} == -1))) {
 							printf "%8s ", $datestamp if defined $opt_date;
 							printf "%-${maxnamelength}s%2d", "$host:$partition", $level{$hostpart};
 							printf "%9dk", $size{$hostpart};
