@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.55 1999/06/02 21:43:12 kashmir Exp $
+/* $Id: taper.c,v 1.56 1999/09/05 22:42:51 jrj Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -322,8 +322,23 @@ int rdpipe, wrpipe;
 	    datestamp = stralloc(argv[6]);
 
 	    data_port = 0;
-/*	    data_socket = stream_server(&data_port);	*/
 	    data_socket = stream_server(&data_port, DEFAULT_SIZE, DATABUF_SIZE);	
+	    if(data_socket < 0) {
+		char *m;
+
+		m = vstralloc("[port create failure: ",
+			      strerror(errno),
+			      "]",
+			      NULL);
+		q = squote(m);
+		putresult("TAPE-ERROR %s %s\n", handle, q);
+		amfree(q);
+		amfree(m);
+		amfree(handle);
+		amfree(hostname);
+		amfree(diskname);
+		break;
+	    }
 	    putresult("PORT %d\n", data_port);
 
 	    if((fd = stream_accept(data_socket, CONNECT_TIMEOUT,

@@ -1,5 +1,13 @@
 1999-09-05 John R. Jackson  <jrj@purdue.edu>
 
+	* common-src/stream.c: make sure errno is returned properly from
+	  stream_client() and stream_server().
+	* server-src/taper.c: report errors from stream_server() and
+	  abort.
+	* recover-src/extract_list.c: make sure errno is preserved.
+
+1999-09-05 John R. Jackson  <jrj@purdue.edu>
+
 	* configure.in: make sure the dump and restore programs are defined
 	  in pairs, do not allow just the dump program without restore.
 	* client-src/sendbackup-dump.c: assume restore program is present
