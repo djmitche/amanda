@@ -1,3 +1,12 @@
+1998-12-09  Henning P. Schmiedehausen  <henning@tanstaafl.de>
+
+	* client-src/sendbackup.c (parse_options): Added check whether the
+	pathname of the exclude file is relative and if yes, use the
+	mountpoint of the filesystem as anchor.  So you can put your exclude
+	file in the root of the filesystem to backup.
+	* client-src/sendsize.c (getsize_gnutar): added the same check as
+	above so sendsize uses the same exclude file.
+
 1998-12-09  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/holding.c (size_holding_files): return size in KB.
