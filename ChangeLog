@@ -1,5 +1,8 @@
 1998-06-24  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* recover-src/extract_list.c (extract_files_child): handle
+	IS_UNKNOWN dumptype as IS_DUMP
+
 	* client-src/sendsize.c (getsize_dump): always create pipe for
  	killpgrp.
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.38 1998/06/05 18:17:32 martinea Exp $
+ * $Id: extract_list.c,v 1.39 1998/06/24 06:58:01 oliva Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1236,8 +1236,6 @@ EXTRACT_LIST *elist;
     if ((dumptype == IS_UNKNOWN) && (strcmp(file.program, SAMBA_CLIENT) == 0))
     	dumptype = IS_SAMBA;
 #endif
-    if (dumptype == IS_UNKNOWN)
-    	dumptype = IS_DUMP;
 
     /* form the arguments to restore */
     switch (dumptype) {
@@ -1250,6 +1248,7 @@ EXTRACT_LIST *elist;
     case IS_GNUTAR:
         no_initial_params = 3;
         break;
+    case IS_UNKNOWN:
     case IS_DUMP:
 #ifdef AIX_BACKUP
         no_initial_params = 2;
@@ -1294,6 +1293,7 @@ EXTRACT_LIST *elist;
 	restore_args[j++] = stralloc("-xpGvf");
 	restore_args[j++] = stralloc("-");	/* data on stdin */
 	break;
+    case IS_UNKNOWN:
     case IS_DUMP:
         restore_args[j++] = stralloc("restore");
 #ifdef AIX_BACKUP
@@ -1313,6 +1313,7 @@ EXTRACT_LIST *elist;
     	case IS_SAMBA:
 	    restore_args[j+i] = stralloc2(".", fn->path);
 	    break;
+	case IS_UNKNOWN:
 	case IS_DUMP:
 	    restore_args[j+i] = stralloc(fn->path);
   	}
@@ -1335,6 +1336,7 @@ EXTRACT_LIST *elist;
   	cmd = stralloc(GNUTAR);
 #endif
     	break;
+    case IS_UNKNOWN:
     case IS_DUMP:
 #ifndef RESTORE
 	fprintf(stderr, "RESTORE program not available.\n");
