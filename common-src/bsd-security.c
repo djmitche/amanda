@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.7 1998/11/23 18:53:13 kashmir Exp $
+ * $Id: bsd-security.c,v 1.8 1998/12/02 22:27:04 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -37,6 +37,8 @@
 #include "security.h"
 #include "stream.h"
 #include "version.h"
+
+#ifdef BSD_SECURITY
 
 /*
  * This is the private handle data
@@ -149,7 +151,7 @@ struct bsd_stream {
 /*
  * Interface functions
  */
-static void *bsd_connect P((const char *));
+static int bsd_connect P((void *, const char *));
 static void bsd_accept P((int, int, void (*)(void *, void *, pkt_t *),
     void *));
 static void bsd_close P((void *));
@@ -174,6 +176,7 @@ static void bsd_stream_read_cancel P((void *));
  */
 const security_driver_t bsd_security_driver = {
     "BSD",
+    sizeof(struct bsd_handle),
     bsd_connect,
     bsd_accept,
     bsd_close,
@@ -244,7 +247,8 @@ static void *accept_fn_arg;
  * These are the internal helper functions
  */
 static int check_user P((struct bsd_handle *, const char *));
-static void *gethandle P((struct hostent *, int, const char *));
+static int inithandle P((struct bsd_handle *, struct hostent *, int,
+    const char *));
 static const char *pkthdr2str P((const struct bsd_handle *, const pkt_t *));
 static int str2pkthdr P((const char *, pkt_t *, char *, size_t, int *));
 static void recvpkt_callback P((void *));
@@ -255,16 +259,19 @@ static void stream_read_callback P((void *));
 /*
  * Setup and return a handle outgoing to a client
  */
-static void *
-bsd_connect(hostname)
+static int
+bsd_connect(cookie, hostname)
+    void *cookie;
     const char *hostname;
 {
+    struct bsd_handle *bh = cookie;
     char handle[32];
     struct servent *se;
     struct hostent *he;
     int port;
 
     assert(hostname != NULL);
+    assert(bh != NULL);
 
     /*
      * Only init the socket once
@@ -275,18 +282,24 @@ bsd_connect(hostname)
 	/*
 	 * We must have a reserved port.  Bomb if we didn't get one.
 	 */
-	if (ntohs(port) >= IPPORT_RESERVED)
-	    return (NULL);
+	if (ntohs(port) >= IPPORT_RESERVED) {
+	    security_seterror(&bh->security_handle,
+		"unable to bind to a reserved port");
+	    return (-1);
+	}
     }
 
-    if ((he = gethostbyname(hostname)) == NULL)
-	return (NULL);
+    if ((he = gethostbyname(hostname)) == NULL) {
+	security_seterror(&bh->security_handle,
+	    "%s: could not resolve hostname", hostname);
+	return (-1);
+    }
     if ((se = getservbyname(AMANDA_SERVICE_NAME, "udp")) == NULL)
 	port = htons(AMANDA_SERVICE_DEFAULT);
     else
 	port = se->s_port;
     ap_snprintf(handle, sizeof(handle), "%ld", (long)time(NULL));
-    return (gethandle(he, port, handle));
+    return (inithandle(bh, he, port, handle));
 }
 
 /*
@@ -324,27 +337,17 @@ bsd_accept(in, out, fn, arg)
 /*
  * Given a hostname and a port, setup a bsd_handle
  */
-static void *
-gethandle(he, port, handle)
+static int
+inithandle(bh, he, port, handle)
+    struct bsd_handle *bh;
     struct hostent *he;
     int port;
     const char *handle;
 {
-    struct bsd_handle *bh;
     int i;
 
     assert(he != NULL);
     assert(port > 0);
-
-    /*
-     * Allocate space for our handle
-     */
-    bh = alloc(sizeof(*bh));
-
-    /*
-     * Initialize the error buffer now, because we might use it soon.
-     */
-    bh->security_handle.error = NULL;
 
     /*
      * Save the hostname and port info
@@ -362,15 +365,17 @@ gethandle(he, port, handle)
      * resolves back to the remote ip for security reasons.
      */
     if ((he = gethostbyname(bh->hostname)) == NULL) {
-	amfree(bh);
-	return (NULL);
+	security_seterror(&bh->security_handle,
+	    "%s: could not resolve hostname", bh->hostname);
+	return (-1);
     }
     /*
      * Make sure the hostname matches.  This should always work.
      */
     if (strncasecmp(bh->hostname, he->h_name, strlen(bh->hostname)) != 0) {
-	amfree(bh);
-	return(NULL);
+	security_seterror(&bh->security_handle, "%s: did not resolve to %s",
+	    bh->hostname, bh->hostname);
+	return (-1);
     }
 
     /*
@@ -384,7 +389,7 @@ gethandle(he, port, handle)
     }
 
     /*
-     * If we didn't find it, try the aliases.  This is a qorkaround for
+     * If we didn't find it, try the aliases.  This is a workaround for
      * Solaris if DNS goes over NIS.
      */
     if (he->h_addr_list[i] == NULL) {
@@ -398,8 +403,10 @@ gethandle(he, port, handle)
 	 * DNS is messed up.
 	 */
 	if (he->h_aliases[i] == NULL) {
-	    amfree(bh);
-	    return (NULL);
+	    security_seterror(&bh->security_handle,
+		"DNS check failed: no matching ip address for %s",
+		bh->hostname);
+	    return (-1);
 	}
     }
 
@@ -413,7 +420,7 @@ gethandle(he, port, handle)
     bh->arg = NULL;
     bh->ev_timeout = NULL;
 
-    return (bh);
+    return (0);
 }
 
 /*
@@ -424,9 +431,7 @@ bsd_close(bh)
     void *bh;
 {
 
-    assert(bh != NULL);
-
-    amfree(bh);
+    /* nothing */
 }
 
 /*
@@ -622,9 +627,12 @@ recvpkt_callback(cookie)
     he = gethostbyaddr((void *)&peer.sin_addr, sizeof(peer.sin_addr), AF_INET);
     if (he == NULL)
 	return;
-    bh = gethandle(he, peer.sin_port, handle);
-    if (bh == NULL)
+    bh = alloc(sizeof(*bh));
+    bh->security_handle.error = NULL;
+    if (inithandle(bh, he, peer.sin_port, handle) < 0) {
+	amfree(bh);
 	return;
+    }
     /*
      * Check the security of the packet.  If it is bad, then pass NULL
      * to the accept function instead of a packet.
@@ -1098,6 +1106,9 @@ stream_read_callback(arg)
      */
     bsd_stream_read_cancel(bs);
     n = read(bs->fd, bs->databuf, sizeof(bs->databuf));
+    if (n < 0)
+	security_seterror(&bs->bsd_handle->security_handle,
+	    strerror(errno));
     (*bs->fn)(bs->arg, bs->databuf, n);
 }
 
@@ -1195,3 +1206,5 @@ parse_error:
     amfree(str);
     return (-1);
 }
+
+#endif	/* BSD_SECURITY */

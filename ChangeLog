@@ -1,5 +1,23 @@
 1998-12-02  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/bsd-security.c: wrap entire file in #ifdef BSD_SECURITY
+	* common-src/bsd-security.c (bsd_connect): catch up with
+	security interface changes - upper layer now allocates our handle
+	Also, pass up useful error message about why connects failed
+	via the handle we are given
+	* common-src/bsd-security.c (gethandle): rename to inithandle,
+	since we are now passed the handle's memory.  No need to allocate
+	memory or initialize the error msg pointer
+	* common-src/bsd-security.c (bsd_close): now an empty function - no
+	memory to free
+	* common-src/bsd-security.c (recvpkt_callback): allocate the handle
+	before calling inithandle() (nee gethandle()).
+	* common-src/bsd-security.c (stream_read_callback): put
+	strerror(errno) in the handle's error buffer before passing a
+	read error up to the caller
+
+1998-12-02  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/krb5-security.c: new stub file that pulls in the
 	krb5 bits from the amanda-krb-2 tree if KRB5_SECURITY is
 	defined
