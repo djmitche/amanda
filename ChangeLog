@@ -1,3 +1,15 @@
+2001-08-14 John R. Jackson (jrj@purdue.edu)
+
+	* common-src/stream.c: Add stream_client_privileged() function to
+	  get a privileged port and fail if one is not available.  The older
+	  stream_client() function gets a (non-privileged) port in the
+	  configured portrange, if set and possible, else anything available.
+	* common-src/stream.h: Prototypes.
+	* recover-src/amrecover.c: Use stream_client_privileged() instead of
+	  stream_client().
+	* recover-src/extract_list.c: Ditto.
+	* configure.in: More port range sanity checks.
+
 2001-08-09 Thomas Hepper (th@ant.han.de)
 	* changer-src/chg-scsi.c: Added check in MapBarCode if the labelfile
 	parameter is empty, and if yes return. 

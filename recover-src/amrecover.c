@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.29.4.10 2001/07/30 20:06:23 jrjackson Exp $
+ * $Id: amrecover.c,v 1.29.4.11 2001/08/14 21:09:45 jrjackson Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -530,11 +530,11 @@ char **argv;
     {
 	error("%s/tcp unknown protocol", service_name);
     }
-    server_socket = stream_client(server_name,
-				  ntohs(sp->s_port),
-				  DEFAULT_SIZE,
-				  DEFAULT_SIZE,
-				  &my_port);
+    server_socket = stream_client_privileged(server_name,
+					     ntohs(sp->s_port),
+					     DEFAULT_SIZE,
+					     DEFAULT_SIZE,
+					     &my_port);
     if (server_socket < 0)
     {
 	error("cannot connect to %s: %s", server_name, strerror(errno));

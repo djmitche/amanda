@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43.2.17 2001/06/18 22:28:26 jrjackson Exp $
+ * $Id: extract_list.c,v 1.43.2.18 2001/08/14 21:09:45 jrjackson Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1049,11 +1049,11 @@ static int extract_files_setup P((void))
     amfree(service_name);
     seteuid(0);					/* it either works ... */
     setegid(0);
-    tape_server_socket = stream_client(tape_server_name,
-				       ntohs(sp->s_port),
-				       DEFAULT_SIZE,
-				       DATABUF_SIZE*2,
-				       &my_port);
+    tape_server_socket = stream_client_privileged(tape_server_name,
+						  ntohs(sp->s_port),
+						  DEFAULT_SIZE,
+						  DATABUF_SIZE*2,
+						  &my_port);
     if (tape_server_socket < 0)
     {
 	printf("cannot connect to %s: %s\n", tape_server_name, strerror(errno));
