@@ -1,0 +1,141 @@
+.\"
+.de CO
+\fB\\$1\fP \fI\\$2\fP
+..
+.TH AMMT 8
+.SH NAME
+ammt \- Amanda version of mt
+.SH SYNOPSIS
+.B ammt
+[
+.B -d
+]
+[
+.B -f|-t
+.I device
+]
+.B command
+[
+.I count
+]
+.SH DESCRIPTION
+.B Ammt
+provides just enough of the standard
+.UX
+.B mt
+command for the needs of Amanda.
+This is handy when doing a full restore and the standard
+.B mt
+program has not yet been found.
+.LP
+.B Ammt
+also provides access to the Amanda output drivers that support
+various tape simulations.
+.LP
+See the
+.IR amanda (8)
+man page for more details about Amanda.
+See the
+.B OUTPUT DRIVERS
+section of
+.I amanda(8)
+for more information on the Amanda output drivers.
+.SH OPTIONS
+.TP
+.B \-d
+Turn on debugging output.
+.TP
+.BI \-f \ device
+Access tape device
+.IR device .
+If not specified, the
+.B TAPE
+environment variable is used.
+.TP
+.BI \-t \ device
+Same as
+.BR -f .
+.TP
+.BI command \ count
+Which command to issue, and an optional count of operations.
+.SH COMMANDS
+Each command may be abbreviated to whatever length makes it unique.
+.TP
+.BI eof|weof \ count
+Write
+.I count
+(default: 1)
+end of file marks (tapemarks).
+.TP
+.BI fsf \ count
+Skip forward
+.I count
+(default: 1)
+files.
+.TP
+.BI bsf \ count
+Skip backward
+.I count
+(default: 1)
+files.
+.TP
+.BI asf \ count
+Position to file number
+.I count
+(default: 0)
+where zero is beginning of tape.
+This is the same as a
+.B rewind
+followed by a
+.B fsf
+.IR count .
+.TP
+.B rewind
+Rewind to beginning of tape.
+.TP
+.B offline|rewoffl
+Rewind to beginning of tape and unload the tape from the drive.
+.TP
+.BI status
+Report status information about the drive.
+Which data reported,
+and what it means,
+depends on the underlying operating system,
+and may include:
+.RS
+.TP
+ONLINE
+Indicates the drive is online and ready.
+.TP
+OFFLINE
+Indicates the drive is offline or not ready.
+.TP
+BOT
+Indicates the drive is at beginning of tape.
+.TP
+EOT
+Indicates the drive is at end of tape.
+.TP
+PROTECTED
+Indicates the tape is write protected.
+.TP
+ds
+Device status.
+.TP
+er
+Error register.
+.TP
+fileno
+Current tape file number.
+.TP
+blkno
+Current tape block number file.
+.RE
+.IP
+NOTE: many systems only report good data when a tape is in the drive and ready.
+.SH AUTHOR
+Marc Mengel <mengel@fnal.gov>
+.br
+John R. Jackson <jrj@purdue.edu>
+.SH "SEE ALSO"
+amanda(8)

@@ -1,0 +1,121 @@
+.\"
+.de CO
+\fB\\$1\fP \fI\\$2\fP
+..
+.TH AMDD 8
+.SH NAME
+amdd \- Amanda version of dd
+.SH SYNOPSIS
+.B amdd
+[
+.B -d
+]
+[
+.B if=\fIinput
+]
+[
+.B of=\fIoutput
+]
+[
+.B bs=\fIblocksize
+]
+[
+.B skip=\fIcount
+]
+[
+.B count=\fIcount
+]
+.SH DESCRIPTION
+.B Amdd
+provides just enough of the standard
+.UX
+.B dd
+command for the needs of Amanda.
+This is handy when doing a full restore and the standard
+.B dd
+program has not yet been found.
+.LP
+.B Amdd
+also provides access to the Amanda output drivers that support
+various tape simulations.
+This may be used for debugging or to convert from one format
+to another.
+.LP
+See the
+.IR amanda (8)
+man page for more details about Amanda.
+See the
+.B OUTPUT DRIVERS
+section of
+.I amanda(8)
+for more information on the Amanda output drivers.
+.SH OPTIONS
+.de BS
+\fB\\$1\fP\ \fR\\$2\fP
+..
+.TP
+.B \-d
+Turn on debugging output.
+.TP
+.BI \-l length
+Set the output length.
+If the output driver limits the output size, this controls
+when end of tape will be simulated.
+.IP
+.I Length
+may have a multiplier suffix:
+.RS
+.IP
+.BS k 1024\ (Kilobytes)
+.IP
+.BS b 512\ (Blocks)
+.IP
+.BS M 1024*1024\ (Megabytes)
+.RE
+.IP
+The default is no multipler (bytes).
+.TP
+.B if=\fIinput
+Input to
+.BR dd .
+Default is stdin.
+.TP
+.B of=\fIoutput
+Where to send the output of
+.BR dd .
+Default is stdout.
+.TP
+.B bs=\fIblocksize
+Size of each record.
+Input records smaller than this will
+.I not
+be padded.
+Output records will be the same size as the corresponding input record.
+Default is 512 bytes.
+.IP
+.I Blocksize
+may have a multiplier suffix:
+.RS
+.IP
+.BS k 1024\ (Kilobytes)
+.IP
+.BS b 512\ (Blocks)
+.IP
+.BS M 1024*1024\ (Megabytes)
+.RE
+.IP
+The default is no multipler (bytes).
+.TP
+.B count=\fIcount
+Number of records to copy.
+Default is all records until end of file.
+.TP
+.B skip=\fIcount
+Number of records to skip before copying input to output.
+Default is zero.
+.SH AUTHOR
+Marc Mengel <mengel@fnal.gov>
+.br
+John R. Jackson <jrj@purdue.edu>
+.SH "SEE ALSO"
+amanda(8)

@@ -2,28 +2,33 @@
 
 #define RAIT_H
 
-#define MAXRAIT 6
-#define MAXBUFSIZE 32768
-
 typedef struct {
     int nopen;
     int nfds;
-    int fds[MAXRAIT];
-    char xorbuf[MAXBUFSIZE];
+    int *fds;
+    int *readres;
+    int xorbuflen;
+    char *xorbuf;
 } RAIT;
 
 extern int rait_open();
 extern int rait_access(char *, int);
-extern int rait_stat();
+extern int rait_stat(char *, struct stat *);
 extern int rait_close(int );		
 extern int rait_lseek(int , long, int);
-extern int rait_write(int , const char *, int);
-extern int rait_read(int , char *, int);
+extern int rait_write(int , const void *, int);
+extern int rait_read(int , void *, int);
 extern int rait_ioctl(int , int, void *);
-extern int rait_copy(char *f1, char *f2);
+extern int rait_copy(char *f1, char *f2, int buflen);
 
-extern char *rait_init_namelist(char *);
-extern char *rait_next_name();
+extern char *rait_init_namelist(char * dev,
+				char **dev_left,
+				char **dev_right,
+				char **dev_next);
+extern int rait_next_name(char * dev_left,
+       			  char * dev_right,
+       			  char **dev_next,
+       			  char * dev_real);
 
 #ifndef NO_AMANDA
 extern int  rait_tape_open(char *, int);
@@ -31,7 +36,7 @@ extern int  rait_tapefd_fsf(int rait_tapefd, int count);
 extern int  rait_tapefd_rewind(int rait_tapefd);
 extern void rait_tapefd_resetofs(int rait_tapefd);
 extern int  rait_tapefd_unload(int rait_tapefd);
-extern int  rait_tapefd_status(int rait_tapefd);
+extern int  rait_tapefd_status(int rait_tapefd, struct am_mt_status *stat);
 extern int  rait_tapefd_weof(int rait_tapefd, int count);
 #endif
 

@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.19 2000/11/01 21:29:45 jrjackson Exp $
+#	$Id: amverify.sh.in,v 1.20 2001/01/25 00:25:30 jrjackson Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -189,7 +189,7 @@ doonefile() {
 #	XFSRESTORE	ditto for the system restore program
 #	DD		ditto for dd
 #	MT		ditto for mt
-#	MTOPT		flag given to MT to specify tape device: -f or -t
+#	MTF		flag given to MT to specify tape device: -f or -t
 #	MAIL		mail program
 #	IS_AIX		true if this is an AIX system
 
@@ -209,9 +209,24 @@ VXDUMP=@VXDUMP@
 VXRESTORE=@VXRESTORE@
 XFSDUMP=@XFSDUMP@
 XFSRESTORE=@XFSRESTORE@
-DD=@DD@
-MT=@MT@
-MTOPT=@MT_FILE_FLAG@
+if [ -x $sbindir/ammt$SUF ]; then
+	MT=$sbindir/ammt$SUF
+	MTF=-f
+elif [ -x "@MT@" ]; then
+	MT=@MT@
+	MTF=@MT_FILE_FLAG@
+else
+	$Echoe "amverify$SUF mt program not found"
+	exit 1
+fi
+if [ -x $sbindir/amdd$SUF ]; then
+	DD=$sbindir/amdd$SUF
+elif [ -x "@DD@" ]; then
+	DD=@DD@
+else
+	$Echoe "amverify$SUF dd program not found"
+	exit 1
+fi
 MAIL=@MAILER@
 if [ X"`/bin/uname -s 2>/dev/null`" = X"AIX" ]; then
 	IS_AIX=1
@@ -225,7 +240,7 @@ if [ X"`/bin/uname -s 2>/dev/null`" = X"AIX" ]; then
 	DEVICE_READY=:
 else
 	IS_AIX=0
-	DEVICE_READY='$MT $MTOPT $DEVICE stat'
+	DEVICE_READY='$MT $MTF $DEVICE stat'
 fi
 
 #
@@ -353,7 +368,7 @@ while [ $SLOT -lt $SLOTS ]; do
 		sleep 3
 	done
 	$Echon "Rewinding..."
-	until $MT $MTOPT $DEVICE rewind; do
+	until $MT $MTF $DEVICE rewind; do
 		sleep 3
 	done
 	$Echon "Processing label..."
@@ -378,7 +393,7 @@ while [ $SLOT -lt $SLOTS ]; do
 		&& continue
 	TAPELIST="$TAPELIST $VOLUME"
 	$Echon "Rewinding..."
-	until $MT $MTOPT $DEVICE rewind; do
+	until $MT $MTF $DEVICE rewind; do
 		sleep 3
 	done
 	ERG=0
@@ -425,7 +440,7 @@ while [ $SLOT -lt $SLOTS ]; do
 		fi
 	done
 	$Echon "Rewinding..."
-	until $MT $MTOPT $DEVICE rewind; do
+	until $MT $MTF $DEVICE rewind; do
 		sleep 3
 	done
 	rm -f $TEMP/header \

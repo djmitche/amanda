@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.92 2001/01/07 23:02:56 martinea Exp $
+ * $Id: amanda.h,v 1.93 2001/01/25 00:25:30 jrjackson Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -477,6 +477,13 @@ extern char  *newvstralloc    P((char *oldstr, const char *newstr, ...));
 
 #define	stralloc2(s1,s2)      vstralloc((s1),(s2),NULL)
 #define	newstralloc2(p,s1,s2) newvstralloc((p),(s1),(s2),NULL)
+
+extern int amtable_alloc      P((void **table,
+				 size_t elsize,
+				 int count,
+				 int *current,
+				 int bump,
+				 void (*init_func)(void *)));
 
 extern uid_t  client_uid;
 extern gid_t  client_gid;

@@ -338,6 +338,10 @@ so you need not specify the parameter in
 if the default is suitable.
 .LP
 Lines starting with # are ignored, as are blank lines.
+Comments may be placed on a line with a directive by starting
+the comment with a #.
+The remainder of the line is ignored.
+.LP
 Keywords are case insensitive, i.e.\&
 .B mailto
 and
@@ -500,20 +504,28 @@ option.
 .BS tapedev string
 Default:
 .IR @DEFAULT_TAPE_DEVICE@ .
-The path name of the tape device.
+The path name of the non-rewinding tape device.
+Non-rewinding tape device names often have an 'n' in the name,
+e.g.
+.IR /dev/rmt/0mn ,
+however this is operating system specific and you should consult
+that documentation for detailed naming information.
+.IP
 If a tape changer is configured
 (see the
 .B tpchanger
-option), this option may not be used
-and should be commented out of the configuration file.
+option), this option might not be used.
 .IP
-If
-.B tapedev
-is set to
-.IR /dev/null ,
+If the
+.B null
+output driver is selected
+(see the
+.B OUTPUT DRIVERS
+section later for more information),
+programs such as
 .B amdump
 will run normally but all images will be thrown away.
-This should only be used for debugging,
+This should only be used for debugging and testing,
 and probably only with the
 .B record
 option set to
@@ -892,7 +904,7 @@ Since Amanda works with 32 Kbyte blocks, and
 to handle the final read at the end of the chunk, the chunk size
 should be at least 64 Kbytes (2 * 32 Kbytes) smaller than the maximum
 file size, e.g.\& 2047 Mbytes.
-.SH DUMPTYPE SECTION
+.SH "DUMPTYPE SECTION"
 The
 .B amanda.conf
 file may define multiple sets of backup options and
@@ -1268,7 +1280,7 @@ should reference.
 This provides an easy place to make changes that will affect
 every
 .BR dumptype .
-.SH TAPETYPE SECTION
+.SH "TAPETYPE SECTION"
 The
 .B amanda.conf
 file may define multiple types of tape media and devices.
@@ -1359,7 +1371,7 @@ define tapetype DLT4000\-IV {
 }
 .EE
 .RE
-.SH INTERFACE SECTION
+.SH "INTERFACE SECTION"
 The
 .B amanda.conf
 file may define multiple types of network interfaces.
@@ -1413,7 +1425,7 @@ name may be entered, which makes this
 inherit options from another
 .BR interface .
 At the moment, this is of little use.
-.SH DISKLIST FILE
+.SH "DISKLIST FILE"
 The
 .I disklist
 file determines which disks will be backed up by Amanda.
@@ -1528,7 +1540,7 @@ a new dumptype:
 .EE
 .RE
 .LP
-.SH TAPE MANAGEMENT
+.SH "TAPE MANAGEMENT"
 The
 .I tapelist
 file contains the list of tapes in active use.
@@ -1569,6 +1581,123 @@ than there are runs in the backup cycle
 option)
 to prevent overwriting a backup image that would be needed to
 do a full recovery.
+.SH "OUTPUT DRIVERS"
+The normal value for the
+.B tapedev
+parameter,
+or for what a tape changer returns,
+is a full path name to a non-rewinding tape device,
+such as
+.I /dev/nst0
+or
+.I /dev/rmt/0mn
+or
+.I /dev/nst0.1
+or whatever conventions the operating system uses.
+Amanda provides additional application level drivers that
+support non-tradition tape simulatation or features.
+To access a specific output driver, set
+.B tapedev
+(or configure your changer to return)
+a string of the form
+.I driver\fR:\fIdriver-info
+where
+.I driver
+is one of the supported drivers and
+.I driver-info
+is optional additional information needed by the driver.
+.LP
+The supported drivers are:
+.TP 10
+.I tape
+This is the default driver.
+The
+.I driver-info
+is the tape device name.
+Entering
+.I /dev/rmt/0mn
+is really a short hand for
+.IR tape:/dev/rmt/0mn .
+.TP
+.I null
+This driver throws away anything written to it and returns EOF
+for any reads except a special case is made for reading a label,
+in which case a "fake" value is returned that Amanda checks for
+and allows through regardless of what you have set in
+.BR labelstr .
+The
+.I driver-info
+field is not used and may be left blank:
+.RS
+.IP
+.BS tapedev null:
+.RE
+.IP
+The
+.I length
+value from the associated
+.B tapetype
+is used to limit the amount of data written.
+When the limit is reached, the driver will simulate end of tape.
+.IP
+NOTE: this driver should only be used for debugging and testing,
+and probably only with the
+.B record
+option set to
+.IR no .
+.TP
+.I rait
+\fIR\fRedundant
+\fIA\fRrray
+of
+\fII\fRnexpensive (?)
+\fIT\fRapes.
+Reads and writes tapes mounted on multiple drives by spreading
+the data across N-1 drives and using the last drive for a checksum.
+See docs/RAIT for more information.
+.IP
+The
+.I driver-info
+field describes the devices to use.
+Curly braces indicate multiple replacements in the string.
+For instance:
+.RS
+.IP
+.BS tapedev rait:/dev/rmt/tps0d{4,5,6}n
+.RE
+.IP
+would use the following devices:
+.RS
+.IP
+/dev/rmt/tps0d4n
+.br
+/dev/rmt/tps0d5n
+.br
+/dev/rmt/tps0d6n
+.RE
+.TP
+.I file
+This driver emulates a tape device with a set of files in a directory.
+The
+.I driver-info
+field should be the name of an existing directory.
+The driver will store one file in the directory for each tape file.
+.IP
+The
+.I length
+value from the associated
+.B tapetype
+is used to limit the amount of data written.
+When the limit is reached, the driver will simulate end of tape.
+.IP
+A file in /tmp is used to remember the tape position between programs.
+The file name in /tmp is a variant of the
+.I driver-info
+name.
+.IP
+NOTE: record size information is not saved by this driver.
+This is OK for Amanda use,
+but it may cause problems for other applications.
 .SH AUTHORIZATION
 Amanda processes on the tape server host run as the
 .B dumpuser

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.h,v 1.12 2001/01/05 02:29:13 martinea Exp $
+ * $Id: tapeio.h,v 1.13 2001/01/25 00:25:31 jrjackson Exp $
  *
  * interface for tapeio.c
  */
@@ -34,15 +34,47 @@
 
 #include "amanda.h"
 
+/*
+ * Tape drive status structure.  This abstracts the things we are
+ * interested in from the free-for-all of what the various drivers
+ * supply.
+ */
+
+struct am_mt_status {
+    char online_valid;			/* is the online flag valid? */
+    char bot_valid;			/* is the BOT flag valid? */
+    char eot_valid;			/* is the EOT flag valid? */
+    char protected_valid;		/* is the protected flag valid? */
+    char flags_valid;			/* is the flags field valid? */
+    char fileno_valid;			/* is the fileno field valid? */
+    char blkno_valid;			/* is the blkno field valid? */
+    char device_status_valid;		/* is the device status field valid? */
+    char error_status_valid;		/* is the device status field valid? */
+
+    char online;			/* true if device is online/ready */
+    char bot;				/* true if tape is at the beginning */
+    char eot;				/* true if tape is at end of medium */
+    char protected;			/* true if tape is write protected */
+    long flags;				/* device flags, whatever that is */
+    long fileno;			/* tape file number */
+    long blkno;				/* block within file */
+    int device_status_size;		/* size of orig device status field */
+    unsigned long device_status;	/* "device status", whatever that is */
+    int error_status_size;		/* size of orig error status field */
+    unsigned long error_status;		/* "error status", whatever that is */
+};
+
+#define	FAKE_LABEL	"[fake-label]"
+
 int tape_open P((char *filename, int mode));
-int tape_stat P((char *filename, struct stat *buf));
-int tape_access P((char *filename, int mode));
-char *tape_unload P((char *devname));
-char *tape_status P((char *devname));
 
 int tapefd_rewind P((int tapefd));
+int tapefd_unload P((int tapefd));
 int tapefd_fsf P((int tapefd, int count));
 int tapefd_weof P((int tapefd, int count));
+
+int tapefd_status P((int tapefd, struct am_mt_status *));
+
 void tapefd_resetofs P((int tapefd));
 
 int tapefd_read P((int tapefd, void *buffer, int count));
@@ -55,12 +87,35 @@ char *tapefd_wrendmark P((int tapefd, char *datestamp));
 int tapefd_eof P((int tapefd));		/* just used in tapeio-test */
 int tapefd_close P((int tapefd));
 
+char *tape_unload P((char *dev));
 char *tape_rewind P((char *dev));
 char *tape_fsf P((char *dev, int count));
 char *tape_rdlabel P((char *dev, char **datestamp, char **label));
 char *tape_wrlabel P((char *dev, char  *datestamp, char  *label));
 char *tape_wrendmark P((char *dev, char *datestamp));
 char *tape_writable P((char *dev));
+
+int tape_access P((char *dev, int mode));
+int tape_stat P((char *filename, struct stat *buf));
+
+char *tapefd_getinfo_label P((int fd));
+void tapefd_setinfo_label P((int fd, char *v));
+char *tapefd_getinfo_host P((int fd));
+void tapefd_setinfo_host P((int fd, char *v));
+char *tapefd_getinfo_disk P((int fd));
+void tapefd_setinfo_disk P((int fd, char *v));
+int tapefd_getinfo_level P((int fd));
+void tapefd_setinfo_level P((int fd, int v));
+char *tapefd_getinfo_datestamp P((int fd));
+void tapefd_setinfo_datestamp P((int fd, char *v));
+long tapefd_getinfo_length P((int fd));
+void tapefd_setinfo_length P((int fd, long v));
+char *tapefd_getinfo_tapetype P((int fd));
+void tapefd_setinfo_tapetype P((int fd, char *v));
+int tapefd_getinfo_fake_label P((int fd));
+void tapefd_setinfo_fake_label P((int fd, int v));
+int tapefd_getinfo_ioctl_fork P((int fd));
+void tapefd_setinfo_ioctl_fork P((int fd, int v));
 
 #ifdef HAVE_LINUX_ZFTAPE_H
 int is_zftape P((const char *filename));

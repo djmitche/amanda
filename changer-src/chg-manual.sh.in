@@ -15,6 +15,12 @@ libexecdir=@libexecdir@
 PATH=$sbindir:$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
 export PATH
 
+if [ -d "@AMANDA_DBGDIR@" ]; then
+	logfile=@AMANDA_DBGDIR@/changer.debug
+else
+	logfile=/dev/null
+fi
+
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
 if test "$USE_VERSION_SUFFIXES" = "yes"; then
 	SUF="-@VERSION@"
@@ -23,15 +29,45 @@ else
 fi
 
 myname=$0
+
 EGREP=@EGREP@
-MT=am-mt
-MTF=-f
-DD=am-dd
+
+if [ -x $sbindir/ammt$SUF ]; then
+	MT=$sbindir/ammt$SUF
+	MTF=-f
+elif [ -x "@MT@" ]; then
+	MT=@MT@
+	MTF=@MT_FILE_FLAG@
+else
+	answer="<none> $myname: mt program not found"
+	code=1
+	echo "Exit -> $answer" >> $logfile
+	echo "$answer"
+	exit $code
+fi
+echo MT "->" $MT $MTF >> $logfile
+
+if [ -x $sbindir/amdd$SUF ]; then
+	DD=$sbindir/amdd$SUF
+elif [ -x "@DD@" ]; then
+	DD=@DD@
+else
+	answer="<none> $myname: dd program not found"
+	code=1
+	echo "Exit -> $answer" >> $logfile
+	echo "$answer"
+	exit $code
+fi
+echo DD "->" $DD >> $logfile
+
 MAILER=@MAILER@
 ONLINEREGEX="ONLINE|READY|sense[_ ]key[(]0x0[)]|sense key error = 0|^er=0$"
 REPORTTO=`amgetconf$SUF mailto`
 tape=`amgetconf$SUF tapedev`
 ORG=`amgetconf$SUF ORG`
+
+firstslot=1
+lastslot=99
 
 changerfile=`amgetconf$SUF changerfile`
 
@@ -40,20 +76,10 @@ accessfile=$changerfile-access
 slotfile=$changerfile-slot
 [ ! -f $cleanfile ] && echo 0 > $cleanfile
 [ ! -f $accessfile ] && echo 0 > $accessfile
-[ ! -f $slotfile ] && echo 0 > $slotfile
+[ ! -f $slotfile ] && echo $firstslot > $slotfile
 cleancount=`cat $cleanfile`
 accesscount=`cat $accessfile`
 slot=`cat $slotfile`
-
-# this starts at 1 !!!
-lastslot=99
-#
-
-if [ -d "@AMANDA_DBGDIR@" ]; then
-	logfile=@AMANDA_DBGDIR@/changer.debug
-else
-	logfile=/dev/null
-fi
 
 request() {
 	echo "insert tape into slot $1 and press return" >/dev/tty
@@ -114,7 +140,7 @@ eject() {
 		answer="$slot $tape"
 		code=0
 	else
-		answer="0 Drive was not loaded"
+		answer="<none> $myname: Drive was not loaded"
 		code=1
 	fi
 	echo "Exit -> $answer" >> $logfile
@@ -152,26 +178,35 @@ loadslot() {
 	case $whichslot in
 	current)
 		load=$slot
+		[ $load -eq 0 ] && load=$firstslot
+		[ $load -gt $lastslot ] && load=$firstslot
+		[ $load -lt $firstslot ] && load=$lastslot
 		;;
 	next|advance)
 		load=`expr $slot + 1`
+		[ $load -gt $lastslot ] && load=$firstslot
 		;;
 	prev)
-		load=`expr $used - 1`
-		[ $load eq 0 ] && load=1
+		load=`expr $slot - 1`
+		[ $load -lt $firstslot ] && load=$lastslot
 		;;
 	first)
-		load=1
+		load=$firstslot
 		;;
 	last)
-		# for compatibility only
-		load=1
+		load=$lastslot
 		;;
-	[0-9]*)
+	[0-9]|[0-9][0-9])
+		if [ $1 -lt $firstslot -o $1 -gt $lastslot ]; then
+			answer="<none> $myname: slot must be $firstslot .. $lastslot"
+			echo "Exit -> $answer" >> $logfile
+			echo "$answer"
+			exit 1
+		fi
 		load=$1
 		;;
 	*)
-		answer="0 illegal request"
+		answer="<none> $myname: illegal slot: $1"
 		echo "Exit -> $answer" >> $logfile
 		echo "$answer"
 		exit 1
@@ -266,7 +301,7 @@ while [ $# -ge 1 ];do
 		eject
 		;;
 	*)
-		echo "Unknown option $1"
+		echo "<none> $myname: Unknown option $1"
 		exit 2
 		;;
 	esac

@@ -37,8 +37,16 @@ if ("@USE_VERSION_SUFFIXES@" eq "yes") {
     $suf = "";
 }
 
-$MT="am-mt";
-$MTF="@MT_FILE_FLAG@";
+if (-x "$sbindir/ammt$SUF") {
+	$MT="$sbindir/ammt$SUF";
+	$MTF="-f";
+} elsif (-x "@MT@") {
+	$MT="@MT@";
+	$MTF="@MT_FILE_FLAG@";
+} else {
+	print "<none> $pname: mt program not found\n";
+	exit(1);
+fi
 
 $tapeDevice=`$sbindir/amgetconf$SUF tapedev`;
 

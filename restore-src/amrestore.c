@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.37 2001/01/07 23:02:56 martinea Exp $
+ * $Id: amrestore.c,v 1.38 2001/01/25 00:25:30 jrjackson Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -56,9 +56,11 @@ char buffer[TAPE_BLOCK_BYTES];
 
 
 int compflag, rawflag, pipeflag, headerflag;
-int buflen, got_sigpipe, file_number;
+int got_sigpipe, file_number;
 pid_t compress_pid = -1;
 char *compress_type = COMPRESS_FAST_OPT;
+int tapedev;
+int bytes_read;
 
 /* local functions */
 
@@ -67,10 +69,9 @@ void handle_sigpipe P((int sig));
 int disk_match P((dumpfile_t *file, char *datestamp, 
 		  char *hostname, char *diskname));
 char *make_filename P((dumpfile_t *file));
-int read_file_header P((char *buffer, dumpfile_t *file,
-			int buflen, int tapedev));
-void restore P((dumpfile_t *file, char *filename,
-		int tapedev, int isafile));
+void read_file_header P((char *buffer, dumpfile_t *file,
+			int buflen, int isafile));
+void restore P((dumpfile_t *file, char *filename, int isafile));
 void usage P((void));
 int main P((int argc, char **argv));
 
@@ -138,17 +139,20 @@ dumpfile_t *file;
 }
 
 
-int read_file_header(buffer, file, buflen, tapedev)
+void read_file_header(buffer, file, buflen, isafile)
 char *buffer;
 dumpfile_t *file;
 int buflen;
-int tapedev;
+int isafile;
 /*
  * Reads the first block of a tape file.
  */
 {
-    int bytes_read;
-    bytes_read = tapefd_read(tapedev, buffer, buflen);
+    if(isafile) {
+	bytes_read = fullread(tapedev, buffer, buflen);
+    } else {
+	bytes_read = tapefd_read(tapedev, buffer, buflen);
+    }
     if(bytes_read < 0) {
 	error("error reading file header: %s", strerror(errno));
     }
@@ -159,19 +163,18 @@ int tapedev;
 	    fprintf(stderr, "%s: short file header block: %d byte%s\n",
 		    get_pname(), bytes_read, (bytes_read == 1) ? "" : "s");
 	}
-	file->type = F_TAPEEND;
+	file->type = F_UNKNOWN;
     }
     else {
 	parse_file_header(buffer, file, bytes_read);
     }
-    return(bytes_read);
+    return;
 }
 
 
-void restore(file, filename, tapedev, isafile)
+void restore(file, filename, isafile)
 dumpfile_t *file;
 char *filename;
-int tapedev;
 int isafile;
 /*
  * Restore the current file from tape.  Depending on the settings of
@@ -243,10 +246,11 @@ int isafile;
 	/* remove CONT_FILENAME from header */
 	cont_filename = stralloc(file->cont_filename);
 	memset(file->cont_filename,'\0',sizeof(file->cont_filename));
-	write_header(buffer,file,buflen);
+	write_header(buffer,file,bytes_read);
 
-	if (fullwrite(out, buffer, buflen) < 0)
+	if (fullwrite(out, buffer, bytes_read) < 0) {
 	    error("write error: %s", strerror(errno));
+	}
 	/* add CONT_FILENAME to header */
 	strncpy(file->cont_filename, cont_filename, sizeof(file->cont_filename));
     }
@@ -328,56 +332,46 @@ int isafile;
     got_sigpipe = 0;
     wc = 0;
     do {
-	buflen = fullread(tapedev, buffer, sizeof(buffer));
-	if(buflen == 0 && isafile) { /* switch to next file */
-	    int save_tapedev;
-
-	    save_tapedev = tapedev;
-	    close(tapedev);
-	    if(file->cont_filename[0] == '\0') break; /* no more file */
-	    if((tapedev = open(file->cont_filename,O_RDONLY)) == -1) {
-		error("can't open %s: %s",file->cont_filename,strerror(errno));
-	    }
-	    if(tapedev != save_tapedev) {
-		if(dup2(tapedev, save_tapedev) == -1) {
-		    error("can't dup2: %s",strerror(errno));
-		}
-		close(tapedev);
-		tapedev = save_tapedev;
-	    }
-	    buflen=read_file_header(buffer, file, sizeof(buffer), tapedev);
-/* should be validated */
-	    
-	    buflen = fullread(tapedev, buffer, sizeof(buffer));
+	if(isafile) {
+	    bytes_read = fullread(tapedev, buffer, sizeof(buffer));
+	} else {
+	    bytes_read = tapefd_read(tapedev, buffer, sizeof(buffer));
 	}
-	if(buflen == 0 && !isafile) break; /* EOF */
-
-	if(buflen < 0) break;
-
-	if (fullwrite(out, buffer, buflen) < 0) {
+	if(bytes_read < 0) {
+	    error("read error: %s", strerror(errno));
+	}
+	if(bytes_read == 0 && isafile) {
+	    /*
+	     * See if we need to switch to the next file.
+	     */
+	    if(file->cont_filename[0] == '\0') {
+		break;				/* no more files */
+	    }
+	    close(tapedev);
+	    if((tapedev = open(file->cont_filename, O_RDONLY)) == -1) {
+		error("cannot open %s: %s",file->cont_filename,strerror(errno));
+	    }
+	    read_file_header(buffer, file, sizeof(buffer), isafile);
+	    if(file->type != F_DUMPFILE && file->type != F_CONT_DUMPFILE) {
+		fprintf(stderr, "unexpected header type: ");
+		print_header(stderr, file);
+		exit(2);
+	    }
+	    continue;
+	}
+	if(fullwrite(out, buffer, bytes_read) < 0) {
 	    if(got_sigpipe) {
-		fprintf(stderr,"Error %d (%s) offset %d+%d, wrote %d\n",
-			       errno, strerror(errno), wc, buflen, rc);
-		fprintf(stderr,  
-			"%s: pipe reader has quit in middle of file.\n",
-			get_pname());
-		fprintf(stderr,
-			"%s: skipping ahead to start of next file, please wait...\n",
-			get_pname());
-		if(!isafile) {
-		    if(tapefd_fsf(tapedev, 1) == -1) {
-			error("fast-forward: %s", strerror(errno));
-		    }
-		}
+		fprintf(stderr, "Error %d (%s) offset %d+%d, wrote %d\n",
+			        errno, strerror(errno), wc, bytes_read, rc);
+		fprintf(stderr, "%s: pipe reader has quit in middle of file.\n",
+			        get_pname());
 	    } else {
 		perror("amrestore: write error");
 	    }
 	    exit(2);
 	}
-	wc += buflen;
-    } while (buflen > 0);
-    if(buflen < 0)
-	error("read error: %s", strerror(errno));
+	wc += bytes_read;
+    } while (bytes_read > 0);
     if(pipeflag) {
 	if(out != dest) {
 	    aclose(out);
@@ -422,8 +416,8 @@ char **argv;
     int found_match;
     int arg_state;
     amwait_t compress_status;
-    int tapedev;
     int fd;
+    int r;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -462,13 +456,12 @@ char **argv;
     }
 
     if(optind >= argc) {
-	fprintf(stderr, "%s: Must specify tape-device or holdingfile\n", get_pname());
+	fprintf(stderr, "%s: Must specify tape-device or holdingfile\n",
+			get_pname());
 	usage();
     }
-    else tapename = argv[optind++];
 
-    if((tapedev = tape_open(tapename, 0)) < 0)
-	error("could not open tape %s: %s", tapename, strerror(errno));
+    tapename = argv[optind++];
 
 #define ARG_GET_HOST 0
 #define ARG_GET_DISK 1
@@ -525,16 +518,27 @@ char **argv;
 	match_list->next = NULL;
     }
 
-    if(tape_stat(tapename,&stat_tape)!=0)
+    if(tape_stat(tapename,&stat_tape)!=0) {
 	error("could not stat %s",tapename);
+    }
     isafile=S_ISREG((stat_tape.st_mode));
-    file_number = 0;
-    buflen=read_file_header(buffer, &file, sizeof(buffer), tapedev);
 
-    if(file.type != F_TAPESTART && !isafile)
-	fprintf(stderr,
-    "%s: WARNING: not at start of tape, file numbers will be offset\n",
-    get_pname());
+    if(isafile) {
+	tapedev = open(tapename, 0);
+    } else {
+	tapedev = tape_open(tapename, 0);
+    }
+    if(tapedev < 0) {
+	error("could not open %s: %s", tapename, strerror(errno));
+    }
+    file_number = 0;
+
+    read_file_header(buffer, &file, sizeof(buffer), isafile);
+
+    if(file.type != F_TAPESTART && !isafile) {
+	fprintf(stderr, "%s: WARNING: not at start of tape, file numbers will be offset\n",
+			get_pname());
+    }
 
     while(file.type == F_TAPESTART || file.type == F_DUMPFILE) {
 	amfree(filename);
@@ -546,44 +550,85 @@ char **argv;
 		break;
 	    }
 	}
-	if(found_match) {
-	    fprintf(stderr, "%s: %3d: restoring %s\n", 
-		    get_pname(), file_number, filename);
-	    restore(&file, filename, tapedev, isafile);
-	    if(pipeflag) break;
-	      /* GH: close and reopen the tape device, so that the
-		 read_file_header() below reads the next file on the
-		 tape and does not report: short block... */
-	    tapefd_close(tapedev);
-	    /* DB: wait for (un)compress, otherwise
-                   reopening the tape might fail */
-	    if (compress_pid > 0) {
-	      waitpid(compress_pid, &compress_status, 0);
-	      compress_pid = -1;
-	    }
-	    if((tapedev = tape_open(tapename, 0)) < 0)
-		error("could not open tape %s: %s", tapename, strerror(errno));
+	fprintf(stderr, "%s: %3d: %s ",
+			get_pname(),
+			file_number,
+			found_match ? "restoring" : "skipping");
+	if(file.type != F_DUMPFILE) {
+	    print_header(stderr, &file);
+	} else {
+	    fprintf(stderr, "%s\n", filename);
 	}
-	else {
-	    fprintf(stderr, "%s: %3d: skipping ", get_pname(), file_number);
-	    if(file.type != F_DUMPFILE) print_header(stderr,&file);
-	    else fprintf(stderr, "%s\n", filename);
-	    if(tapefd_fsf(tapedev, 1) == -1)
-		error("fast-forward: %s", strerror(errno));
+	if(found_match) {
+	    restore(&file, filename, isafile);
+	    if(compress_pid > 0) {
+		waitpid(compress_pid, &compress_status, 0);
+		compress_pid = -1;
+	    }
+	    if(pipeflag) {
+		break;
+	    }
+	}
+	if(isafile) {
+	    break;
+	}
+	/*
+	 * Note that at this point we know we are working with a tape,
+	 * not a holding disk file, so we can call the tape functions
+	 * without checking.
+	 */
+	if(bytes_read == 0) {
+	    /*
+	     * If the last read got EOF, how to get to the next
+	     * file depends on how the tape device driver is acting.
+	     * If it is BSD-like, we do not really need to do anything.
+	     * If it is Sys-V-like, we need to either fsf or close/open.
+	     * The good news is, a close/open works in either case,
+	     * so that's what we do.
+	     */
+	    tapefd_close(tapedev);
+	    if((tapedev = tape_open(tapename, 0)) < 0) {
+		error("could not open %s: %s", tapename, strerror(errno));
+	    }
+	} else {
+	    /*
+	     * If the last read got something (even an error), we can
+	     * do an fsf to get to the next file.
+	     */
+	    if(tapefd_fsf(tapedev, 1) < 0) {
+		error("could not fsf %s: %s", tapename, strerror(errno));
+	    }
 	}
 	file_number += 1;
-	if(isafile)
-	    file.type = F_TAPEEND;
-	else {
-	    buflen=read_file_header(buffer, &file, sizeof(buffer), tapedev);
+	read_file_header(buffer, &file, sizeof(buffer), isafile);
+    }
+    if(isafile) {
+	close(tapedev);
+    } else {
+	/*
+	 * See the notes above about advancing to the next file.
+	 */
+	if(bytes_read == 0) {
+	    tapefd_close(tapedev);
+	    if((tapedev = tape_open(tapename, 0)) < 0) {
+		error("could not open %s: %s", tapename, strerror(errno));
+	    }
+	} else {
+	    if(tapefd_fsf(tapedev, 1) < 0) {
+		error("could not fsf %s: %s", tapename, strerror(errno));
+	    }
 	}
+	tapefd_close(tapedev);
     }
-    tapefd_close(tapedev);
 
-    if(file.type == F_TAPEEND && !isafile) {
+    if((bytes_read <= 0 || file.type == F_TAPEEND) && !isafile) {
 	fprintf(stderr, "%s: %3d: reached ", get_pname(), file_number);
-	print_header(stderr,&file);
-	return 1;
+	if(bytes_read <= 0) {
+	    fprintf(stderr, "end of information\n");
+	} else {
+	    print_header(stderr,&file);
+	}
+	r = 1;
     }
-    return 0;
+    return r;
 }

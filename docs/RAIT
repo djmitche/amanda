@@ -67,10 +67,10 @@ To tell amanda about the multiple drive set.
 Disaster Recovery:
 
 To assist in disaster recovery (as well as changer scripts) the 
-amanda package now also includes "am-dd", which is a simple dd(1)
+amanda package now also includes "amdd", which is a simple dd(1)
 replacement which supports (only) the "if=xxx", "of=xxx", "bs=nnn[kMb]"
 "skip=nnn" and "count=nnn" options, but which can read and write RAIT 
 tapesets.
 
-Using am-dd and your usual amanda unpack instructions will suffice
+Using amdd and your usual amanda unpack instructions will suffice
 for disaster recovery from RAIT tape-sets.

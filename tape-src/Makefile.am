@@ -10,28 +10,52 @@ noinst_LIBRARIES = 	libamtape.a
 LIB_EXTENSION = a
 endif
 
-libamtape_la_SOURCES = 	tapeio.c \
-			output-rait.c
+libamtape_la_SOURCES = 	output-file.c \
+			output-null.c \
+			output-rait.c \
+			output-tape.c \
+			tapeio.c
 
 libamtape_la_LDFLAGS =  -release $(VERSION)
 
 libamtape_a_SOURCES =	$(libamtape_la_SOURCES)
 
-noinst_HEADERS = 	tapeio.h output-rait.h
+noinst_HEADERS = 	\
+			output-file.h \
+			output-null.h \
+			output-rait.h \
+			output-tape.h \
+			tapeio.h
 
-EXTRA_PROGRAMS = 	tapetype
+TEST_PROGS =		amtapeio
 
-sbin_PROGRAMS=          am-mt am-dd
+EXTRA_PROGRAMS = 	tapetype $(TEST_PROGS)
+
+sbin_PROGRAMS=          ammt amdd
 
 tapetype_LDADD = libamtape.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
 
-am_mt_LDADD = libamtape.$(LIB_EXTENSION) \
+ammt_LDADD = libamtape.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
 
-am_dd_LDADD = libamtape.$(LIB_EXTENSION) \
+amdd_LDADD = libamtape.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
 
 ## So that we can tell people to `cd tape-src && make tapetype':
 ../common-src/libamanda.$(LIB_EXTENSION):
 	cd ../common-src && $(MAKE) libamanda.$(LIB_EXTENSION)
+
+# used for testing only
+
+amtapeio_SOURCES = amtapeio.test.c
+amtapeio_LDADD = libamtape.$(LIB_EXTENSION) \
+	../common-src/libamanda.$(LIB_EXTENSION)
+
+amtapeio.test.c: $(srcdir)/tapeio.c
+	echo '#define TEST' >$@
+	echo '#include "$<"' >>$@
+
+%.test.c: $(srcdir)/%.c
+	echo '#define TEST' >$@
+	echo '#include "$<"' >>$@

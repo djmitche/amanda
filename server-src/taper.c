@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.65 2000/10/11 19:53:19 martinea Exp $
+/* $Id: taper.c,v 1.66 2001/01/25 00:25:30 jrjackson Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -147,6 +147,7 @@ int filenum;
 char *errstr = NULL;
 int tape_fd;
 char *tapedev = NULL;
+char *tapetype = NULL;
 static unsigned long malloc_hist_1, malloc_size_1;
 static unsigned long malloc_hist_2, malloc_size_2;
 char *config_name = NULL;
@@ -236,6 +237,7 @@ char **main_argv;
     }
 
     tapedev	= getconf_str(CNF_TAPEDEV);
+    tapetype    = getconf_str(CNF_TAPETYPE);
 #ifdef HAVE_LIBVTBLC
     rawtapedev = getconf_str(CNF_RAWTAPEDEV);
 #endif /* HAVE_LIBVTBLC */
@@ -597,6 +599,10 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 
     opening = 1;
     syncpipe_put('O');
+    syncpipe_putstr(datestamp);
+    syncpipe_putstr(hostname);
+    syncpipe_putstr(diskname);
+    syncpipe_putint(level);
 
     startclock();
 
@@ -955,6 +961,10 @@ int getp, putp;
     char tok;
     int tape_started, out_open;
     char *str;
+    char *hostname;
+    char *diskname;
+    char *datestamp;
+    int level;
 
 #ifdef HAVE_LIBVTBLC
     char *vol_label;
@@ -991,6 +1001,17 @@ int getp, putp;
 
 	case 'O':		/* open-output */
 	    assert(tape_started);
+	    datestamp = syncpipe_getstr();
+	    tapefd_setinfo_datestamp(tape_fd, datestamp);
+	    amfree(datestamp);
+	    hostname = syncpipe_getstr();
+	    tapefd_setinfo_host(tape_fd, hostname);
+	    amfree(hostname);
+	    diskname = syncpipe_getstr();
+	    tapefd_setinfo_disk(tape_fd, diskname);
+	    amfree(diskname);
+	    level = syncpipe_getint();
+	    tapefd_setinfo_level(tape_fd, level);
 	    write_file();
 	    break;
 
@@ -1223,16 +1244,6 @@ void write_file()
     return;
 }
 
-/*
- * Define the following to test tape error handling.  An EIO error will
- * be simulated after the number of blocks in block_counter.  This works
- * especially well with tapedev set to /dev/null.
- */
-#undef FAKE_TAPE_ERROR
-#if defined(FAKE_TAPE_ERROR)
-static int block_counter = 10;
-#endif
-
 int write_buffer(bp)
 buffer_t *bp;
 {
@@ -1242,12 +1253,6 @@ buffer_t *bp;
 
     startclock();
     rc = tapefd_write(tape_fd, bp->buffer, sizeof(bp->buffer));
-#if defined(FAKE_TAPE_ERROR)
-    if(--block_counter <= 0) {
-	rc = -1;
-	errno = EIO;
-    }
-#endif
     if(rc == sizeof(bp->buffer)) {
 #if defined(NEED_RESETOFS)
 	static double tape_used_modulus_2gb = 0;
@@ -1576,6 +1581,7 @@ int label_tape()
     char *result;
     tape_t *tp;
     static int first_call = 1;
+    tapetype_t *tt;
 
     if(have_changer) {
 	amfree(tapedev);
@@ -1617,7 +1623,7 @@ int label_tape()
     amfree(olddatestamp);
 
     /* check against tape list */
-    if (strcmp(tapedev, "/dev/null") != 0) {
+    if (strcmp(label, FAKE_LABEL) != 0) {
 	tp = lookup_tapelabel(label);
 	if(tp != NULL && !reusable_tape(tp)) {
 	    errstr = newvstralloc(errstr,
@@ -1646,6 +1652,11 @@ int label_tape()
 	return 0;
     }
 
+    tt = lookup_tapetype(tapetype);
+    tapefd_setinfo_length(tape_fd, tt->length);
+
+    tapefd_setinfo_datestamp(tape_fd, taper_datestamp);
+    tapefd_setinfo_disk(tape_fd, label);
     if((result = tapefd_wrlabel(tape_fd, taper_datestamp, label)) != NULL) {
 	errstr = newstralloc(errstr, result);
 	return 0;
@@ -1666,7 +1677,7 @@ int label_tape()
     /* write tape list */
 
     /* XXX add cur_tape number to tape list structure */
-    if (strcmp(tapedev, "/dev/null") != 0) {
+    if (strcmp(label, FAKE_LABEL) != 0) {
 	remove_tapelabel(label);
 	add_tapelabel(atoi(taper_datestamp), label);
 
@@ -1691,7 +1702,7 @@ int label_tape()
 
     log_add(L_START, "datestamp %s label %s tape %d",
 	    taper_datestamp, label, cur_tape);
-    if (first_call && strcmp(tapedev, "/dev/null") == 0) {
+    if (first_call && strcmp(label, FAKE_LABEL) == 0) {
 	first_call = 0;
 	log_add(L_WARNING, "tapedev is %s, dumps will be thrown away", tapedev);
     }
@@ -1904,13 +1915,6 @@ common_exit:
 
 int write_filemark()
 {
-#if defined(FAKE_TAPE_ERROR)
-    if(--block_counter <= 0) {
-	errno = EIO;
-	errstr = newstralloc2(errstr, "writing filemark: ", strerror(errno));
-	return 0;
-    }
-#endif
     if(tapefd_weof(tape_fd, 1) == -1) {
 	errstr = newstralloc2(errstr, "writing filemark: ", strerror(errno));
 	return 0;
@@ -1978,7 +1982,9 @@ int taperscan_slot(rc, slotstr, device)
 		    get_pname(), slotstr, scan_datestamp, label);
 	    fflush(stderr);
 	    amfree(scan_datestamp);
-	    if(searchlabel != NULL && strcmp(label, searchlabel) == 0) {
+	    if(searchlabel != NULL
+	       && (strcmp(label, FAKE_LABEL) == 0
+		   || strcmp(label, searchlabel) == 0)) {
 		/* it's the one we are looking for, stop here */
 		fprintf(stderr, " (exact label match)\n");
 		fflush(stderr);

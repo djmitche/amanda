@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.77 2001/01/09 00:07:07 martinea Exp $
+ * $Id: amcheck.c,v 1.78 2001/01/25 00:25:30 jrjackson Exp $
  *
  * checks for common problems in server and clients
  */
@@ -362,7 +362,9 @@ char *device;
 	    /* got an amanda tape */
 	    fprintf(errf, "%s: slot %s: date %-8s label %s",
 		    get_pname(), slotstr, datestamp, label);
-	    if(searchlabel != NULL && strcmp(label, searchlabel) == 0) {
+	    if(searchlabel != NULL
+	       && (strcmp(label, FAKE_LABEL) == 0
+		   || strcmp(label, searchlabel) == 0)) {
 		/* it's the one we are looking for, stop here */
 		fprintf(errf, " (exact label match)\n");
 		found_device = newstralloc(found_device, device);
@@ -580,7 +582,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
      * Check that the directory for the tapelist file is writable, as well
      * as the tapelist file itself (if it already exists).  Also, check for
      * a "hold" file (just because it is convenient to do it here) and warn
-     * if tapedev is set to "/dev/null".
+     * if tapedev is set to the null device.
      */
 
     if(do_localchk || do_tapechk) {
@@ -624,7 +626,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	amfree(tape_dir);
 	amfree(holdfile);
 	tapename = getconf_str(CNF_TAPEDEV);
-	if (strcmp(tapename, "/dev/null") == 0) {
+	if (strncmp(tapename, "null:", 5) == 0) {
 	    fprintf(outf,
 		    "WARNING: tapedev is %s, dumps will be thrown away\n",
 		    tapename);
@@ -755,7 +757,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	} else if((errstr = tape_rdlabel(tapename, &datestamp, &label)) != NULL) {
 	    fprintf(outf, "ERROR: %s: %s\n", tapename, errstr);
 	    tapebad = 1;
-	} else {
+	} else if(strcmp(label, FAKE_LABEL) != 0) {
 	    tp = lookup_tapelabel(label);
 	    if(tp != NULL && !reusable_tape(tp)) {
 		fprintf(outf, "ERROR: cannot overwrite active tape %s\n", label);
