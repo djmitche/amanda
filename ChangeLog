@@ -1,3 +1,7 @@
+2004-11-19  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amstatus.pl.in: Remove trace.
+
 2004-11-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/diskfile.c: Compilation fix.

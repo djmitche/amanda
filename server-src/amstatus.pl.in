@@ -630,7 +630,6 @@ while(<AMDUMP>) {
 		$error{$hostpart} .= "(too many taper retry)";
 	}
 	elsif(/planner: FAILED (\S+) (\S+) (\S+) (-*\d+) (.*)/) {
-print $_ . "\n";
 		$host=$1;
 		$partition=$2;
 		$datestamp=$3;
