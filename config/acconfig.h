@@ -143,9 +143,6 @@
 /* mail sendmail */
 #undef MAILER
 
-/* driver.c */
-#undef MAXFILESIZE
-
 /* Define as the prefix for disk devices, commonly /dev/ or /dev/dsk/  */
 #undef DEV_PREFIX
 
