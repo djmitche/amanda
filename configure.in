@@ -182,6 +182,12 @@ EOF_SED
 
     # sed with no file args requires a program.
     test "$program_transform_name" = "" && program_transform_name="s,x,x,"
+    # Remove empty command
+    cat <<\EOF_SED > conftestsed
+s,\;\;,\;,g; s,\; \$,,g; s,\;$,,g
+EOF_SED
+    program_transform_name="`echo $program_transform_name|sed -f conftestsed`"
+    rm -f conftestsed
   ;;
 n | no) USE_VERSION_SUFFIXES=no
   ;;
