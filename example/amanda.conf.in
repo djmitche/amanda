@@ -32,6 +32,25 @@ dumporder "sssS"	# specify the priority order of each dumper
 			#   B -> biggest bandwitdh
 			# try "BTBTBTBTBTBT" if you are not holding
 			# disk constrained
+
+taperalgo first		# The algorithm used to choose which dump image to send
+			# to the taper.
+
+			# Possible values: [first|firstfit|largest|largestfit|smallest|last]
+			# Default: first. 
+
+			# first		First in - first out.
+			# firstfit 	The first dump image that will fit on the current tape.
+			# largest 	The largest dump image.
+			# largestfit 	The largest dump image that will fit on the current tape.
+			# smallest 	The smallest dump image.
+			# last 		Last in - first out.
+
+displayunit "k"		# Possible values: "k|m|g|t"
+			# Default: k. 
+			# The unit used to print many numbers.
+			# k=kilo, m=mega, g=giga, t=tera
+			
 netusage  600 Kbps	# maximum net bandwidth for Amanda, in KB per sec
 
 dumpcycle 4 weeks	# the number of days in the normal dump cycle
