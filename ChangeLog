@@ -1,3 +1,7 @@
+2002-12-09  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/reporter.c: Print an usage by tape.
+
 2002-12-05  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* tape-src/tapeio.c (do_read): Init count to 0.

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.17.4.6.2.9 2002/11/19 15:03:38 martinea Exp $
+ * $Id: reporter.c,v 1.44.2.17.4.6.2.10 2002/12/09 18:49:47 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -85,6 +85,17 @@ struct cumulative_stats {
 } stats[3];
 
 int dumpdisks[10], tapedisks[10];	/* by-level breakdown of disk count */
+
+typedef struct taper_s {
+    char *label;
+    double taper_time;
+    double size;
+    int tapedisks;
+    struct taper_s *next;
+} taper_t;
+
+taper_t *stats_by_tape = NULL;
+taper_t *current_tape = NULL;
 
 float total_time, startup_time;
 
@@ -731,7 +742,6 @@ void output_stats()
     divzero(mailf, pct(stats[0].coutsize),stats[0].corigsize);
     fputs("      ", mailf);
     divzero(mailf, pct(stats[1].coutsize),stats[1].corigsize);
-/*    putc('\n', mailf);*/
 
     if(stats[1].dumpdisks > 0) fputs("   (level:#disks ...)", mailf);
     putc('\n', mailf);
@@ -802,6 +812,23 @@ void output_stats()
     fputs("    ", mailf);
     divzero_wide(mailf, stats[1].tapesize,stats[1].taper_time);
     putc('\n', mailf);
+
+    if(stats_by_tape) {
+	int label_length = strlen(stats_by_tape->label) + 5;
+	fprintf(mailf,"\nUSAGE BY TAPE:\n");
+	fprintf(mailf,"  %-*s  Time      Size      %%    Nb\n",
+		label_length, "Label");
+	for(current_tape = stats_by_tape; current_tape != NULL;
+	    current_tape = current_tape->next) {
+	    fprintf(mailf, "  %-*s", label_length, current_tape->label);
+	    fprintf(mailf, " %2d:%2d", hrmn(current_tape->taper_time));
+	    fprintf(mailf, " %9.1f  ", mb(current_tape->size));
+	    divzero(mailf, pct(current_tape->size + 
+			       marksize * current_tape->tapedisks),
+			   tapesize);
+	    fprintf(mailf, "  %4d\n", current_tape->tapedisks);
+	}
+    }
 
     if (postscript) {
       fprintf(postscript, "(Total Size:        %6.1f MB) DrawStat\n",
@@ -1333,9 +1360,12 @@ void handle_start()
 	    bogus_line();
 	    return;
 	}
-	label = s - 1;
+	fp = s - 1;
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';
+
+	label = stralloc(fp);
+	s[-1] = ch;
 
 	if(tape_labels) {
 	    fp = vstralloc(tape_labels, ", ", label, NULL);
@@ -1344,9 +1374,22 @@ void handle_start()
 	} else {
 	    tape_labels = stralloc(label);
 	}
-	s[-1] = ch;
 
 	last_run_tapes++;
+
+	if(stats_by_tape == NULL) {
+	    stats_by_tape = current_tape = (taper_t *)alloc(sizeof(taper_t));
+	}
+	else {
+	    current_tape->next = (taper_t *)alloc(sizeof(taper_t));
+	    current_tape = current_tape->next;
+	}
+	current_tape->label = label;
+	current_tape->taper_time = 0.0;
+	current_tape->size = 0.0;
+	current_tape->tapedisks = 0;
+	current_tape->next = NULL;
+
 	return;
     case P_PLANNER:
 	normal_run = 1;
@@ -1729,6 +1772,13 @@ repdata_t *handle_success()
 	tapedisks[level] +=1;
 	stats[i].tapedisks +=1;
 	stats[i].tapesize += kbytes;
+
+	if(current_tape == NULL) {
+	    error("current_tape == NULL");
+	}
+	current_tape->taper_time += sec;
+	current_tape->size += kbytes;
+	current_tape->tapedisks += 1;
     }
 
     if(curprog == P_DUMPER) {
