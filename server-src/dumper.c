@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.119 1999/04/10 21:11:46 kashmir Exp $
+/* $Id: dumper.c,v 1.120 1999/04/10 22:00:51 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1580,10 +1580,10 @@ bad_nak:
     }
 
     /*
-     * The MESGFD and INDEXFD streams are mandatory.  If we didn't get
+     * The MESGFD and DATAFD streams are mandatory.  If we didn't get
      * them, complain.
      */
-    if (streams[MESGFD].fd == NULL || streams[INDEXFD].fd == NULL) {
+    if (streams[MESGFD].fd == NULL || streams[DATAFD].fd == NULL) {
 	errstr = newstralloc(errstr, "[couldn't open MESG or INDEX streams]");
 	goto connect_error;
     }
