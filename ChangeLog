@@ -1,5 +1,11 @@
 2002-12-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* common-src/arglist.h (printf_arglist_function,
+	  printf_arglist_function1, printf_arglist_function2): Define if
+	  STDC_HEADERS is not defined.
+
+2002-12-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/amstatus.pl.in: New --date option to display datestamp.
 	* server-src/amstatus.pl.in: Increase some field size.
 	* server-src/amstatus.pl.in: The host field adjust it's length to the
