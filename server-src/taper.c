@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.38.2.1 1998/09/11 23:17:17 jrj Exp $
+/* $Id: taper.c,v 1.38.2.2 1998/09/20 09:06:52 oliva Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1167,9 +1167,10 @@ buffer_t *bp;
  * MISC HELPER FUNCTIONS
  *
  */
-cmd_t getcmd(argcp, argvp)
-int *argcp;
-char ***argvp;
+cmd_t
+getcmd(argcp, argvp)
+    int *argcp;
+    char ***argvp;
 {
     /*
      * WARNING: this routine stores the decoded strings in a static buffer.
@@ -1189,16 +1190,17 @@ char ***argvp;
     if((line = agets(stdin)) == NULL) return QUIT;
 
     argc = split(line, argv, sizeof(argv) / sizeof(argv[0]), " ");
-    amfree(line);
 
 #ifdef DEBUG
     {
       int arg;
-      printf("argc = %d\n", argc);
-      for(arg = 0; arg < sizeof(argv) / sizeof(argv[0]); arg++)
-	printf("argv[%d] = \"%s\"\n", arg, argv[arg]);
+      fprintf(stderr, "argc = %d\n", argc);
+      for(arg = 0; arg <= argc; arg++)
+	printf(stderr, "argv[%d] = \"%s\"\n", arg, argv[arg]);
     }
 #endif
+
+    amfree(line);
 
     *argvp = argv;
     *argcp = argc;

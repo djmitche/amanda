@@ -1,3 +1,8 @@
+1998-09-20  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/taper.c (getcmd): print DEBUGging output to stderr
+	Reported by Henning Holtschneider <hh@loca.net>
+
 1998-09-18  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* common-src/Makefile.am (libamanda_la_LDFLAGS): use libtool
