@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.14.2.7.2.13 2003/01/02 19:43:10 martinea Exp $
+/* $Id: dumper.c,v 1.75.2.14.2.7.2.14 2003/01/17 22:34:42 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -659,7 +659,7 @@ int *p_outfd, size;
 
     datain += size;
 
-    while((size == 0 && dataout < datain) || datain >= datalimit) {
+    while(rc == 0 && ((size == 0 && dataout < datain) || datain >= datalimit)) {
 
 	NAUGHTY_BITS;
 
