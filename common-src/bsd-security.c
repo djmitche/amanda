@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.14 1999/01/22 18:06:53 oliva Exp $
+ * $Id: bsd-security.c,v 1.15 1999/03/01 22:02:34 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -73,7 +73,7 @@ struct bsd_handle {
      * Function to call when recvpkt detects new incoming data for this
      * handle
      */
-    void (*fn) P((void *, pkt_t *, security_recvpkt_status_t));
+    void (*fn) P((void *, pkt_t *, security_status_t));
 
     /*
      * Argument for previous function
@@ -151,13 +151,14 @@ struct bsd_stream {
 /*
  * Interface functions
  */
-static int bsd_connect P((void *, const char *));
+static void bsd_connect P((void *, const char *,
+    void (*)(void *, security_handle_t *, security_status_t), void *));
 static void bsd_accept P((int, int, void (*)(void *, void *, pkt_t *),
     void *));
 static void bsd_close P((void *));
 static int bsd_sendpkt P((void *, pkt_t *));
 static void bsd_recvpkt P((void *,
-    void (*)(void *, pkt_t *, security_recvpkt_status_t), void *, int));
+    void (*)(void *, pkt_t *, security_status_t), void *, int));
 static void bsd_recvpkt_cancel P((void *));
 
 static void *bsd_stream_server P((void *));
@@ -259,10 +260,12 @@ static void stream_read_callback P((void *));
 /*
  * Setup and return a handle outgoing to a client
  */
-static int
-bsd_connect(cookie, hostname)
+static void
+bsd_connect(cookie, hostname, fn, arg)
     void *cookie;
     const char *hostname;
+    void (*fn) P((void *, security_handle_t *, security_status_t));
+    void *arg;
 {
     struct bsd_handle *bh = cookie;
     char handle[32];
@@ -277,29 +280,40 @@ bsd_connect(cookie, hostname)
      * Only init the socket once
      */
     if (netfd.socket == 0) {
+	uid_t euid;
 	dgram_zero(&netfd);
+	
+	euid = geteuid();
+	seteuid(0);
 	dgram_bind(&netfd, &port);
+	seteuid(euid);
 	/*
 	 * We must have a reserved port.  Bomb if we didn't get one.
 	 */
 	if (ntohs(port) >= IPPORT_RESERVED) {
 	    security_seterror(&bh->security_handle,
-		"unable to bind to a reserved port");
-	    return (-1);
+		"unable to bind to a reserved port (got port %d)",
+		ntohs(port));
+	    (*fn)(arg, &bh->security_handle, S_ERROR);
+	    return;
 	}
     }
 
     if ((he = gethostbyname(hostname)) == NULL) {
 	security_seterror(&bh->security_handle,
 	    "%s: could not resolve hostname", hostname);
-	return (-1);
+	(*fn)(arg, &bh->security_handle, S_ERROR);
+	return;
     }
     if ((se = getservbyname(AMANDA_SERVICE_NAME, "udp")) == NULL)
 	port = htons(AMANDA_SERVICE_DEFAULT);
     else
 	port = se->s_port;
     ap_snprintf(handle, sizeof(handle), "%ld", (long)time(NULL));
-    return (inithandle(bh, he, port, handle));
+    if (inithandle(bh, he, port, handle) < 0)
+	(*fn)(arg, &bh->security_handle, S_ERROR);
+    else
+	(*fn)(arg, &bh->security_handle, S_OK);
 }
 
 /*
@@ -312,7 +326,7 @@ bsd_accept(in, out, fn, arg)
     void *arg;
 {
 
-    assert(in > 0 && out > 0);
+    assert(in >= 0 && out >= 0);
     assert(fn != NULL);
 
     /*
@@ -443,7 +457,6 @@ bsd_sendpkt(cookie, pkt)
     pkt_t *pkt;
 {
     struct bsd_handle *bh = cookie;
-    char *p;
     struct passwd *pwd;
 
     assert(bh != NULL);
@@ -464,14 +477,12 @@ bsd_sendpkt(cookie, pkt)
 	/*
 	 * Requests get sent with our username in the body
 	 */
-	if ((pwd = getpwuid(getuid())) == NULL) {
+	if ((pwd = getpwuid(geteuid())) == NULL) {
 	    security_seterror(&bh->security_handle,
 		"can't get login name for my uid %ld", (long)getuid());
 	    return (-1);
 	}
-	p = vstralloc("SECURITY USER ", pwd->pw_name, "\n", NULL);
-	dgram_cat(&netfd, p);
-	amfree(p);
+	dgram_cat(&netfd, "SECURITY USER %s\n", pwd->pw_name);
 	break;
 
     default:
@@ -497,7 +508,7 @@ bsd_sendpkt(cookie, pkt)
 static void
 bsd_recvpkt(cookie, fn, arg, timeout)
     void *cookie, *arg;
-    void (*fn) P((void *, pkt_t *, security_recvpkt_status_t));
+    void (*fn) P((void *, pkt_t *, security_status_t));
     int timeout;
 {
     struct bsd_handle *bh = cookie;
@@ -576,7 +587,7 @@ recvpkt_callback(cookie)
     int sequence;
     struct bsd_handle *bh;
     struct hostent *he;
-    void (*fn) P((void *, pkt_t *, security_recvpkt_status_t));
+    void (*fn) P((void *, pkt_t *, security_status_t));
     void *arg;
 
     assert(cookie == NULL);
@@ -612,9 +623,9 @@ recvpkt_callback(cookie)
 	    arg = bh->arg;
 	    bsd_recvpkt_cancel(bh);
 	    if (recv_security_ok(bh, &pkt) < 0)
-		(*fn)(arg, NULL, RECV_ERROR);
+		(*fn)(arg, NULL, S_ERROR);
 	    else
-		(*fn)(arg, &pkt, RECV_OK);
+		(*fn)(arg, &pkt, S_OK);
 	    return;
 	}
     }
@@ -653,7 +664,7 @@ recvpkt_timeout(cookie)
     void *cookie;
 {
     struct bsd_handle *bh = cookie;
-    void (*fn) P((void *, pkt_t *, security_recvpkt_status_t));
+    void (*fn) P((void *, pkt_t *, security_status_t));
     void *arg;
 
     assert(bh != NULL);
@@ -662,7 +673,7 @@ recvpkt_timeout(cookie)
     fn = bh->fn;
     arg = bh->arg;
     bsd_recvpkt_cancel(bh);
-    (*fn)(arg, NULL, RECV_TIMEOUT);
+    (*fn)(arg, NULL, S_TIMEOUT);
 
 }
 

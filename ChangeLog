@@ -1,5 +1,14 @@
 1999-03-01  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/bsd-security.c (bsd_connect): properly munge the uids
+	to get a reserved port
+	* common-src/bsd-security.c: adapt to the security_connect
+	callback changes
+	* common-src/bsd-security.c (bsd_sendpkt): dgram_cat is varargs now,
+	so skip the vstralloc
+
+1999-03-01  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/event.c: implement EV_WAIT events.  Implement macros
 	for adding/removing/traversing the event queue
 	* common-src/event.h: define EV_WAIT, and prototype event_wakeup()
