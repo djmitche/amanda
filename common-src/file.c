@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.7 1998/01/02 18:47:56 jrj Exp $
+ * $Id: file.c,v 1.8 1998/01/12 21:34:19 blair Exp $
  *
  * file and directory bashing routines
  */
@@ -211,7 +211,6 @@ agets(file)
     int line_size, line_free, size_save, line_len;
     char *cp;
     char *f;
-    int ch;
 
 #define	AGETS_LINE_INCR	128
 
