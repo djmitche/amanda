@@ -1,7 +1,8 @@
 .deps
-Makefile.in
+.libs
 Makefile
+Makefile.in
 amrecover
-uscan.c
-uparse.h
 uparse.c
+uparse.h
+uscan.c

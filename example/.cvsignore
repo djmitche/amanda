@@ -1,3 +1,7 @@
-Makefile.in
 Makefile
+Makefile.in
 amanda.conf
+amanda.conf.chg-scsi
+chg-scsi-hpux.conf
+chg-scsi-linux.conf
+chg-scsi-solaris.conf

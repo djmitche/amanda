@@ -1,5 +1,5 @@
-Makefile.in
 Makefile
+Makefile.in
 amadmin.8
 amanda.8
 amcheck.8
@@ -7,9 +7,12 @@ amcheckdb.8
 amcleanup.8
 amdump.8
 amflush.8
+amgetconf.8
 amlabel.8
 amoverview.8
 amrecover.8
+amreport.8
 amrmtape.8
+amstatus.8
 amtoc.8
 amverify.8
