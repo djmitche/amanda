@@ -23,8 +23,6 @@ va_dcl
     va_list ap;
     int argc = 0, pid, i;
     char **argv;
-    char *passwdvar = NULL;
-    int *passwdfd = NULL;
 
     /* count args */
     arglist_start(ap, stderrfd);
@@ -37,10 +35,6 @@ va_dcl
      * Create the argument vector.
      */
     arglist_start(ap, stderrfd);
-    if ((pipedef & PASSWD_PIPE) != 0) {
-        passwdvar = arglist_val(ap, char *);
-        passwdfd = arglist_val(ap, int *);
-    }
     argv = (char **)alloc((argc + 1) * sizeof(*argv));
     i = 0;
     while((argv[i] = arglist_val(ap, char *)) != NULL) {
