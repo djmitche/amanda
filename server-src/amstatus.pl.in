@@ -618,7 +618,7 @@ if (defined $opt_summary) {
 	}
 	if(defined($current_time) && $current_time != $start_time) {
 		$total_time=$current_time-$start_time;
-		foreach $key (sort keys %busy_time) {
+		foreach $key (sort byprocess keys %busy_time) {
 			printf "%8s busy   : %8s  (%6.2f%%)\n",
 				$key, &busytime($busy_time{$key}),
 				($busy_time{$key} * 1.0 / $total_time) * 100;
@@ -649,6 +649,12 @@ if (defined $opt_summary) {
 	}
 }
 
+sub byprocess() {
+	my(@tmp_a) = split(/(\d*)$/, $a, 2);
+	my(@tmp_b) = split(/(\d*)$/, $b, 2);
+	return ($tmp_a[0] cmp $tmp_b[0]) || ($tmp_a[1] <=> $tmp_b[1]);
+}                               
+ 
 sub valuesort() {
 	$r->{$b} <=> $r->{$a};
 }
