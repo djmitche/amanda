@@ -1,3 +1,7 @@
+2001-02-04 John R. Jackson <jrj@purdue.edu>
+
+	* man/amanda.8.in: Fix mailto to space separated, not comma.
+
 2001-02-03 John R. Jackson <jrj@purdue.edu>
 
 	* .cvsignore: Add entries to keep CVS quiet.
