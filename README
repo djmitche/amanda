@@ -116,7 +116,7 @@ WHERE DO I GET AMANDA?
 There are several versions of Amanda.  The latest version at the time
 of this writing is 2.4.0 available at:
 
-	ftp://ftp.cs.umd.edu/pub/amanda
+	ftp://ftp.amanda.org/pub/amanda
 
 
 HOW DO I GET AMANDA UP AND RUNNING?
@@ -157,7 +157,7 @@ The following mailing lists are maintained for those interested in Amanda:
     amanda-users
         The amanda-users mailing list is for questions and general discussion
         about the Amanda Network Backup Manager.  This package and related
-        files are available via anonymous FTP from ftp.cs.umd.edu in the
+        files are available via anonymous FTP from ftp.amanda.org in the
         pub/amanda directory.  NOTE: the amanda-users list is itself on the
         amanda-announce distribution, so you only need to subscribe to one of
         the two lists, not both.

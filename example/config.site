@@ -308,7 +308,7 @@
 #			KRB4_SECURITY requires source files from the separate
 #			"amanda-krb4" package.  See the KERBEROS.HOW-TO-GET
 #			instructions on the Amanda home ftp site,
-#			ftp.cs.umd.edu.
+#			ftp.amanda.org.
 # KRB4_SECURITY=yes
 
 # If you turn on KRB4_SECURITY, you must set all these options below.

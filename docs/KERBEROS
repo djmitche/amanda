@@ -7,7 +7,7 @@ Note that kerberos 5 isn't supported.  [yet]
 
 The Kerberos-related Amanda source code is available in a separate,
 export restricted, package.  US sites can follow the instructions in
-KERBEROS.HOW-TO-GET on ftp.cs.umd.edu in the amanda directory.
+KERBEROS.HOW-TO-GET on ftp.amanda.org in the pub/amanda directory.
 
 1. CONFIGURATION
 
