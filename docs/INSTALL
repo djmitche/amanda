@@ -68,8 +68,8 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	Amplot also required that gnuplot be installed on your system.
 	Gnuplot is available at
 
-	    http://www.cs.dartmouth.edu/gnuplot_info.html
-	    ftp://ftp.dartmouth.edu/pub/gnuplot
+	    http://www.gnuplot.org/
+	    ftp://ftp.gnuplot.org/pub/gnuplot
 
     D.	The process of building Amanda requires that some other
 	packages be installed on your system.  The following packages
