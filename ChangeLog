@@ -1,5 +1,20 @@
 2002-02-13  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/conffile.h (dumptype_t): Add include_file and include_list.
+	* server-src/conffile.c: Read include.
+	* server-src/diskfile.h (disk_t): Add include_file and include_list.
+	* server-src/diskfile.c (optionstr): Add include to the optionstr.
+	* server-src/amadmin.c (disklist_one): Print include.
+	* server-src/planner.c: Use new protocol if include is used.
+	* client-src/client_util.h (option_t): Add include_file and include_list
+	* client-src/client_util.c (parse_options): Parse include.
+	* client-src/selfcheck.c (check_options): Print ERROR if include are
+	  used for SAMBA or DUMP.
+	* client-src/sendsize.c: Send include to gnutar.
+	* client-src/sendbackup-gnutar.c: Send include to gnutar.
+
+2002-02-13  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* client-src/client_util.c (parse_options): Check that files from 
 	  'exclude list' exist'.
 	* client-src/selfcheck.c (check_options): Give ERROR if multiple 

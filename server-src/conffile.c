@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.16.2.5.2.5 2002/02/13 14:51:16 martinea Exp $
+ * $Id: conffile.c,v 1.54.2.16.2.5.2.6 2002/02/14 01:50:42 martinea Exp $
  *
  * read configuration file
  */
@@ -87,7 +87,7 @@ typedef enum {
     OPTIONS, PRIORITY, FREQUENCY, INDEX,
     STARTTIME, COMPRESS, AUTH, STRATEGY,
     SKIP_INCR, SKIP_FULL, RECORD, HOLDING,
-    EXCLUDE, KENCRYPT, IGNORE, COMPRATE,
+    EXCLUDE, INCLUDE, KENCRYPT, IGNORE, COMPRATE,
 
     /* tape type */
     /*COMMENT,*/ BLOCKSIZE, FILE_PAD, LBL_TEMPL, FILEMARK, LENGTH, SPEED,
@@ -275,6 +275,7 @@ static void get_priority P((void));
 static void get_auth P((void));
 static void get_strategy P((void));
 static void get_exclude P((void));
+static void get_include P((void));
 
 static void get_simple P((val_t *var, int *seen, tok_t type));
 static int get_time P((void));
@@ -1182,6 +1183,7 @@ keytab_t dumptype_keytable[] = {
     { "FREQUENCY", FREQUENCY },	/* XXX - historical */
     { "HOLDINGDISK", HOLDING },
     { "IGNORE", IGNORE },
+    { "INCLUDE", INCLUDE },
     { "INDEX", INDEX },
     { "KENCRYPT", KENCRYPT },
     { "MAXCYCLE", MAXCYCLE },	/* XXX - historical */
@@ -1284,6 +1286,9 @@ dumptype_t *read_dumptype(name, from, fname, linenum)
 	    get_simple(&tmpval, &dpcur.s_ignore, BOOL);
 	    dpcur.ignore = (tmpval.i != 0);
 	    break;
+	case INCLUDE:
+	    get_include();
+	    break;
 	case INDEX:
 	    get_simple(&tmpval, &dpcur.s_index, BOOL);
 	    dpcur.index = (tmpval.i != 0);
@@ -1384,6 +1389,8 @@ static void init_dumptype_defaults()
     dpcur.program = "DUMP";
     dpcur.exclude_file = NULL;
     dpcur.exclude_list = NULL;
+    dpcur.include_file = NULL;
+    dpcur.include_list = NULL;
     dpcur.priority = 1;
     dpcur.dumpcycle = conf_dumpcycle.i;
     dpcur.maxcycle = conf_maxcycle.i;
@@ -1408,6 +1415,8 @@ static void init_dumptype_defaults()
     dpcur.s_program = 0;
     dpcur.s_exclude_file = 0;
     dpcur.s_exclude_list = 0;
+    dpcur.s_include_file = 0;
+    dpcur.s_include_list = 0;
     dpcur.s_priority = 0;
     dpcur.s_dumpcycle = 0;
     dpcur.s_maxcycle = 0;
@@ -1462,6 +1471,8 @@ static void copy_dumptype()
     dtcopy(program, s_program);
     dpcur.exclude_file = duplicate_sl(dt->exclude_file);
     dpcur.exclude_list = duplicate_sl(dt->exclude_list);
+    dpcur.include_file = duplicate_sl(dt->include_file);
+    dpcur.include_list = duplicate_sl(dt->include_list);
     dtcopy(priority, s_priority);
     dtcopy(dumpcycle, s_dumpcycle);
     dtcopy(maxcycle, s_maxcycle);
@@ -2073,6 +2084,55 @@ static void get_exclude()
 	dpcur.exclude_file = exclude;
     else
 	dpcur.exclude_list = exclude;
+
+    keytable = save_kt;
+}
+
+
+static void get_include()
+{
+    int list, got_one = 0;
+    keytab_t *save_kt;
+    sl_t *include;
+
+    save_kt = keytable;
+    keytable = exclude_keytable;
+
+    get_conftoken(ANY);
+    if(tok == LIST) {
+	list = 1;
+	include = dpcur.include_list;
+	ckseen(&dpcur.s_include_list);
+	get_conftoken(ANY);
+    }
+    else {
+	list = 0;
+	include = dpcur.include_file;
+	ckseen(&dpcur.s_include_file);
+	if(tok == EFILE) get_conftoken(ANY);
+    }
+
+    if(tok == APPEND) {
+	get_conftoken(ANY);
+    }
+    else {
+	free_sl(include);
+	include = NULL;
+    }
+
+    while(tok == STRING) {
+	include = append_sl(include, tokenval.s);
+	got_one = 1;
+	get_conftoken(ANY);
+    }
+    unget_conftoken();
+
+    if(got_one == 0) { free_sl(include); include = NULL; }
+
+    if(list == 0)
+	dpcur.include_file = include;
+    else
+	dpcur.include_list = include;
 
     keytable = save_kt;
 }

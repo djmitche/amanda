@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.24.2.8.4.4.2.2 2002/02/13 14:51:16 martinea Exp $
+ * $Id: conffile.h,v 1.24.2.8.4.4.2.3 2002/02/14 01:50:42 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -132,6 +132,8 @@ typedef struct dumptype_s {
     char *program;
     sl_t *exclude_file;
     sl_t *exclude_list;
+    sl_t *include_file;
+    sl_t *include_list;
     int priority;
     int dumpcycle;
     int maxcycle;
@@ -156,6 +158,8 @@ typedef struct dumptype_s {
     int s_program;
     int s_exclude_file;
     int s_exclude_list;
+    int s_include_file;
+    int s_include_list;
     int s_priority;
     int s_dumpcycle;
     int s_maxcycle;
