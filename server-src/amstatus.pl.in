@@ -455,6 +455,9 @@ $fsize = 0;
 $wpartition = 0;
 $wsize = 0;
 
+$flpartition = 0;
+$flsize = 0;
+
 $dtpartition = 0;
 $dtesize = 0;
 $dupartition = 0;
@@ -480,215 +483,228 @@ $tesize = 0;
 foreach $host (sort @hosts) {
 	foreach $partition (sort @$host) {
 	   foreach $datestamp (@datestamp) {
-		$nb_partition++;
-		$hostpart = "$host$partition$datestamp";
-		if($estimate_done != 1) {
-			if(defined $estimate{$hostpart}) {
-				if($estimate{$hostpart} != 1) {
-					if( defined $opt_gestimate ) {
-						printf "%-40s", "$host:$partition";
-						print "            getting estimate\n";
-					}
-				}
-				else {
-					if( defined $opt_estimate ) {
-						printf "%-40s", "$host:$partition";
-						printf "%2d",  $level{$hostpart};
-						printf "%8dk", $esize{$hostpart};
-						print " estimate done\n";
-					}
-					$epartition++;
-					$estsize += $esize{$hostpart};
-				}
-				if(defined $esize{$hostpart} && $esize{$hostpart} > 0) {
-					$epartition++;
-					$estsize += $esize{$hostpart};
+			$hostpart=&make_hostpart($host,$partition,$datestamp);
+			next if(!defined $estimate{$hostpart} && !defined $flush{$hostpart});
+			$nb_partition++;
+			if($estimate_done != 1) {
+				if(defined $estimate{$hostpart}) {
 					if($estimate{$hostpart} != 1) {
-						if( defined $opt_failed ) {
+						if( defined $opt_gestimate) {
+							printf "%-40s", "$host:$partition";
+							print "            getting estimate\n";
+						}
+					}
+					else {
+						if(defined $opt_estimate) {
+							printf "%-40s", "$host:$partition";
+							printf "%2d",  $level{$hostpart};
+							printf "%8dk", $esize{$hostpart};
+							print " estimate done\n";
+						}
+						$epartition++;
+						$estsize += $esize{$hostpart};
+					}
+				}
+			}
+			else {
+				if(defined $estimate{$hostpart}) {
+					if($estimate{$hostpart} == 1) {
+						$epartition++;
+						$estsize += $esize{$hostpart};
+					}
+					else {
+						if( defined $opt_failed) {
 							printf "%-40s%2d", "$host:$partition", $level{$hostpart};
 							print " no estimate\n";
 						}
-						$epartition--;
-						$estsize -= $esize{$hostpart};
 						$fpartition++;
 					}
 				}
-			}
-		}
-		elsif(defined $taper_started{$hostpart} &&
-		      $taper_started{$hostpart}==1) {
-			if(defined $dump_started{$hostpart}) {
-				$dpartition++;
-				$dsize += $size{$hostpart};
-				$desize += $esize{$hostpart};
-			}
-			if(defined $dump_started{$hostpart} &&
-			   $dump_started{$hostpart} == 1 &&
-			      $dump_finished{$hostpart} != 1 &&
-			      $taper_started{$hostpart} == 1) {
-				if( defined $opt_dumpingtape ) {
-					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
-					printf "%8dk", $size{$hostpart};
-					print " dumping to tape";
-					if( defined $starttime ) {
-						print " (", &showtime($taper_time{$hostpart}), ")";
-					}
-					print "\n";
-				}
-				$dtpartition++;
-				$dtesize += $esize{$hostpart};
-			}
-			elsif($taper_finished{$hostpart} == 0) {
-				if( !defined $size{$hostpart}) {
-					$size{$hostpart} = &dump_size($holding_file{$hostpart}) / 1024;
-				}
-				if( defined $opt_writingtape ) {
-					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
-					printf "%8dk", $size{$hostpart};
-					print " writing to tape";
-					if( defined $starttime ) {
-						print " (", &showtime($taper_time{$hostpart}), ")";
-					}
-					print "\n";
-				}
-				$tapartition++;
-				$tasize += $size{$hostpart};
-				if(defined $esize{$hostpart}) {
-					$taesize += $esize{$hostpart};
-				}
 				else {
-					$taesize += $size{$hostpart};
-				}
-			}
-			elsif($taper_finished{$hostpart} < 0) {
-				if( defined $opt_failed ) {
-					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
-					printf "%8dk", $size{$hostpart};
-					print " failed to tape";
-					print " (will retry)" unless $taper_finished{$hostpart} < -1;
-					if( defined $starttime ) {
-						print " (", &showtime($taper_time{$hostpart}), ")";
+					$flpartition++;
+					if(!defined $taper_finished{$hostpart} ||
+						$taper_finished{$hostpart}==0) {
+						$flsize = &dump_size($holding_file{$hostpart}) / 1024;
 					}
-					print "\n";
-				}
-				$tfpartition++;
-				$tfsize += $size{$hostpart};
-				if(defined $esize{$hostpart}) {
-					$tfesize += $esize{$hostpart};
-				}
-				else {
-					$tfesize += $size{$hostpart};
-				}
-			}
-			elsif($taper_finished{$hostpart} == 1) {
-				if( defined $opt_finished ) {
-					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
-					printf "%8dk", $size{$hostpart};
-					print " finished";
-					if( defined $starttime ) {
-						print " (", &showtime($taper_time{$hostpart}), ")";
+					else {
+						$flsize += $size{$hostpart};
 					}
-					print "\n";
 				}
-				$tpartition++;
-				$tsize += $size{$hostpart};
-				if(defined $esize{$hostpart}) {
-					$tesize += $esize{$hostpart};
+				if(defined $taper_started{$hostpart} &&
+			      $taper_started{$hostpart}==1) {
+					if(defined $dump_started{$hostpart}) {
+						$dpartition++;
+						$dsize += $size{$hostpart};
+						$desize += $esize{$hostpart};
+					}
+					if(defined $dump_started{$hostpart} &&
+					   $dump_started{$hostpart} == 1 &&
+					      $dump_finished{$hostpart} != 1 &&
+					      $taper_started{$hostpart} == 1) {
+						if( defined $opt_dumpingtape ) {
+							printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+							printf "%8dk", $size{$hostpart};
+							print " dumping to tape";
+							if( defined $starttime ) {
+								print " (", &showtime($taper_time{$hostpart}), ")";
+							}
+							print "\n";
+						}
+						$dtpartition++;
+						$dtesize += $esize{$hostpart};
+					}
+					elsif($taper_finished{$hostpart} == 0) {
+						if( !defined $size{$hostpart}) {
+							$size{$hostpart} = &dump_size($holding_file{$hostpart}) / 1024;
+						}
+						if( defined $opt_writingtape ) {
+							printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+							printf "%8dk", $size{$hostpart};
+							print " writing to tape";
+							if( defined $starttime ) {
+								print " (", &showtime($taper_time{$hostpart}), ")";
+							}
+							print "\n";
+						}
+						$tapartition++;
+						$tasize += $size{$hostpart};
+						if(defined $esize{$hostpart}) {
+							$taesize += $esize{$hostpart};
+						}
+						else {
+							$taesize += $size{$hostpart};
+						}
+					}
+					elsif($taper_finished{$hostpart} < 0) {
+						if( defined $opt_failed ) {
+							printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+							printf "%8dk", $size{$hostpart};
+							print " failed to tape";
+							print " (will retry)" unless $taper_finished{$hostpart} < -1;
+							if( defined $starttime ) {
+								print " (", &showtime($taper_time{$hostpart}), ")";
+							}
+							print "\n";
+						}
+						$tfpartition++;
+						$tfsize += $size{$hostpart};
+						if(defined $esize{$hostpart}) {
+							$tfesize += $esize{$hostpart};
+						}
+						else {
+							$tfesize += $size{$hostpart};
+						}
+					}
+					elsif($taper_finished{$hostpart} == 1) {
+						if( defined $opt_finished ) {
+							printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+							printf "%8dk", $size{$hostpart};
+							print " finished";
+							if( defined $starttime ) {
+								print " (", &showtime($taper_time{$hostpart}), ")";
+							}
+							print "\n";
+						}
+						$tpartition++;
+						$tsize += $size{$hostpart};
+						if(defined $esize{$hostpart}) {
+							$tesize += $esize{$hostpart};
+						}
+						else {
+							$tesize += $size{$hostpart};
+						}
+					}
+					else {
+						printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+						print " unknown state TAPER\n";
+					}
 				}
-				else {
-					$tesize += $size{$hostpart};
+				elsif(defined $dump_started{$hostpart}) {
+					if($dump_started{$hostpart} == -1) {
+						if( defined $opt_failed ) {
+							printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+							printf " " . $error{$hostpart} . "\n";
+						}
+						$fpartition++;
+						$fsize+=$esize{$hostpart};
+					}
+					elsif($dump_started{$hostpart} != 1) {
+						if( defined $opt_waitdumping ) {
+							printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+							printf "%8dk", $esize{$hostpart};
+							print " wait for dumping $error{$hostpart}\n";
+						}
+						$wpartition++;
+						$wsize += $esize{$hostpart};
+					}
+					elsif($dump_started{$hostpart} == 1 &&
+					      $dump_finished{$hostpart} == -1) {
+						if( defined $opt_failed ) {
+							printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+							print " ", $error{$hostpart};
+							if( defined $starttime ) {
+								print " (", &showtime($dump_time{$hostpart}), ")";
+							}
+							print "\n";
+						}
+						$fpartition++;
+						$fsize+=$esize{$hostpart};
+					}
+					elsif($dump_started{$hostpart} == 1 &&
+					      $dump_finished{$hostpart} != 1) {
+						$size = &dump_size($holding_file{$hostpart});
+						if( defined $opt_dumping ) {
+							printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+							printf "%8dk", $esize{$hostpart};
+							printf " dumping %8dk", $size/1024;
+							if($size{$hostpart} != 0) {
+								printf " (%6.2f%%)", 
+										 (100.0*$size)/(1024.0*$esize{$hostpart});
+							}
+							if( defined $starttime ) {
+								print " (", &showtime($dump_time{$hostpart}), ")";
+							}
+							print "\n";
+						}
+						$dupartition++;
+						$dusize += $size/1024;
+						$duesize += $esize{$hostpart};
+					}
+					elsif($dump_finished{$hostpart} == 1 &&
+					      $taper_started{$hostpart} != 1) {
+						if( defined $opt_waittaper ) {
+							printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+							printf "%8dk", $size{$hostpart};
+							print " dump done";
+							if( defined $starttime ) {
+								print " (", &showtime($dump_time{$hostpart}), ")";
+							}
+							print ", wait for writing to tape\n";
+						}
+						$dpartition++;
+						$dsize += $size{$hostpart};
+						$desize += $esize{$hostpart};
+						$twpartition++;
+						$twsize += $size{$hostpart};
+						$twesize += $esize{$hostpart};
+					}
+					else {
+						printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+						print " unknown state DUMPER\n";
+					}
 				}
-			}
-			else {
-				printf "%-40s%2d", "$host:$partition", $level{$hostpart};
-				print " unknown state TAPER\n";
+				elsif(defined $flush{$hostpart}) {
+					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+					$size = &dump_size($holding_file{$hostpart}) / 1024;
+					printf "%8dk", $size;
+					print " waiting to flush\n";
+				}
+				elsif(defined $level{$hostpart}) {
+					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+					print " unknown state\n";
+				}
 			}
 		}
-		elsif(defined $dump_started{$hostpart}) {
-			if($dump_started{$hostpart} == -1) {
-				if( defined $opt_failed ) {
-					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
-					printf " " . $error{$hostpart} . "\n";
-				}
-				$fpartition++;
-				$fsize+=$esize{$hostpart};
-			}
-			elsif($dump_started{$hostpart} != 1) {
-				if( defined $opt_waitdumping ) {
-					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
-					printf "%8dk", $esize{$hostpart};
-					print " wait for dumping $error{$hostpart}\n";
-				}
-				$wpartition++;
-				$wsize += $esize{$hostpart};
-			}
-			elsif($dump_started{$hostpart} == 1 &&
-			      $dump_finished{$hostpart} == -1) {
-				if( defined $opt_failed ) {
-					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
-					print " ", $error{$hostpart};
-					if( defined $starttime ) {
-						print " (", &showtime($dump_time{$hostpart}), ")";
-					}
-					print "\n";
-				}
-				$fpartition++;
-				$fsize+=$esize{$hostpart};
-			}
-			elsif($dump_started{$hostpart} == 1 &&
-			      $dump_finished{$hostpart} != 1) {
-				$size = &dump_size($holding_file{$hostpart});
-				if( defined $opt_dumping ) {
-					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
-					printf "%8dk", $esize{$hostpart};
-					printf " dumping %8dk", $size/1024;
-					if($size{$hostpart} != 0) {
-						printf " (%6.2f%%)", 
-								 (100.0*$size)/(1024.0*$esize{$hostpart});
-					}
-					if( defined $starttime ) {
-						print " (", &showtime($dump_time{$hostpart}), ")";
-					}
-					print "\n";
-				}
-				$dupartition++;
-				$dusize += $size/1024;
-				$duesize += $esize{$hostpart};
-			}
-			elsif($dump_finished{$hostpart} == 1 &&
-			      $taper_started{$hostpart} != 1) {
-				if( defined $opt_waittaper ) {
-					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
-					printf "%8dk", $size{$hostpart};
-					print " dump done";
-					if( defined $starttime ) {
-						print " (", &showtime($dump_time{$hostpart}), ")";
-					}
-					print ", wait for writing to tape\n";
-				}
-				$dpartition++;
-				$dsize += $size{$hostpart};
-				$desize += $esize{$hostpart};
-				$twpartition++;
-				$twsize += $size{$hostpart};
-				$twesize += $esize{$hostpart};
-			}
-			else {
-				printf "%-40s%2d", "$host:$partition", $level{$hostpart};
-				print " unknown state DUMPER\n";
-			}
-		}
-		elsif(defined $flush{$hostpart}) {
-			printf "%-40s%2d", "$host:$partition", $level{$hostpart};
-			$size = &dump_size($holding_file{$hostpart}) / 1024;
-			printf "%8dk", $size;
-			print " waiting to flush\n";
-		}
-		elsif(defined $level{$hostpart}) {
-			printf "%-40s%2d", "$host:$partition", $level{$hostpart};
-			print " unknown state\n";
-		}
-	    }
 	}
 }
 
@@ -698,6 +714,7 @@ if (defined $opt_summary) {
 	print  "                          size      size\n";
 	printf "partition       : %3d\n", $nb_partition;
 	printf "estimated       : %3d %18dk\n", $epartition , $estsize;
+	printf "flush           : %3d %8dk\n", $flpartition, $flsize;
 	printf "failed          : %3d %18dk           (%6.2f%%)\n",
 		$fpartition , $fsize,
 		$estsize ? ($fsize * 1.0 / $estsize) * 100 : 0.0;
