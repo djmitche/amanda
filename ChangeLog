@@ -1,3 +1,15 @@
+1998-07-04  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* NEWS: documented major changes since amanda 2.3.0.4
+
+	* docs/INSTALL: refer to patch-system for editing services and
+ 	inetd.conf
+
+	* docs/FAQ: added entries for common amdump and amcheck errors
+
+	* COPYRIGHT: updated to 1998, refer to Amanda Development Team
+	* AUTHORS: who is the Amanda Development Team
+
 1998-07-03  John R. Jackson  <jrj@purdue.edu>
 
 	* docs/SYSTEM.NOTES: add comment about using the variable device name
