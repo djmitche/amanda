@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.40.2.6 2001/08/01 22:35:02 jrjackson Exp $
+ * $Id: selfcheck.c,v 1.40.2.7 2001/08/04 01:58:49 jrjackson Exp $
  *
  * do self-check and send back any error messages
  */
@@ -322,7 +322,10 @@ int level;
 		goto common_exit;
 	    }
 	    if ((subdir) && (SAMBA_VERSION < 2)) {
-		err = stralloc2("subdirectory specified for share but samba not v2 or better. disk: ", disk);
+		err = vstralloc("subdirectory specified for share '",
+				disk,
+				"' but samba not v2 or better",
+				NULL);
 		goto common_exit;
 	    }
 	    if ((user_and_password = findpass(share, &domain)) == NULL) {

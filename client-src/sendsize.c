@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.17 2001/08/01 22:35:02 jrjackson Exp $
+ * $Id: sendsize.c,v 1.97.2.18 2001/08/04 01:58:49 jrjackson Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -951,12 +951,13 @@ long getsize_smbtar(disk, level, exclude_spec)
     if (!share) {
 	amfree(share);
 	amfree(subdir);
-	error("%s-smbtar: cannot parse disk entry '%s' for share/subdir", get_pn
+	error("%s-smbtar: cannot parse disk entry '%s' for share/subdir",
+	      get_pname(), disk);
     }
     if ((subdir) && (SAMBA_VERSION < 2)) {
 	amfree(share);
 	amfree(subdir);
-	error("%s-smbtar: subdirectory specified for share but samba not v2 or b
+	error("%s-smbtar: subdirectory specified for share '%s' but samba not v2 or better", get_pname(), disk);
     }
     if ((user_and_password = findpass(share, &domain)) == NULL) {
 
