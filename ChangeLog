@@ -1,3 +1,7 @@
+1998-07-29  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/FAQ: disk offline
+
 1998-07-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* restore-src/amidxtaped.c (main): use tape_rewind() instead of

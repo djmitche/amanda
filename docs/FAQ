@@ -170,8 +170,8 @@ spread full backups along the dumpcycle, so you won't have any
 full-only or incremental-only runs.
 
 
-Q: What if my my tape unit uses expensive tapes, and I don't want to
-use one tape per day?  Can't Amanda append to tapes?
+Q: What if my tape unit uses expensive tapes, and I don't want to use
+one tape per day?  Can't Amanda append to tapes?
 
 A: It can't, and this is good.  Tape drives and OS drivers are
 (in)famous for rewinding tapes at unexpected times, without telling
@@ -247,6 +247,25 @@ directories as you need.
 subset of the subdirectories of a filesystem separately.  The others
 can be backed up together with the root of the filesystem, using an
 exclude list that prevents duplicate backups.
+
+
+Q: Why does `amdump' report `disk offline'?
+
+A: Well, assuming the disk is not really off line :-), it may be a
+permission problem, but then, `amcheck' would have reported it.
+
+   Another possible reason for this failure is a filesystem error,
+that causes DUMP to crash before it estimates the backup size; a
+`fsck' may help.
+
+   Yet another possibility is that the filesystem is so large that the
+backup program is incorrectly reporting the estimated size, for
+example, by printing a negative value that Amanda will not accept as a
+valid estimate.  If you are using DUMP, contact your vendor and
+request a patch for dump that fixes this bug.  If you are using GNU
+tar, make sure it is release 1.12 or newer; 1.11.8 won't do!  Even
+release 1.12 may require a patch to correctly report estimates and
+dump sizes; check the patches directory of the Amanda distribution.
 
 
 Q: Why does `amrecover' report `no index records' or `disk not found'?
