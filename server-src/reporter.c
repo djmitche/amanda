@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.21 1998/02/26 19:25:21 jrj Exp $
+ * $Id: reporter.c,v 1.22 1998/03/02 15:55:58 amcore Exp $
  *
  * nightly Amanda Report generator
  */
@@ -84,7 +84,7 @@ char *curstr;
 extern char *datestamp;
 char *tape_labels = NULL;
 int last_run_tapes = 0;
-int degraded_mode = 0;
+static int degraded_mode = 0; /* defined in driverio too */
 int normal_run = 0;
 int amflush_run = 0;
 int testing = 0;
