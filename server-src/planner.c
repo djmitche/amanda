@@ -49,24 +49,17 @@ char *pname = "planner";
 #define DEFAULT_DUMPRATE         30.0	/* K/s */
 #define DEFAULT_COMPRATE         0.50	/* 50% */
 
-#define est_time(d,l)(l?\
-		      (est_size(d,l)*compratio(d,incrcomp)/est(d)->incrrate):\
-		      (est_size(d,l)*compratio(d,fullcomp)/est(d)->fullrate))
-
-/* 
- * make sure over-inflated compression ratios don't throw off the
- * estimates, this is mostly for when you have a small dump getting
- * compressed which takes up alot more disk/tape space relatively due
- * to the overhead of the compression.  This is specifically for
- * Digital Unix vdump.  This patch is courtesy of Rudolf Gabler
- * (RUG@USM.Uni-Muenchen.DE) 
- */
-
-#define minimum(x,y) ((x)<(y) ? (x) : (y))
-#define compratio(d,v) \
-    (((d)->dtype->compress_best || (d)->dtype->compress_fast \
-      || (d)->dtype->srvcompress) ? \
-     minimum((est(d)->v),1.1) : 1.0)
+/* configuration file stuff */
+char *conf_diskfile;
+char *conf_tapelist;
+char *conf_infofile;
+char *conf_tapetype;
+int conf_runtapes;
+int conf_dumpcycle;
+int conf_tapecycle;
+int conf_bumpdays;
+int conf_bumpsize;
+double conf_bumpmult;
 
 typedef struct est_s {
     int got_estimate;
@@ -101,13 +94,11 @@ char loginid[80];
 int kamanda_port;
 #endif
 
-int dumpcycle, runs_per_cycle;
-int runtapes;
+tapetype_t *tape;
+int runs_per_cycle;
 time_t today;
 
 dgram_t *msg;
-
-tapetype_t *tape;
 
 /* We keep a LIFO queue of before images for all modifications made
  * to schedq in our attempt to make the schedule fit on the tape.
@@ -207,27 +198,36 @@ char **argv;
     if(read_conffile(CONFFILE_NAME))
 	error("could not find \"%s\" in this directory.\n", CONFFILE_NAME);
 
+    conf_diskfile = getconf_str(CNF_DISKFILE);
+    conf_tapelist = getconf_str(CNF_TAPELIST);
+    conf_infofile = getconf_str(CNF_INFOFILE);
+    conf_tapetype = getconf_str(CNF_TAPETYPE);
+    conf_runtapes = getconf_int(CNF_RUNTAPES);
+    conf_dumpcycle = getconf_int(CNF_DUMPCYCLE);
+    conf_tapecycle = getconf_int(CNF_TAPECYCLE);
+    conf_bumpdays = getconf_int(CNF_BUMPDAYS);
+    conf_bumpsize = getconf_int(CNF_BUMPSIZE);
+    conf_bumpmult = getconf_real(CNF_BUMPMULT);
+
     construct_datestamp(datestamp);
     log(L_START, "date %s", datestamp);
 
-    if((origqp = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
-	error("could not load \"%s\"\n", getconf_str(CNF_DISKFILE));
+    if((origqp = read_diskfile(conf_diskfile)) == NULL)
+	error("could not load \"%s\"\n", conf_diskfile);
 
-    if(read_tapelist(getconf_str(CNF_TAPELIST)))
-	error("could not load \"%s\"\n", getconf_str(CNF_TAPELIST));
+    if(read_tapelist(conf_tapelist))
+	error("could not load \"%s\"\n", conf_tapelist);
 
-    if(open_infofile(getconf_str(CNF_INFOFILE)))
-	error("could not open info db \"%s\"\n", getconf_str(CNF_INFOFILE));
+    if(open_infofile(conf_infofile))
+	error("could not open info db \"%s\"\n", conf_infofile);
 
 
     /* some initializations */
 
-    runtapes = getconf_int(CNF_RUNTAPES);
-    dumpcycle = getconf_int(CNF_DUMPCYCLE);
     runs_per_cycle = guess_runs_from_tapelist();
 
-    tape = lookup_tapetype(getconf_str(CNF_TAPETYPE));
-    tape_length = tape->length * runtapes;
+    tape = lookup_tapetype(conf_tapetype);
+    tape_length = tape->length * conf_runtapes;
     tape_mark   = tape->filemark;
 
     proto_init(msg->socket, today, 1000); /* XXX handles should eq nhosts */
@@ -314,11 +314,10 @@ char **argv;
      */
 
     {
-	int pos;
 	disk_t *dp;
 
 	fprintf(stderr, "INITIAL SCHEDULE (size %ld):\n", total_size);
-	for(pos = 0, dp = schedq.head; dp != NULL; dp = dp->next, pos++) {
+	for(dp = schedq.head; dp != NULL; dp = dp->next) {
 	    fprintf(stderr, "  %s %s pri %d lev %d size %ld\n",
 		    dp->host->hostname, dp->name, est(dp)->curr_priority,
 		    est(dp)->curr_level, est(dp)->size);
@@ -418,10 +417,11 @@ char *buf;
  *
  */
 
-static int last_level P((disk_t *dp, info_t *ip));	  /* subroutines */
+static int last_level P((info_t *ip));		  /* subroutines */
 static long est_size P((disk_t *dp, int level));
+static long est_tape_size P((disk_t *dp, int level));
 static int next_level0 P((disk_t *dp, info_t *ip));
-static int runs_at P((disk_t *dp, info_t *ip, int lev));
+static int runs_at P((info_t *ip, int lev));
 static long bump_thresh P((int level));
 static int when_overwrite P((char *label));
 
@@ -503,18 +503,18 @@ disk_t *dp;
 	    if(put_info(dp->host->hostname, dp->name, &inf))
 		error("could not put info record for %s:%s: %s",
 		      dp->host->hostname, dp->name, strerror(errno));
-	    ep->last_level = last_level(dp, &inf);
+	    ep->last_level = last_level(&inf);
 	    ep->next_level0 = next_level0(dp, &inf);
 	}
 	else {
 	    ep->last_level = -1;
-	    ep->next_level0 = -dumpcycle;
+	    ep->next_level0 = -conf_dumpcycle;
 	    log(L_INFO, "Forcing full dump of %s:%s as directed.",
 		dp->host->hostname, dp->name);
 	}
     }
     else {
-	ep->last_level = last_level(dp, &inf);
+	ep->last_level = last_level(&inf);
 	ep->next_level0 = next_level0(dp, &inf);
     }
 
@@ -552,13 +552,13 @@ disk_t *dp;
 	    if(inf.inf[0].date == EPOCH || inf.command == PLANNER_FORCE)
 		inf.inf[0].date = today;
 	    else
-		inf.inf[0].date += dumpcycle * SECS_PER_DAY;
+		inf.inf[0].date += conf_dumpcycle * SECS_PER_DAY;
 	    if(inf.command == PLANNER_FORCE)
 		inf.command = NO_COMMAND;
 	    if(put_info(dp->host->hostname, dp->name, &inf))
 		error("could not put info record for %s:%s: %s",
 		      dp->host->hostname, dp->name, strerror(errno));
-	    ep->next_level0 += dumpcycle;
+	    ep->next_level0 += conf_dumpcycle;
 	    ep->last_level = 0;
 	}
 
@@ -611,7 +611,7 @@ disk_t *dp;
     }
 
     if(ep->last_level == 0) ep->level_days = 0;
-    else ep->level_days = runs_at(dp, &inf, ep->last_level);
+    else ep->level_days = runs_at(&inf, ep->last_level);
     ep->last_lev0size = inf.inf[0].csize;
 
     ep->fullrate = perf_average(inf.full.rate, DEFAULT_DUMPRATE);
@@ -649,7 +649,7 @@ disk_t *dp;
 		 */
 		if((inf.inf[curr_level].size == 0 || /* no data, try it anyway */
 		   (inf.inf[curr_level].size > bump_thresh(curr_level))) &&
-		   ep->level_days >= getconf_int(CNF_BUMPDAYS))
+		   ep->level_days >= conf_bumpdays)
 		    askfor(ep, i++, curr_level+1, &inf);
 	    }
 	}
@@ -684,9 +684,10 @@ char *label;
     if((tp = lookup_tapelabel(label)) == NULL)
 	return 1;	/* "shouldn't happen", but trigger warning message */
     else
-	return (getconf_int(CNF_TAPECYCLE) - tp->position) / runtapes;
+	return (conf_tapecycle - tp->position) / conf_runtapes;
 }
 
+/* Return the estimated size for a particular dump */
 static long est_size(dp, level)
 disk_t *dp;
 int level;
@@ -700,10 +701,43 @@ int level;
     return -1;
 }
 
+/* Return the estimated on-tape size of a particular dump */
+static long est_tape_size(dp, level)
+disk_t *dp;
+int level;
+{
+    long size;
+    double ratio;
+
+    size = est_size(dp, level);
+
+    if(size == -1) return size;
+
+    if(!dp->dtype->compress_best
+       && !dp->dtype->compress_fast
+       && !dp->dtype->srvcompress)
+	    return size;
+
+    if(level == 0) ratio = est(dp)->fullcomp;
+    else ratio = est(dp)->incrcomp;
+
+/* 
+ * make sure over-inflated compression ratios don't throw off the
+ * estimates, this is mostly for when you have a small dump getting
+ * compressed which takes up alot more disk/tape space relatively due
+ * to the overhead of the compression.  This is specifically for
+ * Digital Unix vdump.  This patch is courtesy of Rudolf Gabler
+ * (RUG@USM.Uni-Muenchen.DE) 
+ */
+
+    if(ratio > 1.1) ratio = 1.1;
+
+    return (long)(size * ratio);
+}
+
 
 /* what was the level of the last successful dump to tape? */
-static int last_level(dp, ip)
-disk_t *dp;
+static int last_level(ip)
 info_t *ip;
 {
     int min_pos, min_level, i;
@@ -741,15 +775,14 @@ info_t *ip;
 }
 
 /* how many runs at current level? */
-static int runs_at(dp, ip, lev)
-disk_t *dp;
+static int runs_at(ip, lev)
 info_t *ip;
 int lev;
 {
     tape_t *cur_tape, *old_tape;
     int last;
 
-    last = last_level(dp, ip);
+    last = last_level(ip);
     if(lev != last) return 0;
     if(lev == 0) return 1;
 
@@ -757,17 +790,18 @@ int lev;
     old_tape = lookup_tapelabel(ip->inf[lev-1].label);
     if(cur_tape == NULL || old_tape == NULL) return 0;
 
-    return (old_tape->position - cur_tape->position) / runtapes;
+    return (old_tape->position - cur_tape->position) / conf_runtapes;
 }
 
 
 static long bump_thresh(level)
 int level;
 {
-    double bump = getconf_int(CNF_BUMPSIZE);
-    double mult = getconf_real(CNF_BUMPMULT);
+    double bump;
 
-    while(--level) bump = bump * mult;
+    bump = conf_bumpsize;
+    while(--level) bump = bump * conf_bumpmult;
+
     return (long)bump;
 }
 
@@ -1026,15 +1060,15 @@ disk_t *dp;
 {
     long lev0size;
 
-    fprintf(stderr,"pondering %s:%s... ",
+    fprintf(stderr, "pondering %s:%s... ",
 	    dp->host->hostname, dp->name);
-    fprintf(stderr,"next_level0 %d last_level %d ",
+    fprintf(stderr, "next_level0 %d last_level %d ",
 	    est(dp)->next_level0, est(dp)->last_level);
 
     if(est(dp)->next_level0 <= 0) {
 	fprintf(stderr,"(due for level 0) ");
 	est(dp)->curr_level = 0;
-	est(dp)->size = est_size(dp, 0) * compratio(dp,fullcomp);
+	est(dp)->size = est_tape_size(dp, 0);
 	total_lev0 += (double) est(dp)->size;
 	if(est(dp)->last_level == -1 || dp->dtype->skip_incr) {
 	    fprintf(stderr,"(%s disk, can't switch to degraded mode)\n",
@@ -1046,15 +1080,13 @@ disk_t *dp;
 	    /* fill in degraded mode info */
 	    fprintf(stderr,"(picking inclevel for degraded mode)\n");
 	    est(dp)->degr_level = pick_inclevel(dp);
-	    est(dp)->degr_size = 
-		est_size(dp, est(dp)->degr_level) * compratio(dp,incrcomp);
+	    est(dp)->degr_size = est_tape_size(dp, est(dp)->degr_level);
 	}
     }
     else {
 	fprintf(stderr,"(not due for a full dump, picking an incr level)\n");
 	est(dp)->curr_level = pick_inclevel(dp);
-	est(dp)->size = 
-	    est_size(dp,est(dp)->curr_level) * compratio(dp,incrcomp);
+	est(dp)->size = est_tape_size(dp,est(dp)->curr_level);
     }
 
     fprintf(stderr,"  curr level %d size %ld ", est(dp)->curr_level,
@@ -1067,7 +1099,7 @@ disk_t *dp;
     if(!(dp->dtype->skip_full || dp->dtype->no_full)) {
 	/* calculate level 0 size for balancing */
 	if(est_size(dp, 0) == -1) lev0size = est(dp)->last_lev0size;
-	else lev0size = est_size(dp, 0) * compratio(dp,fullcomp);
+	else lev0size = est_tape_size(dp, 0);
 	balanced_size += (lev0size / runs_per_cycle);
     }
 
@@ -1138,54 +1170,54 @@ disk_t *a, *b;
 static int pick_inclevel(dp)
 disk_t *dp;
 {
-    int base_level;
+    int base_level, bump_level;
+    long base_size, bump_size;
     long thresh;
-    long size1, size2;
 
     base_level = est(dp)->last_level;
 
-    /* if last night was level 0, do level 1 tonight, no ifs ors buts */
+    /* if last night was level 0, do level 1 tonight, no ifs or buts */
     if(base_level == 0) {
 	fprintf(stderr,"   picklev: last night 0, so tonight level 1\n");
 	return 1;
     }
+
     /* if no-full option set, always do level 1 */
     if(dp->dtype->no_full) {
 	fprintf(stderr,"   picklev: no-full set, so always level 1\n");
 	return 1;
     }
 
-    size1 = est_size(dp, base_level);
+    base_size = est_size(dp, base_level);
     thresh = bump_thresh(base_level);
 
     fprintf(stderr,
-	    "   pick: orig sz %ld comp %1.3f out sz %ld rate %1.3f time %ld\n",
-	    size1, compratio(dp,incrcomp),
-	    (long)(size1 * compratio(dp,incrcomp)),
-	    est(dp)->incrrate, (long)est_time(dp, base_level));
+	    "   pick: size %ld level %d days %d (thresh %ldK, %d days)\n",
+	    base_size, base_level, est(dp)->level_days, 
+	    thresh, conf_bumpdays);
 
-    fprintf(stderr,
-    "   pick: base size %ld base level %d days %d (thresh %ldK, %d days)\n",
-	    size1, base_level, est(dp)->level_days, 
-	    thresh, getconf_int(CNF_BUMPDAYS));
+    if(base_level == 9
+       || est(dp)->level_days < conf_bumpdays
+       || base_size <= thresh)
+	    return base_level;
 
-    if(base_level != 9 && est(dp)->level_days >= getconf_int(CNF_BUMPDAYS)
-       && est_size(dp, base_level+1) != -1 
-       && size1 > thresh) {
+    bump_level = base_level + 1;
+    bump_size = est_size(dp, bump_level);
 
-	size2 = est_size(dp, base_level+1);
-	fprintf(stderr,"   picklev: next size %ld... ", size2);
-	if(size1 - size2 > thresh) {
-	    base_level++;
-	    fputs("BUMPED\n",stderr);
-	    log(L_INFO, "Incremental of %s:%s bumped to level %d.",
-		dp->host->hostname, dp->name, base_level);
-	}
-	else {
-	    fputs("not bumped\n",stderr);
-	}
+    if(bump_size == -1) return base_level;
+
+    fprintf(stderr, "   pick: next size %ld... ", bump_size);
+
+    if(base_size - bump_size >= thresh) {
+	fprintf(stderr, "not bumped\n");
+	return base_level;
     }
-    return base_level;
+
+    fprintf(stderr, "BUMPED\n");
+    log(L_INFO, "Incremental of %s:%s bumped to level %d.",
+	dp->host->hostname, dp->name, bump_level);
+
+    return bump_level;
 }
 
 
@@ -1221,7 +1253,7 @@ static void delay_modify_dump P((disk_t *dp, char *errstr));
 static void delay_dumps P((void))
 /* delay any dumps that will not fit */
 {
-    disk_t *ptr, *nptr, *preserve;
+    disk_t *dp, *ndp, *preserve;
     char errbuf[1024];
     bi_t *bi, *nbi;
     long new_total;	/* New total_size */
@@ -1239,33 +1271,33 @@ static void delay_dumps P((void))
     ** need to be checked for separately.
     */
 
-    for(ptr = schedq.head; ptr != NULL; ptr = nptr) {
-	nptr = ptr->next; /* remove_disk zaps this */
+    for(dp = schedq.head; dp != NULL; dp = ndp) {
+	ndp = dp->next; /* remove_disk zaps this */
 
-	if(est(ptr)->curr_level == 0 && est(ptr)->size > tape->length) {
-	    if(est(ptr)->last_level == -1 || ptr->dtype->skip_incr) {
+	if(est(dp)->curr_level == 0 && est(dp)->size > tape->length) {
+	    if(est(dp)->last_level == -1 || dp->dtype->skip_incr) {
 		sprintf(errbuf,
 "%s %s 0 [dump larger than tape, but cannot incremental dump %s disk]",
-		    ptr->host->hostname, ptr->name,
-		    ptr->dtype->skip_incr? "skip-incr": "new");
+		    dp->host->hostname, dp->name,
+		    dp->dtype->skip_incr? "skip-incr": "new");
 
-		delay_remove_dump(ptr, errbuf);
+		delay_remove_dump(dp, errbuf);
 	    }
 	    else {
 		sprintf(errbuf,
 		    "Dump larger than tape: full dump of %s:%s delayed.",
-		    ptr->host->hostname, ptr->name);
+		    dp->host->hostname, dp->name);
 
-		delay_modify_dump(ptr, errbuf);
+		delay_modify_dump(dp, errbuf);
 	    }
 	}
 
-	if(est(ptr)->curr_level != 0 && est(ptr)->size > tape->length) {
+	if(est(dp)->curr_level != 0 && est(dp)->size > tape->length) {
 	    sprintf(errbuf,
 		"%s %s %d [dump larger than tape, skipping incremental]",
-		ptr->host->hostname, ptr->name, est(ptr)->curr_level);
+		dp->host->hostname, dp->name, est(dp)->curr_level);
 
-	    delay_remove_dump(ptr, errbuf);
+	    delay_remove_dump(dp, errbuf);
 	}
     }
 
@@ -1283,30 +1315,30 @@ static void delay_dumps P((void))
     */
 
     preserve = NULL;
-    for(ptr = schedq.head; ptr != NULL && preserve == NULL; ptr = ptr->next)
-	if(est(ptr)->curr_level == 0)
-	    preserve = ptr;
+    for(dp = schedq.head; dp != NULL && preserve == NULL; dp = dp->next)
+	if(est(dp)->curr_level == 0)
+	    preserve = dp;
 
-    for(ptr = schedq.tail;
-		ptr != NULL && total_size > tape_length;
-		ptr = nptr) {
-	nptr = ptr->prev;
+    for(dp = schedq.tail;
+		dp != NULL && total_size > tape_length;
+		dp = ndp) {
+	ndp = dp->prev;
 
-	if(est(ptr)->curr_level == 0 && ptr != preserve) {
-	    if(est(ptr)->last_level == -1 || ptr->dtype->skip_incr) {
+	if(est(dp)->curr_level == 0 && dp != preserve) {
+	    if(est(dp)->last_level == -1 || dp->dtype->skip_incr) {
 		sprintf(errbuf,
 "%s %s 0 [dumps too big, but cannot incremental dump %s disk]",
-		    ptr->host->hostname, ptr->name,
-		    ptr->dtype->skip_incr? "skip-incr": "new");
+		    dp->host->hostname, dp->name,
+		    dp->dtype->skip_incr? "skip-incr": "new");
 
-		delay_remove_dump(ptr, errbuf);
+		delay_remove_dump(dp, errbuf);
 	    }
 	    else {
 		sprintf(errbuf,
 		    "Dumps too big for tape: full dump of %s:%s delayed.",
-		    ptr->host->hostname, ptr->name);
+		    dp->host->hostname, dp->name);
 
-		delay_modify_dump(ptr, errbuf);
+		delay_modify_dump(dp, errbuf);
 	    }
 	}
     }
@@ -1319,17 +1351,17 @@ static void delay_dumps P((void))
     ** dispensable) and work forwards.
     */
 
-    for(ptr = schedq.tail;
-	    ptr != NULL && total_size > tape_length;
-	    ptr = nptr) {
-	nptr = ptr->prev;
+    for(dp = schedq.tail;
+	    dp != NULL && total_size > tape_length;
+	    dp = ndp) {
+	ndp = dp->prev;
 
-	if(est(ptr)->curr_level != 0) {
+	if(est(dp)->curr_level != 0) {
 	    sprintf(errbuf,
 		"%s %s %d [dumps way too big, must skip incremental dumps]",
-		ptr->host->hostname, ptr->name, est(ptr)->curr_level);
+		dp->host->hostname, dp->name, est(dp)->curr_level);
 
-	    delay_remove_dump(ptr, errbuf);
+	    delay_remove_dump(dp, errbuf);
 	}
     }
 
@@ -1343,23 +1375,23 @@ static void delay_dumps P((void))
     */
 
     for(bi = biq.tail; bi != NULL; bi = bi->prev) {
-	ptr = bi->dp;
+	dp = bi->dp;
 
 	if(bi->deleted)
-	    new_total = total_size + TAPE_BLOCK_SIZE + est(ptr)->size + tape_mark;
+	    new_total = total_size + TAPE_BLOCK_SIZE + est(dp)->size + tape_mark;
 	else
-	    new_total = total_size - est(ptr)->size + bi->size;
+	    new_total = total_size - est(dp)->size + bi->size;
 
 	if(new_total <= tape_length) { /* reinstate it */
 	    if(bi->deleted) {
 		total_size = new_total;
-		total_lev0 += (double) est(ptr)->size;
-		insert_disk(&schedq, ptr, schedule_order);
+		total_lev0 += (double) est(dp)->size;
+		insert_disk(&schedq, dp, schedule_order);
 	    }
 	    else {
 		total_size = new_total;
-		est(ptr)->curr_level = bi->level;
-		est(ptr)->size = bi->size;
+		est(dp)->curr_level = bi->level;
+		est(dp)->size = bi->size;
 	    }
 
 	    /* Keep it clean */
@@ -1392,9 +1424,9 @@ static void delay_dumps P((void))
 	    log(L_FAIL, "%s", bi->errstr);
 	}
 	else {
-	    ptr = bi->dp;
+	    dp = bi->dp;
 	    fprintf(stderr, "  delay: %s  Now at level %d.\n",
-		bi->errstr, est(ptr)->curr_level);
+		bi->errstr, est(dp)->curr_level);
 	    log(L_INFO, "%s", bi->errstr);
 	}
 
@@ -1471,69 +1503,74 @@ static void delay_modify_dump P((disk_t *dp, char *errstr))
 
 static int promote_highest_priority_incremental P((void))
 {
-    disk_t *ptr;
-    long new_size, new_total;
+    disk_t *dp;
+    long new_size, new_total, new_lev0;
     int check_days, check_limit;
 
     /*
      * return 1 if did so; must update total_size correctly; must not
      * cause total_size to exceed tape_length
      */
-    check_limit = dumpcycle-1;
-    fprintf(stderr,"   promote: checking up to %d days ahead\n", 
-	    check_limit-1);
+    check_limit = conf_dumpcycle - 1;
+    fprintf(stderr, "   promote: checking up to %d days ahead\n", 
+	    check_limit - 1);
 
     for(check_days = 1; check_days < check_limit; check_days++) {
-	fprintf(stderr,"   promote: checking %d days now\n", check_days);
+	fprintf(stderr, "   promote: checking %d days now\n", check_days);
 
-        for(ptr = schedq.head; ptr != NULL; ptr = ptr->next) {
-	    if(ptr->dtype->skip_full || ptr->dtype->no_full) {
+        for(dp = schedq.head; dp != NULL; dp = dp->next) {
+	    if(dp->dtype->skip_full || dp->dtype->no_full) {
 		fprintf(stderr,
-		     "    promote: can't move %s:%s: no full dumps allowed.\n",
-			ptr->host->hostname, ptr->name);
+	"    promote: can't move %s:%s: no full dumps allowed.\n",
+			dp->host->hostname, dp->name);
                 continue;
             }
-	    if(est(ptr)->next_level0 == check_days) {
-		new_size = est_size(ptr, 0) * compratio(ptr,fullcomp);
-		new_total = total_size - est(ptr)->size + new_size;
-		if(new_total <= tape_length && 
-		   total_lev0 + new_size <=
-		   balanced_size + balance_threshold) {
-		    total_size = new_total;
-		    total_lev0 += new_size;
-		    est(ptr)->degr_level = est(ptr)->curr_level;
-		    est(ptr)->degr_size = est(ptr)->size;
-		    est(ptr)->curr_level = 0;
-		    est(ptr)->next_level0 = 0;
-		    est(ptr)->size = new_size;
 
-		    fprintf(stderr,
-	     "   promote: moving %s:%s up, total_lev0 %1.0f, total_size %ld\n",
-			    ptr->host->hostname, ptr->name, 
-			    total_lev0, total_size);
+	    if(est(dp)->next_level0 != check_days)
+		continue; /* totals continue here too */
 
-		    log(L_INFO,
-			"Full dump of %s:%s promoted from %d days ahead.",
-			ptr->host->hostname, ptr->name, check_days);
-		    return 1;
-		}
-		else {
-		    fprintf(stderr,
-			    "  promote: %s:%s too big: new size %ld total %1.0f, bal size %1.0f thresh %1.0f\n",
-			    ptr->host->hostname, ptr->name, new_size, 
-			    total_lev0+new_size, balanced_size, 
-			    balance_threshold);
-		}
+	    new_size = est_tape_size(dp, 0);
+	    new_total = total_size - est(dp)->size + new_size;
+	    new_lev0 = total_lev0 + new_size;
+
+	    if(new_total > tape_length 
+	       || new_lev0 > balanced_size + balance_threshold) {
+
+		fprintf(stderr,
+	"  promote: %s:%s too big: new size %ld total %ld, bal size %1.0f thresh %1.0f\n",
+			dp->host->hostname, dp->name, new_size, 
+			new_lev0, balanced_size, balance_threshold);
+		continue;
 	    }
+
+	    total_size = new_total;
+	    total_lev0 = new_lev0;
+	    est(dp)->degr_level = est(dp)->curr_level;
+	    est(dp)->degr_size = est(dp)->size;
+	    est(dp)->curr_level = 0;
+	    est(dp)->size = new_size;
+	    est(dp)->next_level0 = 0;
+
+	    fprintf(stderr,
+	"   promote: moving %s:%s up, total_lev0 %1.0f, total_size %ld\n",
+		    dp->host->hostname, dp->name, 
+		    total_lev0, total_size);
+
+	    log(L_INFO,
+	        "Full dump of %s:%s promoted from %d days ahead.",
+	        dp->host->hostname, dp->name, check_days);
+
+	    return 1;
 	}
     }
+
     return 0;
 }
 
 
 static int promote_hills P((void))
 {
-    disk_t *ptr;
+    disk_t *dp;
     struct balance_stats {
 	int disks;
 	long size;
@@ -1550,7 +1587,7 @@ static int promote_hills P((void))
 	return 0;
 
     /* Do the guts of an "amadmin balance" */
-    tapecycle = getconf_int(CNF_TAPECYCLE);
+    tapecycle = conf_tapecycle;
 
     sp = (struct balance_stats *)
 	alloc(sizeof(struct balance_stats) * tapecycle);
@@ -1558,11 +1595,11 @@ static int promote_hills P((void))
     for(days = 0; days < tapecycle; days++)
 	sp[days].disks = sp[days].size = 0;
 
-    for(ptr = schedq.head; ptr != NULL; ptr = ptr->next) {
-	days = est(ptr)->next_level0;   /* This is > 0 by definition */
-	if(days<tapecycle && !ptr->dtype->skip_full && !ptr->dtype->no_full) {
+    for(dp = schedq.head; dp != NULL; dp = dp->next) {
+	days = est(dp)->next_level0;   /* This is > 0 by definition */
+	if(days<tapecycle && !dp->dtype->skip_full && !dp->dtype->no_full) {
 	    sp[days].disks++;
-	    sp[days].size += est(ptr)->last_lev0size;
+	    sp[days].size += est(dp)->last_lev0size;
 	}
     }
 
@@ -1580,32 +1617,32 @@ static int promote_hills P((void))
 	if(hill_size <= 0) break;       /* no suitable hills */
 
 	/* Find all the dumps in that hill and try and remove one */
-	for(ptr = schedq.head; ptr != NULL; ptr = ptr->next) {
-	    if(est(ptr)->next_level0 != hill_days ||
-	    ptr->dtype->skip_full ||
-	    ptr->dtype->no_full)
+	for(dp = schedq.head; dp != NULL; dp = dp->next) {
+	    if(est(dp)->next_level0 != hill_days ||
+	    dp->dtype->skip_full ||
+	    dp->dtype->no_full)
 		continue;
-	    new_size = est_size(ptr, 0) * compratio(ptr,fullcomp);
-	    new_total = total_size - est(ptr)->size + new_size;
+	    new_size = est_tape_size(dp, 0);
+	    new_total = total_size - est(dp)->size + new_size;
 	    if(new_total > tape_length)
 		continue;
 	    /* We found a disk we can promote */
 	    total_size = new_total;
 	    total_lev0 += new_size;
-	    est(ptr)->degr_level = est(ptr)->curr_level;
-	    est(ptr)->degr_size = est(ptr)->size;
-	    est(ptr)->curr_level = 0;
-	    est(ptr)->next_level0 = 0;
-	    est(ptr)->size = new_size;
+	    est(dp)->degr_level = est(dp)->curr_level;
+	    est(dp)->degr_size = est(dp)->size;
+	    est(dp)->curr_level = 0;
+	    est(dp)->next_level0 = 0;
+	    est(dp)->size = new_size;
 
 	    fprintf(stderr,
 		    "   promote: moving %s:%s up, total_lev0 %1.0f, total_size %ld\n",
-		    ptr->host->hostname, ptr->name,
+		    dp->host->hostname, dp->name,
 		    total_lev0, total_size);
 
 	    log(L_INFO,
 		"Full dump of %s:%s specially promoted from %d days ahead.",
-		ptr->host->hostname, ptr->name, hill_days);
+		dp->host->hostname, dp->name, hill_days);
 
 	    free(sp);
 	    return 1;
