@@ -222,15 +222,21 @@ requests are issued, so that no packet exceeds the maximum packet
 size.
 
 
-Q: Why does `amrecover' report `no index records'?
+Q: Why does `amrecover' report `no index records' or `disk not found'?
 
-A: Probably because you have not enabled index generation in
-amanda.conf.  The `index yes' option must be present in every dumptype
-for whose disks indexes should be generated.
+A: The most common cause of this problem is not having enabled index
+generation in amanda.conf.  The `index yes' option must be present in
+every dumptype for whose disks indexes should be generated.
+
+   Another possibility is that `amrecover' is not selecting the
+configuration name that contains the backups for the selected disk.
+You may specify a configuration name with the `-c' switch, when you
+invoke `amrecover'.  The default configuration name can only be
+specified at Amanda configure time (--with-config=<name>).
 
    Indexes are currently generated at backup-time only, so, if a
 backup was performed without creating an index, you won't be able to
-use `amrecover' to restore it, 'll have to use `amrestore'.
+use `amrecover' to restore it, you'll have to use `amrestore'.
 
 
 Q: Ok, I'm done with testing Amanda, now I want to put it in
