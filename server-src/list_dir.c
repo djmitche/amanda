@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: list_dir.c,v 1.6 1997/12/09 06:59:47 amcore Exp $
+/* $Id: list_dir.c,v 1.7 1997/12/09 17:22:25 blair Exp $
  *
  * obtains directory listings from index files
  */
@@ -144,7 +144,6 @@ int  recursive;
     char line[2048];
     char filename[1024];
     char *filename_gz;
-    struct stat stat_filename;
     char dir_slash[1024];
     char awk_print[1024];
     char awk_print_field[1024];
