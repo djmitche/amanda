@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.12 1997/12/30 05:24:30 jrj Exp $
+ * $Id: amrecover.c,v 1.13 1997/12/31 23:00:38 jrj Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -62,6 +62,7 @@
 char *pname = "amrecover";
 
 extern int process_line P((char *line));
+int guess_disk P((char *cwd, int cwd_len, char **dn_guess, char **mpt_guess));
 
 #define USAGE "Usage: amrecover [[-C] <config>] [-s <index-server>] [-t <tape-server>] [-d <tape-device>]\n"
 
@@ -573,7 +574,7 @@ char **argv;
 	{
             /* get a starting disk and directory based on where
 	       we currently are */
-	    switch (guess_disk(cwd, sizeof(cwd), dn_guess, &mpt_guess))
+	    switch (guess_disk(cwd, sizeof(cwd), &dn_guess, &mpt_guess))
 	    {
 		case 1:
 		    /* okay, got a guess. Set disk accordingly */
