@@ -1,3 +1,7 @@
+1998-06-24  Steven Freed  <sfreed@gilasoft.com>
+
+	* configure.in (dump-honor-nodump): fix test for `-h' support
+
 1998-06-24  Scott Mesches  <mesches@allison.Colorado.EDU>
 
 	* example/DLT.ps: new file
