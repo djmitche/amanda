@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.3.2.3.4.3 2001/07/31 22:38:39 jrjackson Exp $
+ * $Id: tapetype.c,v 1.3.2.3.4.3.2.1 2002/10/27 22:00:55 martinea Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -42,7 +42,7 @@ static int fd;
 static int blockkb = 32;
 static int blocksize;
 
-static char *randombytes;
+static char *randombytes = (char *) NULL;
 
 #if USE_RAND
 /* If the C library does not define random(), try to use rand() by
@@ -53,12 +53,29 @@ static char *randombytes;
 #define srandom(seed) srand(seed)
 #endif
 
+static void initnotrandombytes() {
+  int i, j;
+  char *p;
+
+  j =NBLOCKS * blocksize;
+  if (randombytes == (char *)NULL) {
+    randombytes = alloc(j);
+  }
+  p = randombytes;
+  for(i=0; i < j; ++i) {
+    *p++ = (char) (i % 256);
+  }
+}
+
 static void initrandombytes() {
   int i, j;
   char *p;
 
   j = NBLOCKS * blocksize;
-  randombytes = p = alloc(j);
+  if (randombytes == (char *)NULL) {
+    randombytes = alloc(j);
+  }
+  p = randombytes;
   for(i=0; i < j; ++i) {
     *p++ = (char)random();
   }
@@ -199,6 +216,47 @@ void do_pass(size, blocks, files, seconds)
 }
 
 
+void do_pass0(size, seconds)
+  size_t size;
+  time_t *seconds;
+{
+  size_t blks;
+  time_t start, end;
+  int save_errno;
+
+  if (tapefd_rewind(fd) == -1) {
+    fprintf(stderr, "%s: could not rewind %s: %s\n",
+	    sProgName, tapedev, strerror(errno));
+    exit(1);
+  }
+
+  time(&start);
+
+  blks = writeblocks(fd, size);
+  tapefd_weof(fd, 1);
+
+  save_errno = errno;
+
+  time(&end);
+
+  if (blks <= 0) {
+    fprintf(stderr, "%s: could not write any data in this pass: %s\n",
+	    sProgName, short_write ? "short write" : strerror(save_errno));
+    exit(1);
+  }
+
+  if(end <= start) {
+    /*
+     * Just in case time warped backward or the device is really, really
+     * fast (e.g. /dev/null testing).
+     */
+    *seconds = 1;
+  } else {
+    *seconds = end - start;
+  }
+}
+
+
 int main(argc, argv)
      int argc;
      char *argv[];
@@ -207,9 +265,11 @@ int main(argc, argv)
   size_t pass2blocks = 0;
   time_t pass1time;
   time_t pass2time;
+  time_t timediff;
   size_t pass1files = 0;
   size_t pass2files = 0;
   size_t estsize;
+  size_t pass0size;
   size_t pass1size;
   size_t pass2size;
   size_t blockdiff;
@@ -222,6 +282,7 @@ int main(argc, argv)
   char *suffix;
   char *typename;
   time_t now;
+  int hwcompr = 0;
 
   if ((sProgName = strrchr(*argv, '/')) == NULL) {
     sProgName = *argv;
@@ -292,11 +353,56 @@ int main(argc, argv)
     return 1;
   }
 
+  do_tty = isatty(fileno(stderr));
+
+  /*
+   * Estimate pass: write twice a file of 16 MByte, once with compressable
+   * data and once with uncompressable data.
+   * The theory is that if the drive is in hardware compression mode
+   * we notice a significant difference in writing speed between the two
+   * (at least if we can provide data as fast the tape streams).
+   */
+
+  initnotrandombytes();
+
+  pass0size = 16 * 1024 / blockkb;  /* 16 MB default -- make this tuneable? */
+
+  printf("Estimate phase 1...\n");
+
+  do_pass0(pass0size, &pass1time);
+
+  /*
+   * now generate uncompressable data and try again
+   */
   time(&now);
   srandom(now);
   initrandombytes();
 
-  do_tty = isatty(fileno(stderr));
+  printf("Estimate phase 2...\n");
+  do_pass0(pass0size, &pass2time);
+
+  /*
+   * Compute the time difference between writing the compressable and
+   * uncompressable data.  If it differs more than 20%, then warn
+   * user that the tape drive has probably hardware compression enabled.
+   */
+  if (pass1time > pass2time) {
+    timediff = pass1time - pass2time;
+  } else {
+    timediff = pass2time - pass1time;
+  }
+  if (((100 * timediff) / pass2time) >= 20) {	/* 20% faster? */
+    printf("WARNING: The tape drive has hardware compression enabled\n");
+    hwcompr = 1;
+  }
+
+  /*
+   * Inform about estimated time needed to run the remaining of this program
+   */
+  printf("Estimated time to write 2 * %d Mbyte: ", estsize / 1024);
+  pass1time = 2 * pass2time * estsize / (16 * 1024);
+  printf("%d sec = ", pass1time);
+  printf("%d h %d min\n", (pass1time / 3600), ((pass1time % 3600) / 60));
 
   /*
    * Do pass 1 -- write files that are 1% of the estimated size until error.
@@ -366,7 +472,8 @@ int main(argc, argv)
    * Dump the tapetype.
    */
   printf("define tapetype %s {\n", typename);
-  printf("    comment \"just produced by tapetype program\"\n");
+  printf("    comment \"just produced by tapetype prog (hardware compression %s)\"\n",
+	hwcompr ? "on" : "off");
   printf("    length %ld %s\n", (long)size, sizeunits);
   printf("    filemark %ld kbytes\n", filemark);
   printf("    speed %ld kps\n", speed);
