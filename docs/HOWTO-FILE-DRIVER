@@ -61,8 +61,8 @@ changed with the standard tape-changer-interface of the AMANDA server.
 
 This guide assumes you have setup the basic AMANDA-services as described in
 Amanda_Installation_Notes
-The configuration in this HOWTO is called daily. The file tapes are also
-called vtapes in this document, which stands for virtual tapes.
+The configuration in this HOWTO is called "daily". The file tapes are also
+called vtapes in this document, which stands for "virtual tapes".
 Please be sure to understand the differences between holding disks and file
 tapes. The two serve different purposes; holding disks allow for parallelism of
 multiple DLE's being backed up while file tapes are a replacement for physical
@@ -143,7 +143,7 @@ tapes.
  Step 2. Create a tapetype definition.
 
 Add a new tapetype definition similar to the following to your amanda.conf. I
-named my definition HARD-DISK. Choose whatever name you consider appropriate.
+named my definition "HARD-DISK". Choose whatever name you consider appropriate.
 
   	define tapetype HARD-DISK {
   		comment "Dump onto hard disk"
@@ -206,15 +206,15 @@ The parameter tapetype , points to the tapetype definition you have created in
 Step 2.
 The parameter tpchanger tells AMANDA to use the generic tape-changer-script to
 handle the vtapes. You can think of it as a virtual tape-changer-device.
-The parameter changerfile is used to give chg-disk the prefix for the %s-
-changer, %s-clean, %s-slot files it needs. Use something like changer in
+The parameter changerfile is used to give chg-disk the "prefix" for the "%s-
+changer, %s-clean, %s-slot" files it needs. Use something like "changer" in
 your config-dir. Please note that this file does NOT have to exist, but it
 won't hurt anyway.
 The parameter tapedev tells the chg-disk-script where the root-dir for your
 vtapes is.
 In our example the vtape-files go to /amandatapes.
 To separate multiple configurations, we decided to use subdirectories according
-to the configuration name daily.
+to the configuration name "daily".
 
 Note
 
@@ -271,7 +271,7 @@ Create the info-file:
   	$ touch /amandatapes/daily/info
   	
 
-and link the first slot to the data-file (to load the vtape into the first
+and link the first slot to the data-file (to "load" the vtape into the first
 slot):
 
   	$ ln -s /amandatapes/daily/slot1 /amandatapes/daily/data
@@ -335,7 +335,7 @@ Recheck your files if errors occur.
 
  Recovery
 
-Recovering files from vtapes is very similar to recovering files from a real
+Recovering files from vtapes is very similar to recovering files from a "real"
 tapechanger.
 Make sure you read the chapter Restore.
 I will simply paste a amrecover-session here (provided by JC Simonetti, author
