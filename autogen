@@ -14,7 +14,7 @@ trap 'rm -rf .test-libtool' 1 2 15
 	    cat >configure.in <<EOF
 AM_PROG_LIBTOOL
 EOF
-	    aclocal
+	    aclocal >/dev/null 2>&1
 	    if grep LIBTOOL aclocal.m4 >/dev/null 2>&1; then
 		amanda_cv_libtool_macros=yes
 	    else
