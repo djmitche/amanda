@@ -13,15 +13,15 @@ LIB_EXTENSION = a
 endif
 
 if WANT_SERVER
-if WANT_CHG_SCSI
 
+if WANT_CHG_SCSI
 libexec_PROGRAMS =	chg-scsi
+endif
 
 libexec_SCRIPTS =	chg-manual	chg-multi	chg-mtx		\
 			chg-rth		chg-chs		chg-chio	\
 			chg-zd-mtx
 
-endif
 endif
 
 LDADD = ../server-src/libamserver.$(LIB_EXTENSION) \
