@@ -1,5 +1,15 @@
 2002-11-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* docs/TAPE.CHANGERS: Sync with 2.5.0
+	* changer-src/chg-juke.sh.in: New changer from 2.5.0
+	* changer-src/chg-rait.sh.in: New changer from 2.5.0
+	* changer-src/chg-null.sh.in: New changer from 2.5.0
+	* changer-src/Makefile.am: Install them.
+	* configure.in (AC_CONFIG_FILES): Add chg-juke.sh.in, chg-rait.sh.in and
+	  chg-null.sh.in
+
+2002-11-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amadmin.c: Cleanup.
 
 2002-11-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>

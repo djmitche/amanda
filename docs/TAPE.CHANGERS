@@ -484,6 +484,21 @@ chg-scsi (new interface, try to drive a robot with direct scsi commands)
 The config and the sysntax is the same as for chg-scsi-chio. New
 is the config type 
 
+emubarcode	1
+
+With this option and the option labelfile chg-scsi will try to create an inventory.
+With this inventory it should be possible to use the search feature for loading tapes.
+
+debuglevel x:y
+
+This option will set the debug level and select for which part debug messages should be sent
+to the debug file. In case of problems you should set it to 9:0
+
+havebarcode 1
+
+This will force the program to read the barcodes, and don not try to figure out if there is an
+barcode reader available.
+
 scsitapedev <devicename>
 
 This device is used to control the tape, read status infos etc.
@@ -508,7 +523,7 @@ th@ant.han.de
 
 changerident <ident>
 
-With this it is possible to specify which internal driver to use for 
+With this it is possible to specify which internal driver to use for
 controlling/error handling of the robot
 
 tapeident <ident>
@@ -535,7 +550,7 @@ IRIX 6.x
 Solaris
 Linux
 AIX
-FreeBSD
+FreeBSD 3.0/4.0
 
 Tape and robot on different IDs run native on
 Linux
@@ -543,15 +558,16 @@ HP-UX 10.20
 Irix 6.x
 FreeBSD
 
-Tape and robot on different IDs with special modules run on
-Solaris with sst kernel module, which is not any longer neede in solaris 2.8. 
+Tape and robot on different IDs with special modules run on:
+
+Solaris	with sst kernel module, which is not any longer needed in solaris 2.8.
 See in the contrib/sst directory
-The configuration on solaris 2.8 with the sgen driver is done by creating 
+The configuration on solaris 2.8 with the sgen driver is done by creating
 the file /kernel/drv/sgen.conf
 This file should contain at the beginning the following
 device-type-config-list="changer","sequential"
 
-This will force the driver to attach only to the devices with type either 
+This will force the driver to attach only to the devices with type either
 changer (the robot) and sequential (the tape).
 Next you must tell the driver on which id it should check for devices
 (tape on id 5, robot on id 6 in this example),
@@ -566,6 +582,7 @@ So the complete sgen.conf looks like:
 device-type-config-list="changer","sequential
 name="sgen" class="scsi" target=5 lun=0;
 name="sgen" class="scsi" target=6 lun=0;
+
 
 For HP you have to create the special device files for the pass throu
 interface. Check if the ctl driver is installed.
@@ -584,6 +601,15 @@ mknod /dev/scsi/1 c 203 0x001000
                           ||| LUN of device
                           ||SCSI ID of the device
                           2 digit instance number from ioscan
+
+On FreeBSD 4.0 the syntax for the device files has changed. Now you
+have to tell chg-scsi the bus:target:lun combination. If you for
+example on your scsi bus 0 target 3 an robot the syntax is
+changerdev 0:3:0
+To get this info you can use the camcontrol command, <camcontrl devlist>
+will give you a list of known devices.
+Don't specify dev and scsitapedev in your chg-scsi.conf !!, this will
+not work.
 
 On Linux you need either sg (generic scsi) as module or it must be compiled
 into the kernel. If the sg driver doses not work try to use the ioctl interface.
@@ -650,3 +676,54 @@ A perl5 script that controls an HPc1553 tape drive via a Peripheral
 Vision Inc. SCSI control subsystem that interprets commands sent on
 the SCSI bus.  It expects `tapedev' to specify the tape device to be
 used.  `changerfile' and `changerdev' are ignored.
+
+==============================
+chg-juke
+==============================
+
+A shell script that uses the Fermilab "juke" software (see 
+http://www.fnal.gov/fermitools/, the "juke" link) to control
+tape chagners.  It supports mounting multiple tapes for RAIT 
+tapedrive sets, both multiple jukeboxes, or one jukebox with
+multiple tape drives, or combinations.  'juke' must be configured
+to know tape drives by the same name Amanda calls them.
+
+It uses 'changerfile' to track Amanda's current tape state, 
+'tapedev' must be the tape drive (or RAIT set) name, and 'changerdev' 
+is the juke software's name for the changer, or a csh-glob that
+expands to several jukebox names (i.e. "changer{a,b,c}")
+
+==============================
+chg-rait
+==============================
+
+A shell script that runs other changers in tandem, and returns
+a rait:{dev1,dev2,...} tape device based on the results of 
+each other changer.  So if you wanted to have 2 stackers
+striped with no parity, and you have chg-mtx support for your
+stackers, you would use the follwing changerfile:
+ 
+   nchangers=3
+   tpchanger_1="chg-mtx"
+   changerdev_1="/dev/mtx1"
+   changerfile_1="/some/file1"
+   tapedev_1="/some/dev"
+   tpchanger_2="chg-mtx"
+   changerdev_2="/dev/mtx2"
+   changerfile_2="/some/file2"
+   tapedev_2="/some/dev"
+   tpchanger_3="chg-null"
+   changerdev_3="/dev/null"
+   changerfile_3="/some/file3"
+   tapedev_3="/some/dev"
+
+The third uses the null changer.  The tapedev_n entries are only needed
+if the changerfile in question uses them.
+
+==============================
+chg-null
+==============================
+
+A trivial changer which loads/unloads on a null: device.  Useful with
+chg-rait to throw away a parity stripe by puttin on a null jukebox, 
+or for testing.
