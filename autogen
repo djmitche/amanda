@@ -15,13 +15,16 @@
 
 makefilename=/tmp/Makefile.tmp.$$
 
-trap 'rm -f $makefilename; exit 1' 0 1 2 15
+trap 'rm -f $makefilename $missingfiles; exit 1' 0 1 2 15
 
 : ${top_srcdir=`pwd`}
 
 genmakefile () {
-  srcdir=`pwd`
-  sed <Makefile.in >$makefilename \
+  if [ ! -f $srcdir/Makefile.in ]; then
+    echo ${AUTOMAKE-"automake -i"} --foreign $srcdir/Makefile
+    eval ${AUTOMAKE-"automake -i"} '--foreign $srcdir/Makefile'
+  fi
+  sed <$srcdir/Makefile.in >$makefilename \
     -e s/@SET_MAKE@/MAKE=${MAKE-make}/ \
     -e s/@srcdir@/`echo $srcdir | sed s%/%\\\\\\\\/%g`/ \
     -e s/@top_srcdir@/`echo $top_srcdir | sed s%/%\\\\\\\\/%g`/ \
@@ -33,14 +36,29 @@ genmakefile () {
   || { echo "Failed to generate $makefilename" && exit 1; }
 }
 
+# Ensure that the following files are present, so that the Makefile
+# contains rules to rebuild them.
+missingfiles=
+for f in aclocal.m4 configure config.h.in; do
+  if [ ! -f $f ]; then touch $f; missingfiles="$missingfiles $f"; fi
+done
+
+# Will rebuild the makefile if necessary
+srcdir=.
 genmakefile
+
+# Cleans up files that were missing, so that they are rebuilt correctly
+rm -f $missingfiles
+missingfiles=
+
 make -f $makefilename \
-    $srcdir/aclocal.m4 $srcdir/configure $srcdir/config.h.in \
+    $top_srcdir/aclocal.m4 $srcdir/configure $srcdir/config.h.in \
     "$@" || exit 1
 
-find `pwd` -name Makefile.am -print | while read f; do
-    cd `dirname $f` && genmakefile &&
-    make -f $makefilename `dirname $f`/Makefile.in
+find . -name Makefile.am -print | while read f; do
+    (srcdir=`dirname $f` &&
+     genmakefile &&
+     make -f $makefilename $srcdir/Makefile.in)
 done
 
 trap '' 0
