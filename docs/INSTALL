@@ -33,7 +33,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
     A.  Amanda can optionally make use of the following packages to
 	back up different types of clients or clients with different
 	filesystem dumping programs.  If you wish to use GNU tar to
-	back up filesystems, we can install version 1.12 or 1.13.19.
+	back up filesystems, we can install version 1.12 or 1.13.25.
 	gnutar 1.12 can be found at:
 
 		ftp://ftp.gnu.org/pub/gnu/tar/tar-1.12.tar.gz
@@ -42,14 +42,14 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	may be enough, unless it's a SunOS4 host.  Read more about the
 	patches in the patch file itself.
 
-	gnutar 1.13.19 can be found at:
+	gnutar 1.13.25 can be found at:
 
-		ftp://alpha.gnu.org/pub/gnu/tar
+		ftp://alpha.gnu.org/pub/gnu/tar/tar-1.13.25.tar.gz
 
 	Samba allows Unix systems to talk to PC clients.  Amanda can
-	back up Microsoft Windows 95/NT clients using samba:
+	back up Microsoft Windows clients using Samba:
 
-		ftp://ftp.samba.org/pub/samba/samba-2.0.4b.tar.gz
+		http://www.samba.org
 
 	Read docs/SAMBA for configuration tips and known limitations.
 
@@ -59,7 +59,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
     B.  If you wish to make use of some of the scripts that come with
 	Amanda, you will need to install Perl.  You can get Perl from
 	any CPAN site.  
-	    ftp://ftp.gnu.org/pub/gnu/perl/perl-5.005_01.tar.gz
+	    ftp://ftp.cpan.org/pub/CPAN/src/perl-5.6.1.tar.gz
 
 
     C.  One of the programs included in this package is amplot,
@@ -70,7 +70,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	version of awk that understands command line variable
 	substitutions, such as nawk or gawk, which is available from
 
-	    ftp://ftp.gnu.org/pub/gnu/gawk/gawk-3.0.3.tar.gz
+	    ftp://ftp.gnu.org/pub/gnu/gawk/gawk-3.1.1.tar.gz
 
 	Amplot also required that gnuplot be installed on your system.
 	Gnuplot is available at
@@ -82,20 +82,21 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	packages be installed on your system.  The following packages
 	are used:
 
-	    ftp://ftp.gnu.org/pub/gnu/readline/readline-2.2.1.tar.gz
+	    ftp://ftp.gnu.org/pub/gnu/readline/readline-4.2.tar.gz
 		amrecover optionally uses the readline library for its
 		command-line edition mechanisms.  This library itself
 		requires either termcap, curses or ncurses.  termcap
 		is preferred, and it may be obtained from:
 	    ftp://ftp.gnu.org/pub/gnu/termcap/termcap-1.3.tar.gz
 
-	Only if you wish to edit and enhance Amanda, you may need to
-	install the following tools.  Autoconf and automake are
-	required if you are going to rebuild the Makefiles and auto
-	configuration scripts.  Bison is only needed if you are going
-	to work on the index server and client code.
-	    ftp://ftp.gnu.org/pub/gnu/autoconf/autoconf-2.13.tar.gz
-	    ftp://ftp.gnu.org/pub/gnu/automake/automake-1.4.tar.gz
+	If you wish to edit and enhance Amanda, you may need to install
+	the following tools.  Autoconf and automake are required if you
+	are going to rebuild the Makefiles and auto configuration scripts.
+	Bison is only needed if you are going to work on the index server
+	and client code.
+
+	    ftp://ftp.gnu.org/pub/gnu/autoconf/autoconf-2.53.tar.gz
+	    ftp://ftp.gnu.org/pub/gnu/automake/automake-1.6.3.tar.gz
 	    ftp://ftp.gnu.org/pub/gnu/bison/bison-1.27.tar.gz
 	    ftp://ftp.gnu.org/pub/gnu/flex/flex-2.5.4a.tar.gz
 
