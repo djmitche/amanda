@@ -1,3 +1,7 @@
+2005-02-14  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amstatus.pl.in: last_level is negative, on new disk.
+
 2005-02-09  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/amstatus.pl.in: Use '-?' to match negative values
