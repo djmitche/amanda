@@ -1,3 +1,8 @@
+2001-08-09 John R. Jackson (jrj@purdue.edu)
+
+	* tape-src/output-tape.c: Missed a reference to TAPE_BLOCK_BYTES
+	  while doing the tapetype "blocksize" changes.
+
 2001-08-01 John R. Jackson (jrj@purdue.edu)
 
 	* client-src/selfcheck.c: Fix typos I introduced into the PC subdir
