@@ -243,12 +243,16 @@ char *filename;
     read_conffile_recursively(filename);
 
     if(lookup_tapetype(conf_tapetype.s) == NULL) {
+	char *save_confname = confname;
+
+	confname = filename;
 	if(!seen_tapetype)
 	    parserror("default tapetype %s not defined", conf_tapetype.s);
 	else {
 	    line_num = seen_tapetype;
 	    parserror("tapetype %s not defined", conf_tapetype.s);
 	}
+	confname = save_confname;
     }
 
     ip = alloc(sizeof(interface_t));
