@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.95 2004/09/17 11:40:19 martinea Exp $
+ * $Id: amadmin.c,v 1.96 2004/09/17 11:54:48 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -166,6 +166,8 @@ int main(argc, argv)
     if(read_conffile(conffile))
 	error("errors processing config file \"%s\"", conffile);
     amfree(conffile);
+
+    check_dumpuser();
 
     conf_diskfile = getconf_str(CNF_DISKFILE);
     if (*conf_diskfile == '/') {
