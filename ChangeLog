@@ -1,5 +1,7 @@
 1998-08-01  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* docs/FAQ: amandad: error receiving message
+	
 	* docs/FAQ: difference between skip-full and strategy nofull
 
 1998-07-31  Alexandre Oliva  <oliva@dcc.unicamp.br>

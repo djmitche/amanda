@@ -56,7 +56,7 @@ NFS-auto-mounted, some clients may fail to mount the Amanda binaries
 in time.
 
    If the error is repeatable, log into the client, and check whether
-the directory /tmp/amanda exists, and a file named /tmp/amandad.debug
+the directory /tmp/amanda exists, and a file named amandad.debug
 exists in there: amandad will create this file whenever it starts.  If
 this file does not exist, amandad is not starting properly, or it
 lacks permission to create /tmp/amanda/amandad.debug.
@@ -80,6 +80,20 @@ from the keyboard.
 
    As soon as you have properly configured inetd.conf so as to run
 amandad, you should no longer get the `selfcheck timed out' message.
+
+
+Q: Why does `amandad.debug' contain `error receiving message'?
+
+A: One possibility is that you have run `amandad' from the command
+line prompt and typed anything instead of waiting for it to time-out:
+in this case, it will try to read a UDP packet from the keyboard, and
+this was reported not to work on most keyboards :-).  However, if you
+have run `amandad' as any user other than the one listed in
+`inetd.conf', it may have created a /tmp/amanda directory that the
+Amanda user cannot write to, so you should wipe it out.
+
+   Another possibility is that the Amanda service was not properly
+configured as a UDP service; check /etc/services and /etc/inetd.conf.
 
 
 Q: Why does `amcheck' say `access as <username> not allowed...'
