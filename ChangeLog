@@ -1,3 +1,7 @@
+1999-03-20  Dahn Nilsson <dahn.nilsson@maxlab.lu.se>
+
+	* configure.in: SAMBA_VERSION is not set correctly.
+
 1999-03-17  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* client-src/sendbackup-dump.c (re_table): generalize a bit some of
