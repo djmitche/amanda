@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.1 1998/11/19 23:12:58 jrj Exp $
+ * $Id: conffile.c,v 1.54.2.2 1999/01/22 20:51:19 oliva Exp $
  *
  * read configuration file
  */
@@ -105,7 +105,7 @@ typedef enum {
     KRB4_AUTH, BSD_AUTH,
 
     /* dump strategy */
-    SKIP, STANDARD, NOFULL, NOINC, HANOI,
+    SKIP, STANDARD, NOFULL, NOINC, HANOI, INCRONLY,
 
     /* exclude list */
     LIST,
@@ -1737,6 +1737,7 @@ keytab_t strategy_keytable[] = {
     { "NOINC", NOINC },
     { "SKIP", SKIP },
     { "STANDARD", STANDARD },
+    { "INCRONLY", INCRONLY },
     { NULL, IDENT }
 };
 
@@ -1766,6 +1767,9 @@ static void get_strategy()
 	break;
     case HANOI:
 	strat = DS_HANOI;
+	break;
+    case INCRONLY:
+	strat = DS_INCRONLY;
 	break;
     default:
 	parserror("STANDARD or NOFULL expected");
@@ -2324,6 +2328,9 @@ dump_configuration(filename)
 	    break;
 	case DS_HANOI:
 	    printf("HANOI");
+	    break;
+	case DS_INCRONLY:
+	    printf("INCRONLY");
 	    break;
 	}
 	putchar('\n');
