@@ -35,16 +35,23 @@
    without express or implied warranty.
    */
 
+#include "config.h"
 #include "amanda.h"
 
-#ifdef HAVE_CHIO_H
+#if defined(HAVE_CHIO_H) || defined(HAVE_SYS_CHIO_H)
 
 /* This include comes with Gerd Knor's SCSI media changer driver.
    If you are porting to another system, this is the file that defines
    ioctl calls for the changer.  You will have to track it down yourself
    and possibly change all the ioctl() calls in this program.  
    */
-#include <chio.h>
+#if defined(HAVE_CHIO_H)
+# include <chio.h>
+#elif defined(HAVE_SYS_CHIO_H)
+# include <sys/chio.h>
+#else
+# error "Inside CHIO code without CHIO_H or SYS_CHIO_H defined"
+#endif
 
 /* device where the changer is */
 #define CHANGER "/dev/ch0"
