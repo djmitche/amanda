@@ -56,10 +56,10 @@ version.c:	$(srcdir)/genversion.c versuff.c $(srcdir)/version.h
 	./genversion > version.c
 	rm -f genversion genversion.o versuff.o
 
-.deps/regcomp.P: regex.h regcomp.ih
-.deps/regexec.P: regex.h engine.ih
-.deps/regerror.P: regex.h regerror.ih
-.deps/regfree.P: regex.h
+.deps/regcomp.P regcomp.o regcomp.lo: regex.h regcomp.ih
+.deps/regexec.P regexec.o regexec.lo: regex.h engine.ih
+.deps/regerror.P regerror.o regerror.lo: regex.h regerror.ih
+.deps/regfree.P regfree.o regfree.lo: regex.h
 
 REGEXHSRC =	$(REGsrcdir)/regex2.h \
 		$(REGsrcdir)/regcomp.c \
