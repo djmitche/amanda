@@ -1,114 +1,79 @@
-.\"
-.de EX
-.if t .ft C
-.nf
-..
-.de EE
-.fi
-.if t .ft
-..
-.de OP
-\fB\\$1\fP \fI\\$2\fP
-..
-.TH AMTOC 1
-.SH NAME
-amtoc \- generate tape table of contents for an Amanda run
+.TH AMTOC 8 
+.SH NAME 
+amtoc \- generate TOC (Table Of Content) for an amanda run
 .SH SYNOPSIS
-.B amtoc
-[
-.B -c
-]
-.I config
-[
-.B -l
-.I label
-] [
-.B -h
-.I host
-] [
-.B -v
-] [
-.B -i
-] [
-.B -t
-] [
-.B -f
-]
+.B
+.I amtoc
+[-a] [-f file] [-s subs] [--] logfile
+
+.br
 .SH DESCRIPTION
-.B Amtoc
-generates a tape table of contents (TOC) for an Amanda run.
-It's a perl script, you need to install perl first.
-.LP
-See the
-.IR amanda (8)
-man page for more details about Amanda.
+.I Amtoc 
+generate a TOC for an amanda run.
+It's a perl script (If you don't have perl, install it first!).
+
 .SH OPTIONS
 .TP
-.OP "\fR[\fP -c \fR]\fP" config
-Name of the configuration to process.
+.B \-a
+output file name defined to `label_of_the_tape`.toc. In the same directory of logfile.
 .TP
-.OP -l label
-Label of the tape (default: last Amanda run).
+.B \-f file
+write output to file ('-' for stdout)
+.TP 
+.B \-s subs
+output file name is evaluated from subs, with $_ set to `label_of_the_tape`.  '-a' option is equiv to -s 's/\\$/.toc/'
 .TP
-.OP -h host
-Only process the specified host (default: all hosts).
+.B \-\-
+last option, next parameter used as logfile
 .TP
-.B -v
-Be verbose.
-This output is not really a TOC, but a full dump of the database.
-It may be restricted by the
-.B -l
-and
-.B -h
-options.
-.TP
-.B -i
-Add an informational text header to the beginning of the TOC
-containing a reminder about how to restore files.
-.TP
-.B -t
-Use tab rather than spaces between the output fields.
-.TP
-.B -f
-Write output to a file rather than standard output.
-The file is named:
-.LP
+.B logfile
+use '-' for stdin.
+
+.SH OUTPUT FORMAT
+4 fields separated by two spaces. exemple:
+
 .RS
-.RS
-\fIlogdir\fP/\fIlabel\fP.toc,
+#  Server:/partition  level  size[Kb]
+.br
+0  all-26.janvier.1999:  -  -
+.br
+1  cuisun49:/cuisun49/home  0  288
+.br
+2  cuisun31:/cuisun31/home  0  29216
+.br
+  ...
+.br
+51  total:  -  35796768
+.br
 .RE
-.RE
-.IP
-where
-.I logdir
-is the log directory defined in amanda.conf, and
-.I label
-is the tape label
-(any '/' characters are converted to '_').
-.RE
-.SH EXAMPLE
-.B Amtoc
-is normally run right after
-.B amflush
-or
-.BI amdump .
-.LP
-.RS
-.EX
-# amdump @DEFAULT_CONFIG@
-# amtoc @DEFAULT_CONFIG@ -f
+
+.SH USAGE
+The easiest way to use it, is to patch
+.I amdump
+, to call
+.I amtoc
+just before
+.I amreport
+:
+
+.RS  
+$sbindir/amtoc -a $logdir/log >/dev/null 2>&1
+.RE  
+
+which generate $logdir/`tape_label`.toc.
+You may also want to call
+.I amtoc
+after an
+.I amflush.
+
+
+
+.SH SEE ALSO
+.I amanda
+,
+.I perl
+
 .SH AUTHOR
-Nicolas MAYENCOURT <nicolas@cui.unige.ch>
+Nicolas MAYENCOURT <Nicolas.Mayencourt@cui.unige.ch>
 .br
 University of Geneva/Switzerland
-.SH "SEE ALSO"
-amanda(8),
-amflush(8),
-perl(1)
-.SH BUGS
-.B Amtoc
-uses the Amanda database,
-which only maintains information about the last tape used
-at a given backup level.
-Generating a TOC for the most recent run should be OK,
-but generating one for an older run is usually only partially correct.
