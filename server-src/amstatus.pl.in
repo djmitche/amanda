@@ -92,9 +92,15 @@ $start_degraded_mode = 0;
 
 $label = "";					# -w fodder
 $origsize = 0;					# -w fodder
-$runq = 0;					# -w fodder
+$runq = 0;						# -w fodder
 $stoppedq = 0;					# -w fodder
 $wakeup = 0;					# -w fodder
+$idle_dumpers = 0;
+$status_driver = 0;
+$status_taper = 0;
+$qlen_tapeq = 0;
+$free_kps = 0;
+$free_space = 0;
 
 while(<AMDUMP>) {
 	chomp;
@@ -111,6 +117,13 @@ while(<AMDUMP>) {
 		}
 		$$host=1;
 		push @$host, $partition;
+		$hostpart="$host$partition";
+		$estimate{$hostpart}=0;
+		$level{$hostpart}=0;
+		$esize{$hostpart}=0;
+		$dump_started{$hostpart}=0;
+		$dump_finished{$hostpart}=0;
+		$taper_started{$hostpart}=0;
 	}
 	elsif(/got result for host (\S+) disk (\S+): (\d+) -> (\d+)K,/) {
 		$host=$1;
@@ -259,6 +272,8 @@ close(AMDUMP);
 
 print "\n\n";
 
+$nb_partition = 0;
+
 $epartition = 0;
 $estsize = 0;
 $fpartition = 0;
@@ -271,15 +286,22 @@ $dtesize = 0;
 $dupartition = 0;
 $dusize = 0;
 $duesize = 0;
+$dpartition = 0;
+$dsize = 0;
+$desize = 0;
+
+$twpartition = 0;
+$twsize = 0;
+$twesize = 0;
 $tapartition = 0;
 $tasize = 0;
 $taesize = 0;
 $tfpartition = 0;
 $tfsize = 0;
 $tfesize = 0;
-$twpartition = 0;
-$twsize = 0;
-$twesize = 0;
+$tpartition = 0;
+$tsize = 0;
+$tesize = 0;
 
 foreach $host (sort @hosts) {
 	foreach $partition (sort @$host) {
