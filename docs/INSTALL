@@ -229,7 +229,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	12:45am that night the dumps will be run.
 
     D.  Put the Amanda services into your /etc/services file.  Add
-	entry like:
+	entries like:
 		amanda		10080/udp
 		amandaidx	10082/tcp
 		amidxtape	10083/tcp
@@ -239,6 +239,10 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	If you are running NIS (aka YP), you have to enter the amanda
 	service into your NIS services database.  Consult your NIS
 	documentation for details.
+
+	You may use the `patch-system' script, from client-src, in
+        order to modify this file.  Run it with a `-h' argument for
+        usage.
 
     E.  If you are going to use the indexing capabilities of Amanda,
 	then add these to your inetd.conf on the tape server host:
@@ -250,6 +254,10 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	to where the amindexd and amidxtaped executables (usually
 	libexec_dir/amindexd and libexec_dir/amidxtaped), and USER is
 	the Amanda user.
+
+	You may use the `patch-system' script, from client-src, in
+        order to modify this file.  Run it with a `-h' argument for
+        usage.
 
     F.  If the tape server host is itself going to be backed up (as is
 	usually the case), you must also follow the client-side install
@@ -287,6 +295,10 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	service into your NIS services database.  Consult your NIS
 	documentation for details.
 
+	You may use the `patch-system' script, from client-src, in
+        order to modify this file.  Run it with a `-h' argument for
+        usage.
+
     D.  Put the Amanda client service into inetd's config file.  This
 	file is usually found in /etc/inetd.conf, but on older systems
 	it is /etc/servers.  The format is different on different OSes,
@@ -294,6 +306,10 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	an example from our site, again from SunOS 4.x:
 
 	    amanda dgram udp wait USER AMANDAD_PATH amandad
+
+	You may use the `patch-system' script, from client-src, in
+        order to modify this file.  Run it with a `-h' argument for
+        usage.
 
     E.  Kick inetd to make it read its config file.  On most systems
 	you can just kill -HUP inetd.  On older systems you may have to
