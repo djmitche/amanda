@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.34 2003/03/28 00:15:21 kovert Exp $
+ * $Id: protocol.c,v 1.35 2003/03/29 23:50:25 kovert Exp $
  *
  * implements amanda protocol
  */
@@ -295,6 +295,12 @@ state_machine(p, action, pkt)
     pstate_t curstate;
     action_t retaction;
 
+#ifdef PROTO_DEBUG
+	dbprintf(("%s: state_machine: initial: p %X action %s pkt %X\n",
+		debug_prefix_time(": protocol"),
+		(int)p, action2str(action), NULL));
+#endif
+
     assert(p != NULL);
     assert(action == A_RCVDATA || pkt == NULL);
     assert(p->state != NULL);
@@ -305,11 +311,11 @@ state_machine(p, action, pkt)
 		  debug_prefix_time(": protocol"),
 		  (int)p, pstate2str(p->state), action2str(action)));
 	if (pkt != NULL) {
-	    dbprintf(("pkt: %s (t %d) orig REQ (t %d cur %d)\n",
+	    dbprintf(("%s: pkt: %s (t %d) orig REQ (t %d cur %d)\n",
 		      debug_prefix(": protocol"),
 		      pkt_type2str(pkt->type), (int)CURTIME,
 		      (int)p->origtime, (int)p->curtime));
-	    dbprintf(("pkt contents:\n-----\n%s-----\n",
+	    dbprintf(("%s: pkt contents:\n-----\n%s-----\n",
 		      debug_prefix(": protocol"), pkt->body));
 	}
 #endif
