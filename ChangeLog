@@ -2,6 +2,9 @@
 
 	* server-src/driver.c (adjust_diskspace): do not abort just because
 	a holding disk file is missing
+	(main): report warning if holding disk directory could not be
+	created, and do not use it
+	Reported by Albrecht Gebhardt <agebhard@zidsrv.sci.uni-klu.ac.at>
 
 	* example/Makefile.am (EXTRA_DIST): add 8.5x11.ps to the
 	distribution

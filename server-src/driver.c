@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.46.2.3 1998/07/31 05:05:54 oliva Exp $
+ * $Id: driver.c,v 1.46.2.4 1998/07/31 05:16:35 oliva Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -229,7 +229,11 @@ char **main_argv;
 	    newdir = newvstralloc(newdir,
 				  hdp->diskdir, "/", datestamp,
 				  NULL);
-	    mkdir(newdir, 0770);
+	    if (mkdir(newdir, 0770) == -1) {
+		log_add(L_WARNING, "WARNING: could not create %s: %s",
+			newdir, strerror(errno));
+		hdp->disksize = 0L;
+	    }
 	}
     }
 
