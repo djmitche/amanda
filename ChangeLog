@@ -1,3 +1,7 @@
+2000-09-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* man/amanda.8.in: add all pages in the SEE ALSO section.
+
 2000-09-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* man/amreport.8.in: amreport does not rotate the log.
