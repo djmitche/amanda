@@ -7,7 +7,7 @@ AC_VALIDATE_CACHE_SYSTEM_TYPE
 AM_INIT_AUTOMAKE(amanda, 2.4.2)
 AM_CONFIG_HEADER(config/config.h)
 
-AC_PREREQ(2.12)			dnl Minimum Autoconf version required.
+AC_PREREQ(2.12.2)		dnl Minimum Autoconf version required.
 
 dnl host system/type
 AC_ARG_PROGRAM

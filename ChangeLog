@@ -1,5 +1,7 @@
 1999-01-22  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* configure.in: require autoconf 2.12.2
+
 	* changer-src/Makefile.am (LDADD): add libamtape, because
 	tapefd_rdlabel() is used in scsi-changer-driver.c
 
