@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.12 2000/09/24 17:12:37 martinea Exp $
+ * $Id: amadmin.c,v 1.49.2.12.2.1 2001/02/28 15:31:16 jrjackson Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -678,7 +678,7 @@ disk_t *dp;
     if(info.command & FORCE_BUMP) 
 	printf("  (Forcing bump at next run)\n");
     if(info.command & FORCE_NO_BUMP) 
-	printf("  (Forecing no-bump at next run)\n");
+	printf("  (Forcing no-bump at next run)\n");
     printf("  Stats: dump rates (kps), Full:  %5.1f, %5.1f, %5.1f\n",
 	   info.full.rate[0], info.full.rate[1], info.full.rate[2]);
     printf("                    Incremental:  %5.1f, %5.1f, %5.1f\n",
