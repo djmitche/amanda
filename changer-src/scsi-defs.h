@@ -1011,7 +1011,7 @@ typedef struct {
 } SC_COM_T;
 
 typedef struct OpenFiles {
-    int fd;                       /* The foledescriptor */
+    int fd;                       /* The filedescriptor */
 #ifdef HAVE_CAM_LIKE_SCSI
     struct cam_device *curdev;
 #endif

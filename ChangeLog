@@ -1,4 +1,9 @@
 2000-07-17 Thomas Hepper <th@ant.han.de>
+	* docs/TAPE.CHANGERS: Added some notes for the cam driver
+	* changer-src/scsi-cam.c: New syntax for telling scsi ids
+	(bus:target:lun)
+	SCSI_ExecuteCommand now returns the correct sense buffer.
+2000-07-17 Thomas Hepper <th@ant.han.de>
 	* configure.in: Added check for BSD SCSI CAM Support
 	* changer-src/scsi-cam.c: New, functions for SCSI CAM Support
 	( at the moment for FreeBSD 4.0)

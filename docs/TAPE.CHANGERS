@@ -400,7 +400,7 @@ IRIX 6.x
 Solaris
 Linux
 AIX
-FreeBSD
+FreeBSD 3.0/4.0
 
 Tape and robot on different IDs run native on
 Linux
@@ -428,6 +428,15 @@ mknod /dev/scsi/1 c 203 0x001000
                           ||| LUN of device
                           ||SCSI ID of the device
                           2 digit instance number from ioscan
+
+On FreeBSD 4.0 the syntax for the device files has changed. Now you
+have to tell chg-scsi the bus:target:lun combination. If you for
+example on your scsi bus 0 target 3 an robot the syntax is
+changerdev 0:3:0
+To get this info you can use the camcontrol command, <camcontrl devlist>
+will give you a list of known devices.
+Don't specify dev and scsitapedev in your chg-scsi.conf !!, this will
+not work.
 
 On Linux you need either sg (generic scsi) as module or it mus be compiled
 into the kernel. If the sg driver doses not work try to use the ioctl interface.
