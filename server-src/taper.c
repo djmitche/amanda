@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.89 2003/04/14 17:16:46 martinea Exp $
+/* $Id: taper.c,v 1.90 2003/05/25 23:34:38 kovert Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1609,7 +1609,7 @@ void destroy_buffers()
 }
 
 #else
-error: must define either HAVE_SYSVSHM or HAVE_MMAP!
+#error: must define either HAVE_SYSVSHM or HAVE_MMAP!
 #endif
 #endif
 
