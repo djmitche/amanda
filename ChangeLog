@@ -1,3 +1,7 @@
+2004-04-23  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/planner.c (setup_estimate): Typo.
+
 2004-04-22  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	Allow bumpsize, bumppercent, bumpdays and bumpmult to be in a dumptype.
