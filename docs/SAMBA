@@ -1,23 +1,29 @@
 README for adding PC hosts to the Amanda backup system.
 
 Release 2. 28/Jan/1997
+$Id: SAMBA,v 1.4 1997/09/12 08:44:32 amcore Exp $
 
 Installation
 
-First, Samba must be patched with the file samba-1.9.16p2.1.patch -
-this is a patch for 1.9.16p2 of samba, and modifies the way the 'dir'
-command works, and adds totals to both the dir command and the tar
-command, via stderr.  These are used by Amanda to estimate and count
-backup sizes.  This should be installed on an Amanda 'client' host,
-that will act as the 'samba server' host.  This will most likely be the
-same machine as the Amanda master server.  This patch also works fine
-with newer releases of samba.
+If you're running a version of samba up to 1.9.16p11, or some alpha
+and beta-versions of 1.9.17, you must patch it with the file
+samba-1.9.16p2.patch - this is a patch for 1.9.16p2 of samba, and
+modifies the way the 'dir' command works, and adds totals to both the
+dir command and the tar command, via stderr.  These are used by Amanda
+to estimate and count backup sizes.  This should be installed on an
+Amanda 'client' host, that will act as the 'samba server' host.  This
+will most likely be the same machine as the Amanda master server.
+This patch also works fine with newer releases of samba, but it is
+unnecessary for releases of samba newer than 1.9.17.  In version
+1.9.17, make sure you don't set a low logging/debuggin level in the
+samba configuration file, because this flag may prevent that estimate
+sizes are printed correctly.  If you have very long pathnames or very
+deep directory trees in the PC filesystems, you may also want to patch
+samba with samba-longnames.patch.
 
-It is possible that releases newer than 1.9.16p11 of samba will not
-require this patch.  When in doubt, try to apply the patch yourself.
-
-Then, Amanda must be configured with smbclient support - when you
-run configure, add the following argument:
+After building and installing samba with the selected patches, Amanda
+must be configured with smbclient support - when you run configure,
+add the following argument:
 
  --with-smbclient=/full/path/to/smbclient
 
@@ -40,7 +46,7 @@ privileges, or amcheck will complain.
 
 The share must be given full access (read/write) to the disk -
 otherwise incremental backups will not work and it will always backup
-most of the disk (A bits never being reset).
+most of the disk (Archive bits never being reset).
 
 e.g.
 

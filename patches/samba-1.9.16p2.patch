@@ -1,3 +1,6 @@
+If you're running samba-1.9.17 or newer, you probably don't need this
+patch.  It is required for versions up to 1.9.16p11, though.
+
 diff -cr samba-1.9.16p2/source/client.c samba-1.9.16p2.1/source/client.c
 *** samba-1.9.16p2/source/client.c	Fri Aug 23 01:39:51 1996
 --- samba-1.9.16p2.1/source/client.c	Mon Sep 16 12:41:10 1996

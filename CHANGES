@@ -1,5 +1,8 @@
 Version 2.4.0b4
 
+	Added patch for samba to support very long filenames.  -Todd
+	Pfaff <todd@edge.cis.mcmaster.ca>
+
 	Added VXDUMP support to estimate program.  -oliva
 
 	Fixed amflush so that it cd's to the configuration directory
