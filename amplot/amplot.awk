@@ -70,6 +70,7 @@ BEGIN{
 	bandw_raise = 250;
 	bandw_scale = 30/300;   # default calculated below 
 
+	holding_disk = -1;      # uninitialized
 		
 	cnt        = 0;		# default values for counters
 	din 	   = 0;		# number of dumps to holding disk
@@ -197,7 +198,11 @@ function do_start() { 		# get configuration parameters
 	}
 	size        = $10/1024;	       # size of holding disk in MB
 	holding_disk= $10;	
-	const        = 100/holding_disk; # displaying the use of the holding disk
+	if (holding_disk != 0) {
+		const        = 100/holding_disk; # displaying the use of the holding disk
+	} else {
+		const        = 100;
+	}
 	space_old    = twait_old = disk_raise;
 	print 0, space_old > "disk_alloc"; # need to reset the files I create 
 	print 0, twait_old > "tape_wait"; # need to reset the files I create 
@@ -306,7 +311,7 @@ function do_moves() { # function that extracts the estimated size of dumps
 
 
 END {
-	if( holding_disk == 0) { 		# bad input file 
+	if( holding_disk == -1) { 		# bad input file 
 		print fil,": MISSING SPACE DECLARATION" ;
 		exit;
 	}
