@@ -1,3 +1,9 @@
+2000-12-04 John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/conffile.c (read_conffile_recursively): If the file name
+	  for the includefile directive is not absolute, make it relative to
+	  the configuration directory.
+
 2000-12-03 John R. Jackson  <jrj@purdue.edu>
 
 	* restore-src/amrestore.c: Fix header when compression is included.
