@@ -928,6 +928,7 @@ case "$target" in
   m88k-motorola-sysv4)
 			;;
   *-nextstep3)
+			ac_cv_func_setpgrp_void=yes
 			;;
   *-pc-linux-*)
 			;;
