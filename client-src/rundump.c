@@ -41,7 +41,7 @@ char **argv;
 	if((pwptr = getpwnam(pwname)) == NULL)
 	    error("error [cannot find user %s in passwd file]\n", pwname);
 
-	chown("/tmp/runtar.debug", pwptr->pw_uid);
+	chown("/tmp/rundump.debug", pwptr->pw_uid, getgid());
 
 #ifdef FORCE_USERID
 	if (getuid() != pwptr->pw_uid)
