@@ -1,5 +1,8 @@
 Version 2.4.0p1
 
+	check whether GNUTAR_LISTED_INCREMENTAL_DIR is a directory.
+	-oliva, reported by J.A. Gutierrez <spd@gtc1.cps.unizar.es>
+
 	index files are now stored in a directory tree ala curinfo instead
 	of a flat namespace. -JJ
 
