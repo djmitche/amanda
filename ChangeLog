@@ -1,3 +1,11 @@
+2002-12-19  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	Don't use the G flag for samba backup restore by tar.
+	* recover-src/extract_list.c (enum dumptypes): Add IS_SAMBA_TAR.
+	* recover-src/extract_list.c (extract_files_child): Set dumptype to
+	  IS_SAMBA_TAR if it's a SAMBA backup. Don't pass the G flag to tar
+	  if it's IS_SAMBA_TAR.
+
 2002-12-18  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* amplot/amplot.awk: Parse line with features, parse ENDFLUSH line.
