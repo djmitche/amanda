@@ -416,7 +416,11 @@ valid estimate.  If you are using DUMP, contact your vendor and
 request a patch for dump that fixes this bug.  If you are using GNU
 tar, make sure it is release 1.12 or newer; 1.11.8 won't do!  Even
 release 1.12 may require a patch to correctly report estimates and
-dump sizes; check the patches directory of the Amanda distribution.
+dump sizes, as well as to handle sparse files correctly and quickly
+instead of printing error messages like `Read error at byte 0, reading
+512 bytes, in file ./var/log/lastlog: Bad file number' in
+sendsize.debug and being very slow.  Check the patches directory of
+the Amanda distribution.
 
 
 Q: What if `amdump' reports `dumps way too big, must skip incremental
