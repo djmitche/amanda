@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.59 1999/04/10 06:19:30 kashmir Exp $
+ * $Id: amcheck.c,v 1.60 1999/04/14 20:56:01 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -111,10 +111,7 @@ char **argv;
     erroutput_type = ERR_INTERACTIVE;
 
     if(geteuid() == 0) {
-	uid_t ruid = getuid();
-	setuid(0);
-	seteuid(ruid);
-	setgid(getgid());
+	seteuid(getuid());
     }
 
     mailout = overwrite = 0;
