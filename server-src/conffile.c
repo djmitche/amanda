@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.99 2003/01/04 17:45:52 martinea Exp $
+ * $Id: conffile.c,v 1.100 2003/02/20 19:35:44 martinea Exp $
  *
  * read configuration file
  */
@@ -688,6 +688,7 @@ static void init_defaults()
     conf_dumporder.s = stralloc("ttt");
     malloc_mark(conf_dumporder.s);
     conf_amrecover_changer.s = stralloc("");
+    conf_printer.s = stralloc("");
 
     conf_dumpcycle.i	= 10;
     conf_runspercycle.i	= 0;
@@ -720,7 +721,6 @@ static void init_defaults()
     seen_tapedev = 0;
     seen_rawtapedev = 0;
     seen_printer = 0;
-    conf_printer.s = "";
     seen_tpchanger = 0;
     seen_chngrdev = 0;
     seen_chngrfile = 0;
