@@ -1,3 +1,10 @@
+1999-08-15  Derek Ney <derek@hipgraphics.com>, Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* client-src/sendsize.c (SAMBA_DEBUG_LEVEL): New macro, "0" for
+	Samba >= 2, "3" for older ones.
+	(getsize_smbtar): Use `du' if SAMBA_VERSION >= 2, and the
+	appropriate SAMBA_DEBUG_LEVEL.
+
 1999-08-15  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* common-src/Makefile.am (genversion.o): Depend on genversion.c
@@ -80,7 +87,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.234 1999/08/15 09:57:46 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.235 1999/08/15 10:09:45 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
