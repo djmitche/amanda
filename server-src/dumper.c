@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.99 1999/02/13 22:32:34 martinea Exp $
+/* $Id: dumper.c,v 1.100 1999/03/07 17:11:45 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -139,7 +139,7 @@ static int runcompress P((int, pid_t *));
 
 void sendbackup_response P((proto_t *p, pkt_t *pkt));
 int startup_dump P((char *hostname, char *disk, int level, char *dumpdate,
-		    char *dumpname, char *options));
+		    char *progname, char *options));
 static int startup_chunker P((const char *, long));
 
 
@@ -1704,8 +1704,8 @@ pkt_t *pkt;
     return;
 }
 
-int startup_dump(hostname, disk, level, dumpdate, dumpname, options)
-char *hostname, *disk, *dumpdate, *dumpname, *options;
+int startup_dump(hostname, disk, level, dumpdate, progname, options)
+char *hostname, *disk, *dumpdate, *progname, *options;
 int level;
 {
     char level_string[NUM_STR_SIZE];

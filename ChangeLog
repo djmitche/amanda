@@ -1,3 +1,9 @@
+1999-03-07 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/dumper.c (startup_dump): rename dumpname to progname.
+	the function will use the parameter progname instead of the
+	global variable.
+
 1999-03-06  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* configure.in (openbsd): according to Ralf Gebhart
