@@ -108,6 +108,7 @@ while (<$fh>) {
     chomp;
     next if /found Amanda directory/;
     next if /skipping cruft directory/;
+    next if /skip-incr/;
     ($date, $host, $disk, $level, $tape, $file, $status) = split ' ', $_;
     next if $date eq 'date';
     next if $date eq 'Warning:';
@@ -126,6 +127,23 @@ while (<$fh>) {
 $fh->close or
     die "$0: error in closing `$amadmin $opt_config find|' pipe: $!\n";
 
+# Process the status to arrive at a "last" status
+for $host (sort keys %disks) {
+    for $disk (sort keys %{$disks{$host}}) {
+	$level{$host}{$disk}{"0000-LA-ST"} = '';
+	for $date (sort keys %dates) {
+	    if ($level{$host}{$disk}{$date} eq "E"
+		 && $level{$host}{$disk}{"0000-LA-ST"} =~ /^\d/ ) {
+		$level{$host}{$disk}{"0000-LA-ST"} .= $level{$host}{$disk}{$date};
+	    } elsif ($level{$host}{$disk}{$date} eq "") {
+		$level{$host}{$disk}{"0000-LA-ST"} =~ s/E//;
+	    } else {
+		$level{$host}{$disk}{"0000-LA-ST"} = $level{$host}{$disk}{$date};
+	    }
+	}
+    }
+}
+
 unless ($opt_skipmissed)
 # touch all the dates just in case whole days were missed.
 {
@@ -141,7 +159,9 @@ unless ($opt_skipmissed)
 	$start += 86400;
     }
 }
-    
+
+#Add the "last" entry    
+$dates{"0000-LA-ST"}=1;
 
 # make formats
 
