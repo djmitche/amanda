@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.47.2.7 1999/09/08 23:28:33 jrj Exp $
+/* $Id: taper.c,v 1.47.2.8 1999/09/19 18:42:57 jrj Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -185,23 +185,15 @@ char **main_argv;
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
-    /* print prompts and debug messages if running interactive */
-
-    interactive = (main_argc > 1 && strcmp(main_argv[1],"-t") == 0);
-    if(interactive) {
-	erroutput_type = ERR_INTERACTIVE;
-    } else {
-	erroutput_type = ERR_AMANDALOG;
-	set_logerror(logerror);
-    }
-
     fprintf(stderr, "%s: pid %ld executable %s version %s\n",
 	    get_pname(), (long) getpid(), main_argv[0], version());
     fflush(stderr);
 
-    if (main_argc > 1) {
+    if (main_argc > 1 && main_argv[1][0] != '-') {
 	config_name = stralloc(main_argv[1]);
 	config_dir = vstralloc(CONFIG_DIR, "/", main_argv[1], "/", NULL);
+	main_argc--;
+	main_argv++;
     } else {
 	char my_cwd[STR_SIZE];
 
@@ -215,6 +207,16 @@ char **main_argv;
     }
 
     safe_cd();
+
+    /* print prompts and debug messages if running interactive */
+
+    interactive = (main_argc > 1 && strcmp(main_argv[1],"-t") == 0);
+    if(interactive) {
+	erroutput_type = ERR_INTERACTIVE;
+    } else {
+	erroutput_type = ERR_AMANDALOG;
+	set_logerror(logerror);
+    }
 
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if(read_conffile(conffile)) {
@@ -756,12 +758,9 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 		log_add(L_FAIL, "%s %s %d [out of tape]",
 			hostname, diskname, level);
 		log_add(L_ERROR,"no-tape [%s]", errstr);
-		amfree(q);
-		exit(1);
 	    }
 	    amfree(q);
 	    return;
-
 
 	case 'C':
 	    assert(!opening);
@@ -1209,6 +1208,16 @@ void write_file()
     return;
 }
 
+/*
+ * Define the following to test tape error handling.  An EIO error will
+ * be simulated after the number of blocks in block_counter.  This works
+ * especially well with tapedev set to /dev/null.
+ */
+#undef FAKE_TAPE_ERROR
+#if defined(FAKE_TAPE_ERROR)
+static int block_counter = 10;
+#endif
+
 int write_buffer(bp)
 buffer_t *bp;
 {
@@ -1221,6 +1230,12 @@ buffer_t *bp;
 
     startclock();
     rc = tapefd_write(tape_fd, bp->buffer, sizeof(bp->buffer));
+#if defined(FAKE_TAPE_ERROR)
+    if(--block_counter <= 0) {
+	rc = -1;
+	errno = EIO;
+    }
+#endif
     if(rc == sizeof(bp->buffer)) {
 #if defined(NEED_RESETOFS)
 	static double tape_used_modulus_2gb = 0;
@@ -1600,6 +1615,7 @@ int label_tape()
 	    return 0;
 	} 
 	tapefd_close(tape_fd);
+	tape_fd = -1;
     }
     else
 #endif /* !HAVE_LINUX_ZFTAPE_H */
@@ -1733,9 +1749,9 @@ int end_tape(writerror)
 int writerror;
 {
     char *result;
+    int rc = 0;
 
-    if (label != NULL) {
-	/* label would be null after entering degraded mode */
+    if(tape_fd >= 0) {
 	log_add(L_INFO, "tape %s kb %ld fm %d %s", 
 		label,
 		(long) ((total_tape_used+1023.0) / 1024.0),
@@ -1748,18 +1764,17 @@ int writerror;
 		(long) ((total_tape_used+1023.0) / 1024.0),
 		total_tape_fm);
 	fflush(stderr);
-    }
+	if(! writerror) {
+	    if(! write_filemark()) {
+		rc = 1;
+		goto common_exit;
+	    }
 
-    if(!writerror) {
-	if(!write_filemark()) {
-	    tapefd_close(tape_fd);
-	    goto tape_error;
-	}
-
-	if((result = tapefd_wrendmark(tape_fd, taper_datestamp)) != NULL) {
-	    tapefd_close(tape_fd);
-	    errstr = newstralloc(errstr, result);
-	    goto tape_error;
+	    if((result = tapefd_wrendmark(tape_fd, taper_datestamp)) != NULL) {
+		errstr = newstralloc(errstr, result);
+		rc = 1;
+		goto common_exit;
+	    }
 	}
     }
 
@@ -1769,14 +1784,17 @@ int writerror;
 
 	if(tapefd_rewind(tape_fd) == -1 ) {
 	    errstr = newstralloc2(errstr, "rewinding tape: ", strerror(errno));
-	    goto tape_error;
+	    rc = 1;
+	    goto common_exit;
 	}
 	/* close the tape */
 
 	if(tapefd_close(tape_fd) == -1) {
 	    errstr = newstralloc2(errstr, "closing tape: ", strerror(errno));
-	    goto tape_error;
+	    rc = 1;
+	    goto common_exit;
 	}
+	tape_fd = -1;
 
 #ifdef HAVE_LIBVTBLC
 	/* update volume table */
@@ -1792,7 +1810,8 @@ int writerror;
 				      "updating volume table: ", 
 				      strerror(errno));
 	    }
-	    goto tape_error;
+	    rc = 1;
+	    goto common_exit;
 	}
 	/* read volume table */
 	if ((num_volumes = read_vtbl(tape_fd, volumes, vtbl_buffer,
@@ -1800,7 +1819,8 @@ int writerror;
 	    errstr = newstralloc2(errstr,
 				  "reading volume table: ", 
 				  strerror(errno));
-	    goto tape_error;
+	    rc = 1;
+	    goto common_exit;
 	}
 	/* set volume label and date for first entry */
 	vtbl_no = 0;
@@ -1808,14 +1828,16 @@ int writerror;
 	    errstr = newstralloc2(errstr,
 				  "setting label for entry 1: ",
 				  strerror(errno));
-	    goto tape_error;
+	    rc = 1;
+	    goto common_exit;
 	}
 	/* date of start writing this tape */
 	if (set_date(start_datestr, volumes, num_volumes, vtbl_no)){
 	    errstr = newstralloc2(errstr,
 				  "setting date for entry 1: ", 
 				  strerror(errno));
-	    goto tape_error;
+	    rc = 1;
+	    goto common_exit;
 	}
 	/* set volume labels and dates for backup files */
 	for (vtbl_no = 1; vtbl_no <= num_volumes - 2; vtbl_no++){ 
@@ -1829,14 +1851,16 @@ int writerror;
 		errstr = newstralloc2(errstr,
 				      "setting label for entry i: ", 
 				      strerror(errno));
-		goto tape_error;
+		rc = 1;
+		goto common_exit;
 	    }
 	    if(set_date(vtbl_entry[vtbl_no].date, 
 			volumes, num_volumes, vtbl_no)){
 		errstr = newstralloc2(errstr,
 				      "setting date for entry i: ",
 				      strerror(errno));
-		goto tape_error;
+		rc = 1;
+		goto common_exit;
 	    }
 	}
 	/* set volume label and date for last entry */
@@ -1845,14 +1869,16 @@ int writerror;
 	    errstr = newstralloc2(errstr,
 				  "setting label for last entry: ", 
 				  strerror(errno));
-	    goto tape_error;
+	    rc = 1;
+	    goto common_exit;
 	}
 	datestr = NULL; /* take current time */ 
 	if (set_date(datestr, volumes, num_volumes, vtbl_no)){
 	    errstr = newstralloc2(errstr,
 				  "setting date for last entry 1: ", 
 				  strerror(errno));
-	    goto tape_error;
+	    rc = 1;
+	    goto common_exit;
 	}
 	/* write volume table back */
 	if (write_vtbl(tape_fd, volumes, vtbl_buffer, num_volumes, first_seg,
@@ -1860,33 +1886,40 @@ int writerror;
 	    errstr = newstralloc2(errstr,
 				  "writing volume table: ", 
 				  strerror(errno));
-	    goto tape_error;
+	    rc = 1;
+	    goto common_exit;
 	}  
-	close(tape_fd);
 
 	fprintf(stderr, "taper: updating volume table: done.\n");
 	fflush(stderr);
 #endif /* HAVE_LIBVTBLC */
     }
-    else
 #endif /* !HAVE_LINUX_ZFTAPE_H */
-    /* write the final filemarks */
 
-    if(tapefd_close(tape_fd) == -1) {
+    /* close the tape and let the OS write the final filemarks */
+
+common_exit:
+
+    if(tapefd_close(tape_fd) == -1 && ! writerror) {
 	errstr = newstralloc2(errstr, "closing tape: ", strerror(errno));
-	goto tape_error;
+	rc = 1;
     }
+    tape_fd = -1;
+    amfree(label);
 
-    return 1;
-
-tape_error:
-    /* global "errstr" should get passed back to reader-side */
-    return 0;
+    return rc;
 }
 
 
 int write_filemark()
 {
+#if defined(FAKE_TAPE_ERROR)
+    if(--block_counter <= 0) {
+	errno = EIO;
+	errstr = newstralloc2(errstr, "writing filemark: ", strerror(errno));
+	return 0;
+    }
+#endif
     if(tapefd_weof(tape_fd, 1) == -1) {
 	errstr = newstralloc2(errstr, "writing filemark: ", strerror(errno));
 	return 0;
