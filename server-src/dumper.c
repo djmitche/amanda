@@ -412,9 +412,11 @@ int outf, size;
 
 static char msgbuf[MAX_LINE];
 static int msgofs = 0;
+int got_info_endline;
 int got_sizeline;
 int got_endline;
 int dump_result;
+char *backup_name, *recover_cmd, *compress_suffix;
 #define max(a,b) (a>b?a:b)
 
 static void process_dumpeof()
@@ -436,6 +438,37 @@ static void process_dumpeof()
     }
 }
 
+/* Parse an information line from the client.
+** We ignore unknown parameters and only remember the last
+** of any duplicates.
+*/
+static void parse_info_line(str)
+char *str;
+{
+    if(!strcmp(str, "end\n")) {
+	got_info_endline = 1;
+	return;
+    }
+
+    if(!strncmp(str, "BACKUP=", 7)) {
+	backup_name = stralloc(str + 7);
+	backup_name[strlen(backup_name)-1] = '\0';
+	return;
+    }
+
+    if(!strncmp(str, "RECOVER_CMD=", 12)) {
+	recover_cmd = stralloc(str + 12);
+	recover_cmd[strlen(recover_cmd)-1] = '\0';
+	return;
+    }
+
+    if(!strncmp(str, "COMPRESS_SUFFIX=", 16)) {
+	compress_suffix = stralloc(str + 16);
+	compress_suffix[strlen(compress_suffix)-1] = '\0';
+	return;
+    }
+}
+
 static void process_dumpline(str)
 char *str;
 {
@@ -448,24 +481,28 @@ char *str;
 	dump_result = max(dump_result, 1);
 	break;
     case 's':
-	/* a sendbackup line, just check them all since there are only 4 */
+	/* a sendbackup line, just check them all since there are only 5 */
 	if(!strncmp(str, "sendbackup: start", 17)) {
 	    break;
 	}
-	else if(!strncmp(str, "sendbackup: size", 16)) {
+	if(!strncmp(str, "sendbackup: size", 16)) {
 	    origsize = (long) ((atof(str + 16)+1023.0) / 1024.0);
 	    got_sizeline = 1;
 	    break;
 	}
-	else if(!strncmp(str, "sendbackup: end", 15)) {
+	if(!strncmp(str, "sendbackup: end", 15)) {
 	    got_endline = 1;
 	    break;
 	}
-	else if(!strncmp(str, "sendbackup: error", 17)) {
+	if(!strncmp(str, "sendbackup: error", 17)) {
 	    got_endline = 1;
 	    dump_result = max(dump_result, 2);
 	    if(sscanf(str+18, "[%[^]]]", errstr) != 1)
 		sprintf(errstr, "bad remote error: %s", str);
+	    break;
+	}
+	if(!strncmp(str, "sendbackup: info ", 17)) {
+	    parse_info_line(str + 17);
 	    break;
 	}
 	/* else we fall through to bad line */
@@ -555,6 +592,61 @@ char *dname;
     return filename;
 }
 
+/* Send an Amanda dump header to the output file.
+*/
+int write_tapeheader(outfd)
+int outfd;
+{
+    char line[128], unc[256];
+    char buffer[HDR_BYTES], *bufptr;
+    int len;
+    char *comp_suf;
+    int count;
+
+    if (srvcompress) {
+	sprintf(unc, " %s %s |", UNCOMPRESS_PATH,
+#ifdef UNCOMPRESS_OPT
+		UNCOMPRESS_OPT
+#else
+		""
+#endif
+		);
+	comp_suf = COMPRESS_SUFFIX;
+    }
+    else {
+	unc[0] = '\0';
+	if(compress_suffix)
+	    comp_suf = compress_suffix;
+	else
+	    comp_suf = "N";
+    }
+
+    sprintf(buffer, "AMANDA: FILE %s %s %s lev %d comp %s program %s\n",
+            datestamp, hostname, diskname, level, comp_suf, backup_name);
+
+    strcat(buffer,"To restore, position tape at start of file and run:\n");
+
+    sprintf(line, "\tdd if=<tape> bs=%dk skip=1 |%s %s\n\014\n",
+            BUFFER_SIZE/1024, unc, recover_cmd);
+    strcat(buffer, line);
+
+    len = strlen(buffer);
+    memset(buffer + len, '\0', sizeof(buffer) - len);
+
+    bufptr = buffer;
+    for (count = sizeof(buffer); count > 0; ) {
+	len = count > spaceleft ? spaceleft : count;
+	memcpy(dataptr, bufptr, len);
+
+	if (update_dataptr(outfd, len)) return 1;
+
+	bufptr += len;
+	count -= len;
+    }
+
+    return 0;
+}
+
 
 static void do_dump(mesgfd, datafd, indexfd, outfd)
 int mesgfd, datafd, indexfd, outfd;
@@ -562,9 +654,8 @@ int mesgfd, datafd, indexfd, outfd;
     int maxfd, nfound, size1, size2, eof1, eof2;
     fd_set readset, selectset;
     struct timeval timeout;
-
-    int tmp, bytes, count, outpipe[2];
-    char hdrbuf[1024];
+    int outpipe[2];
+    int header_done;	/* flag - header has been written */
 
 #ifndef DUMPER_SOCKET_BUFFERING
 #define DUMPER_SOCKET_BUFFERING 0
@@ -584,83 +675,69 @@ int mesgfd, datafd, indexfd, outfd;
 
     startclock();
 
+    dataptr = databuf;
+    spaceleft = DATABUF_SIZE;
+    dumpsize = origsize = dump_result = msgofs = 0;
+    got_info_endline = got_sizeline = got_endline = 0;
+    header_done = 0;
+    backup_name = recover_cmd = compress_suffix = (char *)0;
+
     /* insert pipe in the *READ* side, if server-side compression is desired */
     if (srvcompress) {
-	tmp=datafd;
+	int tmpfd;
+
+	tmpfd = datafd;
 	pipe(outpipe); /* outpipe[0] is pipe's stdin, outpipe[1] is stdout. */
-	datafd=outpipe[0];
+	datafd = outpipe[0];
 	switch(fork()) {
 	    case -1: fprintf(stderr, "couldn't fork\n");
 	    default:
 		close(outpipe[1]);
-		close(tmp);
+		close(tmpfd);
 		break;
 	    case 0:
 		close(outpipe[0]);
 		/* child acts on stdin/stdout */
 		if (dup2(outpipe[1],1) == -1)
 		    fprintf(stderr, "err dup2 out: %s\n", strerror(errno));
-		if (dup2(tmp, 0) == -1)
+		if (dup2(tmpfd, 0) == -1)
 		    fprintf(stderr, "err dup2 in: %s\n", strerror(errno));
-		for(tmp = 3; tmp <= 255; ++tmp)
-		  close(tmp);
-		/*
-		 * copy out the first HDR_BYTES uncompressed; this
-		 * is the tape header. It's too big for one read, so do
-		 * it in small chunks. If the header copy fails, all we
-		 * can do is output an error and exit.
-		 */
-		for(count=HDR_BYTES; count>0;) {
-		    bytes=read(0,hdrbuf,(count < 1024 ? count : 1024));
-		    if (bytes < 0)  {
-			fprintf(stderr, "bytes=%d, exiting.\n", bytes);
-			exit(1);
-		    }
-		    if (write(1,hdrbuf,bytes) != bytes) {
-		        fprintf(stderr, "error writing header");
-			exit(1);
-		    }
-		    count -= bytes;
-		}
+		for(tmpfd = 3; tmpfd <= 255; ++tmpfd)
+		    close(tmpfd);
 		/* now spawn gzip -1 to take care of the rest */
-		execlp(COMPRESS_PATH, COMPRESS_PATH,
-		       COMPRESS_FAST_OPT, (char *)0);
-		fprintf(stderr, "error: couldn't exec %s.\n",
-			COMPRESS_PATH);
+		execlp(COMPRESS_PATH, COMPRESS_PATH, COMPRESS_FAST_OPT, (char *)0);
+		error("error: couldn't exec %s.\n", COMPRESS_PATH);
 	}
 	/* Now the pipe has been inserted. */
     }
 
+    /* start the index reader */
     if (indexfd != -1) {
-      indexfile = getindexname(getconf_str(CNF_INDEXDIR),
-			       hostname, diskname, datestamp, level);
-      strcat(indexfile, ".tmp");
-      switch(fork()) {
-      case -1: fprintf(stderr, "couldn't fork\n");
-      default:
-	close(indexfd);
-	indexfd = -1;
-	break;
-      case 0:
-	if (dup2(indexfd, 0) == -1)
-	  error("err dup2 in: %s", strerror(errno));
-	indexfd = open(indexfile, O_WRONLY | O_CREAT | O_TRUNC, 0600);
-	if (indexfd == -1)
-	  error("err open %s: %s", tmpfile, strerror(errno));
-	if (dup2(indexfd,1) == -1)
-	  error("err dup2 out: %s", strerror(errno));
-	for(tmp = 3; tmp <= 255; ++tmp)
-	  close(tmp);
-	execlp(COMPRESS_PATH, COMPRESS_PATH,
-	       COMPRESS_BEST_OPT, (char *)0);
-	error("error: couldn't exec %s.", COMPRESS_PATH);
-      }
-    }
+	int tmpfd;
 
-    dumpsize = origsize = dump_result = msgofs = 0;
-    dataptr = databuf;
-    spaceleft = DATABUF_SIZE;
-    got_sizeline = got_endline = 0;
+	indexfile = getindexname(getconf_str(CNF_INDEXDIR),
+				 hostname, diskname, datestamp, level);
+	strcat(indexfile, ".tmp");
+	switch(fork()) {
+	case -1: fprintf(stderr, "couldn't fork\n");
+	default:
+	    close(indexfd);
+	    indexfd = -1;
+	    break;
+	case 0:
+	    if (dup2(indexfd, 0) == -1)
+	        error("err dup2 in: %s", strerror(errno));
+	    indexfd = open(indexfile, O_WRONLY | O_CREAT | O_TRUNC, 0600);
+	    if (indexfd == -1)
+	        error("err open %s: %s", tmpfile, strerror(errno));
+	    if (dup2(indexfd,1) == -1)
+	        error("err dup2 out: %s", strerror(errno));
+	    for(tmpfd = 3; tmpfd <= 255; ++tmpfd)
+	        close(tmpfd);
+	    execlp(COMPRESS_PATH, COMPRESS_PATH, COMPRESS_BEST_OPT, (char *)0);
+	    error("error: couldn't exec %s.", COMPRESS_PATH);
+	}
+    }
 
     sprintf(errfname, "/tmp/%s.%s.%d.errout", hostname, 
 	    diskname2filename(diskname), level);
@@ -671,15 +748,18 @@ int mesgfd, datafd, indexfd, outfd;
 
     NAUGHTY_BITS_INITIALIZE;
 
-    maxfd = (mesgfd > datafd ? mesgfd : datafd) + 1;
-    maxfd = (maxfd > indexfd ? maxfd : indexfd) + 1;
+    maxfd = max(mesgfd, datafd) + 1;
     eof1 = eof2 = 0;
 
     FD_ZERO(&readset);
+
+    /* Just process messages for now.  Once we have done the header
+    ** we will start processing data too.
+    */
     FD_SET(mesgfd, &readset);
 
     if(datafd == -1) eof1 = 1;	/* fake eof on data */
-    else {
+
 #if DUMPER_SOCKET_BUFFERING
 
 #ifndef EST_PACKET_SIZE
@@ -689,6 +769,7 @@ int mesgfd, datafd, indexfd, outfd;
 #define	EST_MIN_WINDOW	EST_PACKET_SIZE*4 /* leave room for 2k in transit */
 #endif
 
+    else {
 	recbuf = DATABUF_SIZE*2;
 	if (setsockopt(datafd, SOL_SOCKET, SO_RCVBUF,
 		       (void *) &recbuf, sizeof_recbuf)) {
@@ -711,10 +792,8 @@ int mesgfd, datafd, indexfd, outfd;
 	/* if lowwat < ~512, don't bother */
 	if (lowat < EST_PACKET_SIZE)
 	    recbuf = 0;
-#endif
-
-	FD_SET(datafd, &readset);
     }
+#endif
 
     while(!(eof1 && eof2)) {
 
@@ -803,6 +882,14 @@ int mesgfd, datafd, indexfd, outfd;
 		break;
 	    default:
 		add_msg_data(mesgbuf, size2);
+	    }
+
+	    if (got_info_endline && !header_done) { /* time to do the header */
+		if (write_tapeheader(outfd)) return;
+		header_done = 1;
+
+		if (datafd != -1)
+		    FD_SET(datafd, &readset);	/* now we can read the data */
 	    }
 	}
     } /* end while */

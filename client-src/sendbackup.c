@@ -65,7 +65,6 @@ char line[MAX_LINE];
 char *pname = "sendbackup";
 int compress, no_record, bsd_auth;
 int createindex;
-static int srvcompress=0;
 #define COMPR_FAST 1
 #define COMPR_BEST 2
 
@@ -103,10 +102,6 @@ char *str;
 	else
 	    compress = COMPR_FAST;	/* the default */
     }
-    if(strstr(str, "srvcompress") != NULL) {
-	srvcompress = 1;
-	compress = 0; /* don't compress it twice :) */
-    }
 
     if((i=strstr(str, "exclude"))){
 	memset(estr,0,sizeof(estr));
@@ -139,8 +134,6 @@ char *optionstr()
 	strcat(optstr, "compress-best;");
     else if(compress == COMPR_FAST)
 	strcat(optstr, "compress-fast;");
-    if (srvcompress)
-	strcat(optstr, "srvcompress;");
 
     if(no_record) strcat(optstr, "no-record;");
     if(bsd_auth) strcat(optstr, "bsd-auth;");
@@ -346,47 +339,30 @@ int pid, w;
 }
 
 
+/* Send header info to the message file.
+*/
 void write_tapeheader(host, disk, level, compress, datestamp, outf)
 char *host, *disk, *datestamp;
 int outf, compress, level;
-/*
- * writes an Amanda tape header onto the output file.
- */
 {
-    char line[128], unc[256], buffer[BUFFER_SIZE];
-    int len, rc;
+    fprintf(stderr, "%s: info BACKUP=%s\n", pname, program->backup_name);
 
-    /* if doing server compress, have the header say the dump is compressed
-     * even though it isn't (yet)
-     */
-    sprintf(buffer, "AMANDA: FILE %s %s %s lev %d comp %s program %s\n",
-            datestamp, host, disk, level, 
-	    (compress||srvcompress)? COMPRESS_SUFFIX : "N",
-	    program->backup_name);
-
-    strcat(buffer,"To restore, position tape at start of file and run:\n");
-
-    if (compress||srvcompress)
-	sprintf(unc, " %s %s |", UNCOMPRESS_PATH,
+    fprintf(stderr, "%s: info RECOVER_CMD=", pname);
+    if (compress)
+	fprintf(stderr, "%s %s |", UNCOMPRESS_PATH,
 #ifdef UNCOMPRESS_OPT
 		UNCOMPRESS_OPT
 #else
 		""
 #endif
 		);
-    else
-	strcpy(unc, "");
 
-    sprintf(line,"\tdd if=<tape> bs=%dk skip=1 |%s %s -f... -\n\014\n",
-            BUFFER_SIZE/1024, unc, program->restore_name);
-    strcat(buffer, line);
+    fprintf(stderr, "%s -f... -\n", program->restore_name);
 
-    len = strlen(buffer);
-    memset(buffer+len, '\0', BUFFER_SIZE-len);
-    if((rc = write(outf, buffer, BUFFER_SIZE)) < BUFFER_SIZE) {
-      dbprintf(("error [write header: %s]\n", strerror(errno)));
-      error("error [write header: %s]", strerror(errno));
-    }
+    if (compress)
+	fprintf(stderr, "%s: info COMPRESS_SUFFIX=%s\n", pname, COMPRESS_SUFFIX);
+
+    fprintf(stderr, "%s: info end\n", pname);
 }
 
 #ifdef STDC_HEADERS
