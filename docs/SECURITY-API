@@ -1,6 +1,6 @@
 AMANDA SECURITY API
 
-$Id: SECURITY-API,v 1.9 1999/03/18 16:45:29 kashmir Exp $
+$Id: SECURITY-API,v 1.10 1999/04/15 18:02:34 kashmir Exp $
 
 Mike Grupenhoff <kashmir@munge.com>
 
@@ -377,13 +377,9 @@ previously cancelled.
 
     void *(*stream_server)(void *handle);
 
-Implementation of security_stream_server().  The handle passed is reference
-counted by the general security layer, so it will persist even if the
-caller calls security_close() on it.
-
-This function returns a object describing the stream.  The first member
-of this object MUST be a security_stream_t, because it will be cast
-to that.
+Implementation of security_stream_server().  This function returns a
+object describing the stream.  The first member of this object MUST be
+a security_stream_t, because it will be cast to that.
 
 5.9. stream_accept
 
@@ -411,7 +407,7 @@ Close and free up resources for an open stream.
 
 5.12. stream_auth
 
-    int (*streamauth)(void *stream);
+    int (*stream_auth)(void *stream);
 
 Authenticate a connected stream.
 
