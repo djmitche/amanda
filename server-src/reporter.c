@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.46 1998/12/28 18:56:37 jrj Exp $
+ * $Id: reporter.c,v 1.47 1999/01/17 14:59:36 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -394,10 +394,8 @@ char **argv;
 	output_lines(errsum, mailf);
     }
     fputs("\n\n", mailf);
-    if(!(amflush_run && degraded_mode)) {
-	output_stats();
-    }
-    
+
+    output_stats();
 
     if(errdet) {
 	fprintf(mailf,"\n\014\nFAILED AND STRANGE DUMP DETAILS:\n");
