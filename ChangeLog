@@ -1,5 +1,10 @@
 2000-11-21 John R. Jackson  <jrj@purdue.edu>
 
+	* contrib/sst/README.Amanda: New file of Amanda specific sst notes.
+	* contrib/sst/sst.c: Attempt at letting gcc compile sst.
+
+2000-11-21 John R. Jackson  <jrj@purdue.edu>
+
 	* man/amgetconf.8.in: New man page.
 	* man/Makefile.am: Add support for amgetconf.8.in.
 	* man/amadmin.8.in: Update for 2.4.2 and do general cleanup.
