@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.87 2003/10/27 18:32:50 martinea Exp $
+ * $Id: amadmin.c,v 1.88 2003/11/07 17:56:18 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -749,8 +749,8 @@ void tape(argc, argv)
 int argc;
 char **argv;
 {
-    tape_t *tp;
-    int runtapes,i;
+    tape_t *tp, *lasttp;
+    int runtapes, i;
 
     runtapes = getconf_int(CNF_RUNTAPES);
     tp = lookup_last_reusable_tape(0);
@@ -763,6 +763,34 @@ char **argv;
 	printf("a new tape.\n");
 	
 	tp = lookup_last_reusable_tape(i + 1);
+    }
+    lasttp = lookup_tapepos(lookup_nb_tape());
+    i = runtapes;
+    if(lasttp && i > 0 && lasttp->datestamp == 0) {
+	int c = 0;
+	while(lasttp && i > 0 && lasttp->datestamp == 0) {
+	    c++;
+	    lasttp = lasttp->prev;
+	    i--;
+	}
+	lasttp = lookup_tapepos(lookup_nb_tape());
+	i = runtapes;
+	if(c == 1) {
+	    printf("The next new tape already labelled is: %s.\n",
+		   lasttp->label);
+	}
+	else {
+	    printf("The next %d new tapes already labelled are: %s", c,
+		   lasttp->label);
+	    lasttp = lasttp->prev;
+	    c--;
+	    while(lasttp && c > 0 && lasttp->datestamp == 0) {
+		printf(", %s", lasttp->label);
+		lasttp = lasttp->prev;
+		c--;
+	    }
+	    printf(".\n");
+	}
     }
 }
 
