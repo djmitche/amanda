@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.15 1997/08/31 17:58:56 amcore Exp $
+ * $Id: driverio.c,v 1.16 1997/11/07 11:28:33 george Exp $
  *
  * I/O-related functions for driver program
  */
@@ -393,12 +393,18 @@ long dumptime;
     infp->size = origsize;
     infp->csize = dumpsize;
     infp->secs = dumptime;
-    if(dp->record) infp->date = sched(dp)->timestamp;
+/*GS    if(dp->record)*/ infp->date = sched(dp)->timestamp;
 
     if(level == 0) perfp = &inf.full;
     else perfp = &inf.incr;
-    newperf(perfp->comp, origsize? (dumpsize/(float)origsize) : 1.0);
-    newperf(perfp->rate, dumpsize/(infp->secs? infp->secs : 1.0));
+
+    /* Update the stats, but only if the new values are meaningful */
+    if(dp->compress != COMP_NONE && origsize != 0L) {
+	newperf(perfp->comp, dumpsize/(float)origsize);
+    }
+    if(dumptime != 0L) {
+	newperf(perfp->rate, dumpsize/dumptime);
+    }
 
     if(put_info(dp->host->hostname, dp->name, &inf))
 	error("infofile update failed (%s,%s)\n", dp->host->hostname, dp->name);
@@ -411,8 +417,9 @@ disk_t *dp;
 char *label;
 int filenum;
 {
-    info_t inf;
     int level;
+    info_t inf;
+    stats_t *infp;
     int rc;
 
     level = sched(dp)->level;
@@ -424,9 +431,10 @@ int filenum;
 
     get_info(dp->host->hostname, dp->name, &inf);
 
+    infp = &inf.inf[level];
     /* XXX - should we record these two if no-record? */
-    strcpy(inf.inf[level].label, label);
-    inf.inf[level].filenum = filenum;
+    strcpy(infp->label, label);
+    infp->filenum = filenum;
 
     inf.command = NO_COMMAND;
 
