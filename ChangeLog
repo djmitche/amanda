@@ -1,5 +1,9 @@
 2001-01-20  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.4.2p1)
+
+2001-01-20  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* NEWS: 2.4.2p1 is a bug fix release.
 
 2001-01-20  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
@@ -1386,7 +1390,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.438 2001/01/20 15:39:01 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.439 2001/01/20 15:41:53 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
