@@ -4,6 +4,7 @@ pkgdata_DATA = \
 	EVENT-API		\
 	EXCLUDE			\
 	FAQ			\
+	HOWTO-CYGWIN.html       \
 	INDEXING		\
 	INSTALL			\
 	INTERNALS		\
