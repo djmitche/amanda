@@ -1,3 +1,13 @@
+1998-11-24  John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/amcheck.c: add a "-t" option to disable tape tests in the
+	server checks.  This lets server checks be done without mounting a
+	tape.  Add lots more sanity checks, in particular, ownership and
+	permissions of the index area and text format database.  Warn if
+	amcheck is not run as the dump user listed in amanda.conf.  Minor
+	consistency cleanup in the messages.
+	* man/amcheck.8.in: document the changes.
+
 1998-11-24  Mike Grupenhoff <kashmir@munge.com>
 
 	* common-src/dgram.c (dgram_bind): always try to get a reserved
