@@ -231,11 +231,11 @@ AC_ARG_WITH(client,
 )
 
 AC_ARG_WITH(server,
-    [  --without-server       do not build server stuff],
+    [  --without-server       do not build server stuff (set --without-restore)],
     [
 	case "$withval" in
 	y | ye | yes) NO_SERVER_MODE=false ;;
-	n | no) NO_SERVER_MODE=true;;
+	n | no) NO_SERVER_MODE=true;NO_RESTORE_MODE=true;;
 	*)
 	    AC_MSG_ERROR([*** You must not supply an argument to --with-server option.  Maybe you meant --with-index-server=$withval])
 	  ;;
