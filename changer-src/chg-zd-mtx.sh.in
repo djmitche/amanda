@@ -7,21 +7,74 @@
 #
 # Contributed by Eric DOUTRELEAU <Eric.Doutreleau@int-evry.fr>
 # This is supposed to work with Zubkoff/Dandelion version of mtx
+#
+# Modified by Joe Rhett <jrhett@isite.net>
+# to work with MTX 1.2.9 by Eric Lee Green http://mtx.sourceforge.net
+#
+# Modified by Jason Hollinden <jhollind@sammg.com> on 13-Feb-2001
+# to work with MTX 1.2.10, >9 slots, has barcode support, and works with
+# multiple configs at once.
+# NOTE:  Only tested the 2 additions with an ADIC Scalar 100.
+# All my additions have a '#### Comment' close by.
 
-# try to hit all the possibilities here
+################################################################################
+# NOTE: all variables are now placed in a 'changerfile'.conf in your
+# amanda config directory, where 'changerfile' is what's set in
+# amanda.conf.  Ex. if amanda.conf has:
+# 	changerfile="/etc/amanda/Dailyset1/CHANGER"
+# Then the variables file will be "/etc/amanda/Dailyset1/CHANGER.conf".
+#
+# Here is a commented out example file, with all the variables needed:
+
+####
+# firstslot=2             #### 1st tape slot
+# lastslot=15             #### Last tape slot
+# cleanslot=1             #### Slot with cleaner tape
+#
+#   # Do you want to clean the drive after a certain number of accesses?
+#   # NOTE - This is unreliable, since 'accesses' aren't 'uses', and we
+#   #        have no reliable way to count this. A single amcheck could
+#   #        generate as many accesses as slots you have, plus 1.
+#   # ALSO NOTE - many modern tape loaders handle this automatically.
+#
+# AUTOCLEAN=0             #### Set to '1' or greater to enable
+#
+# autocleancount=99       #### Number of access before a clean.
+#
+# havereader=1            #### If you have a barcode reader, set to 1.
+#
+# offlinestatus=1         #### Set to 0 if 'mt status' gives an
+#                         #### "offline" when drive is offline.
+#                         #### Set to 1 or greater if 'mt status'
+#                         #### doesn't give and offline, rather an
+#                         #### "ONLINE" when drive is online.
+#
+# OFFLINE_BEFORE_UNLOAD=0 #### Does your tape driver require a
+#                         #### 'mt offline' before mtx unload?
+####
+
+# You may need to customize these things
+MT=@MT@
+MTF=@MT_FILE_FLAG@
+MTX=@MTX@
+
+#### Check the 'readyError' section if mt acts differently for you
+#### as stated below.
+#### See the 'readstatus' section below if using a different drive than 0.
+
+################################################################################
+
+# No user-level customized required beyond this point.
+
+# Paths
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 sbindir=@sbindir@
 libexecdir=@libexecdir@
- 
+
+# try to hit all the possibilities here
 PATH=$sbindir:$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb:/usr/local/bin
 export PATH
-
-if [ -d "@AMANDA_DBGDIR@" ]; then
-	logfile=@AMANDA_DBGDIR@/changer.debug
-else
-	logfile=/dev/null
-fi
 
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
 if test "$USE_VERSION_SUFFIXES" = "yes"; then
@@ -30,289 +83,377 @@ else
 	SUF=
 fi
 
+email=`amgetconf$SUF mailto`
+mailer=@MAILER@
+
 myname=$0
 tape=`amgetconf$SUF tapedev`
 TAPE=`amgetconf$SUF changerdev`; export TAPE # for mtx command
 if [ "$tape" = "/dev/null" -o "$TAPE" = "/dev/null" ]; then
-	answer="<none> $myname: Both tapedev and changerdev must be specified in config file"
-	code=2
-	echo "Exit -> $answer" >> $logfile
-	echo "$answer"
-	exit $code
+	echo "Both tapedev and changerdev must be specified in config file";
+	exit 2;
 fi
-fake=0
 
-MTX=@MTX@
+#### Grabs the # from tape device.  Should not car if it's /dev/nst3,
+#### /dev/stuff/p00p/0hn or what.
+drivenum=`echo $tape | sed -n "s/\/dev\/\(.*\)\([0-9][0-9]*\)\(.*\)/\2/p"`
 
-if [ -x $sbindir/ammt$SUF ]; then
-	MT=$sbindir/ammt$SUF
-	MTF=-f
-elif [ -x "@MT@" ]; then
-	MT=@MT@
-	MTF=@MT_FILE_FLAG@
+if [ -d "@AMANDA_DBGDIR@" ]; then
+	DBGFILE=@AMANDA_DBGDIR@/changer.debug.drive$drivenum
 else
-	answer="<none> $myname: mt program not found"
-	code=1
-	echo "Exit -> $answer" >> $logfile
-	echo "$answer"
-	exit $code
+	DBGFILE=/dev/null
 fi
-echo MT "->" $MT $MTF >> $logfile
-
-if [ -x $sbindir/amdd$SUF ]; then
-	DD=$sbindir/amdd$SUF
-elif [ -x "@DD@" ]; then
-	DD=@DD@
-else
-	answer="<none> $myname: dd program not found"
-	code=1
-	echo "Exit -> $answer" >> $logfile
-	echo "$answer"
-	exit $code
-fi
-echo DD "->" $DD >> $logfile
-
-firstslot=1
-lastslot=6
-# counted from 1 !!!
-cleanslot=-2
 
 changerfile=`amgetconf$SUF changerfile`
 
+configfile=$changerfile.conf
 cleanfile=$changerfile-clean
 accessfile=$changerfile-access
 slotfile=$changerfile-slot
-[ ! -s $cleanfile ] && echo 0 > $cleanfile
-[ ! -s $accessfile ] && echo 0 > $accessfile
-[ ! -s $slotfile ] && echo 0 > $slotfile
+labelfile=$changerfile-barcodes
+[ ! -f $cleanfile ] && echo 0 > $cleanfile
+[ ! -f $accessfile ] && echo 0 > $accessfile
+[ ! -f $slotfile ] && echo 0 > $slotfile
+[ ! -f $labelfile ] && echo 0 > $labelfile
 cleancount=`cat $cleanfile`
-if expr $cleancount + 1000000 > /dev/null 2>&1
-then
-  : # the number is OK
-else
-  cleancount=0
-fi
 accesscount=`cat $accessfile`
-if expr $accesscount + 1000000 > /dev/null 2>&1
-then
-  : # the number is OK
-else
-  accesscount=0
-fi
-slot=`cat $slotfile`
-if expr $slot + 1000000 > /dev/null 2>&1
-then
-  : # the number is OK
-else
-  echo 0 > $slotfile
-fi
-#
+
+#### Dig out of the config file what is needed
+
+firstslot=`cat $configfile | sed -n "s/firstslot=\([1-9][0-9]*\)\(.*\)/\1/p"`
+lastslot=`cat $configfile | sed -n "s/lastslot=\([1-9][0-9]*\)\(.*\)/\1/p"`
+cleanslot=`cat $configfile | sed -n "s/cleanslot=\([1-9][0-9]*\)\(.*\)/\1/p"`
+OFFLINE_BEFORE_UNLOAD=`cat $configfile | sed -n "s/OFFLINE_BEFORE_UNLOAD=\([0-9]\)\(.*\)/\1/p"`
+AUTOCLEAN=`cat $configfile | sed -n "s/AUTOCLEAN=\([0-9]\)\(.*\)/\1/p"`
+autocleancount=`cat $configfile | sed -n "s/autocleancount=\([0-9]\)\(.*\)/\1/p"`
+havereader=`cat $configfile | sed -n "s/havereader=\([0-9]\)\(.*\)/\1/p"`
+offlinestatus=`cat $configfile | sed -n "s/offlinestatus=\([0-9]\)\(.*\)/\1/p"`
+
+# Routines start here
+
+	#### If using a different drive than /dev/nst0 (or whatever your OS
+	#### calls the 0'th drive) change the 'Data Transfer Element 0' (there
+	#### are 6 below, and 1 in searchtape().) to 'Data Transfer Element #' 
+	#### where # = /dev/nst# (or whatever for your OS).
 
 readstatus() {
-  used=`$MTX status |
-    sed -n 's/Data Transfer Element:.Empty/-1/p;s/Data Transfer Element:.Full (Storage Element \(.\) Loaded)/\1/p'`
+	if [ $havereader -eq 1 ]; then
+		tmpslot=`$MTX status | grep "Data Transfer Element $drivenum"`
+        	usedslot=`echo $tmpslot |
+                	sed -n "s/Data Transfer Element $drivenum:Empty/-1/p;s/Data Transfer Element $drivenum:Full (Storage Element \([1-9][0-9]*\) Loaded)\(.*\)/\1/p"`
+        	barcode=`echo $tmpslot |
+                	sed -n "s/Data Transfer Element $drivenum:Empty/-1/p;s/Data Transfer Element $drivenum:Full (Storage Element \([1-9][0-9]*\) Loaded):VolumeTag = \(.*\)/\2/p"`
+	else
+        	usedslot=`$MTX status |
+	                sed -n "s/Data Transfer Element:Empty/-1/p;s/Data Transfer Element:Full (Storage Element \([1-9][0-9]*\) Loaded)/\1/p;s/Data Transfer Element $drivenum:Empty/-1/p;s/Data Transfer Element $drivenum:Full (Storage Element \([1-9][0-9]*\) Loaded)/\1/p"`
+	fi
 
-  if [ "$used" -eq -1 ]; then
-    used=`cat $slotfile`
-    fake=1
-  fi
+	if [ "$usedslot" -eq "-1" ]; then
+		echo '-1' > $slotfile
+	fi
+	echo "STATUS -> currently loaded slot = $usedslot" >> $DBGFILE
 }
 
 
 eject() {
-  readstatus 
-  if [ $used -gt 0 ];then
-    $MTX unload $used 2>/dev/null
-    answer="0 $tape"
-    code=0
-  else
-    answer="<none> $myname: Drive was not loaded"
-    code=1
-  fi
-  echo "Exit -> $answer" >> $logfile
-  echo "$answer"
-  exit $code
+	readstatus 
+	echo "EJECT -> ejecting tape from $tape to slot $usedslot" >> $DBGFILE
+	if [ $usedslot -gt 0 ]; then
+		if [ $OFFLINE_BEFORE_UNLOAD -gt 0 ]; then
+			$MT $MTF $tape offline
+		fi
+		$MTX unload $usedslot $drivenum 2>/dev/null
+		echo "0 $tape"
+		exit 0
+	else
+		echo "0 Drive was not loaded"
+		exit 1
+	fi
 }
 
 reset() {
-  readstatus
-  if [ $used -gt 0 ];then
-    $MTX unload $used 2>/dev/null
-  fi
-  res=`$MTX load 1 2>&1`
-  if [ $? -eq 0 ];then
-    answer="1 $tape"
-    code=0
-  else
-    answer="1 $res"
-    code=1
-  fi
-  echo "Exit -> $answer" >> $logfile
-  echo "$answer"
-  exit $code
-}
-#
-#
-loadslot() {
-  readstatus
-  echo "     -> loaded $used" >> $logfile
-  whichslot=$1
-  case $whichslot in
-    current)
-	     if [ $used -lt 0 ];then
-	       $MTX load 1 2>/dev/null
-	       used=1
-	     fi
-	     answer="$used $tape"
-	     code=0
-	     echo "Exit -> $answer" >> $logfile
-	     echo "$answer"
-	     exit $code
-	     ;;
-    next|advance)
-	  load=`expr $used + 1`
-	  [ $load -gt $lastslot ] && load=$firstslot
-	  ;;
-    prev)
-	  load=`expr $used - 1`
-	  [ $load -lt $firstslot ] && load=$lastslot
-	  ;;
-    first)
-	  load=$firstslot
-	  ;;
-    last)
-	  load=$lastslot
-	  ;;
-    [$firstslot-$lastslot])
-	  load=$1
-	  ;;
-    clean)
-	  load=$cleanslot
-	  ;;
-    *)
-       answer="<none> $myname: illegal request: \"$whichslot\""
-       code=1
-       echo "Exit -> $answer" >> $logfile
-       echo "$answer"
-       exit $code
-       ;;
-    esac
-
-    if [ $load = $used ]; then
-	answer="$used $tape"
-	code=0
-	echo "Exit -> $answer" >> $logfile
-	echo "$answer"
-	exit $code
-    fi
-
-    if [ $load = $cleanslot ]; then
-	expr $cleancount + 1 > $cleanfile
-	echo 0 > $accessfile
-    else
-	expr $accesscount + 1 > $accessfile
-	if [ $accesscount -gt 9 ]; then
-		$myname -slot clean >/dev/null
-	fi
-    fi
-
-    # Slot 6 might contain an ordinary tape rather than a cleaning
-    # tape. A cleaning tape auto-ejects; an ordinary tape does not.
-    # We therefore have to read the status again to check what
-    # actually happened.
-    readstatus
-	
-
-    if [ $fake -eq 0 ];then
-      echo "     -> unload $used" >> $logfile
-      res=`$MTX unload $used 2>&1`
-      status=$?
-      echo "     -> status $status" >> $logfile
-      echo "     -> res    $res" >> $logfile
-      if [ $status -ne 0 ];then
-	answer="<none> $myname: $res"
-        echo "$res"
-	code=2
-	echo "Exit -> $answer" >> $logfile
-	echo "$answer"
-	exit $code
-      fi
-    fi
-    if [ $whichslot = advance ];then
-      answer="$load /dev/null"
-      code=0
-      echo "Exit -> $answer" >> $logfile
-      echo "$answer"
-      exit $code
-    fi
-    echo "     -> load   $load" >> $logfile
-    res=`$MTX load $load 2>&1`
-    status=$?
-    echo "     -> status $status" >> $logfile
-    echo "     -> res    $res" >> $logfile
-    if [ $status -eq 0 ];then
-      echo "     -> rew $load" >> $logfile
-      $MT $MTF $tape rewind
-      $DD if=$tape count=1 >> $logfile 2>&1
-      echo "$load" > $slotfile
-      answer="$load $tape"
-      code=0
-      echo "Exit -> $answer" >> $logfile
-      echo "$answer"
-      exit $code
-    else
-	res2=`echo $res | grep "Storage Element . is Empty"`
-	if [ -z $res2 ]; then
-	  code=2
+	$myname -eject >/dev/null
+	echo "RESET -> loading tape from 1st slot ($firstslot) to $tape" >> $DBGFILE
+	result=`$MTX load $firstslot $drivenum 2>&1`
+	if [ $? -eq 0 ]; then
+		echo "1 $tape"
+		exit 0
 	else
-	  echo "$load" > $slotfile
-	  code=1
+		echo "1 $result"
+		exit 1
 	fi
-	answer="$load $res"
-	echo "Exit -> $answer" >> $logfile
-	echo "$answer"
-	exit $code
-    fi
 }
-#
+
+loadslot() {
+	readstatus
+
+	whichslot=$1
+	numeric=`echo $whichslot | tr -cd 0-9`
+	echo "LOADSLOT -> load tape from slot $whichslot" >> $DBGFILE
+	case $whichslot in
+		current)
+			if [ $usedslot -lt 0 ]; then
+				loadslot=$firstslot
+			else 
+				echo "$usedslot $tape"
+				exit 0
+			fi
+			;;
+		next|advance)
+			if [ $usedslot -lt 0 ]; then
+				loadslot=$firstslot
+			else
+				loadslot=`expr $usedslot + 1`
+				if [ $loadslot -gt $lastslot ]; then
+					loadslot=$firstslot
+				fi
+			fi
+			;;
+		prev)
+			loadslot=`expr $usedslot - 1`
+			if [ $loadslot -lt $firstslot ]; then
+				loadslot=$lastslot
+			fi
+			;;
+		first)
+			loadslot=$firstslot
+			;;
+		last)
+			loadslot=$lastslot
+			;;
+		$numeric)
+                        if [ $whichslot -gt $lastslot ] || [ $whichslot -lt $firstslot ]; then
+                                echo "0 Slot $whichslot is out of range ($firstslot - $lastslot)"
+                                exit 1
+                        else
+                                loadslot=$whichslot
+                        fi
+                        ;;
+		clean)
+			loadslot=$cleanslot
+			;;
+		*)
+			echo "0 illegal request"
+			exit 1
+			;;
+	esac
+
+	# Is this already the current slot?
+	if [ $loadslot = $usedslot ]; then
+		echo "$usedslot $tape"
+		exit 0
+	fi
+
+	# Is this a cleaning request?
+	if [ $loadslot = $cleanslot ]; then
+		expr $cleancount + 1 > $cleanfile
+		echo 0 > $accessfile
+	else
+		expr $accesscount + 1 > $accessfile
+		if [ $AUTOCLEAN -gt 0  -a  $accesscount -gt $autocleancount ]; then
+			$myname -slot clean >/dev/null
+
+			# Slot $cleanslot might contain an ordinary tape rather than a cleaning
+			# tape. A cleaning tape *MIGHT* auto-eject; an ordinary tape does not.
+			# We therefore have to read the status again to check what actually happened.
+			readstatus
+		fi
+	fi
+
+	# Unload any previous tape
+	if [ $usedslot -ne "-1" ]; then
+		echo "         -> unload $usedslot from $tape" >> $DBGFILE
+		if [ $OFFLINE_BEFORE_UNLOAD -gt 0 ]; then
+			$MT $MTF $tape offline
+		fi
+		result=`$MTX unload $usedslot $drivenum 2>&1`
+		status=$?
+		echo "         -> status $status, result '$result'" >> $DBGFILE
+		if [ $status -ne 0 ]; then
+			echo "$loadslot $result"
+			exit 2
+		fi
+	fi
+
+	# Load the tape, finally!
+	echo "         -> loading tape from slot $loadslot to $tape" >> $DBGFILE
+	result=`$MTX load $loadslot $drivenum 2>&1`
+	status=$?
+	echo "         -> status $status, result '$result'" >> $DBGFILE
+
+	# If there is an error, abort unless the slot is simply empty
+	if [ $status -ne 0 ]; then
+		empty=`echo $result | grep "Empty"`
+		if [ -z "$empty" ]; then
+			echo "$loadslot $result"
+			exit 2
+		else
+			loadslot next
+		fi
+	else
+                #### The origional test if the drive is offline.  This depends on what
+                #### 'mt -f <device> status returns different between being offline and
+                #### online.  Aparently some drives report an 'offline' when offline, and
+                #### it goes away when online.
+                #### ADIC doesn't report an 'offline', rather an 'ONLINE' when it's up.
+                #### Don't assume the drive is ready until we get an ONLINE
+		#### This is tested by the variable $offlinestatus from the beginning.
+
+		if [ $offlinestatus -eq 0 ]; then
+                	readyError="offline"
+                	while [ -n "$readyError" ]; do
+                       		readyStatus=`$MT $MTF $tape status 2>&1`
+                       		readyError=`echo $readyStatus | grep "offline"`
+                	done
+		else
+                	readyError=""
+                	while [ -z "$readyError" ]; do
+                        	readyStatus=`$MT $MTF $tape status 2>&1`
+                        	readyError=`echo $readyStatus | grep "ONLINE"`
+                	done
+		fi
+
+		#### Moved this outside of the above while statements.
+                echo "         -> readyStatus = $readyStatus" >> $DBGFILE
+
+		# Now rewind and check
+		echo "         -> rewind $loadslot" >> $DBGFILE
+		$MT $MTF $tape rewind
+		echo "$loadslot" > $slotfile
+		echo "$loadslot $tape"
+		exit 0
+	fi
+}
+
 info() {
-  readstatus
-  echo "     -> info   $used" >> $logfile
-  if [ $used -lt 0 ];then
-    used=`cat $slotfile`
-  fi
-  answer="$used $lastslot 1"
-  code=0
-  echo "Exit -> $answer" >> $logfile
-  echo "$answer"
-  exit $code
+	readstatus
+	echo "INFO -> current slot $usedslot, last slot $lastslot, can go backwards 1" >> $DBGFILE
+        #### Checks if you have a barcode reader or not.  If so, it passes the 4th item in the echo
+        #### back to amtape signifying it can search based on barcodes.
+        if [ $havereader -eq 1 ]; then
+                if [ $usedslot -lt 0 ]; then
+                        #### added a variable to the end of the following 2 echos.
+			#### This indicates to amtape that it can/cannot read barcodes.
+                        echo "0 $lastslot 1 1"
+                else
+                        echo "$usedslot $lastslot 1 1"
+                fi
+                exit 0
+        else
+                if [ $usedslot -lt 0 ]; then
+                        echo "0 $lastslot 1"
+                else
+                        echo "$usedslot $lastslot 1"
+                fi
+                exit 0
+        fi
 }
-#
-echo Args "->" "$@" >> $logfile
+
+#### Adds the amlabel and the barcode to the barcode file specified above.
+#### If the database is messed up, it kills amtape (rather abruptly) and
+#### dumps a message into changer.debug on what to do, then sends an email
+#### of the changer.debug to the above set email addr.
+addlabel() {
+        readstatus
+        tapelabel=$1
+        labelfilesize=`ls -l $labelfile | awk '{print $5}'`
+        case $tapelabel in
+        $tapelabel)
+                echo "LABEL -> Adding Barcode $barcode and amlabel $tapelabel for Slot $usedslot into $labelfile" >> $DBGFILE
+                if [ $labelfilesize -eq 2 ]; then
+                        echo "$tapelabel $barcode" > $labelfile
+                        echo "0 $usedslot $tape"
+                else
+                        included=`grep $tapelabel $labelfile | awk '{print $1}'`
+                        if [ -z $included ]; then
+                                echo "$tapelabel $barcode" >> $labelfile
+                                echo "0 $usedslot $tape"
+                        else
+                                oldbarcode=`grep $tapelabel $labelfile | awk '{print $2}'`
+                                if [ $oldbarcode -eq $barcode ]; then
+                                        echo "      -> Barcode $barcode $oldbarcode already synced for $tapelabel" >> $DBGFILE
+                                        echo "0 $usedslot $tape"
+
+                                else
+                                        echo "      -> WARNING!!!  Label database corrupted!!!" >> $DBGFILE
+                                        echo "      -> $tapelabel $oldbarcode conflicts with new barcode $barcode" >> $DBGFILE
+                                        echo "      -> Remove file $labelfile and run /usr/sbin/amtape <config> update" >> $DBGFILE
+                                        `cat $DBGFILE | $mailer -s "Error with barcode reader on \`date\`" $email`
+                                        `killall amtape`
+                                fi
+                        fi
+                fi
+                ;;
+        esac
+        exit 0
+}
+
+#### Looks for the amlabel in the barcode file.  If found, it locates the
+#### slot it's in by looking for the barcode in the mtx output.  It then
+#### loads that tape, and returns to amtape the device the tape is loaded in.
+#### If the amlabel is not found, it kills amtape and dumps a message to
+#### changer.debug on what to do, then sends an email of the changer.debug
+#### to the above set email addr.
+searchtape() {
+        # readstatus
+        tapelabel=$1
+        includedtag=`grep $tapelabel $labelfile | awk '{print $1}'`
+        includedbar=`grep $tapelabel $labelfile | awk '{print $2}'`
+        tmpincludedslot=`$MTX status | grep $includedbar`
+	includedslot=`echo $tmpincludedslot | sed -n "s/\(.*\)Storage Element \([1-9][0-9]*\):\(.*\)/\2/p;s/Data Transfer Element $drivenum:Full (Storage Element \([1-9][0-9]*\) Loaded)\(.*\)/\1/p"`
+        case $tapelabel in
+        $tapelabel)
+                if [ $tapelabel == $includedtag ]; then
+                        shift 
+                        loadslot $includedslot
+                        echo "$tape"
+                else
+                        echo "SEARCH -> WARNING!!!  $tapelabel not found in current ADIC-barcodes database." >> $DBGFILE
+                        echo "       -> WARNING!!!  Check your typing, and/or update the database." >> $DBGFILE
+                        `cat $DBGFILE | $mailer -s "Error with barcode reader on \`date\`" $email`
+                        `killall amtape`
+                fi
+                exit 0
+        esac
+}
+
+
+# Program invocation begins here
+echo "`date` Invoked with args '$@'" >> $DBGFILE
 while [ $# -ge 1 ];do
-  case $1 in
-    -slot)
-	   shift
-	   loadslot $*
-	   ;;
-    -info)
-	   shift
-	   info
-	   ;;
-    -reset)
-	    shift
-	    reset
-	    ;;
-    -eject)
-	    shift
-	    eject
-	    ;;
-    *)
-	answer="<none> $myname: Unknown option $1"
-	code=2
-	echo "Exit -> $answer" >> $logfile
-	echo "$answer"
-	exit $code
-       ;;
-  esac
+	case $1 in
+		-slot)
+			shift
+			loadslot $*
+			;;
+		-info)
+			shift
+			info
+			;;
+		-reset)
+			shift
+			reset
+			;;
+		-eject)
+			shift
+			eject
+			;;
+#### Added the below flags, for barcode support
+                -label) 
+                        shift
+                        addlabel $*
+                        ;;
+                -search)
+                        shift
+                        searchtape $*
+                        ;;
+                -clean)
+                        shift
+                        loadslot $cleanslot
+                        ;;
+		*)
+			echo "Unknown option $1"
+			exit 2
+			;;
+	esac
 done

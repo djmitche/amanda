@@ -12,6 +12,7 @@ Changes in release 2.4.2p2
   be lost by the file being overwritten.  The length of time to keep the
   files is controlled by --with-debug-days (default: 4).  The old flag
   --with-pid-debug-files is no longer needed and is ignored.
+* updated chg-zd-mtx.sh.in changer.
 
 Changes in release 2.4.2
 
