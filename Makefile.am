@@ -24,7 +24,7 @@ EXTRA_DIST = \
 	docs/WISHLIST			\
 	patches/regex-3.6alpha.patch	patches/samba-1.9.16p2.patch	\
 	patches/samba-largefs.patch	patches/tar-1.12.patch		\
-	patches/gcc-sol26.patch		patches/automake-1.2d.patch	\
+	patches/gcc-sol26.patch		patches/automake-1.2e.patch	\
 	regex-src/COPYRIGHT		regex-src/Makefile 		\
 	regex-src/README		regex-src/WHATSNEW 		\
 	regex-src/cclass.h		regex-src/cname.h		\
