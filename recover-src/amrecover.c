@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.29 1998/07/04 00:19:08 oliva Exp $
+ * $Id: amrecover.c,v 1.29.2.1 1998/11/19 17:03:23 jrj Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -634,33 +634,8 @@ char **argv;
     {
 	/* set host we are restoring to this host by default */
 	amfree(dump_hostname);
-	dump_hostname = alloc(MAX_HOSTNAME_LENGTH+1);
-	if (gethostname(dump_hostname, MAX_HOSTNAME_LENGTH) == -1)
-	{
-	    perror("amrecover: Can't get local host name");
-	    amfree(dump_hostname);
-	    /* fake an unhappy server */
-	    server_line[0] = '5';
-	}
-	else
-	{
-	    dump_hostname[MAX_HOSTNAME_LENGTH] = '\0';
-#ifndef USE_FQDN
-	    /* trim domain off name */
-	    for (i = 0; i < strlen(dump_hostname); i++)
-		if (dump_hostname[i] == '.')
-		{
-		    dump_hostname[i] = '\0';
-		    break;
-		}
-#endif
-	    line = stralloc2("HOST ", dump_hostname);
-	    if (converse(line) == -1)
-		exit(1);
-	    amfree(line);
-	}
-
-	if (server_happy())
+	set_host(localhost);
+	if (dump_hostname)
 	{
             /* get a starting disk and directory based on where
 	       we currently are */

@@ -1,5 +1,13 @@
 1998-11-19  John R. Jackson  <jrj@purdue.edu>
 
+	* recover-src/amrecover.c (main): use set_host to find the initial
+	host name so we get the same alias resolution at startup as the
+	sethost command.
+	* recover-src/set_commands.c (set_host): report alternate names being
+	attempted and only clear the directory list if a host is found.
+
+1998-11-19  John R. Jackson  <jrj@purdue.edu>
+
 	* recover-src/set_commands.c (set_host): if the host given by the user
 	does not work, try the canonical name and aliases returned by
 	gethostbyname.
