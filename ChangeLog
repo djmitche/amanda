@@ -1,5 +1,10 @@
 1998-11-24  John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/amadmin.c: issue a warning for update commands that might
+	leave ownership incorrect.
+
+1998-11-24  John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/amcheck.c: add a "-t" option to disable tape tests in the
 	server checks.  This lets server checks be done without mounting a
 	tape.  Add lots more sanity checks, in particular, ownership and
