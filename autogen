@@ -5,7 +5,10 @@
 
 cd `dirname $0`
 
+trap 'rm -rf .test-libtool' 1 2 15
+
 # copied (removing [] quotes) from configure.in
+(
 	    rm -rf .test-libtool
 	    mkdir .test-libtool
 	    cd .test-libtool
@@ -20,6 +23,9 @@ EOF
 	    fi
 	    cd ..
 	    rm -rf .test-libtool
+)
+
+trap 'rm -f libtool/libtool.m4' 1 2 15
 
 if [ "$amanda_cv_libtool_macros" = no ]; then
     ln -s libtool/libtool.m4 config
@@ -28,3 +34,5 @@ fi
 autoreconf --foreign -l config "$@"
 
 rm -f config/libtool.m4
+
+exit 0
