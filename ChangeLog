@@ -1,3 +1,7 @@
+2002-01-05  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/amoverview.pl.in: Ignore some line from amadmin.
+
 2002-01-04  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* Amanda 2.4.3b2 released

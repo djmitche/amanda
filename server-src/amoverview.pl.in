@@ -104,6 +104,8 @@ my $fh = new FileHandle "$amadmin $opt_config find|" or
 <$fh>;
 while (<$fh>) {
     chomp;
+    next if /found Amanda directory/;
+    next if /skipping cruft directory/;
     ($date, $host, $disk, $level, $tape, $file, $status) = split ' ', $_;
     next if $date eq 'date';
     next if $date eq 'Warning:';
