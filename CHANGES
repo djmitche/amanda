@@ -1,5 +1,8 @@
 Version 2.4.0
 
+	fix xfsdump index generation command.
+	-Robert Tarrall <tarrall@bamboo.colorado.edu>
+
 	tape device wouldn't rewind if opened O_WRONLY.
 	-Palle Girgensohn <girgen@partitur.se> & oliva
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.44 1998/01/19 17:53:07 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.44.2.1 1998/01/31 02:28:53 amcore Exp $
  *
  * send backup data using BSD dump
  */
@@ -199,7 +199,7 @@ char *dumpdate;
 			     " -",
 			     " 2>/dev/null",
 			     " | /sbin/sed",
-			     " -e", "\'s/^/\\//\'",
+			     " -e", " \'s/^/\\//\'",
 			     NULL);
 	write_tapeheader();
 
