@@ -1,3 +1,11 @@
+1998-06-30  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/amdump.sh.in (maxdays): set up with tapecycle+2
+	(days): loops from 1 to $maxdays, but stops if amdump.$days does not 
+ 	exist, so that we only rename amdump log files that exist.  This
+ 	prevents too long loops in case of an infinite tapecycle.
+	Reported by Nick Hibma <nick.hibma@jrc.it>
+
 1998-06-28  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* common-src/security.c (bsd_security_ok): accept case mismatches
