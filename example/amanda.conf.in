@@ -205,7 +205,10 @@ define tapetype MIMSY-MEGATAPE {
 #					 re's (1 per line) defining which files
 #					 to exclude
 #					 gnutar gets --exclude-from="filename"
-#		  Refer to the man-page of gnutar for more information.
+#		  Note that the `full pathname' of a file within its filesystem
+#		  starts with `./'.  So, if you're backing up `/', but you want
+#		  to exclude `/tmp', you should specify `./tmp'.
+#		  Please refer to the man-page of gnutar for more information.
 #		  Default: include all files
 #   holdingdisk	- should the holding disk be used for this dump.  Useful for
 #		  dumping the holding disk itself.  Default: [holdingdisk yes]
