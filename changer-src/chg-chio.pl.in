@@ -71,7 +71,6 @@ chomp $changerDevice;
 die "changerdev not found in amanda.conf"
 	if !$changerDevice or $changerDevice =~ m/BUGGY/;
 
-
 #
 # Initialise a few global variables
 #
@@ -289,6 +288,20 @@ sub Unload {
 	# Unload the tape from drive 0 and put it into the slot specified by
 	# $tape.
 	#
+
+	#
+	# Ecrix AutoPAK devices (based on the Spectra Logics 215 changer)
+	# can lock up if you try to move a tape from a drive to an open slot
+	# without first rewinding and ejecting the tape.  This appears to
+	# occur when the operation times out and the ch driver sends a device
+	# or bus reset. Ecrix claims this is about to be fixed with a new
+	# firmware rev but for now it's safest to just explicitly eject
+	# the tape before moving the cartridge.
+	#
+	if ( system ("@MT@ @MT_FILE_FLAG@ $tapeDevice offline") ) {
+		print "$progname: Warning, failed to eject the tape with '@MT@ @MT_FILE_FLAG@ $tapeDevice offline'\n";
+		# NB: not fatal; let chio try it's thing
+	}
 
 	if ( system("@CHIO@ -f $changerDevice move drive 0 slot ".($tape-1)." ") ) {
 		print "$progname: cannot '@CHIO@ -f $changerDevice move' tape $tape from drive 0\n";
