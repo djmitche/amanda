@@ -1,3 +1,8 @@
+1999-01-19  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/amflush.c: use ap_snprintf instead of snprintf.
+	* server-src/amflush.c: rotation of new amflush log was broken.
+
 1999-01-17  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/reporter.c: always call output_stats(), the problem is
