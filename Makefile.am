@@ -1,6 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 
-ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
+ACLOCAL_M4_FROM_SRCDIR = config/aclocal.m4
+ACLOCAL_M4 = $(srcdir)/$(ACLOCAL_M4_FROM_SRCDIR)
+
 ACLOCAL = @ACLOCAL@ -I config @LIBTOOL_M4_MACRO_DIR@
 AUTOCONF = @AUTOCONF@ --localdir=config
 
@@ -43,7 +45,7 @@ $(ACLOCAL_M4): $(srcdir)/config/libtool/libtool.m4
 
 $(ACLOCAL_M4): $(srcdir)/configure.in $(srcdir)/config/acinclude.m4
 	rm -f $(srcdir)/aclocal.m4 $(ACLOCAL_M4)
-	cd $(srcdir) && $(ACLOCAL) --output=$(ACLOCAL_M4)
+	cd $(srcdir) && $(ACLOCAL) --output=$(ACLOCAL_M4_FROM_SRCDIR)
 	if test -f $(srcdir)/aclocal.m4; then \
 	    rm -f $(ACLOCAL_M4) && mv $(srcdir)/aclocal.m4 $(ACLOCAL_M4); \
 	fi

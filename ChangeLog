@@ -1,3 +1,11 @@
+1998-11-02  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* configure.in (LIBTOOL_M4): no longer defined
+	(LIBTOOL_M4_MACRO_DIR): defined assuming CWD is top_srcdir
+	* Makefile.am (ACLOCAL_M4_FROM_SRCDIR): relative to srcdir
+	(ACLOCAL_M4): defined and created using ACLOCAL_M4_FROM_SRCDIR
+	Reported by Thomas Hepper <Thomas.Hepper@icem.de>
+
 1998-10-31  Michael Schmitz <mschmitz@iname.com>
 
 	* configure.in: let configure check whether strcasecmp is
