@@ -413,7 +413,6 @@ while(<AMDUMP>) {
 		$taper_time{$hostpart}=$1;
 		if(!defined $size{$hostpart}) {
 			$size{$hostpart}=$size;
-			$esize{$hostpart}=-1;
 		}
 	}
 	elsif(/driver: result time (\S+) from taper: (TRY-AGAIN|TAPE-ERROR) (\d+-\d+) (.+)/) {
@@ -569,7 +568,7 @@ foreach $host (sort @hosts) {
 					}
 					if(defined $dump_started{$hostpart} &&
 					   $dump_started{$hostpart} == 1 &&
-					      $dump_finished{$hostpart} != 1 &&
+					      $dump_finished{$hostpart} == 0 &&
 					      $taper_started{$hostpart} == 1) {
 						if( defined $opt_dumpingtape ) {
 							printf "%-40s%2d", "$host:$partition", $level{$hostpart};

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.88 2002/02/15 19:14:59 martinea Exp $
+ * $Id: conffile.c,v 1.89 2002/03/11 18:07:17 martinea Exp $
  *
  * read configuration file
  */
@@ -1895,7 +1895,7 @@ static void get_compress()
     }
 
     if(comp == -1) {
-	parserror("NONE, FAST, BEST, SERVER FAST or SERVER BEST expected");
+	parserror("NONE, CLIENT FAST, CLIENT BEST, SERVER FAST or SERVER BEST expected");
 	comp = COMP_NONE;
     }
 
