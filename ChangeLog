@@ -1,3 +1,8 @@
+1999-05-11  Mike Grupenhoff <kashmir@munge.com>
+
+	* client-src/amandad.c (main): call initgroups(), and also set
+	the real gid.
+
 1999-05-10  Mike Grupenhoff <kashmir@munge.com>
 
 	* server-src/driver.c (start_some_dumps): if a dumper is

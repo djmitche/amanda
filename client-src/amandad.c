@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.36 1999/04/16 05:12:37 kashmir Exp $
+ * $Id: amandad.c,v 1.37 1999/05/11 14:47:26 kashmir Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -197,6 +197,8 @@ main(argc, argv)
 	 * order to get at the machine's srvtab entry, so we hang on to
 	 * some root privledges for now.  We give them up entirely later.
 	 */
+	initgroups(CLIENT_LOGIN, pwptr->pw_gid);
+	setgid(pwptr->pw_gid);
 	setegid(pwptr->pw_gid);
 	seteuid(pwptr->pw_uid);
     }
