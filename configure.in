@@ -833,7 +833,8 @@ y |  ye | yes)
 esac
 case "$DEBUG_DIR" in
 "") :;;
-*) AC_SUBST(DEBUG_DIR);;
+*) AC_DEFINE_UNQUOTED(DEBUG_DIR,"$DEBUG_DIR")
+   AC_SUBST(DEBUG_DIR);;
 esac
 
 AC_ARG_WITH(pid-debug-files,
