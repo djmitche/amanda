@@ -1,3 +1,6 @@
+	VXDUMP needs not be run as root, so it no longer enables
+	rundump automatically.  -oliva
+
 	new `killpgrp' setuid-root program.  It is used to kill
 	VDUMP, VXDUMP and XFSDUMP or with-rundump DUMP estimates in a
 	safe manner.

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: killpgrp.c,v 1.1 1998/03/30 16:23:20 amcore Exp $
+ * $Id: killpgrp.c,v 1.2 1998/03/30 21:58:58 amcore Exp $
  *
  * if it is the process group leader, it kills all processes in its
  * process group when it is killed itself.
@@ -48,8 +48,7 @@ int main P((int argc, char **argv));
 static void term_kill_soft P((int sig));
 static void term_kill_hard P((int sig));
     
-#if defined(USE_RUNDUMP) || \
-    defined(VDUMP) || defined(XFSDUMP) || defined(VXDUMP)
+#if defined(USE_RUNDUMP) || defined(VDUMP) || defined(XFSDUMP)
 #  undef ERRMSG
 #else
 #  define ERRMSG "killpgrp not enabled on this system.\n"
@@ -135,7 +134,7 @@ int sig;
 
     signal(SIGTERM, SIG_IGN);
     signal(SIGALRM, term_kill_hard);
-    alarm(5);
+    alarm(3);
     /*
      * First, try to kill the dump process nicely.  If it ignores us
      * for five seconds, hit it harder.

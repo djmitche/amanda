@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.31 1998/02/26 19:24:18 jrj Exp $
+ * $Id: selfcheck.c,v 1.32 1998/03/30 21:59:01 amcore Exp $
  *
  * do self-check and send back any error messages
  */
@@ -243,6 +243,7 @@ char *program, *disk, *str;
 #endif
 	{
 	    need_xfsdump=1;
+	    need_rundump=1;
 	    if (as_index)
 		need_xfsrestore=1;
 	}

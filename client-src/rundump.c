@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: rundump.c,v 1.19 1998/03/14 13:48:31 amcore Exp $
+ * $Id: rundump.c,v 1.20 1998/03/30 21:58:59 amcore Exp $
  *
  * runs DUMP program as root
  */
@@ -34,23 +34,19 @@
 
 int main P((int argc, char **argv));
 
-#ifdef VDUMP
-#define USE_RUNDUMP
+#if defined(VDUMP) || defined(XFSDUMP)
+#  define USE_RUNDUMP
 #endif
 
-#if !defined(VDUMP) && \
-    ((!defined(DUMP) && !defined(XFSDUMP) && !defined(VXDUMP)) \
-     || !defined(USE_RUNDUMP))					/* { */
-
-#if !defined(USE_RUNDUMP)					/* { */
-#define ERRMSG "rundump not enabled on this system.\n"
-#else								/* } { */
-#define ERRMSG "DUMP not available on this system.\n"
-#endif								/* } */
-
-#else								/* } { */
-#undef	ERRMSG
-#endif								/* } */
+#if !defined(USE_RUNDUMP)
+#  define ERRMSG "rundump not enabled on this system.\n"
+#else
+#  if !defined(DUMP) && !defined(VXDUMP)
+#    define ERRMSG "DUMP not available on this system.\n"
+#  else
+#    undef ERRMSG
+#  endif
+#endif
 
 int main(argc, argv)
 int argc;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.82 1998/03/30 16:23:22 amcore Exp $
+ * $Id: sendsize.c,v 1.83 1998/03/30 21:59:04 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -599,8 +599,8 @@ int level;
     device = amname_to_devname(disk);
     fstype = amname_to_fstype(device);
 
-    rundump_cmd = cmd = vstralloc(libexecdir, "/rundump",
-				  versionsuffix(), NULL);
+    cmd = vstralloc(libexecdir, "/rundump", versionsuffix(), NULL);
+    rundump_cmd = stralloc(cmd);
 
     nullfd = open("/dev/null", O_RDWR);
     pipe(pipefd);
@@ -624,7 +624,13 @@ int level;
     if (1)
 #endif							/* } */
     {
+#ifdef USE_RUNDUMP
         char *name = " (vxdump)";
+#else
+	char *name = "";
+
+	cmd = newstralloc(cmd, VXDUMP);
+#endif
 	dumpkeys = vstralloc(level_str, "s", "f", NULL);
         dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n",
 		  get_pname(), cmd, name, dumpkeys, device));
@@ -697,6 +703,7 @@ int level;
     case -1:
 	afree(dumpkeys);
 	afree(cmd);
+	afree(rundump_cmd);
 	afree(device);
 	return -1;
     default:
@@ -704,8 +711,7 @@ int level;
     case 0:	/* child process */
 	if(SETPGRP == -1)
 	    SETPGRP_FAILED();
-
-	if (rundump_cmd == cmd) {
+	else if (strcmp(rundump_cmd, cmd) == 0) {
 	    switch(fork()) {
 	    case -1:
 		/* FIXME */
@@ -783,6 +789,7 @@ int level;
 
     afree(dumpkeys);
     afree(cmd);
+    afree(rundump_cmd);
 
     aclose(pipefd[1]);
     dumpout = fdopen(pipefd[0],"r");

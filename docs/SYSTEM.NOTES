@@ -92,10 +92,7 @@ PATH.
 
 
 If you have vxfs filesystems to back up, amanda will pick vxdump
-automatically.  However, since it must be run as root, amanda will use
-a setuid-root program called rundump to call it, and another
-setuid-root program called killpgrp to kill it after it has printed an
-estimate line.
+automatically.
 
 ---------------------------------------------------------------------------
 Linux
