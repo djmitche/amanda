@@ -754,24 +754,30 @@ time_t dumpsince;
 
     sprintf(cmd, "%s/runtar%s", libexecdir, versionsuffix());
 
-    dbprintf(("%s: running \"%s --create --directory %s "
+    {
+      char *spec =
+	"%s: running \"%s --create --directory %s "
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-	      "--listed-incremental %s "
+	"--listed-incremental %s "
 #else
-	      "--incremental --newer %s "
+	"--incremental --newer %s "
 #endif
-	      "--sparse --one-file-system "
+	"--sparse --one-file-system "
 #ifdef ENABLE_GNUTAR_ATIME_PRESERVE
-	      "--atime-preserve "
+	"--atime-preserve "
 #endif
-	      "--ignore-failed-read --totals --file /dev/null %s.\"\n",
-	      pname, cmd, dirname,
+	"--ignore-failed-read --totals --file /dev/null %s.\"\n";
+
+      char *name_or_time =
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-	      incrname,
+	incrname
 #else
-	      dumptimestr,
+	dumptimestr
 #endif
-	      ));
+	;
+      
+      dbprintf((spec, pname, cmd, dirname, name_or_time));
+    }
 
     nullfd = open("/dev/null", O_RDWR);
     pipe(pipefd);

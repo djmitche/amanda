@@ -30,15 +30,18 @@
 #include "amanda.h"
 #include "statfs.h"
 
-/* define ST_BLOCKS(s) in config.h if the st_blocks units != 512 bytes */
+#define ROUND(n,x)	(x + (x % n) ? (n - x % n) : 0)
 
-#define ROUND(n,x)	((n) * ( ( (x) + (n-1) ) / (n) ) )
+static unsigned long round_function(n, x)
+unsigned long n, x;
+{
+  unsigned long remainder = x % n;
+  if (remainder)
+    x += n-remainder;
+  return x;
+}
 
-#if defined(HAVE_ST_BLOCKS)
-# define ST_BLOCKS(s)	((s).st_blocks)
-#else 
-# define ST_BLOCKS(s)	(((s).st_size + 511) / 512)
-#endif
+# define ST_BLOCKS(s)	((s).st_size / 512 + (((s).st_size % 512) ? 1 : 0))
 
 #define	FILETYPES	(S_IFREG|S_IFLNK|S_IFDIR)
 
@@ -95,10 +98,7 @@ char **argv;
 /* standalone test to ckeck wether the calculated file size is ok */
     struct stat finfo;
     int i;
-    unsigned long dump_t_calc=0,
-		dump_t_used=0,
-		gtar_t_calc=0,
-		gtar_t_used=0;
+    unsigned long dump_total=0, gtar_total=0;
 
     if (argc < 2) {
 	fprintf(stderr,"Usage: %s file[s]\n",argv[0]);
@@ -109,24 +109,13 @@ char **argv;
 	    fprintf(stderr, "%s: %s\n", argv[i], strerror(errno));
 	    continue;
 	}
-	printf("%s: st_size=%d", argv[i],finfo.st_size);
-#ifdef HAVE_ST_BLOCKS
-	printf(", st_blocks=%d",finfo.st_blocks);
-#endif
-	printf(": blocks=%d:%d (used:calculated)\n",
-	    ROUND(4,(ST_BLOCKS(finfo))),
-	    ROUND(4,(((finfo.st_size + 511)/512)))
-	    );
-	if (ST_BLOCKS(finfo) != ((finfo.st_size + 511)/512))
-	    printf("**** WARNING! Blocksize calculation may be wrong!\n");
-	dump_t_used += (ST_BLOCKS(finfo) + 1)/2 + 1;
-	dump_t_calc += (((finfo.st_size + 511)/512) + 1)/2 + 1;
-	gtar_t_used += ROUND(4,(ST_BLOCKS(finfo) + 1));
-	gtar_t_calc += ROUND(4,(((finfo.st_size + 511)/512) + 1));
+	printf("%s: st_size=%lu", argv[i],(unsigned long)finfo.st_size);
+	printf(": blocks=%lu\n", (unsigned long)ST_BLOCKS(finfo));
+	dump_total += (ST_BLOCKS(finfo) + 1)/2 + 1;
+	gtar_total += ROUND(4,(ST_BLOCKS(finfo) + 1));
     }
     printf("           gtar           dump\n");
-    printf("used       %-9ld         %-9ld\n",gtar_t_used,dump_t_used);
-    printf("calculated %-9ld         %-9ld\n",gtar_t_calc,dump_t_calc);
+    printf("total      %-9lu         %-9lu\n",gtar_total,dump_total);
     return 0;
 #else
     int i;
