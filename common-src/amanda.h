@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.72 1998/12/14 19:20:44 kashmir Exp $
+ * $Id: amanda.h,v 1.73 1998/12/14 20:23:00 kashmir Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -570,6 +570,13 @@ extern char  *areads	      P((int fd));
     pclose(p);								\
     (p) = NULL;								\
 } while(0)
+
+/*
+ * Utility bitmask manipulation macros.
+ */
+#define	SET(t, f)	((t) |= (f))
+#define	CLR(t, f)	((t) &= ~((unsigned)(f)))
+#define	ISSET(t, f)	((t) & (f))
 
 /*
  * Utility string macros.  All assume a variable holds the current

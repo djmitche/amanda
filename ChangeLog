@@ -1,5 +1,15 @@
 1998-12-14  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/amanda.h: define SET, CLR, ISSET macros for dealing
+	with bitmasks
+	* server-src/amadmin.c: use the bitmask macros for setting
+	and clearing the bits in the infofile command word
+	* server-src/planner.c: ditto.  This fixes a bug in the code that
+	tried to clear FORCE_FULL with an xor expression that was
+	never assigned (x ^ FORCE_FULL)
+
+1998-12-14  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/bsd-security.c (bsd_sendpkt): cast uid's to long and
 	use %ld to print them.
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.57 1998/12/07 19:04:46 kashmir Exp $
+ * $Id: amadmin.c,v 1.58 1998/12/14 20:23:04 kashmir Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -333,7 +333,7 @@ disk_t *dp;
     check_dumpuser();
 #endif
     get_info(hostname, diskname, &info);
-    info.command |= FORCE_FULL;
+    SET(info.command, FORCE_FULL);
     if(put_info(hostname, diskname, &info) == 0) {
 	printf("%s: %s:%s is set to a forced level 0 at next run.\n",
 	       get_pname(), hostname, diskname);
@@ -363,11 +363,11 @@ disk_t *dp;
     info_t info;
 
     get_info(hostname, diskname, &info);
-    if(info.command & FORCE_FULL) {
+    if (ISSET(info.command, FORCE_FULL)) {
 #if TEXTDB
 	check_dumpuser();
 #endif
-	info.command ^= FORCE_FULL;
+	CLR(info.command, FORCE_FULL);
 	if(put_info(hostname, diskname, &info) == 0){
 	    printf("%s: force command for %s:%s cleared.\n",
 		   get_pname(), hostname, diskname);
@@ -405,9 +405,9 @@ disk_t *dp;
     check_dumpuser();
 #endif
     get_info(hostname, diskname, &info);
-    info.command |= FORCE_BUMP;
-    if(info.command & FORCE_NO_BUMP) {
-	info.command ^= FORCE_NO_BUMP;
+    SET(info.command, FORCE_BUMP);
+    if (ISSET(info.command, FORCE_NO_BUMP)) {
+	CLR(info.command, FORCE_NO_BUMP);
 	printf("%s: WARNING: %s:%s FORCE_NO_BUMP command was cleared.\n",
 	       get_pname(), hostname, diskname);
     }
@@ -443,9 +443,9 @@ disk_t *dp;
     check_dumpuser();
 #endif
     get_info(hostname, diskname, &info);
-    info.command |= FORCE_NO_BUMP;
-    if(info.command & FORCE_BUMP) {
-	info.command ^= FORCE_BUMP;
+    SET(info.command, FORCE_NO_BUMP);
+    if (ISSET(info.command, FORCE_BUMP)) {
+	CLR(info.command, FORCE_BUMP);
 	printf("%s: WARNING: %s:%s FORCE_BUMP command was cleared.\n",
 	       get_pname(), hostname, diskname);
     }
@@ -478,14 +478,11 @@ disk_t *dp;
     info_t info;
 
     get_info(hostname, diskname, &info);
-    if(info.command & (FORCE_BUMP | FORCE_NO_BUMP)) {
+    if (ISSET(info.command, FORCE_BUMP|FORCE_NO_BUMP)) {
 #if TEXTDB
 	check_dumpuser();
 #endif
-	if(info.command & FORCE_BUMP)
-	    info.command ^= FORCE_BUMP;
-	if(info.command & FORCE_NO_BUMP)
-	    info.command ^= FORCE_NO_BUMP;
+	CLR(info.command, FORCE_BUMP|FORCE_NO_BUMP);
 	if(put_info(hostname, diskname, &info) == 0) {
 	    printf("%s: bump command for %s:%s cleared.\n",
 		   get_pname(), hostname, diskname);
@@ -634,12 +631,12 @@ disk_t *dp;
     get_info(dp->host->hostname, dp->name, &info);
 
     printf("\nCurrent info for %s %s:\n", dp->host->hostname, dp->name);
-    if(info.command & FORCE_FULL) 
+    if (ISSET(info.command, FORCE_FULL))
 	printf("  (Forcing to level 0 dump at next run)\n");
-    if(info.command & FORCE_BUMP) 
+    if (ISSET(info.command, FORCE_BUMP))
 	printf("  (Forcing bump at next run)\n");
-    if(info.command & FORCE_NO_BUMP) 
-	printf("  (Forecing no-bump at next run)\n");
+    if (ISSET(info.command, FORCE_NO_BUMP))
+	printf("  (Forcing no-bump at next run)\n");
     printf("  Stats: dump rates (kps), Full:  %5.1f, %5.1f, %5.1f\n",
 	   info.full.rate[0], info.full.rate[1], info.full.rate[2]);
     printf("                    Incremental:  %5.1f, %5.1f, %5.1f\n",

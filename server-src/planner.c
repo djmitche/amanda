@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.80 1998/12/03 03:03:27 martinea Exp $
+ * $Id: planner.c,v 1.81 1998/12/14 20:23:08 kashmir Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -529,7 +529,7 @@ disk_t *dp;
 
     /* calculated fields */
 
-    if(info.command & FORCE_FULL) {
+    if (ISSET(info.command, FORCE_FULL)) {
 	/* force a level 0, kind of like a new disk */
 	if(dp->strategy == DS_NOFULL) {
 	    /*
@@ -548,8 +548,7 @@ disk_t *dp;
 		    dp->host->hostname, dp->name);
 
 	    /* clear force command */
-	    if(info.command & FORCE_FULL)
-		info.command ^ FORCE_FULL;
+	    CLR(info.command, FORCE_FULL);
 	    if(put_info(dp->host->hostname, dp->name, &info))
 		error("could not put info record for %s:%s: %s",
 		      dp->host->hostname, dp->name, strerror(errno));
@@ -596,7 +595,7 @@ disk_t *dp;
 	    }
 	}
     }
-    else if(info.command & FORCE_FULL)
+    else if (ISSET(info.command, FORCE_FULL))
 	ep->dump_priority += 1;
     /* else XXX bump up the priority of incrementals that failed last night */
 
@@ -606,8 +605,7 @@ disk_t *dp;
 	if(ep->next_level0 <= 0) {
 	    /* update the date field */
 	    info.inf[0].date = today;
-	    if(info.command & FORCE_FULL)
-		info.command ^ FORCE_FULL;
+	    CLR(info.command, FORCE_FULL);
 	    ep->next_level0 += conf_dumpcycle;
 	    ep->last_level = 0;
 	    if(put_info(dp->host->hostname, dp->name, &info))
@@ -679,7 +677,8 @@ disk_t *dp;
 
     i = 0;
 
-    if(!dp->skip_full && !(dp->strategy == DS_NOFULL) && (!(info.command & FORCE_BUMP) || dp->skip_incr))
+    if (!dp->skip_full && dp->strategy != DS_NOFULL &&
+	(!ISSET(info.command, FORCE_BUMP) || dp->skip_incr))
 	askfor(ep, i++, 0, &info);
 
     if(!dp->skip_incr) {
@@ -694,18 +693,15 @@ disk_t *dp;
 
 	    curr_level = ep->last_level;
 
-	    if(info.command & FORCE_NO_BUMP) {
+	    if (ISSET(info.command, FORCE_NO_BUMP)) {
 		if(curr_level >= 0) { /* level 0 already asked for */
 		    askfor(ep, i++, curr_level, &info);
 		}
-	    }
-	    else if(info.command & FORCE_BUMP) {
+	    } else if (ISSET(info.command, FORCE_BUMP)) {
 		askfor(ep, i++, curr_level+1, &info);
-	    }
-	    else if(curr_level == 0) {
+	    } else if (curr_level == 0) {
 		askfor(ep, i++, 1, &info);
-	    }
-	    else {
+	    } else {
 		askfor(ep, i++, curr_level, &info);
 		/*
 		 * If last time we dumped less than the threshold, then this
