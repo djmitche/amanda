@@ -1,5 +1,10 @@
 1999-02-03  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* server-src/conffile.c (init_holdingdisk_defaults, chunksize):
+	default to 1Gb
+	* example/amanda.conf.in: ditto
+	* man/amanda.8.in: ditto
+
 	* configure.in (amanda_cv_dump_estimate): check for support for -S
 	too, and define HAVE_DUMP_ESTIMATE as the estimate switch, if any
 	* client-src/sendsize.c (re_size): new regexps for Solaris ufsdump

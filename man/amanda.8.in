@@ -623,39 +623,32 @@ Amanda will use all available space minus that value.
 .TP
 .BN chunksize int
 Default:
-.IR "-1" .
+.IR "1 Gb" .
 Holding disk chunk size.
-Dumps larger than the specified size will be
-stored in multiple holding disk files.
-The size of each chunk will not exceed the specified value.
-However, even though dump images are split in the holding disk,
-they are concatenated as they are written to tape,
-so each dump image still corresponds to a single continuous tape section.
+Dumps larger than the specified size will be stored in multiple
+holding disk files.  The size of each chunk will not exceed the
+specified value.  However, even though dump images are split in the
+holding disk, they are concatenated as they are written to tape, so
+each dump image still corresponds to a single continuous tape section.
 .IP
-If you specify 0, Amanda will create
-holding disk chunks as large as ((INT_MAX/1024)-64) Kbytes.
+If you specify 0, Amanda will create holding disk chunks as large as
+((INT_MAX/1024)-64) Kbytes.
 .IP
-A negative value causes filesystems larger than the absolute value to be
-dumped directly to tape, without using the holding disk.
-The default value, -1, is interpreted as -((INT_MAX/1024-64) Kbytes.
-which causes Amanda to dump filesystems
-larger than slightly less than 2 Gbytes (assuming 32 bit integers)
-directly to tape.
-The default is provided mainly for backward compatibility.
-You are encouraged to specify a positive value
-smaller than the maximum file size in the holding disk filesystem.
+A negative value causes filesystems larger than the absolute value to
+be dumped directly to tape, without using the holding disk.  As a
+special case, -1 is interpreted as -((INT_MAX/1024-64) Kbytes, which
+causes Amanda to dump filesystems larger than slightly less than 2
+Gbytes (assuming 32 bit integers) directly to tape.
 .IP
-Each holding disk chunk includes a 32 Kbyte header,
-so the minimum chunk size is 64 Kbytes
-(but that would be really silly).
+Each holding disk chunk includes a 32 Kbyte header, so the minimum
+chunk size is 64 Kbytes (but that would be really silly).
 .IP
 Operating systems that are limited to a maximum file size of 2 Gbytes
-actually cannot handle files that large.
-They must be at least one byte less than 2 Gbytes.
-Since Amanda works with 32 Kbyte blocks,
-and to handle the final read at the end of the chunk,
-the chunk size should be at least 64 Kbytes (2 * 32 Kbytes) smaller than the
-maximum file size, e.g. 2047 Mbytes.
+actually cannot handle files that large.  They must be at least one
+byte less than 2 Gbytes.  Since Amanda works with 32 Kbyte blocks, and
+to handle the final read at the end of the chunk, the chunk size
+should be at least 64 Kbytes (2 * 32 Kbytes) smaller than the maximum
+file size, e.g. 2047 Mbytes.
 .RE
 .RE
 .SH DUMPTYPE SECTION
