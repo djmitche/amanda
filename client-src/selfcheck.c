@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.40.2.2 2000/10/11 02:08:26 martinea Exp $
+ * $Id: selfcheck.c,v 1.40.2.3 2000/10/31 01:00:24 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -334,9 +334,17 @@ int level;
 	    return;
 	}
 #endif
+        if(disk[0] == '/' && disk[1] == '/') {
+	    printf("ERROR [The client is not configured for samba: %s]\n", disk);
+	    return;
+	}
 	amode = F_OK;
 	device = amname_to_dirname(disk);
     } else {
+        if(disk[0] == '/' && disk[1] == '/') {
+	    printf("ERROR [The DUMP program can't handle samba share, use GNUTAR: %s]\n", disk);
+	    return;
+	}
 #ifdef VDUMP
 #ifdef DUMP
         if (strcmp(amname_to_fstype(disk), "advfs") == 0) {

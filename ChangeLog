@@ -1,3 +1,9 @@
+2000-10-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* client-src/selfcheck.c (check_disk): Write an appropriate
+	message if the disk name start with '//' and the program is DUMP
+	or SAMBA is not compiled in.
+
 2000-10-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/driver.c (continue_dumps): set estimate to more than
@@ -1113,7 +1119,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.399 2000/10/29 18:52:52 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.400 2000/10/31 01:00:24 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
