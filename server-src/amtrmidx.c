@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtrmidx.c,v 1.16 1998/02/26 19:25:06 jrj Exp $
+ * $Id: amtrmidx.c,v 1.17 1998/03/21 17:27:07 martinea Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -39,6 +39,8 @@
 #endif
 #include "conffile.h"
 #include "diskfile.h"
+#include "tapefile.h"
+#include "find.h"
 #include "version.h"
 
 int main(argc, argv)
@@ -52,9 +54,12 @@ char **argv;
     int no_keep;			/* files per system to keep */
     int i;
     int level_position;			/* where (from end) is level in name */
+    int datestamp_position;
     FILE *fp;
     char *ptr;
     int fd;
+    find_result_t *output_find;
+    char *diskname = NULL;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -89,6 +94,11 @@ char **argv;
     if ((diskl = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
 	error("could not load \"%s\".", getconf_str(CNF_DISKFILE));
 
+    if(read_tapelist(getconf_str(CNF_TAPELIST)))
+	error("could not load \"%s\"\n", getconf_str(CNF_TAPELIST));
+
+    output_find = find_dump(NULL,0,NULL);
+
     /* change into the index directory */
     if (chdir(getconf_str(CNF_INDEXDIR)) == -1)
 	error("could not cd to index directory \"%s\": %s",
@@ -99,6 +109,7 @@ char **argv;
     dbprintf(("Keeping %d index files\n", no_keep));
 
     level_position = strlen(COMPRESS_SUFFIX);
+    datestamp_position = level_position + 9;
 
     /* now go through the list of disks and find which have indexes */
     cmd = NULL;
@@ -108,8 +119,9 @@ char **argv;
 	{
 	    dbprintf(("%s %s\n", diskp->host->hostname, diskp->name));
 
+	    diskname = newstralloc(diskname, diskp->name);
 	    /* map '/' chars to '_' */
-	    for (ptr = diskp->name; *ptr != '\0'; ptr++)
+	    for (ptr = diskname; *ptr != '\0'; ptr++)
 		if ( *ptr == '/' )
 		    *ptr = '_';
 
@@ -117,7 +129,7 @@ char **argv;
 	    cmd = newvstralloc(cmd,
 			       "ls", " -r",
 			       " ", "\'", diskp->host->hostname, "\'",
-			       "_", "\'", diskp->name, "\'",
+			       "_", "\'", diskname, "\'",
 			       "_", "????????",
 			       "_", "?",
 			       COMPRESS_SUFFIX,
@@ -143,10 +155,22 @@ char **argv;
 
 	    /* okay, delete the rest */
 	    while ((line = agets(fp)) != NULL) {
-		dbprintf(("rm %s\n", line));
-		if (remove(line) == -1) {
-		    dbprintf(("Error removing \"%s\": %s\n",
-			      line, strerror(errno)));
+		int len;
+		char datestamp[20];
+		int level;
+
+		len = strlen(line);
+		strncpy(datestamp, &line[len - datestamp_position - 1], 
+			sizeof(datestamp) );
+		datestamp[8] = '\0';
+		level = line[len - level_position - 1] - '0';
+		if(!dump_exist(output_find, diskp->host->hostname,diskp->name, 
+			       atoi(datestamp), level)) {
+		    dbprintf(("rm %s\n", line));
+		    if (remove(line) == -1) {
+			dbprintf(("Error removing \"%s\": %s\n",
+				  line, strerror(errno)));
+		    }
 		}
 	    }
 	    apclose(fp);
