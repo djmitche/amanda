@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.94 2000/05/27 22:45:28 martinea Exp $
+ * $Id: driver.c,v 1.95 2000/05/29 20:22:23 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1058,13 +1058,13 @@ handle_dumper_result(cookie)
 	    sched(dp)->origsize = (long)atof(result_argv[3]);
 	    sched(dp)->dumptime = (long)atof(result_argv[5]);
 
-	    if(sched(dp)->dumpsize != -1)/* chunker already finished */
-		dumper_result(dp);
-
 	    printf("driver: finished-cmd time %s %s dumped %s:%s\n",
 		   walltime_str(curclock()), dumper->name,
 		   dp->host->hostname, dp->name);
 	    fflush(stdout);
+
+	    if(sched(dp)->dumpsize != -1)/* chunker already finished */
+		dumper_result(dp);
 
 	    break;
 
@@ -1227,8 +1227,6 @@ handle_chunker_result(cookie)
 	    chunker->fd = -1;
 
 	    sched(dp)->dumpsize = (long)atof(result_argv[4]);
-	    if(sched(dp)->origsize != -1) /* dumper already finished */
-		dumper_result(dp);
 
 	    dummy = 0;
 	    for( i = 0, h = sched(dp)->holdp; i < activehd; i++ ) {
@@ -1245,6 +1243,9 @@ handle_chunker_result(cookie)
 		   walltime_str(curclock()), chunker->name,
 		   dp->host->hostname, dp->name);
 	    fflush(stdout);
+
+	    if(sched(dp)->origsize != -1) /* dumper already finished */
+		dumper_result(dp);
 
 	    break;
 
