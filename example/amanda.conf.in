@@ -80,7 +80,7 @@ define tapetype DLT {
     comment "DLT tape drives"
     length 20000 mbytes		# 20 Gig tapes
     filemark 2000 kbytes	# I don't know what this means
-    speed 1.5 mbytes
+    speed 1536 kbytes		# 1.5 Mb/s
 }
 
 define tapetype SURESTORE-1200E {
