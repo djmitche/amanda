@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: set_commands.c,v 1.10 1998/07/04 00:19:14 oliva Exp $
+ * $Id: set_commands.c,v 1.10.2.1 1998/11/19 15:49:40 jrj Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -75,6 +75,9 @@ void set_host(host)
 char *host;
 {
     char *cmd = NULL;
+    struct hostent *hp;
+    char **hostp;
+    int found_host = 0;
 
     if (is_extract_list_nonempty())
     {
@@ -87,6 +90,40 @@ char *host;
     if (converse(cmd) == -1)
 	exit(1);
     if (server_happy())
+    {
+	found_host = 1;
+    }
+    else
+    {
+	/*
+	 * Try converting the given host to a fully qualified name.
+	 */
+	if ((hp = gethostbyname(host)) != NULL) {
+	    host = hp->h_name;
+	    cmd = newstralloc2(cmd, "HOST ", host);
+	    if (converse(cmd) == -1)
+		exit(1);
+	    if(server_happy())
+	    {
+		found_host = 1;
+	    }
+	    else
+	    {
+	        for (hostp = hp->h_aliases; (host = *hostp) != NULL; hostp++)
+	        {
+		    cmd = newstralloc2(cmd, "HOST ", host);
+		    if (converse(cmd) == -1)
+		        exit(1);
+		    if(server_happy())
+		    {
+		        found_host = 1;
+		        break;
+		    }
+		}
+	    }
+	}
+    }
+    if(found_host)
     {
 	dump_hostname = newstralloc(dump_hostname, host);
 	amfree(disk_name);
