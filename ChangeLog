@@ -1,3 +1,10 @@
+2003-10-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* common-src/genversion.c (prundefvar): New function to print an
+	  undefined variable.
+	* common-src/genversion.c: Print undefined variable.
+	* server-src/amcheck.c: Improve message for no LPRCMD defined.
+
 2003-07-08  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* restore-src/amidxtaped.c: Don't clea re_label before checking
