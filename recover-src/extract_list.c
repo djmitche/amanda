@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.37 1998/06/01 19:46:47 jrj Exp $
+ * $Id: extract_list.c,v 1.38 1998/06/05 18:17:32 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -114,7 +114,8 @@ int buflen;
 
 	if(nfound == 0)  {
 	    size=-2;
-	    fprintf(stderr,"nfound == 0\n");
+	    fprintf(stderr,"timeout waiting for amrestore\n");
+	    fprintf(stderr,"increase READ_TIMEOUT in recover-src/extract_list.c if your tape is slow\n");
 	}
 	if(nfound == -1) {
 	    size=-3;

@@ -1,3 +1,8 @@
+1998-06-05 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* recover-src/extract_list.c (read_buffer): write a message
+	when amrecover timeout waiting for amrestore to send the dump.
+
 1998-06-04  John R. Jackson  <jrj@purdue.edu>
 
 	* client-src/getfsent.c (main): use a dynamically allocated string
