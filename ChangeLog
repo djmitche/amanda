@@ -1,3 +1,8 @@
+2001-04-03 John R. Jackson <jrj@purdue.edu>
+
+	* Makefile.am: Remove *.test.c from the distribution (this is actually
+	  part of 2.4.2p2, just a late arrival).
+
 2001-04-02 John R. Jackson <jrj@purdue.edu>
 
 	* Amanda 2.4.2p2 released.
