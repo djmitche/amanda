@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.39 1998/01/14 23:09:14 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.40 1998/01/19 18:21:56 amcore Exp $
  *
  * send backup data using GNU tar
  */
@@ -52,7 +52,17 @@ static regex_t re_table[] = {
   { DMP_SIZE, 
 	"^Total bytes written: [0-9][0-9]*",				1},
 
- /* samba 1.9.17 has introduced these output messages */
+  /* GNUTAR produces a few error messages when files are modified or
+     removed while it is running.  They may cause data to be lost, but
+     then they may not.  We sholdn't consider them NORMAL until
+     further investigation.  The exit status of GNUTAR has to be taken
+     care of too.  */
+#if 0
+  { DMP_NORMAL, ": File .* shrunk by [0-9][0-9]* bytes, padding with zeros", 1 },
+  { DMP_NORMAL, ": Error exit delayed from previous errors", 1},
+#endif
+  
+  /* samba 1.9.17 has introduced these output messages */
   { DMP_NORMAL, "^doing parameter", 1},
   { DMP_NORMAL, "^pm_process\\(\\)", 1},
   { DMP_NORMAL, "^adding IPC", 1},
