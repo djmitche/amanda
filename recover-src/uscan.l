@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: uscan.l,v 1.9 1998/03/05 17:34:06 jrj Exp $
+ * $Id: uscan.l,v 1.10 1998/03/19 17:22:14 amcore Exp $
  *
  * lexer for amrecover interactive language
  */
@@ -44,11 +44,11 @@ static int  ll_parse_date P((int type, char *text));
 
 %x quotedstring
 
-%%
-
 %{
 static char *string_buf = NULL;
 %}
+
+%%
 
 %{
     /* literal keyword tokens */
