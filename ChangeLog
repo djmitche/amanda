@@ -1,3 +1,8 @@
+1998-09-22  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* client-src/sendsize.c: remove usage of #error
+	Reported by Jay Orr <orr@vss.fsi.com>
+
 1998-09-20  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/taper.c (getcmd): print DEBUGging output to stderr

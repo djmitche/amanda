@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.94.2.4 1998/09/19 00:05:36 oliva Exp $
+ * $Id: sendsize.c,v 1.94.2.5 1998/09/23 00:11:54 oliva Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -577,7 +577,7 @@ regex_t re_size[] = {
        case, just comment out the next three lines, and the matching
        #endif */
 #if defined(SAMBA_CLIENT) && defined(HAVE_DUMP_ESTIMATE)
-# error "Cannot support estimates of both DU's dump and smbclient"
+  error "Cannot support estimates of both DU's dump and smbclient"
 #else
 # ifdef SAMBA_CLIENT
     {"Total bytes listed: [0-9][0-9]*", 1},		     /* Samba client */
