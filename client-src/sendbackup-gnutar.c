@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.40.2.5 1998/02/15 04:33:29 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.40.2.6 1998/02/16 09:06:28 amcore Exp $
  *
  * send backup data using GNU tar
  */
@@ -95,6 +95,7 @@ static regex_t re_table[] = {
    * unavoidable when you're backing up system disks.  Add this at
    * your own risk! */
   { DMP_NORMAL, "^ERRDOS - ERRbadshare opening remote file", 1},
+  { DMP_NORMAL, "^ERRDOS - ERRbadfile opening remote file", 1},
 #endif
 
   /* catch-all: DMP_STRANGE is returned for all other lines */
