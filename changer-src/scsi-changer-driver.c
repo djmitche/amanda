@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.19 2000/01/17 22:26:56 th Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.20 2000/01/17 22:43:51 th Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -2387,7 +2387,7 @@ int GenericMove(int DeviceFD, int from, int to)
  * Return Values:
  * 1 => OK
  * 0 => Not OK
- * /
+ */
 
 int CheckMove(ElementInfo_T *from, ElementInfo_T *to)
 {
@@ -2396,11 +2396,11 @@ int CheckMove(ElementInfo_T *from, ElementInfo_T *to)
   if (pDeviceCapabilitiesPage != NULL )
     {
       dbprintf(("CheckMove : checking if move from %d to %d is legal\n", from->address, to->address));
-      switch (pfrom->type)
+      switch (from->type)
         {
         case CHANGER:
           dbprintf(("CheckMove : MT2"));
-          switch (pto->type)
+          switch (to->type)
             {
             case CHANGER:
               if (pDeviceCapabilitiesPage->MT2MT == 1)
@@ -2436,7 +2436,7 @@ int CheckMove(ElementInfo_T *from, ElementInfo_T *to)
           break;
         case STORAGE:
           dbprintf(("CheckMove : ST2"));
-          switch (pto->type)
+          switch (to->type)
             {
             case CHANGER:
               if (pDeviceCapabilitiesPage->ST2MT == 1)
@@ -2472,7 +2472,7 @@ int CheckMove(ElementInfo_T *from, ElementInfo_T *to)
           break;
         case IMPORT:
           dbprintf(("CheckMove : IE2"));
-          switch (pto->type)
+          switch (to->type)
             {
             case CHANGER:
               if (pDeviceCapabilitiesPage->IE2MT == 1)
@@ -2508,7 +2508,7 @@ int CheckMove(ElementInfo_T *from, ElementInfo_T *to)
           break;
         case TAPETYPE:
           dbprintf(("CheckMove : DT2"));
-          switch (pto->type)
+          switch (to->type)
             {
             case CHANGER:
               if (pDeviceCapabilitiesPage->DT2MT == 1)
