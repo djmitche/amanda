@@ -1,5 +1,11 @@
 1999-01-14  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c (make_tapeheader): explicitly compare
+	srvcompress against srvcomp_none instead of assuming that
+	srvcomp_none's value is 0.
+
+1999-01-14  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c: move max() macro to top of file.  Add min()
 	* server-src/dumper.c (databuf_write): use min() to determine the
 	copy size

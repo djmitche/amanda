@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.97 1999/01/14 23:57:13 kashmir Exp $
+/* $Id: dumper.c,v 1.98 1999/01/15 00:03:25 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -939,7 +939,7 @@ filetype_t type;
     strncpy(file->recover_cmd, recover_cmd, sizeof(file->recover_cmd)-1);
     file->recover_cmd[sizeof(file->recover_cmd)-1] = '\0';
 
-    if (srvcompress) {
+    if (srvcompress != srvcomp_none) {
 	file->compressed=1;
 	ap_snprintf(file->uncompress_cmd, sizeof(file->uncompress_cmd),
 		    " %s %s |", UNCOMPRESS_PATH,
