@@ -23,7 +23,7 @@ libamanda_la_SOURCES = \
 	security.c	sl.c		statfs.c	stream.c	\
 	token.c		\
 	util.c		\
-	version.c	versuff.c
+	versuff.c	version.c
 
 libamanda_la_LIBADD =	@LTLIBOBJS@ @LTALLOCA@
 libamanda_la_LDFLAGS =  -release $(VERSION)
@@ -48,8 +48,8 @@ noinst_HEADERS =	amanda.h	amregex.h	arglist.h	\
 
 EXTRA_PROGRAMS = genversion $(TEST_PROGS)
 
-genversion_SOURCES = genversion.c versuff.c
-genversion_LDADD = $(libamanda_la_LIBADD)
+genversion_SOURCES = genversion.c
+genversion_LDADD = $(libamanda_la_LIBADD) versuff.o
 
 genversion.@OBJEXT@: genversion.h
 genversion.h: $(top_builddir)/config.status

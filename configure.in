@@ -1,9 +1,10 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT(common-src/amanda.h)
+AC_INIT
+AC_CONFIG_SRCDIR([common-src/amanda.h])
 AC_CONFIG_AUX_DIR(config)
-AC_CANONICAL_SYSTEM
-AC_VALIDATE_CACHED_SYSTEM_TUPLE
+AC_CANONICAL_TARGET([])
+
 
 CONFIGURE_COMMAND="'$0'"
 for arg in "$@"; do
@@ -16,7 +17,7 @@ AC_SUBST(CONFIGURE_COMMAND)
 AM_INIT_AUTOMAKE(amanda, 2.5.0)
 AM_CONFIG_HEADER(config/config.h)
 
-AC_PREREQ(2.13)		dnl Minimum Autoconf version required.
+AC_PREREQ(2.53)		dnl Minimum Autoconf version required.
 
 if test -f "$srcdir/SNAPSHOT"; then
   cat < "$srcdir/SNAPSHOT"
@@ -29,9 +30,6 @@ else
   SNAPSHOT_STAMP=
 fi
 AC_SUBST(SNAPSHOT_STAMP)
-
-dnl host system/type
-AC_ARG_PROGRAM
 
 if test -f config.local; then
     echo "running local script ./config.local"
@@ -1480,17 +1478,17 @@ if test "$DUMP" -a "$RESTORE"; then
 		        | $GREP -v Dumping
 			| $GREP -v Date
 			| $GREP -v Label >conftest.d-E 2>&1)
-		    cat conftest.d-E >&AC_FD_CC
+		    cat conftest.d-E >&AS_MESSAGE_LOG_FD()
 		    AC_TRY_COMMAND($DUMP 9Sf /dev/null /dev/null/invalid/fs 2>&1
 		        | $GREP -v Dumping
 			| $GREP -v Date
 		        | $GREP -v Label >conftest.d-S 2>&1)
-		    cat conftest.d-S >&AC_FD_CC
+		    cat conftest.d-S >&AS_MESSAGE_LOG_FD()
 		    AC_TRY_COMMAND($DUMP 9f /dev/null /dev/null/invalid/fs 2>&1
 		        | $GREP -v Dumping
 			| $GREP -v Date
 		        | $GREP -v Label >conftest.d 2>&1)
-		    cat conftest.d >&AC_FD_CC
+		    cat conftest.d >&AS_MESSAGE_LOG_FD()
 		    if AC_TRY_COMMAND(cmp conftest.d-E conftest.d 1>&2); then
 		        amanda_cv_dump_estimate=E
 		    elif AC_TRY_COMMAND(cmp conftest.d-S conftest.d 1>&2); then
@@ -1525,12 +1523,12 @@ if test "$DUMP" -a "$RESTORE"; then
 		    | $GREP -v Dumping
 		    | $GREP -v Date
 		    | $GREP -v Label >conftest.d-h 2>&1)
-		cat conftest.d-h >&AC_FD_CC
+		cat conftest.d-h >&AS_MESSAGE_LOG_FD()
 		AC_TRY_COMMAND($DUMP 9f /dev/null /dev/null/invalid/fs 2>&1
 		    | $GREP -v Dumping
 		    | $GREP -v Date
 		    | $GREP -v Label >conftest.d 2>&1)
-		cat conftest.d >&AC_FD_CC
+		cat conftest.d >&AS_MESSAGE_LOG_FD()
 		if AC_TRY_COMMAND(diff conftest.d-h conftest.d 1>&2); then
 		    amanda_cv_honor_nodump=yes
 		else
@@ -2549,7 +2547,7 @@ ICE_CHECK_DECL(snprintf,stdio.h)
 ICE_CHECK_DECL(vsnprintf,stdio.h)
 if test x"$ice_have_snprintf" != x"yes" ||
    test x"$ice_have_vsnprintf" != x"yes"; then
-    LIBOBJS="$LIBOBJS snprintf.${ac_objext}"
+    AC_LIBOBJ([snprintf])
     if false; then :
 	dnl so that automake includes snprintf.c in the distribution
 	AC_REPLACE_FUNCS(snprintf) 
@@ -2797,12 +2795,18 @@ case "${FORCE_USE_RUNDUMP-${USE_RUNDUMP}}" in
 y |  ye | yes) AC_DEFINE(USE_RUNDUMP,1,[Define to invoke rundump (setuid-root) instead of DUMP program directly. ]);;
 esac
 
+# This is necessary so that .o files in LIBOBJS are also built via
+# the ANSI2KNR-filtering rules.
+LIB@&t@OBJS=`echo "$LIB@&t@OBJS" |
+             sed 's,\.[[^.]]* ,$U&,g;s,\.[[^.]]*$,$U&,'`
+LTLIBOBJS=`echo "$LIB@&t@OBJS" |
+           sed 's,\.[[^.]]* ,.lo ,g;s,\.[[^.]]*$,.lo,'`
 AC_SUBST(LTLIBOBJS)
-AC_SUBST(LTALLOCA)
-LTLIBOBJS=`echo "$LIBOBJS" | sed 's/\.'"${ac_objext}"'/\.lo/g'`
-LTALLOCA=`echo "$ALLOCA" | sed 's/\.'"${ac_objext}"'/\.lo/g'`
 
-AC_OUTPUT( \
+LTALLOCA=`echo "$ALLOCA" | sed 's/\.'"${ac_objext}"'/\.lo/g'`
+AC_SUBST(LTALLOCA)
+
+AC_CONFIG_FILES([\
 	amplot/amcat.awk		amplot/amplot.sh		\
 	amplot/Makefile							\
 									\
@@ -2846,4 +2850,5 @@ AC_OUTPUT( \
 									\
 	tape-src/Makefile						\
 									\
-	config/Makefile			Makefile)
+	config/Makefile			Makefile])
+AC_OUTPUT
