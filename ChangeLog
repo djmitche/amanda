@@ -1,3 +1,11 @@
+1999-11-10 John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/amcleanupdisk.c (main): try to remove empty holding disk
+	  areas.
+	* server-src/holding.c (scan_holdingdisk): do not automatically remove
+	  empty holding disk areas since this function is called by various
+	  utilities and a dump might be in progress.
+
 1999-11-10  James FitzGibbon  <james@targetnet.com>
 
 	* server-src/infofile.c (put_info): d.size should have been

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.29 1999/09/15 00:33:09 jrj Exp $
+ * $Id: holding.c,v 1.30 1999/11/10 23:29:30 jrj Exp $
  *
  * Functions to access holding disk
  */
@@ -178,18 +178,15 @@ int verbose;
 	    if(verbose) {
 	        puts("skipping cruft directory, perhaps you should delete it.");
 	    }
-	} else if(rmdir(entryname) == 0) {
-	    if(verbose) {
-	        puts("deleted empty Amanda directory.");
-	    }
 	} else {
 	    if(insert_dirname(holding_list, workdir->d_name) == NULL) {
 	        if(verbose) {
 		    puts("too many non-empty Amanda dirs, can't handle this one.");
 		}
 	    } else {
-	        if(verbose)
-		    puts("found non-empty Amanda directory.");
+	        if(verbose) {
+		    puts("found Amanda directory.");
+		}
 	    }
 	}
     }
