@@ -1227,6 +1227,27 @@ if test "$MTX"; then
     MTX=mtx
 fi
 
+AC_CACHE_CHECK([for printing support], amanda_cv_print_command, [
+	AC_PATH_PROGS(PRINT, lpr lp)
+	amanda_cv_print_command="$PRINT"
+])
+if test ! -z "$amanda_cv_print_command"; then
+    AC_DEFINE(LPRCMD, "$amanda_cv_print_command")
+    AC_CACHE_CHECK([which flag to use to select a printer],
+	amanda_cv_printer_flag, [
+	amanda_cv_printer_flag=$PRINTER_FLAG
+	case "$amanda_cv_print_command" in
+	lpr|*/lpr) : ${amanda_cv_printer_flag="-P"};;
+	lp|*/lp) : ${amanda_cv_printer_flag="-d"};;
+	esac
+    ])
+    if test ! -z "$amanda_cv_printer_flag"; then
+	AC_DEFINE(LPRFLAG, "$amanda_cv_printer_flag")
+    else
+	AC_MSG_WARN([*** WARNING: amanda will always print to the default printer])
+    fi
+fi
+
 AC_PATH_PROGS(PCAT,pcat,,$LOCSYSPATH)
 AC_PATH_PROGS(PERL,perl5 perl,,$LOCSYSPATH)
 

@@ -184,6 +184,12 @@
  * tape device.  */
 #undef MT_FILE_FLAG
 
+/* Command for starting printing jobs */
+#undef LPRCMD
+
+/* LPRCMD switch for specifying a printer name */
+#undef LPRFLAG
+
 /* Define the names for the Amanda and Kerberos Amanda services.  If you
  * wish to use an alternate service name, then the alternate service name
  * must be appended to the Amanda and Kamanda service names.  This is

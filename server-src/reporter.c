@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.25 1998/03/15 22:37:16 martinea Exp $
+ * $Id: reporter.c,v 1.26 1998/03/20 06:57:32 amcore Exp $
  *
  * nightly Amanda Report generator
  */
@@ -291,11 +291,12 @@ char **argv;
 	if((mailf = popen(cmd, "w")) == NULL)
 	    error("could not open pipe to \"%s\": %s", cmd, strerror(errno));
 
-	cmd = NULL;
-	if (strcmp(printer,"") != 0)
-	  cmd = vstralloc("lpr"," -P", printer, NULL);
+	if (strcmp(printer,"") != 0)	/* alternate printer is defined */
+	  /* print to the specified printer */
+	  cmd = newvstralloc(LPRCMD, " ", LPRFLAG, printer, NULL);
 	else
-	  cmd = vstralloc("lpr", NULL);
+	  /* print to the default printer */
+	  cmd = newvstralloc(LPRCMD, NULL);
 
 	if ((strcmp(tp->lbl_templ,"")) != 0)
 	  if ((postscript = popen(cmd,"w")) == NULL)
