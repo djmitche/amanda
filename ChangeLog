@@ -1,3 +1,8 @@
+2003-01-23  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* recover-src/extract_list.c (add_extract_item, delete_extract_item):
+	  Check also for level when comparing label.
+
 2003-01-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	Do not build chg-scsi-chio, it is buggy.

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.80 2003/01/01 23:28:16 martinea Exp $
+ * $Id: extract_list.c,v 1.81 2003/01/23 23:02:26 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -257,7 +257,7 @@ DIR_ITEM *ditem;
     for (this = extract_list; this != NULL; this = this->next)
     {
 	/* see if this is the list for the tape */	
-	if (strcmp(this->tape, ditem->tape) == 0)
+	if (this->level == ditem->level && strcmp(this->tape, ditem->tape) == 0)
 	{
 	    /* yes, so add to list */
 	    curr=this->files;
@@ -338,7 +338,7 @@ DIR_ITEM *ditem;
     for (this = extract_list; this != NULL; this = this->next)
     {
 	/* see if this is the list for the tape */	
-	if (strcmp(this->tape, ditem->tape) == 0)
+	if (this->level == ditem->level && strcmp(this->tape, ditem->tape) == 0)
 	{
 	    /* yes, so find file on list */
 	    that = this->files;
