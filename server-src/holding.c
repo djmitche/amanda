@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.31 2000/06/02 14:31:35 martinea Exp $
+ * $Id: holding.c,v 1.32 2001/06/19 20:05:09 jrjackson Exp $
  *
  * Functions to access holding disk
  */
@@ -33,6 +33,7 @@
 #include "util.h"
 #include "holding.h"
 #include "fileheader.h"
+#include "util.h"
 
 static holding_t *insert_dirname P((holding_t **, char *));
 static void scan_holdingdisk P((holding_t **, char *, int));
@@ -296,7 +297,7 @@ int *level;
     if((fd = open(fname, O_RDONLY)) == -1)
 	return F_UNKNOWN;
 
-    if(read(fd, buffer, sizeof(buffer)) != sizeof(buffer)) {
+    if(fullread(fd, buffer, sizeof(buffer)) != sizeof(buffer)) {
 	aclose(fd);
 	return F_UNKNOWN;
     }
@@ -326,7 +327,7 @@ dumpfile_t *file;
     if((fd = open(fname, O_RDONLY)) == -1)
 	return;
 
-    if(read(fd, buffer, sizeof(buffer)) != sizeof(buffer)) {
+    if(fullread(fd, buffer, sizeof(buffer)) != sizeof(buffer)) {
 	aclose(fd);
 	return;
     }
