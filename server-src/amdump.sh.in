@@ -67,10 +67,19 @@ tapecycle=`amgetconf$SUF $conf tapecycle`
 [ $? -ne 0 ]  && exit 1
 dumpuser=`amgetconf$SUF $conf dumpuser`
 [ $? -ne 0 ]  && exit 1
-runuser=${LOGNAME-`whoami`}
+
+runuser=`{ whoami ; } 2>/dev/null`
+if [ $? -ne 0 ]; then
+	idinfo=`{ id ; } 2>/dev/null`
+	if [ $? -ne 0 ]; then
+		runuser=${LOGNAME:-"??unknown??"}
+	else
+		runuser=`echo $idinfo | sed -e 's/).*//' -e 's/^.*(//'`
+	fi
+fi
 
 if [ $runuser != $dumpuser ]; then
-	echo "amdump: must be run as user $dumpuser"
+	echo "amdump: must be run as user $dumpuser, not $runuser"
 	exit 1
 fi
 

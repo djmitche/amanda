@@ -1,5 +1,9 @@
 2000-12-04 John R. Jackson  <jrj@purdue.edu>
 
+	server-src/amdump.sh.in: Temporary fix for $LOGNAME vs whoami problem.
+
+2000-12-04 John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/conffile.c (read_conffile_recursively): If the file name
 	  for the includefile directive is not absolute, make it relative to
 	  the configuration directory.
