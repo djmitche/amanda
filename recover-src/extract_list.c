@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43.2.13.4.6.2.3 2002/02/11 01:30:42 jrjackson Exp $
+ * $Id: extract_list.c,v 1.43.2.13.4.6.2.4 2002/03/21 19:33:47 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1067,6 +1067,7 @@ static int extract_files_setup P((void))
     int my_port;
     int tape_server_socket;
     char *disk_regex = NULL;
+    char *host_regex = NULL;
     char *service_name = NULL;
     char *line = NULL;
     char *clean_datestamp, *ch, *ch1;
@@ -1141,6 +1142,30 @@ static int extract_files_setup P((void))
 
     *ch1 = '\0';
 
+    host_regex = alloc(strlen(dump_hostname) * 2 + 3);
+
+    ch = dump_hostname;
+    ch1 = host_regex;
+
+    /* we want to force amrestore to only match disk_name exactly */
+    *(ch1++) = '^';
+
+    /* We need to escape some characters first... NT compatibilty crap */
+    for (; *ch != 0; ch++, ch1++) {
+	switch (*ch) {     /* done this way in case there are more */
+	case '$':
+	    *(ch1++) = '\\';
+	    /* no break; we do want to fall through... */
+	default:
+	    *ch1 = *ch;
+	}
+    }
+
+    /* we want to force amrestore to only match disk_name exactly */
+    *(ch1++) = '$';
+
+    *ch1 = '\0';
+
     clean_datestamp = stralloc(dump_datestamp);
     for(ch=ch1=clean_datestamp;*ch1 != '\0';ch1++) {
 	if(*ch1 != '-') {
@@ -1162,14 +1187,15 @@ static int extract_files_setup P((void))
     send_to_tape_server(tape_server_socket, "-h");
     send_to_tape_server(tape_server_socket, "-p");
     send_to_tape_server(tape_server_socket, dump_device_name);
-    send_to_tape_server(tape_server_socket, dump_hostname);
+    send_to_tape_server(tape_server_socket, host_regex);
     send_to_tape_server(tape_server_socket, disk_regex);
     send_to_tape_server(tape_server_socket, clean_datestamp);
 
     dbprintf(("Started amidxtaped with arguments \"6 -h -p %s %s %s %s\"\n",
-	      dump_device_name, dump_hostname, disk_regex, clean_datestamp));
+	      dump_device_name, host_regex, disk_regex, clean_datestamp));
 
     amfree(disk_regex);
+    amfree(host_regex);
 
     return tape_server_socket;
 }

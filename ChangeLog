@@ -1,3 +1,7 @@
+2002-03-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* recover-src/extract_list.c (extract_files_setup): Add ^$ to host.
+
 2002-03-20  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	Patch from Michael Frankowski <mfrankow@winternet.com>
 
