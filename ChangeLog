@@ -1,3 +1,7 @@
+1999-05-07 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* example/amanda.conf.in: typo
+
 1999-05-07  Mike Grupenhoff <kashmir@munge.com>
 
 	* common-src/alloc.c (safe_env): allow DISPLAY into the

@@ -122,6 +122,8 @@ holdingdisk hd1 {
 # non-reserved portion of the holding disk.
 
 # reserve 30 # percent
+# This means save at least 30% of the holding disk space for degraded
+# mode backups.  
 
 # The format for a ColumnSpec is a ',' seperated list of triples.
 # Each triple consists of
@@ -144,9 +146,6 @@ holdingdisk hd1 {
 #							ElB, 1999-02-24.
 # columnspec "Disk=1:18,HostName=0:10,OutKB=1:7"
 
-
-# This means save at least 30% of the holding disk space for degraded
-# mode backups.  
 
 # Amanda needs a few Mb of diskspace for the log and debug files,
 # as well as a database.  This stuff can grow large, so the conf directory
