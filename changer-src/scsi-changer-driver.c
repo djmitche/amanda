@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.17 2000/12/30 22:57:51 jrjackson Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.18 2001/01/04 01:51:30 martinea Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -162,155 +162,155 @@ ChangerCMD_T ChangerIO[] = {
 	/* HP Devices */
   {"C1553A",
    "HP Auto Loader [C1553A]",
-   {GenericMove,
-    GenericElementStatus,
-    DoNothing,
-    GenericFree,
-    GenericEject,
-    GenericClean,
-    GenericRewind,
-    NoBarCode,
-    GenericSearch,
-    GenericSenseHandler}}, 
+   GenericMove,
+   GenericElementStatus,
+   DoNothing,
+   GenericFree,
+   GenericEject,
+   GenericClean,
+   GenericRewind,
+   NoBarCode,
+   GenericSearch,
+   GenericSenseHandler}, 
 	/* Exabyte Devices */
   {"EXB-10e",      
-    "Exabyte Robot [EXB-10e]",
-   {GenericMove,
-    GenericElementStatus,
-    GenericResetStatus,
-    GenericFree,
-    GenericEject,
-    GenericClean,
-    GenericRewind,
-    GenericBarCode,
-    GenericSearch,
-    GenericSenseHandler}},
+   "Exabyte Robot [EXB-10e]",
+   GenericMove,
+   GenericElementStatus,
+   GenericResetStatus,
+   GenericFree,
+   GenericEject,
+   GenericClean,
+   GenericRewind,
+   GenericBarCode,
+   GenericSearch,
+   GenericSenseHandler},
   {"EXB-120",   
-    "Exabyte Robot [EXB-120]",
-   {GenericMove,
-    GenericElementStatus,
-    GenericResetStatus,
-    GenericFree,
-    GenericEject,
-    GenericClean,
-    GenericRewind,
-    EXB120BarCode,
-    GenericSearch,
-    GenericSenseHandler}},
+   "Exabyte Robot [EXB-120]",
+   GenericMove,
+   GenericElementStatus,
+   GenericResetStatus,
+   GenericFree,
+   GenericEject,
+   GenericClean,
+   GenericRewind,
+   EXB120BarCode,
+   GenericSearch,
+   GenericSenseHandler},
   {"EXB-85058HE-0000",        
    "Exabyte Tape [EXB-85058HE-0000]",
-   {DoNothing,
-    DoNothing,
-    DoNothing,
-    DoNothing,
-    GenericEject,
-    GenericClean,
-    GenericRewind,
-    GenericBarCode,
-    GenericSearch,
-    GenericSenseHandler}},
+   DoNothing,
+   DoNothing,
+   DoNothing,
+   DoNothing,
+   GenericEject,
+   GenericClean,
+   GenericRewind,
+   GenericBarCode,
+   GenericSearch,
+   GenericSenseHandler},
     /* Tandberg Devices */
   {"TDS 1420",              
    "Tandberg Robot (TDS 1420)",
-   {GenericMove,
-    GenericElementStatus,
-    GenericResetStatus,
-    GenericFree,
-    GenericEject,
-    GenericClean,
-    GenericRewind,
-    GenericBarCode,
-    GenericSearch,
-    GenericSenseHandler}},
+   GenericMove,
+   GenericElementStatus,
+   GenericResetStatus,
+   GenericFree,
+   GenericEject,
+   GenericClean,
+   GenericRewind,
+   GenericBarCode,
+   GenericSearch,
+   GenericSenseHandler},
 
   {"DLT7000",        
    "DLT Tape [DLT7000]",
-   {DoNothing,
-    DoNothing,
-    DoNothing,
-    DoNothing,
-    DLT4000Eject,
-    GenericClean,
-    GenericRewind,
-    GenericBarCode,
-    GenericSearch,
-    GenericSenseHandler}},
+   DoNothing,
+   DoNothing,
+   DoNothing,
+   DoNothing,
+   DLT4000Eject,
+   GenericClean,
+   GenericRewind,
+   GenericBarCode,
+   GenericSearch,
+   GenericSenseHandler},
   {"DLT4000",        
    "DLT Tape [DLT4000]",
-   {DoNothing,
-    DoNothing,
-    DoNothing,
-    DoNothing,
-    DLT4000Eject,
-    GenericClean,
-    GenericRewind,
-    NoBarCode,
-    GenericSearch,
-    GenericSenseHandler}},
+   DoNothing,
+   DoNothing,
+   DoNothing,
+   DoNothing,
+   DLT4000Eject,
+   GenericClean,
+   GenericRewind,
+   NoBarCode,
+   GenericSearch,
+   GenericSenseHandler},
     /* ADIC Devices */
   {"VLS DLT",               
-    "ADIC VLS DLT Library [VLS DLT]",
-   {GenericMove,
-    GenericElementStatus,
-    GenericResetStatus,
-    GenericFree,
-    GenericEject,
-    GenericClean,
-    GenericRewind,
-    NoBarCode,
-    GenericSearch,
-    GenericSenseHandler}},
+   "ADIC VLS DLT Library [VLS DLT]",
+   GenericMove,
+   GenericElementStatus,
+   GenericResetStatus,
+   GenericFree,
+   GenericEject,
+   GenericClean,
+   GenericRewind,
+   NoBarCode,
+   GenericSearch,
+   GenericSenseHandler},
   {"VLS SDX",               
-    "ADIC VLS DLT Library [VLS SDX]",
-   {SDXMove,
-    SDXElementStatus,
-    GenericResetStatus,
-    GenericFree,
-    GenericEject,
-    GenericClean,
-    GenericRewind,
-    NoBarCode,
-    GenericSearch,
-    GenericSenseHandler}},
+   "ADIC VLS DLT Library [VLS SDX]",
+   SDXMove,
+   SDXElementStatus,
+   GenericResetStatus,
+   GenericFree,
+   GenericEject,
+   GenericClean,
+   GenericRewind,
+   NoBarCode,
+   GenericSearch,
+   GenericSenseHandler},
   {"Scalar DLT 448",
-    "ADIC DLT 448 [Scalar DLT 448]",
-   {GenericMove,
-    DLT448ElementStatus,
-    GenericResetStatus,
-    GenericFree,
-    GenericEject,
-    GenericClean,
-    GenericRewind,
-    NoBarCode,
-    GenericSearch,
-    GenericSenseHandler}},
-    /* Sepctra Logic Devices */
+   "ADIC DLT 448 [Scalar DLT 448]",
+   GenericMove,
+   DLT448ElementStatus,
+   GenericResetStatus,
+   GenericFree,
+   GenericEject,
+   GenericClean,
+   GenericRewind,
+   NoBarCode,
+   GenericSearch,
+   GenericSenseHandler},
+   /* Sepctra Logic Devices */
   {"215",
-    "Spectra Logic TreeFrog[215]",
-   {GenericMove,
-    GenericElementStatus,
-    GenericResetStatus,
-    GenericFree,
-    GenericEject,
-    GenericClean,
-    GenericRewind,
-    TreeFrogBarCode,
-    GenericSearch,
-    GenericSenseHandler}},
+   "Spectra Logic TreeFrog[215]",
+   GenericMove,
+   GenericElementStatus,
+   GenericResetStatus,
+   GenericFree,
+   GenericEject,
+   GenericClean,
+   GenericRewind,
+   TreeFrogBarCode,
+   GenericSearch,
+   GenericSenseHandler},
     /* The generic handler if nothing matches */
-   {"generic",
-    "Generic driver tape/robot [generic]",
-   {GenericMove,
-    GenericElementStatus,
-    GenericResetStatus,
-    GenericFree,
-    GenericEject,
-    GenericClean,
-    GenericRewind,
-    NoBarCode,
-    GenericSearch,
-    GenericSenseHandler}},
-  {NULL, NULL, {NULL,NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}}
+  {"generic",
+   "Generic driver tape/robot [generic]",
+   GenericMove,
+   GenericElementStatus,
+   GenericResetStatus,
+   GenericFree,
+   GenericEject,
+   GenericClean,
+   GenericRewind,
+   NoBarCode,
+   GenericSearch,
+   GenericSenseHandler},
+  {NULL, NULL, NULL,NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}
 };           
 
 
@@ -438,7 +438,7 @@ int isempty(int fd, int slot)
 
   if (ElementStatusValid == 0)
     {
-      if ( pDev[fd].functions->function[CHG_STATUS](fd, 1) != 0)
+      if ( pDev[fd].functions->function_status(fd, 1) != 0)
         {
           dbprintf(("##### STOP isempty [-1]\n"));
           return(-1);
@@ -467,7 +467,7 @@ int get_clean_state(char *tapedev)
       dbprintf(("##### STOP get_clean_state [-1]\n"));
       return(-1);
     }
-  ret=pDev[INDEX_TAPECTL].functions->function[CHG_CLEAN](tapedev);
+  ret=pDev[INDEX_TAPECTL].functions->function_clean(tapedev);
   dbprintf(("##### STOP get_clean_state [%d]\n", ret));
   return(ret);    
 }
@@ -488,7 +488,7 @@ int eject_tape(char *tapedev, int type)
 
   if (pDev[INDEX_TAPECTL].SCSI == 1 && pDev[INDEX_TAPECTL].avail == 1 && type == 1)
     {
-      ret=pDev[INDEX_TAPECTL].functions->function[CHG_EJECT](tapedev, type);
+      ret=pDev[INDEX_TAPECTL].functions->function_eject(tapedev, type);
       dbprintf(("##### STOP (SCSI)eject_tape [%d]\n", ret));
       return(ret);
     }
@@ -516,7 +516,7 @@ int find_empty(int fd, int start, int count)
 
   if (ElementStatusValid == 0)
     {
-      if ( pDev[fd].functions->function[CHG_STATUS](fd , 1) != 0)
+      if ( pDev[fd].functions->function_status(fd , 1) != 0)
         {
           dbprintf(("###### END find_empty [%d]\n", -1));
           return(-1);
@@ -567,7 +567,7 @@ int drive_loaded(int fd, int drivenum)
   
   if (ElementStatusValid == 0)
     {
-      if (pDev[INDEX_CHANGER].functions->function[CHG_STATUS](INDEX_CHANGER, 1) != 0)
+      if (pDev[INDEX_CHANGER].functions->function_status(INDEX_CHANGER, 1) != 0)
 	{
 	  return(-1);
 	}
@@ -594,7 +594,7 @@ int unload(int fd, int drive, int slot)
 
   if (ElementStatusValid == 0)
       {
-          if (pDev[INDEX_CHANGER].functions->function[CHG_STATUS](INDEX_CHANGER , 1) != 0)
+          if (pDev[INDEX_CHANGER].functions->function_status(INDEX_CHANGER , 1) != 0)
               {
                   return(-1);
               }
@@ -620,11 +620,11 @@ int unload(int fd, int drive, int slot)
       dbprintf(("unload : try to unload to slot %d\n", slot));
     }
   
-  pDev[INDEX_CHANGER].functions->function[CHG_MOVE](INDEX_CHANGER , pDTE[drive].address, pSTE[slot].address);
+  pDev[INDEX_CHANGER].functions->function_move(INDEX_CHANGER , pDTE[drive].address, pSTE[slot].address);
   /*
    * Update the Status
    */
-  if (pDev[INDEX_CHANGER].functions->function[CHG_STATUS](INDEX_CHANGER , 1) != 0)
+  if (pDev[INDEX_CHANGER].functions->function_status(INDEX_CHANGER , 1) != 0)
       {
           return(-1);
       }
@@ -653,7 +653,7 @@ int load(int fd, int drive, int slot)
 
   if (ElementStatusValid == 0)
       {
-          if (pDev[fd].functions->function[CHG_STATUS](fd, 1) != 0)
+          if (pDev[fd].functions->function_status(fd, 1) != 0)
               {
                   return(-1);
               }
@@ -676,12 +676,12 @@ int load(int fd, int drive, int slot)
       return(-1);
     }
 
-  ret = pDev[fd].functions->function[CHG_MOVE](fd, pSTE[slot].address, pDTE[drive].address);
+  ret = pDev[fd].functions->function_move(fd, pSTE[slot].address, pDTE[drive].address);
   
   /*
    * Update the Status
    */
-  if (pDev[fd].functions->function[CHG_STATUS](fd, 1) != 0)
+  if (pDev[fd].functions->function_status(fd, 1) != 0)
       {
           return(-1);
       }
@@ -703,7 +703,7 @@ int get_slot_count(int fd)
 
   if (ElementStatusValid == 0)
     {
-      pDev[fd].functions->function[CHG_STATUS](fd, 1);
+      pDev[fd].functions->function_status(fd, 1);
     }
 
   return(STE);
@@ -731,7 +731,7 @@ int get_drive_count(int fd)
 
   if (ElementStatusValid == 0)
       {
-          if ( pDev[fd].functions->function[CHG_STATUS](fd, 1) != 0)
+          if ( pDev[fd].functions->function_status(fd, 1) != 0)
               {
                   return(-1);
               }
@@ -821,7 +821,7 @@ int BarCode(int fd)
 
   dbprintf(("Ident = [%s], function = [%s]\n", pDev[fd].ident,
         pDev[fd].functions->ident));
-  ret = pDev[fd].functions->function[CHG_BARCODE](fd);
+  ret = pDev[fd].functions->function_barcode(fd);
   return(ret);
 }
 
@@ -1378,7 +1378,7 @@ int SenseHandler(int DeviceFD, unsigned char flag, char *buffer)
   dbprintf(("##### START SenseHandler\n"));
   dbprintf(("Ident = [%s], function = [%s]\n", pDev[DeviceFD].ident,
 	    pDev[DeviceFD].functions->ident));
-  ret = pDev[DeviceFD].functions->function[CHG_ERROR](DeviceFD, flag, buffer);
+  ret = pDev[DeviceFD].functions->function_error(DeviceFD, flag, buffer);
   dbprintf(("#### STOP SenseHandler\n"));
   return(ret);
 }
@@ -2114,7 +2114,7 @@ int GetCurrentSlot(int fd, int drive)
 
   if (ElementStatusValid == 0)
     {
-      if (pDev[0].functions->function[CHG_STATUS](0, 1) != 0)
+      if (pDev[0].functions->function_status(0, 1) != 0)
         {
           return(-1);
         }
@@ -4093,7 +4093,7 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
       {
         if (ElementStatusValid == 0)
           {
-            if (pDev[INDEX_CHANGER].functions->function[CHG_STATUS](pDev[INDEX_CHANGER].fd, 1) != 0)
+            if (pDev[INDEX_CHANGER].functions->function_status(pDev[INDEX_CHANGER].fd, 1) != 0)
               {
                 printf("Can not initialize changer status\n");
                 return;

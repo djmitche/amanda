@@ -92,19 +92,6 @@ typedef unsigned char PackedBit;
 #define SENSE_TAPE_NOT_UNLOADED 7
 #define SENSE_CHM_FULL 8
 /*
- * Defines for the function types in Changer_CMD_T
- */
-#define CHG_MOVE 0
-#define CHG_STATUS 1
-#define CHG_RESET_STATUS 2
-#define CHG_FREE 3
-#define CHG_EJECT 4
-#define CHG_CLEAN 5
-#define CHG_REWIND 6
-#define CHG_BARCODE 7
-#define CHG_SEARCH 8
-#define CHG_ERROR 9
-/*
  * Defines for the type field in the inquiry command
  */
 #define TYPE_DISK 0
@@ -1012,7 +999,16 @@ typedef struct ElementInfo
 typedef struct {
     char *ident;                  /* Name of the device from inquiry */
     char *type;                   /* Device Type, tape|robot */
-    int (*function[10])();        /* New way to call the device dependend functions move/eject ... */
+    int (*function_move)(int, int, int);
+    int (*function_status)(int, int);
+    int (*function_reset_status)(int);
+    int (*function_free)();
+    int (*function_eject)(char *, int);
+    int (*function_clean)(char *);
+    int (*function_rewind)(int);
+    int (*function_barcode)(int);
+    int (*function_search)();
+    int (*function_error)(int, unsigned char, char *);
 } ChangerCMD_T ;
 
 typedef struct {
