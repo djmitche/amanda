@@ -654,11 +654,11 @@ foreach $host (sort @hosts) {
 						$epartition++;
 						$estsize += $esize{$hostpart};
 					}
-					elsif (!defined $dump_started{$hostpart}) {
+					elsif (!defined $dump_started{$hostpart} || $dump_started{$hostpart} == 0) {
 						if( defined $opt_failed) {
 							printf "%8s ", $datestamp if defined $opt_date;
 							printf "%-${maxnamelength}s%2d", "$host:$partition", $level{$hostpart};
-							print " no estimate\n";
+							printf "           no estimate\n";
 						}
 						$fpartition++;
 					}
@@ -739,6 +739,7 @@ foreach $host (sort @hosts) {
 							}
 							print "\n";
 						}
+
 						$tfpartition++;
 						$tfsize += $size{$hostpart};
 						if(defined $esize{$hostpart}) {
@@ -746,6 +747,27 @@ foreach $host (sort @hosts) {
 						}
 						else {
 							$tfesize += $size{$hostpart};
+						}
+
+						if($in_flush == 0) {
+							$twpartition++;
+							$twsize += $size{$hostpart};
+							if(defined $esize{$hostpart}) {
+								$twesize += $esize{$hostpart};
+							}
+							else {
+								$twesize += $size{$hostpart};
+							}
+						}
+						else {
+							$wfpartition++;
+							$wfsize += $size{$hostpart};
+							if(defined $esize{$hostpart}) {
+								$wfesize += $esize{$hostpart};
+							}
+							else {
+								$wfesize += $size{$hostpart};
+							}
 						}
 					}
 					elsif($taper_finished{$hostpart} == 1) {
@@ -789,15 +811,17 @@ foreach $host (sort @hosts) {
 						$fpartition++;
 						$fsize+=$esize{$hostpart};
 					}
-					elsif($dump_started{$hostpart} != 1) {
-						if( defined $opt_waitdumping ) {
-							printf "%8s ", $datestamp if defined $opt_date;
-							printf "%-${maxnamelength}s%2d", "$host:$partition", $level{$hostpart};
-							printf "%9dk", $esize{$hostpart};
-							print " wait for dumping $error{$hostpart}\n";
+					elsif($dump_started{$hostpart} == 0) {
+						if($estimate{$hostpart} == 1) {
+							if( defined $opt_waitdumping ) {
+								printf "%8s ", $datestamp if defined $opt_date;
+								printf "%-${maxnamelength}s%2d", "$host:$partition", $level{$hostpart};
+								printf "%9dk", $esize{$hostpart};
+								print " wait for dumping $error{$hostpart}\n";
+							}
+							$wpartition++;
+							$wsize += $esize{$hostpart};
 						}
-						$wpartition++;
-						$wsize += $esize{$hostpart};
 					}
 					elsif($dump_started{$hostpart} == 1 &&
 							$dump_finished{$hostpart} == -1) {
