@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.48 1998/10/15 22:55:20 kashmir Exp $
+ * $Id: amadmin.c,v 1.49 1998/10/17 01:53:51 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -64,7 +64,6 @@ void diskloop P((int argc, char **argv, char *cmdname,
 char *seqdatestr P((int seq));
 static int next_level0 P((disk_t *dp, info_t *ip));
 int bump_thresh P((int level));
-int search_logfile P((char *label, int datestamp, int datestamp_aux, char *logfile));
 void export_db P((int argc, char **argv));
 void import_db P((int argc, char **argv));
 void disklist P((int argc, char **argv));

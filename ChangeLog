@@ -1,3 +1,7 @@
+1998-10-16  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/amadmin.c (search_logfile): remove declaration
+
 1998-10-15  Mike Grupenhoff <kashmir@munge.com>
 
 	* server-src/amadmin.c (reuse, no-reuse): don't core dump if tape
