@@ -77,7 +77,7 @@ holdingdisk hd1 {
     chunksize -1 	# size of chunk if you want big dump to be
 			# dumped on multiple files on holding disks
 			#	-1 dont split
-			#	 0 use MAXFILESIZE
+			#	 0 use INT_MAX
 			#    other use this value (200 Mb)
     }
 #holdingdisk hd2 {
