@@ -8,8 +8,6 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
-if WANT_SERVER
-
 if WANT_LIBTOOL
 lib_LTLIBRARIES = 	libamserver.la
 LIB_EXTENSION = la
@@ -23,8 +21,6 @@ sbin_PROGRAMS =		amadmin amcheck amflush amlabel amtape amreport
 libexec_PROGRAMS =	amindexd amtrmidx driver dumper getconf planner taper
 
 sbin_SCRIPTS =		amcheckdb amcleanup amdump amoverview amrmtape amtoc amverify amstatus
-
-endif
 
 libamserver_la_SOURCES=	amindex.c	changer.c	clock.c		\
 			conffile.c	diskfile.c	driverio.c	\

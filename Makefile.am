@@ -12,18 +12,35 @@ ACLOCAL = @ACLOCAL@ -I config
 AUTOCONF = @AUTOCONF@ --localdir=config
 AUTOHEADER = @AUTOHEADER@ --localdir=config
 
+if WANT_CLIENT
+CLIENT_SUBDIRS = client-src
+endif
+if WANT_TAPE
+TAPE_SUBDIRS = tape-src
+endif
+if WANT_SERVER
+SERVER_SUBDIRS = server-src changer-src
+endif
+if WANT_RESTORE
+RESTORE_SUBDIRS += restore-src
+endif
+if WANT_RECOVER
+RECOVER_SUBDIRS += recover-src
+endif
+if WANT_AMPLOT
+PLOT_SUBDIRS += amplot
+endif
 # order is significant, don't change it arbitrarily
-SUBDIRS=config		\
-	common-src	\
-	client-src	\
-	tape-src	\
-	server-src	\
-	restore-src	\
-	recover-src	\
-	changer-src	\
-	amplot		\
-	man		\
-	example
+SUBDIRS = \
+	config \
+	common-src \
+	$(CLIENT_SUBDIRS) \
+	$(TAPE_SUBDIRS) \
+	$(SERVER_SUBDIRS) \
+	$(RESTORE_SUBDIRS) \
+	$(RECOVER_SUBDIRS) \
+	$(PLOT_SUBDIRS) \
+	man example
 
 EXTRA_DIST = \
 	COPYRIGHT			\

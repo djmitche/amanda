@@ -8,13 +8,9 @@ SUFFIXES =		.sh
 			cat $< > $@
 			chmod a+x $@
 
-if WANT_AMPLOT
-
 sbin_SCRIPTS =		amplot
 
 amplot_DATA =		amcat.awk amplot.awk amplot.g amplot.gp
-
-endif
 
 amplotdir =		$(libexecdir)
 

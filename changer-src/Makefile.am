@@ -12,8 +12,6 @@ else
 LIB_EXTENSION = a
 endif
 
-if WANT_SERVER
-
 if WANT_CHIO_SCSI
 CHIO_SCSI = chg-scsi-chio
 endif
@@ -25,8 +23,6 @@ endif
 libexec_SCRIPTS =	chg-manual	chg-multi	chg-mtx		\
 			chg-rth		chg-chs		chg-chio	\
 			chg-zd-mtx
-
-endif
 
 LDADD = ../server-src/libamserver.$(LIB_EXTENSION) \
 	../tape-src/libamtape.$(LIB_EXTENSION) \

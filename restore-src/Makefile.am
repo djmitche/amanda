@@ -8,8 +8,6 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
-if WANT_RESTORE
-
 if WANT_LIBTOOL
 LIB_EXTENSION = la
 else
@@ -19,8 +17,6 @@ endif
 sbin_PROGRAMS = 	amrestore
 
 libexec_PROGRAMS = 	amidxtaped
-
-endif
 
 LDADD = ../tape-src/libamtape.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)

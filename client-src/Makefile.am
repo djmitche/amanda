@@ -8,7 +8,6 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
-if WANT_CLIENT
 if WANT_LIBTOOL
 lib_LTLIBRARIES =	libamclient.la
 LIB_EXTENSION = la
@@ -22,7 +21,6 @@ libexec_PROGRAMS =	amandad calcsize killpgrp rundump runtar selfcheck sendbackup
 sbin_SCRIPTS =		@CLIENT_SCRIPTS_OPT@
 
 libexec_SCRIPTS =	patch-system
-endif
 
 if WANT_SAMBA
 samba_sources = findpass.c
