@@ -1,3 +1,8 @@
+2001-01-04 John R. Jackson <jrj@purdue.edu>
+
+	* server-src/conffile.c (main): Fix conffile test program so it builds
+	  and works again.
+
 2001-01-03  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* changer-src/scsi-defs.h (ChangerCMD_T): replace array function

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.75 2000/12/04 22:35:35 jrjackson Exp $
+ * $Id: conffile.c,v 1.76 2001/01/04 21:16:25 jrjackson Exp $
  *
  * read configuration file
  */
@@ -2253,6 +2253,9 @@ tok_t exp;
 
 #ifdef TEST
 
+char *config_name = NULL;
+char *config_dir = NULL;
+
 void
 dump_configuration(filename)
     char *filename;
@@ -2411,6 +2414,9 @@ main(argc, argv)
     int argc;
     char *argv[];
 {
+  char *conffile;
+  char *diskfile;
+  disklist_t lst;
   int result;
   int fd;
   unsigned long malloc_hist_1, malloc_size_1;
@@ -2431,20 +2437,39 @@ main(argc, argv)
   malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
   startclock();
-  if (argc>1)
-    if(chdir(argv[1])) {
-      perror(argv[1]);
-      return 1;
+
+  if (argc > 1) {
+    if (argv[1][0] == '/') {
+      config_dir = stralloc(argv[1]);
+      config_name = strrchr(config_dir, '/') + 1;
+      config_name[-1] = '\0';
+      config_dir = newstralloc2(config_dir, config_dir, "/");
+    } else {
+      config_name = stralloc(argv[1]);
+      config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
     }
-  result = read_conffile(CONFFILE_NAME);
+  } else {
+    char my_cwd[STR_SIZE];
+
+    if (getcwd(my_cwd, sizeof(my_cwd)) == NULL) {
+      error("cannot determine current working directory");
+    }
+    config_dir = stralloc2(my_cwd, "/");
+    if ((config_name = strrchr(my_cwd, '/')) != NULL) {
+      config_name = stralloc(config_name + 1);
+    }
+  }
+
+  conffile = stralloc2(config_dir, CONFFILE_NAME);
+  result = read_conffile(conffile);
   if (result == 0) {
-      char *diskfile = getconf_str(CNF_DISKFILE);
+      diskfile = getconf_str(CNF_DISKFILE);
       if (diskfile != NULL && access(diskfile, R_OK) == 0) {
-	  disklist_t lst;
 	  result = read_diskfile(diskfile, &lst);
       }
   }
   dump_configuration(CONFFILE_NAME);
+  amfree(conffile);
 
   malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
