@@ -493,7 +493,8 @@ extern int puts P((const char *s));
 extern void *realloc P((void *ptr, size_t size));
 #endif
 
-#ifndef HAVE_RECVFROM_DECL
+/* AIX #defines recvfrom, and provides a prototype for the alternate name */
+#if !defined(HAVE_RECVFROM_DECL) && !defined(recvfrom)
 extern int recvfrom P((int s, char *buf, int len, int flags,
 		       struct sockaddr *from, int *fromlen));
 #endif
