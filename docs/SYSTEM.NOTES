@@ -25,21 +25,15 @@ Many people see problems with "No buffer space available" when running
 the server under 4.1.x (although we have not here).  Read the file
 SUNOS4.BUG if you encounter this problem.
 
-There's a bug in gcc 2.7.2.* that may cause it not to be able to
-create shared libraries if it is configured to use GNU ld.  A possible
-solution is to configure amanda so that gcc uses /bin/ld instead of
-GNU ld.  Make sure config.cache does not exist, then run:
-
-% CC="gcc -B/bin/" ./configure --whatever-arguments-you-want...
-
-This will cause shared libraries to be built correctly.  Another
-option is to upgrade libtool (amanda-2.4.0b5 is distributed with
-libtool-1.0h, available from ftp://alpha.gnu.org/pub).
-
-
 A bug in GNU tar 1.12 causes it to miscalculate (in fact, to
 misreport) the size of filesystems.  A patch for GNU tar is available
 in the patches directory.
+
+If you have shared libraries of other versions of amanda lying around,
+gcc may pick them up instead of the locally built ones.  A few
+possible solutions are not to remove the old libraries, configure
+amanda not to build shared libraries, or to specify different
+directories when running configure.
 
 ---------------------------------------------------------------------------
 Ultrix
