@@ -107,6 +107,27 @@ dgram_t *msg;
 
 tapetype_t *tape;
 
+/* We keep a LIFO queue of before images for all modifications made
+ * to schedq in our attempt to make the schedule fit on the tape.
+ * Enough information is stored to reinstate a dump if it turns out
+ * that it shouldn't have been touched after all.
+ */
+typedef struct bi_s {
+    struct bi_s *next;
+    struct bi_s *prev;
+    int deleted;		/* 0=modified, 1=deleted */
+    disk_t *dp;			/* The disk that was changed */
+    int level;			/* The original level */
+    int size;			/* The original size */
+    char *errstr;		/* A message describing why this disk is here */
+} bi_t;
+
+typedef struct bilist_s {
+    bi_t *head, *tail;
+} bilist_t;
+
+bilist_t biq;			/* The BI queue itself */
+
 /*
  * ========================================================================
  * MAIN PROGRAM
@@ -118,9 +139,7 @@ static void setup_estimates P((disklist_t *qp));
 static void get_estimates P((void));
 static void analyze_estimates P((disklist_t *qp));
 static void handle_failed P((disklist_t *qp));
-static void delay_oversize_dumps P((void));
-static int delay_lowest_priority_level_zero P((void));
-static int delay_lowest_priority_incremental P((void));
+static void delay_dumps P((void));
 static int promote_highest_priority_incremental P((void));
 static int promote_hills P((void));
 static void output_scheduleline P((disklist_t *qp));
@@ -303,8 +322,6 @@ char **argv;
 	}
     }
 
-    initial_size = total_size;
-
 
     /*
      * 6. Delay Dumps if Schedule Too Big
@@ -322,15 +339,9 @@ char **argv;
       "\nDELAYING DUMPS IF NEEDED, total_size %ld, tape length %lu mark %lu\n",
 	    total_size, tape_length, tape_mark);
 
-    delay_oversize_dumps();
+    initial_size = total_size;
 
-    moved_one = 1;
-    while(total_size > tape_length && moved_one)
-	moved_one = delay_lowest_priority_level_zero();
-
-    moved_one = 1;
-    while(total_size > tape_length && moved_one)
-	moved_one = delay_lowest_priority_incremental();
+    delay_dumps();
 
     if(total_size <= 0 && total_size < initial_size)
 	error("cannot fit anything on tape, bailing out");
@@ -1156,154 +1167,280 @@ disk_t *dp;
 
 
 /*
- * ========================================================================
- * ADJUST SCHEDULE
- *
- */
+** ========================================================================
+** ADJUST SCHEDULE
+**
+** We have two strategies here:
+**
+** 1. Delay dumps
+**
+** If we are trying to fit too much on the tape something has to go.  We
+** try to delay totals until tomorrow by converting them into incrementals
+** and, if that is not effective enough, dropping incrementals altogether.
+** While we are searching for the guilty dump (the one that is really
+** causing the schedule to be oversize) we have probably trampled on a lot of
+** innocent dumps, so we maintain a "before image" list and use this to
+** put back what we can.
+**
+** 2. Promote dumps.
+**
+** We try to keep the amount of tape used by total dumps the same each night.
+** If there is some spare tape in this run we have a look to see if any of
+** tonights incrementals could be promoted to totals and leave us with a
+** more balanced cycle.
+*/
 
-static void delay_oversize_dumps P((void))
-/* try to move dumps larger than the tape size to tommorrow */
-/* hopefully we will have bigger tapes by then! */
+static void delay_remove_dump P((disk_t *dp, char *errstr));
+static void delay_modify_dump P((disk_t *dp, char *errstr));
+
+static void delay_dumps P((void))
+/* delay any dumps that will not fit */
 {
-    disk_t *ptr, *nptr;
-    int got_one;
+    disk_t *ptr, *nptr, *preserve;
+    char errbuf[1024];
+    bi_t *bi, *nbi;
+    long new_total;	/* New total_size */
 
-    got_one = 0;
+    biq.head = biq.tail = NULL;
+
+    /*
+    ** 1. Delay dumps that are way oversize.
+    **
+    ** Dumps larger that the size of the tapes we are using are just plain
+    ** not going to fit no matter how many other dumps we drop.  Delay
+    ** oversize totals until tomorrow (by which time my owner will have
+    ** resolved the problem!) and drop incrementals altogether.  Naturally
+    ** a large total might be delayed into a large incremental so these
+    ** need to be checked for separately.
+    */
 
     for(ptr = schedq.head; ptr != NULL; ptr = nptr) {
 	nptr = ptr->next; /* remove_disk zaps this */
+
 	if(est(ptr)->curr_level == 0 && est(ptr)->size > tape->length) {
-	    got_one = 1;
-
 	    if(est(ptr)->last_level == -1 || ptr->dtype->skip_incr) {
-		total_size -= est(ptr)->size + tape_mark;
-		total_lev0 -= (double) est(ptr)->size;
-
-		remove_disk(&schedq, ptr);
-		fprintf(stderr,
-"planner: FAILED %s %s 0 [dump larger than tape, but cannot incremental dump %s disk]\n",
-			ptr->host->hostname, ptr->name,
-			ptr->dtype->skip_incr? "skip-incr": "new");
-		log(L_FAIL,
+		sprintf(errbuf,
 "%s %s 0 [dump larger than tape, but cannot incremental dump %s disk]",
 		    ptr->host->hostname, ptr->name,
 		    ptr->dtype->skip_incr? "skip-incr": "new");
+
+		delay_remove_dump(ptr, errbuf);
 	    }
 	    else {
-		total_size -= est(ptr)->size;
-		total_lev0 -= (double) est(ptr)->size;
-
-		est(ptr)->curr_level = est(ptr)->degr_level;
-		est(ptr)->size = est(ptr)->degr_size;
-		total_size += est(ptr)->size;
-		fprintf(stderr,
-			"  delay: moving %s:%s to level %d\n",
-			ptr->host->hostname, ptr->name, est(ptr)->curr_level);
-		log(L_INFO,
+		sprintf(errbuf,
 		    "Dump larger than tape: full dump of %s:%s delayed.",
 		    ptr->host->hostname, ptr->name);
+
+		delay_modify_dump(ptr, errbuf);
 	    }
 	}
 
 	if(est(ptr)->curr_level != 0 && est(ptr)->size > tape->length) {
-	    got_one = 1;
-	    total_size -= est(ptr)->size + tape_mark;
-
-	    remove_disk(&schedq, ptr);
-	    fprintf(stderr,
-"planner: FAILED %s %s %d [dump larger than tape size, skipping incremental]\n",
-		    ptr->host->hostname, ptr->name, est(ptr)->curr_level);
-	    log(L_FAIL,
-		"%s %s %d [dump larger than tape size, skipping incremental]",
+	    sprintf(errbuf,
+		"%s %s %d [dump larger than tape, skipping incremental]",
 		ptr->host->hostname, ptr->name, est(ptr)->curr_level);
+
+	    delay_remove_dump(ptr, errbuf);
 	}
     }
 
-    if (got_one)
-	fprintf(stderr, "  delay: total size now %ld\n", total_size);
+    /*
+    ** 2. Delay total dumps.
+    **
+    ** Delay total dumps until tomorrow (or the day after!).  We start with
+    ** the lowest priority (most dispensable) and work forwards.  We take
+    ** care not to delay *all* the dumps since this could lead to a stale
+    ** mate [for any one disk there are only three ways tomorrows dump will
+    ** be smaller than todays: 1. we do a level 0 today so tomorows dump
+    ** will be a level 1; 2. the disk gets more data so that it is bumped
+    ** tomorrow (this can be a slow process); and, 3. the disk looses some
+    ** data (when does that ever happen?)].
+    */
 
-    return;
-}
-
-static int delay_lowest_priority_level_zero P((void))
-/* try to move a level 0 to tommorrow */
-{
-    disk_t *ptr;
-    disk_t *preserve;
-
-    /* Dont delay all the totals - if we do we will never get one done.
-     * Find the highest priority level 0 and preserve it.
-     * This is quite kludgy!
-     */
     preserve = NULL;
     for(ptr = schedq.head; ptr != NULL && preserve == NULL; ptr = ptr->next)
 	if(est(ptr)->curr_level == 0)
 	    preserve = ptr;
 
-    for(ptr = schedq.tail; ptr != NULL; ptr = ptr->prev) {
+    for(ptr = schedq.tail;
+		ptr != NULL && total_size > tape_length;
+		ptr = nptr) {
+	nptr = ptr->prev;
+
 	if(est(ptr)->curr_level == 0 && ptr != preserve) {
-	    total_size -= est(ptr)->size;
-	    total_lev0 -= (double) est(ptr)->size;
-
 	    if(est(ptr)->last_level == -1 || ptr->dtype->skip_incr) {
-		remove_disk(&schedq, ptr);
-		fprintf(stderr, "planner: FAILED %s %s 0 [dumps too big, but cannot incremental dump %s disk]\n",
-		    ptr->host->hostname, ptr->name,
-		    ptr->dtype->skip_incr? "skip-incr": "new");
-		log(L_FAIL, 
-		"%s %s 0 [dumps too big, but cannot incremental dump %s disk]",
+		sprintf(errbuf,
+"%s %s 0 [dumps too big, but cannot incremental dump %s disk]",
 		    ptr->host->hostname, ptr->name,
 		    ptr->dtype->skip_incr? "skip-incr": "new");
 
-		/* dump totally gone, forget the filemark too */
-
-		total_size -= tape_mark;
-
-		fprintf(stderr,	"  delay: total size now %ld\n", total_size);
-		return 1;
+		delay_remove_dump(ptr, errbuf);
 	    }
 	    else {
-		est(ptr)->curr_level = est(ptr)->degr_level;
-		est(ptr)->size = est(ptr)->degr_size;
-		total_size += est(ptr)->size;
-		fprintf(stderr,
-		     "  delay: moving %s:%s to level %d, total size now %ld\n",
-			ptr->host->hostname, ptr->name, est(ptr)->curr_level, 
-			total_size);
-		log(L_INFO,
+		sprintf(errbuf,
 		    "Dumps too big for tape: full dump of %s:%s delayed.",
 		    ptr->host->hostname, ptr->name);
-		return 1;
+
+		delay_modify_dump(ptr, errbuf);
 	    }
 	}
     }
-    return 0;
+
+    /*
+    ** 3. Delay incremental dumps.
+    **
+    ** Delay incremental dumps until tomorrow.  This is a last ditch attempt
+    ** at making things fit.  Again, we start with the lowest priority (most
+    ** dispensable) and work forwards.
+    */
+
+    for(ptr = schedq.tail;
+	    ptr != NULL && total_size > tape_length;
+	    ptr = nptr) {
+	nptr = ptr->prev;
+
+	if(est(ptr)->curr_level != 0) {
+	    sprintf(errbuf,
+		"%s %s %d [dumps way too big, must skip incremental dumps]",
+		ptr->host->hostname, ptr->name, est(ptr)->curr_level);
+
+	    delay_remove_dump(ptr, errbuf);
+	}
+    }
+
+    /*
+    ** 4. Reinstate delayed dumps.
+    **
+    ** We might not have needed to stomp on all of the dumps we have just
+    ** delayed above.  Try to reinstate them all starting with the last one
+    ** and working forwards.  It is unlikely that the last one will fit back
+    ** in but why complicate the code?
+    */
+
+    for(bi = biq.tail; bi != NULL; bi = bi->prev) {
+	ptr = bi->dp;
+
+	if(bi->deleted)
+	    new_total = total_size + est(ptr)->size + tape_mark;
+	else
+	    new_total = total_size - est(ptr)->size + bi->size;
+
+	if(new_total <= tape_length) { /* reinstate it */
+	    if(bi->deleted) {
+		total_size = new_total;
+		total_lev0 += (double) est(ptr)->size;
+		insert_disk(&schedq, ptr, schedule_order);
+	    }
+	    else {
+		total_size = new_total;
+		est(ptr)->curr_level = bi->level;
+		est(ptr)->size = bi->size;
+	    }
+
+	    /* Keep it clean */
+	    if(bi->next == NULL)
+		biq.tail = bi->prev;
+	    else
+		(bi->next)->prev = bi->prev;
+	    if(bi->prev == NULL)
+		biq.head = bi->next;
+	    else
+		(bi->prev)->next = bi->next;
+	    free(bi->errstr);
+	    free(bi);
+	}
+    }
+
+    /*
+    ** 5. Output messages about what we have done.
+    **
+    ** We can't output messages while we are delaying dumps because we might
+    ** reinstate them later.  We remember all the messages and output them
+    ** now.
+    */
+
+    for(bi = biq.head; bi != NULL; bi = nbi) {
+	nbi = bi->next;
+
+	if(bi->deleted) {
+	    fprintf(stderr, "planner: FAILED %s\n", bi->errstr);
+	    log(L_FAIL, "%s", bi->errstr);
+	}
+	else {
+	    ptr = bi->dp;
+	    fprintf(stderr, "  delay: %s  Now at level %d.\n",
+		bi->errstr, est(ptr)->curr_level);
+	    log(L_INFO, "%s", bi->errstr);
+	}
+
+	/* Clean up - dont be too fancy! */
+        free(bi->errstr);
+        free(bi);
+    }
+
+    fprintf(stderr, "  delay: Total size now %ld.\n", total_size);
+
+    return;
 }
 
 
-static int delay_lowest_priority_incremental P((void))
-/* try to move an incremental to tommorrow */
+static void delay_remove_dump P((disk_t *dp, char *errstr))
+/* Remove a dump - keep track on the bi q */
 {
-    disk_t *ptr;
+    bi_t *bi;
 
-    for(ptr = schedq.tail; ptr != NULL; ptr = ptr->prev) {
-	if(est(ptr)->curr_level != 0) {
-	    total_size -= est(ptr)->size + tape_mark;
+    total_size -= est(dp)->size + tape_mark;
+    if(est(dp)->curr_level == 0)
+	total_lev0 -= (double) est(dp)->size;
 
-	    remove_disk(&schedq, ptr);
-	    fprintf(stderr,
- "planner: FAILED %s %s %d [dumps way too big, must skip incremental dumps]\n",
-		    ptr->host->hostname, ptr->name, est(ptr)->curr_level);
-	    log(L_FAIL, 
-		"%s %s %d [dumps way too big, must skip incremental dumps]",
-		    ptr->host->hostname, ptr->name, est(ptr)->curr_level);
+    bi = alloc(sizeof(bi_t));
+    bi->next = NULL;
+    bi->prev = biq.tail;
+    if(biq.tail == NULL)
+	biq.head = bi;
+    else
+	biq.tail->next = bi;
+    biq.tail = bi;
 
-	    fprintf(stderr, "  delay: total size now %ld\n", total_size);
-	    return 1;
-	}
-    }
+    bi->deleted = 1;
+    bi->dp = dp;
+    bi->errstr = stralloc(errstr);
 
-    return 0;
+    remove_disk(&schedq, dp);
+
+    return;
+}
+
+
+static void delay_modify_dump P((disk_t *dp, char *errstr))
+/* Modify a dump from total to incr - keep track on the bi q */
+{
+    bi_t *bi;
+
+    total_size -= est(dp)->size;
+    total_lev0 -= (double) est(dp)->size;
+
+    bi = alloc(sizeof(bi_t));
+    bi->next = NULL;
+    bi->prev = biq.tail;
+    if (biq.tail == NULL)
+	biq.head = bi;
+    else
+	biq.tail->next = bi;
+    biq.tail = bi;
+
+    bi->deleted = 0;
+    bi->dp = dp;
+    bi->level = est(dp)->curr_level;
+    bi->size = est(dp)->size;
+    bi->errstr = stralloc(errstr);
+
+    est(dp)->curr_level = est(dp)->degr_level;
+    est(dp)->size = est(dp)->degr_size;
+
+    total_size += est(dp)->size;
+
+    return;
 }
 
 
