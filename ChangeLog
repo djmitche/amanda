@@ -1,3 +1,7 @@
+1998-09-15  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/FAQ: common compile-time and link-time errors
+
 1998-09-11  John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/tapefile.c (lookup_last_reusable_tape): use new
