@@ -1,0 +1,41 @@
+#!/bin/sh
+
+# This script updates automatically generated files if needed
+
+# Arguments to this program are passed on to `make'
+
+# The current directory must be the root directory of the source tree.
+
+makefilename=/tmp/Makefile.tmp.$$
+
+trap 'rm -f $makefilename; exit 1' 0 1 2 15
+
+: ${top_srcdir=`pwd`}
+
+genmakefile () {
+  srcdir=`pwd`
+  sed <Makefile.in >$makefilename \
+    -e s/@SET_MAKE@/MAKE=${MAKE-make}/ \
+    -e s/@srcdir@/`echo $srcdir | sed s%/%\\\\\\\\/%g`/ \
+    -e s/@top_srcdir@/`echo $top_srcdir | sed s%/%\\\\\\\\/%g`/ \
+    -e s/@AUTOCONF@/${AUTOCONF-autoconf}/ \
+    -e s/@AUTOMAKE@/${AUTOMAKE-automake\ -i}/ \
+    -e s/@ACLOCAL@/${ACLOCAL-aclocal}/ \
+    -e s/@AUTOHEADER@/${AUTOHEADER-autoheader}/ \
+    -e s/@SHELL@/${STDSH-\\/bin\\/sh}/ \
+  || { echo "Failed to generate $makefilename" && exit 1; }
+}
+
+genmakefile
+make -f $makefilename \
+    $srcdir/aclocal.m4 $srcdir/configure $srcdir/config.h.in \
+    "$@" || exit 1
+
+find `pwd` -name Makefile.am -print | while read f; do
+    cd `dirname $f` && genmakefile &&
+    make -f $makefilename `dirname $f`/Makefile.in
+done
+
+trap '' 0
+rm -f $makefilename
+exit 0
