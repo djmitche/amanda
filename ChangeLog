@@ -1,3 +1,10 @@
+2001-02-09 John R. Jackson <jrj@purdue.edu>
+
+	* tape-src/output-file.c: Use a "data" subdirectory of the main
+	  file driver device directory to hold the tape "files".  This
+	  allows the status file to be moved to the main directory.
+	* man/amanda.8.in: Document these changes.
+
 2001-02-05 John R. Jackson <jrj@purdue.edu>
 
 	* man/amanda.8.in: Fix mailto to space separated, not comma.
