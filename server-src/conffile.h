@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.50 2003/04/26 02:02:26 kovert Exp $
+ * $Id: conffile.h,v 1.51 2004/04/06 13:09:00 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -61,6 +61,7 @@ typedef enum conf_e {
     CNF_INPARALLEL,
     CNF_DUMPORDER,
     CNF_TIMEOUT,
+    CNF_BUMPPERCENT,
     CNF_BUMPSIZE,
     CNF_BUMPMULT,
     CNF_BUMPDAYS,

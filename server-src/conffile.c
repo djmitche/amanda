@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.103 2003/11/26 16:12:13 martinea Exp $
+ * $Id: conffile.c,v 1.104 2004/04/06 13:09:00 martinea Exp $
  *
  * read configuration file
  */
@@ -63,7 +63,7 @@ typedef enum {
     INCLUDEFILE,
     ORG, MAILTO, DUMPUSER,
     TAPECYCLE, TAPEDEV, CHNGRDEV, CHNGRFILE, LABELSTR,
-    BUMPSIZE, BUMPDAYS, BUMPMULT, ETIMEOUT, DTIMEOUT, CTIMEOUT,
+    BUMPPERCENT, BUMPSIZE, BUMPDAYS, BUMPMULT, ETIMEOUT, DTIMEOUT, CTIMEOUT,
     TAPEBUFS, TAPELIST, DISKFILE, INFOFILE, LOGDIR, LOGFILE,
     DISKDIR, DISKSIZE, INDEXDIR, NETUSAGE, INPARALLEL, DUMPORDER, TIMEOUT,
     TPCHANGER, RUNTAPES,
@@ -190,6 +190,7 @@ static val_t conf_netusage;
 static val_t conf_inparallel;
 static val_t conf_timeout;
 static val_t conf_maxdumps;
+static val_t conf_bumppercent;
 static val_t conf_bumpsize;
 static val_t conf_bumpdays;
 static val_t conf_etimeout;
@@ -234,6 +235,7 @@ static int seen_infofile;
 static int seen_diskfile;
 static int seen_diskdir;
 static int seen_logdir;
+static int seen_bumppercent;
 static int seen_bumpsize;
 static int seen_bumpmult;
 static int seen_bumpdays;
@@ -391,6 +393,7 @@ struct byname {
     /*{ "DISKSIZE", CNF_DISKSIZE, INT },*/
     { "BUMPDAYS", CNF_BUMPDAYS, INT },
     { "BUMPSIZE", CNF_BUMPSIZE, INT },
+    { "BUMPPERCENT", CNF_BUMPPERCENT, INT },
     { "BUMPMULT", CNF_BUMPMULT, REAL },
     { "NETUSAGE", CNF_NETUSAGE, INT },
     { "INPARALLEL", CNF_INPARALLEL, INT },
@@ -469,6 +472,7 @@ confparm_t parm;
     /*case CNF_DISKDIR: return seen_diskdir;*/
     case CNF_LOGDIR: return seen_logdir;
     /*case CNF_LOGFILE: return seen_logfile;*/
+    case CNF_BUMPPERCENT: return seen_bumppercent;
     case CNF_BUMPSIZE: return seen_bumpsize;
     case CNF_BUMPMULT: return seen_bumpmult;
     case CNF_BUMPDAYS: return seen_bumpdays;
@@ -513,6 +517,7 @@ confparm_t parm;
     case CNF_TAPECYCLE: r = conf_tapecycle.i; break;
     case CNF_RUNTAPES: r = conf_runtapes.i; break;
     /*case CNF_DISKSIZE: r = conf_disksize.i; break;*/
+    case CNF_BUMPPERCENT: r = conf_bumppercent.i; break;
     case CNF_BUMPSIZE: r = conf_bumpsize.i; break;
     case CNF_BUMPDAYS: r = conf_bumpdays.i; break;
     case CNF_NETUSAGE: r = conf_netusage.i; break;
@@ -715,6 +720,7 @@ static void init_defaults()
     conf_inparallel.i	= 10;
     conf_maxdumps.i	= 1;
     conf_timeout.i	= 2;
+    conf_bumppercent.i	= 0;
     conf_bumpsize.i	= 10*1024;
     conf_bumpdays.i	= 2;
     conf_bumpmult.r	= 1.5;
@@ -748,6 +754,7 @@ static void init_defaults()
     seen_diskfile = 0;
     seen_diskdir = 0;
     seen_logdir = 0;
+    seen_bumppercent = 0;
     seen_bumpsize = 0;
     seen_bumpmult = 0;
     seen_bumpdays = 0;
@@ -906,6 +913,7 @@ keytab_t main_keytable[] = {
     { "BUMPDAYS", BUMPDAYS },
     { "BUMPMULT", BUMPMULT },
     { "BUMPSIZE", BUMPSIZE },
+    { "BUMPPERCENT", BUMPPERCENT },
     { "DEFINE", DEFINE },
     { "DISKDIR", DISKDIR },	/* XXX - historical */
     { "DISKFILE", DISKFILE },
@@ -1013,6 +1021,11 @@ static int read_confline()
     case BUMPMULT:  get_simple(&conf_bumpmult,  &seen_bumpmult,  REAL);
 		    if(conf_bumpmult.r < 0.999) {
 			parserror("bumpmult must be positive");
+		    }
+		    break;
+    case BUMPPERCENT:  get_simple(&conf_bumppercent,  &seen_bumppercent,  INT);
+		    if(conf_bumppercent.i < 0 || conf_bumppercent.i > 100) {
+			parserror("bumppercent must be between 0 and 100");
 		    }
 		    break;
     case BUMPSIZE:  get_simple(&conf_bumpsize,  &seen_bumpsize,  INT);
@@ -2860,6 +2873,7 @@ dump_configuration(filename)
     printf("conf_runspercycle = %d\n", getconf_int(CNF_RUNSPERCYCLE));
     printf("conf_runtapes = %d\n", getconf_int(CNF_RUNTAPES));
     printf("conf_tapecycle = %d\n", getconf_int(CNF_TAPECYCLE));
+    printf("conf_bumppercent = %d\n", getconf_int(CNF_BUMPPERCENT));
     printf("conf_bumpsize = %d\n", getconf_int(CNF_BUMPSIZE));
     printf("conf_bumpdays = %d\n", getconf_int(CNF_BUMPDAYS));
     printf("conf_bumpmult = %f\n", getconf_real(CNF_BUMPMULT));

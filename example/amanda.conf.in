@@ -48,6 +48,7 @@ tapecycle 25 tapes	# the number of tapes in rotation
 ### ### ###
 
 bumpsize 20 Mb		# minimum savings (threshold) to bump level 1 -> 2
+bumppercent 20		# minimum savings (threshold) to bump level 1 -> 2
 bumpdays 1		# minimum days at each level
 bumpmult 4		# threshold = bumpsize * bumpmult^(level-1)
 

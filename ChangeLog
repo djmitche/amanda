@@ -1,3 +1,14 @@
+2004-04-06  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	New bumppercent global option.
+	* example/amanda.conf.in: Document it.
+	* man/amanda.8.in: Document it.
+	* server-src/amadmin.c (bumpsize): Write it.
+	* server-src/conffile.c: Parse it.
+	* server-src/conffile.h: Define It.
+	* server-src/planner.c (bump_thresh): New size_level_0 parameter,
+	  use the new bumppercent option.
+
 2004-04-05  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/amadmin.c: Rename host_t to amhost_t.
