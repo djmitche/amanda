@@ -1,5 +1,9 @@
 1999-01-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* ltmain.sh, ltconfig, libtool.m4i: updated from libtool CVS
+	* configure.in: AC_SUBST LIBTOOL_DEPS
+	* Makefile.am: regen libtool if neded
+
 	* Makefile.am: declare that we want automake 1.4 and we're a foreign 
 	package
 
