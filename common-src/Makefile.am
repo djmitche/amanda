@@ -2,7 +2,7 @@
 
 ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
 
-libamanda_version = 0:0:0
+libamanda_version = 1:0:0
 libnolog_version = 0:0:0
 
 AMANDA_CFLAGS =		@AMANDA_CFLAGS@
@@ -29,7 +29,7 @@ libamanda_la_SOURCES =	alloc.c		debug.c		dgram.c		\
 
 libamanda_la_LIBADD =	@LTLIBOBJS@
 
-libamanda_la_LDFLAGS =  -version-info $(libamanda_version)
+libamanda_la_LDFLAGS =  -version-info $(libamanda_version) -allow-undefined
 
 libamnolog_la_SOURCES =	nolog.c
 
