@@ -1,4 +1,9 @@
+2002-01-11   Thomas Hepper <th@ant.han.de>
+
+	* server-src/planner.c: Check for dp->todo.
+
 2002-01-10   Thomas Hepper <th@ant.han.de>
+
         * changer-src/scsi-changer-driver.c: Fixed prototype for SCSI_ReadElementStatus
         * changer-src/scsi-changer-driver.c (eject_tape): Fixed error in the rewind 
         * changer-src/scsi-changer-driver.c (unload): Fixed error in the rewind logic
