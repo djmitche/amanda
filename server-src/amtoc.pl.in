@@ -18,7 +18,9 @@ sub pr($$$$$$) {
 sub tfn($) {
   # calculate tocfilename
   $_ = $_[0];
-  eval $subs;
+  foreach $s (@subs) {
+    eval $s;
+  }
   return $dir . $_ ;
 }
 #--------------------------------------------------------
@@ -41,9 +43,10 @@ sub usage($) {
 sub init() {
   &usage("amtoc required at least 'logfile' parameter.") if ($#ARGV==-1) ;
 
+  @subs = ();
   for ($i=0;$i<=$#ARGV;$i++) {
     if ($ARGV[$i] eq '-a') {
-        $subs="s/\$/.toc/";
+        push (@subs, "s/\$/.toc/");
       }
     elsif ($ARGV[$i] eq '-f') {
         $i++;
@@ -53,7 +56,7 @@ sub init() {
     elsif ($ARGV[$i] eq '-s') {
         $i++;
         &usage("'-s' option require 'subs' parameter.")  if ($i > $#ARGV);
-        $subs=$ARGV[$i];
+        push (@subs, $ARGV[$i]);
       }
     elsif ($ARGV[$i] eq '--') {
       # no more options: next arg == logfile
@@ -97,7 +100,7 @@ while ( <$IF> ) {
   $level = $5;
   switch: {
     /START taper/ && do {
-      $tocfilename=&tfn($level) if ($subs);
+      $tocfilename=&tfn($level) if ($#subs >= 0);
       if (!$tocfilename || ($tocfilename eq '-')) {$OF=STDOUT;}
       else {
           die ("Cannot open tocfile $tocfilename") unless open(OF,">$tocfilename");
