@@ -31,6 +31,7 @@
 #include "clock.h"
 #include "conffile.h"
 #include "diskfile.h"
+#include "infofile.h"
 #include "logfile.h"
 
 #define GLOBAL		/* the global variables defined here */
@@ -42,19 +43,18 @@ char *cmdstr[] = {
     "FAILED", "TRY-AGAIN", "NO-ROOM", "ABORT-FINISHED",	/* dumper results */
     "FATAL-TRY-AGAIN",
     "START-TAPER", "FILE-WRITE", "PORT-WRITE", 		/* taper cmds */
-    "PORT-WRITE-SUCCESS", "PORT-WRITE-FAILURE",
-    "PORT", "PORT-WRITE-EOF", "TAPE-ERROR", "TAPER-OK",	/* taper results */
+    "PORT", "TAPE-ERROR", "TAPER-OK",			/* taper results */
     NULL
 };
 
 char *pname = "driver";
 
-int main(argc, argv)
-int argc;
-char **argv;
+int main(main_argc, main_argv)
+int main_argc;
+char **main_argv;
 {
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
-    return driver_main(argc, argv);
+    return driver_main(main_argc, main_argv);
 }
 
 void addfd(fd)
@@ -157,8 +157,7 @@ int fd;
     if((len = read(fd, line, MAX_LINE)) == -1)
 	error("reading result from %s: %s", childstr(fd), strerror(errno));
 
-    if(len > 0 && line[len-1] == '\r') line[len-1] = '\0';
-    else line[len] = '\0';
+    line[len] = '\0';
 
     argc = split(line, argv, MAX_ARGS+1, " ");
 
@@ -177,7 +176,7 @@ int fd;
 #endif
 
     for(t = BOGUS+1; t < LAST_TOK; t++)
-	if(!strcmp(argv[0], cmdstr[t])) return t;
+	if(!strcmp(argv[1], cmdstr[t])) return t;
     
     return BOGUS;
 }
@@ -206,12 +205,6 @@ void *ptr;
 	dp = (disk_t *) ptr;
 	sprintf(cmdline, "PORT-WRITE %s %s %s %d\n", disk2serial(dp),
 		dp->host->hostname, dp->name, sched(dp)->level);
-	break;
-    case PORT_WRITE_SUCCESS:
-	sprintf(cmdline, "PORT-WRITE-SUCCESS\n");
-	break;
-    case PORT_WRITE_FAILURE:
-	sprintf(cmdline, "PORT-WRITE-FAILURE\n");
 	break;
     case QUIT:
 	sprintf(cmdline, "QUIT\n");
@@ -346,4 +339,67 @@ disk_t *dp;
 
     sprintf(str, "%02d-%05ld", s, stable[s].gen);
     return str;
+}
+
+void update_info_dumper(dp, origsize, dumpsize, dumptime)
+disk_t *dp;
+long origsize;
+long dumpsize;
+long dumptime;
+{
+    int level;
+    info_t record;
+    stats_t *infp;
+    perf_t *perfp;
+    int res;
+
+    level = sched(dp)->level;
+
+    res = open_infofile(getconf_str(CNF_INFOFILE));
+    if(res)
+	error("could not open infofile %s: %s (%d)", getconf_str(CNF_INFOFILE),
+	      strerror(errno), res);
+
+    get_info(dp->host->hostname, dp->name, &record);
+	
+    infp = &record.inf[level];
+    infp->size = origsize;
+    infp->csize = dumpsize;
+    infp->secs = dumptime;
+    infp->date = sched(dp)->timestamp;
+
+    if(level == 0) perfp = &record.full;
+    else perfp = &record.incr;
+    newperf(perfp->comp, origsize? (dumpsize/(float)origsize) : 1.0);
+    newperf(perfp->rate, dumpsize/(infp->secs? infp->secs : 1.0));
+
+    if(put_info(dp->host->hostname, dp->name, &record))
+	error("infofile update failed (%s,%s)\n", dp->host->hostname, dp->name);
+
+    close_infofile();
+}
+
+void update_info_taper(dp, label, filenum)
+disk_t *dp;
+char *label;
+int filenum;
+{
+    info_t record;
+    int res;
+
+    res = open_infofile(getconf_str(CNF_INFOFILE));
+    if(res)
+	error("could not open infofile %s: %s (%d)", getconf_str(CNF_INFOFILE),
+	      strerror(errno), res);
+
+    get_info(dp->host->hostname, dp->name, &record);
+
+    strcpy(record.inf[sched(dp)->level].label, label);
+    record.inf[sched(dp)->level].filenum = filenum;
+    record.command = NO_COMMAND;
+
+    if(put_info(dp->host->hostname, dp->name, &record))
+	error("infofile update failed (%s,%s)\n", dp->host->hostname, dp->name);
+
+    close_infofile();
 }

@@ -87,9 +87,9 @@ struct timeval sleep_time = { SLEEP_MAX, 0 };
 
 static char local_hostname[MAX_HOSTNAME_LENGTH];
 
-int driver_main(argc, argv)
-int argc;
-char **argv;
+int driver_main(main_argc, main_argv)
+int main_argc;
+char **main_argv;
 {
     disklist_t *origqp;
     disk_t *diskp;
@@ -104,7 +104,7 @@ char **argv;
     FD_ZERO(&readset);
 
     printf("%s: pid %ld executable %s version %s\n",
-	   pname, (long) getpid(), argv[0], version());
+	   pname, (long) getpid(), main_argv[0], version());
 
     if(read_conffile(CONFFILE_NAME))
 	error("could not read amanda config file\n");
@@ -377,6 +377,7 @@ disklist_t *rq;
 		diskp->inprogress = 1;
 		sched(diskp)->dumper = dumper;
 		sched(diskp)->holdp = holdp;
+		sched(diskp)->timestamp = time((time_t *)0);
 
 		dumper->busy = 1;		/* dumper is now busy */
 		dumper->dp = diskp;		/* link disk to dumper */
@@ -474,13 +475,23 @@ disklist_t *queuep;
 void handle_taper_result()
 {
     disk_t *dp;
+    int filenum;
+
     tok = getresult(taper);
 
-    if(tok == DONE) {
-	assert(argc >= 2);
-	dp = serial2disk(argv[1]);
-	free_serial(argv[1]);
+    switch(tok) {
+
+    case DONE:	/* DONE <handle> <label> <tape file> <err mess> */
+	assert(argc == 5);
+
+	dp = serial2disk(argv[2]);
+	free_serial(argv[2]);
+
+	filenum = atoi(argv[4]);
+	update_info_taper(dp, argv[3], filenum);
+
 	delete_diskspace(dp);
+
 	printf("driver: finished-cmd time %s taper wrote %s:%s\n", 
 	       walltime_str(curclock()), dp->host->hostname, dp->name);
 	fflush(stdout);
@@ -508,11 +519,12 @@ void handle_taper_result()
 	    dp = dequeue_disk(&stoppedq);
 	    dumper_cmd(sched(dp)->dumper, CONTINUE, NULL);
 	}
-    }
-    else if(tok == TRYAGAIN) {
+	break;
+
+    case TRYAGAIN:  /* TRY-AGAIN <handle> <err mess> */
 	assert(argc >= 2);
-	dp = serial2disk(argv[1]);
-	free_serial(argv[1]);
+	dp = serial2disk(argv[2]);
+	free_serial(argv[2]);
 	printf("driver: taper-tryagain time %s disk %s:%s\n",
 	       walltime_str(curclock()), dp->host->hostname, dp->name);
 	fflush(stdout);
@@ -536,15 +548,17 @@ void handle_taper_result()
 	dp = dequeue_disk(&tapeq);
 	taper_disk = dp;
 	taper_cmd(FILE_WRITE, dp);
-    }
-    else if(tok == TAPE_ERROR || tok == BOGUS) {
-	if(tok != BOGUS) {
-	    dp = serial2disk(argv[1]);
-	    free_serial(argv[1]);
-	    printf("driver: finished-cmd time %s taper wrote %s:%s\n", 
-		   walltime_str(curclock()), dp->host->hostname, dp->name);
-	    fflush(stdout);
-	}
+	break;
+
+    case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
+	dp = serial2disk(argv[2]);
+	free_serial(argv[2]);
+	printf("driver: finished-cmd time %s taper wrote %s:%s\n", 
+	       walltime_str(curclock()), dp->host->hostname, dp->name);
+	fflush(stdout);
+	/* Note: fall through code... */
+
+    case BOGUS:
 	/*
 	 * Since we've gotten a tape error, we can't send anything more
 	 * to the taper.  Go into degraded mode to try to get everthing
@@ -559,9 +573,10 @@ void handle_taper_result()
 	taper_disk = NULL;
 	FD_CLR(taper,&readset);
 	close(taper);
-    }
-    else
+	break;
+    default:
 	error("driver received unexpected token (%d) from taper", tok);
+    }
 }
 
 
@@ -624,93 +639,74 @@ int fd;
 {
     dumper_t *dumper;
     disk_t *dp, *sdp;
+    long origsize;
+    long dumpsize;
+    long dumptime;
 
     dumper = lookup_dumper(fd);
+    dp = dumper->dp;
+    assert(dp && sched(dp));
+
     tok = getresult(fd);
 
-    if(tok == BOGUS) {
-	/* either eof or garbage from dumper */
-	log(L_WARNING, "dumper%d pid %d is messed up, ignoring it.\n", 
-	    dumper-dmptable, dumper->pid);
-	FD_CLR(fd,&readset);
-	close(fd);
-	dumper->busy = 0;
-	dumper->down = 1;	/* mark it down so it isn't used again */
-	if(dumper->dp) {
-	    /* if it was dumping something, zap it and try again */
-	    deallocate_bandwidth(sched(dumper->dp)->est_kps);
-	    adjust_diskspace(dumper->dp, DONE);
-	    delete_diskspace(dumper->dp);
-	    dumper->dp->host->inprogress -= 1;
-	    dumper->dp->inprogress = 0;
-	    if(sched(dumper->dp)->attempted) {
-		log(L_FAIL, "%s %s %d [dumper%d died]", 
-		    dumper->dp->host->hostname, dumper->dp->name,
-		    sched(dumper->dp)->level, dumper-dmptable);
-	    }
-	    else {
-		log(L_WARNING, "dumper%d died while dumping %s:%s lev %d.", 
-		    dumper-dmptable, 
-		    dumper->dp->host->hostname, dumper->dp->name,
-		    sched(dumper->dp)->level);
-		sched(dumper->dp)->attempted++;
-		enqueue_disk(&runq, dumper->dp);
-	    }
-	    dumper->dp = NULL;
-	}
-	return;
+    if(tok != BOGUS) {
+	sdp = serial2disk(argv[2]); /* argv[2] always contains the serial number */
+	assert(sdp == dp);
     }	
-
-    sdp = serial2disk(argv[1]);	/* argv[1] always contains the serial number */
-
-    assert(dumper->dp && sched(dumper->dp) && sdp == dumper->dp);
-
 
     switch(tok) {
 
-    case DONE:
-	free_serial(argv[1]);
-	deallocate_bandwidth(sched(dumper->dp)->est_kps);
-	adjust_diskspace(dumper->dp, DONE);
+    case DONE: /* DONE <handle> <origsize> <dumpsize> <dumptime> <err str> */
+	assert(argc == 6);
+
+	free_serial(argv[2]);
+
+	origsize = (long)atof(argv[3]);
+	dumpsize = (long)atof(argv[4]);
+	dumptime = (long)atof(argv[5]);
+	update_info_dumper(dp, origsize, dumpsize, dumptime);
+
+	deallocate_bandwidth(sched(dp)->est_kps);
+	adjust_diskspace(dp, DONE);
 	dumper->busy = 0;
-	dumper->dp->host->inprogress -= 1;
-	dumper->dp->inprogress = 0;
-	sched(dumper->dp)->attempted = 0;
+	dp->host->inprogress -= 1;
+	dp->inprogress = 0;
+	sched(dp)->attempted = 0;
 	printf("driver: finished-cmd time %s dumper%ld dumped %s:%s\n", 
 	       walltime_str(curclock()), (long) (dumper-dmptable), 
-	       dumper->dp->host->hostname, dumper->dp->name);
+	       dp->host->hostname, dp->name);
 	fflush(stdout);
 
 	if(taper_busy) {
-	    if(use_lffo)insert_disk(&tapeq, dumper->dp, sort_by_size_reversed);
-	    else enqueue_disk(&tapeq, dumper->dp);
+	    if(use_lffo)insert_disk(&tapeq, dp, sort_by_size_reversed);
+	    else enqueue_disk(&tapeq, dp);
 	}
 	else if(!degraded_mode) {
-	    taper_disk = dumper->dp;
+	    taper_disk = dp;
 	    taper_busy = 1;
-	    taper_cmd(FILE_WRITE, dumper->dp);
+	    taper_cmd(FILE_WRITE, dp);
 	}
-	dumper->dp = NULL;
+	dp = NULL;
 	break;
 
-    case TRYAGAIN:
+    case TRYAGAIN: /* TRY-AGAIN <handle> <err str> */
     case FATAL_TRYAGAIN:
-	free_serial(argv[1]);
-	deallocate_bandwidth(sched(dumper->dp)->est_kps);
-	adjust_diskspace(dumper->dp, DONE);
-	delete_diskspace(dumper->dp);
+	free_serial(argv[2]);
+	deallocate_bandwidth(sched(dp)->est_kps);
+	adjust_diskspace(dp, DONE);
+	delete_diskspace(dp);
 	dumper->busy = 0;
-	dumper->dp->host->inprogress -= 1;
-	dumper->dp->inprogress = 0;
+	dp->host->inprogress -= 1;
+	dp->inprogress = 0;
 	
-	if(sched(dumper->dp)->attempted) {
+	if(sched(dp)->attempted) {
 	    log(L_FAIL, "%s %s %d [could not connect to %s]", 
-		dumper->dp->host->hostname, dumper->dp->name,
-		sched(dumper->dp)->level, dumper->dp->host->hostname);
+		dp->host->hostname, dp->name,
+		sched(dp)->level, dp->host->hostname);
 	}
 	else {
-	    sched(dumper->dp)->attempted++;
-	    enqueue_disk(&runq, dumper->dp);
+	    sched(dp)->attempted++;
+	    enqueue_disk(&runq, dp);
 	}
 
 	if(tok == FATAL_TRYAGAIN) {
@@ -723,19 +719,19 @@ int fd;
 	}
 	break;
 
-    case FAILED:
-	free_serial(argv[1]);
-	deallocate_bandwidth(sched(dumper->dp)->est_kps);
-	adjust_diskspace(dumper->dp, DONE);
-	delete_diskspace(dumper->dp);
+    case FAILED: /* FAILED <handle> <errstr> */
+	free_serial(argv[2]);
+	deallocate_bandwidth(sched(dp)->est_kps);
+	adjust_diskspace(dp, DONE);
+	delete_diskspace(dp);
 	dumper->busy = 0;
-	dumper->dp->host->inprogress -= 1;
-	dumper->dp->inprogress = 1;
+	dp->host->inprogress -= 1;
+	dp->inprogress = 1;
 
 	/* no need to log this, dumper will do it */
 	break;
 
-    case NO_ROOM:
+    case NO_ROOM: /* NO-ROOM <handle> */
 	if(empty(tapeq) && pending_aborts == 0) {
 	    /* no disk space due to be freed */
 	    dumper_cmd(dumper, ABORT, NULL);
@@ -746,40 +742,70 @@ int fd;
 	     * next attempt.
 	     */
 	    if(num_busy_dumpers() <= 1)
-		dumper->dp->dtype->no_hold = 1;
+		dp->dtype->no_hold = 1;
 	}
 	else {
-	    adjust_diskspace(dumper->dp, NO_ROOM);
-	    enqueue_disk(&stoppedq, dumper->dp);
+	    adjust_diskspace(dp, NO_ROOM);
+	    enqueue_disk(&stoppedq, dp);
 	}
 	break;
 
-    case ABORT_FINISHED:
+    case ABORT_FINISHED: /* ABORT-FINISHED <handle> */
 	assert(pending_aborts);
-	free_serial(argv[1]);
-	deallocate_bandwidth(sched(dumper->dp)->est_kps);
-	adjust_diskspace(dumper->dp, DONE);
-	delete_diskspace(dumper->dp);
-	sched(dumper->dp)->attempted++;
-	enqueue_disk(&runq, dumper->dp);	/* we'll try again later */
+	free_serial(argv[2]);
+	deallocate_bandwidth(sched(dp)->est_kps);
+	adjust_diskspace(dp, DONE);
+	delete_diskspace(dp);
+	sched(dp)->attempted++;
+	enqueue_disk(&runq, dp);	/* we'll try again later */
 	dumper->busy = 0;
-	dumper->dp->host->inprogress -= 1;
-	dumper->dp->inprogress = 0;
-	dumper->dp = NULL;
+	dp->host->inprogress -= 1;
+	dp->inprogress = 0;
+	dp = NULL;
 	pending_aborts--;
 	while(!empty(stoppedq)) {
-	    dp = dequeue_disk(&stoppedq);
-	    dumper_cmd(sched(dp)->dumper, CONTINUE, NULL);
+	    disk_t *dp2;
+	    dp2 = dequeue_disk(&stoppedq);
+	    dumper_cmd(sched(dp2)->dumper, CONTINUE, NULL);
 	}
 	break;
 
     case BOGUS:
 	/* either EOF or garbage from dumper.  Turn it off */
+	log(L_WARNING, "dumper%d pid %d is messed up, ignoring it.\n", 
+	    dumper-dmptable, dumper->pid);
+	FD_CLR(fd,&readset);
+	close(fd);
+	dumper->busy = 0;
+	dumper->down = 1;	/* mark it down so it isn't used again */
+	if(dp) {
+	    /* if it was dumping something, zap it and try again */
+	    deallocate_bandwidth(sched(dp)->est_kps);
+	    adjust_diskspace(dp, DONE);
+	    delete_diskspace(dp);
+	    dp->host->inprogress -= 1;
+	    dp->inprogress = 0;
+	    if(sched(dp)->attempted) {
+		log(L_FAIL, "%s %s %d [dumper%d died]", 
+		    dp->host->hostname, dp->name,
+		    sched(dp)->level, dumper-dmptable);
+	    }
+	    else {
+		log(L_WARNING, "dumper%d died while dumping %s:%s lev %d.", 
+		    dumper-dmptable, dp->host->hostname, dp->name,
+		    sched(dp)->level);
+		sched(dp)->attempted++;
+		enqueue_disk(&runq, dp);
+	    }
+	    dp = NULL;
+	}
 	break;
 
     default:
 	assert(0);
     }
+
+    return;
 }
 
 disklist_t read_schedule(waitqp)
@@ -838,6 +864,7 @@ disklist_t *waitqp;
 	sp->act_size = 0;
 	sp->holdp = NULL;
 	sp->dumper  = NULL;
+	sp->timestamp = (time_t)0;
 
 	dp->up = (char *) sp;
 	remove_disk(waitqp, dp);
@@ -1031,6 +1058,10 @@ disk_t *dp;
 {
     dumper_t *dumper;
     int failed = 0;
+    int filenum;
+    long origsize;
+    long dumpsize;
+    long dumptime;
 
     inside_dump_to_tape = 1;	/* for simulator */
 
@@ -1049,7 +1080,7 @@ disk_t *dp;
 	inside_dump_to_tape = 0;
 	return 2;	/* fatal problem */
     }
-    strcpy(sched(dp)->destname, argv[1]);	/* copy port number */
+    strcpy(sched(dp)->destname, argv[2]);	/* copy port number */
 
     /* pick a dumper, then tell it to dump to a port */
 
@@ -1061,6 +1092,7 @@ disk_t *dp;
     taper_busy = dumper->busy = 1;
     dp->host->inprogress += 1;
     dp->inprogress = 1;
+    sched(dp)->timestamp = time((time_t *)0);
     allocate_bandwidth(sched(dp)->est_kps);
     idle_reason = 0;
 
@@ -1069,8 +1101,10 @@ disk_t *dp;
     /* wait for result from dumper */
 
     tok = getresult(dumper->outfd);
+
     if(tok != BOGUS)
-	free_serial(argv[1]);
+	free_serial(argv[2]);
+
     switch(tok) {
     case BOGUS:
 	/* either eof or garbage from dumper */
@@ -1079,16 +1113,24 @@ disk_t *dp;
 	dumper->down = 1;       /* mark it down so it isn't used again */
 	failed = 1;     /* dump failed, must still finish up with taper */
 	break;
-    case DONE:
+
+    case DONE: /* DONE <handle> <origsize> <dumpsize> <dumptime> <err str> */
 	/* everything went fine */
+	/* XXX - maybe this should only be done if the taper works? */
+	origsize = (long)atof(argv[3]);
+	dumpsize = (long)atof(argv[4]);
+	dumptime = (long)atof(argv[5]);
+	update_info_dumper(dp, origsize, dumpsize, dumptime);
 	break;
-    case NO_ROOM:
+
+    case NO_ROOM: /* NO-ROOM <handle> */
 	dumper_cmd(dumper, ABORT, dp);
 	tok = getresult(dumper->outfd);
 	if(tok != BOGUS)
-	    free_serial(argv[1]);
+	    free_serial(argv[2]);
 	assert(tok == ABORT_FINISHED);
-    case TRYAGAIN:
+
+    case TRYAGAIN: /* TRY-AGAIN <handle> <err str> */
     default:
 	/* dump failed, but we must still finish up with taper */
 	failed = 1;	/* problem with dump, possibly nonfatal */
@@ -1103,26 +1145,31 @@ disk_t *dp;
      */
 
     tok = getresult(taper);
-    if((tok != BOGUS) && (tok != PORT_WRITE_EOF))
-	free_serial(argv[1]);	/* reap the serial number */
+
     switch(tok) {
-    case PORT_WRITE_EOF:
-	/* taper got EOF on port, but doesn't know why yet */
-	if(failed == 0)
-	    /* tell taper the dump finished ok */
-	    taper_cmd(PORT_WRITE_SUCCESS, NULL);
-	else {
-	    /* tell taper the dump failed */
-	    taper_cmd(PORT_WRITE_FAILURE, NULL);
-	    failed = 2;	/* fatal problem */
-	}
-	tok = getresult(taper);
-	assert(tok == DONE);
-	free_serial(argv[1]);
+    case DONE: /* DONE <handle> <label> <tape file> <err mess> */
+	assert(argc == 5);
+
+	free_serial(argv[2]);
+
+	if(failed) break;	/* dump didn't work */
+
+	/* every thing went fine */
+	filenum = atoi(argv[4]);
+	update_info_taper(dp, argv[3], filenum);
+
 	break;
-    case TRYAGAIN:
+
+    case TRYAGAIN: /* TRY-AGAIN <handle> <err mess> */
+	free_serial(argv[2]);
 	enqueue_disk(&runq, dp);
 	break;
+
+    case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
+	free_serial(argv[2]);
+	/* fall through */
+
+    case BOGUS:
     default:
 	failed = 2;	/* fatal problem */
     }

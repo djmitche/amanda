@@ -30,7 +30,6 @@
 #include "tapefile.h"
 #include "clock.h"
 #include "stream.h"
-#include "infofile.h"
 #include "logfile.h"
 #include "tapeio.h"
 #include "changer.h"
@@ -51,8 +50,7 @@
 #define THRESHOLD	(NBUFS-1)
 
 
-typedef enum { BOGUS, START_TAPER, FILE_WRITE, PORT_WRITE,
-		PORT_WRITE_SUCCESS, PORT_WRITE_FAILURE, QUIT } cmd_t;
+typedef enum { BOGUS, START_TAPER, FILE_WRITE, PORT_WRITE, QUIT } cmd_t;
 
 #define EMPTY 1
 #define FILLING 2
@@ -67,16 +65,13 @@ typedef struct buffer_s {
 #define prevbuf(p)    ((p) == buftable? buftable+NBUFS-1 : (p)-1)
 
 /* major modules */
-int main P((int argc, char **argv));
+int main P((int main_argc, char **main_argv));
 void file_reader_side P((int rdpipe, int wrpipe));
 void tape_writer_side P((int rdpipe, int wrpipe));
 
 /* misc helper functions */
 cmd_t getcmd P((int *argcp, char ***argvp));
 void putresult P((char *format, ...));
-void record_success P((char *hostname, char *diskname, int level, char *str));
-void record_failure P((char *hostname, char *diskname, int level, char *str));
-void record_tryagain P((char *hostname, char *diskname, int level, char *str));
 
 /* shared-memory routines */
 buffer_t *attach_buffers P((void));
@@ -128,20 +123,20 @@ int tape_fd;
  * MAIN PROGRAM
  *
  */
-int main(argc, argv)
-int argc;
-char **argv;
+int main(main_argc, main_argv)
+int main_argc;
+char **main_argv;
 {
     int p2c[2], c2p[2];		/* parent-to-child, child-to-parent pipes */
 
     /* print prompts and debug messages if running interactive */
     
-    interactive = (argc > 1 && !strcmp(argv[1],"-t"));
+    interactive = (main_argc > 1 && !strcmp(main_argv[1],"-t"));
     if(interactive) erroutput_type = ERR_INTERACTIVE;
     else erroutput_type = ERR_AMANDALOG;
 
     fprintf(stderr, "%s: pid %ld executable %s version %s\n",
-	    pname, (long) getpid(), argv[0], version());
+	    pname, (long) getpid(), main_argv[0], version());
     fflush(stderr);
 
     if(read_conffile(CONFFILE_NAME))
@@ -461,7 +456,8 @@ char *handle, *hostname, *diskname;
 
 		strcpy(errstr, "[fatal buffer mismanagement bug]");
 		putresult("TRY-AGAIN %s %s\n", handle, quote(errstr));
-		record_tryagain(hostname, diskname, level, errstr);
+		log(L_INFO, "retrying %s:%s.%d on new tape: %s",
+		    hostname, diskname, level, errstr);
 		closing = 1;
 		syncpipe_put('X');	/* X == buffer snafu, bail */
 		do {
@@ -504,11 +500,12 @@ char *handle, *hostname, *diskname;
 
 	    if(tok == 'T') {
 		putresult("TRY-AGAIN %s %s\n", handle, quote(errstr));
-		record_tryagain(hostname, diskname, level, errstr);
+		log(L_INFO, "retrying %s:%s.%d on new tape: %s",
+		    hostname, diskname, level, errstr);
 	    }	
 	    else {
 		putresult("TAPE-ERROR %s %s\n", handle, quote(errstr));
-		record_failure(hostname, diskname, level, errstr);
+	        log(L_FAIL, "%s %s %d %s", hostname, diskname, level, errstr);
 	    }
 	    return;
 
@@ -528,7 +525,7 @@ char *handle, *hostname, *diskname;
 	    if(err) {
 		sprintf(errstr, "[input: %s]", strerror(err));
 		putresult("TAPE-ERROR %s %s\n", handle, quote(errstr));
-		record_failure(hostname, diskname, level, errstr);
+	        log(L_FAIL, "%s %s %d %s", hostname, diskname, level, errstr);
 		syncpipe_getstr();	/* reap stats */
 	    }
 	    else {
@@ -536,31 +533,13 @@ char *handle, *hostname, *diskname;
 		       walltime_str(runtime), filesize, 
 		       filesize/(runtime.r.tv_sec+runtime.r.tv_usec/1000000.0),
 		       syncpipe_getstr());
-
-		if ( port_flag == 0 )
-		    /* reading from a file, we're done */
-		    record_success(hostname, diskname, level, errstr);
-		else {
-		    /* reading from a port, must get status from driver */
-		    cmd_t cmd;
-		    int argc;
-		    char **argv;
-
-		    putresult("PORT-WRITE-EOF\n");
-		    cmd = getcmd(&argc, &argv);	/* no args */
-
-		    if (cmd == PORT_WRITE_FAILURE) {
-			sprintf(errstr, "[driver says port-dump failed]");
-			record_failure(hostname, diskname, level, errstr);
-		    }
-		    else {
-			assert(cmd == PORT_WRITE_SUCCESS);
-			record_success(hostname, diskname, level, errstr);
-		    }
-		}
-		putresult("DONE %s %s\n", handle, quote(errstr));
+		putresult("DONE %s %s %d %s\n",
+			  handle, label, filenum, quote(errstr));
+		log(L_SUCCESS, "%s %s %d %s",
+		    hostname, diskname, level, errstr);
 	    }
 	    return;
+
 	default:
 	    assert(0);
 	}
@@ -914,7 +893,7 @@ char ***argvp;
 	printf("argv[%d] = \"%s\"\n", arg, argv[arg]);
 #endif
 
-    *argvp = argv+1;
+    *argvp = argv;
     *argcp = argc;
 
     /* not enough commands for a table lookup */
@@ -922,8 +901,6 @@ char ***argvp;
     if(!strcmp(argv[1],"START-TAPER")) return START_TAPER;
     else if(!strcmp(argv[1],"FILE-WRITE")) return FILE_WRITE;
     else if(!strcmp(argv[1],"PORT-WRITE")) return PORT_WRITE;
-    else if(!strcmp(argv[1],"PORT-WRITE-SUCCESS")) return PORT_WRITE_SUCCESS;
-    else if(!strcmp(argv[1],"PORT-WRITE-FAILURE")) return PORT_WRITE_FAILURE;
     else if(!strcmp(argv[1],"QUIT")) return QUIT;
     return BOGUS;
 }
@@ -938,56 +915,6 @@ arglist_function(void putresult, char *, format)
     vsprintf(result, format, argp);
     arglist_end(argp);
     write(1, result, strlen(result));
-}
-
-
-void record_success(hostname, diskname, level, str)
-char *hostname, *diskname;
-int level;
-char *str;
-{
-    info_t record;
-
-    /* update info record */
-
-    if(open_infofile(getconf_str(CNF_INFOFILE)))
-	error("could not open infofile: %s", strerror(errno));
-    get_info(hostname, diskname, &record);
-    strcpy(record.inf[level].label, label);
-    record.inf[level].filenum = filenum;
-    record.command = NO_COMMAND;
-    if(interactive) {
-	fprintf(stderr,"taper: not updating database record for test\n");
-	fflush(stderr);
-    } else if(put_info(hostname, diskname, &record))
-	error("infofile update failed (%s,%s)\n", hostname, diskname);
-    close_infofile();
-
-    /* log results */
-
-    log(L_SUCCESS, "%s %s %d %s", hostname, diskname, level, str);
-}
-
-void record_failure(hostname, diskname, level, str)
-char *hostname, *diskname;
-int level;
-char *str;
-{
-    /* We don't have to update the info record, just log the results */
-
-    log(L_FAIL, "%s %s %d %s", hostname, diskname, level, str);
-}
-
-
-void record_tryagain(hostname, diskname, level, str)
-char *hostname, *diskname;
-int level;
-char *str;
-{
-    /* We don't have to update the info record, just log the results */
-
-    log(L_INFO, "retrying %s:%s.%d on new tape: %s",
-	hostname, diskname, level, str);
 }
 
 

@@ -26,7 +26,6 @@
  */
 #include "amanda.h"
 #include "conffile.h"
-#include "infofile.h"
 #include "logfile.h"
 #include "stream.h"
 #include "clock.h"
@@ -81,6 +80,7 @@ int spaceleft, abort_pending;
 pid_t pid;
 long dumpsize, origsize;
 times_t runtime;
+double dumptime;	/* Time dump took in secs */
 static int srvcompress;
 
 char errfname[MAX_LINE];
@@ -88,7 +88,6 @@ FILE *errf;
 char *filename, *hostname, *diskname, *options, *progname, *levelstr;
 int level;
 char datestamp[80];
-time_t timestamp;
 
 int datafd = -1;
 int mesgfd = -1;
@@ -109,9 +108,6 @@ static void process_dumpline P((char *str));
 static void add_msg_data P((char *str, int len));
 static void log_msgout P((logtype_t typ));
 void update_info P((void));
-void record_success P((char *str));
-void record_strange P((char *str));
-void record_failure P((char *str));
 char *diskname2filename P((char *dname));
 void sendbackup_response P((proto_t *p, pkt_t *pkt));
 int startup_dump P((char *hostname, char *disk, char *levelstr, 
@@ -155,6 +151,7 @@ static void construct_datestamp(buf)
 char *buf;
 {
     struct tm *tm;
+    time_t timestamp;
 
     timestamp = time((time_t *)NULL);
     tm = localtime(&timestamp);
@@ -534,79 +531,7 @@ logtype_t typ;
     fclose(errf);
 }
 
-
-void update_info()
-{
-    info_t record;
-    stats_t *infp;
-    perf_t *perfp;
-    int res;
-
-    /* update info record */
-
-    if( (res = open_infofile(getconf_str(CNF_INFOFILE))) )
-	error("could not open infofile %s: %s (%d)", getconf_str(CNF_INFOFILE),
-	      strerror(errno), res);
-    get_info(hostname, diskname, &record);
-	
-    infp = &record.inf[level];
-    infp->size = origsize;
-    infp->csize = dumpsize;
-    infp->secs = runtime.r.tv_sec + runtime.r.tv_usec / 500000; /* round off */
-    infp->date = timestamp;
-
-    if(level == 0) perfp = &record.full;
-    else perfp = &record.incr;
-    newperf(perfp->comp, origsize? (dumpsize/(float)origsize) : 1.0);
-    newperf(perfp->rate, dumpsize/(infp->secs? infp->secs : 1.0));
-
-    if(interactive)
-	printf("dumper: not updating database record for test\n");
-    else
-	put_info(hostname, diskname, &record);
-    close_infofile();
-
-    if (indexfile) {
-      char tmpname[1024];
-      strcpy(tmpname, indexfile);
-      indexfile[strlen(indexfile)-4] = 0;
-      unlink(indexfile);
-      rename(tmpname, indexfile);
-    }
-}
-
-void record_success(str)
-char *str;
-{
-    update_info();
-
-    log(L_SUCCESS, "%s %s %d [%s]", hostname, diskname, level, str);
-}
-
-void record_strange(str)
-char *str;
-{
-    update_info();
-
-    log_start_multiline();
-    log(L_STRANGE, "%s %s %d [%s]", hostname, diskname, level, str);
-    log_msgout(L_STRANGE);
-    log_end_multiline();
-}
-
-void record_failure(str)
-char *str;
-{
-    if (indexfile)
-      unlink(indexfile);
-    log_start_multiline();
-    log(L_FAIL, "%s %s %d [%s]", hostname, diskname, level, str);
-    log_msgout(L_FAIL);
-    log_end_multiline();
-}
-
 /* ------------- */
-
 
 char *diskname2filename(dname)
 char *dname;
@@ -881,27 +806,59 @@ int mesgfd, datafd, indexfd, outfd;
     if(dump_result > 1) goto failed;
 
     runtime = stopclock();
+    dumptime = runtime.r.tv_sec + runtime.r.tv_usec/1000000.0;
 
     sprintf(errstr, "sec %s kb %ld kps %3.1f orig-kb %ld ",
 	      walltime_str(runtime), dumpsize, 
-	      dumpsize/(runtime.r.tv_sec+runtime.r.tv_usec/1000000.0),
-	      origsize);
-    putresult("DONE %s %s\n", handle, quotef("[%s]", errstr));
+	      dumpsize/dumptime, origsize);
+    putresult("DONE %s %ld %ld %ld %s\n", handle, origsize, dumpsize,
+	      (long)(dumptime+0.5), quotef("[%s]", errstr));
 
     fclose(errf);
+
     switch(dump_result) {
-    case 0:	record_success(errstr);	break;
-    case 1:	record_strange(errstr); break;
+    case 0:
+	log(L_SUCCESS, "%s %s %d [%s]", hostname, diskname, level, errstr);
+
+	break;
+
+    case 1:
+	log_start_multiline();
+	log(L_STRANGE, "%s %s %d [%s]", hostname, diskname, level, errstr);
+	log_msgout(L_STRANGE);
+	log_end_multiline();
+
+	break;
     }
+
     unlink(errfname);
+
+    if (indexfile) {
+	char tmpname[1024];
+	strcpy(tmpname, indexfile);
+	indexfile[strlen(indexfile)-4] = 0;
+	unlink(indexfile);
+	rename(tmpname, indexfile);
+    }
+
     return;
 
 failed:
     putresult("FAILED %s %s\n", handle, quotef("[%s]", errstr));
 
     fclose(errf);
-    record_failure(errstr);
+
+    log_start_multiline();
+    log(L_FAIL, "%s %s %d [%s]", hostname, diskname, level, errstr);
+    log_msgout(L_FAIL);
+    log_end_multiline();
+
     unlink(errfname);
+
+    if (indexfile)
+      unlink(indexfile);
+
+    return;
 }
 
 /* -------------------- */

@@ -53,6 +53,7 @@ typedef struct sched_s {
     char destname[128];				/* file/port name */
     dumper_t *dumper;
     holdingdisk_t *holdp;
+    time_t timestamp;
 } sched_t;
 
 #define sched(dp)	((sched_t *) (dp)->up)
@@ -80,8 +81,7 @@ typedef enum {
     FAILED, TRYAGAIN, NO_ROOM, ABORT_FINISHED,		/* dumper results */
     FATAL_TRYAGAIN,
     START_TAPER, FILE_WRITE, PORT_WRITE, 		/* taper cmds */
-    PORT_WRITE_SUCCESS, PORT_WRITE_FAILURE,
-    PORT, PORT_WRITE_EOF, TAPE_ERROR, TAPER_OK,		/* taper results */
+    PORT, TAPE_ERROR, TAPER_OK,				/* taper results */
     LAST_TOK
 } tok_t;
 
