@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-cam.c,v 1.10 2001/06/04 12:07:40 ant Exp $
+ * $Id: scsi-cam.c,v 1.10.6.1 2001/07/10 22:16:27 jrjackson Exp $
  *
  * Interface to execute SCSI commands on an system with cam support
  * Current support is for FreeBSD 4.x

@@ -1,5 +1,8 @@
+#ifndef lint
+static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.21.2.3 2001/07/10 22:16:27 jrjackson Exp $";
+#endif
 /*
- *  $Id: chg-scsi.c,v 1.6.2.21.2.2 2001/05/11 18:49:08 jrjackson Exp $
+ * 
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -62,11 +65,21 @@
  * 
  */
 
+
 #include "config.h"
+
+
 #include "amanda.h"
+
+#ifdef HAVE_DMALLOC_H
+#include <dmalloc.h>
+#endif
+
+
 #include "conffile.h"
 #include "libscsi.h"
 #include "scsi-defs.h"
+#include "tapeio.h"
 
 char *tapestatfile = NULL;
 FILE *debug_file = NULL;
@@ -74,13 +87,12 @@ FILE *debug_file = NULL;
 char *config_name = NULL;
 char *config_dir = NULL;
 
-/* So we have 3 devices, here will all the infos be stored after an
+/* 
+ * So we have 3 devices, here will all the infos be stored after an
  * successfull open 
  */
 
-OpenFiles_T *pChangerDev = NULL;
-OpenFiles_T *pTapeDev = NULL;
-OpenFiles_T *pTapeDevCtl = NULL;
+OpenFiles_T *pDev = NULL;
 
 /* Defined in scsi-changer-driver.c
  */
@@ -94,40 +106,13 @@ extern int STE;
 extern int IEE;
 extern int DTE;
 
-extern int BarCode(int);
-void ChangerReplay(char *string);
-
-/*----------------------------------------------------------------------------*/
-/* Some stuff for our own configurationfile */
-typedef struct {  /* The information we can get for any drive (configuration) */
-  int drivenum;      /* Which drive to use in the library */
-  int start;         /* Which is the first slot we may use */
-  int end;           /* The last slot we are allowed to use */
-  int cleanslot;     /* Where the cleaningcartridge stays */
-  char *scsitapedev; /* Where can we send raw SCSI commands to the tape */
-  char *device;      /* Which device is associated to the drivenum */
-  char *slotfile;    /* Where we should have our memory */   
-  char *cleanfile;   /* Where we count how many cleanings we did */
-  char *timefile;    /* Where we count the time the tape was used*/
-  char *tapestatfile;/* Where can we place some drive stats */
-  char *changerident;/* Config to use foe changer control, ovverride result from inquiry */
-  char *tapeident;   /* Same as above for the tape device */
-}config_t; 
-
-typedef struct {
-  int number_of_configs; /* How many different configurations are used */
-  int eject;             /* Do the drives need an eject-command */
-  int sleep;             /* How many seconds to wait for the drive to get ready */
-  int cleanmax;          /* How many runs could be done with one cleaning tape */
-  char *device;          /* Which device is our changer */
-  char *labelfile;       /* Mapping from Barcode labels to volume labels */
-  config_t *conf;
-}changer_t;
+changer_t chg;
+int clean_slot = -1;
 
 typedef enum{
   NUMDRIVE,EJECT,SLEEP,CLEANMAX,DRIVE,START,END,CLEAN,DEVICE,STATFILE,CLEANFILE,DRIVENUM,
     CHANGERDEV,USAGECOUNT,SCSITAPEDEV, TAPESTATFILE, LABELFILE, CHANGERIDENT,
-    TAPEIDENT
+    TAPEIDENT, EMUBARCODE, HAVEBARCODE, DEBUGLEVEL
     } token_t;
 
 typedef struct {
@@ -155,6 +140,9 @@ tokentable_t t_table[]={
   { "labelfile", LABELFILE},
   { "changerident" , CHANGERIDENT},
   { "tapeident", TAPEIDENT},
+  { "emubarcode", EMUBARCODE},
+  { "havebarcode", HAVEBARCODE},
+  { "debuglevel", DEBUGLEVEL},
   { NULL,-1 }
 };
 
@@ -167,8 +155,11 @@ void init_changer_struct(changer_t *chg,int number_of_config)
   chg->eject = 1;
   chg->sleep = 0;
   chg->cleanmax = 0;
+  chg->havebarcode = 0;
+  chg->emubarcode = 0;	
   chg->device = NULL;
   chg->labelfile = NULL;
+  chg->debuglevel = NULL;
   chg->conf = malloc(sizeof(config_t)*number_of_config);
   if (chg->conf != NULL){
     for (i=0; i < number_of_config; i++){
@@ -197,6 +188,9 @@ void dump_changer_struct(changer_t chg)
 
   dbprintf(("Number of configurations: %d\n",chg.number_of_configs));
   dbprintf(("Tapes need eject: %s\n",(chg.eject>0?"Yes":"No")));
+  dbprintf(("barcode reader  : %s\n",(chg.havebarcode>0?"Yes":"No")));
+  if (chg.debuglevel != NULL)
+     dbprintf(("debug level     : %s\n", chg.debuglevel));
   dbprintf(("Tapes need sleep: %d seconds\n",chg.sleep));
   dbprintf(("Cleancycles     : %d\n",chg.cleanmax));
   dbprintf(("Changerdevice   : %s\n",chg.device));
@@ -338,10 +332,19 @@ int read_config(char *configfile, changer_t *chg)
           fprintf(stderr,"Error: number_drives at wrong place, should be "\
                   "first in file\n");
         break;
+        case EMUBARCODE:
+          chg->emubarcode = 1;
+          break;
+        case DEBUGLEVEL:
+          chg->debuglevel = strdup(value);
+          break;
         case EJECT:
           chg->eject = atoi(value);
           break;
-        case SLEEP:
+        case HAVEBARCODE:
+          chg->havebarcode = atoi(value);
+          break;
+       case SLEEP:
           chg->sleep = atoi(value);
           break;
         case LABELFILE:
@@ -466,13 +469,24 @@ int get_current_slot(char *count_file)
 {
   FILE *inf;
   int retval;
+  int ret;          /* return value for the fscanf function */
   if ((inf=fopen(count_file,"r")) == NULL) {
     fprintf(stderr, "%s: unable to open current slot file (%s)\n",
             get_pname(), count_file);
     return 0;
   }
-  fscanf(inf,"%d",&retval);
+  ret = fscanf(inf,"%d",&retval);
   fclose(inf);
+  
+  /*
+   * check if we got an result
+   * if no set retval to -1 
+  */
+  if (ret == 0 || ret == EOF)
+    {
+      retval = -1;
+    }
+
   return retval;
 }
 
@@ -489,122 +503,265 @@ void put_current_slot(char *count_file,int slot)
   fclose(inf);
 }
 
-/* Here we handle the mapping from Barcode to volume label
+/* 
+ * Here we handle the inventory DB
+ * With this it should be possible to do an mapping
+ * Barcode      -> Volume label
+ * Volume Lable -> Barcode
+ * Volume lable -> Slot number
+ * 
  */
 
-char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action)
+char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action, int slot, int from)
 {
   FILE *fp;
   int version;
   LabelV1_T *plabel;
+  LabelV2_T *plabelv2;
   int unusedpos = 0;
   int unusedrec = 0;
-  int pos;
+  int pos  = 0;
   int record = 0;
   int volseen = 0;
+  char *retstr = malloc(17);    /* Return buffer to hold an int value formatted by an sprintf slot:from*/
 
-  if (( plabel = (LabelV1_T *)malloc(sizeof(LabelV1_T))) == NULL)
-    {
-      dbprintf(("MapBarCode : malloc failed\n"));
-      return(NULL);
-    }
-
-  memset(plabel, 0, sizeof(LabelV1_T));
-
+  DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : Parameter\n");
+  DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"labelfile -> %s, vol -> %s, barcode -> %s, action -> %c, slot -> %d, from -> %d\n",
+             labelfile,
+             vol,
+             barcode,
+             action,
+             slot,
+             from);
+  
   if (access(labelfile, F_OK) == -1)
     {
-      dbprintf(("MapBarCode : creating %s", labelfile));
+      DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE, "MapBarCode : creating %s", labelfile);
       if ((fp = fopen(labelfile, "w+")) == NULL)
         {
-          dbprintf((" failed\n"));
+          DebugPrint(DEBUG_ERROR,SECTION_MAP_BARCODE," failed\n");
           return(NULL);
         }
       fprintf(fp,":%d:", LABEL_DB_VERSION);
       fclose(fp);
     }
-
+  
   if ((fp = fopen(labelfile, "r+")) == NULL)
     {
-      dbprintf(("MapBarCode : failed to open %s\n", labelfile));
+       DebugPrint(DEBUG_ERROR,SECTION_MAP_BARCODE,"MapBarCode : failed to open %s\n", labelfile);
       return(NULL);
     }
   
   fscanf(fp,":%d:", &version);
-  dbprintf(("MapBarCode : DB version %d\n", version));
+   DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : DB version %d\n", version);
 
   pos = ftell(fp);
 
-  while(fread(plabel, 1, sizeof(LabelV1_T), fp) > 0)
+  if (version == 1)
     {
-      record++;
-      dbprintf(("MapBarCode : (%d) VolTag %s, BarCode %s, inuse %d\n",record,
-                plabel->voltag,
-                plabel->barcode,
-                plabel->valid));
-      switch (action)
-        {
-        case BARCODE_PUT:
-          if (plabel->valid == 0)
-            {
-              unusedpos = pos;
-              unusedrec = record;
-            }
-          if (strcmp(plabel->voltag, vol) == 0)
-            {
-              volseen = record;
-            }
+     if (( plabel = (LabelV1_T *)malloc(sizeof(LabelV1_T))) == NULL)
+       {
+         DebugPrint(DEBUG_ERROR,SECTION_MAP_BARCODE,"MapBarCode : malloc failed\n");
+         return(NULL);
+       }
 
-          if (strcmp(plabel->barcode, barcode) == 0)
-            {
-              dbprintf(("MapBarCode : update entry\n"));
-              fseek(fp, pos, SEEK_SET);
-              plabel->valid = 1;
-              strcpy(plabel->voltag, vol);
-              fwrite(plabel, 1, sizeof(LabelV1_T), fp);
-              fclose(fp);
-              return(strdup(plabel->barcode));
-            }
-          break;
-        case BARCODE_VOL:
-          if (strcmp(plabel->voltag, vol) == 0)
-            {
-              dbprintf(("MapBarCode : VOL %s match\n", vol));
-              fclose(fp);
-              return(strdup(plabel->barcode));
-            }
-          break;
-        case BARCODE_BARCODE:
-          if (strcmp(plabel->barcode, barcode) == 0)
-            {
-              dbprintf(("MapBarCode : BARCODE %s match\n", barcode));
-              fclose(fp);
-              return(strdup(plabel->voltag));
-            }
+     memset(plabel, 0, sizeof(LabelV1_T));
+     while(fread(plabel, 1, sizeof(LabelV1_T), fp) > 0)
+       {
+         record++;
+         DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : (%d) VolTag %s, BarCode %s, inuse %d\n",record,
+                   plabel->voltag,
+                   plabel->barcode,
+                   plabel->valid);
+         switch (action)
+           {
+           case BARCODE_PUT:
+             if (plabel->valid == 0)
+               {
+                 unusedpos = pos;
+                 unusedrec = record;
+               }
+             if (strcmp(plabel->voltag, vol) == 0)
+               {
+                 volseen = record;
+               }
+
+             if (strcmp(plabel->barcode, barcode) == 0)
+               {
+                 DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : update entry\n");
+                 fseek(fp, pos, SEEK_SET);
+                 plabel->valid = 1;
+                 strcpy(plabel->voltag, vol);
+                 fwrite(plabel, 1, sizeof(LabelV1_T), fp);
+                 fclose(fp);
+                 return(strdup(plabel->barcode));
+               }
+             break;
+           case BARCODE_VOL:
+             if (strcmp(plabel->voltag, vol) == 0)
+               {
+                 DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : VOL %s match\n", vol);
+                 fclose(fp);
+                 return(strdup(plabel->barcode));
+               }
+             break;
+           case BARCODE_BARCODE:
+             if (strcmp(plabel->barcode, barcode) == 0)
+               {
+                 DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : BARCODE %s match\n", barcode);
+                 fclose(fp);
+                 return(strdup(plabel->voltag));
+               }
           
-          break;
-        default:
-          break;
-        }
-      pos = ftell(fp);
+             break;
+           default:
+             DebugPrint(DEBUG_ERROR,SECTION_MAP_BARCODE,"MapBarCode : unsupported function %d\n", action);
+             break;
+           }
+         pos = ftell(fp);
+       }
+     /*
+      * No match above, so create an new record ....
+      */
+     if (action == BARCODE_PUT)
+       {
+         if (unusedpos != 0)
+           {
+             DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : reuse record %d\n", unusedrec);
+             fseek(fp, unusedpos, SEEK_SET);
+           }
+         
+         strcpy(plabel->voltag, vol);
+         strncpy(plabel->barcode, barcode, TAG_SIZE);
+         plabel->valid = 1;
+         fwrite(plabel, 1, sizeof(LabelV1_T), fp);
+         fclose(fp);
+         return(strdup(plabel->voltag));
+       }                                                                           
+    }
+  
+  if (version == 2)
+    {
+     if (( plabelv2 = (LabelV2_T *)malloc(sizeof(LabelV2_T))) == NULL)
+       {
+         DebugPrint(DEBUG_ERROR,SECTION_MAP_BARCODE,"MapBarCode : malloc failed\n");
+         return(NULL);
+       }
+
+     memset(plabelv2, 0, sizeof(LabelV2_T));
+     while(fread(plabelv2, 1, sizeof(LabelV2_T), fp) > 0)
+       {
+         record++;
+         DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : (%d) VolTag %s, BarCode %s, inuse %d\n",record,
+                   plabelv2->voltag,
+                   plabelv2->barcode,
+                   plabelv2->valid);
+         switch (action)
+           {
+           case BARCODE_DUMP:
+             printf("Slot -> %d, from -> %d, valid -> %d, Tag -> %s, Barcode -> %s\n",
+                    plabelv2->slot,
+                    plabelv2->from,
+                    plabelv2->valid,
+                    plabelv2->voltag,
+                    plabelv2->barcode);
+             break;
+           case RESET_VALID:
+             fseek(fp, pos, SEEK_SET);
+             plabelv2->valid = 0;
+             fwrite(plabelv2, 1, sizeof(LabelV2_T), fp);
+             break;
+           case BARCODE_PUT:
+             if (plabelv2->valid == 0)
+               {
+                 unusedpos = pos;
+                 unusedrec = record;
+               }
+             if (strcmp(plabelv2->voltag, vol) == 0)
+               {
+                 volseen = record;
+               }
+
+             if (strcmp(plabelv2->barcode, barcode) == 0)
+               {
+                 DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : update entry\n");
+                 fseek(fp, pos, SEEK_SET);
+                 plabelv2->valid = 1;
+                 plabelv2->from = from;
+                 plabelv2->slot = slot;
+                 strcpy(plabelv2->voltag, vol);
+                 fwrite(plabelv2, 1, sizeof(LabelV2_T), fp);
+                 fclose(fp);
+                 return(strdup(plabelv2->barcode));
+               }
+             break;
+           case FIND_SLOT:
+             if (strcmp(plabelv2->voltag, vol) == 0)
+               {
+                 DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode FIND_SLOT : \n");
+                 sprintf(retstr,"%d:%d",plabelv2->slot,plabelv2->from);
+                 return(retstr);
+               }
+             break;
+           case UPDATE_SLOT:
+             /*             if (strcmp(plabelv2->voltag, vol) == 0) */
+               if (plabelv2->slot == slot)
+               {
+                 DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode UPDATE_SLOT : update entry\n");
+                 fseek(fp, pos, SEEK_SET);
+                 strcpy(plabelv2->voltag, vol);
+                 plabelv2->valid = 1;
+                 plabelv2->slot = slot;
+                 plabelv2->from = from;
+                 fwrite(plabelv2, 1, sizeof(LabelV2_T), fp);
+                 fclose(fp);
+                 return(strdup(plabelv2->barcode));
+               }
+               break;
+           case BARCODE_VOL:
+             if (strcmp(plabelv2->voltag, vol) == 0)
+               {
+                 DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : VOL %s match\n", vol);
+                 fclose(fp);
+                 return(strdup(plabelv2->barcode));
+               }
+             break;
+           case BARCODE_BARCODE:
+             if (strcmp(plabelv2->barcode, barcode) == 0)
+               {
+                 DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : BARCODE %s match\n", barcode);
+                 fclose(fp);
+                 return(strdup(plabelv2->voltag));
+               }
+          
+             break;
+           default:
+             break;
+           }
+         pos = ftell(fp);
+       }
+     if (action == BARCODE_PUT || action == UPDATE_SLOT )
+       {
+         memset(plabelv2, 0, sizeof(LabelV2_T));
+         if (unusedpos != 0)
+           {
+             DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : reuse record %d\n", unusedrec);
+             fseek(fp, unusedpos, SEEK_SET);
+           }
+         
+         strcpy(plabelv2->voltag, vol);
+         strncpy(plabelv2->barcode, barcode, TAG_SIZE);
+         plabelv2->valid = 1;
+         plabelv2->from = from;
+         plabelv2->slot = slot;
+         fwrite(plabelv2, 1, sizeof(LabelV2_T), fp);
+         fclose(fp);
+         return(strdup(plabelv2->voltag));
+       }                                                                           
     }
 
-  if (action == BARCODE_PUT)
-    {
-      if (unusedpos != 0)
-        {
-          dbprintf(("MapBarCode : reuse record %d\n", unusedrec));
-          fseek(fp, unusedpos, SEEK_SET);
-        }
-      
-      strcpy(plabel->voltag, vol);
-      strncpy(plabel->barcode, barcode, TAG_SIZE);
-      plabel->valid = 1;
-      fwrite(plabel, 1, sizeof(LabelV1_T), fp);
-      fclose(fp);
-      return(strdup(plabel->voltag));
-    }
-  return(NULL);
   fclose(fp);
+  return(NULL);
 }
 
 /* ---------------------------------------------------------------------- 
@@ -626,7 +783,7 @@ typedef struct com_stru
 
 
 /* major command line args */
-#define COMCOUNT 9
+#define COMCOUNT 13
 #define COM_SLOT 0
 #define COM_INFO 1
 #define COM_RESET 2
@@ -636,6 +793,10 @@ typedef struct com_stru
 #define COM_SEARCH 6
 #define COM_STATUS 7
 #define COM_TRACE 8
+#define COM_INVENTORY 9
+#define COM_DUMPDB 10
+#define COM_SCAN 11
+#define COM_GEN_CONF 12
 argument argdefs[]={{"-slot",COM_SLOT,1},
                     {"-info",COM_INFO,0},
                     {"-reset",COM_RESET,0},
@@ -644,7 +805,11 @@ argument argdefs[]={{"-slot",COM_SLOT,1},
                     {"-label",COM_LABEL,1},
                     {"-search",COM_SEARCH,1},
                     {"-status",COM_STATUS,1},
-			{"-trace",COM_TRACE,1}
+                    {"-trace",COM_TRACE,1},
+                    {"-inventory", COM_INVENTORY,0},
+                    {"-dumpdb", COM_DUMPDB,0},
+                    {"-scan", COM_SCAN,0},
+                    {"-genconf", COM_GEN_CONF,0}
 	};
 
 
@@ -835,7 +1000,6 @@ int main(int argc, char *argv[])
 {
   int loaded,target,oldtarget;
   command com;   /* a little DOS joke */
-  changer_t chg;
   char *volstr;
   int x;
 
@@ -845,29 +1009,40 @@ int main(int argc, char *argv[])
    * used by amanda only have one drive ( until someone wants to 
    * use an EXB60/120, or a Breece Hill Q45.. )
    */
-  int    drive_num = 0;
+  unsigned char emubarcode = 0;
+  int drive_num = 0;
   int need_eject = 0; /* Does the drive need an eject command ? */
   int need_sleep = 0; /* How many seconds to wait for the drive to get ready */
-  int clean_slot = -1;
+
   int maxclean = 0;
   char *clean_file=NULL;
   char *time_file=NULL;
 
-  int param_index;
+  /*
+   * For the label read fucntion
+   */
+  char *datestamp = NULL;
+  char *label = NULL;
+  char *result;
+
+  /*
+   * For the emubarcode stuff
+   */
+  int slot, from;
 
   int use_slots;
   int slot_offset;
   int confnum;
 
   int fd, slotcnt, drivecnt;
-
   int endstatus = 0;
 
   char *changer_dev;
   char *tape_device = NULL;
   char *changer_file = NULL;
   char *scsitapedevice = NULL;
-  int TapeEject = 0;              /* Do we have an device for ejecting the tape ? */
+
+  int param_index;
 
   chg.number_of_configs = 0;
   chg.eject = 0;
@@ -876,8 +1051,14 @@ int main(int argc, char *argv[])
   chg.device = NULL;
   chg.labelfile = NULL;
   chg.conf = NULL;
+#ifdef CHG_SCSI_STANDALONE
+  printf("Ups standalone\n");
+#else
   set_pname("chg-scsi");
   dbopen();
+
+  dbprintf(("chg-scsi: %s\n",rcsid));
+  ChangerDriverVersion();
 
   if (debug_file == NULL)
     {
@@ -888,7 +1069,26 @@ int main(int argc, char *argv[])
     }
   
   parse_args(argc,argv,&com);
-  
+
+  pDev = (OpenFiles_T *)malloc(sizeof(OpenFiles_T) * CHG_MAXDEV);
+  memset(pDev, 0, sizeof(OpenFiles_T) * CHG_MAXDEV );
+
+
+  switch(com.command_code) 
+    {
+    case COM_SCAN:
+      ScanBus(1);
+      return(0);
+      break;
+    case COM_GEN_CONF:
+      ScanBus(0);
+      PrintConf();
+      return(0);
+      break;
+    default:
+      break;
+    }
+
   if(read_conffile(CONFFILE_NAME)) {
     perror(CONFFILE_NAME);
     exit(1);
@@ -921,6 +1121,7 @@ int main(int argc, char *argv[])
     clean_file   = strdup(chg.conf[confnum].cleanfile);
     clean_slot   = chg.conf[confnum].cleanslot;
     maxclean     = chg.cleanmax;
+    emubarcode   = chg.emubarcode;
     if (NULL != chg.conf[confnum].timefile)
       time_file = strdup(chg.conf[confnum].timefile);
     if (NULL != chg.conf[confnum].slotfile)
@@ -936,77 +1137,75 @@ int main(int argc, char *argv[])
     if (NULL != chg.conf[confnum].tapestatfile)
       tapestatfile = strdup(chg.conf[confnum].tapestatfile);
     dump_changer_struct(chg);
-    /* get info about the changer */
-    if (NULL == (pChangerDev = OpenDevice(changer_dev, "changer_dev", chg.conf[confnum].changerident))) {
-      int localerr = errno;
-      fprintf(stderr, "%s: open: %s: %s\n", get_pname(), 
-              changer_dev, strerror(localerr));
-      printf("%s open: %s: %s\n", "<none>", changer_dev, strerror(localerr));
-      dbprintf(("%s: open: %s: %s\n", get_pname(),
-                changer_dev, strerror(localerr)));
-      return 2;
-    }
 
-    fd = pChangerDev->fd;
 
+    /* 
+     * The changer device.
+     * If we can't open it fail with a message
+     */
+
+    if (OpenDevice(INDEX_CHANGER , changer_dev, "changer_dev", chg.conf[confnum].changerident) == 0)
+      {
+        int localerr = errno;
+        fprintf(stderr, "%s: open: %s: %s\n", get_pname(), 
+                changer_dev, strerror(localerr));
+        printf("%s open: %s: %s\n", "<none>", changer_dev, strerror(localerr));
+        dbprintf(("%s: open: %s: %s\n", get_pname(),
+                  changer_dev, strerror(localerr)));
+        return 2;
+      }
+
+    fd = INDEX_CHANGER;
+
+    /*
+     * The tape device.
+     * We need it for:
+     * eject if eject is set
+     * inventory (reading of the labels) if emubarcode (not yet)
+     */
     if (tape_device != NULL)
       {
-        if ((pTapeDev = OpenDevice(tape_device, "tape_device", chg.conf[confnum].tapeident)) == NULL)
+        if (OpenDevice(INDEX_TAPE, tape_device, "tape_device", chg.conf[confnum].tapeident) == 0)
           {
             dbprintf(("warning open of %s: failed\n",  tape_device));
           }
       }
-    /*
-      if (pTapeDev != NULL)
-      close(pTapeDev->fd);
-    */
 
+    /*
+     * This is for the status pages of the SCSI tape, nice to have but no must....
+     */
     if (scsitapedevice != NULL)
       {
-        if ((pTapeDevCtl = OpenDevice(scsitapedevice, "scsitapedevice", chg.conf[confnum].tapeident)) == NULL)
+        if (OpenDevice(INDEX_TAPECTL, scsitapedevice, "scsitapedevice", chg.conf[confnum].tapeident) == 0)
           {
-            printf("open: %s: failed\n", scsitapedevice);
-            return(2);
+            dbprintf(("warning open of %s: failed\n", scsitapedevice));
           }
-      } else {
-	if (pTapeDev != NULL && pTapeDev->SCSI == 1)
-	{
-		pTapeDevCtl = pTapeDev;
-	}
-     }
+      }
     
 
-    if (pTapeDevCtl != NULL)
-      {
-        TapeEject = 1;
-      }
+    /*
+     * So if we need eject we need either an raw device to eject with an ioctl,
+     * or an SCSI device to send the SCSI eject.
+     */
 
-    if (pTapeDev != NULL)
+    if (need_eject != 0 )
       {
-        if (TapeEject == 0)
+        if (pDev[INDEX_TAPE].avail == 0 && pDev[INDEX_TAPECTL].avail == 0)
           {
-            TapeEject = 2;
-          }
-        if (need_eject == 1)
-          {
-            dbprintf(("need_eject set to %d\n",TapeEject));
-            need_eject = TapeEject;
+            printf("No device found for tape eject");
+            return(2);
           }
       }
 
-
-    if (need_eject != 0 && TapeEject == 0)
-      {
-        printf("No device found for tape eject");
-        return(2);
-      }
-
+	
     if ((chg.conf[confnum].end == -1) || (chg.conf[confnum].start == -1)){
       slotcnt = get_slot_count(fd);
       use_slots    = slotcnt;
       slot_offset  = 0;
     }
+    /*
     free_changer_struct(&chg);
+    */
   } else {
       printf("Please specify a number as tape_device [0-9]\n");
       dbprintf(("tape_device is not a number %s\n", tape_device));
@@ -1024,12 +1223,6 @@ int main(int argc, char *argv[])
     dbprintf(("%s: requested drive number (%d) greater than "
               "number of supported drives (%d)\n", get_pname(), 
               drive_num, drivecnt));
-    if (pChangerDev != NULL)
-      close(pChangerDev->fd);
-    if (pTapeDev != NULL)
-      close(pTapeDev->fd);
-    if (pTapeDevCtl != NULL)
-      close(pTapeDevCtl->fd);
     return 2;
   }
 
@@ -1043,18 +1236,40 @@ int main(int argc, char *argv[])
   break;
 /*
 */
+  case COM_DUMPDB:
+    MapBarCode(chg.labelfile, "", "", BARCODE_DUMP, 0, 0);
+    break;
   case COM_STATUS:
     ChangerStatus(com.parameter, chg.labelfile, BarCode(fd),changer_file, changer_dev, tape_device);
     break;
   case COM_LABEL: /* Update BarCode/Label mapping file */
-    MapBarCode(chg.labelfile, com.parameter, pDTE[drive_num].VolTag, BARCODE_PUT);
+    MapBarCode(chg.labelfile, com.parameter, pDTE[drive_num].VolTag, BARCODE_PUT, 0, 0);
     printf("0 0 0\n");
+    break;
+  case COM_INVENTORY:
+    if (loaded)
+      {
+        oldtarget = get_current_slot(changer_file);
+        if (oldtarget < 0)
+          {
+            dbprintf(("COM_SLOT: get_current_slot %d\n", oldtarget));
+            oldtarget = find_empty(fd, slot_offset, use_slots);
+            dbprintf(("COM_SLOT: find_empty %d\n", oldtarget));
+          }
+        if (need_eject)
+          eject_tape(scsitapedevice, need_eject);
+        (void)unload(fd, drive_num, oldtarget);
+        if (ask_clean(scsitapedevice))
+          clean_tape(fd,tape_device,clean_file,drive_num,
+                     clean_slot,maxclean,time_file);
+      }
+    Inventory(chg.labelfile, drive_num, need_eject, 0, 0, clean_slot);
     break;
   case COM_SEARCH:
     if (BarCode(fd) == 1)
       {
         dbprintf(("search : look for %s\n", com.parameter));
-        if ((volstr = MapBarCode(chg.labelfile, com.parameter, "", BARCODE_VOL)) != NULL)
+        if ((volstr = MapBarCode(chg.labelfile, com.parameter, "", BARCODE_VOL,0 ,0)) != NULL)
           {
             target = -1;
             for (x = 0; x < STE; x++)
@@ -1074,6 +1289,20 @@ int main(int argc, char *argv[])
               }
           }
       }
+    if (emubarcode == 1)
+      {
+        dbprintf(("search : look for %s\n", com.parameter));
+        if ((volstr = MapBarCode(chg.labelfile, com.parameter, "", FIND_SLOT,0 ,0)) != NULL)
+          {
+            sscanf(volstr, "%d:%d", &slot, &from);
+            target = slot;
+          } else {
+            printf("Label %s not found \n",com.parameter);
+            close(fd);
+            endstatus = 2;
+            break;
+          }
+      } 
   case COM_SLOT:  /* slot changing command */
     if (target == -1)
       {
@@ -1081,8 +1310,8 @@ int main(int argc, char *argv[])
           if ((target = atoi(com.parameter))>=use_slots) {
             printf("<none> no slot `%d'\n",target);
             close(fd);
-        endstatus = 2;
-        break;
+            endstatus = 2;
+            break;
           } else {
             target = target+slot_offset;
           }
@@ -1099,6 +1328,7 @@ int main(int argc, char *argv[])
 				     slot_offset,slot_offset+use_slots);
         }
       }
+
     if (loaded) {
       oldtarget = get_current_slot(changer_file);
       if (oldtarget < 0)
@@ -1106,6 +1336,19 @@ int main(int argc, char *argv[])
           dbprintf(("COM_SLOT: get_current_slot %d\n", oldtarget));
           oldtarget = find_empty(fd, slot_offset, use_slots);
           dbprintf(("COM_SLOT: find_empty %d\n", oldtarget));
+        }
+      
+      /*
+       * TODO check if the request slot for the unload is empty
+       */
+
+      /*
+       * If we have an SCSI path to the tape and an raw io path
+       * try to read the Error Counter and the label
+       */
+      if (pDev[INDEX_TAPECTL].avail == 1 && pDev[INDEX_TAPE].avail == 1)
+        {
+          LogSense(INDEX_TAPE);
         }
       
       if ((oldtarget)!=target) {
@@ -1143,12 +1386,24 @@ int main(int argc, char *argv[])
       }
 
     if (need_sleep)
-      if (Tape_Ready(scsitapedevice, need_sleep) == -1)
-        {
-          printf("tape not ready\n");
-          endstatus = 2;
-          break;
+      {
+        if (pDev[INDEX_TAPECTL].inqdone == 1)
+          {
+            if (Tape_Ready(INDEX_TAPECTL, need_sleep) == -1)
+              {
+                printf("tape not ready\n");
+                endstatus = 2;
+                break;
+              }
+          } else {
+            if (Tape_Ready(INDEX_TAPECTL, need_sleep) == -1)
+              {
+                printf("tape not ready\n");
+                endstatus = 2;
+                break;
+              }          
         }
+      }
     printf("%d %s\n", target-slot_offset, tape_device);
     break;
 
@@ -1163,7 +1418,7 @@ int main(int argc, char *argv[])
       
     printf("%d %d 1", loaded, use_slots);
 
-    if (BarCode(fd) == 1)
+    if (BarCode(fd) == 1 || emubarcode == 1)
       {
         printf(" 1\n");
       } else {
@@ -1182,6 +1437,11 @@ int main(int argc, char *argv[])
     }
 
     if (loaded) {
+      if (pDev[INDEX_TAPECTL].avail == 1 && pDev[INDEX_TAPE].avail == 1)
+        {
+          LogSense(INDEX_TAPE);
+        }
+
       if (!isempty(fd, target))
         target=find_empty(fd, slot_offset, use_slots);
       if (need_eject)
@@ -1211,12 +1471,25 @@ int main(int argc, char *argv[])
     put_current_slot(changer_file, slot_offset);
 
     if (need_sleep)
-       if (Tape_Ready(scsitapedevice, need_sleep) == -1)
-        {
-          printf("tape not ready\n");
-          endstatus = 2;
-          break;
-        }
+      {
+        if (pDev[INDEX_TAPECTL].inqdone == 1)
+          {
+            if (Tape_Ready(INDEX_TAPECTL, need_sleep) == -1)
+              {
+                printf("tape not ready\n");
+                endstatus = 2;
+                break;
+              }
+          } else {
+            if (Tape_Ready(INDEX_TAPECTL, need_sleep) == -1)
+              {
+                printf("tape not ready\n");
+                endstatus = 2;
+                break;
+              }          
+          }
+      }
+    
     printf("%d %s\n", slot_offset, tape_device);
     break;
 
@@ -1261,17 +1534,19 @@ int main(int argc, char *argv[])
     printf("%s cleaned\n", tape_device);
     break;
   };
-  
-  if (pChangerDev != NULL)
-    close(pChangerDev->fd);
- 
-  if (pTapeDev != NULL)
-    close(pTapeDev->fd);
 
-  if (pTapeDevCtl != NULL)
-    close(pTapeDevCtl->fd);
+  /* FIX ME, should be an function to close the device */  
+/*   if (pChangerDev != NULL) */
+/*     close(pChangerDev->fd); */
+ 
+/*   if (pTapeDev != NULL) */
+/*     close(pTapeDev->fd); */
+
+/*   if (pTapeDevCtl != NULL) */
+/*     close(pTapeDevCtl->fd); */
 
   dbclose();
+#endif
   return endstatus;
 }
 /*
@@ -1280,3 +1555,4 @@ int main(int argc, char *argv[])
  * tab-width: 4
  * End:
  */
+
