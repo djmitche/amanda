@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.39.2.11.4.4.2.2 2002/01/25 22:17:15 jrjackson Exp $
+ * $Id: amindexd.c,v 1.39.2.11.4.4.2.3 2002/02/10 03:31:53 jrjackson Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -86,6 +86,13 @@ static int amindexd_debug = 0;
 
 static REMOVE_ITEM *uncompress_remove = NULL;
 					/* uncompressed files to remove */
+
+static void reply P((int n, char * fmt, ...))
+    __attribute__ ((format (printf, 2, 3)));
+static void lreply P((int n, char * fmt, ...))
+    __attribute__ ((format (printf, 2, 3)));
+static void fast_lreply P((int n, char * fmt, ...))
+    __attribute__ ((format (printf, 2, 3)));
 
 REMOVE_ITEM *remove_files(remove)
 REMOVE_ITEM *remove;
@@ -233,7 +240,7 @@ char **emsg;
 }
 
 /* send a 1 line reply to the client */
-arglist_function1(void reply, int, n, char *, fmt)
+printf_arglist_function1(static void reply, int, n, char *, fmt)
 {
     va_list args;
     char buf[STR_SIZE];
@@ -259,7 +266,7 @@ arglist_function1(void reply, int, n, char *, fmt)
 }
 
 /* send one line of a multi-line response */
-arglist_function1(void lreply, int, n, char *, fmt)
+printf_arglist_function1(static void lreply, int, n, char *, fmt)
 {
     va_list args;
     char buf[STR_SIZE];
@@ -286,7 +293,7 @@ arglist_function1(void lreply, int, n, char *, fmt)
 }
 
 /* send one line of a multi-line response */
-arglist_function1(void fast_lreply, int, n, char *, fmt)
+printf_arglist_function1(static void fast_lreply, int, n, char *, fmt)
 {
     va_list args;
     char buf[STR_SIZE];

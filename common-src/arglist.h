@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: arglist.h,v 1.4 1998/07/04 00:18:37 oliva Exp $
+ * $Id: arglist.h,v 1.4.10.1 2002/02/10 03:31:53 jrjackson Exp $
  *
  * support macros for variable argument list declaration and definition
  */
@@ -36,15 +36,44 @@
 
 #include <stdarg.h>
 
-#define arglist_function(fdecl, hook_type, hook_name) \
+#define printf_arglist_function(fdecl, \
+				hook_type, hook_name) \
+	__attribute__ ((format (printf, 1, 0))) \
         fdecl(hook_type hook_name, ...)
 
-#define arglist_function1(fdecl, arg1_type, arg1_name, hook_type, hook_name) \
-	fdecl(arg1_type arg1_name, hook_type hook_name, ...)
+#define printf_arglist_function1(fdecl, \
+				 arg1_type, arg1_name, \
+				 hook_type, hook_name) \
+	__attribute__ ((format (printf, 2, 0))) \
+	fdecl(arg1_type arg1_name, \
+	      hook_type hook_name, ...)
 
-#define arglist_function2(fdecl, arg1_type, arg1_name, arg2_type, arg2_name, \
+#define printf_arglist_function2(fdecl, \
+				 arg1_type, arg1_name, \
+				 arg2_type, arg2_name, \
+				 hook_type, hook_name) \
+	__attribute__ ((format (printf, 3, 0))) \
+	fdecl(arg1_type arg1_name, \
+	      arg2_type arg2_name, \
+	      hook_type hook_name, ...)
+
+#define arglist_function(fdecl, \
+			 hook_type, hook_name) \
+        fdecl(hook_type hook_name, ...)
+
+#define arglist_function1(fdecl, \
+			  arg1_type, arg1_name, \
 			  hook_type, hook_name) \
-	fdecl(arg1_type arg1_name, arg2_type arg2_name, hook_type hook_name, ...)
+	fdecl(arg1_type arg1_name, \
+	      hook_type hook_name, ...)
+
+#define arglist_function2(fdecl, \
+			  arg1_type, arg1_name, \
+			  arg2_type, arg2_name, \
+			  hook_type, hook_name) \
+	fdecl(arg1_type arg1_name, \
+	      arg2_type arg2_name, \
+	      hook_type hook_name, ...)
 
 #define arglist_start(arg,hook_name)	va_start(arg,hook_name)
 

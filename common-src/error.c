@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: error.c,v 1.8.4.1.2.2 2001/09/17 22:18:08 jrjackson Exp $
+ * $Id: error.c,v 1.8.4.1.2.2.2.1 2002/02/10 03:31:53 jrjackson Exp $
  *
  * error handling common to Amanda programs
  */
@@ -97,7 +97,7 @@ char *msg;
  * Prints an error message, calls the functions installed via onerror(),
  * then exits.
  */
-arglist_function(void error, char *, format)
+printf_arglist_function(void error, char *, format)
 {
     va_list argp;
     int i;
@@ -126,7 +126,7 @@ arglist_function(void error, char *, format)
  * Prints an error message, calls the functions installed via onerror(),
  * then calls abort() to drop core.
  */
-arglist_function(void errordump, char *, format)
+printf_arglist_function(void errordump, char *, format)
 {
     va_list argp;
     int i;

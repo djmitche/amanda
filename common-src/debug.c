@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.17.4.3.4.3 2001/09/17 22:18:08 jrjackson Exp $
+ * $Id: debug.c,v 1.17.4.3.4.3.2.1 2002/02/10 03:31:53 jrjackson Exp $
  *
  * debug log subroutines
  */
@@ -50,7 +50,7 @@ static char *db_filename = NULL;
 #  define AMANDA_DBGDIR		AMANDA_TMPDIR
 #endif
 
-arglist_function(void debug_printf, char *, format)
+printf_arglist_function(void debug_printf, char *, format)
 /*
  * Formats and writes a debug message to the process's debug file.
  */

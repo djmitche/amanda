@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.27.4.6.4.3 2001/11/11 23:38:30 martinea Exp $
+ * $Id: diskfile.c,v 1.27.4.6.4.3.2.1 2002/02/10 03:31:53 jrjackson Exp $
  *
  * read disklist file
  */
@@ -465,7 +465,7 @@ static int read_diskline()
 }
 
 
-arglist_function(static void parserror, char *, format)
+printf_arglist_function(static void parserror, char *, format)
 {
     va_list argp;
 

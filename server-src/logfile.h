@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.h,v 1.6.8.1 2001/11/03 13:38:37 martinea Exp $
+ * $Id: logfile.h,v 1.6.8.1.2.1 2002/02/10 03:31:53 jrjackson Exp $
  *
  * interface to logfile module
  */
@@ -66,7 +66,8 @@ extern char *curstr;
 extern char *program_str[];
 
 void logerror P((char *));
-void log_add P((logtype_t typ, ...));
+void log_add P((logtype_t typ, char * format, ...))
+    __attribute__ ((format (printf, 2, 3)));
 void log_start_multiline P((void));
 void log_end_multiline P((void));
 void log_rename P((char *datestamp));

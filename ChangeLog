@@ -1,5 +1,22 @@
 2002-02-09 John R. Jackson (jrj@purdue.edu)
 
+	* common-src/arglist.h: Clean up gcc detection of printf style variable
+	  argument list functions.
+	* changer-src/scsi-changer-driver.c: Ditto.
+	* common-src/debug.c: Ditto.
+	* common-src/error.c: Ditto.
+	* common-src/snprintf.c: Ditto.
+	* common-src/token.c: Ditto.
+	* common-src/token.h: Ditto.
+	* server-src/amindexd.c: Ditto.
+	* server-src/conffile.c: Ditto.
+	* server-src/diskfile.c: Ditto.
+	* server-src/logfile.c: Ditto.
+	* server-src/logfile.h: Ditto.
+	* server-src/server_util.c: Ditto.
+
+2002-02-09 John R. Jackson (jrj@purdue.edu)
+
 	* configure.in: Must look in both strings.h and string.h when trying
 	  to find function declarations (strncasecmp was not found on AIX
 	  but is really there and our override caused a mismatch error).

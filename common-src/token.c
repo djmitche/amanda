@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: token.c,v 1.22 1998/09/02 03:39:35 oliva Exp $
+ * $Id: token.c,v 1.22.8.1 2002/02/10 03:31:53 jrjackson Exp $
  *
  * token bashing routines
  */
@@ -133,7 +133,7 @@ char *sep;	/* Token separators - usually " " */
 ** - squote  - fixed string with space separator
 ** - quote   - fixed strings with specified separators
 **/
-arglist_function(char *squotef, char *, format)
+printf_arglist_function(char *squotef, char *, format)
 {
 	va_list argp;
 	char linebuf[16384];
@@ -147,7 +147,7 @@ arglist_function(char *squotef, char *, format)
 	return quote(" ", linebuf);
 }
 
-arglist_function1(char *quotef, char *, sep, char *, format)
+printf_arglist_function1(char *quotef, char *, sep, char *, format)
 {
 	va_list argp;
 	char linebuf[16384];

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.c,v 1.1.2.1.4.2.2.1 2001/12/30 17:26:23 martinea Exp $
+ * $Id: server_util.c,v 1.1.2.1.4.2.2.2 2002/02/10 03:31:53 jrjackson Exp $
  *
  */
 
@@ -82,7 +82,7 @@ struct cmdargs *cmdargs;
 }
 
 
-arglist_function1(void putresult, cmd_t, result, const char *, format)
+printf_arglist_function1(void putresult, cmd_t, result, const char *, format)
 {
     va_list argp;
 

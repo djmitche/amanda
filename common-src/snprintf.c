@@ -1004,7 +1004,10 @@ va_list ap;
 /*
 int ap_snprintf(char *buf, size_t len, const char *format,...)
 */
-arglist_function2(int ap_snprintf, char *, buf, size_t, len, const char *, format)
+printf_arglist_function2(int ap_snprintf,
+			 char *, buf,
+			 size_t, len,
+			 const char *, format)
 {
     int cc;
     va_list ap;

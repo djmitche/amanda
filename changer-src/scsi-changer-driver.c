@@ -1,5 +1,5 @@
  #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.27.2.7.2.5 2002/01/17 19:34:49 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.27.2.7.2.6 2002/02/10 03:31:52 jrjackson Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -5941,7 +5941,7 @@ int SCSI_ReadElementStatus(int DeviceFD,
   return(ret);
 }
 
-arglist_function2(void DebugPrint, int, level, int, section, char *, fmt)
+printf_arglist_function2(void DebugPrint, int, level, int, section, char *, fmt)
 {
   va_list argp;
   char buf[1024];
@@ -5967,7 +5967,7 @@ arglist_function2(void DebugPrint, int, level, int, section, char *, fmt)
 	{
 	  if (index(buf, '\n') != NULL && strlen(buf) > 1)
           {
-	     dbprintf(("%d:%s", ti, buf));
+	     dbprintf(("%ld:%s", (long)ti, buf));
 	  } else {
 	     dbprintf(("%s", buf));
 	  }

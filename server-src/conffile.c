@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.16.2.5.2.2 2001/12/30 23:07:59 martinea Exp $
+ * $Id: conffile.c,v 1.54.2.16.2.5.2.3 2002/02/10 03:31:53 jrjackson Exp $
  *
  * read configuration file
  */
@@ -2257,7 +2257,7 @@ int *seen;
     *seen = line_num;
 }
 
-arglist_function(static void parserror, char *, format)
+printf_arglist_function(static void parserror, char *, format)
 {
     va_list argp;
 
