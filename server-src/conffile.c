@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.105 2004/04/22 19:22:07 martinea Exp $
+ * $Id: conffile.c,v 1.106 2004/08/03 11:27:04 martinea Exp $
  *
  * read configuration file
  */
@@ -83,7 +83,7 @@ typedef enum {
     /* dump type */
     /*COMMENT,*/ PROGRAM, DUMPCYCLE, RUNSPERCYCLE, MAXCYCLE, MAXDUMPS,
     OPTIONS, PRIORITY, FREQUENCY, INDEX, MAXPROMOTEDAY,
-    STARTTIME, COMPRESS, AUTH, STRATEGY,
+    STARTTIME, COMPRESS, AUTH, STRATEGY, ESTIMATE,
     SKIP_INCR, SKIP_FULL, RECORD, HOLDING,
     EXCLUDE, INCLUDE, KENCRYPT, IGNORE, COMPRATE,
 
@@ -96,8 +96,8 @@ typedef enum {
     /* dump options (obsolete) */
     EXCLUDE_FILE, EXCLUDE_LIST,
 
-    /* compress */
-    NONE, FAST, BEST, SERVER, CLIENT,
+    /* compress, estimate */
+    NONE, FAST, BEST, SERVER, CLIENT, CALCSIZE,
 
     /* priority */
     LOW, MEDIUM, HIGH,
@@ -304,6 +304,7 @@ static void get_comprate P((void));
 static void get_compress P((void));
 static void get_priority P((void));
 static void get_strategy P((void));
+static void get_estimate P((void));
 static void get_exclude P((void));
 static void get_include P((void));
 static void get_taperalgo P((val_t *c_taperalgo, int *s_taperalgo));
@@ -1303,6 +1304,7 @@ keytab_t dumptype_keytable[] = {
     { "SKIP-INCR", SKIP_INCR },
     { "STARTTIME", STARTTIME },
     { "STRATEGY", STRATEGY },
+    { "ESTIMATE", ESTIMATE },
     { NULL, IDENT }
 };
 
@@ -1471,7 +1473,9 @@ dumptype_t *read_dumptype(name, from, fname, linenum)
 	case STRATEGY:
 	    get_strategy();
 	    break;
-
+	case ESTIMATE:
+	    get_estimate();
+	    break;
 	case IDENT:
 	    copy_dumptype();
 	    break;
@@ -1542,6 +1546,7 @@ static void init_dumptype_defaults()
     /* options */
     dpcur.record = 1;
     dpcur.strategy = DS_STANDARD;
+    dpcur.estimate = ES_CLIENT;
     dpcur.compress = COMP_FAST;
     dpcur.comprate[0] = dpcur.comprate[1] = 0.50;
     dpcur.skip_incr = dpcur.skip_full = 0;
@@ -1570,6 +1575,7 @@ static void init_dumptype_defaults()
     dpcur.s_security_driver = 0;
     dpcur.s_record = 0;
     dpcur.s_strategy = 0;
+    dpcur.s_estimate = 0;
     dpcur.s_compress = 0;
     dpcur.s_comprate = 0;
     dpcur.s_skip_incr = 0;
@@ -1648,6 +1654,7 @@ static void copy_dumptype()
     dtcopy(security_driver, s_security_driver);
     dtcopy(record, s_record);
     dtcopy(strategy, s_strategy);
+    dtcopy(estimate, s_estimate);
     dtcopy(compress, s_compress);
     dtcopy(comprate[0], s_comprate);
     dtcopy(comprate[1], s_comprate);
@@ -2207,6 +2214,42 @@ static void get_strategy()
 	strat = DS_STANDARD;
     }
     dpcur.strategy = strat;
+
+    keytable = save_kt;
+}
+
+keytab_t estimate_keytable[] = {
+    { "CLIENT", CLIENT },
+    { "SERVER", SERVER },
+    { "CALCSIZE", CALCSIZE }
+};
+
+static void get_estimate()
+{
+    int estime;
+    keytab_t *save_kt;
+
+    save_kt = keytable;
+    keytable = estimate_keytable;
+
+    ckseen(&dpcur.s_estimate);
+
+    get_conftoken(ANY);
+    switch(tok) {
+    case CLIENT:
+	estime = ES_CLIENT;
+	break;
+    case SERVER:
+	estime = ES_SERVER;
+	break;
+    case CALCSIZE:
+	estime = ES_CALCSIZE;
+	break;
+    default:
+	parserror("CLIENT, SERVER or CALCSIZE expected");
+	estime = ES_CLIENT;
+    }
+    dpcur.estimate = estime;
 
     keytable = save_kt;
 }
@@ -3025,6 +3068,19 @@ dump_configuration(filename)
 	    break;
 	case DS_INCRONLY:
 	    printf("INCRONLY");
+	    break;
+	}
+	putchar('\n');
+	printf("	ESTIMATE ");
+	switch(dp->estimate) {
+	case ES_CLIENT:
+	    printf("CLIENT");
+	    break;
+	case ES_SERVER:
+	    printf("SERVER");
+	    break;
+	case ES_CALCSIZE:
+	    printf("CALCSIZE");
 	    break;
 	}
 	putchar('\n');

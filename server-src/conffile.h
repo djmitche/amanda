@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.52 2004/04/22 19:22:07 martinea Exp $
+ * $Id: conffile.h,v 1.53 2004/08/03 11:27:05 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -119,6 +119,11 @@ typedef struct tapetype_s {
 #define DS_HANOI	6	/* Tower of Hanoi (? ? ? ? ? ...) */
 #define DS_INCRONLY	7	/* Forced fulls (0 1 1 2 2 FORCE0 1 1 ...) */
 
+/* Estimate strategies */
+#define ES_CLIENT	0	/* client estimate */
+#define ES_SERVER	1	/* server estimate */
+#define ES_CALCSIZE	2	/* calcsize estimate */
+
 /* Compression types */
 typedef enum {
     COMP_NONE,		/* No compression */
@@ -161,6 +166,7 @@ typedef struct dumptype_s {
     double bumpmult;
     time_t start_t;
     int strategy;
+    int estimate;
     comp_t compress;
     float comprate[2]; /* first is full, second is incremental */
     /* flag options */
@@ -194,6 +200,7 @@ typedef struct dumptype_s {
     int s_bumpmult;
     int s_start_t;
     int s_strategy;
+    int s_estimate;
     int s_compress;
     int s_comprate;
     int s_record;

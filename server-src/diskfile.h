@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.29 2004/04/22 19:22:07 martinea Exp $
+ * $Id: diskfile.h,v 1.30 2004/08/03 11:27:05 martinea Exp $
  *
  * interface for disklist file reading code
  */
@@ -77,6 +77,7 @@ typedef struct disk_s {
     double bumpmult;
     time_t start_t;			/* start this dump after this time */
     int strategy;			/* what dump strategy to use */
+    int estimate;			/* what estimate strategy to use */
     int compress;			/* type of compression to use */
     float comprate[2];			/* default compression rates */
     /* flag options */
