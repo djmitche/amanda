@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.40 2001/01/08 22:04:01 martinea Exp $
+ * $Id: diskfile.c,v 1.41 2001/02/03 21:47:24 jrjackson Exp $
  *
  * read disklist file
  */
@@ -724,6 +724,7 @@ main(argc, argv)
 {
   char *conffile;
   char *conf_diskfile;
+  disklist_t lst;
   int result;
   int fd;
   unsigned long malloc_hist_1, malloc_size_1;
@@ -762,7 +763,7 @@ main(argc, argv)
     } else {
       conf_diskfile = stralloc2(config_dir, conf_diskfile);
     }
-    result = read_diskfile(getconf_str(CNF_DISKFILE), &lst);
+    result = read_diskfile(conf_diskfile, &lst);
     if(result == 0) {
       dump_disklist(&lst);
     }

@@ -1,3 +1,8 @@
+2001-02-03 John R. Jackson <jrj@purdue.edu>
+
+	* server-src/diskfile.c: Fix test program compilation error and bug
+	  when just a config name was given on the command line.
+
 2001-02-02 John R. Jackson <jrj@purdue.edu>
 
 	* server-src/reporter.c: Fix problem with enum being unsigned on
