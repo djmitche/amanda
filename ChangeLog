@@ -1,3 +1,7 @@
+1998-10-01  John R. Jackson  <jrj@purdue.edu>
+
+	* common-src/protocol.c (parse_integer): allow negative numbers.
+
 1998-09-30  John R. Jackson  <jrj@purdue.edu>
 
 	* man/amanda.8.in: minor typo in "reserve" description.
