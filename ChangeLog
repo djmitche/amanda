@@ -1,3 +1,7 @@
+1999-05-07 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* example/amanda.conf.in: typo
+
 1999-05-05  Mike Grupenhoff <kashmir@munge.com>
 
 	* server-src/amverify.sh.in (pecho): new function.  Like echo
