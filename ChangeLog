@@ -1,4 +1,8 @@
 2003-05-29  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* tape-src/output-file.c (check_online): Write error if opendir failed.
+
+2003-05-29  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Paul Bijnens <paul.bijnens@xplanation.com>
 
 	* server-src/amoverview.pl.in: Use 'amadmin <conf> disklist' instead
