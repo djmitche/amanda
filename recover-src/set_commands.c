@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: set_commands.c,v 1.7 1998/01/02 01:05:24 jrj Exp $
+ * $Id: set_commands.c,v 1.7.2.1 1998/02/06 20:43:31 amcore Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -287,7 +287,9 @@ char *dir;
 /* prints the current working directory */
 void show_directory P((void))
 {
-    if (strcmp(mount_point, "/") == 0)
+    if (mount_point == NULL || disk_path == NULL)
+        printf("Must select disk first\n");
+    else if (strcmp(mount_point, "/") == 0)
 	printf("%s\n", disk_path);
     else if (strcmp(disk_path, "/") == 0)
 	printf("%s\n", mount_point);
