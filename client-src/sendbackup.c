@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.12 1997/09/10 22:03:22 amcore Exp $
+ * $Id: sendbackup.c,v 1.13 1997/09/18 23:47:57 george Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -89,7 +89,7 @@ char *optionstr P((void));
 char *childstr P((int pid));
 int check_status P((int pid, int w));
 
-int pipefork P((void (*func) P((void)), char *fname, int *stdinfd, \
+int pipefork P((void (*func) P((void)), char *fname, int *stdinfd,
 		int stdoutfd, int stderrfd));
 void parse_backup_messages P((int mesgin));
 void add_msg_data P((char *str, int len));

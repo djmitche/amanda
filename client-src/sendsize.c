@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.29 1997/09/17 20:04:51 amcore Exp $
+ * $Id: sendsize.c,v 1.30 1997/09/18 23:47:59 george Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -475,7 +475,7 @@ int level;
 	sprintf(cmd, "%s", XFSDUMP);
 #endif
         sprintf(dumpkeys, "%d", level);
-	dbprintf(("%s: running \"%s%s -F -J -l %s - %s\"\n", \
+	dbprintf(("%s: running \"%s%s -F -J -l %s - %s\"\n",
 		  pname, cmd, name, dumpkeys, device));
     }
     else
@@ -494,7 +494,7 @@ int level;
 	sprintf(cmd, "%s", VXDUMP);
 #endif
 	sprintf(dumpkeys, "%dsf", level);
-        dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n", \
+        dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n",
 		  pname, cmd, name, dumpkeys, device));
     }
     else
@@ -522,11 +522,11 @@ int level;
 		"s"
 #endif
 		"f", level);
-	dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n", \
+	dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n",
 		  pname, cmd, name, dumpkeys, device));
 #else /* AIX_BACKUP */
 	sprintf(dumpkeys, "-%df", level);
-	dbprintf(("%s: running \"%s%s %s - %s\"\n", \
+	dbprintf(("%s: running \"%s%s %s - %s\"\n",
 		  pname, cmd, name, dumpkeys, device));
 #endif
     }
@@ -570,9 +570,9 @@ int level;
 #endif
 #endif
 	{
-	  dbprintf(("%s: exec %s failed or no dump program available", \
+	  dbprintf(("%s: exec %s failed or no dump program available",
 		    pname, cmd));
-	  error("%s: exec %s failed or no dump program available", \
+	  error("%s: exec %s failed or no dump program available",
 		pname, cmd);
 	  exit(1);
 	}
@@ -832,7 +832,7 @@ time_t dumpsince;
 #endif
 	;
       
-      dbprintf((spec, pname, cmd, dirname, name_or_time, \
+      dbprintf((spec, pname, cmd, dirname, name_or_time,
 		efile[0] ? efile : "", efile[0] ? " " : ""));
     }
 

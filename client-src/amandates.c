@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandates.c,v 1.7 1997/09/11 08:11:00 amcore Exp $
+ * $Id: amandates.c,v 1.8 1997/09/18 23:47:56 george Exp $
  *
  * manage amandates file, that mimics /etc/dumpdates, but stores
  * GNUTAR dates
@@ -219,7 +219,7 @@ time_t dumpdate;
 
     if(dumpdate < amdp->dates[level]) {
 	/* this is not allowed, but we can ignore it */
-	dbprintf(("amandates updateone: %s lev %d: new dumpdate %ld old %ld", \
+	dbprintf(("amandates updateone: %s lev %d: new dumpdate %ld old %ld",
 		  name, level, (long) dumpdate, (long) amdp->dates[level]));
 	return;
     }
