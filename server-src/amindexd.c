@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.24 1998/01/13 17:11:36 blair Exp $
+ * $Id: amindexd.c,v 1.25 1998/01/20 20:47:14 amcore Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -886,7 +886,7 @@ char **argv;
 				  AF_INET)) == NULL) {
 	error("gethostbyaddr: %s", strerror(errno));
     }
-    s = his_name->h_name;
+    fp = s = his_name->h_name;
     ch = *s++;
     while(ch && ch != '.') ch = *s++;
     s[-1] = '\0';
