@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.47.2.3 1998/12/21 18:27:40 jrj Exp $
+/* $Id: taper.c,v 1.47.2.4 1999/04/07 19:47:48 jrj Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1552,20 +1552,22 @@ int label_tape()
     amfree(olddatestamp);
 
     /* check against tape list */
-    tp = lookup_tapelabel(label);
-    if(tp != NULL && !reusable_tape(tp)) {
-	errstr = newvstralloc(errstr,
-			      "cannot overwrite active tape ", label,
-			      NULL);
-	return 0;
-    }
+    if (strcmp(tapedev, "/dev/null") != 0) {
+	tp = lookup_tapelabel(label);
+	if(tp != NULL && !reusable_tape(tp)) {
+	    errstr = newvstralloc(errstr,
+			          "cannot overwrite active tape ", label,
+			          NULL);
+	    return 0;
+	}
 
-    if(!match(labelstr, label)) {
-	errstr = newvstralloc(errstr,
-			      "label ", label,
-			      " doesn\'t match labelstr \"", labelstr, "\"",
-			      NULL);
-	return 0;
+	if(!match(labelstr, label)) {
+	    errstr = newvstralloc(errstr,
+			          "label ", label,
+			          " doesn\'t match labelstr \"", labelstr, "\"",
+			          NULL);
+	    return 0;
+	}
     }
 
     if((tape_fd = tape_open(tapedev, O_WRONLY)) == -1) {
@@ -1599,21 +1601,23 @@ int label_tape()
     /* write tape list */
 
     /* XXX add cur_tape number to tape list structure */
-    remove_tapelabel(label);
-    add_tapelabel(atoi(taper_datestamp), label);
+    if (strcmp(tapedev, "/dev/null") != 0) {
+	remove_tapelabel(label);
+	add_tapelabel(atoi(taper_datestamp), label);
 
-    if(cur_tape == 0) {
-	oldtapefilename = stralloc2(tapefilename, ".yesterday");
-    } else {
-	char cur_str[NUM_STR_SIZE];
+	if(cur_tape == 0) {
+	    oldtapefilename = stralloc2(tapefilename, ".yesterday");
+	} else {
+	    char cur_str[NUM_STR_SIZE];
 
-	ap_snprintf(cur_str, sizeof(cur_str), "%d", cur_tape - 1);
-	oldtapefilename = vstralloc(tapefilename, ".today.", cur_str, NULL);
+	    ap_snprintf(cur_str, sizeof(cur_str), "%d", cur_tape - 1);
+	    oldtapefilename = vstralloc(tapefilename, ".today.", cur_str, NULL);
+	}
+	rename(tapefilename, oldtapefilename);
+	amfree(oldtapefilename);
+	if(write_tapelist(tapefilename))
+	    error("couldn't write tapelist: %s", strerror(errno));
     }
-    rename(tapefilename, oldtapefilename);
-    amfree(oldtapefilename);
-    if(write_tapelist(tapefilename))
-	error("couldn't write tapelist: %s", strerror(errno));
 
     log_add(L_START, "datestamp %s label %s tape %d",
 	    taper_datestamp, label, cur_tape);

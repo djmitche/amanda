@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.20.4.1 1999/02/10 19:14:47 oliva Exp $
+ * $Id: tapeio.c,v 1.20.4.2 1999/04/07 19:47:44 jrj Exp $
  *
  * implements tape I/O functions
  */
@@ -40,6 +40,8 @@
 
 static char *errstr = NULL;
 
+static int no_op_tapefd = -1;
+
 #ifdef UWARE_TAPEIO 
 
 #include <sys/tape.h>
@@ -48,7 +50,7 @@ int tapefd_rewind(tapefd)
 int tapefd;
 {
     int st;
-    return ioctl(tapefd, T_RWD, &st);
+    return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, T_RWD, &st);
 }
 
 int tapefd_fsf(tapefd, count)
@@ -62,7 +64,7 @@ int tapefd, count;
     int status;
 
     for ( c = count; c ; c--)
-        if (status = ioctl(tapefd, T_SFF, &st))
+        if (status = (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, T_SFF, &st))
             break;
 
     return status;
@@ -79,7 +81,7 @@ int tapefd, count;
     int status;
 
     for ( c = count; c ; c--)
-        if (status = ioctl(tapefd, T_WRFILEM, &st))
+        if (status = (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, T_WRFILEM, &st))
             break;
 
     return status;
@@ -98,7 +100,7 @@ int tapefd;
     st.st_op = STREW;
     st.st_count = 1;
 
-    return ioctl(tapefd, STIOCTOP, &st);
+    return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, STIOCTOP, &st);
 }
 
 int tapefd_fsf(tapefd, count)
@@ -112,7 +114,7 @@ int tapefd, count;
     st.st_op = STFSF;
     st.st_count = count;
 
-    return ioctl(tapefd, STIOCTOP, &st);
+    return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, STIOCTOP, &st);
 }
 
 int tapefd_weof(tapefd, count)
@@ -126,7 +128,7 @@ int tapefd, count;
     st.st_op = STWEOF;
     st.st_count = count;
 
-    return ioctl(tapefd, STIOCTOP, &st);
+    return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, STIOCTOP, &st);
 }
 
 #else /* AIX_TAPEIO */
@@ -138,7 +140,7 @@ int tapefd_rewind(tapefd)
 int tapefd;
 {
     int st;
-    return ioctl(tapefd, MT_REWIND, &st);
+    return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, MT_REWIND, &st);
 }
 
 int tapefd_fsf(tapefd, count)
@@ -152,7 +154,7 @@ int tapefd, count;
     int status;
 
     for ( c = count; c ; c--)
-	if (status = ioctl(tapefd, MT_RFM, &st))
+	if (status = (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, MT_RFM, &st))
 	    break;
 
     return status;
@@ -169,7 +171,7 @@ int tapefd, count;
     int status;
 
     for ( c = count; c ; c--)
-	if (status = ioctl(tapefd, MT_WFM, &st))
+	if (status = (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, MT_WFM, &st))
 	    break;
 
     return status;
@@ -193,7 +195,7 @@ int tapefd;
     /* EXB-8200 drive on FreeBSD can fail to rewind, but retrying
      * won't hurt, and it will usually even work! */
     for(cnt = 0; cnt < 10; ++cnt) {
-	rc = ioctl(tapefd, MTIOCTOP, &mt);
+	rc = (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, MTIOCTOP, &mt);
 	if (rc == 0)
 	    break;
 	sleep(3);
@@ -212,7 +214,7 @@ int tapefd, count;
     mt.mt_op = MTFSF;
     mt.mt_count = count;
 
-    return ioctl(tapefd, MTIOCTOP, &mt);
+    return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, MTIOCTOP, &mt);
 }
 
 int tapefd_weof(tapefd, count)
@@ -226,7 +228,7 @@ int tapefd, count;
     mt.mt_op = MTWEOF;
     mt.mt_count = count;
 
-    return ioctl(tapefd, MTIOCTOP, &mt);
+    return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, MTIOCTOP, &mt);
 }
 
 
@@ -250,6 +252,9 @@ int mode;
 	mode = O_RDONLY;
     else
 	mode = O_RDWR;
+    if (strcmp(filename, "/dev/null") == 0) {
+	filename = "/dev/null";
+    }
     do {
 	ret = open(filename, mode);
 	/* if tape open fails with errno==EAGAIN, it is worth retrying
@@ -261,13 +266,18 @@ int mode;
 	if (delay < 16)
 	    delay *= 2;
     } while (timeout > 0);
+    if (strcmp(filename, "/dev/null") == 0) {
+	no_op_tapefd = ret;
+    } else {
+	no_op_tapefd = -1;
+    }
 #ifdef HAVE_LINUX_ZFTAPE_H
     /* 
      * switch the block size for the zftape driver (3.04d) 
      * (its default is 10kb and not TAPE_BLOCK_BYTES=32kb) 
      *        A. Gebhardt <albrecht.gebhardt@uni-klu.ac.at>
      */
-    if (ret >= 0 && is_zftape(filename) == 1)
+    if (no_op_tapefd < 0 && ret >= 0 && is_zftape(filename) == 1)
 	{
 	    mt.mt_op = MTSETBLK;
 	    mt.mt_count = TAPE_BLOCK_BYTES;
@@ -294,6 +304,9 @@ void *buffer;
 int tapefd_close(tapefd)
 int tapefd;
 {
+    if (tapefd == no_op_tapefd) {
+	no_op_tapefd = -1;
+    }
     return close(tapefd);
 }
 
@@ -380,10 +393,15 @@ char **datestamp, **label;
     if(rc == sizeof(buffer)) rc--;
     buffer[rc] = '\0';
 
-    parse_file_header(buffer, &file, sizeof(buffer));
-    if(file.type != F_TAPESTART) {
-	errstr = newstralloc(errstr, "not an amanda tape");
-	return errstr;
+    if (tapefd == no_op_tapefd) {
+	strcpy(file.datestamp, "X");
+	strcpy(file.name, "/dev/null");
+    } else {
+	parse_file_header(buffer, &file, sizeof(buffer));
+	if(file.type != F_TAPESTART) {
+	    errstr = newstralloc(errstr, "not an amanda tape");
+	    return errstr;
+	}
     }
     *datestamp = stralloc(file.datestamp);
     *label = stralloc(file.name);

@@ -1,3 +1,9 @@
+1999-04-07 John R. Jackson  <jrj@purdue.edu>
+
+	* tape-src/tapeio.c: allow tapedev to be /dev/null.
+	* server-src/taper.c: allow tapedev to be /dev/null.
+	* man/amanda.8.in: allow tapedev to be /dev/null.
+
 1999-04-06 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/reporter.c (TextRule): Fix to write the full string.

@@ -378,6 +378,18 @@ If you have configured a tape changer
 .B tpchanger
 option), this option is not used
 and should be commented out of your configuration file.
+.IP
+If
+.B tapedev
+is set to
+.IR /dev/null ,
+.B amdump
+will run normally but all images will be thrown away.
+This should only be used for debugging,
+and probably only with
+.B record
+set to
+.IR no .
 .TP
 .BS rawtapedev string
 Default:
