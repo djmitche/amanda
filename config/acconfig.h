@@ -95,6 +95,9 @@
 /* For AIX tape-changer support */
 #undef HAVE_AIX_LIKE_SCSI
 
+/* For BSD tape-changer support */
+#undef HAVE_BSD_LIKE_SCSI
+
 /* For Linux systems with floppy tapes: 
  * QIC volume table support via raw tape device.  */
 #undef DEFAULT_RAW_TAPE_DEVICE

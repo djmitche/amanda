@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-linux.c,v 1.4 1998/11/18 07:03:21 oliva Exp $";
+static char rcsid[] = "$Id: scsi-linux.c,v 1.5 1998/12/14 07:55:30 oliva Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on Linux
@@ -84,12 +84,12 @@ int SCSI_ExecuteCommand(int DeviceFD,
 			       int CDB_Length,
 			       void *DataBuffer,
 			       int DataBufferLength,
-  			       char *RequestSense,
+  			       char *pRequestSense,
                                int RequestSenseLength)
 {
   unsigned char *Command;
   int Zero = 0, Result;
-  memset(RequestSense, 0, sizeof(RequestSense_T));
+  memset(pRequestSense, 0, RequestSenseLength);
   switch (Direction)
     {
     case Input:
@@ -110,7 +110,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
     }
   Result = ioctl(DeviceFD, SCSI_IOCTL_SEND_COMMAND, Command);
   if (Result != 0)
-    memcpy(RequestSense, &Command[8], RequestSenseLength);
+    memcpy(pRequestSense, &Command[8], RequestSenseLength);
   else if (Direction == Input)
     memcpy(DataBuffer, &Command[8], DataBufferLength);
   free(Command);
@@ -125,18 +125,6 @@ int Tape_Eject ( int DeviceFD)
   mtop.mt_count = 1;
   ioctl(DeviceFD, MTIOCTOP, &mtop);
   return;
-}
-
-int Tape_Status( int DeviceFD)
-{
-	struct mtget mtget;
-	int true = 1;
-	bzero(&mtget, sizeof(struct mtget));
-
-	if(ioctl(DeviceFD,  MTIOCGET, &mtget) != -1)
-	{
-	} else {
-	}
 }
 
 int Tape_Ready(char *tapedev, char * changerdev, int changerfd, int wait)

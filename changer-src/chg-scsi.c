@@ -1,5 +1,5 @@
 /*
- *	$Id: chg-scsi.c,v 1.9 1998/11/18 07:03:06 oliva Exp $
+ *	$Id: chg-scsi.c,v 1.10 1998/12/14 07:55:19 oliva Exp $
  *
  *	chg-scsi.c -- generic SCSI changer driver
  *
@@ -612,7 +612,8 @@ int main(int argc, char *argv[])
 
     int fd, rc, slotcnt, drivecnt;
     int endstatus = 0;
-    char *changer_dev, *changer_file, *tape_device, *scsitapedevice;
+    char *changer_dev, *changer_file, *tape_device; 
+    char *scsitapedevice = NULL;
 
     set_pname("chg-scsi");
     dbopen();

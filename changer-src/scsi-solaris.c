@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-solaris.c,v 1.5 1998/11/18 07:03:23 oliva Exp $";
+static char rcsid[] = "$Id: scsi-solaris.c,v 1.6 1998/12/14 07:55:31 oliva Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an Sun Workstation
@@ -52,12 +52,12 @@ int SCSI_ExecuteCommand(int DeviceFD,
 			       int CDB_Length,
 			       void *DataBuffer,
 			       int DataBufferLength,
-			       char *RequestSense,
+			       char *pRequestSense,
                                int RequestSenseLength)
 {
   struct uscsi_cmd Command;
   memset(&Command, 0, sizeof(struct uscsi_cmd));
-  memset(RequestSense, 0, RequestSenseLength);
+  memset(pRequestSense, 0, RequestSenseLength);
   switch (Direction)
     {
     case Input:
@@ -77,7 +77,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
   Command.uscsi_cdblen = CDB_Length;
   Command.uscsi_bufaddr = DataBuffer;
   Command.uscsi_buflen = DataBufferLength;
-  Command.uscsi_rqbuf = (caddr_t) RequestSense;
+  Command.uscsi_rqbuf = (caddr_t) pRequestSense;
   Command.uscsi_rqlen = RequestSenseLength;
   return ioctl(DeviceFD, USCSICMD, &Command);
 }
@@ -94,18 +94,6 @@ int Tape_Eject ( int DeviceFD)
   mtop.mt_count = 1;
   ioctl(DeviceFD, MTIOCTOP, &mtop);
   return;
-}
-
-int Tape_Status( int DeviceFD)
-{
-	struct mtget mtget;
-	int true = 1;
-	bzero(&mtget, sizeof(struct mtget));
-
-	if(ioctl(DeviceFD,  MTIOCGET, &mtget) != -1)
-	{
-	} else {
-	}
 }
 
 int Tape_Ready(char *tapedev, char * changerdev, int changerfd, int wait)
