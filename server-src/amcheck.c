@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.107 2004/04/05 17:22:24 martinea Exp $
+ * $Id: amcheck.c,v 1.108 2004/08/03 12:12:08 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1334,6 +1334,12 @@ void start_host(hostp)
 		   !am_has_feature(hostp->features, fe_program_gnutar)) {
 		    fprintf(outf, "ERROR: %s:%s does not support GNUTAR.\n",
 			    hostp->hostname, dp->name);
+		}
+		if(dp->estimate == ES_CALCSIZE &&
+		   !am_has_feature(hostp->features, fe_calcsize_estimate)) {
+		    fprintf(outf, "ERROR: %s:%s does not support CALCSIZE for estimate, using CLIENT.\n",
+			    hostp->hostname, dp->name);
+		    dp->estimate = ES_CLIENT;
 		}
 		if(dp->device) {
 		    l = vstralloc(dp->program, 
