@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.7 1997/12/17 07:34:23 amcore Exp $
+ * $Id: tapeio.c,v 1.8 1997/12/17 21:03:48 jrj Exp $
  *
  * implements tape I/O functions
  */
@@ -267,9 +267,10 @@ int count;
     return NULL;
 }
 
-char *tapefd_rdlabel(tapefd, datestamp, label, labsize)
+char *tapefd_rdlabel(tapefd, datestamp, datestampsize, label, labsize)
 int tapefd;
 char *datestamp, *label;
+unsigned datestampsize;
 unsigned labsize;
 {
     int rc;
@@ -307,8 +308,9 @@ unsigned labsize;
 }
 
 
-char *tape_rdlabel(devname, datestamp, label, bufsize)
+char *tape_rdlabel(devname, datestamp, datestampsize, label, bufsize)
 char *devname, *datestamp, *label;
+unsigned datestampsize;
 unsigned bufsize;
 {
     int fd;
@@ -319,7 +321,7 @@ unsigned bufsize;
 	return errstr;
     }
 
-    if(tapefd_rdlabel(fd, datestamp, label, bufsize) != NULL) {
+    if(tapefd_rdlabel(fd, datestamp, datestampsize, label, bufsize) != NULL) {
 	tapefd_close(fd);
 	return errstr;
     }

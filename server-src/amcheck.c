@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.23 1997/12/17 07:34:17 amcore Exp $
+ * $Id: amcheck.c,v 1.24 1997/12/17 21:03:43 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -251,7 +251,7 @@ char **argv;
 /* --------------------------------------------------- */
 
 int nslots, backwards, found, got_match, tapedays;
-extern char datestamp[];
+extern char datestamp[80];
 char first_match_label[64], first_match[256],found_device[1024];
 char label[80];
 char *searchlabel, *labelstr;
@@ -287,7 +287,8 @@ char *device;
 	return 0;
     }
     else {
-	if((errstr = tape_rdlabel(device, datestamp,
+	if((errstr = tape_rdlabel(device,
+				  datestamp, sizeof(datestamp),
 				  label, sizeof(label))) != NULL)
 	    fprintf(errf, "%s: slot %s: %s\n", pname, slotstr, errstr);
 	else {
@@ -452,7 +453,8 @@ int fd;
     if(changer_init() && (tapename = taper_scan()) == NULL) {
 	fprintf(outf, "ERROR: %s.\n", changer_resultstr);
 	tapebad = 1;
-    } else if((errstr = tape_rdlabel(tapename, datestamp,
+    } else if((errstr = tape_rdlabel(tapename,
+				     datestamp, sizeof(datestamp),
 				     label, sizeof(label))) != NULL) {
 	fprintf(outf, "ERROR: %s: %s.\n", tapename, errstr);
 	tapebad = 1;

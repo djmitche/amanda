@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: fileheader.c,v 1.2 1997/12/16 17:54:59 jrj Exp $
+ * $Id: fileheader.c,v 1.3 1997/12/17 21:03:38 jrj Exp $
  *
  */
 
@@ -190,16 +190,15 @@ int buflen;
 				  file->datestamp, file->name, file->disk,
 				  file->dumplevel, file->comp_suffix,
 				  file->program);
-		      buffer[sizeof(buffer)-1] = '\0';
+		      buffer[buflen-1] = '\0';
 		      strncat(buffer,
 			"To restore, position tape at start of file and run:\n",
-			sizeof(buffer)-strlen(buffer));
+			buflen-strlen(buffer));
 		      ap_snprintf(line, sizeof(line),
 				  "\tdd if=<tape> bs=%dk skip=1 |%s %s\n\014\n",
 				  TAPE_BLOCK_SIZE, file->uncompress_cmd,
 				  file->recover_cmd);
-		      line[sizeof(line)-1] = '\0';
-		      strncat(buffer, line, sizeof(line)-strlen(line));
+		      strncat(buffer, line, buflen-strlen(buffer));
 		      break;
     case F_TAPEEND  : ap_snprintf(buffer, buflen,
 				  "AMANDA: TAPEEND DATE %s\n\014\n",

@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.17 1997/12/17 07:34:20 amcore Exp $
+/* $Id: taper.c,v 1.18 1997/12/17 21:03:46 jrj Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -957,8 +957,10 @@ buffer_t *attach_buffers()
 
     result = (buffer_t *)shmat(shmid, (SHM_ARG_TYPE *)NULL, 0);
 
-    if(result == (buffer_t *)-1)
+    if(result == (buffer_t *)-1) {
+	destroy_buffers();
 	error("shmat: %s", strerror(errno));
+    }
 
     return result;
 }
@@ -1170,7 +1172,8 @@ int label_tape()
 	return 0;
     }
 
-    if((result = tape_rdlabel(tapedev, olddatestamp,
+    if((result = tape_rdlabel(tapedev,
+			      olddatestamp, sizeof(olddatestamp),
 			      label, sizeof(label))) != NULL) {
 	strncpy(errstr, result, sizeof(errstr)-1);
 	errstr[sizeof(errstr)-1] = '\0';
@@ -1387,7 +1390,8 @@ char *device;
 	return 0;
     }
     else {
-	if((t_errstr = tape_rdlabel(device, scan_datestamp,
+	if((t_errstr = tape_rdlabel(device,
+				    scan_datestamp, sizeof(scan_datestamp),
 				    label, sizeof(label))) != NULL) {
 	    fprintf(stderr, "%s: slot %s: %s\n", pname, slotstr, t_errstr);
 	    fflush(stderr);

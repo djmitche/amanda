@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtape.c,v 1.8 1997/12/17 07:34:19 amcore Exp $
+ * $Id: amtape.c,v 1.9 1997/12/17 21:03:45 jrj Exp $
  *
  * tape changer interface program
  */
@@ -176,7 +176,7 @@ char **argv;
 /* ---------------------------- */
 
 int nslots, backwards, found, got_match, tapedays;
-extern char datestamp[];
+extern char datestamp[80];
 char label[80], first_match_label[64], first_match[256];
 char *searchlabel, *labelstr;
 tape_t *tp;
@@ -204,7 +204,8 @@ char *device;
 	error("could not load slot %s: %s", slotstr, changer_resultstr);
     else if(rc == 1)
 	fprintf(stderr, "%s: slot %s: %s\n", pname, slotstr,changer_resultstr);
-    else if((errstr = tape_rdlabel(device, datestamp,
+    else if((errstr = tape_rdlabel(device,
+				   datestamp, sizeof(datestamp),
 				   label, sizeof(label))) != NULL)
 	fprintf(stderr, "%s: slot %s: %s\n", pname, slotstr, errstr);
     else {
@@ -269,7 +270,8 @@ char *slotstr, *device;
 	error("could not load slot %s: %s", slotstr, changer_resultstr);
     else if(rc == 1)
 	fprintf(stderr, "slot %s: %s\n", slotstr, changer_resultstr);
-    else if((errstr = tape_rdlabel(device, datestamp,
+    else if((errstr = tape_rdlabel(device,
+				   datestamp, sizeof(datestamp),
 				   label, sizeof(label))) != NULL)
 	fprintf(stderr, "slot %s: %s\n", slotstr, errstr);
     else {
@@ -314,7 +316,8 @@ char *device;
     else if(rc == 1)
 	fprintf(stderr, "%s: slot %s: %s\n", pname, slotstr,changer_resultstr);
     else {
-	if((errstr = tape_rdlabel(device, datestamp,
+	if((errstr = tape_rdlabel(device,
+				  datestamp, sizeof(datestamp),
 				  label, sizeof(label))) != NULL)
 	    fprintf(stderr, "%s: slot %s: %s\n", pname, slotstr, errstr);
 	else {

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.11 1997/12/16 20:44:50 jrj Exp $
+ * $Id: amrestore.c,v 1.12 1997/12/17 21:03:41 jrj Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -62,7 +62,7 @@ pid_t compress_pid = -1;
 void errexit P((void));
 void handle_sigpipe P((int sig));
 int disk_match P((dumpfile_t *file, char *hostname, char *diskname));
-void make_filename P((string_t filename, dumpfile_t *file));
+void make_filename P((string_t filename, unsigned filename_len, dumpfile_t *file));
 int read_file_header P((char *buffer, dumpfile_t *file, int buflen, int tapedev));
 void restore P((dumpfile_t *file, string_t filename, int tapedev, int isafile));
 void usage P((void));
@@ -108,11 +108,12 @@ char *hostname, *diskname;
 }
 
 
-void make_filename(filename, file)
+void make_filename(filename, filename_len, file)
 string_t filename;
 dumpfile_t *file;
+unsigned filename_len;
 {
-    ap_snprintf(filename, sizeof(filename), "%s.%s.%s.%d", file->name,
+    ap_snprintf(filename, filename_len, "%s.%s.%s.%d", file->name,
 		sanitise_filename(file->disk),
 		file->datestamp, file->dumplevel);
 }
@@ -370,8 +371,8 @@ char **argv;
     "%s: WARNING: not at start of tape, file numbers will be offset\n", pname);
 
     while(file.type == F_TAPESTART || file.type == F_DUMPFILE) {
+	make_filename(filename, sizeof(filename), &file);
 	if(disk_match(&file,hostname,diskname) != 0) {
-	    make_filename(filename, &file);
 	    fprintf(stderr, "%s: %3d: restoring %s\n", 
 		    pname, file_number, filename);
 	    restore(&file, filename, tapedev, isafile);
