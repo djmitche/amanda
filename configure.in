@@ -1362,8 +1362,10 @@ SHELL=
 AC_PATH_PROGS(SHELL,sh,,$LOCSYSPATH)
 
 AC_PATH_PROGS(DUMP,$DUMP_PROGRAMS,,$SYSLOCPATH)
-if test "$DUMP"; then
+AC_PATH_PROGS(RESTORE,ufsrestore restore,,$SYSLOCPATH)
+if test "$DUMP" -a "$RESTORE"; then
     AC_DEFINE_UNQUOTED(DUMP,"$DUMP")
+    AC_DEFINE_UNQUOTED(RESTORE,"$RESTORE")
     if test -x $DUMP; then
         AC_CACHE_CHECK(
 	    [whether $DUMP supports -E or -S for estimates],
@@ -1437,39 +1439,27 @@ if test "$DUMP"; then
     ])
 fi
 
-AC_PATH_PROGS(RESTORE,ufsrestore restore,,$SYSLOCPATH)
-if test "$RESTORE"; then
-    AC_DEFINE_UNQUOTED(RESTORE,"$RESTORE")
-fi
-
 AC_PATH_PROGS(XFSDUMP,xfsdump,,$SYSLOCPATH)
-if test "$XFSDUMP"; then
+AC_PATH_PROGS(XFSRESTORE,xfsrestore,,$SYSLOCPATH)
+if test "$XFSDUMP" -a "$XFSRESTORE"; then
     AC_DEFINE_UNQUOTED(XFSDUMP,"$XFSDUMP")
+    AC_DEFINE_UNQUOTED(XFSRESTORE,"$XFSRESTORE")
     AC_MSG_WARN([*** xfsdump causes the setuid-root rundump program to be enabled])
     AC_MSG_WARN([*** to disable it, just #undef XFSDUMP in config/config.h])
-fi
-AC_PATH_PROGS(XFSRESTORE,xfsrestore,,$SYSLOCPATH)
-if test "$XFSRESTORE"; then
-    AC_DEFINE_UNQUOTED(XFSRESTORE,"$XFSRESTORE")
 fi
 
 VXSYSLOCPATH="$SYSLOCPATH:/usr/lib/fs/vxfs"
 AC_PATH_PROGS(VXDUMP,vxdump,,$VXSYSLOCPATH)
-if test "$VXDUMP"; then
-    AC_DEFINE_UNQUOTED(VXDUMP,"$VXDUMP")
-fi
 AC_PATH_PROGS(VXRESTORE,vxrestore,,$VXSYSLOCPATH)
-if test "$VXRESTORE"; then
+if test "$VXDUMP" -a "$VXRESTORE"; then
+    AC_DEFINE_UNQUOTED(VXDUMP,"$VXDUMP")
     AC_DEFINE_UNQUOTED(VXRESTORE,"$VXRESTORE")
 fi
 
 AC_PATH_PROGS(VDUMP,vdump,,$SYSLOCPATH)
-if test "$VDUMP"; then
-    AC_DEFINE_UNQUOTED(VDUMP,"$VDUMP")
-fi
-
 AC_PATH_PROGS(VRESTORE,vrestore,,$SYSLOCPATH)
-if test "$VRESTORE"; then
+if test "$VDUMP" -a "$VRESTORE"; then
+    AC_DEFINE_UNQUOTED(VDUMP,"$VDUMP")
     AC_DEFINE_UNQUOTED(VRESTORE,"$VRESTORE")
 fi
 

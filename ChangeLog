@@ -1,5 +1,14 @@
 1999-09-05 John R. Jackson  <jrj@purdue.edu>
 
+	* configure.in: make sure the dump and restore programs are defined
+	  in pairs, do not allow just the dump program without restore.
+	* client-src/sendbackup-dump.c: assume restore program is present
+	  if dump program is.
+	* common-src/genversion.c: assume restore program is present if
+	  dump program is.
+
+1999-09-05 John R. Jackson  <jrj@purdue.edu>
+
 	* common-src/genversion.c: CLIENT_LOGIN has to be defined so there
 	  is no point testing for it.
 	* server-src/conffile.c: ditto.
