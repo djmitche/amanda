@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-cam.c,v 1.10.4.1.2.3 2003/01/26 19:20:56 martinea Exp $
+ * $Id: scsi-cam.c,v 1.10.4.1.2.4 2004/04/29 20:47:40 martinea Exp $
  *
  * Interface to execute SCSI commands on an system with cam support
  * Current support is for FreeBSD 4.x
@@ -75,7 +75,7 @@ extern FILE *debug_file;
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-cam.c,v 1.10.4.1.2.3 2003/01/26 19:20:56 martinea Exp $";
+   static char rcsid[] = "$Id: scsi-cam.c,v 1.10.4.1.2.4 2004/04/29 20:47:40 martinea Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -225,7 +225,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
   extern OpenFiles_T *pDev;
   union ccb *ccb;
   int ret;
-  u_int32_t ccb_flags;
+  uint32_t ccb_flags;
   OpenFiles_T *pwork = NULL;
 
   if (pDev[DeviceFD].avail == 0)

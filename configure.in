@@ -1247,6 +1247,8 @@ AC_SUBST(MT_FILE_FLAG)
 AC_DEFINE_UNQUOTED(MT_FILE_FLAG, "$MT_FILE_FLAG",[Defined to the switch to be used when invoking mt to specify the
  * tape device. ])
 
+AX_CREATE_STDINT_H(common-src/amanda-int.h)
+
 dnl Check for programs.
 AC_PATH_PROGS(AR,ar,,$LOCSYSPATH)
 
