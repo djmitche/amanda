@@ -1382,6 +1382,9 @@ if test "$ac_cv_lib_termcap_main" = yes; then
 else
     AC_MSG_WARN([*** libtermcap not found! No history and command line editing in amrecover!])
 fi
+
+AC_CHECK_LIB(m,modf)
+
 dnl
 
 dnl Check if the system does support the user requested database library.
