@@ -1,3 +1,18 @@
+2004-03-10  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	Use only one time event for all dumpers, no wait event.
+	start_some_dumps is called everytime a dumper or taper finish.
+	* server-src/driver.c (dumpers_ev_time): New global event.
+	* server-src/driver.c (start_some_dumps): Remove dumper argument,
+	  can start many dump.
+	* server-src/driver.c (dumper_result): Call start_some_dumps instead
+	  of event_wakeup.
+	* server-src/driver.c (handle_idle_wait): Remove function.
+	* server-src/driver.c (handle_dumpers_time): new handle for
+	  dumpers_ev_time, it call start_some_dumps.
+	* server-src/driverio.h (dumper_t): Remove ev_wait.
+	* server-src/driverio.c (startup_dump_process): Don't set ev_wait.
+
 2004-03-09  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* common-src/fileheader.c (print_header): Fix fprintf use.

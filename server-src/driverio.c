@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.65 2003/01/01 23:28:19 martinea Exp $
+ * $Id: driverio.c,v 1.66 2004/03/10 14:02:35 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -138,7 +138,6 @@ char *dumper_program;
 	aclose(fd[1]);
 	dumper->fd = fd[0];
 	dumper->ev_read = NULL;
-	dumper->ev_wait = NULL;
 	dumper->busy = dumper->down = 0;
 	dumper->dp = NULL;
 	fprintf(stderr,"driver: started %s pid %d\n",

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.136 2004/02/13 14:03:25 martinea Exp $
+ * $Id: driver.c,v 1.137 2004/03/10 14:02:35 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -67,6 +67,8 @@ static char *datestamp;
 static char *timestamp;
 static host_t *flushhost = NULL;
 
+static event_handle_t *dumpers_ev_time = NULL;
+
 static void allocate_bandwidth P((interface_t *ip, int kps));
 static int assign_holdingdisk P((assignedhd_t **holdp, disk_t *diskp));
 static void adjust_diskspace P((disk_t *diskp, cmd_t cmd));
@@ -83,7 +85,7 @@ static unsigned long free_space P((void));
 static void dumper_result P((disk_t *dp));
 static void handle_dumper_result P((void *));
 static void handle_chunker_result P((void *));
-static void handle_idle_wait P((void *));
+static void handle_dumpers_time P((void *));
 static void handle_taper_result P((void *));
 static void holdingdisk_state P((char *time_str));
 static dumper_t *idle_dumper P((void));
@@ -95,7 +97,7 @@ static disklist_t read_schedule P((disklist_t *waitqp));
 static void short_dump_state P((void));
 static void startaflush P((void));
 static void start_degraded_mode P((disklist_t *queuep));
-static void start_some_dumps P((dumper_t *dumper, disklist_t *rq));
+static void start_some_dumps P((disklist_t *rq));
 static void continue_dumps();
 static void update_failed_dump_to_tape P((disk_t *));
 #if 0
@@ -340,13 +342,7 @@ main(main_argc, main_argv)
     taper_ev_read = NULL;
     startaflush();
 
-    /*
-     * Assume we'll schedule this dumper, and default to idle no-dumpers.
-     */
-    for (dumper = dmptable; dumper < dmptable+inparallel; dumper++) {
-	start_some_dumps(dumper, &runq);
-	event_loop(1);
-    }
+    start_some_dumps(&runq);
 
     short_dump_state();
     event_loop(0);
@@ -586,8 +582,7 @@ client_constrained(dp)
 }
 
 static void
-start_some_dumps(dumper, rq)
-    dumper_t *dumper;
+start_some_dumps(rq)
     disklist_t *rq;
 {
     int cur_idle;
@@ -598,207 +593,204 @@ start_some_dumps(dumper, rq)
     int result_argc;
     char *result_argv[MAX_ARGS+1];
     chunker_t *chunker;
-    dumper_t *adumper;
-    int busy_dumpers = 0;
+    dumper_t *dumper;
+    char dumptype;
+    char *dumporder;
 
-    assert(dumper->busy == 0);	/* we better not have been grabbed */
-
-    if (dumper->ev_read != NULL) {
-	event_release(dumper->ev_read);
-	dumper->ev_read = NULL;
-    }
-/*
-    if (empty(*rq)) {
-	idle_reason = NOT_IDLE;
-	return;
-    }
-*/
     idle_reason = IDLE_NO_DUMPERS;
     sleep_time = 0;
 
-    for( adumper = dmptable; adumper < dmptable + inparallel; adumper++) {
-	if( adumper->busy )
-	    busy_dumpers++;
+    if(dumpers_ev_time != NULL) {
+	event_release(dumpers_ev_time);
+	dumpers_ev_time = NULL;
     }
-    /*
-     * A potential problem with starting from the bottom of the dump time
-     * distribution is that a slave host will have both one of the shortest
-     * and one of the longest disks, so starting its shortest disk first will
-     * tie up the host and eliminate its longest disk from consideration the
-     * first pass through.  This could cause a big delay in starting that long
-     * disk, which could drag out the whole night's dumps.
-     *
-     * While starting from the top of the dump time distribution solves the
-     * above problem, this turns out to be a bad idea, because the big dumps
-     * will almost certainly pack the holding disk completely, leaving no
-     * room for even one small dump to start.  This ends up shutting out the
-     * small-end dumpers completely (they stay idle).
-     *
-     * The introduction of multiple simultaneous dumps to one host alleviates
-     * the biggest&smallest dumps problem: both can be started at the
-     * beginning.
-     */
 
-    diskp_accept = NULL;
-    holdp_accept = NULL;
-    delayed_diskp = NULL;
+    for (dumper = dmptable; dumper < dmptable+inparallel; dumper++) {
 
-    cur_idle = NOT_IDLE;
+	if( dumper->busy ) {
+	    continue;
+	}
 
-    for(diskp = rq->head; diskp != NULL; diskp = diskp->next) {
-	assert(diskp->host != NULL && sched(diskp) != NULL);
+	if (dumper->ev_read != NULL) {
+/*	    assert(dumper->ev_read == NULL);*/
+	    event_release(dumper->ev_read);
+	    dumper->ev_read = NULL;
+	}
 
-	/* round estimate to next multiple of DISK_BLOCK_KB */
-	sched(diskp)->est_size = am_round(sched(diskp)->est_size,
-					  DISK_BLOCK_KB);
+	/*
+	 * A potential problem with starting from the bottom of the dump time
+	 * distribution is that a slave host will have both one of the shortest
+	 * and one of the longest disks, so starting its shortest disk first will
+	 * tie up the host and eliminate its longest disk from consideration the
+	 * first pass through.  This could cause a big delay in starting that long
+	 * disk, which could drag out the whole night's dumps.
+	 *
+	 * While starting from the top of the dump time distribution solves the
+	 * above problem, this turns out to be a bad idea, because the big dumps
+	 * will almost certainly pack the holding disk completely, leaving no
+	 * room for even one small dump to start.  This ends up shutting out the
+	 * small-end dumpers completely (they stay idle).
+	 *
+	 * The introduction of multiple simultaneous dumps to one host alleviates
+	 * the biggest&smallest dumps problem: both can be started at the
+	 * beginning.
+	 */
 
-	if (diskp->host->start_t > now) {
-	    cur_idle = max(cur_idle, IDLE_START_WAIT);
-	    if (delayed_diskp == NULL || sleep_time > diskp->host->start_t) {
-		delayed_diskp = diskp;
-		sleep_time = diskp->host->start_t;
-	    }
-	} else if(diskp->start_t > now) {
-	    cur_idle = max(cur_idle, IDLE_START_WAIT);
-	    if (delayed_diskp == NULL || sleep_time > diskp->start_t) {
-		delayed_diskp = diskp;
-		sleep_time = diskp->start_t;
-	    }
-	} else if (diskp->host->netif->curusage > 0 &&
-		   sched(diskp)->est_kps > free_kps(diskp->host->netif)) {
-	    cur_idle = max(cur_idle, IDLE_NO_BANDWIDTH);
-	} else if(sched(diskp)->no_space) {
-	    cur_idle = max(cur_idle, IDLE_NO_DISKSPACE);
-	} else if ((holdp =
-	    find_diskspace(sched(diskp)->est_size,&cur_idle,NULL)) == NULL) {
-	    cur_idle = max(cur_idle, IDLE_NO_DISKSPACE);
-	} else if (diskp->no_hold) {
-	    free_assignedhd(holdp);
-	    cur_idle = max(cur_idle, IDLE_NO_HOLD);
-	} else if (client_constrained(diskp)) {
-	    free_assignedhd(holdp);
-	    cur_idle = max(cur_idle, IDLE_CLIENT_CONSTRAINED);
-	} else {
+	diskp_accept = NULL;
+	holdp_accept = NULL;
+	delayed_diskp = NULL;
 
-	    /* disk fits, dump it */
-	    int accept = !diskp_accept;
-	    if(!accept) {
-		char dumptype;
-		char *dumporder = getconf_str(CNF_DUMPORDER);
-		if(strlen(dumporder) > (busy_dumpers)) {
-		    dumptype = dumporder[busy_dumpers];
+	cur_idle = NOT_IDLE;
+
+	dumporder = getconf_str(CNF_DUMPORDER);
+	if(strlen(dumporder) > (dumper-dmptable)) {
+	    dumptype = dumporder[dumper-dmptable];
+	}
+	else {
+	    if(dumper-dmptable < 3)
+		dumptype = 't';
+	    else
+		dumptype = 'T';
+	}
+
+	for(diskp = rq->head; diskp != NULL; diskp = diskp->next) {
+	    assert(diskp->host != NULL && sched(diskp) != NULL);
+
+	    /* round estimate to next multiple of DISK_BLOCK_KB */
+	    sched(diskp)->est_size = am_round(sched(diskp)->est_size,
+					      DISK_BLOCK_KB);
+
+	    if (diskp->host->start_t > now) {
+		cur_idle = max(cur_idle, IDLE_START_WAIT);
+		if (delayed_diskp == NULL || sleep_time > diskp->host->start_t) {
+		    delayed_diskp = diskp;
+		    sleep_time = diskp->host->start_t;
 		}
-		else {
-		    if(busy_dumpers < 3)
-			dumptype = 't';
-		    else
-			dumptype = 'T';
+	    } else if(diskp->start_t > now) {
+		cur_idle = max(cur_idle, IDLE_START_WAIT);
+		if (delayed_diskp == NULL || sleep_time > diskp->start_t) {
+		    delayed_diskp = diskp;
+		    sleep_time = diskp->start_t;
 		}
-		switch(dumptype) {
-		  case 's': accept = (sched(diskp)->est_size < sched(diskp_accept)->est_size);
-			    break;
-		  case 'S': accept = (sched(diskp)->est_size > sched(diskp_accept)->est_size);
-			    break;
-		  case 't': accept = (sched(diskp)->est_time < sched(diskp_accept)->est_time);
-			    break;
-		  case 'T': accept = (sched(diskp)->est_time > sched(diskp_accept)->est_time);
-			    break;
-		  case 'b': accept = (sched(diskp)->est_kps < sched(diskp_accept)->est_kps);
-			    break;
-		  case 'B': accept = (sched(diskp)->est_kps > sched(diskp_accept)->est_kps);
-			    break;
-		  default:  log_add(L_WARNING, "Unknown dumporder character \'%c\', using 's'.\n",
-				    dumptype);
-			    accept = (sched(diskp)->est_size < sched(diskp_accept)->est_size);
-			    break;
+	    } else if (diskp->host->netif->curusage > 0 &&
+		       sched(diskp)->est_kps > free_kps(diskp->host->netif)) {
+		cur_idle = max(cur_idle, IDLE_NO_BANDWIDTH);
+	    } else if(sched(diskp)->no_space) {
+		cur_idle = max(cur_idle, IDLE_NO_DISKSPACE);
+	    } else if ((holdp =
+		find_diskspace(sched(diskp)->est_size,&cur_idle,NULL)) == NULL) {
+		cur_idle = max(cur_idle, IDLE_NO_DISKSPACE);
+	    } else if (diskp->no_hold) {
+		free_assignedhd(holdp);
+		cur_idle = max(cur_idle, IDLE_NO_HOLD);
+	    } else if (client_constrained(diskp)) {
+		free_assignedhd(holdp);
+		cur_idle = max(cur_idle, IDLE_CLIENT_CONSTRAINED);
+	    } else {
+
+		/* disk fits, dump it */
+		int accept = !diskp_accept;
+		if(!accept) {
+		    switch(dumptype) {
+		      case 's': accept = (sched(diskp)->est_size < sched(diskp_accept)->est_size);
+				break;
+		      case 'S': accept = (sched(diskp)->est_size > sched(diskp_accept)->est_size);
+				break;
+		      case 't': accept = (sched(diskp)->est_time < sched(diskp_accept)->est_time);
+				break;
+		      case 'T': accept = (sched(diskp)->est_time > sched(diskp_accept)->est_time);
+				break;
+		      case 'b': accept = (sched(diskp)->est_kps < sched(diskp_accept)->est_kps);
+				break;
+		      case 'B': accept = (sched(diskp)->est_kps > sched(diskp_accept)->est_kps);
+				break;
+		      default:  log_add(L_WARNING, "Unknown dumporder character \'%c\', using 's'.\n",
+					dumptype);
+				accept = (sched(diskp)->est_size < sched(diskp_accept)->est_size);
+				break;
+		    }
 		}
-	    }
-	    if(accept) {
-		if( !diskp_accept || !degraded_mode || diskp->priority >= diskp_accept->priority) {
-		    if(holdp_accept) free_assignedhd(holdp_accept);
-		    diskp_accept = diskp;
-		    holdp_accept = holdp;
+		if(accept) {
+		    if( !diskp_accept || !degraded_mode || diskp->priority >= diskp_accept->priority) {
+			if(holdp_accept) free_assignedhd(holdp_accept);
+			diskp_accept = diskp;
+			holdp_accept = holdp;
+		    }
+		    else {
+			free_assignedhd(holdp);
+		    }
 		}
 		else {
 		    free_assignedhd(holdp);
 		}
 	    }
-	    else {
-		free_assignedhd(holdp);
-	    }
 	}
-    }
 
-    diskp = diskp_accept;
-    holdp = holdp_accept;
+	diskp = diskp_accept;
+	holdp = holdp_accept;
 
-    /*
-     * If we have no disk at this point, and there are disks that
-     * are delayed, then schedule a time event to call this dumper
-     * with the disk with the shortest delay.
-     */
-    if (diskp == NULL && delayed_diskp != NULL) {
-	assert(dumper->ev_wait == NULL);
-	assert(sleep_time > now);
-	sleep_time -= now;
-	dumper->ev_wait = event_register(sleep_time, EV_TIME,
-	    handle_idle_wait, dumper);
-    } else if (diskp != NULL && cur_idle == NOT_IDLE) {
-	sched(diskp)->act_size = 0;
-	allocate_bandwidth(diskp->host->netif, sched(diskp)->est_kps);
-	sched(diskp)->activehd = assign_holdingdisk(holdp, diskp);
-	amfree(holdp);
-	sched(diskp)->destname = newstralloc(sched(diskp)->destname,
-					     sched(diskp)->holdp[0]->destname);
-	diskp->host->inprogress++;	/* host is now busy */
-	diskp->inprogress = 1;
-	sched(diskp)->dumper = dumper;
-	sched(diskp)->timestamp = now;
+	idle_reason = max(idle_reason, cur_idle);
 
-	dumper->ev_read = event_register(dumper->fd, EV_READFD,
-	    handle_dumper_result, dumper);
-	dumper->busy = 1;		/* dumper is now busy */
-	dumper->dp = diskp;		/* link disk to dumper */
-	remove_disk(rq, diskp);		/* take it off the run queue */
-
-	sched(diskp)->origsize = -1;
-	sched(diskp)->dumpsize = -1;
-	sched(diskp)->dumptime = -1;
-	sched(diskp)->tapetime = -1;
-	chunker = dumper->chunker;
-	chunker->result = LAST_TOK;
-	dumper->result = LAST_TOK;
-	startup_chunk_process(chunker,chunker_program);
-	chunker->dumper = dumper;
-	chunker_cmd(chunker, PORT_WRITE, diskp);
-	cmd = getresult(chunker->fd, 1, &result_argc, result_argv, MAX_ARGS+1);
-	if(cmd != PORT) {
-	    printf("driver: did not get PORT from %s for %s:%s\n",
-		    chunker->name, diskp->host->hostname, diskp->name);
-	    fflush(stdout);
-	    return ;	/* fatal problem */
-	}
-	chunker->ev_read = event_register(chunker->fd, EV_READFD,
-		handle_chunker_result, chunker);
-	dumper->output_port = atoi(result_argv[2]);
-
-	dumper_cmd(dumper, PORT_DUMP, diskp);
-
-	diskp->host->start_t = now + 15;
-    } else if (/* cur_idle != NOT_IDLE && */
-	(num_busy_dumpers() > 0 || taper_busy)) {
 	/*
-	 * We are constrained.  Wait until we aren't.
-	 * If no dumpers/taper are busy, then we'll never be unconstrained,
-	 * so just drop off.
+	 * If we have no disk at this point, and there are disks that
+	 * are delayed, then schedule a time event to call this dumper
+	 * with the disk with the shortest delay.
 	 */
-	assert(dumper->ev_wait == NULL);
-	dumper->ev_wait = event_register((event_id_t)handle_idle_wait,
-	    EV_WAIT, handle_idle_wait, dumper);
-	fprintf(stderr,"%s: EV_WAIT: %s\n",
-		debug_prefix_time(NULL), idle_strings[cur_idle]);
+	if (diskp == NULL && delayed_diskp != NULL) {
+	    assert(sleep_time > now);
+	    sleep_time -= now;
+	    dumpers_ev_time = event_register(sleep_time, EV_TIME,
+		handle_dumpers_time, &runq);
+	    return;
+	} else if (diskp != NULL && cur_idle == NOT_IDLE) {
+	    sched(diskp)->act_size = 0;
+	    allocate_bandwidth(diskp->host->netif, sched(diskp)->est_kps);
+	    sched(diskp)->activehd = assign_holdingdisk(holdp, diskp);
+	    amfree(holdp);
+	    sched(diskp)->destname = newstralloc(sched(diskp)->destname,
+						 sched(diskp)->holdp[0]->destname);
+	    diskp->host->inprogress++;	/* host is now busy */
+	    diskp->inprogress = 1;
+	    sched(diskp)->dumper = dumper;
+	    sched(diskp)->timestamp = now;
+
+	    dumper->ev_read = event_register(dumper->fd, EV_READFD,
+		handle_dumper_result, dumper);
+	    dumper->busy = 1;		/* dumper is now busy */
+	    dumper->dp = diskp;		/* link disk to dumper */
+	    remove_disk(rq, diskp);		/* take it off the run queue */
+
+	    sched(diskp)->origsize = -1;
+	    sched(diskp)->dumpsize = -1;
+	    sched(diskp)->dumptime = -1;
+	    sched(diskp)->tapetime = -1;
+	    chunker = dumper->chunker;
+	    chunker->result = LAST_TOK;
+	    dumper->result = LAST_TOK;
+	    startup_chunk_process(chunker,chunker_program);
+	    chunker->dumper = dumper;
+	    chunker_cmd(chunker, PORT_WRITE, diskp);
+	    cmd = getresult(chunker->fd, 1, &result_argc, result_argv, MAX_ARGS+1);
+	    if(cmd != PORT) {
+		printf("driver: did not get PORT from %s for %s:%s\n",
+		       chunker->name, diskp->host->hostname, diskp->name);
+		fflush(stdout);
+		return ;	/* fatal problem */
+	    }
+	    chunker->ev_read = event_register(chunker->fd, EV_READFD,
+		    handle_chunker_result, chunker);
+	    dumper->output_port = atoi(result_argv[2]);
+
+	    dumper_cmd(dumper, PORT_DUMP, diskp);
+
+	    diskp->host->start_t = now + 15;
+	} else if (/* cur_idle != NOT_IDLE && */
+	    (num_busy_dumpers() > 0 || taper_busy)) {
+	    /*
+	     * We are constrained.
+	     */
+	}
     }
-    idle_reason = max(idle_reason, cur_idle);
 }
 
 /*
@@ -807,17 +799,13 @@ start_some_dumps(dumper, rq)
  * by network or disk limits.
  */
 static void
-handle_idle_wait(cookie)
+handle_dumpers_time(cookie)
     void *cookie;
 {
-    dumper_t *dumper = cookie;
-
-    short_dump_state();
-
-    assert(dumper != NULL);
-    event_release(dumper->ev_wait);
-    dumper->ev_wait = NULL;
-    start_some_dumps(dumper, &runq);
+    disklist_t *runq = cookie;
+    event_release(dumpers_ev_time);
+    dumpers_ev_time = NULL; 
+    start_some_dumps(runq);
 }
 
 static void
@@ -1086,7 +1074,7 @@ handle_taper_result(cookie)
 	 * Wakeup any dumpers that are sleeping because of network
 	 * or disk constraints.
 	 */
-	event_wakeup((event_id_t)handle_idle_wait);
+	start_some_dumps(&runq);
 
     } while(areads_dataready(taper));
 }
@@ -1179,15 +1167,11 @@ dumper_result(dp)
     
     dp = NULL;
     continue_dumps();
-    if(!dumper->down) {
-	start_some_dumps(dumper, &runq);
-    }
-
     /*
      * Wakeup any dumpers that are sleeping because of network
      * or disk constraints.
      */
-    event_wakeup((event_id_t)handle_idle_wait);
+    start_some_dumps(&runq);
 }
 
 

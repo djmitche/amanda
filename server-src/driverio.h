@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.29 2002/03/23 19:58:09 martinea Exp $
+ * $Id: driverio.h,v 1.30 2004/03/10 14:02:35 martinea Exp $
  *
  * driver-related helper functions
  */
@@ -63,7 +63,6 @@ typedef struct dumper_s {
     int result;
     int output_port;		/* output port */
     event_handle_t *ev_read;	/* read event handle */
-    event_handle_t *ev_wait;	/* for delayed disks */
     disk_t *dp;			/* disk currently being dumped */
     chunker_t *chunker;
 } dumper_t;
