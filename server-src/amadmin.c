@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.41 1998/04/14 18:51:14 blair Exp $
+ * $Id: amadmin.c,v 1.42 1998/06/07 21:59:03 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -51,6 +51,8 @@ void reuse P((int argc, char **argv));
 void noreuse P((int argc, char **argv));
 void info P((int argc, char **argv));
 void info_one P((disk_t *dp));
+void due P((int argc, char **argv));
+void due_one P((disk_t *dp));
 void find P((int argc, char **argv));
 void delete P((int argc, char **argv));
 void delete_one P((disk_t *dp));
@@ -124,6 +126,7 @@ char **argv;
     else if(strcmp(argv[2],"reuse") == 0) reuse(argc, argv);
     else if(strcmp(argv[2],"no-reuse") == 0) noreuse(argc, argv);
     else if(strcmp(argv[2],"info") == 0) info(argc, argv);
+    else if(strcmp(argv[2],"due") == 0) due(argc, argv);
     else if(strcmp(argv[2],"find") == 0) find(argc, argv);
     else if(strcmp(argv[2],"delete") == 0) delete(argc, argv);
     else if(strcmp(argv[2],"balance") == 0) balance();
@@ -170,6 +173,8 @@ void usage P((void))
     fprintf(stderr,
 	    "\tinfo <hostname> <disks> ...\t# Show current info records.\n");
     fprintf(stderr,
+	    "\tdue <hostname> <disks> ...\t# Show due date.\n");
+    fprintf(stderr,
 	    "\tbalance\t\t\t\t# Show nightly dump size balance.\n");
     fprintf(stderr,
 	    "\ttape\t\t\t\t# Show which tape is due next.\n");
@@ -185,6 +190,41 @@ void usage P((void))
     exit(1);
 }
 
+
+/* ----------------------------------------------- */
+
+#define SECS_PER_DAY (24*60*60)
+time_t today;
+int runtapes, dumpcycle;
+
+char *seqdatestr(seq)
+int seq;
+{
+    static char str[16];
+    static char *dow[7] = {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};
+    time_t t = today + seq*SECS_PER_DAY;
+    struct tm *tm;
+
+    tm = localtime(&t);
+
+    ap_snprintf(str, sizeof(str),
+		"%2d/%02d %3s", tm->tm_mon+1, tm->tm_mday, dow[tm->tm_wday]);
+    return str;
+}
+
+
+/* when is next level 0 due? 0 = tonight, 1 = tommorrow, etc*/
+static int next_level0(dp, ip)
+disk_t *dp;
+info_t *ip;
+{
+    if(dp->strategy == DS_NOFULL)
+	return 1;	/* fake it */
+    else if(ip->inf[0].date < (time_t)0)
+	return 0;	/* new disk */
+    else
+	return dp->dumpcycle - days_diff(ip->inf[0].date, today);
+}
 
 /* ----------------------------------------------- */
 
@@ -426,7 +466,58 @@ void info(argc, argv)
 int argc;
 char **argv;
 {
-    diskloop(argc, argv, "info", info_one);
+    disk_t *dp;
+
+    if(argc >= 4)
+	diskloop(argc, argv, "info", info_one);
+    else
+	for(dp = diskqp->head; dp != NULL; dp = dp->next)
+	    info_one(dp);
+}
+
+/* ----------------------------------------------- */
+
+void due_one(dp)
+disk_t *dp;
+{
+    host_t *hp;
+    int days;
+    info_t inf;
+
+    hp = dp->host;
+    if(get_info(hp->hostname, dp->name, &inf)) {
+	printf("new disk %s:%s ignored.\n", hp->hostname, dp->name);
+    }
+    else {
+	days = next_level0(dp, &inf);
+	if(days < 0) {
+	    printf("Overdue %2d day%s %s:%s\n",
+		   -days, (-days == 1) ? ": " : "s:",
+		   hp->hostname, dp->name);
+	}
+	else if(days == 0) {
+	    printf("Due today: %s:%s\n", hp->hostname, dp->name);
+	}
+	else {
+	    printf("Due in %2d day%s %s:%s\n", days,
+		   (days == 1) ? ": " : "s:",
+		   hp->hostname, dp->name);
+	}
+    }
+}
+
+void due(argc, argv)
+int argc;
+char **argv;
+{
+    disk_t *dp;
+
+    time(&today);
+    if(argc >= 4)
+	diskloop(argc, argv, "due", due_one);
+    else
+	for(dp = diskqp->head; dp != NULL; dp = dp->next)
+	    due_one(dp);
 }
 
 /* ----------------------------------------------- */
@@ -451,40 +542,6 @@ void tape()
 }
 
 /* ----------------------------------------------- */
-
-#define SECS_PER_DAY (24*60*60)
-time_t today;
-int runtapes, dumpcycle;
-
-char *seqdatestr(seq)
-int seq;
-{
-    static char str[16];
-    static char *dow[7] = {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};
-    time_t t = today + seq*SECS_PER_DAY;
-    struct tm *tm;
-
-    tm = localtime(&t);
-
-    ap_snprintf(str, sizeof(str),
-		"%2d/%02d %3s", tm->tm_mon+1, tm->tm_mday, dow[tm->tm_wday]);
-    return str;
-}
-
-
-/* when is next level 0 due? 0 = tonight, 1 = tommorrow, etc*/
-static int next_level0(dp, ip)
-disk_t *dp;
-info_t *ip;
-{
-    if(dp->strategy == DS_NOFULL)
-	return 1;	/* fake it */
-    else if(ip->inf[0].date < (time_t)0)
-	return 0;	/* new disk */
-    else
-	return dp->dumpcycle - days_diff(ip->inf[0].date, today);
-}
-
 
 void balance()
 {

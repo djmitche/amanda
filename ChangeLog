@@ -1,5 +1,11 @@
 1998-06-07 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amadmin.c (info): don't need to specify an host.
+
+	* server-src/amadmin.c (due): new due command to write when a
+	filesystem is due ffor next level 0 or how much days it is
+	overdue.
+
 	* server-src/amstatus.pl.in (dump_size): new function to report
 	the size of a dump split on multiple files.
 
