@@ -33,8 +33,8 @@
 
 #ifdef TEXTDB
   static char *infodir = (char *)0;
-  static char *fn = (char *)0;
-  static char *newfn;
+  static char *infofile = (char *)0;
+  static char *newinfofile;
   static int writing;
 #else
 #  define MAX_KEY 256
@@ -45,7 +45,7 @@
 #endif
 
 #ifdef TEXTDB
-FILE *open_txinfofile(host,disk,mode)
+FILE *open_txinfofile(host, disk, mode)
 char *host;
 char *disk;
 char *mode;
@@ -54,12 +54,13 @@ char *mode;
     int rc;
     int len;
 
+    assert(infofile == (char *)0);
+
     writing = (*mode == 'w');
 
-    assert(fn == (char *)0);
 /* XXX - need to sanitise host and disk */
     len = strlen(infodir) + strlen(host) + strlen(disk) + 7;
-    fn = alloc(len + 1);
+    infofile = alloc(len + 1);
 
     /* create the directory structure if in write mode */
     if (writing) {
@@ -67,34 +68,46 @@ char *mode;
 	if (rc == -1 && errno == EEXIST) rc = 0;
 
 	if (rc == 0) {
-	    sprintf(fn, "%s/%s", infodir, host);
-	    rc = mkdir(fn, 0755);
+	    sprintf(infofile, "%s/%s", infodir, host);
+	    rc = mkdir(infofile, 0755);
 	    if (rc == -1 && errno == EEXIST) rc = 0;
 
 	    if (rc == 0) {
-		sprintf(fn, "%s/%s/%s", infodir, host, disk);
-		rc = mkdir(fn, 0755);
+		sprintf(infofile, "%s/%s/%s", infodir, host, disk);
+		rc = mkdir(infofile, 0755);
 		if (rc == -1 && errno == EEXIST) rc = 0;
 	    }
 	}
 	if (rc == -1) {
-	    free(fn);
+	    free(infofile);
+#ifdef ASSERTIONS
+	    infofile = (char *)0;
+#endif
 	    return NULL;
 	}
     }
 
-    sprintf(fn, "%s/%s/%s/info", infodir, host, disk);
+    sprintf(infofile, "%s/%s/%s/info", infodir, host, disk);
 
-    newfn = alloc(len + 4 + 1);
-    sprintf(newfn, "%s.new", fn);
+    newinfofile = alloc(len + 4 + 1);
+    sprintf(newinfofile, "%s.new", infofile);
 
     if(writing) {
-	infof = fopen(newfn, mode);
+	infof = fopen(newinfofile, mode);
 	amflock(fileno(infof), "info");
     }
     else {
-	infof = fopen(fn, mode);
+	infof = fopen(infofile, mode);
 	/* no need to lock readers */
+    }
+
+    if(infof == (FILE *)0) {
+	free(infofile);
+	free(newinfofile);
+#ifdef ASSERTIONS
+	infofile = (char *)0;
+#endif
+	return NULL;
     }
 
     return infof;
@@ -105,19 +118,19 @@ FILE *infof;
 {
     int rc;
 
-    assert(fn != (char *)0);
+    assert(infofile != (char *)0);
 
     if(writing) {
-	rc = rename(newfn, fn);
+	rc = rename(newinfofile, infofile);
 
 	amfunlock(fileno(infof), "info");
     }
 
-    free(fn);
-    free(newfn);
+    free(infofile);
+    free(newinfofile);
 
 #ifdef ASSERTIONS
-    fn = (char *)0;
+    infofile = (char *)0;
 #endif
 
     rc = fclose(infof);
@@ -126,7 +139,7 @@ FILE *infof;
     return rc;
 }
 
-int read_txinfofile(infof,info)
+int read_txinfofile(infof, info)
 FILE *infof;
 info_t *info;
 {
@@ -192,7 +205,7 @@ info_t *info;
     return 0;
 }
 
-int write_txinfofile(infof,info)
+int write_txinfofile(infof, info)
 FILE *infof;
 info_t *info;
 {
@@ -228,7 +241,7 @@ info_t *info;
     return 0;
 }
 
-int delete_txinfofile(host,disk)
+int delete_txinfofile(host, disk)
 char *host;
 char *disk;
 {
@@ -358,7 +371,6 @@ char *hostname, *diskname;
 info_t *record;
 {
 #ifdef TEXTDB
-    char *fn;	/* Name of data file */
     FILE *infof;
     int rc;
     int i;
