@@ -107,6 +107,11 @@ CleanTapelist () {
     fi
   done
 
+  if [ ! -d @AMANDA_TMPDIR@ ]; then
+    log "${Program}: directory @AMANDA_TMPDIR@ does not exist."
+    exit 1
+  fi
+
   NewTapelist=@AMANDA_TMPDIR@/tapelist
   rm -f ${NewTapelist}
   awk "\$2 == \"${Tape}\" { next; } { print; }" \

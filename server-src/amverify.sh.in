@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.24 2001/08/25 00:46:49 jrjackson Exp $
+#	$Id: amverify.sh.in,v 1.25 2001/12/12 23:02:01 martinea Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -319,6 +319,11 @@ fi
 #	TEMP		directory for temporary tar archives and stderr
 #	DEFECTS		defect list
 #	REPORT		report for mail
+
+if [ ! -d @AMANDA_TMPDIR@ ]; then
+  $Echoe "amverify: directory @AMANDA_TMPDIR@ does not exist."
+  exit 1
+fi
 
 cd @AMANDA_TMPDIR@ || exit 1
 
