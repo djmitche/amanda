@@ -1,3 +1,9 @@
+2001-04-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* config/config.guess: Upgrade from ftp://ftp.gnu.org/pub/gnu/config
+	* config/config.sub: Upgrade from ftp://ftp.gnu.org/pub/gnu/config
+	* config/mkinstalldirs: Upgrade from automake CVS.
+
 2001-04-06  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* config/depcomp: new file for automake.
