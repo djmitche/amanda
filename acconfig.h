@@ -184,9 +184,10 @@
 #undef HAVE_STRUCT_DATUM
 
 /* Type of file locking.  Define none or one of these. */
-#undef HAVE_POSIX_FCNTL
-#undef HAVE_FLOCK
-#undef HAVE_LOCKF
+#undef USE_POSIX_FCNTL
+#undef USE_FLOCK
+#undef USE_LOCKF
+#undef USE_MYLOCK
 
 /* Declarations of functions.  */
 #undef HAVE_ACCEPT_DECL

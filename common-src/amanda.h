@@ -303,9 +303,9 @@ extern void  *alloc     P((int size));
 extern char  *stralloc  P((char *str));
 extern int    match     P((char *regex, char *str));
 extern time_t unctime   P((char *timestr));
-extern int    amflock   P((int fd));
-extern int    amroflock P((int fd));
-extern int    amfunlock P((int fd));
+extern int    amflock   P((int fd, char *resource));
+extern int    amroflock P((int fd, char *resource));
+extern int    amfunlock P((int fd, char *resource));
 
 extern int debug;
 extern char *version_info[];

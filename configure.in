@@ -1680,7 +1680,7 @@ EOF
 		amanda_cv_max_file_size=$MAXFILESIZE
 	    fi
 	fi
-	rm -f conftest* /tmp/conftest.lock
+	rm -f conftest*
     ]
 )
 if test "$amanda_cv_max_file_size" -gt 0; then
@@ -1723,7 +1723,7 @@ AC_CACHE_CHECK(
 #endif
 
 #define CONFIGURE_TEST
-#define HAVE_POSIX_FCNTL
+#define USE_POSIX_FCNTL
 #include "${srcdir-.}/common-src/amflock.c"
 EOF
 	${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >/dev/null 2>/dev/null
@@ -1743,7 +1743,7 @@ EOF
     ]
 )
 if test "$amanda_cv_posix_filelocking" = yes; then
-    AC_DEFINE(HAVE_POSIX_FCNTL)
+    AC_DEFINE(USE_POSIX_FCNTL)
     HAS_WORKING_FILE_LOCK=1
 fi
 
@@ -1778,7 +1778,7 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 #if defined(LOCK_EX) && defined(LOCK_UN)
 
 #define CONFIGURE_TEST
-#define HAVE_FLOCK
+#define USE_FLOCK
 #include "${srcdir-.}/common-src/amflock.c"
 
 #else
@@ -1807,7 +1807,7 @@ EOF
 	]
     )
     if test "$amanda_cv_flock_filelocking" = yes; then
-	AC_DEFINE(HAVE_FLOCK)
+	AC_DEFINE(USE_FLOCK)
 	HAS_WORKING_FILE_LOCK=1
     fi
 fi
@@ -1841,7 +1841,7 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 #endif
 
 #define CONFIGURE_TEST
-#define HAVE_LOCKF
+#define USE_LOCKF
 #include "${srcdir-.}/common-src/amflock.c"
 EOF
 	    ${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >/dev/null 2>/dev/null
@@ -1861,7 +1861,61 @@ EOF
 	]
     )
     if test "$amanda_cv_lockf_filelocking" = yes; then
-	AC_DEFINE(HAVE_LOCKF)
+	AC_DEFINE(USE_LOCKF)
+	HAS_WORKING_FILE_LOCK=1
+    fi
+fi
+
+if test -z "$HAS_WORKING_FILE_LOCK"; then
+    AC_CACHE_CHECK(
+	[whether mylock locking works],
+	amanda_cv_mylock_filelocking,
+	[
+	    rm -f conftest.$ac_ext
+	    cat <<EOF >conftest.$ac_ext
+#include "confdefs.h"
+#include <stdio.h>
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_FILE_H
+# include <sys/file.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
+# include <sys/stat.h>
+#endif
+#ifdef HAVE_FCNTL_H
+# include <fcntl.h>
+#endif
+#ifdef HAVE_SYS_FCNTL_H
+# include <sys/fcntl.h>
+#endif
+
+#define CONFIGURE_TEST
+#define USE_MYLOCK
+#include "${srcdir-.}/common-src/amflock.c"
+EOF
+	    ${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >/dev/null 2>/dev/null
+	    if test $? = 0; then
+		./conftest
+		STATUS=$?
+		if test "$STATUS" = 0; then
+		    amanda_cv_mylock_filelocking="yes"
+		else
+			amanda_cv_mylock_filelocking="no ($STATUS)"
+		fi
+	    else
+		amanda_cv_mylock_filelocking="no (compiler error)"
+	    fi
+	    dnl cp conftest.c mylocktest.c
+	    rm -f conftest* /tmp/conftest.lock
+	]
+    )
+    if test "$amanda_cv_mylock_filelocking" = yes; then
+	AC_DEFINE(USE_MYLOCK)
 	HAS_WORKING_FILE_LOCK=1
     fi
 fi

@@ -228,12 +228,12 @@ char **argv;
 	sprintf(result, "%s %d SIZE %ld\n", amname,
 		dumplevel[i], final_size(i, dirname));
 
-	amflock(1);
+	amflock(1, "size");
 
 	lseek(1, (off_t)0, SEEK_END);
 	write(1, result, strlen(result));
 
-	amfunlock(1);
+	amfunlock(1, "size");
     }
 
     return 0;

@@ -90,7 +90,7 @@ char *mode;
 
     if(writing) {
 	infof = fopen(newfn, mode);
-	amflock(fileno(infof));
+	amflock(fileno(infof), "info");
     }
     else {
 	infof = fopen(fn, mode);
@@ -110,7 +110,7 @@ FILE *infof;
     if(writing) {
 	rc = rename(newfn, fn);
 
-	amfunlock(fileno(infof));
+	amfunlock(fileno(infof), "info");
     }
 
     free(fn);
@@ -283,7 +283,7 @@ char *filename;
     if((lockfd = open(lockname, O_CREAT|O_RDWR, 0666)) == -1)
 	return 2;
 
-    if(amflock(lockfd) == -1)
+    if(amflock(lockfd, "info") == -1)
 	return 3;
 
     infodb = dbm_open(filename, O_CREAT|O_RDWR, 0666);
@@ -303,7 +303,7 @@ void close_infofile()
 #else
     dbm_close(infodb);
 
-    if(amfunlock(lockfd) == -1)
+    if(amfunlock(lockfd, "info") == -1)
 	error("could not unlock infofile: %s", strerror(errno));
 
     close(lockfd);

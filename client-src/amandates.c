@@ -80,9 +80,9 @@ int open_readwrite;
 	return 0;
 
     if(open_readwrite)
-	rc = amflock(fileno(amdf));
+	rc = amflock(fileno(amdf), "amandates");
     else
-	rc = amroflock(fileno(amdf));
+	rc = amroflock(fileno(amdf), "amandates");
 
     if(rc == -1)
 	error("could not lock %s: %s", AMANDATES_FILE, strerror(errno));
@@ -126,7 +126,7 @@ void finish_amandates()
 	}
     }
 
-    if(amfunlock(fileno(amdf)) == -1)
+    if(amfunlock(fileno(amdf), "amandates") == -1)
 	error("could not unlock %s: %s", AMANDATES_FILE, strerror(errno));
     fclose(amdf);
 }

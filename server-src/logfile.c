@@ -147,7 +147,7 @@ static void open_log()
     logfd = open(getconf_str(CNF_LOGFILE), O_WRONLY|O_CREAT|O_APPEND, 0666);
     if(logfd == -1) error("could not open log file %s: %s", 
 		       getconf_str(CNF_LOGFILE),strerror(errno));
-    if(amflock(logfd) == -1)
+    if(amflock(logfd, "log") == -1)
 	error("could not lock log file %s: %s", getconf_str(CNF_LOGFILE),
 	      strerror(errno));
 }
@@ -155,7 +155,7 @@ static void open_log()
 
 static void close_log()
 {
-    if(amfunlock(logfd) == -1)
+    if(amfunlock(logfd, "log") == -1)
 	error("could not unlock log file %s: %s", getconf_str(CNF_LOGFILE),
 	      strerror(errno));
     if(close(logfd) == -1)

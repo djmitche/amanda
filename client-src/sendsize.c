@@ -319,12 +319,12 @@ disk_estimates_t *est;
 	    size = getsize_dump(est->amname, level);
 	    sprintf(result, "%s %d SIZE %ld\n", est->amname, level, size);
 
-	    amflock(1);
+	    amflock(1, "size");
 
 	    lseek(1, (off_t)0, SEEK_END);
 	    write(1, result, strlen(result));
 
-	    amfunlock(1);
+	    amfunlock(1, "size");
 	}
     }
 }
@@ -344,12 +344,12 @@ disk_estimates_t *est;
 	    size = getsize_smbtar(est->amname, level);
 	    sprintf(result, "%s %d SIZE %ld\n", est->amname, level, size);
 
-	    amflock(1);
+	    amflock(1, "size");
 
 	    lseek(1, (off_t)0, SEEK_END);
 	    write(1, result, strlen(result));
 
-	    amfunlock(1);
+	    amfunlock(1, "size");
 	}
     }
 }

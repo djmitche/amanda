@@ -155,7 +155,10 @@ int main()
 #ifdef HAVE_LOCKF
     prstr(" LOCKING=LOCKF");
 #endif
-#if !defined(HAVE_POSIX_FCNTL) && !defined(HAVE_FLOCK) && !defined(HAVE_LOCK)
+#ifdef HAVE_MYLOCK
+    prstr(" LOCKING=MYLOCK");
+#endif
+#if !defined(HAVE_POSIX_FCNTL) && !defined(HAVE_FLOCK) && !defined(HAVE_LOCK) && !defined(HAVE_MYLOCK)
     prstr(" LOCKING=**NONE**");
 #endif
 #ifdef OSF1_VDUMP
