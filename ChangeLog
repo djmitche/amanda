@@ -1,3 +1,11 @@
+1998-07-21  Blair Zajac  <blair@gps.caltech.edu>
+
+	* server-src/amrmtape.sh.in: now use amanda.conf's tapelist variable
+	* server-src/amcheckdb.sh.in:  now use amanda.conf's tapelist variable
+	* server-src/amfreetapes.sh.in: now use amanda.conf's tapelist variable
+	* server-src/amtoc.pl.in: now use amanda.conf's tapelist variable,
+	make perl4 compatible
+
 1998-07-17  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/FAQ (results missing): suggestions to work around the UDP

@@ -6,7 +6,12 @@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 sbindir=@sbindir@
-CONFIG_DIR=@CONFIG_DIR@
+libexecdir=@libexecdir@
+
+ConfigDir=@CONFIG_DIR@
+
+PATH=$libexecdir:$sbindir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
+export PATH
 
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
 if test "$USE_VERSION_SUFFIXES" = "yes"; then
@@ -15,24 +20,53 @@ else
 	SUF=
 fi
 
-CONFIG=$1
-[ "$CONFIG" = "" ] \
-	&& echo "usage: $0 <config>" >&2 \
+Program=`basename $0`
+
+log () {
+	echo 1>&2 "$@"
+	return 0
+}
+
+Config=$1
+if [ "$Config" = "" ]; then
+	log "usage: ${Program} <config>"
+	exit 1
+fi
+
+#
+# Check if the configuration directory exists.  Make sure that the
+# necessary files can be found, such as amanda.conf and tapelist.
+#
+if [ ! -d ${ConfigDir}/${Config} ]; then
+	log "${Program}: configuration directory ${ConfigDir}/${Config} does not exist."
+	exit 1
+fi
+(cd ${ConfigDir}/${Config} >/dev/null 2>&1) || exit $?
+cd ${ConfigDir}/${Config}
+if [ ! -r amanda.conf ]; then
+	log "${Program}: amanda.conf not found or is not readable in ${ConfigDir}."
+	exit 1
+fi
+
+# Get the location and name of the tapelist filename.  If tapelist is not
+# specified in the amanda.conf file, then use tapelist in the config
+# directory.
+TapeList=`getconf${SUF} tapelist`
+if [ ! "$TapeList" ]; then
+	TapeList="$ConfigDir/$Config/tapelist"
+fi
+if [ ! -r $TapeList ]; then
+	log "${Program}: $TapeList not found or is not readable."
+	exit 1
+fi
+
+Amadmin=$sbindir/amadmin$SUF
+
+[ ! -x $Amadmin ] \
+	&& echo "$Amadmin not found or not executable" >&2 \
 	&& exit 1
 
-TAPELIST=$CONFIG_DIR/$CONFIG/tapelist
-
-[ ! -f $TAPELIST ] \
-	&& echo "$TAPELIST not found" >&2 \
-	&& exit 1
-
-AMADMIN=$sbindir/amadmin$SUF
-
-[ ! -x $AMADMIN ] \
-	&& echo "$AMADMIN not found or not executable" >&2 \
-	&& exit 1
-
-$AMADMIN $CONFIG export \
+$Amadmin $Config export \
 	| grep "^stats: " \
 	| while read LINE; do
 		[ "$LINE" = "" ] && continue
@@ -41,9 +75,9 @@ $AMADMIN $CONFIG export \
 	done \
 	| sort -u \
 	| while read TAPE; do
-		grep " $TAPE\$" $TAPELIST 2>/dev/null >/dev/null
+		grep " $TAPE\$" $TapeList 2>/dev/null >/dev/null
 		[ $? != 0 ] \
-			&& echo "Tape $TAPE missing in $TAPELIST"
+			&& echo "Tape $TAPE missing in $TapeList"
 	done
 
 echo "Ready."
