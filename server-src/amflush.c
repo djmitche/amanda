@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.8 1997/09/11 06:02:20 amcore Exp $
+ * $Id: amflush.c,v 1.9 1997/09/26 12:15:46 george Exp $
  *
  * write files from work directory onto tape
  */
@@ -84,7 +84,6 @@ static char *config;
 char datestamp[80];
 char confdir[1024];
 char taper_program[80], reporter_program[80];
-char host[MAX_HOSTNAME_LENGTH], *domain;
 
 /* local functions */
 int main P((int argc, char **argv));
@@ -146,11 +145,6 @@ char **argv;
 	error("dumpuser %s not found in password file", dumpuser);
     if(pw->pw_uid != getuid())
 	error("must run amflush as user %s", dumpuser);
-
-    /* host[sizeof(host)-1] = '\0';*/ /* not necessary when host[] is static */
-    if(gethostname(host, sizeof(host)-1) == -1)
-	error("gethostname failed: %s", strerror(errno));
-    if((domain = strchr(host, '.'))) domain++;
 
     sprintf(taper_program, "%s/taper%s", libexecdir, versionsuffix());
     sprintf(reporter_program, "%s/reporter%s", libexecdir, versionsuffix());
@@ -439,50 +433,9 @@ char *diskdir;
 	    continue;
 	}
 
-	/*
-	** Old Behavior: send-backup would put the first token of the
-	** hostname in the dump header.  amflush would look for an exact
-	** match of this string in the disklist.
-	**
-	** Problems:  The hostname in the dump header (which is created
-	** in send-backup and parsed by amdump and amrestore) does not
-	** necessarily match the hostname in the disklist file.  If your
-	** disklist contains anything other than the first token of the
-	** client hostname then amflush will not work for those disks.
-	**
-	** New Behavior: send-backup puts the entire gethostname()
-	** result in the dump header.  amflush looks for an exact match,
-	** in the database.  If it can't find one it strips the last token
-	** off the dump header hostname and keeps trying until it finds
-	** a match in the disklist or runs out of tokens.  If the dump
-	** header does not contain a domain, we append one internally.
-	** This allows us to match FQDNs in the disklist against unqualified
-	** hostnames from the clients.
-	**
-	** Advantages:  If gethostname() returns FQDNs and you specify
-	** the same FQDNs in the disklist, then amflush will always work.
-	** It will also work as long as the disklist and gethostname()
-	** on the clients return enough information to be unambiguous.
-	**
-	** Ideal Solution:  Have the amanda server pass the hostname
-	** for the dumpheader to the client.  Make amflush always look
-	** for an exact match.  This guarantees that amflush always
-	** puts every dump in the right place -- even if you use a CNAME
-	** or some other oddity in the disklist file.  Unfortunately this
-	** would require non-backwards compatible protocol extensions.
-	*/
-	dp = NULL;
-	if(strchr(hostname,'.') == NULL && domain && *domain)
-	    strcat(strcat(hostname,"."),domain);
-	for(;;) {
-	    char *s;
-	    if((dp = lookup_disk(hostname, diskname)))
-		break;
-	    if((s = strrchr(hostname,'.')) == NULL)
-		break;
-	    *s = '\0';
-	}
-	if ( dp == NULL ) {
+	dp = lookup_disk(hostname, diskname);
+
+	if (dp == NULL) {
 	    log(L_INFO, "%s: disk %s:%s not in database, skipping it.",
 		entry->d_name, hostname, diskname);
 	    continue;
