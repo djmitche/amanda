@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.6 1998/11/20 18:00:34 kashmir Exp $
+ * $Id: bsd-security.c,v 1.7 1998/11/23 18:53:13 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -33,7 +33,6 @@
 #include "dgram.h"
 #include "event.h"
 #include "packet.h"
-#include "parse.h"
 #include "queue.h"
 #include "security.h"
 #include "stream.h"
@@ -54,7 +53,7 @@ struct bsd_handle {
      * handle, so we differentiate packets for them with a "handle" header
      * in each packet.
      */
-    int handle;
+    char proto_handle[32];
 
     /*
      * sequence number.  historic field in packet header, but not used.
@@ -245,9 +244,9 @@ static void *accept_fn_arg;
  * These are the internal helper functions
  */
 static int check_user P((struct bsd_handle *, const char *));
-static void *gethandle P((struct hostent *, int, int));
+static void *gethandle P((struct hostent *, int, const char *));
 static const char *pkthdr2str P((const struct bsd_handle *, const pkt_t *));
-static int str2pkthdr P((const char *, pkt_t *, int *, int *));
+static int str2pkthdr P((const char *, pkt_t *, char *, size_t, int *));
 static void recvpkt_callback P((void *));
 static void recvpkt_timeout P((void *));
 static int recv_security_ok P((struct bsd_handle *, pkt_t *));
@@ -260,6 +259,7 @@ static void *
 bsd_connect(hostname)
     const char *hostname;
 {
+    char handle[32];
     struct servent *se;
     struct hostent *he;
     int port;
@@ -285,7 +285,8 @@ bsd_connect(hostname)
 	port = htons(AMANDA_SERVICE_DEFAULT);
     else
 	port = se->s_port;
-    return (gethandle(he, port, time(NULL)));
+    ap_snprintf(handle, sizeof(handle), "%ld", (long)time(NULL));
+    return (gethandle(he, port, handle));
 }
 
 /*
@@ -326,7 +327,8 @@ bsd_accept(in, out, fn, arg)
 static void *
 gethandle(he, port, handle)
     struct hostent *he;
-    int port, handle;
+    int port;
+    const char *handle;
 {
     struct bsd_handle *bh;
     int i;
@@ -405,7 +407,8 @@ gethandle(he, port, handle)
      * No sequence number yet
      */
     bh->sequence = 0;
-    bh->handle = handle;
+    strncpy(bh->proto_handle, handle, sizeof(bh->proto_handle) - 1);
+    bh->proto_handle[sizeof(bh->proto_handle) - 1] = '\0';
     bh->fn = NULL;
     bh->arg = NULL;
     bh->ev_timeout = NULL;
@@ -562,9 +565,10 @@ static void
 recvpkt_callback(cookie)
     void *cookie;
 {
+    char handle[32];
     struct sockaddr_in peer;
     pkt_t pkt;
-    int handle, sequence;
+    int sequence;
     struct bsd_handle *bh;
     struct hostent *he;
     void (*fn) P((void *, pkt_t *, security_recvpkt_status_t));
@@ -582,14 +586,14 @@ recvpkt_callback(cookie)
     /*
      * Parse the packet.
      */
-    if (str2pkthdr(netfd.cur, &pkt, &handle, &sequence) < 0)
+    if (str2pkthdr(netfd.cur, &pkt, handle, sizeof(handle), &sequence) < 0)
 	return;
 
     /*
      * Find the handle that this is associated with.
      */
     for (bh = handleq_first(); bh != NULL; bh = handleq_next(bh)) {
-	if (bh->handle == handle &&
+	if (strcmp(bh->proto_handle, handle) == 0 &&
 	    memcmp(&bh->peer, &peer, sizeof(peer)) == 0) {
 	    bh->sequence = sequence;
 
@@ -1111,8 +1115,8 @@ pkthdr2str(bh, pkt)
     assert(pkt != NULL);
 
     ap_snprintf(retbuf, sizeof(retbuf), "Amanda %d.%d %s HANDLE %d SEQ %d\n",
-	VERSION_MAJOR, VERSION_MINOR, pkt_type2str(pkt->type), bh->handle,
-	bh->sequence);
+	VERSION_MAJOR, VERSION_MINOR, pkt_type2str(pkt->type),
+	bh->proto_handle, bh->sequence);
 
     /* check for truncation.  If only we had asprintf()... */
     assert(retbuf[strlen(retbuf) - 1] == '\n');
@@ -1125,49 +1129,62 @@ pkthdr2str(bh, pkt)
  * Returns negative on parse error.
  */
 static int
-str2pkthdr(str, pkt, handle, sequence)
-    const char *str;
+str2pkthdr(origstr, pkt, handle, handlesize, sequence)
+    const char *origstr;
     pkt_t *pkt;
-    int *handle, *sequence;
+    char *handle;
+    size_t handlesize;
+    int *sequence;
 {
-    int i;
-    const char *typestr;
+    char *str;
+    const char *tok;
 
-    assert(str != NULL);
+    assert(origstr != NULL);
     assert(pkt != NULL);
 
+    str = stralloc(origstr);
+
     /* "Amanda %d.%d <ACK,NAK,...> HANDLE %s SEQ %d\n" */
-    if (eat_string(&str, "Amanda") < 0)
-        goto parse_error;
+
+    /* Read in "Amanda" */
+    if ((tok = strtok(str, " ")) == NULL || strcmp(tok, "Amanda") != 0)
+	goto parse_error;
 
     /* nothing is done with the major/minor numbers currently */
-    if (parse_integer(&str, &i) < 0)
-	goto parse_error;
-    if (eat_string(&str, ".") < 0)
-	goto parse_error;
-    if (parse_integer(&str, &i) < 0)
+    if ((tok = strtok(NULL, " ")) == NULL || strchr(tok, '.') == NULL)
 	goto parse_error;
 
-    if (parse_string(&str, &typestr) < 0)
+    /* Read in the packet type */
+    if ((tok = strtok(NULL, " ")) == NULL)
 	goto parse_error;
-    pkt_init(pkt, pkt_str2type(typestr), "");
-    if (pkt->type == (pktype_t)-1)
-	goto parse_error;
-
-    if (eat_string(&str, "HANDLE") < 0)
-	goto parse_error;
-    if (parse_integer(&str, handle) < 0)
+    pkt_init(pkt, pkt_str2type(tok), "");
+    if (pkt->type == (pktype_t)-1)    
 	goto parse_error;
 
-    if (eat_string(&str, "SEQ") < 0)
-	goto parse_error;
-    if (parse_integer(&str, sequence) < 0)
+    /* Read in "HANDLE" */
+    if ((tok = strtok(NULL, " ")) == NULL || strcmp(tok, "HANDLE") != 0)
 	goto parse_error;
 
-    /* eat whitespace, and then save the body */
-    eat_string(&str, "");
-    pkt_cat(pkt, str);
+    /* parse the handle */
+    if ((tok = strtok(NULL, " ")) == NULL)
+	goto parse_error;
+    strncpy(handle, tok, handlesize - 1);
+    handle[handlesize - 1] = '\0';    
 
+    /* Read in "SEQ" */
+    if ((tok = strtok(NULL, " ")) == NULL || strcmp(tok, "SEQ") != 0)   
+	goto parse_error;
+
+    /* parse the sequence number */   
+    if ((tok = strtok(NULL, "\n")) == NULL)
+	goto parse_error;
+    *sequence = atoi(tok);
+
+    /* Save the body, if any */       
+    if ((tok = strtok(NULL, "")) != NULL)
+	pkt_cat(pkt, tok);
+
+    amfree(str);
     return (0);
 
 parse_error:
@@ -1175,5 +1192,6 @@ parse_error:
     security_seterror(&bh->security_handle,
 	"parse error in packet header : '%s'", origstr);
 #endif
+    amfree(str);
     return (-1);
 }

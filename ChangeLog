@@ -1,3 +1,16 @@
+1998-11-23  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/bsd-security.c (struct bsd_handle): change 'int handle'
+	to 'char proto_handle[32]' because the remote client might generate
+	handles that aren't completely numerical
+	* common-src/bsd-security.c (gethandle, str2pkthdr): the 'handle' arg
+	is now a string
+	* common-src/bsd-security.c (bsd_connect): convert our generated
+	handle into a string to pass to gethandle()
+	* common-src/bsd-security.c (str2pkthdr): rewrite to parse with
+	strtok().  Parse the handle as a string instead of trying to
+	convert it into a number
+
 1998-11-20  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/amcleanup.sh.in (logdir/amdump): arrange that it is
