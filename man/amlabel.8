@@ -1,0 +1,38 @@
+.\"
+.TH AMLABEL 8
+.SH NAME
+amlabel \- labels an Amanda tape
+.SH SYNOPSIS
+.B amlabel
+.I config label
+
+.SH DESCRIPTION
+
+.B Amlabel
+writes an Amanda label on the tape in the tape drive specified by the
+.I amanda.conf
+file in /opt/amanda/config/\fIconfig\fR.  The
+.I label
+can be any string that does not contain whitespace, and that matches the
+.I amanda.conf 
+.B labelstr
+regular expression parameter.  It is up to the
+system administrators to define a naming convention.
+See the
+.IR amanda(8)
+man page for more details about Amanda.
+
+.SH EXAMPLE
+.TP
+% amlabel DailySet1 VOL1
+If the line "tapedev /dev/tape/1n" is in
+/opt/amanda/config/DailySet1/amanda.conf, an Amanda label with the name "VOL1" is
+written on the /dev/tape/1n device.
+
+.SH AUTHOR
+James da Silva <jds@cs.umd.edu>
+.br
+University of Maryland, College Park
+
+.SH "SEE ALSO"
+amanda(8).

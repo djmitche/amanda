@@ -1,0 +1,216 @@
+
+AMANDA TAPE CHANGER SUPPORT
+
+Draft 5 - 94/04/02  (send comments to James da Silva <jds@cs.umd.edu>)
+
+1. INTRODUCTION
+
+This document outlines the tape changer support design of Amanda 2.2.  I
+have defined a small interface for changer software to follow so that
+Amanda can remain device-independent, and support the widest range of tape
+software and hardware possible.
+
+The interface is a bit simplistic, but I have been reluctant to add
+complications until there is a body of field experience with the simple
+version.  I am very interested in feedback on how the tape changer support
+can be improved.
+
+
+2. SPECIFYING A TAPE CHANGER IN AMANDA.CONF
+
+All the device-specifics are hidden by a glue program that the rest of
+Amanda calls to interact with the tape changer.
+
+The name of this changer program is given by the new "tpchanger" variable
+in the amanda.conf file.  Example entry:
+
+	tpchanger "chg-generic"		# use generic tape changer script
+
+The older tapedev parameter is ignored if a tpchanger program is specified.
+
+
+3. DEVICE-SPECIFIC TAPE CHANGER SCRIPT
+
+The tape changer program must support the following commands:
+
+    <tpchanger> -slot <slot-specifier>
+
+		changes to a particular slot
+		outputs to stdout the slot name and name of the 
+			device file to access the tape
+		returns 0 on success, 1 on positioning error (eg
+			at bottom of gravity stacker)
+		returns 2 any other fatal error
+			error messages to stdout in place of device name
+
+	Examples:
+		% chg-generic -slot 0
+		0 /dev/nrst8			# exitcode returned is 0
+
+		% chg-generic -slot 1
+		1 slot 1 is empty		# exitcode returned is 1
+
+		% chg-generic -slot bogus-slot
+		<none> no slot `bogus-slot'       # exitcode returned is 2
+
+
+    <tpchanger> -info 
+		outputs to stdout three fields: the current slot string, the
+		number of slots, and whether the changer can go backwards (0
+		if it can't, 1 if it can).  Same error handling as above.
+
+	Example:
+		% chg-generic -info
+		0 10 1				# exitcode returned is 0
+
+    <tpchanger> -reset
+		resets changer to known state and loads the first slot.
+		Output and error handling same as "<tpchanger> -slot first".
+		In the case of a gravity stacker that must be reset by hand,
+		this could be run (via amtape <conf> reset) by the operator
+		to inform the software that the stacker is positioned back at
+		the top.
+
+	Examples:
+		% chg-generic -reset
+		0 /dev/nrst8			# exitcode returned is 0
+
+		% chg-generic -reset
+		0 slot 0 is empty		# exitcode returned is 1
+
+		% chg-generic -reset
+		0 tape-changer not responding	# exitcode returned is 2
+
+    <tpchanger> -eject
+		ejects the currently loaded tape, if appropriate.  Output
+		and error handling are the same as the -slot command.
+
+	Examples:
+		% chg-generic -eject
+		0 /dev/nrst8			# exitcode returned is 0
+
+		% chg-generic -eject
+		0 drive was not loaded		# exitcode returned is 1
+
+For all the commands:
+
+	An exit code of 0 implies that the operation was completely
+	successful, and that the output can be parsed by the amanda code as
+	described above.
+
+	For non-zero exit codes, the first field is still the slot name,
+	but the actual error messages are not fixed.  They are just
+	displayed and/or logged as-is by the calling amanda program.
+
+	An exit code of 1 implies that the operation failed in a benign
+	way, for example an empty slot or an attempt to go backwards in a
+	gravity stacker.  The calling amanda program will print the error
+	message if appropriate and continue, perhaps requesting the load of
+	a different slot.
+
+	Any other exit code is considered a fatal error and will cause
+	amanda to stop attempting to talk to the tape changer.
+
+
+4.  SLOT NUMBERS AND THE "CURRENT" SLOT
+
+Some tape changers, such as carousels and gravity stackers, have a hardware
+notion of current position.  Others have no current position when no tape
+is loaded: all tapes are in their slots and the changer arm is docked away
+from the slots.
+
+Nevertheless, Amanda requires its tape-changer scripts to maintain the
+notion of a "current" position.  This is for performance reasons: as tapes
+tend to be loaded into the rack in order, and Amanda uses them in order,
+the next tape to use can be found much quicker if the position of the
+previous one is remembered.  As an example, the chg-generic.sh script
+maintains the current position in a "chg-generic.state" file.
+
+Amanda does not care how slots are specified: they could be numbered 0 to
+N-1, numbered 1 to N, or even designated by letter, A .. Z.  The only
+requirement is that the names do not contain whitespace, and that the names
+"current", "next", "prev", "first", "last" retain their meaning as follows:
+
+	current	the position of the last loaded tape, as described above
+	next	the position after current, wrapping from the last slot to
+		the first.
+	prev	the position before current, wrapping from the first slot to
+		the last.
+	first   the first slot in the tape rack.
+	last	the last slot in the tape rack.
+
+The current position must be updated even if there is a positioning error
+(such as "empty slot").  This allows amanda to step through the entire tape
+rack by issuing successive "-slot next" positioning commands.
+
+
+5. OPERATOR INTERFACE
+
+The new amtape program is the main operator interface to Amanda's tape
+changer support.  The commands supported include:
+
+	amtape <conf> slot <slot-specifier>
+		Load the tape from the specified slot into the drive
+	amtape <conf> eject
+		Send an eject command to the tape-changer.  Effect is changer
+		specific.
+	amtape <conf> reset
+		Send a reset command to the tape-changer.  Effect is changer
+		specific.
+	amtape <conf> show
+		Goes through the entire tape rack, showing the labels of all 
+		amanda tapes encountered.
+	amtape <conf> label <label>
+		Find and load the tape with the specified label
+	amtape <conf> taper
+		Perform taper's scan algorithm (see below), loading the tape
+		which would be picked for the next amdump run.
+
+In addition to amtape, amlabel has been modified to allow optionally
+specifying a slot:
+	amlabel <conf> <label> [slot <slot-specifier>]
+
+Amcheck also looks for the next tape in the rack the same way the taper
+does.  If multiple tapes are used in one night, amcheck attempts to find
+all the needed tapes in turn if the tape-changer is random access.  On a
+one-way gravity stacker, amcheck just finds the first tape, since finding
+the subsequent ones would put the first one out of reach of that night's
+amdump run.
+
+Amrestore does not include any tape changer support directly, as amrestore
+knows nothing about the conf files or server-side databases.  This is a
+deliberate decision to keep amrestore independent, so that it can be run
+from any host with a tape drive, even if the original tape server host is
+down.  To use amrestore in a tape-changer environment, use amtape to find
+the right tape, then run amrestore giving the resulting tape device name
+[yes, we need a nicer wrapper for amrestore, but I want to maintain the
+independence of the low-level program].
+
+
+6. HOW AMDUMP INTERACTS WITH THE TAPE CHANGER
+
+Amanda does not require a particular tape label for a particular night's
+run.  Any label that matches the labelstr regex, and is not determined to
+be "active" according to the tapelist database, can be written to.
+However, there is a preferred 'next' tape, the one that is next in the
+cycle implied by the current tapelist.
+
+Amdump uses two algorithms, depending on whether the tape changer can go
+backwards in the rack or not.  If multiple tapes are needed in a single
+run, this algorithm is repeated in turn whenever a new tape is required.
+
+Normal tape changers:
+
+With a full-access tape changer, Amdump now searches the entire rack for
+this preferred tape label.  Usually, this tape will be found at the current
+or next position, but can be located anywhere.  If the tape is found, it is
+written to.  If that tape is not found, the first tape encountered that
+matches the labelstr, and is not active, is picked.
+
+Gravity stackers (anything that can not go backwards):
+
+To avoid going all the way to the bottom of the stacker only to find that
+the preferred tape isn't present and nothing can be done, Amanda now picks
+the first tape (starting at the current position) that matches the
+labelstr, and is not active, regardless of whether it is the preferred
+tape.

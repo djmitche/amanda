@@ -1,0 +1,85 @@
+#!/bin/sh
+#
+# Amanda, The Advanced Maryland Automatic Network Disk Archiver
+# Copyright (c) 1991,1994 University of Maryland
+# All Rights Reserved.
+#
+# Permission to use, copy, modify, distribute, and sell this software and its
+# documentation for any purpose is hereby granted without fee, provided that
+# the above copyright notice appear in all copies and that both that
+# copyright notice and this permission notice appear in supporting
+# documentation, and that the name of U.M. not be used in advertising or
+# publicity pertaining to distribution of the software without specific,
+# written prior permission.  U.M. makes no representations about the
+# suitability of this software for any purpose.  It is provided "as is"
+# without express or implied warranty.
+#
+# U.M. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL U.M.
+# BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+# OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+# CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+# Author: James da Silva, Systems Design and Analysis Group
+#			   Computer Science Department
+#			   University of Maryland at College Park
+#
+
+#
+# amcleanup.sh - clean up and generate a report after a crash.
+
+# try to hit all the possibilities here
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libexecdir=@libexecdir@
+
+confdir=@CONFIG_DIR@
+
+PATH=$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
+export PATH
+
+if test "@USE_VERSION_SUFFIXES" = yes; then
+	SUF=-@VERSION@
+else
+	SUF=
+fi
+
+if [ $# -ne 1 ]
+then
+        echo "Usage: amcleanup conf"
+        exit 1
+fi
+
+conf=$1
+if [ ! -d $confdir/$conf ]; then
+        echo "amcleanup: could not cd into $confdir/$conf"
+        exit 1
+fi
+
+cd $confdir/$conf
+logfile=`getconf$SUF logfile`
+errfile=`dirname $logfile`/amdump
+tapecycle=`getconf$SUF tapecycle`
+
+if [ -f $logfile ]; then
+	echo "amcleanup: processing outstanding log file."
+	exec </dev/null >/dev/null 2>&1
+	$libexecdir/reporter$SUF
+
+	# keep debug log through the tapecycle plus a couple days
+	days=`expr $tapecycle + 2`
+
+	while [ $days -ge 2 ]; do
+		ndays=`expr $days - 1`
+		mv $errfile.$ndays $errfile.$days
+		days=$ndays
+	done
+	mv $errfile $errfile.1
+
+else
+	echo "amcleanup: no unprocessed logfile to clean up."
+	exit 1
+fi
+
+exit 0

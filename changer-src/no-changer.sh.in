@@ -1,0 +1,199 @@
+#!/bin/sh 
+#
+# Exit Status:
+# 0 Alles Ok
+# 1 Illegal Request
+# 2 Fatal Error
+#
+
+# try to hit all the possibilities here
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libexecdir=@libexecdir@
+
+PATH=$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
+export PATH
+
+USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
+if test "$USE_VERSION_SUFFIXES" = "yes"; then
+	SUF="-@VERSION@"
+else
+	SUF=
+fi
+
+myname=$0
+EGREP=@EGREP@
+MT=@MT@
+DD=@DD@
+nrtape=@TAPE_NO_REWIND_DEVICE@
+tape=@TAPE_REWIND_DEVICE@
+
+logfile=`getconf$SUF logfile`
+logdir=`dirname $logfile`
+
+if test ! -d "$logdir"; then
+	echo "$0: directory given in amanda.conf's logfile line does not exist." 1>&2
+	exit 1
+fi
+
+cleanfile=$logdir/.no-changer-clean
+accessfile=$logdir/.no-changer-access
+slotfile=$logdir/.no-changer-slot
+[ ! -f $cleanfile ] && echo 0 > $cleanfile
+[ ! -f $accessfile ] && echo 0 > $accessfile
+[ ! -f $slotfile ] && echo 0 > $slotfile
+cleancount=`cat $cleanfile`
+accesscount=`cat $accessfile`
+slot=`cat $slotfile`
+
+lastslot=99
+# counted from 1 !!!
+
+#
+
+request() {
+	echo "insert tape into slot $1 and press return" >/dev/tty
+	read ANSWER </dev/tty
+}
+
+#
+
+eject() { 
+	used=`$MT -t $tape status 2>&1 | $EGREP "ONLINE|READY"`
+	if [ ! -z "$used" ];then
+		$MT -t $tape rewind
+		$MT -t $tape offline
+		echo "$slot $tape"
+		echo 0 > $slotfile
+		exit 0
+	else
+		echo "0 Drive was not loaded"
+		exit 1
+	fi
+}
+
+#
+
+reset() {
+	used=`$MT -t $tape status 2>&1 | $EGREP "ONLINE|READY"`
+	if [ ! -z "$used" ];then
+		echo "$slot $nrtape"
+	else
+		echo "0 $nrtape"
+	fi
+	exit 0
+}
+
+# load #
+
+load() {
+	used=`$MT -t $tape status 2>&1 | $EGREP "ONLINE|READY"`
+	echo "     -> loaded $used" >> /tmp/changer.debug
+	case $1 in
+	current)
+		load=$slot
+		;;
+	next)
+		load=`expr $slot + 1`
+		;;
+	prev)
+		load=`expr $used - 1`
+		[ $load eq 0] && load=1
+		;;
+	first)
+		load=1
+		;;
+	last)
+		# for compatibility only
+		load=1
+		;;
+	[0-9]*)
+		load=$1
+		;;
+	*)
+		echo "0 illegal request"
+		exit 1
+		;;
+	esac
+	#
+	if [ ! -z "$used" -a $load = $slot ];then
+		# already loaded
+		echo "$slot $nrtape"
+		exit 0
+	fi
+
+	# if [ $load = $ecleanslot ]; then
+	# expr $cleancount + 1 > $cleanfile
+	# echo 0 > $accessfile
+	# else
+	expr $accesscount + 1 > $accessfile
+	# if [ $accesscount -gt 9 ]; then
+	# $myname -slot $cleanslot >/dev/null
+	# used=0
+	# fi
+	# fi	
+
+	#
+	if [ ! -z "$used" ]; then
+		echo "     -> unload $used" >> /tmp/changer.debug
+		$MT -t $tape rewind
+		$MT -t $tape offline
+		used=""
+	fi
+	echo "     -> load   $load" >> /tmp/changer.debug
+	while [ -z "$used" ]; do
+		request $load
+		used=`$MT -t $tape status 2>&1 | $EGREP "ONLINE|READY"`
+	done
+	echo $load > $slotfile
+	echo "     -> rew $load" >> /tmp/changer.debug
+	$MT -t $nrtape rewind
+	$DD if=$tape count=1 >> /tmp/changer.debug 2>&1
+	echo "$load $nrtape"
+	exit 0
+}
+
+#
+
+info() {
+	used=`$MT -t $tape status 2>&1 | $EGREP "ONLINE|READY"`
+	echo "     -> info   $used" >> /tmp/changer.debug
+	if [ -z "$used" ];then
+		echo "0 $lastslot 1"
+	else
+		echo "$slot $lastslot 1"
+	fi
+	exit 0
+}
+
+#
+# main part
+#
+
+echo "Args -> $*" >> /tmp/changer.debug
+while [ $# -ge 1 ];do
+	case $1 in
+	-slot)
+		shift
+		load $*
+		;;
+	-info)
+		shift
+		info
+		;;
+	-reset)
+		shift
+		reset
+		;;
+	-eject)
+		shift
+		eject
+		;;
+	*)
+		echo "Unknown option $1"
+		exit 2
+		;;
+	esac
+done
+
+exit 0

@@ -1,0 +1,97 @@
+#!/bin/sh
+#
+# Amanda, The Advanced Maryland Automatic Network Disk Archiver
+# Copyright (c) 1991,1994 University of Maryland
+# All Rights Reserved.
+#
+# Permission to use, copy, modify, distribute, and sell this software and its
+# documentation for any purpose is hereby granted without fee, provided that
+# the above copyright notice appear in all copies and that both that
+# copyright notice and this permission notice appear in supporting
+# documentation, and that the name of U.M. not be used in advertising or
+# publicity pertaining to distribution of the software without specific,
+# written prior permission.  U.M. makes no representations about the
+# suitability of this software for any purpose.  It is provided "as is"
+# without express or implied warranty.
+#
+# U.M. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL U.M.
+# BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+# OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+# CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+# Author: James da Silva, Systems Design and Analysis Group
+#			   Computer Science Department
+#			   University of Maryland at College Park
+#
+
+#
+# amdump: Manage running one night's Amanda dump run.
+#
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+libexecdir=@libexecdir@
+
+confdir=@CONFIG_DIR@
+logdir=@LOG_DIR@
+
+PATH=$libexecdir:@bindir@:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
+export PATH
+
+USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
+if test "$USE_VERSION_SUFFIXES" = "yes"; then
+	SUF="-@VERSION@"
+else
+	SUF=
+fi
+
+if [ $# -ne 1 ]; then
+        echo  Usage: amdump$SUF conf
+        exit 1
+fi
+
+conf=$1
+if [ ! -d $confdir/$conf ]; then
+    echo "amdump$SUF: could not find directory $confdir/$conf"
+    exit 1
+fi
+
+cd $confdir/$conf
+logfile=`$libexecdir/getconf$SUF logfile`
+errfile=$logdir/$conf/amdump
+tapecycle=`$libexecdir/getconf$SUF tapecycle`
+dumpuser=`$libexecdir/getconf$SUF dumpuser`
+runuser=`whoami`
+
+if [ $runuser != $dumpuser ]; then
+	echo "amdump: must be run as user $dumpuser"
+	exit 1
+fi
+
+# Plan and drive the dumps.
+exec </dev/null >$errfile 2>&1
+$libexecdir/planner$SUF | $libexecdir/driver$SUF
+
+# Send out a report on the dumps.
+exec </dev/null >/dev/null 2>&1
+$libexecdir/reporter$SUF
+
+# Keep a debug log through the tapecycle plus a couple of days.
+days=`expr $tapecycle + 2`
+while [ $days -ge 2 ]; do
+	ndays=`expr $days - 1`
+	mv $errfile.$ndays $errfile.$days
+	days=$ndays
+done
+mv $errfile $errfile.1
+
+# Copy across all of the index files.
+$libexecdir/amgetidx$SUF $conf
+
+# Trim the index file to those for dumps that still exist.
+$libexecdir/amtrmidx$SUF $conf
+
+exit 0

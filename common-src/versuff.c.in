@@ -1,0 +1,31 @@
+#include "amanda.h"
+#include "version.h"
+
+const int   VERSION_MAJOR   = @VERSION_MAJOR@;
+const int   VERSION_MINOR   = @VERSION_MINOR@;
+const int   VERSION_PATCH   = @VERSION_PATCH@;
+const char *VERSION_COMMENT = @VERSION_COMMENT@;
+
+char *
+versionsuffix()
+{
+#ifdef USE_VERSION_SUFFIXES
+	static char vsuff[15];
+
+	sprintf(vsuff,"-%d.%d.%d%s", 
+		VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_COMMENT);
+	return vsuff;
+#else
+	return "";
+#endif
+}
+
+char *
+version()
+{
+	static char vsuff[15];
+
+	sprintf(vsuff,"%d.%d.%d%s", 
+		VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_COMMENT);
+	return vsuff;
+}

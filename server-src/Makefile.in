@@ -1,0 +1,622 @@
+# Makefile.in generated automatically by automake 1.1l from Makefile.am
+
+# Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
+# This Makefile.in is free software; the Free Software Foundation
+# gives unlimited permission to copy, distribute and modify it.
+
+# Makefile for Amanada server programs.
+
+
+SHELL = /bin/sh
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+oldincludedir = /usr/include
+
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+
+top_builddir = ..
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+transform = @program_transform_name@
+target_alias = @target_alias@
+build_alias = @build_alias@
+host_triplet = @host@
+target_triplet = @target@
+build_triplet = @build@
+host_alias = @host_alias@
+LOG_DIR = @LOG_DIR@
+MT = @MT@
+RESTORE = @RESTORE@
+DB_DIR = @DB_DIR@
+VERSION = @VERSION@
+ac_c = @ac_c@
+XFSDUMP = @XFSDUMP@
+PCAT = @PCAT@
+DD = @DD@
+LEX = @LEX@
+GNUPLOT = @GNUPLOT@
+VERSION_MINOR = @VERSION_MINOR@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+BUILD_SERVER_PROGS_LIBEXEC = @BUILD_SERVER_PROGS_LIBEXEC@
+PACKAGE = @PACKAGE@
+COMPRESS = @COMPRESS@
+RSH = @RSH@
+BUILD_CLIENT_SCRIPTS_BIN = @BUILD_CLIENT_SCRIPTS_BIN@
+ac_n = @ac_n@
+XFSRESTORE = @XFSRESTORE@
+DUMP = @DUMP@
+INDEX_DIR = @INDEX_DIR@
+BUILD_AMPLOT_LIBEXEC = @BUILD_AMPLOT_LIBEXEC@
+AMPLOT_COMPRESS = @AMPLOT_COMPRESS@
+RANLIB = @RANLIB@
+VERSION_COMMENT = @VERSION_COMMENT@
+MAILER = @MAILER@
+DEFAULT_SERVER = @DEFAULT_SERVER@
+AMPLOT_CAT_GZIP = @AMPLOT_CAT_GZIP@
+TAPE_NO_REWIND_DEVICE = @TAPE_NO_REWIND_DEVICE@
+DEFAULT_TAPE_DEVICE = @DEFAULT_TAPE_DEVICE@
+YACC = @YACC@
+TAPE_REWIND_DEVICE = @TAPE_REWIND_DEVICE@
+AMPLOT_CAT_PACK = @AMPLOT_CAT_PACK@
+SAMBA_CLIENT = @SAMBA_CLIENT@
+DEFAULT_TAPE_SERVER = @DEFAULT_TAPE_SERVER@
+BUILD_SERVER_SCRIPTS_BIN = @BUILD_SERVER_SCRIPTS_BIN@
+CC = @CC@
+BUILD_SERVER_PROGS_BIN = @BUILD_SERVER_PROGS_BIN@
+BUILD_CHANGER_SCRIPTS_LIBEXEC = @BUILD_CHANGER_SCRIPTS_LIBEXEC@
+BUILD_CHANGER_PROGS_LIBEXEC = @BUILD_CHANGER_PROGS_LIBEXEC@
+GREP = @GREP@
+AMPLOT_CAT_COMPRESS = @AMPLOT_CAT_COMPRESS@
+BUILD_CLIENT_SCRIPTS_LIBEXEC = @BUILD_CLIENT_SCRIPTS_LIBEXEC@
+GNUTAR = @GNUTAR@
+PERL = @PERL@
+BUILD_CLIENT_PROGS_LIBEXEC = @BUILD_CLIENT_PROGS_LIBEXEC@
+AR = @AR@
+EGREP = @EGREP@
+CONFIG_DIR = @CONFIG_DIR@
+BUILD_AMPLOT_BIN = @BUILD_AMPLOT_BIN@
+AWK_VAR_ASSIGNMENT_OPT = @AWK_VAR_ASSIGNMENT_OPT@
+VERSION_PATCH = @VERSION_PATCH@
+CLIENT_LOGIN = @CLIENT_LOGIN@
+SHELL = @SHELL@
+CAT = @CAT@
+MTX = @MTX@
+MT_FILE_FLAG = @MT_FILE_FLAG@
+GZIP = @GZIP@
+VERSION_SUFFIX = @VERSION_SUFFIX@
+SETUID_GROUP = @SETUID_GROUP@
+DEFAULT_CONFIG = @DEFAULT_CONFIG@
+VERSION_MAJOR = @VERSION_MAJOR@
+USE_VERSION_SUFFIXES = @USE_VERSION_SUFFIXES@
+
+INCLUDES =		-I$(top_srcdir)/common-src
+
+AMANDA_CFLAGS =		@AMANDA_CFLAGS@
+
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
+
+LDADD =			../common-src/libamanda.a
+
+SUFFIXES =		.sh .pl
+
+bin_PROGRAMS =		@BUILD_SERVER_PROGS_BIN@
+
+libexec_PROGRAMS =	@BUILD_SERVER_PROGS_LIBEXEC@
+
+bin_SCRIPTS =		@BUILD_SERVER_SCRIPTS_BIN@
+
+EXTRA_PROGRAMS =	amadmin				amcheck		\
+			amflush				amgetidx	\
+			amidxtaped			amindexd	\
+			amlabel				amtape		\
+			amtrmidx			driver		\
+			dumper				getconf		\
+			planner				reporter	\
+			taper
+
+EXTRA_SCRIPTS =		amcheckdb			amcleanup	\
+			amdump				amoverview	\
+			amrmtape			amtoc		\
+			amverify
+
+amindexd_SOURCES =	amindexd.c			amindexd.h	\
+			disk_history.c			disk_history.h	\
+			list_dir.c
+
+driver_SOURCES =	driver.c			driver.h	\
+			driverio.c
+mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+CONFIG_HEADER = ../config.h
+CONFIG_CLEAN_FILES =  amcheckdb.sh amcleanup.sh amdump.sh amfreetapes.sh \
+amoverview.pl amrmtape.sh amtoc.pl amverify.sh
+PROGRAMS =  $(bin_PROGRAMS) $(libexec_PROGRAMS)
+
+
+DEFS = @DEFS@ -I. -I$(srcdir) -I..
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+amadmin_SOURCES = amadmin.c
+amadmin_OBJECTS =  amadmin.o
+amadmin_LDADD = $(LDADD)
+amadmin_DEPENDENCIES =  ../common-src/libamanda.a
+amadmin_LDFLAGS = 
+amcheck_SOURCES = amcheck.c
+amcheck_OBJECTS =  amcheck.o
+amcheck_LDADD = $(LDADD)
+amcheck_DEPENDENCIES =  ../common-src/libamanda.a
+amcheck_LDFLAGS = 
+amflush_SOURCES = amflush.c
+amflush_OBJECTS =  amflush.o
+amflush_LDADD = $(LDADD)
+amflush_DEPENDENCIES =  ../common-src/libamanda.a
+amflush_LDFLAGS = 
+amgetidx_SOURCES = amgetidx.c
+amgetidx_OBJECTS =  amgetidx.o
+amgetidx_LDADD = $(LDADD)
+amgetidx_DEPENDENCIES =  ../common-src/libamanda.a
+amgetidx_LDFLAGS = 
+amidxtaped_SOURCES = amidxtaped.c
+amidxtaped_OBJECTS =  amidxtaped.o
+amidxtaped_LDADD = $(LDADD)
+amidxtaped_DEPENDENCIES =  ../common-src/libamanda.a
+amidxtaped_LDFLAGS = 
+amindexd_OBJECTS =  amindexd.o disk_history.o list_dir.o
+amindexd_LDADD = $(LDADD)
+amindexd_DEPENDENCIES =  ../common-src/libamanda.a
+amindexd_LDFLAGS = 
+amlabel_SOURCES = amlabel.c
+amlabel_OBJECTS =  amlabel.o
+amlabel_LDADD = $(LDADD)
+amlabel_DEPENDENCIES =  ../common-src/libamanda.a
+amlabel_LDFLAGS = 
+amtape_SOURCES = amtape.c
+amtape_OBJECTS =  amtape.o
+amtape_LDADD = $(LDADD)
+amtape_DEPENDENCIES =  ../common-src/libamanda.a
+amtape_LDFLAGS = 
+amtrmidx_SOURCES = amtrmidx.c
+amtrmidx_OBJECTS =  amtrmidx.o
+amtrmidx_LDADD = $(LDADD)
+amtrmidx_DEPENDENCIES =  ../common-src/libamanda.a
+amtrmidx_LDFLAGS = 
+driver_OBJECTS =  driver.o driverio.o
+driver_LDADD = $(LDADD)
+driver_DEPENDENCIES =  ../common-src/libamanda.a
+driver_LDFLAGS = 
+dumper_SOURCES = dumper.c
+dumper_OBJECTS =  dumper.o
+dumper_LDADD = $(LDADD)
+dumper_DEPENDENCIES =  ../common-src/libamanda.a
+dumper_LDFLAGS = 
+getconf_SOURCES = getconf.c
+getconf_OBJECTS =  getconf.o
+getconf_LDADD = $(LDADD)
+getconf_DEPENDENCIES =  ../common-src/libamanda.a
+getconf_LDFLAGS = 
+planner_SOURCES = planner.c
+planner_OBJECTS =  planner.o
+planner_LDADD = $(LDADD)
+planner_DEPENDENCIES =  ../common-src/libamanda.a
+planner_LDFLAGS = 
+reporter_SOURCES = reporter.c
+reporter_OBJECTS =  reporter.o
+reporter_LDADD = $(LDADD)
+reporter_DEPENDENCIES =  ../common-src/libamanda.a
+reporter_LDFLAGS = 
+taper_SOURCES = taper.c
+taper_OBJECTS =  taper.o
+taper_LDADD = $(LDADD)
+taper_DEPENDENCIES =  ../common-src/libamanda.a
+taper_LDFLAGS = 
+SCRIPTS =  $(bin_SCRIPTS)
+
+CFLAGS = @CFLAGS@
+LINK = $(CC) $(LDFLAGS) -o $@
+DIST_COMMON =  Makefile.am Makefile.in amcheckdb.sh.in amcleanup.sh.in \
+amdump.sh.in amfreetapes.sh.in amoverview.pl.in amrmtape.sh.in \
+amtoc.pl.in amverify.sh.in
+
+
+DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) \
+	$(TEXINFOS) $(MANS) $(EXTRA_DIST)
+
+TAR = tar
+SOURCES = amadmin.c amcheck.c amflush.c amgetidx.c amidxtaped.c $(amindexd_SOURCES) amlabel.c amtape.c amtrmidx.c $(driver_SOURCES) dumper.c getconf.c planner.c reporter.c taper.c
+OBJECTS = amadmin.o amcheck.o amflush.o amgetidx.o amidxtaped.o $(amindexd_OBJECTS) amlabel.o amtape.o amtrmidx.o $(driver_OBJECTS) dumper.o getconf.o planner.o reporter.o taper.o
+
+default: all
+
+.SUFFIXES:
+.SUFFIXES: .c .o .sh .pl
+$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL) 
+	cd $(top_srcdir) && automake --foreign server-src/Makefile
+
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status $(BUILT_SOURCES)
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+amcheckdb.sh: $(top_builddir)/config.status amcheckdb.sh.in
+	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+amcleanup.sh: $(top_builddir)/config.status amcleanup.sh.in
+	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+amdump.sh: $(top_builddir)/config.status amdump.sh.in
+	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+amfreetapes.sh: $(top_builddir)/config.status amfreetapes.sh.in
+	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+amoverview.pl: $(top_builddir)/config.status amoverview.pl.in
+	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+amrmtape.sh: $(top_builddir)/config.status amrmtape.sh.in
+	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+amtoc.pl: $(top_builddir)/config.status amtoc.pl.in
+	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+amverify.sh: $(top_builddir)/config.status amverify.sh.in
+	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+
+mostlyclean-binPROGRAMS:
+
+clean-binPROGRAMS:
+	test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
+
+distclean-binPROGRAMS:
+
+maintainer-clean-binPROGRAMS:
+
+install-binPROGRAMS: $(bin_PROGRAMS)
+	$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(bindir)
+	@list="$(bin_PROGRAMS)"; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(INSTALL_PROGRAM) $$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
+	     $(INSTALL_PROGRAM) $$p $(bindir)/`echo $$p|sed '$(transform)'`; \
+	  else :; fi; \
+	done
+
+uninstall-binPROGRAMS:
+	list="$(bin_PROGRAMS)"; for p in $$list; do \
+	  rm -f $(bindir)/`echo $$p|sed '$(transform)'`; \
+	done
+
+mostlyclean-libexecPROGRAMS:
+
+clean-libexecPROGRAMS:
+	test -z "$(libexec_PROGRAMS)" || rm -f $(libexec_PROGRAMS)
+
+distclean-libexecPROGRAMS:
+
+maintainer-clean-libexecPROGRAMS:
+
+install-libexecPROGRAMS: $(libexec_PROGRAMS)
+	$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(libexecdir)
+	@list="$(libexec_PROGRAMS)"; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(INSTALL_PROGRAM) $$p $(libexecdir)/`echo $$p|sed '$(transform)'`"; \
+	     $(INSTALL_PROGRAM) $$p $(libexecdir)/`echo $$p|sed '$(transform)'`; \
+	  else :; fi; \
+	done
+
+uninstall-libexecPROGRAMS:
+	list="$(libexec_PROGRAMS)"; for p in $$list; do \
+	  rm -f $(libexecdir)/`echo $$p|sed '$(transform)'`; \
+	done
+
+.c.o:
+	$(COMPILE) -c $<
+
+mostlyclean-compile:
+	rm -f *.o core
+
+clean-compile:
+
+distclean-compile:
+	rm -f *.tab.c
+
+maintainer-clean-compile:
+$(amadmin_OBJECTS): ../config.h
+
+amadmin: $(amadmin_OBJECTS) $(amadmin_DEPENDENCIES)
+	$(LINK) $(amadmin_LDFLAGS) $(amadmin_OBJECTS) $(amadmin_LDADD) $(LIBS)
+$(amcheck_OBJECTS): ../config.h
+
+amcheck: $(amcheck_OBJECTS) $(amcheck_DEPENDENCIES)
+	$(LINK) $(amcheck_LDFLAGS) $(amcheck_OBJECTS) $(amcheck_LDADD) $(LIBS)
+$(amflush_OBJECTS): ../config.h
+
+amflush: $(amflush_OBJECTS) $(amflush_DEPENDENCIES)
+	$(LINK) $(amflush_LDFLAGS) $(amflush_OBJECTS) $(amflush_LDADD) $(LIBS)
+$(amgetidx_OBJECTS): ../config.h
+
+amgetidx: $(amgetidx_OBJECTS) $(amgetidx_DEPENDENCIES)
+	$(LINK) $(amgetidx_LDFLAGS) $(amgetidx_OBJECTS) $(amgetidx_LDADD) $(LIBS)
+$(amidxtaped_OBJECTS): ../config.h
+
+amidxtaped: $(amidxtaped_OBJECTS) $(amidxtaped_DEPENDENCIES)
+	$(LINK) $(amidxtaped_LDFLAGS) $(amidxtaped_OBJECTS) $(amidxtaped_LDADD) $(LIBS)
+$(amindexd_OBJECTS): ../config.h
+
+amindexd: $(amindexd_OBJECTS) $(amindexd_DEPENDENCIES)
+	$(LINK) $(amindexd_LDFLAGS) $(amindexd_OBJECTS) $(amindexd_LDADD) $(LIBS)
+$(amlabel_OBJECTS): ../config.h
+
+amlabel: $(amlabel_OBJECTS) $(amlabel_DEPENDENCIES)
+	$(LINK) $(amlabel_LDFLAGS) $(amlabel_OBJECTS) $(amlabel_LDADD) $(LIBS)
+$(amtape_OBJECTS): ../config.h
+
+amtape: $(amtape_OBJECTS) $(amtape_DEPENDENCIES)
+	$(LINK) $(amtape_LDFLAGS) $(amtape_OBJECTS) $(amtape_LDADD) $(LIBS)
+$(amtrmidx_OBJECTS): ../config.h
+
+amtrmidx: $(amtrmidx_OBJECTS) $(amtrmidx_DEPENDENCIES)
+	$(LINK) $(amtrmidx_LDFLAGS) $(amtrmidx_OBJECTS) $(amtrmidx_LDADD) $(LIBS)
+$(driver_OBJECTS): ../config.h
+
+driver: $(driver_OBJECTS) $(driver_DEPENDENCIES)
+	$(LINK) $(driver_LDFLAGS) $(driver_OBJECTS) $(driver_LDADD) $(LIBS)
+$(dumper_OBJECTS): ../config.h
+
+dumper: $(dumper_OBJECTS) $(dumper_DEPENDENCIES)
+	$(LINK) $(dumper_LDFLAGS) $(dumper_OBJECTS) $(dumper_LDADD) $(LIBS)
+$(getconf_OBJECTS): ../config.h
+
+getconf: $(getconf_OBJECTS) $(getconf_DEPENDENCIES)
+	$(LINK) $(getconf_LDFLAGS) $(getconf_OBJECTS) $(getconf_LDADD) $(LIBS)
+$(planner_OBJECTS): ../config.h
+
+planner: $(planner_OBJECTS) $(planner_DEPENDENCIES)
+	$(LINK) $(planner_LDFLAGS) $(planner_OBJECTS) $(planner_LDADD) $(LIBS)
+$(reporter_OBJECTS): ../config.h
+
+reporter: $(reporter_OBJECTS) $(reporter_DEPENDENCIES)
+	$(LINK) $(reporter_LDFLAGS) $(reporter_OBJECTS) $(reporter_LDADD) $(LIBS)
+$(taper_OBJECTS): ../config.h
+
+taper: $(taper_OBJECTS) $(taper_DEPENDENCIES)
+	$(LINK) $(taper_LDFLAGS) $(taper_OBJECTS) $(taper_LDADD) $(LIBS)
+
+install-binSCRIPTS: $(bin_SCRIPTS)
+	$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(bindir)
+	@list="$(bin_SCRIPTS)"; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo "$(INSTALL_SCRIPT) $$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
+	    $(INSTALL_SCRIPT) $$p $(bindir)/`echo $$p|sed '$(transform)'`; \
+	  else if test -f $(srcdir)/$$p; then \
+	    echo "$(INSTALL_SCRIPT) $(srcdir)/$$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
+	    $(INSTALL_SCRIPT) $(srcdir)/$$p $(bindir)/`echo $$p|sed '$(transform)'`; \
+	  else :; fi; fi; \
+	done
+
+uninstall-binSCRIPTS:
+	list="$(bin_SCRIPTS)"; for p in $$list; do \
+	  rm -f $(bindir)/`echo $$p|sed '$(transform)'`; \
+	done
+
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES)
+	here=`pwd` && cd $(srcdir) && mkid -f$$here/ID $(SOURCES) $(HEADERS)
+
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES)
+	tags=; \
+	here=`pwd`; \
+	list="$(SUBDIRS)"; for subdir in $$list; do \
+	  test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
+	done; \
+	test -z "$(ETAGS_ARGS)$(SOURCES)$(HEADERS)$$tags" \
+	  || cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $(SOURCES) $(HEADERS) -o $$here/TAGS
+
+mostlyclean-tags:
+
+clean-tags:
+
+distclean-tags:
+	rm -f TAGS ID
+
+maintainer-clean-tags:
+
+distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
+
+subdir = server-src
+distdir: $(DISTFILES)
+	@for file in $(DISTFILES); do \
+	  d=$(srcdir); \
+	  test -f $(distdir)/$$file \
+	  || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
+	  || cp -p $$d/$$file $(distdir)/$$file; \
+	done
+amadmin.o amadmin.lo: amadmin.c ../common-src/amanda.h ../config.h \
+	../common-src/conffile.h ../common-src/diskfile.h \
+	../common-src/tapefile.h ../common-src/infofile.h \
+	../common-src/logfile.h ../common-src/version.h
+amcheck.o amcheck.lo: amcheck.c ../common-src/amanda.h ../config.h \
+	../common-src/conffile.h ../common-src/statfs.h \
+	../common-src/diskfile.h ../common-src/tapefile.h \
+	../common-src/tapeio.h ../common-src/changer.h \
+	../common-src/protocol.h ../common-src/dgram.h \
+	../common-src/clock.h ../common-src/version.h
+amflush.o amflush.lo: amflush.c ../common-src/amanda.h ../config.h \
+	../common-src/conffile.h ../common-src/diskfile.h \
+	../common-src/tapefile.h ../common-src/logfile.h \
+	../common-src/clock.h ../common-src/version.h
+amgetidx.o amgetidx.lo: amgetidx.c ../common-src/amanda.h ../config.h \
+	../common-src/arglist.h ../common-src/conffile.h \
+	../common-src/diskfile.h ../common-src/version.h \
+	../common-src/infofile.h ../common-src/logfile.h \
+	../common-src/stream.h ../common-src/clock.h \
+	../common-src/protocol.h ../common-src/dgram.h
+amidxtaped.o amidxtaped.lo: amidxtaped.c ../common-src/amanda.h \
+	../config.h ../common-src/version.h
+amindexd.o amindexd.lo: amindexd.c ../common-src/amanda.h ../config.h \
+	../common-src/conffile.h ../common-src/diskfile.h \
+	../common-src/arglist.h ../common-src/dgram.h \
+	../common-src/version.h ../common-src/protocol.h amindexd.h \
+	disk_history.h
+amlabel.o amlabel.lo: amlabel.c ../common-src/amanda.h ../config.h \
+	../common-src/conffile.h ../common-src/tapeio.h \
+	../common-src/changer.h
+amtape.o amtape.lo: amtape.c ../common-src/amanda.h ../config.h \
+	../common-src/conffile.h ../common-src/tapefile.h \
+	../common-src/tapeio.h ../common-src/clock.h \
+	../common-src/changer.h ../common-src/version.h
+amtrmidx.o amtrmidx.lo: amtrmidx.c ../common-src/amanda.h ../config.h \
+	../common-src/arglist.h ../common-src/conffile.h \
+	../common-src/diskfile.h ../common-src/version.h
+disk_history.o disk_history.lo: disk_history.c ../common-src/amanda.h \
+	../config.h disk_history.h
+driver.o driver.lo: driver.c ../common-src/amanda.h ../config.h \
+	../common-src/clock.h ../common-src/conffile.h \
+	../common-src/diskfile.h ../common-src/logfile.h \
+	../common-src/statfs.h ../common-src/version.h driver.h
+driverio.o driverio.lo: driverio.c ../common-src/amanda.h ../config.h \
+	../common-src/clock.h ../common-src/conffile.h \
+	../common-src/diskfile.h ../common-src/logfile.h driver.h
+dumper.o dumper.lo: dumper.c ../common-src/amanda.h ../config.h \
+	../common-src/conffile.h ../common-src/infofile.h \
+	../common-src/logfile.h ../common-src/stream.h \
+	../common-src/clock.h ../common-src/protocol.h \
+	../common-src/dgram.h ../common-src/version.h \
+	../common-src/arglist.h
+getconf.o getconf.lo: getconf.c ../common-src/amanda.h ../config.h \
+	../common-src/conffile.h
+list_dir.o list_dir.lo: list_dir.c ../common-src/amanda.h ../config.h \
+	amindexd.h disk_history.h
+planner.o planner.lo: planner.c ../common-src/amanda.h ../config.h \
+	../common-src/conffile.h ../common-src/diskfile.h \
+	../common-src/tapefile.h ../common-src/infofile.h \
+	../common-src/logfile.h ../common-src/clock.h \
+	../common-src/dgram.h ../common-src/protocol.h \
+	../common-src/version.h
+reporter.o reporter.lo: reporter.c ../common-src/amanda.h ../config.h \
+	../common-src/conffile.h ../common-src/tapefile.h \
+	../common-src/diskfile.h ../common-src/infofile.h \
+	../common-src/logfile.h ../common-src/version.h
+taper.o taper.lo: taper.c ../common-src/amanda.h ../config.h \
+	../common-src/conffile.h ../common-src/tapefile.h \
+	../common-src/clock.h ../common-src/stream.h \
+	../common-src/infofile.h ../common-src/logfile.h \
+	../common-src/tapeio.h ../common-src/changer.h \
+	../common-src/version.h ../common-src/arglist.h
+
+info:
+dvi:
+check: all
+	$(MAKE)
+installcheck:
+install-exec: install-binPROGRAMS install-libexecPROGRAMS install-binSCRIPTS
+	$(NORMAL_INSTALL)
+	$(MAKE) install-exec-hook
+
+install-data: 
+	$(NORMAL_INSTALL)
+
+install: install-exec install-data all
+	@:
+
+uninstall: uninstall-binPROGRAMS uninstall-libexecPROGRAMS uninstall-binSCRIPTS
+
+all: $(PROGRAMS) $(SCRIPTS) Makefile
+
+install-strip:
+	$(MAKE) INSTALL_PROGRAM='$(INSTALL_PROGRAM) -s' install
+installdirs:
+	$(mkinstalldirs)  $(bindir) $(libexecdir) $(bindir)
+
+
+mostlyclean-generic:
+	test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
+
+clean-generic:
+	test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
+
+distclean-generic:
+	rm -f Makefile $(DISTCLEANFILES)
+	rm -f config.cache config.log stamp-h
+	test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
+
+maintainer-clean-generic:
+	test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
+	test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
+mostlyclean:  mostlyclean-binPROGRAMS mostlyclean-libexecPROGRAMS \
+		mostlyclean-compile mostlyclean-tags \
+		mostlyclean-generic
+
+clean:  clean-binPROGRAMS clean-libexecPROGRAMS clean-compile clean-tags \
+		clean-generic mostlyclean
+
+distclean:  distclean-binPROGRAMS distclean-libexecPROGRAMS \
+		distclean-compile distclean-tags distclean-generic \
+		clean
+	rm -f config.status
+
+maintainer-clean:  maintainer-clean-binPROGRAMS \
+		maintainer-clean-libexecPROGRAMS \
+		maintainer-clean-compile maintainer-clean-tags \
+		maintainer-clean-generic distclean
+	@echo "This command is intended for maintainers to use;"
+	@echo "it deletes files that may require special tools to rebuild."
+
+.PHONY: default mostlyclean-binPROGRAMS distclean-binPROGRAMS \
+clean-binPROGRAMS maintainer-clean-binPROGRAMS uninstall-binPROGRAMS \
+install-binPROGRAMS mostlyclean-libexecPROGRAMS \
+distclean-libexecPROGRAMS clean-libexecPROGRAMS \
+maintainer-clean-libexecPROGRAMS uninstall-libexecPROGRAMS \
+install-libexecPROGRAMS mostlyclean-compile distclean-compile \
+clean-compile maintainer-clean-compile uninstall-binSCRIPTS \
+install-binSCRIPTS tags mostlyclean-tags distclean-tags clean-tags \
+maintainer-clean-tags distdir info dvi installcheck install-exec \
+install-data install uninstall all installdirs mostlyclean-generic \
+distclean-generic clean-generic maintainer-clean-generic clean \
+mostlyclean distclean maintainer-clean
+
+
+.pl:
+			cat $< > $@
+			chmod a+x $@
+
+install-exec-hook:
+	@list="$(bin_PROGRAMS) $(bin_SCRIPTS)"; for p in $$list; do \
+		echo chown $(CLIENT_LOGIN) $(bindir)/`echo $$p|sed '$(transform)'`; \
+		chown $(CLIENT_LOGIN) $(bindir)/`echo $$p|sed '$(transform)'`; \
+		echo chgrp $(SETUID_GROUP) $(bindir)/`echo $$p|sed '$(transform)'`; \
+		chgrp $(SETUID_GROUP) $(bindir)/`echo $$p|sed '$(transform)'`; \
+	done; \
+	list="$(libexec_PROGRAMS) $(libexec_SCRIPTS)"; for p in $$list; do \
+		echo chown $(CLIENT_LOGIN) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
+		chown $(CLIENT_LOGIN) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
+		echo chgrp $(SETUID_GROUP) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
+		chgrp $(SETUID_GROUP) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
+	done; \
+	list="$(bindir)/amcheck $(libexecdir)/amgetidx $(libexecdir)/dumper $(libexecdir)/planner"; for p in $$list; do \
+		if echo "$(bin_PROGRAMS) $(bin_SCRIPTS) $(libexec_PROGRAMS) $(libexec_SCRIPTS)" | grep `basename $$p` >/dev/null 2>&1; then \
+			echo chown root `echo $$p|sed '$(transform)'`; \
+			chown root `echo $$p|sed '$(transform)'`; \
+			echo chmod u+s,o-rwx `echo $$p|sed '$(transform)'`; \
+			chmod u+s,o-rwx `echo $$p|sed '$(transform)'`; \
+		fi; \
+	done
+
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:

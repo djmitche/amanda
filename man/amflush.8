@@ -1,0 +1,62 @@
+.\"
+.TH AMFLUSH 8
+.SH NAME
+amflush \- flushes Amanda backup files from holding disk to tape
+.SH SYNOPSIS
+.B amflush 
+.I [ -f ] config
+
+.SH DESCRIPTION
+
+.B Amflush
+writes all the Amanda backup files from the holding disk to tape, and
+updates the Amanda info database and tape list accordingly.  The
+backups go to the holding disk when something is wrong with the tape
+at the time
+.B amdump
+is run, usually at night.  When this happens, the operator must
+correct the problem and run
+.B amflush
+by hand the next day.
+.PP  
+.B Amflush
+will look in the holding disk specified by the
+.I amanda.conf
+file in /opt/amanda/config/\fIconfig\fR
+for any non-empty Amanda work directories.  It then prompts the
+operator to select the correct directory.  The work directories on the
+holding disk are named by the date at the time
+.B amdump
+was run.  
+.PP
+.B Amflush 
+normally detaches from the user's tty and runs as a background
+process.  With the -f option, amflush stays in the foreground; this is
+useful if
+.B amflush 
+is run as part of another script that, for example, advances the tape
+in a carousel after the flush is completed.
+
+See the
+.IR amanda(8)
+man page for more details about 
+Amanda.
+
+.SH EXAMPLE
+.TP
+% amflush DailySet1
+If the 19910215 directory exists in the holding disk work directory,
+.B amflush 
+will prompt the operator then write all the backups for Feb 15, 1991
+from the holding disk to the tape.
+.B Amflush
+then updates the databases and sends 
+a mail report to the operators, as specified by the "DailySet1" configuration.
+
+.SH AUTHOR
+James da Silva <jds@cs.umd.edu>
+.br
+University of Maryland, College Park
+
+.SH "SEE ALSO"
+amanda(8), amdump(8).

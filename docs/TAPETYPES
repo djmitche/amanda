@@ -1,0 +1,403 @@
+
+A collection of tapetype definitions in use in the Amanda community.
+This list has not been sorted in any way so look at the whole thing
+before you decide what parameters who will use.
+
+Nobody provides any guarantees that any of these settings will work for
+you.  They are provided for information purposes only.
+
+This list is also available from:
+
+http://www.snrc.uow.edu.au/public/amanda_tapetypes.txt
+
+Please send updates or new information to: chris@snrc.uow.edu.au
+
+----
+
+From: "Ron Barak" <RonBarak@POBoxes.com>
+
+In my DAT drive (HP DAT in DEC StorageWorks enclosure), for 120m 
+tapes (with compression), I use (and it's just the numbers that work 
+for me, I have not made a scientific research to get the optimal 
+values):
+
+define tapetype DAT {
+    comment "DAT tape drives"
+    length 8000 mbytes          # these numbers are not accurate
+    filemark 100 kbytes         # but you get the idea
+    speed 400 kbytes
+}
+
+----
+
+From: dietmar <dietmar@highway.bertelsmann.de>
+
+I have a HP1533 and a seagate drive (Archive Python SCSI message).
+I use for both drives:
+
+define tapetype DAT2 {
+    comment "DAT tape drives"
+    length 3000 mbytes
+    filemark 250 kbytes
+    speed 400 kbytes
+}
+
+This is a very conservative setting, but from some tape overflows
+i got the impression that 4GB is unformatted capacity and
+you get somewhere between 3GB and 3.4GB in real data.
+
+the python is used only for testing. I don´t know if it 
+has more capacity then the HP.
+
+----
+
+From: "Chris Stacey" <chris@snrc.uow.edu.au>
+
+I have a seagate drive (Archive Python 4mm Helical Scan SCSI message).
+Based on the output from a series of ufsdumps I use:
+
+define tapetype DAT2 {
+    comment "DAT tape drives"
+    length 4000 mbytes
+    filemark 63 kbytes
+    speed 500 kbytes
+}
+
+----
+
+From: asa@poirot (Andre Saar)
+
+>I am trying to configure a Quantum DLT tapedrive for use with Amanda.
+>Does anybody have the correct define string to go in the amanda.conf file??
+
+Don't know if it is correct, but it works fine:
+
+define tapetype DLT4-2 {
+	comment "DLT4000 with Compaq III tapes"
+	length 10000 mbytes
+	filemark 8 kbytes
+	speed 1250 kbytes
+}
+
+We are not using DLT hardware compression because amanda does compression
+itself.
+
+This dumps 18 machines with 115 filesystems on a DEC3000/300X every night
+(4 nights a week) with 4 to 13 GBytes (avg. 7.2 GBytes) of data depending
+on the dumplevel (tapecycle 16 tapes).
+
+----
+
+From: "Mariano Goluboff" <goluboff@butch.Colorado.EDU>
+
+I use a Quantum DLT tape drive on an SGI, and found that the following
+tapetype entry works very nicely. I use 10 GB tapes, and don't use the
+tape drive compression, since Amanda already does a lot of compression.
+
+define tapetype DLT {
+    comment "DLT tape drives"
+    length 10000 mbytes
+    filemark 8 kbytes
+    speed 2500 kbytes
+}
+
+----
+
+From: Ulla Fischer <ulla@dmi.min.dk>
+
+define tapetype DLT-4000 {
+    comment "Quantum DLT-4000"
+    length 20000 mbytes
+    filemark 8 kbytes
+    speed 1500 kbytes
+}
+
+----
+
+From: "Donald L. Nash" <D.Nash@utexas.edu>
+
+Here's what we use for DEC TZ87 CompacTape III drives:
+
+define tapetype DEC-TZ87 {
+    comment "DEC TZ87 DLT CompacTape III"
+    length 12000 mbytes
+    filemark 8 kbytes
+    speed 2500 kbytes
+}
+
+define tapetype DEC-TZ87-NC {
+    comment "DEC TZ87 DLT CompacTape III, no hardware compression"
+    length 10000 mbytes
+    filemark 8 kbytes
+    speed 1250 kbytes
+}
+
+The actual maximum capacity of a TZ87 with compression turned on is 20000 
+mbytes, but you can't be guaranteed of that compression factor, especially 
+when you are sending already-compressed stuff to the tape.  So we fudge and 
+say the capacity is only 12000 mbytes.  That's not a lot of gain over the 
+uncompressed case, but every little bit counts.
+
+----
+
+From: "Scott R. Keszler" <keszler@rrnet.com>
+
+IBM RS/6000 model C10 with IBM branded 5GB 8mm (112m) tape drive.
+
+define tapetype EXB-8500 {
+    comment "Exabyte EXB-8500 drive on decent machine"
+    length 4200 mbytes
+    filemark 48 kbytes
+    speed 505 kbytes
+}
+
+IIRC, the EXB-8500 definition came included w/ the 2.3.0 example files.
+Although the definition is not new, the IBM 5GB tape drive is a data point
+for that definition.
+
+----
+
+From example/amanda.conf of amanda-2.3.4b3 distribution.
+
+define tapetype QIC-60 {
+    comment "Archive Viper"
+    length 60 mbytes
+    filemark 100 kbytes         # don't know a better value
+    speed 100 kbytes            # dito
+}
+
+define tapetype DEC-DLT2000 {
+    comment "DEC Differential Digital Linear Tape 2000"
+    length 15000 mbytes
+    filemark 8 kbytes
+    speed 1250 kbytes
+}
+
+# goluboff@butch.Colorado.EDU
+# in amanda-users (Thu Dec 26 01:55:38 MEZ 1996)
+define tapetype DLT {
+    comment "DLT tape drives"
+    length 20000 mbytes         # 20 Gig tapes
+    filemark 2000 kbytes        # I don't know what this means
+    speed 1.5 mbytes
+}
+
+define tapetype SURESTORE-1200E {
+    comment "HP AutoLoader"
+    length 3900 mbytes
+    filemark 100 kbytes
+    speed 500 kbytes
+}
+
+define tapetype EXB-8500 {
+    comment "Exabyte EXB-8500 drive on decent machine"
+    length 4200 mbytes
+    filemark 48 kbytes
+    speed 474 kbytes                    
+}
+
+define tapetype EXB-8200 {
+    comment "Exabyte EXB-8200 drive on decent machine"
+    length 2200 mbytes
+    filemark 2130 kbytes
+    speed 240 kbytes                    
+}
+
+define tapetype HP-DAT {
+    comment "DAT tape drives"
+    length 1900 mbytes          # these numbers are not accurate
+    filemark 100 kbytes         # but you get the idea
+    speed 500 kbytes
+}
+
+define tapetype DAT {
+    comment "DAT tape drives"
+    length 1000 mbytes          # these numbers are not accurate
+    filemark 100 kbytes         # but you get the idea
+    speed 100 kbytes
+}
+
+define tapetype MIMSY-MEGATAPE {
+    comment "Megatape (Exabyte based) drive through Emulex on Vax 8600"
+    length 2200 mbytes
+    filemark 2130 kbytes
+    speed 170 kbytes            # limited by the Emulex bus interface, ugh
+}
+
+----
+
+From: Dan Lipofsky <danlip@cyc.com>
+
+Information found on http://www.quantum.com
+
+Quantum DLT 2000xt Drive, hardware compression turned OFF
+    filemark 8 kbytes    # actually 0-8 KB; it fills out the last 8KB block
+    speed 1250 kbytes    # maximum: might be smaller (system dependent)
+    length 15000 mbytes  # Quantum DLT CompacTape IIIxt tapes
+    length 10000 mbytes  # Quantum DLT CompacTape III tapes
+
+Quantum DLT 2000xt Drive, hardware compression turned ON
+    filemark 8 kbytes    # actually 0-8 KB; it fills out the last 8KB block
+    speed 2500 kbytes    # maximum: might be smaller (system dependent)
+    length 30000 mbytes  # Quantum DLT CompacTape IIIxt tapes
+    length 20000 mbytes  # Quantum DLT CompacTape III tapes
+    # these numbers are estimates based on a 2:1 compression ratio
+
+----
+
+From: "Michael R. Zika" <zika@oconto.tamu.edu>
+
+For what it's worth, we use:
+
+define tapetype EXB-8500 {
+    comment "Exabyte EXB-8500 drive"
+    length 5000 mbytes
+    filemark 48 kbytes
+    speed 474 kbytes
+}
+
+For our Sun-packaged Exabyte-8500 tape drive.  The filemark was taken
+from the Amanda examples for that drive -- caveat emptor.
+
+----
+
+From: "Ron Barak" <RonBarak@POBoxes.com>
+
+define tapetype DAT {
+    comment "DAT tape drives"
+    length 8000 mbytes          # these numbers are not accurate
+    filemark 8 kbytes           # but you get the idea
+    speed 400 kbytes
+}
+
+----
+
+From: euler@lavielle.com (Lutz Euler)
+
+Unfortunately I can not provide any new information,
+but here is my configuration anyway:
+
+Amanda version: 2.3.0
+tape drive:     Transitional Technology TTY 8000 XL
+                EXB 8500 compatibility mode
+tape length:    112 m
+tapetype info:  the EXB 8500 entry as provided in the example/amanda.conf
+                of Amanda 2.3.0.
+
+This works perfectly. If you have more accurate information so I can squeeze
+more out of the tape I would be interested to hear about it.
+
+----
+
+From: der Mouse  <mouse@Rodents.Montreal.QC.CA>
+
+Here is the tapetype we're using:
+
+# According to my tests, length=4474 mbyts and filemark=40 kbytes
+# (actually 39.4429- K).  We're being a bit conservative here - I've
+# seen amanda overrun what it thought the tape size was by a few percent.
+# Besides, the Exabyte book _says_ filemarks really are 48K.
+# -Mouse, 1996-10-22
+define tapetype EXB-8500 {
+    comment "Exabyte EXB-8500 drive on decent machine"
+    length 4200 mbytes
+    filemark 48 kbytes
+    speed 474 kbytes
+}
+
+----
+
+From: Ralf Fassel <ralf@atg.venture.de>
+
+We use the following on a DAT streamer (Conner/Seagate) w/o hardware
+compression.  The filemark value is a wild guess and has worked so far.
+
+  tapetype DAT # what kind of tape it is (see tapetypes below)
+  define tapetype DAT {
+	comment "DAT tape drives."
+	length 2000 mbytes		# 90 m tape
+	filemark 100 kbytes		# don't know about this one.
+	speed 400 kbytes		# What the manual says.
+    }
+
+We have only few filesystems to back up (<15), so the filemark is not that
+important for us.  The speed is actually more like 390k/s, but that's close
+enough.
+
+----
+
+From: neil.long@materials.oxford.ac.uk (Neil J Long)
+Subject: Re: tapetype for HPC1533A
+
+The DIP switches do not have specific functions - think of it as an array and
+the permutation of the switches gives a specific behaviour.
+
+Extracted from INSTALLATION notes by Nigel Wade, University of Leicester for
+his codes to interrogate a C1533A on an SGI machine.
+
+For 90M DAT's I use
+ define tapetype DAT2 {
+    comment "DAT tape drives"
+    length 1900000 kbytes # these numbers are not accurate
+    filemark 100 kbytes         # but you get the idea
+    speed 500 kbytes
+}
+
+No compression should give 2G but I lie and that way amanda rarely attempts to
+write beyond the end of the tape!
+
+----
+
+From: Joe Connolly {OH} <jjc@swl.msd.ray.com>
+
+  Here is what we use for our site. The tape is a Digital CompacTape III
+  cartridge (also known as a TK85K).
+
+
+  tapedev "/dev/nrst0"	# or use the (no-rewind!) tape device directly
+
+  tapetype DLT-2000	# what kind of tape it is (see tapetypes below)
+
+  # tapetypes
+  #
+  # Define the type of tape you use here, and use it in "tapetype" above.
+  # Some typical types of tapes are included here. The tapetype tells amanda
+  # how many MB will fit on the tape, how big the filemarks are, and how
+  # fast the tape device is.
+  #
+
+  define tapetype DLT-2000 {
+       comment "Quantum DLT-2000"
+       length 10000 mbytes
+       filemark 8 kbytes
+       speed 1500 kbytes
+  }
+
+----
+
+From: Brian  <signal@ns1.shreve.net>
+
+define tapetype EXB-TR3 {
+    comment "Exabyte EXB-TR3 drive on decent machine"
+    length 2200 mbytes
+    filemark 48 kbytes
+    speed 474 kbytes
+}
+
+----
+
+From: "Ancil Bethelmy (SysAdmin)" <abethelmy@imagelinks.com>
+
+I have had good results with the following tapetype on an Exabyte 10H
+library changer. I hope this helps.
+
+
+define tapetype EXB-8505 {
+    comment "Exabyte EXB-8505 drive on decent machine"
+    length 5000 mbytes
+    filemark 48 kbytes
+    speed 1000 kbytes
+}
+
+----
+

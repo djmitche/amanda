@@ -1,0 +1,197 @@
+#!/bin/sh 
+#
+# Exit Status:
+# 0 Alles Ok
+# 1 Illegal Request
+# 2 Fatal Error
+#
+
+# try to hit all the possibilities here
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libexecdir=@libexecdir@
+ 
+PATH=$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
+export PATH
+
+
+MT_FILE_FLAG=@MT_FILE_FLAG@
+
+USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
+if test "$USE_VERSION_SUFFIXES" = "yes"; then
+	SUF="-@VERSION@"
+else
+	SUF=
+fi
+
+myname=$0
+nrtape=@TAPE_NO_REWIND_DEVICE@
+tape=@TAPE_REWIND_DEVICE@
+MTX=@MTX@
+DD=@DD@
+lastslot=5
+# counted from 1 !!!
+cleanslot=5
+ecleanslot=6
+
+logfile=`getconf$SUF logfile`
+logdir=`dirname $logfile`
+
+if test ! -d "$logdir"; then
+	echo "$0: directory given in amanda.conf's logfile line does not exist." 1>&2
+	exit 1
+fi
+
+cleanfile=$logdir/.hp-changer-clean
+accessfile=$logdir/.hp-changer-access
+[ ! -f $cleanfile ] && echo 0 > $cleanfile
+[ ! -f $accessfile ] && echo 0 > $accessfile
+cleancount=`cat $cleanfile`
+accesscount=`cat $accessfile`
+#
+eject() { 
+  used=`$MTX -s | grep "Drive: tape [1-5] loaded"`
+  if [ ! -z "$used" ];then
+    $MTX -u `echo $used | sed 's/.*\([1-5]\).*/\1/'`
+    echo "`echo $used | sed 's/.*\([1-5]\).*/\1/'` $nrtape"
+    exit 0
+  else
+    echo "0 Drive was not loaded"
+    exit 1
+  fi
+}
+#
+reset() {
+  used=`$MTX -s | grep "Drive: tape [1-5] loaded"`
+  if [ ! -z "$used" ];then
+    $MTX -u `echo $used | sed 's/.*\([1-5]\).*/\1/'`
+  fi
+  res=`$MTX -l 1`
+  if [ $? -eq 0 ];then
+    echo "1 $nrtape"
+    exit 0
+  else
+    echo "1 $res"
+    exit 1
+  fi
+}
+#
+#
+load() {
+  used=`$MTX -s | sed -n 's/Drive: No tape Loaded/-1/p;s/Drive: tape \(.\) loaded/\1/p'`
+  echo "     -> loaded $used" >> /tmp/changer.debug
+  case $1 in
+    current)
+	     if [ $used -lt 0 ];then
+	       $MTX -l 1
+	       echo "0 $nrtape"
+	       exit 0
+	     else 
+	       echo "`expr $used - 1 ` $nrtape"
+	       exit 0
+	     fi
+	     ;;
+    next)
+	  load=`expr $used + 1`
+	  [ $load -gt $lastslot ] && load=1
+	  ;;
+    prev)
+	  load=`expr $used - 1`
+	  [ $load eq 0] && load=1
+	  ;;
+    first)
+	   load=1
+	   ;;
+    last)
+	  load=$lastslot
+	  ;;
+    [0-5])
+	   load=`expr $1 + 1`
+	   ;;
+    *)
+       echo "0 illegal request"
+       exit 1
+       ;;
+    esac
+#
+    if [ $load = $used ]; then
+        echo "`expr $used - 1 ` $nrtape"
+        exit 0
+    fi
+
+    if [ $load = $ecleanslot ]; then
+	expr $cleancount + 1 > $cleanfile
+	echo 0 > $accessfile
+    else
+	expr $accesscount + 1 > $accessfile
+	if [ $accesscount -gt 9 ]; then
+		$myname -slot $cleanslot >/dev/null
+		used=0
+	fi
+    fi	
+	
+#
+    if [ $used -gt 0 ];then
+      echo "     -> unload $used" >> /tmp/changer.debug
+      res=`$MTX -u $used`
+      status=$?
+      echo "     -> status $status" >> /tmp/changer.debug
+      echo "     -> res    $res" >> /tmp/changer.debug
+      if [ $status -ne 0 ];then
+        echo "$res"
+        exit 2
+      fi
+    fi
+    echo "     -> load   $load" >> /tmp/changer.debug
+    res=`$MTX -l $load`
+    status=$?
+    echo "     -> status $status" >> /tmp/changer.debug
+    echo "     -> res    $res" >> /tmp/changer.debug
+    if [ $status -eq 0 ];then
+      echo "     -> rew $load" >> /tmp/changer.debug
+      mt $MT_FILE_FLAG $nrtape rew
+      $DD if=$tape count=1 >> /tmp/changer.debug 2>&1
+      echo "`expr $load - 1` $nrtape"
+      exit 0
+    else
+      echo " $res"
+      exit 2
+    fi
+}
+#
+info() {
+  used=`$MTX -s | sed -n 's/Drive: No tape Loaded/-1/p;s/Drive: tape \(.\) loaded/\1/p'`
+  echo "     -> info   $used" >> /tmp/changer.debug
+  if [ $used -lt 0 ];then
+    echo "0 $lastslot 1"
+  else
+    echo "`expr $used - 1 ` $lastslot 1"
+  fi
+  exit 0
+}
+#
+echo "Args -> $*" >> /tmp/changer.debug
+while [ $# -ge 1 ];do
+  case $1 in
+    -slot)
+	   shift
+	   load $*
+	   ;;
+    -info)
+	   shift
+	   info
+	   ;;
+    -reset)
+	    shift
+	    reset
+	    ;;
+    -eject)
+	    shift
+	    eject
+	    ;;
+    *)
+       echo "Unknown option $1"
+       exit 2
+       ;;
+  esac
+done

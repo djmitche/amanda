@@ -1,0 +1,48 @@
+diff -c2 -r readline-2.0/Makefile.in readline-2.0-patched/Makefile.in
+*** readline-2.0/Makefile.in	Wed Jul 20 22:35:13 1994
+--- readline-2.0-patched/Makefile.in	Sat Dec 21 18:05:42 1996
+***************
+*** 23,26 ****
+--- 23,27 ----
+  bindir = $(exec_prefix)/bin
+  libdir = $(exec_prefix)/lib
++ incdir = $(exec_prefix)/include
+  mandir = $(prefix)/man/man1
+  
+***************
+*** 130,143 ****
+  force:
+  
+! install: installdirs libreadline.a
+! 	$(INSTALL_DATA) $(INSTALLED_HEADERS) $(incdir)/readline
+  	-$(MV) $(libdir)/libreadline.a $(libdir)/libreadline.old
+  	$(INSTALL_DATA) libreadline.a $(libdir)/libreadline.a
+  	-$(RANLIB) -t $(libdir)/libreadline.a
+  
+  installdirs:
+! 	[ ! -d $(incdir)/readline ] && { \
+! 	  mkdir $(incdir)/readline && chmod 755 $(incdir)/readline; }
+! 	[ ! -d $(libdir) ] && mkdir $(libdir)
+  
+  uninstall:
+--- 131,150 ----
+  force:
+  
+! install: installdirs libreadline.a libhistory.a
+! 	for h in $(INSTALLED_HEADERS); do \
+! 	  $(INSTALL_DATA) $(VPATH)/$$h $(incdir)/readline; \
+! 	done
+  	-$(MV) $(libdir)/libreadline.a $(libdir)/libreadline.old
+  	$(INSTALL_DATA) libreadline.a $(libdir)/libreadline.a
+  	-$(RANLIB) -t $(libdir)/libreadline.a
++ 	-$(MV) $(libdir)/libhistory.a $(libdir)/libhistory.old
++ 	$(INSTALL_DATA) libhistory.a $(libdir)/libhistory.a
++ 	-$(RANLIB) -t $(libdir)/libhistory.a
+  
+  installdirs:
+! 	if [ ! -d $(incdir)/readline ]; then \
+! 	  mkdir $(incdir)/readline && chmod 755 $(incdir)/readline; \
+! 	fi
+! 	if [ ! -d $(libdir) ]; then mkdir $(libdir); fi
+  
+  uninstall:

@@ -1,0 +1,252 @@
+#
+# amanda.conf - sample Amanda configuration file.  This is the actual config
+#		file in use at CS.UMD.EDU.
+#
+# If your configuration is called, say, "csd", then this file normally goes
+# in @CONFIG_DIR@/csd/amanda.conf.
+#
+
+org "@DEFAULT_CONFIG@"		# your organization name for reports
+mailto "fifi"		# space separated list of operators at your site
+dumpuser "@CLIENT_LOGIN@"	# the user to run dumps under
+#
+inparallel 4		# maximum dumpers that will run in parallel
+netusage  600		# maximum net bandwidth for Amanda, in KB per sec
+
+dumpcycle 4 weeks	# the number of days in the normal dump cycle
+tapecycle 8 tapes	# the number of tapes in rotation
+
+bumpsize 20 MB		# minimum savings (threshold) to bump level 1 -> 2
+bumpdays     1		# minimum days at each level
+bumpmult     4		# threshold = bumpsize * (level-1)**bumpmult
+
+runtapes     9
+tpchanger "no-changer" # the tape-changer glue script
+# tapedev	"/dev/nst0"	# Linux @ tuck
+# tapedev "/dev/nrst8"	# or use the (no-rewind!) tape device directly
+
+tapetype HP-DAT		# what kind of tape it is (see tapetypes below)
+labelstr "^HISS[0-9][0-9]*$"	# label constraint regex: all tapes must match
+
+diskdir "/space"	# where the holding disk is
+disksize 290 MB			# how much space can we use on it
+#diskdir "/dumps/amanda/work"	# additionaly holding disks can be specified
+#diskdir "/mnt/disk4"
+#disksize 1000 MB		# 	they are used round-robin
+
+
+# Amanda needs a few MB of diskspace for the log and debug files,
+# as well as a database.  This stuff can grow large, so the conf directory
+# isn't usually appropriate.  We use /usr/adm.  Create an amanda directory
+# under there.  You need a separate infofile and logfile for each
+# configuration, so create subdirectories for each conf and put the files
+# there.  Specify the filenames below.
+
+infofile "@DB_DIR@/@DEFAULT_CONFIG@/curinfo"	# database filename
+logfile  "@LOG_DIR@/@DEFAULT_CONFIG@/log"	# log filename
+
+# tapetypes
+#
+# Define the type of tape you use here, and use it in "tapetype" above.
+# Some typical types of tapes are included here.  The tapetype tells amanda
+# how many MB will fit on the tape, how big the filemarks are, and how
+# fast the tape device is.
+#
+# For completeness Amanda should calculate the inter-record gaps too, but it
+# doesn't.  For EXABYTE and DAT tapes this is ok.  Anyone using 9 tracks for
+# amanda and need IRG calculations?  Drop me a note if so.
+
+define tapetype QIC-60 {
+    comment "Archive Viper"
+    length 60 mbytes
+    filemark 100 kbytes		# don't know a better value
+    speed 100 kbytes		# dito
+}
+
+define tapetype DEC-DLT2000 {
+    comment "DEC Differential Digital Linear Tape 2000"
+    length 15000 mbytes
+    filemark 8 kbytes
+    speed 1250 kbytes
+}
+
+# goluboff@butch.Colorado.EDU
+# in amanda-users (Thu Dec 26 01:55:38 MEZ 1996)
+define tapetype DLT {
+    comment "DLT tape drives"
+    length 20000 mbytes		# 20 Gig tapes
+    filemark 2000 kbytes	# I don't know what this means
+    speed 1.5 mbytes
+}
+
+define tapetype SURESTORE-1200E {
+    comment "HP AutoLoader"
+    length 3900 mbytes
+    filemark 100 kbytes
+    speed 500 kbytes
+}
+
+define tapetype EXB-8500 {
+    comment "Exabyte EXB-8500 drive on decent machine"
+    length 4200 mbytes
+    filemark 48 kbytes
+    speed 474 kbytes			
+}
+
+define tapetype EXB-8200 {
+    comment "Exabyte EXB-8200 drive on decent machine"
+    length 2200 mbytes
+    filemark 2130 kbytes
+    speed 240 kbytes			
+}
+
+define tapetype HP-DAT {
+    comment "DAT tape drives"
+    length 1900 mbytes		# these numbers are not accurate
+    filemark 100 kbytes		# but you get the idea
+    speed 500 kbytes
+}
+
+define tapetype DAT {
+    comment "DAT tape drives"
+    length 1000 mbytes		# these numbers are not accurate
+    filemark 100 kbytes		# but you get the idea
+    speed 100 kbytes
+}
+
+define tapetype MIMSY-MEGATAPE {
+    comment "Megatape (Exabyte based) drive through Emulex on Vax 8600"
+    length 2200 mbytes
+    filemark 2130 kbytes
+    speed 170 kbytes		# limited by the Emulex bus interface, ugh
+}
+
+
+# dumptypes
+#
+# These are referred to by the disklist file.  The dumptype specifies
+# certain "options" for dumping including:
+#	index		- keep an index of the files backed up
+#	compress-fast	- (default) compress on the client using fast algorithm
+#	compress-best	- compress using the best (and slowww) algorithm
+#	no-compress	- don't compress the dump output
+#	srvcompress	- Compress dumps on the tape host instead of client
+#			  machines.  This may be useful when a fast tape host
+#			  is backing up slow clients.
+#	record		- (default) record the dump in /etc/dumpdates
+#	no-record	- don't record the dump, for testing
+#	no-hold		- don't go to the holding disk, good for dumping
+#			  the holding disk partition itself.
+#	skip-full	- Skip the disk when a level 0 is due, to allow
+#			  full backups outside Amanda, eg when the machine
+#			  is in single-user mode.
+#	skip-incr	- Skip the disk when the level 0 is NOT due.  This
+#			  is used in archive configurations, where only full
+#			  dumps are done and the tapes saved.
+#	no-full		- Do a level 1 every night.  This can be used, for
+#			  example, for small root filesystems that only change
+#			  slightly relative to a site-wide prototype.  Amanda
+#			  then backs up just the changes.
+#
+# Also, the dumptype specifies the priority level, where "low", "medium" and
+# "high" are the allowed levels.  These are only really used when Amanda has
+# no tape to write to because of some error.  In that "degraded mode", as
+# many incrementals as will fit on the holding disk are done, higher priority
+# first, to insure the important disks are dumped first.
+
+define dumptype always-full {
+    comment "Full dump of this filesystem always"
+    options no-compress
+    priority high
+    dumpcycle 0
+    maxcycle 0
+}
+
+define dumptype comp-user-tar {
+    program "GNUTAR"
+    comment "partitions dumped with tar"
+    options no-compress, index, exclude-list "/usr/local/lib/amanda/exclude.gtar"
+    priority medium
+}
+
+define dumptype comp-root-tar {
+    program "GNUTAR"
+    comment "Root partitions with compression"
+    options no-compress, index, exclude-list "/usr/local/lib/amanda/exclude.gtar"
+    priority low
+}
+
+define dumptype user-tar {
+    program "GNUTAR"
+    comment "partitions dumped with tar"
+    options no-compress, index, exclude-list "/usr/local/lib/amanda/exclude.gtar"
+    priority medium
+}
+
+define dumptype high-tar {
+    program "GNUTAR"
+    comment "partitions dumped with tar"
+    options no-compress, index, exclude-list "/usr/local/lib/amanda/exclude.gtar"
+    priority high
+}
+
+define dumptype root-tar {
+    program "GNUTAR"
+    comment "Root partitions dumped with tar"
+    options no-compress, index, exclude-list "/usr/local/lib/amanda/exclude.gtar"
+    priority low
+}
+
+define dumptype comp-user {
+    comment "Non-root partitions on reasonably fast machines"
+    options compress-fast
+    priority medium
+}
+
+define dumptype nocomp-user {
+    comment "Non-root partitions on slow machines"
+    options no-compress
+    priority medium
+}
+
+define dumptype holding-disk {
+    comment "The master-host holding disk itself"
+    options no-hold
+    priority medium
+}
+
+define dumptype comp-root {
+    comment "Root partitions with compression"
+    options compress-fast
+    priority low
+}
+
+define dumptype nocomp-root {
+    comment "Root partitions without compression"
+    options no-compress
+    priority low
+}
+
+define dumptype comp-high {
+    comment "very important partitions on fast machines"
+    options compress-best
+    priority high
+}
+
+define dumptype nocomp-high {
+    comment "very important partitions on slow machines"
+    options no-compress
+    priority high
+}
+
+define dumptype nocomp-test {
+    comment "test dump without compression, no /etc/dumpdates recording"
+    options no-compress, no-record
+    priority medium
+}
+
+define dumptype comp-test {
+    comment "test dump with compression, no /etc/dumpdates recording"
+    options compress-fast, no-record
+    priority medium
+}

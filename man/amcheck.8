@@ -1,0 +1,83 @@
+.\"
+.TH AMCHECK 8
+.SH NAME
+amcheck \- Amanda pre-run self-check
+.SH SYNOPSIS
+.B amcheck
+.I [ -mwsc ] config
+
+.SH DESCRIPTION
+
+.B Amcheck
+runs a number of self-checks on both the Amanda Tape Server Host and
+the Amanda Backup Client Hosts.
+.PP
+On the Tape Server,
+.B amcheck
+goes through the same tape checking used at the start of the
+nightly
+.B amdump
+process.  This verifies that the correct tape for the next run is in the
+correct drive.  The holding disks are also checked to insure that they
+have enough free space for the next
+.B amdump
+run.
+.PP
+.B Amcheck
+also causes a self-check to be run on all of the Backup Clients.  This
+check makes sure each host is up and running, and that the permissions
+on all the filesystems to be backed-up are correct.
+.PP
+With the -s option only the Tape Server checks to be run, and with the
+-c option only the Backup Client checks are run.
+.PP
+The -w option enables a destructive check for write-protection on the
+tape (which would cause the subsequent amdump to fail).  If the tape
+is writeable, this check causes all data after the tape label to be
+erased (actually depends on the device driver: there is no portable
+non-destructive way to check for write-protection).  The check is only
+made if the tape is otherwise correct.
+.PP
+If the -m option is given, nothing is printed, but  mail is sent to the
+"mailto" address (as specified by the
+.I amanda.conf
+file in /opt/amanda/config/\fIconfig\fR) if any errors are detected.  
+.PP
+See the
+.IR amanda(8)
+man page for more details about Amanda.
+
+
+.SH EXAMPLES
+.nf
+% amcheck DailySet1
+Amanda Tape Server Host Check
+-----------------------------
+/amanda2/amanda/work: 911475 KB disk space available, that's plenty.
+NOTE: skipping tape-writeable test.
+Tape VOL10 label ok.
+Server check took 34.966 seconds.
+
+Amanda Backup Client Hosts Check
+--------------------------------
+WARNING: northstar: selfcheck request timed out.  Host down?
+WARNING: drinkme: selfcheck request timed out.  Host down?
+WARNING: scruffy: selfcheck request timed out.  Host down?
+Client check: 136 hosts checked in 51.945 seconds, 3 problems found.
+
+(brought to you by Amanda 2.2.1)
+.fi
+
+.TP
+% amcheck -m DailySet1
+If the line "mailto csd-amanda" is in
+/opt/amanda/config/DailySet1/amanda.conf, mail will be sent to csd-amanda
+if the tape check returns an error.
+
+.SH AUTHOR
+James da Silva <jds@cs.umd.edu>
+.br
+University of Maryland, College Park
+
+.SH "SEE ALSO"
+amanda(8), amdump(8).

@@ -1,0 +1,44 @@
+diff -c2 -r readline-2.0/rltty.c readline-2.0-patched/rltty.c
+*** readline-2.0/rltty.c	Wed Aug  3 17:25:57 1994
+--- readline-2.0-patched/rltty.c	Tue Dec 24 09:00:41 1996
+***************
+*** 32,35 ****
+--- 32,39 ----
+  #endif /* HAVE_UNISTD_H */
+  
++ #ifndef sigmask
++ # include <netat/compat.h>
++ #endif
++ 
+  #include "rldefs.h"
+  #include "readline.h"
+***************
+*** 468,471 ****
+--- 472,476 ----
+    tiop->c_cc[VTIME] = 0;
+  
++ #if defined (FLUSHO)
+    if (tiop->c_lflag & FLUSHO)
+      {
+***************
+*** 474,477 ****
+--- 479,483 ----
+        otio.c_lflag &= ~FLUSHO;
+      }
++ #endif
+  
+    /* Turn off characters that we need on Posix systems with job control,
+diff -c2 -r readline-2.0/signals.c readline-2.0-patched/signals.c
+*** readline-2.0/signals.c	Wed Aug  3 17:25:57 1994
+--- readline-2.0-patched/signals.c	Tue Dec 24 09:00:41 1996
+***************
+*** 55,58 ****
+--- 55,62 ----
+  #endif /* GWINSZ_IN_SYS_IOCTL */
+  
++ #ifndef sigmask
++ # include <netat/compat.h>
++ #endif
++ 
+  /* Some standard library routines. */
+  #include "readline.h"

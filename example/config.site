@@ -1,0 +1,356 @@
+######################################################################
+#
+# Site dependend configuration.  Please edit this file for your
+# local site and place it in $prefix/share or $prefix/etc.
+#
+# For those options that need to replace the default configuration,
+# remove the beginning # at beginning of the line and set the
+# options to how you like it.
+#
+# These options can also be set on the command line for the configure
+# script.  The appropriate option for the option is listed along with
+# the option.
+#
+######################################################################
+
+# These are the directories for the Amanda programs and files.
+#
+# Let $prefix be the location of the root Amanda directory, commonly
+# /usr/local or /opt/amanda.  $prefix is set by using configure --prefix=.
+# Other directories are setable:
+#    $prefix		--prefix=		Default:/usr/local
+#    $exec_prefix	--exec-prefix=		Default:$prefix
+#    $bindir		--bindir=		Default:$exec_prefix/bin
+#    $libexecdir	--libexecdir=		Default:$exec_prefix/libexec
+#    $sysconfdir	--sysconfdir=		Default:$prefix/etc
+#    $localstatedir	--localstatedir=	Default:$prefix/var
+
+# bindir		--bindir=DIR
+#			Default: $exec_prefix/bin = /usr/local/bin
+#			Directory containing the server side binaries.
+# bindir=/usr/local/bin
+
+
+# libexecdir		--libexecdir=DIR
+#			Default: $exec_prefix/libexec = /usr/local/bin
+#			Directory containing the client side binaries.
+# libexecdir=/usr/local/lib/amanda
+
+
+# CONFIG_DIR		--with-configdir=DIR
+#			Default: $sysconfdir/amanda = /usr/local/etc/amanda
+#			Directory where the runtime files are to be
+#			found.  Amanda supports multiple
+#			configurations per site; these are contained
+#			in subdirectories of CONFIG_DIR.
+# CONFIG_DIR=/usr/local/etc/amanda
+
+
+# INDEX_DIR		--with-indexdir=DIR
+#			Default: $localstatedir/amanda-index = 
+#				/usr/local/var/amanda-index
+#			Directory containing the server side index database.
+#			Amanda supports multiple configurations per site;
+#			these are contained in subdirectories of INDEX_DIR.
+# INDEX_DIR=/usr/spool/amanda
+
+
+# DB_DIR		--with-dbdir=DIR
+#			Default: $localstatedir/amanda = /usr/local/var/amanda
+#			Directory containing the curinfo database files.
+#			Amanda supports multiple configurations per site;
+#			these are contained in subdirectories of DB_DIR.
+# DB_DIR=/usr/adm/amanda
+
+
+# LOG_DIR		--with-logdir=DIR
+#			Default: $localstatedir/amanda = /usr/local/var/amanda
+#			Directory containing the log files.  Amanda
+#			supports multiple configurations per site;
+#			these are contained in subdirectories of LOG_DIR.
+# LOG_DIR=/usr/adm/amanda
+
+
+# mandir		--mandir=DIR
+#			Default: $prefix/man = /usr/local/man
+#			Directory containing the manual pages.
+# mandir=/local/man
+
+
+# USE_VERSION_SUFFIXES	--with-suffixes
+#			Default: no
+#			All the Amanda binaries will be installed with a
+#			version string appended to the command name, for
+#			example "amdump-2.3.0.4".  You must then set up
+#			symlinks from "amdump" to the correct version of
+#			the binary, or use them with the version suffixes
+#			directly.
+#			This is mostly useful when you want multiple
+#			versions online for testing purposes.  I recommend
+#			it if you are doing a major version upgrade and
+#			wish to try out the new version in parallel with
+#			the old.
+# USE_VERSION_SUFFIXES=yes
+
+
+# FORCE_USERID		--with-dont-force-uid
+#			Default: yes
+#			FORCE_USERID controls whether or not the Amanda
+#			client-side should suid to a non-priveledged user
+#			when inetd runs it as root.  Most older inetds do
+#			not allow you to specify which user to run a daemon
+#			as in inetd.conf; all daemons are just run as root.
+#			We prefer to not do anything as root that can be
+#			done as a normal user, so unless FORCE_USERID is set
+#			to no, Amanda will switch to the user specified by
+#			CLIENT_LOGIN for all further operations on the slave
+#			host.  This type of operation normally requires that
+#			the CLIENT_LOGIN be in some group that has read
+#			permissions on the raw disk devices, and read/write
+#			permissions on /etc/dumpdates.
+# FORCE_USERID=no
+
+
+# CLIENT_LOGIN		--with-user=USERNAME
+#			Default: amanda
+#			The user to install as the owner of all Amanda
+#			programs and the user to switch to on client
+#			machines.
+# CLIENT_LOGIN=amanda
+
+
+# SETUID_GROUP		--with-group=GROUPNAME
+#			Default: group that configure is run under
+#			The name of the group to install all files under.
+# SETUID_GROUP=bin
+
+
+# DEFAULT_CONFIG	--with-config=CONFIG
+#			Default: DailySet1
+#			The default configuration name of the default
+#			dump set up.  This gets used throughout the
+#			configuration of Amanda.
+# DEFAULT_CONFIG=DailySet1
+
+
+# DEFAULT_SERVER	--with-server=HOST
+#			Default: name of the machine configure is run on
+#			The default server for the index of files dumped
+#			database.
+# DEFAULT_SERVER=kipuka
+
+
+# DEFAULT_TAPE_SERVER	--with-tape-server=TAPE_SERVER
+#			Default: DEFAULT_SERVER or --with-server
+#			This is the name of the machine which serves as the
+#			default machine to recover files from tape using
+#			amrecover.  The default machine is the one used
+#			for DEFAULT_SERVER.
+# DEFAULT_TAPE_SERVER=kipuka
+
+
+#DEFAULT_TAPE_DEVICE	--with-tape-device=TAPE_DEVICE
+#			Default: /dev/null
+#			This is the name of the no rewinding tape device
+#			on the the DEFAULT_TAPE_SERVER machine for
+#			restoring backups.
+# DEFAULT_TAPE_DEVICE=/dev/rmt/0bn
+
+
+# TAPE_REWIND_DEVICE	--with-rew-tape=
+#			Default: /dev/rmt/[0-9]b or /dev/rst[0-9]
+#			This sets the default rewinding tape device.  The
+#			configure script will search for the lowest numbered
+#			/dev/rmt/[0-9]b device and if none exist, it will
+#			use the lowest numbered	/dev/rst[0-9] device.  If
+#			no tape device is found, /dev/null is used.
+# TAPE_REWIND_DEVICE=/dev/rmt/0b
+
+
+# TAPE_NO_REWIND_DEVICE	--with-norew-tape=
+#			Default: /dev/rmt/[0-9]bn or /dev/nrst[0-9]
+#			This sets the default no rewinding tape device.  The
+#			configure script will search for the lowest numbered
+#			/dev/rmt/[0-9]bn device and if none exist, it will
+#			use the lowest numbered /dev/nrst[0-9] device.  If
+#			no tape device is found, /dev/null is used.
+# TAPE_NO_REWIND_DEVICE=/dev/rmt/0bn
+
+
+# USE_FQDN		--with-fqdn
+#			Default: no
+#			Allow Amanda to backup systems in different
+#			domains.  This requires that the disklist file
+#			have the fully qualified domain names (FQDNs)
+#			listed.
+# USE_FQDN=yes
+
+
+# SAMBA_CLIENT		--with-smbclient=PROG
+#			Default: no
+#			Tell Amanda where to find the smbclient program,
+#			which does the backing up of Samba PC clients.
+#			Look in the patches/ directory for patches to
+#			apply to Samba for this to work properly.
+# SAMBA_CLIENT=/usr/local/lib/smbclient
+
+
+# GNUTAR_EXCLUDE_FILE	--with-gnutar-exclude
+#			Default: no
+#			If you wish to have gnutar exclude files from the
+#			dump, then set this to yes.
+# GNUTAR_EXCLUDE_FILE=yes
+
+
+# GNUTAR_LIST_DIR	--with-gnutar-listed-incremental[=DIR]
+#			Default: $localstatedir/amanda-gnutar-lists =
+#				/usr/local/var/amanda-gnutar-lists
+#			This specifies the directory where gnutar should
+#			place the listed incrementals so it can do
+#			incremental backups.  Without specifiing this
+#			option, gnutar will not do incrementals.  You
+#			can just list --with-gnutar-listed-incremental and
+#			the files will be placed in
+#			$localstatedir/amanda-gnutar-lists or you can
+#			specifiy the directory where to have the files
+#			go by appending the directory to the --with option.
+# GNUTAR_LIST_DIR=/usr/local/var/amanda-gnutar-lists
+
+
+# GNUTAR_ATIME_PRESERVE	--enable-gnutar-atime-preserve
+#			Default: no
+#			Have gnutar call utime() after reading files in
+#			order to adjust their atime.  However, utime()
+#			updates the file's ctime, so incremental
+#			dumps will think the file has changed.
+# GNUTAR_ATIME_PRESERVE=yes
+
+
+# DEV_PREFIX
+#			Default: system specific
+#			Define DEV_PREFIX is the configure script can not
+#			figure out the correct device prefix for the disk
+#			devices.
+# DEV_PREFIX="/dev/"
+
+
+# RDEV_PREFIX
+#			Default: system specific
+#			Define DEV_PREFIX is the configure script can not
+#			figure out the correct device prefix for the raw
+#			disk devices.
+# RDEV_PREFIX="/dev/r"
+
+
+# BSD_SECURITY		--with-bsd-security
+#			Default: no
+#			BSD_SECURITY selects BSD rsh/rlogin style security,
+#			which is not great, but is in common use, and its
+#			strengths and weaknesses are well known.  Under
+#			BSD_SECURITY, the Amanda backup client hosts will
+#			check .rhosts files before sending any dump data.
+# BSD_SECURITY=yes
+
+
+# USE_AMANDAHOSTS	--with-amandahosts
+#			Default: no
+#			When BSD_SECURITY is used, by default it will use
+#			the .rhosts file to make sure that the remote user
+#			can tell the Amanda client what to do.  If you wish
+#			to use a file named .amandahosts instead, then
+#			define this.  The file must have the list both the
+#			remote host and the remote username.
+# USE_AMANDAHOSTS=yes
+
+
+# KRB4_SECURITY		--with-krb4-security
+#			Default: no
+#			KRB4_SECURITY selects MIT Kerberos version 4 style
+#			security, which is significantly better than
+#			BSD_SECURITY, providing for mutual authentication
+#			and (optionally) encryption of backup data over the
+#			network.  Both BSD_SECURITY and KRB4_SECURITY may be
+#			defined at the same time: the type of security to be
+#			used can be selected on a per-client-host basis (in
+#			the disklist file).
+#			NOTE: Due to stupid USA export restrictions, use of
+#			KRB4_SECURITY requires source files from the separate
+#			"amanda-krb4" package.  See the KERBEROS.HOW-TO-GET
+#			instructions on the Amanda home ftp site,
+#			ftp.cs.umd.edu.
+# KRB4_SECURITY=yes
+
+# If you turn on KRB4_SECURITY, you must set all these options below.
+#
+# You can set the principle, instance, and keyfile to use seperately for
+# both the client and server.
+#
+# The instance can either be a string constant, or `HOSTNAME_INSTANCE' if
+# you want the local hostname used as the instance (ala krb_get_phost).
+#
+# The keyfile name can be either a string constant, or `KEYFILE' to use the
+# default keyfile defined in <krb.h>.
+# SERVER_HOST_PRINCIPLE="amanda"
+# SERVER_HOST_INSTANCE="amanda"
+# SERVER_HOST_KEY_FILE="/.amanda"
+# CLIENT_HOST_PRINCIPAL="rcmd"
+# CLIENT_HOST_INSTANCE=HOSTNAME_INSTANCE
+# CLIENT_HOST_KEY_FILE=KEYFILE
+# TICKET_LIFETIME=128
+
+
+# DB_STYLE		--with-db={db,dbm,gdbm,ndbm}
+#			Default: auto-selection by configure
+#			This allows the user to force Amanda to use a
+#			particular database library.
+# DB_STYLE=dbm
+
+# FORCE_MMAP		--with-mmap
+#			Default: no
+#			Force the use of mmap() instead of shared memory
+#			support.
+# FORCE_MMAP=yes
+
+
+# ASSERTIONS		--with-assertions
+#			Default: no
+#			Turns on assertion checking, which makes Amanda a
+#			bit bigger and slower, but will help catch errors
+#			earlier.
+# ASSERTIONS=yes
+
+
+# DEBUGGING		--with-debugging
+#			Default: no
+#			Turning on debugging has each program save a
+#			transcript of what it did to a file in /tmp for
+#			debugging purposes.
+# DEBUGGING=yes
+
+
+# DEBUG_FILE_WITH_PID	--with-pid-debug-files
+#			Default: no
+#			Have the Amanda debugging files that are placed
+#			in /tmp have the process ID appended to their
+#			filename.
+# DEBUG_FILE_WITH_PID=yes
+
+
+#
+######################################################################
+
+
+######################################################################
+#
+# The some environmental variables for the configure and compile
+# only.
+# environment for configure only
+#
+# MAKE_LDFLAGS	Loader flags for compile time only
+# MAKE_CFLAGS	Compiler flags for compile time only
+
+#MAKE_LDFLAGS="-L/opt/util/lib"
+#MAKE_CFLAGS="-I/opt/util/include"
+
+#
+######################################################################

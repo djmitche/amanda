@@ -1,0 +1,1137 @@
+Version 2.3.0.4
+
+	Have bsd_security_ok() in amandad return 1 when BSD security is
+	not turned on.  Patch from Michael C. Grant
+	<mcgrant@rascals.Stanford.EDU>.
+
+	Add a configure option, --with-db, which lets the user specify
+	the database library to use.  The available codes to look for
+	are db,dbm,gdbm,ndbm.  The new configure code goes to a lot
+	more length to find pairs of header files and libraries.  If a
+	header file exists and the library does not, but dbm_open() is
+	found by linking against -lc, then that header file is used.
+	Patch from Blair Zajac <blair@gps.caltech.edu>.
+
+	Fixed bug at line 158 where selfcheck was testing that the
+	result returned by open() was nonzero.  The correct thing to do
+	is check for non-negative values returned by open().  Changed
+	the "ERROR" in line 169 to "OK" to prevent selfcheck from
+	flagging the non-existence of /etc/amandapass as an error.
+	Using "OK" in this line flags this condition as an informative
+	statement rather than an error - which is to say this will be
+	reported along with other errors but it isn't enough in itself
+	to generate an error report.  The reason that I think this is
+	the right fix is because although every Amanda client is
+	capable of backing up PCs using smbclient it isn't the case
+	that we will back up PCs with every Amanda client.  This also
+	implies that we don't want to have /etc/amandapass files on all
+	these machines either.  If an Amanda client does have a samba
+	"//host/share" entry in its disklist file then selfcheck will
+	flag the non-existence of the /etc/amandapass file on line 105
+	when it attempts to check that partition, so I believe that
+	this is a safe fix.  Patch from Michael Brantley
+	<Michael-Brantley@deshaw.com>.
+
+	Have all calls to gethostname() leave the result in character
+	arrays of length 1025.  This will make sure that gethostname
+	behaves correctly.  Patch from  blair Zajac
+	<blair@gps.caltech.edu>.
+
+	Have amrecover.c include history.h or readline/history.h if
+	configure finds it.  Patch from blair Zajac
+	<blair@gps.caltech.edu>.
+
+	Have Amanda use cat if gzip and compress cannot be found.  In
+	this case, do not #define COMPRESS_FAST_OPT, COMPRESS_BEST_OPT,
+	or UNCOMPRESS_OPT as "" since cat will look look for a file by
+	the name of "".  Place #ifdef's around code that uses any of
+	the _OPT defines.  Patch from Blair Zajac
+	<blair@gps.caltech.edu>.
+
+	Rewrite amgetidx to use amandad instead of rsh/rcp.  amgetidx
+	now only gets the index files from a given day.  It now takes
+	two optionally arguments <on day> or <ago days>.  <on day> lets
+	the user specify the day in one of the forms YYYYMMDD MMDD DD
+	YYYY-MM-DD --MM-DD ---DD.  <ago days> gets the files from days
+	days ago.  Have configure look for an appropriate directory to
+	use for the temporary files on the clients.  Use /var/tmp, then
+	/usr/tmp, and if neither of those exist, then use /tmp.  Have
+	selfcheck check if the index holding directory has enough space
+	in it.  Add a new program called sendindex which sends the
+	index files.  Add the file docs/INDEXING which describes the
+	index code.  Patch from Alan IcIvor <alan@auck.irl.cri.nz>.
+
+	Have configure set up mt to use either the -f or the -t option
+	depending upon the operating system.  Patch from Blair Zajac
+	<blair@gps.caltech.edu>.
+
+	Include the amanda_tapetypes.txt file as docs/TAPETYPES.  File
+	composed by Chris Stacey <chris@snrc.uow.edu.au>.
+
+	Allow certain dumptypes to be kicked off at specific times.
+	Add a new, optional, parameter to the dumptype description in
+	the config file.  The parameter is called "starttime" and takes
+	one argument which is a time of day (local timezone) formated
+	as either hhmm or hmm (no `.'s, no `:'s, just an integer).
+		define dumptype comp-user-2am {
+			comment "Non-root partitions on fast machines"
+			options compress-fast
+			priority medium
+			starttime 0200
+		}
+	Any partitions listed in disklist with this dumptype will be
+	fired off no earlier than 2am.  If 2am today is less than 43200
+	seconds past (12 hours ago) it will assume you meant 2am today
+	and fire the dumps off right away.  But if 2am today is more
+	than 12 hours in the past, it will wait till 2am tomorrow.
+	Patch from Brad Huntting <huntting@misc.glarp.com>.
+
+	Totally rewrite the socket buffering code for dumper.
+	Eliminate SO_SNDTIMEO and SO_RCVTIMEO setsockopt calls.  Remove
+	the check for HAVE_SO_SNDTIMEO from configure.  Add a new
+	option to configure named --enable-buffered-dump to enable this
+	code.  Patch from Brad Huntting <huntting@misc.glarp.com>.
+
+	Have amflush call setsid() to detach amflush from the
+	controlling terminal.  Patch from Ken Laprade
+	<klaprade@harris.com>.
+
+	Have configure correctly work on systems where dbm_open is in
+	libc.  Patch from Farzad Farid <farzy@sgip.fr>.
+
+	Patches to amrmtape which remove C style comments and let the
+	script remove a tape if there is only one tape in the tapelist
+	file.  Patch from Andrew A. Ivanov <IVANOV@mics.msu.su>.
+
+	Sprintf formatting error in amgetidx fixed.  Patch from Yossi
+	Gottlieb <yogo@xpert.com>.
+
+	I'm using a Sony SDT/STL-7000 4mm DAT changer.  I could not
+	find any method of directly controlling the device, except for
+	simply using the 'offline' mt command for advancing to the next
+	tape.  Using this method, however, I could not go beyond the
+	last cassette (that is, to roll back to the first one).  This
+	means the device is currently being used as a simple gravity
+	changer, only able to change forward.  The chg-generic.conf
+	should list the default tape device for all slots, disable
+	'needeject', enable 'gravity' and enable the new option named
+	'multieject'.  Patch from Yossi Gottlieb <yogo@xpert.com>.
+
+	Update the example chg-generic.conf file to include comments
+	that describe how to use the multieject feature of the script.
+	Patch from Yossi Gottlieb <yogo@xpert.com>.
+
+	Protocol seems to loop when a A_TIMEOUT occurs because
+	p->reqtries was not being decremented.  Problem noted by Neal
+	Becker <neal@ctd.comsat.com>.
+
+	About half the calls to gethostname() in Amanda fail to
+	null-terminate properly.  This patch makes them all
+	consistent.  In addition it updates sendbackup-dump and
+	sendbackup-gnutar so they handle USE_FQDN is a way consistent
+	with the amindex stuff.  In particular when USE_FQDN is set,
+	the dump clients will not truncate their hostname before
+	putting it in the dump headers.  My patches to amflush are
+	already in the Amanda betas so amflush should be able to match
+	up both FQDN and non-FQDN clients against FQDN and non-FQDN
+	disklist files.  I also fixed an error message that was
+	attributed to gethostname when it actually came from
+	getpeername.  Patches from James Mathiesen
+	<james@nyc.deshaw.com>.
+
+	I have run into the problem, on a Linux system, where the first
+	time I run configure it generates valid Makefiles and Amanda
+	compiles without problem.  If I run configure again, or I alter
+	a Makefile.in or something which causes autoconf to be called,
+	the resulting Makefiles are no good - the programs in
+	server-src don't finish linking because there is no dbm
+	library.  That is, the first time through configure -lgdbm is
+	added to LIBS but the second, and any subsequent times, it is
+	not.  Patch from Alan McIvor <alan@auck.irl.cri.nz>.
+
+	I've just found a bug that has prevented Amanda from running on
+	my site for almost one week.  Just after a dumper replied that
+	it timed-out, the driver would send it another dump request.
+	Then the driver would log to amdump an event of receiving a
+	message from the dumper, but that message would be empty, the
+	holding file for the requested filesystem would not exist, and
+	driver would quit.  It turned out that the problem was that
+	dumper started to close its sockets (datafd, mesgfd and outfd)
+	since release 2.3.0.4b3.  outfd is initialized before invoking
+	startup_dump, but it is sendbackup_response, intended to be
+	invoked by the amandad protocol driver, that opens sockets and
+	initializes datafd and mesgfd.  If sendbackup_response is never
+	run (because the amandad request times out), datafd and mesgfd
+	will not be initialized, so they may contain already closed
+	(and possibly already reopened) file descriptor numbers or
+	still be uninitialized, containing any garbage, but usually 0
+	--- but 0 is stdin, used for reading commands from the driver,
+	it should not be closed!  I've solved the problem by
+	initializing them to -1 in startup_dump.  Patch from Alexandre
+	Oliva <oliva@dcc.unicamp.br>.
+
+	Include declarations for select(), bind(), connect(), fread(),
+	fwrite(), getopt(), getpeername(), getsockname(), getsockopt(),
+	initgroups(), listen(), lstat(), mktemp(), mktime(), puts(),
+	recvfrom(), select(), sendto(), setpgrp(), setsockopt(),
+	shmat(), shmctl(), shmdt(), shmget(), socketpair(), sscanf(),
+	strftime(), strncasecmp(), system() if the system does not
+	declare these in any header files.  Patch from Blair Zajac
+	<blair@gps.caltech.edu>.
+
+	Have configure correctly substitute for DB_DIR and LOG_DIR in
+	example/amanda.conf when --prefix was not used.  Problem noted
+	by Philippe Charnier <charnier@xp11.frmug.org>.
+
+	Include seagate-changer.c from Larry D. Pyeatt
+	<pyeatt@cs.colostate.edu>.  This program was written to control
+	the Seagate/Conner/Archive autoloading DAT drive.  This drive
+	normally has 4 tape capacity but can be expanded to 12 tapes
+	with an optional tape cartridge.  This program may also work on
+	other drives.  This program works for me under Linux with Gerd
+	Knorr's <kraxel@cs.tu-berlin.de> SCSI media changer driver
+	installed as a kernel module.  The kernel module is available
+	at
+	http://sunsite.unc.edu/pub/Linux/kernel/patches/scsi/scsi-changer*
+	Since the Linux media changer is based on NetBSD, this program
+	should also work for NetBSD, although I have not tried it.  It
+	may be necessary to change the IOCTL calls to work on other
+	OS's.
+
+	Add a new configure option, --with-group, which tells Amanda
+	the group to install all files as.  Patch from Alexandre Oliva
+	<oliva@dcc.unicamp.br>.
+
+	If --with-bsd-security was not set, then dumper would not find
+	the amanda/udp port to use to connect to clients.  Patch from
+	Alan McIvor <alan@auck.irl.cri.nz>.
+
+	The order of dump programs to search for (ufsdump, vdump, dump,
+	backup) didn't work on AIX systems, where backup should be used
+	but a program named dump exists on the system.  Patch by Blair
+	Zajac <blair@gps.caltech.edu>.
+
+	The configure --with-mmap was not working properly since
+	configure was using the wrong variable to see if the system had
+	a working mmap().  Problem noted by Keith Mitchell
+	<kmitch@weenix.guru.org>.
+
+Version 2.3.0.4b3
+
+	Save the results of getchar() into int's instead of char's in
+	amidxtaped.c.  Patch by Blair Zajac <blair@gps.caltech.edu>.
+
+	Fix sendbackup-gnutar so that it can be compiled with a K&R
+	compiler.  Patch by Blair Zajac <blair@gps.caltech.edu>.
+
+	Since I installed Amanda 2.3.0.4b3, I noticed some annoying
+	messages in amdump:
+		dumper: pid 8696 setsockopt(SO_SNDTIMEO): Invalid argument
+	This is because Solaris 2.5 does declare SO_SNDTIMEO in
+	sys/socket.h, but fails to setsockopt with the given
+	arguments.  Unfortunately, it is not documented, so I could not
+	find out the correct way to do this, so I just added a test in
+	configure to check whether SO_SNDTIMEO works as expected or
+	not.  Patch from Alexandre Oliva <oliva@dcc.unicamp.br>.
+
+	Include amplot-2.2.6 written by Olafur Gudmundsson
+	<ogud@tis.com> into Amanda.  Have amplot be configured using
+	configure instead of amplot.conf.  It will be installed if
+	gnuplot and the version of awk configure finds can handle
+	variable assignment from the command line.  I also changed some
+	of the command line options so that the amdump files will not
+	be compressed unless amplot is told to do so on the command
+	line.  It also takes a new command line option, -t, which lets
+	the user set the time of the right side of the plot.  Work done
+	by Blair Zajac <blair@gps.caltech.edu>.
+
+	Made rth-changer check all system calls for valid returns.
+	Patch by Blair Zajac <blair@gps.caltech.edu>.
+
+	amrestore.c and sendbackup-common.c would do an ifdef on
+	HAVE_GZIP, which was no longer being defined if Amanda was
+	using gzip.  Now, define HAVE_GZIP if gzip is being used.
+	Patch by Blair Zajac <blair@gps.caltech.edu>.
+
+	Include a script, amoverview, that outputs an overview of all
+	of the backups done on all of the disks.  Script written by
+	Dave Disser <disser@sdd.hp.com>.
+
+	The prototype for amname_to_fstype() is missing in
+	createindex-dump.c when xfsdump is available.  Patch from Ken
+	Laprade <klaprade@harris.com>.
+
+	Apparently SGI provides a dummy libsun.a that does not really
+	have anything in it.  I guess this tricks configure into adding
+	it to the Makefile.  Have configure not check for libsun.a on
+	SGI systems.  Patch from Ken Laprade <klaprade@harris.com>.
+
+	The global variable overwrite in amcheck.c apparently is seen
+	as a potential conflict with the overwrite() curses function
+	which is apparently in SGI's libtermcap.a.  Declaring the
+	variable static eliminates the warning.  Patch from Ken Laprade
+	<klaprade@harris.com>.
+
+	Add a new configure option, --with-fqdn, which allows Amanda to
+	back up systems in different domains.  This requires that the
+	disklist file have the fully qualified domain names (FQDNs)
+	listed.  Patch from Joe Ammond <Joe.Ammond@ee.gatech.edu>.
+
+	Include rundump, a setuid program that runs dump as root.  This
+	is used under OSF1 systems.  Patch from Alexandre Oliva
+	<oliva@dcc.unicamp.br>.
+
+	Install setuid files executable only by the owner and group of
+	the files.  This stops other users from running these programs,
+	making security tighter.  Patch from Alexandre Oliva
+	<oliva@dcc.unicamp.br>.
+
+	On FreeBSD 3.0, amanda.h needs to include <sys/types.h> before
+	<dirent.h>.  Problem noted by Keith Mitchell
+	<kmitch@weenix.guru.org>.
+
+	Amanda had a bug regarding the recent addition of support for
+	excluding files in GNUTAR.  planner and sendsize did not
+	understand each other about empty exclusion lists, so there
+	were failures using gnutar, as dump does not support excludes.
+	Patch from Alexandre Oliva <oliva@dcc.unicamp.br>.
+
+	Fixed a problem in configure where DUMP was being set to
+	/no/restore/available when no restore program could be found
+	instead of setting RESTORE to this.  Patch from Alexandre Oliva
+	<oliva@dcc.unicamp.br>.
+
+	Have no-changer and hp-changer check for the existence of the
+	logging directory before trying to use it.  Patch by Blair
+	Zajac <blair@gps.caltech.edu>.
+
+	Patches to have nicer looking Samba support code.  Patch from
+	Michael Zucchi <cismpz@cis.unisa.edu.au>.
+
+	Got Amanda to compile fine on a m88k-motorola-sysv4 system.
+	Patches from Blair Zajac <blair@gps.caltech.edu>.
+
+	In amandad.c, pk_t dupmsg was conflicting with dupmsg in
+	/usr/include/sys/stream.h on an m88k-motorola-sysv4 system.
+	Rename dupmsg to dup_msg.  To keep things consistent, rename
+	inmsg to in_msg and outmsg to out_msg.  Patch by Blair Zajac
+	<blair@gps.caltech.edu>.
+
+	Check for the dbm_open declaration in any header file that may
+	contain it.  If it doesn't exist, then declare it and all of
+	the other dbm_ functions.  Check if struct datum is declared in
+	any header files and if it isn't then declare it.  Patch from
+	Blair Zajac <blair@gps.caltech.edu>.
+
+	Have runtar make sure that it is being invoked by the
+	CLIENT_LOGIN user, since it is a suid executable.  Patch from
+	Alexandre Oliva <oliva@dcc.unicamp.br>.
+
+	Have selfcheck check for /etc/vdumpdates if vdump is being
+	used.  Patch from Alexandre Oliva <oliva@dcc.unicamp.br>.
+
+	If we're on an Ultrix system, then define STATFS_ULTRIX.  Patch
+	by Blair Zajac <blair@gps.caltech.edu>.
+
+	amadmin export produces a full version number (2.3.0.4b2, for
+	instance), while amadmin import expects three integers
+	separated by dots, so it fails to import an exported file by
+	itself.  Patch by Alexandre Oliva <oliva@dcc.unicamp.br>.
+
+	Sendsize.c would loop forever if debugging was not turned on.
+	Patch from Alexandre Oliva <oliva@dcc.unicamp.br>.
+
+	Define STATFS_OSF1 if we are on a *-dec-osf-* system.  Change
+	ifdef OSF1_HANG_BUG to ifdef OSF1_VDUMP, since I'd rather not
+	have too many defines floating around.  Patch by Blair Zajac
+	<blair@gps.caltech.edu>.
+
+	There was a bug in selfcheck.c when Blair installed the Samba
+	support.  I deleted an extra space that was added after
+	SAMBA_CLIENT when the command was being put together.  Fix by
+	Michael Zucchi <cismpz@cis.unisa.edu.au>.
+
+	Add a needed ; to client-src/Makefile.am and
+	server-src/Makefile.am.  Patch from Alexandre Oliva
+	<oliva@dcc.unicamp.br>.
+
+	Have planner.c and amcheck.c always get the amanda port number
+	even if BSD security is turned off.  Patch by Blair Zajac
+	<blair@gps.caltech.edu>.
+
+	Change the way amgetidx caches host up/down information.  It
+	used to stralloc() a string depending on if the host was up or
+	down.  Now, create two static character arrays, one holding
+	"down" and the other holding "up" and simply point the
+	hostinfo->up pointer to one of the two arrays.  This should
+	save a little memory.  Patch by Blair Zajac
+	<blair@gps.caltech.edu>.
+
+	The Bourne shell in FreeBSD can't handle setting IFS to : and
+	expanding $LOCPATH:$SYSPATH.  Create two new variables before
+	their use called $LOCSYSPATH and $SYSLOCPATH.  Patch by Blair
+	Zajac <blair@gps.caltech.edu>.
+
+	Have open_fstab for BSD systems return the value of setfsent.
+	Patch by Blair Zajac <blair@gps.caltech.edu>.
+
+	Configure was searching for the dump program in the following
+	order: ufsdump, vdump, backup, dump.  On HP-UX systems,
+	configure would find backup, which is a valid program but does
+	not do what dump does.  So switch the order of the programs to
+	ufsdump, vdump, dump, backup.  Patch by Blair Zajac
+	<blair@gps.caltech.edu>.
+
+	Fixed some dbprintf(()) bugs in amgetidx.c.  Patch by Blair
+	Zajac <blair@gps.caltech.edu>.
+
+	Have amrecover.c always declare
+	    extern char *optarg;
+	    extern int optind;
+	This makes amrecover.c compile on Ultrix systems.  Problem
+	noted by Scott Gasch <scott@cray-ymp.acm.stuorg.vt.edu>.
+
+	Patch to configure to have it recognize gnutar version 1.11.2.
+	Patch from Alexandre Oliva <oliva@dcc.unicamp.br>.
+
+Version 2.3.0.4b2
+
+	Have amcleanup, no-changer, and hp-changer find out where the
+	logging directory, or amdump error file is from getconf instead
+	of using @LOG_DIR@ or @DB_DIR@ from configure.  Problem noted
+	by Joe Ammond <Joe.Ammond@ee.gatech.edu>.
+
+	Remove VarDir=@DB_DIR@ from amrmtape.sh.in, since amrmtape
+	figures out where the curinfo files are from the amanda.conf
+	file.  Problem noted by Joe Ammond <Joe.Ammond@ee.gatech.edu>.
+
+	Include rth-changer, a tape changer script for the Robotic Tape
+	Handling system OEM'd by Andataco (RTH-406).  Script written by
+	Erik Frederick <edf@tyrell.mc.duke.edu>.
+
+	Add a new configure option called --with-pid-debug-files which
+	has Amanda append the process ID to the debugging files placed
+	in /tmp.  The PID will not be appended unless this option is
+	used.  Suggestion by Joe Ammond <Joe.Ammond@ee.gatech.edu>.
+
+	Add a new #define UNCOMPRESS_OPT to pass to UNCOMPRESS_PATH to
+	get compressed standard input decompressed and pass it to
+	standard output.  The configure script only recognized gzip and
+	compress right now, so it will set UNCOMPRESS_OPT to -dc and
+	set UNCOMPRESS_PATH to the same value as COMPRESS_PATH.  Edit
+	all of the files that make use of UNCOMPRESS_PATH to also make
+	use of UNCOMPRESS_OPT now.  Patch by Blair Zajac
+	<blair@gps.caltech.edu>.
+
+	The readline() substitute in amrecover.c when the real
+	readline() code is not available did not return to the caller
+	what the user typed in.  It now does so.  Patch from Blair
+	Zajac <blair@gps.caltech.edu>.
+
+	Avoid -lnsl on Irix.  On IRIX 5.x and 6.x systems that have the
+	svr4net module installed, there will be a /usr/lib/libnsl.so
+	present on the system. The configure script looks for this and
+	tosses into the library list if it's there.  It is not
+	advisable to link against libnsl on IRIX unless you really need
+	it for SVR4 networking (TLI/STREAMS). If you _do_ link against
+	it, you should use include '-lc' _before_ '-lnsl'. The reason
+	for this is that libnsl.so also contains the SysV TI-RPC code,
+	which is RPC based on STREAMS/TLI rather than sockets. (Solaris
+	2.x now uses this by default.) TI-RPC has some compatibility
+	functions with the same names as older RPC functions, such as
+	clnt_call(), clnt_create(), clnt_destroy(), and these conflict
+	with the functions in libc.so. The main place this will hose
+	you is NIS: NIS v2 expects the underlying RPC code to use
+	sockets, not STREAMS, and it fails if the TI-RPC symbols in
+	libnsl.so override the RPC symbols in libc.so.  Again, you
+	don't need libnsl.so unless you're actually using STREAMS/TLI
+	or TI-RPC, so in Amanda's case it's safe to just ignore it. If
+	you _do_ need it, you must do 'cc -o foo foo.c -lc -lnsl' in
+	order to make sure the linker resolves the RPC symbol
+	references correctly. The primary symptom of this problem is
+	that things like getpwent(), getgrent() and getnetgrent() stop
+	working in an NIS environment.  To make a long story short: on
+	IRIX, avoid using libnsl. Amanda doesn't need it anyway. So far
+	I haven't encountered a problem with this, but you never know.
+	Note from Bill Paul <wpaul@ctr.columbia.edu>.
+
+	Include patches to have Amanda do incrementals of gnutar based
+	backups.  Patch from Alexandre Oliva <oliva@dcc.unicamp.br>.
+
+	Delete the GNUTAR_BROKEN_PIPE from configure and acconfig.h
+	since no code was testing for it.  Patch by Blair Zajac
+	<blair@gps.caltech.edu>.
+
+	Have configure check for the number of arguments that
+	gettimeofday takes and have clock.c use the appropriate number
+	of arguments.  Patch by Blair Zajac <blair@gps.caltech.edu>.
+
+	Have sendbackup-common.c include tapeio.h instead of defining
+	BUFFER_SIZE.  Fix by Philip Guenther <guenther@gac.edu>.
+
+	Put in more support for AIX by defining AIX_BACKUP if the
+	system is an AIX system.  Fix createindex-dump.c to pass the -B
+	flag to restore to have it read from standard input.  Problem
+	noted by Bill Paul <wpaul@ctr.columbia.edu>.  Patch by Blair
+	Zajac <blair@gps.caltech.edu>.
+
+	Add a regexp for AIX 4's backup in sendbackup-dump.c and
+	sendsize.c.  Patch from Bill Paul <wpaul@ctr.columbia.edu>.
+
+	Add a comment to tapeio.h about BUFFER_SIZE and what it is used
+	for and how people should not change it.  Noted by Bill Paul
+	<wpaul@ctr.columbia.edu>.
+
+	Added a --with-mmap option to force the use of mmap() instead
+	of shared memory support.  Requested by wpaul@ctr.columbia.edu
+	<Bill Paul>.  Patch by Blair Zajac <blair@gps.caltech.edu>.
+
+	On FreeBSD 2.x and 3.x, the SO_SNDTIMEOUT value is too large in
+	dumper.c.  Looking at the kernel source, the maximum value for
+	tv_sec is about 227.  The value used is READ_TIMEOUT/4, or
+	(30*60)/4 == 450 seconds.  This causes setsockopt() to return
+	EDOM (Numerical argument out of domain), and again everything
+	grinds to a halt.  I changed the value from READ_TIMEOUT/4 to
+	READ_TIMEOUT/8, which reduces the SO_SNDTIMEO value to 225.  I
+	haven't extensively tested this yet, but based on eyeballing
+	the kernel source it should work.  Patch from Bill Paul
+	<wpaul@ctr.columbia.edu>.
+
+	In dumper.c:do_dump(), there is code to set the transmission
+	timeout, receive buffer size and receive low water mark on the
+	data socket using setsockopt().  For SO_RECVBUF, the receive
+	buffer size (recbuf) is set to DATABUF_SIZE * 4, which is
+	32*1024*4, or 131072.  On SunOS 4.1.x, this value is too
+	large:  dumper generates a 'no buffer space available' error
+	and everything grinds to a halt.  I took away the '*4', which
+	reduces the size to 32767 bytes, which seems to work.  I'm
+	surprised nobody else has noticed this since it breaks SunOS
+	Amanda servers.  I can only surmise that people aren't using
+	SunOS machines as servers these days. :)   Patch from Bill Paul
+	<wpaul@ctr.columbia.edu>.
+
+	Have Amanda include either readline.h or readline/readline.h
+	Fix suggested by Neal Becker <neal@ctd.comsat.com>.
+
+	Have --with-includes put the -I flags into $CPPFLAGS and
+	$CFLAGS so that AC_CHECK_HEADERS will find other include
+	files.  Problem noted by Neal Becker <neal@ctd.comsat.com>.
+
+	Fixed common-src/Makefile.am to put the extra libamanda.a
+	sources into the EXTRA_libamanda_a_SOURCES variable instead of
+	EXTRA_DIST.  Fix from Tom Tromey <tromey@drip.Colorado.EDU>.
+
+	When compiling amgetidx.c with some compilers, trigraph
+	substitutions were being made when they should not have been.
+	Protect the code from this.  Patch from Blair Zajac
+	<blair@gps.caltech.edu>.
+
+	Test for flock support in the following order:
+		1) POSIX fcntl file locking
+		2) flock locking
+		3) lockf locking
+	The common-src/flock.c file will only be used if the lockf type
+	locking is needed on this system.  Patch from Blair Zajac
+	<blair@gps.caltech.edu>.
+
+	Have Samba support compile in only if requested by the user.
+	Patch from Blair Zajac <blair@gps.caltech.edu>.
+
+	Configure was not using $CFLAGS and $CPPFLAGS when trying to
+	calculate the select argument type.  Patch from Blair Zajac
+	<blair@gps.caltech.edu>.
+
+	Updated amanda.h to include alloca.h if the system has it and
+	if it's ok to include.  Also protect more include files with
+	#ifdefs found by configure.  Patch from Blair Zajac
+	<blair@gps.caltech.edu>.
+
+	Linux does not use the raw device names to do backups.
+	configure now checks to see if it can find a raw disk device
+	file whose name is built from root's mount point.  If it can't,
+	then set RDEV_PREFIX to use /dev/ instead of /dev/r.  Fix
+	suggested by Brian <brian.s.mogged@uwrf.edu> and Ken Latta
+	<latta@parc.xerox.com>.
+
+	Fixed const cast message from regex.c.  Problem noted by Ken
+	Laprade <klaprade@harris.com>.  Patch from Blair Zajac
+	<blair@gps.caltech.edu>.
+
+	Configure was not checking for the OSF1_VDUMP #ifdef used in
+	Amanda.  It now will set OSF1_VDUMP if vdump is found on the
+	system.  However, it does not check if the system is really a
+	OSF system.  Patch from Blair Zajac <blair@gps.caltech.edu>.
+
+	Have configure check for asm/byteorder.h for
+	sparc-unknown-linux-gnu.  Problem noted by Eric Doutreleau
+	<ed@cti.ecp.fr>.
+
+	Remove the check for libintl.h from configure.  It was only
+	being used for regex.c, which really didn't need it.  Patch
+	from Blair Zajac <blair@gps.caltech.edu>.
+
+	Convert all code to K&R C by trying to compile Amanda using
+	/usr/bin/cc on a SunOS 4.1.1 machine.  Have configure check if
+	the compiler can handle the volatile keyword and if it can't,
+	#define it to empty in the config.h file.  Patch from Blair
+	Zajac <blair@gps.caltech.edu>.
+
+	Move the contents of versuff.h into version.h and remove
+	versuff.h.  Add a new function called version() which returns
+	the version string.  Use version() in some of the programs.
+	Patch from Blair Zajac <blair@gps.caltech.edu>.
+
+	m88k-motorola-sysv4 systems define L_FAIL, which is used by
+	logfile.h.  Undefine it in logfile.h.  Patch from Blair Zajac
+	<blair@gps.caltech.edu>.
+
+	Include amindex-1.0 from Alan McIvor.  It includes these
+	improvements over 0.3:
+		Amrecover now provides the ability to restore files
+		from the tapes, via the "extract" command.
+
+		Support for gnutar based index generation (but not file
+		restoration yet).
+
+		Numerous bug fixes.
+
+	Have amgetidx try to open a socket to the shell/tcp port on the
+	remote machine and cache if it succeeds.  If it connection
+	attempt succeeds, then attempt to get the index files over from
+	the client.  Patch from Blair Zajac <blair@gps.caltech.edu>.
+
+	Update patch-system to include the amidxtape service at
+	10083/tcp.  Patch from Blair Zajac <blair@gps.caltech.edu>.
+
+	Configure said that the server configuration was OK and then
+	next said it wasn't.  Remove these checks.  Patch from Blair
+	Zajac <blair@gps.caltech.edu>.
+
+	Fixed building Amanda for multiple architectures in
+	subdirectories of Amanda.  Problem noted by Thomas Hepper
+	<Thomas.Hepper@icem.de>.
+
+Version 2.3.0.4b1
+
+	Fix a problem with `amadmin <conf> balance' dumping core.  If
+	some disks are overdue, they are stored in the sequence array
+	with a negative index.  This has the potential to cause memory
+	corruption, and it makes the reported balance figures not add up
+	to the same as the total.  Since overdue disks are really going
+	to be candidated for today's backups, they are thrown in the
+	bin for those.  Patch from Ken Laprade <klaprade@harris.com>.
+
+	Add Samba client support using smbclient to Amanda.  Samba must
+	be patched with the file patches/samba-1.9.16p2.1.patch - this
+	is a patch for 1.9.16p2 of Samba, and modifies the way the
+	'dir' command works, and adds totals to both the dir command
+	and the tar command, via stderr.  These are used by amanda to
+	estimate and count backup sizes.  This should be installed on
+	an amanda 'client' host, that will act as the 'samba server'
+	host.  This will most likely be the same machine as the Amanda
+	master server.  Patches from Michael Zucchi
+	<zucchi@cis.unisa.edu.au>.
+
+	Amrmtape converted from Bash to Bourne shell.  Patch from Blair
+	Zajac <blair@gps.caltech.edu>.
+
+	Fix the indexing code to use "arglist.h" instead of <stdarg.h>
+	Patch from Blair Zajac <blair@gps.caltech.edu>.
+
+	Have amdump call amgetidx and amtrmidx.  Put amgetidx and
+	amtrmidx into the libexec directory instead of the bin
+	directory, since Amanda users will not use these by hand.
+	Patch from Blair Zajac <blair@gps.caltech.edu>.
+
+	Modified diskfile.c to match hostname in the backup header
+	against the fully qualified domain name in disklist file,
+	because amflush fails in a multidomain backup environment, as
+	backup headers have only the hostname.  Patch from Karl
+	Lehenbauer <karl@neosoft.com>.
+
+	Have autoconf figure out if some functions are not declared and
+	if they are not, then declare them.  Patch from Blair Zajac
+	<blair@gps.caltech.edu>.
+
+	Add security fixes to amandad.c.  It now checks the forward and
+	reverse DNS names for consistency.  Added a configure option
+	--amandahosts to use Michael's code to use .amandahosts instead
+	of .rhosts.  Patch from Michael Douglass <mikedoug@texas.net>.
+
+	Add amverify, a simple shell script to check Amanda tapes -
+	gnutar driven backups only.  Patch from Thomas Hepper
+	<Thomas.Hepper@icem.de>.
+
+	Add the version option to amadmin (eg amadmin <conf> version).
+	Patch from Thomas Hepper <Thomas.Hepper@icem.de>.
+
+	Add the current option to amtape (eg amtape <conf> current).
+	This let's you the label of the current tape only without using
+	dd.  Patch from Thomas Hepper <Thomas.Hepper@icem.de>.
+
+	Gnutar support for amindex added.  Patch from Thomas Hepper
+	<Thomas.Hepper@icem.de>.
+
+	Calcsize supports exclude-list (gtar).  The source was
+	extracted from gnutar itself to be 100% compatible.  Patch from
+	Thomas Hepper <Thomas.Hepper@icem.de>.
+
+	Calcsize checks the file type and ignores special files and
+	pipes.  Patch from Thomas Hepper <Thomas.Hepper@icem.de>.
+
+	Calcsizes calculation for gnu tar archives had a bug (gtar file
+	blocks always are a multiple of 2k).  Patch from Thomas Hepper
+	<Thomas.Hepper@icem.de>.
+
+	`amandates.c': amdandad suffered by missing AMANDATES_FILE.
+	Now it creates this file before missing it.  Patch from Thomas
+	Hepper <Thomas.Hepper@icem.de>.
+
+	`createindex-gnutar.c' added.  Patch from Thomas Hepper
+	<Thomas.Hepper@icem.de>.
+
+	alloca(), strdup.c and getcwd added for those system who don't
+	have them.  Patch from Thomas Hepper <Thomas.Hepper@icem.de>.
+
+	A dirty hack for BSD based systems without sigaction(), see
+	amanda.h.  Patch from Thomas Hepper <Thomas.Hepper@icem.de>.
+ 
+	Add two scripts, hp-changer and no-changer. hp-changer is a
+	tape changer script for a HP DAT changer. Every 10th tape a
+	taper clean runs.  no-changer is a changer-like script for
+	single tape streamer.  It makes Amanda see a tape changer unit
+	with an infinite count of tapes (and requires an operator to
+	change the tapes :-)). Every 10 tapes the operator is
+	recommended to insert a cleaning tape.  Patch from Thomas
+	Hepper <Thomas.Hepper@icem.de>.
+
+	The version suffix adding is done with a seperate function
+	versionsuffix() also available as standalone program.  Patch
+	from Thomas Hepper <Thomas.Hepper@icem.de>.
+
+	Several files got debug support. Patch from Thomas Hepper
+	<Thomas.Hepper@icem.de>.
+
+	Added an idle type file-too-large to driver.c to avoid dumping
+	files to the holding disk(s) which exceed the maximum file size
+	(2 GB on the most 32-bit machines).  Patch from Thomas Hepper
+	<Thomas.Hepper@icem.de>.
+
+	Some minor bug fixes, mostly regarding missing or wrong casts
+	confusing c compilers (shmat()/shmdt(), select()).  Patch from
+	Thomas Hepper <Thomas.Hepper@icem.de>.
+
+	Genversion gives some more information.  Patch from Thomas
+	Hepper <Thomas.Hepper@icem.de>.
+
+	getfsent.c and statfs.c have been cleaned up. The have to be
+	checked on non-Irix/Solaris/NextStep/HPUX/AIX/Linux-systems.
+	Patch from Thomas Hepper <Thomas.Hepper@icem.de>.
+
+	Simple support if readline.a is missing.  NEVER TESTED!  Patch
+	from Thomas Hepper <Thomas.Hepper@icem.de>.
+
+	Linux requires libdb.a and ndbm.h to handle database files. Not
+	really what I expected.  Patch from Thomas Hepper
+	<Thomas.Hepper@icem.de>.
+ 
+	Here's a simple patch which fixes a problem that causes amflush
+	to erroneously complain "ignoring cruft file" about good dump
+	files on the holding disk, and fail to flush them to tape.
+	This happens if your holding disk directory has a long name,
+	and the dump file also has a long name (i.e. if you use
+	filesystem mount points in disklist).  The problem occurs if
+	the holding directory + filename exceeds 80 bytes.  The patch
+	still leaves a length limitation, but at least it matches the
+	size limit imposed by driver (and thus dumper & taper) of 128
+	bytes.  Patch from Marion Hakanson <hakanson@cse.ogi.edu>.
+
+	Use regex.h and regex.c from
+	ftp://prep.ai.mit.edu/sh-utils-1.15.tar.gz instead of the regex
+	checking code in the system.  This code includes re_comp and
+	re_exec calls, so it will work on any system.  Patch by Blair
+	Zajac <blair@gps.caltech.edu>.
+
+	Amadmin find reports the wrong tape file numbers after when a
+	dump is amflush'ed to tape.  Patch by Ralf Fassel
+	<ralf@atg.venture.de>.
+
+	Fix a bug where dumps of disks on the Amanda server are counted
+	against the available network bandwidth.  Patch from Marion
+	Hakanson <hakanson@cse.ogi.edu>.
+
+	Tell gnutar to not exit with a nonzero value if a read failed.
+	This prevents backups from aborting if a file disappeared
+	before gnutar could save it.  Patch from Hal Snyder
+	<hal@vailsys.com>.
+
+	Fix dumper which can cause the entire amdump run to hang after
+	dumper issues a "TRY-AGAIN" message to driver while dumping
+	directly to tape.  Patch from Marion Hakanson's
+	<hakanson@cse.ogi.edu>.
+
+	Added Marion Hakanson's <hakanson@cse.ogi.edu> patches to fix
+	problems when amanda dumps directly to tape (i.e. when holding
+	space is full, or you're backing up a huge filesystem, etc.).
+	The bug occurs in the way taper determines it has succeeded
+	when doing a PORT-WRITE operation (i.e. dumping directly to
+	tape).  It used to assume that an EOF meant no more data --
+	true if it's reading from a file, but when reading from a port
+	(i.e. directly from a dump process), an EOF could signal
+	abnormal exit as well as a normal one.  So, I extended the
+	protocol between driver and taper when dumping directly to tape
+	(see dump_to_tape() in driver.c) so the taper will wait for the
+	driver to pass PORT-WRITE-SUCCESS or PORT-WRITE-FAILURE to the
+	taper (since driver gets OK/not-OK from the dumper) before the
+	taper records success or failure.  Note that this change
+	affects only the PORT-WRITE case in taper.  FYI, the bug
+	resulted in the curinfo database for a failed port-dump to have
+	the tape-label & file-number fields updated with the location
+	of the failed dump, even though the timestamp & dump statistics
+	still have the values of the last successful dump (the latter
+	fields are updated by dumper itself).
+
+	Patches from George Scott <George.Scott@cc.monash.edu.au> to
+	fix the following problems in planner.c.
+	1) Initialise total_size, total_lev0 and balanced_size.  They
+	are updated in analyze_estimates() but never initialised.  Zero
+	them before the first call.
+	2) Remove oversize dumps.   If there is a dump whose estimated
+	size is larger than the tape the planner would tend to throw
+	away all the other dumps and then probably generate an
+	unworkable plan anyway.  (The standard 2.2.6 planner probably
+	tossed these dumps fairly quickly for other reasons, but my
+	next fix made this one almost mandatory!)  The fix is to drop
+	these enormous dumps right at the begining.  This shouldn't be
+	triggered for anyone with a sane configuration.
+	3) Promote hills.  There are two ways to create a balanced
+	cycle.  The first is to fill in any holes and the second is to
+	remove any hills.  The original planner is good at doing the
+	first but doesn't even attempt the second.  A quick look at
+	"amadmin balance" would show big hills quite clearly.  This fix
+	effectively does an "amadmin balance" and promotes a dump from
+	one of the "hills".  This type of promotion is quite
+	restricted:
+	  - don't bother if we already plan to do any level 0 dumps
+	  - don't promote a dump if it was going to be the only level 0
+	    to be done on that run (ie, ignore hills that are only one
+	    dump high)
+	  - only promote one level 0 by this method
+	  - don't exceed tape_length
+	The key to it is the first restriction.  Large sites (with
+	large numbers of disks and a large balanced_size) will have at
+	least one level 0 scheduled for each day in the dump cycle and
+	will already have a balanced cycle.  This code will not
+	activate for them.  Small sites will probably not have a level
+	0 scheduled and will benefit.  The second restriction will stop
+	Amanda from constantly promoting dumps when the schedule is as
+	balanced as it will go.  The third restriction will stop Amanda
+	over reacting.  Promoting one dump by this method would take
+	total_lev0 larger that balanced_size.  If it wouldn't then the
+	first stage promotion didn't work like it should.
+	4) Initialise got_estimate for all cases.  This fix was from
+	der Mouse <mouse@collatz.mcrcim.mcgill.edu>.  "got_estimate"
+	wasn't being initialised for skipped disks.  Later in the code
+	it was being used in all cases.  The fix is to move its
+	initialisation up a few lines.
+	5) Explicitly ignore off-line disks.  If a disk is off-line
+	when the planner is run it gets -1 for all dump sizes.  These
+	were ignored at a later stage.  This fix explicitly ignores
+	them up front.
+	6) Ignore down machines.  If a machine is down when the planner
+	is run it guesses from historical data what the size of
+	tonights dump is likely to be and schedules a dump anyway.  The
+	dumper then usually discovers that the machine is still down
+	and ends up with a half full tape.  Unfortunately the planner
+	had to delay another dump because it thought that the tape was
+	full.  The fix here is for the planner to discard unavailable
+	machines totally rather than just ignore the fact that they are
+	unavailable.
+	7) Keep at least one total.  Amanda moves level 0 dumps back to
+	incrementals to try and fit everything onto the tape.
+	Unfortunately if all your incrementals are too big (or your
+	tape too small) it can move all of your level 0 dumps.  This
+	ends up being a kind of deadlock since, unless a level 0 gets
+	done, the incrementals will not reduce in size and until the
+	incrementals reduce in size there will not be enough room to
+	fit in a level 0.  (This is not quite accurate since a level 4
+	dump can get bumped to a level 5 which reduces its size.
+	However, this deadlock has happened to me and for many days in
+	a row.)  The fix is to pick on the highest priority level 0 and
+	not let it be moved.  This change will not affect users with
+	reasonably sized tapes since Amanda would not have moved all
+	their disks to incrementals.
+	8) Make usage of total_lev0 consistent.  "total_lev0" is a
+	double and doesn't include tape_mark's.  Make it so.
+
+	Add a fflush(outf) to amcheck.c.  Patch from Mike Russell
+	<Michael_Russell@Brown.EDU>.
+
+	Fix problems with amhpfixdevs.  Patch from Michael Schmitz
+	<mc@col.sw-ley.de>.
+
+	Have DEC OSF1 use installbsd instead of install.  Patch from
+	Rainer Landes <rlandes@fphws01.physik.uni-karlsruhe.de>.
+
+	Have amcontrol take the first command line argument as the
+	configuration to use.  If there are no command line arguments,
+	then use daily.  Patch from Thomas Schmeidl
+	<schmeidl@nwp.kwu.siemens.de>.
+
+	Removed --atime-preserve from sendbackup-gnutar.c so that
+	incremental backups of filesystems will work.  Patch from
+	Alexandre Oliva <oliva@dcc.unicamp.br>.
+
+	Change all #if __STDC__ to #ifdef __STDC__ for those systems
+	that define __STDC__ to 0, such as Solaris using cc -Xt, cc
+	-Xa.  Patch from Blair Zajac <blair@gps.caltech.edu>.
+
+	Increase the socket buffer size, and set a low watter mark at
+	32k.  This cut the number of syscalls done to process one 32k
+	block from dozens down to 4 (select, read, lseek, write).
+	Patch from Brad Huntting <huntting@glarp.com>.
+
+	Include amindex-0.3 from Alan McIvor <alan@salan.auck.irl.cri.nz>.
+
+	Add the "srvcompress" option to compress dumps on the tape host
+	instead of on the client machines.  This may be useful when a
+	fast tape host is backing up slow clients.  The patches add a
+	dump-type option, analogous to "compress-fast" or
+	"compress-best" - the way to use it is to create a new dumptype
+	in your amanda.conf that includes "srvcompress" and use the new
+	dumptype for those filesystems you wish to have compressed on
+	the tape server. For example, in amanda.conf:
+	    define dumptype srvcomp-user {
+	    comment "Partitions on slow machines, compressed on tapehost"
+	    options srvcompress
+	    priority medium
+	}
+	Patches from Eric Volpe <epv@panix.com>.
+
+	Increase the planner timeout for one estimate from 30 seconds
+	to 120 seconds.  Patch from Michael Schmitz
+	<mc@col.sw-ley.de>.
+
+	The select(2) prototype on HPUX specifies 'int' as argument
+	type of the filedescriptor arguments. All other systems I know
+	of use 'fd_set'. This has been fixed by having configure check
+	the argument type to select and adding casts to the select(2)
+	calls.  Patch from Michael Schmitz  <mc@col.sw-ley.de>.
+
+	Improve the diagnostic output and increase the robustness of
+	the system by adding better error checking on communication
+	between taper & driver, and among the two taper processes.
+	Patches from Marion Hakanson <hakanson@cse.ogi.edu>.
+
+	Convert all flock() calls to use POSIX-style locks via the
+	fcntl(2) call.  This operation was prompted by the fact that
+	the flock() emulation in the Amanda-provided common-src/flock.c
+	was broken for read-only file descriptors, and the fcntl(2)
+	locks are widely available.  This patch makes it possible to
+	have a read-only lock on the /etc/amandates file on systems
+	which want to use it.  I've built and tested the patched code
+	on Amanda servers running on Digital Unix v3.2B (on Alpha
+	hardware) and on SPARC Solaris-2.5.1.  It's also been compiled
+	here on SPARC's running SunOS-4.1.3u1b, HP-UX 9.0[345], and
+	NeXTstep-3.3 (NeXT hardware).  Note that the patches also
+	remove all trace of the NEED_FLOCK define, and I have removed
+	the file common-src/flock.c from our source tree here.  Patch
+	from Marion Hakanson <hakanson@cse.ogi.edu>.
+
+	For disk/filesystem names which are wider than 14 characters,
+	have reporter print out the rightmost characters of the disk
+	name, which is usually more meaningful in a daily backup
+	summary.  Patch from Marion Hakanson <hakanson@cse.ogi.edu>.
+
+	Lets amflush work in a wider variety of cases than was
+	previously true (it used to work if the disklist contains only
+	the first token of each hostname).  sendbackup-dump.c and
+	sendbackup-gnutar.c now do not trim the domain name from the
+	host name that is sent back to the server.  amflush now looks
+	for an exact match, in the database.  If it can't find one it
+	strips the last token off the dump header hostname and keeps
+	trying until it finds a match in the disklist or runs out of
+	tokens.  This also has the advantage that if gethostname()
+	returns FQDNs and you specify the same FQDNs in the disklist,
+	then amflush will always work.  It will also work as long as
+	the disklist and gethostname() on the clients return enough
+	information to be unambiguous.  Patch from James Mathiesen
+	<james@deshaw.com>.
+
+	Increase the READ_TIMEOUT in dumper.c to 30 minutes.  This
+	needs to be longer than the longest amount of time dump will
+	not produce output.  People have observed dumps taking more
+	than 10 minutes to finish mapping some of the passes
+	sometimes.  Patch from James Mathiesen <james@deshaw.com>.
+	
+	Added Adrian T. Filipi-Martin's <atf3r@cs.virginia.edu>
+	amrmtape script, which allows you to invalidate the contents of
+	an existing backup tape within the Amanda current tape
+	database.  This is meant as a recovery mecanism for when a good
+	backup is damaged either by faulty hardware or user error,
+	i.e.  the tape is eaten by the tape drive, or the tape has been
+	overwritten.  Blair Zajac wrote a quick little manual page for
+	this script.
+
+	amrmtape was using the return value from amadmin and amadmin
+	was exiting with a non-zero value, causing amrmtape to quit.
+	Added a return 0 statement to amadmin.c.  Patch from Blair
+	Zajac <blair@gps.caltech.edu>.
+
+	Went through all of the files and changed void main()'s to int
+	main()'s.  Patch from Blair Zajac <blair@gps.caltech.edu>.
+
+	Removed the 50 tape file limit in amcleanup and amdump.
+
+	createindex-dump and sendbackup-dump did not always take into
+	account the version suffix.  This is now handled.  Patch from
+	Philippe Charnier <charnier@lirmm.fr>
+
+	Compile and install amrecover and amrestore as client programs,
+	not a server program.  The motovation for this is that
+	amrecover is truly a program for all of the users on the
+	system, while the remaining amanda programs could be used by
+	only the system administrator.  Patch from Alexandre Oliva
+	<oliva@dcc.unicamp.br>.
+
+	The program amtrmidx fails to close some of the pipes it uses,
+	and this can lead to failure on systems with large numbers of
+	disks with incomplete database sets, and file descriptor
+	ulimits set.  Patch from Alan McIvor <alan@auck.irl.cri.nz>.
+
+Version 2.3.0.3
+
+	Expanded the width of the DISK column from the reporter
+	output.  I like to use mount points like /export/home?? instead
+	of device names to back up.  Since the width of the disk name
+	field from reporter's output is pretty small, I couldn't easily
+	figure out the statistics for a particular partition.  Patch
+	from Blair Zajac <blair@gps.caltech.edu>.
+
+	Included Eric Doutreleau <ed@cti.ecp.fr> patch's for amadmin to
+	handle multiple tapes better.  The patch that he posted on used
+	a hardwired value of 6 for runtapes, which I changed.
+
+	Included Marion Hakanson's <hakanson@cse.ogi.edu> patches to
+	amadmin.c and amadmin.8 to let amadmin use the same disk
+	regular expression matching as amrestore.  So now "^/$" will
+	match only the root partition, not all of the disks.
+
+	Added a patch from George.Scott@cc.monash.edu.au which makes
+	new disks and forces dump with a higher priority.
+
+	Changed tools/munge to delete blank lines and the commented
+	lines that the C preprocessor generates (i.e. # 123).  We also
+	remove the space after the = sign that can be generated by cpp
+	on some systems.
+
+	Installed amindex-0.2 from Alan McIvor <alan@auck.irl.cri.nz>
+	with the following patches:
+
+		Fix problem so that rsh'ing on a hpux host works.
+		Patch from Neal Becker <neal@ctd.comsat.com>.  This
+		patch includes a new #define for RSH_COMMAND, which is
+		set to rsh in config-common.h and defined as remsh in
+		config.h-hpux.
+
+		Fix bugs in createindex-dump.c when comparing errno to
+		EINTR.  The code was using = instead of ==.  Patch from
+		Neal Becker <neal@ctd.comsat.com>.  I'm guessing this
+		might fix some of the runaway createindex-dump
+		processes that I have seen on my system.
+
+		On my system, we use MAE which likes to generate path
+		names with spaces in them.  I patched
+		createindex-dump.c so that filenames with spaces have
+		the whole filename listed.  Patch from Blair Zajac
+		<blair@gps.caltech.edu>.
+
+		Patch amtrmidx.c so that backups using the mount points
+		for disks instead of the device name have the /'s
+		replaced with _'s.  Patch from Blair Zajac
+		<blair@gps.caltech.edu>.
+
+Version 2.3.0.2
+
+	Changed the signals being sent to xfsdump for Irix so that it
+	will be killed without dumping a core.
+
+	Fixed a typo in the definition of XFSDUMP in config.h-irix.
+
+	Removed the extra option.s-* and copied options.h to
+	options.h-vanilla.
+
+	Moved the amrestore manual page into the man directory so it
+	would get installed.
+
+Version 2.3.0.1
+
+	amindex-0.1 written by Alan McIvor <alan@kauri.auck.irl.cri.nz>
+	installed.  amindex generates an index of all of the files that
+	were dumped.  It is nice to see what files were dumped before
+	you restore a whole bunch of tapes looking for a file.  I
+	patched some of this code.  Here are some of the changes:
+
+		Switched the Imakefile to Makefile and Makefile.in to
+		be more consistent with the system used by the rest of
+		amanda.
+
+		Moved the configuration #defines out of the specific
+		files (such as amrecover.c) into options.h, so that
+		people installing this version of amanda would be able
+		to see the required changes more easily and not have to
+		edit multiple files.
+
+		Made some changes to the codes to remove #include's
+		where amanda.h would include them and also check if the
+		system had the particular include file.
+
+		Added code to set_commands.c and amgetidx.c to change
+		/'s in disk names to _'s.
+
+		Added code to amrecover.c to properly compile on
+		Solaris hosts.
+
+		With the -Xc compiler option on Solaris and with
+		amindex, the sigaction structure was not being
+		declared.  Added -D__EXTENSIONS__ to config.h-sunos5 so
+		that sigaction would be declared.
+
+		I changed a bunch of fprintf to perrors.
+
+	Include Sean Kelly's <kelly@fsl.noaa.gov> patch for tools/munge
+	for FreeBSD-2.1.5.
+
+	Used Peter Lackner's <plo@came.sbg.ac.at> patches for DU 4.0.
+
+	Installed Ken Laprade's <klaprade@harris.com> patches for
+	amanda to handle both EFS and XFs file systems on the same
+	client.  The only change from his patch is to #ifdef XFSDUMP
+	the kill(-dumppid, SIGTERM) so the SIGTERM signal will be used
+	on other systems, while SIGQUIT will be used on Irix systems.
+
+	Installed Marion Hakanson's <hakanson@cse.ogi.edu> patches for
+	the main config file to include subsidiary config files.
+
+	On Solaris, sometimes the hdr->handle variable in amandad.c
+	would be null, causing core dumps when it was used in a sprintf
+	statement.  The code now checks if hdr->handle is null and
+	prints a "" if it is null.  This was only done in amandad.c.
+
+	Fix a problem where new disks would be added but not backed up
+	concurrently.  Changes to diskfile.c.  I forgot who put this
+	patch up on the mailing list.
+
+	I made some changes to options.h to allow the user to more
+	easily install the programs under a different user.  This meant
+	defining two new #defines, MK_AMANDA_USER and
+	MK_QUOTED_AMANDA_USER which are used in the appropriate
+	Makefiles.
+
+	Used Marion Hakanson's <hakanson@cse.ogi.edu> patch for taper.c
+	for multiple tapes.
+
+	Included Joachim Loehr's <Joachim.Loeh@stadt-mh.de>
+	script to automatically figure out which kind of HP-UX file
+	system is being dumped.  Look in tools for the script and a
+	README.

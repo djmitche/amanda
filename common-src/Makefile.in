@@ -1,0 +1,369 @@
+# Makefile.in generated automatically by automake 1.1l from Makefile.am
+
+# Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
+# This Makefile.in is free software; the Free Software Foundation
+# gives unlimited permission to copy, distribute and modify it.
+
+# Makefile for Amanda library.
+
+
+SHELL = /bin/sh
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+oldincludedir = /usr/include
+
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+
+top_builddir = ..
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+transform = @program_transform_name@
+target_alias = @target_alias@
+build_alias = @build_alias@
+host_triplet = @host@
+target_triplet = @target@
+build_triplet = @build@
+host_alias = @host_alias@
+LOG_DIR = @LOG_DIR@
+MT = @MT@
+RESTORE = @RESTORE@
+DB_DIR = @DB_DIR@
+VERSION = @VERSION@
+ac_c = @ac_c@
+XFSDUMP = @XFSDUMP@
+PCAT = @PCAT@
+DD = @DD@
+LEX = @LEX@
+GNUPLOT = @GNUPLOT@
+VERSION_MINOR = @VERSION_MINOR@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+BUILD_SERVER_PROGS_LIBEXEC = @BUILD_SERVER_PROGS_LIBEXEC@
+PACKAGE = @PACKAGE@
+COMPRESS = @COMPRESS@
+RSH = @RSH@
+BUILD_CLIENT_SCRIPTS_BIN = @BUILD_CLIENT_SCRIPTS_BIN@
+ac_n = @ac_n@
+XFSRESTORE = @XFSRESTORE@
+DUMP = @DUMP@
+INDEX_DIR = @INDEX_DIR@
+BUILD_AMPLOT_LIBEXEC = @BUILD_AMPLOT_LIBEXEC@
+AMPLOT_COMPRESS = @AMPLOT_COMPRESS@
+RANLIB = @RANLIB@
+VERSION_COMMENT = @VERSION_COMMENT@
+MAILER = @MAILER@
+DEFAULT_SERVER = @DEFAULT_SERVER@
+AMPLOT_CAT_GZIP = @AMPLOT_CAT_GZIP@
+TAPE_NO_REWIND_DEVICE = @TAPE_NO_REWIND_DEVICE@
+DEFAULT_TAPE_DEVICE = @DEFAULT_TAPE_DEVICE@
+YACC = @YACC@
+TAPE_REWIND_DEVICE = @TAPE_REWIND_DEVICE@
+AMPLOT_CAT_PACK = @AMPLOT_CAT_PACK@
+SAMBA_CLIENT = @SAMBA_CLIENT@
+DEFAULT_TAPE_SERVER = @DEFAULT_TAPE_SERVER@
+BUILD_SERVER_SCRIPTS_BIN = @BUILD_SERVER_SCRIPTS_BIN@
+CC = @CC@
+BUILD_SERVER_PROGS_BIN = @BUILD_SERVER_PROGS_BIN@
+BUILD_CHANGER_SCRIPTS_LIBEXEC = @BUILD_CHANGER_SCRIPTS_LIBEXEC@
+BUILD_CHANGER_PROGS_LIBEXEC = @BUILD_CHANGER_PROGS_LIBEXEC@
+GREP = @GREP@
+AMPLOT_CAT_COMPRESS = @AMPLOT_CAT_COMPRESS@
+BUILD_CLIENT_SCRIPTS_LIBEXEC = @BUILD_CLIENT_SCRIPTS_LIBEXEC@
+GNUTAR = @GNUTAR@
+PERL = @PERL@
+BUILD_CLIENT_PROGS_LIBEXEC = @BUILD_CLIENT_PROGS_LIBEXEC@
+AR = @AR@
+EGREP = @EGREP@
+CONFIG_DIR = @CONFIG_DIR@
+BUILD_AMPLOT_BIN = @BUILD_AMPLOT_BIN@
+AWK_VAR_ASSIGNMENT_OPT = @AWK_VAR_ASSIGNMENT_OPT@
+VERSION_PATCH = @VERSION_PATCH@
+CLIENT_LOGIN = @CLIENT_LOGIN@
+SHELL = @SHELL@
+CAT = @CAT@
+MTX = @MTX@
+MT_FILE_FLAG = @MT_FILE_FLAG@
+GZIP = @GZIP@
+VERSION_SUFFIX = @VERSION_SUFFIX@
+SETUID_GROUP = @SETUID_GROUP@
+DEFAULT_CONFIG = @DEFAULT_CONFIG@
+VERSION_MAJOR = @VERSION_MAJOR@
+USE_VERSION_SUFFIXES = @USE_VERSION_SUFFIXES@
+
+AMANDA_CFLAGS =		@AMANDA_CFLAGS@
+
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
+
+DISTCLEANFILES =	version.c
+
+noinst_LIBRARIES =	libamanda.a
+
+libamanda_a_SOURCES =	alloc.c		amandates.c	changer.c	\
+			clock.c		conffile.c	debug.c		\
+			dgram.c		diskfile.c	error.c		\
+			fnmatch.c	getfsent.c	infofile.c	\
+			logfile.c	match.c		protocol.c	\
+			regex.c		statfs.c	stralloc.c	\
+			stream.c	tapefile.c	tapeio.c	\
+			unctime.c	version.c	version.h	\
+			versuff.c
+
+EXTRA_DIST =		genversion.c
+
+libamanda_a_LIBADD =	@ALLOCA@ @LIBOBJS@
+
+noinst_HEADERS =	amanda.h	amandates.h	arglist.h	\
+			changer.h	clock.h		conffile.h	\
+			dgram.h		diskfile.h	findpass.h	\
+			fnmatch.h	getfsent.h	infofile.h	\
+			logfile.h	protocol.h	regex.h		\
+			statfs.h	stream.h	tapefile.h	\
+			tapeio.h
+mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+CONFIG_HEADER = ../config.h
+CONFIG_CLEAN_FILES =  versuff.c
+LIBRARIES =  $(noinst_LIBRARIES)
+
+
+DEFS = @DEFS@ -I. -I$(srcdir) -I..
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+libamanda_a_DEPENDENCIES =  @LIBOBJS@
+libamanda_a_OBJECTS =  alloc.o amandates.o changer.o clock.o conffile.o \
+debug.o dgram.o diskfile.o error.o fnmatch.o getfsent.o infofile.o \
+logfile.o match.o protocol.o regex.o statfs.o stralloc.o stream.o \
+tapefile.o tapeio.o unctime.o version.o versuff.o
+CFLAGS = @CFLAGS@
+LINK = $(CC) $(LDFLAGS) -o $@
+HEADERS =  $(noinst_HEADERS)
+
+DIST_COMMON =  Makefile.am Makefile.in add_exclude.c alloca.c \
+check_exclude.c fileblocks.c findpass.c flock.c getcwd.c mktime.c \
+strdup.c strerror.c strstr.c versuff.c.in
+
+
+DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) \
+	$(TEXINFOS) $(MANS) $(EXTRA_DIST)
+
+TAR = tar
+SOURCES = $(libamanda_a_SOURCES)
+OBJECTS = $(libamanda_a_OBJECTS)
+
+default: all
+
+.SUFFIXES:
+.SUFFIXES: .c .o
+$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL) 
+	cd $(top_srcdir) && automake --foreign common-src/Makefile
+
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status $(BUILT_SOURCES)
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+versuff.c: $(top_builddir)/config.status versuff.c.in
+	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+
+mostlyclean-noinstLIBRARIES:
+
+clean-noinstLIBRARIES:
+	test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
+
+distclean-noinstLIBRARIES:
+
+maintainer-clean-noinstLIBRARIES:
+
+.c.o:
+	$(COMPILE) -c $<
+
+mostlyclean-compile:
+	rm -f *.o core
+
+clean-compile:
+
+distclean-compile:
+	rm -f *.tab.c
+
+maintainer-clean-compile:
+$(libamanda_a_OBJECTS): ../config.h
+
+libamanda.a: $(libamanda_a_OBJECTS) $(libamanda_a_DEPENDENCIES)
+	rm -f libamanda.a
+	$(AR) cru libamanda.a $(libamanda_a_OBJECTS) $(libamanda_a_LIBADD)
+	$(RANLIB) libamanda.a
+
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES)
+	here=`pwd` && cd $(srcdir) && mkid -f$$here/ID $(SOURCES) $(HEADERS)
+
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES)
+	tags=; \
+	here=`pwd`; \
+	list="$(SUBDIRS)"; for subdir in $$list; do \
+	  test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
+	done; \
+	test -z "$(ETAGS_ARGS)$(SOURCES)$(HEADERS)$$tags" \
+	  || cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $(SOURCES) $(HEADERS) -o $$here/TAGS
+
+mostlyclean-tags:
+
+clean-tags:
+
+distclean-tags:
+	rm -f TAGS ID
+
+maintainer-clean-tags:
+
+distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
+
+subdir = common-src
+distdir: $(DISTFILES)
+	@for file in $(DISTFILES); do \
+	  d=$(srcdir); \
+	  test -f $(distdir)/$$file \
+	  || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
+	  || cp -p $$d/$$file $(distdir)/$$file; \
+	done
+add_exclude.o add_exclude.lo: add_exclude.c amanda.h ../config.h
+alloc.o alloc.lo: alloc.c amanda.h ../config.h
+alloca.o alloca.lo: alloca.c ../config.h
+amandates.o amandates.lo: amandates.c amanda.h ../config.h logfile.h \
+	getfsent.h amandates.h
+changer.o changer.lo: changer.c amanda.h ../config.h conffile.h \
+	version.h changer.h
+check_exclude.o check_exclude.lo: check_exclude.c amanda.h ../config.h \
+	fnmatch.h
+clock.o clock.lo: clock.c amanda.h ../config.h clock.h
+conffile.o conffile.lo: conffile.c amanda.h ../config.h arglist.h \
+	conffile.h clock.h
+debug.o debug.lo: debug.c amanda.h ../config.h arglist.h
+dgram.o dgram.lo: dgram.c amanda.h ../config.h dgram.h
+diskfile.o diskfile.lo: diskfile.c amanda.h ../config.h arglist.h \
+	conffile.h diskfile.h
+error.o error.lo: error.c amanda.h ../config.h logfile.h arglist.h
+fileblocks.o fileblocks.lo: fileblocks.c ../config.h
+findpass.o findpass.lo: findpass.c findpass.h amanda.h ../config.h
+flock.o flock.lo: flock.c amanda.h ../config.h
+fnmatch.o fnmatch.lo: fnmatch.c ../config.h amanda.h fnmatch.h
+getcwd.o getcwd.lo: getcwd.c
+getfsent.o getfsent.lo: getfsent.c amanda.h ../config.h getfsent.h
+infofile.o infofile.lo: infofile.c amanda.h ../config.h conffile.h \
+	infofile.h
+logfile.o logfile.lo: logfile.c amanda.h ../config.h arglist.h \
+	conffile.h logfile.h
+match.o match.lo: match.c amanda.h ../config.h regex.h
+mktime.o mktime.lo: mktime.c
+protocol.o protocol.lo: protocol.c amanda.h ../config.h protocol.h \
+	dgram.h version.h
+regex.o regex.lo: regex.c ../config.h amanda.h regex.h
+statfs.o statfs.lo: statfs.c amanda.h ../config.h statfs.h
+stralloc.o stralloc.lo: stralloc.c amanda.h ../config.h
+strdup.o strdup.lo: strdup.c ../config.h
+stream.o stream.lo: stream.c amanda.h ../config.h dgram.h stream.h
+strerror.o strerror.lo: strerror.c amanda.h ../config.h
+strstr.o strstr.lo: strstr.c amanda.h ../config.h
+tapefile.o tapefile.lo: tapefile.c amanda.h ../config.h tapefile.h \
+	conffile.h
+tapeio.o tapeio.lo: tapeio.c amanda.h ../config.h logfile.h tapeio.h
+unctime.o unctime.lo: unctime.c amanda.h ../config.h
+version.o version.lo: version.c
+versuff.o versuff.lo: versuff.c amanda.h ../config.h version.h
+
+info:
+dvi:
+check: all
+	$(MAKE)
+installcheck:
+install-exec: 
+	$(NORMAL_INSTALL)
+
+install-data: 
+	$(NORMAL_INSTALL)
+
+install: install-exec install-data all
+	@:
+
+uninstall: 
+
+all: $(LIBRARIES) $(HEADERS) Makefile
+
+install-strip:
+	$(MAKE) INSTALL_PROGRAM='$(INSTALL_PROGRAM) -s' install
+installdirs:
+
+
+mostlyclean-generic:
+	test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
+
+clean-generic:
+	test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
+
+distclean-generic:
+	rm -f Makefile $(DISTCLEANFILES)
+	rm -f config.cache config.log stamp-h
+	test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
+
+maintainer-clean-generic:
+	test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
+	test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
+mostlyclean:  mostlyclean-noinstLIBRARIES mostlyclean-compile \
+		mostlyclean-tags mostlyclean-generic
+
+clean:  clean-noinstLIBRARIES clean-compile clean-tags clean-generic \
+		mostlyclean
+
+distclean:  distclean-noinstLIBRARIES distclean-compile distclean-tags \
+		distclean-generic clean
+	rm -f config.status
+
+maintainer-clean:  maintainer-clean-noinstLIBRARIES \
+		maintainer-clean-compile maintainer-clean-tags \
+		maintainer-clean-generic distclean
+	@echo "This command is intended for maintainers to use;"
+	@echo "it deletes files that may require special tools to rebuild."
+
+.PHONY: default mostlyclean-noinstLIBRARIES distclean-noinstLIBRARIES \
+clean-noinstLIBRARIES maintainer-clean-noinstLIBRARIES \
+mostlyclean-compile distclean-compile clean-compile \
+maintainer-clean-compile tags mostlyclean-tags distclean-tags \
+clean-tags maintainer-clean-tags distdir info dvi installcheck \
+install-exec install-data install uninstall all installdirs \
+mostlyclean-generic distclean-generic clean-generic \
+maintainer-clean-generic clean mostlyclean distclean maintainer-clean
+
+
+.sh:
+	cat $< > $@
+	chmod a+x $@
+
+version.c:	genversion.c versuff.c version.h
+	$(COMPILE) -DCC="\"$(CC)\"" -DBUILT_DATE="\"`date`\"" -DBUILT_MACH="\"`uname -a`\"" -c $(srcdir)/genversion.c
+	$(COMPILE) -c $(srcdir)/versuff.c
+	 $(CC) $(LDFLAGS) genversion.o versuff.o -o genversion
+	./genversion > version.c
+	rm -f genversion genversion.o versuff.o
+
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:

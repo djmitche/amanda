@@ -1,0 +1,41 @@
+.\"
+.TH AMRMTAPE 8
+.SH NAME
+amrmtape \- remove a damaged or overwritten tape from the Amanda database
+.SH SYNOPSIS
+.B amrmtape
+[\-n] [\-v] [\-d]
+.I config tape
+.SH DESCRIPTION
+.B Amrmtape
+allows you to invalidate the contents of an existing backup
+.I tape
+in the
+.I config
+configuration database.  This is meant as a recovery mecanism for when a
+good backup is damaged either by faulty hardware or user error, i.e. the
+tape is eaten by the tape drive, or the tape has been overwritten.
+
+.B Amrmtape
+supports the following command line options
+.TP
+.B \-n
+Generate the new tapelist and curinfo.* files with the given
+.I tape
+removed, but leave the tapelist and curinfo.* files in /tmp and do not
+copy them back to the Amanda directories.
+.TP
+.B \-v
+List the hosts and backups of disks that are being discarded.
+.TP
+.B \-d
+Run the script in debugging mode so that all of the executed commands
+are shown.
+.SH EXAMPLE
+.TP
+% amrmtape DailySet1 DailySet1.034
+Remove tape DailySet1.034 from the DailySet1 configuation database.
+.SH AUTHOR
+Adrian T. Filipi-Martin <atf3r@cs.virginia.edu>
+.SH "SEE ALSO"
+amanda(8).

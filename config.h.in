@@ -1,0 +1,710 @@
+/* config.h.in.  Generated automatically from configure.in by autoheader.  */
+#ifndef _CONFIG_H
+#define _CONFIG_H
+
+
+/* Define if using alloca.c.  */
+#undef C_ALLOCA
+
+/* Define to empty if the keyword does not work.  */
+#undef const
+
+/* Define to one of _getb67, GETB67, getb67 for Cray-2 and Cray-YMP systems.
+   This function is required for alloca.c support on those systems.  */
+#undef CRAY_STACKSEG_END
+
+/* Define to `int' if <sys/types.h> doesn't define.  */
+#undef gid_t
+
+/* Define if you have alloca, as a function or macro.  */
+#undef HAVE_ALLOCA
+
+/* Define if you have <alloca.h> and it should be used (not on Ultrix).  */
+#undef HAVE_ALLOCA_H
+
+/* Define if you don't have vprintf but do have _doprnt.  */
+#undef HAVE_DOPRNT
+
+/* Define if you have the getmntent function.  */
+#undef HAVE_GETMNTENT
+
+/* Define if you have a working `mmap' system call.  */
+#undef HAVE_MMAP
+
+/* Define if your struct stat has st_blocks.  */
+#undef HAVE_ST_BLOCKS
+
+/* Define if you have the strftime function.  */
+#undef HAVE_STRFTIME
+
+/* Define if you have <sys/wait.h> that is POSIX.1 compatible.  */
+#undef HAVE_SYS_WAIT_H
+
+/* Define if you have the vprintf function.  */
+#undef HAVE_VPRINTF
+
+/* Define to `long' if <sys/types.h> doesn't define.  */
+#undef off_t
+
+/* Define to `int' if <sys/types.h> doesn't define.  */
+#undef pid_t
+
+/* Define as the return type of signal handlers (int or void).  */
+#undef RETSIGTYPE
+
+/* Define if the `setpgrp' function takes no argument.  */
+#undef SETPGRP_VOID
+
+/* Define to `unsigned' if <sys/types.h> doesn't define.  */
+#undef size_t
+
+/* If using the C implementation of alloca, define if you know the
+   direction of stack growth for your system; otherwise it will be
+   automatically deduced at run-time.
+ STACK_DIRECTION > 0 => grows toward higher addresses
+ STACK_DIRECTION < 0 => grows toward lower addresses
+ STACK_DIRECTION = 0 => direction of growth unknown
+ */
+#undef STACK_DIRECTION
+
+/* Define if you have the ANSI C header files.  */
+#undef STDC_HEADERS
+
+/* Define if you can safely include both <sys/time.h> and <time.h>.  */
+#undef TIME_WITH_SYS_TIME
+
+/* Define if your <sys/time.h> declares struct tm.  */
+#undef TM_IN_SYS_TIME
+
+/* Define to `int' if <sys/types.h> doesn't define.  */
+#undef uid_t
+
+/* Define if lex declares yytext as a char * by default, not a char[].  */
+#undef YYTEXT_POINTER
+
+/* Define if you have the accept function.  */
+#undef HAVE_ACCEPT
+
+/* Define if you have the add_exclude function.  */
+#undef HAVE_ADD_EXCLUDE
+
+/* Define if you have the atof function.  */
+#undef HAVE_ATOF
+
+/* Define if you have the bind function.  */
+#undef HAVE_BIND
+
+/* Define if you have the bzero function.  */
+#undef HAVE_BZERO
+
+/* Define if you have the check_exclude function.  */
+#undef HAVE_CHECK_EXCLUDE
+
+/* Define if you have the closelog function.  */
+#undef HAVE_CLOSELOG
+
+/* Define if you have the connect function.  */
+#undef HAVE_CONNECT
+
+/* Define if you have the dbm_open function.  */
+#undef HAVE_DBM_OPEN
+
+/* Define if you have the fclose function.  */
+#undef HAVE_FCLOSE
+
+/* Define if you have the fflush function.  */
+#undef HAVE_FFLUSH
+
+/* Define if you have the flock function.  */
+#undef HAVE_FLOCK
+
+/* Define if you have the fprintf function.  */
+#undef HAVE_FPRINTF
+
+/* Define if you have the fputc function.  */
+#undef HAVE_FPUTC
+
+/* Define if you have the fputs function.  */
+#undef HAVE_FPUTS
+
+/* Define if you have the fread function.  */
+#undef HAVE_FREAD
+
+/* Define if you have the fwrite function.  */
+#undef HAVE_FWRITE
+
+/* Define if you have the getcwd function.  */
+#undef HAVE_GETCWD
+
+/* Define if you have the getfsent function.  */
+#undef HAVE_GETFSENT
+
+/* Define if you have the gethostname function.  */
+#undef HAVE_GETHOSTNAME
+
+/* Define if you have the getopt function.  */
+#undef HAVE_GETOPT
+
+/* Define if you have the getpagesize function.  */
+#undef HAVE_GETPAGESIZE
+
+/* Define if you have the getpeername function.  */
+#undef HAVE_GETPEERNAME
+
+/* Define if you have the getsockname function.  */
+#undef HAVE_GETSOCKNAME
+
+/* Define if you have the getsockopt function.  */
+#undef HAVE_GETSOCKOPT
+
+/* Define if you have the gettimeofday function.  */
+#undef HAVE_GETTIMEOFDAY
+
+/* Define if you have the getvfsent function.  */
+#undef HAVE_GETVFSENT
+
+/* Define if you have the initgroups function.  */
+#undef HAVE_INITGROUPS
+
+/* Define if you have the isascii function.  */
+#undef HAVE_ISASCII
+
+/* Define if you have the listen function.  */
+#undef HAVE_LISTEN
+
+/* Define if you have the lstat function.  */
+#undef HAVE_LSTAT
+
+/* Define if you have the memset function.  */
+#undef HAVE_MEMSET
+
+/* Define if you have the mkdir function.  */
+#undef HAVE_MKDIR
+
+/* Define if you have the mktemp function.  */
+#undef HAVE_MKTEMP
+
+/* Define if you have the mktime function.  */
+#undef HAVE_MKTIME
+
+/* Define if you have the openlog function.  */
+#undef HAVE_OPENLOG
+
+/* Define if you have the pclose function.  */
+#undef HAVE_PCLOSE
+
+/* Define if you have the perror function.  */
+#undef HAVE_PERROR
+
+/* Define if you have the printf function.  */
+#undef HAVE_PRINTF
+
+/* Define if you have the puts function.  */
+#undef HAVE_PUTS
+
+/* Define if you have the recvfrom function.  */
+#undef HAVE_RECVFROM
+
+/* Define if you have the remove function.  */
+#undef HAVE_REMOVE
+
+/* Define if you have the rename function.  */
+#undef HAVE_RENAME
+
+/* Define if you have the rewind function.  */
+#undef HAVE_REWIND
+
+/* Define if you have the rmdir function.  */
+#undef HAVE_RMDIR
+
+/* Define if you have the ruserok function.  */
+#undef HAVE_RUSEROK
+
+/* Define if you have the select function.  */
+#undef HAVE_SELECT
+
+/* Define if you have the sendto function.  */
+#undef HAVE_SENDTO
+
+/* Define if you have the setpgrp function.  */
+#undef HAVE_SETPGRP
+
+/* Define if you have the setsockopt function.  */
+#undef HAVE_SETSOCKOPT
+
+/* Define if you have the shmat function.  */
+#undef HAVE_SHMAT
+
+/* Define if you have the shmctl function.  */
+#undef HAVE_SHMCTL
+
+/* Define if you have the shmdt function.  */
+#undef HAVE_SHMDT
+
+/* Define if you have the shmget function.  */
+#undef HAVE_SHMGET
+
+/* Define if you have the sigaction function.  */
+#undef HAVE_SIGACTION
+
+/* Define if you have the sigemptyset function.  */
+#undef HAVE_SIGEMPTYSET
+
+/* Define if you have the sigvec function.  */
+#undef HAVE_SIGVEC
+
+/* Define if you have the socket function.  */
+#undef HAVE_SOCKET
+
+/* Define if you have the socketpair function.  */
+#undef HAVE_SOCKETPAIR
+
+/* Define if you have the sscanf function.  */
+#undef HAVE_SSCANF
+
+/* Define if you have the statfs function.  */
+#undef HAVE_STATFS
+
+/* Define if you have the statvfs function.  */
+#undef HAVE_STATVFS
+
+/* Define if you have the strdup function.  */
+#undef HAVE_STRDUP
+
+/* Define if you have the strerror function.  */
+#undef HAVE_STRERROR
+
+/* Define if you have the strftime function.  */
+#undef HAVE_STRFTIME
+
+/* Define if you have the strncasecmp function.  */
+#undef HAVE_STRNCASECMP
+
+/* Define if you have the strstr function.  */
+#undef HAVE_STRSTR
+
+/* Define if you have the syslog function.  */
+#undef HAVE_SYSLOG
+
+/* Define if you have the system function.  */
+#undef HAVE_SYSTEM
+
+/* Define if you have the time function.  */
+#undef HAVE_TIME
+
+/* Define if you have the tolower function.  */
+#undef HAVE_TOLOWER
+
+/* Define if you have the toupper function.  */
+#undef HAVE_TOUPPER
+
+/* Define if you have the ungetc function.  */
+#undef HAVE_UNGETC
+
+/* Define if you have the vfprintf function.  */
+#undef HAVE_VFPRINTF
+
+/* Define if you have the vsprintf function.  */
+#undef HAVE_VSPRINTF
+
+/* Define if you have the <asm/byteorder.h> header file.  */
+#undef HAVE_ASM_BYTEORDER_H
+
+/* Define if you have the <chio.h> header file.  */
+#undef HAVE_CHIO_H
+
+/* Define if you have the <db.h> header file.  */
+#undef HAVE_DB_H
+
+/* Define if you have the <dbm.h> header file.  */
+#undef HAVE_DBM_H
+
+/* Define if you have the <dirent.h> header file.  */
+#undef HAVE_DIRENT_H
+
+/* Define if you have the <fcntl.h> header file.  */
+#undef HAVE_FCNTL_H
+
+/* Define if you have the <fstab.h> header file.  */
+#undef HAVE_FSTAB_H
+
+/* Define if you have the <gdbm.h> header file.  */
+#undef HAVE_GDBM_H
+
+/* Define if you have the <grp.h> header file.  */
+#undef HAVE_GRP_H
+
+/* Define if you have the <history.h> header file.  */
+#undef HAVE_HISTORY_H
+
+/* Define if you have the <mntent.h> header file.  */
+#undef HAVE_MNTENT_H
+
+/* Define if you have the <ndbm.h> header file.  */
+#undef HAVE_NDBM_H
+
+/* Define if you have the <ndir.h> header file.  */
+#undef HAVE_NDIR_H
+
+/* Define if you have the <netdb.h> header file.  */
+#undef HAVE_NETDB_H
+
+/* Define if you have the <readline.h> header file.  */
+#undef HAVE_READLINE_H
+
+/* Define if you have the <readline/history.h> header file.  */
+#undef HAVE_READLINE_HISTORY_H
+
+/* Define if you have the <readline/readline.h> header file.  */
+#undef HAVE_READLINE_READLINE_H
+
+/* Define if you have the <stdlib.h> header file.  */
+#undef HAVE_STDLIB_H
+
+/* Define if you have the <string.h> header file.  */
+#undef HAVE_STRING_H
+
+/* Define if you have the <sys/dir.h> header file.  */
+#undef HAVE_SYS_DIR_H
+
+/* Define if you have the <sys/fcntl.h> header file.  */
+#undef HAVE_SYS_FCNTL_H
+
+/* Define if you have the <sys/file.h> header file.  */
+#undef HAVE_SYS_FILE_H
+
+/* Define if you have the <sys/ioctl.h> header file.  */
+#undef HAVE_SYS_IOCTL_H
+
+/* Define if you have the <sys/ipc.h> header file.  */
+#undef HAVE_SYS_IPC_H
+
+/* Define if you have the <sys/mman.h> header file.  */
+#undef HAVE_SYS_MMAN_H
+
+/* Define if you have the <sys/mntent.h> header file.  */
+#undef HAVE_SYS_MNTENT_H
+
+/* Define if you have the <sys/mount.h> header file.  */
+#undef HAVE_SYS_MOUNT_H
+
+/* Define if you have the <sys/ndir.h> header file.  */
+#undef HAVE_SYS_NDIR_H
+
+/* Define if you have the <sys/param.h> header file.  */
+#undef HAVE_SYS_PARAM_H
+
+/* Define if you have the <sys/select.h> header file.  */
+#undef HAVE_SYS_SELECT_H
+
+/* Define if you have the <sys/shm.h> header file.  */
+#undef HAVE_SYS_SHM_H
+
+/* Define if you have the <sys/stat.h> header file.  */
+#undef HAVE_SYS_STAT_H
+
+/* Define if you have the <sys/statfs.h> header file.  */
+#undef HAVE_SYS_STATFS_H
+
+/* Define if you have the <sys/statvfs.h> header file.  */
+#undef HAVE_SYS_STATVFS_H
+
+/* Define if you have the <sys/time.h> header file.  */
+#undef HAVE_SYS_TIME_H
+
+/* Define if you have the <sys/types.h> header file.  */
+#undef HAVE_SYS_TYPES_H
+
+/* Define if you have the <sys/vfs.h> header file.  */
+#undef HAVE_SYS_VFS_H
+
+/* Define if you have the <sys/vfstab.h> header file.  */
+#undef HAVE_SYS_VFSTAB_H
+
+/* Define if you have the <syslog.h> header file.  */
+#undef HAVE_SYSLOG_H
+
+/* Define if you have the <unistd.h> header file.  */
+#undef HAVE_UNISTD_H
+
+/* Define if you have the c library (-lc).  */
+#undef HAVE_LIBC
+
+/* Define if you have the cur_colr library (-lcur_colr).  */
+#undef HAVE_LIBCUR_COLR
+
+/* Define if you have the db library (-ldb).  */
+#undef HAVE_LIBDB
+
+/* Define if you have the dbm library (-ldbm).  */
+#undef HAVE_LIBDBM
+
+/* Define if you have the gdbm library (-lgdbm).  */
+#undef HAVE_LIBGDBM
+
+/* Define if you have the intl library (-lintl).  */
+#undef HAVE_LIBINTL
+
+/* Define if you have the ndbm library (-lndbm).  */
+#undef HAVE_LIBNDBM
+
+/* Define if you have the nsl library (-lnsl).  */
+#undef HAVE_LIBNSL
+
+/* Define if you have the readline library (-lreadline).  */
+#undef HAVE_LIBREADLINE
+
+/* Define if you have the socket library (-lsocket).  */
+#undef HAVE_LIBSOCKET
+
+/* Define if you have the sun library (-lsun).  */
+#undef HAVE_LIBSUN
+
+/* Define if you have the termcap library (-ltermcap).  */
+#undef HAVE_LIBTERMCAP
+
+/* Define to empty if the compiler does not support volatile.  */
+#undef volatile
+
+/* Define to the name of the distribution.  */
+#undef PACKAGE
+
+/* Define to the version of the distribution.  */
+#undef VERSION
+
+/* Location of Amanda directories and files.  */
+#undef bindir
+#undef libexecdir
+#undef mandir
+#undef CONFIG_DIR
+#undef DB_DIR
+#undef LOG_DIR
+#undef INDEX_DIR
+
+/* This is the rewinding tape device on the Amanda tape host.  */
+#undef TAPE_REWIND_DEVICE
+
+/* This is the no rewinding tape device on the Amanda tape host.  */
+#undef TAPE_NO_REWIND_DEVICE
+
+/* This is the default Amanda index server.  */
+#undef DEFAULT_SERVER
+
+/* This is the default Amanda configuration.  */
+#undef DEFAULT_CONFIG
+
+/* This is the default restoring Amanda tape server.  */
+#undef DEFAULT_TAPE_SERVER
+
+/* This is the default no-rewinding tape drive on the restoring tape server. */
+#undef DEFAULT_TAPE_DEVICE
+
+/* This defines the directory where index files are held before being sent
+ * to the tape host.  */
+#undef INDEX_TMP_DIR
+
+/* Define if you want to use the .amandahosts file instead of .rhosts.  */
+#undef USE_AMANDAHOSTS
+
+/* Define the location of smbclient for backing up Samba PC clients.  */
+#undef SAMBA_CLIENT
+
+/* Define the location of the grep program.  */
+#undef GREP
+
+/* Define GNUTAR to be the location of the Gnu tar program if you want
+ * Gnu tar backup support.  */
+#undef GNUTAR
+
+#ifdef GNUTAR
+/* Define if you want Gnu tar to exclude files from the dump.  */
+#undef GNUTAR_EXCLUDE_FILE
+
+/* Used in sendbackup-gnutar.c  */
+#undef GNUTAR_LISTED_INCREMENTAL_DIR
+#undef ENABLE_GNUTAR_ATIME_PRESERVE
+#endif
+
+/* For AIX systems.  */
+#undef AIX_TAPEIO
+#undef AIX_BACKUP
+
+/* For Ultrix systems.  */
+#undef STATFS_ULTRIX
+
+/* For OSF systems.  */
+#undef OSF1_VDUMP
+#undef STATFS_OSF1
+
+/*
+ * Decide whether to invoke rundump (setuid-root) or DUMP program directly.
+ * This is enabled for OSF1_VDUMP, for instance.
+ */
+#undef USE_RUNDUMP
+
+/* Define this if this system's dump exits with 1 as a success code.  */
+#undef DUMP_RETURNS_1
+
+/* Define the location of the ufsdump, vdump, backup, or dump program.  */
+#undef DUMP
+
+/* Define the location of the ufsrestore or restore program.  */
+#undef RESTORE
+
+/* Define the location of the xfsdump program on Irix hosts.  */
+#undef XFSDUMP
+
+/* Define the location of the xfsrestore program on Irix hosts.  */
+#undef XFSRESTORE
+
+/* Define if Amanda is using the gzip program.  */
+#undef HAVE_GZIP
+
+/* Define to the exact path to the gzip or the compress program.  */
+#undef COMPRESS_PATH
+
+/* Define to the suffix for the COMPRESS_PATH compression program.  */
+#undef COMPRESS_SUFFIX
+
+/* Define as the command line option for fast compression.  */
+#undef COMPRESS_FAST_OPT
+
+/* Define as the command line option for best compression.  */
+#undef COMPRESS_BEST_OPT
+
+/* Define as the exact path to the gzip or compress command.  */
+#undef UNCOMPRESS_PATH
+
+/* Define as any optional arguments to get UNCOMPRESS_PATH to uncompress.  */
+#undef UNCOMPRESS_OPT
+
+/* rsh */
+#undef RSH_COMMAND
+
+/* mail sendmail */
+#undef MAILER
+
+/* driver.c */
+#undef MAXFILESIZE
+
+/* Define as the prefix for disk devices, commonly /dev/ or /dev/dsk/  */
+#undef DEV_PREFIX
+
+/* Define as the prefix for raw disk devices, commonly /dev/r or /dev/rdsk/  */
+#undef RDEV_PREFIX
+
+/* Define to use BSD .rhosts security.  */
+#undef BSD_SECURITY
+
+/* Define to have programs use version suffixes when calling other programs. */
+#undef USE_VERSION_SUFFIXES
+
+/* Define to force to another user on client machines.  */
+#undef FORCE_USERID
+
+/* Define as a the user to force to on client machines.  */
+#undef CLIENT_LOGIN
+
+/* Define for backups being done on a multiple networks and FQDNs are used.  */
+#undef USE_FQDN
+
+/* Define if dumper should buffer the sockets for faster throughput.  */
+#undef DUMPER_SOCKET_BUFFERING
+
+/* Define if you want debugging.  */
+#undef DEBUG_CODE
+
+/* Define if you want the debugging files that appear in /tmp to have
+ * the process ID appended to the filename.  */
+#undef DEBUG_FILE_WITH_PID
+
+/* Define if you want assertion checking.  */
+#undef ASSERTIONS
+
+/* Kerberos security defines.  */
+#undef KRB4_SECURITY
+#undef SERVER_HOST_PRINCIPLE
+#undef SERVER_HOST_INSTANCE
+#undef SERVER_HOST_KEY_FILE
+#undef CLIENT_HOST_PRINCIPLE
+#undef CLIENT_HOST_INSTANCE
+#undef CLIENT_HOST_KEY_FILE
+#undef TICKET_LIFETIME
+
+/* Define only one of these as the header file for the database routines.  */
+#undef USE_DB_H
+#undef USE_DBM_H
+#undef USE_GDBM_H
+#undef USE_NDBM_H
+
+/* System function characteristics.  */
+#undef HAVE_SYSVSHM
+#undef NEED_POSIX_FLOCK
+#undef SELECT_ARG_TYPE
+#undef SHM_ARG_TYPE
+#undef HAVE_TWO_ARG_GETTIMEOFDAY
+#undef HAVE_STRUCT_DATUM
+
+/* Declarations of functions.  */
+#undef HAVE_ACCEPT_DECL
+#undef HAVE_ATOF_DECL
+#undef HAVE_BIND_DECL
+#undef HAVE_BZERO_DECL
+#undef HAVE_CLOSELOG_DECL
+#undef HAVE_CONNECT_DECL
+#undef HAVE_DBM_OPEN_DECL
+#undef HAVE_FCLOSE_DECL
+#undef HAVE_FFLUSH_DECL
+#undef HAVE_FLOCK_DECL
+#undef HAVE_FPRINTF_DECL
+#undef HAVE_FPUTC_DECL
+#undef HAVE_FPUTS_DECL
+#undef HAVE_FREAD_DECL
+#undef HAVE_FWRITE_DECL
+#undef HAVE_GETHOSTNAME_DECL
+#undef HAVE_GETOPT_DECL
+#undef HAVE_GETPEERNAME_DECL
+#undef HAVE_GETSOCKNAME_DECL
+#undef HAVE_GETSOCKOPT_DECL
+#undef HAVE_GETTIMEOFDAY_DECL
+#undef HAVE_INITGROUPS_DECL
+#undef HAVE_LISTEN_DECL
+#undef HAVE_LSTAT_DECL
+#undef HAVE_MEMSET_DECL
+#undef HAVE_MKTEMP_DECL
+#undef HAVE_MKTIME_DECL
+#undef HAVE_OPENLOG_DECL
+#undef HAVE_PCLOSE_DECL
+#undef HAVE_PERROR_DECL
+#undef HAVE_PRINTF_DECL
+#undef HAVE_PUTS_DECL
+#undef HAVE_RECVFROM_DECL
+#undef HAVE_REMOVE_DECL
+#undef HAVE_RENAME_DECL
+#undef HAVE_REWIND_DECL
+#undef HAVE_RUSEROK_DECL
+#undef HAVE_SELECT_DECL
+#undef HAVE_SENDTO_DECL
+#undef HAVE_SETPGRP_DECL
+#undef HAVE_SETSOCKOPT_DECL
+#undef HAVE_SHMAT_DECL
+#undef HAVE_SHMCTL_DECL
+#undef HAVE_SHMDT_DECL
+#undef HAVE_SHMGET_DECL
+#undef HAVE_SOCKET_DECL
+#undef HAVE_SOCKETPAIR_DECL
+#undef HAVE_SSCANF_DECL
+#undef HAVE_STRERROR_DECL
+#undef HAVE_STRFTIME_DECL
+#undef HAVE_STRNCASECMP_DECL
+#undef HAVE_SYSLOG_DECL
+#undef HAVE_SYSTEM_DECL
+#undef HAVE_SSCANF_DECL
+#undef HAVE_TIME_DECL
+#undef HAVE_TOLOWER_DECL
+#undef HAVE_TOUPPER_DECL
+#undef HAVE_UNGETC_DECL
+#undef HAVE_VFPRINTF_DECL
+#undef HAVE_VSPRINTF_DECL
+
+#endif

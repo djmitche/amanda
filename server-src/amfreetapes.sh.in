@@ -1,0 +1,53 @@
+#! /bin/sh
+#
+# ICEM internal :-)
+#
+
+prefix=@prefix@
+
+CONFIG=$1
+VOLHEADER=$2
+[ "$CONFIG" = "" ] && CONFIG=icem
+[ "$VOLHEADER" = "" ] && VOLHEADER=VOL
+
+AMETC=@CONFIG_DIR@/$CONFIG
+
+TAPELIST=$AMETC/tapelist
+ALLTAPELIST=$AMETC/tapelist.all
+
+[ ! -f $TAPELIST ] \
+	&& echo "no tapelist $TAPELIST found" >&2 \
+	&& exit 1
+
+[ ! -f $ALLTAPELIST ] \
+	&& echo "no tapelist $ALLTAPELIST found" >&2 \
+	&& cat $TAPELIST | sed 's/^.* //' | sort -u > $ALLTAPELIST \
+	&& echo "$ALLTAPELIST created" >&2
+
+cat $TAPELIST | sed 's/^.* //' > $ALLTAPELIST.n
+cat $ALLTAPELIST >> $ALLTAPELIST.n
+sort -u $ALLTAPELIST.n > $ALLTAPELIST && rm -f $ALLTAPELIST.n
+
+MAXTAPE=`cat $ALLTAPELIST | sed "s/^$VOLHEADER//" | sort -n | tail -1`
+NEXTTAPE=`expr $MAXTAPE + 1`
+echo "last Tape is ${VOLHEADER}${MAXTAPE}" >&2
+
+I=1
+while [ $I -le $MAXTAPE ]; do
+	WRITTEN=`grep "${VOLHEADER}${I}\$" $TAPELIST`
+	EXISTS=`grep "${VOLHEADER}${I}\$" $ALLTAPELIST`
+	if [ "$EXISTS" = "" -a "$WRITTEN" = "" ]; then
+		echo "missing tape ${VOLHEADER}${I}" >&2
+		echo "${VOLHEADER}${I}" >> $ALLTAPELIST \
+		&& echo "added ${VOLHEADER}${I} to $ALLTAPELIST" >&2
+	elif [ "$EXISTS" = "" -a "$WRITTEN" != "" ]; then
+		echo "tape written, but not existing: ${VOLHEADER}${I}" >&2
+	elif [ "$EXISTS" != "" -a "$WRITTEN" = "" ]; then
+		echo "free tape: ${VOLHEADER}${I}" >&2
+	fi
+	I=`expr $I + 1`
+done
+
+echo "next tape is ${VOLHEADER}${NEXTTAPE}" >&2
+
+exit 0

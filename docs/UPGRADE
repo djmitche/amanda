@@ -1,0 +1,13 @@
+
+Amanda Upgrade Issues
+
+-----
+Depending upon the version of Amanda you are upgrading from, Amanda may
+use a different database library to store the backup information, and
+the new Amanda may not be able to read the old Amanda database files.
+In this case, you will want to do something like the following:
+
+	amadmin-old CONFIG export > zzz
+	amadmin-new CONFIG import < zzz
+
+-----

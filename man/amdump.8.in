@@ -1,0 +1,46 @@
+.\"
+.TH AMDUMP 8
+.SH NAME
+amdump \- backs up all disks in an Amanda configuration
+.SH SYNOPSIS
+.B amdump
+.I config
+
+.SH DESCRIPTION
+
+.B Amdump
+switches to the appropriate Amanda configuration directory, usually
+@CONFIG_DIR@/\fIconfig\fR, then attempts to back up every disk as
+specified by the 
+.I amanda.conf
+file.
+.B Amdump
+is normally run by
+.B cron.
+See the
+.IR amanda(8)
+man page for more details about Amanda.
+
+If the file @CONFIG_DIR@/\fIconfig\fR/hold exists on startup,
+.B amdump
+will wait until the file is removed before proceeding with the night's backups.
+This allows the operators to delay the scheduled backups when the
+circumstances warrant, for example, if the backup tape device is being
+used for some other purpose.  When on hold, 
+.B amdump
+checks for the deletion of the hold file every 5 minutes.
+
+.SH EXAMPLE
+Here is a typical crontab entry.  It runs
+.B amdump
+every weeknight at 1 a.m.:
+.TP
+	0 1 * * 1-5	bin	@bindir@/amdump @DEFAULT_CONFIG@
+
+.SH AUTHOR
+James da Silva <jds@cs.umd.edu>
+.br
+University of Maryland, College Park
+
+.SH "SEE ALSO"
+amanda(8), amrestore(8), amflush(8), cron(8).

@@ -1,0 +1,275 @@
+#!/bin/sh
+#
+# (C) 1996 by ICEM Systems GmbH
+# Author: Axel Zinser (fifi@icem.de)
+#
+# amverify: check amanda tapes and report errors
+#	    !! gtar driven backups only !!
+#
+# 17.12.96: minor bug fixes, more verbose notification mail
+# 18.12.96: use compressed files if we a short of spool space
+# 20.12.96: send a report after interrupt
+# 26.12.96: autoconfigure support
+# 29.12.96: spool no longer required
+#
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+libexecdir=@libexecdir@
+
+PATH=$libexecdir:$bindir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
+export PATH
+
+USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
+if test "$USE_VERSION_SUFFIXES" = "yes"; then
+	SUF="-@VERSION@"
+else
+	SUF=
+fi
+
+report() {
+	echo "$@" >&2
+	echo "$@" >> $REPORT
+}
+
+getparm() {
+	(cd $CONFIG_DIR/$CONFIG; $AMGETCONF $1 2>/dev/null) | grep -v BUGGY
+	# grep "^$1[ 	]" $AMCONFIG | head -1 | sed 's/^'$1'//;s/#.*$//;s/[ 	"]//g'
+}
+
+sendreport() {
+	TAPES=`cat $TAPELIST`
+	if [ -f $REPORT -a "$REPORTTO" != "" ]; then
+		(
+		cat <<EOF
+From: amverify (Amanda Tape Verify)
+To: $REPORTTO
+Subject: $CONFIG AMANDA VERIFY REPORT FOR $TAPES
+
+EOF
+		echo "Tapes: $TAPES"
+		if [ -s $DEFECTS ]; then
+			echo "Errors found: "
+			cat $DEFECTS
+		else
+			echo "no Errors found!"
+		fi
+		echo
+
+		[ -s $REPORT ] \
+			&& cat $REPORT
+		) | $MAIL -t
+	fi
+}
+
+#
+# some paths
+#
+#	CONFIG_DIR		directory in which the config file resides
+#	AMRESTORE	full path name of amrestore
+#	AMGETCONF	full path name of getconf
+#	TAR		dito for GNU-tar
+#	MT		dito for mt
+#	DD		dito for dd
+#	MAIL		mail program
+#	ECHO		echo
+#	ECHOARG		echo argument to supress line feed
+#	ECHOSUF		echo meta character to supress line feed
+#	COMPRESS	(path) name of a fast compression program if
+#			we are short of spool space.
+#	TAROPT		GNU-tar option to unpack these files while reading
+
+	CONFIG_DIR=@CONFIG_DIR@
+	libexecdir=$libexecdir
+	bindir=$bindir
+	AMRESTORE=$bindir/amrestore$SUF
+	AMGETCONF=$libexecdir/getconf$SUF
+	TAR=@GNUTAR@
+	MT=@MT@
+	MAIL=/usr/lib/sendmail
+	DD=@DD@
+	ECHO=/bin/echo
+	ECHOARG="@ac_n@"
+	ECHOSUF="@ac_c@"
+	# if we are short of space, use compressed files
+	# COMPRESS=compress
+	# TAROPT=Z
+	# lots of space on the spool disk, no comrpress needed
+	COMPRESS=cat
+	TAROPT=
+
+#
+# config file
+#
+	SLOT=0; [ "$2" != "" ] && SLOT=$2
+	CONFIG=$1
+	[ "$CONFIG" = "" ] \
+		&& echo "usage: amverify$SUF <config>" >&2 \
+		&& exit 1
+
+	AMCONFIG=$CONFIG_DIR/$CONFIG/amanda.conf
+	[ ! -f $AMCONFIG ] \
+		&& echo "cannot find config file $AMCONFIG" >&2 \
+		&& exit 1
+
+	TPCHANGER=`getparm tpchanger`
+	if [ "$TPCHANGER" = "" ]; then
+		echo "no tape changer..."
+		DEVICE=`getparm tapedev`
+		[ "$DEVICE" = "" ] \
+			&& echo "no tape device..." >&2 \
+			&& exit 1
+		[ ! -c $DEVICE ] \
+			&& echo "no such device: $DEVICE" >&2 \
+			&& exit 1
+		echo "tape device is $DEVICE..."
+		CHANGER=""
+		SLOTS=0
+	else
+		CHANGER=$libexecdir/$TPCHANGER
+		[ ! -x $CHANGER ] \
+			&& echo "tape changer $CHANGER not executable" >&2 \
+			&& exit 1
+		echo "tape changer is $CHANGER..."
+		SLOTS=`getparm runtapes`
+		[ "$SLOTS" = "" ] \
+			&& echo "how many slots?" >&2 \
+			&& exit 1
+		echo "$SLOTS slots..."
+		MAXRETRIES=2
+	fi
+	
+#
+# check the accessability
+#
+	[ ! -x $TAR ] \
+		&& echo "gnu tar not found: $TAR" >&2 \
+		&& exit 1
+	[ ! -x $AMRESTORE ] \
+		&& echo "amrestore not found: $AMRESTORE" >&2 \
+		&& exit 1
+	
+	REPORTTO=`getparm mailto`
+	if [ "$REPORTTO" = "" ]; then
+		echo "no notification by mail!"
+	else
+		echo "verify summary to $REPORTTO"
+	fi
+
+#
+# ok, let's do it
+#
+	# TEMP		filename for temporary tar archives and stderr
+	# DEFECTS	defect list
+	# REPORT	report for mail
+	
+	TEMP=/tmp/amverify.$$; rm -f $TEMP.*
+	DEFECTS=/tmp/defects.$$; rm -f $DEFECTS
+	REPORT=/tmp/report.$$; rm -f $REPORT
+	TAPELIST=/tmp/tapelist.$$; rm -f $TAPELIST
+	EXITSTAT=/tmp/amrecover.exit.$$; rm -rf $EXITSTAT
+
+# ----------------------------------------------------------------------------
+
+trap "rm -f $TEMP.*; report "aborted!"; echo "aborted!" >> $DEFECTS; sendreport; exit 1" 1 2 3 4 5 6 7 8 10 12 13 14 15
+
+echo "Defects file is $DEFECTS" >&2
+report "amverify $CONFIG"
+report `date`
+report " "
+
+while [ $SLOT -le $SLOTS ]; do
+	#
+	# Tape Changer: dial slot and wait for result up to
+	#		$RETRIES times
+	#
+	CSLOT=$SLOT
+	SLOT=`expr $SLOT + 1`
+	if [ "$CHANGER" != "" ]; then
+		ERG=1; RETRY=0
+		while [ $ERG != 0 ]; do
+			RETRY=`expr $RETRY + 1`
+			[ $RETRY -gt $MAXRETRIES ] \
+				&& report "Slot $CSLOT: Aborted" \
+				&& CHRESULT="" \
+				&& break
+			CHRESULT=`$CHANGER -slot $CSLOT`
+			ERG=$?
+			[ $ERG != 0 ] \
+				&& report "Waiting for tape drive..." \
+				&& sleep 5
+		done
+		[ "$CHRESULT" = "" ] \
+			&& report "Skipping slot $CSLOT" \
+			&& continue
+		set $CHRESULT
+		DEVICE=$2
+	fi
+	report "Use device $DEVICE"
+	$ECHO $ECHOARG "Rewinding...\r$ECHOSUF" >&2
+	$MT -t $DEVICE rewind
+	$DD if=$DEVICE count=1 2>/dev/null >$TEMP.$CSLOT.o
+	[ ! -s $TEMP.$CSLOT.o ] \
+		&& report "** Error reading label on tape in slot $CSLOT" \
+		&& continue
+	TAPENDATE=`grep AMANDA: $TEMP.$CSLOT.o | sed 's/^AMANDA: TAPESTART //'`
+	[ "$TAPENDATE" = "" ] \
+		&& report "** No amanda tape in slot $CSLOT" \
+		&& continue
+	set $TAPENDATE
+	VOLUME=$4
+	DWRITTEN=$2
+	report "Slot $CSLOT: Volume $VOLUME, Date $DWRITTEN" 
+	[ "$DWRITTEN" = "0" -o "$DWRITTEN" = "X" ] \
+		&& report "Slot $CSLOT: Fresh tape. Skipping..." \
+		&& continue
+	$ECHO $ECHOARG "$VOLUME $ECHOSUF" >> $TAPELIST
+	$MT -t $DEVICE rewind
+	ERG=0
+	ERRORS=0
+	while [ $ERG = 0 ]; do
+		$ECHO $ECHOARG "Sleeping...\r$ECHOSUF" >&2
+		sleep 3 # slow tape drives...
+		$ECHO $ECHOARG "Reading... \r$ECHOSUF" >&2
+		$AMRESTORE -p $DEVICE 2> $TEMP.$CSLOT.o \
+		| cat | $TAR tf - > /dev/null 2> $TEMP.$CSLOT.oo
+		TARERG=$?
+		FILE=`grep restoring $TEMP.$CSLOT.o | sed 's/^.*restoring //'`
+		EOF=`grep "reached end of tape" $TEMP.$CSLOT.o`
+		# amrestore:   0: restoring sundae._mnt_sol1_usr.19961127.1
+		if [ -n "$FILE" -a $TARERG = 0 ]; then
+			report "Checked $FILE"
+		elif [ -n "$EOF" ]; then
+			report "End-of-Tape detected."
+			break
+		else
+			report "** Error detected ($FILE)"
+			echo "$VOLUME ($FILE):" >>$DEFECTS
+			[ -s $TEMP.$CSLOT.o ] \
+				&& report `cat $TEMP.$CSLOT.o` \
+				&& cat $TEMP.$CSLOT.o >>$DEFECTS
+			[ -s $TEMP.$CSLOT.oo ] \
+				&& report `cat $TEMP.$CSLOT.oo` \
+				&& cat $TEMP.$CSLOT.oo >>$DEFECTS
+			ERRORS=`expr $ERRORS + 1`
+			[ $ERRORS -gt 5 ] \
+				&& report "To many errors." \
+				&& break
+		fi
+	done
+	$ECHO $ECHOARG "Rewinding...\r$ECHOSUF" >&2
+	$MT -t $DEVICE rewind
+	rm -f $TEMP.$CSLOT $TEMP.$CSLOT.o $TEMP.$CSLOT.oo
+done
+$ECHO >> $TAPELIST
+
+[ -s $DEFECTS ] \
+	&& echo "Errors found: " \
+	&& cat $DEFECTS
+
+sendreport
+
+rm -f $DEFECTS $REPORT $TAPELIST $EXITSTAT
+
+exit 0

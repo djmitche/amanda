@@ -1,0 +1,56 @@
+#! /bin/sh
+#
+# patch inetd.conf and services
+# (C) Axel Zinser (fifi@hiss.han.de)
+#
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libexecdir=@libexecdir@
+
+USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
+if test "$USE_VERSION_SUFFIXES" = "yes"; then
+	SUF="-@VERSION@"
+else
+	SUF=
+fi
+
+TEMP=/tmp/patch.$$; rm -f $TEMP
+
+INETDCONF=/etc/inetd.conf
+[ ! -f $INETDCONF ] && INETDCONF=/usr/etc/inetd.conf
+
+SERVICES=/etc/services
+[ ! -f $SERVICES ] && SERVICES=/usr/etc/services
+
+if [ -f $SERVICES ]; then
+	cat $SERVICES | grep -v "^amanda" > $TEMP
+	cat >> $TEMP <<EOF
+amanda 10080/udp
+amandaidx 10082/tcp
+amidxtape 10083/tcp
+EOF
+	diff $SERVICES $TEMP >/dev/null 2>/dev/null
+	if [ $? != 0 ]; then
+		cp $TEMP $SERVICES || echo "cannot patch $SERVICES"
+	else
+		echo "$SERVICES is up to date"
+	fi
+else
+	echo "services not found!"
+fi
+if [ -f $INETDCONF ]; then
+	cat $INETDCONF | grep -v "^amanda" > $TEMP
+	cat >> $TEMP <<EOF
+amanda    dgram  udp wait   root $libexecdir/amandad$SUF amandad$SUF
+amandaidx stream tcp nowait root $libexecdir/amindexd$SUF amindexd$SUF
+EOF
+	diff $INETDCONF $TEMP >/dev/null 2>/dev/null
+	if [ $? != 0 ]; then
+		cp $TEMP $INETDCONF || echo "cannot patch $INETDCONF"
+	else
+		echo "$INETDCONF is up to date"
+	fi
+else
+	echo "inetd.conf not found!"
+fi

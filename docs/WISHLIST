@@ -1,0 +1,75 @@
+
+Amanda WISHLIST
+
+These are items that we are planning to address, OR which we would like to
+see happen sometime in the future.  They appear in vaguely decreasing order
+of priority and feasibility.  Of course, we aren't promising to deliver
+anything, but it's a reasonable bet that at least the first few things will
+get done.
+
+If you have any ideas about any of the following, please send an e-mail
+note to amanda-users@cs.umd.edu, or to jds@cs.umd.edu if you'd prefer.
+
+* Ports to non-Unix platforms, specifically Macs and PCs.  The hooks are in
+the Amanda protocol to support non-dump backup programs, but no-one has
+volunteered to implement the client side.  Sorry, I'm not a Mac programmer!
+
+* A User's Manual.  We need to better document the installation and day to
+day running of Amanda, including sections that help operators diagnose and
+fix problems, and provide tips and techniques.
+
+* More tools in Amadmin.  The administrator should be able to look at the
+database in various ways.  Adding / deleting / moving disks and hosts
+should be done through amadmin instead of editing the disklist directly.
+This will allow Amanda to do some sanity checks for the operators, to make
+sure permissions are set up right, etc.  
+    You should be able to force full dumps for nights other than tonight,
+and be able to undo a previous force command.  Rather than one command at a
+time on the command line, amadmin could be a little shell with a help
+facility (ala ckermit or gnuplot, if you've seen those).
+
+* Better database.  Right now Amanda uses ndbm, which kind of sucks rocks.
+The binary database isn't portable (say you want to move your master host
+from a Vax to a Sun, you're hosed), and ndbm has limitations on how many
+keys will fit on the same page; if too many filesystems hash to the same
+key, it'll bomb!  We need a better hash file library.  Right now I'm
+planning on having the database stored in text form so that it's portable
+and editable (if you are careful and know what you are doing), and having
+the keys stored in a hashed file that will be automatically rebuilt if it
+doesn't exist.  I think the latest BSD hash library will fit the bill.
+
+* Better software configure setup.  We should be more robust in the face of
+strange versions of cpp, probably by running the Makefiles through sed
+instead.  A configure command (ala Larry Wall and the Gnu packages) could
+attempt to do some/most of the work.  Put in a proper make depend.
+
+* A tape-verify pass after the Amanda run.  Amanda finishes fast enough
+that we could read the tape back after the dumps are done, to be sure all
+the files on it can be read.  Perhaps Taper could calculate a CRC for each
+file and store that in the database, to be checked by the verifier.
+
+* A browseable index of of every file backed up, so that administrators (or
+even the users themselves) can identify in advance which tape contains the
+file to be restored.
+
+* More sophisticated tape management.  Should Amanda track tapes globally,
+counting the number of times tapes were used, and recommending retirement
+for tapes at the appropriate time?  I'm not convinced, but I'm interested
+in the subject.  What do you think?  How does your site deal with this?
+
+* Automatically notice that disks have moved around.  This is a
+nice-to-have but don't hold your breath.  It would be nice if planner (via
+sendsize) would notice and optionally add/delete filesystems as they
+appear/disappear from the fstab.
+
+* Automatically notice that external dumps have been done.  Sendsize could
+also notice if a filesystem was dumped externally to Amanda.  Right now the
+planner assumes that the incrementals it is doing are relative to the full
+dumps it is doing.  If someone does a full dump of one of its filesystems
+(and writes /etc/dumpdates) outside of Amanda, data could be lost.  I think
+Sun's Backup-Copilot handles this well.  We should too.
+
+* Insert your favorite feature here, and send me mail telling about what
+you'd like to see!  Of course, I can't please everyone, and can't implement
+everything, but I am very interested in how other sites operate so that we
+can find common ground and learn from each other.  Thanks!

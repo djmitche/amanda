@@ -1,0 +1,1206 @@
+/*
+ * Amanda, The Advanced Maryland Automatic Network Disk Archiver
+ * Copyright (c) 1991,1994 University of Maryland
+ * All Rights Reserved.
+ *
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation, and that the name of U.M. not be used in advertising or
+ * publicity pertaining to distribution of the software without specific,
+ * written prior permission.  U.M. makes no representations about the
+ * suitability of this software for any purpose.  It is provided "as is"
+ * without express or implied warranty.
+ *
+ * U.M. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL U.M.
+ * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * Author: James da Silva, Systems Design and Analysis Group
+ *			   Computer Science Department
+ *			   University of Maryland at College Park
+ */
+/*
+ * driver.c - controlling process for the Amanda backup system
+ */
+
+/*
+ * XXX possibly modify tape queue to be cognizant of how much room is left on
+ *     tape.  Probably not effective though, should do this in planner.
+ */
+
+#include "amanda.h"
+#include "clock.h"
+#include "conffile.h"
+#include "diskfile.h"
+#include "logfile.h"
+#include "statfs.h"
+#include "version.h"
+
+#include "driver.h"
+
+#define LITTLE_DUMPERS 3
+
+static int idle_reason;
+
+#define max(a, b)     ((a) > (b)? (a) : (b))
+#define min(a, b)     ((a) < (b)? (a) : (b))
+char *idle_strings[] = {
+#define NOT_IDLE		0
+    "not-idle",
+#define IDLE_START_WAIT		1
+    "start-wait",
+#define IDLE_NO_DUMPERS		2
+    "no-dumpers",
+#define IDLE_NO_HOLD		3
+    "no-hold",
+#define IDLE_CLIENT_CONSTRAINED	4
+    "client-constrained",
+#define IDLE_NO_DISKSPACE	5
+    "no-diskspace",
+#define IDLE_TOO_LARGE		6
+    "file-too-large",
+#define IDLE_NO_BANDWIDTH	7
+    "no-bandwidth",
+#define IDLE_TAPER_WAIT		8
+    "taper-wait",
+};
+
+#define SLEEP_MAX		(24*3600)
+struct timeval sleep_time = { SLEEP_MAX, 0 };
+
+#ifndef MAXFILESIZE
+/*
+** file size must not exceed MAX_IOV, stored in iov_len
+** usually of type size_t (== signed long)
+** HP-UX-9, Solaris-2, IRIX-3/4/5/6, AIX-3: 2 GB
+** HP-UX-10: 4 GB
+** Irix64: >> n GB
+*/
+# include <limits.h>
+# define MAXFILESIZE	(LONG_MAX/1024)
+#endif
+
+static char local_hostname[MAX_HOSTNAME_LENGTH];
+
+int driver_main(argc, argv)
+int argc;
+char **argv;
+{
+    disklist_t *origqp;
+    disk_t *diskp;
+    fd_set selectset;
+    int fd, dsk;
+    dumper_t *dumper;
+    char newdir[80], *domain;
+    generic_fs_stats_t fs;
+    holdingdisk_t *hdp;
+
+    startclock();
+    FD_ZERO(&readset);
+
+    printf("%s: pid %ld executable %s version %s\n",
+	   pname, (long) getpid(), argv[0], version());
+
+    if(read_conffile(CONFFILE_NAME))
+	error("could not read amanda config file\n");
+
+    /* Use this to see if disks we're dumping are on this host */
+    /* local_hostname[sizeof(local_hostname)-1] = '\0';*/ /* static variable */
+    if(gethostname(local_hostname, sizeof(local_hostname)-1) == -1)
+	error("error [gethostname: %s]", strerror(errno));
+    if((domain = strchr(local_hostname, '.'))) *domain++ = '\0';
+
+    construct_datestamp(datestamp);
+    log(L_START,"date %s", datestamp);
+
+    sprintf(taper_program, "%s/taper%s", libexecdir, versionsuffix());
+    sprintf(dumper_program, "%s/dumper%s", libexecdir, versionsuffix());
+
+    /* taper takes a while to get going, so start it up right away */
+
+    startup_tape_process();
+    taper_cmd(START_TAPER, datestamp);
+
+    /* start initializing: read in databases */
+
+    if((origqp = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
+	error("could not read disklist file\n");
+
+    /* set up any configuration-dependent variables */
+
+    if(!force_parameters) {
+	inparallel	= getconf_int(CNF_INPARALLEL);
+	total_bandwidth = getconf_int(CNF_NETUSAGE);
+	big_dumpers     = inparallel - LITTLE_DUMPERS;
+	use_lffo	= 1;
+
+	for(hdp = holdingdisks, dsk = 0; hdp != NULL; hdp = hdp->next, dsk++) {
+	    hdp->up = (void *)alloc(sizeof(holdalloc_t));
+	    holdalloc(hdp)->allocated_dumpers = 0;
+	    holdalloc(hdp)->allocated_space = 0;
+
+	    if(get_fs_stats(hdp->diskdir, &fs) == -1) {
+		log(L_WARNING, "WARNING: ignoring holding disk %s: %s\n",
+		    hdp->diskdir, strerror(errno));
+		hdp->disksize = 0;
+		continue;
+	    }
+	    if(fs.avail != -1 && fs.avail < hdp->disksize) {
+		log(L_WARNING, 
+		    "WARNING: %s: %d KB requested, but only %d KB available.",
+		    hdp->diskdir, hdp->disksize, fs.avail);
+		hdp->disksize = fs.avail;
+	    }
+	    printf("driver: adding holding disk %d dir %s size %ld\n",
+		   dsk, hdp->diskdir, hdp->disksize);
+	    sprintf(newdir, "%s/%s", hdp->diskdir, datestamp);
+	    mkdir(newdir,0770);
+	}
+    }
+
+    if(inparallel > MAX_DUMPERS) inparallel = MAX_DUMPERS;
+
+    /* fire up the dumpers now while we are waiting */
+
+    startup_dump_processes();
+
+    /* 
+     * Read schedule from stdin.  Usually, this is a pipe from planner,
+     * so the effect is that we wait here for the planner to
+     * finish, but meanwhile the taper is rewinding the tape, reading
+     * the label, checking it, writing a new label and all that jazz
+     * in parallel with the planner.
+     */
+
+    waitq = *origqp;
+    runq = read_schedule(&waitq);
+
+    stoppedq.head = stoppedq.tail = NULL;
+    tapeq.head = tapeq.tail = NULL;
+
+    log(L_STATS, "startup time %s", walltime_str(curclock()));
+
+printf("driver: start time %s inparallel %d bandwidth %d diskspace %d",
+       walltime_str(curclock()), inparallel, total_bandwidth, free_space());
+printf(" dir %s datestamp %s driver: drain-ends tapeq %s big-dumpers %d\n",
+       "OBSOLETE", datestamp,  use_lffo? "LFFO" : "FIFO", big_dumpers);
+fflush(stdout);
+
+    /* ok, planner is done, now lets see if the tape is ready */
+
+    tok = getresult(taper);
+
+    if(tok != TAPER_OK) {
+	/* no tape, go into degraded mode: dump to holding disk */
+	start_degraded_mode(&runq);
+	FD_CLR(taper,&readset);
+    }
+
+    while(start_some_dumps(&runq) || some_dumps_in_progress() ||
+	  (idle_reason == IDLE_START_WAIT)) {
+
+	short_dump_state();
+
+	/* wait for results */
+
+	memcpy(&selectset, &readset, sizeof(fd_set));
+	if(select(maxfd+1, (SELECT_ARG_TYPE *)(&selectset),
+		  NULL, NULL, &sleep_time) == -1)
+	    error("select: %s", strerror(errno));
+
+	/* handle any results that have come in */
+
+	for(fd = 0; fd <= maxfd; fd++) if(FD_ISSET(fd, &selectset)) {
+	    if(fd == taper) handle_taper_result();
+	    else handle_dumper_result(fd);
+	}
+
+    }
+
+    /* handle any remaining dumps by dumping directly to tape, if possible */
+
+    while(!empty(runq)) {
+	diskp = dequeue_disk(&runq);
+	if(!degraded_mode) {
+	    int rc = dump_to_tape(diskp);
+	    if(rc == 1)
+		log(L_INFO, "%s %s %d [dump to tape failed, will try again]",
+		    diskp->host->hostname, diskp->name, sched(diskp)->level);
+	    else if(rc == 2)
+		log(L_FAIL, "%s %s %d [dump to tape failed]",
+		    diskp->host->hostname, diskp->name, sched(diskp)->level);
+	}
+	else 
+	    log(L_FAIL, "%s %s %d [%s]",
+		diskp->host->hostname, diskp->name, sched(diskp)->level,
+		diskp->dtype->no_hold ?
+		    "can't dump no-hold disk in degraded mode" :
+		    "no more holding disk space");
+    }
+
+printf("driver: QUITTING time %s telling children to quit\n", 
+       walltime_str(curclock()));
+fflush(stdout);
+
+    if(!degraded_mode)
+	taper_cmd(QUIT, NULL);
+
+    for(dumper = dmptable; dumper < dmptable + inparallel; dumper++)
+	dumper_cmd(dumper, QUIT, NULL);
+
+    /* wait for all to die */
+
+    while(wait(NULL) != -1);
+
+    if(!degraded_mode) {
+	for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next) {
+	    sprintf(newdir, "%s/%s", hdp->diskdir, datestamp);
+	    if(rmdir(newdir) != 0)
+		log(L_WARNING,"Could not rmdir%s: %s", newdir,strerror(errno));
+	}
+    }
+
+    printf("driver: FINISHED time %s\n", walltime_str(curclock()));
+    fflush(stdout);
+    log(L_FINISH,"date %s time %s", datestamp, walltime_str(curclock()));
+
+    return 0;
+}
+
+int client_constrained(dp)
+disk_t *dp;
+{
+    disk_t *dp2;
+
+    /* first, check if host is too busy */
+
+    if(dp->host->inprogress >= dp->host->maxdumps) {
+	return 1;
+    }
+
+    /* next, check conflict with other dumps on same platter */
+
+    if(dp->platter == -1) {	/* but platter -1 never conflicts by def. */
+	return 0;
+    }
+
+    for(dp2 = dp->host->disks; dp2 != NULL; dp2 = dp2->hostnext)
+	if(dp2->inprogress && dp2->platter == dp->platter) {
+	    return 1;
+	}
+
+    return 0;
+}
+
+#define is_bigdumper(d) (((d)-dmptable) >= (inparallel-big_dumpers))
+
+int start_some_dumps(rq)
+disklist_t *rq;
+{
+    int total, cur_idle;
+    disk_t *diskp, *nextp;
+    dumper_t *dumper;
+    holdingdisk_t *holdp;
+    time_t now = time(NULL);
+
+    if(rq->head == NULL) {
+	idle_reason = 0;
+	return 0;
+    }
+
+    total = 0;
+    idle_reason = IDLE_NO_DUMPERS;
+    sleep_time.tv_sec = SLEEP_MAX;
+    sleep_time.tv_usec = 0;
+
+    /*
+     * A potential problem with starting from the bottom of the dump time
+     * distribution is that a slave host will have both one of the shortest
+     * and one of the longest disks, so starting its shortest disk first will
+     * tie up the host and eliminate its longest disk from consideration the
+     * first pass through.  This could cause a big delay in starting that long
+     * disk, which could drag out the whole night's dumps.
+     * 
+     * While starting from the top of the dump time distribution solves the
+     * above problem, this turns out to be a bad idea, because the big dumps
+     * will almost certainly pack the holding disk completely, leaving no
+     * room for even one small dump to start.  This ends up shutting out the
+     * small-end dumpers completely (they stay idle).
+     *
+     * The introduction of multiple simultaneous dumps to one host alleviates
+     * the biggest&smallest dumps problem: both can be started at the
+     * beginning.
+     */
+    for(dumper = dmptable; dumper < dmptable+inparallel; dumper++) {
+	if(dumper->busy || dumper->down) continue;
+	/* found an idle dumper, now find a disk for it */
+	if(is_bigdumper(dumper)) diskp = rq->tail;
+	else diskp = rq->head;
+
+	if(idle_reason == IDLE_NO_DUMPERS)
+	    idle_reason = NOT_IDLE;
+
+	cur_idle = NOT_IDLE;
+
+	while(diskp) {
+	    assert(diskp->host != NULL && sched(diskp) != NULL);
+
+	    if(is_bigdumper(dumper)) nextp = diskp->prev;
+	    else nextp = diskp->next;
+
+	    if(diskp->dtype->start_t > now) {
+		cur_idle = max(cur_idle, IDLE_START_WAIT);
+		sleep_time.tv_sec = min(diskp->dtype->start_t-now,
+					sleep_time.tv_sec);
+	    } else if(sched(diskp)->est_kps > free_kps())
+		cur_idle = max(cur_idle, IDLE_NO_BANDWIDTH);
+	    else if(sched(diskp)->est_size > MAXFILESIZE)
+		cur_idle = max(cur_idle, IDLE_TOO_LARGE);
+	    else if((holdp = find_diskspace(sched(diskp)->est_size)) == NULL)
+		cur_idle = max(cur_idle, IDLE_NO_DISKSPACE);
+	    else if(diskp->dtype->no_hold)
+		cur_idle = max(cur_idle, IDLE_NO_HOLD);
+	    else if(client_constrained(diskp))
+		cur_idle = max(cur_idle, IDLE_CLIENT_CONSTRAINED);
+	    else {
+
+		/* disk fits, dump it */
+		cur_idle = NOT_IDLE;
+		allocate_bandwidth(sched(diskp)->est_kps);
+		assign_holdingdisk(holdp, diskp);
+		diskp->host->inprogress += 1;	/* host is now busy */
+		diskp->inprogress = 1;
+		sched(diskp)->dumper = dumper;
+		sched(diskp)->holdp = holdp;
+
+		dumper->busy = 1;		/* dumper is now busy */
+		dumper->dp = diskp;		/* link disk to dumper */
+		total++;
+		remove_disk(rq, diskp);		/* take it off the run queue */
+		dumper_cmd(dumper, FILE_DUMP, diskp);
+		break;
+	    }
+	    diskp = nextp;
+	}
+	idle_reason = max(idle_reason, cur_idle);
+    }
+    return total;
+}
+
+int sort_by_priority_reversed(a, b)
+disk_t *a, *b;
+{
+    return sched(b)->priority - sched(a)->priority;
+}
+
+int sort_by_time(a, b)
+disk_t *a, *b;
+{
+    return sched(a)->est_time - sched(b)->est_time;
+}
+
+int sort_by_size_reversed(a, b)
+disk_t *a, *b;
+{
+    return sched(b)->est_size - sched(a)->est_size;
+}
+
+void dump_schedule(qp, str)
+disklist_t *qp;
+char *str;
+{
+    disk_t *dp;
+
+    printf("dump of driver schedule %s:\n--------\n", str);
+    
+    for(dp = qp->head; dp != NULL; dp = dp->next) {
+	printf("  %-10.10s %-4.4s lv %d t %5d s %8ld p %d\n", 
+	       dp->host->hostname, dp->name, sched(dp)->level,
+	       sched(dp)->est_time, sched(dp)->est_size, sched(dp)->priority);
+    }
+    printf("--------\n");
+}
+
+
+void start_degraded_mode(queuep)
+disklist_t *queuep;
+{
+    disk_t *dp;
+    disklist_t newq;
+
+    newq.head = newq.tail = 0;
+
+    dump_schedule(queuep, "before start degraded mode");
+
+    while(!empty(*queuep)) {
+	dp = dequeue_disk(queuep);
+
+	if(sched(dp)->level != 0)
+	    /* go ahead and do the disk as-is */
+	    insert_disk(&newq, dp, sort_by_priority_reversed);
+	else {
+	    if(sched(dp)->degr_level != -1) {
+		sched(dp)->level = sched(dp)->degr_level;
+		sched(dp)->est_size = sched(dp)->degr_size;
+		sched(dp)->est_time = sched(dp)->degr_time;
+		if(strcmp(dp->host->hostname, local_hostname) == 0)
+		    sched(dp)->est_kps = 0;     /* disk on server */
+		else if(sched(dp)->est_time == 0)
+		    sched(dp)->est_kps = 10;
+		else
+		    sched(dp)->est_kps =
+			sched(dp)->est_size/sched(dp)->est_time;
+		insert_disk(&newq, dp, sort_by_priority_reversed);
+	    }
+	    else {
+		log(L_FAIL, "%s %s %d [can't switch to incremental dump]",
+		    dp->host->hostname, dp->name, sched(dp)->level);
+	    }
+	}
+    }
+
+    *queuep = newq;
+    degraded_mode = 1;
+
+    dump_schedule(queuep, "after start degraded mode");
+}
+
+
+void handle_taper_result()
+{
+    disk_t *dp;
+    tok = getresult(taper);
+
+    if(tok == DONE) {
+	assert(argc >= 2);
+	dp = serial2disk(argv[1]);
+	free_serial(argv[1]);
+	delete_diskspace(dp);
+	printf("driver: finished-cmd time %s taper wrote %s:%s\n", 
+	       walltime_str(curclock()), dp->host->hostname, dp->name);
+	fflush(stdout);
+
+	if(empty(tapeq)) {
+	    taper_busy = 0;
+	    taper_disk = NULL;
+	}
+	else {
+	    dp = dequeue_disk(&tapeq);
+	    taper_disk = dp;
+	    taper_cmd(FILE_WRITE, dp);
+	}
+	/*
+	 * we need to restart some stopped dumps; without a good
+	 * way to determine which ones to start, let them all compete
+	 * for the remaining disk space.  Remember, having stopped
+	 * processes indicates a failure in our estimation of sizes.
+	 * Rather than have a complicated workaround to deal with
+	 * stopped dumper processes more efficiently, we should
+	 * work on getting better estimates to avoid the situation
+	 * to begin with.
+	 */
+	while(!empty(stoppedq)) {
+	    dp = dequeue_disk(&stoppedq);
+	    dumper_cmd(sched(dp)->dumper, CONTINUE, NULL);
+	}
+    }
+    else if(tok == TRYAGAIN) {
+	assert(argc >= 2);
+	dp = serial2disk(argv[1]);
+	free_serial(argv[1]);
+	printf("driver: taper-tryagain time %s disk %s:%s\n",
+	       walltime_str(curclock()), dp->host->hostname, dp->name);
+	fflush(stdout);
+
+	/* re-insert into taper queue */
+
+	if(sched(dp)->attempted) {
+	    log(L_FAIL, "%s %s %d [too many taper retries]", 
+		dp->host->hostname, dp->name, sched(dp)->level);
+	    /* XXX should I do this? */
+	    delete_diskspace(dp);
+	}
+	else {
+	    sched(dp)->attempted++;
+	    if(use_lffo)insert_disk(&tapeq, dp, sort_by_size_reversed);
+	    else enqueue_disk(&tapeq, dp);
+	}
+
+	/* run next thing from queue */
+
+	dp = dequeue_disk(&tapeq);
+	taper_disk = dp;
+	taper_cmd(FILE_WRITE, dp);
+    }
+    else if(tok == TAPE_ERROR || tok == BOGUS) {
+	if(tok != BOGUS) {
+	    dp = serial2disk(argv[1]);
+	    free_serial(argv[1]);
+	    printf("driver: finished-cmd time %s taper wrote %s:%s\n", 
+		   walltime_str(curclock()), dp->host->hostname, dp->name);
+	    fflush(stdout);
+	}
+
+	/*
+	 * Since we've gotten a tape error, we can't send anything more
+	 * to the taper.  Go into degraded mode to try to get everthing
+	 * onto disk.  Later, these dumps can be flushed to a new tape.
+	 * The tape queue is zapped so that it appears empty in future
+	 * checks.
+	 */
+	log(L_WARNING, "going into degraded mode because of tape error.");
+	start_degraded_mode(&runq);
+	tapeq.head = tapeq.tail = NULL;
+	taper_busy = 0;
+	taper_disk = NULL;
+	FD_CLR(taper,&readset);
+	close(taper);
+    }
+    else
+	error("driver received unexpected token (%d) from taper", tok);
+}
+
+
+dumper_t *idle_dumper() 
+{
+    dumper_t *dumper;
+
+    for(dumper = dmptable; dumper < dmptable+inparallel; dumper++)
+	if(!dumper->busy && !dumper->down) return dumper;
+
+    return NULL;
+}
+
+int some_dumps_in_progress() 
+{
+    dumper_t *dumper;
+
+    for(dumper = dmptable; dumper < dmptable+inparallel; dumper++)
+	if(dumper->busy) return 1;
+
+    return taper_busy;
+}
+
+int num_busy_dumpers() 
+{
+    dumper_t *dumper;
+    int n;
+
+    n = 0;
+    for(dumper = dmptable; dumper < dmptable+inparallel; dumper++)
+	if(dumper->busy) n += 1;
+
+    return n;
+}
+
+dumper_t *lookup_dumper(fd)
+int fd;
+{
+    dumper_t *dumper;
+
+    for(dumper = dmptable; dumper < dmptable+inparallel; dumper++)
+	if(dumper->outfd == fd) return dumper;
+
+    return NULL;
+}
+
+void construct_datestamp(buf)
+char *buf;
+{
+    struct tm *tm;
+    time_t timevar;
+
+    timevar = time((time_t *)NULL);
+    tm = localtime(&timevar);
+    sprintf(buf, "%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
+}
+
+void handle_dumper_result(fd)
+int fd;
+{
+    dumper_t *dumper;
+    disk_t *dp, *sdp;
+
+    dumper = lookup_dumper(fd);
+    tok = getresult(fd);
+
+    if(tok == BOGUS) {
+	/* either eof or garbage from dumper */
+	log(L_WARNING, "dumper%d pid %d is messed up, ignoring it.\n", 
+	    dumper-dmptable, dumper->pid);
+	FD_CLR(fd,&readset);
+	close(fd);
+	dumper->busy = 0;
+	dumper->down = 1;	/* mark it down so it isn't used again */
+	if(dumper->dp) {
+	    /* if it was dumping something, zap it and try again */
+	    deallocate_bandwidth(sched(dumper->dp)->est_kps);
+	    adjust_diskspace(dumper->dp, DONE);
+	    delete_diskspace(dumper->dp);
+	    dumper->dp->host->inprogress -= 1;
+	    dumper->dp->inprogress = 0;
+	    if(sched(dumper->dp)->attempted) {
+		log(L_FAIL, "%s %s %d [dumper%d died]", 
+		    dumper->dp->host->hostname, dumper->dp->name,
+		    sched(dumper->dp)->level, dumper-dmptable);
+	    }
+	    else {
+		log(L_WARNING, "dumper%d died while dumping %s:%s lev %d.", 
+		    dumper-dmptable, 
+		    dumper->dp->host->hostname, dumper->dp->name,
+		    sched(dumper->dp)->level);
+		sched(dumper->dp)->attempted++;
+		enqueue_disk(&runq, dumper->dp);
+	    }
+	    dumper->dp = NULL;
+	}
+	return;
+    }	
+
+    sdp = serial2disk(argv[1]);	/* argv[1] always contains the serial number */
+
+    assert(dumper->dp && sched(dumper->dp) && sdp == dumper->dp);
+
+
+    switch(tok) {
+
+    case DONE:
+	free_serial(argv[1]);
+	deallocate_bandwidth(sched(dumper->dp)->est_kps);
+	adjust_diskspace(dumper->dp, DONE);
+	dumper->busy = 0;
+	dumper->dp->host->inprogress -= 1;
+	dumper->dp->inprogress = 0;
+	sched(dumper->dp)->attempted = 0;
+	printf("driver: finished-cmd time %s dumper%ld dumped %s:%s\n", 
+	       walltime_str(curclock()), (long) (dumper-dmptable), 
+	       dumper->dp->host->hostname, dumper->dp->name);
+	fflush(stdout);
+
+	if(taper_busy) {
+	    if(use_lffo)insert_disk(&tapeq, dumper->dp, sort_by_size_reversed);
+	    else enqueue_disk(&tapeq, dumper->dp);
+	}
+	else if(!degraded_mode) {
+	    taper_disk = dumper->dp;
+	    taper_busy = 1;
+	    taper_cmd(FILE_WRITE, dumper->dp);
+	}
+	dumper->dp = NULL;
+	break;
+
+    case TRYAGAIN:
+    case FATAL_TRYAGAIN:
+	free_serial(argv[1]);
+	deallocate_bandwidth(sched(dumper->dp)->est_kps);
+	adjust_diskspace(dumper->dp, DONE);
+	delete_diskspace(dumper->dp);
+	dumper->busy = 0;
+	dumper->dp->host->inprogress -= 1;
+	dumper->dp->inprogress = 0;
+	
+	if(sched(dumper->dp)->attempted) {
+	    log(L_FAIL, "%s %s %d [could not connect to %s]", 
+		dumper->dp->host->hostname, dumper->dp->name,
+		sched(dumper->dp)->level, dumper->dp->host->hostname);
+	}
+	else {
+	    sched(dumper->dp)->attempted++;
+	    enqueue_disk(&runq, dumper->dp);
+	}
+
+	if(tok == FATAL_TRYAGAIN) {
+	    /* dumper is confused, start another */
+	    log(L_WARNING, "dumper%d (pid %d) confused, restarting it.", 
+		dumper-dmptable, dumper->pid);
+	    FD_CLR(fd,&readset);
+	    close(fd);
+	    startup_dump_process(dumper);
+	}
+	break;
+
+    case FAILED:
+	free_serial(argv[1]);
+	deallocate_bandwidth(sched(dumper->dp)->est_kps);
+	adjust_diskspace(dumper->dp, DONE);
+	delete_diskspace(dumper->dp);
+	dumper->busy = 0;
+	dumper->dp->host->inprogress -= 1;
+	dumper->dp->inprogress = 1;
+
+	/* no need to log this, dumper will do it */
+	break;
+
+    case NO_ROOM:
+	if(empty(tapeq) && pending_aborts == 0) {
+	    /* no disk space due to be freed */
+	    dumper_cmd(dumper, ABORT, NULL);
+	    pending_aborts++;
+	    /* 
+	     * if this is the only outstanding dump, it must be too big for
+	     * the holding disk, so force it to go directly to tape on the
+	     * next attempt.
+	     */
+	    if(num_busy_dumpers() <= 1)
+		dumper->dp->dtype->no_hold = 1;
+	}
+	else {
+	    adjust_diskspace(dumper->dp, NO_ROOM);
+	    enqueue_disk(&stoppedq, dumper->dp);
+	}
+	break;
+
+    case ABORT_FINISHED:
+	assert(pending_aborts);
+	free_serial(argv[1]);
+	deallocate_bandwidth(sched(dumper->dp)->est_kps);
+	adjust_diskspace(dumper->dp, DONE);
+	delete_diskspace(dumper->dp);
+	sched(dumper->dp)->attempted++;
+	enqueue_disk(&runq, dumper->dp);	/* we'll try again later */
+	dumper->busy = 0;
+	dumper->dp->host->inprogress -= 1;
+	dumper->dp->inprogress = 0;
+	dumper->dp = NULL;
+	pending_aborts--;
+	while(!empty(stoppedq)) {
+	    dp = dequeue_disk(&stoppedq);
+	    dumper_cmd(sched(dp)->dumper, CONTINUE, NULL);
+	}
+	break;
+
+    case BOGUS:
+	/* either EOF or garbage from dumper.  Turn it off */
+	break;
+
+    default:
+	assert(0);
+    }
+}
+
+disklist_t read_schedule(waitqp)
+disklist_t *waitqp;
+{
+    sched_t *sp;
+    disk_t *dp;
+    disklist_t rq;
+    int rc, time, size, level, line, priority;
+    int degr_level, degr_size, degr_time;
+    char hostname[80], diskname[80], inpline[2048];
+
+
+    rq.head = rq.tail = NULL;
+
+    /* read schedule from stdin */
+
+    line = 0;
+    while(fgets(inpline, 2048, stdin)) {
+	line++;
+
+	rc = sscanf(inpline, "%s %s %d %d %d %d %d %d %d\n",
+		    hostname, diskname, 
+		    &priority, &level, &size, &time,
+		    &degr_level, &degr_size, &degr_time);
+	if(rc != 6 && rc != 9) {
+	    error("schedule line %d: syntax error", line); 
+	    continue;
+	}
+
+	dp = lookup_disk(hostname, diskname);
+	if(dp == NULL) {
+	    log(L_WARNING, "schedule line %d: %s:%s not in disklist, ignored",
+		  line, hostname, diskname);
+	    continue;
+	}
+	
+	sp = (sched_t *) alloc(sizeof(sched_t));
+	sp->level    = level;
+	sp->est_size = size;
+	sp->est_time = time;
+	sp->priority = priority;
+	if(rc < 9) sp->degr_level = -1;
+	else {
+	    sp->degr_level = degr_level;
+	    sp->degr_size = degr_size;
+	    sp->degr_time = degr_time;
+	}
+	if(strcmp(hostname, local_hostname) == 0)
+	    sp->est_kps = 0;    /* disk on server, no network traffic */
+	else if(time == 0)
+	    sp->est_kps = 10;
+	else
+	    sp->est_kps = size/time;
+	sp->attempted = 0;
+	sp->act_size = 0;
+	sp->holdp = NULL;
+	sp->dumper  = NULL;
+
+	dp->up = (char *) sp;
+	remove_disk(waitqp, dp);
+	insert_disk(&rq, dp, sort_by_time);
+    }
+    if(line == 0)
+	log(L_WARNING, "WARNING: got empty schedule from planner");
+    return rq;
+}
+
+int free_kps() 
+{
+    return total_bandwidth-allocated_bandwidth;
+}
+
+void allocate_bandwidth(kps) 
+int kps;
+{
+    allocated_bandwidth += kps;
+}
+
+void deallocate_bandwidth(kps)
+int kps;
+{
+    assert(kps <= allocated_bandwidth);
+    allocated_bandwidth -= kps;
+}
+
+/* ------------ */
+int free_space() 
+{
+    holdingdisk_t *hdp;
+    int total_free, diff;
+
+    total_free = 0;
+    for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next) {
+	diff = hdp->disksize - holdalloc(hdp)->allocated_space;
+	if(diff > 0) total_free += diff;
+    }
+    return total_free;
+}
+
+holdingdisk_t *find_diskspace(size)
+int size;
+    /* find holding disk with enough space + minimal # of dumpers */
+{
+    holdingdisk_t *minp, *hdp;
+
+    minp = NULL;
+    for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next)
+	if(hdp->disksize - holdalloc(hdp)->allocated_space >= size) {
+	    if(!minp || (holdalloc(minp)->allocated_dumpers >
+			 holdalloc(hdp)->allocated_dumpers))
+		minp = hdp;
+	}
+#ifdef HOLD_DEBUG
+    printf("find %d K space: selected: %s\n", size,
+	   minp? minp->diskdir : "NO FIT");
+#endif
+    return minp;
+}
+
+
+char *diskname2filename(dname)
+char *dname;
+{
+    static char filename[256];
+    char *s, *d;
+
+    for(s = dname, d = filename; *s != '\0'; s++, d++) {
+	if(*s == '/') *d = '_';
+	else *d = *s;
+    }
+    *d = '\0';
+    return filename;
+}
+
+
+void assign_holdingdisk(holdp, diskp)
+holdingdisk_t *holdp;
+disk_t *diskp;
+{
+#ifdef HOLD_DEBUG
+    printf("assigning disk %s:%s size %ld to disk %s\n",
+	   diskp->host->hostname, diskp->name, 
+	   sched(diskp)->est_size, holdp->diskdir);
+#endif
+
+    sched(diskp)->holdp = holdp;
+    sched(diskp)->act_size = sched(diskp)->est_size;
+    sprintf(sched(diskp)->destname, "%s/%s/%s.%s.%d",
+	    holdp->diskdir, datestamp, diskp->host->hostname,
+	    diskname2filename(diskp->name), sched(diskp)->level);
+
+    holdalloc(holdp)->allocated_space += sched(diskp)->act_size;
+    holdalloc(holdp)->allocated_dumpers += 1;
+}
+
+void adjust_diskspace(diskp, tok)
+disk_t *diskp;
+tok_t tok;
+{
+    struct stat finfo;
+    holdingdisk_t *holdp;
+    int diff, kbytes;
+
+    if(stat(sched(diskp)->destname, &finfo) == -1)
+	error("stat %s: %s", sched(diskp)->destname, strerror(errno));
+
+    holdp = sched(diskp)->holdp;
+
+#ifdef HOLD_DEBUG
+    printf("adjust: before: hdisk %s alloc space %d dumpers %d\n",
+	   holdp->diskdir, holdalloc(holdp)->allocated_space,
+	   holdalloc(holdp)->allocated_dumpers);
+#endif
+
+    kbytes = (finfo.st_size+1023)/1024;
+    diff = kbytes - sched(diskp)->act_size;
+    switch(tok) {
+    case DONE:
+	/* the dump is done, adjust to actual size and decrease dumpers */
+
+#ifdef HOLD_DEBUG
+	printf("adjust: disk %s:%s done, act %d prev est %ld diff %d\n",
+	       diskp->host->hostname, diskp->name, kbytes,
+	       sched(diskp)->act_size, diff);
+#endif
+       
+	sched(diskp)->act_size += diff;
+	holdalloc(holdp)->allocated_space += diff;
+	holdalloc(holdp)->allocated_dumpers -= 1;
+	break;
+    case NO_ROOM:
+	/* dump still active, but adjust size up iff already > estimate */
+
+#ifdef HOLD_DEBUG
+	printf("adjust: disk %s:%s no_room, act %d prev est %ld diff %d\n",
+	       diskp->host->hostname, diskp->name, kbytes,
+	       sched(diskp)->act_size, diff);
+#endif
+	if(diff > 0) {
+	    sched(diskp)->act_size += diff;
+	    holdalloc(holdp)->allocated_space += diff;
+	}
+	break;
+    default:
+	assert(0);
+    }
+#ifdef HOLD_DEBUG
+    printf("adjust: after: hdisk %s alloc space %d dumpers %d\n",
+	   holdp->diskdir, holdalloc(holdp)->allocated_space,
+	   holdalloc(holdp)->allocated_dumpers);
+#endif
+}
+
+void delete_diskspace(diskp)
+disk_t *diskp;
+{
+#ifdef HOLD_DEBUG
+    printf("delete: file %s size %ld hdisk %s\n",
+	   sched(diskp)->destname, sched(diskp)->act_size, 
+	   sched(diskp)->holdp->diskdir);
+#endif
+    holdalloc(sched(diskp)->holdp)->allocated_space -= sched(diskp)->act_size;
+    unlink(sched(diskp)->destname);
+    sched(diskp)->holdp = NULL;
+    sched(diskp)->act_size = 0;
+    sched(diskp)->destname[0] = '\0';
+}
+
+void holdingdisk_state(time_str)
+char *time_str;
+{
+    holdingdisk_t *hdp;
+    int dsk, diff;
+
+    printf("driver: hdisk-state time %s", time_str);
+
+    for(hdp = holdingdisks, dsk = 0; hdp != NULL; hdp = hdp->next, dsk++) {
+	diff = hdp->disksize - holdalloc(hdp)->allocated_space;
+	printf(" hdisk %d: free %d dumpers %d", dsk, diff, 
+	       holdalloc(hdp)->allocated_dumpers);
+    }
+    printf("\n");
+}
+
+/* ------------------- */
+int dump_to_tape(dp)
+disk_t *dp;
+{
+    dumper_t *dumper;
+    int failed = 0;
+
+    inside_dump_to_tape = 1;	/* for simulator */
+
+    printf("driver: dumping %s:%s directly to tape\n",
+	   dp->host->hostname, dp->name);
+    fflush(stdout);
+
+    /* tell the taper to read from a port number of its choice */
+
+    taper_cmd(PORT_WRITE, dp);
+    tok = getresult(taper);
+    if(tok != PORT) {
+	printf("driver: did not get PORT from taper for %s:%s\n",
+		dp->host->hostname, dp->name);
+	fflush(stdout);
+	inside_dump_to_tape = 0;
+	return 2;	/* fatal problem */
+    }
+    strcpy(sched(dp)->destname, argv[1]);	/* copy port number */
+
+    /* pick a dumper, then tell it to dump to a port */
+
+    dumper = idle_dumper();
+    dumper_cmd(dumper, PORT_DUMP, dp);
+
+    /* update statistics & print state */
+
+    taper_busy = dumper->busy = 1;
+    dp->host->inprogress += 1;
+    dp->inprogress = 1;
+    allocate_bandwidth(sched(dp)->est_kps);
+    idle_reason = 0;
+
+    short_dump_state();
+
+    /* wait for result from dumper */
+
+    tok = getresult(dumper->outfd);
+    if(tok != BOGUS)
+	free_serial(argv[1]);
+    switch(tok) {
+    case BOGUS:
+	/* either eof or garbage from dumper */
+	log(L_WARNING, "dumper%d pid %d is messed up, ignoring it.\n",
+	    dumper-dmptable, dumper->pid);
+	dumper->down = 1;       /* mark it down so it isn't used again */
+	failed = 1;     /* dump failed, must still finish up with taper */
+	break;
+    case DONE:
+	/* everything went fine */
+	break;
+    case NO_ROOM:
+	dumper_cmd(dumper, ABORT, dp);
+	tok = getresult(dumper->outfd);
+	if(tok != BOGUS)
+	    free_serial(argv[1]);
+	assert(tok == ABORT_FINISHED);
+    case TRYAGAIN:
+    default:
+	/* dump failed, but we must still finish up with taper */
+	failed = 1;	/* problem with dump, possibly nonfatal */
+    }
+
+    /*
+     * Note that at this point, even if the dump above failed, it may
+     * not be a fatal failure if taper below says we can try again.
+     * E.g. a dumper failure above may actually be the result of a
+     * tape overflow, which in turn causes dump to see "broken pipe",
+     * "no space on device", etc., since taper closed the port first.
+     */
+
+    tok = getresult(taper);
+    if((tok != BOGUS) && (tok != PORT_WRITE_EOF))
+	free_serial(argv[1]);	/* reap the serial number */
+    switch(tok) {
+    case PORT_WRITE_EOF:
+	/* taper got EOF on port, but doesn't know why yet */
+	if(failed == 0)
+	    /* tell taper the dump finished ok */
+	    taper_cmd(PORT_WRITE_SUCCESS, NULL);
+	else {
+	    /* tell taper the dump failed */
+	    taper_cmd(PORT_WRITE_FAILURE, NULL);
+	    failed = 2;	/* fatal problem */
+	}
+	tok = getresult(taper);
+	assert(tok == DONE);
+	free_serial(argv[1]);
+	break;
+    case TRYAGAIN:
+	enqueue_disk(&runq, dp);
+	break;
+    default:
+	failed = 2;	/* fatal problem */
+    }
+
+    /* reset statistics & return */
+
+    taper_busy = dumper->busy = 0;
+    dp->host->inprogress -= 1;
+    dp->inprogress = 0;
+    deallocate_bandwidth(sched(dp)->est_kps);
+
+    inside_dump_to_tape = 0;
+    return failed;
+}
+
+int queue_length(q)
+disklist_t q;
+{
+    disk_t *p;
+    int len;
+
+    for(len = 0, p = q.head; p != NULL; len++, p = p->next);
+    return len;
+}
+
+
+void short_dump_state()
+{
+    int i, nidle;
+    char *wall_time;
+
+    wall_time = walltime_str(curclock());
+
+    printf("driver: state time %s ", wall_time);
+    printf("free kps: %d space: %d taper: ", free_kps(), free_space());
+    if(degraded_mode) printf("DOWN");
+    else if(!taper_busy) printf("idle");
+    else printf("writing");
+    nidle = 0;
+    for(i = 0; i < inparallel; i++) if(!dmptable[i].busy) nidle++;
+    printf(" idle dumpers: %d", nidle);
+    printf(" qlen tapeq: %d", queue_length(tapeq));
+    printf(" runq: %d",       queue_length(runq));
+    printf(" stoppedq: %d", queue_length(stoppedq));
+    printf(" wakeup: %d", (int)sleep_time.tv_sec);
+    printf(" driver-idle: %s\n", idle_strings[idle_reason]);
+    holdingdisk_state(wall_time);
+    fflush(stdout);
+}
+
+void dump_state(str)
+char *str;
+{
+    int i;
+    disk_t *dp;
+
+    printf("================\n");
+    printf("driver state at time %s: %s\n", walltime_str(curclock()), str);
+    printf("free kps: %d, space: %d\n", free_kps(), free_space());
+    if(degraded_mode) printf("taper: DOWN\n");
+    else if(!taper_busy) printf("taper: idle\n");
+    else printf("taper: writing %s:%s.%d est size %ld\n", 
+		taper_disk->host->hostname, taper_disk->name, 
+		sched(taper_disk)->level,
+		sched(taper_disk)->est_size);
+    for(i = 0; i < inparallel; i++) {
+	dp = dmptable[i].dp;
+	if(!dmptable[i].busy)
+	  printf("dumper%02d: idle\n", i);
+	else
+	  printf("dumper%02d: dumping %s:%s.%d est kps %d size %ld time %d\n",
+		i, dp->host->hostname, dp->name, sched(dp)->level,
+		sched(dp)->est_kps, sched(dp)->est_size, sched(dp)->est_time);
+    }
+    dump_queue("TAPE", tapeq, 5, stdout);
+    dump_queue("STOP", stoppedq, 5, stdout);
+    dump_queue("RUN ", runq, 5, stdout);
+    printf("================\n");
+    fflush(stdout);
+}

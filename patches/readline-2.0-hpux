@@ -1,0 +1,16 @@
+*** readline.c.ORIG	Wed Dec 18 12:00:39 1996
+--- readline.c	Tue Dec 17 16:10:49 1996
+***************
+*** 1178,1184 ****
+--- 1178,1188 ----
+  
+  #if !defined (__linux__)
+  /* If this causes problems, remove the `extern'. */
++ #ifdef __hpux
++ char PC, *BC, *UP;
++ #else
+  extern char PC, *BC, *UP;
++ #endif
+  #endif /* __linux__ */
+  
+  /* Some strings to control terminal actions.  These are output by tputs (). */

@@ -1,0 +1,158 @@
+#!/bin/sh -- # -*- perl -*-
+
+# Catch for sh/csh on systems without #! ability.
+eval '(exit $?0)' && eval 'exec @PERL@ -S $0 ${1+"$@"}'
+	& eval 'exec @PERL@ -S $0 $argv:q'
+		if 0;
+
+require 5.001;
+
+use FileHandle;
+use Getopt::Long;
+use Carp;
+use POSIX;
+
+sub Usage {
+    print STDERR <<END;
+Usage: $0 [-config CONFIG] [-verbose]
+
+This script generates to standard output an overview of the filesystems
+dumped over time and the type of dump done on a particular day, such as
+a full dump, or an incremental, or if the dump failed.
+
+You may override the default configuration `@DEFAULT_CONFIG@' by using
+the -config command line option.  On larger installations, this script
+will take a while to run.  In this case, run it with --verbose to see
+how far along it is.
+END
+    exit 1;
+}
+
+# Default paths for this installation of Amanda.
+my $prefix='@prefix@';
+my $exec_prefix="@exec_prefix@";
+my $libexecdir="@libexecdir@";
+my $bindir="@bindir@";
+ 
+# The directory where configurations can be found.
+my $confdir="@CONFIG_DIR@";
+
+# The default configuration.
+my $config="@DEFAULT_CONFIG@";
+
+# Get the version suffix.
+my $USE_VERSION_SUFFIXES = '@USE_VERSION_SUFFIXES@';
+my $suf = '';
+if ( $USE_VERSION_SUFFIXES =~ /^yes$/i ) {
+	$suf='-@VERSION@';
+}
+
+my $amadmin	= "$bindir/amadmin$suf";
+
+# overrideable defaults
+my $opt_config		= "$config";
+my $opt_hostwidth	= 8;
+my $opt_diskwidth	= 20;
+my $opt_verbose		= 0;
+
+GetOptions('config=s'		=> \$opt_config,
+	   'hostwidth=i'	=> \$opt_hostwidth,
+	   'diskwidth=i'	=> \$opt_diskwidth,
+	   'verbose'		=> \$opt_verbose)
+or Usage();
+
+-d "$confdir/$opt_config" or
+	die "$0: directory `$confdir/$opt_config' does not exist.\n";
+
+
+# read disklist
+my $disklist = "$confdir/$opt_config/disklist";
+my %disks = ();
+$::host = '';
+$::disk = '';
+my ($type, $spindle);
+my $dlfh = new FileHandle $disklist or
+    die "$0: unable to open `$disklist' for reading: $!\n";
+while (<$dlfh>) {
+    chomp;
+    next if /^#/;
+    ($host, $disk, $type, $spindle) = split ' ', $_;
+    next unless $host;
+    $disks{$host}{$disk}++;
+}
+
+$dlfh->close or
+    die "$0: error in closing `$disklist': $!\n";
+
+# Get backup dates
+%::dates = ();
+%::level = ();
+$::level = '';
+my ($date, $tape, $file, $status);
+for $host (sort keys %disks) {
+#$host = 'earth'; {
+    $opt_verbose and
+	print STDERR "Examining host $host\n";
+    my $fh = new FileHandle "$amadmin $opt_config find $host|" or
+	die "$0: error in opening `$amadmin $opt_config find $host' pipe: $!\n";
+    <$fh>;
+    while (<$fh>) {
+	chomp;
+	($date, $host, $disk, $level, $tape, $file, $status) = split ' ', $_;
+	defined($level{$host}{$disk}{$date}) or
+	    $level{$host}{$disk}{$date} = '';
+	$level{$host}{$disk}{$date} .= ($status eq 'OK') ? $level : 'E';
+	unless ($date =~ /^\d\d\d\d-\d\d-\d\d$/) {
+	    print "bad date $date in $_\n";
+	}
+
+	$dates{$date}++;
+    }
+    $fh->close or
+	die "$0: error in closing `$amadmin $opt_config find $host' pipe: $!\n";
+}
+
+# touch all the dates just in case whole days were missed.
+{
+    my ($start, $finish) = 
+	map {
+	    my($y,$m,$d) = split /-/, $_;
+	    POSIX::mktime(0,0,0,$d,$m-1,$y-1900);
+	} (sort keys %dates)[0,-1];
+
+    while ($start < $finish) {
+	my @l = localtime $start;
+	$dates{sprintf("19%2d-%02d-%02d", $l[5], $l[4]+1, $l[3])}++;
+	$start += 86400;
+    }
+}
+    
+
+# make formats
+
+my $top_format = "format TOP =\n\n" .
+    sprintf("%-0${opt_hostwidth}s %0${opt_diskwidth}s ", '', 'date') .
+    join(' ', map((split(/-/, $_))[1], sort keys %dates)) . "\n" .
+    sprintf("%-0${opt_hostwidth}s %-0${opt_diskwidth}s ", 'host', 'disk') .
+    join(' ', map((split(/-/, $_))[2], sort keys %dates)) . "\n" .
+    "\n.\n";
+
+my $out_format = "format STDOUT =\n" .
+    "@" . "<" x ($opt_hostwidth - 1) . ' ' .
+    "@" . "<" x ($opt_diskwidth - 1) . ' ' .
+    '@> ' x scalar(keys %dates) . "\n" .
+    join(', ', '$host', '$disk', 
+	 map("\$level{\$host}{\$disk}{'$_'}", sort keys %dates)) . "\n" .
+    ".\n";
+
+eval $top_format;
+die $@ if $@;
+$^ = 'TOP';
+eval $out_format;
+die $@ if $@;
+
+for $host (sort keys %disks) {
+    for $disk (sort keys %{$disks{$host}}) {
+	write;
+    }
+}

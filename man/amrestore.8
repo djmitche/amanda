@@ -1,0 +1,124 @@
+.\"
+.TH AMRESTORE 8
+.SH NAME
+amrestore \- extract files from an Amanda tape
+.SH SYNOPSIS
+.B amrestore
+[ options ] 
+.I tapedevice
+[ 
+.I hostname
+[ 
+.I diskname
+]]
+.SH DESCRIPTION
+
+.B Amrestore
+extracts all files from the 
+.I tapedevice
+that match the
+.I hostname
+and
+.I diskname
+given on the command line.  The tape must be in the format as written by
+the 
+.B amdump
+program.  
+If the
+.I diskname
+is not specified, all backups on the tape for the particular
+.I hostname
+are extracted.  If the
+.I hostname
+is not specified, every backup on the tape is extracted.
+The 
+.I hostname
+and 
+.I diskname
+may be regular expressions that can match many dumps.  For example, if a
+.I diskname
+of
+.B rz[23]a
+is given, it would match backups of disks
+.B rz2a
+and
+.B rz3a.
+.PP
+Matching backup files from the tape are normally extracted to files in the current directory named
+.I hostname.diskname.datestamp.dumplevel.
+
+.LP
+.B Amrestore
+supports the following options:
+
+.TP
+.B \-p
+Pipe output.
+The first matching backup file is sent to the standard output file descriptor
+(which is normally a pipe to 
+.BR restore),
+then
+.B amrestore
+quits.  It may be run again to continue sending successive files to
+.B restore.
+Make sure you specify the no-rewind version of the
+.I tapedevice
+when doing this.
+.IP
+NOTE: 
+.B restore
+can report "short read" errors when reading from a pipe.  Most
+versions of restore support a blocking factor option to let the user
+set the read block size.  See the example below.
+
+.TP
+.B \-c 
+Compressed output.
+.B Amrestore
+normally writes its output files in the format understood by
+.B restore,
+even if the backup files on the tape are in compressed format.  With the
+\-c option, 
+.B amrestore
+will write all files in compressed format, even if the backup files on
+the tape are not compressed.  The output file names will have the
+.I .Z
+extension appended to them.  This option is very useful when the holding
+disk is small.  
+ 
+.TP
+.B \-r 
+Raw output.  The backup files are output exactly as they are on the
+tape, including the
+.B amdump
+file headers.  The output file names will have the
+.I .RAW
+extension appended to them.  This option is only useful for debugging and
+other strange circumstances.
+
+.SH EXAMPLES
+.TP
+% amrestore -p /dev/nrmt9 seine rz3g | restore ivbf 2 -
+This does an interactive restore of disk /dev/rz3g from host seine, to
+restore particular files.  Note the use of the "b 2" option to
+restore, which means read in units of 2 512-byte blocks (== 1 Kbyte)
+at a time.  This keeps restore from complaining about short reads.
+
+.TP
+% amrestore /dev/nrmt9 seine
+This extracts all backup files for host seine.  This is the usual way to
+extract all the data for a host after a disk crash.  If the datestamp
+for the backups is 19910125 and seine has level 0 backups of filesystems
+rz1a and rz1g on the tape; the following files will be
+created in the current directory:
+	seine.rz1a.19910125.0
+.br
+	seine.rz1g.19910125.0
+
+.SH AUTHOR
+James da Silva <jds@cs.umd.edu>
+.br
+University of Maryland, College Park
+
+.SH "SEE ALSO"
+amanda(8), amdump(8), amflush(8), restore(8).

@@ -1,0 +1,106 @@
+README for adding PC hosts to the Amanda backup system.
+
+Release 2. 28/Jan/1997
+
+Installation
+
+First, Samba must be patched with the file samba-1.9.16p2.1.patch -
+this is a patch for 1.9.16p2 of samba, and modifies the way the 'dir'
+command works, and adds totals to both the dir command and the tar
+command, via stderr.  These are used by Amanda to estimate and count
+backup sizes.  This should be installed on an Amanda 'client' host,
+that will act as the 'samba server' host.  This will most likely be the
+same machine as the Amanda master server.  This patch also works fine
+with newer releases of samba.
+
+Then, Amanda must be configured with smbclient support - when you
+run configure, add the following argument:
+
+ --with-smbclient=/full/path/to/smbclient
+
+Setup
+
+Once Amanda is installed, the only difference is in how the backup
+disks are specified.  For each PC host disk, and entry is placed in the
+disklist not for that host, but for the 'samba server' host, where the
+patched samba suite is installed.  Instead of a path or a disk
+specified in the space provided in the disklist for this purpose, a
+sharename is listed.
+
+Additionally, a file must be created called /etc/amandapass, which
+includes a sharename to password mapping.  Each line of input
+lists the sharename in 'Amanda format' (it is case sensitive so
+make it identical to the sharename listed in the disklist) followed
+by whitespace and then the password, which must not contain spaces.
+This file must owned by the amanda user, and without world-read
+privileges, or amcheck will complain.
+
+The share must be given full access (read/write) to the disk -
+otherwise incremental backups will not work and it will always backup
+most of the disk (A bits never being reset).
+
+e.g.
+
+Amanda client software, and the patched samba is installed onto a host
+'pcserver'.  A share to be backed up is called 'backupc' on host
+'thepc'.  It has a password on the share of 'f00bar'.
+
+The entry in the disklist file is:
+
+pcserver	//thepc/backupc		nocomp-user-gnutar
+
+^ samba installed unix host
+                 ^ pc host and sharename
+					^ dumptype must include the tar option
+
+And in /etc/amandapass on the machine 'pcserver', this line must be
+present :
+//thepc/backupc f00bar
+
+An example dumptype (from amanda.conf) could be:
+
+define dumptype nocomp-user-gnutar {
+    program "GNUTAR"
+    comment "user partitions dumped with tar and no compression"
+    options no-compress
+    priority medium
+}
+
+Essentially the disklist entry is a 'pseudo-disk' which contains all the
+relevant information needed by the smbclient program to backup the disk,
+but in an Amanda compatible way.  The full sharename shouldn't be greater
+than 79 characters.  And the password should not include any whitespace.
+
+For NT systems, or where the shares are specified with a username, the
+username it connects with is 'backup'.  See bugs for some notes on
+this.
+
+amcheck does a quick check to see if smbclient exits and also tries to
+connect to any appropriate hosts.  It also checks for the existence of
+/etc/amandapass, and that the permissions are set appropriately.
+
+Bugs
+
+It seems impossible to detect when a per-user based login fails - e.g.
+the username doesn't exist on an NT workstation.  It connects but you
+can't see any files (e.g. backups backup nothing).  The selfcheck code
+isn't particularly robust in this area either, so you can get no
+warnings when a disk isn't being backed up.  Just check to see that
+level 0 dumps are bigger than 64K - otherwise it means the backup was
+empty.  (i have code in sendsize to detect this situation, but I don't
+know how to flag it, without aborting every disk (or 'pseudo disk') on
+that host).
+
+The estimate and totals are probably a bit out, since tar pads to the
+nearest 512 bytes after each file (i think).  Not sure how much of a
+problem this is.
+
+If you compile with smclient support, gnutar support is automatically
+added too.  If you aren't using the gnutar part, you may get warnings
+about the availability of /usr/local/bin/gtar (or whatever it was
+compiled with) - these can safely be ignored.
+
+Michael Zucchi
+School of Computer and Information Science
+University of South Australia
+M.Zucchi@CIS.UniSA.Edu.Au

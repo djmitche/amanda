@@ -1,0 +1,617 @@
+# Makefile.in generated automatically by automake 1.1l from Makefile.am
+
+# Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
+# This Makefile.in is free software; the Free Software Foundation
+# gives unlimited permission to copy, distribute and modify it.
+
+# Makefile for Amanda client programs.
+
+
+SHELL = /bin/sh
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+oldincludedir = /usr/include
+
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+
+top_builddir = ..
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+transform = @program_transform_name@
+target_alias = @target_alias@
+build_alias = @build_alias@
+host_triplet = @host@
+target_triplet = @target@
+build_triplet = @build@
+host_alias = @host_alias@
+LOG_DIR = @LOG_DIR@
+MT = @MT@
+RESTORE = @RESTORE@
+DB_DIR = @DB_DIR@
+VERSION = @VERSION@
+ac_c = @ac_c@
+XFSDUMP = @XFSDUMP@
+PCAT = @PCAT@
+DD = @DD@
+LEX = @LEX@
+GNUPLOT = @GNUPLOT@
+VERSION_MINOR = @VERSION_MINOR@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+BUILD_SERVER_PROGS_LIBEXEC = @BUILD_SERVER_PROGS_LIBEXEC@
+PACKAGE = @PACKAGE@
+COMPRESS = @COMPRESS@
+RSH = @RSH@
+BUILD_CLIENT_SCRIPTS_BIN = @BUILD_CLIENT_SCRIPTS_BIN@
+ac_n = @ac_n@
+XFSRESTORE = @XFSRESTORE@
+DUMP = @DUMP@
+INDEX_DIR = @INDEX_DIR@
+BUILD_AMPLOT_LIBEXEC = @BUILD_AMPLOT_LIBEXEC@
+AMPLOT_COMPRESS = @AMPLOT_COMPRESS@
+RANLIB = @RANLIB@
+VERSION_COMMENT = @VERSION_COMMENT@
+MAILER = @MAILER@
+DEFAULT_SERVER = @DEFAULT_SERVER@
+AMPLOT_CAT_GZIP = @AMPLOT_CAT_GZIP@
+TAPE_NO_REWIND_DEVICE = @TAPE_NO_REWIND_DEVICE@
+DEFAULT_TAPE_DEVICE = @DEFAULT_TAPE_DEVICE@
+YACC = @YACC@
+TAPE_REWIND_DEVICE = @TAPE_REWIND_DEVICE@
+AMPLOT_CAT_PACK = @AMPLOT_CAT_PACK@
+SAMBA_CLIENT = @SAMBA_CLIENT@
+DEFAULT_TAPE_SERVER = @DEFAULT_TAPE_SERVER@
+BUILD_SERVER_SCRIPTS_BIN = @BUILD_SERVER_SCRIPTS_BIN@
+CC = @CC@
+BUILD_SERVER_PROGS_BIN = @BUILD_SERVER_PROGS_BIN@
+BUILD_CHANGER_SCRIPTS_LIBEXEC = @BUILD_CHANGER_SCRIPTS_LIBEXEC@
+BUILD_CHANGER_PROGS_LIBEXEC = @BUILD_CHANGER_PROGS_LIBEXEC@
+GREP = @GREP@
+AMPLOT_CAT_COMPRESS = @AMPLOT_CAT_COMPRESS@
+BUILD_CLIENT_SCRIPTS_LIBEXEC = @BUILD_CLIENT_SCRIPTS_LIBEXEC@
+GNUTAR = @GNUTAR@
+PERL = @PERL@
+BUILD_CLIENT_PROGS_LIBEXEC = @BUILD_CLIENT_PROGS_LIBEXEC@
+AR = @AR@
+EGREP = @EGREP@
+CONFIG_DIR = @CONFIG_DIR@
+BUILD_AMPLOT_BIN = @BUILD_AMPLOT_BIN@
+AWK_VAR_ASSIGNMENT_OPT = @AWK_VAR_ASSIGNMENT_OPT@
+VERSION_PATCH = @VERSION_PATCH@
+CLIENT_LOGIN = @CLIENT_LOGIN@
+SHELL = @SHELL@
+CAT = @CAT@
+MTX = @MTX@
+MT_FILE_FLAG = @MT_FILE_FLAG@
+GZIP = @GZIP@
+VERSION_SUFFIX = @VERSION_SUFFIX@
+SETUID_GROUP = @SETUID_GROUP@
+DEFAULT_CONFIG = @DEFAULT_CONFIG@
+VERSION_MAJOR = @VERSION_MAJOR@
+USE_VERSION_SUFFIXES = @USE_VERSION_SUFFIXES@
+
+INCLUDES =		-I$(top_srcdir)/common-src
+
+AMANDA_CFLAGS =		@AMANDA_CFLAGS@
+
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
+
+LDADD =			../common-src/libamanda.a
+
+SUFFIXES =		.sh .pl
+
+bin_PROGRAMS =		amrecover			amrestore
+
+libexec_PROGRAMS =	versionsuffix					\
+			@BUILD_CLIENT_PROGS_LIBEXEC@
+
+EXTRA_PROGRAMS =	amandad				calcsize	\
+			createindex-dump		createindex-gnutar \
+			rundump				runtar		\
+			selfcheck			sendbackup-dump	\
+			sendbackup-gnutar 		sendindex	\
+			sendsize
+
+bin_SCRIPTS =		@BUILD_CLIENT_SCRIPTS_BIN@
+
+libexec_SCRIPTS =	@BUILD_CLIENT_SCRIPTS_LIBEXEC@
+
+EXTRA_SCRIPTS =		amhpfixdevs			patch-system
+
+amrecover_SOURCES =	amrecover.c			amrecover.h	\
+			display_commands.c		extract_list.c	\
+			help.c				set_commands.c	\
+			uparse.y			uscan.l
+
+EXTRA_DIST =		amhpfixdevs.sh uparse.h
+
+amrecover_LDADD =	../common-src/libamanda.a @LEXLIB@
+YFLAGS =		-d
+
+createindex_dump_SOURCES = createindex-dump.c		indexfilename.c \
+			indexfilename.h
+
+createindex_gnutar_SOURCES = createindex-gnutar.c	indexfilename.c \
+			indexfilename.h
+
+sendbackup_dump_SOURCES = sendbackup-dump.c		sendbackup-common.c \
+			sendbackup-common.h
+
+sendbackup_gnutar_SOURCES = sendbackup-gnutar.c		sendbackup-common.c \
+			sendbackup-common.h
+
+sendindex_SOURCES =	sendindex.c			indexfilename.c \
+			indexfilename.h
+mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+CONFIG_HEADER = ../config.h
+CONFIG_CLEAN_FILES =  patch-system.sh
+PROGRAMS =  $(bin_PROGRAMS) $(libexec_PROGRAMS)
+
+
+DEFS = @DEFS@ -I. -I$(srcdir) -I..
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+amandad_SOURCES = amandad.c
+amandad_OBJECTS =  amandad.o
+amandad_LDADD = $(LDADD)
+amandad_DEPENDENCIES =  ../common-src/libamanda.a
+amandad_LDFLAGS = 
+calcsize_SOURCES = calcsize.c
+calcsize_OBJECTS =  calcsize.o
+calcsize_LDADD = $(LDADD)
+calcsize_DEPENDENCIES =  ../common-src/libamanda.a
+calcsize_LDFLAGS = 
+createindex_dump_OBJECTS =  createindex-dump.o indexfilename.o
+createindex_dump_LDADD = $(LDADD)
+createindex_dump_DEPENDENCIES =  ../common-src/libamanda.a
+createindex_dump_LDFLAGS = 
+createindex_gnutar_OBJECTS =  createindex-gnutar.o indexfilename.o
+createindex_gnutar_LDADD = $(LDADD)
+createindex_gnutar_DEPENDENCIES =  ../common-src/libamanda.a
+createindex_gnutar_LDFLAGS = 
+rundump_SOURCES = rundump.c
+rundump_OBJECTS =  rundump.o
+rundump_LDADD = $(LDADD)
+rundump_DEPENDENCIES =  ../common-src/libamanda.a
+rundump_LDFLAGS = 
+runtar_SOURCES = runtar.c
+runtar_OBJECTS =  runtar.o
+runtar_LDADD = $(LDADD)
+runtar_DEPENDENCIES =  ../common-src/libamanda.a
+runtar_LDFLAGS = 
+selfcheck_SOURCES = selfcheck.c
+selfcheck_OBJECTS =  selfcheck.o
+selfcheck_LDADD = $(LDADD)
+selfcheck_DEPENDENCIES =  ../common-src/libamanda.a
+selfcheck_LDFLAGS = 
+sendbackup_dump_OBJECTS =  sendbackup-dump.o sendbackup-common.o
+sendbackup_dump_LDADD = $(LDADD)
+sendbackup_dump_DEPENDENCIES =  ../common-src/libamanda.a
+sendbackup_dump_LDFLAGS = 
+sendbackup_gnutar_OBJECTS =  sendbackup-gnutar.o sendbackup-common.o
+sendbackup_gnutar_LDADD = $(LDADD)
+sendbackup_gnutar_DEPENDENCIES =  ../common-src/libamanda.a
+sendbackup_gnutar_LDFLAGS = 
+sendindex_OBJECTS =  sendindex.o indexfilename.o
+sendindex_LDADD = $(LDADD)
+sendindex_DEPENDENCIES =  ../common-src/libamanda.a
+sendindex_LDFLAGS = 
+sendsize_SOURCES = sendsize.c
+sendsize_OBJECTS =  sendsize.o
+sendsize_LDADD = $(LDADD)
+sendsize_DEPENDENCIES =  ../common-src/libamanda.a
+sendsize_LDFLAGS = 
+amrecover_OBJECTS =  amrecover.o display_commands.o extract_list.o \
+help.o set_commands.o uparse.o uscan.o
+amrecover_DEPENDENCIES =  ../common-src/libamanda.a
+amrecover_LDFLAGS = 
+amrestore_SOURCES = amrestore.c
+amrestore_OBJECTS =  amrestore.o
+amrestore_LDADD = $(LDADD)
+amrestore_DEPENDENCIES =  ../common-src/libamanda.a
+amrestore_LDFLAGS = 
+versionsuffix_SOURCES = versionsuffix.c
+versionsuffix_OBJECTS =  versionsuffix.o
+versionsuffix_LDADD = $(LDADD)
+versionsuffix_DEPENDENCIES =  ../common-src/libamanda.a
+versionsuffix_LDFLAGS = 
+SCRIPTS =  $(bin_SCRIPTS) $(libexec_SCRIPTS)
+
+LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
+LEXLIB = @LEXLIB@
+CFLAGS = @CFLAGS@
+LINK = $(CC) $(LDFLAGS) -o $@
+DIST_COMMON =  Makefile.am Makefile.in patch-system.sh.in uparse.c \
+uscan.c
+
+
+DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) \
+	$(TEXINFOS) $(MANS) $(EXTRA_DIST)
+
+TAR = tar
+SOURCES = amandad.c calcsize.c $(createindex_dump_SOURCES) $(createindex_gnutar_SOURCES) rundump.c runtar.c selfcheck.c $(sendbackup_dump_SOURCES) $(sendbackup_gnutar_SOURCES) $(sendindex_SOURCES) sendsize.c $(amrecover_SOURCES) amrestore.c versionsuffix.c
+OBJECTS = amandad.o calcsize.o $(createindex_dump_OBJECTS) $(createindex_gnutar_OBJECTS) rundump.o runtar.o selfcheck.o $(sendbackup_dump_OBJECTS) $(sendbackup_gnutar_OBJECTS) $(sendindex_OBJECTS) sendsize.o $(amrecover_OBJECTS) amrestore.o versionsuffix.o
+
+default: all
+
+.SUFFIXES:
+.SUFFIXES: .c .o .y .l .sh .pl
+$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL) 
+	cd $(top_srcdir) && automake --foreign client-src/Makefile
+
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status $(BUILT_SOURCES)
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+patch-system.sh: $(top_builddir)/config.status patch-system.sh.in
+	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+
+mostlyclean-binPROGRAMS:
+
+clean-binPROGRAMS:
+	test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
+
+distclean-binPROGRAMS:
+
+maintainer-clean-binPROGRAMS:
+
+install-binPROGRAMS: $(bin_PROGRAMS)
+	$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(bindir)
+	@list="$(bin_PROGRAMS)"; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(INSTALL_PROGRAM) $$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
+	     $(INSTALL_PROGRAM) $$p $(bindir)/`echo $$p|sed '$(transform)'`; \
+	  else :; fi; \
+	done
+
+uninstall-binPROGRAMS:
+	list="$(bin_PROGRAMS)"; for p in $$list; do \
+	  rm -f $(bindir)/`echo $$p|sed '$(transform)'`; \
+	done
+
+mostlyclean-libexecPROGRAMS:
+
+clean-libexecPROGRAMS:
+	test -z "$(libexec_PROGRAMS)" || rm -f $(libexec_PROGRAMS)
+
+distclean-libexecPROGRAMS:
+
+maintainer-clean-libexecPROGRAMS:
+
+install-libexecPROGRAMS: $(libexec_PROGRAMS)
+	$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(libexecdir)
+	@list="$(libexec_PROGRAMS)"; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(INSTALL_PROGRAM) $$p $(libexecdir)/`echo $$p|sed '$(transform)'`"; \
+	     $(INSTALL_PROGRAM) $$p $(libexecdir)/`echo $$p|sed '$(transform)'`; \
+	  else :; fi; \
+	done
+
+uninstall-libexecPROGRAMS:
+	list="$(libexec_PROGRAMS)"; for p in $$list; do \
+	  rm -f $(libexecdir)/`echo $$p|sed '$(transform)'`; \
+	done
+
+.c.o:
+	$(COMPILE) -c $<
+
+mostlyclean-compile:
+	rm -f *.o core
+
+clean-compile:
+
+distclean-compile:
+	rm -f *.tab.c
+
+maintainer-clean-compile:
+$(amandad_OBJECTS): ../config.h
+
+amandad: $(amandad_OBJECTS) $(amandad_DEPENDENCIES)
+	$(LINK) $(amandad_LDFLAGS) $(amandad_OBJECTS) $(amandad_LDADD) $(LIBS)
+$(calcsize_OBJECTS): ../config.h
+
+calcsize: $(calcsize_OBJECTS) $(calcsize_DEPENDENCIES)
+	$(LINK) $(calcsize_LDFLAGS) $(calcsize_OBJECTS) $(calcsize_LDADD) $(LIBS)
+$(createindex_dump_OBJECTS): ../config.h
+
+createindex-dump: $(createindex_dump_OBJECTS) $(createindex_dump_DEPENDENCIES)
+	$(LINK) $(createindex_dump_LDFLAGS) $(createindex_dump_OBJECTS) $(createindex_dump_LDADD) $(LIBS)
+$(createindex_gnutar_OBJECTS): ../config.h
+
+createindex-gnutar: $(createindex_gnutar_OBJECTS) $(createindex_gnutar_DEPENDENCIES)
+	$(LINK) $(createindex_gnutar_LDFLAGS) $(createindex_gnutar_OBJECTS) $(createindex_gnutar_LDADD) $(LIBS)
+$(rundump_OBJECTS): ../config.h
+
+rundump: $(rundump_OBJECTS) $(rundump_DEPENDENCIES)
+	$(LINK) $(rundump_LDFLAGS) $(rundump_OBJECTS) $(rundump_LDADD) $(LIBS)
+$(runtar_OBJECTS): ../config.h
+
+runtar: $(runtar_OBJECTS) $(runtar_DEPENDENCIES)
+	$(LINK) $(runtar_LDFLAGS) $(runtar_OBJECTS) $(runtar_LDADD) $(LIBS)
+$(selfcheck_OBJECTS): ../config.h
+
+selfcheck: $(selfcheck_OBJECTS) $(selfcheck_DEPENDENCIES)
+	$(LINK) $(selfcheck_LDFLAGS) $(selfcheck_OBJECTS) $(selfcheck_LDADD) $(LIBS)
+$(sendbackup_dump_OBJECTS): ../config.h
+
+sendbackup-dump: $(sendbackup_dump_OBJECTS) $(sendbackup_dump_DEPENDENCIES)
+	$(LINK) $(sendbackup_dump_LDFLAGS) $(sendbackup_dump_OBJECTS) $(sendbackup_dump_LDADD) $(LIBS)
+$(sendbackup_gnutar_OBJECTS): ../config.h
+
+sendbackup-gnutar: $(sendbackup_gnutar_OBJECTS) $(sendbackup_gnutar_DEPENDENCIES)
+	$(LINK) $(sendbackup_gnutar_LDFLAGS) $(sendbackup_gnutar_OBJECTS) $(sendbackup_gnutar_LDADD) $(LIBS)
+$(sendindex_OBJECTS): ../config.h
+
+sendindex: $(sendindex_OBJECTS) $(sendindex_DEPENDENCIES)
+	$(LINK) $(sendindex_LDFLAGS) $(sendindex_OBJECTS) $(sendindex_LDADD) $(LIBS)
+$(sendsize_OBJECTS): ../config.h
+
+sendsize: $(sendsize_OBJECTS) $(sendsize_DEPENDENCIES)
+	$(LINK) $(sendsize_LDFLAGS) $(sendsize_OBJECTS) $(sendsize_LDADD) $(LIBS)
+$(amrecover_OBJECTS): ../config.h
+
+amrecover: $(amrecover_OBJECTS) $(amrecover_DEPENDENCIES)
+	$(LINK) $(amrecover_LDFLAGS) $(amrecover_OBJECTS) $(amrecover_LDADD) $(LIBS)
+$(amrestore_OBJECTS): ../config.h
+
+amrestore: $(amrestore_OBJECTS) $(amrestore_DEPENDENCIES)
+	$(LINK) $(amrestore_LDFLAGS) $(amrestore_OBJECTS) $(amrestore_LDADD) $(LIBS)
+$(versionsuffix_OBJECTS): ../config.h
+
+versionsuffix: $(versionsuffix_OBJECTS) $(versionsuffix_DEPENDENCIES)
+	$(LINK) $(versionsuffix_LDFLAGS) $(versionsuffix_OBJECTS) $(versionsuffix_LDADD) $(LIBS)
+
+install-binSCRIPTS: $(bin_SCRIPTS)
+	$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(bindir)
+	@list="$(bin_SCRIPTS)"; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo "$(INSTALL_SCRIPT) $$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
+	    $(INSTALL_SCRIPT) $$p $(bindir)/`echo $$p|sed '$(transform)'`; \
+	  else if test -f $(srcdir)/$$p; then \
+	    echo "$(INSTALL_SCRIPT) $(srcdir)/$$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
+	    $(INSTALL_SCRIPT) $(srcdir)/$$p $(bindir)/`echo $$p|sed '$(transform)'`; \
+	  else :; fi; fi; \
+	done
+
+uninstall-binSCRIPTS:
+	list="$(bin_SCRIPTS)"; for p in $$list; do \
+	  rm -f $(bindir)/`echo $$p|sed '$(transform)'`; \
+	done
+
+install-libexecSCRIPTS: $(libexec_SCRIPTS)
+	$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(libexecdir)
+	@list="$(libexec_SCRIPTS)"; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo "$(INSTALL_SCRIPT) $$p $(libexecdir)/`echo $$p|sed '$(transform)'`"; \
+	    $(INSTALL_SCRIPT) $$p $(libexecdir)/`echo $$p|sed '$(transform)'`; \
+	  else if test -f $(srcdir)/$$p; then \
+	    echo "$(INSTALL_SCRIPT) $(srcdir)/$$p $(libexecdir)/`echo $$p|sed '$(transform)'`"; \
+	    $(INSTALL_SCRIPT) $(srcdir)/$$p $(libexecdir)/`echo $$p|sed '$(transform)'`; \
+	  else :; fi; fi; \
+	done
+
+uninstall-libexecSCRIPTS:
+	list="$(libexec_SCRIPTS)"; for p in $$list; do \
+	  rm -f $(libexecdir)/`echo $$p|sed '$(transform)'`; \
+	done
+.y.c:
+	$(YACC) $(YFLAGS) $< && mv y.tab.c $@
+	if test -f y.tab.h; then \
+	if cmp -s y.tab.h $*.h; then rm -f y.tab.h; else mv y.tab.h $*.h; fi; \
+	else :; fi
+.l.c:
+	$(LEX) $(LFLAGS) $< && mv $(LEX_OUTPUT_ROOT).c $@
+
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES)
+	here=`pwd` && cd $(srcdir) && mkid -f$$here/ID $(SOURCES) $(HEADERS)
+
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES)
+	tags=; \
+	here=`pwd`; \
+	list="$(SUBDIRS)"; for subdir in $$list; do \
+	  test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
+	done; \
+	test -z "$(ETAGS_ARGS)$(SOURCES)$(HEADERS)$$tags" \
+	  || cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $(SOURCES) $(HEADERS) -o $$here/TAGS
+
+mostlyclean-tags:
+
+clean-tags:
+
+distclean-tags:
+	rm -f TAGS ID
+
+maintainer-clean-tags:
+
+distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
+
+subdir = client-src
+distdir: $(DISTFILES)
+	@for file in $(DISTFILES); do \
+	  d=$(srcdir); \
+	  test -f $(distdir)/$$file \
+	  || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
+	  || cp -p $$d/$$file $(distdir)/$$file; \
+	done
+amandad.o amandad.lo: amandad.c ../common-src/amanda.h ../config.h \
+	../common-src/dgram.h ../common-src/version.h \
+	../common-src/protocol.h
+amrecover.o amrecover.lo: amrecover.c ../common-src/amanda.h ../config.h \
+	amrecover.h ../common-src/getfsent.h
+amrestore.o amrestore.lo: amrestore.c ../common-src/amanda.h ../config.h \
+	../common-src/regex.h ../common-src/tapeio.h
+calcsize.o calcsize.lo: calcsize.c ../common-src/amanda.h ../config.h \
+	../common-src/statfs.h
+createindex-dump.o createindex-dump.lo: createindex-dump.c \
+	../common-src/amanda.h ../config.h ../common-src/getfsent.h \
+	indexfilename.h ../common-src/version.h
+createindex-gnutar.o createindex-gnutar.lo: createindex-gnutar.c \
+	../common-src/amanda.h ../config.h indexfilename.h \
+	../common-src/version.h
+display_commands.o display_commands.lo: display_commands.c \
+	../common-src/amanda.h ../config.h amrecover.h
+extract_list.o extract_list.lo: extract_list.c ../common-src/amanda.h \
+	../config.h amrecover.h
+help.o help.lo: help.c amrecover.h ../common-src/amanda.h ../config.h
+indexfilename.o indexfilename.lo: indexfilename.c ../common-src/amanda.h \
+	../config.h indexfilename.h
+rundump.o rundump.lo: rundump.c ../common-src/amanda.h ../config.h \
+	../common-src/version.h
+runtar.o runtar.lo: runtar.c ../common-src/amanda.h ../config.h \
+	../common-src/version.h
+selfcheck.o selfcheck.lo: selfcheck.c ../common-src/amanda.h ../config.h \
+	../common-src/statfs.h ../common-src/version.h
+sendbackup-common.o sendbackup-common.lo: sendbackup-common.c \
+	sendbackup-common.h ../common-src/amanda.h ../config.h \
+	../common-src/stream.h ../common-src/arglist.h \
+	../common-src/tapeio.h
+sendbackup-dump.o sendbackup-dump.lo: sendbackup-dump.c \
+	sendbackup-common.h ../common-src/amanda.h ../config.h \
+	../common-src/getfsent.h ../common-src/version.h
+sendbackup-gnutar.o sendbackup-gnutar.lo: sendbackup-gnutar.c \
+	../common-src/amanda.h ../config.h sendbackup-common.h \
+	../common-src/amandates.h ../common-src/getfsent.h \
+	../common-src/version.h
+sendindex.o sendindex.lo: sendindex.c ../common-src/amanda.h ../config.h \
+	indexfilename.h ../common-src/stream.h ../common-src/arglist.h \
+	../common-src/tapeio.h
+sendsize.o sendsize.lo: sendsize.c ../common-src/amanda.h ../config.h \
+	../common-src/amandates.h ../common-src/getfsent.h \
+	../common-src/version.h
+set_commands.o set_commands.lo: set_commands.c ../common-src/amanda.h \
+	../config.h amrecover.h
+uparse.o uparse.lo: uparse.c ../common-src/amanda.h ../config.h \
+	amrecover.h
+uscan.o uscan.lo: uscan.c ../common-src/amanda.h ../config.h uparse.h
+versionsuffix.o versionsuffix.lo: versionsuffix.c ../common-src/amanda.h \
+	../config.h ../common-src/version.h
+
+info:
+dvi:
+check: all
+	$(MAKE)
+installcheck:
+install-exec: install-binPROGRAMS install-libexecPROGRAMS install-binSCRIPTS install-libexecSCRIPTS
+	$(NORMAL_INSTALL)
+	$(MAKE) install-exec-hook
+
+install-data: 
+	$(NORMAL_INSTALL)
+
+install: install-exec install-data all
+	@:
+
+uninstall: uninstall-binPROGRAMS uninstall-libexecPROGRAMS uninstall-binSCRIPTS uninstall-libexecSCRIPTS
+
+all: $(PROGRAMS) $(SCRIPTS) Makefile
+
+install-strip:
+	$(MAKE) INSTALL_PROGRAM='$(INSTALL_PROGRAM) -s' install
+installdirs:
+	$(mkinstalldirs)  $(bindir) $(libexecdir) $(bindir) $(libexecdir)
+
+
+mostlyclean-generic:
+	test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
+
+clean-generic:
+	test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
+
+distclean-generic:
+	rm -f Makefile $(DISTCLEANFILES)
+	rm -f config.cache config.log stamp-h
+	test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
+
+maintainer-clean-generic:
+	test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
+	test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
+mostlyclean:  mostlyclean-binPROGRAMS mostlyclean-libexecPROGRAMS \
+		mostlyclean-compile mostlyclean-tags \
+		mostlyclean-generic
+
+clean:  clean-binPROGRAMS clean-libexecPROGRAMS clean-compile clean-tags \
+		clean-generic mostlyclean
+
+distclean:  distclean-binPROGRAMS distclean-libexecPROGRAMS \
+		distclean-compile distclean-tags distclean-generic \
+		clean
+	rm -f config.status
+
+maintainer-clean:  maintainer-clean-binPROGRAMS \
+		maintainer-clean-libexecPROGRAMS \
+		maintainer-clean-compile maintainer-clean-tags \
+		maintainer-clean-generic distclean
+	@echo "This command is intended for maintainers to use;"
+	@echo "it deletes files that may require special tools to rebuild."
+
+.PHONY: default mostlyclean-binPROGRAMS distclean-binPROGRAMS \
+clean-binPROGRAMS maintainer-clean-binPROGRAMS uninstall-binPROGRAMS \
+install-binPROGRAMS mostlyclean-libexecPROGRAMS \
+distclean-libexecPROGRAMS clean-libexecPROGRAMS \
+maintainer-clean-libexecPROGRAMS uninstall-libexecPROGRAMS \
+install-libexecPROGRAMS mostlyclean-compile distclean-compile \
+clean-compile maintainer-clean-compile uninstall-binSCRIPTS \
+install-binSCRIPTS uninstall-libexecSCRIPTS install-libexecSCRIPTS tags \
+mostlyclean-tags distclean-tags clean-tags maintainer-clean-tags \
+distdir info dvi installcheck install-exec install-data install \
+uninstall all installdirs mostlyclean-generic distclean-generic \
+clean-generic maintainer-clean-generic clean mostlyclean distclean \
+maintainer-clean
+
+
+.pl:
+			cat $< > $@
+			chmod a+x $@
+
+install-exec-hook:
+	@list="$(bin_PROGRAMS) $(bin_SCRIPTS)"; for p in $$list; do \
+		echo chown $(CLIENT_LOGIN) $(bindir)/`echo $$p|sed '$(transform)'`; \
+		chown $(CLIENT_LOGIN) $(bindir)/`echo $$p|sed '$(transform)'`; \
+		echo chgrp $(SETUID_GROUP) $(bindir)/`echo $$p|sed '$(transform)'`; \
+		chgrp $(SETUID_GROUP) $(bindir)/`echo $$p|sed '$(transform)'`; \
+	done; \
+	list="$(libexec_PROGRAMS) $(libexec_SCRIPTS)"; for p in $$list; do \
+		echo chown $(CLIENT_LOGIN) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
+		chown $(CLIENT_LOGIN) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
+		echo chgrp $(SETUID_GROUP) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
+		chgrp $(SETUID_GROUP) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
+	done; \
+	list="$(libexecdir)/calcsize $(libexecdir)/rundump $(libexecdir)/runtar"; for p in $$list; do \
+		if echo "$(bin_PROGRAMS) $(bin_SCRIPTS) $(libexec_PROGRAMS) $(libexec_SCRIPTS)" | grep `basename $$p` >/dev/null 2>&1; then \
+			echo chown root `echo $$p|sed '$(transform)'`; \
+			chown root `echo $$p|sed '$(transform)'`; \
+			echo chmod u+s,o-rwx `echo $$p|sed '$(transform)'`; \
+			chmod u+s,o-rwx `echo $$p|sed '$(transform)'`; \
+		fi; \
+	done
+
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:

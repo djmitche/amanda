@@ -1,0 +1,92 @@
+.\"
+.TH AMTAPE 8
+.SH NAME
+amtape \- user interface to tape changer controls
+.SH SYNOPSIS
+.B amtape
+.I config 
+.I command
+[ command options ] 
+
+.SH DESCRIPTION
+
+.B Amtape
+performs various tape changer control operations.  It uses the
+underlying tape changer script defined for a particular Amanda
+configuration as specified by the \fIconfig\fR argument.  
+
+Amanda maintains a notion of the ``current slot'' for each
+configuration.  This may or may not correspond to an actual physical
+state of the device, but does tend to minimize searching through the
+tape rack: if the currently desired tape is in the current slot, it is
+likely that the next tape needed is in the next slot rather that at
+some random position in the rack.
+
+The
+.B amtape
+commands and their options are as follows.
+.HP 5
+.B reset
+.br
+Resets the tape changer to a known state.  It changes the current slot
+to the first slot and may have other device-specific side effects.
+Some gravity stackers need to be reset to the top position by hand.  
+This command would in that case serve to notify Amanda that the
+stacker was back in the top position.
+.HP 5
+.B eject
+.br
+If a tape is loaded in the drive, it is ejected and returned to the
+slot from which it was loaded.
+.HP 5
+.B show
+.br
+shows the contents of all slots in the rack.  This can be slow.
+.HP 5
+.B slot
+.I <slot #>
+.br
+loads tape from slot <slot #>.
+.HP 5
+.B slot
+.I current
+.br
+loads tape from current slot.
+.HP 5
+.B slot
+.I prev
+.br
+loads tape from previous slot.
+.HP 5
+.B slot
+.I next
+.br
+loads tape from next slot.
+.HP 5
+.B slot
+.I first
+.br
+loads tape from first slot.
+.HP 5
+.B slot
+.I last
+.br
+loads tape from last slot.
+.HP 5
+.B label
+.I <label>
+.br
+searchs for and loads an Amanda tape with the given label.
+.HP 5
+.B taper
+.br
+performs Taper's scan algorithm.  This will load the next tape in the
+configuration's tape sequence, or a fresh tape with a suitable label.
+
+.SH AUTHOR
+James da Silva <jds@cs.umd.edu>
+.br
+University of Maryland, College Park
+
+.SH "SEE ALSO"
+amanda(8)
