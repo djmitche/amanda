@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.144 2001/11/08 18:46:26 martinea Exp $
+/* $Id: dumper.c,v 1.145 2001/12/04 15:42:42 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -273,7 +273,7 @@ main(main_argc, main_argv)
 		options);
 	    if (rc != 0) {
 		q = squote(errstr);
-		putresult(rc == 2? FAILED : TRY_AGAIN, "%s %s\n",
+		putresult(rc == 2? FAILED : TRYAGAIN, "%s %s\n",
 		    handle, q);
 		if (rc == 2)
 		    log_add(L_FAIL, "%s %s %s %d [%s]", hostname, diskname,

@@ -1,3 +1,8 @@
+2001-12-04  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/dumper.c, server-src/taper.c, server-src/chunker.c:
+	Replace TRY_AGAIN by TRYAGAIN.
+
 2001-11-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	Patch by Michael D. Beynon <beynon@ll.mit.edu>
 
