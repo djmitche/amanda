@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.110 2005/02/09 14:36:30 martinea Exp $
+ * $Id: conffile.c,v 1.111 2005/03/29 16:34:52 martinea Exp $
  *
  * read configuration file
  */
@@ -157,7 +157,7 @@ char *config_dir = NULL;
 holdingdisk_t *holdingdisks;
 int num_holdingdisks;
 
-long int unit_divisor = 1024;
+long int unit_divisor = 1;
 
 /* configuration parameters */
 
@@ -2964,7 +2964,7 @@ int taperalgo;
     return "UNKNOWN";
 }
 
-long int getcont_unit_divisor()
+long int getconf_unit_divisor()
 {
     return unit_divisor;
 }

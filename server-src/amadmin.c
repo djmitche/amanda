@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.97 2004/11/19 13:21:17 martinea Exp $
+ * $Id: amadmin.c,v 1.98 2005/03/29 16:34:52 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -202,7 +202,7 @@ int main(argc, argv)
     amfree(conf_infofile);
 
     displayunit = getconf_str(CNF_DISPLAYUNIT);
-    unitdivisor = getcont_unit_divisor();
+    unitdivisor = getconf_unit_divisor();
 
     for (i = 0; i < NCMDS; i++)
 	if (strcmp(argv[2], cmdtab[i].name) == 0) {

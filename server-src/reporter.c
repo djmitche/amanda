@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.90 2004/11/16 13:58:30 martinea Exp $
+ * $Id: reporter.c,v 1.91 2005/03/29 16:34:53 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -421,7 +421,7 @@ main(argc, argv)
     today_datestamp = construct_datestamp(NULL);
 
     displayunit = getconf_str(CNF_DISPLAYUNIT);
-    unitdivisor = getcont_unit_divisor();
+    unitdivisor = getconf_unit_divisor();
 
     ColumnSpec = getconf_str(CNF_COLUMNSPEC);
     if(SetColumDataFromString(ColumnData, ColumnSpec, &errstr) < 0) {
@@ -674,7 +674,8 @@ main(argc, argv)
 
 /* ----- */
 
-#define mb(f)	((f)/unitdivisor)	/* kbytes -> displayunit */
+#define mb(f)	((f)/1024)		/* kbytes -> mbutes */
+#define du(f)	((f)/unitdivisor)	/* kbytes -> displayunit */
 #define pct(f)	((f)*100.0)		/* percent */
 #define hrmn(f) ((int)(f)+30)/3600, (((int)(f)+30)%3600)/60
 #define mnsc(f) ((int)(f+0.5))/60, ((int)(f+0.5)) % 60
@@ -838,7 +839,7 @@ output_stats()
 	    current_tape = current_tape->next) {
 	    fprintf(mailf, "  %-*s", label_length, current_tape->label);
 	    fprintf(mailf, " %2d:%02d", hrmn(current_tape->taper_time));
-	    fprintf(mailf, " %8.0f%s  ", mb(current_tape->coutsize), displayunit);
+	    fprintf(mailf, " %8.0f%s  ", du(current_tape->coutsize), displayunit);
 	    divzero(mailf, pct(current_tape->coutsize + 
 			       marksize * current_tape->tapedisks),
 			   tapesize);
@@ -1057,8 +1058,8 @@ CalcMaxWidth()
 		continue;
 	    CheckIntMax(&ColumnData[Level], repdata->level);
 	    if(repdata->dumper.result == L_SUCCESS) {
-		CheckFloatMax(&ColumnData[OrigKB], repdata->dumper.origsize/unitdivisor);
-		CheckFloatMax(&ColumnData[OutKB], repdata->dumper.outsize/unitdivisor);
+		CheckFloatMax(&ColumnData[OrigKB], du(repdata->dumper.origsize));
+		CheckFloatMax(&ColumnData[OutKB], du(repdata->dumper.outsize));
 		if(dp->compress == COMP_NONE)
 		    f = 0.0;
 		else 
@@ -1253,14 +1254,14 @@ output_summary()
 	    cd= &ColumnData[OrigKB];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
 	    if(origsize != 0.0)
-		fprintf(mailf, cd->Format, cd->Width, cd->Precision, origsize/unitdivisor);
+		fprintf(mailf, cd->Format, cd->Width, cd->Precision, du(origsize));
 	    else
 		fprintf(mailf, "%*.*s", cd->Width, cd->Width, "N/A");
 
 	    cd= &ColumnData[OutKB];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
 
-	    fprintf(mailf, cd->Format, cd->Width, cd->Precision, outsize/unitdivisor);
+	    fprintf(mailf, cd->Format, cd->Width, cd->Precision, du(outsize));
 	    	
 	    cd= &ColumnData[Compress];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
