@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1999 University of Maryland at College Park
+ * Copyright (c) 1999 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.11 1999/04/16 04:30:51 kashmir Exp $
+ * $Id: event.c,v 1.12 1999/04/16 05:12:55 kashmir Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
  * a uniform interface, central state storage, and centralized

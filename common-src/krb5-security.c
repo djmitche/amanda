@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1999 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: krb5-security.c,v 1.1 1998/12/02 22:20:48 kashmir Exp $
+ * $Id: krb5-security.c,v 1.2 1999/04/16 05:13:01 kashmir Exp $
  *
  * Stub file that pulls in the krb5 module from the export-restricted
  * tree.

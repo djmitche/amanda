@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1999 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.h,v 1.4 1999/04/16 04:30:53 kashmir Exp $
+ * $Id: event.h,v 1.5 1999/04/16 05:12:57 kashmir Exp $
  */
 #ifndef EVENT_H
 #define EVENT_H

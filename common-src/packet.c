@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-1999 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: packet.c,v 1.2 1999/04/10 06:18:57 kashmir Exp $
+ * $Id: packet.c,v 1.3 1999/04/16 05:13:02 kashmir Exp $
  *
  * Routines for modifying the amanda protocol packet type
  */

@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-1999 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.35 1999/04/10 22:12:49 kashmir Exp $
+ * $Id: amandad.c,v 1.36 1999/04/16 05:12:37 kashmir Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
