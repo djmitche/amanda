@@ -23,14 +23,13 @@
 # the same distribution terms that you use for the rest of that program.
 
 echo=echo
-if test X`$echo '\t'` = 'X\t'; then :
+if test "X`$echo '\t'`" = 'X\t'; then :
 else
   # The Solaris and AIX default echo program unquotes backslashes.
   # This makes it impossible to quote backslashes using
   #   echo "$something" | sed 's/\\/\\\\/g'
   # So, we emulate echo with printf '%s\n'
-  printfecho () { printf %s\n "$@"; }
-  echo=printfecho
+  echo='printf %s\n'
   if test "X`$echo '\t'`" = 'X\t'; then :
   else
     # Oops.  We have no working printf.  Try to find a not-so-buggy echo.
@@ -39,7 +38,7 @@ else
     save_PATH="$PATH"
     PATH="$PATH":/usr/ucb
     for dir in $PATH; do
-      if test -f $dir/echo && test X`$dir/echo '\t'` = 'X\t'; then
+      if test -f $dir/echo && test "X`$dir/echo '\t'`" = 'X\t'; then
         echo="$dir/echo"
         break
       fi
@@ -369,7 +368,7 @@ if test -z "$show_help"; then
     # link it into a program.
     if test "$build_libtool_libs" != yes; then
       $show "$echo timestamp > $libobj"
-      $run eval "$echo timestamp > \$libobj" || exit $?
+      $run eval "\$echo timestamp > \$libobj" || exit $?
     fi
 
     exit 0
@@ -472,7 +471,7 @@ if test -z "$show_help"; then
       -export-dynamic)
         if test "$export_dynamic" != yes; then
           export_dynamic=yes
-	  arg=`eval $echo "$export_dynamic_flag_spec"`
+	  arg=`eval \\$echo "$export_dynamic_flag_spec"`
 
           # Add the symbol object into the linking commands.
 	  compile_command="$compile_command @SYMFILE@"
@@ -648,7 +647,7 @@ if test -z "$show_help"; then
             fi
 
             if test -n "$libdir"; then
-              flag=`eval $echo \"$hardcode_libdir_flag_spec\"`
+              flag=`eval \\$echo \"$hardcode_libdir_flag_spec\"`
 
               compile_command="$compile_command $flag"
               finalize_command="$finalize_command $flag"
@@ -923,13 +922,13 @@ if test -z "$show_help"; then
 
       if test "$build_libtool_libs" = yes; then
         # Get the real and link names of the library.
-        library_names=`eval $echo \"$library_names_spec\"`
+        library_names=`eval \\$echo \"$library_names_spec\"`
         set dummy $library_names
         realname="$2"
         shift; shift
 
         if test -n "$soname_spec"; then
-          soname=`eval $echo \"$soname_spec\"`
+          soname=`eval \\$echo \"$soname_spec\"`
         else
           soname="$realname"
         fi
@@ -945,7 +944,7 @@ if test -z "$show_help"; then
         test -z "$pic_flag" && libobjs=`$echo "$libobjs " | sed -e 's/\.lo /.o /g' -e 's/ $//g'`
 
         # Do each of the archive commands.
-        cmds=`eval $echo \"$archive_cmds\"`
+        cmds=`eval \\$echo \"$archive_cmds\"`
         IFS="${IFS= 	}"; save_ifs="$IFS"; IFS=';'
         for cmd in $cmds; do
           IFS="$save_ifs"
@@ -1015,7 +1014,7 @@ if test -z "$show_help"; then
       reload_objs="$objs"`$echo "$libobjs " | sed -e 's/[^       ]*\.a //g' -e 's/\.lo /.o /g' -e 's/ $//g'`
 
       output="$obj"
-      cmds=`eval $echo \"$reload_cmds\"`
+      cmds=`eval \\$echo \"$reload_cmds\"`
       IFS="${IFS= 	}"; save_ifs="$IFS"; IFS=';'
       for cmd in $cmds; do
         IFS="$save_ifs"
@@ -1031,7 +1030,7 @@ if test -z "$show_help"; then
         # Create an invalid libtool object if no PIC, so that we don't
         # accidentally link it into a program.
         $show "$echo timestamp > $libobj"
-        $run eval "$echo timestamp > $libobj" || exit $?
+        $run eval "\$echo timestamp > $libobj" || exit $?
         exit 0
       fi
 
@@ -1039,7 +1038,7 @@ if test -z "$show_help"; then
         # Only do commands if we really have different PIC objects.
         reload_objs="$libobjs"
         output="$libobj"
-        cmds=`eval $echo \"$reload_cmds\"`
+        cmds=`eval \\$echo \"$reload_cmds\"`
         IFS="${IFS= 	}"; save_ifs="$IFS"; IFS=';'
         for cmd in $cmds; do
           IFS="$save_ifs"
@@ -1372,7 +1371,7 @@ EOF
       fi
 
       # Do each command in the archive commands.
-      cmds=`eval $echo \"$old_archive_cmds\"`
+      cmds=`eval \\$echo \"$old_archive_cmds\"`
       IFS="${IFS= 	}"; save_ifs="$IFS"; IFS=';'
       for cmd in $cmds; do
         IFS="$save_ifs"
@@ -1646,7 +1645,7 @@ EOF
 
           # Do each command in the postinstall commands.
           lib="$destdir/$realname"
-          cmds=`eval $echo \"$postinstall_cmds\"`
+          cmds=`eval \\$echo \"$postinstall_cmds\"`
           IFS="${IFS= 	}"; save_ifs="$IFS"; IFS=';'
           for cmd in $cmds; do
             IFS="$save_ifs"
@@ -1793,7 +1792,7 @@ EOF
       fi
 
       # Do each command in the postinstall commands.
-      cmds=`eval $echo \"$old_postinstall_cmds\"`
+      cmds=`eval \\$echo \"$old_postinstall_cmds\"`
       IFS="${IFS= 	}"; save_ifs="$IFS"; IFS=';'
       for cmd in $cmds; do
         IFS="$save_ifs"
@@ -1830,7 +1829,7 @@ EOF
 
       for libdir in $libdirs; do
         # Do each command in the postinstall commands.
-        cmds=`eval $echo \"$finish_cmds\"`
+        cmds=`eval \\$echo \"$finish_cmds\"`
         IFS="${IFS= 	}"; save_ifs="$IFS"; IFS=';'
         for cmd in $cmds; do
           IFS="$save_ifs"
@@ -1972,7 +1971,7 @@ EOF
       exit 1
     else
       # Display what would be done.
-      eval "$echo \"\$shlibpath_var=\$$shlibpath_var\""
+      eval "\$echo \"\$shlibpath_var=\$$shlibpath_var\""
       $echo "export $shlibpath_var"
       $echo "$cmd$args"
       exit 0
