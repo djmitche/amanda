@@ -1,163 +1,243 @@
-Amanda WISHLIST
----------------
 
-These are items that we are planning to address, OR which we would
-like to see happen sometime in the future.  They appear in vaguely
-decreasing order of priority and feasibility.  Of course, we aren't
-promising to deliver anything, but it's a reasonable bet that at least
-the first few things will get done.
 
-You may find more up-to-date information in the Amanda Ongoing
-Projects page, http://www.amanda.org/ongoing.html.
+AMANDA WISHLIST
 
-If you have any ideas about any of the following, please send an
-e-mail note to amanda-users@amanda.org or amanda-hackers@amanda.org.
+This is a major update.
+These are items that we are planning to address, OR which we would like to see
+happen sometime in the future.
+They appear in random order.
+Of course, we aren't promising to deliver anything.
+This document can be found at http://www.amanda.org/docs/wishlist.html.
+You may find more up-to-date information at http://www.amanda.org/ongoing.php.
+If you have any ideas about any of the following, please send an e-mail note to
+mailto://amanda-users@amanda.org or mailto://amanda-hackers@amanda.org.
+Jean-Louis Martineau, Stefan G. Weichinger,
+AMANDA core team
+Oct. 2004.
 
-* Setting tapecycle to infinity (which is reasonable for archive
-configurations) will cause planner to crash, because it will try to
-allocate a huge memory block.  The current workaround is to use a
-finite tapecycle; a correct fix would involve dynamically growing the
-structure allocated by planner as needed.
+* Samba: Ports to non-Unix platforms, specifically Macs and PCs. The hooks are
+  in the AMANDA protocol to support non-dump backup programs, but no-one has
+  volunteered to implement the client side. sgw: Mac OS X is able to run the
+  client, so only the PC is left, and I suggest that we should go the SAMBA-
+  way, I think. Samba is working well, is documented and developed further, so
+  I think this will be a stable path to go and support. And people don't need
+  to compile/install anything on their Win-boxes, just add a user and shares
+  ...
 
-* amcheck and amadmin should check whether the user that invoked it is
-the user configured to run amanda.
 
-* Amanda should be able to retry failed backups in a single run.  So,
-if backup fails because of active filesystems or lack of memory,
-amanda could throw the failed backup away and run it again, instead of
-trying it again in the next run only.
+* Samba: Samba should be treated as a different backup program, not as GNUTAR,
+  because it cannot handle dump-style incrementals.
 
-* SAMBA should be treated as a different backup program, not as
-GNUTAR, because it cannot handle dump-style incrementals (as of
-samba-1.9.17p5).  We should be able to back up subdirectories of
-shares (using the -D switch).  It should be possible to specify the
-samba user, instead of assuming user `backup'.  /etc/amandapass could
-be specified (in a backward-compatible way) as follows:
 
-// password [-U default_user] [[-W] default_workgroup]
-//hostname password [-U default_user] [[-W] default_workgroup]
-//hostname/sharename[/subdir] password [-U default_user] [[-W] default_workgroup | -W-]
+* Samba: multiple exclusion-patterns. Since Samba 3.0.3 smbclient supports the
+  usage of multiple exclude-patterns. This would enable AMANDA to exclude more
+  than one pattern per SMB-share, allowing to exclude pagefile.sys AND the
+  registry-files, for example.
 
-So that:
 
-// XXXX -W Win32-LAB
-//win-srv XXXX -U srv-backup
-//win-srv/F$ XXXX -U backup
-//other XXXX -U amanda -W-
+* Instead of hard-coding the interface with tape devices in AMANDA, there
+  should be a higher level interface that allowed different storage devices to
+  be used. AMANDA should also be able to retain backups in disk, even after
+  they are taped, for faster restore of recently backed up data. It should also
+  be possible to store a single backup in multiple tapes, for redundancy.
 
-would be equivalent to:
 
-//win-client1/C$ XXXX -W Win32-LAB
-//win-client2/C$ XXXX -W Win32-LAB
-//win-srv/C$ XXXX -U srv-backup -W Win32-LAB
-//win-srv/D$ XXXX -U srv-backup -W Win32-LAB
-//win-srv/F$ XXXX -U backup -W Win32-LAB
-//other/C$ XXXX -U amanda  (no domain specified)
+* We need a better protocol between the driver and dumpers. setup terminated
+  (to not start to dump on the same host at the same time). driver should ask
+  periodicaly if the dumper is still alive (in case the dumper hang).
 
-* When a disk is configured to skip-incr, it will present no estimate
-errors every day except the day it is scheduled for a full dump.
-Besides, it will never be promoted, because no estimate is requested
-on such days.  Maybe we should request a full estimate anyway, and
-skip incrementals after analysis takes place.
 
-* It should be possible to re-generate databases and indexes from
-tapes.
+* image span / multiple tape. John Stange <building@nap.edu> is working on it.
+  His patch could go into a development-branch.
 
-* amanda should install man-pages for installed programs only.
 
-* we should provide for client-side configuration files, to specify
-default tape server, index server, and perhaps even pathnames to some
-programs.
+* retry failed backups in a single run. If backup fails because of active
+  filesystems or lack of memory, AMANDA could throw the failed backup away and
+  run it again, instead of trying it again in the next run only.
 
-* amidxtaped should be able to deal with tape changers, and it should
-check whether it has the appropriate tape before reading any backup
-files from it.  It should also be possible to configure whether
-amidxtaped should decompress the dump stream or not (so amrecover
-could decompress it locally).  Suggested by Chris Jones
-<cjones@honors.montana.edu>
 
-* Ports to non-Unix platforms, specifically Macs and PCs.  The hooks
-are in the Amanda protocol to support non-dump backup programs, but
-no-one has volunteered to implement the client side.  Sorry, I'm not a
-Mac programmer!
+* Support for client-initiated backups might be interesting, but the server
+  would have to keep listening for clients backup requests for a configurable
+  period of time. This could be used to back up secure hosts, for instance.
 
-* More tools in Amadmin.  The administrator should be able to look at
-the database in various ways.  Adding / deleting / moving disks and
-hosts should be done through amadmin instead of editing the disklist
-directly.  This will allow Amanda to do some sanity checks for the
-operators, to make sure permissions are set up right, etc.
-  You should be able to force full dumps for nights other than
-tonight.  Rather than one command at a time on the command line,
-amadmin could be a little shell with a help facility (ala ckermit or
-gnuplot, if you've seen those).
 
-* A tape-verify pass after the Amanda run (we already have one, but it
-doesn't work with dump as well as it does with GNU tar).  Perhaps
-taper could calculate a CRC for each file and store that in the
-database, to be checked by the verifier.
+* Backups to remote tape devices (i.e., not in the main AMANDA server), as well
+  as to remote filesystems should be supported.
 
-* More sophisticated tape management.  Should Amanda track tapes
-globally, counting the number of times tapes were used, and
-recommending retirement for tapes at the appropriate time?  I'm not
-convinced, but I'm interested in the subject.  What do you think?  How
-does your site deal with this?
 
-* Automatically notice that disks have moved around.  This is a
-nice-to-have but don't hold your breath.  It would be nice if planner
-(via sendsize) would notice and optionally add/delete filesystems as
-they appear/disappear from the fstab.
+* multi-tape : AMANDA should be able to write to many tape at the same time.
+  Need some criteria to select which dump should go on which tape? By level,
+  host name, ???
 
-* Automatically notice that external dumps have been done.  Sendsize
-could also notice if a filesystem was dumped externally to Amanda.
-Right now the planner assumes that the incrementals it is doing are
-relative to the full dumps it is doing.  If someone does a full dump
-of one of its filesystems (and writes /etc/dumpdates) outside of
-Amanda, data could be lost.  I think Sun's Backup-Copilot handles this
-well.  We should too.
 
-* Support for client-initiated backups might be interesting, but the
-server would have to keep listening for clients backup requests for a
-configurable period of time.  This could be used to back up secure
-hosts, for instance.
+* A way to tell if some dump must be done before/after some other. (eg. DLE X
+  must be started after DLE Y is started/dumped/taped).
 
-* Backups to remote tape devices (i.e., not in the main amanda
-server), as well as to filesystems, should be supported.  Instead of
-hard-coding the interface with tape devices in amanda, there should be
-a higher level interface that allowed different storage devices to be
-used.  Amanda should also be able to retain backups in disk, even
-after they are taped, for faster restore of recently backed up data.
-It should also be possible to store a single backup in multiple tapes,
-for redundancy.
 
-* We need a better protocol between the driver and dumpers.
-- setup terminated (to not start to dump onn the same host at the
-  same time).
-- dumper should ask for holding space if the dump is larger that
-  estimated.  It is needed if we want to write a dump on multiple
-  holding disks.
-- driver should ask periodicaly if the dumper is still alive (in case       
-  the dumper hang).
+* Write to tape and holding disk in parallel (For dump to tape), the dump to
+  tape could be started first, while doing some dump to holding disk.
 
-* From: "John R. Jackson" <jrj@gandalf.cc.purdue.edu>
-Here's an idea for someone to think about.  What if we made the
-"length" in a tapetype definition always be the "no compression"
-value?  Then change the dumptype "compress" option to accept
-"hardware" as another type (ala "client" and "server") and let planner
-do its normal thing with that information (including "comprate", which
-at the current default of 50% is the usual first guess for hardware
-compression).
-  This would make setting the tape length value less confusing, and
-make the tapetype program easier to run.  You could even get more
-accurate planning than what is currently available by setting the
-comprate to what you know the data is like on a dumptype by dumptype
-basis.
 
-* We could have an autoflush flag to tell amdump to automatically
-flush the contents of the holding disk to tape.  We'd have to figure
-out a way to tell planner to take that space into account.
+* Autoflush to tape while doing estimate.
 
-* Insert your favorite feature here, and send us e-mail telling about
-what you'd like to see!  Of course, we can't please everyone, and
-can't implement everything, but we are very interested in how other
-sites operate so that we can find common ground and learn from each
-other.  Thanks!
+
+* Keep files on holding disk after taped, that will permit faster recovery
+  because they will be from holding disk, these dump will be erase when the
+  same is needed for newer dump.
+
+
+* Append to tape
+
+
+* chg-disk
+  This script writes to disks which can be accessed in a parallel way (contrary
+  to the serial access to tapes). This could enable AMANDA to do writes and
+  reads to several vtapes in parallel (e.g. doing an amrestore while the
+  regular amdump is running).
+  It would be helpful to have a script which generates the needed directory-
+  structure for a given chg-disk configuration. This script should test for
+  valid settings (using amgetconf to get the values out of amanda.conf), create
+  the necessary slot-directories and label the new vtapes by using amlabel.
+  (there are drafts available already)
+
+
+* amrecover should be able to set and "rewind" the correct vtape. Currently it
+  is necessary to do this manually in another tty.
+
+
+* It should be possible to re-generate databases and indexes from tapes.
+
+
+* AMANDA could append meta-data like databases and indexes to tape, so that
+  each tape contains its own current indexes and everything to rebuild the
+  server-config.
+
+
+* AMANDA should install man-pages for installed programs only.
+
+
+* We should provide for client-side configuration files, to specify default
+  tape server, index server, and perhaps even pathnames to some programs.
+
+
+* It should be possible to configure whether amidxtaped should decompress the
+  dump stream or not (so amrecover could decompress it locally).
+
+
+* amstatus:
+  It should read degraded schedule and write which are delayed.
+  It should print number of byte written to tape for the current flush.
+  The taper should write a file with a byte count for the current files (every
+  GB) and amstatus could read it.
+  It could report the expected time before the dump finishes.
+
+
+* amverify/ amverifyrun:
+  It should look at the log file and compare the result.
+
+
+* amrecover:
+  should cd, add, remove, ... with a path with glob or regex (cd o*/linux)
+  find [file] # where is that file in the current DLE? (I don't know the path)
+  when [file] # when was this file dumped?
+  parsing accept '\': cd HP890\ Color
+  our own completion
+
+
+* amkill:
+  A new script to kill all process on client and server
+
+
+* Convert datestamp to timestamp everywhere, that will permit many run a day,
+  and be able to recover them easily. it's already done for holding disk.
+  (That's a big job, AMANDA use the datestamp sometimes as INT, sometime as
+  CHAR*, converting every thing to CHAR* is probably not very difficult, what
+  will be difficult will be to stay compatible with the old datestamp.)
+
+
+* Enhance the protocol between client-server to allow white-space and any
+  character in DLE/exclude/include.
+
+
+* More tools in amadmin. The administrator should be able to look at the
+  database in various ways. Adding / deleting / moving disks and hosts should
+  be done through amadmin instead of editing the disklist directly. This will
+  allow AMANDA to do some sanity checks for the operators, to make sure
+  permissions are set up right, etc.
+  Suggested by Chris Jones <cjones@honors.montana.edu>.
+
+
+* You should be able to force full dumps for nights other than tonight. Rather
+  than one command at a time on the command line, amadmin could be a little
+  shell with a help facility (ala ckermit or gnuplot, if you've seen those).
+
+
+* A tape-verify pass after the AMANDA run (we already have one, but it doesn't
+  work with dump as well as it does with GNU tar). Perhaps taper could
+  calculate a CRC for each file and store that in the database, to be checked
+  by the verifier.
+
+
+* More sophisticated tape management. Should AMANDA track tapes globally,
+  counting the number of times tapes were used, and recommending retirement for
+  tapes at the appropriate time?
+
+
+* Automatically notice that external dumps have been done. Sendsize could also
+  notice if a filesystem was dumped externally from AMANDA. Right now the
+  planner assumes that the incrementals it is doing are relative to the full
+  dumps it is doing. If someone does a full dump of one of its filesystems (and
+  writes /etc/dumpdates) outside of AMANDA, data could be lost. Sun's Backup-
+  Copilot handles this well. We should too.
+
+
+* What if we made the "length" in a tapetype definition always be the "no
+  compression" value? Then change the dumptype "compress" option to accept
+  "hardware" as another type (ala "client" and "server") and let planner do its
+  normal thing with that information (including "comprate", which at the
+  current default of 50% is the usual first guess for hardware compression).
+  This would make setting the tape length value less confusing, and make the
+  amtapetype program easier to run. You could even get more accurate planning
+  than what is currently available by setting the comprate to what you know the
+  data is like on a dumptype by dumptype basis. Suggested by John R. Jackson
+  <jrj@gandalf.cc.purdue.edu>.
+
+
+* The way to specify the schedule should be redesigned, all those strategy
+  (standard, nofull, noinc, incronly, force-full) and options (skip-full, skip-
+  incr) are confusing.
+  We should have two options, one for full dump and one for incrementals.
+  full [AUTOMATIC | SKIP | NOTIFY | FORCE | FIXED]
+  incr [NONE | BUMP | NOBUMP]
+  with the following values:
+  AUTOMATIC: follow AMANDA scheduling (allow promoted and delayed)
+  SKIP : full dump are done externally on an fixed schedule, dump nothing when
+  a full is due (like skip-full).
+  NOTIFY : full dumps are done externally, but are notified with the NOTIFY
+  command ( amadmin <conf> notify <host> <disk>).
+  FORCE : full dumps are done only with the FORCE_FULL command.
+  FIXED : do full dumps on a fixed schedule (like skip-incr).
+  NONE : don't do incremental dumps.
+  BUMP : allow incremental dumps to bump.
+  NOBUMP : do not allow incremental dumps to bump.
+
+
+* Remove all compiled options that can be moved to a (the?) configuration file.
+  (eg. GNU tar path, if configure can't find it, AMANDA should be able to use
+  GNU tar if the path is specified on a client config file) Many people would
+  like this, it would maybe also bring us closer to the possibility of working
+  and usable rpms?
+
+
+* Documentation:
+  There is pretty much going on with the AMANDA-docs. The docs have been
+  converted to Docbook/XML and form the new module xml-docs in the AMANDA-CVS-
+  repository. Please note that this module is still Beta.
+  The FAQ-O-Matic could be replaced by a Wiki. Suggested by Harlan Stenn
+  <Harlan.Stenn@pfcs.com>.
+  The xml-docs need more formatting and reviewing.
+  The tapetypes from the FOM should go into the XML-docs.
+  The docs would benefit from adding some illustrations.
+  The WISHLIST should get shortened.
+
+
