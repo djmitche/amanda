@@ -1,5 +1,10 @@
 1999-05-14  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c: make prototypes consistent, (putresult):
+	make first arg const.
+
+1999-05-14  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/conffile.c (getconf_byname): islower takes an int
 	for an arg.
 	* server-src/diskfile.c (upcase): islower takes an int for an

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.127 1999/05/14 19:38:12 kashmir Exp $
+/* $Id: dumper.c,v 1.128 1999/05/14 21:59:28 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -112,21 +112,22 @@ static struct {
 #define	NSTREAMS	(sizeof(streams) / sizeof(streams[0]))
 
 /* local functions */
-int main P((int main_argc, char **main_argv));
+int main P((int, char **));
 static cmd_t getcmd P((struct cmdargs *));
-static void putresult P((char *format, ...))
+static void putresult P((const char *, ...))
     __attribute__ ((format (printf, 1, 2)));
 static int do_dump P((struct databuf *));
-void check_options P((char *options));
+void check_options P((char *));
 static void finish_tapeheader P((dumpfile_t *));
-static int write_tapeheader P((int outfd, dumpfile_t *type));
+static int write_tapeheader P((int, dumpfile_t *));
 static void databuf_init P((struct databuf *, int, const char *, long));
 static int databuf_write P((struct databuf *, const void *, int));
 static int databuf_flush P((struct databuf *));
 static void process_dumpeof P((void));
 static void process_dumpline P((const char *));
-static void add_msg_data P((const char *str, size_t len));
-static void log_msgout P((logtype_t typ));
+static void add_msg_data P((const char *, size_t));
+static void parse_info_line P((char *));
+static void log_msgout P((logtype_t));
 
 static int runcompress P((int, pid_t *, comp_t));
 
@@ -494,7 +495,7 @@ getcmd(cmdargs)
 }
 
 
-arglist_function(static void putresult, char *, format)
+arglist_function(static void putresult, const char *, format)
 {
     va_list argp;
 
