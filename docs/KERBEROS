@@ -1,7 +1,11 @@
 
-Amanda 2.3.0.4 - KERBEROS v4 SUPPORT NOTES
+Amanda 2.4.0 - KERBEROS v4 SUPPORT NOTES
 
 Note that kerberos 5 isn't supported.  [yet]
+
+NOTE:  encrypted dumps are rumored not to work in the 2.4.0b4 beta 
+	release of amanda.  Hopefully they'll be fixed by the 2.4.0 
+	full release.
 
 0. GETTING THE SOURCE FILES
 
