@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43.2.13.4.6.2.5 2002/03/24 04:12:20 jrjackson Exp $
+ * $Id: extract_list.c,v 1.43.2.13.4.6.2.6 2002/03/24 19:23:23 jrjackson Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -269,11 +269,7 @@ DIR_ITEM *ditem;
 		}
 		curr=curr->next;
 	    }
-	    if ((that = (EXTRACT_LIST_ITEM *)malloc(sizeof(EXTRACT_LIST_ITEM)))
-		== NULL) {
-		amfree(ditem_path);
-		return -1;
-	    }
+	    that = (EXTRACT_LIST_ITEM *)alloc(sizeof(EXTRACT_LIST_ITEM));
 	    strncpy(that->path, ditem_path, sizeof(that->path)-1);
 	    that->path[sizeof(that->path)-1] = '\0';
 	    that->next = this->files;
@@ -284,20 +280,13 @@ DIR_ITEM *ditem;
     }
 
     /* so this is the first time we have seen this tape */
-    if ((this = (EXTRACT_LIST *)malloc(sizeof(EXTRACT_LIST))) == NULL) {
-	amfree(ditem_path);
-	return -1;
-    }
+    this = (EXTRACT_LIST *)alloc(sizeof(EXTRACT_LIST));
     strncpy(this->tape, ditem->tape, sizeof(this->tape)-1);
     this->tape[sizeof(this->tape)-1] ='\0';
     this->level = ditem->level;
     strncpy(this->date, ditem->date, sizeof(this->date)-1);
     this->date[sizeof(this->date)-1] = '\0';
-    if ((that = (EXTRACT_LIST_ITEM *)malloc(sizeof(EXTRACT_LIST_ITEM)))
-	== NULL) {
-	amfree(ditem_path);
-	return -1;
-    }
+    that = (EXTRACT_LIST_ITEM *)alloc(sizeof(EXTRACT_LIST_ITEM));
     strncpy(that->path, ditem_path, sizeof(that->path)-1);
     that->path[sizeof(that->path)-1] = '\0';
     that->next = NULL;
@@ -1335,14 +1324,8 @@ static void extract_files_child(in_fd, elist)
     	break;
     }
 
-    if ((restore_args
-	 = (char **)malloc((extra_params + files_off_tape + 1)
-			   * sizeof(char *)))
-	== NULL) 
-    {
-  	perror("Couldn't malloc restore_args");
-  	exit(3);
-    }
+    restore_args = (char **)alloc((extra_params + files_off_tape + 1)
+				  * sizeof(char *));
     switch(dumptype) {
     case IS_SAMBA:
 #ifdef SAMBA_CLIENT

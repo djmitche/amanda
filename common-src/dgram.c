@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.11.2.3.4.3.2.1 2002/02/11 01:30:42 jrjackson Exp $
+ * $Id: dgram.c,v 1.11.2.3.4.3.2.2 2002/03/24 19:23:23 jrjackson Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -313,13 +313,9 @@ dgram_t *dgram;
     *(dgram->cur) = '\0';
 }
 
-#if defined(USE_DBMALLOC)
-dgram_t *dbmalloc_dgram_alloc(s, l)
+dgram_t *debug_dgram_alloc(s, l)
 char *s;
 int l;
-#else
-dgram_t *dgram_alloc()
-#endif
 {
     dgram_t *p;
 

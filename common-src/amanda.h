@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.66.2.7.4.5.2.3 2002/02/15 01:47:55 martinea Exp $
+ * $Id: amanda.h,v 1.66.2.7.4.5.2.4 2002/03/24 19:23:23 jrjackson Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -437,12 +437,12 @@ extern void   errordump P((char *format, ...))
     __attribute__ ((format (printf, 1, 2)));
 extern int    onerror         P((void (*errf)(void)));
 
-#if defined(USE_DBMALLOC)
-extern void  *debug_alloc           P((char *c, int l, int size));
-extern void  *debug_newalloc        P((char *c, int l, void *old, int size));
+extern void  *debug_alloc           P((char *c, int l, size_t size));
+extern void  *debug_newalloc        P((char *c, int l, void *old, size_t size));
 extern char  *debug_stralloc        P((char *c, int l, const char *str));
 extern char  *debug_newstralloc     P((char *c, int l, char *oldstr, const char *newstr));
-extern char  *dbmalloc_caller_loc   P((char *file, int line));
+extern char  *debug_caller_loc      P((char *file, int line));
+
 extern int   debug_alloc_push	    P((char *file, int line));
 extern void  debug_alloc_pop	    P((void));
 
@@ -487,28 +487,30 @@ extern void  debug_alloc_pop	    P((void));
 extern char  *debug_vstralloc       P((const char *str, ...));
 extern char  *debug_newvstralloc    P((char *oldstr, const char *newstr, ...));
 
-#else
-
-extern void  *alloc           P((int size));
-extern void  *newalloc        P((void *old, int size));
-extern char  *stralloc        P((const char *str));
-extern char  *newstralloc     P((char *oldstr, const char *newstr));
-extern char  *vstralloc       P((const char *str, ...));
-extern char  *newvstralloc    P((char *oldstr, const char *newstr, ...));
-
-#define debug_alloc_push(s,l)
-#define debug_alloc_pop()
-#endif
-
 #define	stralloc2(s1,s2)      vstralloc((s1),(s2),NULL)
 #define	newstralloc2(p,s1,s2) newvstralloc((p),(s1),(s2),NULL)
 
-extern int amtable_alloc      P((void **table,
-				 int *current,
-				 size_t elsize,
-				 int count,
-				 int bump,
-				 void (*init_func)(void *)));
+extern char  *debug_agets     P((char *c, int l, FILE *file));
+extern char  *debug_areads    P((char *c, int l, int fd));
+#define agets(f)	      debug_agets(__FILE__,__LINE__,(f))
+#define areads(f)	      debug_areads(__FILE__,__LINE__,(f))
+
+extern int debug_amtable_alloc P((char *file,
+				  int line,
+				  void **table,
+				  int *current,
+				  size_t elsize,
+				  int count,
+				  int bump,
+				  void (*init_func)(void *)));
+#define amtable_alloc(t,c,s,n,b,f) debug_amtable_alloc(__FILE__,	\
+						       __LINE__,	\
+						       (t),		\
+						       (c),		\
+						       (s),		\
+						       (n),		\
+						       (b),		\
+						       (f))
 extern void amtable_free      P((void **table, int *current));
 
 extern void  *sbuf_man        P((void *bufs, void *ptr));
@@ -527,15 +529,6 @@ extern int    match_host      P((char *glob, char *host));
 extern int    match_disk      P((char *glob, char *disk));
 extern int    match_datestamp P((char *dateexp, char *datestamp));
 extern time_t unctime         P((char *timestr));
-#if defined(USE_DBMALLOC)
-extern char  *dbmalloc_agets  P((char *c, int l, FILE *file));
-extern char  *dbmalloc_areads P((char *c, int l, int fd));
-#define agets(f)	      dbmalloc_agets(__FILE__,__LINE__,(f))
-#define areads(f)	      dbmalloc_areads(__FILE__,__LINE__,(f))
-#else
-extern char  *agets	      P((FILE *file));
-extern char  *areads	      P((int fd));
-#endif
 extern ssize_t  areads_dataready  P((int fd));
 extern void     areads_relbuf     P((int fd));
 
@@ -603,6 +596,17 @@ extern void     areads_relbuf     P((int fd));
     }									\
     (p) = NULL;								\
 } while(0)
+/*
+ * min/max.  Don't do something like
+ *
+ *    x = min(y++, z);
+ *
+ * because the increment will be duplicated.
+ */
+#undef min
+#undef max
+#define min(a, b)       ((a) < (b) ? (a) : (b))
+#define max(a, b)       ((a) > (b) ? (a) : (b))
 
 /*
  * Utility string macros.  All assume a variable holds the current

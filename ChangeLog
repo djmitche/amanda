@@ -1,3 +1,25 @@
+2002-03-24  John R. Jackson (jrj@purdue.edu)
+
+	* client-src/client_util.c: Use the Amanda memory allocation code.
+	* client-src/sendbackup-gnutar.c: Ditto.
+	* client-src/sendsize.c: Ditto.
+	* common-src/match.c: Ditto.
+	* recover-src/amrecover.c: Ditto.
+	* recover-src/display_commands.c: Ditto.
+	* recover-src/extract_list.c: Ditto.
+	* restore-src/amidxtaped.c: Ditto.
+	* server-src/amflush.c: Ditto.
+	* server-src/disk_history.c: Ditto.
+	* server-src/driver.c: Ditto.
+	* server-src/dumper.c: Ditto.
+	* server-src/list_dir.c: Ditto.
+	* common-src/amanda.h: Always pass the source file and line number
+	  to the memory routines to make it easier to debug.
+	* common-src/alloc.c: Ditto.
+	* common-src/file.c: Ditto.
+	* common-src/dgram.c: Ditto.
+	* common-src/dgram.h: Ditto.
+
 2002-03-24  Thomas Hepper ( th@ant.han.de)
 	* changer-src/chg-scsi.c: Fixed problems introduced by the agets change
 	* changer-src/chg-scsi.c (MapBarCode): Fixed error in eof handling

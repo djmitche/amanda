@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.25.2.3.4.1 2001/05/15 21:01:15 jrjackson Exp $
+/* $Id: amidxtaped.c,v 1.25.2.3.4.1.2.1 2002/03/24 19:23:23 jrjackson Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -203,14 +203,7 @@ char **argv;
     amrestore_nargs = atoi(buf);
     dbprintf(("amrestore_nargs=%d\n", amrestore_nargs));
 
-    if ((amrestore_args = (char **)malloc((amrestore_nargs+2)*sizeof(char *)))
-	== NULL) 
-    {
-	dbprintf(("Couldn't malloc amrestore_args\n"));
-	dbclose();
-	return 1;
-    }
-
+    amrestore_args = (char **)alloc((amrestore_nargs+2)*sizeof(char *));
     i = 0;
     amrestore_args[i++] = "amrestore";
     while (i <= amrestore_nargs)

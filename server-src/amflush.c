@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.41.2.13.4.6.2.3 2002/03/24 04:12:20 jrjackson Exp $
+ * $Id: amflush.c,v 1.41.2.13.4.6.2.4 2002/03/24 19:23:23 jrjackson Exp $
  *
  * write files from work directory onto tape
  */
@@ -108,7 +108,7 @@ char **main_argv;
 	case 'f': foreground = 1;
 		  break;
 	case 'D': if (datearg == NULL)
-			datearg = malloc(21*sizeof(char *));
+			datearg = alloc(21*sizeof(char *));
 		  if(nb_datearg == 20) {
 		      fprintf(stderr,"maximum of 20 -D arguments.\n");
 		      exit(1);

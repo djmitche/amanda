@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: disk_history.c,v 1.8 1998/07/04 00:19:44 oliva Exp $
+/* $Id: disk_history.c,v 1.8.10.1 2002/03/24 19:23:23 jrjackson Exp $
  *
  * functions for obtaining backup history
  */
@@ -56,9 +56,7 @@ int file;
 {
     DUMP_ITEM *new, *item, *before;
 
-    if ((new = (DUMP_ITEM *)malloc(sizeof(DUMP_ITEM))) == NULL)
-	return;				/* naughty naughty */
-
+    new = (DUMP_ITEM *)alloc(sizeof(DUMP_ITEM));
     strncpy(new->date, date, sizeof(new->date)-1);
     new->date[sizeof(new->date)-1] = '\0';
     new->level = level;

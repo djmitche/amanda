@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.56.2.15.4.4.2.6 2002/03/21 00:53:43 martinea Exp $
+ * $Id: sendbackup-gnutar.c,v 1.56.2.15.4.4.2.7 2002/03/24 19:23:23 jrjackson Exp $
  *
  * send backup data using GNU tar
  */
@@ -460,7 +460,7 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 	if(nb_exclude > 0) file_exclude = build_exclude(disk, amdevice, options, 0);
 	if(nb_include > 0) file_include = build_include(disk, amdevice, options, 0);
 
-	my_argv = malloc(sizeof(char *) * (17 + (nb_exclude*2)+(nb_include*2)));
+	my_argv = alloc(sizeof(char *) * (17 + (nb_exclude*2)+(nb_include*2)));
 
 	cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
 	write_tapeheader();

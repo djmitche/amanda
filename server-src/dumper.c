@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.14.2.7.2.5 2002/03/03 17:10:52 martinea Exp $
+/* $Id: dumper.c,v 1.75.2.14.2.7.2.6 2002/03/24 19:23:23 jrjackson Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -655,7 +655,6 @@ int got_info_endline;
 int got_sizeline;
 int got_endline;
 int dump_result;
-#define max(a,b) ((a)>(b)?(a):(b))
 
 static void process_dumpeof()
 {

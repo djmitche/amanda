@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: alloc.c,v 1.17.2.1.4.3.2.1 2002/02/11 01:30:42 jrjackson Exp $
+ * $Id: alloc.c,v 1.17.2.1.4.3.2.2 2002/03/24 19:23:23 jrjackson Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * errordump() is called, relieving the caller from checking the return
@@ -33,16 +33,14 @@
 #include "amanda.h"
 #include "arglist.h"
 
-#if defined(USE_DBMALLOC)
-
 /*
  *=====================================================================
- * dbmalloc_caller_loc -- keep track of all allocation callers
+ * debug_caller_loc -- keep track of all allocation callers
  *
- * char *dbmalloc_caller_loc(char *s, int l)
+ * char *debug_caller_loc(char *file, int line)
  *
- * entry:	s = source file
- *		l = source line
+ * entry:	file = source file
+ *		line = source line
  * exit:	a string like "genversion.c@999"
  *
  * The debug malloc library has a concept of a call stack that can be used
@@ -62,9 +60,9 @@
  */
 
 char *
-dbmalloc_caller_loc(s, l)
-char *s;
-int l;
+debug_caller_loc(file, line)
+    char *file;
+    int line;
 {
     struct loc_str {
 	char *str;
@@ -78,8 +76,8 @@ int l;
     static char *loc = NULL;
     static int loc_size = 0;
 
-    if ((p = strrchr(s, '/')) == NULL) {
-	p = s;					/* keep the whole name */
+    if ((p = strrchr(file, '/')) == NULL) {
+	p = file;				/* keep the whole name */
     } else {
 	p++;					/* just the last path element */
     }
@@ -103,7 +101,7 @@ int l;
     }
 
     strcpy (loc, p);
-    ap_snprintf(loc + len, 1 + NUM_STR_SIZE, "@%d", l);
+    ap_snprintf(loc + len, 1 + NUM_STR_SIZE, "@%d", line);
 
     for (ls_last = NULL, ls = root; ls != NULL; ls_last = ls, ls = ls->next) {
 	if (strcmp (loc, ls->str) == 0) {
@@ -174,8 +172,8 @@ static int		saved_line;
 
 int
 debug_alloc_push (s, l)
-char *s;
-int l;
+    char *s;
+    int l;
 {
     debug_alloc_loc_info[debug_alloc_ptr].file = s;
     debug_alloc_loc_info[debug_alloc_ptr].line = l;
@@ -205,91 +203,84 @@ debug_alloc_pop ()
     saved_line = debug_alloc_loc_info[debug_alloc_ptr].line;
 }
 
-#endif
-
 /*
-** alloc - a wrapper for malloc.
-*/
-#if defined(USE_DBMALLOC)
-void *debug_alloc(s, l, size)
-char *s;
-int l;
-#else
-void *alloc(size)
-#endif
-int size;
+ * alloc - a wrapper for malloc.
+ */
+void *
+debug_alloc(s, l, size)
+    char *s;
+    int l;
+    size_t size;
 {
     void *addr;
 
-    malloc_enter(dbmalloc_caller_loc(s, l));
-    addr = (void *)malloc(size>0 ? size : 1);
+    malloc_enter(debug_caller_loc(s, l));
+    addr = (void *)malloc(max(size, 1));
     if(addr == NULL) {
-	errordump("memory allocation failed");
+	errordump("%s@%d: memory allocation failed (%u bytes requested)",
+		  s ? s : "(unknown)",
+		  s ? l : -1,
+		  size);
     }
-    malloc_leave(dbmalloc_caller_loc(s, l));
+    malloc_leave(debug_caller_loc(s, l));
     return addr;
 }
 
 
 /*
-** newalloc - free existing buffer and then alloc a new one.
-*/
-#if defined(USE_DBMALLOC)
-void *debug_newalloc(s, l, old, size)
-char *s;
-int l;
-#else
-void *newalloc(old, size)
-#endif
-void *old;
-int size;
+ * newalloc - free existing buffer and then alloc a new one.
+ */
+void *
+debug_newalloc(s, l, old, size)
+    char *s;
+    int l;
+    void *old;
+    size_t size;
 {
     char *addr;
 
-    malloc_enter(dbmalloc_caller_loc(s, l));
-    addr = alloc(size);
+    malloc_enter(debug_caller_loc(s, l));
+    addr = debug_alloc(s, l, size);
     amfree(old);
-    malloc_leave(dbmalloc_caller_loc(s, l));
+    malloc_leave(debug_caller_loc(s, l));
     return addr;
 }
 
 
 /*
-** stralloc - copies the given string into newly allocated memory.
-**            Just like strdup()!
-*/
-#if defined(USE_DBMALLOC)
-char *debug_stralloc(s, l, str)
-char *s;
-int l;
-#else
-char *stralloc(str)
-#endif
-const char *str;
+ * stralloc - copies the given string into newly allocated memory.
+ *            Just like strdup()!
+ */
+char *
+debug_stralloc(s, l, str)
+    char *s;
+    int l;
+    const char *str;
 {
     char *addr;
 
-    malloc_enter(dbmalloc_caller_loc(s, l));
-    addr = alloc(strlen(str)+1);
+    malloc_enter(debug_caller_loc(s, l));
+    addr = debug_alloc(s, l, strlen(str) + 1);
     strcpy(addr, str);
-    malloc_leave(dbmalloc_caller_loc(s, l));
+    malloc_leave(debug_caller_loc(s, l));
     return addr;
 }
 
 
 /*
-** internal_vstralloc - copies up to MAX_STR_ARGS strings into newly
-** allocated memory.
-**
-** The MAX_STR_ARGS limit is purely an efficiency issue so we do not have
-** to scan the strings more than necessary.
-*/
+ * internal_vstralloc - copies up to MAX_STR_ARGS strings into newly
+ * allocated memory.
+ *
+ * The MAX_STR_ARGS limit is purely an efficiency issue so we do not have
+ * to scan the strings more than necessary.
+ */
 
 #define	MAX_VSTRALLOC_ARGS	32
 
-static char *internal_vstralloc(str, argp)
-const char *str;
-va_list argp;
+static char *
+internal_vstralloc(str, argp)
+    const char *str;
+    va_list argp;
 {
     char *next;
     char *result;
@@ -315,8 +306,11 @@ va_list argp;
 	    continue;				/* minor optimisation */
 	}
 	if (a >= MAX_VSTRALLOC_ARGS) {
-	    errordump("more than %d arg%s to vstralloc",
-		      MAX_VSTRALLOC_ARGS, (MAX_VSTRALLOC_ARGS == 1) ? "" : "s");
+	    errordump("%s@%d: more than %d arg%s to vstralloc",
+		      saved_file ? saved_file : "(unknown)",
+		      saved_file ? saved_line : -1,
+		      MAX_VSTRALLOC_ARGS,
+		      (MAX_VSTRALLOC_ARGS == 1) ? "" : "s");
 	}
 	arg[a] = next;
 	len[a] = l;
@@ -326,7 +320,7 @@ va_list argp;
     arg[a] = NULL;
     len[a] = 0;
 
-    next = result = alloc(total_len+1);
+    next = result = debug_alloc(saved_file, saved_line, total_len+1);
     for (a = 0; (s = arg[a]) != NULL; a++) {
 	memcpy(next, s, len[a]);
 	next += len[a];
@@ -338,82 +332,74 @@ va_list argp;
 
 
 /*
-** vstralloc - copies multiple strings into newly allocated memory.
-*/
-#if defined(USE_DBMALLOC)
+ * vstralloc - copies multiple strings into newly allocated memory.
+ */
 arglist_function(char *debug_vstralloc, const char *, str)
-#else
-arglist_function(char *vstralloc, const char *, str)
-#endif
 {
     va_list argp;
     char *result;
 
     debug_alloc_pop();
-    malloc_enter(dbmalloc_caller_loc(saved_file, saved_line));
+    malloc_enter(debug_caller_loc(saved_file, saved_line));
     arglist_start(argp, str);
     result = internal_vstralloc(str, argp);
     arglist_end(argp);
-    malloc_leave(dbmalloc_caller_loc(saved_file, saved_line));
+    malloc_leave(debug_caller_loc(saved_file, saved_line));
     return result;
 }
 
 
 /*
-** newstralloc - free existing string and then stralloc a new one.
-*/
-#if defined(USE_DBMALLOC)
-char *debug_newstralloc(s, l, oldstr, newstr)
-char *s;
-int l;
-#else
-char *newstralloc(oldstr, newstr)
-#endif
-char *oldstr;
-const char *newstr;
+ * newstralloc - free existing string and then stralloc a new one.
+ */
+char *
+debug_newstralloc(s, l, oldstr, newstr)
+    char *s;
+    int l;
+    char *oldstr;
+    const char *newstr;
 {
     char *addr;
 
-    malloc_enter(dbmalloc_caller_loc(s, l));
-    addr = stralloc(newstr);
+    malloc_enter(debug_caller_loc(s, l));
+    addr = debug_stralloc(s, l, newstr);
     amfree(oldstr);
-    malloc_leave(dbmalloc_caller_loc(s, l));
+    malloc_leave(debug_caller_loc(s, l));
     return addr;
 }
 
 
 /*
-** newvstralloc - free existing string and then vstralloc a new one.
-*/
-#if defined(USE_DBMALLOC)
-arglist_function1(char *debug_newvstralloc, char *, oldstr, const char *,
-    newstr)
-#else
-arglist_function1(char *newvstralloc, char *, oldstr, const char *, newstr)
-#endif
+ * newvstralloc - free existing string and then vstralloc a new one.
+ */
+arglist_function1(char *debug_newvstralloc,
+		  char *,
+		  oldstr,
+		  const char *,
+		  newstr)
 {
     va_list argp;
     char *result;
 
     debug_alloc_pop();
-    malloc_enter(dbmalloc_caller_loc(saved_file, saved_line));
+    malloc_enter(debug_caller_loc(saved_file, saved_line));
     arglist_start(argp, newstr);
     result = internal_vstralloc(newstr, argp);
     arglist_end(argp);
     amfree(oldstr);
-    malloc_leave(dbmalloc_caller_loc(saved_file, saved_line));
+    malloc_leave(debug_caller_loc(saved_file, saved_line));
     return result;
 }
 
 
 /*
-** sbuf_man - static buffer manager.
-**
-** Manage a bunch of static buffer pointers.
-*/
+ * sbuf_man - static buffer manager.
+ *
+ * Manage a bunch of static buffer pointers.
+ */
 void *sbuf_man(e_bufs, ptr)
-void *e_bufs; /* XXX - I dont think this is right */
-void *ptr;
+    void *e_bufs; /* XXX - I dont think this is right */
+    void *ptr;
 {
 	SBUF2_DEF(1) *bufs;
 	int slot;
@@ -446,9 +432,10 @@ void *ptr;
 
 
 /*
-** safe_env - build a "safe" environment list.
-*/
-char **safe_env()
+ * safe_env - build a "safe" environment list.
+ */
+char **
+safe_env()
 {
     static char *safe_env_list[] = {
 	"TZ",
@@ -506,7 +493,9 @@ char **safe_env()
  */
 
 int
-amtable_alloc(table, current, elsize, count, bump, init_func)
+debug_amtable_alloc(s, l, table, current, elsize, count, bump, init_func)
+    char *s;
+    int l;
     void **table;
     int *current;
     size_t elsize;
@@ -520,11 +509,7 @@ amtable_alloc(table, current, elsize, count, bump, init_func)
 
     if (count >= *current) {
 	table_count_new = ((count + bump) / bump) * bump;
-	table_new = malloc(table_count_new * elsize);
-	if (0 == table_new) {
-	    errno = ENOMEM;
-	    return -1;
-	}
+	table_new = debug_alloc(s, l, table_count_new * elsize);
 	if (0 != *table) {
 	    memcpy(table_new, *table, *current * elsize);
 	    free(*table);
