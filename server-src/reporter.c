@@ -346,6 +346,9 @@ char **argv;
 #define divzero(fp,a,b)	((b) == 0.0? \
 			 fprintf(fp,"  -- ") : \
 			 fprintf(fp, "%5.1f",(a)/(b)))
+#define divzero_wide(fp,a,b)	((b) == 0.0? \
+				 fprintf(fp,"    -- ") : \
+				 fprintf(fp, "%7.1f",(a)/(b)))
 
 void output_stats()
 {
@@ -428,20 +431,20 @@ void output_stats()
     }
     putc('\n', mailf);
 
-    fprintf(mailf, "Avg Dump Rate (k/s)       ");
-    divzero(mailf, stats[2].outsize,stats[2].dumper_time);
-    fputs("      ", mailf);
-    divzero(mailf, stats[0].outsize,stats[0].dumper_time);
-    fputs("      ", mailf);
-    divzero(mailf, stats[1].outsize,stats[1].dumper_time);
+    fprintf(mailf, "Avg Dump Rate (k/s)     ");
+    divzero_wide(mailf, stats[2].outsize,stats[2].dumper_time);
+    fputs("    ", mailf);
+    divzero_wide(mailf, stats[0].outsize,stats[0].dumper_time);
+    fputs("    ", mailf);
+    divzero_wide(mailf, stats[1].outsize,stats[1].dumper_time);
     putc('\n', mailf);
 
-    fprintf(mailf, "Avg Tp Write Rate (k/s)   ");
-    divzero(mailf, stats[2].outsize,stats[2].taper_time);
-    fputs("      ", mailf);
-    divzero(mailf, stats[0].outsize,stats[0].taper_time);
-    fputs("      ", mailf);
-    divzero(mailf, stats[1].outsize,stats[1].taper_time);
+    fprintf(mailf, "Avg Tp Write Rate (k/s) ");
+    divzero_wide(mailf, stats[2].outsize,stats[2].taper_time);
+    fputs("    ", mailf);
+    divzero_wide(mailf, stats[0].outsize,stats[0].taper_time);
+    fputs("    ", mailf);
+    divzero_wide(mailf, stats[1].outsize,stats[1].taper_time);
     putc('\n', mailf);
 }
 
