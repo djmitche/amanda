@@ -1,3 +1,10 @@
+1998-12-20  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/amlabel.c (main): datestamp for new tapes is now 0
+	* server-src/tapefile.c (reusable_tape): recognize datestamp 0 as
+	reusable
+	* man/amlabel.8.in: document that tapes are added to tapelist
+
 1998-12-19  John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/amstatus.pl.in: instead of just displaying why no
