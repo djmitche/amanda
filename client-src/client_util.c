@@ -24,13 +24,30 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.1.2.14 2002/03/24 19:23:23 jrjackson Exp $
+ * $Id: client_util.c,v 1.1.2.15 2002/03/25 18:42:40 martinea Exp $
  *
  */
 
 #include "client_util.h"
 #include "getfsent.h"
 #include "util.h"
+
+static char *fixup_relative(name, device)
+char *name;
+char *device;
+{
+    char *newname;
+    if(*name != '/') {
+	char *dirname = amname_to_dirname(device);
+	newname = vstralloc(dirname, "/", name , NULL);
+	amfree(dirname);
+    }
+    else {
+	newname = stralloc(name);
+    }
+    return newname;
+}
+
 
 static char *get_name(diskname, exin, t, n)
 char *diskname, *exin;
@@ -246,7 +263,8 @@ int verbose;
 	    if(options->exclude_list) {
 		for(excl = options->exclude_list->first; excl != NULL;
 		    excl = excl->next) {
-		    if((exclude = fopen(excl->name, "r")) != NULL) {
+		    char *exclname = fixup_relative(excl->name, device);
+		    if((exclude = fopen(exclname, "r")) != NULL) {
 			while ((aexc = agets(exclude)) != NULL) {
 			    add_exclude(file_exclude, aexc,
 				        verbose && options->exclude_optional == 0);
@@ -256,11 +274,12 @@ int verbose;
 		    }
 		    else {
 			dbprintf(("%s: Can't open exclude file '%s': %s\n",
-				  get_pname(), excl->name, strerror(errno)));
+				  get_pname(), exclname, strerror(errno)));
 			if(verbose && options->exclude_optional==0)
 			    printf("ERROR [Can't open exclude file '%s': %s]\n",
-				   excl->name, strerror(errno));
+				   exclname, strerror(errno));
 		    }
+		    amfree(exclname);
 		}
 	    }
             fclose(file_exclude);
@@ -311,7 +330,8 @@ int verbose;
 	    if(options->include_list) {
 		for(incl = options->include_list->first; incl != NULL;
 		    incl = incl->next) {
-		    if((include = fopen(incl->name, "r")) != NULL) {
+		    char *inclname = fixup_relative(incl->name, device);
+		    if((include = fopen(inclname, "r")) != NULL) {
 			while ((ainc = agets(include)) != NULL) {
 			    nb_exp += add_include(disk, device,
 						  file_include, ainc,
@@ -322,11 +342,12 @@ int verbose;
 		    }
 		    else {
 			dbprintf(("%s: Can't open include file '%s': %s\n",
-				  get_pname(), incl->name, strerror(errno)));
+				  get_pname(), inclname, strerror(errno)));
 			if(verbose && options->include_optional == 0)
 			    printf("ERROR [Can't open include file '%s': %s]\n",
-				   incl->name, strerror(errno));
+				   inclname, strerror(errno));
 		   }
+		   amfree(inclname);
 		}
 	    }
             fclose(file_include);
@@ -427,17 +448,7 @@ int verbose;
 	}
 	else if(strncmp(tok,"exclude-list=", 13) == 0) {
 	    exc = &tok[13];
-	    if(*exc != '/') {
-		char *dirname = amname_to_dirname(device);
-		char *efile = vstralloc(dirname,"/",exc, NULL);
-		options->exclude_list =
-		    append_sl(options->exclude_list, efile);
-		amfree(dirname);
-		amfree(efile);
-	    }
-	    else {
-		options->exclude_list = append_sl(options->exclude_list, exc);
-	    }
+	    options->exclude_list = append_sl(options->exclude_list, exc);
 	}
 	else if(strncmp(tok,"include-file=", 13) == 0) {
 	    exc = &tok[13];
@@ -445,17 +456,7 @@ int verbose;
 	}
 	else if(strncmp(tok,"include-list=", 13) == 0) {
 	    exc = &tok[13];
-	    if(*exc != '/') {
-		char *dirname = amname_to_dirname(device);
-		char *efile = vstralloc(dirname,"/",exc, NULL);
-		options->include_list =
-		    append_sl(options->include_list, efile);
-		amfree(dirname);
-		amfree(efile);
-	    }
-	    else {
-		options->include_list = append_sl(options->include_list, exc);
-	    }
+	    options->include_list = append_sl(options->include_list, exc);
 	}
 	else if(strcmp(tok,"|") == 0) {
 	}
