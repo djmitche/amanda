@@ -1767,6 +1767,7 @@ dnl Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_DIRENT
 CF_WAIT
+CF_WAIT_INT
 AC_HEADER_TIME
 AC_CHECK_HEADERS(\
 	arpa/inet.h \

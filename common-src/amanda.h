@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.106 2003/02/05 02:07:49 martinea Exp $
+ * $Id: amanda.h,v 1.107 2004/02/02 19:52:53 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -182,18 +182,7 @@ struct iovec {
 #  include <sys/wait.h>
 #endif
 
-#ifdef WAIT_USES_UNION
-  typedef union wait amwait_t;
-# ifndef WEXITSTATUS
-#  define WEXITSTATUS(stat_val) (((amwait_t*)&(stat_val))->w_retcode)
-# endif
-# ifndef WTERMSIG
-#  define WTERMSIG(stat_val) (((amwait_t*)&(stat_val))->w_termsig)
-# endif
-# ifndef WIFEXITED
-#  define WIFEXITED(stat_val) (WTERMSIG(stat_val) == 0)
-# endif
-#else
+#ifdef WAIT_USES_INT
   typedef int amwait_t;
 # ifndef WEXITSTATUS
 #  define WEXITSTATUS(stat_val) (*(unsigned*)&(stat_val) >> 8)
@@ -203,6 +192,30 @@ struct iovec {
 # endif
 # ifndef WIFEXITED
 #  define WIFEXITED(stat_val) ((*(unsigned*)&(stat_val) & 255) == 0)
+# endif
+#else
+# ifdef WAIT_USES_UNION
+   typedef union wait amwait_t;
+#  ifndef WEXITSTATUS
+#  define WEXITSTATUS(stat_val) (((amwait_t*)&(stat_val))->w_retcode)
+#  endif
+#  ifndef WTERMSIG
+#   define WTERMSIG(stat_val) (((amwait_t*)&(stat_val))->w_termsig)
+#  endif
+#  ifndef WIFEXITED
+#   define WIFEXITED(stat_val) (WTERMSIG(stat_val) == 0)
+#  endif
+# else
+   typedef int amwait_t;
+#  ifndef WEXITSTATUS
+#   define WEXITSTATUS(stat_val) (*(unsigned*)&(stat_val) >> 8)
+#  endif
+#  ifndef WTERMSIG
+#   define WTERMSIG(stat_val) (*(unsigned*)&(stat_val) & 0x7F)
+#  endif
+#  ifndef WIFEXITED
+#   define WIFEXITED(stat_val) ((*(unsigned*)&(stat_val) & 255) == 0)
+#  endif
 # endif
 #endif
 
