@@ -93,9 +93,9 @@ Driver talks via two pipes connected to each dumper's stdin and stdout.  The
 commands and responses are plain text.
 
 Driver can ask dumper to do a dump to a file on the holding disk:
-   FILE-DUMP <handle> <filename> <host> <disk> <level> <prog> <options>
+   FILE-DUMP <handle> <filename> <host> <disk> <level> <dumpdate> <chunksize> <prog> <options>
 or directly to taper:
-   PORT-DUMP <handle> <port> <host> <disk> <level> <prog> <options>
+   PORT-DUMP <handle> <port> <host> <disk> <level> <dumpdate> <prog> <options>
 or exit at the end of the run:
    QUIT
 

@@ -1,3 +1,9 @@
+1998-10-12  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* docs/INTERNALS (driver and dumper): document <dumpdate> in 
+	FILE-DUMP and PORT-DUMP request, document <chunksize> in 
+	FILE-DUMP request.
+
 1998-10-12  John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/amtape.c (usage, main, show_device): apply patch from
