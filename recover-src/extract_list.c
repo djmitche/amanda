@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.13 1997/12/17 04:21:09 jrj Exp $
+ * $Id: extract_list.c,v 1.14 1997/12/28 01:43:15 kovert Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -34,7 +34,6 @@
 #include "version.h"
 #include "amrecover.h"
 #include "fileheader.h"
-#include "tapeio.h"
 
 typedef struct EXTRACT_LIST_ITEM
 {
