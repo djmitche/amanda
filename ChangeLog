@@ -1,5 +1,10 @@
 2001-12-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* restore-src/amrestore.c (restore): try to find the next chunk 
+	  in the current directory.
+
+2001-12-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* example/amanda.conf.in: typo.
 
 2001-12-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
