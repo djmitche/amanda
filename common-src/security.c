@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.c,v 1.16 1998/07/06 18:17:29 jrj Exp $
+ * $Id: security.c,v 1.17 1998/10/30 22:08:55 jrj Exp $
  *
  * wrapper file for kerberos security
  */
@@ -147,7 +147,7 @@ char **errstr;
     if(hp == NULL) {
 	/* XXX include remote hostname in message */
 	*errstr = vstralloc("[",
-			    "addr ", remotehost, ": ",
+			    "host ", remotehost, ": ",
 			    "hostname lookup failed",
 			    "]", NULL);
 	amfree(remotehost);
