@@ -47,6 +47,8 @@ int tapefd;
     struct stop st;
 
     st.st_op = STREW;
+    st.st_count = 1;
+
     return ioctl(tapefd, STIOCTOP, &st);
 }
 
