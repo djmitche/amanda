@@ -935,43 +935,59 @@ fi
 
 
 AC_ARG_WITH(portrange,
-    [  --with-portrange=low,high  bind unreserved TCP server sockets to ports within this range [unlimited]],
+    [  --with-portrange=low,high     bind unreserved TCP server sockets to ports within this range [unlimited]],
     [
-	PORTRANGE="$withval"
+	TCPPORTRANGE="$withval"
     ]
 )
-if test x"${PORTRANGE+set}" = x"set"; then
-    if test x`echo "$PORTRANGE" | sed 's/[[0-9]]*,[[0-9]]*//'` != x""; then
-    	AC_MSG_ERROR([*** --with-portrange requires two comma-separated non-negative numbers])
+AC_ARG_WITH(tcpportrange,
+    [  --with-tcpportrange=low,high  bind unreserved TCP server sockets to ports within this range [unlimited]],
+    [
+	TCPPORTRANGE="$withval"
+    ]
+)
+if test x"${TCPPORTRANGE+set}" = x"set"; then
+    if test x`echo "$TCPPORTRANGE" | sed 's/[[0-9]][[0-9]]*,[[0-9]][[0-9]]*//'` != x""; then
+    	AC_MSG_ERROR([*** --with-tcpportrange requires two comma-separated positive numbers])
     fi
-    if echo "$PORTRANGE" | sed s/,/\ / | {
-       read min max && test "$min" -le "$max"; }; then :
-    else
-	AC_MSG_ERROR([*** the second port number must be greater than the first one in --with-portrange])
+    min_tcp_port=`echo "$TCPPORTRANGE" | sed 's/,.*//'`
+    max_tcp_port=`echo "$TCPPORTRANGE" | sed 's/.*,//'`
+    if test $min_tcp_port -gt $max_tcp_port; then
+	AC_MSG_ERROR([*** the second TCP port number must be greater than the first in --with-tcpportrange])
     fi
-    AC_DEFINE_UNQUOTED(PORTRANGE,$PORTRANGE,[A comma-separated list of two integers, determining the minimum and
-   maximum port number unreserved TCP server sockets should be bound
-   to. ])
+    if test $min_tcp_port -lt 1024; then
+	AC_MSG_WARN([*** the TCP port range should be 1024 or greater in --with-tcpportrange])
+    fi
+    if test $max_tcp_port -ge 65536; then
+	AC_MSG_WARN([*** the TCP port range should be less than 65536 in --with-tcpportrange])
+    fi
+    AC_DEFINE_UNQUOTED(TCPPORTRANGE,$TCPPORTRANGE,[A comma-separated list of two integers, determining the minimum and
+   maximum unreserved TCP port numbers sockets should be bound to. ])
 fi
 
 AC_ARG_WITH(udpportrange,
-    [  --with-udpportrange=low,high  bind unreserved UDP server sockets to ports within this range [unlimited]],
+    [  --with-udpportrange=low,high  bind reserved UDP server sockets to ports within this range [unlimited]],
     [
 	UDPPORTRANGE="$withval"
     ]
 )
 if test x"${UDPPORTRANGE+set}" = x"set"; then
-    if test x`echo "$UDPPORTRANGE" | sed 's/[[0-9]]*,[[0-9]]*//'` != x""; then
-    	AC_MSG_ERROR([*** --with-udpportrange requires two comma-separated non-negative numbers])
+    if test x`echo "$UDPPORTRANGE" | sed 's/[[0-9]][[0-9]]*,[[0-9]][[0-9]]*//'` != x""; then
+    	AC_MSG_ERROR([*** --with-udpportrange requires two comma-separated positive numbers])
     fi
-    if echo "$UDPPORTRANGE" | sed s/,/\ / | {
-       read min max && test "$min" -le "$max"; }; then :
-    else
-	AC_MSG_ERROR([*** the second port number must be greater than the first one in --with-udpportrange])
+    min_udp_port=`echo "$UDPPORTRANGE" | sed 's/,.*//'`
+    max_udp_port=`echo "$UDPPORTRANGE" | sed 's/.*,//'`
+    if test $min_udp_port -gt $max_udp_port; then
+	AC_MSG_ERROR([*** the second UDP port number must be greater than the first in --with-udpportrange])
+    fi
+    if test $max_udp_port -ge 1024; then
+	AC_MSG_WARN([*** the UDP port range should be less than 1024 in --with-udpportrange])
+    fi
+    if test $min_udp_port -le 0; then
+	AC_MSG_WARN([*** the UDP port range should be greater than 0 in --with-udpportrange])
     fi
     AC_DEFINE_UNQUOTED(UDPPORTRANGE,$UDPPORTRANGE,[A comma-separated list of two integers, determining the minimum and
-   maximum port number unreserved UDP server sockets should be bound
-   to. ])
+   maximum reserved UDP port numbers sockets should be bound to. ])
 fi
 
 AC_ARG_WITH(db,

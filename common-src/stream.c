@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.22 2001/07/31 23:19:57 jrjackson Exp $
+ * $Id: stream.c,v 1.23 2001/08/14 22:38:26 jrjackson Exp $
  *
  * functions for managing stream sockets
  */
@@ -86,8 +86,8 @@ int sendsize, recvsize;
      * to get the desired port, and to make sure we return a port that
      * is within the range it requires.
      */
-#ifdef PORTRANGE
-    if (bind_portrange(server_socket, &server, PORTRANGE) == 0)
+#ifdef TCPPORTRANGE
+    if (bind_portrange(server_socket, &server, TCPPORTRANGE) == 0)
 	goto out;
 #endif
 
@@ -143,9 +143,16 @@ out:
     return server_socket;
 }
 
-int stream_client(hostname, port, sendsize, recvsize, localport, nonblock)
-const char *hostname;
-int port, sendsize, recvsize, *localport, nonblock;
+static int
+stream_client_internal(hostname,
+		       port,
+		       sendsize,
+		       recvsize,
+		       localport,
+		       nonblock,
+		       priv)
+    const char *hostname;
+    int port, sendsize, recvsize, *localport, nonblock, priv;
 {
     int client_socket, len;
 #ifdef SO_KEEPALIVE
@@ -155,11 +162,15 @@ int port, sendsize, recvsize, *localport, nonblock;
     struct sockaddr_in svaddr, claddr;
     struct hostent *hostp;
     int save_errno;
+    char *f;
+
+    f = priv ? "stream_client_privileged" : "stream_client";
 
     if((hostp = gethostbyname(hostname)) == NULL) {
 	save_errno = errno;
-	dbprintf(("%s: stream_client: gethostbyname(%s) failed\n",
+	dbprintf(("%s: %s: gethostbyname(%s) failed\n",
 		  get_pname(),
+		  f,
 		  hostname));
 	errno = save_errno;
 	return -1;
@@ -172,8 +183,9 @@ int port, sendsize, recvsize, *localport, nonblock;
 
     if((client_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 	save_errno = errno;
-	dbprintf(("%s: stream_client: socket() failed: %s\n",
+	dbprintf(("%s: %s: socket() failed: %s\n",
 		  get_pname(),
+		  f,
 		  strerror(save_errno)));
 	errno = save_errno;
 	return -1;
@@ -189,8 +201,9 @@ int port, sendsize, recvsize, *localport, nonblock;
 	(void *)&on, sizeof(on));
     if(r == -1) {
 	save_errno = errno;
-	dbprintf(("%s: stream_client: setsockopt() failed: %s\n",
+	dbprintf(("%s: %s: setsockopt() failed: %s\n",
 		  get_pname(),
+		  f,
 		  strerror(save_errno)));
         aclose(client_socket);
 	errno = save_errno;
@@ -203,27 +216,43 @@ int port, sendsize, recvsize, *localport, nonblock;
     claddr.sin_addr.s_addr = INADDR_ANY;
 
     /*
-     * If a port range was specified, we try to get a port in that
-     * range first.  Next, we try to get a reserved port.  If that
-     * fails, we just go for any port.
+     * If a privileged port range was requested, we try to get a port in
+     * that range first and fail if it is not available.  Next, we try
+     * to get a port in the range built in when Amanda was configured.
+     * If that fails, we just go for any port.
      *
      * It is up to the caller to make sure we have the proper permissions
      * to get the desired port, and to make sure we return a port that
      * is within the range it requires.
      */
-#ifdef PORTRANGE
-    if (bind_portrange(client_socket, &claddr, PORTRANGE) == 0)
+    if (priv) {
+	int b;
+
+	b = bind_portrange(client_socket, &claddr, 512, IPPORT_RESERVED - 1);
+	if (b == 0) {
+	    goto out;				/* got what we wanted */
+	}
+	save_errno = errno;
+	dbprintf(("%s: %s: bind(IPPORT_RESERVED) failed: %s\n",
+		  get_pname(),
+		  f,
+		  strerror(save_errno)));
+	aclose(client_socket);
+	errno = save_errno;
+	return -1;
+    }
+
+#ifdef TCPPORTRANGE
+    if (bind_portrange(client_socket, &claddr, TCPPORTRANGE) == 0)
 	goto out;
 #endif
-
-    if (bind_portrange(client_socket, &claddr, 512, IPPORT_RESERVED - 1) == 0)
-	goto out;
 
     claddr.sin_port = INADDR_ANY;
     if (bind(client_socket, (struct sockaddr *)&claddr, sizeof(claddr)) == -1) {
 	save_errno = errno;
-	dbprintf(("%s: stream_client: bind(INADDR_ANY) failed: %s\n",
+	dbprintf(("%s: %s: bind(INADDR_ANY) failed: %s\n",
 		  get_pname(),
+		  f,
 		  strerror(save_errno)));
 	aclose(client_socket);
 	errno = save_errno;
@@ -237,8 +266,9 @@ out:
     len = sizeof(claddr);
     if(getsockname(client_socket, (struct sockaddr *)&claddr, &len) == -1) {
 	save_errno = errno;
-	dbprintf(("%s: stream_client: getsockname() failed: %s\n",
+	dbprintf(("%s: %s: getsockname() failed: %s\n",
 		  get_pname(),
+		  f,
 		  strerror(save_errno)));
 	aclose(client_socket);
 	errno = save_errno;
@@ -252,8 +282,9 @@ out:
     if(connect(client_socket, (struct sockaddr *)&svaddr, sizeof(svaddr))
        == -1 && !nonblock) {
 	save_errno = errno;
-	dbprintf(("%s: stream_client: connect(%d) failed: %s\n",
+	dbprintf(("%s: %s: connect(%d) failed: %s\n",
 		  get_pname(),
+		  f,
 		  port,
 		  strerror(save_errno)));
 	aclose(client_socket);
@@ -261,12 +292,14 @@ out:
 	return -1;
     }
 
-    dbprintf(("%s: stream_client: connected to %s.%d\n",
+    dbprintf(("%s: %s: connected to %s.%d\n",
 	      get_pname(),
+	      f,
 	      inet_ntoa(svaddr.sin_addr),
 	      ntohs(svaddr.sin_port)));
-    dbprintf(("%s: stream_client: our side is %s.%d\n",
+    dbprintf(("%s: %s: our side is %s.%d\n",
 	      get_pname(),
+	      f,
 	      inet_ntoa(claddr.sin_addr),
 	      ntohs(claddr.sin_port)));
 
@@ -279,6 +312,39 @@ out:
 	*localport = ntohs(claddr.sin_port);
 
     return client_socket;
+}
+
+int
+stream_client_privileged(hostname,
+			 port,
+			 sendsize,
+			 recvsize,
+			 localport,
+			 nonblock)
+    const char *hostname;
+    int port, sendsize, recvsize, *localport, nonblock;
+{
+    return stream_client_internal(hostname,
+				  port,
+				  sendsize,
+				  recvsize,
+				  localport,
+				  nonblock,
+				  1);
+}
+
+int
+stream_client(hostname, port, sendsize, recvsize, localport, nonblock)
+    const char *hostname;
+    int port, sendsize, recvsize, *localport, nonblock;
+{
+    return stream_client_internal(hostname,
+				  port,
+				  sendsize,
+				  recvsize,
+				  localport,
+				  nonblock,
+				  0);
 }
 
 /* don't care about these values */

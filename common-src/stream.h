@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.h,v 1.9 2001/07/31 23:19:57 jrjackson Exp $
+ * $Id: stream.h,v 1.10 2001/08/14 22:38:26 jrjackson Exp $
  *
  * interface to stream module
  */
@@ -39,7 +39,17 @@
 
 int stream_server P((int *port, int sendsize, int recvsize));
 int stream_accept P((int sock, int timeout, int sendsize, int recvsize));
-int stream_client P((const char *hostname, int port, int sendsize, int recvsize,
-    int *localport, int nonblock));
+int stream_client_privileged P((const char *hostname,
+				int port,
+				int sendsize,
+				int recvsize,
+				int *localport,
+				int nonblock));
+int stream_client P((const char *hostname,
+		     int port,
+		     int sendsize,
+		     int recvsize,
+		     int *localport,
+		     int nonblock));
 
 #endif
