@@ -111,6 +111,9 @@ while [ $days -ge 2 ]; do
 done
 mv $errfile $errfile.1
 
+# Trim the log file to those for dumps that still exist.
+$libexecdir/amtrmlog$SUF $conf
+
 # Trim the index file to those for dumps that still exist.
 $libexecdir/amtrmidx$SUF $conf
 
