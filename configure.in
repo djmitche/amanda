@@ -1616,9 +1616,6 @@ AC_CHECK_HEADERS(\
 	history.h \
 	libc.h \
 	limits.h \
-	linux/ftape-header-segment.h \
-	linux/ftape-vendors.h \
-	linux/ftape.h \
 	linux/zftape.h \
 	mntent.h \
 	mnttab.h \

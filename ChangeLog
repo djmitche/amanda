@@ -1,4 +1,9 @@
 2003-04-28  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* configure.in (AC_CHECK_HEADERS): Remove linux/ftape-header-segment.h,
+	  linux/ftape-vendors.h and linux/ftape.h.
+
+2003-04-28  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Darin Dugan <dddugan@iastate.edu>
 
 	* server-src/amcheck.c: Change subject in email if no error.
