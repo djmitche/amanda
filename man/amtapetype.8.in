@@ -44,6 +44,6 @@ Generate a tapetype definition for your tape device:
 .LP
 .RS
 .nf
-% amtapetype @DEFAULT_TAPE_DEVICE@
+% amtapetype -f @DEFAULT_TAPE_DEVICE@
 .SH "SEE ALSO"
 amanda(8)
