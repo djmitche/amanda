@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.101 2002/03/31 21:02:00 jrjackson Exp $
+ * $Id: amanda.h,v 1.102 2002/07/19 19:50:19 jrjackson Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -383,8 +383,8 @@ extern char *debug_prefix_time P((char *));
 #   define dbfp()	NULL
 #   define dbfn()	NULL
 #   define set_debug_prefix_pid(x)
-#   debug_prefix(x) get_pname()
-#   debug_prefix_time(x) get_pname()
+#   define debug_prefix(x) get_pname()
+#   define debug_prefix_time(x) get_pname()
 #endif									/* } */
 
 /* amanda #days calculation, with roundoff */
