@@ -1,6 +1,14 @@
 This document contains notes on new features in Amanda 2.3 that may
 not yet be fully documented elsewhere.
 
+* INDEXING BACKUPS FOR EASIER RESTORE
+
+Read more about this in the file named INDEXING.
+
+* SAMBA SUPPORT
+
+Read more about this in the file named SAMBA.
+
 * GNUTAR SUPPORT
 
 Amanda now supports dumps made via Gnu TAR.  To use this, set your
@@ -176,7 +184,7 @@ version.
 
 * KERBEROS 
 
-Read the comments in options.h-vanilla for how to configure the kerberos
+Read the comments in file docs/KERBEROS for how to configure the kerberos
 version.  With KRB4_SECURITY defined, there are two new dumptype options:
 
 	krb4-auth	use krb4 auth for this host 

@@ -376,9 +376,12 @@
 
 # TESTING		--with-testing
 #			Default: no
-#			Ues alternate service numbers so that a new
+#			Ues alternate service names so that a new
 #			version of amanda can be tested without preventing
 #			a production one from being run successfully.
+#			The used service names will have `-test' appended
+#			to the original names, i.e., service `amanda'
+#			will become `amanda-test'.
 # TESTING=yes
 
 
