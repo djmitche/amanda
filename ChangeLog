@@ -1,5 +1,10 @@
 1998-12-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* NEWS: document new force-bump, force-no-bump and unforce-bump
+	command in amadmin.
+
+1998-12-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/holding.c (size_holding_files): new function to
 	return the sum of the size of all chunk of an image.
 	* server-src/holding.h (size_holding_files): declare.

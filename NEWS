@@ -1,8 +1,9 @@
 Changes in release 2.4.2
 
+* new force-bump, force-no-bump and unforce-bump command in amadmin.
 * Increased the maximum number of filesystems that can be backed up
   from a single host, by increasing the maximum UDP request packet
-  size
+  size.
 * A new `dtimeout' keyword in amanda.conf to replace the READ_TIMEOUT
   constant in dumper.c.
 
