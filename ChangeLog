@@ -1,5 +1,12 @@
 1999-09-19 John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/amverify.sh.in: this script is important enough it should
+	  not depend on having perl installed.  Clean up the AIX "mt status"
+	  code.  Test for presense of other restore programs and check that
+	  they are executable during processing.
+
+1999-09-19 John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/amverify.sh.in: put back an "mt status" wait loop I
 	  erroneously removed, but protect it from AIX.
 
@@ -464,7 +471,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.281 1999/09/19 19:31:36 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.282 1999/09/20 00:23:45 jrj Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
