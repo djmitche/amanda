@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.36 2001/07/31 23:19:57 jrjackson Exp $
+ * $Id: bsd-security.c,v 1.37 2001/12/31 02:23:27 martinea Exp $
  *
  * "BSD" security module
  */
@@ -1051,7 +1051,8 @@ check_user_amandahosts(host, pwd, remoteuser)
 	goto common_exit;
     }
     if ((sbuf.st_mode & 077) != 0) {
-	result = stralloc2(ptmp, ": group or other access enabled");
+	result = stralloc2(ptmp,
+	  ": incorrect permissions; file must be accessible only by its owner");
 	goto common_exit;
     }
 
