@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.61.2.6 1998/02/15 06:53:16 amcore Exp $
+ * $Id: sendsize.c,v 1.61.2.7 1998/02/19 09:41:55 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -546,7 +546,6 @@ int level;
     FILE *dumpout;
     char *dumpkeys = NULL;
     char *device = NULL;
-    int status;
     char *cmd = NULL;
     char *line = NULL;
     char level_str[NUM_STR_SIZE];
@@ -752,7 +751,7 @@ int level;
 	    dbprintf(("oh well, seems like it won\'t die; amanda may have to run as root then\n"));
 	}
     }
-    wait(&status);
+    wait(NULL);
 
     aclose(nullfd);
     afclose(dumpout);

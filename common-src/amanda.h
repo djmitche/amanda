@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.40.2.4 1998/02/18 16:16:06 amcore Exp $
+ * $Id: amanda.h,v 1.40.2.5 1998/02/19 09:41:58 amcore Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -156,8 +156,24 @@
 #  include <sys/stat.h>
 #endif
 
+#ifdef HAVE_WAIT_H
+#  include <wait.h>
+#endif
+
 #ifdef HAVE_SYS_WAIT_H
 #  include <sys/wait.h>
+#endif
+
+#ifdef WAIT_USES_UNION
+  typedef union wait amwait_t;
+#else
+  typedef int amwait_t;
+# ifndef WEXITSTATUS
+#  define WEXITSTATUS(stat_val) ((unsigned)(stat_val) >> 8)
+# endif
+# ifndef WIFEXITED
+#  define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
+# endif
 #endif
 
 #ifdef HAVE_UNISTD_H
