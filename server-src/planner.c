@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.29 2003/06/18 13:21:43 martinea Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.30 2003/10/27 13:47:42 kovert Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -112,7 +112,7 @@ int kamanda_port;
 tapetype_t *tape;
 long tt_blocksize;
 long tt_blocksize_kb;
-int runs_per_cycle;
+int runs_per_cycle = 0;
 time_t today;
 
 dgram_t *msg;
@@ -329,6 +329,14 @@ char **argv;
     if (runs_per_cycle <= 0) {
 	runs_per_cycle = 1;
     }
+
+    /*
+     * do some basic sanity checking
+     */
+     if(conf_tapecycle < runs_per_cycle) {
+	log_add(L_WARNING, "tapecycle (%d) < runspercycle (%d)",
+		conf_tapecycle, runs_per_cycle);
+     }
     
     tape = lookup_tapetype(conf_tapetype);
     if(conf_maxdumpsize > 0) {
