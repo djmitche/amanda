@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: maketree.c,v 1.1 1997/10/30 14:49:20 amcore Exp $
+ * $Id: maketree.c,v 1.2 1997/11/04 19:59:13 amcore Exp $
  *
  * create directories as needed
  */
@@ -54,9 +54,22 @@ gid_t gid;
 	return -1;
     }
 
-    if (mkdir(file, mode) != 0) {
+    /* check for access again, since, in the pathname contains
+     * adjacent slashes, it directory will have already been created.
+     */
+    if (access(file, F_OK) == 0) {
 	*p = '/';
-	return -1;
+	return 0;
+    }
+
+    if (mkdir(file, mode) != 0) {
+	/* If the directory has just been created by another process,
+	 * check whether it has appropriate permissions.  If it does
+	 * not, fail.  */
+	if (!access(file, F_OK) == 0) {
+	    *p = '/';
+	    return -1;
+	}
     }
 
     if (uid || gid) {
