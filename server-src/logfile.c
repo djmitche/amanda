@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.17.4.1 1999/09/08 23:28:20 jrj Exp $
+ * $Id: logfile.c,v 1.17.4.1.2.1 2001/09/01 03:35:54 jrjackson Exp $
  *
  * common log file writing routine
  */
@@ -205,6 +205,7 @@ static void open_log()
 	conf_logdir = stralloc2(config_dir, conf_logdir);
     }
     logfile = vstralloc(conf_logdir, "/log", NULL);
+    amfree(conf_logdir);
 
     logfd = open(logfile, O_WRONLY|O_CREAT|O_APPEND, 0600);
 
