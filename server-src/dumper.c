@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.105 1999/04/06 19:13:49 kashmir Exp $
+/* $Id: dumper.c,v 1.106 1999/04/06 20:37:58 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -120,7 +120,7 @@ int main P((int main_argc, char **main_argv));
 static cmd_t getcmd P((struct cmdargs *));
 static void putresult P((char *format, ...))
     __attribute__ ((format (printf, 1, 2)));
-int do_dump P((int mesgfd, int datafd, int indexfd, struct databuf *db));
+static int do_dump P((struct databuf *));
 void check_options P((char *options));
 void service_ports_init P((void));
 static char *construct_datestamp P((void));
@@ -136,8 +136,8 @@ static void log_msgout P((logtype_t typ));
 static int runcompress P((int, pid_t *));
 
 void sendbackup_response P((proto_t *p, pkt_t *pkt));
-int startup_dump P((char *hostname, char *disk, int level, char *dumpdate,
-		    char *progname, char *options));
+static int startup_dump P((const char *, const char *, int, const char *,
+		    const char *, const char *));
 static int startup_chunker P((const char *, long));
 
 
@@ -337,7 +337,7 @@ main(main_argc, main_argv)
 		amfree(q);
 	    } else {
 		abort_pending = 0;
-		if (do_dump(mesgfd, datafd, indexfd, &db)) {
+		if (do_dump(&db)) {
 		}
 		if (abort_pending)
 		    putresult("ABORT-FINISHED %s\n", handle);
@@ -385,7 +385,7 @@ main(main_argc, main_argv)
 		amfree(q);
 	    } else {
 		abort_pending = 0;
-		if (do_dump(mesgfd, datafd, indexfd, &db)) {
+		if (do_dump(&db)) {
 		}
 		if (abort_pending)
 		    putresult("ABORT-FINISHED %s\n", handle);
@@ -1023,9 +1023,8 @@ write_tapeheader(outfd, file)
 }
 
 
-int
-do_dump(mesgfd, datafd, indexfd, db)
-    int mesgfd, datafd, indexfd;
+static int
+do_dump(db)
     struct databuf *db;
 {
     static char buf[DATABUF_SIZE];
@@ -1742,9 +1741,10 @@ pkt_t *pkt;
     return;
 }
 
-int startup_dump(hostname, disk, level, dumpdate, progname, options)
-char *hostname, *disk, *dumpdate, *progname, *options;
-int level;
+static int
+startup_dump(hostname, disk, level, dumpdate, progname, options)
+    const char *hostname, *disk, *dumpdate, *progname, *options;
+    int level;
 {
     char level_string[NUM_STR_SIZE];
     char rc_str[NUM_STR_SIZE];
@@ -1777,7 +1777,7 @@ int level;
 
 #ifdef KRB4_SECURITY
     if(krb4_auth) {
-	rc = make_krb_request(hostname, kamanda_port, req, NULL,
+	rc = make_krb_request((char *)hostname, kamanda_port, req, NULL,
 			      STARTUP_TIMEOUT, sendbackup_response);
 	if(!rc) {
 	    char inst[256], realm[256];
@@ -1789,7 +1789,7 @@ int level;
 	     * XXX: But admittedly, we could restructure a bit here and
 	     * at least eliminate the duplicate gethostbyname().
 	     */
-	    if(host2krbname(hostname, inst, realm) == 0)
+	    if(host2krbname((char *)hostname, inst, realm) == 0)
 		rc = -1;
 	    else
 		rc = krb_get_cred(CLIENT_HOST_PRINCIPLE, CLIENT_HOST_INSTANCE,
@@ -1819,7 +1819,7 @@ int level;
 	}
     } else
 #endif
-	rc = make_request(hostname, amanda_port, req, NULL,
+	rc = make_request((char *)hostname, amanda_port, req, NULL,
 			  STARTUP_TIMEOUT, sendbackup_response);
 
     req = NULL;					/* do not own this any more */

@@ -1,5 +1,11 @@
 1999-04-06  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c (startup_dump): make static, and const all
+	of the string args
+	* server-src/dumper.c (do_dump): make static
+
+1999-04-06  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c (do_dump): no need to have a separate buffer
 	to read the mesgfd - just reuse the one we used for data reads.
 	Gets rid of one more global.  Also, we don't need to leave
