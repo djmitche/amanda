@@ -1,5 +1,8 @@
 Version 2.4.0b5
 
+	Make sure amverify waits for the tape device to be ready before it
+	starts reading each section. -oliva
+
 	Fix amrecover so that it accepts filenames with blanks.
 	-J. Shirk <jshirt@ksu.edu> & oliva
 

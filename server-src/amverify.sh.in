@@ -66,7 +66,7 @@ EOF
 #
 # some paths
 #
-#	CONFIG_DIR		directory in which the config file resides
+#	CONFIG_DIR	directory in which the config file resides
 #	AMRESTORE	full path name of amrestore
 #	AMGETCONF	full path name of getconf
 #	TAR		dito for GNU-tar
@@ -76,9 +76,8 @@ EOF
 #	ECHO		echo
 #	ECHOARG		echo argument to supress line feed
 #	ECHOSUF		echo meta character to supress line feed
-#	COMPRESS	(path) name of a fast compression program if
-#			we are short of spool space.
 #	TAROPT		GNU-tar option to unpack these files while reading
+#	MTOPT		flag given to MT to specify tape device: -f or -t
 
 	CONFIG_DIR=@CONFIG_DIR@
 	libexecdir=$libexecdir
@@ -92,12 +91,8 @@ EOF
 	ECHO=/bin/echo
 	ECHOARG="@ac_n@"
 	ECHOSUF="@ac_c@"
-	# if we are short of space, use compressed files
-	# COMPRESS=compress
-	# TAROPT=Z
-	# lots of space on the spool disk, no comrpress needed
-	COMPRESS=cat
 	TAROPT=
+	MTOPT=@MT_FILE_FLAG@
 
 #
 # config file
@@ -208,7 +203,7 @@ while [ $SLOT -le $SLOTS ]; do
 	fi
 	report "Use device $DEVICE"
 	$ECHO $ECHOARG "Rewinding...\r$ECHOSUF" >&2
-	$MT -t $DEVICE rewind
+	$MT $MTOPT $DEVICE rewind
 	$DD if=$DEVICE count=1 bs=32768 2>/dev/null >$TEMP.$CSLOT.o
 	[ ! -s $TEMP.$CSLOT.o ] \
 		&& report "** Error reading label on tape in slot $CSLOT" \
@@ -225,16 +220,15 @@ while [ $SLOT -le $SLOTS ]; do
 		&& report "Slot $CSLOT: Fresh tape. Skipping..." \
 		&& continue
 	$ECHO $ECHOARG "$VOLUME $ECHOSUF" >> $TAPELIST
-	$MT -t $DEVICE rewind
+	$MT $MTOPT $DEVICE rewind
 	ERG=0
 	ERRORS=0
 	while [ $ERG = 0 ]; do
 		$ECHO $ECHOARG "Sleeping...\r$ECHOSUF" >&2
-		sleep 3 # slow tape drives...
+		until $MT $MTOPT $DEVICE stat >/dev/null 2>&1; do sleep 3; done
 		$ECHO $ECHOARG "Reading... \r$ECHOSUF" >&2
-		$AMRESTORE -p $DEVICE 2> $TEMP.$CSLOT.o \
-		| cat | $TAR tf - > /dev/null 2> $TEMP.$CSLOT.oo
-		TARERG=$?
+		TARERG=`$AMRESTORE -p $DEVICE 2> $TEMP.$CSLOT.o |
+			{ $TAR tf - > /dev/null 2> $TEMP.$CSLOT.oo; echo $?; }`
 		FILE=`grep restoring $TEMP.$CSLOT.o | sed 's/^.*restoring //'`
 		EOF=`grep "reached end of tape" $TEMP.$CSLOT.o`
 		# amrestore:   0: restoring sundae._mnt_sol1_usr.19961127.1
@@ -259,7 +253,7 @@ while [ $SLOT -le $SLOTS ]; do
 		fi
 	done
 	$ECHO $ECHOARG "Rewinding...\r$ECHOSUF" >&2
-	$MT -t $DEVICE rewind
+	$MT $MTOPT $DEVICE rewind
 	rm -f $TEMP.$CSLOT $TEMP.$CSLOT.o $TEMP.$CSLOT.oo
 done
 $ECHO >> $TAPELIST
