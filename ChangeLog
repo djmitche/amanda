@@ -1,3 +1,7 @@
+1998-11-18  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* configure.in: hack for paxutils was not working; fixed
+
 1998-11-18  Michael Povel  <mcp@ladyada.han.de>
 
 	* server-src/changer.h added new functions:changer_query
