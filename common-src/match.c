@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: match.c,v 1.13 2001/01/06 16:32:12 martinea Exp $
+ * $Id: match.c,v 1.14 2001/01/07 23:02:56 martinea Exp $
  *
  * functions for checking and matching regular expressions
  */
@@ -289,20 +289,18 @@ char separator;
 	 *   ( ) { } + . ^ $ |
 	 *
 	 * If the last
-	 * non-escaped character is \ leave the $ off to cause a syntax
+	 * non-escaped character is \ leave it to cause a syntax
 	 * error when the regex is compiled.
 	 */
 
-	if(*g == separator)	/* add a leading ^ */
-	    *r++ = '^';
-	else if(*g == '^') {
+	if(*g == '^') {
 	    *r++ = '^';
 	    *r++ = '\\';	/* escape the separator */
 	    *r++ = separator;
 	    g++;
 	    if(*g == separator) g++;
 	}
-	else {
+	else if(*g != separator) {
 	    *r++ = '\\';	/* add a leading \separator */
 	    *r++ = separator;
 	}
@@ -353,11 +351,9 @@ char separator;
 	    }
 	}
 	if(last_ch != '\\') {
-	    if (last_ch == separator)		/* add a trailing $ */
-		*r++ = '$';
-	    else if(last_ch != '$') {		/* add a trailing \separator */
+	    if(last_ch != separator && last_ch != '$') {
 		*r++ = '\\';
-		*r++ = separator;
+		*r++ = separator;		/* add a trailing \separator */
 	    }
 	}
     }
@@ -403,4 +399,64 @@ int match_disk(glob, disk)
 char *glob, *disk;
 {
     return match_word(glob, disk, '/');
+}
+
+int match_datestamp(dateexp, datestamp)
+char *dateexp, *datestamp;
+{
+    char *dash;
+    int len, len_suffix, len_prefix;
+    char firstdate[100], lastdate[100];
+    char mydateexp[100];
+    int match_exact;
+
+    if(strlen(dateexp) >= 100 || strlen(dateexp) < 1) {
+	error("Illegal datestamp expression %s",dateexp);
+    }
+   
+    if(dateexp[0] == '^') {
+	strncpy(mydateexp, dateexp+1, strlen(dateexp)-1); 
+	mydateexp[strlen(dateexp)-1] = '\0';
+    }
+    else {
+	strncpy(mydateexp, dateexp, strlen(dateexp));
+	mydateexp[strlen(dateexp)] = '\0';
+    }
+
+    if(mydateexp[strlen(mydateexp)] == '$') {
+	match_exact = 1;
+	mydateexp[strlen(mydateexp)] = '\0';
+    }
+    else
+	match_exact = 0;
+
+    if((dash = strchr(mydateexp,'-'))) {
+	if(match_exact == 1) {
+	    error("Illegal datestamp expression %s",dateexp);
+	}
+	len = dash - mydateexp;
+	len_suffix = strlen(dash) - 1;
+	len_prefix = len - len_suffix;
+
+	if(len_prefix < 0) {
+	    error("Illegal datestamp expression %s",dateexp);
+	}
+
+	dash++;
+	strncpy(firstdate, mydateexp, len);
+	firstdate[len] = '\0';
+	strncpy(lastdate, mydateexp, len_prefix);
+	strncpy(&(lastdate[len_prefix]), dash, len_suffix);
+	lastdate[len] = '\0';
+	return ((strncmp(datestamp, firstdate, strlen(firstdate)) >= 0) &&
+		(strncmp(datestamp, lastdate , strlen(lastdate))  <= 0));
+    }
+    else {
+	if(match_exact == 1) {
+	    return (strcmp(datestamp, mydateexp) == 0);
+	}
+	else {
+	    return (strncmp(datestamp, mydateexp, strlen(mydateexp)) == 0);
+	}
+    }
 }

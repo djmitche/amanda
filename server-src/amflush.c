@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.60 2001/01/02 19:25:12 martinea Exp $
+ * $Id: amflush.c,v 1.61 2001/01/07 23:02:56 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -56,10 +56,6 @@ void detach P((void));
 void run_dumps P((void));
 static int get_letter_from_user P((void));
 
-typedef struct datearg_s {
-    char *first, *last;
-} datearg_t;
-
 int main(main_argc, main_argv)
 int main_argc;
 char **main_argv;
@@ -67,9 +63,8 @@ char **main_argv;
     int foreground;
     struct passwd *pw;
     char *dumpuser;
-    datearg_t *datearg = NULL;
+    char **datearg = NULL;
     int nb_datearg = 0;
-    char *dash;
     int fd;
     char *conffile;
     char *conf_diskfile;
@@ -108,31 +103,12 @@ char **main_argv;
 	case 'f': foreground = 1;
 		  break;
 	case 'D': if (datearg == NULL)
-		      datearg = malloc(20*sizeof(datearg_t));
+		      datearg = malloc(20*sizeof(char *));
 		  if(nb_datearg == 20) {
 		      fprintf(stderr,"maximum of 20 -D arguments.\n");
 		      exit(1);
 		  }
-		  if((dash = strchr(optarg,'-'))) {
-		      int len = dash - optarg;
-		      int len_suffix = strlen(dash) - 1;
-		      int len_prefix = len - len_suffix;
-
-		      dash++;
-		      datearg[nb_datearg].first = malloc((len+1)*sizeof(char));
-		      datearg[nb_datearg].last  = malloc((len+1)*sizeof(char));
-		      strncpy(datearg[nb_datearg].first, optarg, len);
-		      datearg[nb_datearg].first[len] = '\0';
-		      strncpy(datearg[nb_datearg].last, optarg, len_prefix);
-		      strncpy(&(datearg[nb_datearg].last[len_prefix]), dash,
-			      len_suffix);
-		      datearg[nb_datearg].last[len]  = '\0';
-		  }
-		  else {
-		      datearg[nb_datearg].first = stralloc(optarg);
-		      datearg[nb_datearg].last  = stralloc(optarg);
-		  }
-		  nb_datearg++;
+		  datearg[nb_datearg++] = stralloc(optarg);
 		  break;
 	}
     }
@@ -203,10 +179,7 @@ char **main_argv;
 	    next_dir = dir->next;
 	    ok = 0;
 	    for(i=0; i<nb_datearg && ok==0; i++) {
-		ok = (strncasecmp(dir->name, datearg[i].first,
-				  strlen(datearg[i].first)) >= 0) &&
-		     (strncasecmp(dir->name, datearg[i].last,
-				  strlen(datearg[i].last)) <= 0);
+		ok = match_datestamp(datearg[i], dir->name);
 	    }
 	    if(ok == 0) { /* remove dir */
 		amfree(dir);
