@@ -479,9 +479,6 @@ program to change tapes.  As in chg-multi, `tapedev' and
 `changerdev' are ignored, whereas `changerfile' names its
 configuration file, similar to chg-multi.conf.
 
-Neil Crellin <neilc@wallaby.cc> reports that chs is available at
-ftp://ftp.exabyte.com/pub/swd/libraries/{aix,hpux,solaris}
-
 chg-rth: (former rth-changer)
 
 A perl5 script that controls an HPc1553 tape drive via a Peripheral
