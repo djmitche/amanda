@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.35.2.3 1998/11/19 13:29:29 oliva Exp $
+ * $Id: driverio.c,v 1.35.2.4 1999/02/16 03:12:26 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -110,8 +110,9 @@ void startup_tape_process()
     }
 }
 
-void startup_dump_process(dumper)
+void startup_dump_process(dumper, dumper_program)
 dumper_t *dumper;
+char *dumper_program;
 {
     int fd[2];
 
@@ -140,7 +141,8 @@ dumper_t *dumper;
     }
 }
 
-void startup_dump_processes()
+void startup_dump_processes(dumper_program)
+char *dumper_program;
 {
     int i;
     dumper_t *dumper;
@@ -150,7 +152,7 @@ void startup_dump_processes()
 	ap_snprintf(number, sizeof(number), "%d", i);
 	dumper->name = stralloc2("dumper", number);
 
-	startup_dump_process(dumper);
+	startup_dump_process(dumper, dumper_program);
     }
 }
 
