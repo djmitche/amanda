@@ -1,3 +1,7 @@
+	Have configure check for the initgroups() declaration in
+	unistd.h in addition to grp.h and sys/types.h, which is where
+	some OSes have the declaration. -blair
+
 	SAMBA backups won't succeed if GNUTAR listed incrementals are
 	enabled. -oliva
 

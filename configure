@@ -8747,8 +8747,8 @@ fi
 done
 
 if test "${ice_have_initgroups}" = yes; then
-echo $ac_n "checking for initgroups declaration in grp.h sys/types.h""... $ac_c" 1>&6
-echo "configure:8752: checking for initgroups declaration in grp.h sys/types.h" >&5
+echo $ac_n "checking for initgroups declaration in grp.h sys/types.h unistd.h""... $ac_c" 1>&6
+echo "configure:8752: checking for initgroups declaration in grp.h sys/types.h unistd.h" >&5
 if eval "test \"`echo '$''{'ice_cv_have_initgroups_decl'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -8756,7 +8756,7 @@ else
 ice_cv_have_initgroups_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
 ice_re_word='(^|[^a-zA-Z_0-9_])'
-for header in grp.h sys/types.h; do
+for header in grp.h sys/types.h unistd.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
 #line 8763 "configure"
