@@ -1,5 +1,9 @@
 2001-01-04 John R. Jackson <jrj@purdue.edu>
 
+	* client-src/killpgrp.c: Calls to error() do not need a newline.
+
+2001-01-04 John R. Jackson <jrj@purdue.edu>
+
 	* man/amanda.8.in: Try to make it clearer that dumpcycle and maxdumps
 	  changes in the main part of the config file must appear before any
 	  dumptype definitions, and also that inherited dumptypes must appear
@@ -1358,7 +1362,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.433 2001/01/05 01:37:41 jrjackson Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.434 2001/01/05 02:18:21 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: killpgrp.c,v 1.8.4.1 1999/09/08 23:26:17 jrj Exp $
+ * $Id: killpgrp.c,v 1.8.4.2 2001/01/05 02:18:21 jrjackson Exp $
  *
  * if it is the process group leader, it kills all processes in its
  * process group when it is killed itself.
@@ -72,23 +72,23 @@ char **argv;
     dbprintf(("%s: version %s\n", argv[0], version()));
 
     if(client_uid == (uid_t) -1) {
-	error("error [cannot find user %s in passwd file]\n", CLIENT_LOGIN);
+	error("error [cannot find user %s in passwd file]", CLIENT_LOGIN);
     }
 
 #ifdef FORCE_USERID
     if (getuid() != client_uid) {
-	error("error [must be invoked by %s]\n", CLIENT_LOGIN);
+	error("error [must be invoked by %s]", CLIENT_LOGIN);
     }
 
     if (geteuid() != 0) {
-	error("error [must be setuid root]\n");
+	error("error [must be setuid root]");
     }
 #endif	/* FORCE_USERID */
 
     setuid(0);
 
     if (AM_GETPGRP() != getpid()) {
-	error("error [must be the process group leader]\n");
+	error("error [must be the process group leader]");
     }
 
     signal(SIGTERM, term_kill_soft);
@@ -103,7 +103,7 @@ char **argv;
 	if (wait(&status) != -1)
 	    break;
 	if (errno != EINTR) {
-	    error("error [wait() failed: %s]\n", strerror(errno));
+	    error("error [wait() failed: %s]", strerror(errno));
 	    return -1;
 	}
     }
