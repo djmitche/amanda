@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.68.2.1 1998/08/27 16:27:00 blair Exp $
+/* $Id: dumper.c,v 1.68.2.2 1998/11/03 21:37:55 jrj Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1258,13 +1258,15 @@ int mesgfd, datafd, indexfd, outfd;
 
     return;
 
-failed:
-    q = squotef("[%s]", errstr);
-    putresult("FAILED %s %s\n", handle, q);
-    amfree(q);
+ failed:
+
+    if(!abort_pending) {
+	q = squotef("[%s]", errstr);
+	putresult("FAILED %s %s\n", handle, q);
+	amfree(q);
+    }
 
     if(errf) afclose(errf);
-    /* fall through to ... */
 
     /* kill all child process */
     if(compresspid != -1) {
@@ -1293,14 +1295,18 @@ failed:
 
  log_failed:
 
-    log_start_multiline();
-    log_add(L_FAIL, "%s %s %d [%s]", hostname, diskname, level, errstr);
+    if(!abort_pending) {
+	log_start_multiline();
+	log_add(L_FAIL, "%s %s %d [%s]", hostname, diskname, level, errstr);
+	if (errfname) {
+	    log_msgout(L_FAIL);
+	}
+	log_end_multiline();
+    }
     if (errfname) {
-	log_msgout(L_FAIL);
 	unlink(errfname);
 	amfree(errfname);
     }
-    log_end_multiline();
 
     if (indexfile)
 	unlink(indexfile);
