@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.19.2.7.2.20.2.9 2005/03/29 16:35:11 martinea Exp $
+ * $Id: amcheck.c,v 1.50.2.19.2.7.2.20.2.10 2005/04/06 12:32:31 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -796,7 +796,8 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	char *tape_dir;
 	char *lastslash;
 	char *holdfile;
-
+	struct stat statbuf;
+	
 	conf_tapelist=getconf_str(CNF_TAPELIST);
 	if (*conf_tapelist == '/') {
 	    tapefile = stralloc(conf_tapelist);
@@ -814,7 +815,16 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	 */
 	}
 	if(access(tape_dir, W_OK) == -1) {
-	    fprintf(outf, "ERROR: tapelist dir %s: not writable\n", tape_dir);
+	    fprintf(outf, "ERROR: tapelist dir %s: not writable.\n", tape_dir);
+	    tapebad = 1;
+	}
+	else if(stat(tapefile, &statbuf) == -1) {
+	    fprintf(outf, "ERROR: tapefile %s: %s, you must create an empty file.\n",
+		    tapefile, strerror(errno));
+	    tapebad = 1;
+	}
+	else if(access(tapefile, F_OK) != 0) {
+	    fprintf(outf, "ERROR: can't access tape list %s\n", tapefile);
 	    tapebad = 1;
 	} else if(access(tapefile, F_OK) == 0 && access(tapefile, W_OK) != 0) {
 	    fprintf(outf, "ERROR: tape list %s: not writable\n", tapefile);
@@ -845,12 +855,12 @@ int start_server_check(fd, do_localchk, do_tapechk)
     if(do_localchk) {
 	for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next) {
 	    if(get_fs_stats(hdp->diskdir, &fs) == -1) {
-		fprintf(outf, "ERROR: holding disk %s: statfs: %s\n",
+		fprintf(outf, "ERROR: holding dir %s: %s, you must create a directory.\n",
 			hdp->diskdir, strerror(errno));
 		disklow = 1;
 	    }
 	    else if(access(hdp->diskdir, W_OK) == -1) {
-		fprintf(outf, "ERROR: holding disk %s: not writable: %s\n",
+		fprintf(outf, "ERROR: holding disk %s: not writable: %s.\n",
 			hdp->diskdir, strerror(errno));
 		disklow = 1;
 	    }
@@ -896,6 +906,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	char *logfile;
 	char *olddir;
 	struct stat stat_old;
+	struct stat statbuf;
 
 	conf_logdir = getconf_str(CNF_LOGDIR);
 	if (*conf_logdir == '/') {
@@ -905,7 +916,12 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	}
 	logfile = vstralloc(conf_logdir, "/log", NULL);
 
-	if(access(conf_logdir, W_OK) == -1) {
+	if(stat(conf_logdir, &statbuf) == -1) {
+	    fprintf(outf, "ERROR: logdir %s: %s, you must create a directory.\n",
+		    conf_logdir, strerror(errno));
+	    disklow = 1;
+	}
+	else if(access(conf_logdir, W_OK) == -1) {
 	    fprintf(outf, "ERROR: log dir %s: not writable\n", conf_logdir);
 	    logbad = 1;
 	}
@@ -1056,7 +1072,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 #if TEXTDB
 	if(stat(conf_infofile, &statbuf) == -1) {
 	    fprintf(outf, "NOTE: info dir %s: does not exist\n", conf_infofile);
-	    fprintf(outf, "NOTE: it will be created on the next run\n");
+	    fprintf(outf, "NOTE: it will be created on the next run.\n");
 	    amfree(conf_infofile);
 	} else if (!S_ISDIR(statbuf.st_mode)) {
 	    fprintf(outf, "ERROR: info dir %s: not a directory\n", conf_infofile);
@@ -1079,6 +1095,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 		if(stat(hostinfodir, &statbuf) == -1) {
 		    fprintf(outf, "NOTE: info dir %s: does not exist\n",
 			    hostinfodir);
+		    fprintf(outf, "NOTE: it will be created on the next run.\n");
 		    amfree(hostinfodir);
 		} else if (!S_ISDIR(statbuf.st_mode)) {
 		    fprintf(outf, "ERROR: info dir %s: not a directory\n",
@@ -1104,6 +1121,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 		    if(stat(diskdir, &statbuf) == -1) {
 			fprintf(outf, "NOTE: info dir %s: does not exist\n",
 				diskdir);
+			fprintf(outf, "NOTE: it will be created on the next run.\n");
 		    } else if (!S_ISDIR(statbuf.st_mode)) {
 			fprintf(outf, "ERROR: info dir %s: not a directory\n",
 				diskdir);
@@ -1115,6 +1133,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 		    } else if(stat(infofile, &statbuf) == -1) {
 			fprintf(outf, "WARNING: info file %s: does not exist\n",
 				infofile);
+			fprintf(outf, "NOTE: it will be created on the next run.\n");
 		    } else if (!S_ISREG(statbuf.st_mode)) {
 			fprintf(outf, "ERROR: info file %s: not a file\n",
 				infofile);
@@ -1132,6 +1151,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 			if(stat(conf_indexdir, &statbuf) == -1) {
 			    fprintf(outf, "NOTE: index dir %s: does not exist\n",
 				    conf_indexdir);
+			    fprintf(outf, "NOTE: it will be created on the next run.\n");
 			    amfree(conf_indexdir);
 			} else if (!S_ISDIR(statbuf.st_mode)) {
 			    fprintf(outf, "ERROR: index dir %s: not a directory\n",
@@ -1154,6 +1174,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 			    if(stat(hostindexdir, &statbuf) == -1) {
 			        fprintf(outf, "NOTE: index dir %s: does not exist\n",
 				        hostindexdir);
+				fprintf(outf, "NOTE: it will be created on the next run.\n");
 			        amfree(hostindexdir);
 			    } else if (!S_ISDIR(statbuf.st_mode)) {
 			        fprintf(outf, "ERROR: index dir %s: not a directory\n",
@@ -1175,6 +1196,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 			    if(stat(diskdir, &statbuf) == -1) {
 				fprintf(outf, "NOTE: index dir %s: does not exist\n",
 					diskdir);
+				fprintf(outf, "NOTE: it will be created on the next run.\n");
 			    } else if (!S_ISDIR(statbuf.st_mode)) {
 				fprintf(outf, "ERROR: index dir %s: not a directory\n",
 					diskdir);
