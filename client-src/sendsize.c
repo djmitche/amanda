@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.31 1997/09/19 02:37:59 george Exp $
+ * $Id: sendsize.c,v 1.32 1997/09/20 15:33:43 george Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -526,15 +526,20 @@ int level;
 		"",
 #  endif
 #  ifdef OSF1_VDUMP
-		""
+		"b"
 #  else
 		"s"
 #  endif
 		);
 
+#  ifdef OSF1_VDUMP
+	dbprintf(("%s: running \"%s%s %s 60 - %s\"\n",
+		  pname, cmd, name, dumpkeys, device));
+#  else
 	dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n",
 		  pname, cmd, name, dumpkeys, device));
-#endif
+#  endif
+# endif
     }
     else
 #endif
@@ -569,11 +574,15 @@ int level;
 	else
 #endif
 #ifdef DUMP
-#ifndef AIX_BACKUP
-	    execl(cmd, "dump", dumpkeys, "100000", "-", device, (char *)0);
-#else
+# ifdef AIX_BACKUP
 	    execl(cmd, "backup", dumpkeys, "-", device, (char *)0);
-#endif
+# else
+#  ifdef OSF1_VDUMP
+	    execl(cmd, "dump", dumpkeys, "60", "-", device, (char *)0);
+#  else
+	    execl(cmd, "dump", dumpkeys, "100000", "-", device, (char *)0);
+#  endif
+# endif
 #endif
 	{
 	  dbprintf(("%s: exec %s failed or no dump program available",
