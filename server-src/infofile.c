@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.32 1998/01/08 08:28:43 amcore Exp $
+ * $Id: infofile.c,v 1.33 1998/01/09 01:28:51 george Exp $
  *
  * manage current info file
  */
@@ -62,14 +62,15 @@ char *mode;
     writing = (*mode == 'w');
 
     host = stralloc(sanitise_filename(host));
+    disk = stralloc(sanitise_filename(disk));
 
     infofile = vstralloc(infodir,
 			 "/", host,
-			 "/", sanitise_filename(disk),
+			 "/", disk,
 			 "/info",
 			 NULL);
 
-    afree(host);
+    afree(host); afree(disk);
 
     /* create the directory structure if in write mode */
     if (writing) {
@@ -324,15 +325,21 @@ char *disk;
     char *fn = NULL, *fn_new = NULL;
     int rc, rc2;
 
+    host = stralloc(sanitise_filename(host));
+    disk = stralloc(sanitise_filename(disk));
+
     fn = vstralloc(infodir,
-		   "/", sanitise_filename(host),
+		   "/", host,
 		   "/", disk,
 		   "/info",
 		   NULL);
     fn_new = stralloc2(fn, ".new");
 
+    afree(host); afree(disk);
+
     unlink(fn_new);
     afree(fn_new);
+
     rc = rmpdir(fn, infodir);
     afree(fn);
 
