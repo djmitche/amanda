@@ -789,13 +789,13 @@ static void get_estimates P((void))
 {
     struct servent *amandad;
 
-    if((amandad = getservbyname("amanda", "udp")) == NULL)
+    if((amandad = getservbyname(AMANDA_SERVICE_NAME, "udp")) == NULL)
 	amanda_port = AMANDA_SERVICE_DEFAULT;
     else
 	amanda_port = ntohs(amandad->s_port);
 
 #ifdef KRB4_SECURITY
-    if((amandad = getservbyname("kamanda", "udp")) == NULL)
+    if((amandad = getservbyname(KAMANDA_SERVICE_NAME, "udp")) == NULL)
 	kamanda_port = KAMANDA_SERVICE_DEFAULT;
     else
 	kamanda_port = ntohs(amandad->s_port);

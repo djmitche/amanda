@@ -55,8 +55,6 @@
 #define DATABUF_SIZE 	32*1024
 #define MESGBUF_SIZE  	4*1024
 
-#define AMANDA_SERVICE_DEFAULT	10080
-#define KAMANDA_SERVICE_DEFAULT	10081
 #define STARTUP_TIMEOUT		   60
 
 typedef enum { BOGUS, FILE_DUMP, PORT_DUMP, CONTINUE, ABORT, QUIT } cmd_t;
@@ -128,19 +126,19 @@ void service_ports_init()
 {
     struct servent *amandad;
 
-    if((amandad = getservbyname("amanda", "udp")) == NULL) {
+    if((amandad = getservbyname(AMANDA_SERVICE_NAME, "udp")) == NULL) {
 	amanda_port = AMANDA_SERVICE_DEFAULT;
-	log(L_WARNING, "no amanda/udp service, using default port %d",
-	    AMANDA_SERVICE_DEFAULT);
+	log(L_WARNING, "no %s/udp service, using default port %d",
+	    AMANDA_SERVICE_NAME, AMANDA_SERVICE_DEFAULT);
     }
     else
 	amanda_port = ntohs(amandad->s_port);
 
 #ifdef KRB4_SECURITY
-    if((amandad = getservbyname("kamanda", "udp")) == NULL) {
+    if((amandad = getservbyname(KAMANDA_SERVICE_NAME, "udp")) == NULL) {
 	kamanda_port = KAMANDA_SERVICE_DEFAULT;
-	log(L_WARNING, "no kamanda/udp service, using default port %d",
-	    KAMANDA_SERVICE_DEFAULT);
+	log(L_WARNING, "no %s/udp service, using default port %d",
+	    KAMANDA_SERVICE_NAME, KAMANDA_SERVICE_DEFAULT);
     }
     else
 	kamanda_port = ntohs(amandad->s_port);
