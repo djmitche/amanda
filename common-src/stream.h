@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.h,v 1.3 1998/07/04 00:19:00 oliva Exp $
+ * $Id: stream.h,v 1.3.2.1 1998/11/17 18:06:55 jrj Exp $
  *
  * interface to stream module
  */
@@ -36,7 +36,7 @@
 
 #define DEFAULT_SIZE -1
 
-int stream_server P((int *port));
+int stream_server P((int *port, int sendsize, int recvsize));
 int stream_accept P((int sock, int timeout, int sendsize, int recvsize));
 int stream_client P((char *hostname, int port, int sendsize, int recvsize));
 

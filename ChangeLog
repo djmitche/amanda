@@ -1,3 +1,14 @@
+1998-11-17  Brendan M Coffey <bcoffey@connix.com>
+
+	* common-src/stream.c (stream_server): add requested send and receive
+	socket size parameters.
+	* common-src/stream.h (stream_server): ditto
+	* server-src/taper.c (file_reader_side): set a large receive socket
+	buffer size.
+	* client-src/sendbackup.c (main): set a large send and receive socket
+	buffer size for the data path, use defaults for the message and index
+	paths.
+
 1998-11-10  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/driver.c (main): total_disksize was only added after

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.42 1998/07/04 00:18:23 oliva Exp $
+ * $Id: sendbackup.c,v 1.42.2.1 1998/11/17 18:07:05 jrj Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -33,6 +33,9 @@
 #include "stream.h"
 #include "arglist.h"
 #include "../tape-src/tapeio.h"
+#include "amanda.h"
+
+#define DATABUF_SIZE	TAPE_BLOCK_BYTES
 
 #define TIMEOUT 30
 
@@ -344,11 +347,11 @@ char **argv;
 #endif
 
     if(!interactive) {
-      data_socket = stream_server(&data_port);
-      mesg_socket = stream_server(&mesg_port);
+      data_socket = stream_server(&data_port, DATABUF_SIZE*2, DATABUF_SIZE*2);
+      mesg_socket = stream_server(&mesg_port, DEFAULT_SIZE, DEFAULT_SIZE);
     }
     if (!interactive && createindex) {
-      index_socket = stream_server(&index_port);
+      index_socket = stream_server(&index_port, DEFAULT_SIZE, DEFAULT_SIZE);
     } else {
       index_port = -1;
     }

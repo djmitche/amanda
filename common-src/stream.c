@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.7.2.1 1998/08/13 21:54:10 oliva Exp $
+ * $Id: stream.c,v 1.7.2.2 1998/11/17 18:06:53 jrj Exp $
  *
  * functions for managing stream sockets
  */
@@ -37,8 +37,9 @@
 /* local functions */
 static void try_socksize P((int sock, int which, int size));
 
-int stream_server(portp)
+int stream_server(portp, sendsize, recvsize)
 int *portp;
+int sendsize, recvsize;
 {
     int server_socket, len;
     struct sockaddr_in server;
@@ -53,6 +54,11 @@ int *portp;
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = INADDR_ANY;
+
+    if(sendsize != DEFAULT_SIZE) 
+        try_socksize(server_socket, SO_SNDBUF, sendsize);
+    if(recvsize != DEFAULT_SIZE) 
+        try_socksize(server_socket, SO_RCVBUF, recvsize);
 
     if(geteuid() == 0) {
 	if(bind_reserved(server_socket, &server) == -1) {

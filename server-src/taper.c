@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.38.2.7 1998/11/04 04:13:00 oliva Exp $
+/* $Id: taper.c,v 1.38.2.8 1998/11/17 18:07:00 jrj Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -67,6 +67,7 @@ static vtbl_lbls vtbl_entry[MAX_VOLUMES];
 #define MAX_ARGS	7
 #define NBUFS		20
 #define CONNECT_TIMEOUT 2*60
+#define DATABUF_SIZE	TAPE_BLOCK_BYTES
 
 #define THRESHOLD	(NBUFS-1)
 
@@ -314,7 +315,8 @@ int rdpipe, wrpipe;
 	    datestamp = stralloc(argv[6]);
 
 	    data_port = 0;
-	    data_socket = stream_server(&data_port);
+/*	    data_socket = stream_server(&data_port);	*/
+	    data_socket = stream_server(&data_port, DEFAULT_SIZE, DATABUF_SIZE);	
 	    putresult("PORT %d\n", data_port);
 
 	    if((fd = stream_accept(data_socket, CONNECT_TIMEOUT,
