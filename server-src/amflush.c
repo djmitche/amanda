@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.26 1998/03/08 08:05:04 amcore Exp $
+ * $Id: amflush.c,v 1.27 1998/03/08 14:45:50 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -220,7 +220,7 @@ char *diskdir, *datestamp;
 
 	afree(hostname);
 	afree(diskname);
-	if(get_amanda_names(destname, &hostname, &diskname, &level)) {
+	if(get_amanda_names(destname, &hostname, &diskname, &sp.level)) {
 	    log_add(L_INFO, "%s: ignoring cruft file.", entry->d_name);
 	    continue;
 	}
@@ -233,9 +233,9 @@ char *diskdir, *datestamp;
 	    continue;
 	}
 
-	if(level < 0 || level > 9) {
+	if(sp.level < 0 || sp.level > 9) {
 	    log_add(L_INFO, "%s: ignoring file with bogus dump level %d.",
-		    entry->d_name, level);
+		    entry->d_name, sp.level);
 	    continue;
 	}
 
