@@ -1,3 +1,7 @@
+1998-08-12  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/FAQ: working around `dumps way too big'
+
 1998-08-11  Alexandre Oliva  <oliva@dcc.unicamp.br>, Gunnar Gunnarsson  <gunnar@ki.ericsson.se>
 
 	* common-src/token.h (rxquote, shquote): new functions

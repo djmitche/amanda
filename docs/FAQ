@@ -353,6 +353,31 @@ release 1.12 may require a patch to correctly report estimates and
 dump sizes; check the patches directory of the Amanda distribution.
 
 
+Q: What if `amdump' reports `dumps way too big, must skip incremental
+dumps'?
+
+A: It means Amanda couldn't back up some disk because it wouldn't fit
+in the tape(s) you have configured Amanda to use.  It considered
+performing some incrementals instead of full dumps, so that all disks
+would fit, but this wouldn't be enough, so the disk really had to be
+dropped in this run.
+
+   In general, you can just ignore this message if it happens only
+once in a while.  Low-priority disks are discarded first, so you'll
+hardly miss really important data.
+
+   One real work-around is to configure Amanda to use more tapes:
+increase `runtapes' in `amanda.conf'.  Even if you don't have a real
+tape changer, you can act yourself as a changer (`chg-manual'; more
+details in the question about tape changer configuration), or use
+`chg-multi' with a single tape unit, and lie to Amanda that it will
+have two tapes to use.  If you have a holding disk as large as a tape,
+and configure Amanda (2.4.1b1 or newer) not to reserve any space for
+degraded dumps, dumps that would be stored in the second tape of a run
+will be performed to the holding disk, so you can flush them to tape
+in the morning.
+
+
 Q: Why does `amrecover' report `no index records' or `disk not found'?
 
 A: The most common cause of this problem is not having enabled index
