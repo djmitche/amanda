@@ -1,3 +1,8 @@
+2001-09-17 John R. Jackson (jrj@purdue.edu)
+
+	* server-src/planner.c: Make sure we do not attempt to bump beyond
+	  level 9.
+
 2001-09-16 Thomas Hepper (th@ant.han.de)
 	* changer-src/chg-scsi.c: Added new config option autoinv, 
 	if not set no auto inventory will be done if the label db is out of 
