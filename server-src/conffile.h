@@ -96,6 +96,7 @@ typedef struct dumptype_s {
     time_t start_t;
     int strategy;
     int compress;
+    float comprate[2]; /* first is full, second is incremental */
     /* flag options */
     int record:1;
     int skip_incr:1;
@@ -118,6 +119,7 @@ typedef struct dumptype_s {
     int s_start_t;
     int s_strategy;
     int s_compress;
+    int s_comprate;
     int s_record;
     int s_skip_incr;
     int s_skip_full;

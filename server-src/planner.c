@@ -47,7 +47,6 @@ char *pname = "planner";
 
 #define PROMOTE_THRESHOLD	 0.05	/* if <5% unbalanced, don't promote */
 #define DEFAULT_DUMPRATE         30.0	/* K/s */
-#define DEFAULT_COMPRATE         0.50	/* 50% */
 
 /* configuration file stuff */
 char *conf_diskfile;
@@ -616,8 +615,8 @@ disk_t *dp;
 
     ep->fullrate = perf_average(inf.full.rate, DEFAULT_DUMPRATE);
     ep->incrrate = perf_average(inf.incr.rate, DEFAULT_DUMPRATE);
-    ep->fullcomp = perf_average(inf.full.comp, DEFAULT_COMPRATE);
-    ep->incrcomp = perf_average(inf.incr.comp, DEFAULT_COMPRATE);
+    ep->fullcomp = perf_average(inf.full.comp, dp->comprate[0]);
+    ep->incrcomp = perf_average(inf.incr.comp, dp->comprate[1]);
 
     /* determine which estimates to get */
 

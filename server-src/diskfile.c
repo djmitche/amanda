@@ -267,6 +267,8 @@ static int read_diskline()
     disk->start_t   = dtype->start_t;
     disk->strategy  = dtype->strategy;
     disk->compress  = dtype->compress;
+    disk->comprate[0]=dtype->comprate[0];
+    disk->comprate[1]=dtype->comprate[1];
     disk->record    = dtype->record;
     disk->skip_incr = dtype->skip_incr;
     disk->skip_full = dtype->skip_full;

@@ -62,6 +62,7 @@ typedef struct disk_s {
     time_t start_t;			/* start this dump after this time */
     int strategy;			/* what dump strategy to use */
     int compress;			/* type of compression to use */
+    float comprate[2];                  /* default compression rates */
     /* flag options */
     int record:1;			/* record dump in /etc/dumpdates ? */
     int skip_incr:1;			/* incs done externally ? */

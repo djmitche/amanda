@@ -66,7 +66,7 @@ typedef enum {
     OPTIONS, PRIORITY, FREQUENCY, INDEX,
     STARTTIME, COMPRESS, AUTH, STRATEGY,
     SKIP_INCR, SKIP_FULL, RECORD, HOLDING,
-    EXCLUDE, KENCRYPT, IGNORE,
+    EXCLUDE, KENCRYPT, IGNORE, COMPRATE,
 
     FILEMARK, LENGTH, SPEED,
 
@@ -189,6 +189,7 @@ static void init_interface_defaults P((void));
 static void save_interface P((void));
 static void copy_interface P((void));
 static void get_dumpopts P((void));
+static void get_comprate P((void));
 static void get_compress P((void));
 static void get_priority P((void));
 static void get_auth P((void));
@@ -771,6 +772,7 @@ static int read_confline()
 keytab_t dumptype_keytable[] = {
     { "AUTH", AUTH },
     { "COMMENT", COMMENT },
+    { "COMPRATE", COMPRATE },
     { "COMPRESS", COMPRESS },
     { "DUMPCYCLE", DUMPCYCLE },
     { "EXCLUDE", EXCLUDE },
@@ -825,6 +827,9 @@ static void get_dumptype()
 	    break;
 	case COMMENT:
 	    get_simple((val_t *)&dpcur.comment, &dpcur.s_comment, STRING);
+	    break;
+	case COMPRATE:
+	    get_comprate();
 	    break;
 	case COMPRESS:
 	    get_compress();
@@ -936,6 +941,7 @@ static void init_dumptype_defaults()
     dpcur.record = 1;
     dpcur.strategy = DS_NORMAL;
     dpcur.compress = COMP_FAST;
+    dpcur.comprate[0] = dpcur.comprate[1] = 0.50;
     dpcur.skip_incr = dpcur.skip_full = 0;
     dpcur.no_hold = 0;
     dpcur.kencrypt = 0;
@@ -955,6 +961,7 @@ static void init_dumptype_defaults()
     dpcur.s_record = 0;
     dpcur.s_strategy = 0;
     dpcur.s_compress = 0;
+    dpcur.s_comprate = 0;
     dpcur.s_skip_incr = 0;
     dpcur.s_skip_full = 0;
     dpcur.s_no_hold = 0;
@@ -1305,6 +1312,27 @@ keytab_t compress_keytable[] = {
     { "SERVER", SERVER },
     { NULL, IDENT }
 };
+
+static void get_comprate()
+{
+    val_t var;
+    
+    get_simple(&var, &dpcur.s_comprate, REAL);
+    dpcur.comprate[0] = dpcur.comprate[1] = var.r;
+    get_conftoken(ANY);
+    switch(tok) {
+    case NL:
+      return;
+    case COMMA:
+      break;
+    default:
+      unget_conftoken();
+      break;
+    }
+    get_conftoken(REAL);
+    dpcur.comprate[1] = tokenval.r;
+    get_conftoken(NL);
+}
 
 static void get_compress()
 {

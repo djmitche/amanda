@@ -151,6 +151,14 @@ define tapetype MIMSY-MEGATAPE {
 #			  example, for small root filesystems that only change
 #			  slightly relative to a site-wide prototype.  Amanda
 #			  then backs up just the changes.
+#       comprate	- set default compression rate.  Should be followed
+#			  by one or two numbers, separated or not by a comma.
+#			  The 1st is the full compression rate; the 2nd is
+#			  the incremental rate.  If the second is omitted,
+#			  it is assumed equal to the first.  The numbers
+#			  represent the amount of the original file the
+#			  compressed file is expected to take up.
+#			  Default: comprate 0.50, 0.50
 #	ignore		- Do not back this filesystem up.  Useful for sharing
 #			  a single disklist in several configurations.
 #

@@ -1018,6 +1018,10 @@ disk_t *dp;
 	printf("SERVER BEST\n"); /* XXX */
 	break;
     }
+    if (dp->compress != COMP_NONE) {
+        printf("        comprate %.2f %.2f\n",
+	       dp->comprate[0], dp->comprate[1]);
+    }
 
     printf("        options: ");
     if(!dp->record) printf("NO-");
