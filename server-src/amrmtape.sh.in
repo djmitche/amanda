@@ -189,6 +189,10 @@ CleanCurinfo () {
 	  echo "${Line}"
 	fi
 	;;
+      history*)
+	set ${Line}
+	echo "${Line}"
+	;;
       //)
 	echo "${Line}"
 	DeadLevel=10
