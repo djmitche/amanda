@@ -78,7 +78,7 @@ REGEXHSRC =	$(REGsrcdir)/regex2.h \
 		$(REGsrcdir)/regfree.c
 
 # these are used for testing only:
-TEST_PROGS = statfs token file
+TEST_PROGS = statfs token file security
 
 CLEANFILES = regex.h regcomp.ih engine.ih regerror.ih *.test.c
 
@@ -109,6 +109,11 @@ token_LDADD = $(libamanda_a_LIBADD) \
 file_SOURCES = file.test.c
 file_LDADD = $(libamanda_a_LIBADD) \
 	alloc.$(OBJ_EXTENSION) error.$(OBJ_EXTENSION)
+
+security_SOURCES = security.test.c
+security_LDADD = $(libamanda_a_LIBADD) \
+	alloc.$(OBJ_EXTENSION) debug.$(OBJ_EXTENSION) \
+	error.$(OBJ_EXTENSION) file.$(OBJ_EXTENSION)
 
 %.test.c: $(srcdir)/%.c
 	echo '#define TEST' >$@

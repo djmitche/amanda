@@ -24,12 +24,52 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.c,v 1.14 1998/07/04 00:18:55 oliva Exp $
+ * $Id: security.c,v 1.15 1998/07/06 18:06:30 jrj Exp $
  *
  * wrapper file for kerberos security
  */
 
 #include "amanda.h"
+
+#if defined(TEST)
+#undef dbprintf
+#define dbprintf(p)	printf p
+
+void show_stat_info(a, b)
+    char *a, *b;
+{
+    char *name = vstralloc(a, b, NULL);
+    struct stat sbuf;
+    struct passwd *pwptr;
+    char *owner;
+    struct group *grptr;
+    char *group;
+
+    if (stat(name, &sbuf) != 0) {
+	dbprintf(("cannot stat %s: %s\n", name, strerror(errno)));
+	amfree(name);
+	return;
+    }
+    if ((pwptr = getpwuid(sbuf.st_uid)) == NULL) {
+	owner = alloc(32);
+	ap_snprintf(owner, 32, "%ld", (long)sbuf.st_uid);
+    } else {
+	owner = stralloc(pwptr->pw_name);
+    }
+    if ((grptr = getgrgid(sbuf.st_gid)) == NULL) {
+	group = alloc(32);
+	ap_snprintf(owner, 32, "%ld", (long)sbuf.st_gid);
+    } else {
+	group = stralloc(grptr->gr_name);
+    }
+    dbprintf(("processing file: %s\n", name));
+    dbprintf(("                 owner=%s group=%s mode=%03o\n",
+	      owner, group, (int) (sbuf.st_mode & 0777)));
+    amfree(name);
+    amfree(owner);
+    amfree(group);
+}
+#endif
 
 #ifdef KRB4_SECURITY
 #include "krb4-security.c"
@@ -232,6 +272,23 @@ char **errstr;
     saved_stderr = dup(2);
     close(2);			/*  " */
 
+#if defined(TEST)
+    {
+	char *dir = stralloc(pwptr->pw_dir);
+
+	dbprintf(("calling ruserok(%s, %d, %s, %s)\n",
+	          remotehost, myuid == 0, remoteuser, localuser));
+	if (myuid == 0) {
+	    dbprintf(("because you are running as root, "));
+	    dbprintf(("/etc/hosts.equiv will not be used\n"));
+	} else {
+	    show_stat_info("/etc/hosts.equiv", NULL);
+	}
+	show_stat_info(dir, "/.rhosts");
+	amfree(dir);
+    }
+#endif
+
     if(ruserok(remotehost, myuid == 0, remoteuser, localuser) == -1) {
 	dup2(saved_stderr,2);
 	close(saved_stderr);
@@ -256,7 +313,15 @@ char **errstr;
     return 1;
 #else
     /* We already chdired to ~amandauser */
+
+#if defined(TEST)
+    show_stat_info(pwptr->pw_dir, "/.amandahosts");
+#endif
+
     if((fPerm = fopen(".amandahosts", "r")) == NULL) {
+#if defined(TEST)
+	dbprintf(("fopen failed: %s\n", strerror(errno)));
+#endif
 	*errstr = vstralloc("[",
 			    "access as ", localuser, " not allowed",
 			    " from ", remoteuser, "@", remotehost,
@@ -269,6 +334,9 @@ char **errstr;
     }
 
     for(; (pbuf = agets(fPerm)) != NULL; free(pbuf)) {
+#if defined(TEST)
+	dbprintf(("processing line: <%s>\n", pbuf));
+#endif
 	pbuf_len = strlen(pbuf);
 	s = pbuf;
 	ch = *s++;
@@ -292,7 +360,16 @@ char **errstr;
 	    skip_non_whitespace(s, ch);
 	    s[-1] = '\0';			/* terminate remoteuser field */
 	}
-
+#if defined(TEST)
+	dbprintf(("comparing %s with\n", pbuf));
+	dbprintf(("          %s (%s)\n",
+		  remotehost,
+		  (strcasecmp(pbuf, remotehost) == 0) ? "match" : "no match"));
+	dbprintf(("      and %s with\n", ptmp));
+	dbprintf(("          %s (%s)\n",
+		  remoteuser,
+		  (strcasecmp(ptmp, remoteuser) == 0) ? "match" : "no match"));
+#endif
 	if(strcasecmp(pbuf, remotehost) == 0 && strcasecmp(ptmp, remoteuser) == 0) {
 	    amandahostsauth = 1;
 	    break;
@@ -333,7 +410,56 @@ char *str;
 unsigned long cksum;
 char **errstr;
 {
+#if defined(TEST)
+    dbprintf(("You configured Amanda using --without-bsd-security, so it\n"));
+    dbprintf(("will let anyone on the Internet connect and do dumps of\n"));
+    dbprintf(("your system unless you have some other kind of protection,\n"));
+    dbprintf(("such as a firewall or TCP wrappers.\n"));
+#endif
     return 1;
 }
 
 #endif /* ! BSD_SECURITY */
+
+#if defined(TEST)
+
+int
+main (argc, argv)
+{
+    char *remoteuser;
+    char *remotehost;
+    struct hostent *hp;
+    struct sockaddr_in fake;
+    char *str;
+    char *errstr;
+    int r;
+
+    fputs("Remote user: ", stdout);
+    fflush(stdout);
+    if ((remoteuser = agets(stdin)) == NULL) {
+	return 0;
+    }
+    str = stralloc2("USER ", remoteuser);
+
+    fputs("Remote host: ", stdout);
+    fflush(stdout);
+    if ((remotehost = agets(stdin)) == NULL) {
+	return 0;
+    }
+    if ((hp = gethostbyname(remotehost)) == NULL) {
+	dbprintf(("cannot look up remote host %s\n", remotehost));
+	return 1;
+    }
+    memcpy((char *)&fake.sin_addr, (char *)hp->h_addr, sizeof(hp->h_addr));
+    fake.sin_port = htons(IPPORT_RESERVED - 1);
+
+    if ((r = bsd_security_ok(&fake, str, 0, &errstr)) == 0) {
+	dbprintf(("security check of %s@%s failed\n", remoteuser, remotehost));
+	dbprintf(("%s\n", errstr));
+    } else {
+	dbprintf(("security check of %s@%s passed\n", remoteuser, remotehost));
+    }
+    return r;
+}
+
+#endif

@@ -4,6 +4,11 @@
 	count estimate to be negative.  Found by Lance A. Brown
 	<brown9@niehs.nih.gov> on NeXT.
 
+	* common-src/Makefile.am, common-src/security.c: add TEST code to
+	security.c so people can do "make security" and have a test program
+	to track down why they are getting "access as XXX not allowed from
+	YYY@ZZZ".
+
 1998-07-04  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amcheck.c (start_server_check): report space use for
