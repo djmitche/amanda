@@ -1,5 +1,10 @@
 2003-06-18  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/planner.c (delay_dumps): Delay not delay forced full
+	  before forced full.
+
+2003-06-18  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* changer-src/chg-zd-mtx.sh.in: Log the changer file used.
 
 2003-06-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>

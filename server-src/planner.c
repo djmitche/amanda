@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.144 2003/06/10 14:13:39 martinea Exp $
+ * $Id: planner.c,v 1.145 2003/06/18 13:21:36 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1781,6 +1781,8 @@ static void delay_dumps P((void))
     bi_t *bi, *nbi;
     long new_total;	/* New total_size */
     char est_kb[20];     /* Text formatted dump size */
+    int nb_forced_level_0;
+    info_t info;
 
     biq.head = biq.tail = NULL;
 
@@ -1845,17 +1847,28 @@ static void delay_dumps P((void))
     ** data (when does that ever happen?)].
     */
 
+    nb_forced_level_0 = 0;
     preserve = NULL;
     for(dp = schedq.head; dp != NULL && preserve == NULL; dp = dp->next)
 	if(est(dp)->dump_level == 0)
 	    preserve = dp;
 
+    /* 2.a. Do not delay forced full */
     for(dp = schedq.tail;
 		dp != NULL && total_size > tape_length;
 		dp = ndp) {
 	ndp = dp->prev;
 
-	if(est(dp)->dump_level == 0 && dp != preserve) {
+	if(est(dp)->dump_level != 0) continue;
+
+	get_info(dp->host->hostname, dp->name, &info);
+	if(info.command & FORCE_FULL) {
+	    nb_forced_level_0 += 1;
+	    preserve = dp;
+	    continue;
+	}
+
+	if(dp != preserve) {
 
             /* Format dumpsize for messages */
 	    snprintf(est_kb, 20, "%ld KB,", est(dp)->dump_size);
@@ -1875,6 +1888,38 @@ static void delay_dumps P((void))
 			       est_kb,
 			       "full dump delayed",
 			       NULL);
+	    }
+	}
+    }
+
+    /* 2.b. Delay forced full if needed */
+    if(nb_forced_level_0 > 0 && total_size > tape_length) {
+	for(dp = schedq.tail;
+		dp != NULL && total_size > tape_length;
+		dp = ndp) {
+	    ndp = dp->prev;
+
+	    if(est(dp)->dump_level == 0 && dp != preserve) {
+
+		/* Format dumpsize for messages */
+		ap_snprintf(est_kb, 20, "%ld KB,", est(dp)->dump_size);
+
+		if(est(dp)->last_level == -1 || dp->skip_incr) {
+		    delay_one_dump(dp, 1,
+				   "dumps too big,",
+				   est_kb,
+				   "but cannot incremental dump",
+				   dp->skip_incr ? "skip-incr": "new",
+				   "disk",
+				   NULL);
+		}
+		else {
+		    delay_one_dump(dp, 0,
+				   "dumps too big,",
+				   est_kb,
+				   "full dump delayed",
+				   NULL);
+		}
 	    }
 	}
     }
