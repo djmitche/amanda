@@ -1,3 +1,14 @@
+2003-10-22  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Paul Bijnens <paul.bijnens@xplanation.com>
+
+	* client-src/amandates.c (finish_amandates): Call error() if the
+	  close of amdf fail.
+	* common-src/amflock.c (create_lock): Return -1 if the close of f fail.
+	* common-src/amflock.c (read_lock): Don't set f to NULL if the close
+	  fail.
+	* server-src/tapefile.c (write_tapelist): Return 1 if the close of
+	  tapef fail.
+
 2003-10-14  John R. Jackson (jrj@purdue.edu)
 
 	* docs/SYSTEM.NOTES: Add FreeBSD 5.1 note about setting the UDP packet

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amandates.c,v 1.15 1998/09/03 22:10:40 oliva Exp $
+ * $Id: amandates.c,v 1.15.8.1 2003/10/22 17:43:33 martinea Exp $
  *
  * manage amandates file, that mimics /etc/dumpdates, but stores
  * GNUTAR dates
@@ -149,7 +149,9 @@ void finish_amandates()
 
     if(amfunlock(fileno(amdf), "amandates") == -1)
 	error("could not unlock %s: %s", AMANDATES_FILE, strerror(errno));
-    afclose(amdf);
+    if (fclose(amdf) == EOF)
+	error("error [closing %s: %s]", AMANDATES_FILE, strerror(errno));
+    amdf = NULL;
 }
 
 void free_amandates()

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflock.c,v 1.17.4.6 1999/11/02 21:52:08 oliva Exp $
+ * $Id: amflock.c,v 1.17.4.6.6.1 2003/10/22 17:43:33 martinea Exp $
  *
  * file locking routines, put here to hide the system dependant stuff
  * from the rest of the code
@@ -142,7 +142,8 @@ long pid;
 	    return -1;
 	}
 	fprintf(f, "%ld\n", pid);
-	afclose(f);
+	if (fclose(f) == EOF)
+	    return -1;
 	return 0;
 }
 
@@ -166,10 +167,8 @@ char *fn; /* name of lock file */
 		return -1;
 	}
 	if (fclose(f) != 0) {
-		f = NULL;
 		return -1;
 	}
-	f = NULL;
 	return pid;
 }
 
