@@ -1,3 +1,9 @@
+1998-12-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/amadmin.c: new force-bump, force-no-bump and unforce-bump
+	command.
+	* man/amadmin.8.in: document them.
+
 1998-12-05  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/FAQ (large filesystems): fixed reference to results missing

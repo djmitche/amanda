@@ -60,6 +60,27 @@ This is the same mechanism used by
 .B version
 Show the current version and some compile time and runtime parameters.
 .TP
+.P1 force-bump hostname [ disks ]
+Force the
+.I disks
+on
+.I hostname
+to bump during the next Amanda run.
+.TP
+.P1 force-no-bump hostname [ disks ]
+Force the
+.I disks
+on
+.I hostname
+to not bump during the next Amanda run.
+.TP
+.P1 unforce-bump hostname [ disks ]
+Clear
+.B force-bump
+and
+.B force-no-bump
+command 
+.TP
 .P1 force hostname [ disks ]
 Force the
 .I disks
