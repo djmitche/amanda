@@ -1,3 +1,9 @@
+1999-03-05 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* configure.in: set SAMBA_VERSION
+	* client-src/sendbackup-gnutar.c (start_backup): use -q flag
+	if SAMBA_VERSION >= 2
+
 1999-03-05 Mathias Herberts <Mathias.Herberts@ago.fr>
 
 	* recover-src/amrecover.h (set_mode, show_mode) declare new functions.
