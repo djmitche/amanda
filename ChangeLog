@@ -1,5 +1,9 @@
 2004-09-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/amadmin.c (main): Call check_dumpuser() as soon as posible.
+
+2004-09-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/conffile.c (getconf_byname): Special case for typ == BOOL.
 
 2004-09-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>

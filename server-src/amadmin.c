@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.13.2.3.2.16 2004/09/17 11:41:16 martinea Exp $
+ * $Id: amadmin.c,v 1.49.2.13.2.3.2.17 2004/09/17 11:55:08 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -74,6 +74,7 @@ void export_db P((int argc, char **argv));
 void import_db P((int argc, char **argv));
 void disklist P((int argc, char **argv));
 void disklist_one P((disk_t *dp));
+static void check_dumpuser P((void));
 
 static char *conf_tapelist = NULL;
 
@@ -119,6 +120,9 @@ char **argv;
 	error("errors processing config file \"%s\"", conffile);
     }
     amfree(conffile);
+
+    check_dumpuser();
+
     conf_diskfile = getconf_str(CNF_DISKFILE);
     if (*conf_diskfile == '/') {
 	conf_diskfile = stralloc(conf_diskfile);
