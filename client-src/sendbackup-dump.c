@@ -69,8 +69,12 @@ static regex_t re_table[] = {
   { DMP_SIZE, "vdump: Dumped  [0-9][0-9]* of [0-9][0-9]* bytes",	    1},
 		/* OSF's vdump */
 
+  { DMP_SIZE, "dump: Actual: [0-9][0-9]* blocks output to pipe",         1024},
+                /* DU 4.0a dump */
+
   { DMP_SIZE, "dump: Dumped  [0-9][0-9]* of [0-9][0-9]* bytes",             1},
 		/* DU 4.0 vdump */
+
   { DMP_SIZE, "xfsdump: media file size [0-9][0-9]* bytes",                 1},
 		/* Irix 6.2 xfs dump */
 

@@ -39,8 +39,15 @@
 
 #ifdef SETPGRP_VOID
 #  define SETPGRP	setpgrp()
+#  define SETPGRP_FAILED() \
+	    dbprintf(("setpgrp() failed: %s\n", strerror(errno)));
+
 #else
 #  define SETPGRP	setpgrp(0, getpid())
+#  define SETPGRP_FAILED() \
+	    dbprintf(("setpgrp(0,%ld) failed: %s\n", (long) getpid(), \
+		      strerror(errno)));
+
 #endif
 
 #define MAXLINE 4096
@@ -371,6 +378,10 @@ regex_t re_size[] = {
     {"backup: estimated [0-9][0-9]* tape blocks", 1024},	      /* AIX */
     {"backup: [0-9][0-9]* tape blocks on [0-9][0-9]* tape(s)",1024},  /* AIX */
     {"backup: [0-9][0-9]* 1k blocks on [0-9][0-9]* volume(s)",1024},  /* AIX */
+    {"[0-9][0-9]* blocks, [0-9][0-9]*.[0-9][0-9]* volumes", 1024},
+                                                          /* DU 3.2g dump -E */
+    {"dump: Estimate: [0-9][0-9]* blocks being output to pipe",1024},
+                                                              /* DU 4.0 dump */
     {"dump: Dumping [0-9][0-9]* bytes, ", 1},                /* DU 4.0 vdump */
     {"xfsdump: estimated dump size: [0-9][0-9]* bytes", 1},  /* Irix 6.2 xfs */
     {"Total bytes listed: [0-9][0-9]*", 1},		     /* Samba client */
@@ -414,7 +425,11 @@ int level;
 #endif
 #ifdef DUMP
     {
-	sprintf(dumpkeys, "%dsf", level);
+	sprintf(dumpkeys, "%d"
+#ifdef HAVE_DUMP_ESTIMATE
+		"E"
+#endif
+		"sf", level);
 	dbprintf(("%s: running \"%s %s 100000 - %s\"\n",
 		  pname, cmd, dumpkeys, device));
     }
@@ -424,9 +439,10 @@ int level;
     case -1: return -1;
     default: break; 
     case 0:	/* child process */
+#ifndef HAVE_DUMP_ESTIMATE
 	if(SETPGRP == -1)
-	    dbprintf(("setpgrp(0,%ld) failed: %s\n", (long) getpid(),
-		      strerror(errno)));
+	    SETPGRP_FAILED();
+#endif
 
 	dup2(nullfd, 0);
 	dup2(nullfd, 1);
@@ -483,11 +499,13 @@ int level;
     if(size == 0 && level == 0)
 	dbprintf(("(PC SHARE connection problem, is this disk really empty?)\n.....\n"));
 
+#ifdef HAVE_DUMP_ESTIMATE
 #ifdef OSF1_VDUMP
     sleep(5);
 #endif
 
     kill(-dumppid, SIGTERM);
+#endif /* HAVE_DUMP_ESTIMATE */
     wait(&status);
 #ifdef XFSDUMP
     /* `xfsdump' catches and ignores `SIGTERM', so make sure it dies. */
@@ -534,10 +552,6 @@ int level;
 	default:
 	    break; 
 	case 0:   /* child process */
-	    if(SETPGRP == -1)
-		dbprintf(("setpgrp(0,%d) failed: %s\n",
-			  getpid(), strerror(errno)));
-
 	    dup2(nullfd, 0);
 	    dup2(nullfd, 1);
 	    dup2(pipefd[1], 2);

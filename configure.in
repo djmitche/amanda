@@ -1007,6 +1007,22 @@ AC_PATH_PROGS(SHELL,sh,,$LOCSYSPATH)
 AC_PATH_PROGS(DUMP,$DUMP_PROGRAMS,,$SYSLOCPATH)
 if test "$DUMP"; then
     AC_DEFINE_UNQUOTED(DUMP,"$DUMP")
+    AC_CACHE_CHECK(
+        [whether $DUMP supports -E for estimates],
+	amanda_cv_dump_estimate,
+	[
+	    $DUMP 9f /dev/null /dev/null/invalid/fs 2>conftest.--E
+	    $DUMP 9Ef /dev/null /dev/null/invalid/fs 2>conftest.-E
+	    if diff conftest.-E conftest.--E >/dev/null 2>&1; then
+		amanda_cv_dump_estimate=yes
+	    else
+		amanda_cv_dump_estimate=no
+	    fi
+	    rm -f conftest.-E conftest.--E
+	])
+    if test "$amanda_cv_dump_estimate" = yes; then
+	AC_DEFINE(HAVE_DUMP_ESTIMATE)
+    fi
 fi
 case "$DUMP" in
     *vdump*)
@@ -1426,11 +1442,10 @@ else
 		amanda_cv_struct_datum=yes,
 		amanda_cv_struct_datum=no
 	    )
-	]
-	if test "$amanda_cv_struct_datum" = yes; then
-	    AC_DEFINE(HAVE_STRUCT_DATUM)
-	fi
-    )
+	])
+    if test "$amanda_cv_struct_datum" = yes; then
+	AC_DEFINE(HAVE_STRUCT_DATUM)
+    fi
 fi
 
 case "$DB_STYLE" in

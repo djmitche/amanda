@@ -83,6 +83,9 @@
 /* Define this if this system's dump exits with 1 as a success code.  */
 #undef DUMP_RETURNS_1
 
+/* Define this if dump accepts -E for estimates. */
+#undef HAVE_DUMP_ESTIMATE
+
 /* Define the location of the ufsdump, vdump, backup, or dump program.  */
 #undef DUMP
 
