@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.47.2.14.4.8.2.4 2002/02/11 04:38:44 jrjackson Exp $
+/* $Id: taper.c,v 1.47.2.14.4.8.2.5 2002/03/23 17:40:25 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1740,8 +1740,6 @@ int label_tape()
 
     /* XXX add cur_tape number to tape list structure */
     if (strcmp(label, FAKE_LABEL) != 0) {
-	remove_tapelabel(label);
-	add_tapelabel(atoi(taper_datestamp), label);
 
 	if(cur_tape == 0) {
 	    conf_tapelist_old = stralloc2(conf_tapelist, ".yesterday");
@@ -1752,12 +1750,13 @@ int label_tape()
 	    conf_tapelist_old = vstralloc(conf_tapelist,
 					".today.", cur_str, NULL);
 	}
-	if(rename(conf_tapelist, conf_tapelist_old) != 0) {
-	    if(errno != ENOENT)
-		error("could not rename \"%s\" to \"%s\": %s",
-		      conf_tapelist, conf_tapelist_old, strerror(errno));
+	if(write_tapelist(conf_tapelist_old)) {
+	    error("could not write tapelist: %s", strerror(errno));
 	}
 	amfree(conf_tapelist_old);
+
+	remove_tapelabel(label);
+	add_tapelabel(atoi(taper_datestamp), label);
 	if(write_tapelist(conf_tapelist)) {
 	    error("could not write tapelist: %s", strerror(errno));
 	}

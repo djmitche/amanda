@@ -1,3 +1,10 @@
+2002-03-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/tapefile.c (write_tapelist): Write to a temp file and
+	  rename it.
+	* server-src/amlabel.c: Do not rename the tapelist file.
+	* server-src/taper.c (label_tape): Do not rename the tapelist file.
+
 2002-03-22  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* client-src/client_util.c (parse_options): Do not check if the
