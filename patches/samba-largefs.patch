@@ -1,6 +1,7 @@
-This patch fixes Samba 2.0.0 or newer, so that it does not overflow on
-filesystems larger than 2GB.  Note that it requires a compiler that
-supports unsigned long longs, such as gcc.
+This patch fixes Samba 2.0.0 up to 2.0.3, so that it does not overflow
+on filesystems larger than 2GB.  Note that it requires a compiler that
+supports long longs, such as gcc.  The problem is fixed on Samba 2.0.4
+(but only if the compiler supports long longs).
 
 The hunks for client.c and clitar.c were updated for Samba 2.0.0 by
 Tom Schutter <tom@platte.com>.  The snprintf.c improvement is by
