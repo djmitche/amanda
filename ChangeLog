@@ -1,5 +1,16 @@
 1999-10-02 John R. Jackson  <jrj@purdue.edu>
 
+	* common-src/file.c (areads): when NO-ROOM became advisory and didn't
+	  participate in a full handshake, it exposed a problem in areads()
+	  where a static buffer was shared among all I/O.  Changed it to use
+	  a separate buffer for each file descriptor.  Enhanced the test
+	  program to check out the code.
+	* common-src/amanda.h: ditto
+	* restore-src/amidxtaped.c: minor areads/agets comment typo.
+	* server-src/amindexd.c: ditto
+
+1999-10-02 John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/driver.c: delete #define of HOLD_DEBUG, it was increasing
 	  the size of the amdump log file by a factor of 10 or more.  Anyone
 	  who needs it can define it in CFLAGS or some other way.
@@ -494,7 +505,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.286 1999/10/02 17:04:05 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.287 1999/10/02 22:01:46 jrj Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

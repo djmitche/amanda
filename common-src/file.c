@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.14.4.1 1999/09/08 23:26:45 jrj Exp $
+ * $Id: file.c,v 1.14.4.2 1999/10/02 22:01:56 jrj Exp $
  *
  * file and directory bashing routines
  */
@@ -422,6 +422,74 @@ agets(file)
 
 /*
  *=====================================================================
+ * Find/create a buffer for a particular file descriptor for use with
+ * areads().
+ *
+ * void areads_getbuf (int fd)
+ *
+ * entry:	fd = file descriptor to look up
+ * exit:	returns a pointer to the buffer, possibly new
+ *=====================================================================
+ */
+
+static struct areads_buffer {
+    char *buffer;
+    char *endptr;
+    int bufsize;
+} *areads_buffer = NULL;
+static int areads_bufcount = 0;
+
+static void
+areads_getbuf(fd)
+    int fd;
+{
+    struct areads_buffer *new;
+    int size;
+
+    assert(fd >= 0);
+    if(fd > areads_bufcount) {
+	size = (fd + 1) * sizeof(*areads_buffer);
+	new = (struct areads_buffer *) alloc(size);
+	memset((char *)new, 0, size);
+	if(areads_buffer) {
+	    size = areads_bufcount * sizeof(*areads_buffer);
+	    memcpy(new, areads_buffer, size);
+	}
+	amfree(areads_buffer);
+	areads_buffer = new;
+	areads_bufcount = fd + 1;
+    }
+    if(areads_buffer[fd].buffer == NULL) {
+	areads_buffer[fd].bufsize = BUFSIZ;
+	areads_buffer[fd].buffer = alloc(areads_buffer[fd].bufsize + 1);
+	areads_buffer[fd].buffer[0] = '\0';
+	areads_buffer[fd].endptr = areads_buffer[fd].buffer;
+    }
+}
+
+/*
+ *=====================================================================
+ * Release a buffer for a particular file descriptor used by areads().
+ *
+ * void areads_relbuf (int fd)
+ *
+ * entry:	fd = file descriptor to release buffer for
+ * exit:	none
+ *=====================================================================
+ */
+
+void
+areads_relbuf(fd)
+    int fd;
+{
+    assert(fd >= 0 && fd < areads_bufcount);
+    amfree(areads_buffer[fd].buffer);
+    areads_buffer[fd].endptr = NULL;
+    areads_buffer[fd].bufsize = 0;
+}
+
+/*
+ *=====================================================================
  * Get the next line of input from a file descriptor.
  *
  * char *areads (int fd)
@@ -448,51 +516,52 @@ areads (fd)
 {
     char *nl;
     char *line;
-    static char buffer[BUFSIZ+1];
-    static char *line_buffer = NULL;
-    char *t;
+    char *buffer;
+    char *endptr;
+    char *newbuf;
+    int buflen;
+    int size;
     int r;
 
     malloc_enter(dbmalloc_caller_loc(s, l));
 
-    while(1) {
+    areads_getbuf(fd);
+    buffer = areads_buffer[fd].buffer;
+    endptr = areads_buffer[fd].endptr;
+    buflen = areads_buffer[fd].bufsize - (endptr - buffer);
+    while((nl = strchr(buffer, '\n')) == NULL) {
 	/*
-	 * First, see if we have a line in the buffer.
+	 * No newline yet, so get more data.
 	 */
-	if(line_buffer) {
-	    if((nl = strchr(line_buffer, '\n')) != NULL) {
-		*nl++ = '\0';
-		line = stralloc(line_buffer);
-		if(*nl) {
-		    t = stralloc(nl);		/* save data still in buffer */
-		} else {
-		    t = NULL;
-		}
-		amfree(line_buffer);
-		line_buffer = t;
-		malloc_leave(dbmalloc_caller_loc(s, l));
-		return line;
-	    }
+	if (buflen == 0) {
+	    size = areads_buffer[fd].bufsize + BUFSIZ;
+	    newbuf = alloc(size + 1);
+	    memcpy (newbuf, buffer, areads_buffer[fd].bufsize);
+	    areads_buffer[fd].endptr = newbuf + areads_buffer[fd].bufsize;
+	    areads_buffer[fd].bufsize = size;
+	    buffer = areads_buffer[fd].buffer;
+	    endptr = areads_buffer[fd].endptr;
+	    buflen = areads_buffer[fd].bufsize - (endptr - buffer);
 	}
-	/*
-	 * Now, get more data and loop back to check for a completed
-	 * line again.
-	 */
-	if ((r = read(fd, buffer, sizeof(buffer)-1)) <= 0) {
+	if ((r = read(fd, endptr, buflen)) <= 0) {
 	    if(r == 0) {
-		errno = 0;			/* flag EOF instead of error */
+		errno = 0;		/* flag EOF instead of error */
 	    }
-	    amfree(line_buffer);
 	    malloc_leave(dbmalloc_caller_loc(s, l));
 	    return NULL;
 	}
-	buffer[r] = '\0';
-	if(line_buffer) {
-	    strappend(line_buffer, buffer);
-	} else {
-	    line_buffer = stralloc(buffer);
-	}
+	endptr[r] = '\0';		/* we always leave room for this */
+	endptr += r;
+	buflen -= r;
     }
+    *nl++ = '\0';
+    line = stralloc(buffer);
+    size = endptr - nl;			/* data still left in buffer */
+    memmove(buffer, nl, size);
+    areads_buffer[fd].endptr = buffer + size;
+    areads_buffer[fd].endptr[0] = '\0';
+    malloc_leave(dbmalloc_caller_loc(s, l));
+    return line;
 }
 
 #ifdef TEST
@@ -505,6 +574,8 @@ int main(argc, argv)
 	int fd;
 	char *name;
 	char *top;
+	char *file;
+	char *line;
 
 	for(fd = 3; fd < FD_SETSIZE; fd++) {
 		/*
@@ -518,33 +589,50 @@ int main(argc, argv)
 
 	set_pname("file test");
 
-	if (argc > 2) {
-		name = *++argv;
-		top = *++argv;
-	} else {
-		name = "/tmp/a/b/c/d/e";
-		top = "/tmp";
+	name = "/tmp/a/b/c/d/e";
+	if (argc > 2 && argv[1][0] != '\0') {
+		name = argv[1];
+	}
+	top = "/tmp";
+	if (argc > 3 && argv[2][0] != '\0') {
+		name = argv[2];
+	}
+	file = "/etc/hosts";
+	if (argc > 4 && argv[3][0] != '\0') {
+		name = argv[3];
 	}
 
-	printf("Create parent directories of %s ...", name);
+	fprintf(stderr, "Create parent directories of %s ...", name);
 	rc = mkpdir(name, 02777, (uid_t)-1, (gid_t)-1);
 	if (rc == 0)
-		printf("done\n");
+		fprintf(stderr, " done\n");
 	else {
 		perror("failed");
 		return rc;
 	}
 
-	printf("Delete %s back to %s ...", name, top);
+	fprintf(stderr, "Delete %s back to %s ...", name, top);
 	rc = rmpdir(name, top);
 	if (rc == 0)
-		printf("done\n");
+		fprintf(stderr, " done\n");
 	else {
 		perror("failed");
 		return rc;
 	}
 
-	printf("Finished.\n");
+	fprintf(stderr, "areads dump of %s ...", file);
+	if ((fd = open (file, 0)) < 0) {
+		perror(file);
+		return 1;
+	}
+	while ((line = areads(fd)) != NULL) {
+		puts(line);
+		amfree(line);
+	}
+	aclose(fd);
+	fprintf(stderr, " done.\n");
+
+	fprintf(stderr, "Finished.\n");
 	return 0;
 }
 
