@@ -1,3 +1,9 @@
+Changes in release 2.4.2p1
+
+* Bugs fix release, the most annoying one is that amanda could retry
+  the same filesystem indefinitely if it is larger than the holding
+  disk but the estimate was smaller.
+
 Changes in release 2.4.2
 
 * dumptypes can be specialized in the disklist file
