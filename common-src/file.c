@@ -23,12 +23,13 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.14.4.6 2000/09/24 01:57:20 martinea Exp $
+ * $Id: file.c,v 1.14.4.6.4.1 2001/03/20 00:25:22 jrjackson Exp $
  *
  * file and directory bashing routines
  */
 
 #include "amanda.h"
+#include "util.h"
 
 uid_t client_uid = (uid_t) -1;
 gid_t client_gid = (gid_t) -1;
@@ -268,15 +269,11 @@ save_core()
     struct stat sbuf;
 
     if(stat("core", &sbuf) != -1) {
-        struct tm *tm;
-        char ts[8+1];
+        char *ts;
         char suffix[2];
         char *old, *new;
 
-        tm = localtime(&sbuf.st_mtime);
-        ap_snprintf(ts, sizeof(ts),
-                    "%04d%02d%02d",
-                    tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
+	ts = construct_datestamp((time_t *)&sbuf.st_mtime);
         suffix[0] = 'z';
         suffix[1] = '\0';
         old = vstralloc("core", ts, suffix, NULL);
@@ -294,6 +291,7 @@ save_core()
             old = vstralloc("core", ts, suffix, NULL);
             (void)rename(old, new);         /* it either works ... */
         }
+	amfree(ts);
         amfree(old);
         amfree(new);
     }

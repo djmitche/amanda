@@ -32,14 +32,24 @@ noinst_HEADERS =	amanda.h	arglist.h	\
 			amregex.h	fileheader.h	\
 			util.h          pipespawn.h
 
+STANDARD_COMMON_STUFF_NOT_FILE = \
+	alloc.$(OBJEXT) \
+	debug.$(OBJEXT) \
+	error.$(OBJEXT) \
+	util.$(OBJEXT)
+
+STANDARD_COMMON_STUFF = \
+	$(STANDARD_COMMON_STUFF_NOT_FILE) \
+	file.$(OBJEXT)
+
 .sh:
 	cat $< > $@
 	chmod a+x $@
 
 EXTRA_PROGRAMS = genversion $(TEST_PROGS)
 
-genversion_SOURCES = genversion.c versuff.c alloc.c debug.c error.c file.c
-genversion_LDADD = $(libamanda_a_LIBADD)
+genversion_SOURCES = genversion.c versuff.c
+genversion_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF)
 
 genversion.o: genversion.h
 genversion.h: $(top_builddir)/config.status
@@ -86,18 +96,17 @@ regerror.ih: $(REGsrcdir)/regerror.c $(REGsrcdir)/mkh
 
 # used for testing only
 
-statfs_SOURCES = statfs.test.c alloc.c debug.c error.c file.c
-statfs_LDADD = $(libamanda_a_LIBADD)
+statfs_SOURCES = statfs.test.c
+statfs_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF)
 
-token_SOURCES = token.test.c alloc.c debug.c error.c file.c
-token_LDADD = $(libamanda_a_LIBADD)
+token_SOURCES = token.test.c
+token_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF)
 
-file_SOURCES = file.test.c alloc.c debug.c error.c
-file_LDADD = $(libamanda_a_LIBADD)
+file_SOURCES = file.test.c
+file_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF_NOT_FILE)
 
 security_SOURCES = security.test.c
-security_LDADD = $(libamanda_a_LIBADD) \
-	alloc.$(OBJEXT) debug.$(OBJEXT) error.$(OBJEXT) file.$(OBJEXT)
+security_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF)
 
 %.test.c: $(srcdir)/%.c
 	echo '#define TEST' >$@

@@ -24,21 +24,8 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.c,v 1.1.2.1 1999/04/17 22:13:46 martinea Exp $
+ * $Id: server_util.c,v 1.1.2.1.4.1 2001/03/20 00:25:23 jrjackson Exp $
  *
  */
 
 #include "amanda.h"
-
-char *construct_datestamp()
-{
-    struct tm *tm;
-    char datestamp[3*NUM_STR_SIZE];
-    time_t today;
-
-    today = time((time_t *)NULL);
-    tm = localtime(&today);
-    ap_snprintf(datestamp, sizeof(datestamp),
-                "%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
-    return stralloc(datestamp);
-}

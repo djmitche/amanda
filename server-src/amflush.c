@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.41.2.13 1999/09/11 16:55:16 jrj Exp $
+ * $Id: amflush.c,v 1.41.2.13.4.1 2001/03/20 00:25:22 jrjackson Exp $
  *
  * write files from work directory onto tape
  */
@@ -129,7 +129,7 @@ char **main_argv;
     }
     amfree(conf_tapelist);
 
-    datestamp = construct_datestamp();
+    datestamp = construct_datestamp(NULL);
 
     dumpuser = getconf_str(CNF_DUMPUSER);
     if((pw = getpwnam(dumpuser)) == NULL)

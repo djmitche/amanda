@@ -1,3 +1,28 @@
+2001-03-19 John R. Jackson <jrj@purdue.edu>
+
+	* configure.in: Add --with-debug-days (default is 4) and remove
+	  --with-pid-debug-files.
+	* common-src/Makefile.am: Clean up test program dependencies.
+	* common-src/debug.c: Create timestamped debug file names and remove
+	  files older (based on file name) than --with-debug-days.  Rename old
+	  style names to new style (based on modification time) the first time
+	  they are seen.
+	* common-src/file.c: Use construct_datestamp() instead of private code.
+	* common-src/genversion.c: Display AMANDA_DEBUG_DAYS and remove
+	  DEBUG_FILE_WITH_PID.
+	* common-src/util.c: Move construct_datestamp to here and add new
+	  function construct_timestamp.  Change time used to build string to
+	  be an optional parameter instead of always getting it in the routine.
+	* common-src/util.h: Add prototypes.
+	* server-src/amcleanupdisk.c: Change construct_datestamp call to pass
+	  indication that it should get the current time.
+	* server-src/amflush.c: Ditto.
+	* server-src/driver.c: Ditto.
+	* server-src/dumper.c: Ditto.
+	* server-src/planner.c: Ditto.
+	* server-src/server_util.c: Remove construct_datestamp (now in util.c).
+	* server-src/server_util.h: Remove prototype.
+
 2001-03-15 John R. Jackson <jrj@purdue.edu>
 
 	* server-src/planner.c (analyze_estimate): Do not do an incremental
