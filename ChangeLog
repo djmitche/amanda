@@ -1,5 +1,10 @@
 1999-04-16  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/versuff.c.in: const the return str of version()
+	and versionsuffix.  Bump copyright to 1999.
+
+1999-04-16  Mike Grupenhoff <kashmir@munge.com>
+
 	* client-src/amandad.c, client-src/amandad.h,
 	client-src/sendbackup-dump,c, client-src/sendbackup-gnutar.c,
 	client-src/sendbackup.c, common-src/bsd-security.c,
