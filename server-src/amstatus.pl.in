@@ -123,7 +123,6 @@ while(<AMDUMP>) {
 			push @hosts, $host;
 			$hosts{$host}=1;
 		}
-		$$host=1;
 		push @$host, $partition;
 		$hostpart="$host$partition";
 		$estimate{$hostpart}=0;
