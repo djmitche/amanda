@@ -1,5 +1,10 @@
 1999-10-02 John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/amindexd.c (build_disk_table): only "OK" results from
+	  find_dump should be considered.
+
+1999-10-02 John R. Jackson  <jrj@purdue.edu>
+
 	* common-src/file.c (areads): when NO-ROOM became advisory and didn't
 	  participate in a full handshake, it exposed a problem in areads()
 	  where a static buffer was shared among all I/O.  Changed it to use

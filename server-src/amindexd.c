@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.51 1999/10/02 22:20:40 jrj Exp $
+ * $Id: amindexd.c,v 1.52 1999/10/03 00:11:10 jrj Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -472,7 +472,8 @@ static int build_disk_table()
     for(find_output = output_find; find_output != NULL; 
 	find_output = find_output->next) {
 	if(strcmp(dump_hostname, find_output->hostname) == 0 &&
-	   strcmp(disk_name    , find_output->diskname) == 0) {
+	   strcmp(disk_name    , find_output->diskname) == 0 &&
+	   strcmp("OK"         , find_output->status)   == 0) {
 	    snprintf(date, sizeof(date), "%04d-%02d-%02d",
 			find_output->datestamp/10000,
 			(find_output->datestamp/100) %100,
