@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: display_commands.c,v 1.12.4.1.6.2 2002/03/24 19:23:23 jrjackson Exp $
+ * $Id: display_commands.c,v 1.12.4.1.6.3 2002/10/27 21:13:25 martinea Exp $
  *
  * implements the directory-display related commands in amrecover
  */
@@ -61,16 +61,17 @@ void clear_dir_list P((void))
 }
 
 /* add item to list if path not already on list */
-static int add_dir_list_item(date, level, tape, path)
+static int add_dir_list_item(date, level, tape, fileno, path)
 char *date;
 int level;
 char *tape;
+int fileno;
 char *path;
 {
     DIR_ITEM *last;
 
-    dbprintf(("add_dir_list_item: Adding \"%s\" \"%d\" \"%s\" \"%s\"\n",
-	      date, level, tape, path));
+    dbprintf(("add_dir_list_item: Adding \"%s\" \"%d\" \"%s\" \"%d\" \"%s\"\n",
+	      date, level, tape, fileno, path));
 
     if (dir_list == NULL)
     {
@@ -81,6 +82,7 @@ char *path;
 	dir_list->level = level;
 	strncpy(dir_list->tape, tape, sizeof(dir_list->tape)-1);
 	dir_list->tape[sizeof(dir_list->tape)-1] = '\0';
+	dir_list->fileno = fileno;
 	strncpy(dir_list->path, path, sizeof(dir_list->path)-1);
 	dir_list->path[sizeof(dir_list->path)-1] = '\0';
 
@@ -100,6 +102,7 @@ char *path;
     last->next->level = level;
     strncpy(last->next->tape, tape, sizeof(last->next->tape)-1);
     last->next->tape[sizeof(last->next->tape)-1] = '\0';
+    last->next->fileno = fileno;
     strncpy(last->next->path, path, sizeof(last->next->path)-1);
     last->next->path[sizeof(last->next->path)-1] = '\0';
 
@@ -121,7 +124,7 @@ void suck_dir_list_from_server P((void))
     int i;
     char *l = NULL;
     char *date, *date_undo, date_undo_ch = '\0';
-    int level;
+    int level, fileno;
     char *tape, *tape_undo, tape_undo_ch = '\0';
     char *dir, *dir_undo, dir_undo_ch = '\0';
     char *disk_path_slash = NULL;
@@ -223,6 +226,18 @@ void suck_dir_list_from_server P((void))
 	tape_undo_ch = *tape_undo;
 	*tape_undo = '\0';
 
+	if(am_has_feature(their_features, fe_amindexd_fileno_in_OLSD)) {
+	    skip_whitespace(s, ch);
+	    if(ch == '\0' || sscanf(s - 1, "%d", &fileno) != 1) {
+		err = "bad reply: cannot parse fileno field";
+		continue;
+	    }
+	    skip_integer(s, ch);
+	}
+	else {
+	    fileno = -1;
+	}
+
 	skip_whitespace(s, ch);
 	if(ch == '\0') {
 	    err = "bad reply: missing directory field";
@@ -234,7 +249,7 @@ void suck_dir_list_from_server P((void))
 	if(strcmp(disk_path,dir)==0 || strcmp(disk_path_slash,dir)==0) {
 	    dir = disk_path_slash_dot;
 	}
-	add_dir_list_item(date, level, tape, dir);
+	add_dir_list_item(date, level, tape, fileno, dir);
     }
     amfree(disk_path_slash_dot);
     amfree(disk_path_slash);

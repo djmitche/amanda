@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.h,v 1.8.4.2.4.1.2.2 2002/10/22 23:35:40 martinea Exp $
+ * $Id: amrecover.h,v 1.8.4.2.4.1.2.3 2002/10/27 21:13:25 martinea Exp $
  *
  * data structures and declarations for amrecover
  */
@@ -38,6 +38,7 @@ typedef struct DIR_ITEM
     int  level;
     char tape[256];
     char path[1024];
+    int  fileno;
 
     struct DIR_ITEM *next;
 }

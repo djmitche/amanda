@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43.2.13.4.6.2.9 2002/10/18 20:53:16 martinea Exp $
+ * $Id: extract_list.c,v 1.43.2.13.4.6.2.10 2002/10/27 21:13:25 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -57,6 +57,7 @@ typedef struct EXTRACT_LIST
     char date[11];			/* date tape created */
     int  level;				/* level of dump */
     char tape[256];			/* tape label */
+    int fileno;				/* fileno on tape */
     EXTRACT_LIST_ITEM *files;		/* files to get off tape */
 
     struct EXTRACT_LIST *next;
@@ -284,6 +285,7 @@ DIR_ITEM *ditem;
     strncpy(this->tape, ditem->tape, sizeof(this->tape)-1);
     this->tape[sizeof(this->tape)-1] ='\0';
     this->level = ditem->level;
+    this->fileno = ditem->fileno;
     strncpy(this->date, ditem->date, sizeof(this->date)-1);
     this->date[sizeof(this->date)-1] = '\0';
     that = (EXTRACT_LIST_ITEM *)alloc(sizeof(EXTRACT_LIST_ITEM));
@@ -568,6 +570,15 @@ char *regex;
 			continue;
 		    }
 
+		    if(am_has_feature(their_features, fe_amindexd_fileno_in_ORLD)) {
+			skip_whitespace(s, ch);
+			if(ch == '\0' || sscanf(s - 1, "%d", &lditem.fileno) != 1) {
+			    err = "bad reply: cannot parse fileno field";
+			    continue;
+			}
+			skip_integer(s, ch);
+		    }
+
 		    skip_whitespace(s, ch);
 		    if(ch == '\0') {
 			err = "bad reply: missing directory field";
@@ -697,7 +708,7 @@ char *regex;
     char *date, *date_undo, date_undo_ch = '\0';
     char *tape, *tape_undo, tape_undo_ch = '\0';
     char *dir, *dir_undo, dir_undo_ch = '\0';
-    int  level;
+    int  level, fileno;
     char *ditem_path = NULL;
     char *l = NULL;
     int  deleted;
@@ -833,6 +844,15 @@ char *regex;
 		    tape_undo = s - 1;
 		    tape_undo_ch = *tape_undo;
 		    *tape_undo = '\0';
+
+		    if(am_has_feature(their_features, fe_amindexd_fileno_in_ORLD)) {
+			skip_whitespace(s, ch);
+			if(ch == '\0' || sscanf(s - 1, "%d", &fileno) != 1) {
+			    err = "bad reply: cannot parse fileno field";
+			    continue;
+			}
+			skip_integer(s, ch);
+		    }
 
 		    skip_whitespace(s, ch);
 		    if(ch == '\0') {
