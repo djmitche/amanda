@@ -13,6 +13,7 @@ Changes in release 2.4.2
   size
 * A new `dtimeout' keyword in amanda.conf to replace the READ_TIMEOUT
   constant in dumper.c.
+* new amtrmlog command
 
 Changes in release 2.4.1
 

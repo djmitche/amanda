@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.6.2.2 1999/02/26 22:07:22 martinea Exp $
+ * $Id: find.c,v 1.6.2.3 1999/03/28 21:31:34 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -114,6 +114,79 @@ char **lfind_diskstrs;
 
     search_holding_disk(&output_find);
     return(output_find);
+}
+
+char **find_log()
+{
+    char *conflogdir, *logfile = NULL;
+    int tape, maxtape, seq, logs;
+    tape_t *tp;
+    char **output_find_log = NULL;
+    char **current_log;
+
+    conflogdir = getconf_str(CNF_LOGDIR);
+    maxtape = lookup_nb_tape();
+
+    output_find_log = alloc((maxtape*5+10) * sizeof(char *));
+    current_log = output_find_log;
+
+    for(tape = 1; tape <= maxtape; tape++) {
+	char ds_str[NUM_STR_SIZE];
+
+	tp = lookup_tapepos(tape);
+	if(tp == NULL) continue;
+	ap_snprintf(ds_str, sizeof(ds_str), "%d", tp->datestamp);
+
+	/* search log files */
+
+	logs = 0;
+
+	/* new-style log.<date>.<seq> */
+
+	for(seq = 0; 1; seq++) {
+	    char seq_str[NUM_STR_SIZE];
+
+	    ap_snprintf(seq_str, sizeof(seq_str), "%d", seq);
+	    logfile = newvstralloc(logfile,
+			conflogdir, "/log.", ds_str, ".", seq_str, NULL);
+	    if(access(logfile, R_OK) != 0) break;
+	    if( search_logfile(NULL, tp->label, tp->datestamp, seq, logfile)) {
+		*current_log = vstralloc("log.", ds_str, ".", seq_str, NULL);
+		current_log++;
+		logs++;
+		break;
+	    }
+	}
+
+	/* search old-style amflush log, if any */
+
+	logfile = newvstralloc(logfile,
+			       conflogdir, "/log.", ds_str, ".amflush", NULL);
+	if(access(logfile,R_OK) == 0) {
+	    if( search_logfile(NULL, tp->label, tp->datestamp, 1000, logfile)) {
+		*current_log = vstralloc("log.", ds_str, ".amflush", NULL);
+		current_log++;
+		logs++;
+	    }
+	}
+
+	/* search old-style main log, if any */
+
+	logfile = newvstralloc(logfile, conflogdir, "/log.", ds_str, NULL);
+	if(access(logfile,R_OK) == 0) {
+	    if(search_logfile(NULL, tp->label, tp->datestamp, -1, logfile)) {
+		*current_log = vstralloc("log.", ds_str, NULL);
+		current_log++;
+		logs++;
+	    }
+	}
+	if(logs == 0)
+	    printf("Warning: no log files found for tape %s written %s\n",
+		   tp->label, find_nicedate(tp->datestamp));
+    }
+    amfree(logfile);
+    *current_log = NULL;
+    return(output_find_log);
 }
 
 void search_holding_disk(output_find)
@@ -453,6 +526,12 @@ char **label;
     return 1;
 }
 
+/* if output_find is NULL					*/
+/*	return 1 if this is the logfile for this label		*/
+/*	return 0 if this is not the logfile for this label	*/
+/* else								*/
+/*	add to output_find all the dump for this label		*/
+/*	return the number of dump added.			*/
 int search_logfile(output_find, label, datestamp, datestamp_aux, logfile)
 find_result_t **output_find;
 char *label, *logfile;
@@ -484,6 +563,14 @@ int datestamp, datestamp_aux;
 		tapematch = 1;
 	    }
 	}
+    }
+
+    if(output_find == NULL) {
+	afclose(logf);
+        if(tapematch == 0)
+	    return 0;
+	else
+	    return 1;
     }
 
     if(tapematch == 0) {
