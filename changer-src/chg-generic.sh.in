@@ -83,6 +83,12 @@ if [ "$multieject" = "" ]; then
 #	exit 2
 fi
 
+ejectdelay=`awk '$1 == "ejectdelay" {print $2}' $ourconf 2>/dev/null`
+if [ "$ejectdelay" = "" ]; then
+	echo "<none> $pname: ejectdelay not specified in $ourconf"
+	ejectdelay=0
+fi
+
 # read in state: only curslot and curloaded at the present time
 
 curslot=`awk '$1 == "curslot" {print $2}' $ourstate 2>/dev/null`
@@ -256,6 +262,8 @@ if [ $ejectslot -eq 1 ]; then	# eject the tape from the drive
 		# we just presume an error signifies an empty slot.
 		#
 		slotempty=1
+	else
+		sleep $ejectdelay
 	fi
 fi
 
