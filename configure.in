@@ -987,6 +987,8 @@ case "$target" in
 			;;
   *-pc-linux-*)
 			;;
+  alpha-*-linux-*)
+			;;
   *-sgi-irix3*)
 			dnl The old cc won't work!
 			CC=gcc
