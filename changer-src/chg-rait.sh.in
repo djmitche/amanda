@@ -8,13 +8,16 @@
 # so we have a changerfile that lists other changers and
 # changer files.
 #   nchangers=3
-#   changerdev_1="chg-mtx"
+#   tpchanger_1="chg-mtx"
+#   changerdev_1="/dev/mtx1"
 #   changerfile_1="/some/file1"
 #   tapedev_1="/some/dev"
-#   changerdev_2="chg-mtx"
+#   tpchanger_2="chg-mtx"
+#   changerdev_2="/dev/mtx2"
 #   changerfile_2="/some/file2"
 #   tapedev_2="/some/dev"
-#   changerdev_3="chg-mtx"
+#   tpchanger_3="chg-mtx"
+#   changerdev_3="/dev/mtx3"
 #   changerfile_3="/some/file3"
 #   tapedev_3="/some/dev"
 #
@@ -77,6 +80,7 @@ mailto=`$getconf mailto`
 i=1
 while [ $i -le $nchangers ]
 do
+   eval tpchanger=\$tpchanger_$i
    eval changerdev=\$changerdev_$i
    eval changerfile=\$changerfile_$i
    eval tapedev=\$tapedev_$i
@@ -87,6 +91,7 @@ do
    cat >> amanda.conf <<EOF
 org     	"$ORG"
 mailto  	"$mailto"
+tpchanger 	"$tpchanger"
 changerdev 	"$changerdev"
 changerfile 	"$changerfile"
 tapedev 	"$tapedev"
@@ -100,7 +105,7 @@ define tapetype EXABYTE {
 EOF
 
     (
-	$changerdev "$@"
+	$tpchanger "$@"
 	echo "$?"> exitcode 
     )  > stdout 2>stderr &
 

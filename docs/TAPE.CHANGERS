@@ -651,7 +651,9 @@ Vision Inc. SCSI control subsystem that interprets commands sent on
 the SCSI bus.  It expects `tapedev' to specify the tape device to be
 used.  `changerfile' and `changerdev' are ignored.
 
-chg-juke:
+==============================
+chg-juke
+==============================
 
 A shell script that uses the Fermilab "juke" software (see 
 http://www.fnal.gov/fermitools/, the "juke" link) to control
@@ -664,3 +666,38 @@ It uses 'changerfile' to track Amanda's current tape state,
 'tapedev' must be the tape drive (or RAIT set) name, and 'changerdev' 
 is the juke software's name for the changer, or a csh-glob that
 expands to several jukebox names (i.e. "changer{a,b,c}")
+
+==============================
+chg-rait
+==============================
+
+A shell script that runs other changers in tandem, and returns
+a rait:{dev1,dev2,...} tape device based on the results of 
+each other changer.  So if you wanted to have 2 stackers
+striped with no parity, and you have chg-mtx support for your
+stackers, you would use the follwing changerfile:
+ 
+   nchangers=3
+   tpchanger_1="chg-mtx"
+   changerdev_1="/dev/mtx1"
+   changerfile_1="/some/file1"
+   tapedev_1="/some/dev"
+   tpchanger_2="chg-mtx"
+   changerdev_2="/dev/mtx2"
+   changerfile_2="/some/file2"
+   tapedev_2="/some/dev"
+   tpchanger_3="chg-null"
+   changerdev_3="/dev/null"
+   changerfile_3="/some/file3"
+   tapedev_3="/some/dev"
+
+The third uses the null changer.  The tapedev_n entries are only needed
+if the changerfile in question uses them.
+
+==============================
+chg-null
+==============================
+
+A trivial changer which loads/unloads on a null: device.  Useful with
+chg-rait to throw away a parity stripe by puttin on a null jukebox, 
+or for testing.
