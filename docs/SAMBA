@@ -3,21 +3,21 @@ README for adding PC hosts to the Amanda backup system.
 Installation
 
 Amanda is able to back up Microsoft Windows shared disks by using
-SAMBA, a package that implements a SMB client and server for Unix.
-Releases from 1.9.18p5 up to 1.9.18p10 would log information in the tar
-files it produces, making them unusable (both the tar files and the
-releases of SAMBA :-)!  If you really must, a patch that fixes the
-problem was posted to the Amanda Users mailing-list; please check the
-archives.  The patch may be available in the Amanda Patches Page too.
+Samba, a package that implements a SMB client and server for Unix.
+Releases from 1.9.18p5 up to 1.9.18p10 would log information in the
+tar files it produces, making them unusable (both the tar files and
+the releases of Samba :-)!  If you really must use a release prior to
+Samba 2.0.0, a patch that fixes the problem is available in the Amanda
+Patches Page too.
 
-Amanda no longer supports SAMBA releases prior to 1.9.18.  If you're
-using SAMBA from 1.9.18 up to 1.9.18p3, make sure you don't set a low
+Amanda no longer supports Samba releases prior to 1.9.18.  If you're
+using Samba from 1.9.18 up to 1.9.18p3, make sure you don't set a low
 logging/debugging level in smb.conf.  This flag may prevent that
 estimate sizes are printed correctly.  Amanda will report an estimate
 failure in this case.
 
 This problem may also occur if you have large (>2GB) filesystems to
-back up with samba.  In this case, apply samba-largefs.patch, after
+back up with Samba.  In this case, apply samba-largefs.patch, after
 making sure your C compiler supports `unsigned long long's, and that
 printf() in your C library understands that "%llu" means `unsigned
 long long'.  gcc may help you getting unsigned long longs, in case
@@ -25,12 +25,12 @@ your platform doesn't, but it will not help printf understand "%llu".
 
 After building and installing samba with the selected patches, Amanda
 must be configured with smbclient support - when you run configure,
-add the following argument:
+you may add the following argument:
 
  --with-smbclient=/full/path/to/smbclient
 
 By default, amanda will try to find smbclient in the PATH.  If it is
-not found, or it appears not to be smbclient, SAMBA support won't be
+not found, or it appears not to be smbclient, Samba support won't be
 enabled.
 
 Setup
@@ -103,13 +103,13 @@ connect to any appropriate hosts.  It also checks for the existence of
 
 Bugs
 
-SAMBA will not back up open files (such as PAGEFILE.SYS and registry
+Samba will not back up open files (such as PAGEFILE.SYS and registry
 files) nor Access Control List data.  Furthermore, at restore time,
-smbclient is unable to overwrite read-only files.  Hence, Amanda+SAMBA
+smbclient is unable to overwrite read-only files.  Hence, Amanda+Samba
 is not a perfect solution for backing up (restoring, actually) system
 disks.
 
-SAMBA does not use Windows' Backup API, so configuring the Amanda
+Samba does not use Windows' Backup API, so configuring the Amanda
 backup user as a member of group backup, in the Windows host, is
 useless.  You will probably have to configure it as an Administrator,
 and make sure that it can read and change permission of *all* files in
