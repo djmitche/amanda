@@ -841,16 +841,24 @@ esac
 
 AC_MSG_CHECKING(for Kerberos V)
 for dir in $KRB5_SPOTS; do
-    if test -f ${dir}/lib/libkrb5.a -a -f ${dir}/lib/libcrypto.a -a -f ${dir}/lib/libgssapi_krb5.a -a -f ${dir}/lib/libcom_err.a; then
+    k5libdir=${dir}/lib
+    if test -f ${k5libdir}/libkrb5.a -a -f ${k5libdir}/libgssapi_krb5.a -a -f ${k5libdir}/libcom_err.a; then
+	if test -f ${k5libdir}/libcrypto.a; then
+	    K5CRYPTO=${k5libdir}/libcrypto.a
+	elif test -f ${k5libdir}/libk5crypto.a; then
+	    K5CRYPTO=${k5libdir}/libk5crypto.a
+	else
+	    K5CRYPTO=""
+	fi
 	AC_MSG_RESULT(found in $dir)
 	KRB5_SECURITY=yes
 	AC_DEFINE(KRB5_SECURITY)
 	KRB5INCLUDES=-I$dir/include
-	KRB5LDFLAGS=-L$dir/lib
+	KRB5LDFLAGS=-L$k5libdir
 	# force the static versions of these libs by linking directly
 	# with the .a files.  I don't know how to get -R dependancies checked
 	# in autoconf at this time. -kashmir
-	KRB5LIBS="${dir}/lib/libgssapi_krb5.a ${dir}/lib/libkrb5.a ${dir}/lib/libcrypto.a ${dir}/lib/libcom_err.a"
+	KRB5LIBS="${k5libdir}/libgssapi_krb5.a ${k5libdir}/libkrb5.a $K5CRYPTO ${k5libdir}/libcom_err.a"
 	break
     fi
 done

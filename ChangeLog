@@ -1,5 +1,10 @@
 1999-04-06  Mike Grupenhoff <kashmir@munge.com>
 
+	* configure.in: MIT krb5 has libk5crypto, Cygnus kerbnet 1.2
+	calls it libcrypto.  Check for both.
+
+1999-04-06  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/bsd-security.c (check_user): if an .amandahosts
 	file is missing or unreadable, log this fact to the debug file
 	instead of claiming that a user doesn't have permission.
