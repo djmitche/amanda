@@ -51,7 +51,7 @@ struct cmd {
 };
 
 static char *pgm;
-static int debug = 0;
+static int debug_ammt = 0;
 
 static char *tapename;
 
@@ -62,13 +62,13 @@ do_asf(fd, count)
 {
     int r;
 
-    if(debug) {
+    if(debug_ammt) {
 	fprintf(stderr, "calling tapefd_rewind()\n");
     }
     if(0 != (r = tapefd_rewind(fd))) {
 	return r;
     }
-    if(debug) {
+    if(debug_ammt) {
 	fprintf(stderr, "calling tapefd_fsf(%d)\n", count);
     }
     return tapefd_fsf(fd, count);
@@ -79,7 +79,7 @@ do_bsf(fd, count)
     int fd;
     int count;
 {
-    if(debug) {
+    if(debug_ammt) {
 	fprintf(stderr, "calling tapefd_fsf(%d)\n", -count);
     }
     return tapefd_fsf(fd, -count);
@@ -93,7 +93,7 @@ do_status(fd, count)
     int ret;
     struct am_mt_status stat;
 
-    if(debug) {
+    if(debug_ammt) {
 	fprintf(stderr, "calling tapefd_status()\n");
     }
     if((ret = tapefd_status(fd, &stat)) != 0) {
@@ -163,7 +163,7 @@ main(int argc, char **argv) {
     while(-1 != (ch = getopt(argc, argv, "df:t:"))) {
 	switch(ch) {
 	case 'd':
-	    debug = 1;
+	    debug_ammt = 1;
 	    fprintf(stderr, "debug mode!\n");
 	    break;
 	case 'f':
@@ -199,7 +199,7 @@ main(int argc, char **argv) {
 	    }
 	    cmd[i].min_chars++;
 	}
-	if(debug) {
+	if(debug_ammt) {
 	    fprintf(stderr, "syntax: %-20s -> %*.*s\n",
 			    cmd[i].name,
 			    cmd[i].min_chars,
@@ -230,7 +230,7 @@ main(int argc, char **argv) {
 	fprintf(stderr, "%s: -f device or -t device is required\n", pgm);
 	exit(1);
     }
-    if(debug) {
+    if(debug_ammt) {
 	fprintf(stderr, "tapename is \"%s\"\n", tapename);
     }
 
@@ -239,14 +239,14 @@ main(int argc, char **argv) {
 	count = atoi(argv[optind]);
     }
 
-    if(debug) {
+    if(debug_ammt) {
 	fprintf(stderr, "calling tape_open(\"%s\",%d)\n", tapename, cmd[i].flags);
     }
     if((fd = tape_open(tapename, cmd[i].flags)) < 0) {
 	goto report_error;
     }
 
-    if(debug) {
+    if(debug_ammt) {
 	fprintf(stderr, "processing %s(%d)\n", cmd[i].name, count);
     }
     if(0 != (*cmd[i].func)(fd, count)) {

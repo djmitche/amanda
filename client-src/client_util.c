@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.21 2002/04/22 01:54:06 martinea Exp $
+ * $Id: client_util.c,v 1.22 2002/11/12 18:01:09 martinea Exp $
  *
  */
 
@@ -86,7 +86,7 @@ char *disk, *exin;
     DIR *d;
     struct dirent *entry;
     char *test_name = NULL;
-    int test_name_len, match_len, d_name_len;
+    int match_len, d_name_len;
 
 
     time(&curtime);
@@ -99,7 +99,6 @@ char *disk, *exin;
     }
     test_name = get_name(diskname, exin,
 			 curtime - (AMANDA_DEBUG_DAYS * 24 * 60 * 60), 0);
-    test_name_len = strlen(test_name);
     match_len = strlen(get_pname()) + strlen(diskname) + 2;
     while((entry = readdir(d)) != NULL) {
 	if(is_dot_or_dotdot(entry->d_name)) {

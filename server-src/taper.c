@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.84 2002/11/05 01:58:52 martinea Exp $
+/* $Id: taper.c,v 1.85 2002/11/12 18:01:10 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -302,10 +302,10 @@ char **main_argv;
     i = (buffers - (char *)0) & (page_size - 1);  /* page boundary offset */
     if(i != 0) {
 	first_buffer = buffers + page_size - i;
-	fprintf(stderr, "%s: shared memory at 0x%x, first buffer at 0x%x\n",
+	fprintf(stderr, "%s: shared memory at %p, first buffer at %p\n",
 		get_pname(),
-		(unsigned int)buffers,
-		(unsigned int)first_buffer);
+		buffers,
+		first_buffer);
     } else {
 	first_buffer = buffers;
     }
@@ -320,14 +320,14 @@ char **main_argv;
     }
     for(i = 0; i < conf_tapebufs; i++) {
 	buftable[i].buffer = first_buffer + i * buffer_size;
-	fprintf(stderr, "%s: buffer[%0*d] at 0x%x\n",
+	fprintf(stderr, "%s: buffer[%0*d] at %p\n",
 		get_pname(),
 		j, i,
-		(unsigned int)buftable[i].buffer);
+		buftable[i].buffer);
     }
-    fprintf(stderr, "%s: buffer structures at 0x%x for %d bytes\n",
+    fprintf(stderr, "%s: buffer structures at %p for %d bytes\n",
 	    get_pname(),
-	    (unsigned int)buftable,
+	    buftable,
 	    conf_tapebufs * sizeof(buffer_t));
 
     /* fork off child writer process, parent becomes reader process */
