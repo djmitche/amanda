@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.17 1998/01/08 18:32:07 jrj Exp $
+ * $Id: amrecover.c,v 1.18 1998/01/08 19:33:38 jrj Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -40,6 +40,10 @@
 #endif
 #include "amrecover.h"
 #include "getfsent.h"
+
+#if defined(KRB4_SECURITY)
+#include "krb4-security.h"
+#endif
 
 #ifdef HAVE_LIBREADLINE
 #  ifdef HAVE_READLINE_READLINE_H
@@ -60,6 +64,8 @@
 #endif
 
 char *pname = "amrecover";
+
+char *errstr = NULL;
 
 extern int process_line P((char *line));
 int guess_disk P((char *cwd, int cwd_len, char **dn_guess, char **mpt_guess));
@@ -376,12 +382,14 @@ void quit ()
     (void)converse("QUIT");
 }
 
+char *localhost = NULL;
 
 int main(argc, argv)
 int argc;
 char **argv;
 {
     struct sockaddr_in server;
+    struct sockaddr_in myname;
     struct servent *sp;
     struct hostent *hp;
     int i;
@@ -404,6 +412,12 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    localhost = alloc(MAX_HOSTNAME_LENGTH+1);
+    if (gethostname(localhost, MAX_HOSTNAME_LENGTH) != 0) {
+	error("cannot determine local host name\n");
+    }
+    localhost[MAX_HOSTNAME_LENGTH] = '\0';
 
     config = newstralloc(config, DEFAULT_CONFIG);
     server_name = newstralloc(server_name, DEFAULT_SERVER);
@@ -522,6 +536,38 @@ char **argv;
 	exit(1);
     }
 
+    /*
+     * Bind our end of the socket to a privileged port.
+     */
+    if ((hp = gethostbyname(localhost)) == NULL)
+    {
+	(void)fprintf(stderr, "%s: %s is an unknown host\n",
+		      pname, localhost);
+	dbprintf(("%s is an unknown host\n", localhost));
+	dbclose();
+	exit(1);
+    }
+    memset((char *)&myname, 0, sizeof(myname));
+    memcpy((char *)&myname.sin_addr, hp->h_addr, hp->h_length);
+    myname.sin_family = hp->h_addrtype;
+    if (bind_reserved(server_socket, &myname) != 0)
+    {
+	int save_errno = errno;
+
+	perror("amrecover: Error binding socket");
+	dbprintf(("Error binding socket: %s\n", strerror(save_errno)));
+	dbclose();
+	exit(1);
+    }
+
+    /*
+     * We may need root privilege again later for a reserved port to
+     * the tape server, so we will drop down now but might have to
+     * come back later.
+     */
+    seteuid(getuid());
+    setegid(getgid());
+
     if (connect(server_socket, (struct sockaddr *)&server, sizeof(server))
 	== -1)
     {
@@ -540,6 +586,25 @@ char **argv;
 	aclose(server_socket);
 	exit(1);
     }
+
+    /* do the security thing */
+#if defined(KRB4_SECURITY)
+#if 0 /* not yet implemented */
+    if(krb4_auth)
+    {
+	line = get_krb_security();
+    } else
+#endif /* 0 */
+#endif
+    {
+	line = get_bsd_security();
+    }
+    if (converse(line) == -1)
+	exit(1);
+    if (!server_happy())
+	exit(1);
+    memset(line, '\0', strlen(line));
+    afree(line);
 
     /* set the date of extraction to be today */
     (void)time(&timer);

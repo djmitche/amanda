@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.6 1998/01/02 18:47:55 jrj Exp $
+ * $Id: dgram.c,v 1.7 1998/01/08 19:33:33 jrj Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -42,13 +42,14 @@ struct sockaddr_in *addrp;
 #   define FIRST_PORT 512
 #   define NUM_PORTS		(IPPORT_RESERVED-FIRST_PORT)
     int port, count;
+    static int port_base = FIRST_PORT;
 
     /* 
      * we pick a different starting point based on our pid to avoid always
      * picking the same reserved port twice.
      */
 
-    port = FIRST_PORT + (getpid() % NUM_PORTS);
+    port = FIRST_PORT + ((getpid() + port_base) % NUM_PORTS);
 
     for(count = 0; count < NUM_PORTS; count++) {
 	addrp->sin_port = htons(port);
@@ -67,6 +68,7 @@ struct sockaddr_in *addrp;
 	errno = EAGAIN;
 	return -1;
     }
+    port_base = port + 1;
     return 0;
 }
 

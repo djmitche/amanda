@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.19 1998/01/08 18:32:09 jrj Exp $
+ * $Id: extract_list.c,v 1.20 1998/01/08 19:33:39 jrj Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -34,6 +34,10 @@
 #include "version.h"
 #include "amrecover.h"
 #include "fileheader.h"
+
+#if defined(KRB4_SECURITY)
+#include "krb4-security.h"
+#endif
 
 typedef struct EXTRACT_LIST_ITEM
 {
@@ -55,6 +59,8 @@ typedef struct EXTRACT_LIST
 EXTRACT_LIST;
 
 char *dump_device_name = NULL;
+
+extern char *localhost;
 
 /* global pid storage for interrupt handler */
 pid_t extract_restore_child_pid = -1;
@@ -897,11 +903,13 @@ char *cmd;
 static int extract_files_setup P((void))
 {
     struct sockaddr_in tape_server;
+    struct sockaddr_in myname;
     struct servent *sp;
     struct hostent *hp;
     int tape_server_socket;
     char *disk_regex = NULL;
     char *service_name = NULL;
+    char *line = NULL;
 
     service_name = stralloc2("amidxtape", SERVICE_SUFFIX);
 
@@ -929,6 +937,26 @@ static int extract_files_setup P((void))
 	perror("Error creating socket");
 	exit(1);
     }
+    if ((hp = gethostbyname(localhost)) == NULL)
+    {
+	(void)fprintf(stderr, "%s: %s is an unknown host\n",
+		      pname, localhost);
+	dbprintf(("%s is an unknown host\n", localhost));
+	dbclose();
+	exit(1);
+    }
+    memset((char *)&myname, 0, sizeof(myname));
+    memcpy((char *)&myname.sin_addr, hp->h_addr, hp->h_length);
+    myname.sin_family = hp->h_addrtype;
+    seteuid(0);					/* it either works ... */
+    setegid(0);
+    if (bind_reserved(tape_server_socket, &myname) != 0)
+    {
+	perror("amrecover: Error binding socket");
+	exit(2);
+    }
+    seteuid(getuid());				/* put it back */
+    setegid(getgid());
     if (connect(tape_server_socket, (struct sockaddr *)&tape_server,
 		sizeof(struct sockaddr_in)) == -1)
     {
@@ -936,6 +964,21 @@ static int extract_files_setup P((void))
 	exit(2);
     }
 
+    /* do the security thing */
+#if defined(KRB4_SECURITY)
+#if 0 /* not yet implemented */
+    if(krb4_auth)
+    {
+	line = get_krb_security();
+    }
+#endif /* 0 */
+#endif
+    {
+	line = get_bsd_security();
+    }
+    send_to_tape_server(tape_server_socket, line);
+    memset(line, '\0', strlen(line));
+    afree(line);
 
     /* we want to force amrestore to only match disk_name exactly */
     disk_regex = vstralloc("^", disk_name, "$", NULL);

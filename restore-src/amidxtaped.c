@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: amidxtaped.c,v 1.14 1998/01/03 22:50:14 jrj Exp $
+/* $Id: amidxtaped.c,v 1.15 1998/01/08 19:33:42 jrj Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -108,6 +108,9 @@ char **argv;
     struct stat stat_tape;
     char *tapename = NULL;
     int fd;
+    char *s, *fp;
+    int ch;
+    char *errstr = NULL;
     struct sockaddr_in addr;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
@@ -158,6 +161,29 @@ char **argv;
     if (addr.sin_family != AF_INET || htons(addr.sin_port) == 20) {
 	error("connection rejected from %s family %d port %d",
 	      inet_ntoa(addr.sin_addr), addr.sin_family, htons(addr.sin_port));
+    }
+
+    /* do the security thing */
+    afree(buf);
+    buf = get_client_line();
+    s = buf;
+    ch = *s++;
+
+    skip_whitespace(s, ch);
+    if (ch == '\0')
+    {
+	error("cannot parse SECURITY line");
+    }
+    fp = s-1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    if (strcmp(fp, "SECURITY") != 0)
+    {
+	error("cannot parse SECURITY line");
+    }
+    skip_whitespace(s, ch);
+    if (!security_ok(&addr, s-1, 0, &errstr)) {
+	error("security check failed: %s", errstr);
     }
 
     /* get the number of arguments */

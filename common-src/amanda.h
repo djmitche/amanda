@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.33 1998/01/07 21:12:00 jrj Exp $
+ * $Id: amanda.h,v 1.34 1998/01/08 19:33:32 jrj Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -531,6 +531,11 @@ extern char  *sanitise_filename P((char *inp));
 
 extern int debug;
 extern char *version_info[];
+
+/* from security.c */
+extern int security_ok P((struct sockaddr_in *addr,
+			  char *str, unsigned long cksum, char **errstr));
+extern char *get_bsd_security P((void));
 
 /*
  * Handle functions which are not always declared on all systems.  This

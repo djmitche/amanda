@@ -1,5 +1,11 @@
 Version 2.4.0b5
 
+	Change amrecover/amindexd/amidxtaped to require a SECURITY
+	exchange if --with-bsd-security is enabled.  It is done on a
+	reserved port, which means amrecover must be run as root and that
+	amindexd/amidxtaped need an entry for the incoming amrecover in
+	either .rhosts or .amandahosts (Kerberos is not yet supported).  --JJ
+
 	Make our internal TEXTDB the default database style for the infofile.
 	If you wish to keep using a dbm style database use the configure
 	option "--with-db={db,dbm,gdbm,ndbm}".

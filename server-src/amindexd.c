@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.20 1998/01/03 22:50:17 jrj Exp $
+ * $Id: amindexd.c,v 1.21 1998/01/08 19:33:44 jrj Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -795,6 +795,8 @@ char **argv;
     char *cmd;
     int len;
     int fd;
+    int user_validated = 0;
+    char *errstr = NULL;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -855,30 +857,42 @@ char **argv;
     s[-1] = '\0';
 
     if(amindexd_debug) {
-	remote_hostname = newstralloc(remote_hostname, local_hostname);
+	/*
+	 * Fake the remote address as the local address enough to get
+	 * through the security check.
+	 */
+	his_name = gethostbyname(local_hostname);
+	if(his_name == NULL) {
+	    error("gethostbyname: %s: %s\n", local_hostname, strerror(errno));
+	}
+	assert(his_name->h_addrtype == AF_INET);
+	his_addr.sin_family = his_name->h_addrtype;
+	his_addr.sin_port = htons(0);
+	memcpy((char *)&his_addr.sin_addr.s_addr,
+	       (char *)his_name->h_addr_list[0], his_name->h_length);
     } else {
 	/* who are we talking to? */
 	i = sizeof (his_addr);
 	if (getpeername(0, (struct sockaddr *)&his_addr, &i) == -1)
 	    error("getpeername: %s", strerror(errno));
-	if (his_addr.sin_family != AF_INET || htons(his_addr.sin_port) == 20)
-	{
-	    error("connection rejected from %s family %d port %d",
-		  inet_ntoa(his_addr.sin_addr), his_addr.sin_family,
-		  htons(his_addr.sin_port));
-	}
-	if ((his_name = gethostbyaddr((char *)&(his_addr.sin_addr),
-				      sizeof(struct in_addr),
-				      AF_INET)) == NULL) {
-	    error("gethostbyaddr: %s", strerror(errno));
-	}
-	s = his_name->h_name;
-	ch = *s++;
-	while(ch && ch != '.') ch = *s++;
-	s[-1] = '\0';
-	remote_hostname = newstralloc(remote_hostname, fp);
-	s[-1] = ch;
     }
+    if (his_addr.sin_family != AF_INET || htons(his_addr.sin_port) == 20)
+    {
+	error("connection rejected from %s family %d port %d",
+	      inet_ntoa(his_addr.sin_addr), his_addr.sin_family,
+	      htons(his_addr.sin_port));
+    }
+    if ((his_name = gethostbyaddr((char *)&(his_addr.sin_addr),
+				  sizeof(struct in_addr),
+				  AF_INET)) == NULL) {
+	error("gethostbyaddr: %s", strerror(errno));
+    }
+    s = his_name->h_name;
+    ch = *s++;
+    while(ch && ch != '.') ch = *s++;
+    s[-1] = '\0';
+    remote_hostname = newstralloc(remote_hostname, fp);
+    s[-1] = ch;
 
     /* clear these so we can detect when the have not been set by the client */
     afree(dump_hostname);
@@ -966,6 +980,23 @@ char **argv;
 		 */
 		arg_len = s-arg;
 	    }
+	}
+
+	afree(errstr);
+	if (!user_validated && strcmp(cmd, "SECURITY") == 0 && arg) {
+	    user_validated = security_ok(&his_addr, arg, 0, &errstr);
+	    if(user_validated) {
+		reply(200, "Access OK");
+		continue;
+	    }
+	}
+	if (!user_validated) {
+	    if (errstr) {
+		reply(500, "Access not allowed: %s", errstr);
+	    } else {
+		reply(500, "Access not allowed");
+	    }
+	    break;
 	}
 
 	if (strcmp(cmd, "QUIT") == 0) {

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: protocol.c,v 1.17 1998/01/02 18:47:59 jrj Exp $
+ * $Id: protocol.c,v 1.18 1998/01/08 19:33:34 jrj Exp $
  *
  * implements amanda protocol
  */
@@ -555,6 +555,7 @@ char *security, *typestr;
 			" SEQ ", seq_str,
 			"\n",
 			security ? security : "",
+			security ? "\n" : "",
 			NULL);
     dgram_cat(msg, linebuf);
     afree(linebuf);
@@ -751,11 +752,7 @@ pkt_t *pkt;
 static void add_bsd_security(p)
 proto_t *p;
 {
-    struct passwd *pwptr;
-
-    if((pwptr = getpwuid(getuid())) == NULL)
-	error("can't get login name for my uid %ld", (long)getuid());
-    p->security = vstralloc("SECURITY USER ", pwptr->pw_name, "\n", NULL);
+    p->security = get_bsd_security();
 }
 
 int make_request(hostname, port, req, datap, repwait, continuation)
@@ -801,32 +798,14 @@ static int add_krb_security(p, host_inst, realm)
 proto_t *p;
 char *host_inst, *realm;
 {
-    KTEXT_ST ticket;
-    int rc;
-
-    p->auth_cksum = kerberos_cksum(p->req);
+    p->security = get_krb_security(p->req, host_inst, realm, &p->auth_cksum);
 
 #ifdef PROTO_DEBUG
     fprintf(stderr, "add_krb_security() cksum: %lu: \'%s\'\n",
 	p->auth_cksum, p->req);
 #endif
 
-#define HOSTNAME_INSTANCE host_inst
-
-    if((rc = krb_mk_req(&ticket, CLIENT_HOST_PRINCIPLE,
-		       CLIENT_HOST_INSTANCE, realm, p->auth_cksum))) {
-	if(rc == NO_TKT_FIL) {
-	    /* It's been kdestroyed.  Get a new one and try again */
-	    kerberos_service_init();
-	    rc = krb_mk_req(&ticket, CLIENT_HOST_PRINCIPLE, 
-			    CLIENT_HOST_INSTANCE, realm, p->auth_cksum);
-	}
-	if(rc) return rc;
-    }
-    p->security = vstralloc("SECURITY TICKET ",
-			    bin2astr((unsigned char *)ticket.dat, ticket.length),
-			    "\n", NULL);
-    return 0;
+    return p->security != NULL;
 }
 
 int make_krb_request(hostname, port, req, datap, repwait, continuation)
