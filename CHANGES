@@ -19,6 +19,13 @@
 
 Version 2.4.0
 
+	when USE_RUNDUMP is enabled, instead of checking for read or write
+	access in selfcheck, just test for the existence of disk devices.
+	-oliva
+
+	fixed code that computed the dump size when incomplete
+	writes occurred in dumper.  -Eric Siegerman <erics@now.com>
+
 	amplot no longer crashes if there's no holding disk. -oliva
 
 Version 2.4.0b6p2

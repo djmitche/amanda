@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.27 1998/01/26 21:15:36 jrj Exp $
+ * $Id: selfcheck.c,v 1.28 1998/02/03 21:11:03 amcore Exp $
  *
  * do self-check and send back any error messages
  */
@@ -287,6 +287,7 @@ int level;
 {
     char *device = NULL;
     char *err = NULL;
+    int amode;
 
     if (strcmp(program, "GNUTAR") == 0) {
 #ifdef SAMBA_CLIENT
@@ -335,21 +336,34 @@ int level;
 	    return;
 	}
 #endif
+	amode = F_OK;
 	device = amname_to_dirname(disk);
     } else {
         device = amname_to_devname(disk);
 #ifdef VDUMP
 #ifdef DUMP
-        if (strcmp(amname_to_fstype(device), "advfs") == 0)
+        if (strcmp(amname_to_fstype(device), "advfs") == 0) {
+#else
+	if (1) {
 #endif
 	    device = newstralloc(device, amname_to_dirname(disk));
+	    amode = F_OK;
+	} else
 #endif
+	{
+	    device = stralloc(amname_to_devname(disk));
+#ifdef USE_RUNDUMP
+	    amode = F_OK;
+#else
+	    amode = R_OK;
+#endif
+	}
     }
 
     dbprintf(("checking disk %s: device %s", disk, device));
 
 #ifndef CHECK_FOR_ACCESS_WITH_OPEN
-    if(access(device, R_OK) == -1) {
+    if(access(device, amode) == -1) {
 	    err = strerror(errno);
 	    printf("ERROR [can not access %s (%s): %s]\n", device, disk, err);
     } else {
@@ -421,7 +435,7 @@ static void check_overall()
 
 #ifdef XFSDUMP
     if( need_xfsdump )
-	check_file(XFSDUMP, X_OK);
+	check_file(XFSDUMP, F_OK);
 #endif
 
 #ifdef XFSRESTORE
@@ -474,11 +488,17 @@ static void check_overall()
 	check_file(COMPRESS_PATH, X_OK);
 #if defined(DUMP) || defined(XFSDUMP)
     if( need_dump || need_xfsdump )
-	check_file("/etc/dumpdates", R_OK|W_OK);
+	check_file("/etc/dumpdates",
+#ifdef USE_RUNDUMP
+		   F_OK
+#else
+		   R_OK|W_OK
+#endif
+		   );
 #endif
 #ifdef VDUMP
     if (need_vdump)
-	check_file("/etc/vdumpdates", R_OK|W_OK);
+	check_file("/etc/vdumpdates", F_OK);
 #endif
     check_file("/dev/null", R_OK|W_OK);
     check_space("/tmp", 64);		/* for amandad i/o */
@@ -509,7 +529,9 @@ int mode;
 {
     char *noun, *adjective;
 
-    if((mode & X_OK) == X_OK)
+    if(mode == F_OK)
+        noun = "find", adjective = "exists";
+    else if((mode & X_OK) == X_OK)
 	noun = "execute", adjective = "executable";
     else if((mode & (W_OK|R_OK)) == (W_OK|R_OK))
 	noun = "read/write", adjective = "read/writable";

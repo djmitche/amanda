@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.51 1998/01/29 20:38:03 blair Exp $
+/* $Id: dumper.c,v 1.52 1998/02/03 21:11:06 amcore Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -430,14 +430,17 @@ int outf, size;
 
     if(spaceleft == 0) {	/* buffer is full, write it */
 
+        /* FIXME: will this break if an incomplete block is written,
+	 * and we retry later with the remaining part, plus any
+	 * additional data? */
 	NAUGHTY_BITS;
 
 	while((spaceleft = write(outf, databuf, sizeof(databuf)))
 	      < sizeof(databuf)) {
 	    if(spaceleft > 0) {
 		static unsigned remainder = 0;
-		dumpsize += (sizeof(databuf) - spaceleft + remainder) / 1024;
-		remainder = (sizeof(databuf) - spaceleft + remainder) % 1024;
+		dumpsize += (spaceleft + remainder) / 1024;
+		remainder = (spaceleft + remainder) % 1024;
 		log(L_WARNING,
 		    "retrying incomplete write to %s while dumping %s:%s",
 		    filename, hostname, diskname);
@@ -459,7 +462,10 @@ int outf, size;
 		}
 		dataptr = databuf + sizeof(databuf) - spaceleft;
 	        memmove(databuf, databuf + spaceleft, dataptr - databuf);
-		if (size == 0) { /* must retry until succeeded */
+		if (size == 0) {
+		    /* In the last write, we're expected to flush the
+		     * buffer completely, so we must retry until
+		     * everything is written successfully. */
 		    goto retry;
 		}
 		return 0;
