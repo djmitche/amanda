@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.10.2.1 1998/01/29 11:25:51 amcore Exp $
+ * $Id: tapeio.c,v 1.10.2.2 1998/02/18 16:16:14 amcore Exp $
  *
  * implements tape I/O functions
  */
@@ -140,10 +140,20 @@ int tapefd_rewind(tapefd)
 int tapefd;
 {
     struct mtop mt;
+    int rc, cnt;
 
     mt.mt_op = MTREW;
     mt.mt_count = 1;
-    return ioctl(tapefd, MTIOCTOP, &mt);
+
+    /* EXB-8200 drive on FreeBSD can fail to rewind, but retrying
+     * won't hurt, and it will usually it even work! */
+    for(cnt = 0; cnt < 10; ++cnt) {
+	rc = ioctl(tapefd, MTIOCTOP, &mt);
+	if (rc == 0)
+	    break;
+	sleep(3);
+    }
+    return rc;
 }
 
 int tapefd_fsf(tapefd, count)

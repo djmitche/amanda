@@ -1878,6 +1878,7 @@ AC_FUNC_VPRINTF
 ICE_CHECK_DECL(vfprintf,stdio.h)
 ICE_CHECK_DECL(vprintf,stdio.h)
 ICE_CHECK_DECL(vsprintf,stdio.h)
+AC_CHECK_FUNCS(waitpid)
 
 dnl disk device prefixes
 AC_MSG_CHECKING(disk device prefixes)
