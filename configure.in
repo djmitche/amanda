@@ -173,7 +173,7 @@ AMCLIENT_EXTRA_OBJS=
 BUILD_RECOVER_PROGS_SBIN="amrecover"
 
 BUILD_CHANGER_PROGS_LIBEXEC="chg-scsi"
-BUILD_CHANGER_SCRIPTS_LIBEXEC="chg-manual chg-multi chg-mtx chg-rth chg-chs chg-chio"
+BUILD_CHANGER_SCRIPTS_LIBEXEC="chg-manual chg-multi chg-mtx chg-rth chg-chs chg-chio chg-zd-mtx"
 
 BUILD_TAPE_LIB="libamtape.a"
 BUILD_TAPE_LTLIB="libamtape.la"

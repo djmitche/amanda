@@ -1,3 +1,17 @@
+1998-08-20  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* changer-src/chg-mtx.sh.in (PATH): added /usr/local/bin
+
+	* configure.in (BUILD_CHANGER_SCRIPTS_LIBEXEC): added chg-zd-mtx
+	* changer-src/Makefile.am (EXTRA_SCRIPTS): ditto
+	* docs/TAPE.CHANGERS (chg-zd-mtx): documented it
+	(chg-mtx): mentioned chg-zd-mtx
+
+1998-08-20  Eric Doutreleau  <Eric.Doutreleau@int-evry.fr>
+
+	* changer-src/chg-zd-mtx.sh.in: new changer script for
+	Zubkoff/Dandelion version of mtx.
+
 1998-08-19  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/SAMBA: updated; documented new patch (sambatar.diff,

@@ -36,7 +36,8 @@ EXTRA_PROGRAMS =	chg-scsi
 libexec_SCRIPTS =	@BUILD_CHANGER_SCRIPTS_LIBEXEC@
 
 EXTRA_SCRIPTS =		chg-manual	chg-multi	chg-mtx		\
-			chg-rth		chg-chs		chg-chio
+			chg-rth		chg-chs		chg-chio	\
+			chg-zd-mtx
 
 DISTCLEANFILES = $(EXTRA_SCRIPTS)
 

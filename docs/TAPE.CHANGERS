@@ -256,7 +256,23 @@ and `tapedev' will reference the same device file.  `changerfile' must
 specify a prefix for status files maintained by this script.  If
 `changerfile' is defined as `/usr/adm/amanda/csd/changer', this script
 will maintain files named `changer-clean' and `changer-access' in the
-log directory.
+log directory.  You may have to edit the script to specify which slot
+contains a cleaning tape (cleanslot).
+
+The `mtx' program must support commands such as `-s', `-l' and `-u'.
+If the one you've got requires `status', `load' and `unload', you
+should use chg-zd-mtx instead, see below.
+
+chg-zd-mtx:
+
+Based on chg-mtx, but modified in order to support Zubkoff/Dandelion
+version of mtx.  Eric DOUTRELEAU <Eric.Doutreleau@int-evry.fr>, who
+contributed this script, reported that it works on a Solaris/sparc box
+with a HP 1557A stacker.
+
+In addition to the `changerfile'-clean and the `changerfile'-access
+files, it will maintain a `changerfile'-slot that indicates the
+currently loaded slot.
 
 chg-scsi: (former seagate-changer, then chg-chio)
 
