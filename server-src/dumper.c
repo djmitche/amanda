@@ -229,7 +229,7 @@ char **main_argv;
 
 	    if((outfd = open(filename, O_WRONLY|O_CREAT, 0666)) == -1) {
 		putresult("FAILED %s %s\n", handle,
-			  quotef("[holding file \"%s\": %s]",
+			  squotef("[holding file \"%s\": %s]",
 				 filename, strerror(errno))
 			 );
 		break;
@@ -240,7 +240,7 @@ char **main_argv;
 	    rc = startup_dump(hostname, diskname, levelstr, progname, options);
 	    if(rc) {
 		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
-			  handle, quote(errstr));
+			  handle, squote(errstr));
 		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
 		close(mesgfd);
 		close(datafd);
@@ -276,7 +276,7 @@ char **main_argv;
 				  DATABUF_SIZE, DEFAULT_SIZE);
 	    if(outfd == -1) {
 		putresult("FAILED %s %s\n", handle,
-			  quotef("[taper port open: %s]", strerror(errno)));
+			  squotef("[taper port open: %s]", strerror(errno)));
 		break;
 	    }
 
@@ -285,7 +285,7 @@ char **main_argv;
 	    rc = startup_dump(hostname, diskname, levelstr, progname, options);
 	    if(rc) {
 		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
-			  handle, quote(errstr));
+			  handle, squote(errstr));
 		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
 		close(mesgfd);
 		close(datafd);
@@ -302,7 +302,7 @@ char **main_argv;
 	    break;
 
 	default:
-	    putresult("BAD-COMMAND %s\n", quote(argv[1]));
+	    putresult("BAD-COMMAND %s\n", squote(argv[1]));
 	}
     } while(cmd != QUIT);
     return 0;
@@ -389,7 +389,7 @@ int outf, size;
 
 	    } else if(errno != ENOSPC) {
 		putresult("FAILED %s %s\n", handle,
-			  quotef("[data write: %s]", strerror(errno)));
+			  squotef("[data write: %s]", strerror(errno)));
 		return 1;
 	    }
 	    putresult("NO-ROOM %s\n", handle);
@@ -813,7 +813,7 @@ int mesgfd, datafd, indexfd, outfd;
 	      walltime_str(runtime), dumpsize, 
 	      dumpsize/dumptime, origsize);
     putresult("DONE %s %ld %ld %ld %s\n", handle, origsize, dumpsize,
-	      (long)(dumptime+0.5), quotef("[%s]", errstr));
+	      (long)(dumptime+0.5), squotef("[%s]", errstr));
 
     fclose(errf);
 
@@ -845,7 +845,7 @@ int mesgfd, datafd, indexfd, outfd;
     return;
 
 failed:
-    putresult("FAILED %s %s\n", handle, quotef("[%s]", errstr));
+    putresult("FAILED %s %s\n", handle, squotef("[%s]", errstr));
 
     fclose(errf);
 

@@ -26,7 +26,9 @@
 #define TOKEN_H
 
 extern int split P((char *str, char **token, int toklen, char *sep));
-extern char *quotef P((char *format, ...));
-extern char *quote P((char *str));
+extern char *squotef P((char *format, ...));
+extern char *squote P((char *str));
+extern char *quotef P((char *sep, char *format, ...));
+extern char *quote P((char *sep, char *str));
 
 #endif

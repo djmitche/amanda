@@ -232,7 +232,7 @@ int rdpipe, wrpipe;
     case 'E':
 	/* no tape, bail out */
 	result = syncpipe_getstr();
-	putresult("TAPE-ERROR %s\n", quotef("[%s]",result));
+	putresult("TAPE-ERROR %s\n", squotef("[%s]", result));
 	log(L_ERROR,"no-tape [%s]", result);
 	exit(1);
     default:
@@ -262,7 +262,7 @@ int rdpipe, wrpipe;
 	    if((fd = stream_accept(data_socket, CONNECT_TIMEOUT,
 				   DEFAULT_SIZE, BUFFER_SIZE)) == -1) {
 		putresult("TAPE-ERROR %s %s\n", handle,
-			  quote("[port connect timeout]"));
+			  squote("[port connect timeout]"));
 		close(data_socket);
 		free(handle);
 		free(hostname);
@@ -286,7 +286,7 @@ int rdpipe, wrpipe;
 
 	    if((fd = open(argv[3], O_RDONLY)) == -1) {
 		putresult("TAPE-ERROR %s %s\n", handle,
-			  quotef("[%s]",strerror(errno)));
+			  squotef("[%s]", strerror(errno)));
 		free(handle);
 		free(hostname);
 		free(diskname);
@@ -318,7 +318,7 @@ int rdpipe, wrpipe;
 	    exit(0);
 
 	default:
-	    putresult("BAD-COMMAND %s\n", quote(argv[1]));
+	    putresult("BAD-COMMAND %s\n", squote(argv[1]));
 	    break;
 	}
     }
@@ -455,7 +455,7 @@ char *handle, *hostname, *diskname;
 		fflush(stderr);
 
 		strcpy(errstr, "[fatal buffer mismanagement bug]");
-		putresult("TRY-AGAIN %s %s\n", handle, quote(errstr));
+		putresult("TRY-AGAIN %s %s\n", handle, squote(errstr));
 		log(L_INFO, "retrying %s:%s.%d on new tape: %s",
 		    hostname, diskname, level, errstr);
 		closing = 1;
@@ -499,12 +499,12 @@ char *handle, *hostname, *diskname;
 	    sprintf(errstr, "[%s]", syncpipe_getstr());
 
 	    if(tok == 'T') {
-		putresult("TRY-AGAIN %s %s\n", handle, quote(errstr));
+		putresult("TRY-AGAIN %s %s\n", handle, squote(errstr));
 		log(L_INFO, "retrying %s:%s.%d on new tape: %s",
 		    hostname, diskname, level, errstr);
 	    }	
 	    else {
-		putresult("TAPE-ERROR %s %s\n", handle, quote(errstr));
+		putresult("TAPE-ERROR %s %s\n", handle, squote(errstr));
 	        log(L_FAIL, "%s %s %d %s", hostname, diskname, level, errstr);
 	    }
 	    return;
@@ -524,7 +524,7 @@ char *handle, *hostname, *diskname;
 	    runtime = stopclock();
 	    if(err) {
 		sprintf(errstr, "[input: %s]", strerror(err));
-		putresult("TAPE-ERROR %s %s\n", handle, quote(errstr));
+		putresult("TAPE-ERROR %s %s\n", handle, squote(errstr));
 	        log(L_FAIL, "%s %s %d %s", hostname, diskname, level, errstr);
 		syncpipe_getstr();	/* reap stats */
 	    }
@@ -534,7 +534,7 @@ char *handle, *hostname, *diskname;
 		       filesize/(runtime.r.tv_sec+runtime.r.tv_usec/1000000.0),
 		       syncpipe_getstr());
 		putresult("DONE %s %s %d %s\n",
-			  handle, label, filenum, quote(errstr));
+			  handle, label, filenum, squote(errstr));
 		log(L_SUCCESS, "%s %s %d %s",
 		    hostname, diskname, level, errstr);
 	    }

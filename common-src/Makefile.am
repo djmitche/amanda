@@ -43,5 +43,5 @@ version.c:	$(srcdir)/genversion.c versuff.c $(srcdir)/version.h
 statfs: $(srcdir)/statfs.c $(srcdir)/statfs.h
 	$(COMPILE) $(LDFLAGS) -DTEST -I.. $(srcdir)/statfs.c -o statfs
 
-token: $(srcdir)/token.c $(srcdir)/token.h
-	$(COMPILE) $(LDFLAGS) -DTEST -I.. $(srcdir)/token.c -o token
+token: $(srcdir)/token.c $(srcdir)/token.h libamanda.a libamnolog.a
+	$(COMPILE) $(LDFLAGS) -DTEST -I.. $(srcdir)/token.c libamanda.a libamnolog.a -o token

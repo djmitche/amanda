@@ -22,9 +22,15 @@
  *
  * Author: George Scott, Computer Centre, Monash University.
  */
+
 /*
- *  token.c - token bashing routines
- */
+** token.c - token bashing routines
+**
+** The quoting method used here was selected because it has the property that
+** quoting a string that doesn't contain funny characters results in an unchanged
+** string and it was easy to code.  There are probably other algorithms that are
+** just as effective.
+**/
 
 #include "amanda.h"
 #include "arglist.h"
@@ -37,6 +43,7 @@ static char *buf = (char *)0;
 
 /* Split a string up into tokens.
 ** There is exactly one separator character between tokens.
+** XXX Won't work too well if separator is '\'!
 **
 ** Inspired by awk and a routine called splitter() that I snarfed from
 ** the net ages ago (original author long forgotten).
@@ -51,9 +58,7 @@ char *sep;	/* Token separators - usually " " */
 	register int fld;
 	register int len;
 
-	if (str == (char *)0 || token == (char **)0 ||
-	    toklen <= 0 || sep == (char *)0)
-		abort();	/* You gotta be kidding! */
+	assert(str && token && toklen > 0 && sep);
 
 	token[0] = str;
 
@@ -67,13 +72,16 @@ char *sep;	/* Token separators - usually " " */
 
 	len = 0;
 	for (pi = str; *pi && *pi != '\n'; pi++) {
-		if (*pi == '\\') pi++; /* Had better not be trailing... */
+		if (*pi == '\\') {	/* had better not be trailing... */
+			pi++;
+			if (*pi >= '0' && *pi <= '3') pi = pi + 3;
+		}
 		len++;
 	}
 
 	/* Allocate some space */
 
-	if (buf != (char *)0) free(buf); /* Clean up from last time */
+	if (buf != (char *)0) free(buf); /* clean up from last time */
 	buf = alloc(len+1);
 
 	/* Copy it across and tokenise it */
@@ -81,17 +89,24 @@ char *sep;	/* Token separators - usually " " */
 	po = buf;
 	token[++fld] = po;
 	for (pi = str; *pi && *pi != '\n'; pi++) {
-		if (*pi == '\\') {
-			*po++ = *++pi;	/* escaped */
+		if (*pi == '\\') {	/* escape */
+			pi++;
+			if (*pi >= '0' && *pi <= '3') {
+				*po =       (*pi++ - '0') << 6;
+				*po = *po + (*pi++ - '0') << 3;
+				*po = *po + (*pi   - '0')     ;
+			}
+			else *po = *pi;
 		}
-		else if (strchr(sep, *pi)) {
-			*po++ = '\0';	/* end of token */
+		else if (strchr(sep, *pi)) {	/* separator */
+			*po = '\0';	/* end of token */
 			if (fld+1 >= toklen) return fld;
-			token[++fld] = po;
+			token[++fld] = po + 1;
 		}
 		else {
-			*po++ = *pi;	/* normal */
+			*po = *pi;	/* normal */
 		}
+		po++;
 	}
 	*po = '\0';
 
@@ -102,10 +117,12 @@ char *sep;	/* Token separators - usually " " */
 
 /*
 ** Quote all the funny characters in one token.
-**
-** At the moment we will just put \ in front of ' ' and '\'.
+** - squotef - formatted string with space separator
+** - quotef  - formatted string with specified separators
+** - squote  - fixed string with space separator
+** - quote   - fixed strings with specified separators
 **/
-arglist_function(char *quotef, char *, format)
+arglist_function(char *squotef, char *, format)
 {
 	va_list argp;
 	char linebuf[16384];
@@ -116,11 +133,32 @@ arglist_function(char *quotef, char *, format)
 	vsprintf(linebuf, format, argp);
 	arglist_end(argp);
 
-	return quote(linebuf);
+	return quote(" ", linebuf);
 }
 
-char *quote(str)
-char *str;	/* The string to quote */
+arglist_function1(char *quotef, char *, sep, char *, format)
+{
+	va_list argp;
+	char linebuf[16384];
+
+	/* Format the token */
+
+	arglist_start(argp, format);
+	vsprintf(linebuf, format, argp);
+	arglist_end(argp);
+
+	return quote(sep, linebuf);
+}
+
+char *squote(str)
+char *str;	/* the string to quote */
+{
+	return quote(" ", str);
+}
+
+char *quote(sep, str)
+char *sep;	/* separators that also need quoting */
+char *str;	/* the string to quote */
 {
 	register char *pi, *po;
 	register int len;
@@ -129,8 +167,9 @@ char *str;	/* The string to quote */
 
 	len = 0;
 	for (pi = str; *pi; pi++) {
-		if (*pi == ' ' || *pi == '\\') len++;
-		len++;
+		if (*pi < ' ' || *pi > '~') len = len + 4;
+		else if (*sep && strchr(sep, *pi) || *pi == '\\') len = len + 2;
+		else len++;
 	}
 
 	/* Allocate some space */
@@ -140,8 +179,19 @@ char *str;	/* The string to quote */
 
 	/* Copy it across */
 
-	for (pi = str, po = buf; *pi; *po++ = *pi++) {
-		if (*pi == ' ' || *pi == '\\') *po++ = '\\';
+	po = buf;
+	for (pi = str; *pi; pi++) {
+		if (*pi < ' ' || *pi > '~') {
+			*po++ = '\\';
+			*po++ = ((*pi >> 6) & 07) + '0';
+			*po++ = ((*pi >> 3) & 07) + '0';
+			*po++ = ((*pi     ) & 07) + '0';
+		}
+		else if (*sep && strchr(sep, *pi) || *pi == '\\') {
+			*po++ = '\\';
+			*po++ = *pi;
+		}
+		else *po++ = *pi;
 	}
 	*po = '\0';
 
@@ -151,6 +201,8 @@ char *str;	/* The string to quote */
 }
 
 #ifdef TEST
+
+char pname[] = "token test";
 
 int main()
 {
@@ -181,11 +233,12 @@ int main()
 			printf("\n");
 			break;
 		}
-		sr = quote(str);
+		sr = squote(str);
 		printf("Quoted   = \"%s\"\n", sr);
 		r = split(strcpy(str,sr), t, 20, " ");
 		if (r != 1) printf("split()=%d!\n", r);
 		printf("Unquoted = \"%s\"\n", t[1]);
 	}
 }
+
 #endif
