@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.2 2001/02/28 15:30:28 jrjackson Exp $
+ * $Id: planner.c,v 1.76.2.15.2.3 2001/03/16 00:50:20 jrjackson Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1324,6 +1324,8 @@ static void analyze_estimate(dp)
 disk_t *dp;
 {
     est_t *ep;
+    info_t info;
+    int have_info = 0;
 
     ep = est(dp);
 
@@ -1332,8 +1334,15 @@ disk_t *dp;
     fprintf(stderr, "next_level0 %d last_level %d ",
 	    ep->next_level0, ep->last_level);
 
-    if(ep->next_level0 <= 0) {
-	fprintf(stderr,"(due for level 0) ");
+    if(get_info(dp->host->hostname, dp->name, &info) == 0) {
+	have_info = 1;
+    }
+
+    if(ep->next_level0 <= 0
+       || (have_info && ep->last_level == 0 && (info.command & FORCE_NO_BUMP))) {
+	if(ep->next_level0 <= 0) {
+	    fprintf(stderr,"(due for level 0) ");
+	}
 	ep->dump_level = 0;
 	ep->dump_size = est_tape_size(dp, 0);
 	if(ep->dump_size <= 0) {
