@@ -1,5 +1,10 @@
 2000-09-22  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amcheck.c: (start_server_check): don't check the tape
+        if tapedev is /dev/null.
+
+2000-09-22  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/reporter.c (output_tapeinfo): test reversed for run_tapes.
 
 2000-07-31 Thomas Hepper <th@ant.han.de>
