@@ -1,3 +1,10 @@
+Version 2.4.0
+
+	chg-chio still thought it was seagate-changer, and contained a
+	few bugs.  -Tim Tsai <tim@futuresouth.com>
+
+	New file docs/RESTORE, by Daniel Moore <dmoore@jeffco.k12.co.us>
+
 Version 2.4.0b5
 
 	Make sure amverify waits for the tape device to be ready before it
