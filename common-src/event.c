@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.15 1999/05/14 19:08:47 kashmir Exp $
+ * $Id: event.c,v 1.16 1999/05/24 16:24:31 kashmir Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
  * a uniform interface, central state storage, and centralized
@@ -104,12 +104,30 @@ event_register(data, type, fn, arg)
 {
     event_handle_t *handle;
 
-    /* make sure signals are within range */
-    assert(type != EV_SIG || data < NSIG);
-    /* make sure we don't double-register a signal */
-    assert(type != EV_SIG || sigtable[data].handle == NULL);
-    /* callers can't register EV_DEAD */
-    assert(type != EV_DEAD);
+    switch (type) {
+    case EV_READFD:
+    case EV_WRITEFD:
+	/* make sure we aren't given a high fd that will overflow a fd_set */
+	assert(data < FD_SETSIZE);
+	break;
+
+    case EV_SIG:
+	/* make sure signals are within range */
+	assert(data < NSIG);
+	/* make sure we don't double-register a signal */
+	assert(sigtable[data].handle == NULL);
+	break;
+
+    case EV_TIME:
+    case EV_WAIT:
+	break;
+
+    case EV_DEAD:
+    default:
+	/* callers can't register EV_DEAD */
+	assert(0);
+	break;
+    }
 
     handle = gethandle();
     handle->fn = fn;

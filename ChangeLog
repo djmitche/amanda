@@ -1,5 +1,10 @@
 1999-05-24  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/event.c (event_register): restructure asserts, and
+	for EV_READFD/EV_WRITEFD, assert that the fd is < FD_SETSIZE.
+
+1999-05-24  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/queue.h: move the multiple-inclusion #defines
 	into application namespace.  #undef each macro before defining
 	it, in case the OS has an identical macro.
