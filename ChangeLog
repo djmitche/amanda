@@ -1,3 +1,8 @@
+1999-11-02  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* Makefile.am (EXTRA_DIST): Added contrib/set_prod_link.pl.
+	* docs/INSTALL: Likewise.
+
 1999-11-02  Ricardo Malta  <rmalta@bigfoot.com>
 	
 	* contrib/set_prod_link.pl: Create the links for a configuration
