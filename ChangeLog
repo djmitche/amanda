@@ -1,5 +1,10 @@
 1998-11-07  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* configure.in (GNUTAR): accept tar from Free paxutils, the new name
+	of GNU tar
+
+1998-11-07  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
 	* changer-src/scsi-solaris.c: added missing #endif
 
 	* configure.in: merge with camlib.h patch from Oct 31
