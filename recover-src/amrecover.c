@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.20.2.2 1998/03/01 23:35:58 amcore Exp $
+ * $Id: amrecover.c,v 1.20.2.3 1998/03/16 10:18:43 amcore Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -566,6 +566,7 @@ char **argv;
 	exit(1);
     }
 
+#if 0
     /*
      * We may need root privilege again later for a reserved port to
      * the tape server, so we will drop down now but might have to
@@ -573,6 +574,7 @@ char **argv;
      */
     setegid(getgid());
     seteuid(getuid());
+#endif
 
     if (connect(server_socket, (struct sockaddr *)&server, sizeof(server))
 	== -1)
@@ -667,8 +669,14 @@ char **argv;
 		    printf("$CWD '%s' is on disk '%s' mounted at '%s'.\n",
 			   cwd, dn_guess, mpt_guess);
 		    set_disk(dn_guess, mpt_guess);
-		    afree(mpt_guess);
 		    set_directory(cwd);
+		    if (server_happy()) {
+			if (chdir(mpt_guess) == 0)
+			    printf("$LCWD '%s'.\n", mpt_guess);
+			else
+			    printf("Cannot lcd to '%s'.\n", mpt_guess);
+		    }
+		    afree(mpt_guess);
 		    break;
 
 		case 0:

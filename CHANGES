@@ -1,5 +1,9 @@
 Version 2.4.0
 
+	when amrecover starts up, it will chdir() to the root of the
+	local filesystem, if the local directory exists in the index.
+	-oliva
+
 	removed all uses of #elif, because some C compilers won't
 	handle it correctly. -Gunther Felkel <G.Felkel@edelmann.de>
 
