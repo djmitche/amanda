@@ -1,7 +1,7 @@
 1998-11-19  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/driverio.c (update_info_dumper): do not update
-	compression or dump rates if hwen called from
+	compression or dump rates when called from
 	update_failed_dump_to_date
 	Reported by Michael Schmitz <mschmitz@sema.de>
 
