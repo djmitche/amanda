@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.57 2002/03/24 03:46:16 jrjackson Exp $
+ * $Id: selfcheck.c,v 1.58 2002/03/25 18:42:30 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -245,13 +245,15 @@ check_options(program, disk, amdevice, options)
 	    if(options->exclude_file && options->exclude_file->nb_element > 1) {
 		printf("ERROR [samba support only one exclude file]\n");
 	    }
-	    if(options->exclude_list && options->exclude_list->nb_element > 0) {
+	    if(options->exclude_list && options->exclude_list->nb_element > 0 &&
+	       options->exclude_optional==0) {
 		printf("ERROR [samba does not support exclude list]\n");
 	    }
 	    if(options->include_file && options->include_file->nb_element > 0) {
 		printf("ERROR [samba does not support include file]\n");
 	    }
-	    if(options->include_list && options->include_list->nb_element > 0) {
+	    if(options->include_list && options->include_list->nb_element > 0 &&
+	       options->include_optional==0) {
 		printf("ERROR [samba does not support include list]\n");
 	    }
 	    need_samba=1;

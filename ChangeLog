@@ -1,3 +1,13 @@
+2002-03-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* client-src/client_util.c (fixup_relative): New function to prepend
+	  the dirname if relative.
+	* client-src/client_util.c (build_exclude, build_include): Use
+	  fixup_relative.
+	* client-src/client_util.c (parse_options): Do not prepend the dirname.
+	* client-src/selfcheck.c (check_options): Don't generate ERROR for samba
+	  if optional is set.
+
 2002-03-24  John R. Jackson (jrj@purdue.edu)
 
 	* common-src/debug.c: Change dbopen() message slightly to match what
