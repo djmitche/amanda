@@ -489,6 +489,9 @@ foreach $host (sort @hosts) {
 			$hostpart=&make_hostpart($host,$partition,$datestamp);
 			next if(!defined $estimate{$hostpart} && !defined $flush{$hostpart});
 			$nb_partition++;
+			if( !defined $size{$hostpart} && defined $holding_file{$hostpart}) {
+				$size{$hostpart} = &dump_size($holding_file{$hostpart}) / 1024;
+			}
 			if($estimate_done != 1) {
 				if(defined $estimate{$hostpart}) {
 					if($estimate{$hostpart} != 1) {
@@ -525,13 +528,7 @@ foreach $host (sort @hosts) {
 				}
 				else {
 					$flpartition++;
-					if(!defined $taper_finished{$hostpart} ||
-						$taper_finished{$hostpart}==0) {
-						$flsize += &dump_size($holding_file{$hostpart}) / 1024;
-					}
-					else {
-						$flsize += $size{$hostpart};
-					}
+					$flsize += $size{$hostpart};
 				}
 				if(defined $taper_started{$hostpart} &&
 			      $taper_started{$hostpart}==1) {
@@ -557,9 +554,6 @@ foreach $host (sort @hosts) {
 						$dtesize += $esize{$hostpart};
 					}
 					elsif($taper_finished{$hostpart} == 0) {
-						if( !defined $size{$hostpart}) {
-							$size{$hostpart} = &dump_size($holding_file{$hostpart}) / 1024;
-						}
 						if( defined $opt_writingtape ) {
 							printf "%-40s%2d", "$host:$partition", $level{$hostpart};
 							printf "%8dk", $size{$hostpart};
@@ -655,14 +649,12 @@ foreach $host (sort @hosts) {
 					}
 					elsif($dump_started{$hostpart} == 1 &&
 					      $dump_finished{$hostpart} != 1) {
-						$size = &dump_size($holding_file{$hostpart});
 						if( defined $opt_dumping ) {
 							printf "%-40s%2d", "$host:$partition", $level{$hostpart};
 							printf "%8dk", $esize{$hostpart};
-							printf " dumping %8dk", $size/1024;
+							printf " dumping %8dk", $size{$hostpart};
 							if($size{$hostpart} != 0) {
-								printf " (%6.2f%%)", 
-										 (100.0*$size)/(1024.0*$esize{$hostpart});
+								printf " (%6.2f%%)", (100.0*$size{$hostpart})/(1024.0*$esize{$hostpart});
 							}
 							if( defined $starttime ) {
 								print " (", &showtime($dump_time{$hostpart}), ")";
@@ -670,7 +662,7 @@ foreach $host (sort @hosts) {
 							print "\n";
 						}
 						$dupartition++;
-						$dusize += $size/1024;
+						$dusize += $size{$hostpart};
 						$duesize += $esize{$hostpart};
 					}
 					elsif($dump_finished{$hostpart} == 1 &&
@@ -698,11 +690,10 @@ foreach $host (sort @hosts) {
 				}
 				elsif(defined $flush{$hostpart}) {
 					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
-					$size = &dump_size($holding_file{$hostpart}) / 1024;
-					printf "%8dk", $size;
+					printf "%8dk", $size{$hostpart};
 					print " waiting to flush\n";
 					$wfpartition++;
-					$wfsize += $size;
+					$wfsize += $size{$hostpart};
 				}
 				elsif(defined $level{$hostpart}) {
 					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
