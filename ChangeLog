@@ -1,3 +1,7 @@
+2004-10-22  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+        * Amanda 2.4.5b1 released.
+
 2004-10-21  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/holding.c (rename_tmp_holding): Always rename files.
