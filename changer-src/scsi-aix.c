@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-aix.c,v 1.1.2.5 1998/12/22 05:12:04 oliva Exp $";
+static char rcsid[] = "$Id: scsi-aix.c,v 1.1.2.6 1999/01/10 17:03:06 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an AIX Workstation
@@ -19,12 +19,19 @@ static char rcsid[] = "$Id: scsi-aix.c,v 1.1.2.5 1998/12/22 05:12:04 oliva Exp $
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+#ifdef HAVE_STDIO_H
 #include <stdio.h>
+#endif
+#ifdef HAVE_ERRNO_H
 #include <errno.h>
+#endif
 
 #include <sys/scarray.h>
 #include <sys/tape.h>
+
 #include <scsi-defs.h>
 
 OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
@@ -33,7 +40,7 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
   int i;
   OpenFiles_T *pwork;
   
-  if ((DeviceFD = openx(DeviceName, O_RDWR, 0, SC_DIAGNOSTI)) > 0)
+  if ((DeviceFD = openx(DeviceName, O_RDWR, 0, SC_DIAGNOSTIC)) > 0)
     {
       pwork = (OpenFiles_T *)malloc(sizeof(OpenFiles_T));
       pwork->next = NULL;
@@ -41,13 +48,21 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
       pwork->SCSI = 0;
       pwork->dev = strdup(DeviceName);
       pwork->inquiry = (SCSIInquiry_T *)malloc(sizeof(SCSIInquiry_T));
-      Inquiry(DeviceFD, pwork->inquiry);
-      for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
-          pwork->name[i] = pwork->inquiry->prod_ident[i];
-      pwork->name[i] = '\0';
-      pwork->SCSI = 1;
-      return(pwork); 
+      
+      if ( Inquiry(DeviceFD, pwork->inquiry) == 0)
+        {
+          for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
+            pwork->ident[i] = pwork->inquiry->prod_ident[i];
+          pwork->ident[i] = '\0';
+          pwork->SCSI = 1;
+          return(pwork); 
+        } else {
+          free(pwork->inquiry);
+          pwork->inquiry = NULL;
+          return(pwork);
+        }
     }
+  
   return(NULL);
 }
 

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-bsd.c,v 1.1.2.2 1998/12/22 05:12:06 oliva Exp $";
+static char rcsid[] = "$Id: scsi-bsd.c,v 1.1.2.3 1999/01/10 17:04:31 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an SGI Workstation
@@ -47,14 +47,22 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
       pwork = (OpenFiles_T *)malloc(sizeof(OpenFiles_T));
       pwork->next = NULL;
       pwork->fd = DeviceFD;
+      pwork->SCSI = 0;
       pwork->dev = strdup(DeviceName);
       pwork->inquiry = (SCSIInquiry_T *)malloc(sizeof(SCSIInquiry_T));
-      Inquiry(DeviceFD, pwork->inquiry);
-      for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
-        pwork->name[i] = pwork->inquiry->prod_ident[i];
-      pwork->name[i] = '\0';
-      pwork->SCSI = 1;
-      return(pwork);
+
+      if (Inquiry(DeviceFD, pwork->inquiry) == 0)
+          {
+              for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
+                  pwork->ident[i] = pwork->inquiry->prod_ident[i];
+              pwork->ident[i] = '\0';
+              pwork->SCSI = 1;
+              return(pwork);
+          } else {
+              free(pwork->inquiry);
+              pwork->inquiry = NULL;
+              return(pwork);
+          }
     }
   
   return(NULL); 
