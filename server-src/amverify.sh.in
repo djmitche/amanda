@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.7.2.2 1999/05/05 18:28:26 kashmir Exp $
+#	$Id: amverify.sh.in,v 1.7.2.3 1999/06/15 08:26:16 oliva Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -312,7 +312,11 @@ while [ $SLOT -lt $SLOTS ]; do
 	ERG=0
 	ERRORS=0
 	while [ $ERG = 0 ]; do
-		pecho "Reading...\r" >&2
+		pecho "Waiting for device...\r" >&2
+		until $MT $MTOPT $DEVICE stat >/dev/null 2>&1; do
+			sleep 3
+		done
+		pecho "Reading...           \r" >&2
 		RESULT=`$AMRESTORE -h -p $DEVICE 2> $TEMP/amrestore.out \
 			| doonefile 2> $TEMP/onefile.errors`
 		FILE=`grep restoring $TEMP/amrestore.out | sed 's/^.*restoring //'`
