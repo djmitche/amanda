@@ -1,5 +1,11 @@
 2001-07-18 John R. Jackson <jrj@purdue.edu>
 
+	* changer-src/chg-chio.pl.in: Try to unload the drive before moving
+	  a tape back to a slot.  Fixes a problem on Ecrix AutoPAK devices.
+	  Patch compliments of Sam Leffler <sam@errno.com>.
+
+2001-07-18 John R. Jackson <jrj@purdue.edu>
+
 	* server-src/amverify.sh.in: Change to the Amanda temp directory
 	  instead of the config directory.  In addition to making amverify
 	  act like most other Amanda programs, this gets around an
