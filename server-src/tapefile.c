@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: tapefile.c,v 1.14.2.1 1998/09/11 23:17:13 jrj Exp $
+ * $Id: tapefile.c,v 1.14.2.2 1998/11/18 01:00:59 martinea Exp $
  *
  * routines to read and write the amanda active tape list
  */
@@ -167,8 +167,8 @@ int skip;
     for(tp = tape_list; tp != NULL; tp = tp->next) {
 	if(tp->reuse == 1) {
 	    count++;
-	    for(s = 0; s < skip; s++) {
-	        tpsave[s + 1] = tpsave[s];
+	    for(s = skip; s > 0; s--) {
+	        tpsave[s] = tpsave[s - 1];
 	    }
 	    tpsave[0] = tp;
 	}
