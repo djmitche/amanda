@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.4 1998/12/03 03:02:48 martinea Exp $
+ * $Id: planner.c,v 1.76.2.5 1999/01/22 10:13:21 oliva Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1902,7 +1902,7 @@ static int promote_hills P((void))
  * XXX - memory leak - we shouldn't just throw away *dp
  */
 static void output_scheduleline(dp)
-disk_t *dp;
+    disk_t *dp;
 {
     est_t *ep;
     long dump_time, degr_time;
@@ -1922,9 +1922,9 @@ disk_t *dp;
     if(ep->dump_size == -1) {
 	/* no estimate, fail the disk */
 	fprintf(stderr,
-		"planner: FAILED %s %s %d [no estimate or historical data]\n",
+		"planner: FAILED %s %s %d [no estimate]\n",
 		dp->host->hostname, dp->name, ep->dump_level);
-	log_add(L_FAIL, "%s %s %d [no estimate or historical data]",
+	log_add(L_FAIL, "%s %s %d [no estimate]",
 	        dp->host->hostname, dp->name, ep->dump_level);
 	return;
     }
