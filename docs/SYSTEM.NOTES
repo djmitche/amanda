@@ -94,6 +94,10 @@ PATH.
 If you have vxfs filesystems to back up, amanda will pick vxdump
 automatically.
 
+
+GNU tar 1.12 will incorrectly report the size of backups.  There's a
+patch in the patches directory that fixes this problem.
+
 ---------------------------------------------------------------------------
 Linux
 -----

@@ -4,8 +4,8 @@ GNUTAR to issue error messages like the following for sparse files:
 
 > /bin/tar: Read error at byte 0, reading 512 bytes, in file ./var/log/lastlog: Bad file number
 
-The others fix an estimate problem in GNUTAR on SunOS 4.1.3 and other
-systems whose C libraries do not support "%lld" in printf format
+The others fix an estimate problem in GNUTAR on SunOS 4.1.3, HP/UX and
+other systems whose C libraries do not support "%lld" in printf format
 strings for printing long long integers.
 
 --- tar-1.12/src/create.c	Mon Dec 15 17:26:47 1997

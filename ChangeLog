@@ -1,5 +1,8 @@
 1998-05-28  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* docs/SYSTEM.NOTES: GNU tar must be patched on HP/UX.
+	* patches/tar-1.12.patch: ditto.
+
 	* server-src/taper.c (endtape): do not log amount of used tape after 
 	entering degraded mode.
 
