@@ -248,6 +248,7 @@
 #undef SHM_ARG_TYPE
 #undef HAVE_TWO_ARG_GETTIMEOFDAY
 #undef HAVE_STRUCT_DATUM
+#undef NEED_RESETOFS
 
 /* Compiler characteristics.  */
 #undef HAVE_UNSIGNED_LONG_CONSTANTS

@@ -1,3 +1,11 @@
+1998-12-20  John R. Jackson  <jrj@purdue.edu>
+
+	* configure.in: define NEED_RESETOFS unless LFS (large file system
+	support) is available.
+	* config/acconfig.h: add NEED_RESETOFS tag.
+	* server-src/taper.c: only reset the tape offset if NEED_RESETOFS
+	is defined and only once per 2 GBytes.
+
 1998-12-20  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/amlabel.c (main): datestamp for new tapes is now 0

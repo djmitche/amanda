@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.49 1998/11/18 07:37:00 oliva Exp $
+/* $Id: taper.c,v 1.50 1998/12/21 18:26:47 jrj Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1153,17 +1153,23 @@ buffer_t *bp;
     startclock();
     rc = tapefd_write(tape_fd, bp->buffer, sizeof(bp->buffer));
     if(rc == sizeof(bp->buffer)) {
-	wrwait = timesadd(wrwait, stopclock());
-	total_writes += 1;
-	total_tape_used += (double)rc;
+#if defined(NEED_RESETOFS)
+	static double tape_used_modulus_2gb = 0;
+
 	/*
 	 * If the next write will go over the 2 GByte boundary, reset
 	 * the kernel concept of where we are to make sure it does not
 	 * go silly on us.
 	 */
-	if(total_tape_used + (double)rc > (double)0x7fffffff) {
+	tape_used_modulus_2gb += (double)rc;
+	if(tape_used_modulus_2gb + (double)rc > (double)0x7fffffff) {
+	    tape_used_modulus_2gb = 0;
 	    tapefd_resetofs(tape_fd);
 	}
+#endif
+	wrwait = timesadd(wrwait, stopclock());
+	total_writes += 1;
+	total_tape_used += (double)rc;
 	bp->status = EMPTY;
 	if(interactive || bufdebug) dumpstatus(bp);
 	if(interactive) fputs("W", stderr);
