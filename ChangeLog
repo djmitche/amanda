@@ -1,3 +1,16 @@
+2001-08-09 Thomas Hepper (th@ant.han.de)
+	* changer-src/chg-scsi.c: Added check in MapBarCode if the labelfile
+	parameter is empty, and if yes return. 
+	Added global variable do_inventory, and if set do an inventory before
+	exit.
+	In MapBarCode changed the way the UPDATE_SLOT is done, now it uses
+	the slot number passed to MapBarCode to find and update the record.
+	* changer-src/scsi-changer-driver.c: Added def. for BreeceHill Q7
+	Added global variables which are set by the tape_rdlabel function
+	in eject/unload.
+	Reworked the way how the updates of the labelfile are done.
+	* docs/TAPE.CHANGERS: Added note about solaris 8 and the sgen driver.
+
 2001-08-09 John R. Jackson (jrj@purdue.edu)
 
 	* tape-src/output-tape.c: Missed a reference to TAPE_BLOCK_BYTES

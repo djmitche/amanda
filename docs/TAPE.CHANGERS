@@ -464,7 +464,28 @@ Irix 6.x
 FreeBSD
 
 Tape and robot on different IDs with special modules run on
-Solaris	with sst kernel module. See in the contrib/sst directory
+Solaris with sst kernel module, which is not any longer neede in solaris 2.8. 
+See in the contrib/sst directory
+The configuration on solaris 2.8 with the sgen driver is done by creating 
+the file /kernel/drv/sgen.conf
+This file should contain at the beginning the following
+device-type-config-list="changer","sequential"
+
+This will force the driver to attach only to the devices with type either 
+changer (the robot) and sequential (the tape).
+Next you must tell the driver on which id it should check for devices
+(tape on id 5, robot on id 6 in this example),
+name="sgen" class="scsi" target=5 lun=0;
+name="sgen" class="scsi" target=6 lun=0;
+
+This will create the 2 device files
+/dev/scsi/sequential/c0t5d0         (scsitapedev option in chg-scsi.conf)
+/dev/scsi/changer/c0t6d0            (changer option in chg-scsi.conf)
+
+So the complete sgen.conf looks like:
+device-type-config-list="changer","sequential
+name="sgen" class="scsi" target=5 lun=0;
+name="sgen" class="scsi" target=6 lun=0;
 
 For HP you have to create the special device files for the pass throu
 interface. Check if the ctl driver is installed.

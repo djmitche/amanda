@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.27.2.4 2001/07/10 22:03:14 jrjackson Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.27.2.5 2001/08/10 17:08:09 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -192,7 +192,7 @@ ChangerCMD_T ChangerIO[] = {
    GenericBarCode,
    GenericSearch,
    GenericSenseHandler}, 
-	/* Exabyte Devices */
+  /* Exabyte Devices */
   {"EXB-10e",      
    "Exabyte Robot [EXB-10e]",
    GenericMove,
@@ -241,7 +241,7 @@ ChangerCMD_T ChangerIO[] = {
    GenericBarCode,
    GenericSearch,
    GenericSenseHandler},
-    /* Tandberg Devices */
+  /* Tandberg Devices */
   {"TDS 1420",              
    "Tandberg Robot (TDS 1420)",
    GenericMove,
@@ -252,31 +252,6 @@ ChangerCMD_T ChangerIO[] = {
    GenericClean,
    GenericRewind,
    GenericBarCode,
-   GenericSearch,
-   GenericSenseHandler},
-  /* And now the tape devices */
-  {"DLT7000",        
-   "DLT Tape [DLT7000]",
-   DoNothing,
-   DoNothing,
-   DoNothing,
-   DoNothing,
-   DLT4000Eject,
-   GenericClean,
-   GenericRewind,
-   GenericBarCode,
-   GenericSearch,
-   GenericSenseHandler},
-  {"DLT4000",        
-   "DLT Tape [DLT4000]",
-   DoNothing,
-   DoNothing,
-   DoNothing,
-   DoNothing,
-   DLT4000Eject,
-   GenericClean,
-   GenericRewind,
-   NoBarCode,
    GenericSearch,
    GenericSenseHandler},
     /* ADIC Devices */
@@ -341,7 +316,47 @@ ChangerCMD_T ChangerIO[] = {
    TreeFrogBarCode,
    GenericSearch,
    GenericSenseHandler},
-    /* The generic handler if nothing matches */
+  /* BreeceHill Q7 */
+  {"Quad 7",
+   "Breece Hill Quad 7",
+   GenericMove,
+   GenericElementStatus,
+   GenericResetStatus,
+   GenericFree,
+   GenericEject,
+   GenericClean,
+   GenericRewind,
+   GenericBarCode,
+   GenericSearch,
+   GenericSenseHandler},
+  /* 
+   * And now the tape devices
+   */
+  {"DLT7000",        
+   "DLT Tape [DLT7000]",
+   DoNothing,
+   DoNothing,
+   DoNothing,
+   DoNothing,
+   DLT4000Eject,
+   GenericClean,
+   GenericRewind,
+   GenericBarCode,
+   GenericSearch,
+   GenericSenseHandler},
+  {"DLT4000",        
+   "DLT Tape [DLT4000]",
+   DoNothing,
+   DoNothing,
+   DoNothing,
+   DoNothing,
+   DLT4000Eject,
+   GenericClean,
+   GenericRewind,
+   NoBarCode,
+   GenericSearch,
+   GenericSenseHandler},
+  /* The generic handler if nothing matches */
   {"generic",
    "Generic driver tape/robot [generic]",
    GenericMove,
@@ -410,6 +425,9 @@ int STE = 0;
 int IEE = 0;
 int DTE = 0;
 
+char *chgscsi_datestamp = NULL;       /* Result pointer for tape_rdlabel */       
+char *chgscsi_label = NULL;           /* Result pointer for tape_rdlabel */
+char *chgscsi_result = NULL;          /* Needed for the result string of MapBarCode */
 
 /*
  * First all functions which are called from extern
@@ -704,8 +722,24 @@ int eject_tape(char *tapedev, int type)
 {
   extern OpenFiles_T *pDev;
   int ret = 0;
+  extern changer_t chg;         /* Needed for the infos about emubarcode and labelfile */
 
   DebugPrint(DEBUG_INFO,SECTION_TAPE,"##### START eject_tape\n");
+
+  /*
+   * Try to read the label
+   */
+  if (pDev[INDEX_TAPE].avail == 1 && (chg.emubarcode == 1 || BarCode(INDEX_CHANGER)))
+    {
+      pDev[INDEX_TAPE].functions->function_rewind(INDEX_TAPE);
+      
+      if (pDev[INDEX_TAPE].devopen == 1)
+	{
+	  SCSI_CloseDevice(INDEX_TAPE);
+	}
+      
+      chgscsi_result = (char *)tape_rdlabel(pDev[INDEX_TAPE].dev, &chgscsi_datestamp, &chgscsi_label);
+    }
 
   if (pDev[INDEX_TAPECTL].SCSI == 1 && pDev[INDEX_TAPECTL].avail == 1 && type == 1)
     {
@@ -815,13 +849,11 @@ int drive_loaded(int fd, int drivenum)
 int unload(int fd, int drive, int slot) 
 {
   extern OpenFiles_T *pDev;
-  extern changer_t chg;         /* Needed for the infos about emubarcode and labelfile */
-  int fslot,ffrom;              /* Store the result from the label/slot db (MapBarCode) */
-  char *result = NULL;          /* Needed for the result string of MapBarCode */
-  char *datestamp = NULL;       /* Result pointer for tape_rdlabel */       
-  char *label = NULL;           /* Result pointer for tape_rdlabel */
-  extern int clean_slot;
   int ret;
+  char *result;                 /* Needed by MapBarCode */
+  extern changer_t chg;         /* Needed for the infos about emubarcode and labelfile */
+  int scanret, fslot, ffrom;
+  extern int do_inventory;
 
   DebugPrint(DEBUG_INFO, SECTION_TAPE,"###### START unload\n");
   DebugPrint(DEBUG_INFO, SECTION_TAPE,"%-20s : fd %d, slot %d, drive %d \n", "unload", fd, slot, drive);
@@ -874,21 +906,28 @@ int unload(int fd, int drive, int slot)
       slot = find_empty(fd, 0, 0);
       DebugPrint(DEBUG_INFO, SECTION_TAPE,"unload : found empty one, try to unload to slot %d\n", slot);
     }
+
   
+
   /*
-   * Try to read the label
-   * and update the label/slot database
+   * If eject is not set we must read the label info
    */
-  if (pDev[INDEX_TAPE].avail == 1 && (chg.emubarcode == 1 || BarCode(INDEX_CHANGER)))
+
+  if (chg.eject == 0)
     {
-      if (pDev[INDEX_TAPE].devopen == 1)
+      if (pDev[INDEX_TAPE].avail == 1 && (chg.emubarcode == 1 || BarCode(INDEX_CHANGER)))
 	{
-	  SCSI_CloseDevice(INDEX_TAPE);
-	}
-      
-      result = (char *)tape_rdlabel(pDev[INDEX_TAPE].dev, &datestamp, &label);
-      tapefd_close(fd);
+	  pDev[INDEX_TAPE].functions->function_rewind(INDEX_TAPE);
+	  
+	  if (pDev[INDEX_TAPE].devopen == 1)
+	    {
+	      SCSI_CloseDevice(INDEX_TAPE);
+	    }
+	  
+	  chgscsi_result = (char *)tape_rdlabel(pDev[INDEX_TAPE].dev, &chgscsi_datestamp, &chgscsi_label);
+	} 
     }
+
   /*
    * Do the unload/move
    */
@@ -902,36 +941,41 @@ int unload(int fd, int drive, int slot)
       DebugPrint(DEBUG_ERROR, SECTION_TAPE,"##### STOP unload (-1 update status failed)\n");
       return(-1);
     }
-  
+     
   /*
    * Did we get an error from tape_rdlabel
    * if no update the vol/label mapping
+   * If chgscsi_label is NULL don't do it
    */
-  if (result  == NULL)
+  if (chgscsi_result  == NULL && chgscsi_label != NULL && chg.labelfile != NULL)
   {
-    result = MapBarCode(chg.labelfile, label, "" , FIND_SLOT, 0, 0);
-    if (result == NULL) /* Nothing found, do an inventory */
+    /* 
+     * We got something, update the db
+     * but before check if the db has as entry the slot
+     * to where we placed the tape, if no force an inventory
+     */
+    result = MapBarCode(chg.labelfile, chgscsi_label, pSTE[slot].VolTag ,FIND_SLOT, 0, 0);
+    if ( result == NULL) /* Nothing known about this, do an Inventory */
       {
-	Inventory(chg.labelfile, drive, chg.eject, 0, 0, clean_slot);
-      } else { /* We got something, is it correct ? */
-	ret = sscanf(result, "%d:%d", &fslot, &ffrom);
-	if (ret == 2)
+	do_inventory = 1;
+      } else {
+	scanret = sscanf(result, "%d:%d", &fslot, &ffrom);
+	if (scanret == 2)
 	  {
-	    DebugPrint(DEBUG_INFO, SECTION_TAPE,"Result from MapBarCode, slot -> %d, from -> %d\n",fslot, ffrom);
+	    DebugPrint(DEBUG_INFO, SECTION_TAPE,"Result from MapBarCode (%s),result, slot -> %d, from -> %d\n",result,fslot, ffrom);
 	    if (slot != fslot)
 	      {
 		DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Slot DB out of sync, slot %d != map %d",slot, fslot);
-		Inventory(chg.labelfile, drive, chg.eject, 0, 0, clean_slot);
+		do_inventory = 1;
 	      } else {
-		result = MapBarCode(chg.labelfile, label, pSTE[slot].VolTag ,UPDATE_SLOT, slot, 0);
+		result = MapBarCode(chg.labelfile, chgscsi_label, pSTE[slot].VolTag ,UPDATE_SLOT, slot, 0);
 	      }
-	  } else {
-	    DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Error in result from MapBarCode 2 != %d\n",ret);
+	  } else { /* if scanret != 2 */
+	    DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Got an error from sscanf %d\n", scanret);
 	  }
       }
   }
-   
-  
+
   DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP unload(0)\n");
   return(0);
 }
@@ -940,7 +984,7 @@ int unload(int fd, int drive, int slot)
 /*
  * load the media from the specified element (slot) into the
  * specified data transfer unit (drive)
- * fd     -> pointer to the internal devie structure pDev
+ * fd     -> pointer to the internal device structure pDev
  * driver -> which drive in the library
  * slot   -> the slot number from where to load
  *
@@ -949,8 +993,15 @@ int unload(int fd, int drive, int slot)
  */
 int load(int fd, int drive, int slot)
 {
-  int ret;
+  extern changer_t chg;         /* Needed for the infos about emubarcode and labelfile */
+  int fslot,ffrom;              /* Store the result from the label/slot db (MapBarCode) */
+  char *result = NULL;          /* Needed for the result string of MapBarCode */
+  char *datestamp = NULL;       /* Result pointer for tape_rdlabel */       
+  char *label = NULL;           /* Result pointer for tape_rdlabel */
+  extern int clean_slot;
+  int ret, scanret;
   extern OpenFiles_T *pDev;
+  extern int do_inventory;
 
   DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"###### START load\n");
   DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"%-20s : fd %d, drive %d, slot %d \n", "load", fd, drive, slot);
@@ -1006,7 +1057,7 @@ int load(int fd, int drive, int slot)
     }
   
   ret = pDev[fd].functions->function_move(fd, pSTE[slot].address, pDTE[drive].address);
-  
+
   /*
    * Update the Status
    */
@@ -1015,6 +1066,54 @@ int load(int fd, int drive, int slot)
 	DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"##### STOP load (-1 update status failed)\n");
 	return(-1);
       }
+
+  /*
+   * Try to read the label
+   * and update the label/slot database
+   */
+  if (pDev[INDEX_TAPE].avail == 1 && (chg.emubarcode == 1 || BarCode(INDEX_CHANGER)))
+    {
+      pDev[INDEX_TAPE].functions->function_rewind(INDEX_TAPE);
+      
+      if (pDev[INDEX_TAPE].devopen == 1)
+	{
+	  SCSI_CloseDevice(INDEX_TAPE);
+	}
+      
+      result = (char *)tape_rdlabel(pDev[INDEX_TAPE].dev, &datestamp, &label);
+    }
+  
+  /*
+   * Did we get an error from tape_rdlabel
+   * if no update the vol/label mapping
+   */
+  if (result  == NULL && chg.labelfile != NULL && label != NULL )
+  {
+    result = MapBarCode(chg.labelfile, label, "" , FIND_SLOT, 0, 0);
+    if (result == NULL) /* Nothing found, do an inventory */
+      {
+	do_inventory = 1;
+      } else { /* We got something, is it correct ? */
+	scanret = sscanf(result, "%d:%d", &fslot, &ffrom);
+	if (scanret == 2)
+	  {
+	    DebugPrint(DEBUG_INFO, SECTION_TAPE,"Result from MapBarCode (%s),result, slot -> %d, from -> %d\n",result,fslot, ffrom);
+	    if (slot != fslot)
+	      {
+		DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Slot DB out of sync, slot %d != map %d",slot, fslot);
+		do_inventory = 1;
+	      } else {
+	        /*
+		* Don't do anything ... 
+		result = MapBarCode(chg.labelfile, label, pDTE[drive].VolTag ,UPDATE_SLOT, slot, 0);
+		*/
+	      }
+	  } else {
+	    DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Error in result from MapBarCode 2 != %d\n",ret);
+	  }
+      }
+  }
+
   DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"##### STOP load (%d)\n",ret);
   return(ret);
 }
@@ -1848,7 +1947,7 @@ int TapeStatus()
     {
       if ((pRequestSense = malloc(sizeof(RequestSense_T))) == NULL)
 	{
-	  dbprintf(("%-20s : malloc failed\n","DLT4000Eject"));
+	  dbprintf(("%-20s : malloc failed\n",TapeStatus));
 	  return(-1);
 	}
       
@@ -2349,7 +2448,7 @@ int GenericRewind(int DeviceFD)
       DebugPrint(DEBUG_INFO, SECTION_TAPE,"GenericRewind : Ready after %d sec, true = %d\n", cnt * 2, true);
       DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP GenericRewind (0)\n");
     } else {
-      DebugPrint(DEBUG_INFO, SECTION_TAPE,"GenericRewind : use ioctl rewind");
+      DebugPrint(DEBUG_INFO, SECTION_TAPE,"GenericRewind : use ioctl rewind\n");
       tape_rewind(pDev[DeviceFD].dev);
       DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP GenericRewind (0)\n");
     }
@@ -2501,7 +2600,18 @@ int GenericSenseHandler(int ip, int flag, unsigned char SenseKey, unsigned char 
   return(ret);
 }
 
-/* ======================================================= */
+/*
+ * Do the move. We don't address the MTE element (the gripper)
+ * here. We assume that the library use the right MTE.
+ * The difference to GenericMove is that we do an align element
+ * before the move.
+ *
+ * Return:
+ *         == 0 -> success
+ *         != 0 -> error either from the SCSI command or from
+ *                 the element handling 
+ * TODO:
+*/
 int SDXMove(int DeviceFD, int from, int to)
 {
   extern OpenFiles_T *pDev;
@@ -2514,27 +2624,30 @@ int SDXMove(int DeviceFD, int from, int to)
   int SDX_STE = -1;     /* to                          */
   int SDX_DTE = -1;     /* AlignElements               */
 
-  dbprintf(("##### START SDXMove\n"));
+  DebugPrint(DEBUG_INFO, SECTION_MOVE,"##### START SDXMove\n");
+  
+  DebugPrint(DEBUG_INFO, SECTION_MOVE,"%-20s : from = %d, to = %d\n", "SDXMove", from, to);
 
-  dbprintf(("%-20s : from = %d, to = %d\n", "SDXMove", from, to));
-
-  /* FIXME
-   * There should be an check if a tape is loaded !!
-   */
- 
+  
   if ((pfrom = LookupElement(from)) == NULL)
     {
-      dbprintf(("SDXMove : ElementInfo for %d not found\n", from));
+      DebugPrint(DEBUG_INFO, SECTION_MOVE,"SDXMove : ElementInfo for %d not found\n", from);
+      DebugPrint(DEBUG_INFO, SECTION_MOVE,"##### STOP SDXMove\n");
+      return(-1);
     }
   
   if ((pto = LookupElement(to)) == NULL)
     {
-      dbprintf(("SDXMove : ElementInfo for %d not found\n", to));
+      DebugPrint(DEBUG_INFO, SECTION_MOVE,"SDXMove : ElementInfo for %d not found\n", to);
+      DebugPrint(DEBUG_INFO, SECTION_MOVE,"##### STOP SDXMove\n");
+      return(-1);
     }
   
   if (pfrom->status == 'E') 
     {
-      dbprintf(("SDXMove : from %d is empty\n", from));
+      DebugPrint(DEBUG_INFO, SECTION_MOVE,"SDXMove : from %d is empty\n", from);
+      DebugPrint(DEBUG_INFO, SECTION_MOVE,"##### STOP SDXMove\n");
+      return(-1);
     }
 
   if (pto->status == 'F') 
@@ -2544,13 +2657,15 @@ int SDXMove(int DeviceFD, int from, int to)
          case CHANGER:
            break;
          case STORAGE:
-           dbprintf(("SDXMove : Destination Element %d Type %d is full\n",
-                pto->address, pto->type));
+           DebugPrint(DEBUG_INFO, SECTION_MOVE,"SDXMove : Destination Element %d Type %d is full\n",
+                pto->address, pto->type);
             to = find_empty(DeviceFD, 0, 0);
-            dbprintf(("GenericMove : Unload to %d\n", to));
+            DebugPrint(DEBUG_INFO, SECTION_MOVE,"SDXMove : Unload to %d\n", to);
             if ((pto = LookupElement(to)) == NULL)
             {
-            
+	      DebugPrint(DEBUG_INFO, SECTION_MOVE, "SDXMove : ElementInfo for %d not found\n", to);
+	      DebugPrint(DEBUG_INFO, SECTION_MOVE,"##### STOP SDXMove\n");
+	      return(-1);
             }
            break;
          case IMPORT:
@@ -2591,18 +2706,22 @@ int SDXMove(int DeviceFD, int from, int to)
   if (SDX_DTE >= 0 && SDX_STE >= 0)
   {
     ret = SCSI_AlignElements(DeviceFD, SDX_MTE, SDX_DTE, SDX_STE);
-    dbprintf(("##### SCSI_AlignElemnts ret = %d\n",ret));
+    DebugPrint(DEBUG_INFO, SECTION_MOVE,"##### SCSI_AlignElemnts ret = %d\n",ret);
     if (ret != 0 )
     {
-       return(-1);
+      DebugPrint(DEBUG_INFO, SECTION_MOVE,"##### STOP SDXMove\n");
+      return(-1);
     }
   } else {
-    dbprintf(("##### Error setting STE/DTE %d/%d\n", SDX_STE, SDX_DTE));
+    DebugPrint(DEBUG_INFO, SECTION_MOVE,"##### Error setting STE/DTE %d/%d\n", SDX_STE, SDX_DTE);
+    DebugPrint(DEBUG_INFO, SECTION_MOVE,"##### STOP SDXMove\n");
     return(-1);
   }
 
-  /* If from is a tape we must check if it is loaded */
-  /* and if yes we have to eject it                  */
+  /* 
+   * If from is a tape we must check if it is loaded 
+   * and if yes we have to eject it                  
+  */
   if (pfrom->type == TAPETYPE)
   {
     tapestat = Tape_Status(INDEX_TAPE);
@@ -2621,12 +2740,23 @@ int SDXMove(int DeviceFD, int from, int to)
   {
     ret = SCSI_Move(DeviceFD, 0, from, to);
   } else {
+    DebugPrint(DEBUG_INFO, SECTION_MOVE,"##### STOP SDXMove\n");
     return(ret);
   }
+  DebugPrint(DEBUG_INFO, SECTION_MOVE,"##### STOP SDXMove\n");
   return(ret);
 }
 
-/* ======================================================= */
+/*
+ * Do the move. We don't address the MTE element (the gripper)
+ * here. We assume that the library use the right MTE
+ *
+ * Return:
+ *         == 0 -> success
+ *         != 0 -> error either from the SCSI command or from
+ *                 the element handling 
+ * TODO:
+*/
 int GenericMove(int DeviceFD, int from, int to)
 {
   ElementInfo_T *pfrom;
@@ -2641,16 +2771,22 @@ int GenericMove(int DeviceFD, int from, int to)
   if ((pfrom = LookupElement(from)) == NULL)
     {
       DebugPrint(DEBUG_INFO, SECTION_MOVE, "GenericMove : ElementInfo for %d not found\n", from);
+      DebugPrint(DEBUG_INFO, SECTION_MOVE,"##### STOP GenericMove\n");
+      return(-1);
     }
   
   if ((pto = LookupElement(to)) == NULL)
     {
       DebugPrint(DEBUG_INFO, SECTION_MOVE, "GenericMove : ElementInfo for %d not found\n", to);
+      DebugPrint(DEBUG_INFO, SECTION_MOVE,"##### STOP GenericMove\n");
+      return(-1);
     }
   
   if (pfrom->status == 'E') 
     {
       DebugPrint(DEBUG_INFO, SECTION_MOVE, "GenericMove : from %d is empty\n", from);
+      DebugPrint(DEBUG_INFO, SECTION_MOVE,"##### STOP GenericMove\n");
+      return(-1);
     }
   
   if (pto->status == 'F') 
@@ -2662,6 +2798,8 @@ int GenericMove(int DeviceFD, int from, int to)
       if ((pto = LookupElement(to)) == NULL)
         {
           DebugPrint(DEBUG_ERROR, SECTION_MOVE, " Ups should not happen\n");
+	  DebugPrint(DEBUG_INFO, SECTION_MOVE,"##### STOP GenericMove\n");
+	  return(-1);
         }
     }
   
@@ -2671,6 +2809,7 @@ int GenericMove(int DeviceFD, int from, int to)
     }
 
   DebugPrint(DEBUG_INFO, SECTION_MOVE, "GenericMove : SCSI_Move return (%d)\n", ret);
+  DebugPrint(DEBUG_INFO, SECTION_MOVE,"##### STOP GenericMove\n");
   return(ret);
 }
 
@@ -4105,7 +4244,6 @@ int LogSense(DeviceFD)
 	    } else {
 	      fprintf(StatFile, "%s\n", result);
 	    }
-	  tapefd_close(fd);
 	}
 
       if ((buffer = (char *)malloc(size)) == NULL)
