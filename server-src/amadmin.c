@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.56 1998/12/06 20:19:07 martinea Exp $
+ * $Id: amadmin.c,v 1.57 1998/12/07 19:04:46 kashmir Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -62,9 +62,9 @@ void due_one P((disk_t *dp));
 void find P((int argc, char **argv));
 void delete P((int argc, char **argv));
 void delete_one P((disk_t *dp));
-void balance P((void));
-void tape P((void));
-void bumpsize P((void));
+void balance P((int argc, char **argv));
+void tape P((int argc, char **argv));
+void bumpsize P((int argc, char **argv));
 void diskloop P((int argc, char **argv, char *cmdname,
 		 void (*func) P((disk_t *dp))));
 char *seqdatestr P((int seq));
@@ -74,15 +74,60 @@ void export_db P((int argc, char **argv));
 void import_db P((int argc, char **argv));
 void disklist P((int argc, char **argv));
 void disklist_one P((disk_t *dp));
+void show_version P((int argc, char **argv));
 
 static char *confname;
+
+static const struct {
+    const char *name;
+    void (*fn) P((int, char **));
+    const char *usage;
+} cmdtab[] = {
+    { "version", show_version,
+	"\t\t\t\t# Show version info." },
+    { "force", force,
+	" <hostname> <disks> ...\t# Force level 0 at next run." },
+    { "unforce", unforce,
+	" <hostname> <disks> ...\t# Clear force command." },
+    { "force-bump", force_bump,
+	" <hostname> <disks> ...\t# Force bump at next run." },
+    { "force-no-bump", force_no_bump,
+	" <hostname> <disks> ...\t# Force no-bump at next run." },
+    { "unforce-bump", unforce_bump,
+	" <hostname> <disks> ...\t# Clear bump command." },
+    { "reuse", reuse,
+	" <tapelabel> ...\t\t# re-use this tape." },
+    { "no-reuse", noreuse,
+	" <tapelabel> ...\t# never re-use this tape." },
+    { "find", find,
+	" <hostname> <disks> ...\t# Show which tapes these dumps are on." },
+    { "delete", delete,
+	" <hostname> <disks> ...\t# Delete from database." },
+    { "info", info,
+	" <hostname> <disks> ...\t# Show current info records." },
+    { "due", due,
+	" <hostname> <disks> ...\t# Show due date." },
+    { "balance", balance,
+	"\t\t\t\t# Show nightly dump size balance." },
+    { "tape", tape,
+	"\t\t\t\t# Show which tape is due next." },
+    { "bumpsize", bumpsize,
+	"\t\t\t# Show current bump thresholds." },
+    { "export", export_db,
+	" [<hostname> [<disks>]]\t# Export curinfo database to stdout." },
+    { "import", import_db,
+	"\t\t\t\t# Import curinfo database from stdin." },
+    { "disklist", disklist,
+	" [<hostname> [<disks> ...]]\t# Debug disklist entries." },
+};
+#define	NCMDS	(sizeof(cmdtab) / sizeof(cmdtab[0]))
 
 int main(argc, argv)
 int argc;
 char **argv;
 {
     char *confdir = NULL;
-    int fd;
+    int fd, i;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
 
@@ -104,10 +149,6 @@ char **argv;
 
     if(argc < 3) usage();
 
-    if(strcmp(argv[2],"version") == 0) {
-	for(argc=0; version_info[argc]; printf("%s",version_info[argc++]));
-	return 0;
-    }
     confname = argv[1];
     confdir = vstralloc(CONFIG_DIR, "/", confname, NULL);
     if(chdir(confdir)) {
@@ -129,27 +170,16 @@ char **argv;
     if(open_infofile(getconf_str(CNF_INFOFILE)))
 	error("could not open info db \"%s\"\n", getconf_str(CNF_INFOFILE));
 
-    if(strcmp(argv[2],"force-bump") == 0) force_bump(argc, argv);
-    else if(strcmp(argv[2],"force-no-bump") == 0) force_no_bump(argc, argv);
-    else if(strcmp(argv[2],"unforce-bump") == 0) unforce_bump(argc, argv);
-    else if(strcmp(argv[2],"force") == 0) force(argc, argv);
-    else if(strcmp(argv[2],"unforce") == 0) unforce(argc, argv);
-    else if(strcmp(argv[2],"reuse") == 0) reuse(argc, argv);
-    else if(strcmp(argv[2],"no-reuse") == 0) noreuse(argc, argv);
-    else if(strcmp(argv[2],"info") == 0) info(argc, argv);
-    else if(strcmp(argv[2],"due") == 0) due(argc, argv);
-    else if(strcmp(argv[2],"find") == 0) find(argc, argv);
-    else if(strcmp(argv[2],"delete") == 0) delete(argc, argv);
-    else if(strcmp(argv[2],"balance") == 0) balance();
-    else if(strcmp(argv[2],"tape") == 0) tape();
-    else if(strcmp(argv[2],"bumpsize") == 0) bumpsize();
-    else if(strcmp(argv[2],"import") == 0) import_db(argc, argv);
-    else if(strcmp(argv[2],"export") == 0) export_db(argc, argv);
-    else if(strcmp(argv[2],"disklist") == 0) disklist(argc, argv);
-    else {
+    for (i = 0; i < NCMDS; i++)
+	if (strcmp(argv[2], cmdtab[i].name) == 0) {
+	    (*cmdtab[i].fn)(argc, argv);
+	    break;
+	}
+    if (i == NCMDS) {
 	fprintf(stderr, "%s: unknown command \"%s\"\n", argv[0], argv[2]);
 	usage();
     }
+
     close_infofile();
     clear_tapelist();
 
@@ -165,45 +195,13 @@ char **argv;
 
 void usage P((void))
 {
+    int i;
+
     fprintf(stderr, "\nUsage: %s%s <conf> <command> {<args>} ...\n",
 	    get_pname(), versionsuffix());
     fprintf(stderr, "    Valid <command>s are:\n");
-    fprintf(stderr,"\tversion\t\t\t\t# Show version info.\n");
-    fprintf(stderr,
-	    "\tforce <hostname> <disks> ...\t# Force level 0 at next run.\n");
-    fprintf(stderr,
-	    "\tunforce <hostname> <disks> ...\t# Clear force command.\n");
-    fprintf(stderr,
-	    "\tforce-bump <hostname> <disks> ...\t# Force bump at next run.\n");
-    fprintf(stderr,
-	    "\tforce-no-bump <hostname> <disks> ...\t# Force no-bump at next run.\n");
-    fprintf(stderr,
-	    "\tunforce-bump <hostname> <disks> ...\t# Clear bump command.\n");
-    fprintf(stderr,
-	    "\treuse <tapelabel> ...\t\t# re-use this tape.\n");
-    fprintf(stderr,
-	    "\tno-reuse <tapelabel> ...\t# never re-use this tape.\n");
-    fprintf(stderr,
-	    "\tfind <hostname> <disks> ...\t# Show which tapes these dumps are on.\n");
-    fprintf(stderr,
-	    "\tdelete <hostname> <disks> ...\t# Delete from database.\n");
-    fprintf(stderr,
-	    "\tinfo <hostname> <disks> ...\t# Show current info records.\n");
-    fprintf(stderr,
-	    "\tdue <hostname> <disks> ...\t# Show due date.\n");
-    fprintf(stderr,
-	    "\tbalance\t\t\t\t# Show nightly dump size balance.\n");
-    fprintf(stderr,
-	    "\ttape\t\t\t\t# Show which tape is due next.\n");
-    fprintf(stderr,
-	    "\tbumpsize\t\t\t# Show current bump thresholds.\n");
-    fprintf(stderr,
-	    "\texport [<hostname> [<disks>]]\t# Export curinfo database to stdout.\n");
-    fprintf(stderr,
-	    "\timport\t\t\t\t# Import curinfo database from stdin.\n");
-/*  fprintf(stderr,
-**	    "\tdisklist [<hostname> [<disks> ...]]\t# Debug disklist entries.\n");
-*/
+    for (i = 0; i < NCMDS; i++)
+	fprintf(stderr, "\t%s%s\n", cmdtab[i].name, cmdtab[i].usage);
     exit(1);
 }
 
@@ -723,7 +721,9 @@ char **argv;
 
 /* ----------------------------------------------- */
 
-void tape()
+void tape(argc, argv)
+int argc;
+char **argv;
 {
     tape_t *tp;
     int runtapes,i;
@@ -744,7 +744,9 @@ void tape()
 
 /* ----------------------------------------------- */
 
-void balance()
+void balance(argc, argv)
+int argc;
+char **argv;
 {
     disk_t *dp;
     struct balance_stats {
@@ -940,7 +942,9 @@ int level;
     return bump;
 }
 
-void bumpsize()
+void bumpsize(argc, argv)
+int argc;
+char **argv;
 {
     int l;
 
@@ -1472,4 +1476,14 @@ char **argv;
     else
 	for(dp = diskqp->head; dp != NULL; dp = dp->next)
 	    disklist_one(dp);
+}
+
+void show_version(argc, argv)
+int argc;
+char **argv;
+{
+    int i;
+
+    for(i = 0; version_info[i] != NULL; i++)
+	printf("%s", version_info[i]);
 }

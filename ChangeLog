@@ -1,3 +1,15 @@
+1998-12-07  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/amadmin.c: make command lookup and usage table-driven
+	* server-src/amadmin.c (balance, tape, bumpsize): add
+	argc/argv arguments to make them like the rest
+	* server-src/amadmin.c (show_version): new function, implements
+	the version command, so it is done like the other commands
+	* server-src/amadmin.c (main): iterate through cmdtab[] when
+	looking up the command, instead of a huge if/then/else
+	* server-src/amadmin.c (usage): iterate through cmdtab[] when
+	displaying usage strings.  Display the "disklist" usage string.
+
 1998-12-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* config/acconfig.h: add "#undef HAVE_WRITEV_DECL".
