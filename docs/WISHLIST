@@ -10,6 +10,70 @@ get done.
 If you have any ideas about any of the following, please send an e-mail
 note to amanda-users@cs.umd.edu, or to jds@cs.umd.edu if you'd prefer.
 
+* Setting tapecycle to infinity (which is reasonable for archive
+configurations) will cause planner to crash, because it will try to
+allocate a huge memory block.  The current workaround is to use a
+finite tapecycle; a correct fix would involve dynamically growing the
+structure allocated by planner as needed.
+
+* amlabel should ask for confirmation before overwriting an active
+tape.
+
+* amcheck should check whether the user that invoked it is the user
+configured to run amanda.
+
+* Support for Solaris 2.[5-6]*'s ufsdump -S switch (for estimates)
+should be added.
+
+* It should be possible to configure estimate and data time-outs on a
+per-filesystem basis.
+
+* SAMBA should be treated as a different backup program, not as
+GNUTAR, because it cannot handle dump-style incrementals (as of
+samba-1.9.17p5).  We should be able to back up subdirectories of
+shares (using the -D switch).  It should be possible to specify the
+samba user, instead of assuming user `backup'.  /etc/amandapass could
+be specified (in a backward-compatible way) as follows:
+
+// password [-U default_user] [[-W] default_workgroup]
+//hostname password [-U default_user] [[-W] default_workgroup]
+//hostname/sharename[/subdir] password [-U default_user] [[-W] default_workgroup | -W-]
+
+So that:
+
+// XXXX -W Win32-LAB
+//win-srv XXXX -U srv-backup
+//win-srv/F$ XXXX -U backup
+//other XXXX -U amanda -W-
+
+would be equivalent to:
+
+//win-client1/C$ XXXX -W Win32-LAB
+//win-client2/C$ XXXX -W Win32-LAB
+//win-srv/C$ XXXX -U srv-backup -W Win32-LAB
+//win-srv/D$ XXXX -U srv-backup -W Win32-LAB
+//win-srv/F$ XXXX -U backup -W Win32-LAB
+//other/C$ XXXX -U amanda  (no domain specified)
+
+* It should be possible to re-generate databases and indexes from tapes.
+
+* amdump should not run if files named either amdump or log exist in
+the log directory.  This should make it harder to mix results of a
+crashed amdump with a new one.  However, when amanda is expected to
+run unattended for long periods of time (1-2 weeks), a cron job should
+be configured to check whether those files exist and, if they do, run
+amcleanup before amdump.
+
+* Instead of hard-coding /dev prefixes, amanda should be able to
+figure out device names by itself, by looking up /etc/*fstab.  Also,
+whenever block device names are needed, this information might be
+obtained from /etc/*fstab.  On systems whose fstab does not contain
+that information, amanda could try to prepend an `r' before each
+pathname component, from the last to the first, and check whether that
+name exists and is a block device.  If no such name is found, the
+device name itself is used.  Can anyone find an example where this
+would fail?
+
 * Ports to non-Unix platforms, specifically Macs and PCs.  The hooks are in
 the Amanda protocol to support non-dump backup programs, but no-one has
 volunteered to implement the client side.  Sorry, I'm not a Mac programmer!
@@ -23,34 +87,17 @@ database in various ways.  Adding / deleting / moving disks and hosts
 should be done through amadmin instead of editing the disklist directly.
 This will allow Amanda to do some sanity checks for the operators, to make
 sure permissions are set up right, etc.  
-    You should be able to force full dumps for nights other than tonight,
-and be able to undo a previous force command.  Rather than one command at a
-time on the command line, amadmin could be a little shell with a help
-facility (ala ckermit or gnuplot, if you've seen those).
+    You should be able to force full dumps for nights other than
+tonight.  Rather than one command at a time on the command line,
+amadmin could be a little shell with a help facility (ala ckermit or
+gnuplot, if you've seen those).
 
-* Better database.  Right now Amanda uses ndbm, which kind of sucks rocks.
-The binary database isn't portable (say you want to move your master host
-from a Vax to a Sun, you're hosed), and ndbm has limitations on how many
-keys will fit on the same page; if too many filesystems hash to the same
-key, it'll bomb!  We need a better hash file library.  Right now I'm
-planning on having the database stored in text form so that it's portable
-and editable (if you are careful and know what you are doing), and having
-the keys stored in a hashed file that will be automatically rebuilt if it
-doesn't exist.  I think the latest BSD hash library will fit the bill.
-
-* Better software configure setup.  We should be more robust in the face of
-strange versions of cpp, probably by running the Makefiles through sed
-instead.  A configure command (ala Larry Wall and the Gnu packages) could
-attempt to do some/most of the work.  Put in a proper make depend.
-
-* A tape-verify pass after the Amanda run.  Amanda finishes fast enough
-that we could read the tape back after the dumps are done, to be sure all
-the files on it can be read.  Perhaps Taper could calculate a CRC for each
-file and store that in the database, to be checked by the verifier.
-
-* A browseable index of of every file backed up, so that administrators (or
-even the users themselves) can identify in advance which tape contains the
-file to be restored.
+* A tape-verify pass after the Amanda run (we already have one, but it
+will only work if you only use GNU tar for your backups).  Amanda
+finishes fast enough that we could read the tape back after the dumps
+are done, to be sure all the files on it can be read.  Perhaps Taper
+could calculate a CRC for each file and store that in the database, to
+be checked by the verifier.
 
 * More sophisticated tape management.  Should Amanda track tapes globally,
 counting the number of times tapes were used, and recommending retirement
@@ -68,6 +115,29 @@ planner assumes that the incrementals it is doing are relative to the full
 dumps it is doing.  If someone does a full dump of one of its filesystems
 (and writes /etc/dumpdates) outside of Amanda, data could be lost.  I think
 Sun's Backup-Copilot handles this well.  We should too.
+
+* It should be possible to configure pre-backup and post-backup
+commands, so as to make it possible to lock filesystems or shutdown
+database servers.  It might also be possible to modify the actual
+command line used to run dump or tar commands.  However, as this might
+have security implications, this should be configured on the clients,
+not on the server.
+
+* Amanda should be able to tunnel its protocol through rsh-like
+commands such as SSH.  This would make it possible to back up hosts
+outside a firewall, by controlling the ports that can be used by
+amanda.  One disadvantage of this would be that UDP could no longer be
+used for requesting hundreds of estimates in parallel, since, when
+connection-oriented services are used, the number of open connections
+is limited.  So, planner should use a smarter algorithm for sending
+out estimate requests.  Additionally, when it uses UDP, it should make
+sure it doesn't build a datagram larger than the maximum UDP datagram
+size, even if it has to send more than one request to a single host.
+
+* Support for client-initiated backups might be interesting, but the
+server would have to keep listening for clients backup requests for a
+configurable period of time.  This could be used to back up secure
+hosts, for instance.
 
 * Insert your favorite feature here, and send me mail telling about what
 you'd like to see!  Of course, I can't please everyone, and can't implement
