@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.83 1998/12/10 16:32:40 kashmir Exp $
+/* $Id: dumper.c,v 1.84 1998/12/10 21:03:41 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -537,18 +537,7 @@ update_dataptr(outf, db, size)
 	    char *new_filename = NULL;
 	    char sequence[10];
 	    int save_outf;
-	    int save_spaceleft;
-	    char *save_dataptr;
-	    char save_databuf[DATABUF_SIZE];
 	    char *tmp_filename = NULL;
-
-
-	    assert(sizeof(save_databuf) == sizeof(db->buf));
-	    memcpy(save_databuf, db->buf, sizeof(db->buf)); 
-	    save_spaceleft = db->spaceleft;
-	    save_dataptr = db->dataptr;
-    	    db->spaceleft = sizeof(db->buf);
-	    db->dataptr = db->buf;
 
 	    save_outf = outf;
 
@@ -568,14 +557,11 @@ update_dataptr(outf, db, size)
 
 	    tmp_filename = newvstralloc(tmp_filename, cont_filename,
 		".tmp", NULL);
-	    if((outf = open(tmp_filename,O_RDWR)) == -1) {
+	    if((outf = open(tmp_filename, O_RDWR)) == -1) {
 		errstr = squotef("holding file \"%s\": %s",
 			    tmp_filename, strerror(errno));
 		return 1;
 	    }
-	    strncpy(file.cont_filename, new_filename, 
-		    sizeof(file.cont_filename));
-	    file.cont_filename[sizeof(file.cont_filename)-1] = '\0';
 	    write_tapeheader(outf, &file);
 	    close(outf);
 
@@ -598,15 +584,9 @@ update_dataptr(outf, db, size)
 	    }
 	    /*outf = save_outf;*/
 	    split_size += chunksize;
-    	    db->spaceleft = sizeof(db->buf);
-	    db->dataptr = db->buf;
 	    file.type = F_CONT_DUMPFILE;
 	    file.cont_filename[0] = '\0';
 	    write_tapeheader(outf, &file);
-
-	    memcpy(db->buf, save_databuf, sizeof(db->buf)); 
-	    db->spaceleft = save_spaceleft;
-	    db->dataptr = save_dataptr;
 	}
 	return write_dataptr(outf, db);
     }

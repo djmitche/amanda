@@ -1,5 +1,11 @@
 1998-12-10  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c (update_dataptr): remove pointless backups
+	of the databuf and associated vars when creating next chunk.
+	Remove duplicate setting of file.cont_filename.
+
+1998-12-10  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c (main): reuse outfd to clear the open files
 	passed to us.  Nuke the fd var.
 	* server-src/dumper.c (update_dataptr): nuke 'split' argument - it
