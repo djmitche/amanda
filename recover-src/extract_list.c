@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.40 1998/07/04 00:19:12 oliva Exp $
+ * $Id: extract_list.c,v 1.41 1998/09/04 15:39:37 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1198,6 +1198,7 @@ EXTRACT_LIST *elist;
     int buflen;
     int len_program;
     char *cmd = NULL;
+    int passwd_field = -1;
 #ifdef SAMBA_CLIENT
     char *domain = NULL, *smbpass = NULL;
 #endif
@@ -1273,6 +1274,7 @@ EXTRACT_LIST *elist;
     	smbpass = findpass(file.disk, &domain);
     	if (smbpass) {
             restore_args[j++] = stralloc(file.disk);
+	    passwd_field=j;
     	    restore_args[j++] = smbpass;
     	    restore_args[j++] = stralloc("-U");
     	    restore_args[j++] = stralloc(SAMBA_USER);
@@ -1346,8 +1348,12 @@ EXTRACT_LIST *elist;
     }
     if (cmd) {
         dbprintf(("Exec'ing %s with arguments:\n", cmd));
-	for (i = 0; i < no_initial_params + files_off_tape; i++)
-  	    dbprintf(("\t%s\n", restore_args[i]));
+	for (i = 0; i < no_initial_params + files_off_tape; i++) {
+	    if( i == passwd_field)
+		dbprintf(("\tXXXXX\n"));
+	    else
+  	        dbprintf(("\t%s\n", restore_args[i]));
+	}
         (void)execv(cmd, restore_args);
 	/* only get here if exec failed */
 	for (i = 0; i < no_initial_params + files_off_tape; i++) {
