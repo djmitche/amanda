@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.98 2000/10/29 18:52:32 martinea Exp $
+ * $Id: driver.c,v 1.99 2000/10/29 19:08:09 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1030,7 +1030,7 @@ static void
 handle_dumper_result(cookie)
     void *cookie;
 {
-    static int pending_aborts = 0;
+    /*static int pending_aborts = 0;*/
     dumper_t *dumper = cookie;
     disk_t *dp, *sdp;
     tok_t tok;
@@ -1185,7 +1185,7 @@ static void
 handle_chunker_result(cookie)
     void *cookie;
 {
-    static int pending_aborts = 0;
+    /*static int pending_aborts = 0;*/
     chunker_t *chunker = cookie;
     assignedhd_t **h=NULL;
     dumper_t *dumper;
@@ -1201,6 +1201,9 @@ handle_chunker_result(cookie)
     dumper = chunker->dumper;
     assert(dumper != NULL);
     dp = dumper->dp;
+    assert(dp != NULL);
+    assert(sched(dp) != NULL);
+    assert(sched(dp)->destname);
     assert(dp != NULL && sched(dp) != NULL && sched(dp)->destname);
 
     if(dp && sched(dp) && sched(dp)->holdp) {
@@ -1338,7 +1341,9 @@ handle_chunker_result(cookie)
 	     * clean up the remains of this image, and try to finish
 	     * other dumps that are waiting on disk space.
 	     */
-	    assert(pending_aborts);
+	    /*assert(pending_aborts);*/
+	    event_release(chunker->ev_read);
+	    aclose(chunker->fd);
 	    free_serial(result_argv[2]);
 	    rename_tmp_holding(sched(dp)->destname, 0);
 	    deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
@@ -1350,7 +1355,7 @@ handle_chunker_result(cookie)
 	    dp->host->inprogress -= 1;
 	    dp->inprogress = 0;
 	    dp = NULL;
-	    pending_aborts--;
+	    /*pending_aborts--;*/
 	    continue_dumps();
 	    start_some_dumps(dumper, &runq);
 	    break;
