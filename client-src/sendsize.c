@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.35 1997/09/26 13:13:34 george Exp $
+ * $Id: sendsize.c,v 1.36 1997/10/26 05:01:00 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -628,7 +628,9 @@ int level;
 #endif
 
     kill(-dumppid,
-#ifdef XFSDUMP
+#if defined(AIX_BACKUP)
+	 SIGKILL
+#elif defined(XFSDUMP)
     /* `xfsdump' catches and ignores `SIGTERM', so make sure it dies. */
 	 strcmp(amname_to_fstype(device), "xfs")!=0 ? SIGTERM : SIGKILL
 #else
