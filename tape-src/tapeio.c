@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.10.2.4 1998/02/22 02:04:42 amcore Exp $
+ * $Id: tapeio.c,v 1.10.2.5 1998/03/14 11:56:50 amcore Exp $
  *
  * implements tape I/O functions
  */
@@ -41,6 +41,52 @@
 
 static char *errstr = NULL;
 
+#ifdef UWARE_TAPEIO 
+
+#include <sys/tape.h>
+
+int tapefd_rewind(tapefd)
+int tapefd;
+{
+    int st;
+    return ioctl(tapefd, T_RWD, &st);
+}
+
+int tapefd_fsf(tapefd, count)
+int tapefd, count;
+/*
+ * fast-forwards the tape device count files.
+ */
+{
+    int st;
+    int c;
+    int status;
+
+    for ( c = count; c ; c--)
+        if (status = ioctl(tapefd, T_SFF, &st))
+            break;
+
+    return status;
+}
+
+int tapefd_weof(tapefd, count)
+int tapefd, count;
+/*
+ * write <count> filemarks on the tape.
+ */
+{
+    int st;
+    int c;
+    int status;
+
+    for ( c = count; c ; c--)
+        if (status = ioctl(tapefd, T_WRFILEM, &st))
+            break;
+
+    return status;
+}
+
+#else
 #ifdef AIX_TAPEIO
 
 #include <sys/tape.h>
@@ -189,6 +235,7 @@ int tapefd, count;
 
 #endif /* !XENIX_TAPEIO */
 #endif /* !AIX_TAPEIO */
+#endif /* !UWARE_TAPEIO */
 
 
 

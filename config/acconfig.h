@@ -71,6 +71,9 @@
 /* For XENIX/ISC systems.  */
 #undef XENIX_TAPEIO
 
+/* For UnixWare systems.  */
+#undef UWARE_TAPEIO
+
 /* For SCO OS5 systems.  */
 #undef STATFS_SCO_OS5
 

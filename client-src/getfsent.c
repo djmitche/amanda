@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getfsent.c,v 1.11.2.3 1998/02/26 11:24:47 amcore Exp $
+ * $Id: getfsent.c,v 1.11.2.4 1998/03/14 11:56:43 amcore Exp $
  *
  * generic version of code to read fstab
  */
@@ -171,7 +171,7 @@ generic_fsent_t *fsent;
     return 1;
 }
 
-#elif defined(HAVE_SYS_MNTTAB_H) /* } { */
+#elif defined(HAVE_SYS_MNTTAB_H) || defined(STATFS_SCO_OS5) /* } { */
 
 /* we won't actually include mnttab.h, since it contains nothing useful.. */
 
@@ -210,7 +210,7 @@ generic_fsent_t *fsent;
     int ch;
 
     afree(cp);
-    for (; (cp = agets(fstabf) != NULL; free(cp)) {
+    for (; (cp = agets(fstabf)) != NULL; free(cp)) {
 	fsent->fsname = strtok(cp, " \t");
 	if ( fsent->fsname && *fsent->fsname != '#' )
 	    break;

@@ -1,5 +1,7 @@
 Version 2.4.0
 
+	ported to UnixWare.  -Jeff Moscow <jeff@rtr.com>
+
 	improved vxdump support so that rundump will be used for vxfs
 	filesystems only, and it will be enabled automatically.  -oliva
 
