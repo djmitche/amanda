@@ -1,3 +1,10 @@
+1998-09-19  Eric Doutreleau <Eric.doutreleau@int-evry.fr>
+
+	* server-src/driverio.h (MAX_DUMPERS): increased from 15 to 63 in
+	order to launch more dumper in parallel
+	* example/amanda.conf.in (inparallel): Add the fact that it is
+ 	limited by MAX_DUMPERS
+
 1998-09-18  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* common-src/Makefile.am (libamanda_la_LDFLAGS): use libtool

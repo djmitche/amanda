@@ -25,12 +25,12 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.7 1998/07/04 00:19:52 oliva Exp $
+ * $Id: driverio.h,v 1.8 1998/09/20 02:40:44 oliva Exp $
  *
  * driver-related helper functions
  */
 
-#define MAX_DUMPERS 15
+#define MAX_DUMPERS 63
 #define MAX_ARGS 10
 
 #ifndef GLOBAL
