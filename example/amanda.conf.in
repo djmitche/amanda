@@ -36,8 +36,9 @@ labelstr "^HISS[0-9][0-9]*$"	# label constraint regex: all tapes must match
 # The main disadvantage is that dumps on the holding disk need to be flushed
 # (with amflush) to tape after an operating system crash or a tape failure.
 # If no holding disks are specified then all dumps will be written directly
-# to tape.  If more than one holding disk is specified then they will all
-# be used round-robin.
+# to tape.  If a dump is too big to fit on the holding disk than it will be
+# written directly to tape.  If more than one holding disk is specified then
+# they will all be used round-robin.
 
 holdingdisk hd1 {
     comment "main holding disk"
