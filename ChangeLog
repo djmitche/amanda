@@ -1,3 +1,10 @@
+2000-09-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* client-src/sendsize.c (getsize_smbtar): remove unused debug_level
+	variable.
+	* server-src/amlabel.c (main): init errstr to NULL, 
+	fix compiler warning.
+
 2000-09-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	patch by jason Thomas <jet@users.sourceforge.net>
 
