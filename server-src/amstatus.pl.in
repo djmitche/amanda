@@ -633,7 +633,7 @@ if(defined $opt_stats) {
 		}
 		for ($d = 0; $d <= $#dumpers_active; $d++) {
 			$l = sprintf "%2d dumper%s busy%s : %8s  (%6.2f%%)",
-				$d, ($d <= 1) ? "" : "s", ($d =< 1) ? " " : "",
+				$d, ($d <= 1) ? "" : "s", ($d <= 1) ? " " : "",
 				&busytime($dumpers_active[$d]),
 				($dumpers_active[$d] * 1.0 / $total_time) * 100;
 			print $l;

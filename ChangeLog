@@ -1,3 +1,7 @@
+2000-04-20 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/amstatus.pl.in: typo
+
 2000-04-20  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
 	* recover-src/Makefile.am (LDADD): Removed libamtape.
@@ -825,7 +829,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.346 2000/04/21 02:04:49 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.347 2000/04/21 03:07:32 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
