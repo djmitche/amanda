@@ -281,7 +281,7 @@ define dumptype comp-user-tar {
 
 define dumptype holding-disk {
     comment "The master-host holding disk itself"
-    holdingdisk true
+    holdingdisk no # do not use the holding disk
     priority medium
 }
 
