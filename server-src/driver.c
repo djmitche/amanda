@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.16 1997/10/03 08:29:21 george Exp $
+ * $Id: driver.c,v 1.17 1997/11/11 05:27:18 amcore Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -959,8 +959,12 @@ unsigned long size;
 		minp = hdp;
 	}
 #ifdef HOLD_DEBUG
-    printf("find %d K space: selected: %s\n", size,
-	   minp? minp->diskdir : "NO FIT");
+    printf("find %d K space: selected %s size %ld allocated %ld dumpers %d\n",
+	   size,
+	   minp? minp->diskdir : "NO FIT",
+	   minp? minp->disksize : (unsigned long)-1,
+	   minp? holdalloc(minp)->allocated_space : (unsigned long)-1,
+	   minp? holdalloc(minp)->allocated_dumpers : -1);
 #endif
     return minp;
 }
@@ -1014,7 +1018,7 @@ tok_t tok;
 	/* the dump is done, adjust to actual size and decrease dumpers */
 
 #ifdef HOLD_DEBUG
-	printf("adjust: disk %s:%s done, act %d prev est %ld diff %d\n",
+	printf("adjust: disk %s:%s done, act %d prev est %ld diff %ld\n",
 	       diskp->host->hostname, diskp->name, kbytes,
 	       sched(diskp)->act_size, diff);
 #endif
@@ -1027,7 +1031,7 @@ tok_t tok;
 	/* dump still active, but adjust size up iff already > estimate */
 
 #ifdef HOLD_DEBUG
-	printf("adjust: disk %s:%s no_room, act %d prev est %ld diff %d\n",
+	printf("adjust: disk %s:%s no_room, act %d prev est %ld diff %ld\n",
 	       diskp->host->hostname, diskp->name, kbytes,
 	       sched(diskp)->act_size, diff);
 #endif
@@ -1230,7 +1234,8 @@ void short_dump_state()
     wall_time = walltime_str(curclock());
 
     printf("driver: state time %s ", wall_time);
-    printf("free kps: %d space: %ld taper: ", free_kps((interface_t *)0), free_space());
+    printf("free kps: %d space: %ld taper: ",
+	   free_kps((interface_t *)0), free_space());
     if(degraded_mode) printf("DOWN");
     else if(!taper_busy) printf("idle");
     else printf("writing");
