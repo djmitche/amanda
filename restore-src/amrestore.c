@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.46 2003/01/25 21:36:25 jrjackson Exp $
+ * $Id: amrestore.c,v 1.47 2003/02/09 04:34:12 jrjackson Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -501,13 +501,12 @@ char **argv;
 	switch(opt) {
 	case 'b':
 	    blocksize = strtol(optarg, &e, 10);
-	    if(e == NULL) {
-		error("cannot convert \"%s\"", optarg);
-	    }
-	    if(strcasecmp(e, "k") == 0) {
+	    if(*e == 'k' || *e == 'K') {
 		blocksize *= 1024;
-	    } else if(strcasecmp(e, "m") == 0) {
+	    } else if(*e == 'm' || *e == 'M') {
 		blocksize *= 1024 * 1024;
+	    } else if(*e != '\0') {
+		error("invalid blocksize value \"%s\"", optarg);
 	    }
 	    if(blocksize < DISK_BLOCK_BYTES) {
 		error("minimum block size is %dk", DISK_BLOCK_BYTES / 1024);
@@ -520,7 +519,7 @@ char **argv;
 	case 'h': headerflag = 1; break;
 	case 'f':
 	    filefsf = strtol(optarg, &e, 10);
-	    if(e != NULL && *e != '\0') {
+	    if(*e != '\0') {
 		error("invalid fileno value \"%s\"", optarg);
 	    }
 	    break;

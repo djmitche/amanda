@@ -1,5 +1,9 @@
 2003-02-08  John R. Jackson (jrj@purdue.edu)
 
+	* restore-src/amrestore.c: Clean up strtol() argument processing.
+
+2003-02-08  John R. Jackson (jrj@purdue.edu)
+
 	* docs/INSTALL: Clean up supporting package versions and URL's.
 
 2003-02-06  Jean-Louis Martineau <martineau@iro.umontreal.ca>
