@@ -1,5 +1,10 @@
 Version 2.4.0
 
+	fixed amflush problem, reported by Dietmar Goldbeck
+	<dietmar@telemedia.de>  -oliva
+
+Version 2.4.0-980319
+
 	chg-mtx should use changer-dev if specified.
 	-Steve Khoo <steve@gordian.com>
 
