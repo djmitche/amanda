@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.87 2002/02/14 01:51:05 martinea Exp $
+ * $Id: conffile.c,v 1.88 2002/02/15 19:14:59 martinea Exp $
  *
  * read configuration file
  */
@@ -2593,12 +2593,37 @@ dump_configuration(filename)
 	    printf("	STARTTIME %d:%02d:%02d\n",
 	      stm->tm_hour, stm->tm_min, stm->tm_sec);
 	}
-	if(dp->exclude) {
-	    printf("	EXCLUDE");
-	    if(dp->exclude_list) {
-		printf("-LIST");
+	if(dp->exclude_file) {
+	    sle_t *excl;
+	    printf("	EXCLUDE FILE");
+	    for(excl = dp->exclude_file->first; excl != NULL; excl =excl->next){
+		printf(" \"%s\"", excl->name);
 	    }
-	    printf(" \"%s\"\n", dp->exclude);
+	    printf("\n");
+	}
+	if(dp->exclude_list) {
+	    sle_t *excl;
+	    printf("	EXCLUDE LIST");
+	    for(excl = dp->exclude_list->first; excl != NULL; excl =excl->next){
+		printf(" \"%s\"", excl->name);
+	    }
+	    printf("\n");
+	}
+	if(dp->include_file) {
+	    sle_t *incl;
+	    printf("	INCLUDE FILE");
+	    for(incl = dp->include_file->first; incl != NULL; incl =incl->next){
+		printf(" \"%s\"", incl->name);
+	    }
+	    printf("\n");
+	}
+	if(dp->include_list) {
+	    sle_t *incl;
+	    printf("	INCLUDE LIST");
+	    for(incl = dp->include_list->first; incl != NULL; incl =incl->next){
+		printf(" \"%s\"", incl->name);
+	    }
+	    printf("\n");
 	}
 	printf("	FREQUENCY %ld\n", (long)dp->frequency);
 	printf("	MAXDUMPS %d\n", dp->maxdumps);
