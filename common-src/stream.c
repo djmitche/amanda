@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.10.2.6.4.4.2.2 2002/03/31 21:01:33 jrjackson Exp $
+ * $Id: stream.c,v 1.10.2.6.4.4.2.3 2002/04/12 00:58:44 jrjackson Exp $
  *
  * functions for managing stream sockets
  */
@@ -274,10 +274,11 @@ out:
     if(connect(client_socket, (struct sockaddr *)&svaddr, sizeof(svaddr))
        == -1) {
 	save_errno = errno;
-	dbprintf(("%s: %s: connect(%d) failed: %s\n",
+	dbprintf(("%s: %s: connect to %s.%d failed: %s\n",
 		  debug_prefix_time(NULL),
 		  f,
-		  port,
+		  inet_ntoa(svaddr.sin_addr),
+		  ntohs(svaddr.sin_port),
 		  strerror(save_errno)));
 	aclose(client_socket);
 	errno = save_errno;
