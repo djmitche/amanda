@@ -3,12 +3,41 @@
 * File:          $RCSfile: amidxtaped.c,v $
 *
 * Revision:      $Revision: 1.1 $
-* Last Edited:   $Date: 1997/03/15 21:30:10 $
+* Last Edited:   $Date: 1997/05/14 08:29:29 $
 * Author:        $Author: amcore $
 *
 * History:       $Log: amidxtaped.c,v $
-* History:       Revision 1.1  1997/03/15 21:30:10  amcore
-* History:       Initial revision
+* History:       Revision 1.1  1997/05/14 08:29:29  amcore
+* History:       Moved library files and its dependencies into appropriate directories.
+* History:
+* History:       Now --without-amrecover does not build recover, --without-restore does
+* History:       not build amrestore nor amidxtaped.
+* History:
+* History:       Created new directory tape-src, to contain the tapeio library.  It is
+* History:       used by both server-src and restore-src.  If neither of them is built,
+* History:       the tape library is not build either.
+* History:
+* History:       Moved amidxtaped.c from server-src to restore-src.
+* History:
+* History:       Moved amrestore.c from recover-src to restore-src.
+* History:
+* History:       Moved add_exclude.c amandates.c amandates.h check_exclude.c fnmatch.c
+* History:       fnmatch.h getfsent.c getfsent.h unctime.c from common-src to
+* History:       client-src.
+* History:
+* History:       Renamed log_dummy.c to nolog.c.
+* History:
+* History:       Created new library nolog, with nolog.c, to be used in subdirectories
+* History:       supposed to be run without the server library.
+* History:
+* History:       Moved amindex.c amindex.h changer.c changer.h clock.c clock.h
+* History:       conffile.c conffile.h diskfile.c diskfile.h infofile.c infofile.h
+* History:       logfile.c logfile.h tapefile.c tapefile.h from common-src to server.c.
+* History:
+* History:       Moved tapeio.c tapeio.h from common-src to tape-src.
+* History:
+* History:       Revision 1.1.1.1  1997/03/15 21:30:10  amcore
+* History:       Mass import of 2.3.0.4 as-is.  We can remove generated files later.
 * History:
 * History:       Revision 1.4  1997/01/29 08:08:18  alan
 * History:       better handling of return status from amrestore

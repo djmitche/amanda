@@ -1,25 +1,24 @@
 # Makefile for Amanda file recovery programs.
 
-INCLUDES =		-I$(top_srcdir)/common-src
+INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/client-src
 
 AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
  
-LDADD = -L../common-src -lamrecover -lamanda
+LDADD = ../client-src/libamclient.a ../common-src/libamanda.a \
+	../common-src/libamnolog.a @LEXLIB@
 
-EXTRA_PROGRAMS = 	amrecover			amrestore
+EXTRA_PROGRAMS = 	amrecover
 
 sbin_PROGRAMS =		@BUILD_RECOVER_PROGS_SBIN@
 
-amrecover_SOURCES =	amrecover.c			amrecover.h	\
+amrecover_SOURCES =	amrecover.c					\
 			display_commands.c		extract_list.c	\
 			help.c				set_commands.c	\
 			uparse.y			uscan.l
 
-EXTRA_DIST =		uparse.h
-
-amrecover_LDADD =	-L../common-src -lamclient -lamanda @LEXLIB@
+noinst_HEADERS = 	amrecover.h uparse.h
 
 YFLAGS =		-d
 

@@ -31,7 +31,7 @@
 #include "sendbackup-common.h"
 #include "stream.h"
 #include "arglist.h"
-#include "tapeio.h"
+#include "../tape-src/tapeio.h"
 
 #define MAX_LINE 1024
 #define TIMEOUT 30

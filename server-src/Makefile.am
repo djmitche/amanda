@@ -1,12 +1,14 @@
 # Makefile for Amanda server programs.
 
-INCLUDES =		-I$(top_srcdir)/common-src
+INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/tape-src
 
 AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
-LDADD =			-L../common-src -lamserver -lamanda
+LDADD =	libamserver.a ../tape-src/libamtape.a \
+	../common-src/libamanda.a libamserver.a
+# libamserver.a must be duplicated in some systems
 
 SUFFIXES =		.sh .pl
 
@@ -25,8 +27,7 @@ libexec_PROGRAMS =	@BUILD_SERVER_PROGS_LIBEXEC@
 sbin_SCRIPTS =		@BUILD_SERVER_SCRIPTS_SBIN@
 
 EXTRA_PROGRAMS =	amadmin				amcheck		\
-			amflush						\
-			amidxtaped			amindexd	\
+			amflush				amindexd	\
 			amlabel				amtape		\
 			amtrmidx			driver		\
 			dumper				getconf		\
@@ -44,6 +45,18 @@ amindexd_SOURCES =	amindexd.c			amindexd.h	\
 
 driver_SOURCES =	driver.c			driver.h	\
 			driverio.c
+
+noinst_LIBRARIES = 	@BUILD_SERVER_LIB@
+
+EXTRA_LIBRARIES = 	libamserver.a
+
+libamserver_a_SOURCES =	amindex.c	changer.c	clock.c		\
+			conffile.c	diskfile.c	infofile.c	\
+			logfile.c	tapefile.c
+
+noinst_HEADERS = 	amindex.h	changer.h	clock.h		\
+			conffile.h	diskfile.h	infofile.h	\
+			logfile.h	tapefile.h
 
 install-exec-hook:
 	@list="$(sbin_PROGRAMS) $(sbin_SCRIPTS)"; for p in $$list; do \

@@ -20,40 +20,15 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * Author: James da Silva, Systems Design and Analysis Group
- *			   Computer Science Department
- *			   University of Maryland at College Park
+ * Author: George Scott, Computer Centre, Monash University
+ * Changed by Alexandre Oliva
  */
 /*
- * logfile.h - interface to logfile module.
+ *  log_dummy.c - dummy log() replacement for error.c to call on clients.
  */
-#ifndef LOGFILE_H
-#define LOGFILE_H
 
-#include "amanda.h"
-
-/*
- * L_FAIL is defined on m88k-motorola-sysv4 systems for multiprocessor
- * support, which we don't need, so it gets undefined here.
- */
-#undef L_FAIL
-
-typedef enum logtype_e {
-    L_BOGUS,
-    L_FATAL,		/* program died for some reason, used by error() */
-    L_ERROR, L_WARNING,	L_INFO, L_SUMMARY, 	 /* information messages */
-    L_START, L_FINISH,				     /* start/end of run */
-    L_SUCCESS, L_FAIL, L_STRANGE,		    /* the end of a dump */
-    L_STATS,						   /* statistics */
-    L_MARKER,					  /* marker for reporter */
-    L_CONT			 /* continuation line, used when reading */
-} logtype_t;
-
-extern char *logtype_str[];
-
-void log P((logtype_t typ, ...));
-void log_start_multiline P((void));
-void log_end_multiline P((void));
-void log_rename P((char *datestamp));
-
-#endif  /* ! LOGFILE_H */
+void logerror(ignore)
+char *ignore;
+{
+  abort();
+}

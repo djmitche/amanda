@@ -204,17 +204,26 @@ n | no) USE_VERSION_SUFFIXES=no
 esac
 AC_SUBST(USE_VERSION_SUFFIXES)
 
-BUILD_CHANGER_PROGS_LIBEXEC="seagate-changer"
-BUILD_CHANGER_SCRIPTS_LIBEXEC="chg-generic hp-changer no-changer rth-changer"
 BUILD_CLIENT_PROGS_LIBEXEC="amandad calcsize rundump runtar selfcheck sendbackup-dump sendbackup-gnutar sendsize"
 BUILD_CLIENT_SCRIPTS_LIBEXEC="patch-system"
 BUILD_CLIENT_LIB="libamclient.a"
+AMCLIENT_EXTRA_OBJS=
+
+BUILD_RECOVER_PROGS_SBIN="amrecover"
+
+BUILD_CHANGER_PROGS_LIBEXEC="seagate-changer"
+BUILD_CHANGER_SCRIPTS_LIBEXEC="chg-generic hp-changer no-changer rth-changer"
+
+BUILD_TAPE_LIB="libamtape.a"
+
 BUILD_SERVER_PROGS_SBIN="amadmin amcheck amflush amlabel amtape"
-BUILD_SERVER_PROGS_LIBEXEC="amidxtaped amindexd amtrmidx driver dumper getconf planner reporter taper"
+BUILD_SERVER_PROGS_LIBEXEC="amindexd amtrmidx driver dumper getconf planner reporter taper"
 BUILD_SERVER_SCRIPTS_SBIN="amcheckdb amcleanup amdump amoverview amrmtape amtoc amverify"
 BUILD_SERVER_LIB="libamserver.a"
-BUILD_RECOVER_PROGS_SBIN="amrecover amrestore"
-BUILD_RECOVER_LIB="libamrecover.a"
+
+BUILD_RESTORE_PROGS_SBIN="amrestore"
+BUILD_RESTORE_PROGS_LIBEXEC="amidxtaped"
+
 case "$target" in
     *-hp-*)
 	BUILD_CLIENT_SCRIPTS_SBIN=amhpfixdevs
@@ -224,18 +233,21 @@ case "$target" in
 	;;
 esac
 
-AC_SUBST(BUILD_CHANGER_PROGS_LIBEXEC)
-AC_SUBST(BUILD_CHANGER_SCRIPTS_LIBEXEC)
 AC_SUBST(BUILD_CLIENT_SCRIPTS_SBIN)
 AC_SUBST(BUILD_CLIENT_PROGS_LIBEXEC)
 AC_SUBST(BUILD_CLIENT_SCRIPTS_LIBEXEC)
 AC_SUBST(BUILD_CLIENT_LIB)
+AC_SUBST(AMCLIENT_EXTRA_OBJS)
+AC_SUBST(BUILD_RECOVER_PROGS_SBIN)
+AC_SUBST(BUILD_CHANGER_PROGS_LIBEXEC)
+AC_SUBST(BUILD_CHANGER_SCRIPTS_LIBEXEC)
+AC_SUBST(BUILD_TAPE_LIB)
 AC_SUBST(BUILD_SERVER_PROGS_SBIN)
 AC_SUBST(BUILD_SERVER_PROGS_LIBEXEC)
 AC_SUBST(BUILD_SERVER_SCRIPTS_SBIN)
 AC_SUBST(BUILD_SERVER_LIB)
-AC_SUBST(BUILD_RECOVER_PROGS_SBIN)
-AC_SUBST(BUILD_RECOVER_LIB)
+AC_SUBST(BUILD_RESTORE_PROGS_SBIN)
+AC_SUBST(BUILD_RESTORE_PROGS_LIBEXEC)
 
 AC_ARG_WITH(client-only,
     [   --with-client-only     deprecated, use --without-server],
@@ -259,7 +271,7 @@ AC_ARG_WITH(server,
 	    BUILD_SERVER_LIB=
 	  ;;
 	*)
-	    AC_MSG_ERROR([*** You must not supply an argument to --with-server option.  Maybe you meant --with-index-server=$withval])
+	    AC_MSG_ERROR([*** You must not supply an argument to --with-server option.  Maybe you meant --with-indexserver=$withval])
 	  ;;
 	esac
     ]
@@ -274,6 +286,7 @@ AC_ARG_WITH(client,
 	    BUILD_CLIENT_PROGS_LIBEXEC=
 	    BUILD_CLIENT_SCRIPTS_LIBEXEC=
 	    BUILD_CLIENT_LIB=
+	    BUILD_RECOVER_PROGS_SBIN=
 	  ;;
 	*)
 	    AC_MSG_ERROR([*** You must not supply an argument to --with-client option.])
@@ -282,17 +295,39 @@ AC_ARG_WITH(client,
     ]
 )
 
-AC_ARG_WITH(recover,
-    [   --without-recover       do not build recover stuff],
+AC_ARG_WITH(restore,
+    [   --without-restore       do not build amrestore nor amidxtaped],
     [
 	case "$withval" in
 	y | ye | yes) : ;;
 	n | no)
-	    BUILD_RECOVER_PROGS_SBIN=
-	    BUILD_RECOVER_LIB=
+	    BUILD_RESTORE_PROGS_SBIN=
+	    BUILD_RESTORE_PROGS_LIBEXEC=
+	    case "$BUILD_SERVER_LIB" in
+	    "") BUILD_TAPE_LIB="";;
+	    esac
 	  ;;
 	*)
-	    AC_MSG_ERROR([*** You must not supply an argument to --with-recover option.])
+	    AC_MSG_ERROR([*** You must not supply an argument to --with-restore option.])
+	  ;;
+	esac
+    ]
+)
+
+AC_ARG_WITH(amrecover,
+    [   --without-amrecover       do not build amrecover],
+    [
+	case "$withval" in
+	y | ye | yes)
+	    case "$BUILD_RECOVER_PROGS_SBIN" in
+	    "") AC_MSG_ERROR([*** --without-client and --with-amrecover are incompatible]);;
+	    esac
+	    ;;
+	n | no)
+	    BUILD_RECOVER_PROGS_SBIN=
+	  ;;
+	*)
+	    AC_MSG_ERROR([*** You must not supply an argument to --with-amrecover option.])
 	  ;;
 	esac
     ]
@@ -1396,12 +1431,10 @@ dnl Checks for library functions and if the function is declared in
 dnl an appropriate header file.  Add some of the missing functions
 dnl to LIBOBJS.
 ICE_CHECK_DECL(accept,sys/types.h sys/socket.h)
-AC_REPLACE_FUNCS(add_exclude)
 AC_FUNC_ALLOCA
 ICE_CHECK_DECL(atof,stdlib.h)
 ICE_CHECK_DECL(bind,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(bzero,string.h)
-AC_REPLACE_FUNCS(check_exclude)
 ICE_CHECK_DECL(closelog,syslog.h)
 ICE_CHECK_DECL(connect,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(dbm_open,${DB_HEADER-no/db/header/file})
@@ -1866,16 +1899,28 @@ AC_SUBST(KRB4CLIENT_C)
 AC_SUBST(KRB4CLIENT_O)
 
 AC_OUTPUT( \
-	amplot/amcat.awk		amplot/amplot.sh		\
-	amplot/Makefile							\
+	common-src/versuff.c		common-src/Makefile		\
+									\
+	client-src/patch-system.sh	client-src/Makefile		\
+									\
+	restore-src/Makefile						\
+									\
+	tape-src/Makefile						\
+									\
+	server-src/amcheckdb.sh		server-src/amcleanup.sh		\
+	server-src/amdump.sh		server-src/amfreetapes.sh	\
+	server-src/amoverview.pl	server-src/amrmtape.sh		\
+	server-src/amtoc.pl		server-src/amverify.sh		\
+	server-src/Makefile						\
 									\
 	changer-src/chg-generic.sh	changer-src/hp-changer.sh	\
 	changer-src/no-changer.sh	changer-src/rth-changer.pl	\
 	changer-src/Makefile						\
 									\
-	client-src/patch-system.sh	client-src/Makefile		\
+	recover-src/Makefile						\
 									\
-	common-src/versuff.c		common-src/Makefile		\
+	amplot/amcat.awk		amplot/amplot.sh		\
+	amplot/Makefile							\
 									\
 	example/amanda.conf		example/Makefile		\
 									\
@@ -1883,13 +1928,5 @@ AC_OUTPUT( \
 	man/amcheck.8			man/amcleanup.8			\
 	man/amdump.8			man/amflush.8			\
 	man/amlabel.8			man/Makefile			\
-									\
-	recover-src/Makefile						\
-									\
-	server-src/amcheckdb.sh		server-src/amcleanup.sh		\
-	server-src/amdump.sh		server-src/amfreetapes.sh	\
-	server-src/amoverview.pl	server-src/amrmtape.sh		\
-	server-src/amtoc.pl		server-src/amverify.sh		\
-	server-src/Makefile						\
 									\
 	Makefile)

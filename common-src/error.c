@@ -28,7 +28,6 @@
  *  error.c  - error handling common to Amanda programs
  */
 #include "amanda.h"
-#include "logfile.h"
 #include "arglist.h"
 
 #define MAXFUNCS 8
@@ -59,9 +58,10 @@ arglist_function(void error, char *, format)
 
     /* print and/or log message */
 
-    if(erroutput_type & ERR_AMANDALOG)	
-	log(L_FATAL, "%s", linebuf);
-    if(erroutput_type & ERR_SYSLOG) {
+    if(erroutput_type & ERR_AMANDALOG) {
+        extern void logerror P((char *string));
+	logerror(linebuf);
+    } if(erroutput_type & ERR_SYSLOG) {
 #ifdef LOG_AUTH
 	openlog(pname, LOG_PID, LOG_AUTH);
 #else

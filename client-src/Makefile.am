@@ -5,8 +5,8 @@ INCLUDES =		-I$(top_srcdir)/common-src
 AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
- 
-LDADD =			-L../common-src -lamclient -lamanda
+
+LDADD =	libamclient.a ../common-src/libamanda.a ../common-src/libamnolog.a
 
 SUFFIXES =		.sh .pl
 
@@ -40,6 +40,15 @@ sendbackup_dump_SOURCES = sendbackup-dump.c		sendbackup-common.c \
 sendbackup_gnutar_SOURCES = sendbackup-gnutar.c		sendbackup-common.c \
 			sendbackup-common.h
 
+noinst_LIBRARIES =	@BUILD_CLIENT_LIB@
+
+EXTRA_LIBRARIES = 	libamclient.a
+
+libamclient_a_SOURCES =	amandates.c	fnmatch.c	getfsent.c	\
+			unctime.c	add_exclude.c	check_exclude.c
+
+noinst_HEADERS	= 	amandates.h	fnmatch.h	getfsent.h
+
 install-exec-hook:
 	@list="$(sbin_SCRIPTS)"; \
 	for p in $$list; do \
@@ -67,3 +76,6 @@ install-exec-hook:
 			chmod u+s,o-rwx $$pa; \
 		fi; \
 	done
+
+getfsent: $(srcdir)/getfsent.c $(srcdir)/getfsent.h
+	$(CC) $(LDFLAGS) -DTEST -I.. -g $(srcdir)/getfsent.c -o getfsent
