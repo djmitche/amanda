@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.92 1999/04/17 22:20:13 martinea Exp $
+ * $Id: planner.c,v 1.93 1999/04/24 00:03:09 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -964,9 +964,8 @@ host_t *hostp;
 	    else
 		t = vstralloc(req, "DUMPER ",
 			      dp->program, " ", dp->name, " ", level, " ",
-			      est(dp)->dumpdate[i], " ", spindle,
-			      exclude1,
-			      exclude2,
+			      est(dp)->dumpdate[i], " ", spindle, " ",
+			      optionstr(dp),
 			      "\n",
 			      NULL);
 	    amfree(req);

@@ -6,11 +6,15 @@ eval '(exit $?0)' && eval 'exec @PERL@ -S $0 ${1+"$@"}'
 	& eval 'exec @PERL@ -S $0 $argv:q'
 		if 0;
 
-+push(@INC, "@DUMPER_DIR@");
+$debug=1;
+push(@INC, "@DUMPER_DIR@");
 
 use File::Copy;
 use IPC::Open3;
 use Sys::Hostname;
+
+
+open(DEBUG,">>/tmp/amanda/gnutar.$$.debug") if ($debug==1);
 
 $prefix='@prefix@';
 $exec_prefix="@exec_prefix@";
@@ -72,6 +76,7 @@ $group_default = "amanda";
 
 
 sub command_selfcheck {
+print DEBUG "STDOUT: OK selfcheck\n" if ($debug == 1);
    print "OK selfcheck\n";
 }
 
@@ -106,7 +111,7 @@ sub command_estimate_level {
 sub command_estimate_opt_direct {
    my($disk, $level, $listdir) = @_;
    my($size) = -1;
-
+print DEBUG "$gnutar --create --directory $disk --listed-incremental ${gnulist}/${listdir}_${level}.new --sparse --one-file-system --ignore-failed-read --totals --file /dev/null .\n" if ($debug == 1);
    open3(\*WTRFH, '>&STDOUT', \*ESTIMATE, "$gnutar --create --directory $disk --listed-incremental ${gnulist}/${listdir}_${level}.new --sparse --one-file-system --ignore-failed-read --totals --file /dev/null .") || die();
 
    $size = parse_estimate(ESTIMATE);
@@ -122,6 +127,8 @@ sub command_estimate_opt_parse {
    open3(\*WTRFH, '>&STDOUT',\*ESTIMATE,"$gnutar --create --directory $disk --listed-incremental ${gnulist}/${listdir}_${level}.new --sparse --one-file-system --ignore-failed-read --totals --file /dev/null .");
 
    while (<ESTIMATE>) {
+print DEBUG "READ: $_" if ($debug == 1);
+print DEBUG "STDOUT: $_" if ($debug == 1);
       print $_;
    }
    close(ESTIMATE);
@@ -140,6 +147,7 @@ sub parse_estimate {
    my($fh) = @_;
    my($size) = -1;
    while(<$fh>) {
+print DEBUG "READ: $_" if ($debug == 1);
       if ($_ =~ /^Total bytes written: (\d*)$/) {
          $size = $1;
          last;
@@ -151,11 +159,13 @@ sub parse_estimate {
 sub output_size {
    my($size) = @_;
    if($size == -1) {
+print DEBUG "STDOUT: -1 -1\n" if ($debug == 1);
       print "-1 -1\n";
       exit 2;
    }
    else {
       my($ksize) = $size / 1024;
+print DEBUG "STDOUT: $ksize 1024\n" if ($debug == 1);
       print "$ksize 1024\n";
    }
 }
@@ -229,13 +239,16 @@ sub parse_backup {
    my($fhin, $fhout, $indexout) = @_;
    my($size) = -1;
    while(<$fhin>) {
+print DEBUG "READ: $_" if ($debug == 1);
       if ( /^\.\//) {
          if(defined($indexout)) {
 	    if($option_index_direct == 1) {
                s/^\.//;
+print DEBUG "INDEXOUT: $_" if ($debug == 1);
                print $indexout $_;
 	    }
 	    elsif($option_index_parse == 1) {
+print DEBUG "INDEXOUT: $_" if ($debug == 1);
                print $indexout $_;
             }
          }
@@ -244,14 +257,17 @@ sub parse_backup {
          if (/^Total bytes written: (\d*)$/) {
             $size = $1;
 	    if(defined($fhout) && $option_backup_parse == 1) {
+print DEBUG "FHOUT: $_" if ($debug == 1);
 	       print $fhout $_;
 	    }
          }
          elsif(defined($fhout)) {
             if($option_backup_direct == 1) {
+print DEBUG "FHOUT: $_" if ($debug == 1);
                print $fhout $_;
             }
             elsif($option_backup_parse == 1) {
+print DEBUG "FHOUT: $_" if ($debug == 1);
                print $fhout $_;
             }
          }
@@ -259,10 +275,12 @@ sub parse_backup {
    }
    if(defined($fhout) && $option_backup_direct == 1) {
       if ($size == -1) {
+print DEBUG "FHOUT: $command -1 -1\n" if ($debug == 1);
          print $fhout "$command -1 -1\n";
       }
       else {
          my($ksize) = $size/1024;
+print DEBUG "FHOUT: $ksize 1024\n" if ($debug == 1);
          print $fhout "$ksize 1024\n";
       }
    }
@@ -277,9 +295,11 @@ sub index_from_output {
    my($fhin, $fhout) = @_;
    my($size) = -1;
    while(<$fhin>) {
+print DEBUG "READ: $_" if ($debug == 1);
       next if /^Total bytes written:/;
       next if !/^\.\//;
       s/^\.//;
+print DEBUG "FHOUT: $_" if ($debug == 1);
       print $fhout $_;
    }
 }

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.41 1999/04/17 15:57:59 martinea Exp $
+ * $Id: selfcheck.c,v 1.42 1999/04/24 00:02:58 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -125,8 +125,9 @@ char **argv;
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';				/* terminate the program name */
 
+	program_is_wrapper = 0;
 	if(strcmp(program,"DUMPER")==0) {
-	    program_is_wrapper=1;
+	    program_is_wrapper = 1;
 	    skip_whitespace(s, ch);		/* find dumper name */
 	    if (ch == '\0') {
 		goto err;			/* no program */
@@ -382,7 +383,7 @@ char *optstr;
 	    {
 		char *argvchild[5];
 		char *cmd = vstralloc(DUMPER_DIR, "/", program, NULL);
-		argvchild[0] = cmd;
+		argvchild[0] = program;
 		argvchild[1] = "selfcheck";
 		argvchild[2] = disk;
 		argvchild[3] = optstr;

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.102 1999/04/10 06:18:34 kashmir Exp $
+ * $Id: sendsize.c,v 1.103 1999/04/24 00:03:00 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -74,6 +74,8 @@ typedef struct disk_estimates_s {
     char *dirname;
     char *exclude;
     char *program;
+    int program_is_wrapper;
+    char *optstr;
     int spindle;
     level_estimate_t est[DUMP_LEVELS];
 } disk_estimates_t;
@@ -87,12 +89,14 @@ char *host;				/* my hostname from the server */
 
 /* local functions */
 int main P((int argc, char **argv));
-void add_diskest P((char *disk, int level, char *exclude, int spindle, char *prog));
+void add_diskest P((char *disk, int level, char *exclude, int spindle, 
+		    int program_is_wrapper, char *prog));
 void calc_estimates P((disk_estimates_t *est));
 void free_estimates P((disk_estimates_t *est));
 void dump_calc_estimates P((disk_estimates_t *));
 void smbtar_calc_estimates P((disk_estimates_t *));
 void gnutar_calc_estimates P((disk_estimates_t *));
+void wrapper_calc_estimates P((disk_estimates_t *));
 void generic_calc_estimates P((disk_estimates_t *));
 
 
@@ -103,6 +107,7 @@ char **argv;
 {
     int level, new_maxdumps, spindle;
     char *prog, *disk, *dumpdate, *exclude = NULL;
+    int program_is_wrapper;
     disk_estimates_t *est;
     disk_estimates_t *est_prev;
     char *line = NULL;
@@ -192,6 +197,18 @@ char **argv;
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';
 
+	program_is_wrapper=0;
+	if(strcmp(prog,"DUMPER")==0) {
+	    program_is_wrapper=1;
+	    skip_whitespace(s, ch);		/* find dumper name */
+	    if (ch == '\0') {
+		goto err;			/* no program */
+	    }
+	    prog = s - 1;
+	    skip_non_whitespace(s, ch);
+	    s[-1] = '\0';
+	}
+
 	skip_whitespace(s, ch);			/* find the disk name */
 	if(ch == '\0') {
 	    err_extra = "no disk name";
@@ -218,7 +235,7 @@ char **argv;
 	s[-1] = '\0';
 
 	spindle = 0;				/* default spindle */
-	amfree(exclude);				/* default is no exclude */
+	amfree(exclude);			/* default is no exclude */
 
 	skip_whitespace(s, ch);			/* find the spindle */
 	if(ch != '\0') {
@@ -239,7 +256,7 @@ char **argv;
 	    }
 	}
 
-	add_diskest(disk, level, exclude, spindle, prog);
+	add_diskest(disk, level, exclude, spindle, program_is_wrapper, prog);
     }
     amfree(line);
 
@@ -287,10 +304,10 @@ char **argv;
 }
 
 
-void add_diskest(disk, level, exclude, spindle, prog)
+void add_diskest(disk, level, exclude, spindle, program_is_wrapper, prog)
 char *disk, *prog;
 char *exclude;
-int level, spindle;
+int level, spindle, program_is_wrapper;
 {
     disk_estimates_t *newp, *curp;
     amandates_t *amdp;
@@ -312,7 +329,9 @@ int level, spindle;
     newp->amname = stralloc(disk);
     newp->dirname = amname_to_dirname(newp->amname);
     newp->exclude = exclude ? stralloc(exclude) : NULL;
+    newp->optstr  = exclude ? stralloc(exclude) : "";
     newp->program = stralloc(prog);
+    newp->program_is_wrapper = program_is_wrapper;
     newp->spindle = spindle;
     newp->est[level].needestimate = 1;
 
@@ -367,26 +386,72 @@ disk_estimates_t *est;
     }
 
     /* Now in the child process */
+    if(est->program_is_wrapper ==  1) {
+	wrapper_calc_estimates(est);
+    }
+    else {
 #ifndef USE_GENERIC_CALCSIZE
-    if(strcmp(est->program, "DUMP") == 0)
-	dump_calc_estimates(est);
-    else
+	if(strcmp(est->program, "DUMP") == 0)
+	    dump_calc_estimates(est);
+	else
 #endif
 #ifdef SAMBA_CLIENT
-      if (strcmp(est->program, "GNUTAR") == 0 &&
-	  est->amname[0] == '/' && est->amname[1] == '/')
-	smbtar_calc_estimates(est);
-      else
+	if (strcmp(est->program, "GNUTAR") == 0 &&
+	    est->amname[0] == '/' && est->amname[1] == '/')
+	    smbtar_calc_estimates(est);
+	else
 #endif
 #ifdef GNUTAR
 	if (strcmp(est->program, "GNUTAR") == 0)
-	  gnutar_calc_estimates(est);
+	    gnutar_calc_estimates(est);
 	else
 #endif
-	  generic_calc_estimates(est);
+	generic_calc_estimates(est);
+    }
     if (maxdumps > 1)
       exit(0);
 }
+
+/*
+ * ------------------------------------------------------------------------
+ *
+ */
+
+/* local functions */
+long getsize_dump P((char *disk, int level));
+long getsize_smbtar P((char *disk, int level));
+long getsize_gnutar P((char *disk, int level,
+		       char *exclude, time_t dumpsince));
+long getsize_wrapper P((char *program, char *disk, int level,
+			char *optstr, time_t dumpsince));
+long handle_dumpline P((char *str));
+double first_num P((char *str));
+
+void wrapper_calc_estimates(est)
+disk_estimates_t *est;
+{
+  int level;
+  long size;
+
+  for(level = 0; level < DUMP_LEVELS; level++) {
+      if (est->est[level].needestimate) {
+	  dbprintf(("%s: getting size via wrapper for %s level %d\n",
+		    get_pname(), est->amname, level));
+	  size = getsize_wrapper(est->program, est->amname, level, est->optstr,
+				 est->est[level].dumpsince);
+
+	  amflock(1, "size");
+
+	  fseek(stdout, (off_t)0, SEEK_SET);
+
+	  printf("%s %d SIZE %ld\n", est->amname, level, size);
+	  fflush(stdout);
+
+	  amfunlock(1, "size");
+      }
+  }
+}
+
 
 void generic_calc_estimates(est)
 disk_estimates_t *est;
@@ -449,20 +514,6 @@ disk_estimates_t *est;
     wait(NULL);
 }
 
-
-/*
- * ------------------------------------------------------------------------
- *
- */
-
-/* local functions */
-void dump_calc_estimates P((disk_estimates_t *est));
-long getsize_dump P((char *disk, int level));
-long getsize_smbtar P((char *disk, int level));
-long getsize_gnutar P((char *disk, int level,
-		       char *exclude, time_t dumpsince));
-long handle_dumpline P((char *str));
-double first_num P((char *str));
 
 void dump_calc_estimates(est)
 disk_estimates_t *est;
@@ -1311,6 +1362,97 @@ notincremental:
     return size;
 }
 #endif
+
+long getsize_wrapper(program, disk, level, optstr, dumpsince)
+char *program, *disk;
+int level;
+char *optstr;
+time_t dumpsince;
+{
+    int pipefd[2], nullfd, dumppid;
+    long size;
+    FILE *dumpout;
+    char *line = NULL;
+    char *cmd = NULL;
+    char dumptimestr[80];
+    struct tm *gmtm;
+    int  i, j;
+    char *argvchild[10];
+    char *newoptstr;
+    long size1, size2;
+
+    gmtm = gmtime(&dumpsince);
+    snprintf(dumptimestr, sizeof(dumptimestr),
+		"%04d-%02d-%02d %2d:%02d:%02d GMT",
+		gmtm->tm_year + 1900, gmtm->tm_mon+1, gmtm->tm_mday,
+		gmtm->tm_hour, gmtm->tm_min, gmtm->tm_sec);
+
+    cmd = vstralloc(DUMPER_DIR, "/", program, NULL);
+
+    i=0;
+    argvchild[i++] = program;
+    argvchild[i++] = "estimate";
+    if(level == 0)
+	argvchild[i++] = "full";
+    else {
+	char levelstr[20];
+	snprintf(levelstr,19,"%d",level);
+	argvchild[i++] = "level";
+	argvchild[i++] = levelstr;
+    }
+    argvchild[i++] = disk;
+    newoptstr = vstralloc(optstr,"estimate-direct;", NULL);
+    argvchild[i++] = newoptstr;
+
+    dbprintf(("%s: running \"%s", get_pname(), cmd));
+    for(j=1;j<i;j++) dbprintf((" %s",argvchild[j]));
+    dbprintf(("\"\n"));
+    nullfd = open("/dev/null", O_RDWR);
+    pipe(pipefd);
+
+    switch(dumppid = fork()) {
+    case -1:
+      amfree(cmd);
+      return -1;
+    default:
+      break;
+    case 0:
+      dup2(nullfd, 0);
+      dup2(nullfd, 2);
+      dup2(pipefd[1], 1);
+      aclose(pipefd[0]);
+
+      execve(cmd, argvchild, safe_env());
+      exit(1);
+      break;
+    }
+    amfree(cmd);
+
+    aclose(pipefd[1]);
+    dumpout = fdopen(pipefd[0],"r");
+
+    line = agets(dumpout);
+    dbprintf(("DUMP:%s",line));
+    i = sscanf(line,"%ld %ld",&size1, &size2);
+    if(i == 2) size = size1 * size2;
+    else size = -1;
+    amfree(line);
+
+    dbprintf((".....\n"));
+    if(size == -1)
+	dbprintf(("(no size line match in above gnutar output)\n.....\n"));
+    if(size==0 && level ==0)
+	size=-1;
+
+    kill(-dumppid, SIGTERM);
+
+    wait(NULL);
+
+    aclose(nullfd);
+    afclose(dumpout);
+
+    return size;
+}
 
 
 double first_num(str)
