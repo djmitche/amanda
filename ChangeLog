@@ -1,3 +1,7 @@
+2001-01-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* Amanda 2.4.2p1 released
+	
 2001-01-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/driverio.h (sched_t): new field no_space.
@@ -1405,7 +1409,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.441 2001/01/24 04:02:31 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.442 2001/01/26 19:25:30 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
