@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-solaris.c,v 1.1.2.15 2000/01/17 22:27:07 th Exp $";
+static char rcsid[] = "$Id: scsi-solaris.c,v 1.1.2.16 2000/06/03 12:26:50 ant Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an Sun Workstation
@@ -30,7 +30,6 @@ static char rcsid[] = "$Id: scsi-solaris.c,v 1.1.2.15 2000/01/17 22:27:07 th Exp
 
 #include <scsi-defs.h>
 #include <sys/mtio.h>
-
 
 OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
 {
@@ -104,6 +103,13 @@ int SCSI_ExecuteCommand(int DeviceFD,
   extern int errno;
   struct uscsi_cmd Command;
   ExtendedRequestSense_T pExtendedRequestSense;
+  static int depth = 0;
+
+  if (depth++ > 2)
+  {
+     --depth;
+     return -1;
+  }
   memset(&Command, 0, sizeof(struct uscsi_cmd));
   memset(pRequestSense, 0, RequestSenseLength);
   switch (Direction)
@@ -137,16 +143,16 @@ int SCSI_ExecuteCommand(int DeviceFD,
   DecodeSCSI(CDB, "SCSI_ExecuteCommand : ");
   while (retries > 0)
   {
-    if ((ret = ioctl(DeviceFD, USCSICMD, &Command)) < 0)
+    if ((ret = ioctl(DeviceFD, USCSICMD, &Command)) >= 0)
     {
-       dbprintf(("ioctl on %d failed, errno %d, ret %d\n",DeviceFD, errno, ret));
-       RequestSense(DeviceFD, &pExtendedRequestSense, 0);
-       DecodeExtSense(&pExtendedRequestSense, "SCSI_ExecuteCommand:", debug_file);
-    } else {
-      return(ret);
+       break;
     }
+    dbprintf(("ioctl on %d failed, errno %d, ret %d\n",DeviceFD, errno, ret));
+    RequestSense(DeviceFD, &pExtendedRequestSense, 0);
+    DecodeExtSense(&pExtendedRequestSense, "SCSI_ExecuteCommand:", debug_file);
     retries--;
   }
+  --depth;
   return(ret);
 }
 
@@ -162,10 +168,7 @@ int Tape_Eject ( int DeviceFD)
 
 int Tape_Status( int DeviceFD)
 {
-/*
-  Not yet
-*/
-  return(-1);
+  return(-1); 
 }
 
 #endif

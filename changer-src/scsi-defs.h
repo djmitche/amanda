@@ -20,10 +20,24 @@ typedef unsigned char PackedBit;
 
 #define TAG_SIZE 36
 
+/*
+ * Sense Key definitions
+*/
+#define SENSE_NULL 0
+#define SENSE_RECOVERED_ERROR 1
 #define NOT_READY 2
+#define SENSE_NOT_READY 2
+#define SENSE_MEDIUM_ERROR 3
+#define SENSE_HARDWARE_ERROR 4
 #define HARDWARE_ERROR 4
 #define ILLEGAL_REQUEST 5
+#define SENSE_ILLEGAL_REQUEST 5
 #define UNIT_ATTENTION 6
+#define SENSE_UNIT_ATTENTION 6
+#define SENSE_DATA_PROTECT 7
+#define SENSE_BLANK_CHECK 8
+#define SENSE_ABORTED_COMMAND 0xb
+#define SENSE_VOLUME_OVERFLOW 0xd
 
 #define MAX_RETRIES 100
 
@@ -32,10 +46,6 @@ typedef unsigned char PackedBit;
 #define SCSI_OK 0
 #define SCSI_SENSE 1
 
-/*
- * Sense Key definitions
-*/
-#define SENSE_NOT_READY 0x2
 
 /*
  *  SCSI Commands
@@ -70,6 +80,7 @@ typedef unsigned char PackedBit;
 #define SENSE_RETRY 2
 #define SENSE_IES 3
 #define SENSE_TAPE_NOT_UNLOADED 4
+#define SENSE_NO 5
 /*
  * Defines for the function types in Changer_CMD_T
  */
