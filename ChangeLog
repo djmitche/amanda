@@ -1,3 +1,8 @@
+1999-06-15  Adam Hammer  <hammer@math.purdue.edu>
+
+	* server-src/amverify.sh.in: Wait until device becomes ready after
+	rewinding.
+
 1999-06-15  Björn Brezger <Bjoern.Brezger@uni-konstanz.de>, Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* client-src/calcsize.c (ROUND): Rewrite, it was broken.
