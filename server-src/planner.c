@@ -1450,7 +1450,9 @@ static void delay_dumps P((void))
 }
 
 
-static void delay_remove_dump P((disk_t *dp, char *errstr))
+static void delay_remove_dump  (dp, errstr)
+disk_t *dp;
+char *errstr;
 /* Remove a dump - keep track on the bi q */
 {
     bi_t *bi;
@@ -1478,7 +1480,9 @@ static void delay_remove_dump P((disk_t *dp, char *errstr))
 }
 
 
-static void delay_modify_dump P((disk_t *dp, char *errstr))
+static void delay_modify_dump (dp, errstr)
+disk_t *dp;
+char *errstr;
 /* Modify a dump from total to incr - keep track on the bi q */
 {
     bi_t *bi;
