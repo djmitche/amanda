@@ -1,3 +1,6 @@
+	fixed estimate command for XFSDUMP.
+	-Mark Radleigh <radleigh@image.ucr.edu>
+
 Version 2.4.0b6p1
 
 	documented etimeout configuration option.  -oliva&jrj
