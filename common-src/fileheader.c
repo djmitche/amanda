@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.11.4.1.4.1.2.3 2002/01/31 19:14:25 martinea Exp $
+ * $Id: fileheader.c,v 1.11.4.1.4.1.2.4 2002/02/01 01:04:00 martinea Exp $
  *
  */
 
@@ -301,13 +301,6 @@ int buflen;
 	    ch = *s++;
 	}
 #undef SC
-#define SC "BLOCKSIZE="
-	else if(strncmp(line,SC,strlen(SC)) == 0) {
-	    s = line + strlen(SC);
-	    file->blocksize=atoi(s);
-	    ch = *s++;
-	}
-#undef SC
 #define SC "To restore, position tape at start of file and run:"
 	else if(strncmp(line,SC,strlen(SC)) == 0) {
 	}
@@ -360,8 +353,8 @@ int buflen;
 
     switch (file->type) {
     case F_TAPESTART: ap_snprintf(buffer, buflen,
-				  "AMANDA: TAPESTART DATE %s TAPE %s\nBLOCKSIZE=%ld\n\014\n",
-				  file->datestamp, file->name, file->blocksize);
+				  "AMANDA: TAPESTART DATE %s TAPE %s\n\014\n",
+				  file->datestamp, file->name);
 		      break;
     case F_CONT_DUMPFILE:
     case F_DUMPFILE : if( file->type == F_DUMPFILE) {
@@ -400,13 +393,6 @@ int buflen;
 				       " |", file->uncompress_cmd,
 				       " ", file->recover_cmd,
 				       "\n",
-				       NULL);
-		      strncat(buffer, line, buflen-strlen(buffer));
-		      ap_snprintf(number, sizeof(number),
-				  "%ld", file->blocksize);
-		      line = newvstralloc(line, 
-				       "BLOCKSIZE=", number,
-				       "\n",
 				       "\014\n",	/* ?? */
 				       NULL);
 		      strncat(buffer, line, buflen-strlen(buffer));
@@ -414,8 +400,8 @@ int buflen;
 		      buffer[buflen-1] = '\0';
 		      break;
     case F_TAPEEND  : ap_snprintf(buffer, buflen,
-				  "AMANDA: TAPEEND DATE %s\nBLOCKSIZE=%ld\n\014\n",
-				  file->datestamp,file->blocksize);
+				  "AMANDA: TAPEEND DATE %s\n\014\n",
+				  file->datestamp);
 		      break;
     case F_UNKNOWN  : break;
     case F_WEIRD    : break;
