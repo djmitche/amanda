@@ -1,5 +1,13 @@
 2001-08-01 John R. Jackson (jrj@purdue.edu)
 
+	* server-src/amcheck.c: Unlink the temp files as soon as they are
+	  created so they always go away when amcheck terminates.  Use
+	  pipespawn() instead of system() to call the MAILER program.  Call
+	  dbopen()/dbclose() in main() to write to a debug file instead of
+	  stderr.
+
+2001-08-01 John R. Jackson (jrj@purdue.edu)
+
 	* common-src/debug.c: Only rename files that end in ".debug".
 
 2001-08-01 John R. Jackson (jrj@purdue.edu)
