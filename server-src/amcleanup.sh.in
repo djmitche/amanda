@@ -64,6 +64,7 @@ cd $confdir/$conf
 logdir=`getconf$SUF logdir`
 logfile=$logdir/log
 errfile=$logdir/amdump
+erramflush=$logdir/amflush
 tapecycle=`getconf$SUF tapecycle`
 
 if [ -f $logfile ]; then
@@ -103,6 +104,29 @@ if [ -f $errfile ]; then
 	days=$ndays
     done
     mv $errfile $errfile.1
+fi
+
+if [ -f $erramflush ]; then
+    # if log was found, this will have been directed to /dev/null,
+    # which is fine.
+    echo "amcleanup: $erramflush exists, renaming it."
+
+    # Keep debug log through the tapecycle plus a couple days
+    maxdays=`expr $tapecycle + 2`
+
+    days=1
+    # First, find out the last existing erramflush,
+    # to avoid ``infinite'' loops if tapecycle is infinite
+    while [ $days -lt $maxdays ] && [ -f $erramflush.$days ]; do
+	days=`expr $days + 1`
+    done
+    # Now, renumber the existing log files
+    while [ $days -ge 2 ]; do
+	ndays=`expr $days - 1`
+	mv $erramflush.$ndays $erramflush.$days
+	days=$ndays
+    done
+    mv $erramflush $erramflush.1
 fi
 	
 exit $lognotfound

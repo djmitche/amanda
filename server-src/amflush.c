@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.41 1998/10/25 17:01:43 martinea Exp $
+ * $Id: amflush.c,v 1.41.2.1 1999/01/17 14:00:04 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -125,6 +125,48 @@ char **main_argv;
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
     set_logerror(logerror);
     run_dumps();
+
+    if(!foreground) { /* rename errfile */
+	char *errfile, *errfilex, *nerrfilex, number[100];
+	int tapecycle;
+	int maxdays, days;
+		
+	struct stat stat_buf;
+
+	errfile = vstralloc(getconf_str(CNF_LOGDIR), "/amflush", NULL);
+	errfilex = NULL;
+	nerrfilex = NULL;
+	tapecycle = getconf_int(CNF_TAPECYCLE);
+	maxdays = tapecycle + 2;
+	days = 1;
+	/* First, find out the last existing errfile,           */
+	/* to avoid ``infinite'' loops if tapecycle is infinite */
+
+	snprintf(number,100,"%d",days);
+	errfilex = newvstralloc(errfilex, errfile, ".", number, NULL);
+	while ( days < maxdays && stat(errfilex,&stat_buf)) {
+	    days++;
+	    snprintf(number,100,"%d",days);
+	    errfilex = newvstralloc(errfilex, errfile, ".", number, NULL);
+	}
+	snprintf(number,100,"%d",days);
+	errfilex = newvstralloc(errfilex, errfile, ".", number, NULL);
+	nerrfilex = NULL;
+	while (days > 2) {
+	    amfree(nerrfilex);
+	    nerrfilex = errfilex;
+	    days--;
+	    snprintf(number,100,"%d",days);
+	    errfilex = newvstralloc(errfilex, errfile, ".", number, NULL);
+	    rename(errfilex, nerrfilex);
+	}
+    }
+
+    /* now, have reporter generate report and send mail */
+
+    chdir(confdir);
+    execle(reporter_program, "amreport", (char *)0, safe_env());
+
     return 0;
 }
 
@@ -161,7 +203,8 @@ void confirm()
 
 void detach()
 {
-    int fd;
+    int fd, fderr;
+    char *errfile;
 
     fflush(stdout); fflush(stderr);
     if((fd = open("/dev/null", O_RDWR, 0666)) == -1)
@@ -171,10 +214,15 @@ void detach()
     case -1: error("could not fork: %s", strerror(errno));
     case 0:
 	dup2(fd,0);
-	dup2(fd,1);
-	dup2(fd,2);
 	aclose(fd);
+	errfile = vstralloc(getconf_str(CNF_LOGDIR), "/amflush", NULL);
+	if((fderr = open(errfile, O_WRONLY| O_CREAT | O_TRUNC, 0600)) == -1)
+	    error("could not open %s: %s", errfile, strerror(errno));
+	dup2(fderr,1);
+	dup2(fderr,2);
+	aclose(fderr);
 	setsid();
+	amfree(errfile);
 	return;
     }
 
@@ -349,11 +397,6 @@ void run_dumps()
     }
 
     log_add(L_FINISH, "date %s time %s", datestamp, walltime_str(curclock()));
-
-    /* now, have reporter generate report and send mail */
-
-    chdir(confdir);
-    execle(reporter_program, "amreport", (char *)0, safe_env());
 }
 
 static char *construct_datestamp()
