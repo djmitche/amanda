@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflock.c,v 1.17.4.2 1998/12/10 23:11:10 jrj Exp $
+ * $Id: amflock.c,v 1.17.4.3 1998/12/10 23:54:57 jrj Exp $
  *
  * file locking routines, put here to hide the system dependant stuff
  * from the rest of the code
@@ -426,8 +426,6 @@ main()
 	 */
 	close(fd);
     }
-
-    set_pname("lnlock test");
 
     unlink(filen);
     if ((lockfd = open(filen, O_RDONLY|O_CREAT|O_EXCL, 0600)) == -1) {
