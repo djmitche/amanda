@@ -1,5 +1,10 @@
 1999-11-10 John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/amindexd.c (build_disk_table): need to clear the old
+	  disk history list before building a new one.
+
+1999-11-10 John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/taper.c (label_tape): issue a warning when tapedev is
 	  set to /dev/null.
 	* server-src/amcheck.c (start_server_check): make warning message
