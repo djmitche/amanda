@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.27.2.1.6.2 2003/01/02 19:01:28 martinea Exp $
+ * $Id: protocol.c,v 1.27.2.1.6.2.2.1 2004/02/13 14:01:08 martinea Exp $
  *
  * implements amanda protocol
  */
@@ -140,6 +140,7 @@ pktype_t s;
     case P_BOGUS: return "P_BOGUS";
     case P_REQ: return "P_REQ";
     case P_REP: return "P_REP";
+    case P_PREP: return "P_PREP";
     case P_ACK: return "P_ACK";
     case P_NAK: return "P_NAK";
     default:
@@ -510,6 +511,7 @@ pkt_t *pkt;
 
     if(strcmp(typestr, "REQ") == 0) pkt->type = P_REQ;
     else if(strcmp(typestr, "REP") == 0) pkt->type = P_REP;
+    else if(strcmp(typestr, "PREP") == 0) pkt->type = P_PREP;
     else if(strcmp(typestr, "ACK") == 0) pkt->type = P_ACK;
     else if(strcmp(typestr, "NAK") == 0) pkt->type = P_NAK;
     else pkt->type = P_BOGUS;
@@ -738,6 +740,11 @@ pkt_t *pkt;
 		p->state = S_REPWAIT;
 		break;
 	    }
+	    else if(pkt->type == P_PREP) {
+		/* no ack, just rep */
+		p->state = S_REPWAIT;
+		break;
+	    }
 	    /* else unexpected packet, put back on queue */
 	    pending_enqueue(p);
 	    return;
@@ -764,18 +771,26 @@ pkt_t *pkt;
 	    else if(action != A_RCVDATA)
 		goto badaction;
 	    /* got the packet with the right handle, now check it */
-	    if(pkt->type != P_REP) {
+	    if(pkt->type != P_REP && pkt->type != P_PREP) {
 		pending_enqueue(p);
 		return;
 	    }
-	    send_ack(p);
-	    p->state = S_SUCCEEDED;
-	    free_handle(p);
-	    p->continuation(p, pkt);
-	    amfree(p->req);
-	    amfree(p->security);
-	    amfree(p);
-	    return;
+	    if(pkt->type == P_REP) {
+		send_ack(p);
+		p->state = S_SUCCEEDED;
+		free_handle(p);
+		p->continuation(p, pkt);
+		amfree(p->req);
+		amfree(p->security);
+		amfree(p);
+		return;
+	    }
+	    else if(pkt->type == P_PREP) {
+		p->state = S_REPWAIT;
+		p->continuation(p, pkt);
+		pending_enqueue(p);
+		return;
+	    }
 
 	default:
 	badaction:

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.h,v 1.8.10.2 2004/01/14 12:59:12 martinea Exp $
+ * $Id: protocol.h,v 1.8.10.2.2.1 2004/02/13 14:01:08 martinea Exp $
  *
  * interfaces for amanda protocol
  */
@@ -41,7 +41,7 @@ typedef enum {
 
 typedef enum { A_BOGUS, A_START, A_TIMEOUT, A_RCVDATA } action_t;
 
-typedef enum { P_BOGUS, P_REQ, P_REP, P_ACK, P_NAK } pktype_t;
+typedef enum { P_BOGUS, P_REQ, P_REP, P_PREP, P_ACK, P_NAK } pktype_t;
 
 typedef struct {			/* a predigested datagram */
     pktype_t type;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.32.2.4.4.1.2.6 2003/12/16 22:36:45 martinea Exp $
+ * $Id: amandad.c,v 1.32.2.4.4.1.2.6.2.1 2004/02/13 14:01:07 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -39,6 +39,7 @@
 #include "version.h"
 #include "protocol.h"
 #include "util.h"
+#include "client_util.h"
 
 #define RECV_TIMEOUT 30
 #define ACK_TIMEOUT  10		/* XXX should be configurable */
@@ -75,7 +76,7 @@ int ack_timeout     = ACK_TIMEOUT;
 int main P((int argc, char **argv));
 void sendack P((pkt_t *hdr, pkt_t *msg));
 void sendnak P((pkt_t *hdr, pkt_t *msg, char *str));
-void setup_rep P((pkt_t *hdr, pkt_t *msg));
+void setup_rep P((pkt_t *hdr, pkt_t *msg, int partial_rep));
 char *strlower P((char *str));
 
 int main(argc, argv)
@@ -94,7 +95,7 @@ char **argv;
        out_msg: Standard, i.e. non-repeated, ACK and REP.
        rej_msg: Any other outgoing message.
      */
-    pkt_t in_msg, out_msg, rej_msg, dup_msg;
+    pkt_t in_msg, out_msg, out_pmsg, rej_msg, dup_msg;
     char *cmd = NULL, *base = NULL;
     char *noop_file = NULL;
     char **vp;
@@ -106,6 +107,7 @@ char **argv;
     char number[NUM_STR_SIZE];
     am_feature_t *our_features = NULL;
     char *our_feature_string = NULL;
+    int send_partial_reply = 0;
 
     struct service_s *servp;
     fd_set insock;
@@ -199,6 +201,9 @@ char **argv;
 
     dgram_zero(&out_msg.dgram);
     dgram_socket(&out_msg.dgram, 0);
+
+    dgram_zero(&out_pmsg.dgram);
+    dgram_socket(&out_pmsg.dgram, 0);
 
     dgram_zero(&rej_msg.dgram);
     dgram_socket(&rej_msg.dgram, 0);
@@ -312,7 +317,7 @@ char **argv;
     if(!(servp->flags & NO_AUTH)
        && !security_ok(&in_msg.peer, in_msg.security, in_msg.cksum, &errstr)) {
 	/* XXX log on authlog? */
-	setup_rep(&in_msg, &out_msg);
+	setup_rep(&in_msg, &out_msg, 0);
 	ap_snprintf(out_msg.dgram.cur,
 		    sizeof(out_msg.dgram.data)-out_msg.dgram.len,
 		    "ERROR %s\n", errstr);
@@ -362,6 +367,22 @@ char **argv;
 	amfree(s);
 	(void)lseek(rep_pipe[0], (off_t)0, SEEK_SET);
     } else {
+	if(strcmp(servp->name, "sendsize") == 0) {
+	    if(strncmp(in_msg.dgram.cur,"OPTIONS ",8) == 0) {
+		g_option_t *g_options;
+		char *option_str, *p;
+
+		option_str = stralloc(in_msg.dgram.cur+8);
+		p = strchr(option_str,'\n');
+		if(p) *p = '\0';
+
+		g_options = parse_g_options(option_str, 0);
+		if(am_has_feature(g_options->features, fe_partial_estimate)) {
+		    send_partial_reply = 1;
+		}
+		amfree(option_str);
+	    }
+	}
 	if(pipe(req_pipe) == -1 || pipe(rep_pipe) == -1)
 	    error("pipe: %s", strerror(errno));
 
@@ -433,9 +454,13 @@ char **argv;
         aclose(req_pipe[1]);
     }
 
-    setup_rep(&in_msg, &out_msg);
+    setup_rep(&in_msg, &out_msg, 0);
+    if(send_partial_reply) {
+	setup_rep(&in_msg, &out_pmsg, 1);
+    }
 #ifdef KRB4_SECURITY
     add_mutual_authenticator(&out_msg.dgram);
+    add_mutual_authenticator(&out_pmsg.dgram);
 #endif
 
     while(1) {
@@ -468,7 +493,17 @@ char **argv;
 		}
 		break;
 	    }
-	    dglen += rc;
+ 	    else {
+		if(send_partial_reply) {
+		    strncpy(out_pmsg.dgram.cur+dglen, out_msg.dgram.cur+dglen, rc);
+		    out_pmsg.dgram.len += rc;
+		    out_pmsg.dgram.data[out_pmsg.dgram.len] = '\0';
+		    dbprintf(("%s: sending PREP packet:\n----\n%s----\n\n",
+			      debug_prefix_time(NULL), out_pmsg.dgram.data));
+		    dgram_send_addr(in_msg.peer, &out_pmsg.dgram);
+		}
+		dglen += rc;
+	    }
 	}
 	if(!FD_ISSET(0,&insock))
 	    continue;
@@ -637,14 +672,16 @@ char *str;
     dgram_send_addr(hdr->peer, &msg->dgram);
 }
 
-void setup_rep(hdr, msg)
+void setup_rep(hdr, msg, partial_rep)
 pkt_t *hdr;
 pkt_t *msg;
+int partial_rep;
 {
     /* XXX this isn't very safe either: handle could be bogus */
     ap_snprintf(msg->dgram.data, sizeof(msg->dgram.data),
-		"Amanda %d.%d REP HANDLE %s SEQ %d\n",
+		"Amanda %d.%d %s HANDLE %s SEQ %d\n",
 		VERSION_MAJOR, VERSION_MINOR,
+		partial_rep == 0 ? "REP" : "PREP", 
 		hdr->handle ? hdr->handle : "",
 		hdr->sequence);
 
