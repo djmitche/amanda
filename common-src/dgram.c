@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.3 1997/09/04 01:57:26 amcore Exp $
+ * $Id: dgram.c,v 1.4 1997/09/05 02:45:53 amcore Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -98,9 +98,10 @@ int *portp;
  * exchanges are all wrapped in kerberos bits.  It actually causes a problem
  * for sites that block lower ports at a firewall.  perhaps this should just
  * be configured to try to optionally bind to a compile time or config file
- * range.  next version of amanda...
+ * range.  next version of amanda...  XXX  people mixing bsd-auth and
+ * krb4-auth run into problems here.
  */
-#ifdef KRB4_SECURITY
+#ifndef KRB4_SECURITY
     if(geteuid() == 0) {
 	if(bind_reserved(s, &name) == -1) {
 	    close(s);
