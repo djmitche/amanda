@@ -38,7 +38,7 @@ noinst_HEADERS =	amanda.h	arglist.h	\
 
 EXTRA_PROGRAMS = genversion $(TEST_PROGS)
 
-genversion_SOURCES = genversion.c versuff.c alloc.c error.c
+genversion_SOURCES = genversion.c versuff.c alloc.c debug.c error.c file.c
 genversion_LDADD = $(libamanda_a_LIBADD)
 
 genversion.o: genversion.h

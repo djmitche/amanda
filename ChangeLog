@@ -1,5 +1,11 @@
 2001-01-04 John R. Jackson <jrj@purdue.edu>
 
+	* common-src/error.c (error): If the debug file pointer is set, log
+	  any fatal error message to it and close the file so it has a good
+	  trace of what happened and when.
+
+2001-01-04 John R. Jackson <jrj@purdue.edu>
+
 	* client-src/killpgrp.c: Calls to error() do not need a newline.
 
 2001-01-04 John R. Jackson <jrj@purdue.edu>
@@ -1362,7 +1368,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.434 2001/01/05 02:18:21 jrjackson Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.435 2001/01/05 02:29:08 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
