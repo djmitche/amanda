@@ -1,3 +1,7 @@
+2004-01-14  Stefan G. Weichinger <monitor@oops.co.at>
+
+	* docs/INSTALL: Add config for xinetd.
+
 2004-01-08  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* Amanda 2.4.4p2 released.
