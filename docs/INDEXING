@@ -143,6 +143,10 @@ OLSD <dir> - Opaque list directory.  Give all filenames present in
 	     <dir> in the backups of the current disk back to and
 	     including the last level 0 dump.
 
+ORLD <dir> - Opaque recursive list directory.  Give all filenames 
+	     present in <dir> and subdir in the backups of the current
+	     disk back to and including the last level 0 dump.
+
 TAPE - return value of tapedev from amanda.conf if set.
 
 DCMP - returns "YES" if dumps for disk are compressed, "NO" if dumps

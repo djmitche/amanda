@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.8 1997/10/30 14:49:31 amcore Exp $
+ * $Id: amindexd.c,v 1.9 1997/12/09 06:59:45 amcore Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assummed that this is launched from inetd instead of being
@@ -46,8 +46,17 @@
 #include "version.h"
 #include "amindex.h"
 
+typedef struct REMOVE_ITEM
+{
+    char filename[1024];
+    struct REMOVE_ITEM *next;
+}
+REMOVE_ITEM;
+
+static REMOVE_ITEM *to_remove = NULL; /* file to remove at end */
+
 char *pname = "amindexd";
-char *server_version = "1.0";
+char *server_version = "1.1";
 
 /* state */
 char local_hostname[MAX_HOSTNAME_LENGTH];/* me! */
@@ -56,6 +65,17 @@ char dump_hostname[LONG_LINE];		/* the machine we are restoring */
 char disk_name[LONG_LINE];		/* the disk we are restoring */
 char config[LONG_LINE];			/* the config we are restoring */
 char date[LONG_LINE];
+
+void remove_uncompressed_file()
+{
+    REMOVE_ITEM *remove_file;
+
+    for(remove_file=to_remove;remove_file!=NULL;remove_file=remove_file->next)
+    {
+	unlink(remove_file->filename);
+	dbprintf(("Removing index file: %s\n",remove_file->filename));
+    }
+}
 
 /* send a 1 line reply to the client */
 arglist_function1(void reply, int, n, char *, fmt)
@@ -71,11 +91,13 @@ arglist_function1(void reply, int, n, char *, fmt)
     if (printf("%s\r\n", buf) <= 0)
     {
 	dbprintf(("! error %d in printf\n", errno));
+	remove_uncompressed_file();
 	exit(1);
     }
     if (fflush(stdout) != 0)
     {
 	dbprintf(("! error in fflush %d\n", errno));
+	remove_uncompressed_file();
 	exit(1);
     }
     dbprintf(("< %s\n", buf));
@@ -96,17 +118,83 @@ arglist_function1(void lreply, int, n, char *, fmt)
     if (printf("%s\r\n", buf) <= 0)
     {
 	dbprintf(("! error %d in printf\n", errno));
+	remove_uncompressed_file();
 	exit(1);
     }
     if (fflush(stdout) != 0)
     {
 	dbprintf(("! error in fflush %d\n", errno));
+	remove_uncompressed_file();
 	exit(1);
     }
 
     dbprintf(("< %s\n", buf));
 }
 
+
+/* send one line of a multi-line response */
+arglist_function1(void fast_lreply, int, n, char *, fmt)
+{
+    va_list args;
+    char buf[LONG_LINE];
+
+    arglist_start(args, fmt);
+    (void)sprintf(buf, "%03d-", n);
+    (void)vsprintf(buf+4, fmt, args);
+    arglist_end(args);
+
+    if (printf("%s\r\n", buf) <= 0)
+    {
+	dbprintf(("! error %d in printf\n", errno));
+	remove_uncompressed_file();
+	exit(1);
+    }
+}
+
+
+int uncompress_file(filename_gz, filename)
+char *filename_gz;
+char *filename;
+{
+    char cmd[2048];
+    struct stat stat_filename;
+    int result;
+
+    strcpy(filename,filename_gz);
+    if(strcmp(&(filename[strlen(filename)-3]),".gz")==0)
+	filename[strlen(filename)-3]='\0';
+    if(strcmp(&(filename[strlen(filename)-2]),".Z")==0)
+	filename[strlen(filename)-2]='\0';
+
+    /* uncompress the file */
+    result=stat(filename,&stat_filename);
+    if(result==-1 && errno==ENOENT) /* file does not exist */
+    {
+	REMOVE_ITEM *remove_file;
+	sprintf(cmd, "%s %s '%s' 2>/dev/null | sort > '%s'",
+		UNCOMPRESS_PATH,
+#ifdef UNCOMPRESS_OPT
+		UNCOMPRESS_OPT,
+#else
+		"",
+#endif
+		filename_gz, filename);
+	dbprintf(("Uncompress command: %s\n",cmd));
+	if (system(cmd)!=0)
+	    return -1;
+
+	/* add at beginning */
+	remove_file = (REMOVE_ITEM *)alloc(sizeof(REMOVE_ITEM));
+	strcpy(remove_file->filename,filename);
+	remove_file->next = to_remove;
+	to_remove = remove_file;
+    }
+    else if(!S_ISREG((stat_filename.st_mode))) {
+	    return -1;
+    }
+    else {} /* already uncompressed */
+    return 0;
+}
 
 /* see if hostname is valid */
 /* valid is defined to be that there are index records for it */
@@ -254,6 +342,7 @@ int build_disk_table P((void))
     char tape[LONG_LINE];
     int file;
     char cmd[LONG_LINE];
+    char status[LONG_LINE];
     FILE *fp;
     int first_line = 0;
     char format[LONG_LINE];
@@ -271,14 +360,16 @@ int build_disk_table P((void))
 	reply(599, "System error %d", errno);
 	return -1;
     }
-    sprintf(format, "%%s %s %s %%d %%s %%d", dump_hostname, disk_name);
+    sprintf(format, "%%s %s %s %%d %%s %%d %%s", dump_hostname, disk_name);
     clear_list();
     while (fgets(cmd, LONG_LINE, fp) != NULL)
     {
 	if (first_line++ == 0)
 	    continue;
-	if (sscanf(cmd, format, date, &level, tape, &file) != 4)
+	if (sscanf(cmd, format, date, &level, tape, &file, status) != 5)
 	    continue;			/* assume failed dump */
+	if (strcmp(status,"OK")!=0)
+	    continue;			/* dump failed */
 	add_dump(date, level, tape, file);
 	dbprintf(("- %s %d %s %d\n", date, level, tape, file));
     }
@@ -318,6 +409,14 @@ char *dir;
     char cmd[LONG_LINE];
     FILE *fp;
     int last_level;
+    char ldir[LONG_LINE];
+    char *filename_gz;
+    char filename[LONG_LINE];
+
+    strcpy(ldir,dir);
+    /* add a "/" at the end of the path */
+    if(strcmp(ldir,"/"))
+	strcat(ldir,"/");
 
     if (strlen(disk_name) == 0)
     {
@@ -344,16 +443,15 @@ char *dir;
     /* go back till we hit a level 0 dump */
     do
     {
-	sprintf(cmd, "%s %s %s 2>/dev/null | grep \"^%s\"",
-		UNCOMPRESS_PATH,
-#ifdef UNCOMPRESS_OPT
-		UNCOMPRESS_OPT,
-#else
-		"",
-#endif
-		getindexfname(dump_hostname, disk_name,
-			      item->date, item->level),
-		dir);
+	filename_gz=getindexfname(dump_hostname, disk_name,
+				  item->date, item->level);
+	if(uncompress_file(filename_gz,filename)!=0)
+	{
+	    reply(599, "System error %d", errno);
+	    return -1;
+	}
+	sprintf(cmd, "grep \"^%s\" %s 2>/dev/null",
+		ldir, filename);
 	dbprintf(("c %s\n", cmd));
 	if ((fp = popen(cmd, "r")) == NULL)
 	{
@@ -602,12 +700,16 @@ char **argv;
 	bptr = buffer;
 	while (1)
 	{
-	    if ((i = getchar()) == EOF)
+	    if ((i = getchar()) == EOF) {
+		remove_uncompressed_file();
 		return 1;		/* they hung up? */
+	    }
 	    if ((char)i == '\r')
 	    {
-		if ((i = getchar()) == EOF)
+		if ((i = getchar()) == EOF) {
+		    remove_uncompressed_file();
 		    return 1;		/* they hung up? */
+		}
 		if ((char)i == '\n')
 		    break;
 	    }
@@ -620,7 +722,9 @@ char **argv;
 
 	if (strncmp(buffer, "QUIT", 4) == 0)
 	{
+	    remove_uncompressed_file();
 	    reply(200, "Good bye.");
+	    dbclose();
 	    return 0;
 	}
 	else if (sscanf(buffer, "HOST %s", buf1) == 1)
@@ -672,7 +776,12 @@ char **argv;
 	else if (strncmp(buffer, "OLSD ", 5) == 0)
 	{
 	    strcpy(buf1, buffer+5);
-	    (void)opaque_ls(buf1);
+	    (void)opaque_ls(buf1,0);
+	}
+	else if (strncmp(buffer, "ORLD ", 5) == 0)
+	{
+	    strcpy(buf1, buffer+5);
+	    (void)opaque_ls(buf1,1);
 	}
 	else if (strcmp(buffer, "TAPE") == 0)
 	{

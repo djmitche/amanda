@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: display_commands.c,v 1.2 1997/08/27 08:12:31 amcore Exp $
+ * $Id: display_commands.c,v 1.3 1997/12/09 06:59:40 amcore Exp $
  *
  * implements the directory-display related commands in amrecover
  */
@@ -124,6 +124,11 @@ void suck_dir_list_from_server P((void))
     int level;
     char tape[256];
     char dir[1024];
+    char disk_path_slash[1024];
+
+    strcpy(disk_path_slash,disk_path);
+    if(strcmp(disk_path,"/")!=0)
+        strcat(disk_path_slash,"/");
 
     if (strlen(disk_path) == 0) 
     {
@@ -159,6 +164,11 @@ void suck_dir_list_from_server P((void))
 	    return;
 	}
 	sscanf(l+5, "%s %d %s %s", date, &level, tape, dir);
+	/* add a '.' if it a the entry for the current directory */
+	if(strcmp(disk_path,dir)==0 || strcmp(disk_path_slash,dir)==0) {
+	    strcpy(dir,disk_path_slash);
+	    strcat(dir,".");
+	}
 	add_dir_list_item(date, level, tape, dir);
     }
 }

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.h,v 1.2 1997/08/27 08:12:30 amcore Exp $
+ * $Id: amrecover.h,v 1.3 1997/12/09 06:59:38 amcore Exp $
  *
  * data structures and declarations for amrecover
  */
@@ -80,7 +80,7 @@ extern DIR_ITEM *get_dir_list P((void));
 extern DIR_ITEM *get_next_dir_item P((DIR_ITEM *this));
 extern void suck_dir_list_from_server P((void));
 extern void clear_dir_list P((void));
-
+extern void clean_pathname P((char *s));
 extern void display_extract_list P((char *file));
 extern void clear_extract_list P((void));
 extern int is_extract_list_nonempty P((void));

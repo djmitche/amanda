@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.7 1997/11/11 20:48:16 amcore Exp $
+ * $Id: amrecover.c,v 1.8 1997/12/09 06:59:37 amcore Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -101,48 +101,72 @@ char *prompt;
 /* server_line is terminated with \0, \r\n is striped */
 /* returns -1 if error */
 /* NOTE server sends at least 6 chars: 3 for code, 1 for cont, 2 for \r\n */
+static char get_line_buffer[1024];
+static int  p_get_line_buffer=0;
+static int  size_get_line_buffer=0;
 int get_line ()
 {
-    int l;
-    int r;
-    
-    l = 0;
-    do
-    {
-	if ((r = read(server_socket, server_line+l, 1)) != 1)
-	{
-	    while (--l >= 0
-		   && (server_line[l] == '\r' || server_line[l] == '\n'))
-	    {
-		server_line[l] = '\0';
-	    }
-	    if (l > 0)
-	    {
-		int save_errno;
+    int l=0,m,r;
 
-		save_errno = errno;
-		fputs(server_line, stderr);
-		fputc('\n', stderr);
-		errno = save_errno;
-	    }
-	    if (r < 0)
-	    {
-		perror("amrecover: Error reading line from server");
-	    }
-	    else
-	    {
-		fprintf(stderr, "amrecover: Unexpected server end of file\n");
-	    }
-	    return -1;
+    while(1) {
+
+	/* parse the buffer */
+	while(p_get_line_buffer<size_get_line_buffer-2 &&
+	    (get_line_buffer[p_get_line_buffer] != '\r' ||
+	     get_line_buffer[p_get_line_buffer+1] != '\n')) {
+	    server_line[l++]=get_line_buffer[p_get_line_buffer++];
 	}
-	l++;
+
+	/* a line is read */
+	if(p_get_line_buffer<size_get_line_buffer-1 &&
+	   get_line_buffer[p_get_line_buffer] == '\r' &&
+	   get_line_buffer[p_get_line_buffer+1] == '\n') {
+	    server_line[l++]='\0';
+	    p_get_line_buffer+=2;
+	    return 0;
+	}
+
+	/* shift the buffer */
+	if(p_get_line_buffer!=0) {
+	    for(m=0;p_get_line_buffer<size_get_line_buffer;m++,p_get_line_buffer++)
+		get_line_buffer[m]=get_line_buffer[p_get_line_buffer];
+	    p_get_line_buffer=0;
+	    size_get_line_buffer = m;
+	}
+
+	/* read a buffer */
+	if(size_get_line_buffer<p_get_line_buffer+2 ||
+	   (size_get_line_buffer==p_get_line_buffer+2 &&
+	    (get_line_buffer[p_get_line_buffer] != '\r' ||
+	     get_line_buffer[p_get_line_buffer+1] != '\n'))) {
+	    m = size_get_line_buffer;
+	    r = read(server_socket, get_line_buffer+m, 1024-m);
+	    size_get_line_buffer+=r;
+	    if (r <=0 ) {
+		while (--l >= 0
+			&& (server_line[l] == '\r' || server_line[l] == '\n'))
+		{
+		    server_line[l] = '\0';
+		}
+		if (l > 0)
+		{
+		    int save_errno;
+
+		    save_errno = errno;
+		    fputs(server_line, stderr);
+		    fputc('\n', stderr);
+		    errno = save_errno;
+		}
+		if (r < 0) {
+		    perror("amrecover: Error reading line from server");
+		}
+		else if (r == 0) {
+		    fprintf(stderr,"%s: Unexpected server end of file\n",pname);
+		}
+		return -1;
+	    }
+	}
     }
-    while ((l < 6)
-	   || (server_line[l-2] != '\r') || (server_line[l-1] != '\n'));
-
-    server_line[l-2] = '\0';
-
-    return 0;
 }
     
 
@@ -270,6 +294,25 @@ int signum;
 }
 
     
+void clean_pathname(s)
+char *s;
+{
+    int length;
+    length = strlen(s);
+
+    /* remove "/" at end of path */
+    if(s[length-1]=='/')
+	s[length-1]='\0';
+
+    /* change "/." to "/" */
+    if(strcmp(s,"/.")==0)
+	s[1]='\0';
+
+    /* remove "/." at end of path */
+    if(strcmp(&(s[length-2]),"/.")==0)
+	s[length-2]='\0';
+}
+
 
 /* try and guess the disk the user is currently on.
    Return -1 if error, 0 if disk not local, 1 if disk local,
@@ -382,7 +425,7 @@ char **argv;
 	new_argv = (char **) malloc ((argc + 1 + 1) * sizeof (*new_argv));
 	if (new_argv == NULL)
 	{
-	    (void)fprintf(stderr, "amrecover: no memory for argument list\n");
+	    (void)fprintf(stderr, "%s: no memory for argument list\n",pname);
 	    exit(1);
 	}
 	new_argv[0] = argv[0];
@@ -459,8 +502,8 @@ char **argv;
     }
     if ((hp = gethostbyname(server_name)) == NULL)
     {
-	(void)fprintf(stderr, "amrecover: %s is an unknown host\n",
-		      server_name);
+	(void)fprintf(stderr, "%s: %s is an unknown host\n",
+		      pname, server_name);
 	dbprintf(("%s is an unknown host\n", server_name));
 	dbclose();
 	exit(1);

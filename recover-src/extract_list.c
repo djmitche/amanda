@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.7 1997/12/01 01:06:06 amcore Exp $
+ * $Id: extract_list.c,v 1.8 1997/12/09 06:59:41 amcore Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -66,10 +66,6 @@ static EXTRACT_LIST *extract_list = NULL;
 
 #define READ_TIMEOUT	30*60
 
-#define STARTUP_TIMEOUT 60 */
-
-
-
 
 int read_buffer(datafd, buffer, buflen)
 int datafd;
@@ -105,13 +101,15 @@ int buflen;
 	if(nfound == 0)  {
 	    size=-2;
 	    /*strcpy(errstr,"data timeout");*/
+		fprintf(stderr,"nfound == 0\n");
 	}
 	if(nfound == -1) {
 	    size=-3;
 	    /*sprintf(errstr,  "select: %s", strerror(errno));*/
+		fprintf(stderr,"nfound == -1\n");
 	}
 
-	/* read/write any data */
+	/* read any data */
 
 	if(FD_ISSET(datafd, &selectset)) {
 	    size = read(datafd, dataptr, spaceleft);
@@ -122,6 +120,7 @@ int buflen;
 	    case 0:
 		spaceleft -= size;
 		dataptr += size;
+		fprintf(stderr,"EOF, check amidxtaped.debug file.\n");
 		break;
 	    default:
 		spaceleft -= size;
@@ -224,11 +223,17 @@ void clear_extract_list P((void))
 
 
 /* returns -1 if error */
+/* returns  0 on succes */
+/* returns  1 if already added */
 static int add_extract_item(ditem)
 DIR_ITEM *ditem;
 {
-    EXTRACT_LIST *this;
-    EXTRACT_LIST_ITEM *that;
+    EXTRACT_LIST *this, *this1;
+    EXTRACT_LIST_ITEM *that, *curr;
+    char ditem_path[1024];
+
+    strcpy(ditem_path,ditem->path);
+    clean_pathname(ditem_path);
 
     for (this = extract_list; this != NULL; this = this->next)
     {
@@ -236,10 +241,17 @@ DIR_ITEM *ditem;
 	if (strcmp(this->tape, ditem->tape) == 0)
 	{
 	    /* yes, so add to list */
+	    curr=this->files;
+	    while(curr!=NULL)
+	    {
+		if (strcmp(curr->path,ditem_path) == 0)
+		    return 1;
+		curr=curr->next;
+	    }
 	    if ((that = (EXTRACT_LIST_ITEM *)malloc(sizeof(EXTRACT_LIST_ITEM)))
 		== NULL)
 		return -1;
-	    strcpy(that->path, ditem->path);
+	    strcpy(that->path, ditem_path);
 	    that->next = this->files;
 	    this->files = that;		/* add at front since easiest */
 	    return 0;
@@ -255,22 +267,48 @@ DIR_ITEM *ditem;
     if ((that = (EXTRACT_LIST_ITEM *)malloc(sizeof(EXTRACT_LIST_ITEM)))
 	== NULL)
 	return -1;
-    strcpy(that->path, ditem->path);
+    strcpy(that->path, ditem_path);
     that->next = NULL;
     this->files = that;
-    this->next = extract_list;
-    extract_list = this;
-    
+
+    /* add this in date increasing order          */
+    /* because restore must be done in this order */
+    /* add at begining */
+    if(extract_list==NULL || strcmp(this->date,extract_list->date) < 0) 
+    {
+	this->next = extract_list;
+	extract_list = this;
+	return 0;
+    }
+    for (this1 = extract_list; this1->next != NULL; this1 = this1->next)
+    {
+	/* add in the middle */
+	if(strcmp(this->date,this1->next->date) < 0)
+	{
+	    this->next = this1->next;
+	    this1->next = this;
+	    return 0;
+	}
+    }
+    /* add at end */
+    this->next = NULL;
+    this1->next = this;
     return 0;
 }
 
 
 /* returns -1 if error */
+/* returns  0 on deletion */
+/* returns  1 if not there */
 static int delete_extract_item(ditem)
 DIR_ITEM *ditem;
 {
     EXTRACT_LIST *this;
     EXTRACT_LIST_ITEM *that, *prev;
+    char ditem_path[1024];
+
+    strcpy(ditem_path,ditem->path);
+    clean_pathname(ditem_path);
 
     for (this = extract_list; this != NULL; this = this->next)
     {
@@ -279,7 +317,7 @@ DIR_ITEM *ditem;
 	{
 	    /* yes, so find file on list */
 	    that = this->files;
-	    if (strcmp(that->path, ditem->path) == 0)
+	    if (strcmp(that->path, ditem_path) == 0)
 	    {
 		/* first on list */
 		this->files = that->next;
@@ -293,7 +331,7 @@ DIR_ITEM *ditem;
 	    that = that->next;
 	    while (that != NULL)
 	    {
-		if (strcmp(that->path, ditem->path) == 0)
+		if (strcmp(that->path, ditem_path) == 0)
 		{
 		    prev->next = that->next;
 		    free(that);
@@ -302,21 +340,28 @@ DIR_ITEM *ditem;
 		prev = that;
 		that = that->next;
 	    }
-	    printf("Warning - file '%s' not on tape list\n", ditem->path);
-	    return 0;
+	    return 1;
 	}
     }
 
-    printf("Warning - no list for tape\n");
-    return 0;
+    return 1;
 }
 
 
 void add_file(path)
 char *path;
 {
-    DIR_ITEM *ditem;
+    DIR_ITEM *ditem, lditem;
     char path_on_disk[1024];
+    char path_on_disk_slash[1024];
+    char cmd[1024];
+    int  i;
+    /*char date[1024],tape[1024];*/
+    char dir[1024];
+    /*int  level;*/
+    char *l;
+    char ditem_path[1024];
+    int  added;
 
     if (strlen(disk_path) == 0) 
     {
@@ -326,11 +371,18 @@ char *path;
     
     dbprintf(("add_file: Looking for \"%s\"\n", path));
 
+    /* remove "/" at end of path */
+    if(path[strlen(path)-1]=='/')
+	path[strlen(path)-1]='\0';
+
     /* convert path (assumed in cwd) to one on disk */
     if (strcmp(disk_path, "/") == 0)
 	sprintf(path_on_disk, "/%s", path);
     else
 	sprintf(path_on_disk, "%s/%s", disk_path, path);
+
+    strcpy(path_on_disk_slash,path_on_disk);
+    strcat(path_on_disk_slash,"/");
 
     dbprintf(("add_file: Converted path=\"%s\" to path_on_disk=\"%s\"\n",
 	      path, path_on_disk));
@@ -338,17 +390,79 @@ char *path;
     for (ditem=get_dir_list(); ditem!=NULL; ditem=get_next_dir_item(ditem))
     {
 	dbprintf(("add_file: Pondering ditem->path=\"%s\"\n", ditem->path));
-	if (strcmp(ditem->path, path_on_disk) == 0)
+	if (strcmp(ditem->path, path_on_disk) == 0 ||
+	    strcmp(ditem->path, path_on_disk_slash) == 0)
 	{
-	    if (add_extract_item(ditem) == -1)
-	    {
-		printf("System error\n");
-		dbprintf(("add_file: (Failed) System error\n"));
+	    if(ditem->path[strlen(ditem->path)-1]=='/' ||
+	       strcmp(&(ditem->path[strlen(ditem->path)-2]),"/.")==0)
+	    {	/* It is a directory */
+		
+		strcpy(ditem_path,ditem->path);
+		clean_pathname(ditem_path);
+
+		sprintf(cmd, "ORLD %s",ditem_path);
+		if(send_command(cmd) == -1)
+		    exit(1);
+		/* skip preamble */
+		if ((i = get_reply_line()) == -1)
+		    exit(1);
+		if(i==0)		/* assume something wrong */
+		{
+		    l = reply_line();
+		    printf("%s\n", l);
+		    return;
+		}
+		added=0;
+		strcpy(lditem.path, ditem->path);
+		/* miss last line too */
+		while ((i = get_reply_line()) != 0)
+		{
+		    if (i == -1)
+			exit(1);
+		    l=reply_line();
+		    if (!server_happy())
+			return;
+		    if(strncmp(l,"201- ",5)==0) {
+			sscanf(l+5,"%s %d %s %s",lditem.date,&lditem.level,
+				lditem.tape,dir);
+			switch(add_extract_item(&lditem)) {
+			case -1:
+			    printf("System error\n");
+			    dbprintf(("add_file: (Failed) System error\n"));
+			    break;
+			case  0:
+			    printf("Added dir %s at date %s\n", ditem_path, lditem.date);
+			    dbprintf(("add_file: (Successful) Added dir %s at date %s\n",ditem_path,lditem.date));
+			    added=1;
+			    break;
+			case  1:
+			    break;
+			}
+		    }
+		    else
+			printf("ERROR:not '201- ': %s\n",l);
+		}
+		if(added==0) {
+		    printf("dir %s already added\n", ditem_path);
+		    dbprintf(("add_file: dir %s already added\n", ditem_path));
+		}
 	    }
-	    else
+	    else /* It is a file */
 	    {
-		printf("Added %s\n", path_on_disk);
-		dbprintf(("add_file: (Successful) Added %s\n", path_on_disk));
+		switch(add_extract_item(ditem)) {
+		    case -1:
+		        printf("System error\n");
+		        dbprintf(("add_file: (Failed) System error\n"));
+			break;
+		    case  0:
+		        printf("Added %s\n", path_on_disk);
+		        dbprintf(("add_file: (Successful) Added %s\n",path_on_disk));
+			break;
+		    case  1:
+		        printf("File %s already added\n", path_on_disk);
+		        dbprintf(("add_file: file %s already added\n",path_on_disk));
+			break;
+		}
 	    }
 	    return;
 	}
@@ -364,14 +478,26 @@ char *path;
 void delete_file(path)
 char *path;
 {
-    DIR_ITEM *ditem;
+    DIR_ITEM *ditem, lditem;
     char path_on_disk[1024];
+    char path_on_disk_slash[1024];
+    char cmd[1024];
+    int  i;
+    char date[1024],tape[1024],dir[1024];
+    int  level;
+    char *l;
+    char ditem_path[1024];
+    int  deleted;
 
     if (strlen(disk_path) == 0) 
     {
 	printf("Must select directory before deleting files\n");
 	return;
     }
+
+    /* remove "/" at the end of the path */
+    if(path[strlen(path)-1]=='/')
+        path[strlen(path)-1]='\0';
     
     /* convert path (assumed in cwd) to one on disk */
     if (strcmp(disk_path, "/") == 0)
@@ -379,16 +505,85 @@ char *path;
     else
 	sprintf(path_on_disk, "%s/%s", disk_path, path);
 
+    strcpy(path_on_disk_slash,path_on_disk);
+    strcat(path_on_disk_slash,"/");
+
     for (ditem=get_dir_list(); ditem!=NULL; ditem=get_next_dir_item(ditem))
-	if (strcmp(ditem->path, path_on_disk) == 0)
+    {
+	if (strcmp(ditem->path, path_on_disk) == 0 ||
+	    strcmp(ditem->path, path_on_disk_slash) == 0)
 	{
-	    if (delete_extract_item(ditem) == -1)
-		printf("System error\n");
+	    if(ditem->path[strlen(ditem->path)-1]=='/' ||
+	       strcmp(&(ditem->path[strlen(ditem->path)-2]),"/.")==0)
+	    {	/* It is a directory */
+		strcpy(ditem_path,ditem->path);
+		clean_pathname(ditem_path);
+
+		sprintf(cmd, "ORLD %s",ditem_path);
+		if(send_command(cmd) == -1)
+		    exit(1);
+		/* skip preamble */
+		if ((i = get_reply_line()) == -1)
+		    exit(1);
+		if(i==0)		/* assume something wrong */
+		{
+		    l = reply_line();
+		    printf("%s\n", l);
+		    return;
+		}
+		deleted=0;
+		strcpy(lditem.path, ditem->path);
+		/* miss last line too */
+		while ((i = get_reply_line()) != 0)
+		{
+		    if (i == -1)
+			exit(1);
+		    l=reply_line();
+		    if (!server_happy())
+			return;
+		    if(strncmp(l,"201- ",5)==0) {
+			sscanf(l+5,"%s %d %s %s",date,&level,tape,dir);
+			strcpy(lditem.date,date);
+			lditem.level=level;
+			strcpy(lditem.tape, tape);
+			switch(delete_extract_item(&lditem)) {
+			case -1:
+			    printf("System error\n");
+			    dbprintf(("delete_file: (Failed) System error\n"));
+			    break;
+			case  0:
+			    printf("Deleted dir %s at date %s\n", ditem_path, date);
+			    dbprintf(("delete_file: (Successful) Deleted dir %s at date %s\n", ditem_path, date));
+			    deleted=1;
+			    break;
+			case  1:
+			    break;
+			}
+		    }
+		    else
+			printf("ERROR:not '201- ': %s\n",l);
+		}
+		if(deleted==0) {
+		    printf("Warning - dir '%s' not on tape list\n",path_on_disk);
+		}
+	    }
 	    else
-		printf("Deleted %s\n", path_on_disk);    
+	    {
+		switch(delete_extract_item(ditem)) {
+		case -1:
+		    printf("System error\n");
+		    break;
+		case  0:
+		    printf("Deleted %s\n", path_on_disk);    
+		    break;
+		case  1:
+		    printf("Warning - file '%s' not on tape list\n",path_on_disk);
+		    break;
+		}
+	    }
 	    return;
 	}
-
+    }
     printf("File %s doesn't exist in directory\n", path);
 }
 
@@ -775,7 +970,7 @@ void extract_files P((void))
 	    if(first) {
 		printf("\nExtracting files using tape drive %s on host %s.\n",
 			tape_device_name, tape_server_name);
-		printf("\nThe following tapes are needed:");
+		printf("The following tapes are needed:");
 		first=0;
 	    }
 	    else
@@ -788,7 +983,7 @@ void extract_files P((void))
 	    if(first) {
 		printf("\nExtracting files from holding disk on host %s.\n",
 			tape_server_name);
-		printf("\nThe following files are needed:");
+		printf("The following files are needed:");
 		first=0;
 	    }
 	    else

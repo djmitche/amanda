@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.40 1997/12/02 23:58:20 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.41 1997/12/09 06:59:31 amcore Exp $
  *
  * send backup data using BSD dump
  */
@@ -236,8 +236,9 @@ char *dumpdate;
 
 	sprintf(indexcmd,
 		"%s -tvf - 2>/dev/null |\
-		    awk '/^leaf/ {$1=\"\"; $2=\"\"; print}' |\
-		    cut -c4-",
+		    awk '/^[leaf|dir]/ {print $3$1}' |\
+		    sed -e 's/leaf$//' -e 's/dir$/\\//' |\
+		    cut -c2-",
 		VXRESTORE);
 
 	write_tapeheader();
@@ -262,8 +263,9 @@ char *dumpdate;
 
 	sprintf(indexcmd,
 		"%s -tvf - 2>/dev/null |\
-		    awk '/^leaf/ {$1=\"\"; $2=\"\"; print}' |\
-		    cut -c4-",
+		    awk '/^[leaf|dir]/ {print $3$1}' |\
+		    sed -e 's/leaf$//' -e 's/dir$/\\//' |\
+		    cut -c2-",
 #ifdef RESTORE
 		    RESTORE
 #else
@@ -291,8 +293,9 @@ char *dumpdate;
 
 	sprintf(indexcmd,
 		"%s -B -tvf - 2>/dev/null |\
-		    awk '/^leaf/ {$1=\"\"; $2=\"\"; print}' |\
-		    cut -c4-",
+		    awk '/^[leaf|dir]/ {print $3$1}' |\
+		    sed -e 's/leaf$//' -e 's/dir$/\\//' |\
+		    cut -c2-",
 #ifdef RESTORE
 		    RESTORE
 #else

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: set_commands.c,v 1.2 1997/08/27 08:12:34 amcore Exp $
+ * $Id: set_commands.c,v 1.3 1997/12/09 06:59:42 amcore Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -40,6 +40,7 @@ char *date;
 {
     char cmd[LINE_LENGTH];
 
+    clear_dir_list();
     sprintf(cmd, "DATE %s", date);
     if (converse(cmd) == -1)
 	exit(1);
@@ -80,6 +81,7 @@ char *host;
 	return;
     }
 
+    clear_dir_list();
     sprintf(cmd, "HOST %s", host);
     if (converse(cmd) == -1)
 	exit(1);
@@ -113,6 +115,7 @@ char *mtpt;
 	return;
     }
     
+    clear_dir_list();
     sprintf(cmd, "DISK %s", dsk);
     if (converse(cmd) == -1)
 	exit(1);
@@ -172,6 +175,16 @@ char *dir;
     char cmd[LINE_LENGTH];
     char new_dir[LINE_LENGTH];
     char *dp, *de;
+    char ldir[LINE_LENGTH];
+
+    /* do nothing if "." */
+    if(strcmp(dir,".")==0) {
+	show_directory();		/* say where we are */
+	return;
+    }
+
+    strcpy(ldir,dir);
+    clean_pathname(ldir);
 
     if (strlen(disk_name) == 0)
     {
@@ -180,30 +193,30 @@ char *dir;
     }
 
     /* convert directory into absolute path relative to disk mount point */
-    if (dir[0] == '/')
+    if (ldir[0] == '/')
     {
 	/* absolute path specified, must start with mount point */
 	if (strcmp(mount_point, "/") == 0)
 	{
-	    strcpy(new_dir, dir);
+	    strcpy(new_dir, ldir);
 	}
 	else
 	{
-	    if (strncmp(mount_point, dir, strlen(mount_point)) != 0)
+	    if (strncmp(mount_point, ldir, strlen(mount_point)) != 0)
 	    {
 		printf("Invalid directory - Can't cd outside mount point \"%s\"\n",
 		       mount_point);
 		return;
 	    }
-	    strcpy(new_dir, dir+strlen(mount_point));
+	    strcpy(new_dir, ldir+strlen(mount_point));
 	    if (strlen(new_dir) == 0)
-		strcpy(new_dir, "/");	/* ie dir == mount_point */
+		strcpy(new_dir, "/");	/* ie ldir == mount_point */
 	}
     }
     else
     {
 	strcpy(new_dir, disk_path);
-	dp = dir;
+	dp = ldir;
 	/* strip any leading ..s */
 	while (strncmp(dp, "../", 3) == 0)
 	{
@@ -244,7 +257,7 @@ char *dir;
 	{
 	    if (strcmp(new_dir, "/") != 0)
 		strcat(new_dir, "/");
-	    strcat(new_dir, dir);
+	    strcat(new_dir, ldir);
 	}
     }
 
