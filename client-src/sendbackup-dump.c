@@ -243,7 +243,9 @@ char *dumpdate;
 
     {
 	sprintf(dumpkeys, "%d%s"
-#ifndef OSF1_VDUMP
+#ifdef OSF1_VDUMP
+		"b"
+#else
 		"s"
 #endif
 		"f", level, no_record ? "" : "u");
@@ -261,7 +263,13 @@ char *dumpdate;
 		    " cut -c4-");
 
 	dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf, 
-			    "dump", dumpkeys, "100000", "-", device,
+			    "dump", dumpkeys,
+#ifdef OSF1_VDUMP
+			    "60",
+#else
+			    "1048576",
+#endif
+			    "-", device,
 			    (char *)0);
     }
 #else
