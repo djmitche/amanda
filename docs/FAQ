@@ -126,7 +126,7 @@ database.
 
 Q: Which tape changer configuration should I use in amanda.conf?
 
-A: If you only have one tape unit, you have to choices: (i) don't use
+A: If you only have one tape unit, you have two choices: (i) don't use
 a tape changer at all, i.e., set runtapes to 1, set tapedev to the
 non-rewinding device corresponding to the tape unit, and comment out
 tpchanger, changerfile and changerdev; or (ii) set up chg-manual, so
