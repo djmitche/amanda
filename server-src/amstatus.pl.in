@@ -314,10 +314,7 @@ foreach $host (@hosts) {
 					printf "%8dk", $esize{$hostpart};
 					print " dumping";
 				}
-				($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
-				 $atime,$mtime,$ctime,$blksize,$blocks) =
-											 stat($holding_file{$hostpart});
-				$size=$size-32768 if $size > 32768;
+				$size = dump_size($holding_file{$hostpart});
 				if( defined $opt_dumping ) {
 					printf "%8dk", $size/1024;
 					if($size{$hostpart} != 0) {
@@ -422,6 +419,28 @@ if ($opt_summary == 1) {
 	}
 	printf "network free kps: %d\n", $free_kps;
 	printf "holding space   : %d\n", $free_space;
+}
+
+sub dump_size() {
+	local($filename) = @_;
+	local($size);
+   local($dsize)=0;
+	local($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
+		   $atime,$mtime,$ctime,$blksize,$blocks);
+	while ($filename ne "") {
+		($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
+				$atime,$mtime,$ctime,$blksize,$blocks) = stat($filename);
+		$size=$size-32768 if $size > 32768;
+		$dsize += $size;
+		open(DUMP,$filename);
+		$filename = "";
+		while(<DUMP>) {
+			if(/^CONT_FILENAME=(.*)$/) { $filename = $1; last }
+			last if /^To restore, position tape at start of file and run/;
+		}
+		close(DUMP);
+   }
+	return $dsize;
 }
 
 sub usage() {
