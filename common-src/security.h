@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.h,v 1.5 1998/12/02 20:14:40 kashmir Exp $
+ * $Id: security.h,v 1.6 1998/12/14 19:35:01 kashmir Exp $
  *
  * security api
  */
@@ -174,7 +174,8 @@ typedef struct security_stream {
 const security_driver_t *security_getdriver P((const char *));
 
 const char *security_geterror P((security_handle_t *));
-void security_seterror P((security_handle_t *, const char *, ...));
+void security_seterror P((security_handle_t *, const char *, ...))
+    __attribute__ ((format (printf, 2, 3)));
 
 security_handle_t *security_connect P((const security_driver_t *,
     const char *, const char **));

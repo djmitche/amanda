@@ -1,5 +1,11 @@
 1998-12-14  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/dgram.h: mark dgram_cat with gcc's printf attribute
+	* common-src/packet.h: ditto for pkt_cat
+	* common-src/security.h: likewise for security_seterror
+
+1998-12-14  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/error.c (error): const the format arg
 	* common-src/amanda.h: mark error with gcc's noreturn attribute, and
 	const its format arg

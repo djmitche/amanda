@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: packet.h,v 1.1 1998/11/04 20:17:31 kashmir Exp $
+ * $Id: packet.h,v 1.2 1998/12/14 19:34:59 kashmir Exp $
  *
  * interfaces for modifying amanda protocol packet type
  */
@@ -50,7 +50,8 @@ void pkt_init P((pkt_t *, pktype_t, const char *, ...));
 /*
  * Append data to a packet
  */
-void pkt_cat P((pkt_t *, const char *, ...));
+void pkt_cat P((pkt_t *, const char *, ...))
+    __attribute__ ((format (printf, 2, 3)));
 
 /*
  * Convert the packet type to and from a string
