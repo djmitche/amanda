@@ -20,12 +20,10 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * Author: James da Silva, Systems Design and Analysis Group
- *			   Computer Science Department
- *			   University of Maryland at College Park
+ * Author: AMANDA core development group.
  */
 /*
- * $Id: alloc.c,v 1.10 1998/01/03 17:53:47 kovert Exp $
+ * $Id: alloc.c,v 1.11 1998/01/14 23:48:46 george Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -175,6 +173,45 @@ arglist_function1(char *newvstralloc, char *, oldstr, char *, newstr)
     result = internal_vstralloc(newstr, argp);
     arglist_end(argp);
     return result;
+}
+
+
+/*
+** sbuf_man - static buffer manager.
+**
+** Manage a bunch of static buffer pointers.
+*/
+void *sbuf_man(e_bufs, ptr)
+void *e_bufs; /* XXX - I dont think this is right */
+void *ptr;
+{
+	SBUF2_DEF(1) *bufs;
+	int slot;
+
+	bufs = e_bufs;
+
+	/* try and trap bugs */
+	assert(bufs->magic == SBUF_MAGIC);
+	assert(bufs->max > 0);
+
+	/* initialise first time through */
+	if(bufs->cur == -1)
+		for(slot=0; slot < bufs->max; slot++) {
+			bufs->bufp[slot] = (void *)0;
+		} 
+
+	/* calculate the next slot */
+	slot = bufs->cur + 1;
+	if (slot >= bufs->max) slot = 0;
+
+	/* free the previous inhabitant */
+	if(bufs->bufp[slot] != (void *)0) free(bufs->bufp[slot]);
+
+	/* store the new one */
+	bufs->bufp[slot] = ptr;
+	bufs->cur = slot;
+
+	return ptr;
 }
 
 

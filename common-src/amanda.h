@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.37 1998/01/13 19:09:54 blair Exp $
+ * $Id: amanda.h,v 1.38 1998/01/14 23:48:48 george Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -327,6 +327,16 @@ extern void debug_printf P((char *format, ...))
 #define ERR_SYSLOG	2
 #define ERR_AMANDALOG	4
 
+/* For static buffer manager [alloc.c:sbuf_man()] */
+#define SBUF_MAGIC 42
+#define SBUF_DEF(name, len) static SBUF2_DEF(len) name = {SBUF_MAGIC, len, -1}
+#define SBUF2_DEF(len) 		\
+    struct {			\
+	int magic;		\
+	int max, cur;		\
+	void *bufp[len];	\
+    }
+
 extern int    erroutput_type;
 extern void   error     P((char *format, ...))
     __attribute__ ((format (printf, 1, 2)));
@@ -339,6 +349,7 @@ extern char  *vstralloc       P((char *str, ...));
 extern char  *newstralloc     P((char *oldstr, char *newstr));
 extern char  *newvstralloc    P((char *oldstr, char *newstr, ...));
 #define	newstralloc2(p,s1,s2) newvstralloc((p),(s1),(s2),NULL)
+extern void  *sbuf_man        P((void *bufs, void *ptr));
 extern char **safe_env        P((void));
 extern char  *validate_regexp P((char *regex));
 extern int    match           P((char *regex, char *str));
