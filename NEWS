@@ -1,6 +1,8 @@
 Changes in release 2.4.4p2
 
 * New initial_poll_delay config in chg-zd-mtx
+* 'amadmin find' list disk removed from the disklist.
+* amrecover can recover a disk removed from the disklist file.
 
 Changes in release 2.4.4p1
 

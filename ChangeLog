@@ -1,5 +1,16 @@
 2003-10-27  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/amadmin.c (find): Call find_dump to allow dynamic disklist.
+	* server-src/amindexd.c: Call find_dump to allow dynamic disklist.
+	* server-src/amtrmidx.c:  Call find_dump to allow dynamic disklist.
+	* server-src/diskfile.c (add_disk): Set device and todo.
+	* server-src/find.c: Build disklist dynamicaly from log files.
+	* server-src/find.h (find_dump): New prototype.
+	* NEWS: 'amadmin find' list disk removed from the disklist.
+	* NEWS: amrecover can recover a disk removed from the disklist file.
+
+2003-10-27  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/amlogroll.c: set_pname("amlogroll").
 
 2003-10-24  Todd M. Kover <kovert@omniscient.com>
