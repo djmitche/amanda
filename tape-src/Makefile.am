@@ -33,6 +33,8 @@ EXTRA_PROGRAMS = 	tapetype $(TEST_PROGS)
 
 sbin_PROGRAMS=          ammt amdd
 
+CLEANFILES = *.test.c
+
 ###
 # Because libamanda includes routines (e.g. regex) provided by some system
 # libraries, and because of the way libtool sets up the command line, we
