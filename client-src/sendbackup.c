@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.16 1997/10/30 14:49:08 amcore Exp $
+ * $Id: sendbackup.c,v 1.17 1997/11/04 22:40:16 blair Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -179,7 +179,7 @@ char **argv;
 
 	str = strstr(line, "hostname=");
 	if(str != NULL)
-	    sscanf(str, "hostname=%s;", &host);
+	    sscanf(str, "hostname=%s;", host);
 
 	if(fgets(line, MAX_LINE, stdin) == NULL)
 	    goto err;
@@ -227,7 +227,7 @@ char **argv;
     switch(fork()) {
     case -1:	/* fork error */
       dbprintf(("ERROR [%s: could not fork: %s]\n", argv[0], strerror(errno)));
-      error(("ERROR [%s: could not fork: %s]\n", argv[0], strerror(errno)));
+      error("ERROR [%s: could not fork: %s]\n", argv[0], strerror(errno));
     default:	/* parent */
       printf("CONNECT DATA %d MESG %d INDEX %d\n",
 	     data_port, mesg_port, index_port);
