@@ -24,12 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-hpux_new.c,v 1.1.2.12.4.1 2001/07/10 22:03:15 jrjackson Exp $
+ * $Id: scsi-hpux_new.c,v 1.1.2.12.4.1.2.1 2002/03/24 19:04:12 ant Exp $
  *
  * Interface to execute SCSI commands on an HP-UX Workstation
  *
  * Copyright (c) Thomas Hepper th@ant.han.de
  */
+
+
 #include <amanda.h>
 
 #ifdef HAVE_HPUX_LIKE_SCSI
@@ -54,6 +56,14 @@
 #include <sys/mtio.h>
 
 #include <scsi-defs.h>
+
+void SCSI_OS_Version()
+{
+#ifndef lint
+    static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.1.2.12.4.1.2.1 2002/03/24 19:04:12 ant Exp $";
+   DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
+#endif
+}
 
 int SCSI_OpenDevice(int ip)
 {

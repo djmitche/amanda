@@ -24,12 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-bsd.c,v 1.1.2.10.4.2 2001/09/16 18:10:26 ant Exp $
+ * $Id: scsi-bsd.c,v 1.1.2.10.4.2.2.1 2002/03/24 19:04:12 ant Exp $
  *
  * Interface to execute SCSI commands on an BSD System (FreeBSD)
  *
  * Copyright (c) Thomes Hepper th@ant.han.de
  */
+
+
 #include <amanda.h>
 
 #ifdef HAVE_BSD_LIKE_SCSI
@@ -55,6 +57,15 @@
 #include <sys/mtio.h>
 
 #include <scsi-defs.h>
+
+void SCSI_OS_Version()
+{
+#ifndef lint
+   static char rcsid[] = "$Id: scsi-bsd.c,v 1.1.2.10.4.2.2.1 2002/03/24 19:04:12 ant Exp $";
+   DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
+#endif
+}
+
 
 /*
  * Check if the device is already open,

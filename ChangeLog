@@ -1,3 +1,18 @@
+2002-03-24  Thomas Hepper ( th@ant.han.de)
+	* changer-src/chg-scsi.c: Fixed problems introduced by the agets change
+	* changer-src/chg-scsi.c (MapBarCode): Fixed error in eof handling
+	  eof was not correctly detected, now use the feof function.
+	* changer-src/scsi-aix.c (SCSI_OS_Version()): New function to print
+	  the rcsid 
+	* changer-src/scsi-aix.c: same as above
+	* changer-src/scsi-cam.c: same as above
+	* changer-src/scsi-hpux_new.c: same as above
+	* changer-src/scsi-irix.c: same as above
+	* changer-src/scsi-linux.c: same as above
+	* changer-src/scsi-solaris.c: same as above
+	* changer-src/scsi-changer-driver.c (DLT448ElementStatus()): Fixed 
+	  error messages. Fixed some errors with the barcode handling.
+
 2002-03-23  John R. Jackson (jrj@purdue.edu)
 
 	* changer-src/chg-scsi-chio.c: Use agets instead of fgets.

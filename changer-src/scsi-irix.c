@@ -24,12 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-irix.c,v 1.1.2.13.4.1.2.2 2002/01/01 21:18:12 martinea Exp $
+ * $Id: scsi-irix.c,v 1.1.2.13.4.1.2.3 2002/03/24 19:04:12 ant Exp $
  *
  * Interface to execute SCSI commands on an SGI Workstation
  *
  * Copyright (c) Thomas Hepper th@ant.han.de
  */
+
+
 #include <amanda.h>
 
 #ifdef HAVE_IRIX_LIKE_SCSI
@@ -56,6 +58,15 @@
 #include <sys/mtio.h>
 
 #include <scsi-defs.h>
+
+void SCSI_OS_Version()
+{
+#ifndef lint
+   static char rcsid[] = "$Id: scsi-irix.c,v 1.1.2.13.4.1.2.3 2002/03/24 19:04:12 ant Exp $";
+   DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
+#endif
+}
+
 
 /*
  */

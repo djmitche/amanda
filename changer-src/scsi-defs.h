@@ -1170,6 +1170,7 @@ int LogSense(int fd);
 int ScanBus(int print);
 void DebugPrint(int level, int section, char * fmt, ...);
 int DecodeSense(RequestSense_T *sense, char *pstring, FILE *out);
+void SCSI_OS_Version();
 /*
  * Local variables:
  * indent-tabs-mode: nil

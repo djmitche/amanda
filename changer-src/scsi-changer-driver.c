@@ -1,5 +1,5 @@
  #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.27.2.7.2.6 2002/02/10 03:31:52 jrjackson Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.27.2.7.2.7 2002/03/24 19:04:12 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -442,7 +442,8 @@ char *chgscsi_result = NULL;          /* Needed for the result string of MapBarC
 
 void ChangerDriverVersion()
 {
-  DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-changer-driver: %s\n",rcsid);
+  DebugPrint(DEBUG_ERROR, SECTION_INFO, "scsi-changer-driver: %s\n",rcsid);
+  SCSI_OS_Version();
 }
 
 /*
@@ -2588,15 +2589,19 @@ int GenericClean(char * Device)
   /*
    * Request Sense Data, reset the counter
    */
-  RequestSense(INDEX_TAPECTL, &ExtRequestSense, 1);
-
-  DecodeExtSense(&ExtRequestSense, "GenericClean : ", debug_file);
-  if(ExtRequestSense.CLN) {
-    ret = 1;
-  } else {
-    ret = 0;
-  }
-  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP GenericClean\n");
+  if ( RequestSense(INDEX_TAPECTL, &ExtRequestSense, 1) == 0)
+    {
+      
+      DecodeExtSense(&ExtRequestSense, "GenericClean : ", debug_file);
+      if(ExtRequestSense.CLN) {
+	ret = 1;
+      } else {
+	ret = 0;
+      }
+    } else {
+      DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Got error from RequestSense\n");
+    }
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP GenericClean (%d)\n",ret);
   return(ret);
 }
 
@@ -3352,7 +3357,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
   int x;           /* The standard loop counter :-) */
   int loop = 2;    /* Redo it if an error has been reset */
 
-  DebugPrint(DEBUG_INFO, SECTION_ELEMENT, "##### START GenericElementStatus\n");
+  DebugPrint(DEBUG_INFO, SECTION_ELEMENT, "##### START DLT448ElementStatus\n");
 
   if (pEAAPage == NULL)
     {
@@ -3365,15 +3370,15 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
         {
           if ((pModePage = malloc(0xff)) == NULL)
             {
-              DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"GenericElementStatus : malloc failed\n");
+              DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"DLT448ElementStatus : malloc failed\n");
               return(-1);
             }
 	  if (SCSI_ModeSense(DeviceFD, pModePage, 0xff, 0x8, 0x3f) == 0)
 	    {
 	      LibModeSenseValid = 1;
-	      DecodeModeSense(pModePage, 12, "GenericElementStatus :", 0, debug_file);
+	      DecodeModeSense(pModePage, 12, "DLT448ElementStatus :", 0, debug_file);
 	    } else {
-	      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"GetElementStatus : failed SCSI_ModeSense\n");
+	      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"DLT448ElementStatus : failed SCSI_ModeSense\n");
 	      LibModeSenseValid = -1;
 	    }
         }
@@ -3393,7 +3398,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
 		  error = 1;
 		  break;
 		case SENSE_ABORT:
-		  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Abort on MTE\n");
+		  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "DLT448ElementStatus : Abort on MTE\n");
 		  return(-1);
 		  break;
 		}
@@ -3411,7 +3416,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
 		  error = 1;
 		  break;
 		case SENSE_ABORT:
-		  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Abort on IEE\n");
+		  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "DLT448ElementStatus : Abort on IEE\n");
 		  return(-1);
 		  break;
 		}
@@ -3439,7 +3444,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
 		  error = 1;
 		  break;
 		case SENSE_ABORT:
-		  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Abort on IES\n");
+		  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "DLT448ElementStatus : Abort on IES\n");
 		  return(-1);
 		  break;
 		}
@@ -3457,7 +3462,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
 		  error = 1;
 		  break;
 		case SENSE_ABORT:
-		  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Abort on DTE\n");
+		  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "DLT448ElementStatus : Abort on DTE\n");
 		  return(-1);
 		  break;
 		}
@@ -3474,7 +3479,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
 	  if (GenericResetStatus(DeviceFD) != 0)
 	    {
 	      ElementStatusValid = 0;
-	      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Can't init status\n");
+	      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "DLT448ElementStatus : Can't init status\n");
 	      return(-1);
 	    }
 	  error = 0;
@@ -3489,7 +3494,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
 	   */
 	  if (pDTE[0].status == 'E')
 	    {
-	      DebugPrint(DEBUG_INFO, SECTION_ELEMENT, "GenericElementStatus : try to move tape to tape drive\n");
+	      DebugPrint(DEBUG_INFO, SECTION_ELEMENT, "DLT448ElementStatus : try to move tape to tape drive\n");
 	      pDev[DeviceFD].functions->function_move(DeviceFD, pDTE[0].address, pDTE[0].address);
 	    }
 	}
@@ -3498,12 +3503,12 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
 
   if (error != 0)
     {
-      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Can't init status (after loop)\n");
+      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "DLT448ElementStatus : Can't init status (after loop)\n");
       return(-1);
     }
 
   ElementStatusValid = 1;
-  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "#### STOP GenericElementStatus\n");
+  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "#### STOP DLT448ElementStatus\n");
   return(0);
 }
 
@@ -4223,15 +4228,19 @@ int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int
   
   if (ret < 0)
     {
+      DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP RequestSense (%d)\n",ret);
       return(ret);
     }
   
   if ( ret > 0)
     {
       DecodeExtSense(ExtendedRequestSense, "RequestSense : ",debug_file);
+      DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP RequestSense (%d)\n", ExtendedRequestSense->SenseKey);
       return(ExtendedRequestSense->SenseKey);
     }
+  
   dump_hex((char *)ExtendedRequestSense , sizeof(ExtendedRequestSense_T) , DEBUG_INFO, SECTION_SCSI);
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP RequestSense (0)\n");
   return(0);
 }
 
@@ -4942,15 +4951,20 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
                  (pMTE[x].full ? "Full " :"Empty"),
                  pMTE[x].from, pMTE[x].VolTag);
 
-	  pbarcoderes->action = BARCODE_BARCODE;
-	  strcpy(pbarcoderes->data.barcode, pMTE[x].VolTag);
-
-          if (MapBarCode(labelfile, pbarcoderes) == 0 )
-          { 
-		printf("No mapping\n");
-          } else {
-                printf("%s \n",pbarcoderes->data.barcode);
-          }
+	  if (pMTE[x].full == 1)
+	    {
+	      pbarcoderes->action = BARCODE_BARCODE;
+	      strcpy(pbarcoderes->data.barcode, pMTE[x].VolTag);
+	      
+	      if (MapBarCode(labelfile, pbarcoderes) == 0 )
+		{ 
+		  printf("No mapping\n");
+		} else {
+		  printf("%s \n",pbarcoderes->data.voltag);
+		}
+	    } else {
+	      printf("\n");
+	    }
 	} else {
           printf("%07d MTE  %s  %04d \n",pMTE[x].address,
                  (pMTE[x].full ? "Full " :"Empty"),
@@ -4965,15 +4979,20 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
                  (pSTE[x].full ? "Full ":"Empty"),
                  pSTE[x].from, pSTE[x].VolTag);
 
-	  pbarcoderes->action = BARCODE_BARCODE;
-	  strcpy(pbarcoderes->data.barcode, pSTE[x].VolTag);
-	  
-          if (MapBarCode(labelfile, pbarcoderes) == 0 )
-          {
-                printf("No mapping\n");
-          } else {
-                printf("%s \n",pbarcoderes->data.barcode);
-          }
+	  if (pSTE[x].full == 1)
+	    {
+	      pbarcoderes->action = BARCODE_BARCODE;
+	      strcpy(pbarcoderes->data.barcode, pSTE[x].VolTag);
+	      
+	      if (MapBarCode(labelfile, pbarcoderes) == 0 )
+		{
+		  printf("No mapping\n");
+		} else {
+		  printf("%s \n",pbarcoderes->data.voltag);
+		}
+	    } else {
+	      printf("\n");
+	    }
 	} else {
           printf("%07d STE  %s  %04d %s\n",pSTE[x].address,  
                  (pSTE[x].full ? "Full ":"Empty"),
@@ -4988,15 +5007,20 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
                  (pDTE[x].full ? "Full " : "Empty"),
                  pDTE[x].from, pDTE[x].VolTag);
 
-	  pbarcoderes->action = BARCODE_BARCODE;
-	  strcpy(pbarcoderes->data.barcode, pDTE[x].VolTag);
-	  
-          if (MapBarCode(labelfile, pbarcoderes) == 0 )
-          {
-                printf("No mapping\n");
-          } else {
-                printf("%s \n",pbarcoderes->data.barcode);
-          }
+	  if (pDTE[x].full == 1)
+	    {
+	      pbarcoderes->action = BARCODE_BARCODE;
+	      strcpy(pbarcoderes->data.barcode, pDTE[x].VolTag);
+	      
+	      if (MapBarCode(labelfile, pbarcoderes) == 0 )
+		{
+		  printf("No mapping\n");
+		} else {
+		  printf("%s \n",pbarcoderes->data.voltag);
+		}
+	    } else {
+	      printf("\n");
+	    }
 
 	} else {
           printf("%07d DTE  %s  %04d %s\n",pDTE[x].address,  
@@ -5011,15 +5035,20 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
                  (pIEE[x].full ? "Full " : "Empty"),
                  pIEE[x].from, pIEE[x].VolTag);
 
-	  pbarcoderes->action = BARCODE_BARCODE;
-	  strcpy(pbarcoderes->data.barcode, pIEE[x].VolTag);
-	  
-          if (MapBarCode(labelfile, pbarcoderes) == 0 )
-          {
-                printf("No mapping\n");
-          } else {
-                printf("%s \n",pbarcoderes->data.barcode);
-          }
+	  if (pIEE[x].full == 1)
+	    {
+	      pbarcoderes->action = BARCODE_BARCODE;
+	      strcpy(pbarcoderes->data.barcode, pIEE[x].VolTag);
+	      
+	      if (MapBarCode(labelfile, pbarcoderes) == 0 )
+		{
+		  printf("No mapping\n");
+		} else {
+		  printf("%s \n",pbarcoderes->data.voltag);
+		}
+	    } else {
+	      printf("\n");
+	    }
 
 	} else {
           printf("%07d IEE  %s  %04d %s\n",pIEE[x].address,  

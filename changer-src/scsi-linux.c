@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-linux.c,v 1.1.2.18.4.1 2001/07/10 22:03:15 jrjackson Exp $
+ * $Id: scsi-linux.c,v 1.1.2.18.4.1.2.1 2002/03/24 19:04:12 ant Exp $
  *
  * Interface to execute SCSI commands on Linux
  *
@@ -79,6 +79,13 @@
 #include <scsi-defs.h>
 
 
+void SCSI_OS_Version()
+{
+#ifndef lint
+   static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.18.4.1.2.1 2002/03/24 19:04:12 ant Exp $";
+   DebugPrint(DEBUG_ERROR, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
+#endif
+}
 
 int SCSI_CloseDevice(int DeviceFD)
 {

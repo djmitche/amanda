@@ -24,13 +24,15 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-cam.c,v 1.10.4.1 2001/07/10 22:03:14 jrjackson Exp $
+ * $Id: scsi-cam.c,v 1.10.4.1.2.1 2002/03/24 19:04:12 ant Exp $
  *
  * Interface to execute SCSI commands on an system with cam support
  * Current support is for FreeBSD 4.x
  *
  * Copyright (c) Thomes Hepper th@ant.han.de
  */
+
+
 #include <amanda.h>
 
 #ifdef HAVE_CAM_LIKE_SCSI
@@ -68,6 +70,15 @@ extern OpenFiles_T *pChangerDev;
 extern OpenFiles_T *pTapeDev;
 extern OpenFiles_T *pTapeDevCtl;
 extern FILE *debug_file;
+
+
+void SCSI_OS_Version()
+{
+#ifndef lint
+   static char rcsid[] = "$Id: scsi-cam.c,v 1.10.4.1.2.1 2002/03/24 19:04:12 ant Exp $";
+   DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
+#endif
+}
 
 /* parse string of format 1:2:3 and fill in path, target, lun
    returns 0  if it doesn't look like btl

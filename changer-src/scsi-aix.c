@@ -24,12 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-aix.c,v 1.1.2.14.4.3 2001/08/15 18:33:13 ant Exp $
+ * $Id: scsi-aix.c,v 1.1.2.14.4.3.2.1 2002/03/24 19:04:12 ant Exp $
  *
  * Interface to execute SCSI commands on an AIX System
  *
  * Copyright (c) Thomas Hepper th@ant.han.de
  */
+
+
 #include <amanda.h>
 
 #ifdef HAVE_AIX_LIKE_SCSI
@@ -58,6 +60,15 @@
 
 #include <scsi-defs.h>
 #include <gscdds.h>
+
+void SCSI_OS_Version()
+{
+#ifndef lint
+   static char rcsid[] = "$Id: scsi-aix.c,v 1.1.2.14.4.3.2.1 2002/03/24 19:04:12 ant Exp $";
+   DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
+#endif
+}
+
 
 int SCSI_OpenDevice(int ip)
 {
