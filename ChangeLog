@@ -1,5 +1,10 @@
 1999-03-01  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/security.h: implement security_connect callback and
+	security_status_t changes
+
+1999-03-01  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/bsd-security.c (bsd_connect): properly munge the uids
 	to get a reserved port
 	* common-src/bsd-security.c: adapt to the security_connect

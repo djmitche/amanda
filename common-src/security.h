@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.h,v 1.6 1998/12/14 19:35:01 kashmir Exp $
+ * $Id: security.h,v 1.7 1999/03/01 22:50:32 kashmir Exp $
  *
  * security api
  */
@@ -34,10 +34,11 @@
 struct security_handle;
 
 /*
- * This is a type that gets passed to the security_recvpkt() callback.
+ * This is a type that gets passed to the security_recvpkt() and
+ * security_connect() callbacks.
  * It details what the status of this callback is.
  */
-typedef enum { RECV_OK, RECV_TIMEOUT, RECV_ERROR } security_recvpkt_status_t;
+typedef enum { S_OK, S_TIMEOUT, S_ERROR } security_status_t;
 
 /*
  * This structure defines a security driver.  This driver abstracts
@@ -59,7 +60,9 @@ typedef struct security_driver {
      * Connects a security handle, for this driver to a remote
      * host.
      */
-    int (*connect) P((void *, const char *));
+    void (*connect) P((void *, const char *,
+	void (*)(void *, struct security_handle *, security_status_t),
+	void *));
 
     /*
      * This form sets up a callback that returns new handles as
@@ -91,7 +94,7 @@ typedef struct security_driver {
      * Only one recvpkt request can exist per handle.
      */
     void (*recvpkt) P((void *, void (*)(void *, pkt_t *,
-	security_recvpkt_status_t), void *, int));
+	security_status_t), void *, int));
 
     /*
      * Cancel an outstanding recvpkt request on a handle.
@@ -177,8 +180,8 @@ const char *security_geterror P((security_handle_t *));
 void security_seterror P((security_handle_t *, const char *, ...))
     __attribute__ ((format (printf, 2, 3)));
 
-security_handle_t *security_connect P((const security_driver_t *,
-    const char *, const char **));
+void security_connect P((const security_driver_t *, const char *,
+    void (*)(void *, security_handle_t *, security_status_t), void *));
 void security_accept P((const security_driver_t *, int, int,
     void (*)(security_handle_t *, pkt_t *)));
 void security_close P((security_handle_t *));
@@ -188,7 +191,7 @@ void security_close P((security_handle_t *));
     (*(handle)->driver->sendpkt)(handle, pkt)
 
 /* void security_recvpkt P((security_handle_t *,
-    void (*)(void *, pkt_t *, security_recvpkt_status_t), void *, int); */
+    void (*)(void *, pkt_t *, security_status_t), void *, int); */
 #define	security_recvpkt(handle, fn, arg, timeout)	\
     (*(handle)->driver->recvpkt)(handle, fn, arg, timeout)
 
