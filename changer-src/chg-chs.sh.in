@@ -27,14 +27,14 @@
 #
 
 #
-# chs-changer.sh - chs tape changer script
+# chg-chs.sh - chs tape changer script
 #
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libexecdir=@libexecdir@
 
-pname="chs-changer"
+pname="chg-chs"
 
 PATH=$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
 export PATH
@@ -325,9 +325,9 @@ fi
 
 # update state
 
-echo "# chs-changer state cache: DO NOT EDIT!" >  $ourstate
-echo curslot $newslot 				   >> $ourstate
-echo curloaded $curloaded			   >> $ourstate
+echo "# $pname state cache: DO NOT EDIT!"	>  $ourstate
+echo curslot $newslot 				>> $ourstate
+echo curloaded $curloaded			>> $ourstate
 
 # return slot info
 
