@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.28 1998/03/23 16:54:44 martinea Exp $
+ * $Id: reporter.c,v 1.29 1998/03/24 01:50:49 amcore Exp $
  *
  * nightly Amanda Report generator
  */
@@ -278,7 +278,7 @@ char **argv;
 	/* postscript debugging file for writing.                        */
 	if ((strcmp(tp->lbl_templ,"")) != 0) {
 	  if ((postscript = fopen(PSLOGFILE,"w")) == NULL)
-	    error("could not open PSLOGFILE: %s", strerror(errno));
+	    error("could not open %s: %s", PSLOGFILE, strerror(errno));
 	}
     }
     else {
