@@ -1,3 +1,7 @@
+2002-03-08  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/amindexd.c: Compilation fix.
+
 2002-03-07 John R. Jackson (jrj@purdue.edu)
 
 	* changer-src/chg-zd-mtx.sh.in: Allow whitespace on a VolumeTag line.

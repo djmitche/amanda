@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.63 2002/03/06 19:23:20 martinea Exp $
+ * $Id: amindexd.c,v 1.64 2002/03/08 21:48:19 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -1009,7 +1009,7 @@ char **argv;
 	    else if(arg) {
 		lreply(200, " List of disk for device %s on host %s", arg,
 		       dump_hostname);
-		for (disk = disk_list->head; disk!=NULL; disk = disk->next) {
+		for (disk = disk_list.head; disk!=NULL; disk = disk->next) {
 		    if(strcmp(disk->host->hostname, dump_hostname) == 0 &&
 		       ((disk->device && strcmp(disk->device, arg) == 0) ||
 			(!disk->device && strcmp(disk->name, arg) == 0))) {
@@ -1028,7 +1028,7 @@ char **argv;
 	    }
 	    else {
 		lreply(200, " List of disk for host %s", dump_hostname);
-		for (disk = disk_list->head; disk!=NULL; disk = disk->next) {
+		for (disk = disk_list.head; disk!=NULL; disk = disk->next) {
 		    if(strcmp(disk->host->hostname, dump_hostname) == 0) {
 			fast_lreply(201, " %s", disk->name);
 			nbdisk++;
