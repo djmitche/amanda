@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: protocol.c,v 1.15 1998/01/02 01:05:17 jrj Exp $
+ * $Id: protocol.c,v 1.16 1998/01/02 03:26:56 jrj Exp $
  *
  * implements amanda protocol
  */
@@ -820,7 +820,7 @@ char *host_inst, *realm;
 	if(rc) return rc;
     }
     p->security = vstralloc("SECURITY TICKET ",
-			    bin2astr(ticket.dat, ticket.length),
+			    bin2astr((unsigned char *)ticket.dat, ticket.length),
 			    "\n", NULL);
     return 0;
 }
