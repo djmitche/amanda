@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.20 1998/01/12 22:32:35 blair Exp $
+ * $Id: amrecover.c,v 1.20.2.1 1998/02/06 20:43:51 amcore Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -412,6 +412,10 @@ char **argv;
 	 * an array (e.g. an fd_set).
 	 */
 	close(fd);
+    }
+
+    if (geteuid() != 0) {
+	error("amrecover must be run by root");
     }
 
     localhost = alloc(MAX_HOSTNAME_LENGTH+1);
