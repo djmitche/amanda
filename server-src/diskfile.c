@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.27.4.6.4.3.2.1 2002/02/10 03:31:53 jrjackson Exp $
+ * $Id: diskfile.c,v 1.27.4.6.4.3.2.2 2002/02/13 14:51:16 martinea Exp $
  *
  * read disklist file
  */
@@ -383,8 +383,8 @@ static int read_diskline()
 
     disk->dtype_name	= dtype->name;
     disk->program	= dtype->program;
-    disk->exclude	= dtype->exclude;
-    disk->exclude_list	= dtype->exclude_list;
+    disk->exclude_file	= duplicate_sl(dtype->exclude_file);
+    disk->exclude_list	= duplicate_sl(dtype->exclude_list);
     disk->priority	= dtype->priority;
     disk->dumpcycle	= dtype->dumpcycle;
     disk->frequency	= dtype->frequency;
@@ -519,9 +519,10 @@ disk_t *dp;
     char *compress_opt = "";
     char *record_opt = "";
     char *index_opt = "";
-    char *exclude_opt1 = "";
-    char *exclude_opt2 = "";
-    char *exclude_opt3 = "";
+    char *exclude_file;
+    char *exclude_list;
+    char *exc = NULL;
+    sle_t *excl;
 
     amfree(str);
 
@@ -550,10 +551,19 @@ disk_t *dp;
     if(!dp->record) record_opt = "no-record;";
     if(dp->index) index_opt = "index;";
 
-    if(dp->exclude) {
-	exclude_opt1 = dp->exclude_list ? "exclude-list=" : "exclude-file=";
-	exclude_opt2 = dp->exclude;
-	exclude_opt3 = ";";
+    exclude_file = stralloc("");
+    if(dp->exclude_file != NULL && dp->exclude_file->nb_element > 0) {
+	for(excl = dp->exclude_file->first; excl != NULL; excl = excl->next) {
+	    exc = newvstralloc( exc, "exclude-file=", excl->name, ";", NULL);
+	    strappend(exclude_file, exc);
+	}
+    }
+    exclude_list = stralloc("");
+    if(dp->exclude_list != NULL && dp->exclude_list->nb_element > 0) {
+	for(excl = dp->exclude_list->first; excl != NULL; excl = excl->next) {
+	    exc = newvstralloc( exc, "exclude-list=", excl->name, ";", NULL);
+	    strappend(exclude_list, exc);
+	}
     }
 
     return vstralloc(";",
@@ -562,9 +572,8 @@ disk_t *dp;
 		     compress_opt,
 		     record_opt,
 		     index_opt,
-		     exclude_opt1,
-		     exclude_opt2,
-		     exclude_opt3,
+		     exclude_file,
+		     exclude_list,
 		     NULL);
 }
 

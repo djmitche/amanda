@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.24.2.8.4.4.2.1 2002/02/11 04:38:44 jrjackson Exp $
+ * $Id: conffile.h,v 1.24.2.8.4.4.2.2 2002/02/13 14:51:16 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -33,6 +33,7 @@
 #define CONFFILE_H
 
 #include "amanda.h"
+#include "sl.h"
 
 #define CONFFILE_NAME "amanda.conf"
 
@@ -129,8 +130,8 @@ typedef struct dumptype_s {
 
     char *comment;
     char *program;
-    char *exclude;
-    int exclude_list;
+    sl_t *exclude_file;
+    sl_t *exclude_list;
     int priority;
     int dumpcycle;
     int maxcycle;
@@ -153,7 +154,8 @@ typedef struct dumptype_s {
     /* seen flags */
     int s_comment;
     int s_program;
-    int s_exclude;
+    int s_exclude_file;
+    int s_exclude_list;
     int s_priority;
     int s_dumpcycle;
     int s_maxcycle;

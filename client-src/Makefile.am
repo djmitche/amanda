@@ -21,7 +21,8 @@ samba_sources = findpass.c
 endif
 
 libamclient_la_SOURCES=	amandates.c		getfsent.c	\
-			unctime.c		$(samba_sources)
+			unctime.c		client_util.c	\
+			$(samba_sources)
 
 libamclient_la_LDFLAGS = -release $(VERSION)
 
@@ -65,7 +66,8 @@ EXTRA_DIST =		amhpfixdevs.sh		amsinixfixdevs.sh
 sendbackup_SOURCES = 	sendbackup.c		sendbackup.h	\
 			sendbackup-dump.c	sendbackup-gnutar.c
 
-noinst_HEADERS	= 	amandates.h	getfsent.h	findpass.h
+noinst_HEADERS	= 	amandates.h	getfsent.h	findpass.h	\
+			client_util.h
 
 install-exec-hook:
 	@list="$(sbin_SCRIPTS)"; \

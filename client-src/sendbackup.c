@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.44.2.9.4.4 2001/07/31 22:38:38 jrjackson Exp $
+ * $Id: sendbackup.c,v 1.44.2.9.4.4.2.1 2002/02/13 14:51:15 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -50,12 +50,7 @@ int data_socket, data_port, dataf;
 int mesg_socket, mesg_port, mesgf;
 int index_socket, index_port, indexf;
 
-char *efile = NULL;
-char *estr = NULL;
-int compress, no_record, bsd_auth;
-int createindex;
-#define COMPR_FAST 1
-#define COMPR_BEST 2
+option_t *options;
 
 #ifdef KRB4_SECURITY
 #include "sendbackup-krb4.h"
@@ -69,8 +64,7 @@ backup_program_t *program = NULL;
 
 /* local functions */
 int main P((int argc, char **argv));
-void parse_options P((char *str, char *disk));
-char *optionstr P((void));
+char *optionstr P((option_t *options));
 char *childstr P((int pid));
 int check_status P((int pid, amwait_t w));
 
@@ -79,81 +73,8 @@ int pipefork P((void (*func) P((void)), char *fname, int *stdinfd,
 void parse_backup_messages P((int mesgin));
 static void process_dumpline P((char *str));
 
-void parse_options(str, disk)
-char *str;
-char *disk;
-{
-    char *e, *i, *j, *k;
-    int ch;
 
-    /* only a few options, no need to get fancy */
-
-    if(strstr(str, "compress") != NULL) {
-	if(strstr(str, "compress-best") != NULL)
-	    compress = COMPR_BEST;
-	else
-	    compress = COMPR_FAST;	/* the default */
-    }
-
-    if((i=strstr(str, "exclude")) != NULL) {
-	if((j = strchr(i, '=')) != NULL && (k = strchr(j, ';')) != NULL) {
-	    j++;				/* advance to after the '=' */
-
-	    ch = k[1];				/* character after ';' */
-	    k[1] = '\0';
-	    estr = newstralloc(estr, i);	/* save the whole option */
-	    k[1] = ch;
-
-	    k[0] = '\0';			/* zap the ';' */
-
-#define sc "exclude-list"
-	    if(strncmp(sc, estr, sizeof(sc)-1) == 0) {
-		e = "-from";
-	    } else {
-		e = "";
-	    }
-#undef sc
-/* BEGIN HPS */
-	    if (*e != '\0')
-		{
-		  char *file = j;
-		  if(*file != '/')
-		  {
-			char *dirname = amname_to_dirname(disk);
-			efile = vstralloc(dirname,"/",file, NULL);
-		  }
-		  else
-			efile = stralloc(file);
-		  
-		  if(access(efile, F_OK) != 0) {
-			/* if exclude list file does not exist, ignore it.
-			 * Should not test for R_OK, because the file may be
-			 * readable by root only! */
-			dbprintf(("%s: exclude list file \"%s\" does not exist, ignoring\n",
-				  get_pname(), efile));
-			amfree(efile);
-		  }
-		  estr = NULL;
-	    } else
-/* END HPS */
-	    {
-		  estr = stralloc(j);
-		  amfree(efile);
-	    }
-	    k[0] = ';';
-	}
-    }
-
-    no_record = strstr(str, "no-record") != NULL;
-    bsd_auth = strstr(str, "bsd-auth") != NULL;
-#ifdef KRB4_SECURITY
-    krb4_auth = strstr(str, "krb4-auth") != NULL;
-    kencrypt = strstr(str, "kencrypt") != NULL;
-#endif
-    createindex = strstr(str, "index") != NULL;
-}
-
-char *optionstr()
+char *optionstr(option_t *options)
 {
     static char *optstr = NULL;
     char *compress_opt = "";
@@ -162,19 +83,37 @@ char *optionstr()
     char *krb4_opt = "";
     char *kencrypt_opt = "";
     char *index_opt = "";
+    char *exclude_file_opt;
+    char *exclude_list_opt;
+    char *exc = NULL;
+    sle_t *excl;
 
-    if(compress == COMPR_BEST)
+    if(options->compress == COMPR_BEST)
 	compress_opt = "compress-best;";
-    else if(compress == COMPR_FAST)
+    else if(options->compress == COMPR_FAST)
 	compress_opt = "compress-fast;";
-    if(no_record) record_opt = "no-record;";
-    if(bsd_auth) bsd_opt = "bsd-auth;";
+    if(options->no_record) record_opt = "no-record;";
+    if(options->bsd_auth) bsd_opt = "bsd-auth;";
 #ifdef KRB4_SECURITY
-    if(krb4_auth) krb4_opt = "krb4-auth;";
-    if(kencrypt) kencrypt_opt = "kencrypt;";
+    if(options->krb4_auth) krb4_opt = "krb4-auth;";
+    if(options->kencrypt) kencrypt_opt = "kencrypt;";
 #endif
-    if(createindex) index_opt = "index;";
+    if(options->createindex) index_opt = "index;";
 
+    exclude_file_opt = stralloc("");
+    if(options->exclude_file) {
+	for(excl = options->exclude_file->first; excl != NULL; excl=excl->next){
+	    exc = newvstralloc(exc, "exclude-file=", excl->name, ";", NULL);
+	    strappend(exclude_file_opt, exc);
+	}
+    }
+    exclude_list_opt = stralloc("");
+    if(options->exclude_list) {
+	for(excl = options->exclude_list->first; excl != NULL; excl=excl->next){
+	    exc = newvstralloc(exc, "exclude-list=", excl->name, ";", NULL);
+	    strappend(exclude_list_opt, exc);
+	}
+    }
     optstr = newvstralloc(optstr,
 			  ";",
 			  compress_opt,
@@ -183,10 +122,12 @@ char *optionstr()
 			  krb4_opt,
 			  kencrypt_opt,
 			  index_opt,
-			  estr ? estr : "",
+			  exclude_file_opt,
+			  exclude_list_opt,
 			  NULL);
     return optstr;
 }
+
 
 int main(argc, argv)
 int argc;
@@ -194,7 +135,7 @@ char **argv;
 {
     int interactive = 0;
     int level, mesgpipe[2];
-    char *prog, *disk, *dumpdate, *options;
+    char *prog, *disk, *dumpdate, *stroptions;
     char *host;				/* my hostname from the server */
     char *line = NULL;
     char *err_extra = NULL;
@@ -336,13 +277,13 @@ char **argv;
 	err_extra = "bad options string";
 	goto err;				/* no options */
     }
-    options = s - 1;
+    stroptions = s - 1;
 
     dbprintf(("  parsed request as: program `%s'\n", prog));
     dbprintf(("                     disk `%s'\n", disk));
     dbprintf(("                     lev %d\n", level));
     dbprintf(("                     since %s\n", dumpdate));
-    dbprintf(("                     opt `%s'\n", options));
+    dbprintf(("                     opt `%s'\n", stroptions));
 
     {
       int i;
@@ -356,7 +297,7 @@ char **argv;
       }
     }
 
-    parse_options(options, disk);
+    options = parse_options(stroptions, disk, 0);
 
 #ifdef KRB4_SECURITY
     if(krb4_auth) {
@@ -379,7 +320,7 @@ char **argv;
 	      get_pname(), strerror(errno));
       }
     }
-    if (!interactive && createindex) {
+    if (!interactive && options->createindex) {
       index_socket = stream_server(&index_port, -1, -1);
       if(index_socket < 0) {
 	error("ERROR [%s: could not create index socket: %s]",
@@ -391,10 +332,10 @@ char **argv;
 
     printf("CONNECT DATA %d MESG %d INDEX %d\n",
 	   data_port, mesg_port, index_port);
-    printf("OPTIONS %s\n", optionstr());
+    printf("OPTIONS %s\n", optionstr(options));
     freopen("/dev/null","w",stdout);
 
-    if (createindex)
+    if (options->createindex)
       dbprintf(("  waiting for connect on %d, then %d, then %d\n",
 		data_port, mesg_port, index_port));
     else
@@ -419,7 +360,7 @@ char **argv;
     }
     if(interactive) {
       indexf = 1;
-    } else if (createindex) {
+    } else if (options->createindex) {
       indexf = stream_accept(index_socket, TIMEOUT, -1, -1);
       if (indexf == -1) {
 	dbprintf(("%s: timeout on index port %d\n", get_pname(), index_port));
@@ -427,7 +368,7 @@ char **argv;
     }
 
     if(!interactive) {
-      if(dataf == -1 || mesgf == -1 || (createindex && indexf == -1)) {
+      if(dataf == -1 || mesgf == -1 || (options->createindex && indexf == -1)) {
         dbclose();
         exit(1);
       }
@@ -608,7 +549,7 @@ void write_tapeheader()
     fprintf(stderr, "%s: info BACKUP=%s\n", get_pname(), program->backup_name);
 
     fprintf(stderr, "%s: info RECOVER_CMD=", get_pname());
-    if (compress)
+    if (options->compress)
 	fprintf(stderr, "%s %s |", UNCOMPRESS_PATH,
 #ifdef UNCOMPRESS_OPT
 		UNCOMPRESS_OPT
@@ -619,7 +560,7 @@ void write_tapeheader()
 
     fprintf(stderr, "%s -f... -\n", program->restore_name);
 
-    if (compress)
+    if (options->compress)
 	fprintf(stderr, "%s: info COMPRESS_SUFFIX=%s\n",
 			get_pname(), COMPRESS_SUFFIX);
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.40.2.3.4.4.2.2 2001/12/29 21:41:29 martinea Exp $
+ * $Id: selfcheck.c,v 1.40.2.3.4.4.2.3 2002/02/13 14:51:15 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -37,6 +37,7 @@
 #include "amandates.h"
 #include "util.h"
 #include "pipespawn.h"
+#include "client_util.h"
 
 #ifdef SAMBA_CLIENT
 #include "findpass.h"
@@ -59,7 +60,7 @@ int need_compress_path=0;
 /* local functions */
 int main P((int argc, char **argv));
 
-static void check_options P((char *program, char *disk, char *str));
+static void check_options P((char *program, char *disk, option_t *options));
 static void check_disk P((char *program, char *disk, int level));
 static void check_overall P((void));
 static void check_access P((char *filename, int mode));
@@ -82,6 +83,7 @@ char **argv;
     int fd;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
+    option_t *options;
 
     /* initialize */
 
@@ -154,7 +156,8 @@ char **argv;
 	    optstr = s - 1;
 	    skip_non_whitespace(s, ch);
 	    s[-1] = '\0';			/* terminate the options */
-	    check_options(program, disk, optstr);
+	    options = parse_options(optstr, disk, 1);
+	    check_options(program, disk, options);
 	    check_disk(program, disk, level);
 	} else if (ch == '\0') {
 	    /* check all since no option */
@@ -204,13 +207,10 @@ char **argv;
 
 
 static void
-check_options(program, disk, str)
-     char *program, *disk, *str;
+check_options(program, disk, options)
+    char *program, *disk;
+    option_t *options;
 {
-    int as_index = 0;
-
-    if(strstr(str,"index") != NULL)
-	as_index=1;
     if(strcmp(program,"GNUTAR") == 0) {
 	need_gnutar=1;
         if(disk[0] == '/' && disk[1] == '/')
@@ -232,7 +232,7 @@ check_options(program, disk, str)
 	{
 	    need_vdump=1;
 	    need_rundump=1;
-	    if (as_index)
+	    if (options->createindex)
 		need_vrestore=1;
 	}
 	else
@@ -246,7 +246,7 @@ check_options(program, disk, str)
 	{
 	    need_xfsdump=1;
 	    need_rundump=1;
-	    if (as_index)
+	    if (options->createindex)
 		need_xfsrestore=1;
 	}
 	else
@@ -259,28 +259,25 @@ check_options(program, disk, str)
 #endif
 	{
 	    need_vxdump=1;
-	    if (as_index)
+	    if (options->createindex)
 		need_vxrestore=1;
 	}
 	else
 #endif /* VXDUMP */
 	{
 	    need_dump=1;
-	    if (as_index)
+	    if (options->createindex)
 		need_restore=1;
 	}
 #else
 	/* AIX backup program */
 	need_dump=1;
-	if (as_index)
+	if (options->createindex)
 	    need_restore=1;
 #endif
     }
-    if(strstr(str, "compress") != NULL)
+    if(options->compress != NO_COMPR) 
 	need_compress_path=1;
-    if(strstr(str, "index") != NULL) {
-	/* do nothing */
-    }
 }
 
 static void check_disk(program, disk, level)

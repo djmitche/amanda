@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.4 2002/02/11 22:49:15 martinea Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.5 2002/02/13 14:51:16 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1123,6 +1123,7 @@ host_t *hostp;
 
 	for(i = 0; i < MAX_LEVELS; i++) {
 	    char *l;
+	    int nb_exclude;
 	    char *exclude1 = "";
 	    char *exclude2 = "";
 	    char spindle[NUM_STR_SIZE];
@@ -1133,9 +1134,22 @@ host_t *hostp;
 
 	    ap_snprintf(level, sizeof(level), "%d", lev);
 	    ap_snprintf(spindle, sizeof(spindle), "%d", dp->spindle);
-	    if(dp->exclude) {
-		exclude1 = dp->exclude_list ? " exclude-list=" : " exclude-file=";
-		exclude2 = dp->exclude;
+	    nb_exclude = 0;
+	    if(dp->exclude_file) nb_exclude += dp->exclude_file->nb_element;
+	    if(dp->exclude_list) nb_exclude += dp->exclude_list->nb_element;
+	    if(nb_exclude > 1) {
+		exclude1 = " OPTIONS |";
+		exclude2 = optionstr(dp);
+	    }
+	    else {
+		if(dp->exclude_file && dp->exclude_file->nb_element == 1) {
+		    exclude1 = " exclude-file=";
+		    exclude2 = dp->exclude_file->first->name;
+		}
+		else if(dp->exclude_list && dp->exclude_list->nb_element == 1) {
+		    exclude1 = " exclude-list=";
+		    exclude2 = dp->exclude_list->first->name;
+		}
 	    }
 	    l = vstralloc(dp->program, " ", dp->name, " ", level, " ",
 			  est(dp)->dumpdate[i], " ", spindle,

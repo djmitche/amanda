@@ -24,12 +24,13 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.h,v 1.11.4.1 2000/05/27 21:20:32 vectro Exp $
+ * $Id: sendbackup.h,v 1.11.4.1.6.1 2002/02/13 14:51:15 martinea Exp $
  *
  * a few common decls for the sendbackup-* sources
  */
 #include "amanda.h"
 #include "pipespawn.h"
+#include "client_util.h"
 
 void write_tapeheader P((void));
 
@@ -62,8 +63,9 @@ typedef struct regex_s {
     int scale;                  /* only used for size lines */
 } regex_t;
 
-extern int compress, comppid, dumppid, tarpid, no_record;
-extern int indexpid, createindex;
+extern int  comppid, dumppid, tarpid;
+extern int indexpid;
+extern option_t *options;
 
 typedef struct backup_program_s {
     char *name, *backup_name, *restore_name;
@@ -75,8 +77,3 @@ typedef struct backup_program_s {
 
 extern backup_program_t *programs[], *program;
 
-#define COMPR_FAST 1
-#define COMPR_BEST 2
-
-extern char *efile;
-extern char *estr;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.13.2.3.2.2 2002/02/08 22:21:47 jrjackson Exp $
+ * $Id: amadmin.c,v 1.49.2.13.2.3.2.3 2002/02/13 14:51:16 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1382,6 +1382,7 @@ disk_t *dp;
 {
     host_t *hp;
     interface_t *ip;
+    sle_t *excl;
 
     hp = dp->host;
     ip = hp->netif;
@@ -1395,8 +1396,20 @@ disk_t *dp;
     printf("    disk %s:\n", dp->name);
 
     printf("        program \"%s\"\n", dp->program);
-    if(dp->exclude != (char *)0)
-	printf("        exclude %s\"%s\"\n", dp->exclude_list? "list ":"", dp->exclude);
+    if(dp->exclude_file != NULL && dp->exclude_file->nb_element > 0) {
+	printf("        exclude file");
+	for(excl = dp->exclude_file->first; excl != NULL; excl = excl->next) {
+	    printf(" \"%s\"", excl->name);
+	}
+	printf("\n");
+    }
+    if(dp->exclude_list != NULL && dp->exclude_list->nb_element > 0) {
+	printf("        exclude list");
+	for(excl = dp->exclude_list->first; excl != NULL; excl = excl->next) {
+	    printf(" \"%s\"", excl->name);
+	}
+	printf("\n");
+    }
     printf("        priority %ld\n", dp->priority);
     printf("        dumpcycle %ld\n", dp->dumpcycle);
     printf("        maxdumps %d\n", dp->maxdumps);
