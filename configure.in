@@ -1340,7 +1340,8 @@ if test "$DUMP"; then
 	[
 	    case "$DUMP" in
 	    *dump)
-		$DUMP 9hf 0 /dev/null /dev/null/invalid/fs >conftest.d-E 2>&1
+		$DUMP 9hf 0 /dev/null /dev/null/invalid/fs 2>&1 |
+		    $EGREP -v 'Dumping|Date of' > conftest.d-E
 		$DUMP 9f /dev/null /dev/null/invalid/fs 2>&1 |
 		    $EGREP -v 'Dumping|Date of' >conftest.d
 		if diff conftest.d-E conftest.d >/dev/null 2>&1; then
