@@ -1,5 +1,8 @@
 2000-01-13  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* tape-src/Makefile.am (../common-src/libamanda.$(LIB_EXTENSION)):
+	Allow for `make tapetype' before libamanda is built.
+
 	* server-src/amoverview.pl.in: Year doesn't take just 2 bytes.
 
 2000-01-06  David Wolfskill  <dhw@whistle.com>
@@ -663,7 +666,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.315 2000/01/13 21:23:04 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.316 2000/01/13 21:50:24 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

@@ -22,3 +22,7 @@ EXTRA_PROGRAMS = 	tapetype
 
 tapetype_LDADD = libamtape.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
+
+## So that we can tell people to `cd tape-src && make tapetype':
+../common-src/libamanda.$(LIB_EXTENSION):
+	cd ../common-src && $(MAKE) libamanda.$(LIB_EXTENSION)
