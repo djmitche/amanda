@@ -1,5 +1,10 @@
 1999-04-08  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c (do_dump): store compresspid inside of
+	the databuf
+
+1999-04-08  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c (parse_info_line): parse info lines
 	from sendbackup directly into the 'file' global.  Eliminate
 	the backup_name, recover_cmd, and compress_suffix globals.

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.111 1999/04/08 16:09:04 kashmir Exp $
+/* $Id: dumper.c,v 1.112 1999/04/08 19:34:36 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -81,6 +81,7 @@ struct databuf {
     char buf[DATABUF_SIZE];
     char *dataptr;		/* data buffer markers */
     int spaceleft;
+    pid_t compresspid;		/* valid if fd is pipe to compress */
 };
 
 int interactive;
@@ -579,6 +580,7 @@ databuf_init(db, fd, filename, split_size)
     db->chunk_size = db->split_size = split_size;
     db->dataptr = db->buf;
     db->spaceleft = sizeof(db->buf);
+    db->compresspid = -1;
 }
 
 
@@ -1049,7 +1051,7 @@ do_dump(db)
     times_t runtime;
     double dumptime;	/* Time dump took in secs */
     int killerr;
-    pid_t compresspid, indexpid;
+    pid_t indexpid;
 
 #ifndef DUMPER_SOCKET_BUFFERING
 #define DUMPER_SOCKET_BUFFERING 0
@@ -1092,8 +1094,6 @@ do_dump(db)
 	amfree(errfname);
 	goto failed;
     }
-
-    compresspid = -1;
 
     indexpid = -1;
     if (streams[INDEXFD].fd != -1) {
@@ -1304,7 +1304,7 @@ do_dump(db)
 		 * Insert a gzip process in front of our outfd
 		 */
 		if (srvcompress != srvcomp_none) {
-		    if (runcompress(db->fd, &compresspid) < 0) {
+		    if (runcompress(db->fd, &db->compresspid) < 0) {
 			errstr = newstralloc2(errstr, "compress startup: ", 
 			    strerror(errno));
 			goto failed;
@@ -1380,8 +1380,8 @@ do_dump(db)
     if(errf) afclose(errf);
 
     /* kill all child process */
-    if(compresspid != -1) {
-	killerr = kill(compresspid,SIGTERM);
+    if (db->compresspid != -1) {
+	killerr = kill(db->compresspid,SIGTERM);
 	if(killerr == 0) {
 	    fprintf(stderr,"%s: kill compress command\n",get_pname());
 	}
