@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.42 1997/11/25 08:18:01 george Exp $
+ * $Id: planner.c,v 1.43 1997/11/25 22:10:38 george Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -618,8 +618,13 @@ disk_t *dp;
     ep->last_lev0size = inf.inf[0].csize;
 
     ep->fullrate = perf_average(inf.full.rate, DEFAULT_DUMPRATE);
+    if(ep->fullrate < 1.0) ep->fullrate = 1.0;
+
     ep->incrrate = perf_average(inf.incr.rate, DEFAULT_DUMPRATE);
+    if(ep->incrrate < 1.0) ep->incrrate = 1.0;
+
     ep->fullcomp = perf_average(inf.full.comp, dp->comprate[0]);
+
     ep->incrcomp = perf_average(inf.incr.comp, dp->comprate[1]);
 
     /* determine which estimates to get */
