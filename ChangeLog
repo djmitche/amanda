@@ -1,3 +1,8 @@
+2002-04-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* recover-src/extract_list.c (extract_files): Set dump_device_name
+	  after the call of okay_to_continue.
+
 2002-04-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	New features to describe the OPTIONS line of a REP packet.
