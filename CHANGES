@@ -1,3 +1,8 @@
+	fixed amrmtape so that it will delete from tapelist only the
+	entry that corresponds to the specified tape, not others that
+	contain the tape name as a substring.
+	-Nick Hibma <nick.hibma@jrc.it> & oliva
+
 	Updated to libtool 1.2.  -oliva
 
 	Added support for FreeBSD dump -h flag (honor nodump).

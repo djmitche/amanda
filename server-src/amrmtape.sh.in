@@ -92,7 +92,9 @@ CleanTapelist () {
 
   NewTapelist=/tmp/tapelist
   rm -f ${NewTapelist}
-  sed -e "/${Tape}/d" > ${NewTapelist} < tapelist || return $?
+  awk "\$2 == \"${Tape}\" { next; } { print; }" \
+      > ${NewTapelist} < tapelist ||
+  return $?
   if [ "xno" = "x${DoNothing}" ]; then
     lines=`wc -l < tapelist`
     cp -p tapelist tapelist~ && (
