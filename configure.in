@@ -1026,6 +1026,8 @@ case "$target" in
 			;;
     *-freebsd*)
 			;;
+    *-openbsd*)
+			;;
     *-hp-*)
 			MT_FILE_FLAG="-t"
 			GETCONF_LFS="XBS5_ILP32_OFFBIG"

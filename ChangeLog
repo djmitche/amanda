@@ -1,4 +1,11 @@
-1999-06-03 Thomas Hepper <th@ant.han.de>
+1999-03-06  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* configure.in (openbsd): according to Ralf Gebhart
+	<rgebhart@cybernet-ag.net>, sparc-unknown-openbsd2.3 is supported;
+	I assume other openbsd platforms work too.
+
+1999-03-06 Thomas Hepper <th@ant.han.de>
+
 	* client-src/sendbackup-gnutar.c: Replaced #fi with #endif
 	* changer-src/: Get in sync with 2.4.2 Version
 
