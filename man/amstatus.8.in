@@ -36,6 +36,7 @@ amstatus \- give the current state of an amanda run
 [--failed]
 [--estimate]
 [--gestimate]
+[--stats]
 .SH DESCRIPTION
 .B Amstatus
 gives the current state of the amanda run specified by the 
@@ -88,6 +89,8 @@ Works only during the estimate phase.
 .B --gestimate|gettingestimate
 Print all partitions whose estimate is not finished.
 Works only during the estimate phase.
+.B --stats|statistics
+Print statistics about active-time of taper and dumpers.
 .SH "SEE ALSO"
 amanda(8),
 amcheck(8),

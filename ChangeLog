@@ -1,3 +1,9 @@
+2000-01-21  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* server-src/amstatus.pl.in: New option --stats, to display
+	statistics about dumpers and taper.
+	* man/amstatus.8.in: Document it.
+
 2000-01-21  David Wolfskill  <dhw@whistle.com>
 
 	* server-src/amstatus.pl.in: Sort dumpers by number.

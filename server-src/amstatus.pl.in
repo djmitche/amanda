@@ -22,6 +22,7 @@ if ( $USE_VERSION_SUFFIXES =~ /^yes$/i ) {
 }
 
 $result = &NGetOpt (	"summary",
+			"stats|statistics",
 			"dumping|d",
 			"waitdumping|wdumping",
 			"waittaper|wtaper",
@@ -63,6 +64,7 @@ chomp $logdir;
 $errfile="$logdir/amdump";
 
 $nb_options = defined( $opt_summary ) +
+				  defined( $opt_stats ) +
 				  defined( $opt_dumping ) +
 				  defined( $opt_waitdumping ) +
 				  defined( $opt_waittaper ) +
@@ -75,6 +77,7 @@ $nb_options = defined( $opt_summary ) +
 
 if($nb_options == 0 ) {
 	$opt_summary     = 1;
+	$opt_stats       = 1; 
 	$opt_dumping     = 1;
 	$opt_waitdumping = 1;
 	$opt_waittaper   = 1;
@@ -616,6 +619,9 @@ if (defined $opt_summary) {
 		}
 		printf "holding space   : %8dk (%6.2f%%)\n", $free{"space:"}, $hs;
 	}
+}
+
+if(defined $opt_stats) {
 	if(defined($current_time) && $current_time != $start_time) {
 		$total_time=$current_time-$start_time;
 		foreach $key (sort byprocess keys %busy_time) {
@@ -786,6 +792,6 @@ sub usage() {
 	print "amstatus [--config] config [--file amdump_file]\n";
 	print "         [--summary] [--dumping] [--waitdumping] [--waittaper]\n";
 	print "         [--dumpingtape] [--writingtape] [--finished] [--failed]\n";
-	print "         [--estimate] [--gestimate]\n";
+	print "         [--estimate] [--gestimate] [--stats]\n";
 	exit 0;
 }
