@@ -114,7 +114,7 @@ CleanTapelist () {
   rm -f ${NewTapelist}
   sed -e "/${Tape}/d" > ${NewTapelist} < tapelist || return $?
   if [ "xno" = "x${DoNothing}" ]; then
-    lines=`wc -l tapelist`
+    lines=`wc -l < tapelist`
     cp -p tapelist tapelist~ && (
       if test "$lines" -gt 1; then
         [ -s ${NewTapelist} ] &&
