@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.15 1999/03/01 22:02:34 kashmir Exp $
+ * $Id: bsd-security.c,v 1.16 1999/03/03 18:55:24 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -55,7 +55,7 @@ struct bsd_handle {
      * handle, so we differentiate packets for them with a "handle" header
      * in each packet.
      */
-    char proto_handle[32];
+    int proto_handle;
 
     /*
      * sequence number.  historic field in packet header, but not used.
@@ -81,15 +81,14 @@ struct bsd_handle {
     void *arg;
 
     /*
+     * read (EV_WAIT) handle for a recv
+     */
+    event_handle_t *ev_read;
+
+    /*
      * Timeout handle for a recv
      */
     event_handle_t *ev_timeout;
-
-    /*
-     * Queue handles.  bsd_handle's that are blocked on input get added
-     * to a queue.
-     */
-    TAILQ_ENTRY(bsd_handle) tq;
 };
 
 /*
@@ -196,46 +195,49 @@ const security_driver_t bsd_security_driver = {
 };
 
 /*
- * This is the dgram socket that is used for all transmissions from this
- * host.
- */
-static dgram_t netfd;
-
-/*
- * This is the event handle for read events on netfd
- */
-static event_handle_t *ev_netfd;
-
-/*
- * This is a queue of bsd_handles that are blocked waiting for packets
- * to arrive.
+ * This is data local to the datagram socket.  We have one datagram
+ * per process, so it is global.
  */
 static struct {
-    TAILQ_HEAD(, bsd_handle) tailq;
-    int qlength;
-} handleq = {
-    TAILQ_HEAD_INITIALIZER(handleq.tailq), 0
-};
+    dgram_t dgram;		/* datagram to read/write from */
+    struct sockaddr_in peer;	/* who sent it to us */
+    pkt_t pkt;			/* parsed form of dgram */
+    int handle;			/* handle from recvd packet */
+    int sequence;		/* seq no of packet */
+    event_handle_t *ev_read;	/* read event handle from dgram */
+    int refcnt;			/* number of handles blocked for reading */
+} netfd;
+
+/* generate new handles from here */
+static int newhandle = 0;
 
 /*
- * Macros to add or remove bsd_handles from the above queue
+ * We register one event handler for our network fd which takes
+ * care of all of our async requests.  When all async requests
+ * have either been satisfied or cancelled, we unregister our
+ * network event handler.
  */
-#define	handleq_add(kh)	do {			\
-    assert(handleq.qlength == 0 ? TAILQ_FIRST(&handleq.tailq) == NULL : 1); \
-    TAILQ_INSERT_TAIL(&handleq.tailq, kh, tq);	\
-    handleq.qlength++;				\
+#define	netfd_addref()	do	{					\
+    if (netfd.refcnt++ == 0) {						\
+	assert(netfd.ev_read == NULL);					\
+	netfd.ev_read = event_register(netfd.dgram.socket, EV_READFD,	\
+	    netfd_read_callback, NULL);					\
+    }									\
+    assert(netfd.refcnt > 0);						\
 } while (0)
 
-#define	handleq_remove(kh)	do {		\
-    assert(handleq.qlength > 0);		\
-    assert(TAILQ_FIRST(&handleq.tailq) != NULL);\
-    TAILQ_REMOVE(&handleq.tailq, kh, tq);	\
-    handleq.qlength--;				\
-    assert(handleq.qlength == 0 ? TAILQ_FIRST(&handleq.tailq) == NULL : 1); \
+/*
+ * If this is the last request to be removed, then remove the
+ * reader event from the netfd.
+ */
+#define	netfd_delref()	do	{					\
+    assert(netfd.refcnt > 0);						\
+    if (--netfd.refcnt == 0) {						\
+	assert(netfd.ev_read != NULL);					\
+	event_release(netfd.ev_read);					\
+	netfd.ev_read = NULL;						\
+    }									\
 } while (0)
-
-#define	handleq_first()		TAILQ_FIRST(&handleq.tailq)
-#define	handleq_next(kh)	TAILQ_NEXT(kh, tq)
 
 /*
  * This is the function and argument that is called when new requests
@@ -248,13 +250,13 @@ static void *accept_fn_arg;
  * These are the internal helper functions
  */
 static int check_user P((struct bsd_handle *, const char *));
-static int inithandle P((struct bsd_handle *, struct hostent *, int,
-    const char *));
+static int inithandle P((struct bsd_handle *, struct hostent *, int, int));
 static const char *pkthdr2str P((const struct bsd_handle *, const pkt_t *));
-static int str2pkthdr P((const char *, pkt_t *, char *, size_t, int *));
+static int str2pkthdr P((void));
+static void netfd_read_callback P((void *));
 static void recvpkt_callback P((void *));
 static void recvpkt_timeout P((void *));
-static int recv_security_ok P((struct bsd_handle *, pkt_t *));
+static int recv_security_ok P((struct bsd_handle *));
 static void stream_read_callback P((void *));
 
 /*
@@ -268,7 +270,6 @@ bsd_connect(cookie, hostname, fn, arg)
     void *arg;
 {
     struct bsd_handle *bh = cookie;
-    char handle[32];
     struct servent *se;
     struct hostent *he;
     int port;
@@ -279,13 +280,13 @@ bsd_connect(cookie, hostname, fn, arg)
     /*
      * Only init the socket once
      */
-    if (netfd.socket == 0) {
+    if (netfd.dgram.socket == 0) {
 	uid_t euid;
-	dgram_zero(&netfd);
+	dgram_zero(&netfd.dgram);
 	
 	euid = geteuid();
 	seteuid(0);
-	dgram_bind(&netfd, &port);
+	dgram_bind(&netfd.dgram, &port);
 	seteuid(euid);
 	/*
 	 * We must have a reserved port.  Bomb if we didn't get one.
@@ -309,8 +310,7 @@ bsd_connect(cookie, hostname, fn, arg)
 	port = htons(AMANDA_SERVICE_DEFAULT);
     else
 	port = se->s_port;
-    ap_snprintf(handle, sizeof(handle), "%ld", (long)time(NULL));
-    if (inithandle(bh, he, port, handle) < 0)
+    if (inithandle(bh, he, port, newhandle++) < 0)
 	(*fn)(arg, &bh->security_handle, S_ERROR);
     else
 	(*fn)(arg, &bh->security_handle, S_OK);
@@ -333,7 +333,7 @@ bsd_accept(in, out, fn, arg)
      * We assume in and out point to the same socket, and just use
      * in.
      */
-    dgram_socket(&netfd, in);
+    dgram_socket(&netfd.dgram, in);
 
     /*
      * Assign the function and return.  When they call recvpkt later,
@@ -343,9 +343,7 @@ bsd_accept(in, out, fn, arg)
     accept_fn = fn;
     accept_fn_arg = arg;
 
-    if (ev_netfd == NULL)
-	ev_netfd = event_register(netfd.socket, EV_READFD, recvpkt_callback,
-	    NULL);
+    netfd_addref();
 }
 
 /*
@@ -355,8 +353,7 @@ static int
 inithandle(bh, he, port, handle)
     struct bsd_handle *bh;
     struct hostent *he;
-    int port;
-    const char *handle;
+    int port, handle;
 {
     int i;
 
@@ -428,10 +425,10 @@ inithandle(bh, he, port, handle)
      * No sequence number yet
      */
     bh->sequence = 0;
-    strncpy(bh->proto_handle, handle, sizeof(bh->proto_handle) - 1);
-    bh->proto_handle[sizeof(bh->proto_handle) - 1] = '\0';
+    bh->proto_handle = handle;
     bh->fn = NULL;
     bh->arg = NULL;
+    bh->ev_read = NULL;
     bh->ev_timeout = NULL;
 
     return (0);
@@ -445,7 +442,7 @@ bsd_close(bh)
     void *bh;
 {
 
-    /* nothing */
+    bsd_recvpkt_cancel(bh);
 }
 
 /*
@@ -465,8 +462,8 @@ bsd_sendpkt(cookie, pkt)
     /*
      * Initialize this datagram, and add the header
      */
-    dgram_zero(&netfd);
-    dgram_cat(&netfd, pkthdr2str(bh, pkt));
+    dgram_zero(&netfd.dgram);
+    dgram_cat(&netfd.dgram, pkthdr2str(bh, pkt));
 
     /*
      * Add the security info.  This depends on which kind of packet we're
@@ -482,7 +479,7 @@ bsd_sendpkt(cookie, pkt)
 		"can't get login name for my uid %ld", (long)getuid());
 	    return (-1);
 	}
-	dgram_cat(&netfd, "SECURITY USER %s\n", pwd->pw_name);
+	dgram_cat(&netfd.dgram, "SECURITY USER %s\n", pwd->pw_name);
 	break;
 
     default:
@@ -492,8 +489,8 @@ bsd_sendpkt(cookie, pkt)
     /*
      * Add the body, and send it
      */
-    dgram_cat(&netfd, pkt->body);
-    if (dgram_send_addr(bh->peer, &netfd) != 0) {
+    dgram_cat(&netfd.dgram, pkt->body);
+    if (dgram_send_addr(bh->peer, &netfd.dgram) != 0) {
 	security_seterror(&bh->security_handle, "send %s to %s failed: %s",
 	    pkt_type2str(pkt->type), bh->hostname, strerror(errno));
 	return (-1);
@@ -516,23 +513,15 @@ bsd_recvpkt(cookie, fn, arg, timeout)
     assert(bh != NULL);
     assert(fn != NULL);
 
-    /*
-     * We register one event handler for our network fd which takes
-     * case of all of our async requests.  When all async requests
-     * have either been satisfied or cancelled, we unregister
-     * our handler.
-     */
-    if (ev_netfd == NULL) {
-	assert(handleq.qlength == 0);
-	ev_netfd = event_register(netfd.socket, EV_READFD, recvpkt_callback,
-	    NULL);
-    }
 
     /*
      * Subsequent recvpkt calls override previous ones
      */
-    if (bh->fn == NULL)
-	handleq_add(bh);
+    if (bh->ev_read == NULL) {
+	netfd_addref();
+	bh->ev_read = event_register(bh->proto_handle, EV_WAIT,
+	    recvpkt_callback, bh);
+    }
     if (bh->ev_timeout != NULL)
 	event_release(bh->ev_timeout);
     if (timeout < 0)
@@ -556,19 +545,15 @@ bsd_recvpkt_cancel(cookie)
 
     assert(bh != NULL);
 
-    if (bh->fn != NULL) {
-	handleq_remove(bh);
-	bh->fn = NULL;
-	bh->arg = NULL;
+    if (bh->ev_read != NULL) {
+	netfd_delref();
+	event_release(bh->ev_read);
+	bh->ev_read = NULL;
     }
-    if (bh->ev_timeout != NULL)
-	event_release(bh->ev_timeout);
-    bh->ev_timeout = NULL;
 
-    if (handleq.qlength == 0 && accept_fn == NULL &&
-	ev_netfd != NULL) {
-	event_release(ev_netfd);
-	ev_netfd = NULL;
+    if (bh->ev_timeout != NULL) {
+	event_release(bh->ev_timeout);
+	bh->ev_timeout = NULL;
     }
 }
 
@@ -578,57 +563,32 @@ bsd_recvpkt_cancel(cookie)
  * realizes that data is waiting to be read on the network socket.
  */
 static void
-recvpkt_callback(cookie)
+netfd_read_callback(cookie)
     void *cookie;
 {
-    char handle[32];
-    struct sockaddr_in peer;
-    pkt_t pkt;
-    int sequence;
     struct bsd_handle *bh;
     struct hostent *he;
-    void (*fn) P((void *, pkt_t *, security_status_t));
-    void *arg;
 
     assert(cookie == NULL);
 
     /*
      * Receive the packet.
      */
-    dgram_zero(&netfd);
-    if (dgram_recv(&netfd, 0, &peer) < 0)
+    dgram_zero(&netfd.dgram);
+    if (dgram_recv(&netfd.dgram, 0, &netfd.peer) < 0)
 	return;
 
     /*
      * Parse the packet.
      */
-    if (str2pkthdr(netfd.cur, &pkt, handle, sizeof(handle), &sequence) < 0)
+    if (str2pkthdr() < 0)
 	return;
 
     /*
-     * Find the handle that this is associated with.
+     * If there are events waiting on this handle, we're done
      */
-    for (bh = handleq_first(); bh != NULL; bh = handleq_next(bh)) {
-	if (strcmp(bh->proto_handle, handle) == 0 &&
-	    memcmp(&bh->peer.sin_addr, &peer.sin_addr,
-	    sizeof(peer.sin_addr)) == 0 &&
-	    bh->peer.sin_port == peer.sin_port) {
-	    bh->sequence = sequence;
-
-	    /*
-	     * We need to cancel the recvpkt request before calling
-	     * the callback because the callback may reschedule us.
-	     */
-	    fn = bh->fn;
-	    arg = bh->arg;
-	    bsd_recvpkt_cancel(bh);
-	    if (recv_security_ok(bh, &pkt) < 0)
-		(*fn)(arg, NULL, S_ERROR);
-	    else
-		(*fn)(arg, &pkt, S_OK);
-	    return;
-	}
-    }
+    if (event_wakeup(netfd.handle) > 0)
+	return;
 
     /*
      * If we didn't find a handle, then check for a new incoming packet.
@@ -637,12 +597,13 @@ recvpkt_callback(cookie)
     if (accept_fn == NULL)
 	return;
 
-    he = gethostbyaddr((void *)&peer.sin_addr, sizeof(peer.sin_addr), AF_INET);
+    he = gethostbyaddr((void *)&netfd.peer.sin_addr,
+	sizeof(netfd.peer.sin_addr), AF_INET);
     if (he == NULL)
 	return;
     bh = alloc(sizeof(*bh));
     bh->security_handle.error = NULL;
-    if (inithandle(bh, he, peer.sin_port, handle) < 0) {
+    if (inithandle(bh, he, netfd.peer.sin_port, netfd.handle) < 0) {
 	amfree(bh);
 	return;
     }
@@ -650,10 +611,51 @@ recvpkt_callback(cookie)
      * Check the security of the packet.  If it is bad, then pass NULL
      * to the accept function instead of a packet.
      */
-    if (recv_security_ok(bh, &pkt) < 0)
+    if (recv_security_ok(bh) < 0)
 	(*accept_fn)(accept_fn_arg, bh, NULL);
     else
-	(*accept_fn)(accept_fn_arg, bh, &pkt);
+	(*accept_fn)(accept_fn_arg, bh, &netfd.pkt);
+}
+
+/*
+ * This is called when a handle is woken up because data read off of the
+ * net is for it.
+ */
+static void
+recvpkt_callback(cookie)
+    void *cookie;
+{
+    struct bsd_handle *bh = cookie;
+    void (*fn) P((void *, pkt_t *, security_status_t));
+    void *arg;
+
+    assert(bh != NULL);
+    assert(bh->proto_handle == netfd.handle);
+
+    /* if it didn't come from the same host/port, forget it */
+    if (memcmp(&bh->peer.sin_addr, &netfd.peer.sin_addr,
+	sizeof(netfd.peer.sin_addr)) != 0 ||
+	bh->peer.sin_port != netfd.peer.sin_port) {
+	netfd.handle = -1;
+	return;
+    }
+
+    /*
+     * We need to cancel the recvpkt request before calling the callback
+     * because the callback may reschedule us.
+     */
+    fn = bh->fn;
+    arg = bh->arg;
+    bsd_recvpkt_cancel(bh);
+
+    /*
+     * Check the security of the packet.  If it is bad, then pass NULL
+     * to the accept function instead of a packet.
+     */
+    if (recv_security_ok(bh) < 0)
+	(*fn)(arg, NULL, S_ERROR);
+    else
+	(*fn)(arg, &netfd.pkt, S_OK);
 }
 
 /*
@@ -682,11 +684,11 @@ recvpkt_timeout(cookie)
  * violation, or returns 0 if ok.  Removes the security info from the pkt_t.
  */
 static int
-recv_security_ok(bh, pkt)
+recv_security_ok(bh)
     struct bsd_handle *bh;
-    pkt_t *pkt;
 {
     char *tok, *security, *body;
+    pkt_t *pkt = &netfd.pkt;
 
     /*
      * Set this preempively before we mangle the body.  
@@ -1131,7 +1133,7 @@ pkthdr2str(bh, pkt)
     assert(bh != NULL);
     assert(pkt != NULL);
 
-    ap_snprintf(retbuf, sizeof(retbuf), "Amanda %d.%d %s HANDLE %s SEQ %d\n",
+    ap_snprintf(retbuf, sizeof(retbuf), "Amanda %d.%d %s HANDLE %d SEQ %d\n",
 	VERSION_MAJOR, VERSION_MINOR, pkt_type2str(pkt->type),
 	bh->proto_handle, bh->sequence);
 
@@ -1146,20 +1148,16 @@ pkthdr2str(bh, pkt)
  * Returns negative on parse error.
  */
 static int
-str2pkthdr(origstr, pkt, handle, handlesize, sequence)
-    const char *origstr;
-    pkt_t *pkt;
-    char *handle;
-    size_t handlesize;
-    int *sequence;
+str2pkthdr()
 {
     char *str;
     const char *tok;
+    pkt_t *pkt;
 
-    assert(origstr != NULL);
-    assert(pkt != NULL);
+    pkt = &netfd.pkt;
 
-    str = stralloc(origstr);
+    assert(netfd.dgram.cur != NULL);
+    str = stralloc(netfd.dgram.cur);
 
     /* "Amanda %d.%d <ACK,NAK,...> HANDLE %s SEQ %d\n" */
 
@@ -1185,8 +1183,7 @@ str2pkthdr(origstr, pkt, handle, handlesize, sequence)
     /* parse the handle */
     if ((tok = strtok(NULL, " ")) == NULL)
 	goto parse_error;
-    strncpy(handle, tok, handlesize - 1);
-    handle[handlesize - 1] = '\0';    
+    netfd.handle = atoi(tok);
 
     /* Read in "SEQ" */
     if ((tok = strtok(NULL, " ")) == NULL || strcmp(tok, "SEQ") != 0)   
@@ -1195,7 +1192,7 @@ str2pkthdr(origstr, pkt, handle, handlesize, sequence)
     /* parse the sequence number */   
     if ((tok = strtok(NULL, "\n")) == NULL)
 	goto parse_error;
-    *sequence = atoi(tok);
+    netfd.sequence = atoi(tok);
 
     /* Save the body, if any */       
     if ((tok = strtok(NULL, "")) != NULL)
