@@ -1,5 +1,8 @@
 Version 2.4.0
 
+	chg-mtx will check whether slot 6 is a cleaning tape or not.
+	-Martyn Johnson <Martyn.Johnson@cl.cam.ac.uk>
+
 	amrmtape updated to text database.  -oliva
 
 	incorrect NO-ROOM error when dumping directly to tape fixed.
