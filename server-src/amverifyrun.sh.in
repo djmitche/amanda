@@ -55,4 +55,4 @@ fi
 
 NBTAPES=`grep -c "taper: wrote label " $AMLOG`
 
-echo $AMVERIFY $CONFIG $FIRST_SLOT $NBTAPES
+$AMVERIFY $CONFIG $FIRST_SLOT $NBTAPES
