@@ -1,5 +1,14 @@
 1999-04-06  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c (main): keep our real uid as 0, and make
+	our effective uid nonprivlidged, so we can get back to root
+	later.  Don't print what port we bound to.  This info won't
+	always be available or even applicable.
+	* server-src/dumper.c (do_dump): create the stats line with one
+	snprintf instead of a huge amount of code.
+
+1999-04-06  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c (startup_dump): make static, and const all
 	of the string args
 	* server-src/dumper.c (do_dump): make static

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.106 1999/04/06 20:37:58 kashmir Exp $
+/* $Id: dumper.c,v 1.107 1999/04/06 20:56:23 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -235,19 +235,24 @@ main(main_argc, main_argv)
     if(dgram_bind(msg, &protocol_port) == -1)
 	error("could not bind result datagram port: %s", strerror(errno));
 
+    /*
+     * Make our effective uid nonprivlidged, but keep our real uid as root
+     * in case we need to get back (to bind privlidged ports, etc).
+     */
     if(geteuid() == 0) {
-	/* set both real and effective uid's to real uid, likewise for gid */
+	uid_t ruid = getuid();
+	setuid(0);
+	seteuid(ruid);
 	setgid(getgid());
-	setuid(getuid());
     }
 #ifdef BSD_SECURITY
     else error("must be run setuid root to communicate correctly");
 #endif
 
     fprintf(stderr,
-	    "%s: pid %ld executable %s version %s, using port %d\n",
+	    "%s: pid %ld executable %s version %s\n",
 	    get_pname(), (long) getpid(),
-	    main_argv[0], version(), protocol_port);
+	    main_argv[0], version());
     fflush(stderr);
 
     /* now, make sure we are a valid user */
@@ -1034,9 +1039,6 @@ do_dump(db)
     int header_done;	/* flag - header has been written */
     char *indexfile = NULL;
     char level_str[NUM_STR_SIZE];
-    char kb_str[NUM_STR_SIZE];
-    char kps_str[NUM_STR_SIZE];
-    char orig_kb_str[NUM_STR_SIZE];
     char *fn;
     char *q;
     times_t runtime;
@@ -1317,17 +1319,10 @@ do_dump(db)
     dumpsize -= (nb_header_block * TAPE_BLOCK_SIZE);/* don't count the header */
     if (dumpsize < 0) dumpsize = 0;	/* XXX - maybe this should be fatal? */
 
-    ap_snprintf(kb_str, sizeof(kb_str), "%ld", dumpsize);
-    ap_snprintf(kps_str, sizeof(kps_str),
-		"%3.1f",
-		dumptime ? dumpsize / dumptime : 0.0);
-    ap_snprintf(orig_kb_str, sizeof(orig_kb_str), "%ld", origsize);
-    errstr = newvstralloc(errstr,
-			  "sec ", walltime_str(runtime),
-			  " ", "kb ", kb_str,
-			  " ", "kps ", kps_str,
-			  " ", "orig-kb ", orig_kb_str,
-			  NULL);
+    errstr = alloc(128);
+    ap_snprintf(errstr, 128, "sec %s kb %ld kps %3.1f orig-kb %ld",
+	walltime_str(runtime), dumpsize,
+	dumptime ? dumpsize / dumptime : 0.0, origsize);
     q = squotef("[%s]", errstr);
     putresult("DONE %s %ld %ld %ld %s\n", handle, origsize, dumpsize,
 	      (long)(dumptime+0.5), q);
