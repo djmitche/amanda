@@ -24,10 +24,12 @@
  * Changed by Alexandre Oliva
  */
 /*
- * $Id: nolog.c,v 1.3 1997/08/27 08:12:06 amcore Exp $
+ * $Id: nolog.c,v 1.4 1997/11/06 17:39:51 blair Exp $
  *
  * dummy logerror() replacement for error.c to call on clients
  */
+
+#include "amanda.h"
 
 void logerror(ignore)
 char *ignore;
