@@ -789,12 +789,12 @@ AC_ARG_WITH(testing,
     : ${TESTING=no}
 )
 case "$TESTING" in
-n | no) AC_DEFINE(SERVICE_SUFFIX, "") ;;
-y |  ye | yes) AC_DEFINE(SERVICE_SUFFIX, "-test")
-  ;;
-*) AC_DEFINE(SERVICE_SUFFIX, "-$TESTING")
-  ;;
+n | no) SERVICE_SUFFIX="";;
+y |  ye | yes) SERVICE_SUFFIX="-test";;
+*) SERVICE_SUFFIX="-$TESTING";;
 esac
+AC_DEFINE(SERVICE_SUFFIX, "$SERVICE_SUFFIX")
+AC_SUBST(SERVICE_SUFFIX)
 
 (
     test "x$prefix" = xNONE && prefix=$ac_default_prefix

@@ -15,6 +15,8 @@ else
 	SUF=
 fi
 
+SERVICE_SUFFIX="@SERVICE_SUFFIX@"
+
 TEMP=/tmp/patch.$$; rm -f $TEMP
 
 INETDCONF=/etc/inetd.conf
@@ -24,11 +26,11 @@ SERVICES=/etc/services
 [ ! -f $SERVICES ] && SERVICES=/usr/etc/services
 
 if [ -f $SERVICES ]; then
-	cat $SERVICES | grep -v "^amanda" > $TEMP
+	cat $SERVICES | grep -v "^amanda${SERVICE_SUFFIX}[ 	]" > $TEMP
 	cat >> $TEMP <<EOF
-amanda 10080/udp
-amandaidx 10082/tcp
-amidxtape 10083/tcp
+amanda${SERVICE_SUFFIX} 10080/udp
+amandaidx${SERVICE_SUFFIX} 10082/tcp
+amidxtape${SERVICE_SUFFIX} 10083/tcp
 EOF
 	diff $SERVICES $TEMP >/dev/null 2>/dev/null
 	if [ $? != 0 ]; then
@@ -40,10 +42,10 @@ else
 	echo "services not found!"
 fi
 if [ -f $INETDCONF ]; then
-	cat $INETDCONF | grep -v "^amanda" > $TEMP
+	cat $INETDCONF | grep -v "^amanda${SERVICE_SUFFIX}[ 	]" > $TEMP
 	cat >> $TEMP <<EOF
-amanda    dgram  udp wait   root $libexecdir/amandad$SUF amandad$SUF
-amandaidx stream tcp nowait root $libexecdir/amindexd$SUF amindexd$SUF
+amanda${SERVICE_SUFFIX}    dgram  udp wait   root $libexecdir/amandad$SUF amandad$SUF
+amandaidx${SERVICE_SUFFIX} stream tcp nowait root $libexecdir/amindexd$SUF amindexd$SUF
 EOF
 	diff $INETDCONF $TEMP >/dev/null 2>/dev/null
 	if [ $? != 0 ]; then
