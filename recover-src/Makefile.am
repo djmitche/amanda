@@ -31,3 +31,10 @@ install-exec-hook:
 		echo chgrp $(SETUID_GROUP) $$pa; \
 		chgrp $(SETUID_GROUP) $$pa; \
 	done
+
+# so that uscan.c is never generated before uparse.h
+# otherwise we might have makedepend problems
+$(srcdir)/uscan.c: $(srcdir)/uparse.h
+# work around a bug in automake-1.2
+$(srcdir)/uparse.h: $(srcdir)/uparse.c
+	touch $@
