@@ -5,13 +5,21 @@
 
 cd `dirname $0`
 
-if test x`ls -1t config/acinclude.m4 2>/dev/null \
+if test x`ls -1t acinclude.m4 2>/dev/null \
 	    config/acinclude.m4i config/libtool.m4i |
-	  sed 1q` != x"config/acinclude.m4"; then
-    rm -f config/acinclude.m4
-    cat config/acinclude.m4i config/libtool.m4i > config/acinclude.m4
+	  sed 1q` != x"acinclude.m4"; then
+    rm -f acinclude.m4
+    cat config/acinclude.m4i config/libtool.m4i > acinclude.m4
 fi
 
-autoreconf -l config ${1+"$@"}
+if cmp acconfig.h config/acconfig.h > /dev/null 2>&1; then
+  :
+else
+  ln -s config/acconfig.h acconfig.h ||
+  ln config/acconfig.h acconfig.h ||
+  cp config/acconfig.h acconfig.h
+fi
+
+autoreconf ${1+"$@"}
 
 exit 0

@@ -1,7 +1,5 @@
 # Makefile for amanda man-pages
 
-ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
-
 transform =	s,x,x,;
 
 if WANT_AMPLOT

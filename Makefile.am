@@ -1,16 +1,10 @@
 ## Process this file with automake to produce Makefile.in
 AUTOMAKE_OPTIONS = 1.4 foreign
 
-ACLOCAL_M4_FROM_SRCDIR = config/aclocal.m4
-ACLOCAL_M4 = $(srcdir)/$(ACLOCAL_M4_FROM_SRCDIR)
-ACINCLUDE_M4 = $(srcdir)/config/acinclude.m4
+ACINCLUDE_M4 = $(srcdir)/acinclude.m4
 ACINCLUDE_M4I = $(srcdir)/config/acinclude.m4i
 LIBTOOL_M4I = $(srcdir)/config/libtool.m4i
 ACINCLUDE_M4_DEPS = $(ACINCLUDE_M4I) $(LIBTOOL_M4I)
-
-ACLOCAL = @ACLOCAL@ -I config
-AUTOCONF = @AUTOCONF@ --localdir=config
-AUTOHEADER = @AUTOHEADER@ --localdir=config
 
 if WANT_CLIENT
 CLIENT_SUBDIRS = client-src dumper-src
@@ -109,10 +103,6 @@ EXTRA_DIST = \
 $(ACINCLUDE_M4): $(ACINCLUDE_M4_DEPS)
 	@-rm -f $@
 	@cat $(ACINCLUDE_M4_DEPS) > $@
-
-$(ACLOCAL_M4): $(srcdir)/configure.in $(ACINCLUDE_M4)
-	@-rm -f $(srcdir)/aclocal.m4 $(ACLOCAL_M4)
-	cd $(srcdir) && $(ACLOCAL) --output=$(ACLOCAL_M4_FROM_SRCDIR)
 
 libtool: $(LIBTOOL_DEPS)
 	$(SHELL) ./config.status --recheck

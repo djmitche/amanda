@@ -1,12 +1,6 @@
 # Makefile for Amanda server programs.
 
-ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
-
 INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/tape-src
-
-AMANDA_CFLAGS =		@AMANDA_CFLAGS@
-
-COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
 if WANT_LIBTOOL
 lib_LTLIBRARIES = 	libamserver.la

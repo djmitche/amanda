@@ -1,3 +1,16 @@
+1999-05-25  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* */Makefile.am: Do not define ACLOCAL_M4, COMPILE or
+	AMANDA_CFLAGS.
+	* Makefile.am: Create acinclude.m4 in the top-level directory.
+	* config/Makefile.am: Create link to acconfig.h in the top-level
+	directory.
+	* configure.in: Add AMANDA_CFLAGS to CFLAGS.  Set DUMPER_DIR without 
+	trying to run it.
+	* common-src/Makefile.am: Create genversion.h with #defines, to
+	avoid genversion-specific CPPFLAGS.
+	* common-src/genversion.c: #include genversion.h
+
 1999-05-24 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amandad.c (state2str): string "s_processrep" is 13

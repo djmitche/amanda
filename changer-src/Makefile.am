@@ -2,10 +2,6 @@
 
 INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/server-src -I$(top_srcdir)/tape-src
 
-AMANDA_CFLAGS =		@AMANDA_CFLAGS@
-
-COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
-
 if WANT_LIBTOOL
 LIB_EXTENSION = la
 else
