@@ -1,11 +1,15 @@
-Version 2.4.0 (non-bugfixes)
+Version 2.4.1?
 
 	use vdump to dump advfs filesystems only.  -oliva
+
+	new index generation commands.  -oliva
 
 	incorrect NO-ROOM error when dumping directly to tape fixed.
 	-oliva
 
-	new index generation commands.  -oliva
+	amrmtape updated to text database.  -oliva
+
+	--with-user and --with-group become are now required.  -oliva
 
 	bsd-security is now enabled by default.  -oliva
 
