@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.23 1999/02/13 23:40:54 martinea Exp $
+ * $Id: amlabel.c,v 1.24 1999/02/14 15:22:29 martinea Exp $
  *
  * write an Amanda label on a tape
  */
@@ -257,7 +257,7 @@ int main(argc, argv)
 	    putchar('\n');
 	    error(errstr);
 	} else {
-	    printf(", checking label", label); fflush(stdout);
+	    printf(", checking label"); fflush(stdout);
 
 	    if((errstr = tape_rdlabel(tapename, &olddatestamp, &oldlabel)) != NULL) {
 		putchar('\n');
