@@ -1,3 +1,8 @@
+2001-03-26 John R. Jackson <jrj@purdue.edu>
+
+	* server-src/amtape.c: Do not rewind for slot "advance".  Do not report
+	  device name (which is bogus) for slot "advance".
+
 2001-03-23 John R. Jackson <jrj@purdue.edu>
 
 	* example/amanda.conf.in: Add warning that the sample amanda.conf
