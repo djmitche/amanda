@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: genversion.c,v 1.18.4.2 1999/09/05 21:22:20 jrj Exp $
+ * $Id: genversion.c,v 1.18.4.3 1999/09/05 21:42:13 jrj Exp $
  *
  * dump the current Amanda version info
  */
@@ -131,33 +131,21 @@ int main()
 
 #ifdef DUMP
     prvar(" DUMP", DUMP);
-#endif
-
-#ifdef RESTORE
     prvar(" RESTORE", RESTORE);
 #endif
 
 #ifdef VDUMP
     prvar(" VDUMP", VDUMP);
-#endif
-
-#ifdef VRESTORE
     prvar(" VRESTORE", VRESTORE);
 #endif
 
 #ifdef XFSDUMP
     prvar(" XFSDUMP", XFSDUMP);
-#endif
-
-#ifdef XFSRESTORE
     prvar(" XFSRESTORE", XFSRESTORE);
 #endif
 
 #ifdef VXDUMP
     prvar(" VXDUMP", VXDUMP);
-#endif
-
-#ifdef VXRESTORE
     prvar(" VXRESTORE", VXRESTORE);
 #endif
 

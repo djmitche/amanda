@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.65.2.3 1999/06/19 22:02:56 oliva Exp $
+ * $Id: sendbackup-dump.c,v 1.65.2.4 1999/09/05 21:42:09 jrj Exp $
  *
  * send backup data using BSD dump
  */
@@ -186,9 +186,6 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
         char *progname = cmd = newvstralloc(cmd, libexecdir, "/", "rundump",
 					    versionsuffix(), NULL);
 	program->backup_name  = XFSDUMP;
-#ifndef XFSRESTORE
-#define XFSRESTORE "xfsrestore"
-#endif
 	program->restore_name = XFSRESTORE;
 
 	indexcmd = vstralloc(XFSRESTORE,
@@ -233,9 +230,6 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 	char *progname = cmd = newvstralloc(cmd, VXDUMP, NULL);
 #endif
 	program->backup_name  = VXDUMP;
-#ifndef VXRESTORE
-#define VXRESTORE "vxrestore"
-#endif
 	program->restore_name = VXRESTORE;
 
 	dumpkeys = vstralloc(level_str, no_record ? "" : "u", "s", "f", NULL);
@@ -268,9 +262,6 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 					    versionsuffix(), NULL);
 	device = newstralloc(device, amname_to_dirname(disk));
 	program->backup_name  = VDUMP;
-#ifndef VRESTORE
-#define VRESTORE "vrestore"
-#endif
 	program->restore_name = VRESTORE;
 
 	dumpkeys = vstralloc(level_str, no_record ? "" : "u", "b", "f", NULL);

@@ -1,5 +1,14 @@
 1999-09-05 John R. Jackson  <jrj@purdue.edu>
 
+	* configure.in: make sure the dump and restore programs are defined
+	  in pairs, do not allow just the dump program without restore.
+	* client-src/sendbackup-dump.c: assume restore program is present
+	  if dump program is.
+	* common-src/genversion.c: assume restore program is present if
+	  dump program is.
+
+1999-09-05 John R. Jackson  <jrj@purdue.edu>
+
 	* common-src/genversion.c: CLIENT_USER has to be defined so there
 	  is no point testing for it.
 	* server-src/conffile.c: ditto.
@@ -196,7 +205,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.250 1999/09/05 21:22:11 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.251 1999/09/05 21:41:56 jrj Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
