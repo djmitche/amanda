@@ -1,10 +1,10 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.5 1999/01/26 14:21:03 th Exp $";
+static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.6 1999/03/06 09:09:33 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an HP-UX Workstation
  *
- * Copyright (c) 1998 T.Hepper th@icem.de
+ * Copyright (c) Thomas Hepper th@ant.han.de
  */
 #include <amanda.h>
 
@@ -40,19 +40,22 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
   if ((DeviceFD = open(DeviceName, O_RDWR| O_NDELAY)) > 0)
     {
       pwork = (OpenFiles_T *)malloc(sizeof(OpenFiles_T));
-      pwork->next = NULL;
+      memset(pwork, 0, sizeof(OpenFiles_T));
       pwork->fd = DeviceFD;
       pwork->SCSI = 0;
       pwork->dev = strdup(DeviceName);
-      pwork->inquiry = (SCSIInquiry_T *)malloc(sizeof(SCSIInquiry_T));
+      pwork->inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
       
-      if (Inquiry(DeviceFD, pwork->inquiry) == 0)
+      if (SCSI_Inquiry(DeviceFD, pwork->inquiry, INQUIRY_SIZE) == 0)
           {
             if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
               {
-                for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
+                for (i=0;i < 16;i++)
                   pwork->ident[i] = pwork->inquiry->prod_ident[i];
-                pwork->ident[i] = '\0';
+                for (i=15; i >= 0 && !isalnum(pwork->inquiry->prod_ident[i]) ; i--)
+                  {
+                    pwork->inquiry->prod_ident[i] = '\0';
+                  }
                 pwork->SCSI = 1;
                 PrintInquiry(pwork->inquiry);
                 return(pwork);    
@@ -67,6 +70,7 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
             pwork->inquiry = NULL;
             return(pwork);
           }
+      return(pwork);
     }
 
   return(NULL); 
@@ -111,8 +115,9 @@ int SCSI_ExecuteCommand(int DeviceFD,
       sctl_io.flags = sctl_io.flags | SCTL_READ;
       break;
     }
+
   while (--Retries > 0) {
-    
+    DecodeSCSI(CDB, "SCSI_ExecuteCommand : ");
     Result = ioctl(DeviceFD, SIOC_IO, &sctl_io);
     if (Result < 0)
       return(Result);

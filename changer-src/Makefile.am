@@ -1,6 +1,6 @@
 # Makefile for Amanda tape changer programs.
 
-INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/server-src
+INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/server-src -I$(top_srcdir)/tape-src
 
 AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
@@ -34,7 +34,7 @@ chg_scsi_SOURCES =	chg-scsi.c libscsi.h scsi-defs.h \
 	scsi-aix.c scsi-changer-driver.c scsi-hpux_new.c scsi-irix.c \
 	scsi-linux.c scsi-solaris.c scsi-bsd.c
 
-chg_scsi_chio_SOURCES = chg-scsi.c scsi-hpux.c scsi-chio.c libscsi.h
+chg_scsi_chio_SOURCES = chg-scsi-chio.c scsi-hpux.c scsi-chio.c libscsi.h
 
 EXTRA_DIST = scsi-proto.c
 

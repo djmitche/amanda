@@ -1,3 +1,7 @@
+1999-06-03 Thomas Hepper <th@ant.han.de>
+	* client-src/sendbackup-gnutar.c: Replaced #fi with #endif
+	* changer-src/: Get in sync with 2.4.2 Version
+
 1999-03-05 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* configure.in: set SAMBA_VERSION

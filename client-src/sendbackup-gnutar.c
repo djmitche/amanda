@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.62 1999/03/05 02:15:12 martinea Exp $
+ * $Id: sendbackup-gnutar.c,v 1.63 1999/03/06 09:09:41 th Exp $
  *
  * send backup data using GNU tar
  */
@@ -319,7 +319,7 @@ notincremental:
 		taropt = "-Tca";
 	} else
 	    taropt = "-Tcg";
-#fi
+#endif
 	dbprintf(("backup from %s, user %s, pass %s\n", 
 		  sharename, SAMBA_USER, "XXXXX"));
 

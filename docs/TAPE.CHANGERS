@@ -381,6 +381,12 @@ If this option is given on every eject/move the log pages of the tape
 device will be dumped in this file. There are 2 log pages were you
 can see how many read/write errors (corrected) are processed by the tape
 
+labelfile <filename>
+
+This file is used for the mapping from barcode labels to amanda volume labels.
+It is used if the changer has a barcode reader. To initialize run amtape show,
+this will add the mapping for the tapes in the magazine.
+
 eject > 1
 
 Use the mtio ioctl to eject the tape, use only if the standard (1) does
@@ -424,7 +430,10 @@ mknod /dev/scsi/1 c 203 0x001000
                           2 digit instance number from ioscan
 
 On Linux you need either sg (generic scsi) as module or it mus be compiled
-into the kernel.
+into the kernel. If the sg driver doses not work try to use the ioctl interface.
+For that you have to undef the LINUX_CHG define in changer-src/scsi-linux.c
+Also you have to change the NORMAL_TIMEOUT in /usr/src/linux/drivers/scsi/scsi_ioctl.c
+from (10 * HZ) to (5 * 60 * HZ).
 
 On IRIX you find the SCSI pass through interfaces for every device in /dev/scsi
 
@@ -432,8 +441,16 @@ chg-scsi has been tested/run with the following devices
 Exabyte 10h and eliant tape
 HP-Surestore 1200e and C1553A tape
 BreeceHill Q2.15 (EXB-120) and DLT7000 tape
-Powerstor L200 and DLT7000 (not fully tested)
+Powerstor L200 and DLT7000 
 ARCHIVE Python 28849-XXX 
+TANDBERG TDS 1420
+
+It is now possible with a changer that has barcode reader to load tapes faster.
+Also amdump will find tapes faster. Every time a tape is labeled the information
+in the labelfile will be updated. To initialize the label mapping you can also
+do an amtape config show. This will put the mapping for all tapes in the magazine
+into the mapping file.
+
 
 chg-chio: (new perl script, that replaces the original chg-chio written in C)
 

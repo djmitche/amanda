@@ -1,10 +1,10 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-solaris.c,v 1.8 1999/01/26 14:21:08 th Exp $";
+static char rcsid[] = "$Id: scsi-solaris.c,v 1.9 1999/03/06 09:09:38 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an Sun Workstation
  *
- * Copyright (c) 1998 T.Hepper th@icem.de
+ * Copyright (c) Thomas Hepper th@ant.han.de
  */
 #include <amanda.h>
 
@@ -41,19 +41,22 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
   if ((DeviceFD = open(DeviceName, O_RDWR| O_NDELAY)) > 0)
     {
       pwork = (OpenFiles_T *)malloc(sizeof(OpenFiles_T));
-      pwork->next = NULL;
+      memset(pwork, 0, sizeof(OpenFiles_T));
       pwork->fd = DeviceFD;
       pwork->dev = strdup(DeviceName);
       pwork->SCSI = 0;
-      pwork->inquiry = (SCSIInquiry_T *)malloc(sizeof(SCSIInquiry_T));
+      pwork->inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
 
-      if (Inquiry(DeviceFD, pwork->inquiry) == 0)
+      if (SCSI_Inquiry(DeviceFD, pwork->inquiry, INQUIRY_SIZE) == 0)
           {
           if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
             {
-               for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
-                  pwork->ident[i] = pwork->inquiry->prod_ident[i];
-              pwork->ident[i] = '\0';
+              for (i=0;i < 16;i++)
+                pwork->ident[i] = pwork->inquiry->prod_ident[i];
+              for (i=15; i >= 0 && !isalnum(pwork->inquiry->prod_ident[i]) ; i--)
+                {
+                  pwork->inquiry->prod_ident[i] = '\0';
+                }
               pwork->SCSI = 1;
               PrintInquiry(pwork->inquiry);
               return(pwork);
@@ -68,6 +71,7 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
               pwork->inquiry = NULL;
               return(pwork);
           }
+      return(pwork);
     } else {
       dbprintf(("SCSI_OpenDevice %s failed\n", DeviceName));
     }
