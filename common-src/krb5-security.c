@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb5-security.c,v 1.7 2003/04/26 02:02:16 kovert Exp $
+ * $Id: krb5-security.c,v 1.8 2003/05/25 17:22:20 kovert Exp $
  *
  * krb5-security.c - kerberos V5 security module
  */
@@ -1571,10 +1571,14 @@ init()
 static void
 cleanup()
 {
+#ifdef KDESTROY_VIA_UNLINK
     char ccache[64];
     snprintf(ccache, sizeof(ccache), "/tmp/amanda_ccache.%ld.%ld",
-	(long)geteuid(), (long)getpid());
+        (long)geteuid(), (long)getpid());
     unlink(ccache);
+#else
+    kdestroy();
+#endif
 }
 #endif
 
@@ -1704,6 +1708,28 @@ cleanup2:
     return (error);
 }
 
+/*
+ * get rid of tickets
+ */
+kdestroy()
+{
+    krb5_context context;
+    krb5_ccache ccache;
+
+    if ((krb5_init_context(&context)) != 0) {
+	return;
+    }
+    if ((krb5_cc_default(context, &ccache)) != 0) {
+	goto cleanup;
+    }
+
+    krb5_cc_destroy(context, ccache);
+    krb5_cc_close(context, ccache);
+
+cleanup:
+     krb5_free_context(context);
+     return;
+}
 
 static void
 parse_pkt(pkt, buf, bufsize)
