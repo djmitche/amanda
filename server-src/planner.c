@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.49 1998/01/02 18:48:35 jrj Exp $
+ * $Id: planner.c,v 1.50 1998/01/03 20:26:04 kovert Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -979,7 +979,7 @@ pkt_t *pkt;
     disk_t *dp;
     host_t *hostp;
     char *resp;
-    char *msgdisk, *msgdisk_undo, msgdisk_undo_ch;
+    char *msgdisk=NULL, *msgdisk_undo=NULL, msgdisk_undo_ch;
     char *remoterr, *errbuf = NULL;
     char *s, *fp;
     int ch;
