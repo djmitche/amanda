@@ -1,5 +1,9 @@
 1999-04-17  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/bsd-security.c: this doesn't need queue.h
+
+1999-04-17  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/event.c: Insert new events at the head of the eventq,
 	not the tail, so we don't loop forever if a newly registered
 	event has the same type as the one currently firing.  Noticed

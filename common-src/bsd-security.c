@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.26 1999/04/16 05:12:50 kashmir Exp $
+ * $Id: bsd-security.c,v 1.27 1999/04/17 18:56:42 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -33,7 +33,6 @@
 #include "dgram.h"
 #include "event.h"
 #include "packet.h"
-#include "queue.h"
 #include "security.h"
 #include "stream.h"
 #include "version.h"
