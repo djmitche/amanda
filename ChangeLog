@@ -1,5 +1,13 @@
 2002-04-22  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amcheck.c: Check if it can send features, hostname or
+	  maxdumps on the global options line. Don't send hostname and
+	  maxdumps for a noop service.
+	* server-src/dumper.c: Ditto.
+	* server-src/planner.c: Ditto.
+
+2002-04-22  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* client-src/sendbackup.c: (optionstr): Add srvcomp-best and
 	  srvcomp-fast options.
 

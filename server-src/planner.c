@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.14 2002/04/19 14:24:29 martinea Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.15 2002/04/22 23:36:28 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1124,7 +1124,6 @@ host_t *hostp;
     char *req = NULL, *errstr = NULL;
     int i, estimates, rc, timeout, disk_state, req_len;
     char number[NUM_STR_SIZE];
-    char *service;
 
     assert(hostp->disks != NULL);
 
@@ -1139,20 +1138,26 @@ host_t *hostp;
      * empty structure.  In either case, we do the disks on the second
      * (and subsequent) pass(es).
      */
-    if(hostp->features == NULL) {
-	service = "noop";
-    } else {
-	service = "sendsize";
-    }
-    ap_snprintf(number, sizeof(number), "%d", hostp->maxdumps);
-    req = vstralloc("SERVICE ", service, "\n",
-		    "OPTIONS ",
-		    "features=", our_feature_string, ";",
-		    "maxdumps=", number, ";",
-		    "hostname=", hostp->hostname, ";",
-		    "\n",
-		    NULL);
-    if(hostp->features != NULL) {
+
+    if(hostp->features != NULL) { /* sendsize service */
+	int has_features=am_has_feature(hostp->features, fe_g_options_features);
+	int has_hostname=am_has_feature(hostp->features, fe_g_options_hostname);
+	int has_maxdumps=am_has_feature(hostp->features, fe_g_options_maxdump);
+
+	ap_snprintf(number, sizeof(number), "%d", hostp->maxdumps);
+	req = vstralloc("SERVICE ", "sendsize", "\n",
+			"OPTIONS ",
+			has_features ? "features=" : "",
+			has_features ? our_feature_string : "",
+			has_features ? ";" : "",
+			has_maxdumps ? "maxdumps=" : "",
+			has_maxdumps ? number : "",
+			has_maxdumps ? ";" : "",
+			has_hostname ? "hostname=" : "",
+			has_hostname ? hostp->hostname : "",
+			has_hostname ? ";" : "",
+			"\n",
+			NULL);
 	req_len = strlen(req);
 	req_len += 128;                             /* room for SECURITY ... */
 	estimates = 0;
@@ -1247,7 +1252,12 @@ host_t *hostp;
 	} else {
 	    timeout = estimates * conf_etimeout;
 	}
-    } else {
+    } else { /* noop service */
+	req = vstralloc("SERVICE ", "noop", "\n",
+			"OPTIONS ",
+			"features=", our_feature_string, ";",
+			"\n",
+			NULL);
 	/*
 	 * We use ctimeout for the "noop" request because it should be
 	 * very fast and etimeout has other side effects.
