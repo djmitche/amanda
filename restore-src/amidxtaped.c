@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.30 2000/07/10 19:50:23 mengel Exp $
+/* $Id: amidxtaped.c,v 1.31 2000/12/30 23:02:10 jrjackson Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -322,7 +322,6 @@ char **errstr;
     int myuid, i, j;
     char *s, *fp;
     int ch;
-    int ec;
 
     *errstr = NULL;
 
@@ -453,15 +452,15 @@ char **errstr;
 	      remotehost, remoteuser, pwptr->pw_name));
 
 #ifndef USE_AMANDAHOSTS
-    ec = check_user_ruserok(remotehost, pwptr, remoteuser);
+    s = check_user_ruserok(remotehost, pwptr, remoteuser);
 #else
-    ec = check_user_amandahosts(remotehost, pwptr, remoteuser);
+    s = check_user_amandahosts(remotehost, pwptr, remoteuser);
 #endif
-    if (ec != 0) {
+    if (s != NULL) {
 	*errstr = vstralloc("[",
 			    "access as ", pwptr->pw_name, " not allowed",
 			    " from ", remoteuser, "@", remotehost,
-			    "]", NULL);
+			    ": ", s, "]", NULL);
     }
-    return ec == 0;
+    return s == NULL;
 }

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.54 2000/09/25 23:50:17 martinea Exp $
+ * $Id: amindexd.c,v 1.55 2000/12/30 23:02:10 jrjackson Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -1044,7 +1044,6 @@ char **errstr;
     int myuid, i, j;
     char *s, *fp;
     int ch;
-    int ec;
 
     *errstr = NULL;
 
@@ -1175,15 +1174,15 @@ char **errstr;
 	      remotehost, remoteuser, pwptr->pw_name));
 
 #ifndef USE_AMANDAHOSTS
-    ec = check_user_ruserok(remotehost, pwptr, remoteuser);
+    s = check_user_ruserok(remotehost, pwptr, remoteuser);
 #else
-    ec = check_user_amandahosts(remotehost, pwptr, remoteuser);
+    s = check_user_amandahosts(remotehost, pwptr, remoteuser);
 #endif
-    if (ec != 0) {
+    if (s != NULL) {
 	*errstr = vstralloc("[",
 			    "access as ", pwptr->pw_name, " not allowed",
 			    " from ", remoteuser, "@", remotehost,
-			    "]", NULL);
+			    ": ", s, "]", NULL);
     }
-    return ec == 0;
+    return s == NULL;
 }

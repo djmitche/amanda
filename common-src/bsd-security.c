@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.32 1999/09/16 00:12:15 jrj Exp $
+ * $Id: bsd-security.c,v 1.33 2000/12/30 23:02:10 jrjackson Exp $
  *
  * "BSD" security module
  */
@@ -42,7 +42,19 @@
 #undef DUMPER_SOCKET_BUFFERING
 #endif
 
-#ifdef BSD_SECURITY
+#ifdef BSD_SECURITY						/* { */
+
+/*
+ * Change the following from #undef to #define to cause detailed logging
+ * of the security steps, e.g. into /tmp/amanda/amandad*debug.
+ */
+#undef SHOW_SECURITY_DETAIL
+
+#if defined(TEST)						/* { */
+#define SHOW_SECURITY_DETAIL
+#undef dbprintf
+#define dbprintf(p)	printf p
+#endif								/* } */
 
 /*
  * This is the private handle data
@@ -244,7 +256,7 @@ static void (*accept_fn) P((security_handle_t *, pkt_t *));
 /*
  * These are the internal helper functions
  */
-static int check_user P((struct bsd_handle *, const char *));
+static char *check_user P((struct bsd_handle *, const char *));
 static int inithandle P((struct bsd_handle *, struct hostent *, int, int));
 static const char *pkthdr2str P((const struct bsd_handle *, const pkt_t *));
 static int str2pkthdr P((void));
@@ -254,6 +266,46 @@ static void recvpkt_timeout P((void *));
 static int recv_security_ok P((struct bsd_handle *));
 static void stream_read_callback P((void *));
 
+
+#if defined(SHOW_SECURITY_DETAIL)				/* { */
+/*
+ * Display stat() information about a file.
+ */
+void show_stat_info(a, b)
+    char *a, *b;
+{
+    char *name = vstralloc(a, b, NULL);
+    struct stat sbuf;
+    struct passwd *pwptr;
+    char *owner;
+    struct group *grptr;
+    char *group;
+
+    if (stat(name, &sbuf) != 0) {
+	dbprintf(("cannot stat %s: %s\n", name, strerror(errno)));
+	amfree(name);
+	return;
+    }
+    if ((pwptr = getpwuid(sbuf.st_uid)) == NULL) {
+	owner = alloc(NUM_STR_SIZE + 1);
+	snprintf(owner, NUM_STR_SIZE, "%ld", (long)sbuf.st_uid);
+    } else {
+	owner = stralloc(pwptr->pw_name);
+    }
+    if ((grptr = getgrgid(sbuf.st_gid)) == NULL) {
+	group = alloc(NUM_STR_SIZE + 1);
+	snprintf(owner, NUM_STR_SIZE, "%ld", (long)sbuf.st_gid);
+    } else {
+	group = stralloc(grptr->gr_name);
+    }
+    dbprintf(("processing file: %s\n", name));
+    dbprintf(("                 owner=%s group=%s mode=%03o\n",
+	      owner, group, (int) (sbuf.st_mode & 0777)));
+    amfree(name);
+    amfree(owner);
+    amfree(group);
+}
+#endif								/* } */
 
 /*
  * Setup and return a handle outgoing to a client
@@ -568,12 +620,14 @@ netfd_read_callback(cookie)
 
     assert(cookie == NULL);
 
+#ifndef TEST							/* { */
     /*
      * Receive the packet.
      */
     dgram_zero(&netfd.dgram);
     if (dgram_recv(&netfd.dgram, 0, &netfd.peer) < 0)
 	return;
+#endif /* !TEST */						/* } */
 
     /*
      * Parse the packet.
@@ -684,7 +738,7 @@ static int
 recv_security_ok(bh)
     struct bsd_handle *bh;
 {
-    char *tok, *security, *body;
+    char *tok, *security, *body, *result;
     pkt_t *pkt = &netfd.pkt;
 
     /*
@@ -760,15 +814,9 @@ recv_security_ok(bh)
 	/* the third word is the username */
 	if ((tok = strtok(NULL, "")) == NULL)
 	    return (-1);	/* default errmsg */
-	if (check_user(bh, tok) < 0) {
-	    security_seterror(&bh->sech,
-		"%s not allowed access: %s", tok,
-#ifdef USE_AMANDAHOSTS
-		".amandahosts auth failed"
-#else
-		"ruserok failed"
-#endif
-		);
+	if ((result = check_user(bh, tok)) != NULL) {
+	    security_seterror(&bh->sech, "%s", result);
+	    amfree(result);
 	    return (-1);
 	}
 
@@ -787,22 +835,41 @@ recv_security_ok(bh)
     return (0);
 }
 
-static int
+static char *
 check_user(bh, remoteuser)
     struct bsd_handle *bh;
     const char *remoteuser;
 {
     struct passwd *pwd;
+    char *r;
+    char *result = NULL;
+    char *localuser = NULL;
 
     /* lookup our local user name */
-    if ((pwd = getpwnam(CLIENT_LOGIN)) == NULL)
-        error("error [getpwnam(%s) fails]", CLIENT_LOGIN);
+    if ((pwd = getpwnam(CLIENT_LOGIN)) == NULL) {
+	return vstralloc("getpwnam(", CLIENT_LOGIN, ") fails", NULL);
+    }
+
+    /*
+     * Make a copy of the user name in case getpw* is called by
+     * any of the lower level routines.
+     */
+    localuser = stralloc(pwd->pw_name);
 
 #ifndef USE_AMANDAHOSTS
-    return check_user_ruserok(bh->hostname, pwd, remoteuser);
+    r = check_user_ruserok(bh->hostname, pwd, remoteuser);
 #else
-    return check_user_amandahosts(bh->hostname, pwd, remoteuser);
+    r = check_user_amandahosts(bh->hostname, pwd, remoteuser);
 #endif
+    if (r != NULL) {
+	result = vstralloc("access as ", localuser, " not allowed",
+			   " from ", remoteuser, "@", bh->hostname,
+			   ": ", r,
+			   NULL);
+	amfree(r);
+    }
+    amfree(localuser);
+    return result;
 }
 
 /*
@@ -811,7 +878,7 @@ check_user(bh, remoteuser)
  *
  * Returns 0 on success, or negative on error.
  */
-int
+char *
 check_user_ruserok(host, pwd, remoteuser)
     const char *host;
     struct passwd *pwd;
@@ -823,9 +890,11 @@ check_user_ruserok(host, pwd, remoteuser)
     amwait_t exitcode;
     pid_t ruserok_pid;
     pid_t pid;
-    int ec;
     char *es;
+    char *result;
     int ok;
+    char number[NUM_STR_SIZE];
+    uid_t myuid = getuid();
 
     /*
      * note that some versions of ruserok (eg SunOS 3.2) look in
@@ -839,10 +908,10 @@ check_user_ruserok(host, pwd, remoteuser)
      * problem and is expected.  Thanks a lot.  Not.
      */
     if (pipe(fd) != 0) {
-	error("error [pipe() fails: %s]", strerror(errno));
+	return stralloc2("pipe() fails: ", strerror(errno));
     }
     if ((ruserok_pid = fork()) < 0) {
-	error("error [fork() fails: %s]", strerror(errno));
+	return stralloc2("fork() fails: ", strerror(errno));
     } else if (ruserok_pid == 0) {
 	int ec;
 
@@ -850,16 +919,34 @@ check_user_ruserok(host, pwd, remoteuser)
 	fError = fdopen(fd[1], "w");
 	/* pamper braindead ruserok's */
 	if (chdir(pwd->pw_dir) != 0) {
-	    fprintf(fError, "error [chdir(%s) failed: %s]",
+	    fprintf(fError, "chdir(%s) failed: %s",
 		    pwd->pw_dir, strerror(errno));
 	    fclose(fError);
 	    exit(1);
 	}
+
+#if defined(SHOW_SECURITY_DETAIL)				/* { */
+	{
+	char *dir = stralloc(pwd->pw_dir);
+
+	dbprintf(("calling ruserok(%s, %d, %s, %s)\n",
+	          host, myuid == 0, remoteuser, pwd->pw_name));
+	if (myuid == 0) {
+	    dbprintf(("because you are running as root, "));
+	    dbprintf(("/etc/hosts.equiv will not be used\n"));
+	} else {
+	    show_stat_info("/etc/hosts.equiv", NULL);
+	}
+	show_stat_info(dir, "/.rhosts");
+	amfree(dir);
+	}
+#endif								/* } */
+
 	saved_stderr = dup(2);
 	close(2);
 	(void) open("/dev/null", 2);
 
-	ok = ruserok(host, getuid() == 0, remoteuser, CLIENT_LOGIN);
+	ok = ruserok(host, myuid == 0, remoteuser, CLIENT_LOGIN);
 	if (ok < 0) {
 	    ec = 1;
 	} else {
@@ -872,76 +959,158 @@ check_user_ruserok(host, pwd, remoteuser)
     close(fd[1]);
     fError = fdopen(fd[0], "r");
 
+    result = NULL;
+    while ((es = agets(fError)) != NULL) {
+	if (result == NULL) {
+	    result = stralloc("");
+	} else {
+	    strappend(result, ": ");
+	}
+	strappend(result, es);
+    }
+    close(fd[0]);
+
     while (1) {
 	if ((pid = wait(&exitcode)) == (pid_t) -1) {
 	    if (errno == EINTR) {
 		continue;
 	    }
-	    error("error [ruserok wait failed: %s]", strerror(errno));
+	    amfree(result);
+	    return stralloc2("ruserok wait failed: %s", strerror(errno));
 	}
 	if (pid == ruserok_pid) {
 	    break;
 	}
     }
     if (WIFSIGNALED(exitcode)) {
-	error("error [ruserok child got signal %d]", WTERMSIG(exitcode));
+	amfree(result);
+	snprintf(number, sizeof(number), "%d", WTERMSIG(exitcode));
+	return stralloc2("ruserok child got signal ", number);
     }
-    ec = WEXITSTATUS(exitcode);
-    if (ec) {
-	if ((es = agets(fError)) != NULL) {
-	    error(es);
-	}
+    if (WEXITSTATUS(exitcode) == 0) {
+	amfree(result);
+    } else if (result == NULL) {
+	result = stralloc("ruserok failed");
     }
-    close(fd[0]);
 
-    return ec;
+    return result;
 }
 
 /*
  * Check to see if a user is allowed in.  This version uses .amandahosts
  * Returns -1 on failure, or 0 on success.
  */
-int
+char *
 check_user_amandahosts(host, pwd, remoteuser)
     const char *host;
     struct passwd *pwd;
     const char *remoteuser;
 {
-    char buf[256], *filehost;
+    char *line = NULL;
+    char *filehost;
     const char *fileuser;
-    char *ptmp;
-    FILE *fp;
-    int rval;
+    char *ptmp = NULL;
+    char *result = NULL;
+    FILE *fp = NULL;
+    int found;
+    struct stat sbuf;
+    char n1[NUM_STR_SIZE];
+    char n2[NUM_STR_SIZE];
+    int hostmatch;
+    int usermatch;
+    uid_t localuid;
+    char *localuser = NULL;
+
+    /*
+     * Save copies of what we need from the passwd structure in case
+     * any other code calls getpw*.
+     */
+    localuid = pwd->pw_uid;
+    localuser = stralloc(pwd->pw_name);
 
     ptmp = stralloc2(pwd->pw_dir, "/.amandahosts");
+#if defined(SHOW_SECURITY_DETAIL)				/* { */
+    show_stat_info(ptmp, "");;
+#endif								/* } */
     if ((fp = fopen(ptmp, "r")) == NULL) {
-	dbprintf(("can't open %s/.amandahosts: %s\n",
-		  pwd->pw_dir, strerror(errno)));
+	result = vstralloc("cannot open ", ptmp, ": ", strerror(errno), NULL);
 	amfree(ptmp);
-	return (-1);
+	return result;
     }
 
-    rval = -1;	/* assume failure */
-    while (fgets(buf, sizeof(buf), fp) != NULL) {
+    /*
+     * Make sure the file is owned by the Amanda user and does not
+     * have any group/other access allowed.
+     */
+    if (fstat(fileno(fp), &sbuf) != 0) {
+	result = vstralloc("cannot fstat ", ptmp, ": ", strerror(errno), NULL);
+	goto common_exit;
+    }
+    if (sbuf.st_uid != localuid) {
+	snprintf(n1, sizeof(n1), "%ld", (long)sbuf.st_uid);
+	snprintf(n2, sizeof(n2), "%ld", (long)localuid);
+	result = vstralloc(ptmp, ": ",
+			   "owned by id ", n1,
+			   ", should be ", n2,
+			   NULL);
+	goto common_exit;
+    }
+    if ((sbuf.st_mode & 077) != 0) {
+	result = stralloc2(ptmp, ": group or other access enabled");
+	goto common_exit;
+    }
+
+    /*
+     * Now, scan the file for the host/user.
+     */
+    found = 0;
+    while ((line = agets(fp)) != NULL) {
+#if defined(SHOW_SECURITY_DETAIL)				/* { */
+	dbprintf(("processing line: <%s>\n", line));
+#endif								/* } */
 	/* get the host out of the file */
-	if ((filehost = strtok(buf, " \t")) == NULL)
+	if ((filehost = strtok(line, " \t")) == NULL) {
+	    amfree(line);
 	    continue;
+	}
 
 	/* get the username.  If no user specified, then use the local user */
-	if ((fileuser = strtok(NULL, "\n")) == NULL)
-	    fileuser = pwd->pw_name;
+	if ((fileuser = strtok(NULL, " \t")) == NULL) {
+	    fileuser = localuser;
+	}
 
+	hostmatch = (strcasecmp(filehost, host) == 0);
+	usermatch = (strcasecmp(fileuser, remoteuser) == 0);
+#if defined(SHOW_SECURITY_DETAIL)				/* { */
+	dbprintf(("comparing \"%s\" with\n", filehost));
+	dbprintf(("          \"%s\" (%s)\n", host,
+		  hostmatch ? "match" : "no match"));
+	dbprintf(("      and \"%s\" with\n", fileuser));
+	dbprintf(("          \"%s\" (%s)\n", remoteuser,
+		  usermatch ? "match" : "no match"));
+#endif								/* } */
 	/* compare */
-	if (strcasecmp(filehost, host) == 0 &&
-	    strcasecmp(fileuser, remoteuser) == 0) {
-		/* success */
-		rval = 0;
-		break;
+	if (hostmatch && usermatch) {
+	    /* success */
+	    found = 1;
+	    break;
 	}
     }
+    if (! found) {
+	result = vstralloc(ptmp, ": ",
+			   "\"", host, " ", remoteuser, "\"",
+			   " entry not found",
+			   NULL);
+    }
+
+common_exit:
+
     afclose(fp);
     amfree(ptmp);
-    return (rval);
+    amfree(line);
+    amfree(localuser);
+
+    return result;
 }
 
 /*
@@ -952,8 +1121,9 @@ static void *
 bsd_stream_server(h)
     void *h;
 {
-    struct bsd_handle *bh = h;
     struct bsd_stream *bs;
+#ifndef TEST							/* { */
+    struct bsd_handle *bh = h;
 
     assert(bh != NULL);
 
@@ -968,6 +1138,7 @@ bsd_stream_server(h)
     }
     bs->fd = -1;
     bs->ev_read = NULL;
+#endif /* !TEST */						/* } */
     return (bs);
 }
 
@@ -979,6 +1150,7 @@ static int
 bsd_stream_accept(s)
     void *s;
 {
+#ifndef TEST							/* { */
     struct bsd_stream *bs = s;
 
     assert(bs != NULL);
@@ -991,6 +1163,7 @@ bsd_stream_accept(s)
 	    "can't accept new stream connection: %s", strerror(errno));
 	return (-1);
     }
+#endif /* !TEST */						/* } */
     return (0);
 }
 
@@ -1002,8 +1175,9 @@ bsd_stream_client(h, id)
     void *h;
     int id;
 {
-    struct bsd_handle *bh = h;
     struct bsd_stream *bs;
+#ifndef TEST							/* { */
+    struct bsd_handle *bh = h;
 #ifdef DUMPER_SOCKET_BUFFERING
     int rcvbuf = sizeof(bs->databuf) * 2;
 #endif
@@ -1032,6 +1206,7 @@ bsd_stream_client(h, id)
 #ifdef DUMPER_SOCKET_BUFFERING
     setsockopt(bs->fd, SOL_SOCKET, SO_RCVBUF, (void *)&rcvbuf, sizeof(rcvbuf));
 #endif
+#endif /* !TEST */						/* } */
     return (bs);
 }
 
@@ -1088,6 +1263,7 @@ bsd_stream_write(s, buf, size)
     const void *buf;
     size_t size;
 {
+#ifndef TEST							/* { */
     struct bsd_stream *bs = s;
 
     assert(bs != NULL);
@@ -1097,6 +1273,7 @@ bsd_stream_write(s, buf, size)
 	    "write error on stream %d: %s", bs->port, strerror(errno));
 	return (-1);
     }
+#endif /* !TEST */						/* } */
     return (0);
 }
 
@@ -1252,4 +1429,95 @@ parse_error:
     return (-1);
 }
 
-#endif	/* BSD_SECURITY */
+#endif	/* BSD_SECURITY */					/* } */
+
+#if defined(TEST)						/* { */
+
+/*
+ * The following dummy bind_portrange function is so we do not need to
+ * drag in util.o just for the test program.
+ */
+int
+bind_portrange(s, addrp, first_port, last_port)
+    int s;
+    struct sockaddr_in *addrp;
+    int first_port, last_port;
+{
+    return 0;
+}
+
+/*
+ * The following are so we can include security.o but not all the rest
+ * of the security modules.
+ */
+const security_driver_t krb4_security_driver = {};
+const security_driver_t krb5_security_driver = {};
+const security_driver_t rsh_security_driver = {};
+
+/*
+ * This function will be called to accept the connection and is used
+ * to report success or failure.
+ */
+static void fake_accept_function(handle, pkt)
+    security_handle_t *handle;
+    pkt_t *pkt;
+{
+    if (pkt == NULL) {
+	fputs(handle->error, stdout);
+	fputc('\n', stdout);
+    } else {
+	fputs("access is allowed\n", stdout);
+    }
+}
+
+int
+main (argc, argv)
+{
+    char *remoteuser;
+    char *remotehost;
+    struct hostent *hp;
+    struct bsd_handle *bh;
+    void *save_cur;
+
+    if (isatty(0)) {
+	fputs("Remote user: ", stdout);
+	fflush(stdout);
+    }
+    if ((remoteuser = agets(stdin)) == NULL) {
+	return 0;
+    }
+
+    if (isatty(0)) {
+	fputs("Remote host: ", stdout);
+	fflush(stdout);
+    }
+    if ((remotehost = agets(stdin)) == NULL) {
+	return 0;
+    }
+    if ((hp = gethostbyname(remotehost)) == NULL) {
+	fprintf(stderr, "cannot look up remote host %s\n", remotehost);
+	return 1;
+    }
+    memcpy((char *)&netfd.peer.sin_addr,
+	   (char *)hp->h_addr,
+	   sizeof(hp->h_addr));
+    /*
+     * Fake that it is coming from a reserved port.
+     */
+    netfd.peer.sin_port = htons(IPPORT_RESERVED - 1);
+
+    bh = alloc(sizeof(*bh));
+    netfd.pkt.type = P_REQ;
+    dgram_zero(&netfd.dgram);
+    save_cur = netfd.dgram.cur;				/* cheating */
+    dgram_cat(&netfd.dgram, "%s", pkthdr2str(bh, &netfd.pkt));
+    dgram_cat(&netfd.dgram, "SECURITY USER %s\n", remoteuser);
+    netfd.dgram.cur = save_cur;				/* cheating */
+
+    accept_fn = fake_accept_function;
+    netfd_read_callback(NULL);
+
+    return 0;
+}
+
+#endif								/* } */

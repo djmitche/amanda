@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.90 2000/12/30 15:22:09 martinea Exp $
+ * $Id: amanda.h,v 1.91 2000/12/30 23:02:10 jrjackson Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -725,10 +725,10 @@ extern int    rmpdir    P((char *file, char *topdir));
 extern char  *sanitise_filename P((char *inp));
 
 /* from bsd-security.c */
-extern int    check_user_ruserok     P((const char *host,
+extern char  *check_user_ruserok     P((const char *host,
 					struct passwd *pwd,
 					const char *user));
-extern int    check_user_amandahosts P((const char *host,
+extern char  *check_user_amandahosts P((const char *host,
 					struct passwd *pwd,
 					const char *user));
 
