@@ -1,6 +1,6 @@
 AMANDA EVENT API
 
-$Id: EVENT-API,v 1.3 1999/04/12 19:58:25 kashmir Exp $
+$Id: EVENT-API,v 1.4 1999/04/23 14:20:56 kashmir Exp $
 
 by Mike Grupenhoff <kashmir@munge.com>
 
@@ -14,7 +14,7 @@ types of events.
 
 2.1. event_register
 
-    event_handle_t *event_register(int data, event_type_t type,
+    event_handle_t *event_register(event_id_t data, event_type_t type,
 	event_fn_t callback, void *arg);
 
 Sets up an event of the given type to call the given function with
@@ -46,16 +46,10 @@ immediately ready, and then return.
 
 2.4. event_wakeup
 
-    int event_wakeup(int id);
+    int event_wakeup(event_id_t id);
 
-Fire all EV_WAIT events registered with an argument value of 'id' on
-the next event_loop.  They will fire after other types of events
-are processed.  Returns the number of events awoken.
-
-Currently, EV_WAIT events are processed after all other types of events.
-event_wakeup() should only be called from a non-EV_WAIT event handler.
-If it is called from a EV_WAIT handler, the events might not fire under
-the next event pass.
+Fire all EV_WAIT events registered with an argument value of 'id'
+immediately.  Returns the number of events that were fired.
 
 3. DATA TYPES
 
@@ -64,17 +58,22 @@ the next event pass.
 This is an opaque structure that describes a registered event.  It is
 only useful to keep if you need to unregister the event later.
 
-3.2. event_fn_t
+3.2. event_id_t
+
+This is type-specific data.  The contents and format depend on on
+the type of the event.  This is an unsigned integral type.
+
+3.3. event_type_t
+
+This is an enumerated type describing the different events we handle.
+
+3.4. event_fn_t
 
     typedef void (*event_fn_t)(void *arg);
 
 This is a function signature for the type of function that needs to get
 passed to event_register.  The argument to the function is a pointer
 of the caller's choosing.
-
-3.3. event_type_t
-
-This is an enumerated type describing the different events we handle.
 
 4. EVENT TYPES
 
