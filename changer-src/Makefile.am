@@ -29,6 +29,7 @@ libexec_SCRIPTS =	chg-manual	chg-multi	chg-mtx		\
 endif
 
 LDADD = ../server-src/libamserver.$(LIB_EXTENSION) \
+	../tape-src/libamtape.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
 
 SUFFIXES =		.pl .sh
