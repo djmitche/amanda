@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.22.2.6.4.2 2001/02/28 00:34:31 jrjackson Exp $
+ * $Id: amtape.c,v 1.22.2.6.4.3 2001/03/26 22:23:27 jrjackson Exp $
  *
  * tape changer interface program
  */
@@ -262,21 +262,26 @@ char **argv;
 {
     char *slotstr = NULL, *devicename = NULL;
     char *errstr;
+    int is_advance;
 
     if(argc != 2)
 	usage();
 
+    is_advance = (strcmp(argv[1], "advance") == 0);
     if(changer_loadslot(argv[1], &slotstr, &devicename)) {
 	error("could not load slot %s: %s", slotstr, changer_resultstr);
     }
-    if((errstr = tape_rewind(devicename)) != NULL) {
+    if(! is_advance && (errstr = tape_rewind(devicename)) != NULL) {
 	fprintf(stderr,
 		"%s: could not rewind %s: %s", get_pname(), devicename, errstr);
 	amfree(errstr);
     }
 
-    fprintf(stderr, "%s: changed to slot %s on %s\n",
-	    get_pname(), slotstr, devicename);
+    fprintf(stderr, "%s: changed to slot %s", get_pname(), slotstr);
+    if(! is_advance) {
+	fprintf(stderr, " on %s", devicename);
+    }
+    fputc('\n', stderr);
     amfree(slotstr);
     amfree(devicename);
 }
