@@ -1783,6 +1783,7 @@ AC_CHECK_HEADERS(\
 	sys/mtio.h \
 	sys/param.h \
 	sys/scarray.h \
+	sys/gscdds.h \
 	sys/scsiio.h \
 	sys/scsi.h \
 	sys/scsi/impl/uscsi.h \
@@ -1958,7 +1959,8 @@ dnl
 dnl AIX SCSI
 dnl
 if test x"$ac_cv_header_sys_tape_h" = x"yes" &&
-   test x"$ac_cv_header_sys_scarray_h" = x"yes"; then 
+   test x"$ac_cv_header_sys_scarray_h" = x"yes" &&
+   test x"$ac_cv_header_sys_gscdds_h" = x"yes"; then 
 	AC_CACHE_CHECK([for AIX like scsi support],
 	amanda_cv_aix_scsi,
 	[AC_TRY_COMPILE([
