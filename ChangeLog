@@ -1,4 +1,8 @@
-2000-10-14 homas Hepper <th@ant.han.de>
+2000-10-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* AUTHORS: add Thomas Hepper.
+
+2000-10-14  Thomas Hepper <th@ant.han.de>
 
 	* changer-src/scsi-changer-driver.c: Added support for the TreeFrog
 	library (barcode support), fixed some signal 11 problems in the
@@ -1063,7 +1067,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.391 2000/10/18 17:02:17 ant Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.392 2000/10/24 23:38:54 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
