@@ -900,7 +900,10 @@ If
 .I true
 and
 .B planner
-has scheduled a full backup, these disks will be skipped.
+has scheduled a full backup, these disks will be skipped, and you
+should run full backups off-line on these days.  It was reported that
+Amanda only schedules level 1 incrementals in this configuration; this
+is probably a bug.
 .TP
 .BS skip\-incr boolean
 Default:
@@ -941,7 +944,12 @@ Never do backups (useful when sharing the
 file).
 .TP
 .B incronly
-Only do incremental dumps, full dumps only after 'amadmin force'.
+Only do incremental dumps.  `amadmin force' should be used to tell
+Amanda that a full dump has been performed off-line, so that it resets
+to level 1.  It is similar to skip-full, but with incronly you can
+schedule full dumps manually.  Unfortunately, it appears that Amanda
+will perform full backups with this configuration, which is probably a
+bug.
 .RE
 .LP
 The following
