@@ -25,42 +25,45 @@ require 5.001;
 
 use Getopt::Long;
 
+$pname = "rth-changer";
+
 $libexecdir="@libexecdir@";
-if ("@USE_VERSION_SUFFIXES" eq "yes") {
+if ("@USE_VERSION_SUFFIXES@" eq "yes") {
     $suf = "-@VERSION@";
 } else {
     $suf = "";
 }
 
-$MT="@MT";
-$MTF="@MT_FILE_FLAG";
+$MT="@MT@";
+$MTF="@MT_FILE_FLAG@";
+
 $tapeDevice=`$libexecdir/getconf$SUF tapedev`;
 
 sub getCurrentTape {
 
   if (!sysopen(RTH, $tapeDevice, 2)) {
-    print "$currentTape rth-changer: error in opening `$tapeDevice' for getting current tape: $!\n";
+    print "$currentTape $pname: error in opening `$tapeDevice' for getting current tape: $!\n";
     exit(2);
   }
   if (syswrite(RTH, "Rd_ElS", 6) != 6) {
-    print "$currentTape rth-changer: error in writing `Rd_ElS' to `$tapeDevice': $!\n";
+    print "$currentTape $pname: error in writing `Rd_ElS' to `$tapeDevice': $!\n";
     exit(2);
   }
   if (!close(RTH)) {
-    print "$currentTape rth-changer: error in closing `$tapeDevice' for getting current tape: $!\n";
+    print "$currentTape $pname: error in closing `$tapeDevice' for getting current tape: $!\n";
     exit(2);
   }
 
   if (!sysopen(RTH, $tapeDevice, 2)) {
-    print "$currentTape rth-changer: error in opening `$tapeDevice' for getting current tape: $!\n";
+    print "$currentTape $pname: error in opening `$tapeDevice' for getting current tape: $!\n";
     exit(2);
   }
   if (sysread(RTH, $status, 136) != 136) {
-    print "$currentTape rth-changer: error in reading rth status.\n";
+    print "$currentTape $pname: error in reading rth status.\n";
     exit(2);
   }
   if (!close(RTH)) {
-    print "$currentTape rth-changer: error in closing `$tapeDevice' for getting current tape: $!\n";
+    print "$currentTape $pname: error in closing `$tapeDevice' for getting current tape: $!\n";
     exit(2);
   }
 
@@ -77,28 +80,28 @@ sub getCurrentTape {
 sub getTapeStatus {
 
   if (!sysopen(RTH, $tapeDevice, 2)) {
-    print "$currentTape rth-changer: error in opening `$tapeDevice' for getting tape status: $!\n";
+    print "$currentTape $pname: error in opening `$tapeDevice' for getting tape status: $!\n";
     exit(2);
   }
   if (syswrite(RTH, "Rd_ElS", 6) != 6) {
-    print "$currentTape rth-changer: error in writing `Rd_ElS' to `$tapeDevice': $!\n";
+    print "$currentTape $pname: error in writing `Rd_ElS' to `$tapeDevice': $!\n";
     exit(2);
   }
   if (!close(RTH)) {
-    print "$currentTape rth-changer: error in closing `$tapeDevice' for getting tpae status: $!\n";
+    print "$currentTape $pname: error in closing `$tapeDevice' for getting tpae status: $!\n";
     exit(2);
   }
 
   if (!sysopen(RTH, $tapeDevice, 2)) {
-    print "$currentTape rth-changer: error in opening `$tapeDevice' for getting tape status: $!\n";
+    print "$currentTape $pname: error in opening `$tapeDevice' for getting tape status: $!\n";
     exit(2);
   }
   if (sysread(RTH, $status, 136) != 136) {
-    print "$currentTape rth-changer: error in reading rth status for tape $currentTape.\n";
+    print "$currentTape $pname: error in reading rth status for tape $currentTape.\n";
     exit(2);
   }
   if (!close(RTH)) {
-    print "$currentTape rth-changer: error in closing `$tapeDevice' for getting tape status: $!\n";
+    print "$currentTape $pname: error in closing `$tapeDevice' for getting tape status: $!\n";
     exit(2);
   }
 
@@ -123,15 +126,15 @@ sub rthLoad {
 
   $command = sprintf "GeT%d", $tape;
   if (!sysopen(RTH, $tapeDevice, 2)) {
-    print "$currentTape rth-changer: error in opening `$tapeDevice' for loading tape: $!\n";
+    print "$currentTape $pname: error in opening `$tapeDevice' for loading tape: $!\n";
     exit(2);
   }
   if (syswrite(RTH, $command, 4) != 4) {
-    print "$currentTape rth-changer: error in loading tape by writing `$command' to `$tapeDevice': $!\n";
+    print "$currentTape $pname: error in loading tape by writing `$command' to `$tapeDevice': $!\n";
     exit(2);
   }
   if (!close (RTH)) {
-    print "$currentTape rth-changer: error in closing `$tapeDevice' when trying to load tape: $!\n";
+    print "$currentTape $pname: error in closing `$tapeDevice' when trying to load tape: $!\n";
     exit(2);
   }
 }
@@ -141,15 +144,15 @@ sub rthUnload {
 
   $command = sprintf "PuT%d", $tape;
   if (!sysopen(RTH, $tapeDevice, 2)) {
-    print "$currentTape rth-changer: error in opening `$tapeDevice' for unloading tape: $!\n";
+    print "$currentTape $pname: error in opening `$tapeDevice' for unloading tape: $!\n";
     exit(2);
   }
   if (syswrite(RTH, $command, 4) != 4) {
-    print "$currentTape rth-changer: error in unloading tape by writing `$command' to `$tapeDevice': $!\n";
+    print "$currentTape $pname: error in unloading tape by writing `$command' to `$tapeDevice': $!\n";
     exit(2);
   }
   if (!close (RTH)) {
-    print "$currentTape rth-changer: error in closing `$tapeDevice' when trying to unload tape: $!\n";
+    print "$currentTape $pname: error in closing `$tapeDevice' when trying to unload tape: $!\n";
     exit(2);
   }
 }
@@ -164,15 +167,15 @@ sub testTape {
   }
 
   if($slots[$tape-1] == 0) {
-    print "<none> rth-changer: no tape in slot requested\n";
+    print "<none> $pname: no tape in slot requested\n";
     exit(1);
   }
   if($tape>6) {
-    print $tape," rth-changer: requested a tape > 6\n";
+    print $tape," $pname: requested a tape > 6\n";
     exit(2);
   }
   if($tape<1) {
-    print $tape," rth-changer: requested a tape < 1\n";
+    print $tape," $pname: requested a tape < 1\n";
     exit(2);
   }
   return;
@@ -180,7 +183,6 @@ sub testTape {
 
 sub changeTape {
   my($tape) = @_;
-
 
   if($tape==$currentTape) {
     return;
@@ -203,7 +205,7 @@ sub changeTape {
 
 $result = &GetOptions("slot=s", "info", "reset", "eject"); 
 
-system ("mt rewind");
+system($MT, 'rewind');
 
 $nSlots=6;
 $firstTape=1;
@@ -277,10 +279,10 @@ if($opt_eject) {
     exit 0;
   } 
   else {
-    print "0 rth-changer: drive was not loaded\n";
+    print "0 $pname: drive was not loaded\n";
     exit 1;
   }
 }
 
-print "rth-changer: No command was received.  Exiting.\n";
+print "$pname: No command was received.  Exiting.\n";
 exit 1;
