@@ -197,11 +197,15 @@ define tapetype MIMSY-MEGATAPE {
 #   dumpcycle	- set the number of days in the dump cycle, ie, set how often a
 #		  full dump should be performed.  Default: from DUMPCYCLE above
 #   exclude	- specify files and directories to be excluded from the dump.
-#		  Currently only useful with gnutar.  Valid values are:
+#		  Useful with gnutar only; silently ignored by dump and samba.
+#		  Valid values are:
 #		  "regular expression" - an re defining which files to exclude
+#					 gnutar gets --exclude="expression"
 #		  list "filename"      - a file (on the client!) containing
 #					 re's (1 per line) defining which files
-#					 to exclude.
+#					 to exclude
+#					 gnutar gets --exclude-from="filename"
+#		  Refer to the man-page of gnutar for more information.
 #		  Default: include all files
 #   holdingdisk	- should the holding disk be used for this dump.  Useful for
 #		  dumping the holding disk itself.  Default: [holdingdisk yes]
