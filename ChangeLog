@@ -1,4 +1,9 @@
 2000-09-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	patch by <jeg@time.ucsc.edu>
+
+	* server-src/reporter.c (output_summary): check for tape_labels.
+
+2000-09-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amindexd.c: use strcasecmp to compare hostname.
 
