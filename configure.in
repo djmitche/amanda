@@ -193,7 +193,7 @@ EOF_SED
     # Use a double $ so make ignores it.
     test "$program_suffix" != NONE &&
 	program_transform_name="s,\$\$,${program_suffix},; $program_transform_name"
- 
+
     # sed with no file args requires a program.
     test "$program_transform_name" = "" && program_transform_name="s,x,x,"
   ;;
@@ -262,9 +262,9 @@ AC_ARG_WITH(server-only,
 AC_ARG_WITH(server,
     [   --without-server       do not build server stuff],
     [
-        case "$withval" in
+	case "$withval" in
 	y | ye | yes) NO_SERVER_MODE=false ;;
-        n | no) NO_SERVER_MODE=true;;
+	n | no) NO_SERVER_MODE=true;;
 	*)
 	    AC_MSG_ERROR([*** You must not supply an argument to --with-server option.  Maybe you meant --with-indexserver=$withval])
 	  ;;
@@ -273,7 +273,7 @@ AC_ARG_WITH(server,
 )
 
 AC_ARG_WITH(client,
-    [   --without-client         do not build client stuff],
+    [   --without-client       do not build client stuff],
     [
 	case "$withval" in
 	y | ye | yes) NO_CLIENT_MODE=false;;
@@ -286,7 +286,7 @@ AC_ARG_WITH(client,
 )
 
 AC_ARG_WITH(restore,
-    [   --without-restore       do not build amrestore nor amidxtaped],
+    [   --without-restore      do not build amrestore nor amidxtaped],
     [
 	case "$withval" in
 	y | ye | yes) : ;;
@@ -305,12 +305,12 @@ AC_ARG_WITH(restore,
 )
 
 AC_ARG_WITH(amrecover,
-    [   --without-amrecover       do not build amrecover],
+    [   --without-amrecover    do not build amrecover],
     [
 	case "$withval" in
 	y | ye | yes)
 	    if ${NO_CLIENT_MODE-false}; then
-	    	AC_MSG_ERROR([*** --without-client and --with-amrecover are incompatible])
+		AC_MSG_ERROR([*** --without-client and --with-amrecover are incompatible])
 	    fi
 	    ;;
 	n | no)
@@ -476,7 +476,7 @@ AC_ARG_WITH(norew-tape,
     : ${TAPE_NO_REWIND_DEVICE=/dev/null}
 )
 AC_DEFINE_UNQUOTED(TAPE_NO_REWIND_DEVICE,"$TAPE_NO_REWIND_DEVICE")
-AC_SUBST(TAPE_NO_REWIND_DEVICE)    
+AC_SUBST(TAPE_NO_REWIND_DEVICE)
 
 AC_ARG_WITH(fqdn,
     [   --with-fqdn            use FQDN's to backup multiple networks],
@@ -495,17 +495,17 @@ AC_ARG_WITH(smbclient,
     [   --with-smbclient[=PATH] Compile in Samba PC backup support, where PATH is the location of smbclient],
     [
 	case "$withval" in
- 	y | ye | yes)
+	y | ye | yes)
 	    AC_PATH_PROGS(SAMBA_CLIENT,smbclient,,$LOCSYSPATH)
 	    if test -z "$SAMBA_CLIENT"; then
-	        AC_MSG_ERROR([*** please specify --with-smbclient=/some/dir/smbclient])
+		AC_MSG_ERROR([*** please specify --with-smbclient=/some/dir/smbclient])
 	    fi
-          ;;
-        n | no) unset SAMBA_CLIENT
-          ;;
-        *) SAMBA_CLIENT="$withval"
-          ;;
-        esac
+	  ;;
+	n | no) unset SAMBA_CLIENT
+	  ;;
+	*) SAMBA_CLIENT="$withval"
+	  ;;
+	esac
     ]
 )
 if test "$SAMBA_CLIENT"; then
@@ -557,11 +557,11 @@ y |  ye | yes) AC_DEFINE(USE_AMANDAHOSTS)
 esac
 
 dnl Specify --with-krb4 if kerberos bits are in somewhere other than the
-dnl listed KRB4_SPOTS.  We only compile kerberos support in if the right 
+dnl listed KRB4_SPOTS.  We only compile kerberos support in if the right
 dnl files are there.
 
 AC_ARG_WITH(krb4-security,
-    [   --with-krb4=DIR   kerberos bits can be found here		],
+    [   --with-krb4=DIR   kerberos bits can be found here],
     KRB4_SPOTS="$withval",
     : ${KRB4_SPOTS="/usr/kerberos /usr/cygnus /usr /opt/kerberos"}
 )
@@ -569,10 +569,10 @@ AC_ARG_WITH(krb4-security,
 AC_MSG_CHECKING(kerberos4 bits)
 if test -f common-src/krb4-security.c ; then
     for dir in $KRB4_SPOTS; do
-	if test "$KRB4_SECURITY" != "yes" && test -f ${dir}/lib/libkrb.a ; then
-            AC_MSG_RESULT(found in $dir)
-    	    KRB4_SECURITY=yes
-    	    AC_DEFINE(KRB4_SECURITY)
+	if test "$KRB4_SECURITY" != "yes" -a -f ${dir}/lib/libkrb.a ; then
+	    AC_MSG_RESULT(found in $dir)
+	    KRB4_SECURITY=yes
+	    AC_DEFINE(KRB4_SECURITY)
 	    KRB4INCLUDES=-I$dir/include
 	    KRB4LDFLAGS=-L$dir/lib
 	    KRB4LIBS="-lkrb -ldes"
@@ -582,9 +582,9 @@ if test -f common-src/krb4-security.c ; then
 	    KRB4CLIENT_O=sendbackup-krb4.o
 	fi
     done
-    
+
     if test "$KRB4LDFLAGS" = "" ; then
-       AC_MSG_RESULT(no libkrb.a)
+	AC_MSG_RESULT(no libkrb.a)
     fi
 else
     AC_MSG_RESULT(no)
@@ -593,10 +593,10 @@ fi
 AC_ARG_WITH(server-principal,
     [     --with-server-principal=ARG    server host principal  ["amanda"]],
     [
-        case "$withval" in
-        "" | y | ye | yes | n | no)
+	case "$withval" in
+	"" | y | ye | yes | n | no)
 	    AC_MSG_ERROR([*** You must supply an argument to the --with-server-principal option.])
-          ;;
+	  ;;
 	*)
 	    SERVER_HOST_PRINCIPLE="$withval"
 	  ;;
@@ -717,7 +717,7 @@ if test "$DB_STYLE"; then
 	    ;;
     esac
 fi
-    
+
 AC_ARG_WITH(mmap,
     [   --with-mmap            force use of mmap instead of shared memory support],
     FORCE_MMAP=$withval,
@@ -870,7 +870,7 @@ case "$target" in
 			AC_DEFINE(STATFS_ULTRIX)
 			AC_DEFINE(DUMP_RETURNS_1)
 			;;
-  i386-pc-isc4*)	
+  i386-pc-isc4*)
 			AC_DEFINE(XENIX_TAPEIO)
 			;;
   *)
@@ -1008,12 +1008,12 @@ AC_PATH_PROGS(DUMP,$DUMP_PROGRAMS,,$SYSLOCPATH)
 if test "$DUMP"; then
     AC_DEFINE_UNQUOTED(DUMP,"$DUMP")
     AC_CACHE_CHECK(
-        [whether $DUMP supports -E for estimates],
+	[whether $DUMP supports -E for estimates],
 	amanda_cv_dump_estimate,
 	[
 	    $DUMP 9Ef /dev/null /dev/null/invalid/fs >conftest.d-E 2>&1
 	    $DUMP 9f /dev/null /dev/null/invalid/fs 2>&1 |
-	      $EGREP -v 'Dumping|Date of' >conftest.d
+		$EGREP -v 'Dumping|Date of' >conftest.d
 	    if diff conftest.d-E conftest.d >/dev/null 2>&1; then
 		amanda_cv_dump_estimate=yes
 	    else
@@ -1092,7 +1092,7 @@ if test -d /dev/rmt; then
     for num in 9 8 7 6 5 4 3 2 1 0; do
 	td=/dev/rmt/${num}b
 	ntd=/dev/rmt/${num}bn
-	if test -r $td && test -r $ntd; then
+	if test -r $td -a -r $ntd; then
 	    tape_dev=$td
 	    nr_tape_dev=$ntd
 	fi
@@ -1102,7 +1102,7 @@ else
     for num in 9 8 7 6 5 4 3 2 1 0; do
 	td=/dev/rst${num}
 	ntd=/dev/nrst${num}
-	if test -r $td && test -r $ntd; then
+	if test -r $td -a -r $ntd; then
 	    tape_dev=$td
 	    nr_tape_dev=$ntd
 	fi
@@ -1626,7 +1626,7 @@ else
 	# mount point of the root filesystem.
 	if test "$mount"; then
 	    dev_name="/dev/r`basename $mount`"
-	    if test -b $dev_name || test -c $dev_name; then
+	    if test -b $dev_name -o -c $dev_name; then
 		RDEV_PREFIX=/dev/r
 	    else
 		RDEV_PREFIX=/dev/
@@ -1645,7 +1645,7 @@ AC_DEFINE_UNQUOTED(DEV_PREFIX,"${DEV_PREFIX}")
 AC_DEFINE_UNQUOTED(RDEV_PREFIX,"${RDEV_PREFIX}")
 
 AC_MSG_CHECKING(whether /dev/root and /dev/rroot exist)
-if [[ -b /dev/root ] && [ -c /dev/rroot ]]; then
+if test -b /dev/root -a -c /dev/rroot; then
     AC_DEFINE_UNQUOTED(DEV_ROOT)
     AC_MSG_RESULT(yes)
 else
@@ -1657,6 +1657,7 @@ case $mount in
 	AC_MSG_WARN("*** Run amhpfixdevs on HP-UX systems using /dev/vg??.")
 	;;
 esac
+
 dnl maximum file size on holding disk
 AC_CACHE_CHECK(
     [maximum file size],
@@ -1664,7 +1665,7 @@ AC_CACHE_CHECK(
     [
 	amanda_cv_max_file_size=0
 	rm -f conftest.$ac_ext
-cat <<EOF >conftest.$ac_ext
+	cat <<EOF >conftest.$ac_ext
 #include "confdefs.h"
 #include <stdio.h>
 #include <limits.h>
