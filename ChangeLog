@@ -1,5 +1,9 @@
 2001-08-16 John R. Jackson (jrj@purdue.edu)
 
+	* docs/Makefile.am: Fix PORTS.USAGE -> PORT.USAGE typo.
+
+2001-08-16 John R. Jackson (jrj@purdue.edu)
+
 	* configure.in: Change release name to "2.4.2p2-tapeio".  Add missing
 	  CAM header checks from the 2.5 branch.
 
