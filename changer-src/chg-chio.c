@@ -245,7 +245,7 @@ argument slotdefs[]={{"current",SLOT_CUR,0},
 		     {"first",SLOT_FIRST,0},
 		     {"last",SLOT_LAST,0}};
 
-int isnumber(char *tmp) /* is the string a valid positive int? */
+int is_positive_number(char *tmp) /* is the string a valid positive int? */
 {
     int i=0;
     if ((tmp==NULL)||(tmp[0]==0))
@@ -368,7 +368,7 @@ int main(argc, argv)
 
     switch(com.command_code) {
 	case COM_SLOT:  /* slot changing command */
-	    if (isnumber(com.parameter)) {
+	    if (is_positive_number(com.parameter)) {
 		if ((target = atoi(com.parameter))>=params.cp_nslots) {
 		    printf("<none> no slot `%d'\n",target);
 		    close(fd);
