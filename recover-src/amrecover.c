@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.45 2002/03/24 19:25:51 jrjackson Exp $
+ * $Id: amrecover.c,v 1.46 2002/10/22 23:35:26 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -39,6 +39,7 @@
 #include <netinet/ip.h>
 #endif
 #include "stream.h"
+#include "amfeatures.h"
 #include "amrecover.h"
 #include "getfsent.h"
 #include "dgram.h"
@@ -81,6 +82,9 @@ int quit_prog;				/* set when time to exit parser */
 char *tape_server_name = NULL;
 int tape_server_socket;
 char *tape_device_name = NULL;
+am_feature_t *our_features = NULL;
+am_feature_t *their_features = NULL;
+
 
 #ifndef HAVE_LIBREADLINE
 /*
@@ -566,6 +570,26 @@ char **argv;
 	exit(1);
     memset(line, '\0', strlen(line));
     amfree(line);
+
+    /* try to get the features form the server */
+    {
+	char *our_feature_string = NULL;
+	char *their_feature_string = NULL;
+
+	our_features = am_init_feature_set();
+	our_feature_string = am_feature_to_string(our_features);
+	line = stralloc2("FEATURES ", our_feature_string);
+	if(exchange(line) == 0) {
+	    their_feature_string = stralloc(server_line+13);
+	    their_features = am_string_to_feature(their_feature_string);
+	}
+	else {
+	    their_features = am_set_default_feature_set();
+        }
+	amfree(our_feature_string);
+	amfree(their_feature_string);
+	amfree(line);
+    }
 
     /* set the date of extraction to be today */
     (void)time(&timer);
