@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: calcsize.c,v 1.18 1998/01/12 22:32:26 blair Exp $
+ * $Id: calcsize.c,v 1.18.2.1 1998/03/18 10:01:01 amcore Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -376,8 +376,12 @@ char *parent_dir;
 	    }
 	}
 
+#ifdef CLOSEDIR_VOID
+	closedir(d);
+#else
 	if(closedir(d) == -1)
 	    perror(dirname);
+#endif
     }
     afree(newname);
 }

@@ -34,7 +34,7 @@
  * SUCH DAMAGE.  */
 
 /*static char *sccsid = "from: @(#)ctime.c	5.26 (Berkeley) 2/23/91";*/
-/*static char *rcsid = "$Id: mktime.c,v 1.3 1997/12/30 05:24:18 jrj Exp $";*/
+/*static char *rcsid = "$Id: mktime.c,v 1.3.2.1 1998/03/18 10:01:06 amcore Exp $";*/
 
 /*
  * This implementation of mktime is lifted straight from the NetBSD (BSD 4.4)
@@ -80,6 +80,7 @@
 #define TM_YEAR_BASE    1900
 #define isleap(y) ((((y) % 4) == 0 && ((y) % 100) != 0) || ((y) % 400) == 0)
 
+#include <sys/types.h>
 #include <time.h>
 
 extern time_t	time();
