@@ -1,3 +1,8 @@
+2000-11-01 John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/amverify.sh.in: use common form for getting the first
+	line of a file/pipe.  Sed is more portable than head.
+
 2000-10-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* client-src/selfcheck.c (check_disk): Write an appropriate
