@@ -1,5 +1,10 @@
 2004-02-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/amverifyrun.sh.in: Do not execute amverify if no tape
+	  to verify.
+
+2004-02-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/amdump.sh.in: Do not redirect to /dev/null.
 
 2004-02-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
