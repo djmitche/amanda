@@ -44,10 +44,12 @@ libamanda_a_LIBADD =	$(libamanda_la_LIBADD)
 
 noinst_HEADERS =	amanda.h	arglist.h	\
 			base64.h	dgram.h		\
-			packet.h	protocol.h	\
-			statfs.h	stream.h	\
-			token.h		version.h	\
-			amregex.h	fileheader.h
+			event.h		packet.h	\
+			protocol.h	queue.h		\
+			security.h	statfs.h	\
+			stream.h	token.h		\
+			version.h	amregex.h	\
+			fileheader.h
 
 .sh:
 	cat $< > $@
