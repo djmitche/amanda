@@ -1,5 +1,11 @@
 2000-12-04 John R. Jackson  <jrj@purdue.edu>
 
+	* common-src/security.c: Make the "./security" test code available
+	  for normal operation by #define so it can be seen in, e.g., the
+	  */amandad*debug file.
+
+2000-12-04 John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/conffile.c (read_conffile_recursively): If the file name
 	  for the includefile directive is not absolute, make it relative to
 	  the configuration directory.
@@ -1226,7 +1232,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.417 2000/12/04 22:33:54 jrjackson Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.418 2000/12/04 22:44:58 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

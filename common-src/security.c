@@ -24,12 +24,18 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.c,v 1.17.2.5 2000/11/01 20:35:36 jrjackson Exp $
+ * $Id: security.c,v 1.17.2.6 2000/12/04 22:44:59 jrjackson Exp $
  *
  * wrapper file for kerberos security
  */
 
 #include "amanda.h"
+
+/*
+ * Change the following from #undef to #define to cause detailed logging
+ * of the security steps, e.g. into /tmp/amanda/amandad*debug.
+ */
+#undef SHOW_SECURITY_DETAIL
 
 /*
  * If we don't have the new-style wait access functions, use our own,
@@ -46,9 +52,12 @@
 #endif
 
 #if defined(TEST)						/* { */
+#define SHOW_SECURITY_DETAIL
 #undef dbprintf
 #define dbprintf(p)	printf p
+#endif								/* } */
 
+#if defined(SHOW_SECURITY_DETAIL)				/* { */
 void show_stat_info(a, b)
     char *a, *b;
 {
@@ -303,7 +312,7 @@ int bsd_security_ok(addr, str, cksum, errstr)
 	    exit(1);
 	}
 
-#if defined(TEST)						/* { */
+#if defined(SHOW_SECURITY_DETAIL)				/* { */
 	{
 	char *dir = stralloc(pwptr->pw_dir);
 
@@ -387,7 +396,7 @@ int bsd_security_ok(addr, str, cksum, errstr)
     fclose(fError);
     return *errstr == NULL;
 #else								/* } { */
-#if defined(TEST)						/* { */
+#if defined(SHOW_SECURITY_DETAIL)				/* { */
     show_stat_info(pwptr->pw_dir, "/.amandahosts");
 #endif								/* } */
 
@@ -415,7 +424,7 @@ int bsd_security_ok(addr, str, cksum, errstr)
     amfree(ptmp);
 
     for(; (pbuf = agets(fPerm)) != NULL; free(pbuf)) {
-#if defined(TEST)						/* { */
+#if defined(SHOW_SECURITY_DETAIL)				/* { */
 	dbprintf(("processing line: <%s>\n", pbuf));
 #endif								/* } */
 	pbuf_len = strlen(pbuf);
@@ -441,7 +450,7 @@ int bsd_security_ok(addr, str, cksum, errstr)
 	    skip_non_whitespace(s, ch);
 	    s[-1] = '\0';			/* terminate remoteuser field */
 	}
-#if defined(TEST)						/* { */
+#if defined(SHOW_SECURITY_DETAIL)				/* { */
 	dbprintf(("comparing %s with\n", pbuf));
 	dbprintf(("          %s (%s)\n",
 		  remotehost,
@@ -491,7 +500,7 @@ char *str;
 unsigned long cksum;
 char **errstr;
 {
-#if defined(TEST)						/* { */
+#if defined(SHOW_SECURITY_DETAIL)				/* { */
     dbprintf(("You configured Amanda using --without-bsd-security, so it\n"));
     dbprintf(("will let anyone on the Internet connect and do dumps of\n"));
     dbprintf(("your system unless you have some other kind of protection,\n"));
