@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.65 1998/04/27 10:25:24 amcore Exp $
+ * $Id: planner.c,v 1.66 1998/05/03 23:54:34 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -728,6 +728,8 @@ char *label;
 
     if((tp = lookup_tapelabel(label)) == NULL)
 	return 1;	/* "shouldn't happen", but trigger warning message */
+    else if(lookup_nb_tape() > conf_tapecycle)
+	return (lookup_nb_tape() - tp->position) / conf_runtapes;
     else
 	return (conf_tapecycle - tp->position) / conf_runtapes;
 }
