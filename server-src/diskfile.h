@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.26 2002/04/19 14:24:12 martinea Exp $
+ * $Id: diskfile.h,v 1.27 2003/01/04 03:35:04 martinea Exp $
  *
  * interface for disklist file reading code
  */
@@ -70,6 +70,7 @@ typedef struct disk_s {
     long frequency;			/* XXX - not used */
     char *security_driver;		/* type of authentication (per disk) */
     int maxdumps;			/* max number of parallel dumps (per system) */
+    int maxpromoteday;			/* maximum of promote day */
     time_t start_t;			/* start this dump after this time */
     int strategy;			/* what dump strategy to use */
     int compress;			/* type of compression to use */

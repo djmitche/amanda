@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.140 2003/01/02 04:00:21 martinea Exp $
+ * $Id: planner.c,v 1.141 2003/01/04 03:35:04 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -2063,6 +2063,9 @@ static int promote_highest_priority_incremental P((void))
 	    continue;
 
 	if(est(dp)->next_level0 <= 0)
+	    continue;
+
+	if(est(dp)->next_level0 > dp->maxpromoteday)
 	    continue;
 
 	new_size = est_tape_size(dp, 0);
