@@ -1,3 +1,10 @@
+1998-11-17  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* example/amanda.conf.in: document that infofile is supposed to be a
+ 	directory with the default database format
+	* docs/FAQ: New questions: `infofile update failed' and `using the
+ 	same host in different configurations'
+
 1998-11-17  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	changer-src/scsi-linux.c (Tape_Ready): typo, the argument Device

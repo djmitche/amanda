@@ -136,7 +136,10 @@ holdingdisk hd1 {
 # logdir for each configuration, so create subdirectories for each conf and
 # put the files there.  Specify the locations below.
 
-infofile "/usr/adm/amanda/@DEFAULT_CONFIG@/curinfo"	# database filename
+# Note that, although the keyword below is infofile, it is only so for
+# historic reasons, since now it is supposed to be a directory (unless
+# you have selected some database format other than the `text' default)
+infofile "/usr/adm/amanda/@DEFAULT_CONFIG@/curinfo"	# database DIRECTORY
 logdir   "/usr/adm/amanda/@DEFAULT_CONFIG@"		# log directory
 indexdir "/usr/adm/amanda/@DEFAULT_CONFIG@/index"	# index directory
 #tapelist "/usr/adm/amanda/@DEFAULT_CONFIG@/tapelist"	# list of used tapes

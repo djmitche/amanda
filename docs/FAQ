@@ -293,6 +293,38 @@ dumptypes configured with `record no', so it doesn't interfere with
 regular backups.
 
 
+Q: Can I backup separate disks of the same host in different
+configurations?
+
+A: Yes, but you have to be careful.  Amanda uses UDP to issue estimate
+and backup requests and, although replies to backup requests are
+immediate (so that TCP connections for the actual backup can be
+established), replies to estimate requests are not and, while one
+request is being processed, any other request is ignored.  The effect
+is two-fold: (i) if another configuration requests for estimates, the
+request will be ignored, and the requester will end up timing out;
+(ii) if another configuration has already finished the estimates, and
+is now requesting for backups, the backup requests will time-out.
+
+  So, there are two easy ways out: (i) ensure that the configurations
+never run concurrently, or (ii) set up two different installations of
+the Amanda server, using different services names to contact the
+clients, i.e., different port numbers.  This can be attained with the
+configure flag --with-testing=<service-suffix>.  Yes, the flag name is
+not appropriate, but so what?
+
+   If you don't want to set up two installations of Amanda (I agree,
+it's overkill), but you still want to back up disks of the same host
+in separate configurations, you can set up Amanda so that one
+configuration only starts after the first one has already finished its 
+One possible way to work-around this limitation is to start one
+configuration only after you know the estimates for the first one have 
+already finished (modifying the crontab entries, according to history
+data).  You'll also have to delay the starttime (a dumptype option) of 
+the disks in the first configuration, so that they don't start backing 
+up before the estimates of the second configuration finish.
+
+
 Q: Can Amanda span large filesystems across multiple tapes?
 
 A: Not yet :-(
@@ -302,7 +334,8 @@ help, please take a look at the Amanda Ongoing Projects Page, where
 more up-to-date information is likely to be found about this project.
 
    The current work-around is to use GNU tar to back up subdirectories
-of the huge filesystem separately.  But be aware of the problems listed in the next question:
+of the huge filesystem separately.  But be aware of the problems
+listed in the next question:
 
 
 Q: What's the difference between option `skip-full' and `strategy nofull'?
@@ -404,6 +437,14 @@ and configure Amanda (2.4.1b1 or newer) not to reserve any space for
 degraded dumps, dumps that would be stored in the second tape of a run
 will be performed to the holding disk, so you can flush them to tape
 in the morning.
+
+
+Q: `amdump' reported `infofile update failed'.  What should I do?
+
+A: Make sure all directories and files are readable and writable by
+the Amanda user, within the directory you specified as `infofile' in
+`amanda.conf'.  From then on, only run amanda server commands
+(amadmin, amdump, amflush, amcleanup) as the Amanda user, not as root.
 
 
 Q: Why does `amrecover' report `no index records' or `disk not found'?
