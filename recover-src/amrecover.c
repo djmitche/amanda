@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.10 1997/12/16 17:57:31 jrj Exp $
+ * $Id: amrecover.c,v 1.11 1997/12/19 23:16:08 jrj Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -244,7 +244,12 @@ char *cmd;
 {
     int l, n, s;
 
-    
+    /*
+     * NOTE: this routine is called from sigint_handler, so we must be
+     * **very** careful about what we do since there is no way to know
+     * our state at the time the interrupt happened.  For instance,
+     * do not use any stdio routines here.
+     */
     for (l = 0, n = strlen(cmd); l < n; l += s)
 	if ((s = write(server_socket, cmd + l, n - l)) == -1)
 	{
@@ -289,12 +294,19 @@ char *cmd;
 void sigint_handler(signum)
 int signum;
 {
+    /*
+     * NOTE: we must be **very** careful about what we do here since there
+     * is no way to know our state at the time the interrupt happened.
+     * For instance, do not use any stdio routines here or in any called
+     * routines.  Also, use _exit() instead of exit() to make sure stdio
+     * buffer flushing is not attempted.
+     */
     if (extract_restore_child_pid != -1)
 	(void)kill(extract_restore_child_pid, SIGKILL);
     extract_restore_child_pid = -1;
 
     (void)send_command("QUIT");
-    exit(1);
+    _exit(1);
 }
 
     
