@@ -598,17 +598,17 @@ y |  ye | yes) AC_DEFINE(USE_AMANDAHOSTS)
   ;;
 esac
 
-dnl Specify --with-krb4 if kerberos bits are in somewhere other than the
-dnl listed KRB4_SPOTS.  We only compile kerberos support in if the right
-dnl files are there.
+dnl Specify --with-krb4 if Amanda kerberos bits are in somewhere other
+dnl than the listed KRB4_SPOTS.  We only compile kerberos support in if
+dnl the right files are there.
 
 AC_ARG_WITH(krb4-security,
-    [  --with-krb4=DIR   kerberos bits can be found here],
+    [  --with-krb4=DIR   Amanda kerberos bits can be found here],
     KRB4_SPOTS="$withval",
     : ${KRB4_SPOTS="/usr/kerberos /usr/cygnus /usr /opt/kerberos"}
 )
 
-AC_MSG_CHECKING(kerberos4 bits)
+AC_MSG_CHECKING(Amanda kerberos4 bits)
 if test -f common-src/krb4-security.c ; then
     for dir in $KRB4_SPOTS; do
 	if test "$KRB4_SECURITY" != "yes" -a -f ${dir}/lib/libkrb.a ; then
