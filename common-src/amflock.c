@@ -429,17 +429,25 @@ main()
     char *resn = "test";
 
     unlink(filen);
-    if ((lockfd = open(filen, O_RDWR|O_CREAT, 0600)) == -1)
+    if ((lockfd = open(filen, O_RDONLY|O_CREAT|O_EXCL, 0600)) == -1)
 	return (-1);
 
     if (amroflock(lockfd, resn) != 0)
 	exit(1);
     if (amfunlock(lockfd, resn) != 0)
 	exit(2);
+
+    close(lockfd);
+
+    unlink(filen);
+    if ((lockfd = open(filen, O_WRONLY|O_CREAT|O_EXCL, 0600)) == -1)
+	return (-1);
+
     if (amflock(lockfd, resn) != 0)
 	exit(3);
     if (amfunlock(lockfd, resn) != 0)
 	exit(4);
+
     close(lockfd);
 
     exit(0);
