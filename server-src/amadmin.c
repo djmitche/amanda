@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.52 1998/11/24 23:51:28 jrj Exp $
+ * $Id: amadmin.c,v 1.53 1998/11/27 02:09:58 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -868,6 +868,8 @@ disk_t *dp;
     }
     printf("host: %s\ndisk: %s\n", dp->host->hostname, dp->name);
     printf("command: %d\n", info.command);
+    printf("last_level: %d\n",info.last_level);
+    printf("consecutive_runs: %d\n",info.consecutive_runs);
     printf("full-rate:");
     for(i=0;i<AVG_COUNT;i++) printf(" %f", info.full.rate[i]);
     printf("\nfull-comp:");
@@ -1062,10 +1064,21 @@ int import_one P((void))
     if((line = impget_line()) == NULL) goto shortfile_err;
     if(sscanf(line, "command: %d", &info.command) != 1) goto parse_err;
 
-    /* get rate: and comp: lines for full dumps */
+    /* get last_level and consecutive_runs */
 
     amfree(line);
     if((line = impget_line()) == NULL) goto shortfile_err;
+    rc = sscanf(line, "last_level: %d", &info.last_level);
+    if(rc == 1) {
+	amfree(line);
+	if((line = impget_line()) == NULL) goto shortfile_err;
+	if(sscanf(line, "consecutive_runs: %d", &info.consecutive_runs) != 1) goto parse_err;
+	amfree(line);
+	if((line = impget_line()) == NULL) goto shortfile_err;
+    }
+
+    /* get rate: and comp: lines for full dumps */
+
     rc = sscanf(line, "full-rate: %f %f %f",
 		&info.full.rate[0], &info.full.rate[1], &info.full.rate[2]);
     if(rc != 3) goto parse_err;
