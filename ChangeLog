@@ -1,3 +1,21 @@
+1998-05-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* client-src/killpgrp.c (main): wait for either SIGTERM or EOF on
+	stdin.
+
+	* client-src/sendsize.c (getsize_dump): close the other end of
+ 	killpgrp's stdin pipe before trying to kill it, because we just
+ 	can't kill it.
+
+	* configure.in (HAVE_HPUX_SCSI): check whether sys/scsi.h actually
+	supports HP/UX-like changer commands.
+
+	* config/acconfig.h (HAVE_HPUX_SCSI): indicates HP/UX-like changer
+	interface is supported.
+
+	* changer-src/scsi-hpux.c: check for HAVE_HPUX_SCSI instead of
+ 	HAVE_SYS_SCSI_H.
+
 1998-05-25  Allen Briggs  <briggs@canolog.ninthwonder.com>
 
 	* changer-src/chg-manual.sh.in (ONLINEREGEX): add `^er=0$' for
