@@ -6,8 +6,6 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
-noinst_DATA =		versuff.c
-
 if WANT_LIBTOOL
 lib_LTLIBRARIES =	libamanda.la
 OBJ_EXTENSION = lo
