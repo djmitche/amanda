@@ -1,5 +1,11 @@
 2004-11-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/planner.c: Print the time in the FINISH line.
+	* server-src/reporter.c: The estimate time is based on the planner
+	  FINISH line.
+
+2004-11-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* restore-src/amrestore.c: Read empty file.
 
 2004-11-10  Jean-Louis Martineau <martineau@iro.umontreal.ca>

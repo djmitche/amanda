@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.17.4.6.2.16.2.2 2004/08/31 13:39:08 martinea Exp $
+ * $Id: reporter.c,v 1.44.2.17.4.6.2.16.2.3 2004/11/11 20:23:44 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -96,7 +96,7 @@ typedef struct taper_s {
 taper_t *stats_by_tape = NULL;
 taper_t *current_tape = NULL;
 
-float total_time, startup_time;
+float total_time, startup_time, planner_time;
 
 /* count files to tape */
 int tapefcount = 0;
@@ -682,7 +682,6 @@ char **argv;
 
 void output_stats()
 {
-    double idle_time;
     tapetype_t *tp = lookup_tapetype(getconf_str(CNF_TAPETYPE));
     int tapesize, marksize, lv, first;
 
@@ -700,10 +699,7 @@ void output_stats()
     stats[2].dumper_time = stats[0].dumper_time + stats[1].dumper_time;
 
     if(!got_finish)	/* no driver finish line, estimate total run time */
-	total_time = stats[2].taper_time + startup_time;
-
-    idle_time = (total_time - startup_time) - stats[2].taper_time;
-    if(idle_time < 0) idle_time = 0.0;
+	total_time = stats[2].taper_time + planner_time;
 
     fprintf(mailf,"STATISTICS:\n");
     fprintf(mailf,
@@ -712,7 +708,7 @@ void output_stats()
 	    "                        --------   --------   --------\n");
 
     fprintf(mailf,
-	    "Estimate Time (hrs:min)   %2d:%02d\n", hrmn(startup_time));
+	    "Estimate Time (hrs:min)   %2d:%02d\n", hrmn(planner_time));
 
     fprintf(mailf,
 	    "Run Time (hrs:min)        %2d:%02d\n", hrmn(total_time));
@@ -1429,8 +1425,9 @@ void handle_finish()
 {
     char *s;
     int ch;
+    float a_time;
 
-    if(curprog == P_DRIVER || curprog == P_AMFLUSH) {
+    if(curprog == P_DRIVER || curprog == P_AMFLUSH || curprog == P_PLANNER) {
 	s = curstr;
 	ch = *s++;
 
@@ -1454,6 +1451,8 @@ void handle_finish()
 	skip_whitespace(s, ch);
 #define sc "time"
 	if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	    /* older planner doesn't write time */
+	    if(curprog == P_PLANNER) return;
 	    bogus_line();
 	    return;
 	}
@@ -1466,12 +1465,17 @@ void handle_finish()
 	    bogus_line();
 	    return;
 	}
-	if(sscanf(s - 1, "%f", &total_time) != 1) {
+	if(sscanf(s - 1, "%f", &a_time) != 1) {
 	    bogus_line();
 	    return;
 	}
-
-	got_finish = 1;
+	if(curprog == P_PLANNER) {
+	    planner_time = a_time;
+	}
+	else {
+	    total_time = a_time;
+	    got_finish = 1;
+	}
     }
 }
 
@@ -1503,6 +1507,7 @@ void handle_stats()
 	    bogus_line();
 	    return;
 	}
+	planner_time = startup_time;
     }
 }
 
