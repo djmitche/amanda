@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.105 2004/03/16 19:03:27 martinea Exp $
+ * $Id: amcheck.c,v 1.106 2004/03/22 22:11:07 weichinger Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1219,6 +1219,12 @@ void start_host(hostp)
 
     if(hostp->up != HOST_READY) {
 	return;
+    }
+
+    if (strncmp (hostp->hostname,"localhost",9) == 0) {
+	fprintf(outf,
+                    "WARNING: Usage of fully qualified hostname recommended for Client %s.\n",
+                    hostp->hostname);
     }
 
     /*
