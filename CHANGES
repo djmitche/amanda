@@ -64,8 +64,6 @@
 	contain the tape name as a substring.
 	-Nick Hibma <nick.hibma@jrc.it> & oliva
 
-	Updated to libtool 1.2.  -oliva
-
 	Added support for FreeBSD dump -h flag (honor nodump).
 	-James E. Housley <housley@pr-comm.com>
 
@@ -95,7 +93,12 @@
 
 Version 2.4.0p1
 
-	add --with-owner option.  -kovert
+	updated to libtool 1.2a.  -oliva
+
+	fix kerberos encryption to work.  -kovert
+
+	add --with-owner option to optionally not have things owned by
+	the amanda user.  (meant to be in 2.4.0) -kovert
 
 	only call initgroups() if it is available.  -oliva
 
