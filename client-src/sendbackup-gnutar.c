@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.40.2.7 1998/02/16 09:29:22 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.40.2.8 1998/02/22 02:03:48 amcore Exp $
  *
  * send backup data using GNU tar
  */
@@ -51,6 +51,9 @@ static regex_t re_table[] = {
   /* tar prints the size in bytes */
   { DMP_SIZE, 
 	"^Total bytes written: [0-9][0-9]*",				1},
+
+  { DMP_NORMAL, "^Elapsed time:", 1 },
+  { DMP_NORMAL, "^Throughput", 1 },
 
   /* GNUTAR produces a few error messages when files are modified or
      removed while it is running.  They may cause data to be lost, but
