@@ -1,4 +1,8 @@
 2003-03-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* configure.in: Typo.
+
+2003-03-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Gert Doering <gert@greenie.muc.de>
 
 	* client-src/getfsent.c (get_fstab_nextentry): Compile on *-sco3.2v4*.
