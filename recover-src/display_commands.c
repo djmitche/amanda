@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: display_commands.c,v 1.8 1998/01/12 22:32:37 blair Exp $
+ * $Id: display_commands.c,v 1.8.2.1 1998/03/01 23:35:42 amcore Exp $
  *
  * implements the directory-display related commands in amrecover
  */
@@ -134,7 +134,6 @@ void suck_dir_list_from_server P((void))
 
     if (disk_path == NULL) {
 	printf("Directory must be set before getting listing\n");
-	printf("This is a coding error. Please report\n");
 	return;
     } else if(strcmp(disk_path, "/") == 0) {
 	disk_path_slash = stralloc(disk_path);
@@ -262,8 +261,7 @@ void list_directory P((void))
     FILE *fp;
 
     if (disk_path == NULL) {
-	printf("Directory should have been set already but wasn't\n");
-	printf("This is a coding error. Please report\n");
+	printf("Must select a disk before listing files\n");
 	return;
     }
 
