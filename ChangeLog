@@ -1,3 +1,7 @@
+2003-02-12  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* man/amtapetype.8.in: Add doc from a mail by John R. Jackson.
+
 2003-02-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/amcheck.c: New -a option.
