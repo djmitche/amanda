@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.40 1998/04/14 17:11:31 jrj Exp $
+ * $Id: amadmin.c,v 1.41 1998/04/14 18:51:14 blair Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -583,10 +583,7 @@ void find(argc, argv)
 int argc;
 char **argv;
 {
-    char *conflogdir, *logfile = NULL;
     host_t *hp;
-    int tape, maxtape, seq, logs;
-    tape_t *tp;
     int start_argc;
     char *sort_order = NULL;
     find_result_t *output_find;
