@@ -1501,73 +1501,84 @@ case "$DB_STYLE" in
 	;;
 esac
 
-if test -z "$DB_STYLE" -a "$ac_cv_header_ndbm_h" = yes; then
-    AC_CHECK_LIB(ndbm,dbm_open)
-    if test "$ac_cv_lib_ndbm_dbm_open" = yes; then
-	DB_STYLE=ndbm
-	DB_HEADER=ndbm.h
-	DB_LIB=ndbm
-    elif test "$ac_cv_lib_c_dbm_open" = yes; then
-	DB_STYLE=ndbm
-	DB_HEADER=ndbm.h
-	DB_LIB=c
-    fi
-fi
-
-if test -z "$DB_STYLE" -a "$ac_cv_header_db_h" = yes; then
-    AC_CHECK_LIB(db,dbm_open)
-    if test "$ac_cv_lib_db_dbm_open" = yes; then
-	DB_STYLE=db
-	DB_HEADER=db.h
-	DB_LIB=db
-    elif test "$ac_cv_lib_c_dbm_open" = yes; then
-	DB_STYLE=db
-	DB_HEADER=db.h
-	DB_LIB=c
-    fi
-fi
-
-if test -z "$DB_STYLE" -a "$ac_cv_header_dbm_h" = yes; then
-    AC_CHECK_LIB(dbm,dbm_open)
-    if test "$ac_cv_lib_db_dbm_open" = yes; then
-	DB_STYLE=dbm
-	DB_HEADER=dbm.h
-	DB_LIB=dbm
-    elif test "$ac_cv_lib_c_dbm_open" = yes; then
-	DB_STYLE=dbm
-	DB_HEADER=dbm.h
-	DB_LIB=c
-    fi
-fi
-
-if test -z "$DB_STYLE" -a "$ac_cv_header_ndbm_h" = yes; then
-    AC_CHECK_LIB(gdbm,dbm_open)
-    if test "$ac_cv_lib_gdbm_dbm_open" = yes; then
-	DB_STYLE=gdbm
-	DB_HEADER=ndbm.h
-	DB_LIB=gdbm
-    elif test "$ac_cv_lib_c_dbm_open" = yes; then
-	DB_STYLE=gdbm
-	DB_HEADER=ndbm.h
-	DB_LIB=c
-    fi
-fi
+dnl If a database style was not specified select an appropriate one
+dnl automatically.
+dnl Nowadays we default to our own internal text database, but I have left
+dnl the code that does the testing here just in case it is needed one day.
 
 if test -z "$DB_STYLE"; then
-    if test "$ac_cv_lib_c_dbm_open" = yes; then
-	AC_MSG_WARN([*** A dbm_open() routine was found in -lc, but no header])
-	AC_MSG_WARN([*** files exist.  Please remedy the situation.])
-    else
-	AC_MSG_WARN([*** No dbm_open() routine found!])
-    fi
-    AC_MSG_WARN([*** You may want to install the gdbm library from])
-    AC_MSG_WARN([*** ftp://prep.ai.mit.edu/pub/gnu/gdbm-1.7.3.tar.gz.])
-
-    AC_MSG_WARN([*** Using the built-in text database.])
     DB_STYLE=text
     DB_HEADER=
     DB_LIB=
 fi
+
+dnl if test -z "$DB_STYLE" -a "$ac_cv_header_ndbm_h" = yes; then
+dnl     AC_CHECK_LIB(ndbm,dbm_open)
+dnl     if test "$ac_cv_lib_ndbm_dbm_open" = yes; then
+dnl 	DB_STYLE=ndbm
+dnl 	DB_HEADER=ndbm.h
+dnl 	DB_LIB=ndbm
+dnl     elif test "$ac_cv_lib_c_dbm_open" = yes; then
+dnl 	DB_STYLE=ndbm
+dnl	DB_HEADER=ndbm.h
+dnl	DB_LIB=c
+dnl    fi
+dnl fi
+dnl
+dnl if test -z "$DB_STYLE" -a "$ac_cv_header_db_h" = yes; then
+dnl    AC_CHECK_LIB(db,dbm_open)
+dnl    if test "$ac_cv_lib_db_dbm_open" = yes; then
+dnl	DB_STYLE=db
+dnl	DB_HEADER=db.h
+dnl	DB_LIB=db
+dnl    elif test "$ac_cv_lib_c_dbm_open" = yes; then
+dnl	DB_STYLE=db
+dnl	DB_HEADER=db.h
+dnl	DB_LIB=c
+dnl    fi
+dnl fi
+dnl
+dnl if test -z "$DB_STYLE" -a "$ac_cv_header_dbm_h" = yes; then
+dnl    AC_CHECK_LIB(dbm,dbm_open)
+dnl    if test "$ac_cv_lib_db_dbm_open" = yes; then
+dnl	DB_STYLE=dbm
+dnl	DB_HEADER=dbm.h
+dnl	DB_LIB=dbm
+dnl    elif test "$ac_cv_lib_c_dbm_open" = yes; then
+dnl	DB_STYLE=dbm
+dnl	DB_HEADER=dbm.h
+dnl	DB_LIB=c
+dnl    fi
+dnl fi
+dnl
+dnl if test -z "$DB_STYLE" -a "$ac_cv_header_ndbm_h" = yes; then
+dnl    AC_CHECK_LIB(gdbm,dbm_open)
+dnl    if test "$ac_cv_lib_gdbm_dbm_open" = yes; then
+dnl	DB_STYLE=gdbm
+dnl	DB_HEADER=ndbm.h
+dnl	DB_LIB=gdbm
+dnl    elif test "$ac_cv_lib_c_dbm_open" = yes; then
+dnl	DB_STYLE=gdbm
+dnl	DB_HEADER=ndbm.h
+dnl	DB_LIB=c
+dnl    fi
+dnl fi
+dnl
+dnl if test -z "$DB_STYLE"; then
+dnl    if test "$ac_cv_lib_c_dbm_open" = yes; then
+dnl	AC_MSG_WARN([*** A dbm_open() routine was found in -lc, but no header])
+dnl	AC_MSG_WARN([*** files exist.  Please remedy the situation.])
+dnl    else
+dnl	AC_MSG_WARN([*** No dbm_open() routine found!])
+dnl    fi
+dnl    AC_MSG_WARN([*** You may want to install the gdbm library from])
+dnl    AC_MSG_WARN([*** ftp://prep.ai.mit.edu/pub/gnu/gdbm-1.7.3.tar.gz.])
+dnl
+dnl    AC_MSG_WARN([*** Using the built-in text database.])
+dnl    DB_STYLE=text
+dnl    DB_HEADER=
+dnl    DB_LIB=
+dnl fi
 
 if test "$DB_STYLE" = text; then
     AC_DEFINE(TEXTDB)

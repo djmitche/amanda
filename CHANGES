@@ -1,5 +1,10 @@
 Version 2.4.0b5
 
+	Make our internal TEXTDB the default database style for the infofile.
+	If you wish to keep using a dbm style database use the configure
+	option "--with-db={db,dbm,gdbm,ndbm}".
+	-scott
+
 	Sanitise the disk name in the TEXTDB code.
 	**NOTE** if your infofile database uses TEXTDB (which has only been
 		 available since Amanda-2.4.0b1) and you have '/'s in the
