@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.10 2002/03/12 22:47:29 martinea Exp $
+ * $Id: client_util.c,v 1.11 2002/03/13 01:06:47 martinea Exp $
  *
  */
 
@@ -346,6 +346,21 @@ int verbose;
 }
 
 
+void init_options(options)
+option_t *options;
+{
+    options->str = NULL;
+    options->compress = NO_COMPR;
+    options->no_record = 0;
+    options->createindex = 0;
+    options->auth = NULL;
+    options->exclude_file = NULL;
+    options->exclude_list = NULL;
+    options->include_file = NULL;
+    options->include_list = NULL;
+}
+
+
 option_t *parse_options(str, disk, device, verbose)
 char *str;
 char *disk, *device;
@@ -356,15 +371,8 @@ int verbose;
     char *p, *tok;
 
     options = malloc(sizeof(option_t));
+    init_options(options);
     options->str = stralloc(str);
-    options->compress = NO_COMPR;
-    options->no_record = 0;
-    options->createindex = 0;
-    options->auth = NULL;
-    options->exclude_file = NULL;
-    options->exclude_list = NULL;
-    options->include_file = NULL;
-    options->include_list = NULL;
 
     p = stralloc(str);
     tok = strtok(p,";");
