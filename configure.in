@@ -17,7 +17,7 @@ AC_SUBST(CONFIGURE_COMMAND)
 AM_INIT_AUTOMAKE(amanda, 2.4.5b1)
 AM_CONFIG_HEADER(config/config.h)
 
-AC_PREREQ(2.53)		dnl Minimum Autoconf version required.
+AC_PREREQ(2.59)		dnl Minimum Autoconf version required.
 
 if test -f "$srcdir/SNAPSHOT"; then
   cat < "$srcdir/SNAPSHOT"
@@ -1742,14 +1742,14 @@ dnl
 if test x"$ac_cv_header_sys_scsi_h" = x"yes"; then
     AC_CACHE_CHECK([for HP/UX-like scsi changer support],
 	amanda_cv_hpux_scsi_chio,
-	[AC_TRY_COMPILE([
+	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/scsi.h>
-], [
+]], [[
 	static struct element_addresses changer_info;
 	int i = SIOC_ELEMENT_ADDRESSES;
 	int j = SIOC_ELEMENT_STATUS;
 	int k = SIOC_MOVE_MEDIUM;
-], amanda_cv_hpux_scsi_chio=yes, amanda_cv_hpux_scsi_chio=no)])
+]])],[amanda_cv_hpux_scsi_chio=yes],[amanda_cv_hpux_scsi_chio=no])])
     if test x"$amanda_cv_hpux_scsi_chio" = x"yes"; then
 	AC_DEFINE(HAVE_HPUX_SCSI_CHIO,1,[Define to enable HPUX chio based changer support. ])
 	NO_SCSI_CHANGER_MODE=false
@@ -1763,14 +1763,14 @@ if test x"$ac_cv_header_sys_mtio_h" = x"yes" &&
    test x"$ac_cv_header_scsi_scsi_ioctl_h" = x"yes"; then 
 	AC_CACHE_CHECK([for Linux like scsi support (ioctl)],
 	amanda_cv_linux_scsi,
-	[AC_TRY_COMPILE([
+	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <scsi/scsi_ioctl.h>
 #include <sys/mtio.h>
-],[
+]], [[
 	int device;
 	char *Command;
 	ioctl(device, SCSI_IOCTL_SEND_COMMAND, Command);
-], amanda_cv_linux_scsi=yes, amanda_cv_linux_scsi=no)])
+]])],[amanda_cv_linux_scsi=yes],[amanda_cv_linux_scsi=no])])
 fi
 
 dnl
@@ -1780,15 +1780,15 @@ if test x"$ac_cv_header_sys_mtio_h" = x"yes" &&
    test x"$ac_cv_header_scsi_sg_h" = x"yes"; then 
 	AC_CACHE_CHECK([for Linux like scsi support (sg)],
 	amanda_cv_linux_sg_scsi,
-	[AC_TRY_COMPILE([
+	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <scsi/sg.h>
 #include <sys/mtio.h>
-],[
+]], [[
 	int device;
 	struct sg_header *psg_header;
 	char *buffer;
 	write(device, buffer, 1);
-], amanda_cv_linux_sg_scsi=yes, amanda_cv_linux_sg_scsi=no)])
+]])],[amanda_cv_linux_sg_scsi=yes],[amanda_cv_linux_sg_scsi=no])])
 fi
 
 if test x"$amanda_cv_linux_scsi" = x"yes" ||
@@ -1804,16 +1804,16 @@ if test x"$ac_cv_header_sys_mtio_h" = x"yes" &&
    test x"$ac_cv_header_sys_scsi_h" = x"yes"; then 
 	AC_CACHE_CHECK([for HP-UX like scsi support],
 	amanda_cv_hpux_scsi,
-	[AC_TRY_COMPILE([
+	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <sys/scsi.h>
 #include <sys/mtio.h>
-],[
+]], [[
 	int device;
 	char *Command;
 	ioctl(device, SIOC_IO, Command);
-], amanda_cv_hpux_scsi=yes, amanda_cv_hpux_scsi=no)])
+]])],[amanda_cv_hpux_scsi=yes],[amanda_cv_hpux_scsi=no])])
 	if test x"$amanda_cv_hpux_scsi" = x"yes";then
 		AC_DEFINE(HAVE_HPUX_LIKE_SCSI,1,[Define to enable HPUX tape-changer support. ])
 		NO_SCSI_CHANGER_MODE=false
@@ -1828,15 +1828,15 @@ if test x"$ac_cv_header_sys_mtio_h" = x"yes" &&
    test x"$ac_cv_header_sys_dsreq_h" = x"yes"; then 
 	AC_CACHE_CHECK([for Irix like scsi support],
 	amanda_cv_irix_scsi,
-	[AC_TRY_COMPILE([
+	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
 #include <sys/dsreq.h>
 #include <sys/mtio.h>
-],[
+]], [[
 	int device=1;
 	char Command;
 	ioctl(device, DS_ENTER, &Command);
-], amanda_cv_irix_scsi=yes, amanda_cv_irix_scsi=no)])
+]])],[amanda_cv_irix_scsi=yes],[amanda_cv_irix_scsi=no])])
 	if test x"$amanda_cv_irix_scsi" = x"yes";then
 		AC_DEFINE(HAVE_IRIX_LIKE_SCSI,1,[Define to enable IRIX tape-changer support])
 		NO_SCSI_CHANGER_MODE=false
@@ -1850,15 +1850,15 @@ if test x"$ac_cv_header_sys_mtio_h" = x"yes" &&
    test x"$ac_cv_header_sys_scsi_impl_uscsi_h" = x"yes"; then 
 	AC_CACHE_CHECK([for Solaris like scsi support],
 	amanda_cv_solaris_scsi,
-	[AC_TRY_COMPILE([
+	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
 #include <sys/scsi/impl/uscsi.h>
 #include <sys/mtio.h>
-],[
+]], [[
 	int device;
 	char *Command;
 	ioctl(device, USCSICMD, Command);
-], amanda_cv_solaris_scsi=yes, amanda_cv_solaris_scsi=no)])
+]])],[amanda_cv_solaris_scsi=yes],[amanda_cv_solaris_scsi=no])])
 	if test x"$amanda_cv_solaris_scsi" = x"yes";then
 		AC_DEFINE(HAVE_SOLARIS_LIKE_SCSI,1,[Define to enable Solaris tape-changer support])
 		NO_SCSI_CHANGER_MODE=false
@@ -1873,15 +1873,15 @@ if test x"$ac_cv_header_sys_tape_h" = x"yes" &&
    test x"$ac_cv_header_sys_gscdds_h" = x"yes"; then 
 	AC_CACHE_CHECK([for AIX like scsi support],
 	amanda_cv_aix_scsi,
-	[AC_TRY_COMPILE([
+	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
 #include <sys/scarray.h>
 #include <sys/tape.h>
-],[
+]], [[
 	int device;
 	char *Command;
 	ioctl(device, STIOCMD, Command);
-], amanda_cv_aix_scsi=yes, amanda_cv_aix_scsi=no)])
+]])],[amanda_cv_aix_scsi=yes],[amanda_cv_aix_scsi=no])])
 	if test x"$amanda_cv_aix_scsi" = x"yes";then
 		AC_DEFINE(HAVE_AIX_LIKE_SCSI,1,[Define to enable AIX tape-changer support])
 		NO_SCSI_CHANGER_MODE=false
@@ -1893,7 +1893,7 @@ dnl
 if test x"$ac_cv_header_cam_cam_h" = x"yes";then
 	AC_CACHE_CHECK([for CAM like scsi support],
 	amanda_cv_cam_scsi,
-	[AC_TRY_COMPILE([
+	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <stdio.h>
 # include <fcntl.h>
 # include <cam/cam.h>
@@ -1901,11 +1901,11 @@ if test x"$ac_cv_header_cam_cam_h" = x"yes";then
 # include <cam/scsi/scsi_message.h>
 # include <cam/scsi/scsi_pass.h>
 # include <camlib.h>
-],[
+]], [[
 	struct cam_device *curdev;
 
 	curdev = cam_open_pass("", O_RDWR, NULL);
-], amanda_cv_cam_scsi=yes, amanda_cv_cam_scsi=no)])
+]])],[amanda_cv_cam_scsi=yes],[amanda_cv_cam_scsi=no])])
 	if test x"$amanda_cv_cam_scsi" = x"yes";then
 		AC_DEFINE(HAVE_CAM_LIKE_SCSI,1,[Define to enable CAM tape-changer support])
 		NO_SCSI_CHANGER_MODE=false
@@ -1920,15 +1920,15 @@ if test x"$ac_cv_header_sys_mtio_h" = x"yes" &&
    test x"$ac_cv_header_sys_scsiio_h" = x"yes"; then
     AC_CACHE_CHECK([for BSD like scsi support],
     amanda_cv_bsd_scsi,
-    [AC_TRY_COMPILE([
+    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
 #include <sys/scsiio.h>
 #include <sys/mtio.h>
-],[
+]], [[
     int device=1;
     char Command;
     ioctl(device, SCIOCCOMMAND, &Command);
-], amanda_cv_bsd_scsi=yes, amanda_cv_bsd_scsi=no)])
+]])],[amanda_cv_bsd_scsi=yes],[amanda_cv_bsd_scsi=no])])
     if test x"$amanda_cv_bsd_scsi" = x"yes";then
        AC_DEFINE(HAVE_BSD_LIKE_SCSI,1,[Define to enable BSD tape-changer support])
        NO_SCSI_CHANGER_MODE=false
@@ -2009,72 +2009,72 @@ dnl Check for various "mt status" related structure elements.
 
 AC_MSG_CHECKING(for mt_flags mtget structure element)
 mt_flags_result="found"
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/mtio.h>
-],[
+]], [[
     struct mtget buf;
     long ds;
 
     ds = buf.mt_flags;
-],AC_DEFINE(HAVE_MT_FLAGS,1,Define if the mtget structure has an mt_flags field),mt_flags_result="not found")
+]])],[AC_DEFINE(HAVE_MT_FLAGS,1,Define if the mtget structure has an mt_flags field)],[mt_flags_result="not found"])
 AC_MSG_RESULT($mt_flags_result)
 
 AC_MSG_CHECKING(for mt_fileno mtget structure element)
 mt_fileno_result="found"
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/mtio.h>
-],[
+]], [[
     struct mtget buf;
     long ds;
 
     ds = buf.mt_fileno;
-],AC_DEFINE(HAVE_MT_FILENO,1,Define if the mtget structure has an mt_fileno field),mt_fileno_result="not found")
+]])],[AC_DEFINE(HAVE_MT_FILENO,1,Define if the mtget structure has an mt_fileno field)],[mt_fileno_result="not found"])
 AC_MSG_RESULT($mt_fileno_result)
 
 AC_MSG_CHECKING(for mt_blkno mtget structure element)
 mt_blkno_result="found"
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/mtio.h>
-],[
+]], [[
     struct mtget buf;
     long ds;
 
     ds = buf.mt_blkno;
-],AC_DEFINE(HAVE_MT_BLKNO,1,Define if the mtget structure has an mt_blkno field),mt_blkno_result="not found")
+]])],[AC_DEFINE(HAVE_MT_BLKNO,1,Define if the mtget structure has an mt_blkno field)],[mt_blkno_result="not found"])
 AC_MSG_RESULT($mt_blkno_result)
 
 AC_MSG_CHECKING(for mt_dsreg mtget structure element)
 mt_dsreg_result="found"
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/mtio.h>
-],[
+]], [[
     struct mtget buf;
     long ds;
 
     ds = buf.mt_dsreg;
-],AC_DEFINE(HAVE_MT_DSREG,1,Define if the mtget structure has an mt_dsreg field),mt_dsreg_result="not found")
+]])],[AC_DEFINE(HAVE_MT_DSREG,1,Define if the mtget structure has an mt_dsreg field)],[mt_dsreg_result="not found"])
 AC_MSG_RESULT($mt_dsreg_result)
 
 AC_MSG_CHECKING(for mt_erreg mtget structure element)
 mt_erreg_result="found"
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/mtio.h>
-],[
+]], [[
     struct mtget buf;
     long ds;
 
     ds = buf.mt_erreg;
-],AC_DEFINE(HAVE_MT_ERREG,1,Define if the mtget structure has an mt_erreg field),mt_erreg_result="not found")
+]])],[AC_DEFINE(HAVE_MT_ERREG,1,Define if the mtget structure has an mt_erreg field)],[mt_erreg_result="not found"])
 AC_MSG_RESULT($mt_erreg_result)
 
 dnl
@@ -2303,8 +2303,7 @@ else
 	[for struct datum declared in header files],
 	amanda_cv_struct_datum,
 	[
-	    AC_TRY_COMPILE(
-		[
+	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #if defined(USE_DB_H)
 #  include <db.h>
 #else
@@ -2316,13 +2315,10 @@ else
 #    endif
 #  endif
 #endif
-		],
-		[
+		]], [[
 		    datum a;
-		],
-		amanda_cv_struct_datum=yes,
-		amanda_cv_struct_datum=no
-	    )
+		]])],[amanda_cv_struct_datum=yes],[amanda_cv_struct_datum=no
+	    ])
 	])
     if test "$amanda_cv_struct_datum" = yes; then
 	AC_DEFINE(HAVE_STRUCT_DATUM,1,[Define if the database header declares struct datum. ])
@@ -2641,16 +2637,16 @@ AC_CACHE_CHECK(
    [whether posix fcntl locking works],
    amanda_cv_posix_filelocking,
    [
-	AC_TRY_RUN([
+	AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #undef  ASSERTIONS
 #define CONFIGURE_TEST
 #define USE_POSIX_FCNTL
 #include "${srcdir-.}/common-src/amflock.c"
-], [
+]])],[
 	amanda_cv_posix_filelocking=yes
-], [
+],[
 	amanda_cv_posix_filelocking="no"
-], [
+],[
 	amanda_cv_posix_filelocking="no (cannot run test)"
 ])
     rm -f /tmp/conftest.lock
@@ -2665,16 +2661,16 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 	[whether flock locking works],
 	amanda_cv_flock_filelocking,
 	[
-	    AC_TRY_RUN([
+	    AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #undef  ASSERTIONS
 #define CONFIGURE_TEST
 #define USE_FLOCK
 #include "${srcdir-.}/common-src/amflock.c"
-], [
+]])],[
 		    amanda_cv_flock_filelocking="yes"
-], [
+],[
 		    amanda_cv_flock_filelocking="no"
-], [
+],[
 		    amanda_cv_flock_filelocking="no (cannot run test)"
 ])
 	rm -f /tmp/conftest.lock
@@ -2690,16 +2686,16 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 	[whether lockf locking works],
 	amanda_cv_lockf_filelocking,
 	[
-	    AC_TRY_RUN([
+	    AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #undef  ASSERTIONS
 #define CONFIGURE_TEST
 #define USE_LOCKF
 #include "${srcdir-.}/common-src/amflock.c"
-], [
+]])],[
 		    amanda_cv_lockf_filelocking="yes"
-], [
+],[
 		    amanda_cv_lockf_filelocking="no"
-], [
+],[
 		    amanda_cv_lockf_filelocking="no (cannot run test)"
 ])
 	rm -f /tmp/conftest.lock
@@ -2715,7 +2711,7 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 	[whether lnlock locking works],
 	amanda_cv_lnlock_filelocking,
 	[
-	    AC_TRY_RUN([
+	    AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #undef  ASSERTIONS
 #define CONFIGURE_TEST
 #define USE_LNLOCK
@@ -2723,11 +2719,11 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 #include "${srcdir-.}/common-src/alloc.c"
 #include "${srcdir-.}/common-src/error.c"
 #include "${srcdir-.}/common-src/snprintf.c"
-], [
+]])],[
 		    amanda_cv_lnlock_filelocking="yes"
-], [
+],[
 		    amanda_cv_lnlock_filelocking="no"
-], [
+],[
 		    amanda_cv_lnlock_filelocking="no (cannot run test)"
 ])
 	rm -f /tmp/conftest.lock
