@@ -152,6 +152,22 @@ removed in future releases of Amanda.
 Sinix port originally by Michael Schmitz <mschmitz@iname.com>.
 
 ---------------------------------------------------------------------------
+IRIX (all)
+----------
+
+When setting the tape device name in either amanda.conf or one of the
+changer configuration files, make sure you specify the "variable" device
+name, which has a 'v' on the end.  If not, IRIX will write 4KByte blocks
+instead of the 32KByte blocks Amanda tells it to.  This apparantly works
+OK unless you take the tape to a non-IRIX system, where amrestore will
+complain about a short (4096) read.
+
+If you do end up in this situation, the dd command to use to pipe into
+your system restore program is:
+
+    dd if=/dev/whatever bs=4k skip=8 | ...
+
+---------------------------------------------------------------------------
 IRIX 6
 ------
 
@@ -162,6 +178,7 @@ again.  Using GNU make fixes this problem.
 
 If you have xfs filesystems to back up, amanda will pick xfsdump
 automatically.
+
 
 ---------------------------------------------------------------------------
 SCO

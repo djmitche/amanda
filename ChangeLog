@@ -1,3 +1,11 @@
+1998-07-03  John R. Jackson  <jrj@purdue.edu>
+
+	* docs/SYSTEM.NOTES: add comment about using the variable device name
+	on IRIX.  Otherwise, IRIX will write 4KByte physical blocks, which
+	it appears to read OK, but not if you take the tape to some other
+	system that does what you tell it.  Discovered by Steve E. Khoo
+	(steve@gordian.com).
+
 1998-07-02  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/planner.c (setup_estimate): handle new disks with
