@@ -1,6 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 pkgdata_DATA = \
 	DUMPER-API		\
+	EXCLUDE			\
 	FAQ			\
 	INDEXING		\
 	INSTALL			\
@@ -8,6 +9,7 @@ pkgdata_DATA = \
 	KERBEROS		\
 	LABEL.PRINTING		\
 	MULTITAPE		\
+	PORT.USAGE		\
 	RESTORE			\
 	SAMBA			\
 	SECURITY		\
