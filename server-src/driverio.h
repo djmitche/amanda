@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.22 1999/05/14 21:52:45 kashmir Exp $
+ * $Id: driverio.h,v 1.23 1999/05/15 15:08:47 martinea Exp $
  *
  * driver-related helper functions
  */
@@ -99,8 +99,8 @@ void startup_tape_process P((char *taper_program));
 void startup_dump_process P((dumper_t *dumper, char *dumper_program));
 void startup_dump_processes P((char *dumper_program, int inparallel));
 tok_t getresult P((int fd, int show, int *result_argc, char **result_argv, int max_arg));
-void taper_cmd P((tok_t cmd, void *ptr, char *destname, int level, char *datestamp));
-void dumper_cmd P((dumper_t *dumper, tok_t cmd, disk_t *dp));
+int taper_cmd P((tok_t cmd, void *ptr, char *destname, int level, char *datestamp));
+int dumper_cmd P((dumper_t *dumper, tok_t cmd, disk_t *dp));
 disk_t *serial2disk P((char *str));
 void free_serial P((char *str));
 char *disk2serial P((disk_t *dp));

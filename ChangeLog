@@ -1,3 +1,11 @@
+1999-05-15 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/amflush.c: ignore SIGPIPE
+	* server-src/driver.c: ignore SIGPIPE
+	* server-src/driverio.c (taper_cmd, dumper_cmd): return 0 on error, 
+	1 on success.
+	* server-src/driverio.h (taper_cmd, dumper_cmd): prototype.
+
 1999-05-14  Mike Grupenhoff <kashmir@munge.com>
 
 	* server-src/dumper.c: make prototypes consistent, (putresult):
