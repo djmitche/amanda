@@ -2070,7 +2070,9 @@ fi
 if test "$ac_cv_lib_termcap_tgetent" = yes ||
    test "$ac_cv_lib_curses_tgetent" = yes ||
    test "$ac_cv_lib_ncurses_tgetent" = yes; then
-    AC_CHECK_LIB(readline,readline)
+    AC_CHECK_LIB(readline,readline,
+	READLINE_LIBS="-lreadline"; AC_SUBST(READLINE_LIBS)
+    )
     if test "$ac_cv_lib_readline_readline" != yes; then
 	AC_MSG_WARN([*** No readline library, no history and command line editing in amrecover!])
     fi

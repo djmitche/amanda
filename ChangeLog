@@ -1,3 +1,9 @@
+2003-10-23  Todd Kover <kovert@omniscient.com>
+
+	* make amrecover link against readline rather than libamanda so
+	  only amrecover would require the shared library (if it's found)
+
+
 2003-10-22  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Paul Bijnens <paul.bijnens@xplanation.com>
 
