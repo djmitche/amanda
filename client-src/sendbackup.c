@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.28.2.7 1998/02/25 21:59:26 amcore Exp $
+ * $Id: sendbackup.c,v 1.28.2.8 1998/03/14 07:03:31 amcore Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -931,14 +931,18 @@ char *cmd;
     while (bytes_read > bytes_written && !index_finished) {
       just_written = write(fileno(pipe_fp), ptr, bytes_read - bytes_written);
       if (just_written < 0) {
-	e = strerror(errno);
-	dbprintf(("index tee cannot write to index creator [%s]\n", e));
+	  /* the signal handler may have assigned to index_finished
+	   * just as we waited for write() to complete. */
+	  if (!index_finished) {
+	      e = strerror(errno);
+	      dbprintf(("index tee cannot write to index creator [%s]\n", e));
 #if 0
-	/* only write debugging info for write error
-           to index pipe. */
-	error("index tee cannot write to index creator [%s]", e);
+	      /* only write debugging info for write error to index
+	       * pipe. */
+	      error("index tee cannot write to index creator [%s]", e);
 #endif
-	index_finished = 1;
+	      index_finished = 1;
+	}
       } else {
 	bytes_written += just_written;
 	ptr += just_written;
