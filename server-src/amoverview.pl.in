@@ -14,7 +14,7 @@ use POSIX;
 
 sub Usage {
     print STDERR <<END;
-Usage: $0 [-config CONFIG] [-verbose]
+Usage: $0 [[-config] CONFIG] [-hostwidth width] [-diskwidth width] [-verbose]
 
 This script generates to standard output an overview of the filesystems
 dumped over time and the type of dump done on a particular day, such as
@@ -61,9 +61,15 @@ GetOptions('config=s'		=> \$opt_config,
 	   'verbose'		=> \$opt_verbose)
 or Usage();
 
+if($#ARGV == 0) {
+  $opt_config = @ARGV[0];
+}
+elsif($#ARGV > 0) {
+  Usage();
+}
+
 -d "$confdir/$opt_config" or
 	die "$0: directory `$confdir/$opt_config' does not exist.\n";
-
 
 # read disklist
 my $disklist = "$confdir/$opt_config/disklist";

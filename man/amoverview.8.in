@@ -15,8 +15,10 @@
 amoverview \- display file systems processed by Amanda over time
 .SH SYNOPSIS
 .B amoverview
-[
-.OP -config config
+[[
+.B -config
+]
+.I config
 ] [
 .OP -hostwidth width
 ] [
