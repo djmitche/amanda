@@ -4,6 +4,7 @@ Changes in release 2.4.4p2
 * 'amadmin find' list disk removed from the disklist.
 * amrecover can recover a disk removed from the disklist file.
 * amanda works with samba3.
+* new chag-disk changer script to use with the file: driver.
 
 Changes in release 2.4.4p1
 

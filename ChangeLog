@@ -1,4 +1,12 @@
 2003-11-28  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Jean-Christian SIMONETTI <simonetti@echo.fr>
+
+	* changer-src/chg-disk.sh.in: New changer script.
+	* changer-src/Makefile.am (libexec_SCRIPTS): Add chg-disk.
+	* configure.in (AC_CONFIG_FILES): Add changer-src/chg-disk.sh.
+	* NEWS: new chag-disk changer script to use with the file: driver.
+
+2003-11-28  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* tape-src/tapetype.c: extern int optind.
 	* tape-src/tapeio.c: extern int optind.
