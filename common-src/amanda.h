@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.40 1998/01/21 01:06:42 jrj Exp $
+ * $Id: amanda.h,v 1.40.2.1 1998/01/27 05:31:53 amcore Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -588,11 +588,11 @@ extern int connect P((int s, struct sockaddr *name, int namelen));
 #endif
 
 #if !defined(TEXTDB) && !defined(HAVE_DBM_OPEN_DECL)
-    #undef   DBM_INSERT
-    #define  DBM_INSERT  0
+#undef   DBM_INSERT
+#define  DBM_INSERT  0
 
-    #undef   DBM_REPLACE
-    #define  DBM_REPLACE 1
+#undef   DBM_REPLACE
+#define  DBM_REPLACE 1
 
     typedef struct {
 	int dummy[10];

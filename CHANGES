@@ -1,4 +1,5 @@
-	# directives must not be indented in configure scripts.
+	removed backslashes from inside macro calls.
+	un-indented # directives.
 	-Gregory Neil Shapiro <gshapiro@WPI.EDU>
 
 	enabled BSD security by default.
