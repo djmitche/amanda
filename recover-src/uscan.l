@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: uscan.l,v 1.6 1997/12/30 05:24:42 jrj Exp $
+ * $Id: uscan.l,v 1.6.2.1 1998/03/05 17:33:50 jrj Exp $
  *
  * lexer for amrecover interactive language
  */
@@ -49,7 +49,9 @@ extern int  yyparse P((void));
 static char *string_buf = NULL;
 %}
 
+%{
     /* literal keyword tokens */
+%}
 
 sethost	{ return SETHOST; }
 setdisk	{ return SETDISK; }
@@ -70,7 +72,9 @@ lcd     { return LCD; }
 lpwd    { return LPWD; }
 extract { return EXTRACT; }
 
+%{
     /* dates */
+%}
 
 ---[0-9][0-9] { time_t now;
 	        struct tm *t;
@@ -92,7 +96,9 @@ extract { return EXTRACT; }
 
 [1-2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] { yylval.strval = stralloc(yytext); return DATE; }
 
+%{
     /* file names */
+%}
 
 [-A-Za-z0-9_/.]* { yylval.strval = stralloc(yytext); return PATH; }
 \"               { afree(string_buf); BEGIN(quotedstring); }
@@ -120,11 +126,15 @@ extract { return EXTRACT; }
 
 <quotedstring>[^\\\n\"]+        { strappend(string_buf, yytext); }
 
+%{
     /* whitespace */
+%}
 
 [ \t\r]+	;     /* whitespace */
 
+%{
     /* anything else */
+%}
 
 .	{ yyerror("invalid character"); }
 
