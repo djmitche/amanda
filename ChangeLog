@@ -1,5 +1,11 @@
 1998-10-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/driverio.h,server-src/driver.c: move declaration
+	of big_dumpers, degraded_mode and reserved_space from 
+	driverio.h to driver.c
+
+1998-10-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/driverio.h (optionstr): remove declaration
 
 1998-10-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.49 1998/09/03 22:11:47 oliva Exp $
+ * $Id: driver.c,v 1.50 1998/10/15 02:27:56 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -51,6 +51,9 @@ int pending_aborts, inside_dump_to_tape;
 int verbose;
 int force_parameters, use_lffo;
 disk_t *taper_disk;
+int big_dumpers;
+int degraded_mode;
+unsigned long reserved_space;
 
 int driver_main P((int argc, char **argv));
 int client_constrained P((disk_t *dp));
