@@ -58,17 +58,17 @@ extract { return EXTRACT; }
                                   yytext+1);
                           return DATE; }
                         
-[1-2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] { yylval.strval = strdup(yytext); return DATE; }
+[1-2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] { yylval.strval = stralloc(yytext); return DATE; }
 
     /* file names */
 
-[-A-Za-z0-9_/.]* { yylval.strval = strdup(yytext); return PATH; }
+[-A-Za-z0-9_/.]* { yylval.strval = stralloc(yytext); return PATH; }
 \"               { string_buf_ptr = string_buf; BEGIN(quotedstring); }
 
 <quotedstring>\"        { /* saw closing quote - all done */
   BEGIN(INITIAL);
   *string_buf_ptr = '\0';
-  yylval.strval = strdup(string_buf);
+  yylval.strval = stralloc(string_buf);
   return PATH;
 }
 

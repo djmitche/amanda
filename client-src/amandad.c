@@ -226,7 +226,7 @@ char **argv;
     }
 
     sprintf(local_hostname, "HOSTNAME=%s", in_msg.hostname);
-    putenv(strdup(local_hostname));
+    putenv(stralloc(local_hostname));
     strcpy(local_hostname, in_msg.hostname);
 
     /* lookup service */

@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991 University of Maryland
+ * Copyright (c) 1991, 1997 University of Maryland
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -25,11 +25,14 @@
  *			   University of Maryland at College Park
  */
 /*
- * alloc.c - A wrapper for malloc.  If the allocation fails, error is called.
- * Thus, the caller is relieved from checking the malloc return code.
+ * alloc.c - Memory allocators with error handling.  If the allocation fails,
+ * error() is called, relieving the caller from checking the return code.
  */
 #include "amanda.h"
 
+/*
+** alloc - a wrapper for malloc.
+*/
 void *alloc(size)
 int size;
 {
@@ -38,5 +41,19 @@ int size;
     addr = (void *)malloc(size);
     if(addr == NULL)
 	error("memory allocation failed");
+    return addr;
+}
+
+/*
+** stralloc - copies the given string into newly allocated memory.
+**            Just like strdup()!
+*/
+char *stralloc(str)
+char *str;
+{
+    char *addr;
+
+    addr = alloc(strlen(str)+1);
+    strcpy(addr, str);
     return addr;
 }

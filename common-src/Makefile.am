@@ -12,7 +12,7 @@ noinst_LIBRARIES =	libamanda.a libamnolog.a
 
 libamanda_a_SOURCES =	alloc.c		debug.c		dgram.c		\
 			error.c		match.c		protocol.c	\
-			regex.c		statfs.c	stralloc.c	\
+			regex.c		statfs.c	\
 			stream.c	token.c		version.c	\
 			versuff.c	amflock.c
 
@@ -26,7 +26,7 @@ noinst_HEADERS =	amanda.h	arglist.h	\
 			token.h		version.h
 
 EXTRA_DIST = 		alloca.c	getcwd.c	\
-			mktime.c	strdup.c	strerror.c	\
+			mktime.c	strerror.c	\
 			strstr.c	genversion.c
 
 .sh:

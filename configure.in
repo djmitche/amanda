@@ -1559,7 +1559,6 @@ ICE_CHECK_DECL(socket,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(socketpair,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(sscanf,stdio.h)
 AC_CHECK_FUNCS(statfs statvfs)
-AC_REPLACE_FUNCS(strdup)
 AC_REPLACE_FUNCS(strerror)
 ICE_CHECK_DECL(strerror,string.h)
 AC_FUNC_STRFTIME

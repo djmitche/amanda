@@ -134,7 +134,7 @@ int level, dataf, mesgf, indexf;
 		    pname, level, incrname));
 	} else {
 	    FILE *in = NULL, *out;
-	    char *inputname = strdup(incrname);
+	    char *inputname = stralloc(incrname);
 	    char buf[512];
 	    int baselevel = level;
 
@@ -323,7 +323,7 @@ int goterror;
 #ifdef SAMBA_CLIENT
       if (incrname != NULL) {
 #endif
-        char *nodotnew = strdup(incrname);
+        char *nodotnew = stralloc(incrname);
         nodotnew[strlen(nodotnew)-4] = '\0';
 	unlink(nodotnew);
         if (rename(incrname, nodotnew))
