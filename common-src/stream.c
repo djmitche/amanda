@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.18 1999/09/19 19:17:37 jrj Exp $
+ * $Id: stream.c,v 1.19 1999/10/07 18:33:40 jrj Exp $
  *
  * functions for managing stream sockets
  */
@@ -48,8 +48,6 @@ int sendsize, recvsize;
 #endif
     struct sockaddr_in server;
     int save_errno;
-
-    assert(portrange[0] <= portrange[1]);
 
     *portp = -1;				/* in case we error exit */
     if((server_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
