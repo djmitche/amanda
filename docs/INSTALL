@@ -262,7 +262,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	so you must consult the inetd man page for your site.  Here is
 	an example from our site, again from SunOS 4.x:
 
-	    amanda dgram udp wait bin /usr/local/libexec/amanda/amandad amandad
+	    amanda dgram udp wait USER AMANDAD_PATH amandad
 
 	If you wish tighter security checking to make sure that your
 	Amanda clients are only contacted by the Amanda backup host,
@@ -272,7 +272,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
 
 	Then you want to have your inetd.conf file say something like
 
-	    amanda dgram udp wait bin /usr/sbin/tcpd /usr/local/libexec/amanda/amandad
+	    amanda dgram udp wait USER /usr/sbin/tcpd AMANDAD_PATH
 
 	You will also need to edit your /etc/hosts.allow file.
 
