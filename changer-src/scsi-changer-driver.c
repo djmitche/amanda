@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1 1998/11/07 08:49:18 oliva Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.2 1998/11/11 23:59:10 oliva Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -114,7 +114,8 @@ int Inquiry(int DeviceFD)
     RequestSense_T RequestSense;
     int i;
     int lun;
-    
+    int ret;
+
     SCSIInquiry = (SCSIInquiry_T *)malloc(sizeof(SCSIInquiry_T));
     bzero(SCSIInquiry,sizeof(SCSIInquiry_T));
     CDB[0] = 0x12;   /* Inquiry command */
@@ -123,19 +124,29 @@ int Inquiry(int DeviceFD)
     CDB[3] = 0;
     CDB[4] = (unsigned char)sizeof(SCSIInquiry_T);
     CDB[5] = 0;
-    if (SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,                      
-			    SCSIInquiry, sizeof(SCSIInquiry_T), 
-			    (char *) &RequestSense, sizeof(RequestSense_T)) != 0)
-	{
-	    fprintf(stderr, "%s: Request Sense[Inquiry]: %02X",
-		    "chs", ((unsigned char *) &RequestSense)[0]);
-	    for (i = 1; i < sizeof(RequestSense_T); i++)               
-		fprintf(stderr, " %02X", ((unsigned char *) &RequestSense)[i]);
-	    fprintf(stderr, "\n");                         
-	}
+
+    ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,                      
+			      SCSIInquiry,
+			      sizeof(SCSIInquiry_T), 
+			      (char *) &RequestSense,
+			      sizeof(RequestSense_T));
+    if (ret < 0)
+      {
+/* 	fprintf(stderr, "%s: Request Sense[Inquiry]: %02X", */
+/* 		"chs", ((unsigned char *) &RequestSense)[0]); */
+/* 	for (i = 1; i < sizeof(RequestSense_T); i++)                */
+/* 	  fprintf(stderr, " %02X", ((unsigned char *) &RequestSense)[i]); */
+/* 	fprintf(stderr, "\n");    */
+	return(ret);
+      }
+    if ( ret > 0)
+      return(RequestSense.SenseKey);
+
     for (i=0;i < 16 && SCSIInquiry->prod_ident[i] != ' ';i++)
-	SCSIIdent[i] = SCSIInquiry->prod_ident[i];
+      SCSIIdent[i] = SCSIInquiry->prod_ident[i];
     SCSIIdent[i] = '\0';
+    
+    return(ret);
 }
 
 int PrintInquiry()
@@ -214,6 +225,7 @@ int TestUnitReady(int DeviceFD)
   RequestSense_T RequestSense;
   SCSIInquiry_T *SCSIInquiry;
   int i;
+  int ret;
 
   SCSIInquiry = (SCSIInquiry_T *)malloc(sizeof(SCSIInquiry_T));
   CDB[0] = 0;   /* Test Unit Ready*/
@@ -222,16 +234,28 @@ int TestUnitReady(int DeviceFD)
   CDB[3] = 0;
   CDB[4] = 0;
   CDB[5] = 0;
-  if (SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,                      
-                          0, 0, (char *) &RequestSense, sizeof(RequestSense_T)) != 0)      {
-    fprintf(stderr, "%s: Request Sense[TestUnitReady]: %02X",                                
-	    "chs", ((unsigned char *) &RequestSense)[0]);               
-    for (i = 1; i < sizeof(RequestSense_T); i++)                              
-      fprintf(stderr, " %02X", ((unsigned char *) &RequestSense)[i]);         
-    fprintf(stderr, "\n");                                                    
-  }
-  fprintf(stderr,"Type %d, product %s\n",SCSIInquiry->type, SCSIInquiry->prod_ident); 
 
+
+  ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,                      
+			    0, 0,
+			    (char *) &RequestSense,
+			    sizeof(RequestSense_T));
+
+  if (ret < 0)
+    {
+      /* 	fprintf(stderr, "%s: Request Sense[Inquiry]: %02X", */
+      /* 		"chs", ((unsigned char *) &RequestSense)[0]); */
+      /* 	for (i = 1; i < sizeof(RequestSense_T); i++)                */
+      /* 	  fprintf(stderr, " %02X", ((unsigned char *) &RequestSense)[i]); */
+      /* 	fprintf(stderr, "\n");    */
+      return(ret);
+    }
+  if ( ret > 0)
+    return(RequestSense.SenseKey);
+  
+  fprintf(stderr,"Type %d, product %s\n",SCSIInquiry->type, SCSIInquiry->prod_ident); 
+  
+  return(ret);
 }
 
 int ResetStatus(int DeviceFD)
@@ -239,6 +263,7 @@ int ResetStatus(int DeviceFD)
   CDB_T CDB;
   RequestSense_T RequestSense;
   int i;
+  int ret;
 
   CDB[0] = 0x7;   /* */
   CDB[1] = 0;
@@ -246,18 +271,26 @@ int ResetStatus(int DeviceFD)
   CDB[3] = 0;
   CDB[4] = 0;
   CDB[5] = 0;
-  if (SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,
-                          0, 0, (char *) &RequestSense, sizeof(RequestSense_T)) != 0)
-  {
-    fprintf(stderr, "%s: Request Sense[ResetStatus]: %02X",
-
-            "chs", ((unsigned char *) &RequestSense)[0]);
-    for (i = 1; i < sizeof(RequestSense_T); i++)
-      fprintf(stderr, " %02X", ((unsigned char *) &RequestSense)[i]);
-    fprintf(stderr, "\n");
-  }
 
 
+  ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,
+			    0, 0,
+			    (char *) &RequestSense,
+			    sizeof(RequestSense_T));
+
+  if (ret < 0)
+    {
+      /* 	fprintf(stderr, "%s: Request Sense[Inquiry]: %02X", */
+      /* 		"chs", ((unsigned char *) &RequestSense)[0]); */
+      /* 	for (i = 1; i < sizeof(RequestSense_T); i++)                */
+      /* 	  fprintf(stderr, " %02X", ((unsigned char *) &RequestSense)[i]); */
+      /* 	fprintf(stderr, "\n");    */
+      return(ret);
+    }
+  if ( ret > 0)
+    return(RequestSense.SenseKey);
+  
+  return(ret);
 }
 
 int EXBMove(int DeviceFD, int from, int to)
@@ -278,7 +311,7 @@ int GenericMove(int DeviceFD, int from, int to)
 {
   CDB_T CDB;
   RequestSense_T RequestSense;
-  int Result;
+  int ret;
   int i;
 
 
@@ -295,17 +328,23 @@ int GenericMove(int DeviceFD, int from, int to)
   CDB[10] = 0;
   CDB[11] = 0;
  
-  Result = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 12,
+  ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 12,
 	0, 0, (char *) &RequestSense, sizeof(RequestSense_T)); 
-  if (Result != 0)
-  {
-    fprintf(stderr, "%s: %02X Request Sense[EXABYTEMoveElement]: %02X",                                
-	    "chs", Result, ((unsigned char *) &RequestSense)[0]);               
-    for (i = 1; i < sizeof(RequestSense_T); i++)                              
-      fprintf(stderr, " %02X", ((unsigned char *) &RequestSense)[i]);         
-    fprintf(stderr, "\n");                                                    
-  }
-  return (Result);
+
+  if (ret < 0)
+    {
+      /* 	fprintf(stderr, "%s: Request Sense[Inquiry]: %02X", */
+      /* 		"chs", ((unsigned char *) &RequestSense)[0]); */
+      /* 	for (i = 1; i < sizeof(RequestSense_T); i++)                */
+      /* 	  fprintf(stderr, " %02X", ((unsigned char *) &RequestSense)[i]); */
+      /* 	fprintf(stderr, "\n");    */
+      return(ret);
+    }
+  if ( ret > 0)
+    return(RequestSense.SenseKey);
+  
+  return(ret);
+
 }
 /* ====================================================== */
 int UnloadTape(ElementInfo_T *ElementInfo, int MediumChangerFD, int TapeDeviceFD)
@@ -360,34 +399,44 @@ int ReadElementStatus(int DeviceFD, ElementInfo_T **ElementInfo)
   int x = 0;
   int offset = 0;
   int NoOfElements;
+  int ret; 
+
   MinSlots = 99;
   MaxSlots = 0;
 
-  CDB[0] = 0xB8;                /* READ ELEMENT STATUS */                       
-  CDB[1] = 0;                   /* Element Type Code = 0, VolTag = 0 */         
-  CDB[2] = 0;                   /* Starting Element Address MSB */              
-  CDB[3] = 0;                   /* Starting Element Address LSB */              
-  CDB[4] = 0;                   /* Number Of Elements MSB */                    
+  CDB[0] = 0xB8;                /* READ ELEMENT STATUS */
+  CDB[1] = 0;                   /* Element Type Code = 0, VolTag = 0 */
+  CDB[2] = 0;                   /* Starting Element Address MSB */   
+  CDB[3] = 0;                   /* Starting Element Address LSB */   
+  CDB[4] = 0;                   /* Number Of Elements MSB */             
   CDB[5] = 255;                 /* Number Of Elements LSB */                   
-  CDB[6] = 0;                   /* Reserved */                                  
-  CDB[7] = 0;                   /* Allocation Length MSB */                     
-  CDB[8] = (MaxReadElementStatusData >> 8) & 0xFF; /* Allocation Length */      
-  CDB[9] = MaxReadElementStatusData & 0xFF; /* Allocation Length LSB */         
-  CDB[10] = 0;                  /* Reserved */                                  
-  CDB[11] = 0;                  /* Control */                                   
-  if (SCSI_ExecuteCommand(DeviceFD, Input, CDB, 12,                      
+  CDB[6] = 0;                   /* Reserved */                                 
+  CDB[7] = 0;                   /* Allocation Length MSB */                    
+  CDB[8] = (MaxReadElementStatusData >> 8) & 0xFF; /* Allocation Length */    
+  CDB[9] = MaxReadElementStatusData & 0xFF; /* Allocation Length LSB */      
+  CDB[10] = 0;                  /* Reserved */                                
+  CDB[11] = 0;                  /* Control */                                  
+
+
+
+  ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 12,                      
                           DataBuffer, sizeof(DataBuffer), 
-                          (char *) &RequestSense, sizeof(RequestSense_T)) != 0){
-    fprintf(stderr, "%s: Request Sense[ReadElementStatus]: %02X",                                
-	    "chs", ((unsigned char *) &RequestSense)[0]);               
-    for (i = 1; i < sizeof(RequestSense_T); i++)                              
-      fprintf(stderr, " %02X", ((unsigned char *) &RequestSense)[i]);         
-    fprintf(stderr, "\n");                                                    
-    return(1);
-  }
-  /*
-    dump_hex(&DataBuffer, 1024);
-  */
+                          (char *) &RequestSense, sizeof(RequestSense_T));
+
+
+  if (ret < 0)
+    {
+      /* 	fprintf(stderr, "%s: Request Sense[Inquiry]: %02X", */
+      /* 		"chs", ((unsigned char *) &RequestSense)[0]); */
+      /* 	for (i = 1; i < sizeof(RequestSense_T); i++)                */
+      /* 	  fprintf(stderr, " %02X", ((unsigned char *) &RequestSense)[i]); */
+      /* 	fprintf(stderr, "\n");    */
+      return(ret);
+    }
+  if ( ret > 0)
+    return(RequestSense.SenseKey);
+  
+  
   ElementStatusData = (ElementStatusData_T *)&DataBuffer[offset];
   DataBufferLength = Endian24(ElementStatusData->count);
   offset = sizeof(ElementStatusData_T);
@@ -479,9 +528,10 @@ int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int
   int x = 0;
   int offset = 0;
   int NoOfElements;
+  int ret;
 
   CDB[0] = 0x03;                /* REQUEST SENSE */                       
-  CDB[1] = 0;                   /* Logical Unit Number = 0, Reserved */         
+  CDB[1] = 0;                   /* Logical Unit Number = 0, Reserved */ 
   CDB[2] = 0;                   /* Reserved */              
   CDB[3] = 0;                   /* Reserved */
   CDB[4] = 0x1D;                /* Allocation Length */                    
@@ -489,14 +539,21 @@ int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int
 
   bzero(ExtendedRequestSense, sizeof(ExtendedRequestSense_T));
 
-  if (SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,                      
-                          (char *) ExtendedRequestSense, sizeof(ExtendedRequestSense_T),  
-                          (char *) &RequestSense, sizeof(RequestSense_T)) == 0)
-  {      
-    return(1);
-  }
-  fprintf(stderr,"RequestSense-ERROR!\n");
-  return(error);
+  ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,                      
+			    (char *) ExtendedRequestSense,
+			    sizeof(ExtendedRequestSense_T),  
+			    (char *) &RequestSense, sizeof(RequestSense_T));
+  if (ret < 0)
+    {
+      /* 	fprintf(stderr, "%s: Request Sense[Inquiry]: %02X", */
+      /* 		"chs", ((unsigned char *) &RequestSense)[0]); */
+      /* 	for (i = 1; i < sizeof(RequestSense_T); i++)                */
+      /* 	  fprintf(stderr, " %02X", ((unsigned char *) &RequestSense)[i]); */
+      /* 	fprintf(stderr, "\n");    */
+      return(ret);
+    }
+  if ( ret > 0)
+    return(RequestSense.SenseKey);
 }
 
 

@@ -1,5 +1,5 @@
 /*
- *	$Id: chg-scsi.c,v 1.7 1998/11/07 08:49:12 oliva Exp $
+ *	$Id: chg-scsi.c,v 1.8 1998/11/11 23:59:07 oliva Exp $
  *
  *	chg-scsi.c -- generic SCSI changer driver
  *
@@ -575,9 +575,9 @@ void clean_tape(int fd,char *tapedev,char *cnt_file, int drivenum,
     put_current_slot(cnt_file,counter);
   }
   load(fd,drivenum,cleancart);
-/*  eject_tape(tapedev); */
   
-  unload(fd,drivenum,cleancart);  
+  if (drive_loaded(fd, drivenum))
+    unload(fd,drivenum,cleancart);  
   unlink(usagetime);
 }
 /* ----------------------------------------------------------------------*/
@@ -727,7 +727,7 @@ int main(int argc, char *argv[])
 	    if (!loaded)
 		(void)load(fd, drive_num, target);
 	    if (need_sleep)
-	      Tape_Ready(tape_device, need_sleep);
+	      Tape_Ready(tape_device, changer_dev, fd, need_sleep);
 	    printf("%d %s\n", target-slot_offset, tape_device);
 	    break;
 
@@ -759,7 +759,7 @@ int main(int argc, char *argv[])
 	    (void)load(fd, drive_num, slot_offset);
 	    put_current_slot(changer_file, slot_offset);
 	    if (need_sleep)
-		Tape_Ready(tape_device, need_sleep);
+		Tape_Ready(tape_device, changer_dev, fd, need_sleep);
 	    printf("%d %s\n", get_current_slot(changer_file), tape_device);
 	    break;
 

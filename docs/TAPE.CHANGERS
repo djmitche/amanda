@@ -361,13 +361,18 @@ This device is used to control the tape, read status infos etc.
 Notes on how to run on different Plattforms. At the moment it is
 tested with a HP DAT changer and an exabyte 10h library on the following
 plattforms:
-HP_UX 10.20
-IRIX 6.x
-Solaris 2.5/6
-Linux
+HP_UX 10.20	SureStore 1200e, Exabyte 10h
+IRIX 6.x	SureStore 1200e, Exabyte 10h
+Solaris 2.5/6 Exabyte 10h
+Linux	SureStore 1200e
+AIX		SureStore 1200e
 
-For solaris a generic scsi driver modules is needed(sst), you can find it in
-the driver development package at sun or ask me (th@icem.de) for a copy.
+The Exabyte library uses 2 SCSI Addresses, one for the tape, one for the robot.
+The SureStore uses the same address for the tape and the robot.
+
+For solaris a generic scsi driver modules is needed(sst), if your changer 
+uses 2 addresses, you can find it in the driver development package
+at sun or ask me (th@icem.de) for a copy.
 
 For HP you have to create the special device files for the pass throu
 interface.

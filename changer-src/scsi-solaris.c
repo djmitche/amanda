@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-solaris.c,v 1.2 1998/11/07 08:53:28 oliva Exp $";
+static char rcsid[] = "$Id: scsi-solaris.c,v 1.3 1998/11/11 23:59:18 oliva Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an Sun Workstation
@@ -110,9 +110,22 @@ int Tape_Status( int DeviceFD)
 	}
 }
 
-int Tape_Ready(char *Device, int wait)
+int Tape_Ready(char *tapedev, char * changerdev, int changerfd, int wait)
 {
-   sleep(wait);
-   return;
+  int cnt;
+  FILE *out =NULL;
+  
+  if (strcmp(tapedev, changerdev) == 0) {
+    sleep(wait);
+    return(0);
+  } else {
+    while ((cnt<timeout) && (NULL==(out=fopen(tapedev,"w+")))){
+      cnt++;
+      sleep(1);
+    }
+    if (out != NULL)
+      fclose(out);
+    return 0;
+  }
 }
 #endif
