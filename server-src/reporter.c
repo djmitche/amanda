@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.74 2002/06/10 21:53:15 martinea Exp $
+ * $Id: reporter.c,v 1.75 2002/09/05 17:50:28 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -581,7 +581,7 @@ main(argc, argv)
 #else
 	    curlog = L_ERROR;
 	    curprog = P_REPORTER;
-	    curstr = stralloc2("no printer command defined");
+	    curstr = stralloc("no printer command defined");
 	    handle_error();
 	    amfree(curstr);
 #endif
