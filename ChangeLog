@@ -1,3 +1,8 @@
+1999-11-01 John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/amcleanupdisk.c (main): do not free the config name (it
+	  was never alloc-d).
+
 1999-10-24  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
 	* common-src/debug.c: Do not assume stderr is a compile-time

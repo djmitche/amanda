@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcleanupdisk.c,v 1.7 1999/09/15 00:32:18 jrj Exp $
+ * $Id: amcleanupdisk.c,v 1.8 1999/11/01 22:24:38 jrj Exp $
  */
 #include "amanda.h"
 
@@ -119,7 +119,6 @@ char **main_argv;
     close_infofile();
 
     amfree(config_dir);
-    amfree(config_name);
     return 0;
 }
 
