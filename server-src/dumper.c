@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.31 1997/10/17 17:51:14 amcore Exp $
+/* $Id: dumper.c,v 1.32 1997/11/06 03:32:10 amcore Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -217,6 +217,7 @@ char **main_argv;
     strcpy(loginid, pwptr->pw_name);
 
     signal(SIGPIPE, SIG_IGN);
+    signal(SIGCHLD, SIG_IGN);
 
     interactive = isatty(0);
     pid = getpid();
