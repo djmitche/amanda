@@ -70,6 +70,7 @@ genversion.o: genversion.c
 		   -c $(srcdir)/genversion.c
 
 version.c:	genversion
+	-rm -f version.c
 	./genversion > version.c
 
 .deps/match.P match.o match.lo: regex.h
