@@ -486,7 +486,7 @@ log file.
 .TP
 .BS indexdir string
 Default
-.IR @INDEX_DIR@ .
+.IR @DB_DIR@/index .
 The directory where index files are stored.
 Index files are
 only generated for filesystems whose

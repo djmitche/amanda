@@ -174,12 +174,13 @@ This cause sendbackup-dump on the client machine to generate an index
 file which is stored local to the client, for later recovery by
 amgetidx (which is called by amdump).
 
-3) Part of the configuration for amindex is INDEX_DIR where all the
-index files are stored.  This directory needs to have a subdirectory
-for each different amanda config used, with name equal to the config
-name.  You need to create these directories by hand.  Each needs to
-have read/write permissions set for the user you defined to run
-amanda.
+3) Amanda saves all the index files under a directory specified by
+"indexdir" in amanda.conf.  You need to create this directory by hand.
+It needs to have read/write permissions set for the user you defined
+to run Amanda.
+
+If you are using the "text database" option you may set indexdir and
+infofile to be the same directory.
 
 4) The index browser, amrecover, currently gets installed as part of
 the client software.  Its location may not be appropriate for your
@@ -206,6 +207,8 @@ must have permission to run restore.
 
 CHANGES FROM AMINDEX-1.0
 ------------------------
+
+Get index directory from amanda.conf
 
 Integration into amanda-2.3.0.4.
 

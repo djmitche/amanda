@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.11 1997/12/16 18:02:17 jrj Exp $
+ * $Id: amindexd.c,v 1.12 1997/12/19 11:54:54 george Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assummed that this is launched from inetd instead of being
@@ -328,17 +328,12 @@ char *config;
     }
 
     /* okay, now look for the index directory */
-    if (chdir(INDEX_DIR) == -1)
+    if (chdir(getconf_str(CNF_INDEXDIR)) == -1)
     {
-	reply(501, "Index directory %s does not exist", INDEX_DIR);
+	reply(501, "Index directory %s does not exist", getconf_str(CNF_INDEXDIR));
 	return -1;
     }
-    if (chdir(getconf_byname("indexdir")) == -1)
-    {
-	(void)chdir(INDEX_DIR);
-	reply(501, "There is no index directory for config %s.", config);
-	return -1;
-    }
+
     return 0;
 }
 
@@ -526,7 +521,7 @@ int tapedev_is P((void))
     }
 
     /* get tapedev value */
-    if ((result = getconf_byname("tapedev")) == NULL)
+    if ((result = getconf_str(CNF_TAPEDEV)) == NULL)
     {
 	reply(501, "Tapedev not set inside config file.");
 	return -1;
@@ -660,16 +655,6 @@ char **argv;
     /* localhost[sizeof(local_hostname)-1] = '\0'; */ /* local_hostname is static */
     if(gethostname(local_hostname, sizeof(local_hostname)-1) == -1)
 	error("gethostname: %s", strerror(errno));
-
-    if (chdir(INDEX_DIR) == -1)
-    {
-	lreply(520, "%s AMANDA index server (%s) not ready.",
-	       local_hostname, server_version);
-	lreply(520, "Configuration error: cannot cd to INDEX_DIR \"%s\"",
-	       INDEX_DIR);
-	reply(520, "Server exiting!");
-	return 1;
-    }
 
     reply(220, "%s AMANDA index server (%s) ready.", local_hostname,
 	  server_version);

@@ -22,7 +22,6 @@
 #undef DB_DIR
 #undef DEBUG_DIR
 #undef LOG_DIR
-#undef INDEX_DIR
 
 /* This is the default Amanda index server.  */
 #undef DEFAULT_SERVER

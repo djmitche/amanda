@@ -110,25 +110,9 @@ AC_DEFINE_UNQUOTED(CONFIG_DIR,"$CONFIG_DIR")
 AC_SUBST(CONFIG_DIR)
 
 AC_ARG_WITH(indexdir,
-    [  --with-indexdir=DIR    index of files dumped go in DIR [localstatedir/amanda/index]],
-    [
-	case "$withval" in
-	"" | y | ye | yes | n | no)
-	    AC_MSG_ERROR([*** You must supply an argument to the --with-indexdir option.])
-	  ;;
-	*) INDEX_DIR="$withval"
-	  ;;
-	esac
-    ],
-    : ${INDEX_DIR=$localstatedir/amanda/index}
-)
-INDEX_DIR=`(
-    test "x$prefix" = xNONE && prefix=$ac_default_prefix
-    test "x$exec_prefix" = xNONE && exec_prefix=${prefix}
-    eval echo "$INDEX_DIR"
-)`
-AC_DEFINE_UNQUOTED(INDEX_DIR,"$INDEX_DIR")
-AC_SUBST(INDEX_DIR)
+    [  --with-indexdir        deprecated, use indexdir in amanda.conf],
+    [   AC_MSG_ERROR([*** --with-indexdir is deprecated, use indexdir in amanda.conf instead.])
+    ],)
 
 AC_ARG_WITH(dbdir,
     [  --with-dbdir=DIR       curinfo database in DIR [localstatedir/amanda]],

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtrmidx.c,v 1.11 1997/12/16 20:44:55 jrj Exp $
+ * $Id: amtrmidx.c,v 1.12 1997/12/19 11:54:55 george Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -66,25 +66,26 @@ char **argv;
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 
-    /* get the list of disks being dumped and their types */
+    /* read the config file */
     ap_snprintf(buf, sizeof(buf), "%s/%s", CONFIG_DIR, argv[1]);
     if (chdir(buf) != 0)
-	error("could not cd to confdir %s: %s", buf, strerror(errno));
+	error("could not cd to confdir \"%s\": %s", buf, strerror(errno));
+
     if (read_conffile(CONFFILE_NAME))
 	error("could not read amanda config file");
+
+    /* get the list of disks being dumped and their types */
     if ((diskl = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
 	error("could not load \"%s\".", getconf_str(CNF_DISKFILE));
+
+    /* change into the index directory */
+    if (chdir(getconf_str(CNF_INDEXDIR)) == -1)
+	error("could not cd to index directory \"%s\": %s",
+	      getconf_str(CNF_INDEXDIR), strerror(errno));
 
     /* determine how many indices to keep */
     no_keep = getconf_int(CNF_TAPECYCLE) + 1;
     dbprintf(("Keeping %d index files\n", no_keep));
-
-    /* change into the index directory */
-    if (chdir(INDEX_DIR) == -1)
-	error("couldn't change into index root directory \"%s\".", INDEX_DIR);
-    if (chdir(getconf_str(CNF_INDEXDIR)) == -1)
-	error("couldn't change into index config directory \"%s\".",
-	      getconf_str(CNF_INDEXDIR));
 
     level_position = strlen(COMPRESS_SUFFIX)+1;
 

@@ -1,5 +1,10 @@
 Version 2.4.0b5
 
+	Remove --with-indexdir option from configure.  This is obtained
+	from amanda.conf at run time.  Also fix things so that it *is*
+	obtained from amanda.conf in all cases.
+	- scott
+
 	This is no longer tested on configure.in, since it is
 	expressly forbidden to include kernel headers under glibc,
 	according to Matthias Urlichs <smurf@noris.de>.  However, Eric

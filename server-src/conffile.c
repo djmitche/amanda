@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.26 1997/12/16 18:02:23 jrj Exp $
+ * $Id: conffile.c,v 1.27 1997/12/19 11:54:56 george Exp $
  *
  * read configuration file
  */
@@ -552,13 +552,12 @@ static void init_defaults()
     conf_diskfile.s = newstralloc(conf_diskfile.s, "disklist");
     conf_diskdir.s  = newstralloc(conf_diskdir.s,  "/dumps/amanda");
     conf_tapetype.s = newstralloc(conf_tapetype.s, "EXABYTE");
-    conf_indexdir.s = newstralloc(conf_indexdir.s,
-#ifdef INDEX_DIR
-		INDEX_DIR
+
+#ifdef DB_DIR
+    conf_indexdir.s = newstralloc2(conf_indexdir.s, DB_DIR, "/index");
 #else
-		"/usr/adm/amanda/index"
+    conf_indexdir.s = newstralloc(conf_indexdir.s, "/usr/adm/amanda/index");
 #endif
-		);
 
     conf_dumpcycle.i	= 10;
     conf_tapecycle.i	= 15;

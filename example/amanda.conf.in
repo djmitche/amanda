@@ -84,7 +84,7 @@ holdingdisk hd1 {
 
 infofile "@DB_DIR@/@DEFAULT_CONFIG@/curinfo"	# database filename
 logfile  "@LOG_DIR@/@DEFAULT_CONFIG@/log"	# log filename
-indexdir "@INDEX_DIR@/@DEFAULT_CONFIG@"		# index directory
+indexdir "@DB_DIR@/@DEFAULT_CONFIG@/index"	# index directory
 
 # tapetypes
 #

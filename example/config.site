@@ -74,15 +74,6 @@
 # CONFIG_DIR=/usr/local/etc/amanda
 
 
-# INDEX_DIR		--with-indexdir=DIR
-#			Default: $localstatedir/amanda-index = 
-#				/usr/local/var/amanda-index
-#			Directory containing the server side index database.
-#			Amanda supports multiple configurations per site;
-#			these are contained in subdirectories of INDEX_DIR.
-# INDEX_DIR=/usr/spool/amanda
-
-
 # DB_DIR		--with-dbdir=DIR
 #			Default: $localstatedir/amanda = /usr/local/var/amanda
 #			Directory containing the curinfo database files.
