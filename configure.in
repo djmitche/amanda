@@ -827,7 +827,7 @@ y |  ye | yes) AC_DEFINE(ASSERTIONS)
 esac
 
 AC_ARG_WITH(debugging,
-    [  --with[out]-debugging  [do not] record runtime debugging information in specified directory [/tmp/amanda]],
+    [  --with[out]-debugging[=/debug/dir] [do not] record runtime debugging information in specified directory [/tmp/amanda]],
     DEBUGGING="$withval",
     : ${DEBUGGING=yes}
 )
