@@ -1,5 +1,9 @@
 1998-06-13  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* docs/FAQ: new file
+	* docs/SUNOS4.BUG: removed
+	* Makefile.am: remove docs/SUNOS4.BUG and add docs/FAQ
+	
 	* example/amanda.conf.in (bumpmult): fixed equation for threshold
 	* man/amanda.8.in (bumpsize): fix threshold example.
 	problem reported by Brian McEntire <brianm@fsg1.nws.noaa.gov>

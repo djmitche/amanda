@@ -14,11 +14,11 @@ SUBDIRS=config		\
 EXTRA_DIST = \
 	CHANGES				COPYRIGHT			\
 	COPYRIGHT-APACHE		COPYRIGHT-REGEX 		\
-	docs/INDEXING			docs/INSTALL			\
-	docs/INTERNALS			docs/KERBEROS			\
-	docs/LABEL.PRINTING		docs/MULTITAPE			\
-	docs/RESTORE			docs/SAMBA			\
-	docs/SECURITY			docs/SUNOS4.BUG			\
+	docs/FAQ			docs/INDEXING			\
+	docs/INSTALL			docs/INTERNALS			\
+	docs/KERBEROS			docs/LABEL.PRINTING		\
+	docs/MULTITAPE			docs/RESTORE			\
+	docs/SAMBA			docs/SECURITY			\
 	docs/SYSTEM.NOTES		docs/TAPE.CHANGERS		\
 	docs/TAPETYPES			docs/UPGRADE			\
 	docs/WHATS.NEW			docs/WISHLIST			\

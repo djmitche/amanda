@@ -1,0 +1,57 @@
+This file contains some questions that are frequently asked in the
+Amanda mailing lists, specially by new users.  Please take a look at
+this file before posting, this can save us time that could be spent
+improving amanda and its documentation.
+
+New entries and modifications are welcome; send them to
+amanda-users@amanda.org or amanda-hackers@amanda.org.
+
+You may also want to take a look at Oren Teich's Amanda FAQ Page,
+http://ugrad-www.cs.colorado.edu/~teich/amanda
+
+He is no longer maintaining that page, but it still contains useful
+and accurate information.
+
+
+Q: How can I configure amanda so that it performs full backups on the
+week-end and incrementals on weekdays?
+
+A: You can't.  Amanda doesn't work this way.  You just have to tell
+Amanda how many tapes you have (tapecycle), and how often you want it
+to perform full backups of each filesystem (dumpcycle).  It will
+spread full backups along the dumpcycle, so you won't have any
+full-only or incremental-only runs.
+
+
+Q: What if my my tape unit uses expensive tapes, and I don't want to
+use one tape per day?  Can't Amanda append to tapes?
+
+A: It can't, and this is good.  Tape drives and OS drivers are
+(in)famous for rewinding tapes at unexpected times, without telling
+the program that's writing to them.  If you have a month's worth of
+backups in that tape, you really don't want them to be overwritten, so
+Amanda has taken the safe approach of requiring tapes to be written
+from the beginning on every run.
+
+   This can be wasteful, specially if you have a small amount of data
+to back up, but expensive large-capacity tapes.  One possible approach
+is to run amdump with tapes only, say once a week, to perform full
+backups, and run it without tape on the other days, so that it
+performs incremental backups and stores them in the holding disk.
+Once or twice a week, you flush all backups in the holding disk to a
+single tape.
+
+   If you don't trust your holding disk, and you'd rather have all
+your data on tapes daily, you can create an alternate configuration,
+with two tapes, that backs up the holding disk only, always as a full
+backup.  You'd run this configuration always after your regular
+backup, so you always have a complete image of the holding disk on
+tape, just in case it fails.
+
+
+Q: How can I configure Amanda for long-term archiving?
+
+A: The best approach is to create a separate configuration for your
+archive backups.  It should use a separate set of tapes, and have all
+dumptypes configured with `record no', so it doesn't interfere with
+regular backups.
