@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.33 1999/04/09 20:35:25 kashmir Exp $
+ * $Id: amandad.c,v 1.34 1999/04/10 19:35:26 kashmir Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -305,7 +305,6 @@ main(argc, argv)
     {
 	/* this lameness is for error() */
 	extern int db_fd;
-	dup2(db_fd, 1);
 	dup2(db_fd, 2);
     }
     dbprintf(("%s: version %s\n", argv[0], version()));
@@ -871,8 +870,6 @@ s_ackwait(as, action, pkt)
 		security_geterror(as->security_handle)));
 	    security_stream_close(dh->netfd);
 	    dh->netfd = NULL;
-	    event_release(dh->ev_handle);
-	    dh->ev_handle = NULL;
 	}
 	/* setup an event for reads from it */
 	dh->ev_handle = event_register(dh->fd, EV_READFD, process_netfd, dh);
@@ -1035,11 +1032,8 @@ allocstream(as, handle)
 
     /* allocate a stream from the security layer and return */
     dh->netfd = security_stream_server(as->security_handle);
-    if (dh->netfd == NULL) {
-	event_release(dh->ev_handle);
-	dh->ev_handle = NULL;
+    if (dh->netfd == NULL)
 	return (-1);
-    }
 
     /*
      * convert the stream into a numeric id that can be sent to the

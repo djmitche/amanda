@@ -1,7 +1,13 @@
 1999-04-10  Mike Grupenhoff <kashmir@munge.com>
 
-	* ap_snprintf -> snprintf, ap_vsnprintf -> vsnprintf
+	* client-src/amandad.c (main): don't dup stdout to db_fd - it might
+	be needed by the security driver
+	* client-src/amandad.c (s_ackwait, allocstream,): on error, don't
+	attempt to event_release a handle we haven't attached yet.
 
+1999-04-10  Mike Grupenhoff <kashmir@munge.com>
+
+	* ap_snprintf -> snprintf, ap_vsnprintf -> vsnprintf
 
 1999-04-09  Mike Grupenhoff <kashmir@munge.com>
 
