@@ -1,3 +1,9 @@
+2001-05-29 John R. Jackson <jrj@purdue.edu>
+
+	* server-src/reporter.c: Fix PostScript output to only show what went
+	  on the tape, not what the total amount dumped.  Compliments of
+	  Joshua Baker-LePain <jlb17@duke.edu>.
+
 2001-05-18 John R. Jackson <jrj@purdue.edu>
 
 	* client-src/patch-system.sh.in: Missed a reference to kamanda in the
