@@ -1,3 +1,8 @@
+1999-09-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server/driver.c (main): use the holding disk even if the
+	datestamped directory already exist.
+
 1999-09-14  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
 	* configure.in: Get snapshot date from SNAPSHOT file, if it exists.
@@ -409,7 +414,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.272 1999/09/14 05:40:25 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.273 1999/09/16 00:02:18 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
