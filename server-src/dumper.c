@@ -24,20 +24,20 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.28 1997/09/26 11:24:35 george Exp $
+/* $Id: dumper.c,v 1.29 1997/10/03 08:29:23 george Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
 #include "amanda.h"
+#include "amindex.h"
+#include "arglist.h"
+#include "clock.h"
 #include "conffile.h"
 #include "logfile.h"
-#include "stream.h"
-#include "clock.h"
 #include "protocol.h"
-#include "version.h"
-#include "arglist.h"
-#include "amindex.h"
+#include "stream.h"
 #include "token.h"
+#include "version.h"
 
 
 #ifdef KRB4_SECURITY
@@ -121,7 +121,6 @@ static void process_dumpeof P((void));
 static void process_dumpline P((char *str));
 static void add_msg_data P((char *str, int len));
 static void log_msgout P((logtype_t typ));
-char *diskname2filename P((char *dname));
 void sendbackup_response P((proto_t *p, pkt_t *pkt));
 int startup_dump P((char *hostname, char *disk, int level, char *dumpdate,
 		    char *dumpname, char *options));
@@ -604,24 +603,6 @@ logtype_t typ;
 
 /* ------------- */
 
-char *diskname2filename(dname)
-char *dname;
-{
-    static char filename[256];
-    char *s, *d;
-
-    for(s = dname, d = filename; *s != '\0'; s++, d++) {
-	switch(*s) {
-	case '/': *d = ':'; break;
-	    /* the : -> ::  gives us 1-1 mapping of strings */
-	case ':': *d++ = ':'; *d = ':'; break;
-	default:  *d = *s;
-	}
-    }
-    *d = '\0';
-    return filename;
-}
-
 /* Send an Amanda dump header to the output file.
 */
 int write_tapeheader(outfd)
@@ -774,7 +755,7 @@ int mesgfd, datafd, indexfd, outfd;
     }
 
     sprintf(errfname, "/tmp/%s.%s.%d.errout", hostname,
-	    diskname2filename(diskname), level);
+	    sanitise_filename(diskname), level);
     if((errf = fopen(errfname, "w")) == NULL) {
 	sprintf(errstr,"errfile open \"%s\": %s", errfname, strerror(errno));
 	goto failed;

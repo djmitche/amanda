@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.6 1997/09/09 17:05:26 amcore Exp $
+ * $Id: amrestore.c,v 1.7 1997/10/03 08:29:19 george Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -78,7 +78,6 @@ int compress_status;
 
 void errexit P((void));
 char *eatword P((char **linep));
-char *diskname2filename P((char *dname));
 void read_file_header P((void));
 void print_header P((FILE *outf));
 int disk_match P((void));
@@ -121,22 +120,6 @@ char **linep;
     }
     *linep = lp;
     return str;
-}
-
-
-/* XXX dup from driver.c */
-char *diskname2filename(dname)
-char *dname;
-{
-    static char filename[256];
-    char *s, *d;
-
-    for(s = dname, d = filename; *s != '\0'; s++, d++) {
-	if(*s == '/') *d = '_';
-	else *d = *s;
-    }
-    *d = '\0';
-    return filename;
 }
 
 
@@ -206,7 +189,7 @@ void read_file_header()
 	    strcpy(file.comp_suffix, ".Z");
 
 	sprintf(filename, "%s.%s.%d.%d", file.name, 
-		diskname2filename(file.disk),
+		sanitise_filename(file.disk),
 		file.datestamp, file.dumplevel);
     }
     else if(!strcmp(str, "TAPEEND")) {

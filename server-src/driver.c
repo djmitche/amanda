@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.15 1997/09/26 12:04:46 george Exp $
+ * $Id: driver.c,v 1.16 1997/10/03 08:29:21 george Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -42,6 +42,7 @@
 #include "infofile.h"
 #include "logfile.h"
 #include "statfs.h"
+#include "token.h"
 #include "version.h"
 
 #include "driver.h"
@@ -965,21 +966,6 @@ unsigned long size;
 }
 
 
-char *diskname2filename(dname)
-char *dname;
-{
-    static char filename[256];
-    char *s, *d;
-
-    for(s = dname, d = filename; *s != '\0'; s++, d++) {
-	if(*s == '/') *d = '_';
-	else *d = *s;
-    }
-    *d = '\0';
-    return filename;
-}
-
-
 void assign_holdingdisk(holdp, diskp)
 holdingdisk_t *holdp;
 disk_t *diskp;
@@ -995,7 +981,7 @@ disk_t *diskp;
 
     sprintf(sched(diskp)->destname, "%s/%s/%s.%s.%d",
 	    holdp->diskdir, datestamp, diskp->host->hostname,
-	    diskname2filename(diskp->name), sched(diskp)->level);
+	    sanitise_filename(diskp->name), sched(diskp)->level);
 
     holdalloc(holdp)->allocated_space += sched(diskp)->act_size;
     holdalloc(holdp)->allocated_dumpers += 1;

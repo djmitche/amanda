@@ -25,13 +25,14 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.17 1997/10/03 07:01:11 george Exp $
+ * $Id: infofile.c,v 1.18 1997/10/03 08:29:24 george Exp $
  *
  * manage current info file
  */
 #include "amanda.h"
 #include "conffile.h"
 #include "infofile.h"
+#include "token.h"
 
 #ifdef TEXTDB
   static char *infodir = (char *)0;
@@ -85,15 +86,21 @@ char *mode;
     int rc;
     int len;
     char *p;
+    char *shost, *sdisk;
 
     assert(infofile == (char *)0);
 
     writing = (*mode == 'w');
 
-/* XXX - need to sanitise host and disk */
-    len = strlen(infodir) + strlen(host) + strlen(disk) + 7;
+    shost = stralloc(sanitise_filename(host));
+    sdisk = stralloc(sanitise_filename(disk));
+
+    len = strlen(infodir) + strlen(shost) + strlen(sdisk) + 7;
     infofile = alloc(len + 1);
-    sprintf(infofile, "%s/%s/%s/info", infodir, host, disk);
+    sprintf(infofile, "%s/%s/%s/info", infodir, shost, sdisk);
+
+    free(sdisk);
+    free(shost);
 
     /* create the directory structure if in write mode */
     if (writing) {
@@ -265,29 +272,34 @@ char *disk;
     int len;
     char *fn;
     int rc, rc2;
+    char *shost, *sdisk;
 
-/* XXX - need to sanitise host and disk */
-    len = strlen(infodir) + strlen(host) + strlen(disk) + 7;
+    shost = stralloc(sanitise_filename(host));
+    sdisk = stralloc(sanitise_filename(disk));
+
+    len = strlen(infodir) + strlen(shost) + strlen(sdisk) + 7;
     fn = alloc(len + 4 + 1);
 
-    sprintf(fn, "%s/%s/%s/info.new", infodir, host, disk);
+    sprintf(fn, "%s/%s/%s/info.new", infodir, shost, sdisk);
     rc = unlink(fn);
 
-    sprintf(fn, "%s/%s/%s/info", infodir, host, disk);
+    sprintf(fn, "%s/%s/%s/info", infodir, shost, sdisk);
     rc = unlink(fn);
     if(errno == ENOENT) rc = 0; /* already gone! */
 
     /* try to clean up */
     if (rc == 0) {
-	sprintf(fn, "%s/%s/%s", infodir, host, disk);
+	sprintf(fn, "%s/%s/%s", infodir, shost, sdisk);
 	rc2 = rmdir(fn);
 	if (rc2 == 0) {
-	    sprintf(fn, "%s/%s", infodir, host);
+	    sprintf(fn, "%s/%s", infodir, shost);
 	    rc2 = rmdir(fn);
 	}
     }
 
     free(fn);
+    free(sdisk);
+    free(shost);
 
     return rc;
 }
