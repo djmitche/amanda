@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.28.2.6 1998/02/19 16:03:34 amcore Exp $
+ * $Id: sendbackup.c,v 1.28.2.7 1998/02/25 21:59:26 amcore Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -189,7 +189,10 @@ char **argv;
 	 * descriptor, which in turn might be used as an index into
 	 * an array (e.g. an fd_set).
 	 */
-	close(fd);
+#ifdef KRB4_SECURITY
+	if (fd != KEY_PIPE)	/* XXX interface needs to be fixed */
+#endif
+		close(fd);
     }
 
     chdir("/tmp");
