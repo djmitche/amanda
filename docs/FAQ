@@ -124,6 +124,23 @@ information about backups stored in that tape from the Amanda
 database.
 
 
+Q: Why does `amcheck' tell me `DUMP program not available'?
+
+A: Because the `configure' could not find DUMP when it was first run.
+This is a common problem on Linux hosts, because most Linux
+distributions do not install DUMP by default.
+
+   If you don't have a DUMP program installed, install it, remove
+`config.cache', run `configure' again and rebuild Amanda.  While
+`configure' is running, make sure it can find the installed DUMP
+program.  If it cannot, you may have to set the environment variables
+DUMP and RESTORE by hand, before running configure.
+
+   If you can't or don't want to install DUMP, you may use GNU tar,
+but make sure it as release 1.12 or newer; release 1.11.8 may work,
+but estimates will be slow as hell.
+
+
 Q: Which tape changer configuration should I use in amanda.conf?
 
 A: If you only have one tape unit, you have two choices: (i) don't use

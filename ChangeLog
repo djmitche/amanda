@@ -1,5 +1,10 @@
 1998-07-13  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* docs/FAQ: What to do if DUMP program is not available.
+	* client-src/selfcheck.c (check_overall): if a needed program is
+	missing, print an error message.
+	Reported by Klaus Hoffmann <handatalog@csi.com>
+
 	* */Makefile.am: checked library version numbers, no need for update
 	
 	* configure.in: version number set to 2.4.1b1
