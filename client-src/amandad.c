@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.43 2001/01/24 22:16:58 jrjackson Exp $
+ * $Id: amandad.c,v 1.44 2001/05/14 23:44:57 jrjackson Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -41,6 +41,7 @@
 #include "version.h"
 #include "queue.h"
 #include "security.h"
+#include "util.h"
 
 #define	REP_TIMEOUT	(6*60*60)	/* secs for service to reply */
 #define	ACK_TIMEOUT  	10		/* XXX should be configurable */
@@ -148,7 +149,7 @@ static void process_netfd P((void *));
 static struct active_service *service_new P((security_handle_t *,
     const char *, const char *));
 static void service_delete P((struct active_service *));
-static int writebuf P((int, const void *, size_t));
+static int writebuf P((struct active_service *, const void *, size_t));
 static int do_sendpkt P((security_handle_t *handle, pkt_t *pkt));
 
 #ifdef AMANDAD_DEBUG
@@ -472,9 +473,9 @@ protocol_accept(handle, pkt)
      */
     dbprintf(("amandad: creating new service: %s\n%s\n", service, arguments));
     as = service_new(handle, service, arguments);
-    if (writebuf(as->reqfd, arguments, strlen(arguments)) < 0) {
+    if (writebuf(as, arguments, strlen(arguments)) < 0) {
 	const char *errmsg = strerror(errno);
-	dbprintf(("amandad: error sening arguments to %s: %s\n", service,
+	dbprintf(("amandad: error sending arguments to %s: %s\n", service,
 	    errmsg));
 	pkt_init(&nak, P_NAK, "ERROR error writing arguments to %s: %s\n",
 	    service, errmsg);
@@ -673,6 +674,14 @@ s_repwait(as, action, pkt)
      * If the read fails, consider the process dead, and remove it.
      * Always save room for nul termination.
      */
+    if (as->repbufsize + 1 >= sizeof(as->repbuf)) {
+	dbprintf(("more than %d bytes in reply\n", sizeof(as->repbuf)));
+	dbprintf(("reply so far:\n%s\n", as->repbuf));
+	pkt_init(&as->rep_pkt, P_NAK, "ERROR more than %d bytes in reply\n",
+	    sizeof(as->repbuf));
+	do_sendpkt(as->security_handle, &as->rep_pkt);
+	return (A_FINISH);
+    }
     n = read(as->repfd, as->repbuf + as->repbufsize,
 	sizeof(as->repbuf) - as->repbufsize - 1);
     if (n < 0) {
@@ -684,8 +693,10 @@ s_repwait(as, action, pkt)
 	return (A_FINISH);
     }
     /*
-     * If we got some data, go back and wait for more, or EOF.
+     * If we got some data, go back and wait for more, or EOF.  Nul terminate
+     * the buffer first.
      */
+    as->repbuf[n + as->repbufsize] = '\0';
     if (n > 0) {
 	as->repbufsize += n;
 	return (A_PENDING);
@@ -693,11 +704,9 @@ s_repwait(as, action, pkt)
 
     /*
      * If we got 0, then we hit EOF.  Process the data and release
-     * the timeout.  Nul terminate the buffer first.
+     * the timeout.
      */
     assert(n == 0);
-    as->repbuf[as->repbufsize] = '\0';
-
 
     assert(as->ev_repfd != NULL);
     event_release(as->ev_repfd);
@@ -1209,26 +1218,27 @@ service_delete(as)
 }
 
 /*
- * Like 'write', but always writes everything
+ * Like 'fullwrite', but does the work in a child process so pipelines
+ * do not hang.
  */
 static int
-writebuf(fd, bufp, size)
-    int fd;
+writebuf(as, bufp, size)
+    struct active_service *as;
     const void *bufp;
     size_t size;
 {
-    const char *buf = bufp;		/* cast to char * so we can increment */
-    const size_t origsize = size;	/* save orig size so we can return it */
-    int n;
+    switch (fork()) {
+    case -1:
+	return -1;
 
-    while (size > 0) {
-	n = write(fd, buf, size);
-	if (n < 0)
-	    return (n);
-	buf += n;
-	size -= n;
+    default:
+	return 0;			/* this is the parent */
+
+    case 0:
+	break;				/* this is the child */
     }
-    return (origsize);
+    aclose (as->repfd);			/* make sure we are not a reader */
+    exit (fullwrite(as->reqfd, bufp, size) != size);
 }
 
 static int

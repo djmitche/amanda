@@ -1,3 +1,11 @@
+2001-05-14 John R. Jackson <jrj@purdue.edu>
+
+	* client-src/amandad.c: Fix hang when the incoming packet size is
+	  larger than the pipe buffer.  Also, report back when too much
+	  data for a packet is returned by the service (this is not properly
+	  diagnosed back to, e.g., amcheck, but that's for another day).
+	* common-src/bsd-security.c: Fix minor comment error.
+
 2001-05-11 John R. Jackson <jrj@purdue.edu>
 
 	* common-src/util.c (bind_portrange): Log a debug message stating

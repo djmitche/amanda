@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.34 2001/02/28 02:48:53 jrjackson Exp $
+ * $Id: bsd-security.c,v 1.35 2001/05/14 23:44:57 jrjackson Exp $
  *
  * "BSD" security module
  */
@@ -696,7 +696,7 @@ recvpkt_callback(cookie)
 
     /*
      * Check the security of the packet.  If it is bad, then pass NULL
-     * to the accept function instead of a packet.
+     * to the packet handling function instead of a packet.
      */
     if (recv_security_ok(bh) < 0)
 	(*fn)(arg, NULL, S_ERROR);
