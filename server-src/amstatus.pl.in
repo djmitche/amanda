@@ -288,12 +288,12 @@ while(<AMDUMP>) {
 		$busy_time{"taper"}+=($1-$taper_time{$hostpart});
 		$taper_time{$hostpart}=$1;
 	}
-	elsif(/driver: result time (\S+) from taper: TAPE-ERROR (\d+-\d+) (.+)/) {
+	elsif(/driver: result time (\S+) from taper: (TRY-AGAIN|TAPE-ERROR) (\d+-\d+) (.+)/) {
 		$current_time=$1;
-		$serial=$2;
-		$error=$3;
+		$serial=$3;
+		$error=$4;
 		$hostpart=$serial{$serial};
-		$taper_finished{$hostpart}=-1;
+		$taper_finished{$hostpart}= $2 eq 'TAPE-ERROR' ? -2 : -1;
 		$busy_time{"taper"}+=($1-$taper_time{$hostpart});
 		$taper_time{$hostpart}=$1;
 		$error{$hostpart}=$error;
@@ -513,11 +513,12 @@ foreach $host (sort @hosts) {
 				$taesize += $esize{$hostpart};
 			}
 			elsif($taper_started{$hostpart} == 1 &&
-					$taper_finished{$hostpart} == -1) {
+					$taper_finished{$hostpart} < 0) {
 				if( defined $opt_failed ) {
 					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
 					printf "%8dk", $size{$hostpart};
 					print " failed to tape";
+					print " (will retry)" unless $taper_finished{$hostpart} < -1;
 					if( defined $starttime ) {
 						print " (", &showtime($taper_time{$hostpart}), ")";
 					}

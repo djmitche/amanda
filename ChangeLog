@@ -1,5 +1,9 @@
 2000-01-21  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* server-src/amstatus.pl.in: Compute and display TRY-AGAIN tape
+	errors.
+	Reported by David Wolfskill <dhw@whistle.com>
+
 	* man/amtoc.8.in: Document -w.
 
 2000-01-21  David Wolfskill  <dhw@whistle.com>
@@ -751,7 +755,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.331 2000/01/21 08:21:54 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.332 2000/01/21 08:53:49 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
