@@ -59,6 +59,14 @@ AC_ARG_WITH(includes,
     AMANDA_CPPFLAGS=
 )
 
+AC_ARG_WITH(rundump,
+    [   --with-rundump         use rundump (setuid-root) to invoke dump],
+    [
+        if test "$withval" = "yes"; then
+            AC_DEFINE(USE_RUNDUMP)
+        fi
+    ])
+
 AC_ARG_WITH(libraries,
     [   --with-libraries=DIR   site library directories for readline, etc in DIR],
     [
@@ -834,6 +842,7 @@ fi
 AC_PATH_PROGS(XFSDUMP,xfsdump,,$SYSLOCPATH)
 if test "$XFSDUMP"; then
     AC_DEFINE_UNQUOTED(XFSDUMP,"$XFSDUMP")
+    AC_DEFINE(USE_RUNDUMP)
 fi
 AC_PATH_PROGS(XFSRESTORE,xfsrestore,,$SYSLOCPATH)
 if test "$XFSDUMP"; then
