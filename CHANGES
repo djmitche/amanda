@@ -17,10 +17,6 @@
 	function of the same name.  Replace pname global variable with two
 	functions to set/get.  Get rid of libamnolog.  -JJ
 
-	ensure that `amadmin find' reports multiple backups performed on
-	the same day in the correct sequence.
-	-Liudvikas Bukys <bukys@cs.rochester.edu>
-
 	chg-chio was renamed to chg-scsi, and now it will support not
 	only chio.h, but also tape changer interfaces available on
 	HPUX, Solaris 2.5, IRIX and possibly others.  Currently, only
@@ -32,6 +28,9 @@
 	-Eric Schnoebelen <eric@cirr.com>
 
 Version 2.4.0
+
+	fixed VXDUMP support.
+	-Andrew Ivanov <ivanov@mics.msu.su> & oliva
 
 	typos fixed in chg-chs.
 	-David Barr <dbarr@simplex.com>
