@@ -1,3 +1,14 @@
+2001-04-26 Thomas Hepper <th@ant.han.de>
+
+	* changer-src/scsi-aix.c : Added more different ret values depending on the SCSI
+	error condition. 
+	* changer-src/scsi-changer-driver.c: Split GenericElementStatus in GetElementStatus which
+	reads the element Status, and GenericElementStatus which handles the errors.
+	Removed DLT448ElementStatus. Rework the handling of some SCSI error conditions...
+	* changer-src/scsi-defs.h: Added more defs for the debug SECTION types.
+	* changer-src/scsi-linux.c: Fixed an bug in the non SCSI device handling in SCSI_OpenDevice
+	* changer-src/sense.c: Added EXB-210 defs, added defs for READ_ELEMENT_STATUS error conditions.
+	
 2001-04-25 John R. Jackson <jrj@purdue.edu>
 
 	* changer-src/chg-rth.pl.in: Add exec_prefix back since it is usually

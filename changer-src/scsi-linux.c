@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-linux.c,v 1.17 2001/04/15 12:05:24 ant Exp $
+ * $Id: scsi-linux.c,v 1.18 2001/04/26 19:18:29 ant Exp $
  *
  * Interface to execute SCSI commands on Linux
  *
@@ -93,6 +93,10 @@ int SCSI_CloseDevice(int DeviceFD)
  * Return:
  * 0 -> error
  * 1 -> OK
+ *
+ * TODO:
+ * Define some readable defs for the falgs which can be set (like in the AIX dreiver)
+ *
  */
 #ifdef LINUX_SG
 int SCSI_OpenDevice(int ip)
@@ -105,6 +109,7 @@ int SCSI_OpenDevice(int ip)
   char *buffer = NULL ;           /* Will contain the device name after checking */
   int openmode = O_RDONLY;
 
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### START SCSI_OpenDevice\n");
   if (pDev[ip].inqdone == 0)
     {
       pDev[ip].inqdone = 1;
@@ -156,15 +161,18 @@ int SCSI_OpenDevice(int ip)
           openmode = O_RDWR;
         }
       
+      DebugPrint(DEBUG_INFO, SECTION_SCSI,"Try to open %s\n", buffer);
       if ((DeviceFD = open(buffer, openmode)) > 0)
         {
           pDev[ip].avail = 1;
           pDev[ip].devopen = 1;
           pDev[ip].fd = DeviceFD;
         } else {
+          DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_OpenDevice open failed\n");
           return(0);
         }
       
+      DebugPrint(DEBUG_INFO, SECTION_SCSI,"done\n");
       if ( pDev[ip].flags == 1)
         {
           pDev[ip].SCSI = 1;
@@ -196,10 +204,12 @@ int SCSI_OpenDevice(int ip)
                     }
                   pDev[ip].SCSI = 1;
                   PrintInquiry(pDev[ip].inquiry);
+                  DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_OpenDevice (1)\n");
                   return(1);
                 } else {
                   close(DeviceFD);
                   free(pDev[ip].inquiry);
+                  DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_OpenDevice (0)\n");
                   return(0);
                 }
             } else {
@@ -207,8 +217,17 @@ int SCSI_OpenDevice(int ip)
               close(DeviceFD);
               free(pDev[ip].inquiry);
               pDev[ip].inquiry = NULL;
+              DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_OpenDevice (1)\n");
               return(1);
             }
+        } else /* if (pDev[ip].SCSI == 1) */ {  
+          DebugPrint(DEBUG_INFO, SECTION_SCSI,"Device not capable for SCSI commands\n");
+          pDev[ip].SCSI = 0;
+          close(DeviceFD);
+          free(pDev[ip].inquiry);
+          pDev[ip].inquiry = NULL;
+          DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_OpenDevice (1)\n");
+          return(1);
         }
     } else {
       if (pDev[ip].flags == 1)
@@ -233,11 +252,14 @@ int SCSI_OpenDevice(int ip)
                     }
                 }
             }
+          DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_OpenDevice (1)\n");
           return(1);
         } else {
+          DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_OpenDevice open failed\n");
           return(0);
         }
     }
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_OpenDevice should not happen !!\n");
   return(0);
 }
 

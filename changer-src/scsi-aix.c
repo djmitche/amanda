@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-aix.c,v 1.15 2001/04/15 12:05:24 ant Exp $
+ * $Id: scsi-aix.c,v 1.16 2001/04/26 19:18:28 ant Exp $
  *
  * Interface to execute SCSI commands on an AIX System
  *
@@ -148,6 +148,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
   extern OpenFiles_T *pDev;
   extern FILE * debug_file;
   CDB_T CDBSENSE;
+  CDB_T SINQ;
   ExtendedRequestSense_T ExtendedRequestSense;
   struct sc_iocmd ds;
   scmd_t scmd;
@@ -201,9 +202,8 @@ int SCSI_ExecuteCommand(int DeviceFD,
       /* 
        *  Data buffer for results 
        * If the size of the buffer is 0
-       * then keep this fields untouched
+       * then keep this fields untouched           
        */
-      
       if (DataBufferLength > 0)
         {
           ds.buffer = DataBuffer;
@@ -236,15 +236,42 @@ int SCSI_ExecuteCommand(int DeviceFD,
           switch (ds.scsi_bus_status)
             {
             case SC_GOOD_STATUS:
+              SINQ[0] = SC_COM_REQUEST_SENSE;
+              SINQ[1] = 0; 
+              SINQ[2] = 0;
+              SINQ[3] = 0;
+              SINQ[4] = 0x1D;
+              SINQ[5] = 0x80;
+              bcopy(SINQ, ds.scsi_cdb, 6);
+              ds.command_length = 6;
+              ds.buffer = RequestSenseBuf;
+              ds.data_length = RequestSenseLength;
+              
+              if (pDev[DeviceFD].devopen == 0)
+                SCSI_OpenDevice(DeviceFD);
+              Result = ioctl(pDev[DeviceFD].fd, STIOCMD, &ds);
+              SCSI_CloseDevice(DeviceFD);
               return(SCSI_OK);
               break;
             case SC_BUSY_STATUS:
               return(SCSI_BUSY);
               break;
             case SC_CHECK_CONDITION:
-              /*           RequestSense(DeviceFD, &ExtendedRequestSense, 0); */
-              /*           DecodeExtSense(&ExtendedRequestSense, "SCSI_ExecuteCommand:", debug_file); */
-              /*           bcopy(&ExtendedRequestSense, RequestSenseBuf, RequestSenseLength);  */
+              SINQ[0] = SC_COM_REQUEST_SENSE;
+              SINQ[1] = 0; 
+              SINQ[2] = 0;
+              SINQ[3] = 0;
+              SINQ[4] = 0x1D;
+              SINQ[5] = 0x80;
+              bcopy(SINQ, ds.scsi_cdb, 6);
+              ds.command_length = 6;
+              ds.buffer = RequestSenseBuf;
+              ds.data_length = RequestSenseLength;
+
+              if (pDev[DeviceFD].devopen == 0)
+                SCSI_OpenDevice(DeviceFD);
+              Result = ioctl(pDev[DeviceFD].fd, STIOCMD, &ds);
+              SCSI_CloseDevice(DeviceFD);
               return(SCSI_CHECK);
               break;
             default:

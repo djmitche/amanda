@@ -46,6 +46,7 @@ typedef unsigned char PackedBit;
 #define SENSE_VENDOR_SPECIFIC 0x9
 #define SENSE_ABORTED_COMMAND 0xb
 #define SENSE_VOLUME_OVERFLOW 0xd
+#define SENSE_CHG_ELEMENT_STATUS 0xe
 
 #define MAX_RETRIES 100
 
@@ -165,6 +166,7 @@ typedef unsigned char PackedBit;
 #define SECTION_ELEMENT 4
 #define SECTION_BARCODE 5
 #define SECTION_TAPE 6
+#define SECTION_MOVE 7
 /*----------------------------------------------------------------------------*/
 /* Some stuff for our own configurationfile */
 typedef struct {  /* The information we can get for any drive (configuration) */
@@ -1058,7 +1060,7 @@ typedef struct {
     int (*function_rewind)(int);
     int (*function_barcode)(int);
     int (*function_search)();
-    int (*function_error)(int, int, char *);
+    int (*function_error)(int, int, unsigned char, unsigned char, unsigned char, char *);
 } ChangerCMD_T ;
 
 typedef struct {

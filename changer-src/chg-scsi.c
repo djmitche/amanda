@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.22 2001/02/17 18:48:42 ant Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.23 2001/04/26 19:18:28 ant Exp $";
 #endif
 /*
  * 
@@ -78,7 +78,8 @@ FILE *debug_file = NULL;
 char *config_name = NULL;
 char *config_dir = NULL;
 
-/* So we have 3 devices, here will all the infos be stored after an
+/* 
+ * So we have 3 devices, here will all the infos be stored after an
  * successfull open 
  */
 

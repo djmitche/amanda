@@ -74,6 +74,8 @@
 	{ "generic", "", TYPE_CHANGER , SENSE_UNIT_ATTENTION, 0x0, 0x0, SENSE_RETRY, "Unit Attention"},
 	{ "generic", "", TYPE_CHANGER,  SENSE_UNIT_ATTENTION, -1, -1, SENSE_ABORT, "Default for SENSE_UNIT_ATTENTION"},
 
+	{ "generic", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, -1, -1, SENSE_IGNORE, "Default for SENSE_CHG_ELEMENT_STATUS"},
+
 	{ "generic", "", TYPE_CHANGER , -1, 0x0, 0x0, SENSE_ABORT, "Nothing Found"},
 /*
  * HP C1553A Tape
@@ -124,6 +126,8 @@
 	{ "C1553A", "", TYPE_CHANGER , SENSE_UNIT_ATTENTION, 0x0, 0x0, SENSE_RETRY, "Unit Attention"},
 	{ "C1553A", "", TYPE_CHANGER,  SENSE_UNIT_ATTENTION , -1, -1, SENSE_RETRY, "Default for SENSE_UNIT_ATTENTION"},
 	
+	{ "C1553A", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, -1, -1, SENSE_IGNORE, "Default for SENSE_CHG_ELEMENT_STATUS"},
+
 	{ "C1553A", "", TYPE_CHANGER , -1, 0x0, 0x0, SENSE_ABORT, "Nothing Found"},
 /*
  * Tandberg Tape
@@ -157,7 +161,7 @@
 /*
  * DLT 7000 Tape
  */
-	{ "DLT7000", "", TYPE_TAPE, SENSE_NOT_READY, 0x4, 0x0, SENSE_RETRY, "Logical Unit not ready, no additionla sense"},
+	{ "DLT7000", "", TYPE_TAPE, SENSE_NOT_READY, 0x4, 0x0, SENSE_RETRY, "Logical Unit not ready, no additional sense"},
 	{ "DLT7000", "", TYPE_TAPE, SENSE_NOT_READY, 0x4, 0x2, SENSE_TAPE_NOT_ONLINE, "Logical Unit not ready, in progress becoming ready"},
 	{ "DLT7000", "", TYPE_TAPE, SENSE_NOT_READY, 0x30, 0x3, SENSE_RETRY, "The tape drive is being cleaned"},
 	{ "DLT7000", "", TYPE_TAPE, SENSE_NOT_READY , -1, -1, SENSE_RETRY, "Default for SENSE_NOT_READY"},
@@ -172,7 +176,7 @@
 /*
  * DLT 4000 Tape
  */
-	{ "DLT4000", "", TYPE_TAPE, SENSE_NOT_READY, 0x4, 0x0, SENSE_RETRY, "Logical Unit not ready, no additionla sense"},
+	{ "DLT4000", "", TYPE_TAPE, SENSE_NOT_READY, 0x4, 0x0, SENSE_RETRY, "Logical Unit not ready, no additional sense"},
 	{ "DLT4000", "", TYPE_TAPE, SENSE_NOT_READY, 0x4, 0x2, SENSE_TAPE_NOT_ONLINE, "Logical Unit not ready, in progress becoming ready"},
 	{ "DLT4000", "", TYPE_TAPE, SENSE_NOT_READY, 0x30, 0x3, SENSE_RETRY, "The tape drive is being cleaned"},
 	{ "DLT4000", "", TYPE_TAPE,  SENSE_NOT_READY , -1, -1, SENSE_RETRY, "Default for SENSE_NOT_READY"},
@@ -187,7 +191,7 @@
 /*
  * AIT VLS DLT Library
  */
-	{ "VLS_DLT", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x0, SENSE_RETRY, "Logical Unit not ready, no additionla sense"},
+	{ "VLS_DLT", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x0, SENSE_RETRY, "Logical Unit not ready, no additional sense"},
 	{ "VLS_DLT", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x2, SENSE_TAPE_NOT_ONLINE, "Logical Unit not ready, in progress becoming ready"},
 	{ "VLS_DLT", "", TYPE_CHANGER, SENSE_NOT_READY, 0x30, 0x3, SENSE_RETRY, "The tape drive is being cleaned"},
 	{ "VLS_DLT", "", TYPE_CHANGER, SENSE_NOT_READY , -1, -1, SENSE_RETRY, "Default for SENSE_NOT_READY"},
@@ -197,12 +201,14 @@
 	
 	{ "VLS_DLT", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x0, 0x0, SENSE_ABORT, "Illegal Request"},
 	{ "VLS_DLT", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST , -1, -1, SENSE_ABORT, "Default for SENSE_ILLEGAL_REQUEST"},
+
+	{ "VLS_DLT", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, -1, -1, SENSE_IGNORE, "Default for SENSE_CHG_ELEMENT_STATUS"},
 	
 	{ "VLS_DLT", "", TYPE_CHANGER, -1, 0x0, 0x0, SENSE_ABORT, "Nothing Found"},
 /*
  * AIT VLS SDX Library
  */
-	{ "VLS_SDX", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x0, SENSE_RETRY, "Logical Unit not ready, no additionla sense"},
+	{ "VLS_SDX", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x0, SENSE_RETRY, "Logical Unit not ready, no additional sense"},
 	{ "VLS_SDX", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x2, SENSE_TAPE_NOT_ONLINE, "Logical Unit not ready, in progress becoming ready"},
 	{ "VLS_SDX", "", TYPE_CHANGER, SENSE_NOT_READY, 0x30, 0x3, SENSE_RETRY, "The tape drive is being cleaned"},
 	{ "VLS_SDX", "", TYPE_CHANGER, SENSE_NOT_READY , -1, -1, SENSE_RETRY, "Default for SENSE_NOT_READY"},
@@ -213,11 +219,13 @@
 	{ "VLS_SDX", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x0, 0x0, SENSE_ABORT, "Illegal Request"},
 	{ "VLS_SDX", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST , -1, -1, SENSE_ABORT, "Default for SENSE_ILLEGAL_REQUEST"},
 	
+	{ "VLS_SDX", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, -1, -1, SENSE_IGNORE, "Default for SENSE_CHG_ELEMENT_STATUS"},
+
 	{ "VLS_SDX", "", TYPE_CHANGER, -1, 0x0, 0x0, SENSE_ABORT, "Nothing Found"},
 /*
  * Exabyte 85058 Tape
  */
-	{ "EXB-85058HE-0000", "", TYPE_TAPE, SENSE_NOT_READY, 0x4, 0x0, SENSE_RETRY, "Logical Unit not ready, no additionla sense"},
+	{ "EXB-85058HE-0000", "", TYPE_TAPE, SENSE_NOT_READY, 0x4, 0x0, SENSE_RETRY, "Logical Unit not ready, no additional sense"},
 	{ "EXB-85058HE-0000", "", TYPE_TAPE, SENSE_NOT_READY, 0x4, 0x1, SENSE_RETRY, "Logical Unit not ready, in progress becoming ready"},
 	{ "EXB-85058HE-0000", "", TYPE_TAPE, SENSE_NOT_READY, 0x30, 0x3, SENSE_RETRY, "The tape drive is being cleaned"},
 	{ "EXB-85058HE-0000", "", TYPE_TAPE, SENSE_NOT_READY, 0x3A, 0x0, SENSE_TAPE_NOT_ONLINE, "No Tape online"},
@@ -237,7 +245,7 @@
 	{ "EXB-10e", "", TYPE_CHANGER, SENSE_NULL , 0x90, 0x3, SENSE_IES, "IES"},
 	{ "EXB-10e", "", TYPE_CHANGER, SENSE_NULL , -1, -1, SENSE_RETRY, "Default for SENSE_NULL"},
 
-	{ "EXB-10e", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x0, SENSE_RETRY, "Logical Unit not ready, no additionla sense"},
+	{ "EXB-10e", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x0, SENSE_RETRY, "Logical Unit not ready, no additional sense"},
 	{ "EXB-10e", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x1, SENSE_RETRY, "Logical Unit not ready, in progress becoming ready"},
 	{ "EXB-10e", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x85, SENSE_ABORT, "Library door is open"},
 	{ "EXB-10e", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x85, SENSE_ABORT, "The data cartridge magazine is missing"},
@@ -257,7 +265,51 @@
 	{ "EXB-10e", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x91, 0x0, SENSE_CHM_FULL, "CHM full during reset"},
 	{ "EXB-10e", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST , -1, -1, SENSE_RETRY, "Default for SENSE_ILLEGAL_REQUEST"},
 	
+	{ "EXB-10e", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, -1, -1, SENSE_IGNORE, "Default for SENSE_CHG_ELEMENT_STATUS"},
+
 	{ "EXB-10e", "", TYPE_CHANGER, -1, 0x0, 0x0, SENSE_ABORT, "Nothing Found for EXB-10e"},
+
+/*
+ * Exabyte 210 Library (Robot)
+ */
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_NULL, 0x0, 0x0, SENSE_RETRY, "Retry, no sense"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_NULL, 0x90, 0x2, SENSE_ABORT, "Illegal Request"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_NULL , 0x90, 0x3, SENSE_IES, "IES"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_NULL , -1, -1, SENSE_RETRY, "Default for SENSE_NULL"},
+
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x0, SENSE_RETRY, "Logical Unit not ready, no additional sense"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x1, SENSE_RETRY, "Logical Unit not ready, in progress becoming ready"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x85, SENSE_ABORT, "Library door is open"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x85, SENSE_ABORT, "The data cartridge magazine is missing"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x89, SENSE_ABORT, "The library is in CHS Monitor mode"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x8C, SENSE_RETRY, "The library is performing a power-on self test"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x8D, SENSE_ABORT, "The library is in LCD mode"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x8E, SENSE_ABORT, "The library is in Sequential mode"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_NOT_READY, 0x30, 0x3, SENSE_RETRY, "The tape drive is being cleaned"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_NOT_READY, 0x3A, 0x0, SENSE_TAPE_NOT_ONLINE, "No Tape online"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_NOT_READY , -1, -1, SENSE_RETRY, "Default for SENSE_NOT_READY"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_NOT_READY , -1, -1, SENSE_RETRY, "Default for SENSE_NOT_READY"},
+
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_UNIT_ATTENTION, 0x0, 0x0, SENSE_RETRY, "Unit Attention"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_UNIT_ATTENTION , -1, -1, SENSE_RETRY, "Default for SENSE_UNIT_ATTENTION"},
+	
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x0, 0x0, SENSE_ABORT, "Illegal Request"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x91, 0x0, SENSE_CHM_FULL, "CHM full during reset"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST , -1, -1, SENSE_RETRY, "Default for SENSE_ILLEGAL_REQUEST"},
+	
+	{ "EXB-210", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, 0x83, 0x0, SENSE_IES, ""},
+	{ "EXB-210", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, 0x83, 0x1, SENSE_IGNORE, ""},
+	{ "EXB-210", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, 0x83, 0x2, SENSE_ABORT, ""},
+	{ "EXB-210", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, 0x83, 0x3, SENSE_IES, ""},
+       	{ "EXB-210", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, 0x83, 0x4, SENSE_ABORT, ""},
+	{ "EXB-210", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, 0x83, 0x7, SENSE_IES, ""},
+	{ "EXB-210", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, 0x83, 0x8, SENSE_IGNORE, ""},
+	{ "EXB-210", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, 0x83, 0x9, SENSE_IGNORE, ""},
+	{ "EXB-210", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, 0x83, 0xa, SENSE_IGNORE, ""},
+	{ "EXB-210", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, -1, -1, SENSE_IGNORE, "Default for SENSE_CHG_ELEMENT_STATUS"},
+
+	{ "EXB-210", "", TYPE_CHANGER, -1, 0x0, 0x0, SENSE_ABORT, "Nothing Found for EXB-10e"},
+
 /*
  * Exabyte 230D Library (Robot)
  */
@@ -266,7 +318,7 @@
 	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NULL , 0x90, 0x3, SENSE_IES, "IES"},
 	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NULL , -1, -1, SENSE_RETRY, "Default for SENSE_NULL"},
 
-	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x0, SENSE_RETRY, "Logical Unit not ready, no additionla sense"},
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x0, SENSE_RETRY, "Logical Unit not ready, no additional sense"},
 	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x1, SENSE_RETRY, "Logical Unit not ready, in progress becoming ready"},
 	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x85, SENSE_ABORT, "Library door is open"},
 	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x85, SENSE_ABORT, "The data cartridge magazine is missing"},
@@ -286,6 +338,8 @@
 	{ "EXB-230D", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x91, 0x0, SENSE_CHM_FULL, "CHM full during reset"},
 	{ "EXB-230D", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST , -1, -1, SENSE_RETRY, "Default for SENSE_ILLEGAL_REQUEST"},
 	
+	{ "EXB-230D", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, -1, -1, SENSE_IGNORE, "Default for SENSE_CHG_ELEMENT_STATUS"},
+
 	{ "EXB-230D", "", TYPE_CHANGER, -1, 0x0, 0x0, SENSE_ABORT, "Nothing Found for EXB-10e"},
 /*
  * Spectra TreeFrog  library
@@ -342,6 +396,8 @@
 	{"215", "SPECTRA", TYPE_CHANGER, SENSE_VENDOR_SPECIFIC, 0x84, 0x18, SENSE_ABORT, "SCSI Reservation Conflict"},
 	{"215", "SPECTRA", TYPE_CHANGER, SENSE_VENDOR_SPECIFIC,  -1, -1, SENSE_ABORT, "Default for SENSE_VENDOR_SPECIFIC"},
 	 
+	{ "215", "SPECTRA", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, -1, -1, SENSE_IGNORE, "Default for SENSE_CHG_ELEMENT_STATUS"},
+
 	{ "215", "SPECTRA", TYPE_CHANGER, -1, 0x0, 0x0, SENSE_ABORT, "Nothing found for Spectra/215"},
 	
 	{ NULL, "", 0x0, -1, 0x0, 0x0, 0x0, ""},
@@ -411,7 +467,7 @@ int Sense2Action(char *ident,
 	
 	while (pwork->ident != NULL)	
 	{
-		if (strcmp(pwork->ident, "generic") == 0 && generic == NULL)
+		if (strcmp(pwork->ident, "generic") == 0 && pwork->type == type && generic == NULL)
 		{
 			generic = pwork;
 		}
@@ -500,7 +556,7 @@ int Sense2Action(char *ident,
 	 */
 	dbprintf(("Sense2Action generic start :\n"));
 	while (generic->ident != NULL)
-	{
+	{	  
 		if (generic->sense == -1)
 		{
 			*text = (char *)strdup(generic->text);
