@@ -1,3 +1,7 @@
+2003-03-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* configure.in: Use '=' instead of '=='.
+
 2003-03-14  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* recover-src/set_commands.c (set_tape): Recognize null:, rait:, 
