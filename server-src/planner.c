@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.25 2003/01/02 04:00:28 martinea Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.26 2003/01/02 19:01:36 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1351,10 +1351,14 @@ pkt_t *pkt;
     hostp->up = HOST_READY;
 
     if(p->state == S_FAILED && pkt == NULL) {
-	errbuf = vstralloc("Request to ",
-			   hostp->hostname,
-			   " timed out.",
-			   NULL);
+	if(p->prevstate == S_REPWAIT) {
+	    errbuf = vstralloc("Estimate timeout from ", hostp->hostname,
+			       NULL);
+	}
+	else {
+	    errbuf = vstralloc("Request to ", hostp->hostname, " timed out.",
+			       NULL);
+	}
 	goto error_return;
     }
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.h,v 1.8 1998/07/04 00:18:50 oliva Exp $
+ * $Id: protocol.h,v 1.8.10.1 2003/01/02 19:01:33 martinea Exp $
  *
  * interfaces for amanda protocol
  */
@@ -58,6 +58,7 @@ typedef struct {			/* a predigested datagram */
 
 typedef struct proto_s {
     pstate_t state;
+    pstate_t prevstate;
     struct sockaddr_in peer;
     time_t timeout;
     time_t repwait;

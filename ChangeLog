@@ -1,3 +1,10 @@
+2003-01-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* common-src/protocol.h (proto_t): Add prevstate field.
+	* common-src/protocol.c: Keep prevstate up to date.
+	* server-src/planner.c (handle_result): Use prevstate to write
+	  Request or Estimate timeout.
+
 2003-01-01  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Undo patch of 2002-11-27. That doesn't work well for the planner.
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.27.2.1.6.1 2002/04/13 19:24:16 jrjackson Exp $
+ * $Id: protocol.c,v 1.27.2.1.6.2 2003/01/02 19:01:28 martinea Exp $
  *
  * implements amanda protocol
  */
@@ -665,6 +665,7 @@ pkt_t *pkt;
 #endif
 
     while(1) {
+	p->prevstate = p->state;
 	switch(p->state) {
 	case S_STARTUP: 
 	    if(action != A_START) goto badaction;
@@ -804,6 +805,7 @@ void (*continuation) P((proto_t *p, pkt_t *pkt));
 
     p = alloc(sizeof(proto_t));
     p->state = S_STARTUP;
+    p->prevstate = S_STARTUP;
     p->continuation = continuation;
     p->req = req;
     p->repwait = repwait;
@@ -862,6 +864,7 @@ void (*continuation) P((proto_t *p, pkt_t *pkt));
 
     p = alloc(sizeof(proto_t));
     p->state = S_STARTUP;
+    p->prevstate = S_STARTUP;
     p->continuation = continuation;
     p->req = req;
     p->repwait = repwait;
