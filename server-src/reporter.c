@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.17.4.6.2.8 2002/11/13 14:26:02 martinea Exp $
+ * $Id: reporter.c,v 1.44.2.17.4.6.2.9 2002/11/19 15:03:38 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -544,7 +544,7 @@ char **argv;
 	    printer_cmd = vstralloc(LPRCMD, NULL);
 #endif
 
-	if ((strcmp(tp->lbl_templ, "")) != 0)
+	if ((strcmp(tp->lbl_templ, "")) != 0) {
 #ifdef LPRCMD
 	    if ((postscript = popen(printer_cmd, "w")) == NULL) {
 		curlog = L_ERROR;
@@ -564,6 +564,7 @@ char **argv;
 	    handle_error();
 	    amfree(curstr);
 #endif
+	}
     }
 
     amfree(subj_str);
