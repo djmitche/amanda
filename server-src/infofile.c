@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.41 1998/04/08 16:25:23 amcore Exp $
+ * $Id: infofile.c,v 1.42 1998/04/11 06:41:57 amcore Exp $
  *
  * manage current info file
  */
@@ -334,7 +334,8 @@ char *disk;
 		   NULL);
     fn_new = stralloc2(fn, ".new");
 
-    amfree(host); afree(disk);
+    amfree(host);
+    amfree(disk);
 
     unlink(fn_new);
     amfree(fn_new);
