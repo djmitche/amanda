@@ -686,6 +686,7 @@ rait_read(int fd, void *bufptr, size_t len) {
     int data_fds;
     int save_errno = errno;
     int maxreadres = 0;
+    int sum_mismatch = 0;
 
     rait_debug((stderr, "rait_read(%d,%lx,%d)\n",fd,(unsigned long)buf,len));
 
@@ -773,28 +774,28 @@ rait_read(int fd, void *bufptr, size_t len) {
     }
 
     /*
-     * Make sure all the reads were the same length or EOF.
+     * Make sure all the reads were the same length
      */
     for (j = 0; j < pr->nfds; j++) {
-	if (pr->readres[j] > 0 && pr->readres[j] != maxreadres) {
+	if (pr->readres[j] != maxreadres) {
 	    nerrors++;
 	    errorblock = j;
 	}
     }
 
-    /* don't count this as an error read if none of the
-       data blocks failed ... */
-
-    if ( nerrors == 0 && pr->nfds > 1 && pr->readres[i] <= 0 ) {
-	if ( pr->readres[i] == 0 ) {
-	    neofs++;
-	} else {
-	    if (0 == nerrors) {
-	        save_errno = errno;
-	    }
-	    nerrors++;
-	}
-	errorblock = i;
+    /*
+     * If no errors, check that the xor sum matches
+     */
+    if ( nerrors == 0 && pr->nfds > 1  ) {
+       for(i = 0; i < maxreadres; i++ ) {
+	   int sum = 0;
+	   for(j = 0; j < pr->nfds - 1; j++) {
+	       sum ^= (buf + len * j)[i];
+           }
+	   if (sum != pr->xorbuf[i]) {
+	      sum_mismatch = 1;
+	   }
+       }
     }
 
     /* 
@@ -809,14 +810,12 @@ rait_read(int fd, void *bufptr, size_t len) {
 	return 0;
     }
 
-    if (neofs > 1) {
-	errno = EIO;
+    if (sum_mismatch) {
+	errno = EDOM;
 	rait_debug((stderr, "rait_read:returning %d: %s\n",
 			    -1,
-			    strerror(errno)));
+			    "XOR block mismatch"));
 	return -1;
-    } else if (neofs == 1) {
-	nerrors++;
     }
 
     if (nerrors > 1 || (pr->nfds <= 1 && nerrors > 0)) {
@@ -831,7 +830,7 @@ rait_read(int fd, void *bufptr, size_t len) {
     ** so now if we failed on a data block, we need to do a recovery
     ** if we failed on the xor block -- who cares?
     */
-    if (nerrors == 1 && pr->nfds > 1 && errorblock != i) {
+    if (nerrors == 1 && pr->nfds > 1 && errorblock != pr->nfds-1) {
 
 	rait_debug((stderr, "rait_read: fixing data from fd %d\n",
 			    pr->fds[errorblock]));
