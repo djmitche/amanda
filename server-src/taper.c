@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.43 1998/09/29 01:42:37 oliva Exp $
+/* $Id: taper.c,v 1.44 1998/09/29 20:49:54 jrj Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1791,13 +1791,6 @@ int writerror;
 
     if(tapefd_close(tape_fd) == -1) {
 	errstr = newstralloc2(errstr, "closing tape: ", strerror(errno));
-	goto tape_error;
-    }
-
-    /* rewind the tape */
-
-    if((result = tape_rewind(tapedev)) != NULL) {
-	errstr = newstralloc(errstr, result);
 	goto tape_error;
     }
 
