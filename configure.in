@@ -14,7 +14,7 @@ AC_DEFINE_UNQUOTED(CONFIGURE_COMMAND,"$CONFIGURE_COMMAND",
 	  [Saves the original ./configure command line arguments])
 AC_SUBST(CONFIGURE_COMMAND)
 
-AM_INIT_AUTOMAKE(amanda, 2.4.3)
+AM_INIT_AUTOMAKE(amanda, 2.4.4b1)
 AM_CONFIG_HEADER(config/config.h)
 
 AC_PREREQ(2.53)		dnl Minimum Autoconf version required.
