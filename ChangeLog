@@ -1,3 +1,7 @@
+2000-06-26 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/list_dir.c (add_dir_list_item): add at head of list.
+
 2000-06-12  Jeroen Ruigrok van der Werven  <asmodai@wxs.nl>
 
 	* server-src/amlabel.c (main): Do not amfree(config_name).
@@ -859,7 +863,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.352 2000/06/12 04:44:33 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.353 2000/06/26 13:45:31 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
