@@ -19,12 +19,13 @@ char **argv;
     dbopen("/tmp/rundump.debug");
     dbprintf(("%s: version %s\n", argv[0], version()));
 
-#if (!defined(DUMP) && !defined(XFSDUMP)) || !defined(USE_RUNDUMP)
+#if (!defined(DUMP) && !defined(XFSDUMP)) && !defined(VXDUMP) \
+    || !defined(USE_RUNDUMP)
 
-#if !defined(DUMP) && !defined(XFSDUMP)
-#define ERRMSG "DUMP not available on this system.\n"
-#else
+#if !defined(USE_RUNDUMP)
 #define ERRMSG "rundump not enabled on this system.\n"
+#else
+#define ERRMSG "DUMP not available on this system.\n"
 #endif
 
     fprintf(stderr, ERRMSG);
@@ -52,27 +53,31 @@ char **argv;
 #endif	/* FORCE_USERID */
     }
 
-    /* If XFSDUMP is defined but DUMP isn't, XFSDUMP is used by default.
-       If XFSDUMP is not defined, DUMP is used by default.
-       If both are defined, DUMP is used unless argv[0] is "xfsdump". */
-
-#if defined(XFSDUMP) || !defined(DUMP)
-
-#ifdef DUMP
+#ifdef XFSDUMP
+    
     if (strcmp(argv[0], "xfsdump") == 0)
-#endif /* DUMP */
-
         dump_program = XFSDUMP;
-
-#ifdef DUMP
     else /* strcmp(argv[0], "xfsdump") != 0 */
-#endif /* DUMP */
 
-#endif /* defined(XFSDUMP) || !defined(DUMP) */
+#endif
 
-#ifdef DUMP
+#ifdef VXDUMP
+
+    if (strcmp(argv[0], "vxdump") == 0)
+        dump_program = VXDUMP;
+    else /* strcmp(argv[0], "vxdump") != 0 */
+
+#endif
+
+#if defined(DUMP)
         dump_program = DUMP;
-#endif /* DUMP */
+#elif defined(XFSDUMP)
+        dump_program = XFSDUMP;
+#elif defined(VXDUMP)
+	dump_program = VXDUMP;
+#else
+        dump_program = "dump";
+#endif
 
     dbprintf(("running: %s: ",dump_program));
     for (i=0; argv[i]; i++)

@@ -98,6 +98,12 @@
 /* Define the location of the xfsrestore program on Irix hosts.  */
 #undef XFSRESTORE
 
+/* Define the location of the vxdump program on HPUX hosts.  */
+#undef VXDUMP
+
+/* Define the location of the vxrestore program on HPUX hosts.  */
+#undef VXRESTORE
+
 /* Define if Amanda is using the gzip program.  */
 #undef HAVE_GZIP
 

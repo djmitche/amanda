@@ -95,7 +95,7 @@ static regex_t re_table[] = {
   { DMP_NORMAL, "^  DUMP:" },
   { DMP_NORMAL, "^dump:" },					/* OSF/1 */
   { DMP_NORMAL, "^vdump:" },					/* OSF/1 */
-  { DMP_NORMAL, "^vxdump:" },                                   /* HPUX10 */
+  { DMP_NORMAL, "^  vxdump:" },					/* HPUX10 */
   { DMP_NORMAL, "^xfsdump:" },					/* IRIX xfs */
 
 #ifdef OSF1_VDUMP	/* this is for OSF/1 3.2's vdump for advfs */
@@ -177,6 +177,9 @@ char *dumpdate;
 	progname = XFSDUMP;
 #endif
 	program->backup_name  = XFSDUMP;
+#ifndef XFSRESTORE
+#define XFSRESTORE "xfsrestore"
+#endif
 	program->restore_name = XFSRESTORE;
 
 	write_tapeheader(compress);
@@ -201,6 +204,46 @@ char *dumpdate;
     }
     else
 #endif
+#ifdef VXDUMP
+#ifdef DUMP
+    if (!strcmp(amname_to_fstype(device), "vxfs"))
+#else
+    if (1)
+#endif
+    {
+        char *progname = cmd
+#ifdef USE_RUNDUMP
+        progname = cmd;
+#else
+	progname = VXDUMP;
+#endif
+	program->backup_name  = VXDUMP;
+#ifndef VXRESTORE
+#define VXRESTORE "vxrestore"
+#endif
+	program->restore_name = VXRESTORE;
+
+	sprintf(dumpkeys, "%d%ssf", level, no_record ? "" : "u");
+
+	write_tapeheader(compress);
+
+	start_index(createindex, dumpout, mesgf, indexf,
+		    VXRESTORE
+		    " -t -v silent - 2>/dev/null | /sbin/sed -e 's/^/\\//'");
+
+	start_index(createindex, dumpout, mesgf, indexf,
+		    VXRESTORE
+		    " -tvf - 2>/dev/null |"
+		    " awk '/^leaf/ {$1=\"\"; $2=\"\"; print}' |"
+		    " cut -c4-");
+
+	dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf, 
+			    "vxdump", dumpkeys, "100000", "-", device,
+			    (char *)0);
+    }
+    else
+#endif
+
     {
 	sprintf(dumpkeys, "%d%ssf", level, no_record ? "" : "u");
 

@@ -161,6 +161,9 @@ static void check_overall()
 #ifdef XFSDUMP
     check_file(XFSDUMP, X_OK);
 #endif
+#ifdef VXDUMP
+    check_file(VXDUMP, X_OK);
+#endif
 #ifdef GNUTAR
     check_file(GNUTAR, X_OK);
 #endif

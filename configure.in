@@ -811,7 +811,7 @@ dnl and AIX, have both the backup and dump programs.  HP-UX can't use the
 dnl the backup program while AIX systems can't use the dump program.  So
 dnl a variable is set up here to specify the order of dump programs to
 dnl search for on the system.
-DUMP_PROGRAMS="ufsdump vxdump vdump dump backup"
+DUMP_PROGRAMS="ufsdump vdump dump backup"
 
 dnl This specifies the flag for mt that tells mt the proper tape drive
 dnl to use.
@@ -1045,8 +1045,17 @@ if test "$XFSDUMP"; then
     AC_MSG_WARN([*** enabling rundump because xfsdump must be run as root])
 fi
 AC_PATH_PROGS(XFSRESTORE,xfsrestore,,$SYSLOCPATH)
-if test "$XFSDUMP"; then
+if test "$XFSRESTORE"; then
     AC_DEFINE_UNQUOTED(XFSRESTORE,"$XFSRESTORE")
+fi
+
+AC_PATH_PROGS(VXDUMP,vxdump,,$SYSLOCPATH)
+if test "$VXDUMP"; then
+    AC_DEFINE_UNQUOTED(VXDUMP,"$VXDUMP")
+fi
+AC_PATH_PROGS(VXRESTORE,vxrestore,,$SYSLOCPATH)
+if test "$VXRESTORE"; then
+    AC_DEFINE_UNQUOTED(VXRESTORE,"$VXRESTORE")
 fi
 
 dnl Handle all of the substitutions to make amplot work.

@@ -92,6 +92,12 @@ int main()
 #ifdef XFSRESTORE
     sprintf(str, " XFSRESTORE=\\\"%s\\\"", XFSRESTORE); prstr(str);
 #endif
+#ifdef VXDUMP
+    sprintf(str, " VXDUMP=\\\"%s\\\"", VXDUMP); prstr(str);
+#endif
+#ifdef VXRESTORE
+    sprintf(str, " VXRESTORE=\\\"%s\\\"", VXRESTORE); prstr(str);
+#endif
 #ifdef SAMBA_CLIENT
     sprintf(str, " SAMBA_CLIENT=\\\"%s\\\"", SAMBA_CLIENT); prstr(str);
 #endif
