@@ -13,7 +13,6 @@ sbin_PROGRAMS =		amrecover
 
 LDADD = @LEXLIB@ \
 	../client-src/libamclient.$(LIB_EXTENSION) \
-	../tape-src/libamtape.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
 
 amrecover_SOURCES =	amrecover.c					\
