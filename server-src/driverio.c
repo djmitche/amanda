@@ -331,7 +331,8 @@ char *str;
 	/* nuke self to get core dump for Brett */
 	fprintf(stderr, "driver: free_serial: str \"%s\" rc %d s %d\n",
 		str, rc, s);
-	kill(getpid(), SIGSEGV);
+	fflush(stderr);
+	abort();
     }
 
     if(gen != stable[s].gen)
