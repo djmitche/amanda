@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-bsd.c,v 1.4 1999/03/06 09:09:25 th Exp $";
+static char rcsid[] = "$Id: scsi-bsd.c,v 1.5 1999/03/16 21:20:59 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an BSD System (FreeBSD)
@@ -58,7 +58,7 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
             {
               for (i=0;i < 16 ;i++)
                 pwork->ident[i] = pwork->inquiry->prod_ident[i];
-              for (i=15; i >= 0 && !isalnum(pwork->inquiry->prod_ident[i]); i--)
+              for (i=15; i >= 0 && !isalnum(pwork->ident[i]); i--)
                 {
                   pwork->ident[i] = '\0';
                 }

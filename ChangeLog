@@ -1,3 +1,15 @@
+1999-03-16 Thomas Hepper <th@ant.han.de>
+	* changer-src/chg-scsi.c: If the open of the TapeDevice fails
+	the programm is not terminated.
+	* changer-src/scsi-aix.c: The wrong ident string was checked
+	for 0 termination.
+	* changer-src/scsi-bsd.c: see scsi-aix.c
+	* changer-src/scsi-linux.c: see scsi-aix.c
+	* changer-src/scsi-solaris.c: see scsi-aix.c
+	* changer-src/scsi-changer-driver.c: Added some more debug prints.
+	Wrong fd passwd to LogSense.
+	* docs/TAPE.CHANGERS: added note about linux and aha1542
+
 1999-03-15  Mike Grupenhoff <kashmir@munge.com>
 
 	* common-src/packet.h: explicitly list the numeric values for

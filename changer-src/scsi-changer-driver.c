@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.10 1999/03/06 09:09:26 th Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.11 1999/03/16 21:21:01 th Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -627,7 +627,8 @@ int BarCode(int fd)
       dbprintf(("%-20s : pChangerCtl == NULL\n", "BarCode"));
       return(-1);
     }
-
+  dbprintf(("Ident = [%s], function = [%d]\n", pChangerDev->ident,
+        pChangerDev->functions->ident));
   ret = pChangerDev->functions->function[CHG_BARCODE](fd);
   return(ret);
 }
@@ -1069,18 +1070,24 @@ int SenseHandler(int DeviceFD, int flag, char *buffer)
   dbprintf(("##### START SenseHandler\n"));
   if (pChangerDev != NULL && pChangerDev->fd == DeviceFD)
     {
+      dbprintf(("Ident = [%s], function = [%s]\n", pChangerDev->ident,
+                pChangerDev->functions->ident));
       ret = pChangerDev->functions->function[CHG_ERROR](DeviceFD, flag, buffer);
       return(ret);
     }
 
   if (pTapeDev != NULL && pTapeDev->fd == DeviceFD)
     {
+      dbprintf(("Ident = [%s], function = [%s]\n", pTapeDev->ident,
+               pTapeDev->functions->ident));
       ret = pTapeDev->functions->function[CHG_ERROR](DeviceFD, flag, buffer);
       return(ret);
     }
   
   if (pTapeDevCtl != NULL && pTapeDevCtl->fd == DeviceFD)
     {
+      dbprintf(("Ident = [%s], function = [%s]\n", pTapeDev->ident,
+               pTapeDevCtl->functions->ident));
       ret = pTapeDevCtl->functions->function[CHG_ERROR](DeviceFD, flag, buffer);
       return(ret);
     }
@@ -1906,7 +1913,7 @@ int GenericMove(int DeviceFD, int from, int to)
     {
       dbprintf(("GenericMove : can't send SCSI commands to tape, no log pages read\n"));
     } else {
-      LogSense(pTapeDev->fd);
+      LogSense(pTapeDevCtl->fd);
     }
 
   if ((pfrom = LookupElement(from)) == NULL)
