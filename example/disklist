@@ -75,4 +75,36 @@ cleo     sd0g nocomp-user
 susie         rz8a nocomp-root
 susie         rz8g nocomp-user
 
+# An example of how to separate a big disk (/diskA) in multiple smaller entry
+# using GNUTAR.
+# I suggest to always use the diskdevice in the diskname.
+# Don't forget to use the same spindle for all entry.
+hosta /diskA/all /diskA {
+	# all directories except the one that start with [a-u]
+	high-tar
+	exclude "./[a-u]*"
+	} 1
+hosta /diskA/ag /diskA {
+	# all directories that start with [a-g] except big1 and big2
+	high-tar
+	include "./[a-g]*"
+	exclude "./big1" "./big2"
+	} 1
+hosta /diskA/big /diskA {
+	# directories big1 and big2
+	high-tar
+	include "./big1" "./big2"
+	} 1
+hosta /diskA/gm /diskA {
+	# all directories that start with [h-m]
+	high-tar
+	include "./[h-m]*"
+	} 1
+hosta /diskA/nu /diskA {
+	# all directories that start with [n-u]
+	high-tar
+	include "./[n-u]*"
+	} 1
+
+
 # and so on ... well, you get the idea

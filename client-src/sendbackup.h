@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.h,v 1.11.4.1.6.1 2002/02/13 14:51:15 martinea Exp $
+ * $Id: sendbackup.h,v 1.11.4.1.6.2 2002/03/03 17:10:51 martinea Exp $
  *
  * a few common decls for the sendbackup-* sources
  */
@@ -70,7 +70,7 @@ extern option_t *options;
 typedef struct backup_program_s {
     char *name, *backup_name, *restore_name;
     regex_t *re_table;
-    void (*start_backup) P((char *host, char *disk, int level, char *dumpdate, 
+    void (*start_backup) P((char *host, char *disk, char *amdevice, int level, char *dumpdate, 
 			    int dataf, int mesgf, int indexf));
     void (*end_backup) P((int goterror));
 } backup_program_t;

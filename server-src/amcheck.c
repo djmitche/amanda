@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.19.2.7 2001/11/03 13:38:36 martinea Exp $
+ * $Id: amcheck.c,v 1.50.2.19.2.7.2.1 2002/03/03 17:10:52 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1184,13 +1184,26 @@ int start_host(hostp)
 	    continue;
 	}
 	o = optionstr(dp);
-	l = vstralloc(dp->program, 
-		      " ",
-		      dp->name,
-		      " 0 OPTIONS |",
-		      o,
-		      "\n",
-		      NULL);
+	if(dp->device) {
+	    l = vstralloc(dp->program, 
+			  " ",
+			  dp->name,
+			  " ",
+			  dp->device,
+			  " 0 OPTIONS |",
+			  o,
+			  "\n",
+			  NULL);
+	}
+	else {
+	    l = vstralloc(dp->program, 
+			  " ",
+			  dp->name,
+			  " 0 OPTIONS |",
+			  o,
+			  "\n",
+			  NULL);
+	}
 	l_len = strlen(l);
 	amfree(o);
 	if(req_len + l_len > MAX_DGRAM / 2) {	/* allow 2X for err response */

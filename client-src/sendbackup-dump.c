@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.65.2.5.4.2.2.1 2002/02/13 14:51:15 martinea Exp $
+ * $Id: sendbackup-dump.c,v 1.65.2.5.4.2.2.2 2002/03/03 17:10:51 martinea Exp $
  *
  * send backup data using BSD dump
  */
@@ -132,9 +132,9 @@ static regex_t re_table[] = {
   { DMP_STRANGE, NULL, 0}
 };
 
-static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
+static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, indexf)
     char *host;
-    char *disk;
+    char *disk, *amdevice;
     int level, dataf, mesgf, indexf;
     char *dumpdate;
 {
@@ -177,7 +177,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
     }
 
     /* invoke dump */
-    device = amname_to_devname(disk);
+    device = amname_to_devname(amdevice);
 
 #if defined(USE_RUNDUMP) || !defined(DUMP)
     cmd = vstralloc(libexecdir, "/", "rundump", versionsuffix(), NULL);
@@ -277,7 +277,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
     {
         char *progname = cmd = newvstralloc(cmd, libexecdir, "/", "rundump",
 					    versionsuffix(), NULL);
-	device = newstralloc(device, amname_to_dirname(disk));
+	device = newstralloc(device, amname_to_dirname(amdevice));
 	program->backup_name  = VDUMP;
 	program->restore_name = VRESTORE;
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.56.2.15.4.4.2.4 2002/02/15 14:19:53 martinea Exp $
+ * $Id: sendbackup-gnutar.c,v 1.56.2.15.4.4.2.5 2002/03/03 17:10:51 martinea Exp $
  *
  * send backup data using GNU tar
  */
@@ -132,9 +132,9 @@ time_t cur_dumptime;
 static char *incrname = NULL;
 #endif
 
-static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
+static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, indexf)
     char *host;
-    char *disk;
+    char *disk, *amdevice;
     int level, dataf, mesgf, indexf;
     char *dumpdate;
 {
@@ -179,7 +179,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR					/* { */
 #ifdef SAMBA_CLIENT							/* { */
-    if (disk[0] == '/' && disk[1]=='/')
+    if (amdevice[0] == '/' && amdevice[1]=='/')
 	amfree(incrname);
     else
 #endif									/* } */
@@ -301,7 +301,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
     dbprintf(("%s-gnutar: doing level %d dump from date: %s\n",
 	      get_pname(), level, dumptimestr));
 
-    dirname = amname_to_dirname(disk);
+    dirname = amname_to_dirname(amdevice);
 
     cur_dumptime = time(0);
     cur_level = level;
@@ -320,7 +320,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 
 #ifdef SAMBA_CLIENT							/* { */
     /* Use sambatar if the disk to back up is a PC disk */
-    if (disk[0] == '/' && disk[1]=='/') {
+    if (amdevice[0] == '/' && amdevice[1]=='/') {
 	char *sharename = NULL, *user_and_password = NULL, *domain = NULL;
 	char *share = NULL, *subdir = NULL;
 	char *pwtext;
@@ -330,7 +330,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 	int pwtext_len;
 	char *pw_fd_env;
 
-	parsesharename(disk, &share, &subdir);
+	parsesharename(amdevice, &share, &subdir);
 	if (!share) {
 	     amfree(share);
 	     amfree(subdir);
@@ -453,8 +453,8 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 	if(options->include_file) nb_include+=options->include_file->nb_element;
 	if(options->include_list) nb_include+=options->include_list->nb_element;
 
-	if(nb_exclude > 0) file_exclude = build_exclude(disk, options, 0);
-	if(nb_include > 0) file_include = build_include(disk, options, 0);
+	if(nb_exclude > 0) file_exclude = build_exclude(disk, amdevice, options, 0);
+	if(nb_include > 0) file_include = build_include(disk, amdevice, options, 0);
 
 	my_argv = malloc(sizeof(char *) * (17 + (nb_exclude*2)+(nb_include*2)));
 

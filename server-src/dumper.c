@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.14.2.7.2.4 2002/01/25 22:17:15 jrjackson Exp $
+/* $Id: dumper.c,v 1.75.2.14.2.7.2.5 2002/03/03 17:10:52 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -83,6 +83,7 @@ char *filename = NULL;			/* holding disk base file name */
 string_t cont_filename;
 char *hostname = NULL;
 char *diskname = NULL;
+char *device = NULL;
 char *options = NULL;
 char *progname = NULL;
 int level;
@@ -119,8 +120,8 @@ static void process_dumpline P((char *str));
 static void add_msg_data P((char *str, int len));
 static void log_msgout P((logtype_t typ));
 void sendbackup_response P((proto_t *p, pkt_t *pkt));
-int startup_dump P((char *hostname, char *disk, int level, char *dumpdate,
-		    char *progname, char *options));
+int startup_dump P((char *hostname, char *disk, char *device, int level,
+		    char *dumpdate, char *progname, char *options));
 
 
 void check_options(options)
@@ -263,22 +264,24 @@ char **main_argv;
 	    break;
 	case FILE_DUMP:
 	    /*
-	     * FILE-DUMP handle filename host disk level dumpdate chunksize
-	     *   progname use options
+	     * FILE-DUMP handle filename host disk device level dumpdate
+	     *   chunksize progname use options
 	     */
-	    if(cmdargs.argc != 11) {
-		error("error [dumper FILE-DUMP argc != 11: %d]", cmdargs.argc);
+	    if(cmdargs.argc != 12) {
+		error("error [dumper FILE-DUMP argc != 12: %d]", cmdargs.argc);
 	    }
 	    handle = newstralloc(handle, cmdargs.argv[2]);
 	    filename = newstralloc(filename, cmdargs.argv[3]);
 	    hostname = newstralloc(hostname, cmdargs.argv[4]);
 	    diskname = newstralloc(diskname, cmdargs.argv[5]);
-	    level = atoi(cmdargs.argv[6]);
-	    dumpdate = newstralloc(dumpdate, cmdargs.argv[7]);
-	    chunksize = am_floor(atoi(cmdargs.argv[8]), DISK_BLOCK_KB);
-	    progname = newstralloc(progname, cmdargs.argv[9]);
-	    use = am_floor(atoi(cmdargs.argv[10]), DISK_BLOCK_KB);
-	    options = newstralloc(options, cmdargs.argv[11]);
+	    device = newstralloc(device, cmdargs.argv[6]);
+	    if(strcmp(device,"NODEVICE") == 0) amfree(device);
+	    level = atoi(cmdargs.argv[7]);
+	    dumpdate = newstralloc(dumpdate, cmdargs.argv[8]);
+	    chunksize = am_floor(atoi(cmdargs.argv[9]), DISK_BLOCK_KB);
+	    progname = newstralloc(progname, cmdargs.argv[10]);
+	    use = am_floor(atoi(cmdargs.argv[11]), DISK_BLOCK_KB);
+	    options = newstralloc(options, cmdargs.argv[12]);
 	    cont_filename[0] = '\0';
 
 	    tmp_filename = newvstralloc(tmp_filename, filename, ".tmp", NULL);
@@ -301,7 +304,7 @@ char **main_argv;
 
 	    check_options(options);
 
-	    rc = startup_dump(hostname, diskname, level, dumpdate, progname, options);
+	    rc = startup_dump(hostname, diskname, device, level, dumpdate, progname, options);
 	    if(rc) {
 		q = squote(errstr);
 		putresult(rc == 2? FAILED : TRYAGAIN, "%s %s\n",
@@ -338,20 +341,23 @@ char **main_argv;
 
 	case PORT_DUMP:
 	    /*
-	     * PORT-DUMP handle port host disk level dumpdate progname options
+	     * PORT-DUMP handle port host disk device level dumpdate
+	     *    progname options
 	     */
-	    if(cmdargs.argc != 9) {
-		error("error [dumper PORT-DUMP argc != 9: %d]", cmdargs.argc);
+	    if(cmdargs.argc != 10) {
+		error("error [dumper PORT-DUMP argc != 10: %d]", cmdargs.argc);
 	    }
 	    handle = newstralloc(handle, cmdargs.argv[2]);
 	    taper_port = atoi(cmdargs.argv[3]);
 	    filename = newstralloc(filename, "<taper program>");
 	    hostname = newstralloc(hostname, cmdargs.argv[4]);
 	    diskname = newstralloc(diskname, cmdargs.argv[5]);
-	    level = atoi(cmdargs.argv[6]);
-	    dumpdate = newstralloc(dumpdate, cmdargs.argv[7]);
-	    progname = newstralloc(progname, cmdargs.argv[8]);
-	    options = newstralloc(options, cmdargs.argv[9]);
+	    device = newstralloc(device, cmdargs.argv[6]);
+	    if(strcmp(device,"NODEVICE") == 0) amfree(device);
+	    level = atoi(cmdargs.argv[7]);
+	    dumpdate = newstralloc(dumpdate, cmdargs.argv[8]);
+	    progname = newstralloc(progname, cmdargs.argv[9]);
+	    options = newstralloc(options, cmdargs.argv[10]);
 	    cont_filename[0] = '\0';
 
 	    /* connect outf to taper port */
@@ -368,7 +374,7 @@ char **main_argv;
 
 	    check_options(options);
 
-	    rc = startup_dump(hostname, diskname, level, dumpdate, progname, options);
+	    rc = startup_dump(hostname, diskname, device, level, dumpdate, progname, options);
 	    if(rc) {
 		q = squote(errstr);
 		putresult(rc == 2? FAILED : TRYAGAIN, "%s %s\n",
@@ -420,6 +426,7 @@ char **main_argv;
     amfree(filename);
     amfree(hostname);
     amfree(diskname);
+    amfree(device);
     amfree(dumpdate);
     amfree(progname);
     amfree(options);
@@ -1632,8 +1639,8 @@ pkt_t *pkt;
     return;
 }
 
-int startup_dump(hostname, disk, level, dumpdate, progname, options)
-char *hostname, *disk, *dumpdate, *progname, *options;
+int startup_dump(hostname, disk, device, level, dumpdate, progname, options)
+char *hostname, *disk, *device, *dumpdate, *progname, *options;
 int level;
 {
     char level_string[NUM_STR_SIZE];
@@ -1641,14 +1648,28 @@ int level;
     int rc;
 
     ap_snprintf(level_string, sizeof(level_string), "%d", level);
-    req = vstralloc("SERVICE sendbackup\n",
-		    "OPTIONS ",
-		    "hostname=", hostname, ";",
-		    "\n",
-		    progname, " ", disk, " ", level_string, " ", dumpdate, " ",
-		    "OPTIONS ", options,
-		    "\n",
-		    NULL);
+    if(device) {
+	req = vstralloc("SERVICE sendbackup\n",
+			"OPTIONS ",
+			"hostname=", hostname, ";",
+			"\n",
+			progname, " ", disk, " ", device, " ",
+			level_string, " ", dumpdate, " ",
+			"OPTIONS ", options,
+			"\n",
+			NULL);
+    }
+    else {
+	req = vstralloc("SERVICE sendbackup\n",
+			"OPTIONS ",
+			"hostname=", hostname, ";",
+			"\n",
+			progname, " ", disk, " ",
+			level_string, " ", dumpdate, " ",
+			"OPTIONS ", options,
+			"\n",
+			NULL);
+    }
 
     datafd = mesgfd = indexfd = -1;
 

@@ -1,3 +1,30 @@
+2002-03-03  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/amadmin.c (disklist_one): Print dp->device.
+	* server-src/amcheck.c (start_host): Send device if specified.
+	* server-src/amstatus.pl.in: Parse line with device.
+	* server-src/diskfile.c (parse_diskline): Parse device.
+	* server-src/diskfile.c (match_disklist): Match on device.
+	* server-src/diskfile.h (disk_t): New field device.
+	* server-src/driverio.c: (dumper_cmd): Send device.
+	* server-src/dumper.c (main): Parse device in request.
+	* server-src/dumper.c (start_dump): New device argument, send
+	  device to client.
+	* server-src/planner.c (getsize): Send device to client.
+	* server-src/server_util.h (MAX_ARGS): Set it to 12.
+	* client-src/client_util.c (add_include, build_exclude, build_include,
+	  parse_options): New device argument.
+	* client-src/client_util.h (build_exclude,build_include,parse_options):
+	  New prototype.
+	* client-src/selfcheck.c: Use device.
+	* client-src/sendbackup-dump.c: Use device.
+	* client-src/sendbackup-gnutar.c: Use device.
+	* client-src/sendbackup.c: Use device.
+	* client-src/sendbackup.h (start_backup): New device argument.
+	* client-src/sendsize.c: Use device.
+	* man/amanda.8.in: Document new disklist syntax.
+	* example/disklist: Give example.
+
 2002-03-02  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amstatus.pl.in: Write "wait to flush" only if waittaper

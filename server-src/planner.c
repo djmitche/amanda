@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.6 2002/02/14 01:50:42 martinea Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.7 2002/03/03 17:10:52 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1155,12 +1155,23 @@ host_t *hostp;
 		    exclude2 = dp->exclude_list->first->name;
 		}
 	    }
-	    l = vstralloc(dp->program, " ", dp->name, " ", level, " ",
-			  est(dp)->dumpdate[i], " ", spindle,
-			  exclude1,
-			  exclude2,
-			  "\n",
-			  NULL);
+	    if(dp->device) {
+		l = vstralloc(dp->program, " ", dp->name, " ", dp->device, " ",
+			      level, " ",
+			      est(dp)->dumpdate[i], " ", spindle,
+			      exclude1,
+			      exclude2,
+			      "\n",
+			      NULL);
+	    }
+	    else {
+		l = vstralloc(dp->program, " ", dp->name, " ", level, " ",
+			      est(dp)->dumpdate[i], " ", spindle,
+			      exclude1,
+			      exclude2,
+			      "\n",
+			      NULL);
+	    }
 	    strappend(s, l);
 	    s_len += strlen(l);
 	    amfree(l);
