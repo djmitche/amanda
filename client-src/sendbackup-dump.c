@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.57 1998/03/14 11:59:27 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.58 1998/03/20 06:43:05 amcore Exp $
  *
  * send backup data using BSD dump
  */
@@ -298,7 +298,11 @@ char *dumpdate;
 #define RESTORE "restore"
 #endif
 
+#ifdef HAVE_HONOR_NODUMP
+	dumpkeys = vstralloc(level_str, no_record ? "" : "u", "s", "h", "f", NULL);
+#else
 	dumpkeys = vstralloc(level_str, no_record ? "" : "u", "s", "f", NULL);
+#endif
 
 	indexcmd = vstralloc(RESTORE,
 			     " -tvf", " -",
@@ -314,6 +318,9 @@ char *dumpdate;
 	dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf, 
 			    "dump", dumpkeys,
 			    "1048576",
+#ifdef HAVE_HONOR_NODUMP
+			    "0",
+#endif
 			    "-", device,
 			    (char *)0);
     }

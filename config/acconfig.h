@@ -92,6 +92,9 @@
 /* Define this if dump accepts -E for estimates.  */
 #undef HAVE_DUMP_ESTIMATE
 
+/* Define this if dump accepts -h for honoring nodump.  */
+#undef HAVE_HONOR_NODUMP
+
 /* Define the location of the ufsdump, backup, or dump program.  */
 #undef DUMP
 

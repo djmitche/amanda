@@ -1,3 +1,6 @@
+	Added support for FreeBSD dump -h flag (honor nodump).
+	-James E. Housley <housley@pr-comm.com>
+
 	Added support for ZFTAPE on Linux.
 	-Albrecht Gebhardt <agebhard@zidsrv.sci.uni-klu.ac.at>
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.80 1998/03/18 21:22:26 amcore Exp $
+ * $Id: sendsize.c,v 1.81 1998/03/20 06:43:07 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -674,13 +674,19 @@ int level;
 	dumpkeys = vstralloc(level_str,
 #  ifdef HAVE_DUMP_ESTIMATE				/* { */
 			     "E",
-#  else							/* } { */
-			     "",
+#  endif						/* } */
+#  ifdef HAVE_HONOR_NODUMP				/* { */
+			     "h",
 #  endif						/* } */
 			     "s", "f", NULL);
 
+#  ifdef HAVE_HONOR_NODUMP				/* { */
+	dbprintf(("%s: running \"%s%s %s 0 100000 - %s\"\n",
+		  get_pname(), cmd, name, dumpkeys, device));
+#  else							/* } { */
 	dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n",
 		  get_pname(), cmd, name, dumpkeys, device));
+#  endif						/* } */
 # endif							/* } */
 	afree(name);
     }
@@ -742,8 +748,11 @@ int level;
 # ifdef AIX_BACKUP
 	    execle(cmd, "backup", dumpkeys, "-", device, (char *)0, safe_env());
 # else
-	    execle(cmd, "dump", dumpkeys, "100000", "-", device, (char *)0,
-		   safe_env());
+	    execle(cmd, "dump", dumpkeys, 
+#ifdef HAVE_HONOR_NODUMP
+		   "0",
+#endif
+		   "100000", "-", device, (char *)0, safe_env());
 # endif
 #endif
 	{
