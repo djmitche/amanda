@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.1.2.8 2002/03/03 17:10:51 martinea Exp $
+ * $Id: client_util.c,v 1.1.2.9 2002/03/12 22:47:42 martinea Exp $
  *
  */
 
@@ -41,8 +41,6 @@ int n;
     char *filename;
     char *ts;
 
-    if(n<0 || n>1000)
-	return NULL;
     ts = construct_timestamp(&t);
     if(n == 0)
 	number[0] = '\0';
@@ -56,11 +54,12 @@ int n;
 }
 
 
-static char *build_name(disk, exin)
+static char *build_name(disk, exin, verbose)
 char *disk, *exin;
 {
-    int n=0;
+    int n=0, fd=-1;
     char *filename = NULL;
+    char *afilename = NULL;
     char *diskname;
     time_t curtime;
     char *dbgdir = NULL;
@@ -79,7 +78,8 @@ char *disk, *exin;
 	error("open debug directory \"%s\": %s",
 	AMANDA_DBGDIR, strerror(errno));
     }
-    test_name = get_name(diskname, exin, curtime - (AMANDA_DEBUG_DAYS * 24 * 60 * 60), 0);
+    test_name = get_name(diskname, exin,
+			 curtime - (AMANDA_DEBUG_DAYS * 24 * 60 * 60), 0);
     test_name_len = strlen(test_name);
     match_len = strlen(get_pname()) + strlen(diskname) + 2;
     while((entry = readdir(d)) != NULL) {
@@ -97,24 +97,38 @@ char *disk, *exin;
 	    (void) unlink(e);                   /* get rid of old file */
 	}
     }
-    amfree(dbgdir);
     amfree(test_name);
     amfree(e);
     closedir(d);
 
+    n=0;
     do {
-	amfree(filename);
 	filename = get_name(diskname, exin, curtime, n);
-	n++;
-    } while(access(filename, F_OK) == 0 && n<1000);
+	afilename = newvstralloc(afilename, dbgdir, filename, NULL);
+	if((fd=open(afilename, O_WRONLY|O_CREAT|O_EXCL|O_APPEND, 0600)) < 0){
+	    amfree(filename);
+	    amfree(afilename);
+	    n++;
+	}
+	else {
+	    close(fd);
+	}
+    } while(!afilename && n < 1000);
 
-    if(n==1000) {
-	error("Can't create filename %s\n", filename);
+    if(afilename == NULL) {
+	filename = get_name(diskname, exin, curtime, 0);
+	afilename = newvstralloc(afilename, dbgdir, filename, NULL);
+	dbprintf(("%s: Cannot create '%s'\n", get_pname(), afilename));
+	if(verbose)
+	    printf("ERROR [cannot create: %s]\n", afilename);
+	amfree(filename);
+	amfree(afilename);
     }
 
+    amfree(dbgdir);
     amfree(diskname);
 
-    return filename;
+    return afilename;
 }
 
 
@@ -206,7 +220,7 @@ char *disk, *device;
 option_t *options;
 int verbose;
 {
-    char *filename, *f;
+    char *filename;
     FILE *file_exclude;
     FILE *exclude;
     char aexc[MAXPATHLEN+1];
@@ -218,33 +232,47 @@ int verbose;
 
     if(nb_exclude == 0) return NULL;
 
-    filename = build_name(disk, "exclude");
-    file_exclude = fopen(filename,"w");
+    if((filename = build_name(disk, "exclude", verbose)) != NULL) {
+	if((file_exclude = fopen(filename,"w")) != NULL) {
 
-    if(options->exclude_file) {
-	for(excl = options->exclude_file->first; excl != NULL;
-	    excl = excl->next) {
-	    add_exclude(file_exclude, excl->name, verbose);
-	}
-    }
-
-    if(options->exclude_list) {
-	for(excl = options->exclude_list->first; excl != NULL;
-	    excl = excl->next) {
-	    exclude = fopen(excl->name, "r");
-	    while (!feof(exclude)) {
-		if(fgets(aexc, MAXPATHLEN, exclude))
-		    add_exclude(file_exclude, aexc, verbose);
+	    if(options->exclude_file) {
+		for(excl = options->exclude_file->first; excl != NULL;
+		    excl = excl->next) {
+		    add_exclude(file_exclude, excl->name, verbose);
+		}
 	    }
-	    fclose(exclude);
+
+	    if(options->exclude_list) {
+		for(excl = options->exclude_list->first; excl != NULL;
+		    excl = excl->next) {
+		    if((exclude = fopen(excl->name, "r")) != NULL) {
+			while (!feof(exclude)) {
+			    if(fgets(aexc, MAXPATHLEN, exclude))
+				add_exclude(file_exclude, aexc, verbose);
+			}
+			fclose(exclude);
+		    }
+		    else {
+			dbprintf(("%s: Can't open exclude file '%s': %s\n",
+				  get_pname(), excl->name, strerror(errno)));
+			if(verbose)
+			    printf("ERROR [Can't open exclude file '%s': %s]\n",
+				   excl->name, strerror(errno));
+		    }
+		}
+	    }
+            fclose(file_exclude);
+	}
+	else {
+	    dbprintf(("%s: Can't create exclude file '%s': %s\n", get_pname(),
+		      filename, strerror(errno)));
+	    if(verbose)
+		printf("ERROR [Can't create exclude file '%s': %s]\n", filename,
+			strerror(errno));
 	}
     }
 
-    fclose(file_exclude);
-
-    f = vstralloc(AMANDA_DBGDIR, "/", filename, NULL);
-    amfree(filename);
-    return f;
+    return filename;
 }
 
 char *build_include(disk, device, options, verbose)
@@ -253,7 +281,7 @@ char *device;
 option_t *options;
 int verbose;
 {
-    char *filename, *f;
+    char *filename;
     FILE *file_include;
     FILE *include;
     char ainc[MAXPATHLEN+1];
@@ -266,38 +294,55 @@ int verbose;
 
     if(nb_include == 0) return NULL;
 
-    filename = build_name(disk, "include");
-    file_include = fopen(filename,"w");
+    if((filename = build_name(disk, "include", verbose)) != NULL) {
+	if((file_include = fopen(filename,"w")) != NULL) {
 
-    if(options->include_file) {
-	for(incl = options->include_file->first; incl != NULL;
-	    incl = incl->next) {
-	    nb_exp += add_include(disk, device, file_include, incl->name, verbose);
-	}
-    }
-
-    if(options->include_list) {
-	for(incl = options->include_list->first; incl != NULL;
-	    incl = incl->next) {
-	    include = fopen(incl->name, "r");
-	    while (!feof(include)) {
-		if(fgets(ainc, MAXPATHLEN, include))
-		    nb_exp += add_include(disk, device, file_include, ainc, verbose);
+	    if(options->include_file) {
+		for(incl = options->include_file->first; incl != NULL;
+		    incl = incl->next) {
+		    nb_exp += add_include(disk, device, file_include,
+					  incl->name, verbose);
+		}
 	    }
-	    fclose(include);
+
+	    if(options->include_list) {
+		for(incl = options->include_list->first; incl != NULL;
+		    incl = incl->next) {
+		    if((include = fopen(incl->name, "r")) != NULL) {
+			while (!feof(include)) {
+			    if(fgets(ainc, MAXPATHLEN, include))
+				nb_exp += add_include(disk, device,
+						   file_include, ainc, verbose);
+			}
+			fclose(include);
+		    }
+		    else {
+			dbprintf(("%s: Can't open include file '%s': %s\n",
+				  get_pname(), incl->name, strerror(errno)));
+			if(verbose)
+			    printf("ERROR [Can't open include file '%s': %s]\n",
+				   incl->name, strerror(errno));
+		   }
+		}
+	    }
+            fclose(file_include);
+	}
+	else {
+	    dbprintf(("%s: Can't create include file '%s': %s\n", get_pname(),
+		      filename, strerror(errno)));
+	    if(verbose)
+		printf("ERROR [Can't create include file '%s': %s]\n", filename,
+			strerror(errno));
 	}
     }
 	
-    fclose(file_include);
-
     if(nb_exp == 0) {
-	dbprintf(("%s: No include for '%s']\n", get_pname(), disk));
+	dbprintf(("%s: No include for '%s'\n", get_pname(), disk));
 	if(verbose)
 	    printf("ERROR [No include for '%s']\n", disk);
     }
-    f = vstralloc(AMANDA_DBGDIR, "/", filename, NULL);
-    amfree(filename);
-    return f;
+
+    return filename;
 }
 
 
