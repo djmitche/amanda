@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.84 2002/03/03 17:10:32 martinea Exp $
+ * $Id: amcheck.c,v 1.85 2002/03/31 21:52:21 jrjackson Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1129,13 +1129,18 @@ void start_host(hostp)
     int req_len = 0;
     int disk_count;
     const security_driver_t *secdrv;
+    char number[NUM_STR_SIZE];
 
     if(hostp->up != HOST_READY) {
 	return;
     }
 
+    snprintf(number, sizeof(number), "%d", hostp->maxdumps);
     req = vstralloc("SERVICE selfcheck\n",
-		    "OPTIONS ;\n",
+		    "OPTIONS ",
+		    "maxdumps=", number, ";",
+		    "hostname=", hostp->hostname, ";",
+		    "\n",
 		    NULL);
     req_len = strlen(req);
     req_len += 128;				/* room for SECURITY ... */
