@@ -1,3 +1,9 @@
+1998-11-04  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/taper.c (read_file): if a new tape cannot be found,
+ 	report a no-tape error to the log file and exit, just like it does
+ 	for the first tape
+
 1998-11-03  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/planner.c (pick_inclevel): return base_level even
