@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.17.4.3.4.3.2.8 2003/01/01 23:28:52 martinea Exp $
+ * $Id: debug.c,v 1.17.4.3.4.3.2.9 2003/01/04 17:46:09 martinea Exp $
  *
  * debug log subroutines
  */
@@ -35,25 +35,22 @@
 #include "util.h"
 #include "arglist.h"
 
-int debug = 1;
-
-#define	MIN_DB_FD			10
-
-#ifdef DEBUG_CODE
-int db_fd = 2;				/* default is stderr */
-#else
-int db_fd = -1;				/* default is to throw away */
-#endif
-static FILE *db_file = NULL;		/* stderr may not be a constant */
-static char *db_filename = NULL;
-
-static pid_t debug_prefix_pid = 0;
-
 #ifndef AMANDA_DBGDIR
 #  define AMANDA_DBGDIR		AMANDA_TMPDIR
 #endif
 
 #ifdef DEBUG_CODE
+
+int debug = 1;
+
+#define	MIN_DB_FD			10
+
+static int db_fd = 2;			/* default is stderr */
+static FILE *db_file = NULL;		/* stderr may not be a constant */
+static char *db_filename = NULL;
+
+static pid_t debug_prefix_pid = 0;
+
 /*
  * Format and write a debug message to the process debug file.
  */

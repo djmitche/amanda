@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.32.2.4.4.1.2.4 2002/04/17 20:05:41 martinea Exp $
+ * $Id: amandad.c,v 1.32.2.4.4.1.2.5 2003/01/04 17:46:08 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -170,9 +170,11 @@ char **argv;
 
     dbopen();
     {
-	extern int db_fd;
-	dup2(db_fd, 1);
-	dup2(db_fd, 2);
+	int db_fd = dbfd();
+	if(db_fd != -1) {
+	    dup2(db_fd, 1);
+	    dup2(db_fd, 2);
+	}
     }
 
     startclock();
@@ -583,9 +585,7 @@ send_response:
 
     if(malloc_size_1 != malloc_size_2) {
 #if defined(USE_DBMALLOC)
-	extern int db_fd;
-
-	malloc_list(db_fd, malloc_hist_1, malloc_hist_2);
+	malloc_list(dbfd(), malloc_hist_1, malloc_hist_2);
 #endif
     }
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.13.4.6.2.19 2003/01/01 23:28:51 martinea Exp $
+ * $Id: sendsize.c,v 1.97.2.13.4.6.2.20 2003/01/04 17:46:09 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -420,9 +420,7 @@ char **argv;
 
     if(malloc_size_1 != malloc_size_2) {
 #if defined(USE_DBMALLOC)
-	extern int db_fd;
-
-	malloc_list(db_fd, malloc_hist_1, malloc_hist_2);
+	malloc_list(dbfd(), malloc_hist_1, malloc_hist_2);
 #endif
     }
 

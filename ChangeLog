@@ -1,3 +1,16 @@
+2003-01-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* client-src/amandad.c: Use the dbfd macro instead of the external
+	  variable db_fd.
+	* client-src/selfcheck.c: Ditto.
+	* client-src/sendbackup.c: Ditto.
+	* client-src/sendsize.c: Ditto.
+	* client-src/sendbackup-gnutar.c: Use save_errno instead of errno.
+	* common-src/debug.c: Move most declaration inside #ifdef DEBUG_CODE.
+	* server-src/amindexd.c: dup db_fd() to stderr.
+	* server-src/conffile.c: Don't call error() if the config file does not
+	  exist, just write to stderr and set got_parserror.
+
 2003-01-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* recover-src/amrecover.c: Fix memory leak.
