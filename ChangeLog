@@ -1,3 +1,8 @@
+1998-09-20  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/taper.c (getcmd): print DEBUGging output to stderr
+	Reported by Henning Holtschneider <hh@loca.net>
+
 1998-09-19  Eric Doutreleau <Eric.doutreleau@int-evry.fr>
 
 	* server-src/driverio.h (MAX_DUMPERS): increased from 15 to 63 in
