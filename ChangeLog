@@ -1,4 +1,11 @@
-1998-08-14  John R. Jackson  <jrj@purdue.edu>
+1998-09-11  John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/amstatus.pl.in (all): fix USE_VERSION_SUFFIXES=yes
+	problems.  Reported by David Eckelkamp <davide@locutus.tradewave.com>.
+
+	* man/amstatus.8.in (all): fix minor typos.
+
+1998-09-10  John R. Jackson  <jrj@purdue.edu>
 
 	* configure.in (LFS): add code that might support configuring large
 	files on HP-UX.

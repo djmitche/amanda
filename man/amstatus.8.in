@@ -38,7 +38,7 @@ amstatus \- give the current state of an amanda run
 [--gestimate]
 .SH DESCRIPTION
 .B Amstatus
-give the current state of an amanda run in the 
+gives the current state of the amanda run specified by the 
 .I config
 configuration.
 .LP
@@ -46,11 +46,11 @@ See the
 .IR amanda (8)
 man page for more details about Amanda.
 .SH OPTIONS
-All options can be abreviated to the shortest non-ambiguous sub-string.
-If no options is given then everythings is printed
+All options may be abbreviated to the shortest non-ambiguous sub-string.
+If no options are given then everything is printed.
 .TP
 .B "[--config]" config
-Specify the amanda configuration you want to print the state.
+Specify the amanda configuration you want to print the state for.
 .TP
 .B --file amdumpfile
 Specify an alternate file instead of the
@@ -64,16 +64,16 @@ Print a summary of the state of the run.
 Print all partitions that are dumping.
 .TP
 .B --waitdumping|wdumping
-Print all partitions that wait to be dumped.
+Print all partitions that are waiting to be dumped.
 .TP
 .B --waittaper|wtaper
-Print all partitions dumped that wait to be written to tape.
+Print all partitions dumped that are waiting to be written to tape.
 .TP
 .B --dumpingtape|dtape
 Print all partitions that are dumping directly to tape.
 .TP
 .B --writingtape|wtape
-Print all partitions that are writting to tape.
+Print all partitions that are writing to tape.
 .TP
 .B --finished
 Print all partitions that are dumped and written to tape.
@@ -82,13 +82,12 @@ Print all partitions that are dumped and written to tape.
 Print all partitions that failed.
 .TP
 .B --estimate
-Print all partitions that the estimate are finished. Work only during the
-estimate phase.
+Print all partitions whose estimate is finished.
+Works only during the estimate phase.
 .TP
 .B --gestimate|gettingestimate
-Print all partitions that the estimate are not finished. Work only during the
-estimate phase.
-
+Print all partitions whose estimate is not finished.
+Works only during the estimate phase.
 .SH "SEE ALSO"
 amanda(8),
 amcheck(8),
