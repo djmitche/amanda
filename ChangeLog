@@ -1,3 +1,7 @@
+2002-11-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* restore-src/amidxtaped.c: Fix restore from file.
+
 2002-11-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* restore-src/amidxtaped.c: Fix newline in string literal.
