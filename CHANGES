@@ -1,5 +1,8 @@
 Version 2.4.0
 
+	fixed memory corruption error in amtape.
+	-oliva
+
 	fixed VXDUMP support.
 	-Andrew Ivanov <ivanov@mics.msu.su> & oliva
 

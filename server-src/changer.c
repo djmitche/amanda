@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: changer.c,v 1.7 1998/01/12 22:32:47 blair Exp $
+ * $Id: changer.c,v 1.7.2.1 1998/03/30 04:51:04 amcore Exp $
  *
  * interface routines for tape changers
  */
@@ -116,8 +116,9 @@ char **rest;
 
     if(exitcode) {
 	if(ch == '\0') return report_bad_resultstr();
-	result_copy = s - 1;
-	changer_resultstr = newstralloc(changer_resultstr, result_copy);
+	result_copy = stralloc(s - 1);
+	afree(changer_resultstr);
+	changer_resultstr = result_copy;
 	return exitcode;
     }
     return 0;
