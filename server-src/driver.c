@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.103 2001/01/05 00:48:50 martinea Exp $
+ * $Id: driver.c,v 1.104 2001/01/24 04:02:59 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -541,6 +541,8 @@ start_some_dumps(dumper, rq)
 	} else if (diskp->host->netif->curusage > 0 &&
 		   sched(diskp)->est_kps > free_kps(diskp->host->netif)) {
 	    cur_idle = max(cur_idle, IDLE_NO_BANDWIDTH);
+	} else if(sched(diskp)->no_space)
+	    cur_idle = max(cur_idle, IDLE_NO_DISKSPACE);
 	} else if ((holdp =
 	    find_diskspace(sched(diskp)->est_size,&cur_idle,NULL)) == NULL) {
 	    cur_idle = max(cur_idle, IDLE_NO_DISKSPACE);
@@ -822,18 +824,7 @@ static void continue_dumps()
     if( !active_dumpers && busy_dumpers > 0 && !taper_busy && empty(tapeq) &&
 	pending_aborts == 0 ) { /* not case a */
 	if( busy_dumpers == 1 ) { /* case c */
-	    assignedhd_t **holdp;
-	    int i;
-	    long est_size;
-	    /* set estimate to more than what is already use */
-	    est_size = 20 * TAPE_BLOCK_SIZE;
-	    holdp = sched(dp)->holdp;
-	    for(i=0; holdp[i]; i++ ) { /* for each disk */
-		est_size += holdp[i]->used;
-	    }
-	    if(est_size > sched(dp)->est_size) {
-		sched(dp)->est_size = est_size;
-	    }
+	    sched(dp)->no_space = 1;
 	}
 	/* case b */
 	/* At this time, dp points to the dump with the smallest est_size.
@@ -1600,6 +1591,7 @@ read_schedule(waitqp)
 	sp->dumper = NULL;
 	sp->timestamp = (time_t)0;
 	sp->destname = NULL;
+	sp->no_space = 0;
 
 	dp->up = (char *) sp;
 	remove_disk(waitqp, dp);
