@@ -614,7 +614,7 @@ pkt_t *pkt;
 
     resp = pkt->body;
 /*
-    fprintf(errf, "got response from %s:\n----\n%s----\n",
+    fprintf(errf, "got response from %s:\n----\n%s----\n\n",
             hostp->hostname, resp);
 */
 

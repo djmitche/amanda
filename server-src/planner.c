@@ -883,7 +883,7 @@ pkt_t *pkt;
 	    sprintf(errbuf, "%s NAK: %s", hostp->hostname, remoterr);
 	else {
 	    sprintf(errbuf, "%s NAK: [NAK parse failed]", hostp->hostname);
-	    fprintf(stderr, "got strange nak from %s:\n----\n%s----\n",
+	    fprintf(stderr, "got strange nak from %s:\n----\n%s----\n\n",
 		    hostp->hostname, pkt->body);
 	}
 	goto error_return;
@@ -971,7 +971,7 @@ pkt_t *pkt;
 
 bad_msg:
     fprintf(stderr,"got a bad message, stopped at:\n");
-    fprintf(stderr,"----\n%s----\n", resp);
+    fprintf(stderr,"----\n%s----\n\n", resp);
     sprintf(errbuf, "badly formatted response from %s", hostp->hostname);
 
 error_return:

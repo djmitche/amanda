@@ -880,7 +880,7 @@ pkt_t *pkt;
 	    return;
 	}
 	else {
-/*	    fprintf(stderr, "got nak response:\n----\n%s----\n", pkt->body); */
+/*	    fprintf(stderr, "got nak response:\n----\n%s----\n\n", pkt->body); */
 	    if(sscanf(pkt->body, "ERROR %[^\n]", errstr) != 1) {
 /*		fprintf(stderr, "dumper: got strange NAK: %s", pkt->body); */
 		strcpy(errstr, "[request NAK]");
@@ -890,7 +890,7 @@ pkt_t *pkt;
 	}
     }
 
-/*     fprintf(stderr, "got response:\n----\n%s----\n", pkt->body); */
+/*     fprintf(stderr, "got response:\n----\n%s----\n\n", pkt->body); */
 
 #ifdef KRB4_SECURITY
     if(krb4_auth && !check_mutual_authenticator(&cred.session, pkt, p)) {

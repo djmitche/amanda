@@ -208,7 +208,7 @@ char **argv;
     if(dgram_recv(&in_msg.dgram, RECV_TIMEOUT, &in_msg.peer) <= 0)
 	error("error receiving message: %s", strerror(errno));
 
-    dbprintf(("got packet:\n--------\n%s--------\n", in_msg.dgram.cur));
+    dbprintf(("got packet:\n--------\n%s--------\n\n", in_msg.dgram.cur));
 
     parse_pkt_header(&in_msg);
     if(in_msg.type != P_REQ && in_msg.type != P_NAK) {
@@ -316,7 +316,7 @@ char **argv;
 	    error("could not open temp file \"%s\": %s", 
 		  input_fname, strerror(errno));
 
-	dbprintf(("%s: cmd for \"%s\":\n----\n%s----\n", argv[0], cmd, 
+	dbprintf(("%s: cmd for \"%s\":\n----\n%s----\n\n", argv[0], cmd, 
 		  in_msg.dgram.cur));
 
 	reqlen = strlen(in_msg.dgram.cur);
@@ -435,7 +435,7 @@ send_response:
 
     while(retry_count < max_retry_count) {
 	if(!retry_count)
-	    dbprintf(("%s: sending REP packet:\n----\n%s----\n",
+	    dbprintf(("%s: sending REP packet:\n----\n%s----\n\n",
 		      argv[0], out_msg.dgram.data));
 	dgram_send_addr(in_msg.peer, &out_msg.dgram);
 	if(dgram_recv(&dup_msg.dgram, ack_timeout, &dup_msg.peer) <= 0) {
@@ -450,7 +450,7 @@ send_response:
 			 
 	    continue;
 	}
-	dbprintf(("%s: got ack:\n----\n%s----\n", argv[0],
+	dbprintf(("%s: got ack:\n----\n%s----\n\n", argv[0],
 		  dup_msg.dgram.data));
 	parse_pkt_header(&dup_msg);
 		
@@ -492,7 +492,7 @@ pkt_t *msg;
 	    hdr->handle ? hdr->handle : "",
 	    hdr->sequence);
     msg->dgram.len = strlen(msg->dgram.data);
-    dbprintf(("sending ack:\n----\n%s----\n", msg->dgram.data));
+    dbprintf(("sending ack:\n----\n%s----\n\n", msg->dgram.data));
     dgram_send_addr(hdr->peer, &msg->dgram);
 }
 
@@ -508,7 +508,7 @@ char *str;
 	    hdr->sequence, str);
 
     msg->dgram.len = strlen(msg->dgram.data);
-    dbprintf(("sending nack:\n----\n%s----\n", msg->dgram.data));
+    dbprintf(("sending nack:\n----\n%s----\n\n", msg->dgram.data));
     dgram_send_addr(hdr->peer, &msg->dgram);
 }
 
