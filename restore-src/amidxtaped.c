@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.25.2.3.4.1.2.4 2002/11/07 02:12:58 martinea Exp $
+/* $Id: amidxtaped.c,v 1.25.2.3.4.1.2.5 2002/11/08 01:52:40 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -170,8 +170,7 @@ int lock_logfile()
     }
     conf_logfile = vstralloc(conf_logdir, "/log", NULL);
     if (access(conf_logfile, F_OK) == 0) {
-        error("%s exists: amdump or amflush is already running, or you must run
-amcleanup", conf_logfile);
+        error("%s exists: amdump or amflush is already running, or you must run amcleanup", conf_logfile);
     }
     log_add(L_INFO, "amidxtaped");
     return 1;

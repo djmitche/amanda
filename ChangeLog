@@ -1,5 +1,9 @@
 2002-11-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* restore-src/amidxtaped.c: Fix newline in string literal.
+
+2002-11-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/conffile.c (maxdumpsize): New option.
 	* server-src/conffile.h: Ditto.
 	* server-src/planner.c: Use maxdumpsize if set.
