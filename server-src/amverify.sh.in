@@ -209,7 +209,7 @@ while [ $SLOT -le $SLOTS ]; do
 	report "Use device $DEVICE"
 	$ECHO $ECHOARG "Rewinding...\r$ECHOSUF" >&2
 	$MT -t $DEVICE rewind
-	$DD if=$DEVICE count=1 2>/dev/null >$TEMP.$CSLOT.o
+	$DD if=$DEVICE count=1 bs=32768 2>/dev/null >$TEMP.$CSLOT.o
 	[ ! -s $TEMP.$CSLOT.o ] \
 		&& report "** Error reading label on tape in slot $CSLOT" \
 		&& continue
