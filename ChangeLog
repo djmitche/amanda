@@ -1,5 +1,10 @@
 1999-08-16  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* configure.in: Call AC_OBJEXT.
+	(LTLIBOBJS, LTALLOCA): Define, according to ac_objext.
+	* common-src/Makefile.am (libamanda_la_LIBADD): Use them.
+	(libamanda_a_LIBADD): Use LIBOBJS and ALLOCA.
+
 	* common-src/Makefile.am (genversion.o): Revert last change, it was
 	just a bug in automake's --disable-dependency-tracking.
 
