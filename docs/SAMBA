@@ -53,7 +53,7 @@ File /etc/amandapass must be created by hand.  It contains share name
 to user name, password and workgroup mapping.  Each line consists of two
 or three whitespace separated fields:
 
-  * Share name.
+  * Share name followed by optional directory.
   
     Must use forward slashes (/), not backslashes (\).
 
@@ -62,6 +62,9 @@ or three whitespace separated fields:
     May be asterisk (*) to match all remaining shares for this Samba
     server.  The first match in the file is used, so specific entries
     must be listed first.
+
+    The directory is appended to the share name as full M$ network path.
+    Like //thepc/c$/mydir . No blanks in directory!
 
   * User name and password.
 

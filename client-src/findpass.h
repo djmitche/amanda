@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: findpass.h,v 1.5 1998/07/04 00:18:13 oliva Exp $
+ * $Id: findpass.h,v 1.6 2001/08/01 22:37:32 jrjackson Exp $
  *
  * interface to findpass module
  */
@@ -35,5 +35,6 @@
 
 extern char *findpass P((char *disk, char **domain));
 extern char *makesharename P((char *disk, int shell));
+void parsesharename P((char *disk, char **share, char **subdir));
 
 #endif

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.47 2001/04/23 21:14:52 jrjackson Exp $
+ * $Id: selfcheck.c,v 1.48 2001/08/01 22:37:32 jrjackson Exp $
  *
  * do self-check and send back any error messages
  */
@@ -305,6 +305,7 @@ char *optstr;
     char *device = NULL;
     char *err = NULL;
     char *user_and_password = NULL, *domain = NULL;
+    char *share = NULL, *subdir = NULL;
     int lpass;
     int amode;
     int access_result;
@@ -329,8 +330,18 @@ char *optstr;
 	    char *sep;
 	    FILE *ferr;
 	    char *pw_fd_env;
+	    int errdos;
 
-	    if ((user_and_password = findpass(disk, &domain)) == NULL) {
+	    parsesharename(disk, &share, &subdir);
+	    if (!share) {
+		err = stralloc2("cannot parse for share/subdir disk entry ", disk);
+		goto common_exit;
+	    }
+	    if ((subdir) && (SAMBA_VERSION < 2)) {
+		err = stralloc2("subdirectory specified for share but samba not v2 or better. disk: ", disk);
+		goto common_exit;
+	    }
+	    if ((user_and_password = findpass(share, &domain)) == NULL) {
 		err = stralloc2("cannot find password for ", disk);
 		goto common_exit;
 	    }
@@ -341,8 +352,8 @@ char *optstr;
 	    }
 	    *pwtext++ = '\0';
 	    pwtext_len = strlen(pwtext);
-	    if ((device = makesharename(disk, 0)) == NULL) {
-		err = stralloc2("cannot make share name of ", disk);
+	    if ((device = makesharename(share, 0)) == NULL) {
+		err = stralloc2("cannot make share name of ", share);
 		goto common_exit;
 	    }
 
@@ -362,6 +373,10 @@ char *optstr;
 				 "-E",
 				 domain ? "-W" : skip_argument,
 				 domain ? domain : skip_argument,
+#if SAMBA_VERSION >= 2
+				 subdir ? "-D" : skip_argument,
+				 subdir ? subdir : skip_argument,
+#endif
 				 "-c", "quit",
 				 NULL);
 	    if (domain) {
@@ -383,10 +398,14 @@ char *optstr;
 	    aclose(passwdfd);
 	    ferr = fdopen(checkerr, "r");
 	    sep = "";
+	    errdos = 0;
 	    for(sep = ""; (line = agets(ferr)) != NULL; free(line)) {
 		strappend(extra_info, sep);
 		strappend(extra_info, line);
 		sep = ": ";
+		if(strstr(line, "ERRDOS") != NULL) {
+		    errdos = 1;
+		}
 	    }
 	    afclose(ferr);
 	    checkerr = -1;
@@ -411,7 +430,7 @@ char *optstr;
 		    strappend(err, number);
 		}
 	    }
-	    if (rc != 0) {
+	    if (errdos != 0 || rc != 0) {
 		err = newvstralloc(err,
 				   "samba access error: ",
 				   disk,
@@ -502,6 +521,8 @@ char *optstr;
 
 common_exit:
 
+    amfree(share);
+    amfree(subdir);
     if(user_and_password) {
 	memset(user_and_password, '\0', lpass);
 	amfree(user_and_password);
