@@ -170,6 +170,10 @@ If no argument is specified, or the argument is an
 empty string, no changes occur, and the current settings are
 displayed.
 .IP
+If you want amrecover to use your changer, the 
+.I tapedev
+must be equal to the amrecover_changer setting on the server.
+.IP
 If you need to change the protocol (tape:, rait:, file:, null:) then you
 must specify the hostname.
 .LP
