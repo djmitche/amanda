@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.39 1998/10/19 20:46:13 jrj Exp $
+ * $Id: amindexd.c,v 1.40 1998/11/05 21:07:08 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -53,6 +53,7 @@
 #include "list_dir.h"
 #include "logfile.h"
 #include "token.h"
+#include "find.h"
 
 #ifdef HAVE_NETINET_IN_SYSTM_H
 #include <netinet/in_systm.h>
@@ -78,6 +79,7 @@ char *disk_name;				/* disk we are restoring */
 char *config = NULL;				/* config we are restoring */
 char *target_date = NULL;
 disklist_t *disk_list;				/* all disks in cur config */
+find_result_t *output_find = NULL;
 
 static int amindexd_debug = 0;
 
@@ -407,6 +409,12 @@ char *config;
 	return -1;
     }
 
+    /* read the tapelist file, needed by find_dump() */
+    if(read_tapelist(getconf_str(CNF_TAPELIST))) {
+	reply(501, "Couldn't read tapelist file");
+	return -1;
+    }
+
     /* okay, now look for the index directory */
     if (chdir(getconf_str(CNF_INDEXDIR)) == -1)
     {
@@ -420,7 +428,7 @@ char *config;
 
 int build_disk_table P((void))
 {
-    char *date;
+    char date[100];
     char *host;
     int level;
     char *tape;
@@ -432,116 +440,36 @@ int build_disk_table P((void))
     char *s;
     int ch;
     char *line;
+    find_result_t *find_output;
 
     if (config == NULL || dump_hostname == NULL || disk_name == NULL) {
 	reply(590, "Must set config,host,disk before building disk table");
 	return -1;
     }
 
-    {
-	char *rxdiskname, *shdiskname;
-	rxdiskname = rxquote(disk_name);
-	shdiskname = shquote(rxdiskname);
-	amfree(rxdiskname);
-	cmd = vstralloc(sbindir, "/", "amadmin", versionsuffix(),
-			" ", config,
-			" ", "find",
-			" ", dump_hostname,
-			" \\^", shdiskname, "\\$",
-			NULL);
-	amfree(shdiskname);
-    }
-
-    dbprintf(("! %s\n",cmd));
-    if ((fp = popen(cmd, "r")) == NULL)
-    {
-	reply(599, "System error %s", strerror(errno));
-	amfree(cmd);
-	return -1;
-    }
-    amfree(cmd);
-    clear_list();
-    for(; (line = agets(fp)) != NULL; free(line)) {
-	if (first_line++ == 0) {
-	    continue;
-	}
-
-#define sc "No dump to list"
-	if (strncmp(line, sc, sizeof(sc)-1) == 0) {
-#undef sc
-	    reply(598, "Error: disk not found.");
-	    apclose(fp);
+    if(output_find == NULL) { /* do it the first time only */
+	output_find = find_dump(NULL,0,NULL);
+	if (chdir(getconf_str(CNF_INDEXDIR)) == -1) {
+	    reply(501, "Index directory %s does not exist", getconf_str(CNF_INDEXDIR));
 	    return -1;
 	}
-	
-	s = line;
-	ch = *s++;
-
-	skip_whitespace(s, ch);			/* find the date */
-	if (ch == '\0') {
-	    continue;				/* no date field */
-	}
-	date = s - 1;
-	skip_non_whitespace(s, ch);
-	s[-1] = '\0';
-
-	skip_whitespace(s, ch);			/* find the host name */
-	if (ch == '\0') {
-	    continue;				/* no host name */
-	}
-	host = s - 1;
-	skip_non_whitespace(s, ch);
-	s[-1] = '\0';
-	if (strcmp(dump_hostname, host) != 0) {
-	    continue;				/* wrong host */
-	}
-
-	skip_whitespace(s, ch);			/* find the disk name */
-	if (ch == '\0') {
-	    continue;				/* no disk name */
-	}
-	host = s - 1;
-	skip_non_whitespace(s, ch);
-	s[-1] = '\0';
-	if (strcmp(disk_name, host) != 0) {
-	    continue;				/* wrong disk */
-	}
-
-	skip_whitespace(s, ch);			/* find the level number */
-	if (ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
-	    continue;				/* bad level */
-	}
-	skip_integer(s, ch);
-
-	skip_whitespace(s, ch);			/* find the tape label */
-	if (ch == '\0') {
-	    continue;				/* no tape field */
-	}
-	tape = s - 1;
-	skip_non_whitespace(s, ch);
-	s[-1] = '\0';
-
-	skip_whitespace(s, ch);			/* find the file number */
-	if (ch == '\0' || sscanf(s - 1, "%d", &file) != 1) {
-	    continue;				/* bad file number */
-	}
-	skip_integer(s, ch);
-
-	skip_whitespace(s, ch);			/* find the status */
-	if (ch == '\0') {
-	    continue;				/* no status field */
-	}
-	status = s - 1;
-	skip_non_whitespace(s, ch);
-	s[-1] = '\0';
-	if (strcmp("OK", status) != 0) {
-	    continue;			/* wrong status */
-	}
-
-	add_dump(date, level, tape, file);
-	dbprintf(("- %s %d %s %d\n", date, level, tape, file));
+	sort_find_result("DLKHB", &output_find);
     }
-    apclose(fp);
+
+    for(find_output = output_find; find_output != NULL; 
+	find_output = find_output->next) {
+	if(strcmp(dump_hostname, find_output->hostname) == 0 &&
+	   strcmp(disk_name    , find_output->diskname) == 0) {
+	    ap_snprintf(date, sizeof(date), "%04d-%02d-%02d",
+			find_output->datestamp/10000,
+			(find_output->datestamp/100) %100,
+			find_output->datestamp %100);
+	    add_dump(date, find_output->level, find_output->label, 
+		     find_output->filenum);
+	    dbprintf(("- %s %d %s %d\n", date, find_output->level, 
+		     find_output->label, find_output->filenum));
+	}
+    }
     return 0;
 }
 
@@ -1072,6 +1000,7 @@ char **argv;
     }
 
     uncompress_remove = remove_files(uncompress_remove);
+    free_find_result(&output_find);
     reply(200, "Good bye.");
     dbclose();
     return 0;
