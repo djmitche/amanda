@@ -1,3 +1,25 @@
+1999-02-12  Thomas Hepper <th@ant.han.de>
+	* changer-src/Makefile.am added tape-src to the include list
+	* changer-src/chg-scsi.c removed the changes for not using the
+	statfile.
+	* changer-src/scsi-aix.c Added debug output in SCSI_ExecuteCommand
+	added size parameter to the SCSI_Inquiry call
+	* changer-src/scsi-bsd.c added size parameter to the SCSI_Inquiry call
+	* changer-src/scsi-hpux_new.c same as above 
+	* changer-src/scsi-irix.c same as above
+	* changer-src/scsi-solaris.c same as above
+	* changer-src/scsi-linux swich from ioctl interface to sg interface.
+	Not full tested yet !!
+	* changer-src/scsi-changer-driver.c Added new structs for new devices.
+	complete rewrite of Sense Handling. Removed now unused functions.
+	Added first functions for Barcode reader support.
+	Now use MODE_SENSE to get the number of Drives/Slots/Robots.
+	Split up functions in SCSI functions (prefix SCSI, Generic functions,
+	prefix Generic. Not complete yet). Rewrite of GenericElementStatus
+	* changer-src/scsi-defs.h added new structs, reordered some defines.
+	* changer-src/chg-scsi-chio.c New file(copy of chg-scsi.c). 
+	Too difficult to maintain chg-scsi and chg-scsi-chio from one file
+
 1999-02-10  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/amlabel.c (main): try to read just-written tape label

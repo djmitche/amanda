@@ -415,8 +415,9 @@ chg-scsi has been tested/run with the following devices
 Exabyte 10h and eliant tape
 HP-Surestore 1200e and C1553A tape
 BreeceHill Q2.15 (EXB-120) and DLT7000 tape
-Powerstor L200 and DLT7000 (not fully tested)
+Powerstor L200 and DLT7000 
 ARCHIVE Python 28849-XXX 
+TANDBERG TDS 1420
 
 chg-chio: (new perl script, that replaces the original chg-chio written in C)
 

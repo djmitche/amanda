@@ -1,10 +1,10 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.8 1999/01/26 11:23:18 th Exp $";
+static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.9 1999/02/12 19:58:35 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on Linux
  *
- * Copyright (c) 1998 T.Hepper th@icem.de
+ * Copyright (c) Thomas Hepper th@ant.han.de
  */
 #include <amanda.h>
 
@@ -35,10 +35,21 @@ static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.8 1999/01/26 11:23:18 th Exp $"
 #include <scsi-defs.h>
 
 
+
+int SCSI_CloseDevice(int DeviceFD)
+{
+    int ret;
+    
+    ret = close(DeviceFD);
+    return(ret);
+}
+#define LINUX_CHG
+#ifdef LINUX_CHG
 OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
 {
   int DeviceFD;
   int i;
+  int timeout;
   OpenFiles_T *pwork;
 
   if ((DeviceFD = open(DeviceName, O_RDWR)) > 0)
@@ -50,8 +61,18 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
       pwork->dev = strdup(DeviceName);
       if (strncmp("/dev/sg", DeviceName, 7) == 0)
         {
-          pwork->inquiry = (SCSIInquiry_T *)malloc(sizeof(SCSIInquiry_T));
-          if ((Inquiry(DeviceFD, pwork->inquiry)) != NULL)
+          dbprintf(("SCSI_OpenDevice : use SG interface\n"));
+          if ((timeout = ioctl(DeviceFD, SG_GET_TIMEOUT)) > 0) 
+            {
+              dbprintf(("SCSI_OpenDevice : current timeout %d\n", timeout));
+              timeout = 60000;
+              if (ioctl(DeviceFD, SG_SET_TIMEOUT, &timeout) == 0)
+                {
+                  dbprintf(("SCSI_OpenDevice : timeout set to %d\n", timeout));
+                }
+            }
+          pwork->inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
+          if (SCSI_Inquiry(DeviceFD, pwork->inquiry, INQUIRY_SIZE) == 0)
             {
               if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
                 {
@@ -79,14 +100,6 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
   return(NULL);
 }
 
-int SCSI_CloseDevice(int DeviceFD)
-{
-    int ret;
-    
-    ret = close(DeviceFD);
-    return(ret);
-}
-#ifdef LINUX_CHG
 #define SCSI_OFF sizeof(struct sg_header)
 int SCSI_ExecuteCommand(int DeviceFD,
                         Direction_T Direction,
@@ -176,6 +189,47 @@ static inline int max(int x, int y)
   return (x > y ? x : y);
 }
 
+OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
+{
+  int DeviceFD;
+  int i;
+  OpenFiles_T *pwork;
+
+  if ((DeviceFD = open(DeviceName, O_RDWR)) > 0)
+    {
+      pwork = (OpenFiles_T *)malloc(sizeof(OpenFiles_T));
+      pwork->next = NULL;
+      pwork->fd = DeviceFD;
+      pwork->SCSI = 0;
+      pwork->dev = strdup(DeviceName);
+      pwork->inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
+      dbprintf(("SCSI_OpenDevice : use ioctl interface\n"));
+      if (SCSI_Inquiry(DeviceFD, pwork->inquiry, INQUIRY_SIZE) == 0)
+        {
+          if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
+            {
+              for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
+                pwork->ident[i] = pwork->inquiry->prod_ident[i];
+              pwork->ident[i] = '\0';
+              pwork->SCSI = 1;
+              PrintInquiry(pwork->inquiry);
+              return(pwork);
+            } else {
+              free(pwork->inquiry);
+                  free(pwork);
+                  close(DeviceFD);
+                  return(NULL);
+            }
+            } else {
+              free(pwork->inquiry);
+              pwork->inquiry = NULL;
+              return(pwork);
+            }
+      
+    }
+  return(pwork); 
+}
+
 
 int SCSI_ExecuteCommand(int DeviceFD,
                         Direction_T Direction,
@@ -207,6 +261,9 @@ int SCSI_ExecuteCommand(int DeviceFD,
             memcpy(&Command[8 + CDB_Length], DataBuffer, DataBufferLength);
             break;
         }
+
+    DecodeSCSI(CDB, "SCSI_ExecuteCommand : ");
+
     Result = ioctl(DeviceFD, SCSI_IOCTL_SEND_COMMAND, Command);
     if (Result != 0)
         memcpy(pRequestSense, &Command[8], RequestSenseLength);

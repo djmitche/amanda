@@ -1,10 +1,10 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.9 1999/01/27 10:49:50 th Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.10 1999/02/12 19:58:25 th Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
  *
- * Copyright (c) 1998 T.Hepper th@icem.de
+ * Copyright (c) Thomas Hepper th@ant.han.de
  */
 
 #include <amanda.h>
@@ -34,14 +34,19 @@ static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.9 1999/01/27 10:49:50 
 
 #include <scsi-defs.h>
 
-int Inquiry(int, SCSIInquiry_T *);
-int TestUnitReady(int, RequestSense_T *);
+#include "tapeio.h"
+
+extern int TapeEject(int DeviceFD);
+
 int PrintInquiry(SCSIInquiry_T *);
-int GenericElementStatus(int DeviceFD);
-int EXB120ElementStatus(int DeviceFD);
+int GenericElementStatus(int DeviceFD, int InitStatus);
 ElementInfo_T *LookupElement(int addr);
-int ResetStatus(int DeviceFD);
+int GenericResetStatus(int DeviceFD);
 int RequestSense(int, ExtendedRequestSense_T *, int  );
+void dump_hex(char *, int);
+int BarCode(int fd);
+int LogSense(int fd);
+int SenseHandler(int fd, int flag, char *buffer);
 
 int DoNothing();
 int GenericMove(int, int, int);
@@ -49,9 +54,20 @@ int GenericRewind(int);
 int GenericStatus();
 int GenericFree();
 int GenericEject(char *Device, int type);
-int DLTEject(char *Device, int type);
-int GenericClean(char *Device);
+int GenericClean(char *Device);                 /* Does the tape need a clean */
+int GenericBarCode(int DeviceFD);               /* Do we have Barcode reader support */
+int GenericSearch();
+
+int EXB120BarCode(int DeviceFD);
+
+int GenericSenseHandler(int DeviceFD, int, char *);
+int EXB10eSenseHandler(int DeviceFD, int, char *);
+int EXB85058SenseHandler(int DeviceFD, int, char *);
+int DLTSenseHandler(int DeviceFD, int, char *);
+int TDS1420SenseHandler(int DeviceFD, int, char *);
+
 ChangerCMD_T *LookupFunction(int fd, char *dev);
+ElementInfo_T *LookupElement(int address);
 
 /*
  * Log Pages Decode
@@ -63,32 +79,46 @@ void C1553APage37(LogParameter_T *, int);
 void EXB85058HEPage39(LogParameter_T *, int);
 void EXB85058HEPage3c(LogParameter_T *, int);
 int Decode(LogParameter_T *, int *); 
+int DecodeModeSense(char *buffer, char *pstring);
 
-int SCSI_ReadElementStatus(int DeviceFD, unsigned char type, char **data);
+int SCSI_LoadUnload(int DeviceFD, RequestSense_T *pRequestSense, unsigned char byte1, unsigned char load);
+int SCSI_TestUnitReady(int, RequestSense_T *);
+int SCSI_Inquiry(int, char *, unsigned char);
+int SCSI_ModeSense(int DeviceFD, char *buffer, u_char size, u_char byte1, u_char byte2);
+int SCSI_ReadElementStatus(int DeviceFD, 
+                           unsigned char type,
+                           unsigned char lun,
+                           unsigned char VolTag,
+                           int StartAddress,
+                           int NoOfElements,
+                           char **data);
 
 FILE *StatFile;
 
 SC_COM_T SCSICommand[] = {
   {0x00,
-   5,
+   6,
    "TEST UNIT READY"},
   {0x01,
-   5,
+   6,
    "REWIND"},
   {0x03,
-   5,
+   6,
    "REQUEST SENSE"},
   {0x07,
-   5,
+   6,
    "INITIALIZE ELEMENT STATUS"},
   {0x12,
-   5,
+   6,
    "INQUIRY"},
   {0x13,
-   5,
+   6,
    "ERASE"},
+  {0x1A,
+   6,
+   "MODE SENSE"},
   {0x1B,
-   5,
+   6,
    "UNLOAD"},
   {0xA5,
    12,
@@ -107,23 +137,43 @@ ChangerCMD_T ChangerIO[] = {
     GenericFree,
     GenericEject,
     GenericClean,
-    GenericRewind}},
+    GenericRewind,
+    GenericBarCode,
+    GenericSearch,
+    GenericSenseHandler}},
   {"EXB-10e",                 /* Exabyte Robot */
    {GenericMove,
     GenericElementStatus,
-    ResetStatus,
+    GenericResetStatus,
     GenericFree,
     GenericEject,
     GenericClean,
-    GenericRewind}},
+    GenericRewind,
+    GenericBarCode,
+    GenericSearch,
+    EXB10eSenseHandler}},
   {"EXB-120",                 /* Exabyte Robot */
    {GenericMove,
-    EXB120ElementStatus,
-    ResetStatus,
+    GenericElementStatus,
+    GenericResetStatus,
     GenericFree,
     GenericEject,
     GenericClean,
-    GenericRewind}},
+    GenericRewind,
+    EXB120BarCode,
+    GenericSearch,
+    GenericSenseHandler}},
+  {"TDS 1420",                 /* Tandberg Robot */
+   {GenericMove,
+    GenericElementStatus,
+    GenericResetStatus,
+    GenericFree,
+    GenericEject,
+    GenericClean,
+    GenericRewind,
+    GenericBarCode,
+    GenericSearch,
+    TDS1420SenseHandler}},
   {"EXB-85058HE-0000",        /* Exabyte TapeDrive */
    {DoNothing,
     DoNothing,
@@ -131,24 +181,33 @@ ChangerCMD_T ChangerIO[] = {
     DoNothing,
     GenericEject,
     GenericClean,
-    GenericRewind}},
+    GenericRewind,
+    GenericBarCode,
+    GenericSearch,
+    EXB85058SenseHandler}},
   {"DLT7000",        /* DLT7000 TapeDrive */
    {DoNothing,
     DoNothing,
     DoNothing,
     DoNothing,
-    DLTEject,
+    GenericEject,
     GenericClean,
-    GenericRewind}},
+    GenericRewind,
+    GenericBarCode,
+    GenericSearch,
+    DLTSenseHandler}},
   {"generic",
    {GenericMove,
     GenericElementStatus,
-    ResetStatus,
+    GenericResetStatus,
     GenericFree,
     GenericEject,
     GenericClean,
-    GenericRewind}},
-  {NULL, {NULL, NULL, NULL, NULL, NULL, NULL, NULL}}
+    GenericRewind,
+    GenericBarCode,
+    GenericSearch,
+    GenericSenseHandler}},
+  {NULL, {NULL,NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}}
 };           
 
 
@@ -182,8 +241,12 @@ LogPageDecode_T DecodePages[] = {
 
 OpenFiles_T *pOpenFiles = NULL;
 
+int InErrorHandler = 0;
 int ElementStatusValid = 0;
 char *SlotArgs = 0;
+/* Pointer to MODE SENSE Pages */
+EAAPage_T *EAAPage = NULL;
+DeviceCapabilitiesPage_T *DeviceCapabilitiesPage = NULL;
 
 /*
   New way, every element type has its on array
@@ -201,7 +264,6 @@ int DTE = 0;
  */
 int isempty(int fd, int slot)
 {
-  int rslot;
   ChangerCMD_T *pwork;
 
   if ((pwork = LookupFunction(fd, "")) == NULL)
@@ -211,7 +273,7 @@ int isempty(int fd, int slot)
 
   if (ElementStatusValid == 0)
     {
-      if ( pwork->function[CHG_STATUS](fd) != 0)
+      if ( pwork->function[CHG_STATUS](fd, 1) != 0)
         {
           return(-1);
         }
@@ -255,8 +317,32 @@ int eject_tape(char *tapedev, int type)
 
 int find_empty(int fd)
 {
+  ChangerCMD_T *pwork;
+  int x;
+
   dbprintf(("find_empty %d\n", fd));
-  return(0);
+
+  if ((pwork = LookupFunction(fd, "")) == NULL)
+    {
+      return(-1);
+    }
+
+  if (ElementStatusValid == 0)
+    {
+      if ( pwork->function[CHG_STATUS](fd, 1) != 0)
+        {
+          return(-1);
+        }
+    }
+
+  for (x = 0; x < STE; x++)
+    {
+      if (pSTE[x].status == 'E')
+        {
+          return(x);
+        }
+    }
+  return(-1);
 }
 
 int drive_loaded(int fd, int drivenum)
@@ -272,7 +358,7 @@ int drive_loaded(int fd, int drivenum)
 
   if (ElementStatusValid == 0)
       {
-          if (pwork->function[CHG_STATUS](fd) != 0)
+          if (pwork->function[CHG_STATUS](fd, 1) != 0)
               {
                   return(-1);
               }
@@ -291,7 +377,6 @@ int unload(int fd, int drive, int slot)
    * unload the specified drive into the specified slot
    * (storage element)
    */
-  int empty = 0;
   ChangerCMD_T *pwork;
 
   if ((pwork = LookupFunction(fd, "")) == NULL)
@@ -301,7 +386,7 @@ int unload(int fd, int drive, int slot)
 
   if (ElementStatusValid == 0)
       {
-          if (pwork->function[CHG_STATUS](fd) != 0)
+          if (pwork->function[CHG_STATUS](fd, 1) != 0)
               {
                   return(-1);
               }
@@ -322,14 +407,15 @@ int unload(int fd, int drive, int slot)
   if (pSTE[slot].status == 'F')
     {
       dbprintf(("unload : Slot %d address %d is full\n", drive, pSTE[slot].address));
-      return(-1);
+      slot = find_empty(fd);
+      dbprintf(("unload : try to unload to slot %d\n", slot));
     }
   
   pwork->function[CHG_MOVE](fd, pDTE[drive].address, pSTE[slot].address);
   /*
    * Update the Status
    */
-  if (pwork->function[CHG_STATUS](fd) != 0)
+  if (pwork->function[CHG_STATUS](fd, 1) != 0)
       {
           return(-1);
       }
@@ -353,7 +439,7 @@ int load(int fd, int drive, int slot)
   
   if (ElementStatusValid == 0)
       {
-          if (pwork->function[CHG_STATUS](fd) != 0)
+          if (pwork->function[CHG_STATUS](fd, 1) != 0)
               {
                   return(-1);
               }
@@ -381,7 +467,7 @@ int load(int fd, int drive, int slot)
   /*
    * Update the Status
    */
-  if (pwork->function[CHG_STATUS](fd) != 0)
+  if (pwork->function[CHG_STATUS](fd, 1) != 0)
       {
           return(-1);
       }
@@ -403,7 +489,7 @@ int get_slot_count(int fd)
 
       if (ElementStatusValid == 0)
           {
-              pwork->function[CHG_STATUS](fd);
+              pwork->function[CHG_STATUS](fd, 1);
           }
     }
   return(STE);
@@ -420,7 +506,6 @@ int get_slot_count(int fd)
  */ 
 int get_drive_count(int fd)
 {
-  int count = 0;
   ChangerCMD_T *pwork;
 
   if ((pwork = LookupFunction(fd, "")) == NULL)
@@ -430,7 +515,7 @@ int get_drive_count(int fd)
 
   if (ElementStatusValid == 0)
       {
-          if ( pwork->function[CHG_STATUS](fd) != 0)
+          if ( pwork->function[CHG_STATUS](fd, 1) != 0)
               {
                   return(-1);
               }
@@ -450,7 +535,6 @@ int get_drive_count(int fd)
 
 int OpenDevice(char *DeviceName, char *ConfigName)
 {
-  int i;
   OpenFiles_T *pwork, *pprev;
   
   dbprintf(("OpenDevice : %s\n", DeviceName));
@@ -488,47 +572,66 @@ OpenFiles_T * LookupDevice(char *DeviceName, int DeviceFD, int what)
 {
   OpenFiles_T *pwork, *pprev;
   
+   
   switch (what)
     {
     case LOOKUP_NAME:
+      dbprintf(("LookupDevice : LOOKUP_NAME name = %s, fd = %d\n", 
+                DeviceName,
+                DeviceFD));
       for (pwork = pOpenFiles; pwork != NULL; pwork = pwork->next)
         {
           if (strcmp(DeviceName, pwork->dev) == 0)
             {
+              dbprintf(("LookupDevice : found %s\n", pwork->dev));
               return(pwork);
             }
           pprev = pwork;
         }
       break;
     case LOOKUP_CONFIG:
+      dbprintf(("LookupDevice : LOOKUP_CONFIG name = %s, fd = %d\n", 
+                DeviceName,
+                DeviceFD));
       for (pwork = pOpenFiles; pwork != NULL; pwork = pwork->next)
         {
           if (strcmp(DeviceName, pwork->ConfigName) == 0)
             {
+              dbprintf(("LookupDevice : found %s\n", pwork->dev));
               return(pwork);
             }
           pprev = pwork;
         }
       break;
     case LOOKUP_FD:
+      dbprintf(("LookupDevice : LOOKUP_FD name = %s, fd = %d\n", 
+                DeviceName,
+                DeviceFD));
       for (pwork = pOpenFiles; pwork != NULL; pwork = pwork->next)
         {
           if (DeviceFD == pwork->fd)
             {
+              dbprintf(("LookupDevice : found %s\n", pwork->dev));
               return(pwork);
             }
           pprev = pwork;
         }
       break;
     case LOOKUP_TYPE:
+      dbprintf(("LookupDevice : LOOKUP_TYPE name = %s, fd = %d\n", 
+                DeviceName,
+                DeviceFD));
       for (pwork = pOpenFiles; pwork != NULL; pwork = pwork->next)
         {
-          if (pwork->SCSI == 1 && DeviceFD == pwork->inquiry->data_format)
+          if (pwork->SCSI == 1 && DeviceFD == pwork->inquiry->type)
             {
+              dbprintf(("LookupDevice : found %s\n", pwork->dev));
               return(pwork);
             }
           pprev = pwork;
         }
+      break;
+    default:
       break;
     }
   /*
@@ -617,6 +720,19 @@ int CloseDevice(char *DeviceName, int DeviceFD)
   return(0);
 }
 
+int BarCode(int fd)
+{
+  ChangerCMD_T *pwork;
+  int ret;
+
+  if ((pwork = LookupFunction(fd, "")) == NULL)
+    {
+      return(0);
+    }
+
+  ret = pwork->function[CHG_BARCODE](fd);
+  return(ret);
+}
 
 int Tape_Ready(char *tapedev, int wait)
 {
@@ -639,11 +755,15 @@ int Tape_Ready(char *tapedev, int wait)
           return(0);
       }
 
-  pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T));
+  if ((pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
+      {
+        dbprintf(("Tape_Ready : malloc failed\n"));
+        return(-1);
+      }
 
   while (true && cnt < wait)
     {
-      if (TestUnitReady(pwork->fd, pRequestSense ))
+      if (SCSI_TestUnitReady(pwork->fd, pRequestSense ))
         {
           true = 0;
         } 
@@ -664,76 +784,6 @@ int Tape_Ready(char *tapedev, int wait)
   return(0);
 }
 
-int TestUnitReady(int DeviceFD, RequestSense_T *pRequestSense)
-{
-  CDB_T CDB;
-
-  CDB[0] = SC_COM_TEST_UNIT_READY;
-  CDB[1] = 0;
-  CDB[2] = 0;
-  CDB[3] = 0;
-  CDB[4] = 0;
-  CDB[5] = 0;
-
-  SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,
-                      0, 0, 
-                      (char *) pRequestSense,
-                      sizeof(RequestSense_T));
-
-  DecodeSense(pRequestSense, "TestUnitReady : ");
-
-  if (pRequestSense->ErrorCode == 0 && pRequestSense->SenseKey == 0)
-    {
-      return(1);
-    }
-  
-  return(0);
-}
-
-int Inquiry(int DeviceFD, SCSIInquiry_T *SCSIInquiry)
-{
-  CDB_T CDB;
-  RequestSense_T *pRequestSense;
-  int i;
-  int lun;
-  int ret;
-
-  dbprintf(("Inquiry start:\n"));
-  pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T));
-
-  bzero(SCSIInquiry,sizeof(SCSIInquiry_T));
-  CDB[0] = SC_COM_INQUIRY;
-  CDB[1] = 0;
-  CDB[2] = 0;
-  CDB[3] = 0;
-  CDB[4] = (unsigned char)sizeof(SCSIInquiry_T);
-  CDB[5] = 0;
-
-  ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,                      
-                            SCSIInquiry,
-                            sizeof(SCSIInquiry_T), 
-                            (char *) pRequestSense,
-                            sizeof(RequestSense_T));
-  if (ret < 0)
-    {
-      dbprintf(("%s: Request Sense[Inquiry]: %02X",
-                "chs", ((unsigned char *) pRequestSense)[0]));
-      for (i = 1; i < sizeof(RequestSense_T); i++)               
-        dbprintf((" %02X", ((unsigned char *) pRequestSense)[i]));
-      dbprintf(("\n"));   
-      dbprintf(("Inquiry end: %d\n", ret));
-      return(ret);
-    }
-  if ( ret > 0)
-    {
-      DecodeSense(pRequestSense, "Inquiry : ");
-      return(pRequestSense->SenseKey);
-    }
-
-    
-  dbprintf(("Inquiry end: %d\n", ret));
-  return(ret);
-}
 
 int DecodeSCSI(CDB_T CDB, char *string)
 {
@@ -757,6 +807,94 @@ int DecodeSCSI(CDB_T CDB, char *string)
       pSCSICommand++;
     }
   return(0);
+}
+
+int DecodeModeSense(char *buffer, char *pstring)
+{
+  int length = (unsigned char)*buffer - 4;
+  dump_hex(buffer, 255);
+  /* Jump over the Parameter List header */
+  buffer = buffer + 4;
+  
+  while (length > 0)
+    {
+      switch (*buffer & 0x3f)
+        {
+        case 0x1d:
+          EAAPage = (EAAPage_T *)buffer;
+          dbprintf(("DecodeModeSense : Medium Transport Element Address %d\n", 
+                    V2(EAAPage->MediumTransportElementAddress)));
+          dbprintf(("DecodeModeSense : Number of Medium Transport Elements %d\n", 
+                    V2(EAAPage->NoMediumTransportElements)));
+          dbprintf(("DecodeModeSense : First Storage Element Address %d\n", 
+                    V2(EAAPage->FirstStorageElementAddress)));
+          dbprintf(("DecodeModeSense : Number of  Storage Elements %d\n", 
+                    V2(EAAPage->NoStorageElements)));
+          dbprintf(("DecodeModeSense : First Import/Export Element Address %d\n", 
+                    V2(EAAPage->FirstImportExportElementAddress)));
+          dbprintf(("DecodeModeSense : Number of  ImportExport Elements %d\n", 
+                    V2(EAAPage->NoImportExportElements)));
+          dbprintf(("DecodeModeSense : First Data Transfer Element Address %d\n", 
+                    V2(EAAPage->FirstDataTransferElementAddress)));
+          dbprintf(("DecodeModeSense : Number of  Data Transfer Elements %d\n", 
+                    V2(EAAPage->NoDataTransferElements)));
+          buffer++;
+          break;
+        case 0x1f:
+          DeviceCapabilitiesPage = (DeviceCapabilitiesPage_T *)buffer;
+          dbprintf(("DecodeModeSense : MT can store data cartridges %d\n",
+                    DeviceCapabilitiesPage->MT));
+          dbprintf(("DecodeModeSense : ST can store data cartridges %d\n",
+                    DeviceCapabilitiesPage->ST));
+          dbprintf(("DecodeModeSense : IE can store data cartridges %d\n",
+                    DeviceCapabilitiesPage->IE));
+          dbprintf(("DecodeModeSense : DT can store data cartridges %d\n",
+                    DeviceCapabilitiesPage->DT));
+          dbprintf(("DecodeModeSense : MT to MT %d\n",
+                    DeviceCapabilitiesPage->MT2MT));
+          dbprintf(("DecodeModeSense : MT to ST %d\n",
+                    DeviceCapabilitiesPage->MT2ST));
+          dbprintf(("DecodeModeSense : MT to IE %d\n",
+                    DeviceCapabilitiesPage->MT2IE));
+          dbprintf(("DecodeModeSense : MT to DT %d\n",
+                    DeviceCapabilitiesPage->MT2DT));
+          dbprintf(("DecodeModeSense : ST to MT %d\n",
+                    DeviceCapabilitiesPage->ST2ST));
+          dbprintf(("DecodeModeSense : ST to MT %d\n",
+                    DeviceCapabilitiesPage->ST2ST));
+          dbprintf(("DecodeModeSense : ST to DT %d\n",
+                    DeviceCapabilitiesPage->ST2DT));
+          dbprintf(("DecodeModeSense : IE to MT %d\n",
+                    DeviceCapabilitiesPage->IE2MT));
+          dbprintf(("DecodeModeSense : IE to ST %d\n",
+                    DeviceCapabilitiesPage->IE2IE));
+          dbprintf(("DecodeModeSense : IE to ST %d\n",
+                    DeviceCapabilitiesPage->IE2DT));
+          dbprintf(("DecodeModeSense : IE to ST %d\n",
+                    DeviceCapabilitiesPage->IE2DT));
+          dbprintf(("DecodeModeSense : DT to MT %d\n",
+                    DeviceCapabilitiesPage->DT2MT));
+          dbprintf(("DecodeModeSense : DT to ST %d\n",
+                    DeviceCapabilitiesPage->DT2ST));
+          dbprintf(("DecodeModeSense : DT to IE %d\n",
+                    DeviceCapabilitiesPage->DT2IE));
+          dbprintf(("DecodeModeSense : DT to DT %d\n",
+                    DeviceCapabilitiesPage->DT2DT));
+          buffer++;
+          break;
+        default:
+          buffer++;  /* set pointer to the length information */
+          break;
+        }
+      if (*buffer == 0)
+        {
+          /*           EAAPage = NULL; */
+          /*           DeviceCapabilitiesPage = NULL; */
+          return(-1);
+        }
+      length = length - *buffer - 2;
+      buffer = buffer + *buffer + 1;      
+    }
 }
 
 int DecodeSense(RequestSense_T *sense, char *pstring)
@@ -897,7 +1035,7 @@ int PrintInquiry(SCSIInquiry_T *SCSIInquiry)
   dbprintf(("%-15s %.8s\n", "vendor_info", SCSIInquiry->vendor_info));
   dbprintf(("%-15s %.16s\n", "prod_ident", SCSIInquiry->prod_ident));
   dbprintf(("%-15s %.4s\n", "prod_version", SCSIInquiry->prod_version));
-  dbprintf(("%-15s %.20s\n", "vendor_specific", SCSIInquiry->vendor_specific));
+  dbprintf(("%-15s %.19s\n", "vendor_specific", SCSIInquiry->vendor_specific));
   return(0);
 }
 
@@ -912,116 +1050,58 @@ int GenericFree()
   return(0);
 }
 
-int DLTEject(char *Device, int type)
+int GenericSearch()
 {
-  CDB_T CDB;
-  RequestSense_T *pRequestSense;
-  int ret;
-  int cnt = 0;
-  int true = 1;
-  OpenFiles_T *pwork;
-  OpenFiles_T *ptape;
-
-  if ((ptape = LookupDevice(Device, 0, LOOKUP_NAME)) == NULL) 
-    {
-      dbprintf(("DLTEject : LookupDevice %s failed\n", Device));
-      return(-1);
-    }
-
-  pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T));
-
-  LogSense(ptape->fd);
- 
-  if ((pwork = LookupDevice("tape_device", 0, LOOKUP_CONFIG)) == NULL) 
-    {
-      dbprintf(("DLTEject : LookupDevice tape_device failed\n"));
-      return(-1);
-    }
-
-  if ( type > 1)
-  {
-     dbprintf(("DLTEject : use mtio ioctl for eject on %s\n", pwork->dev));
-     return(Tape_Eject(pwork->fd));
-  }
-
-  if (ptape->fd != pwork->fd) {
-    dbprintf(("DLTEject : Close %s \n", pwork->dev));
-    CloseDevice("", pwork->fd);
-  }
-
-  if (ptape->SCSI == 0)
-  {
-     dbprintf(("DLTEject : Device %s not able to receive SCSI commands\n", pwork->dev));
-     return(Tape_Eject(ptape->fd));
-  }
-
-
-  dbprintf(("DLTEject : SCSI eject on %s = %s\n", ptape->dev, ptape->ConfigName));
-
-  CDB[0] = SC_COM_UNLOAD;
-  CDB[1] = 1;             /* Don't wait for success */
-  CDB[2] = 0;
-  CDB[3] = 0;
-  CDB[4] = 0;
-  CDB[5] = 0;
-
-  while (true)
-    {
-      ret = SCSI_ExecuteCommand(ptape->fd, Input, CDB, 6,
-                                0, 0, 
-                                (char *) pRequestSense,
-                                sizeof(RequestSense_T));
-      
-      DecodeSense(pRequestSense, "GenericEject : ");
-      
-      if (ret > 0) 
-        {
-          if (pRequestSense->SenseKey != UNIT_ATTENTION)
-            {
-              true = 0;
-            }
-        }
-      if (ret == 0)
-        {
-          true = 0;
-        }
-      if (ret < 0)
-        {
-          dbprintf(("DLTEject : failed %d\n", ret));
-          true = 0;
-        }
-    }
-  true = 1;
-
-  while (true && cnt < 300)
-    {
-      if (TestUnitReady(ptape->fd, pRequestSense))
-        {
-          true = 0;
-          break;
-        }
-      if ((pRequestSense->SenseKey == SENSE_NOT_READY) &&
-          (pRequestSense->AdditionalSenseCode == 0x4) &&
-          (pRequestSense->AdditionalSenseCodeQualifier == 0x2))
-        {
-          true=0;
-          break;
-        } else {
-          cnt++;
-          sleep(2);
-        }
-    }
-
-  free(pRequestSense);
-
-  dbprintf(("DLTEject : Ready after %d sec, true = %d\n", cnt * 2, true));
   return(0);
+}
 
+int EXB120BarCode(int DeviceFD)
+{
+  OpenFiles_T *pwork; 
+  
+  if ((pwork = LookupDevice("", DeviceFD, LOOKUP_FD)) != NULL)
+    {
+      dump_hex((char *)pwork->inquiry, INQUIRY_SIZE);
+      dbprintf(("GenericBarCode : vendor_specific[19] %x\n",
+                pwork->inquiry->vendor_specific[19]));
+    }
+  return(1);
+}
+
+int GenericBarCode(int DeviceFD)
+{
+  OpenFiles_T *pwork; 
+
+  if ((pwork = LookupDevice("", DeviceFD, LOOKUP_FD)) != NULL)
+    {
+      dump_hex((char *)pwork->inquiry, INQUIRY_SIZE);
+      dbprintf(("GenericBarCode : vendor_specific[19] %x\n",
+                pwork->inquiry->vendor_specific[19]));
+      if ((pwork->inquiry->vendor_specific[19] & 1) == 1)
+        {
+          return(1);
+        } else {
+          return(0);
+        }
+    }
+  return(0);
+}
+
+int SenseHandler(int DeviceFD, int flag, char *buffer)
+{
+
+  ChangerCMD_T *pwork;
+
+  if ((pwork = LookupFunction(DeviceFD, "")) == NULL)
+    {
+      return(-1);
+    }
+  
+  return(pwork->function[CHG_ERROR](DeviceFD, flag, buffer));
 }
 
 int GenericEject(char *Device, int type)
 {
-  CDB_T CDB;
   RequestSense_T *pRequestSense;
   int ret;
   int cnt = 0;
@@ -1034,9 +1114,15 @@ int GenericEject(char *Device, int type)
       dbprintf(("GenericEject : LookupDevice %s failed\n", Device));
       return(-1);
     }
-  pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T));
+  
+  if ((pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
+    {
+      dbprintf(("GenericEject : malloc failed\n"));
+      return(-1);
+    }
 
-  LogSense(ptape->fd);
+  if (ptape->SCSI != 0)
+    LogSense(ptape->fd);
 
   if ((pwork = LookupDevice("tape_device", 0, LOOKUP_CONFIG)) == NULL) 
     {
@@ -1064,50 +1150,30 @@ int GenericEject(char *Device, int type)
 
   dbprintf(("GenericEject : SCSI eject on %s = %s\n", ptape->dev, ptape->ConfigName));
 
-  CDB[0] = SC_COM_UNLOAD;
-  CDB[1] = 1;             /* Don't wait for success */
-  CDB[2] = 0;
-  CDB[3] = 0;
-  CDB[4] = 0;
-  CDB[5] = 0;
+  /* Unload the tape, 1 == don't wait for success
+   * 0 == unload 
+   */
+  ret = SCSI_LoadUnload(ptape->fd, pRequestSense, 1, 0);
 
-  while (true)
+  /* < 0 == fatal */
+  if (ret < 0)
+    return(-1);
+
+  if ( ret > 0)
     {
-      ret = SCSI_ExecuteCommand(ptape->fd, Input, CDB, 6,
-                                0, 0, 
-                                (char *) pRequestSense,
-                                sizeof(RequestSense_T));
-      
-      DecodeSense(pRequestSense, "GenericEject : ");
-      
-      if (ret > 0) 
-        {
-          if (pRequestSense->SenseKey != UNIT_ATTENTION)
-            {
-              true = 0;
-            }
-        }
-      if (ret == 0)
-        {
-          true = 0;
-        }
-      if (ret < 0)
-        {
-          dbprintf(("GenericEject : failed %d\n", ret));
-          true = 0;
-        }
     }
+
   true = 1;
+
 
   while (true && cnt < 300)
     {
-      if (TestUnitReady(ptape->fd, pRequestSense))
+      if (SCSI_TestUnitReady(ptape->fd, pRequestSense))
         {
           true = 0;
           break;
         }
-      if ((pRequestSense->SenseKey == SENSE_NOT_READY) &&
-          (pRequestSense->AdditionalSenseCode == 0x3A))
+      if (SenseHandler(ptape->fd, 0, (char *)pRequestSense) == SENSE_NO_TAPE_ONLINE)
         {
           true=0;
           break;
@@ -1132,7 +1198,11 @@ int GenericRewind(int DeviceFD)
   int cnt = 0;
   int true = 1;
 
-  pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T));
+  if ((pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
+      {
+          dbprintf(("GenericRewind : malloc failed\n"));
+          return(-1);
+      }
 
   CDB[0] = SC_COM_REWIND;
   CDB[1] = 1;             
@@ -1167,17 +1237,17 @@ int GenericRewind(int DeviceFD)
           true = 0;
         }
     }
+
   true = 1;
 
   while (true && cnt < 300)
     {
-      if (TestUnitReady(DeviceFD, pRequestSense))
+      if (SCSI_TestUnitReady(DeviceFD, pRequestSense))
         {
           true = 0;
           break;
         }
-      if ((pRequestSense->SenseKey == SENSE_NOT_READY) &&
-          (pRequestSense->AdditionalSenseCode == 0x3A))
+      if (SenseHandler(DeviceFD, 0, (char *)pRequestSense) == SENSE_NO_TAPE_ONLINE)
         {
           true=0;
           break;
@@ -1186,12 +1256,11 @@ int GenericRewind(int DeviceFD)
           sleep(2);
         }
     }
-
+  
   free(pRequestSense);
-
+  
   dbprintf(("GenericRewind : Ready after %d sec, true = %d\n", cnt * 2, true));
   return(0);
-
 }
 
 int GenericClean(char * Device)
@@ -1221,15 +1290,18 @@ int GenericClean(char * Device)
   }
 }
 
-int ResetStatus(int DeviceFD)
+int GenericResetStatus(int DeviceFD)
 {
   CDB_T CDB;
   RequestSense_T *pRequestSense;
-  int i;
   int ret;
   int retry = 1;
   
-  pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T));
+  if ((pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
+      {
+          dbprintf(("GenericResetStatus : malloc failed\n"));
+          return(-1);
+      }
 
   while (retry)
     {
@@ -1255,34 +1327,565 @@ int ResetStatus(int DeviceFD)
           /*        fprintf(stderr, "\n");    */
           return(ret);
         }
-      if ( ret > 0)
+      if ( ret > 0 && InErrorHandler == 0)
         {
-          dbprintf(("ResetStatus : ret = %d\n",ret));
-          DecodeSense(pRequestSense, "ResetStatus : ");
-          if (pRequestSense->SenseKey)
+          switch (SenseHandler(DeviceFD, 0, (char *)pRequestSense))
             {
-              if (pRequestSense->SenseKey == UNIT_ATTENTION || pRequestSense->SenseKey == NOT_READY)
+            case SENSE_IGNORE:
+              return(0);
+              break;
+            case SENSE_ABORT:
+              return(-1);
+              break;
+            case SENSE_RETRY:
+              retry++;
+              if (retry < MAX_RETRIES )
                 {
-                  if ( retry < MAX_RETRIES )
-                    { 
-                      dbprintf(("ResetStatus : retry %d\n", retry));
-                      retry++;
-                      sleep(2);
-                    } else {
-                      return(pRequestSense->SenseKey);
-                    }
+                  dbprintf(("ResetStatus : retry %d\n", retry));
+                  sleep(2);
                 } else {
-                  return(pRequestSense->SenseKey);
+                  return(-1);
                 }
+              break;
+            default:
+              return(-1);
+              break;
             }
         }
       if (ret == 0)
         retry = 0;
     }
-  
   return(ret);
 }
 
+int GenericSenseHandler(int DeviceFD, int flag, char *buffer)
+{ 
+  RequestSense_T *pRequestSense = (RequestSense_T *)buffer;
+  int ret = 0;
+  InErrorHandler = 1;
+
+  if (flag == 1)
+    {
+    } else {
+      DecodeSense(pRequestSense, "GenericSenseHandler : ");
+      switch (pRequestSense->SenseKey)
+        {
+        case NOT_READY:
+          dbprintf(("GenericSenseHandler : NOT_READY ASC = %x ASCQ = %x\n",
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          switch (pRequestSense->AdditionalSenseCode)
+            {
+            default:
+              ret = SENSE_RETRY;
+              break;
+            }
+          break;
+        case UNIT_ATTENTION:
+          dbprintf(("GenericSenseHandler : UNIT_ATTENTION ASC = %x ASCQ = %x\n",
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          switch (pRequestSense->AdditionalSenseCode)
+            {
+            default:
+              ret = SENSE_RETRY;
+              break;
+            }
+          break;
+        case ILLEGAL_REQUEST:
+          dbprintf(("GenericSenseHandler : ILLEGAL_REQUEST  ASC = %x ASCQ = %x\n",
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          switch (pRequestSense->AdditionalSenseCode)
+            {
+            default:
+              ret = SENSE_ABORT;
+              break;
+            }
+          break;
+        default:
+          dbprintf(("GenericSenseHandler : Unknow %x ASC = %x ASCQ = %x\n",
+                    pRequestSense->SenseKey,
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          ret = SENSE_ABORT;
+          break;
+        }
+    }
+  InErrorHandler=0;
+  return(ret);
+}
+
+/**/
+
+int TDS1420SenseHandler(int DeviceFD, int flag, char *buffer)
+{ 
+  RequestSense_T *pRequestSense = (RequestSense_T *)buffer;
+  ElementInfo_T *pElementInfo;
+  int ret = 0;
+  InErrorHandler = 1;
+
+  if (flag == 1)
+    {
+      pElementInfo = (ElementInfo_T *)buffer;
+      switch(pElementInfo->ASC)
+        {
+        case 0x83:
+          switch(pElementInfo->ASCQ)
+            {
+            case 00:
+              ret=SENSE_IES;
+              break;
+            case 01:
+              ret=SENSE_IES;
+              break;
+            case 04:
+              ret=SENSE_IGNORE;
+              break;
+            default:
+              break;
+            }
+          break;
+        default:
+          break;
+        }
+    } else {
+      DecodeSense(pRequestSense, "TDS1420SenseHandler : ");
+      switch (pRequestSense->SenseKey)
+        {
+        case NOT_READY:
+          dbprintf(("TDS1420SenseHandler : NOT_READY ASC = %x ASCQ = %x\n",
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          switch (pRequestSense->AdditionalSenseCode)
+            {
+            default:
+              ret = SENSE_RETRY;
+              break;
+            }
+          break;
+        case UNIT_ATTENTION:
+          dbprintf(("TDS1420SenseHandler : UNIT_ATTENTION ASC = %x ASCQ = %x\n",
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          switch (pRequestSense->AdditionalSenseCode)
+            {
+            default:
+              ret = SENSE_RETRY;
+              break;
+            }
+          break;
+        case ILLEGAL_REQUEST:
+          dbprintf(("TDS1420SenseHandler : ILLEGAL_REQUEST  ASC = %x ASCQ = %x\n",
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          switch (pRequestSense->AdditionalSenseCode)
+            {
+            default:
+              ret = SENSE_ABORT;
+              break;
+            }
+          break;
+        default:
+          dbprintf(("TDS1420SenseHandler : Unknow %x ASC = %x ASCQ = %x\n",
+                    pRequestSense->SenseKey,
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          ret = SENSE_ABORT;
+          break;
+        }
+    }
+  InErrorHandler=0;
+  return(ret);
+}
+
+
+
+int DLTSenseHandler(int DeviceFD, int flag, char *buffer)
+{ 
+  RequestSense_T *pRequestSense = (RequestSense_T *)buffer;
+  int ret = 0;
+  InErrorHandler = 1;
+
+  if (flag == 1)
+    {
+    } else {
+      DecodeSense(pRequestSense, "DLTSenseHandler : ");
+      switch (pRequestSense->SenseKey)
+        {
+        case NOT_READY:
+          dbprintf(("DLTSenseHandler : NOT_READY ASC = %x ASCQ = %x\n",
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          switch (pRequestSense->AdditionalSenseCode)
+            {
+            case 0x4:
+              if (pRequestSense->AdditionalSenseCodeQualifier == 00)
+                {
+                  dbprintf(("DLTSenseHandler : Logical Unit not ready, No additional sense\n"));
+                  ret = SENSE_RETRY;
+                }
+              if (pRequestSense->AdditionalSenseCodeQualifier == 02)
+                {
+                  dbprintf(("DLTSenseHandler : Logical Unit not ready, in progress becoming ready\n"));
+                  ret = SENSE_NO_TAPE_ONLINE;
+                }
+              break;
+            case 0x30:
+              if (pRequestSense->AdditionalSenseCodeQualifier == 0x3)
+                {
+                  dbprintf(("DLTSenseHandler : The tape drive is being cleaned\n"));
+                } else {
+                  dbprintf(("DLTSenseHandler : Unknown ASCQ %x\n",
+                            pRequestSense->AdditionalSenseCodeQualifier));
+                }
+              ret = SENSE_RETRY;
+              break;
+            default:
+              ret = SENSE_RETRY;
+              break;
+            }
+          break;
+        case UNIT_ATTENTION:
+          dbprintf(("DLTSenseHandler : UNIT_ATTENTION ASC = %x ASCQ = %x\n",
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          switch (pRequestSense->AdditionalSenseCode)
+            {
+            default:
+              ret = SENSE_RETRY;
+              break;
+            }
+          break;
+        case ILLEGAL_REQUEST:
+          dbprintf(("DLTSenseHandler : ILLEGAL_REQUEST  ASC = %x ASCQ = %x\n",
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          switch (pRequestSense->AdditionalSenseCode)
+            {
+            default:
+              ret = SENSE_ABORT;
+              break;
+            }
+          break;
+        default:
+          dbprintf(("DLTSenseHandler : Unknow %x ASC = %x ASCQ = %x\n",
+                    pRequestSense->SenseKey,
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          ret = SENSE_ABORT;
+          break;
+        }
+    }
+  InErrorHandler=0;
+  return(ret);
+}
+
+int EXB85058SenseHandler(int DeviceFD, int flag, char *buffer)
+{ 
+  RequestSense_T *pRequestSense = (RequestSense_T *)buffer;
+  int ret = 0;
+  InErrorHandler = 1;
+  
+  if (flag == 1)
+    {
+    } else {
+      DecodeSense(pRequestSense, "EXB85058SenseHandler : ");
+      switch (pRequestSense->SenseKey)
+        {
+        case NOT_READY:
+          dbprintf(("EXB85058SenseHandler : NOT_READY ASC = %x ASCQ = %x\n",
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          switch (pRequestSense->AdditionalSenseCode)
+            {
+            case 0x4:
+              if (pRequestSense->AdditionalSenseCodeQualifier == 00)
+                {
+                  dbprintf(("EXB85058SenseHandler : Logical Unit not ready, No additional sense\n"));
+                }
+              if (pRequestSense->AdditionalSenseCodeQualifier == 01)
+                {
+                  dbprintf(("EXB85058SenseHandler : Logical Unit not ready, in progress becoming ready\n"));
+                }
+              ret = SENSE_RETRY;
+              break;
+            case 0x30:
+              if (pRequestSense->AdditionalSenseCodeQualifier == 0x3)
+                {
+                  dbprintf(("EXB85058SenseHandler : The tape drive is being cleaned\n"));
+                } else {
+                  dbprintf(("EXB85058SenseHandler : Unknown ASCQ %x\n",
+                            pRequestSense->AdditionalSenseCodeQualifier));
+                }
+              ret = SENSE_RETRY;
+              break;
+            case 0x3A:
+              dbprintf(("EXB85058SenseHandler : No tape online/loaded\n"));
+              ret = SENSE_NO_TAPE_ONLINE;
+              break;
+            default:
+              ret = SENSE_RETRY;
+              break;
+            }
+          break;
+        case UNIT_ATTENTION:
+          dbprintf(("EXB85058SenseHandler : UNIT_ATTENTION ASC = %x ASCQ = %x\n",
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          switch (pRequestSense->AdditionalSenseCode)
+            {
+            default:
+              ret = SENSE_RETRY;
+              break;
+            }
+          break;
+        case ILLEGAL_REQUEST:
+          dbprintf(("EXB85058SenseHandler : ILLEGAL_REQUEST  ASC = %x ASCQ = %x\n",
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          switch (pRequestSense->AdditionalSenseCode)
+            {
+            default:
+              ret = SENSE_ABORT;
+              break;
+            }
+          break;
+        default:
+          dbprintf(("EXB85058SenseHandler : Unknow %x ASC = %x ASCQ = %x\n",
+                    pRequestSense->SenseKey,
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          ret = SENSE_ABORT;
+          break;
+    }
+    }
+  InErrorHandler=0;
+  return(ret);
+}
+
+int EXB10eSenseHandler(int DeviceFD, int flag, char *buffer)
+{
+  RequestSense_T *pRequestSense;
+  ElementInfo_T *pElementInfo;
+  int ret = 0;
+  int to;
+  ChangerCMD_T *pwork;
+  InErrorHandler = 1;
+
+  if (flag == 1)
+    {
+      pElementInfo = (ElementInfo_T *)buffer;
+      switch (pElementInfo->ASC)
+        {
+        case 0x90:
+          switch (pElementInfo->ASCQ)
+            {
+            case 02:
+              ret = SENSE_ABORT;
+              break;
+            case 03:
+              ret = SENSE_IES;
+              break;
+            }
+          break;
+        default:
+          ret = SENSE_RETRY;
+          break;
+        }
+    } else {
+      pRequestSense = (RequestSense_T *)buffer;
+      DecodeSense(pRequestSense, "EXB10eSenseHandler : ");
+      switch (pRequestSense->SenseKey)
+        {
+        case NOT_READY:
+          switch (pRequestSense->AdditionalSenseCode)
+            {
+            case 0x4:
+              switch (pRequestSense->AdditionalSenseCodeQualifier)
+                {
+                case 0x85:   
+                  dbprintf(("EXB10eSenseHandler : Library door is open\n"));
+                  ret=SENSE_ABORT;
+                  break;
+                case 0x86:   
+                  dbprintf(("EXB10eSenseHandler : The data cartridge magazine is missing\n"));
+                  ret=SENSE_ABORT;
+                  break;
+                case 0x89:
+                  dbprintf(("EXB10eSenseHandler : The library is in CHS Monitor mode\n"));
+                  ret=SENSE_ABORT;
+                  break;
+                case 0x8c:
+                  dbprintf(("EXB10eSenseHandler : The library is performing a power-on self test\n"));
+                  sleep(10);
+                  ret=SENSE_RETRY;
+                  break;
+                case 0x8d:
+                  dbprintf(("EXB10eSenseHandler : The library is in LCD mode\n"));
+                  ret=SENSE_ABORT;
+                  break;
+                case 0x8e:
+                  dbprintf(("EXB10eSenseHandler : The library is in Sequential mode\n"));
+                  ret=SENSE_ABORT;
+                  break;
+                default:
+                  dbprintf(("EXB10eSenseHandler : unknown %x ASC %x\n", 
+                            pRequestSense->SenseKey,
+                            pRequestSense->AdditionalSenseCode));
+                  ret=SENSE_ABORT;
+                  break;
+                }
+              break;
+            default:
+              dbprintf(("EXB10eSenseHandler : unknown %x ASC %x ASCQ %x\n", 
+                        pRequestSense->SenseKey,
+                        pRequestSense->AdditionalSenseCode,
+                        pRequestSense->AdditionalSenseCodeQualifier));
+              ret=SENSE_ABORT;
+              break;
+            }
+          break;
+        case UNIT_ATTENTION:
+          dbprintf(("EXB10eSenseHandler : SenseKey UNIT_ATTENTION\n"));
+          ret=SENSE_RETRY;
+          break;
+        case ILLEGAL_REQUEST:
+          dbprintf(("EXB10eSenseHandler : SenseKey ILLEGAL_REQUEST\n"));
+          switch(pRequestSense->AdditionalSenseCode)
+            {
+            case 0x91:
+              dbprintf(("EXB10eSenseHandler : CHM full during reset, try to unload\n"));
+              
+              if ((pwork = LookupFunction(DeviceFD, "")) == NULL)
+                {
+                  return(SENSE_ABORT);
+                }
+              
+              for (to = 0; to < DTE ; to++)
+                {
+                  if (pwork->function[CHG_MOVE](DeviceFD, 11, pDTE[to].address) == 0)
+                    {
+                      InErrorHandler = 0;
+                      return(SENSE_RETRY);
+                    }
+                }
+              for (to = 0; to < STE ; to++)
+                {
+                  if (pwork->function[CHG_MOVE](DeviceFD, 11, pSTE[to].address) == 0)
+                    {
+                      InErrorHandler = 0;
+                      return(SENSE_RETRY);
+                    }
+                }              
+              break;
+            default:
+              ret=SENSE_ABORT;
+              break;
+            }
+        }
+    }
+  InErrorHandler=0;
+  return(ret);
+}
+
+int EXB120SenseHandler(int DeviceFD, int flag, char *buffer)
+{ 
+  RequestSense_T *pRequestSense = (RequestSense_T *)buffer;
+  ElementInfo_T *pElementInfo;
+  int ret = 0;
+  InErrorHandler = 1;
+
+  if (flag == 1)
+    {
+      pElementInfo = (ElementInfo_T *)buffer;
+      switch (pElementInfo->ASC)
+        {
+        case 0x83:
+          switch (pElementInfo->ASCQ)
+            {
+            case 00:
+              dbprintf(("EXB120SenseHandler : Label Invalid\n"));
+              ret = SENSE_IES;
+              break;
+            case 01:
+              dbprintf(("EXB120SenseHandler : Cannot read label\n"));
+              ret = SENSE_IGNORE;
+              break;
+            case 02:
+              dbprintf(("EXB120SenseHandler : Magazine not present\n"));
+              ret = SENSE_ABORT;
+              break;
+            case 03:
+              dbprintf(("EXB120SenseHandler : Label and full status unknown\n"));
+              ret = SENSE_IES;
+              break;
+            case 04:
+              dbprintf(("EXB120SenseHandler : Drive not installed\n"));
+              ret = SENSE_IGNORE;
+              break;
+            default:
+              dbprintf(("EXB120SenseHandler : unkown ASC/ASCQ %x %x\n",
+                        pElementInfo->ASC,
+                        pElementInfo->ASCQ));    
+              ret = SENSE_IGNORE;
+              break;
+            }
+          break;
+        default:
+          ret = SENSE_RETRY;
+          break;
+        }
+      
+    } else {
+      DecodeSense(pRequestSense, "GenericSenseHandler : ");
+      switch (pRequestSense->SenseKey)
+        {
+        case NOT_READY:
+          dbprintf(("GenericSenseHandler : NOT_READY ASC = %x ASCQ = %x\n",
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          switch (pRequestSense->AdditionalSenseCode)
+            {
+            default:
+              ret = SENSE_RETRY;
+              break;
+            }
+          break;
+        case UNIT_ATTENTION:
+          dbprintf(("GenericSenseHandler : UNIT_ATTENTION ASC = %x ASCQ = %x\n",
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          switch (pRequestSense->AdditionalSenseCode)
+            {
+            default:
+              ret = SENSE_RETRY;
+              break;
+            }
+          break;
+        case ILLEGAL_REQUEST:
+          dbprintf(("GenericSenseHandler : ILLEGAL_REQUEST  ASC = %x ASCQ = %x\n",
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          switch (pRequestSense->AdditionalSenseCode)
+            {
+            default:
+              ret = SENSE_ABORT;
+              break;
+            }
+          break;
+        default:
+          dbprintf(("GenericSenseHandler : Unknow %x ASC = %x ASCQ = %x\n",
+                    pRequestSense->SenseKey,
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          ret = SENSE_ABORT;
+          break;
+        }
+    }
+  InErrorHandler=0;
+  return(ret);
+}
 
 /* ======================================================= */
 int GenericMove(int DeviceFD, int from, int to)
@@ -1290,6 +1893,8 @@ int GenericMove(int DeviceFD, int from, int to)
   CDB_T CDB;
   RequestSense_T pRequestSense;
   OpenFiles_T *pwork;
+  ElementInfo_T *psource;
+  ElementInfo_T *pdest;
   int ret;
   int i;
 
@@ -1297,14 +1902,33 @@ int GenericMove(int DeviceFD, int from, int to)
 
   if ((pwork = LookupDevice("", TYPE_TAPE, LOOKUP_TYPE)) != NULL)
     {
-      LogSense(pwork->fd);
+      if (pwork->SCSI == 0)
+        {
+          dbprintf(("GenericMove : can't send SCSI commands to tape, no log pages read\n"));
+        } else {
+          LogSense(pwork->fd);
+        }
     }
 
-  if (pwork->SCSI == 0)
-      {
-          dbprintf(("GenericMove : can't send SCSI commands\n"));
-          return(-1);
-      }
+  if ((psource = LookupElement(from)) == NULL)
+    {
+    }
+  
+  if ((pdest = LookupElement(to)) == NULL)
+    {
+    }
+  
+  if (psource->status == 'E') 
+    {
+    }
+
+  if (pdest->status == 'F') 
+    {
+      dbprintf(("GenericMove : Destination Element %d Type %d is full\n",
+                pdest->address, pdest->type));
+      to = find_empty(DeviceFD);
+      dbprintf(("GenericMove : Unload to %d\n", to));
+    }
 
   CDB[0]  = SC_MOVE_MEDIUM;
   CDB[1]  = 0;
@@ -1367,14 +1991,14 @@ int GetCurrentSlot(int fd, int drive)
   
   if (ElementStatusValid == 0)
     {
-      if (pwork->function[CHG_STATUS](pfile->fd) != 0)
+      if (pwork->function[CHG_STATUS](pfile->fd, 1) != 0)
         {
           return(-1);
         }
     }   
 
-    
-  if (pDTE[drive].from >= 0)
+  /* If the from address is the as the same as the tape address skip it */
+  if (pDTE[drive].from >= 0 && pDTE[drive].from != pDTE[drive].address)
     {
       for (x = 0; x < STE;x++)
         {
@@ -1389,129 +2013,272 @@ int GetCurrentSlot(int fd, int drive)
       if (pSTE[x].status == 'E')
         return(x);
     }
+
+  /* Ups nothing loaded */
   return(-1);
 }
 
-int GenericElementStatus(int DeviceFD)
+int GenericElementStatus(int DeviceFD, int InitStatus)
 {
   unsigned char *DataBuffer = NULL;
+  char ModeSenseBuffer[0xff];
   int DataBufferLength;
   ElementStatusData_T *ElementStatusData;
   ElementStatusPage_T *ElementStatusPage;
   MediumTransportElementDescriptor_T *MediumTransportElementDescriptor;
   StorageElementDescriptor_T *StorageElementDescriptor;
   DataTransferElementDescriptor_T *DataTransferElementDescriptor;
-  ElementInfo_T *pwork;
+  ImportExportElementDescriptor_T *ImportExportElementDescriptor;
 
   int error = 0;                /* Is set if ASC for an element is set */
-  int i;
   int x = 0;
   int offset = 0;
   int NoOfElements;
-  int retry = 1;
-  int ret; 
-
-  if (SCSI_ReadElementStatus(DeviceFD, 0, &DataBuffer) != 0)
+  
+  /* If the MODE_SENSE was successfull we use this Information to read the Elelement Info */
+  if (SCSI_ModeSense(DeviceFD, (char *)&ModeSenseBuffer, 0xff, 0x8, 0x3f) == 0)
     {
-      return(-1);
-    }
-
-  ElementStatusData = (ElementStatusData_T *)DataBuffer;
-  DataBufferLength = V3(ElementStatusData->count);
-
-  offset = sizeof(ElementStatusData_T);
-
-  if (DataBufferLength <= 0) 
-    {
-      dbprintf(("DataBufferLength %d\n",DataBufferLength));
-      return(1);
-    }
-
-  while (offset < DataBufferLength) 
-    {
-      ElementStatusPage = (ElementStatusPage_T *)&DataBuffer[offset];
-      NoOfElements = V3(ElementStatusPage->count) / V2(ElementStatusPage->length);
-      offset = offset + sizeof(ElementStatusPage_T);
-
-      switch (ElementStatusPage->type)
+      DecodeModeSense((char *)&ModeSenseBuffer, "GenericElementStatus :");
+      /* First the Medim Transport*/
+      if (V2(EAAPage->NoMediumTransportElements)  > 0)
         {
-        case 1:
-          MTE = NoOfElements;
-          pMTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * MTE);
+          MTE = V2(EAAPage->NoMediumTransportElements) ;
+          if ((pMTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * MTE)) == NULL)
+              {
+                  dbprintf(("GenericElementStatus : malloc failed\n"));
+                  return(-1);
+              }
           memset(pMTE, 0, sizeof(ElementInfo_T) * MTE);
-          for (x = 0; x < NoOfElements; x++)
-            {
-/*               dbprintf(("PVolTag %d, AVolTag %d\n", */
-/*                         ElementStatusPage->pvoltag, */
-/*                         ElementStatusPage->avoltag)); */
 
+          if (SCSI_ReadElementStatus(DeviceFD, 
+                                     CHANGER, 
+                                     0,
+                                     BarCode(DeviceFD),
+                                     V2(EAAPage->MediumTransportElementAddress),
+                                     MTE,
+                                     (char **)&DataBuffer) != 0)
+            {
+              return(-1);
+            }
+          ElementStatusData = (ElementStatusData_T *)DataBuffer;
+          offset = sizeof(ElementStatusData_T);
+          
+          ElementStatusPage = (ElementStatusPage_T *)&DataBuffer[offset];
+          offset = offset + sizeof(ElementStatusPage_T);
+          
+          for (x = 0; x < MTE; x++)
+            {
               MediumTransportElementDescriptor = (MediumTransportElementDescriptor_T *)&DataBuffer[offset];
+              if (ElementStatusPage->pvoltag == 1)
+                {
+                  strncpy(pMTE[x].VolTag, 
+                          MediumTransportElementDescriptor->res4,
+                          TAG_SIZE);
+                }
               pMTE[x].type = ElementStatusPage->type;
               pMTE[x].address = V2(MediumTransportElementDescriptor->address);
               pMTE[x].ASC = MediumTransportElementDescriptor->asc;
               pMTE[x].ASCQ = MediumTransportElementDescriptor->ascq;
               pMTE[x].status = (MediumTransportElementDescriptor->full > 0) ? 'F':'E';
-
+              
               if (MediumTransportElementDescriptor->svalid == 1)
                 {
                   pMTE[x].from = V2(MediumTransportElementDescriptor->source);
                 } else {
                   pMTE[x].from = -1;
                 }
-
+              
               if (pMTE[x].ASC > 0)
-                error = 1;
+                {
+                  switch(SenseHandler(DeviceFD, 1, (char *)&pMTE[x]))
+                    {
+                    case SENSE_IES:
+                      error=1;
+                      break;
+                    case SENSE_ABORT:
+                      return(-1);
+                      break;
+                    }
+                }
               offset = offset + V2(ElementStatusPage->length); 
             }
-          break;
-        case 2:
-          STE = NoOfElements;
-          pSTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * STE);
+        }
+      /* Storage Elements */
+      if ( V2(EAAPage->NoStorageElements)  > 0)
+        {
+          STE = V2(EAAPage->NoStorageElements);
+          if ((pSTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * STE)) == NULL)
+              {
+                  dbprintf(("GenericElementStatus : malloc failed\n"));
+                  return(-1);
+              }
           memset(pSTE, 0, sizeof(ElementInfo_T) * STE);
-          for (x = 0; x < NoOfElements; x++)
+          
+          if (SCSI_ReadElementStatus(DeviceFD, 
+                                     STORAGE, 
+                                     0,
+                                     BarCode(DeviceFD),
+                                     V2(EAAPage->FirstStorageElementAddress),
+                                     STE,
+                                     (char **)&DataBuffer) != 0)
             {
-/*               dbprintf(("PVolTag %d, AVolTag %d\n", */
-/*                         ElementStatusPage->pvoltag, */
-/*                         ElementStatusPage->avoltag)); */
-              
+              return(-1);
+            }
+          
+          ElementStatusData = (ElementStatusData_T *)DataBuffer;
+          offset = sizeof(ElementStatusData_T);
+          
+          ElementStatusPage = (ElementStatusPage_T *)&DataBuffer[offset];
+          offset = offset + sizeof(ElementStatusPage_T);
+          
+          for (x = 0; x < STE; x++)
+            {
               StorageElementDescriptor = (StorageElementDescriptor_T *)&DataBuffer[offset];
+              if (ElementStatusPage->pvoltag == 1)
+                {
+                  strncpy(pSTE[x].VolTag, 
+                          StorageElementDescriptor->res4,
+                          TAG_SIZE);
+                }
+              
+              
               pSTE[x].type = ElementStatusPage->type;
               pSTE[x].address = V2(StorageElementDescriptor->address);
               pSTE[x].ASC = StorageElementDescriptor->asc;
               pSTE[x].ASCQ = StorageElementDescriptor->ascq;
               pSTE[x].status = (StorageElementDescriptor->full > 0) ? 'F':'E';
-          
+              
               if (StorageElementDescriptor->svalid == 1)
                 {
                   pSTE[x].from = V2(StorageElementDescriptor->source);
-                 } else {
+                } else {
                   pSTE[x].from = -1;
                 }
               
               if (pSTE[x].ASC > 0)
-                error = 1;
-
+                {
+                  switch(SenseHandler(DeviceFD, 1, (char *)&pSTE[x]))
+                    {
+                    case SENSE_IES:
+                      error=1;
+                      break;
+                    case SENSE_ABORT:
+                      return(-1);
+                      break;
+                    }
+                }
+              
               offset = offset + V2(ElementStatusPage->length); 
             }
-          break;
-        case 4:
-          DTE = NoOfElements;
-          pDTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * DTE);
-          memset(pDTE, 0, sizeof(ElementInfo_T) * DTE);
           
-          for (x = 0; x < NoOfElements; x++)
+        }
+      /* Import/Export Elements */
+      if ( V2(EAAPage->NoImportExportElements) > 0)
+        {
+          IEE = V2(EAAPage->NoImportExportElements);
+          if ((pIEE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * IEE)) == NULL)
+              {
+                  dbprintf(("GenericElementStatus : malloc failed\n"));
+                  return(-1);
+              }
+          memset(pIEE, 0, sizeof(ElementInfo_T) * IEE);
+          if (SCSI_ReadElementStatus(DeviceFD, 
+                                     IMPORT, 
+                                     0,
+                                     BarCode(DeviceFD),
+                                     V2(EAAPage->FirstImportExportElementAddress),
+                                     IEE,
+                                     (char **)&DataBuffer) != 0)
             {
-/*               dbprintf(("PVolTag %d, AVolTag %d\n", */
-/*                         ElementStatusPage->pvoltag, */
-/*                         ElementStatusPage->avoltag)); */
+              return(-1);
+            }
+          
+          ElementStatusData = (ElementStatusData_T *)DataBuffer;
+          offset = sizeof(ElementStatusData_T);
+          
+          ElementStatusPage = (ElementStatusPage_T *)&DataBuffer[offset];
+          offset = offset + sizeof(ElementStatusPage_T);
+          
+          for (x = 0; x < IEE; x++)
+            {
+              ImportExportElementDescriptor = (ImportExportElementDescriptor_T *)&DataBuffer[offset];
+              if (ElementStatusPage->pvoltag == 1)
+                {
+                  strncpy(pIEE[x].VolTag, 
+                          ImportExportElementDescriptor->res4,
+                          TAG_SIZE);
+                }
+              pIEE[x].type = ElementStatusPage->type;
+              pIEE[x].address = V2(ImportExportElementDescriptor->address);
+              pIEE[x].ASC = ImportExportElementDescriptor->asc;
+              pIEE[x].ASCQ = ImportExportElementDescriptor->ascq;
+              pIEE[x].status = (ImportExportElementDescriptor->full > 0) ? 'F':'E';
               
+              if (ImportExportElementDescriptor->svalid == 1)
+                {
+                  pIEE[x].from = V2(ImportExportElementDescriptor->source);
+                } else {
+                  pIEE[x].from = -1;
+                }
+              
+              if (pIEE[x].ASC > 0)
+                {
+                  switch(SenseHandler(DeviceFD, 1, (char *)&pIEE[x]))
+                    {
+                    case SENSE_IES:
+                      error=1;
+                      break;
+                    case SENSE_ABORT:
+                      return(-1);
+                      break;
+                    }
+                }
+              
+              offset = offset + V2(ElementStatusPage->length); 
+            }
+          
+        }
+      /* Data Transfer Elements*/
+      if (V2(EAAPage->NoDataTransferElements) >0)
+        {
+          DTE = V2(EAAPage->NoDataTransferElements) ;
+          if ((pDTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * DTE)) == NULL)
+              {
+                  dbprintf(("GenericElementStatus : malloc failed\n"));
+                  return(-1);
+              }
+          memset(pDTE, 0, sizeof(ElementInfo_T) * DTE);
+          if (SCSI_ReadElementStatus(DeviceFD, 
+                                     TAPETYPE, 
+                                     0,
+                                     BarCode(DeviceFD),
+                                     V2(EAAPage->FirstDataTransferElementAddress),
+                                     DTE,
+                                     (char **)&DataBuffer) != 0)
+            {
+              return(-1);
+            }
+          
+          ElementStatusData = (ElementStatusData_T *)DataBuffer;
+          offset = sizeof(ElementStatusData_T);
+          
+          ElementStatusPage = (ElementStatusPage_T *)&DataBuffer[offset];
+          offset = offset + sizeof(ElementStatusPage_T);
+
+          for (x = 0; x < DTE; x++)
+            {
               DataTransferElementDescriptor = (DataTransferElementDescriptor_T *)&DataBuffer[offset];
-              pDTE[x].type = ElementStatusPage->type;
-              pDTE[x].address = V2((char *)DataTransferElementDescriptor->address);
+              if (ElementStatusPage->pvoltag == 1)
+                {
+                  strncpy(pDTE[x].VolTag, 
+                          DataTransferElementDescriptor->res4,
+                          TAG_SIZE);
+                }
+              pDTE[x].type = ElementStatusPage->type;               pDTE[x].address = V2(DataTransferElementDescriptor->address);
               pDTE[x].ASC = DataTransferElementDescriptor->asc;
               pDTE[x].ASCQ = DataTransferElementDescriptor->ascq;
               pDTE[x].status = (DataTransferElementDescriptor->full > 0) ? 'F':'E';
-               
+              
               if (DataTransferElementDescriptor->svalid == 1)
                 {
                   pDTE[x].from = V2(DataTransferElementDescriptor->source);
@@ -1520,227 +2287,268 @@ int GenericElementStatus(int DeviceFD)
                 }
               
               if (pDTE[x].ASC > 0)
-                error = 1;
+                {
+                  switch(SenseHandler(DeviceFD, 1, (char *)&pDTE[x]))
+                    {
+                    case SENSE_IES:
+                      error=1;
+                      break;
+                    case SENSE_ABORT:
+                      return(-1);
+                      break;
+                    }
+                }
               
               offset = offset + V2(ElementStatusPage->length); 
             }
-          break;
-        default:
-          offset = offset + V2(ElementStatusPage->length); 
-          dbprintf(("ReadElementStatus : UnGknown Type %d\n",ElementStatusPage->type));
-          break;
         }
-    }
-
-  dbprintf(("\tMedia Transport Elements (robot arms) :\n"));
-  for ( x = 0; x < MTE; x++)
-    dbprintf(("\t\tElement #%04d %c ASC = %02X ASCQ = %02X Type %d From = %04d\n",
-              pMTE[x].address, pMTE[x].status, pMTE[x].ASC,
-              pMTE[x].ASCQ, pMTE[x].type, pMTE[x].from));
-
-  dbprintf(("\tStorage Elements (Media slots) :\n"));
-  for ( x = 0; x < STE; x++)
-    dbprintf(("\t\tElement #%04d %c ASC = %02X ASCQ = %02X Type %d From = %04d\n",
-              pSTE[x].address, pSTE[x].status, pSTE[x].ASC,
-              pSTE[x].ASCQ, pSTE[x].type, pSTE[x].from));
-
-  dbprintf(("\tData Transfer Elements (tape drives) :\n"));
-  for ( x = 0; x < DTE; x++)
-    dbprintf(("\t\tElement #%04d %c ASC = %02X ASCQ = %02X Type %d From = %04d\n",
-              pDTE[x].address, pDTE[x].status, pDTE[x].ASC,
-              pDTE[x].ASCQ, pDTE[x].type, pDTE[x].from));
-
-
-  if (error != 0)
-      {
-          if (ResetStatus(DeviceFD) != 0)
-              {
-                  ElementStatusValid = 0;
-                  free(DataBuffer);
-                  return(-1);
-              }
-          if (GenericElementStatus(DeviceFD) != 0)
-              {
-                  ElementStatusValid = 0;
-                  free(DataBuffer);
-                  return(-1);
-              }
-      } 
-
-  ElementStatusValid = 1;
-  free(DataBuffer);
-  return(0);
-}
-
-
-int EXB120ElementStatus(int DeviceFD)
-{
-  unsigned char *DataBuffer = NULL;
-  int DataBufferLength;
-  ElementStatusData_T *ElementStatusData;
-  ElementStatusPage_T *ElementStatusPage;
-  MediumTransportElementDescriptor_T *MediumTransportElementDescriptor;
-  StorageElementDescriptor_T *StorageElementDescriptor;
-  DataTransferElementDescriptor_T *DataTransferElementDescriptor;
-  ElementInfo_T *pwork;
-
-  int error = 0;                /* Is set if ASC for an element is set */
-  int i;
-  int x = 0;
-  int offset = 0;
-  int NoOfElements;
-  int retry = 1;
-  int ret; 
-
-  if (SCSI_ReadElementStatus(DeviceFD, 0, &DataBuffer) != 0)
-    {
-      return(-1);
-    }
-
-  ElementStatusData = (ElementStatusData_T *)DataBuffer;
-  DataBufferLength = V3(ElementStatusData->count);
-
-  offset = sizeof(ElementStatusData_T);
-
-  if (DataBufferLength <= 0) 
-    {
-      dbprintf(("DataBufferLength %d\n",DataBufferLength));
-      return(1);
-    }
-
-  while (offset < DataBufferLength) 
-    {
-      ElementStatusPage = (ElementStatusPage_T *)&DataBuffer[offset];
-      NoOfElements = V3(ElementStatusPage->count) / V2(ElementStatusPage->length);
-      offset = offset + sizeof(ElementStatusPage_T);
-
-      switch (ElementStatusPage->type)
+    } else {  
+      if (SCSI_ReadElementStatus(DeviceFD, 
+                                 0, 
+                                 0,
+                                 BarCode(DeviceFD),
+                                 0,
+                                 0xffff,
+                                 (char **)&DataBuffer) != 0)
         {
-        case 1:
-          MTE = NoOfElements;
-          pMTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * MTE);
-          memset(pMTE, 0, sizeof(ElementInfo_T) * MTE);
-          for (x = 0; x < NoOfElements; x++)
-            {
-/*               dbprintf(("PVolTag %d, AVolTag %d\n", */
-/*                         ElementStatusPage->pvoltag, */
-/*                         ElementStatusPage->avoltag)); */
-
-              MediumTransportElementDescriptor = (MediumTransportElementDescriptor_T *)&DataBuffer[offset];
-              pMTE[x].type = ElementStatusPage->type;
-              pMTE[x].address = V2(MediumTransportElementDescriptor->address);
-              pMTE[x].ASC = MediumTransportElementDescriptor->asc;
-              pMTE[x].ASCQ = MediumTransportElementDescriptor->ascq;
-              pMTE[x].status = (MediumTransportElementDescriptor->full > 0) ? 'F':'E';
-
-              if (MediumTransportElementDescriptor->svalid == 1)
-                {
-                  pMTE[x].from = V2(MediumTransportElementDescriptor->source);
-                } else {
-                  pMTE[x].from = -1;
-                }
-
-              if (pMTE[x].ASC ==0x83 && (pMTE[x].ASCQ == 00 || pMTE[x].ASCQ == 03))
-                error = 1;
-              offset = offset + V2(ElementStatusPage->length); 
-            }
-          break;
-        case 2:
-          STE = NoOfElements;
-          pSTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * STE);
-          memset(pSTE, 0, sizeof(ElementInfo_T) * STE);
-          for (x = 0; x < NoOfElements; x++)
-            {
-/*               dbprintf(("PVolTag %d, AVolTag %d\n", */
-/*                         ElementStatusPage->pvoltag, */
-/*                         ElementStatusPage->avoltag)); */
-              
-              StorageElementDescriptor = (StorageElementDescriptor_T *)&DataBuffer[offset];
-              pSTE[x].type = ElementStatusPage->type;
-              pSTE[x].address = V2(StorageElementDescriptor->address);
-              pSTE[x].ASC = StorageElementDescriptor->asc;
-              pSTE[x].ASCQ = StorageElementDescriptor->ascq;
-              pSTE[x].status = (StorageElementDescriptor->full > 0) ? 'F':'E';
+          return(-1);
+        }
+      
+      ElementStatusData = (ElementStatusData_T *)DataBuffer;
+      DataBufferLength = V3(ElementStatusData->count);
+      
+      offset = sizeof(ElementStatusData_T);
+      
+      if (DataBufferLength <= 0) 
+        {
+          dbprintf(("DataBufferLength %d\n",DataBufferLength));
+          return(1);
+        }
+      
+      while (offset < DataBufferLength) 
+        {
+          ElementStatusPage = (ElementStatusPage_T *)&DataBuffer[offset];
+          NoOfElements = V3(ElementStatusPage->count) / V2(ElementStatusPage->length);
+          offset = offset + sizeof(ElementStatusPage_T);
           
-              if (StorageElementDescriptor->svalid == 1)
-                {
-                  pSTE[x].from = V2(StorageElementDescriptor->source);
-                 } else {
-                  pSTE[x].from = -1;
-                }
-              
-              if (pSTE[x].ASC ==0x83 && (pSTE[x].ASCQ == 00 || pSTE[x].ASCQ == 03))
-                error = 1;
-
-              offset = offset + V2(ElementStatusPage->length); 
-            }
-          break;
-        case 4:
-          DTE = NoOfElements;
-          pDTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * DTE);
-          memset(pDTE, 0, sizeof(ElementInfo_T) * DTE);
-          
-          for (x = 0; x < NoOfElements; x++)
-            {
-/*               dbprintf(("PVolTag %d, AVolTag %d\n", */
-/*                         ElementStatusPage->pvoltag, */
-/*                         ElementStatusPage->avoltag)); */
-              
-              DataTransferElementDescriptor = (DataTransferElementDescriptor_T *)&DataBuffer[offset];
-              pDTE[x].type = ElementStatusPage->type;
-              pDTE[x].address = V2((char *)DataTransferElementDescriptor->address);
-              pDTE[x].ASC = DataTransferElementDescriptor->asc;
-              pDTE[x].ASCQ = DataTransferElementDescriptor->ascq;
-              pDTE[x].status = (DataTransferElementDescriptor->full > 0) ? 'F':'E';
-               
-              if (DataTransferElementDescriptor->svalid == 1)
-                {
-                  pDTE[x].from = V2(DataTransferElementDescriptor->source);
-                } else {
-                  pDTE[x].from = -1;
-                }
-              
-              if (pDTE[x].ASC ==0x83 && (pDTE[x].ASCQ == 00 || pDTE[x].ASCQ == 03))
-                 error = 1;
-              
-              offset = offset + V2(ElementStatusPage->length); 
-            }
-          break;
-        default:
-          offset = offset + V2(ElementStatusPage->length); 
-          dbprintf(("ReadElementStatus : UnGknown Type %d\n",ElementStatusPage->type));
-          break;
+          switch (ElementStatusPage->type)
+                      {
+                      case 1:
+                        MTE = NoOfElements;
+                        if ((pMTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * MTE)) == NULL)
+                            {
+                                dbprintf(("GenericElementStatus : malloc failed\n"));
+                                return(-1);
+                            }
+                        memset(pMTE, 0, sizeof(ElementInfo_T) * MTE);
+                        for (x = 0; x < NoOfElements; x++)
+                          {
+                            /*               dbprintf(("PVolTag %d, AVolTag %d\n", */
+                            /*                         ElementStatusPage->pvoltag, */
+                            /*                         ElementStatusPage->avoltag)); */
+                            
+                            MediumTransportElementDescriptor = (MediumTransportElementDescriptor_T *)&DataBuffer[offset];
+                            if (ElementStatusPage->pvoltag == 1)
+                              {
+                                strncpy(pMTE[x].VolTag, 
+                                        MediumTransportElementDescriptor->res4,
+                                        TAG_SIZE);
+                              }
+                            pMTE[x].type = ElementStatusPage->type;
+                            pMTE[x].address = V2(MediumTransportElementDescriptor->address);
+                            pMTE[x].ASC = MediumTransportElementDescriptor->asc;
+                            pMTE[x].ASCQ = MediumTransportElementDescriptor->ascq;
+                            pMTE[x].status = (MediumTransportElementDescriptor->full > 0) ? 'F':'E';
+                            
+                            if (MediumTransportElementDescriptor->svalid == 1)
+                              {
+                                pMTE[x].from = V2(MediumTransportElementDescriptor->source);
+                              } else {
+                                pMTE[x].from = -1;
+                              }
+                            
+                            if (pMTE[x].ASC > 0)
+                              {
+                                if (SenseHandler(DeviceFD, 1, (char *)&pMTE[x]) == SENSE_RETRY)
+                                  error = 1;
+                              }
+                            offset = offset + V2(ElementStatusPage->length); 
+                          }
+                        break;
+                      case 2:
+                        STE = NoOfElements;
+                        if ((pSTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * STE)) == NULL)
+                            {
+                                dbprintf(("GenericElementStatus : malloc failed\n"));
+                                return(-1);
+                            }
+                        memset(pSTE, 0, sizeof(ElementInfo_T) * STE);
+                        for (x = 0; x < NoOfElements; x++)
+                          {
+                            /*               dbprintf(("PVolTag %d, AVolTag %d\n", */
+                            /*                         ElementStatusPage->pvoltag, */
+                            /*                         ElementStatusPage->avoltag)); */
+                            
+                            StorageElementDescriptor = (StorageElementDescriptor_T *)&DataBuffer[offset];
+                            if (ElementStatusPage->pvoltag == 1)
+                              {
+                                strncpy(pSTE[x].VolTag, 
+                                        StorageElementDescriptor->res4,
+                                        TAG_SIZE);
+                              }
+                            
+                            pSTE[x].type = ElementStatusPage->type;
+                            pSTE[x].address = V2(StorageElementDescriptor->address);
+                            pSTE[x].ASC = StorageElementDescriptor->asc;
+                            pSTE[x].ASCQ = StorageElementDescriptor->ascq;
+                            pSTE[x].status = (StorageElementDescriptor->full > 0) ? 'F':'E';
+                            
+                            if (StorageElementDescriptor->svalid == 1)
+                              {
+                                pSTE[x].from = V2(StorageElementDescriptor->source);
+                              } else {
+                                pSTE[x].from = -1;
+                              }
+                            
+                            if (pSTE[x].ASC > 0)
+                              {
+                                if (SenseHandler(DeviceFD, 1, (char *)&pSTE[x]) == SENSE_RETRY)
+                                  error = 1;
+                              }
+                            
+                            offset = offset + V2(ElementStatusPage->length); 
+                          }
+                        break;
+                      case 3:
+                        IEE = NoOfElements;
+                        if ((pIEE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * IEE)) == NULL)
+                            {
+                                dbprintf(("GenericElementStatus : malloc failed\n"));
+                                return(-1);
+                            }
+                        memset(pIEE, 0, sizeof(ElementInfo_T) * IEE);
+                        
+                        for (x = 0; x < NoOfElements; x++)
+                          {
+                            ImportExportElementDescriptor = (ImportExportElementDescriptor_T *)&DataBuffer[offset];
+                            if (ElementStatusPage->pvoltag == 1)
+                              {
+                                strncpy(pIEE[x].VolTag, 
+                                        ImportExportElementDescriptor->res4,
+                                        TAG_SIZE);
+                              }
+                            ImportExportElementDescriptor = (ImportExportElementDescriptor_T *)&DataBuffer[offset];
+                            pIEE[x].type = ElementStatusPage->type;
+                            pIEE[x].address = V2(ImportExportElementDescriptor->address);
+                            pIEE[x].ASC = ImportExportElementDescriptor->asc;
+                            pIEE[x].ASCQ = ImportExportElementDescriptor->ascq;
+                            pIEE[x].status = (ImportExportElementDescriptor->full > 0) ? 'F':'E';
+                            
+                            if (ImportExportElementDescriptor->svalid == 1)
+                              {
+                                pIEE[x].from = V2(ImportExportElementDescriptor->source);
+                              } else {
+                                pIEE[x].from = -1;
+                              }
+                            
+                            if (pIEE[x].ASC > 0)
+                              {
+                                if (SenseHandler(DeviceFD, 1, (char *)&pIEE[x]) == SENSE_RETRY)
+                                  error = 1;
+                              }
+                            
+                            offset = offset + V2(ElementStatusPage->length); 
+                          }
+                        break;
+                      case 4:
+                        DTE = NoOfElements;
+                        if ((pDTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * DTE)) == NULL)
+                            {
+                                dbprintf(("GenericElementStatus : malloc failed\n"));
+                                return(-1);
+                            }
+                        memset(pDTE, 0, sizeof(ElementInfo_T) * DTE);
+                        
+                        for (x = 0; x < NoOfElements; x++)
+                          {
+                            /*               dbprintf(("PVolTag %d, AVolTag %d\n", */
+                            /*                         ElementStatusPage->pvoltag, */
+                            /*                         ElementStatusPage->avoltag)); */
+                            
+                            DataTransferElementDescriptor = (DataTransferElementDescriptor_T *)&DataBuffer[offset];
+                            if (ElementStatusPage->pvoltag == 1)
+                              {
+                                strncpy(pSTE[x].VolTag, 
+                                        DataTransferElementDescriptor->res4,
+                                        TAG_SIZE);
+                              }
+                            pDTE[x].type = ElementStatusPage->type;
+                            pDTE[x].address = V2(DataTransferElementDescriptor->address);
+                            pDTE[x].ASC = DataTransferElementDescriptor->asc;
+                            pDTE[x].ASCQ = DataTransferElementDescriptor->ascq;
+                            pDTE[x].status = (DataTransferElementDescriptor->full > 0) ? 'F':'E';
+                            
+                            if (DataTransferElementDescriptor->svalid == 1)
+                              {
+                                pDTE[x].from = V2(DataTransferElementDescriptor->source);
+                              } else {
+                                pDTE[x].from = -1;
+                              }
+                            
+                            if (pDTE[x].ASC > 0)
+                              {
+                                if (SenseHandler(DeviceFD, 1, (char *)&pDTE[x]) == SENSE_RETRY)
+                                  error = 1;
+                              }
+                            
+                            offset = offset + V2(ElementStatusPage->length); 
+                          }
+                        break;
+                      default:
+                        offset = offset + V2(ElementStatusPage->length); 
+                        dbprintf(("ReadElementStatus : UnGknown Type %d\n",ElementStatusPage->type));
+                        break;
+                      }
         }
     }
 
-  dbprintf(("\tMedia Transport Elements (robot arms) :\n"));
+  dbprintf(("\n\n\tMedia Transport Elements (robot arms) :\n"));
+
   for ( x = 0; x < MTE; x++)
-    dbprintf(("\t\tElement #%04d %c ASC = %02X ASCQ = %02X Type %d From = %04d\n",
+    dbprintf(("\t\tElement #%04d %c\n\t\t\tASC = %02X ASCQ = %02X\n\t\t\tType %d From = %04d\n\t\t\tTAG = %s\n",
               pMTE[x].address, pMTE[x].status, pMTE[x].ASC,
-              pMTE[x].ASCQ, pMTE[x].type, pMTE[x].from));
+              pMTE[x].ASCQ, pMTE[x].type, pMTE[x].from, pMTE[x].VolTag));
 
-  dbprintf(("\tStorage Elements (Media slots) :\n"));
+  dbprintf(("\n\n\tStorage Elements (Media slots) :\n"));
+
   for ( x = 0; x < STE; x++)
-    dbprintf(("\t\tElement #%04d %c ASC = %02X ASCQ = %02X Type %d From = %04d\n",
+    dbprintf(("\t\tElement #%04d %c\n\t\t\tASC = %02X ASCQ = %02X\n\t\t\tType %d From = %04d\n\t\t\tTAG = %s\n",
               pSTE[x].address, pSTE[x].status, pSTE[x].ASC,
-              pSTE[x].ASCQ, pSTE[x].type, pSTE[x].from));
+              pSTE[x].ASCQ, pSTE[x].type, pSTE[x].from, pSTE[x].VolTag));
 
-  dbprintf(("\tData Transfer Elements (tape drives) :\n"));
+  dbprintf(("\n\n\tData Transfer Elements (tape drives) :\n"));
+ 
   for ( x = 0; x < DTE; x++)
-    dbprintf(("\t\tElement #%04d %c ASC = %02X ASCQ = %02X Type %d From = %04d\n",
+    dbprintf(("\t\tElement #%04d %c\n\t\t\t\tASC = %02X ASCQ = %02X\n\t\t\tType %d From = %04d\n\t\t\tTAG = %s\n",
               pDTE[x].address, pDTE[x].status, pDTE[x].ASC,
-              pDTE[x].ASCQ, pDTE[x].type, pDTE[x].from));
+              pDTE[x].ASCQ, pDTE[x].type, pDTE[x].from, pDTE[x].VolTag));
 
+  dbprintf(("\n\n\tImport/Export Elements  :\n"));
 
-  if (error != 0)
+  for ( x = 0; x < IEE; x++)
+    dbprintf(("\t\tElement #%04d %c\n\t\t\t\tASC = %02X ASCQ = %02X\n\t\t\tType %d From = %04d\n\t\t\tTAG = %s\n",
+              pIEE[x].address, pIEE[x].status, pIEE[x].ASC,
+              pIEE[x].ASCQ, pIEE[x].type, pIEE[x].from, pIEE[x].VolTag));
+
+  if (error != 0 && InitStatus == 1)
       {
-          if (ResetStatus(DeviceFD) != 0)
+          if (GenericResetStatus(DeviceFD) != 0)
               {
                   ElementStatusValid = 0;
                   free(DataBuffer);
                   return(-1);
               }
-          if (EXB120ElementStatus(DeviceFD) != 0)
+          if (GenericElementStatus(DeviceFD, 0) != 0)
               {
                   ElementStatusValid = 0;
                   free(DataBuffer);
@@ -1758,11 +2566,6 @@ int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int
 {
   CDB_T CDB;
   RequestSense_T RequestSense;
-  int error = 0;                /* Is set if ASC for an element is set */
-  int i;
-  int x = 0;
-  int offset = 0;
-  int NoOfElements;
   int ret;
   
   CDB[0] = SC_COM_REQUEST_SENSE; /* REQUEST SENSE */                       
@@ -1792,10 +2595,6 @@ int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int
     }
   return(0);
 }
-
-
-
-
 
 
 /*
@@ -1850,6 +2649,47 @@ ChangerCMD_T *LookupFunction(int fd, char *dev)
   return(NULL);
 }
 
+ElementInfo_T *LookupElement(int address)
+{
+  int x;
+
+  if (DTE > 0)
+    {
+      for (x = 0; x < DTE; x++)
+        {
+          if (pDTE[x].address == address)
+            return(&pDTE[x]);
+        }
+    }
+
+  if (MTE > 0)
+    {
+      for (x = 0; x < MTE; x++)
+        {
+          if (pMTE[x].address == address)
+            return(&pMTE[x]);
+        }
+    }
+
+  if (STE > 0)
+    {
+      for (x = 0; x < STE; x++)
+        {
+          if (pSTE[x].address == address)
+            return(&pSTE[x]);
+        }
+    }
+
+  if (IEE > 0)
+    {
+      for ( x = 0; x < IEE; x++)
+        {
+          if (pIEE[x].address == address)
+            return(&pIEE[x]);
+        }
+    }
+  return(NULL);
+}
 /*
  * Here comes everything what decode the log Pages
  */
@@ -1858,13 +2698,11 @@ int LogSense(DeviceFD)
 {
   CDB_T CDB;
   RequestSense_T *pRequestSense;
-  extern OpenFiles_T *pOpenFiles;
   OpenFiles_T *pwork;
   LogSenseHeader_T *LogSenseHeader;
   LogParameter_T *LogParameter;
   struct LogPageDecode *p;
   int found;
-  int fd;
   char *datestamp = NULL;
   char *label = NULL;
   char *result = NULL;
@@ -1882,16 +2720,23 @@ int LogSense(DeviceFD)
 
   if (tapestatfile != NULL && (StatFile = fopen(tapestatfile,"a")) != NULL) 
     {
-      pRequestSense  = (RequestSense_T *)malloc(sizeof(RequestSense_T));
+      if ((pRequestSense  = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
+          {
+              dbprintf(("LogSense : malloc failed\n"));
+              return(-1);
+          }
 
-      if (TestUnitReady(DeviceFD, pRequestSense) == 0)
+      if (SCSI_TestUnitReady(DeviceFD, pRequestSense) == 0)
         {
+          DecodeSense(pRequestSense, "LogSense :");
           dbprintf(("LogSense : Tape_Ready failed\n"));
+          free(pRequestSense);
           return(0);
         }
        if (GenericRewind(DeviceFD) < 0) 
          { 
-           dbprintf(("LogSense : Rewind failed\n")); 
+           dbprintf(("LogSense : Rewind failed\n"));
+           free(pRequestSense);
            return(0); 
          } 
       /*
@@ -1906,7 +2751,11 @@ int LogSense(DeviceFD)
               fprintf(StatFile, "%s\n", result);
             }
         }
-      buffer = (char *)malloc(size);
+      if ((buffer = (char *)malloc(size)) == NULL)
+          {
+              dbprintf(("LogSense : malloc failed\n"));
+              return(-1);
+          }
       bzero(buffer, size);
       /*
        * Get the known log pages 
@@ -1932,6 +2781,7 @@ int LogSense(DeviceFD)
                               sizeof(RequestSense_T)) != 0)
         {
           DecodeSense(pRequestSense, "LogSense : ");
+          free(buffer);
           free(pRequestSense);
           return(0);
         }
@@ -1946,13 +2796,18 @@ int LogSense(DeviceFD)
 
       if (pwork == NULL)
         {
+          free(buffer);
           free(pRequestSense);
           return(-1);
         }
 
       LogSenseHeader = (LogSenseHeader_T *)buffer;
       nologpages = V2(LogSenseHeader->PageLength);
-      logpages = (char *)malloc(nologpages);
+      if ((logpages = (char *)malloc(nologpages)) == NULL)
+          {
+              dbprintf(("LogSense : malloc failed\n"));
+              return(-1);
+          }
   
       memcpy(logpages, buffer + sizeof(LogSenseHeader_T), nologpages);
   
@@ -1978,6 +2833,7 @@ int LogSense(DeviceFD)
                                   sizeof(RequestSense_T)) != 0)
             { 
               DecodeSense(pRequestSense, "LogSense : ");
+              free(buffer);
               free(pRequestSense);
               return(0);
             }
@@ -2036,8 +2892,9 @@ int LogSense(DeviceFD)
           }
         }
       }
+      free(pRequestSense);
+      free(buffer);
     }
-    free(pRequestSense);
     return(0);
 }
 
@@ -2351,168 +3208,362 @@ int Decode(LogParameter_T *LogParameter, int *value)
   return(0);
 }
 
-int
-dump_hex(char *p, int size)
+void dump_hex(char *p, int size)
 {
     int row_count = 0;
     int x = 0;
 
-    while (row_count <= size)
+    while (row_count < size)
     {
         dbprintf(("%02X ", (unsigned char)p[row_count]));
-        row_count++;
-        if ((row_count % 16) == 0)
+        if (((row_count + 1) % 16) == 0 )
           {
             dbprintf(("   "));
-            for (x = 16; x>=0;x--)
+            for (x = 16; x>0;x--)
               {
-            if (isalnum((unsigned char)p[row_count - x]))
-              dbprintf(("%c",(unsigned char)p[row_count - x]));
+            if (isalnum((unsigned char)p[row_count - x + 1 ]))
+              dbprintf(("%c",(unsigned char)p[row_count - x + 1]));
             else
               dbprintf(("."));
               }
             dbprintf(("\n"));
           }
+    	row_count++;
     }
     dbprintf(("\n"));
 }
 
 /* OK here starts a new set of functions.
    Every function is for one SCSI command.
-   Prefix is SCSI_ and the the SCSI command name
-   SCSI_ReadElementStatus
+   Prefix is SCSI_ and then the SCSI command name
 */
 
+int SCSI_LoadUnload(int DeviceFD, RequestSense_T *pRequestSense, unsigned char byte1, unsigned char load)
+{
+  CDB_T CDB;
+  int ret;
 
-int SCSI_ReadElementStatus(int DeviceFD, unsigned char type, char **data)
+  CDB[0] = SC_COM_UNLOAD;
+  CDB[1] = byte1;             
+  CDB[2] = 0;
+  CDB[3] = 0;
+  CDB[4] = load;
+  CDB[5] = 0;
+  
+ 
+  ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,
+                            0, 0, 
+                            (char *) pRequestSense,
+                            sizeof(RequestSense_T));
+    
+  if (ret < 0)
+    {
+      dbprintf(("SCSI_Unload : failed %d\n", ret));
+      return(-1);
+    } 
+
+  return(ret);
+}
+
+int SCSI_TestUnitReady(int DeviceFD, RequestSense_T *pRequestSense)
+{
+  CDB_T CDB;
+
+  CDB[0] = SC_COM_TEST_UNIT_READY;
+  CDB[1] = 0;
+  CDB[2] = 0;
+  CDB[3] = 0;
+  CDB[4] = 0;
+  CDB[5] = 0;
+
+  SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,
+                      0, 0, 
+                      (char *) pRequestSense,
+                      sizeof(RequestSense_T));
+
+  if (pRequestSense->ErrorCode == 0 && pRequestSense->SenseKey == 0)
+    {
+      return(1);
+    }
+  
+  return(0);
+}
+
+int SCSI_ModeSense(int DeviceFD, char *buffer, u_char size, u_char byte1, u_char byte2)
+{
+  CDB_T CDB;
+  RequestSense_T *pRequestSense;
+  int ret;
+  int retry = 1;
+  dbprintf(("SCSI_ModeSense start length = %d:\n", size));
+  if ((pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
+      {
+          dbprintf(("SCSI_ModeSense : malloc failed\n"));
+          return(-1);
+      }
+
+  while (retry > 0 && retry < MAX_RETRIES)
+    {
+      bzero(pRequestSense, sizeof(RequestSense_T));
+      bzero(buffer, size);
+      
+      CDB[0] = SC_COM_MODE_SENSE;
+      CDB[1] = byte1;
+      CDB[2] = byte2;
+      CDB[3] = 0;
+      CDB[4] = size;
+      CDB[5] = 0;
+      ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,                      
+                                buffer,
+                                size, 
+                                (char *) pRequestSense,
+                                sizeof(RequestSense_T));
+      if (ret < 0)
+        {
+          return(ret);
+        }
+      
+      if ( ret > 0)
+        {
+          switch(SenseHandler(DeviceFD, 0 ,(char *)pRequestSense))
+            {
+            case SENSE_IGNORE:
+              dbprintf(("SCSI_ModeSense : SENSE_IGNORE\n"));
+              return(0);
+              break;
+            case SENSE_RETRY:
+              dbprintf(("SCSI_ModeSense : SENSE_RETRY no %d\n", retry));
+              break;
+            default:
+              dbprintf(("SCSI_ModeSense : end %d\n", pRequestSense->SenseKey));
+              return(pRequestSense->SenseKey);
+              break;
+            }
+        }
+      if (ret == 0)
+        {
+          dbprintf(("SCSI_ModeSense end: %d\n", ret));
+          return(ret);
+        }
+    }
+  dbprintf(("SCSI_ModeSense end: %d\n", ret));
+  return(ret);
+}
+
+int SCSI_Inquiry(int DeviceFD, char *buffer, u_char size)
+{
+  CDB_T CDB;
+  RequestSense_T *pRequestSense;
+  int i;
+  int ret;
+  int retry = 1;
+
+  dbprintf(("SCSI_Inquiry start length = %d:\n", size));
+
+  if ((pRequestSense = (RequestSense_T *)malloc(size)) == NULL)
+      {
+          dbprintf(("SCSI_Inquiry : malloc failed\n"));
+          return(-1);
+      }
+
+  while (retry > 0 && retry < MAX_RETRIES)
+    {
+      bzero(buffer, size);
+      CDB[0] = SC_COM_INQUIRY;
+      CDB[1] = 0;
+      CDB[2] = 0;
+      CDB[3] = 0;
+      CDB[4] = size;
+      CDB[5] = 0;
+      
+      ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,                      
+                                buffer,
+                                size, 
+                                (char *) pRequestSense,
+                            sizeof(RequestSense_T));
+      if (ret < 0)
+        {
+          dbprintf(("%s: Request Sense[Inquiry]: %02X",
+                    "chs", ((unsigned char *) pRequestSense)[0]));
+          for (i = 1; i < sizeof(RequestSense_T); i++)               
+            dbprintf((" %02X", ((unsigned char *) pRequestSense)[i]));
+          dbprintf(("\n"));   
+      dbprintf(("Inquiry end: %d\n", ret));
+      return(ret);
+        }
+      if ( ret > 0)
+        {
+          switch(SenseHandler(DeviceFD, 0 , (char *)pRequestSense))
+            {
+            case SENSE_IGNORE:
+              dbprintf(("SCSI_ModeSense : SENSE_IGNORE\n"));
+              return(0);
+              break;
+            case SENSE_RETRY:
+              dbprintf(("SCSI_ModeSense : SENSE_RETRY no %d\n", retry));
+              break;
+            default:
+              dbprintf(("SCSI_ModeSense : end %d\n", pRequestSense->SenseKey));
+              return(pRequestSense->SenseKey);
+              break;
+            }
+        }
+      if (ret == 0)
+        {
+          dump_hex(buffer, size);
+          dbprintf(("SCSI_Inquiry : end %d\n", ret));
+          return(ret);
+        }
+    }
+  
+  dbprintf(("SCSI_Inquiry end: %d\n", ret));
+  return(ret);
+}
+
+int SCSI_ReadElementStatus(int DeviceFD, 
+                           unsigned char type, 
+                           unsigned char lun,
+                           unsigned char VolTag,
+                           int StartAddress,
+                           int NoOfElements,
+                           char **data)
 {
   CDB_T CDB;
   int DataBufferLength;
   ElementStatusData_T *ElementStatusData;
-  RequestSense_T RequestSenseBuf;
- 
+  RequestSense_T *pRequestSense;
   int retry = 1;
   int ret; 
+ 
+  if ((pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
+      {
+          dbprintf(("SCSI_ReadElementStatus : malloc failed\n"));
+          return(-1);
+      }
 
+  
   if (*data != NULL)
     {
-      *data = realloc(data, 8);
+      *data = realloc(*data, 8);
     } else {
       *data = malloc(8);
     }
-  
-  while (retry > 0)
+
+  memset(*data, 0, 8);
+
+  VolTag = (VolTag << 4) & 0x10;
+  type = type & 0xf;
+  lun = (lun << 5) & 0xe0;
+ 
+  /* First try to get the allocation length for a second call
+   */
+
+  while (retry > 0 && retry < MAX_RETRIES)
     {
-      bzero(&RequestSenseBuf, sizeof(RequestSense_T) );
+      bzero(pRequestSense, sizeof(RequestSense_T) );
       
       CDB[0] = SC_COM_RES;          /* READ ELEMENT STATUS */
-      CDB[1] = type & 0xf;          /* Element Type Code = 0, VolTag = 0 */
-      CDB[2] = 0;                   /* Starting Element Address MSB */   
-      CDB[3] = 0;                   /* Starting Element Address LSB */   
-      CDB[4] = 0;                   /* Number Of Elements MSB */             
-      CDB[5] = 255;                 /* Number Of Elements LSB */                   
-      CDB[6] = 0;                   /* Reserved */                                 
-      CDB[7] = 0;                   /* Allocation Length MSB */                    
-      MSB2(&CDB[8],8); /* Allocation Length */    
-      CDB[10] = 0;                  /* Reserved */                                
-      CDB[11] = 0;                  /* Control */                                  
+      CDB[1] = VolTag | type | lun; /* Element Type Code , VolTag, LUN */
+      MSB2(&CDB[2], StartAddress);  /* Starting Element Address */
+      MSB2(&CDB[4], NoOfElements);  /* Number Of Element */
+      CDB[6] = 0;                             /* Reserved */                          
+      MSB3(&CDB[7],8);                   /* Allocation Length */    
+      CDB[10] = 0;                           /* Reserved */                           
+      CDB[11] = 0;                           /* Control */                             
       
       ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 12,                      
                                 *data, 8, 
-                                (char *) &RequestSenseBuf, sizeof(RequestSense_T));
+                                (char *)pRequestSense, sizeof(RequestSense_T));
       
       
       dbprintf(("SCSI_ReadElementStatus : (1) SCSI_ExecuteCommand %d\n", ret));
       if (ret < 0)
         {
-          DecodeSense(&RequestSenseBuf, "SCSI_ReadElementStatus :");
+          DecodeSense(pRequestSense, "SCSI_ReadElementStatus :");
           free(data);
           return(ret);
         }
       if ( ret > 0)
         {
-          DecodeSense(&RequestSenseBuf, "SCSI_ReadElementStatus : ");
-          if (RequestSenseBuf.SenseKey)
+          switch(SenseHandler(DeviceFD, 0 ,(char *)pRequestSense))
             {
-              if (RequestSenseBuf.SenseKey == UNIT_ATTENTION || RequestSenseBuf.SenseKey == NOT_READY)
-                {
-                  if ( retry < MAX_RETRIES )
-                    { 
-                      dbprintf(("SCSI_ReadElementStatus : retry %d\n", retry));
-                      retry++;
-                      sleep(2);
-                    } else {
-                      free(data);
-                      return(RequestSenseBuf.SenseKey);
-                    }
-                } else {
-                  free(data);
-                  return(RequestSenseBuf.SenseKey);
-                }
+            case SENSE_IGNORE:
+              dbprintf(("SCSI_ModeSense : SENSE_IGNORE\n"));
+              retry = 0;
+              break;
+            case SENSE_RETRY:
+              dbprintf(("SCSI_ModeSense : SENSE_RETRY no %d\n", retry));
+              sleep(2);
+              break;
+            default:
+              dbprintf(("SCSI_ModeSense : end %d\n", pRequestSense->SenseKey));
+              return(pRequestSense->SenseKey);
+              break;
             }
         }
       if (ret == 0)
         {
           retry=0;
         }
+    }
+  if (retry > 0)
+    {
+      free(*data);
+      return(ret);
     }
   
   ElementStatusData = (ElementStatusData_T *)*data;
   DataBufferLength = V3(ElementStatusData->count);
   DataBufferLength = DataBufferLength + 8;
-  dbprintf(("SCSI_ReadElementStatus: DataBufferLength %d, ret %d\n",DataBufferLength, ret));
+  dbprintf(("SCSI_ReadElementStatus: DataBufferLength %X, ret %d\n",DataBufferLength, ret));
+
+  dump_hex(*data, 8);
 
   *data = realloc(*data, DataBufferLength);
+  memset(*data, 0, DataBufferLength);
   retry = 1;
 
-  while (retry > 0)
+  while (retry > 0 && retry < MAX_RETRIES)
     {
-      bzero(&RequestSenseBuf, sizeof(RequestSense_T) );
+      bzero(pRequestSense, sizeof(RequestSense_T) );
       
-      CDB[0] = SC_COM_RES;          /* READ ELEMENT STATUS */
-      CDB[1] = 0;                   /* Element Type Code = 0, VolTag = 0 */
-      CDB[2] = 0;                   /* Starting Element Address MSB */   
-      CDB[3] = 0;                   /* Starting Element Address LSB */   
-      CDB[4] = 0;                   /* Number Of Elements MSB */             
-      CDB[5] = 255;                 /* Number Of Elements LSB */                   
-      CDB[6] = 0;                   /* Reserved */                                 
-      CDB[7] = 0;                   /* Allocation Length MSB */                    
-      MSB2(&CDB[8],DataBufferLength); /* Allocation Length */    
-      CDB[10] = 0;                  /* Reserved */                                
-      CDB[11] = 0;                  /* Control */                                  
+      CDB[0] = SC_COM_RES;           /* READ ELEMENT STATUS */
+      CDB[1] = VolTag | type | lun;  /* Element Type Code, VolTag, LUN */
+      MSB2(&CDB[2], StartAddress);   /* Starting Element Address */
+      MSB2(&CDB[4], NoOfElements);   /* Number Of Element */
+      CDB[6] = 0;                              /* Reserved */                      
+      MSB3(&CDB[7],DataBufferLength);  /* Allocation Length */    
+      CDB[10] = 0;                                 /* Reserved */                      
+      CDB[11] = 0;                                 /* Control */                       
       
       ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 12,                      
                                 *data, DataBufferLength, 
-                                (char *) &RequestSenseBuf, sizeof(RequestSense_T));
+                                (char *)pRequestSense, sizeof(RequestSense_T));
       
       
       dbprintf(("SCSI_ReadElementStatus : (2) SCSI_ExecuteCommand %d\n", ret));
       if (ret < 0)
         {
-          DecodeSense(&RequestSenseBuf, "SCSI_ReadElementStatus :");
+          DecodeSense(pRequestSense, "SCSI_ReadElementStatus :");
           free(data);
           return(ret);
         }
       if ( ret > 0)
         {
-          DecodeSense(&RequestSenseBuf, "SCSI_ReadElementStatus : ");
-          if (RequestSenseBuf.SenseKey)
+          switch(SenseHandler(DeviceFD, 0 ,(char *)pRequestSense))
             {
-              if (RequestSenseBuf.SenseKey == UNIT_ATTENTION || RequestSenseBuf.SenseKey == NOT_READY)
-                {
-                  if ( retry < MAX_RETRIES )
-                    { 
-                      dbprintf(("SCSI_ReadElementStatus : retry %d\n", retry));
-                      retry++;
-                      sleep(2);
-                    } else {
-                      free(data);
-                      return(RequestSenseBuf.SenseKey);
-                    }
-                } else {
-                  free(data);
-                  return(RequestSenseBuf.SenseKey);
-                }
+            case SENSE_IGNORE:
+              dbprintf(("SCSI_ModeSense : SENSE_IGNORE\n"));
+              retry = 0;
+              break;
+            case SENSE_RETRY:
+              dbprintf(("SCSI_ModeSense : SENSE_RETRY no %d\n", retry));
+              sleep(2);
+              break;
+            default:
+              dbprintf(("SCSI_ModeSense : end %d\n", pRequestSense->SenseKey));
+              return(pRequestSense->SenseKey);
+              break;
             }
         }
       if (ret == 0)
@@ -2521,6 +3572,14 @@ int SCSI_ReadElementStatus(int DeviceFD, unsigned char type, char **data)
         }
     }
 
+  if (retry > 0)
+    {
+      free(*data);
+      return(ret);
+    }
+  
+  dump_hex(*data, DataBufferLength);
+  
   return(ret);
 }
 

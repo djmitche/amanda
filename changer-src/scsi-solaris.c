@@ -1,10 +1,10 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-solaris.c,v 1.1.2.9 1999/01/26 11:23:20 th Exp $";
+static char rcsid[] = "$Id: scsi-solaris.c,v 1.1.2.10 1999/02/12 19:58:37 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an Sun Workstation
  *
- * Copyright (c) 1998 T.Hepper th@icem.de
+ * Copyright (c) Thomas Hepper th@ant.han.de
  */
 #include <amanda.h>
 
@@ -45,9 +45,9 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
       pwork->fd = DeviceFD;
       pwork->dev = strdup(DeviceName);
       pwork->SCSI = 0;
-      pwork->inquiry = (SCSIInquiry_T *)malloc(sizeof(SCSIInquiry_T));
+      pwork->inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
 
-      if (Inquiry(DeviceFD, pwork->inquiry) == 0)
+      if (SCSI_Inquiry(DeviceFD, pwork->inquiry, INQUIRY_SIZE) == 0)
           {
           if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
             {

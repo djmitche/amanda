@@ -1,10 +1,10 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-irix.c,v 1.1.2.7 1999/01/26 11:23:16 th Exp $";
+static char rcsid[] = "$Id: scsi-irix.c,v 1.1.2.8 1999/02/12 19:58:33 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an SGI Workstation
  *
- * Copyright (c) 1998 T.Hepper th@icem.de
+ * Copyright (c) Thomas Hepper th@ant.han.de
  */
 #include <amanda.h>
 
@@ -50,9 +50,9 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
       pwork->next = NULL;
       pwork->fd = DeviceFD;
       pwork->SCSI = 0;
-      pwork->inquiry = (SCSIInquiry_T *)malloc(sizeof(SCSIInquiry_T));
+      pwork->inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
       pwork->dev = strdup(DeviceName);
-      if (Inquiry(DeviceFD, pwork->inquiry) == 0)
+      if (SCSI_Inquiry(DeviceFD, pwork->inquiry, INQUIRY_SIZE) == 0)
           {
           if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
             {
