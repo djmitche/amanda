@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.11 1997/08/27 08:13:10 amcore Exp $
+ * $Id: diskfile.c,v 1.12 1997/10/17 06:26:45 george Exp $
  *
  * read disklist file
  */
@@ -43,7 +43,6 @@ static int line_num, got_parserror;
 static char str[1024];
 
 /* local functions */
-static void init_string P((char **ptrp, char *st));
 static char *upcase P((char *st));
 static int read_diskline P((void));
 static void get_string P((void));
@@ -64,7 +63,7 @@ char *filename;
 
     hostlist = NULL;
     lst.head = lst.tail = NULL;
-    init_string(&diskfname, filename);
+    diskfname = newstralloc(diskfname, filename);
     line_num = got_parserror = 0;
 
     if((diskf = fopen(filename, "r")) == NULL)
@@ -189,13 +188,6 @@ disk_t *disk;
     else disk->next->prev = disk->prev;
 
     disk->prev = disk->next = NULL;
-}
-
-static void init_string(ptrp, s)
-char *s, **ptrp;
-{
-    if(*ptrp) free(*ptrp);
-    *ptrp = stralloc(s);
 }
 
 static char *upcase(st)

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.19 1997/08/31 17:58:54 amcore Exp $
+ * $Id: conffile.c,v 1.20 1997/10/17 06:26:44 george Exp $
  *
  * read configuration file
  */
@@ -194,7 +194,6 @@ static char *confname = NULL;
 
 static void init_defaults P((void));
 static void read_conffile_recursively P((char *filename));
-static void init_string P((char **ptrp, char *str));
 
 static int read_confline P((void));
 static void get_holdingdisk P((void));
@@ -480,49 +479,49 @@ static void init_defaults()
 {
     /* defaults for exported variables */
 
-    init_string(&conf_org.s,
+    conf_org.s = newstralloc(conf_org.s,
 #ifdef DEFAULT_CONFIG
 		DEFAULT_CONFIG
 #else
 		"YOUR ORG"
 #endif
 		);
-    init_string(&conf_mailto.s, "operators");
-    init_string(&conf_dumpuser.s,
+    conf_mailto.s = newstralloc(conf_mailto.s, "operators");
+    conf_dumpuser.s = newstralloc(conf_dumpuser.s,
 #ifdef CLIENT_LOGIN
 		CLIENT_LOGIN
 #else
 		"bin"
 #endif
 		);
-    init_string(&conf_tapedev.s,
+    conf_tapedev.s = newstralloc(conf_tapedev.s,
 #ifdef DEFAULT_TAPE_DEVICE
 		DEFAULT_TAPE_DEVICE
 #else
 		"/dev/rmt8"
 #endif
 		);
-    init_string(&conf_tpchanger.s, "");
-    init_string(&conf_labelstr.s, ".*");
-    init_string(&conf_tapelist.s, "tapelist");
-    init_string(&conf_infofile.s,
+    conf_tpchanger.s = newstralloc(conf_tpchanger.s, "");
+    conf_labelstr.s = newstralloc(conf_labelstr.s, ".*");
+    conf_tapelist.s = newstralloc(conf_tapelist.s, "tapelist");
+    conf_infofile.s = newstralloc(conf_infofile.s,
 #ifdef DB_DIR
 		DB_DIR "/curinfo"
 #else
 		"/usr/adm/amanda/curinfo"
 #endif
 		);
-    init_string(&conf_logfile.s,
+    conf_logfile.s = newstralloc(conf_logfile.s,
 #ifdef LOG_DIR
 		LOG_DIR "/log"
 #else
 		"/usr/adm/amanda/log"
 #endif
 		);
-    init_string(&conf_diskfile.s, "disklist");
-    init_string(&conf_diskdir.s, "/dumps/amanda");
-    init_string(&conf_tapetype.s, "EXABYTE");
-    init_string(&conf_indexdir.s,
+    conf_diskfile.s = newstralloc(conf_diskfile.s, "disklist");
+    conf_diskdir.s = newstralloc(conf_diskdir.s, "/dumps/amanda");
+    conf_tapetype.s = newstralloc(conf_tapetype.s, "EXABYTE");
+    conf_indexdir.s = newstralloc(conf_indexdir.s,
 #ifdef INDEX_DIR
 		INDEX_DIR
 #else
@@ -645,11 +644,10 @@ char *filename;
     FILE *save_conf     = conf;
     char *save_confname = confname;
 
-    confname = NULL;	/* Protect it from free() in init_string() */
-    init_string(&confname, filename);
+    confname = stralloc(filename);
 
-    if((conf = fopen(filename, "r")) == NULL)
-	error("could not open conf file \"%s\": %s", filename, strerror(errno));
+    if((conf = fopen(confname, "r")) == NULL)
+	error("could not open conf file \"%s\": %s", confname, strerror(errno));
 
     line_num = 0;
 
@@ -657,20 +655,12 @@ char *filename;
     while(read_confline());
     fclose(conf);
 
-    /* Restore globals */
-    if (save_confname) {
-      line_num = save_line_num;
-      conf     = save_conf;
-      free(confname);	/* Free what was allocated by init_string() above */
-      confname = save_confname;
-    }
-}
+    free(confname);
 
-static void init_string(ptrp, str)
-char *str, **ptrp;
-{
-    if(*ptrp) free(*ptrp);
-    *ptrp = stralloc(str);
+    /* Restore globals */
+    line_num = save_line_num;
+    conf     = save_conf;
+    confname = save_confname;
 }
 
 
@@ -761,7 +751,7 @@ static int read_confline()
 	    s = tokenval.s;
 	
 	    if(!seen_diskdir) {
-		init_string(&conf_diskdir.s, s);
+		conf_diskdir.s = newstralloc(conf_diskdir.s, s);
 		seen_diskdir = line_num;
 	    }
 

@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.29 1997/10/03 08:29:23 george Exp $
+/* $Id: dumper.c,v 1.30 1997/10/17 06:26:47 george Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -236,21 +236,14 @@ char **main_argv;
 	    /* FILE-DUMP handle filename host disk level dumpdate progname options */
 
 	    assert(argc == 9);
-	    if(handle) free(handle);
-	    if(filename) free(filename);
-	    if(hostname) free(hostname);
-	    if(diskname) free(diskname);
-	    if(dumpdate) free(dumpdate);
-	    if(progname) free(progname);
-	    if(options) free(options);
-	    handle = stralloc(argv[2]);
-	    filename = stralloc(argv[3]);
-	    hostname = stralloc(argv[4]);
-	    diskname = stralloc(argv[5]);
+	    handle = newstralloc(handle, argv[2]);
+	    filename = newstralloc(filename, argv[3]);
+	    hostname = newstralloc(hostname, argv[4]);
+	    diskname = newstralloc(diskname, argv[5]);
 	    level = atoi(argv[6]);
-	    dumpdate = stralloc(argv[7]);
-	    progname = stralloc(argv[8]);
-	    options = stralloc(argv[9]);
+	    dumpdate = newstralloc(dumpdate, argv[7]);
+	    progname = newstralloc(progname, argv[8]);
+	    options = newstralloc(options, argv[9]);
 
 	    if((outfd = open(filename, O_WRONLY|O_CREAT, 0666)) == -1) {
 		putresult("FAILED %s %s\n", handle,
@@ -287,20 +280,14 @@ char **main_argv;
 
 	    /* PORT-DUMP handle port host disk level dumpdate progname options */
 	    assert(argc == 9);
-	    if(handle) free(handle);
-	    if(hostname) free(hostname);
-	    if(diskname) free(diskname);
-	    if(dumpdate) free(dumpdate);
-	    if(progname) free(progname);
-	    if(options) free(options);
-	    handle = stralloc(argv[2]);
+	    handle = newstralloc(handle, argv[2]);
 	    taper_port = atoi(argv[3]);
-	    hostname = stralloc(argv[4]);
-	    diskname = stralloc(argv[5]);
+	    hostname = newstralloc(hostname, argv[4]);
+	    diskname = newstralloc(diskname, argv[5]);
 	    level = atoi(argv[6]);
-	    dumpdate = stralloc(argv[7]);
-	    progname = stralloc(argv[8]);
-	    options = stralloc(argv[9]);
+	    dumpdate = newstralloc(dumpdate, argv[7]);
+	    progname = newstralloc(pogname, argv[8]);
+	    options = newstralloc(options, argv[9]);
 
 	    /* connect outf to taper port */
 
@@ -480,19 +467,19 @@ char *str;
     }
 
     if(!strncmp(str, "BACKUP=", 7)) {
-	backup_name = stralloc(str + 7);
+	backup_name = newstralloc(backup_name, str + 7);
 	backup_name[strlen(backup_name)-1] = '\0';
 	return;
     }
 
     if(!strncmp(str, "RECOVER_CMD=", 12)) {
-	recover_cmd = stralloc(str + 12);
+	recover_cmd = newstralloc(recover_cmd, str + 12);
 	recover_cmd[strlen(recover_cmd)-1] = '\0';
 	return;
     }
 
     if(!strncmp(str, "COMPRESS_SUFFIX=", 16)) {
-	compress_suffix = stralloc(str + 16);
+	compress_suffix = newstralloc(compress_suffix, str + 16);
 	compress_suffix[strlen(compress_suffix)-1] = '\0';
 	return;
     }

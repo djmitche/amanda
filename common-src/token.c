@@ -23,10 +23,11 @@
  * Author: George Scott, Computer Centre, Monash University.
  */
 /*
- * $Id: token.c,v 1.10 1997/10/08 05:30:29 george Exp $
+ * $Id: token.c,v 1.11 1997/10/17 06:26:41 george Exp $
  *
  * token bashing routines
  */
+
 /*
 ** The quoting method used here was selected because it has the
 ** property that quoting a string that doesn't contain funny
@@ -86,8 +87,7 @@ char *sep;	/* Token separators - usually " " */
 
     /* Allocate some space */
 
-    if (buf != (char *)0) free(buf); /* clean up from last time */
-    buf = alloc(len+1);
+    buf = newalloc(buf, len+1);
 
     /* Copy it across and tokenise it */
 
@@ -197,8 +197,7 @@ char *str;	/* the string to quote */
 
     /* Allocate some space */
 
-    if (buf != (char *)0) free(buf); /* Clean up from last time */
-    buf = alloc(len+1);	/* trailing null */
+    buf = newalloc(buf, len+1);	/* trailing null */
 
     /* Copy it across */
 
