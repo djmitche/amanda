@@ -53,8 +53,8 @@ EXTRA_DIST = 		genversion.c	getcwd.c	memmove.c	\
 
 EXTRA_PROGRAMS = genversion $(TEST_PROGS)
 
-genversion_SOURCES = versuff.c alloc.c error.c nolog.c
-genversion_LDADD = genversion.o $(libamanda_la_LIBADD)
+genversion_SOURCES = genversion.c
+genversion_LDADD = versuff.lo alloc.lo error.lo nolog.lo $(libamanda_la_LIBADD)
 
 genversion.o: genversion.c
 	$(COMPILE) -DCC="\"$(CC)\"" \
