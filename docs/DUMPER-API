@@ -1,6 +1,6 @@
 AMANDA DUMPER API
 
-Last modified $Date: 1998/10/06 17:17:00 $
+Last modified $Date: 2002/04/10 20:35:47 $
 
 by Alexandre Oliva <oliva@dcc.unicamp.br>
 
@@ -238,31 +238,6 @@ Errors should be printed as:
 
 ERROR [/etc/dumpdates is not writable]
 
-If selfcheck needs super-user (or some other user, for that matter)
-access to perform some tests, it should print to the standard output
-either:
-
-USER root
-GROUP operator
-
-The backup driver should then arrange to re-run the script as the
-specified user/group.  Security concerns may impose restrictions on
-privileges that can be given to wrapper scripts.  For example, we may
-require that, in order to run a wrapper script as any other user or
-group, the wrapper script must be in a separate directory, say
-/usr/local/amanda/libexec/wrappers-protected, and that the script, its
-containing directory and all its parents must only be writable by
-root.
-
-The need for starting programs as other users requires amandad (that
-will incorporate all the functionality from selfcheck, sendsize and
-sendbackup) to be setuid-root.  However, it will fork a child process
-and drop to the amanda user privileges as soon as possible.  This
-child process will be driven through a pipe, and it will be able to
-start services as other users, in a way that no other user, not even
-the backup operator, will be able to run arbitrary commands.
-
-
 A wrapper script will certainly have to figure out either the disk
 device name or its mount point, given a filesystem name such as
 `hda0', as specified in the disklist.  In order to help these scripts,
@@ -277,9 +252,7 @@ automatically selecting the appropriate dump program.
 The exit status of selfcheck and of this alternate script are probably
 going to be disregarded.  Anyway, for consistency, selfcheck should
 return exit status 0 for complete success, 1 if any failures have
-occurred and 2 if it needs additional permissions (USER/GROUP).  Note
-that, if the wrapper needs a special permission to perform a test, it
-should not report a failure for that test.
+occurred.
 
 3.3. The `estimate' and `estimate-parse' commands
 
@@ -291,15 +264,8 @@ timestamp-based incrementals:
   DUMP estimate level 1 hda0 option ...
   DUMP estimate diff 1998:09:24:01:02:03 hda0 option ...
 
-
-If the backup program needs privileged access to obtain estimates, it
-should just print:
-
-USER root
-GROUP operator
-
-and exit, with exit status 2.  If requested estimate type is not
-supported, exit status 3 should be returned.
+If requested estimate type is not supported, exit status 3 should be
+returned.
 
 If the option `estimate-direct' is set, then the `estimate' command
 should write to stdout the estimated size, in bytes, a pair of numbers
@@ -318,8 +284,7 @@ signal to the process group of the `estimate' process.  If it does not
 die within a few seconds, a SIGKILL will be issued.
 
 If `estimate' or `estimate-parse' succeed, they should exit 0,
-otherwise exit 1, except for the already listed cases of exit status 2
-and 3.
+otherwise exit 1, except for the already listed cases of exit status 3.
 
 3.4. The `backup' and `backup-parse' commands
 
