@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.42 2003/07/08 21:26:41 martinea Exp $
+/* $Id: amidxtaped.c,v 1.43 2004/01/29 19:26:42 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -113,9 +113,12 @@ int nslots, backwards;
 int scan_init(rc, ns, bk)
 int rc, ns, bk;
 {
-    if(rc)
+    if(rc) {
+	if(get_lock) {
+	    unlink(conf_logfile);
+	}
         error("could not get changer info: %s", changer_resultstr);
-
+    }
     nslots = ns;
     backwards = bk;
 
