@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-linux.c,v 1.18 2001/04/26 19:18:29 ant Exp $
+ * $Id: scsi-linux.c,v 1.19 2001/04/28 19:17:58 ant Exp $
  *
  * Interface to execute SCSI commands on Linux
  *
@@ -214,6 +214,7 @@ int SCSI_OpenDevice(int ip)
                 }
             } else {
               pDev[ip].SCSI = 0;
+              pDev[ip].devopen = 0;
               close(DeviceFD);
               free(pDev[ip].inquiry);
               pDev[ip].inquiry = NULL;
@@ -223,13 +224,14 @@ int SCSI_OpenDevice(int ip)
         } else /* if (pDev[ip].SCSI == 1) */ {  
           DebugPrint(DEBUG_INFO, SECTION_SCSI,"Device not capable for SCSI commands\n");
           pDev[ip].SCSI = 0;
+          pDev[ip].devopen = 0;
           close(DeviceFD);
           free(pDev[ip].inquiry);
           pDev[ip].inquiry = NULL;
           DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_OpenDevice (1)\n");
           return(1);
         }
-    } else {
+    } else { /* if (pDev[ip].inqdone == 0) */
       if (pDev[ip].flags == 1)
         {
           openmode = O_RDWR;

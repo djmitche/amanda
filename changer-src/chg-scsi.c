@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.23 2001/04/26 19:18:28 ant Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.24 2001/04/28 19:17:58 ant Exp $";
 #endif
 /*
  * 
@@ -695,6 +695,7 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
                  fclose(fp);
                  return(strdup(plabelv2->barcode));
                }
+               break;
            case BARCODE_VOL:
              if (strcmp(plabelv2->voltag, vol) == 0)
                {
@@ -1011,7 +1012,7 @@ int main(int argc, char *argv[])
   int confnum;
 
   int fd, slotcnt, drivecnt;
-
+  int tapefd;                    /* Used from tape_open */
   int endstatus = 0;
 
   char *changer_dev;
@@ -1314,28 +1315,31 @@ int main(int argc, char *argv[])
       
       if (pDev[INDEX_TAPE].avail == 1 && emubarcode == 1)
         {
-          if (pDev[INDEX_TAPE].devopen == 0)
+          if (pDev[INDEX_TAPE].devopen == 1)
             {
-              SCSI_OpenDevice(INDEX_TAPE);
+              SCSI_CloseDevice(INDEX_TAPE);
             }
-          if ((result = (char *)tapefd_rdlabel(pDev[INDEX_TAPE].fd, &datestamp, &label)) == NULL)
+          if ((tapefd = tape_open(pDev[INDEX_TAPE].dev, O_RDONLY)) != 0)
             {
-              result = MapBarCode(chg.labelfile, label, "" , FIND_SLOT, 0, 0);
-              if (result == NULL) /* Nothing found, do an inventory */
+              if ((result = (char *)tapefd_rdlabel(tapefd, &datestamp, &label)) == NULL)
                 {
-                  if (need_eject)
-                    eject_tape(scsitapedevice, need_eject);
-                  (void)unload(fd, drive_num, oldtarget);
+                  result = MapBarCode(chg.labelfile, label, "" , FIND_SLOT, 0, 0);
+                  if (result == NULL) /* Nothing found, do an inventory */
+                    {
+                      if (need_eject)
+                        eject_tape(scsitapedevice, need_eject);
+                      (void)unload(fd, drive_num, oldtarget);
                   if (ask_clean(scsitapedevice))
                     clean_tape(fd,tape_device,clean_file,drive_num,
                                clean_slot,maxclean,time_file);
                   Inventory(chg.labelfile, drive_num, need_eject, 0, 0, clean_slot);
                   load(fd, drive_num, oldtarget);
-                } else {
-                  result = MapBarCode(chg.labelfile, label, "" ,UPDATE_SLOT, oldtarget, target);
+                    } else {
+                      result = MapBarCode(chg.labelfile, label, "" ,UPDATE_SLOT, oldtarget, target);
+                    }
                 }
+              tapefd_close(fd);
             }
-          SCSI_CloseDevice(INDEX_TAPE);
         }
 
       

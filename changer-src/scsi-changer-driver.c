@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.24 2001/04/26 19:18:28 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.25 2001/04/28 19:17:58 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -544,6 +544,7 @@ void Inventory(char *labelfile, int drive, int eject, int start, int stop, int c
   char *datestamp = malloc(1);   /* stupid, but tapefd_rdlabel does an free at the begining ... */
   char *label = malloc(1);       /* the same here ..... */
   char *result;
+  int fd;                        /* fd from tape_open */
 
   DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE, "##### START Inventory\n");
   MapBarCode(labelfile,  "", "", RESET_VALID, 0, 0);
@@ -558,18 +559,30 @@ void Inventory(char *labelfile, int drive, int eject, int start, int stop, int c
 	  DebugPrint(DEBUG_ERROR,SECTION_MAP_BARCODE, "Load drive(%d) from(%d) failed\n", drive, x);
 	}
 
-      if (pDev[INDEX_TAPE].devopen == 0)
+      if (pDev[INDEX_TAPECTL].inqdone == 1 && pDev[INDEX_TAPECTL].SCSI == 1)
 	{
-	  SCSI_OpenDevice(INDEX_TAPE);
+	  Tape_Ready(INDEX_TAPECTL, 60);
+	} else {
+	  Tape_Ready(INDEX_TAPE, 60);
 	}
 
-      if ((result = (char *)tapefd_rdlabel(pDev[INDEX_TAPE].fd, &datestamp, &label)) == NULL)
-	{
-	  MapBarCode(labelfile, label, "", UPDATE_SLOT, x , 0);
-	} else {
-	  DebugPrint(DEBUG_ERROR,SECTION_MAP_BARCODE, "Read label failed\n");
-	}
       SCSI_CloseDevice(INDEX_TAPE);
+
+      if ((fd = tape_open(pDev[INDEX_TAPE].dev, O_RDONLY)) != 0)
+	{
+	  if ((result = (char *)tapefd_rdlabel(fd, &datestamp, &label)) == NULL)
+	    {
+	      if (BarCode(INDEX_CHANGER) == 1)
+		{
+		  MapBarCode(labelfile, label, pDTE[drive].VolTag, UPDATE_SLOT, x, 0);
+		} else {
+		  MapBarCode(labelfile, label, "", UPDATE_SLOT, x, 0);
+		}
+	    } else {
+	      DebugPrint(DEBUG_ERROR,SECTION_MAP_BARCODE, "Read label failed\n");
+	    }
+	  tapefd_close(fd);
+	}
 
       if (eject)
 	{
@@ -3523,7 +3536,7 @@ int LogSense(DeviceFD)
   char *label = NULL;
   char *result = NULL;
   extern char *tapestatfile;
-  
+  int fd;                        /* for tape_open */
   int i;
   int ParameterCode;
   unsigned int value;
@@ -3564,17 +3577,20 @@ int LogSense(DeviceFD)
        */
       if (pDev[INDEX_TAPE].inqdone == 1)
         {
-	  if (pDev[INDEX_TAPE].devopen == 0)
+	  if (pDev[INDEX_TAPE].devopen == 1)
 	    {
-	      SCSI_OpenDevice(INDEX_TAPE);
+	      SCSI_CloseDevice(INDEX_TAPE);
 	    }
-	  if ((result = (char *)tapefd_rdlabel(pDev[INDEX_TAPE].fd, &datestamp, &label)) == NULL)
-            {
-              fprintf(StatFile, "==== %s ==== %s ====\n", datestamp, label);
-            } else {
-              fprintf(StatFile, "%s\n", result);
-            }
-	  SCSI_CloseDevice(INDEX_TAPE);
+	  if ((fd = tape_open(pDev[INDEX_TAPE].dev, O_RDONLY)) != 0)
+	    {
+	      if ((result = (char *)tapefd_rdlabel(pDev[INDEX_TAPE].fd, &datestamp, &label)) == NULL)
+		{
+		  fprintf(StatFile, "==== %s ==== %s ====\n", datestamp, label);
+		} else {
+		  fprintf(StatFile, "%s\n", result);
+		}
+	      tapefd_close(fd);
+	    }
         }
       if ((buffer = (char *)malloc(size)) == NULL)
         {

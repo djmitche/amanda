@@ -1,3 +1,12 @@
+2001-04-28 Thomas Hepper <th@ant.han.de>
+	* changer-scsi/chg-scsi.c : Added missing break in MapBarCode
+	Changed the way an tape label is read, use tape_open to open the
+	device, not own open.
+	* changer-src/scsi-changer-driver.c : Changed the way an tape label 
+	is read, use tape_open to open the device, not own open.
+	* changer-src/scsi-linux.c : Fixed error on reopen of non SCSI devices
+	(/dev/nst0 for example)
+	
 2001-04-26 Thomas Hepper <th@ant.han.de>
 
 	* changer-src/scsi-aix.c : Added more different ret values depending on the SCSI
