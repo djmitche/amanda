@@ -14,6 +14,15 @@ LDADD = ../server-src/libamserver.$(LIB_EXTENSION) \
 
 SUFFIXES =		.pl .sh
 
+noinst_LIBRARIES =	libscsi.a
+
+libscsi_a_SOURCES =	scsi-hpux.c scsi-chio.c
+EXTRA_DIST = scsi-proto.c
+
+chg_scsi_SOURCES =	chg-scsi.c libscsi.h
+
+chg_scsi_LDADD =	libscsi.a $(LDADD)
+
 .pl:
 			cat $< > $@
 			chmod a+x $@
@@ -24,7 +33,7 @@ SUFFIXES =		.pl .sh
 
 libexec_PROGRAMS =	@BUILD_CHANGER_PROGS_LIBEXEC@
 
-EXTRA_PROGRAMS =	chg-chio
+EXTRA_PROGRAMS =	chg-scsi
 
 libexec_SCRIPTS =	@BUILD_CHANGER_SCRIPTS_LIBEXEC@
 

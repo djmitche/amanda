@@ -252,14 +252,17 @@ this script.  If `changerfile' is defined as
 `/usr/adm/amanda/csd/changer', this script will maintain files named
 `changer-clean' and `changer-access' in the log directory.
 
-chg-chio: (former seagate-changer)
+chg-scsi: (former seagate-changer, then chg-chio)
 
-A C program that relies on the tape changer interface specified in
-chio.h (Gerd Knor's SCSI media changer driver, a Linux kernel loadable
-module).  `tapedev' specifies the tape device to be used;
-`changer_dev' is the device used to talk to the kernel module (usually
-/dev/ch0), and `changerfile' specifies a filename in which the current
-slot number will be stored.
+A C program that relies on scsi tape-changer interfaces.  It may
+either use the tape changer interface specified in chio.h (Gerd Knor's
+SCSI media changer driver, a Linux kernel loadable module), or it may
+use built-in tape changer interfaces available on HPUX, Solaris 2.5,
+IRIX and possibly others, but only the chio and HPUX interfaces are
+currently implemented .  `tapedev' specifies the tape device to be
+used; `changer_dev' is the device used to talk to the kernel module
+(for chio, usually /dev/ch0), and `changerfile' specifies a filename
+in which the current slot number will be stored.
 
 chg-chs: (former chs-changer)
 

@@ -1,5 +1,15 @@
 Version 2.4.1?
 
+	chg-chio was renamed to chg-scsi, and now it will support not
+	only chio.h, but also tape changer interfaces available on
+	HPUX, Solaris 2.5, IRIX and possibly others.  Currently, only
+	chio and HPUX are implemented.
+	-Eric Schnoebelen <eric@cirr.com>
+
+	Numerous bugs/errors were fixed in chg-chio/chg-scsi.  it now
+	properly responds to -eject requests, among other things.
+	- Eric Schnoebelen <eric@cirr.com>
+
 	use vdump to dump advfs filesystems only.  -oliva
 
 	new index generation commands.  -oliva

@@ -172,7 +172,7 @@ AMCLIENT_EXTRA_OBJS=
 
 BUILD_RECOVER_PROGS_SBIN="amrecover"
 
-BUILD_CHANGER_PROGS_LIBEXEC="chg-chio"
+BUILD_CHANGER_PROGS_LIBEXEC="chg-scsi"
 BUILD_CHANGER_SCRIPTS_LIBEXEC="chg-manual chg-multi chg-mtx chg-rth chg-chs"
 
 BUILD_TAPE_LIB="libamtape.a"
@@ -1385,8 +1385,21 @@ AC_CHECK_HEADERS(\
 	sys/types.h \
 	sys/vfs.h \
 	sys/vfstab.h \
+	sys/scsi.h \
 	syslog.h \
 	unistd.h)
+
+dnl Do not build chg-scsi if we cannot find the needed support include files
+dnl for the SCSI interfaces
+dnl chio.h and sys/chio.h are chio based systems
+dnl sys/scsi.h is for HP/UX systems
+dnl sys/scsi/impl/uscsi.h is for Solaris 2.5 and later
+if test x"$ac_cv_header_chio_h" = xno &&
+   test x"$ac_cv_header_sys_chio_h" = xno &&
+   test x"$ac_cv_header_sys_scsi_h" = xno &&
+   true; then
+    BUILD_CHANGER_PROGS_LIBEXEC=
+fi
 
 dnl cur_colr is on some HP's
 AC_CHECK_LIB(cur_colr,main)
