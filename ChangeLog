@@ -1,4 +1,8 @@
 2001-12-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* configure.in: Set MAX_TAPE_BLOCK_KB on linux
+
+2001-12-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	Patch by Blaz Zupan <blaz@amis.net>
 
 	* changer-src/chg-zd-mtx.sh.in: typo.
