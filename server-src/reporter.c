@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.24 1998/03/14 12:45:08 amcore Exp $
+ * $Id: reporter.c,v 1.25 1998/03/15 22:37:16 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -291,7 +291,7 @@ char **argv;
 	if((mailf = popen(cmd, "w")) == NULL)
 	    error("could not open pipe to \"%s\": %s", cmd, strerror(errno));
 
-	*cmd = NULL;
+	cmd = NULL;
 	if (strcmp(printer,"") != 0)
 	  cmd = vstralloc("lpr"," -P", printer, NULL);
 	else
@@ -672,7 +672,7 @@ void output_summary()
 	    else
 		fprintf(mailf, "    N/A    N/A ");
 
-	    if ((postscript) && (data(dp)->taper.success)) {
+	    if ((postscript) && (data(dp)->taper[i].success)) {
 		fprintf(postscript,"(%s) (%s) (%d) (%d) DrawHost\n",
 			dp->host->hostname, dp->name, data(dp)->level);
 	    }
