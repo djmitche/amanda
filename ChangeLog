@@ -1,4 +1,9 @@
 2004-02-13  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Reported by Allen Liu <allen@bellglobal.com>
+
+	* server-src/amverifyrun.sh.in: Replace '-e' test by '-f'.
+
+2004-02-13  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/amcheck.c: Verify the tape is listed in the tapelist file.
 	* server-src/taper.c: Ditto
