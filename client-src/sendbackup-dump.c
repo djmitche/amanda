@@ -78,6 +78,9 @@ static regex_t re_table[] = {
   { DMP_SIZE, "DUMP: [0-9][0-9]* KB actual output", 1024},
 		/* HPUX dump */
 
+  { DMP_SIZE, "vxdump: [0-9][0-9]* tape blocks", 512},
+		/* HPUX vxdump */
+
   { DMP_SIZE, "xfsdump: media file size [0-9][0-9]* bytes",                 1},
 		/* Irix 6.2 xfs dump */
 

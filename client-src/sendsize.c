@@ -374,6 +374,7 @@ regex_t re_size[] = {
     {"  DUMP: [Ee]stimated [0-9][0-9]* bytes", 1},	       /* Ultrix 4.4 */
     {"vdump: Dumping [0-9][0-9]* bytes, ", 1},		      /* OSF/1 vdump */
     {"dump: Estimate: [0-9][0-9]* tape blocks", 1024},		    /* OSF/1 */
+    {"vxdump: estimated [0-9][0-9]* blocks", 512},          /* HPUX's vxdump */
     {"backup: There are an estimated [0-9][0-9]* tape blocks.",1024}, /* AIX */
     {"backup: estimated [0-9][0-9]* 1k blocks", 1024},		      /* AIX */
     {"backup: estimated [0-9][0-9]* tape blocks", 1024},	      /* AIX */
