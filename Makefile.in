@@ -1,4 +1,4 @@
-# Makefile.in generated automatically by automake 1.1n from Makefile.am
+# Makefile.in generated automatically by automake 1.1o from Makefile.am
 
 # Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
@@ -55,12 +55,17 @@ host_alias = @host_alias@
 host_triplet = @host@
 target_alias = @target_alias@
 target_triplet = @target@
+ACLOCAL = @ACLOCAL@
 AMANDA_CFLAGS = @AMANDA_CFLAGS@
 AMPLOT_CAT_COMPRESS = @AMPLOT_CAT_COMPRESS@
 AMPLOT_CAT_GZIP = @AMPLOT_CAT_GZIP@
 AMPLOT_CAT_PACK = @AMPLOT_CAT_PACK@
 AMPLOT_COMPRESS = @AMPLOT_COMPRESS@
 AR = @AR@
+AUTOCONF = @AUTOCONF@
+AUTOHEADER = @AUTOHEADER@
+AUTOMAKE = @AUTOMAKE@
+AWK = @AWK@
 AWK_VAR_ASSIGNMENT_OPT = @AWK_VAR_ASSIGNMENT_OPT@
 BUILD_AMPLOT_BIN = @BUILD_AMPLOT_BIN@
 BUILD_AMPLOT_LIBEXEC = @BUILD_AMPLOT_LIBEXEC@
@@ -97,6 +102,7 @@ KRB4COMMON_O = @KRB4COMMON_O@
 LEX = @LEX@
 LOG_DIR = @LOG_DIR@
 MAILER = @MAILER@
+MAKEINFO = @MAKEINFO@
 MT = @MT@
 MTX = @MTX@
 MT_FILE_FLAG = @MT_FILE_FLAG@
@@ -128,8 +134,6 @@ SUBDIRS = common-src client-src server-src amplot changer-src man example
 
 EXTRA_DIST = CHANGES COPYRIGHT COPYRIGHT-GNU
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-CONFIG_HEADER_IN = config.h.in
-CONFIG_HEADER_FULL = config.h
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = config.h
 CONFIG_CLEAN_FILES = 
@@ -151,21 +155,21 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status $(BUILT_SOURCES)
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
-$(srcdir)/aclocal.m4:  configure.in  acinclude.m4
+$(ACLOCAL_M4):  configure.in  acinclude.m4
 	cd $(srcdir) && $(ACLOCAL)
 
-config.status: configure
+config.status: $(srcdir)/configure
 	$(SHELL) ./config.status --recheck
-$(srcdir)/configure: configure.in $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES)
+$(srcdir)/configure: $(srcdir)/configure.in $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES)
 	cd $(srcdir) && $(AUTOCONF)
 
-$(CONFIG_HEADER): stamp-h
-stamp-h: $(CONFIG_HEADER_IN) $(top_builddir)/config.status
+config.h: stamp-h
+stamp-h: $(srcdir)/config.h.in $(top_builddir)/config.status
 	cd $(top_builddir) \
-	  && CONFIG_FILES= CONFIG_HEADERS=$(CONFIG_HEADER_FULL) \
+	  && CONFIG_FILES= CONFIG_HEADERS=config.h \
 	     $(SHELL) ./config.status
 	@echo timestamp > stamp-h
-$(srcdir)/$(CONFIG_HEADER_IN): $(srcdir)/stamp-h.in
+$(srcdir)/config.h.in: $(srcdir)/stamp-h.in
 $(srcdir)/stamp-h.in: $(top_srcdir)/configure.in $(ACLOCAL_M4) acconfig.h
 	cd $(top_srcdir) && $(AUTOHEADER)
 	echo timestamp > $(srcdir)/stamp-h.in
@@ -175,7 +179,7 @@ mostlyclean-hdr:
 clean-hdr:
 
 distclean-hdr:
-	rm -f $(CONFIG_HEADER)
+	rm -f config.h
 
 maintainer-clean-hdr:
 
@@ -260,7 +264,7 @@ dist-all: distdir
 distdir: $(DISTFILES)
 	rm -rf $(distdir)
 	mkdir $(distdir)
-	-chmod 755 $(distdir)
+	-chmod 777 $(distdir)
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  test -f $(distdir)/$$file \
@@ -271,17 +275,17 @@ distdir: $(DISTFILES)
 	  test -d $(distdir)/$$subdir		\
 	  || mkdir $(distdir)/$$subdir		\
 	  || exit 1;				\
-	  chmod 755 $(distdir)/$$subdir;	\
-	  (cd $$subdir && $(MAKE) distdir=../$(distdir)/$$subdir distdir) \
+	  chmod 777 $(distdir)/$$subdir;	\
+	  (cd $$subdir && $(MAKE) top_distdir=$(top_distdir) distdir=../$(distdir)/$$subdir distdir) \
 	    || exit 1; \
 	done
-	$(MAKE) distdir="$(distdir)" dist-hook
+	$(MAKE) top_distdir="$(distdir)" distdir="$(distdir)" dist-hook
 info: info-recursive
 dvi: dvi-recursive
 check: all-am
 	$(MAKE) check-recursive
 installcheck: installcheck-recursive
-all-recursive-am: $(CONFIG_HEADER)
+all-recursive-am: config.h
 	$(MAKE) all-recursive
 
 all-am: Makefile config.h

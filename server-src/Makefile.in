@@ -1,4 +1,4 @@
-# Makefile.in generated automatically by automake 1.1n from Makefile.am
+# Makefile.in generated automatically by automake 1.1o from Makefile.am
 
 # Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
@@ -57,11 +57,16 @@ host_alias = @host_alias@
 host_triplet = @host@
 target_alias = @target_alias@
 target_triplet = @target@
+ACLOCAL = @ACLOCAL@
 AMPLOT_CAT_COMPRESS = @AMPLOT_CAT_COMPRESS@
 AMPLOT_CAT_GZIP = @AMPLOT_CAT_GZIP@
 AMPLOT_CAT_PACK = @AMPLOT_CAT_PACK@
 AMPLOT_COMPRESS = @AMPLOT_COMPRESS@
 AR = @AR@
+AUTOCONF = @AUTOCONF@
+AUTOHEADER = @AUTOHEADER@
+AUTOMAKE = @AUTOMAKE@
+AWK = @AWK@
 AWK_VAR_ASSIGNMENT_OPT = @AWK_VAR_ASSIGNMENT_OPT@
 BUILD_AMPLOT_BIN = @BUILD_AMPLOT_BIN@
 BUILD_AMPLOT_LIBEXEC = @BUILD_AMPLOT_LIBEXEC@
@@ -98,6 +103,7 @@ KRB4COMMON_O = @KRB4COMMON_O@
 LEX = @LEX@
 LOG_DIR = @LOG_DIR@
 MAILER = @MAILER@
+MAKEINFO = @MAKEINFO@
 MT = @MT@
 MTX = @MTX@
 MT_FILE_FLAG = @MT_FILE_FLAG@
@@ -263,7 +269,7 @@ OBJECTS = amadmin.o amcheck.o amflush.o amgetidx.o amidxtaped.o $(amindexd_OBJEC
 default: all
 
 .SUFFIXES:
-.SUFFIXES: .c .o .sh .pl
+.SUFFIXES: .c .o .pl .sh
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
 	cd $(top_srcdir) && $(AUTOMAKE) --foreign server-src/Makefile
 
@@ -438,9 +444,6 @@ ID: $(HEADERS) $(SOURCES)
 TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES)
 	tags=; \
 	here=`pwd`; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
-	done; \
 	test -z "$(ETAGS_ARGS)$(SOURCES)$(HEADERS)$$tags" \
 	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $(SOURCES) $(HEADERS) -o $$here/TAGS)
 
@@ -480,7 +483,7 @@ install: install-exec install-data all
 
 uninstall: uninstall-binPROGRAMS uninstall-libexecPROGRAMS uninstall-binSCRIPTS
 
-all: $(PROGRAMS) $(SCRIPTS) Makefile
+all: Makefile $(PROGRAMS) $(SCRIPTS)
 
 install-strip:
 	$(MAKE) INSTALL_PROGRAM='$(INSTALL_PROGRAM) -s' install

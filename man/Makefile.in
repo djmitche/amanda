@@ -1,4 +1,4 @@
-# Makefile.in generated automatically by automake 1.1n from Makefile.am
+# Makefile.in generated automatically by automake 1.1o from Makefile.am
 
 # Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
@@ -54,12 +54,17 @@ host_alias = @host_alias@
 host_triplet = @host@
 target_alias = @target_alias@
 target_triplet = @target@
+ACLOCAL = @ACLOCAL@
 AMANDA_CFLAGS = @AMANDA_CFLAGS@
 AMPLOT_CAT_COMPRESS = @AMPLOT_CAT_COMPRESS@
 AMPLOT_CAT_GZIP = @AMPLOT_CAT_GZIP@
 AMPLOT_CAT_PACK = @AMPLOT_CAT_PACK@
 AMPLOT_COMPRESS = @AMPLOT_COMPRESS@
 AR = @AR@
+AUTOCONF = @AUTOCONF@
+AUTOHEADER = @AUTOHEADER@
+AUTOMAKE = @AUTOMAKE@
+AWK = @AWK@
 AWK_VAR_ASSIGNMENT_OPT = @AWK_VAR_ASSIGNMENT_OPT@
 BUILD_AMPLOT_BIN = @BUILD_AMPLOT_BIN@
 BUILD_AMPLOT_LIBEXEC = @BUILD_AMPLOT_LIBEXEC@
@@ -96,6 +101,7 @@ KRB4COMMON_O = @KRB4COMMON_O@
 LEX = @LEX@
 LOG_DIR = @LOG_DIR@
 MAILER = @MAILER@
+MAKEINFO = @MAKEINFO@
 MT = @MT@
 MTX = @MTX@
 MT_FILE_FLAG = @MT_FILE_FLAG@
@@ -311,7 +317,7 @@ install: install-exec install-data all
 
 uninstall: uninstall-man
 
-all: $(MANS) Makefile
+all: Makefile $(MANS)
 
 install-strip:
 	$(MAKE) INSTALL_PROGRAM='$(INSTALL_PROGRAM) -s' install

@@ -48,6 +48,11 @@ LOCSYSPATH="$LOCPATH:$SYSPATH"
 AC_ARG_WITH(includes,
     [   --with-includes=DIR    site header files for readline, etc in DIR],
     [
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-includes option.])
+	  ;;
+	esac
 	for dir in $withval; do
 	    if test -d "$dir"; then
 		AMANDA_CPPFLAGS="$AMANDA_CPPFLAGS -I$dir"
@@ -59,17 +64,14 @@ AC_ARG_WITH(includes,
     AMANDA_CPPFLAGS=
 )
 
-AC_ARG_WITH(rundump,
-    [   --with-rundump         use rundump (setuid-root) to invoke dump],
-    [
-        if test "$withval" = "yes"; then
-            AC_DEFINE(USE_RUNDUMP)
-        fi
-    ])
-
 AC_ARG_WITH(libraries,
     [   --with-libraries=DIR   site library directories for readline, etc in DIR],
     [
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-libraries option.])
+	  ;;
+	esac
 	for dir in $withval; do
 	    if test -d "$dir"; then
 		AMANDA_LDFLAGS="$AMANDA_LDFLAGS -L$dir"
@@ -84,14 +86,16 @@ AC_ARG_WITH(libraries,
 AC_ARG_WITH(configdir,
     [   --with-configdir=DIR   runtime config files in DIR [sysconfdir/amanda]],
     [
-	if test "$withval"; then
-	    CONFIG_DIR="$withval"
-	else
-	    AC_MSG_WARN([*** You must supply an argument to the --with-configdir option.])
-	fi
-    ]
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-configdir option.])
+	  ;;
+	*) CONFIG_DIR="$withval"
+	  ;;
+	esac
+    ],
+    : ${CONFIG_DIR=$sysconfdir/amanda}
 )
-: ${CONFIG_DIR:=$sysconfdir/amanda}
 CONFIG_DIR=`(
     test "x$prefix" = xNONE && prefix=$ac_default_prefix
     test "x$exec_prefix" = xNONE && exec_prefix=${prefix}
@@ -103,14 +107,16 @@ AC_SUBST(CONFIG_DIR)
 AC_ARG_WITH(indexdir,
     [   --with-indexdir=DIR    index of files dumped go in DIR [localstatedir/amanda-index]],
     [
-	if test "$withval"; then
-	    INDEX_DIR="$withval"
-	else
-	    AC_MSG_WARN([*** You must supply an argument to the --with-indexdir option.])
-	fi
-    ]
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-indexdir option.])
+	  ;;
+	*) INDEX_DIR="$withval"
+	  ;;
+	esac
+    ],
+    : ${INDEX_DIR=$localstatedir/amanda-index}
 )
-: ${INDEX_DIR:=$localstatedir/amanda-index}
 INDEX_DIR=`(
     test "x$prefix" = xNONE && prefix=$ac_default_prefix
     test "x$exec_prefix" = xNONE && exec_prefix=${prefix}
@@ -122,14 +128,16 @@ AC_SUBST(INDEX_DIR)
 AC_ARG_WITH(dbdir,
     [   --with-dbdir=DIR       curinfo database in DIR [localstatedir/amanda]],
     [
-	if test "$withval"; then
-	    DB_DIR="$withval"
-	else
-	    AC_MSG_WARN([*** You must supply an argument to the --with-dbdir option.])
-	fi
-    ]
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-dbdir option.])
+	  ;;
+	*) DB_DIR="$withval"
+	  ;;
+	esac
+    ],
+    : ${DB_DIR=$localstatedir/amanda}
 )
-: ${DB_DIR:=$localstatedir/amanda}
 DB_DIR=`(
     test "x$prefix" = xNONE && prefix=$ac_default_prefix
     test "x$exec_prefix" = xNONE && exec_prefix=${prefix}
@@ -141,14 +149,16 @@ AC_SUBST(DB_DIR)
 AC_ARG_WITH(logdir,
     [   --with-logdir=DIR      log files go in DIR [localstatedir/amanda]],
     [
-	if test "$withval"; then
-	    LOG_DIR="$withval"
-	else
-	    AC_MSG_WARN([*** You must supply an argument to the --with-logdir option.])
-	fi
-    ]
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-logdir option.])
+	  ;;
+	*) LOG_DIR="$withval"
+	  ;;
+	esac
+    ],
+    : ${LOG_DIR=$localstatedir/amanda}
 )
-: ${LOG_DIR:=$localstatedir/amanda}
 LOG_DIR=`(
     test "x$prefix" = xNONE && prefix=$ac_default_prefix
     test "x$exec_prefix" = xNONE && exec_prefix=${prefix}
@@ -159,10 +169,11 @@ AC_SUBST(LOG_DIR)
 
 AC_ARG_WITH(suffixes,
     [   --with-suffixes        install binaries with version string appended to name],
-    USE_VERSION_SUFFIXES=yes
+    USE_VERSION_SUFFIXES=$withval,
+    : ${USE_VERSION_SUFFIXES=no}
 )
-: ${USE_VERSION_SUFFIXES:=no}
-if test "$USE_VERSION_SUFFIXES" = yes; then
+case "$USE_VERSION_SUFFIXES" in
+y | ye | yes)
     AC_DEFINE(USE_VERSION_SUFFIXES)
 
     program_suffix="-$VERSION"
@@ -185,9 +196,12 @@ EOF_SED
  
     # sed with no file args requires a program.
     test "$program_transform_name" = "" && program_transform_name="s,x,x,"
-else
-    USE_VERSION_SUFFIXES=no
-fi
+  ;;
+n | no) USE_VERSION_SUFFIXES=no
+  ;;
+*) AC_MSG_ERROR([*** You must not supply an argument to --with-suffixes option.])
+  ;;
+esac
 AC_SUBST(USE_VERSION_SUFFIXES)
 
 BUILD_CHANGER_PROGS_LIBEXEC="seagate-changer"
@@ -218,164 +232,223 @@ AC_SUBST(BUILD_CLIENT_SCRIPTS_LIBEXEC)
 AC_ARG_WITH(client-only,
     [   --with-client-only     build Amanda for a client only machine],
     [
-	BUILD_CHANGER_PROGS_LIBEXEC=
-	BUILD_CHANGER_SCRIPTS_LIBEXEC=
-	BUILD_SERVER_PROGS_BIN=
-	BUILD_SERVER_PROGS_LIBEXEC=
-	BUILD_SERVER_SCRIPTS_BIN=
+        case "$withval" in
+        y | ye | yes)
+	    BUILD_CHANGER_PROGS_LIBEXEC=
+	    BUILD_CHANGER_SCRIPTS_LIBEXEC=
+	    BUILD_SERVER_PROGS_BIN=
+	    BUILD_SERVER_PROGS_LIBEXEC=
+	    BUILD_SERVER_SCRIPTS_BIN=
+	  ;;
+	n | no)
+	    AC_MSG_ERROR([*** use --with-server-only instead of --without-client-only])
+	  ;;
+	*)
+	    AC_MSG_ERROR([*** You must not supply an argument to --with-client-only option.])
+	  ;;
+	esac
     ]
 )
 
 AC_ARG_WITH(server-only,
     [   --with-server-only     build Amanda for a server only machine],
     [
-	BUILD_CLIENT_PROGS_LIBEXEC=
-	BUILD_CLIENT_SCRIPTS_LIBEXEC=
+	case "$withval" in
+	y | ye | yes)
+	    BUILD_CLIENT_PROGS_LIBEXEC=
+	    BUILD_CLIENT_SCRIPTS_LIBEXEC=
+	  ;;
+	n | no)
+	    AC_MSG_ERROR([*** use --with-client-only instead of --without-server-only])
+	  ;;
+	*)
+	    AC_MSG_ERROR([*** You must not supply an argument to --with-server-only option.])
+	  ;;
+	esac
     ]
 )
 
 AC_ARG_WITH(server,
    [   --with-server=HOST     default amanda index server [`uname -n`]],
    [
-	if test "$withval"; then
-	    DEFAULT_SERVER="$withval"
-	else
-	    AC_MSG_WARN([*** You must supple an an argument to the --with-server option.])
-	fi
-    ]
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-server option.])
+	  ;;
+	*) DEFAULT_SERVER="$withval"
+	  ;;
+	esac
+   ],
+   : ${DEFAULT_SERVER=`uname -n`}
 )
-: ${DEFAULT_SERVER:=`uname -n`}
 AC_DEFINE_UNQUOTED(DEFAULT_SERVER,"$DEFAULT_SERVER")
 AC_SUBST(DEFAULT_SERVER)
 
-AC_ARG_WITH(dont-force-uid,
-    [   --with-dont-force-uid  do not force the uid to --with-user],
-    FORCE_USERID=no
+AC_ARG_WITH(force-uid,
+    [   --without-force-uid    do not force the uid to --with-user],
+    FORCE_USERID="$withval",
+    : ${FORCE_USERID=yes}
 )
-: ${FORCE_USERID:=yes}
-if test "$FORCE_USERID" = yes; then
-    AC_DEFINE(FORCE_USERID)
-fi
+case "$FORCE_USERID" in
+y | ye | yes) AC_DEFINE(FORCE_USERID)
+  ;;
+n | no) :
+  ;;
+*) AC_MSG_ERROR([*** You must not supply an argument to --with-force-uid option.])
+esac
 
 AC_ARG_WITH(user,
-    [   --with-user=USER       force execution to USER on client systems [amanda]],
+    [   --with-user=USER       force execution to USER on client systems [${LOGIN-${USER-${LOGNAME-`whoami`}}}]],
     [
-	if test "$withval"; then
-	    CLIENT_LOGIN="$withval"
-	else
-	    AC_MSG_WARN([*** You must supply an argument to the --with-user option.])
-	fi
-    ]
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-user option.])
+	  ;;
+	*) CLIENT_LOGIN="$withval"
+	  ;;
+	esac
+    ],
+    : ${CLIENT_LOGIN=${LOGIN-${USER-${LOGNAME-`whoami`}}}}
 )
-: ${CLIENT_LOGIN:=amanda}
 AC_DEFINE_UNQUOTED(CLIENT_LOGIN,"$CLIENT_LOGIN")
 AC_SUBST(CLIENT_LOGIN)
 
 AC_ARG_WITH(group,
     [   --with-group=USER      group allowed to execute setuid-root programs [`(id 2>/dev/null; echo amanda) | sed -e 's/^.*gid=[0-9]*(\([^)]*\)).*/\1/' | grep -v = | head -1`]],
     [
-	if test "$withval"; then
-	    SETUID_GROUP="$withval"
-	else
-	    AC_MSG_WARN([*** You must supply an argument to the --with-group option.])
-	fi
-    ]
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-group option.])
+	  ;;
+	*) SETUID_GROUP="$withval"
+	  ;;
+	esac
+    ],
+    : ${SETUID_GROUP=`(id 2>/dev/null; echo amanda) | sed -e 's/^.*gid=[0-9]*(\([^)]*\)).*/\1/' | grep -v = | head -1`}
 )
-[: ${SETUID_GROUP:=`(id 2>/dev/null; echo amanda) | sed -e 's/^.*gid=[0-9]*(\([^)]*\)).*/\1/' | grep -v = | head -1`}]
 AC_SUBST(SETUID_GROUP)
+
+AC_ARG_WITH(rundump,
+    [   --with-rundump         use rundump (setuid-root) to invoke dump],
+    USE_RUNDUMP="$withval",
+    : ${USE_RUNDUMP=no}
+)
+case "$USE_RUNDUMP" in
+n | no) : ;;
+y |  ye | yes) AC_DEFINE(USE_RUNDUMP)
+  ;;
+*) AC_MSG_ERROR([*** You must not supply an argument to --with-rundump option.])
+  ;;
+esac
 
 AC_ARG_WITH(config,
    [   --with-config=CONFIG   default configuration [DailySet1]],
    [
-	if test "$withval"; then
-	    DEFAULT_CONFIG="$withval"
-	else
-	    AC_MSG_WARN([*** You must supply an argument to the --with-config option.])
-	fi
-   ]
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-config option.])
+	  ;;
+	*) DEFAULT_CONFIG="$withval"
+	  ;;
+	esac
+   ],
+   : ${DEFAULT_CONFIG=DailySet1}
 )
-: ${DEFAULT_CONFIG:=DailySet1}
 AC_DEFINE_UNQUOTED(DEFAULT_CONFIG,"$DEFAULT_CONFIG")
 AC_SUBST(DEFAULT_CONFIG)
 
 AC_ARG_WITH(tape-server,
     [   --with-tape-server=HOST default restoring tape server is HOST [--with-server]],
     [
-	if test "$withval"; then
-	    DEFAULT_TAPE_SERVER="$withval"
-	else
-	    AC_MSG_WARN([*** You must supply an argument to the --with-tape-server option.])
-	fi
-    ]
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-tape-server option.])
+	  ;;
+	*) DEFAULT_TAPE_SERVER="$withval"
+	  ;;
+	esac
+    ],
+    : ${DEFAULT_TAPE_SERVER=$DEFAULT_SERVER}
 )
-: ${DEFAULT_TAPE_SERVER:=$DEFAULT_SERVER}
 AC_DEFINE_UNQUOTED(DEFAULT_TAPE_SERVER,"$DEFAULT_TAPE_SERVER")
 AC_SUBST(DEFAULT_TAPE_SERVER)
 
 AC_ARG_WITH(tape-device,
     [   --with-tape-device=ARG restoring tape server HOST's no rewinding tape drive],
     [
-	if test "$withval"; then
-	    DEFAULT_TAPE_DEVICE="$withval"
-	else
-	    AC_MSG_WARN([*** You must supply an argument to the --with-tape-device option.])
-	fi
-    ]
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-tape-device option.])
+	  ;;
+	*) DEFAULT_TAPE_DEVICE="$withval"
+	  ;;
+	esac
+    ],
+    : ${DEFAULT_TAPE_DEVICE=/dev/null}
 )
-: ${DEFAULT_TAPE_DEVICE:=/dev/null}
 AC_DEFINE_UNQUOTED(DEFAULT_TAPE_DEVICE,"$DEFAULT_TAPE_DEVICE")
 AC_SUBST(DEFAULT_TAPE_DEVICE)
 
-AC_ARG_WITH(rew-tape-drive,
+AC_ARG_WITH(rew-tape,
     [   --with-rew-tape=ARG    rewinding tape device for changer scripts is ARG],
     [
-	if test "$withval"; then
-	    TAPE_REWIND_DEVICE="$withval"
-	else
-	    AC_MSG_WARN([*** You must supply an argument to the --with-re-tape-drive option.])
-	fi
-    ]
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-rew-tape option.])
+	  ;;
+	*) TAPE_REWIND_DEVICE="$withval"
+	  ;;
+	esac
+    ],
+    : ${TAPE_REWIND_DEVICE=/dev/null}
 )
-: ${TAPE_REWIND_DEVICE:=/dev/null}
 AC_DEFINE_UNQUOTED(TAPE_REWIND_DEVICE,"$TAPE_REWIND_DEVICE")
 AC_SUBST(TAPE_REWIND_DEVICE)
 
-AC_ARG_WITH(norew-tape-drive,
+AC_ARG_WITH(norew-tape,
     [   --with-norew-tape=ARG  norewinding tape device for changer scripts is ARG],
     [
-	if test "$withval"; then
-	    TAPE_NO_REWIND_DEVICE="$withval"
-	else
-	    AC_MSG_WARN([*** You must supple an argument to the --with-norew-tape-drive option.])
-	fi
-    ]
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-norew-tape option.])
+	  ;;
+	*) TAPE_NO_REWIND_DEVICE="$withval"
+	  ;;
+	esac
+    ],
+    : ${TAPE_NO_REWIND_DEVICE=/dev/null}
 )
-: ${TAPE_NO_REWIND_DEVICE:=/dev/null}
 AC_DEFINE_UNQUOTED(TAPE_NO_REWIND_DEVICE,"$TAPE_NO_REWIND_DEVICE")
 AC_SUBST(TAPE_NO_REWIND_DEVICE)    
 
 AC_ARG_WITH(fqdn,
     [   --with-fqdn            use FQDN's to backup multiple networks],
-    USE_FQDN=yes
+    USE_FQDN=$withval,
+    : ${USE_FQDN=no}
 )
-: ${USE_FQDN:=no}
-if test "$USE_FQDN" = yes; then
-    AC_DEFINE(USE_FQDN)
-fi
+case "$USE_FQDN" in
+n | no) : ;;
+y |  ye | yes) AC_DEFINE(USE_FQDN)
+  ;;
+*) AC_MSG_ERROR([*** You must not supply an argument to --with-fqdn option.])
+  ;;
+esac
 
 AC_ARG_WITH(smbclient,
     [   --with-smbclient[=PATH] Compile in Samba PC backup support, where PATH is the location of smbclient],
     [
-	if test "$withval"; then
-	    SAMBA_CLIENT="$withval"
-	else
+	case "$withval" in
+ 	y | ye | yes)
 	    AC_PATH_PROGS(SAMBA_CLIENT,smbclient,,$LOCSYSPATH)
-	fi
-	if test -z "$SAMBA_CLIENT"; then
-	    AC_MSG_WARN([*** You requested Samba support but you did not supply the location])
-	    AC_MSG_WARN([*** of smbclient to --with-smbclient and configure was unable to find])
-	    AC_MSG_WARN([*** smbclient on your system.])
-	fi
+	    if test -z "$SAMBA_CLIENT"; then
+	        AC_MSG_ERROR([*** please specify --with-smbclient=/some/dir/smbclient])
+	    fi
+          ;;
+        n | no) unset SAMBA_CLIENT
+          ;;
+        *) SAMBA_CLIENT="$withval"
+          ;;
+        esac
     ]
 )
 if test "$SAMBA_CLIENT"; then
@@ -388,58 +461,51 @@ AC_ARG_WITH(gnutar-listed-incremental,
    [
 	case "$withval" in
 	    n | no)		unset GNUTAR_LIST_DIR ;;
-	    y | ye | yes)	: ${GNUTAR_LIST_DIR:=$localstatedir/amanda-gnutar-lists} ;;
-	    *)			: ${GNUTAR_LIST_DIR:="$withval"} ;;
+	    y | ye | yes)	: ${GNUTAR_LIST_DIR=$localstatedir/amanda-gnutar-lists} ;;
+	    *)			GNUTAR_LIST_DIR="$withval" ;;
 	esac
-    ]
+    ],
+    : ${GNUTAR_LIST_DIR=$localstatedir/amanda-gnutar-lists}
 )
-: ${GNUTAR_LIST_DIR:=$localstatedir/amanda-gnutar-lists}
-(
-	tmp=`eval echo "$GNUTAR_LIST_DIR"`
-	if test "$tmp"; then
-	    AC_DEFINE_UNQUOTED(GNUTAR_LISTED_INCREMENTAL_DIR,"$tmp")
-        fi
-)
-
-AC_ARG_ENABLE(gnutar-atime-preserve,
-    [   --enable-gnutar-atime-preserve  gnutar preserves atime, do not use],
-    GNUTAR_ATIME_PRESERVE=$enableval
-)
-: ${GNUTAR_ATIME_PRESERVE=no}
-case "$GNUTAR_ATIME_PRESERVE" in
-    n | no) : ;;
-    y | ye | yes) 
-	AC_DEFINE(ENABLE_GNUTAR_ATIME_PRESERVE)
-    ;;
-esac
+if test "$GNUTAR_LIST_DIR"; then
+    AC_DEFINE_UNQUOTED(GNUTAR_LISTED_INCREMENTAL_DIR,"$tmp")
+fi
 
 AC_ARG_WITH(bsd-security,
     [   --with-bsd-security    use BSD rsh/rlogin style security],
-    BSD_SECURITY=yes
+    BSD_SECURITY=$withval,
+    : ${BSD_SECURITY=no}
 )
-: ${BSD_SECURITY:=no}
-if test "$BSD_SECURITY" = yes; then
-    AC_DEFINE(BSD_SECURITY)
-fi
+case "$BSD_SECURITY" in
+n | no) : ;;
+y |  ye | yes) AC_DEFINE(BSD_SECURITY)
+  ;;
+*) AC_MSG_ERROR([*** You must not supply an argument to --with-bsd-security option.])
+  ;;
+esac
 
 AC_ARG_WITH(amandahosts,
     [   --with-amandahosts     use .amandahosts instead .rhosts],
-    USE_AMANDAHOSTS=yes
+    USE_AMANDAHOSTS=$withval,
+    : ${USE_AMANDAHOSTS=no}
 )
-: ${USE_AMANDAHOSTS:=no}
-if test "$USE_AMANDAHOSTS" = yes; then
-    AC_DEFINE(USE_AMANDAHOSTS)
-fi
+case "$USE_AMANDAHOSTS" in
+n | no) : ;;
+y |  ye | yes) AC_DEFINE(USE_AMANDAHOSTS)
+  ;;
+*) AC_MSG_ERROR([*** You must not supply an argument to --with-amandahosts option.])
+  ;;
+esac
 
-dnl Speicify --with-krb4 if kerberos bits are in somewhere other than the
+dnl Specify --with-krb4 if kerberos bits are in somewhere other than the
 dnl listed KRB4_SPOTS.  We only compile kerberos support in if the right 
 dnl files are there.
 
 AC_ARG_WITH(krb4-security,
     [   --with-krb4=DIR   kerberos bits can be found here		],
-    KRB4_SPOTS="$withval"
+    KRB4_SPOTS="$withval",
+    : ${KRB4_SPOTS="/usr/kerberos /usr/cygnus /usr /opt/kerberos"}
 )
-: ${KRB4_SPOTS="/usr/kerberos /usr/cygnus /usr /opt/kerberos"}
 
 AC_MSG_CHECKING(kerberos4 bits)
 if test -f common-src/krb4-security.c ; then
@@ -468,102 +534,119 @@ fi
 AC_ARG_WITH(server-principal,
     [     --with-server-principal=ARG    server host principal  ["amanda"]],
     [
-	if test "$withval"; then
+        case "$withval" in
+        "" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-server-principal option.])
+          ;;
+	*)
 	    SERVER_HOST_PRINCIPLE="$withval"
-	else
-	    AC_MSG_WARN([*** You must supply an argument to the --with-server-principal option.])
-	fi
-    ]
+	  ;;
+	esac
+    ],
+    : ${SERVER_HOST_PRINCIPLE="amanda"}
 )
-: ${SERVER_HOST_PRINCIPLE:="amanda"}
 AC_DEFINE_UNQUOTED(SERVER_HOST_PRINCIPLE,"$SERVER_HOST_PRINCIPLE")
 
 AC_ARG_WITH(server-instance,
     [     --with-server-instance=ARG     server host instance   ["amanda"]],
     [
-	if test "$withval"; then
-	    SERVER_HOST_INSTANCE="$withval"
-	else
-	    AC_MSG_WARN([*** You must supply an argument to the --with-server-instance option.])
-	fi
-    ]
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-server-instance option.])
+	  ;;
+	*) SERVER_HOST_INSTANCE="$withval"
+	  ;;
+	esac
+    ],
+    : ${SERVER_HOST_INSTANCE="amanda"}
 )
-: ${SERVER_HOST_INSTANCE:="amanda"}
 AC_DEFINE_UNQUOTED(SERVER_HOST_INSTANCE,"$SERVER_HOST_INSTANCE")
 
 AC_ARG_WITH(server-keyfile,
     [     --with-server-keyfile=ARG      server host key file   ["/.amanda"]],
     [
-	if test "$withval"; then
-	    SERVER_HOST_KEY_FILE="$withval"
-	else
-	    AC_MSG_WARN([*** You must supply an argument to the --with-server-keyfile option.])
-	fi
-    ]
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-server-keyfile option.])
+	  ;;
+	*) SERVER_HOST_KEY_FILE="$withval"
+	  ;;
+	esac
+    ],
+    : ${SERVER_HOST_KEY_FILE="/.amanda"}
 )
-: ${SERVER_HOST_KEY_FILE:="/.amanda"}
 AC_DEFINE_UNQUOTED(SERVER_HOST_KEY_FILE,"$SERVER_HOST_KEY_FILE")
 
 AC_ARG_WITH(client-principal,
     [     --with-client-principal=ARG    client host principal  ["rcmd"]],
     [
-	if test "$withval"; then
-	    CLIENT_HOST_PRINCIPLE="$withval"
-	else
-	    AC_MSG_WARN([*** You must supply an argument to the --with-client-principal option.])
-	fi
-    ]
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-client-principal option.])
+	  ;;
+	*) CLIENT_HOST_PRINCIPLE="$withval"
+	  ;;
+	esac
+    ],
+    : ${CLIENT_HOST_PRINCIPLE="rcmd"}
 )
-: ${CLIENT_HOST_PRINCIPLE:="rcmd"}
 AC_DEFINE_UNQUOTED(CLIENT_HOST_PRINCIPLE,"$CLIENT_HOST_PRINCIPLE")
 
 AC_ARG_WITH(client-instance,
     [     --with-client-instance=ARG     client host instance   [HOSTNAME_INSTANCE]],
     [
-	if test "$withval"; then
-	    CLIENT_HOST_INSTANCE="$withval"
-	else
-	    AC_MSG_WARN([*** You must supply an argument to the --with-client-instance option.])
-	fi
-    ]
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-client-instance option.])
+	  ;;
+	*) CLIENT_HOST_INSTANCE="$withval"
+	  ;;
+	esac
+    ],
+    : ${CLIENT_HOST_INSTANCE=HOSTNAME_INSTANCE}
 )
-: ${CLIENT_HOST_INSTANCE:=HOSTNAME_INSTANCE}
 AC_DEFINE_UNQUOTED(CLIENT_HOST_INSTANCE,$CLIENT_HOST_INSTANCE)
 
 AC_ARG_WITH(client-keyfile,
     [     --with-client-keyfile=ARG      client host key file   [KEYFILE]],
     [
-	if test "$iwthval"; then
-	    CLIENT_HOST_KEY_FILE="$withval"
-	else
-	    AC_MSG_WARN([*** You must supply an argument to the --with-client-keyfile option.])
-	fi
-    ]
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-client-keyfile option.])
+	  ;;
+	*) CLIENT_HOST_KEY_FILE="$withval"
+	  ;;
+	esac
+    ],
+    : ${CLIENT_HOST_KEY_FILE=KEYFILE}
 )
-: ${CLIENT_HOST_KEY_FILE:=KEYFILE}
 AC_DEFINE_UNQUOTED(CLIENT_HOST_KEY_FILE,$CLIENT_HOST_KEY_FILE)
 
 AC_ARG_WITH(ticket-lifetime,
     [     --with-ticket-lifetime=ARG     ticket lifetime        [128]],
     [
-	if test "$withval"; then
-	    TICKET_LIFETIME="$withval"
-	else
-	    AC_MSG_WARN([*** You must supply an argument to the --with-ticket-lifetime option.])
-	fi
-    ]
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-ticket-lifetime option.])
+	  ;;
+	*) TICKET_LIFETIME="$withval"
+	  ;;
+	esac
+    ],
+    : ${TICKET_LIFETIME=128}
 )
-: ${TICKET_LIFETIME:=128}
 AC_DEFINE_UNQUOTED(TICKET_LIFETIME,$TICKET_LIFETIME)
 
 AC_ARG_WITH(db,
     [   --with-db={db,dbm,gdbm,ndbm} use the given library for dbm_open],
     [
-	if test "$withval"; then
-	    DB_STYLE="$withval"
-	else
-	    AC_MSG_WARN([*** You must supply an argument to the --with-db option.])
-	fi
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-db option.])
+	  ;;
+	*) DB_STYLE="$withval"
+	  ;;
+	esac
     ]
 )
 if test "$DB_STYLE"; then
@@ -573,53 +656,75 @@ if test "$DB_STYLE"; then
 	gdbm)	;;
 	ndbm)	;;
 	*)
+	    AC_MSG_ERROR([*** Unknown argument $DB_STYLE given to --with-db.  Choose from db, dbm, gdbm, ndbm.])
 	    DB_STYLE=
-	    AC_MSG_WARN([*** Unknown argument $withval given to --with-db.  Choose from db, dbm, gdbm, ndbm.])
 	    ;;
     esac
 fi
     
 AC_ARG_WITH(mmap,
     [   --with-mmap            force use of mmap instead of shared memory support],
-    FORCE_MMAP=yes
+    FORCE_MMAP=$withval,
+    : ${FORCE_MMAP=no}
 )
-: ${FORCE_MMAP:=no}
+case "$FORCE_MMAP" in
+y | ye | yes | n | no) : ;;
+*) AC_MSG_ERROR([*** You must not supply an argument to --with-mmap.])
+  ;;
+esac
 
-AC_ARG_ENABLE(buffered-dump,
-    [   --enable-buffered-dump buffer the dumping sockets on the server for speed],
-    DUMPER_SOCKET_BUFFERING=yes
+AC_ARG_WITH(buffered-dump,
+    [   --with-buffered-dump   buffer the dumping sockets on the server for speed],
+    DUMPER_SOCKET_BUFFERING=$withval,
+    : ${DUMPER_SOCKET_BUFFERING=no}
 )
-: ${DUMPER_SOCKET_BUFFERING:=no}
-if test "$DUMPER_SOCKET_BUFFERING" = yes; then
-    AC_DEFINE(DUMPER_SOCKET_BUFFERING)
-fi    
+case "$DUMPER_SOCKET_BUFFERING" in
+n | no) :
+  ;;
+y | ye | yes) AC_DEFINE(DUMPER_SOCKET_BUFFERING)
+  ;;
+*) AC_MSG_ERROR([*** You must not supply an argument to --with-buffered-dump.])
+  ;;
+esac
 
 AC_ARG_WITH(assertions,
     [   --with-assertions      compile assertions into code],
-    ASSERTIONS=yes
+    ASSERTIONS="$withval",
+    : ${ASSERTIONS=no}
 )
-: ${ASSERTIONS:=no}
-if test "$ASSERTIONS" = yes; then
-    AC_DEFINE(ASSERTIONS)
-fi
+case "$ASSERTIONS" in
+n | no) : ;;
+y |  ye | yes) AC_DEFINE(ASSERTIONS)
+  ;;
+*) AC_MSG_ERROR([*** You must not supply an argument to --with-assertions option.])
+  ;;
+esac
 
 AC_ARG_WITH(debugging,
-    [   --with-debugging       record runtime debugging information into /tmp],
-    DEBUGGING=yes
+    [   --without-debugging    do not record runtime debugging information into /tmp],
+    DEBUGGING="$withval",
+    : ${DEBUGGING=yes}
 )
-: ${DEBUGGING:=no}
-if test "$DEBUGGING" = yes; then
-    AC_DEFINE(DEBUG_CODE)
-fi
+case "$DEBUGGING" in
+n | no) : ;;
+y |  ye | yes) AC_DEFINE(DEBUG_CODE)
+  ;;
+*) AC_MSG_ERROR([*** You must not supply an argument to --without-debugging option.])
+  ;;
+esac
 
 AC_ARG_WITH(pid-debug-files,
     [   --with-pid-debug-files append pid's to program's /tmp debugging filenames],
-    DEBUG_FILE_WITH_PID=yes
+    DEBUG_FILE_WITH_PID="$withval",
+    : ${DEBUG_FILE_WITH_PID=no}
 )
-: ${DEBUG_FILE_WITH_PID:=no}
-if test "$DEBUG_FILE_WITH_PID" = yes; then
-    AC_DEFINE(DEBUG_FILE_WITH_PID)
-fi
+case "$DEBUG_FILE_WITH_PID" in
+n | no) : ;;
+y |  ye | yes) AC_DEFINE(DEBUG_FILE_WITH_PID)
+  ;;
+*) AC_MSG_ERROR([*** You must not supply an argument to --with-pid-debug-files option.])
+  ;;
+esac
 
 (
     test "x$prefix" = xNONE && prefix=$ac_default_prefix
@@ -855,6 +960,7 @@ case "$DUMP" in
     *vdump*)
 	AC_DEFINE(OSF1_VDUMP)
 	AC_DEFINE(USE_RUNDUMP)
+	AC_MSG_WARN([*** enabling rundump because vdump must run as root])
 	;;
 esac
 
@@ -867,6 +973,7 @@ AC_PATH_PROGS(XFSDUMP,xfsdump,,$SYSLOCPATH)
 if test "$XFSDUMP"; then
     AC_DEFINE_UNQUOTED(XFSDUMP,"$XFSDUMP")
     AC_DEFINE(USE_RUNDUMP)
+    AC_MSG_WARN([*** enabling rundump because xfsdump must be run as root])
 fi
 AC_PATH_PROGS(XFSRESTORE,xfsrestore,,$SYSLOCPATH)
 if test "$XFSDUMP"; then
@@ -1340,9 +1447,11 @@ ICE_CHECK_DECL(setsockopt,sys/types.h sys/socket.h)
 AC_CHECK_FUNCS(shmget,
     [
 	AMANDA_FUNC_SHM_ARG_TYPE
-	if test "$FORCE_MMAP" = no; then
+	case "$FORCE_MMAP" in
+	n | no)
 	    AC_DEFINE(HAVE_SYSVSHM)
-	fi
+	  ;;
+	esac
     ]
 )
 ICE_CHECK_DECL(shmat,sys/types.h sys/ipc.h sys/shm.h)
@@ -1351,17 +1460,20 @@ ICE_CHECK_DECL(shmdt,sys/types.h sys/ipc.h sys/shm.h)
 ICE_CHECK_DECL(shmget,sys/types.h sys/ipc.h sys/shm.h)
 
 if test "$ac_cv_func_mmap_fixed_mapped" != yes; then
-    if test "$FORCE_MMAP" = yes; then
-	AC_MSG_WARN([*** --with-mmap used on a system with no mmap() support!])
-	AC_MSG_WARN([*** This system will not support the Amanda server.])
-	NO_SERVER_MODE=true
-    else
+    case "$FORCE_MMAP" in
+    n | no)
 	if test "$ac_cv_func_shmget" != yes; then
 	    AC_MSG_WARN([*** Neither shmget() nor mmap() found!])
 	    AC_MSG_WARN([*** This system will not support the Amanda server.])
 	    NO_SERVER_MODE=true
 	fi
-    fi
+      ;;
+    y | ye | yes)
+	AC_MSG_WARN([*** --with-mmap used on a system with no mmap() support!])
+	AC_MSG_WARN([*** This system will not support the Amanda server.])
+	NO_SERVER_MODE=true
+      ;;
+    esac
 fi
 
 AC_CHECK_FUNCS(sigaction sigemptyset sigvec)
