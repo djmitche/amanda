@@ -82,6 +82,17 @@ If you don't call the script, '/etc/dump' will definitely fail!
 Michael Schmitz (mc@col.sw-ley.de)
 Fri Oct 25 17:35:39 MET 1996
  
+
+It has been reported that amandad core dumps on HP/UX 10 if compiled
+against a shared amanda or amclient library.  Issuing
+--disabled-shared at configure time has fixed this problem.  If you
+get shared libraries running correctly on HP/UX, please report this to
+the amanda-hackers mailing list so that this note can be updated, as
+it may be a transitory gcc (2.7.2) or libtool (1.0) bug.
+
+Alexandre Oliva
+Thu Oct 28 16:40:20 EDT 1997
+
 ---------------------------------------------------------------------------
 IRIX 5.2
 --------
@@ -115,6 +126,10 @@ We have the client-side running under Alpha OSF/1 2.0 at our site.
 Amanda should also work under OSF/1 3.0, but vdump is not yet
 supported.
 
+As of amanda 2.4.0, vdump is supported.  However, some people have
+reported problems with shared libraries on Digital Unix 4.0.  It may
+be a transitory bug in libtool 1.0.  Reports that shared libraries
+work on such a platform are welcome.
 
 ---------------------------------------------------------------------------
 BSDI BSD/386 1.1
