@@ -1,0 +1,97 @@
+.\"
+.de EX
+.if t .ft C
+.nf
+..
+.de EE
+.fi
+.if t .ft
+..
+.de P1
+\fB\\$1\fP \fI\\$2\fP \\$3 \fI\\$4\fP \\$5
+..
+.de P2
+\fB\\$1\fP \fI\\$2\fP \fI\\$3\fP
+..
+.de P3
+\fB\\$1\fP \\$2 \fI\\$3\fP \\$4 \fI\\$5\fP \\$6 \\$7
+..
+.TH AMSTATUS 8
+.SH NAME
+amstatus \- give the current state of an amanda run
+.SH SYNOPSIS
+.B amstatus
+[--config]
+.I config
+[--file 
+.I amdumpfile
+]
+[--summary]
+[--dumping]
+[--waitdumping]
+[--waittaper]
+[--dumpingtape]
+[--writingtape]
+[--finished]
+[--failed]
+[--estimate]
+[--gestimate]
+.SH DESCRIPTION
+.B Amstatus
+give the current state of an amanda run in the 
+.I config
+configuration.
+.LP
+See the
+.IR amanda (8)
+man page for more details about Amanda.
+.SH OPTIONS
+All options can be abreviated to the shortest non-ambiguous sub-string.
+If no options is given then everythings is printed
+.TP
+.B "[--config]" config
+Specify the amanda configuration you want to print the state.
+.TP
+.B --file amdumpfile
+Specify an alternate file instead of the
+.I amdump
+file.
+.TP
+.B --summary
+Print a summary of the state of the run.
+.TP
+.B --dumping
+Print all partitions that are dumping.
+.TP
+.B --waitdumping|wdumping
+Print all partitions that wait to be dumped.
+.TP
+.B --waittaper|wtaper
+Print all partitions dumped that wait to be written to tape.
+.TP
+.B --dumpingtape|dtape
+Print all partitions that are dumping directly to tape.
+.TP
+.B --writingtape|wtape
+Print all partitions that are writting to tape.
+.TP
+.B --finished
+Print all partitions that are dumped and written to tape.
+.TP
+.B --failed|error
+Print all partitions that failed.
+.TP
+.B --estimate
+Print all partitions that the estimate are finished. Work only during the
+estimate phase.
+.TP
+.B --gestimate|gettingestimate
+Print all partitions that the estimate are not finished. Work only during the
+estimate phase.
+
+.SH "SEE ALSO"
+amanda(8),
+amcheck(8),
+amdump(8),
+amrestore(8),
+amadmin(8)

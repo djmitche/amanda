@@ -1,0 +1,432 @@
+#!@PERL@
+#
+
+# Run perl.
+eval '(exit $?0)' && eval 'exec @PERL@ -S $0 ${1+"$@"}'
+	 & eval 'exec @PERL@ -S $0 $argv:q'
+		if 0;
+
+require "newgetopt.pl";
+
+$confdir="@CONFIG_DIR@";
+$prefix='@prefix@';
+
+$exec_prefix="@exec_prefix@";
+$libexecdir="@libexecdir@";
+
+$USE_VERSION_SUFFIXES='@USE_VERSION_SUFFIXES@';
+$suf = '';
+if ( $USE_VERSION_SUFFIXES =~ /^yes$/i ) {
+        $suf='--@VERSION@';
+}
+
+$result = &NGetOpt (	"summary","dumping|d",
+							"waitdumping|wdumping","waittaper|wtaper",
+							"dumpingtape|dtape", "writingtape|wtape",
+							"finished","failed|error",
+							"estimate","gestimate|gettingestimate",
+							"config|c:s","file:s",
+							);
+if($result !=1 ) {
+	usage();
+}
+
+if( defined $opt_config ) {
+	$conf = $opt_config;
+}
+else {
+	if($#ARGV == 0 ) {
+		$conf=$ARGV[0];
+	}
+	else {
+		usage();
+	}
+}
+
+if ( ! -d "$confdir/$conf" ) {
+    print "amdump$SUF: could not find directory $confdir/$conf";
+    exit 1;
+}
+
+$pwd = `pwd`;
+chomp $pwd;
+chdir "$confdir/$conf";
+
+$logdir=`$libexecdir/getconf$SUF logdir`;
+chomp $logdir;
+$errfile="$logdir/amdump";
+
+$nb_options = defined( $opt_status ) +
+				  defined( $opt_dumping ) +
+				  defined( $opt_waitdumping ) +
+				  defined( $opt_waittaper ) +
+				  defined( $opt_dumpingtape ) +
+				  defined( $opt_writingtape ) +
+				  defined( $opt_finished ) +
+				  defined( $opt_estimate ) +
+				  defined( $opt_gestimate ) +
+				  defined( $opt_failed );
+
+if($nb_options == 0 ) {
+	$opt_status      = 1;
+	$opt_dumping     = 1;
+	$opt_waitdumping = 1;
+	$opt_waittaper   = 1;
+	$opt_dumpingtape = 1;
+	$opt_writingtape = 1;
+	$opt_finished    = 1;
+	$opt_failed      = 1;
+	$opt_gestimate   = 1;
+	$opt_estimate    = 1;
+}
+
+if( defined $opt_file) {
+	$errfile = "$pwd/$opt_file";
+	$errfile = "$logdir/$opt_file" if ( ! (-f $errfile ));
+}
+
+open(AMDUMP,"<$errfile") || die("no $errfile file");
+print "Using $errfile\n\n";
+
+while(<AMDUMP>) {
+	if(/^setup_estimate: (\S+):(\S+): command .*, options:.*$/) {
+		$host=$1;
+		$partition=$2;
+		if($hosts{$host} != 1 ) {
+			push @hosts, $host;
+			$hosts{$host}=1;
+		}
+		$$host=1;
+		push @$host, $partition;
+	}
+	elsif(/^got result for host (\S+) disk (\S+): (\d+) -> (\d+)K, .*$/) {
+		$host=$1;
+		$partition=$2;
+		$hostpart="$host$partition";
+		$estimate{$hostpart}=1;
+		$level{$hostpart}=$3;
+		$esize{$hostpart}=$4;
+	}
+	elsif(/^getting estimates took .*$/) {
+		$estimate_done=1;
+	}
+	elsif(/^GENERATING SCHEDULE:$/) {
+		$generating_schedule=1;
+	}
+	elsif(/^(\S+) (\S+) (\d+) (\d+) \d+:\d+:\d+:\d+:\d+:\d+ (\d+) \d+$/) {
+		if($generating_schedule == 1 ) {
+			$host=$1;
+			$partition=$2;
+			$hostpart="$host$partition";
+			$level{"$hostpart"}=$4;
+			$size=$5;
+			$size=32 if $size<32;
+			$esize{$hostpart}=$size;
+			$size{$hostpart}=$size;
+			$degr_level{$hostpart}=-1;
+		}
+	}
+	elsif(/^(\S+) (\S+) (\d+) (\d+) \d+:\d+:\d+:\d+:\d+:\d+ (\d+) \d+ (\d+) \d+:\d+:\d+:\d+:\d+:\d+ ([-]*\d+) \d+$/) {
+		if($generating_schedule == 1 ) {
+			$host=$1;
+			$partition=$2;
+			$hostpart="$host$partition";
+			$level{$hostpart}=$4;
+			$size=$5;
+			$size=32 if $size<32;
+			$esize{$hostpart}=$size;
+			$size{$hostpart}=$size;
+			$degr_level{$hostpart}=$6;
+			$degr_size{$hostpart}=$7;
+			$degr_size{$hostpart}=32 if ($7 < 32);
+		}
+	}
+	elsif(/^driver: send-cmd time \S+ to dumper\d*: (FILE-DUMP|PORT-DUMP) (\d+-\d+) (\S+) (\S+) (\S+) (\d+) .*$/) {
+		$host=$4;
+		$partition=$5;
+		$hostpart="$host$partition";
+		$serial=$2;
+		$dump_started{$hostpart}=1;
+		$holding_file{$hostpart}=$3;
+		if(     $level{$hostpart} != $6 &&
+		   $degr_level{$hostpart} == $6) {
+			$level{$hostpart}=$degr_level{$hostpart};
+			$size{$hostpart} =$degr_size{$hostpart};
+			$esize{$hostpart}=$degr_size{$hostpart};
+		}
+		$serial{"$serial"}=$hostpart;
+	}
+	elsif(/^driver: result time \S+ from dumper\d+: FAILED (\d+-\d+) (.*)$/) {
+		$serial=$1;
+		$error=$2;
+		$hostpart=$serial{$serial};
+		$dump_finished{$hostpart}=-1;
+		$error{$hostpart}=$error;
+	}
+	elsif(/^driver: result time \S+ from dumper\d+: TRY-AGAIN (\d+-\d+) (.*)$/) {
+		$serial=$1;
+		$error=$2;
+		$hostpart=$serial{$serial};
+		$dump_finished{$hostpart}=-1;
+		$error{$hostpart}=$error;
+	}
+	elsif(/^driver: result time \S+ from dumper\d+: DONE (\d+-\d+) (\d+) (\d+) (\d+) \[.*\]$/) {
+		$serial=$1;
+		$origsize=$2;
+		$outputsize=$3;
+		$hostpart=$serial{$serial};
+		$size{$hostpart}=$outputsize;
+		$dump_finished{$hostpart}=1;
+	}
+	elsif(/^driver: finished-cmd time \S+ dumper\d+ dumped (\S+):(\S+)$/){
+	}
+	elsif(/^driver: send-cmd time \S+ to taper: FILE-WRITE (\d+-\d+) (\S+) (\S+) (\S+) \d*.*$/){
+		$serial=$1;
+		$host=$3;
+		$partition=$4;
+		$hostpart="$host$partition";
+		$serial{$serial}=$hostpart;
+		$taper_started{$hostpart}=1;
+	}
+	elsif(/^driver: send-cmd time \S+ to taper: PORT-WRITE (\d+-\d+) (\S+) (\S+) \d*( \d*|)$/){
+		$serial=$1;
+		$host=$2;
+		$partition=$3;
+		$hostpart="$host$partition";
+		$serial{$serial}=$hostpart;
+		$taper_started{$hostpart}=1;
+	}
+	elsif(/^driver: result time \S+ from taper: DONE (\d+-\d+) (\S+) .*$/) {
+		$serial=$1;
+		$label=$2;
+		$hostpart=$serial{$serial};
+		$taper_finished{$hostpart}=1;
+	}
+	elsif(/^driver: result time \S+ from taper: TAPE-ERROR (\d+-\d+) (.+)$/) {
+		$serial=$1;
+		$error=$2;
+		$hostpart=$serial{$serial};
+		$taper_finished{$hostpart}=-1;
+		$error{$hostpart}=$error;
+	}
+	elsif(/^planner: FAILED (\S+) (\S+) (\d+) (.*)$/) {
+		$host=$1;
+		$partition=$2;
+		$hostpart="$host$partition";
+		$dump_started{$hostpart}=-1;
+		$level{$hostpart}=$3;
+		$error{$hostpart}=$4;
+	}
+	elsif(/^dump of driver schedule after start degraded mode:$/) {
+		$start_degraded_mode=1;
+	}
+	elsif(/^driver: state time \S+ free kps: (\d+) space: (\d+) taper: (\S+) idle-dumpers: (\d+) qlen tapeq: (\d+) runq: (\d+) stoppedq: (\d+) wakeup: (\d+) driver-idle: (\S+)$/) {
+		$free_kps=$1;
+		$free_space=$2;
+		$status_taper=$3;
+		$idle_dumpers=$4;
+		$qlen_tapeq=$5;
+		$runq=$6;
+		$stoppedq=$7;
+		$wakeup=$8;
+		$status_driver=$9;
+	}
+}
+
+close(AMDUMP);
+
+foreach $host (@hosts) {
+	foreach $partition (@$host) {
+		$nb_partition++;
+		$hostpart = "$host$partition";
+		if($estimate_done != 1) {
+			if($estimate{$hostpart} != 1) {
+				if( defined $opt_gestimate ) {
+					printf "%-40s", "$host:$partition";
+					print "            getting estimate\n";
+				}
+			}
+			else {
+				if( defined $opt_estimate ) {
+					printf "%-40s", "$host:$partition";
+					printf "%2d",  $level{$hostpart};
+					printf "%8dk", $esize{$hostpart};
+					print " estimate done\n";
+				}
+				$epartition++;
+				$estsize += $esize{$hostpart};
+			}
+		}
+		else {
+			$epartition++;
+			$estsize += $esize{$hostpart};
+			if($estimate{$hostpart} != 1) {
+				if( defined $opt_failed ) {
+					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+					print " no estimate\n";
+				}
+				$epartition--;
+				$estsize -= $esize{$hostpart};
+				$fpartition++;
+			}
+			elsif($dump_started{$hostpart} == -1) {
+				if( defined $opt_failed ) {
+					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+					printf " " . $error{$hostpart} . "\n";
+				}
+				$fpartition++;
+				$fsize+=$esize{$hostpart};
+			}
+			elsif($dump_started{$hostpart} != 1) {
+				if( defined $opt_waitdumping ) {
+					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+					printf "%8dk", $esize{$hostpart};
+					print " wait for dumping\n";
+				}
+				$wpartition++;
+				$wsize += $esize{$hostpart};
+			}
+			elsif($dump_started{$hostpart} == 1 &&
+					$dump_finished{$hostpart} == -1) {
+				if( defined $opt_failed ) {
+					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+					printf " " . $error{$hostpart} . "\n";
+				}
+				$fpartition++;
+				$fsize+=$esize{$hostpart};
+			}
+			elsif($dump_started{$hostpart} == 1 &&
+					$dump_finished{$hostpart} != 1 &&
+					$taper_started{$hostpart} == 1) {
+				if( defined $opt_dumpingtape ) {
+					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+					printf "%8dk", $size{$hostpart};
+					print " dumping to tape\n";
+				}
+				$dtpartition++;
+				$dtesize += $esize{$hostpart};
+			}
+			elsif($dump_started{$hostpart} == 1 &&
+					$dump_finished{$hostpart} != 1) {
+				if( defined $opt_dumping ) {
+					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+					printf "%8dk", $esize{$hostpart};
+					print " dumping";
+				}
+				($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
+				 $atime,$mtime,$ctime,$blksize,$blocks) =
+											 stat($holding_file{$hostpart});
+				$size=$size-32768 if $size > 32768;
+				if( defined $opt_dumping ) {
+					printf "%8dk", $size/1024;
+					if($size{$hostpart} != 0) {
+						printf " (%6.2f\%)", 
+								 (100.0*$size)/(1024.0*$esize{$hostpart});
+					}
+					print "\n";
+				}
+				$dupartition++;
+				$dusize += $size/1024;
+				$duesize += $esize{$hostpart};
+			}
+			elsif($dump_finished{$hostpart} == 1 &&
+					$taper_started{$hostpart} != 1) {
+				if( defined $opt_waittaper ) {
+					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+					printf "%8dk", $size{$hostpart};
+					print " dump done, wait for writing to tape\n";
+				}
+				$dpartition++;
+				$dsize += $size{$hostpart};
+				$desize += $esize{$hostpart};
+				$twpartition++;
+				$twsize += $size{$hostpart};
+				$twesize += $esize{$hostpart};
+			}
+			elsif($taper_started{$hostpart} == 1 &&
+					$taper_finished{$hostpart} == 0) {
+				if( defined $opt_writingtape ) {
+					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+					printf "%8dk", $size{$hostpart};
+					print " writing to tape\n";
+				}
+				$dpartition++;
+				$dsize += $size{$hostpart};
+				$desize += $esize{$hostpart};
+				$tapartition++;
+				$tasize += $size{$hostpart};
+				$taesize += $esize{$hostpart};
+			}
+			elsif($taper_started{$hostpart} == 1 &&
+					$taper_finished{$hostpart} == -1) {
+				if( defined $opt_failed ) {
+					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+					printf "%8dk", $size{$hostpart};
+					print " failed to taped\n";
+				}
+				$dpartition++;
+				$dsize += $size{$hostpart};
+				$desize += $esize{$hostpart};
+				$tfpartition++;
+				$tfsize += $size{$hostpart};
+				$tfesize += $esize{$hostpart};
+			}
+			elsif($taper_finished{$hostpart} == 1) {
+				if( defined $opt_finished ) {
+					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+					printf "%8dk", $size{$hostpart};
+					print " finished\n";
+				}
+				$dpartition++;
+				$dsize += $size{$hostpart};
+				$desize += $esize{$hostpart};
+				$tpartition++;
+				$tsize += $size{$hostpart};
+				$tesize += $esize{$hostpart};
+			}
+			else {
+				printf "%-40s%2d", "$host:$partition", $level{$hostpart};
+				print " unknown state\n";
+			}
+		}
+	}
+}
+
+if ($opt_summary == 1) {
+	print "\n";
+	print  "SUMMARY          part     real estimated\n";
+	print  "                          size      size\n";
+	printf "partition       : %3d\n", $nb_partition;
+	printf "estimated       : %3d %18dk\n", $epartition , $estsize;
+	printf "failed          : %3d %18dk\n", $fpartition , $fsize;
+	printf "wait for dumping: %3d %18dk\n", $wpartition , $wsize;
+	printf "dumping to tape : %3d %18dk\n", $dtpartition, $dtesize;
+	printf "dumping         : %3d %8dk %8dk\n", $dupartition, $dusize, $duesize;
+	printf "dumped          : %3d %8dk %8dk\n", $dpartition , $dsize , $desize;
+	printf "wait for writing: %3d %8dk %8dk\n", $twpartition, $twsize, $twesize;
+	printf "writing to tape : %3d %8dk %8dk\n", $tapartition, $tasize, $taesize;
+	printf "failed to tape  : %3d %8dk %8dk\n", $tfpartition, $tfsize, $tfesize;
+	printf "taped           : %3d %8dk %8dk\n", $tpartition , $tsize , $tesize;
+	if($idle_dumpers ==0) {
+		printf "all dumpers active\n";
+	}
+	else {
+		printf "%d dumpers idle  : %s\n", $idle_dumpers, $status_driver;
+	}
+	if($status_taper eq "writing") {
+		printf "taper writing, tapeq: %d\n", qlen_tapeq;
+	}
+	else {
+		printf "taper idle\n";
+	}
+	printf "network free kps: %d\n", $free_kps;
+	printf "holding space   : %d\n", $free_space;
+}
+
+sub usage() {
+	print "amstatus [--config] config [--file amdump_file]\n";
+	print "         [--status] [--dumping] [--waitdumping] [--waittaper]\n";
+	print "         [--dumpingtape] [--writingtape] [--finished] [--failed]\n";
+	print "         [--estimate] [--gestimate]\n";
+	exit;
+}

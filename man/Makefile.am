@@ -9,7 +9,7 @@ man_MANS =	amadmin.8	amanda.8	amcheck.8	\
 		amflush.8	amlabel.8	amoverview.8	\
 		amplot.8	amrecover.8	amrestore.8	\
 		amrmtape.8	amtape.8	amtoc.8		\
-		amverify.8
+		amverify.8	amstatus.8
 
 EXTRA_DIST = amplot.8 amrestore.8 amtape.8
 

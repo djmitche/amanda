@@ -180,7 +180,7 @@ BUILD_TAPE_LTLIB="libamtape.la"
 
 BUILD_SERVER_PROGS_SBIN="amadmin amcheck amflush amlabel amtape"
 BUILD_SERVER_PROGS_LIBEXEC="amindexd amtrmidx driver dumper getconf planner reporter taper"
-BUILD_SERVER_SCRIPTS_SBIN="amcheckdb amcleanup amdump amoverview amrmtape amtoc amverify"
+BUILD_SERVER_SCRIPTS_SBIN="amcheckdb amcleanup amdump amoverview amrmtape amtoc amverify amstatus"
 BUILD_SERVER_LIB="libamserver.a"
 BUILD_SERVER_LTLIB="libamserver.la"
 
@@ -2210,6 +2210,7 @@ AC_OUTPUT( \
 	man/amoverview.8		man/amrecover.8			\
 	man/amrmtape.8			man/amtoc.8			\
 	man/amverify.8			man/Makefile			\
+	man/amstatus.8							\
 									\
 	recover-src/Makefile						\
 									\
@@ -2219,7 +2220,7 @@ AC_OUTPUT( \
 	server-src/amdump.sh		server-src/amfreetapes.sh	\
 	server-src/amoverview.pl	server-src/amrmtape.sh		\
 	server-src/amtoc.pl		server-src/amverify.sh		\
-	server-src/Makefile						\
+	server-src/Makefile		server-src/amstatus.pl		\
 									\
 	tape-src/Makefile						\
 									\

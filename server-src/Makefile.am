@@ -48,7 +48,7 @@ EXTRA_PROGRAMS =	amadmin				amcheck		\
 EXTRA_SCRIPTS =		amcheckdb			amcleanup	\
 			amdump				amoverview	\
 			amrmtape			amtoc		\
-			amverify
+			amverify			amstatus
 
 CLEANFILES = *.test.c
 
