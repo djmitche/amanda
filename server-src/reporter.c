@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.17.2.3 2001/07/19 22:15:16 jrjackson Exp $
+ * $Id: reporter.c,v 1.44.2.17.2.4 2001/09/26 15:48:38 jrjackson Exp $
  *
  * nightly Amanda Report generator
  */
@@ -1123,10 +1123,20 @@ void output_summary()
     wTape= ColWidth(TapeTime, TapeRate);
 
     /* print centered top titles */
-    h= (wDump-strlen(ds))/2;
+    h= strlen(ds);
+    if (h > wDump) {
+	h= 0;
+    } else {
+	h= (wDump-h)/2;
+    }
     fprintf(mailf, "%*s", w1+h, "");
     fprintf(mailf, "%-*s", wDump-h, ds);
-    h= (wTape-strlen(ts))/2;
+    h= strlen(ts);
+    if (h > wTape) {
+	h= 0;
+    } else {
+	h= (wTape-h)/2;
+    }
     fprintf(mailf, "%*s", h, "");
     fprintf(mailf, "%-*s", wTape-h, ts);
     fputc('\n', mailf);
