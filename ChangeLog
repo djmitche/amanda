@@ -1,5 +1,10 @@
 1998-11-24  Mike Grupenhoff <kashmir@munge.com>
 
+	* configure.in: check for <sys/uio.h>, check for a writev() decl
+	in <unistd.h> and/or <sys/uio.h>
+
+1998-11-24  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/writev.c (writev): new file, implements writev for
 	systems that lack it
 
