@@ -1,6 +1,6 @@
 AMANDA EVENT API
 
-$Id: EVENT-API,v 1.2 1999/03/01 21:32:54 kashmir Exp $
+$Id: EVENT-API,v 1.3 1999/04/12 19:58:25 kashmir Exp $
 
 by Mike Grupenhoff <kashmir@munge.com>
 
@@ -49,8 +49,13 @@ immediately ready, and then return.
     int event_wakeup(int id);
 
 Fire all EV_WAIT events registered with an argument value of 'id' on
-the next event_loop.  They will fire before other types of events
+the next event_loop.  They will fire after other types of events
 are processed.  Returns the number of events awoken.
+
+Currently, EV_WAIT events are processed after all other types of events.
+event_wakeup() should only be called from a non-EV_WAIT event handler.
+If it is called from a EV_WAIT handler, the events might not fire under
+the next event pass.
 
 3. DATA TYPES
 
