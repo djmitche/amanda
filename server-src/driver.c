@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.23 1999/10/03 21:30:01 jrj Exp $
+ * $Id: driver.c,v 1.58.2.24 1999/11/01 23:29:45 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1510,8 +1510,10 @@ long halloc, dalloc, hfree, dfree;
     amfree(used);
 
     if( size ) { /* not enough space available */
+#ifdef HOLD_DEBUG
 	printf("find diskspace: not enough diskspace. Left with %lu K\n", size);
 	fflush(stdout);
+#endif
 	free_assignedhd(result);
 	result = NULL;
     }

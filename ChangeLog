@@ -1,5 +1,10 @@
 1999-11-01 John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/driver.c (find_diskspace): make noisy holding space log
+	  message conditional on HOLD_DEBUG.
+
+1999-11-01 John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/amcleanupdisk.c (main): do not free the config name (it
 	  was never alloc-d).
 
@@ -557,7 +562,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.296 1999/11/01 22:22:04 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.297 1999/11/01 23:29:35 jrj Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
