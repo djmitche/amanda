@@ -341,17 +341,17 @@ AC_CACHE_VAL(ice_cv_have_$1_decl,
 ice_cv_have_$1_decl=no
 changequote(,)dnl
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 changequote([,])dnl
 for header in $2; do
 # Check for ordinary declaration
-AC_EGREP_HEADER([${ice_re_word}$1 *\(], $header, 
+AC_EGREP_HEADER([${ice_re_word}$1[ 	]*\(], $header, 
 	ice_cv_have_$1_decl=yes)
 if test "$ice_cv_have_$1_decl" = yes; then
 	break
 fi
 # Check for "fixed" declaration like "getpid _PARAMS((int))"
-AC_EGREP_HEADER([${ice_re_word}$1 *$ice_re_params\(\(], $header, 
+AC_EGREP_HEADER([${ice_re_word}$1[ 	]*$ice_re_params\(\(], $header, 
 	ice_cv_have_$1_decl=yes)
 if test "$ice_cv_have_$1_decl" = yes; then
 	break

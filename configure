@@ -1554,7 +1554,7 @@ if test "${with_client_principal+set}" = set; then
 
 fi
 
-: ${CLIENT_HOST_PRINCIPLE:="rcmp"}
+: ${CLIENT_HOST_PRINCIPLE:="rcmd"}
 cat >> confdefs.h <<EOF
 #define CLIENT_HOST_PRINCIPLE "$CLIENT_HOST_PRINCIPLE"
 EOF
@@ -1887,8 +1887,8 @@ EOF
 *****
 This machine, target type $target, is not known
 to be fully supported by this configure script.  If the
-installation of Amanda on this system suceeds or needed
-any patches, please email amanda-hackers@cs.umb.edu with
+installation of Amanda on this system succeeds or needed
+any patches, please email amanda-hackers@cs.umd.edu with
 the patches or an indication of the sucess or failure of
 the Amanda installation on your system.
 *****
@@ -5602,7 +5602,7 @@ else
   
 ice_cv_have_accept_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in sys/types.h sys/socket.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -5611,7 +5611,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}accept *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}accept[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_accept_decl=yes
 fi
@@ -5627,7 +5627,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}accept *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}accept[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_accept_decl=yes
 fi
@@ -6004,7 +6004,7 @@ else
   
 ice_cv_have_atof_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdlib.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -6013,7 +6013,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}atof *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}atof[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_atof_decl=yes
 fi
@@ -6029,7 +6029,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}atof *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}atof[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_atof_decl=yes
 fi
@@ -6120,7 +6120,7 @@ else
   
 ice_cv_have_bind_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in sys/types.h sys/socket.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -6129,7 +6129,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}bind *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}bind[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_bind_decl=yes
 fi
@@ -6145,7 +6145,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}bind *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}bind[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_bind_decl=yes
 fi
@@ -6236,7 +6236,7 @@ else
   
 ice_cv_have_bzero_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in string.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -6245,7 +6245,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}bzero *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}bzero[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_bzero_decl=yes
 fi
@@ -6261,7 +6261,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}bzero *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}bzero[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_bzero_decl=yes
 fi
@@ -6409,7 +6409,7 @@ else
   
 ice_cv_have_closelog_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in syslog.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -6418,7 +6418,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}closelog *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}closelog[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_closelog_decl=yes
 fi
@@ -6434,7 +6434,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}closelog *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}closelog[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_closelog_decl=yes
 fi
@@ -6525,7 +6525,7 @@ else
   
 ice_cv_have_connect_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in sys/types.h sys/socket.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -6534,7 +6534,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}connect *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}connect[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_connect_decl=yes
 fi
@@ -6550,7 +6550,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}connect *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}connect[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_connect_decl=yes
 fi
@@ -6641,7 +6641,7 @@ else
   
 ice_cv_have_dbm_open_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in ${DB_HEADER-no/db/header/file}; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -6650,7 +6650,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}dbm_open *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}dbm_open[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_dbm_open_decl=yes
 fi
@@ -6666,7 +6666,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}dbm_open *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}dbm_open[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_dbm_open_decl=yes
 fi
@@ -6757,7 +6757,7 @@ else
   
 ice_cv_have_fclose_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdio.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -6766,7 +6766,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}fclose *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}fclose[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_fclose_decl=yes
 fi
@@ -6782,7 +6782,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}fclose *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}fclose[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_fclose_decl=yes
 fi
@@ -6873,7 +6873,7 @@ else
   
 ice_cv_have_fflush_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdio.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -6882,7 +6882,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}fflush *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}fflush[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_fflush_decl=yes
 fi
@@ -6898,7 +6898,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}fflush *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}fflush[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_fflush_decl=yes
 fi
@@ -6989,7 +6989,7 @@ else
   
 ice_cv_have_flock_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in sys/file.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -6998,7 +6998,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}flock *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}flock[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_flock_decl=yes
 fi
@@ -7014,7 +7014,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}flock *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}flock[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_flock_decl=yes
 fi
@@ -7105,7 +7105,7 @@ else
   
 ice_cv_have_fprintf_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdio.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -7114,7 +7114,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}fprintf *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}fprintf[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_fprintf_decl=yes
 fi
@@ -7130,7 +7130,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}fprintf *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}fprintf[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_fprintf_decl=yes
 fi
@@ -7221,7 +7221,7 @@ else
   
 ice_cv_have_fputc_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdio.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -7230,7 +7230,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}fputc *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}fputc[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_fputc_decl=yes
 fi
@@ -7246,7 +7246,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}fputc *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}fputc[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_fputc_decl=yes
 fi
@@ -7337,7 +7337,7 @@ else
   
 ice_cv_have_fputs_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdio.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -7346,7 +7346,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}fputs *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}fputs[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_fputs_decl=yes
 fi
@@ -7362,7 +7362,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}fputs *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}fputs[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_fputs_decl=yes
 fi
@@ -7453,7 +7453,7 @@ else
   
 ice_cv_have_fread_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdio.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -7462,7 +7462,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}fread *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}fread[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_fread_decl=yes
 fi
@@ -7478,7 +7478,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}fread *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}fread[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_fread_decl=yes
 fi
@@ -7569,7 +7569,7 @@ else
   
 ice_cv_have_fwrite_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdio.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -7578,7 +7578,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}fwrite *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}fwrite[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_fwrite_decl=yes
 fi
@@ -7594,7 +7594,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}fwrite *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}fwrite[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_fwrite_decl=yes
 fi
@@ -7797,7 +7797,7 @@ else
   
 ice_cv_have_gethostname_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in unistd.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -7806,7 +7806,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}gethostname *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}gethostname[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_gethostname_decl=yes
 fi
@@ -7822,7 +7822,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}gethostname *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}gethostname[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_gethostname_decl=yes
 fi
@@ -8085,7 +8085,7 @@ else
   
 ice_cv_have_getopt_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdlib.h unistd.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -8094,7 +8094,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}getopt *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}getopt[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_getopt_decl=yes
 fi
@@ -8110,7 +8110,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}getopt *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}getopt[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_getopt_decl=yes
 fi
@@ -8201,7 +8201,7 @@ else
   
 ice_cv_have_getpeername_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in sys/types.h sys/socket.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -8210,7 +8210,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}getpeername *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}getpeername[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_getpeername_decl=yes
 fi
@@ -8226,7 +8226,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}getpeername *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}getpeername[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_getpeername_decl=yes
 fi
@@ -8317,7 +8317,7 @@ else
   
 ice_cv_have_getsockname_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in sys/types.h sys/socket.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -8326,7 +8326,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}getsockname *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}getsockname[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_getsockname_decl=yes
 fi
@@ -8342,7 +8342,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}getsockname *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}getsockname[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_getsockname_decl=yes
 fi
@@ -8433,7 +8433,7 @@ else
   
 ice_cv_have_getsockopt_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in sys/types.h sys/socket.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -8442,7 +8442,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}getsockopt *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}getsockopt[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_getsockopt_decl=yes
 fi
@@ -8458,7 +8458,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}getsockopt *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}getsockopt[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_getsockopt_decl=yes
 fi
@@ -8549,7 +8549,7 @@ else
   
 ice_cv_have_gettimeofday_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in time.h sys/time.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -8558,7 +8558,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}gettimeofday *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}gettimeofday[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_gettimeofday_decl=yes
 fi
@@ -8574,7 +8574,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}gettimeofday *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}gettimeofday[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_gettimeofday_decl=yes
 fi
@@ -8775,7 +8775,7 @@ else
   
 ice_cv_have_initgroups_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in grp.h sys/types.h unistd.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -8784,7 +8784,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}initgroups *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}initgroups[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_initgroups_decl=yes
 fi
@@ -8800,7 +8800,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}initgroups *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}initgroups[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_initgroups_decl=yes
 fi
@@ -8891,7 +8891,7 @@ else
   
 ice_cv_have_listen_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in sys/types.h sys/socket.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -8900,7 +8900,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}listen *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}listen[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_listen_decl=yes
 fi
@@ -8916,7 +8916,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}listen *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}listen[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_listen_decl=yes
 fi
@@ -9007,7 +9007,7 @@ else
   
 ice_cv_have_lstat_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in sys/types.h sys/stat.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -9016,7 +9016,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}lstat *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}lstat[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_lstat_decl=yes
 fi
@@ -9032,7 +9032,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}lstat *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}lstat[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_lstat_decl=yes
 fi
@@ -9123,7 +9123,7 @@ else
   
 ice_cv_have_memset_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in string.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -9132,7 +9132,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}memset *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}memset[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_memset_decl=yes
 fi
@@ -9148,7 +9148,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}memset *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}memset[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_memset_decl=yes
 fi
@@ -9294,7 +9294,7 @@ else
   
 ice_cv_have_mktemp_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdlib.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -9303,7 +9303,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}mktemp *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}mktemp[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_mktemp_decl=yes
 fi
@@ -9319,7 +9319,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}mktemp *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}mktemp[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_mktemp_decl=yes
 fi
@@ -9467,7 +9467,7 @@ else
   
 ice_cv_have_mktime_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in time.h sys/time.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -9476,7 +9476,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}mktime *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}mktime[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_mktime_decl=yes
 fi
@@ -9492,7 +9492,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}mktime *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}mktime[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_mktime_decl=yes
 fi
@@ -9849,7 +9849,7 @@ else
   
 ice_cv_have_openlog_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in syslog.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -9858,7 +9858,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}openlog *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}openlog[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_openlog_decl=yes
 fi
@@ -9874,7 +9874,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}openlog *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}openlog[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_openlog_decl=yes
 fi
@@ -9965,7 +9965,7 @@ else
   
 ice_cv_have_pclose_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdio.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -9974,7 +9974,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}pclose *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}pclose[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_pclose_decl=yes
 fi
@@ -9990,7 +9990,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}pclose *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}pclose[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_pclose_decl=yes
 fi
@@ -10081,7 +10081,7 @@ else
   
 ice_cv_have_perror_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdio.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -10090,7 +10090,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}perror *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}perror[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_perror_decl=yes
 fi
@@ -10106,7 +10106,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}perror *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}perror[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_perror_decl=yes
 fi
@@ -10197,7 +10197,7 @@ else
   
 ice_cv_have_printf_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdio.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -10206,7 +10206,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}printf *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}printf[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_printf_decl=yes
 fi
@@ -10222,7 +10222,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}printf *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}printf[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_printf_decl=yes
 fi
@@ -10313,7 +10313,7 @@ else
   
 ice_cv_have_puts_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdio.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -10322,7 +10322,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}puts *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}puts[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_puts_decl=yes
 fi
@@ -10338,7 +10338,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}puts *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}puts[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_puts_decl=yes
 fi
@@ -10429,7 +10429,7 @@ else
   
 ice_cv_have_recvfrom_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in sys/types sys/socket.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -10438,7 +10438,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}recvfrom *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}recvfrom[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_recvfrom_decl=yes
 fi
@@ -10454,7 +10454,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}recvfrom *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}recvfrom[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_recvfrom_decl=yes
 fi
@@ -10545,7 +10545,7 @@ else
   
 ice_cv_have_remove_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdio.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -10554,7 +10554,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}remove *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}remove[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_remove_decl=yes
 fi
@@ -10570,7 +10570,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}remove *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}remove[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_remove_decl=yes
 fi
@@ -10661,7 +10661,7 @@ else
   
 ice_cv_have_rename_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdio.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -10670,7 +10670,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}rename *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}rename[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_rename_decl=yes
 fi
@@ -10686,7 +10686,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}rename *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}rename[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_rename_decl=yes
 fi
@@ -10777,7 +10777,7 @@ else
   
 ice_cv_have_rewind_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdio.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -10786,7 +10786,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}rewind *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}rewind[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_rewind_decl=yes
 fi
@@ -10802,7 +10802,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}rewind *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}rewind[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_rewind_decl=yes
 fi
@@ -10948,7 +10948,7 @@ else
   
 ice_cv_have_ruserok_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in netdb.h sys/socket.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -10957,7 +10957,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}ruserok *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}ruserok[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_ruserok_decl=yes
 fi
@@ -10973,7 +10973,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}ruserok *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}ruserok[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_ruserok_decl=yes
 fi
@@ -11064,7 +11064,7 @@ else
   
 ice_cv_have_select_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in sys/types.h sys/socket.h sys/select.h time.h sys/time.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -11073,7 +11073,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}select *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}select[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_select_decl=yes
 fi
@@ -11089,7 +11089,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}select *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}select[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_select_decl=yes
 fi
@@ -11250,7 +11250,7 @@ else
   
 ice_cv_have_sendto_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in sys/types.h sys/socket.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -11259,7 +11259,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}sendto *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}sendto[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_sendto_decl=yes
 fi
@@ -11275,7 +11275,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}sendto *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}sendto[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_sendto_decl=yes
 fi
@@ -11462,7 +11462,7 @@ else
   
 ice_cv_have_setpgrp_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in sys/types.h unistd.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -11471,7 +11471,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}setpgrp *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}setpgrp[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_setpgrp_decl=yes
 fi
@@ -11487,7 +11487,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}setpgrp *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}setpgrp[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_setpgrp_decl=yes
 fi
@@ -11579,7 +11579,7 @@ else
   
 ice_cv_have_setsockopt_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in sys/types.h sys/socket.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -11588,7 +11588,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}setsockopt *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}setsockopt[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_setsockopt_decl=yes
 fi
@@ -11604,7 +11604,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}setsockopt *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}setsockopt[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_setsockopt_decl=yes
 fi
@@ -11812,7 +11812,7 @@ else
   
 ice_cv_have_shmat_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in sys/types.h sys/ipc.h sys/shm.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -11821,7 +11821,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}shmat *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}shmat[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_shmat_decl=yes
 fi
@@ -11837,7 +11837,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}shmat *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}shmat[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_shmat_decl=yes
 fi
@@ -11928,7 +11928,7 @@ else
   
 ice_cv_have_shmctl_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in sys/types.h sys/ipc.h sys/shm.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -11937,7 +11937,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}shmctl *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}shmctl[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_shmctl_decl=yes
 fi
@@ -11953,7 +11953,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}shmctl *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}shmctl[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_shmctl_decl=yes
 fi
@@ -12044,7 +12044,7 @@ else
   
 ice_cv_have_shmdt_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in sys/types.h sys/ipc.h sys/shm.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -12053,7 +12053,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}shmdt *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}shmdt[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_shmdt_decl=yes
 fi
@@ -12069,7 +12069,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}shmdt *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}shmdt[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_shmdt_decl=yes
 fi
@@ -12160,7 +12160,7 @@ else
   
 ice_cv_have_shmget_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in sys/types.h sys/ipc.h sys/shm.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -12169,7 +12169,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}shmget *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}shmget[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_shmget_decl=yes
 fi
@@ -12185,7 +12185,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}shmget *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}shmget[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_shmget_decl=yes
 fi
@@ -12346,7 +12346,7 @@ else
   
 ice_cv_have_socket_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in sys/types.h sys/socket.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -12355,7 +12355,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}socket *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}socket[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_socket_decl=yes
 fi
@@ -12371,7 +12371,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}socket *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}socket[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_socket_decl=yes
 fi
@@ -12462,7 +12462,7 @@ else
   
 ice_cv_have_socketpair_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in sys/types.h sys/socket.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -12471,7 +12471,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}socketpair *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}socketpair[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_socketpair_decl=yes
 fi
@@ -12487,7 +12487,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}socketpair *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}socketpair[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_socketpair_decl=yes
 fi
@@ -12578,7 +12578,7 @@ else
   
 ice_cv_have_sscanf_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdio.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -12587,7 +12587,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}sscanf *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}sscanf[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_sscanf_decl=yes
 fi
@@ -12603,7 +12603,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}sscanf *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}sscanf[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_sscanf_decl=yes
 fi
@@ -12863,7 +12863,7 @@ else
   
 ice_cv_have_strerror_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in string.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -12872,7 +12872,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}strerror *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}strerror[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_strerror_decl=yes
 fi
@@ -12888,7 +12888,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}strerror *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}strerror[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_strerror_decl=yes
 fi
@@ -13075,7 +13075,7 @@ else
   
 ice_cv_have_strftime_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in time.h sys/time.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -13084,7 +13084,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}strftime *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}strftime[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_strftime_decl=yes
 fi
@@ -13100,7 +13100,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}strftime *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}strftime[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_strftime_decl=yes
 fi
@@ -13191,7 +13191,7 @@ else
   
 ice_cv_have_strncasecmp_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in string.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -13200,7 +13200,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}strncasecmp *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}strncasecmp[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_strncasecmp_decl=yes
 fi
@@ -13216,7 +13216,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}strncasecmp *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}strncasecmp[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_strncasecmp_decl=yes
 fi
@@ -13364,7 +13364,7 @@ else
   
 ice_cv_have_syslog_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in syslog.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -13373,7 +13373,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}syslog *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}syslog[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_syslog_decl=yes
 fi
@@ -13389,7 +13389,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}syslog *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}syslog[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_syslog_decl=yes
 fi
@@ -13480,7 +13480,7 @@ else
   
 ice_cv_have_system_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdlib.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -13489,7 +13489,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}system *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}system[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_system_decl=yes
 fi
@@ -13505,7 +13505,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}system *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}system[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_system_decl=yes
 fi
@@ -13596,7 +13596,7 @@ else
   
 ice_cv_have_time_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in time.h sys/time.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -13605,7 +13605,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}time *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}time[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_time_decl=yes
 fi
@@ -13621,7 +13621,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}time *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}time[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_time_decl=yes
 fi
@@ -13712,7 +13712,7 @@ else
   
 ice_cv_have_tolower_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in ctype.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -13721,7 +13721,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}tolower *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}tolower[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_tolower_decl=yes
 fi
@@ -13737,7 +13737,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}tolower *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}tolower[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_tolower_decl=yes
 fi
@@ -13828,7 +13828,7 @@ else
   
 ice_cv_have_toupper_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in ctype.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -13837,7 +13837,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}toupper *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}toupper[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_toupper_decl=yes
 fi
@@ -13853,7 +13853,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}toupper *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}toupper[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_toupper_decl=yes
 fi
@@ -13944,7 +13944,7 @@ else
   
 ice_cv_have_ungetc_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdio.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -13953,7 +13953,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}ungetc *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}ungetc[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_ungetc_decl=yes
 fi
@@ -13969,7 +13969,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}ungetc *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}ungetc[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_ungetc_decl=yes
 fi
@@ -14165,7 +14165,7 @@ else
   
 ice_cv_have_vfprintf_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdio.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -14174,7 +14174,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}vfprintf *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}vfprintf[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_vfprintf_decl=yes
 fi
@@ -14190,7 +14190,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}vfprintf *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}vfprintf[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_vfprintf_decl=yes
 fi
@@ -14281,7 +14281,7 @@ else
   
 ice_cv_have_vsprintf_decl=no
 ice_re_params='[a-zA-Z_][a-zA-Z0-9_]*'
-ice_re_word='(^|[^a-zA-Z_0-9_])'
+ice_re_word='(^|[^a-zA-Z0-9_])'
 for header in stdio.h; do
 # Check for ordinary declaration
 cat > conftest.$ac_ext <<EOF
@@ -14290,7 +14290,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}vsprintf *\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}vsprintf[ 	]*\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_vsprintf_decl=yes
 fi
@@ -14306,7 +14306,7 @@ cat > conftest.$ac_ext <<EOF
 #include <$header>
 EOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "${ice_re_word}vsprintf *$ice_re_params\(\(" >/dev/null 2>&1; then
+  egrep "${ice_re_word}vsprintf[ 	]*$ice_re_params\(\(" >/dev/null 2>&1; then
   rm -rf conftest*
   ice_cv_have_vsprintf_decl=yes
 fi
