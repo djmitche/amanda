@@ -34,22 +34,17 @@ bumpmult 4		# threshold = bumpsize * (level-1)**bumpmult
 # changers, read docs/TAPE.CHANGERS.
 
 # At most one changerfile entry must be defined; select the most
-# appropriate one for your configuration.  If you select no-changer,
+# appropriate one for your configuration.  If you select man-changer,
 # keep the first one; if you decide not to use a tape changer, you may
 # comment them all out.
 
 runtapes 1		# number of tapes to be used in a single run of amdump
-tpchanger "no-changer"	# the tape-changer glue script
+tpchanger "chg-manual"	# the tape-changer glue script
 tapedev "@DEFAULT_TAPE_DEVICE@"	# the no-rewind tape device to be used
 changerfile "@LOG_DIR@/@DEFAULT_CONFIG@/changer"
 changerfile "@LOG_DIR@/@DEFAULT_CONFIG@/changer-status"
 changerfile "@CONFIG_DIR@/@DEFAULT_CONFIG@/changer.conf"
 changerdev "@DEFAULT_CHANGER_DEVICE@"
-
- # changer data file prefix for some changers (no-changer, 
- # changer data file for seagate changer
- # changer configuration file for some changers (chg-generic, chs-changer, 
- # the changer device, 
 
 tapetype HP-DAT		# what kind of tape it is (see tapetypes below)
 labelstr "^@DEFAULT_CONFIG@[0-9][0-9]*$"	# label constraint regex: all tapes must match
