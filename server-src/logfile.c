@@ -68,6 +68,12 @@ static struct flock lock = {
 static void open_log P((void));
 static void close_log P((void));
 
+void logerror(msg)
+char *msg;
+{
+    log(L_FATAL, "%s", msg);
+}
+
 arglist_function(void log, logtype_t, typ)
 {
     va_list argp;
