@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.19.2.7.2.6 2002/04/19 14:24:29 martinea Exp $
+ * $Id: amcheck.c,v 1.50.2.19.2.7.2.7 2002/04/22 19:39:09 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1268,11 +1268,11 @@ int start_host(hostp)
 		    "hostname=", hostp->hostname, ";",
 		    "\n",
 		    NULL);
+    disk_count = 0;
     if(hostp->features != NULL) {
 	req_len = strlen(req);
 	req_len += 128;				/* room for SECURITY ... */
 	req_len += 256;				/* room for non-disk answers */
-	disk_count = 0;
 	for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
 	    char *l;
 	    int l_len;
@@ -1337,11 +1337,21 @@ int start_host(hostp)
 	    disk_count++;
 	}
 
-	if(disk_count == 0) {
-	    amfree(req);
-	    hostp->up = HOST_DONE;
-	    return 0;
+    }
+    else {
+	for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	    if(dp->todo == 0) continue;
+
+	    if(dp->up != DISK_READY) {
+		continue;
+	    }
+	    disk_count++;
 	}
+    }
+    if(disk_count == 0) {
+	amfree(req);
+	hostp->up = HOST_DONE;
+	return 0;
     }
 
 #ifdef KRB4_SECURITY
