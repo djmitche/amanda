@@ -1,3 +1,14 @@
+1999-03-28 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/amtrmlog.c: new program to move unused log 
+	to logdir/oldlog.
+	* server-src/Makefile.am: install amtrmlog.
+	* server-src/find.h: declare find_log().
+	* server-src/find.c(find_log): new function to return an array of
+	all the logfile name that are still needed.
+	* server-src/find.c(search_logfile): special case if output_find==NULL,
+	return 1 if it the logfile fir the label.
+
 1999-03-25  Neil Crellin  <neil@wallaby.cc>
 
 	* docs/TAPE.CHANGERS (chg-chs): URL for chs
