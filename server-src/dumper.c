@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.50 1998/01/29 20:16:50 jrj Exp $
+/* $Id: dumper.c,v 1.51 1998/01/29 20:38:03 blair Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -756,7 +756,6 @@ int mesgfd, datafd, indexfd, outfd;
     char kb_str[NUM_STR_SIZE];
     char kps_str[NUM_STR_SIZE];
     char orig_kb_str[NUM_STR_SIZE];
-    char *sfn;
 
 #ifndef DUMPER_SOCKET_BUFFERING
 #define DUMPER_SOCKET_BUFFERING 0
