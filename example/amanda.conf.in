@@ -20,6 +20,8 @@ bumpsize 20 Mb		# minimum savings (threshold) to bump level 1 -> 2
 bumpdays 1		# minimum days at each level
 bumpmult 4		# threshold = bumpsize * (level-1)**bumpmult
 
+etimeout 300		# seconds per filesystem for estimates
+
 # Specify tape device and/or tape changer.  If you don't have a tape
 # changer, and you don't want to use more than one tape per run of
 # amdump, just comment out the definition of tpchanger.
