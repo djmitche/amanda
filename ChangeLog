@@ -1,3 +1,7 @@
+1998-08-10  Nick Hibma  <nick.hibma@jrc.it>
+
+	* changer-src/chg-chio.pl.in: move to first slot if last is unused
+
 1998-08-07  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* example/Makefile.am (EXTRA_DIST): add DIN-A4.ps
