@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.37 1997/10/30 14:49:10 amcore Exp $
+ * $Id: sendsize.c,v 1.38 1997/11/04 22:43:37 blair Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -127,7 +127,7 @@ char **argv;
 
 	    str = strstr(line, "hostname=");
 	    if(str != NULL)
-		sscanf(str, "hostname=%s;", &host);
+		sscanf(str, "hostname=%s;", host);
 
 	    sprintf(opt, "OPTIONS maxdumps=%d;\n", maxdumps);
 	    write(1, opt, strlen(opt));
@@ -736,8 +736,6 @@ time_t dumpsince;
     char *dirname;
     char cmd[256], dumptimestr[80];
     struct tm *gmtm;
-    time_t prev_dumptime;
-    int l;
 
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
     {
