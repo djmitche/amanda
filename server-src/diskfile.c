@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.56 2003/01/04 03:35:04 martinea Exp $
+ * $Id: diskfile.c,v 1.57 2003/10/27 18:32:50 martinea Exp $
  *
  * read disklist file
  */
@@ -166,10 +166,12 @@ char *diskname;
     disk = alloc(sizeof(disk_t));
     disk->line = 0;
     disk->name = stralloc(diskname);
+    disk->device = stralloc(diskname);
     disk->spindle = -1;
     disk->up = NULL;
     disk->compress = COMP_NONE;
     disk->start_t = 0;
+    disk->todo = 1;
 
     host = lookup_host(hostname);
     if(host == NULL) {

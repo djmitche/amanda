@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.73 2003/02/12 02:08:55 martinea Exp $
+ * $Id: amindexd.c,v 1.74 2003/10/27 18:32:50 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -466,6 +466,9 @@ char *config;
     }
     amfree(conf_tapelist);
 
+    output_find = find_dump(1, &disk_list);
+    sort_find_result("DLKHB", &output_find);
+
     conf_indexdir = getconf_str(CNF_INDEXDIR);
     if(*conf_indexdir == '/') {
 	conf_indexdir = stralloc(conf_indexdir);
@@ -494,11 +497,6 @@ static int build_disk_table()
     if (config_name == NULL || dump_hostname == NULL || disk_name == NULL) {
 	reply(590, "Must set config,host,disk before building disk table");
 	return -1;
-    }
-
-    if(output_find == NULL) { /* do it the first time only */
-	output_find = find_dump();
-	sort_find_result("DLKHB", &output_find);
     }
 
     clear_list();

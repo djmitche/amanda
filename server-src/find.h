@@ -15,7 +15,7 @@ typedef struct find_result_s {
     char *status;
 } find_result_t;
 
-find_result_t *find_dump P((void));
+find_result_t *find_dump P((int dyna_disklist, disklist_t* diskqp));
 char **find_log P((void));
 void sort_find_result P((char *sort_order, find_result_t **output_find));
 void print_find_result P((find_result_t *output_find));

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.18 2003/01/01 23:28:20 martinea Exp $
+ * $Id: find.c,v 1.19 2003/10/27 18:32:50 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -45,14 +45,20 @@ static int find_compare P((const void *, const void *));
 static int parse_taper_datestamp_log P((char *, int *, char **));
 
 static char *find_sort_order = NULL;
+int dynamic_disklist = 0;
+disklist_t* find_diskqp = NULL;
 
-find_result_t *find_dump()
+find_result_t *find_dump(dyna_disklist, diskqp)
+int dyna_disklist;
+disklist_t* diskqp;
 {
     char *conf_logdir, *logfile = NULL;
     int tape, maxtape, seq, logs;
     tape_t *tp;
     find_result_t *output_find = NULL;
 
+    dynamic_disklist = dyna_disklist;
+    find_diskqp = diskqp;
     conf_logdir = getconf_str(CNF_LOGDIR);
     if (*conf_logdir == '/') {
 	conf_logdir = stralloc(conf_logdir);
@@ -229,6 +235,9 @@ find_result_t **output_find;
 		if(get_amanda_names(destname, &hostname, &diskname, &level) != F_DUMPFILE) {
 		    continue;
 		}
+		if(level < 0 || level > 9)
+		    continue;
+
 		dp = NULL;
 		for(;;) {
 		    char *s;
@@ -238,10 +247,9 @@ find_result_t **output_find;
            		break;
 	            *s = '\0';
 		}
-		if ( dp == NULL )
+		if ( dp == NULL ) {
 		    continue;
-		if(level < 0 || level > 9)
-		    continue;
+		}
 
 		if(find_match(hostname,diskname)) {
 		    find_result_t *new_output_find =
@@ -541,6 +549,7 @@ int datestamp, datestamp_aux;
     int passlabel, ck_datestamp2;
     char *s;
     int ch;
+    disk_t *dp;
 
     if((logf = fopen(logfile, "r")) == NULL)
 	error("could not open logfile %s: %s", logfile, strerror(errno));
@@ -638,6 +647,14 @@ int datestamp, datestamp_aux;
 		*s = '\0';
 	    }
 
+	    dp = lookup_disk(host,disk);
+	    if ( dp == NULL ) {
+		if (dynamic_disklist == 0) {
+		    continue;
+		}
+		dp = add_disk(find_diskqp, host, disk);
+		enqueue_disk(find_diskqp, dp);
+	    }
 	    if(find_match(host, disk)) {
 		if(curprog == P_TAPER) {
 		    find_result_t *new_output_find =

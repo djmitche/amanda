@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.86 2003/10/24 13:44:35 martinea Exp $
+ * $Id: amadmin.c,v 1.87 2003/10/27 18:32:50 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -981,7 +981,13 @@ char **argv;
 	start_argc=4;
     }
     match_disklist(&diskq, argc-(start_argc-1), argv+(start_argc-1));
-    output_find = find_dump();
+    output_find = find_dump(1, &diskq);
+    if(argc-(start_argc-1) > 0) {
+	free_find_result(&output_find);
+	match_disklist(&diskq, argc-(start_argc-1), argv+(start_argc-1));
+	output_find = find_dump(0, NULL);
+    }
+
     sort_find_result(sort_order, &output_find);
     print_find_result(output_find);
     free_find_result(&output_find);
