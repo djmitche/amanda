@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.102 2003/10/31 15:40:36 martinea Exp $
+ * $Id: amcheck.c,v 1.103 2003/11/25 12:20:54 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -521,7 +521,9 @@ char *device;
 		/* not an exact label match, but a labelstr match */
 		/* check against tape list */
 		tp = lookup_tapelabel(label);
-		if(tp != NULL && !reusable_tape(tp))
+		if(tp == NULL)
+		    fprintf(errf, " (Not in tapelist)\n");
+		else if(!reusable_tape(tp))
 		    fprintf(errf, " (active tape)\n");
 		else if(got_match == 0 && tp->datestamp == 0) {
 		    got_match = 1;

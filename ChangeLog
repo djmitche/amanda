@@ -1,3 +1,10 @@
+2003-11-25  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amcheck.c (taperscan_slot): Deal with label not in
+	  tapelist case.
+	* server-src/amtape.c (taperscan_slot): Ditto.
+	* server-src/taper.c (taperscan_slot): Ditto.
+
 2003-11-24  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/driver.c (handle_taper_result): Always call

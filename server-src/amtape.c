@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.35 2003/10/31 15:40:36 martinea Exp $
+ * $Id: amtape.c,v 1.36 2003/11/25 12:20:54 martinea Exp $
  *
  * tape changer interface program
  */
@@ -496,7 +496,9 @@ char *device;
 		/* not an exact label match, but a labelstr match */
 		/* check against tape list */
 		tp = lookup_tapelabel(label);
-		if(tp != NULL && !reusable_tape(tp))
+		if(tp == NULL)
+		    fprintf(stderr, " (not in tapelist)\n");
+		else if(!reusable_tape(tp))
 		    fprintf(stderr, " (active tape)\n");
 		else if(got_match == 0 && tp->datestamp == 0) {
 		    got_match = 1;
