@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-irix.c,v 1.4 1998/12/14 07:55:28 oliva Exp $";
+static char rcsid[] = "$Id: scsi-irix.c,v 1.5 1998/12/22 05:11:40 oliva Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an SGI Workstation
@@ -26,41 +26,55 @@ static char rcsid[] = "$Id: scsi-irix.c,v 1.4 1998/12/14 07:55:28 oliva Exp $";
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
-#include <time.h>
 
 #include <sys/scsi.h>
 #include <sys/dsreq.h>
-#include <sys/mtio.h>
+
 #include <scsi-defs.h>
 
-
-int SCSI_OpenDevice(char *DeviceName)
+/*
+ * Check if the device is already open,
+ * if no open it and save it in the list 
+ * of open files.
+ */
+OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
 {
-  int DeviceFD = open(DeviceName, O_RDONLY); 
-  /*
-    if (DeviceFD < 0) 
-    printf("cannot open SCSI device '%s' - %m\n", DeviceName);
-  */
-  return DeviceFD; 
+  int DeviceFD;
+  int i;
+  OpenFiles_T *pwork;
+  
+  if ((DeviceFD = open(DeviceName, O_RDONLY)) > 0)
+    {
+      pwork= (OpenFiles_T *)malloc(sizeof(OpenFiles_T));
+      pwork->next = NULL;
+      pwork->fd = DeviceFD;
+      pwork->inquiry = (SCSIInquiry_T *)malloc(sizeof(SCSIInquiry_T));
+      Inquiry(DeviceFD, pwork->inquiry);
+      for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
+          pwork->name[i] = pwork->inquiry->prod_ident[i];
+      pwork->name[i] = '\0';
+      pwork->SCSI = 1;
+      pwork->dev = strdup(DeviceName);
+      return(pwork);
+    }
+  return(NULL); 
 }
 
-void SCSI_CloseDevice(char *DeviceName,
-		      int DeviceFD)
+int SCSI_CloseDevice(int DeviceFD)
 {
-  close(DeviceFD) ;
-  /*
-    if (close(DeviceFD) < 0)
-    printf("cannot close SCSI device '%s' - %m\n", DeviceName);
-  */
+  int ret;
+    
+  ret = close(DeviceFD) ;
+  return(ret);
 }
 
 int SCSI_ExecuteCommand(int DeviceFD,
-			Direction_T Direction,
-			CDB_T CDB,
-			int CDB_Length,
-			void *DataBuffer,
-			int DataBufferLength,
-			char *pRequestSense,
+                        Direction_T Direction,
+                        CDB_T CDB,
+                        int CDB_Length,
+                        void *DataBuffer,
+                        int DataBufferLength,
+                        char *pRequestSense,
                         int RequestSenseLength)
 {
   ExtendedRequestSense_T ExtendedRequestSense;
@@ -94,97 +108,49 @@ int SCSI_ExecuteCommand(int DeviceFD,
       ds.ds_flags = ds.ds_flags | DSRQ_WRITE;
       break;
     }
-
+  
   while (--retries > 0) {
     Result = ioctl(DeviceFD, DS_ENTER, &ds);
     if (Result < 0)
       {
-	RET(&ds) = DSRT_DEVSCSI;
-	return (-1);
+        RET(&ds) = DSRT_DEVSCSI;
+        return (-1);
       }
-    dbprintf(("SCSI_ExecuteCommand(irix) %02X STATUS(%02X) RET(%02X) : %02X\n", CDB[0], STATUS(&ds), RET(&ds)));
+    DecodeSCSI(CDB, "SCSI_ExecuteCommand : ");
+    dbprintf(("\t\t\tSTATUS(%02X) RET(%02X)\n", STATUS(&ds), RET(&ds)));
     switch (STATUS(&ds))
       {
       case ST_BUSY:                /*  BUSY */
-	break;
-      case STA_RESERV:                   /*  RESERV CONFLICT */
-	if (retries > 0)
-	  sleep(2);
-	continue;
+        break;
+      case STA_RESERV:             /*  RESERV CONFLICT */
+        if (retries > 0)
+          sleep(2);
+        continue;
       case ST_GOOD:                /*  GOOD */
-	switch (RET(&ds))
-	  {
-	  case DSRT_SHORT:
-	    return(ST_GOOD);
-	    break;
-	  case DSRT_OK:
-	  default:
-	    return(STATUS(&ds));
-	  }
+        switch (RET(&ds))
+          {
+          case DSRT_SHORT:
+            return(ST_GOOD);
+            break;
+          case DSRT_OK:
+          default:
+            return(STATUS(&ds));
+          }
       case ST_CHECK:               /*  CHECK CONDITION */ 
-	return(ST_CHECK);
-	break;
+        return(ST_CHECK);
+        break;
       case ST_COND_MET:            /*  INTERM/GOOD */
       default:
-	continue;
+        continue;
       }
-  }	
+  }     
   return(STATUS(&ds));
 }
 
-int SCSI_Scan()
-{
-	return(0);
-}
-
-int Tape_Eject ( int DeviceFD)
-{
-  struct mtop mtop;
-  
-  mtop.mt_op = MTUNLOAD;
-  mtop.mt_count = 1;
-  ioctl(DeviceFD, MTIOCTOP, &mtop);
-  return(0);
-}
-
-
-int Tape_Ready(char *tapedev, char *changerdev, int changerfd, int wait)
-{
-
-  struct mtget mtget;
-  int true = 1;
-  int cnt = 0;
-  int DeviceFD;
-  
-  if (strcmp(tapedev, changerdev) == 0) {
-    dbprintf(("Tape_Ready: %s %s\n",tapedev, changerdev));
-    DeviceFD = changerfd;
-  } else {
-    if ((DeviceFD = SCSI_OpenDevice(tapedev)) < 0)
-      {
-	sleep(wait);
-	dbprintf(("Tape_Ready: SCSI_OpenDevice failed\n"));
-	return(0);
-      }
-  }
-  
-  bzero(&mtget, sizeof(struct mtget));
-  while (true && cnt < wait)
-    {
-      if(ioctl(DeviceFD,  MTIOCGET, &mtget) != -1) 
-	{
-	  if (mtget.mt_dposn & MT_ONL)
-	    {
-	      true=0;
-	    }
-	}
-      sleep(1);
-      cnt++;
-    }
-    dbprintf(("Tape_Ready: cnt = %d\n",cnt));
-
-  if (strcmp(tapedev, changerdev) != 0)
-    SCSI_CloseDevice(tapedev, DeviceFD);
-  return(0);
-}
 #endif
+/*
+ * Local variables:
+ * indent-tabs-mode: nil
+ * c-file-style: gnu
+ * End:
+ */

@@ -358,27 +358,33 @@ scsitapedev <devicename>
 
 This device is used to control the tape, read status infos etc.
 
-Notes on how to run on different Plattforms. At the moment it is
-tested with a HP DAT changer and an exabyte 10h library on the following
-plattforms:
-HP_UX 10.20	SureStore 1200e, Exabyte 10h
-IRIX 6.x	SureStore 1200e, Exabyte 10h
-Solaris 2.5/6 Exabyte 10h
-Linux	SureStore 1200e 
-AIX		SureStore 1200e
+tapestatus <filename>
 
-The Exabyte library uses 2 SCSI Addresses, one for the tape, one for the robot.
-The SureStore uses the same address for the tape and the robot.
+If this option is given on every eject/move the log pages of the tape
+device will be dumped in this file. There are 2 log pages were you
+can see how many read/write errors (corrected) are processed by the tape
 
-For solaris a generic scsi driver modules is needed(sst), if your changer 
-uses 2 addresses, you can find it in the driver development package
-at sun or ask me (th@icem.de) for a copy.
+At the moment changer with tape and robot on the same SCSI id (
+but on different luns) will run on the following plattforms
+(tested with HP Surestore/Exabyte 10h/ARCHIVE Python)
+HP_UX 10.20	
+IRIX 6.x
+Solaris
+Linux
+AIX
+FreeBSD
+
+Tape and robot on different IDs run native on
+Linux
+HP-UX 10.20
+Irix 6.x
+
+Tape and robot on different IDs with special modules run on
+Solaris	with sst kernel module (availabe at SUN)
 
 For HP you have to create the special device files for the pass throu
 interface.
 
-To work on AIX the tape must be loaded, else the open call will fail.
-(Fixes are welcome ;-))
 
 chg-chio: (new perl script, that replaces the original chg-chio written in C)
 

@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-hpux.c,v 1.7 1998/11/18 07:03:15 oliva Exp $
+ *	$Id: scsi-hpux.c,v 1.8 1998/12/22 05:11:37 oliva Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -284,5 +284,21 @@ int Tape_Ready(char *tapedev, char *changerdev, int changerfd, int wait)
   if (out != NULL)
     fclose(out);
   return 0;
+}
+
+int OpenDevice(char * tapedev)
+{
+  int DeviceFD;
+
+  DeviceFD = open(tapedev, O_RDWR);
+  return(DeviceFD);
+}
+
+int CloseDevice(int DeviceFD)
+{
+  int ret;
+
+  ret = close(DeviceFD);
+  return(ret);
 }
 #endif

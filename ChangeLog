@@ -1,3 +1,30 @@
+1998-12-22  Thomas Hepper <th@icem.de>
+
+	* docs/TAPE.CHANGERS Update notes about chg-scsi
+	* changer-src/chg-scsi.c Added new config option tapestatus,
+	if set the tape log pages are written to this file.
+	changed parameter list for get_clean_state/ask_clean,
+	* changer-src/libscsi.h changed parameter list for get_clean_state
+	* changer-src/scsi-changer-driver.c Added new functions OpenDevice
+	CloseDevice LookupDevice. 
+	Added new functions to read and decode the Tape LOG Pages.
+	Tape Eject and ready check is now done by SCSI calls
+
+	* changer-src/scsi-aix.c
+	* changer-src/scsi-bsd.c
+	* changer-src/scsi-hpux_new.c
+	* changer-src/scsi-hpux.c
+	* changer-src/scsi-irix.c
+	* changer-src/scsi-solaris.c
+	Changed all SCSI_OpenDevice/SCSI_CloseDevice functions so that they
+	fit to the new OpenDevice/CloseDevice calls. Removed mtio.h from 
+	includes, remove Tape_Ready and Tape_Eject
+	* changer-src/scsi-chio.c
+	* changer-src/scsi-defs.h
+
+	For all changer-src files, removed tabs, run indent (from xemacs)
+ 	Added emacs variables to the end (no tab, gnu style)
+
 1998-12-21  John R. Jackson  <jrj@purdue.edu>
 
 	* man/amanda.8.in: document the lbl-templ tapetype option.
