@@ -1,5 +1,10 @@
 1998-10-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* client-src/amandad.c (main): better logging of received packet,
+	do not send a P_ACK when the received packet is not a P_REQ.
+
+1998-10-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* client-src/amandad.c (main): terminate immediately if started
 	by a P_ACK packet without sending a P_NAK packet.
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.31 1998/10/27 21:17:08 martinea Exp $
+ * $Id: amandad.c,v 1.32 1998/10/27 21:47:09 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -385,13 +385,26 @@ char **argv;
 	 *
 	 * It should suffice to ACK whenever the sender is identical.
 	 */
+	dbprintf(("%s: got packet:\n----\n%s----\n\n", argv[0],
+		  dup_msg.dgram.data));
+	parse_pkt_header(&dup_msg);
 	if(dup_msg.peer.sin_addr.s_addr == in_msg.peer.sin_addr.s_addr &&
 	   dup_msg.peer.sin_port == in_msg.peer.sin_port) {
-	    dbprintf(("%s: received dup packet, ACKing it\n", argv[0]));
-	    sendack(&in_msg, &rej_msg);
+	    if(dup_msg.type == P_REQ) {
+		dbprintf(("%s: received dup P_REQ packet, ACKing it\n", argv[0]));
+		sendack(&in_msg, &rej_msg);
+	    }
+	    else {
+		dbprintf(("%s: It's not a P_REQ, ignoring it\n", argv[0]));
+	    }
 	}
 	else {
 	    dbprintf(("%s: received other packet, NAKing it\n", argv[0]));
+	    dbprintf(("  addr: peer %lX dup %lX, port: peer %lX dup %lX\n",
+		      (unsigned long)in_msg.peer.sin_addr.s_addr,
+		      (unsigned long)dup_msg.peer.sin_addr.s_addr,
+		      (unsigned long)in_msg.peer.sin_port,
+		      (unsigned long)dup_msg.peer.sin_port));
 	    /* XXX dup_msg filled in? */
 	    sendnak(&dup_msg, &rej_msg, "amandad busy");
 	}
@@ -434,14 +447,18 @@ send_response:
 
 	    continue;
 	}
-	dbprintf(("%s: got ack:\n----\n%s----\n\n", argv[0],
+	dbprintf(("%s: got packet:\n----\n%s----\n\n", argv[0],
 		  dup_msg.dgram.data));
 	parse_pkt_header(&dup_msg);
 
-	if(dup_msg.type == P_ACK && 
-	   dup_msg.peer.sin_addr.s_addr == in_msg.peer.sin_addr.s_addr &&
-	   dup_msg.peer.sin_port == in_msg.peer.sin_port)
-	    break;
+	
+	if(dup_msg.peer.sin_addr.s_addr == in_msg.peer.sin_addr.s_addr &&
+	   dup_msg.peer.sin_port == in_msg.peer.sin_port) {
+	    if(dup_msg.type == P_ACK)
+		break;
+	    else
+		dbprintf(("%s: It's not an ack\n", argv[0]));
+	}
 	else {
 	    dbprintf(("%s: weird, it's not a proper ack\n", argv[0]));
 	    dbprintf(("  addr: peer %lX dup %lX, port: peer %lX dup %lX\n",
