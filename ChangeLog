@@ -1,5 +1,10 @@
 1998-11-24  John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/amlabel.c: insist on being run as the dump user (ala
+	amflush) to keep permissions straight.
+
+1998-11-24  John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/amrmtape.sh.in: insist on being run as the dump user (ala
 	amdump) to keep permissions straight.
 

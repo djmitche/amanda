@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.18.2.1 1998/11/18 07:37:06 oliva Exp $
+ * $Id: amlabel.c,v 1.18.2.2 1998/11/24 23:48:17 jrj Exp $
  *
  * write an Amanda label on a tape
  */
@@ -65,6 +65,10 @@ int main(argc, argv)
     int force, tape_ok;
     tape_t *tp;
     int slotcommand;
+    uid_t uid_me;
+    uid_t uid_dumpuser;
+    char *dumpuser;
+    struct passwd *pw;
 
 #ifdef HAVE_LIBVTBLC
     int vtbl_no      = -1;
@@ -116,6 +120,25 @@ int main(argc, argv)
 
     if(read_conffile(CONFFILE_NAME))
 	error("could not read amanda config file");
+
+    uid_me = getuid();
+    uid_dumpuser = uid_me;
+    dumpuser = getconf_str(CNF_DUMPUSER);
+
+    if ((pw = getpwnam(dumpuser)) == NULL) {
+	error("cannot look up dump user \"%s\"", dumpuser);
+	/* NOTREACHED */
+    }
+    uid_dumpuser = pw->pw_uid;
+    if ((pw = getpwuid(uid_me)) == NULL) {
+	error("cannot look up my own uid %ld", (long)uid_me);
+	/* NOTREACHED */
+    }
+    if (uid_me != uid_dumpuser) {
+	error("running as user \"%s\" instead of \"%s\"",
+	      pw->pw_name, dumpuser);
+	/* NOTREACHED */
+    }
 
     labelstr = getconf_str(CNF_LABELSTR);
 
@@ -234,15 +257,16 @@ int main(argc, argv)
 	    putchar('\n');
 	    error(errstr);
 	} else {
-	/* write tape list */
+	    /* write tape list */
 
-    	/* XXX add cur_tape number to tape list structure */
-    	add_tapelabel(atoi("19700101"), label);
-       	oldtapefilename = stralloc2(tapefilename, ".amlabel");
-	rename(tapefilename, oldtapefilename);
-	amfree(oldtapefilename);
-	if(write_tapelist(tapefilename))
-	error("couldn't write tapelist: %s", strerror(errno));
+    	    /* XXX add cur_tape number to tape list structure */
+    	    add_tapelabel(atoi("19700101"), label);
+       	    oldtapefilename = stralloc2(tapefilename, ".amlabel");
+	    rename(tapefilename, oldtapefilename);
+	    amfree(oldtapefilename);
+	    if(write_tapelist(tapefilename)) {
+	        error("couldn't write tapelist: %s", strerror(errno));
+	    }
 	} /* write tape list */
 
 #ifdef HAVE_LINUX_ZFTAPE_H
