@@ -56,6 +56,15 @@ EXTRA_DIST = $(SNAPSHOT_STAMP) \
 	contrib/sst/sst.conf		\
 	contrib/sst/sst_def.h		\
 	contrib/sst/sstest.c		\
+	contrib/gsc/README		\
+	contrib/gsc/cfggsc.c		\
+	contrib/gsc/defgsc.c		\
+	contrib/gsc/gsc.add		\
+	contrib/gsc/gscdd.c		\
+	contrib/gsc/gscdds.h		\
+	contrib/gsc/makefile		\
+	contrib/gsc/tstinq.c		\
+	contrib/gsc/ucfggsc.c		\
 	patches/regex-3.6alpha.patch	\
 	patches/samba-largefs.patch	\
 	patches/tar-1.12.patch		\

@@ -1,4 +1,7 @@
 2001-04-15 Thomas Hepper <th@ant.han.de>
+	* Makefile.am: Added contrib/gsc files to EXTRA_DIST
+	
+2001-04-15 Thomas Hepper <th@ant.han.de>
 	* changer-src/scsi-aix.c: Rework of the SCSI interface, support
 	to talk to an device handled by the gsc driver (not tested yet)
 	* changer-src/scsi-bsd.c (SCSI_ExecuteCommand): Fix error in
