@@ -431,13 +431,36 @@ if test "$USE_AMANDAHOSTS" = yes; then
     AC_DEFINE(USE_AMANDAHOSTS)
 fi
 
+dnl Speicify --with-krb4 if kerberos bits are in somewhere other than the
+dnl listed KRB4_SPOTS.  We only compile kerberos support in if the right 
+dnl files are there.
+
 AC_ARG_WITH(krb4-security,
-    [   --with-krb4-security   use Kerbose 4 security and set the following:],
-    KRB4_SECURITY=yes
+    [   --with-krb4=DIR   kerberos bits can be found here		],
+    KRB4_SPOTS="$withval"
 )
-: ${KRB4_SECURITY:=no}
-if test "$KRB4_SECURITY" = yes; then
-    AC_DEFINE(KRB4_SECURITY)
+: ${KRB4_SPOTS="/usr/kerberos /usr/cygnus /usr /opt/kerberos"}
+
+AC_MSG_CHECKING(kerberos4 bits)
+if test -f common-src/krb4-security.c ; then
+    for dir in $KRB4_SPOTS; do
+	if test "$KRB4_SECURITY" != "yes" && test -f ${dir}/lib/libkrb.a ; then
+            AC_MSG_RESULT(found in $dir)
+    	    KRB4_SECURITY=yes
+    	    AC_DEFINE(KRB4_SECURITY)
+	    KRB4INCLUDES=-I$dir/include
+	    KRB4LDFLAGS=-L$dir/lib
+	    KRB4LIBS="-lkrb -ldes"
+	    KRB4COMMON_C=krb4-security.c
+	    KRB4COMMON_O=krb4-security.o
+	fi
+    done
+    
+    if test "$KRB4LDFLAGS" = "" ; then
+       AC_MSG_RESULT(no libkrb.a)
+    fi
+else
+    AC_MSG_RESULT(no)
 fi
 
 AC_ARG_WITH(server-principal,
@@ -635,6 +658,8 @@ case "$target" in
 				ac_cv_func_setpgrp_void=yes;;
 			esac
 			AC_DEFINE(STATFS_OSF1)
+			;;
+    *-netbsd*)
 			;;
     *-freebsd*)
 			;;
@@ -1711,6 +1736,11 @@ dnl extra substitution parameters
 AC_SUBST(MTX)
 AC_SUBST(ac_n)
 AC_SUBST(ac_c)
+
+dnl kerberos bits that need to be linked into common-src/libamanda.a
+AC_SUBST(KRB4COMMON_C)
+AC_SUBST(KRB4COMMON_O)
+LIBS="$LIBS $KRB4LIBS"
 
 AC_OUTPUT( \
 	amplot/amcat.awk		amplot/amplot.sh		\

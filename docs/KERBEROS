@@ -1,5 +1,7 @@
 
-Amanda 2.2 - KERBEROS v4 SUPPORT NOTES
+Amanda 2.3.0.4 - KERBEROS v4 SUPPORT NOTES
+
+Note that kerberos 5 isn't supported.  [yet]
 
 0. GETTING THE SOURCE FILES
 
@@ -7,34 +9,10 @@ The Kerberos-related Amanda source code is available in a separate,
 export restricted, package.  US sites can follow the instructions in
 KERBEROS.HOW-TO-GET on ftp.cs.umd.edu in the amanda directory.
 
-1. COMPILATION
+1. CONFIGURATION
 
-Read the comments in options.h-vanilla for how to configure the kerberos
-version:
+The configure script defaults to:
 
-/*
- * KRB4_SECURITY selects MIT Kerberos version 4 style security, which is
- * significantly better than BSD_SECURITY, providing for mutual
- * authentication and (optionally) encryption of backup data over the
- * network.  Both BSD_SECURITY and KRB4_SECURITY may be defined at the same
- * time: the type of security to be used can be selected on a per-client-host
- * basis (in the disklist file).
- */
-#undef KRB4_SECURITY
-
-#ifdef KRB4_SECURITY
-/*
- * If you turn on KRB4_SECURITY, you must set all these options below.
- *
- * You can set the principle, instance, and keyfile to use seperately for
- * both the client and server.
- *
- * The instance can either be a string constant, or `HOSTNAME_INSTANCE' if
- * you want the local hostname used as the instance (ala krb_get_phost).
- *
- * The keyfile name can be either a string constant, or `KEYFILE' to use the
- * default keyfile defined in <krb.h>.
- */
 #  define SERVER_HOST_PRINCIPLE "amanda"
 #  define SERVER_HOST_INSTANCE  "amanda"
 #  define SERVER_HOST_KEY_FILE  "/.amanda"
@@ -45,14 +23,25 @@ version:
 
 #  define TICKET_LIFETIME       128
 
-/*
- * Add Kerberos include directories and libraries to the compiler command
- * line.  Customize these for your site.
- */
-#  define MK_KRB4INC -I/local/athena/include
-#  define MK_KRB4LIB -L/local/athena/lib -lkrb -ldes
+you can override these with configure options if you so desire, with:
 
-#endif /* KRB4_SECURITY */
+    --with-server-principal=ARG    server host principal  [amanda]
+     --with-server-instance=ARG     server host instance   [amanda]
+     --with-server-keyfile=ARG      server host key file   [/.amanda]
+     --with-client-principal=ARG    client host principal  [rcmd]
+     --with-client-instance=ARG     client host instance   [HOSTNAME_INSTANCE]
+     --with-client-keyfile=ARG      client host key file   [KEYFILE]
+     --with-ticket-lifetime=ARG     ticket lifetime        [128]
+
+The configure script will automatically include kerberos if you
+followed the directions in step 0.  It'll search under /usr/kerberos/lib,
+/usr/cygnus/lib, /usr/lib, and /opt/kerberos/lib for libkrb.a.
+(in that order) for the kerberos bits.  If it finds them, kerberos
+support will be added in, if it doesn't, it won't.  If the kerberos
+bits are found under some other hierarchy, you can specify this
+via the --with-krb4=DIR, where DIR is where the kerberos bits live.
+It'll look under the 'lib' directory under this hierarchy for
+libkrb.a.
 
 2. INSTALLATION
 
