@@ -1,3 +1,5 @@
+	enabled BSD security by default.
+
 	fixed estimate command for XFSDUMP.
 	-Mark Radleigh <radleigh@image.ucr.edu>
 
