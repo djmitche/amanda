@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.143 2004/10/21 12:31:30 martinea Exp $
+ * $Id: driver.c,v 1.144 2004/10/21 13:09:30 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1019,6 +1019,7 @@ handle_taper_result(cookie)
 		log_add(L_FAIL, "%s %s %s %d [too many taper retries]",
 	    	    dp->host->hostname, dp->name, sched(dp)->datestamp,
 		    sched(dp)->level);
+		printf("driver: taper failed %s %s %s, too many taper retry\n", result_argv[2], dp->host->hostname, dp->name);
 	    }
 	    else {
 		sched(dp)->attempted++;
@@ -1232,9 +1233,10 @@ handle_dumper_result(cookie)
 	     * case for cleanup.
 	     */
 	    if(sched(dp)->attempted) {
-		log_add(L_FAIL, "%s %s %s %d [could not connect to %s]",
+		log_add(L_FAIL, "%s %s %s %d [too many dumper retry]",
 	    	    dp->host->hostname, dp->name, sched(dp)->datestamp,
-	    	    sched(dp)->level, dp->host->hostname);
+	    	    sched(dp)->level);
+		printf("driver: dump failed %s %s %s, too many dumper retry\n", result_argv[2], dp->host->hostname, dp->name);
 	    }
 	    /* FALLTHROUGH */
 	case FAILED: /* FAILED <handle> <errstr> */
