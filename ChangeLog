@@ -1,5 +1,9 @@
 1998-08-04  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* client-src/sendsize.c: revert 1998-08-01's change, it wouldn't
+	even compile, as amfree() expands to a statement, not an expression, 
+	so it cannot be used as the `increment' part of a for loop.
+
 	* server-src/planner.c (main): if runs_per_cycle is set to zero or
 	negative, set it to 1, in order to avoid division by zero.
 	* server-src/amadmin.c (balance): ditto
