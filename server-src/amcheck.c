@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.24 1997/12/17 21:03:43 jrj Exp $
+ * $Id: amcheck.c,v 1.25 1997/12/22 00:13:13 amcore Exp $
  *
  * checks for common problems in server and clients
  */
@@ -452,6 +452,9 @@ int fd;
 
     if(changer_init() && (tapename = taper_scan()) == NULL) {
 	fprintf(outf, "ERROR: %s.\n", changer_resultstr);
+	tapebad = 1;
+    } else if(access(tapename,F_OK|R_OK|W_OK) == -1) {
+	fprintf(outf, "ERROR: %s: %s\n",tapename,strerror(errno));
 	tapebad = 1;
     } else if((errstr = tape_rdlabel(tapename,
 				     datestamp, sizeof(datestamp),
