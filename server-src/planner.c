@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.87 1999/04/09 15:05:54 kashmir Exp $
+ * $Id: planner.c,v 1.88 1999/04/09 20:13:19 kashmir Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -35,7 +35,8 @@
 #include "infofile.h"
 #include "logfile.h"
 #include "clock.h"
-#include "dgram.h"
+#include "packet.h"
+#include "security.h"
 #include "protocol.h"
 #include "version.h"
 
@@ -86,18 +87,11 @@ disklist_t startq, waitq, estq, failq, schedq;
 long total_size;
 double total_lev0, balanced_size, balance_threshold;
 unsigned long tape_length, tape_mark;
-int result_port, amanda_port;
 int max_disks;
-
-#ifdef KRB4_SECURITY
-int kamanda_port;
-#endif
 
 tapetype_t *tape;
 int runs_per_cycle;
 time_t today;
-
-dgram_t *msg;
 
 /* We keep a LIFO queue of before images for all modifications made
  * to schedq in our attempt to make the schedule fit on the tape.
@@ -182,12 +176,7 @@ char **argv;
      * setuid root.
      */
 
-    /* set up dgram port first thing */
-
-    msg = dgram_alloc();
-
-    if(dgram_bind(msg, &result_port) == -1)
-	error("could not bind result datagram port: %s", strerror(errno));
+    protocol_init();
 
     if(geteuid() == 0) {
 	uid_t ruid = getuid();
@@ -260,12 +249,6 @@ char **argv;
     tape = lookup_tapetype(conf_tapetype);
     tape_length = tape->length * conf_runtapes;
     tape_mark   = tape->filemark;
-
-    proto_init(msg->socket, today, 1000); /* XXX handles should eq nhosts */
-
-#ifdef KRB4_SECURITY
-    kerberos_service_init();
-#endif
 
     fprintf(stderr, "startup took %s secs\n", walltime_str(curclock()));
 
@@ -427,7 +410,6 @@ char **argv;
     close_infofile();
     log_add(L_FINISH, "date %s", datestamp);
 
-    amfree(msg);
     amfree(datestamp);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
@@ -922,30 +904,17 @@ int level;
 
 static void getsize P((host_t *hostp));
 static disk_t *lookup_hostdisk P((host_t *hp, char *str));
-static void handle_result P((proto_t *p, pkt_t *pkt));
+static void handle_result P((void *datap, pkt_t *pkt, security_handle_t *sech));
 
 
 static void get_estimates P((void))
 {
-    struct servent *amandad;
-
-    if((amandad = getservbyname(AMANDA_SERVICE_NAME, "udp")) == NULL)
-	amanda_port = AMANDA_SERVICE_DEFAULT;
-    else
-	amanda_port = ntohs(amandad->s_port);
-
-#ifdef KRB4_SECURITY
-    if((amandad = getservbyname(KAMANDA_SERVICE_NAME, "udp")) == NULL)
-	kamanda_port = KAMANDA_SERVICE_DEFAULT;
-    else
-	kamanda_port = ntohs(amandad->s_port);
-#endif
 
     while(!empty(startq)) {
 	getsize(startq.head->host);
-	check_protocol();
+	protocol_check();
     }
-    run_protocol();
+    protocol_run();
 
     while(!empty(waitq)) {
 	disk_t *dp = dequeue_disk(&waitq);
@@ -957,11 +926,10 @@ static void get_estimates P((void))
 static void getsize(hostp)
 host_t *hostp;
 {
-    disklist_t *destqp;
+    char number[NUM_STR_SIZE], *req;
     disk_t *dp;
-    char *req = NULL, *errstr = NULL;
-    int i, disks, rc, timeout;
-    char number[NUM_STR_SIZE];
+    int i, disks, timeout;
+    const security_driver_t *secdrv;
 
     assert(hostp->disks != NULL);
 
@@ -1024,37 +992,21 @@ host_t *hostp;
     else
       timeout = disks * conf_etimeout;
 
-#ifdef KRB4_SECURITY
-    if (strcasecmp(hostp->disks->security_driver, "KRB4") == 0)
-	rc = make_krb_request(hostp->hostname, kamanda_port, req,
-			      hostp, timeout, handle_result);
-    else
-#endif
-	rc = make_request(hostp->hostname, amanda_port, req,
-			  hostp, timeout, handle_result);
-
-    req = NULL;					/* do not own this any more */
-
-    if(rc) {
-	errstr = vstralloc("could not resolve hostname \"",
-			   hostp->hostname,
-			   "\"",
-			   ": ", strerror(errno),
-			   NULL);
-	destqp = &failq;
+    secdrv = security_getdriver(hostp->disks->security_driver);
+    if (secdrv == NULL) {
+	error("could not find security driver '%s' for host '%s'",
+	    hostp->disks->security_driver, hostp->hostname);
     }
-    else {
-	errstr = NULL;
-	destqp = &waitq;
-    }
+
+    protocol_sendreq(hostp->hostname, secdrv, req, timeout,
+	handle_result, hostp);
+    amfree(req);
 
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
 	if(est(dp)->level[0] == -1) continue;   /* ignore this disk */
-	est(dp)->errstr = errstr;
-	errstr = NULL;
-	enqueue_disk(destqp, dp);
+	est(dp)->errstr = NULL;
+	enqueue_disk(&waitq, dp);
     }
-    amfree(errstr);
 }
 
 static disk_t *lookup_hostdisk(hp, str)
@@ -1070,9 +1022,10 @@ char *str;
 }
 
 
-static void handle_result(p, pkt)
-proto_t *p;
+static void handle_result(datap, pkt, sech)
+void *datap;
 pkt_t *pkt;
+security_handle_t *sech;
 {
     int level, i;
     long size;
@@ -1084,11 +1037,11 @@ pkt_t *pkt;
     char *s;
     int ch;
 
-    hostp = (host_t *) p->datap;
+    hostp = (host_t *)datap;
 
     if (pkt == NULL) {
-	errbuf = vstralloc("Request to ", hostp->hostname, " timed out.",
-			   NULL);
+	errbuf = vstralloc("Request to ", hostp->hostname, " failed: ", 
+	    security_geterror(sech), NULL);
 	goto error_return;
     } else if (pkt->type == P_NAK) {
 #define sc "ERROR"
@@ -1110,16 +1063,6 @@ pkt_t *pkt;
 	    goto NAK_parse_failed;
 	}
     }
-
-#ifdef KRB4_SECURITY
-    if (strcasecmp(hostp->disks->security_driver, "KRB4") == 0 &&
-       !check_mutual_authenticator(host2key(hostp->hostname), pkt, p)) {
-	errbuf = vstralloc(hostp->hostname,
-			   "[mutual-authentication failed]",
-			   NULL);
-	goto error_return;
-    }
-#endif
 
     s = pkt->body;
     ch = *s++;

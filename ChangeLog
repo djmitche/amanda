@@ -1,5 +1,17 @@
 1999-04-09  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/planner.c: security changes:
+	(main): Remove dgram usage.  Call protocol_init().  Remove
+	krb4 code.
+	(getsize): remove krb4 code.  Handle protocol layer api changes.
+	Lookup security driver/complain if not found.  Free request
+	after calling sendreq.  All hosts get put on the waitq since
+	sendreq never returns an error.
+	(handle_result): deal with new protocol layer error semantics.
+	Remove krb4 code.
+
+1999-04-09  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/conffile.c: remove INTERFACE undef hack.  Our
 	namespace isn't polluted by krb4 headers anymore, so it's
 	unneeded.
