@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.5 1997/08/27 08:11:55 amcore Exp $
+ * $Id: debug.c,v 1.6 1997/09/04 06:33:27 amcore Exp $
  *
  * debug log subroutines
  */
@@ -72,6 +72,7 @@ char *filename;
 {
     time_t curtime;
     int saved_debug;
+    int maxtries = 50;
 #ifdef DEBUG_FILE_WITH_PID
     static char dbfilename[256];
 
@@ -80,10 +81,13 @@ char *filename;
 #   define dbfilename filename
 #endif
 
-    unlink(dbfilename);
-    if((db_file = open(dbfilename, O_WRONLY|O_CREAT|O_EXCL|O_APPEND,
-		       0600)) == -1)
-	error("open debug file \"%s\": %s", dbfilename, strerror(errno));
+    do {
+      unlink(dbfilename);
+      if (--maxtries)
+	continue;
+      error("open debug file \"%s\": %s", dbfilename, strerror(errno));
+    } while((db_file = open(dbfilename, O_WRONLY|O_CREAT|O_EXCL|O_APPEND,
+			    0600)) == -1);
 
     time(&curtime);
     saved_debug = debug; debug = 1;
