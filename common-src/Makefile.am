@@ -1,5 +1,7 @@
 # Makefile for Amanda library.
 
+ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
+
 libamanda_version = 0:0:0
 libnolog_version = 0:0:0
 

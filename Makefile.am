@@ -1,5 +1,9 @@
 ## Process this file with automake to produce Makefile.in
 
+ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
+ACLOCAL = @ACLOCAL@ -I $(top_srcdir)/config
+AUTOCONF = @AUTOCONF@ --localdir=$(top_srcdir)/config
+
 SUBDIRS=config		\
 	common-src	client-src	recover-src	\
 	tape-src	server-src	restore-src	\
@@ -31,3 +35,6 @@ EXTRA_DIST = \
 	regex-src/tests			regex-src/utils.h		\
 	regex-src/fake/limits.h		regex-src/fake/memmove.c	\
 	regex-src/fake/stdlib.h
+
+$(ACLOCAL_M4): $(srcdir)/config/acinclude.m4 $(srcdir)/config/libtool.m4
+	cd $(srcdir) && $(ACLOCAL) --output=$(ACLOCAL_M4)

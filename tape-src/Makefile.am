@@ -1,5 +1,7 @@
 # Makefile for Amanda tape library.
 
+ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
+
 libtape_version = 0:0:0
 
 INCLUDES =		-I$(top_srcdir)/common-src

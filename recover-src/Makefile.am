@@ -1,5 +1,7 @@
 # Makefile for Amanda file recovery programs.
 
+ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
+
 INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/client-src
 
 AMANDA_CFLAGS =		@AMANDA_CFLAGS@

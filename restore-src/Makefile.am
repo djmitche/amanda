@@ -1,5 +1,7 @@
 # Makefile for Amanda restore programs.
 
+ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
+
 INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/tape-src
 
 AMANDA_CFLAGS =		@AMANDA_CFLAGS@

@@ -1,5 +1,7 @@
 # Makefile for Amanda client programs.
 
+ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
+
 libclient_version = 0:0:0
 
 INCLUDES =		-I$(top_srcdir)/common-src
