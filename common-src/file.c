@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.14.4.3 1999/10/03 16:00:50 jrj Exp $
+ * $Id: file.c,v 1.14.4.4 1999/10/03 16:09:06 jrj Exp $
  *
  * file and directory bashing routines
  */
@@ -447,7 +447,7 @@ areads_getbuf(fd)
     int size;
 
     assert(fd >= 0);
-    if(fd > areads_bufcount) {
+    if(fd >= areads_bufcount) {
 	size = (fd + 1) * sizeof(*areads_buffer);
 	new = (struct areads_buffer *) alloc(size);
 	memset((char *)new, 0, size);

@@ -1,5 +1,9 @@
 1999-10-03 John R. Jackson  <jrj@purdue.edu>
 
+	* common-src/file.c (areads_getbuf): fix a buffer allocation problem.
+
+1999-10-03 John R. Jackson  <jrj@purdue.edu>
+
 	* common-src/amflock.c (main): do not use aclose() in the configure
 	  test case.  During configure we do not have areads_relbuf()
 	  available and it makes configure think all the tests have failed.
@@ -522,7 +526,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.290 1999/10/03 16:05:51 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.291 1999/10/03 16:08:57 jrj Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
