@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.16.2.5.2.10 2002/04/07 20:00:21 jrjackson Exp $
+ * $Id: conffile.c,v 1.54.2.16.2.5.2.11 2002/04/14 13:15:19 martinea Exp $
  *
  * read configuration file
  */
@@ -664,7 +664,7 @@ static void init_defaults()
     malloc_mark(conf_indexdir.s);
     conf_columnspec.s = newstralloc(conf_columnspec.s, "");
     malloc_mark(conf_columnspec.s);
-    conf_dumporder.s = newstralloc(conf_dumporder.s, "sssSS");
+    conf_dumporder.s = newstralloc(conf_dumporder.s, "ttt");
     malloc_mark(conf_dumporder.s);
 
     conf_dumpcycle.i	= 10;

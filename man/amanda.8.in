@@ -667,7 +667,7 @@ of backups, but this effect is relatively small on most systems.
 .TP
 .BS dumporder string
 Default:
-.IR "sssSSSSSSS" .
+.IR "tttTTTTTTT" .
 The priority order of each dumper:
 .RS
 .RS

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.10 2002/04/13 19:24:17 jrjackson Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.11 2002/04/14 13:15:19 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -623,9 +623,9 @@ disklist_t *rq;
 		    char *dumporder = getconf_str(CNF_DUMPORDER);
 		    if(strlen(dumporder) <= (dumper-dmptable)) {
 			if(dumper-dmptable < 3)
-			    dumptype = 's';
+			    dumptype = 't';
 			else
-			    dumptype = 'S';
+			    dumptype = 'T';
 		    }
 		    else {
 			dumptype = dumporder[dumper-dmptable];
