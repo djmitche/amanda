@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.13.4.2 2001/04/23 21:12:32 jrjackson Exp $
+ * $Id: sendsize.c,v 1.97.2.13.4.3 2001/08/01 22:05:06 jrjackson Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -86,6 +86,8 @@ disk_estimates_t *est_list;
 
 int maxdumps = 1, dumpsrunning = 0;
 char *host;				/* my hostname from the server */
+char *prefix;				/* debug line prefix if maxdumps */
+char *prefix_line;			/* debug line prefix if maxdumps */
 
 /* local functions */
 int main P((int argc, char **argv));
@@ -136,6 +138,9 @@ char **argv;
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
+
+    prefix = stralloc(get_pname());
+    prefix_line = "";
 
     host = alloc(MAX_HOSTNAME_LENGTH+1);
     gethostname(host, MAX_HOSTNAME_LENGTH);
@@ -350,8 +355,10 @@ disk_estimates_t *est;
 void calc_estimates(est)
 disk_estimates_t *est;
 {
-    dbprintf(("calculating for amname '%s', dirname '%s'\n", est->amname,
-	      est->dirname));
+    char my_pid[NUM_STR_SIZE];
+
+    dbprintf(("%s: calculating for amname '%s', dirname '%s'\n",
+	      prefix, est->amname, est->dirname));
     if (maxdumps > 1) {
       while(dumpsrunning >= maxdumps) {
 	wait(NULL);
@@ -367,6 +374,9 @@ disk_estimates_t *est;
       default:
 	return;
       }
+      ap_snprintf(my_pid, sizeof(my_pid), "%d", getpid());
+      prefix = newvstralloc(prefix, prefix, ": ", my_pid, NULL);
+      prefix_line = newstralloc2(prefix_line, prefix, ": ");
     }
 
     /* Now in the child process */
@@ -413,7 +423,7 @@ disk_estimates_t *est;
     argv[argc++] = stralloc(est->amname);
     argv[argc++] = stralloc(est->dirname);
 
-    dbprintf(("%s: running cmd:", argv[0]));
+    dbprintf(("%s: running cmd: %s", prefix, argv[0]));
     for(i=0; i<argc; ++i)
 	dbprintf((" %s", argv[i]));
 
@@ -440,8 +450,7 @@ disk_estimates_t *est;
         break;
     case 0:
 	execve(cmd, argv, safe_env());
-	dbprintf(("%s: execve %s returned: %s",
-		  get_pname(), cmd, strerror(errno)));
+	dbprintf(("%s: execve %s returned: %s", prefix, cmd, strerror(errno)));
 	exit(1);
     }
     for(i = 0; i < argc; i++) {
@@ -476,7 +485,7 @@ disk_estimates_t *est;
     for(level = 0; level < DUMP_LEVELS; level++) {
 	if(est->est[level].needestimate) {
 	    dbprintf(("%s: getting size via dump for %s level %d\n",
-		      get_pname(), est->amname, level));
+		      prefix, est->amname, level));
 	    size = getsize_dump(est->amname, level);
 
 	    amflock(1, "size");
@@ -501,7 +510,7 @@ disk_estimates_t *est;
     for(level = 0; level < DUMP_LEVELS; level++) {
 	if(est->est[level].needestimate) {
 	    dbprintf(("%s: getting size via smbclient for %s level %d\n",
-		      get_pname(), est->amname, level));
+		      prefix, est->amname, level));
 	    size = getsize_smbtar(est->amname, level, est->exclude);
 
 	    amflock(1, "size");
@@ -527,7 +536,7 @@ disk_estimates_t *est;
   for(level = 0; level < DUMP_LEVELS; level++) {
       if (est->est[level].needestimate) {
 	  dbprintf(("%s: getting size via gnutar for %s level %d\n",
-		    get_pname(), est->amname, level));
+		    prefix, est->amname, level));
 	  size = getsize_gnutar(est->amname, level,
 				est->exclude, est->est[level].dumpsince);
 
@@ -644,7 +653,7 @@ long getsize_dump(disk, level)
     {
         char *name = " (xfsdump)";
 	dbprintf(("%s: running \"%s%s -F -J -l %s - %s\"\n",
-		  get_pname(), cmd, name, level_str, device));
+		  prefix, cmd, name, level_str, device));
     }
     else
 #endif							/* } */
@@ -664,7 +673,7 @@ long getsize_dump(disk, level)
 #endif
 	dumpkeys = vstralloc(level_str, "s", "f", NULL);
         dbprintf(("%s: running \"%s%s %s 1048576 - %s\"\n",
-		  get_pname(), cmd, name, dumpkeys, device));
+		  prefix, cmd, name, dumpkeys, device));
     }
     else
 #endif							/* } */
@@ -680,7 +689,7 @@ long getsize_dump(disk, level)
 	device = amname_to_dirname(disk);
 	dumpkeys = vstralloc(level_str, "b", "f", NULL);
 	dbprintf(("%s: running \"%s%s %s 60 - %s\"\n",
-		  get_pname(), cmd, name, dumpkeys, device));
+		  prefix, cmd, name, dumpkeys, device));
     }
     else
 #endif							/* } */
@@ -702,7 +711,7 @@ long getsize_dump(disk, level)
 # ifdef AIX_BACKUP					/* { */
 	dumpkeys = vstralloc("-", level_str, "f", NULL);
 	dbprintf(("%s: running \"%s%s %s - %s\"\n",
-		  get_pname(), cmd, name, dumpkeys, device));
+		  prefix, cmd, name, dumpkeys, device));
 # else							/* } { */
 	dumpkeys = vstralloc(level_str,
 #  ifdef HAVE_DUMP_ESTIMATE				/* { */
@@ -719,10 +728,10 @@ long getsize_dump(disk, level)
 
 #  ifdef HAVE_HONOR_NODUMP				/* { */
 	dbprintf(("%s: running \"%s%s %s 0 1048576 - %s\"\n",
-		  get_pname(), cmd, name, dumpkeys, device));
+		  prefix, cmd, name, dumpkeys, device));
 #  else							/* } { */
 	dbprintf(("%s: running \"%s%s %s 1048576 - %s\"\n",
-		  get_pname(), cmd, name, dumpkeys, device));
+		  prefix, cmd, name, dumpkeys, device));
 #  endif						/* } */
 # endif							/* } */
 	amfree(name);
@@ -730,7 +739,7 @@ long getsize_dump(disk, level)
     else
 #endif							/* } */
     {
-        dbprintf(("%s: no dump program available", get_pname()));
+        dbprintf(("%s: no dump program available", prefix));
 	error("%s: no dump program available", get_pname());
     }
 
@@ -738,7 +747,8 @@ long getsize_dump(disk, level)
 
     switch(dumppid = fork()) {
     case -1:
-	dbprintf(("cannot fork for killpgrp: %s\n", strerror(errno)));
+	dbprintf(("%s: cannot fork for killpgrp: %s\n",
+		  prefix, strerror(errno)));
 	amfree(dumpkeys);
 	amfree(cmd);
 	amfree(rundump_cmd);
@@ -750,18 +760,20 @@ long getsize_dump(disk, level)
 	if(SETPGRP == -1)
 	    SETPGRP_FAILED();
 	else if (killctl[0] == -1 || killctl[1] == -1)
-	    dbprintf(("pipe for killpgrp failed, trying without killpgrp\n"));
+	    dbprintf(("%s: pipe for killpgrp failed, trying without killpgrp\n",
+		      prefix));
 	else {
 	    switch(fork()) {
 	    case -1:
-		dbprintf(("fork failed, trying without killpgrp\n"));
+		dbprintf(("%s: fork failed, trying without killpgrp\n",
+			  prefix));
 		break;
 
 	    default:
 	    {
 		char *killpgrp_cmd = vstralloc(libexecdir, "/killpgrp",
 					       versionsuffix(), NULL);
-		dbprintf(("running %s\n",killpgrp_cmd));
+		dbprintf(("%s: running %s\n", prefix, killpgrp_cmd));
 		dup2(killctl[0], 0);
 		dup2(nullfd, 1);
 		dup2(nullfd, 2);
@@ -770,7 +782,7 @@ long getsize_dump(disk, level)
 		close(killctl[1]);
 		close(nullfd);
 		execle(killpgrp_cmd, killpgrp_cmd, (char *)0, safe_env());
-		dbprintf(("cannot execute %s: %s\n", killpgrp_cmd,
+		dbprintf(("%s: cannot execute %s: %s\n", prefix, killpgrp_cmd,
 		    strerror(errno)));
 		exit(-1);
 	    }
@@ -846,26 +858,28 @@ long getsize_dump(disk, level)
     dumpout = fdopen(pipefd[0],"r");
 
     for(size = -1; (line = agets(dumpout)) != NULL; free(line)) {
-	dbprintf(("%s\n",line));
+	dbprintf(("%s%s\n", prefix_line, line));
 	size = handle_dumpline(line);
 	if(size > -1) {
 	    amfree(line);
 	    if((line = agets(dumpout)) != NULL) {
-		dbprintf(("%s\n",line));
+		dbprintf(("%s%s\n", prefix_line, line));
 	    }
 	    break;
 	}
     }
     amfree(line);
 
-    dbprintf((".....\n"));
+    dbprintf(("%s.....\n", prefix_line));
     if(size == -1)
-	dbprintf(("(no size line match in above dump output)\n.....\n"));
+	dbprintf(("%s: (no size line match in above dump output)\n%s.....\n",
+		  prefix, prefix_line));
     if(size == 0 && level == 0)
-	dbprintf(("(PC SHARE connection problem, is this disk really empty?)\n.....\n"));
+	dbprintf(("%s: (PC SHARE connection problem, is this disk really empty?)\n%s.....\n",
+		  prefix, prefix_line));
 
     if (killctl[1] != -1) {
-	dbprintf(("asking killpgrp to terminate\n"));
+	dbprintf(("%s: asking killpgrp to terminate\n", prefix));
 	aclose(killctl[1]);
 	for(s = 5; s > 0; --s) {
 	    sleep(1);
@@ -878,9 +892,10 @@ long getsize_dump(disk, level)
      * First, try to kill the dump process nicely.  If it ignores us
      * for several seconds, hit it harder.
      */
-    dbprintf(("sending SIGTERM to process group %ld\n", (long) dumppid));
+    dbprintf(("%s: sending SIGTERM to process group %ld\n",
+	      prefix, (long) dumppid));
     if (kill(-dumppid, SIGTERM) == -1) {
-	dbprintf(("kill failed: %s\n", strerror(errno)));
+	dbprintf(("%s: kill failed: %s\n", prefix, strerror(errno)));
     }
     /* Now check whether it dies */
     for(s = 5; s > 0; --s) {
@@ -889,9 +904,10 @@ long getsize_dump(disk, level)
 	    goto terminated;
     }
 
-    dbprintf(("sending SIGKILL to process group %ld\n", (long) dumppid));
+    dbprintf(("%s: sending SIGKILL to process group %ld\n",
+	      prefix, (long) dumppid));
     if (kill(-dumppid, SIGKILL) == -1) {
-	dbprintf(("kill failed: %s\n", strerror(errno)));
+	dbprintf(("%s: kill failed: %s\n", prefix, strerror(errno)));
     }
     for(s = 5; s > 0; --s) {
 	sleep(1);
@@ -899,7 +915,7 @@ long getsize_dump(disk, level)
 	    goto terminated;
     }
 
-    dbprintf(("cannot kill it, waiting for normal termination\n"));
+    dbprintf(("%s: cannot kill it, waiting for normal termination\n", prefix));
     wait(NULL);
 
  terminated:
@@ -1012,21 +1028,22 @@ long getsize_smbtar(disk, level, exclude_spec)
     dumpout = fdopen(pipefd,"r");
 
     for(size = -1; (line = agets(dumpout)) != NULL; free(line)) {
-	dbprintf(("%s\n",line));
+	dbprintf(("%s%s\n", prefix_line, line));
 	size = handle_dumpline(line);
 	if(size > -1) {
 	    amfree(line);
 	    if((line = agets(dumpout)) != NULL) {
-		dbprintf(("%s",line));
+		dbprintf(("%s%s\n", prefix_line, line));
 	    }
 	    break;
 	}
     }
     amfree(line);
 
-    dbprintf((".....\n"));
+    dbprintf(("%s.....\n", prefix_line));
     if(size == -1)
-	dbprintf(("(no size line match in above smbclient output)\n.....\n"));
+	dbprintf(("%s: (no size line match in above smbclient output)\n%s.....\n",
+		  prefix, prefix_line));
     if(size==0 && level ==0)
 	size=-1;
 
@@ -1106,8 +1123,8 @@ time_t dumpsince;
 	    if ((in = fopen(inputname, "r")) == NULL) {
 		int save_errno = errno;
 
-		dbprintf(("%s-gnutar: error opening %s: %s\n",
-			  get_pname(),
+		dbprintf(("%s: gnutar: error opening %s: %s\n",
+			  prefix,
 			  inputname,
 			  strerror(save_errno)));
 		if (baselevel < 0) {
@@ -1120,30 +1137,35 @@ time_t dumpsince;
 	 * Copy the previous listed incremental file to the new one.
 	 */
 	if ((out = fopen(incrname, "w")) == NULL) {
-	    dbprintf(("opening %s: %s\n", incrname, strerror(errno)));
+	    dbprintf(("%s: opening %s: %s\n",
+		      prefix, incrname, strerror(errno)));
 	    goto common_exit;
 	}
 
 	for (; (line = agets(in)) != NULL; free(line)) {
 	    if (fputs(line, out) == EOF || putc('\n', out) == EOF) {
-		dbprintf(("writing to %s: %s\n", incrname, strerror(errno)));
+		dbprintf(("%s: writing to %s: %s\n",
+			   prefix, incrname, strerror(errno)));
 		goto common_exit;
 	    }
 	}
 	amfree(line);
 
 	if (ferror(in)) {
-	    dbprintf(("reading from %s: %s\n", inputname, strerror(errno)));
+	    dbprintf(("%s: reading from %s: %s\n",
+		      prefix, inputname, strerror(errno)));
 	    goto common_exit;
 	}
 	if (fclose(in) == EOF) {
-	    dbprintf(("closing %s: %s\n", inputname, strerror(errno)));
+	    dbprintf(("%s: closing %s: %s\n",
+		      prefix, inputname, strerror(errno)));
 	    in = NULL;
 	    goto common_exit;
 	}
 	in = NULL;
 	if (fclose(out) == EOF) {
-	    dbprintf(("closing %s: %s\n", incrname, strerror(errno)));
+	    dbprintf(("%s: closing %s: %s\n",
+		      prefix, incrname, strerror(errno)));
 	    out = NULL;
 	    goto common_exit;
 	}
@@ -1181,7 +1203,7 @@ time_t dumpsince;
 	    efile = newstralloc(efile, file);
 	else {
 	    dbprintf(("%s: missing exclude list file \"%s\" discarded\n",
-		      get_pname(), file));
+		      prefix, file));
 	    amfree(efile);
 	}
 #undef sc
@@ -1236,21 +1258,22 @@ time_t dumpsince;
     dumpout = fdopen(pipefd,"r");
 
     for(size = -1; (line = agets(dumpout)) != NULL; free(line)) {
-	dbprintf(("%s\n",line));
+	dbprintf(("%s%s\n", prefix_line, line));
 	size = handle_dumpline(line);
 	if(size > -1) {
 	    amfree(line);
 	    if((line = agets(dumpout)) != NULL) {
-		dbprintf(("%s\n",line));
+		dbprintf(("%s%s\n", prefix_line, line));
 	    }
 	    break;
 	}
     }
     amfree(line);
 
-    dbprintf((".....\n"));
+    dbprintf(("%s.....\n", prefix_line));
     if(size == -1)
-	dbprintf(("(no size line match in above gnutar output)\n.....\n"));
+	dbprintf(("%s: (no size line match in above gnutar output)\n%s.....\n",
+		  prefix, prefix_line));
     if(size==0 && level ==0)
 	size=-1;
 
