@@ -849,7 +849,7 @@ host_t *hostp;
 {
     disklist_t *destqp;
     disk_t *dp;
-    char req[8192], line[1024], *errstr;
+    char req[8192], line[2048], *errstr;
     int i, disks, rc;
 
     assert(hostp->disks != NULL);
@@ -864,7 +864,7 @@ host_t *hostp;
 	remove_disk(&startq, dp);
 
 	for(i = 0; i < MAX_LEVELS; i++) {
-	    char exc[256];
+	    char exc[1040];
 	    int lev = est(dp)->level[i];
 
 	    if(lev == -1) break;

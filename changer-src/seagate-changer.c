@@ -57,6 +57,7 @@
 /* COUNTFILE is were we store the current slot */
 #define COUNTFILE "/etc/amanda/cervesa/changer_count"
 
+int loaded;
 
 /*  The tape drive does not have an idea of current slot so
     we use a file to store the current slot.  It is not ideal
@@ -160,17 +161,19 @@ void unload(int fd, int drive, int slot)
     struct changer_move  move;
     int rc;
 
-    move.cm_fromtype = CHET_DT;
-    move.cm_fromunit = drive;
-    move.cm_totype = CHET_ST;
-    move.cm_tounit = slot;
-    move.cm_flags = 0;
+    if (!loaded) {
+      move.cm_fromtype = CHET_DT;
+      move.cm_fromunit = drive;
+      move.cm_totype = CHET_ST;
+      move.cm_tounit = slot;
+      move.cm_flags = 0;
 
-    rc = ioctl(fd,CHIOMOVE,&move);
-    if (rc){
+      rc = ioctl(fd,CHIOMOVE,&move);
+      if (rc){
 	fprintf(stderr,"ioctl failed (MOVE): 0x%x %s\n",
 		rc,sys_errlist[errno]);
 	exit(2);
+      }
     }
 }
 
@@ -324,7 +327,7 @@ int get_relative_target(int fd,int nslots,char *parameter,int loaded)
 
 int main(int argc, char *argv[])
 {
-    int loaded,target,oldtarget;
+    int target,oldtarget;
     command com;   /* a little DOS joke */
   
     struct changer_params params;
@@ -398,6 +401,9 @@ int main(int argc, char *argv[])
 	    if (loaded) {
 		target=get_current_slot();
 		unload(fd,0,target);
+		pritnf("%d %s\n",0,TAPE_NO_REWIND_DEVICE);
+	    } else {
+	        printf("%d %s\n",0,"drive was not loaded");
 	    }
 	    break;
       };
