@@ -1,5 +1,14 @@
 1999-05-10  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/driver.c (start_some_dumps): if a dumper is
+	constrained, and some dumpers or the taper are active, register
+	a EV_WAIT event.
+	* server-src/driver.c (handle_taper_result,
+	handle_dumper_result):  wakeup constrained dumpers after we
+	have freed some resources.
+
+1999-05-10  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/fileheader.c, common-src/fileheader.h: rework the
 	fileheader parse and format code to remove a lot of duplicated
 	code (in the F_DUMPFILE and F_CONT_DUMPFILE cases), consting

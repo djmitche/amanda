@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.81 1999/05/06 18:18:09 kashmir Exp $
+ * $Id: driver.c,v 1.82 1999/05/10 22:41:45 kashmir Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -542,14 +542,24 @@ start_some_dumps(dumper, rq)
 	remove_disk(rq, diskp);		/* take it off the run queue */
 	dumper_cmd(dumper, FILE_DUMP, diskp);
 	diskp->host->start_t = now + 15;
+    } else if (cur_idle != NOT_IDLE &&
+	(num_busy_dumpers() > 0 || taper_busy)) {
+	/*
+	 * We are constrained.  Wait until we aren't.
+	 * If no dumpers/taper are busy, then we'll never be unconstrained,
+	 * so just drop off.
+	 */
+	assert(dumper->ev_wait == NULL);
+	dumper->ev_wait = event_register((event_id_t)handle_idle_wait,
+	    EV_WAIT, handle_idle_wait, dumper);
     }
     idle_reason = max(idle_reason, cur_idle);
 }
 
 /*
- * This gets called when a disk that had a delayed start is ready to be
- * dumped.  These timed events are only registered if a dumper can't find
- * any disk that is ready to be dumped.
+ * This gets called when a dumper is delayed for some reason.  It may
+ * be because a disk has a delayed start, or amanda is constrained
+ * by network or disk limits.
  */
 static void
 handle_idle_wait(cookie)
@@ -796,6 +806,11 @@ handle_taper_result(cookie)
     default:
 	error("driver received unexpected token (%d) from taper", tok);
     }
+    /*
+     * Wakeup any dumpers that are sleeping because of network
+     * or disk constraints.
+     */
+    event_wakeup((event_id_t)handle_idle_wait);
 }
 
 static dumper_t *
@@ -996,6 +1011,11 @@ handle_dumper_result(cookie)
     default:
 	assert(0);
     }
+    /*
+     * Wakeup any dumpers that are sleeping because of network
+     * or disk constraints.
+     */
+    event_wakeup((event_id_t)handle_idle_wait);
 }
 
 /*
