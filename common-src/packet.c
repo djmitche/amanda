@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: packet.c,v 1.4 1999/05/14 19:31:19 kashmir Exp $
+ * $Id: packet.c,v 1.5 2002/02/10 03:34:04 jrjackson Exp $
  *
  * Routines for modifying the amanda protocol packet type
  */
@@ -49,7 +49,7 @@ static const struct {
 /*
  * Initialize a packet
  */
-arglist_function2(void pkt_init, pkt_t *, pkt, pktype_t, type,
+printf_arglist_function2(void pkt_init, pkt_t *, pkt, pktype_t, type,
     const char *, fmt)
 {
     va_list argp;
@@ -68,7 +68,7 @@ arglist_function2(void pkt_init, pkt_t *, pkt, pktype_t, type,
 /*
  * Append data to a packet
  */
-arglist_function1(void pkt_cat, pkt_t *, pkt, const char *, fmt)
+printf_arglist_function1(void pkt_cat, pkt_t *, pkt, const char *, fmt)
 {
     size_t len, bufsize;
     va_list argp;

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.c,v 1.24 1999/05/11 16:16:07 kashmir Exp $
+ * $Id: security.c,v 1.25 2002/02/10 03:34:04 jrjackson Exp $
  *
  * Security driver interface for the Amanda backup system.
  */
@@ -93,7 +93,7 @@ security_handleinit(handle, driver)
     handle->error = stralloc("unknown protocol error");
 }
 
-arglist_function1(void security_seterror, security_handle_t *, handle,
+printf_arglist_function1(void security_seterror, security_handle_t *, handle,
     const char *, fmt)
 {
     static char buf[256];
@@ -128,7 +128,8 @@ security_streaminit(stream, driver)
     stream->error = stralloc("unknown stream error");
 }
 
-arglist_function1(void security_stream_seterror, security_stream_t *, stream,
+printf_arglist_function1(void security_stream_seterror,
+    security_stream_t *, stream,
     const char *, fmt)
 {
     static char buf[256];
