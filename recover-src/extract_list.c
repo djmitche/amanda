@@ -2,11 +2,14 @@
 *
 * File:          $RCSfile: extract_list.c,v $
 *
-* Revision:      $Revision: 1.2 $
-* Last Edited:   $Date: 1997/08/15 15:14:31 $
+* Revision:      $Revision: 1.3 $
+* Last Edited:   $Date: 1997/08/22 16:55:25 $
 * Author:        $Author: amcore $
 *
 * History:       $Log: extract_list.c,v $
+* History:       Revision 1.3  1997/08/22 16:55:25  amcore
+* History:       Added support to AIX restore
+* History:
 * History:       Revision 1.2  1997/08/15 15:14:31  amcore
 * History:       Updated version number to 2.4.0b2 (supposed to be the next pre-release)
 * History:
@@ -563,7 +566,11 @@ EXTRACT_LIST *elist;
     }
 
     /* form the arguments to restore */
+#ifdef AIX_BACKUP
+    no_initial_params = 2;
+#else
     no_initial_params = 4;
+#endif
     files_off_tape = length_of_tape_list(elist);
     if ((restore_args
 	 = (char **)malloc((no_initial_params + files_off_tape + 1)
@@ -584,6 +591,9 @@ EXTRACT_LIST *elist;
 	perror("Couldn't malloc restore_args[1]");
 	exit(5);
     }
+#ifdef AIX_BACKUP
+    strcpy(restore_args[1], "-xB");
+#else
     strcpy(restore_args[1], "xbf");
     if ((restore_args[2] = (char *)malloc(1024)) == NULL)
     {
@@ -597,6 +607,7 @@ EXTRACT_LIST *elist;
 	exit(61);
     }
     strcpy(restore_args[3], "-");	/* data on stdin */
+#else
     for (i = 0, fn = elist->files; i < files_off_tape; i++, fn = fn->next)
     {
 	if ((restore_args[no_initial_params+i]
