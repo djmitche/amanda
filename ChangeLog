@@ -1,3 +1,9 @@
+2001-08-30 John R. Jackson (jrj@purdue.edu)
+
+	* server-src/planner.c: Fix problem with maintenance of total level
+	  0 size when disk being brought back into the schedule was not doing
+	  a level 0.  Compliments of Robert Minsk <egbert@centropolisfx.com>.
+
 2001-08-24 John R. Jackson (jrj@purdue.edu)
 
 	* server-src/amverify.sh.in: Fix missing backtick error.
