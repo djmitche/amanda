@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.20 1999/09/16 00:02:27 martinea Exp $
+ * $Id: driver.c,v 1.58.2.21 1999/09/19 18:56:23 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -829,10 +829,16 @@ void handle_taper_result()
 	}
 
 	/* run next thing from queue */
-	dp = dequeue_disk(&tapeq);
-	taper_disk = dp;
-	taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level,
-		  datestamp);
+	if(empty(tapeq)) {
+	    taper_busy = 0;
+	    taper_disk = NULL;
+	}
+	else {
+	    dp = dequeue_disk(&tapeq);
+	    taper_disk = dp;
+	    taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level,
+		      datestamp);
+	}
 
 	break;
 
