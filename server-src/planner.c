@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.81 1998/12/14 20:23:08 kashmir Exp $
+ * $Id: planner.c,v 1.82 1998/12/15 00:58:00 kashmir Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -995,7 +995,7 @@ host_t *hostp;
       timeout = disks * conf_etimeout;
 
 #ifdef KRB4_SECURITY
-    if(hostp->disks->auth == AUTH_KRB4)
+    if (strcasecmp(hostp->disks->security_driver, "KRB4") == 0)
 	rc = make_krb_request(hostp->hostname, kamanda_port, req,
 			      hostp, timeout, handle_result);
     else
@@ -1081,7 +1081,7 @@ pkt_t *pkt;
     }
 
 #ifdef KRB4_SECURITY
-    if(hostp->disks->auth == AUTH_KRB4 &&
+    if (strcasecmp(hostp->disks->security_driver, "KRB4") == 0 &&
        !check_mutual_authenticator(host2key(hostp->hostname), pkt, p)) {
 	errbuf = vstralloc(hostp->hostname,
 			   "[mutual-authentication failed]",

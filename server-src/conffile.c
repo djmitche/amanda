@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.55 1998/11/19 23:16:00 jrj Exp $
+ * $Id: conffile.c,v 1.56 1998/12/15 00:57:48 kashmir Exp $
  *
  * read configuration file
  */
@@ -100,9 +100,6 @@ typedef enum {
 
     /* priority */
     LOW, MEDIUM, HIGH,
-
-    /* authentication */
-    KRB4_AUTH, BSD_AUTH,
 
     /* dump strategy */
     SKIP, STANDARD, NOFULL, NOINC, HANOI,
@@ -240,7 +237,6 @@ static void get_dumpopts P((void));
 static void get_comprate P((void));
 static void get_compress P((void));
 static void get_priority P((void));
-static void get_auth P((void));
 static void get_strategy P((void));
 static void get_exclude P((void));
 
@@ -700,12 +696,12 @@ static void init_defaults()
 
     init_dumptype_defaults();
     dpcur.name = "BSD-AUTH"; dpcur.seen = -1;
-    dpcur.auth = AUTH_BSD; dpcur.s_auth = -1;
+    dpcur.security_driver = "BSD"; dpcur.s_security_driver = -1;
     save_dumptype();
 
     init_dumptype_defaults();
     dpcur.name = "KRB4-AUTH"; dpcur.seen = -1;
-    dpcur.auth = AUTH_KRB4; dpcur.s_auth = -1;
+    dpcur.security_driver = "KRB4"; dpcur.s_security_driver = -1;
     save_dumptype();
 
     init_dumptype_defaults();
@@ -1083,7 +1079,8 @@ static void get_dumptype()
 	switch(tok) {
 
 	case AUTH:
-	    get_auth();
+	    get_simple((val_t *)&dpcur.security_driver,
+		&dpcur.s_security_driver, STRING);
 	    break;
 	case COMMENT:
 	    get_simple((val_t *)&dpcur.comment, &dpcur.s_comment, STRING);
@@ -1195,8 +1192,7 @@ static void init_dumptype_defaults()
     dpcur.frequency = 1;
     dpcur.maxdumps = conf_maxdumps.i;
     dpcur.start_t = 0;
-
-    dpcur.auth = AUTH_BSD;
+    dpcur.security_driver = "BSD";
 
     /* options */
     dpcur.record = 1;
@@ -1218,7 +1214,7 @@ static void init_dumptype_defaults()
     dpcur.s_frequency = 0;
     dpcur.s_maxdumps = 0;
     dpcur.s_start_t = 0;
-    dpcur.s_auth = 0;
+    dpcur.s_security_driver = 0;
     dpcur.s_record = 0;
     dpcur.s_strategy = 0;
     dpcur.s_compress = 0;
@@ -1272,7 +1268,7 @@ static void copy_dumptype()
     dtcopy(frequency, s_frequency);
     dtcopy(maxdumps, s_maxdumps);
     dtcopy(start_t, s_start_t);
-    dtcopy(auth, s_auth);
+    dtcopy(security_driver, s_security_driver);
     dtcopy(record, s_record);
     dtcopy(strategy, s_strategy);
     dtcopy(compress, s_compress);
@@ -1694,39 +1690,6 @@ static void get_priority()
 	pri = 0;
     }
     dpcur.priority = pri;
-
-    keytable = save_kt;
-}
-
-keytab_t auth_keytable[] = {
-    { "BSD", BSD_AUTH },
-    { "KRB4", KRB4_AUTH },
-    { NULL, IDENT }
-};
-
-static void get_auth()
-{
-    auth_t auth;
-    keytab_t *save_kt;
-
-    save_kt = keytable;
-    keytable = auth_keytable;
-
-    ckseen(&dpcur.s_auth);
-
-    get_conftoken(ANY);
-    switch(tok) {
-    case BSD_AUTH:
-	auth = AUTH_BSD;
-	break;
-    case KRB4_AUTH:
-	auth = AUTH_KRB4;
-	break;
-    default:
-	parserror("BSD or KRB4 expected");
-	auth = AUTH_BSD;
-    }
-    dpcur.auth = auth;
 
     keytable = save_kt;
 }
@@ -2351,9 +2314,7 @@ dump_configuration(filename)
 
 	if(!dp->record) printf("NO-");
 	printf("RECORD");
-	if(dp->auth == AUTH_BSD) printf(" BSD-AUTH");
-	else if(dp->auth == AUTH_KRB4) printf(" KRB4-AUTH");
-	else printf(" UNKNOWN-AUTH");
+	printf(" %s-AUTH", dp->security_driver);
 	if(dp->skip_incr) printf(" SKIP-INCR");
 	if(dp->skip_full) printf(" SKIP-FULL");
 	if(dp->no_hold) printf(" NO-HOLD");

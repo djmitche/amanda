@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.11 1998/07/04 00:19:48 oliva Exp $
+ * $Id: diskfile.h,v 1.12 1998/12/15 00:57:56 kashmir Exp $
  *
  * interface for disklist file reading code
  */
@@ -60,7 +60,7 @@ typedef struct disk_s {
     long priority;			/* priority of disk */
     long dumpcycle;			/* days between fulls */
     long frequency;			/* XXX - not used */
-    auth_t auth;			/* type of authentication (per system?) */
+    char *security_driver;		/* type of authentication (per disk) */
     int maxdumps;			/* max number of parallel dumps (per system) */
     time_t start_t;			/* start this dump after this time */
     int strategy;			/* what dump strategy to use */

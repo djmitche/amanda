@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.27 1998/07/04 00:19:47 oliva Exp $
+ * $Id: diskfile.c,v 1.28 1998/12/15 00:57:54 kashmir Exp $
  *
  * read disklist file
  */
@@ -281,7 +281,7 @@ static int read_diskline()
     disk->priority	= dtype->priority;
     disk->dumpcycle	= dtype->dumpcycle;
     disk->frequency	= dtype->frequency;
-    disk->auth		= dtype->auth;
+    disk->security_driver = dtype->security_driver;
     disk->maxdumps	= dtype->maxdumps;
     disk->start_t	= dtype->start_t;
     disk->strategy	= dtype->strategy;
@@ -405,7 +405,6 @@ char *optionstr(dp)
 disk_t *dp;
 {
     static char *str = NULL;
-    char *auth_opt = "";
     char *kencrypt_opt = "";
     char *compress_opt = "";
     char *record_opt = "";
@@ -415,13 +414,6 @@ disk_t *dp;
     char *exclude_opt3 = "";
 
     amfree(str);
-
-    if(dp->auth == AUTH_BSD) {
-	auth_opt = "bsd-auth;";
-    } else if(dp->auth == AUTH_KRB4) {
-	auth_opt = "krb4-auth;";
-	if(dp->kencrypt) kencrypt_opt = "kencrypt;";
-    }
 
     switch(dp->compress) {
     case COMP_FAST:
@@ -447,8 +439,12 @@ disk_t *dp;
 	exclude_opt3 = ";";
     }
 
+    if(dp->kencrypt) kencrypt_opt = "kencrypt;";
+
     return vstralloc(";",
-		     auth_opt,
+		     "auth=",
+		     dp->security_driver,
+		     ";",
 		     kencrypt_opt,
 		     compress_opt,
 		     record_opt,

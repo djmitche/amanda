@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.54 1998/12/04 20:55:00 kashmir Exp $
+ * $Id: amcheck.c,v 1.55 1998/12/15 00:57:46 kashmir Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1066,7 +1066,7 @@ int fd;
 	hostcount++;
 
 #ifdef KRB4_SECURITY
-	if(hostp->disks->auth == AUTH_KRB4)
+	if (strcasecmp(hostp->disks->security_driver, "KRB4") == 0)
 	    rc = make_krb_request(hostp->hostname, kamanda_port, req,
 				  hostp, CHECK_TIMEOUT, handle_response);
 	else
@@ -1139,7 +1139,7 @@ pkt_t *pkt;
     }
 
 #ifdef KRB4_SECURITY
-    if(hostp->disks->auth == AUTH_KRB4 &&
+    if (strcasecmp(hostp->disks->security_driver, "KRB4") == 0 &&
        !check_mutual_authenticator(host2key(hostp->hostname), pkt, p)) {
 	fprintf(outf, "ERROR: %s [mutual-authentication failed]\n",
 		hostp->hostname);

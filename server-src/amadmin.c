@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.58 1998/12/14 20:23:04 kashmir Exp $
+ * $Id: amadmin.c,v 1.59 1998/12/15 00:57:43 kashmir Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1442,15 +1442,7 @@ disk_t *dp;
 	       dp->comprate[0], dp->comprate[1]);
     }
 
-    printf("        auth ");
-    switch(dp->auth) {
-    case AUTH_BSD:
-	printf("BSD\n");
-	break;
-    case AUTH_KRB4:
-	printf("KRB4\n");
-	break;
-    }
+    printf("        security-driver %s\n", dp->security_driver);
     printf("        kencrypt %s\n", (dp->kencrypt? "YES" : "NO"));
 
     printf("        holdingdisk %s\n", (!dp->no_hold? "YES" : "NO"));

@@ -1,5 +1,25 @@
 1998-12-14  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/conffile.c: remove KRB4_AUTH, BSD_AUTH tokens, auth
+	element from dumptype_t, and get_auth() lookup func.  Add
+	security_driver to dumptype_t and parse value of AUTH keyword
+	as a string.
+	* server-src/conffile.h: nuke auth_t.  Remove auth_t auth, int s_auth
+	from typetype_t; add char *security_driver, int s_security_driver.
+	* server-src/diskfile.c: nuke auth_t auth from disk_t, add
+	char *security_driver.  Inherit security_driver from the dumptype_t
+	for this disk.
+	* server-src/diskfile.h: ditto
+	* server-src/amadmin.c (disklist_one): output the security-driver
+	string in place of the auth type
+	* server-src/amcheck.c (start_client_checks, handle_response):
+	enum type hostp->disks->auth is gone.  check the string in the
+	security_driver for this disk for krb4 auth.
+	* server-src/planner.c (getsize, handle_result): check the string
+	in hostp->disks->security_driver for the auth type.
+
+1998-12-14  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/amindexd.c: no need to include protocol.h
 
 1998-12-14  Mike Grupenhoff <kashmir@munge.com>
