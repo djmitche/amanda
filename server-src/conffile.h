@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.31 1999/05/14 21:52:43 kashmir Exp $
+ * $Id: conffile.h,v 1.32 1999/06/15 08:08:31 oliva Exp $
  *
  * interface for config file reading code
  */
@@ -56,9 +56,9 @@ typedef struct tapetype_s {
 
     char *comment;
     char *lbl_templ;
-    unsigned long length;
-    unsigned long filemark;
-    long speed;
+    unsigned int length;
+    unsigned int filemark;
+    int speed;
 
     /* seen flags */
     int s_comment;
@@ -96,10 +96,10 @@ typedef struct dumptype_s {
     char *program;
     char *exclude;
     int exclude_list;
-    long priority;
-    long dumpcycle;
+    int priority;
+    int dumpcycle;
     int maxcycle;
-    long frequency;
+    int frequency;
     char *security_driver;
     int maxdumps;
     time_t start_t;
@@ -162,8 +162,8 @@ typedef struct holdingdisk_s {
 
     char *comment;
     char *diskdir;
-    long disksize;
-    long chunksize;
+    int disksize;
+    int chunksize;
 
     int s_comment;
     int s_disk;
