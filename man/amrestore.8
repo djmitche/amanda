@@ -250,6 +250,11 @@ file that has not yet been flushed to tape:
 % amrestore \-p /amanda/20001119/seine.rz1a.2 | restore \-ivbf 2 \-
 .EE
 .RE
+.SH CAVEATS
+.LP
+GNU tar must be used to restore files from backup images created with
+the GNUTAR dumptype.
+Vendor tar programs sometimes fail to read GNU tar images.
 .SH AUTHOR
 James da Silva <jds@cs.umd.edu>
 .br

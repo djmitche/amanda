@@ -1,3 +1,13 @@
+2001-07-25 Ben Lewis (bhlewis@purdue.edu) via John R. Jackson (jrj@purdue.edu)
+
+	* man/amanda.8.in: Document includefile.
+	* man/amdump.8.in: Add note that local crontab documention should be
+	  checked for proper syntax.
+	* man/amrecover.8.in: Document use of PAGER environment variable.
+	* man/amrestore.8: Document that GNU tar must be used as some vendor
+	  tar programs cannot read GNU tar format.
+	* docs/FAQ: Update location of online FAQ.
+
 2001-07-25 John R. Jackson <jrj@purdue.edu>
 
 	* docs/TAPE.CHANGER: Changes from Ben Lewis (bhlewis@purdue.edu) to
