@@ -6,17 +6,21 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
 DISTCLEANFILES =	version.c
 
-noinst_LIBRARIES =	libamanda.a
+noinst_LIBRARIES =	libamserver.a	libamanda.a
 
-libamanda_a_SOURCES =	alloc.c		amandates.c	changer.c	\
-			clock.c		conffile.c	debug.c		\
-			dgram.c		diskfile.c	error.c		\
-			fnmatch.c	getfsent.c	infofile.c	\
-			logfile.c	match.c		protocol.c	\
+libamanda_a_SOURCES =	alloc.c		amandates.c	\
+			debug.c		\
+			dgram.c		error.c		\
+			fnmatch.c	getfsent.c	\
+			log_dummy.c	match.c		protocol.c	\
 			regex.c		statfs.c	stralloc.c	\
-			stream.c	tapefile.c	tapeio.c	\
+			stream.c	\
 			unctime.c	version.c	version.h	\
-			versuff.c	amindex.c
+			versuff.c	
+
+libamserver_a_SOURCES =	amindex.c	changer.c	clock.c		\
+			conffile.c	diskfile.c	infofile.c	\
+			logfile.c	tapefile.c	tapeio.c
 
 EXTRA_DIST =		genversion.c
 

@@ -6,7 +6,7 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
  
-LDADD =			../common-src/libamanda.a
+LDADD =			../common-src/libamserver.a ../common-src/libamanda.a
 
 EXTRA_PROGRAMS = 	amrecover			amrestore
 
