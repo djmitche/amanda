@@ -867,7 +867,8 @@ Amrecover will call amrestore with the -l flag to check the label.
 .TP
 .BS amrecover_changer string
 Default: ''.
-Amrecover will use the changer if you restore from this device..
+Amrecover will use the changer if you use 'settape <STRING>' and that string
+is the same as the amrecover_changer setting.
 .TP
 .BS columnspec string
 Defines the width of columns
