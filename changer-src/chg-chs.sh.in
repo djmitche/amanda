@@ -98,9 +98,9 @@ if [ "$ejectdelay" = "" ]; then
 	ejectdelay=0
 fi
 
-ourstate=`awk '$1 == "statefile" {print $2}' $outconf 2>/dev/null`
-if [ "$outstate" = "" ]; then
-	echo "<none> $pname: statefile not specified in $outconf"
+ourstate=`awk '$1 == "statefile" {print $2}' $ourconf 2>/dev/null`
+if [ "$ourstate" = "" ]; then
+	echo "<none> $pname: statefile not specified in $ourconf"
 	exit 2
 fi
 
