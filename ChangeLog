@@ -1,5 +1,11 @@
 2002-04-07  John R. Jackson (jrj@purdue.edu)
 
+	* server-src/dumper.c: Change sendbackup response parsing to handle
+	  2.4 changes.  Improve packet parse error processing.  Make packet
+	  logging conditional on an #ifdef instead of commented out.
+
+2002-04-07  John R. Jackson (jrj@purdue.edu)
+
 	* client-src/amandad.c: Fix FORCE_USERID to run the service as the
 	  client user if amandad was started as root.
 

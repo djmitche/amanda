@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.149 2002/03/23 19:58:09 martinea Exp $
+/* $Id: dumper.c,v 1.150 2002/04/08 02:37:18 jrjackson Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1204,7 +1204,9 @@ sendbackup_response(datap, pkt, sech)
     security_handle_t *sech;
 {
     int ports[NSTREAMS], *response_error = datap, i;
+    char *p;
     char *tok;
+    char *extra = NULL;
 
     assert(response_error != NULL);
     assert(sech != NULL);
@@ -1217,7 +1219,9 @@ sendbackup_response(datap, pkt, sech)
     }
 
     if (pkt->type == P_NAK) {
-/*    fprintf(stderr, "got nak response:\n----\n%s----\n\n", pkt->body);*/
+#if defined(PACKET_DEBUG)
+	fprintf(stderr, "got nak response:\n----\n%s\n----\n\n", pkt->body);
+#endif
 
 	tok = strtok(pkt->body, " ");
 	if (tok == NULL || strcmp(tok, "ERROR") != 0)
@@ -1242,57 +1246,79 @@ bad_nak:
 	return;
     }
 
-/*     fprintf(stderr, "got response:\n----\n%s----\n\n", pkt->body); */
+#if defined(PACKET_DEBUG)
+    fprintf(stderr, "got response:\n----\n%s\n----\n\n", pkt->body);
+#endif
 
-    /*
-     * Get the first word out of the packet
-     */
-    tok = strtok(pkt->body, " ");
-    if (tok == NULL)
+    p = pkt->body;
+    while((tok = strtok(p, " \n")) != NULL) {
+	p = NULL;
+
+	/*
+	 * Error response packets have "ERROR" followed by the error message
+	 * followed by a newline.
+	 */
+	if (strcmp(tok, "ERROR") == 0) {
+	    tok = strtok(NULL, "\n");
+	    if (tok == NULL)
+		tok = "[bogus error packet]";
+	    errstr = newstralloc(errstr, tok);
+	    *response_error = 2;
+	    return;
+	}
+
+	/*
+	 * Regular packets have CONNECT followed by three streams
+	 */
+	if (strcmp(tok, "CONNECT") == 0) {
+
+	    /*
+	     * Parse the three stream specifiers out of the packet.
+	     */
+	    for (i = 0; i < NSTREAMS; i++) {
+		tok = strtok(NULL, " ");
+		if (tok == NULL || strcmp(tok, streams[i].name) != 0) {
+		    extra = vstralloc("CONNECT token is \"",
+				      tok ? tok : "(null)",
+				      "\": expected \"",
+				      streams[i].name,
+				      "\"",
+				      NULL);
+		    goto parse_error;
+		}
+		tok = strtok(NULL, " \n");
+		if (tok == NULL || sscanf(tok, "%d", &ports[i]) != 1) {
+		    extra = vstralloc("CONNECT ",
+				      streams[i].name,
+				      " token is \"",
+				      tok ? tok : "(null)",
+				      "\": expected a port number",
+				      NULL);
+		    goto parse_error;
+		}
+	    }
+	    continue;
+	}
+
+	/*
+	 * OPTIONS [options string] '\n'
+	 */
+	if (strcmp(tok, "OPTIONS") == 0) {
+	    tok = strtok(NULL, "\n");
+	    if (tok == NULL) {
+		extra = stralloc("OPTIONS token is missing");
+		goto parse_error;
+	    }
+	    /* we do nothing with the options right now */
+	    continue;
+	}
+
+	extra = vstralloc("next token is \"",
+			  tok ? tok : "(null)",
+			  "\": expected \"CONNECT\", \"ERROR\" or \"OPTIONS\"",
+			  NULL);
 	goto parse_error;
-
-    /*
-     * Error response packets have "ERROR" followed by the error message
-     * followed by a newline.
-     */
-    if (strcmp(tok, "ERROR") == 0) {
-	tok = strtok(NULL, "\n");
-	if (tok == NULL)
-	    tok = "[bogus error packet]";
-	errstr = newstralloc(errstr, tok);
-	*response_error = 2;
-	return;
     }
-
-    /*
-     * Regular packets have CONNECT followed by three streams
-     */
-    if (strcmp(tok, "CONNECT") != 0)
-	goto parse_error;
-
-    /*
-     * Parse the three stream specifiers out of the packet.
-     */
-    for (i = 0; i < NSTREAMS; i++) {
-	tok = strtok(NULL, " ");
-	if (tok == NULL || strcmp(tok, streams[i].name) != 0)
-	    goto parse_error;
-	tok = strtok(NULL, " \n");
-	if (tok == NULL || sscanf(tok, "%d", &ports[i]) != 1)
-	    goto parse_error;
-    }
-
-    /*
-     * OPTIONS [options string] '\n'
-     */
-    tok = strtok(NULL, " ");
-    if (tok == NULL || strcmp(tok, "OPTIONS") != 0)
-	goto parse_error;
-
-    tok = strtok(NULL, "\n");
-    if (tok == NULL)
-	goto parse_error;
-    /* we do nothing with the options right now */
 
     /*
      * Connect the streams to their remote ports
@@ -1347,7 +1373,12 @@ bad_nak:
     return;
 
 parse_error:
-    errstr = newstralloc(errstr, "[parse of reply message failed]");
+    errstr = newvstralloc(errstr,
+			  "[parse of reply message failed: ",
+			  extra ? extra : "(no additional information)",
+			  "]",
+			  NULL);
+    amfree(extra);
     *response_error = 2;
     return;
 
