@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.107 1999/04/06 20:56:23 kashmir Exp $
+/* $Id: dumper.c,v 1.108 1999/04/06 22:43:47 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -108,9 +108,19 @@ int conf_dtimeout;
 
 dumpfile_t file;
 
-int datafd = -1;
-int mesgfd = -1;
-int indexfd = -1;
+static struct {
+    const char *name;
+    int fd;
+} streams[] = {
+#define	DATAFD	0
+    { "DATA", -1 },
+#define	MESGFD	1
+    { "MESG", -1 },
+#define	INDEXFD	2
+    { "INDEX", -1 },
+};
+#define	NSTREAMS	(sizeof(streams) / sizeof(streams[0]))
+
 int amanda_port;
 
 /* local functions */
@@ -135,9 +145,10 @@ static void log_msgout P((logtype_t typ));
 
 static int runcompress P((int, pid_t *));
 
-void sendbackup_response P((proto_t *p, pkt_t *pkt));
+static void sendbackup_response P((proto_t *p, pkt_t *pkt));
 static int startup_dump P((const char *, const char *, int, const char *,
 		    const char *, const char *));
+static void stop_dump P((void));
 static int startup_chunker P((const char *, long));
 
 
@@ -406,12 +417,7 @@ main(main_argc, main_argv)
 
 	if (outfd != -1)
 	    aclose(outfd);
-	if (datafd != -1)
-	    aclose(datafd);
-	if (mesgfd != -1)
-	    aclose(mesgfd);
-	if (indexfd != -1)
-	    aclose(indexfd);
+	stop_dump();
 
 	while (wait(NULL) != -1)
 	    continue;
@@ -1094,7 +1100,7 @@ do_dump(db)
     compresspid = -1;
 
     indexpid = -1;
-    if (indexfd != -1) {
+    if (streams[INDEXFD].fd != -1) {
 	int tmpfd;
 
 	indexfile = vstralloc(getconf_str(CNF_INDEXDIR),
@@ -1120,16 +1126,16 @@ do_dump(db)
 	    errstr = newstralloc2(errstr, "couldn't fork: ", strerror(errno));
 	    goto failed;
 	default:
-	    aclose(indexfd);
-	    indexfd = -1;			/* redundant */
+	    aclose(streams[INDEXFD].fd);
+	    streams[INDEXFD].fd = -1;			/* redundant */
 	    break;
 	case 0:
-	    if (dup2(indexfd, 0) == -1)
+	    if (dup2(streams[INDEXFD].fd, 0) == -1)
 		error("err dup2 in: %s", strerror(errno));
-	    indexfd = open(indexfile, O_WRONLY | O_CREAT | O_TRUNC, 0600);
-	    if (indexfd == -1)
+	    streams[INDEXFD].fd = open(indexfile, O_WRONLY | O_CREAT | O_TRUNC, 0600);
+	    if (streams[INDEXFD].fd == -1)
 		error("err open %s: %s", indexfile, strerror(errno));
-	    if (dup2(indexfd,1) == -1)
+	    if (dup2(streams[INDEXFD].fd,1) == -1)
 		error("err dup2 out: %s", strerror(errno));
 	    for(tmpfd = 3; tmpfd <= FD_SETSIZE; ++tmpfd) {
 		close(tmpfd);
@@ -1141,7 +1147,7 @@ do_dump(db)
 
     NAUGHTY_BITS_INITIALIZE;
 
-    maxfd = max(mesgfd, datafd) + 1;
+    maxfd = max(streams[MESGFD].fd, streams[DATAFD].fd) + 1;
     eof1 = eof2 = 0;
 
     FD_ZERO(&readset);
@@ -1149,9 +1155,9 @@ do_dump(db)
     /* Just process messages for now.  Once we have done the header
     ** we will start processing data too.
     */
-    FD_SET(mesgfd, &readset);
+    FD_SET(streams[MESGFD].fd, &readset);
 
-    if(datafd == -1) eof1 = 1;	/* fake eof on data */
+    if(streams[DATAFD].fd == -1) eof1 = 1;	/* fake eof on data */
 
 #if DUMPER_SOCKET_BUFFERING
 
@@ -1164,13 +1170,13 @@ do_dump(db)
 
     else {
 	recbuf = DATABUF_SIZE*2;
-	if (setsockopt(datafd, SOL_SOCKET, SO_RCVBUF,
+	if (setsockopt(streams[DATAFD].fd, SOL_SOCKET, SO_RCVBUF,
 		       (void *) &recbuf, sizeof_recbuf)) {
 	    const int errornumber = errno;
 	    fprintf(stderr, "dumper: pid %ld setsockopt(SO_RCVBUF): %s\n",
 		    (long) getpid(), strerror(errornumber));
 	}
-	if (getsockopt(datafd, SOL_SOCKET, SO_RCVBUF,
+	if (getsockopt(streams[DATAFD].fd, SOL_SOCKET, SO_RCVBUF,
 		       (void *) &recbuf, (void *)&sizeof_recbuf)) {
 	    const int errornumber = errno;
 	    fprintf(stderr, "dumper: pid %ld getsockopt(SO_RCVBUF): %s\n",
@@ -1193,7 +1199,7 @@ do_dump(db)
 #if DUMPER_SOCKET_BUFFERING
 	/* Set socket buffering */
 	if (recbuf>0 && !lowwatset) {
-	    if (setsockopt(datafd, SOL_SOCKET, SO_RCVLOWAT,
+	    if (setsockopt(streams[DATAFD].fd, SOL_SOCKET, SO_RCVLOWAT,
 			   (void *) &lowat, sizeof(lowat))) {
 		const int errornumber = errno;
 		fprintf(stderr,
@@ -1216,7 +1222,7 @@ do_dump(db)
 	if (nfound==0 && lowwatset) {
 	    const int zero = 0;
 	    /* Disable socket buffering and ... */
-	    if (setsockopt(datafd, SOL_SOCKET, SO_RCVLOWAT,
+	    if (setsockopt(streams[DATAFD].fd, SOL_SOCKET, SO_RCVLOWAT,
 			   (void *) &zero, sizeof(zero))) {
 		const int errornumber = errno;
 		fprintf(stderr,
@@ -1244,8 +1250,8 @@ do_dump(db)
 
 	/* read/write any data */
 
-	if(datafd >= 0 && FD_ISSET(datafd, &selectset)) {
-	    int size1 = read(datafd, buf, sizeof(buf));
+	if(streams[DATAFD].fd >= 0 && FD_ISSET(streams[DATAFD].fd, &selectset)) {
+	    int size1 = read(streams[DATAFD].fd, buf, sizeof(buf));
 
 	    switch(size1) {
 	    case -1:
@@ -1256,7 +1262,7 @@ do_dump(db)
 		if (databuf_flush(db) < 0)
 		    goto failed;
 		eof1 = 1;
-		FD_CLR(datafd, &readset);
+		FD_CLR(streams[DATAFD].fd, &readset);
 		break;
 	    default:
 		if (databuf_write(db, buf, size1) < 0)
@@ -1265,8 +1271,8 @@ do_dump(db)
 	    }
 	}
 
-	if(mesgfd >= 0 && FD_ISSET(mesgfd, &selectset)) {
-	    int size2 = read(mesgfd, buf, sizeof(buf));
+	if(streams[MESGFD].fd >= 0 && FD_ISSET(streams[MESGFD].fd, &selectset)) {
+	    int size2 = read(streams[MESGFD].fd, buf, sizeof(buf));
 	    switch(size2) {
 	    case -1:
 		errstr = newstralloc2(errstr, "mesg read: ", strerror(errno));
@@ -1274,8 +1280,8 @@ do_dump(db)
 	    case 0:
 		eof2 = 1;
 		process_dumpeof();
-		FD_CLR(mesgfd, &readset);
-		aclose(mesgfd);
+		FD_CLR(streams[MESGFD].fd, &readset);
+		aclose(streams[MESGFD].fd);
 		break;
 	    default:
 		add_msg_data(buf, size2);
@@ -1293,8 +1299,8 @@ do_dump(db)
 		nb_header_block++;
 		header_done = 1;
 
-		if (datafd != -1)
-		    FD_SET(datafd, &readset);	/* now we can read the data */
+		if (streams[DATAFD].fd != -1)
+		    FD_SET(streams[DATAFD].fd, &readset);	/* now we can read the data */
 		/*
 		 * If srvcompress is set, then we need to start compressing
 		 * all future writes to the holding file/taper/chunk process
@@ -1423,6 +1429,22 @@ do_dump(db)
 }
 
 /*
+ * This is called when everything needs to shut down
+ */
+static void
+stop_dump()
+{
+    int i;
+
+    for (i = 0; i < NSTREAMS; i++) {
+	if (streams[i].fd >= 0) {
+	    aclose(streams[i].fd);
+	    streams[i].fd = -1;
+	}
+    }
+}
+
+/*
  * Runs compress with the first arg as its stdout.  Returns
  * 0 on success or negative if error, and it's pid via the second
  * argument.  The outfd arg is dup2'd to the pipe to the compress
@@ -1476,44 +1498,46 @@ runcompress(outfd, pid)
 
 /* -------------------- */
 
-char *hostname, *disk;
-int response_error;
-
-void sendbackup_response(p, pkt)
-proto_t *p;
-pkt_t *pkt;
+static void
+sendbackup_response(p, pkt)
+    proto_t *p;
+    pkt_t *pkt;
 {
-    char *optionstr = NULL;
-    int data_port, mesg_port, index_port;
-    char *s;
-    int ch;
-    char *nl;
+    int ports[NSTREAMS], *response_error = p->datap, i;
+    char *tok;
 
-    if(p->state == S_FAILED) {
-	if(pkt == NULL) {
-	    errstr = newstralloc(errstr, "[request timeout]");
-	    response_error = 1;
-	    return;
+    assert(response_error != NULL);
+
+    if (pkt == NULL) {
+	errstr = newstralloc(errstr, "[request timeout]");
+	*response_error = 1;
+	return;
+    }
+
+    if (pkt->type == P_NAK) {
+/*    fprintf(stderr, "got nak response:\n----\n%s----\n\n", pkt->body);*/
+
+	tok = strtok(pkt->body, " ");
+	if (tok == NULL || strcmp(tok, "ERROR") != 0)
+	    goto bad_nak;
+
+	tok = strtok(NULL, "\n");
+	if (tok != NULL) {
+	    errstr = newvstralloc(errstr, "NAK: ", tok, NULL);
+	    *response_error = 1;
+	} else {
+bad_nak:
+	    errstr = newstralloc(errstr, "request NAK");
+	    *response_error = 2;
 	}
-	else {
-/*	    fprintf(stderr, "got nak response:\n----\n%s----\n\n", pkt->body);*/
-#define sc "ERROR"
-	    if(strncmp(pkt->body, sc, sizeof(sc)-1) != 0) {
-		goto request_NAK;
-	    }
-	    s = pkt->body+sizeof(sc)-1;
-	    ch = *s++;
-#undef sc
-	    skip_whitespace(s, ch);
-	    if(ch == '\0') {
-		goto request_NAK;
-	    }
-	    errstr = newvstralloc(errstr, "nak error:", s - 1, NULL);
-	    if(errstr[strlen(errstr)-1] == '\n' )
-		errstr[strlen(errstr)-1] = '\0';
-	    response_error = 1;
-	    return;
-	}
+	return;
+    }
+
+    if (pkt->type != P_REP) {
+	errstr = newvstralloc(errstr, "received strange packet type ",
+	    ": ", pkt->body, NULL);
+	*response_error = 1;
+	return;
     }
 
 /*     fprintf(stderr, "got response:\n----\n%s----\n\n", pkt->body); */
@@ -1521,219 +1545,112 @@ pkt_t *pkt;
 #ifdef KRB4_SECURITY
     if(krb4_auth && !check_mutual_authenticator(&cred.session, pkt, p)) {
 	errstr = newstralloc(errstr, "[mutual-authentication failed]");
-	response_error = 2;
+	*response_error = 2;
 	return;
     }
 #endif
 
-#define sc "ERROR"
-    if(strncmp(pkt->body, sc, sizeof(sc)-1) == 0) {
-	/* this is an error response packet */
-	s = pkt->body+sizeof(sc)-1;
-	ch = *s++;
-#undef sc
-	skip_whitespace(s, ch);
-	if(ch == '\0') {
-	    goto bogus_error_packet;
-	}
-	errstr = newstralloc(errstr, s - 1);
-	response_error = 2;
+    /*
+     * Get the first word out of the packet
+     */
+    tok = strtok(pkt->body, " ");
+    if (tok == NULL)
+	goto parse_error;
+
+    /*
+     * Error response packets have "ERROR" followed by the error message
+     * followed by a newline.
+     */
+    if (strcmp(tok, "ERROR") == 0) {
+	tok = strtok(NULL, "\n");
+	if (tok == NULL)
+	    tok = "[bogus error packet]";
+	errstr = newstralloc(errstr, tok);
+	*response_error = 2;
 	return;
     }
 
-    if((nl = strchr(pkt->body, '\n')) == NULL) {
-	goto parse_of_reply_message_failed;
-    }
-    *nl = '\0';
+    /*
+     * Regular packets have CONNECT followed by three streams
+     */
+    if (strcmp(tok, "CONNECT") != 0)
+	goto parse_error;
 
-    s = pkt->body;
-    ch = *s++;
-
-    skip_whitespace(s, ch);
-#define sc "CONNECT"
-    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
-	goto parse_of_reply_message_failed;
-    }
-    s += sizeof(sc)-1;
-    ch = s[-1];
-#undef sc
-
-    skip_whitespace(s, ch);
-#define sc "DATA"
-    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
-	goto parse_of_reply_message_failed;
-    }
-    s += sizeof(sc)-1;
-    ch = s[-1];
-#undef sc
-
-    skip_whitespace(s, ch);
-    if(ch == '\0' || sscanf(s - 1, "%d", &data_port) != 1) {
-	goto parse_of_reply_message_failed;
-    }
-    skip_integer(s, ch);
-
-    skip_whitespace(s, ch);
-#define sc "MESG"
-    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
-	goto parse_of_reply_message_failed;
-    }
-    s += sizeof(sc)-1;
-    ch = s[-1];
-#undef sc
-
-    skip_whitespace(s, ch);
-    if(ch == '\0' || sscanf(s - 1, "%d", &mesg_port) != 1) {
-	goto parse_of_reply_message_failed;
-    }
-    skip_integer(s, ch);
-
-    skip_whitespace(s, ch);
-#define sc "INDEX"
-    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
-	goto parse_of_reply_message_failed;
-    }
-    s += sizeof(sc)-1;
-    ch = s[-1];
-#undef sc
-
-    skip_whitespace(s, ch);
-    if(ch == '\0' || sscanf(s - 1, "%d", &index_port) != 1) {
-	goto parse_of_reply_message_failed;
-    }
-    skip_integer(s, ch);
-
-    skip_whitespace(s, ch);
-    if(ch != '\0') {
-	goto parse_of_reply_message_failed;
+    /*
+     * Parse the three stream specifiers out of the packet.
+     */
+    for (i = 0; i < NSTREAMS; i++) {
+	tok = strtok(NULL, " ");
+	if (tok == NULL || strcmp(tok, streams[i].name) != 0)
+	    goto parse_error;
+	tok = strtok(NULL, " \n");
+	if (tok == NULL || sscanf(tok, "%d", &ports[i]) != 1)
+	    goto parse_error;
     }
 
-    s = nl + 1;
-    ch = *s++;
-    *nl = '\n';
-    nl = NULL;
+    /*
+     * OPTIONS [options string] '\n'
+     */
+    tok = strtok(NULL, " ");
+    if (tok == NULL || strcmp(tok, "OPTIONS") != 0)
+	goto parse_error;
 
-    skip_whitespace(s, ch);
-#define sc "OPTIONS"
-    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
-	goto parse_of_reply_message_failed;
-    }
-    s += sizeof(sc)-1;
-    ch = s[-1];
+    tok = strtok(NULL, "\n");
+    if (tok == NULL)
+	goto parse_error;
+    /* we do nothing with the options right now */
 
-    skip_whitespace(s, ch);
-    if(ch == '\0') {
-	goto parse_of_reply_message_failed;
-    }
-    if ((nl = strchr(s - 1, '\n')) != NULL) {
-	*nl = '\0';
-	if(nl == s - 1) {
-	    goto parse_of_reply_message_failed;
-	}
-    }
-    optionstr = stralloc(s - 1);
-    if(nl) {
-	*nl = '\n';
-	nl = NULL;
-    }
-
-    datafd = stream_client(hostname, data_port,
-			   DEFAULT_SIZE, DEFAULT_SIZE, NULL, 0);
-    if(datafd == -1) {
-	errstr = newvstralloc(errstr,
-			      "[could not connect to data port: ",
-			      strerror(errno),
-			      "]",
-			      NULL);
-	response_error = 1;
-	amfree(optionstr);
-	return;
-    }
-    mesgfd = stream_client(hostname, mesg_port,
-			   DEFAULT_SIZE, DEFAULT_SIZE, NULL, 0);
-    if(mesgfd == -1) {
-	errstr = newvstralloc(errstr,
-			      "[could not connect to mesg port: ",
-			      strerror(errno),
-			      "]",
-			      NULL);
-	aclose(datafd);
-	datafd = -1;				/* redundant */
-	response_error = 1;
-	amfree(optionstr);
-	return;
-    }
-
-    if (index_port != -1) {
-	indexfd = stream_client(hostname, index_port,
-				DEFAULT_SIZE, DEFAULT_SIZE, NULL, 0);
-	if (indexfd == -1) {
+    /*
+     * Connect the streams to their remote ports
+     */
+    for (i = 0; i < NSTREAMS; i++) {
+	if (ports[i] == -1)
+	    continue;
+	streams[i].fd = stream_client(hostname, ports[i], DEFAULT_SIZE,
+	    DEFAULT_SIZE, NULL, 0);
+	if (streams[i].fd == -1) {
 	    errstr = newvstralloc(errstr,
-				  "[could not connect to index port: ",
-				  strerror(errno),
-				  "]",
-				  NULL);
-	    aclose(datafd);
-	    aclose(mesgfd);
-	    datafd = mesgfd = -1;		/* redundant */
-	    response_error = 1;
-	    amfree(optionstr);
-	    return;
+		"[could not connect ", streams[i].name, " stream: ",
+		strerror(errno), "]", NULL);
+	    goto connect_error;
 	}
+    }
+
+    /*
+     * Authenticate the streams
+     */
+    for (i = 0; i < NSTREAMS; i++) {
+	if (streams[i].fd == -1)
+	    continue;
+#ifdef KRB4_SECURITY
+	/*
+	 * XXX krb4 historically never authenticated the index stream!
+	 * We need to reproduce this lossage here to preserve compatibility
+	 * with old clients.
+	 */
+	if (krb4_auth && i == INDEXFD)
+	    continue;
+
+	if (kerberos_handshake(streams[i].fd, cred.session) == 0) {
+	    errstr = newstralloc(errstr,
+		"[mutual authentication in data stream failed]");
+	    goto connect_error;
+	}
+#endif
     }
 
     /* everything worked */
-
-#ifdef KRB4_SECURITY
-    if(krb4_auth && kerberos_handshake(datafd, cred.session) == 0) {
-	errstr = newstralloc(errstr,
-			     "[mutual authentication in data stream failed]");
-	aclose(datafd);
-	aclose(mesgfd);
-	if (indexfd != -1)
-	    aclose(indexfd);
-	response_error = 1;
-	amfree(optionstr);
-	return;
-    }
-    if(krb4_auth && kerberos_handshake(mesgfd, cred.session) == 0) {
-	errstr = newstralloc(errstr,
-			     "[mutual authentication in mesg stream failed]");
-	aclose(datafd);
-	if (indexfd != -1)
-	    aclose(indexfd);
-	aclose(mesgfd);
-	response_error = 1;
-	amfree(optionstr);
-	return;
-    }
-#endif
-    response_error = 0;
-    amfree(optionstr);
+    *response_error = 0;
     return;
 
- request_NAK:
-
-/*  fprintf(stderr, "dumper: got strange NAK: %s", pkt->body); */
-    errstr = newstralloc(errstr, "[request NAK]");
-    response_error = 2;
-    amfree(optionstr);
-    return;
-
- bogus_error_packet:
-
-    errstr = newstralloc(errstr, "[bogus error packet]");
-    response_error = 2;
-    amfree(optionstr);
-    return;
-
- parse_of_reply_message_failed:
-
-    if(nl) *nl = '\n';
+parse_error:
     errstr = newstralloc(errstr, "[parse of reply message failed]");
-    response_error = 2;
-    amfree(optionstr);
+    *response_error = 2;
     return;
+
+connect_error:
+    stop_dump();
+    *response_error = 1;
 }
 
 static int
@@ -1744,7 +1661,7 @@ startup_dump(hostname, disk, level, dumpdate, progname, options)
     char level_string[NUM_STR_SIZE];
     char rc_str[NUM_STR_SIZE];
     char *req = NULL;
-    int rc;
+    int rc, response_error;
 
     ap_snprintf(level_string, sizeof(level_string), "%d", level);
     if(strncmp(progname,"DUMP",4) == 0 || strncmp(progname,"GNUTAR",6) == 0)
@@ -1768,7 +1685,7 @@ startup_dump(hostname, disk, level, dumpdate, progname, options)
 		        "\n",
 		        NULL);
 
-    datafd = mesgfd = indexfd = -1;
+    streams[DATAFD].fd = streams[MESGFD].fd = streams[INDEXFD].fd = -1;
 
 #ifdef KRB4_SECURITY
     if(krb4_auth) {
@@ -1814,7 +1731,7 @@ startup_dump(hostname, disk, level, dumpdate, progname, options)
 	}
     } else
 #endif
-	rc = make_request((char *)hostname, amanda_port, req, NULL,
+	rc = make_request((char *)hostname, amanda_port, req, &response_error,
 			  STARTUP_TIMEOUT, sendbackup_response);
 
     req = NULL;					/* do not own this any more */
@@ -1828,5 +1745,5 @@ startup_dump(hostname, disk, level, dumpdate, progname, options)
 	return 2;
     }
     run_protocol();
-    return response_error;
+    return (response_error);
 }

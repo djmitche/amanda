@@ -1,5 +1,16 @@
 1999-04-06  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c: put all of the streams (data,mesg,index)
+	into an array with a name tag.
+	* server-src/dumper.c (stop_dump): new function that cleans up
+	and shuts down all of the streams.
+	* server-src/dumper.c (sendbackup_response): make static, pass
+	response_error through p->datap instead of making it global.
+	Rewrite the parsing to use strtok() and take advantage of the
+	streams array instead of repeading code for all three streams.
+
+1999-04-06  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c (main): keep our real uid as 0, and make
 	our effective uid nonprivlidged, so we can get back to root
 	later.  Don't print what port we bound to.  This info won't
