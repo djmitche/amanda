@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.26.2.3 1998/02/14 23:21:40 amcore Exp $
+ * $Id: driver.c,v 1.26.2.4 1998/03/02 04:54:18 amcore Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -200,24 +200,13 @@ char **main_argv;
 		continue;
 	    }
 
-	    /* Check how much space is left on the disk.  We pretend that there
-	    ** is a little less space left than there really is to give a bit
-	    ** of protection against under-estimated dump sizes.
-	    */
-	    if(fs.avail != -1) { /* XXX - is this right? */
-		long avail;
-
-		avail = fs.avail - inparallel * 10 * 1024;  /* 10 MB/dumper */
-		if (avail < 0L) {
-		    avail = 0L;
-		}
-
-		if(hdp->disksize > avail) {
+	    if(fs.avail != -1) {
+		if(hdp->disksize > fs.avail) {
 		    log(L_WARNING,
 			"WARNING: %s: %ld KB requested, but only %ld KB available.",
-			hdp->diskdir, hdp->disksize, avail);
+			hdp->diskdir, hdp->disksize, fs.avail);
 
-		    hdp->disksize = avail;
+		    hdp->disksize = fs.avail;
 		}
 	    }
 
@@ -1125,7 +1114,11 @@ unsigned long size;
 
     minp = NULL;
     for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next)
-	if(holdalloc(hdp)->allocated_space + size <= hdp->disksize) {
+	/* We add 10 MB per active dumper to give a bit of protection
+	 * against under-estimated dump sizes.  */
+	if(holdalloc(hdp)->allocated_space + size +
+	   ((holdalloc(hdp)->allocated_dumpers + 1) * 10*1024)
+	   <= hdp->disksize) {
 	    if(!minp || (holdalloc(minp)->allocated_dumpers >
 			 holdalloc(hdp)->allocated_dumpers))
 		minp = hdp;

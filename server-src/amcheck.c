@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.30.2.2 1998/02/19 09:42:10 amcore Exp $
+ * $Id: amcheck.c,v 1.30.2.3 1998/03/02 04:54:16 amcore Exp $
  *
  * checks for common problems in server and clients
  */
@@ -440,8 +440,6 @@ int fd;
     inparallel = getconf_int(CNF_INPARALLEL);
 
     for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next) {
-	long avail;
-
 	if(get_fs_stats(hdp->diskdir, &fs) == -1) {
 	    fprintf(outf, "ERROR: statfs %s: %s\n",
 		    hdp->diskdir, strerror(errno));
@@ -458,15 +456,15 @@ int fd;
 		    hdp->diskdir, hdp->disksize);
 	    disklow = 1;
 	}
-	else if((avail = fs.avail - inparallel * 10 * 1024) < hdp->disksize) {
+	else if(fs.avail < hdp->disksize) {
 	    fprintf(outf,
 		    "WARNING: %s: only %ld KB free (%ld KB requested).\n",
-		    hdp->diskdir, avail, hdp->disksize);
+		    hdp->diskdir, fs.avail, hdp->disksize);
 	    disklow = 1;
 	}
 	else
 	    fprintf(outf, "%s: %ld KB disk space available, that's plenty.\n",
-		    hdp->diskdir, avail);
+		    hdp->diskdir, fs.avail);
     }
 
     /* check that the log file is writable if it already exists */
