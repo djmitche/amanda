@@ -32,6 +32,8 @@ amtrmidx
 amtrmlog
 amverify
 amverify.sh
+amverifyrun
+amverifyrun.sh
 changer.lo
 chunker
 clock.lo

@@ -5,13 +5,17 @@ Makefile.in
 amandad
 amandates.lo
 amqde
+amqde.c
 calcize
 calcsize
+client_util.lo
+findpass.lo
 getfsent
 getfsent.lo
 getfsent.test.c
 killpgrp
 libamclient.la
+noop
 patch-system
 patch-system.sh
 rundump

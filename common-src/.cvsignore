@@ -3,10 +3,12 @@
 Makefile
 Makefile.in
 alloc.lo
+amfeatures.lo
 amflock.lo
 bsd-security.lo
 bsd-security.test.c
 bsdsecurity
+clock.lo
 debug.lo
 dgram.lo
 engine.ih
@@ -23,6 +25,7 @@ krb5-security.lo
 libamanda.la
 match.lo
 packet.lo
+pipespawn.lo
 protocol.lo
 regcomp.ih
 regcomp.lo
@@ -33,6 +36,7 @@ regexec.lo
 regfree.lo
 rsh-security.lo
 security.lo
+sl.lo
 statfs
 statfs.lo
 statfs.test.c
