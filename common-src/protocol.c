@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.27.2.1.6.2.2.1 2004/02/13 14:01:08 martinea Exp $
+ * $Id: protocol.c,v 1.27.2.1.6.2.2.2 2004/04/14 13:24:17 martinea Exp $
  *
  * implements amanda protocol
  */
@@ -945,6 +945,10 @@ static void handle_incoming_packet()
     if(dgram_recv(&inpkt.dgram, 0, &inpkt.peer) == -1) {
 #ifdef ECONNREFUSED
 	if(errno == ECONNREFUSED)
+	    return;
+#endif
+#ifdef EAGAIN
+	if(errno == EAGAIN)
 	    return;
 #endif
 	fprintf(stderr,"protocol packet receive: %s\n", strerror(errno));
