@@ -1,3 +1,8 @@
+2001-07-18 John R. Jackson <jrj@purdue.edu>
+
+	* man/amanda.8.in: Describe the .amandahosts format better.  Clean up
+	  a couple of minor typos.
+
 2001-07-13 John R. Jackson <jrj@purdue.edu>
 
 	* common-src/dgram.h: Improve UDP datagram size calculation.
