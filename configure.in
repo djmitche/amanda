@@ -1890,7 +1890,7 @@ ICE_CHECK_DECL(getsockname,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(getsockopt,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(gettimeofday,time.h sys/time.h)
 AMANDA_FUNC_GETTIMEOFDAY_ARGS
-AC_CHECK_FUNCS(getvfsent isascii)
+AC_CHECK_FUNCS(getvfsent initgroups isascii)
 ICE_CHECK_DECL(initgroups,grp.h sys/types.h unistd.h libc.h)
 ICE_CHECK_DECL(ioctl,sys/ioctl.h unistd.h libc.h)
 ICE_CHECK_DECL(listen,sys/types.h sys/socket.h)

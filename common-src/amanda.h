@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.59 1998/04/11 05:23:41 amcore Exp $
+ * $Id: amanda.h,v 1.60 1998/05/11 08:34:32 amcore Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -812,15 +812,19 @@ extern int getsockopt P((int s, int level, int optname, char *optval,
 #endif
 
 #ifndef HAVE_GETTIMEOFDAY_DECL
-#ifdef HAVE_TWO_ARG_GETTIMEOFDAY
+# ifdef HAVE_TWO_ARG_GETTIMEOFDAY
 extern int gettimeofday P((struct timeval *tp, struct timezone *tzp));
-#else
+# else
 extern int gettimeofday P((struct timeval *tp));
-#endif
+# endif
 #endif
 
-#ifndef HAVE_INITGROUPS_DECL
+#ifndef HAVE_INITGROUPS
+# define initgroups(name,basegid) 0
+#else
+# ifndef HAVE_INITGROUPS_DECL
 extern int initgroups P((const char *name, gid_t basegid));
+# endif
 #endif
 
 #ifndef HAVE_IOCTL_DECL
