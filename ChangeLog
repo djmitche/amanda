@@ -1,3 +1,8 @@
+2001-12-12  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/amverify.sh.in: Check that @AMANDA_TMPDIR@ exist.
+	* server-src/amrmtape.sh.in: Ditto.
+
 2001-12-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* changer-src/Makefile.am: fix setting of libexec_PROGRAMS.
