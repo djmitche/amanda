@@ -1,5 +1,10 @@
 2002-12-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* tape-src/ammt.c (optind): Add prototype.
+	* tape-src/amdd.c (optind): Add prototype.
+
+2002-12-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* common-src/arglist.h (printf_arglist_function,
 	  printf_arglist_function1, printf_arglist_function2): Define if
 	  STDC_HEADERS is not defined.

@@ -20,6 +20,8 @@
 #include "tapeio.h"
 #endif
 
+extern int optind;
+
 static int debug_amdd = 0;
 static char *pgm = NULL;
 
