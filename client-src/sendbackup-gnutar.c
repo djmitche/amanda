@@ -82,13 +82,11 @@ int level, dataf, mesgf;
     char host[MAX_HOSTNAME_LENGTH], cmd[256];
     char *dirname;
     char dbprintf_buf[1024];
-#ifndef GNUTAR_LISTED_INCREMENTAL_DIR
     int l;
     char dumptimestr[80];
     struct tm *gmtm;
     amandates_t *amdates;
     time_t prev_dumptime;
-#endif
     int indexout;
 #ifndef USE_FQDN
     char *domain;
