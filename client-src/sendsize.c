@@ -390,7 +390,13 @@ int level;
 	if (!strcmp(amname_to_fstype(device), "xfs"))
 	{
 	    sprintf(dumpkeys, "%d", level);
-	    execl(XFSDUMP, "xfsdump", "-F", "-J", "-l", dumpkeys, "-", device,
+	    execl(
+#ifdef USE_RUNDUMP
+		  cmd,
+#else
+		  XFSDUMP,
+#endif
+		  "xfsdump", "-F", "-J", "-l", dumpkeys, "-", device,
 		  (char *)0);
 	}
 	else
