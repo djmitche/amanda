@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.17.2.4 1998/12/09 19:28:29 martinea Exp $
+ * $Id: holding.c,v 1.17.2.5 1999/02/13 21:11:20 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -215,6 +215,28 @@ int verbose;
     }
     closedir(topdir);
 }
+
+char **pick_all_datestamp()
+{
+    holdingdisk_t *hdisk;
+    struct dirname *dir;
+    int i;
+    char ** directories_names;
+
+    for(hdisk = getconf_holdingdisks(); hdisk != NULL; hdisk = hdisk->next)
+	scan_holdingdisk(hdisk->diskdir,1);
+
+    directories_names = alloc((ndirs+1) * sizeof(char *));
+
+    for(dir = holding_list, i = 0; dir != NULL;
+	dir = dir->next, i++) {
+	directories_names[i] = stralloc(dir->name);
+    }
+    directories_names[i] = NULL;
+
+    return directories_names;
+}
+
 
 char **pick_datestamp()
 {

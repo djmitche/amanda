@@ -1,5 +1,11 @@
 1999-02-13  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/holding.c (pick_all_datestamp): new function to return
+	all datestamp in the holding disks.
+	* server-src/holding.h: declare pick_all_datestamp.
+
+1999-02-13  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/diskfile.h (host_t): new start_t field.
 	* server-src/diskfile.c (read_diskline): set start_t to 0.
 	* server-src/driver.c (start_some_dumps): Don't start a dump if 
