@@ -101,10 +101,21 @@ install-exec-hook:
 		echo chgrp $(SETUID_GROUP) $$pa; \
 		chgrp $(SETUID_GROUP) $$pa; \
 	done
-	@list="$(sbindir)/amcheck $(libexecdir)/dumper $(libexecdir)/planner"; \
+	@list="amcheck"; \
 	for p in $$list; do \
-		if echo "$(sbin_PROGRAMS) $(sbin_SCRIPTS) $(libexec_PROGRAMS) $(libexec_SCRIPTS)" | grep `basename $$p` >/dev/null 2>&1; then \
-			pa=$(DESTDIR)`echo $$p|sed '$(transform)'`; \
+		if echo "$(sbin_PROGRAMS)" | grep $$p >/dev/null 2>&1; then \
+			pa=$(DESTDIR)$(sbindir)/`echo $$p|sed '$(transform)'`; \
+			echo chown root $$pa; \
+			chown root $$pa; \
+			echo chmod u+s,o-rwx $$pa; \
+			chmod u+s,o-rwx $$pa; \
+		else true; \
+		fi; \
+	done
+	@list="dumper planner"; \
+	for p in $$list; do \
+		if echo "$(libexec_PROGRAMS)" | grep $$p >/dev/null 2>&1; then \
+			pa=$(DESTDIR)$(libexecdir)/`echo $$p|sed '$(transform)'`; \
 			echo chown root $$pa; \
 			chown root $$pa; \
 			echo chmod u+s,o-rwx $$pa; \
