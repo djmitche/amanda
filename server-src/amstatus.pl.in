@@ -44,8 +44,7 @@ else {
 }
 
 if ( ! -d "$confdir/$conf" ) {
-    print "amdump$suf: could not find directory $confdir/$conf";
-    exit 1;
+    die "amdump$suf: could not find directory $confdir/$conf";
 }
 
 $pwd = `pwd`;
@@ -448,5 +447,5 @@ sub usage() {
 	print "         [--summary] [--dumping] [--waitdumping] [--waittaper]\n";
 	print "         [--dumpingtape] [--writingtape] [--finished] [--failed]\n";
 	print "         [--estimate] [--gestimate]\n";
-	exit;
+	exit 0;
 }
