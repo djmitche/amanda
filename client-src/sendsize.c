@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.68 1998/01/29 10:19:33 amcore Exp $
+ * $Id: sendsize.c,v 1.69 1998/01/31 03:28:38 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -699,10 +699,8 @@ int level;
     default:
 	break; 
     case 0:	/* child process */
-#ifndef HAVE_DUMP_ESTIMATE
 	if(SETPGRP == -1)
 	    SETPGRP_FAILED();
-#endif
 
 	dup2(nullfd, 0);
 	dup2(nullfd, 1);
@@ -769,21 +767,10 @@ int level;
     if(size == 0 && level == 0)
 	dbprintf(("(PC SHARE connection problem, is this disk really empty?)\n.....\n"));
 
-#ifndef HAVE_DUMP_ESTIMATE
-#ifdef VDUMP
-    sleep(5);
-#endif
     /*
      * First, try to kill the dump process nicely.  If it ignores us
      * for several seconds, hit it harder.
      */
-#ifdef XFSDUMP
-    if (strcmp(fstype, "xfs") != 0) {
-    /*
-     * xfsdump won't die because it runs as root, and parent can't kill
-     * child unless it is root itself.
-     */
-#endif
     dbprintf(("sending SIGTERM to process group %ld\n", dumppid));
     killerr = kill(-dumppid, SIGTERM);
     if (killerr == -1) {
@@ -799,17 +786,13 @@ int level;
 	if (killerr == -1) {
 	    dbprintf(("kill failed: %s\n", strerror(errno)));
 	}
+	for(s = 5; s > 0 && (p = kill(dumppid, 0)) == 0; s--) {
+	    sleep(1);
+	}
+	if(p == 0) {
+	    dbprintf(("oh well, seems like it won\'t die; amanda may have to run as root then\n"));
+	}
     }
-    for(s = 5; s > 0 && (p = kill(dumppid, 0)) == 0; s--) {
-	sleep(1);
-    }
-    if(p == 0) {
-	dbprintf(("oh well, seems like it won\'t die; amanda may have to run as root then\n"));
-    }
-#ifdef XFSDUMP
-    }
-#endif
-#endif /* HAVE_DUMP_ESTIMATE */
     wait(&status);
 
     aclose(nullfd);
