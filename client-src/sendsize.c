@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.45 1997/12/30 05:24:02 jrj Exp $
+ * $Id: sendsize.c,v 1.46 1997/12/30 17:38:52 jrj Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -841,7 +841,7 @@ time_t dumpsince;
     char *incrname;
     char *dirname;
     char *line = NULL;
-    char *cmd = NULL
+    char *cmd = NULL;
     char *cmd_line;
     char dumptimestr[80];
     struct tm *gmtm;
@@ -992,7 +992,7 @@ notincremental:
 	t = NULL;
 #undef sc
     } else {
-	dbprintf(("error [efile not --exclude-list or -file: %s]\n", efile);
+	dbprintf(("error [efile not --exclude-list or -file: %s]\n", efile));
 	error("error: efile not --exclude-list or -file: %s]", efile);
     }
 
@@ -1017,7 +1017,7 @@ notincremental:
 			 efile ? " ." : "",
 			 NULL);
 
-    dbprintf(("%s: running \"%s\"\n", pname, buf));
+    dbprintf(("%s: running \"%s\"\n", pname, cmd_line));
 
     nullfd = open("/dev/null", O_RDWR);
     pipe(pipefd);
