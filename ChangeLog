@@ -1,5 +1,8 @@
 1999-06-15  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* configure.in (bcopy, bzero): Oops, ICE_CHECK_DECL already checks
+	for availability.
+
 	* configure.in (bcopy, bzero): Check whether they're available.
 	* common-src/amanda.h (bcopy, bzero): If not, use memmove and
 	memset.
