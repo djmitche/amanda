@@ -1,5 +1,10 @@
 1999-11-11  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* server-src/driverio.c (update_info_dumper): Discard information on
+	older same- or higher-level dumps.
+	* server-src/driver.c (dump_to_tape): Add comment that _dumper must
+	be called before _taper.
+
 	* docs/FAQ: Sometimes FQDNs are wrong for amandahosts.
 
 1999-11-10 John R. Jackson  <jrj@purdue.edu>
@@ -614,7 +619,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.307 1999/11/11 23:43:47 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.308 1999/11/12 00:16:15 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

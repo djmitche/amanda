@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.24 1999/11/01 23:29:45 jrj Exp $
+ * $Id: driver.c,v 1.58.2.25 1999/11/12 00:16:24 oliva Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1725,7 +1725,7 @@ disk_t *dp;
 
 /* ------------------- */
 int dump_to_tape(dp)
-disk_t *dp;
+     disk_t *dp;
 {
     dumper_t *dumper;
     int failed = 0;
@@ -1853,6 +1853,9 @@ disk_t *dp;
 	update_info_dumper(dp, origsize, dumpsize, dumptime);
 	filenum = atoi(result_argv[4]);
 	update_info_taper(dp, result_argv[3], filenum, sched(dp)->level);
+	/* note that update_info_dumper() must be run before
+	   update_info_taper(), since update_info_dumper overwrites
+	   tape information.  */
 
 	break;
 
