@@ -12,7 +12,15 @@ sbin_PROGRAMS = 	amrestore
 
 libexec_PROGRAMS = 	amidxtaped
 
-LDADD = ../tape-src/libamtape.$(LIB_EXTENSION) \
+###
+# Because libamanda includes routines (e.g. regex) provided by some system
+# libraries, and because of the way libtool sets up the command line, we
+# need to list libamanda twice here, first to override the system library
+# routines, and second to pick up any references in the other libraries.
+###
+
+LDADD = ../common-src/libamanda.$(LIB_EXTENSION) \
+	../tape-src/libamtape.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
 
 amidxtaped_SOURCES = 	amidxtaped.c

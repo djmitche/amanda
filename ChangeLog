@@ -1,3 +1,13 @@
+2001-01-26 John R. Jackson <jrj@purdue.edu>
+
+	* changer-src/Makefile.am: Double up the references to libamanda to
+	  handle systems that put regex in strange places.
+	* client-src/Makefile.am: Ditto.
+	* recover-src/Makefile.am: Ditto.
+	* restore-src/Makefile.am: Ditto.
+	* server-src/Makefile.am: Ditto.
+	* tape-src/Makefile.am: Ditto.
+
 2001-01-23 John R. Jackson <jrj@purdue.edu>
 
 	* configure.in: Add tapeio switch from Marc Mengel <mengel@fnal.gov>,
