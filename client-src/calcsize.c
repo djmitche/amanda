@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: calcsize.c,v 1.24.2.2 1999/09/08 23:26:14 jrj Exp $
+ * $Id: calcsize.c,v 1.24.2.3 2000/09/24 01:52:34 martinea Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -135,7 +135,7 @@ char **argv;
     return 0;
 #else
     int i;
-    char *dirname, *amname;
+    char *dirname=NULL, *amname=NULL;
     int fd;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
@@ -150,6 +150,8 @@ char **argv;
 	close(fd);
     }
 
+    set_pname("calcsize");
+
     safe_cd();
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
@@ -162,7 +164,7 @@ char **argv;
 
     /* need at least program, amname, and directory name */
 
-    if(argc < 2) {
+    if(argc < 3) {
 #ifdef BUILTIN_EXCLUDE_SUPPORT
       usage:
 #endif
@@ -243,12 +245,18 @@ char **argv;
 
     /* the amanda name can be different from the directory name */
 
-    amname = *argv;
-    argc--, argv++;
+    if (argc > 0) {
+	amname = *argv;
+	argc--, argv++;
+    } else
+	error("missing <name>");
 
     /* the toplevel directory name to search from */
-    dirname = *argv;
-    argc--, argv++;
+    if (argc > 0) {
+	dirname = *argv;
+	argc--, argv++;
+    } else
+	error("missing <dir>");
 
     /* the dump levels to calculate sizes for */
 

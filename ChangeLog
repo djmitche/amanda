@@ -1,4 +1,10 @@
 2000-09-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	patch by Rudolf Cejka <cejkar@users.sourceforge.net>
+
+	* client-src/calcsize.c:sets correct program name,
+	prevent coredumps and some improrer command line error mesages
+
+2000-09-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* common-src/amanda.h: prototype clean_regex().
 	* common-src/match.c: new function clean_regex() that escape
@@ -913,7 +919,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.364 2000/09/23 15:33:57 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.365 2000/09/24 01:52:33 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
