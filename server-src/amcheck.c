@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.64 1999/06/02 21:43:00 kashmir Exp $
+ * $Id: amcheck.c,v 1.65 1999/06/15 04:29:05 oliva Exp $
  *
  * checks for common problems in server and clients
  */
@@ -437,7 +437,7 @@ uid_t dumpuid;
 }
 
 int start_server_check(fd, do_localchk, do_tapechk)
-int fd;
+    int fd;
 {
     char *errstr, *tapename;
     generic_fs_stats_t fs;
@@ -745,7 +745,7 @@ int fd;
 
 #if TEXTDB
 	if(stat(infodir, &statbuf) == -1) {
-	    fprintf(outf, "NOTE: info dir %s: does not exist\n",
+	    fprintf(outf, "NOTE: info dir %s: does not exist\nNOTE: it is supposed to be created on the next run\n",
 		    infodir);
 	    amfree(infodir);
 	} else if (!S_ISDIR(statbuf.st_mode)) {

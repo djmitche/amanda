@@ -1,3 +1,8 @@
+1999-06-15  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/amcheck.c (start_server_check): If info file does not
+	exist, explain that it is supposed to be created on the next run.
+
 1999-06-08  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/tapefile.c (lookup_last_reusable_tape): Fix order of
