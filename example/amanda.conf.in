@@ -103,6 +103,28 @@ indexdir "/usr/adm/amanda/@DEFAULT_CONFIG@/index"	# index directory
 # doesn't.  For EXABYTE and DAT tapes this is ok.  Anyone using 9 tracks for
 # amanda and need IRG calculations?  Drop me a note if so.
 
+# If you want amanda to print postscript paper tape labels
+# add a line after the comment in the tapetype of the form
+#    lbl-templ "/path/to/postscript/template/label.ps"
+#
+# if you want the label to go to a printer other than the default
+# for your system, you can also add a line above for a different
+# printer. (i usually add that line after the dumpuser specification)
+#
+# dumpuser "operator"     # the user to run dumps under
+# printer "mypostscript"  # printer to print paper label on
+#
+# here is an example of my definition for an EXB-8500
+#
+# define tapetype EXB-8500 {
+#     comment "Exabyte EXB-8500 drive on decent machine"
+#     lbl-templ "/usr/local/amanda/config/lbl.exabyte.ps"
+#     length 4200 mbytes
+#     filemark 48 kbytes
+#     speed 474 kbytes                    
+# }
+#
+
 define tapetype QIC-60 {
     comment "Archive Viper"
     length 60 mbytes

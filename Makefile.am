@@ -16,13 +16,14 @@ EXTRA_DIST = \
 	COPYRIGHT-APACHE		COPYRIGHT-REGEX 		\
 	docs/INDEXING			docs/INSTALL			\
 	docs/INTERNALS			docs/KERBEROS			\
-	docs/MULTITAPE			docs/RESTORE			\
-	docs/SAMBA			docs/SECURITY			\
-	docs/SUNOS4.BUG			docs/SYSTEM.NOTES		\
-	docs/TAPE.CHANGERS		docs/TAPETYPES			\
-	docs/UPGRADE			docs/WHATS.NEW			\
-	docs/WISHLIST			patches/regex-3.6alpha.patch	\
-	patches/samba-largefs.patch	patches/tar-1.12.patch		\
+	docs/LABEL.PRINTING		docs/MULTITAPE			\
+	docs/RESTORE			docs/SAMBA			\
+	docs/SECURITY			docs/SUNOS4.BUG			\
+	docs/SYSTEM.NOTES		docs/TAPE.CHANGERS		\
+	docs/TAPETYPES			docs/UPGRADE			\
+	docs/WHATS.NEW			docs/WISHLIST			\
+	patches/regex-3.6alpha.patch	patches/samba-largefs.patch	\
+	patches/tar-1.12.patch		\
 	regex-src/COPYRIGHT		regex-src/Makefile 		\
 	regex-src/README		regex-src/WHATSNEW 		\
 	regex-src/cclass.h		regex-src/cname.h		\
