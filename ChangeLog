@@ -1,5 +1,10 @@
 2000-10-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* NEWS: A new `ctimeout' keyword in amanda.conf to replace
+	the CHECK_TIMEOUT constant in amcheck.c.
+
+2000-10-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amlabel.c: Don't set tape_ok to 0 if
 	tape_wrlabel is successful.
 
@@ -1040,7 +1045,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.387 2000/10/11 20:42:26 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.388 2000/10/12 00:45:53 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

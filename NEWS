@@ -17,6 +17,8 @@ Changes in release 2.4.2
   size
 * A new `dtimeout' keyword in amanda.conf to replace the READ_TIMEOUT
   constant in dumper.c.
+* A new `ctimeout' keyword in amanda.conf to replace the CHECK_TIMEOUT
+  constant in amcheck.c.
 * new amtrmlog command
 * --with-samba-user is deprecated, the username go in the amandapass file
 
