@@ -31,6 +31,7 @@ va_dcl
     while(arglist_val(ap, char *) != NULL) {
 	argc++;
     }
+    arglist_end(ap);
 
     /*
      * Create the argument vector.
