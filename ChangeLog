@@ -41,6 +41,62 @@
 	* changer-src/Makefile.am: New conditional for building chg-scsi-chio
 	and chg-scsi. chg-scsi-chio is the old chg-scsi
 
+1998-11-06  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/bsd-security.c (bsd_stream_write): callback's third
+	arg should now be an int.
+	* common-src/bsd-security.c: quash some gcc -Wall warnings
+
+1998-11-06  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/security.h: the callback to stream_read should
+	take signed type as its 'length' argument so errors can be
+	expressed as a negative number.
+
+1998-11-06  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/bsd-security.c (stream_read_callback): do reads into
+	a buffer of size TAPE_BLOCK_BYTES, instead of 256, and place the
+	buffer in the stream handle instead of on the stack, since it's
+	huge
+
+1998-11-05  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/event.c (event_loop): Consider error conditions on
+	file descriptors as read or write events.  The caller will be
+	able to differentiate when they call read or write and it
+	fails.
+
+1998-11-05  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/event.c (event_loop): print out WHY select failed
+
+1998-11-05  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/bsd-security.c: adjust for the recvpkt timeout
+	interface changes
+	* common-src/bsd-security.c (handleq_remove): add a missing ; after
+	an assertion
+	* common-src/bsd-security.c (gethandle): initialize the error buffer
+	in the security handle, since errors may be set before the handle
+	is passed up to the general security layer
+	* common-src/bsd-security.c (bsd_recvpkt_cancel): allow it to be
+	called several times, or when no recvpkt was scheduled
+
+1998-11-05  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/security.h: define security_recvpkt_status_t
+	* common-src/security.h: security_driver_t->recvpkt() now
+	takes a timeout argument, and its callback takes a
+	security_recvpkt_status_t
+	* common-src/security.h: adjust the security_recvpkt() macro
+	for the above changes
+
+1998-11-05  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/event.c (event_loop): assert that we are not firing
+	a dead event
+
 1998-11-05  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* recover-src/amrecover.c: remove declaration of errstr.
@@ -60,6 +116,37 @@
 1998-11-05  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amstatus.pl.in: remove warning.
+
+1998-11-04  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/event.c (event_register): delete some improper debug
+	code that shouldn't have made it in
+
+1998-11-04  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/bsd-security.c: new file: security driver that
+	implements "BSD" security.
+
+1998-11-04  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/security.h: new file: the security api header
+
+1998-11-04  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/event.c: new file: the event handler.  Handles file
+	descriptor io, signals, and timed events.
+	* common-src/event.h: new file: interface for the event handler.
+
+1998-11-04  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/packet.c: new file: description of pkt_t's and routines
+	for formatting
+	* common-src/packet.h: new file: header for common-src/packet.c
+
+1998-11-04  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/queue.h: new file: the 4.4BSD queue macros, with
+	additions from NetBSD
 
 1998-11-04  John R. Jackson  <jrj@purdue.edu>
 
