@@ -1,5 +1,9 @@
 2001-12-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* example/amanda.conf.in: typo.
+
+2001-12-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	Patch by Roland E. Lipovits <rel@lipo.at0.net>
 	* example/amanda.conf.in: typo.
 
