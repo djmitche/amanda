@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.h,v 1.9 1999/09/15 00:32:48 jrj Exp $
+ * $Id: changer.h,v 1.10 2003/03/07 21:23:09 martinea Exp $
  *
  * interface routines for tape changers
  */
@@ -37,7 +37,7 @@ int changer_init P((void));
 int changer_reset P((char **slotstr));
 int changer_clean P((char **slotstr));
 int changer_eject P((char **slotstr));
-void changer_label P((int slotsp, char *labelstr));
+int changer_label P((int slotsp, char *labelstr));
 int changer_info P((int *nslotsp, char **curslotstr, int *backwards));
 int changer_query P((int *nslotsp, char **curslotstr, int *backwards,
 		     int *searchable));

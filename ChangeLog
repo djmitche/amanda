@@ -1,5 +1,9 @@
 2003-04-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/changer.h (changer_label): Return an int.
+
+2003-04-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* file tape-src/output-rait.c (rait_open): Call tapefd_set_master_fd();
 	* file tape-src/tapeio.c (struct tape_info): Add master_fd field.
 	* file tape-src/tapeio.c (tape_info_init): Set master_fd to -1;
