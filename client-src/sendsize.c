@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.18 2001/08/04 01:58:49 jrjackson Exp $
+ * $Id: sendsize.c,v 1.97.2.19 2001/09/01 20:49:38 jrjackson Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -140,7 +140,7 @@ char **argv;
     dbprintf(("%s: version %s\n", argv[0], version()));
 
     prefix = stralloc(get_pname());
-    prefix_line = "";
+    prefix_line = stralloc("");
 
     host = alloc(MAX_HOSTNAME_LENGTH+1);
     gethostname(host, MAX_HOSTNAME_LENGTH);
