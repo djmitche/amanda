@@ -1,5 +1,9 @@
 2002-12-30  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* amplot/amplot.awk: Many fix.
+
+2002-12-30  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/planner.c (promote_highest_priority_incremental): Promote
 	  a disk > balanced size if no full today. Do not promote a disk it's
 	  the only disk due that day and no full today.
