@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.38 1998/09/02 03:40:31 oliva Exp $
+ * $Id: amindexd.c,v 1.39 1998/10/19 20:46:13 jrj Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -390,14 +390,15 @@ char *config;
 	amfree(conf_dir);
 	return -1;
     }
-    amfree(conf_dir);
 
     /* read conffile */
     if (read_conffile(CONFFILE_NAME))
     {
 	reply(501, "Couldn't read config file %s/%s!", conf_dir, CONFFILE_NAME);
+	amfree(conf_dir);
 	return -1;
     }
+    amfree(conf_dir);
 
     /* read the disk file while we are here - just in case we need it */
     if ((disk_list = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
