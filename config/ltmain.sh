@@ -266,7 +266,7 @@ if test -z "$show_help"; then
     libobj=`$echo "$srcfile" | sed -e 's%^.*/%%'`
 
     # Recognize several different file suffixes.
-    xform='[cCFSfm]'
+    xform='[cCFsSfm]'
     case "$libobj" in
     *.c++) xform=c++ ;;
     *.cc) xform=cc ;;
