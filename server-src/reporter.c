@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.4 1999/03/21 14:22:18 oliva Exp $
+ * $Id: reporter.c,v 1.44.2.5 1999/03/29 02:17:59 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -172,7 +172,6 @@ static char *ColumnNameStrings[ColumnNameCount] = {
 /* conversion from string to enumeration
  */
 static int StringToColumnName(char *s) {
-    static char *myname= "StringToColumnName";
     ColumnName cn;
     for (cn= 0; cn<ColumnNameCount; cn++) {
     	if (strcmp(s, ColumnNameStrings[cn]) == 0) {
@@ -909,7 +908,7 @@ void sort_disks()
     }
 }
 
-CheckStringMax(ColumnInfo *cd, char *s) {
+void CheckStringMax(ColumnInfo *cd, char *s) {
     if (cd->MaxWidth) {
 	int l= strlen(s);
 	if (cd->Width < l)
@@ -917,7 +916,7 @@ CheckStringMax(ColumnInfo *cd, char *s) {
     }
 }
 
-CheckIntMax(ColumnInfo *cd, int n) {
+void CheckIntMax(ColumnInfo *cd, int n) {
     if (cd->MaxWidth) {
     	char testBuf[200];
     	int l;
@@ -929,7 +928,7 @@ CheckIntMax(ColumnInfo *cd, int n) {
     }
 }
 
-CheckFloatMax(ColumnInfo *cd, double d) {
+void CheckFloatMax(ColumnInfo *cd, double d) {
     if (cd->MaxWidth) {
     	char testBuf[200];
 	int l;
@@ -941,7 +940,7 @@ CheckFloatMax(ColumnInfo *cd, double d) {
     }
 }
 
-CalcMaxWidth() {
+void CalcMaxWidth() {
     /* we have to look for columspec's, that require the recalculation.
      * we do here the same loops over the sortq as is done in
      * output_summary. So, if anything is changed there, we have to
