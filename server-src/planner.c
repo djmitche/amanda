@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.14 1999/09/08 23:28:23 jrj Exp $
+ * $Id: planner.c,v 1.76.2.15 2000/12/29 17:46:31 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1327,18 +1327,26 @@ disk_t *dp;
 	fprintf(stderr,"(due for level 0) ");
 	ep->dump_level = 0;
 	ep->dump_size = est_tape_size(dp, 0);
-	total_lev0 += (double) ep->dump_size;
-	if(ep->last_level == -1 || dp->skip_incr) {
-	    fprintf(stderr,"(%s disk, can't switch to degraded mode)\n",
-		    dp->skip_incr? "skip-incr":"new");
-	    ep->degr_level = -1;
-	    ep->degr_size = -1;
+	if(ep->dump_size <= 0) {
+	    fprintf(stderr,
+		    "(no estimate for level 0, picking an incr level)\n");
+	    ep->dump_level = pick_inclevel(dp);
+	    ep->dump_size = est_tape_size(dp, ep->dump_level);
 	}
 	else {
-	    /* fill in degraded mode info */
-	    fprintf(stderr,"(picking inclevel for degraded mode)\n");
-	    ep->degr_level = pick_inclevel(dp);
-	    ep->degr_size = est_tape_size(dp, ep->degr_level);
+	    total_lev0 += (double) ep->dump_size;
+	    if(ep->last_level == -1 || dp->skip_incr) {
+		fprintf(stderr,"(%s disk, can't switch to degraded mode)\n",
+			dp->skip_incr? "skip-incr":"new");
+		ep->degr_level = -1;
+		ep->degr_size = -1;
+	    }
+	    else {
+		/* fill in degraded mode info */
+		fprintf(stderr,"(picking inclevel for degraded mode)\n");
+		ep->degr_level = pick_inclevel(dp);
+		ep->degr_size = est_tape_size(dp, ep->degr_level);
+	    }
 	}
     }
     else {
