@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: alloc.c,v 1.17.2.1.4.3.2.3 2002/10/27 14:31:18 martinea Exp $
+ * $Id: alloc.c,v 1.17.2.1.4.3.2.3.2.1 2004/08/31 12:46:06 martinea Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * errordump() is called, relieving the caller from checking the return
@@ -439,6 +439,9 @@ safe_env()
 {
     static char *safe_env_list[] = {
 	"TZ",
+#ifdef __CYGWIN__
+	"SYSTEMROOT",
+#endif
 #ifdef NEED_PATH_ENV
 	"PATH",
 #endif
