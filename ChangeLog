@@ -1,3 +1,6 @@
+2001-04-15 Thomas Hepper <th@ant.han.de>
+	*contrib/gsc: Generic SCSI interface for AIX, used by chg-scsi
+
 2001-04-13 John R. Jackson <jrj@purdue.edu>
 
 	* example/amanda.conf.in: Fix multiple holding disks comment.
