@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.3 1998/09/02 03:40:54 oliva Exp $
+ * $Id: tapetype.c,v 1.4 1999/08/15 09:41:24 oliva Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -35,6 +35,8 @@
 
 #define BLOCKSIZE (32768)
 #define NBLOCKS (32)
+
+#define FilesPerTape (1000)	/* approx EOF's in 2nd phase */
 
 static char randombytes[NBLOCKS][BLOCKSIZE];
 
@@ -66,6 +68,19 @@ int writeblock(fd)
   return write(fd, getrandombytes(), BLOCKSIZE) == BLOCKSIZE;
 }
 
+
+/* returns number of blocks actually written */
+int writeblocks(int fd, int nblks)
+{
+  int blks = 0, rtrn = 0;
+
+  while (blks < nblks && writeblock(fd))
+    blks++;
+
+  return blks;
+}
+
+
 int main(argc, argv)
      int argc;
      char *argv[];
@@ -73,6 +88,7 @@ int main(argc, argv)
   int minblocks = 0, maxblocks = 0;
   int fd;
   time_t start, end;
+  int eofwritten = 0, FileSzMax;
 
   if (argc != 3) {
     fprintf(stderr, "usage: tapetype NAME DEV\n");
@@ -110,16 +126,33 @@ int main(argc, argv)
     return 1;
   }
 
-  while(writeblock(fd) && tapefd_weof(fd, 1) == 0)
-    if (++minblocks % 100 == 0)
-      fprintf(stderr, "\rwrote %d 32Kb sections", minblocks);
+  /* FileSzMax sets the max blks / file before an eof */
+  FileSzMax = (maxblocks * 2) / FilesPerTape;
+
+  while (1) {
+    int FileSz, blks, rtrn;
+
+    FileSz = (random() % FileSzMax) + 1;
+    if ((blks = writeblocks(fd, FileSz)) <= 0)
+      break;
+    minblocks += blks;
+
+    if ((rtrn = tapefd_weof(fd, 1)) != 0) {
+      printf("weof returned %d\n", rtrn);
+      break;
+    }
+    eofwritten++;
+
+    fprintf(stderr, "\rwrote %d 32Kb sections, %d eofs",
+	    minblocks, eofwritten);
+  }
 
   fprintf(stderr, "\rwrote %d 32Kb sections\n", minblocks);
 
   printf("define tapetype %s {\n", argv[1]);
   printf("    comment \"just produced by tapetype program\"\n");
   printf("    length %d mbytes\n", maxblocks/32);
-  printf("    filemark %d kbytes\n", (maxblocks-minblocks)*32/minblocks);
+  printf("    filemark %d kbytes\n", (maxblocks-minblocks)*32/eofwritten);
   printf("    speed %d kbytes\n", maxblocks*32/(end-start));
   printf("}\n");
 

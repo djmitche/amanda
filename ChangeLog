@@ -1,3 +1,8 @@
+1999-08-15  Jon LaBadie  <jon@jgcomp.com>
+	
+	* tape-src/tapetype.c: Speed it up by using larger sections in the
+	second pass.
+
 1999-08-15  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* man/amanda.8.in (skip-full, incronly): Document existing bugs.
