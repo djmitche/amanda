@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.44.2.5 1998/02/15 06:53:14 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.44.2.6 1998/03/12 07:11:39 amcore Exp $
  *
  * send backup data using BSD dump
  */
@@ -223,11 +223,7 @@ char *dumpdate;
     if (1)
 #endif
     {
-#ifdef USE_RUNDUMP
         char *progname = cmd;
-#else
-	char *progname = VXDUMP;
-#endif
 	program->backup_name  = VXDUMP;
 #ifndef VXRESTORE
 #define VXRESTORE "vxrestore"
