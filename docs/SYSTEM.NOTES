@@ -83,6 +83,14 @@ If you use logical volumes, you may refer to mountpoints or full
 device pathnames instead of device names in the disk list file.
  
 
+According to Stan Brown <stanb@awod.com>, amverify won't work with
+HP/UX's stock `mt'.  The work-around is to install GNU cpio, that
+contains an implementation of `mt', and edit amverify so that MT
+points to GNU mt and MTOPT is `-f', or reconfigure and rebuild amanda
+from scratch, making sure it finds GNU mt before the stock mt in the
+PATH.
+
+
 If you have vxfs filesystems to back up, amanda will pick vxdump
 automatically.  However, since it must be run as root, amanda will use
 a setuid-root program called rundump to call it.  Unfortunately, this
