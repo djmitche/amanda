@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.14 1997/09/22 20:39:19 amcore Exp $
+ * $Id: infofile.c,v 1.15 1997/09/25 04:13:39 george Exp $
  *
  * manage current info file
  */
@@ -51,27 +51,29 @@
 int maketreefor(file)
 char *file;
 {
-  char *p;
-  if (access(file, F_OK)==0)
-    return 0;
+    char *p;
 
-  p = strrchr(file, '/');
-  if (p == file)
-    return 0;
+    p = strrchr(file, '/');
+    if (p == file) return 0;
+    *p = '\0';
 
-  *p = '\0';
-  if (maketreefor(file) == -1) {
+    if (access(file, F_OK) == 0) {
+	*p = '/';
+	return 0;
+    }
+
+    if (maketreefor(file) == -1) {
+	*p = '/';
+	return -1;
+    }
+
+    if (mkdir(file, 0755) != 0) {
+	*p = '/';
+	return -1;
+    }
+
     *p = '/';
-    return -1;
-  }
-
-  if (mkdir(file, 0755) != 0) {
-    *p = '/';
-    return -1;
-  }
-
-  *p = '/';
-  return 0;
+    return 0;
 }
 
 FILE *open_txinfofile(host, disk, mode)
