@@ -1,3 +1,8 @@
+	Possible fix for "taper syncpipe_get: w: unexpected EOF".  Do not
+	close the taper file descriptor in driver on TAPE-ERROR, but let
+	the protocol clean up nicely.  -JJ with much appreciated testing
+	by Battu' Mario <Mario.Battu@CSELT.IT>
+
 Version 2.4.0b6p3
 
 	accept curses and ncurses in addition to termcap for readline
