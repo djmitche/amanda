@@ -1,5 +1,13 @@
 1998-12-18  John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/amstatus.pl.in: fix two minor typos.  Add percentage
+	display to the summary comparing real and estimated size and real
+	versus total estimate (showing how well the estimates are doing and
+	a rough guess at how far along the run is).  Also the percentage of
+	total holding disk space in use.
+
+1998-12-18  John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/amstatus.pl.in: take the --file argument as is if it
 	is an absolute path.
 
