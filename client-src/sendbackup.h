@@ -24,14 +24,10 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.h,v 1.14 2002/02/13 14:47:47 martinea Exp $
+ * $Id: sendbackup.h,v 1.15 2002/02/13 15:21:17 martinea Exp $
  *
  * a few common decls for the sendbackup-* sources
  */
-
-#define IGNORE_SMBCLIENT_ERRORS
-#define IGNORE_TAR_ERRORS
-
 #include "amanda.h"
 #include "pipespawn.h"
 #include "client_util.h"

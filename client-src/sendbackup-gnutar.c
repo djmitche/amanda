@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.78 2002/02/13 14:47:47 martinea Exp $
+ * $Id: sendbackup-gnutar.c,v 1.79 2002/02/13 15:21:17 martinea Exp $
  *
  * send backup data using GNU tar
  */
@@ -60,9 +60,6 @@ static regex_t re_table[] = {
   { DMP_NORMAL, ": File .* shrunk by [0-9][0-9]* bytes, padding with zeros", 1 },
   { DMP_NORMAL, ": Cannot add file .*: No such file or directory$", 1},
   { DMP_NORMAL, ": Error exit delayed from previous errors", 1},
-  { DMP_NORMAL, ": Cannot stat: Stale NFS file handle$", 1 },
-  { DMP_NORMAL, ": .*: Warning: Cannot stat: No such file or directory$", 1 },
-  { DMP_NORMAL, ": .*: Cannot savedir: Permission denied", 1 },
 #endif
   
   /* samba may produce these output messages */
@@ -109,10 +106,6 @@ static regex_t re_table[] = {
   { DMP_NORMAL, "^ERRDOS - ERRnoaccess opening remote file", 1},
   { DMP_NORMAL, "^ERRSRV - ERRaccess setting attributes on file", 1},
   { DMP_NORMAL, "^ERRDOS - ERRnoaccess setting attributes on file", 1},
-  { DMP_NORMAL, "^ERRDOS - 123 opening remote file", 1},
-  { DMP_NORMAL, "^ERRDOS - ERRnoaccess listing", 1},
-  { DMP_NORMAL, "^Unknown parameter encountered: \"ssl CA certFile\"", 1},
-  { DMP_NORMAL, "^Ignoring unknown parameter \"ssl CA certFile\"", 1},
 #endif
 
 #if SAMBA_VERSION >= 2
