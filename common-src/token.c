@@ -23,7 +23,7 @@
  * Author: George Scott, Computer Centre, Monash University.
  */
 /*
- * $Id: token.c,v 1.9 1997/10/06 04:25:34 george Exp $
+ * $Id: token.c,v 1.10 1997/10/08 05:30:29 george Exp $
  *
  * token bashing routines
  */
@@ -37,11 +37,6 @@
 #include "amanda.h"
 #include "arglist.h"
 #include "token.h"
-
-/* Static buffer for these routines.  This shouldn't cause
-** a problem in most cases.
-*/
-static char *buf = (char *)0;
 
 /* Split a string up into tokens.
 ** There is exactly one separator character between tokens.
@@ -59,6 +54,7 @@ char *sep;	/* Token separators - usually " " */
     register char *pi, *po;
     register int fld;
     register int len;
+    static char *buf = (char *)0; /* XXX - static buffer */
     int in_quotes;
 
     assert(str && token && toklen > 0 && sep);
@@ -176,6 +172,7 @@ char *str;	/* the string to quote */
 {
     register char *pi, *po;
     register int len;
+    static char *buf = (char *)0; /* XXX static buffer */
     int sep, need_quotes;
 
     /* Calculate the length of the quoted token. */
@@ -273,10 +270,10 @@ int val;
 char *sanitise_filename(inp)
 char *inp;
 {
-    static char buff[512]; /* XXX string overflow */
+    static char buf[512]; /* XXX string overflow */
     char *s, *d;
 
-    d = buff;
+    d = buf;
     for(s = inp; *s != '\0'; s++) {
 	switch(*s) {
 	case '_':	/* convert _ to __ to ensure unique output */
@@ -292,7 +289,7 @@ char *inp;
     }
     *d = '\0';
 
-    return buff;
+    return buf;
 }
 
 #ifdef TEST
