@@ -1,17 +1,17 @@
 README for adding PC hosts to the Amanda backup system.
 
 Release 2. 28/Jan/1997
-$Id: SAMBA,v 1.6.2.2 1998/02/28 23:59:53 amcore Exp $
+$Id: SAMBA,v 1.6.2.3 1998/03/01 00:03:48 amcore Exp $
 
 Installation
 
 Amanda is able to back up Microsoft Windows shared disks by using
 SAMBA, a package that implements a SMB client and server for Unix.
-This version of amanda is reported to work with samba 1.9.18p3; it
-will not work with versions previous to 1.9.17.  If you already have
-samba 1.9.16p2 or some beta versions of 1.9.17 already installed with
-a patch that used to be provided with amanda, there's probably no
-reason for you to upgrade.
+This version of amanda is reported to work with samba 1.9.18p3.  It
+will not work with versions previous to 1.9.17, unless you have samba
+1.9.16p2 or some beta versions of 1.9.17 already installed with a
+patch that used to be provided with amanda.  In this case, there's
+probably no reason for you to upgrade.
 
 Make sure you don't set a low logging/debugging level in the samba
 configuration file, because this flag may prevent that estimate sizes
