@@ -1,5 +1,10 @@
 1999-11-11  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* server-src/driverio.c (update_info_dumper): Discard information on
+	older same- or higher-level dumps.
+	* server-src/driver.c (dump_to_tape): Add comment that _dumper must
+	be called before _taper.
+
 	* docs/FAQ: Sometimes FQDNs are wrong for amandahosts.
 
 1999-11-10 John R. Jackson  <jrj@purdue.edu>

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.52 1999/09/15 00:33:00 jrj Exp $
+ * $Id: driverio.c,v 1.53 1999/11/12 00:16:10 oliva Exp $
  *
  * I/O-related functions for driver program
  */
@@ -411,12 +411,12 @@ disk_t *dp;
 }
 
 void update_info_dumper(dp, origsize, dumpsize, dumptime)
-disk_t *dp;
-long origsize;
-long dumpsize;
-long dumptime;
+     disk_t *dp;
+     long origsize;
+     long dumpsize;
+     long dumptime;
 {
-    int level;
+    int level, i;
     info_t info;
     stats_t *infp;
     perf_t *perfp;
@@ -437,11 +437,25 @@ long dumptime;
 
     get_info(dp->host->hostname, dp->name, &info);
 
+    /* Clean up information about this and higher-level dumps.  This
+       assumes that update_info_dumper() is always run before
+       update_info_taper(). */
+    for (i = level; i < DUMP_LEVELS; ++i) {
+      infp = &info.inf[i];
+      infp->size = -1;
+      infp->csize = -1;
+      infp->secs = -1;
+      infp->date = (time_t)-1;
+      infp->label[0] = '\0';
+      infp->filenum = 0;
+    }
+
+    /* now store information about this dump */
     infp = &info.inf[level];
     infp->size = origsize;
     infp->csize = dumpsize;
     infp->secs = dumptime;
-/*GS    if(dp->record)*/ infp->date = sched(dp)->timestamp;
+    infp->date = sched(dp)->timestamp;
 
     if(level == 0) perfp = &info.full;
     else perfp = &info.incr;
