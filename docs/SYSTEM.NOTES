@@ -57,7 +57,11 @@ investigation.  Another alternative proposed by Martyn Johnson
 use a binary program editor and replace `/dev/tty' with `/dev/nul',
 for instance, and link /dev/nul to /dev/null.  Note that the chosen
 file name must be exactly 8 bytes long, otherwise you'll break the
-restore program.
+restore program.  A nice one-liner perl script by Martyn Johnson will
+do the trick (make sure you preserve a copy of the original restore
+program, it will be rewritten by running this script!):
+
+perl -pi -e 'BEGIN { $/ = "/dev/tty" } s-$/-/dev/nul-' restore
 
 ---------------------------------------------------------------------------
 HP/UX
