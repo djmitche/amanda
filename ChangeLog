@@ -1,5 +1,9 @@
 1998-07-04  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* man/amanda.8.in (reserve): document it
+	* example/amanda.conf.in (reserve, gigabytes): ditto
+	(etimeout) negative number stands for total estimate time
+
 	* NEWS: documented major changes since amanda 2.3.0.4
 
 	* docs/INSTALL: refer to patch-system for editing services and

@@ -96,6 +96,22 @@ holdingdisk hd1 {
 #    use 1000 Mb
 #    }
 
+
+# If amanda cannot find a tape on which to store backups, it will run
+# as many backups as it can to the holding disks.  In order to save
+# space for unattended backups, by default, amanda will only perform
+# incremental backups in this case, i.e., it will reserve 100% of the
+# holding disk space for the so-called degraded mode backups.
+# However, if you specify a different value for the `reserve'
+# parameter, amanda will not degrade backups if they will fit in the
+# non-reserved portion of the holding disk.
+
+# reserve 30 # percent
+
+
+# This means save at least 30% of the holding disk space for degraded
+# mode backups.  
+
 # Amanda needs a few Mb of diskspace for the log and debug files,
 # as well as a database.  This stuff can grow large, so the conf directory
 # isn't usually appropriate.  Some sites use /usr/local/var and some /usr/adm.

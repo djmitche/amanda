@@ -252,6 +252,9 @@ some of which have a multiplier effect:
 .B "b byte bytes"
 Some number of bytes.
 .TP
+.B "g gb gbytes gigabytes"
+Some number of gigabytes (bytes*1024*1024*1024).
+.TP
 .B "k kb kbytes kilobytes"
 Some number of kilobytes (bytes*1024).
 .TP
@@ -436,7 +439,8 @@ Amount of time per disk on a given client that
 will wait to get the dump size estimates.
 For instance, with the default of 300 seconds and four disks on client A, 
 .B planner
-will wait up to 20 minutes for that machine.
+will wait up to 20 minutes for that machine.  A negative value will be
+interpreted as a total amount of time, instead of a per-disk value.
 .TP
 .BN netusage int
 Default:
@@ -543,6 +547,16 @@ Default:
 The file name for the active
 .I tapelist
 file.
+.TP
+.BN reserve number
+Default:
+.IR 100 (percent)
+The amount of holding-disk space that should not be used for full
+backups if no tape is available.  By default, when there is not tape
+to write to, degraded mode (incremental) backups will be performed to
+the holding disk.  If you wish to allow for full backups in this case,
+you may reduce the amount of holding disk space reserved for
+incrementals.
 .TP
 .B holdingdisk
 Define parameters for a holding disk.
