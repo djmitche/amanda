@@ -23,6 +23,10 @@ amrestore \- extract files from an Amanda tape
 [
 .B \-h
 ]
+[
+.B \-d
+.I datestamp
+]
 .I tapedevice
 [
 .I hostname
@@ -35,8 +39,10 @@ extracts files from the tape mounted on
 .I tapedevice
 that match
 .I hostname
-and
+,
 .I diskname
+and
+.I datestamp
 patterns given on the command line.
 The tape must be in a format written by the
 .B amdump
@@ -51,10 +57,15 @@ are candidates.
 If
 .I hostname
 is not specified, every backup on the tape is a candidate.
+If
+.I datestamp
+is not specified, every backup on the tape is a candidate.
 .LP
 .I Hostname
-and
+,
 .I diskname
+and
+.I datestamp
 are regular expressions that may match more than one backup.
 For example, if
 .I diskname
@@ -62,6 +73,11 @@ is "rz[23]a", it would match disks
 .B rz2a
 and
 .BR rz3a .
+.LP
+.I datestamp
+is usefull if you have
+.B amflush
+multiple runs on the tape.
 .PP
 Unless
 .B -p
