@@ -1,3 +1,8 @@
+1998-10-19  John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/amindexd.c (is_config_valid): fix core dump by moving
+	amfree of conf_dir later in case it is needed in an error message.
+
 1998-10-14  John R. Jackson  <jrj@purdue.edu>
 
 	* restore-src/amrestore.c (read_file_header): make a couple of error
