@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-aix.c,v 1.1.2.4 1998/11/27 04:25:48 oliva Exp $";
+static char rcsid[] = "$Id: scsi-aix.c,v 1.1.2.5 1998/12/22 05:12:04 oliva Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an AIX Workstation
@@ -27,27 +27,46 @@ static char rcsid[] = "$Id: scsi-aix.c,v 1.1.2.4 1998/11/27 04:25:48 oliva Exp $
 #include <sys/tape.h>
 #include <scsi-defs.h>
 
-int SCSI_OpenDevice(char *DeviceName)
+OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
 {
-  extern int errno;
-  int DeviceFD = openx(DeviceName, O_RDONLY ,0 ,SC_DIAGNOSTIC);
-  return(DeviceFD); 
+  int DeviceFD;
+  int i;
+  OpenFiles_T *pwork;
+  
+  if ((DeviceFD = openx(DeviceName, O_RDWR, 0, SC_DIAGNOSTI)) > 0)
+    {
+      pwork = (OpenFiles_T *)malloc(sizeof(OpenFiles_T));
+      pwork->next = NULL;
+      pwork->fd = DeviceFD;
+      pwork->SCSI = 0;
+      pwork->dev = strdup(DeviceName);
+      pwork->inquiry = (SCSIInquiry_T *)malloc(sizeof(SCSIInquiry_T));
+      Inquiry(DeviceFD, pwork->inquiry);
+      for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
+          pwork->name[i] = pwork->inquiry->prod_ident[i];
+      pwork->name[i] = '\0';
+      pwork->SCSI = 1;
+      return(pwork); 
+    }
+  return(NULL);
 }
 
-void SCSI_CloseDevice(char *DeviceName,
-		      int DeviceFD)
+int SCSI_CloseDevice(int DeviceFD)
 {
-  close(DeviceFD);
+  int ret;
+  
+  ret = close(DeviceFD);
+  return(ret);
 }
 
 int SCSI_ExecuteCommand(int DeviceFD,
-			Direction_T Direction,
-			CDB_T CDB,
-			int CDB_Length,
-			void *DataBuffer,
-			int DataBufferLength,
-			char *RequestSenseBuf,
-			 int RequestSenseLength)
+                        Direction_T Direction,
+                        CDB_T CDB,
+                        int CDB_Length,
+                        void *DataBuffer,
+                        int DataBufferLength,
+                        char *RequestSenseBuf,
+                        int RequestSenseLength)
 {
   CDB_T CDBSENSE;
   ExtendedRequestSense_T ExtendedRequestSense;
@@ -58,7 +77,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
   bzero(&ds, sizeof(struct sc_iocmd));
   bzero(RequestSenseBuf, RequestSenseLength);
   bzero(&ExtendedRequestSense, sizeof(ExtendedRequestSense_T));
-
+  
   ds.flags = SC_ASYNC; 
   /* Timeout */
   ds.timeout_value = 60;
@@ -85,64 +104,35 @@ int SCSI_ExecuteCommand(int DeviceFD,
   if ( Result < 0)
     {
       switch (ds.scsi_bus_status)
-	{
-	case SC_GOOD_STATUS:
-	  return(SC_GOOD_STATUS);
-	  break;
-	case SC_CHECK_CONDITION:
-	  RequestSense(DeviceFD, &ExtendedRequestSense, 0);
-	  DecodeExtSense(&ExtendedRequestSense);
-	  bcopy(&ExtendedRequestSense, RequestSenseBuf, RequestSenseLength); 
-	  return(SC_CHECK_CONDITION);
-	  break;
-	default:
-	  RequestSense(DeviceFD, &ExtendedRequestSense, 0);
-	  DecodeExtSense(&ExtendedRequestSense);
-	  bcopy(&ExtendedRequestSense, RequestSenseBuf, RequestSenseLength); 
-	  dbprintf(("ioctl on %d return %d\n", DeviceFD, Result));
-	  dbprintf(("ret: %d errno: %d (%s)\n", Result, errno, ""));
-	  dbprintf(("data_length:     %d\n", ds.data_length));
-	  dbprintf(("buffer:          0x%X\n", ds.buffer));
-	  dbprintf(("timeout_value:   %d\n", ds.timeout_value));
-	  dbprintf(("status_validity: %d\n", ds.status_validity));
-	  dbprintf(("scsi_bus_status: 0x%X\n", ds.scsi_bus_status));
-	  dbprintf(("adapter_status:  0x%X\n", ds.adapter_status));
-	  dbprintf(("adap_q_status:   0x%X\n", ds.adap_q_status));
-	  dbprintf(("q_tag_msg:       0x%X\n", ds.q_tag_msg));
-	  dbprintf(("flags:           0X%X\n", ds.flags));
-	  return(ds.scsi_bus_status);
-	}
+        {
+        case SC_GOOD_STATUS:
+          return(SC_GOOD_STATUS);
+          break;
+        case SC_CHECK_CONDITION:
+          RequestSense(DeviceFD, &ExtendedRequestSense, 0);
+          DecodeExtSense(&ExtendedRequestSense);
+          bcopy(&ExtendedRequestSense, RequestSenseBuf, RequestSenseLength); 
+          return(SC_CHECK_CONDITION);
+          break;
+        default:
+          RequestSense(DeviceFD, &ExtendedRequestSense, 0);
+          DecodeExtSense(&ExtendedRequestSense);
+          bcopy(&ExtendedRequestSense, RequestSenseBuf, RequestSenseLength); 
+          dbprintf(("ioctl on %d return %d\n", DeviceFD, Result));
+          dbprintf(("ret: %d errno: %d (%s)\n", Result, errno, ""));
+          dbprintf(("data_length:     %d\n", ds.data_length));
+          dbprintf(("buffer:          0x%X\n", ds.buffer));
+          dbprintf(("timeout_value:   %d\n", ds.timeout_value));
+          dbprintf(("status_validity: %d\n", ds.status_validity));
+          dbprintf(("scsi_bus_status: 0x%X\n", ds.scsi_bus_status));
+          dbprintf(("adapter_status:  0x%X\n", ds.adapter_status));
+          dbprintf(("adap_q_status:   0x%X\n", ds.adap_q_status));
+          dbprintf(("q_tag_msg:       0x%X\n", ds.q_tag_msg));
+          dbprintf(("flags:           0X%X\n", ds.flags));
+          return(ds.scsi_bus_status);
+        }
     }
   return(Result);
-}
-
-int Tape_Eject ( int DeviceFD)
-{
-/*
- Not yet ....
-*/
-  return(-1);
-}
-
-/* This function should ask the drive if it is ready */
-int Tape_Ready ( char *tapedev , char * changerdev, int changerfd, int wait)
-{
-  FILE *out=NULL;
-  int cnt=0;
-  
-  if (strcmp(tapedev,changerdev) == 0)
-    {
-      sleep(wait);
-      return(0);
-    }
-  
-  while ((cnt < wait) && (NULL==(out=fopen(tapedev,"w+")))){
-    cnt++;
-    sleep(1);
-  }
-  if (out != NULL)
-    fclose(out);
-  return 0;
 }
 
 int SCSI_Scan()
@@ -161,10 +151,10 @@ int SCSI_Scan()
     printf("Target %d:\n", target);
     if (ioctl(fd, SCIOSTART, IDLUN(target, 0)) == -1) {
       if (errno == EINVAL) {
-	printf("is in use\n");
-	isbusy = 1;
+        printf("is in use\n");
+        isbusy = 1;
       } else
-	return(1);
+        return(1);
     } else
       isbusy = 0;
     bzero(&si, sizeof(si));
@@ -181,3 +171,9 @@ int SCSI_Scan()
   }
 }
 #endif
+/*
+ * Local variables:
+ * indent-tabs-mode: nil
+ * c-file-style: gnu
+ * End:
+ */

@@ -1,20 +1,20 @@
 /*
- *	$Id: chg-scsi.c,v 1.6.2.4 1998/12/14 07:55:51 oliva Exp $
+ *  $Id: chg-scsi.c,v 1.6.2.5 1998/12/22 05:11:59 oliva Exp $
  *
- *	chg-scsi.c -- generic SCSI changer driver
+ *  chg-scsi.c -- generic SCSI changer driver
  *
- * 	This program provides a driver to control generic
- *	SCSI changers, no matter what platform.  The host/OS
- *	specific portions of the interface are implemented
- *	in libscsi.a, which contains a module for each host/OS.
- *	The actual interface for HP/UX is in scsi-hpux.c;
- *	chio is in scsi-chio.c, etc..  A prototype system
- *	dependent scsi interface file is in scsi-proto.c.
+ *  This program provides a driver to control generic
+ *  SCSI changers, no matter what platform.  The host/OS
+ *  specific portions of the interface are implemented
+ *  in libscsi.a, which contains a module for each host/OS.
+ *  The actual interface for HP/UX is in scsi-hpux.c;
+ *  chio is in scsi-chio.c, etc..  A prototype system
+ *  dependent scsi interface file is in scsi-proto.c.
  *
- *	Copyright 1997, 1998 Eric Schnoebelen <eric@cirr.com>
+ *  Copyright 1997, 1998 Eric Schnoebelen <eric@cirr.com>
  *
  * This module based upon seagate-changer, by Larry Pyeatt
- *					<pyeatt@cs.colostate.edu>
+ *                  <pyeatt@cs.colostate.edu>
  *
  * The original introductory comments follow:
  *
@@ -59,33 +59,36 @@
 #include "conffile.h"
 #include "libscsi.h"
 
+char *tapestatfile = NULL;
+
 /*----------------------------------------------------------------------------*/
 /* Some stuff for our own configurationfile */
 typedef struct {  /* The information we can get for any drive (configuration) */
-        int drivenum; 	/* Which drive to use in the library */
-        int start;	/* Which is the first slot we may use */
-        int end;	/* The last slot we are allowed to use */
-        int cleanslot;	/* Where the cleaningcartridge stays */
-        char *scsitapedev; /* Where can we send raw SCSI commands to the tape */
-        char *device;	/* Which device is associated to the drivenum */
-        char *slotfile;	/* Where we should have our memory */	
-        char *cleanfile;/* Where we count how many cleanings we did */
-        char *timefile; /* Where we count the time the tape was used*/
+  int drivenum;      /* Which drive to use in the library */
+  int start;         /* Which is the first slot we may use */
+  int end;           /* The last slot we are allowed to use */
+  int cleanslot;     /* Where the cleaningcartridge stays */
+  char *scsitapedev; /* Where can we send raw SCSI commands to the tape */
+  char *device;      /* Which device is associated to the drivenum */
+  char *slotfile;    /* Where we should have our memory */   
+  char *cleanfile;   /* Where we count how many cleanings we did */
+  char *timefile;    /* Where we count the time the tape was used*/
+  char *tapestatfile;/* Where can we place some drive stats */
 }config_t; 
 
 typedef struct {
-        int number_of_configs; /* How many different configurations are used */
-        int eject;		/* Do the drives need an eject-command */
-        int sleep;		/* How many seconds to wait for the drive to get ready */
-        int cleanmax;		/* How many runs could be done with one cleaning tape */
-        char *device;		/* Which device is our changer */
-        config_t *conf;
+  int number_of_configs; /* How many different configurations are used */
+  int eject;             /* Do the drives need an eject-command */
+  int sleep;             /* How many seconds to wait for the drive to get ready */
+  int cleanmax;          /* How many runs could be done with one cleaning tape */
+  char *device;          /* Which device is our changer */
+  config_t *conf;
 }changer_t;
 
 typedef enum{
   NUMDRIVE,EJECT,SLEEP,CLEANMAX,DRIVE,START,END,CLEAN,DEVICE,STATFILE,CLEANFILE,DRIVENUM,
-  CHANGERDEV,USAGECOUNT,SCSITAPEDEV
-} token_t;
+    CHANGERDEV,USAGECOUNT,SCSITAPEDEV, TAPESTATFILE
+    } token_t;
 
 typedef struct {
   char *word;
@@ -108,14 +111,15 @@ tokentable_t t_table[]={
   { "changerdev",CHANGERDEV},
   { "usagecount",USAGECOUNT},
   { "scsitapedev", SCSITAPEDEV},
+  { "tapestatus", TAPESTATFILE},
   { NULL,-1 }
 };
 
 void init_changer_struct(changer_t *chg,int number_of_config)
-/* Initialize datasructures with default values */
+     /* Initialize datasructures with default values */
 {
   int i;
-
+  
   chg->number_of_configs = number_of_config;
   chg->eject = 1;
   chg->sleep = 0;
@@ -123,22 +127,23 @@ void init_changer_struct(changer_t *chg,int number_of_config)
   chg->device = NULL;
   chg->conf = malloc(sizeof(config_t)*number_of_config);
   if (chg->conf != NULL){
-     for (i=0; i < number_of_config; i++){
-       chg->conf[i].drivenum   = 0;
-       chg->conf[i].start      = -1;
-       chg->conf[i].end        = -1;
-       chg->conf[i].cleanslot  = -1;
-       chg->conf[i].device     = NULL;
-       chg->conf[i].slotfile   = NULL;
-       chg->conf[i].cleanfile  = NULL;
-       chg->conf[i].timefile  = NULL;
-       chg->conf[i].scsitapedev = NULL;
-     }
+    for (i=0; i < number_of_config; i++){
+      chg->conf[i].drivenum   = 0;
+      chg->conf[i].start      = -1;
+      chg->conf[i].end        = -1;
+      chg->conf[i].cleanslot  = -1;
+      chg->conf[i].device     = NULL;
+      chg->conf[i].slotfile   = NULL;
+      chg->conf[i].cleanfile  = NULL;
+      chg->conf[i].timefile  = NULL;
+      chg->conf[i].scsitapedev = NULL;
+      chg->conf[i].tapestatfile = NULL;
+    }
   }
 }
 
 void dump_changer_struct(changer_t chg)
-/* Dump of information for debug */
+     /* Dump of information for debug */
 {
   int i;
 
@@ -161,6 +166,10 @@ void dump_changer_struct(changer_t chg)
       dbprintf(("  SCSITapedev   : %s\n",chg.conf[i].scsitapedev));
     else
       dbprintf(("  SCSITapedev   : none\n"));
+    if (chg.conf[i].tapestatfile != NULL)
+      dbprintf((" statfile       : %s\n", chg.conf[i].tapestatfile));
+    else
+      dbprintf((" statfile       : none\n"));
     if (chg.conf[i].slotfile != NULL)
       dbprintf(("  Slotfile      : %s\n",chg.conf[i].slotfile));
     else
@@ -177,12 +186,12 @@ void dump_changer_struct(changer_t chg)
 }
 
 void free_changer_struct(changer_t *chg)
-/* Free all allocated memory */
+     /* Free all allocated memory */
 {
   int i;
 
   if (chg->device != NULL)
-     free(chg->device);
+    free(chg->device);
   for (i=0; i<chg->number_of_configs; i++){
     if (chg->conf[i].device != NULL)
       free(chg->conf[i].device);
@@ -200,7 +209,7 @@ void free_changer_struct(changer_t *chg)
 }
 
 void parse_line(char *linebuffer,int *token,char **value)
-/* This function parses a line, and returns the token an value */
+     /* This function parses a line, and returns the token an value */
 {
   char *tok;
   int i;
@@ -227,7 +236,7 @@ void parse_line(char *linebuffer,int *token,char **value)
 }
 
 int read_config(char *configfile, changer_t *chg)
-/* This function reads the specified configfile and fills the structure */
+     /* This function reads the specified configfile and fills the structure */
 {
   int numconf;
   FILE *file;
@@ -238,120 +247,123 @@ int read_config(char *configfile, changer_t *chg)
   char *value;
 
   numconf = 1;  /* At least one configuration is assumed */
-             /* If there are more, it should be the first entry in the configurationfile */
+  /* If there are more, it should be the first entry in the configurationfile */
 
   if (NULL==(file=fopen(configfile,"r"))){
     return (-1);
   }
   while (!feof(file)){
-     if (NULL!=fgets(linebuffer,255,file)){
-       parse_line(linebuffer,&token,&value);
-       if (token != -1){
-         if (0==init_flag) {
-           if (token != NUMDRIVE){
-             init_changer_struct(chg,numconf);
-           } else {
-             numconf = atoi(value);
-             init_changer_struct(chg,numconf);
-           }
-           init_flag=1;
-         }
-         switch (token){
-         case NUMDRIVE: if (atoi(value) != numconf)
-                          fprintf(stderr,"Error: number_drives at wrong place, should be "\
-                                         "first in file\n");
-                        break;
-         case EJECT:
-                        chg->eject = atoi(value);
-                        break;
-         case SLEEP:
-                        chg->sleep = atoi(value);
-                        break;
-  	 case CHANGERDEV:
-			chg->device = strdup(value);
-			break;
-	 case SCSITAPEDEV:
-	                chg->conf[drivenum].scsitapedev = strdup(value);
-			break;
-         case CLEANMAX:
-                        chg->cleanmax = atoi(value);
-                        break;
-         case DRIVE:
-                        drivenum = atoi(value);
-                        if(drivenum >= numconf){
-                          fprintf(stderr,"Error: drive must be less than number_drives\n");
-                        }
-                        break;
-         case DRIVENUM:
-                        if (drivenum < numconf){
-                          chg->conf[drivenum].drivenum = atoi(value);
-                        } else {
-                          fprintf(stderr,"Error: drive is not less than number_drives"\
-                                         " drivenum ignored\n");
-                        }
-                        break;
-         case START:
-                        if (drivenum < numconf){
-                          chg->conf[drivenum].start = atoi(value);
-                        } else {
-                          fprintf(stderr,"Error: drive is not less than number_drives"\
-                                         " startuse ignored\n");
-                        }
-                        break;
-         case END:
-                        if (drivenum < numconf){
-                          chg->conf[drivenum].end = atoi(value);
-                        } else {
-                          fprintf(stderr,"Error: drive is not less than number_drives"\
-                                         " enduse ignored\n");
-                        }
-                        break;
-         case CLEAN:
-                        if (drivenum < numconf){
-                          chg->conf[drivenum].cleanslot = atoi(value);
-                        } else {
-                          fprintf(stderr,"Error: drive is not less than number_drives"\
-                                         " cleanslot ignored\n");
-                        }
-                        break;
-         case DEVICE:
-                        if (drivenum < numconf){
-                          chg->conf[drivenum].device = strdup(value);
-                        } else {
-                          fprintf(stderr,"Error: drive is not less than number_drives"\
-                                         " device ignored\n");
-                        }
-                        break;
-         case STATFILE:
-                        if (drivenum < numconf){
-                          chg->conf[drivenum].slotfile = strdup(value);
-                        } else {
-                          fprintf(stderr,"Error: drive is not less than number_drives"\
-                                         " slotfile ignored\n");
-                        }
-                        break;
-         case CLEANFILE:
-                        if (drivenum < numconf){
-                          chg->conf[drivenum].cleanfile = strdup(value);
-                        } else {
-                          fprintf(stderr,"Error: drive is not less than number_drives"\
-                                         " cleanfile ignored\n");
-                        }
-                        break;
-         case USAGECOUNT:
-                        if (drivenum < numconf){
-                          chg->conf[drivenum].timefile = strdup(value);
-                        } else {
-                          fprintf(stderr,"Error: drive is not less than number_drives"\
-                                         " usagecount ignored\n");
-                        }
-			break;
-         default:
-                fprintf(stderr,"Error: Unknown token\n");
-                break;
-         }
-       }
-     }
+    if (NULL!=fgets(linebuffer,255,file)){
+      parse_line(linebuffer,&token,&value);
+      if (token != -1){
+        if (0==init_flag) {
+          if (token != NUMDRIVE){
+            init_changer_struct(chg,numconf);
+          } else {
+            numconf = atoi(value);
+            init_changer_struct(chg,numconf);
+          }
+          init_flag=1;
+        }
+        switch (token){
+        case NUMDRIVE: if (atoi(value) != numconf)
+          fprintf(stderr,"Error: number_drives at wrong place, should be "\
+                  "first in file\n");
+        break;
+        case EJECT:
+          chg->eject = atoi(value);
+          break;
+        case SLEEP:
+          chg->sleep = atoi(value);
+          break;
+        case CHANGERDEV:
+          chg->device = strdup(value);
+          break;
+        case SCSITAPEDEV:
+          chg->conf[drivenum].scsitapedev = strdup(value);
+          break;
+        case TAPESTATFILE:
+          chg->conf[drivenum].tapestatfile = strdup(value);
+          break;
+        case CLEANMAX:
+          chg->cleanmax = atoi(value);
+          break;
+        case DRIVE:
+          drivenum = atoi(value);
+          if(drivenum >= numconf){
+            fprintf(stderr,"Error: drive must be less than number_drives\n");
+          }
+          break;
+        case DRIVENUM:
+          if (drivenum < numconf){
+            chg->conf[drivenum].drivenum = atoi(value);
+          } else {
+            fprintf(stderr,"Error: drive is not less than number_drives"\
+                    " drivenum ignored\n");
+          }
+          break;
+        case START:
+          if (drivenum < numconf){
+            chg->conf[drivenum].start = atoi(value);
+          } else {
+            fprintf(stderr,"Error: drive is not less than number_drives"\
+                    " startuse ignored\n");
+          }
+          break;
+        case END:
+          if (drivenum < numconf){
+            chg->conf[drivenum].end = atoi(value);
+          } else {
+            fprintf(stderr,"Error: drive is not less than number_drives"\
+                    " enduse ignored\n");
+          }
+          break;
+        case CLEAN:
+          if (drivenum < numconf){
+            chg->conf[drivenum].cleanslot = atoi(value);
+          } else {
+            fprintf(stderr,"Error: drive is not less than number_drives"\
+                    " cleanslot ignored\n");
+          }
+          break;
+        case DEVICE:
+          if (drivenum < numconf){
+            chg->conf[drivenum].device = strdup(value);
+          } else {
+            fprintf(stderr,"Error: drive is not less than number_drives"\
+                    " device ignored\n");
+          }
+          break;
+        case STATFILE:
+          if (drivenum < numconf){
+            chg->conf[drivenum].slotfile = strdup(value);
+          } else {
+            fprintf(stderr,"Error: drive is not less than number_drives"\
+                    " slotfile ignored\n");
+          }
+          break;
+        case CLEANFILE:
+          if (drivenum < numconf){
+            chg->conf[drivenum].cleanfile = strdup(value);
+          } else {
+            fprintf(stderr,"Error: drive is not less than number_drives"\
+                    " cleanfile ignored\n");
+          }
+          break;
+        case USAGECOUNT:
+          if (drivenum < numconf){
+            chg->conf[drivenum].timefile = strdup(value);
+          } else {
+            fprintf(stderr,"Error: drive is not less than number_drives"\
+                    " usagecount ignored\n");
+          }
+          break;
+        default:
+          fprintf(stderr,"Error: Unknown token\n");
+          break;
+        }
+      }
+    }
   }
 
   fclose(file);
@@ -366,29 +378,29 @@ int read_config(char *configfile, changer_t *chg)
  */
 int get_current_slot(char *count_file)
 {
-    FILE *inf;
-    int retval;
-    if ((inf=fopen(count_file,"r")) == NULL) {
-	fprintf(stderr, "%s: unable to open current slot file (%s)\n",
-				get_pname(), count_file);
-	return 0;
-    }
-    fscanf(inf,"%d",&retval);
-    fclose(inf);
-    return retval;
+  FILE *inf;
+  int retval;
+  if ((inf=fopen(count_file,"r")) == NULL) {
+    fprintf(stderr, "%s: unable to open current slot file (%s)\n",
+            get_pname(), count_file);
+    return 0;
+  }
+  fscanf(inf,"%d",&retval);
+  fclose(inf);
+  return retval;
 }
 
 void put_current_slot(char *count_file,int slot)
 {
-    FILE *inf;
+  FILE *inf;
 
-    if ((inf=fopen(count_file,"w")) == NULL) {
-	fprintf(stderr, "%s: unable to open current slot file (%s)\n",
-				get_pname(), count_file);
-	exit(2);
-    }
-    fprintf(inf, "%d\n", slot);
-    fclose(inf);
+  if ((inf=fopen(count_file,"w")) == NULL) {
+    fprintf(stderr, "%s: unable to open current slot file (%s)\n",
+            get_pname(), count_file);
+    exit(2);
+  }
+  fprintf(inf, "%d\n", slot);
+  fclose(inf);
 }
 
 /* ---------------------------------------------------------------------- 
@@ -417,10 +429,10 @@ typedef struct com_stru
 #define COM_EJECT 3
 #define COM_CLEAN 4
 argument argdefs[]={{"-slot",COM_SLOT,1},
-		    {"-info",COM_INFO,0},
-		    {"-reset",COM_RESET,0},
-		    {"-eject",COM_EJECT,0},
-		    {"-clean",COM_CLEAN,0}};
+                    {"-info",COM_INFO,0},
+                    {"-reset",COM_RESET,0},
+                    {"-eject",COM_EJECT,0},
+                    {"-clean",COM_CLEAN,0}};
 
 
 /* minor command line args */
@@ -431,116 +443,116 @@ argument argdefs[]={{"-slot",COM_SLOT,1},
 #define SLOT_FIRST 3
 #define SLOT_LAST 4
 argument slotdefs[]={{"current",SLOT_CUR,0},
-		     {"next",SLOT_NEXT,0},
-		     {"prev",SLOT_PREV,0},
-		     {"first",SLOT_FIRST,0},
-		     {"last",SLOT_LAST,0}};
+                     {"next",SLOT_NEXT,0},
+                     {"prev",SLOT_PREV,0},
+                     {"first",SLOT_FIRST,0},
+                     {"last",SLOT_LAST,0}};
 
 int is_positive_number(char *tmp) /* is the string a valid positive int? */
 {
-    int i=0;
-    if ((tmp==NULL)||(tmp[0]==0))
-	return 0;
-    while ((tmp[i]>='0')&&(tmp[i]<='9')&&(tmp[i]!=0))
-	i++;
-    if (tmp[i]==0)
-	return 1;
-    else
-	return 0;
+  int i=0;
+  if ((tmp==NULL)||(tmp[0]==0))
+    return 0;
+  while ((tmp[i]>='0')&&(tmp[i]<='9')&&(tmp[i]!=0))
+    i++;
+  if (tmp[i]==0)
+    return 1;
+  else
+    return 0;
 }
 
 void usage(char *argv[])
 {
-    int cnt;
-    printf("%s: Usage error.\n", argv[0]);
-    for (cnt=0; cnt < COMCOUNT; cnt++){
-	printf("      %s    %s",argv[0],argdefs[cnt].str);
-        if (argdefs[cnt].takesparam)
-	   printf(" <param>\n");
-        else
-	   printf("\n");
-    }
-    exit(2);
+  int cnt;
+  printf("%s: Usage error.\n", argv[0]);
+  for (cnt=0; cnt < COMCOUNT; cnt++){
+    printf("      %s    %s",argv[0],argdefs[cnt].str);
+    if (argdefs[cnt].takesparam)
+      printf(" <param>\n");
+    else
+      printf("\n");
+  }
+  exit(2);
 }
 
 
 void parse_args(int argc, char *argv[],command *rval)
 {
-    int i=0;
-    if ((argc<2)||(argc>3))
-	usage(argv);
-    while ((i<COMCOUNT)&&(strcmp(argdefs[i].str,argv[1])))
-	i++;
-    if (i==COMCOUNT)
-	usage(argv);
-    rval->command_code = argdefs[i].command_code;
-   if (argdefs[i].takesparam) {
-	if (argc<3)
-	    usage(argv);
-	rval->parameter=argv[2];      
-    }
-    else {
-	if (argc>2)
-	    usage(argv);
-	rval->parameter=0;
-    }
+  int i=0;
+  if ((argc<2)||(argc>3))
+    usage(argv);
+  while ((i<COMCOUNT)&&(strcmp(argdefs[i].str,argv[1])))
+    i++;
+  if (i==COMCOUNT)
+    usage(argv);
+  rval->command_code = argdefs[i].command_code;
+  if (argdefs[i].takesparam) {
+    if (argc<3)
+      usage(argv);
+    rval->parameter=argv[2];      
+  }
+  else {
+    if (argc>2)
+      usage(argv);
+    rval->parameter=0;
+  }
 }
 
 /* used to find actual slot number from keywords next, prev, first, etc */
 int get_relative_target(int fd,int nslots,char *parameter,int loaded, 
-				char *changer_file,int slot_offset,int maxslot)
+                        char *changer_file,int slot_offset,int maxslot)
 {
-    int current_slot,i;
-    current_slot=get_current_slot(changer_file);
-    if (current_slot > maxslot){
-	current_slot = slot_offset;
-    }
-    if (current_slot < slot_offset){
-	current_slot = slot_offset;
-    }
+  int current_slot,i;
+  current_slot=get_current_slot(changer_file);
+  if (current_slot > maxslot){
+    current_slot = slot_offset;
+  }
+  if (current_slot < slot_offset){
+    current_slot = slot_offset;
+  }
 
-    i=0;
-    while((i<SLOTCOUNT)&&(strcmp(slotdefs[i].str,parameter)))
-	i++;
+  i=0;
+  while((i<SLOTCOUNT)&&(strcmp(slotdefs[i].str,parameter)))
+    i++;
 
-    switch(i) {
-	case SLOT_CUR:
-	    return current_slot;
-	    break;
-	case SLOT_NEXT:
-	    if (++current_slot==nslots+slot_offset)
-		return slot_offset;
-	    else
-		return current_slot;
-	    break;
-	case SLOT_PREV:
-	    if (--current_slot<slot_offset)
-		return maxslot;
-	    else
-		return current_slot;
-	    break;
-	case SLOT_FIRST:
-	    return slot_offset;
-	    break;
-	case SLOT_LAST:
-	    return maxslot;
-	    break;
-	default: 
-	    printf("<none> no slot `%s'\n",parameter);
-	    close(fd);
-	    exit(2);
-    };
+  switch(i) {
+  case SLOT_CUR:
+    return current_slot;
+    break;
+  case SLOT_NEXT:
+    if (++current_slot==nslots+slot_offset)
+      return slot_offset;
+    else
+      return current_slot;
+    break;
+  case SLOT_PREV:
+    if (--current_slot<slot_offset)
+      return maxslot;
+    else
+      return current_slot;
+    break;
+  case SLOT_FIRST:
+    return slot_offset;
+    break;
+  case SLOT_LAST:
+    return maxslot;
+    break;
+  default: 
+    printf("<none> no slot `%s'\n",parameter);
+    close(fd);
+    exit(2);
+  };
 }
 
-int ask_clean(int fd, char *changerdev, char *tapedev)
-/* This function should ask the drive if it wants to be cleaned */
+int ask_clean(char *tapedev)
+     /* This function should ask the drive if it wants to be cleaned */
 {
-  return get_clean_state(fd, changerdev, tapedev);
+  return get_clean_state(tapedev);
 }
 
 void clean_tape(int fd,char *tapedev,char *cnt_file, int drivenum, 
                 int cleancart, int maxclean,char *usagetime)
-/* This function should move the cleaning cartridge into the drive */
+     /* This function should move the cleaning cartridge into the drive */
 {
   int counter=-1;
   if (cleancart == -1 ){
@@ -551,28 +563,28 @@ void clean_tape(int fd,char *tapedev,char *cnt_file, int drivenum,
     counter = get_current_slot(cnt_file);
     counter++;
     if (counter>=maxclean){
-    /* Now we should inform the administrator */
-	char *mail_cmd;
-        FILE *mailf;
-        mail_cmd = vstralloc(MAILER,
-                             " -s", " \"", "AMANDA PROBLEM: PLEASE FIX", "\"",
-                             " ", getconf_str(CNF_MAILTO),
-                             NULL);
-        if((mailf = popen(mail_cmd, "w")) == NULL){
-            error("could not open pipe to \"%s\": %s",
-                  mail_cmd, strerror(errno));
-          printf("Mail failed\n");
-          return;
-        }
-	fprintf(mailf,"\nThe usage count of your cleaning tape in slot %d",
-                         cleancart);
-	fprintf(mailf,"\nis more than %d. (cleanmax)",maxclean);
-	fprintf(mailf,"\nTapedrive %s needs to be cleaned",tapedev);
-	fprintf(mailf,"\nPlease insert a new cleaning tape and reset");
-	fprintf(mailf,"\nthe countingfile %s",cnt_file);
+      /* Now we should inform the administrator */
+      char *mail_cmd;
+      FILE *mailf;
+      mail_cmd = vstralloc(MAILER,
+                           " -s", " \"", "AMANDA PROBLEM: PLEASE FIX", "\"",
+                           " ", getconf_str(CNF_MAILTO),
+                           NULL);
+      if((mailf = popen(mail_cmd, "w")) == NULL){
+        error("could not open pipe to \"%s\": %s",
+              mail_cmd, strerror(errno));
+        printf("Mail failed\n");
+        return;
+      }
+      fprintf(mailf,"\nThe usage count of your cleaning tape in slot %d",
+              cleancart);
+      fprintf(mailf,"\nis more than %d. (cleanmax)",maxclean);
+      fprintf(mailf,"\nTapedrive %s needs to be cleaned",tapedev);
+      fprintf(mailf,"\nPlease insert a new cleaning tape and reset");
+      fprintf(mailf,"\nthe countingfile %s",cnt_file);
 
-        if(pclose(mailf) != 0)
-            error("mail command failed: %s", mail_cmd);
+      if(pclose(mailf) != 0)
+        error("mail command failed: %s", mail_cmd);
 
       return;
     }
@@ -588,234 +600,254 @@ void clean_tape(int fd,char *tapedev,char *cnt_file, int drivenum,
 
 int main(int argc, char *argv[])
 {
-    int loaded,target,oldtarget;
-    command com;   /* a little DOS joke */
-    changer_t chg;
+  int loaded,target,oldtarget;
+  command com;   /* a little DOS joke */
+  changer_t chg;
   
-    /*
-     * drive_num really should be something from the config file, but..
-     * for now, it is set to zero, since most of the common changers
-     * used by amanda only have one drive ( until someone wants to 
-     * use an EXB60/120, or a Breece Hill Q45.. )
-     */
-    int	drive_num = 0;
-    int need_eject = 0; /* Does the drive need an eject command ? */
-    int need_sleep = 0; /* How many seconds to wait for the drive to get ready */
-    int clean_slot = -1;
-    int maxclean = 0;
-    char *clean_file=NULL;
-    char *time_file=NULL;
+  /*
+   * drive_num really should be something from the config file, but..
+   * for now, it is set to zero, since most of the common changers
+   * used by amanda only have one drive ( until someone wants to 
+   * use an EXB60/120, or a Breece Hill Q45.. )
+   */
+  int    drive_num = 0;
+  int need_eject = 0; /* Does the drive need an eject command ? */
+  int need_sleep = 0; /* How many seconds to wait for the drive to get ready */
+  int clean_slot = -1;
+  int maxclean = 0;
+  char *clean_file=NULL;
+  char *time_file=NULL;
 
-    int use_slots;
-    int slot_offset;
-    int confnum;
+  int use_slots;
+  int slot_offset;
+  int confnum;
 
-    int fd, rc, slotcnt, drivecnt;
-    int endstatus = 0;
-    char *changer_dev, *changer_file, *tape_device; 
-    char *scsitapedevice = NULL;
+  int fd, rc, slotcnt, drivecnt;
+  int endstatus = 0;
+  char *changer_dev, *changer_file, *tape_device; 
+  char *scsitapedevice = NULL;
 
-    set_pname("chg-scsi");
-    dbopen();
-    parse_args(argc,argv,&com);
+  set_pname("chg-scsi");
+  dbopen();
+  parse_args(argc,argv,&com);
 
-    if(read_conffile(CONFFILE_NAME)) {
-        perror(CONFFILE_NAME);
-        exit(1);
+  if(read_conffile(CONFFILE_NAME)) {
+    perror(CONFFILE_NAME);
+    exit(1);
+  }
+
+  changer_dev = getconf_str(CNF_CHNGRDEV);
+  changer_file = getconf_str(CNF_CHNGRFILE);
+  tape_device = getconf_str(CNF_TAPEDEV);
+
+  /* Get the configuration parameters */
+  if (strlen(tape_device)==1){
+    read_config(changer_file,&chg);
+    confnum=atoi(tape_device);
+    use_slots    = chg.conf[confnum].end-chg.conf[confnum].start+1;
+    slot_offset  = chg.conf[confnum].start;
+    drive_num    = chg.conf[confnum].drivenum;
+    need_eject   = chg.eject;
+    need_sleep   = chg.sleep;
+    clean_file   = strdup(chg.conf[confnum].cleanfile);
+    clean_slot   = chg.conf[confnum].cleanslot;
+    maxclean     = chg.cleanmax;
+    if (NULL != chg.conf[confnum].timefile)
+      time_file = strdup(chg.conf[confnum].timefile);
+    if (NULL != chg.conf[confnum].slotfile)
+      changer_file = strdup(chg.conf[confnum].slotfile);
+    if (NULL != chg.conf[confnum].device)
+      tape_device  = strdup(chg.conf[confnum].device);
+    if (NULL != chg.device)
+      changer_dev  = strdup(chg.device); 
+    if (NULL != chg.conf[confnum].scsitapedev)
+      scsitapedevice = strdup(chg.conf[confnum].scsitapedev);
+    if (NULL != chg.conf[confnum].tapestatfile)
+      tapestatfile = strdup(chg.conf[confnum].tapestatfile);
+    dump_changer_struct(chg);
+    /* get info about the changer */
+    if (-1 == (fd = OpenDevice(changer_dev))) {
+      int localerr = errno;
+      fprintf(stderr, "%s: open: %s: %s\n", get_pname(), 
+              changer_dev, strerror(localerr));
+      printf("%s open: %s: %s\n", "<none>", changer_dev, strerror(localerr));
+      dbprintf(("%s: open: %s: %s\n", get_pname(),
+                changer_dev, strerror(localerr)));
+      return 2;
     }
 
-    changer_dev = getconf_str(CNF_CHNGRDEV);
-    changer_file = getconf_str(CNF_CHNGRFILE);
-    tape_device = getconf_str(CNF_TAPEDEV);
+    if (tape_device == NULL)
+      {
+        tape_device = strdup(changer_dev);
+      }
 
-    /* Get the configuration parameters */
-    if (strlen(tape_device)==1){
-      read_config(changer_file,&chg);
-      confnum=atoi(tape_device);
-      use_slots    = chg.conf[confnum].end-chg.conf[confnum].start+1;
-      slot_offset  = chg.conf[confnum].start;
-      drive_num    = chg.conf[confnum].drivenum;
-      need_eject   = chg.eject;
-      need_sleep   = chg.sleep;
-      clean_file   = strdup(chg.conf[confnum].cleanfile);
-      clean_slot   = chg.conf[confnum].cleanslot;
-      maxclean     = chg.cleanmax;
-      if (NULL != chg.conf[confnum].timefile)
-        time_file = strdup(chg.conf[confnum].timefile);
-      if (NULL != chg.conf[confnum].slotfile)
-        changer_file = strdup(chg.conf[confnum].slotfile);
-      if (NULL != chg.conf[confnum].device)
-        tape_device  = strdup(chg.conf[confnum].device);
-      if (NULL != chg.device)
-        changer_dev  = strdup(chg.device); 
-      if (NULL != chg.conf[confnum].scsitapedev)
-	scsitapedevice = strdup(chg.conf[confnum].scsitapedev);
-      dump_changer_struct(chg);
-      /* get info about the changer */
-      if (-1 == (fd = open(changer_dev,O_RDWR))) {
-	int localerr = errno;
-	fprintf(stderr, "%s: open: %s: %s\n", get_pname(), 
-				changer_dev, strerror(localerr));
-	printf("%s open: %s: %s\n", "<none>", changer_dev, strerror(localerr));
-	dbprintf(("%s: open: %s: %s\n", get_pname(),
-		  changer_dev, strerror(localerr)));
-	return 2;
+    if (scsitapedevice == NULL)
+      {
+         scsitapedevice = strdup(tape_device);
       }
-      if ((chg.conf[confnum].end == -1) || (chg.conf[confnum].start == -1)){
-        slotcnt = get_slot_count(fd);
-        use_slots    = slotcnt;
-        slot_offset  = 0;
-      }
-      free_changer_struct(&chg);
-    } else {
-      /* get info about the changer */
-      if (-1 == (fd = open(changer_dev,O_RDWR))) {
-  	int localerr = errno;
-	fprintf(stderr, "%s: open: %s: %s\n", get_pname(), 
-				changer_dev, strerror(localerr));
-	printf("%s open: %s: %s\n", "<none>", changer_dev, strerror(localerr));
-	dbprintf(("%s: open: %s: %s\n", get_pname(),
-		  changer_dev, strerror(localerr)));
-	return 2;
-      }
+
+    if ((chg.conf[confnum].end == -1) || (chg.conf[confnum].start == -1)){
       slotcnt = get_slot_count(fd);
       use_slots    = slotcnt;
       slot_offset  = 0;
-      drive_num    = 0;
-      need_eject   = 0;
-      need_sleep   = 0;
+    }
+    free_changer_struct(&chg);
+  } else {
+    /* get info about the changer */
+    if (-1 == (fd = OpenDevice(changer_dev))) {
+      int localerr = errno;
+      fprintf(stderr, "%s: open: %s: %s\n", get_pname(), 
+              changer_dev, strerror(localerr));
+      printf("%s open: %s: %s\n", "<none>", changer_dev, strerror(localerr));
+      dbprintf(("%s: open: %s: %s\n", get_pname(),
+                changer_dev, strerror(localerr)));
+      return 2;
+    }
+    slotcnt = get_slot_count(fd);
+    use_slots    = slotcnt;
+    slot_offset  = 0;
+    drive_num    = 0;
+    need_eject   = 0;
+    need_sleep   = 0;
+  }
+
+  drivecnt = get_drive_count(fd);
+
+  if (drive_num > drivecnt) {
+    printf("%s drive number error (%d > %d)\n", "<none>", 
+           drive_num, drivecnt);
+    fprintf(stderr, "%s: requested drive number (%d) greater than "
+            "number of supported drives (%d)\n", get_pname(), 
+            drive_num, drivecnt);
+    dbprintf(("%s: requested drive number (%d) greater than "
+              "number of supported drives (%d)\n", get_pname(), 
+              drive_num, drivecnt));
+    CloseDevice("", fd);
+    return 2;
+  }
+
+  loaded = drive_loaded(fd, drive_num);
+
+  switch(com.command_code) {
+  case COM_SLOT:  /* slot changing command */
+    if (is_positive_number(com.parameter)) {
+      if ((target = atoi(com.parameter))>=use_slots) {
+        printf("<none> no slot `%d'\n",target);
+        close(fd);
+        endstatus = 2;
+        break;
+      } else {
+        target = target+slot_offset;
+      }
+    } else
+      target=get_relative_target(fd, use_slots,
+                                 com.parameter, loaded, changer_file,slot_offset,slot_offset+use_slots);
+    if (loaded) {
+      oldtarget=get_current_slot(changer_file);
+      if ((oldtarget)!=target) {
+        if (need_eject)
+          eject_tape(scsitapedevice);
+        (void)unload(fd, drive_num, oldtarget);
+        if (ask_clean(scsitapedevice))
+          clean_tape(fd,tape_device,clean_file,drive_num,
+                     clean_slot,maxclean,time_file);
+        loaded=0;
+      }
+    }
+    put_current_slot(changer_file, target);
+    if (!loaded && isempty(fd, target)) {
+      printf("%d slot %d is empty\n",target-slot_offset,
+             target-slot_offset);
+      close(fd);
+      endstatus = 1;
+      break;
+    }
+    if (!loaded)
+      if (load(fd, drive_num, target) != 0) {
+        printf("%d slot %d move failed\n",target-slot_offset,
+               target-slot_offset);  
+        close(fd);
+        endstatus = 2;
+        break;
+      }
+    if (need_sleep)
+      Tape_Ready(tape_device, changer_dev, fd, need_sleep);
+    printf("%d %s\n", target-slot_offset, tape_device);
+    break;
+
+  case COM_INFO:
+    printf("%d ", get_current_slot(changer_file)-slot_offset);
+    printf("%d 1\n", use_slots);
+    break;
+
+  case COM_RESET:
+    target=get_current_slot(changer_file);
+    if (loaded) {
+      if (!isempty(fd, target))
+        target=find_empty(fd);
+      if (need_eject)
+        eject_tape(scsitapedevice);
+      (void)unload(fd, drive_num, target);
+      if (ask_clean(scsitapedevice))
+        clean_tape(fd,tape_device,clean_file,drive_num,clean_slot,
+                   maxclean,time_file);
     }
 
-    drivecnt = get_drive_count(fd);
-
-    if (drive_num > drivecnt) {
-	printf("%s drive number error (%d > %d)\n", "<none>", 
-						drive_num, drivecnt);
-	fprintf(stderr, "%s: requested drive number (%d) greater than "
-			"number of supported drives (%d)\n", get_pname(), 
-			drive_num, drivecnt);
-	dbprintf(("%s: requested drive number (%d) greater than "
-		  "number of supported drives (%d)\n", get_pname(), 
-		  drive_num, drivecnt));
-	return 2;
+    if (isempty(fd, slot_offset)) {
+      printf("0 slot 0 is empty\n");
+      close(fd);
+      endstatus = 1;
+      break;
     }
 
-    loaded = drive_loaded(fd, drive_num);
+    if (load(fd, drive_num, slot_offset) != 0) {
+      printf("%d slot %d move failed\n",slot_offset,
+             slot_offset);  
+      close(fd);
+      endstatus = 2;
+      break;
+    }
+    put_current_slot(changer_file, slot_offset);
+    if (need_sleep)
+      Tape_Ready(tape_device, changer_dev, fd, need_sleep);
+    printf("%d %s\n", get_current_slot(changer_file), tape_device);
+    break;
 
-    switch(com.command_code) {
-	case COM_SLOT:  /* slot changing command */
-	    if (is_positive_number(com.parameter)) {
-		if ((target = atoi(com.parameter))>=use_slots) {
-		    printf("<none> no slot `%d'\n",target);
-		    close(fd);
-		    endstatus = 2;
-		    break;
-		} else {
-		    target = target+slot_offset;
-                }
-	    } else
-		target=get_relative_target(fd, use_slots,
-			   com.parameter, loaded, changer_file,slot_offset,slot_offset+use_slots);
-	    if (loaded) {
-		oldtarget=get_current_slot(changer_file);
-		if ((oldtarget)!=target) {
-		    if (need_eject)
-		      eject_tape(tape_device);
-		    (void)unload(fd, drive_num, oldtarget);
-		    if (ask_clean(fd, changer_dev, scsitapedevice))
-			clean_tape(fd,tape_device,clean_file,drive_num,
-                                   clean_slot,maxclean,time_file);
-		    loaded=0;
-		}
-	    }
-	    put_current_slot(changer_file, target);
-	    if (!loaded && isempty(fd, target)) {
-		printf("%d slot %d is empty\n",target-slot_offset,
-		       target-slot_offset);
-		close(fd);
-		endstatus = 1;
-		break;
-	    }
-	    if (!loaded)
-	      if (load(fd, drive_num, target) != 0) {
-		printf("%d slot %d move failed\n",target-slot_offset,
-		       target-slot_offset);  
-		close(fd);
-		endstatus = 2;
-		break;
-	      }
-	    if (need_sleep)
-	      Tape_Ready(tape_device, changer_dev, fd, need_sleep);
-	    printf("%d %s\n", target-slot_offset, tape_device);
-	    break;
+  case COM_EJECT:
+    if (loaded) {
+      target=get_current_slot(changer_file);
+      if (need_eject)
+        eject_tape(scsitapedevice);
+      (void)unload(fd, drive_num, target);
+      if (ask_clean(scsitapedevice))
+        clean_tape(fd,tape_device,clean_file,drive_num,clean_slot,
+                   maxclean,time_file);
+      printf("%d %s\n", target, tape_device);
+    } else {
+      printf("%d %s\n", target, "drive was not loaded");
+      endstatus = 1;
+    }
+    break;
+  case COM_CLEAN:
+    if (loaded) {
+      target=get_current_slot(changer_file);
+      if (need_eject)
+        eject_tape(scsitapedevice);
+      (void)unload(fd, drive_num, target);
+    } 
+    clean_tape(fd,tape_device,clean_file,drive_num,clean_slot,
+               maxclean,time_file);
+    printf("%s cleaned\n", tape_device);
+    break;
+  };
 
-	case COM_INFO:
-	    printf("%d ", get_current_slot(changer_file)-slot_offset);
-	    printf("%d 1\n", use_slots);
-	    break;
-
-	case COM_RESET:
-	    target=get_current_slot(changer_file);
-	    if (loaded) {
-		if (!isempty(fd, target))
-		    target=find_empty(fd);
-		if (need_eject)
-		    eject_tape(tape_device);
-		(void)unload(fd, drive_num, target);
-		if (ask_clean(fd, changer_dev, scsitapedevice))
-		    clean_tape(fd,tape_device,clean_file,drive_num,clean_slot,
-                               maxclean,time_file);
-	    }
-
-	    if (isempty(fd, slot_offset)) {
-		printf("0 slot 0 is empty\n");
-		close(fd);
-		endstatus = 1;
-		break;
-	    }
-
-	    if (load(fd, drive_num, slot_offset) != 0) {
-	      printf("%d slot %d move failed\n",slot_offset,
-		     slot_offset);  
-	      close(fd);
-	      endstatus = 2;
-	      break;
-	    }
-	    put_current_slot(changer_file, slot_offset);
-	    if (need_sleep)
-		Tape_Ready(tape_device, changer_dev, fd, need_sleep);
-	    printf("%d %s\n", get_current_slot(changer_file), tape_device);
-	    break;
-
-	case COM_EJECT:
-	    if (loaded) {
-		target=get_current_slot(changer_file);
-		if (need_eject)
-		  eject_tape(tape_device);
-		(void)unload(fd, drive_num, target);
-		if (ask_clean(fd, changer_dev, scsitapedevice))
-		    clean_tape(fd,tape_device,clean_file,drive_num,clean_slot,
-                               maxclean,time_file);
-		printf("%d %s\n", target, tape_device);
-	    } else {
-		printf("%d %s\n", target, "drive was not loaded");
-		endstatus = 1;
-	    }
-	    break;
-	case COM_CLEAN:
-	    if (loaded) {
-		target=get_current_slot(changer_file);
-		if (need_eject)
-		  eject_tape(tape_device);
-		(void)unload(fd, drive_num, target);
-	    } 
-	    clean_tape(fd,tape_device,clean_file,drive_num,clean_slot,
-                       maxclean,time_file);
-	    printf("%s cleaned\n", tape_device);
-	    break;
-      };
-
-    close(fd);
-    dbclose();
-    return endstatus;
+  CloseDevice("", 0);
+  dbclose();
+  return endstatus;
 }
+/*
+ * Local variables:
+ * indent-tabs-mode: nil
+ * tab-width: 4
+ * End:
+ */

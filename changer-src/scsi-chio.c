@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-chio.c,v 1.5.4.3 1998/12/14 07:55:58 oliva Exp $
+ *	$Id: scsi-chio.c,v 1.5.4.4 1998/12/22 05:12:11 oliva Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -53,7 +53,6 @@ int rc = 0;
 
 int get_clean_state(int changerfd, char *changerdev, char *dev)
 {
-
     return 0;
 
 }
@@ -266,4 +265,27 @@ int Tape_Ready ( char *tapedev , char * changerdev, int changerfd, int wait)
   return 0;
 }
 
+int OpenDevice (char *tapedev)
+{
+  int DeviceFD;
+
+  DeviceFD = open(tapedev, O_RDWR);
+  return(DeviceFD);
+}
+
+int CloseDevice (char *device, int DeviceFD)
+{
+   int ret;
+
+   ret = close(DeviceFD);
+
+   return ret;
+}
+
 #endif
+/*
+ * Local variables:
+ * indent-tabs-mode: nil
+ * c-default-style: gnu
+ * End:
+ */
