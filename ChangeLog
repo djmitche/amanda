@@ -1,5 +1,7 @@
 1998-11-17  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* configure.in: hack for paxutils was not working; fixed
+
 	* client-src/sendsize.c: disable HAVE_DUMP_ESTIMATE if SAMBA_CLIENT
 	is defined
 
