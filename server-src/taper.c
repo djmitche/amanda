@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.22 1998/01/26 21:16:38 jrj Exp $
+/* $Id: taper.c,v 1.23 1998/02/18 18:20:59 jrj Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1448,8 +1448,11 @@ tape_t *tp;
 int scan_init(rc, ns, bk)
 int rc, ns, bk;
 {
-    if(rc)
-	error("could not get changer info: %s", changer_resultstr);
+    if(rc) {
+	fprintf(stderr, "%s: could not get changer info: %s\n",
+		pname, changer_resultstr);
+	return rc;
+    }
 
     nslots = ns;
     backwards = bk;
