@@ -105,7 +105,7 @@ BEGIN{
 		else if( $2=="QUITTING")     do_quit();
 		else if( $2=="dumping" || $2 == "adding" || $2 == "holding-disks:") 
 		  dumping++; # eat this line
-		else if( $2!="FINISHED" && $2 != "pid" && $2 != "taper-tryagain")
+		else if( $2!="FINISHED" && $2 != "pid" && $2 != "taper-tryagain"&& $2!="startaflush:")
 		  print fil,"Unknown statement#",$0;
 	}
 	else if ( $1 == "planner:") {
@@ -116,11 +116,14 @@ BEGIN{
 	}
 	else if( $1 == "GENERATING")        sched_start=NR;
 	else if( $1 == "DELAYING")          do_moves();    # find estimated size
-	else if( $1 == "dumper:" && $4 != "starting" && $2 !="pid") 
+	else if( $1 == "dumper:") {
+		if($4 != "starting" && $2 != "pid" && $2 != "stream_client:" && $2 != "dgram_bind:") 
 	            print fil, "INFO#", $0;
-	else if( $1 == "taper:" && $3 != "label" && $3 != "end" && $2 != "DONE"\
-		 && $2 != "pid" && $2 != "slot" && $2 != "reader-side:")  print fil, "INFO#", $0;
-	else if( $1 == "planner:")          print fil, "INFO#", $0;
+	}
+	else if( $1 == "taper:") {
+		if($3 != "label" && $3 != "end" && $2 != "DONE" && $2 != "pid" && $2 != "slot" && $2 != "reader-side:" && $2 != "page" && $2 != "buffer" && $3 != "at")
+		    print fil, "INFO#", $0;
+	}
 	else if( NF==1 && sched_start > 0 && NR-sched_start > 1) { # new style end of schedule
 		no_disks = NR-sched_start-2; # lets hope there are no extra lines
 		sched_start = 0;
@@ -302,9 +305,12 @@ function do_moves() { # function that extracts the estimated size of dumps
 	getline ; 			# eating blank line
 	if( $1== "PROMOTING") {         # everything is dandy 
 		getline;		# get first promote line
-		while ( NF>0 && (($1 == "promote:")|| ($1 =="planner:")) ) {
-			if( $2 == "moving") est_size=$8;
-			else if($2 != "checking" && $2 != "can't" && $3 != "too")
+		while ( NF>0 && ($1 == "promote:" || $1 == "planner:" || $1 == "no" || $1 == "try") ) {
+			if( $2 == "moving") {
+				est_size=$8;
+				print fil, "PROMOTING#", $1, $3;
+			}
+			else if($2 != "checking" && $2 != "can't" && $3 != "too" &&  $1 != "no" && $1 != "try" && $2 != "time")
 			     print fil,"PROMOTING#", $0;
 			getline ;	# get next promote line
 		}

@@ -1,3 +1,7 @@
+2002-12-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* amplot/amplot.awk: Parse newer log lines.
+
 2002-12-12  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* client-src/selfcheck.c: Typo.
