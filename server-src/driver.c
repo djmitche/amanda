@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.121 2002/03/24 19:25:51 jrjackson Exp $
+ * $Id: driver.c,v 1.122 2002/04/10 02:09:28 jrjackson Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -413,7 +413,7 @@ main(main_argc, main_argv)
 	}
     }
 
-    if(taper)
+    if(taper >= 0)
 	taper_cmd(QUIT, NULL, NULL, 0, NULL);
 
     /* wait for all to die */

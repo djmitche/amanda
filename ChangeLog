@@ -1,3 +1,7 @@
+2002-04-09  John R. Jackson (jrj@purdue.edu)
+
+	* server-src/driver.c: Fix send of QUIT to taper when it is down.
+
 2002-04-07  John R. Jackson (jrj@purdue.edu)
 
 	* server-src/dumper.c: Change sendbackup response parsing to handle
