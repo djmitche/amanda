@@ -944,7 +944,7 @@ struct {
 dld_preloaded_symbols[] =
 {
 EOF
-        sed 's/^\(.*\) \(.*\)$/  {"\1", \&\2},/' < "$nlist" >> conftest.c
+        sed 's/^\(.*\) \(.*\)$/  {"\1", (__ptr_t) \&\2},/' < "$nlist" >> conftest.c
         cat <<\EOF >> conftest.c
   {0},
 };

@@ -1257,7 +1257,7 @@ dld_preloaded_symbols[] =
 EOF
 
 	    if test -f "$nlist"; then
-	      sed 's/^\(.*\) \(.*\)$/  {"\1", \&\2},/' < "$nlist" >> "$objdir/$dlsyms"
+	      sed 's/^\(.*\) \(.*\)$/  {"\1", (__ptr_t) \&\2},/' < "$nlist" >> "$objdir/$dlsyms"
 	    fi
 
 	    cat <<\EOF >> "$objdir/$dlsyms"
