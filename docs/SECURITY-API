@@ -1,6 +1,6 @@
 AMANDA SECURITY API
 
-$Id: SECURITY-API,v 1.5 1998/11/10 20:23:26 kashmir Exp $
+$Id: SECURITY-API,v 1.6 1998/11/11 20:17:00 kashmir Exp $
 
 by Mike Grupenhoff <kashmir@munge.com>
 
@@ -159,7 +159,18 @@ Returns a security_stream_t on success, and NULL on error.  Error
 messages can be obtained by calling security_geterror() on the security
 handle associated with this stream.
 
-3.2.2. security_stream_client
+3.2.2. security_stream_accept
+
+    int security_stream_accept(security_stream_t *);
+
+Given a security stream created by security_stream_server, blocks until
+a connection is made from the remote end.
+
+Returns 0 on success, and -1 on error.  Error messages can be obtained
+by calling security_geterror() on the security handle associated with
+this stream.
+
+3.2.3. security_stream_client
 
     security_stream_t *security_stream_client(security_handle_t *h, int id);
 
@@ -171,13 +182,13 @@ Returns a security_stream_t on success, and NULL on error.  Error
 messages can be obtained by calling security_geterror() on the security
 handle associated with this stream.
 
-3.2.3. security_stream_close
+3.2.4. security_stream_close
 
     void security_stream_close(security_stream_t *s);
 
 Closes a security stream and frees up resources associated with it.
 
-3.2.4. security_stream_auth
+3.2.5. security_stream_auth
 
     int security_stream_auth(security_stream_t *s);
 
@@ -187,7 +198,7 @@ Returns 0 on success, and -1 on error.  Error messages can be obtained
 by calling security_geterror() on the security handle associated with
 this stream.
 
-3.2.5. security_stream_id
+3.2.6. security_stream_id
 
     int security_stream_id(security_stream_t *s);
 
@@ -199,7 +210,7 @@ with security_stream_server(), and then transmit the id for that stream
 to the other side.  The other side will then connect to that id with
 security_stream_client().
 
-3.2.6. security_stream_write
+3.2.7. security_stream_write
 
     int security_stream_write(security_stream_t *s, const void *buf,
 	size_t bufsize);
@@ -209,7 +220,7 @@ or negative on error.  Error messages can be obtained by calling
 security_geterror() on the security handle associated with this
 stream.
 
-3.2.7. security_stream_read
+3.2.8. security_stream_read
 
     void security_stream_read(security_stream_t *s,
 	void (*callback)(void *arg, void *buf, int bufsize), void *arg);
@@ -225,7 +236,7 @@ associated with this stream.
 This function uses the event interface.  Callbacks will only be
 generated while in event_loop().
 
-3.2.8. security_stream_read_cancel
+3.2.9. security_stream_read_cancel
 
     void security_stream_read_cancel(security_stream_t *s);
 
@@ -345,7 +356,14 @@ This function returns a object describing the stream.  The first member
 of this object MUST be a security_stream_t, because it will be cast
 to that.
 
-5.9. stream_client
+5.9. stream_accept
+
+    int (*stream_accept)(void *stream);
+
+After calling stream_server, stream_accept must be called on the stream
+before it is fully connected.
+
+5.10. stream_client
 
     void *(*stream_client)(void *handle, int id);
 
@@ -356,13 +374,19 @@ This function returns a object describing the stream.  The first member
 of this object MUST be a security_stream_t, because it will be cast
 to that.
 
-5.10. stream_close
+5.11. stream_close
 
     void (*stream_close)(void *stream);
 
 Close and free up resources for an open stream.
 
-5.11. stream_id
+5.12. stream_auth
+
+    int (*streamauth)(void *stream);
+
+Authenticate a connected stream.
+
+5.13. stream_id
 
     int (*stream_id)(void *stream);
 
@@ -370,20 +394,20 @@ Return a unique id for this stream.  This is to be used by stream_client()
 to connect to this stream.
 
 
-5.12. stream_write
+5.14. stream_write
 
     int (*stream_write)(void *stream, const void *buf, size_t bufsize);
 
 Implementation of security_stream_write.
 
-5.13. stream_read
+5.15. stream_read
 
     void (*stream_read)(void *stream,
 	void (*callback)(void *arg, void *buf, int bufsize), void *arg);
 
 Implementation of security_stream_read.
 
-5.14. stream_read_cancel
+5.16. stream_read_cancel
 
     void (*stream_read_cancel)(void *stream);
 
