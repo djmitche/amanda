@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.19 1997/10/30 14:49:34 amcore Exp $
+ * $Id: infofile.c,v 1.20 1997/11/02 23:17:39 george Exp $
  *
  * manage current info file
  */
@@ -76,7 +76,7 @@ char *mode;
 
     /* create the directory structure if in write mode */
     if (writing) {
-        if (maketreefor(infofile, 0755, (uid_t)0, (gid_t)0) == -1) {
+        if (mkpdir(infofile, 0755, (uid_t)-1, (gid_t)-1) == -1) {
 	    free(infofile);
 #ifdef ASSERTIONS
 	    infofile = (char *)0;
@@ -253,25 +253,17 @@ char *disk;
     fn = alloc(len + 4 + 1);
 
     sprintf(fn, "%s/%s/%s/info.new", infodir, shost, sdisk);
-    rc = unlink(fn);
 
-    sprintf(fn, "%s/%s/%s/info", infodir, shost, sdisk);
-    rc = unlink(fn);
-    if(errno == ENOENT) rc = 0; /* already gone! */
-
-    /* try to clean up */
-    if (rc == 0) {
-	sprintf(fn, "%s/%s/%s", infodir, shost, sdisk);
-	rc2 = rmdir(fn);
-	if (rc2 == 0) {
-	    sprintf(fn, "%s/%s", infodir, shost);
-	    rc2 = rmdir(fn);
-	}
-    }
-
-    free(fn);
     free(sdisk);
     free(shost);
+
+    rc = unlink(fn);
+
+    fn[len] = '\0';	/* remove the '.new' */
+
+    rc = rmpdir(fn, infodir);
+
+    free(fn);
 
     return rc;
 }
