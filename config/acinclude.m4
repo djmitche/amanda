@@ -432,7 +432,7 @@ if test $cf_cv_decl_union_wait = yes; then
         AC_MSG_CHECKING(union wait used as wait-arg)
         AC_CACHE_VAL(cf_cv_arg_union_wait,[
                 AC_TRY_COMPILE($cf_decl,
-                        [union wait x; wait(&x)],
+                        [union wait x; int i; wait(&x); i = WIFEXITED(x)],
                         [cf_cv_arg_union_wait=yes],
                         [cf_cv_arg_union_wait=no])
                 ])
