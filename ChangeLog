@@ -1,3 +1,8 @@
+2000-09-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/amcheck.c: (start_server_check): check for the oldlog
+	directory.
+
 2000-09-22  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amtrmlog.c: better check of the oldlog directory.
@@ -901,7 +906,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.362 2000/09/23 00:28:08 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.363 2000/09/23 13:05:15 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
