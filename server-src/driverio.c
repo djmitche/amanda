@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.17 1997/11/20 19:58:37 jrj Exp $
+ * $Id: driverio.c,v 1.18 1997/12/09 07:16:11 amcore Exp $
  *
  * I/O-related functions for driver program
  */
@@ -224,47 +224,6 @@ printf("driver: send-cmd time %s to taper: %*.*s\n",
 fflush(stdout);
     if(write(taper, cmdline, len) < len)
 	error("writing taper command");
-}
-
-char *optionstr(dp)
-disk_t *dp;
-{
-    static char str[512];
-
-    strcpy(str,";");
-
-    if(dp->auth == AUTH_BSD) strcat(str, "bsd-auth;");
-    else if(dp->auth == AUTH_KRB4) {
-	strcat(str, "krb4-auth;");
-	if(dp->kencrypt) strcat(str, "kencrypt;");
-    }
-
-    switch(dp->compress) {
-    case COMP_FAST:
-	strcat(str, "compress-fast;");
-	break;
-    case COMP_BEST:
-	strcat(str, "compress-best;");
-	break;
-    case COMP_SERV_FAST:
-	strcat(str, "srvcomp-fast;");
-	break;
-    case COMP_SERV_BEST:
-        strcat(str, "srvcomp-best;");
-	break;
-    }
-
-    if(!dp->record) strcat(str,"no-record;");
-    if(dp->index) strcat(str,"index;");
-
-    if(dp->exclude) {
-	strcat(str, "exclude-");
-	strcat(str, (dp->exclude_list? "list=" : "file="));
-	strcat(str, dp->exclude);
-	strcat(str, ";");
-    }
-
-    return str;
 }
 
 void dumper_cmd(dumper, cmd, /* optional */ dp)

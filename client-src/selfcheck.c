@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.12 1997/11/04 22:32:03 blair Exp $
+ * $Id: selfcheck.c,v 1.13 1997/12/09 07:16:03 amcore Exp $
  *
  * do self-check and send back any error messages
  */
@@ -34,10 +34,23 @@
 #include "statfs.h"
 #include "version.h"
 #include "getfsent.h"
+#include "amandates.h"
 
 #ifdef SAMBA_CLIENT
 #include "findpass.h"
 #endif
+
+int need_samba=0;
+int need_rundump=0;
+int need_dump=0;
+int need_restore=0;
+int need_xfsdump=0;
+int need_xfsrestore=0;
+int need_vxdump=0;
+int need_vxrestore=0;
+int need_runtar=0;
+int need_gnutar=0;
+int need_compress_path=0;
 
 #define MAXLINE 4096
 
@@ -47,6 +60,7 @@ char *pname = "selfcheck";
 /* local functions */
 int main P((int argc, char **argv));
 
+static void check_options P((char *program, char *disk, char *str));
 static void check_disk P((char *program, char *disk, int level));
 static void check_overall P((void));
 static void check_file P((char *filename, int mode));
@@ -58,6 +72,7 @@ char **argv;
 {
     int level;
     char program[128], disk[256];
+    char optstr[1024];
 
     /* initialize */
 
@@ -76,8 +91,30 @@ char **argv;
 	    continue;
 	}
 
-	if(sscanf(line, "%s %s %d\n", program, disk, &level) != 3) goto err;
-	check_disk(program, disk, level);
+	if(sscanf(line, "%s %s %d OPTIONS %s[^\n]\n", 
+		  program, disk, &level, optstr) == 4)
+	{
+	    check_options(program, disk, optstr);
+	    check_disk(program, disk, level);
+	}
+	else if(sscanf(line, "%s %s %d\n", program, disk, &level) == 3)
+	{
+	    /* check all since no option */
+	    need_samba=1;
+	    need_rundump=1;
+	    need_dump=1;
+	    need_restore=1;
+	    need_xfsdump=1;
+	    need_xfsrestore=1;
+	    need_vxdump=1;
+	    need_vxrestore=1;
+	    need_runtar=1;
+	    need_gnutar=1;
+	    need_compress_path=1;
+	    check_disk(program, disk, level);
+	}
+	else
+	    goto err;
     }
 
     check_overall();
@@ -92,6 +129,75 @@ char **argv;
     return 1;
 }
 
+
+static void check_options(program, disk, str)
+char *program, *disk, *str;
+{
+    int as_index;
+    char device[1024];
+
+    if(strstr(str,"index") != NULL)
+	as_index=1;
+    if(strcmp(program,"GNUTAR") == 0) {
+	need_runtar=1;
+	need_gnutar=1;
+        if(disk[0] == '/' && disk[1] == '/')
+	    need_samba=1;
+    }
+    if(strcmp(program,"DUMP") == 0) {
+#ifdef USE_RUNDUMP
+	need_rundump=1;
+#endif
+#ifndef AIX_BACKUP
+#ifdef OSF1_VDUMP
+	strcpy(device, amname_to_dirname(disk));
+#else
+	strcpy(device, amname_to_devname(disk));
+#endif
+
+#ifdef XFSDUMP
+#ifdef DUMP
+	if (!strcmp(amname_to_fstype(device), "xfs"))
+#else
+	if (1)
+#endif
+	{
+	    need_xfsdump=1;
+	    if (as_index)
+		need_xfsrestore=1;
+	}
+	else
+#endif /* XFSDUMP */
+#ifdef VXDUMP
+#ifdef DUMP
+	if (!strcmp(amname_to_fstype(device), "vxfs"))
+#else
+	if (1)
+#endif
+	{
+	    need_vxdump=1;
+	    if (as_index)
+		need_vxrestore=1;
+	}
+	else
+#endif /* VXDUMP */
+	{
+	    need_dump=1;
+	    if (as_index)
+		need_restore=1;
+	}
+#else
+	/* AIX backup program */
+	need_dump=1;
+	if (as_index)
+	    need_restore=1;
+#endif
+    }
+    if(strstr(str, "compress") != NULL)
+	need_compress_path=1;
+    if(strstr(str, "index") != NULL) {
+    }
+}
 
 static void check_disk(program, disk, level)
 char *program, *disk;
@@ -109,9 +215,9 @@ int level;
 		return;
 	    }
 	    makesharename(disk, device, 1);
-	    sprintf(cmd, "%s %s %s -E -U backup%s%s -c quit", SAMBA_CLIENT,
+	    sprintf(cmd, "%s %s '%s' -E -U backup%s%s -c quit", SAMBA_CLIENT,
 		    device, pass, domain[0] ? " -W " : "", domain);
-	    printf("running %s %s XXXX -E -U backup%s%s -c quit",
+	    printf("running %s %s XXXX -E -U backup%s%s -c quit\n",
 		   SAMBA_CLIENT, device, domain[0] ? " -W " : "", domain);
 	    if (system(cmd) & 0xff00)
 		printf("ERROR [PC SHARE %s access error: host down or invalid password?]\n", disk);
@@ -155,44 +261,93 @@ int level;
 
 static void check_overall()
 {
+    char cmd[1024];
+
 #ifdef SAMBA_CLIENT
     struct stat buf;
     int testfd;
 #endif
-#ifdef DUMP
-    check_file(DUMP, X_OK);
-#endif
-#ifdef XFSDUMP
-    check_file(XFSDUMP, X_OK);
-#endif
-#ifdef VXDUMP
-    check_file(VXDUMP, X_OK);
-#endif
-#ifdef GNUTAR
-    check_file(GNUTAR, X_OK);
-#endif
-#ifdef SAMBA_CLIENT
-    check_file(SAMBA_CLIENT, X_OK);
-    testfd = open("/etc/amandapass", R_OK);
-    if (testfd >= 0) {
-	if(!fstat(testfd, &buf)) {
-	    if (buf.st_mode & 0x7)
-		printf("ERROR [/etc/amandapass is world readable!]\n");
-	    else
-		printf("OK [/etc/amandapass is readable, but not by all]\n");
-	} else
-	    printf("OK [unable to access /etc/amandapass?]\n");
-	close(testfd);
+
+    if( need_runtar )
+    {
+	sprintf(cmd,"%s/runtar%s",libexecdir,versionsuffix());
+	check_file(cmd,X_OK);
     }
-    else
-	printf("ERROR [unable to access /etc/amandapass?]\n");
+
+    if( need_rundump )
+    {
+	sprintf(cmd,"%s/rundump%s",libexecdir,versionsuffix());
+	check_file(cmd,X_OK);
+    }
+
+#ifdef DUMP
+    if( need_dump )
+	check_file(DUMP, X_OK);
 #endif
-    check_file(COMPRESS_PATH, X_OK);
+
+#ifdef RESTORE
+    if( need_restore )
+	check_file(RESTORE, X_OK);
+#endif
+
+#ifdef XFSDUMP
+    if( need_xfsdump )
+	check_file(XFSDUMP, X_OK);
+#endif
+
+#ifdef XFSRESTORE
+    if( need_xfsrestore )
+	check_file(XFSRESTORE, X_OK);
+#endif
+
+#ifdef VXDUMP
+    if( need_vxdump )
+	check_file(VXDUMP, X_OK);
+#endif
+
+#ifdef VXRESTORE
+    if( need_vxrestore )
+	check_file(VXRESTORE, X_OK);
+#endif
+
+#ifdef GNUTAR
+    if( need_gnutar )
+    {
+	check_file(GNUTAR, X_OK);
+	check_file(AMANDATES_FILE, R_OK|W_OK);
+#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
+	check_file(GNUTAR_LISTED_INCREMENTAL_DIR,R_OK|W_OK);
+#endif
+    }
+#endif
+
+#ifdef SAMBA_CLIENT
+    if( need_samba )
+    {
+	check_file(SAMBA_CLIENT, X_OK);
+	testfd = open("/etc/amandapass", R_OK);
+	if (testfd >= 0) {
+	    if(!fstat(testfd, &buf)) {
+		if (buf.st_mode & 0x7)
+		    printf("ERROR [/etc/amandapass is world readable!]\n");
+		else
+		    printf("OK [/etc/amandapass is readable, but not by all]\n");
+	    } else
+		printf("OK [unable to access /etc/amandapass?]\n");
+	    close(testfd);
+	}
+	else
+	    printf("ERROR [unable to access /etc/amandapass?]\n");
+    }
+#endif
+    if( need_compress_path )
+	check_file(COMPRESS_PATH, X_OK);
 #if defined(DUMP) || defined(XFSDUMP)
+    if( need_dump || need_xfsdump )
 #ifdef OSF1_VDUMP
-    check_file("/etc/vdumpdates", R_OK|W_OK);
+	check_file("/etc/vdumpdates", R_OK|W_OK);
 #else
-    check_file("/etc/dumpdates", R_OK|W_OK);
+	check_file("/etc/dumpdates", R_OK|W_OK);
 #endif
 #endif
     check_file("/dev/null", R_OK|W_OK);

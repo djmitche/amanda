@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.18 1997/12/04 22:40:16 jrj Exp $
+ * $Id: amcheck.c,v 1.19 1997/12/09 07:16:06 amcore Exp $
  *
  * checks for common problems in server and clients
  */
@@ -567,7 +567,7 @@ int fd;
 
 	for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
 	    remove_disk(origqp, dp);
-	    sprintf(line, "%s %s 0\n", dp->program, dp->name);
+	    sprintf(line, "%s %s 0 OPTIONS |%s\n", dp->program, dp->name,optionstr(dp));
 	    strcat(req, line);
 	}
 	hostcount++;
