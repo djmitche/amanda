@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.43 1998/05/05 21:47:38 martinea Exp $
+ * $Id: conffile.c,v 1.44 1998/05/17 22:45:10 amcore Exp $
  *
  * read configuration file
  */
@@ -40,6 +40,14 @@
 
 #include "conffile.h"
 #include "clock.h"
+
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
+
+#ifndef INT_MAX
+#define INT_MAX 2147483647
+#endif
 
 #define BIGINT	1000000000		/* 2 million yrs @ 1 per day */
 
@@ -928,7 +936,7 @@ static void get_holdingdisk()
 	case CHUNKSIZE:
 	    get_simple((val_t *)&hdcur.chunksize, &hdcur.s_csize, INT);
 	    if(hdcur.chunksize == 0)
-		hdcur.chunksize = MAXFILESIZE;
+		hdcur.chunksize = INT_MAX;
 	    break;
 
 	case RBRACE:
