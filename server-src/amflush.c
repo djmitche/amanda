@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.19 1998/01/27 06:32:30 amcore Exp $
+ * $Id: amflush.c,v 1.20 1998/02/10 01:36:58 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -110,7 +110,8 @@ char **main_argv;
     reporter_program = vstralloc(libexecdir, "/", "reporter", versionsuffix(),
 				 NULL);
 
-    pick_datestamp();
+    afree(datestamp);
+    datestamp = pick_datestamp();
     confirm();
     if(!foreground) detach();
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);

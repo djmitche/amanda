@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: holding.c,v 1.10 1998/02/05 03:05:43 martinea Exp $
+ * $Id: holding.c,v 1.11 1998/02/10 01:37:00 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -33,28 +33,6 @@
 #include "amanda.h"
 #include "holding.h"
 #include "fileheader.h"
-
-#define MAX_ARGS 10
-
-/* define schedule structure */
-
-typedef struct sched_s {
-    int level;			/* dump level */
-    char destname[128];		/* file name */
-} sched_t;
-
-#define sched(dp)	((sched_t *) (dp)->up)
-
-disklist_t *diskqp;
-
-int result_argc;
-char *datestamp = NULL;
-char *taper_program, *reporter_program;
-char host[MAX_HOSTNAME_LENGTH+1], *domain;
-
-/* local functions */
-void get_host_and_domain();
-
 
 int is_dir(fname)
 char *fname;
@@ -239,7 +217,7 @@ int verbose;
     closedir(topdir);
 }
 
-void pick_datestamp()
+char *pick_datestamp()
 {
     holdingdisk_t *hdisk;
     struct dirname *dir;
@@ -258,7 +236,7 @@ void pick_datestamp()
     for(dir = dir_list; dir != NULL; dir = dir->next)
 	if(picked-- == 0) break;
 
-    datestamp = newstralloc(datestamp, dir->name);
+    return stralloc(dir->name);
 }
 
 int get_amanda_names(fname, hostname, diskname, level)
