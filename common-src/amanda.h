@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.66 1998/11/04 00:43:20 kashmir Exp $
+ * $Id: amanda.h,v 1.67 1998/11/25 01:52:26 kashmir Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -159,6 +159,15 @@
 
 #ifdef HAVE_SYS_STAT_H
 #  include <sys/stat.h>
+#endif
+
+#ifdef HAVE_SYS_UIO_H
+#  include <sys/uio.h>
+#else
+struct iovec {
+    void *iov_base;
+    int iov_len;
+};
 #endif
 
 #ifdef HAVE_WAIT_H
