@@ -1,3 +1,8 @@
+2003-04-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* recover-src/extract_list.c: Fix the name of the
+	  amidxtaped.<timestamp>.debug file.
+
 2003-02-28  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Eric Doutreleau <Eric.Doutreleau@int-evry.fr>
 	
