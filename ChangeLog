@@ -1,5 +1,9 @@
 1998-11-24  John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/amadmin.c: fix minor message format problem.
+
+1998-11-24  John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/amlabel.c: insist on being run as the dump user (ala
 	amflush) to keep permissions straight.
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.51 1998/11/24 23:26:59 jrj Exp $
+ * $Id: amadmin.c,v 1.52 1998/11/24 23:51:28 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -244,12 +244,12 @@ static void check_dumpuser()
     dumpuser = getconf_str(CNF_DUMPUSER);
 
     if ((pw = getpwnam(dumpuser)) == NULL) {
-	error("cannot look up dump user \"%s\"\n", dumpuser);
+	error("cannot look up dump user \"%s\"", dumpuser);
 	/* NOTREACHED */
     }
     uid_dumpuser = pw->pw_uid;
     if ((pw = getpwuid(uid_me)) == NULL) {
-	error("ERROR: cannot look up my own uid %ld\n", (long)uid_me);
+	error("cannot look up my own uid %ld", (long)uid_me);
 	/* NOTREACHED */
     }
     if (uid_me != uid_dumpuser) {
