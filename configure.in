@@ -1102,13 +1102,12 @@ EOF
 	]
 )
 if test "$amanda_cv_libtool_macros" = yes; then
-    LIBTOOL_M4=
     LIBTOOL_M4_MACRO_DIR=
 else
-    LIBTOOL_M4='$(top_srcdir)/config/libtool/libtool.m4'
-    LIBTOOL_M4_MACRO_DIR='-I $(top_srcdir)/config/libtool'
+    # We don't want top_srcdir here, because, when we run aclocal, we're
+    # already in top_srcdir
+    LIBTOOL_M4_MACRO_DIR='-I config/libtool'
 fi
-AC_SUBST(LIBTOOL_M4)
 AC_SUBST(LIBTOOL_M4_MACRO_DIR)
 
 dnl Check for programs.
