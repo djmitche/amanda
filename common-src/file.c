@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.14.4.2 1999/10/02 22:01:56 jrj Exp $
+ * $Id: file.c,v 1.14.4.3 1999/10/03 16:00:50 jrj Exp $
  *
  * file and directory bashing routines
  */
@@ -482,10 +482,11 @@ void
 areads_relbuf(fd)
     int fd;
 {
-    assert(fd >= 0 && fd < areads_bufcount);
-    amfree(areads_buffer[fd].buffer);
-    areads_buffer[fd].endptr = NULL;
-    areads_buffer[fd].bufsize = 0;
+    if(fd >= 0 && fd < areads_bufcount) {
+	amfree(areads_buffer[fd].buffer);
+	areads_buffer[fd].endptr = NULL;
+	areads_buffer[fd].bufsize = 0;
+    }
 }
 
 /*
@@ -525,6 +526,10 @@ areads (fd)
 
     malloc_enter(dbmalloc_caller_loc(s, l));
 
+    if(fd < 0) {
+	errno = EBADF;
+	return NULL;
+    }
     areads_getbuf(fd);
     buffer = areads_buffer[fd].buffer;
     endptr = areads_buffer[fd].endptr;
