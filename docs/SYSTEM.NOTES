@@ -7,6 +7,17 @@ after checking that they are not known/fixed problems in the amanda
 patches page: http://www.amanda.org/patches.html
 
 ---------------------------------------------------------------------------
+Solaris 2.6
+-----------
+
+You may have compilation errors on statfs.c if you're running, on a
+Solaris 2.6 host, a gcc that was not build on a Solaris 2.6 host.
+This happens because gcc stores fixed copies of some Solaris header
+files on an internal directory.  You must rebuild gcc if you get this
+kind of trouble.  However, you must apply the patch in
+patches/gcc-sol26.patch for Solaris 2.6's header files to be fixed
+correctly.
+
 SunOS 4.x
 ---------
 

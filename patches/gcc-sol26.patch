@@ -1,0 +1,20 @@
+As with all new Solaris releases, you need to reinstall gcc after
+upgrading.  Unfortunately, Solaris 2.6 include files don't get
+properly fixed by fixincludes.  To fix this, apply the following patch
+to fixinc.svr4 before building gcc-2.7.2.3 or earlier.  Neither
+gcc-2.8 (snapshots for testers available from
+ftp://vger.rutgers.edu/pub/gcc) nor egcs (http://www.cygnus.com/egcs)
+require this patch.
+
+*** ./fixinc.svr4	Thu Jun 15 23:03:29 1995
+--- ./fixinc.svr4	Thu Sep  4 13:41:29 1997
+***************
+*** 189,194 ****
+--- 189,195 ----
+  	  s/__STDC__[ 	][ 	]*==[ 	][ 	]*1/defined (__STRICT_ANSI__)/g
+  	  s/__STDC__[ 	][ 	]*!=[ 	][ 	]*0/defined (__STRICT_ANSI__)/g
+  	  s/__STDC__ - 0 == 0/!defined (__STRICT_ANSI__)/g
++ 	  s/__STDC__ - 0 == 1/defined (__STRICT_ANSI__)/g
+  	  /^typedef[ 	][ 	]*[unsigned 	]*long[ 	][ 	]*[u_]*longlong_t;/s/long/long long/
+  	  ' $2/$file > $2/$file.sed
+  	  mv $2/$file.sed $2/$file

@@ -25,7 +25,7 @@ EXTRA_DIST = \
 	patches/readline-2.0-irix4	patches/readline-2.0-more	\
 	patches/regex-3.6alpha.patch	patches/samba-1.9.16p2.patch	\
 	patches/samba-largefs.patch	patches/samba-longnames.patch	\
-	patches/tar-1.12.patch						\
+	patches/tar-1.12.patch		patches/gcc-sol26.patch		\
 	regex-src/COPYRIGHT		regex-src/Makefile 		\
 	regex-src/README		regex-src/WHATSNEW 		\
 	regex-src/cclass.h		regex-src/cname.h		\
