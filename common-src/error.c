@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: error.c,v 1.3 1997/08/27 08:11:58 amcore Exp $
+ * $Id: error.c,v 1.4 1997/09/30 01:49:04 george Exp $
  *
  * error handling common to Amanda programs
  */
@@ -63,7 +63,9 @@ arglist_function(void error, char *, format)
     if(erroutput_type & ERR_AMANDALOG) {
         extern void logerror P((char *string));
 	logerror(linebuf);
-    } if(erroutput_type & ERR_SYSLOG) {
+    }
+
+    if(erroutput_type & ERR_SYSLOG) {
 #ifdef LOG_AUTH
 	openlog(pname, LOG_PID, LOG_AUTH);
 #else
@@ -72,6 +74,7 @@ arglist_function(void error, char *, format)
 	syslog(LOG_NOTICE, "%s", linebuf);
 	closelog();
     }
+
     if(erroutput_type & ERR_INTERACTIVE) {
 	fprintf(stderr, "%s: %s\n", pname, linebuf);
 	fflush(stderr);
