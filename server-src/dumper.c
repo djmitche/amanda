@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.30 1997/10/17 06:26:47 george Exp $
+/* $Id: dumper.c,v 1.31 1997/10/17 17:51:14 amcore Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -286,7 +286,7 @@ char **main_argv;
 	    diskname = newstralloc(diskname, argv[5]);
 	    level = atoi(argv[6]);
 	    dumpdate = newstralloc(dumpdate, argv[7]);
-	    progname = newstralloc(pogname, argv[8]);
+	    progname = newstralloc(progname, argv[8]);
 	    options = newstralloc(options, argv[9]);
 
 	    /* connect outf to taper port */
