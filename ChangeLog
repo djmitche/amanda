@@ -1,5 +1,26 @@
 1999-04-09  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/amcheck.c: security changes:
+	(main): ignore SIGPIPE - some security drivers might get it.
+	Remove all usages of dgram.
+	Make our real uid root and our effective uid amanda so we can
+	get back to root later (on most os's :()
+	(start_client_checks): remove krb4 bits.
+	The dump user check should check the effective uid.
+	Get the name of the security driver for this host out of
+	host->diskp->security_driver.
+	Free req after calling protocol_sendreq() because it will internalize
+	it.
+	protocol_sendreq doesn't return any errors - they're all returned
+	via handle_response.
+	(handle_result): renamed from handle_response for consistency.
+	The protocol layer doesn't pass us a proto_t anymore, so detect
+	errors based on pkt being NULL.
+	Remove krb4 bits - security violations will be indicated by a 
+	NULL pkt.
+
+1999-04-09  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/protocol.[ch]: rewrite for security api.  The entry
 	points now have the 'protocol' prefix.  See protocol.h for more
 	info.

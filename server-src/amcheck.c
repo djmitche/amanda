@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.57 1999/04/01 15:34:11 martinea Exp $
+ * $Id: amcheck.c,v 1.58 1999/04/09 20:05:37 kashmir Exp $
  *
  * checks for common problems in server and clients
  */
@@ -35,6 +35,8 @@
 #include "tapefile.h"
 #include "tapeio.h"
 #include "changer.h"
+#include "packet.h"
+#include "security.h"
 #include "protocol.h"
 #include "clock.h"
 #include "version.h"
@@ -44,7 +46,6 @@
 #define BUFFER_SIZE	32768
 
 static int overwrite;
-dgram_t *msg = NULL;
 char *confname;
 
 /* local functions */
@@ -78,7 +79,7 @@ char **argv;
     int do_clientchk, clientchk_pid, client_probs;
     int do_localchk, do_tapechk, serverchk_pid, server_probs;
     int chk_flag;
-    int opt, size, result_port, tempfd, mainfd;
+    int opt, size, tempfd, mainfd;
     amwait_t retstat;
     pid_t pid;
     extern int optind;
@@ -99,6 +100,8 @@ char **argv;
 	close(fd);
     }
 
+    signal(SIGPIPE, SIG_IGN);
+
     set_pname("amcheck");
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
@@ -107,17 +110,11 @@ char **argv;
 
     erroutput_type = ERR_INTERACTIVE;
 
-    /* set up dgram port first thing */
-
-    msg = dgram_alloc();
-
-    if(dgram_bind(msg, &result_port) == -1)
-	error("could not bind result datagram port: %s", strerror(errno));
-
     if(geteuid() == 0) {
-	/* set both real and effective uid's to real uid, likewise for gid */
+	uid_t ruid = getuid();
+	setuid(0);
+	seteuid(ruid);
 	setgid(getgid());
-	setuid(getuid());
     }
 
     mailout = overwrite = 0;
@@ -239,7 +236,6 @@ char **argv;
 	    amfree(wait_msg);
 	}
     }
-    amfree(msg);
 
     /* copy temp output to main output and write tagline */
 
@@ -478,8 +474,6 @@ int fd;
     dup2(fd, 2);
 
     set_pname("amcheck-server");
-
-    amfree(msg);
 
     startclock();
 
@@ -950,7 +944,7 @@ int fd;
 int remote_errors;
 FILE *outf;
 
-static void handle_response P((proto_t *p, pkt_t *pkt));
+static void handle_result P((void *, pkt_t *, security_handle_t *));
 
 int start_client_checks(fd)
 int fd;
@@ -959,14 +953,9 @@ int fd;
     disk_t *dp;
     host_t *hostp;
     char *req = NULL;
-    int hostcount, rc, pid;
-    int amanda_port;
-    struct servent *amandad;
+    int hostcount, pid;
+    const security_driver_t *secdrv;
     int userbad = 0;
-
-#ifdef KRB4_SECURITY
-    int kamanda_port;
-#endif
 
     switch(pid = fork()) {
     case -1: error("could not fork client check: %s", strerror(errno));
@@ -996,7 +985,7 @@ int fd;
      * Make sure we are running as the dump user.
      */
     {
-	uid_t uid_me = getuid();
+	uid_t uid_me = geteuid();
 	uid_t uid_dumpuser = uid_me;
 	char *dumpuser = getconf_str(CNF_DUMPUSER);
 	struct passwd *pw;
@@ -1019,24 +1008,7 @@ int fd;
 	}
     }
 
-#ifdef KRB4_SECURITY
-    kerberos_service_init();
-#endif
-
-    proto_init(msg->socket, time(0), 1024);
-
-    /* get remote service port */
-    if((amandad = getservbyname(AMANDA_SERVICE_NAME, "udp")) == NULL)
-	amanda_port = AMANDA_SERVICE_DEFAULT;
-    else
-	amanda_port = ntohs(amandad->s_port);
-
-#ifdef KRB4_SECURITY
-    if((amandad = getservbyname(KAMANDA_SERVICE_NAME, "udp")) == NULL)
-	kamanda_port = KAMANDA_SERVICE_DEFAULT;
-    else
-	kamanda_port = ntohs(amandad->s_port);
-#endif
+    protocol_init();
 
     hostcount = remote_errors = 0;
 
@@ -1077,27 +1049,19 @@ int fd;
 	}
 	hostcount++;
 
-#ifdef KRB4_SECURITY
-	if (strcasecmp(hostp->disks->security_driver, "KRB4") == 0)
-	    rc = make_krb_request(hostp->hostname, kamanda_port, req,
-				  hostp, CHECK_TIMEOUT, handle_response);
-	else
-#endif
-	    rc = make_request(hostp->hostname, amanda_port, req,
-			      hostp, CHECK_TIMEOUT, handle_response);
-
-	req = NULL;				/* do not own this any more */
-
-	if(rc) {
-	    /* couldn't resolve hostname */
-	    fprintf(outf,
-		    "ERROR: %s: could not resolve hostname\n", hostp->hostname);
-	    remote_errors++;
+	secdrv = security_getdriver(hostp->disks->security_driver);
+	if (secdrv == NULL) {
+	    error("could not find security driver '%s' for host '%s'",
+		hostp->disks->security_driver, hostp->hostname);
 	}
-	check_protocol();
+	protocol_sendreq(hostp->hostname, secdrv, req, CHECK_TIMEOUT,
+				handle_result, hostp);
+
+	amfree(req);
+
+	protocol_check();
     }
-    run_protocol();
-    amfree(msg);
+    protocol_run();
 
     fprintf(outf,
      "Client check: %d host%s checked in %s seconds, %d problem%s found\n",
@@ -1117,54 +1081,47 @@ int fd;
     return 0;
 }
 
-static void handle_response(p, pkt)
-proto_t *p;
+static void handle_result(datap, pkt, sech)
+void *datap;
 pkt_t *pkt;
+security_handle_t *sech;
 {
     host_t *hostp;
     char *errstr;
     char *s;
     int ch;
 
-    hostp = (host_t *) p->datap;
+    hostp = (host_t *)datap;
 
-    if(p->state == S_FAILED) {
-	if(pkt == NULL) {
-	    fprintf(outf,
-		    "WARNING: %s: selfcheck request timed out.  Host down?\n",
-		    hostp->hostname);
+    if (pkt == NULL) {
+	fprintf(outf,
+	    "WARNING: %s: selfcheck request failed: %s\n", hostp->hostname,
+	    security_geterror(sech));
+	remote_errors++;
+	return;
+    } else if (pkt->type == P_NAK) {
 #define sc "ERROR"
-	} else if(strncmp(pkt->body, sc, sizeof(sc)-1) == 0) {
+	if(strncmp(pkt->body, sc, sizeof(sc)-1) == 0) {
 	    s = pkt->body + sizeof(sc)-1;
-	    ch = *s++;
 #undef sc
+	    ch = *s++;
 	    skip_whitespace(s, ch);
 	    errstr = s - 1;
 
 	    fprintf(outf, "ERROR: %s NAK: %s\n", hostp->hostname, errstr);
 	} else {
 	    fprintf(outf, "ERROR: %s NAK: [NAK parse failed]\n",
-		    hostp->hostname);
+		hostp->hostname);
 	}
 	remote_errors++;
 	return;
     }
 
-#ifdef KRB4_SECURITY
-    if (strcasecmp(hostp->disks->security_driver, "KRB4") == 0 &&
-       !check_mutual_authenticator(host2key(hostp->hostname), pkt, p)) {
-	fprintf(outf, "ERROR: %s [mutual-authentication failed]\n",
-		hostp->hostname);
-	remote_errors++;
-	return;
-    }
-#endif
-
     s = pkt->body;
     ch = *s++;
 /*
     fprintf(errf, "got response from %s:\n----\n%s----\n\n",
-	    hostp->hostname, resp);
+	    hostp->hostname, pkt->body);
 */
 
 #define sc "OPTIONS"
