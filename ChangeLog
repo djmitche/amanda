@@ -74,6 +74,15 @@
 	* tape-src/tests/testdist: Ditto.
 	* tape-src/tests/torture: Ditto.
 
+2001-01-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/driverio.h (sched_t): new field no_space.
+	* server-src/driver.c (start_some_dumps): don't start a disk if
+	  no_space is set.
+	* server-src/driver.c (continue_dumps): set no_space if it's the
+	  only active dumpers, case c.
+	* server-src/driver.c (read_schedule): set no_space to 0.
+
 2000-12-24 John R. Jackson <jrj@purdue.edu>
 
 	* server-src/getconf.c: Fix free() of static text string (BUGGY) when
@@ -1401,7 +1410,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.423.2.4 2001/01/24 22:12:16 jrjackson Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = ...
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

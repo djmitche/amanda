@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.30 2000/11/08 01:55:45 martinea Exp $
+ * $Id: driver.c,v 1.58.2.30.2.1 2001/01/26 22:47:48 jrjackson Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -552,6 +552,8 @@ disklist_t *rq;
 	    else if(diskp->host->netif->curusage > 0 &&
 		    sched(diskp)->est_kps > free_kps(diskp->host->netif))
 		cur_idle = max(cur_idle, IDLE_NO_BANDWIDTH);
+	    else if(sched(diskp)->no_space)
+		cur_idle = max(cur_idle, IDLE_NO_DISKSPACE);
 	    else if((holdp = find_diskspace(sched(diskp)->est_size,&cur_idle,NULL)) == NULL)
 		cur_idle = max(cur_idle, IDLE_NO_DISKSPACE);
 	    else if(diskp->no_hold) {
@@ -757,14 +759,7 @@ dumper_t *dumper;
     if( !active_dumpers && busy_dumpers > 0 && !taper_busy && empty(tapeq) &&
 	pending_aborts == 0 ) { /* not case a */
 	if( busy_dumpers == 1 ) { /* case c */
-	    assignedhd_t **holdp;
-	    int i;
-	    /* set estimate to more than what is already use */
-	    sched(dp)->est_size = 20 * TAPE_BLOCK_SIZE;
-	    holdp = sched(dp)->holdp;
-	    for(i=0; holdp[i]; i++ ) { /* for each disk */
-		sched(dp)->est_size += holdp[i]->used;
-	    }
+	    sched(dp)->no_space = 1;
 	}
 	/* case b */
 	/* At this time, dp points to the dump with the smallest est_size.
@@ -1338,6 +1333,7 @@ disklist_t *waitqp;
 	sp->dumper = NULL;
 	sp->timestamp = (time_t)0;
 	sp->destname = NULL;
+	sp->no_space = 0;
 
 	dp->up = (char *) sp;
 	remove_disk(waitqp, dp);
