@@ -1969,5 +1969,6 @@ AC_OUTPUT( \
 									\
 	docs/Makefile							\
 	patches/Makefile						\
+	config-aux/Makefile						\
 									\
 	Makefile)

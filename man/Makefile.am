@@ -6,6 +6,8 @@ man_MANS =	amadmin.8	amanda.8	amcheck.8	\
 		amrestore.8	amrmtape.8	amtape.8	\
 		amtoc.8
 
+EXTRA_DIST = amplot.8 amrecover.8 amrestore.8 amrmtape.8 amtape.8 amtoc.8
+
 install-data-hook:
 	@list="$(man_MANS)"; echo $$list; for p in $$list; do \
 		pa=$(mandir)/man8/`echo $$p|sed '$(transform)'`; \
