@@ -130,6 +130,7 @@ while(<AMDUMP>) {
 		$dump_started{$hostpart}=0;
 		$dump_finished{$hostpart}=0;
 		$taper_started{$hostpart}=0;
+		$taper_finished{$hostpart}=0;
 	}
 	elsif(/got result for host (\S+) disk (\S+): (\d+) -> (\d+)K,/) {
 		$host=$1;
@@ -227,6 +228,7 @@ while(<AMDUMP>) {
 		$hostpart="$host$partition";
 		$serial{$serial}=$hostpart;
 		$taper_started{$hostpart}=1;
+		$taper_finished{$hostpart}=0;
 		$taper_time{$hostpart}=$1;
 	}
 	elsif(/driver: send-cmd time (\S+) to taper: PORT-WRITE (\d+-\d+) (\S+) (\S+) \d*( \d*|)/){
@@ -236,6 +238,7 @@ while(<AMDUMP>) {
 		$hostpart="$host$partition";
 		$serial{$serial}=$hostpart;
 		$taper_started{$hostpart}=1;
+		$taper_finished{$hostpart}=0;
 		$taper_time{$hostpart}=$1;
 	}
 	elsif(/driver: result time (\S+) from taper: DONE (\d+-\d+) (\S+)/) {
@@ -556,6 +559,7 @@ sub dump_size() {
 		   $atime,$mtime,$ctime,$blksize,$blocks);
 	while ($filename ne "") {
 		$filename = "$filename.tmp" if (!(-e "$filename"));
+		$filename = "/dev/null" if (!(-e "$filename"));
 		($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
 				$atime,$mtime,$ctime,$blksize,$blocks) = stat($filename);
 		$size=$size-32768 if $size > 32768;
@@ -567,7 +571,7 @@ sub dump_size() {
 			last if /^To restore, position tape at start of file and run/;
 		}
 		close(DUMP);
-   }
+	}
 	return $dsize;
 }
 
