@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: fileheader.h,v 1.1 1997/12/01 01:05:58 amcore Exp $
+ * $Id: fileheader.h,v 1.2 1997/12/01 02:47:29 blair Exp $
  *
  */
 
@@ -58,11 +58,11 @@ extern char *pname;
 
 /* local functions */
 
-void fh_init(dumpfile_t *file);
-char *eatword P((char **linep));
-void parse_file_header P((char *buffer, dumpfile_t *file, int buflen));
-void write_header P((char *buffer, dumpfile_t *file, int buflen));
-void print_header P((FILE *outf, dumpfile_t *file));
-int known_compress_type P((dumpfile_t *file));
+void  fh_init             P((dumpfile_t *file));
+char *eatword             P((char **linep));
+void  parse_file_header   P((char *buffer, dumpfile_t *file, int buflen));
+void  write_header        P((char *buffer, dumpfile_t *file, int buflen));
+void  print_header        P((FILE *outf, dumpfile_t *file));
+int   known_compress_type P((dumpfile_t *file));
 
 #endif /* !FILEHEADER_H */
