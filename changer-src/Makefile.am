@@ -17,7 +17,7 @@ SUFFIXES =		.pl .sh
 noinst_LIBRARIES =	libscsi.a
 
 libscsi_a_SOURCES =	scsi-hpux.c scsi-chio.c
-EXTRA_DIST = scsi-proto.c
+EXTRA_DIST = chg-chio.c scsi-proto.c
 
 chg_scsi_SOURCES =	chg-scsi.c libscsi.h
 
@@ -38,7 +38,7 @@ EXTRA_PROGRAMS =	chg-scsi
 libexec_SCRIPTS =	@BUILD_CHANGER_SCRIPTS_LIBEXEC@
 
 EXTRA_SCRIPTS =		chg-manual	chg-multi	chg-mtx		\
-			chg-rth		chg-chs
+			chg-rth		chg-chs		chg-chio
 
 DISTCLEANFILES = $(EXTRA_SCRIPTS)
 

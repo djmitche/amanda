@@ -330,6 +330,21 @@ usagecount <filename>				This points to a file which is
 Comments begin with an '#' until end of line.
 Allowed separators are TAB and SPACE. 
 
+chg-chio: (new perl script, that replaces the original chg-chio written in C)
+
+This script is based on the FreeBSD version of chio, a program to
+communicate with the jukebox.  This script has for the moment only
+been test with FreeBSD and is likely not to work on any other system.
+Let me know if this is the case and send me the output of the chio
+program for your version of chio.
+
+It does not restrict the number of tapes, except that if there is only
+one tape in the juke, it is supposed to be in max_slot and not in slot 1.
+
+[This is the first version of the changer script and I would
+appreciate all comments on it, at nick.hibma@jrc.it.  It has been
+tested only with FreeBSD 2.2.5 and the accompanying chio program.]
+
 chg-chs: (former chs-changer)
 
 A tape changer script very similar to chg-multi, that uses the `chs'

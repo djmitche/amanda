@@ -1,3 +1,12 @@
+1998-07-10  Nick Hibma  <nick.hibma@jrc.it>, Alexandre Oliva <oliva@dcc.unicamp.br>
+
+	* changer-src/chg-chio.pl.in: new script, created to replace old
+ 	chg-chio written in C
+	* docs/TAPE.CHANGERS (chg-chio): document it
+	* changer-src/Makefile.am (EXTRA_SCRIPTS): add chg-chio
+	(EXTRA_DIST): still include chg-chio.c, just in case it is useful
+	* configure.in (BUILD_CHANGER_SCRIPTS_LIBEXEC): add chg-chio
+	
 1998-07-08  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/reporter.c (main): if no arguments are given, preserve
