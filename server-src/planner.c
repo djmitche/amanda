@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.159 2004/08/03 13:09:03 martinea Exp $
+ * $Id: planner.c,v 1.160 2004/09/17 11:44:37 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -2500,29 +2500,30 @@ static int promote_hills P((void))
 	int disks;
 	long size;
     } *sp = NULL;
-    int tapecycle;
     int days;
     int hill_days = 0;
     long hill_size;
     long new_size;
     long new_total;
+    int my_dumpcycle;
 
     /* If we are already doing a level 0 don't bother */
     if(total_lev0 > 0)
 	return 0;
 
     /* Do the guts of an "amadmin balance" */
-    tapecycle = conf_tapecycle;
+    my_dumpcycle = conf_dumpcycle;
+    if(my_dumpcycle > 10000) my_dumpcycle = 10000;
 
     sp = (struct balance_stats *)
-	alloc(sizeof(struct balance_stats) * tapecycle);
+	alloc(sizeof(struct balance_stats) * my_dumpcycle);
 
-    for(days = 0; days < tapecycle; days++)
+    for(days = 0; days < my_dumpcycle; days++)
 	sp[days].disks = sp[days].size = 0;
 
     for(dp = schedq.head; dp != NULL; dp = dp->next) {
 	days = est(dp)->next_level0;   /* This is > 0 by definition */
-	if(days<tapecycle && !dp->skip_full && dp->strategy != DS_NOFULL &&
+	if(days<my_dumpcycle && !dp->skip_full && dp->strategy != DS_NOFULL &&
 	   dp->strategy != DS_INCRONLY) {
 	    sp[days].disks++;
 	    sp[days].size += est(dp)->last_lev0size;
@@ -2533,7 +2534,7 @@ static int promote_hills P((void))
     while(1) {
 	/* Find the tallest hill */
 	hill_size = 0;
-	for(days = 0; days < tapecycle; days++) {
+	for(days = 0; days < my_dumpcycle; days++) {
 	    if(sp[days].disks > 1 && sp[days].size > hill_size) {
 		hill_size = sp[days].size;
 		hill_days = days;
