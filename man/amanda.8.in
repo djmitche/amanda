@@ -1496,8 +1496,8 @@ define tapetype DLT4000\-III {
     speed 1536 kps
 }
 define tapetype DLT4000\-IV {
-    comment "DLT4000 tape drives with Compact\-IV tapes"
     DLT4000\-III
+    comment "DLT4000 tape drives with Compact\-IV tapes"
     length 25000 mbytes         # 20 Gig tapes with some compression
 }
 .EE
