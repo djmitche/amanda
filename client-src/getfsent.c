@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: getfsent.c,v 1.20.4.1 2001/01/23 22:46:56 jrjackson Exp $
+ * $Id: getfsent.c,v 1.20.4.1.2.1 2001/03/30 02:40:59 martinea Exp $
  *
  * generic version of code to read fstab
  */
@@ -462,18 +462,33 @@ generic_fsent_t *fsent;
 
   rc = 0;
   while(get_fstab_nextentry(fsent)) {
-    struct stat estat;
+    struct stat mntstat;
+    struct stat fsstat;
+    struct stat fsrstat;
+    int smnt = -1, sfs = -1, sfsr = -1;
 
     amfree(rdev);
-    if ((fsent->mntdir != NULL
-	 && stat(fsent->mntdir, &estat) != -1
-	 && samefile(stats, &estat)) ||
-	(fsent->fsname != NULL
-	 && stat(fsent->fsname, &estat) != -1
-	 && samefile(stats, &estat)) ||
-	(fsent->fsname != NULL
-	 && stat((rdev = dev2rdev(fsent->fsname)), &estat) != -1
-	 && samefile(stats, &estat))) {
+
+    if(fsent->mntdir != NULL &&
+       (smnt = stat(fsent->mntdir, &mntstat)) == -1)
+      continue;
+
+    if(fsent->fsname != NULL) {
+      sfs = stat(fsent->fsname, &fsstat);
+      sfsr = stat((rdev = dev2rdev(fsent->fsname)), &fsrstat);
+      if(sfs == -1 && sfsr == -1)
+        continue;
+    }
+
+    if((fsent->mntdir != NULL &&
+	smnt != -1 &&
+        samefile(stats, &mntstat)) || 
+       (fsent->fsname != NULL &&
+	sfs != -1 &&
+        samefile(stats, &fsstat)) ||
+       (fsent->fsname != NULL &&
+	sfsr != -1 &&
+        samefile(stats, &fsrstat))) {
       rc = 1;
       break;
     }
@@ -588,6 +603,15 @@ int main(argc, argv)
     close_fstab();
 
     name = newstralloc(name, "/usr");
+    if(search_fstab(name, &fsent)) {
+	printf("Found %s mount for %s:\n",
+	       is_local_fstype(&fsent)? "local" : "remote", name);
+	print_entry(&fsent);
+    }
+    else 
+	printf("Mount for %s not found\n", name);
+
+    name = newstralloc(name, "/");
     if(search_fstab(name, &fsent)) {
 	printf("Found %s mount for %s:\n",
 	       is_local_fstype(&fsent)? "local" : "remote", name);
