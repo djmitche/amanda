@@ -1,3 +1,7 @@
+1998-12-03  Mike Grupenhoff <kashmir@munge.com>
+
+	* configure.in: AC_REPLACE_FUNCS(writev)
+
 1998-12-02  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/infofile.h: rename PLANNER_FORCE to FORCE_FULL
