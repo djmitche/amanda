@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlogroll.c,v 1.1.2.1 1999/09/11 16:55:25 jrj Exp $
+ * $Id: amlogroll.c,v 1.1.2.1.4.1 2001/07/19 21:50:39 jrjackson Exp $
  *
  * rename a live log file to the datestamped name.
  */
@@ -93,7 +93,7 @@ char **argv;
 
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if(read_conffile(conffile)) {
-        error("could not read config file \"%s\"", conffile);
+        error("errors processing config file \"%s\"", conffile);
     }
     amfree(conffile);
 

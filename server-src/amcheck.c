@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.19.2.4 2001/07/13 20:38:37 jrjackson Exp $
+ * $Id: amcheck.c,v 1.50.2.19.2.5 2001/07/19 21:50:39 jrjackson Exp $
  *
  * checks for common problems in server and clients
  */
@@ -200,7 +200,7 @@ char **argv;
     config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if(read_conffile(conffile)) {
-	error("could not find config file \"%s\"", conffile);
+	error("errors processing config file \"%s\"", conffile);
     }
     amfree(conffile);
     conf_ctimeout = getconf_int(CNF_CTIMEOUT);

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.47.2.14.4.3 2001/03/09 19:36:27 jrjackson Exp $
+/* $Id: taper.c,v 1.47.2.14.4.4 2001/07/19 21:50:40 jrjackson Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -220,7 +220,7 @@ char **main_argv;
 
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if(read_conffile(conffile)) {
-	error("could not find config file \"%s\"", conffile);
+	error("errors processing config file \"%s\"", conffile);
     }
     amfree(conffile);
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.22.2.6.4.4 2001/06/19 19:58:28 jrjackson Exp $
+ * $Id: amtape.c,v 1.22.2.6.4.5 2001/07/19 21:50:39 jrjackson Exp $
  *
  * tape changer interface program
  */
@@ -127,7 +127,7 @@ char **argv;
     config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if (read_conffile(conffile)) {
-	error("could not read config file \"%s\"", conffile);
+	error("errors processing config file \"%s\"", conffile);
     }
     conf_tapelist = getconf_str(CNF_TAPELIST);
     if (*conf_tapelist == '/') {

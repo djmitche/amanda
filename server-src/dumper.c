@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.14.2.2 2001/03/20 00:25:22 jrjackson Exp $
+/* $Id: dumper.c,v 1.75.2.14.2.3 2001/07/19 21:50:40 jrjackson Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -214,7 +214,7 @@ char **main_argv;
 
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if(read_conffile(conffile)) {
-	error("could not find config file \"%s\"", conffile);
+	error("errors processing config file \"%s\"", conffile);
     }
     amfree(conffile);
 

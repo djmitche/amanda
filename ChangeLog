@@ -1,5 +1,24 @@
 2001-07-19 John R. Jackson <jrj@purdue.edu>
 
+	* server-src/amadmin.c: Improve the error message when read_conffile()
+	  fails.
+	* server-src/amcheck.c: Ditto.
+	* server-src/amcleanupdisk.c: Ditto.
+	* server-src/amflush.c: Ditto.
+	* server-src/amlabel.c: Ditto.
+	* server-src/amlogroll.c: Ditto.
+	* server-src/amtape.c: Ditto.
+	* server-src/amtrmidx.c: Ditto.
+	* server-src/amtrmlog.c: Ditto.
+	* server-src/driver.c: Ditto.
+	* server-src/dumper.c: Ditto.
+	* server-src/getconf.c: Ditto.
+	* server-src/planner.c: Ditto.
+	* server-src/reporter.c: Ditto.
+	* server-src/taper.c: Ditto.
+
+2001-07-19 John R. Jackson <jrj@purdue.edu>
+
 	* server-src/driverio.c: Make the name "ps" reports match the dumper
 	  name (e.g. "dumper3").
 

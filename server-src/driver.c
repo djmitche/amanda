@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.2 2001/03/20 00:25:22 jrjackson Exp $
+ * $Id: driver.c,v 1.58.2.31.2.3 2001/07/19 21:50:39 jrjackson Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -190,7 +190,7 @@ int main(main_argc, main_argv)
 
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if(read_conffile(conffile)) {
-	error("could not find config file \"%s\"", conffile);
+	error("errors processing config file \"%s\"", conffile);
     }
     amfree(conffile);
 

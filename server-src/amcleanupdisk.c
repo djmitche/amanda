@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcleanupdisk.c,v 1.1.2.6.4.1 2001/03/20 00:25:22 jrjackson Exp $
+ * $Id: amcleanupdisk.c,v 1.1.2.6.4.2 2001/07/19 21:50:39 jrjackson Exp $
  */
 #include "amanda.h"
 
@@ -81,7 +81,7 @@ char **main_argv;
     config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if(read_conffile(conffile)) {
-	error("could not find config file \"%s\"", conffile);
+	error("errors processing config file \"%s\"", conffile);
     }
     amfree(conffile);
     conf_diskfile = getconf_str(CNF_DISKFILE);
