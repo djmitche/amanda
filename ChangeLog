@@ -3,6 +3,7 @@
 	* changer-src/chg-mtx.sh.in (PATH): added /usr/local/bin
 
 	* configure.in (BUILD_CHANGER_SCRIPTS_LIBEXEC): added chg-zd-mtx
+	(AC_OUTPUT): ditto
 	* changer-src/Makefile.am (EXTRA_SCRIPTS): ditto
 	* docs/TAPE.CHANGERS (chg-zd-mtx): documented it
 	(chg-mtx): mentioned chg-zd-mtx
