@@ -1,6 +1,6 @@
 AMANDA EVENT API
 
-$Id: EVENT-API,v 1.1 1998/11/04 19:58:29 kashmir Exp $
+$Id: EVENT-API,v 1.2 1999/03/01 21:32:54 kashmir Exp $
 
 by Mike Grupenhoff <kashmir@munge.com>
 
@@ -25,6 +25,7 @@ The 'data' argument is type specific.
     EV_READFD, EV_WRITEFD - the file descriptor to monitor
     EV_SIG - the signal number to monitor
     EV_TIME - the number of seconds between each pulse
+    EV_WAIT - the wait identifier used with event_wakeup()
     EV_DEAD - internal use only
 
 2.2. event_release
@@ -42,6 +43,14 @@ Process all pending events.  If the argument is zero, this will keep running
 until all events have been released.  If the argument is nonzero, this
 will do one pass over all pending events, and fire the ones that are
 immediately ready, and then return.
+
+2.4. event_wakeup
+
+    int event_wakeup(int id);
+
+Fire all EV_WAIT events registered with an argument value of 'id' on
+the next event_loop.  They will fire before other types of events
+are processed.  Returns the number of events awoken.
 
 3. DATA TYPES
 
@@ -85,3 +94,9 @@ processing returns to event_loop().
 
 This type of event will fire repeatedly with a delay of the number of
 seconds passed to event_register between each interval.
+
+4.5. EV_WAIT
+
+This type of event will fire when someone calls event_wakeup() with
+the numeric argument equal to the argument this event was registered
+with.
