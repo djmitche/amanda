@@ -84,6 +84,10 @@ install the dump package, as it is not installed by default on the
 Linux distributions I know of.  It is possible to find compiled
 versions of dump on most Linux sites and CD-ROMs.
 
+Make sure the user that runs configure has permission to run the dump
+program, otherwise configure may misdetect an ability of dump to
+accept a -E (for estimates) switch.
+
 ---------------------------------------------------------------------------
 Digital Unix 4
 --------------
