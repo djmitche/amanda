@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-solaris.c,v 1.19 2001/05/07 17:57:12 ant Exp $
+ * $Id: scsi-solaris.c,v 1.20 2001/07/10 21:49:08 jrjackson Exp $
  *
  * Interface to execute SCSI commands on an Sun Workstation
  *
@@ -220,21 +220,40 @@ int SCSI_ExecuteCommand(int DeviceFD,
     }
 }
 
-int Tape_Eject ( int DeviceFD)
+/*
+ * Send the command to the device with the
+ * ioctl interface
+ */
+int Tape_Ioctl( int DeviceFD, int command)
 {
-  struct mtop mtop;
   extern OpenFiles_T *pDev;
-  int ret;
+  struct mtop mtop;
+  int ret = 0;
 
   if (pDev[DeviceFD].devopen == 0)
-    SCSI_OpenDevice(DeviceFD);
+    {
+      SCSI_OpenDevice(DeviceFD);
+    }
 
-  mtop.mt_op = MTOFFL;
-  mtop.mt_count = 1;
-  ret = ioctl(pDev[DeviceFD].fd, MTIOCTOP, &mtop);
+  switch (command)
+    {
+    case IOCTL_EJECT:
+      mtop.mt_op = MTOFFL;
+      mtop.mt_count = 1;
+      break;
+     default:
+      break;
+    }
+
+  if (ioctl(pDev[DeviceFD].fd , MTIOCTOP, &mtop) != 0)
+    {
+      dbprintf(("Tape_Ioctl error ioctl %d\n",errno));
+      SCSI_CloseDevice(DeviceFD);
+      return(-1);
+    }
 
   SCSI_CloseDevice(DeviceFD);
-  return ret;
+  return(ret);  
 }
 
 int Tape_Status( int DeviceFD)

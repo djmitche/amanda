@@ -1,5 +1,10 @@
 2001-07-10 John R. Jackson <jrj@purdue.edu>
 
+	* changer-src/scsi-aix.c: Convert Tape_Eject to Tape_Ioctl.
+	* changer-src/scsi-solaris.c: Ditto.
+
+2001-07-10 John R. Jackson <jrj@purdue.edu>
+
 	* server-src/amcheck.c: Move user name check before attempt to create
 	  temp files so more appropriate error message is generated.
 
