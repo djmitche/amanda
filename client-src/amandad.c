@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.40 1999/05/26 14:32:51 kashmir Exp $
+ * $Id: amandad.c,v 1.41 1999/06/02 19:00:59 kashmir Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -42,9 +42,9 @@
 #include "queue.h"
 #include "security.h"
 
-#define	REP_TIMEOUT	(30*60)	/* time for service to reply - should be high */
-#define ACK_TIMEOUT  10		/* XXX should be configurable */
-#define MAX_REP_RETRIES   5
+#define	REP_TIMEOUT	(6*60*60)	/* secs for service to reply */
+#define	ACK_TIMEOUT  	10		/* XXX should be configurable */
+#define	MAX_REP_RETRIES	5
 
 /*
  * These are the actions for entering the state machine
@@ -108,7 +108,6 @@ static const char *services[] = {
 /*
  * Queue of outstanding requests that we are running.
  */
-
 static struct {
     TAILQ_HEAD(, active_service) tailq;
     int qlength;
@@ -343,32 +342,15 @@ static void
 exit_check(cookie)
     void *cookie;
 {
-    struct active_service *as, *nextas;
-    int qlength, no_exit;
+    int no_exit;
 
     assert(cookie != NULL);
     no_exit = *(int *)cookie;
 
-    qlength = serviceq.qlength;
-
     /*
-     * Run down the list and reap the ones that have exited.
-     * Save the 'next' pointer before we potentially free this entry.
+     * If things are still running, then don't exit.
      */
-    for (as = TAILQ_FIRST(&serviceq.tailq); as != NULL; as = nextas) {
-	nextas = TAILQ_NEXT(as, tq);
-	if (waitpid(as->pid, NULL, WNOHANG) == as->pid) {
-	    dbprintf(("amandad: shutting down %s %s\n", as->cmd,
-		as->arguments));
-	    service_delete(as);
-	}
-    }
-
-    /*
-     * If we removed some requests, then don't exit just yet.  There may
-     * be more requests on the way.  Otherwise, just exit.
-     */
-    if (serviceq.qlength > 0 || qlength > serviceq.qlength)
+    if (serviceq.qlength > 0)
 	return;
 
     /*
@@ -704,10 +686,10 @@ s_repwait(as, action, pkt)
     n = read(as->repfd, as->repbuf + as->repbufsize,
 	sizeof(as->repbuf) - as->repbufsize - 1);
     if (n < 0) {
-	const char *err = strerror(errno);
-	dbprintf(("read error on reply pipe: %s\n", err));
+	const char *errstr = strerror(errno);
+	dbprintf(("read error on reply pipe: %s\n", errstr));
 	pkt_init(&as->rep_pkt, P_NAK, "ERROR read error on reply pipe: %s\n",
-	    err);
+	    errstr);
 	security_sendpkt(as->security_handle, &as->rep_pkt);
 	return (A_FINISH);
     }
@@ -848,6 +830,7 @@ s_ackwait(as, action, pkt)
     pkt_t *pkt;
 {
     struct datafd_handle *dh;
+    int npipes;
 
     /*
      * If we got a timeout, try again, but eventually give up.
@@ -885,9 +868,9 @@ s_ackwait(as, action, pkt)
     }
 
     /*
-     * Pipes are open, so auth them
+     * Pipes are open, so auth them.  Count them at the same time.
      */
-    for (dh = &as->data[0]; dh < &as->data[DATA_FD_COUNT]; dh++) {
+    for (npipes = 0, dh = &as->data[0]; dh < &as->data[DATA_FD_COUNT]; dh++) {
 	if (dh->netfd == NULL)
 	    continue;
 	if (security_stream_auth(dh->netfd) < 0) {
@@ -895,13 +878,22 @@ s_ackwait(as, action, pkt)
 	    dh->netfd = NULL;
 	    event_release(dh->ev_handle);
 	    dh->ev_handle = NULL;
+	} else {
+	    npipes++;
 	}
     }
 
-    /* Authenticated our pipes, so just start running.  The event handlers on
-     * all of the pipes will take it from here.
+    /*
+     * If no pipes are open, then we're done.  Otherwise, just start running.
+     * The event handlers on all of the pipes will take it from here.
      */
-    return (A_PENDING);
+    if (npipes == 0)
+	return (A_FINISH);
+    else {
+	security_close(as->security_handle);
+	as->security_handle = NULL;
+	return (A_PENDING);
+    }
 }
 
 /*
@@ -990,10 +982,18 @@ process_netfd(cookie)
     }
     /*
      * Process has closed the pipe.  Just remove this event handler.
+     * If all pipes are closed, shut down this service.
      */
     if (n == 0) {
 	event_release(dh->ev_handle);
 	dh->ev_handle = NULL;
+	security_stream_close(dh->netfd);
+	dh->netfd = NULL;
+	for (dh = &as->data[0]; dh < &as->data[DATA_FD_COUNT]; dh++) {
+	    if (dh->netfd != NULL)
+		return;
+	}
+	service_delete(as);
 	return;
     }
     if (security_stream_write(dh->netfd, as->databuf, n) < 0) {
@@ -1015,7 +1015,7 @@ sendnak:
  * Convert a local stream handle (DATA_FD...) into something that
  * can be sent to the amanda server.
  *
- * Returns a string that should be sent to the server in the REP packet.
+ * Returns a number that should be sent to the server in the REP packet.
  */
 static int
 allocstream(as, handle)
@@ -1206,12 +1206,13 @@ service_delete(as)
 	    event_release(dh->ev_handle);
     }
 
-    assert(as->security_handle != NULL);
-    security_recvpkt_cancel(as->security_handle);
-    security_close(as->security_handle);
+    if (as->security_handle != NULL)
+	security_close(as->security_handle);
 
     assert(as->pid > 0);
     kill(as->pid, SIGTERM);
+    sleep(1);
+    waitpid(as->pid, NULL, WNOHANG);
 
     TAILQ_REMOVE(&serviceq.tailq, as, tq);
     assert(serviceq.qlength > 0);

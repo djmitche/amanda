@@ -1,3 +1,20 @@
+1999-06-02  Mike Grupenhoff <kashmir@munge.com>
+
+	* client-src/amandad.c (REP_TIMEOUT): bump up to six hours, for slow
+	machines.
+	(exit_check): remove waitpid(), let the service reap its own
+	children.
+	(s_repwait): rename 'err' to 'errstr' to avoid conflict with
+	function in some libcs.
+	(s_ackwait): if no pipes were opened by this service, then shut
+	it down here.
+	(process_netfd): on EOF, be sure to also close the network
+	stream.  Also, if this is the last stream to be closed, shut
+	down the service.
+	(allocstream): correct a comment
+	(service_delete): only close the security handle if it is still
+	open.  Reap our children here instead of in exit_check().
+
 1999-06-01  Mike Grupenhoff <kashmir@munge.com>
 
 	* server-src/taper.c (write_buffer): assert properly
