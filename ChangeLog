@@ -1,3 +1,8 @@
+1999-03-15  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/packet.h: explicitly list the numeric values for
+	the pktype_t enum, so we can use them on the wire
+
 1999-03-15  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* config/ltconfig, config/ltmain.sh: updated from libtool 1.2f
