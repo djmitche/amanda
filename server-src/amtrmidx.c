@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmidx.c,v 1.21 1998/07/04 00:19:34 oliva Exp $
+ * $Id: amtrmidx.c,v 1.22 1999/04/28 21:48:18 kashmir Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -49,7 +49,7 @@ char **argv;
     char *line;
     char *cmd = NULL;
     disk_t *diskp;
-    disklist_t *diskl;
+    disklist_t diskl;
     int no_keep;			/* files per system to keep */
     int i;
     int level_position;			/* where (from end) is level in name */
@@ -89,7 +89,7 @@ char **argv;
 	error("could not read amanda config file");
 
     /* get the list of disks being dumped and their types */
-    if ((diskl = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
+    if (read_diskfile(getconf_str(CNF_DISKFILE), &diskl) < 0)
 	error("could not load \"%s\".", getconf_str(CNF_DISKFILE));
 
     if(read_tapelist(getconf_str(CNF_TAPELIST)))
@@ -111,7 +111,7 @@ char **argv;
 
     /* now go through the list of disks and find which have indexes */
     cmd = NULL;
-    for (diskp = diskl->head; diskp != NULL; diskp = diskp->next)
+    for (diskp = diskl.head; diskp != NULL; diskp = diskp->next)
     {
 	if (diskp->index)
 	{

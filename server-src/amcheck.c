@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.61 1999/04/16 05:13:14 kashmir Exp $
+ * $Id: amcheck.c,v 1.62 1999/04/28 21:48:09 kashmir Exp $
  *
  * checks for common problems in server and clients
  */
@@ -744,7 +744,7 @@ int fd;
 	char *diskdir = NULL;
 	char *infofile = NULL;
 	struct stat statbuf;
-	disklist_t *origqp;
+	disklist_t origq;
 	disk_t *dp;
 	host_t *hostp;
 	int indexdir_checked = 0;
@@ -772,11 +772,11 @@ int fd;
 	}
 #endif
 
-	if((origqp = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
+	if (read_diskfile(getconf_str(CNF_DISKFILE), &origq) < 0)
 	    error("could not load diskfile %s\n", getconf_str(CNF_DISKFILE));
 
-	while(!empty(*origqp)) {
-	    hostp = origqp->head->host;
+	while(!empty(origq)) {
+	    hostp = origq.head->host;
 	    host = sanitise_filename(hostp->hostname);
 #if TEXTDB
 	    if(infodir) {
@@ -893,7 +893,7 @@ int fd;
 		    }
 		}
 		amfree(disk);
-		remove_disk(origqp, dp);
+		remove_disk(&origq, dp);
 	    }
 	    amfree(host);
 	    amfree(hostindexdir);
@@ -946,7 +946,7 @@ static void handle_result P((void *, pkt_t *, security_handle_t *));
 int start_client_checks(fd)
 int fd;
 {
-    disklist_t *origqp;
+    disklist_t origq;
     disk_t *dp;
     host_t *hostp;
     char *req = NULL;
@@ -968,7 +968,7 @@ int fd;
 
     startclock();
 
-    if((origqp = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
+    if (read_diskfile(getconf_str(CNF_DISKFILE), &origq) < 0)
 	error("could not load diskfile %s\n", getconf_str(CNF_DISKFILE));
 
     if((outf = fdopen(fd, "w")) == NULL)
@@ -1009,16 +1009,16 @@ int fd;
 
     hostcount = remote_errors = 0;
 
-    while(!empty(*origqp)) {
+    while(!empty(origq)) {
 	req = vstralloc("SERVICE selfcheck\n",
 			"OPTIONS ;\n",
 			NULL);
-	hostp = origqp->head->host;
+	hostp = origq.head->host;
 	for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
 	    char *t;
 	    char *o;
 
-	    remove_disk(origqp, dp);
+	    remove_disk(&origq, dp);
 	    o = optionstr(dp);
 	    if(strncmp(dp->program,"DUMP",4) == 0 || 
 	       strncmp(dp->program,"GNUTAR",6) == 0)

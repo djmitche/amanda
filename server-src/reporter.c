@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.51 1999/04/10 06:20:06 kashmir Exp $
+ * $Id: reporter.c,v 1.52 1999/04/28 21:48:31 kashmir Exp $
  *
  * nightly Amanda Report generator
  */
@@ -100,7 +100,7 @@ FILE *logfile, *mailf;
 FILE *template_file, *postscript;
 char *printer;
 
-disklist_t *diskq;
+disklist_t diskq;
 disklist_t sortq;
 
 line_t *errsum = NULL;
@@ -463,7 +463,7 @@ char **argv;
 	    }
 	}
     }
-    if((diskq = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
+    if (read_diskfile(getconf_str(CNF_DISKFILE), &diskq) < 0)
 	error("could not read disklist file");
     if(read_tapelist(getconf_str(CNF_TAPELIST)))
 	error("parse error in %s", getconf_str(CNF_TAPELIST));
@@ -909,8 +909,8 @@ void sort_disks()
     disk_t *dp;
 
     sortq.head = sortq.tail = NULL;
-    while(!empty(*diskq)) {
-	dp = dequeue_disk(diskq);
+    while(!empty(diskq)) {
+	dp = dequeue_disk(&diskq);
 	if(data(dp) != NULL)
 	    insert_disk(&sortq, dp, sort_by_name);
     }
@@ -1486,7 +1486,7 @@ disk_t *dp;
 void setup_data()
 {
     disk_t *dp;
-    for(dp = diskq->head; dp != NULL; dp = dp->next)
+    for(dp = diskq.head; dp != NULL; dp = dp->next)
 	setup_disk(dp);
 }
 
@@ -1737,7 +1737,7 @@ void generate_missing()
     disk_t *dp;
     char *str = NULL;
 
-    for(dp = diskq->head; dp != NULL; dp = dp->next) {
+    for(dp = diskq.head; dp != NULL; dp = dp->next) {
 	if(data(dp)->result == L_BOGUS) {
 	    str = vstralloc("  ", prefix(dp->host->hostname, dp->name, -987),
 			    " ", "RESULTS MISSING",

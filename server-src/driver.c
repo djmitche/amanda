@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.74 1999/04/17 22:20:08 martinea Exp $
+ * $Id: driver.c,v 1.75 1999/04/28 21:48:25 kashmir Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -127,7 +127,7 @@ int main(main_argc, main_argv)
      int main_argc;
      char **main_argv;
 {
-    disklist_t *origqp;
+    disklist_t origq;
     disk_t *diskp;
     fd_set selectset;
     int fd, dsk;
@@ -185,7 +185,7 @@ int main(main_argc, main_argv)
 
     /* start initializing: read in databases */
 
-    if((origqp = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
+    if (read_diskfile(getconf_str(CNF_DISKFILE), &origq) < 0)
 	error("could not read disklist file\n");
 
     /* set up any configuration-dependent variables */
@@ -283,7 +283,7 @@ int main(main_argc, main_argv)
      * in parallel with the planner.
      */
 
-    waitq = *origqp;
+    waitq = origq;
     runq = read_schedule(&waitq);
 
     stoppedq.head = stoppedq.tail = NULL;

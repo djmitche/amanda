@@ -1,5 +1,20 @@
 1999-04-28  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/diskfile.c (read_diskfile): rework to take a
+	disklist_t * as an argument, and return -1 on error, or 0 on
+	success.  const the filename argument.  Kill a few globals.
+	* server-src/diskfile.c (lookup_host, lookup_disk): const
+	arguments
+	* server-src/diskfile.h: adjust prototypes for above changes
+	* server-src/amadmin.c, server-src/amcheck.c,
+	server-src/amcleanupdisk.c, server-src/amflush.c,
+	server-src/amindexd.c, server-src/amtrmidx.c,
+	server-src/amtrmlog.c, server-src/driver.c,
+	server-src/planner.c, server-src/reporter.c: adjust calls to
+	read_diskfile() to deal with convention
+
+1999-04-28  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c (read_mesgfd, read_indexfd): on EOF, just
 	stop reading these streams.  We let EOF on the data stream cause
 	the entire dump to be stopped.

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.62 1999/04/10 06:19:27 kashmir Exp $
+ * $Id: amadmin.c,v 1.63 1999/04/28 21:48:07 kashmir Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -39,7 +39,7 @@
 #include "holding.h"
 #include "find.h"
 
-disklist_t *diskqp;
+disklist_t diskq;
 
 int main P((int argc, char **argv));
 void usage P((void));
@@ -161,7 +161,7 @@ char **argv;
     if(read_conffile(CONFFILE_NAME))
 	error("could not find \"%s\" in this directory.\n", CONFFILE_NAME);
 
-    if((diskqp = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
+    if (read_diskfile(getconf_str(CNF_DISKFILE), &diskq) < 0)
 	error("could not load \"%s\"\n", getconf_str(CNF_DISKFILE));
 
     if(read_tapelist(getconf_str(CNF_TAPELIST)))
@@ -667,7 +667,7 @@ char **argv;
     if(argc >= 4)
 	diskloop(argc, argv, "info", info_one);
     else
-	for(dp = diskqp->head; dp != NULL; dp = dp->next)
+	for(dp = diskq.head; dp != NULL; dp = dp->next)
 	    info_one(dp);
 }
 
@@ -712,7 +712,7 @@ char **argv;
     if(argc >= 4)
 	diskloop(argc, argv, "due", due_one);
     else
-	for(dp = diskqp->head; dp != NULL; dp = dp->next)
+	for(dp = diskq.head; dp != NULL; dp = dp->next)
 	    due_one(dp);
 }
 
@@ -783,7 +783,7 @@ char **argv;
     for(seq=0; seq <= total; seq++)
 	sp[seq].disks = sp[seq].origsize = sp[seq].outsize = 0;
 
-    for(dp = diskqp->head; dp != NULL; dp = dp->next) {
+    for(dp = diskq.head; dp != NULL; dp = dp->next) {
 	if(get_info(dp->host->hostname, dp->name, &info)) {
 	    printf("new disk %s:%s ignored.\n", dp->host->hostname, dp->name);
 	    continue;
@@ -989,7 +989,7 @@ char **argv;
 
     if(argc >= 4)
 	diskloop(argc, argv, "export", export_one);
-    else for(dp = diskqp->head; dp != NULL; dp = dp->next)
+    else for(dp = diskq.head; dp != NULL; dp = dp->next)
 	export_one(dp);
 }
 
@@ -1465,7 +1465,7 @@ char **argv;
     if(argc >= 4)
 	diskloop(argc, argv, "disklist", disklist_one);
     else
-	for(dp = diskqp->head; dp != NULL; dp = dp->next)
+	for(dp = diskq.head; dp != NULL; dp = dp->next)
 	    disklist_one(dp);
 }
 

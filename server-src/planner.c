@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.93 1999/04/24 00:03:09 martinea Exp $
+ * $Id: planner.c,v 1.94 1999/04/28 21:48:28 kashmir Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -134,7 +134,7 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    disklist_t *origqp;
+    disklist_t origq;
     int moved_one;
     char *datestamp = NULL;
     unsigned long malloc_hist_1, malloc_size_1;
@@ -224,7 +224,7 @@ char **argv;
     datestamp = construct_datestamp();
     log_add(L_START, "date %s", datestamp);
 
-    if((origqp = read_diskfile(conf_diskfile)) == NULL)
+    if (read_diskfile(conf_diskfile, &origq) < 0)
 	error("could not load \"%s\"\n", conf_diskfile);
 
     if(read_tapelist(conf_tapelist))
@@ -265,7 +265,7 @@ char **argv;
     startclock();
 
     startq.head = startq.tail = NULL;
-    while(!empty(*origqp)) setup_estimate(dequeue_disk(origqp));
+    while(!empty(origq)) setup_estimate(dequeue_disk(&origq));
 
     fprintf(stderr, "setting up estimates took %s secs\n",
 	    walltime_str(curclock()));

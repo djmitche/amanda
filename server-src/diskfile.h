@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.13 1999/02/13 19:36:15 martinea Exp $
+ * $Id: diskfile.h,v 1.14 1999/04/28 21:48:23 kashmir Exp $
  *
  * interface for disklist file reading code
  */
@@ -86,10 +86,10 @@ typedef struct disklist_s {
 #define empty(dlist)	((dlist).head == NULL)
 
 
-disklist_t *read_diskfile P((char *filename));
+int read_diskfile P((const char *, disklist_t *));
 
-host_t *lookup_host P((char *hostname));
-disk_t *lookup_disk P((char *hostname, char *diskname));
+host_t *lookup_host P((const char *hostname));
+disk_t *lookup_disk P((const char *hostname, const char *diskname));
 
 void enqueue_disk P((disklist_t *list, disk_t *disk));
 void insert_disk P((disklist_t *list, disk_t *disk, int (*f)(disk_t *a, disk_t *b)));

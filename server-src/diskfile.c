@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.29 1999/02/13 19:36:13 martinea Exp $
+ * $Id: diskfile.c,v 1.30 1999/04/28 21:48:21 kashmir Exp $
  *
  * read disklist file
  */
@@ -34,72 +34,81 @@
 #include "conffile.h"
 #include "diskfile.h"
 
-
-static disklist_t lst;
-static FILE *diskf;
-static char *diskfname = NULL;
 static host_t *hostlist;
-static int line_num, got_parserror;
 
 /* local functions */
 static char *upcase P((char *st));
-static int read_diskline P((void));
-static void parserror P((char *format, ...))
-    __attribute__ ((format (printf, 1, 2)));
+static int parse_diskline P((disklist_t *, const char *, int, char *));
+static void parserror P((const char *, int, const char *, ...))
+    __attribute__ ((format (printf, 3, 4)));
 
 
-disklist_t *read_diskfile(filename)
-char *filename;
+int
+read_diskfile(filename, lst)
+    const char *filename;
+    disklist_t *lst;
 {
-    extern int errno;
+    FILE *diskf;
+    int line_num;
+    char *line;
 
     /* initialize */
 
     hostlist = NULL;
-    lst.head = lst.tail = NULL;
-    diskfname = newstralloc(diskfname, filename);
-    malloc_mark(diskfname);
-    line_num = got_parserror = 0;
+    lst->head = lst->tail = NULL;
+    line_num = 0;
 
-    if((diskf = fopen(filename, "r")) == NULL)
+    if ((diskf = fopen(filename, "r")) == NULL) {
 	error("could not open disklist file \"%s\": %s",
 	      filename, strerror(errno));
+    }
 
-    while(read_diskline());
+    while ((line = agets(diskf)) != NULL) {
+	line_num++;
+	if (parse_diskline(lst, filename, line_num, line) < 0) {
+	    amfree(line);
+	    afclose(diskf);
+	    return (-1);
+	}
+	amfree(line);
+    }
+
     afclose(diskf);
-
-    if(got_parserror) return NULL;
-    else return &lst;
+    return (0);
 }
 
-host_t *lookup_host(hostname)
-char *hostname;
+host_t *
+lookup_host(hostname)
+    const char *hostname;
 {
     host_t *p;
     int nameLen = strlen(hostname);
 
-    for(p = hostlist; p != NULL; p = p->next) {
-	if(!strncasecmp(p->hostname, hostname, nameLen)) {
+    for (p = hostlist; p != NULL; p = p->next) {
+	if (!strncasecmp(p->hostname, hostname, nameLen)) {
 	    if (p->hostname[nameLen] == '\0' || p->hostname[nameLen] == '.')
-		return p;
+		return (p);
 	}
     }
-    return NULL;
+    return (NULL);
 }
 
-disk_t *lookup_disk(hostname, diskname)
-char *hostname, *diskname;
+disk_t *
+lookup_disk(hostname, diskname)
+    const char *hostname, *diskname;
 {
     host_t *host;
     disk_t *disk;
 
     host = lookup_host(hostname);
-    if(host == NULL) return NULL;
+    if (host == NULL)
+	return (NULL);
 
-    for(disk = host->disks; disk != NULL; disk = disk->hostnext) {
-	if(strcmp(disk->name, diskname) == 0) return disk;
+    for (disk = host->disks; disk != NULL; disk = disk->hostnext) {
+	if (strcmp(disk->name, diskname) == 0)
+	    return (disk);
     }
-    return NULL;
+    return (NULL);
 }
 
 void enqueue_disk(list, disk)	/* put disk on end of queue */
@@ -198,27 +207,30 @@ char *st;
 }
 
 
-static int read_diskline()
+static int
+parse_diskline(lst, filename, line_num, line)
+    disklist_t *lst;
+    const char *filename;
+    int line_num;
+    char *line;
 {
     host_t *host;
     disk_t *disk;
     dumptype_t *dtype;
     interface_t *netif = 0;
     char *hostname = NULL;
-    static char *line = NULL;
     char *s, *fp;
     int ch;
 
-    amfree(line);
-    for(; (line = agets(diskf)) != NULL; free(line)) {
-	line_num += 1;
-	s = line;
-	ch = *s++;
+    assert(filename != NULL);
+    assert(line_num > 0);
+    assert(line != NULL);
 
-	skip_whitespace(s, ch);
-	if(ch != '\0' && ch != '#') break;
-    }
-    if(line == NULL) return 0;
+    s = line;
+    ch = *s++;
+    skip_whitespace(s, ch);
+    if(ch == '\0' || ch == '#')
+	return (0);
 
     fp = s - 1;
     skip_non_whitespace(s, ch);
@@ -233,8 +245,8 @@ static int read_diskline()
 
     skip_whitespace(s, ch);
     if(ch == '\0' || ch == '#') {
-	parserror("disk device name expected");
-	return 1;
+	parserror(filename, line_num, "disk device name expected");
+	return (-1);
     }
     fp = s - 1;
     skip_non_whitespace(s, ch);
@@ -243,8 +255,9 @@ static int read_diskline()
     /* check for duplicate disk */
 
     if(host && (disk = lookup_disk(hostname, fp)) != NULL) {
-	parserror("duplicate disk record, previous on line %d", disk->line);
-	return 1;
+	parserror(filename, line_num,
+	    "duplicate disk record, previous on line %d", disk->line);
+	return (-1);
     }
 
     disk = alloc(sizeof(disk_t));
@@ -258,21 +271,21 @@ static int read_diskline()
 
     skip_whitespace(s, ch);
     if(ch == '\0' || ch == '#') {
-	parserror("disk dumptype expected");
+	parserror(filename, line_num, "disk dumptype expected");
 	if(host == NULL) amfree(hostname);
 	amfree(disk->name);
 	amfree(disk);
-	return 1;
+	return (-1);
     }
     fp = s - 1;
     skip_non_whitespace(s, ch);
     s[-1] = '\0';
     if((dtype = lookup_dumptype(upcase(fp))) == NULL) {
-	parserror("undefined dumptype `%s'", fp);
+	parserror(filename, line_num, "undefined dumptype `%s'", fp);
 	if(host == NULL) amfree(hostname);
 	amfree(disk->name);
 	amfree(disk);
-	return 1;
+	return (-1);
     }
     disk->dtype_name	= dtype->name;
     disk->program	= dtype->program;
@@ -308,11 +321,12 @@ static int read_diskline()
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';
 	if((netif = lookup_interface(upcase(fp))) == NULL) {
-	    parserror("undefined network interface `%s'", fp);
+	    parserror(filename, line_num,
+		"undefined network interface `%s'", fp);
 	    if(host == NULL) amfree(hostname);
 	    amfree(disk->name);
 	    amfree(disk);
-	    return 1;
+	    return (-1);
 	}
     } else {
 	netif = lookup_interface("");
@@ -320,11 +334,11 @@ static int read_diskline()
 
     skip_whitespace(s, ch);
     if(ch && ch != '#') {		/* now we have garbage, ignore it */
-	parserror("end of line expected");
+	parserror(filename, line_num, "end of line expected");
     }
 
     if(dtype->ignore || dtype->strategy == DS_SKIP) {
-	return 1;
+	return (-1);
     }
 
     /* success, add disk to lists */
@@ -346,30 +360,29 @@ static int read_diskline()
 
     host->netif = netif;
 
-    enqueue_disk(&lst, disk);
+    enqueue_disk(lst, disk);
 
     disk->host = host;
     disk->hostnext = host->disks;
     host->disks = disk;
     host->maxdumps = disk->maxdumps;
 
-    return 1;
+    return (0);
 }
 
 
-arglist_function(static void parserror, char *, format)
+arglist_function2(static void parserror, const char *, filename,
+    int, line_num, const char *, format)
 {
     va_list argp;
 
     /* print error message */
 
-    fprintf(stderr, "\"%s\", line %d: ", diskfname, line_num);
+    fprintf(stderr, "\"%s\", line %d: ", filename, line_num);
     arglist_start(argp, format);
     vfprintf(stderr, format, argp);
     arglist_end(argp);
     fputc('\n', stderr);
-
-    got_parserror = 1;
 }
 
 
@@ -458,9 +471,13 @@ disk_t *dp;
 
 #ifdef TEST
 
-void
+static void dump_disk P((const disk_t *));
+static void dump_disklist P((const disklist_t *));
+int main P((int, char *[]));
+
+static void
 dump_disk(dp)
-disk_t *dp;
+    const disk_t *dp;
 {
     printf("  DISK %s (HOST %s, LINE %d) TYPE %s NAME %s SPINDLE %d\n",
 	   dp->name, dp->host->hostname, dp->line, dp->dtype_name,
@@ -468,11 +485,12 @@ disk_t *dp;
 	   dp->spindle);
 }
 
-void
-dump_disklist()
+static void
+dump_disklist(lst)
+    const disklist_t *lst;
 {
-    disk_t *dp, *prev;
-    host_t *hp;
+    const disk_t *dp, *prev;
+    const host_t *hp;
 
     if(hostlist == NULL) {
 	printf("DISKLIST not read in\n");
@@ -495,11 +513,11 @@ dump_disklist()
     printf("DISKLIST IN FILE ORDER:\n");
 
     prev = NULL;
-    for(dp = lst.head; dp != NULL; prev = dp, dp = dp->next) {
+    for(dp = lst->head; dp != NULL; prev = dp, dp = dp->next) {
 	dump_disk(dp);
 	/* check pointers */
 	if(dp->prev != prev) printf("*** prev pointer mismatch!\n");
-	if(dp->next == NULL && lst.tail != dp) printf("tail mismatch!\n");
+	if(dp->next == NULL && lst->tail != dp) printf("tail mismatch!\n");
     }
 }
 
@@ -512,6 +530,7 @@ char *argv[];
   int fd;
   unsigned long malloc_hist_1, malloc_size_1;
   unsigned long malloc_hist_2, malloc_size_2;
+  disklist_t *lst;
 
   for(fd = 3; fd < FD_SETSIZE; fd++) {
     /*
@@ -533,9 +552,11 @@ char *argv[];
        return 1;
     }
   if((result = read_conffile(CONFFILE_NAME)) == 0) {
-    result = (read_diskfile(getconf_str(CNF_DISKFILE)) == NULL);
+    lst = read_diskfile(getconf_str(CNF_DISKFILE));
+    result = (lst == NULL);
   }
-  dump_disklist();
+  if (lst != NULL)
+      dump_disklist(lst);
 
   malloc_size_2 = malloc_inuse(&malloc_hist_2);
 

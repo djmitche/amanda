@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.45 1999/04/12 21:25:27 kashmir Exp $
+ * $Id: amindexd.c,v 1.46 1999/04/28 21:48:16 kashmir Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -76,7 +76,7 @@ char *dump_hostname = NULL;			/* machine we are restoring */
 char *disk_name;				/* disk we are restoring */
 char *config = NULL;				/* config we are restoring */
 char *target_date = NULL;
-disklist_t *disk_list;				/* all disks in cur config */
+disklist_t disk_list;				/* all disks in cur config */
 find_result_t *output_find = NULL;
 
 static int amindexd_debug = 0;
@@ -404,7 +404,7 @@ char *config;
     amfree(conf_dir);
 
     /* read the disk file while we are here - just in case we need it */
-    if ((disk_list = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
+    if (read_diskfile(getconf_str(CNF_DISKFILE), &disk_list) < 0)
     {
 	reply(501, "Couldn't read disk file");
 	return -1;
@@ -690,7 +690,7 @@ int are_dumps_compressed P((void))
     }
 
     /* now go through the list of disks and find which have indexes */
-    for (diskp = disk_list->head; diskp != NULL; diskp = diskp->next)
+    for (diskp = disk_list.head; diskp != NULL; diskp = diskp->next)
 	if ((strcmp(diskp->host->hostname, dump_hostname) == 0)
 	    && (strcmp(diskp->name, disk_name) == 0))
 	    break;

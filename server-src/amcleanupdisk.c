@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcleanupdisk.c,v 1.5 1999/04/17 22:20:03 martinea Exp $
+ * $Id: amcleanupdisk.c,v 1.6 1999/04/28 21:48:12 kashmir Exp $
  */
 #include "amanda.h"
 
@@ -53,7 +53,7 @@ char **main_argv;
     struct passwd *pw;
     char *dumpuser;
     int fd;
-    disklist_t *diskqp;
+    disklist_t diskq;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -80,7 +80,7 @@ char **main_argv;
 
     datestamp = construct_datestamp();
 
-    if((diskqp = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
+    if (read_diskfile(getconf_str(CNF_DISKFILE), &diskq) < 0)
 	error("could not read disklist file\n");
 
     dumpuser = getconf_str(CNF_DUMPUSER);

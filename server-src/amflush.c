@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.51 1999/04/17 22:20:05 martinea Exp $
+ * $Id: amflush.c,v 1.52 1999/04/28 21:48:13 kashmir Exp $
  *
  * write files from work directory onto tape
  */
@@ -63,7 +63,7 @@ char **main_argv;
     char *dumpuser;
     int fd;
     char *logfile;
-    disklist_t *diskqp;
+    disklist_t diskq;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -98,7 +98,7 @@ char **main_argv;
 
     datestamp = construct_datestamp();
 
-    if((diskqp = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
+    if (read_diskfile(getconf_str(CNF_DISKFILE), &diskq) < 0)
 	error("could not read disklist file\n");
 
     if(read_tapelist(getconf_str(CNF_TAPELIST)))

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmlog.c,v 1.1 1999/03/28 21:30:36 martinea Exp $
+ * $Id: amtrmlog.c,v 1.2 1999/04/28 21:48:20 kashmir Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -46,7 +46,7 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    disklist_t *diskl;
+    disklist_t diskl;
     int no_keep;			/* files per system to keep */
     char *ptr;
     int fd;
@@ -94,7 +94,7 @@ char **argv;
     date_keep = today - (getconf_int(CNF_DUMPCYCLE)*86400);
 
     /* get the list of disks being dumped and their types */
-    if ((diskl = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
+    if (read_diskfile(getconf_str(CNF_DISKFILE), &diskl) < 0)
 	error("could not load \"%s\".", getconf_str(CNF_DISKFILE));
 
     if(read_tapelist(getconf_str(CNF_TAPELIST)))
