@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.46.2.6 1998/02/08 20:33:33 amcore Exp $
+/* $Id: dumper.c,v 1.46.2.7 1998/02/25 22:02:40 amcore Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -273,11 +273,14 @@ char **main_argv;
 		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
 			  handle, squote(errstr));
 		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
-		aclose(mesgfd);
-		aclose(datafd);
+		if (mesgfd != -1)
+		    aclose(mesgfd);
+		if (datafd != -1)
+		    aclose(datafd);
 		if (indexfd != -1)
 		    aclose(indexfd);
-		aclose(outfd);
+		if (outfd != -1)
+		    aclose(outfd);
 		break;
 	    }
 
@@ -325,11 +328,14 @@ char **main_argv;
 		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
 			  handle, squote(errstr));
 		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
-		aclose(mesgfd);
-		aclose(datafd);
+		if (mesgfd != -1)
+		    aclose(mesgfd);
+		if (datafd != -1)
+		    aclose(datafd);
 		if (indexfd != -1)
 		    aclose(indexfd);
-		aclose(outfd);
+		if (outfd != -1)
+		    aclose(outfd);
 		break;
 	    }
 
