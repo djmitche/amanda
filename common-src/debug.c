@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.27 2002/02/11 01:32:10 jrjackson Exp $
+ * $Id: debug.c,v 1.28 2002/02/16 17:38:08 martinea Exp $
  *
  * debug log subroutines
  */
@@ -184,7 +184,7 @@ void debug_open()
 	    i = 0;
 	    while(dbfilename != NULL
 		  && (s = newvstralloc(s, dbgdir, dbfilename, NULL)) != NULL
-		  && rename(e, s) != 0) {
+		  && rename(e, s) != 0 && errno != ENOENT) {
 		amfree(dbfilename);
 		dbfilename = get_debug_name((time_t)sbuf.st_mtime, ++i);
 	    }
@@ -194,6 +194,7 @@ void debug_open()
 	}
     }
     amfree(dbfilename);
+    amfree(e);
     amfree(s);
     amfree(test_name);
     closedir(d);
