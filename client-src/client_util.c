@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.1.2.23 2003/01/01 23:28:51 martinea Exp $
+ * $Id: client_util.c,v 1.1.2.24 2003/01/03 01:05:56 martinea Exp $
  *
  */
 
@@ -161,15 +161,7 @@ char *aexc;
 	aexc[l-1] = '\0';
 	l--;
     }
-    if(l > MAXPATHLEN-1) {
-	dbprintf(("%s: exclude too long: %s\n", debug_prefix(NULL), aexc));
-	if(verbose)
-	    printf("ERROR [exclude too long: %s]\n", aexc);
-	return 0;
-    }
-    else {
-	fprintf(file_exclude, "%s\n", aexc);
-    }
+    fprintf(file_exclude, "%s\n", aexc);
     return 1;
 }
 
@@ -186,13 +178,7 @@ char *ainc;
 	ainc[l-1] = '\0';
 	l--;
     }
-    if(l > MAXPATHLEN-1) {
-	dbprintf(("%s: include too long: %s\n", debug_prefix(NULL), ainc));
-	if(verbose)
-	    printf("ERROR [include too long: %s]\n", ainc);
-	return 0;
-    }
-    else if(l < 3) {
+    if(l < 3) {
 	dbprintf(("%s: include must be at least 3 character long: %s\n",
 		  debug_prefix(NULL), ainc));
 	if(verbose)

@@ -1,4 +1,10 @@
 2003-01-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Reported by Josh More <jmore@remote-print.com>
+
+	* client-src/client_util.c (add_exclude, add_include): Remove the
+	  need for MAXPATHLEN.
+
+2003-01-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Fix by Josh More <jmore@remote-print.com>
 
 	* tape-src/output-tape.c: Add a ; after f = MT_UNLOAD
