@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.7.2.13.2.3 2001/06/19 19:51:43 jrjackson Exp $
+#	$Id: amverify.sh.in,v 1.7.2.13.2.4 2001/07/18 19:11:28 jrjackson Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -257,8 +257,6 @@ AMCONFIG=$CONFIG_DIR/$CONFIG/amanda.conf
 	&& $Echoe "Cannot find config file $AMCONFIG" \
 	&& exit 1
 
-cd $CONFIG_DIR/$CONFIG
-
 TPCHANGER=`getparm tpchanger`
 if [ X"$TPCHANGER" = X"" ]; then
 	$Echoe "No tape changer..."
@@ -321,6 +319,8 @@ fi
 #	TEMP		directory for temporary tar archives and stderr
 #	DEFECTS		defect list
 #	REPORT		report for mail
+
+cd @AMANDA_TMPDIR@ || exit 1
 
 TEMP=@AMANDA_TMPDIR@/amverify.$$
 trap 'rm -fr $TEMP' 0
