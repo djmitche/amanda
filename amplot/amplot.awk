@@ -1,6 +1,6 @@
 #
 # Amanda, The Advanced Maryland Automatic Network Disk Archiver
-# Copyright (c) 1992-1998 University of Maryland at College Park
+# Copyright (c) 1992-1998, 2000 University of Maryland at College Park
 # All Rights Reserved.
 #
 # Permission to use, copy, modify, distribute, and sell this software and its
@@ -271,7 +271,7 @@ function do_result(){		# process lines driver: result
 		}
 	}
 	else if ($6=="taper:") {		# something else than DONE
-		if($7=="TAPE-ERROR") {
+		if($7=="TAPE-ERROR" || $7=="TRY-AGAIN") {
 			tape_err= 1;
 			err_time=$4/time_scale;
 		}
@@ -282,6 +282,7 @@ function do_result(){		# process lines driver: result
 	else { 					# something bad from dumper 
 		if ($7=="FAILED") { failed++;}
 		else if ($7=="TRY-AGAIN"){ try++;}
+		else if ($7=="RQ-MORE-DISK") ;  # FIXME: ignore for now
 		else if ($7=="NO-ROOM")  
 		  print fil, pr_time($4),"#"  ++no_room, $0;
 		else if( $7=="ABORT-FINISHED") print fil, "#" ++no_abort, $0;
