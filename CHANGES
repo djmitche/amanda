@@ -1,3 +1,6 @@
+	Use "a" mode instead of "w" for the fdopen of the debug file.
+	-David Lamkin <drl@net-tel.co.uk>
+
 	ensure that `amadmin find' reports multiple backups performed on
 	the same day in the correct sequence.
 	-Liudvikas Bukys <bukys@cs.rochester.edu>
