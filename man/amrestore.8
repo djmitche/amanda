@@ -24,6 +24,8 @@ amrestore \- extract files from an Amanda tape
 .B \-h
 ]
 .I tapedevice
+|
+.I holdingfile
 [
 .I hostname
 [
@@ -216,6 +218,15 @@ these files will be created in the current directory:
 .EX
 seine.rz1a.19910125.0
 seine.rz1g.19910125.0
+.EE
+.RE
+.LP
+You can also use amrestore to extract backup data from a holding disk
+file:
+.LP
+.RS
+.EX
+% amrestore -p seine.rz1a.2 | restore -if -
 .EE
 .RE
 .SH AUTHOR

@@ -1,3 +1,7 @@
+1999-06-29  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* man/amrestore.8: Document holding-file usage.
+
 1999-06-25  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* Makefile.am (pkgdata_DATA): Install COPYRIGHTs.
