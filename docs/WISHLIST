@@ -28,6 +28,11 @@ should be added.
 * It should be possible to configure estimate and data time-outs on a
 per-filesystem basis.
 
+* Amanda should be able to retry failed backups in a single run.  So,
+if backup fails because of active filesystems or lack of memory,
+amanda could throw the failed backup away and run it again, instead of
+trying it again in the next run only.
+
 * The location of the `tapelist' file should be configurable, and
 should not default to the `etc' directory.  Ideally, `etc'
 directories/files should be writable by root only.
