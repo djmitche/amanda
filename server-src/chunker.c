@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.2 2000/05/27 22:45:28 martinea Exp $
+/* $Id: chunker.c,v 1.3 2000/10/29 13:43:05 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -126,7 +126,7 @@ main(main_argc, main_argv)
     char *conffile;
     char *q = NULL;
     char *filename;
-    long chunksize, split_size, use;
+    long chunksize, use;
     times_t runtime;
 
     for (outfd = 3; outfd < FD_SETSIZE; outfd++) {
@@ -214,15 +214,12 @@ main(main_argc, main_argv)
 	    use = (use/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
 	    options = newstralloc(options, cmdargs.argv[11]);
 
-	    split_size = (chunksize>use)?use:chunksize;
-	    use -= split_size;
-
 	    /*
 	     * We start a subprocess to do the chunking, and pipe our
 	     * data to it.  This allows us to insert a compress in between
 	     * if srvcompress is set.
 	     */
-	    infd = startup_chunker(filename, use, split_size, &db);
+	    infd = startup_chunker(filename, use, chunksize, &db);
 	    if (infd < 0) {
 		q = squotef("[chunker startup failed: %s]",
 		    strerror(errno));
@@ -430,10 +427,11 @@ databuf_init(db, fd, filename, use, chunk_size)
     db->filename_seq = 0;
     db->chunk_size = chunk_size;
     db->split_size = (db->chunk_size > use) ? use : db->chunk_size;
-    db->use = use - db->split_size;
+    db->use = (use>db->split_size) ? use - db->split_size : 0;
     db->dataptr = db->buf;
     db->spaceleft = sizeof(db->buf);
     db->compresspid = -1;
+
 }
 
 
@@ -495,9 +493,9 @@ databuf_flush(db)
      * See if we need to split this file.
      */
     if (db->split_size > 0 && dumpsize >= db->split_size) {
+	int newfile = 1;
 	if( db->use == 0 ) { /* no more space on this disk. request some more */
 	    cmd_t cmd;
-	    char *new_filename = NULL;
 
 	    putresult("RQ-MORE-DISK %s\n", handle);
 	    cmd = getcmd(&cmdargs);
@@ -511,8 +509,9 @@ databuf_flush(db)
 		if( !strcmp( db->filename, cmdargs.argv[2] ) ) { /* same disk */
 		    db->split_size += (db->chunk_size-filesize>db->use)?db->use:db->chunk_size-filesize;
 		    db->use = (db->chunk_size-filesize>db->use)?0:db->use-(db->chunk_size-filesize);
-		    if(db->chunk_size>filesize)
-			new_filename = newstralloc(new_filename, cmdargs.argv[2]);
+		    if(db->chunk_size > filesize) {
+			newfile = 0;
+		    }
 		} else { /* different disk -> use new file */
 		    db->filename = newstralloc(db->filename, cmdargs.argv[2]);
 		}
@@ -523,58 +522,68 @@ databuf_flush(db)
 	    }
 	}
 
-	/*
-	 * First, update the header of the current file to point
-	 * to the next chunk, and then close it.
-	 */
-	fd = db->fd;
-	if (lseek(fd, (off_t)0, SEEK_SET) < 0) {
-	    errstr = squotef("lseek holding file: %s", strerror(errno));
-	    return (-1);
-	}
-	snprintf(file.cont_filename, sizeof(file.cont_filename),
-	    "%s.%d", db->filename, ++db->filename_seq);
-	write_tapeheader(fd, &file);
-	aclose(fd);
-
-	/*
-	 * Now, open the new chunk file, and give it a new header
-	 * that has no cont_filename pointer.
-	 */
-	tmp_filename = vstralloc(file.cont_filename, ".tmp", NULL);
-	if ((fd = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600)) == -1) {
-	    errstr = squotef("holding file \"%s\": %s",
-			tmp_filename, strerror(errno));
-	    amfree(tmp_filename);
-	    return (-1);
-	}
-	file.type = F_CONT_DUMPFILE;
-	file.cont_filename[0] = '\0';
-	write_tapeheader(fd, &file);
-	dumpsize += TAPE_BLOCK_SIZE;
-	/*
-	 * XXX this is bogus - this is being updated in the chunker process
-	 * and therefore will never be seen by the dumper.
-	 */
-	headersize += TAPE_BLOCK_SIZE;
-	amfree(tmp_filename);
-
-	/*
-	 * Now put give the new file the old file's descriptor
-	 */
-	if (fd != db->fd) {
-	    if (dup2(fd, db->fd) == -1) {
-		errstr = squotef("can't dup2: %s", strerror(errno));
-		return (-1);
+	if(newfile ) { /* use another file */
+	    /*
+	     * First, update the header of the current file to point
+	     * to the next chunk, and then close it.
+	     */
+	    fd = db->fd;
+	    if (lseek(fd, (off_t)0, SEEK_SET) < 0) {
+	        errstr = squotef("lseek holding file: %s", strerror(errno));
+	        return (-1);
 	    }
+	    snprintf(file.cont_filename, sizeof(file.cont_filename),
+	        "%s.%d", db->filename, ++db->filename_seq);
+	    write_tapeheader(fd, &file);
 	    aclose(fd);
-	}
 
-	/*
-	 * Update when we need to chunk again
-	 */
-	db->split_size += (db->chunk_size>db->use)?db->use:db->chunk_size;
-	db->use = (db->chunk_size>db->use)?0:db->use-db->chunk_size;
+	    /*
+	     * Now, open the new chunk file, and give it a new header
+	     * that has no cont_filename pointer.
+	     */
+	    tmp_filename = vstralloc(file.cont_filename, ".tmp", NULL);
+	    if ((fd = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600)) == -1) {
+	        errstr = squotef("holding file \"%s\": %s",
+			    tmp_filename, strerror(errno));
+	        amfree(tmp_filename);
+	        return (-1);
+	    }
+	    file.type = F_CONT_DUMPFILE;
+	    file.cont_filename[0] = '\0';
+	    write_tapeheader(fd, &file);
+	    dumpsize += TAPE_BLOCK_SIZE;
+	    filesize = TAPE_BLOCK_SIZE;
+	    /*
+	     * XXX this is bogus - this is being updated in the chunker process
+	     * and therefore will never be seen by the dumper.
+	     */
+	    headersize += TAPE_BLOCK_SIZE;
+	    amfree(tmp_filename);
+
+	    /*
+	     * Now put give the new file the old file's descriptor
+	     */
+	    if (fd != db->fd) {
+	        if (dup2(fd, db->fd) == -1) {
+		    errstr = squotef("can't dup2: %s", strerror(errno));
+		    return (-1);
+	        }
+	        aclose(fd);
+	    }
+
+	    /*
+	     * Update when we need to chunk again
+	     */
+	    if(newfile && db->use == TAPE_BLOCK_SIZE) { /* header + data */
+		/* use one more block than allowed */
+		db->split_size += 2 * TAPE_BLOCK_SIZE;
+		db->use = 0;
+	    }
+	    else {
+	    	db->split_size += (db->chunk_size>db->use)?db->use:db->chunk_size;
+	    	db->use = (db->chunk_size>db->use)?0:db->use-db->chunk_size;
+	    }
+	}
     }
 
     /*
