@@ -1,3 +1,8 @@
+1999-02-10  Paul Bijnens  <Paul.Bijnens@lant.be>
+
+	* server-src/amoverview.pl.in: Y2K fix in output to user
+	* server-src/amtoc.pl.in (print_info): ditto
+
 1999-02-10  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* client-src/sendsize.c (getsize_dump): do not redirect standard

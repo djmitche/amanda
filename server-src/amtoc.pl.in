@@ -138,7 +138,8 @@ sub print_info {
 	    print "\t$size[$i]";
 	    print "\t$csize[$i]";
 	    print "\t$secs[$i]";
-	    print "\t19$year-$mon-$mday";
+	    $year += 1900;
+	    print "\t$year-$mon-$mday";
 	    print "\t$file_no[$i]";
 	    print "\t$label[$i]\n";
 	} # if
