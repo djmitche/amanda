@@ -56,7 +56,7 @@ $logdir=`$libexecdir/getconf$SUF logdir`;
 chomp $logdir;
 $errfile="$logdir/amdump";
 
-$nb_options = defined( $opt_status ) +
+$nb_options = defined( $opt_summary ) +
 				  defined( $opt_dumping ) +
 				  defined( $opt_waitdumping ) +
 				  defined( $opt_waittaper ) +
@@ -68,7 +68,7 @@ $nb_options = defined( $opt_status ) +
 				  defined( $opt_failed );
 
 if($nb_options == 0 ) {
-	$opt_status      = 1;
+	$opt_summary      = 1;
 	$opt_dumping     = 1;
 	$opt_waitdumping = 1;
 	$opt_waittaper   = 1;
@@ -425,7 +425,7 @@ if ($opt_summary == 1) {
 
 sub usage() {
 	print "amstatus [--config] config [--file amdump_file]\n";
-	print "         [--status] [--dumping] [--waitdumping] [--waittaper]\n";
+	print "         [--summary] [--dumping] [--waitdumping] [--waittaper]\n";
 	print "         [--dumpingtape] [--writingtape] [--finished] [--failed]\n";
 	print "         [--estimate] [--gestimate]\n";
 	exit;
