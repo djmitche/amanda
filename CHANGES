@@ -1,5 +1,7 @@
 Version 2.4.0p1
 
+	only call initgroups() if it is available.  -oliva
+
 	check whether GNUTAR_LISTED_INCREMENTAL_DIR is a directory.
 	-oliva, reported by J.A. Gutierrez <spd@gtc1.cps.unizar.es>
 
