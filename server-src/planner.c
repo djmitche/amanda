@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.55 1998/01/14 21:43:51 amcore Exp $
+ * $Id: planner.c,v 1.56 1998/01/16 11:32:39 amcore Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -909,12 +909,12 @@ host_t *hostp;
 	    ap_snprintf(level, sizeof(level), "%d", lev);
 	    ap_snprintf(spindle, sizeof(spindle), "%d", dp->spindle);
 	    if(dp->exclude) {
-		exclude1 = dp->exclude_list ? " exclude-list" : " exclude-file";
+		exclude1 = dp->exclude_list ? " exclude-list=" : " exclude-file=";
 		exclude2 = dp->exclude;
 	    }
 	    t = vstralloc(req,
 			  dp->program, " ", dp->name, " ", level, " ",
-			  est(dp)->dumpdate[i], " ", spindle,
+			  est(dp)->dumpdate[i], " ", spindle, " ",
 			  exclude1,
 			  exclude2,
 			  "\n",
