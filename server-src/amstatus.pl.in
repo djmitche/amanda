@@ -102,15 +102,9 @@ $start_degraded_mode = 0;
 
 $label = "";					# -w fodder
 $origsize = 0;					# -w fodder
-$runq = 0;						# -w fodder
-$stoppedq = 0;					# -w fodder
-$wakeup = 0;					# -w fodder
 $idle_dumpers = 0;
 $status_driver = "";
 $status_taper = 0;
-$qlen_tapeq = 0;
-$free_kps = 0;
-$free_space = 0;
 $estimate_done = 0;
 $holding_space = 0;
 $start_time = 0;
@@ -313,16 +307,14 @@ while(<AMDUMP>) {
 	elsif(/dump of driver schedule after start degraded mode:/) {
 		$start_degraded_mode=1;
 	}
-	elsif(/driver: state time (\S+) free kps: (\d+) space: (\d+) taper: (\S+) idle-dumpers: (\d+) qlen tapeq: (\d+) runq: (\d+) stoppedq: (\d+) wakeup: (\d+) driver-idle: (\S+)/) {
+	elsif(/driver: state time (\S+) free (.*) taper: (\S+) idle-dumpers: (\d+) qlen (.*) driver-idle: (\S+)/) {
 		$current_time=$1;
-		$free_kps=$2;
-		$free_space=$3;
-		$status_taper=$4;
-		$idle_dumpers=$5;
-		$qlen_tapeq=$6;
-		$runq=$7;
-		$stoppedq=$8;
-		$wakeup=$9;
+		$status_taper=$3;
+		$idle_dumpers=$4;
+
+		%free = split (/ +/, $2);
+		%qlen = split (/ +/, $5);
+
 		if($status_driver ne "") {
 			$dumpers_active[$dumpers_active_prev]
 				+=$current_time-$state_time_prev;
@@ -331,7 +323,7 @@ while(<AMDUMP>) {
 		}
 		$state_time_prev=$current_time;
 		$dumpers_active_prev=$dumpers_active;
-		$status_driver=$10;
+		$status_driver=$6;
 		if(! defined($dumpers_held[$dumpers_active]{$status_driver})) {
 			$dumpers_held[$dumpers_active]{$status_driver}=0;
 		}
@@ -608,15 +600,23 @@ if (defined $opt_summary) {
 		$c2 = ($idle_dumpers == 1) ? " " : "";
 		printf "%d dumper%s idle%s  : %s\n", $idle_dumpers, $c1, $c2, $status_driver;
 	}
-	if($status_taper eq "writing") {
-		printf "taper writing, tapeq: %d\n", $qlen_tapeq;
+	if($status_taper eq "writing" && defined($qlen{"tapeq:"})) {
+		printf "taper writing, tapeq: %d\n", $qlen{"tapeq:"};
 	}
 	else {
 		printf "taper idle\n";
 	}
-	printf "network free kps: %8d\n", $free_kps;
-	printf "holding space   : %8dk (%6.2f%%)\n", $free_space,
-		$holding_space ? ($free_space * 1.0 / $holding_space) * 100 : 0.0;
+	if (defined ($free{"kps:"})) {
+		printf "network free kps: %8d\n", $free{"kps:"};
+	}
+	if (defined ($free{"space:"})) {
+		if ($holding_space) {
+			$hs = ($free{"space:"} * 1.0 / $holding_space) * 100;
+		} else {
+			$hs = 0.0;
+		}
+		printf "holding space   : %8dk (%6.2f%%)\n", $free{"space:"}, $hs;
+	}
 	if(defined($current_time) && $current_time != $start_time) {
 		$total_time=$current_time-$start_time;
 		foreach $key (sort keys %busy_time) {
@@ -626,7 +626,7 @@ if (defined $opt_summary) {
 		}
 		for ($d = 0; $d <= $#dumpers_active; $d++) {
 			$l = sprintf "%2d dumper%s busy%s : %8s  (%6.2f%%)",
-				$d, ($d <= 1) ? "" : "s", ($d <= 1) ? " " : "",
+				$d, ($d == 1) ? "" : "s", ($d == 1) ? " " : "",
 				&busytime($dumpers_active[$d]),
 				($dumpers_active[$d] * 1.0 / $total_time) * 100;
 			print $l;

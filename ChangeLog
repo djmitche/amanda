@@ -1,5 +1,10 @@
 1999-09-15 John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/amstatus.pl.in: generalize the "driver: state" parsing
+	  so it can handle current and future information.
+
+1999-09-15 John R. Jackson  <jrj@purdue.edu>
+
 	* common-src/bsd-security.c: if the user field is not present in the
 	  .amandahosts file, it should default to the local user, not the
 	  remote user.  For our purposes, that is CLIENT_USER, not the user
