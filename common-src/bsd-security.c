@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.19 1999/03/04 22:40:00 kashmir Exp $
+ * $Id: bsd-security.c,v 1.20 1999/03/15 15:12:59 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -764,8 +764,14 @@ recv_security_ok(bh)
 	if ((tok = strtok(NULL, "")) == NULL)
 	    return (-1);	/* default errmsg */
 	if (check_user(bh, tok) < 0) {
-	    security_seterror(&bh->security_handle, "%s not allowed access",
-		tok);
+	    security_seterror(&bh->security_handle, "%s not allowed access: %s",
+		tok,
+#ifdef USE_AMANDAHOSTS
+		".amandahosts auth failed"
+#else
+		"ruserok failed"
+#endif
+		);
 	    return (-1);
 	}
 

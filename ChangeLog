@@ -1,3 +1,8 @@
+1999-03-15  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/bsd-security.c (recv_security_ok): bring over
+	increased verbosity change from common-src/security.c
+
 1999-03-14  Mathias Herberts  <Mathias.Herberts@ago.fr>
 
 	* man/amrecover.8.in: document mode and setmode
