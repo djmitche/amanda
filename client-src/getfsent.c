@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: getfsent.c,v 1.20.4.1.2.2 2001/04/12 15:31:38 jrjackson Exp $
+ * $Id: getfsent.c,v 1.20.4.1.2.2.2.1 2002/03/24 00:01:22 jrjackson Exp $
  *
  * generic version of code to read fstab
  */
@@ -143,6 +143,12 @@ generic_fsent_t *fsent;
 
 #include <mntent.h>
 
+#if defined(HAVE_ENDMNTENT)
+#define AMCLOSE_MNTENT(x)	endmntent(x)
+#else
+#define AMCLOSE_MNTENT(x)	fclose(x)
+#endif
+
 static FILE *fstabf1 = NULL;		/* /proc/mounts */
 static FILE *fstabf2 = NULL;		/* MOUNTED */
 static FILE *fstabf3 = NULL;		/* MNTTAB */
@@ -164,9 +170,18 @@ int open_fstab()
 
 void close_fstab()
 {
-    afclose(fstabf1);
-    afclose(fstabf2);
-    afclose(fstabf3);
+    if (fstabf1) {
+	AMCLOSE_MNTENT(fstabf1);
+	fstabf1 = NULL;
+    }
+    if (fstabf2) {
+	AMCLOSE_MNTENT(fstabf2);
+	fstabf2 = NULL;
+    }
+    if (fstabf3) {
+	AMCLOSE_MNTENT(fstabf3);
+	fstabf3 = NULL;
+    }
 }
 
 int get_fstab_nextentry(fsent)
@@ -177,19 +192,22 @@ generic_fsent_t *fsent;
     if(fstabf1) {
 	sys_fsent = getmntent(fstabf1);
 	if(!sys_fsent) {
-	    afclose(fstabf1);
+	    AMCLOSE_MNTENT(fstabf1);
+	    fstabf1 = NULL;
 	}
     }
     if(!sys_fsent && fstabf2) {
 	sys_fsent = getmntent(fstabf2);
 	if(!sys_fsent) {
-	    afclose(fstabf2);
+	    AMCLOSE_MNTENT(fstabf2);
+	    fstabf2 = NULL;
 	}
     }
     if(!sys_fsent && fstabf3) {
 	sys_fsent = getmntent(fstabf3);
 	if(!sys_fsent) {
-	    afclose(fstabf3);
+	    AMCLOSE_MNTENT(fstabf3);
+	    fstabf3 = NULL;
 	}
     }
     if(!sys_fsent) {

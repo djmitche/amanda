@@ -2322,6 +2322,7 @@ AC_FUNC_CLOSEDIR_VOID
 ICE_CHECK_DECL(closelog,syslog.h)
 ICE_CHECK_DECL(connect,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(dbm_open,${DB_HEADER-no/db/header/file})
+AC_CHECK_FUNCS(endmntent)
 ICE_CHECK_DECL(fclose,stdio.h)
 ICE_CHECK_DECL(fflush,stdio.h)
 ICE_CHECK_DECL(flock,sys/file.h)

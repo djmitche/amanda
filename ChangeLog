@@ -1,5 +1,10 @@
 2002-03-23  John R. Jackson (jrj@purdue.edu)
 
+	* client-src/getfsent.c (close_fstab()): Call endfsent() instead
+	  of fclose(), if available.
+
+2002-03-23  John R. Jackson (jrj@purdue.edu)
+
 	* common-src/dbprintf (debug_printf): Make sure errno is preserved
 	  across dbprint() calls.
 
