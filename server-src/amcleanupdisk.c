@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcleanupdisk.c,v 1.1.2.5 1999/11/01 22:22:13 jrj Exp $
+ * $Id: amcleanupdisk.c,v 1.1.2.6 1999/11/10 23:26:47 jrj Exp $
  */
 #include "amanda.h"
 
@@ -201,7 +201,10 @@ char *diskdir, *datestamp;
     }
     closedir(workdir);
 
-    /* try to zap the now (hopefully) empty working dir */
+    /* try to zap the potentially empty working dir */
+    /* ignore any errors -- it either works or it doesn't */
+    (void) rmdir(dirname);
+
     amfree(diskname);
     amfree(hostname);
     amfree(destname);
@@ -218,6 +221,4 @@ void check_disks()
 	for(hdisk = getconf_holdingdisks(); hdisk != NULL; hdisk = hdisk->next)
 	    check_holdingdisk(hdisk->diskdir, dir->name);
     }
-
 }
-
