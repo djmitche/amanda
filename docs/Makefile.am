@@ -10,6 +10,7 @@ pkgdata_DATA = \
 	LABEL.PRINTING		\
 	MULTITAPE		\
 	PORT.USAGE		\
+	RAIT			\
 	RESTORE			\
 	SAMBA			\
 	SECURITY		\
@@ -17,6 +18,7 @@ pkgdata_DATA = \
 	TAPE.CHANGERS		\
 	TAPETYPES		\
 	UPGRADE			\
+	VTAPE-API		\
 	WHATS.NEW		\
 	WISHLIST		\
 	YEAR2000		\
