@@ -1,3 +1,7 @@
+2002-09-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* client-src/getfsent.c (open_fstab): Check if MNTTAB is defined.
+
 2002-09-19  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* NEWS: Changes in release 2.4.3.

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: getfsent.c,v 1.20.4.1.2.2.2.1 2002/03/24 00:01:22 jrjackson Exp $
+ * $Id: getfsent.c,v 1.20.4.1.2.2.2.2 2002/09/30 18:40:37 martinea Exp $
  *
  * generic version of code to read fstab
  */
@@ -161,9 +161,13 @@ int open_fstab()
 # if defined(MOUNTED)
     fstabf2 = setmntent(MOUNTED, "r");
 # endif
+# if defined(MNTTAB)
     fstabf3 = setmntent(MNTTAB, "r");
+# endif
 #else
+# if defined(MNTTAB)
     fstabf3 = fopen(MNTTAB, "r");
+# endif
 #endif
     return (fstabf1 != NULL || fstabf2 != NULL || fstabf3 != NULL);
 }
