@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.45 1998/06/04 18:55:54 jrj Exp $
+ * $Id: conffile.c,v 1.46 1998/06/07 22:37:15 kovert Exp $
  *
  * read configuration file
  */
@@ -111,7 +111,7 @@ typedef enum {
     LIST,
 
     /* numbers */
-    INFINITY, MULT1, MULT7, MULT1K, MULT1M,
+    INFINITY, MULT1, MULT7, MULT1K, MULT1M, MULT1G,
 
     /* boolean */
     ATRUE, AFALSE,
@@ -1851,6 +1851,8 @@ keytab_t numb_keytable[] = {
     { "MBYTES", MULT1M },
     { "MEG", MULT1M },
     { "MEGABYTES", MULT1M },
+    { "GB", MULT1G },
+    { "GIGABYTES", MULT1G },
     { "MPS", MULT1M },
     { "TAPE", MULT1 },
     { "TAPES", MULT1 },
@@ -1894,6 +1896,9 @@ static int get_number()
 	break;
     case MULT1M:
 	val *= 1024;
+	break;
+    case MULT1G:
+	val *= 1024*1024;
 	break;
     default:	/* it was not a multiplier */
 	unget_conftoken();
