@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.45 1998/01/22 01:49:26 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.46 1998/01/22 03:04:16 amcore Exp $
  *
  * send backup data using BSD dump
  */
@@ -39,6 +39,8 @@
 #else					/* I'd tell you what this does */
 #define NAUGHTY_BITS			/* but then I'd have to kill you */
 #endif
+
+#define LEAF_AND_DIRS "sed -e \'\ns/^leaf[ \t]*[0-9]*[ \t]*\\.//\nt\n/^dir[ \t]/ {\ns/^dir[ \t]*[0-9]*[ \t]*\\n//\ns%$%/%\nt\n}\nd\n\'"
 
 static regex_t re_table[] = {
   /* the various encodings of dump size */
@@ -199,7 +201,7 @@ char *dumpdate;
 			     " -",
 			     " 2>/dev/null",
 			     " | /sbin/sed",
-			     " -e", "\'s/^/\\//\'",
+			     " -e", " \'s/^/\\//\'",
 			     NULL);
 	write_tapeheader();
 
@@ -244,13 +246,7 @@ char *dumpdate;
 	indexcmd = vstralloc(VXRESTORE,
 			     " -tvf", " -",
 			     " 2>/dev/null",
-			     " | awk",
-			     " \'/^(leaf|dir)/ {print $3$1}\'",
-			     " | sed",
-			     " -e", " \'s/leaf$//\'",
-			     " -e", " \'s/dir$/\\//\'",
-			     " | cut",
-			     " -c2-",
+			     LEAF_AND_DIRS,
 			     NULL);
 	write_tapeheader();
 
@@ -282,13 +278,7 @@ char *dumpdate;
 #endif
 			     " -tvf", " -",
 			     " 2>/dev/null",
-			     " | awk",
-			     " \'/^(leaf|dir)/ {print $3$1}\'",
-			     " | sed",
-			     " -e", " \'s/leaf$//\'",
-			     " -e", " \'s/dir$/\\//\'",
-			     " | cut",
-			     " -c2-",
+			     LEAF_AND_DIRS,
 			     NULL);
 	write_tapeheader();
 
@@ -317,13 +307,8 @@ char *dumpdate;
 			 " -B",
 			 " -tvf", " -",
 			 " 2>/dev/null",
-			 " | awk",
-			 " \'/^(leaf|dir)/ {print $3$1}\'",
-			 " | sed",
-			 " -e", " \'s/leaf$//\'",
-			 " -e", " \'s/dir$/\\//\'",
-			 " | cut",
-			 " -c2-",
+			 " | ",
+			 LEAF_AND_DIRS,
 			 NULL);
     write_tapeheader();
 

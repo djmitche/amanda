@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.40 1998/01/19 18:21:56 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.41 1998/01/22 03:04:18 amcore Exp $
  *
  * send backup data using GNU tar
  */
@@ -303,8 +303,8 @@ notincremental:
 	indexcmd = vstralloc(tarcmd,
 			     " -tf", " -",
 			     " 2>/dev/null",
-			     " | cut",
-			     " -c2-",
+			     " | sed", " -e", 
+			     " \'s/^\\.//\'",
 			     NULL);
 	write_tapeheader();
 
