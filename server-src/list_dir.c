@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: list_dir.c,v 1.12 1998/04/08 16:25:24 amcore Exp $
+/* $Id: list_dir.c,v 1.13 1998/04/25 01:59:49 martinea Exp $
  *
  * manage directory listings from index files
  */
@@ -85,19 +85,19 @@ char *path;
 	return 0; /* found */
 
     /* if smaller than last path */
-    if(strcmp(path,dir_last->path) == -1)
+    if(strcmp(path,dir_last->path) < 0)
     {
 	if(cur_list==NULL)
 	    cur_list=dir_list;
 
 	/* reset cur_list if path is smaller than cur_list->path */
-	if(strcmp(path,cur_list->path) == -1)
+	if(strcmp(path,cur_list->path) < 0)
 	    cur_list=dir_list;
 
 	if(strcmp(path,cur_list->path) == 0)
 	    return 0; /* found */
 
-	while (cur_list->next!=NULL && (strcmp(path,cur_list->next->path) == 1))
+	while (cur_list->next!=NULL && (strcmp(path,cur_list->next->path) > 0))
 	{
 	    cur_list=cur_list->next;
 	}
