@@ -18,7 +18,7 @@ lib_LTLIBRARIES =	libamanda.la libamnolog.la
 REGDIR = ../regex-src
 REGsrcdir = $(srcdir)/$(REGDIR)
 
-INCLUDES += -I$(REGsrcdir)
+INCLUDES = -I$(REGsrcdir)
 
 libamanda_la_SOURCES =	alloc.c		debug.c		dgram.c		\
 			error.c		match.c		protocol.c	\
