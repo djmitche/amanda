@@ -1,3 +1,7 @@
+2001-07-12 John R. Jackson <jrj@purdue.edu>
+
+	* Makefile.am: Fix automake warning.
+
 2001-07-11 John R. Jackson <jrj@purdue.edu>
 
 	* common-src/file.c: Fix a memory leak.  Grab exponentially larger
