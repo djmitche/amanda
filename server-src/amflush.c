@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.40 1998/10/24 03:02:01 martinea Exp $
+ * $Id: amflush.c,v 1.41 1998/10/25 17:01:43 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -198,6 +198,8 @@ char *diskdir, *datestamp;
     sched_t sp;
     filetype_t filetype;
     tok_t tok;
+    int result_argc;
+    char *result_argv[MAX_ARGS+1];
 
     dirname = vstralloc(diskdir, "/", datestamp, NULL);
 
@@ -251,34 +253,34 @@ char *diskdir, *datestamp;
 	dp->up = &sp;
 	taper_cmd(FILE_WRITE, dp, destname, sp.level, datestamp);
 
-	tok = getresult(taper, 0);
+	tok = getresult(taper, 0, &result_argc, result_argv, MAX_ARGS+1);
 	if(tok == TRYAGAIN) {
 	    /* we'll retry one time */
 	    taper_cmd(FILE_WRITE, dp, destname, sp.level, datestamp);
-	    tok = getresult(taper, 0);
+	    tok = getresult(taper, 0, &result_argc, result_argv, MAX_ARGS+1);
 	}
 
 	switch(tok) {
 	case DONE: /* DONE <handle> <label> <tape file> <err mess> */
-	    if(argc != 5) {
-		error("error [DONE argc != 5: %d]", argc);
+	    if(result_argc != 5) {
+		error("error [DONE result_argc != 5: %d]", result_argc);
 	    }
-	    if( dp != serial2disk(argv[2]))
+	    if( dp != serial2disk(result_argv[2]))
 		error("Bad serial");
-	    free_serial(argv[2]);
+	    free_serial(result_argv[2]);
 
-	    filenum = atoi(argv[4]);
-	    update_info_taper(dp, argv[3], filenum);
+	    filenum = atoi(result_argv[4]);
+	    update_info_taper(dp, result_argv[3], filenum);
 
 	    unlink_holding_files(destname);
 	    break;
 	case TRYAGAIN: /* TRY-AGAIN <handle> <err mess> */
-	    if (argc < 2) {
-		error("error [taper TRYAGAIN argc < 2: %d]", argc);
+	    if (result_argc < 2) {
+		error("error [taper TRYAGAIN result_argc < 2: %d]", result_argc);
 	    }
-	    if( dp != serial2disk(argv[2]))
+	    if( dp != serial2disk(result_argv[2]))
 		error("Bad serial");
-	    free_serial(argv[2]);
+	    free_serial(result_argv[2]);
 
 	    log_add(L_WARNING,
 		    "%s: too many taper retries, leaving file on disk",
@@ -286,9 +288,9 @@ char *diskdir, *datestamp;
 	    break;
 
 	case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
-	    if( dp != serial2disk(argv[2]))
+	    if( dp != serial2disk(result_argv[2]))
 		error("Bad serial");
-	    free_serial(argv[2]);
+	    free_serial(result_argv[2]);
 	    /* Note: fall through code... */
 
 	default:
@@ -315,6 +317,8 @@ void run_dumps()
     holdingdisk_t *hdisk;
     char **dss;
     tok_t tok;
+    int result_argc;
+    char *result_argv[MAX_ARGS+1];
 
     startclock();
     log_add(L_START, "date %s", datestamp);
@@ -322,7 +326,7 @@ void run_dumps()
     chdir(confdir);
     startup_tape_process();
     taper_cmd(START_TAPER, datestamp, NULL, 0, NULL);
-    tok = getresult(taper, 0);
+    tok = getresult(taper, 0, &result_argc, result_argv, MAX_ARGS+1);
 
     if(tok != TAPER_OK) {
 	/* forget it */

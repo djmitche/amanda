@@ -1,3 +1,15 @@
+1998-10-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/driverio.h: remove declaration of argc et argv.
+	* server-src/driverio.h (getresult): add parameters result_argc, 
+	result_argv and max_arg.
+	* server-src/driverio.c (getresult): use new parameters.
+	* server-src/amflush.c (flush_holdingdisk, run_dumps): declare
+	and use result_argc and result_argv instead of global variables
+	argc and argv.
+	* server-src/driver.c (main, handle_taper_result, 
+	handle_dumper_result, dump_to_tape): ditto
+
 1998-10-24  John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/amstatus.pl.in: do not be quite so accurate in matching

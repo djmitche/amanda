@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.12 1998/10/24 03:02:06 martinea Exp $
+ * $Id: driverio.h,v 1.13 1998/10/25 17:01:49 martinea Exp $
  *
  * driver-related helper functions
  */
@@ -96,8 +96,6 @@ GLOBAL int maxfd;
 GLOBAL fd_set readset;
 GLOBAL int taper, taper_busy, taper_pid;
 
-GLOBAL int argc;
-GLOBAL char *argv[MAX_ARGS+1];
 GLOBAL char *taper_program, *dumper_program;
 
 void addfd P((int fd));
@@ -105,7 +103,7 @@ char *childstr P((int fd));
 void startup_tape_process P((void));
 void startup_dump_process P((dumper_t *dumper));
 void startup_dump_processes P((void));
-tok_t getresult P((int fd, int show));
+tok_t getresult P((int fd, int show, int *result_argc, char **result_argv, int max_arg));
 void taper_cmd P((tok_t cmd, void *ptr, char *destname, int level, char *datestamp));
 void dumper_cmd P((dumper_t *dumper, tok_t cmd, disk_t *dp));
 disk_t *serial2disk P((char *str));

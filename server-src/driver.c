@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.54 1998/10/24 03:02:04 martinea Exp $
+ * $Id: driver.c,v 1.55 1998/10/25 17:01:45 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -136,6 +136,8 @@ char **main_argv;
     unsigned long malloc_hist_2, malloc_size_2;
     unsigned long reserve = 100;
     tok_t tok;
+    int result_argc;
+    char *result_argv[MAX_ARGS+1];
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -291,7 +293,7 @@ char **main_argv;
 
     /* ok, planner is done, now lets see if the tape is ready */
 
-    tok = getresult(taper, 1);
+    tok = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
 
     if(tok != TAPER_OK) {
 	/* no tape, go into degraded mode: dump to holding disk */
@@ -610,21 +612,23 @@ void handle_taper_result()
     disk_t *dp;
     int filenum;
     tok_t tok;
+    int result_argc;
+    char *result_argv[MAX_ARGS+1];
 
-    tok = getresult(taper, 1);
+    tok = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
 
     switch(tok) {
 
     case DONE:	/* DONE <handle> <label> <tape file> <err mess> */
-	if(argc != 5) {
-	    error("error: [taper DONE argc != 5: %d", argc);
+	if(result_argc != 5) {
+	    error("error: [taper DONE result_argc != 5: %d", result_argc);
 	}
 
-	dp = serial2disk(argv[2]);
-	free_serial(argv[2]);
+	dp = serial2disk(result_argv[2]);
+	free_serial(result_argv[2]);
 
-	filenum = atoi(argv[4]);
-	update_info_taper(dp, argv[3], filenum);
+	filenum = atoi(result_argv[4]);
+	update_info_taper(dp, result_argv[3], filenum);
 
 	delete_diskspace(dp);
 
@@ -661,11 +665,11 @@ void handle_taper_result()
 	break;
 
     case TRYAGAIN:  /* TRY-AGAIN <handle> <err mess> */
-	if (argc < 2) {
-	    error("error [taper TRYAGAIN argc < 2: %d]", argc);
+	if (result_argc < 2) {
+	    error("error [taper TRYAGAIN result_argc < 2: %d]", result_argc);
 	}
-	dp = serial2disk(argv[2]);
-	free_serial(argv[2]);
+	dp = serial2disk(result_argv[2]);
+	free_serial(result_argv[2]);
 	printf("driver: taper-tryagain time %s disk %s:%s\n",
 	       walltime_str(curclock()), dp->host->hostname, dp->name);
 	fflush(stdout);
@@ -692,8 +696,8 @@ void handle_taper_result()
 	break;
 
     case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
-	dp = serial2disk(argv[2]);
-	free_serial(argv[2]);
+	dp = serial2disk(result_argv[2]);
+	free_serial(result_argv[2]);
 	printf("driver: finished-cmd time %s taper wrote %s:%s\n",
 	       walltime_str(curclock()), dp->host->hostname, dp->name);
 	fflush(stdout);
@@ -786,30 +790,32 @@ int fd;
     long dumpsize;
     long dumptime;
     tok_t tok;
+    int result_argc;
+    char *result_argv[MAX_ARGS+1];
 
     dumper = lookup_dumper(fd);
     dp = dumper->dp;
     assert(dp && sched(dp));
 
-    tok = getresult(fd, 1);
+    tok = getresult(fd, 1, &result_argc, result_argv, MAX_ARGS+1);
 
     if(tok != BOGUS) {
-	sdp = serial2disk(argv[2]); /* argv[2] always contains the serial number */
+	sdp = serial2disk(result_argv[2]); /* result_argv[2] always contains the serial number */
 	assert(sdp == dp);
     }
 
     switch(tok) {
 
     case DONE: /* DONE <handle> <origsize> <dumpsize> <dumptime> <err str> */
-	if(argc != 6) {
-	    error("error [dumper DONE argc != 6: %d]", argc);
+	if(result_argc != 6) {
+	    error("error [dumper DONE result_argc != 6: %d]", result_argc);
 	}
 
-	free_serial(argv[2]);
+	free_serial(result_argv[2]);
 
-	origsize = (long)atof(argv[3]);
-	dumpsize = (long)atof(argv[4]);
-	dumptime = (long)atof(argv[5]);
+	origsize = (long)atof(result_argv[3]);
+	dumpsize = (long)atof(result_argv[4]);
+	dumptime = (long)atof(result_argv[5]);
 	update_info_dumper(dp, origsize, dumpsize, dumptime);
 
 	deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
@@ -838,7 +844,7 @@ int fd;
 
     case TRYAGAIN: /* TRY-AGAIN <handle> <err str> */
     case FATAL_TRYAGAIN:
-	free_serial(argv[2]);
+	free_serial(result_argv[2]);
 	deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
 	adjust_diskspace(dp, DONE);
 	delete_diskspace(dp);
@@ -867,7 +873,7 @@ int fd;
 	break;
 
     case FAILED: /* FAILED <handle> <errstr> */
-	free_serial(argv[2]);
+	free_serial(result_argv[2]);
 	deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
 	adjust_diskspace(dp, DONE);
 	delete_diskspace(dp);
@@ -899,7 +905,7 @@ int fd;
 
     case ABORT_FINISHED: /* ABORT-FINISHED <handle> */
 	assert(pending_aborts);
-	free_serial(argv[2]);
+	free_serial(result_argv[2]);
 	deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
 	adjust_diskspace(dp, DONE);
 	delete_diskspace(dp);
@@ -1371,6 +1377,8 @@ disk_t *dp;
     long dumpsize;
     long dumptime;
     tok_t tok;
+    int result_argc;
+    char *result_argv[MAX_ARGS+1];
 
     inside_dump_to_tape = 1;	/* for simulator */
 
@@ -1394,7 +1402,7 @@ disk_t *dp;
     /* tell the taper to read from a port number of its choice */
 
     taper_cmd(PORT_WRITE, dp, NULL, sched(dp)->level, datestamp);
-    tok = getresult(taper, 1);
+    tok = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
     if(tok != PORT) {
 	printf("driver: did not get PORT from taper for %s:%s\n",
 		dp->host->hostname, dp->name);
@@ -1403,7 +1411,7 @@ disk_t *dp;
 	return 2;	/* fatal problem */
     }
     /* copy port number */
-    strncpy(sched(dp)->destname, argv[2], sizeof(sched(dp)->destname)-1);
+    strncpy(sched(dp)->destname, result_argv[2], sizeof(sched(dp)->destname)-1);
     sched(dp)->destname[sizeof(sched(dp)->destname)-1] = '\0';
 
     /* tell the dumper to dump to a port */
@@ -1423,10 +1431,10 @@ disk_t *dp;
 
     /* wait for result from dumper */
 
-    tok = getresult(dumper->outfd, 1);
+    tok = getresult(dumper->outfd, 1, &result_argc, result_argv, MAX_ARGS+1);
 
     if(tok != BOGUS)
-	free_serial(argv[2]);
+	free_serial(result_argv[2]);
 
     switch(tok) {
     case BOGUS:
@@ -1439,16 +1447,16 @@ disk_t *dp;
 
     case DONE: /* DONE <handle> <origsize> <dumpsize> <dumptime> <err str> */
 	/* everything went fine */
-	origsize = (long)atof(argv[3]);
-	dumpsize = (long)atof(argv[4]);
-	dumptime = (long)atof(argv[5]);
+	origsize = (long)atof(result_argv[3]);
+	dumpsize = (long)atof(result_argv[4]);
+	dumptime = (long)atof(result_argv[5]);
 	break;
 
     case NO_ROOM: /* NO-ROOM <handle> */
 	dumper_cmd(dumper, ABORT, dp);
-	tok = getresult(dumper->outfd, 1);
+	tok = getresult(dumper->outfd, 1, &result_argc, result_argv, MAX_ARGS+1);
 	if(tok != BOGUS)
-	    free_serial(argv[2]);
+	    free_serial(result_argv[2]);
 	assert(tok == ABORT_FINISHED);
 
     case TRYAGAIN: /* TRY-AGAIN <handle> <err str> */
@@ -1465,35 +1473,35 @@ disk_t *dp;
      * "no space on device", etc., since taper closed the port first.
      */
 
-    tok = getresult(taper, 1);
+    tok = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
 
     switch(tok) {
     case DONE: /* DONE <handle> <label> <tape file> <err mess> */
-	if(argc != 5) {
-	    error("error [dump to tape DONE argc != 5: %d]", argc);
+	if(result_argc != 5) {
+	    error("error [dump to tape DONE result_argc != 5: %d]", result_argc);
 	}
 
-	free_serial(argv[2]);
+	free_serial(result_argv[2]);
 
 	if(failed) break;	/* dump didn't work */
 
 	/* every thing went fine */
 	update_info_dumper(dp, origsize, dumpsize, dumptime);
-	filenum = atoi(argv[4]);
-	update_info_taper(dp, argv[3], filenum);
+	filenum = atoi(result_argv[4]);
+	update_info_taper(dp, result_argv[3], filenum);
 
 	break;
 
     case TRYAGAIN: /* TRY-AGAIN <handle> <err mess> */
 	update_failed_dump_to_tape(dp);
-	free_serial(argv[2]);
+	free_serial(result_argv[2]);
 	enqueue_disk(&runq, dp);
 	break;
 
 
     case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
 	update_failed_dump_to_tape(dp);
-	free_serial(argv[2]);
+	free_serial(result_argv[2]);
 	/* fall through */
 
     case BOGUS:

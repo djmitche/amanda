@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.34 1998/09/04 14:00:21 martinea Exp $
+ * $Id: driverio.c,v 1.35 1998/10/25 17:01:47 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -154,9 +154,12 @@ void startup_dump_processes()
     }
 }
 
-tok_t getresult(fd, show)
+tok_t getresult(fd, show, result_argc, result_argv, max_arg)
 int fd;
 int show;
+int *result_argc;
+char **result_argv;
+int max_arg;
 {
     int arg;
     tok_t t;
@@ -166,9 +169,9 @@ int show;
 	if(errno) {
 	    error("reading result from %s: %s", childstr(fd), strerror(errno));
 	}
-	argc = 0;				/* EOF */
+	*result_argc = 0;				/* EOF */
     } else {
-	argc = split(line, argv, sizeof(argv) / sizeof(argv[0]), " ");
+	*result_argc = split(line, result_argv, max_arg, " ");
     }
     amfree(line);
 
@@ -176,22 +179,22 @@ int show;
 	printf("driver: result time %s from %s:",
 	       walltime_str(curclock()),
 	       childstr(fd));
-	for(arg = 1; arg <= argc; arg++)
-	    printf(" %s", argv[arg]);
+	for(arg = 1; arg <= *result_argc; arg++)
+	    printf(" %s", result_argv[arg]);
 	printf("\n");
 	fflush(stdout);
     }
 
 #ifdef DEBUG
-    printf("argc = %d\n", argc);
-    for(arg = 0; arg < sizeof(argv) / sizeof(argv[0]); arg++)
-	printf("argv[%d] = \"%s\"\n", arg, argv[arg]);
+    printf("argc = %d\n", *result_argc);
+    for(arg = 0; arg < max_arg; arg++)
+	printf("argv[%d] = \"%s\"\n", arg, result_argv[arg]);
 #endif
 
-    if(argc < 1) return BOGUS;
+    if(*result_argc < 1) return BOGUS;
 
     for(t = BOGUS+1; t < LAST_TOK; t++)
-	if(strcmp(argv[1], cmdstr[t]) == 0) return t;
+	if(strcmp(result_argv[1], cmdstr[t]) == 0) return t;
 
     return BOGUS;
 }
