@@ -1,3 +1,8 @@
+2000-04-16 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/taper.c: don't crash if the tapelist file
+	doesn't exist.
+
 2000-04-09  Frank Wojcik  <fwojcik@lucent.com>
 
 	* server-src/taper.c (detach_buffers): Fixed typo in error message.
@@ -815,7 +820,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.344 2000/04/09 08:29:37 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.345 2000/04/16 14:34:04 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
