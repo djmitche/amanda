@@ -1,6 +1,11 @@
 2003-04-01  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Paul Bijnens <paul.bijnens@xplanation.com>
 
+	* server-src/reporter.c: Get the filenumber correct.
+
+2003-04-01  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Paul Bijnens <paul.bijnens@xplanation.com>
+
 	* server-src/reporter.c: Print a postscript label for each tape used.
 	* NEWS: Print a postscript label for each tape used.
 

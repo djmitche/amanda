@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.17.4.6.2.13 2003/04/01 21:09:39 martinea Exp $
+ * $Id: reporter.c,v 1.44.2.17.4.6.2.14 2003/04/02 15:31:35 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -1350,6 +1350,7 @@ void handle_start()
 	current_tape->corigsize = 0.0;
 	current_tape->tapedisks = 0;
 	current_tape->next = NULL;
+	tapefcount = 0;
 
 	return;
     case P_PLANNER:
