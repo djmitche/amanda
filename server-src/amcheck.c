@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.23 2001/07/19 21:49:43 jrjackson Exp $
+ * $Id: amcheck.c,v 1.50.2.24 2001/08/01 19:26:36 jrjackson Exp $
  *
  * checks for common problems in server and clients
  */
@@ -39,6 +39,9 @@
 #include "clock.h"
 #include "version.h"
 #include "amindex.h"
+#include "token.h"
+#include "util.h"
+#include "pipespawn.h"
 
 /*
  * If we don't have the new-style wait access functions, use our own,
@@ -90,7 +93,7 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    char buffer[BUFFER_SIZE], *cmd = NULL;
+    char buffer[BUFFER_SIZE];
     char *version_string;
     char *mainfname = NULL;
     char pid_str[NUM_STR_SIZE];
@@ -243,17 +246,19 @@ char **argv;
     if(do_clientchk && (do_localchk || do_tapechk)) {
 	/* we need the temp file */
 	tempfname = vstralloc(AMANDA_TMPDIR, "/amcheck.temp.", pid_str, NULL);
-	malloc_mark(tempfname);
 	if((tempfd = open(tempfname, O_RDWR|O_CREAT|O_TRUNC, 0600)) == -1)
 	    error("could not open %s: %s", tempfname, strerror(errno));
+	unlink(tempfname);			/* so it goes away on close */
+	amfree(tempfname);
     }
 
     if(mailout) {
 	/* the main fd is a file too */
 	mainfname = vstralloc(AMANDA_TMPDIR, "/amcheck.main.", pid_str, NULL);
-	malloc_mark(mainfname);
 	if((mainfd = open(mainfname, O_RDWR|O_CREAT|O_TRUNC, 0600)) == -1)
 	    error("could not open %s: %s", mainfname, strerror(errno));
+	unlink(mainfname);			/* so it goes away on close */
+	amfree(mainfname);
     }
     else
 	/* just use stdout */
@@ -320,7 +325,6 @@ char **argv;
 	if(size < 0)
 	    error("read temp file: %s", strerror(errno));
 	aclose(tempfd);
-	unlink(tempfname);
     }
 
     version_string = vstralloc("\n",
@@ -344,25 +348,116 @@ char **argv;
     /* send mail if requested, but only if there were problems */
 #ifdef MAILER
 
-    if((server_probs || client_probs) && mailout) {
-	fflush(stdout);
-	if(close(mainfd) == -1)
-	    error("close main file: %s", strerror(errno));
-	mainfd = -1;
+#define	MAILTO_LIMIT	10
 
-	cmd = vstralloc(MAILER,
-			" -s ", "\"",
-			  getconf_str(CNF_ORG),
-			  " AMANDA PROBLEM: FIX BEFORE RUN, IF POSSIBLE\"",
-			" ", (mailto ? mailto : getconf_str(CNF_MAILTO)),
-			" < ", mainfname,
-			NULL);
-	if(system(cmd) != 0)
-	    error("mail command failed: %s", cmd);
-	amfree(cmd);
-    }
-    if(mailout) {
-	unlink(mainfname);
+    if((server_probs || client_probs) && mailout) {
+	int mailfd;
+	int nullfd;
+	int errfd;
+	FILE *ferr;
+	char *subject;
+	char **a;
+	amwait_t retstat;
+	pid_t mailpid;
+	pid_t wpid;
+	int r;
+	int w;
+	char *err = NULL;
+	char *extra_info = NULL;
+	char *line = NULL;
+	int ret;
+	int rc;
+	int sig;
+	char number[NUM_STR_SIZE];
+
+	fflush(stdout);
+	if(lseek(mainfd, (off_t)0, SEEK_SET) == -1) {
+	    error("lseek main file: %s", strerror(errno));
+	}
+	subject = stralloc2(getconf_str(CNF_ORG),
+			    " AMANDA PROBLEM: FIX BEFORE RUN, IF POSSIBLE");
+	/*
+	 * Variable arg lists are hard to deal with when we do not know
+	 * ourself how many args are involved.  Split the address list
+	 * and hope there are not more than 9 entries.
+	 *
+	 * Remember that split() returns the original input string in
+	 * argv[0], so we have to skip over that.
+	 */
+	a = (char **) alloc((MAILTO_LIMIT + 1) * sizeof(char *));
+	memset(a, 0, (MAILTO_LIMIT + 1) * sizeof(char *));
+	if(mailto) {
+	    a[1] = mailto;
+	    a[2] = NULL;
+	} else {
+	    n = split(getconf_str(CNF_MAILTO), a, MAILTO_LIMIT, " ");
+	    a[n + 1] = NULL;
+	}
+	if((nullfd = open("/dev/null", O_RDWR)) < 0) {
+	    error("nullfd: /dev/null: %s", strerror(errno));
+	}
+	mailpid = pipespawn(MAILER, STDIN_PIPE | STDERR_PIPE,
+			    &mailfd, &nullfd, &errfd,
+			    MAILER,
+			    "-s", subject,
+			          a[1], a[2], a[3], a[4],
+			    a[5], a[6], a[7], a[8], a[9],
+			    NULL);
+	amfree(subject);
+	/*
+	 * There is the potential for a deadlock here since we are writing
+	 * to the process and then reading stderr, but in the normal case,
+	 * nothing should be coming back to us, and hopefully in error
+	 * cases, the pipe will break and we will exit out of the loop.
+	 */
+	signal(SIGPIPE, SIG_IGN);
+	while((r = fullread(mainfd, buffer, sizeof(buffer))) > 0) {
+	    if((w = fullwrite(mailfd, buffer, r)) != r) {
+		if(w < 0 && errno == EPIPE) {
+		    strappend(extra_info, "EPIPE writing to mail process\n");
+		    break;
+		} else if(w < 0) {
+		    error("mailfd write: %s", strerror(errno));
+		} else {
+		    error("mailfd write: wrote %d instead of %d", w, r);
+		}
+	    }
+	}
+	aclose(mailfd);
+	ferr = fdopen(errfd, "r");
+	for(; (line = agets(ferr)) != NULL; free(line)) {
+	    strappend(extra_info, line);
+	    strappend(extra_info, "\n");
+	}
+	afclose(ferr);
+	errfd = -1;
+	rc = 0;
+	while ((wpid = wait(&retstat)) != -1) {
+	    if (WIFSIGNALED(retstat)) {
+		    ret = 0;
+		    rc = sig = WTERMSIG(retstat);
+	    } else {
+		    sig = 0;
+		    rc = ret = WEXITSTATUS(retstat);
+	    }
+	    if (rc != 0) {
+		    if (ret == 0) {
+			strappend(err, "got signal ");
+			ret = sig;
+		    } else {
+			strappend(err, "returned ");
+		    }
+		    ap_snprintf(number, sizeof(number), "%d", ret);
+		    strappend(err, number);
+	    }
+	}
+	if (rc != 0) {
+	    if(extra_info) {
+		fputs(extra_info, stderr);
+		amfree(extra_info);
+	    }
+	    error("error running mailer %s: %s", MAILER, err);
+	}
     }
 #endif
     dbclose();
