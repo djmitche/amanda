@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-2000 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.13 1999/11/11 00:21:05 jrj Exp $
+ * $Id: amcheck.c,v 1.50.2.14 2000/04/09 08:10:30 oliva Exp $
  *
  * checks for common problems in server and clients
  */
@@ -54,9 +54,9 @@
 #   define WIFSIGNALED(r)        (((union wait *) &(r))->w_termsig != 0)
 #endif
 
-#define CHECK_TIMEOUT   30
 #define BUFFER_SIZE	32768
 
+static int conf_ctimeout;
 static int overwrite;
 dgram_t *msg = NULL;
 char *config_name = NULL;
@@ -189,6 +189,7 @@ char **argv;
 	error("could not find config file \"%s\"", conffile);
     }
     amfree(conffile);
+    conf_ctimeout = getconf_int(CNF_CTIMEOUT);
     conf_diskfile = getconf_str(CNF_DISKFILE);
     if (*conf_diskfile == '/') {
 	conf_diskfile = stralloc(conf_diskfile);
@@ -1116,11 +1117,11 @@ int fd;
 #ifdef KRB4_SECURITY
 	if(hostp->disks->auth == AUTH_KRB4)
 	    rc = make_krb_request(hostp->hostname, kamanda_port, req,
-				  hostp, CHECK_TIMEOUT, handle_response);
+				  hostp, conf_ctimeout, handle_response);
 	else
 #endif
 	    rc = make_request(hostp->hostname, amanda_port, req,
-			      hostp, CHECK_TIMEOUT, handle_response);
+			      hostp, conf_ctimeout, handle_response);
 
 	req = NULL;				/* do not own this any more */
 

@@ -40,6 +40,9 @@ etimeout 300		# number of seconds per filesystem for estimates.
 
 dtimeout 1800		# number of idle seconds before a dump is aborted.
 
+ctimeout 30		# maximum number of seconds that amcheck waits
+			# for each client host
+ 
 tapebufs 20
 # A positive integer telling taper how many 32k buffers to allocate.
 # WARNING! If this is set too high, taper will not be able to allocate

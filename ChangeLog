@@ -1,3 +1,12 @@
+2000-04-09  Davide Marchignoli  <marchign@di.unipi.it>
+
+	* server-src/conffile.h (confparm_t): Added CTIMEOUT.
+	* server-src/conffile.c: Added ctimeout support.  Default to 30.
+	* example/amanda.conf.in: Likewise.
+	* man/amanda.8.in: Documented it.
+	* server-src/amcheck.c: Use ctimeout from configuration file instead
+	of CHECK_TIMEOUT.
+
 2000-04-09  Stan Brown  <stanb@awod.com>
 
 	* recover-src/amrecover.c (guess_disk): Omit DEV_PREFIX only if
@@ -799,7 +808,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.341 2000/04/09 07:32:31 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.342 2000/04/09 08:10:28 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

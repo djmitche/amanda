@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-2000 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.12 1999/09/11 01:14:17 jrj Exp $
+ * $Id: conffile.c,v 1.54.2.13 2000/04/09 08:10:30 oliva Exp $
  *
  * read configuration file
  */
@@ -70,8 +70,8 @@ typedef enum {
     INCLUDEFILE,
     ORG, MAILTO, DUMPUSER,
     TAPECYCLE, TAPEDEV, CHNGRDEV, CHNGRFILE, LABELSTR,
-    BUMPSIZE, BUMPDAYS, BUMPMULT, ETIMEOUT, DTIMEOUT, TAPEBUFS,
-    TAPELIST, DISKFILE, INFOFILE, LOGDIR, LOGFILE,
+    BUMPSIZE, BUMPDAYS, BUMPMULT, ETIMEOUT, DTIMEOUT, CTIMEOUT,
+    TAPEBUFS, TAPELIST, DISKFILE, INFOFILE, LOGDIR, LOGFILE,
     DISKDIR, DISKSIZE, INDEXDIR, NETUSAGE, INPARALLEL, TIMEOUT,
     TPCHANGER, RUNTAPES,
     DEFINE, DUMPTYPE, TAPETYPE, INTERFACE,
@@ -176,6 +176,7 @@ static val_t conf_bumpsize;
 static val_t conf_bumpdays;
 static val_t conf_etimeout;
 static val_t conf_dtimeout;
+static val_t conf_ctimeout;
 static val_t conf_tapebufs;
 static val_t conf_reserve;
 
@@ -201,7 +202,7 @@ static int seen_logdir, seen_bumpsize, seen_bumpmult, seen_bumpdays;
 static int seen_tapetype, seen_dumpcycle, seen_runspercycle;
 static int seen_maxcycle, seen_tapecycle;
 static int seen_disksize, seen_netusage, seen_inparallel, seen_timeout;
-static int seen_indexdir, seen_etimeout, seen_dtimeout;
+static int seen_indexdir, seen_etimeout, seen_dtimeout, seen_ctimeout;
 static int seen_tapebufs;
 static int seen_reserve;
 static int seen_columnspec;
@@ -338,6 +339,7 @@ struct byname {
     { "MAXDUMPS", CNF_MAXDUMPS, INT },
     { "ETIMEOUT", CNF_ETIMEOUT, INT },
     { "DTIMEOUT", CNF_DTIMEOUT, INT },
+    { "CTIMEOUT", CNF_CTIMEOUT, INT },
     { "TAPEBUFS", CNF_TAPEBUFS, INT },
     { "RAWTAPEDEV", CNF_RAWTAPEDEV, STRING },
     { "COLUMNSPEC", CNF_COLUMNSPEC, STRING },
@@ -414,6 +416,7 @@ confparm_t parm;
     case CNF_INDEXDIR: return seen_indexdir;
     case CNF_ETIMEOUT: return seen_etimeout;
     case CNF_DTIMEOUT: return seen_dtimeout;
+    case CNF_CTIMEOUT: return seen_ctimeout;
     case CNF_TAPEBUFS: return seen_tapebufs;
     case CNF_RAWTAPEDEV: return seen_rawtapedev;
     case CNF_RESERVE: return seen_reserve;
@@ -441,6 +444,7 @@ confparm_t parm;
     case CNF_MAXDUMPS: r = conf_maxdumps.i; break;
     case CNF_ETIMEOUT: r = conf_etimeout.i; break;
     case CNF_DTIMEOUT: r = conf_dtimeout.i; break;
+    case CNF_CTIMEOUT: r = conf_ctimeout.i; break;
     case CNF_TAPEBUFS: r = conf_tapebufs.i; break;
     case CNF_RESERVE: r = conf_reserve.i; break;
 
@@ -624,6 +628,7 @@ static void init_defaults()
     conf_bumpmult.r	= 1.5;
     conf_etimeout.i     = 300;
     conf_dtimeout.i     = 1800;
+    conf_ctimeout.i     = 30;
     conf_tapebufs.i     = 20;
     conf_reserve.i	= 100;
 
@@ -640,7 +645,7 @@ static void init_defaults()
     seen_tapetype = seen_dumpcycle = seen_runspercycle = 0;
     seen_maxcycle = seen_tapecycle = 0;
     seen_disksize = seen_netusage = seen_inparallel = seen_timeout = 0;
-    seen_indexdir = seen_etimeout = seen_dtimeout = 0;
+    seen_indexdir = seen_etimeout = seen_dtimeout = seen_ctimeout = 0;
     seen_tapebufs = 0;
     seen_reserve = 0;
     seen_columnspec = 0;
@@ -800,6 +805,7 @@ keytab_t main_keytable[] = {
     { "CHANGERFILE", CHNGRFILE },
     { "ETIMEOUT", ETIMEOUT },
     { "DTIMEOUT", DTIMEOUT },
+    { "CTIMEOUT", CTIMEOUT },
     { "TAPEBUFS", TAPEBUFS },
     { "RAWTAPEDEV", RAWTAPEDEV },
     { "RESERVE", RESERVE },
@@ -854,6 +860,7 @@ static int read_confline()
     case INDEXDIR:  get_simple(&conf_indexdir,  &seen_indexdir,  STRING); break;
     case ETIMEOUT:  get_simple(&conf_etimeout,  &seen_etimeout,  INT);    break;
     case DTIMEOUT:  get_simple(&conf_dtimeout,  &seen_dtimeout,  INT);    break;
+    case CTIMEOUT:  get_simple(&conf_ctimeout,  &seen_ctimeout,  INT);    break;
     case TAPEBUFS:  get_simple(&conf_tapebufs,  &seen_tapebufs,  INT);    break;
     case RESERVE:   get_simple(&conf_reserve,  &seen_reserve,	 INT);    break;
     case COLUMNSPEC:get_simple(&conf_columnspec,&seen_columnspec,STRING);break;
@@ -2332,6 +2339,7 @@ dump_configuration(filename)
     printf("conf_maxdumps = %d\n", getconf_int(CNF_MAXDUMPS));
     printf("conf_etimeout = %d\n", getconf_int(CNF_ETIMEOUT));
     printf("conf_dtimeout = %d\n", getconf_int(CNF_DTIMEOUT));
+    printf("conf_ctimeout = %d\n", getconf_int(CNF_CTIMEOUT));
     printf("conf_tapebufs = %d\n", getconf_int(CNF_TAPEBUFS));
     printf("conf_reserve  = %d\n", getconf_int(CNF_RESERVE));
 
