@@ -21,10 +21,16 @@ va_dcl
 #endif
 {
     va_list ap;
-    int argc, pid, i;
+    int argc = 0, pid, i;
     char **argv;
     char *passwdvar = NULL;
     int *passwdfd = NULL;
+
+    /* count args */
+    arglist_start(ap, stderrfd);
+    while(arglist_val(ap, char *) != NULL) {
+	argc++;
+    }
 
     /*
      * Create the argument vector.
