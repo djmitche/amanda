@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.44.2.7 2000/05/27 21:20:32 vectro Exp $
+ * $Id: sendbackup.c,v 1.44.2.8 2000/07/08 01:14:32 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -122,15 +122,17 @@ char *disk;
 		  if(*file != '/')
 		  {
 			char *dirname = amname_to_dirname(disk);
-			file = vstralloc(dirname,"/",file, NULL);
+			efile = vstralloc(dirname,"/",file, NULL);
 		  }
+		  else
+			efile = stralloc(file);
 		  
-		  if(access(file, F_OK) != 0) {
+		  if(access(efile, F_OK) != 0) {
 		        /* if exclude list file does not exist, ignore it.
 		         * Should not test for R_OK, because the file may be
 		         * readable by root only! */
 		        dbprintf(("%s: exclude list file \"%s\" does not exist, ignoring\n",
-				  get_pname(), file));
+				  get_pname(), efile));
 	                amfree(efile);
 		  }
 		  else
