@@ -36,7 +36,7 @@
 **     USE_FLOCK       - use flock().  Does just as well.
 **     USE_LOCKF       - use lockf().  Only handles advisory, exclusive,
 **                       blocking file locks as used by Amanda.
-**     USE_MYLOCK      - Home brew exclusive, blocking file lock.
+**     USE_LNLOCK      - Home brew exclusive, blocking file lock.
 **     <none>          - No locking available.  User beware!
 ** - "configure" compiles this with -DCONFIGURE_TEST to try and determine
 **   whether a particular type of locking works.
@@ -102,7 +102,7 @@ int op;	/* true to lock; false to unlock */
 
 #endif
 
-#if !defined(USE_POSIX_FCNTL) && !defined(USE_FLOCK) && !defined(USE_LOCKF) && defined(USE_MYLOCK)
+#if !defined(USE_POSIX_FCNTL) && !defined(USE_FLOCK) && !defined(USE_LOCKF) && defined(USE_LNLOCK)
 /* XXX - error checking in this section needs to be tightened up */
 
 /* Delete a lock file.
@@ -220,7 +220,7 @@ char *sres;	/* name of steal-resource to lock */
 	int rc;
 
 	/* prevent a race with another stealer */
-	rc = my_lock(sres, 1);
+	rc = ln_lock(sres, 1);
 	if (rc != 0) goto error;
 
 	pid = read_lock(fn);
@@ -239,7 +239,7 @@ char *sres;	/* name of steal-resource to lock */
 	}
 
 inuse:
-	rc = my_lock(sres, 0);
+	rc = ln_lock(sres, 0);
 	if (rc != 0) goto error;
 
 	return 1;
@@ -249,20 +249,20 @@ steal:
 	if (rc != 0) goto error;
 
 done:
-	rc = my_lock(sres, 0);
+	rc = ln_lock(sres, 0);
 	if (rc != 0) goto error;
 
 	return 0;
 
 error:
-	rc = my_lock(sres, 0);
+	rc = ln_lock(sres, 0);
 
 	return -1;
 }
 
 /* Locking using existance of a file.
 */
-int my_lock(res, op)
+int ln_lock(res, op)
 char *res; /* name of resource to lock */
 int op;    /* true to lock; false to unlock */
 {
@@ -368,8 +368,8 @@ char *resource;
 #ifdef USE_LOCKF
 	r = use_lockf(fd, 1);
 #else
-#ifdef USE_MYLOCK
-	r = my_lock(resource, 1);
+#ifdef USE_LNLOCK
+	r = ln_lock(resource, 1);
 #else
 	r = 0;
 #endif
@@ -399,8 +399,8 @@ char *resource;
 #ifdef USE_LOCKF
 	r = use_lockf(fd, 0);
 #else
-#ifdef USE_MYLOCK
-	r = my_lock(resource, 0);
+#ifdef USE_LNLOCK
+	r = ln_lock(resource, 0);
 #else
 	r = 0;
 #endif

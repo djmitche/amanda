@@ -204,7 +204,7 @@
 #undef USE_POSIX_FCNTL
 #undef USE_FLOCK
 #undef USE_LOCKF
-#undef USE_MYLOCK
+#undef USE_LNLOCK
 
 /* Declarations of functions.  */
 #undef HAVE_ACCEPT_DECL

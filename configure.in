@@ -1852,15 +1852,15 @@ fi
 
 if test -z "$HAS_WORKING_FILE_LOCK"; then
     AC_CACHE_CHECK(
-	[whether mylock locking works],
-	amanda_cv_mylock_filelocking,
+	[whether lnlock locking works],
+	amanda_cv_lnlock_filelocking,
 	[
 	    rm -f conftest.$ac_ext
 	    cat <<EOF >conftest.$ac_ext
 #include "confdefs.h"
 
 #define CONFIGURE_TEST
-#define USE_MYLOCK
+#define USE_LNLOCK
 #include "${srcdir-.}/common-src/amflock.c"
 
 void *alloc(l)
@@ -1874,19 +1874,19 @@ EOF
 		./conftest
 		STATUS=$?
 		if test "$STATUS" = 0; then
-		    amanda_cv_mylock_filelocking="yes"
+		    amanda_cv_lnlock_filelocking="yes"
 		else
-			amanda_cv_mylock_filelocking="no ($STATUS)"
+			amanda_cv_lnlock_filelocking="no ($STATUS)"
 		fi
 	    else
-		amanda_cv_mylock_filelocking="no (compiler error)"
+		amanda_cv_lnlock_filelocking="no (compiler error)"
 	    fi
-	    dnl cp conftest.c mylocktest.c
+	    dnl cp conftest.c lnlocktest.c
 	    rm -f conftest* /tmp/conftest.lock
 	]
     )
-    if test "$amanda_cv_mylock_filelocking" = yes; then
-	AC_DEFINE(USE_MYLOCK)
+    if test "$amanda_cv_lnlock_filelocking" = yes; then
+	AC_DEFINE(USE_LNLOCK)
 	HAS_WORKING_FILE_LOCK=1
     fi
 fi
@@ -1963,9 +1963,5 @@ AC_OUTPUT( \
 	man/amcheck.8			man/amcleanup.8			\
 	man/amdump.8			man/amflush.8			\
 	man/amlabel.8			man/Makefile			\
-									\
-	docs/Makefile							\
-	patches/Makefile						\
-	config-aux/Makefile						\
 									\
 	Makefile)
