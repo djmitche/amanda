@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amregex.h,v 1.3 1997/08/27 08:11:52 amcore Exp $
+ * $Id: amregex.h,v 1.4 1997/09/11 14:08:30 amcore Exp $
  *
  * compatibility header file for Henry Spencer's regex library.
  */
@@ -34,6 +34,10 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
+
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
 #endif
 
 #ifdef HAVE_STRINGS_H
