@@ -48,6 +48,7 @@ EXTRA_DIST = $(SNAPSHOT_STAMP) \
 	contrib/dbbackup.ksh		\
 	contrib/dbbackup.sql		\
 	contrib/dbbackup.tcl		\
+	contrib/mkamandisk		\
 	contrib/set_prod_link.pl	\
 	contrib/sst/Makefile		\
 	contrib/sst/README		\
