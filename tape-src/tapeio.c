@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.10.2.2 1998/02/18 16:16:14 amcore Exp $
+ * $Id: tapeio.c,v 1.10.2.3 1998/02/19 10:32:42 amcore Exp $
  *
  * implements tape I/O functions
  */
@@ -196,10 +196,23 @@ int tape_open(filename, mode)
 char *filename;
 int mode;
 {
+    int ret = 0, delay = 2, timeout = 200;
     if (mode == 0 || mode == O_RDONLY)
-        return open(filename, O_RDONLY);
+	mode = O_RDONLY;
     else
-	return open(filename, O_RDWR);
+	mode = O_RDWR;
+    do {
+	ret = open(filename, mode);
+	/* if tape open fails with errno==EAGAIN, it is worth retrying
+	 * a few seconds later.  */
+	if (ret == 0 || errno != EAGAIN)
+	    break;
+	sleep(delay);
+	timeout -= delay;
+	if (delay < 16)
+	    delay *= 2;
+    } while (timeout > 0);
+    return ret;
 }
 
 int tapefd_read(tapefd, buffer, count)
