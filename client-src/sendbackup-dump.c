@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.65.2.1 1998/11/09 17:25:58 kashmir Exp $
+ * $Id: sendbackup-dump.c,v 1.65.2.2 1999/03/17 04:25:34 oliva Exp $
  *
  * send backup data using BSD dump
  */
@@ -82,10 +82,10 @@ static regex_t re_table[] = {
   { DMP_SIZE, "DUMP: [0-9][0-9]* KB actual output", 1024},
 		/* HPUX dump */
 
-  { DMP_SIZE, "vxdump: vxdump: [0-9][0-9]* tape blocks", 1024},
+  { DMP_SIZE, "vxdump: [0-9][0-9]* tape blocks", 1024},
 		/* HPUX 10.20 and above vxdump */
 
-  { DMP_SIZE, "vxdump: vxdump: [0-9][0-9]* blocks", 1024},
+  { DMP_SIZE, "vxdump: [0-9][0-9]* blocks", 1024},
 		/* UnixWare vxdump */
 
   { DMP_SIZE, "   VXDUMP: [0-9][0-9]* blocks",                            512},
@@ -105,13 +105,13 @@ static regex_t re_table[] = {
   /* XXX add more ERROR entries here by scanning dump sources? */
 
   /* any blank or non-strange DUMP: lines are marked as normal */
-  { DMP_NORMAL, "^  DUMP:" },
+  { DMP_NORMAL, "^ *DUMP:" },
   { DMP_NORMAL, "^dump:" },					/* OSF/1 */
   { DMP_NORMAL, "^vdump:" },					/* OSF/1 */
-  { DMP_NORMAL, "^  vxdump:" },					/* HPUX10 */
+  { DMP_NORMAL, "^ *vxdump:" },					/* HPUX10 */
   { DMP_NORMAL, "^xfsdump:" },					/* IRIX xfs */
-  { DMP_NORMAL, "^  VXDUMP:" },                                 /* Sinix */
-  { DMP_NORMAL, "^  UFSDUMP:" },                                /* Sinix */
+  { DMP_NORMAL, "^ *VXDUMP:" },                                 /* Sinix */
+  { DMP_NORMAL, "^ *UFSDUMP:" },                                /* Sinix */
 
 #ifdef VDUMP	/* this is for OSF/1 3.2's vdump for advfs */
   { DMP_NORMAL, "^The -s option is ignored"},			/* OSF/1 */
