@@ -1,3 +1,9 @@
+2000-11-01 John R. Jackson  <jrj@purdue.edu>
+
+	* common-src/security.c (bsd_security_ok): Same fix for amwait_t !=
+	int as applied a while back to changer.c.  Compliments of John E.
+	Hein <jhein@timing.com>.
+
 2000-10-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* client-src/selfcheck.c (check_disk): Write an appropriate
@@ -1119,7 +1125,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.400 2000/10/31 01:00:24 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.401 2000/11/01 20:35:35 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

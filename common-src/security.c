@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.c,v 1.17.2.4 1999/09/11 01:14:09 jrj Exp $
+ * $Id: security.c,v 1.17.2.5 2000/11/01 20:35:36 jrjackson Exp $
  *
  * wrapper file for kerberos security
  */
@@ -141,7 +141,8 @@ int bsd_security_ok(addr, str, cksum, errstr)
     FILE *fError;
     int saved_stderr;
     int fd[2];
-    amwait_t exitcode;
+    amwait_t wait_exitcode;
+    int exitcode;
     pid_t pid, ruserok_pid;
 #endif								/* } */
 
@@ -345,7 +346,7 @@ int bsd_security_ok(addr, str, cksum, errstr)
     close(fd[1]);
     fError = fdopen(fd[0], "r");
 
-    while((pid = wait(&exitcode)) == (pid_t)-1 && errno == EINTR) {}
+    while((pid = wait(&wait_exitcode)) == (pid_t)-1 && errno == EINTR) {}
     if (pid == (pid_t)-1) {
 	*errstr = vstralloc("[",
 			    "access as ", localuser, " not allowed",
@@ -363,8 +364,8 @@ int bsd_security_ok(addr, str, cksum, errstr)
 			    number,
 			    NULL);
 	exitcode = 0;
-    } else if (WIFSIGNALED(exitcode)) {
-	ap_snprintf(number, sizeof(number), "%d", WTERMSIG(exitcode));
+    } else if (WIFSIGNALED(wait_exitcode)) {
+	ap_snprintf(number, sizeof(number), "%d", WTERMSIG(wait_exitcode));
 	*errstr = vstralloc("[",
 			    "access as ", localuser, " not allowed",
 			    " from ", remoteuser, "@", remotehost,
@@ -372,7 +373,7 @@ int bsd_security_ok(addr, str, cksum, errstr)
 			    NULL);
 	exitcode = 0;
     } else {
-	exitcode = WEXITSTATUS(exitcode);
+	exitcode = WEXITSTATUS(wait_exitcode);
     }
     if(exitcode) {
 	if((*errstr = agets(fError)) == NULL) {
