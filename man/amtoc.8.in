@@ -4,7 +4,7 @@ amtoc \- generate TOC (Table Of Content) for an amanda run
 .SH SYNOPSIS
 .B
 .I amtoc
-[-a] [-i] [-t] [-f file] [-s subs] [--] logfile
+[-a] [-i] [-t] [-f file] [-s subs] [-w] [--] logfile
 
 .br
 .SH DESCRIPTION
@@ -28,6 +28,9 @@ write output to file ('-' for stdout)
 .TP 
 .B \-s subs
 output file name is evaluated from subs, with $_ set to `label_of_the_tape`.  '-a' option is equiv to -s 's/\\$/.toc/'
+.TP
+.B \-w
+separate tapes with form-feeds and prints blank lines before totals
 .TP
 .B \-\-
 last option, next parameter used as logfile
