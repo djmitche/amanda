@@ -141,6 +141,22 @@
 #  include <unistd.h>
 #endif
 
+/*
+ * At present, the kerberos routines require atexit(), or equivilent.  If 
+ * you're not using kerberos, you don't need it at all.  If you just null
+ * out the definition, you'll end up with ticket files hanging around in
+ * /tmp.
+ */
+#if defined(KRB4_SECURITY)
+#   if !defined(HAVE_ATEXIT) 
+#      if defined(HAVE_ON_EXIT)
+#          define atexit(func) on_exit(func, 0)
+#      else
+#	   define atexit(func) (you must to resolve lack of atexit in amanda.h)
+#      endif
+#   endif
+#endif
+
 #include <ctype.h>
 #include <errno.h>
 #include <netinet/in.h>
