@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb5-security.c,v 1.4 2003/03/29 23:59:05 kovert Exp $
+ * $Id: krb5-security.c,v 1.5 2003/03/30 00:29:59 kovert Exp $
  *
  * krb5-security.c - kerberos V5 security module
  */
@@ -562,7 +562,13 @@ conn_get(hostname)
     kc->hostname[sizeof(kc->hostname) - 1] = '\0';
     kc->errmsg = NULL;
     kc->gss_context = GSS_C_NO_CONTEXT;
-    kc->refcnt = 1;
+    /*
+     * [XXX] this is set to 2 in order to force the connection to stay
+     * open and process more protocol requests.  (basically consistant
+     * with bsd-security.c, and theoretically krb4-security.c.   This
+     * needs to be addressed in a cleaner way.
+     */
+    kc->refcnt = 2;
     TAILQ_INIT(&kc->frameq);
     connq_append(kc);
     return (kc);
@@ -1221,9 +1227,16 @@ conn_read_callback(cookie)
      * based and run out of inetd.  So, delete our accept reference once
      * we've gotten the first connection.
      */
+
+    /*
+     * [XXX] actually, the protocol has been changed to have multiple
+     * requests in one session be possible.  By not resetting accept_fn,
+     * this will caused them to be properly processed.  this needs to be
+     * addressed in a much cleaner way.
+     */
     if (accept_fn != NULL)
 	conn_put(kc);
-    accept_fn = NULL;
+    /* accept_fn = NULL; */
 }
 
 /*
