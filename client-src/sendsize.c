@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.99 1998/12/09 21:37:41 oliva Exp $
+ * $Id: sendsize.c,v 1.100 1999/02/03 12:32:05 oliva Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -547,42 +547,51 @@ typedef struct regex_s {
 } regex_t;
 
 regex_t re_size[] = {
+#ifdef DUMP
     {"  DUMP: estimated -*[0-9][0-9]* tape blocks", 1024},
     {"  DUMP: [Ee]stimated [0-9][0-9]* blocks", 512},
     {"  DUMP: [Ee]stimated [0-9][0-9]* bytes", 1},	       /* Ultrix 4.4 */
     {" UFSDUMP: estimated [0-9][0-9]* blocks", 512},           /* NEC EWS-UX */
-    {"vdump: Dumping [0-9][0-9]* bytes, ", 1},		      /* OSF/1 vdump */
     {"dump: Estimate: [0-9][0-9]* tape blocks", 1024},		    /* OSF/1 */
-    {"vxdump: estimated [0-9][0-9]* blocks", 512},          /* HPUX's vxdump */
     {"backup: There are an estimated [0-9][0-9]* tape blocks.",1024}, /* AIX */
     {"backup: estimated [0-9][0-9]* 1k blocks", 1024},		      /* AIX */
     {"backup: estimated [0-9][0-9]* tape blocks", 1024},	      /* AIX */
     {"backup: [0-9][0-9]* tape blocks on [0-9][0-9]* tape(s)",1024},  /* AIX */
     {"backup: [0-9][0-9]* 1k blocks on [0-9][0-9]* volume(s)",1024},  /* AIX */
-    {"[0-9][0-9]* blocks, [0-9][0-9]*.[0-9][0-9]* volumes", 1024},
-                                                          /* DU 3.2g dump -E */
     {"dump: Estimate: [0-9][0-9]* blocks being output to pipe",1024},
                                                               /* DU 4.0 dump */
     {"dump: Dumping [0-9][0-9]* bytes, ", 1},                /* DU 4.0 vdump */
     {"DUMP: estimated [0-9][0-9]* KB output", 1024},                 /* HPUX */
-    {"xfsdump: estimated dump size: [0-9][0-9]* bytes", 1},  /* Irix 6.2 xfs */
     {"  UFSDUMP: estimated [0-9][0-9]* blocks", 512},               /* Sinix */
-    {"  VXDUMP: estimated [0-9][0-9]* blocks", 512},                /* Sinix */
-    {"Total bytes written: [0-9][0-9]*", 1},		    /* Gnutar client */
-
-#ifdef SAMBA_CLIENT
-    {"Total bytes listed: [0-9][0-9]*", 1},		     /* Samba client */
-#endif
 
 #ifdef HAVE_DUMP_ESTIMATE
-# ifdef SAMBA_CLIENT
-    /* On DU 4.0, dump -E prints a line that matches an output line of
-       smbclient.  So, even if both are enabled by configure, dump
-       estimates will be disabled here.  */
-#  undef HAVE_DUMP_ESTIMATE
-# else
-    {"[0-9][0-9]* blocks", 1024},			  /* DU 4.0 dump  -E */
-# endif
+    {"[0-9][0-9]* blocks, [0-9][0-9]*.[0-9][0-9]* volumes", 1024},
+                                                          /* DU 3.2g dump -E */
+    {"^[0-9][0-9]* blocks$", 1024},			  /* DU 4.0 dump  -E */
+    {"^[0-9][0-9]*$", 1},			       /* Solaris ufsdump -S */
+#endif
+#endif
+
+#ifdef VDUMP
+    {"vdump: Dumping [0-9][0-9]* bytes, ", 1},		      /* OSF/1 vdump */
+#endif
+    
+#ifdef VXDUMP
+    {"vxdump: estimated [0-9][0-9]* blocks", 512},          /* HPUX's vxdump */
+    {"  VXDUMP: estimated [0-9][0-9]* blocks", 512},                /* Sinix */
+#endif
+
+#ifdef XFSDUMP
+    {"xfsdump: estimated dump size: [0-9][0-9]* bytes", 1},  /* Irix 6.2 xfs */
+#endif
+    
+#ifdef GNUTAR
+    {"Total bytes written: [0-9][0-9]*", 1},		    /* Gnutar client */
+#endif
+
+#ifdef SAMBA_CLIENT
+    {"Total bytes listed: [0-9][0-9]*", 1},			/* Samba dir */
+    {"Total number of bytes: [0-9][0-9]*", 1},			 /* Samba du */
 #endif
 
     { NULL, 0 }
@@ -689,7 +698,7 @@ long getsize_dump(disk, level)
 # else							/* } { */
 	dumpkeys = vstralloc(level_str,
 #  ifdef HAVE_DUMP_ESTIMATE				/* { */
-			     "E",
+			     HAVE_DUMP_ESTIMATE,
 #  endif						/* } */
 #  ifdef HAVE_HONOR_NODUMP				/* { */
 			     "h",

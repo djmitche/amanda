@@ -1254,7 +1254,7 @@ if test "$DUMP"; then
     AC_DEFINE_UNQUOTED(DUMP,"$DUMP")
     if test -x $DUMP; then
         AC_CACHE_CHECK(
-	    [whether $DUMP supports -E for estimates],
+	    [whether $DUMP supports -E or -S for estimates],
 	    amanda_cv_dump_estimate,
 	    [
 	        case "$DUMP" in
@@ -1262,26 +1262,31 @@ if test "$DUMP"; then
 		    AC_TRY_COMMAND($DUMP 9Ef /dev/null /dev/null/invalid/fs
 		        >conftest.d-E 2>&1)
 		    cat conftest.d-E >&AC_FD_CC
+		    AC_TRY_COMMAND($DUMP 9Sf /dev/null /dev/null/invalid/fs
+		        >conftest.d-S 2>&1)
+		    cat conftest.d-S >&AC_FD_CC
 		    AC_TRY_COMMAND($DUMP 9f /dev/null /dev/null/invalid/fs 2>&1
 		        | $EGREP -v "Dumping\|Date of" >conftest.d)
 		    cat conftest.d >&AC_FD_CC
-		    if AC_TRY_COMMAND(diff conftest.d-E conftest.d 1>&2); then
-		        amanda_cv_dump_estimate=yes
+		    if AC_TRY_COMMAND(cmp conftest.d-E conftest.d 1>&2); then
+		        amanda_cv_dump_estimate=E
+		    elif AC_TRY_COMMAND(cmp conftest.d-S conftest.d 1>&2); then
+			amanda_cv_dump_estimate=S
 		    else
 		        amanda_cv_dump_estimate=no
 		    fi
-		    rm -f conftest.d conftest.d-E conftest.d-noE
+		    rm -f conftest.d conftest.d-E conftest.d-S
 	          ;;
 	        *) amanda_cv_dump_estimate=no
 	          ;;
 	        esac
 	    ])
     else
-	AC_MSG_WARN([*** $DUMP is not executable, cannot run -E test])
+	AC_MSG_WARN([*** $DUMP is not executable, cannot run -E/-S test])
 	amanda_cv_dump_estimate=no
     fi
-    if test "$amanda_cv_dump_estimate" = yes; then
-	AC_DEFINE(HAVE_DUMP_ESTIMATE)
+    if test "$amanda_cv_dump_estimate" != no; then
+	AC_DEFINE_UNQUOTED(HAVE_DUMP_ESTIMATE, "$amanda_cv_dump_estimate")
     fi
 
     AC_ARG_WITH(dump-honor-nodump,
