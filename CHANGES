@@ -1,5 +1,15 @@
 Version 2.4.0b5
 
+	Sanitise the disk name in the TEXTDB code.
+	**NOTE** if your infofile database uses TEXTDB (which has only been
+		 available since Amanda-2.4.0b1) and you have '/'s in the
+		 first field in disklist you will need to 'amadmin export'
+		 the data using the old version of Amanda, 'mv' the old
+		 database out of the way and 'amadmin import' it back again
+		 using the new version.  When you are happy with the new
+		 version you may delete the old database.
+	-scott
+
 	Get rid of DEV_ROOT/DEV_RROOT and figure out the raw name on the
 	fly by trying a leading 'r' before each path element one at a time
 	until we find a character device.  This should handle all the current

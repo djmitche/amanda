@@ -3,24 +3,38 @@ Amanda Upgrade Issues
 
 -----
 
-Amanda 2.4.0 has introduced a major incompatibility in the amanda
+Amanda 2.4.0 has introduced a major incompatibility in the Amanda
 protocol.  This means that pre-2.4.0 clients won't interoperate with a
 2.4.0 server, nor will 2.4.0 clients interoperate with pre-2.4.0
-servers.  You have to upgrade them at once.
+servers.  You have to upgrade them all at the same time.
 
-For easing the upgrade process, from release 2.4.0 on, amanda has
-supported a configure flag (--with-testing) that will cause amanda to
-use alternate service names (amanda-test) instead of the standard
-ones.  Thus, you can maintain a production release of amanda working
-while you test a new one.
+To ease the upgrade process Amanda has, from release 2.4.0 on, a
+configure flag (--with-testing) that will cause Amanda to use alternate
+service names (amanda-test) instead of the standard ones.  This allows
+you to keep using your old version of Amanda while you test the new one.
 
 -----
+
 Depending upon the version of Amanda you are upgrading from, Amanda may
 use a different database library to store the backup information, and
 the new Amanda may not be able to read the old Amanda database files.
 In this case, you will want to do something like the following:
 
-	amadmin-old CONFIG export > zzz
-	amadmin-new CONFIG import < zzz
+Before the upgrade (using the old version of amadmin):
+
+	# cd /var/amanda/CONFIG
+	# amadmin CONFIG export > zzz
+	# mkdir backup
+	# mv curinfo* backup
+
+and after the upgrade (using the new version of amadmin):
+
+	# cd /var/amanda/CONFIG
+	# amadmin CONFIG import < zzz
+
+and a month (:-) after you are happy with the new version:
+
+	# cd /var/amanda/CONFIG
+	# rm -rf backup
 
 -----

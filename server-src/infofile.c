@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.30 1998/01/03 20:27:01 kovert Exp $
+ * $Id: infofile.c,v 1.31 1998/01/07 23:12:12 george Exp $
  *
  * manage current info file
  */
@@ -63,7 +63,7 @@ char *mode;
 
     infofile = vstralloc(infodir,
 			 "/", sanitise_filename(host),
-			 "/", disk,
+			 "/", sanitise_filename(disk),
 			 "/info",
 			 NULL);
 
