@@ -1,3 +1,9 @@
+1999-04-28  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/dumper.c (read_mesgfd, read_indexfd): on EOF, just
+	stop reading these streams.  We let EOF on the data stream cause
+	the entire dump to be stopped.
+
 1999-04-27  Mike Grupenhoff <kashmir@munge.com>
 
 	* common-src/rsh-security.c (conn_read_callback): cast

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.123 1999/04/17 22:20:11 martinea Exp $
+/* $Id: dumper.c,v 1.124 1999/04/28 18:03:53 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1197,8 +1197,11 @@ read_mesgfd(cookie, buf, size)
 	stop_dump();
 	return;
     case 0:
+	/*
+	 * EOF.  Just stop reading the mesg stream.  EOF on the data
+	 * stream will cause everything to shut down.
+	 */
 	process_dumpeof();
-	stop_dump();
 	return;
     default:
 	assert(buf != NULL);
@@ -1307,6 +1310,10 @@ read_indexfd(cookie, buf, size)
     assert(cookie != NULL);
     fd = *(int *)cookie;
 
+    /*
+     * On error, or EOF, just stop reading the index stream.  EOF
+     * on the data stream will cause everything to shut down.
+     */
     if (size <= 0)
 	return;
 
