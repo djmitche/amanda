@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.11 1998/12/03 19:23:48 kashmir Exp $
+ * $Id: bsd-security.c,v 1.12 1998/12/14 19:41:58 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -853,7 +853,7 @@ check_user(bh, remoteuser)
 
     uid = getuid();
     if ((pwd = getpwuid(uid)) == NULL)
-        error("error [getpwuid(%d) fails]", uid);
+        error("error [getpwuid(%ld) fails]", (long)uid);
     localuser = pwd->pw_name;
 
     chdir(pwd->pw_dir);

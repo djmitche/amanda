@@ -1,5 +1,10 @@
 1998-12-14  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/bsd-security.c (bsd_sendpkt): cast uid's to long and
+	use %ld to print them.
+
+1998-12-14  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/dgram.h: mark dgram_cat with gcc's printf attribute
 	* common-src/packet.h: ditto for pkt_cat
 	* common-src/security.h: likewise for security_seterror
