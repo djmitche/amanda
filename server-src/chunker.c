@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.6 2001/02/28 02:48:53 jrjackson Exp $
+/* $Id: chunker.c,v 1.7 2001/03/05 23:52:39 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -52,16 +52,8 @@
 #endif
 
 #define CONNECT_TIMEOUT	5*60
-#define MAX_ARGS	11
 
 #define STARTUP_TIMEOUT 60
-
-typedef enum { BOGUS, PORT_WRITE, CONTINUE, ABORT, QUIT } cmd_t;
-
-struct cmdargs {
-    int argc;
-    char *argv[MAX_ARGS + 1];
-};
 
 struct databuf {
     int fd;			/* file to flush to */
@@ -98,9 +90,6 @@ static dumpfile_t file;
 
 /* local functions */
 int main P((int, char **));
-static cmd_t getcmd P((struct cmdargs *));
-static void putresult P((const char *, ...))
-    __attribute__ ((format (printf, 1, 2)));
 static int write_tapeheader P((int, dumpfile_t *));
 static void databuf_init P((struct databuf *, int, char *, long, long));
 static int databuf_write P((struct databuf *, const void *, int));
@@ -221,7 +210,7 @@ main(main_argc, main_argv)
 	    if (infd < 0) {
 		/*q = squotef("[chunker startup failed: %s]",
 		    strerror(errno));
-		putresult("FAILED %s %s\n", handle, q);
+		putresult(FAILED, "%s %s\n", handle, q);
 		amfree(q);*/
 		break;
 	    }
@@ -241,7 +230,7 @@ main(main_argc, main_argv)
 				      " kps ", kps_str,
 				      NULL);
 		q = squotef("[%s]",errstr);
-		putresult("DONE %s %ld %s\n",
+		putresult(DONE, "%s %ld %s\n",
 			  handle, dumpsize - headersize, q);
 		log_add(L_SUCCESS, "%s %s %s %d [%s]",
 				hostname, diskname, datestamp, level, errstr);
@@ -250,7 +239,7 @@ main(main_argc, main_argv)
 
 	default:
 	    q = squote(cmdargs.argv[1]);
-	    putresult("BAD-COMMAND %s\n", q);
+	    putresult(BAD_COMMAND, "%s\n", q);
 	    amfree(q);
 	    break;
 	}
@@ -301,7 +290,7 @@ startup_chunker(filename, use, chunksize, db)
 	error("AA");
     }
 
-    putresult("PORT %d\n", data_port);
+    putresult(PORT, "%d\n", data_port);
 
     if((infd = stream_accept(data_socket, CONNECT_TIMEOUT,
 		DEFAULT_SIZE, TAPE_BLOCK_BYTES)) == -1) {
@@ -311,12 +300,12 @@ startup_chunker(filename, use, chunksize, db)
     tmp_filename = vstralloc(filename, ".tmp", NULL);
     if ((outfd = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600)) < 0) {
 	if(errno == ENOSPC) {
-	    putresult("NO-ROOM %s %lu", handle, use);
-	    putresult("TRY-AGAIN %s [holding file \"%s\": %s]", handle,
+	    putresult(NO_ROOM, "%s %lu", handle, use);
+	    putresult(TRY_AGAIN, "%s [holding file \"%s\": %s]", handle,
 		      tmp_filename, strerror(errno));
 	}
 	else {
-	    putresult("FAILED %s [holding file \"%s\": %s]", handle,
+	    putresult(FAILED, "%s [holding file \"%s\": %s]", handle,
 		      tmp_filename, strerror(errno));
 	}
 	amfree(tmp_filename);
@@ -352,7 +341,7 @@ do_chunk(infd, db)
 	errstr = squotef("write_tapeheader file \"%s\": %s",
 			 db->filename, strerror(errno));
 	if(save_errno == ENOSPC) {
-	    putresult("NO-ROOM %s %lu\n", handle, 
+	    putresult(NO_ROOM, "%s %lu\n", handle, 
 		      db->use+db->split_size-dumpsize);
 	}
 	return (-1);
@@ -368,62 +357,6 @@ do_chunk(infd, db)
     }
     databuf_flush(db);
     return 1;
-}
-
-static cmd_t
-getcmd(cmdargs)
-    struct cmdargs *cmdargs;
-{
-    static const struct {
-	const char str[12];
-	cmd_t cmd;
-    } cmdtab[] = {
-	{ "PORT-WRITE", PORT_WRITE },
-	{ "CONTINUE", CONTINUE },
-	{ "ABORT", ABORT },
-	{ "QUIT", QUIT },
-    };
-    char *line;
-    int i;
-
-    assert(cmdargs != NULL);
-
-    if (interactive) {
-	printf("%s> ", get_pname());
-	fflush(stdout);
-    }
-
-    if ((line = agets(stdin)) == NULL)
-	return (QUIT);
-
-    cmdargs->argc = split(line, cmdargs->argv,
-	sizeof(cmdargs->argv) / sizeof(cmdargs->argv[0]), " ");
-    amfree(line);
-
-#if DEBUG
-    printf("argc = %d\n", cmdargs->argc);
-    for (i = 0; i < cmdargs->argc; i++)
-	printf("argv[%d] = \"%s\"\n", i, cmdargs->argv[i]);
-#endif
-
-    if (cmdargs->argc < 1)
-	return (BOGUS);
-
-    for (i = 0; i < sizeof(cmdtab) / sizeof(cmdtab[0]); i++)
-	if (strcmp(cmdargs->argv[1], cmdtab[i].str) == 0)
-	    return (cmdtab[i].cmd);
-    return (BOGUS);
-}
-
-
-arglist_function(static void putresult, const char *, format)
-{
-    va_list argp;
-
-    arglist_start(argp, format);
-    vprintf(format, argp);
-    fflush(stdout);
-    arglist_end(argp);
 }
 
 /*
@@ -509,7 +442,7 @@ databuf_flush(db)
 	if( db->use == 0 ) { /* no more space on this disk. request some more */
 	    cmd_t cmd;
 
-	    putresult("RQ-MORE-DISK %s\n", handle);
+	    putresult(RQ_MORE_DISK, "%s\n", handle);
 	    cmd = getcmd(&cmdargs);
 	    if(cmd != CONTINUE && cmd != ABORT) {
 		error("error [bad command after RQ-MORE-DISK: %d]", cmd);
@@ -530,7 +463,7 @@ databuf_flush(db)
 	    } else { /* test ABORT */
 		abort_pending = 1;
 		errstr = newstralloc(errstr, "ERROR");
-		putresult("ABORT-FINISHED %s\n", handle);
+		putresult(ABORT_FINISHED, "%s\n", handle);
 		exit(1);
 		return 1;
 	    }
@@ -557,7 +490,7 @@ databuf_flush(db)
 		if(save_errno == ENOSPC) {
 		    db->split_size = dumpsize;
 		    db->use = 0;
-		    putresult("NO-ROOM %s %lu\n", handle, 
+		    putresult(NO_ROOM, "%s %lu\n", handle, 
 			      db->use+db->split_size-dumpsize);
 		}
 	        else return (-1);
@@ -574,7 +507,7 @@ databuf_flush(db)
 		    if(save_errno == ENOSPC) {
 			db->split_size = dumpsize;
 			db->use = 0;
-			putresult("NO-ROOM %s %lu\n", handle, 
+			putresult(NO_ROOM, "%s %lu\n", handle, 
 			          db->use+db->split_size-dumpsize);
 		    }
 	            else return (-1);
@@ -657,7 +590,7 @@ databuf_flush(db)
 	    dumpsize += db->spaceleft/1024;
 	    filesize += db->spaceleft/1024;
 	}
-	putresult("NO-ROOM %s %lu\n", handle, db->use+db->split_size-dumpsize);
+	putresult(NO_ROOM, "%s %lu\n", handle, db->use+db->split_size-dumpsize);
 	db->use = 0; /* force RQ_MORE_DISK */
 	db->split_size = dumpsize;
 	db->dataptr = db->buf + db->spaceleft;

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.67 2001/02/28 02:48:53 jrjackson Exp $
+/* $Id: taper.c,v 1.68 2001/03/05 23:52:39 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -41,6 +41,7 @@
 #include "arglist.h"
 #include "token.h"
 #include "fileheader.h"
+#include "server_util.h"
 #ifdef HAVE_LIBVTBLC
 #include <vtblc.h>
 #include <strings.h>
@@ -65,7 +66,6 @@ static vtbl_lbls vtbl_entry[MAX_VOLUMES];
  * XXX advance to next tape first in next_tape
  * XXX label is being read twice?
  */
-#define MAX_ARGS	7
 
 /* NBUFS replaced by conf_tapebufs */
 /* #define NBUFS		20 */
@@ -77,8 +77,6 @@ int conf_tapebufs;
 #define CONNECT_TIMEOUT 2*60
 
 
-
-typedef enum { BOGUS, START_TAPER, FILE_WRITE, PORT_WRITE, QUIT } cmd_t;
 
 #define EMPTY 1
 #define FILLING 2
@@ -96,11 +94,6 @@ typedef struct buffer_s {
 int main P((int main_argc, char **main_argv));
 void file_reader_side P((int rdpipe, int wrpipe));
 void tape_writer_side P((int rdpipe, int wrpipe));
-
-/* misc helper functions */
-cmd_t getcmd P((int *argcp, char ***argvp));
-void putresult P((char *format, ...))
-    __attribute__ ((format (printf, 1, 2)));
 
 /* shared-memory routines */
 buffer_t *attach_buffers P((void));
@@ -302,8 +295,7 @@ void file_reader_side(rdpipe, wrpipe)
 int rdpipe, wrpipe;
 {
     cmd_t cmd;
-    int argc;
-    char **argv;
+    struct cmdargs cmdargs;
     char *handle = NULL, *hostname = NULL, *diskname = NULL, *result;
     char *datestamp = NULL;
     char tok;
@@ -317,16 +309,16 @@ int rdpipe, wrpipe;
     /* must get START_TAPER before beginning */
 
     startclock();
-    cmd = getcmd(&argc, &argv);
+    cmd = getcmd(&cmdargs);
     total_wait = stopclock();
 
-    if(cmd != START_TAPER || argc != 2) {
-	error("error [file_reader_side cmd %d argc %d]", cmd, argc);
+    if(cmd != START_TAPER || cmdargs.argc != 2) {
+	error("error [file_reader_side cmd %d argc %d]", cmd, cmdargs.argc);
     }
 
     /* pass start command on to tape writer */
 
-    taper_datestamp = newstralloc(taper_datestamp, argv[2]);
+    taper_datestamp = newstralloc(taper_datestamp, cmdargs.argv[2]);
 
     syncpipe_put('S');
     syncpipe_putstr(taper_datestamp);
@@ -336,14 +328,14 @@ int rdpipe, wrpipe;
     tok = syncpipe_get();
     switch(tok) {
     case 'S':
-	putresult("TAPER-OK\n");
+	putresult(TAPER_OK, "\n");
 	/* start is logged in writer */
 	break;
     case 'E':
 	/* no tape, bail out */
 	result = syncpipe_getstr();
 	q = squotef("[%s]", result ? result : "(null)");
-	putresult("TAPE-ERROR %s\n", q);
+	putresult(TAPE_ERROR, "%s\n", q);
 	amfree(q);
 	log_add(L_ERROR,"no-tape [%s]", result);
 	amfree(result);
@@ -358,7 +350,7 @@ int rdpipe, wrpipe;
 
     while(1) {
 	startclock();
-	cmd = getcmd(&argc, &argv);
+	cmd = getcmd(&cmdargs);
 	total_wait = timesadd(total_wait, stopclock());
 
 	switch(cmd) {
@@ -366,15 +358,15 @@ int rdpipe, wrpipe;
 	    /*
 	     * PORT-WRITE <handle> <host> <disk> <lev> <datestamp>
 	     */
-	    if(argc != 6) {
+	    if(cmdargs.argc != 6) {
 		error("error [file_reader_side PORT-WRITE argc != 6: %d]",
-		      argc);
+		      cmdargs.argc);
 	    }
-	    handle = stralloc(argv[2]);
-	    hostname = stralloc(argv[3]);
-	    diskname = stralloc(argv[4]);
-	    level = atoi(argv[5]);
-	    datestamp = stralloc(argv[6]);
+	    handle = stralloc(cmdargs.argv[2]);
+	    hostname = stralloc(cmdargs.argv[3]);
+	    diskname = stralloc(cmdargs.argv[4]);
+	    level = atoi(cmdargs.argv[5]);
+	    datestamp = stralloc(cmdargs.argv[6]);
 
 	    data_port = 0;
 	    data_socket = stream_server(&data_port,
@@ -388,7 +380,7 @@ int rdpipe, wrpipe;
 			      "]",
 			      NULL);
 		q = squote(m);
-		putresult("TAPE-ERROR %s %s\n", handle, q);
+		putresult(TAPE_ERROR, "%s %s\n", handle, q);
 		amfree(q);
 		amfree(m);
 		amfree(handle);
@@ -396,12 +388,12 @@ int rdpipe, wrpipe;
 		amfree(diskname);
 		break;
 	    }
-	    putresult("PORT %d\n", data_port);
+	    putresult(PORT, "%d\n", data_port);
 
 	    if((fd = stream_accept(data_socket, CONNECT_TIMEOUT,
 				   DEFAULT_SIZE, sizeof(buftable->buffer))) == -1) {
 		q = squote("[port connect timeout]");
-		putresult("TAPE-ERROR %s %s\n", handle, q);
+		putresult(TAPE_ERROR, "%s %s\n", handle, q);
 		amfree(q);
 		aclose(data_socket);
 		amfree(handle);
@@ -420,29 +412,29 @@ int rdpipe, wrpipe;
 	    /*
 	     * FILE-WRITE <sn> <fname> <hst> <dsk> <lev> <datestamp>
 	     */
-	    if(argc != 7) {
+	    if(cmdargs.argc != 7) {
 		error("error [file_reader_side FILE-WRITE argc != 7: %d]",
-		      argc);
+		      cmdargs.argc);
 	    }
 
-	    handle = stralloc(argv[2]);
-	    hostname = stralloc(argv[4]);
-	    diskname = stralloc(argv[5]);
-	    level = atoi(argv[6]);
-	    datestamp = stralloc(argv[7]);
+	    handle = stralloc(cmdargs.argv[2]);
+	    hostname = stralloc(cmdargs.argv[4]);
+	    diskname = stralloc(cmdargs.argv[5]);
+	    level = atoi(cmdargs.argv[6]);
+	    datestamp = stralloc(cmdargs.argv[7]);
 
-	    if(stat(argv[3],&stat_file)!=0) {
+	    if(stat(cmdargs.argv[3],&stat_file)!=0) {
 		q = squotef("[%s]", strerror(errno));
-		putresult("TAPE-ERROR %s %s\n", handle, q);
+		putresult(TAPE_ERROR, "%s %s\n", handle, q);
 		amfree(q);
 		amfree(handle);
 		amfree(hostname);
 		amfree(diskname);
 		break;
 	    }
-	    if((fd = open(argv[3], O_RDONLY)) == -1) {
+	    if((fd = open(cmdargs.argv[3], O_RDONLY)) == -1) {
 		q = squotef("[%s]", strerror(errno));
-		putresult("TAPE-ERROR %s %s\n", handle, q);
+		putresult(TAPE_ERROR, "%s %s\n", handle, q);
 		amfree(q);
 		amfree(handle);
 		amfree(hostname);
@@ -456,7 +448,7 @@ int rdpipe, wrpipe;
 	    break;
 
 	case QUIT:
-	    putresult("QUITTING\n");
+	    putresult(QUITTING, "\n");
 	    fprintf(stderr,"taper: DONE [idle wait: %s secs]\n",
 		    walltime_str(total_wait));
 	    fflush(stderr);
@@ -491,9 +483,9 @@ int rdpipe, wrpipe;
 	    exit(0);
 
 	default:
-	    handle = stralloc(argv[1]);
+	    handle = stralloc(cmdargs.argv[1]);
 	    q = squote(handle);
-	    putresult("BAD-COMMAND %s\n", q);
+	    putresult(BAD_COMMAND, "%s\n", q);
 	    amfree(q);
 	    amfree(handle);
 	    break;
@@ -655,7 +647,7 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 		errstr = newstralloc(errstr,
 				     "[fatal buffer mismanagement bug]");
 		q = squote(errstr);
-		putresult("TRY-AGAIN %s %s\n", handle, q);
+		putresult(TRY_AGAIN, "%s %s\n", handle, q);
 		amfree(q);
 		log_add(L_INFO, "retrying %s:%s.%d on new tape: %s",
 		        hostname, diskname, level, errstr);
@@ -768,11 +760,11 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 
 	    q = squote(errstr);
 	    if(tok == 'T') {
-		putresult("TRY-AGAIN %s %s\n", handle, q);
+		putresult(TRY_AGAIN, "%s %s\n", handle, q);
 		log_add(L_INFO, "retrying %s:%s.%d on new tape: %s",
 		        hostname, diskname, level, errstr);
 	    } else {
-		putresult("TAPE-ERROR %s %s\n", handle, q);
+		putresult(TAPE_ERROR, "%s %s\n", handle, q);
 		log_add(L_FAIL, "%s %s %d [out of tape]",
 			hostname, diskname, level);
 		log_add(L_ERROR,"no-tape [%s]", errstr);
@@ -808,7 +800,7 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 				          "[input: ", strerror(err), "]",
 				          NULL);
 		q = squote(errstr);
-		putresult("TAPE-ERROR %s %s\n", handle, q);
+		putresult(TAPE_ERROR, "%s %s\n", handle, q);
 		amfree(q);
 		log_add(L_FAIL, "%s %s %d %s",
 			hostname, diskname, level, errstr);
@@ -834,7 +826,7 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 				      NULL);
 		amfree(str);
 		q = squote(errstr);
-		putresult("DONE %s %s %d %s\n",
+		putresult(DONE, "%s %s %d %s\n",
 			  handle, label, filenum, q);
 		amfree(q);
 		log_add(L_SUCCESS, "%s %s %s %d %s",
@@ -1292,71 +1284,6 @@ buffer_t *bp;
 	if(interactive) fputs("[WE]", stderr);
 	return 0;
     }
-}
-
-
-/*
- * ========================================================================
- * MISC HELPER FUNCTIONS
- *
- */
-cmd_t
-getcmd(argcp, argvp)
-    int *argcp;
-    char ***argvp;
-{
-    /*
-     * WARNING: this routine stores the decoded strings in a static buffer.
-     * Subsequent calls will overwrite previous values, so if you want
-     * them to hang around, the calling routine had better copy them to
-     * storage it has allocated for that purpose.
-     */
-    char *line;
-    static char *argv[MAX_ARGS+1];
-    int argc;
-
-    if(interactive) {
-	fprintf(stderr, "%s> ", get_pname());
-	fflush(stderr);
-    }
-
-    if((line = agets(stdin)) == NULL) return QUIT;
-
-    argc = split(line, argv, sizeof(argv) / sizeof(argv[0]), " ");
-
-#ifdef DEBUG
-    {
-      int arg;
-      fprintf(stderr, "argc = %d\n", argc);
-      for(arg = 0; arg <= argc; arg++)
-	fprintf(stderr, "argv[%d] = \"%s\"\n", arg, argv[arg]);
-    }
-#endif
-
-    amfree(line);
-
-    *argvp = argv;
-    *argcp = argc;
-
-    /* not enough commands for a table lookup */
-
-    if(argc < 1) return BOGUS;
-    if(strcmp(argv[1],"START-TAPER") == 0) return START_TAPER;
-    if(strcmp(argv[1],"FILE-WRITE") == 0) return FILE_WRITE;
-    if(strcmp(argv[1],"PORT-WRITE") == 0) return PORT_WRITE;
-    if(strcmp(argv[1],"QUIT") == 0) return QUIT;
-    return BOGUS;
-}
-
-
-arglist_function(void putresult, char *, format)
-{
-    va_list argp;
-
-    arglist_start(argp, format);
-    vprintf(format, argp);
-    fflush(stdout);
-    arglist_end(argp);
 }
 
 

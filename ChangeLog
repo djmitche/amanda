@@ -1,3 +1,20 @@
+2001-03-05  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/server_util.c (cmdstr, getcmd, putresult): New.
+	* server-src/server_util.h (cmdstr, getcmd, putresult): Prototype.
+	* server-src/server_util.h (cmd_t): New.
+	* server-src/driverio.c (cmdstr): Remove.
+	* server-src/driverio.c: Use new cmdstr and cmd_t.
+	* server-src/driverio.h: (tok_t): Remove.
+	* server-src/amflush.c: Use new cmd_t.
+	* server-src/driver.c: Use new cmd_t.
+	* server-src/chunker.c (cmd_t, getcmd, putresult): Remove.
+	* server-src/chunker.c: Use new cmd_t, getcmd and putresult.
+	* server-src/dumper.c (cmd_t, getcmd, putresult): Remove.
+	* server-src/dumper.c: Use new cmd_t, getcmd and putresult.
+	* server-src/taper.c (cmd_t, getcmd, putresult): Remove.
+	* server-src/taper.c: Use new cmd_t, getcmd and putresult.
+
 2001-03-05 John R. Jackson <jrj@purdue.edu>
 
 	* common-src/util.c: The fullread() and fullwrite() functions should

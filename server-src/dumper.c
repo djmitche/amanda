@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.136 2001/02/28 02:48:53 jrjackson Exp $
+/* $Id: dumper.c,v 1.137 2001/03/05 23:52:39 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -53,16 +53,8 @@
 #endif
 
 #define CONNECT_TIMEOUT	5*60
-#define MAX_ARGS	10
 
 #define STARTUP_TIMEOUT 60
-
-typedef enum { BOGUS, PORT_DUMP, CONTINUE, ABORT, QUIT } cmd_t;
-
-struct cmdargs {
-    int argc;
-    char *argv[MAX_ARGS + 1];
-};
 
 struct databuf {
     int fd;			/* file to flush to */
@@ -111,9 +103,6 @@ static struct {
 
 /* local functions */
 int main P((int, char **));
-static cmd_t getcmd P((struct cmdargs *));
-static void putresult P((const char *, ...))
-    __attribute__ ((format (printf, 1, 2)));
 static int do_dump P((struct databuf *));
 void check_options P((char *));
 static void finish_tapeheader P((dumpfile_t *));
@@ -269,7 +258,7 @@ main(main_argc, main_argv)
 				  STREAM_BUFSIZE, DEFAULT_SIZE, NULL, 0);
 	    if (outfd == -1) {
 		q = squotef("[taper port open: %s]", strerror(errno));
-		putresult("FAILED %s %s\n", handle, q);
+		putresult(FAILED, "%s %s\n", handle, q);
 		amfree(q);
 		break;
 	    }
@@ -281,7 +270,7 @@ main(main_argc, main_argv)
 		options);
 	    if (rc != 0) {
 		q = squote(errstr);
-		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
+		putresult(rc == 2? FAILED : TRY_AGAIN, "%s %s\n",
 		    handle, q);
 		if (rc == 2)
 		    log_add(L_FAIL, "%s %s %d [%s]", hostname, diskname, level,
@@ -292,13 +281,13 @@ main(main_argc, main_argv)
 		if (do_dump(&db)) {
 		}
 		if (abort_pending)
-		    putresult("ABORT-FINISHED %s\n", handle);
+		    putresult(ABORT_FINISHED, "%s\n", handle);
 	    }
 	    break;
 
 	default:
 	    q = squote(cmdargs.argv[1]);
-	    putresult("BAD-COMMAND %s\n", q);
+	    putresult(BAD_COMMAND, "%s\n", q);
 	    amfree(q);
 	    break;
 	}
@@ -329,62 +318,6 @@ main(main_argc, main_argv)
     exit(0);
 }
 
-
-static cmd_t
-getcmd(cmdargs)
-    struct cmdargs *cmdargs;
-{
-    static const struct {
-	const char str[12];
-	cmd_t cmd;
-    } cmdtab[] = {
-	{ "PORT-DUMP", PORT_DUMP },
-	{ "CONTINUE", CONTINUE },
-	{ "ABORT", ABORT },
-	{ "QUIT", QUIT },
-    };
-    char *line;
-    int i;
-
-    assert(cmdargs != NULL);
-
-    if (interactive) {
-	printf("%s> ", get_pname());
-	fflush(stdout);
-    }
-
-    if ((line = agets(stdin)) == NULL)
-	return (QUIT);
-
-    cmdargs->argc = split(line, cmdargs->argv,
-	sizeof(cmdargs->argv) / sizeof(cmdargs->argv[0]), " ");
-    amfree(line);
-
-#if DEBUG
-    printf("argc = %d\n", cmdargs->argc);
-    for (i = 0; i < cmdargs->argc; i++)
-	printf("argv[%d] = \"%s\"\n", i, cmdargs->argv[i]);
-#endif
-
-    if (cmdargs->argc < 1)
-	return (BOGUS);
-
-    for (i = 0; i < sizeof(cmdtab) / sizeof(cmdtab[0]); i++)
-	if (strcmp(cmdargs->argv[1], cmdtab[i].str) == 0)
-	    return (cmdtab[i].cmd);
-    return (BOGUS);
-}
-
-
-arglist_function(static void putresult, const char *, format)
-{
-    va_list argp;
-
-    arglist_start(argp, format);
-    vprintf(format, argp);
-    fflush(stdout);
-    arglist_end(argp);
-}
 
 /*
  * Initialize a databuf.  Takes a writeable file descriptor.
@@ -474,7 +407,7 @@ databuf_flush(db)
 	    return (-1);
 	}
 
-	putresult("NO-ROOM %s\n", handle);
+	putresult(NO_ROOM, "%s\n", handle);
 	cmd = getcmd(&cmdargs);
 	switch (cmd) {
 	case ABORT:
@@ -915,7 +848,7 @@ do_dump(db)
 	walltime_str(runtime), dumpsize,
 	dumptime ? dumpsize / dumptime : 0.0, origsize);
     q = squotef("[%s]", errstr);
-    putresult("DONE %s %ld %ld %ld %s\n", handle, origsize, dumpsize,
+    putresult(DONE, "%s %ld %ld %ld %s\n", handle, origsize, dumpsize,
 	      (long)(dumptime+0.5), q);
     amfree(q);
 
@@ -954,7 +887,7 @@ do_dump(db)
 failed:
     if (!abort_pending) {
 	q = squotef("[%s]", errstr);
-	putresult("FAILED %s %s\n", handle, q);
+	putresult(FAILED, "%s %s\n", handle, q);
 	amfree(q);
     }
 
