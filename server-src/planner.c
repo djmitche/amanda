@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.22 2002/12/17 21:18:59 martinea Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.23 2002/12/30 16:22:22 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -2077,6 +2077,7 @@ static int promote_highest_priority_incremental P((void))
     long new_size, new_total, new_lev0;
     int check_days;
     int nb_today, nb_same_day, nb_today2;
+    int nb_disk_today, nb_disk_same_day;
 
     /*
      * return 1 if did so; must update total_size correctly; must not
@@ -2098,14 +2099,15 @@ static int promote_highest_priority_incremental P((void))
 	new_total = total_size - est(dp)->dump_size + new_size;
 	new_lev0 = total_lev0 + new_size;
 
-	if(new_total > tape_length ||
-	   new_lev0 > balanced_size + balance_threshold) {
-	    continue;
-	}
-
 	nb_today = 0;
 	nb_same_day = 0;
+	nb_disk_today = 0;
+	nb_disk_same_day = 0;
         for(dp1 = schedq.head; dp1 != NULL; dp1 = dp1->next) {
+	    if(est(dp1)->dump_level == 0)
+		nb_disk_today++;
+	    else if(est(dp1)->next_level0 == est(dp)->next_level0)
+		nb_disk_same_day++;
 	    if(strcmp(dp->host->hostname, dp1->host->hostname) == 0) {
 		if(est(dp1)->dump_level == 0)
 		    nb_today++;
@@ -2113,8 +2115,20 @@ static int promote_highest_priority_incremental P((void))
 		    nb_same_day++;
 	    }
 	}
+
+	/* do not promote if overflow tape */
+	if(new_total > tape_length) continue;
+
+	/* do not promote if overflow balanced size and something today */
+	/* promote if nothing today */
+	if(new_lev0 > balanced_size+balance_threshold && nb_disk_today > 0)
+	    continue;
+
+	/* do not promote if only one disk due that day and nothing today */
+	if(nb_disk_same_day == 1 && nb_disk_today == 0) continue;
+
 	nb_today2 = nb_today*nb_today;
-	if(nb_today == 0) nb_same_day++;
+	if(nb_today == 0 && nb_same_day > 1) nb_same_day++;
 
 	if(nb_same_day >= nb_today2) {
 	    est(dp)->promote = ((nb_same_day - nb_today2)*(nb_same_day - nb_today2)) + 
