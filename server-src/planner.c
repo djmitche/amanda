@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.86 1999/03/07 17:44:35 martinea Exp $
+ * $Id: planner.c,v 1.87 1999/04/09 15:05:54 kashmir Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -160,6 +160,8 @@ char **argv;
 
     set_pname("planner");
 
+    signal(SIGPIPE, SIG_IGN);
+
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
@@ -188,9 +190,10 @@ char **argv;
 	error("could not bind result datagram port: %s", strerror(errno));
 
     if(geteuid() == 0) {
-	/* set both real and effective uid's to real uid, likewise for gid */
+	uid_t ruid = getuid();
+	setuid(0);
+	seteuid(ruid);
 	setgid(getgid());
-	setuid(getuid());
     }
 
     /*
@@ -1083,12 +1086,13 @@ pkt_t *pkt;
 
     hostp = (host_t *) p->datap;
 
-    if(p->state == S_FAILED) {
-	if(pkt == NULL) {
-	    errbuf = vstralloc("Request to ", hostp->hostname, " timed out.",
-			       NULL);
+    if (pkt == NULL) {
+	errbuf = vstralloc("Request to ", hostp->hostname, " timed out.",
+			   NULL);
+	goto error_return;
+    } else if (pkt->type == P_NAK) {
 #define sc "ERROR"
-	} else if(strncmp(pkt->body, sc, sizeof(sc)-1) == 0) {
+	if(strncmp(pkt->body, sc, sizeof(sc)-1) == 0) {
 	    s = pkt->body + sizeof(sc)-1;
 	    ch = *s++;
 #undef sc
@@ -1101,10 +1105,10 @@ pkt_t *pkt;
 	    }
 	    errbuf = vstralloc(hostp->hostname, " NAK: ", remoterr, NULL);
 	    if(s) *s = '\n';
+	    goto error_return;
 	} else {
 	    goto NAK_parse_failed;
 	}
-	goto error_return;
     }
 
 #ifdef KRB4_SECURITY

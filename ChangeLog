@@ -1,3 +1,13 @@
+1999-04-09  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/planner.c (main): ignore SIGPIPE.  tcp based
+	security drivers may get this while getting estimates.
+	Set the real uid to root, and the effective uid to the amanda
+	user, so we can get back to root later if needed.
+	* server-src/planner.c (handle_result): rework error logic
+	so we don't need to use p->state, which will eventually go
+	away.
+
 1999-04-08  Mike Grupenhoff <kashmir@munge.com>
 
 	* server-src/dumper.c: rewrite to use the event handler instead
