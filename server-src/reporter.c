@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.8 1997/11/17 12:41:33 amcore Exp $
+ * $Id: reporter.c,v 1.9 1997/11/26 15:55:37 jrj Exp $
  *
  * nightly Amanda Report generator
  */
@@ -343,7 +343,7 @@ char **argv;
 
 #define mb(f)	((f)/1024.0)		/* kbytes -> mbytes */
 #define pct(f)	((f)*100.0)		/* percent */
-#define hrmn(f) ((int)(f))/3600, ((((int)(f)) % 3600)+30)/60
+#define hrmn(f) ((int)(f)+30)/3600, (((int)(f)+30)%3600)/60
 #define mnsc(f) ((int)(f+0.5))/60, ((int)(f+0.5)) % 60
 
 #define divzero(fp,a,b)	((b) == 0.0? \
