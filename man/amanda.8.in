@@ -392,8 +392,7 @@ of the tape media and device.
 .BN netusage int
 Default:
 .IR "300 Kbps" .
-The maximum network bandwidth allocated to Amanda, in Kbytes per second
-(not currently implemented).
+The maximum network bandwidth allocated to Amanda, in Kbytes per second.
 See also the
 .B interface
 section.
