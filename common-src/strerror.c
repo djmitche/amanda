@@ -15,25 +15,28 @@
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-/* $Id: strerror.c,v 1.5 1999/04/10 06:19:02 kashmir Exp $ */
+/* $Id: strerror.c,v 1.6 1999/05/18 20:38:53 kashmir Exp $ */
 
 #include "amanda.h"
+
+#define	UPREFIX	"Unknown error: %u"
 
 /*
  * Return the error message corresponding to some error number.
  */
 char *
 strerror(e)
-	int e;
+    int e;
 {
-	extern int sys_nerr;
-	extern char *sys_errlist[];
-	char number[NUM_STR_SIZE];
-	static char *unknown = NULL;
+    extern int sys_nerr;
+    extern char *sys_errlist[];
+    unsigned int errnum;
+    static char buf[NUM_STR_SIZE + sizeof(UPREFIX) + 1];
 
-	if ((unsigned)e < sys_nerr)
-		return sys_errlist[e];
-	snprintf(number, sizeof(number), "%d", e);
-	unknown = newstralloc2(unknown, "Unknown error: ", number);
-	return unknown;
+    errnum = e;		/* convert to unsigned */
+
+    if (errnum < sys_nerr)
+	return (sys_errlist[errnum]);
+    snprintf(buf, sizeof(buf), UPREFIX, errnum);
+    return (buf);
 }

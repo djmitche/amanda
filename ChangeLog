@@ -1,3 +1,8 @@
+1999-05-18  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/strerror.c (strerror): restructure so that it doesn't
+	need to malloc.
+
 1999-05-17  Mike Grupenhoff <kashmir@munge.com>
 
 	* common-src/genversion.c (prvar): prototype declared it static,
