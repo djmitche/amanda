@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.47.2.14.4.8.2.9 2002/09/10 12:11:41 martinea Exp $
+/* $Id: taper.c,v 1.47.2.14.4.8.2.10 2002/11/05 01:59:24 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -149,8 +149,6 @@ long buffer_size;
 int tt_file_pad;
 static unsigned long malloc_hist_1, malloc_size_1;
 static unsigned long malloc_hist_2, malloc_size_2;
-char *config_name = NULL;
-char *config_dir = NULL;
 
 am_feature_t *their_features = NULL;
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.22.2.6.4.5 2001/07/19 21:50:39 jrjackson Exp $
+ * $Id: amtape.c,v 1.22.2.6.4.5.2.1 2002/11/05 01:59:23 martinea Exp $
  *
  * tape changer interface program
  */
@@ -57,9 +57,6 @@ int show_slot P((int rc, char *slotstr, char *device));
 int taperscan_slot P((int rc, char *slotstr, char *device));
 int update_one_slot P((int rc, char *slotstr, char *device));
 void update_labeldb P((int argc, char **argv));
-
-char *config_name = NULL;
-char *config_dir = NULL;
 
 void usage()
 {

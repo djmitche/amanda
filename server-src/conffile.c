@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.16.2.5.2.11 2002/04/14 13:15:19 martinea Exp $
+ * $Id: conffile.c,v 1.54.2.16.2.5.2.12 2002/11/05 01:59:23 martinea Exp $
  *
  * read configuration file
  */
@@ -151,6 +151,9 @@ ColumnInfo ColumnData[] = {
     { "TapeRate",   0, 6,  1,  0, "%*.*f",  "KB/s" },
     { NULL,         0, 0,  0,  0, NULL,     NULL }
 };
+
+char *config_name = NULL;
+char *config_dir = NULL;
 
 /* visible holding disk variables */
 
@@ -2692,9 +2695,6 @@ int SetColumDataFromString(ColumnInfo* ci, char *s, char **errstr) {
 
 
 #ifdef TEST
-
-char *config_name = NULL;
-char *config_dir = NULL;
 
 void
 dump_configuration(filename)

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.16 2002/04/23 14:26:55 martinea Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.17 2002/11/05 01:59:24 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -51,8 +51,6 @@
 #define DEFAULT_DUMPRATE	 30.0	/* K/s */
 
 /* configuration file stuff */
-char *config_name = NULL;
-char *config_dir = NULL;
 
 char *conf_tapetype;
 int conf_runtapes;

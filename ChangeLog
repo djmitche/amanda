@@ -1,3 +1,25 @@
+2002-11-04  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* changer-src/chg-scsi.c (config_name, config_dir): Remove declaration.
+	* server-src/amadmin.c: Ditto.
+	* server-src/amcheck.c: Ditto.
+	* server-src/amcleanupdisk.c: Ditto.
+	* server-src/amflush.c: Ditto.
+	* server-src/amindexd.c: Ditto.
+	* server-src/amlabel.c: Ditto.
+	* server-src/amlogroll.c: Ditto.
+	* server-src/amtape.c: Ditto.
+	* server-src/amtrmidx.c: Ditto.
+	* server-src/amtrmlog.c: Ditto.
+	* server-src/diskfile.c: Ditto.
+	* server-src/driver.c: Ditto.
+	* server-src/dumper.c: Ditto.
+	* server-src/getconf.c: Ditto.
+	* server-src/planner.c: Ditto.
+	* server-src/reporter.c: Ditto.
+	* server-src/taper.c: Ditto.
+	* server-src/conffile.c: (config_name, config_dir): Add declaration.
+
 2002-11-03  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* man/amrestore.8: Amrestore doesn't use a changer.

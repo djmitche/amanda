@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.13.2.3.2.6 2002/03/22 15:00:22 martinea Exp $
+ * $Id: amadmin.c,v 1.49.2.13.2.3.2.7 2002/11/05 01:59:23 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -74,9 +74,6 @@ void export_db P((int argc, char **argv));
 void import_db P((int argc, char **argv));
 void disklist P((int argc, char **argv));
 void disklist_one P((disk_t *dp));
-
-char *config_name = NULL;
-char *config_dir = NULL;
 
 static char *conffile = NULL;
 static char *conf_tapelist = NULL;

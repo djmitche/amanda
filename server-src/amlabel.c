@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.18.2.15.4.3.2.2 2002/03/23 17:40:25 martinea Exp $
+ * $Id: amlabel.c,v 1.18.2.15.4.3.2.3 2002/11/05 01:59:23 martinea Exp $
  *
  * write an Amanda label on a tape
  */
@@ -37,9 +37,6 @@
 #ifdef HAVE_LIBVTBLC
 #include <vtblc.h>
 #endif /* HAVE_LIBVTBLC */
-
-char *config_name = NULL;
-char *config_dir = NULL;
 
 /* local functions */
 

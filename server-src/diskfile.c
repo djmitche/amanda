@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.27.4.6.4.3.2.10 2002/04/19 18:14:55 martinea Exp $
+ * $Id: diskfile.c,v 1.27.4.6.4.3.2.11 2002/11/05 01:59:23 martinea Exp $
  *
  * read disklist file
  */
@@ -886,9 +886,6 @@ void match_disklist(disklist_t *origqp, int sargc, char **sargv)
 
  
 #ifdef TEST
-
-char *config_name = NULL;
-char *config_dir = NULL;
 
 void
 dump_disk(dp)

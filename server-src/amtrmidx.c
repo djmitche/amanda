@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmidx.c,v 1.21.4.1.4.2.2.2 2002/08/21 18:59:08 martinea Exp $
+ * $Id: amtrmidx.c,v 1.21.4.1.4.2.2.3 2002/11/05 01:59:23 martinea Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -41,9 +41,6 @@
 #include "tapefile.h"
 #include "find.h"
 #include "version.h"
-
-char *config_name = NULL;
-char *config_dir = NULL;
 
 static int sort_by_name_reversed(a, b)
 const void *a;

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.11 2002/04/14 13:15:19 martinea Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.12 2002/11/05 01:59:24 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -118,8 +118,6 @@ char *idle_strings[] = {
 struct timeval sleep_time = { SLEEP_MAX, 0 };
 /* enabled if any disks are in start-wait: */
 int any_delayed_disk = 0;
-char *config_name = NULL;
-char *config_dir = NULL;
 
 int main(main_argc, main_argv)
      int main_argc;

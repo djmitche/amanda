@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.41.2.13.4.6.2.5 2002/04/13 19:24:16 jrjackson Exp $
+ * $Id: amflush.c,v 1.41.2.13.4.6.2.6 2002/11/05 01:59:23 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -40,8 +40,6 @@
 #include "driverio.h"
 #include "server_util.h"
 
-char *config_name = NULL;
-char *config_dir = NULL;
 static char *conf_logdir;
 FILE *driver_stream;
 char *driver_program;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlogroll.c,v 1.1.2.1.4.1 2001/07/19 21:50:39 jrjackson Exp $
+ * $Id: amlogroll.c,v 1.1.2.1.4.1.2.1 2002/11/05 01:59:23 martinea Exp $
  *
  * rename a live log file to the datestamped name.
  */
@@ -36,9 +36,6 @@
 #include "version.h"
 
 char *datestamp;
-
-char *config_name = NULL;
-char *config_dir = NULL;
 
 void handle_start P((void));
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcleanupdisk.c,v 1.1.2.6.4.3.2.1 2002/02/11 22:49:15 martinea Exp $
+ * $Id: amcleanupdisk.c,v 1.1.2.6.4.3.2.2 2002/11/05 01:59:23 martinea Exp $
  */
 #include "amanda.h"
 
@@ -43,8 +43,6 @@ char *datestamp;
 int main P((int argc, char **argv));
 void check_holdingdisk P((char *diskdir, char *datestamp));
 void check_disks P((void));
-char *config_name = NULL;
-char *config_dir = NULL;
 
 int main(main_argc, main_argv)
 int main_argc;

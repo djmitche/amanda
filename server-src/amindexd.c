@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.39.2.11.4.4.2.8 2002/10/27 21:13:25 martinea Exp $
+ * $Id: amindexd.c,v 1.39.2.11.4.4.2.9 2002/11/05 01:59:23 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -77,8 +77,6 @@ char local_hostname[MAX_HOSTNAME_LENGTH+1];	/* me! */
 char *remote_hostname = NULL;			/* the client */
 char *dump_hostname = NULL;			/* machine we are restoring */
 char *disk_name;				/* disk we are restoring */
-char *config_name = NULL;			/* config we are restoring */
-char *config_dir = NULL;			/* config directory */
 char *target_date = NULL;
 disklist_t *disk_list;				/* all disks in cur config */
 find_result_t *output_find = NULL;
