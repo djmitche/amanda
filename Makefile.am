@@ -2,8 +2,8 @@
 
 ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
 LIBTOOL_M4 = @LIBTOOL_M4@
-ACLOCAL = @ACLOCAL@ -I $(top_srcdir)/config @LIBTOOL_M4_MACRO_DIR@
-AUTOCONF = @AUTOCONF@ --localdir=$(top_srcdir)/config
+ACLOCAL = @ACLOCAL@ -I config @LIBTOOL_M4_MACRO_DIR@
+AUTOCONF = @AUTOCONF@ --localdir=config
 
 SUBDIRS=config		\
 	common-src	client-src	recover-src	\
