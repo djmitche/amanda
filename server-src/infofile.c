@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.23 1997/11/25 08:17:58 george Exp $
+ * $Id: infofile.c,v 1.24 1997/11/25 08:27:28 george Exp $
  *
  * manage current info file
  */
@@ -378,21 +378,28 @@ int lev;
 }
 
 double perf_average(a, d)
-/* Weighted average.  # items should agree w/ AVG_COUNT */
-float *a;
-double d;
+/* Weighted average */
+float *a;	/* array of items to average */
+double d;	/* default value */
 {
-    int total;
-    double avg;
+    double sum;	/* running total */
+    int n;	/* number of items in sum */
+    int w;	/* weight */
+    int i;	/* counter */
 
-    if(a[0] == -1.0)
-	return d;
+    sum = 0.0;
+    n = 0;
 
-    avg = a[0]*3, total = 3;
-    if(a[1] != -1.0) avg += a[1]*2, total += 2;
-    if(a[2] != -1.0) avg += a[2],   total += 1;
+    for(i = 0; i < AVG_COUNT; i++) {
+	if(a[i] >= 0.0) {
+	    w = AVG_COUNT - i;
+	    sum += a[i] * w;
+	    n += w;
+	}
+    }
 
-    return avg / total;
+    if(n == 0) return d;
+    return sum / n;
 }
 
 void zero_info(ip)
