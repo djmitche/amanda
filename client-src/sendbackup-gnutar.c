@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.74 2001/03/15 02:25:50 jrjackson Exp $
+ * $Id: sendbackup-gnutar.c,v 1.75 2001/04/23 21:14:52 jrjackson Exp $
  *
  * send backup data using GNU tar
  */
@@ -317,6 +317,8 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 	char *taropt;
 	int passwdf;
 	int lpass;
+	int pwtext_len;
+	char *pw_fd_env;
 
 	if ((user_and_password = findpass(disk, &domain)) == NULL) {
 	    if(domain) {
@@ -337,6 +339,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 		  get_pname(), disk);
 	}
 	*pwtext++ = '\0';
+	pwtext_len = strlen(pwtext);
 	if ((sharename = makesharename(disk, 0)) == 0) {
 	    memset(user_and_password, '\0', lpass);
 	    amfree(user_and_password);
@@ -369,12 +372,18 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
+	if (pwtext_len > 0) {
+	    pw_fd_env = "PASSWD_FD";
+	} else {
+	    pw_fd_env = "dummy_PASSWD_FD";
+	}
 	dumppid = pipespawn(cmd, STDIN_PIPE|PASSWD_PIPE,
 			    &dumpin, &dumpout, &mesgf,
-			    "PASSWD_FD", &passwdf,
+			    pw_fd_env, &passwdf,
 			    "smbclient",
 			    sharename,
-			    "-U", user_and_password,		/* user only */
+			    *user_and_password ? "-U" : skip_argument,
+			    *user_and_password ? user_and_password : skip_argument,
 			    "-E",
 			    domain ? "-W" : skip_argument,
 			    domain ? domain : skip_argument,
@@ -387,7 +396,7 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 	    memset(domain, '\0', strlen(domain));
 	    amfree(domain);
 	}
-	if(fullwrite(passwdf, pwtext, strlen(pwtext)) < 0) {
+	if(pwtext_len > 0 && fullwrite(passwdf, pwtext, pwtext_len) < 0) {
 	    int save_errno = errno;
 
 	    aclose(passwdf);

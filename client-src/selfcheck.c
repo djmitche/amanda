@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.46 2001/03/15 02:25:50 jrjackson Exp $
+ * $Id: selfcheck.c,v 1.47 2001/04/23 21:14:52 jrjackson Exp $
  *
  * do self-check and send back any error messages
  */
@@ -305,6 +305,7 @@ char *optstr;
     char *device = NULL;
     char *err = NULL;
     char *user_and_password = NULL, *domain = NULL;
+    int lpass;
     int amode;
     int access_result;
     char *access_type;
@@ -318,6 +319,7 @@ char *optstr;
 	    int nullfd, checkerr;
 	    int passwdfd;
 	    char *pwtext;
+	    int pwtext_len;
 	    int checkpid;
 	    amwait_t retstat;
 	    char number[NUM_STR_SIZE];
@@ -326,28 +328,37 @@ char *optstr;
 	    char *line;
 	    char *sep;
 	    FILE *ferr;
+	    char *pw_fd_env;
 
 	    if ((user_and_password = findpass(disk, &domain)) == NULL) {
 		err = stralloc2("cannot find password for ", disk);
 		goto common_exit;
 	    }
+	    lpass = strlen(user_and_password);
 	    if ((pwtext = strchr(user_and_password, '%')) == NULL) {
 		err = stralloc2("password field not \'user%pass\' for ", disk);
 		goto common_exit;
 	    }
 	    *pwtext++ = '\0';
+	    pwtext_len = strlen(pwtext);
 	    if ((device = makesharename(disk, 0)) == NULL) {
 		err = stralloc2("cannot make share name of ", disk);
 		goto common_exit;
 	    }
 
 	    nullfd = open("/dev/null", O_RDWR);
+	    if (pwtext_len > 0) {
+		pw_fd_env = "PASSWD_FD";
+	    } else {
+		pw_fd_env = "dummy_PASSWD_FD";
+	    }
 	    checkpid = pipespawn(SAMBA_CLIENT, STDERR_PIPE|PASSWD_PIPE,
 				 &nullfd, &nullfd, &checkerr,
-				 "PASSWD_FD", &passwdfd,
+				 pw_fd_env, &passwdfd,
 				 "smbclient",
 				 device,
-				 "-U", user_and_password,	/* user only */
+				 *user_and_password ? "-U" : skip_argument,
+				 *user_and_password ? user_and_password : skip_argument,
 				 "-E",
 				 domain ? "-W" : skip_argument,
 				 domain ? domain : skip_argument,
@@ -358,7 +369,7 @@ char *optstr;
 		amfree(domain);
 	    }
 	    aclose(nullfd);
-	    if (fullwrite(passwdfd, pwtext, strlen(pwtext)) < 0) {
+	    if (pwtext_len > 0 && fullwrite(passwdfd, pwtext, pwtext_len) < 0) {
 		err = vstralloc("password write failed: ",
 				disk,
 				": ",
@@ -367,7 +378,7 @@ char *optstr;
 		aclose(passwdfd);
 		goto common_exit;
 	    }
-	    memset(user_and_password, '\0', strlen(user_and_password));
+	    memset(user_and_password, '\0', lpass);
 	    amfree(user_and_password);
 	    aclose(passwdfd);
 	    ferr = fdopen(checkerr, "r");
@@ -492,7 +503,7 @@ char *optstr;
 common_exit:
 
     if(user_and_password) {
-	memset(user_and_password, '\0', strlen(user_and_password));
+	memset(user_and_password, '\0', lpass);
 	amfree(user_and_password);
     }
     if(domain) {
