@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-solaris.c,v 1.14 2000/11/26 15:55:45 martinea Exp $
+ * $Id: scsi-solaris.c,v 1.15 2000/12/30 22:57:51 jrjackson Exp $
  *
  * Interface to execute SCSI commands on an Sun Workstation
  *
@@ -74,11 +74,11 @@ int SCSI_OpenDevice(int ip)
           
           if (SCSI_Inquiry(ip, pDev[ip].inquiry, INQUIRY_SIZE) == 0)
             {
-              if (pDev[ip].inquiry->type == TYPE_TAPE || pDev[ip]->inquiry->type == TYPE_CHANGER)
+              if (pDev[ip].inquiry->type == TYPE_TAPE || pDev[ip].inquiry->type == TYPE_CHANGER)
                 {
                   for (i=0;i < 16;i++)
                     pDev[ip].ident[i] = pDev[ip].inquiry->prod_ident[i];
-                  for (i=15; i >= 0 && !isalnum(pDev[ip].ident[i]) ; i--)
+                  for (i=15; i >= 0 && !isalnum((int)pDev[ip].ident[i]) ; i--)
                     {
                       pDev[ip].ident[i] = '\0';
                     }
@@ -97,7 +97,7 @@ int SCSI_OpenDevice(int ip)
             }
           return(1);
         } else {
-          dbprintf(("SCSI_OpenDevice %s failed\n", DeviceName));
+          dbprintf(("SCSI_OpenDevice %s failed\n", pDev[ip].dev));
           return(0);
         }
     } else {
@@ -200,17 +200,18 @@ int SCSI_ExecuteCommand(int DeviceFD,
 int Tape_Eject ( int DeviceFD)
 {
   struct mtop mtop;
-  extern OpenFiles_T pDev;
+  extern OpenFiles_T *pDev;
+  int ret;
 
   if (pDev[DeviceFD].devopen == 0)
     SCSI_OpenDevice(DeviceFD);
 
   mtop.mt_op = MTOFFL;
   mtop.mt_count = 1;
-  ioctl(DeviceFD, MTIOCTOP, &mtop);
+  ret = ioctl(DeviceFD, MTIOCTOP, &mtop);
 
   SCSI_CloseDevice(DeviceFD);
-  return;
+  return ret;
 }
 
 int Tape_Status( int DeviceFD)

@@ -1084,6 +1084,9 @@ int SCSI_Inquiry(int, SCSIInquiry_T *, unsigned char);
 int PrintInquiry(SCSIInquiry_T *);
 int DecodeSCSI(CDB_T CDB, char *string);
 
+int RequestSense P((int fd, ExtendedRequestSense_T *s, int ClearErrorCounters));
+int DecodeExtSense P((ExtendedRequestSense_T *sense, char *pstring, FILE *out));
+
 void ChangerReplay(char *option);
 void ChangerStatus(char * option, char * labelfile, int HasBarCode, char *changer_file, char *changer_dev, char *tape_device);
 int BarCode(int fd);

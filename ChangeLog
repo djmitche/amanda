@@ -1,4 +1,12 @@
-2000-11-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+2000-12-30 John R. Jackson <jrj@purdue.edu>
+
+	* ChangeLog: Bring Jean-Louis into the right month :-).
+	* changer-src/scsi-changer-driver.c: Untested changes to at least
+	  get the code to compile on Solaris and to remove some warnings.
+	* changer-src/scsi-defs.h: Ditto.
+	* changer-src/scsi-solaris.c: Ditto.
+
+2000-12-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/diskfile.c (add_disk): New function.
 	* server-src/diskfile.h (add_disk): Prototype.
@@ -8,7 +16,7 @@
 	* server-src/planner.c (main): log DISK.
 	* server-src/reporter.c: use DISK if available.
 
-2000-11-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+2000-12-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amcheck.c: New [host disk]* pair arguments.
 	* server-src/amflush.c: Ditto.
@@ -19,19 +27,19 @@
 	* man/amflush.8.in: Ditto.
 	* man/amdump.8.in: Ditto.
 
-2000-11-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+2000-12-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/diskfile.c (match_disklist): new function.
 	* server-src/diskfile.h (struct disk_s): new field todo.
 	* server-src/diskfile.h (match_disklist): prototype.
 
-2000-11-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+2000-12-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* common-src/match.c (match_word, match_host, match_disk): 
 	new functions.
 	* common-src/amanda.h (match_host, match_disk): prototype.
 
-2000-11-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+2000-12-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/planner.c (analyze_estimate): pick incremental level
         if no estimate of level 0.

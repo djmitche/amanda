@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.16 2000/11/26 15:55:45 martinea Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.17 2000/12/30 22:57:51 jrjackson Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -3424,7 +3424,7 @@ int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int
   CDB[4] = 0x1D;                /* Allocation Length */                    
   CDB[5] = (ClearErrorCounters << 7) & 0x80;                 /*  */
   
-  bzero(ExtendedRequestSense, sizeof(ExtendedRequestSense_T));
+  memset(ExtendedRequestSense, 0, sizeof(ExtendedRequestSense_T));
   
   ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,                      
                             (char *) ExtendedRequestSense,
@@ -3581,7 +3581,7 @@ int LogSense(DeviceFD)
           dbprintf(("LogSense : malloc failed\n"));
           return(-1);
         }
-      bzero(buffer, size);
+      memset(buffer, 0, size);
       /*
        * Get the known log pages 
        */
@@ -3623,7 +3623,7 @@ int LogSense(DeviceFD)
       
       for (count = 0; count < nologpages; count++) {
         if (logpages[count] != 0  ) {
-          bzero(buffer, size);
+          memset(buffer, 0, size);
           
           
           CDB[0] = SC_COM_LOG_SENSE;
@@ -4264,7 +4264,7 @@ void TerminateString(char *string, int length)
 {
   int x;
   
-  for (x = length; x >= 0 && !isalnum(string[x]); x--)
+  for (x = length; x >= 0 && !isalnum((int)string[x]); x--)
     string[x] = '\0';
 }
 
@@ -4527,7 +4527,7 @@ int SCSI_ModeSelect(int DeviceFD, char *buffer, unsigned char length, unsigned c
 
   while (retry > 0 && retry < MAX_RETRIES)
     {
-      bzero(pRequestSense, sizeof(RequestSense_T));
+      memset(pRequestSense, 0, sizeof(RequestSense_T));
       
       CDB[0] = SC_COM_MODE_SELECT;
       CDB[1] = ((lun << 5) & 0xF0) | ((mode << 4) & 0x10) | (save & 1);
@@ -4594,8 +4594,8 @@ int SCSI_ModeSense(int DeviceFD, char *buffer, u_char size, u_char byte1, u_char
 
   while (retry > 0 && retry < MAX_RETRIES)
     {
-      bzero(pRequestSense, sizeof(RequestSense_T));
-      bzero(buffer, size);
+      memset(pRequestSense, 0, sizeof(RequestSense_T));
+      memset(buffer, 0, size);
       
       CDB[0] = SC_COM_MODE_SENSE;
       CDB[1] = byte1;
@@ -4661,7 +4661,7 @@ int SCSI_Inquiry(int DeviceFD, SCSIInquiry_T *buffer, u_char size)
 
   while (retry > 0 && retry < MAX_RETRIES)
     {
-      bzero(buffer, size);
+      memset(buffer, 0, size);
       CDB[0] = SC_COM_INQUIRY;
       CDB[1] = 0;
       CDB[2] = 0;
@@ -4756,7 +4756,7 @@ int SCSI_ReadElementStatus(int DeviceFD,
 
   while (retry > 0 && retry < MAX_RETRIES)
     {
-      bzero(pRequestSense, sizeof(RequestSense_T) );
+      memset(pRequestSense, 0, sizeof(RequestSense_T) );
       
       CDB[0] = SC_COM_RES;          /* READ ELEMENT STATUS */
       CDB[1] = VolTag | type | lun; /* Element Type Code , VolTag, LUN */
@@ -4820,7 +4820,7 @@ int SCSI_ReadElementStatus(int DeviceFD,
 
   while (retry > 0 && retry < MAX_RETRIES)
     {
-      bzero(pRequestSense, sizeof(RequestSense_T) );
+      memset(pRequestSense, 0, sizeof(RequestSense_T) );
       
       CDB[0] = SC_COM_RES;           /* READ ELEMENT STATUS */
       CDB[1] = VolTag | type | lun;  /* Element Type Code, VolTag, LUN */
