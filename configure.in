@@ -882,9 +882,9 @@ AC_DEFINE_UNQUOTED(AMANDA_SERVICE_NAME,  "$AMANDA_SERVICE_NAME")
 AC_DEFINE_UNQUOTED(KAMANDA_SERVICE_NAME, "$KAMANDA_SERVICE_NAME")
 
 AC_ARG_ENABLE(libtool,
-    [  --enable-libtool        use libtool to build static/shared libraries [no]],
+    [  --disable-libtool       build static libraries only, without libtool],
     USE_LIBTOOL="$enableval",
-    : ${USE_LIBTOOL=no}
+    : ${USE_LIBTOOL=yes}
 )
 case "$USE_LIBTOOL" in
 n | no)

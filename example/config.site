@@ -361,12 +361,14 @@
 # TESTING=yes
 
 
-# USE_LIBTOOL		--enable-libtool
-#			Default: no
-#			Use libtool to create static/shared libraries.
-#			By default, only static libraries are created
-#			and the libtool script is only used to link and
-#			install programs.
+# USE_LIBTOOL		--disable-libtool
+#			Default: yes
+#			By default, libtool to create static/shared
+#			libraries.  If USE_LIBTOOL is set to no, or
+#			--disable-libtool is specified, only static
+#			libraries will be created, and the libtool
+#			script will only be used to link and install
+#			programs.
 #			A drawback of using libtool is that it will
 #			always install libraries, even static ones,
 #			which are not necessary for the execution of

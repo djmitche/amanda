@@ -34,10 +34,10 @@ libamanda_la_SOURCES = \
 	token.c		version.c	versuff.c
 
 libamanda_la_LIBADD =	@LIBOBJS@ @ALLOCA@
-libamanda_la_LDFLAGS =  -version-info $(libamanda_version)
+libamanda_la_LDFLAGS =  -version-info $(libamanda_version) -rpath $(libdir)
 
 libamnolog_la_SOURCES =	nolog.c
-libamnolog_la_LDFLAGS = -version-info $(libnolog_version)
+libamnolog_la_LDFLAGS = -version-info $(libnolog_version) -rpath $(libdir)
 
 libamanda_a_SOURCES =	$(libamanda_la_SOURCES)
 libamanda_a_LIBADD =	$(libamanda_la_LIBADD)

@@ -88,10 +88,11 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	    ftp://ftp.gnu.org/pub/gnu/flex-2.5.4a.tar.gz
 
 	Although Amanda uses libtool in order to build shared
-	libraries (if --enable-libtool is issued), you shouldn't have
-	any version of libtool different from the one distributed with
-	Amanda, otherwise you may find incompatibilities between the
-	libtool scripts and its autoconf macros.
+	libraries (unless --disable-libtool is issued), you shouldn't
+	have any version of libtool different from 1.0h, the one
+	distributed with Amanda, otherwise you may find
+	incompatibilities between the libtool scripts and its autoconf
+	macros.
 
     E.  Read about the different configuration options available for
 	building and running Amanda.  To see the options, do both:
