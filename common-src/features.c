@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: features.c,v 1.1.2.1 2002/04/13 19:24:16 jrjackson Exp $
+ * $Id: features.c,v 1.1.2.2 2002/04/13 23:36:19 jrjackson Exp $
  *
  * Feature test related code.
  */
@@ -55,6 +55,7 @@ am_init_feature_set()
 	 * to be added here to show that we support it.
 	 */
 	am_add_feature(f, have_feature_support);
+	am_add_feature(f, amanda_feature_auth_keyword);
     }
     return f;
 }

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: features.h,v 1.1.2.1 2002/04/13 19:24:16 jrjackson Exp $
+ * $Id: features.h,v 1.1.2.2 2002/04/13 23:36:19 jrjackson Exp $
  *
  * Define feature test related items.
  */
@@ -54,6 +54,27 @@ typedef enum {
      * will only be off for "old" (2.4.2p2 and earlier) systems.
      */
     have_feature_support = 0,
+
+    /*
+     * Amanda used to send authorization type information around like
+     * this in the OPTIONS string:
+     *
+     *	bsd-auth
+     *	krb4-auth
+     *
+     * To make it easier to add new authorization methods and parse,
+     * this was changed to a keyword=value syntax:
+     *
+     *	auth=BSD
+     *	auth=RSH
+     *	auth=KRB4
+     *	auth=krb5
+     *
+     * and so on.
+     */
+
+    amanda_feature_auth_keyword,
+
     /*
      * All new features must be inserted immediately *before* this entry.
      */

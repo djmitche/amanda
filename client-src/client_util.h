@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.h,v 1.1.2.6 2002/03/22 15:00:22 martinea Exp $
+ * $Id: client_util.h,v 1.1.2.7 2002/04/13 23:36:18 jrjackson Exp $
  *
  */
 
@@ -32,6 +32,7 @@
 #define CLIENT_UTIL_H
 
 #include "amanda.h"
+#include "features.h"
 #include "sl.h"
 
 typedef struct option_s {
@@ -59,6 +60,10 @@ typedef struct option_s {
 char *build_exclude P((char *disk, char *device, option_t *options, int verbose));
 char *build_include P((char *disk, char *device, option_t *options, int verbose));
 void init_options P((option_t *options));
-option_t *parse_options P((char *str, char *disk, char *device, int verbose));
+option_t *parse_options P((char *str,
+			   char *disk,
+			   char *device,
+			   am_feature_t *fs,
+			   int verbose));
 
 #endif

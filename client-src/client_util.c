@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.1.2.16 2002/03/31 21:01:32 jrjackson Exp $
+ * $Id: client_util.c,v 1.1.2.17 2002/04/13 23:36:18 jrjackson Exp $
  *
  */
 
@@ -403,9 +403,10 @@ option_t *options;
 }
 
 
-option_t *parse_options(str, disk, device, verbose)
+option_t *parse_options(str, disk, device, fs, verbose)
 char *str;
 char *disk, *device;
+am_feature_t *fs;
 int verbose;
 {
     char *exc;
@@ -420,7 +421,25 @@ int verbose;
     tok = strtok(p,";");
 
     while (tok != NULL) {
-	if(strcmp(tok, "compress-fast") == 0) {
+	if(am_has_feature(fs, amanda_feature_auth_keyword)
+	   && strncmp(tok, "auth=", 5) == 0) {
+	    if(strcasecmp(tok + 5, "bsd") == 0) {
+		options->bsd_auth = 1;
+	    }
+#ifdef KRB4_SECURITY
+	    else if(strcasecmp(tok + 5, "krb4") == 0) {
+		options->krb4_auth = 1;
+	    }
+#endif
+	    else {
+		dbprintf(("%s: unknown auth= value \"%s\"\n",
+			  debug_prefix(NULL), tok + 5));
+		if(verbose) {
+		    printf("ERROR [unknown auth= value \"%s\"]\n", tok + 5);
+		}
+	    }
+	}
+	else if(strcmp(tok, "compress-fast") == 0) {
 	    options->compress = COMPR_FAST;
 	}
 	else if(strcmp(tok, "compress-best") == 0) {

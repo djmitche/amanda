@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.27.4.6.4.3.2.7 2002/04/13 22:32:23 jrjackson Exp $
+ * $Id: diskfile.c,v 1.27.4.6.4.3.2.8 2002/04/13 23:36:19 jrjackson Exp $
  *
  * read disklist file
  */
@@ -543,7 +543,7 @@ FILE *f;
 char *optionstr(dp)
 disk_t *dp;
 {
-    char *auth_opt = "";
+    char *auth_opt = NULL;
     char *kencrypt_opt = "";
     char *compress_opt = "";
     char *record_opt = "";
@@ -558,10 +558,21 @@ disk_t *dp;
     char *result = NULL;
     sle_t *excl;
 
-    if(dp->auth == AUTH_BSD) {
-	auth_opt = "bsd-auth;";
+    if(dp->host
+       && am_has_feature(dp->host->features, amanda_feature_auth_keyword)) {
+	auth_opt = stralloc("auth=");
+	if(dp->auth == AUTH_BSD) {
+	    strappend(auth_opt, "bsd");
+	} else if(dp->auth == AUTH_KRB4) {
+	    strappend(auth_opt, "krb4");
+	} else {
+	    strappend(auth_opt, "unknown");
+	}
+	strappend(auth_opt, ";");
+    } else if(dp->auth == AUTH_BSD) {
+	auth_opt = stralloc("bsd-auth;");
     } else if(dp->auth == AUTH_KRB4) {
-	auth_opt = "krb4-auth;";
+	auth_opt = stralloc("krb4-auth;");
 	if(dp->kencrypt) kencrypt_opt = "kencrypt;";
     }
 
@@ -629,6 +640,7 @@ disk_t *dp;
 		       excl_opt,
 		       incl_opt,
 		       NULL);
+    amfree(auth_opt);
     amfree(exclude_file);
     amfree(exclude_list);
     amfree(include_file);

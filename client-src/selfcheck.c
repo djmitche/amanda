@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.40.2.3.4.4.2.11 2002/04/13 19:24:16 jrjackson Exp $
+ * $Id: selfcheck.c,v 1.40.2.3.4.4.2.12 2002/04/13 23:36:18 jrjackson Exp $
  *
  * do self-check and send back any error messages
  */
@@ -213,7 +213,7 @@ char **argv;
 	    optstr = s - 1;
 	    skip_non_whitespace(s, ch);
 	    s[-1] = '\0';			/* terminate the options */
-	    options = parse_options(optstr, disk, device, 1);
+	    options = parse_options(optstr, disk, device, their_features, 1);
 	    check_options(program, disk, device, options);
 	    check_disk(program, disk, device, level);
 	} else if (ch == '\0') {

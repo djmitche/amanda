@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.44.2.9.4.4.2.5 2002/04/13 19:24:16 jrjackson Exp $
+ * $Id: sendbackup.c,v 1.44.2.9.4.4.2.6 2002/04/13 23:36:18 jrjackson Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -344,7 +344,7 @@ char **argv;
     }
     program = programs[i];
 
-    options = parse_options(stroptions, disk, amdevice, 0);
+    options = parse_options(stroptions, disk, amdevice, their_features, 0);
 
 #ifdef KRB4_SECURITY
     if(krb4_auth) {
