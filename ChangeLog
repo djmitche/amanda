@@ -1,5 +1,7 @@
 1998-07-22  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* configure.in: version number set to 2.4.1
+
 	* recover-src/Makefile.am (LDADD): libamtape imports symbols from
  	libamanda, so it must be listed first
 
