@@ -3,12 +3,14 @@
 	* client-src/Makefile.am (CLIENT_SCRIPTS): rename to
  	CLIENT_SCRIPTS_OPT, because *_SCRIPTS is interpreted by automake
 	* configure.in (CLIENT_SCRIPTS): ditto
+	Reported by Thomas Hepper <Thomas.Hepper@icem.de>
 
 	* configure.in (LIBTOOL_M4): no longer defined
 	(LIBTOOL_M4_MACRO_DIR): defined assuming CWD is top_srcdir
 	* Makefile.am (ACLOCAL_M4_FROM_SRCDIR): relative to srcdir
 	(ACLOCAL_M4): defined and created using ACLOCAL_M4_FROM_SRCDIR
-
+	Reported by Thomas Hepper <Thomas.Hepper@icem.de>
+	
 	* client-src/sendbackup.c (backup_program): rename to
 	gnutar_program, that's the name it should have had from the
 	beginning
