@@ -16,7 +16,7 @@ libamanda_a_SOURCES =	alloc.c		amandates.c	changer.c	\
 			regex.c		statfs.c	stralloc.c	\
 			stream.c	tapefile.c	tapeio.c	\
 			unctime.c	version.c	version.h	\
-			versuff.c
+			versuff.c	amindex.c
 
 EXTRA_DIST =		genversion.c
 
@@ -28,7 +28,7 @@ noinst_HEADERS =	amanda.h	amandates.h	arglist.h	\
 			fnmatch.h	getfsent.h	infofile.h	\
 			logfile.h	protocol.h	regex.h		\
 			statfs.h	stream.h	tapefile.h	\
-			tapeio.h
+			tapeio.h	amindex.h
 
 .sh:
 	cat $< > $@

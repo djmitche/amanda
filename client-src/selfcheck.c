@@ -180,8 +180,6 @@ static void check_overall()
 #endif
     check_file("/dev/null", R_OK|W_OK);
     check_space("/tmp", 64);		/* for amandad i/o */
-    if ( !strcmp("/tmp", INDEX_TMP_DIR) )
-	check_space(INDEX_TMP_DIR, 64);	/* for dump/gnutar index files */
     check_space("/etc", 64);		/* for /etc/dumpdates writing */
 }
 

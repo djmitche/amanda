@@ -33,8 +33,10 @@ void write_tapeheader P((char *host, char *disk, int level, int compress, \
 			 char *datestamp, int outf));
 int pipespawn P((char *prog, int *stdinfd, int stdoutfd, int stderrfd, ...));
 void start_backup P((char *disk, int level, char *datestamp, \
-		     int dataf, int mesgf));
+		     int dataf, int mesgf, int indexf));
 void end_backup P((int goterror));
+void start_index P((int createindex, int input, int mesg, \
+		    int index, char *cmd));
 
 /*
  * Dump output lines are scanned for two types of regex matches.

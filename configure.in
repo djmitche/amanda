@@ -206,10 +206,10 @@ AC_SUBST(USE_VERSION_SUFFIXES)
 
 BUILD_CHANGER_PROGS_LIBEXEC="seagate-changer"
 BUILD_CHANGER_SCRIPTS_LIBEXEC="chg-generic hp-changer no-changer rth-changer"
-BUILD_CLIENT_PROGS_LIBEXEC="amandad calcsize createindex-dump createindex-gnutar rundump runtar selfcheck sendbackup-dump sendbackup-gnutar sendindex sendsize"
+BUILD_CLIENT_PROGS_LIBEXEC="amandad calcsize rundump runtar selfcheck sendbackup-dump sendbackup-gnutar sendsize"
 BUILD_CLIENT_SCRIPTS_LIBEXEC="patch-system"
 BUILD_SERVER_PROGS_BIN="amadmin amcheck amflush amlabel amtape"
-BUILD_SERVER_PROGS_LIBEXEC="amgetidx amidxtaped amindexd amtrmidx driver dumper getconf planner reporter taper"
+BUILD_SERVER_PROGS_LIBEXEC="amidxtaped amindexd amtrmidx driver dumper getconf planner reporter taper"
 BUILD_SERVER_SCRIPTS_BIN="amcheckdb amcleanup amdump amoverview amrmtape amtoc amverify"
 case "$target" in
     *-hp-*)
@@ -324,7 +324,9 @@ AC_ARG_WITH(group,
 	  ;;
 	esac
     ],
-    : ${SETUID_GROUP=`(id 2>/dev/null; echo amanda) | sed -e 's/^.*gid=[0-9]*(\([^)]*\)).*/\1/' | grep -v = | head -1`}
+    [[
+	: ${SETUID_GROUP=`(id 2>/dev/null; echo amanda) | sed -e 's/^.*gid=[0-9]*(\([^)]*\)).*/\1/' | grep -v = | head -1`}
+    ]]
 )
 AC_SUBST(SETUID_GROUP)
 
@@ -468,6 +470,7 @@ AC_ARG_WITH(gnutar-listed-incremental,
     : ${GNUTAR_LIST_DIR=$localstatedir/amanda-gnutar-lists}
 )
 if test "$GNUTAR_LIST_DIR"; then
+    tmp=`eval echo $GNUTAR_LIST_DIR`
     AC_DEFINE_UNQUOTED(GNUTAR_LISTED_INCREMENTAL_DIR,"$tmp")
 fi
 
@@ -942,16 +945,6 @@ dnl AC_PATH_PROGS(TEXI2DVI,texi2dvi,,$LOCSYSPATH)
 SHELL=
 AC_PATH_PROGS(SHELL,sh,,$LOCSYSPATH)
 
-AC_PATH_PROGS(RSH,remsh,,$SYSPATH)
-if test "$RSH"; then
-    AC_DEFINE_UNQUOTED(RSH_COMMAND,"$RSH")
-else
-    AC_PATH_PROGS(RSH,rsh,,$SYSPATH)
-    if test "$RSH"; then
-	AC_DEFINE_UNQUOTED(RSH_COMMAND,"$RSH")
-    fi
-fi
-
 AC_PATH_PROGS(DUMP,$DUMP_PROGRAMS,,$SYSLOCPATH)
 if test "$DUMP"; then
     AC_DEFINE_UNQUOTED(DUMP,"$DUMP")
@@ -1052,23 +1045,6 @@ AC_MSG_RESULT($TAPE_REWIND_DEVICE)
 
 AC_MSG_CHECKING(for no rewinding tape device)
 AC_MSG_RESULT($TAPE_NO_REWIND_DEVICE)
-
-dnl Check for a good directory where index files are held before being
-dnl to the tape host.
-AC_CACHE_CHECK(
-    [for index files temporary holding directory],
-    amanda_cv_index_tmp_dir,
-    [
-	if test -d /var/tmp; then
-	    amanda_cv_index_tmp_dir=/var/tmp
-	elif test -d /usr/tmp; then
-	    amanda_cv_index_tmp_dir=/usr/tmp
-	else
-	    amanda_cv_index_tmp_dir=/tmp
-	fi
-    ]
-)
-AC_DEFINE_UNQUOTED(INDEX_TMP_DIR,"$amanda_cv_index_tmp_dir")
 
 dnl Checks for compilers, typedefs, structures, and compiler characteristics.
 AC_PROG_CC

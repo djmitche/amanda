@@ -27,7 +27,7 @@ install-exec-hook:
 		chown $(CLIENT_LOGIN) $(bindir)/`echo $$p|sed '$(transform)'`; \
 		echo chgrp $(SETUID_GROUP) $(bindir)/`echo $$p|sed '$(transform)'`; \
 		chgrp $(SETUID_GROUP) $(bindir)/`echo $$p|sed '$(transform)'`; \
-	done;
+	done
 
 install-data-hook:
 	@list="$(amplot_DATA)"; for p in $$list; do \
@@ -35,4 +35,4 @@ install-data-hook:
 		chown $(CLIENT_LOGIN) $(libexecdir)/$$p; \
 		echo chgrp $(SETUID_GROUP) $(libexecdir)/$$p; \
 		chgrp $(SETUID_GROUP) $(libexecdir)/$$p; \
-        done;
+        done

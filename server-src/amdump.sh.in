@@ -88,9 +88,6 @@ while [ $days -ge 2 ]; do
 done
 mv $errfile $errfile.1
 
-# Copy across all of the index files.
-$libexecdir/amgetidx$SUF $conf
-
 # Trim the index file to those for dumps that still exist.
 $libexecdir/amtrmidx$SUF $conf
 

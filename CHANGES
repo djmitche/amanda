@@ -1,5 +1,7 @@
 Version 2.4.0
 
+	Integrated amgetidx into dumper/sendbackup protocol. -oliva
+
 	Have sendbackup-dump and sendbackup-gnutar list the actual
 	program that should be used to restore a file from a backup
 	instead of just listing restore or gtar. -blair&oliva

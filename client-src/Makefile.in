@@ -112,7 +112,6 @@ PCAT = @PCAT@
 PERL = @PERL@
 RANLIB = @RANLIB@
 RESTORE = @RESTORE@
-RSH = @RSH@
 SAMBA_CLIENT = @SAMBA_CLIENT@
 SETUID_GROUP = @SETUID_GROUP@
 SHELL = @SHELL@
@@ -147,11 +146,9 @@ libexec_PROGRAMS =	versionsuffix					\
 			@BUILD_CLIENT_PROGS_LIBEXEC@
 
 EXTRA_PROGRAMS =	amandad				calcsize	\
-			createindex-dump		createindex-gnutar \
 			rundump				runtar		\
 			selfcheck			sendbackup-dump	\
-			sendbackup-gnutar 		sendindex	\
-			sendsize
+			sendbackup-gnutar 		sendsize
 
 bin_SCRIPTS =		@BUILD_CLIENT_SCRIPTS_BIN@
 
@@ -169,20 +166,11 @@ EXTRA_DIST =		amhpfixdevs.sh uparse.h
 amrecover_LDADD =	../common-src/libamanda.a @LEXLIB@
 YFLAGS =		-d
 
-createindex_dump_SOURCES = createindex-dump.c		indexfilename.c \
-			indexfilename.h
-
-createindex_gnutar_SOURCES = createindex-gnutar.c	indexfilename.c \
-			indexfilename.h
-
 sendbackup_dump_SOURCES = sendbackup-dump.c		sendbackup-common.c \
 			sendbackup-common.h
 
 sendbackup_gnutar_SOURCES = sendbackup-gnutar.c		sendbackup-common.c \
 			sendbackup-common.h
-
-sendindex_SOURCES =	sendindex.c			indexfilename.c \
-			indexfilename.h
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = ../config.h
 CONFIG_CLEAN_FILES =  patch-system.sh
@@ -203,14 +191,6 @@ calcsize_OBJECTS =  calcsize.o
 calcsize_LDADD = $(LDADD)
 calcsize_DEPENDENCIES =  ../common-src/libamanda.a
 calcsize_LDFLAGS = 
-createindex_dump_OBJECTS =  createindex-dump.o indexfilename.o
-createindex_dump_LDADD = $(LDADD)
-createindex_dump_DEPENDENCIES =  ../common-src/libamanda.a
-createindex_dump_LDFLAGS = 
-createindex_gnutar_OBJECTS =  createindex-gnutar.o indexfilename.o
-createindex_gnutar_LDADD = $(LDADD)
-createindex_gnutar_DEPENDENCIES =  ../common-src/libamanda.a
-createindex_gnutar_LDFLAGS = 
 rundump_SOURCES = rundump.c
 rundump_OBJECTS =  rundump.o
 rundump_LDADD = $(LDADD)
@@ -234,10 +214,6 @@ sendbackup_gnutar_OBJECTS =  sendbackup-gnutar.o sendbackup-common.o
 sendbackup_gnutar_LDADD = $(LDADD)
 sendbackup_gnutar_DEPENDENCIES =  ../common-src/libamanda.a
 sendbackup_gnutar_LDFLAGS = 
-sendindex_OBJECTS =  sendindex.o indexfilename.o
-sendindex_LDADD = $(LDADD)
-sendindex_DEPENDENCIES =  ../common-src/libamanda.a
-sendindex_LDFLAGS = 
 sendsize_SOURCES = sendsize.c
 sendsize_OBJECTS =  sendsize.o
 sendsize_LDADD = $(LDADD)
@@ -270,8 +246,8 @@ uscan.c
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
-SOURCES = amandad.c calcsize.c $(createindex_dump_SOURCES) $(createindex_gnutar_SOURCES) rundump.c runtar.c selfcheck.c $(sendbackup_dump_SOURCES) $(sendbackup_gnutar_SOURCES) $(sendindex_SOURCES) sendsize.c $(amrecover_SOURCES) amrestore.c versionsuffix.c
-OBJECTS = amandad.o calcsize.o $(createindex_dump_OBJECTS) $(createindex_gnutar_OBJECTS) rundump.o runtar.o selfcheck.o $(sendbackup_dump_OBJECTS) $(sendbackup_gnutar_OBJECTS) $(sendindex_OBJECTS) sendsize.o $(amrecover_OBJECTS) amrestore.o versionsuffix.o
+SOURCES = amandad.c calcsize.c rundump.c runtar.c selfcheck.c $(sendbackup_dump_SOURCES) $(sendbackup_gnutar_SOURCES) sendsize.c $(amrecover_SOURCES) amrestore.c versionsuffix.c
+OBJECTS = amandad.o calcsize.o rundump.o runtar.o selfcheck.o $(sendbackup_dump_OBJECTS) $(sendbackup_gnutar_OBJECTS) sendsize.o $(amrecover_OBJECTS) amrestore.o versionsuffix.o
 
 default: all
 
@@ -358,14 +334,6 @@ calcsize: $(calcsize_OBJECTS) $(calcsize_DEPENDENCIES)
 	@rm -f calcsize
 	$(LINK) $(calcsize_LDFLAGS) $(calcsize_OBJECTS) $(calcsize_LDADD) $(LIBS)
 
-createindex-dump: $(createindex_dump_OBJECTS) $(createindex_dump_DEPENDENCIES)
-	@rm -f createindex-dump
-	$(LINK) $(createindex_dump_LDFLAGS) $(createindex_dump_OBJECTS) $(createindex_dump_LDADD) $(LIBS)
-
-createindex-gnutar: $(createindex_gnutar_OBJECTS) $(createindex_gnutar_DEPENDENCIES)
-	@rm -f createindex-gnutar
-	$(LINK) $(createindex_gnutar_LDFLAGS) $(createindex_gnutar_OBJECTS) $(createindex_gnutar_LDADD) $(LIBS)
-
 rundump: $(rundump_OBJECTS) $(rundump_DEPENDENCIES)
 	@rm -f rundump
 	$(LINK) $(rundump_LDFLAGS) $(rundump_OBJECTS) $(rundump_LDADD) $(LIBS)
@@ -385,10 +353,6 @@ sendbackup-dump: $(sendbackup_dump_OBJECTS) $(sendbackup_dump_DEPENDENCIES)
 sendbackup-gnutar: $(sendbackup_gnutar_OBJECTS) $(sendbackup_gnutar_DEPENDENCIES)
 	@rm -f sendbackup-gnutar
 	$(LINK) $(sendbackup_gnutar_LDFLAGS) $(sendbackup_gnutar_OBJECTS) $(sendbackup_gnutar_LDADD) $(LIBS)
-
-sendindex: $(sendindex_OBJECTS) $(sendindex_DEPENDENCIES)
-	@rm -f sendindex
-	$(LINK) $(sendindex_LDFLAGS) $(sendindex_OBJECTS) $(sendindex_LDADD) $(LIBS)
 
 sendsize: $(sendsize_OBJECTS) $(sendsize_DEPENDENCIES)
 	@rm -f sendsize

@@ -34,6 +34,7 @@
 #include "protocol.h"
 #include "clock.h"
 #include "version.h"
+#include "amindex.h"
 
 /*
  * If we don't have the new-style wait access functions, use our own,
@@ -453,6 +454,17 @@ int fd;
 
     if(!tapebad)
 	fprintf(outf, "Tape %s label ok.\n", label);
+
+    {
+      char *indexdir = getindexdir(getconf_str(CNF_INDEXDIR));
+      struct stat statbuf;
+      if ((stat(indexdir, &statbuf) == -1)
+	  || !S_ISDIR(statbuf.st_mode)
+	  || (access(indexdir, W_OK) == -1)) {
+	fprintf(outf, "Index dir \"%s\" doesn't exist or is not writable.\n",
+		indexdir);
+      }
+    }
 
     fprintf(outf, "Server check took %s seconds.\n", walltime_str(curclock()));
 

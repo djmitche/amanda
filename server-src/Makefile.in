@@ -112,7 +112,6 @@ PCAT = @PCAT@
 PERL = @PERL@
 RANLIB = @RANLIB@
 RESTORE = @RESTORE@
-RSH = @RSH@
 SAMBA_CLIENT = @SAMBA_CLIENT@
 SETUID_GROUP = @SETUID_GROUP@
 SHELL = @SHELL@
@@ -148,7 +147,7 @@ libexec_PROGRAMS =	@BUILD_SERVER_PROGS_LIBEXEC@
 bin_SCRIPTS =		@BUILD_SERVER_SCRIPTS_BIN@
 
 EXTRA_PROGRAMS =	amadmin				amcheck		\
-			amflush				amgetidx	\
+			amflush						\
 			amidxtaped			amindexd	\
 			amlabel				amtape		\
 			amtrmidx			driver		\
@@ -193,11 +192,6 @@ amflush_OBJECTS =  amflush.o
 amflush_LDADD = $(LDADD)
 amflush_DEPENDENCIES =  ../common-src/libamanda.a
 amflush_LDFLAGS = 
-amgetidx_SOURCES = amgetidx.c
-amgetidx_OBJECTS =  amgetidx.o
-amgetidx_LDADD = $(LDADD)
-amgetidx_DEPENDENCIES =  ../common-src/libamanda.a
-amgetidx_LDFLAGS = 
 amidxtaped_SOURCES = amidxtaped.c
 amidxtaped_OBJECTS =  amidxtaped.o
 amidxtaped_LDADD = $(LDADD)
@@ -263,8 +257,8 @@ amtoc.pl.in amverify.sh.in
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
-SOURCES = amadmin.c amcheck.c amflush.c amgetidx.c amidxtaped.c $(amindexd_SOURCES) amlabel.c amtape.c amtrmidx.c $(driver_SOURCES) dumper.c getconf.c planner.c reporter.c taper.c
-OBJECTS = amadmin.o amcheck.o amflush.o amgetidx.o amidxtaped.o $(amindexd_OBJECTS) amlabel.o amtape.o amtrmidx.o $(driver_OBJECTS) dumper.o getconf.o planner.o reporter.o taper.o
+SOURCES = amadmin.c amcheck.c amflush.c amidxtaped.c $(amindexd_SOURCES) amlabel.c amtape.c amtrmidx.c $(driver_SOURCES) dumper.c getconf.c planner.c reporter.c taper.c
+OBJECTS = amadmin.o amcheck.o amflush.o amidxtaped.o $(amindexd_OBJECTS) amlabel.o amtape.o amtrmidx.o $(driver_OBJECTS) dumper.o getconf.o planner.o reporter.o taper.o
 
 default: all
 
@@ -368,10 +362,6 @@ amcheck: $(amcheck_OBJECTS) $(amcheck_DEPENDENCIES)
 amflush: $(amflush_OBJECTS) $(amflush_DEPENDENCIES)
 	@rm -f amflush
 	$(LINK) $(amflush_LDFLAGS) $(amflush_OBJECTS) $(amflush_LDADD) $(LIBS)
-
-amgetidx: $(amgetidx_OBJECTS) $(amgetidx_DEPENDENCIES)
-	@rm -f amgetidx
-	$(LINK) $(amgetidx_LDFLAGS) $(amgetidx_OBJECTS) $(amgetidx_LDADD) $(LIBS)
 
 amidxtaped: $(amidxtaped_OBJECTS) $(amidxtaped_DEPENDENCIES)
 	@rm -f amidxtaped
@@ -559,7 +549,7 @@ install-exec-hook:
 		echo chgrp $(SETUID_GROUP) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
 		chgrp $(SETUID_GROUP) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
 	done; \
-	list="$(bindir)/amcheck $(libexecdir)/amgetidx $(libexecdir)/dumper $(libexecdir)/planner"; for p in $$list; do \
+	list="$(bindir)/amcheck $(libexecdir)/dumper $(libexecdir)/planner"; for p in $$list; do \
 		if echo "$(bin_PROGRAMS) $(bin_SCRIPTS) $(libexec_PROGRAMS) $(libexec_SCRIPTS)" | grep `basename $$p` >/dev/null 2>&1; then \
 			echo chown root `echo $$p|sed '$(transform)'`; \
 			chown root `echo $$p|sed '$(transform)'`; \

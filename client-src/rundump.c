@@ -34,8 +34,6 @@ char **argv;
 
 #else
 
-#ifdef FORCE_USERID
-
     /* we should be invoked by CLIENT_LOGIN */
     {
 	struct passwd *pwptr;
@@ -43,13 +41,16 @@ char **argv;
 	if((pwptr = getpwnam(pwname)) == NULL)
 	    error("error [cannot find user %s in passwd file]\n", pwname);
 
+	chown("/tmp/runtar.debug", pwptr->pw_uid);
+
+#ifdef FORCE_USERID
 	if (getuid() != pwptr->pw_uid)
 	    error("error [must be invoked by %s]\n", pwname);
 
 	if (geteuid() != 0)
 	    error("error [must be setuid root]\n", pwname);
-    }
 #endif	/* FORCE_USERID */
+    }
 
     /* If XFSDUMP is defined but DUMP isn't, XFSDUMP is used by default.
        If XFSDUMP is not defined, DUMP is used by default.

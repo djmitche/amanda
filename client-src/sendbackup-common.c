@@ -58,6 +58,7 @@ char thiserr[80], errorstr[256];
 
 int data_socket, data_port, dataf;
 int mesg_socket, mesg_port, mesgf;
+int index_socket, index_port, indexf;
 
 char efile[256],estr[256];
 char line[MAX_LINE];
@@ -137,7 +138,7 @@ char *optionstr()
     else if(compress == COMPR_FAST)
 	strcat(optstr, "compress-fast;");
     if (srvcompress)
-	strcat(optstr, "srvcompress");
+	strcat(optstr, "srvcompress;");
 
     if(no_record) strcat(optstr, "no-record;");
     if(bsd_auth) strcat(optstr, "bsd-auth;");
@@ -186,42 +187,57 @@ char **argv;
     if(krb4_auth) {
 	if(read(KEY_PIPE, session_key, sizeof session_key) 
 	   != sizeof session_key) {
-	    printf("ERROR [%s: could not read session key]\n", argv[0]);
-	    exit(0);
+	  dbprintf(("ERROR [%s: could not read session key]\n", argv[0]));
+	  error("ERROR [%s: could not read session key]\n", argv[0]);
 	}
     }
 #endif
 
     data_socket = stream_server(&data_port);
     mesg_socket = stream_server(&mesg_port);
+    if (createindex)
+      index_socket = stream_server(&index_port);
+    else
+      index_port = -1;
 
     switch(fork()) {
     case -1:	/* fork error */
-	printf("ERROR [%s: could not fork: %s]\n", argv[0], strerror(errno));
-	exit(0);
+      dbprintf(("ERROR [%s: could not fork: %s]\n", argv[0], strerror(errno)));
+      error(("ERROR [%s: could not fork: %s]\n", argv[0], strerror(errno)));
     default:	/* parent */
-	printf("CONNECT DATA %d MESG %d\n", data_port, mesg_port);
-	printf("OPTIONS %s\n", optionstr());
-	exit(0);
+      printf("CONNECT DATA %d MESG %d INDEX %d\n",
+	     data_port, mesg_port, index_port);
+      printf("OPTIONS %s\n", optionstr());
+      exit(0);
     case 0:	/* child, keep going */
-	break;
+      break;
     }
 
-    dbprintf(("  waiting for connect on %d, then %d\n", data_port, mesg_port));
+    if (createindex)
+      dbprintf(("  waiting for connect on %d, then %d, then %d\n",
+		data_port, mesg_port, index_port));
+    else
+      dbprintf(("  waiting for connect on %d, then %d\n",
+		data_port, mesg_port));
     
     dataf = stream_accept(data_socket, TIMEOUT, DEFAULT_SIZE, DEFAULT_SIZE);
     if(dataf == -1)
-	dbprintf(("%s: timeout on data port %d\n", argv[0], data_port));
+      dbprintf(("%s: timeout on data port %d\n", argv[0], data_port));
     mesgf = stream_accept(mesg_socket, TIMEOUT, DEFAULT_SIZE, DEFAULT_SIZE);
     if(mesgf == -1)
-	dbprintf(("%s: timeout on mesg port %d\n", argv[0], mesg_port));
-
-    if(dataf == -1 || mesgf == -1) {
-	dbclose();
-	exit(1);
+      dbprintf(("%s: timeout on mesg port %d\n", argv[0], mesg_port));
+    if (createindex) {
+      indexf = stream_accept(index_socket, TIMEOUT, DEFAULT_SIZE, DEFAULT_SIZE);
+      if (indexf == -1)
+	dbprintf(("%s: timeout on index port %d\n", argv[0], index_port));
     }
 
-    dbprintf(("  got both connections\n"));
+    if(dataf == -1 || mesgf == -1 || (createindex && indexf == -1)) {
+      dbclose();
+      exit(1);
+    }
+
+    dbprintf(("  got all connections\n"));
 
 #ifdef KRB4_SECURITY
     if(kerberos_handshake(dataf, session_key) == 0) {
@@ -246,11 +262,12 @@ char **argv;
 	exit(1);
     }
 
-    if(pipe(mesgpipe) == -1)
-	error("error [opening mesg pipe: %s]", strerror(errno));
+    if(pipe(mesgpipe) == -1) {
+      dbprintf(("error [opening mesg pipe: %s]\n", strerror(errno)));
+      error("error [opening mesg pipe: %s]", strerror(errno));
+    }
 
-
-    start_backup(disk, level, datestamp, dataf, mesgpipe[1]);
+    start_backup(disk, level, datestamp, dataf, mesgpipe[1], indexf);
     parse_backup_messages(mesgpipe[0]);
 
     dbclose();
@@ -349,8 +366,10 @@ int outf, compress, level;
 
     len = strlen(buffer);
     memset(buffer+len, '\0', BUFFER_SIZE-len);
-    if((rc = write(outf, buffer, BUFFER_SIZE)) < BUFFER_SIZE)
-	error("error [write header: %s]", strerror(errno));
+    if((rc = write(outf, buffer, BUFFER_SIZE)) < BUFFER_SIZE) {
+      dbprintf(("error [write header: %s]\n", strerror(errno)));
+      error("error [write header: %s]", strerror(errno));
+    }
 }
 
 #ifdef STDC_HEADERS
@@ -369,11 +388,15 @@ va_dcl
 
     dbprintf(("%s: spawning \"%s\" in pipeline\n", pname, prog));
 
-    if(pipe(inpipe) == -1) 
-	error("error [open pipe to %s: %s]", prog, strerror(errno));
+    if(pipe(inpipe) == -1) {
+      dbprintf(("error [open pipe to %s: %s]\n", prog, strerror(errno)));
+      error("error [open pipe to %s: %s]", prog, strerror(errno));
+    }
 
     switch(pid = fork()) {
-    case -1: error("error [fork %s: %s]", prog, strerror(errno));
+    case -1:
+      dbprintf(("error [fork %s: %s]\n", prog, strerror(errno)));
+      error("error [fork %s: %s]", prog, strerror(errno));
     default:	/* parent process */
 	close(inpipe[0]);	/* close input side of pipe */
 	*stdinfd = inpipe[1];
@@ -381,12 +404,18 @@ va_dcl
     case 0:		/* child process */
 	close(inpipe[1]);	/* close output side of pipe */
 
-	if(dup2(inpipe[0], 0) == -1)
-	    error("error [spawn %s: dup2 in: %s]", prog, strerror(errno));
-	if(dup2(stdoutfd, 1) == -1)
-	    error("error [spawn %s: dup2 out: %s]", prog, strerror(errno));
-	if(dup2(stderrfd, 2) == -1)
-	    error("error [spawn %s: dup2 err: %s]", prog, strerror(errno));
+	if(dup2(inpipe[0], 0) == -1) {
+	  dbprintf(("error [spawn %s: dup2 in: %s]\n", prog, strerror(errno)));
+	  error("error [spawn %s: dup2 in: %s]", prog, strerror(errno));
+	}
+	if(dup2(stdoutfd, 1) == -1) {
+	  dbprintf(("error [spawn %s: dup2 out: %s]\n", prog, strerror(errno)));
+	  error("error [spawn %s: dup2 out: %s]", prog, strerror(errno));
+	}
+	if(dup2(stderrfd, 2) == -1) {
+	  dbprintf(("error [spawn %s: dup2 err: %s]\n", prog, strerror(errno)));
+	  error("error [spawn %s: dup2 err: %s]", prog, strerror(errno));
+	}
 
 	arglist_start(ap, stderrfd);		/* setup argv */
 	for(i=0; i<16 && (argv[i]=arglist_val(ap, char *)) != (char *)0; i++);
@@ -396,6 +425,7 @@ va_dcl
 	environ[0] = (char *)0;	/* pass empty environment */
 
 	execve(prog, argv, environ);
+	dbprintf(("error [exec %s: %s]\n", prog, strerror(errno)));
 	error("error [exec %s: %s]", prog, strerror(errno));
 	/* NOTREACHED */
     }
@@ -413,11 +443,15 @@ int stdoutfd, stderrfd;
 
     dbprintf(("%s: forking function %s in pipeline\n", pname, fname));
 
-    if(pipe(inpipe) == -1) 
-	error("error [open pipe to %s: %s]", fname, strerror(errno));
+    if(pipe(inpipe) == -1) {
+      dbprintf(("error [open pipe to %s: %s]\n", fname, strerror(errno)));
+      error("error [open pipe to %s: %s]", fname, strerror(errno));
+    }
 
     switch(pid = fork()) {
-    case -1: error("error [fork %s: %s]", fname, strerror(errno));
+    case -1:
+      dbprintf(("error [fork %s: %s]\n", fname, strerror(errno)));
+      error("error [fork %s: %s]", fname, strerror(errno));
     default:	/* parent process */
 	close(inpipe[0]);	/* close input side of pipe */
 	*stdinfd = inpipe[1];
@@ -425,12 +459,18 @@ int stdoutfd, stderrfd;
     case 0:		/* child process */
 	close(inpipe[1]);	/* close output side of pipe */
 
-	if(dup2(inpipe[0], 0) == -1)
-	    error("error [fork %s: dup2 in: %s]", fname, strerror(errno));
-	if(dup2(stdoutfd, 1) == -1)
-	    error("error [fork %s: dup2 out: %s]", fname, strerror(errno));
-	if(dup2(stderrfd, 2) == -1)
-	    error("error [fork %s: dup2 err: %s]", fname, strerror(errno));
+	if(dup2(inpipe[0], 0) == -1) {
+	  dbprintf(("error [fork %s: dup2 in: %s]\n", fname, strerror(errno)));
+	  error("error [fork %s: dup2 in: %s]", fname, strerror(errno));
+	}
+	if(dup2(stdoutfd, 1) == -1) {
+	  dbprintf(("error [fork %s: dup2 out: %s]\n", fname, strerror(errno)));
+	  error("error [fork %s: dup2 out: %s]", fname, strerror(errno));
+	}
+	if(dup2(stderrfd, 2) == -1) {
+	  dbprintf(("error [fork %s: dup2 err: %s]\n", fname, strerror(errno)));
+	  error("error [fork %s: dup2 err: %s]", fname, strerror(errno));
+	}
 
 	func();
 	exit(0);
@@ -451,6 +491,7 @@ int mesgin;
 	size = read(mesgin, line, MAX_LINE);
 	switch(size) {
 	case -1:
+	    dbprintf(("error [read mesg pipe: %s]\n", strerror(errno)));
 	    error("error [read mesg pipe: %s]", strerror(errno));
 	case 0:
 	    close(mesgin);
@@ -468,10 +509,13 @@ int mesgin;
 	    goterror = 1;
     }
 
-    if(goterror)
-	error("error [%s]", errorstr);
-    else if(dump_size == -1)
-	error("error [no backup size line]");
+    if(goterror) {
+      dbprintf(("error [%s]\n", errorstr));
+      error("error [%s]", errorstr);
+    } else if(dump_size == -1) {
+      dbprintf(("error [no backup size line]\n"));
+      error("error [no backup size line]");
+    }
 
     end_backup(goterror);
 
@@ -590,4 +634,144 @@ int len;
 	len -= len1;
 	str += len1;
     }
+}
+
+/* start_index.  Creates an index file from the output of dump/tar.
+   It arranges that input is the fd to be written by the dump process.
+   If createindex is not enabled, it does nothing.  If it is not, a
+   new process will be created that tees input both to a pipe whose
+   read fd is dup2'ed input and to a program that outputs an index
+   file to `index'.
+
+   make sure that the chat from restore doesn't go to stderr cause
+   this goes back to amanda which doesn't expect to see it
+   (2>/dev/null should do it)
+
+   Originally by Alan M. McIvor, 13 April 1996
+
+   Adapted by Alexandre Oliva, 1 May 1997
+
+   This program owes a lot to tee.c from GNU sh-utils and dumptee.c
+   from the DeeJay backup package.
+
+*/
+
+static volatile int index_finished = 0;
+
+static void index_closed(sig)
+int sig;
+{
+  index_finished = 1;
+}
+
+void start_index(createindex, input, mesg, index, cmd)
+int createindex, input, mesg, index;
+char *cmd;
+{
+  struct sigaction act, oact;
+  int pipefd[2];
+  FILE *pipe_fp;
+
+  if (!createindex)
+    return;
+    
+  if (pipe(pipefd) != 0) {
+    dbprintf(("creating index pipe: %s\n", strerror(errno)));
+    error("creating index pipe: %s", strerror(errno));
+  }
+
+  switch(indexpid = fork()) {
+  case -1:
+    dbprintf(("forking index tee process: %s\n", strerror(errno)));
+    error("forking index tee process: %s", strerror(errno));
+
+  default:
+    close(pipefd[0]);
+    if (dup2(pipefd[1], input) == -1) {
+      dbprintf(("dup'ping index tee output: %s", strerror(errno)));
+      error("dup'ping index tee output: %s", strerror(errno));
+    }
+    close(pipefd[1]);
+    return;
+
+  case 0:
+    break;
+  }
+
+  /* now in a child process */
+  dup2(pipefd[0], 0);
+  dup2(index, 1);
+  dup2(mesg, 2);
+  dup2(input, 3);
+  for(index = 4; index <= 255; index++)
+    if (index != db_file)
+      close(index);
+
+  /* set up a signal handler for SIGPIPE for when the pipe is finished
+     creating the index file */
+  /* at that point we obviously want to stop writing to it */
+  act.sa_handler = index_closed;
+  sigemptyset(&act.sa_mask);
+  act.sa_flags = 0;
+  if (sigaction(SIGPIPE, &act, &oact) != 0) {
+    dbprintf(("couldn't set index SIGPIPE handler [%s]\n", strerror(errno)));
+    error("couldn't set index SIGPIPE handler [%s]", strerror(errno));
+  }
+
+  if ((pipe_fp = popen(cmd, "w")) == NULL) {
+    dbprintf(("couldn't start index creator [%s]\n", strerror(errno)));
+    error("couldn't start index creator [%s]", strerror(errno));
+  }
+
+  dbprintf(("%s: started index creator: \"%s\"\n", pname, cmd));
+  while(1) {
+    char buffer[BUFSIZ], *ptr;
+    int bytes_read;
+    int bytes_written;
+
+    bytes_read = read(0, buffer, BUFSIZ);
+    if ((bytes_read < 0) && (errno == EINTR))
+      continue;
+
+    if (bytes_read < 0) {
+      dbprintf(("index tee cannot read [%s]\n", strerror(errno)));
+      error("index tee cannot read [%s]", strerror(errno));
+    }
+
+    if (bytes_read == 0)
+      break; /* finished */
+
+    /* write the stuff to the subprocess */
+    /* we are likely to be interrupted part way through one write by
+       the subprocess finishing. But we don't care at that point */
+    if (!index_finished)
+      fwrite(buffer, sizeof(char), BUFSIZ, pipe_fp);
+
+    /* write the stuff to stdout, ensuring none lost when interrupt
+       occurs */
+    ptr = buffer;
+    while (bytes_read > 0) {
+      bytes_written = write(3, ptr, bytes_read);
+      if ((bytes_written < 0) && (errno == EINTR))
+	continue;
+      if (bytes_written < 0) {
+	dbprintf(("index tee cannot write [%s]\n", strerror(errno)));
+	error("index tee cannot write [%s]", strerror(errno));
+      }
+      bytes_read -= bytes_written;
+      ptr += bytes_written;
+    }
+  }
+    
+  close(pipefd[1]);
+
+  /* finished */
+  /* check the exit code of the pipe and moan if not 0 */
+  if ((pipefd[0] = pclose(pipe_fp)) != 0) {
+    dbprintf(("index pipe returned %d [%s]\n", pipefd[0], strerror(errno)));
+    error("index pipe returned %d [%s]", pipefd[0], strerror(errno));
+  }
+
+  dbprintf(("%s: index created successfully\n", pname));
+  exit(0);
 }

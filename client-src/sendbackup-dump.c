@@ -120,12 +120,11 @@ char *restore_program_name = "restore";
 
 char *amanda_backup_program = "DUMP";	/* for the header */
 
-void start_backup(disk, level, datestamp, dataf, mesgf)
+void start_backup(disk, level, datestamp, dataf, mesgf, indexf)
 char *disk, *datestamp;
-int level, dataf, mesgf;
+int level, dataf, mesgf, indexf;
 {
     int dumpin, dumpout;
-    int indexout;
     char host[MAX_HOSTNAME_LENGTH], dumpkeys[80];
     char device[80];
     char cmd[256];
@@ -140,7 +139,7 @@ int level, dataf, mesgf;
     NAUGHTY_BITS;
 
     if(compress)
-	comppid = pipespawn(COMPRESS_PATH, &indexout, dataf, mesgf,
+	comppid = pipespawn(COMPRESS_PATH, &dumpout, dataf, mesgf,
 			    COMPRESS_PATH,
 #if defined(COMPRESS_BEST_OPT) && defined(COMPRESS_FAST_OPT)
 			    compress == COMPR_BEST? 
@@ -148,26 +147,8 @@ int level, dataf, mesgf;
 #endif
 			    (char *)0);
     else {
-	indexout = dataf;
+	dumpout = dataf;
 	comppid = -1;
-    }
-
-    if(createindex) {
-	char cmd2[256];
-	char level_str[12];
-
-	sprintf(cmd2, "createindex-dump%s", versionsuffix());
-        sprintf(cmd, "%s/%s", libexecdir, cmd2);
-	sprintf(level_str, "%d", level);
-
-	indexpid = pipespawn(cmd, &dumpout, indexout, mesgf,
-			     cmd2, host, disk, level_str, datestamp,
-			     (char *)0);
-	dbprintf(("sendbackup-dump: pid %d: %s %s %s %s %s\n",
-		  indexpid, cmd, host, disk, level_str, datestamp));
-    } else {
-	dumpout = indexout;
-	indexpid = -1;
     }
 
     /* invoke dump */
@@ -201,6 +182,10 @@ int level, dataf, mesgf;
 
 	write_tapeheader(host, disk, level, compress, datestamp, dataf);
 
+	start_index(createindex, dumpout, mesgf, indexf,
+		    XFSRESTORE
+		    " tvsilent - 2>/dev/null | /sbin/sed -e 's/^/\\/'");
+
 	sprintf(dumpkeys, "%d", level);
 	if (no_record)
 	{
@@ -222,6 +207,16 @@ int level, dataf, mesgf;
 
 	write_tapeheader(host, disk, level, compress, datestamp, dataf);
 
+	start_index(createindex, dumpout, mesgf, indexf,
+#ifdef RESTORE
+		    RESTORE
+#else
+		    "restore"
+#endif
+		    " -tvf - 2>/dev/null |"
+		    " awk '/^leaf/ {$1=\"\"; $2=\"\"; print}' |"
+		    " cut -c4-");
+
 	dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf, 
 			    "dump", dumpkeys, "100000", "-", device,
 			    (char *)0);
@@ -232,6 +227,16 @@ int level, dataf, mesgf;
 
     write_tapeheader(host, disk, level, compress, datestamp, dataf);
 
+    start_index(createindex, dumpout, mesgf, indexf,
+#ifdef RESTORE
+		RESTORE
+#else
+		"restore"
+#endif
+		" -B -tvf 2>/dev/null |"
+		" awk '/^leaf/ {$1=\"\"; $2=\"\"; print}' |"
+		" cut -c4-");
+
     dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf, 
 			"backup", dumpkeys, "-", device, (char *)0);
 #endif
@@ -240,9 +245,9 @@ int level, dataf, mesgf;
 
     close(dumpin);
     close(dumpout);
-    close(indexout);
     close(dataf);
     close(mesgf);
+    close(indexf);
 }
 
 void end_backup(status)

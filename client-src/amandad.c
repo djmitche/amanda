@@ -56,7 +56,6 @@ struct service_s {
     { "sendbackup",	USE_PROGRAM|NEED_KEYPIPE },
     { "sendfsinfo",	NONE },
     { "selfcheck",	NONE },
-    { "sendindex",      NONE },
     { NULL, NONE }
 };
 

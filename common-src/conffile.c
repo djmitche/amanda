@@ -76,7 +76,7 @@ typedef enum {
     TAPECYCLE, TAPEDEV, LABELSTR,
     BUMPSIZE, BUMPDAYS, BUMPMULT,
     TAPELIST, DISKFILE, INCLUDEFILE, INFOFILE, LOGFILE,
-    DISKDIR, DISKSIZE, NETUSAGE, INPARALLEL, TIMEOUT, DEFINE,
+    DISKDIR, DISKSIZE, INDEXDIR, NETUSAGE, INPARALLEL, TIMEOUT, DEFINE,
     TAPETYPE, TPCHANGER, RUNTAPES, COMMENT, LENGTH, FILEMARK, SPEED,
     DUMPTYPE, OPTIONS, PRIORITY, FREQUENCY, PROGRAM, MAXDUMPS,
     STARTTIME, NO_COMPRESS, COMPR, COMPR_BEST, COMPR_FAST, SRVCOMPRESS,
@@ -114,6 +114,7 @@ static val_t conf_logfile;
 static val_t conf_diskfile;
 static val_t conf_diskdir;
 static val_t tapetype_id;
+static val_t conf_indexdir;
 
 /* ints */
 static val_t conf_dumpcycle;
@@ -144,6 +145,7 @@ static int seen_tapelist, seen_infofile, seen_diskfile, seen_diskdir;
 static int seen_logfile, seen_bumpsize, seen_bumpmult, seen_bumpdays;
 static int seen_tapetype, seen_dumpcycle, seen_maxcycle, seen_tapecycle;
 static int seen_disksize, seen_netusage, seen_inparallel, seen_timeout;
+static int seen_indexdir;
 
 static tok_t tok;
 static val_t tokenval;
@@ -249,6 +251,7 @@ static void init_defaults()
     init_string(&conf_diskfile.s, "disklist");
     init_string(&conf_diskdir.s, "/dumps/amanda");
     init_string(&tapetype_id.s, "EXABYTE");
+    init_string(&conf_indexdir.s, DEFAULT_CONFIG);
 
     conf_dumpcycle.i	= 10;
     conf_tapecycle.i	= 15;
@@ -278,6 +281,7 @@ static void init_defaults()
     seen_logfile = seen_bumpsize = seen_bumpmult = seen_bumpdays = 0;
     seen_tapetype = seen_dumpcycle = seen_maxcycle = seen_tapecycle = 0;
     seen_disksize = seen_netusage = seen_inparallel = seen_timeout = 0;
+    seen_indexdir = 0;
     line_num = got_parserror = 0;
 
     /* free any previously declared dump and tape types */
@@ -342,6 +346,8 @@ static int read_confline()
     case TIMEOUT:   get_simple(&conf_timeout,   &seen_timeout,   INT);	 break;
     case MAXDUMPS:  get_simple(&conf_maxdumps,  &seen_maxdumps,   INT);	 break;
     case TAPETYPE:  get_simple(&tapetype_id,    &seen_tapetype,  IDENT); break;
+    case INDEXDIR:  get_simple(&conf_indexdir,  &seen_indexdir,  STRING);break;
+
 
     case DISKDIR:
 	assert(holdingdisks != NULL);
@@ -674,6 +680,7 @@ confparm_t parm;
     case CNF_DISKFILE: r = conf_diskfile.s; break;
     case CNF_DISKDIR: r = conf_diskdir.s; break;
     case CNF_TAPETYPE: r = tapetype_id.s; break;
+    case CNF_INDEXDIR: r = conf_indexdir.s; break;
 
     default:
 	assert(0);
@@ -876,6 +883,7 @@ static struct keytab_s {
     { "HIGH", HIGH },
     { "INCLUDEFILE", INCLUDEFILE },
     { "INDEX", INDEX },
+    { "INDEXDIR", INDEXDIR },
     { "INF", INFINITY },
     { "INFOFILE", INFOFILE },
     { "INPARALLEL", INPARALLEL },
@@ -1075,6 +1083,7 @@ struct byname {
     { "INFOFILE", CNF_INFOFILE, STRING },
     { "LOGFILE", CNF_LOGFILE, STRING },
     { "DISKDIR", CNF_DISKDIR, STRING },
+    { "INDEXDIR", CNF_INDEXDIR, STRING },
     { "TAPETYPE", CNF_TAPETYPE, STRING },
     { "DUMPCYCLE", CNF_DUMPCYCLE, INT },
     { "MINCYCLE",  CNF_DUMPCYCLE, INT },
@@ -1157,6 +1166,7 @@ dump_configuration()
 
     printf("conf_diskdir = \"%s\"\n", getconf_str(CNF_DISKDIR));
     printf("conf_disksize = %d\n", getconf_int(CNF_DISKSIZE));
+    printf("conf_indexdir = \"%s\"\n", getconf_str(CNF_INDEXDIR));
     printf("num_holdingdisks = %d\n", num_holdingdisks);
     for(hp = holdingdisks; hp != NULL; hp = hp->next)
 	printf("  holddisk: dir \"%s\" size %d\n", hp->diskdir, hp->disksize);

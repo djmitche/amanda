@@ -524,15 +524,6 @@ char *diskdir;
 	    dirname);
 }
 
-static void getindex()
-{
-    char cmd[1024];
-    sprintf(cmd, "%s/amgetidx%s %s on %s",
-	    libexecdir, versionsuffix(), config, datestamp);
-    if (system(cmd))
-      log(L_WARNING, "failed to fetch index files");
-}
-
 void run_dumps()
 {
     holdingdisk_t *hdisk;
@@ -563,8 +554,6 @@ void run_dumps()
     }
 
     log(L_FINISH, "date %s time %s", datestamp, walltime_str(curclock()));
-
-    getindex();
 
     /* now, have reporter generate report and send mail */
 

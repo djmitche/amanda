@@ -3,15 +3,30 @@
 * File:          $RCSfile: amindexd.h,v $
 * Part of:       
 *
-* Revision:      $Revision: 1.1 $
-* Last Edited:   $Date: 1997/03/15 21:30:10 $
-* Author:        $Author: amcore $
+* Revision:      $Revision: 1.2 $
+* Last Edited:   $Date: 1997/05/01 19:03:41 $
+* Author:        $Author: oliva $
 *
 * Description:   
 * Public Func:   
 * History:       $Log: amindexd.h,v $
-* History:       Revision 1.1  1997/03/15 21:30:10  amcore
-* History:       Initial revision
+* History:       Revision 1.2  1997/05/01 19:03:41  oliva
+* History:       Integrated amgetidx into sendbackup&dumper.
+* History:
+* History:       New command in configuration file: indexdir; it indicates the
+* History:       subdirectory of amanda-index where index files should be stored.
+* History:
+* History:       Index files are now compressed in the server (since the server will
+* History:       have to decompress them)
+* History:
+* History:       Removed RSH configuration from configure
+* History:
+* History:       Added check for index directory to self check
+* History:
+* History:       Changed amindexd and amtrmidx to use indexdir option.
+* History:
+* History:       Revision 1.1.1.1  1997/03/15 21:30:10  amcore
+* History:       Mass import of 2.3.0.4 as-is.  We can remove generated files later.
 * History:
 * History:       Revision 1.7  1996/11/05 08:50:18  alan
 * History:       removed #define of GREP since not needed
@@ -57,8 +72,5 @@ extern void lreply P((int n, char *fmt, ...));
 
 extern int opaque_ls P((char *dir));
 extern int translucent_ls P((char *dir));
-
-/* create file name from index parameters */
-extern char *idxfname P((char *host, char *disk, char *date, int level));
 
 #endif /* AMINDEXD */

@@ -33,6 +33,7 @@
 #include "protocol.h"
 #include "version.h"
 #include "arglist.h"
+#include "amindex.h"
 
 
 #ifdef KRB4_SECURITY
@@ -70,6 +71,7 @@ int argc;
 int interactive;
 char *handle;
 char loginid[80];
+char *indexfile;
 
 char databuf[DATABUF_SIZE];
 char mesgbuf[MESGBUF_SIZE];
@@ -90,13 +92,14 @@ time_t timestamp;
 
 int datafd = -1;
 int mesgfd = -1;
+int indexfd = -1;
 int amanda_port;
 
 /* local functions */
 int main P((int main_argc, char **main_argv));
 static cmd_t getcmd P((void));
 static void putresult P((char *format, ...));
-static void do_dump P((int mesgfd, int datafd, int outfd));
+static void do_dump P((int mesgfd, int datafd, int indexfd, int outfd));
 void check_options P((char *options));
 void service_ports_init P((void));
 static void construct_datestamp P((char *buf));
@@ -110,7 +113,6 @@ void record_success P((char *str));
 void record_strange P((char *str));
 void record_failure P((char *str));
 char *diskname2filename P((char *dname));
-static void do_dump P((int mesgfd, int datafd, int outfd));
 void sendbackup_response P((proto_t *p, pkt_t *pkt));
 int startup_dump P((char *hostname, char *disk, char *levelstr, 
 		    char *dumpname, char *options));
@@ -243,14 +245,16 @@ char **main_argv;
 		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
 		close(mesgfd);
 		close(datafd);
+		close(indexfd);
 		close(outfd);
 		break;
 	    }
 
 	    abort_pending = 0;
-	    do_dump(mesgfd, datafd, outfd);
+	    do_dump(mesgfd, datafd, indexfd, outfd);
 	    close(mesgfd);
 	    close(datafd);
+	    close(indexfd);
 	    close(outfd);
 	    if(abort_pending) putresult("ABORT-FINISHED %s\n", handle);
 	    break;
@@ -286,13 +290,15 @@ char **main_argv;
 		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
 		close(mesgfd);
 		close(datafd);
+		close(indexfd);
 		close(outfd);
 		break;
 	    }
 
-	    do_dump(mesgfd, datafd, outfd);
+	    do_dump(mesgfd, datafd, indexfd, outfd);
 	    close(mesgfd);
 	    close(datafd);
+	    close(indexfd);
 	    close(outfd);
 	    break;
 
@@ -565,6 +571,14 @@ void update_info()
     else
 	put_info(hostname, diskname, &record);
     close_infofile();
+
+    if (indexfile) {
+      char tmpname[1024];
+      strcpy(tmpname, indexfile);
+      indexfile[strlen(indexfile)-4] = 0;
+      unlink(indexfile);
+      rename(tmpname, indexfile);
+    }
 }
 
 void record_success(str)
@@ -589,6 +603,8 @@ char *str;
 void record_failure(str)
 char *str;
 {
+    if (indexfile)
+      unlink(indexfile);
     log_start_multiline();
     log(L_FAIL, "%s %s %d [%s]", hostname, diskname, level, str);
     log_msgout(L_FAIL);
@@ -617,8 +633,8 @@ char *dname;
 }
 
 
-static void do_dump(mesgfd, datafd, outfd)
-int mesgfd, datafd, outfd;
+static void do_dump(mesgfd, datafd, indexfd, outfd)
+int mesgfd, datafd, indexfd, outfd;
 {
     int maxfd, nfound, size1, size2, eof1, eof2;
     fd_set readset, selectset;
@@ -663,6 +679,8 @@ int mesgfd, datafd, outfd;
 		    fprintf(stderr, "err dup2 out: %s\n", strerror(errno));
 		if (dup2(tmp, 0) == -1)
 		    fprintf(stderr, "err dup2 in: %s\n", strerror(errno));
+		for(tmp = 3; tmp <= 255; ++tmp)
+		  close(tmp);
 		/*
 		 * copy out the first HDR_BYTES uncompressed; this
 		 * is the tape header. It's too big for one read, so do
@@ -682,11 +700,38 @@ int mesgfd, datafd, outfd;
 		    count -= bytes;
 		}
 		/* now spawn gzip -1 to take care of the rest */
-		execlp(COMPRESS_PATH, "gzip", "-1", (char *)0);
+		execlp(COMPRESS_PATH, COMPRESS_PATH,
+		       COMPRESS_FAST_OPT, (char *)0);
 		fprintf(stderr, "error: couldn't exec %s.\n",
 			COMPRESS_PATH);
 	}
 	/* Now the pipe has been inserted. */
+    }
+
+    if (indexfd != -1) {
+      indexfile = getindexname(getconf_str(CNF_INDEXDIR),
+			       hostname, diskname, datestamp, level);
+      strcat(indexfile, ".tmp");
+      switch(fork()) {
+      case -1: fprintf(stderr, "couldn't fork\n");
+      default:
+	close(indexfd);
+	indexfd = -1;
+	break;
+      case 0:
+	if (dup2(indexfd, 0) == -1)
+	  error("err dup2 in: %s", strerror(errno));
+	indexfd = open(indexfile, O_WRONLY | O_CREAT | O_TRUNC, 0600);
+	if (indexfd == -1)
+	  error("err open %s: %s", tmpfile, strerror(errno));
+	if (dup2(indexfd,1) == -1)
+	  error("err dup2 out: %s", strerror(errno));
+	for(tmp = 3; tmp <= 255; ++tmp)
+	  close(tmp);
+	execlp(COMPRESS_PATH, COMPRESS_PATH,
+	       COMPRESS_BEST_OPT, (char *)0);
+	error("error: couldn't exec %s.", COMPRESS_PATH);
+      }
     }
 
     dumpsize = origsize = dump_result = msgofs = 0;
@@ -704,6 +749,7 @@ int mesgfd, datafd, outfd;
     NAUGHTY_BITS_INITIALIZE;
 
     maxfd = (mesgfd > datafd ? mesgfd : datafd) + 1;
+    maxfd = (maxfd > indexfd ? maxfd : indexfd) + 1;
     eof1 = eof2 = 0;
 
     FD_ZERO(&readset);
@@ -874,7 +920,7 @@ proto_t *p;
 pkt_t *pkt;
 {
     char optionstr[512];
-    int data_port, mesg_port;
+    int data_port, mesg_port, index_port;
 
     if(p->state == S_FAILED) {
 	if(pkt == NULL) {
@@ -912,8 +958,8 @@ pkt_t *pkt;
     }
 
     if(sscanf(pkt->body,
-	      "CONNECT DATA %d MESG %d\nOPTIONS %[^\n]\n",
-	      &data_port, &mesg_port, optionstr) != 3) {
+	      "CONNECT DATA %d MESG %d INDEX %d\nOPTIONS %[^\n]\n",
+	      &data_port, &mesg_port, &index_port, optionstr) != 4) {
 	sprintf(errstr, "[parse of reply message failed]");
 	response_error = 2;
 	return;
@@ -933,9 +979,25 @@ pkt_t *pkt;
 	sprintf(errstr,
 		"[could not connect to mesg port: %s]", strerror(errno));
 	close(datafd);
+	datafd = -1;
 	response_error = 1;
 	return;
     }
+
+    if (index_port != -1) {
+      indexfd = stream_client(hostname, index_port,
+			     DEFAULT_SIZE, DEFAULT_SIZE);
+      if (indexfd == -1) {
+	sprintf(errstr,
+		"[could not connect to index port: %s]", strerror(errno));
+	close(datafd);
+	close(mesgfd);
+	datafd = mesgfd = -1;
+	response_error = 1;
+	return;
+      }
+    }
+    
     /* everything worked */
 
 #ifdef KRB4_SECURITY
@@ -944,6 +1006,7 @@ pkt_t *pkt;
 		"[mutual authentication in data stream failed]");
 	close(datafd);
 	close(mesgfd);
+	close(indexfd);
 	response_error = 1;
 	return;
     }
@@ -951,6 +1014,7 @@ pkt_t *pkt;
 	sprintf(errstr,
 		"[mutual authentication in mesg stream failed]");
 	close(datafd);
+	close(indexfd);
 	close(mesgfd);
 	response_error = 1;
 	return;
@@ -969,7 +1033,7 @@ char *hostname, *disk, *levelstr, *dumpname, *options;
 	    "SERVICE sendbackup PROGRAM %s\n%s %s DATESTAMP %s OPTIONS %s\n",
             progname, disk, levelstr, datestamp, options);
 
-    datafd = mesgfd = -1;
+    datafd = mesgfd = indexfd = -1;
 
 #ifdef KRB4_SECURITY
     if(krb4_auth) {

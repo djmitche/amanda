@@ -24,11 +24,9 @@ libexec_PROGRAMS =	versionsuffix					\
 			@BUILD_CLIENT_PROGS_LIBEXEC@
 
 EXTRA_PROGRAMS =	amandad				calcsize	\
-			createindex-dump		createindex-gnutar \
 			rundump				runtar		\
 			selfcheck			sendbackup-dump	\
-			sendbackup-gnutar 		sendindex	\
-			sendsize
+			sendbackup-gnutar 		sendsize
 
 bin_SCRIPTS =		@BUILD_CLIENT_SCRIPTS_BIN@
 
@@ -46,20 +44,11 @@ EXTRA_DIST =		amhpfixdevs.sh uparse.h
 amrecover_LDADD =	../common-src/libamanda.a @LEXLIB@
 YFLAGS =		-d
 
-createindex_dump_SOURCES = createindex-dump.c		indexfilename.c \
-			indexfilename.h
-
-createindex_gnutar_SOURCES = createindex-gnutar.c	indexfilename.c \
-			indexfilename.h
-
 sendbackup_dump_SOURCES = sendbackup-dump.c		sendbackup-common.c \
 			sendbackup-common.h
 
 sendbackup_gnutar_SOURCES = sendbackup-gnutar.c		sendbackup-common.c \
 			sendbackup-common.h
-
-sendindex_SOURCES =	sendindex.c			indexfilename.c \
-			indexfilename.h
 
 install-exec-hook:
 	@list="$(bin_PROGRAMS) $(bin_SCRIPTS)"; for p in $$list; do \

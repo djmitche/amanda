@@ -104,14 +104,15 @@ int main()
 #ifdef UNCOMPRESS_PATH
     sprintf(str, " UNCOMPRESS_PATH=\\\"%s\\\"", UNCOMPRESS_PATH); prstr(str);
 #endif
-#ifdef RSH_COMMAND
-    sprintf(str, " RSH_COMMAND=\\\"%s\\\"", RSH_COMMAND); prstr(str);
-#endif
     sprintf(str, " MAILER=\\\"%s\\\"", MAILER); prstr(str);
     sprintf(str, " bindir=\\\"%s\\\"", bindir); prstr(str);
     sprintf(str, " libexecdir=\\\"%s\\\"", libexecdir); prstr(str);
     sprintf(str, " CONFIG_DIR=\\\"%s\\\"", CONFIG_DIR); prstr(str);
     sprintf(str, " mandir=\\\"%s\\\"", mandir); prstr(str);
+#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
+    sprintf(str, " listed_incr_dir=\\\"%s\\\"",
+	    GNUTAR_LISTED_INCREMENTAL_DIR); prstr(str);
+#endif
     newline();
 
     prstr("defs: ");

@@ -3,15 +3,30 @@
 * File:          $RCSfile: amindexd.c,v $
 * Part of:       
 *
-* Revision:      $Revision: 1.1 $
-* Last Edited:   $Date: 1997/03/15 21:30:10 $
-* Author:        $Author: amcore $
+* Revision:      $Revision: 1.2 $
+* Last Edited:   $Date: 1997/05/01 19:03:39 $
+* Author:        $Author: oliva $
 *
 * Notes:         
 * Private Func:  
 * History:       $Log: amindexd.c,v $
-* History:       Revision 1.1  1997/03/15 21:30:10  amcore
-* History:       Initial revision
+* History:       Revision 1.2  1997/05/01 19:03:39  oliva
+* History:       Integrated amgetidx into sendbackup&dumper.
+* History:
+* History:       New command in configuration file: indexdir; it indicates the
+* History:       subdirectory of amanda-index where index files should be stored.
+* History:
+* History:       Index files are now compressed in the server (since the server will
+* History:       have to decompress them)
+* History:
+* History:       Removed RSH configuration from configure
+* History:
+* History:       Added check for index directory to self check
+* History:
+* History:       Changed amindexd and amtrmidx to use indexdir option.
+* History:
+* History:       Revision 1.1.1.1  1997/03/15 21:30:10  amcore
+* History:       Mass import of 2.3.0.4 as-is.  We can remove generated files later.
 * History:
 * History:       Revision 1.16  1996/12/19 08:56:29  alan
 * History:       first go at file extraction
@@ -84,6 +99,7 @@
 #include "protocol.h"
 #include "amindexd.h"
 #include "version.h"
+#include "amindex.h"
 
 char *pname = "amindexd";
 char *server_version = "1.0";
@@ -144,31 +160,6 @@ arglist_function1(void lreply, int, n, char *, fmt)
     }
 
     dbprintf(("< %s\n", buf));
-}
-
-
-/* create file name from index parameters */
-/* string is returned in an internal buffer which will
-   be overwritten next time this function is called */
-char *idxfname(host, disk, date, level)
-char *host;
-char *disk;
-char *date;
-int level;
-{
-    static char name[1024];
-    char *nptr;
-
-    sprintf(name, "%s_%s_%s_%d%s", host, disk, date, level,
-	    COMPRESS_SUFFIX);
-
-    /* disks specified by logical names can have '/' in them
-       this needs to be mapped to '_' */
-    for (nptr = name; *nptr != '\0'; nptr++)
-	if (*nptr == '/')
-	    *nptr = '_';
-
-    return name;
 }
 
 
@@ -248,7 +239,7 @@ char *disk;
 	reply(599, "System error: %d.", errno);
 	return -1;
     }
-    search_str = idxfname(dump_hostname, disk, "0000-00-00", 0);
+    search_str = getindexfname(dump_hostname, disk, "00000000", 0);
     /* NOTE!!!!!! the following assumes knowledge of the
        host,disk,date,level to file name mapping and may need changing if
        that is changed */
@@ -268,10 +259,33 @@ char *disk;
 }
 
 
-int is_config_valid(conf)
-char *conf;
+int is_config_valid(config)
+char *config;
 {
+    char conf_dir[1024];
+    char *result;
+    
     /* check that the config actually exists */
+    if (strlen(config) == 0)
+    {
+	reply(501, "Must set config first.");
+	return -1;
+    }
+
+    /* cd to confdir */
+    sprintf(conf_dir, "%s/%s", CONFIG_DIR, config);
+    if (chdir(conf_dir) == -1)
+    {
+	reply(501, "Couldn't cd into config dir. Misconfiguration?");
+	return -1;
+    }
+    
+    /* read conffile */
+    if (read_conffile(CONFFILE_NAME))
+    {
+	reply(501, "Couldn't read config file!");
+	return -1;
+    }
     
     /* okay, now look for the index directory */
     if (chdir(INDEX_DIR) == -1)
@@ -279,10 +293,10 @@ char *conf;
 	reply(501, "Index directory %s does not exist", INDEX_DIR);
 	return -1;
     }
-    if (chdir(conf) == -1) 
+    if (chdir(getconf_byname("indexdir")) == -1) 
     {
 	(void)chdir(INDEX_DIR);
-	reply(501, "There is no index directory for config %s.", conf);
+	reply(501, "There is no index directory for config %s.", config);
 	return -1;
     }
     return 0;
@@ -393,7 +407,8 @@ char *dir;
 #else
 		"",
 #endif
-		idxfname(dump_hostname, disk_name, item->date, item->level),
+		getindexfname(dump_hostname, disk_name,
+			      item->date, item->level),
 		dir);
 	dbprintf(("c %s\n", cmd));
 	if ((fp = popen(cmd, "r")) == NULL)

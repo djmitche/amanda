@@ -3,15 +3,30 @@
 * File:          $RCSfile: list_dir.c,v $
 * Part of:       
 *
-* Revision:      $Revision: 1.1 $
-* Last Edited:   $Date: 1997/03/15 21:30:10 $
-* Author:        $Author: amcore $
+* Revision:      $Revision: 1.2 $
+* Last Edited:   $Date: 1997/05/01 19:03:48 $
+* Author:        $Author: oliva $
 *
 * Notes:         
 * Private Func:  
 * History:       $Log: list_dir.c,v $
-* History:       Revision 1.1  1997/03/15 21:30:10  amcore
-* History:       Initial revision
+* History:       Revision 1.2  1997/05/01 19:03:48  oliva
+* History:       Integrated amgetidx into sendbackup&dumper.
+* History:
+* History:       New command in configuration file: indexdir; it indicates the
+* History:       subdirectory of amanda-index where index files should be stored.
+* History:
+* History:       Index files are now compressed in the server (since the server will
+* History:       have to decompress them)
+* History:
+* History:       Removed RSH configuration from configure
+* History:
+* History:       Added check for index directory to self check
+* History:
+* History:       Changed amindexd and amtrmidx to use indexdir option.
+* History:
+* History:       Revision 1.1.1.1  1997/03/15 21:30:10  amcore
+* History:       Mass import of 2.3.0.4 as-is.  We can remove generated files later.
 * History:
 * History:       Revision 1.8  1996/11/05 08:50:30  alan
 * History:       removed #define of GREP since not needed
@@ -43,6 +58,7 @@
 
 #include "amanda.h"
 #include "amindexd.h"
+#include "amindex.h"
 
 typedef struct DIR_ITEM
 {
@@ -141,8 +157,8 @@ DUMP_ITEM *dump_item;
 #else
 	    "",
 #endif
-	    idxfname(dump_hostname, disk_name, dump_item->date,
-		     dump_item->level),
+	    getindexfname(dump_hostname, disk_name, dump_item->date,
+			  dump_item->level),
 	    dir_slash, no_fields);
     dbprintf(("c %s\n", cmd));
     if ((fp = popen(cmd, "r")) == NULL)

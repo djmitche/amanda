@@ -74,9 +74,9 @@ time_t cur_dumptime;
 char *incrname;
 #endif
 
-void start_backup(disk, level, datestamp, dataf, mesgf)
+void start_backup(disk, level, datestamp, dataf, mesgf, indexf)
 char *disk, *datestamp;
-int level, dataf, mesgf;
+int level, dataf, mesgf, indexf;
 {
     int dumpin, dumpout;
     char host[MAX_HOSTNAME_LENGTH], cmd[256];
@@ -87,7 +87,6 @@ int level, dataf, mesgf;
     struct tm *gmtm;
     amandates_t *amdates;
     time_t prev_dumptime;
-    int indexout;
 #ifndef USE_FQDN
     char *domain;
 #endif
@@ -112,32 +111,13 @@ int level, dataf, mesgf;
 #else
 	const char compopt[] = "";
 #endif
-	comppid = pipespawn(COMPRESS_PATH, &indexout, dataf, mesgf,
+	comppid = pipespawn(COMPRESS_PATH, &dumpout, dataf, mesgf,
 			    COMPRESS_PATH, compopt, (char *)0);
 	dbprintf(("sendbackup-gnutar: pid %d: %s %s\n",
 		comppid, COMPRESS_PATH, compopt));
     } else {
-	indexout = dataf;
+	dumpout = dataf;
 	comppid = -1;
-    }
-
-    if(createindex) {
-	char cmd2[256];
-	char level_str[12];
-
-	sprintf(cmd2, "createindex-gnutar%s", versionsuffix());
-	sprintf(cmd, "%s/%s", libexecdir, cmd2);
-	sprintf(level_str, "%d", level);
-
-	indexpid = pipespawn(cmd, &dumpout, indexout, mesgf,
-			     cmd2,
-			     host, disk, level_str, datestamp,
-			     (char *)0);
-	dbprintf(("sendbackup-gnutar: pid %d: %s %s %s %s %s\n",
-		indexpid, cmd, host, disk, level_str, datestamp));
-    } else {
-	dumpout = indexout;
-	indexpid = -1;
     }
 
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
@@ -165,8 +145,8 @@ int level, dataf, mesgf;
 
 	if (level == 0) {
 	notincremental:
-		dbprintf(("%s: doing level %d dump as listed-incremental: %s\n",
-			  pname, level, incrname));
+	  dbprintf(("%s: doing level %d dump as listed-incremental: %s\n",
+		    pname, level, incrname));
 	} else {
 	    FILE *in = NULL, *out;
 	    char *inputname = strdup(incrname);
@@ -178,8 +158,10 @@ int level, dataf, mesgf;
 	      in = fopen(inputname, "r");
 	    }
 
-	    if (in == NULL)
-	        goto notincremental;
+	    if (in == NULL) {
+	      free(inputname);
+	      goto notincremental;
+	    }
 	    
 	    out = fopen(incrname, "w");
 	    if (out == NULL)
@@ -254,6 +236,13 @@ int level, dataf, mesgf;
 	restore_program_name = SAMBA_CLIENT;
 	
 	write_tapeheader(host, disk, level, compress, datestamp, dataf);
+	start_index(createindex, dumpout, mesgf, indexf,
+#ifdef GNUTAR
+		    GNUTAR
+#else
+		    "tar"
+#endif
+		    " -tf - 2>/dev/null | cut -c2-");
 
 	dumppid = pipespawn(SAMBA_CLIENT, &dumpin, dumpout, mesgf,
 			    "gtar",
@@ -269,6 +258,14 @@ int level, dataf, mesgf;
 	char sprintf_buf[512];
 
 	write_tapeheader(host, disk, level, compress, datestamp, dataf);
+
+	start_index(createindex, dumpout, mesgf, indexf,
+#ifdef GNUTAR
+		    GNUTAR
+#else
+		    "tar"
+#endif
+		    " -tf - 2>/dev/null | cut -c2-");
 
 	dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf,
 			"gtar", "--create",
@@ -325,9 +322,9 @@ int level, dataf, mesgf;
 
     close(dumpin);
     close(dumpout);
-    close(indexout);
     close(dataf);
     close(mesgf);
+    close(indexf);
 }
 
 void end_backup(goterror)

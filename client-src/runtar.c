@@ -25,7 +25,6 @@ char **argv;
     return 1;
 #else
 
-#ifdef FORCE_USERID
     /* we should be invoked by CLIENT_LOGIN */
     {
 	struct passwd *pwptr;
@@ -33,13 +32,16 @@ char **argv;
 	if((pwptr = getpwnam(pwname)) == NULL)
 	    error("error [cannot find user %s in passwd file]\n", pwname);
 
+	chown("/tmp/runtar.debug", pwptr->pw_uid, getgid());
+
+#ifdef FORCE_USERID
 	if (getuid() != pwptr->pw_uid)
 	    error("error [must be invoked by %s]\n", pwname);
 
 	if (geteuid() != 0)
 	    error("error [must be setuid root]\n", pwname);
-    }
 #endif
+    }
 
     dbprintf(("running: %s: ",GNUTAR));
     for (i=0; argv[i]; i++)

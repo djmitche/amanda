@@ -545,7 +545,6 @@ void handle_taper_result()
 		   walltime_str(curclock()), dp->host->hostname, dp->name);
 	    fflush(stdout);
 	}
-
 	/*
 	 * Since we've gotten a tape error, we can't send anything more
 	 * to the taper.  Go into degraded mode to try to get everthing

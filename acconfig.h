@@ -40,10 +40,6 @@
 /* This is the default no-rewinding tape drive on the restoring tape server. */
 #undef DEFAULT_TAPE_DEVICE
 
-/* This defines the directory where index files are held before being sent
- * to the tape host.  */
-#undef INDEX_TMP_DIR
-
 /* Define if you want to use the .amandahosts file instead of .rhosts.  */
 #undef USE_AMANDAHOSTS
 
@@ -115,9 +111,6 @@
 
 /* Define as any optional arguments to get UNCOMPRESS_PATH to uncompress.  */
 #undef UNCOMPRESS_OPT
-
-/* rsh */
-#undef RSH_COMMAND
 
 /* mail sendmail */
 #undef MAILER

@@ -25,7 +25,7 @@ libexec_PROGRAMS =	@BUILD_SERVER_PROGS_LIBEXEC@
 bin_SCRIPTS =		@BUILD_SERVER_SCRIPTS_BIN@
 
 EXTRA_PROGRAMS =	amadmin				amcheck		\
-			amflush				amgetidx	\
+			amflush						\
 			amidxtaped			amindexd	\
 			amlabel				amtape		\
 			amtrmidx			driver		\
@@ -58,7 +58,7 @@ install-exec-hook:
 		echo chgrp $(SETUID_GROUP) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
 		chgrp $(SETUID_GROUP) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
 	done; \
-	list="$(bindir)/amcheck $(libexecdir)/amgetidx $(libexecdir)/dumper $(libexecdir)/planner"; for p in $$list; do \
+	list="$(bindir)/amcheck $(libexecdir)/dumper $(libexecdir)/planner"; for p in $$list; do \
 		if echo "$(bin_PROGRAMS) $(bin_SCRIPTS) $(libexec_PROGRAMS) $(libexec_SCRIPTS)" | grep `basename $$p` >/dev/null 2>&1; then \
 			echo chown root `echo $$p|sed '$(transform)'`; \
 			chown root `echo $$p|sed '$(transform)'`; \

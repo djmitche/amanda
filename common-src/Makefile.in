@@ -112,7 +112,6 @@ PCAT = @PCAT@
 PERL = @PERL@
 RANLIB = @RANLIB@
 RESTORE = @RESTORE@
-RSH = @RSH@
 SAMBA_CLIENT = @SAMBA_CLIENT@
 SETUID_GROUP = @SETUID_GROUP@
 SHELL = @SHELL@
@@ -147,7 +146,7 @@ libamanda_a_SOURCES =	alloc.c		amandates.c	changer.c	\
 			regex.c		statfs.c	stralloc.c	\
 			stream.c	tapefile.c	tapeio.c	\
 			unctime.c	version.c	version.h	\
-			versuff.c
+			versuff.c	amindex.c
 
 EXTRA_DIST =		genversion.c
 
@@ -159,7 +158,7 @@ noinst_HEADERS =	amanda.h	amandates.h	arglist.h	\
 			fnmatch.h	getfsent.h	infofile.h	\
 			logfile.h	protocol.h	regex.h		\
 			statfs.h	stream.h	tapefile.h	\
-			tapeio.h
+			tapeio.h	amindex.h
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = ../config.h
 CONFIG_CLEAN_FILES =  versuff.c
@@ -174,7 +173,7 @@ libamanda_a_DEPENDENCIES =  @ALLOCA@ @LIBOBJS@
 libamanda_a_OBJECTS =  alloc.o amandates.o changer.o clock.o conffile.o \
 debug.o dgram.o diskfile.o error.o fnmatch.o getfsent.o infofile.o \
 logfile.o match.o protocol.o regex.o statfs.o stralloc.o stream.o \
-tapefile.o tapeio.o unctime.o version.o versuff.o
+tapefile.o tapeio.o unctime.o version.o versuff.o amindex.o
 CFLAGS = @CFLAGS@
 LINK = $(CC) $(LDFLAGS) -o $@
 HEADERS =  $(noinst_HEADERS)
