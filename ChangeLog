@@ -1,5 +1,12 @@
 2002-11-12  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* configure.in: socklen_t default to int.
+	* common-src/dgram.c (dgram_recv): addrlen is socklen_t.
+	* common-src/stream.c (stream_server): len is socklen_t.
+	* recover-src/extract_list.c (add_file): j is int.
+
+2002-11-12  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* client-src/client_util.c (test_name_len) Remove variable.
 	* common-src/match.c (len_prefix): Change type to int.
 	* server-src/taper.c: Use %p to print pointer.
