@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.1 2000/04/18 00:23:16 martinea Exp $
+/* $Id: chunker.c,v 1.2 2000/05/27 22:45:28 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -52,7 +52,7 @@
 #endif
 
 #define CONNECT_TIMEOUT	5*60
-#define MAX_ARGS	10
+#define MAX_ARGS	11
 #define DATABUF_SIZE	TAPE_BLOCK_BYTES
 
 #define STARTUP_TIMEOUT 60
@@ -66,10 +66,11 @@ struct cmdargs {
 
 struct databuf {
     int fd;			/* file to flush to */
-    const char *filename;	/* name of what fd points to */
+    char *filename;		/* name of what fd points to */
     int filename_seq;		/* for chunking */
     long split_size;		/* when to chunk */
     long chunk_size;		/* size of each chunk */
+    long use;			/* size to use on thos disk */
     char buf[DATABUF_SIZE];
     char *dataptr;		/* data buffer markers */
     int spaceleft;
@@ -82,6 +83,7 @@ char *handle = NULL;
 char *errstr = NULL;
 int abort_pending;
 static long dumpsize, headersize;
+static long filesize;
 
 char *hostname = NULL;
 char *diskname = NULL;
@@ -102,11 +104,11 @@ static cmd_t getcmd P((struct cmdargs *));
 static void putresult P((const char *, ...))
     __attribute__ ((format (printf, 1, 2)));
 static int write_tapeheader P((int, dumpfile_t *));
-static void databuf_init P((struct databuf *, int, const char *, long));
+static void databuf_init P((struct databuf *, int, char *, long, long));
 static int databuf_write P((struct databuf *, const void *, int));
 static int databuf_flush P((struct databuf *));
 
-static int startup_chunker P((const char *, long, struct databuf *));
+static int startup_chunker P((char *, long, long, struct databuf *));
 static int do_chunk P((int, struct databuf *));
 
 
@@ -124,7 +126,7 @@ main(main_argc, main_argv)
     char *conffile;
     char *q = NULL;
     char *filename;
-    long chunksize;
+    long chunksize, split_size, use;
     times_t runtime;
 
     for (outfd = 3; outfd < FD_SETSIZE; outfd++) {
@@ -194,11 +196,11 @@ main(main_argc, main_argv)
 
 	case PORT_WRITE:
 	    /*
-	     * FILE-DUMP handle filename host disk level dumpdate chunksize
-	     *   progname options
+	     * PORT-WRITE handle filename host disk level dumpdate chunksize
+	     *   progname use options
 	     */
-	    if (cmdargs.argc != 10)
-		error("error [dumper FILE-DUMP argc != 10: %d]", cmdargs.argc);
+	    if (cmdargs.argc != 11)
+		error("error [dumper PORT-WRITE argc != 11: %d]", cmdargs.argc);
 	    handle = newstralloc(handle, cmdargs.argv[2]);
 	    filename = cmdargs.argv[3];
 	    hostname = newstralloc(hostname, cmdargs.argv[4]);
@@ -208,14 +210,19 @@ main(main_argc, main_argv)
 	    chunksize = atoi(cmdargs.argv[8]);
 	    chunksize = (chunksize/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
 	    progname = newstralloc(progname, cmdargs.argv[9]);
-	    options = newstralloc(options, cmdargs.argv[10]);
+	    use = atoi(cmdargs.argv[10]);
+	    use = (use/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
+	    options = newstralloc(options, cmdargs.argv[11]);
+
+	    split_size = (chunksize>use)?use:chunksize;
+	    use -= split_size;
 
 	    /*
 	     * We start a subprocess to do the chunking, and pipe our
 	     * data to it.  This allows us to insert a compress in between
 	     * if srvcompress is set.
 	     */
-	    infd = startup_chunker(filename, chunksize, &db);
+	    infd = startup_chunker(filename, use, split_size, &db);
 	    if (infd < 0) {
 		q = squotef("[chunker startup failed: %s]",
 		    strerror(errno));
@@ -282,8 +289,9 @@ main(main_argc, main_argv)
  * on success, or -1 on error.
  */
 static int
-startup_chunker(filename, chunksize, db)
-    const char *filename;
+startup_chunker(filename, use, chunksize, db)
+    char *filename;
+    long use;
     long chunksize;
     struct databuf *db;
 {
@@ -313,7 +321,7 @@ startup_chunker(filename, chunksize, db)
 	exit(1);
     }
     amfree(tmp_filename);
-    databuf_init(db, outfd, filename, chunksize);
+    databuf_init(db, outfd, filename, use, chunksize);
     return infd;
 }
 
@@ -409,17 +417,20 @@ arglist_function(static void putresult, const char *, format)
  * Initialize a databuf.  Takes a writeable file descriptor.
  */
 static void
-databuf_init(db, fd, filename, split_size)
+databuf_init(db, fd, filename, use, chunk_size)
     struct databuf *db;
     int fd;
-    const char *filename;
-    long split_size;
+    char *filename;
+    long use;
+    long chunk_size;
 {
 
     db->fd = fd;
-    db->filename = filename;
+    db->filename = stralloc(filename);
     db->filename_seq = 0;
-    db->chunk_size = db->split_size = split_size;
+    db->chunk_size = chunk_size;
+    db->split_size = (db->chunk_size > use) ? use : db->chunk_size;
+    db->use = use - db->split_size;
     db->dataptr = db->buf;
     db->spaceleft = sizeof(db->buf);
     db->compresspid = -1;
@@ -464,7 +475,6 @@ databuf_flush(db)
 {
     struct cmdargs cmdargs;
     int fd, written, off;
-    cmd_t cmd;
     char *tmp_filename;
 
     /*
@@ -485,6 +495,34 @@ databuf_flush(db)
      * See if we need to split this file.
      */
     if (db->split_size > 0 && dumpsize >= db->split_size) {
+	if( db->use == 0 ) { /* no more space on this disk. request some more */
+	    cmd_t cmd;
+	    char *new_filename = NULL;
+
+	    putresult("RQ-MORE-DISK %s\n", handle);
+	    cmd = getcmd(&cmdargs);
+	    if(cmd != CONTINUE && cmd != ABORT) {
+		error("error [bad command after RQ-MORE-DISK: %d]", cmd);
+	    }
+	    if(cmd == CONTINUE) {
+		db->chunk_size = atoi(cmdargs.argv[3]);
+		db->chunk_size = (db->chunk_size/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
+		db->use = atoi(cmdargs.argv[4]);
+		if( !strcmp( db->filename, cmdargs.argv[2] ) ) { /* same disk */
+		    db->split_size += (db->chunk_size-filesize>db->use)?db->use:db->chunk_size-filesize;
+		    db->use = (db->chunk_size-filesize>db->use)?0:db->use-(db->chunk_size-filesize);
+		    if(db->chunk_size>filesize)
+			new_filename = newstralloc(new_filename, cmdargs.argv[2]);
+		} else { /* different disk -> use new file */
+		    db->filename = newstralloc(db->filename, cmdargs.argv[2]);
+		}
+	    } else {
+		abort_pending = 1;
+		errstr = newstralloc(errstr, "ERROR");
+		return 1;
+	    }
+	}
+
 	/*
 	 * First, update the header of the current file to point
 	 * to the next chunk, and then close it.
@@ -535,7 +573,8 @@ databuf_flush(db)
 	/*
 	 * Update when we need to chunk again
 	 */
-	db->split_size += db->chunk_size;
+	db->split_size += (db->chunk_size>db->use)?db->use:db->chunk_size;
+	db->use = (db->chunk_size>db->use)?0:db->use-db->chunk_size;
     }
 
     /*
@@ -554,21 +593,27 @@ databuf_flush(db)
 	    return (-1);
 	}
 
-	putresult("NO-ROOM %s\n", handle);
-	cmd = getcmd(&cmdargs);
-	switch (cmd) {
-	case ABORT:
-	    abort_pending = 1;
-	    errstr = "ERROR";
-	    return (-1);
-	case CONTINUE:
-	    continue;
-	default:
-	    error("error [bad command after NO-ROOM: %d]", cmd);
+	/* NO-ROOM is informational only. The file will be truncated
+	 * to the last full TAPE_BLOCK. Later, RQ_MORE_DISK will be
+	 * issued to use another holding disk.
+	 */
+	db->spaceleft = (db->spaceleft / TAPE_BLOCK_BYTES) * TAPE_BLOCK_BYTES;
+	ftruncate( db->fd, (filesize*1024) + db->spaceleft );
+	if( db->spaceleft > 0 ) {
+	    memmove( db->buf, db->buf+db->spaceleft, sizeof(db->buf)-db->spaceleft );
+	    dumpsize += db->spaceleft/1024;
+	    filesize += db->spaceleft/1024;
 	}
+	putresult("NO-ROOM %s %lu\n", handle, db->use+db->split_size-dumpsize);
+	db->use = 0; /* force RQ_MORE_DISK */
+	db->split_size = dumpsize;
+	db->dataptr = db->buf + db->spaceleft;
+	db->spaceleft = sizeof(db->buf)-db->spaceleft;
+	return 0;
     } while (db->spaceleft != sizeof(db->buf));
     db->dataptr = db->buf;
     dumpsize += (sizeof(db->buf) / 1024);
+    filesize += (sizeof(db->buf)/1024);
     return (0);
 }
 

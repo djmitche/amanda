@@ -1,3 +1,21 @@
+2000-05-27 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* chunker.c: allow chunk to be written on different holding disk.
+	* server-src/driver.c: allow chunk to be written on different
+	  holding disk.
+	* server-src/conffile.c: make sure that disksize and chunksize
+	  are multiple of TAPE_BLOCK_SIZE.
+	* server-src/conffile.h: disksize and chunksize are long.
+	* server-src/diskfile.c (find_disk): new function to see if a
+	  given disk is contained in a list structure.
+	* server-src/diskfile.h (find_disk): prototype.
+	* server-src/driverio.h (RQ_MORE_DISK): Added message.
+	* server-src/driverio.h (free_assignedhd): prototype.
+	* server-src/driverio.h (assignedhd_t): new data structure.
+	* server-src/driverio.c (cmdstr): added comamnd RQ-MORE-DISK.
+	* server-src/driverio.c (free_assignedhd): new function to free an
+	  array of assignedhd_t.
+	
 2000-05-03 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/driver.c (chunker_program): new variable.

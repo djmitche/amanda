@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.54 2000/04/18 00:23:16 martinea Exp $
+ * $Id: driverio.c,v 1.55 2000/05/27 22:45:28 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -46,7 +46,8 @@ int nb_chunker = 0;
 static const char *cmdstr[] = {
     "BOGUS", "QUIT", "DONE",
     "FILE-DUMP", "PORT-DUMP", "CONTINUE", "ABORT",	/* dumper cmds */
-    "FAILED", "TRY-AGAIN", "NO-ROOM", "ABORT-FINISHED",	/* dumper results */
+    "FAILED", "TRY-AGAIN", "NO-ROOM", "RQ-MORE-DISK",	/* dumper results */
+    "ABORT-FINISHED",					/* dumper results */
     "START-TAPER", "FILE-WRITE", "PORT-WRITE",		/* taper cmds */
     "PORT", "TAPE-ERROR", "TAPER-OK",			/* taper results */
     NULL
@@ -233,7 +234,7 @@ int max_arg;
 
 #ifdef DEBUG
     printf("argc = %d\n", *result_argc);
-    for(arg = 0; arg < max_arg; arg++)
+    for(arg = 0; arg < *result_argc; arg++)
 	printf("argv[%d] = \"%s\"\n", arg, result_argv[arg]);
 #endif
 
@@ -314,14 +315,23 @@ disk_t *dp;
     char number[NUM_STR_SIZE];
     char numberport[NUM_STR_SIZE];
     char chunksize[NUM_STR_SIZE];
+    char use[NUM_STR_SIZE];
     char *o;
+    int activehd=0;
+    assignedhd_t **h=NULL;
+
+    if(dp && sched(dp) && sched(dp)->holdp) {
+	h = sched(dp)->holdp;
+	activehd = sched(dp)->activehd;
+    }
 
     switch(cmd) {
     case FILE_DUMP:
 	assert(0);
+	holdalloc(h[activehd]->disk)->allocated_dumpers++;
 	snprintf(number, sizeof(number), "%d", sched(dp)->level);
-	snprintf(chunksize, sizeof(chunksize), "%ld",
-		    (long)sched(dp)->holdp->chunksize);
+	snprintf(chunksize, sizeof(chunksize), "%ld", h[0]->disk->chunksize);
+	snprintf(use, sizeof(use), "%ld", h[0]->reserved );
 	o = optionstr(dp);
 	cmdline = vstralloc(cmdstr[cmd],
 			    " ", disk2serial(dp),
@@ -332,6 +342,7 @@ disk_t *dp;
 			    " ", sched(dp)->dumpdate,
 			    " ", chunksize,
 			    " ", dp->program,
+			    " ", use,
 			    " |", o,
 			    "\n", NULL);
 	amfree(o);
@@ -354,8 +365,29 @@ disk_t *dp;
 	break;
     case QUIT:
     case ABORT:
+	if( dp ) {
+	    cmdline = vstralloc(cmdstr[cmd],
+				" ", sched(dp)->destname,
+				"\n", NULL );
+	} else {
+	    cmdline = stralloc2(cmdstr[cmd], "\n");
+	}
+	break;
     case CONTINUE:
-	cmdline = stralloc2(cmdstr[cmd], "\n");
+	if( dp ) {
+	    holdalloc(h[activehd]->disk)->allocated_dumpers++;
+	    snprintf(chunksize, sizeof(chunksize), "%ld", 
+		     h[activehd]->disk->chunksize );
+	    snprintf(use, sizeof(use), "%ld", 
+		     h[activehd]->reserved - h[activehd]->used );
+	    cmdline = vstralloc(cmdstr[cmd],
+				" ", h[activehd]->destname,
+				" ", chunksize,
+				" ", use,
+				"\n", NULL );
+	} else {
+	    cmdline = stralloc2(cmdstr[cmd], "\n");
+	}
 	break;
     default:
 	assert(0);
@@ -388,17 +420,23 @@ disk_t *dp;
     char *cmdline = NULL;
     char number[NUM_STR_SIZE];
     char chunksize[NUM_STR_SIZE];
+    char use[NUM_STR_SIZE];
     char *o;
+    int activehd=0;
+    assignedhd_t **h=NULL;
 
-fprintf(stderr,"b1\n");
+    if(dp && sched(dp) && sched(dp)->holdp) {
+	h = sched(dp)->holdp;
+	activehd = sched(dp)->activehd;
+    }
+
     switch(cmd) {
     case PORT_WRITE:
-fprintf(stderr,"b2\n");
+	holdalloc(h[activehd]->disk)->allocated_dumpers++;
 	snprintf(number, sizeof(number), "%d", sched(dp)->level);
-	snprintf(chunksize, sizeof(chunksize), "%ld",
-			(long)sched(dp)->holdp->chunksize);
+	snprintf(chunksize, sizeof(chunksize), "%ld", h[0]->disk->chunksize);
+	snprintf(use, sizeof(use), "%ld", h[0]->reserved );
 	o = optionstr(dp);
-fprintf(stderr,"b3\n");
 	cmdline = vstralloc(cmdstr[cmd],
 			    " ", disk2serial(dp),
 			    " ", sched(dp)->destname,
@@ -408,10 +446,26 @@ fprintf(stderr,"b3\n");
 			    " ", sched(dp)->dumpdate,
 			    " ", chunksize,
 			    " ", dp->program,
+			    " ", use,
 			    " |", o,
 			    "\n", NULL);
-fprintf(stderr,"b4\n");
 	amfree(o);
+	break;
+    case CONTINUE:
+	if( dp ) {
+	    holdalloc(h[activehd]->disk)->allocated_dumpers++;
+	    snprintf(chunksize, sizeof(chunksize), "%ld", 
+		     h[activehd]->disk->chunksize );
+	    snprintf(use, sizeof(use), "%ld", 
+		     h[activehd]->reserved - h[activehd]->used );
+	    cmdline = vstralloc(cmdstr[cmd],
+				" ", h[activehd]->destname,
+				" ", chunksize,
+				" ", use,
+				"\n", NULL );
+	} else {
+	    cmdline = stralloc2(cmdstr[cmd], "\n");
+	}
 	break;
     case QUIT:
 	cmdline = stralloc("QUIT\n");
@@ -419,7 +473,6 @@ fprintf(stderr,"b4\n");
     default:
 	assert(0);
     }
-fprintf(stderr,"b5\n");
     /*
      * Note: cmdline already has a '\n'.
      */
@@ -611,4 +664,21 @@ int level;
 	error("infofile update failed (%s,%s)\n", dp->host->hostname, dp->name);
 
     close_infofile();
+}
+
+/* Free an array of pointers to assignedhd_t after freeing the
+ * assignedhd_t themselves. The array must be NULL-terminated.
+ */
+void free_assignedhd( ahd )
+assignedhd_t **ahd;
+{
+    int i;
+
+    if( !ahd ) { return; }
+
+    for( i = 0; ahd[i]; i++ ) {
+	amfree(ahd[i]->destname);
+	amfree(ahd[i]);
+    }
+    amfree(ahd);
 }

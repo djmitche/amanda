@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.72 2000/04/09 07:59:04 oliva Exp $
+ * $Id: conffile.c,v 1.73 2000/05/27 22:45:28 martinea Exp $
  *
  * read configuration file
  */
@@ -893,6 +893,7 @@ static int read_confline()
 	    int i;
 
 	    i = get_number();
+	    i = (i/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
 
 	    if(!seen_disksize) {
 		conf_disksize.i = i;
@@ -972,6 +973,7 @@ static void get_holdingdisk()
 	    break;
 	case USE:
 	    get_simple((val_t *)&hdcur.disksize, &hdcur.s_size, INT);
+	    hdcur.disksize = (hdcur.disksize/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
 	    break;
 	case CHUNKSIZE:
 	    get_simple((val_t *)&hdcur.chunksize, &hdcur.s_csize, INT);
@@ -979,6 +981,7 @@ static void get_holdingdisk()
 	        hdcur.chunksize =  ((INT_MAX/1024)-(2*TAPE_BLOCK_SIZE));
 	    else if(hdcur.chunksize == -1)
 	        hdcur.chunksize = -((INT_MAX/1024)-(2*TAPE_BLOCK_SIZE));
+	    hdcur.chunksize = (hdcur.chunksize/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
 	    break;
 	case RBRACE:
 	    done = 1;

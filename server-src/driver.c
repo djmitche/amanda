@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.93 2000/05/03 23:45:33 martinea Exp $
+ * $Id: driver.c,v 1.94 2000/05/27 22:45:28 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -33,6 +33,8 @@
  * XXX possibly modify tape queue to be cognizant of how much room is left on
  *     tape.  Probably not effective though, should do this in planner.
  */
+
+#define HOLD_DEBUG
 
 #include "amanda.h"
 #include "clock.h"
@@ -48,7 +50,8 @@
 #include "driverio.h"
 #include "server_util.h"
 
-disklist_t waitq, runq, stoppedq, tapeq;
+disklist_t waitq, runq, tapeq, roomq;
+int pending_aborts;
 static int use_lffo;
 disk_t *taper_disk;
 int big_dumpers;
@@ -60,15 +63,16 @@ char *chunker_program;
 int  inparallel;
 static time_t sleep_time;
 
-static void adjust_diskspace P((disk_t *diskp, tok_t tok));
 static void allocate_bandwidth P((interface_t *ip, int kps));
-static void assign_holdingdisk P((holdingdisk_t *holdp, disk_t *diskp));
+static int assign_holdingdisk P((assignedhd_t **holdp, disk_t *diskp));
+static void adjust_diskspace P((disk_t *diskp, tok_t tok));
+static void delete_diskspace P((disk_t *diskp));
 static int client_constrained P((disk_t *dp));
 static void deallocate_bandwidth P((interface_t *ip, int kps));
-static void delete_diskspace P((disk_t *diskp));
 static void dump_schedule P((disklist_t *qp, char *str));
 static int dump_to_tape P((disk_t *dp));
-static holdingdisk_t *find_diskspace P((unsigned long size, int *cur_idle));
+static assignedhd_t **find_diskspace P((unsigned long size, int *cur_idle,
+					assignedhd_t *preferred));
 static int free_kps P((interface_t *ip));
 static unsigned long free_space P((void));
 static void dumper_result P((disk_t *dp));
@@ -88,12 +92,13 @@ static int sort_by_size_reversed P((disk_t *a, disk_t *b));
 static int sort_by_time P((disk_t *a, disk_t *b));
 static void start_degraded_mode P((disklist_t *queuep));
 static void start_some_dumps P((dumper_t *dumper, disklist_t *rq));
+static void continue_dumps();
 static void taper_queuedisk P((disk_t *));
 static void update_failed_dump_to_tape P((disk_t *));
 #if 0
 static void dump_state P((const char *str));
 #endif
-int main P((int argc, char **argv));
+int main P((int main_argc, char **main_argv));
 
 #define LITTLE_DUMPERS 3
 
@@ -268,7 +273,7 @@ main(main_argc, main_argv)
 		hdp->disksize += fs.avail;
 	}
 
-	printf("driver: adding holding disk %d dir %s size %d\n",
+	printf("driver: adding holding disk %d dir %s size %ld\n",
 	       dsk, hdp->diskdir, hdp->disksize);
 
 	newdir = newvstralloc(newdir,
@@ -322,8 +327,8 @@ main(main_argc, main_argv)
     waitq = origq;
     runq = read_schedule(&waitq);
 
-    stoppedq.head = stoppedq.tail = NULL;
     tapeq.head = tapeq.tail = NULL;
+    roomq.head = roomq.tail = NULL;
 
     log_add(L_STATS, "startup time %s", walltime_str(curclock()));
 
@@ -465,7 +470,7 @@ start_some_dumps(dumper, rq)
 {
     int cur_idle;
     disk_t *diskp, *big_degraded_diskp, *delayed_diskp;
-    holdingdisk_t *holdp = NULL, *big_degraded_holdp = NULL;
+    assignedhd_t **holdp=NULL, **big_degraded_holdp=NULL;
     const time_t now = time(NULL);
     tok_t tok;
     int result_argc;
@@ -478,12 +483,12 @@ start_some_dumps(dumper, rq)
 	event_release(dumper->ev_read);
 	dumper->ev_read = NULL;
     }
-
+/*
     if (empty(*rq)) {
 	idle_reason = NOT_IDLE;
 	return;
     }
-
+*/
     idle_reason = IDLE_NO_DUMPERS;
     sleep_time = 0;
 
@@ -518,6 +523,9 @@ start_some_dumps(dumper, rq)
     while (diskp) {
 	assert(diskp->host != NULL && sched(diskp) != NULL);
 
+	/* round estimate to next multiple of TAPE_BLOCK_SIZE */
+	sched(diskp)->est_size = ((sched(diskp)->est_size + TAPE_BLOCK_SIZE-1)/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
+
 	if (diskp->host->start_t > now) {
 	    cur_idle = max(cur_idle, IDLE_START_WAIT);
 	    if (delayed_diskp == NULL || sleep_time > diskp->host->start_t) {
@@ -533,11 +541,13 @@ start_some_dumps(dumper, rq)
 	} else if (sched(diskp)->est_kps > free_kps(diskp->host->netif)) {
 	    cur_idle = max(cur_idle, IDLE_NO_BANDWIDTH);
 	} else if ((holdp =
-	    find_diskspace(sched(diskp)->est_size, &cur_idle)) == NULL) {
+	    find_diskspace(sched(diskp)->est_size,&cur_idle,NULL)) == NULL) {
 	    cur_idle = max(cur_idle, IDLE_NO_DISKSPACE);
 	} else if (diskp->no_hold) {
+	    free_assignedhd(holdp);
 	    cur_idle = max(cur_idle, IDLE_NO_HOLD);
 	} else if (client_constrained(diskp)) {
+	    free_assignedhd(holdp);
 	    cur_idle = max(cur_idle, IDLE_CLIENT_CONSTRAINED);
 	} else if (is_bigdumper(dumper) && degraded_mode) {
 	    if (!big_degraded_diskp || 
@@ -575,12 +585,12 @@ start_some_dumps(dumper, rq)
 	dumper->ev_wait = event_register(sleep_time, EV_TIME,
 	    handle_idle_wait, dumper);
     } else if (diskp != NULL && cur_idle == NOT_IDLE) {
+	sched(diskp)->act_size = 0;
 	allocate_bandwidth(diskp->host->netif, sched(diskp)->est_kps);
-	assign_holdingdisk(holdp, diskp);
+	sched(diskp)->activehd = assign_holdingdisk(holdp, diskp);
 	diskp->host->inprogress++;	/* host is now busy */
 	diskp->inprogress = 1;
 	sched(diskp)->dumper = dumper;
-	sched(diskp)->holdp = holdp;
 	sched(diskp)->timestamp = now;
 
 	dumper->ev_read = event_register(dumper->fd, EV_READFD,
@@ -595,6 +605,8 @@ start_some_dumps(dumper, rq)
 	sched(diskp)->dumptime = -1;
 	sched(diskp)->tapetime = -1;
 	chunker = dumper->chunker;
+	chunker->result = -1;
+	dumper->result = -1;
 	startup_chunk_process(chunker,chunker_program);
 	chunker->dumper = dumper;
 	chunker_cmd(chunker, PORT_WRITE, diskp);
@@ -603,7 +615,7 @@ start_some_dumps(dumper, rq)
 	    printf("driver: did not get PORT from %s for %s:%s\n",
 		    chunker->name, diskp->host->hostname, diskp->name);
 	    fflush(stdout);
-	    return 2;	/* fatal problem */
+	    return ;	/* fatal problem */
 	}
 	chunker->ev_read = event_register(chunker->fd, EV_READFD,
 		handle_chunker_result, chunker);
@@ -612,7 +624,7 @@ start_some_dumps(dumper, rq)
 	dumper_cmd(dumper, PORT_DUMP, diskp);
 
 	diskp->host->start_t = now + 15;
-    } else if (cur_idle != NOT_IDLE &&
+    } else if (/* cur_idle != NOT_IDLE && */
 	(num_busy_dumpers() > 0 || taper_busy)) {
 	/*
 	 * We are constrained.  Wait until we aren't.
@@ -753,6 +765,76 @@ start_degraded_mode(queuep)
     dump_schedule(queuep, "after start degraded mode");
 }
 
+
+static void continue_dumps()
+{
+    disk_t *dp, *ndp;
+    assignedhd_t **h;
+    int active_dumpers=0, busy_dumpers=0, i;
+    dumper_t *dumper;
+
+    /* First we try to grant diskspace to some dumps waiting for it. */
+    for( dp = roomq.head; dp; dp = ndp ) {
+	ndp = dp->next;
+	/* find last holdingdisk used by this dump */
+	for( i = 0, h = sched(dp)->holdp; h[i+1]; i++ );
+	/* find more space */
+	h = find_diskspace( sched(dp)->est_size - sched(dp)->act_size,
+			    &active_dumpers, h[i] );
+	if( h ) {
+	    for(dumper = dmptable; dumper < dmptable + inparallel &&
+				   dumper->dp != dp; dumper++);
+	    assert( dumper < dmptable + inparallel );
+	    sched(dp)->activehd = assign_holdingdisk( h, dp );
+	    dumper_cmd( dumper, CONTINUE, dp );
+	    amfree(h);
+	    remove_disk( &roomq, dp );
+	}
+    }
+
+    /* So for some disks there is less holding diskspace available than
+     * was asked for. Possible reasons are
+     * a) diskspace has been allocated for other dumps which are
+     *    still running or already being written to tape
+     * b) all other dumps have been suspended due to lack of diskspace
+     * c) this dump doesn't fit on all the holding disks
+     * Case a) is not a problem. We just wait for the diskspace to
+     * be freed by moving the current disk to a queue.
+     * If case b) occurs, we have a deadlock situation. We select
+     * a dump from the queue to be aborted and abort it. It will
+     * be retried later dumping to disk.
+     * If case c) is detected, the dump is aborted. Next time
+     * it will be dumped directly to tape. Actually, case c is a special
+     * manifestation of case b) where only one dumper is busy.
+     */
+    for( dp=NULL, dumper = dmptable; dumper < dmptable + inparallel; dumper++) {
+	if( dumper->busy ) {
+	    busy_dumpers++;
+	    if( !find_disk(&roomq, dumper->dp) ) {
+		active_dumpers++;
+	    } else if( !dp || 
+		       sched(dp)->est_size > sched(dumper->dp)->est_size ) {
+		dp = dumper->dp;
+	    }
+	}
+    }
+    if( !active_dumpers && busy_dumpers > 0 && !taper_busy && empty(tapeq) &&
+	pending_aborts == 0 ) { /* not case a */
+	if( busy_dumpers == 1 ) { /* case c */
+	    dp->no_hold = 1;
+	}
+	/* case b */
+	/* At this time, dp points to the dump with the smallest est_size.
+	 * We abort that dump, hopefully not wasting too much time retrying it.
+	 */
+	remove_disk( &roomq, dp );
+	chunker_cmd( sched(dp)->dumper->chunker, ABORT, NULL );
+	dumper_cmd( sched(dp)->dumper, ABORT, NULL );
+	pending_aborts++;
+    }
+}
+
+
 static void
 handle_taper_result(cookie)
     void *cookie;
@@ -802,23 +884,11 @@ handle_taper_result(cookie)
 	    else {
 		dp = dequeue_disk(&tapeq);
 		taper_disk = dp;
-		taper_cmd(FILE_WRITE, dp, sched(dp)->destname,
-			  sched(dp)->level, datestamp);
+		taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level,
+			  datestamp);
 	    }
-	    /*
-	     * we need to restart some stopped dumps; without a good
-	     * way to determine which ones to start, let them all compete
-	     * for the remaining disk space.  Remember, having stopped
-	     * processes indicates a failure in our estimation of sizes.
-	     * Rather than have a complicated workaround to deal with
-	     * stopped dumper processes more efficiently, we should
-	     * work on getting better estimates to avoid the situation
-	     * to begin with.
-	     */
-	    while(!empty(stoppedq)) {
-		dp = dequeue_disk(&stoppedq);
-		dumper_cmd(sched(dp)->dumper, CONTINUE, NULL);
-	    }
+	    /* continue with those dumps waiting for diskspace */
+	    continue_dumps();
 	    break;
 
 	case TRYAGAIN:  /* TRY-AGAIN <handle> <err mess> */
@@ -839,6 +909,7 @@ handle_taper_result(cookie)
 	    	    dp->host->hostname, dp->name, sched(dp)->level);
 		/* XXX should I do this? */
 		delete_diskspace(dp);
+		continue_dumps();
 	    }
 	    else {
 		sched(dp)->attempted++;
@@ -875,7 +946,8 @@ handle_taper_result(cookie)
 	     * to the taper.  Go into degraded mode to try to get everthing
 	     * onto disk.  Later, these dumps can be flushed to a new tape.
 	     * The tape queue is zapped so that it appears empty in future
-	     * checks.
+	     * checks. If there are dumps waiting for diskspace to be freed,
+	     * cancel one.
 	     */
 	    log_add(L_WARNING,
 		    "going into degraded mode because of tape error.");
@@ -886,6 +958,7 @@ handle_taper_result(cookie)
 	    event_release(taper_ev_read);
 	    taper_ev_read = NULL;
 	    if(tok != TAPE_ERROR) aclose(taper);
+	    continue_dumps();
 	    break;
 	default:
 	    error("driver received unexpected token (%d) from taper", tok);
@@ -934,9 +1007,7 @@ dumper_result(dp)
     update_info_dumper(dp, sched(dp)->origsize,
 		   sched(dp)->dumpsize, sched(dp)->dumptime);
 
-    rename_tmp_holding(sched(dp)->destname, 1);
     deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
-    adjust_diskspace(dp, DONE);
     dumper->busy = 0;
     dp->host->inprogress -= 1;
     dp->inprogress = 0;
@@ -946,6 +1017,7 @@ dumper_result(dp)
     dp = NULL;
     start_some_dumps(dumper, &runq);
 }
+
 
 static void
 handle_dumper_result(cookie)
@@ -1031,25 +1103,6 @@ handle_dumper_result(cookie)
 					     dumper);
 	    break;
 
-	case NO_ROOM: /* NO-ROOM <handle> */
-	    if(!taper_busy && empty(tapeq) && pending_aborts == 0) {
-		/* no disk space due to be freed */
-		dumper_cmd(dumper, ABORT, NULL);
-		pending_aborts++;
-		/*
-		 * if this is the only outstanding dump, it must be too
-		 * big for the holding disk, so force it to go directly
-		 * to tape on the next attempt.
-		 */
-		if(num_busy_dumpers() <= 1)
-		dp->no_hold = 1;
-	    }
-	    else {
-		adjust_diskspace(dp, NO_ROOM);
-		enqueue_disk(&stoppedq, dp);
-	    }
-	    break;
-
 	case ABORT_FINISHED: /* ABORT-FINISHED <handle> */
 	    /*
 	     * We sent an ABORT from the NO-ROOM case because this dump
@@ -1070,11 +1123,7 @@ handle_dumper_result(cookie)
 	    dp->inprogress = 0;
 	    dp = NULL;
 	    pending_aborts--;
-	    while(!empty(stoppedq)) {
-		disk_t *dp2;
-		dp2 = dequeue_disk(&stoppedq);
-		dumper_cmd(sched(dp2)->dumper, CONTINUE, NULL);
-	    }
+	    continue_dumps();
 	    start_some_dumps(dumper, &runq);
 	    break;
 
@@ -1088,10 +1137,12 @@ handle_dumper_result(cookie)
 	    dumper->down = 1;	/* mark it down so it isn't used again */
 	    if(dp) {
 		/* if it was dumping something, zap it and try again */
+		/*
 		rename_tmp_holding(sched(dp)->destname, 0);
 		deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
 		adjust_diskspace(dp, DONE);
 		delete_diskspace(dp);
+		*/
 		dp->host->inprogress -= 1;
 		dp->inprogress = 0;
 		if(sched(dp)->attempted) {
@@ -1129,17 +1180,26 @@ handle_chunker_result(cookie)
 {
     static int pending_aborts = 0;
     chunker_t *chunker = cookie;
+    assignedhd_t **h=NULL;
     dumper_t *dumper;
     disk_t *dp, *sdp;
     tok_t tok;
     int result_argc;
     char *result_argv[MAX_ARGS+1];
+    int i, dummy;
+    int activehd = -1;
+
 
     assert(chunker != NULL);
     dumper = chunker->dumper;
     assert(dumper != NULL);
     dp = dumper->dp;
-    assert(dp != NULL && sched(dp) != NULL);
+    assert(dp != NULL && sched(dp) != NULL && sched(dp)->destname);
+
+    if(dp && sched(dp) && sched(dp)->holdp) {
+	h = sched(dp)->holdp;
+	activehd = sched(dp)->activehd;
+    }
 
     do {
 
@@ -1170,6 +1230,17 @@ handle_chunker_result(cookie)
 	    if(sched(dp)->origsize != -1) /* dumper already finished */
 		dumper_result(dp);
 
+	    dummy = 0;
+	    for( i = 0, h = sched(dp)->holdp; i < activehd; i++ ) {
+		dummy += h[i]->used;
+	    }
+
+	    rename_tmp_holding(sched(dp)->destname, 1);
+	    assert( h && activehd >= 0 );
+	    h[activehd]->used = size_holding_files(sched(dp)->destname) - dummy;
+	    holdalloc(h[activehd]->disk)->allocated_dumpers--;
+	    adjust_diskspace(dp, DONE);
+
 	    printf("driver: finished-cmd time %s %s chunked %s:%s\n",
 		   walltime_str(curclock()), chunker->name,
 		   dp->host->hostname, dp->name);
@@ -1199,6 +1270,11 @@ handle_chunker_result(cookie)
 
 	    rename_tmp_holding(sched(dp)->destname, 0);
 	    deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
+	    assert( h && activehd >= 0 );
+	    holdalloc(h[activehd]->disk)->allocated_dumpers--;
+	    /* Because we don't know how much was written to disk the
+	     * following functions *must* be called together!
+	     */
 	    adjust_diskspace(dp, DONE);
 	    delete_diskspace(dp);
 	    dumper->busy = 0;
@@ -1212,22 +1288,38 @@ handle_chunker_result(cookie)
 					     dumper);
 	    break;
 
-	case NO_ROOM: /* NO-ROOM <handle> */
-	    if(!taper_busy && empty(tapeq) && pending_aborts == 0) {
-		/* no disk space due to be freed */
-		dumper_cmd(dumper, ABORT, NULL);
-		pending_aborts++;
-		/*
-		 * if this is the only outstanding dump, it must be too
-		 * big for the holding disk, so force it to go directly
-		 * to tape on the next attempt.
-		 */
-		if(num_busy_dumpers() <= 1)
-		dp->no_hold = 1;
-	    }
-	    else {
-		adjust_diskspace(dp, NO_ROOM);
-		enqueue_disk(&stoppedq, dp);
+	case NO_ROOM: /* NO-ROOM <handle> <missing_size> */
+	    assert( h && activehd >= 0 );
+	    h[activehd]->used -= atoi(result_argv[3]);
+	    h[activehd]->reserved -= atoi(result_argv[3]);
+	    holdalloc(h[activehd]->disk)->allocated_space -= atoi(result_argv[3]);
+	    h[activehd]->disk->disksize -= atoi(result_argv[3]);
+	    break;
+	case RQ_MORE_DISK: /* RQ-MORE-DISK <handle> */
+	    assert( h && activehd >= 0 );
+	    holdalloc(h[activehd]->disk)->allocated_dumpers--;
+	    h[activehd]->used = h[activehd]->reserved;
+	    if( h[++activehd] ) { /* There's still some allocated space left.
+				   * Tell the dumper about it. */
+		sched(dp)->activehd++;
+		chunker_cmd( chunker, CONTINUE, dp );
+	    } else { /* !h[++activehd] - must allocate more space */
+		sched(dp)->act_size = sched(dp)->est_size; /* not quite true */
+		sched(dp)->est_size = sched(dp)->act_size * 21 / 20; /* +5% */
+		sched(dp)->est_size = ((sched(dp)->est_size + TAPE_BLOCK_SIZE - 1)/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
+		h = find_diskspace( sched(dp)->est_size - sched(dp)->act_size,
+				    &dummy, h[activehd-1] );
+		if( !h ) {
+		    /* No diskspace available. The reason for this will be
+		     * determined in continue_dumps(). */
+		    enqueue_disk( &roomq, dp );
+		    continue_dumps();
+		} else {
+		    /* OK, allocate space for disk and have chunker continue */
+		    sched(dp)->activehd = assign_holdingdisk( h, dp );
+		    chunker_cmd( chunker, CONTINUE, dp );
+		    amfree(h);
+		}
 	    }
 	    break;
 
@@ -1251,30 +1343,30 @@ handle_chunker_result(cookie)
 	    dp->inprogress = 0;
 	    dp = NULL;
 	    pending_aborts--;
-	    while(!empty(stoppedq)) {
-		disk_t *dp2;
-		dp2 = dequeue_disk(&stoppedq);
-		dumper_cmd(sched(dp2)->dumper, CONTINUE, NULL);
-	    }
+	    continue_dumps();
 	    start_some_dumps(dumper, &runq);
 	    break;
 
 	case BOGUS:
-	    /* either EOF or garbage from dumper.  Turn it off */
+	    /* either EOF or garbage from chunker.  Turn it off */
 	    log_add(L_WARNING, "%s pid %ld is messed up, ignoring it.\n",
-		    dumper->name, (long)dumper->pid);
-	    event_release(dumper->ev_read);
-	    aclose(dumper->fd);
+		    chunker->name, (long)chunker->pid);
+	    event_release(chunker->ev_read);
+	    aclose(chunker->fd);
 	    dumper->busy = 0;
 	    dumper->down = 1;	/* mark it down so it isn't used again */
 	    if(dp) {
 		/* if it was dumping something, zap it and try again */
 		rename_tmp_holding(sched(dp)->destname, 0);
 		deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
+		assert( h && activehd >= 0 );
+		holdalloc(h[activehd]->disk)->allocated_dumpers--;
 		adjust_diskspace(dp, DONE);
 		delete_diskspace(dp);
+		/*
 		dp->host->inprogress -= 1;
 		dp->inprogress = 0;
+		*/
 		if(sched(dp)->attempted) {
 	    	log_add(L_FAIL, "%s %s %d [%s died]",
 	    		dp->host->hostname, dp->name,
@@ -1282,12 +1374,13 @@ handle_chunker_result(cookie)
 		}
 		else {
 	    	log_add(L_WARNING, "%s died while dumping %s:%s lev %d.",
-	    		dumper->name, dp->host->hostname, dp->name,
+	    		chunker->name, dp->host->hostname, dp->name,
 	    		sched(dp)->level);
 	    	sched(dp)->attempted++;
 	    	enqueue_disk(&runq, dp);
 		}
 		dp = NULL;
+		continue_dumps();
 	    }
 	    break;
 
@@ -1300,8 +1393,9 @@ handle_chunker_result(cookie)
 	 */
 	event_wakeup((event_id_t)handle_idle_wait);
 
-    } while(areads_dataready(dumper->fd));
+    } while(areads_dataready(chunker->fd));
 }
+
 
 /*
  * Tell the taper to write a disk dump to tape.  If the taper
@@ -1484,8 +1578,10 @@ read_schedule(waitqp)
 	sp->attempted = 0;
 	sp->act_size = 0;
 	sp->holdp = NULL;
+	sp->activehd = -1;
 	sp->dumper = NULL;
 	sp->timestamp = (time_t)0;
+	sp->destname = NULL;
 
 	dp->up = (char *) sp;
 	remove_disk(waitqp, dp);
@@ -1574,65 +1670,193 @@ free_space()
     return total_free;
 }
 
-static holdingdisk_t *
-find_diskspace(size, cur_idle)
+static assignedhd_t **
+find_diskspace(size, cur_idle, pref)
     unsigned long size;
     int *cur_idle;
-    /* find holding disk with enough space + minimal # of dumpers */
-{
-    holdingdisk_t *minp, *hdp;
+    assignedhd_t *pref;
+/* We return an array of pointers to assignedhd_t. The array contains at
+ * most one entry per holding disk. The list of pointers is terminated by
+ * a NULL pointer. Each entry contains a pointer to a holdingdisk and
+ * how much diskspace to use on that disk. Later on, assign_holdingdisk
+ * will allocate the given amount of space.
+ * If there is not enough room on the holdingdisks, NULL is returned.
+ */
 
-    minp = NULL;
-    for(hdp = getconf_holdingdisks(); hdp != NULL; hdp = hdp->next) {
-	if(hdp->chunksize < 0 && size > -hdp->chunksize) {
-	    *cur_idle = max(*cur_idle, IDLE_TOO_LARGE);
-	}
-	/* We add 10 MB per active dumper to give a bit of protection
-	 * against under-estimated dump sizes.  */
-	else if(holdalloc(hdp)->allocated_space + size +
-	   ((holdalloc(hdp)->allocated_dumpers + 1) * 10*1024)
-	   <= hdp->disksize) {
-	    if(!minp || (holdalloc(minp)->allocated_dumpers >
-			 holdalloc(hdp)->allocated_dumpers))
-		minp = hdp;
-	}
-    }
+{
+    assignedhd_t **result = NULL;
+    holdingdisk_t *minp, *hdp;
+    int i=0, num_holdingdisks=0; /* are we allowed to use the global thing? */
+    int j, minj;
+    char *used;
+    int as_pref;
+    long halloc, dalloc, hfree, dfree;
+
+    as_pref = (pref!=NULL);
+    size = ((size + TAPE_BLOCK_SIZE - 1)/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
+
 #ifdef HOLD_DEBUG
-    printf("find %lu K space: selected %s size %ld allocated %ld dumpers %d\n",
-	   size,
-	   minp? minp->diskdir : "NO FIT",
-	   minp? minp->disksize : (long)-1,
-	   minp? holdalloc(minp)->allocated_space : (long)-1,
-	   minp? holdalloc(minp)->allocated_dumpers : -1);
+    printf("find diskspace: want %lu K\n", size );
+    fflush(stdout);
 #endif
-    return minp;
+
+    for(hdp = getconf_holdingdisks(); hdp != NULL; hdp = hdp->next) {
+	num_holdingdisks++;
+    }
+
+    used = alloc(sizeof(char) * num_holdingdisks);/*disks used during this run*/
+    memset( used, 0, num_holdingdisks );
+    result = alloc( sizeof(assignedhd_t *) * (num_holdingdisks+1) );
+    result[0] = NULL;
+
+    while( i < num_holdingdisks && size > 0 ) {
+	/* find the holdingdisk with the fewest active dumpers and among
+	 * those the one with the biggest free space
+	 */
+	minp = NULL; minj = -1;
+	for(j = 0, hdp = getconf_holdingdisks(); hdp != NULL; hdp = hdp->next, j++ ) {
+	    if( pref && pref->disk == hdp && !used[j] &&
+		holdalloc(hdp)->allocated_space <= hdp->disksize - TAPE_BLOCK_SIZE) {
+		minp = hdp;
+		minj = j;
+		break;
+	    }
+	    else if( holdalloc(hdp)->allocated_space <= hdp->disksize - 2*TAPE_BLOCK_SIZE &&
+		!used[j] &&
+		(!minp ||
+		 holdalloc(hdp)->allocated_dumpers < holdalloc(minp)->allocated_dumpers ||
+		 (holdalloc(hdp)->allocated_dumpers == holdalloc(minp)->allocated_dumpers &&
+		  hdp->disksize-holdalloc(hdp)->allocated_space > minp->disksize-holdalloc(minp)->allocated_space)) ) {
+		minp = hdp;
+		minj = j;
+	    }
+	}
+
+	pref = NULL;
+	if( !minp ) { break; } /* all holding disks are full */
+	used[minj] = 1;
+
+	/* hfree = free space on the disk */
+	hfree = minp->disksize - holdalloc(minp)->allocated_space;
+
+	/* dfree = free space for data, remove 1 header for each chunksize */
+	dfree = hfree - (((hfree-1)/minp->chunksize)+1) * TAPE_BLOCK_SIZE;
+
+	/* dalloc = space I can allocate for data */
+	dalloc = ( dfree < size ) ? dfree : size;
+
+	/* halloc = space to allocate, including 1 header for each chunksize */
+	halloc = dalloc + (((dalloc-1)/minp->chunksize)+1) * TAPE_BLOCK_SIZE;
+
+#ifdef HOLD_DEBUG
+	fprintf(stdout,"find diskspace: size %ld hf %ld df %ld da %ld ha %ld\n",
+		size, hfree, dfree, dalloc, halloc);
+	fflush(stdout);
+#endif
+	size -= dalloc;
+	result[i] = alloc(sizeof(assignedhd_t));
+	result[i]->disk = minp;
+	result[i]->reserved = halloc;
+	result[i]->used = 0;
+	result[i]->destname = NULL;
+	result[i+1] = NULL;
+	i++;
+    } /* while i < num_holdingdisks && size > 0 */
+    amfree(used);
+
+    if( size ) { /* not enough space available */
+	printf("find diskspace: not enough diskspace. Left with %lu K\n", size);
+	fflush(stdout);
+	free_assignedhd(result);
+	result = NULL;
+    }
+
+#ifdef HOLD_DEBUG
+    for( i = 0; result && result[i]; i++ ) {
+	printf("find diskspace: selected %s free %ld reserved %ld dumpers %d\n",
+		result[i]->disk->diskdir,
+		result[i]->disk->disksize - holdalloc(result[i]->disk)->allocated_space,
+		result[i]->reserved,
+		holdalloc(result[i]->disk)->allocated_dumpers);
+    }
+    fflush(stdout);
+#endif
+
+    return result;
 }
 
-static void
+static int
 assign_holdingdisk(holdp, diskp)
-    holdingdisk_t *holdp;
+    assignedhd_t **holdp;
     disk_t *diskp;
 {
-    char *sfn;
+    int i, j, c, l=0;
+    unsigned long size;
+    char *sfn = sanitise_filename(diskp->name);
+    char lvl[64];
 
+    snprintf( lvl, sizeof(lvl), "%d", sched(diskp)->level );
+
+    size = sched(diskp)->est_size - sched(diskp)->act_size;
+    size = ((size + TAPE_BLOCK_SIZE - 1)/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
+
+    for( c = 0; holdp[c]; c++ ); /* count number of disks */
+
+    /* allocate memory for sched(diskp)->holdp */
+    if( sched(diskp)->holdp ) {
+	for( j = 0; sched(diskp)->holdp[j]; j++ );
+	sched(diskp)->holdp = realloc(sched(diskp)->holdp,sizeof(assignedhd_t*)*(j+c+1));
+    } else {
+	sched(diskp)->holdp = alloc(sizeof(assignedhd_t*)*(c+1));
+	j = 0;
+    }
+
+    i = 0;
+    if( j > 0 ) { /* This is a request for additional diskspace. See if we can
+		   * merge assignedhd_t's */
+	l=j;
+	if( sched(diskp)->holdp[j-1]->disk == holdp[0]->disk ) { /* Yes! */
+	    sched(diskp)->holdp[j-1]->reserved += holdp[0]->reserved;
+	    holdalloc(holdp[0]->disk)->allocated_space += holdp[0]->reserved;
+	    size = (holdp[0]->reserved>size) ? 0 : size-holdp[0]->reserved;
 #ifdef HOLD_DEBUG
-    printf("assigning disk %s:%s size %lu to disk %s\n",
-	   diskp->host->hostname, diskp->name,
-	   sched(diskp)->est_size, holdp->diskdir);
+	    printf("merging holding disk %s to disk %s:%s, add %lu for reserved %lu, left %lu\n",
+		   sched(diskp)->holdp[j-1]->disk->diskdir,
+		   diskp->host->hostname, diskp->name,
+		   holdp[0]->reserved, sched(diskp)->holdp[j-1]->reserved,
+		   size );
+	    fflush(stdout);
 #endif
+	    i++;
+	    amfree(holdp[0]);
+	    l=j-1;
+	}
+    }
 
-    sched(diskp)->holdp = holdp;
-    sched(diskp)->act_size = sched(diskp)->est_size;
-
-    sfn = sanitise_filename(diskp->name);
-    snprintf(sched(diskp)->destname, sizeof(sched(diskp)->destname),
-		"%s/%s/%s.%s.%d",
-		holdp->diskdir, datestamp, diskp->host->hostname,
-		sfn, sched(diskp)->level);
+    /* copy assignedhd_s to sched(diskp), adjust allocated_space */
+    for( ; holdp[i]; i++ ) {
+	holdp[i]->destname = newvstralloc( holdp[i]->destname,
+					   holdp[i]->disk->diskdir, "/",
+					   datestamp, "/",
+					   diskp->host->hostname, ".",
+					   sfn, ".",
+					   lvl, NULL );
+	sched(diskp)->holdp[j++] = holdp[i];
+	holdalloc(holdp[i]->disk)->allocated_space += holdp[i]->reserved;
+	size = (holdp[i]->reserved>size) ? 0 : size-holdp[i]->reserved;
+#ifdef HOLD_DEBUG
+	printf("assigning holding disk %s to disk %s:%s, reserved %lu, left %lu\n",
+		holdp[i]->disk->diskdir, diskp->host->hostname, diskp->name,
+		holdp[i]->reserved, size );
+	fflush(stdout);
+#endif
+	holdp[i] = NULL; /* so it doesn't get free()d... */
+    }
+    sched(diskp)->holdp[j] = NULL;
+    sched(diskp)->destname = newstralloc(sched(diskp)->destname,sched(diskp)->holdp[0]->destname);
     amfree(sfn);
 
-    holdalloc(holdp)->allocated_space += sched(diskp)->act_size;
-    holdalloc(holdp)->allocated_dumpers += 1;
+    return l;
 }
 
 static void
@@ -1640,74 +1864,72 @@ adjust_diskspace(diskp, tok)
     disk_t *diskp;
     tok_t tok;
 {
-    holdingdisk_t *holdp;
-    unsigned long kbytes;
+    assignedhd_t **holdp;
+    unsigned long total=0;
     long diff;
-    long size;
+    int i;
 
-    size = size_holding_files(sched(diskp)->destname);
+#ifdef HOLD_DEBUG
+    printf("adjust: %s:%s %s\n", diskp->host->hostname, diskp->name,
+	   sched(diskp)->destname );
+    fflush(stdout);
+#endif
 
     holdp = sched(diskp)->holdp;
 
-#ifdef HOLD_DEBUG
-    printf("adjust: before: hdisk %s alloc space %ld dumpers %d\n",
-	   holdp->diskdir, holdalloc(holdp)->allocated_space,
-	   holdalloc(holdp)->allocated_dumpers);
-#endif
+    assert(holdp);
 
-    kbytes = size;
-    diff = kbytes - sched(diskp)->act_size;
-    switch(tok) {
-    case DONE:
-	/* the dump is done, adjust to actual size and decrease dumpers */
+    for( i = 0; holdp[i]; i++ ) { /* for each allocated disk */
+	diff = holdp[i]->used - holdp[i]->reserved;
+	total += holdp[i]->used;
+	holdalloc(holdp[i]->disk)->allocated_space += diff;
 
 #ifdef HOLD_DEBUG
-	printf("adjust: disk %s:%s done, act %lu prev est %lu diff %ld\n",
-	       diskp->host->hostname, diskp->name, kbytes,
-	       sched(diskp)->act_size, diff);
+	printf("adjust: hdisk %s done, reserved %ld used %ld diff %ld alloc %ld dumpers %d\n",
+		holdp[i]->disk->name, holdp[i]->reserved, holdp[i]->used, diff,
+		holdalloc(holdp[i]->disk)->allocated_space,
+		holdalloc(holdp[i]->disk)->allocated_dumpers );
+	fflush(stdout);
 #endif
-
-	sched(diskp)->act_size = kbytes;
-	holdalloc(holdp)->allocated_space += diff;
-	holdalloc(holdp)->allocated_dumpers -= 1;
-	break;
-    case NO_ROOM:
-	/* dump still active, but adjust size up iff already > estimate */
-
-#ifdef HOLD_DEBUG
-	printf("adjust: disk %s:%s no_room, act %lu prev est %lu diff %ld\n",
-	       diskp->host->hostname, diskp->name, kbytes,
-	       sched(diskp)->act_size, diff);
-#endif
-	if(diff > 0) {
-	    sched(diskp)->act_size = kbytes;
-	    holdalloc(holdp)->allocated_space += diff;
-	}
-	break;
-    default:
-	assert(0);
+	holdp[i]->reserved += diff;
     }
+
+    sched(diskp)->act_size = total;
+
 #ifdef HOLD_DEBUG
-    printf("adjust: after: hdisk %s alloc space %ld dumpers %d\n",
-	   holdp->diskdir, holdalloc(holdp)->allocated_space,
-	   holdalloc(holdp)->allocated_dumpers);
+    printf("adjust: after: disk %s:%s used %ld\n", diskp->host->hostname,
+	   diskp->name, sched(diskp)->act_size );
+    fflush(stdout);
 #endif
+
 }
 
 static void
 delete_diskspace(diskp)
     disk_t *diskp;
 {
-#ifdef HOLD_DEBUG
-    printf("delete: file %s size %lu hdisk %s\n",
-	   sched(diskp)->destname, sched(diskp)->act_size,
-	   sched(diskp)->holdp->diskdir);
-#endif
-    holdalloc(sched(diskp)->holdp)->allocated_space -= sched(diskp)->act_size;
-    unlink_holding_files(sched(diskp)->destname);
+    assignedhd_t **holdp;
+    int i;
+
+    holdp = sched(diskp)->holdp;
+
+    assert(holdp);
+
+    for( i = 0; holdp[i]; i++ ) { /* for each disk */
+	/* find all files of this dump on that disk, and subtract their
+	 * reserved sizes from the disk's allocated space
+	 */
+	holdalloc(holdp[i]->disk)->allocated_space -= holdp[i]->used;
+    }
+
+    unlink_holding_files(holdp[0]->destname);	/* no need for the entire list,
+						 * because unlink_holding_files
+						 * will walk through all files
+						 * using cont_filename */
+    free_assignedhd(sched(diskp)->holdp);
     sched(diskp)->holdp = NULL;
     sched(diskp)->act_size = 0;
-    sched(diskp)->destname[0] = '\0';
+    amfree(sched(diskp)->destname);
 }
 
 static void
@@ -1936,7 +2158,7 @@ short_dump_state()
     printf(" idle-dumpers: %d", nidle);
     printf(" qlen tapeq: %d", queue_length(tapeq));
     printf(" runq: %d", queue_length(runq));
-    printf(" stoppedq: %d", queue_length(stoppedq));
+    printf(" roomq: %d", queue_length(roomq));
     printf(" wakeup: %d", (int)sleep_time);
     printf(" driver-idle: %s\n", idle_strings[idle_reason]);
     interface_state(wall_time);
@@ -1971,7 +2193,7 @@ dump_state(str)
 		sched(dp)->est_kps, sched(dp)->est_size, sched(dp)->est_time);
     }
     dump_queue("TAPE", tapeq, 5, stdout);
-    dump_queue("STOP", stoppedq, 5, stdout);
+    dump_queue("ROOM", roomq, 5, stdout);
     dump_queue("RUN ", runq, 5, stdout);
     printf("================\n");
     fflush(stdout);

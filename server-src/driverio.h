@@ -25,12 +25,14 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.24 2000/04/18 00:23:16 martinea Exp $
+ * $Id: driverio.h,v 1.25 2000/05/27 22:45:28 martinea Exp $
  *
  * driver-related helper functions
  */
 
 #include "event.h"
+
+#include "holding.h"
 
 #define MAX_DUMPERS 63
 #define MAX_ARGS 10
@@ -42,9 +44,10 @@
 /* chunker process structure */
 
 typedef struct chunker_s {
-    char *name;			/* name of this dumper */
+    char *name;			/* name of this chunker */
     int pid;			/* its pid */
     int fd;			/* read/write */
+    int result;
     event_handle_t *ev_read;	/* read event handle */
     struct dumper_s *dumper;
 } chunker_t;
@@ -56,12 +59,20 @@ typedef struct dumper_s {
     int pid;			/* its pid */
     int busy, down;		/* state */
     int fd;			/* read/write */
+    int result;
     int output_port;		/* output port */
     event_handle_t *ev_read;	/* read event handle */
     event_handle_t *ev_wait;	/* for delayed disks */
     disk_t *dp;			/* disk currently being dumped */
     chunker_t *chunker;
 } dumper_t;
+
+typedef struct assignedhd_s {
+    holdingdisk_t	*disk;
+    long		used;
+    long		reserved;
+    char		*destname;
+} assignedhd_t;
 
 /* schedule structure */
 
@@ -74,10 +85,11 @@ typedef struct sched_s {
     unsigned long dumptime, tapetime;
     char *dumpdate, *degr_dumpdate;
     int est_kps, degr_kps;
-    char destname[128];				/* file/port name */
+    char *destname;				/* file/port name */
     dumper_t *dumper;
-    holdingdisk_t *holdp;
+    assignedhd_t **holdp;
     time_t timestamp;
+    int activehd;
 } sched_t;
 
 #define sched(dp)	((sched_t *) (dp)->up)
@@ -100,7 +112,8 @@ GLOBAL chunker_t chktable[MAX_DUMPERS];
 typedef enum {
     BOGUS, QUIT, DONE,
     FILE_DUMP, PORT_DUMP, CONTINUE, ABORT,		/* dumper cmds */
-    FAILED, TRYAGAIN, NO_ROOM, ABORT_FINISHED,		/* dumper results */
+    FAILED, TRYAGAIN, NO_ROOM, RQ_MORE_DISK,		/* dumper results */
+    ABORT_FINISHED,					/* dumper results */
     START_TAPER, FILE_WRITE, PORT_WRITE,		/* taper cmds */
     PORT, TAPE_ERROR, TAPER_OK,				/* taper results */
     LAST_TOK
@@ -124,3 +137,4 @@ void free_serial P((char *str));
 char *disk2serial P((disk_t *dp));
 void update_info_dumper P((disk_t *dp, long origsize, long dumpsize, long dumptime));
 void update_info_taper P((disk_t *dp, char *label, int filenum, int level));
+void free_assignedhd P((assignedhd_t **holdp));
