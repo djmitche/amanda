@@ -15,6 +15,9 @@ extern char skip_argument[1];
 int pipespawn P((char *prog, int pipedef,
 		 int *stdinfd, int *stdoutfd, int *stderrfd,
 		 ...));
+int pipespawnv P((char *prog, int pipedef,
+		  int *stdinfd, int *stdoutfd, int *stderrfd,
+		  char **my_argv));
 
 
 #endif /* PIPESPAWN_H */
