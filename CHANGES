@@ -3,10 +3,6 @@
 	functions to set/get.  Get rid of libamnolog.
 	-JJ
 
-	ensure that `amadmin find' reports multiple backups performed on
-	the same day in the correct sequence.
-	-Liudvikas Bukys <bukys@cs.rochester.edu>
-
 	chg-chio was renamed to chg-scsi, and now it will support not
 	only chio.h, but also tape changer interfaces available on
 	HPUX, Solaris 2.5, IRIX and possibly others.  Currently, only
@@ -18,6 +14,10 @@
 	-Eric Schnoebelen <eric@cirr.com>
 
 Version 2.4.0
+
+	ensure that `amadmin find' reports multiple backups performed on
+	the same day in the correct sequence.
+	-Liudvikas Bukys <bukys@cs.rochester.edu>
 
 	if backup server has multiple IP addresses, security code
 	might reject it.  -Gunnar Gunnarsson <gunnar@ki.ericsson.se>
