@@ -1,5 +1,9 @@
 2000-09-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amindexd.c: use strcasecmp to compare hostname.
+
+2000-09-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amstatus.pl.in: fix plural misuse.
 
 2000-09-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
