@@ -77,42 +77,26 @@ para=""
 maxtime=4
 
 # setting up the parameters to pass to [gn]awk 
-while [	$1 = "-c" -o \
-	$1 = "-e" -o \
-	$1 = "-g" -o \
-	$1 = "-l" -o \
-	$1 = "-p" -o \
-	$1 = "-t" ] ; do 
-	if [ $1 = "-c" ] ; then
-		cmpres=1
+while :; do 
+   case "$1" in
+   -c)  cmpres=1; shift;;
+   -e)  para=$para"$AVARFLAG extend=1 "; shift;;
+   -g)  gnuplot=1; shift;;
+   -l)  paper=1; para=$para"$AVARFLAG paper=1 "; shift;;
+   -p)  gnuplot=0; shift;;
+   -t)  shift
+	if test "$#" -eq 0; then
+	    echo "amplot: no argument for -t option" 1>&2
+	    exit 5
 	fi
-	if [ $1 = "-e" ] ; then 
-		para=$para"$AVARFLAG extend=1 "
-	fi
-	if [ $1 = "-g" ] ; then
-		gnuplot=1 
-	fi
-	if [ $1 = "-l" ] ; then 
-		paper=1
-		para=$para"$AVARFLAG paper=1 "
-	fi		
-	if [ $1 = "-p" ] ; then 
-		gnuplot=0;
-	fi
-	if [ $1 = "-t" ] ; then
-		shift
-		if [ $# -eq 0 ] ; then
-			echo "amplot: no argument for -t option" 1>&2
-			exit 5
-		fi
-		maxtime=$1
-	fi
-	shift; 
-	if [ $# -eq 0 ] ; then 
-		echo "amplot: no input files" 1>&2
-		exit 5
-	fi
+	maxtime="$1"; shift;;
+   *) break;;
+   esac
 done
+if [ $# -eq 0 ] ; then 
+	echo "amplot: no input files" 1>&2
+	exit 5
+fi
 para=$para"$AVARFLAG maxtime=$maxtime"
 
 if [ $gnuplot  -eq 1 ] ; then
@@ -121,7 +105,7 @@ if [ $gnuplot  -eq 1 ] ; then
 	para=$para"$AVARFLAG gnuplot=1 "
 	echo "Displaying graph on the screen, <CR> for next graph"
 
-	if [ $paper -eq 1 ] ; then
+	if [ "$paper" -eq 1 ] ; then
 		echo "amplot: -l requires -p flag at the same time" 1>&2
 		exit 6 
 	fi
@@ -129,18 +113,18 @@ fi
 
 list="";		# files to compress at the end
 
-for i in $* 		# for all the input files
+for i in ${1+"$@"}		# for all the input files
 do
-	f=$i;
-	if [ ! -f $f ] ; then 
-		f=`ls $i $i.*[zZ] 2>/dev/null`
+	f="$i";
+	if [ ! -f "$f" ] ; then 
+		f=`ls "$i" "$i".*[zZ] 2>/dev/null`
 	fi
 	if [ -f "$f" ] ; then 		# found file 
                 disp=`$AWK -f $libexecdir/amcat.awk $AVARFLAG f="$f"`
-		if [ -z $disp ] ; then 
+		if [ -z "$disp" ] ; then 
 			echo "Do not know how to [gz|z]cat this file"
 		else
-			$disp $f | $AWK -f $libexecdir/amplot.awk $para
+			$disp "$f" | $AWK -f $libexecdir/amplot.awk $para
 			$GNUPLOT $plot $my_plot
 			if [ $disp = "cat" -a  $cmpres -eq 1 ] ; then
 				list=$list" "$f

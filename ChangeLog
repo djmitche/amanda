@@ -1,3 +1,10 @@
+1998-06-03  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* amplot/amplot.sh.in: modified command line argument parsing
+ 	mechanism, so as to prevent shell quoting problems and unportable
+ 	constructs.
+	Reported by Chris Jones <cjones@clydesdale.math.montana.edu>
+
 1998-06-02  John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/amcheck.c (main), server-src/reporter.c (main): make
