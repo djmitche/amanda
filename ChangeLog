@@ -1,5 +1,9 @@
 2004-04-26  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* configure.in: Result of autoupdate.
+
+2004-04-26  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* config/config.guess: Update from automake 1.8.
 	* config/config.sub: Update from automake 1.8.
 	* config/depcomp: Update from automake 1.8.
