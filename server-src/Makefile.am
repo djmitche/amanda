@@ -28,7 +28,7 @@ libexec_PROGRAMS =	amindexd	amlogroll	amtrmidx	\
 
 sbin_SCRIPTS =		amcheckdb	amcleanup	amdump		\
 			amoverview	amrmtape	amtoc		\
-			amverify	amstatus
+			amverify	amverifyrun	amstatus
 
 libamserver_la_SOURCES=	amindex.c	changer.c			\
 			conffile.c	diskfile.c	driverio.c	\
