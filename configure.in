@@ -2118,10 +2118,12 @@ AC_OUTPUT( \
 	example/amanda.conf		example/Makefile		\
 									\
 	man/amadmin.8			man/amanda.8			\
-	man/amcheck.8			man/amcleanup.8			\
-	man/amdump.8			man/amflush.8			\
-	man/amlabel.8			man/amrecover.8			\
-	man/amrmtape.8			man/Makefile			\
+	man/amcheck.8			man/amcheckdb.8			\
+	man/amcleanup.8			man/amdump.8			\
+	man/amflush.8			man/amlabel.8			\
+	man/amoverview.8		man/amrecover.8			\
+	man/amrmtape.8			man/amtoc.8			\
+	man/amverify.8			man/Makefile			\
 									\
 	recover-src/Makefile						\
 									\
