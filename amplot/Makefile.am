@@ -18,8 +18,7 @@ endif
 
 amplotdir =		$(libexecdir)
 
-EXTRA_DATA =		amplot.awk		amplot.g
-EXTRA_DIST =		$(EXTRA_DATA)
+EXTRA_DIST =		amplot.awk		amplot.g
 
 CLEANFILES = amplot.gp.new
 DISTCLEANFILES = amplot.gp

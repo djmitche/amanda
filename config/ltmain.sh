@@ -49,7 +49,7 @@ modename="$progname"
 # Constants.
 PROGRAM=ltmain.sh
 PACKAGE=libtool
-VERSION=1.2c
+VERSION=1.2d
 
 default_mode=
 help="Try \`$progname --help' for more information."
@@ -262,7 +262,7 @@ if test -z "$show_help"; then
     lastarg=
     srcfile="$nonopt"
     suppress_output=
-    module=no
+    force_static=no
 
     user_target=no
     for arg
@@ -277,8 +277,8 @@ if test -z "$show_help"; then
         user_target=next
 	;;
 
-      -module)
-        module=yes
+      -force-static)
+        force_static=yes
         continue
         ;;
 	
@@ -480,9 +480,9 @@ compiler."
 	fi
       fi
 
-      # If we have no pic_flag and do not compile a module, 
+      # If we have no pic_flag and do not have -force-static, 
       # then copy the object into place and finish.
-      if test -z "$pic_flag" && test "$module" = no; then
+      if test -z "$pic_flag" && test "$force_static" = no; then
         $show "$LN_S $libobj $obj"
         if $run $LN_S $libobj $obj; then
 	  exit 0
@@ -500,7 +500,9 @@ compiler."
     # Only build a position-dependent object if we build old libraries.
     if test "$build_old_libs" = yes; then
       command="$base_compile $srcfile"
-      test "$module" = yes && command="$command -DLT_RENAME"
+      if test "$force_static" = yes; then
+        command="$command -DLIBTOOL_STATIC"
+      fi
       if test "$compiler_c_o" = yes; then
         command="$command -o $obj"
         output_obj="$obj"
@@ -576,8 +578,7 @@ compiler."
     convenience=
     old_convenience=
     deplibs=
-    extradeplibs=
-    lib_search_path="/lib /usr/lib"
+    eval lib_search_path=\"$sys_lib_search_path\"
     
     dlfiles=
     dlprefiles=
@@ -647,15 +648,6 @@ compiler."
             $echo "$modename: symbol file \`$arg' does not exist"
             exit 1
           fi
-	  if test -n "$export_dynamic_flag_spec"; then
-	    eval arg=\"$export_dynamic_flag_spec\"
-	  else
-	    arg=
-	  fi
-
-          # Add the symbol object into the linking commands.
-	  compile_command="$compile_command @SYMFILE@"
-	  finalize_command="$finalize_command @SYMFILE@"
 	  prev=
 	  ;;
 	release)
@@ -719,10 +711,6 @@ compiler."
         ;;
 
       -export-symbols)
-        if test "$export_dynamic" != no; then
-          $echo "$modename: cannot have both -export-dynamic and -export-symbols"
-          exit 1
-        fi
         if test -n "$export_symbols"; then
           $echo "$modename: cannot have more than one -exported-symbols"
           exit 1
@@ -743,16 +731,20 @@ compiler."
           ;;
         esac
         deplibs="$deplibs $arg"
-        extradeplibs="$extradeplibs $arg"
         lib_search_path="$lib_search_path `expr $arg : '-L\(.*\)'`"
         ;;
 
       -l*) deplibs="$deplibs $arg" ;;
-      -El*) extradeplibs="$extradeplibs -`expr $arg : '-E\(.*\)'`" ;;
 
       -module)
-        module=yes
-        continue
+        if test "$module" != yes; then
+          module=yes
+	  if test -n "$export_dynamic_flag_spec"; then
+	    eval arg=\"$export_dynamic_flag_spec\"
+	  else
+	    arg=
+	  fi
+	fi
         ;;
 	
       -no-undefined)
@@ -876,18 +868,20 @@ compiler."
 
         if test -z "$libdir"; then
 	  # It is a libtool convenience library, so add in its objects.
-	  convenience="$convenience $dir/$old_library"l
+	  convenience="$convenience $dir/$old_library"
 	  old_convenience="$old_convenience $dir/$old_library"
-	  compile_command="$compile_command $dir/$old_library"
-	  finalize_command="$finalize_command $dir/$old_library"
+	  deplibs="$deplibs$dependency_libs"
+	  compile_command="$compile_command $dir/$old_library$dependency_libs"
+	  finalize_command="$finalize_command $dir/$old_library$dependency_libs"
 	  continue
 	fi
 
         # This library was specified with -dlopen.
         if test "$prev" = dlfiles; then
           dlfiles="$dlfiles $arg"
-          if test -z "$dlname"; then
-            # If there is no dlname, we need to preload.
+          if test -z "$dlname" || test "$build_libtool_libs" = no; then
+            # If there is no dlname or we're linking statically,
+            # we need to preload.
             prev=dlprefiles
           else
             # We should not create a dependency on this library, but we
@@ -1076,6 +1070,11 @@ compiler."
       exit 1
     fi
 
+    if test -n "$export_symbols" && test "$module" = yes; then
+      $echo "$modename: \`-export-symbols' is not supported for modules"
+      exit 1
+    fi
+    
     oldlibs=
     # calculate the name of the file, without its directory
     outputname=`$echo "X$output" | $Xsed -e 's%^.*/%%'`
@@ -1111,6 +1110,10 @@ compiler."
 
       if test -n "$release"; then
         $echo "$modename: warning: \`-release' is ignored for archives" 1>&2
+      fi
+
+      if test -n "$export_symbols"; then
+        $echo "$modename: warning: \`-export-symbols' is ignored for archives" 1>&2
       fi
 
       # Now set the variables for building old libraries.
@@ -1168,8 +1171,10 @@ compiler."
       oldlibs=
       if test -z "$rpath"; then
 	# Building a libtool convenience library.
-	oldlibs="$output_objdir/$libname.al $oldlibs"
+        libext=al
+	oldlibs="$output_objdir/$libname.$libext $oldlibs"
 	build_libtool_libs=convenience
+	dependency_libs="$deplibs"
 
 	if test -n "$vinfo"; then
 	  $echo "$modename: warning: \`-version-info' is ignored for convenience libraries" 1>&2
@@ -1265,12 +1270,12 @@ compiler."
 
 	freebsd-aout)
 	  major=".$current"
-	  versuffix="$current.$revision";
+	  versuffix=".$current.$revision";
 	  ;;
 
 	freebsd-elf)
 	  major=".$current"
-	  versuffix="$current";
+	  versuffix=".$current";
 	  ;;
 
 	windows)
@@ -1338,183 +1343,167 @@ compiler."
       fi
 
       if test "$build_libtool_libs" = yes; then
-         # Transform deplibs into only deplibs that can be linked in shared.
-         ## Gordon: Do you check for the existence of the libraries in deplibs
-         ## on the system?  That should maybe be merged in here someplace....
-         ## Actually: I think test_compile and file_magic do this... file_regex
-         ## sorta does this. Only pas_all needs to be changed.  -Toshio
-         name_save=$name
-         libname_save=$libname
-         release_save=$release
-         versuffix_save=$versuffix
-         major_save=$major
-         # I'm not sure if I'm treating the release correctly.  I think
-         # release should show up in the -l (ie -lgmp5) so we don't want to
-         # add it in twice.  Is that correct?
-         release=""
-         versuffix=""
-         major=""
-         newdeplibs=
-         case "$check_shared_deplibs_method" in
-         pass_all)   ;; # Don't check for shared/static.  Everything works.
-                        # This might be a little naive.  We might want to check
-                        # whether the library exists or not.  But this is on
-                        # osf3 & osf4 and I'm not really sure... Just
-                        # implementing what was already the behaviour.
-         test_compile)
-           # This code stresses the "libraries are programs" paradigm to its
-           # limits. Maybe even breaks it.  We compile a program, linking it
-           # against the deplibs as a proxy for the library.  Then we can check
-           # whether they linked in statically or dynamically with ldd.
-           $rm conftest.c
-           cat > conftest.c <<EOF
-           int main() { return 0; }
+        # Transform deplibs into only deplibs that can be linked in shared.
+        ## Gordon: Do you check for the existence of the libraries in deplibs
+        ## on the system?  That should maybe be merged in here someplace....
+        ## Actually: I think test_compile and file_magic do this... file_regex
+        ## sorta does this. Only pas_all needs to be changed.  -Toshio
+        name_save=$name
+        libname_save=$libname
+        release_save=$release
+        versuffix_save=$versuffix
+        major_save=$major
+        # I'm not sure if I'm treating the release correctly.  I think
+        # release should show up in the -l (ie -lgmp5) so we don't want to
+        # add it in twice.  Is that correct?
+        release=""
+        versuffix=""
+        major=""
+        newdeplibs=
+        case "$check_shared_deplibs_method" in
+        pass_all)  
+          newdeplibs=$deplibs 
+                    ;; # Don't check for shared/static.  Everything works.
+                       # This might be a little naive.  We might want to check
+                       # whether the library exists or not.  But this is on
+                       # osf3 & osf4 and I'm not really sure... Just
+                       # implementing what was already the behaviour.
+        test_compile)
+          # This code stresses the "libraries are programs" paradigm to its
+          # limits. Maybe even breaks it.  We compile a program, linking it
+          # against the deplibs as a proxy for the library.  Then we can check
+          # whether they linked in statically or dynamically with ldd.
+          $rm conftest.c
+          cat > conftest.c <<EOF
+          int main() { return 0; }
 EOF
-           $rm a.out
-           $C_compiler conftest.c $deplibs $extradeplibs
-           if test $? -eq 0 ; then
-             ldd_output=`ldd a.out`
-             for i in $deplibs; do
-               name="`expr $i : '-l\(.*\)'`"
-               # If $name is empty we are operating on a -L argument.
-               if test "$name" != "" ; then
-                 libname=`eval \\$echo \"$libname_spec\"`
-                 deplib_matches=`eval \\$echo \"$library_names_spec\"`
-                 set dummy $deplib_matches
-                 deplib_match=$2
-                 if test `expr "$ldd_output" : ".*$deplib_match"` -ne 0 ; then
-                   newdeplibs="$newdeplibs $i"
-                 else
-                   echo
-                   echo "*** Warning: This library needs some functionality provided by $i."
-                   echo "*** I have the capability to make that library automatically link in when"
-                   echo "*** you link to this library.  But I can only do this if you have a"
-                   echo "*** shared version of the library, which you do not appear to have."
-                 fi
-               else
-                 newdeplibs="$newdeplibs $i"
-               fi
-             done
-           else
-           # Error occured in the first compile.  Let's try to salvage the situation:
-             # 1) Is the error in the extradeplibs?
-             $rm a.out
-             $C_compiler conftest.c $extradeplibs
-             if test $? -ne 0 ; then
-               echo
-               echo "*** Warning! Not all libraries necessary to the dependent libraries are"
-               echo "*** working!  You will probably need to install some of:"
-               echo "*** $extradeplibs"
-               echo "*** before this library will be fully functional.  Installing these"
-               echo "***  libraries before continuing would be even better."
-               newextradeplibs=
-               for i in $extradeplibs; do
-                 if test `expr "$i" : '-L'` -ne 0 ; then
-                   newextradeplibs="$newextradeplibs $i"
-                 fi
-               done
-               extradeplibs=$newextradeplibs
-             fi
-             # 2) Compile a seperate program for each library.
-             for i in $deplibs; do
-               name="`expr $i : '-l\(.*\)'`"
+          $rm a.out
+          $C_compiler conftest.c $deplibs
+          if test $? -eq 0 ; then
+            ldd_output=`ldd a.out`
+            for i in $deplibs; do
+              name="`expr $i : '-l\(.*\)'`"
               # If $name is empty we are operating on a -L argument.
-               if test "$name" != "" ; then
-                 $rm a.out
-                 $C_compiler conftest.c $i $extradeplibs
-                 # Did it work?
-                 if test $? -eq 0 ; then
-                   ldd_output=`ldd a.out`
-                     libname=`eval \\$echo \"$libname_spec\"`
-                     deplib_matches=`eval \\$echo \"$library_names_spec\"`
-                     set dummy $deplib_matches
-                     deplib_match=$2
-                     if test `expr "$ldd_output" : ".*$deplib_match"` -ne 0 ; then
-                       newdeplibs="$newdeplibs $i"
-                     else
-                       echo
-                       echo "*** Warning: This library needs some functionality provided by $i."
-                       echo "*** I have the capability to make that library automatically link in when"
-                       echo "*** you link to this library.  But I can only do this if you have a"
-                       echo "*** shared version of the library, which you do not appear to have."
-                     fi
-                 else
-                   echo
-                   echo "*** Warning!  Library $i is needed by this library but I was not able to"
-                   echo "***  make it link in!  You will probably need to install it or some"
-                   echo "*** library that it depends on before this library will be fully"
-                   echo "*** functional.  Installing it before continuing would be even better."
-                 fi
-               else
-                 newdeplibs="$newdeplibs $i"
-               fi
-             done
-           fi
-           deplibs=$newdeplibs
-           ;;
-         file_magic* | file_regex)
-           set dummy $check_shared_deplibs_method
-           file_magic_regex="`expr \"$check_shared_deplibs_method\" : \"$2\(.*\)\"`"
-           for a_deplib in $deplibs; do
-             name="`expr $a_deplib : '-l\(.*\)'`"
+              if test "$name" != "" ; then
+                libname=`eval \\$echo \"$libname_spec\"`
+                deplib_matches=`eval \\$echo \"$library_names_spec\"`
+                set dummy $deplib_matches
+                deplib_match=$2
+                if test `expr "$ldd_output" : ".*$deplib_match"` -ne 0 ; then
+                  newdeplibs="$newdeplibs $i"
+                else
+                  echo
+                  echo "*** Warning: This library needs some functionality provided by $i."
+                  echo "*** I have the capability to make that library automatically link in when"
+                  echo "*** you link to this library.  But I can only do this if you have a"
+                  echo "*** shared version of the library, which you do not appear to have."
+                fi
+              else
+                newdeplibs="$newdeplibs $i"
+              fi
+            done
+          else
+            # Error occured in the first compile.  Let's try to salvage the situation:
+            # Compile a seperate program for each library.
+            for i in $deplibs; do
+              name="`expr $i : '-l\(.*\)'`"
              # If $name is empty we are operating on a -L argument.
-             if test "$name" != "" ; then
-               libname=`eval \\$echo \"$libname_spec\"`
-               case "$check_shared_deplibs_method" in
-                 file_magic*)
-                   for i in $lib_search_path; do
-                    # This needs to be more general than file_regex in order to
-                    # catch things like glibc on linux.  Maybe file_regex
-                    # should be more general as well, but maybe not.  Since
-                    # library names are supposed to conform to
-                    # library_name_spec, I think file_regex should remain
-                    # strict.  What do you think Gordon?
-                     potential_libs=`ls $i/$libname[.-]* 2>/dev/null`
-                     for potent_lib in $potential_libs; do
-                       file_output=`file $potent_lib`
-                       if test `expr "$file_output" : ".*$file_magic_regex"` -ne 0 ; then
-                         newdeplibs="$newdeplibs $a_deplib"
-                         a_deplib=""
-                         break 2
-                       fi
-                     done
-                   done
-                   ;;
-                 file_regex)
-                   deplib_matches=`eval \\$echo \"$library_names_spec\"`
-                   set dummy $deplib_matches
-                   deplib_match=$2
-                   for i in $lib_search_path; do
-                     potential_libs=`ls $i/$deplib_match* 2>/dev/null`
-                     if test "$potential_libs" != "" ; then
-                       newdeplibs="$newdeplibs $a_deplib"
-                       a_deplib=""
-                       break
-                     fi
-                   done
-                   ;;
-               esac
-               if test "$a_deplib" != "" ; then
-                 echo
-                 echo "*** Warning: This library needs some functionality provided by $a_deplib."
-                 echo "*** I have the capability to make that library automatically link in when"
-                 echo "*** you link to this library.  But I can only do this if you have a"
-                 echo "*** shared version of the library, which you do not appear to have."
-               fi
-             else
-               # Add a -L argument.
-               newdeplibs="$newdeplibs $a_deplib"
-             fi
-           done # Gone through all deplibs.
-           ;;
-         none | *)  deplibs="" ;;
-         esac
-         versuffix=$versuffix_save
-         major=$major_save
-         release=$release_save
-         libname=$libname_save
-         name=$name_save
-         deplibs=$newdeplibs
+              if test "$name" != "" ; then
+                $rm a.out
+                $C_compiler conftest.c $i
+                # Did it work?
+                if test $? -eq 0 ; then
+                  ldd_output=`ldd a.out`
+                    libname=`eval \\$echo \"$libname_spec\"`
+                    deplib_matches=`eval \\$echo \"$library_names_spec\"`
+                    set dummy $deplib_matches
+                    deplib_match=$2
+                    if test `expr "$ldd_output" : ".*$deplib_match"` -ne 0 ; then
+                      newdeplibs="$newdeplibs $i"
+                    else
+                      echo
+                      echo "*** Warning: This library needs some functionality provided by $i."
+                      echo "*** I have the capability to make that library automatically link in when"
+                      echo "*** you link to this library.  But I can only do this if you have a"
+                      echo "*** shared version of the library, which you do not appear to have."
+                    fi
+                else
+                  echo
+                  echo "*** Warning!  Library $i is needed by this library but I was not able to"
+                  echo "***  make it link in!  You will probably need to install it or some"
+                  echo "*** library that it depends on before this library will be fully"
+                  echo "*** functional.  Installing it before continuing would be even better."
+                fi
+              else
+                newdeplibs="$newdeplibs $i"
+              fi
+            done
+          fi
+          deplibs=$newdeplibs
+          ;;
+        file_magic* | file_regex)
+          set dummy $check_shared_deplibs_method
+          file_magic_regex="`expr \"$check_shared_deplibs_method\" : \"$2\(.*\)\"`"
+          for a_deplib in $deplibs; do
+            name="`expr $a_deplib : '-l\(.*\)'`"
+            # If $name is empty we are operating on a -L argument.
+            if test "$name" != "" ; then
+              libname=`eval \\$echo \"$libname_spec\"`
+              case "$check_shared_deplibs_method" in
+                file_magic*)
+                  for i in $lib_search_path; do
+                   # This needs to be more general than file_regex in order to
+                   # catch things like glibc on linux.  Maybe file_regex
+                   # should be more general as well, but maybe not.  Since
+                   # library names are supposed to conform to
+                   # library_name_spec, I think file_regex should remain
+                   # strict.  What do you think Gordon?
+                    potential_libs=`ls $i/$libname[.-]* 2>/dev/null`
+                    for potent_lib in $potential_libs; do
+                      file_output=`file $potent_lib`
+                      if test `expr "$file_output" : ".*$file_magic_regex"` -ne 0 ; then
+                        newdeplibs="$newdeplibs $a_deplib"
+                        a_deplib=""
+                        break 2
+                      fi
+                    done
+                  done
+                  ;;
+                file_regex)
+                  deplib_matches=`eval \\$echo \"$library_names_spec\"`
+                  set dummy $deplib_matches
+                  deplib_match=$2
+                  for i in $lib_search_path; do
+                    potential_libs=`ls $i/$deplib_match* 2>/dev/null`
+                    if test "$potential_libs" != "" ; then
+                      newdeplibs="$newdeplibs $a_deplib"
+                      a_deplib=""
+                      break
+                    fi
+                  done
+                  ;;
+              esac
+              if test "$a_deplib" != "" ; then
+                echo
+                echo "*** Warning: This library needs some functionality provided by $a_deplib."
+                echo "*** I have the capability to make that library automatically link in when"
+                echo "*** you link to this library.  But I can only do this if you have a"
+                echo "*** shared version of the library, which you do not appear to have."
+              fi
+            else
+              # Add a -L argument.
+              newdeplibs="$newdeplibs $a_deplib"
+            fi
+          done # Gone through all deplibs.
+          ;;
+        none | *)  deplibs="" ;;
+        esac
+        versuffix=$versuffix_save
+        major=$major_save
+        release=$release_save
+        libname=$libname_save
+        name=$name_save
+        deplibs=$newdeplibs
         # Done checking deplibs!
  
 	# Get the real and link names of the library.
@@ -1565,7 +1554,11 @@ EOF
 	fi
 
 	# Do each of the archive commands.
-	eval cmds=\"$archive_cmds\"
+	if test -n "$export_symbols" && test -n "$archive_sym_cmds"; then
+	  eval cmds=\"$archive_sym_cmds\"
+	else
+	  eval cmds=\"$archive_cmds\"
+	fi
 	IFS="${IFS= 	}"; save_ifs="$IFS"; IFS='~'
 	for cmd in $cmds; do
 	  IFS="$save_ifs"
@@ -1582,8 +1575,8 @@ EOF
 	  fi
 	done
 
-	# If -export-dynamic/symbols was specified, set the dlname.
-	if test "$export_dynamic" = yes || test -n "$export_symbols"; then
+	# If -module or -export-dynamic was specified, set the dlname.
+	if test "$module" = yes || test "$export_dynamic" = yes; then
 	  # On all known operating systems, these are identical.
 	  dlname="$soname"
 	fi
@@ -1745,8 +1738,7 @@ EOF
         finalize_command=`$echo "X$finalize_command " | $Xsed -e "$los2o" -e 's/ $//'`
       fi
 
-      if { test "$export_dynamic" = yes || test "$export_dynamic" = yes; } &&
-         test -n "$NM" && test -n "$global_symbol_pipe"; then
+      if test "$export_dynamic" = yes && test -n "$NM" && test -n "$global_symbol_pipe"; then
         dlsyms="${outputname}S.c"
       else
         dlsyms=
@@ -1845,8 +1837,9 @@ dld_preloaded_symbols[] =
             fi
 
             for arg in $dlprefiles; do
+	      name=`echo "$arg" | sed -e 's%^.*/%%'`
               echo >> "$objdir/$dlsyms" "\
-  {\"$arg\", (__ptr_t) 0},"
+  {\"$name\", (__ptr_t) 0},"
 	      eval "$NM $arg | $global_symbol_pipe > '$nlist'"
 
 	      if test -f "$nlist"; then
@@ -1884,7 +1877,7 @@ dld_preloaded_symbols[] =
           exit 1
           ;;
         esac
-      elif test "$export_dynamic" != yes && test -z "$export_symbols"; then
+      elif test "$export_dynamic" != yes; then
         test -n "$dlfiles$dlprefiles" && $echo "$modename: warning: \`-dlopen' and \`-dlpreopen' are ignored without \`-export-dynamic'" 1>&2
       else
         # We keep going just in case the user didn't refer to

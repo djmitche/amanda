@@ -3,8 +3,13 @@
 ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
 AUTOHEADER = @AUTOHEADER@ --localdir=config
 
-EXTRA_DIST =	aclocal.m4	libtool/libtool.m4 \
-		config.guess	config.sub	\
-		install-sh	ltconfig	\
-		ltmain.sh	missing		\
+EXTRA_DIST =	acinclude.m4i	\
+		aclocal.m4	\
+		config.guess	\
+		config.sub	\
+		install-sh	\
+		libtool.m4i	\
+		ltconfig	\
+		ltmain.sh	\
+		missing		\
 		mkinstalldirs

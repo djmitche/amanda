@@ -70,7 +70,8 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	Amplot also required that gnuplot be installed on your system.
 	Gnuplot is available at
 
-	    ftp://ftp.gnu.org/pub/gnu/gnuplot-3.5.tar.gz
+	    http://www.cs.dartmouth.edu/gnuplot_info.html
+	    ftp://ftp.dartmouth.edu/pub/gnuplot
 
     D.	The process of building Amanda requires that some other
 	packages be installed on your system.  The following packages
@@ -88,18 +89,14 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	required if you are going to rebuild the Makefiles and auto
 	configuration scripts.  Bison is only needed if you are going
 	to work on the index server and client code.
-	    ftp://ftp.gnu.org/pub/gnu/autoconf-2.12.tar.gz
-	    ftp://ftp.gnu.org/pub/gnu/automake-1.3.tar.gz
+	    ftp://ftp.gnu.org/pub/gnu/autoconf-2.13.tar.gz (*)
+	    ftp://ftp.gnu.org/pub/gnu/automake-1.4.tar.gz (*)
 	    ftp://ftp.gnu.org/pub/gnu/bison-1.25.tar.gz
 	    ftp://ftp.gnu.org/pub/gnu/flex-2.5.4a.tar.gz
-	    ftp://alpha.gnu.org/gnu/libtool-1.2a.tar.gz
 
-	Although Amanda uses libtool in order to build shared
-	libraries (unless --disable-libtool is issued), you shouldn't
-	have any version of libtool older than 1.2, otherwise you may
-        find incompatibilities between the libtool scripts and its
-        autoconf macros.  In other words, don't bother installing
-        libtool unless you have an older version already installed.
+	(*) these have not been released yet; you may download them
+	    via anonymous CVS.  Look for instructions at
+	    http://sourceware.cygnus.com
 
     E.  Read about the different configuration options available for
 	building and running Amanda.  To see the options, do both:

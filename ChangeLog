@@ -1,3 +1,24 @@
+1998-12-17  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* common-src/Makefile.am (noinst_DATA): removed; bogus
+	* config/config.guess, config/config.sub: config/install-sh,
+	config/mkinstalldirs: updated to current pre-2.13 autoconf CVS tree
+	* patches/autoreconf.patch: removed
+	* config/libtool/libtool.m4: renamed to config/libtool.m4i
+	* config/acinclude.m4: renamed to config/acinclude.m4i
+	* config/Makefile.am (EXTRA_DIST): updated to reflect changes
+	* autogen: build config/acinclude.m4  by concatenating acinclude.m4i
+	and libtool.m4i
+	* configure.in: no longer test whether libtool is installed; require 
+	newer autoconf
+	* config/ltconfig, config/ltmain.sh, config/libtool.m4i: updated to
+	libtool 1.2d
+	* amplot/Makefile.am (EXTRA_DIST): no longer needed
+	* changer-src/Makefile.am (chg_scsi_SOURCE): move scsi-defs.h closer 
+	to the beginning of the list
+	* docs/INSTALL: fixed URL to gnuplot; recommend autoconf and
+	automake from CVS
+
 1998-12-14  Mike Grupenhoff <kashmir@munge.com>
 
 	* common-src/genversion.c (main): rip out krb4 defines.  If we

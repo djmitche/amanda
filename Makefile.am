@@ -2,9 +2,14 @@
 
 ACLOCAL_M4_FROM_SRCDIR = config/aclocal.m4
 ACLOCAL_M4 = $(srcdir)/$(ACLOCAL_M4_FROM_SRCDIR)
+ACINCLUDE_M4 = $(srcdir)/config/acinclude.m4
+ACINCLUDE_M4I = $(srcdir)/config/acinclude.m4i
+LIBTOOL_M4I = $(srcdir)/config/libtool.m4i
+ACINCLUDE_M4_DEPS = $(ACINCLUDE_M4I) $(LIBTOOL_M4I)
 
-ACLOCAL = @ACLOCAL@ -I config @LIBTOOL_M4_MACRO_DIR@
+ACLOCAL = @ACLOCAL@ -I config
 AUTOCONF = @AUTOCONF@ --localdir=config
+AUTOHEADER = @AUTOHEADER@ --localdir=config
 
 # order is significant, don't change it arbitrarily
 SUBDIRS=config		\
@@ -77,15 +82,10 @@ EXTRA_DIST = \
 	regex-src/fake/memmove.c	\
 	regex-src/fake/stdlib.h
 
-# even if libtool.m4 is not used at all, aclocal.m4 should be newer
-# than libtool.m4 in a distribution
-$(ACLOCAL_M4): $(srcdir)/config/libtool/libtool.m4
+$(ACINCLUDE_M4): $(ACINCLUDE_M4_DEPS)
+	@-rm -f $@
+	@cat $(ACINCLUDE_M4_DEPS) > $@
 
-$(ACLOCAL_M4): $(srcdir)/configure.in $(srcdir)/config/acinclude.m4
-	@rm -f $(srcdir)/aclocal.m4 $(ACLOCAL_M4)
+$(ACLOCAL_M4): $(srcdir)/configure.in $(ACINCLUDE_M4)
+	@-rm -f $(srcdir)/aclocal.m4 $(ACLOCAL_M4)
 	cd $(srcdir) && $(ACLOCAL) --output=$(ACLOCAL_M4_FROM_SRCDIR)
-	@if test -f $(srcdir)/aclocal.m4; then \
-	    rm -f $(ACLOCAL_M4) && mv $(srcdir)/aclocal.m4 $(ACLOCAL_M4); \
-	 fi
-# this last line works around a bug in automake (fixed in release 1.3):
-# it would always generate ./aclocal.m4, despite --output
