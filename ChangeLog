@@ -1,3 +1,8 @@
+2000-01-21  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* config/acinclude.m4i (CF_WAIT): Simplify the test.  Declare wait()
+	in the global scope.
+
 2000-01-21  Garrett Wollman  <wollman@khavrinen.lcs.mit.edu>
 
 	* config/acinclude.m4i (CF_WAIT): Avoid warnings on systems
