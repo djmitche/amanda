@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.18.2.15 2000/10/11 20:42:40 martinea Exp $
+ * $Id: amlabel.c,v 1.18.2.15.4.1 2001/01/24 01:37:01 jrjackson Exp $
  *
  * write an Amanda label on a tape
  */
@@ -223,7 +223,8 @@ int main(argc, argv)
     else {
 	/* got an amanda tape */
 	printf(" %s",oldlabel);
-	if(!match(labelstr, oldlabel)) {
+	if(strcmp(oldlabel, FAKE_LABEL) != 0
+	   && match(labelstr, oldlabel) == 0) {
 	    printf(", tape is in another amanda configuration");
 	    if(!force)
 		tape_ok=0;
@@ -380,7 +381,8 @@ int main(argc, argv)
 	    }
 
 	    if (strcmp("X", olddatestamp) != 0 ||
-		strcmp(label, oldlabel) != 0) {
+		(strcmp(oldlabel, FAKE_LABEL) != 0
+		 && strcmp(label, oldlabel) != 0)) {
 		putchar('\n');
 		error("read label %s back, timestamp %s (expected X), what now?",
 		      oldlabel, olddatestamp);

@@ -13,10 +13,12 @@ SERVER_MAN_PAGES = amadmin.8 \
 		   amcheck.8 \
 		   amcheckdb.8 \
 		   amcleanup.8 \
+		   amdd.8 \
 		   amdump.8 \
 		   amflush.8 \
 		   amgetconf.8 \
 		   amlabel.8 \
+		   ammt.8 \
 		   amoverview.8 \
 		   amreport.8 \
 		   amrmtape.8 \

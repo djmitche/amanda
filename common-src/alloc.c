@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: alloc.c,v 1.17.2.1 1999/09/08 23:26:35 jrj Exp $
+ * $Id: alloc.c,v 1.17.2.1.4.1 2001/01/24 01:37:01 jrjackson Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -489,4 +489,54 @@ char **safe_env()
 	*q = NULL;				/* terminate the list */
     }
     return envp;
+}
+
+/*
+ * amtable_alloc -- (re)allocate enough space for some number of elements.
+ *
+ * input:	table -- pointer to pointer to table
+ *		elsize -- size of a table element
+ *		count -- desired number of elements
+ *		current -- pointer to current number of elements
+ *		bump -- round up factor
+ * output:	table -- possibly adjusted to point to new table area
+ *		current -- possibly adjusted to new number of elements
+ */
+
+int
+amtable_alloc(table, elsize, count, current, bump, init_func)
+    void **table;
+    size_t elsize;
+    int count;
+    int *current;
+    int bump;
+    void (*init_func)(void *);
+{
+    void *table_new;
+    int table_count_new;
+    int i;
+
+    if (count >= *current) {
+	table_count_new = ((count + bump) / bump) * bump;
+	table_new = malloc(table_count_new * elsize);
+	if (0 == table_new) {
+	    errno = ENOMEM;
+	    return -1;
+	}
+	if (0 != *table) {
+	    memcpy(table_new, *table, *current * elsize);
+	    free(*table);
+	}
+	*table = table_new;
+	memset(((char *)*table) + *current * elsize,
+	       0,
+	       (table_count_new - *current) * elsize);
+	if (init_func != NULL) {
+	    for (i = *current; i < table_count_new; i++) {
+		(*init_func)(((char *)*table) + i * elsize);
+	    }
+	}
+	*current = table_count_new;
+    }
+    return 0;
 }

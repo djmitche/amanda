@@ -213,7 +213,8 @@ Startup           S<datestamp> --->
                                <--- S             Start OK
                                <--- E<messge>     Error
 
-Open tape         O            --->
+Open tape         O<datestamp><hostname><diskname><level>
+			       --->
                                <--- O             Opening
 
 Write buffer      W<bufnum>    --->

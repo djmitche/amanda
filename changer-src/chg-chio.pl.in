@@ -343,7 +343,20 @@ $nr_tapes = &getTapeStatus();
 # Before we do anything with the tape changer we'll have to rewind the tape
 #
 
-system ("@MT@ @MT_FILE_FLAG@ $tapeDevice rewind")
+if (-x "$sbindir/ammt$SUF") {
+	$MT="$sbindir/ammt$SUF";
+	$MTF="-f";
+} elsif (-x "@MT@") {
+	$MT="@MT@";
+	$MTF="@MT_FILE_FLAG@";
+} else {
+	print LOG &do_time(), ": mt program not found\n";
+	print "<none> mt program not found\n";
+	exit(1);
+fi
+print LOG &do_time(), "MT -> $MT $MTF\n";
+
+system ("$MT $MTF $tapeDevice rewind")
 	unless $currentTape == 0;
 
 

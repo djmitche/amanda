@@ -1814,6 +1814,78 @@ fi
 
 AC_CHECK_LIB(m,modf)
 
+dnl Check for various "mt status" related structure elements.
+
+AC_MSG_CHECKING(for mt_flags mtget structure element)
+mt_flags_result="found"
+AC_TRY_COMPILE([
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/mtio.h>
+],[
+    struct mtget buf;
+    long ds;
+
+    ds = buf.mt_flags;
+],AC_DEFINE(AM_HAVE_MT_FLAGS,1,Define if the mtget structure has an mt_flags field),mt_flags_result="not found")
+AC_MSG_RESULT($mt_flags_result)
+
+AC_MSG_CHECKING(for mt_fileno mtget structure element)
+mt_fileno_result="found"
+AC_TRY_COMPILE([
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/mtio.h>
+],[
+    struct mtget buf;
+    long ds;
+
+    ds = buf.mt_fileno;
+],AC_DEFINE(AM_HAVE_MT_FILENO,1,Define if the mtget structure has an mt_fileno field),mt_fileno_result="not found")
+AC_MSG_RESULT($mt_fileno_result)
+
+AC_MSG_CHECKING(for mt_blkno mtget structure element)
+mt_blkno_result="found"
+AC_TRY_COMPILE([
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/mtio.h>
+],[
+    struct mtget buf;
+    long ds;
+
+    ds = buf.mt_blkno;
+],AC_DEFINE(AM_HAVE_MT_BLKNO,1,Define if the mtget structure has an mt_blkno field),mt_blkno_result="not found")
+AC_MSG_RESULT($mt_blkno_result)
+
+AC_MSG_CHECKING(for mt_dsreg mtget structure element)
+mt_dsreg_result="found"
+AC_TRY_COMPILE([
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/mtio.h>
+],[
+    struct mtget buf;
+    long ds;
+
+    ds = buf.mt_dsreg;
+],AC_DEFINE(AM_HAVE_MT_DSREG,1,Define if the mtget structure has an mt_dsreg field),mt_dsreg_result="not found")
+AC_MSG_RESULT($mt_dsreg_result)
+
+AC_MSG_CHECKING(for mt_erreg mtget structure element)
+mt_erreg_result="found"
+AC_TRY_COMPILE([
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/mtio.h>
+],[
+    struct mtget buf;
+    long ds;
+
+    ds = buf.mt_erreg;
+],AC_DEFINE(AM_HAVE_MT_ERREG,1,Define if the mtget structure has an mt_erreg field),mt_erreg_result="not found")
+AC_MSG_RESULT($mt_erreg_result)
+
 dnl
 
 dnl Check if the system does support the user requested database library.
