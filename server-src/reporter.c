@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-1999 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.52 1999/04/28 21:48:31 kashmir Exp $
+ * $Id: reporter.c,v 1.53 1999/05/14 21:28:23 kashmir Exp $
  *
  * nightly Amanda Report generator
  */
@@ -71,73 +71,43 @@ typedef struct repdata_s {
 
 #define data(dp) ((repdata_t *)(dp)->up)
 
-struct cumulative_stats {
+static struct cumulative_stats {
     int disks;
     double taper_time, dumper_time;
     double outsize, origsize;
     double coutsize, corigsize;
 } stats[3];
 
-int disks[10];	/* by-level breakdown of disk count */
+static int disks[10];	/* by-level breakdown of disk count */
 
-float total_time, startup_time;
+static float total_time, startup_time;
 
 /* count files to tape */
-int tapefcount = 0;
+static int tapefcount = 0;
 
-char *datestamp;
-char *tape_labels = NULL;
-int last_run_tapes = 0;
+static char *datestamp;
+static char *tape_labels = NULL;
+static int last_run_tapes = 0;
 static int degraded_mode = 0; /* defined in driverio too */
-int normal_run = 0;
-int amflush_run = 0;
-int got_finish = 0;
+static int normal_run = 0;
+static int amflush_run = 0;
+static int got_finish = 0;
 
-char *tapestart_error = NULL;
+static char *tapestart_error = NULL;
 
-FILE *logfile, *mailf;
+static FILE *logfile, *mailf;
 
-FILE *template_file, *postscript;
-char *printer;
+static FILE *template_file, *postscript;
+static char *printer;
 
-disklist_t diskq;
-disklist_t sortq;
+static disklist_t diskq;
+static disklist_t sortq;
 
-line_t *errsum = NULL;
-line_t *errdet = NULL;
-line_t *notes = NULL;
+static line_t *errsum = NULL;
+static line_t *errdet = NULL;
+static line_t *notes = NULL;
 
-char *hostname = NULL, *diskname = NULL;
-
-/* local functions */
-int contline_next P((void));
-void addline P((line_t **lp, char *str));
-void usage P((void));
-int main P((int argc, char **argv));
-
-void copy_template_file P((char *lbl_templ));
-void setup_data P((void));
-void handle_start P((void));
-void handle_finish P((void));
-void handle_note P((void));
-void handle_summary P((void));
-void handle_stats P((void));
-void handle_error P((void));
-void handle_success P((void));
-void handle_strange P((void));
-void handle_failed P((void));
-void generate_missing P((void));
-void output_tapeinfo P((void));
-void output_lines P((line_t *lp, FILE *f));
-void output_stats P((void));
-void output_summary P((void));
-void sort_disks P((void));
-int sort_by_time P((disk_t *a, disk_t *b));
-int sort_by_name P((disk_t *a, disk_t *b));
-void bogus_line P((void));
-char *nicedate P((int datestamp));
-void setup_disk P((disk_t *dp));
-static char *prefix P((char *host, char *disk, int level));
+static char *hostname = NULL, *diskname = NULL;
 
 /* enumeration of our reporter columns */
 typedef enum {
@@ -156,7 +126,7 @@ typedef enum {
 
 /* the corresponding strings for the above enumeration
  */
-static char *ColumnNameStrings[ColumnNameCount] = {
+static const char *ColumnNameStrings[ColumnNameCount] = {
     "HostName",
     "Disk",
     "Level",
@@ -168,22 +138,6 @@ static char *ColumnNameStrings[ColumnNameCount] = {
     "TapeTime",
     "TapeRate"
 };
-
-/* conversion from string to enumeration
- */
-static int StringToColumnName(char *s) {
-    ColumnName cn;
-    for (cn= 0; cn<ColumnNameCount; cn++) {
-    	if (strcmp(s, ColumnNameStrings[cn]) == 0) {
-	    return cn;
-	}
-    }
-    return -1;
-}
-
-char LastChar(char *s) {
-    return s[strlen(s)-1];
-}
 
 /* for each column we define some values on how to
  * format this column element
@@ -203,6 +157,68 @@ typedef struct {
     char *Title;	/* the title to use for this column */
 } ColumnInfo;
 
+
+/* local functions */
+static void CalcMaxWidth P((void));
+static void CheckFloatMax P((ColumnInfo *, double));
+static void CheckIntMax P((ColumnInfo *, int));
+static void CheckStringMax P((ColumnInfo *, char *));
+static int ColWidth P((ColumnName, ColumnName));
+static int LastChar P((char *));
+static char *Rule P((ColumnName, ColumnName));
+static int SetColumDataFromString P((ColumnInfo *, char *));
+static int StringToColumnName P((char *));
+static char *TextRule P((ColumnName, ColumnName, char *));
+static void addline P((line_t **, char *));
+static void bogus_line P((void));
+static int contline_next P((void));
+static void copy_template_file P((char *));
+static void generate_missing P((void));
+static void handle_error P((void));
+static void handle_failed P((void));
+static void handle_finish P((void));
+static void handle_note P((void));
+static void handle_start P((void));
+static void handle_stats P((void));
+static void handle_strange P((void));
+static void handle_success P((void));
+static void handle_summary P((void));
+static char *nicedate P((int));
+static void output_lines P((line_t *, FILE *));
+static void output_stats P((void));
+static void output_summary P((void));
+static void output_tapeinfo P((void));
+static char *prefix P((char *, char *, int));
+static char *sDivZero P((float, float, ColumnName));
+static void setup_data P((void));
+static void setup_disk P((disk_t *));
+static int sort_by_name P((disk_t *, disk_t *));
+static void sort_disks P((void));
+static void usage P((void));
+int main P((int, char **));
+
+/* conversion from string to enumeration
+ */
+static int
+StringToColumnName(s)
+    char *s;
+{
+    ColumnName cn;
+    for (cn= 0; cn<ColumnNameCount; cn++) {
+    	if (strcmp(s, ColumnNameStrings[cn]) == 0) {
+	    return cn;
+	}
+    }
+    return -1;
+}
+
+static int
+LastChar(s)
+    char *s;
+{
+    return s[strlen(s)-1];
+}
+
 /* this corresponds to the normal output of amanda, but may
  * be adapted to any spacing as you like.
  */
@@ -221,7 +237,11 @@ ColumnInfo ColumnData[ColumnNameCount] = {
 static char *ColumnSpec="";		/* filled from config */
 static char MaxWidthsRequested=0;	/* determined via config data */
 
-static int SetColumDataFromString(ColumnInfo* ci, char *s) {
+static int
+SetColumDataFromString(ci, s)
+    ColumnInfo *ci;
+    char *s;
+{
     /* Convert from a Columspec string to our internal format
      * of columspec. The purpose is to provide this string
      * as configuration paramter in the amanda.conf file or
@@ -280,14 +300,20 @@ static int SetColumDataFromString(ColumnInfo* ci, char *s) {
     return 0;
 }
 
-static int ColWidth(ColumnName From, ColumnName To) {
+static int
+ColWidth(From, To)
+    ColumnName From, To;
+{
     int i, Width= 0;
     for (i=From; i<=To; i++)
     	Width+= ColumnData[i].PrefixSpace + ColumnData[i].Width;
     return Width;
 }
 
-static char *Rule(ColumnName From, ColumnName To) {
+static char *
+Rule(From, To)
+    ColumnName From, To;
+{
     int i, ThisLeng;
     int Leng= ColWidth(0, ColumnNameCount-1);
     char *RuleSpace= alloc(Leng+1);
@@ -300,7 +326,11 @@ static char *Rule(ColumnName From, ColumnName To) {
     return RuleSpace;
 }
 
-static char *TextRule(ColumnName From, ColumnName To, char *s) {
+static char *
+TextRule(From, To, s)
+    ColumnName From, To;
+    char *s;
+{
     ColumnInfo *cd= &ColumnData[From];
     int leng, nbrules, i, txtlength;
     int RuleSpaceSize= ColWidth(0, ColumnNameCount-1)+1;
@@ -319,7 +349,11 @@ static char *TextRule(ColumnName From, ColumnName To, char *s) {
     return RuleSpace;
 }
 
-char *sDivZero(float a, float b, ColumnName cn) {
+static char *
+sDivZero(a, b, cn)
+    float a, b;
+    ColumnName cn;
+{
     ColumnInfo *cd= &ColumnData[cn];
     static char PrtBuf[256];
     if (b == 0.0)
@@ -331,9 +365,8 @@ char *sDivZero(float a, float b, ColumnName cn) {
     return PrtBuf;
 }
 
-
-
-int contline_next()
+static int
+contline_next()
 {
     int ch = getc(logfile);
     ungetc(ch, logfile);
@@ -341,9 +374,10 @@ int contline_next()
     return ch == ' ';
 }
 
-void addline(lp, str)
-line_t **lp;
-char *str;
+static void
+addline(lp, str)
+    line_t **lp;
+    char *str;
 {
     line_t *new, *p, *q;
 
@@ -358,15 +392,16 @@ char *str;
     else q->next = new;
 }
 
-void usage()
+static void
+usage()
 {
     error("Usage: amreport conf [-f output-file] [-l logfile] [-p postscript-file]");
 }
 
-
-int main(argc, argv)
-int argc;
-char **argv;
+int
+main(argc, argv)
+    int argc;
+    char **argv;
 {
     char *confname, *conffname;
     char *logfname, *psfname, *outfname, *subj_str = NULL;
@@ -691,7 +726,8 @@ char **argv;
 	    fprintf((fp), "%7.1f",q);	    \
     } while(0)
 
-void output_stats()
+static void
+output_stats()
 {
     double idle_time;
     tapetype_t *tp = lookup_tapetype(getconf_str(CNF_TAPETYPE));
@@ -805,7 +841,8 @@ void output_stats()
 
 /* ----- */
 
-void output_tapeinfo()
+static void
+output_tapeinfo()
 {
     tape_t *tp;
     int run_tapes;
@@ -870,9 +907,10 @@ void output_tapeinfo()
 
 /* ----- */
 
-void output_lines(lp, f)
-line_t *lp;
-FILE *f;
+static void
+output_lines(lp, f)
+    line_t *lp;
+    FILE *f;
 {
     line_t *next;
 
@@ -888,14 +926,9 @@ FILE *f;
 
 /* ----- */
 
-int sort_by_time(a, b)
-disk_t *a, *b;
-{
-    return data(b)->dumper.sec - data(a)->dumper.sec;
-}
-
-int sort_by_name(a, b)
-disk_t *a, *b;
+static int
+sort_by_name(a, b)
+    disk_t *a, *b;
 {
     int rc;
 
@@ -904,7 +937,8 @@ disk_t *a, *b;
     return rc;
 }
 
-void sort_disks()
+static void
+sort_disks()
 {
     disk_t *dp;
 
@@ -916,7 +950,11 @@ void sort_disks()
     }
 }
 
-void CheckStringMax(ColumnInfo *cd, char *s) {
+static void
+CheckStringMax(cd, s)
+    ColumnInfo *cd;
+    char *s;
+{
     if (cd->MaxWidth) {
 	int l= strlen(s);
 	if (cd->Width < l)
@@ -924,7 +962,11 @@ void CheckStringMax(ColumnInfo *cd, char *s) {
     }
 }
 
-void CheckIntMax(ColumnInfo *cd, int n) {
+static void
+CheckIntMax(cd, n)
+    ColumnInfo *cd;
+    int n;
+{
     if (cd->MaxWidth) {
     	char testBuf[200];
     	int l;
@@ -936,7 +978,11 @@ void CheckIntMax(ColumnInfo *cd, int n) {
     }
 }
 
-void CheckFloatMax(ColumnInfo *cd, double d) {
+static void
+CheckFloatMax(cd, d)
+    ColumnInfo *cd;
+    double d;
+{
     if (cd->MaxWidth) {
     	char testBuf[200];
 	int l;
@@ -948,7 +994,9 @@ void CheckFloatMax(ColumnInfo *cd, double d) {
     }
 }
 
-void CalcMaxWidth() {
+static void
+CalcMaxWidth()
+{
     /* we have to look for columspec's, that require the recalculation.
      * we do here the same loops over the sortq as is done in
      * output_summary. So, if anything is changed there, we have to
@@ -1016,7 +1064,8 @@ void CalcMaxWidth() {
     }
 }
 
-void output_summary()
+static void
+output_summary()
 {
     disk_t *dp;
     float f;
@@ -1197,20 +1246,22 @@ void output_summary()
     }
 }
 
-void bogus_line()
+static void
+bogus_line()
 {
     printf("line %d of log is bogus\n", curlinenum);
 }
 
 
-char *nicedate(datestamp)
-int datestamp;
 /*
  * Formats an integer of the form YYYYMMDD into the string
  * "Monthname DD, YYYY".  A pointer to the statically allocated string
  * is returned, so it must be copied to other storage (or just printed)
  * before calling nicedate() again.
  */
+static char *
+nicedate(datestamp)
+    int datestamp;
 {
     static char nice[64];
     static char *months[13] = { "BogusMonth",
@@ -1228,7 +1279,8 @@ int datestamp;
     return nice;
 }
 
-void handle_start()
+static void
+handle_start()
 {
     static int started = 0;
     char *label;
@@ -1333,7 +1385,8 @@ void handle_start()
 }
 
 
-void handle_finish()
+static void
+handle_finish()
 {
     char *s;
     int ch;
@@ -1383,7 +1436,8 @@ void handle_finish()
     }
 }
 
-void handle_stats()
+static void
+handle_stats()
 {
     char *s;
     int ch;
@@ -1415,7 +1469,8 @@ void handle_stats()
 }
 
 
-void handle_note()
+static void
+handle_note()
 {
     char *str = NULL;
 
@@ -1427,7 +1482,8 @@ void handle_note()
 
 /* ----- */
 
-void handle_error()
+static void
+handle_error()
 {
     char *s = NULL, *nl;
     int ch;
@@ -1466,15 +1522,17 @@ void handle_error()
 
 /* ----- */
 
-void handle_summary()
+static void
+handle_summary()
 {
     bogus_line();
 }
 
 /* ----- */
 
-void setup_disk(dp)
-disk_t *dp;
+static void
+setup_disk(dp)
+    disk_t *dp;
 {
     if(dp->up == NULL) {
 	dp->up = (void *) alloc(sizeof(repdata_t));
@@ -1483,16 +1541,18 @@ disk_t *dp;
     }
 }
 
-void setup_data()
+static void
+setup_data()
 {
     disk_t *dp;
     for(dp = diskq.head; dp != NULL; dp = dp->next)
 	setup_disk(dp);
 }
 
-int level;
+static int level;
 
-void handle_success()
+static void
+handle_success()
 {
     disk_t *dp;
     float sec, kps, kbytes;
@@ -1617,7 +1677,8 @@ void handle_success()
     }
 }
 
-void handle_strange()
+static void
+handle_strange()
 {
     char *str = NULL;
 
@@ -1643,7 +1704,8 @@ void handle_strange()
     addline(&errdet,"\\--------");
 }
 
-void handle_failed()
+static void
+handle_failed()
 {
     disk_t *dp;
     char *hostname;
@@ -1732,7 +1794,8 @@ void handle_failed()
     return;
 }
 
-void generate_missing()
+static void
+generate_missing()
 {
     disk_t *dp;
     char *str = NULL;
@@ -1778,8 +1841,9 @@ prefix (host, disk, level)
     return str;
 }
 
-void copy_template_file(lbl_templ)
-char *lbl_templ;
+static void
+copy_template_file(lbl_templ)
+    char *lbl_templ;
 {
   char buf[BUFSIZ];
   int numread, numwritten;
