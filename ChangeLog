@@ -1,3 +1,8 @@
+1999-08-23 John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/reporter.c (copy_template_file): make sure all data is
+	  written to label template pipeline.
+
 1999-08-16  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* common-src/Makefile.am: Replace .o with OBJEXT.  List sources
