@@ -974,14 +974,15 @@ pkt_t *pkt;
 
 	dp = lookup_hostdisk(hostp, msgdisk);
 
-	if (dp == NULL)
+	if(dp == NULL)
 	    log(L_ERROR, "%s: invalid reply from sendsize: `%s'\n",
 		hostp->hostname, resp);
 	else {
-	    for(i = 0; i < MAX_LEVELS; i++) if(est(dp)->level[i] == level) {
-		est(dp)->est_size[i] = size;
-		break;
-	    }
+	    for(i = 0; i < MAX_LEVELS; i++)
+		if(est(dp)->level[i] == level) {
+		    est(dp)->est_size[i] = size;
+		    break;
+		}
 	    if(i == MAX_LEVELS) goto bad_msg;   /* this est wasn't requested */
 	    est(dp)->got_estimate++;
 	}
@@ -1056,49 +1057,53 @@ static int pick_inclevel P((disk_t *dp));
 static void analyze_estimate(dp)
 disk_t *dp;
 {
-    long lev0size;
+    est_t *ep;
+
+    ep = est(dp);
 
     fprintf(stderr, "pondering %s:%s... ",
 	    dp->host->hostname, dp->name);
     fprintf(stderr, "next_level0 %d last_level %d ",
-	    est(dp)->next_level0, est(dp)->last_level);
+	    ep->next_level0, ep->last_level);
 
-    if(est(dp)->next_level0 <= 0) {
+    if(ep->next_level0 <= 0) {
 	fprintf(stderr,"(due for level 0) ");
-	est(dp)->curr_level = 0;
-	est(dp)->size = est_tape_size(dp, 0);
-	total_lev0 += (double) est(dp)->size;
-	if(est(dp)->last_level == -1 || dp->dtype->skip_incr) {
+	ep->curr_level = 0;
+	ep->size = est_tape_size(dp, 0);
+	total_lev0 += (double) ep->size;
+	if(ep->last_level == -1 || dp->dtype->skip_incr) {
 	    fprintf(stderr,"(%s disk, can't switch to degraded mode)\n",
 		    dp->dtype->skip_incr? "skip-incr":"new");
-	    est(dp)->degr_level = -1;
-	    est(dp)->degr_size = -1;
+	    ep->degr_level = -1;
+	    ep->degr_size = -1;
 	}
 	else {
 	    /* fill in degraded mode info */
 	    fprintf(stderr,"(picking inclevel for degraded mode)\n");
-	    est(dp)->degr_level = pick_inclevel(dp);
-	    est(dp)->degr_size = est_tape_size(dp, est(dp)->degr_level);
+	    ep->degr_level = pick_inclevel(dp);
+	    ep->degr_size = est_tape_size(dp, ep->degr_level);
 	}
     }
     else {
 	fprintf(stderr,"(not due for a full dump, picking an incr level)\n");
-	est(dp)->curr_level = pick_inclevel(dp);
-	est(dp)->size = est_tape_size(dp,est(dp)->curr_level);
+	ep->curr_level = pick_inclevel(dp);
+	ep->size = est_tape_size(dp, ep->curr_level);
     }
 
-    fprintf(stderr,"  curr level %d size %ld ", est(dp)->curr_level,
-	    est(dp)->size);
+    fprintf(stderr,"  curr level %d size %ld ", ep->curr_level, ep->size);
 
     insert_disk(&schedq, dp, schedule_order);
 
-    total_size += TAPE_BLOCK_SIZE + est(dp)->size + tape_mark;
+    total_size += TAPE_BLOCK_SIZE + ep->size + tape_mark;
 
+    /* update the balanced size */
     if(!(dp->dtype->skip_full || dp->dtype->no_full)) {
-	/* calculate level 0 size for balancing */
-	if(est_size(dp, 0) == -1) lev0size = est(dp)->last_lev0size;
-	else lev0size = est_tape_size(dp, 0);
-	balanced_size += (lev0size / runs_per_cycle);
+	long lev0size;
+
+	lev0size = est_tape_size(dp, 0);
+	if(lev0size == -1) lev0size = ep->last_lev0size;
+
+	balanced_size += lev0size / runs_per_cycle;
     }
 
     fprintf(stderr,"total size %ld total_lev0 %1.0f balanced-lev0size %1.0f\n",
@@ -1662,35 +1667,38 @@ static int promote_hills P((void))
 static void output_scheduleline(dp)
 disk_t *dp;
 {
+    est_t *ep;
     long time, degr_time;
     char schedline[1024];
 
-    if(est(dp)->size == -1) {
+    ep = est(dp);
+
+    if(ep->size == -1) {
 	/* no estimate, fail the disk */
 	fprintf(stderr, 
 		"planner: FAILED %s %s %d [no estimate or historical data]\n", 
-		dp->host->hostname, dp->name, est(dp)->curr_level);
+		dp->host->hostname, dp->name, ep->curr_level);
 	log(L_FAIL, "%s %s %d [no estimate or historical data]", 
-	    dp->host->hostname, dp->name, est(dp)->curr_level);
+	    dp->host->hostname, dp->name, ep->curr_level);
 	return;
     }
 
-    if(est(dp)->curr_level == 0 && est(dp)->degr_level != -1) {
-	time = est(dp)->size / est(dp)->fullrate;
-	degr_time = est(dp)->degr_size / est(dp)->incrrate;
+    if(ep->curr_level == 0 && ep->degr_level != -1) {
+	time = ep->size / ep->fullrate;
+	degr_time = ep->degr_size / ep->incrrate;
 	sprintf(schedline, "%s %s %d %d %ld %ld %d %ld %ld\n",
-		dp->host->hostname, dp->name, est(dp)->curr_priority,
-		est(dp)->curr_level, est(dp)->size, time,
-		est(dp)->degr_level, est(dp)->degr_size, degr_time);
+		dp->host->hostname, dp->name, ep->curr_priority,
+		ep->curr_level, ep->size, time,
+		ep->degr_level, ep->degr_size, degr_time);
     }
     else {
-	if(est(dp)->curr_level == 0)
-	    time = est(dp)->size / est(dp)->fullrate;
+	if(ep->curr_level == 0)
+	    time = ep->size / ep->fullrate;
 	else
-	    time = est(dp)->size / est(dp)->incrrate;
+	    time = ep->size / ep->incrrate;
 	sprintf(schedline, "%s %s %d %d %ld %ld\n",
-		dp->host->hostname, dp->name, est(dp)->curr_priority,
-		est(dp)->curr_level, est(dp)->size, time);
+		dp->host->hostname, dp->name, ep->curr_priority,
+		ep->curr_level, ep->size, time);
     }
 
     fputs(schedline, stdout);
