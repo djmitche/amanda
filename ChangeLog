@@ -1,4 +1,9 @@
 2004-08-31  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/driverio.c (free_serial): Set stable[s].dp to NULL.
+	* server-src/driverio.c (disk2serial): Check that stable[s].dp == NULL.
+
+2004-08-31  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Joe Rhett <jrhett@isite.net>
 
 	* common-src/alloc.c (safe_env): Keep SYSTEMROOT if __CYGWIN__.
