@@ -1,3 +1,10 @@
+2000-09-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* client-src/sendsize.c (getsize_smbtar): remove unused debug_level 
+	variable.
+	* server-src/amlabel.c (main): init errstr to NULL, 
+	fix compiler warning.
+
 2000-09-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	patch by jason Thomas <jet@users.sourceforge.net>
 
@@ -930,7 +937,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.367 2000/09/24 02:00:33 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.368 2000/09/24 14:04:51 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

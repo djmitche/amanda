@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.11 2000/07/18 01:45:08 martinea Exp $
+ * $Id: sendsize.c,v 1.97.2.12 2000/09/24 14:04:52 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -928,7 +928,6 @@ long getsize_smbtar(disk, level, exclude_spec)
     FILE *dumpout;
     char *tarkeys, *sharename, *pass, *domain = NULL;
     char *line;
-    int debug_level;
 
     if ((pass = findpass(disk, &domain)) == NULL) {
 	error("[sendsize : error in smbtar diskline, unable to find password]");
