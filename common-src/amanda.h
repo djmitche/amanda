@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.95 2001/07/31 23:19:57 jrjackson Exp $
+ * $Id: amanda.h,v 1.96 2001/09/17 22:18:27 jrjackson Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -354,10 +354,12 @@ extern int errno;
  */
 
 #ifdef DEBUG_CODE
-#   define dbopen()    debug_open()
-#   define dbclose()    debug_close()
-#   define dbprintf(p)  (debug? (debug_printf p, 0) : 0)
-#   define dbfd()    debug_fd()
+#   define dbopen()	debug_open()
+#   define dbclose()	debug_close()
+#   define dbprintf(p)	(debug? (debug_printf p, 0) : 0)
+#   define dbfd()	debug_fd()
+#   define dbfp()	debug_fp()
+#   define dbfn()	debug_fn()
 
 extern void debug_open P((void));
 extern void debug_close P((void));
@@ -365,11 +367,14 @@ extern void debug_printf P((const char *format, ...))
     __attribute__ ((format (printf, 1, 2)));
 extern int  debug_fd P((void));
 extern FILE *  debug_fp P((void));
+extern char *  debug_fn P((void));
 #else
 #   define dbopen()
 #   define dbclose()
 #   define dbprintf(p)
-#   define dbfd()    (-1)
+#   define dbfd()	(-1)
+#   define dbfp()	NULL
+#   define dbfn()	NULL
 #endif
 
 /* amanda #days calculation, with roundoff */

@@ -21,6 +21,7 @@ amgetconf \- look up amanda.conf variables
 looks up parameters in
 .IR amanda.conf ,
 the Amanda configuration file,
+or from the build and runtime environment,
 and returns their corresponding value.
 .LP
 If
@@ -30,6 +31,38 @@ is not specified,
 assumes it is being run from the configuration directory and that
 .I amanda.conf
 is present.
+.LP
+If
+.I parameter
+begins with
+.IR build. ,
+the (case insensitive) string following the period
+is a build environment variable.
+Variables without a value (e.g.\&
+.I XFSDUMP
+on a system that does not support that type of file system)
+will not report an error and will return an empty string as the value.
+Flag variables (e.g.\&
+.IR USE_AMANDAHOSTS )
+will return
+.I 1
+if the flag is set or an empty string if it is not.
+.LP
+If
+.I parameter
+begins with
+.IR dbopen. ,
+the string following the period is a program name and an Amanda debug
+file will be created for the caller.
+The name of the file is returned.
+.LP
+If
+.I parameter
+begins with
+.IR dbclose. ,
+the string following the period is a program name previously used with
+.IR dbopen. ,
+followed by a colon (:) and the previously opened file name.
 .LP
 See the
 .IR amanda (8)
@@ -52,14 +85,34 @@ Find out the current tape type:
 DLT4000-IV
 .fi
 .RE
+.LP
+Find out the default configuration directory:
+.LP
+.RS
+.nf
+% amgetconf @DEFAULT_CONFIG@ build.CONFIG_DIR
+@CONFIG_DIR@
+.fi
+.RE
+.LP
+Create, use and close a debug file in a script:
+.LP
+.RS
+.nf
+% set debug_file = `amgetconf @DEFAULT_CONFIG@ dbopen.myscript`
+% echo debug information >> $debug_file
+% amgetconf @DEFAULT_CONFIG@ dbclose.myscript:$debug_file
+.fi
+.RE
 .SH MESSAGES
 .TP
 amgetconf: no such parameter "\fIparam\fR"
 Parameter
 .I param
-is not a valid
+is not a known keyword
+(e.g. not a valid
 .I amanda.conf
-keyword.
+keyword).
 In this case,
 .B amgetconf
 will write "\fBBUGGY\fR" to stdout as the value.
