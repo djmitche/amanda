@@ -1,4 +1,4 @@
-#!@PERL@
+#!@PERL@ -w
 #
 
 # Run perl.
@@ -88,23 +88,31 @@ if( defined $opt_file) {
 open(AMDUMP,"<$errfile") || die("$errfile: $!");
 print "Using $errfile";
 
+$start_degraded_mode = 0;
+
+$label = "";					# -w fodder
+$origsize = 0;					# -w fodder
+$runq = 0;					# -w fodder
+$stoppedq = 0;					# -w fodder
+$wakeup = 0;					# -w fodder
+
 while(<AMDUMP>) {
 	chomp;
-	if(/^amdump: start at (.*)/) {
+	if(/amdump: start at (.*)/) {
 		print " from $1";
 		$starttime=&unctime(split(/[ 	]+/,$1));
 	}
-	elsif(/^setup_estimate: (\S+):(\S+): command .*, options:.*$/) {
+	elsif(/setup_estimate: (\S+):(\S+): command .*, options:/) {
 		$host=$1;
 		$partition=$2;
-		if($hosts{$host} != 1 ) {
+		if(! defined($hosts{$host})) {
 			push @hosts, $host;
 			$hosts{$host}=1;
 		}
 		$$host=1;
 		push @$host, $partition;
 	}
-	elsif(/^got result for host (\S+) disk (\S+): (\d+) -> (\d+)K, .*$/) {
+	elsif(/got result for host (\S+) disk (\S+): (\d+) -> (\d+)K,/) {
 		$host=$1;
 		$partition=$2;
 		$hostpart="$host$partition";
@@ -112,13 +120,13 @@ while(<AMDUMP>) {
 		$level{$hostpart}=$3;
 		$esize{$hostpart}=$4;
 	}
-	elsif(/^getting estimates took .*$/) {
+	elsif(/getting estimates took/) {
 		$estimate_done=1;
 	}
-	elsif(/^GENERATING SCHEDULE:$/) {
+	elsif(/GENERATING SCHEDULE:/) {
 		$generating_schedule=1;
 	}
-	elsif(/^(\S+) (\S+) (\d+) (\d+) \d+:\d+:\d+:\d+:\d+:\d+ (\d+) \d+$/) {
+	elsif(/^(\S+) (\S+) (\d+) (\d+) \d+:\d+:\d+:\d+:\d+:\d+ (\d+) \d+/) {
 		if($generating_schedule == 1 ) {
 			$host=$1;
 			$partition=$2;
@@ -131,7 +139,7 @@ while(<AMDUMP>) {
 			$degr_level{$hostpart}=-1;
 		}
 	}
-	elsif(/^(\S+) (\S+) (\d+) (\d+) \d+:\d+:\d+:\d+:\d+:\d+ (\d+) \d+ (\d+) \d+:\d+:\d+:\d+:\d+:\d+ ([-]*\d+) \d+$/) {
+	elsif(/^(\S+) (\S+) (\d+) (\d+) \d+:\d+:\d+:\d+:\d+:\d+ (\d+) \d+ (\d+) \d+:\d+:\d+:\d+:\d+:\d+ ([-]*\d+) \d+/) {
 		if($generating_schedule == 1 ) {
 			$host=$1;
 			$partition=$2;
@@ -146,7 +154,7 @@ while(<AMDUMP>) {
 			$degr_size{$hostpart}=32 if ($7 < 32);
 		}
 	}
-	elsif(/^driver: send-cmd time (\S+) to dumper\d*: (FILE-DUMP|PORT-DUMP) (\d+-\d+) (\S+) (\S+) (\S+) (\d+) .*$/) {
+	elsif(/driver: send-cmd time (\S+) to dumper\d*: (FILE-DUMP|PORT-DUMP) (\d+-\d+) (\S+) (\S+) (\S+) (\d+)/) {
 		$host=$5;
 		$partition=$6;
 		$hostpart="$host$partition";
@@ -163,7 +171,7 @@ while(<AMDUMP>) {
 		}
 		$serial{"$serial"}=$hostpart;
 	}
-	elsif(/^driver: result time (\S+) from dumper\d+: FAILED (\d+-\d+) (.*)$/) {
+	elsif(/driver: result time (\S+) from dumper\d+: FAILED (\d+-\d+) (.*)/) {
 		$serial=$2;
 		$error=$3;
 		$hostpart=$serial{$serial};
@@ -171,7 +179,7 @@ while(<AMDUMP>) {
 		$dump_time{$hostpart}=$1;
 		$error{$hostpart}=$error;
 	}
-	elsif(/^driver: result time (\S+) from dumper\d+: TRY-AGAIN (\d+-\d+) (.*)$/) {
+	elsif(/driver: result time (\S+) from dumper\d+: TRY-AGAIN (\d+-\d+) (.*)/) {
 		$serial=$2;
 		$error=$3;
 		$hostpart=$serial{$serial};
@@ -179,7 +187,7 @@ while(<AMDUMP>) {
 		$dump_time{$hostpart}=$1;
 		$error{$hostpart}=$error;
 	}
-	elsif(/^driver: result time (\S+) from dumper\d+: DONE (\d+-\d+) (\d+) (\d+) (\d+) \[.*\]$/) {
+	elsif(/driver: result time (\S+) from dumper\d+: DONE (\d+-\d+) (\d+) (\d+) (\d+) \[.*\]/) {
 		$serial=$2;
 		$origsize=$3;
 		$outputsize=$4;
@@ -188,9 +196,9 @@ while(<AMDUMP>) {
 		$dump_finished{$hostpart}=1;
 		$dump_time{$hostpart}=$1;
 	}
-	elsif(/^driver: finished-cmd time (\S+) dumper\d+ dumped (\S+):(\S+)$/){
+	elsif(/driver: finished-cmd time (\S+) dumper\d+ dumped (\S+):(\S+)/){
 	}
-	elsif(/^driver: send-cmd time (\S+) to taper: FILE-WRITE (\d+-\d+) (\S+) (\S+) (\S+) \d*.*$/){
+	elsif(/driver: send-cmd time (\S+) to taper: FILE-WRITE (\d+-\d+) (\S+) (\S+) (\S+) \d*/){
 		$serial=$2;
 		$host=$4;
 		$partition=$5;
@@ -199,7 +207,7 @@ while(<AMDUMP>) {
 		$taper_started{$hostpart}=1;
 		$taper_time{$hostpart}=$1;
 	}
-	elsif(/^driver: send-cmd time (\S+) to taper: PORT-WRITE (\d+-\d+) (\S+) (\S+) \d*( \d*|)$/){
+	elsif(/driver: send-cmd time (\S+) to taper: PORT-WRITE (\d+-\d+) (\S+) (\S+) \d*( \d*|)/){
 		$serial=$2;
 		$host=$3;
 		$partition=$4;
@@ -208,14 +216,14 @@ while(<AMDUMP>) {
 		$taper_started{$hostpart}=1;
 		$taper_time{$hostpart}=$1;
 	}
-	elsif(/^driver: result time (\S+) from taper: DONE (\d+-\d+) (\S+) .*$/) {
+	elsif(/driver: result time (\S+) from taper: DONE (\d+-\d+) (\S+)/) {
 		$serial=$2;
 		$label=$3;
 		$hostpart=$serial{$serial};
 		$taper_finished{$hostpart}=1;
 		$taper_time{$hostpart}=$1;
 	}
-	elsif(/^driver: result time (\S+) from taper: TAPE-ERROR (\d+-\d+) (.+)$/) {
+	elsif(/driver: result time (\S+) from taper: TAPE-ERROR (\d+-\d+) (.+)/) {
 		$serial=$2;
 		$error=$3;
 		$hostpart=$serial{$serial};
@@ -223,7 +231,7 @@ while(<AMDUMP>) {
 		$taper_time{$hostpart}=$1;
 		$error{$hostpart}=$error;
 	}
-	elsif(/^planner: FAILED (\S+) (\S+) (\d+) (.*)$/) {
+	elsif(/planner: FAILED (\S+) (\S+) (\d+) (.*)/) {
 		$host=$1;
 		$partition=$2;
 		$hostpart="$host$partition";
@@ -231,10 +239,10 @@ while(<AMDUMP>) {
 		$level{$hostpart}=$3;
 		$error{$hostpart}=$4;
 	}
-	elsif(/^dump of driver schedule after start degraded mode:$/) {
+	elsif(/dump of driver schedule after start degraded mode:/) {
 		$start_degraded_mode=1;
 	}
-	elsif(/^driver: state time (\S+) free kps: (\d+) space: (\d+) taper: (\S+) idle-dumpers: (\d+) qlen tapeq: (\d+) runq: (\d+) stoppedq: (\d+) wakeup: (\d+) driver-idle: (\S+)$/) {
+	elsif(/driver: state time (\S+) free kps: (\d+) space: (\d+) taper: (\S+) idle-dumpers: (\d+) qlen tapeq: (\d+) runq: (\d+) stoppedq: (\d+) wakeup: (\d+) driver-idle: (\S+)/) {
 		$free_kps=$2;
 		$free_space=$3;
 		$status_taper=$4;
@@ -250,6 +258,28 @@ while(<AMDUMP>) {
 close(AMDUMP);
 
 print "\n\n";
+
+$epartition = 0;
+$estsize = 0;
+$fpartition = 0;
+$fsize = 0;
+$wpartition = 0;
+$wsize = 0;
+
+$dtpartition = 0;
+$dtesize = 0;
+$dupartition = 0;
+$dusize = 0;
+$duesize = 0;
+$tapartition = 0;
+$tasize = 0;
+$taesize = 0;
+$tfpartition = 0;
+$tfsize = 0;
+$tfesize = 0;
+$twpartition = 0;
+$twsize = 0;
+$twesize = 0;
 
 foreach $host (sort @hosts) {
 	foreach $partition (sort @$host) {
@@ -451,7 +481,7 @@ if ($opt_summary == 1) {
 		printf "%d dumpers idle  : %s\n", $idle_dumpers, $status_driver;
 	}
 	if($status_taper eq "writing") {
-		printf "taper writing, tapeq: %d\n", qlen_tapeq;
+		printf "taper writing, tapeq: %d\n", $qlen_tapeq;
 	}
 	else {
 		printf "taper idle\n";
