@@ -1,4 +1,4 @@
-#!/bin/sh -- # -*- perl -*-
+#!@PERL@
 
 # Run perl.
 eval '(exit $?0)' && eval 'exec @PERL@ -S $0 ${1+"$@"}'
