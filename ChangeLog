@@ -1,3 +1,8 @@
+1998-11-10  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/driver.c (main): total_disksize was only added after
+	the loop terminated, i.e., when hdp was NULL -> crash.  fixed.
+
 1998-11-09  John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/reporter.c (main): ignore SIGPIPE so if a child process

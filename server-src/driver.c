@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.59 1998/11/08 15:22:11 martinea Exp $
+ * $Id: driver.c,v 1.60 1998/11/11 00:36:34 oliva Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -122,8 +122,8 @@ struct timeval sleep_time = { SLEEP_MAX, 0 };
 int any_delayed_disk = 0;
 
 int main(main_argc, main_argv)
-int main_argc;
-char **main_argv;
+     int main_argc;
+     char **main_argv;
 {
     disklist_t *origqp;
     disk_t *diskp;
@@ -254,8 +254,8 @@ char **main_argv;
 		log_add(L_WARNING, "WARNING: directory %s is not writable",
 			newdir);
 	    }
+	    total_disksize += hdp->disksize;
 	}
-	total_disksize += hdp->disksize;
     }
 
     reserved_space = total_disksize * (reserve / 100.0);
