@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.29 2000/11/03 20:39:05 jrjackson Exp $
+ * $Id: driver.c,v 1.58.2.30 2000/11/08 01:55:45 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -549,7 +549,8 @@ disklist_t *rq;
 					sleep_time.tv_sec);
 		any_delayed_disk = 1;
 	    }
-	    else if(sched(diskp)->est_kps > free_kps(diskp->host->netif))
+	    else if(diskp->host->netif->curusage > 0 &&
+		    sched(diskp)->est_kps > free_kps(diskp->host->netif))
 		cur_idle = max(cur_idle, IDLE_NO_BANDWIDTH);
 	    else if((holdp = find_diskspace(sched(diskp)->est_size,&cur_idle,NULL)) == NULL)
 		cur_idle = max(cur_idle, IDLE_NO_DISKSPACE);
@@ -1365,12 +1366,7 @@ interface_t *ip;
 	res = maxusage - curusage;
     }
     else {
-	/* XXX - kludge - if we are currently using nothing
-	**       on this interface then lie and say he can
-	**       have as much as he likes.
-	*/
-	if (ip->curusage == 0) res = 10000;
-	else res = ip->maxusage - ip->curusage;
+	res = ip->maxusage - ip->curusage;
     }
 
     return res;
