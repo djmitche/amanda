@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.22.2.4 1999/02/26 19:42:30 th Exp $
+ * $Id: amtape.c,v 1.22.2.5 1999/03/16 20:43:45 th Exp $
  *
  * tape changer interface program
  */
@@ -55,6 +55,8 @@ int show_init_all P((int rc, int ns, int bk));
 int show_init_current P((int rc, int ns, int bk));
 int show_slot P((int rc, char *slotstr, char *device));
 int taperscan_slot P((int rc, char *slotstr, char *device));
+int update_one_slot P((int rc, char *slotstr, char *device));
+void update_labeldb P((int argc, char **argv));
 
 void usage()
 {
@@ -74,6 +76,7 @@ void usage()
     fprintf(stderr, "\t\tlabel <label>        find and load labeled tape\n");
     fprintf(stderr, "\t\ttaper                perform taper's scan alg.\n");
     fprintf(stderr, "\t\tdevice               show current tape device\n");
+    fprintf(stderr, "\t\tupdate               update the label matchingdatabase\n");
 
     exit(1);
 }
@@ -155,6 +158,7 @@ char **argv;
     else if(strcmp(argv[0], "show") == 0)  show_slots(argc, argv);
     else if(strcmp(argv[0], "taper") == 0) taper_scan(argc, argv);
     else if(strcmp(argv[0], "device") == 0) show_device(argc, argv);
+    else if(strcmp(argv[0], "update") == 0) update_labeldb(argc, argv);
     else {
 	fprintf(stderr, "%s: unknown command \"%s\"\n", argv0, argv[0]);
 	usage();
@@ -361,6 +365,28 @@ int rc, ns, bk;
     return ret;
 }
 
+int update_one_slot(rc, slotstr, device)
+int rc;
+char *slotstr, *device;
+{
+    char *errstr;
+
+    if(rc > 1)
+	error("could not load slot %s: %s", slotstr, changer_resultstr);
+    else if(rc == 1)
+	fprintf(stderr, "slot %s: %s\n", slotstr, changer_resultstr);
+    else if((errstr = tape_rdlabel(device, &datestamp, &label)) != NULL)
+	fprintf(stderr, "slot %s: %s\n", slotstr, errstr);
+    else {
+	fprintf(stderr, "slot %s: date %-8s label %s\n",
+		slotstr, datestamp, label);
+	changer_label(slotstr,label);
+    }
+    amfree(datestamp);
+    amfree(label);
+    return 0;
+}
+
 int show_slot(rc, slotstr, device)
 int rc;
 char *slotstr, *device;
@@ -376,7 +402,6 @@ char *slotstr, *device;
     else {
 	fprintf(stderr, "slot %s: date %-8s label %s\n",
 		slotstr, datestamp, label);
-	changer_label(0,label);
     }
     amfree(datestamp);
     amfree(label);
@@ -391,6 +416,16 @@ char **argv;
 	usage();
 
     changer_current(show_init_current, show_slot);
+}
+
+void update_labeldb(argc, argv)
+int argc;
+char **argv;
+{
+    if(argc != 1)
+	usage();
+
+    changer_scan(show_init_all, update_one_slot);
 }
 
 void show_slots(argc, argv)

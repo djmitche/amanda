@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.14.4.2 1999/02/26 19:42:32 th Exp $
+ * $Id: changer.c,v 1.14.4.3 1999/03/16 20:43:48 th Exp $
  *
  * interface routines for tape changers
  */
@@ -403,7 +403,7 @@ char *searchlabel, **outslotstr, **devicename;
    slot is known. e.g. during library scan.
 */
 int changer_label (slotsp,labelstr)
-int slotsp; 
+char *slotsp; 
 char *labelstr;
 {
     int rc;
@@ -412,11 +412,13 @@ char *labelstr;
     char *curslotstr = NULL;
     int nslots, backwards, searchable;
 
-    dbprintf(("changer_label: %s\n",labelstr));
+    dbprintf(("changer_label: %s for slot %s\n",labelstr,slotsp));
     rc = changer_query(&nslots, &curslotstr, &backwards,&searchable);
 
-    if ((rc == 0) && (searchable == 1))
+    if ((rc == 0) && (searchable == 1)){
+      dbprintf(("changer_label: calling changer -label %s\n",labelstr));
       rc = run_changer_command("-label", labelstr, &slotstr, &rest);
+    }
 
     if(rc) return rc;
 

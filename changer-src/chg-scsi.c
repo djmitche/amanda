@@ -1,5 +1,5 @@
 /*
- *  $Id: chg-scsi.c,v 1.6.2.12 1999/03/04 20:47:35 th Exp $
+ *  $Id: chg-scsi.c,v 1.6.2.13 1999/03/16 20:43:23 th Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -860,8 +860,7 @@ int main(int argc, char *argv[])
       {
         if ((pTapeDev = OpenDevice(tape_device, "tape_device")) == NULL)
           {
-            printf("open: %s: failed\n",  tape_device);
-            return(2);
+            dbprintf(("warning open of %s: failed\n",  tape_device));
           }
       }
 
@@ -873,9 +872,14 @@ int main(int argc, char *argv[])
             return(2);
           }
       } else {
-        if (pTapeDev->SCSI == 1)
+        if (pTapeDev != NULL && pTapeDev->SCSI == 1)
           {
             pTapeDevCtl = pTapeDev;
+          } else { 
+            if (pChangerDev != NULL && pChangerDev->SCSI == 1)
+              {
+                pTapeDevCtl = pChangerDev;
+              }
           }
       }
 

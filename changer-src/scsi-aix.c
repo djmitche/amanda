@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-aix.c,v 1.1.2.10 1999/03/04 20:47:37 th Exp $";
+static char rcsid[] = "$Id: scsi-aix.c,v 1.1.2.11 1999/03/16 20:43:25 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an AIX System
@@ -55,9 +55,9 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
             {
               for (i=0;i < 16 ;i++)
                 pwork->ident[i] = pwork->inquiry->prod_ident[i];
-              for (i=15; i >= 0 && !isalnum(pwork->inquiry->prod_ident[i]) ; i--)
+              for (i=15; i >= 0 && !isalnum(pwork->ident[i]) ; i--)
                 {
-                  pwork->inquiry->prod_ident[i] = '\0';
+                  pwork->ident[i] = '\0';
                 }
               pwork->SCSI = 1;
               PrintInquiry(pwork->inquiry);

@@ -1,3 +1,23 @@
+1999-03-15 Thomas Hepper <th@ant.han.de>
+	* changer-src/chg-scsi.c: If the open of the TapeDevice fails
+	the programm is not terminated.
+	* changer-src/scsi-aix.c: The wrong ident string was checked
+	for 0 termination.
+	* changer-src/scsi-bsd.c: see scsi-aix.c
+	* changer-src/scsi-linux.c: see scsi-aix.c
+	* changer-src/scsi-solaris.c: see scsi-aix.c
+	* changer-src/scsi-changer-driver.c: Added some more debug prints.
+	Wrong fd passwd to LogSense.
+	* docs/TAPE.CHANGERS: added note about linux and aha1542
+
+1999-03-15   Michael Povel  <mcp@ladyada.han.de>
+	* server-src/amlabel.c: Wrong parameter to changer_label
+	* server-src/amtape.c: New function update_one_slot,
+	update_labeldb
+	* server-src/changer.c: Changed slotsp from int to char, some
+	debug prints.
+	* server-src/changer.h: Changed prototype for changer_label
+
 1999-03-15  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* config/ltconfig, config/ltmain.sh: updated from libtool 1.2f

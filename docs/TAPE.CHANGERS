@@ -434,6 +434,8 @@ into the kernel. If the sg driver doses not work try to use the ioctl interface.
 For that you have to undef the LINUX_CHG define in changer-src/scsi-linux.c
 Also you have to change the NORMAL_TIMEOUT in /usr/src/linux/drivers/scsi/scsi_ioctl.c
 from (10 * HZ) to (5 * 60 * HZ).
+On linux it does not run if you are using an aha1542 SCSI controller. The
+driver can not handle the extended request sense.
 
 On IRIX you find the SCSI pass through interfaces for every device in /dev/scsi
 
@@ -450,6 +452,9 @@ Also amdump will find tapes faster. Every time a tape is labeled the information
 in the labelfile will be updated. To initialize the label mapping you can also
 do an amtape config show. This will put the mapping for all tapes in the magazine
 into the mapping file.
+
+For all problems please contact th@ant.han.de. Please include in your
+mail the debug file. (/tmp/amanda/chg-scsi.debug)
 
 
 chg-chio: (new perl script, that replaces the original chg-chio written in C)

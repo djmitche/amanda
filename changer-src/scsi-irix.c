@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-irix.c,v 1.1.2.10 1999/03/04 20:47:47 th Exp $";
+static char rcsid[] = "$Id: scsi-irix.c,v 1.1.2.11 1999/03/16 20:43:32 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an SGI Workstation
@@ -78,7 +78,6 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
           }
       return(pwork);
     }
-
   return(NULL); 
 }
 
