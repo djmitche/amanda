@@ -1,3 +1,7 @@
+2001-12-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* changer-src/Makefile.am: fix setting of libexec_PROGRAMS.
+
 2001-12-09  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amstatus.pl.in: Work with amflush log.

@@ -13,8 +13,10 @@ CHIO_SCSI = chg-scsi-chio
 endif
 
 if WANT_CHG_SCSI
-libexec_PROGRAMS =	chg-scsi $(CHIO_SCSI)
+CHG_SCSI = chg-scsi
 endif
+
+libexec_PROGRAMS =	$(CHG_SCSI) $(CHIO_SCSI)
 
 libexec_SCRIPTS =	chg-manual	chg-multi	chg-mtx		\
 			chg-rth		chg-chs		chg-chio	\
