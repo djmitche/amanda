@@ -42,6 +42,10 @@
 
 Version 2.4.0p1
 
+	implement `strategy skip' just like `ignore'.
+	-oliva,
+	reported by Michael O'Shaughnessy <mikeo@emg.sms.siemens.com>
+
 	amcheck now checks whether COMPRESS_PATH is executable, which
 	would prevent server-compression and indexing from working.
 	-oliva, reported by Peter Schultze <peter@mbi.ucla.edu>

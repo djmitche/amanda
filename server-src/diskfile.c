@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.22 1998/02/26 19:25:09 jrj Exp $
+ * $Id: diskfile.c,v 1.23 1998/04/07 22:57:11 amcore Exp $
  *
  * read disklist file
  */
@@ -323,7 +323,7 @@ static int read_diskline()
 	parserror("end of line expected");
     }
 
-    if(dtype->ignore) {
+    if(dtype->ignore || dtype->strategy == DS_SKIP) {
 	return 1;
     }
 
