@@ -1264,10 +1264,10 @@ else
 fi
 AC_DEFINE_UNQUOTED(COMPRESS_PATH,"$COMPRESS_PATH",[Define to the exact path to the gzip or the compress program. ])
 AC_DEFINE_UNQUOTED(COMPRESS_SUFFIX,"$COMPRESS_SUFFIX",[Define to the suffix for the COMPRESS_PATH compression program. ])
-AC_DEFINE_UNQUOTED(COMPRESS_FAST_OPT,"COMPRESS_FAST_OPT",[Define as the command line option for fast compression. ])
-AC_DEFINE_UNQUOTED(COMPRESS_BEST_OPT,"COMPRESS_BEST_OPT",[Define as the command line option for best compression. ])
-AC_DEFINE_UNQUOTED(UNCOMPRESS_PATH,"UNCOMPRESS_PATH",[Define as the exact path to the gzip or compress command. ])
-AC_DEFINE_UNQUOTED(UNCOMPRESS_OPT,"UNCOMPRESS_OPT",[Define as any optional arguments to get UNCOMPRESS_PATH to uncompress. ])
+AC_DEFINE_UNQUOTED(COMPRESS_FAST_OPT,"$COMPRESS_FAST_OPT",[Define as the command line option for fast compression. ])
+AC_DEFINE_UNQUOTED(COMPRESS_BEST_OPT,"$COMPRESS_BEST_OPT",[Define as the command line option for best compression. ])
+AC_DEFINE_UNQUOTED(UNCOMPRESS_PATH,"$UNCOMPRESS_PATH",[Define as the exact path to the gzip or compress command. ])
+AC_DEFINE_UNQUOTED(UNCOMPRESS_OPT,"$UNCOMPRESS_OPT",[Define as any optional arguments to get UNCOMPRESS_PATH to uncompress. ])
 
 AC_PATH_PROGS(MAILER,Mail mailx mail)
 if test "$MAILER"; then
