@@ -1,3 +1,8 @@
+1998-12-27  John R. Jackson  <jrj@purdue.edu>
+
+	* example/3hole.ps: new lbl-templ file for 3 hole punch reports
+	* example/Makefile.am: add 3hole.ps
+
 1998-12-22  Thomas Hepper <th@icem.de>
 
 	* docs/TAPE.CHANGERS Update notes about chg-scsi
