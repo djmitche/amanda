@@ -1042,6 +1042,7 @@ dnl the backup program while AIX systems can't use the dump program.  So
 dnl a variable is set up here to specify the order of dump programs to
 dnl search for on the system.
 DUMP_PROGRAMS="ufsdump dump backup"
+GETCONF_LFS="LFS"
 
 case "$target" in
     *-dec-osf*)
@@ -1058,8 +1059,10 @@ case "$target" in
 			;;
     *-hp-*)
 			MT_FILE_FLAG="-t"
+			GETCONF_LFS="XBS5_ILP32_OFFBIG"
 			case "$CC" in
 			    *gcc*)
+				AMANDA_CPPFLAGS="-D__STDC_EXT__ $AMANDA_CPPFLAGS"
 				;;
 			    *cc*)
 				AMANDA_CFLAGS="-Ae $AMANDA_CFLAGS"
@@ -1428,8 +1431,8 @@ AC_CACHE_CHECK(
     [
 	amanda_cv_LFS_CFLAGS=
 	if test "$GETCONF"; then
-	    if $GETCONF LFS_CFLAGS >/dev/null 2>&1; then
-		amanda_cv_LFS_CFLAGS=`$GETCONF LFS_CFLAGS 2>/dev/null`
+	    if $GETCONF ${GETCONF_LFS}_CFLAGS >/dev/null 2>&1; then
+		amanda_cv_LFS_CFLAGS=`$GETCONF ${GETCONF_LFS}_CFLAGS 2>/dev/null`
 	    fi
 	fi
     ]
@@ -1440,8 +1443,8 @@ AC_CACHE_CHECK(
     [
 	amanda_cv_LFS_LDFLAGS=
 	if test "$GETCONF"; then
-	    if $GETCONF LFS_LDFLAGS >/dev/null 2>&1; then
-		amanda_cv_LFS_LDFLAGS=`$GETCONF LFS_LDFLAGS 2>/dev/null`
+	    if $GETCONF ${GETCONF_LFS}_LDFLAGS >/dev/null 2>&1; then
+		amanda_cv_LFS_LDFLAGS=`$GETCONF ${GETCONF_LFS}_LDFLAGS 2>/dev/null`
 	    fi
 	fi
     ]
@@ -1452,8 +1455,8 @@ AC_CACHE_CHECK(
     [
 	amanda_cv_LFS_LIBS=
 	if test "$GETCONF"; then
-	    if $GETCONF LFS_LIBS >/dev/null 2>&1; then
-		amanda_cv_LFS_LIBS=`$GETCONF LFS_LIBS 2>/dev/null`
+	    if $GETCONF ${GETCONF_LFS}_LIBS >/dev/null 2>&1; then
+		amanda_cv_LFS_LIBS=`$GETCONF ${GETCONF_LFS}_LIBS 2>/dev/null`
 	    fi
 	fi
     ]
