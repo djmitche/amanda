@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: holding.c,v 1.12 1998/03/07 18:12:59 martinea Exp $
+ * $Id: holding.c,v 1.13 1998/03/09 23:03:57 blair Exp $
  *
  * Functions to access holding disk
  */
@@ -221,7 +221,7 @@ char **pick_datestamp()
 {
     holdingdisk_t *hdisk;
     struct dirname *dir;
-    int picked, i;
+    int i;
     char ** directories_names;
     struct dirname **directories;
     char answer[1024], *result;
