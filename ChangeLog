@@ -1,5 +1,10 @@
 2000-11-22 John R. Jackson  <jrj@purdue.edu>
 
+	* contrib/dbbackup.ksh: Deal with adm being a symlink.
+	* contrib/dbbackup.tcl: Update for Tcl 8.3 and newer Oratcl versions.
+
+2000-11-22 John R. Jackson  <jrj@purdue.edu>
+
 	* Makefile.am: Forgot to add contrib/sst/README.Amanda to the list
 	  of files to put in a distribution.
 
@@ -1204,7 +1209,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.413 2000/11/22 12:09:41 jrjackson Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.414 2000/11/22 12:14:49 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
