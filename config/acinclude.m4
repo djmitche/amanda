@@ -31,28 +31,28 @@ AC_DEFUN(AMANDA_FUNC_SHM_ARG_TYPE,
 	    [
 		if test "$ac_cv_func_shmget" = yes; then
 		    cat <<EOF >conftest.$ac_ext
-			#include "confdefs.h"
-			#ifdef HAVE_SYS_TYPES_H
-			# include <sys/types.h>
-			#endif
-			#ifdef HAVE_SYS_IPC_H
-			# include <sys/ipc.h>
-			#endif
-			#ifdef HAVE_SYS_SHM_H
-			# include <sys/shm.h>
-			#endif
+#include "confdefs.h"
+#ifdef HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_IPC_H
+# include <sys/ipc.h>
+#endif
+#ifdef HAVE_SYS_SHM_H
+# include <sys/shm.h>
+#endif
 
-			#ifdef __cplusplus
-			extern "C" void *shmat(int, void *, int);
-			#else
-			void *shmat();
-			#endif
+#ifdef __cplusplus
+extern "C" void *shmat(int, void *, int);
+#else
+void *shmat();
+#endif
 
-			int main()
-			{
-			    int i;
-			    return 0;
-			}
+int main()
+{
+    int i;
+    return 0;
+}
 EOF
 		    ${CC-cc} -c $CFLAGS $CPPFLAGS conftest.$ac_ext >/dev/null 2>/dev/null
 		    if test $? = 0; then
@@ -79,32 +79,32 @@ AC_DEFUN(AMANDA_FUNC_SELECT_ARG_TYPE,
 	    [
 		rm -f conftest.c
 		cat <<EOF >conftest.$ac_ext
-		    #include "confdefs.h"
-		    #ifdef HAVE_SYS_TIME_H
-		    # include <sys/time.h>
-		    #endif
-		    #ifdef HAVE_SYS_TYPES_H
-		    # include <sys/types.h>
-		    #endif
-		    #ifdef HAVE_SYS_SELECT_H
-		    #  include <sys/select.h>
-		    #endif
-		    #ifdef HAVE_SYS_SOCKET_H
-		    #  include <sys/socket.h>
-		    #endif
-		    #ifdef HAVE_UNISTD_H
-		    # include <unistd.h>
-		    #endif
+#include "confdefs.h"
+#ifdef HAVE_SYS_TIME_H
+# include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SELECT_H
+#  include <sys/select.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#  include <sys/socket.h>
+#endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 
-		    int main()
-		    {
-		    #ifdef FD_SET_POINTER
-			(void)select(0, (fd_set *) 0, (fd_set *) 0, (fd_set *) 0, 0);
-		    #else
-			(void)select(0, (int *) 0, (int *) 0, (int *) 0, 0);
-		    #endif
-			return 0;
-		    }
+int main()
+{
+#ifdef FD_SET_POINTER
+	(void)select(0, (fd_set *) 0, (fd_set *) 0, (fd_set *) 0, 0);
+#else
+	(void)select(0, (int *) 0, (int *) 0, (int *) 0, 0);
+#endif
+	return 0;
+}
 EOF
 
 		dnl Figure out the select argument type by first trying to
@@ -153,31 +153,31 @@ AC_DEFUN(AMANDA_FUNC_SETSOCKOPT_SO_SNDTIMEO,
 	    [
 		AC_TRY_RUN(
 		    [
-			#include <sys/types.h>
-			#include <sys/socket.h>
-			#ifdef TIME_WITH_SYS_TIME
-			#  include <sys/time.h>
-			#  include <time.h>
-			#else
-			#  ifdef HAVE_SYS_TIME_H
-			#    include <sys/time.h>
-			#  else
-			#    include <time.h>
-			#  endif
-			#endif
+#include <sys/types.h>
+#include <sys/socket.h>
+#ifdef TIME_WITH_SYS_TIME
+#  include <sys/time.h>
+#  include <time.h>
+#else
+#  ifdef HAVE_SYS_TIME_H
+#    include <sys/time.h>
+#  else
+#    include <time.h>
+#  endif
+#endif
 
-			main() {
-			#ifdef SO_SNDTIMEO
-			    int sock = socket(AF_INET, SOCK_STREAM, 0);
-			    struct timeval timeout;
-			    timeout.tv_sec = 1;
-			    timeout.tv_usec = 0;
-			    return (setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO,
-		                     (void *)&timeout, sizeof(timeout)));
-			#else
-			    return -1;
-			#endif
-			}
+main() {
+#ifdef SO_SNDTIMEO
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    struct timeval timeout;
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 0;
+    return (setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO,
+             (void *)&timeout, sizeof(timeout)));
+#else
+    return -1;
+#endif
+}
 		    ],
 		    amanda_cv_setsockopt_SO_SNDTIMEO=yes,
 		    amanda_cv_setsockopt_SO_SNDTIMEO=no,
@@ -242,16 +242,16 @@ AC_DEFUN(AMANDA_FUNC_GETTIMEOFDAY_ARGS,
 	    [
 		AC_TRY_COMPILE(
 		    [
-			#ifdef TIME_WITH_SYS_TIME
-			#  include <sys/time.h>
-			#  include <time.h>
-			#else
-			#  ifdef HAVE_SYS_TIME_H
-			#    include <sys/time.h>
-			#  else
-			#    include <time.h>
-			#  endif
-			#endif
+#ifdef TIME_WITH_SYS_TIME
+#  include <sys/time.h>
+#  include <time.h>
+#else
+#  ifdef HAVE_SYS_TIME_H
+#    include <sys/time.h>
+#  else
+#    include <time.h>
+#  endif
+#endif
 		    ],
 		    [
 			struct timeval val;
@@ -308,22 +308,22 @@ AC_DEFUN(AMANDA_TYPE_PID_T,
 		    if test $amanda_cv_pid_type = unknown; then
 			AC_EGREP_CPP(typedef.*${TEST_amanda_cv_pid_type}.*pid_t,
 			    [
-				#include <sys/types.h>
-				#if STDC_HEADERS
-				#include <stdlib.h>
-				#include <stddef.h>
-				#endif
+#include <sys/types.h>
+#if STDC_HEADERS
+#include <stdlib.h>
+#include <stddef.h>
+#endif
 			    ],
 			amanda_cv_pid_type=$TEST_amanda_cv_pid_type)
 		    fi
 		    if test $amanda_cv_pid_type = unknown; then
 			AC_EGREP_CPP(ZZZZ.*${TEST_amanda_cv_pid_type},
 			    [
-				#include <sys/types.h>
-				#if STDC_HEADERS
-				#include <stdlib.h>
-				#include <stddef.h>
-				#endif
+#include <sys/types.h>
+#if STDC_HEADERS
+#include <stdlib.h>
+#include <stddef.h>
+#endif
 				ZZZZ pid_t
 			],
 			amanda_cv_pid_type=$TEST_amanda_cv_pid_type)

@@ -1,3 +1,6 @@
+	# directives must not be indented in configure scripts.
+	-Gregory Neil Shapiro <gshapiro@WPI.EDU>
+
 	enabled BSD security by default.
 
 	fixed estimate command for XFSDUMP.
