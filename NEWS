@@ -1,5 +1,7 @@
 Changes in release 2.4.1
- 
+
+* Space to be use as holding disk can now be "use all space except ??? Kb"
+  using a negative value for the 'use' parameter.
 * FAQ for new users, in docs/FAQ
 * New `chg-scsi' tape changer program, that replaces chg-chio and uses
   tape-changer-related ioctls on OSs that support them

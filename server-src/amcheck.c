@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.45 1998/07/04 00:19:23 oliva Exp $
+ * $Id: amcheck.c,v 1.46 1998/07/04 15:53:10 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -497,15 +497,30 @@ int fd;
 		    hdp->diskdir, hdp->disksize);
 	    disklow = 1;
 	}
-	else if(fs.avail < hdp->disksize) {
-	    fprintf(outf,
-		    "WARNING: %s: only %ld KB free (%ld KB requested).\n",
-		    hdp->diskdir, fs.avail, hdp->disksize);
-	    disklow = 1;
+	else if(hdp->disksize > 0) {
+	    if(fs.avail < hdp->disksize) {
+		fprintf(outf,
+			"WARNING: %s: only %ld KB free (%ld KB requested).\n",
+			hdp->diskdir, fs.avail, hdp->disksize);
+		disklow = 1;
+	    }
+	    else
+		fprintf(outf,
+			"%s: %ld KB disk space available, that's plenty.\n",
+			hdp->diskdir, fs.avail);
 	}
-	else
-	    fprintf(outf, "%s: %ld KB disk space available, that's plenty.\n",
-		    hdp->diskdir, fs.avail);
+	else {
+	    if(fs.avail < -hdp->disksize) {
+		fprintf(outf,
+			"WARNING: %s: only %ld KB free, using nothing.\n",
+			hdp->diskdir, fs.avail);
+		disklow = 1;
+	    }
+	    else
+		fprintf(outf,
+			"%s: %ld KB disk space available, using %ld KB.\n",
+			hdp->diskdir, fs.avail, fs.avail + hdp->disksize);
+	}
     }
 
     /* check that the log file is writable if it already exists */

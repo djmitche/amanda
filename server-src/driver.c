@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.45 1998/07/04 00:19:50 oliva Exp $
+ * $Id: driver.c,v 1.46 1998/07/04 15:53:12 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -214,13 +214,23 @@ char **main_argv;
 	    }
 
 	    if(fs.avail != -1) {
-		if(hdp->disksize > fs.avail) {
-		    log_add(L_WARNING,
-			    "WARNING: %s: %ld KB requested, but only %ld KB available.",
-			    hdp->diskdir, hdp->disksize, fs.avail);
-
-		    hdp->disksize = fs.avail;
+		if(hdp->disksize > 0) {
+		    if(hdp->disksize > fs.avail) {
+			log_add(L_WARNING,
+				"WARNING: %s: %ld KB requested, but only %ld KB available.",
+				hdp->diskdir, hdp->disksize, fs.avail);
+				hdp->disksize = fs.avail;
+		    }
 		}
+		else if(fs.avail + hdp->disksize < 0) {
+		    log_add(L_WARNING,
+			    "WARNING: %s: not %ld KB free.",
+			    hdp->diskdir, -hdp->disksize);
+		    hdp->disksize = 0L;
+		    continue;
+		}
+		else
+		    hdp->disksize += fs.avail;
 	    }
 
 	    printf("driver: adding holding disk %d dir %s size %ld\n",

@@ -81,6 +81,8 @@ holdingdisk hd1 {
     comment "main holding disk"
     directory "/dumps/amanda"	# where the holding disk is
     use 290 Mb		# how much space can we use on it
+			# a negative value mean:
+			#        use all space except that value
     chunksize -1 	# size of chunk if you want big dump to be
 			# dumped on multiple files on holding disks
 			#	-1 dont split
