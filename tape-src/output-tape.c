@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-tape.c,v 1.1.2.6 2001/08/09 23:56:42 jrjackson Exp $
+ * $Id: output-tape.c,v 1.1.2.6.2.1 2002/01/01 21:18:12 martinea Exp $
  *
  * tapeio.c virtual tape interface for normal tape drives.
  */
@@ -315,7 +315,7 @@ tape_tapefd_rewind(fd)
     int fd;
 {
     struct mtop mt;
-    int rc, cnt;
+    int rc=-1, cnt;
 
     mt.mt_op = MTREW;
     mt.mt_count = 1;
@@ -343,7 +343,7 @@ tape_tapefd_unload(fd)
     int fd;
 {
     struct mtop mt;
-    int rc, cnt;
+    int rc=-1, cnt;
 
 #ifdef MTUNLOAD
     mt.mt_op = MTUNLOAD;
