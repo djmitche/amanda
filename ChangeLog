@@ -1,5 +1,9 @@
 2002-02-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* client-src/client_util.c (add_exclude, add_include): Typo.
+
+2002-02-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* client-src/client_util.c (build_include, build_exclude): Fix for 
 	  bad eof detection.
 
