@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.10 1998/12/03 19:20:37 kashmir Exp $
+ * $Id: bsd-security.c,v 1.11 1998/12/03 19:23:48 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -678,15 +678,6 @@ recv_security_ok(bh, pkt)
     char *tok, *security, *body;
 
     /*
-     * First, make sure the remote port is a "reserved" one
-     */
-    if (ntohs(bh->peer.sin_port) >= IPPORT_RESERVED) {
-	security_seterror(&bh->security_handle, "host %s: port %d not secure",
-	    bh->hostname, ntohs(bh->peer.sin_port));
-	return (-1);
-    }
-
-    /*
      * Set this preempively before we mangle the body.  
      */
     security_seterror(&bh->security_handle, "bad SECURITY line: '%s'",
@@ -722,6 +713,16 @@ recv_security_ok(bh, pkt)
      */
     switch (pkt->type) {
     case P_REQ:
+	/*
+	 * Request packets must come from a reserved port
+	 */
+	if (ntohs(bh->peer.sin_port) >= IPPORT_RESERVED) {
+	    security_seterror(&bh->security_handle,
+		"host %s: port %d not secure", bh->hostname,
+		ntohs(bh->peer.sin_port));
+	    return (-1);
+	}
+
 	/*
 	 * Request packets contain a remote username.  We need to check
 	 * that we allow it in.
