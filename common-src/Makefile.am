@@ -58,6 +58,7 @@ version.c:	$(srcdir)/genversion.c versuff.c $(srcdir)/version.h
 	./genversion > version.c
 	rm -f genversion genversion.o versuff.o
 
+.deps/match.P match.o match.lo: regex.h
 .deps/regcomp.P regcomp.o regcomp.lo: regex.h regcomp.ih
 .deps/regexec.P regexec.o regexec.lo: regex.h engine.ih
 .deps/regerror.P regerror.o regerror.lo: regex.h regerror.ih
