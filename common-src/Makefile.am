@@ -71,7 +71,12 @@ REGEXHSRC =	$(REGsrcdir)/regex2.h \
 		$(REGsrcdir)/regerror.c \
 		$(REGsrcdir)/regfree.c
 
-CLEANFILES = regex.h regcomp.ih engine.ih regerror.ih
+# these are used for testing only:
+TEST_PROGS = statfs token file
+
+EXTRA_PROGRAMS = $(TEST_PROGS)
+
+CLEANFILES = regex.h regcomp.ih engine.ih regerror.ih *.test.c
 
 DISTCLEANFILES = version.c
 
@@ -87,14 +92,12 @@ engine.ih: $(REGsrcdir)/engine.c $(REGsrcdir)/mkh
 regerror.ih: $(REGsrcdir)/regerror.c $(REGsrcdir)/mkh
 	sh $(REGsrcdir)/mkh -o -p $(REGsrcdir)/regerror.c >$@
 
+# used for testing only
 
-LINK_TEST=$(COMPILE) $(LDFLAGS) -DTEST
+statfs_SOURCES = statfs.test.c
+token_SOURCES = token.test.c
+file_SOURCES = file.test.c
 
-statfs: $(srcdir)/statfs.c $(srcdir)/statfs.h
-	$(LINK_TEST) $(srcdir)/statfs.c -o statfs
-
-token: $(srcdir)/token.c $(srcdir)/token.h libamanda.la libamnolog.la
-	$(LINK_TEST) $(srcdir)/token.c -o token .libs/libamanda.a .libs/libamnolog.a
-
-file: $(srcdir)/file.c libamanda.la libamnolog.la
-	$(LINK_TEST) $(srcdir)/file.c -o file .libs/libamanda.a .libs/libamnolog.a
+%.test.c: $(srcdir)/%.c
+	echo '#define TEST' >$@
+	echo '#include "$<"' >>$@

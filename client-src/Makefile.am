@@ -25,10 +25,14 @@ SUFFIXES =		.sh .pl
 
 libexec_PROGRAMS =	versionsuffix		@BUILD_CLIENT_PROGS_LIBEXEC@
 
+# these are used for testing only:
+TEST_PROGS = getfsent
+
 EXTRA_PROGRAMS =	amandad			calcsize	\
 			rundump			runtar		\
 			selfcheck		sendbackup	\
-			sendsize
+			sendsize				\
+			$(TEST_PROGS)
 
 sbin_SCRIPTS =		@BUILD_CLIENT_SCRIPTS_SBIN@
 
@@ -88,7 +92,8 @@ install-exec-hook:
 		fi; \
 	done
 
-LINK_TEST=$(COMPILE) $(LDFLAGS) -DTEST
+getfsent_SOURCES = getfsent.test.c
 
-getfsent: $(srcdir)/getfsent.c $(srcdir)/getfsent.h
-	$(LINK_TEST) $(srcdir)/getfsent.c -o getfsent
+%.test.c: $(srcdir)/%.c
+	echo '#define TEST' >$@
+	echo '#include "$<"' >>$@
