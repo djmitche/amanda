@@ -1,3 +1,8 @@
+2002-03-24  John R. Jackson (jrj@purdue.edu)
+
+	* man/amanda.8.in: Move "comment" in tapetype after inclusion of
+	  previous definition.  Found by Uncle George <gatgul@voicenet.com>.
+
 2002-03-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* client-src/client_util.c (fixup_relative): New function to prepend 
