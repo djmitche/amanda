@@ -24,6 +24,10 @@ amrestore \- extract backup images from an Amanda tape
 .I blocksize
 ]
 [
+.B \-f
+.I fileno
+]
+[
 .B \-p
 ]
 [
@@ -124,6 +128,9 @@ should normally be able to determine the blocksize for tapes
 on its own and not need this parameter.
 .IP
 The default is 32 KBytes.
+.TP
+.B \-f
+Do a rewind followed by a fsf <fileno> before trying to restore an image.
 .TP
 .B \-p
 Pipe output.
