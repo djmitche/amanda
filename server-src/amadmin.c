@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.13 1997/11/11 20:34:52 blair Exp $
+ * $Id: amadmin.c,v 1.14 1997/11/17 12:47:36 amcore Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -677,6 +677,13 @@ void print_find_result()
 	if(len>max_len_status) max_len_status=len;
     }
 
+    /*
+     * Since status is the rightmost field, we zap the maximum length
+     * because it is not needed.  The code is left in place in case
+     * another column is added later.
+     */
+    max_len_status = 1;
+
     printf("\ndate%*s host%*s disk%*s lv%*s tape or file%*s file%*s status\n",
 	   max_len_datestamp-4,"",
 	   max_len_hostname-4 ,"",
@@ -688,7 +695,7 @@ void print_find_result()
 	output_find_result;
 	output_find_result=output_find_result->next) {
 
-	printf("%-*s %-*s %-*s %-*d %-*s %-*d %-*s\n",
+	printf("%-*s %-*s %-*s %*d %-*s %*d %-*s\n",
 		max_len_datestamp, output_find_result->datestamp,
 		max_len_hostname,  output_find_result->hostname,
 		max_len_diskname,  output_find_result->diskname,
