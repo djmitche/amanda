@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.47 2002/03/31 21:02:00 jrjackson Exp $
+ * $Id: amandad.c,v 1.48 2002/03/31 21:08:40 jrjackson Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -822,7 +822,7 @@ s_processrep(as, action, pkt)
 	pkt_cat(&as->rep_pkt, "\n%s", nextbuf);
     } else {
 error:
-	pkt_cat(&as->rep_pkt, as->repbuf);
+	pkt_cat(&as->rep_pkt, "%s", as->repbuf);
     }
 
     /*

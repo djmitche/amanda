@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.39 2002/03/31 21:02:00 jrjackson Exp $
+ * $Id: bsd-security.c,v 1.40 2002/03/31 21:08:40 jrjackson Exp $
  *
  * "BSD" security module
  */
@@ -1414,7 +1414,7 @@ str2pkthdr()
 
     /* Save the body, if any */       
     if ((tok = strtok(NULL, "")) != NULL)
-	pkt_cat(pkt, tok);
+	pkt_cat(pkt, "%s", tok);
 
     amfree(str);
     return (0);
