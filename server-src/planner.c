@@ -481,7 +481,7 @@ disk_t *dp;
 
     if(inf.command == PLANNER_FORCE) {
 	/* force a level 0, kind of like a new disk */
-	if(dp->no_full) {
+	if(dp->strategy == DS_NOFULL) {
 	    /* 
 	     * XXX - Not sure what it means to force a no-full disk.  The
 	     * purpose of no-full is to just dump changes relative to a
@@ -603,7 +603,7 @@ disk_t *dp;
 	return;
     }
 
-    if(ep->last_level == -1 && ep->next_level0 > 0 && !dp->no_full) {
+    if(ep->last_level == -1 && ep->next_level0 > 0 && dp->strategy != DS_NOFULL) {
 	log(L_WARNING, 
 	    "%s:%s mismatch: no tapelist record, but curinfo next_level0: %d.",
 	    dp->host->hostname, dp->name, ep->next_level0);
@@ -623,12 +623,12 @@ disk_t *dp;
 
     i = 0;
 
-    if(!(dp->skip_full || dp->no_full))
+    if(!(dp->skip_full || dp->strategy == DS_NOFULL))
 	askfor(ep, i++, 0, &inf);
 
     if(!dp->skip_incr) {
 	if(ep->last_level == -1) {		/* a new disk */
-	    if(dp->no_full)
+	    if(dp->strategy == DS_NOFULL)
 		askfor(ep, i++, 1, &inf);
 	    else assert(!dp->skip_full);	/* should be handled above */
 	}
@@ -662,7 +662,7 @@ disk_t *dp;
 
     fprintf(stderr, "setup_estimate: %s:%s: command %d, options:",
 	    dp->host->hostname, dp->name, inf.command);
-    if(dp->no_full) fputs(" no-full", stderr);
+    if(dp->strategy == DS_NOFULL) fputs(" no-full", stderr);
     if(dp->skip_full) fputs(" skip-full", stderr);
     if(dp->skip_incr) fputs(" skip-incr", stderr);
     fprintf(stderr, "\n    last_level %d next_level0 %d level_days %d\n",
@@ -764,7 +764,7 @@ static int next_level0(dp, ip)
 disk_t *dp;
 info_t *ip;
 {
-    if(dp->no_full) 
+    if(dp->strategy == DS_NOFULL) 
 	return 1;		/* fake it */
     else if(ip->inf[0].date == EPOCH)
 	return -days_diff(EPOCH, today);        /* new disk  */
@@ -1097,7 +1097,7 @@ disk_t *dp;
     total_size += TAPE_BLOCK_SIZE + ep->size + tape_mark;
 
     /* update the balanced size */
-    if(!(dp->skip_full || dp->no_full)) {
+    if(!(dp->skip_full || dp->strategy == DS_NOFULL)) {
 	long lev0size;
 
 	lev0size = est_tape_size(dp, 0);
@@ -1186,7 +1186,7 @@ disk_t *dp;
     }
 
     /* if no-full option set, always do level 1 */
-    if(dp->no_full) {
+    if(dp->strategy == DS_NOFULL) {
 	fprintf(stderr,"   picklev: no-full set, so always level 1\n");
 	return 1;
     }
@@ -1522,7 +1522,7 @@ static int promote_highest_priority_incremental P((void))
 	fprintf(stderr, "   promote: checking %d days now\n", check_days);
 
         for(dp = schedq.head; dp != NULL; dp = dp->next) {
-	    if(dp->skip_full || dp->no_full) {
+	    if(dp->skip_full || dp->strategy == DS_NOFULL) {
 		fprintf(stderr,
 	"    promote: can't move %s:%s: no full dumps allowed.\n",
 			dp->host->hostname, dp->name);
@@ -1600,7 +1600,7 @@ static int promote_hills P((void))
 
     for(dp = schedq.head; dp != NULL; dp = dp->next) {
 	days = est(dp)->next_level0;   /* This is > 0 by definition */
-	if(days<tapecycle && !dp->skip_full && !dp->no_full) {
+	if(days<tapecycle && !dp->skip_full && dp->strategy != DS_NOFULL) {
 	    sp[days].disks++;
 	    sp[days].size += est(dp)->last_lev0size;
 	}
@@ -1622,8 +1622,8 @@ static int promote_hills P((void))
 	/* Find all the dumps in that hill and try and remove one */
 	for(dp = schedq.head; dp != NULL; dp = dp->next) {
 	    if(est(dp)->next_level0 != hill_days ||
-	    dp->skip_full ||
-	    dp->no_full)
+	       dp->skip_full ||
+	       dp->strategy == DS_NOFULL)
 		continue;
 	    new_size = est_tape_size(dp, 0);
 	    new_total = total_size - est(dp)->size + new_size;

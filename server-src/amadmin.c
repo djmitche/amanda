@@ -64,6 +64,8 @@ int search_logfile P((char *label, int datestamp, char *logfile));
 int get_logline P((FILE *logf));
 void export_db P((int argc, char **argv));
 void import_db P((int argc, char **argv));
+void disklist P((int argc, char **argv));
+void disklist_one P((disk_t *dp));
 
 int main(argc, argv)
 int argc;
@@ -107,6 +109,7 @@ char **argv;
     else if(!strcmp(argv[2],"bumpsize")) bumpsize();
     else if(!strcmp(argv[2],"import")) import_db(argc, argv);
     else if(!strcmp(argv[2],"export")) export_db(argc, argv);
+    else if(!strcmp(argv[2],"disklist")) disklist(argc, argv);
     else {
 	fprintf(stderr, "%s: unknown command \"%s\"\n", argv[0], argv[2]);
 	usage();
@@ -127,7 +130,7 @@ void usage P((void))
     fprintf(stderr,
 	    "\tunforce <hostname> <disks> ...\t# Clear force command.\n");
     fprintf(stderr,
-    "\tfind <hostname> <disks> ...\t# Show which tapes these dumps are on.\n");
+	    "\tfind <hostname> <disks> ...\t# Show which tapes these dumps are on.\n");
     fprintf(stderr,
 	    "\tdelete <hostname> <disks> ...\t# Delete from database.\n");
     fprintf(stderr,
@@ -141,7 +144,10 @@ void usage P((void))
     fprintf(stderr,
 	    "\texport [<hostname> [<disks>]]\t# Export curinfo database to stdout.\n");
     fprintf(stderr,
-	   "\timport\t\t\t\t# Import curinfo database from stdin.\n");
+	    "\timport\t\t\t\t# Import curinfo database from stdin.\n");
+/*  fprintf(stderr,
+**	    "\tdisklist [<hostname> [<disks> ...]]\t# Debug disklist entries.\n");
+*/
     exit(1);
 }
 
@@ -374,7 +380,7 @@ static int next_level0(dp, ip)
 disk_t *dp;
 info_t *ip;
 {
-    if(dp->no_full) 
+    if(dp->strategy == DS_NOFULL) 
 	return 1;	/* fake it */
     else if(ip->inf[0].date == EPOCH)
 	return 0;	/* new disk */
@@ -958,3 +964,86 @@ int impget_line P((void))
     }
 }
 
+/* ----------------------------------------------- */
+
+void disklist_one(dp)
+disk_t *dp;
+{
+    host_t *hp;
+    interface_t *ip;
+
+    hp = dp->host;
+    ip = hp->netif;
+
+    printf("line %d:\n", dp->line);
+
+    printf("    host %s:\n", hp->hostname);
+    printf("        interface %s\n",
+	   ip->name[0] ? ip->name : "default");
+
+    printf("    disk %s:\n", dp->name);
+
+    printf("        program \"%s\"\n", dp->program);
+    if(dp->exclude != (char *)0)
+	printf("        exclude %s\n", dp->exclude);
+    printf("        priority %d\n", dp->priority);
+    printf("        dumpcycle %d\n", dp->dumpcycle);
+    printf("        maxdumps %d\n", dp->maxdumps);
+
+    printf("        strategy ");
+    switch(dp->strategy) {
+    case DS_NORMAL:
+	printf("NORMAL\n");
+	break;
+    case DS_NOFULL:
+	printf("NOFULL\n");
+	break;
+    }
+
+    printf("        compress ");
+    switch(dp->compress) {
+    case COMP_NONE:
+	printf("NONE\n");
+	break;
+    case COMP_FAST:
+	printf("CLIENT FAST\n");
+	break;
+    case COMP_BEST:
+	printf("CLIENT BEST\n");
+	break;
+    case COMP_SERV_FAST:
+	printf("SERVER FAST\n");
+	break;
+    case COMP_SERV_BEST:
+	printf("SERVER BEST\n"); /* XXX */
+	break;
+    }
+
+    printf("        options: ");
+    if(!dp->record) printf("NO-");
+    printf("RECORD");
+
+    if(dp->auth == AUTH_BSD) printf(" BSD-AUTH");
+    else if(dp->auth == AUTH_KRB4) printf(" KRB4-AUTH");
+    else printf(" UNKNOWN-AUTH");
+
+    if(dp->skip_incr) printf(" SKIP-INCR");
+    if(dp->skip_full) printf(" SKIP-FULL");
+    if(dp->no_hold) printf(" NO-HOLD");
+    if(dp->kencrypt) printf(" KENCRYPT");
+    if(dp->index) printf(" INDEX");
+    printf("\n");
+}
+
+void disklist(argc, argv)
+int argc;
+char **argv;
+{
+    disk_t *dp;
+
+    if(argc >= 4)
+	diskloop(argc, argv, "disklist", disklist_one);
+    else
+	for(dp = diskqp->head; dp != NULL; dp = dp->next)
+	    disklist_one(dp);
+}

@@ -60,12 +60,12 @@ typedef struct disk_s {
     auth_t auth;			/* type of authentication (per system?) */
     int maxdumps;			/* max number of parallel dumps (per system) */
     time_t start_t;			/* start this dump after this time */
+    int strategy;			/* what dump strategy to use */
     int compress;			/* type of compression to use */
     /* flag options */
     int record:1;			/* record dump in /etc/dumpdates ? */
     int skip_incr:1;			/* incs done externally ? */
     int skip_full:1;			/* fulls done externally ? */
-    int no_full:1;			/* only do level 1's ? */
     int no_hold:1;			/* don't use holding disk ? */
     int kencrypt:1;
     int index:1;			/* produce an index ? */

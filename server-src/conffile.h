@@ -57,8 +57,22 @@ typedef struct tapetype_s {
     unsigned long length;
     unsigned long filemark;
     long speed;
+
+    /* seen flags */
+    int s_comment;
+    int s_length;
+    int s_filemark;
+    int s_speed;
 } tapetype_t;
 
+/* Dump strategies */
+#define DS_NORMAL	0	/* Normal (0 1 1 1 1 2 2 2 ...) */
+#define DS_NOFULL	1	/* No full's (1 1 1 ...) */
+#define DS_2		2	/* ? (0 1 2 3 4 5 6 7 8 9 10 11 ...) */
+#define DS_3		3	/* ? (0 1 1 1 1 1 1 1 1 1 1 1 ...) */
+#define DS_HANOI	4	/* Tower of Hanoi (? ? ? ? ? ...) */
+
+/* Compression types */
 #define COMP_NONE	0	/* No compression */
 #define COMP_FAST	1	/* Fast compression on client */
 #define COMP_BEST	2	/* Best compression on client */
@@ -75,19 +89,40 @@ typedef struct dumptype_s {
     char *exclude;
     long priority;
     long dumpcycle;
+    int maxcycle;
     long frequency;
     auth_t auth;
     int maxdumps;
     time_t start_t;
+    int strategy;
     int compress;
     /* flag options */
     int record:1;
     int skip_incr:1;
     int skip_full:1;
-    int no_full:1;
     int no_hold:1;
     int kencrypt:1;
     int index:1;
+
+    /* seen flags */
+    int s_comment;
+    int s_program;
+    int s_exclude;
+    int s_priority;
+    int s_dumpcycle;
+    int s_maxcycle;
+    int s_frequency;
+    int s_auth;
+    int s_maxdumps;
+    int s_start_t;
+    int s_strategy;
+    int s_compress;
+    int s_record;
+    int s_skip_incr;
+    int s_skip_full;
+    int s_no_hold;
+    int s_kencrypt;
+    int s_index;
 } dumptype_t;
 
 /* A network interface */
@@ -99,7 +134,11 @@ typedef struct interface_s {
     char *comment;
     int maxusage;		/* bandwidth we can consume [kb/s] */
 
-    int curusage;			/* current usage */
+    /* seen flags */
+    int s_comment;
+    int s_maxusage;
+
+    int curusage;		/* current usage */
 } interface_t;
 
 typedef struct holdingdisk_s {

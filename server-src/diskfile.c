@@ -276,11 +276,11 @@ static int read_diskline()
     disk->auth      = dtype->auth;
     disk->maxdumps  = dtype->maxdumps;
     disk->start_t   = dtype->start_t;
+    disk->strategy  = dtype->strategy;
     disk->compress  = dtype->compress;
     disk->record    = dtype->record;
     disk->skip_incr = dtype->skip_incr;
     disk->skip_full = dtype->skip_full;
-    disk->no_full   = dtype->no_full;
     disk->no_hold   = dtype->no_hold;
     disk->kencrypt  = dtype->kencrypt;
     disk->index     = dtype->index;
