@@ -241,7 +241,11 @@ char *dumpdate;
 #endif
 
     {
-	sprintf(dumpkeys, "%d%ssf", level, no_record ? "" : "u");
+	sprintf(dumpkeys, "%d%s"
+#ifndef OSF1_VDUMP
+		"s"
+#endif
+		"f", level, no_record ? "" : "u");
 
 	write_tapeheader();
 

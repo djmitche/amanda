@@ -435,7 +435,10 @@ int level;
 #ifdef HAVE_DUMP_ESTIMATE
 		"E"
 #endif
-		"sf", level);
+#ifndef OSF1_VDUMP
+		"s"
+#endif
+		"f", level);
 	dbprintf(("%s: running \"%s %s 100000 - %s\"\n",
 		  pname, cmd, dumpkeys, device));
     }
