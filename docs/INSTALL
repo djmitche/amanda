@@ -19,6 +19,8 @@ of Amanda 2.4.1 and higher.
 	for details on installing and running the kerberized version of
 	Amanda.
 
+    E.  Check the Amanda Patches Page, www.amanda.org/patches.html.
+
 1. COMPILING THE AMANDA SOURCES
 
 If you have multiple architectures, you only need to install the whole
@@ -42,7 +44,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	Samba allows Unix systems to talk to PC clients.  Amanda can
 	back up Microsoft Windows 95/NT clients using samba:
 
-		ftp://ftp.samba.org/pub/samba/samba-2.0.0.tar.gz
+		ftp://ftp.samba.org/pub/samba/samba-2.0.4b.tar.gz
 
 	Read docs/SAMBA for configuration tips and known limitations.
 
@@ -87,7 +89,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	to work on the index server and client code.
 	    ftp://ftp.gnu.org/pub/gnu/autoconf/autoconf-2.13.tar.gz
 	    ftp://ftp.gnu.org/pub/gnu/automake/automake-1.4.tar.gz
-	    ftp://ftp.gnu.org/pub/gnu/bison/bison-1.25.tar.gz
+	    ftp://ftp.gnu.org/pub/gnu/bison/bison-1.27.tar.gz
 	    ftp://ftp.gnu.org/pub/gnu/flex/flex-2.5.4a.tar.gz
 
     E.  Read about the different configuration options available for

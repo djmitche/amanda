@@ -1,5 +1,7 @@
 1999-06-01  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* docs/INSTALL: Point to the patches page.  Update version numbers.
+
 	* example/config.site: Document UDPPORTRANGE.
 
 1999-06-01  Jens Persson  <jens.persson@btj.se>
