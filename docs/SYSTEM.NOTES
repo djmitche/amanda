@@ -87,6 +87,18 @@ failures (Index returned -1).  Upgrading to GNUtar 1.12 fixes this
 problem.  This is not a Linux-specific problem, but it is quite common
 in this platform.
 
+Configure may incorrectly determine the maximum file size on
+Linux/i386; it may find 4194303 while the maximum was reported to be
+2097151 by Dietmar Goldbeck <dietmar@telemedia.de>.  If you have large
+filesystems to back up and your holding disk is larger than the
+maximum file size, you may have to overwrite the value determined by
+configure.  You may either set amanda_cv_max_file_size in config.site,
+or in the environment, before running configure, or you may edit
+config.cache and change amanda_cv_max_file_size there, and run
+configure again, or you may set MAXFILESIZE in config/config.h after
+running configure (and make sure you do that whenever config/config.h
+is rebuilt!)
+
 ---------------------------------------------------------------------------
 Digital Unix 4
 --------------
