@@ -1,3 +1,7 @@
+2003-10-27  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amlogroll.c: set_pname("amlogroll").
+
 2003-10-24  Todd M. Kover <kovert@omniscient.com>
 
 	* add amqde for "quick and dirty estimates" under gnutar (program
@@ -5,7 +9,6 @@
 	  controlled via configure option --with-qde.  This really wants to
 	  be configured in the server.
 
-=======
 2003-10-24  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/amverify.sh.in: Fix usage message.

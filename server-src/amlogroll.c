@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlogroll.c,v 1.1.2.1.4.1.2.2 2003/01/01 23:28:53 martinea Exp $
+ * $Id: amlogroll.c,v 1.1.2.1.4.1.2.3 2003/10/27 17:55:39 martinea Exp $
  *
  * rename a live log file to the datestamped name.
  */
@@ -62,7 +62,7 @@ char **argv;
 	close(fd);
     }
 
-    set_pname("amreport");
+    set_pname("amlogroll");
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
