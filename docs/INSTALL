@@ -91,11 +91,11 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	    ftp://ftp.cygnus.com/pub/tromey/automake-1.2f.tar.gz
 	    ftp://ftp.gnu.org/pub/gnu/bison-1.25.tar.gz
 	    ftp://ftp.gnu.org/pub/gnu/flex-2.5.4a.tar.gz
-	    ftp://alpha.gnu.org/gnu/libtool-1.0i.tar.gz
+	    ftp://alpha.gnu.org/gnu/libtool-1.2a.tar.gz
 
 	Although Amanda uses libtool in order to build shared
 	libraries (unless --disable-libtool is issued), you shouldn't
-	have any version of libtool different from 1.0i, the one
+	have any version of libtool different from 1.2a, the one
 	distributed with Amanda, otherwise you may find
 	incompatibilities between the libtool scripts and its autoconf
 	macros.  In other words, don't bother installing libtool

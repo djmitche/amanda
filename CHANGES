@@ -1,5 +1,7 @@
 Version 2.4.0p1
 
+	updated to libtool 1.2a.  -oliva
+
 	fix kerberos encryption to work.  -kovert
 
 	add --with-owner option to optionally not have things owned by
