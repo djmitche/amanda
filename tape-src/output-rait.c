@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <sys/ioctl.h>
 #else
 #include "amanda.h"
 #include "tapeio.h"
@@ -136,7 +137,7 @@ amtable_alloc(void **table,
 	      size_t elsize,
 	      int count,
 	      int bump,
-	      int dummy) {
+	      void *dummy) {
     void *table_new;
     int table_count_new;
 
@@ -360,8 +361,9 @@ char *
 tapeio_next_devname(char * dev_left,
 	            char * dev_right,
 	            char **dev_next) {
-    char *dev_real = NULL;
+    char *dev_real = 0;
     char *next;
+    int len;
 
     next = *dev_next;
     if (0 != (*dev_next = strchr(next, ','))
@@ -370,7 +372,15 @@ tapeio_next_devname(char * dev_left,
 	**dev_next = 0;				/* zap the terminator */
 	(*dev_next)++;
 
-	dev_real = vstralloc(dev_left, next, dev_right, NULL);
+	/* 
+	** we have one string picked out, build it into the buffer
+	*/
+	len = strlen(dev_left) + strlen(next) + strlen(dev_right) + 1;
+	if ( 0 != (dev_real = malloc(len)) ) {
+	    strcpy(dev_real, dev_left);		/* safe */
+	    strcat(dev_real, next);		/* safe */
+	    strcat(dev_real, dev_right);	/* safe */
+	}
     }
     return dev_real;
 }

@@ -14,6 +14,7 @@ typedef struct {
 
 #ifdef NO_AMANDA
 
+#define stralloc strdup
 #define P(x)	x			/* for function prototypes */
 
 /*

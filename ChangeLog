@@ -1,3 +1,9 @@
+2003-01-28  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* tape-src/output-rait.h: #define stralloc strdup
+	* tape-src/output-rait.c: Revert patch of 2003-01-26, we don't have
+	  vstralloc in standalone.
+
 2003-01-27  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Reported by Doug Kingston <dpk@randomnotes.org>
 
