@@ -243,14 +243,15 @@
 # RDEV_PREFIX="/dev/r"
 
 
-# BSD_SECURITY		--with-bsd-security
-#			Default: no
+# BSD_SECURITY		--without-bsd-security
+#			Default: yes
 #			BSD_SECURITY selects BSD rsh/rlogin style security,
 #			which is not great, but is in common use, and its
 #			strengths and weaknesses are well known.  Under
 #			BSD_SECURITY, the Amanda backup client hosts will
-#			check .rhosts files before sending any dump data.
-# BSD_SECURITY=yes
+#			check .rhosts (or .amandahosts, see below)
+#			files before sending any dump data.
+# BSD_SECURITY=no
 
 
 # USE_AMANDAHOSTS	--with-amandahosts

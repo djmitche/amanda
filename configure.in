@@ -568,9 +568,9 @@ AC_ARG_WITH(gnutar-listed-incremental,
 )
 
 AC_ARG_WITH(bsd-security,
-    [  --with-bsd-security    use BSD rsh/rlogin style security],
+    [  --without-bsd-security do not use BSD rsh/rlogin style security],
     BSD_SECURITY=$withval,
-    : ${BSD_SECURITY=no}
+    : ${BSD_SECURITY=yes}
 )
 case "$BSD_SECURITY" in
 n | no) : ;;
