@@ -135,7 +135,7 @@ $tape_size = 0;
 while(<AMDUMP>) {
 	chomp;
 	if(/(amdump|amflush): start at (.*)/) {
-		print " from $2";
+		print " from $2\n";
 		$starttime=&unctime(split(/[ 	]+/,$2));
 	}
 	elsif(/amdump: datestamp (\S+)/) {
@@ -258,7 +258,7 @@ while(<AMDUMP>) {
 	elsif(/^FLUSH (\S+) (\S+) (\S+) (\d+) (\S+)/) {
 		$host=$1;
 		$partition=$2;
-		$datestamp=$3;
+		$datestamp="$3";
 		$level=$4;
 		$holding_file=$5;
 		$hostpart=&make_hostpart($host,$partition,$datestamp);
@@ -372,6 +372,15 @@ while(<AMDUMP>) {
 			$dumpers_held[$dumpers_active]={};
 		}
 	}
+	elsif(/driver: send-cmd time (\S+) to (dumper\d*): CONTINUE (\d+-\d+) (\S+) (\d+) (\d+)/) {
+		$current_time=$1;
+		$serial=$3;
+		$hostpart=$serial{$serial};
+		if($hostpart ne "") {
+			$dump_roomq{$hostpart}=undef;
+			$error{$hostpart}="";
+		}
+	}
 	elsif(/driver: result time (\S+) from (dumper\d+): FAILED (\d+-\d+) (.*)/) {
 		$current_time=$1;
 		$serial=$3;
@@ -422,6 +431,13 @@ while(<AMDUMP>) {
 		$dump_time{$hostpart}=$1;
 		$error{$hostpart}="driver: (aborted)";
 		$dumpers_active--;
+	}
+	elsif(/driver: result time (\S+) from (dumper\d+): RQ-MORE-DISK (\d+-\d+)/) {
+		$current_time=$1;
+		$serial=$3;
+		$hostpart=$serial{$serial};
+		$dump_roomq{$hostpart}=1;
+		$error{$hostpart}="(waiting for holding disk space)";
 	}
 	elsif(/driver: finished-cmd time (\S+) dumper\d+ dumped (\S+):(\S+)/){
 		$current_time=$1;
@@ -588,7 +604,7 @@ if(defined $current_time) {
 	}
 }
 
-print "\n\n";
+print "\n";
 
 $nb_partition = 0;
 
@@ -876,6 +892,9 @@ foreach $host (sort @hosts) {
 							}
 							if( defined $starttime ) {
 								print " (", &showtime($dump_time{$hostpart}), ")";
+							}
+							if(defined $dump_roomq{$hostpart}) {
+								print " " . $error{$hostpart};
 							}
 							print "\n";
 						}
