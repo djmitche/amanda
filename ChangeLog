@@ -1,6 +1,10 @@
+1998-09-10  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/INSTALL: URL for SAMBA was broken; note about 1.9.18p10 bug
+
 1998-09-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
-	* doc/SAMBA: 1.9.18p10 has a bug
+	* docs/SAMBA: 1.9.18p10 has a bug
 
 1998-09-09  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
