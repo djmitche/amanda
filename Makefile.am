@@ -95,3 +95,10 @@ CONFIG_STATUS = config.status
 $(CONFIG_STATUS): $(SNAPSHOT_STAMP)
 SNAPSHOT:
 	: SNAPSHOT file was removed, will reconfigure...
+
+## Do not release the *.test.c sources.  They get built on the fly and
+## would contain a path from the distribution machine, which will just
+## confuse the target user.
+
+dist-hook:
+	find $(distdir)/. -name '*.test.c' -exec rm {} \;
