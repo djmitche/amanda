@@ -1,3 +1,10 @@
+2001-04-25 John R. Jackson <jrj@purdue.edu>
+
+	* changer-src/chg-rth.pl.in: Add exec_prefix back since it is usually
+	  used to define sbindir.  Sigh.  Include X=X assignments to get rid
+	  of the Perl warnings.
+	* server-src/amoverview.pl.in: Ditto.
+
 2001-04-24 John R. Jackson <jrj@purdue.edu>
 
 	* changer-src/chg-chio.pl.in: Remove unused exec_prefix to get rid of
