@@ -1,3 +1,8 @@
+1999-03-04  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* common-src/bsd-security.c (stream_read_callback): change n to int
+	since ssize_t doesn't exist on all OS.
+
 1999-03-03  Ralf Fassel <ralf@akutech.de>
 
 	* common-src/conffile.h: bit field of length 1 should be unsigned int,

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.17 1999/03/04 00:21:13 martinea Exp $
+ * $Id: bsd-security.c,v 1.18 1999/03/04 14:10:23 martinea Exp $
  *
  * "BSD" security module
  */
@@ -1105,7 +1105,7 @@ stream_read_callback(arg)
     void *arg;
 {
     struct bsd_stream *bs = arg;
-    ssize_t n;
+    int n;
 
     assert(bs != NULL);
 
