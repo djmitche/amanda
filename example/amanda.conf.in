@@ -123,6 +123,27 @@ holdingdisk hd1 {
 
 # reserve 30 # percent
 
+# The format for a ColumnSpec is a ',' seperated list of triples.
+# Each triple consists of
+#   + the name of the column (as in ColumnNameStrings)
+#   + prefix before the column
+#   + the width of the column, if set to -1 it will be recalculated
+#     to the maximum length of a line to print.
+# Example:
+# 	"Disk=1:17,HostName=1:10,OutKB=1:7"
+# or
+# 	"Disk=1:-1,HostName=1:10,OutKB=1:7"
+#        
+# You need only specify those colums that should be changed from
+# the default. If nothing is specified in the configfile, the
+# above compiled in values will be in effect, resulting in an
+# output as it was all the time.
+# The names of the colums are:
+# HostName, Disk, Level, OrigKB, OutKB, Compress, DumpTime, DumpRate,
+# TapeTime and TapeRate.
+#							ElB, 1999-02-24.
+# columnspec "Disk=1:18,HostName=0:10,OutKB=1:7"
+
 
 # This means save at least 30% of the holding disk space for degraded
 # mode backups.  

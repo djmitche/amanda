@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.4 1999/02/03 13:05:33 oliva Exp $
+ * $Id: conffile.c,v 1.54.2.5 1999/03/21 14:22:13 oliva Exp $
  *
  * read configuration file
  */
@@ -75,6 +75,7 @@ typedef enum {
     TPCHANGER, RUNTAPES,
     DEFINE, DUMPTYPE, TAPETYPE, INTERFACE,
     PRINTER, RESERVE,
+    COLUMNSPEC,
 
     /* holding disk */
     COMMENT, DIRECTORY, USE, CHUNKSIZE,
@@ -157,6 +158,7 @@ static val_t conf_diskfile;
 static val_t conf_diskdir;
 static val_t conf_tapetype;
 static val_t conf_indexdir;
+static val_t conf_columnspec;
 
 /* ints */
 static val_t conf_dumpcycle;
@@ -201,6 +203,7 @@ static int seen_disksize, seen_netusage, seen_inparallel, seen_timeout;
 static int seen_indexdir, seen_etimeout, seen_dtimeout;
 static int seen_tapebufs;
 static int seen_reserve;
+static seen_columnspec;
 
 static int allow_overwrites;
 static int token_pushed;
@@ -336,6 +339,7 @@ struct byname {
     { "DTIMEOUT", CNF_DTIMEOUT, INT },
     { "TAPEBUFS", CNF_TAPEBUFS, INT },
     { "RAWTAPEDEV", CNF_RAWTAPEDEV, STRING },
+    { "COLUMNSPEC", CNF_COLUMNSPEC, STRING },
     { "RESERVE", CNF_RESERVE, INT },
     { NULL }
 };
@@ -487,6 +491,7 @@ confparm_t parm;
     case CNF_TAPETYPE: r = conf_tapetype.s; break;
     case CNF_INDEXDIR: r = conf_indexdir.s; break;
     case CNF_RAWTAPEDEV: r = conf_rawtapedev.s; break;
+    case CNF_COLUMNSPEC: r = conf_columnspec.s; break;
 
     default:
 	error("error [unknown getconf_str parm: %d]", parm);
@@ -606,6 +611,8 @@ static void init_defaults()
     malloc_mark(conf_tapetype.s);
     conf_indexdir.s = newstralloc(conf_indexdir.s, "/usr/adm/amanda/index");
     malloc_mark(conf_indexdir.s);
+    conf_columnspec.s = newstralloc(conf_columnspec.s, "");
+    malloc_mark(conf_columnspec.s);
 
     conf_dumpcycle.i	= 10;
     conf_runspercycle.i	= 0;
@@ -640,6 +647,7 @@ static void init_defaults()
     seen_indexdir = seen_etimeout = seen_dtimeout = 0;
     seen_tapebufs = 0;
     seen_reserve = 0;
+    seen_columnspec = 0;
     line_num = got_parserror = 0;
     allow_overwrites = 0;
     token_pushed = 0;
@@ -799,6 +807,7 @@ keytab_t main_keytable[] = {
     { "TAPEBUFS", TAPEBUFS },
     { "RAWTAPEDEV", RAWTAPEDEV },
     { "RESERVE", RESERVE },
+    { "COLUMNSPEC", COLUMNSPEC },
     { NULL, IDENT }
 };
 
@@ -851,6 +860,7 @@ static int read_confline()
     case DTIMEOUT:  get_simple(&conf_dtimeout,  &seen_dtimeout,  INT);    break;
     case TAPEBUFS:  get_simple(&conf_tapebufs,  &seen_tapebufs,  INT);    break;
     case RESERVE:   get_simple(&conf_reserve,  &seen_reserve,	 INT);    break;
+    case COLUMNSPEC:get_simple(&conf_columnspec,&seen_columnspec,STRING);break;
 
     case LOGFILE: /* XXX - historical */
 	/* truncate the filename part and pretend he said "logdir" */
@@ -2272,6 +2282,7 @@ dump_configuration(filename)
 
     /*printf("conf_diskdir = \"%s\"\n", getconf_str(CNF_DISKDIR));*/
     /*printf("conf_disksize = %d\n", getconf_int(CNF_DISKSIZE));*/
+    printf("conf_columnspec = \"%s\"\n", getconf_str(CNF_COLUMNSPEC));
     printf("conf_indexdir = \"%s\"\n", getconf_str(CNF_INDEXDIR));
     printf("num_holdingdisks = %d\n", num_holdingdisks);
     for(hp = holdingdisks; hp != NULL; hp = hp->next) {
