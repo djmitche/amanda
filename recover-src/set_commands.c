@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: set_commands.c,v 1.11.2.3.4.2.2.2 2002/03/06 19:23:32 martinea Exp $
+ * $Id: set_commands.c,v 1.11.2.3.4.2.2.3 2002/03/24 04:12:20 jrjackson Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -512,7 +512,7 @@ void set_tape (tape)
     }
 
     if (tape_device_name)
-	printf ("Using tape %s", tape_device_name);
+	printf ("Using tape \"%s\"", tape_device_name);
     else
 	printf ("Using default tape");
 

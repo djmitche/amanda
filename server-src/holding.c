@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.17.2.12.4.3.2.5 2002/02/11 22:49:15 martinea Exp $
+ * $Id: holding.c,v 1.17.2.12.4.3.2.6 2002/03/24 04:12:20 jrjackson Exp $
  *
  * Functions to access holding disk
  */
@@ -293,11 +293,14 @@ sl_t *pick_datestamp(verbose)
 int verbose;
 {
     sl_t *holding_list;
+    sl_t *r_holding_list = NULL;
     sle_t *dir;
-    char **directories;
+    char **directories = NULL;
     int i;
-    char answer[1024];
-    char max_char = '\0', *ch, chupper = '\0';
+    char *answer = NULL;
+    char *a;
+    int ch;
+    char max_char = '\0', chupper = '\0';
 
     holding_list = pick_all_datestamp(verbose);
 
@@ -315,40 +318,46 @@ int verbose;
 
 	while(1) {
 	    puts("\nMultiple Amanda directories, please pick one by letter:");
-	    for(dir = holding_list->first, i = 0; dir != NULL && i < 26; dir = dir->next, i++) {
-		printf("  %c. %s\n", 'A'+i, dir->name);
-		max_char = 'A'+i;
+	    for(dir = holding_list->first, max_char = 'A';
+		dir != NULL && max_char <= 'Z';
+		dir = dir->next, max_char++) {
+		printf("  %c. %s\n", max_char, dir->name);
 	    }
-	    printf("Select directories to flush [A..%c]: [ALL] ", 'A' + i - 1);
-	    fgets(answer, sizeof(answer), stdin);
-	    if(strlen(answer) == 1 || !strncasecmp(answer,"ALL",3)) {
-		amfree(directories);
-		return holding_list;
+	    max_char--;
+	    printf("Select directories to flush [A..%c]: [ALL] ", max_char);
+	    fflush(stdout); fflush(stderr);
+	    amfree(answer);
+	    if ((answer = agets(stdin)) == NULL) {
+		clearerr(stdin);
+		continue;
 	    }
-	    else {
-		i=1;
-		for(ch = answer; *ch != '\0'; ch++) {
-		    chupper = toupper(*ch);
-		    if(!((chupper >= 'A' && chupper <= max_char) ||
-			 chupper == ' ' || chupper != ',' || chupper != '\n'))
-			i=0;
+	    a = answer;
+	    while ((ch = *a++) != '\0' && isspace(ch)) {}
+	    if(ch == '\0' || strncasecmp(a, "ALL", 3) == 0) {
+		break;
+	    }
+	    do {
+		if (isspace(ch) || ch == ',') {
+		    continue;
 		}
-		if(i==1) {
-		    sl_t *r_holding_list = NULL;
-		    for(ch = answer; *ch != '\0'; ch++) {
-			chupper = toupper(*ch);
-			if(chupper >= 'A' && chupper <= max_char) {
-			    r_holding_list = append_sl(r_holding_list, directories[chupper-'A']);
-			}
-		    }
-		    amfree(directories);
-		    free_sl(holding_list);
-		    holding_list = NULL;
-		    return(r_holding_list);
+		chupper = toupper(ch);
+		if (chupper < 'A' || chupper > max_char) {
+		    free_sl(r_holding_list);
+		    r_holding_list = NULL;
+		    break;
 		}
+		r_holding_list = append_sl(r_holding_list,
+					   directories[chupper - 'A']);
+	    } while ((ch = *a++) != '\0');
+	    if (r_holding_list && ch == '\0') {
+		free_sl(holding_list);
+		holding_list = r_holding_list;
+		break;
 	    }
 	}
     }
+    amfree(directories);
+    amfree(answer);
     return holding_list;
 }
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.1.2.12 2002/03/22 15:40:47 martinea Exp $
+ * $Id: client_util.c,v 1.1.2.13 2002/03/24 04:12:20 jrjackson Exp $
  *
  */
 
@@ -223,7 +223,7 @@ int verbose;
     char *filename;
     FILE *file_exclude;
     FILE *exclude;
-    char aexc[MAXPATHLEN+1];
+    char *aexc = NULL;
     sle_t *excl;
     int nb_exclude = 0;
 
@@ -247,10 +247,10 @@ int verbose;
 		for(excl = options->exclude_list->first; excl != NULL;
 		    excl = excl->next) {
 		    if((exclude = fopen(excl->name, "r")) != NULL) {
-			while (!feof(exclude)) {
-			    if(fgets(aexc, MAXPATHLEN, exclude))
-				add_exclude(file_exclude, aexc,
-				    verbose && options->exclude_optional == 0);
+			while ((aexc = agets(exclude)) != NULL) {
+			    add_exclude(file_exclude, aexc,
+				        verbose && options->exclude_optional == 0);
+			    amfree(aexc);
 			}
 			fclose(exclude);
 		    }
@@ -286,7 +286,7 @@ int verbose;
     char *filename;
     FILE *file_include;
     FILE *include;
-    char ainc[MAXPATHLEN+1];
+    char *ainc = NULL;
     sle_t *incl;
     int nb_include = 0;
     int nb_exp = 0;
@@ -312,11 +312,11 @@ int verbose;
 		for(incl = options->include_list->first; incl != NULL;
 		    incl = incl->next) {
 		    if((include = fopen(incl->name, "r")) != NULL) {
-			while (!feof(include)) {
-			    if(fgets(ainc, MAXPATHLEN, include))
-				nb_exp += add_include(disk, device,
-					   file_include, ainc,
-					   verbose && options->include_optional == 0);
+			while ((ainc = agets(include)) != NULL) {
+			    nb_exp += add_include(disk, device,
+						  file_include, ainc,
+						  verbose && options->include_optional == 0);
+			    amfree(ainc);
 			}
 			fclose(include);
 		    }

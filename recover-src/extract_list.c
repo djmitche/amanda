@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43.2.13.4.6.2.4 2002/03/21 19:33:47 martinea Exp $
+ * $Id: extract_list.c,v 1.43.2.13.4.6.2.5 2002/03/24 04:12:20 jrjackson Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -79,6 +79,7 @@ unsigned short samba_extract_method = SAMBA_TAR;
 
 #define READ_TIMEOUT	30*60
 
+static int okay_to_continue P((int));
 
 ssize_t read_buffer(datafd, buffer, buflen)
 int datafd;
@@ -987,50 +988,62 @@ int is_extract_list_nonempty P((void))
 
 /* prints continue prompt and waits for response,
    returns 0 if don't, non-0 if do */
-static int okay_to_continue P((void))
+static int okay_to_continue(allow_tape)
+    int allow_tape;
 {
     int ch;
-    int ret;
+    int ret = -1;
+    char *line = NULL;
+    char *s;
+    char *prompt;
+    int get_tape;
 
-    printf("Continue? [Y/n]: ");
-    fflush(stdout); fflush(stderr);
-    while((ch = getchar()) != EOF && ch != '\n' && isspace(ch)) {}
-    if (ch == '\n' || ch == 'Y' || ch == 'y') {
-	ret = 1;
-    } else {
-	ret = 0;
-    }
-    while(ch != EOF && ch != '\n') ch = getchar();
-    return ret;
-}
-
-/* prints continue prompt and waits for response,
-   returns 0 if don't, non-0 if do */
-static int okay_to_continue_tape P((void))
-{
-    int ch;
-    int ret;
-
-    printf("Continue? [Y/n/t]: ");
-    fflush(stdout); fflush(stderr);
-    while((ch = getchar()) != EOF && ch != '\n' && isspace(ch)) {}
-    if (ch == '\n' || ch == 'Y' || ch == 'y') {
-	ret = 1;
-    } else if (ch == 'T' || ch == 't') {
-	char device[100];
-
-	while(ch != EOF && ch != '\n') ch = getchar();
-	printf("Tape device: ");
+    get_tape = 0;
+    while (ret < 0) {
+	if (get_tape) {
+	    prompt = "New tape device [?]: ";
+	} else if (allow_tape) {
+	    prompt = "Continue [?/Y/n/t]? ";
+	} else {
+	    prompt = "Continue [?/Y/n]? ";
+	}
+	fputs(prompt, stdout);
 	fflush(stdout); fflush(stderr);
-	fgets(device, 100, stdin);
-	if( device[strlen(device)-1] == '\n')
-	    device[strlen(device)-1] = '\0';
-	set_tape(device);
-	return okay_to_continue_tape();
-    } else {
-	ret = 0;
+	amfree(line);
+	if ((line = agets(stdin)) == NULL) {
+	    putchar('\n');
+	    clearerr(stdin);
+	    if (get_tape) {
+		get_tape = 0;
+		continue;
+	    }
+	    ret = 0;
+	    break;
+	}
+	s = line;
+	while ((ch = *s++) != '\0' && isspace(ch)) {}
+	if (ch == '?') {
+	    if (get_tape) {
+		printf("Enter a new device ([host:]device) or \"default\"\n");
+	    } else {
+		printf("Enter \"y\"es to continue, \"n\"o to stop");
+		if (allow_tape) {
+		    printf(" or \"t\"ape to change tape drives");
+		}
+		putchar('\n');
+	    }
+	} else if (get_tape) {
+	    set_tape(s - 1);
+	    get_tape = 0;
+	} else if (ch == '\0' || ch == 'Y' || ch == 'y') {
+	    ret = 1;
+	} else if (allow_tape && (ch == 'T' || ch == 't')) {
+	    get_tape = 1;
+	} else if (ch == 'N' || ch == 'n') {
+	    ret = 0;
+	}
     }
-    while(ch != EOF && ch != '\n') ch = getchar();
+    amfree(line);
     return ret;
 }
 
@@ -1577,7 +1590,7 @@ void extract_files P((void))
     if (samba_extract_method == SAMBA_SMBCLIENT)
       printf("(unless it is a Samba backup, that will go through to the SMB server)\n");
 #endif
-    if (!okay_to_continue())
+    if (!okay_to_continue(0))
 	return;
     printf("\n");
 
@@ -1590,7 +1603,7 @@ void extract_files P((void))
 	else {
 	    dump_device_name = newstralloc(dump_device_name, tape_device_name);
 	    printf("Load tape %s now\n", elist->tape);
-	    if (!okay_to_continue_tape())
+	    if (!okay_to_continue(1))
 	        return;
 	}
 	dump_datestamp = newstralloc(dump_datestamp, elist->date);
@@ -1642,7 +1655,7 @@ void extract_files P((void))
 	    fprintf(stderr,
 		    "extract_list - child returned non-zero status: %d\n",
 		    WEXITSTATUS(child_stat));
-	    if (!okay_to_continue())
+	    if (!okay_to_continue(0))
 		return;
 	}
 

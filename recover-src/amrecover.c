@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.29.4.7.4.6.2.1 2002/02/11 01:30:42 jrjackson Exp $
+ * $Id: amrecover.c,v 1.29.4.7.4.6.2.2 2002/03/24 04:12:20 jrjackson Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -642,11 +642,13 @@ char **argv;
     quit_prog = 0;
     do
     {
-	if ((lineread = readline("amrecover> ")) == NULL)
+	if ((lineread = readline("amrecover> ")) == NULL) {
+	    clearerr(stdin);
+	    putchar('\n');
 	    break;
+	}
 	if (lineread[0] != '\0') 
 	{
-
 	    add_history(lineread);
 	    process_line(lineread);	/* act on line's content */
 	}
