@@ -1669,6 +1669,28 @@ AC_TYPE_SIGNAL
 AC_STRUCT_TM
 AM_PROG_LEX
 
+dnl AC_CHECK_TYPE does not work for socklen_t because it does not look
+dnl in <sys/socket.h>, so this is a variant that adds another header.
+AC_DEFUN(AMANDA_CHECK_TYPE,
+[AC_REQUIRE([AC_HEADER_STDC])dnl
+AC_MSG_CHECKING(for $1)
+AC_CACHE_VAL(ac_cv_type_$1,
+[AC_EGREP_CPP(dnl
+changequote(<<,>>)dnl
+<<(^|[^a-zA-Z_0-9])$1[^a-zA-Z_0-9]>>dnl
+changequote([,]), [#include <sys/types.h>
+#if STDC_HEADERS
+#include <stdlib.h>
+#include <stddef.h>
+#endif
+#include <$3>], ac_cv_type_$1=yes, ac_cv_type_$1=no)])dnl
+AC_MSG_RESULT($ac_cv_type_$1)
+if test $ac_cv_type_$1 = no; then
+  AC_DEFINE($1, $2, [Define if $1 is not a standard system type])
+fi
+])
+AMANDA_CHECK_TYPE(socklen_t, unsigned int, sys/socket.h)
+
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_DIRENT

@@ -1,4 +1,9 @@
-2002-02-02 John R. Jackson (jrj@purdue.edu)
+2002-02-09 John R. Jackson (jrj@purdue.edu)
+
+	* configure.in: Add code to test for a type defined in other than the
+	  autoconf expected locations.  Use it to look for socklen_t.
+
+2002-02-08 John R. Jackson (jrj@purdue.edu)
 
 	* server-src/amadmin.c (check_dumpuser): Make it fatal to attempt to
 	  do an operation that would alter any files when run as someone other
