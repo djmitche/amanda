@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.47 1998/09/11 23:25:21 jrj Exp $
+ * $Id: amcheck.c,v 1.48 1998/10/15 21:31:28 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -480,7 +480,7 @@ int fd;
 
     inparallel = getconf_int(CNF_INPARALLEL);
 
-    for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next) {
+    for(hdp = getconf_holdingdisks(); hdp != NULL; hdp = hdp->next) {
 	if(get_fs_stats(hdp->diskdir, &fs) == -1) {
 	    fprintf(outf, "ERROR: statfs %s: %s\n",
 		    hdp->diskdir, strerror(errno));

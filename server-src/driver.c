@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.51 1998/10/15 19:43:52 martinea Exp $
+ * $Id: driver.c,v 1.52 1998/10/15 21:31:36 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -191,7 +191,7 @@ char **main_argv;
 	reserve = 100;
     }
 
-    for(hdp = holdingdisks, dsk = 0; hdp != NULL; hdp = hdp->next, dsk++) {
+    for(hdp = getconf_holdingdisks(), dsk = 0; hdp != NULL; hdp = hdp->next, dsk++) {
 	struct stat stat_hdp;
 	hdp->up = (void *)alloc(sizeof(holdalloc_t));
 	holdalloc(hdp)->allocated_dumpers = 0;
@@ -361,7 +361,7 @@ char **main_argv;
     while(wait(NULL) != -1);
 
     if(!degraded_mode) {
-	for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next) {
+	for(hdp = getconf_holdingdisks(); hdp != NULL; hdp = hdp->next) {
 	    newdir = newvstralloc(newdir,
 				  hdp->diskdir, "/", datestamp,
 				  NULL);
@@ -1181,7 +1181,7 @@ unsigned long free_space()
     long diff;
 
     total_free = 0L;
-    for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next) {
+    for(hdp = getconf_holdingdisks(); hdp != NULL; hdp = hdp->next) {
 	diff = hdp->disksize - holdalloc(hdp)->allocated_space;
 	if(diff > 0)
 	    total_free += diff;
@@ -1197,7 +1197,7 @@ int *cur_idle;
     holdingdisk_t *minp, *hdp;
 
     minp = NULL;
-    for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next) {
+    for(hdp = getconf_holdingdisks(); hdp != NULL; hdp = hdp->next) {
 	if(hdp->chunksize < 0 && size > -hdp->chunksize) {
 	    *cur_idle = max(*cur_idle, IDLE_TOO_LARGE);
 	}
@@ -1334,7 +1334,7 @@ char *time_str;
 
     printf("driver: hdisk-state time %s", time_str);
 
-    for(hdp = holdingdisks, dsk = 0; hdp != NULL; hdp = hdp->next, dsk++) {
+    for(hdp = getconf_holdingdisks(), dsk = 0; hdp != NULL; hdp = hdp->next, dsk++) {
 	diff = hdp->disksize - holdalloc(hdp)->allocated_space;
 	printf(" hdisk %d: free %ld dumpers %d", dsk, diff,
 	       holdalloc(hdp)->allocated_dumpers);

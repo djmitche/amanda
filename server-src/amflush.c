@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.36 1998/09/11 23:25:24 jrj Exp $
+ * $Id: amflush.c,v 1.37 1998/10/15 21:31:30 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -332,7 +332,7 @@ void run_dumps()
     else {
 
     	for(dss = datestamps; *dss != NULL; dss++) {
-	    for(hdisk = holdingdisks; hdisk != NULL; hdisk = hdisk->next)
+	    for(hdisk = getconf_holdingdisks(); hdisk != NULL; hdisk = hdisk->next)
 		flush_holdingdisk(hdisk->diskdir, *dss);
 	}
 

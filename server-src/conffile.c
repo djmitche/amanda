@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.52 1998/09/21 11:55:49 oliva Exp $
+ * $Id: conffile.c,v 1.53 1998/10/15 21:31:32 martinea Exp $
  *
  * read configuration file
  */
@@ -489,6 +489,11 @@ confparm_t parm;
 	/* NOTREACHED */
     }
     return r;
+}
+
+holdingdisk_t *getconf_holdingdisks()
+{
+    return holdingdisks;
 }
 
 dumptype_t *lookup_dumptype(str)

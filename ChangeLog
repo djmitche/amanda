@@ -1,5 +1,16 @@
 1998-10-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/conffile.h: remove declaration of holdingdisks and 
+	num_holdingdisks, declare getconf_holdingdisks().
+	* server-src/conffile.c: define getconf_holdingdisks(),
+	* server-src/holding.c: use getconf_holdingdisks
+	* server-src/find.c: ditto
+	* server-src/amcheck.c: ditto
+	* server-src/amflush.c: ditto
+	* server-src/driver.c ditto
+
+1998-10-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/driver.c: remove verbose and force_parameters
 	variables.
 
