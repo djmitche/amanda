@@ -27,7 +27,7 @@ amrecover_SOURCES =	amrecover.c					\
 
 noinst_HEADERS = 	amrecover.h uparse.h
 
-YFLAGS =		-d
+AM_YFLAGS =		-d
 
 install-exec-hook:
 	@list="$(sbin_PROGRAMS)"; \

@@ -1,3 +1,8 @@
+2003-01-27  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Reported by Doug Kingston <dpk@randomnotes.org>
+
+	* recover-src/Makefile.am: Set AM_YFLAGS instead of YFLAGS.
+
 2003-01-26  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* tape-src/output-rait.c (tapeio_next_devname): Use vstralloc.
