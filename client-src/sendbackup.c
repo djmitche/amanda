@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.34 1998/02/19 10:04:08 amcore Exp $
+ * $Id: sendbackup.c,v 1.35 1998/02/19 16:03:27 amcore Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -36,20 +36,6 @@
 #include "../tape-src/tapeio.h"
 
 #define TIMEOUT 30
-
-/*
- * If we don't have the new-style wait access functions, use our own,
- * compatible with old-style BSD systems at least.  Note that we don't
- * care about the case w_stopval == WSTOPPED since we don't ask to see
- * stopped processes, so should never get them from wait.
- */
-#ifndef WEXITSTATUS
-#   define WEXITSTATUS(r)	(((union wait *) &(r))->w_retcode)
-#   define WTERMSIG(r)		(((union wait *) &(r))->w_termsig)
-
-#   undef  WIFSIGNALED
-#   define WIFSIGNALED(r)	(((union wait *) &(r))->w_termsig != 0)
-#endif
 
 int comppid = -1;
 int dumppid = -1;
