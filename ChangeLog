@@ -1,8 +1,11 @@
 1998-09-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* docs/DUMPER-API (USER, GROUP): detailed security mechanisms
+	(estimate, estimate-parse): can print `KILL' after the estimate
+	
 	* docs/DUMPER-API: various suggestions from Eric Siegerman
  	<erics@now.com> and some explanations added
-
+	
 1998-09-27  Andy Farkas  <andyf@speednet.com.au>
 
 	* man/amlabel.8.in (labelstr): fix typo

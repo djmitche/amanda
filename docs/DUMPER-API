@@ -1,6 +1,6 @@
 AMANDA DUMPER API
 
-Last modified $Date: 1998/09/27 22:22:55 $
+Last modified $Date: 1998/09/27 23:38:20 $
 
 by Alexandre Oliva <oliva@dcc.unicamp.br>
 
@@ -205,8 +205,24 @@ either:
 USER root
 GROUP operator
 
-The backup driver should then arrange to re-run the script (or another
-script, from a privileged directory) as the specified user.
+The backup driver should then arrange to re-run the script as the
+specified user/group.  Security concerns may impose restrictions on
+privileges that can be given to wrapper scripts.  For example, we may
+require that, in order to run a wrapper script as any other user or
+group, the wrapper script must be in a separate directory, and that
+the script, its containing directory and all its parents must only be
+writable by root.  The search path for wrappers could be modified in
+this case, so as to allow protected wrappers to be stored in a
+separate directory.
+
+This ability causes amandad (that will incorporate all the
+functionality from selfcheck, sendsize and sendbackup) to have to be
+setuid-root.  However, it will fork a child process and drop to the
+amanda user privileges as soon as possible.  This child process will
+be driven through a pipe, and it will be able to start services as
+other users, in a way that no other user, not even the backup
+operator, will be able to run arbitrary commands.
+
 
 The exit status of selfcheck and of this alternate script are probably
 going to be disregarded.  Anyway, for consistency, selfcheck should
@@ -242,6 +258,11 @@ If the first line of output of the estimate command contains only the
 word PARSE, any further output will be fed to the `estimate-parse'
 command, that should extract from its input the estimated size.  The
 syntax of `estimate-parse' is identical to that of `estimate'.
+
+Both `estimate' and `estimate-parse' can output the word `KILL', after
+printing the estimate.  In this case, Amanda will send a SIGTERM
+signal to the process group of the `estimate' process.  If it does not
+die within a few seconds, a SIGKILL will be issued.
 
 If `estimate' or `estimate-parse' succeed, they should exit 0,
 otherwise exit 1, except for the already listed cases of exit status 2
