@@ -1,3 +1,9 @@
+1999-06-03  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/SYSTEM.NOTES: On Trusted Solaris, the format of inetd.conf is 
+	slightly different.
+	Reported by Julian Stevens <julian.stevens@baedsl.co.uk>
+
 1999-06-02  Mike Grupenhoff <kashmir@munge.com>
 
 	* common-src/util.c (fullread, fullwrite): versions of

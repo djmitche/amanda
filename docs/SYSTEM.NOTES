@@ -18,6 +18,19 @@ kind of trouble.  Note, however, that gcc 2.7.2.3 does not support
 Solaris 2.6, you should upgrade to 2.8.0 or higher, or egcs.
 
 ---------------------------------------------------------------------------
+Trusted Solaris
+---------------
+
+According to Julian Stevens <julian.stevens@baedsl.co.uk>, the format
+of inetd.conf on Trusted Solaris 1.2 is a bit different.  Just before
+the user name, you should insert the word `untrusted':
+
+amanda dgram udp wait untrusted amuser /usr/local/libexec/amandad amandad
+
+The patch-system script is *NOT* aware of this detail; you must fix it
+yourself.
+
+---------------------------------------------------------------------------
 SunOS 4.x
 ---------
 
