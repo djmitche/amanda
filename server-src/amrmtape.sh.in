@@ -132,8 +132,8 @@ CleanTapelist () {
 
 CleanCurinfo () {
   [ "xyes" = "x${DebugMode}" ] && set -x
-  (cd ${VarDir}/${Config} >/dev/null 2>&1) || return $?
-  cd ${VarDir}/${Config}
+  (cd ${VarDir} >/dev/null 2>&1) || return $?
+  cd ${VarDir}
 
   TmpSrc=/tmp/amcurinfo.$$ 
   TmpDest=/tmp/amcurinfo.new.$$
