@@ -1,3 +1,11 @@
+1998-12-09  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/holding.c (size_holding_files): return size in KB.
+	* server-src/driver.c (adjust_diskspace): use KB returned by
+	size_holding_files.
+	* server-src/driver.c: rename .tmp file
+	* server-src/dumper.c: do not rename .tmp file. let the driver do it.
+
 1998-12-09  John R. Jackson  <jrj@purdue.edu>
 
 	* common-src/stream.c (stream_server): do not request a reserved port
