@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.18 2002/01/04 21:26:28 martinea Exp $
+ * $Id: event.c,v 1.19 2003/03/29 23:48:54 kovert Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
  * a uniform interface, central state storage, and centralized
@@ -139,8 +139,8 @@ event_register(data, type, fn, arg)
     eventq.qlength++;
 
 #ifdef EVENT_DEBUG
-    fprintf(stderr, "event: register: %X data=%lu, type=%s\n", (int)handle,
-	handle->data, event_type2str(handle->type));
+    dbprintf(("event: register: %X data=%lu, type=%s\n", (int)handle,
+	handle->data, event_type2str(handle->type)));
 #endif
     return (handle);
 }
@@ -158,8 +158,8 @@ event_release(handle)
     assert(handle != NULL);
 
 #ifdef EVENT_DEBUG
-    fprintf(stderr, "event: release (mark): %X data=%lu, type=%s\n",
-	(int)handle, handle->data, event_type2str(handle->type));
+    dbprintf(("event: release (mark): %X data=%lu, type=%s\n",
+	(int)handle, handle->data, event_type2str(handle->type)));
 #endif
     assert(handle->type != EV_DEAD);
 
@@ -199,7 +199,7 @@ event_wakeup(id)
     int nwaken = 0;
 
 #ifdef EVENT_DEBUG
-	fprintf(stderr, "event: wakeup: enter (%lu)\n", id);
+	dbprintf(("event: wakeup: enter (%lu)\n", id));
 #endif
 
     assert(id >= 0);
@@ -208,7 +208,7 @@ event_wakeup(id)
 
 	if (eh->type == EV_WAIT && eh->data == id) {
 #ifdef EVENT_DEBUG
-	    fprintf(stderr, "event: wakeup: %X id=%lu\n", (int)eh, id);
+	    dbprintf(("event: wakeup: %X id=%lu\n", (int)eh, id));
 #endif
 	    fire(eh);
 	    nwaken++;
@@ -238,8 +238,8 @@ event_loop(dontblock)
     struct sigtabent *se;
 
 #ifdef EVENT_DEBUG
-	fprintf(stderr, "event: loop: enter: dontblock=%d, qlength=%d\n",
-	    dontblock, eventq.qlength);
+	dbprintf(("event: loop: enter: dontblock=%d, qlength=%d\n",
+	    dontblock, eventq.qlength));
 #endif
 
     /*
@@ -263,11 +263,11 @@ event_loop(dontblock)
 
     do {
 #ifdef EVENT_DEBUG
-	fprintf(stderr, "event: loop: dontblock=%d, qlength=%d\n", dontblock,
-	    eventq.qlength);
+	dbprintf(("event: loop: dontblock=%d, qlength=%d\n", dontblock,
+	    eventq.qlength));
 	for (eh = eventq_first(eventq); eh != NULL; eh = eventq_next(eh)) {
-	    fprintf(stderr, "%X: %s data=%lu fn=0x%x arg=0x%x\n", (int)eh,
-		event_type2str(eh->type), eh->data, (int)eh->fn, (int)eh->arg);
+	    dbprintf(("%X: %s data=%lu fn=0x%x arg=0x%x\n", (int)eh,
+		event_type2str(eh->type), eh->data, (int)eh->fn, (int)eh->arg));
 	}
 #endif
 	/*
@@ -391,12 +391,12 @@ event_loop(dontblock)
 	 * Let 'er rip
 	 */
 #ifdef EVENT_DEBUG
-	fprintf(stderr, "event: select: dontblock=%d, maxfd=%d, timeout=%ld\n",
-	    dontblock, maxfd, tvptr != NULL ? timeout.tv_sec : -1);
+	dbprintf(("event: select: dontblock=%d, maxfd=%d, timeout=%ld\n",
+	    dontblock, maxfd, tvptr != NULL ? timeout.tv_sec : -1));
 #endif
 	rc = select(maxfd + 1, &readfds, &writefds, &errfds, tvptr);
 #ifdef EVENT_DEBUG
-	fprintf(stderr, "event: select returns %d\n", rc);
+	dbprintf(("event: select returns %d\n", rc));
 #endif
 
 	/*
