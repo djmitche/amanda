@@ -124,7 +124,7 @@ $fh->close or
 
     while ($start < $finish) {
 	my @l = localtime $start;
-	$dates{sprintf("%2d-%02d-%02d", 1900+$l[5], $l[4]+1, $l[3])}++;
+	$dates{sprintf("%d-%02d-%02d", 1900+$l[5], $l[4]+1, $l[3])}++;
 	$start += 86400;
     }
 }

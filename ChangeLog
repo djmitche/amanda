@@ -1,3 +1,7 @@
+2000-01-13  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* server-src/amoverview.pl.in: Year doesn't take just 2 bytes.
+
 2000-01-06  David Wolfskill  <dhw@whistle.com>
 
 	* docs/TAPETYPES: Typo.
