@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.61 1998/02/26 19:25:19 jrj Exp $
+ * $Id: planner.c,v 1.62 1998/03/19 15:48:44 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -548,6 +548,11 @@ disk_t *dp;
 	    log_add(L_INFO, "Forcing full dump of %s:%s as directed.",
 		    dp->host->hostname, dp->name);
 	}
+    }
+    else if(dp->strategy == DS_NOFULL) {
+	/* force estimate of level 1 */
+	ep->last_level = 1;
+	ep->next_level0 = next_level0(dp, &inf);
     }
     else {
 	ep->last_level = last_level(&inf);
