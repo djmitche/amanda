@@ -232,7 +232,7 @@ char *dumpdate;
 
 	dumppid = pipespawn(program->backup_name, &dumpin, dumpout, mesgf,
 			    "smbclient",
-			    sharename, pass, "-U", "backup",
+			    sharename, pass, "-U", "backup", "-E",
 			    domain[0] ? "-W" : "-d0",
 			    domain[0] ? domain : taropt,
 			    domain[0] ? "-d0" : "-",

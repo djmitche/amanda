@@ -384,6 +384,7 @@ regex_t re_size[] = {
     {"dump: Estimate: [0-9][0-9]* blocks being output to pipe",1024},
                                                               /* DU 4.0 dump */
     {"dump: Dumping [0-9][0-9]* bytes, ", 1},                /* DU 4.0 vdump */
+    {"DUMP: estimated [0-9][0-9]* KB output", 1024},                 /* HPUX */
     {"xfsdump: estimated dump size: [0-9][0-9]* bytes", 1},  /* Irix 6.2 xfs */
     {"Total bytes listed: [0-9][0-9]*", 1},		     /* Samba client */
 
@@ -541,7 +542,7 @@ int level;
     else
 	tarkeys = "archive 1;recurse;dir";
 
-    dbprintf(("%s: running \"%s %s %s -U backup%s%s -c %s\"\n",
+    dbprintf(("%s: running \"%s %s %s -U backup -E%s%s -c %s\"\n",
 	      pname, SAMBA_CLIENT, sharename, "XXXXX",
 	      domain[0] ? " -W " : "", domain,
 	      tarkeys));
@@ -558,7 +559,8 @@ int level;
 	    dup2(pipefd[1], 2);
 	    close(pipefd[0]);
 
-	    execl(SAMBA_CLIENT, "smbclient", sharename, pass, "-U", "backup",
+	    execl(SAMBA_CLIENT, "smbclient", sharename, pass,
+		  "-U", "backup", "-E",
 		  domain[0] ? "-W" : "-c",
 		  domain[0] ? domain : tarkeys,
 		  domain[0] ? "-c" : (char *)0,
