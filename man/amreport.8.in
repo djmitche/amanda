@@ -119,13 +119,13 @@ other tape types. Others are encouraged to do so.
 * exabyte 8mm tapes
 * dat 4mm tapes
 * DLT tapes
-* 8.5x11 3-ring binder
+* 3-ring binder
 .fi
 .sp
 .RE
 .RE
-The 8.5x11 3-ring binder type is the most generic. It can be used to make a
-hardcopy log of the tapes which can be kept in a 3-ring binder.
+The 3-ring binder type is the most generic.
+It may be used to make a hardcopy log of the tapes.
 .SH "SEE ALSO"
 amanda(8),
 amflush(8)
