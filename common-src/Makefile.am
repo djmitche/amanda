@@ -1,10 +1,6 @@
 # Makefile for Amanda library.
 
-if WANT_LIBTOOL
 lib_LTLIBRARIES =	libamanda.la
-else
-noinst_LIBRARIES = 	libamanda.a
-endif
 
 REGDIR = ../regex-src
 REGsrcdir = $(srcdir)/$(REGDIR)
@@ -32,9 +28,6 @@ libamanda_la_SOURCES = \
 libamanda_la_LIBADD =	@LTLIBOBJS@ @LTALLOCA@
 libamanda_la_LDFLAGS =  -release $(VERSION)
 
-libamanda_a_SOURCES =	$(libamanda_la_SOURCES)
-libamanda_a_LIBADD =	@LIBOBJS@ @ALLOCA@
-
 noinst_HEADERS =	amanda.h	amregex.h	arglist.h	\
 			clock.h		\
 			dgram.h		\
@@ -56,7 +49,7 @@ noinst_HEADERS =	amanda.h	amregex.h	arglist.h	\
 EXTRA_PROGRAMS = genversion $(TEST_PROGS)
 
 genversion_SOURCES = genversion.c versuff.c
-genversion_LDADD = $(libamanda_a_LIBADD)
+genversion_LDADD = $(libamanda_la_LIBADD)
 
 genversion.@OBJEXT@: genversion.h
 genversion.h: $(top_builddir)/config.status
@@ -115,13 +108,13 @@ STANDARD_COMMON_STUFF = \
 	file.$(OBJEXT)
 
 statfs_SOURCES = statfs.test.c
-statfs_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF)
+statfs_LDADD = $(libamanda_la_LIBADD) $(STANDARD_COMMON_STUFF)
 
 token_SOURCES = token.test.c
-token_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF)
+token_LDADD = $(libamanda_la_LIBADD) $(STANDARD_COMMON_STUFF)
 
 file_SOURCES = file.test.c
-file_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF_NOT_FILE)
+file_LDADD = $(libamanda_la_LIBADD) $(STANDARD_COMMON_STUFF_NOT_FILE)
 
 bsdsecurity_SOURCES = bsd-security.test.c
 bsdsecurity_LDADD = $(libamanda_a_LIBADD) \
@@ -136,7 +129,7 @@ bsdsecurity_LDADD = $(libamanda_a_LIBADD) \
 		    versuff.$(OBJEXT)
 
 amfeatures_SOURCES = amfeatures.test.c
-amfeatures_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF)
+amfeatures_LDADD = $(libamanda_la_LIBADD) $(STANDARD_COMMON_STUFF)
 
 %.test.c: $(srcdir)/%.c
 	echo '#define TEST' >$@
