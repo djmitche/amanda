@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.3.2.3.4.3.2.7 2003/06/20 14:46:30 martinea Exp $
+ * $Id: tapetype.c,v 1.3.2.3.4.3.2.8 2003/10/30 18:12:42 martinea Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -343,10 +343,10 @@ int main(argc, argv)
       }
       break;
     case 'f':
-      tapedev = optarg;
+      tapedev = stralloc(optarg);
       break;
     case 't':
-      typename = optarg;
+      typename = stralloc(optarg);
       break;
     case 'c':
       comprtstonly = 1;

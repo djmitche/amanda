@@ -1,4 +1,10 @@
 2003-10-30  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amcheck.c: Use stralloc(optarg).
+	* tape-src/ammt.c: Use stralloc(optarg).
+	* tape-src/tapetype.c: Use stralloc(optarg).
+
+2003-10-30  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Jay Fenlason <fenlason@redhat.com>
 
 	* server-src/dumper.c: Don't set SIGCHLD to SIG_IGN.
