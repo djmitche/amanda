@@ -14,7 +14,7 @@ libamanda_a_SOURCES =	alloc.c		debug.c		dgram.c		\
 			error.c		match.c		protocol.c	\
 			regex.c		statfs.c	stralloc.c	\
 			stream.c	token.c		version.c	\
-			versuff.c	
+			versuff.c	amflock.c
 
 libamanda_a_LIBADD =	@ALLOCA@ @LIBOBJS@
 
@@ -25,7 +25,7 @@ noinst_HEADERS =	amanda.h	arglist.h	\
 			regex.h		statfs.h	stream.h	\
 			token.h		version.h
 
-EXTRA_DIST = 		alloca.c	flock.c		getcwd.c	\
+EXTRA_DIST = 		alloca.c	getcwd.c	\
 			mktime.c	strdup.c	strerror.c	\
 			strstr.c	genversion.c
 

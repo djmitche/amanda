@@ -216,14 +216,6 @@ extern int errno;
 
 
 /*
- * Constants from BSDish <sys/file.h>, for SV systems that define NEED_FLOCK.
- */
-#ifndef LOCK_EX
-#  define LOCK_EX 2
-#  define LOCK_UN 8
-#endif
-
-/*
  * Define MAX_HOSTNAME_LENGTH as the size of arrays to hold hostname's.
  */
 #undef  MAX_HOSTNAME_LENGTH
@@ -304,13 +296,16 @@ extern void debug_printf P((char *format, ...));
 #define ERR_SYSLOG	2
 #define ERR_AMANDALOG	4
 
-extern int   erroutput_type;
-extern void  error     P((char *format, ...));
-extern int   onerror   P((void (*errf)(void)));
-extern void  *alloc    P((int size));
-extern char  *stralloc P((char *str));
-extern int    match    P((char *regex, char *str));
-extern time_t unctime  P((char *timestr));
+extern int    erroutput_type;
+extern void   error     P((char *format, ...));
+extern int    onerror   P((void (*errf)(void)));
+extern void  *alloc     P((int size));
+extern char  *stralloc  P((char *str));
+extern int    match     P((char *regex, char *str));
+extern time_t unctime   P((char *timestr));
+extern int    amflock   P((int fd));
+extern int    amroflock P((int fd));
+extern int    amfunlock P((int fd));
 
 extern int debug;
 extern char *version_info[];
@@ -386,10 +381,6 @@ extern int fclose P((FILE *stream));
 
 #ifndef HAVE_FFLUSH_DECL
 extern int fflush P((FILE *stream));
-#endif
-
-#ifndef HAVE_FLOCK_DECL
-extern int flock P((int fd, int operation));
 #endif
 
 #ifndef HAVE_FPRINTF_DECL

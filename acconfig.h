@@ -177,11 +177,15 @@
 
 /* System function characteristics.  */
 #undef HAVE_SYSVSHM
-#undef NEED_POSIX_FLOCK
 #undef SELECT_ARG_TYPE
 #undef SHM_ARG_TYPE
 #undef HAVE_TWO_ARG_GETTIMEOFDAY
 #undef HAVE_STRUCT_DATUM
+
+/* Type of file locking.  Define none or one of these. */
+#undef HAVE_POSIX_FCNTL
+#undef HAVE_FLOCK
+#undef HAVE_LOCKF
 
 /* Declarations of functions.  */
 #undef HAVE_ACCEPT_DECL

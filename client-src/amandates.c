@@ -33,9 +33,6 @@
 static amandates_t *amandates_list = NULL;
 static FILE *amdf = NULL;
 static int updated, readonly;
-#ifdef NEED_POSIX_FLOCK
-static struct flock lock = { F_UNLCK, SEEK_SET, 0, 0 };
-#endif
 static void import_dumpdates P((amandates_t *));
 static void enter_record P((char *, int , time_t));
 static amandates_t *lookup P((char *name, int import));
@@ -82,16 +79,12 @@ int open_readwrite;
     if(amdf == NULL)
 	return 0;
 
-#ifdef NEED_POSIX_FLOCK
     if(open_readwrite)
-	lock.l_type = F_WRLCK;
+	rc = amflock(fileno(amdf));
     else
-	lock.l_type = F_RDLCK;
+	rc = amroflock(fileno(amdf));
 
-    if(fcntl(fileno(amdf), F_SETLKW, &lock) == -1)
-#else
-    if(flock(fileno(amdf), LOCK_EX) == -1)
-#endif
+    if(rc == -1)
 	error("could not lock %s: %s", AMANDATES_FILE, strerror(errno));
 
     while(fgets(line, 4096, amdf)) {
@@ -133,12 +126,7 @@ void finish_amandates()
 	}
     }
 
-#ifdef NEED_POSIX_FLOCK
-    lock.l_type = F_UNLCK;
-    if(fcntl(fileno(amdf), F_SETLK, &lock) == -1)
-#else
-    if(flock(fileno(amdf), LOCK_UN) == -1)
-#endif
+    if(amfunlock(fileno(amdf)) == -1)
 	error("could not unlock %s: %s", AMANDATES_FILE, strerror(errno));
     fclose(amdf);
 }

@@ -55,14 +55,6 @@ static int logfd = -1;
   * careful, and on top of that the functions here are so far
   * the only accesses to the logfile, so keep things simple.
   */
-#ifdef NEED_POSIX_FLOCK
-static struct flock lock = {
-  F_UNLCK,    /* Lock type, will be set below. */
-  SEEK_SET,   /* Offset below starts at beginning, */
-  0,          /* thus lock region starts at byte 0 */
-  0           /* and goes to EOF. */
-};            /* Don't need other field(s). */
-#endif
 
 /* local functions */
 static void open_log P((void));
@@ -155,12 +147,7 @@ static void open_log()
     logfd = open(getconf_str(CNF_LOGFILE), O_WRONLY|O_CREAT|O_APPEND, 0666);
     if(logfd == -1) error("could not open log file %s: %s", 
 		       getconf_str(CNF_LOGFILE),strerror(errno));
-#ifdef NEED_POSIX_FLOCK
-    lock.l_type = F_WRLCK;
-    if(fcntl(logfd, F_SETLKW, &lock) == -1)
-#else
-    if(flock(logfd, LOCK_EX) == -1)
-#endif
+    if(amflock(logfd) == -1)
 	error("could not lock log file %s: %s", getconf_str(CNF_LOGFILE),
 	      strerror(errno));
 }
@@ -168,17 +155,9 @@ static void open_log()
 
 static void close_log()
 {
-#ifdef NEED_POSIX_FLOCK
-    lock.l_type = F_UNLCK;
-    if(fcntl(logfd, F_SETLK, &lock) == -1)
-#else
-    if(flock(logfd, LOCK_UN) == -1)
-#endif
+    if(amfunlock(logfd) == -1)
 	error("could not unlock log file %s: %s", getconf_str(CNF_LOGFILE),
 	      strerror(errno));
     if(close(logfd) == -1)
 	error("close log file: %s", strerror(errno));
 }
-
-
-

@@ -36,9 +36,6 @@
 
 static DBM *infodb = NULL;
 static lockfd = -1;
-#ifdef NEED_POSIX_FLOCK
-static struct flock lock = { F_UNLCK, SEEK_SET, 0, 0 };
-#endif
 
 int open_infofile(filename)
 char *filename;
@@ -51,12 +48,7 @@ char *filename;
     if((lockfd = open(lockname, O_CREAT|O_RDWR, 0666)) == -1)
 	return 2;
 
-#ifdef NEED_POSIX_FLOCK
-    lock.l_type = F_WRLCK;
-    if(fcntl(lockfd, F_SETLKW, &lock) == -1)
-#else
-    if(flock(lockfd, LOCK_EX) == -1)
-#endif
+    if(amflock(lockfd) == -1)
 	return 3;
 
     infodb = dbm_open(filename, O_CREAT|O_RDWR, 0666);
@@ -67,12 +59,7 @@ void close_infofile()
 {
     dbm_close(infodb);
 
-#ifdef NEED_POSIX_FLOCK
-    lock.l_type = F_UNLCK;
-    if(fcntl(lockfd, F_SETLK, &lock) == -1)
-#else
-    if(flock(lockfd, LOCK_UN) == -1)
-#endif
+    if(amfunlock(lockfd) == -1)
 	error("could not unlock infofile: %s", strerror(errno));
 
     close(lockfd);

@@ -305,10 +305,6 @@ long getsize_smbtar P((char *disk, int level));
 long handle_dumpline P((char *str));
 double first_num P((char *str));
 
-#ifdef NEED_POSIX_FLOCK
-static struct flock lock = { F_UNLCK, SEEK_SET, 0, 0 };
-#endif
-
 void dump_calc_estimates(est)
 disk_estimates_t *est;
 {
@@ -323,22 +319,12 @@ disk_estimates_t *est;
 	    size = getsize_dump(est->amname, level);
 	    sprintf(result, "%s %d SIZE %ld\n", est->amname, level, size);
 
-#ifdef NEED_POSIX_FLOCK
-	    lock.l_type = F_WRLCK;
-	    fcntl(1, F_SETLKW, &lock);
-#else
-	    flock(1, LOCK_EX);
-#endif
+	    amflock(1);
 
 	    lseek(1, (off_t)0, SEEK_END);
 	    write(1, result, strlen(result));
 
-#ifdef NEED_POSIX_FLOCK
-	    lock.l_type = F_UNLCK;
-	    fcntl(1, F_SETLK, &lock);
-#else
-	    flock(1, LOCK_UN);
-#endif
+	    amfunlock(1);
 	}
     }
 }
@@ -358,22 +344,12 @@ disk_estimates_t *est;
 	    size = getsize_smbtar(est->amname, level);
 	    sprintf(result, "%s %d SIZE %ld\n", est->amname, level, size);
 
-#ifdef NEED_POSIX_FLOCK
-	    lock.l_type = F_WRLCK;
-	    fcntl(1, F_SETLKW, &lock);
-#else
-	    flock(1, LOCK_EX);
-#endif
+	    amflock(1);
 
 	    lseek(1, (off_t)0, SEEK_END);
 	    write(1, result, strlen(result));
 
-#ifdef NEED_POSIX_FLOCK
-	    lock.l_type = F_UNLCK;
-	    fcntl(1, F_SETLK, &lock);
-#else
-	    flock(1, LOCK_UN);
-#endif
+	    amfunlock(1);
 	}
     }
 }

@@ -146,8 +146,17 @@ int main()
 #ifdef HAVE_SYSVSHM
     prstr(" HAVE_SYSVSHM");
 #endif
-#ifdef NEED_POSIX_FLOCK
-    prstr(" NEED_POSIX_FLOCK");
+#ifdef HAVE_POSIX_FCNTL
+    prstr(" LOCKING=POSIX_FCNTL");
+#endif
+#ifdef HAVE_FLOCK
+    prstr(" LOCKING=FLOCK");
+#endif
+#ifdef HAVE_LOCKF
+    prstr(" LOCKING=LOCKF");
+#endif
+#if !defined(HAVE_POSIX_FCNTL) && !defined(HAVE_FLOCK) && !defined(HAVE_LOCK)
+    prstr(" LOCKING=**NONE**");
 #endif
 #ifdef OSF1_VDUMP
     prstr(" OSF1_VDUMP");

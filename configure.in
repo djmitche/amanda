@@ -1684,11 +1684,11 @@ dnl fi
 
 dnl lock/flock/fcntl
 AC_CACHE_CHECK(
-   [whether posix fcntl flock works],
+   [whether posix fcntl locking works],
    amanda_cv_posix_filelocking,
    [
-rm -f conftest.$ac_ext
-cat <<EOF >conftest.$ac_ext
+	rm -f conftest.$ac_ext
+	cat <<EOF >conftest.$ac_ext
 #include "confdefs.h"
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H
@@ -1710,62 +1710,43 @@ cat <<EOF >conftest.$ac_ext
 # include <sys/fcntl.h>
 #endif
 
-static struct flock lock = {F_UNLCK, SEEK_SET, 0, 0};
-
-main()
-{
-    int lockfd;
-    FILE *fp;
-
-    if (lockfd = open("/tmp/conftest.lock", O_RDWR | O_CREAT, 0666) == -1)
-	return (-1);
-    close(lockfd);
-    chmod("/tmp/conftest.lock", 0666);
-    if (!(fp = fopen("/tmp/conftest.lock", "r")))
-	return (-2);
-    lock.l_type = F_RDLCK;
-    if (fcntl(fileno(fp), F_SETLKW, &lock) == -1)
-	exit(1);
-    lock.l_type = F_UNLCK;
-    if (fcntl(fileno(fp), F_SETLK, &lock) == -1)
-	exit(2);
-    fclose(fp);
-    if (!(fp = fopen("/tmp/conftest.lock", "w")))
-	return (-3);
-    lock.l_type = F_WRLCK;
-    if (fcntl(fileno(fp), F_SETLKW, &lock) == -1)
-	exit(3);
-    lock.l_type = F_UNLCK;
-    if (fcntl(fileno(fp), F_SETLK, &lock) == -1)
-	exit(4);
-    exit(0);
-}
+#define CONFIGURE_TEST
+#define HAVE_POSIX_FCNTL
+#include "common-src/amflock.c"
 EOF
-${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >/dev/null 2>/dev/null
-if test $? = 0; then
-    ./conftest
-    STATUS=$?
-    if test "$STATUS" = 0; then
-	amanda_cv_posix_filelocking=yes
-    else
-	amanda_cv_posix_filelocking="no (test returned ${STATUS})"
-    fi
-else
-    amanda_cv_posix_filelocking="no (compiler error)"
-fi
-rm -f conftest* /tmp/conftest.lock
-])
+	${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >/dev/null 2>/dev/null
+	if test $? = 0; then
+	    ./conftest
+	    STATUS=$?
+	    if test "$STATUS" = 0; then
+		amanda_cv_posix_filelocking=yes
+	    else
+		amanda_cv_posix_filelocking="no (test returned ${STATUS})"
+	    fi
+	else
+	    amanda_cv_posix_filelocking="no (compiler error)"
+	fi
+	cp conftest.c fcntltest.c
+	rm -f conftest* /tmp/conftest.lock
+    ]
+)
 if test "$amanda_cv_posix_filelocking" = yes; then
-    AC_DEFINE(NEED_POSIX_FLOCK)
-    HAS_RUNNING_FLOCK=1
+    AC_DEFINE(HAVE_POSIX_FCNTL)
+    HAS_WORKING_FILE_LOCK=1
 fi
 
-if test -z "$HAS_RUNNING_FLOCK"; then
-AC_MSG_CHECKING(whether flock works)
-rm -f conftest.$ac_ext
-cat <<EOF >conftest.$ac_ext
+if test -z "$HAS_WORKING_FILE_LOCK"; then
+    AC_CACHE_CHECK(
+	[whether flock locking works],
+	amanda_cv_flock_filelocking,
+	[
+	    rm -f conftest.$ac_ext
+	    cat <<EOF >conftest.$ac_ext
 #include "confdefs.h"
 #include <stdio.h>
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
 #endif
@@ -1782,58 +1763,55 @@ cat <<EOF >conftest.$ac_ext
 # include <sys/fcntl.h>
 #endif
 
-main()
-{
 #if defined(LOCK_EX) && defined(LOCK_UN)
-    int lockfd;
-    FILE *fp;
 
-    if (lockfd = open("/tmp/conftest.lock", O_RDWR | O_CREAT, 0666) == -1)
-	return (-1);
-    close(lockfd);
-    chmod("/tmp/conftest.lock", 0666);
-    if (!(fp = fopen("/tmp/conftest.lock", "r")))
-	return (-2);
-    if (flock(fileno(fp), LOCK_EX) == -1)
-	exit(1);
-    if (flock(fileno(fp), LOCK_UN) == -1)
-	exit(2);
-    fclose(fp);
-    if (!(fp = fopen("/tmp/conftest.lock", "w")))
-	return (-3);
-    if (flock(fileno(fp), LOCK_EX) == -1)
-	exit(3);
-    if (flock(fileno(fp), LOCK_UN) == -1)
-	exit(4);
-    exit(0);
+#define CONFIGURE_TEST
+#define HAVE_FLOCK
+#include "common-src/amflock.c"
+
 #else
+
+main()
+{
     exit(42);
-#endif
 }
+
+#endif
 EOF
-${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >/dev/null 2>/dev/null
-if test $? = 0; then
-    ./conftest
-    STATUS=$?
-    if test "$STATUS" = 0; then
-	AC_MSG_RESULT(yes)
-	HAS_RUNNING_FLOCK=1
-    else
-	AC_MSG_RESULT(no ($STATUS))
+	    ${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >/dev/null 2>/dev/null
+	    if test $? = 0; then
+		./conftest
+		STATUS=$?
+		if test "$STATUS" = 0; then
+		    amanda_cv_flock_filelocking="yes"
+		else
+		    amanda_cv_flock_filelocking="no ($STATUS)"
+		fi
+	    else
+		amanda_cv_flock_filelocking="no (compiler error)"
+	    fi
+	    cp conftest.c flocktest.c
+	    rm -f conftest* /tmp/conftest.lock
+	]
+    )
+    if test "$amanda_cv_flock_filelocking" = yes; then
+	AC_DEFINE(HAVE_FLOCK)
+	HAS_WORKING_FILE_LOCK=1
     fi
-else
-    AC_MSG_RESULT(no (compiler error))
-fi
-dnl cp conftest.c flocktest.c
-rm -f conftest* /tmp/conftest.lock
 fi
 
-if test -z "$HAS_RUNNING_FLOCK"; then
-AC_MSG_CHECKING(whether an lockf flock replacement works)
-rm -f conftest.$ac_ext
-cat <<EOF >conftest.$ac_ext
+if test -z "$HAS_WORKING_FILE_LOCK"; then
+    AC_CACHE_CHECK(
+	[whether lockf locking works],
+	amanda_cv_lockf_filelocking,
+	[
+	    rm -f conftest.$ac_ext
+	    cat <<EOF >conftest.$ac_ext
 #include "confdefs.h"
 #include <stdio.h>
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
 #endif
@@ -1850,93 +1828,35 @@ cat <<EOF >conftest.$ac_ext
 # include <sys/fcntl.h>
 #endif
 
-/* consts from BSDish <sys/file.h> */
-#ifndef LOCK_EX
-#  define LOCK_EX 2
-#  define LOCK_UN 8
-#endif
- 
-/* sgi irix reportedly has F_ULOCK instead of F_UNLOCK */
-#ifdef F_UNLOCK
-#  define OUR_UNLOCK F_UNLOCK
-#else
-#  ifdef F_ULOCK
-#    define OUR_UNLOCK F_ULOCK
-#  else
-     !!! error neither F_ULOCK or F_UNLOCK defined: cannot deal with this
-#  endif
-#endif
-
-int flock(fd, operation)
-int fd, operation;
-{
-    off_t prevpos;
- 
-    assert(operation == LOCK_EX || operation == LOCK_UN);
- 
-    /* save our current position */
-    if((prevpos = lseek(fd, (off_t)0, SEEK_CUR)) == -1) return -1;
- 
-    /* a lock on the first byte of the file serves as our advisory file lock */
-    if(lseek(fd, (off_t)0, SEEK_SET) == -1) return -1;
-    if(operation == LOCK_EX) {
-	if(lockf(fd, F_LOCK, 1) == -1) return -1;
-    }
-    else {
-	if(lockf(fd, OUR_UNLOCK, 1) == -1) return -1;
-    }
- 
-    /* restore our current position */
-    if(lseek(fd, prevpos, SEEK_SET) == -1) return -1;
-    return 0;
-}
-
-main()
-{
-    int lockfd;
-    FILE *fp;
-
-    if (lockfd = open("/tmp/conftest.lock", O_RDWR | O_CREAT, 0666) == -1)
-	return (-1);
-    close(lockfd);
-    chmod("/tmp/conftest.lock", 0666);
-    if (!(fp = fopen("/tmp/conftest.lock", "r")))
-	return (-2);
-    if (flock(fileno(fp), LOCK_EX) == -1)
-	exit(1);
-    if (flock(fileno(fp), LOCK_UN) == -1)
-	exit(2);
-    fclose(fp);
-    if (!(fp = fopen("/tmp/conftest.lock", "w")))
-	return (-3);
-    if (flock(fileno(fp), LOCK_EX) == -1)
-	exit(3);
-    if (flock(fileno(fp), LOCK_UN) == -1)
-	exit(4);
-    exit(0);
-}
+#define CONFIGURE_TEST
+#define HAVE_LOCKF
+#include "common-src/amflock.c"
 EOF
-${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >/dev/null 2>/dev/null
-if test $? = 0; then
-    ./conftest
-    STATUS=$?
-    if test "$STATUS" = 0; then
-	AC_MSG_RESULT(yes)
-	HAS_RUNNING_FLOCK=1
-	LIBOBJS="$LIBOBJS flock.o"
-    else
-	AC_MSG_RESULT(no ($STATUS))
+	    ${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >/dev/null 2>/dev/null
+	    if test $? = 0; then
+		./conftest
+		STATUS=$?
+		if test "$STATUS" = 0; then
+		    amanda_cv_lockf_filelocking="yes"
+		else
+			amanda_cv_lockf_filelocking="no ($STATUS)"
+		fi
+	    else
+		amanda_cv_lockf_filelocking="no (compiler error)"
+	    fi
+	    cp conftest.c lockftest.c
+	    rm -f conftest* /tmp/conftest.lock
+	]
+    )
+    if test "$amanda_cv_lockf_filelocking" = yes; then
+	AC_DEFINE(HAVE_LOCKF)
+	HAS_WORKING_FILE_LOCK=1
     fi
-else
-    AC_MSG_RESULT(no (compiler error))
-fi
-dnl cp conftest.c flocktest.c
-rm -f conftest* /tmp/conftest.lock
 fi
 
-if test -z "$HAS_RUNNING_FLOCK"; then
-    AC_MSG_WARN([*** No working flock/fcntl capability found!])
-    AC_MSG_WARN([*** This system will not support the Amanda server.])
+if test -z "$HAS_WORKING_FILE_LOCK"; then
+    AC_MSG_WARN([*** No working file locking capability found!])
+    AC_MSG_WARN([*** Be VERY VERY careful.])
 fi
 
 dnl restore the old CFLAGS
