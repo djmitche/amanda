@@ -1,3 +1,8 @@
+2001-12-04  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/dumper.c, server-src/taper.c: Replace TRY_AGAIN
+	by TRYAGAIN.
+
 2001-11-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* Amanda 2.4.3b1 released

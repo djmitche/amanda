@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.14.2.7 2001/11/08 18:44:56 martinea Exp $
+/* $Id: dumper.c,v 1.75.2.14.2.7.2.1 2001/12/04 15:40:03 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -289,7 +289,7 @@ char **main_argv;
 			    tmp_filename, strerror(errno));
 		if(save_errno == ENOSPC) {
 		    putresult(NO_ROOM, "%s %lu\n", handle, use);
-		    putresult(TRY_AGAIN, "%s %s\n", handle, q);
+		    putresult(TRYAGAIN, "%s %s\n", handle, q);
 		}
 		else {
 		    putresult(FAILED, "%s %s\n", handle, q);
@@ -304,7 +304,7 @@ char **main_argv;
 	    rc = startup_dump(hostname, diskname, level, dumpdate, progname, options);
 	    if(rc) {
 		q = squote(errstr);
-		putresult(rc == 2? FAILED : TRY_AGAIN, "%s %s\n",
+		putresult(rc == 2? FAILED : TRYAGAIN, "%s %s\n",
 			  handle, q);
 		if(rc == 2) {
 		    log_add(L_FAIL, "%s %s %s %d [%s]", hostname, diskname,
@@ -371,7 +371,7 @@ char **main_argv;
 	    rc = startup_dump(hostname, diskname, level, dumpdate, progname, options);
 	    if(rc) {
 		q = squote(errstr);
-		putresult(rc == 2? FAILED : TRY_AGAIN, "%s %s\n",
+		putresult(rc == 2? FAILED : TRYAGAIN, "%s %s\n",
 			  handle, q);
 		if(rc == 2) {
 		    log_add(L_FAIL, "%s %s %s %d [%s]", hostname, diskname,
@@ -1320,7 +1320,7 @@ int mesgfd, datafd, indexfd, outfd;
 	if(rc==2)
 	    putresult(FAILED, "%s %s\n", handle, q);
 	else
-	    putresult(TRY_AGAIN, "%s %s\n", handle, q);
+	    putresult(TRYAGAIN, "%s %s\n", handle, q);
 	amfree(q);
     }
 

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.47.2.14.4.8 2001/11/08 18:44:56 martinea Exp $
+/* $Id: taper.c,v 1.47.2.14.4.8.2.1 2001/12/04 15:40:03 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -731,7 +731,7 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 		errstr = newstralloc(errstr,
 				     "[fatal buffer mismanagement bug]");
 		q = squote(errstr);
-		putresult(TRY_AGAIN, "%s %s\n", handle, q);
+		putresult(TRYAGAIN, "%s %s\n", handle, q);
 		amfree(q);
 		log_add(L_INFO, "retrying %s:%s.%d on new tape: %s",
 		        hostname, diskname, level, errstr);
@@ -847,7 +847,7 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 
 	    q = squote(errstr);
 	    if(tok == 'T') {
-		putresult(TRY_AGAIN, "%s %s\n", handle, q);
+		putresult(TRYAGAIN, "%s %s\n", handle, q);
 		log_add(L_INFO, "retrying %s:%s.%d on new tape: %s",
 		        hostname, diskname, level, errstr);
 	    } else {
