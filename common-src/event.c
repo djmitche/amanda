@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.5 1998/11/05 21:22:25 kashmir Exp $
+ * $Id: event.c,v 1.6 1998/12/01 17:05:15 kashmir Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
  * a uniform interface, central state storage, and localized
@@ -161,8 +161,7 @@ event_release(handle)
 }
 
 /*
- * Release an event.  We need to specially handle signal events by
- * unregistering their handler.
+ * Release an event.
  */
 static void
 release(handle)
@@ -200,15 +199,15 @@ event_loop(dontblock)
     struct sigtabent *se;
 
     /*
-     * We must not be entered twice
-     */
-    assert(++entry == 1);
-
-    /*
      * If we have no events, we have nothing to do
      */
     if (eventq.qlength == 0)
 	return;
+
+    /*
+     * We must not be entered twice
+     */
+    assert(++entry == 1);
 
     ntries = 0;
 
@@ -319,7 +318,7 @@ event_loop(dontblock)
 		break;
 
 	    /*
-	     * Dead events require another scan for removal.
+	     * Prune dead events
 	     */
 	    case EV_DEAD:
 		release(eh);
@@ -460,7 +459,7 @@ event_loop(dontblock)
 	}
     } while (!dontblock && eventq.qlength > 0);
 
-    entry--;
+    assert(--entry == 0);
 }
 
 /*

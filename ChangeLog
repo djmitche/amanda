@@ -1,5 +1,17 @@
 1998-12-01  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/event.c (release): nuke bogus comment about signal
+	handler release
+	* common-src/event.c (event_loop): move the reentrancy assert
+	after the empty queue check.  Otherwise, calling event_loop()
+	with an empty event queue would cause the entry count to get
+	out of sync.  Also, on exit, assert that the entry count has
+	gone to 0
+	* common-src/event.c (event_loop): fix bogus comment about event
+	removal
+
+1998-12-01  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/arglist.h: implement arglist_function3()
 
 1998-11-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
