@@ -19,7 +19,7 @@ amrecover_SOURCES =	amrecover.c			amrecover.h	\
 
 EXTRA_DIST =		uparse.h
 
-amrecover_LDADD =	../common-src/libamanda.a @LEXLIB@
+amrecover_LDADD =	../common-src/libamclient.a ../common-src/libamanda.a @LEXLIB@
 YFLAGS =		-d
 
 install-exec-hook:
