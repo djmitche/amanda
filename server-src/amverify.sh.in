@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.7.2.7 1999/09/13 21:20:06 jrj Exp $
+#	$Id: amverify.sh.in,v 1.7.2.8 1999/09/19 19:31:45 jrj Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -341,6 +341,20 @@ while [ $SLOT -lt $SLOTS ]; do
 	ERG=0
 	ERRORS=0
 	while [ $ERG = 0 ]; do
+		if [ $IS_AIX -eq 0 ]; then
+
+			# The AIX "mt stat" function does not really do anything
+			# w.r.t. checking the drive for ready, and in fact, will
+			# fail under some conditions (e.g. if the tape "file"
+			# is a symlink to the real device).  We let the rewind
+			# right after this take care of the cases "mt stat"
+			# does not catch.
+
+			pecho "Waiting for device to go ready...\r" >&2
+			until $MT $MTOPT $DEVICE stat >/dev/null 2>&1; do
+				sleep 3
+			done
+		fi
 		pecho "Reading...           \r" >&2
 		RESULT=`$AMRESTORE -h -p $DEVICE 2> $TEMP/amrestore.out \
 			| doonefile 2> $TEMP/onefile.errors`

@@ -1,5 +1,10 @@
 1999-09-19 John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/amverify.sh.in: put back an "mt status" wait loop I
+	  erroneously removed, but protect it from AIX.
+
+1999-09-19 John R. Jackson  <jrj@purdue.edu>
+
 	* common-src/util.c: fix math in bind_portrange so ports requested
 	  are between those the caller passed and make sure port 0 does not
 	  accidentally get requested, which returns a non-privileged port.
@@ -459,7 +464,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.280 1999/09/19 19:09:59 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.281 1999/09/19 19:31:36 jrj Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
