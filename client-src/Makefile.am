@@ -18,7 +18,7 @@ SUFFIXES =		.sh .pl
 			cat $< > $@
 			chmod a+x $@
 
-sbin_PROGRAMS =		amrecover			amrestore
+sbin_PROGRAMS =		amrecover
 
 libexec_PROGRAMS =	versionsuffix					\
 			@BUILD_CLIENT_PROGS_LIBEXEC@

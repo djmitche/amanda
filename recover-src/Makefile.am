@@ -8,10 +8,10 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
  
 LDADD =			../common-src/libamanda.a
 
-sbin_PROGRAMS =
+sbin_PROGRAMS =		amrestore
 
 install-exec-hook:
-	@list="$(sbin_PROGRAMS)";
+	@list="$(sbin_PROGRAMS)"; \
 	for p in $$list; do \
 		pa=$(sbindir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(CLIENT_LOGIN) $$pa; \
