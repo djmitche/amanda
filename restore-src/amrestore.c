@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.28 1998/10/14 22:36:24 jrj Exp $
+ * $Id: amrestore.c,v 1.28.2.1 1999/06/08 14:53:24 kashmir Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -66,7 +66,7 @@ int disk_match P((dumpfile_t *file, char *datestamp,
 char *make_filename P((dumpfile_t *file));
 int read_file_header P((char *buffer, dumpfile_t *file,
 			int buflen, int tapedev));
-void restore P((dumpfile_t *file, string_t filename,
+void restore P((dumpfile_t *file, char *filename,
 		int tapedev, int isafile));
 void usage P((void));
 int main P((int argc, char **argv));
