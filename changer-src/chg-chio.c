@@ -93,7 +93,7 @@ int isempty(fd, slot, nslots)
 
     rc = ioctl(fd,CHIOGSTATUS,&ces);
     if (rc) {
-	fprintf(stderr,"ioctl failed: 0x%x %s\n",rc,sys_errlist[errno]);
+	fprintf(stderr,"ioctl failed: 0x%x %s\n",rc,strerror(errno));
 	exit(1);
     }
 

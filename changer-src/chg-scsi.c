@@ -1,5 +1,5 @@
 /*
- *	$Id: chg-scsi.c,v 1.2 1998/02/26 19:24:01 jrj Exp $
+ *	$Id: chg-scsi.c,v 1.3 1998/04/22 15:57:38 jrj Exp $
  *
  *	chg-scsi.c -- generic SCSI changer driver
  *
@@ -253,7 +253,6 @@ int main(int argc, char *argv[])
     drivecnt = get_drive_count(fd);
 
     if (drive_num > drivecnt) {
-	int localerr = errno;
 	printf("%s drive number error (%d > %d)\n", "<none>", 
 						drive_num, drivecnt);
 	fprintf(stderr, "%s: requested drive number (%d) greater than "

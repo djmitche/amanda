@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.32 1998/04/11 06:14:44 amcore Exp $
+ * $Id: amindexd.c,v 1.33 1998/04/22 15:57:43 jrj Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -226,13 +226,13 @@ arglist_function1(void reply, int, n, char *, fmt)
 
     if (printf("%s\r\n", buf) <= 0)
     {
-	dbprintf(("! error %d in printf\n", errno));
+	dbprintf(("! error %d (%s) in printf\n", errno, strerror(errno)));
 	uncompress_remove = remove_files(uncompress_remove);
 	exit(1);
     }
     if (fflush(stdout) != 0)
     {
-	dbprintf(("! error in fflush %d\n", errno));
+	dbprintf(("! error %d (%s) in fflush\n", errno, strerror(errno)));
 	uncompress_remove = remove_files(uncompress_remove);
 	exit(1);
     }
@@ -252,13 +252,13 @@ arglist_function1(void lreply, int, n, char *, fmt)
 
     if (printf("%s\r\n", buf) <= 0)
     {
-	dbprintf(("! error %d in printf\n", errno));
+	dbprintf(("! error %d (%s) in printf\n", errno, strerror(errno)));
 	uncompress_remove = remove_files(uncompress_remove);
 	exit(1);
     }
     if (fflush(stdout) != 0)
     {
-	dbprintf(("! error in fflush %d\n", errno));
+	dbprintf(("! error %d (%s) in fflush\n", errno, strerror(errno)));
 	uncompress_remove = remove_files(uncompress_remove);
 	exit(1);
     }
@@ -279,7 +279,7 @@ arglist_function1(void fast_lreply, int, n, char *, fmt)
 
     if (printf("%s\r\n", buf) <= 0)
     {
-	dbprintf(("! error %d in printf\n", errno));
+	dbprintf(("! error %d (%s) in printf\n", errno, strerror(errno)));
 	uncompress_remove = remove_files(uncompress_remove);
 	exit(1);
     }
@@ -318,7 +318,7 @@ char *host;
     /* assume in index dir already */
     if ((dirp = opendir(".")) == NULL)
     {
-	reply(599, "System error: %d.", errno);
+	reply(599, "System error: %s.", strerror(errno));
 	return -1;
     }
 
@@ -353,7 +353,7 @@ char *disk;
     /* check that given disk is from given host and handled by given config */
     if ((dirp = opendir(".")) == NULL)
     {
-	reply(599, "System error: %d.", errno);
+	reply(599, "System error: %s.", strerror(errno));
 	return -1;
     }
     search_str = getindexfname(dump_hostname, disk, "00000000", 0);
@@ -450,7 +450,7 @@ int build_disk_table P((void))
 		    NULL);
     if ((fp = popen(cmd, "r")) == NULL)
     {
-	reply(599, "System error %d", errno);
+	reply(599, "System error %s", strerror(errno));
 	amfree(cmd);
 	return -1;
     }
@@ -614,13 +614,13 @@ char *dir;
 				  item->date, item->level);
 	amfree(filename);
 	if((filename = uncompress_file(filename_gz)) == NULL) {
-	    reply(599, "System error %d", errno);
+	    reply(599, "System error %s", strerror(errno));
 	    amfree(ldir);
 	    return -1;
 	}
 	dbprintf(("f %s\n", filename));
 	if ((fp = fopen(filename, "r")) == NULL) {
-	    reply(599, "System error %d", errno);
+	    reply(599, "System error %s", strerror(errno));
 	    amfree(filename);
 	    amfree(ldir);
 	    return -1;
@@ -682,7 +682,7 @@ int  recursive;
 
     /* get data from that dump */
     if (process_ls_dump(dir, dump_item,recursive) == -1) {
-	reply(599, "System error %d", errno);
+	reply(599, "System error %s", strerror(errno));
 	return -1;
     }
 
@@ -694,7 +694,7 @@ int  recursive;
 	{
 	    last_level = dump_item->level;
 	    if (process_ls_dump(dir, dump_item,recursive) == -1) {
-		reply(599, "System error %d", errno);
+		reply(599, "System error %s", strerror(errno));
 		return -1;
 	    }
 	}

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: runtar.c,v 1.9 1998/02/26 19:24:17 jrj Exp $
+ * $Id: runtar.c,v 1.10 1998/04/22 15:57:41 jrj Exp $
  *
  * runs GNUTAR program as root
  */
@@ -90,7 +90,7 @@ char **argv;
 
     execve(GNUTAR, argv, safe_env());
 
-    dbprintf(("failed (errno=%d)\n",errno));
+    dbprintf(("failed (%s)\n", strerror(errno)));
     dbclose();
 
     fprintf(stderr, "runtar: could not exec %s: %s\n",
