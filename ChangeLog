@@ -1,3 +1,7 @@
+2002-11-19  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/reporter.c: Fix for LPRCMD not defined.
+
 2002-11-14  Marc Mengel <mengel@fnal.gov>
 	New changer scripts for use with rait: code, run several other
 	changers in tandem and return a rait: tape device.  Makes fake
