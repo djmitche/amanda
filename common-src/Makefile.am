@@ -59,7 +59,9 @@ EXTRA_DIST = 		genversion.c	getcwd.c	memmove.c	\
 EXTRA_PROGRAMS = genversion $(TEST_PROGS)
 
 genversion_SOURCES = genversion.c
-genversion_LDADD = versuff.$(OBJ_EXTENSION) alloc.$(OBJ_EXTENSION) error.$(OBJ_EXTENSION) nolog.$(OBJ_EXTENSION) $(libamanda_a_LIBADD)
+genversion_LDADD = versuff.$(OBJ_EXTENSION) $(libamanda_a_LIBADD) \
+	alloc.$(OBJ_EXTENSION) error.$(OBJ_EXTENSION) \
+	nolog.$(OBJ_EXTENSION)
 
 genversion.o: genversion.c
 	$(COMPILE) -DCC="\"$(CC)\"" \
