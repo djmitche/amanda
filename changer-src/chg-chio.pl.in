@@ -177,6 +177,7 @@ sub getTapeStatus {
 			$slots[$num] = ( $status =~ m/full/i ) ? 1 : 0;
 			if ($slots[ $num ]) { $nr_tapes++ }
 		} elsif ( $type =~ m/drive/i ) {
+			$drives[$num] = 0;
 			if (  $status =~ m/full/i ) {
 				$drives[$num] = 1;
 				$nr_tapes++;
