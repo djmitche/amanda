@@ -1,5 +1,10 @@
 2000-10-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/taper.c: give better message when failing 
+	to open a chunk.
+
+2000-10-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/diskfile.c (headqueue_disk): new function to
 	insert at the head of the queue.
 	* server-src/diskfile.h (headqueue_disk): prototype.
