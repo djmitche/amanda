@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.41 1998/05/06 02:25:17 martinea Exp $
+ * $Id: driver.c,v 1.42 1998/05/17 22:43:42 amcore Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -69,6 +69,7 @@ char *construct_datestamp P((void));
 void handle_dumper_result P((int fd));
 disklist_t read_schedule P((disklist_t *waitqp));
 int free_kps P((interface_t *ip));
+void interface_state P((char *time_str));
 void allocate_bandwidth P((interface_t *ip, int kps));
 void deallocate_bandwidth P((interface_t *ip, int kps));
 unsigned long free_space P((void));
@@ -1108,6 +1109,19 @@ interface_t *ip;
     return res;
 }
 
+void interface_state(time_str)
+char *time_str;
+{
+    interface_t *ip;
+
+    printf("driver: interface-state time %s", time_str);
+
+    for(ip = lookup_interface(NULL); ip != NULL; ip = ip->next) {
+	printf(" if %s: free %d", ip->name, free_kps(ip));
+    }
+    printf("\n");
+}
+
 void allocate_bandwidth(ip, kps)
 interface_t *ip;
 int kps;
@@ -1487,6 +1501,7 @@ void short_dump_state()
     printf(" stoppedq: %d", queue_length(stoppedq));
     printf(" wakeup: %d", (int)sleep_time.tv_sec);
     printf(" driver-idle: %s\n", idle_strings[idle_reason]);
+    interface_state(wall_time);
     holdingdisk_state(wall_time);
     fflush(stdout);
 }
