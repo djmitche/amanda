@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.7 1997/10/03 08:29:19 george Exp $
+ * $Id: amrestore.c,v 1.8 1997/11/11 06:39:37 amcore Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -424,6 +424,8 @@ char **argv;
     extern int optind;
     int opt, last_match, this_match;
     char *errstr;
+    int isafile;
+    struct stat stat_tape;
 
     erroutput_type = ERR_INTERACTIVE;
 
@@ -476,11 +478,14 @@ char **argv;
 	}
     }
 
+    if(stat(tapename,&stat_tape)!=0)
+	error("could not stat %s",tapename);
+    isafile=S_ISREG((stat_tape.st_mode));
     last_match = 0;
     file_number = 0;
     read_file_header();
 
-    if(file.type != F_TAPESTART)
+    if(file.type != F_TAPESTART && !isafile)
 	fprintf(stderr,
     "amrestore: WARNING: not at start of tape, file numbers will be offset\n");
 
@@ -512,11 +517,14 @@ char **argv;
 	}
 	last_match = this_match;
 	file_number += 1;
-	read_file_header();
+	if(isafile)
+	    file.type = F_TAPEEND;
+	else
+	    read_file_header();
     }
     tapefd_close(tapedev);
 
-    if(file.type == F_TAPEEND) {
+    if(file.type == F_TAPEEND && !isafile) {
 	fprintf(stderr, "amrestore: %3d: reached ", file_number);
 	print_header(stderr);
 	return 1;

@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: amidxtaped.c,v 1.6 1997/10/30 14:49:29 amcore Exp $
+/* $Id: amidxtaped.c,v 1.7 1997/11/11 06:39:36 amcore Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -94,6 +94,9 @@ char **argv;
     int i;
     char amrestore_path[BUF_LEN];
     pid_t pid;
+    int isafile;
+    struct stat stat_tape;
+    char tapename[BUF_LEN];
 
 #ifdef FORCE_USERID
 
@@ -225,17 +228,21 @@ char **argv;
 	return 1;
     }
 
-    sprintf(buf, "mt %s %s rewind",
+    strcpy(tapename, amrestore_args[i]);
+    if (stat(tapename, &stat_tape) != 0)
+      error("could not stat %s", tapename);
+    isafile = S_ISREG((stat_tape.st_mode));
+    if (!isafile) {
+	sprintf(buf, "mt %s %s rewind",
 #ifdef MT_FILE_FLAG
-	MT_FILE_FLAG,
+		MT_FILE_FLAG,
 #else
-	"-f",
+		"-f",
 #endif
-	amrestore_args[i]);
-
-    dbprintf(("Rewinding tape: %s\n", buf));
-    system(buf);
-    
+		tapename);
+	dbprintf(("Rewinding tape: %s\n", buf));
+	system(buf);
+    }
     dbclose();
     return 0;
 }

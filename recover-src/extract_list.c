@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.5 1997/09/19 02:38:03 george Exp $
+ * $Id: extract_list.c,v 1.6 1997/11/11 06:39:33 amcore Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -51,6 +51,8 @@ typedef struct EXTRACT_LIST
     struct EXTRACT_LIST *next;
 }
 EXTRACT_LIST;
+
+char dump_device_name[LINE_LENGTH];
 
 /* global pid storage for interrupt handler */
 pid_t extract_restore_child_pid = -1;
@@ -456,12 +458,12 @@ static int extract_files_setup P((void))
     /* 4 args: "-p", "tape device", "hostname", "diskname" */
     send_to_tape_server(tape_server_socket, "4");
     send_to_tape_server(tape_server_socket, "-p");
-    send_to_tape_server(tape_server_socket, tape_device_name);
+    send_to_tape_server(tape_server_socket, dump_device_name);
     send_to_tape_server(tape_server_socket, dump_hostname);
     send_to_tape_server(tape_server_socket, disk_regex);
 		
     dbprintf(("Started amidxtaped with arguments \"4 -p %s %s %s\"\n",
-	      tape_device_name, dump_hostname, disk_regex));
+	      dump_device_name, dump_hostname, disk_regex));
 
     return tape_server_socket;
 }
@@ -587,6 +589,7 @@ void extract_files P((void))
     char buf[1024];
     char *l;
     int tape_server_socket;
+    int first;
 
     if (!is_extract_list_nonempty())
     {
@@ -612,11 +615,30 @@ void extract_files P((void))
 	strcpy(tape_device_name, l+4);	/* skip reply number */
     }
 
-    printf("Extracting files using tape drive %s on host %s.\n",
+    printf("\nExtracting files using tape drive %s on host %s.\n",
 	   tape_device_name, tape_server_name);
-    printf("The following tapes are needed:");
+    first=1;
     for (elist = first_tape_list(); elist != NULL; elist = next_tape_list(elist))
-	printf(" %s", elist->tape);
+	if(elist->tape[0]!='/') {
+	    if(first) {
+		printf("\nThe following tapes are needed:");
+		first=0;
+	    }
+	    else
+		printf("                               ");
+	    printf(" %s\n", elist->tape);
+	}
+    first=1;
+    for (elist = first_tape_list(); elist != NULL; elist = next_tape_list(elist))
+	if(elist->tape[0]=='/') {
+	    if(first) {
+		printf("\nThe following files are needed:");
+		first=0;
+	    }
+	    else
+		printf("                               ");
+	    printf(" %s\n", elist->tape);
+	}
     printf("\n");
     getcwd(buf, 1024);
     printf("Restoring files into directory %s\n", buf);
@@ -626,9 +648,16 @@ void extract_files P((void))
 
     while ((elist = first_tape_list()) != NULL)
     {
-	printf("Load tape %s now\n", elist->tape);
-	if (!okay_to_continue())
-	    return;
+	if(elist->tape[0]=='/') {
+	    strcpy(dump_device_name,elist->tape);
+	    printf("Extracting from file %s\n",dump_device_name);
+	}
+	else {
+	    strcpy(dump_device_name,tape_device_name);
+	    printf("Load tape %s now\n", elist->tape);
+	    if (!okay_to_continue())
+	        return;
+	}
 
 	/* connect to the tape handler daemon on the tape drive server */
 	if ((tape_server_socket = extract_files_setup()) == -1)

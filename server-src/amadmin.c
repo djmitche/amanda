@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.11 1997/11/11 05:06:46 amcore Exp $
+ * $Id: amadmin.c,v 1.12 1997/11/11 06:39:41 amcore Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -36,9 +36,22 @@
 #include "infofile.h"
 #include "logfile.h"
 #include "version.h"
+#include "holding.h"
 
 char *pname = "amadmin";
 disklist_t *diskqp;
+
+struct find_result {
+    struct find_result *next;
+    char *datestamp;
+    char *hostname;
+    char *diskname;
+    int level;
+    char *label;
+    int  filenum;
+    char *status;
+};
+struct find_result *output_find=NULL;
 
 int main P((int argc, char **argv));
 void usage P((void));
@@ -62,13 +75,14 @@ void find P((int argc, char **argv));
 int find_match P((char *host, char *disk));
 char *nicedate P((int datestamp));
 int bump_thresh P((int level));
-int search_logfile P((char *label, int datestamp, char *logfile,
-		      int pass, int host_len, int *disk_len, int *label_len));
+int search_logfile P((char *label, int datestamp, char *logfile));
 int get_logline P((FILE *logf));
 void export_db P((int argc, char **argv));
 void import_db P((int argc, char **argv));
 void disklist P((int argc, char **argv));
 void disklist_one P((disk_t *dp));
+void print_find_result();
+void search_holding_disk();
 
 int main(argc, argv)
 int argc;
@@ -508,7 +522,7 @@ char **argv;
 {
     char *conflog, logfile[1024];
     host_t *hp;
-    int tape, maxtape, host_len, disk_len, label_len, seq, logs, pass;
+    int tape, maxtape, len, seq, logs;
     tape_t *tp;
 
     if(argc < 4) {
@@ -530,18 +544,7 @@ char **argv;
     conflog = getconf_str(CNF_LOGFILE);
     maxtape = getconf_int(CNF_TAPECYCLE);
 
-    host_len = strlen(find_hostname);
-    disk_len = 4;
-    label_len = 4;
-    pass = 0;
-    do {
-      if (pass != 0) {
-	printf("date        host%*s disk%*s lv tape%*s file status\n",
-	       host_len>4?host_len-4:0,"",
-	       disk_len>4?disk_len-4:0,"",
-	       label_len>4?label_len-4:0,"");
-      }
-      for(tape = 1; tape <= maxtape; tape++) {
+    for(tape = 1; tape <= maxtape; tape++) {
 	tp = lookup_tapepos(tape);
 	if(tp == NULL) continue;
 
@@ -554,30 +557,149 @@ char **argv;
 	for(seq = 0; 1; seq++) {
 	    sprintf(logfile, "%s.%d.%d", conflog, tp->datestamp, seq);
 	    if(access(logfile, R_OK) != 0) break;
-	    logs += search_logfile(tp->label, tp->datestamp, logfile,
-				   pass, host_len, &disk_len, &label_len);
+	    logs += search_logfile(tp->label, tp->datestamp, logfile);
 	}
 
 	/* search old-style amflush log, if any */
 
 	sprintf(logfile, "%s.%d.amflush", conflog, tp->datestamp);
 	if(access(logfile,R_OK) == 0) {
-	    logs += search_logfile(tp->label, tp->datestamp, logfile,
-				   pass, host_len, &disk_len, &label_len);
+	    logs += search_logfile(tp->label, tp->datestamp, logfile);
 	}
 
 	/* search old-style main log, if any */
 
 	sprintf(logfile, "%s.%d", conflog, tp->datestamp);
 	if(access(logfile,R_OK) == 0) {
-	    logs += search_logfile(tp->label, tp->datestamp, logfile,
-				   pass, host_len, &disk_len, &label_len);
+	    logs += search_logfile(tp->label, tp->datestamp, logfile);
 	}
-	if(logs == 0 && pass == 0)
+	if(logs == 0)
 	    printf("Warning: no log files found for tape %s written %s\n",
 		   tp->label, nicedate(tp->datestamp));
-      }
-    } while (pass++ == 0);
+    }
+
+    search_holding_disk();
+
+    print_find_result();
+}
+
+void search_holding_disk()
+{
+    int i;
+    int ok;
+    holdingdisk_t *hdisk;
+    struct dirname *dir;
+    char sdirname[80], destname[128], hostname[256], diskname[80];
+    int picked;
+    DIR *workdir;
+    struct dirent *entry;
+    int level;
+    disk_t *dp;
+	
+    for(hdisk = holdingdisks; hdisk != NULL; hdisk = hdisk->next)
+	scan_holdingdisk(hdisk->diskdir,0);
+
+    for(hdisk = holdingdisks; hdisk != NULL; hdisk = hdisk->next) {
+	for(dir = dir_list; dir != NULL; dir = dir->next) {
+            sprintf(sdirname, "%s/%s", hdisk->diskdir,dir->name);
+	    if((workdir = opendir(sdirname)) == NULL) {
+	        continue;
+	    }
+
+	    chdir(sdirname);
+	    while((entry = readdir(workdir)) != NULL) {
+		if(!strcmp(entry->d_name, ".") ||  !strcmp(entry->d_name, ".."))
+		    continue;
+		if(is_emptyfile(entry->d_name))
+		    continue;
+		sprintf(destname, "%s/%s", sdirname, entry->d_name);
+		if(get_amanda_names(destname, hostname, diskname, &level))
+		    continue;
+		dp = NULL;
+		for(;;) {
+		    char *s;
+		    if((dp = lookup_disk(hostname, diskname)))
+	                break;
+	            if((s = strrchr(hostname,'.')) == NULL)
+           		break;
+	            *s = '\0';
+		}
+		if ( dp == NULL )
+		    continue;
+		if(level < 0 || level > 9)
+		    continue;
+		    
+		if(find_match(hostname,diskname)) {
+		    struct find_result *new_output_find=
+			alloc(sizeof(struct find_result));
+		    new_output_find->next=output_find;
+		    new_output_find->datestamp=stralloc(nicedate(atoi(dir->name)));
+		    new_output_find->hostname=stralloc(hostname);
+		    new_output_find->diskname=stralloc(diskname);
+		    new_output_find->level=level;
+		    new_output_find->label=stralloc(destname);
+		    new_output_find->filenum=0;
+		    new_output_find->status=stralloc("OK");
+		    output_find=new_output_find;
+		}
+	    }
+	    closedir(workdir);
+	}	
+    }
+}
+
+void print_find_result()
+{
+    struct find_result *output_find_result=output_find;
+    int max_len_datestamp = 4;
+    int max_len_hostname  = 4;
+    int max_len_diskname  = 4;
+    int max_len_level     = 2;
+    int max_len_label     =12;
+    int max_len_filenum   = 4;
+    int max_len_status    = 6;
+    int len;
+
+    for(output_find_result=output_find;
+	output_find_result;
+	output_find_result=output_find_result->next) {
+
+	len=strlen(output_find_result->datestamp);
+	if(len>max_len_datestamp) max_len_datestamp=len;
+
+	len=strlen(output_find_result->hostname);
+	if(len>max_len_hostname) max_len_hostname=len;
+
+	len=strlen(output_find_result->diskname);
+	if(len>max_len_diskname) max_len_diskname=len;
+
+	len=strlen(output_find_result->label);
+	if(len>max_len_label) max_len_label=len;
+
+	len=strlen(output_find_result->status);
+	if(len>max_len_status) max_len_status=len;
+    }
+
+    printf("\ndate%*s host%*s disk%*s lv%*s tape or file%*s file%*s status\n",
+	   max_len_datestamp-4,"",
+	   max_len_hostname-4 ,"",
+	   max_len_diskname-4 ,"",
+	   max_len_level-2    ,"",
+	   max_len_label-12   ,"",
+	   max_len_filenum-4  ,"");
+    for(output_find_result=output_find;
+	output_find_result;
+	output_find_result=output_find_result->next) {
+
+	printf("%-*s %-*s %-*s %-*d %-*s %-*d %-*s\n",
+		max_len_datestamp, output_find_result->datestamp,
+		max_len_hostname,  output_find_result->hostname,
+		max_len_diskname,  output_find_result->diskname,
+		max_len_level,     output_find_result->level,
+		max_len_label,     output_find_result->label,
+		max_len_filenum,   output_find_result->filenum,
+		max_len_status,    output_find_result->status);
+    }
 }
 
 int find_match(host, disk)
@@ -610,18 +732,14 @@ int datestamp;
     return nice;
 }
 
-int search_logfile(label, datestamp, logfile,
-		   pass, host_len, disk_len, label_len)
+int search_logfile(label, datestamp, logfile)
 char *label, *logfile;
 int datestamp;
-int pass;
-int host_len, *disk_len, *label_len;
 {
     FILE *logf;
     char host[80], disk[80], ck_label[80], rest[MAX_LINE];
     int level, rc, filenum, ck_datestamp, tapematch;
     int passlabel, ck_datestamp2;
-    int len;
 
     if((logf = fopen(logfile, "r")) == NULL)
 	error("could not open logfile %s: %s", logfile, strerror(errno));
@@ -632,13 +750,10 @@ int host_len, *disk_len, *label_len;
 	if(curlog == L_START && curprog == P_TAPER) {
 	    rc = sscanf(curstr, " datestamp %d label %s",
 			&ck_datestamp, ck_label);
-	    if(rc != 2) {
-		if (pass == 0) {
-		    printf("strange log line \"start taper %s\"\n", curstr);
-		}
-	    } else if(ck_datestamp == datestamp && !strcmp(ck_label,label)) {
+	    if(rc != 2)
+		printf("strange log line \"start taper %s\"\n", curstr);
+	    else if(ck_datestamp == datestamp && !strcmp(ck_label,label))
 		tapematch = 1;
-	    }
 	}
     }
 
@@ -654,49 +769,49 @@ int host_len, *disk_len, *label_len;
 	if(curlog == L_START && curprog == P_TAPER) {
 	    rc = sscanf(curstr, " datestamp %d label %s",
 			&ck_datestamp2, ck_label);
-	    if(rc != 2) {
-		if(pass == 0) {
-		    printf("strange log line \"start taper %s\"\n", curstr);
-		}
-	    } else {
+	    if(rc != 2)
+		printf("strange log line \"start taper %s\"\n", curstr);
+	    else
 		if (strcmp(ck_label,label))
 		    passlabel = !passlabel;
-	    }
 	}
 	if(curlog == L_SUCCESS || curlog == L_FAIL) {
 	    rc =sscanf(curstr,"%s %s %d %[^\n]", host, disk, &level, rest);
 	    if(rc != 4) {
-		if(pass == 0) {
-		    printf("strange log line \"%s\"\n", curstr);
-		}
+		printf("strange log line \"%s\"\n", curstr);
 		continue;
 	    }
 	    if(find_match(host, disk)) {
 		if(curprog == P_TAPER) {
-		    if(pass == 0) {
-			if((len = strlen(disk)) > *disk_len) {
-			    *disk_len = len;
-			}
-			if((len = strlen(label)) > *label_len) {
-			    *label_len = len;
-			}
-		    } else {
-			printf("%s  %-*s %-*s %2d %-*s %4d",
-			       nicedate(datestamp),
-			       host_len, host,
-			       *disk_len, disk, level,
-			       *label_len, label, filenum);
-		        if(curlog == L_SUCCESS) printf(" OK\n");
-		        else printf(" FAILED %s\n", rest);
-		    }
+		    struct find_result *new_output_find=
+			alloc(sizeof(struct find_result));
+		    new_output_find->next=output_find;
+		    new_output_find->datestamp=stralloc(nicedate(datestamp));
+		    new_output_find->hostname=stralloc(host);
+		    new_output_find->diskname=stralloc(disk);
+		    new_output_find->level=level;
+		    new_output_find->label=stralloc(label);
+		    new_output_find->filenum=filenum;
+		    if(curlog == L_SUCCESS) 
+			new_output_find->status=stralloc("OK");
+		    else
+			new_output_find->status=stralloc(rest);
+		    output_find=new_output_find;
 		}
-		else if(curlog == L_FAIL && pass != 0) {
-		    /* print other failures too */
-		    printf("%s  %-*s %-*s %2d %-*s FAILED (%s) %s\n",
-			   nicedate(datestamp),
-			   host_len, host,
-			   *disk_len, disk, level,
-			   *label_len, "---", program_str[(int)curprog], rest);
+		else if(curlog == L_FAIL) {	/* print other failures too */
+		    struct find_result *new_output_find=
+			alloc(sizeof(struct find_result));
+		    new_output_find->next=output_find;
+		    new_output_find->datestamp=stralloc(nicedate(datestamp));
+		    new_output_find->hostname=stralloc(host);
+		    new_output_find->diskname=stralloc(disk);
+		    new_output_find->level=level;
+		    new_output_find->label=stralloc("---");
+		    new_output_find->filenum=0;
+		    new_output_find->status=(char*)alloc(11+strlen(program_str[(int)curprog])+strlen(rest));
+		    sprintf(new_output_find->status,"FAILED (%s) %s", 
+			    program_str[(int)curprog], rest);
+		    output_find=new_output_find;
 		}
 	    }
 	}
