@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.38 1999/05/14 19:30:06 kashmir Exp $
+ * $Id: amandad.c,v 1.39 1999/05/25 02:11:41 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -1249,7 +1249,7 @@ state2str(state)
 {
     static const struct {
 	state_t state;
-	const char str[12];
+	const char str[13];
     } states[] = {
 #define	X(state)	{ state, stringize(state) }
 	X(s_sendack),
