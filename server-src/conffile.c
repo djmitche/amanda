@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.16.2.4 2001/11/08 01:21:54 martinea Exp $
+ * $Id: conffile.c,v 1.54.2.16.2.5 2001/11/08 18:44:56 martinea Exp $
  *
  * read configuration file
  */
@@ -75,8 +75,8 @@ typedef enum {
     DISKDIR, DISKSIZE, INDEXDIR, NETUSAGE, INPARALLEL, DUMPORDER, TIMEOUT,
     TPCHANGER, RUNTAPES,
     DEFINE, DUMPTYPE, TAPETYPE, INTERFACE,
-    PRINTER, RESERVE,
-    COLUMNSPEC,
+    PRINTER, AUTOFLUSH, RESERVE,
+    COLUMNSPEC, 
 
     /* holding disk */
     COMMENT, DIRECTORY, USE, CHUNKSIZE,
@@ -179,6 +179,7 @@ static val_t conf_etimeout;
 static val_t conf_dtimeout;
 static val_t conf_ctimeout;
 static val_t conf_tapebufs;
+static val_t conf_autoflush;
 static val_t conf_reserve;
 
 /* reals */
@@ -228,6 +229,7 @@ static int seen_etimeout;
 static int seen_dtimeout;
 static int seen_ctimeout;
 static int seen_tapebufs;
+static int seen_autoflush;
 static int seen_reserve;
 static int seen_columnspec;
 
@@ -368,6 +370,7 @@ struct byname {
     { "TAPEBUFS", CNF_TAPEBUFS, INT },
     { "RAWTAPEDEV", CNF_RAWTAPEDEV, STRING },
     { "COLUMNSPEC", CNF_COLUMNSPEC, STRING },
+    { "AUTOFLUSH", CNF_AUTOFLUSH, BOOL },
     { "RESERVE", CNF_RESERVE, INT },
     { NULL }
 };
@@ -445,6 +448,7 @@ confparm_t parm;
     case CNF_CTIMEOUT: return seen_ctimeout;
     case CNF_TAPEBUFS: return seen_tapebufs;
     case CNF_RAWTAPEDEV: return seen_rawtapedev;
+    case CNF_AUTOFLUSH: return seen_autoflush;
     case CNF_RESERVE: return seen_reserve;
     default: return 0;
     }
@@ -472,6 +476,7 @@ confparm_t parm;
     case CNF_DTIMEOUT: r = conf_dtimeout.i; break;
     case CNF_CTIMEOUT: r = conf_ctimeout.i; break;
     case CNF_TAPEBUFS: r = conf_tapebufs.i; break;
+    case CNF_AUTOFLUSH: r = conf_autoflush.i; break;
     case CNF_RESERVE: r = conf_reserve.i; break;
 
     default:
@@ -659,6 +664,7 @@ static void init_defaults()
     conf_dtimeout.i     = 1800;
     conf_ctimeout.i     = 30;
     conf_tapebufs.i     = 20;
+    conf_autoflush.i	= 0;
     conf_reserve.i	= 100;
 
     /* defaults for internal variables */
@@ -699,6 +705,7 @@ static void init_defaults()
     seen_dtimeout = 0;
     seen_ctimeout = 0;
     seen_tapebufs = 0;
+    seen_autoflush = 0;
     seen_reserve = 0;
     seen_columnspec = 0;
     line_num = got_parserror = 0;
@@ -865,6 +872,7 @@ keytab_t main_keytable[] = {
     { "CTIMEOUT", CTIMEOUT },
     { "TAPEBUFS", TAPEBUFS },
     { "RAWTAPEDEV", RAWTAPEDEV },
+    { "AUTOFLUSH", AUTOFLUSH },
     { "RESERVE", RESERVE },
     { "COLUMNSPEC", COLUMNSPEC },
     { NULL, IDENT }
@@ -920,8 +928,9 @@ static int read_confline()
     case DTIMEOUT:  get_simple(&conf_dtimeout,  &seen_dtimeout,  INT);    break;
     case CTIMEOUT:  get_simple(&conf_ctimeout,  &seen_ctimeout,  INT);    break;
     case TAPEBUFS:  get_simple(&conf_tapebufs,  &seen_tapebufs,  INT);    break;
-    case RESERVE:   get_simple(&conf_reserve,  &seen_reserve,	 INT);    break;
-    case COLUMNSPEC:get_simple(&conf_columnspec,&seen_columnspec,STRING);break;
+    case AUTOFLUSH: get_simple(&conf_autoflush, &seen_autoflush, BOOL);   break;
+    case RESERVE:   get_simple(&conf_reserve,   &seen_reserve,	 INT);    break;
+    case COLUMNSPEC:get_simple(&conf_columnspec,&seen_columnspec,STRING); break;
 
     case LOGFILE: /* XXX - historical */
 	/* truncate the filename part and pretend he said "logdir" */
@@ -2435,6 +2444,7 @@ dump_configuration(filename)
     printf("conf_dtimeout = %d\n", getconf_int(CNF_DTIMEOUT));
     printf("conf_ctimeout = %d\n", getconf_int(CNF_CTIMEOUT));
     printf("conf_tapebufs = %d\n", getconf_int(CNF_TAPEBUFS));
+    printf("conf_autoflush  = %d\n", getconf_int(CNF_AUTOFLUSH));
     printf("conf_reserve  = %d\n", getconf_int(CNF_RESERVE));
 
     /*printf("conf_diskdir = \"%s\"\n", getconf_str(CNF_DISKDIR));*/

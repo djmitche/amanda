@@ -146,6 +146,10 @@ holdingdisk hd1 {
 # This means save at least 30% of the holding disk space for degraded
 # mode backups.  
 
+autoflush no #
+# if autoflush is set to yes, then amdump will schedule all dump on
+holding disks to be flush to tape during the run.
+
 # The format for a ColumnSpec is a ',' seperated list of triples.
 # Each triple consists of
 #   + the name of the column (as in ColumnNameStrings)

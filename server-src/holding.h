@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.h,v 1.11.2.7 1999/02/26 22:07:27 martinea Exp $
+ * $Id: holding.h,v 1.11.2.7.4.1 2001/11/08 18:44:56 martinea Exp $
  *
  */
 
@@ -46,8 +46,9 @@ int is_emptyfile P((char *fname));
 int is_datestr P((char *fname));
 int non_empty P((char *fname));
 void free_holding_list P(( holding_t *holding_list));
-holding_t *pick_datestamp P((void));
-holding_t *pick_all_datestamp P((void));
+void get_flush(char **dateargs, holding_t **holding_list, char *datestamp, int amflush, int verbose);
+holding_t *pick_datestamp P((int verbose));
+holding_t *pick_all_datestamp P((int verbose));
 filetype_t get_amanda_names P((char *fname,
 			       char **hostname,
 			       char **diskname,
@@ -56,5 +57,6 @@ void get_dumpfile P((char *fname, dumpfile_t *file));
 long size_holding_files P((char *holding_file));
 int unlink_holding_files P((char *holding_file));
 int rename_tmp_holding P((char *holding_file, int complete));
+void cleanup_holdingdisk P((char *diskdir, int verbose));
 
 #endif /* HOLDING_H */

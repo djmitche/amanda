@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.17.4.5 2001/11/03 13:38:37 martinea Exp $
+ * $Id: reporter.c,v 1.44.2.17.4.6 2001/11/08 18:44:56 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -46,6 +46,7 @@ report format
 #include "infofile.h"
 #include "logfile.h"
 #include "version.h"
+#include "util.h"
 
 /* don't have (or need) a skipped type except internally to reporter */
 #define L_SKIPPED	L_MARKER
@@ -57,16 +58,21 @@ typedef struct line_s {
 
 #define	MAX_TAPER 31
 
-typedef struct repdata_s {
+typedef struct timedata_s {
     logtype_t result;
-    int nb_taper;
-    struct timedata_s {
-	int success;
-	float origsize, outsize;
-	int datestamp;
-	float sec, kps;
-	int level, filenum;
-    } taper[MAX_TAPER], dumper;
+    float origsize, outsize;
+    char *datestamp;
+    float sec, kps;
+    int filenum;
+} timedata_t;
+
+typedef struct repdata_s {
+    disk_t *disk;
+    char *datestamp;
+    timedata_t taper;
+    timedata_t dumper;
+    int level;
+    struct repdata_s *next;
 } repdata_t;
 
 #define data(dp) ((repdata_t *)(dp)->up)
@@ -85,7 +91,8 @@ float total_time, startup_time;
 /* count files to tape */
 int tapefcount = 0;
 
-char *datestamp;
+char *run_datestamp;
+char *today_datestamp;
 char *tape_labels = NULL;
 int last_run_tapes = 0;
 static int degraded_mode = 0; /* defined in driverio too */
@@ -110,7 +117,9 @@ line_t *errsum = NULL;
 line_t *errdet = NULL;
 line_t *notes = NULL;
 
+/*
 char *hostname = NULL, *diskname = NULL;
+*/
 
 /* local functions */
 int contline_next P((void));
@@ -119,7 +128,6 @@ void usage P((void));
 int main P((int argc, char **argv));
 
 void copy_template_file P((char *lbl_templ));
-void setup_data P((void));
 void handle_start P((void));
 void handle_finish P((void));
 void handle_note P((void));
@@ -127,7 +135,7 @@ void handle_summary P((void));
 void handle_stats P((void));
 void handle_error P((void));
 void handle_disk P((void));
-void handle_success P((void));
+repdata_t *handle_success P((void));
 void handle_strange P((void));
 void handle_failed P((void));
 void generate_missing P((void));
@@ -140,8 +148,8 @@ int sort_by_time P((disk_t *a, disk_t *b));
 int sort_by_name P((disk_t *a, disk_t *b));
 void bogus_line P((void));
 char *nicedate P((int datestamp));
-void setup_disk P((disk_t *dp));
 static char *prefix P((char *host, char *disk, int level));
+repdata_t *find_repdata P((disk_t *dp, char *datestamp, int level));
 
 /* for each column we define some values on how to
  * format this column element
@@ -498,6 +506,8 @@ char **argv;
     }
     amfree(conf_infofile);
 
+    today_datestamp = construct_datestamp(NULL);
+
     ColumnSpec = getconf_str(CNF_COLUMNSPEC);
     if(SetColumDataFromString(ColumnData, ColumnSpec) < 0) {
         error("wrong column specification");
@@ -528,8 +538,6 @@ char **argv;
     if((logfile = fopen(logfname, "r")) == NULL) {
 	error("could not open log %s: %s", logfname, strerror(errno));
     }
-
-    setup_data();    /* setup per-disk data */
 
     while(get_logline(logfile)) {
 	switch(curlog) {
@@ -563,7 +571,7 @@ char **argv;
     subj_str = vstralloc(getconf_str(CNF_ORG),
 			 " ", amflush_run ? "AMFLUSH" : "AMANDA",
 			 " ", "MAIL REPORT FOR",
-			 " ", nicedate(datestamp ? atoi(datestamp) : 0),
+			 " ", nicedate(run_datestamp ? atoi(run_datestamp) : 0),
 			 NULL);
 	
     /* lookup the tapetype and printer type from the amanda.conf file. */
@@ -636,7 +644,7 @@ char **argv;
       copy_template_file(tp->lbl_templ);
       /* generate a few elements */
       fprintf(postscript,"(%s) DrawDate\n\n",
-	      nicedate(datestamp ? atoi(datestamp) : 0));
+	      nicedate(run_datestamp ? atoi(run_datestamp) : 0));
       fprintf(postscript,"(Amanda Version %s) DrawVers\n",version());
       fprintf(postscript,"(%s) DrawTitle\n",tape_labels ? tape_labels : "");
     }
@@ -693,9 +701,7 @@ char **argv;
         mailf = NULL;
     }
 
-    amfree(hostname);
-    amfree(diskname);
-    amfree(datestamp);
+    amfree(run_datestamp);
     amfree(tape_labels);
     amfree(config_dir);
     amfree(config_name);
@@ -977,8 +983,10 @@ void sort_disks()
     sortq.head = sortq.tail = NULL;
     while(!empty(*diskq)) {
 	dp = dequeue_disk(diskq);
-	if(data(dp) != NULL)
-	    insert_disk(&sortq, dp, sort_by_name);
+	if(data(dp) == NULL) { /* create one */
+	    find_repdata(dp, run_datestamp, 0);
+	}
+	insert_disk(&sortq, dp, sort_by_name);
     }
 }
 
@@ -1034,61 +1042,57 @@ void CalcMaxWidth() {
      */
     disk_t *dp;
     float f;
+    repdata_t *repdata;
 
     for(dp = sortq.head; dp != NULL; dp = dp->next) {
       if(dp->todo) {
-	int i;
-	for (i=0; i<data(dp)->nb_taper; i++) {
+	for(repdata = data(dp); repdata != NULL; repdata = repdata->next) {
 	    ColumnInfo *cd;
 	    char TimeRateBuffer[40];
 
 	    CheckStringMax(&ColumnData[HostName], dp->host->hostname);
 	    CheckStringMax(&ColumnData[Disk], dp->name);
-	    if (data(dp)->result == L_BOGUS)
+	    if (repdata->dumper.result == L_BOGUS && 
+		repdata->taper.result == L_BOGUS)
 		continue;
-	    CheckIntMax(&ColumnData[Level], data(dp)->taper[i].level);
-	    CheckIntMax(&ColumnData[Level], data(dp)->dumper.level);
-	    if (data(dp)->result == L_SKIPPED)
-		continue;
-	    if (data(dp)->result == L_FAIL);
-		continue;
-	    if(!amflush_run || i == data(dp)->nb_taper-1) {
-		CheckFloatMax(&ColumnData[OrigKB], data(dp)->dumper.origsize);
-		CheckFloatMax(&ColumnData[OutKB], data(dp)->dumper.outsize);
+	    CheckIntMax(&ColumnData[Level], repdata->level);
+	    if(repdata->dumper.result == L_SUCCESS) {
+		CheckFloatMax(&ColumnData[OrigKB], repdata->dumper.origsize);
+		CheckFloatMax(&ColumnData[OutKB], repdata->dumper.outsize);
+		if(dp->compress == COMP_NONE)
+		    f = 0.0;
+		else 
+		    f = repdata->dumper.origsize;
+		CheckStringMax(&ColumnData[Disk], 
+			sDivZero(pct(repdata->dumper.outsize), f, Compress));
+
+		if(!amflush_run)
+		    ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
+				"%3d:%02d", mnsc(repdata->dumper.sec));
+		else
+		    ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
+				"N/A ");
+		CheckStringMax(&ColumnData[DumpTime], TimeRateBuffer);
+
+		CheckFloatMax(&ColumnData[DumpRate], repdata->dumper.kps); 
 	    }
-	    if(dp->compress == COMP_NONE)
-		f = 0.0;
-	    else 
-		f = data(dp)->dumper.origsize;
-	    CheckStringMax(&ColumnData[Disk], 
-	      sDivZero(pct(data(dp)->dumper.outsize), f, Compress));
-
-	    if(!amflush_run)
-		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
-		  "%3d:%02d", mnsc(data(dp)->dumper.sec));
-	    else
-		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
-		  "N/A ");
-	    CheckStringMax(&ColumnData[DumpTime], TimeRateBuffer);
-
-	    CheckFloatMax(&ColumnData[DumpRate], data(dp)->dumper.kps); 
 
 	    cd= &ColumnData[TapeTime];
-	    if(!data(dp)->taper[i].success && !degraded_mode) {
+	    if(repdata->taper.result == L_FAIL) {
 		CheckStringMax(cd, "FAILED");
 		continue;
 	    }
-	    if(data(dp)->taper[i].success)
+	    if(repdata->taper.result == L_SUCCESS)
 		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer), 
-		  "%3d:%02d", mnsc(data(dp)->taper[i].sec));
+		  "%3d:%02d", mnsc(repdata->taper.sec));
 	    else
 		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
 		  "N/A ");
 	    CheckStringMax(cd, TimeRateBuffer);
 
 	    cd= &ColumnData[TapeRate];
-	    if(data(dp)->taper[i].success)
-		CheckFloatMax(cd, data(dp)->taper[i].kps);
+	    if(repdata->taper.result == L_SUCCESS)
+		CheckFloatMax(cd, repdata->taper.kps);
 	    else
 		CheckStringMax(cd, "N/A ");
 	}
@@ -1099,6 +1103,7 @@ void CalcMaxWidth() {
 void output_summary()
 {
     disk_t *dp;
+    repdata_t *repdata;
     char *ds="DUMPER STATS";
     char *ts=" TAPER STATS";
     char *tmp;
@@ -1172,13 +1177,11 @@ void output_summary()
           tape_labels ? tape_labels : "");
     }
 
-    for(dp = sortq.head; dp != NULL; free(dp->up), dp = dp->next) {
+    for(dp = sortq.head; dp != NULL; dp = dp->next) {
       if(dp->todo) {
     	ColumnInfo *cd;
 	char TimeRateBuffer[40];
-	if (data(dp)->nb_taper == 0)
-	    data(dp)->nb_taper= 1;
-	for (i=0; i<data(dp)->nb_taper; i++) {
+	for(repdata = data(dp); repdata != NULL; repdata = repdata->next) {
 	    int devlen;
 
 	    cd= &ColumnData[HostName];
@@ -1197,50 +1200,43 @@ void output_summary()
 		fprintf(mailf, cd->Format, cd->Width, cd->Width, dp->name);
 
 	    cd= &ColumnData[Level];
-	    if (data(dp)->result == L_BOGUS) {
+	    if (repdata->dumper.result == L_BOGUS &&
+		repdata->taper.result  == L_BOGUS) {
 	      if(amflush_run){
 		fprintf(mailf, "%*s%s\n", cd->PrefixSpace+cd->Width, "",
 			tmp=TextRule(OrigKB, TapeRate, "NO FILE TO FLUSH"));
-		amfree(tmp);
 	      } else {
 		fprintf(mailf, "%*s%s\n", cd->PrefixSpace+cd->Width, "",
 			tmp=TextRule(OrigKB, TapeRate, "MISSING"));
-		amfree(tmp);
 	      }
+	      amfree(tmp);
 	      continue;
 	    }
 	    
 	    cd= &ColumnData[Level];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
-	    if(data(dp)->taper[i].success) {
-		fprintf(mailf, cd->Format, cd->Width, cd->Precision, data(dp)->taper[i].level);
-	    }
-	    else {
-		fprintf(mailf, cd->Format, cd->Width, cd->Precision, data(dp)->dumper.level);
-	    }
+	    fprintf(mailf, cd->Format, cd->Width, cd->Precision,repdata->level);
 
-	    if (data(dp)->result == L_SKIPPED) {
+	    if (repdata->dumper.result == L_SKIPPED) {
 		fprintf(mailf, "%s\n",
 			tmp=TextRule(OrigKB, TapeRate, "SKIPPED"));
 		amfree(tmp);
 		continue;
 	    }
-	    if (data(dp)->result == L_FAIL) {
+	    if (repdata->dumper.result == L_FAIL) {
 		fprintf(mailf, "%s\n",
 			tmp=TextRule(OrigKB, TapeRate, "FAILED"));
 		amfree(tmp);
 		continue;
 	    }
 
-	    if((data(dp)->dumper.success) &&
-	       ((!data(dp)->taper[i].success) ||
-	        (data(dp)->dumper.datestamp == data(dp)->taper[i].datestamp))) {
-		origsize = data(dp)->dumper.origsize;
-		outsize  = data(dp)->dumper.outsize;
+	    if(repdata->dumper.result == L_SUCCESS) {
+		origsize = repdata->dumper.origsize;
+		outsize  = repdata->dumper.outsize;
 	    }
 	    else {
-		origsize = data(dp)->taper[i].origsize;
-		outsize  = data(dp)->taper[i].outsize;
+		origsize = repdata->taper.origsize;
+		outsize  = repdata->taper.outsize;
 	    }
 
 	    cd= &ColumnData[OrigKB];
@@ -1269,11 +1265,9 @@ void output_summary()
 
 	    cd= &ColumnData[DumpTime];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
-	    if((data(dp)->dumper.success) &&
-	       ((!data(dp)->taper[i].success) ||
-	        (data(dp)->dumper.datestamp == data(dp)->taper[i].datestamp)))
+	    if(repdata->dumper.result == L_SUCCESS)
 		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
-		  "%3d:%02d", mnsc(data(dp)->dumper.sec));
+		  "%3d:%02d", mnsc(repdata->dumper.sec));
 	    else
 		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
 		  "N/A ");
@@ -1281,24 +1275,23 @@ void output_summary()
 
 	    cd= &ColumnData[DumpRate];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
-	    if((data(dp)->dumper.success) &&
-	       ((!data(dp)->taper[i].success) ||
-	        (data(dp)->dumper.datestamp == data(dp)->taper[i].datestamp)))
-		fprintf(mailf, cd->Format, cd->Width, cd->Precision, data(dp)->dumper.kps);
+	    if(repdata->dumper.result == L_SUCCESS)
+		fprintf(mailf, cd->Format, cd->Width, cd->Precision, repdata->dumper.kps);
 	    else
 		fprintf(mailf, "%*s", cd->Width, "N/A ");
 
 	    cd= &ColumnData[TapeTime];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
-	    if(!data(dp)->taper[i].success && !degraded_mode) {
+	    if(repdata->taper.result == L_FAIL) {
 		fprintf(mailf, "%s\n",
 			tmp=TextRule(TapeTime, TapeRate, "FAILED "));
 		amfree(tmp);
 		continue;
 	    }
-	    if(data(dp)->taper[i].success)
+
+	    if(repdata->taper.result == L_SUCCESS)
 		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
-		  "%3d:%02d", mnsc(data(dp)->taper[i].sec));
+		  "%3d:%02d", mnsc(repdata->taper.sec));
 	    else
 		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
 		  "N/A ");
@@ -1306,23 +1299,23 @@ void output_summary()
 
 	    cd= &ColumnData[TapeRate];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
-	    if(data(dp)->taper[i].success)
-		fprintf(mailf, cd->Format, cd->Width, cd->Precision, data(dp)->taper[i].kps);
+	    if(repdata->taper.result == L_SUCCESS)
+		fprintf(mailf, cd->Format, cd->Width, cd->Precision, repdata->taper.kps);
 	    else
 		fprintf(mailf, "%*s", cd->Width, "N/A ");
 	    fputc('\n', mailf);
 
-	    if ((postscript) && (data(dp)->taper[i].success)) {
+	    if ((postscript) && (repdata->taper.result == L_SUCCESS)) {
 		if(origsize != 0.0) {
 		    fprintf(postscript,"(%s) (%s) (%d) (%3.0d) (%8.0f) (%8.0f) DrawHost\n",
-			dp->host->hostname, dp->name, data(dp)->taper[i].level,
-                        data(dp)->taper[i].filenum, origsize, 
+			dp->host->hostname, dp->name, repdata->level,
+                        repdata->taper.filenum, origsize, 
 			outsize);
 		}
 		else {
 		    fprintf(postscript,"(%s) (%s) (%d) (%3.0d) (%8s) (%8.0f) DrawHost\n",
-			dp->host->hostname, dp->name, data(dp)->taper[i].level,
-                        data(dp)->taper[i].filenum, "N/A", 
+			dp->host->hostname, dp->name, repdata->level,
+                        repdata->taper.filenum, "N/A", 
 			outsize);
 		}
 	    }
@@ -1391,7 +1384,7 @@ void handle_start()
 	fp = s - 1;
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';
-	datestamp = newstralloc(datestamp, fp);
+	run_datestamp = newstralloc(run_datestamp, fp);
 	s[-1] = ch;
 
 	skip_whitespace(s, ch);
@@ -1454,7 +1447,7 @@ void handle_start()
 	fp = s - 1;
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';
-	datestamp = newstralloc(datestamp, fp);
+	run_datestamp = newstralloc(run_datestamp, fp);
 	s[-1] = ch;
 
 	started = 1;
@@ -1607,31 +1600,13 @@ void handle_summary()
 
 /* ----- */
 
-void setup_disk(dp)
-disk_t *dp;
-{
-    if(dp->up == NULL) {
-	dp->up = (void *) alloc(sizeof(repdata_t));
-	memset(dp->up, '\0', sizeof(repdata_t));
-	data(dp)->result = L_BOGUS;
-    }
-}
-
-void setup_data()
-{
-    disk_t *dp;
-    for(dp = diskq->head; dp != NULL; dp = dp->next)
-	setup_disk(dp);
-}
-
-int level;
-
 int nb_disk=0;
 void handle_disk()
 {
     disk_t *dp;
     char *s, *fp;
     int ch;
+    char *hostname = NULL, *diskname = NULL;
 
     if(curprog != P_PLANNER && curprog != P_AMFLUSH) {
 	bogus_line();
@@ -1672,27 +1647,28 @@ void handle_disk()
     dp = lookup_disk(hostname, diskname);
     if(dp == NULL) {
 	dp = add_disk(hostname, diskname);
-	setup_disk(dp);
     }
 
     dp->todo = 1;
 }
 
-void handle_success()
+repdata_t *handle_success()
 {
     disk_t *dp;
     float sec, kps, kbytes, origkb;
-    struct timedata_s *sp;
-    info_t inf;
+    timedata_t *sp;
     int i;
     char *s, *fp;
     int ch;
-    int datestampI;
-
+    char *hostname = NULL;
+    char *diskname = NULL;
+    repdata_t *repdata;
+    int level;
+    char *datestamp;
 
     if(curprog != P_TAPER && curprog != P_DUMPER && curprog != P_PLANNER) {
 	bogus_line();
-	return;
+	return NULL;
     }
 
     s = curstr;
@@ -1701,42 +1677,45 @@ void handle_success()
     skip_whitespace(s, ch);
     if(ch == '\0') {
 	bogus_line();
-	return;
+	return NULL;
     }
     fp = s - 1;
     skip_non_whitespace(s, ch);
     s[-1] = '\0';
-    hostname = newstralloc(hostname, fp);
+    hostname = stralloc(fp);
     s[-1] = ch;
 
     skip_whitespace(s, ch);
     if(ch == '\0') {
 	bogus_line();
-	return;
+	return NULL;
     }
     fp = s - 1;
     skip_non_whitespace(s, ch);
     s[-1] = '\0';
-    diskname = newstralloc(diskname, fp);
+    diskname = stralloc(fp);
     s[-1] = ch;
 
     skip_whitespace(s, ch);
-
-    if(ch == '\0' || sscanf(s - 1, "%d", &datestampI) != 1) {
+    if(ch == '\0') {
 	bogus_line();
-	return;
+	return NULL;
     }
-    skip_integer(s, ch);
+    fp = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    datestamp = stralloc(fp);
+    s[-1] = ch;
 
-    if(datestampI < 100)  {
-	level = datestampI;
-	datestampI = atoi(datestamp);
+    level = atoi(datestamp);
+    if(level < 100)  {
+	datestamp = stralloc(run_datestamp);
     }
     else {
 	skip_whitespace(s, ch);
 	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
 	    bogus_line();
-	    return;
+	    return NULL;
 	}
 	skip_integer(s, ch);
     }
@@ -1752,7 +1731,7 @@ void handle_success()
 	    if(sscanf(s - 1,"[sec %f kb %f kps %f",
 		      &sec, &kbytes, &kps) != 3) {
 		bogus_line();
-		return;
+		return NULL;
 	    }
 	}
 	else {
@@ -1770,38 +1749,43 @@ void handle_success()
 			NULL);
 	addline(&errsum, str);
 	amfree(str);
-	return;
+	return NULL;
     }
+
+    repdata = find_repdata(dp, datestamp, level);
 
     if(curprog == P_PLANNER) {
-	data(dp)->result = L_SKIPPED;
-	return;
+	repdata->dumper.result = L_SKIPPED;
+	return repdata;
     }
-    data(dp)->result = L_SUCCESS;
 
     if(curprog == P_TAPER)
-	sp = &(data(dp)->taper[data(dp)->nb_taper++]);
-    else sp = &(data(dp)->dumper);
+	sp = &(repdata->taper);
+    else sp = &(repdata->dumper);
 
     i = level > 0;
 
     if(origkb == -1) {
+	info_t inf;
 	struct tm *tm;
-	int datestamp;
-	/* grab original size from record */
+	int Idatestamp;
+
 	get_info(hostname, diskname, &inf);
-	tm = localtime(&inf.inf[level].date);
-	datestamp = 10000*(tm->tm_year+1900) + 
-		      100*(tm->tm_mon+1) + tm->tm_mday;
-	if(datestampI == datestamp)
+        tm = localtime(&inf.inf[level].date);
+        Idatestamp = 10000*(tm->tm_year+1900) +
+                      100*(tm->tm_mon+1) + tm->tm_mday;
+
+fprintf(stderr,"%s %d %d %d\n",dp->name, atoi(datestamp), Idatestamp, atoi(datestamp) == Idatestamp);
+	if(atoi(datestamp) == Idatestamp) {
+	    /* grab original size from record */
 	    origkb = (double)inf.inf[level].size;
+	}
 	else
 	    origkb = 0.0;
     }
 
-    sp->success = 1;
-    sp->datestamp = datestampI;
-    sp->level = level;
+    sp->result = L_SUCCESS;
+    sp->datestamp = repdata->datestamp;
     sp->sec = sec;
     sp->kps = kps;
     sp->origsize = origkb;
@@ -1831,22 +1815,26 @@ void handle_success()
 	stats[i].outsize += kbytes;
     }
 
+    return repdata;
 }
 
 void handle_strange()
 {
     char *str = NULL;
+    repdata_t *repdata;
 
-    handle_success();
+    repdata = handle_success();
 
-    str = vstralloc("  ", prefix(hostname, diskname, level),
+    str = vstralloc("  ", prefix(repdata->disk->host->hostname, 
+				 repdata->disk->name, repdata->level),
 		    " ", "STRANGE",
 		    NULL);
     addline(&errsum, str);
     amfree(str);
 
     addline(&errdet,"");
-    str = vstralloc("/-- ", prefix(hostname, diskname, level),
+    str = vstralloc("/-- ", prefix(repdata->disk->host->hostname, 
+				   repdata->disk->name, repdata->level),
 		    " ", "STRANGE",
 		    NULL);
     addline(&errdet, str);
@@ -1864,11 +1852,14 @@ void handle_failed()
     disk_t *dp;
     char *hostname;
     char *diskname;
+    char *datestamp;
     char *errstr;
     int level;
     char *s;
     int ch;
     char *str = NULL;
+    repdata_t *repdata;
+    timedata_t *sp;
 
     hostname = NULL;
     diskname = NULL;
@@ -1895,11 +1886,26 @@ void handle_failed()
     s[-1] = '\0';
 
     skip_whitespace(s, ch);
-    if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
+    if(ch == '\0') {
 	bogus_line();
 	return;
     }
-    skip_integer(s, ch);
+    datestamp = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+
+    if(strlen(datestamp) < 3) { /* there is no datestamp, it's the level */
+	level = atoi(datestamp);
+	datestamp = stralloc(run_datestamp);
+    }
+    else { /* read the level */
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
+	    bogus_line();
+	    return;
+	}
+	skip_integer(s, ch);
+    }
 
     skip_whitespace(s, ch);
     if(ch == '\0') {
@@ -1919,10 +1925,14 @@ void handle_failed()
 	addline(&errsum, str);
 	amfree(str);
     } else {
-	if(data(dp)->result != L_SUCCESS) {
-	    data(dp)->result = L_FAIL;
-	    data(dp)->dumper.level = level;
-	}
+	repdata = find_repdata(dp, datestamp, level);
+
+	if(curprog == P_TAPER)
+	    sp = &(repdata->taper);
+	else sp = &(repdata->dumper);
+
+	if(sp->result != L_SUCCESS)
+	    sp->result = L_FAIL;
     }
 
     str = vstralloc("  ", prefix(hostname, diskname, level),
@@ -1954,7 +1964,7 @@ void generate_missing()
     char *str = NULL;
 
     for(dp = diskq->head; dp != NULL; dp = dp->next) {
-	if(dp->todo && data(dp)->result == L_BOGUS) {
+	if(dp->todo && data(dp) == NULL) {
 	    str = vstralloc("  ", prefix(dp->host->hostname, dp->name, -987),
 			    " ", "RESULTS MISSING",
 			    NULL);
@@ -2020,4 +2030,34 @@ char *lbl_templ;
   }
   close(fd);
   amfree(lbl_templ);
+}
+
+repdata_t *find_repdata(dp, datestamp, level)
+disk_t *dp;
+char *datestamp;
+int level;
+{
+    repdata_t *repdata, *prev;
+
+    if(!datestamp)
+	datestamp = run_datestamp;
+    prev = NULL;
+    for(repdata = data(dp); repdata != NULL && (repdata->level != level || strcmp(repdata->datestamp,datestamp)!=0); repdata = repdata->next) {
+	prev = repdata;
+    }
+    if(!repdata) {
+	repdata = (repdata_t *)alloc(sizeof(repdata_t));
+	memset(repdata, '\0',sizeof(repdata_t));
+	repdata->disk = dp;
+	repdata->datestamp = stralloc(datestamp);
+	repdata->level = level;
+	repdata->dumper.result = L_BOGUS;
+	repdata->taper.result = L_BOGUS;
+	repdata->next = NULL;
+	if(prev)
+	    prev->next = repdata;
+	else
+	    dp->up = (void *)repdata;
+    }
+    return repdata;
 }

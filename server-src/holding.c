@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.17.2.12.4.2 2001/07/31 22:38:39 jrjackson Exp $
+ * $Id: holding.c,v 1.17.2.12.4.3 2001/11/08 18:44:56 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -33,6 +33,7 @@
 #include "holding.h"
 #include "fileheader.h"
 #include "util.h"
+#include "logfile.h"
 
 
 int is_dir(fname)
@@ -151,14 +152,16 @@ int verbose;
     char *entryname = NULL;
 
     if((topdir = opendir(diskdir)) == NULL) {
-	printf("Warning: could not open holding dir %s: %s\n",
-	       diskdir, strerror(errno));
+	if(verbose && errno != ENOENT)
+	   printf("Warning: could not open holding dir %s: %s\n",
+		  diskdir, strerror(errno));
 	return;
     }
 
     /* find all directories of the right format  */
 
-    printf("Scanning %s...\n", diskdir);
+    if(verbose)
+	printf("Scanning %s...\n", diskdir);
     while((workdir = readdir(topdir)) != NULL) {
 	if(is_dot_or_dotdot(workdir->d_name)) {
 	    continue;
@@ -192,19 +195,136 @@ int verbose;
     amfree(entryname);
 }
 
-holding_t *pick_all_datestamp()
+
+void scan_holdingdir(holding_list, holdp, datestamp)
+holding_t **holding_list;
+holdingdisk_t *holdp;
+char *datestamp;
+{
+    DIR *workdir;
+    struct dirent *entry;
+    char *dirname = NULL;
+    char *destname = NULL;
+    disk_t *dp;
+    dumpfile_t file;
+
+    dirname = vstralloc(holdp->diskdir, "/", datestamp, NULL);
+    if((workdir = opendir(dirname)) == NULL) {
+	if(errno != ENOENT)
+	    log_add(L_INFO, "%s: could not open dir: %s",
+		    dirname, strerror(errno));
+	amfree(dirname);
+	return;
+    }
+    chdir(dirname);
+    while((entry = readdir(workdir)) != NULL) {
+	if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+	    continue;
+
+	if(is_emptyfile(entry->d_name))
+	    continue;
+
+	destname = newvstralloc(destname,
+				dirname, "/", entry->d_name,
+				NULL);
+	get_dumpfile(destname, &file);
+	if( file.type != F_DUMPFILE) {
+	    if( file.type != F_CONT_DUMPFILE )
+		log_add(L_INFO, "%s: ignoring cruft file.", entry->d_name);
+	    continue;
+	}
+
+	dp = lookup_disk(file.name, file.disk);
+
+	if (dp == NULL) {
+	    log_add(L_INFO, "%s: disk %s:%s not in database, skipping it.",
+		    entry->d_name, file.name, file.disk);
+	    continue;
+	}
+
+	if(file.dumplevel < 0 || file.dumplevel > 9) {
+	    log_add(L_INFO, "%s: ignoring file with bogus dump level %d.",
+		    entry->d_name, file.dumplevel);
+	    continue;
+	}
+
+	if(insert_dirname(holding_list, destname) == NULL) {
+	    puts("too many non-empty Amanda dirs, can't handle this one.");
+
+	}
+    }
+}
+
+
+void get_flush(dateargs, holding_list, datestamp, amflush, verbose)
+char **dateargs;  /* NULL terminated array */
+holding_t **holding_list;
+char *datestamp;  /* don't do this date */
+int amflush, verbose;
+{
+    holding_t *date_list;
+    char **datearg;
+    holding_t *date;
+    holdingdisk_t *hdisk;
+
+    if(dateargs) {
+	holding_t *prev_date = NULL, *next_date;
+	int ok;
+
+	date_list = pick_all_datestamp(verbose);
+	for(date = date_list; date != NULL;) {
+	    next_date = date->next;
+	    ok = 0;
+	    for(datearg=dateargs; datearg != NULL && ok==0; datearg++) {
+		ok = match_datestamp(*datearg, date->name);
+	    }
+	    if(ok == 0) { /* remove dir */
+		amfree(date);
+		if(prev_date)
+		    prev_date->next = next_date;
+		else
+		    date_list = next_date;
+	    }
+	    else {
+		prev_date = date;
+	    }
+	    date=next_date;
+	}
+    }
+    else if (amflush) {
+	date_list = pick_datestamp(verbose);
+    }
+    else {
+	date_list = pick_all_datestamp(verbose);
+    }
+
+    for(date = date_list; date !=NULL; date = date->next) {
+	if(!datestamp || strcmp(datestamp,date->name) != 0) {
+	    for(hdisk = getconf_holdingdisks(); hdisk != NULL;
+						hdisk = hdisk->next) {
+		scan_holdingdir(holding_list, hdisk, date->name);
+	    }
+	}
+    }
+
+}
+
+
+holding_t *pick_all_datestamp(verbose)
+int verbose;
 {
     holdingdisk_t *hdisk;
     holding_t *holding_list = NULL;
 
     for(hdisk = getconf_holdingdisks(); hdisk != NULL; hdisk = hdisk->next)
-	scan_holdingdisk(&holding_list, hdisk->diskdir, 1);
+	scan_holdingdisk(&holding_list, hdisk->diskdir, verbose);
 
     return holding_list;
 }
 
 
-holding_t *pick_datestamp()
+holding_t *pick_datestamp(verbose)
+int verbose;
 {
     holding_t *holding_list;
     holding_t *dir, **directories;
@@ -213,7 +333,7 @@ holding_t *pick_datestamp()
     char answer[1024], *result;
     char max_char = '\0', *ch, chupper = '\0';
 
-    holding_list = pick_all_datestamp();
+    holding_list = pick_all_datestamp(verbose);
 
     ndirs=0;
     for(dir = holding_list; dir != NULL;
@@ -224,7 +344,7 @@ holding_t *pick_datestamp()
     if(ndirs == 0) {
 	return holding_list;
     }
-    else if(ndirs == 1) {
+    else if(ndirs == 1 || !verbose) {
 	return holding_list;
     }
     else {
@@ -443,3 +563,48 @@ int complete;
     amfree(filename_tmp);
     return 1;
 }
+
+
+void cleanup_holdingdisk(diskdir, verbose)
+char *diskdir;
+int verbose;
+{
+    DIR *topdir;
+    struct dirent *workdir;
+
+    if((topdir = opendir(diskdir)) == NULL) {
+	if(verbose && errno != ENOENT)
+	    printf("Warning: could not open holding dir %s: %s\n",
+		   diskdir, strerror(errno));
+	return;
+   }
+
+    /* find all directories of the right format  */
+
+    if(verbose)
+	printf("Scanning %s...\n", diskdir);
+    chdir(diskdir);
+    while((workdir = readdir(topdir)) != NULL) {
+	if(strcmp(workdir->d_name, ".") == 0
+	   || strcmp(workdir->d_name, "..") == 0
+	   || strcmp(workdir->d_name, "lost+found") == 0)
+	    continue;
+
+	if(verbose)
+	    printf("  %s: ", workdir->d_name);
+	if(!is_dir(workdir->d_name)) {
+	    if(verbose)
+	        puts("skipping cruft file, perhaps you should delete it.");
+	}
+	else if(!is_datestr(workdir->d_name)) {
+	    if(verbose)
+	        puts("skipping cruft directory, perhaps you should delete it.");
+	}
+	else if(rmdir(workdir->d_name) == 0) {
+	    if(verbose)
+	        puts("deleted empty Amanda directory.");
+ 	}
+     }
+     closedir(topdir);
+}
+

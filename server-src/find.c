@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.6.2.4.4.1 2001/11/03 13:38:37 martinea Exp $
+ * $Id: find.c,v 1.6.2.4.4.2 2001/11/08 18:44:56 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -198,7 +198,7 @@ find_result_t **output_find;
     int level;
     disk_t *dp;
 
-    holding_list = pick_all_datestamp();
+    holding_list = pick_all_datestamp(1);
 
     for(hdisk = getconf_holdingdisks(); hdisk != NULL; hdisk = hdisk->next) {
 	for(dir = holding_list; dir != NULL; dir = dir->next) {

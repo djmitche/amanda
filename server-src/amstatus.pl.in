@@ -153,32 +153,32 @@ while(<AMDUMP>) {
 	elsif(/GENERATING SCHEDULE:/) {
 		$generating_schedule=1;
 	}
-	elsif(/^(\S+) (\S+) (\d+) (\d+) \d+:\d+:\d+:\d+:\d+:\d+ (\d+) \d+/) {
+	elsif(/^(DUMP )?(\S+) (\S+) (\d+) (\d+) \d+:\d+:\d+:\d+:\d+:\d+ (\d+) \d+/) {
 		if($generating_schedule == 1 ) {
-			$host=$1;
-			$partition=$2;
+			$host=$2;
+			$partition=$3;
 			$hostpart="$host$partition";
-			$level{"$hostpart"}=$4;
-			$size=$5;
+			$level{"$hostpart"}=$5;
+			$size=$6;
 			$size=32 if $size<32;
 			$esize{$hostpart}=$size;
 			$size{$hostpart}=$size;
 			$degr_level{$hostpart}=-1;
 		}
 	}
-	elsif(/^(\S+) (\S+) (\d+) (\d+) \d+:\d+:\d+:\d+:\d+:\d+ (\d+) \d+ (\d+) \d+:\d+:\d+:\d+:\d+:\d+ ([-]*\d+) \d+/) {
+	elsif(/^(DUMP )?(\S+) (\S+) (\d+) (\d+) \d+:\d+:\d+:\d+:\d+:\d+ (\d+) \d+ (\d+) \d+:\d+:\d+:\d+:\d+:\d+ ([-]*\d+) \d+/) {
 		if($generating_schedule == 1 ) {
-			$host=$1;
-			$partition=$2;
+			$host=$2;
+			$partition=$3;
 			$hostpart="$host$partition";
-			$level{$hostpart}=$4;
-			$size=$5;
+			$level{$hostpart}=$5;
+			$size=$6;
 			$size=32 if $size<32;
 			$esize{$hostpart}=$size;
 			$size{$hostpart}=$size;
-			$degr_level{$hostpart}=$6;
-			$degr_size{$hostpart}=$7;
-			$degr_size{$hostpart}=32 if ($7 < 32);
+			$degr_level{$hostpart}=$7;
+			$degr_size{$hostpart}=$8;
+			$degr_size{$hostpart}=32 if ($8 < 32);
 		}
 	}
 	elsif(/^driver: start time (\S+)/) {

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.14.2.6 2001/11/03 13:43:40 martinea Exp $
+/* $Id: dumper.c,v 1.75.2.14.2.7 2001/11/08 18:44:56 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -307,7 +307,8 @@ char **main_argv;
 		putresult(rc == 2? FAILED : TRY_AGAIN, "%s %s\n",
 			  handle, q);
 		if(rc == 2) {
-		    log_add(L_FAIL, "%s %s %d [%s]", hostname, diskname, level, errstr);
+		    log_add(L_FAIL, "%s %s %s %d [%s]", hostname, diskname,
+			    datestamp, level, errstr);
 		}
 		amfree(q);
 		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
@@ -373,7 +374,8 @@ char **main_argv;
 		putresult(rc == 2? FAILED : TRY_AGAIN, "%s %s\n",
 			  handle, q);
 		if(rc == 2) {
-		    log_add(L_FAIL, "%s %s %d [%s]", hostname, diskname, level, errstr);
+		    log_add(L_FAIL, "%s %s %s %d [%s]", hostname, diskname,
+			    datestamp, level, errstr);
 		}
 		amfree(q);
 		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
@@ -1349,7 +1351,8 @@ int mesgfd, datafd, indexfd, outfd;
 
     if(!abort_pending) {
 	log_start_multiline();
-	log_add(L_FAIL, "%s %s %d [%s]", hostname, diskname, level, errstr);
+	log_add(L_FAIL, "%s %s %s %d [%s]", hostname, diskname, 
+		datestamp, level, errstr);
 	if (errf) {
 	    log_msgout(L_FAIL);
 	}
