@@ -1,3 +1,13 @@
+1998-06-13  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/logfile.c (open_log): open log file with mode 0600.
+
+	* server-src/amdump.sh.in: refuse to run if either amdump or log
+	exist in logdir.
+	* server-src/amflush.c (main): refuse to run if log exists.
+	* server-src/amcheck.c (start_server_check): do not perform tape
+ 	testing if amdump and/or log exist in logdir.
+
 1998-06-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* restore-src/amrestore.c (restore): fixed -p flag (and amrecover)

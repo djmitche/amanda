@@ -72,10 +72,15 @@ if [ $runuser != $dumpuser ]; then
 fi
 
 if test -f hold; then
-	echo "amdump: waiting for hold file to be removed"
+	echo "amdump: waiting for hold file to be removed" >&2
 	while test -f hold; do
 		sleep 60
 	done
+fi
+
+if test -f $errfile || test -f $logdir/log; then
+	echo "amdump: amdump or amflush is already running, or you must run amcleanup" >&2
+	exit 1
 fi
 
 umask 077

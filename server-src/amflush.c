@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.30 1998/05/05 21:47:36 martinea Exp $
+ * $Id: amflush.c,v 1.31 1998/06/13 04:39:44 oliva Exp $
  *
  * write files from work directory onto tape
  */
@@ -64,6 +64,7 @@ char **main_argv;
     struct passwd *pw;
     char *dumpuser;
     int fd;
+    char *logfile;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -110,6 +111,11 @@ char **main_argv;
     if(pw->pw_uid != getuid())
 	error("must run amflush as user %s", dumpuser);
 
+    logfile = vstralloc(getconf_str(CNF_LOGDIR), "/log", NULL);
+    if (access(logfile, F_OK) == 0)
+	error("amdump or amflush is already running, or you must run amcleanup", logfile);
+    amfree(logfile);
+    
     taper_program = vstralloc(libexecdir, "/", "taper", versionsuffix(), NULL);
     reporter_program = vstralloc(libexecdir, "/", "reporter", versionsuffix(),
 				 NULL);

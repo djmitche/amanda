@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.15 1998/04/08 16:25:25 amcore Exp $
+ * $Id: logfile.c,v 1.16 1998/06/13 04:39:45 oliva Exp $
  *
  * common log file writing routine
  */
@@ -189,7 +189,7 @@ static void open_log()
 {
     logfile = vstralloc(getconf_str(CNF_LOGDIR), "/log", NULL);
 
-    logfd = open(logfile, O_WRONLY|O_CREAT|O_APPEND, 0666);
+    logfd = open(logfile, O_WRONLY|O_CREAT|O_APPEND, 0600);
 
     if(logfd == -1)
 	error("could not open log file %s: %s", logfile, strerror(errno));

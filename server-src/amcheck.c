@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.43 1998/06/02 18:28:59 jrj Exp $
+ * $Id: amcheck.c,v 1.44 1998/06/13 04:39:40 oliva Exp $
  *
  * checks for common problems in server and clients
  */
@@ -425,6 +425,7 @@ int fd;
     holdingdisk_t *hdp;
     int pid, tapebad, disklow, logbad;
     int inparallel;
+    int testtape = 1;
 
     switch(pid = fork()) {
     case -1: error("could not fork server check: %s", strerror(errno));
@@ -525,69 +526,83 @@ int fd;
 	    logbad = 1;
 	}
 
-	if(access(logfile, F_OK) == 0 && access(logfile, W_OK) != 0) {
-	    fprintf(outf, "ERROR: %s is not writable\n", logfile);
+	if(access(logfile, F_OK) == 0) {
+	    testtape = 0;
 	    logbad = 1;
+	    if(access(logfile, W_OK) != 0)
+		fprintf(outf, "ERROR: %s is not writable\n", logfile);
 	}
 
+	if (testtape) {
+	    logfile = newvstralloc(logfile, logdir, "/amdump", NULL);
+	    if (access(logfile, F_OK) == 0) {
+		testtape = 0;
+		logbad = 1;
+	    }
+	}
+	
 	amfree(logfile);
     }
 
-    /* check that the tape is a valid amanda tape */
+    if (testtape) {
+	/* check that the tape is a valid amanda tape */
 
-    tapebad = 0;
+	tapebad = 0;
 
-    tapedays = getconf_int(CNF_TAPECYCLE);
-    labelstr = getconf_str(CNF_LABELSTR);
-    tapename = getconf_str(CNF_TAPEDEV);
+	tapedays = getconf_int(CNF_TAPECYCLE);
+	labelstr = getconf_str(CNF_LABELSTR);
+	tapename = getconf_str(CNF_TAPEDEV);
 
-    if (!getconf_seen(CNF_TPCHANGER) && getconf_int(CNF_RUNTAPES) != 1) {
-	fprintf(outf,
-		"WARNING: if a tape changer is not available, runtapes must be set to 1.\n");
-    }
-
-    if(changer_init() && (tapename = taper_scan()) == NULL) {
-	fprintf(outf, "ERROR: %s.\n", changer_resultstr);
-	tapebad = 1;
-    } else if(access(tapename,F_OK|R_OK|W_OK) == -1) {
-	fprintf(outf, "ERROR: %s: %s\n",tapename,strerror(errno));
-	tapebad = 1;
-    } else if((errstr = tape_rdlabel(tapename, &datestamp, &label)) != NULL) {
-	fprintf(outf, "ERROR: %s: %s.\n", tapename, errstr);
-	tapebad = 1;
-    } else {
-	tp = lookup_tapelabel(label);
-	if(tp != NULL && !reusable_tape(tp)) {
-	    fprintf(outf, "ERROR: cannot overwrite active tape %s.\n", label);
-	    tapebad = 1;
-	}
-	if(!match(labelstr, label)) {
-	    fprintf(outf, "ERROR: label %s doesn't match labelstr \"%s\".\n",
-		    label, labelstr);
-	    tapebad = 1;
-	}
-
-    }
-
-    if(tapebad) {
-	tape_t *exptape = lookup_last_reusable_tape();
-	fprintf(outf, "       (expecting ");
-	if(exptape != NULL) fprintf(outf, "tape %s or ", exptape->label);
-	fprintf(outf, "a new tape)\n");
-    }
-
-    if(!tapebad && overwrite) {
-	if((errstr = tape_writable(tapename)) != NULL) {
+	if (!getconf_seen(CNF_TPCHANGER) && getconf_int(CNF_RUNTAPES) != 1) {
 	    fprintf(outf,
-		    "ERROR: tape %s label ok, but is not writable.\n", label);
-	    tapebad = 1;
+		    "WARNING: if a tape changer is not available, runtapes must be set to 1.\n");
 	}
-	else fprintf(outf, "Tape %s is writable.\n", label);
-    }
-    else fprintf(outf, "NOTE: skipping tape-writable test.\n");
 
-    if(!tapebad)
-	fprintf(outf, "Tape %s label ok.\n", label);
+	if(changer_init() && (tapename = taper_scan()) == NULL) {
+	    fprintf(outf, "ERROR: %s.\n", changer_resultstr);
+	    tapebad = 1;
+	} else if(access(tapename,F_OK|R_OK|W_OK) == -1) {
+	    fprintf(outf, "ERROR: %s: %s\n",tapename,strerror(errno));
+	    tapebad = 1;
+	} else if((errstr = tape_rdlabel(tapename, &datestamp, &label)) != NULL) {
+	    fprintf(outf, "ERROR: %s: %s.\n", tapename, errstr);
+	    tapebad = 1;
+	} else {
+	    tp = lookup_tapelabel(label);
+	    if(tp != NULL && !reusable_tape(tp)) {
+		fprintf(outf, "ERROR: cannot overwrite active tape %s.\n", label);
+		tapebad = 1;
+	    }
+	    if(!match(labelstr, label)) {
+		fprintf(outf, "ERROR: label %s doesn't match labelstr \"%s\".\n",
+			label, labelstr);
+		tapebad = 1;
+	    }
+
+	}
+
+	if(tapebad) {
+	    tape_t *exptape = lookup_last_reusable_tape();
+	    fprintf(outf, "       (expecting ");
+	    if(exptape != NULL) fprintf(outf, "tape %s or ", exptape->label);
+	    fprintf(outf, "a new tape)\n");
+	}
+
+	if(!tapebad && overwrite) {
+	    if((errstr = tape_writable(tapename)) != NULL) {
+		fprintf(outf,
+			"ERROR: tape %s label ok, but is not writable.\n", label);
+		tapebad = 1;
+	    }
+	    else fprintf(outf, "Tape %s is writable.\n", label);
+	}
+	else fprintf(outf, "NOTE: skipping tape-writable test.\n");
+
+	if(!tapebad)
+	    fprintf(outf, "Tape %s label ok.\n", label);
+    } else {
+	fprintf(outf, "WARNING: skipping tape test because amdump or amflush seem to be running;\nWARNING: if they are not, you must run amcleanup.\n");
+    }
 
     {
 	char *indexdir = getconf_str(CNF_INDEXDIR);
