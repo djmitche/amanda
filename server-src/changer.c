@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.24 2003/01/01 23:28:18 martinea Exp $
+ * $Id: changer.c,v 1.25 2003/02/28 19:23:35 martinea Exp $
  *
  * interface routines for tape changers
  */
@@ -34,15 +34,28 @@
 
 #include "changer.h"
 
+/*
+ * If we don't have the new-style wait access functions, use our own,
+ * compatible with old-style BSD systems at least.  Note that we don't
+ * care about the case w_stopval == WSTOPPED since we don't ask to see
+ * stopped processes, so should never get them from wait.
+ */
+#ifndef WEXITSTATUS
+#   define WEXITSTATUS(r)       (((union wait *) &(r))->w_retcode)
+#   define WTERMSIG(r)          (((union wait *) &(r))->w_termsig)
+
+#   undef  WIFSIGNALED
+#   define WIFSIGNALED(r)       (((union wait *) &(r))->w_termsig != 0)
+#endif
+
+
 int changer_debug = 0;
 char *changer_resultstr = NULL;
 
 static char *tapechanger = NULL;
 
 /* local functions */
-static int changer_command P((char *cmdstr, char *arg));
-static int report_bad_resultstr P((void));
-static int run_changer_command P((char *, char *, char **, char **));
+static int changer_command P((char *cmd, char *arg));
 
 int changer_init()
 {
@@ -159,6 +172,7 @@ char **curslotstr;
     rc = run_changer_command("-info", (char *) NULL, curslotstr, &rest);
     if(rc) return rc;
 
+    dbprintf(("changer_query: changer return was %s\n",rest));
     if (sscanf(rest, "%d %d %d", nslotsp, backwardsp, searchable) != 3) {
       if (sscanf(rest, "%d %d", nslotsp, backwardsp) != 2) {
         return report_bad_resultstr();
@@ -166,6 +180,7 @@ char **curslotstr;
         *searchable = 0;
       }
     }
+    dbprintf(("changer_query: searchable = %d\n",*searchable));
     return 0;
 }
 
@@ -229,9 +244,18 @@ char *searchlabel;
     char *slotstr, *device = NULL, *curslotstr = NULL;
     int nslots, checked, backwards, rc, done, searchable;
 
-    rc = changer_query(&nslots, &curslotstr, &backwards,&searchable);
+    rc = changer_query(&nslots, &curslotstr, &backwards, &searchable);
     done = user_init(rc, nslots, backwards);
     amfree(curslotstr);
+   
+    if (searchlabel != NULL)
+    {
+      dbprintf(("changer_find: looking for %s changer is searchable = %d\n",
+		searchlabel, searchable));
+    } else {
+      dbprintf(("changer_find: looking for NULL changer is searchable = %d\n",
+		searchable));
+    }
 
     if ((searchlabel!=NULL) && searchable && !done){
       rc=changer_search(searchlabel,&curslotstr,&device);
@@ -282,12 +306,12 @@ int (*user_slot) P((int rc, char *slotstr, char *device));
 /* ---------------------------- */
 
 static int changer_command(cmd, arg)
-    char *cmd;
-    char *arg;
+     char *cmd;
+     char *arg;
 {
     int fd[2];
-    int exitcode;
     amwait_t wait_exitcode;
+    int exitcode;
     char num1[NUM_STR_SIZE];
     char num2[NUM_STR_SIZE];
     char *cmdstr;
@@ -476,6 +500,7 @@ char *searchlabel, **outslotstr, **devicename;
     char *rest;
     int rc;
 
+    dbprintf(("changer_search: %s\n",searchlabel));
     rc = run_changer_command("-search", searchlabel, outslotstr, &rest);
     if(rc) return rc;
 
@@ -491,9 +516,27 @@ char *searchlabel, **outslotstr, **devicename;
    giving a label for a tape. (Maybe also, when the label and the associated
    slot is known. e.g. during library scan.
 */
-void changer_label (slotsp,labelstr)
-int slotsp; 
+int changer_label (slotsp,labelstr)
+char *slotsp; 
 char *labelstr;
 {
-/* only dummy at the moment */
+    int rc;
+    char *rest=NULL;
+    char *slotstr;
+    char *curslotstr = NULL;
+    int nslots, backwards, searchable;
+
+    dbprintf(("changer_label: %s for slot %s\n",labelstr,slotsp));
+    rc = changer_query(&nslots, &curslotstr, &backwards,&searchable);
+    amfree(curslotstr);
+
+    if ((rc == 0) && (searchable == 1)){
+	dbprintf(("changer_label: calling changer -label %s\n",labelstr));
+	rc = run_changer_command("-label", labelstr, &slotstr, &rest);
+	amfree(slotstr);
+    }
+
+    if(rc) return rc;
+
+    return 0;
 }
