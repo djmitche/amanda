@@ -87,7 +87,7 @@ install-exec-hook:
 		fi; \
 	done
 
-LINK_TEST=$(COMPILE) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -DTEST
+LINK_TEST=$(COMPILE) $(LDFLAGS) -DTEST
 
 getfsent: $(srcdir)/getfsent.c $(srcdir)/getfsent.h
 	$(LINK_TEST) $(srcdir)/getfsent.c -o getfsent
