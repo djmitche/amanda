@@ -820,7 +820,7 @@ AC_SUBST(MT_FILE_FLAG)
 case "$target" in
     *-dec-osf*)
 			# setpgrp takes void
-			case "$target" in *-dec-osf[123]*)
+			case "$target" in *-dec-osf[[123]]*)
 				ac_cv_func_setpgrp_void=yes;;
 			esac
 			AC_DEFINE(STATFS_OSF1)
@@ -1013,7 +1013,7 @@ if test "$DUMP"; then
 	[
 	    $DUMP 9Ef /dev/null /dev/null/invalid/fs >conftest.d-E 2>&1
 	    $DUMP 9f /dev/null /dev/null/invalid/fs 2>&1 |
-	      $EGREP -v ['^dump: (Dumping from host|Date of (this|last) level [0-9])'] >conftest.d
+	      $EGREP -v 'Dumping|Date of' >conftest.d
 	    if diff conftest.d-E conftest.d >/dev/null 2>&1; then
 		amanda_cv_dump_estimate=yes
 	    else
