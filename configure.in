@@ -1081,15 +1081,21 @@ if test "$DUMP"; then
 	[whether $DUMP supports -E for estimates],
 	amanda_cv_dump_estimate,
 	[
-	    $DUMP 9Ef /dev/null /dev/null/invalid/fs >conftest.d-E 2>&1
-	    $DUMP 9f /dev/null /dev/null/invalid/fs 2>&1 |
-		$EGREP -v 'Dumping|Date of' >conftest.d
-	    if diff conftest.d-E conftest.d >/dev/null 2>&1; then
-		amanda_cv_dump_estimate=yes
-	    else
-		amanda_cv_dump_estimate=no
-	    fi
-	    rm -f conftest.d conftest.d-E
+	    case "$DUMP" in
+	    *dump)
+		$DUMP 9Ef /dev/null /dev/null/invalid/fs >conftest.d-E 2>&1
+		$DUMP 9f /dev/null /dev/null/invalid/fs 2>&1 |
+		    $EGREP -v 'Dumping|Date of' >conftest.d
+		if diff conftest.d-E conftest.d >/dev/null 2>&1; then
+		    amanda_cv_dump_estimate=yes
+		else
+		    amanda_cv_dump_estimate=no
+		fi
+		rm -f conftest.d conftest.d-E
+	      ;;
+	    *) amanda_cv_dump_estimate=no
+	      ;;
+	    esac
 	])
     if test "$amanda_cv_dump_estimate" = yes; then
 	AC_DEFINE(HAVE_DUMP_ESTIMATE)
@@ -1232,6 +1238,7 @@ AC_CHECK_HEADERS(\
 	grp.h \
 	history.h \
 	limits.h \
+	libc.h \
 	mntent.h \
 	mnttab.h \
 	ndbm.h \
@@ -1652,7 +1659,7 @@ AC_CHECK_FUNCS(on_exit)
 
 dnl arguments for setpgrp or not
 AC_CHECK_FUNC(setpgrp,[AC_FUNC_SETPGRP])
-ICE_CHECK_DECL(setpgrp,sys/types.h unistd.h)
+ICE_CHECK_DECL(setpgrp,sys/types.h unistd.h libc.h)
 
 ICE_CHECK_DECL(setsockopt,sys/types.h sys/socket.h)
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.21 1997/11/02 23:13:44 george Exp $
+ * $Id: amanda.h,v 1.22 1997/11/06 04:25:50 amcore Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -105,6 +105,10 @@
 #  else
 #    include <time.h>
 #  endif
+#endif
+
+#ifdef HAVE_LIBC_H
+#  include <libc.h>
 #endif
 
 #ifdef HAVE_STDLIB_H
