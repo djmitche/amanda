@@ -75,7 +75,7 @@ specified at configure-time (--with-user=<USERNAME>) is listed in
 inetd.conf.  Check whether this user has permission to run amandad, as
 well as any shared libraries amandad depends upon, by running the
 specified amandad command by hand, as the Amanda user.  If you type
-anything, amandad should abort because it can't read an UDP packet
+anything, amandad should abort because it can't read a UDP packet
 from the keyboard.
 
    As soon as you have properly configured inetd.conf so as to run
