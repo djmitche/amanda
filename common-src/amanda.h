@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.78 1999/05/11 23:33:36 kashmir Exp $
+ * $Id: amanda.h,v 1.79 1999/05/11 23:48:44 kashmir Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -401,16 +401,6 @@ extern int  debug_fd P((void));
 #define ERR_INTERACTIVE	1
 #define ERR_SYSLOG	2
 #define ERR_AMANDALOG	4
-
-/* For static buffer manager [alloc.c:sbuf_man()] */
-#define SBUF_MAGIC 42
-#define SBUF_DEF(name, len) static SBUF2_DEF(len) name = {SBUF_MAGIC, len, -1}
-#define SBUF2_DEF(len) 		\
-    struct {			\
-	int magic;		\
-	int max, cur;		\
-	void *bufp[len];	\
-    }
 
 extern void   set_logerror P((void (*f)(char *)));
 extern void   set_pname P((char *pname));

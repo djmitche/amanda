@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: alloc.c,v 1.21 1999/05/07 16:43:13 kashmir Exp $
+ * $Id: alloc.c,v 1.22 1999/05/11 23:48:46 kashmir Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -367,45 +367,6 @@ arglist_function1(char *newvstralloc, char *, oldstr, const char *, newstr)
     arglist_end(argp);
     malloc_leave(dbmalloc_caller_loc(saved_file, saved_line));
     return result;
-}
-
-
-/*
-** sbuf_man - static buffer manager.
-**
-** Manage a bunch of static buffer pointers.
-*/
-void *sbuf_man(e_bufs, ptr)
-void *e_bufs; /* XXX - I dont think this is right */
-void *ptr;
-{
-	SBUF2_DEF(1) *bufs;
-	int slot;
-
-	bufs = e_bufs;
-
-	/* try and trap bugs */
-	assert(bufs->magic == SBUF_MAGIC);
-	assert(bufs->max > 0);
-
-	/* initialise first time through */
-	if(bufs->cur == -1)
-		for(slot=0; slot < bufs->max; slot++) {
-			bufs->bufp[slot] = (void *)0;
-		} 
-
-	/* calculate the next slot */
-	slot = bufs->cur + 1;
-	if (slot >= bufs->max) slot = 0;
-
-	/* free the previous inhabitant */
-	if(bufs->bufp[slot] != (void *)0) free(bufs->bufp[slot]);
-
-	/* store the new one */
-	bufs->bufp[slot] = ptr;
-	bufs->cur = slot;
-
-	return ptr;
 }
 
 

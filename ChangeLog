@@ -1,5 +1,11 @@
 1999-05-11  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/amanda.h, common-src/alloc.c: remove the static
+	buffer manager - nothing uses it.  It can be resurrected in
+	the future if needed.
+
+1999-05-11  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/amanda.h: define stringconcat() macros that
 	concatenate two const strings together
 	* common-src/versuff.c.in (versionsuffix, version): generate
