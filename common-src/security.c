@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.c,v 1.17 1998/10/30 22:08:55 jrj Exp $
+ * $Id: security.c,v 1.17.2.1 1999/03/14 08:42:25 oliva Exp $
  *
  * wrapper file for kerberos security
  */
@@ -104,10 +104,10 @@ char **errstr;
 #ifdef BSD_SECURITY
 
 int bsd_security_ok(addr, str, cksum, errstr)
-struct sockaddr_in *addr;
-char *str;
-unsigned long cksum;
-char **errstr;
+     struct sockaddr_in *addr;
+     char *str;
+     unsigned long cksum;
+     char **errstr;
 {
     char *remotehost = NULL, *remoteuser = NULL, *localuser = NULL;
     char *bad_bsd = NULL;
@@ -295,7 +295,7 @@ char **errstr;
 	*errstr = vstralloc("[",
 			    "access as ", localuser, " not allowed",
 			    " from ", remoteuser, "@", remotehost,
-			    "]", NULL);
+			    "] ruserok failed", NULL);
 	dbprintf(("check failed: %s\n", *errstr));
 	amfree(remotehost);
 	amfree(localuser);
@@ -325,7 +325,7 @@ char **errstr;
 	*errstr = vstralloc("[",
 			    "access as ", localuser, " not allowed",
 			    " from ", remoteuser, "@", remotehost,
-			    "]", NULL);
+			    "] .amandahosts failed", NULL);
 	dbprintf(("check failed: %s\n", *errstr));
 	amfree(remotehost);
 	amfree(localuser);
@@ -391,7 +391,7 @@ char **errstr;
     *errstr = vstralloc("[",
 			"access as ", localuser, " not allowed",
 			" from ", remoteuser, "@", remotehost,
-			"]", NULL);
+			"] amandahostsauth failed", NULL);
     dbprintf(("check failed: %s\n", *errstr));
 
     amfree(remotehost);
