@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: set_commands.c,v 1.11.2.3.4.2.2.6 2004/02/11 13:03:52 martinea Exp $
+ * $Id: set_commands.c,v 1.11.2.3.4.2.2.7 2004/02/11 13:15:29 martinea Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -247,6 +247,7 @@ char *glob;
     if ((s = validate_regexp(regex)) != NULL) {
         printf("\"%s\" is not a valid shell wildcard pattern: ", glob);
         puts(s);
+	amfree(regex);
         return;
     }
     /*

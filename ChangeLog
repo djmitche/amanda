@@ -1,5 +1,9 @@
 2004-02-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* recover-src/set_commands.c (cd_glob): Fix memory leak.
+
+2004-02-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* recover-src/set_commands.c (cd_dir, set_directory): Fix memory leak.
 	* recover-src/uscan.l: Fix double amfree.
 
