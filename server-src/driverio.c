@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.35.2.14 1999/11/12 00:16:27 oliva Exp $
+ * $Id: driverio.c,v 1.35.2.15 2001/07/19 21:31:56 jrjackson Exp $
  *
  * I/O-related functions for driver program
  */
@@ -145,7 +145,11 @@ char *dumper_program;
 	aclose(fd[0]);
 	if(dup2(fd[1], 0) == -1 || dup2(fd[1], 1) == -1)
 	    error("%s dup2: %s", dumper->name, strerror(errno));
-	execle(dumper_program, "dumper", config_name, (char *)0, safe_env());
+	execle(dumper_program,
+	       dumper->name ? dumper->name : "dumper",
+	       config_name,
+	       (char *)0,
+	       safe_env());
 	error("exec %s (%s): %s", dumper_program,
 	      dumper->name, strerror(errno));
     default:	/* parent process */
