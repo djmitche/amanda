@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43.2.3 1999/09/05 22:07:55 jrj Exp $
+ * $Id: extract_list.c,v 1.43.2.4 1999/09/05 22:28:32 jrj Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1379,10 +1379,12 @@ static void extract_files_child(in_fd, elist)
 	}
         (void)execv(cmd, restore_args);
 	/* only get here if exec failed */
+	save_errno = errno;
 	for (i = 0; i < no_initial_params + files_off_tape; i++) {
   	    amfree(restore_args[i]);
   	}
   	amfree(restore_args);
+	errno = save_errno;
         perror("amrecover couldn't exec");
         fprintf(stderr, " problem executing %s\n", cmd);
 	amfree(cmd);

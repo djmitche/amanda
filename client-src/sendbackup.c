@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.44.2.2 1998/12/09 21:37:51 oliva Exp $
+ * $Id: sendbackup.c,v 1.44.2.3 1999/09/05 22:28:23 jrj Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -364,10 +364,25 @@ char **argv;
 
     if(!interactive) {
       data_socket = stream_server(&data_port, DATABUF_SIZE*2, DATABUF_SIZE*2);
+      if(data_socket < 0) {
+	s = strerror(errno);
+	dbprintf(("ERROR [%s: could not create data socket: %s]\n", argv[0], s));
+	error("ERROR [%s: could not create data socket: %s]\n", argv[0], s);
+      }
       mesg_socket = stream_server(&mesg_port, DEFAULT_SIZE, DEFAULT_SIZE);
+      if(mesg_socket < 0) {
+	s = strerror(errno);
+	dbprintf(("ERROR [%s: could not create mesg socket: %s]\n", argv[0], s));
+	error("ERROR [%s: could not create mesg socket: %s]\n", argv[0], s);
+      }
     }
     if (!interactive && createindex) {
       index_socket = stream_server(&index_port, DEFAULT_SIZE, DEFAULT_SIZE);
+      if(index_socket < 0) {
+	s = strerror(errno);
+	dbprintf(("ERROR [%s: could not create index socket: %s]\n", argv[0], s));
+	error("ERROR [%s: could not create index socket: %s]\n", argv[0], s);
+      }
     } else {
       index_port = -1;
     }

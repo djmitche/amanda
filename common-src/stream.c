@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.10.2.3 1999/06/07 16:36:46 kashmir Exp $
+ * $Id: stream.c,v 1.10.2.4 1999/09/05 22:28:28 jrj Exp $
  *
  * functions for managing stream sockets
  */
@@ -42,8 +42,14 @@ int *portp;
 int sendsize, recvsize;
 {
     int server_socket, len;
+#ifdef SO_KEEPALIVE
     int on = 1;
+    int r;
+#endif
     struct sockaddr_in server;
+    int save_errno;
+
+    assert(portrange[0] <= portrange[1]);
 
     *portp = -1;				/* in case we error exit */
     if((server_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -82,7 +88,9 @@ int sendsize, recvsize;
 
     server.sin_port = INADDR_ANY;
     if (bind(server_socket, (struct sockaddr *)&server, sizeof(server)) == -1) {
+	save_errno = errno;
 	aclose(server_socket);
+	errno = save_errno;
 	return -1;
     }
 
@@ -93,14 +101,19 @@ out:
 
     len = sizeof(server);
     if(getsockname(server_socket, (struct sockaddr *)&server, &len) == -1) {
+	save_errno = errno;
 	aclose(server_socket);
+	errno = save_errno;
 	return -1;
     }
 
 #ifdef SO_KEEPALIVE
-    if(setsockopt(server_socket, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on)) 
-       == -1) {
+    r = setsockopt(server_socket, SOL_SOCKET, SO_KEEPALIVE,
+	(void *)&on, sizeof(on));
+    if(r == -1) {
+	save_errno = errno;
         aclose(server_socket);
+	errno = save_errno;
         return -1;
     }
 #endif
@@ -114,9 +127,13 @@ char *hostname;
 int port, sendsize, recvsize, *localport;
 {
     int client_socket;
+#ifdef SO_KEEPALIVE
     int on = 1;
+    int r;
+#endif
     struct sockaddr_in svaddr, claddr;
     struct hostent *hostp;
+    int save_errno;
 
     if((hostp = gethostbyname(hostname)) == NULL)
 	return -1;
@@ -135,9 +152,12 @@ int port, sendsize, recvsize, *localport;
     }
 
 #ifdef SO_KEEPALIVE
-    if(setsockopt(client_socket, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on)) 
-       == -1) {
+    r = setsockopt(client_socket, SOL_SOCKET, SO_KEEPALIVE,
+		   (void *)&on, sizeof(on));
+    if(r == -1) {
+	save_errno = errno;
         aclose(client_socket);
+	errno = save_errno;
         return -1;
     }
 #endif
@@ -165,14 +185,18 @@ int port, sendsize, recvsize, *localport;
 
     claddr.sin_port = INADDR_ANY;
     if (bind(client_socket, (struct sockaddr *)&claddr, sizeof(claddr)) == -1) {
+	save_errno = errno;
 	aclose(client_socket);
+	errno = save_errno;
 	return -1;
     }
 
 out:
     if(connect(client_socket, (struct sockaddr *)&svaddr, sizeof(svaddr))
        == -1) {
+	save_errno = errno;
 	aclose(client_socket);
+	errno = save_errno;
 	return -1;
     }
 
