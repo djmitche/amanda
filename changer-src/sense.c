@@ -1,4 +1,13 @@
+#include <amanda.h>
+
+#ifdef HAVE_STDIO_H
 #include <stdio.h>
+#endif
+
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+
 #include "scsi-defs.h" 
 /*
  Handling of Sense codes which are returned from the device
@@ -273,7 +282,7 @@
 	{ "215", "SPECTRA", TYPE_CHANGER, SENSE_HARDWARE_ERROR, 0x85, 0x4, SENSE_ABORT, "Ambient Light Detected"},
 	{ "215", "SPECTRA", TYPE_CHANGER, SENSE_HARDWARE_ERROR, -1, -1, SENSE_ABORT, "Default for SENSE_HARDWARE_ERROR"},
 	
-	{ "215", "SPECTRA", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x1A, 0x0, SENSE_ABORT, "Parameter List Length Error"},
+	{"215", "SPECTRA", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x1A, 0x0, SENSE_ABORT, "Parameter List Length Error"},
 	{"215", "SPECTRA", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x20, 0x0, SENSE_ABORT, "Invalid Command Code"},
 	{"215", "SPECTRA", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x21, 0x01, SENSE_ABORT, "Invalid Element Address"},
 	{"215", "SPECTRA", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x24, 0x0, SENSE_ABORT, "Invalid Field in CDB"},
@@ -351,7 +360,7 @@ int Sense2Action(char *ident,
 		unsigned char sense,
 		unsigned char asc,
 		unsigned char ascq,
-		char *text)
+		char **text)
 {
 	/*
 	 * Decode the combination of sense key, ASC, ASCQ and return what to do with this
@@ -360,19 +369,31 @@ int Sense2Action(char *ident,
 	 *
 	 */
 	SenseType_T *pwork = (SenseType_T *)&SenseType;
+	SenseType_T *generic = NULL;
         int in = 0;
 
-
+	dbprintf(("Sense2Action START : type(%d), ignsense(%d), sense(%02X), asc(%02X), ascq(%02X)\n",
+		type,
+		ignsense,
+		sense,
+		asc,
+		ascq));
+	
 	while (pwork->ident != NULL)	
 	{
+		if (strcmp(pwork->ident, "generic") == 0 && generic == NULL)
+		{
+			generic = pwork;
+		}
+		
 		if (strcmp(pwork->ident, ident) == 0 && pwork->type == type)
                 {
 			in = 1;
                 } else {
 			if (in == 1)
 			{
-				text = (char *)strdup("No ident match found");
-				return(SENSE_ABORT);
+				dbprintf(("Sense2Action       : no match\n"));
+				break;
 			}
 			pwork++;
 			continue;
@@ -383,7 +404,10 @@ int Sense2Action(char *ident,
 			/* End of definitions for this device */
 			if (pwork->sense == -1)
 			{
-				text = (char *)strdup(pwork->text);
+				*text = (char *)strdup(pwork->text);
+				dbprintf(("Sense2Action   END : no match for %s %s\n",
+					pwork->ident,
+					pwork->vendor));
 				return(pwork->ret);
 			}
 			
@@ -391,7 +415,12 @@ int Sense2Action(char *ident,
 			{
 				if (pwork->asc ==  asc && pwork->ascq == ascq)
 				{
-					text = (char *)strdup(pwork->text);
+					*text = (char *)strdup(pwork->text);
+					dbprintf(("Sense2Action END(IGN) : match for %s %s  return -> %d/%s\n",
+						pwork->ident,
+						pwork->vendor,
+						pwork->ret,
+						*text));	
 					return(pwork->ret);
 				}
 				pwork++;
@@ -403,7 +432,12 @@ int Sense2Action(char *ident,
 				/* Matching ASC/ASCQ, if yes return the defined result code */
 				if (pwork->asc ==  asc && pwork->ascq == ascq)
 				{
-					text = (char *)strdup(pwork->text);
+					*text = (char *)strdup(pwork->text);
+					dbprintf(("Sense2Action   END : match for %s %s  return -> %d/%s\n",
+						pwork->ident,
+						pwork->vendor,
+						pwork->ret,
+						*text));		
 					return(pwork->ret);
 				}
 				
@@ -412,7 +446,12 @@ int Sense2Action(char *ident,
 				 */
 				if ( 	pwork->asc == -1 && pwork->ascq == -1)
 				{
-					text = (char *)strdup(pwork->text);
+					*text = (char *)strdup(pwork->text);
+					dbprintf(("Sense2Action   END : no match for %s %s  return -> %d/%s\n",
+						pwork->ident,
+						pwork->vendor,
+						pwork->ret,
+						*text));	
 					return(pwork->ret);
 				}			
 				pwork++;
@@ -425,6 +464,74 @@ int Sense2Action(char *ident,
 		
 		pwork++;
 	}
-	text = (char *)strdup("No match found");
+
+	/* 
+	 * Ok no match found, so lets return the values from the generic table
+	 */
+	dbprintf(("Sense2Action generic start :\n"));
+	while (generic->ident != NULL)
+	{
+		if (generic->sense == -1)
+		{
+			*text = (char *)strdup(generic->text);
+			dbprintf(("Sense2Action generic END : match for %s %s  return -> %d/%s\n",
+				generic->ident,
+				generic->vendor,
+				generic->ret,
+				*text));	
+			return(generic->ret);
+		}
+		
+		if (ignsense)
+		{
+			if (generic->asc ==  asc && generic->ascq == ascq)
+			{
+				*text = (char *)strdup(generic->text);
+				dbprintf(("Sense2Action generic END(IGN) : match for %s %s  return -> %d/%s\n",
+					generic->ident,
+					generic->vendor,
+					generic->ret,
+					*text));	
+				return(generic->ret);
+			}
+			generic++;
+			continue;
+		} 
+			
+		if (generic->sense == sense)
+		{
+			/* Matching ASC/ASCQ, if yes return the defined result code */
+			if (generic->asc ==  asc && generic->ascq == ascq)
+			{
+				*text = (char *)strdup(generic->text);
+				dbprintf(("Sense2Action generic END : match for %s %s  return -> %d/%s\n",
+					generic->ident,
+					generic->vendor,
+					generic->ret,
+					*text));	
+				return(generic->ret);
+			}
+			
+			/* End of definitions for this sense type, if yes return the default
+			 * for this type
+			 */
+			if ( 	generic->asc == -1 && generic->ascq == -1)
+			{
+				*text = (char *)strdup(generic->text);
+				dbprintf(("Sense2Action generic END : no match for %s %s  return -> %d/%s\n",
+					generic->ident,
+					generic->vendor,
+					generic->ret,
+					*text));	
+				return(generic->ret);
+			}			
+			generic++;
+			continue;
+		}
+		generic++;
+	}	
+
+	dbprintf(("Sense2Action END:\n"));
+	*text = (char *)strdup("No match found");
 	return(SENSE_ABORT);
 }

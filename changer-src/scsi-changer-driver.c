@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.12 2000/06/25 18:48:11 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.13 2000/07/05 20:30:53 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -701,11 +701,13 @@ OpenFiles_T *OpenDevice(char *DeviceName, char *ConfigName, char *ident)
             if (strcmp(ident, p->ident) == 0)
               {
                 pwork->functions = p;
+		strncpy(pwork->ident, ident, 17);
                 dbprintf(("override using ident = %s, type = %s\n",p->ident, p->type));
                 return(pwork);
               }
             p++;
           }
+	  ChgExit("OpenDevice", "ident not found", FATAL);
       } else {
         while(p->ident != NULL)
           {
@@ -1735,7 +1737,7 @@ int GenericSenseHandler(OpenFiles_T *pwork, unsigned char flag, char *buffer)
 			flag, pRequestSense->SenseKey,
 	 		pRequestSense->AdditionalSenseCode,
 			pRequestSense->AdditionalSenseCodeQualifier,
-			info);
+			(char **)&info);
 	
   	dbprintf(("##### STOP GenericSenseHandler\n"));
   	return(ret);
@@ -4122,7 +4124,7 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
           printf("%07d MTE  %s  %04d %s ",pMTE[x].address,
                  (pMTE[x].full ? "Full " :"Empty"),
                  pMTE[x].from, pMTE[x].VolTag);
-          if ((label = (char *)MapBarCode(labelfile, pMTE[x].VolTag, "",  BARCODE_VOL)) == NULL)
+          if ((label = (char *)MapBarCode(labelfile, "", pMTE[x].VolTag, BARCODE_BARCODE)) == NULL)
           { 
 		printf("No mapping\n");
           } else {
@@ -4141,7 +4143,7 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
           printf("%07d STE  %s  %04d %s ",pSTE[x].address,  
                  (pSTE[x].full ? "Full ":"Empty"),
                  pSTE[x].from, pSTE[x].VolTag);
-	  if ((label = (char *)MapBarCode(labelfile, pSTE[x].VolTag, "",  BARCODE_VOL)) == NULL)
+	  if ((label = (char *)MapBarCode(labelfile, "", pSTE[x].VolTag,  BARCODE_BARCODE)) == NULL)
           {
                 printf("No mapping\n");
           } else {
@@ -4160,7 +4162,7 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
           printf("%07d DTE  %s  %04d %s ",pDTE[x].address,  
                  (pDTE[x].full ? "Full " : "Empty"),
                  pDTE[x].from, pDTE[x].VolTag);
-	  if (( label = (char *)MapBarCode(labelfile, pDTE[x].VolTag, "",  BARCODE_VOL)) == NULL)
+	  if (( label = (char *)MapBarCode(labelfile, "", pDTE[x].VolTag,  BARCODE_BARCODE)) == NULL)
           {
                 printf("No mapping\n");
           } else {
@@ -4178,7 +4180,7 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
           printf("%07d IEE  %s  %04d %s ",pIEE[x].address,  
                  (pIEE[x].full ? "Full " : "Empty"),
                  pIEE[x].from, pIEE[x].VolTag);
-	  if ((label = (char *)MapBarCode(labelfile, pIEE[x].VolTag, "",  BARCODE_VOL)) == NULL)
+	  if ((label = (char *)MapBarCode(labelfile, "", pIEE[x].VolTag,  BARCODE_BARCODE)) == NULL)
           {
                 printf("No mapping\n");
           } else {

@@ -1,3 +1,20 @@
+2000-07-05 Thomas Hepper <th@ant.han.de>
+	* changer-src/chg-scsi.c: fixed an core dump if tapeident was set
+	* changer-src/scsi-changer-driver.c (OpenFile):
+	 if the ident ist set in the config set this in the internal device 
+	 struct too.
+	* changer-src/scsi-changer-driver.c (GenerciSenseHandler):
+	 changed the type for the info text from char * to char ** which
+	 is passwd to Sense2Action
+	* changer-src/scsi-changer-driver.c (ChangerStatus):
+	 fixed the bug which causes an core dump for chg-scsi -status robot
+	 if an bar code reader is detected. Fixed also the bug that the
+	 mapping Label -> Barcode was not displayed.
+	* changer-src/scsi-defs.h: Changed the prototype for Sense2Action
+	* changer-src/sense.c: Added the defs for the Spectra TreeFrog lib
+	* changer-src/sense.c (Sense2Action); Fixed the handling if no match
+	 was found (fall back to the generic description)
+
 2000-06-26 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/list_dir.c (add_dir_list_item): add at head of list.

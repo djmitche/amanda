@@ -1014,14 +1014,14 @@ typedef struct LogPageDecode {
 } LogPageDecode_T;
 
 typedef struct {
-    char *ident;                    /* Ident as returned from the inquiry */
-    char *vendor;                   /* Vendor as returned from the inquiry */
-    unsigned char type;             /* removable .... */
-    int sense;                      /* Sense key as returned from the device */
-    int asc;                        /* ASC as set in the sense struct */
-    int ascq;                       /* ASCQ as set in the sense struct */
+   char *ident;                    /* Ident as returned from the inquiry */
+   char *vendor;                   /* Vendor as returned from the inquiry */
+   unsigned char type;             /* removable .... */
+   int sense;                      /* Sense key as returned from the device */
+   int asc;                        /* ASC as set in the sense struct */
+   int ascq;                       /* ASCQ as set in the sense struct */
    int  ret;                       /* What we think that we should return on this conditon */
-    char text[80];                  /* A short text describing this condition */
+   char text[80];                  /* A short text describing this condition */
 } SenseType_T;                                                                                    
 
 /* ======================================================= */
@@ -1035,7 +1035,8 @@ int CloseDevice(int );
 int Tape_Eject(int);
 int Tape_Status(int);
 int DumpSense();
-int Sense2Action(char *ident, unsigned char type, unsigned char ignsense, unsigned char sense, unsigned char asc, unsigned char ascq, char *text) ;
+int Sense2Action(char *ident, unsigned char type, unsigned char ignsense, unsigned char sense, unsigned
+char asc, unsigned char ascq, char **text) ;
 
 int SCSI_ExecuteCommand(int DeviceFD,
                         Direction_T Direction,

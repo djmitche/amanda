@@ -1,5 +1,5 @@
 /*
- *  $Id: chg-scsi.c,v 1.16 2000/06/25 18:48:11 ant Exp $
+ *  $Id: chg-scsi.c,v 1.17 2000/07/05 20:30:53 ant Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -223,7 +223,7 @@ void dump_changer_struct(changer_t chg)
       dbprintf(("  SCSITapedev   : none\n"));
 
     if (chg.conf[i].tapeident != NULL)
-      dbprintf(("  tapeident     : %s\n",chg.conf[i].changerident));
+      dbprintf(("  tapeident     : %s\n",chg.conf[i].tapeident));
     else
       dbprintf(("  tapeident     : none\n"));
 
@@ -997,6 +997,7 @@ int main(int argc, char *argv[])
         return(2);
       }
 
+	
     if ((chg.conf[confnum].end == -1) || (chg.conf[confnum].start == -1)){
       slotcnt = get_slot_count(fd);
       use_slots    = slotcnt;
