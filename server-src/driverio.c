@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.35.2.14.4.2.2.5.2.1 2004/08/02 18:54:00 martinea Exp $
+ * $Id: driverio.c,v 1.35.2.14.4.2.2.5.2.2 2004/08/03 18:06:14 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -375,6 +375,7 @@ disk_t *dp;
 	    ap_snprintf(use, sizeof(use), "%ld", 
 			h[activehd]->reserved - h[activehd]->used );
 	    cmdline = vstralloc(cmdstr[cmd],
+			        " ", disk2serial(dp),
 				" ", h[activehd]->destname,
 				" ", chunksize,
 				" ", use,
@@ -464,6 +465,13 @@ disk_t *dp;
 {
     int s;
     static char str[NUM_STR_SIZE];
+
+    for(s = 0; s < MAX_SERIAL; s++) {
+	if(stable[s].dp == dp) {
+	    ap_snprintf(str, sizeof(str), "%02d-%05ld", s, stable[s].gen);
+	    return str;
+	}
+    }
 
     /* find unused serial number */
     for(s = 0; s < MAX_SERIAL; s++) if(stable[s].gen == 0) break;

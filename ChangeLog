@@ -1,5 +1,14 @@
 2004-08-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/driverio.c (dumper_cmd): Print serial number for CONTINUE
+	  command.
+	* server-src/driverio.c (disk2serial): Try to find a 'dp' before
+	  allocating a new serial.
+	* server-src/dumper.c (update_dataptr): Read serial number for CONTINUE
+	  command.
+
+2004-08-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/planner.c (getsize): Do SERVER estimate, call sendsize with
 	  CALCSIZE estimate.
 

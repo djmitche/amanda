@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.14.2.7.2.17 2003/10/30 18:09:27 martinea Exp $
+/* $Id: dumper.c,v 1.75.2.14.2.7.2.17.2.1 2004/08/03 18:06:14 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -679,12 +679,13 @@ int *p_outfd, size;
                 if(cmd == CONTINUE) {
 		    /*
 		     * CONTINUE
+		     *   serial
 		     *   filename
 		     *   chunksize
 		     *   use
 		     */
 		    cmdargs.argc++;		/* true count of args */
-		    a = 2;
+		    a = 3;
 
 		    if(a >= cmdargs.argc) {
 			error("error [dumper CONTINUE: not enough args: filename]");
