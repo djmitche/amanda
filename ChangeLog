@@ -1,5 +1,10 @@
 2000-11-21 John R. Jackson  <jrj@purdue.edu>
 
+	* recover-src/extract_list.c (extract_files_child): Add support for
+	  XFSRESTORE.
+
+2000-11-21 John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/amcheck.c: Minor message wording changes.
 
 2000-11-21 John R. Jackson  <jrj@purdue.edu>
