@@ -534,9 +534,9 @@ int level;
     int pipefd[2], nullfd, dumppid;
     long size;
     FILE *dumpout;
-    char *tarkeys, sharename[256], pass[256];
+    char *tarkeys, sharename[256], pass[256], domain[256];
 
-    if (findpass(disk, pass) == 0)
+    if (findpass(disk, pass, domain) == 0)
 	error("[sendsize : error in smbtar diskline, unable to find password]");
     makesharename(disk, sharename, 0);
     nullfd = open("/dev/null", O_RDWR);
@@ -546,8 +546,10 @@ int level;
     else
 	tarkeys = "archive 1;recurse;dir";
 
-    dbprintf(("%s: running \"%s %s %s -U backup -c %s\"\n",
-	      pname, SAMBA_CLIENT, sharename, "XXXXX" , tarkeys));
+    dbprintf(("%s: running \"%s %s %s -U backup%s%s -c %s\"\n",
+	      pname, SAMBA_CLIENT, sharename, "XXXXX",
+	      domain[0] ? " -W " : "", domain,
+	      tarkeys));
 
     switch(dumppid = fork()) {
 	case -1:
@@ -565,8 +567,12 @@ int level;
 	    dup2(pipefd[1], 2);
 	    close(pipefd[0]);
 
-	    execl(SAMBA_CLIENT, "smbclient", sharename, pass, "-U",
-		  "backup", "-c", tarkeys, (char *)0);
+	    execl(SAMBA_CLIENT, "smbclient", sharename, pass, "-U", "backup",
+		  domain[0] ? "-W" : "-c",
+		  domain[0] ? domain : tarkeys,
+		  domain[0] ? "-c" : (char *)0,
+		  domain[0] ? tarkeys : (char *)0,
+		  (char *)0);
 	    exit(1);
 	    break;
     }

@@ -5,7 +5,7 @@
 
 #include "findpass.h"
 
-char *findpass(char *disk, char *pass)
+char *findpass(char *disk, char *pass, char *domain)
 {
   FILE *fp;
   static char buffer[256];
@@ -26,6 +26,13 @@ char *findpass(char *disk, char *pass)
 	    while (*ptr && !isspace(*ptr))
 	      *pass++=*ptr++;
 	    *pass=0;
+	    while(*ptr && isspace(*ptr))
+	      ptr++;
+	    if (*ptr) {
+	      while (*ptr && !isspace(*ptr))
+		*domain++=*ptr++;
+	    }
+	    *domain = 0;
 	  }
 	  break;
 	}

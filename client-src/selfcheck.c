@@ -99,17 +99,17 @@ int level;
     if(disk[0] == '/') {
 #ifdef SAMBA_CLIENT
 	if (disk[1] == '/') {
-	    char cmd[256], pass[256];
+	    char cmd[256], pass[256], domain[256];
 
-	    if (!findpass(disk, pass)) {
+	    if (!findpass(disk, pass, domain)) {
 		printf("ERROR [can't find password for %s]\n", disk);
 		return;
 	    }
 	    makesharename(disk, device, 1);
-	    sprintf(cmd, "%s %s %s -U backup -c quit", SAMBA_CLIENT,
-		    device, pass);
-	    printf("running %s %s XXXX -U backup -c quit",
-		   SAMBA_CLIENT, device);
+	    sprintf(cmd, "%s %s %s -U backup%s%s -c quit", SAMBA_CLIENT,
+		    device, pass, domain[0] ? " -W " : "", domain);
+	    printf("running %s %s XXXX -U backup%s%s -c quit",
+		   SAMBA_CLIENT, device, domain[0] ? " -W " : "", domain);
 	    if (system(cmd) & 0xff00)
 		printf("ERROR [PC SHARE %s access error: host down or invalid password?]\n", disk);
 	    else

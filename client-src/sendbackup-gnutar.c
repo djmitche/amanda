@@ -207,9 +207,9 @@ int level, dataf, mesgf, indexf;
 #ifdef SAMBA_CLIENT
     /* Use sambatar if the disk to back up is a PC disk */
    if (disk[0] == '/' && disk[1]=='/') {
-	char sharename[256], pass[256], *taropt;
+	char sharename[256], pass[256], domain[256], *taropt;
 
-	if (findpass(disk, pass) == 0)
+	if (findpass(disk, pass, domain) == 0)
 	    error("[invalid samba host or password not found?]");
 	makesharename(disk, sharename, 0);
 	if (level==0)
@@ -232,8 +232,11 @@ int level, dataf, mesgf, indexf;
 	dumppid = pipespawn(program->backup_name, &dumpin, dumpout, mesgf,
 			    "smbclient",
 			    sharename, pass, "-U", "backup",
-			    "-d0",
-			    taropt, "-",
+			    domain[0] ? "-W" : "-d0",
+			    domain[0] ? domain : taropt,
+			    domain[0] ? "-d0" : "-",
+			    domain[0] ? taropt : (char *)0,
+			    domain[0] ? "-" : (char *)0,
 			    (char *) 0);
     } else {
 #endif

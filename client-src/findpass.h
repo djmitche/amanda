@@ -6,7 +6,7 @@
 
 #include "amanda.h"
 
-extern char *findpass P((char *disk, char *pass));
+extern char *findpass P((char *disk, char *pass, char *domain));
 extern char *makesharename P((char *disk, char *buffer, int shell));
 
 #endif

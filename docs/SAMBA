@@ -57,6 +57,13 @@ And in /etc/amandapass on the machine 'pcserver', this line must be
 present :
 //thepc/backupc f00bar
 
+If smbclient would require a workgroup specification (-W), you may add
+it as a third argument in /etc/amandapass line:
+//thepc/backupc f00bar NTGROUP
+
+This way, smbclient will be invoked with -W NTGROUP
+
+
 An example dumptype (from amanda.conf) could be:
 
 define dumptype nocomp-user-gnutar {
