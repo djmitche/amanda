@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.14.2.7.2.3 2002/01/14 00:27:27 martinea Exp $
+/* $Id: dumper.c,v 1.75.2.14.2.7.2.4 2002/01/25 22:17:15 jrjackson Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1637,7 +1637,6 @@ char *hostname, *disk, *dumpdate, *progname, *options;
 int level;
 {
     char level_string[NUM_STR_SIZE];
-    char rc_str[NUM_STR_SIZE];
     char *req = NULL;
     int rc;
 
@@ -1655,6 +1654,8 @@ int level;
 
 #ifdef KRB4_SECURITY
     if(krb4_auth) {
+	char rc_str[NUM_STR_SIZE];
+
 	rc = make_krb_request(hostname, kamanda_port, req, NULL,
 			      STARTUP_TIMEOUT, sendbackup_response);
 	if(!rc) {
@@ -1703,10 +1704,8 @@ int level;
     req = NULL;					/* do not own this any more */
 
     if(rc) {
-	ap_snprintf(rc_str, sizeof(rc_str), "%d", rc);
 	errstr = newvstralloc(errstr,
-			      "[could not resolve name \"", hostname, "\"",
-			      ": error ", rc_str, "]",
+			      "[could not resolve name \"", hostname, "\"]",
 			      NULL);
 	return 2;
     }

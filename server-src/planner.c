@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.1 2002/01/11 20:01:26 martinea Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.2 2002/01/25 22:17:15 jrjackson Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1182,7 +1182,6 @@ host_t *hostp;
 	errstr = vstralloc("could not resolve hostname \"",
 			   hostp->hostname,
 			   "\"",
-			   ": ", strerror(errno),
 			   NULL);
 	destqp = &failq;
 	hostp->up = HOST_DONE;

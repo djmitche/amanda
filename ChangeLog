@@ -1,3 +1,11 @@
+2002-01-25 John R. Jackson (jrj@purdue.edu)
+
+	* server-src/amindexd.c: Clean up reporting of errors by gethostby*()
+	  functions.  Make sure they always report what they were trying to
+	  look up, and don't bother reporting errno (it would be h_errno).
+	* server-src/dumper.c: Ditto.
+	* server-src/planner.c: Ditto.
+
 2002-01-17  Thomas Hepper <th@ant.han.de>
 
 	* changer-src/scsi-changer-driver.c (DecodeSense): Check if it is
