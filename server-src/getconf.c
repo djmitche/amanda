@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.8.4.1 1999/09/08 23:28:13 jrj Exp $
+ * $Id: getconf.c,v 1.8.4.2 2000/12/24 23:14:36 jrjackson Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -93,7 +93,7 @@ char **argv;
 
     result = getconf_byname(parmname);
     if(result == NULL) {
-	result = "BUGGY";
+	result = stralloc("BUGGY");
 	fprintf(stderr, "%s: no such parameter \"%s\"\n", argv[0], parmname);
 	fflush(stderr);
     }
