@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.14.2.7.2.12 2003/01/01 23:28:54 martinea Exp $
+/* $Id: dumper.c,v 1.75.2.14.2.7.2.13 2003/01/02 19:43:10 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1592,7 +1592,12 @@ pkt_t *pkt;
 
     if(p->state == S_FAILED) {
 	if(pkt == NULL) {
-	    errstr = newstralloc(errstr, "[request timeout]");
+	    if(p->prevstate == S_REPWAIT) {
+		errstr = newstralloc(errstr, "[reply timeout]");
+	    }
+	    else {
+		errstr = newstralloc(errstr, "[request timeout]");
+	    }
 	    response_error = 1;
 	    return;
 	}

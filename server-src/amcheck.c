@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.19.2.7.2.11 2003/01/01 23:28:52 martinea Exp $
+ * $Id: amcheck.c,v 1.50.2.19.2.7.2.12 2003/01/02 19:43:10 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1490,9 +1490,16 @@ pkt_t *pkt;
     hostp->up = HOST_READY;
 
     if(p->state == S_FAILED && pkt == NULL) {
-	fprintf(outf,
-		"WARNING: %s: selfcheck request timed out.  Host down?\n",
-		hostp->hostname);
+	if(p->prevstate == S_REPWAIT) {
+	    fprintf(outf,
+		    "WARNING: %s: selfcheck reply timed out.\n",
+		    hostp->hostname);
+	}
+	else {
+	    fprintf(outf,
+		    "WARNING: %s: selfcheck request timed out.  Host down?\n",
+		    hostp->hostname);
+	}
 	remote_errors++;
 	hostp->up = HOST_DONE;
 	return;

@@ -1,5 +1,12 @@
 2003-01-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/amcheck.c (handle_response): Print 'request timed out' or
+	  'reply timed out'.
+	* server-src/dumper.c (sendbackup_response): Print 'request timeout' or
+	  'reply timeout'.
+
+2003-01-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* common-src/protocol.h (proto_t): Add prevstate field.
 	* common-src/protocol.c: Keep prevstate up to date.
 	* server-src/planner.c (handle_result): Use prevstate to write
