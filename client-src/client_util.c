@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.26 2003/02/21 19:50:59 martinea Exp $
+ * $Id: client_util.c,v 1.27 2003/03/08 18:42:49 martinea Exp $
  *
  */
 
@@ -193,28 +193,32 @@ char *ainc;
 	return 0;
     }
     else {
-	char *glob;
-	char *regex;
-	DIR *d;
-	struct dirent *entry;
-
-	glob = ainc+2;
-	regex = glob_to_regex(glob);
-	if((d = opendir(device)) == NULL) {
-	    dbprintf(("%s: Can't open disk '%s']\n",
-		      debug_prefix(NULL), device));
-	    if(verbose)
-		printf("ERROR [Can't open disk '%s']\n", device);
-	    return 0;
+	char *incname = ainc+2;
+	if(strchr(incname, '/')) {
+	    fprintf(file_include, "./%s\n", incname);
 	}
 	else {
-	    while((entry = readdir(d)) != NULL) {
-		if(is_dot_or_dotdot(entry->d_name)) {
-		    continue;
-		}
-		if(match(regex, entry->d_name)) {
-		    fprintf(file_include, "./%s\n", entry->d_name);
-		    nb_exp++;
+	    char *regex;
+	    DIR *d;
+	    struct dirent *entry;
+
+	    regex = glob_to_regex(incname);
+	    if((d = opendir(device)) == NULL) {
+		dbprintf(("%s: Can't open disk '%s']\n",
+		      debug_prefix(NULL), device));
+		if(verbose)
+		    printf("ERROR [Can't open disk '%s']\n", device);
+		return 0;
+	    }
+	    else {
+		while((entry = readdir(d)) != NULL) {
+		    if(is_dot_or_dotdot(entry->d_name)) {
+			continue;
+		    }
+		    if(match(regex, entry->d_name)) {
+			fprintf(file_include, "./%s\n", entry->d_name);
+			nb_exp++;
+		    }
 		}
 	    }
 	}
