@@ -549,6 +549,19 @@ y |  ye | yes) AC_DEFINE(USE_FQDN)
   ;;
 esac
 
+AC_ARG_WITH(broken-fsf,
+    [  --with-broken-fsf      only enable if tape fsf calls fail mid-file],
+    HAVE_BROKEN_FSF=$withval,
+    : ${HAVE_BROKEN_FSF=no}
+)
+case "$HAVE_BROKEN_FSF" in
+n | no) : ;;
+y |  ye | yes) AC_DEFINE(HAVE_BROKEN_FSF)
+  ;;
+*) AC_MSG_ERROR([*** You must not supply an argument to --with-broken-fsf option.])
+  ;;
+esac
+
 AC_ARG_WITH(gnutar,
     [  --with-gnutar[=PROG]      use PROG as GNU tar executable [default: looks for one]],
     [

@@ -194,6 +194,11 @@
 /* Define for backups being done on a multiple networks and FQDNs are used.  */
 #undef USE_FQDN
 
+/* Define this if issuing a fsf on a tape fails when you are not at a tape
+ * mark, for instance, if amrecover gives I/O errors when skipping.
+ */
+#undef HAVE_BROKEN_FSF
+
 /* Define if dumper should buffer the sockets for faster throughput.  */
 #undef DUMPER_SOCKET_BUFFERING
 

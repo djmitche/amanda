@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.25 1999/04/20 14:21:35 oliva Exp $
+ * $Id: tapeio.c,v 1.26 1999/04/22 22:13:38 jrj Exp $
  *
  * implements tape I/O functions
  */
@@ -41,6 +41,34 @@
 static char *errstr = NULL;
 
 static int no_op_tapefd = -1;
+
+#if defined(HAVE_BROKEN_FSF)
+/*
+ * tapefd_fsf_broken -- handle systems that have a broken fsf operation
+ * and cannot do an fsf operation unless they are positioned at a tape
+ * mark (or BOT).  This shows up in amrestore as I/O errors when skipping.
+ */
+
+static int
+tapefd_fsf_broken(tapefd, count)
+int tapefd;
+int count;
+{
+    char buffer[TAPE_BLOCK_BYTES];
+    int len = 0;
+
+    if(tapefd == no_op_tapefd) {
+	return 0;
+    }
+    while(--count >= 0) {
+	while((len = tapefd_read(tapefd, buffer, sizeof(buffer))) > 0) {}
+	if(len < 0) {
+	    break;
+	}
+    }
+    return len;
+}
+#endif
 
 #ifdef UWARE_TAPEIO 
 
@@ -59,6 +87,9 @@ int tapefd, count;
  * fast-forwards the tape device count files.
  */
 {
+#if defined(HAVE_BROKEN_FSF)
+    return tapefd_fsf_broken(tapefd, count);
+#else
     int st;
     int c;
     int status;
@@ -68,6 +99,7 @@ int tapefd, count;
             break;
 
     return status;
+#endif
 }
 
 int tapefd_weof(tapefd, count)
@@ -109,12 +141,16 @@ int tapefd, count;
  * fast-forwards the tape device count files.
  */
 {
+#if defined(HAVE_BROKEN_FSF)
+    return tapefd_fsf_broken(tapefd, count);
+#else
     struct stop st;
 
     st.st_op = STFSF;
     st.st_count = count;
 
     return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, STIOCTOP, &st);
+#endif
 }
 
 int tapefd_weof(tapefd, count)
@@ -149,6 +185,9 @@ int tapefd, count;
  * fast-forwards the tape device count files.
  */
 {
+#if defined(HAVE_BROKEN_FSF)
+    return tapefd_fsf_broken(tapefd, count);
+#else
     int st;
     int c;
     int status;
@@ -158,6 +197,7 @@ int tapefd, count;
 	    break;
 
     return status;
+#endif
 }
 
 int tapefd_weof(tapefd, count)
@@ -209,12 +249,16 @@ int tapefd, count;
  * fast-forwards the tape device count files.
  */
 {
+#if defined(HAVE_BROKEN_FSF)
+    return tapefd_fsf_broken(tapefd, count);
+#else
     struct mtop mt;
 
     mt.mt_op = MTFSF;
     mt.mt_count = count;
 
     return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, MTIOCTOP, &mt);
+#endif
 }
 
 int tapefd_weof(tapefd, count)
