@@ -1,3 +1,7 @@
+2000-10-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/taper.c: amfree(strclosing).
+
 2000-10-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* configure.in: --with-samba-user is deprecated.
@@ -1031,7 +1035,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.385 2000/10/11 02:08:25 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.386 2000/10/11 19:59:13 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
