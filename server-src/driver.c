@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.78 1999/04/30 22:50:50 kashmir Exp $
+ * $Id: driver.c,v 1.79 1999/05/04 15:42:23 kashmir Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -48,7 +48,7 @@
 #include "server_util.h"
 
 disklist_t waitq, runq, stoppedq, tapeq;
-int use_lffo;
+static int use_lffo;
 disk_t *taper_disk;
 int big_dumpers;
 int degraded_mode;
@@ -84,6 +84,7 @@ static int sort_by_size_reversed P((disk_t *a, disk_t *b));
 static int sort_by_time P((disk_t *a, disk_t *b));
 static void start_degraded_mode P((disklist_t *queuep));
 static int start_some_dumps P((disklist_t *rq));
+static void taper_queuedisk P((disk_t *));
 #if 0
 static void dump_state P((const char *str));
 #endif
@@ -730,8 +731,7 @@ handle_taper_result()
 	}
 	else {
 	    sched(dp)->attempted++;
-	    if(use_lffo)insert_disk(&tapeq, dp, sort_by_size_reversed);
-	    else enqueue_disk(&tapeq, dp);
+	    taper_queuedisk(dp);
 	}
 
 	/* run next thing from queue */
@@ -832,10 +832,11 @@ handle_dumper_result(fd)
     char *result_argv[MAX_ARGS+1];
 
     dumper = lookup_dumper(fd);
+    assert(dumper != NULL);
     dp = dumper->dp;
-    assert(dp && sched(dp));
+    assert(dp != NULL && sched(dp) != NULL);
 
-    tok = getresult(fd, 1, &result_argc, result_argv, MAX_ARGS+1);
+    tok = getresult(dumper->fd, 1, &result_argc, result_argv, MAX_ARGS+1);
 
     if(tok != BOGUS) {
 	sdp = serial2disk(result_argv[2]); /* result_argv[2] always contains the serial number */
@@ -868,16 +869,7 @@ handle_dumper_result(fd)
 	       dp->host->hostname, dp->name);
 	fflush(stdout);
 
-	if(taper_busy) {
-	    if(use_lffo)insert_disk(&tapeq, dp, sort_by_size_reversed);
-	    else enqueue_disk(&tapeq, dp);
-	}
-	else if(!degraded_mode) {
-	    taper_disk = dp;
-	    taper_busy = 1;
-	    taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level,
-		      datestamp);
-	}
+	taper_queuedisk(dp);
 	dp = NULL;
 	break;
 
@@ -994,8 +986,30 @@ handle_dumper_result(fd)
     default:
 	assert(0);
     }
+}
 
-    return;
+/*
+ * Tell the taper to write a disk dump to tape.  If the taper
+ * is busy, queue the disk in the tapeq.
+ * If we're in degraded mode, do nothing, and leave the dump image
+ * in the holding disk.
+ */
+static void
+taper_queuedisk(dp)
+    disk_t *dp;
+{
+
+    if (taper_busy) {
+	if (use_lffo)
+	    insert_disk(&tapeq, dp, sort_by_size_reversed);
+	else
+	    enqueue_disk(&tapeq, dp);
+    } else if (!degraded_mode) {
+	taper_disk = dp;
+	taper_busy = 1;
+	taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level,
+	    datestamp);
+    }
 }
 
 static disklist_t

@@ -1,3 +1,11 @@
+1999-05-04  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/driver.c (taper_queuedisk): new function that takes
+	a disk_t, and, if the taper is not busy, tells it to write it out,
+	or else adds it to the tapeq.  Make use_lffo global static.
+	* server-src/driver.c (handle_taper_result, handle_dumper_result):
+	call taper_queuedisk() instead of queueing ourself.
+
 1999-04-30  Mike Grupenhoff <kashmir@munge.com>
 
 	* server-src/driver.c: make all local functions static.
