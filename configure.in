@@ -1936,6 +1936,7 @@ AC_CACHE_CHECK(
    amanda_cv_posix_filelocking,
    [
 	AC_TRY_RUN([
+#undef  ASSERTIONS
 #define CONFIGURE_TEST
 #define USE_POSIX_FCNTL
 #include "${srcdir-.}/common-src/amflock.c"
@@ -1965,6 +1966,7 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 
 #if defined(LOCK_EX) && defined(LOCK_UN)
 
+#undef  ASSERTIONS
 #define CONFIGURE_TEST
 #define USE_FLOCK
 #include "${srcdir-.}/common-src/amflock.c"
@@ -2022,6 +2024,7 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 	amanda_cv_lnlock_filelocking,
 	[
 	    AC_TRY_RUN([
+#undef  ASSERTIONS
 #define CONFIGURE_TEST
 #define USE_LNLOCK
 #include "${srcdir-.}/common-src/amflock.c"
