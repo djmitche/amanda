@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.46.2.7 1998/11/03 20:04:35 jrj Exp $
+ * $Id: driver.c,v 1.46.2.8 1998/11/08 15:20:56 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -250,8 +250,8 @@ char **main_argv;
 			    newdir);
 		}
 	    }
-	    total_disksize += hdp->disksize;
 	}
+	total_disksize += hdp->disksize;
     }
 
     reserved_space = total_disksize * (reserve / 100.0);
