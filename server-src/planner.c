@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.20 2002/11/26 03:27:55 martinea Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.21 2002/11/28 02:29:55 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1022,7 +1022,7 @@ next_level0(dp, info)
     else if(info->inf[0].date < (time_t)0)
 	return -days_diff(EPOCH, today);	/* new disk */
     else
-	return dp->dumpcycle - days_diff(info->inf[0].date, today);
+	return dp->dumpcycle - (days_diff(info->inf[0].date, today) + 1);
 }
 
 /* how many runs at current level? */

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.66.2.7.4.5.2.6 2002/07/19 19:49:07 jrjackson Exp $
+ * $Id: amanda.h,v 1.66.2.7.4.5.2.7 2002/11/28 02:29:54 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -387,7 +387,7 @@ extern char *debug_prefix_time P((char *));
 /* amanda #days calculation, with roundoff */
 
 #define SECS_PER_DAY	(24*60*60)
-#define days_diff(a, b)	(((b) - (a) + SECS_PER_DAY/2) / SECS_PER_DAY)
+#define days_diff(a, b)	(((b) - (a)) / SECS_PER_DAY)
 
 /* Global constants.  */
 #ifndef AMANDA_SERVICE_NAME
