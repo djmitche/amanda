@@ -1,6 +1,6 @@
 /*
-  createindex-dump. Creates an index file from the output of
-  dump. It is assumed that the output of dump will be available on
+  createindex-gnutar. Creates an index file from the output of
+  gnutar. It is assumed that the output of gnutar will be available on
   stdin. This is copied to stdout without alteration (so that it acts
   as a filter). The stuff from stdin is run through "gtar t" to
   get a table of contents and the file names stripped out. These are
