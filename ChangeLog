@@ -1,3 +1,11 @@
+1998-05-29  John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/amindexd.c (uncompress_file, process_ls_dump,
+	build_disk_table, is_dir_valid_opaque, opaque_ls): fix file
+	descriptor leak, log the amadmin find command, fix error reporting
+	from routines that do not generate system errors.
+	* common-src/amanda.h: make sure errno is saved through amfree().
+
 1998-05-28  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/SYSTEM.NOTES: GNU tar must be patched on HP/UX.

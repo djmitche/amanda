@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.61 1998/05/23 17:56:54 amcore Exp $
+ * $Id: amanda.h,v 1.62 1998/05/29 18:52:32 jrj Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -506,10 +506,12 @@ extern char  *areads	      P((int fd));
  * the very next source line sets the pointer to a new value.
  */
 
-#define	amfree(ptr) do {							\
+#define	amfree(ptr) do {						\
     if(ptr) {								\
+	int e = errno;							\
 	free(ptr);							\
 	(ptr) = NULL;							\
+	errno = e;							\
     }									\
 } while(0)
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.35 1998/05/19 15:00:25 martinea Exp $
+ * $Id: amindexd.c,v 1.36 1998/05/29 18:52:35 jrj Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -100,8 +100,9 @@ REMOVE_ITEM *remove;
     return remove;
 }
 
-char *uncompress_file(filename_gz)
+char *uncompress_file(filename_gz, emsg)
 char *filename_gz;
+char **emsg;
 {
     char *cmd = NULL;
     char *filename = NULL;
@@ -132,6 +133,9 @@ char *filename_gz;
 			NULL);
 	dbprintf(("Uncompress command: %s\n",cmd));
 	if (system(cmd)!=0) {
+	    amfree(*emsg);
+	    *emsg = vstralloc("\"", cmd, "\" failed", NULL);
+	    errno = -1;
 	    amfree(filename);
 	    amfree(cmd);
 	    return NULL;
@@ -143,6 +147,9 @@ char *filename_gz;
 	remove_file->next = uncompress_remove;
 	uncompress_remove = remove_file;
     } else if(!S_ISREG((stat_filename.st_mode))) {
+	    amfree(*emsg);
+	    *emsg = vstralloc("\"", filename, "\" is not a regular file", NULL);
+	    errno = -1;
 	    amfree(filename);
 	    amfree(cmd);
 	    return NULL;
@@ -155,10 +162,11 @@ char *filename_gz;
 
 /* find all matching entries in a dump listing */
 /* return -1 if error */
-static int process_ls_dump(dir, dump_item, recursive)
+static int process_ls_dump(dir, dump_item, recursive, emsg)
 char *dir;
 DUMP_ITEM *dump_item;
 int  recursive;
+char **emsg;
 {
     char *line = NULL;
     char *old_line = NULL;
@@ -178,12 +186,14 @@ int  recursive;
 
     filename_gz=getindexfname(dump_hostname, disk_name, dump_item->date,
 			      dump_item->level);
-    if((filename = uncompress_file(filename_gz)) == NULL) {
+    if((filename = uncompress_file(filename_gz, emsg)) == NULL) {
 	amfree(dir_slash);
 	return -1;
     }
 
     if((fp = fopen(filename,"r"))==0) {
+	amfree(*emsg);
+	*emsg = stralloc(strerror(errno));
 	amfree(dir_slash);
 	return -1;
     }
@@ -208,6 +218,7 @@ int  recursive;
 	    }
 	}
     }
+    afclose(fp);
     amfree(old_line);
     amfree(line);
     amfree(filename);
@@ -432,6 +443,7 @@ int build_disk_table P((void))
 		    " ", dump_hostname,
 		    " \'^", disk_name, "$\'",
 		    NULL);
+    dbprintf(("! %s\n",cmd));
     if ((fp = popen(cmd, "r")) == NULL)
     {
 	reply(599, "System error %s", strerror(errno));
@@ -562,6 +574,7 @@ char *dir;
     char *filename_gz;
     char *filename = NULL;
     int ldir_len;
+    static char *emsg = NULL;
 
     if (config == NULL || dump_hostname == NULL || disk_name == NULL) {
 	reply(502, "Must set config,host,disk before asking about directories");
@@ -597,8 +610,9 @@ char *dir;
 	filename_gz=getindexfname(dump_hostname, disk_name,
 				  item->date, item->level);
 	amfree(filename);
-	if((filename = uncompress_file(filename_gz)) == NULL) {
-	    reply(599, "System error %s", strerror(errno));
+	if((filename = uncompress_file(filename_gz, &emsg)) == NULL) {
+	    reply(599, "System error %s", emsg);
+	    amfree(emsg);
 	    amfree(ldir);
 	    return -1;
 	}
@@ -640,6 +654,7 @@ int  recursive;
     DUMP_ITEM *dump_item;
     DIR_ITEM *dir_item;
     int last_level;
+    static char *emsg = NULL;
 
     clear_dir_list();
 
@@ -665,8 +680,9 @@ int  recursive;
     }
 
     /* get data from that dump */
-    if (process_ls_dump(dir, dump_item,recursive) == -1) {
-	reply(599, "System error %s", strerror(errno));
+    if (process_ls_dump(dir, dump_item, recursive, &emsg) == -1) {
+	reply(599, "System error %s", emsg);
+	amfree(emsg);
 	return -1;
     }
 
@@ -677,8 +693,9 @@ int  recursive;
 	if (dump_item->level < last_level)
 	{
 	    last_level = dump_item->level;
-	    if (process_ls_dump(dir, dump_item,recursive) == -1) {
-		reply(599, "System error %s", strerror(errno));
+	    if (process_ls_dump(dir, dump_item, recursive, &emsg) == -1) {
+		reply(599, "System error %s", emsg);
+		amfree(emsg);
 		return -1;
 	    }
 	}
