@@ -1712,7 +1712,7 @@ AC_CACHE_CHECK(
 
 #define CONFIGURE_TEST
 #define HAVE_POSIX_FCNTL
-#include "common-src/amflock.c"
+#include "${srcdir-.}/common-src/amflock.c"
 EOF
 	${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >/dev/null 2>/dev/null
 	if test $? = 0; then
@@ -1767,7 +1767,7 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 
 #define CONFIGURE_TEST
 #define HAVE_FLOCK
-#include "common-src/amflock.c"
+#include "${srcdir-.}/common-src/amflock.c"
 
 #else
 
@@ -1830,7 +1830,7 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 
 #define CONFIGURE_TEST
 #define HAVE_LOCKF
-#include "common-src/amflock.c"
+#include "${srcdir-.}/common-src/amflock.c"
 EOF
 	    ${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >/dev/null 2>/dev/null
 	    if test $? = 0; then
