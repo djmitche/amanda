@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.18 1998/01/02 18:47:41 jrj Exp $
+ * $Id: amandad.c,v 1.19 1998/01/03 22:50:54 jrj Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -79,8 +79,6 @@ int security_ok P((pkt_t *msg));
 
 void sigchild_jump P((int sig));
 void sigchild_flag P((int sig));
-
-char *addrstr P((struct in_addr addr));
 
 
 /*
@@ -510,21 +508,6 @@ pkt_t *msg;
 	return bsd_security_ok(msg);
 }
 
-char *addrstr(addr)
-struct in_addr addr;
-{
-    static char str[4*NUM_STR_SIZE];
-    union {			/* XXX we rely on inet addrs being 32 bits */
-	unsigned char c[4];	/*   but not on fields of struct in_addr   */
-	int i;			/*   so we use our own union		   */
-    } u;
-
-    u.i = (int) addr.s_addr;
-    ap_snprintf(str, sizeof(str),
-		"%d.%d.%d.%d", u.c[0], u.c[1], u.c[2], u.c[3]);
-    return str;
-}
-
 #ifdef BSD_SECURITY
 
 int bsd_security_ok(msg)
@@ -553,7 +536,7 @@ pkt_t *msg;
 	/* XXX include remote address in message */
 	errstr = newvstralloc(errstr,
 			      "[",
-			      "addr ", addrstr(msg->peer.sin_addr), ": ",
+			      "addr ", inet_ntoa(msg->peer.sin_addr), ": ",
 			      "hostname lookup failed",
 			      "]", NULL);
 	return 0;
@@ -600,7 +583,7 @@ pkt_t *msg;
     if( !hp->h_addr_list[i] ) {
 	errstr = newvstralloc(errstr,
 			      "[",
-			      "ip address ", addrstr(msg->peer.sin_addr),
+			      "ip address ", inet_ntoa(msg->peer.sin_addr),
 			      " is not in the ip list for ", remotehost,
 			      "]",
 			      NULL);
