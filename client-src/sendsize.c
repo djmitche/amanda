@@ -513,7 +513,7 @@ int level;
     kill(-dumppid,
 #ifdef XFSDUMP
     /* `xfsdump' catches and ignores `SIGTERM', so make sure it dies. */
-	 SIGKILL
+	 strcmp(amname_to_fstype(device), "xfs")!=0 ? SIGTERM : SIGKILL
 #else
 	 SIGTERM
 #endif
