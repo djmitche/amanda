@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.66 1999/09/15 00:32:12 jrj Exp $
+ * $Id: amcheck.c,v 1.67 1999/11/09 18:04:06 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -565,7 +565,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
     /*
      * Check that the tapelist file is writable if it already exists.
      * Also, check for a "hold" file (just because it is convenient
-     * to do it here).
+     * to do it here) and warn if tapedev is set to "/dev/null".
      */
 
     if(do_localchk || do_tapechk) {
@@ -595,6 +595,12 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	}
 	amfree(tapefile);
 	amfree(holdfile);
+	tapename = getconf_str(CNF_TAPEDEV);
+	if (strcmp(tapename, "/dev/null") == 0) {
+	    fprintf(outf,
+		    "WARNING: tapedev is set to %s, dumps will be thrown away\n",
+		    tapename);
+	}
     }
 
     /* check available disk space */

@@ -1,3 +1,8 @@
+1999-11-09 John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/amcheck.c (start_server_check): test tapedev for
+	  "/dev/null" and issue warning that dumps will be thrown away.
+
 1999-11-02  David M. Olsen  <David.M.Olsen@boeing.com>
 
 	* server-src/amadmin.c (main): Second occurrence of CNF_TAPELIST
