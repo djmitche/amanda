@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.80 2001/07/10 20:58:27 jrjackson Exp $
+ * $Id: amcheck.c,v 1.81 2001/07/13 22:38:05 jrjackson Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1016,14 +1016,100 @@ FILE *outf;
 
 static void handle_result P((void *, pkt_t *, security_handle_t *));
 
+#define HOST_READY				((void *)0)
+#define HOST_ACTIVE				((void *)1)
+#define HOST_DONE				((void *)2)
+
+#define DISK_READY				((void *)0)
+#define DISK_ACTIVE				((void *)1)
+#define DISK_DONE				((void *)2)
+
+void start_host(hostp)
+    host_t *hostp;
+{
+    disk_t *dp;
+    char *req = NULL;
+    int req_len = 0;
+    int disk_count;
+    const security_driver_t *secdrv;
+
+    if(hostp->up != HOST_READY) {
+	return;
+    }
+
+    req = vstralloc("SERVICE selfcheck\n",
+		    "OPTIONS ;\n",
+		    NULL);
+    req_len = strlen(req);
+    req_len += 128;				/* room for SECURITY ... */
+    req_len += 256;				/* room for non-disk answers */
+    disk_count = 0;
+    for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	char *l;
+	int l_len;
+	char *o;
+
+	if(dp->up != DISK_READY || dp->todo != 1) {
+	    continue;
+	}
+	o = optionstr(dp);
+	if(strncmp(dp->program,"DUMP",4) == 0 || 
+	   strncmp(dp->program,"GNUTAR",6) == 0) {
+	    l = vstralloc(dp->program, 
+			  " ",
+			  dp->name,
+			  " 0 OPTIONS |",
+			  o,
+			  "\n",
+			  NULL);
+	} else {
+	    l = vstralloc("DUMPER ",
+			  dp->program, 
+			  " ",
+			  dp->name,
+			  " 0 OPTIONS |",
+			  o,
+			  "\n",
+			  NULL);
+	}
+	l_len = strlen(l);
+	amfree(o);
+	if(req_len + l_len > MAX_PACKET / 2) {	/* allow 2X for err response */
+	    amfree(l);
+	    break;
+	}
+	strappend(req, l);
+	req_len += l_len;
+	amfree(l);
+	dp->up = DISK_ACTIVE;
+	disk_count++;
+    }
+
+    if(disk_count == 0) {
+	amfree(req);
+	hostp->up = HOST_DONE;
+	return;
+    }
+
+    secdrv = security_getdriver(hostp->disks->security_driver);
+    if (secdrv == NULL) {
+	error("could not find security driver '%s' for host '%s'",
+	      hostp->disks->security_driver, hostp->hostname);
+    }
+    protocol_sendreq(hostp->hostname, secdrv, req, conf_ctimeout,
+		     handle_result, hostp);
+
+    amfree(req);
+
+    hostp->up = HOST_ACTIVE;
+}
+
 int start_client_checks(fd)
 int fd;
 {
-    disk_t *dp;
     host_t *hostp;
-    char *req = NULL;
+    disk_t *dp;
     int hostcount, pid;
-    const security_driver_t *secdrv;
     int userbad = 0;
 
     switch(pid = fork()) {
@@ -1051,61 +1137,15 @@ int fd;
 
     hostcount = remote_errors = 0;
 
-    while(!empty(origq)) {
-	int todo = 0;
-	req = vstralloc("SERVICE selfcheck\n",
-			"OPTIONS ;\n",
-			NULL);
-	hostp = origq.head->host;
-	for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
-	    remove_disk(&origq, dp);
-	    if(dp->todo == 1) {
-		char *t;
-		char *o;
-
-		todo = 1;
-		o = optionstr(dp);
-		if(strncmp(dp->program,"DUMP",4) == 0 || 
-		   strncmp(dp->program,"GNUTAR",6) == 0)
-		    t = vstralloc(req,
-				  dp->program, 
-				  " ",
-				  dp->name,
-				  " 0 OPTIONS |",
-				  o,
-				  "\n",
-				  NULL);
-		else
-		    t = vstralloc(req,
-				  "DUMPER ",
-				  dp->program, 
-				  " ",
-				  dp->name,
-				  " 0 OPTIONS |",
-				  o,
-				  "\n",
-				  NULL);
-		amfree(req);
-		amfree(o);
-		req = t;
-	    }
-	}
-	if(todo == 1) {
+    for(dp = origq.head; dp != NULL; dp = dp->next) {
+	hostp = dp->host;
+	if(hostp->up == HOST_READY) {
+	    start_host(hostp);
 	    hostcount++;
-
-	    secdrv = security_getdriver(hostp->disks->security_driver);
-	    if (secdrv == NULL) {
-		error("could not find security driver '%s' for host '%s'",
-		      hostp->disks->security_driver, hostp->hostname);
-	    }
-	    protocol_sendreq(hostp->hostname, secdrv, req, conf_ctimeout,
-			     handle_result, hostp);
-
-	    amfree(req);
-
 	    protocol_check();
 	}
     }
+
     protocol_run();
 
     fprintf(outf,
@@ -1135,6 +1175,7 @@ pkt_t *pkt;
 security_handle_t *sech;
 {
     host_t *hostp;
+    disk_t *dp;
     char *errstr;
     char *s;
     int ch;
@@ -1162,6 +1203,7 @@ security_handle_t *sech;
 		hostp->hostname);
 	}
 	remote_errors++;
+	hostp->up = HOST_DONE;
 	return;
     }
 
@@ -1179,6 +1221,7 @@ security_handle_t *sech;
     }
 #undef sc
 
+    hostp->up = HOST_READY;
     while(ch) {
 #define sc "ERROR"
 	if(strncmp(s - 1, sc, sizeof(sc)-1) == 0) {
@@ -1194,8 +1237,15 @@ security_handle_t *sech;
 
 	    fprintf(outf, "ERROR: %s: %s\n", hostp->hostname, errstr);
 	    remote_errors++;
+	    hostp->up = HOST_DONE;
 	} else {
 	    skip_line(s, ch);
 	}
     }
+    for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	if(dp->up == DISK_ACTIVE) {
+	    dp->up = DISK_DONE;
+	}
+    }
+    start_host(hostp);
 }

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.108 2001/06/21 22:39:02 jrjackson Exp $
+ * $Id: planner.c,v 1.109 2001/07/13 22:38:05 jrjackson Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -63,7 +63,16 @@ int conf_etimeout;
 int conf_reserve;
 double conf_bumpmult;
 
+#define HOST_READY				((void *)0)
+#define HOST_ACTIVE				((void *)1)
+#define HOST_DONE				((void *)2)
+
+#define DISK_READY				0
+#define DISK_ACTIVE				1
+#define DISK_DONE				2
+
 typedef struct est_s {
+    int state;
     int got_estimate;
     int dump_priority;
     int dump_level;
@@ -88,7 +97,6 @@ disklist_t startq, waitq, estq, failq, schedq;
 long total_size;
 double total_lev0, balanced_size, balance_threshold;
 unsigned long tape_length, tape_mark;
-int max_disks;
 
 tapetype_t *tape;
 int runs_per_cycle;
@@ -556,6 +564,7 @@ setup_estimate(dp)
     ep = alloc(sizeof(est_t));
     malloc_mark(ep);
     dp->up = (void *) ep;
+    ep->state = DISK_READY;
     ep->dump_size = -1;
     ep->dump_priority = dp->priority;
     ep->errstr = 0;
@@ -981,10 +990,26 @@ static void handle_result P((void *datap, pkt_t *pkt, security_handle_t *sech));
 
 static void get_estimates P((void))
 {
+    host_t *hostp;
+    disk_t *dp;
+    int something_started;
 
-    while(!empty(startq)) {
-	getsize(startq.head->host);
-	protocol_check();
+    something_started = 1;
+    while(something_started) {
+	something_started = 0;
+	for(dp = startq.head; dp != NULL; dp = dp->next) {
+	    hostp = dp->host;
+	    if(hostp->up == HOST_READY) {
+		something_started = 1;
+		getsize(hostp);
+		protocol_check();
+		/*
+		 * dp is no longer on startq, so dp->next is not valid
+		 * and we have to start all over.
+		 */
+		break;
+	    }
+	}
     }
     protocol_run();
 
@@ -1000,10 +1025,14 @@ host_t *hostp;
 {
     char number[NUM_STR_SIZE], *req;
     disk_t *dp;
-    int i, disks, timeout;
+    int i, estimates, disks, timeout, req_len;
     const security_driver_t *secdrv;
 
     assert(hostp->disks != NULL);
+
+    if(hostp->up != HOST_READY) {
+	return;
+    }
 
     snprintf(number, sizeof(number), "%d", hostp->maxdumps);
     req = vstralloc("SERVICE sendsize\n",
@@ -1013,15 +1042,26 @@ host_t *hostp;
 		    "\n",
 		    NULL);
     disks = 0;
+    req_len = strlen(req);
+    req_len += 128;				/* room for SECURITY ... */
+    estimates = 0;
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
-	if(dp->todo == 0) continue;
-	est(dp)->got_estimate = 0;
-	if(est(dp)->level[0] == -1) continue;	/* ignore this disk */
+	char *s = NULL;
+	int s_len = 0;
 
-	remove_disk(&startq, dp);
+	if(est(dp)->state != DISK_READY) continue;
+	if(dp->todo == 0) {
+	    est(dp)->state = DISK_DONE;
+	    continue;
+	}
+	est(dp)->got_estimate = 0;
+	if(est(dp)->level[0] == -1) {
+	    est(dp)->state = DISK_DONE;
+	    continue;
+	}
 
 	for(i = 0; i < MAX_LEVELS; i++) {
-	    char *t;
+	    char *l;
 	    char *exclude1 = "";
 	    char *exclude2 = "";
 	    char spindle[NUM_STR_SIZE];
@@ -1037,44 +1077,63 @@ host_t *hostp;
 		exclude2 = dp->exclude;
 	    }
 	    if(strncmp(dp->program,"DUMP",4) == 0 || 
-	       strncmp(dp->program,"GNUTAR",6) == 0)
-		t = vstralloc(req,
-			      dp->program, " ", dp->name, " ", level, " ",
+	       strncmp(dp->program,"GNUTAR",6) == 0) {
+		l = vstralloc(dp->program, " ", dp->name, " ", level, " ",
 			      est(dp)->dumpdate[i], " ", spindle,
 			      exclude1,
 			      exclude2,
 			      "\n",
 			      NULL);
-	    else
-		t = vstralloc(req, "DUMPER ",
+	    } else {
+		l = vstralloc("DUMPER ",
 			      dp->program, " ", dp->name, " ", level, " ",
 			      est(dp)->dumpdate[i], " ", spindle, " ",
 			      optionstr(dp),
 			      "\n",
 			      NULL);
-	    amfree(req);
-	    req = t;
-	    disks++;
+	    }
+	    strappend(s, l);
+	    s_len += strlen(l);
+	    amfree(l);
 	}
+	if(req_len + s_len > MAX_PACKET / 2) {	/* allow 2X for err response */
+	    amfree(s);
+	    break;
+	}
+	estimates += i;
+	strappend(req, s);
+	req_len += s_len;
+	amfree(s);
+	est(dp)->state = DISK_ACTIVE;
+	remove_disk(&startq, dp);
     }
-    if(disks > max_disks) max_disks = disks;
+
+    if(estimates == 0) {
+	amfree(req);
+	hostp->up = HOST_DONE;
+	return;
+    }
 
     if (conf_etimeout < 0)
       timeout = - conf_etimeout;
     else
-      timeout = disks * conf_etimeout;
+      timeout = estimates * conf_etimeout;
 
     secdrv = security_getdriver(hostp->disks->security_driver);
     if (secdrv == NULL) {
 	error("could not find security driver '%s' for host '%s'",
 	    hostp->disks->security_driver, hostp->hostname);
     }
+    hostp->up = HOST_ACTIVE;
 
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
-	if(dp->todo == 0) continue;
-	if(est(dp)->level[0] == -1) continue;   /* ignore this disk */
-	est(dp)->errstr = NULL;
-	enqueue_disk(&waitq, dp);
+	if(dp->todo == 0) {
+	    continue;
+	}
+	if(est(dp)->state == DISK_ACTIVE) {
+	    est(dp)->errstr = NULL;
+	    enqueue_disk(&waitq, dp);
+	}
     }
 
     protocol_sendreq(hostp->hostname, secdrv, req, timeout,
@@ -1208,8 +1267,10 @@ security_handle_t *sech;
     /* XXX amanda 2.1 treated that case as a bad msg */
 
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	if(est(dp)->state != DISK_ACTIVE) continue;
+	est(dp)->state = DISK_DONE;
 	if(dp->todo == 0) continue;
-	if(est(dp)->level[0] == -1) continue;   /* ignore this disk */
+	if(est(dp)->level[0] == -1) continue;	/* ignore this disk */
 	remove_disk(&waitq, dp);
 	if(est(dp)->got_estimate) {
 	    if(est(dp)->est_size[0] >= 0) {
@@ -1241,6 +1302,8 @@ security_handle_t *sech;
 					NULL);
 	}
     }
+    hostp->up = HOST_READY;
+    getsize(hostp);
     return;
 
  NAK_parse_failed:
@@ -1277,14 +1340,19 @@ security_handle_t *sech;
 	msgdisk_undo = NULL;
     }
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
-	if(est(dp)->level[0] == -1) continue;   /* ignore this disk */
-	remove_disk(&waitq, dp);
-	enqueue_disk(&failq, dp);
+	if(est(dp)->state != DISK_ACTIVE) continue;
+	est(dp)->state = DISK_DONE;
+	if(est(dp)->state == DISK_ACTIVE) {
+	    est(dp)->state = DISK_DONE;
+	    remove_disk(&waitq, dp);
+	    enqueue_disk(&failq, dp);
 
-	est(dp)->errstr = stralloc(errbuf);
-	fprintf(stderr, "error result for host %s disk %s: %s\n",
-	    dp->host->hostname, dp->name, errbuf);
+	    est(dp)->errstr = stralloc(errbuf);
+	    fprintf(stderr, "error result for host %s disk %s: %s\n",
+	        dp->host->hostname, dp->name, errbuf);
+	}
     }
+    hostp->up = HOST_DONE;
     amfree(errbuf);
 }
 

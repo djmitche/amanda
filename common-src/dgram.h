@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: dgram.h,v 1.12 1999/09/01 18:00:22 jrj Exp $
+ * $Id: dgram.h,v 1.13 2001/07/13 22:38:05 jrjackson Exp $
  *
  * interface for datagram module
  */
@@ -34,7 +34,12 @@
 
 #include "amanda.h"
 
-#define MAX_DGRAM      (64*1024)
+/*
+ * Maximum datagram (UDP packet) we can generate.  Size is limited by
+ * a 16 bit length field in an IPv4 header (65535), which must include
+ * the 24 byte IP header and the 8 byte UDP header.
+ */
+#define MAX_DGRAM      (((1<<16)-1)-24-8)
 
 typedef struct dgram_s {
     char *cur;
