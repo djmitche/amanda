@@ -1,6 +1,6 @@
 AMANDA DUMPER API
 
-Last modified $Date: 1998/10/06 01:21:46 $
+Last modified $Date: 1998/10/06 17:17:00 $
 
 by Alexandre Oliva <oliva@dcc.unicamp.br>
 
@@ -335,6 +335,9 @@ If the option `backup-parse' is set, then the `backup' command
 should write to stderr the informations needed by the `backup-parse'
 command, that should edit its input so that it prints to standard
 output a formatted-output-backup.
+
+If the option `no-record' is set, then the `backup' command should
+not modify its state file (ex. dump should not modify /etc/dumpdates).
 
 The syntax of `backup-parse' is identical to that of `backup'.
 
