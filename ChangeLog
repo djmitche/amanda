@@ -1,5 +1,8 @@
 1998-06-01  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* docs/SYSTEM.NOTES: advise Linux users to use dump without
+ 	setuid/setgid
+
 	* docs/INDEXING: update dumptype syntax
 
 1998-05-29  John R. Jackson  <jrj@purdue.edu>

@@ -132,6 +132,11 @@ Amanda now supports the ftape driver version 3.04d. It adjusts the
 blocksize automatically to 32k and supports QIC volume tables.
 More details con be found in the file ZFTAPE in this directory.
 
+Estimates may take longer if dump are setuid-root.  There's no reason
+for this, and it can even open up security holes.  Nevertheless, Linux
+RedHat 5.0 installs both dump and restore as setuid-root.  You should
+disable both setuid and setgid bits of these programs.
+
 ---------------------------------------------------------------------------
 Digital Unix 4
 --------------
