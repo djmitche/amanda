@@ -25,7 +25,7 @@ libamanda_la_SOURCES = \
 	debug.c		dgram.c		\
 	event.c		error.c		\
 	file.c		fileheader.c	\
-	krb5-security.c	\
+	krb4-security.c	krb5-security.c	\
 	match.c		\
 	packet.c	protocol.c	\
 	regcomp.c	regerror.c	regexec.c	regfree.c	\
