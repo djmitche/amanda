@@ -1,5 +1,10 @@
 2002-04-07  John R. Jackson (jrj@purdue.edu)
 
+	* client-src/amandad.c: Fix FORCE_USERID to run the service as the
+	  client user if amandad was started as root.
+
+2002-04-07  John R. Jackson (jrj@purdue.edu)
+
 	* common-src/clock.c: Move definition of amanda_gettimeofday() macro
 	  to the header file so it could be used other places.  Use new
 	  amanda_timezone macro to avoid some #ifdef's.

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.48 2002/03/31 21:08:40 jrjackson Exp $
+ * $Id: amandad.c,v 1.49 2002/04/08 01:24:43 jrjackson Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -1162,6 +1162,10 @@ service_new(security_handle, cmd, arguments)
 	 * The child.  Put our pipes in their advertised locations
 	 * and start up.
 	 */
+#ifdef FORCE_USERID
+	seteuid((uid_t)0);
+	setuid(client_uid);
+#endif
 
 	/*
 	 * The data stream is stdin in the new process
