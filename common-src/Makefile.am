@@ -7,11 +7,7 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
-BUILT_SOURCES = 	version.c	\
-			regex.h		regcomp.ih	\
-			regerror.ih	engine.ih	\
-			regcomp.c	regexec.c	\
-			regerror.c	regfree.c
+BUILT_SOURCES = 	version.c
 
 noinst_DATA =		versuff.c
 
@@ -40,10 +36,11 @@ libamnolog_la_LDFLAGS = -version-info $(libnolog_version)
 noinst_HEADERS =	amanda.h	arglist.h	\
 			dgram.h		protocol.h	\
 			statfs.h	stream.h	\
-			token.h		version.h
+			token.h		version.h	\
+			amregex.h
 
 EXTRA_DIST = 		getcwd.c	mktime.c	strerror.c	\
-			strstr.c	genversion.c
+			strstr.c	genversion.c	memmove.c
 
 .sh:
 	cat $< > $@
@@ -62,23 +59,6 @@ statfs: $(srcdir)/statfs.c $(srcdir)/statfs.h
 
 token: $(srcdir)/token.c $(srcdir)/token.h libamanda.la libamnolog.la
 	$(COMPILE) $(LDFLAGS) -DTEST -I.. $(srcdir)/token.c libamanda.la libamnolog.la -o token
-
-
-regcomp.c: $(REGsrcdir)/regcomp.c
-	rm -f $@
-	ln -s $< $@ || cp $< $@
-
-regexec.c: $(REGsrcdir)/regexec.c
-	rm -f $@
-	ln -s $< $@ || cp $< $@
-
-regerror.c: $(REGsrcdir)/regerror.c
-	rm -f $@
-	ln -s $< $@ || cp $< $@
-
-regfree.c: $(REGsrcdir)/regfree.c
-	rm -f $@
-	ln -s $< $@ || cp $< $@
 
 .deps/regcomp.P: regex.h regcomp.ih
 .deps/regexec.P: regex.h engine.ih

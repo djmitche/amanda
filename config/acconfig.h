@@ -206,9 +206,16 @@
 #undef USE_LOCKF
 #undef USE_LNLOCK
 
+/* Definitions in header files. */
+#undef HAVE__POSIX2_RE_DUP_MAX
+#undef HAVE_CHAR_MIN
+#undef HAVE_CHAR_MAX
+#undef HAVE_CHAR_BIT
+
 /* Declarations of functions.  */
 #undef HAVE_ACCEPT_DECL
 #undef HAVE_ATOF_DECL
+#undef HAVE_BCOPY_DECL
 #undef HAVE_BIND_DECL
 #undef HAVE_BZERO_DECL
 #undef HAVE_CLOSELOG_DECL
@@ -231,6 +238,8 @@
 #undef HAVE_INITGROUPS_DECL
 #undef HAVE_LISTEN_DECL
 #undef HAVE_LSTAT_DECL
+#undef HAVE_MALLOC_DECL
+#undef HAVE_MEMMOVE_DECL
 #undef HAVE_MEMSET_DECL
 #undef HAVE_MKTEMP_DECL
 #undef HAVE_MKTIME_DECL
@@ -239,6 +248,7 @@
 #undef HAVE_PERROR_DECL
 #undef HAVE_PRINTF_DECL
 #undef HAVE_PUTS_DECL
+#undef HAVE_REALLOC_DECL
 #undef HAVE_RECVFROM_DECL
 #undef HAVE_REMOVE_DECL
 #undef HAVE_RENAME_DECL

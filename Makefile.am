@@ -1,6 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS=common-src	client-src	recover-src	\
+SUBDIRS=config		\
+	common-src	client-src	recover-src	\
 	tape-src	server-src	restore-src	\
 	changer-src	amplot		man		\
 	example
@@ -15,10 +16,6 @@ EXTRA_DIST = \
 	docs/TAPE.CHANGERS		docs/TAPETYPES			\
 	docs/UPGRADE			docs/WHATS.NEW			\
 	docs/WISHLIST							\
-	config-aux/config.guess		config-aux/config.sub		\
-	config-aux/install-sh		config-aux/ltconfig		\
-	config-aux/ltmain.sh		config-aux/missing		\
-	config-aux/mkinstalldirs					\
 	patches/readline-2.0-all	patches/readline-2.0-hpux	\
 	patches/readline-2.0-irix4	patches/readline-2.0-more	\
 	patches/samba-1.9.16p2.patch					\

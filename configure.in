@@ -1,10 +1,10 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_INIT(common-src/amanda.h)
-AC_CONFIG_AUX_DIR(config-aux)
+AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE(amanda, 2.4.0)
-AM_CONFIG_HEADER(config.h)
+AM_CONFIG_HEADER(config/config.h)
 
 AC_PREREQ(2.12)			dnl Minimum Autoconf version required.
 
@@ -1178,6 +1178,7 @@ AC_CHECK_HEADERS(\
 	fstab.h \
 	grp.h \
 	history.h \
+	limits.h \
 	mntent.h \
 	mnttab.h \
 	ndbm.h \
@@ -1187,6 +1188,7 @@ AC_CHECK_HEADERS(\
 	readline/readline.h \
 	stdlib.h \
 	string.h \
+	strings.h \
 	sys/fcntl.h \
 	sys/file.h \
 	sys/ioctl.h \
@@ -1484,13 +1486,62 @@ case "$DB_STYLE" in
 esac
 AC_SUBST(DB_EXT)
 
+AC_CACHE_CHECK(whether _POSIX2_RE_DUP_MAX is defined,
+	amanda_cv_have__posix2_re_dup_max,
+	AC_EGREP_CPP(yes, [
+#include <limits.h>
+#ifdef _POSIX2_RE_DUP_MAX
+  yes
+#endif
+], amanda_cv_have__posix2_re_dup_max=yes, amanda_cv_have__posix2_re_dup_max=no))
+if test "$amanda_cv_have__posix2_re_dup_max" = yes; then
+	AC_DEFINE(HAVE__POSIX2_RE_DUP_MAX)
+fi
+
+AC_CACHE_CHECK(whether CHAR_MIN is defined,
+	amanda_cv_have_char_min,
+	AC_EGREP_CPP(yes, [
+#include <limits.h>
+#ifdef CHAR_MIN
+  yes
+#endif
+], amanda_cv_have_char_min=yes, amanda_cv_have_char_min=no))
+if test "$amanda_cv_have_char_min" = yes; then
+	AC_DEFINE(HAVE_CHAR_MIN)
+fi
+
+AC_CACHE_CHECK(whether CHAR_MAX is defined,
+	amanda_cv_have_char_max,
+	AC_EGREP_CPP(yes, [
+#include <limits.h>
+#ifdef CHAR_MAX
+  yes
+#endif
+], amanda_cv_have_char_max=yes, amanda_cv_have_char_max=no))
+if test "$amanda_cv_have_char_max" = yes; then
+	AC_DEFINE(HAVE_CHAR_MAX)
+fi
+
+AC_CACHE_CHECK(whether CHAR_BIT is defined,
+	amanda_cv_have_char_bit,
+	AC_EGREP_CPP(yes, [
+#include <limits.h>
+#ifdef CHAR_BIT
+  yes
+#endif
+], amanda_cv_have_char_bit=yes, amanda_cv_have_char_bit=no))
+if test "$amanda_cv_have_char_bit" = yes; then
+	AC_DEFINE(HAVE_CHAR_BIT)
+fi
+
 dnl Checks for library functions and if the function is declared in
 dnl an appropriate header file.  Add some of the missing functions
 dnl to LIBOBJS.
 ICE_CHECK_DECL(accept,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(atof,stdlib.h)
 ICE_CHECK_DECL(bind,sys/types.h sys/socket.h)
-ICE_CHECK_DECL(bzero,string.h)
+ICE_CHECK_DECL(bcopy,string.h strings.h)
+ICE_CHECK_DECL(bzero,string.h strings.h)
 ICE_CHECK_DECL(closelog,syslog.h)
 ICE_CHECK_DECL(connect,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(dbm_open,${DB_HEADER-no/db/header/file})
@@ -1516,6 +1567,9 @@ AC_CHECK_FUNCS(getvfsent isascii)
 ICE_CHECK_DECL(initgroups,grp.h sys/types.h unistd.h)
 ICE_CHECK_DECL(listen,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(lstat,sys/types.h sys/stat.h)
+ICE_CHECK_DECL(malloc,stdlib.h)
+AC_REPLACE_FUNCS(memmove)
+ICE_CHECK_DECL(memmove,string.h)
 ICE_CHECK_DECL(memset,string.h)
 AC_CHECK_FUNCS(mkdir)
 ICE_CHECK_DECL(mktemp,stdlib.h)
@@ -1527,6 +1581,7 @@ ICE_CHECK_DECL(pclose,stdio.h)
 ICE_CHECK_DECL(perror,stdio.h)
 ICE_CHECK_DECL(printf,stdio.h)
 ICE_CHECK_DECL(puts,stdio.h)
+ICE_CHECK_DECL(realloc,stdlib.h)
 ICE_CHECK_DECL(recvfrom,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(remove,stdio.h)
 ICE_CHECK_DECL(rename,stdio.h)
@@ -1778,6 +1833,10 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 	    cat <<EOF >conftest.$ac_ext
 #include "confdefs.h"
 
+#ifdef HAVE_SYS_FILE_H
+#include <sys/file.h>
+#endif
+
 #if defined(LOCK_EX) && defined(LOCK_UN)
 
 #define CONFIGURE_TEST
@@ -1964,4 +2023,4 @@ AC_OUTPUT( \
 	man/amdump.8			man/amflush.8			\
 	man/amlabel.8			man/Makefile			\
 									\
-	Makefile)
+	config/Makefile			Makefile)

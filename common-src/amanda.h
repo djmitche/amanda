@@ -323,18 +323,12 @@ extern time_t unctime   P((char *timestr));
 extern int    amflock   P((int fd, char *resource));
 extern int    amroflock P((int fd, char *resource));
 extern int    amfunlock P((int fd, char *resource));
+extern void add_exclude P((char *name));
+extern void add_exclude_file P((char *file));
+extern int check_exclude P((const char *name));
 
 extern int debug;
 extern char *version_info[];
-
-#ifndef HAVE_ADD_EXCLUDE
-extern void add_exclude P((char *name));
-extern void add_exclude_file P((char *file));
-#endif
-
-#ifndef HAVE_CHECK_EXCLUDE
-extern int check_exclude P((const char *name));
-#endif
 
 /*
  * Handle functions which are not always declared on all systems.  This
@@ -462,6 +456,10 @@ extern int listen P((int s, int backlog));
 extern int lstat P((const char *path, struct stat *buf));
 #endif
 
+#ifndef HAVE_MALLOC_DECL
+extern void *malloc P((size_t size));
+#endif
+
 #ifndef HAVE_MEMSET_DECL
 extern void *memset P((void *s, int c, size_t n));
 #endif
@@ -496,6 +494,10 @@ extern int printf P((const char *format, ...));
 
 #ifndef HAVE_PUTS_DECL
 extern int puts P((const char *s));
+#endif
+
+#ifndef HAVE_REALLOC_DECL
+extern void *realloc P((void *ptr, size_t size));
 #endif
 
 #ifndef HAVE_RECVFROM_DECL

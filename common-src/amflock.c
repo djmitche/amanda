@@ -54,6 +54,10 @@
 #endif
 
 #if !defined(USE_POSIX_FCNTL) && defined(USE_FLOCK)
+#  ifdef HAVE_SYS_FILE_H
+#    include <sys/file.h>
+#  endif
+
 #  if !defined(HAVE_FLOCK_DECL) && !defined(CONFIGURE_TEST)
      extern int flock P((int fd, int operation));
 #  endif

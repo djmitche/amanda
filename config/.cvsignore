@@ -1,0 +1,6 @@
+aclocal.m4
+config.h.in
+config.h
+Makefile.in
+stamp-h.in
+stamp-h

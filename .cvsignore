@@ -1,11 +1,6 @@
-aclocal.m4
-config.h.in
-config.h
 configure
 Makefile.in
 Makefile
-stamp-h.in
-stamp-h
 config.cache
 config.log
 config.status
