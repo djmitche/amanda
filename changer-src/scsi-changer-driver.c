@@ -1,5 +1,5 @@
-#ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.27.2.6 2001/08/15 18:33:13 ant Exp $";
+ #ifndef lint
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.27.2.7 2001/09/16 18:10:26 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -960,35 +960,34 @@ int unload(int fd, int drive, int slot)
    */
   if (chgscsi_result  == NULL && chgscsi_label != NULL && chg.labelfile != NULL)
   {
-    /* 
-     * We got something, update the db
-     * but before check if the db has as entry the slot
-     * to where we placed the tape, if no force an inventory
+    /*
+     * OK this is only needed if we have emubarcode set
+     * There we need an exact inventory to get the search function working
+     * and returning correct results
      */
-    pbarcoderes->action = FIND_SLOT;
-    strcpy(pbarcoderes->data.voltag, chgscsi_label);
-    strcpy(pbarcoderes->data.barcode, pSTE[slot].VolTag );
-    pbarcoderes->data.slot = 0;
-    pbarcoderes->data.from = 0;
-    pbarcoderes->data.LoadCount = 1;
-
-    if ( MapBarCode(chg.labelfile, pbarcoderes) == 0) /* Nothing known about this, do an Inventory */
+    if (BarCode(INDEX_CHANGER) == 0 && chg.emubarcode == 1)
       {
-	do_inventory = 1;
-      } else {
-	if (slot != pbarcoderes->data.slot)
+	/* 
+	 * We got something, update the db
+	 * but before check if the db has as entry the slot
+	 * to where we placed the tape, if no force an inventory
+	 */
+	pbarcoderes->action = FIND_SLOT;
+	strcpy(pbarcoderes->data.voltag, chgscsi_label);
+	strcpy(pbarcoderes->data.barcode, pSTE[slot].VolTag );
+	pbarcoderes->data.slot = 0;
+	pbarcoderes->data.from = 0;
+	pbarcoderes->data.LoadCount = 0;
+	
+	
+	if ( MapBarCode(chg.labelfile, pbarcoderes) == 0) /* Nothing known about this, do an Inventory */
 	  {
-	    DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Slot DB out of sync, slot %d != map %d",slot, pbarcoderes->data.slot);
-	      do_inventory = 1;
+	    do_inventory = 1;
 	  } else {
-	    pbarcoderes->data.slot = slot;
-	    pbarcoderes->data.from = 0;
-	    pbarcoderes->action = UPDATE_SLOT;
-	    if (MapBarCode(chg.labelfile, pbarcoderes))
+	    if (slot != pbarcoderes->data.slot)
 	      {
-		DebugPrint(DEBUG_INFO, SECTION_TAPE,"Update barcode file ok\n");
-	      } else {
-		ChgExit("unload", "Update barcode file failed in unload\n", FATAL);
+		DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Slot DB out of sync, slot %d != map %d",slot, pbarcoderes->data.slot);
+		do_inventory = 1;
 	      }
 	  }
       }
@@ -1107,39 +1106,64 @@ int load(int fd, int drive, int slot)
    * if no update the vol/label mapping
    */
   if (result  == NULL && chg.labelfile != NULL && label != NULL )
-  {
-    /* 
-     * We got something, update the db
-     * but before check if the db has as entry the slot
-     * to where we placed the tape, if no force an inventory
-     */
-    pbarcoderes->action = FIND_SLOT;
-    strcpy(pbarcoderes->data.voltag, label);
-    pbarcoderes->data.slot = 0;
-    pbarcoderes->data.from = 0;
-    pbarcoderes->data.LoadCount = 1;
-    
-
-    if (MapBarCode(chg.labelfile, pbarcoderes) == 0) /* Nothing found, do an inventory */
-      {
-	do_inventory = 1;
-      } else { /* We got something, is it correct ? */
-	if (slot != pbarcoderes->data.slot)
-	  {
-	    DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Slot DB out of sync, slot %d != map %d",slot, pbarcoderes->data.slot);
-	    do_inventory = 1;
-	  } else {
-	    /*
-	     * Don't do anything ... 
-	     result = MapBarCode(chg.labelfile, pbarcoderes);
-	    */
-	  }
-      }
-  }
-
-  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"##### STOP load (%d)\n",ret);
-  return(ret);
-  }
+    {
+      /* 
+       * We got something, update the db
+       * but before check if the db has as entry the slot
+       * to where we placed the tape, if no force an inventory
+       */
+      strcpy(pbarcoderes->data.voltag, label);
+      pbarcoderes->data.slot = 0;
+      pbarcoderes->data.from = 0;
+      pbarcoderes->data.LoadCount = 0;
+      
+      
+      /*
+       * If we have an barcode reader we only do an update
+       * If emubarcode is set we check if the
+       * info in the DB is up to date, if no we set the do_inventory flag
+       */
+      
+      if (BarCode(INDEX_CHANGER) == 1 && chg.emubarcode == 0)
+	{
+	  pbarcoderes->action = UPDATE_SLOT;
+	  strcpy(pbarcoderes->data.barcode, pDTE[drive].VolTag);
+	  pbarcoderes->data.LoadCount = 1;
+	  pbarcoderes->data.slot = slot;
+	  MapBarCode(chg.labelfile, pbarcoderes);
+	}
+      
+      if (BarCode(INDEX_CHANGER) == 0 && chg.emubarcode == 1)
+	{
+	  pbarcoderes->action = FIND_SLOT;
+	  if (MapBarCode(chg.labelfile, pbarcoderes) == 0) /* Nothing found, do an inventory */
+	    {
+	      do_inventory = 1;
+	    } else { /* We got something, is it correct ? */
+	      if (slot != pbarcoderes->data.slot && do_inventory == 0)
+		{
+		  DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Slot DB out of sync, slot %d != map %d",slot, pbarcoderes->data.slot);
+		  ChgExit("Load", "Label DB out of sync", FATAL);
+		} else { /* OK, so increment the load count */
+		  pbarcoderes->action = UPDATE_SLOT;
+		  pbarcoderes->data.LoadCount = 1;
+		  pbarcoderes->data.slot = slot;
+		  MapBarCode(chg.labelfile, pbarcoderes);
+		}
+	    }
+	}
+      
+      if (BarCode(INDEX_CHANGER) == 1 && chg.emubarcode == 1)
+	{
+	  ChgExit("Load", "BarCode == 1 and emubarcode == 1", FATAL);
+	}
+      
+      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"##### STOP load (%d)\n",ret);
+      return(ret);
+    }
+    DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"##### STOP load (%d)\n",ret);
+    return(ret);
+}
 
 /*
  * Returns the number of Storage Slots which the library has
@@ -2290,6 +2314,7 @@ int GenericRewind(int DeviceFD)
   CDB_T CDB;
   extern OpenFiles_T *pDev; 
   RequestSense_T *pRequestSense;
+  char *errstr;                    /* Used by tape_rewind */
   int ret;
   int cnt = 0;
   int true = 1;
@@ -2475,7 +2500,37 @@ int GenericRewind(int DeviceFD)
       DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP GenericRewind (0)\n");
     } else {
       DebugPrint(DEBUG_INFO, SECTION_TAPE,"GenericRewind : use ioctl rewind\n");
-      tape_rewind(pDev[DeviceFD].dev);
+      if (pDev[DeviceFD].devopen == 1) 
+	{
+	  DebugPrint(DEBUG_INFO, SECTION_TAPE,"Close Device\n");
+	  SCSI_CloseDevice(DeviceFD);
+	}
+      /*
+       * Hmm retry it if it fails ?
+       */
+      cnt = 0;
+      true = 1;
+      while (true) 
+	{
+	  if ((errstr = tape_rewind(pDev[DeviceFD].dev)) == NULL)
+	    {
+	      true = 0;
+	      DebugPrint(DEBUG_INFO, SECTION_TAPE,"Rewind OK, (after %d tries)\n", cnt);
+	    } else {
+	      DebugPrint(DEBUG_INFO, SECTION_TAPE,"Rewind failed %s\n",errstr);
+	      /*
+	       * DebugPrint(DEBUG_ERROR, SECTION_TAPE,"##### STOP GenericRewind (-1)\n");
+	       * return(-1);
+	       */
+	      cnt++;
+	      sleep(1);
+	      if (cnt > 60)
+		{
+		  DebugPrint(DEBUG_ERROR, SECTION_TAPE,"##### STOP GenericRewind (-1), retry limit reached\n");
+		  return(-1);
+		}
+	    }
+	}
       DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP GenericRewind (0)\n");
     }
 

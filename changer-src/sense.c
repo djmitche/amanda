@@ -295,6 +295,17 @@
 	
 	{ "EXB-210", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x0, 0x0, SENSE_ABORT, "Illegal Request"},
 	{ "EXB-210", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x91, 0x0, SENSE_CHM_FULL, "CHM full during reset"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x21, 0x01, SENSE_ABORT, "Invalid element address"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x24, 0x00, SENSE_ABORT, "Invalid Invert Field"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x3b, 0x0d, SENSE_ABORT, "Destination element occupied"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x3b, 0x0e, SENSE_ABORT, "Source Element empty"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x3b, 0x87, SENSE_ABORT, "Cartridge stuck in tape"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x3b, 0x90, SENSE_ABORT, "Source cart is loaded inside the tape drive and not accessible"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x80, 0x03, SENSE_ABORT, "Source magazine not installed"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x80, 0x04, SENSE_ABORT, "Destination magazine no installed"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x80, 0x05, SENSE_ABORT, "Source tape drive not installed"},
+	{ "EXB-210", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x80, 0x06, SENSE_ABORT, "Destination tape drive not installed"},
+	
 	{ "EXB-210", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST , -1, -1, SENSE_RETRY, "Default for SENSE_ILLEGAL_REQUEST"},
 	
 	{ "EXB-210", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, 0x83, 0x0, SENSE_IES, "Label questionable"},
