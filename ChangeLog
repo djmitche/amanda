@@ -1,3 +1,10 @@
+2002-12-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amstatus.pl.in: New --date option to display datestamp.
+	* server-src/amstatus.pl.in: Increase some field size.
+	* server-src/amstatus.pl.in: The host field adjust it's length to the
+	 largest.
+
 2002-11-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* common-src/amanda.h (days_diff): Don't add a half day.
