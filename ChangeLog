@@ -1,5 +1,17 @@
 2004-11-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* NEWS: new displayunit global option to select the unit use to
+	  display number: k=kilo, m=mega, g=giga, t=tera
+	* server-src/conffile.c: Parse displayunit,
+	  new fonction getcont_unit_divisor().
+	* server-src/conffile.h: Prototype of getcont_unit_divisor().
+	* server-src/amcheck.c: Use displayunit to display holding disk size.
+	* server-src/amstatus.pl.in: Use displayunit to display dump size.
+	* server-src/reporter.c: use displayunit to display dump size.
+	* man/amanda.8.in: Document displayunit.
+
+2004-11-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/reporter.c: Change 'Daily' for 'Incr.'.
 
 2004-11-15  Jean-Louis Martineau <martineau@iro.umontreal.ca>

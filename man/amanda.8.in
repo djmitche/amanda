@@ -708,6 +708,11 @@ this number a bit high.
 Some contention can occur with larger numbers
 of backups, but this effect is relatively small on most systems.
 .TP
+.BS displayunit "k|m|g|t"
+Default:
+.IR "k" .
+The unit use to print many number, k=kilo, m=mega, g=giga, t=tera.
+.TP
 .BS dumporder string
 Default:
 .IR "tttTTTTTTT" .

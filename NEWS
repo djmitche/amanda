@@ -1,3 +1,8 @@
+Change in release 2.4.5b2
+
+* new displayunit global option to select the unit use to display number
+  k=kilo, m=mega, g=giga, t=tera
+
 Change in release 2.4.5b1
 
 * holding disk disk use timestamped directory.

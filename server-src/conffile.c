@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.16.2.5.2.20.2.5 2004/09/17 11:47:26 martinea Exp $
+ * $Id: conffile.c,v 1.54.2.16.2.5.2.20.2.6 2004/11/16 13:58:41 martinea Exp $
  *
  * read configuration file
  */
@@ -81,6 +81,7 @@ typedef enum {
     AMRECOVER_DO_FSF, AMRECOVER_CHECK_LABEL, AMRECOVER_CHANGER,
 
     TAPERALGO, FIRST, FIRSTFIT, LARGEST, LARGESTFIT, SMALLEST, LAST,
+    DISPLAYUNIT,
 
     /* holding disk */
     COMMENT, DIRECTORY, USE, CHUNKSIZE,
@@ -163,6 +164,8 @@ char *config_dir = NULL;
 holdingdisk_t *holdingdisks;
 int num_holdingdisks;
 
+long int unit_divisor = 1024;
+
 /* configuration parameters */
 
 /* strings */
@@ -211,6 +214,7 @@ static val_t conf_maxdumpsize;
 static val_t conf_amrecover_do_fsf;
 static val_t conf_amrecover_check_label;
 static val_t conf_taperalgo;
+static val_t conf_displayunit;
 
 /* reals */
 static val_t conf_bumpmult;
@@ -268,6 +272,7 @@ static int seen_amrecover_do_fsf;
 static int seen_amrecover_check_label;
 static int seen_amrecover_changer;
 static int seen_taperalgo;
+static int seen_displayunit;
 
 static int allow_overwrites;
 static int token_pushed;
@@ -416,6 +421,7 @@ struct byname {
     { "AMRECOVER_CHECK_LABEL", CNF_AMRECOVER_CHECK_LABEL, BOOL },
     { "AMRECOVER_CHANGER", CNF_AMRECOVER_CHANGER, STRING },
     { "TAPERALGO", CNF_TAPERALGO, INT },
+    { "DISPLAYUNIT", CNF_DISPLAYUNIT, STRING },
     { "AUTOFLUSH", CNF_AUTOFLUSH, BOOL },
     { "RESERVE", CNF_RESERVE, INT },
     { "MAXDUMPSIZE", CNF_MAXDUMPSIZE, INT },
@@ -510,6 +516,7 @@ confparm_t parm;
     case CNF_AMRECOVER_CHECK_LABEL: return seen_amrecover_check_label;
     case CNF_AMRECOVER_CHANGER: return seen_amrecover_changer;
     case CNF_TAPERALGO: return seen_taperalgo;
+    case CNF_DISPLAYUNIT: return seen_displayunit;
     default: return 0;
     }
 }
@@ -595,6 +602,7 @@ confparm_t parm;
     case CNF_RAWTAPEDEV: r = conf_rawtapedev.s; break;
     case CNF_COLUMNSPEC: r = conf_columnspec.s; break;
     case CNF_AMRECOVER_CHANGER: r = conf_amrecover_changer.s; break;
+    case CNF_DISPLAYUNIT: r = conf_displayunit.s; break;
 
     default:
 	error("error [unknown getconf_str parm: %d]", parm);
@@ -714,6 +722,7 @@ static void init_defaults()
     malloc_mark(conf_dumporder.s);
     conf_amrecover_changer.s = stralloc("");
     conf_printer.s = stralloc("");
+    conf_displayunit.s = stralloc("k");
 
     conf_dumpcycle.i	= 10;
     conf_runspercycle.i	= 0;
@@ -785,6 +794,7 @@ static void init_defaults()
     seen_amrecover_check_label = 0;
     seen_amrecover_changer = 0;
     seen_taperalgo = 0;
+    seen_displayunit = 0;
     line_num = got_parserror = 0;
     allow_overwrites = 0;
     token_pushed = 0;
@@ -963,6 +973,7 @@ keytab_t main_keytable[] = {
     { "AMRECOVER_CHECK_LABEL", AMRECOVER_CHECK_LABEL },
     { "AMRECOVER_CHANGER", AMRECOVER_CHANGER },
     { "TAPERALGO", TAPERALGO },
+    { "DISPLAYUNIT", DISPLAYUNIT },
     { NULL, IDENT }
 };
 
@@ -1089,6 +1100,31 @@ static int read_confline()
     case AMRECOVER_CHANGER: get_simple(&conf_amrecover_changer,&seen_amrecover_changer, STRING); break;
 
     case TAPERALGO: get_taperalgo(&conf_taperalgo,&seen_taperalgo); break;
+    case DISPLAYUNIT: get_simple(&conf_displayunit,&seen_displayunit, STRING);
+		      if(strcmp(conf_displayunit.s,"k") == 0 ||
+			 strcmp(conf_displayunit.s,"K") == 0) {
+			  conf_displayunit.s[0] = toupper(conf_displayunit.s[0]);
+			  unit_divisor=1;
+		      }
+		      else if(strcmp(conf_displayunit.s,"m") == 0 ||
+			 strcmp(conf_displayunit.s,"M") == 0) {
+			  conf_displayunit.s[0] = toupper(conf_displayunit.s[0]);
+			  unit_divisor=1024;
+		      }
+		      else if(strcmp(conf_displayunit.s,"g") == 0 ||
+			 strcmp(conf_displayunit.s,"G") == 0) {
+			  conf_displayunit.s[0] = toupper(conf_displayunit.s[0]);
+			  unit_divisor=1024*1024;
+		      }
+		      else if(strcmp(conf_displayunit.s,"t") == 0 ||
+			 strcmp(conf_displayunit.s,"T") == 0) {
+			  conf_displayunit.s[0] = toupper(conf_displayunit.s[0]);
+			  unit_divisor=1024*1024*1024;
+		      }
+		      else {
+			  parserror("displayunit must be k,m,g or t.");
+		      }
+		      break;
 
     case LOGFILE: /* XXX - historical */
 	/* truncate the filename part and pretend he said "logdir" */
@@ -2936,6 +2972,10 @@ int taperalgo;
     return "UNKNOWN";
 }
 
+long int getcont_unit_divisor()
+{
+    return unit_divisor;
+}
 
 /* ------------------------ */
 
@@ -2995,6 +3035,7 @@ dump_configuration(filename)
     printf("conf_amrecover_check_label  = %d\n", getconf_int(CNF_AMRECOVER_CHECK_LABEL));
     printf("conf_amrecover_changer = \"%s\"\n", getconf_str(CNF_AMRECOVER_CHANGER));
     printf("conf_taperalgo  = %s\n", taperalgo2str(getconf_int(CNF_TAPERALGO)));
+    printf("conf_displayunit  = %s\n", getconf_str(CNF_DISPLAYUNIT));
 
     /*printf("conf_diskdir = \"%s\"\n", getconf_str(CNF_DISKDIR));*/
     /*printf("conf_disksize = %d\n", getconf_int(CNF_DISKSIZE));*/
