@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.56.2.15.4.4.2.10 2003/01/04 17:46:08 martinea Exp $
+ * $Id: sendbackup-gnutar.c,v 1.56.2.15.4.4.2.11 2003/10/30 18:04:45 martinea Exp $
  *
  * send backup data using GNU tar
  */
@@ -50,7 +50,7 @@
 
 static regex_t re_table[] = {
   /* tar prints the size in bytes */
-  AM_SIZE_RE("^Total bytes written: [0-9][0-9]*", 1),
+  AM_SIZE_RE("^ *Total bytes written: [0-9][0-9]*", 1),
 
   AM_NORMAL_RE("^Elapsed time:"),
   AM_NORMAL_RE("^Throughput"),
