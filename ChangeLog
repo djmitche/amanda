@@ -1,4 +1,9 @@
 2005-02-09  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amstatus.pl.in: Use '-?' to match negative values
+	  instead of '-*'.
+
+2005-02-09  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Orion Poplawski <orion@cora.nwra.com>
 
 	* server-src/amoverview.pl.in: Print the total number of level 0

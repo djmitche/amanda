@@ -166,7 +166,7 @@ while(<AMDUMP>) {
 			push @datestamp, $gdatestamp;
 		}
 	}
-	elsif(/setup_estimate: (\S+):(\S+): command .*, options: *(\S+) *last_level \d+ next_level0 -*\d+ level_days \d+ *getting estimates (-*\d) \(-2\) (-*\d) \(-2\) (-*\d) \(-2\)/) {
+	elsif(/setup_estimate: (\S+):(\S+): command .*, options: *(\S+) *last_level \d+ next_level0 -*\d+ level_days \d+ *getting estimates (-?\d) \(-2\) (-?\d) \(-2\) (-?\d) \(-2\)/) {
 		$host=$1;
 		$partition=$2;
 		$hostpart=&make_hostpart($host,$partition,$gdatestamp);
@@ -199,7 +199,7 @@ while(<AMDUMP>) {
 		$_ = <AMDUMP>;
 		while (! /getting estimates/) { $_ = <AMDUMP>; }
 		chomp;
-		if(/getting estimates (-*\d) \(-2\) (-*\d) \(-2\) (-*\d) \(-2\)/) {
+		if(/getting estimates (-?\d) \(-2\) (-?\d) \(-2\) (-?\d) \(-2\)/) {
 			if($1 != -1) { $getest{$hostpart} .= ":$1:" };
 			if($2 != -1) { $getest{$hostpart} .= ":$2:" };
 			if($3 != -1) { $getest{$hostpart} .= ":$3:" };
@@ -218,7 +218,7 @@ while(<AMDUMP>) {
 		$partialestimate{$hostpart}=0;
 		$getest{$hostpart} = "";
 	}
-	elsif(/got partial result for host (\S+) disk (\S+): (-*\d+) -> (-*\d+)K, (-*\d+) -> (-*\d+)K, (-*\d+) -> (-*\d+)K/) {
+	elsif(/got partial result for host (\S+) disk (\S+): (-?\d+) -> (-?\d+)K, (-?\d+) -> (-?\d+)K, (-?\d+) -> (-?\d+)K/) {
 		$host=$1;
 		$partition=$2;
 		$hostpart=&make_hostpart($host,$partition,$gdatestamp);
@@ -646,7 +646,7 @@ while(<AMDUMP>) {
 		$taper_finished{$hostpart}=-2;
 		$error{$hostpart} .= "(too many taper retry)";
 	}
-	elsif(/planner: FAILED (\S+) (\S+) (\S+) (-*\d+) (.*)/) {
+	elsif(/planner: FAILED (\S+) (\S+) (\S+) (-?\d+) (.*)/) {
 		$host=$1;
 		$partition=$2;
 		$datestamp=$3;
