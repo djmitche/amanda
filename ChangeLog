@@ -1,3 +1,8 @@
+1999-10-24  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* common-src/debug.c: Do not assume stderr is a compile-time
+	constant.  On glibc 2.2 (RedHat Linux 6.1), it is not.
+
 1999-10-11  Nicolas Mayencourt  <Nicolas.Mayencourt@cui.unige.ch>
 
 	* server-src/amtoc.pl.in: Add new options -i and -t.  Print original

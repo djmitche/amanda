@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.20 1999/09/15 00:31:52 jrj Exp $
+ * $Id: debug.c,v 1.21 1999/10/24 17:52:16 oliva Exp $
  *
  * debug log subroutines
  */
@@ -42,7 +42,8 @@ int debug = 1;
   static FILE *db_file = NULL;
 #else
   int db_fd = 2;
-  static FILE *db_file = stderr;
+  /* stderr cannot be assumed to be constant */
+  static FILE *db_file = NULL; 
 #endif
 
 #ifndef AMANDA_DBGDIR
@@ -56,7 +57,10 @@ arglist_function(void debug_printf, const char *, format)
 {
     va_list argp;
 
-    if(db_fd == -1) return;
+    if(db_file == NULL) {
+      if (db_fd == -1) return;
+      if (db_fd == 2) db_file = stderr;
+    }
 
     arglist_start(argp, format);
     vfprintf(db_file, format, argp);
