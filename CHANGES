@@ -1,3 +1,5 @@
+	Updated to libtool 1.2.  -oliva
+
 	Added support for FreeBSD dump -h flag (honor nodump).
 	-James E. Housley <housley@pr-comm.com>
 
