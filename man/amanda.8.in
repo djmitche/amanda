@@ -860,7 +860,7 @@ Values are:
 The standard Amanda schedule.
 .TP
 .B nofull
-Never do full backups, only incrementals.
+Never do full backups, only level 1 incrementals.
 .TP
 .B noinc
 Never do incremental backups, only full dumps.
