@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.52 2002/04/19 14:24:12 martinea Exp $
+ * $Id: diskfile.c,v 1.53 2002/04/19 18:14:43 martinea Exp $
  *
  * read disklist file
  */
@@ -584,10 +584,31 @@ FILE *fdout;
        && am_has_feature(dp->host->features, fe_options_auth)) {
 	auth_opt = vstralloc("auth=", dp->security_driver, ";", NULL);
     } else if(strcasecmp(dp->security_driver, "bsd") == 0) {
-	auth_opt = stralloc("bsd-auth;");
+	if(am_has_feature(dp->host->features, fe_options_bsd_auth))
+	    auth_opt = stralloc("bsd-auth;");
+	else if(fdout) {
+	    fprintf(fdout,
+		    "WARNING: %s:%s does not support auth or bsd-auth\n",
+		    dp->host->hostname, dp->name);
+	}
     } else if(strcasecmp(dp->security_driver, "krb4") == 0) {
-	auth_opt = stralloc("krb4-auth;");
-	if(dp->kencrypt) kencrypt_opt = "kencrypt;";
+	if(am_has_feature(dp->host->features, fe_options_krb4_auth))
+	    auth_opt = stralloc("krb4-auth;");
+	else if(fdout) {
+	    fprintf(fdout,
+		    "WARNING: %s:%s does not support auth or krb4-auth\n",
+		    dp->host->hostname, dp->name);
+	}
+	if(dp->kencrypt) {
+	    if(am_has_feature(dp->host->features, fe_options_kencrypt)) {
+		kencrypt_opt = "kencrypt;";
+	    }
+	    else if(fdout) {
+	    fprintf(fdout,
+		    "WARNING: %s:%s does not support kencrypt\n",
+		    dp->host->hostname, dp->name);
+	    }
+	}
     }
 
     switch(dp->compress) {
@@ -597,8 +618,8 @@ FILE *fdout;
 	}
 	else if(fdout) {
 	    fprintf(fdout,
-		    "WARNING: client %s does not support fast compression",
-		    dp->host->hostname);
+		    "WARNING: %s:%s does not support fast compression\n",
+		    dp->host->hostname, dp->name);
 	}
 	break;
     case COMP_BEST:
@@ -607,8 +628,8 @@ FILE *fdout;
 	}
 	else if(fdout) {
 	    fprintf(fdout,
-		    "WARNING: client %s does not support best compression",
-		    dp->host->hostname);
+		    "WARNING: %s:%s does not support best compression\n",
+		    dp->host->hostname, dp->name);
 	}
 	break;
     case COMP_SERV_FAST:
@@ -628,8 +649,8 @@ FILE *fdout;
 	    record_opt = "no-record;";
 	}
 	else if(fdout) {
-	    fprintf(fdout, "WARNING: client %s does not support no record",
-		    dp->host->hostname);
+	    fprintf(fdout, "WARNING: %s:%s does not support no record\n",
+		    dp->host->hostname, dp->name);
 	}
     }
 
@@ -638,8 +659,8 @@ FILE *fdout;
 	    index_opt = "index;";
 	}
 	else if(fdout) {
-	    fprintf(fdout, "WARNING: client %s does not support index",
-		    dp->host->hostname);
+	    fprintf(fdout, "WARNING: %s:%s does not support index\n",
+		    dp->host->hostname, dp->name);
 	}
     }
 
@@ -665,13 +686,13 @@ FILE *fdout;
 		strappend(exclude_file, exc);
 		if(fdout) {
 		    fprintf(fdout,
-			 "WARNING: client %s does not support multiple exclude",
-			 dp->host->hostname);
+		       "WARNING: %s:%s does not support multiple exclude\n",
+		       dp->host->hostname, dp->name);
 		}
 	    }
 	} else if(fdout) {
-	    fprintf(fdout, "WARNING: client %s does not support exclude file",
-		    dp->host->hostname);
+	    fprintf(fdout, "WARNING: %s:%s does not support exclude file\n",
+		    dp->host->hostname, dp->name);
 	}
     }
     exclude_list = stralloc("");
@@ -691,13 +712,13 @@ FILE *fdout;
 		strappend(exclude_list, exc);
 		if(fdout) {
 			fprintf(fdout,
-			 "WARNING: client %s does not support multiple exclude",
-			 dp->host->hostname);
+			 "WARNING: %s:%s does not support multiple exclude\n",
+			 dp->host->hostname, dp->name);
 		}
 	    }
 	} else if(fdout) {
-	    fprintf(fdout, "WARNING: client %s does not support exclude list",
-		    dp->host->hostname);
+	    fprintf(fdout, "WARNING: %s:%s does not support exclude list\n",
+		    dp->host->hostname, dp->name);
 	}
     }
 
@@ -720,13 +741,13 @@ FILE *fdout;
 		strappend(include_file, exc);
 		if(fdout) {
 		    fprintf(fdout,
-			 "WARNING: client %s does not support multiple include",
-			 dp->host->hostname);
+			 "WARNING: %s:%s does not support multiple include\n",
+			 dp->host->hostname, dp->name);
 		}
 	    }
 	} else if(fdout) {
-	    fprintf(fdout, "WARNING: client %s does not support include file",
-		    dp->host->hostname);
+	    fprintf(fdout, "WARNING: %s:%s does not support include file\n",
+		    dp->host->hostname, dp->name);
 	}
     }
     include_list = stralloc("");
@@ -746,13 +767,13 @@ FILE *fdout;
 		strappend(include_list, exc);
 		if(fdout) {
 			fprintf(fdout,
-			 "WARNING: client %s does not support multiple include",
-			 dp->host->hostname);
+			 "WARNING: %s:%s does not support multiple include\n",
+			 dp->host->hostname, dp->name);
 		}
 	    }
 	} else if(fdout) {
-	    fprintf(fdout, "WARNING: client %s does not support include list",
-		    dp->host->hostname);
+	    fprintf(fdout, "WARNING: %s:%s does not support include list\n",
+		    dp->host->hostname, dp->name);
 	}
     }
 
@@ -762,8 +783,8 @@ FILE *fdout;
 	}
 	else if(fdout) {
 	    fprintf(fdout,
-		    "WARNING: client %s does not support optional exclude",
-		    dp->host->hostname);
+		    "WARNING: %s:%s does not support optional exclude\n",
+		    dp->host->hostname, dp->name);
 	}
     }
     if(dp->include_optional) {
@@ -772,8 +793,8 @@ FILE *fdout;
 	}
 	else if(fdout) {
 	    fprintf(fdout,
-		    "WARNING: client %s does not support optional include",
-		    dp->host->hostname);
+		    "WARNING: %s:%s does not support optional include\n",
+		    dp->host->hostname, dp->name);
 	}
     }
 

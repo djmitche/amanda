@@ -1,5 +1,9 @@
 2002-04-19  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+        * server-src/diskfile.c: Improve message for missing features.
+
+2002-04-19  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	Add many features.
 	* common-src/amfeatures.c (am_set_default_feature_set): New function 
 	  to set the default features set.
