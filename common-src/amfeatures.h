@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.h,v 1.9 2004/08/03 12:12:08 martinea Exp $
+ * $Id: amfeatures.h,v 1.10 2004/08/11 19:16:14 martinea Exp $
  *
  * Define feature test related items.
  */
@@ -136,6 +136,7 @@ typedef enum {
 
     fe_partial_estimate,
     fe_calcsize_estimate,
+    fe_selfcheck_calcsize,
 
     /*
      * All new features must be inserted immediately *before* this entry.

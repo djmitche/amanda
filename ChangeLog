@@ -1,3 +1,13 @@
+2004-08-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* common-src/amfeatures.h (fe_selfcheck_calcsize): New feature.
+	* common-src/amfeatures.c (am_init_feature_set): Set
+	  fe_selfcheck_calcsize.
+	* client-src/selfcheck.c: Check if calcsize binary is available if
+	  it is needed.
+	* server-src/amcheck.c (start_host): Call selfcheck with CALCSIZE
+	  if it support fe_selfcheck_calcsize.
+
 2004-08-05  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* man/amanda.8.in: Document 'estimate' dumptype option.
