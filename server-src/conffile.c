@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.73 2000/05/27 22:45:28 martinea Exp $
+ * $Id: conffile.c,v 1.74 2000/11/08 01:49:20 martinea Exp $
  *
  * read configuration file
  */
@@ -979,8 +979,8 @@ static void get_holdingdisk()
 	    get_simple((val_t *)&hdcur.chunksize, &hdcur.s_csize, INT);
 	    if(hdcur.chunksize == 0)
 	        hdcur.chunksize =  ((INT_MAX/1024)-(2*TAPE_BLOCK_SIZE));
-	    else if(hdcur.chunksize == -1)
-	        hdcur.chunksize = -((INT_MAX/1024)-(2*TAPE_BLOCK_SIZE));
+	    else if(hdcur.chunksize < 0)
+		parserror("Negative chunksize (%ld) is no longer supported", hdcur.chunksize);
 	    hdcur.chunksize = (hdcur.chunksize/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
 	    break;
 	case RBRACE:

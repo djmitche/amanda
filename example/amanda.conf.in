@@ -103,9 +103,6 @@ holdingdisk hd1 {
 			#	      The maximum value should be
 			#	      (MAX_FILE_SIZE - 1Mb)
 			#  0          same as INT_MAX bytes
-			# -1          same as -INT_MAX bytes
-			# -N Kb/Mb/Gb dont split, dump images larger than
-			#             N directly to tape (example: -2 Gb)
     }
 #holdingdisk hd2 {
 #    directory "/dumps2/amanda"

@@ -681,12 +681,6 @@ each dump image still corresponds to a single continuous tape section.
 If you specify 0, Amanda will create holding disk chunks as large as
 ((INT_MAX/1024)-64) Kbytes.
 .IP
-A negative value causes filesystems larger than the absolute value to
-be dumped directly to tape, without using the holding disk.  As a
-special case, -1 is interpreted as -((INT_MAX/1024-64) Kbytes, which
-causes Amanda to dump filesystems larger than slightly less than 2
-Gbytes (assuming 32 bit integers) directly to tape.
-.IP
 Each holding disk chunk includes a 32 Kbyte header, so the minimum
 chunk size is 64 Kbytes (but that would be really silly).
 .IP
