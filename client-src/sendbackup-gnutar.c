@@ -210,7 +210,7 @@ int level, dataf, mesgf;
 	    free(inputname);
 	}
     }
-#else
+#endif
 
     /* find previous dump time */
 
@@ -232,7 +232,6 @@ int level, dataf, mesgf;
 
     dbprintf(("%s: doing level %d dump from date: %s\n",
 	      pname, level, dumptimestr));
-#endif
 
     dirname = amname_to_dirname(disk);
 
