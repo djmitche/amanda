@@ -1,5 +1,9 @@
 2000-01-21  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* man/amlabel.8.in: Tapes are no longer requested in reverse order
+	of amlabeling.
+	Reported by Brad Guillory <round@baileylink.net>
+
 	* server-src/amstatus.pl.in: New option --stats, to display
 	statistics about dumpers and taper.
 	* man/amstatus.8.in: Document it.
