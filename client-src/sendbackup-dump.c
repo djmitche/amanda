@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.39 1997/11/27 09:18:23 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.40 1997/12/02 23:58:20 amcore Exp $
  *
  * send backup data using BSD dump
  */
@@ -51,19 +51,19 @@ static regex_t re_table[] = {
 	"dump: Actual: [0-9][0-9]* tape blocks",			1024},
 
   { DMP_SIZE,
-        "backup: There are [0-9][0-9]* tape blocks on [0-9]* tapes",    1024},
+        "backup: There are [0-9][0-9]* tape blocks on [0-9][0-9]* tapes",    1024},
 
   { DMP_SIZE,
-        "backup: [0-9][0-9]* tape blocks on [0-9][0-9]* tape(s)",       1024},
+        "backup: [0-9][0-9]* tape blocks on [0-9][0-9]* tape\\(s\\)",       1024},
 
   { DMP_SIZE,
-	"backup: [0-9][0-9]* 1k blocks on [0-9][0-9]* volume(s)",	1024},
+	"backup: [0-9][0-9]* 1k blocks on [0-9][0-9]* volume\\(s\\)",	1024},
 
   { DMP_SIZE,
-	"DUMP: [0-9][0-9]* blocks ([0-9][0-9]*KB) on [0-9][0-9]* volume", 512},
+	"DUMP: [0-9][0-9]* blocks \\([0-9][0-9]*KB\\) on [0-9][0-9]* volume", 512},
 
   { DMP_SIZE,
-"DUMP: [0-9][0-9]* blocks ([0-9][0-9]*\\.[0-9][0-9]*MB) on [0-9][0-9]* volume",
+"DUMP: [0-9][0-9]* blocks \\([0-9][0-9]*\\.[0-9][0-9]*MB\\) on [0-9][0-9]* volume",
                                                                           512},
   { DMP_SIZE, "DUMP: [0-9][0-9]* blocks",                                 512},
 

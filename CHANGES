@@ -1,5 +1,11 @@
 Version 2.4.0b5
 
+	Use extended regular expressions.  -Noel Hunt
+	<noel@jpmorgan.com>
+
+	Fixed regular expressions for samba support.  -Brian Fernald
+	<fernald@nsi.edu>
+
 	Fixed a few bugs that caused arithmetic exceptions in planner.
 	-Bob Willcox <bob@luke.pmr.com>, Evan Champion
 	<evanc@synapse.net>, scott and oliva
