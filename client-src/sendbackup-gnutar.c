@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.70 1999/11/29 19:21:25 oliva Exp $
+ * $Id: sendbackup-gnutar.c,v 1.71 2000/05/28 11:34:42 oliva Exp $
  *
  * send backup data using GNU tar
  */
@@ -46,6 +46,10 @@ static regex_t re_table[] = {
 
   { DMP_NORMAL, "^Elapsed time:", 1 },
   { DMP_NORMAL, "^Throughput", 1 },
+
+  /* GNU tar 1.13.17 will print this warning when (not) backing up a
+     Unix named socket.  */
+  { DMP_NORMAL, ": socket ignored$", 1 },
 
   /* GNUTAR produces a few error messages when files are modified or
      removed while it is running.  They may cause data to be lost, but

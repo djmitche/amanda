@@ -1,3 +1,8 @@
+2000-05-28  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* client-src/sendbackup-gnutar.c: Ignore `socket ignored' GNU tar
+	messages.
+
 2000-05-27 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* chunker.c: allow chunk to be written on different holding disk.
