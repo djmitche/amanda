@@ -1627,6 +1627,7 @@ disklist_t *qp;
     char schedline[1024];
 
     dp = dequeue_disk(qp);
+
     if(est(dp)->size == -1) {
 	/* no estimate, fail the disk */
 	fprintf(stderr, 
@@ -1636,7 +1637,8 @@ disklist_t *qp;
 	    dp->host->hostname, dp->name, est(dp)->curr_level);
 	return;
     }
-    else if(est(dp)->curr_level == 0 && est(dp)->degr_level != -1) {
+
+    if(est(dp)->curr_level == 0 && est(dp)->degr_level != -1) {
 	time = est(dp)->size / est(dp)->fullrate;
 	degr_time = est(dp)->degr_size / est(dp)->incrrate;
 	sprintf(schedline, "%s %s %d %d %d %d %d %d %d\n",
@@ -1645,11 +1647,15 @@ disklist_t *qp;
 		est(dp)->degr_level, est(dp)->degr_size, degr_time);
     }
     else {
-	time = est(dp)->size / est(dp)->incrrate;
+	if(est(dp)->curr_level == 0)
+	    time = est(dp)->size / est(dp)->fullrate;
+	else
+	    time = est(dp)->size / est(dp)->incrrate;
 	sprintf(schedline, "%s %s %d %d %d %d\n",
 		dp->host->hostname, dp->name, est(dp)->curr_priority,
 		est(dp)->curr_level, est(dp)->size, time);
     }
+
     fputs(schedline, stdout);
     fputs(schedline, stderr);
 }
