@@ -1,3 +1,8 @@
+2001-12-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	Patch by Blaz Zupan <blaz@amis.net>
+
+	* changer-src/chg-zd-mtx.sh.in: typo.
+
 2001-12-20 Thomas Hepper <th@ant.han.de>
 	* changer-src/scsi-changer-driver.c: Return error if the find_empty returns an error
 	  In function LogSense try to reset the error counter. Fixed wrong pDev struct pointer in

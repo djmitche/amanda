@@ -403,7 +403,7 @@ searchtape() {
 	includedslot=`echo $tmpincludedslot | sed -n "s/\(.*\)Storage Element \([1-9][0-9]*\):\(.*\)/\2/p;s/Data Transfer Element $drivenum:Full (Storage Element \([1-9][0-9]*\) Loaded)\(.*\)/\1/p"`
         case $tapelabel in
         $tapelabel)
-                if [ $tapelabel == $includedtag ]; then
+                if [ $tapelabel = $includedtag ]; then
                         shift 
                         loadslot $includedslot
                         echo "$tape"
