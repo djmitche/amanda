@@ -12,6 +12,10 @@ SUFFIXES =		.pl .sh
 			cat $< > $@
 			chmod a+x $@
 
+.sh:
+			cat $< > $@
+			chmod a+x $@
+
 libexec_PROGRAMS =	@BUILD_CHANGER_PROGS_LIBEXEC@
 
 EXTRA_PROGRAMS =	seagate-changer

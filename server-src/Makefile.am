@@ -14,6 +14,10 @@ SUFFIXES =		.sh .pl
 			cat $< > $@
 			chmod a+x $@
 
+.sh:
+			cat $< > $@
+			chmod a+x $@
+
 bin_PROGRAMS =		@BUILD_SERVER_PROGS_BIN@
 
 libexec_PROGRAMS =	@BUILD_SERVER_PROGS_LIBEXEC@

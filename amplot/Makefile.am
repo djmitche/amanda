@@ -2,6 +2,10 @@
 
 SUFFIXES =		.sh
 
+.sh:
+			cat $< > $@
+			chmod a+x $@
+
 bin_SCRIPTS =		@BUILD_AMPLOT_BIN@
 
 EXTRA_SCRIPTS =		amplot

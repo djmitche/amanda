@@ -14,6 +14,10 @@ SUFFIXES =		.sh .pl
 			cat $< > $@
 			chmod a+x $@
 
+.sh:
+			cat $< > $@
+			chmod a+x $@
+
 bin_PROGRAMS =		amrecover			amrestore
 
 libexec_PROGRAMS =	versionsuffix					\
