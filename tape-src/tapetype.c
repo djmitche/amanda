@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.3.2.1 1999/08/15 09:41:38 oliva Exp $
+ * $Id: tapetype.c,v 1.3.2.2 1999/12/12 20:39:11 jrj Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -33,10 +33,13 @@
 
 #include "tapeio.h"
 
-#define BLOCKSIZE (32768)
-#define NBLOCKS (32)
+#define BLOCKKB 32			/* block size in KBytes */
+#define BLOCKSIZE ((BLOCKKB) * 1024)	/* block size in bytes */
+#define NBLOCKS 32			/* number of random blocks */
 
-#define FilesPerTape (1000)	/* approx EOF's in 2nd phase */
+static char *sProgName;
+static char *tapedev;
+static int fd;
 
 static char randombytes[NBLOCKS][BLOCKSIZE];
 
@@ -57,27 +60,110 @@ static void initrandombytes() {
 }
 
 static char *getrandombytes() {
-  static int counter;
+  static int counter = 0;
   ++counter;
   return randombytes[counter % NBLOCKS];
 }
 
+static int short_write;
+
 int writeblock(fd)
      int fd;
 {
-  return write(fd, getrandombytes(), BLOCKSIZE) == BLOCKSIZE;
+  size_t w;
+
+  if ((w = write(fd, getrandombytes(), BLOCKSIZE)) == BLOCKSIZE) {
+    return 1;
+  }
+  if (w >= 0) {
+    short_write = 1;
+  } else {
+    short_write = 0;
+  }
+  return 0;
 }
 
 
 /* returns number of blocks actually written */
-int writeblocks(int fd, int nblks)
+size_t writeblocks(int fd, size_t nblks)
 {
-  int blks = 0, rtrn = 0;
+  size_t blks = 0;
 
-  while (blks < nblks && writeblock(fd))
+  while (blks < nblks) {
+    if (! writeblock(fd)) {
+      return 0;
+    }
     blks++;
+  }
 
   return blks;
+}
+
+
+void usage()
+{
+  fputs("usage: ", stderr);
+  fputs(sProgName, stderr);
+  fputs(" [-e estsize]", stderr);
+  fputs(" [-f tapedev]", stderr);
+  fputs(" [-t typename]", stderr);
+  fputc('\n', stderr);
+}
+
+void help()
+{
+  usage();
+  fputs("\
+  -help			display this message\n\
+  -e estsize		estimated tape size (default: 1g == 1024m)\n\
+  -f tapedev		tape device name (default: $TAPE)\n\
+  -t typename		tapetype name (default: unknown-tapetype)\n\
+\n\
+Note: disable hardware compression when running this program.\n\
+", stderr);
+}
+
+
+void do_pass(size, blocks, files, seconds)
+  size_t size, *blocks, *files;
+  time_t *seconds;
+{
+  size_t blks;
+  time_t start, end;
+  int save_errno;
+
+  if (tapefd_rewind(fd) == -1) {
+    fprintf(stderr, "%s: could not rewind %s: %s\n",
+	    sProgName, tapedev, strerror(errno));
+    exit(1);
+  }
+
+  time(&start);
+
+  while(1) {
+
+    if ((blks = writeblocks(fd, size)) <= 0 || tapefd_weof(fd, 1) != 0)
+      break;
+    *blocks += blks;
+    (*files)++;
+    fprintf(stderr, "\rwrote %ld %dKb block%s in %ld file%s",
+	    (long)*blocks, BLOCKKB, (*blocks == 1) ? "" : "s",
+	    (long)*files, (*files == 1) ? "" : "s");
+
+  }
+  save_errno = errno;
+
+  time(&end);
+
+  if (*blocks == 0) {
+    fprintf(stderr, "%s: could not write any data in this pass: %s\n",
+	    sProgName, short_write ? "short write" : strerror(save_errno));
+    exit(1);
+  }
+
+  *seconds = end - start;
+  fprintf(stderr, " in %ld seconds (%s)\n",
+	  (long)*seconds, short_write ? "short write" : strerror(save_errno));
 }
 
 
@@ -85,84 +171,166 @@ int main(argc, argv)
      int argc;
      char *argv[];
 {
-  int minblocks = 0, maxblocks = 0;
-  int fd;
-  time_t start, end;
-  int eofwritten = 0, FileSzMax;
+  size_t pass1blocks = 0;
+  size_t pass2blocks = 0;
+  time_t pass1time;
+  time_t pass2time;
+  size_t pass1files = 0;
+  size_t pass2files = 0;
+  size_t estsize;
+  size_t pass1size;
+  size_t pass2size;
+  size_t blockdiff;
+  size_t filediff;
+  long filemark;
+  long speed;
+  size_t size;
+  char *sizeunits;
+  int ch;
+  char *suffix;
+  char *typename;
+  time_t now;
 
-  if (argc != 3) {
-    fprintf(stderr, "usage: tapetype NAME DEV\n");
-    return 1;
+  if ((sProgName = strrchr(*argv, '/')) == NULL) {
+    sProgName = *argv;
+  } else {
+    sProgName++;
   }
 
-  fd = tape_open(argv[2], O_RDWR);
-  if (fd == -1) {
-    fprintf(stderr, "could not open %s: %s\n", argv[2], strerror(errno));
-    return 1;
-  }
+  estsize = 1024 * 1024;			/* assume 1 GByte for now */
+  tapedev = getenv("TAPE");
+  typename = "unknown-tapetype";
 
-  if (tapefd_rewind(fd) == -1) {
-    fprintf(stderr, "could not rewind %s: %s\n", argv[2], strerror(errno));
-    return 1;
-  }
-
-  initrandombytes();
-
-  time(&start);
-
-  srandom(start);
-
-  while(writeblock(fd))
-    if (++maxblocks % 100 == 0)
-      fprintf(stderr, "\rwrote %d 32Kb blocks", maxblocks);
-
-  time(&end);
-
-  fprintf(stderr, "\rwrote %d 32Kb blocks in %ld seconds\n",
-	  maxblocks, (long)end-start);
-
-  if (tapefd_rewind(fd) == -1) {
-    fprintf(stderr, "could not rewind %s: %s\n", argv[2], strerror(errno));
-    return 1;
-  }
-
-  /* FileSzMax sets the max blks / file before an eof */
-  FileSzMax = (maxblocks * 2) / FilesPerTape;
-
-  while (1) {
-    int FileSz, blks, rtrn;
-
-    FileSz = (random() % FileSzMax) + 1;
-    if ((blks = writeblocks(fd, FileSz)) <= 0)
+  while ((ch = getopt(argc, argv, "e:f:t:h")) != EOF) {
+    switch (ch) {
+    case 'e':
+      estsize = strtol(optarg, &suffix, 0);
+      if (*suffix == '\0' || *suffix == 'k' || *suffix == 'K') {
+      } else if (*suffix == 'm' || *suffix == 'M') {
+	estsize *= 1024;
+      } else if (*suffix == 'g' || *suffix == 'G') {
+	estsize *= 1024 * 1024;
+      } else {
+	fprintf(stderr, "%s: unknown size suffix \'%c\'\n", sProgName, *suffix);
+	return 1;
+      }
       break;
-    minblocks += blks;
-
-    if ((rtrn = tapefd_weof(fd, 1)) != 0) {
-      printf("weof returned %d\n", rtrn);
+    case 'f':
+      tapedev = optarg;
+      break;
+    case 't':
+      typename = optarg;
+      break;
+    case 'h':
+      help();
+      return 1;
+      break;
+    default:
+      fprintf(stderr, "%s: unknown option \'%c\'\n", sProgName, ch);
+      /* fall through to ... */
+    case '?':
+      usage();
+      return 1;
       break;
     }
-    eofwritten++;
-
-    fprintf(stderr, "\rwrote %d 32Kb sections, %d eofs",
-	    minblocks, eofwritten);
   }
 
-  fprintf(stderr, "\rwrote %d 32Kb sections\n", minblocks);
+  if (tapedev == NULL || optind < argc) {
+    usage();
+    return 1;
+  }
 
-  printf("define tapetype %s {\n", argv[1]);
+  fd = tape_open(tapedev, O_RDWR);
+  if (fd == -1) {
+    fprintf(stderr, "%s: could not open %s: %s\n",
+	    sProgName, tapedev, strerror(errno));
+    return 1;
+  }
+
+  time(&now);
+  srandom(now);
+  initrandombytes();
+
+  /*
+   * Do pass 1 -- write files that are 1% of the estimated size until error.
+   */
+  pass1size = (estsize * 0.01) / BLOCKKB;	/* 1% of estimate */
+  do_pass(pass1size, &pass1blocks, &pass1files, &pass1time);
+
+  /*
+   * Do pass 2 -- write smaller files until error.
+   */
+  pass2size = pass1size / 2;
+  do_pass(pass2size, &pass2blocks, &pass2files, &pass2time);
+
+  /*
+   * Compute the size of a filemark as the difference in data written
+   * between pass 1 and pass 2 divided by the difference in number of
+   * file marks written between pass 1 and pass 2.  Note that we have
+   * to be careful in case size_t is unsigned (i.e. do not subtract
+   * things and then check for less than zero).
+   */
+  if (pass1blocks < pass2blocks) {
+    /*
+     * If tape marks take up space, there should be fewer blocks in pass
+     * 2 than in pass 1 since we wrote twice as many tape marks.  But
+     * odd things happen, so make sure the result does not go negative.
+     */
+    blockdiff = 0;
+  } else {
+    blockdiff = pass1blocks - pass2blocks;
+  }
+  if (pass2files < pass1files) {
+    /*
+     * This should not happen, but just in case ...
+     */
+    filediff = 1;
+  } else {
+    filediff = pass2files - pass1files;
+  }
+  filemark = blockdiff * BLOCKKB / filediff;
+
+  /*
+   * Compute the length as the average of the two pass sizes including
+   * tape marks.
+   */
+  size = ((pass1blocks * BLOCKKB + filemark * pass1files)
+           + (pass2blocks * BLOCKKB + filemark * pass2files)) / 2;
+  if (size >= 1024 * 1024 * 1000) {
+    size /= 1024 * 1024;
+    sizeunits = "gbytes";
+  } else if (size >= 1024 * 1000) {
+    size /= 1024;
+    sizeunits = "mbytes";
+  } else {
+    sizeunits = "kbytes";
+  }
+
+  /*
+   * Compute the speed as the average of the two passes.
+   */
+  speed = (((double)pass1blocks * BLOCKKB / pass1time)
+           + ((double)pass2blocks * BLOCKKB / pass2time)) / 2;
+
+  /*
+   * Dump the tapetype.
+   */
+  printf("define tapetype %s {\n", typename);
   printf("    comment \"just produced by tapetype program\"\n");
-  printf("    length %d mbytes\n", maxblocks/32);
-  printf("    filemark %d kbytes\n", (maxblocks-minblocks)*32/eofwritten);
-  printf("    speed %d kbytes\n", maxblocks*32/(end-start));
+  printf("    length %ld %s\n", (long)size, sizeunits);
+  printf("    filemark %ld kbytes\n", filemark);
+  printf("    speed %ld kps\n", speed);
   printf("}\n");
 
   if (tapefd_rewind(fd) == -1) {
-    fprintf(stderr, "could not rewind %s: %s\n", argv[2], strerror(errno));
+    fprintf(stderr, "%s: could not rewind %s: %s\n",
+	    sProgName, tapedev, strerror(errno));
     return 1;
   }
 
   if (tapefd_close(fd) == -1) {
-    fprintf(stderr, "could not close %s: %s\n", argv[2], strerror(errno));
+    fprintf(stderr, "%s: could not close %s: %s\n",
+	    sProgName, tapedev, strerror(errno));
     return 1;
   }
 
