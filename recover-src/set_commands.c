@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: set_commands.c,v 1.12 1998/11/19 17:08:26 jrj Exp $
+ * $Id: set_commands.c,v 1.13 1999/03/05 01:29:46 martinea Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -32,6 +32,9 @@
 #include "amanda.h"
 #include "amrecover.h"
 
+#ifdef SAMBA_CLIENT
+extern unsigned short samba_extract_method;
+#endif /* SAMBA_CLIENT */
 
 /* sets a date, mapping given date into standard form if needed */
 int set_date(date)
@@ -333,4 +336,33 @@ void show_directory P((void))
 	printf("%s\n", mount_point);
     else
 	printf("%s%s\n", mount_point, disk_path);
+}
+
+void set_mode (mode)
+int mode;
+{
+#ifdef SAMBA_CLIENT
+  if (mode == SAMBA_SMBCLIENT) {
+    printf ("SAMBA dumps will be extracted using smbclient\n");
+    samba_extract_method = SAMBA_SMBCLIENT;
+  } else {
+    if (mode == SAMBA_TAR) {
+      printf ("SAMBA dumps will be extracted as TAR dumps\n");
+      samba_extract_method = SAMBA_TAR;
+    }
+  }
+#endif /* SAMBA_CLIENT */
+}
+
+void show_mode (void) 
+{
+#ifdef SAMBA_CLIENT
+  printf ("SAMBA dumps are extracted ");
+
+  if (samba_extract_method == SAMBA_TAR) {
+    printf (" as TAR dumps\n");
+  } else {
+    printf ("using smbclient\n");
+  }
+#endif /* SAMBA_CLIENT */
 }

@@ -1,3 +1,17 @@
+1999-03-05 Mathias Herberts <Mathias.Herberts@ago.fr>
+
+	* recover-src/amrecover.h (set_mode, show_mode) declare new functions.
+	* recover-src/amrecover.h (SAMBA_SMBCLIENT, SAMBA_TAR) define new 
+	constant.
+	* recover-src/extract_list.c: declare variable samba_extract_method.
+	* recover-src/extract_list.c (extract_files_child): set dumptype
+	according to samba_extract_method.
+	* recover-src/help.c (help_list): print help for new command mode
+	and showmode.
+	* recover-src/set_commands.c (set_mode, show_mode): new functions.
+	* recover-src/uscan.l:
+	* recover-src/uparse.y:
+
 1999-03-05  Mike Grupenhoff <kashmir@munge.com>
 
 	* common-src/amanda.h: use ssize_t in writev return value

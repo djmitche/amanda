@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: uparse.y,v 1.5 1998/07/04 00:19:15 oliva Exp $
+ * $Id: uparse.y,v 1.6 1999/03/05 01:29:48 martinea Exp $
  *
  * parser for amrecover interactive language
  */
@@ -47,12 +47,13 @@ extern int yylex P((void));
 	/* literal keyword tokens */
 
 %token SETHOST SETDISK SETDATE SETMODE CD QUIT DHIST LS ADD ADDX EXTRACT
-%token LIST DELETE DELETEX PWD CLEAR HELP LCD LPWD
+%token LIST DELETE DELETEX PWD CLEAR HELP LCD LPWD MODE SMB TAR
 
         /* typed tokens */
 
 %token <strval> PATH
 %token <strval> DATE
+
 
 /* GRAMMAR */
 %%
@@ -76,6 +77,16 @@ set_command:
   |     SETDISK PATH PATH { set_disk($2, $3); }
   |     SETDISK PATH { set_disk($2, NULL); }
   |     CD PATH { set_directory($2); }
+  |     SETMODE SMB {
+#ifdef SAMBA_CLIENT
+			 set_mode(SAMBA_SMBCLIENT);
+#endif /* SAMBA_CLIENT */
+                    }
+  |     SETMODE TAR {
+#ifdef SAMBA_CLIENT
+			 set_mode(SAMBA_TAR);
+#endif /* SAMBA_CLIENT */
+                    }
   ;
 
 display_command:
@@ -85,6 +96,7 @@ display_command:
   |     LIST { display_extract_list(NULL); }
   |     PWD { show_directory(); }
   |     CLEAR { clear_extract_list(); }    
+  |     MODE { show_mode (); }
   ;
 
 quit_command:
@@ -150,3 +162,5 @@ char *s;
 {
   printf("Invalid command - %s\n", s);
 }
+
+
