@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: holding.h,v 1.7 1998/03/07 18:13:00 martinea Exp $
+ * $Id: holding.h,v 1.8 1998/03/09 22:44:28 blair Exp $
  *
  */
 
@@ -46,7 +46,7 @@ int is_emptyfile P((char *fname));
 int is_datestr P((char *fname));
 int non_empty P((char *fname));
 struct dirname *insert_dirname P((char *name));
-/*char get_letter_from_user P((void));*/
+char get_letter_from_user P((void));
 /*int select_dir P((void));*/
 void scan_holdingdisk P((char *diskdir,int verbose));
 char **pick_datestamp P((void));
