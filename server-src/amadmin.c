@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.13.2.3.2.1 2001/12/30 17:26:22 martinea Exp $
+ * $Id: amadmin.c,v 1.49.2.13.2.3.2.2 2002/02/08 22:21:47 jrjackson Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -293,9 +293,8 @@ static void check_dumpuser()
 	/* NOTREACHED */
     }
     if (uid_me != uid_dumpuser) {
-	fprintf(stderr, "WARNING: running as user \"%s\" instead of \"%s\".\n",
-	        pw->pw_name, dumpuser);
-	fprintf(stderr, "WARNING: run \"amcheck -st %s\"\n", config_name);
+	error("ERROR: running as user \"%s\" instead of \"%s\"",
+	      pw->pw_name, dumpuser);
     }
     been_here = 1;
     return;
