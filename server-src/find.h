@@ -7,6 +7,7 @@ typedef struct find_result_s {
     int datestamp_aux;
         /* aux is secondary key for intra-day comparisons -- could be timestamp,
            just use seq# */
+    char *timestamp;
     char *hostname;
     char *diskname;
     int level;
