@@ -93,3 +93,6 @@ $(ACINCLUDE_M4): $(ACINCLUDE_M4_DEPS)
 $(ACLOCAL_M4): $(srcdir)/configure.in $(ACINCLUDE_M4)
 	@-rm -f $(srcdir)/aclocal.m4 $(ACLOCAL_M4)
 	cd $(srcdir) && $(ACLOCAL) --output=$(ACLOCAL_M4_FROM_SRCDIR)
+
+libtool: $(LIBTOOL_DEPS)
+	$(SHELL) ./config.status --recheck

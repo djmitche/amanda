@@ -1081,35 +1081,6 @@ dnl to use.
 AC_SUBST(MT_FILE_FLAG)
 AC_DEFINE_UNQUOTED(MT_FILE_FLAG, "$MT_FILE_FLAG")
 
-AC_CACHE_CHECK(
-	[whether aclocal can find libtool macros],
-	amanda_cv_libtool_macros,
-	[
-	    rm -rf .test-libtool
-	    mkdir .test-libtool
-	    cd .test-libtool
-	    cat >configure.in <<EOF
-[AM_PROG_LIBTOOL]
-EOF
-	    aclocal >/dev/null 2>/dev/null
-	    if grep LIBTOOL aclocal.m4 >/dev/null 2>&1; then
-		amanda_cv_libtool_macros=yes
-	    else
-		amanda_cv_libtool_macros=no
-	    fi
-	    cd ..
-	    rm -rf .test-libtool
-	]
-)
-if test "$amanda_cv_libtool_macros" = yes; then
-    LIBTOOL_M4_MACRO_DIR=
-else
-    # We don't want top_srcdir here, because, when we run aclocal, we're
-    # already in top_srcdir
-    LIBTOOL_M4_MACRO_DIR='-I config/libtool'
-fi
-AC_SUBST(LIBTOOL_M4_MACRO_DIR)
-
 dnl Check for programs.
 AC_PATH_PROGS(AR,ar,,$LOCSYSPATH)
 
@@ -1420,6 +1391,7 @@ LDFLAGS="$amanda_cv_LFS_LDFLAGS $LDFLAGS"
 LIBS="$amanda_cv_LFS_LIBS $LIBS"
 
 AM_PROG_LIBTOOL
+AC_SUBST(LIBTOOL_DEPS)
 AC_PROG_CC
 AC_PROG_GCC_TRADITIONAL
 AC_C_CONST
