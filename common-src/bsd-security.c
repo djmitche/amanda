@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.24 1999/04/10 06:18:46 kashmir Exp $
+ * $Id: bsd-security.c,v 1.25 1999/04/14 02:52:00 martinea Exp $
  *
  * "BSD" security module
  */
@@ -288,10 +288,10 @@ bsd_connect(hostname, fn, arg)
 	/*
 	 * We must have a reserved port.  Bomb if we didn't get one.
 	 */
-	if (ntohs(port) >= IPPORT_RESERVED) {
+	if (port >= IPPORT_RESERVED) {
 	    security_seterror(&bh->sech,
 		"unable to bind to a reserved port (got port %d)",
-		ntohs(port));
+		port);
 	    (*fn)(arg, &bh->sech, S_ERROR);
 	    return;
 	}
