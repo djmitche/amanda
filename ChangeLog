@@ -1,3 +1,7 @@
+2003-02-06  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* docs/Makefile.am (pkgdata_DATA): Add HOWTO-CYGWIN.html.
+
 2003-02-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Christophe Kalt <kalt@taranis.org>
 
