@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.29 1997/12/15 21:27:35 blair Exp $
+ * $Id: amanda.h,v 1.30 1997/12/15 21:44:05 blair Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -611,6 +611,7 @@ extern int shmget P((key_t key, size_t size, int shmflg));
 #define ap_vsnprintf	vsnprintf
 #endif
 #ifndef HAVE_SNPRINTF_DECL
+#include "arglist.h"
 int ap_snprintf  P((char *buf, size_t len, const char *format,...))
 		    __attribute__((format(printf,3,4)));
 int ap_vsnprintf P((char *buf, size_t len, const char *format, va_list ap));
