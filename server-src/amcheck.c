@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.19.2.7.2.20.2.8 2004/11/19 13:21:49 martinea Exp $
+ * $Id: amcheck.c,v 1.50.2.19.2.7.2.20.2.9 2005/03/29 16:35:11 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -255,7 +255,7 @@ char **argv;
     }
 
     displayunit = getconf_str(CNF_DISPLAYUNIT);
-    unitdivisor = getcont_unit_divisor();
+    unitdivisor = getconf_unit_divisor();
 
     /*
      * If both server and client side checks are being done, the server

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.13.2.3.2.15.2.8 2004/11/19 13:21:49 martinea Exp $
+ * $Id: amadmin.c,v 1.49.2.13.2.3.2.15.2.9 2005/03/29 16:35:11 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -156,7 +156,7 @@ char **argv;
     amfree(conf_infofile);
 
     displayunit = getconf_str(CNF_DISPLAYUNIT);
-    unitdivisor = getcont_unit_divisor();
+    unitdivisor = getconf_unit_divisor();
 
     if(strcmp(argv[2],"force-bump") == 0) force_bump(argc, argv);
     else if(strcmp(argv[2],"force-no-bump") == 0) force_no_bump(argc, argv);

@@ -1,3 +1,14 @@
+2005-03-29  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/conffile.h: Rename getcont_unit_divisor to
+	  getconf_unit_divisor.
+	* server-src/amadmin.c: Use getconf_unit_divisor.
+	* server-src/amcheck.c: Use getconf_unit_divisor.
+	* server-src/conffile.c: Use getconf_unit_divisor.
+	* server-src/conffile.c (unit_divisor): Init to 1.
+	* server-src/reporter.c: Use getconf_unit_divisor. The mb macro always
+	  divide by 1024. Add the du macro. Use mb or du where appropriate.
+
 2005-03-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/infofile.h (history_t): Add secs field.

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.24.2.8.4.4.2.9.2.4 2004/11/16 13:58:41 martinea Exp $
+ * $Id: conffile.h,v 1.24.2.8.4.4.2.9.2.5 2005/03/29 16:35:11 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -290,7 +290,7 @@ dumptype_t *read_dumptype P((char *name, FILE *from, char *fname, int *linenum))
 tapetype_t *lookup_tapetype P((char *identifier));
 interface_t *lookup_interface P((char *identifier));
 holdingdisk_t *getconf_holdingdisks P((void));
-long int getcont_unit_divisor P((void));
+long int getconf_unit_divisor P((void));
 
 int ColumnDataCount P((void));
 int StringToColumn P((char *s));
