@@ -1,3 +1,7 @@
+2001-08-16 John R. Jackson (jrj@purdue.edu)
+
+	* man/amanda.8.in: Fix several minor odds and ends.
+
 2001-08-15 Thomas Hepper (th@ant.han.de)
 	* changer-src/chg-scsi.c. Removed version 1 DB support from mapBarCode. Changed the way parameter
 	are given to MapBarCode and returned from there. No a struct is passed where all infos

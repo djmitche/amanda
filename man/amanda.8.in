@@ -338,6 +338,10 @@ so you need not specify the parameter in
 if the default is suitable.
 .LP
 Lines starting with # are ignored, as are blank lines.
+Comments may be placed on a line with a directive by starting
+the comment with a #.
+The remainder of the line is ignored.
+.LP
 Keywords are case insensitive, i.e.\&
 .B mailto
 and
@@ -500,20 +504,26 @@ option.
 .BS tapedev string
 Default:
 .IR @DEFAULT_TAPE_DEVICE@ .
-The path name of the tape device.
+The path name of the non-rewinding tape device.
+Non-rewinding tape device names often have an 'n' in the name,
+e.g.
+.IR /dev/rmt/0mn ,
+however this is operating system specific and you should consult
+that documentation for detailed naming information.
+.IP
 If a tape changer is configured
 (see the
 .B tpchanger
-option), this option may not be used
-and should be commented out of the configuration file.
+option), this option might not be used.
 .IP
 If
 .B tapedev
 is set to
 .IR /dev/null ,
+programs such as
 .B amdump
 will run normally but all images will be thrown away.
-This should only be used for debugging,
+This should only be used for debugging and testing,
 and probably only with the
 .B record
 option set to
@@ -700,7 +710,7 @@ Mbytes for level two, 40 Mbytes for level three, and so on.
 .TP
 .BN bumpdays int
 Default:
-.IR 2 .
+.IR "2 days" .
 To insure redundancy in the dumps, Amanda keeps filesystems at the
 same incremental level for at least
 .B bumpdays
@@ -900,7 +910,7 @@ Since Amanda works with 32 Kbyte blocks, and
 to handle the final read at the end of the chunk, the chunk size
 should be at least 64 Kbytes (2 * 32 Kbytes) smaller than the maximum
 file size, e.g.\& 2047 Mbytes.
-.SH DUMPTYPE SECTION
+.SH "DUMPTYPE SECTION"
 The
 .B amanda.conf
 file may define multiple sets of backup options and
@@ -1276,7 +1286,7 @@ should reference.
 This provides an easy place to make changes that will affect
 every
 .BR dumptype .
-.SH TAPETYPE SECTION
+.SH "TAPETYPE SECTION"
 The
 .B amanda.conf
 file may define multiple types of tape media and devices.
@@ -1326,7 +1336,7 @@ it gets an error, regardless of what value is entered for
 .TP
 .BS speed int
 Default:
-.IR 200 .
+.IR "200 bps" .
 How fast the drive will accept data, in bytes per second.
 This parameter is not currently used by Amanda.
 .TP
@@ -1367,7 +1377,7 @@ define tapetype DLT4000\-IV {
 }
 .EE
 .RE
-.SH INTERFACE SECTION
+.SH "INTERFACE SECTION"
 The
 .B amanda.conf
 file may define multiple types of network interfaces.
@@ -1421,7 +1431,7 @@ name may be entered, which makes this
 inherit options from another
 .BR interface .
 At the moment, this is of little use.
-.SH DISKLIST FILE
+.SH "DISKLIST FILE"
 The
 .I disklist
 file determines which disks will be backed up by Amanda.
@@ -1536,7 +1546,7 @@ a new dumptype:
 .EE
 .RE
 .LP
-.SH TAPE MANAGEMENT
+.SH "TAPE MANAGEMENT"
 The
 .I tapelist
 file contains the list of tapes in active use.
