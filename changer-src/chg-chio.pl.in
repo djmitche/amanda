@@ -56,6 +56,9 @@ die "$progname: cannot open $logfile: $ERRNO\n"
 #
 
 $prefix="@prefix@";
+$prefix=$prefix;		# avoid warnings about possible typo
+$exec_prefix="@exec_prefix@";
+$exec_prefix=$exec_prefix;	# Ditto
 $sbindir="@sbindir@";
 if ( "@USE_VERSION_SUFFIXES@" eq "yes" ) {
     $SUF = "-@VERSION@";
@@ -218,7 +221,7 @@ sub getTapeParams {
 	#
 
 	$max_slot = 0;
-	$max_picker = 0;
+	$max_picker = -1;
 	$max_drive = 0;
 
 	while( defined ($line = <FH>) ) {
@@ -230,7 +233,7 @@ sub getTapeParams {
 
 	}
 	close(FH);
-	if ( $max_drive == 0 or $max_picker == 0 ) {
+	if ( $max_drive == 0 or $max_picker == -1 ) {
 		print "$progname: No drive or picker ? ($max_drive/$max_picker)\n";
 		exit(2);
 	}
@@ -365,7 +368,7 @@ if (-x "$sbindir/ammt$SUF") {
 	print LOG &do_time(), ": mt program not found\n";
 	print "<none> mt program not found\n";
 	exit(1);
-fi
+}
 print LOG &do_time(), "MT -> $MT $MTF\n";
 
 system ("$MT $MTF $tapeDevice rewind")
