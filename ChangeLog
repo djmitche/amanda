@@ -1,5 +1,12 @@
 1999-11-10 John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/taper.c (label_tape): issue a warning when tapedev is
+	  set to /dev/null.
+	* server-src/amcheck.c (start_server_check): make warning message
+	  text the same for amcheck and taper when tapedev is /dev/null.
+
+1999-11-10 John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/amcleanupdisk.c (main): try to remove empty holding disk
 	  areas.
 	* server-src/holding.c (scan_holdingdisk): do not automatically remove
