@@ -1,5 +1,9 @@
 2004-09-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/conffile.c (getconf_byname): Special case for typ == BOOL.
+
+2004-09-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/planner.c (promote_hills): Use dumpcycle instead of
 	  tapecycle.
 	* example/amanda.conf.in: Remove warning for tapecyle set to inf.
