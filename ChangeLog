@@ -1,5 +1,11 @@
 2003-06-05  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* changer-src/scsi-bsd.c: Use pDev[DeviceFD].fd instead of DeviceFD.
+	* changer-src/scsi-hpux_new.c:Use pDev[DeviceFD].fd instead of DeviceFD.
+	* changer-src/scsi-linux.c: Use pDev[ip].fd instead of DeviceFD.
+
+2003-06-05  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/amflush.c: Implement new -b and -s options.
 	* man/amflush.8.in: Document it.
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-bsd.c,v 1.1.2.10.4.2.2.3 2003/01/26 19:20:56 martinea Exp $
+ * $Id: scsi-bsd.c,v 1.1.2.10.4.2.2.4 2003/06/05 20:44:23 martinea Exp $
  *
  * Interface to execute SCSI commands on an BSD System (FreeBSD)
  *
@@ -61,7 +61,7 @@
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-bsd.c,v 1.1.2.10.4.2.2.3 2003/01/26 19:20:56 martinea Exp $";
+   static char rcsid[] = "$Id: scsi-bsd.c,v 1.1.2.10.4.2.2.4 2003/06/05 20:44:23 martinea Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -220,7 +220,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
       {
         SCSI_OpenDevice(DeviceFD);
       }
-    Result = ioctl(DeviceFD, SCIOCCOMMAND, &ds);
+    Result = ioctl(pDev[DeviceFD].fd, SCIOCCOMMAND, &ds);
     SCSI_CloseDevice(DeviceFD);
    
     memcpy(pRequestSense, ds.sense, RequestSenseLength);
