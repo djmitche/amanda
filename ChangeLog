@@ -1,5 +1,9 @@
 1999-08-16  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* common-src/Makefile.am: Replace .o with OBJEXT.  List sources
+	explicitly, instead of LDADDing the corresponding objects.
+	(OBJ_EXTENSION): Wipe out, use OBJEXT.
+
 	* configure.in: Call AC_OBJEXT.
 	(LTLIBOBJS, LTALLOCA): Define, according to ac_objext.
 	* common-src/Makefile.am (libamanda_la_LIBADD): Use them.

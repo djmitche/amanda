@@ -2,10 +2,8 @@
 
 if WANT_LIBTOOL
 lib_LTLIBRARIES =	libamanda.la
-OBJ_EXTENSION = lo
 else
 noinst_LIBRARIES = 	libamanda.a
-OBJ_EXTENSION = o
 endif
 
 REGDIR = ../regex-src
@@ -52,10 +50,10 @@ noinst_HEADERS =	amanda.h	amregex.h	arglist.h	\
 
 EXTRA_PROGRAMS = genversion $(TEST_PROGS)
 
-genversion_SOURCES = genversion.c
-genversion_LDADD = versuff.$(OBJ_EXTENSION) $(libamanda_a_LIBADD)
+genversion_SOURCES = genversion.c versuff.c
+genversion_LDADD = $(libamanda_a_LIBADD)
 
-genversion.o: genversion.h
+genversion.@OBJEXT@: genversion.h
 genversion.h: $(top_builddir)/config.status
 	-rm -f $@ $@.new
 	echo '#define CC "$(CC)"' > $@.new
@@ -67,11 +65,11 @@ version.c:	genversion$(EXEEXT)
 	-rm -f version.c
 	./genversion > version.c
 
-.deps/match.P match.o match.lo: regex.h
-.deps/regcomp.P regcomp.o regcomp.lo: regex.h regcomp.ih
-.deps/regexec.P regexec.o regexec.lo: regex.h engine.ih
-.deps/regerror.P regerror.o regerror.lo: regex.h regerror.ih
-.deps/regfree.P regfree.o regfree.lo: regex.h
+match.@OBJEXT@ match.lo: regex.h
+regcomp.@OBJEXT@ regcomp.lo: regex.h regcomp.ih
+regexec.@OBJEXT@ regexec.lo: regex.h engine.ih
+regerror.@OBJEXT@ regerror.lo: regex.h regerror.ih
+regfree.@OBJEXT@ regfree.lo: regex.h
 
 REGEXHSRC =	$(REGsrcdir)/regex2.h \
 		$(REGsrcdir)/regcomp.c \
@@ -100,17 +98,14 @@ regerror.ih: $(REGsrcdir)/regerror.c $(REGsrcdir)/mkh
 
 # used for testing only
 
-statfs_SOURCES = statfs.test.c
-statfs_LDADD = $(libamanda_a_LIBADD) \
-	alloc.$(OBJ_EXTENSION) error.$(OBJ_EXTENSION)
+statfs_SOURCES = statfs.test.c alloc.c error.c
+statfs_LDADD = $(libamanda_a_LIBADD)
 
-token_SOURCES = token.test.c
-token_LDADD = $(libamanda_a_LIBADD) \
-	alloc.$(OBJ_EXTENSION) error.$(OBJ_EXTENSION) file.$(OBJ_EXTENSION)
+token_SOURCES = token.test.c alloc.c error.c file.c
+token_LDADD = $(libamanda_a_LIBADD)
 
-file_SOURCES = file.test.c
-file_LDADD = $(libamanda_a_LIBADD) \
-	alloc.$(OBJ_EXTENSION) error.$(OBJ_EXTENSION)
+file_SOURCES = file.test.c alloc.c error.c
+file_LDADD = $(libamanda_a_LIBADD)
 
 %.test.c: $(srcdir)/%.c
 	echo '#define TEST' >$@
