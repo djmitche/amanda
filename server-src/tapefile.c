@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: tapefile.c,v 1.14 1998/07/04 00:20:14 oliva Exp $
+ * $Id: tapefile.c,v 1.14.2.1 1998/09/11 23:17:13 jrj Exp $
  *
  * routines to read and write the amanda active tape list
  */
@@ -146,31 +146,39 @@ int lookup_nb_tape()
     return pos;
 }
 
-tape_t *lookup_last_reusable_tape()
+tape_t *lookup_last_reusable_tape(skip)
+int skip;
 {
-    tape_t *tp, *tp1;
+    tape_t *tp, **tpsave;
     int count=0;
+    int s;
     int tapecycle = getconf_int(CNF_TAPECYCLE);
 
+    /*
+     * The idea here is we keep the last "several" reusable tapes we
+     * find in a stack and then return the n-th oldest one to the
+     * caller.  If skip is zero, the oldest is returned, if it is
+     * one, the next oldest, two, the next to next oldest and so on.
+     */
+    tpsave = alloc((skip + 1) * sizeof (*tpsave));
+    for(s = 0; s <= skip; s++) {
+	tpsave[s] = NULL;
+    }
     for(tp = tape_list; tp != NULL; tp = tp->next) {
 	if(tp->reuse == 1) {
 	    count++;
-	    tp1 = tp;
+	    for(s = 0; s < skip; s++) {
+	        tpsave[s + 1] = tpsave[s];
+	    }
+	    tpsave[0] = tp;
 	}
     }
-    if(count < tapecycle) return NULL;
-    else return tp1;
-}
-
-tape_t *lookup_previous_reusable_tape(tp)
-tape_t *tp;
-{
-    while(tp != NULL) {
-	tp = tp->prev;
-	if(tp == NULL) return NULL;
-	if(tp->reuse == 1 ) return tp;
-    }
-    return NULL;
+    s = tapecycle - count;
+    if(s < 0) s = 0;
+    if(count < tapecycle - skip) tp = NULL;
+    else tp = tpsave[skip - s];
+    amfree(tpsave);
+    return tp;
 }
 
 int reusable_tape(tp)
