@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.20 2002/04/20 01:55:44 martinea Exp $
+ * $Id: client_util.c,v 1.21 2002/04/22 01:54:06 martinea Exp $
  *
  */
 
@@ -417,36 +417,115 @@ int verbose;
     while (tok != NULL) {
 	if(am_has_feature(fs, fe_options_auth)
 	   && strncmp(tok,"auth=", 5) == 0) {
+	    if(options->auth != NULL) {
+		dbprintf(("%s: multiple auth option \"%s\"\n",
+			  debug_prefix(NULL), tok+5));
+		if(verbose) {
+		    printf("ERROR [multiple auth option \"%s\"\n", tok+5);
+		}
+	    }
 	    options->auth = stralloc(&tok[5]);
 	}
 	else if(am_has_feature(fs, fe_options_bsd_auth)
 	   && strcmp(tok, "bsd-auth") == 0) {
+	    if(options->auth != NULL) {
+		dbprintf(("%s: multiple auth option \n",
+			  debug_prefix(NULL)));
+		if(verbose) {
+		    printf("ERROR [multiple auth option \n");
+		}
+	    }
 	    options->auth = stralloc("bsd");
 	}
 	else if(am_has_feature(fs, fe_options_krb4_auth)
 	   && strcmp(tok, "krb4-auth") == 0) {
+	    if(options->auth != NULL) {
+		dbprintf(("%s: multiple auth option \n",
+			  debug_prefix(NULL)));
+		if(verbose) {
+		    printf("ERROR [multiple auth option \n");
+		}
+	    }
 	    options->auth = stralloc("krb4");
 	}
 	else if(strcmp(tok, "compress-fast") == 0) {
+	    if(options->compress != NO_COMPR) {
+		dbprintf(("%s: multiple compress option \n",
+			  debug_prefix(NULL)));
+		if(verbose) {
+		    printf("ERROR [multiple compress option \n");
+		}
+	    }
 	    options->compress = COMPR_FAST;
 	}
 	else if(strcmp(tok, "compress-best") == 0) {
+	    if(options->compress != NO_COMPR) {
+		dbprintf(("%s: multiple compress option \n",
+			  debug_prefix(NULL)));
+		if(verbose) {
+		    printf("ERROR [multiple compress option \n");
+		}
+	    }
 	    options->compress = COMPR_BEST;
 	}
 	else if(strcmp(tok, "srvcomp-fast") == 0) {
+	    if(options->compress != NO_COMPR) {
+		dbprintf(("%s: multiple compress option \n",
+			  debug_prefix(NULL)));
+		if(verbose) {
+		    printf("ERROR [multiple compress option \n");
+		}
+	    }
+	    options->compress = COMPR_SERVER_FAST;
 	}
 	else if(strcmp(tok, "srvcomp-best") == 0) {
+	    if(options->compress != NO_COMPR) {
+		dbprintf(("%s: multiple compress option \n",
+			  debug_prefix(NULL)));
+		if(verbose) {
+		    printf("ERROR [multiple compress option \n");
+		}
+	    }
+	    options->compress = COMPR_SERVER_BEST;
 	}
 	else if(strcmp(tok, "no-record") == 0) {
+	    if(options->no_record != 0) {
+		dbprintf(("%s: multiple no-record option \n",
+			  debug_prefix(NULL)));
+		if(verbose) {
+		    printf("ERROR [multiple no-record option \n");
+		}
+	    }
 	    options->no_record = 1;
 	}
 	else if(strcmp(tok, "index") == 0) {
+	    if(options->createindex != 0) {
+		dbprintf(("%s: multiple index option \n",
+			  debug_prefix(NULL)));
+		if(verbose) {
+		    printf("ERROR [multiple index option \n");
+		}
+	    }
 	    options->createindex = 1;
 	}
 	else if(strcmp(tok, "exclude-optional") == 0) {
+	    if(options->exclude_optional != 0) {
+		dbprintf(("%s: multiple exclude-optional option \n",
+			  debug_prefix(NULL)));
+		if(verbose) {
+		    printf("ERROR [multiple exclude-optional option \n");
+		}
+	    }
 	    options->exclude_optional = 1;
 	}
 	else if(strcmp(tok, "include-optional") == 0) {
+	    if(options->include_optional != 0) {
+		dbprintf(("%s: multiple include-optional option \n",
+			  debug_prefix(NULL)));
+		if(verbose) {
+		    printf("ERROR [multiple include-optional option \n");
+		}
+	    }
 	    options->include_optional = 1;
 	}
 	else if(strncmp(tok,"exclude-file=", 13) == 0) {
@@ -484,7 +563,7 @@ g_option_t *g_options;
 {
     g_options->features = NULL;
     g_options->hostname = NULL;
-    g_options->maxdumps = 1;
+    g_options->maxdumps = 0;
 }
 
 
@@ -505,6 +584,13 @@ int verbose;
 
     while (tok != NULL) {
 	if(strncmp(tok,"features=", 9) == 0) {
+	    if(g_options->features != NULL) {
+		dbprintf(("%s: multiple features option\n", 
+			  debug_prefix(NULL)));
+		if(verbose) {
+		    printf("ERROR [multiple features option]\n");
+		}
+	    }
 	    if((g_options->features = am_string_to_feature(tok+9)) == NULL) {
 		dbprintf(("%s: bad features value \"%s\n",
 			  debug_prefix(NULL), tok+10));
@@ -514,9 +600,23 @@ int verbose;
 	    }
 	}
 	else if(strncmp(tok,"hostname=", 9) == 0) {
+	    if(g_options->hostname != NULL) {
+		dbprintf(("%s: multiple hostname option\n", 
+			  debug_prefix(NULL)));
+		if(verbose) {
+		    printf("ERROR [multiple hostname option]\n");
+		}
+	    }
 	    g_options->hostname = stralloc(tok+9);
 	}
 	else if(strncmp(tok,"maxdumps=", 9) == 0) {
+	    if(g_options->maxdumps != 0) {
+		dbprintf(("%s: multiple maxdumps option\n", 
+			  debug_prefix(NULL)));
+		if(verbose) {
+		    printf("ERROR [multiple maxdumps option]\n");
+		}
+	    }
 	    if(sscanf(tok+9, "%d;", &new_maxdumps) == 1) {
 		if (new_maxdumps > MAXMAXDUMPS) {
 		    g_options->maxdumps = MAXMAXDUMPS;
@@ -524,12 +624,21 @@ int verbose;
 		else if (new_maxdumps > 0) {
 		    g_options->maxdumps = new_maxdumps;
 		}
+		else {
+		    dbprintf(("%s: bad maxdumps value \"%s\"\n",
+			      debug_prefix(NULL), tok+9));
+		    if(verbose) {
+			printf("ERROR [bad maxdumps value \"%s\"]\n",
+			       tok+9);
+		    }
+		}
 	    }
 	    else {
 		dbprintf(("%s: bad maxdumps value \"%s\"\n",
 			  debug_prefix(NULL), tok+9));
 		if(verbose) {
-		    printf("ERROR [bad maxdumps value]\n");
+		    printf("ERROR [bad maxdumps value \"%s\"]\n",
+			   tok+9);
 		}
 	    }
 	}
@@ -545,5 +654,7 @@ int verbose;
     if(g_options->features == NULL) {
 	g_options->features = am_set_default_feature_set();
     }
+    if(g_options->maxdumps == 0) /* default */
+	g_options->maxdumps = 1;
     return g_options;
 }

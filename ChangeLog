@@ -1,5 +1,13 @@
 2002-04-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* client-src/client_util.c (parse_options, parse_g_options): Check
+	  for duplication options.
+	* client-src/client_util.h (COMPR_SERVER_FAST, COMPR_SERVER_BEST):
+	  Declare.
+	* client-src/selfcheck.c: Check for COMPR_FAST or COMPR_BEST.
+
+2002-04-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* client-src/selfcheck.c (host):Remove variable,use g_options->hostname.
 	* client-src/sendbackup.c: Ditto.
 	* client-src/sendsize.c: Ditto.
