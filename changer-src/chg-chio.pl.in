@@ -174,7 +174,7 @@ sub getTapeParams {
 
 	$line = <FH>;
 	chomp $line;
-	if ($line =~ m/:\s+(\d+)\s+slot,\s+(\d+)\s+drive,\s+(\d+)\s+picker/i) {
+	if ($line =~ m/:\s+(\d+)\s+slots,\s+(\d+)\s+drive,\s+(\d+)\s+picker/i) {
 		$max_slot 	= $1 if $line =~ m/(\d+) slot/i;
 		$max_drive	= $1 if $line =~ m/(\d+) drive/i;
 		$max_picker 	= $1 if $line =~ m/(\d+) picker/i;
