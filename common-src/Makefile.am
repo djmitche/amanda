@@ -2,7 +2,9 @@
 
 ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
 
-libamanda_version = 1:0:0
+# last updated on amanda 2.4.0b4
+libamanda_version = 2:0:0
+# last updated on amanda 2.4.0b1
 libnolog_version = 0:0:0
 
 AMANDA_CFLAGS =		@AMANDA_CFLAGS@

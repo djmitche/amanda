@@ -2,7 +2,8 @@
 
 ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
 
-libserver_version = 0:1:0
+# last updated on amanda 2.4.0b4
+libserver_version = 0:2:0
 
 INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/tape-src
 
