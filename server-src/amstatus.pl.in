@@ -573,7 +573,7 @@ $tesize = 0;
 
 foreach $host (sort @hosts) {
 	foreach $partition (sort @$host) {
-	   foreach $datestamp (@datestamp) {
+	   foreach $datestamp (sort @datestamp) {
 			$hostpart=&make_hostpart($host,$partition,$datestamp);
 			next if(!defined $estimate{$hostpart} && !defined $flush{$hostpart});
 			$nb_partition++;
