@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.c,v 1.9 2002/02/10 03:34:04 jrjackson Exp $
+ * $Id: server_util.c,v 1.10 2002/03/23 19:58:09 martinea Exp $
  *
  */
 
@@ -34,10 +34,10 @@
 #include "token.h"
 
 const char *cmdstr[] = {
-    "BOGUS", "QUIT", "QUITTING", "DONE",
+    "BOGUS", "QUIT", "QUITTING", "DONE", "PARTIAL", 
     "FILE-DUMP", "PORT-DUMP", "CONTINUE", "ABORT",	/* dumper cmds */
     "FAILED", "TRY-AGAIN", "NO-ROOM", "RQ-MORE-DISK",	/* dumper results */
-    "ABORT-FINISHED", "FAIL-OUTPUT", "BAD-COMMAND",	/* dumper results */
+    "ABORT-FINISHED", "BAD-COMMAND",			/* dumper results */
     "START-TAPER", "FILE-WRITE", "PORT-WRITE",		/* taper cmds */
     "PORT", "TAPE-ERROR", "TAPER-OK",			/* taper results */
     NULL

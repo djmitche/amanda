@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.148 2002/03/09 15:09:39 martinea Exp $
+/* $Id: dumper.c,v 1.149 2002/03/23 19:58:09 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -58,7 +58,6 @@
 
 struct databuf {
     int fd;			/* file to flush to */
-    const char *filename;	/* name of what fd points to */
     char *buf;
     char *datain;		/* data buffer markers */
     char *dataout;
@@ -66,29 +65,27 @@ struct databuf {
     pid_t compresspid;		/* valid if fd is pipe to compress */
 };
 
-int interactive;
-char *handle = NULL;
+static char *handle = NULL;
 
-char *errstr = NULL;
-int abort_pending;
+static char *errstr = NULL;
 static long dumpbytes;
 static long dumpsize, headersize, origsize;
 
 static comp_t srvcompress = COMP_NONE;
 
 static FILE *errf = NULL;
-char *hostname = NULL;
-char *diskname = NULL;
-char *device = NULL;
-char *options = NULL;
-char *progname = NULL;
-int level;
-char *dumpdate = NULL;
-char *datestamp;
-char *config_name = NULL;
+static char *hostname = NULL;
+static char *diskname = NULL;
+static char *device = NULL;
+static char *options = NULL;
+static char *progname = NULL;
+static int level;
+static char *dumpdate = NULL;
+static char *datestamp;
+static char *config_name = NULL;
 char *config_dir = NULL;
-int conf_dtimeout;
-int indexfderror;
+static int conf_dtimeout;
+static int indexfderror;
 
 static dumpfile_t file;
 
@@ -108,10 +105,10 @@ static struct {
 /* local functions */
 int main P((int, char **));
 static int do_dump P((struct databuf *));
-void check_options P((char *));
+static void check_options P((char *));
 static void finish_tapeheader P((dumpfile_t *));
 static int write_tapeheader P((int, dumpfile_t *));
-static void databuf_init P((struct databuf *, int, const char *));
+static void databuf_init P((struct databuf *, int));
 static int databuf_write P((struct databuf *, const void *, int));
 static int databuf_flush P((struct databuf *));
 static void process_dumpeof P((void));
@@ -133,8 +130,9 @@ static void read_mesgfd P((void *, void *, ssize_t));
 static void timeout P((int));
 static void timeout_callback P((void *));
 
-void check_options(options)
-char *options;
+static void
+check_options(options)
+    char *options;
 {
     if (strstr(options, "srvcomp-best;") != NULL)
       srvcompress = COMP_BEST;
@@ -227,8 +225,6 @@ main(main_argc, main_argv)
     signal(SIGPIPE, SIG_IGN);
     signal(SIGCHLD, SIG_IGN);
 
-    interactive = isatty(0);
-
     datestamp = construct_datestamp(NULL);
     conf_dtimeout = getconf_int(CNF_DTIMEOUT);
 
@@ -269,7 +265,7 @@ main(main_argc, main_argv)
 		amfree(q);
 		break;
 	    }
-	    databuf_init(&db, outfd, "<output program>");
+	    databuf_init(&db, outfd);
 
 	    check_options(options);
 
@@ -284,11 +280,8 @@ main(main_argc, main_argv)
 			datestamp, level, errstr);
 		amfree(q);
 	    } else {
-		abort_pending = 0;
 		if (do_dump(&db)) {
 		}
-		if (abort_pending)
-		    putresult(ABORT_FINISHED, "%s\n", handle);
 	    }
 	    break;
 
@@ -331,14 +324,12 @@ main(main_argc, main_argv)
  * Initialize a databuf.  Takes a writeable file descriptor.
  */
 static void
-databuf_init(db, fd, filename)
+databuf_init(db, fd)
     struct databuf *db;
     int fd;
-    const char *filename;
 {
 
     db->fd = fd;
-    db->filename = filename;
     db->datain = db->dataout = db->datalimit = NULL;
     db->compresspid = -1;
 }
@@ -420,14 +411,20 @@ process_dumpeof()
 	fprintf(errf,
 		"? %s: strange [missing size line from sendbackup]\n",
 		get_pname());
-	dump_result = max(dump_result, 1);
+	if(errstr == NULL) {
+	    errstr = stralloc("missing size line from sendbackup");
+	}
+	dump_result = max(dump_result, 2);
     }
 
     if(!ISSET(status, GOT_ENDLINE) && dump_result < 2) {
 	fprintf(errf,
 		"? %s: strange [missing end line from sendbackup]\n",
 		get_pname());
-	dump_result = max(dump_result, 1);
+	if(errstr == NULL) {
+	    errstr = stralloc("missing end line from sendbackup");
+	}
+	dump_result = max(dump_result, 2);
     }
 }
 
@@ -862,11 +859,9 @@ do_dump(db)
     return 1;
 
 failed:
-    if (!abort_pending) {
-	q = squotef("[%s]", errstr);
-	putresult(FAILED, "%s %s\n", handle, q);
-	amfree(q);
-    }
+    q = squotef("[%s]", errstr);
+    putresult(FAILED, "%s %s\n", handle, q);
+    amfree(q);
 
     /* kill all child process */
     if (db->compresspid != -1) {
@@ -887,15 +882,13 @@ failed:
 	}
     }
 
-    if(!abort_pending) {
-	log_start_multiline();
-	log_add(L_FAIL, "%s %s %s %d [%s]", hostname, diskname, datestamp,
-		level, errstr);
-	if (errf) {
-	    log_msgout(L_FAIL);
-	}
-	log_end_multiline();
+    log_start_multiline();
+    log_add(L_FAIL, "%s %s %s %d [%s]", hostname, diskname, datestamp,
+	    level, errstr);
+    if (errf) {
+	log_msgout(L_FAIL);
     }
+    log_end_multiline();
 
     if (errf) afclose(errf);
 

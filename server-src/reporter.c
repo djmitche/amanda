@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.71 2002/02/11 01:32:11 jrjackson Exp $
+ * $Id: reporter.c,v 1.72 2002/03/23 19:58:09 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -137,6 +137,7 @@ static void handle_stats P((void));
 static void handle_error P((void));
 static void handle_disk P((void));
 static repdata_t *handle_success P((void));
+static void handle_partial P((void));
 static void handle_strange P((void));
 static void handle_failed P((void));
 static void generate_missing P((void));
@@ -584,6 +585,7 @@ main(argc, argv)
 	case L_DISK:    handle_disk(); break;
 
 	case L_SUCCESS: handle_success(); break;
+	case L_PARTIAL: handle_partial(); break;
 	case L_STRANGE: handle_strange(); break;
 	case L_FAIL:    handle_failed(); break;
 
@@ -1265,21 +1267,28 @@ output_summary()
 		amfree(tmp);
 		continue;
 	    }
-	    if (repdata->dumper.result == L_FAIL) {
+	    if (repdata->dumper.result == L_FAIL && (repdata->chunker.result != L_PARTIAL && repdata->taper.result  != L_PARTIAL)) {
 		fprintf(mailf, "%s\n",
 			tmp=TextRule(OrigKB, TapeRate, "FAILED"));
 		amfree(tmp);
 		continue;
 	    }
 
-	    if(repdata->dumper.result == L_SUCCESS) {
+	    if(repdata->dumper.result == L_SUCCESS)
 		origsize = repdata->dumper.origsize;
-		outsize  = repdata->dumper.outsize;
-	    }
-	    else {
+	    else if(repdata->taper.result == L_SUCCESS ||
+		    repdata->taper.result == L_PARTIAL)
 		origsize = repdata->taper.origsize;
+	    else
+		origsize = repdata->chunker.origsize;
+
+	    if(repdata->taper.result == L_SUCCESS || repdata->taper.result == L_PARTIAL)
 		outsize  = repdata->taper.outsize;
-	    }
+	    else if(repdata->chunker.result == L_SUCCESS ||
+		    repdata->chunker.result == L_PARTIAL)
+		outsize  = repdata->chunker.outsize;
+	    else
+		outsize  = repdata->dumper.outsize;
 
 	    cd= &ColumnData[OrigKB];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
@@ -1331,7 +1340,7 @@ output_summary()
 		continue;
 	    }
 
-	    if(repdata->taper.result == L_SUCCESS)
+	    if(repdata->taper.result == L_SUCCESS || repdata->taper.result == L_PARTIAL)
 		snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
 		  "%3d:%02d", mnsc(repdata->taper.sec));
 	    else
@@ -1341,13 +1350,19 @@ output_summary()
 
 	    cd= &ColumnData[TapeRate];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
-	    if(repdata->taper.result == L_SUCCESS)
+	    if(repdata->taper.result == L_SUCCESS || repdata->taper.result == L_PARTIAL)
 		fprintf(mailf, cd->Format, cd->Width, cd->Precision, repdata->taper.kps);
 	    else
 		fprintf(mailf, "%*s", cd->Width, "N/A ");
+
+	    if(repdata->chunker.result == L_PARTIAL ||
+	       repdata->taper.result == L_PARTIAL) {
+		fprintf(mailf, " PARTIAL");
+	    }
 	    fputc('\n', mailf);
 
-	    if ((postscript) && (repdata->taper.result == L_SUCCESS)) {
+	    if ((postscript) && (repdata->taper.result == L_SUCCESS ||
+				 repdata->taper.result == L_PARTIAL)) {
 		if(origsize != 0.0) {
 		    fprintf(postscript,"(%s) (%s) (%d) (%3.0d) (%8.0f) (%8.0f) DrawHost\n",
 			dp->host->hostname, dp->name, repdata->level,
@@ -1877,6 +1892,23 @@ handle_success()
 	stats[i].outsize += kbytes;
     }
     return repdata;
+}
+
+static void
+handle_partial()
+{
+    repdata_t *repdata;
+    timedata_t *sp;
+
+    repdata = handle_success();
+
+    if(curprog == P_TAPER)
+	sp = &(repdata->taper);
+    else if(curprog == P_DUMPER)
+	sp = &(repdata->dumper);
+    else sp = &(repdata->chunker);
+
+    sp->result = L_PARTIAL;
 }
 
 static void

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.h,v 1.9 2002/02/10 03:34:04 jrjackson Exp $
+ * $Id: logfile.h,v 1.10 2002/03/23 19:58:09 martinea Exp $
  *
  * interface to logfile module
  */
@@ -46,7 +46,7 @@ typedef enum logtype_e {
     L_ERROR, L_WARNING,	L_INFO, L_SUMMARY,	 /* information messages */
     L_START, L_FINISH,				     /* start/end of run */
     L_DISK,							 /* disk */
-    L_SUCCESS, L_FAIL, L_STRANGE,		    /* the end of a dump */
+    L_SUCCESS, L_PARTIAL, L_FAIL, L_STRANGE,	    /* the end of a dump */
     L_STATS,						   /* statistics */
     L_MARKER,					  /* marker for reporter */
     L_CONT			 /* continuation line, used when reading */

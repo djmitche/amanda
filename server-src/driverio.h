@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.28 2001/11/08 18:46:26 martinea Exp $
+ * $Id: driverio.h,v 1.29 2002/03/23 19:58:09 martinea Exp $
  *
  * driver-related helper functions
  */
@@ -46,6 +46,7 @@
 typedef struct chunker_s {
     char *name;			/* name of this chunker */
     int pid;			/* its pid */
+    int down;			/* state */
     int fd;			/* read/write */
     int result;
     event_handle_t *ev_read;	/* read event handle */

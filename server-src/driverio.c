@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.61 2002/03/03 17:10:32 martinea Exp $
+ * $Id: driverio.c,v 1.62 2002/03/23 19:58:09 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -192,6 +192,7 @@ char *chunker_program;
 	      chunker->name, strerror(errno));
     default:	/* parent process */
 	aclose(fd[1]);
+	chunker->down = 0;
 	chunker->fd = fd[0];
 	chunker->ev_read = NULL;
 	fprintf(stderr,"driver: started %s pid %d\n",
@@ -461,6 +462,12 @@ disk_t *dp;
 	break;
     case QUIT:
 	cmdline = stralloc2(cmdstr[cmd], "\n");
+	break;
+    case DONE:
+    case FAILED:
+	cmdline = vstralloc(cmdstr[cmd],
+			    " ", disk2serial(dp),
+			    "\n",  NULL);
 	break;
     default:
 	error("Don't know how to send %s command to chunker", cmdstr[cmd]);

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.78 2002/03/23 17:39:55 martinea Exp $
+/* $Id: taper.c,v 1.79 2002/03/23 19:58:09 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -640,6 +640,7 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
     char *str;
     int header_read = 0;
     int buflen;
+    dumpfile_t first_file;
     dumpfile_t file;
 
     char *q = NULL;
@@ -809,6 +810,7 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 			char *cont_filename;
 
 			parse_file_header(bp->buffer, &file, rc);
+			parse_file_header(bp->buffer, &first_file, rc);
 			cont_filename = stralloc(file.cont_filename);
 			file.cont_filename[0] = '\0';
 			file.blocksize = tt_blocksize;
@@ -911,11 +913,19 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 				      NULL);
 		amfree(str);
 		q = squote(errstr);
-		putresult(DONE, "%s %s %d %s\n",
-			  handle, label, filenum, q);
+		if(first_file.is_partial) {
+		    putresult(PARTIAL, "%s %s %d %s\n",
+			      handle, label, filenum, q);
+		    log_add(L_PARTIAL, "%s %s %s %d %s",
+			    hostname, diskname, datestamp, level, errstr);
+		}
+		else {
+		    putresult(DONE, "%s %s %d %s\n",
+			      handle, label, filenum, q);
+		    log_add(L_SUCCESS, "%s %s %s %d %s",
+			    hostname, diskname, datestamp, level, errstr);
+		}
 		amfree(q);
-		log_add(L_SUCCESS, "%s %s %s %d %s",
-		        hostname, diskname, datestamp, level, errstr);
 #ifdef HAVE_LIBVTBLC
 		/* 
 		 *  We have 44 characters available for the label string:

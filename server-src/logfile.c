@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.24 2002/02/10 03:34:04 jrjackson Exp $
+ * $Id: logfile.c,v 1.25 2002/03/23 19:58:09 martinea Exp $
  *
  * common log file writing routine
  */
@@ -42,7 +42,7 @@ char *logtype_str[] = {
     "ERROR", "WARNING",	"INFO", "SUMMARY",	 /* information messages */
     "START", "FINISH",				   /* start/end of a run */
     "DISK",							 /* disk */
-    "SUCCESS", "FAIL", "STRANGE",		    /* the end of a dump */
+    "SUCCESS", "PARTIAL", "FAIL", "STRANGE",	    /* the end of a dump */
     "STATS",						   /* statistics */
     "MARKER",					  /* marker for reporter */
     "CONT"				   /* continuation line; special */

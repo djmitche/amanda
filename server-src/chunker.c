@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.13 2002/01/14 00:27:44 martinea Exp $
+/* $Id: chunker.c,v 1.14 2002/03/23 19:58:09 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -68,25 +68,24 @@ struct databuf {
     char *datalimit;
 };
 
-int interactive;
-char *handle = NULL;
+static char *handle = NULL;
 
-char *errstr = NULL;
-int abort_pending;
+static char *errstr = NULL;
+static int abort_pending;
 static long dumpsize, headersize;
 static long dumpbytes;
 static long filesize;
 
-char *hostname = NULL;
-char *diskname = NULL;
-char *options = NULL;
-char *progname = NULL;
-int level;
-char *dumpdate = NULL;
-char *datestamp;
-char *config_name = NULL;
+static char *hostname = NULL;
+static char *diskname = NULL;
+static char *options = NULL;
+static char *progname = NULL;
+static int level;
+static char *dumpdate = NULL;
+static char *datestamp;
+static char *config_name = NULL;
 char *config_dir = NULL;
-int conf_dtimeout;
+static int command_in_transit;
 
 static dumpfile_t file;
 
@@ -171,8 +170,6 @@ main(main_argc, main_argv)
     signal(SIGPIPE, SIG_IGN);
     signal(SIGCHLD, SIG_IGN);
 
-    interactive = isatty(0);
-
     datestamp = construct_datestamp(NULL);
 
 /*    do {*/
@@ -206,6 +203,7 @@ main(main_argc, main_argv)
 		    putresult(TRYAGAIN, "%s %s\n", handle, q);
 		}
 	    }
+	    command_in_transit = -1;
 	    if(infd >= 0 && do_chunk(infd, &db)) {
 		char kb_str[NUM_STR_SIZE];
 		char kps_str[NUM_STR_SIZE];
@@ -222,16 +220,49 @@ main(main_argc, main_argv)
 				      " kps ", kps_str,
 				      NULL);
 		q = squotef("[%s]", errstr);
-		putresult(DONE, "%s %ld %s\n",
-			  handle, dumpsize - headersize, q);
-		log_add(L_SUCCESS, "%s %s %s %d [%s]",
+		if(command_in_transit != -1)
+		    cmd = command_in_transit;
+		else
+		    cmd = getcmd(&cmdargs);
+		switch(cmd) {
+		case DONE:
+		    putresult(DONE, "%s %ld %s\n",
+			      handle, dumpsize - headersize, q);
+		    log_add(L_SUCCESS, "%s %s %s %d [%s]",
+			    hostname, diskname, datestamp, level, errstr);
+		    break;
+		case BOGUS:
+		case TRYAGAIN:
+		case FAILED:
+		case ABORT_FINISHED:
+		    if(dumpsize > DISK_BLOCK_KB) {
+			putresult(PARTIAL, "%s %ld %s\n",
+				  handle, dumpsize - headersize, q);
+			log_add(L_PARTIAL, "%s %s %s %d [%s]",
 				hostname, diskname, datestamp, level, errstr);
+		    }
+		    else {
+			errstr = newvstralloc(errstr,
+					      "dumper returned ",
+					      cmdstr[cmd],
+					      NULL);
+			amfree(q);
+			q = squotef("[%s]",errstr);
+			putresult(FAILED, "%s %s\n", handle, q);
+			log_add(L_FAIL, "%s %s %s %d [%s]",
+				hostname, diskname, datestamp, level, errstr);
+		    }
+		default:
+		}
+		amfree(q);
 	    } else if(infd != -2) {
 		if(!abort_pending) {
 		    if(q == NULL) {
 			q = squotef("[%s]", errstr);
 		    }
 		    putresult(FAILED, "%s %s\n", handle, q);
+		    log_add(L_FAIL, "%s %s %s %d [%s]",
+			    hostname, diskname, datestamp, level, errstr);
 		    amfree(q);
 		}
 	    }
@@ -454,6 +485,11 @@ databuf_flush(db)
 
 	    putresult(RQ_MORE_DISK, "%s\n", handle);
 	    cmd = getcmd(&cmdargs);
+	    if(command_in_transit == -1 &&
+	       (cmd == DONE || cmd == TRYAGAIN || cmd == FAILED)) {
+		command_in_transit = cmd;
+		cmd = getcmd(&cmdargs);
+	    }
 	    if(cmd == CONTINUE) {
 		/* CONTINUE filename chunksize use */
 		db->chunk_size = am_floor(atoi(cmdargs.argv[3]), DISK_BLOCK_KB);

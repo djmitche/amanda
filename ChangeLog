@@ -1,5 +1,20 @@
 2002-03-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/chunker.c: Get result from dumper.
+	* server-src/driver.c: Send dumper result to chunker.
+	* server-src/driverio.c (chunker_cmd): Send DONE and FAILED command.
+	* server-src/driverio.h (chunker_t): New down field.
+	* server-src/dumper.c: Cleanup.
+	* server-src/logfile.c (logtype_str): Add "PARTIAL".
+	* server-src/logfile.h (logtype_e): Add L_PARTIAL log.
+	* server-src/reporter.c: Handle PARTIAL log.
+	* server-src/server_util.c (cmdstr): Add "PARTIAL".
+	* server-src/server_util.h (cmd_t): Add PARTIAL command.
+	* server-src/taper.c (read_file): Result is PARTIAL if dumper
+	  result is not DONE.
+
+2002-03-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/tapefile.c (write_tapelist): Write to a temp file and
 	  rename it.
 	* server-src/amlabel.c: Do not rename the tapelist file.

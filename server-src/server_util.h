@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.h,v 1.5 2002/03/03 17:10:32 martinea Exp $
+ * $Id: server_util.h,v 1.6 2002/03/23 19:58:09 martinea Exp $
  *
  */
 #ifndef SERVER_UTIL_H
@@ -35,10 +35,10 @@
 #define MAX_ARGS 12
 
 typedef enum {
-    BOGUS, QUIT, QUITTING, DONE,
+    BOGUS, QUIT, QUITTING, DONE, PARTIAL,
     FILE_DUMP, PORT_DUMP, CONTINUE, ABORT,		/* dumper cmds */
     FAILED, TRYAGAIN, NO_ROOM, RQ_MORE_DISK,		/* dumper results */
-    ABORT_FINISHED, FAIL_OUTPUT, BAD_COMMAND,		/* dumper results */
+    ABORT_FINISHED, BAD_COMMAND,			/* dumper results */
     START_TAPER, FILE_WRITE, PORT_WRITE,		/* taper cmds */
     PORT, TAPE_ERROR, TAPER_OK,				/* taper results */
     LAST_TOK
