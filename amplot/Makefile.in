@@ -1,4 +1,4 @@
-# Makefile.in generated automatically by automake 1.1l from Makefile.am
+# Makefile.in generated automatically by automake 1.1m from Makefile.am
 
 # Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
@@ -34,82 +34,91 @@ pkgincludedir = $(includedir)/@PACKAGE@
 
 top_builddir = ..
 
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
+
 INSTALL = @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 transform = @program_transform_name@
-target_alias = @target_alias@
 build_alias = @build_alias@
-host_triplet = @host@
-target_triplet = @target@
 build_triplet = @build@
 host_alias = @host_alias@
-LOG_DIR = @LOG_DIR@
-MT = @MT@
-RESTORE = @RESTORE@
-DB_DIR = @DB_DIR@
-VERSION = @VERSION@
-ac_c = @ac_c@
-XFSDUMP = @XFSDUMP@
-PCAT = @PCAT@
-DD = @DD@
-LEX = @LEX@
-GNUPLOT = @GNUPLOT@
-VERSION_MINOR = @VERSION_MINOR@
-INSTALL_SCRIPT = @INSTALL_SCRIPT@
-BUILD_SERVER_PROGS_LIBEXEC = @BUILD_SERVER_PROGS_LIBEXEC@
-PACKAGE = @PACKAGE@
-COMPRESS = @COMPRESS@
-RSH = @RSH@
-BUILD_CLIENT_SCRIPTS_BIN = @BUILD_CLIENT_SCRIPTS_BIN@
-ac_n = @ac_n@
-XFSRESTORE = @XFSRESTORE@
-DUMP = @DUMP@
-INDEX_DIR = @INDEX_DIR@
-BUILD_AMPLOT_LIBEXEC = @BUILD_AMPLOT_LIBEXEC@
-AMPLOT_COMPRESS = @AMPLOT_COMPRESS@
-RANLIB = @RANLIB@
-VERSION_COMMENT = @VERSION_COMMENT@
-MAILER = @MAILER@
-DEFAULT_SERVER = @DEFAULT_SERVER@
-AMPLOT_CAT_GZIP = @AMPLOT_CAT_GZIP@
-TAPE_NO_REWIND_DEVICE = @TAPE_NO_REWIND_DEVICE@
-DEFAULT_TAPE_DEVICE = @DEFAULT_TAPE_DEVICE@
-YACC = @YACC@
-TAPE_REWIND_DEVICE = @TAPE_REWIND_DEVICE@
-AMPLOT_CAT_PACK = @AMPLOT_CAT_PACK@
-SAMBA_CLIENT = @SAMBA_CLIENT@
-DEFAULT_TAPE_SERVER = @DEFAULT_TAPE_SERVER@
-BUILD_SERVER_SCRIPTS_BIN = @BUILD_SERVER_SCRIPTS_BIN@
-CC = @CC@
-BUILD_SERVER_PROGS_BIN = @BUILD_SERVER_PROGS_BIN@
-BUILD_CHANGER_SCRIPTS_LIBEXEC = @BUILD_CHANGER_SCRIPTS_LIBEXEC@
-BUILD_CHANGER_PROGS_LIBEXEC = @BUILD_CHANGER_PROGS_LIBEXEC@
-GREP = @GREP@
-AMPLOT_CAT_COMPRESS = @AMPLOT_CAT_COMPRESS@
-BUILD_CLIENT_SCRIPTS_LIBEXEC = @BUILD_CLIENT_SCRIPTS_LIBEXEC@
-GNUTAR = @GNUTAR@
+host_triplet = @host@
+target_alias = @target_alias@
+target_triplet = @target@
 AMANDA_CFLAGS = @AMANDA_CFLAGS@
-PERL = @PERL@
-BUILD_CLIENT_PROGS_LIBEXEC = @BUILD_CLIENT_PROGS_LIBEXEC@
+AMPLOT_CAT_COMPRESS = @AMPLOT_CAT_COMPRESS@
+AMPLOT_CAT_GZIP = @AMPLOT_CAT_GZIP@
+AMPLOT_CAT_PACK = @AMPLOT_CAT_PACK@
+AMPLOT_COMPRESS = @AMPLOT_COMPRESS@
 AR = @AR@
-EGREP = @EGREP@
-CONFIG_DIR = @CONFIG_DIR@
-BUILD_AMPLOT_BIN = @BUILD_AMPLOT_BIN@
 AWK_VAR_ASSIGNMENT_OPT = @AWK_VAR_ASSIGNMENT_OPT@
-VERSION_PATCH = @VERSION_PATCH@
-CLIENT_LOGIN = @CLIENT_LOGIN@
-SHELL = @SHELL@
+BUILD_AMPLOT_BIN = @BUILD_AMPLOT_BIN@
+BUILD_AMPLOT_LIBEXEC = @BUILD_AMPLOT_LIBEXEC@
+BUILD_CHANGER_PROGS_LIBEXEC = @BUILD_CHANGER_PROGS_LIBEXEC@
+BUILD_CHANGER_SCRIPTS_LIBEXEC = @BUILD_CHANGER_SCRIPTS_LIBEXEC@
+BUILD_CLIENT_PROGS_LIBEXEC = @BUILD_CLIENT_PROGS_LIBEXEC@
+BUILD_CLIENT_SCRIPTS_BIN = @BUILD_CLIENT_SCRIPTS_BIN@
+BUILD_CLIENT_SCRIPTS_LIBEXEC = @BUILD_CLIENT_SCRIPTS_LIBEXEC@
+BUILD_SERVER_PROGS_BIN = @BUILD_SERVER_PROGS_BIN@
+BUILD_SERVER_PROGS_LIBEXEC = @BUILD_SERVER_PROGS_LIBEXEC@
+BUILD_SERVER_SCRIPTS_BIN = @BUILD_SERVER_SCRIPTS_BIN@
 CAT = @CAT@
+CC = @CC@
+CLIENT_LOGIN = @CLIENT_LOGIN@
+COMPRESS = @COMPRESS@
+CONFIG_DIR = @CONFIG_DIR@
+DB_DIR = @DB_DIR@
+DD = @DD@
+DEFAULT_CONFIG = @DEFAULT_CONFIG@
+DEFAULT_SERVER = @DEFAULT_SERVER@
+DEFAULT_TAPE_DEVICE = @DEFAULT_TAPE_DEVICE@
+DEFAULT_TAPE_SERVER = @DEFAULT_TAPE_SERVER@
+DUMP = @DUMP@
+EGREP = @EGREP@
+GNUPLOT = @GNUPLOT@
+GNUTAR = @GNUTAR@
+GREP = @GREP@
+GZIP = @GZIP@
+INDEX_DIR = @INDEX_DIR@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+KRB4CLIENT_C = @KRB4CLIENT_C@
+KRB4CLIENT_O = @KRB4CLIENT_O@
+KRB4COMMON_C = @KRB4COMMON_C@
+KRB4COMMON_O = @KRB4COMMON_O@
+LEX = @LEX@
+LOG_DIR = @LOG_DIR@
+MAILER = @MAILER@
+MT = @MT@
 MTX = @MTX@
 MT_FILE_FLAG = @MT_FILE_FLAG@
-GZIP = @GZIP@
-VERSION_SUFFIX = @VERSION_SUFFIX@
+PACKAGE = @PACKAGE@
+PCAT = @PCAT@
+PERL = @PERL@
+RANLIB = @RANLIB@
+RESTORE = @RESTORE@
+RSH = @RSH@
+SAMBA_CLIENT = @SAMBA_CLIENT@
 SETUID_GROUP = @SETUID_GROUP@
-DEFAULT_CONFIG = @DEFAULT_CONFIG@
-VERSION_MAJOR = @VERSION_MAJOR@
+SHELL = @SHELL@
+TAPE_NO_REWIND_DEVICE = @TAPE_NO_REWIND_DEVICE@
+TAPE_REWIND_DEVICE = @TAPE_REWIND_DEVICE@
 USE_VERSION_SUFFIXES = @USE_VERSION_SUFFIXES@
+VERSION = @VERSION@
+VERSION_COMMENT = @VERSION_COMMENT@
+VERSION_MAJOR = @VERSION_MAJOR@
+VERSION_MINOR = @VERSION_MINOR@
+VERSION_PATCH = @VERSION_PATCH@
+VERSION_SUFFIX = @VERSION_SUFFIX@
+XFSDUMP = @XFSDUMP@
+XFSRESTORE = @XFSRESTORE@
+YACC = @YACC@
+ac_c = @ac_c@
+ac_n = @ac_n@
 
 SUFFIXES =		.sh
 
@@ -132,16 +141,15 @@ DATA =  $(amplot_DATA)
 DIST_COMMON =  Makefile.am Makefile.in amcat.awk.in amplot.sh.in
 
 
-DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) \
-	$(TEXINFOS) $(MANS) $(EXTRA_DIST)
+DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
-TAR = tar
+TAR = gnutar
 default: all
 
 .SUFFIXES:
 .SUFFIXES: .sh
-$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL) 
-	cd $(top_srcdir) && automake --foreign amplot/Makefile
+$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
+	cd $(top_srcdir) && $(AUTOMAKE) --foreign amplot/Makefile
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status $(BUILT_SOURCES)
 	cd $(top_builddir) \
@@ -157,10 +165,10 @@ install-binSCRIPTS: $(bin_SCRIPTS)
 	$(mkinstalldirs) $(bindir)
 	@list="$(bin_SCRIPTS)"; for p in $$list; do \
 	  if test -f $$p; then \
-	    echo "$(INSTALL_SCRIPT) $$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
+	    echo " $(INSTALL_SCRIPT) $$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
 	    $(INSTALL_SCRIPT) $$p $(bindir)/`echo $$p|sed '$(transform)'`; \
 	  else if test -f $(srcdir)/$$p; then \
-	    echo "$(INSTALL_SCRIPT) $(srcdir)/$$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
+	    echo " $(INSTALL_SCRIPT) $(srcdir)/$$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
 	    $(INSTALL_SCRIPT) $(srcdir)/$$p $(bindir)/`echo $$p|sed '$(transform)'`; \
 	  else :; fi; fi; \
 	done
@@ -175,10 +183,10 @@ install-amplotDATA: $(amplot_DATA)
 	$(mkinstalldirs) $(amplotdir)
 	@list="$(amplot_DATA)"; for p in $$list; do \
 	  if test -f $(srcdir)/$$p; then \
-	    echo "$(INSTALL_DATA) $(srcdir)/$$p $(amplotdir)/$$p"; \
+	    echo " $(INSTALL_DATA) $(srcdir)/$$p $(amplotdir)/$$p"; \
 	    $(INSTALL_DATA) $(srcdir)/$$p $(amplotdir)/$$p; \
 	  else if test -f $$p; then \
-	    echo "$(INSTALL_DATA) $$p $(amplotdir)/$$p"; \
+	    echo " $(INSTALL_DATA) $$p $(amplotdir)/$$p"; \
 	    $(INSTALL_DATA) $$p $(amplotdir)/$$p; \
 	  fi; fi; \
 	done
@@ -278,10 +286,10 @@ install-exec-hook:
 
 install-data-hook:
 	@list="$(amplot_DATA)"; for p in $$list; do \
-		echo chown $(CLIENT_LOGIN) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
-		chown $(CLIENT_LOGIN) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
-		echo chgrp $(SETUID_GROUP) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
-		chgrp $(SETUID_GROUP) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
+		echo chown $(CLIENT_LOGIN) $(libexecdir)/$$p; \
+		chown $(CLIENT_LOGIN) $(libexecdir)/$$p; \
+		echo chgrp $(SETUID_GROUP) $(libexecdir)/$$p; \
+		chgrp $(SETUID_GROUP) $(libexecdir)/$$p; \
         done;
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
