@@ -1,5 +1,5 @@
 /* $RCSfile: amgetidx.c,v $
-   $Date: 1997/03/15 21:30:10 $
+   $Date: 1997/04/27 21:10:52 $
 
    amgetidx - gets index files from clients
 
@@ -33,12 +33,20 @@ static char *dataptr;		/* data buffer markers */
 
 static int datafd;
 static int amanda_port;
+static int mesgfd = -1;
 
 /* these global variables define the currently being collected index */
 static char progname[1024];
 static char hostname[1024], diskname[1024];
 static int level;
 static char datestamp[80];
+
+#ifdef KRB4_SECURITY
+int kamanda_port;
+int krb4_auth;
+int kencrypt;
+CREDENTIALS cred;
+#endif
     
 static void service_ports_init()
 {
@@ -175,7 +183,7 @@ static void sendindex_response(p, pkt)
 proto_t *p;
 pkt_t *pkt;
 {
-    int data_port;
+    int data_port, mesg_port;
 
     if(p->state == S_FAILED)
     {
@@ -216,7 +224,8 @@ pkt_t *pkt;
 	return;
     }
 
-    if(sscanf(pkt->body, "CONNECT DATA %d\n", &data_port) != 1)
+    if(sscanf(pkt->body, "CONNECT DATA %d MESG %d\n", &data_port,
+	&mesg_port) != 2)
     {
 	sprintf(errstr, "[parse of reply message failed]");
 	response_error = 5;
@@ -230,6 +239,15 @@ pkt_t *pkt;
 		"[could not connect to data port: %s]", strerror(errno));
 	response_error = 6;
 	return;
+    }
+    mesgfd = stream_client(hostname, mesg_port,
+                           DEFAULT_SIZE, DEFAULT_SIZE);
+    if(mesgfd == -1) {
+        sprintf(errstr,
+                "[could not connect to mesg port: %s]", strerror(errno));
+        close(datafd);  
+        response_error = 1; 
+        return;
     }
     /* everything worked */
 
@@ -270,7 +288,7 @@ static int startup_retrieve P((void))
 #ifdef KRB4_SECURITY
     if(krb4_auth) {
 	rc = make_krb_request(hostname, kamanda_port, req, NULL, 
-			      STARTUP_TIMEOUT, sendbackup_response);
+			      STARTUP_TIMEOUT, sendindex_response);
 	if(!rc) {
 	    char inst[256], realm[256];
 #define HOSTNAME_INSTANCE inst
