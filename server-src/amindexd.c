@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.25 1998/01/20 20:47:14 amcore Exp $
+ * $Id: amindexd.c,v 1.25.2.1 1998/01/27 10:23:22 amcore Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -448,7 +448,7 @@ int build_disk_table P((void))
 		    " ", config,
 		    " ", "find",
 		    " ", dump_hostname,
-		    " ", disk_name,
+		    " \'^", disk_name, "$\'",
 		    NULL);
     if ((fp = popen(cmd, "r")) == NULL)
     {
