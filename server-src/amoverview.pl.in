@@ -89,28 +89,30 @@ $dlfh->close or
 %::level = ();
 $::level = '';
 my ($date, $tape, $file, $status);
-for $host (sort keys %disks) {
-#$host = 'earth'; {
-    $opt_verbose and
-	print STDERR "Examining host $host\n";
-    my $fh = new FileHandle "$amadmin $opt_config find $host|" or
-	die "$0: error in opening `$amadmin $opt_config find $host' pipe: $!\n";
-    <$fh>;
-    while (<$fh>) {
-	chomp;
-	($date, $host, $disk, $level, $tape, $file, $status) = split ' ', $_;
+$opt_verbose and
+    print STDERR "Running $amadmin $opt_config find\n";
+my $fh = new FileHandle "$amadmin $opt_config find|" or
+    die "$0: error in opening `$amadmin $opt_config find' pipe: $!\n";
+<$fh>;
+while (<$fh>) {
+    chomp;
+    ($date, $host, $disk, $level, $tape, $file, $status) = split ' ', $_;
+    next if $date eq 'date';
+    next if $date eq 'Warning:';
+    next if $date eq 'Scanning';
+    next if $date eq "";
+    if ($date =~ /^\d\d\d\d-\d\d-\d\d$/) {
 	defined($level{$host}{$disk}{$date}) or
 	    $level{$host}{$disk}{$date} = '';
 	$level{$host}{$disk}{$date} .= ($status eq 'OK') ? $level : 'E';
-	unless ($date =~ /^\d\d\d\d-\d\d-\d\d$/) {
-	    print "bad date $date in $_\n";
-	}
-
 	$dates{$date}++;
     }
-    $fh->close or
-	die "$0: error in closing `$amadmin $opt_config find $host' pipe: $!\n";
+    else {
+	print "bad date $date in $_\n";
+    }
 }
+$fh->close or
+    die "$0: error in closing `$amadmin $opt_config find|' pipe: $!\n";
 
 # touch all the dates just in case whole days were missed.
 {

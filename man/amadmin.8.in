@@ -72,14 +72,27 @@ command.
 
 .HP 5
 .B find
-.I hostname
-.I [ disks ... ]
+.I [ --sort <hkdlb> ]
+.I [[ hostname ]
+.I [ disks ... ]]
 .br
 Displays, for each
 .I disk,
 all dumps that are currently on tape.
 The tape label, file number, and status are displayed.
-
+The --sort flag change the sort order, uppercase reverse the sort order.
+The default sort order is <hkdlb>.
+.RS 10
+h - host
+.br
+k - disk
+.br
+d - date
+.br
+l - level
+.br
+b - label
+.RE
 .HP 5
 .B delete
 .I hostname

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.14 1997/11/17 12:47:36 amcore Exp $
+ * $Id: amadmin.c,v 1.15 1997/11/23 23:43:20 amcore Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -81,6 +81,7 @@ void export_db P((int argc, char **argv));
 void import_db P((int argc, char **argv));
 void disklist P((int argc, char **argv));
 void disklist_one P((disk_t *dp));
+void sort_find_result();
 void print_find_result();
 void search_holding_disk();
 
@@ -515,6 +516,8 @@ char logline[MAX_LINE];
 char *find_hostname;
 char **find_diskstrs;
 int  find_ndisks;
+int  find_nhosts;
+char sort_order[10]="hkdlb";
 
 void find(argc, argv)
 int argc;
@@ -524,22 +527,57 @@ char **argv;
     host_t *hp;
     int tape, maxtape, seq, logs;
     tape_t *tp;
+    int start_argc;
 
-    if(argc < 4) {
+    if(argc < 3) {
 	fprintf(stderr,
-		"%s: expecting \"find <hostname> [<disk> ...]\"\n", pname);
+		"%s: expecting \"find [--sort <hkdlb>] [hostname [<disk> ...]]\"\n", pname);
 	usage();
     }
 
-    find_hostname = argv[3];
-    find_diskstrs = &argv[4];
-    find_ndisks = argc - 4;
-
-    if((hp = lookup_host(find_hostname)) == NULL) {
-	printf("Warning: host %s not in disklist.\n", find_hostname);
+	
+    if(argc > 3 && !strcmp(argv[3],"--sort")) {
+	int i, valid_sort=1;
+	argv[4][9]=0; /* trunc */
+	for(i=strlen(argv[4])-1;i>=0;i--) {
+	    switch (argv[4][i]) {
+	    case 'h':
+	    case 'H':
+	    case 'k':
+	    case 'K':
+	    case 'd':
+	    case 'D':
+	    case 'l':
+	    case 'L':
+	    case 'b':
+	    case 'B':
+		    break;
+	    default: valid_sort=0;
+	    }
+	}
+	if(valid_sort)
+	    strcpy(sort_order,argv[4]);
+	else
+	    printf("Invalid sort order: %s\nUse default sort order: %s\n",
+		    argv[4],sort_order);
+	start_argc=6;
     } else {
-	find_hostname = hp->hostname;
+	start_argc=4;
     }
+
+    if(argc < start_argc)
+	find_nhosts = 0;
+    else {
+	find_nhosts = 1;
+        find_hostname = argv[start_argc-1];
+        if((hp = lookup_host(find_hostname)) == NULL)
+	    printf("Warning: host %s not in disklist.\n", find_hostname);
+        else
+	    find_hostname = hp->hostname;
+    }
+    find_diskstrs = &argv[start_argc];
+    find_ndisks = argc - start_argc;
+
 
     conflog = getconf_str(CNF_LOGFILE);
     maxtape = getconf_int(CNF_TAPECYCLE);
@@ -579,6 +617,8 @@ char **argv;
     }
 
     search_holding_disk();
+
+    sort_find_result();
 
     print_find_result();
 }
@@ -645,9 +685,87 @@ void search_holding_disk()
     }
 }
 
+int find_compare(const void *i1, const void *j1)
+{
+    int compare=0;
+    struct find_result **i = (struct find_result **)i1;
+    struct find_result **j = (struct find_result **)j1;
+
+    int nb_compare=strlen(sort_order);
+    int k;
+
+    for(k=0;k<nb_compare;k++) {
+	switch (sort_order[k]) {
+	case 'h' : compare=strcmp((*i)->hostname,(*j)->hostname);
+		   break;
+	case 'H' : compare=strcmp((*j)->hostname,(*i)->hostname);
+		   break;
+	case 'k' : compare=strcmp((*i)->diskname,(*j)->diskname);
+		   break;
+	case 'K' : compare=strcmp((*j)->diskname,(*i)->diskname);
+		   break;
+	case 'd' : compare=strcmp((*i)->datestamp,(*j)->datestamp);
+		   break;
+	case 'D' : compare=strcmp((*j)->datestamp,(*i)->datestamp);
+		   break;
+	case 'l' : compare=(*j)->level - (*i)->level;
+		   break;
+	case 'L' : compare=(*i)->level - (*j)->level;
+		   break;
+	case 'b' : compare=strcmp((*i)->label,(*j)->label);
+		   break;
+	case 'B' : compare=strcmp((*j)->label,(*i)->label);
+		   break;
+	}
+	if(compare != 0)
+	    return compare;
+    }
+    return 0;
+}
+
+void sort_find_result()
+{
+    struct find_result **array_find_result;
+    struct find_result *output_find_result;
+    int nb_result=0;
+    int no_result;
+
+    /* qsort core dump if nothing to sort */
+    if(output_find==NULL)
+	return;
+
+    /* How many result */
+    for(output_find_result=output_find;
+	output_find_result;
+	output_find_result=output_find_result->next) {
+	nb_result++;
+    }
+
+    /* put the list in an array */
+    array_find_result=alloc(nb_result * sizeof(struct find_result *));
+    for(output_find_result=output_find,no_result=0;
+	output_find_result;
+	output_find_result=output_find_result->next,no_result++) {
+	array_find_result[no_result]=output_find_result;
+    }
+
+    /* sort the array */
+    qsort(array_find_result,nb_result,sizeof(struct find_result *),
+	  find_compare);
+
+    /* put the sorted result in the list */
+    for(no_result=0;
+	no_result<nb_result-1; no_result++) {
+	array_find_result[no_result]->next = array_find_result[no_result+1];
+    }
+    array_find_result[nb_result-1]->next=NULL;
+    output_find=array_find_result[0];
+
+}
+
 void print_find_result()
 {
-    struct find_result *output_find_result=output_find;
+    struct find_result *output_find_result;
     int max_len_datestamp = 4;
     int max_len_hostname  = 4;
     int max_len_diskname  = 4;
@@ -684,25 +802,30 @@ void print_find_result()
      */
     max_len_status = 1;
 
-    printf("\ndate%*s host%*s disk%*s lv%*s tape or file%*s file%*s status\n",
-	   max_len_datestamp-4,"",
-	   max_len_hostname-4 ,"",
-	   max_len_diskname-4 ,"",
-	   max_len_level-2    ,"",
-	   max_len_label-12   ,"",
-	   max_len_filenum-4  ,"");
-    for(output_find_result=output_find;
-	output_find_result;
-	output_find_result=output_find_result->next) {
+    if(output_find==NULL) {
+	printf("\nNo dump to list\n");
+    }
+    else {
+	printf("\ndate%*s host%*s disk%*s lv%*s tape or file%*s file%*s status\n",
+	       max_len_datestamp-4,"",
+	       max_len_hostname-4 ,"",
+	       max_len_diskname-4 ,"",
+	       max_len_level-2    ,"",
+	       max_len_label-12   ,"",
+	       max_len_filenum-4  ,"");
+        for(output_find_result=output_find;
+	    output_find_result;
+	    output_find_result=output_find_result->next) {
 
-	printf("%-*s %-*s %-*s %*d %-*s %*d %-*s\n",
-		max_len_datestamp, output_find_result->datestamp,
-		max_len_hostname,  output_find_result->hostname,
-		max_len_diskname,  output_find_result->diskname,
-		max_len_level,     output_find_result->level,
-		max_len_label,     output_find_result->label,
-		max_len_filenum,   output_find_result->filenum,
-		max_len_status,    output_find_result->status);
+	    printf("%-*s %-*s %-*s %*d %-*s %*d %-*s\n",
+		    max_len_datestamp, output_find_result->datestamp,
+		    max_len_hostname,  output_find_result->hostname,
+		    max_len_diskname,  output_find_result->diskname,
+		    max_len_level,     output_find_result->level,
+		    max_len_label,     output_find_result->label,
+		    max_len_filenum,   output_find_result->filenum,
+		    max_len_status,    output_find_result->status);
+	}
     }
 }
 
@@ -711,6 +834,7 @@ char *host, *disk;
 {
     int d;
 
+    if(find_nhosts == 0) return 1;
     if(strcmp(host, find_hostname)) return 0;
     if(find_ndisks == 0) return 1;
 

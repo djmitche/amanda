@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: holding.c,v 1.4 1997/11/17 12:41:31 amcore Exp $
+ * $Id: holding.c,v 1.5 1997/11/23 23:43:24 amcore Exp $
  *
  * Functions to access holding disk
  */
@@ -200,8 +200,10 @@ int verbose;
     DIR *topdir;
     struct dirent *workdir;
 
-    if((topdir = opendir(diskdir)) == NULL)
-	error("could not open holding dir %s: %s", diskdir, strerror(errno));
+    if((topdir = opendir(diskdir)) == NULL) {
+	printf("Warning: could not open holding dir %s: %s\n", diskdir, strerror(errno));
+	return;
+    }
 
     /* find all directories of the right format  */
 
