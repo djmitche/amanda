@@ -4,14 +4,6 @@
 # Author: Axel Zinser (fifi@icem.de)
 #
 # amverify: check amanda tapes and report errors
-#	    !! gtar driven backups only !!
-#
-# 17.12.96: minor bug fixes, more verbose notification mail
-# 18.12.96: use compressed files if we a short of spool space
-# 20.12.96: send a report after interrupt
-# 26.12.96: autoconfigure support
-# 29.12.96: spool no longer required
-#
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
@@ -22,45 +14,101 @@ PATH=$libexecdir:$sbindir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
 export PATH
 
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
-if test "$USE_VERSION_SUFFIXES" = "yes"; then
+if [ "$USE_VERSION_SUFFIXES" = "yes" ]; then
 	SUF="-@VERSION@"
 else
 	SUF=
 fi
 
 report() {
-	echo "$@" >&2
-	echo "$@" >> $REPORT
+	$ECHO "$@" >&2
+	$ECHO "$@" >> $REPORT
 }
 
 getparm() {
 	(cd $CONFIG_DIR/$CONFIG; $AMGETCONF $1 2>/dev/null) | grep -v BUGGY
-	# grep "^$1[ 	]" $AMCONFIG | head -1 | sed 's/^'$1'//;s/#.*$//;s/[ 	"]//g'
 }
 
 sendreport() {
 	TAPES=`cat $TAPELIST`
-	if [ -f $REPORT -a "$REPORTTO" != "" ]; then
+	if [ -f $REPORT -a X"$REPORTTO" != X"" ]; then
 		(
-		cat <<EOF
-From: amverify (Amanda Tape Verify)
-To: $REPORTTO
-Subject: $CONFIG AMANDA VERIFY REPORT FOR $TAPES
-
-EOF
-		echo "Tapes: $TAPES"
+		$ECHO "Tapes: $TAPES"
 		if [ -s $DEFECTS ]; then
-			echo "Errors found: "
+			$ECHO "Errors found: "
 			cat $DEFECTS
 		else
-			echo "no Errors found!"
+			$ECHO "No errors found!"
 		fi
-		echo
+		$ECHO
 
 		[ -s $REPORT ] \
 			&& cat $REPORT
-		) | $MAIL -t
+		) | $MAIL -s "$ORG AMANDA VERIFY REPORT FOR $TAPES" $REPORTTO
 	fi
+}
+
+###
+# This function is called to process one dump image.  Standard input is
+# the dump image.  We parse the header and decide if it is a GNU tar
+# dump or a system dump.  Then we do a catalog operation to /dev/null
+# and finally a "cat" to /dev/null to soak up whatever data is still in
+# the pipeline.
+#
+# In the case of a system restore catalogue, this does not fully check
+# the integrity of the dump image because system restore programs stop
+# as soon as they are done with the directories, which are all at the
+# beginning.  But the trailing cat will at least make sure the whole
+# image is readable.
+###
+
+doonefile() {
+
+	###
+	# The goal here is to collect the first 32 KBytes and save the
+	# first line.  But the pipe size coming in to us from amrestore
+	# is highly system dependent and "dd" does not do reblocking.
+	# So we pick a block size that is likely to always be available in
+	# the pipe and a count to take it up to 32 KBytes.  Worst case,
+	# this could be changed to "bs=1 count=32k".  We also have to
+	# soak up the rest of the output after the "head" so an EPIPE
+	# does not go back and terminate the "dd" early.
+	###
+
+	HEADER=`$DD bs=512 count=64 | ( head -1 ; cat > /dev/null )`
+	CMD=
+	result=1
+	if [ X"$HEADER" = X"" ]; then
+		$ECHO "** No header" > $TEMP/errors
+	else
+		set X $HEADER
+		shift
+		shift 9
+		if [ X"$1" = X"program" -a X"$2" != X"" ]; then
+			if [ X"$TAR" != X"" -a X"$2" = X"$TAR" ]; then
+				CMD=$TAR
+				ARGS="tf -"
+			elif [ X"$DUMP" != X"" -a X"$2" = X"$DUMP" ]; then
+				CMD=$RESTORE
+				if [ $IS_AIX -eq 1 ]; then
+					ARGS=-tB
+				else
+					ARGS="tbf 2 -"
+				fi
+			else
+				$ECHO "** Cannot do $2 dumps" > $TEMP/errors
+				result=999	# flag as not really an error
+			fi
+		else
+			$ECHO "** Cannot find dump type" > $TEMP/errors
+		fi
+	fi
+	if [ X"$CMD" != X"" ]; then
+		$CMD $ARGS > /dev/null 2> $TEMP/errors
+		result=$?
+	fi
+	cat >/dev/null
+	$ECHO $result
 }
 
 #
@@ -69,186 +117,223 @@ EOF
 #	CONFIG_DIR	directory in which the config file resides
 #	AMRESTORE	full path name of amrestore
 #	AMGETCONF	full path name of getconf
-#	TAR		dito for GNU-tar
-#	MT		dito for mt
-#	DD		dito for dd
+#	TAR		ditto for GNU-tar
+#	DUMP		ditto for the system dump program
+#	RESTORE		ditto for the system restore program
+#	MT		ditto for mt
+#	DD		ditto for dd
 #	MAIL		mail program
 #	ECHO		echo
 #	ECHOARG		echo argument to supress line feed
 #	ECHOSUF		echo meta character to supress line feed
-#	TAROPT		GNU-tar option to unpack these files while reading
 #	MTOPT		flag given to MT to specify tape device: -f or -t
+#	IS_AIX		true if this is an AIX system
 
-	CONFIG_DIR=@CONFIG_DIR@
-	libexecdir=$libexecdir
-	sbindir=$sbindir
-	AMRESTORE=$sbindir/amrestore$SUF
-	AMGETCONF=$libexecdir/getconf$SUF
-	TAR=@GNUTAR@
-	MT=@MT@
-	MAIL=/usr/lib/sendmail
-	DD=@DD@
-	ECHO=/bin/echo
-	ECHOARG="@ac_n@"
-	ECHOSUF="@ac_c@"
-	TAROPT=
-	MTOPT=@MT_FILE_FLAG@
+CONFIG_DIR=@CONFIG_DIR@
+libexecdir=$libexecdir
+sbindir=$sbindir
+AMRESTORE=$sbindir/amrestore$SUF
+AMGETCONF=$libexecdir/getconf$SUF
+AMTAPE=$sbindir/amtape$SUF
+TAR=@GNUTAR@
+DUMP=@DUMP@
+RESTORE=@RESTORE@
+MT=@MT@
+MAIL=@MAILER@
+DD=@DD@
+ECHO=/bin/echo
+ECHOARG="@ac_n@"
+ECHOSUF="@ac_c@"
+MTOPT=@MT_FILE_FLAG@
+if [ `/bin/uname -s 2>/dev/null` = AIX ]; then
+	IS_AIX=1
+else
+	IS_AIX=0
+fi
 
 #
 # config file
 #
-	SLOT=0; [ "$2" != "" ] && SLOT=$2
-	CONFIG=$1
-	[ "$CONFIG" = "" ] \
-		&& echo "usage: amverify$SUF <config>" >&2 \
-		&& exit 1
+SLOT=0
+CONFIG=$1
+[ X"$CONFIG" = X"" ] \
+	&& $ECHO "usage: amverify$SUF <config>" >&2 \
+	&& exit 1
 
-	AMCONFIG=$CONFIG_DIR/$CONFIG/amanda.conf
-	[ ! -f $AMCONFIG ] \
-		&& echo "cannot find config file $AMCONFIG" >&2 \
-		&& exit 1
+AMCONFIG=$CONFIG_DIR/$CONFIG/amanda.conf
+[ ! -f $AMCONFIG ] \
+	&& $ECHO "Cannot find config file $AMCONFIG" >&2 \
+	&& exit 1
 
-	TPCHANGER=`getparm tpchanger`
-	if [ "$TPCHANGER" = "" ]; then
-		echo "no tape changer..."
-		DEVICE=`getparm tapedev`
-		[ "$DEVICE" = "" ] \
-			&& echo "no tape device..." >&2 \
-			&& exit 1
-		[ ! -c $DEVICE ] \
-			&& echo "no such device: $DEVICE" >&2 \
-			&& exit 1
-		echo "tape device is $DEVICE..."
-		CHANGER=""
-		SLOTS=0
+cd $CONFIG_DIR/$CONFIG
+
+TPCHANGER=`getparm tpchanger`
+if [ X"$TPCHANGER" = X"" ]; then
+	$ECHO "No tape changer..."
+	DEVICE=`getparm tapedev`
+	[ X"$DEVICE" = X"" ] \
+		&& $ECHO "No tape device..." >&2 \
+		&& exit 1
+	[ ! -c $DEVICE ] \
+		&& $ECHO "Not a character special device: $DEVICE" >&2 \
+		&& exit 1
+	$ECHO "Tape device is $DEVICE..."
+	SLOTS=1
+else
+	CHANGER_SLOT=${2:-current}
+	$ECHO "Tape changer is $TPCHANGER..."
+	SLOTS=`getparm runtapes`
+	[ X"$SLOTS" = X"" ] && SLOTS=1
+	if [ $SLOTS -eq 1 ]; then
+		p=""
 	else
-		CHANGER=$libexecdir/$TPCHANGER
-		[ ! -x $CHANGER ] \
-			&& echo "tape changer $CHANGER not executable" >&2 \
-			&& exit 1
-		echo "tape changer is $CHANGER..."
-		SLOTS=`getparm runtapes`
-		[ "$SLOTS" = "" ] \
-			&& echo "how many slots?" >&2 \
-			&& exit 1
-		echo "$SLOTS slots..."
-		MAXRETRIES=2
+		p=s
 	fi
-	
+	$ECHO "$SLOTS slot${p}..."
+	MAXRETRIES=2
+fi
+
 #
 # check the accessability
 #
-	[ ! -x $TAR ] \
-		&& echo "gnu tar not found: $TAR" >&2 \
-		&& exit 1
-	[ ! -x $AMRESTORE ] \
-		&& echo "amrestore not found: $AMRESTORE" >&2 \
-		&& exit 1
-	
-	REPORTTO=`getparm mailto`
-	if [ "$REPORTTO" = "" ]; then
-		echo "no notification by mail!"
-	else
-		echo "verify summary to $REPORTTO"
-	fi
+[ X"$TAR" != X"" -a ! -x "$TAR" ] \
+	&& $ECHO "GNU tar not found: $TAR" >&2
+[ X"$DUMP" != X"" -a \( X"$RESTORE" = X"" -o ! -x "$RESTORE" \) ] \
+	&& $ECHO "System restore program not found: $RESTORE" >&2
+[ ! -x $AMRESTORE ] \
+	&& $ECHO "amrestore not found: $AMRESTORE" >&2 \
+	&& exit 1
+
+REPORTTO=`getparm mailto`
+if [ X"$REPORTTO" = X"" ]; then
+	$ECHO "No notification by mail!"
+else
+	$ECHO "Verify summary to $REPORTTO"
+fi
+
+ORG=`getparm org`
+if [ X"$ORG" = X"" ]; then
+	$ECHO "No org in amanda.conf -- using $CONFIG"
+	ORG=$CONFIG
+fi
 
 #
 # ok, let's do it
 #
-	# TEMP		filename for temporary tar archives and stderr
-	# DEFECTS	defect list
-	# REPORT	report for mail
-	
-	TEMP=/tmp/amverify.$$; rm -f $TEMP.*
-	DEFECTS=/tmp/defects.$$; rm -f $DEFECTS
-	REPORT=/tmp/report.$$; rm -f $REPORT
-	TAPELIST=/tmp/tapelist.$$; rm -f $TAPELIST
-	EXITSTAT=/tmp/amrecover.exit.$$; rm -rf $EXITSTAT
+#	TEMP		directory for temporary tar archives and stderr
+#	DEFECTS		defect list
+#	REPORT		report for mail
+
+TEMP=/tmp/amverify.$$
+trap 'rm -fr $TEMP' 0
+if ( umask 077 ; mkdir $TEMP ) ; then
+	:
+else
+	$ECHO "Cannot create $TEMP" >&2
+	exit 1
+fi
+DEFECTS=$TEMP/defects; rm -f $DEFECTS
+REPORT=$TEMP/report; rm -f $REPORT
+TAPELIST=$TEMP/tapelist; rm -f $TAPELIST
+EXITSTAT=$TEMP/amrecover.exit; rm -rf $EXITSTAT
+
+trap 'report "aborted!"; $ECHO "aborted!" >> $DEFECTS; sendreport; rm -fr $TEMP; exit 1' 1 2 3 4 5 6 7 8 10 12 13 14 15
+
+$ECHO "Defects file is $DEFECTS" >&2
+report "amverify $CONFIG"
+report "`date`"
+report ""
 
 # ----------------------------------------------------------------------------
 
-trap "rm -f $TEMP.*; report "aborted!"; echo "aborted!" >> $DEFECTS; sendreport; exit 1" 1 2 3 4 5 6 7 8 10 12 13 14 15
-
-echo "Defects file is $DEFECTS" >&2
-report "amverify $CONFIG"
-report `date`
-report " "
-
-while [ $SLOT -le $SLOTS ]; do
-	#
-	# Tape Changer: dial slot and wait for result up to
-	#		$RETRIES times
-	#
-	CSLOT=$SLOT
+while [ $SLOT -lt $SLOTS ]; do
 	SLOT=`expr $SLOT + 1`
-	if [ "$CHANGER" != "" ]; then
-		ERG=1; RETRY=0
-		while [ $ERG != 0 ]; do
-			RETRY=`expr $RETRY + 1`
-			[ $RETRY -gt $MAXRETRIES ] \
-				&& report "Slot $CSLOT: Aborted" \
-				&& CHRESULT="" \
-				&& break
-			CHRESULT=`$CHANGER -slot $CSLOT`
-			ERG=$?
-			[ $ERG != 0 ] \
-				&& report "Waiting for tape drive..." \
-				&& sleep 5
-		done
-		[ "$CHRESULT" = "" ] \
-			&& report "Skipping slot $CSLOT" \
+	#
+	# Tape Changer: dial slot
+	#
+	if [ X"$TPCHANGER" != X"" ]; then
+		report "Loading ${CHANGER_SLOT} slot..."
+		$AMTAPE $CONFIG slot $CHANGER_SLOT > $TEMP/amtape.out 2>&1
+		THIS_SLOT=$CHANGER_SLOT
+		CHANGER_SLOT=next
+		RESULT=`grep "changed to slot" $TEMP/amtape.out`
+		[ X"$RESULT" = X"" ] \
+			&& report "** Error loading slot $THIS_SLOT" \
+			&& report "`cat $TEMP/amtape.out`" \
+			&& cat $TEMP/amtape.out >> $DEFECTS \
 			&& continue
-		set $CHRESULT
-		DEVICE=$2
+		DEVICE=`$AMTAPE $CONFIG device`
 	fi
-	report "Use device $DEVICE"
-	$ECHO $ECHOARG "Rewinding...\r$ECHOSUF" >&2
-	$MT $MTOPT $DEVICE rewind
-	$DD if=$DEVICE count=1 bs=32768 2>/dev/null >$TEMP.$CSLOT.o
-	[ ! -s $TEMP.$CSLOT.o ] \
-		&& report "** Error reading label on tape in slot $CSLOT" \
+	report "Using device $DEVICE"
+	if [ $IS_AIX -eq 0 ]; then
+
+		# The AIX "mt stat" function does not really do anything
+		# w.r.t. checking the drive for ready, and in fact, will
+		# fail under some conditions (e.g. if the tape "file"
+		# is a symlink to the real device).  We let the rewind
+		# right after this take care of the cases "mt stat"
+		# does not catch.
+
+		$ECHO $ECHOARG "Waiting for device to go ready...\r$ECHOSUF" >&2
+		until $MT $MTOPT $DEVICE stat >/dev/null 2>&1; do
+			sleep 3
+		done
+	fi
+	$ECHO $ECHOARG "Rewinding...                             \r$ECHOSUF" >&2
+	until $MT $MTOPT $DEVICE rewind; do
+		sleep 3
+	done
+	$ECHO $ECHOARG "Processing label...\r$ECHOSUF" >&2
+	$DD if=$DEVICE count=1 bs=32k 2> $TEMP/errors > $TEMP/header
+	[ ! -s $TEMP/header ] \
+		&& report "** Error reading label on tape" \
+		&& cat $TEMP/errors >> $DEFECTS \
 		&& continue
-	TAPENDATE=`grep AMANDA: $TEMP.$CSLOT.o | sed 's/^AMANDA: TAPESTART //'`
-	[ "$TAPENDATE" = "" ] \
-		&& report "** No amanda tape in slot $CSLOT" \
+	TAPENDATE=`grep AMANDA: $TEMP/header | sed 's/^AMANDA: TAPESTART //'`
+	[ X"$TAPENDATE" = X"" ] \
+		&& report "** No amanda tape in slot" \
 		&& continue
-	set $TAPENDATE
+	set X $TAPENDATE
+	shift
 	VOLUME=$4
 	DWRITTEN=$2
-	report "Slot $CSLOT: Volume $VOLUME, Date $DWRITTEN" 
-	[ "$DWRITTEN" = "0" -o "$DWRITTEN" = "X" ] \
-		&& report "Slot $CSLOT: Fresh tape. Skipping..." \
+	report "Volume $VOLUME, Date $DWRITTEN"
+	[ X"$DWRITTEN" = X"0" -o X"$DWRITTEN" = X"X" ] \
+		&& report "Fresh tape. Skipping..." \
 		&& continue
 	$ECHO $ECHOARG "$VOLUME $ECHOSUF" >> $TAPELIST
-	$MT $MTOPT $DEVICE rewind
+	$ECHO $ECHOARG "Rewinding...\r$ECHOSUF" >&2
+	until $MT $MTOPT $DEVICE rewind; do
+		sleep 3
+	done
 	ERG=0
 	ERRORS=0
 	while [ $ERG = 0 ]; do
-		$ECHO $ECHOARG "Sleeping...\r$ECHOSUF" >&2
-		until $MT $MTOPT $DEVICE stat >/dev/null 2>&1; do sleep 3; done
-		$ECHO $ECHOARG "Reading... \r$ECHOSUF" >&2
-		TARERG=`$AMRESTORE -p $DEVICE 2> $TEMP.$CSLOT.o |
-			{ $TAR tf - > /dev/null 2> $TEMP.$CSLOT.oo
-			  echo $?
-			  cat >/dev/null
-			}`
-		FILE=`grep restoring $TEMP.$CSLOT.o | sed 's/^.*restoring //'`
-		EOF=`grep "reached end of tape" $TEMP.$CSLOT.o`
+		$ECHO $ECHOARG "Reading...\r$ECHOSUF" >&2
+		RESULT=`$AMRESTORE -h -p $DEVICE 2> $TEMP/amrestore.out \
+			| doonefile 2> $TEMP/onefile.errors`
+		FILE=`grep restoring $TEMP/amrestore.out | sed 's/^.*restoring //'`
+		EOF=`grep "reached end of tape" $TEMP/amrestore.out`
 		# amrestore:   0: restoring sundae._mnt_sol1_usr.19961127.1
-		if [ -n "$FILE" -a $TARERG = 0 ]; then
+		if [ X"$FILE" != X"" -a X"$RESULT" = X"0" ]; then
 			report "Checked $FILE"
+		elif [ X"$FILE" != X"" -a X"$RESULT" = X"999" ]; then
+			report "Skipped $FILE (`cat $TEMP/errors`)"
 		elif [ -n "$EOF" ]; then
 			report "End-of-Tape detected."
 			break
 		else
 			report "** Error detected ($FILE)"
-			echo "$VOLUME ($FILE):" >>$DEFECTS
-			[ -s $TEMP.$CSLOT.o ] \
-				&& report `cat $TEMP.$CSLOT.o` \
-				&& cat $TEMP.$CSLOT.o >>$DEFECTS
-			[ -s $TEMP.$CSLOT.oo ] \
-				&& report `cat $TEMP.$CSLOT.oo` \
-				&& cat $TEMP.$CSLOT.oo >>$DEFECTS
+			$ECHO "$VOLUME ($FILE):" >>$DEFECTS
+			[ -s $TEMP/amrestore.out ] \
+				&& report "`cat $TEMP/amrestore.out`" \
+				&& cat $TEMP/amrestore.out >>$DEFECTS
+			[ -s $TEMP/errors ] \
+				&& report "`cat $TEMP/errors`" \
+				&& cat $TEMP/errors >>$DEFECTS
+			[ -s $TEMP/onefile.errors ] \
+				&& report "`cat $TEMP/onefile.errors`" \
+				&& cat $TEMP/onefile.errors >>$DEFECTS
 			ERRORS=`expr $ERRORS + 1`
 			[ $ERRORS -gt 5 ] \
 				&& report "Too many errors." \
@@ -256,17 +341,33 @@ while [ $SLOT -le $SLOTS ]; do
 		fi
 	done
 	$ECHO $ECHOARG "Rewinding...\r$ECHOSUF" >&2
-	$MT $MTOPT $DEVICE rewind
-	rm -f $TEMP.$CSLOT $TEMP.$CSLOT.o $TEMP.$CSLOT.oo
+	until $MT $MTOPT $DEVICE rewind; do
+		sleep 3
+	done
+	$ECHO
+	rm -f $TEMP/header \
+	      $TEMP/amtape.out \
+	      $TEMP/amrestore.out \
+	      $TEMP/errors \
+	      $TEMP/onefile.errors
 done
+
+if [ X"$TPCHANGER" != X"" ]; then
+	report "Advancing past the last tape..."
+	$AMTAPE $CONFIG slot advance 2> $TEMP/amtape.out
+	RESULT=`grep "changed to slot" $TEMP/amtape.out`
+	[ X"$RESULT" = X"" ] \
+		&& report "** Error advancing after last slot" \
+		&& report "`cat $TEMP/amtape.out`" \
+		&& cat $TEMP/amtape.out >> $DEFECTS
+fi
+
 $ECHO >> $TAPELIST
 
 [ -s $DEFECTS ] \
-	&& echo "Errors found: " \
+	&& $ECHO "Errors found: " \
 	&& cat $DEFECTS
 
 sendreport
-
-rm -f $DEFECTS $REPORT $TAPELIST $EXITSTAT
 
 exit 0

@@ -1,5 +1,17 @@
 1998-11-19  John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/amtape.c (usage, main, show_device): apply patch from
+	Chris Jones <cjones@clydesdale.math.montana.edu> to support "device"
+	as an option to return the drive device name as reported by the
+	changer.
+	* man/amtape.8: document the new "device" option.
+	* server-src/amverify.sh.in: use the new amtape "device" option to
+	better handle tape changers.  Overhaul for general cleanup and some
+	security issues, plus amverify now tries to support non-tar images.
+	* man/amverify.8.in: document non-tar image issues.
+
+1998-11-19  John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/reporter.c (main): ignore SIGPIPE so if a child process
 	dies we do not also go away.  Also fix a core dump if amanda.conf
 	cannot be processed, and clean up a few error messages.

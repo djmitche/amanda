@@ -21,7 +21,7 @@ amverify \- check an Amanda tape for errors
 reads an Amanda format tape and makes sure each backup image
 can be processed by
 .B amrestore
-and the appropriate system restore program (e.g.\&
+and, if possible, the appropriate system restore program (e.g.\&
 .BR tar ).
 .LP
 .B Amverify
@@ -31,16 +31,30 @@ on each file of the tape and pipes the output
 to the system restore program with an option to create a catalogue
 of the backup.
 The catalogue itself is discarded.
-Only the success or failure of the operation itself is of interest.
+Only the success or failure of the operation itself is reported.
+.LP
+If the dump image cannot be processed by the system restore program,
+e.g. if it was written on a different operating system,
+the image is still processed by
+.B amrestore
+but thrown away.
+This still determines if the tape is readable,
+but does not do any internal consistency check on the image.
 .LP
 If
 .I config
 is set up to use a tape changer,
+the
 .I slot
-may be entered to choose a particular tape to process.
-Otherwise, slot
-.B 0
-is the default.
+argument may be used to choose the first tape to process.
+Otherwise,
+the
+.B current
+slot is used.
+.LP
+The
+.B runtapes
+configuration parameter determines how many tapes are processed.
 .LP
 See the
 .IR amanda (8)
@@ -50,9 +64,3 @@ Axel Zinser <fifi@icem.de>
 .SH "SEE ALSO"
 amrestore(8),
 amanda(8)
-.SH BUGS
-At the moment, only backup tapes created with GNU tar can be verified.
-.LP
-The
-.I slot
-parameter is assumed to be numeric.
