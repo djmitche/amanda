@@ -1,5 +1,10 @@
 2002-04-22  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* client-src/sendbackup.c: (optionstr): Add srvcomp-best and
+	  srvcomp-fast options.
+
+2002-04-22  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amcheck.c (start_host): Check the todo bit before 
 	  sending noop REQ.
 

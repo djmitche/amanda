@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.66 2002/04/21 23:13:27 martinea Exp $
+ * $Id: sendbackup.c,v 1.67 2002/04/22 20:47:30 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -92,6 +92,10 @@ option_t *options;
 	compress_opt = "compress-best;";
     else if(options->compress == COMPR_FAST)
 	compress_opt = "compress-fast;";
+    else if(options->compress == COMPR_SERVER_BEST)
+	compress_opt = "srvcomp-best;";
+    else if(options->compress == COMPR_SERVER_FAST)
+	compress_opt = "srvcomp-fast;";
     if(options->no_record) record_opt = "no-record;";
     if(options->auth) auth_opt = vstralloc("auth=", options->auth, ";", NULL);
     if(options->createindex) index_opt = "index;";
