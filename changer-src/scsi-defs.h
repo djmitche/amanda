@@ -448,7 +448,8 @@ typedef struct
     PackedBit     byte10res : 6;
 #endif
     unsigned char source[2];
-    unsigned char res4[4];
+  unsigned char pvoltag[36];
+  unsigned char res4[4];
 } MediumTransportElementDescriptor_T;
 
 /* ======================================================= */
@@ -488,7 +489,11 @@ typedef struct
     PackedBit     byte10res : 6;
 #endif
     unsigned char source[2];
-    unsigned char res4[4];
+  unsigned char pvoltag[36];
+  unsigned char res4[4];
+  unsigned char mediadomain[1];
+  unsigned char mediatype[1];
+  unsigned char res5[2];
 } ImportExportElementDescriptor_T;
 
 /* ======================================================= */
@@ -524,7 +529,11 @@ typedef struct
     PackedBit     res3   : 6;
 #endif
     unsigned char source[2];
-    unsigned char res4[4];
+  unsigned char pvoltag[36];
+  unsigned char res4[4];
+  unsigned char mediadomain[1];
+  unsigned char mediatype[1];
+  unsigned char res5[2];
 } StorageElementDescriptor_T;
 
 /* ======================================================= */
@@ -576,7 +585,8 @@ typedef struct
     PackedBit     res3    : 6;
 #endif
     unsigned char source[2];
-    unsigned char res4[4];
+  unsigned char pvoltag[36];
+    unsigned char res4[42];
 } DataTransferElementDescriptor_T;
 
 /* ======================================================= */
@@ -1159,6 +1169,7 @@ void PrintConf();
 int LogSense(int fd);
 int ScanBus(int print);
 void DebugPrint(int level, int section, char * fmt, ...);
+int DecodeSense(RequestSense_T *sense, char *pstring, FILE *out);
 /*
  * Local variables:
  * indent-tabs-mode: nil

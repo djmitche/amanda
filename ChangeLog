@@ -1,3 +1,15 @@
+2002-01-10   Thomas Hepper <th@ant.han.de>
+        * changer-src/scsi-changer-driver.c: Fixed prototype for SCSI_ReadElementStatus
+        * changer-src/scsi-changer-driver.c (eject_tape): Fixed error in the rewind 
+        * changer-src/scsi-changer-driver.c (unload): Fixed error in the rewind logic
+        * changer-src/scsi-changer-driver.c (load): Fixed error in the rewind logic
+        * changer-src/scsi-changer-driver.c (GetElementStatus): Fixed error in the parameter list to SCSI_ReadElementStatus
+        * changer-src/scsi-changer-driver.c (SCSI_ReadElementStatus): Changed the logic, if the size for DescriptorSize
+	  is 0 try to get the size the old way, if this parameter greate 0 take this value as the size for the data
+	  buffer which is used to hold the result. May fix a problem with an HP changer
+	* changer-src/scsi-defs.h: Updated the structs for the different element types (Media Changer, Storage, Tape, Import)
+
+
 2002-01-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	Patch by Harlan Stenn <Harlan.Stenn@pfcs.com>
 

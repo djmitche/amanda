@@ -1,5 +1,5 @@
  #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.27.2.7.2.2 2001/12/29 21:41:28 martinea Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.27.2.7.2.3 2002/01/10 21:41:37 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -132,7 +132,8 @@ int SCSI_ReadElementStatus(int DeviceFD,
                            unsigned char VolTag,
                            int StartAddress,
                            int NoOfElements,
-                           char **data);
+			   int DescriptorSize,
+			   char **data);
 
 FILE *StatFile;
 
@@ -742,8 +743,13 @@ int eject_tape(char *tapedev, int type)
    */
   if (pDev[INDEX_TAPE].avail == 1 && (chg.emubarcode == 1 || BarCode(INDEX_CHANGER)))
     {
-      pDev[INDEX_TAPE].functions->function_rewind(INDEX_TAPE);
-      
+
+      if (pDev[INDEX_TAPECTL].SCSI == 1 && pDev[INDEX_TAPECTL].avail) {
+	pDev[INDEX_TAPECTL].functions->function_rewind(INDEX_TAPECTL);
+      } else {
+	pDev[INDEX_TAPE].functions->function_rewind(INDEX_TAPE);
+      }
+
       if (pDev[INDEX_TAPE].devopen == 1)
 	{
 	  SCSI_CloseDevice(INDEX_TAPE);
@@ -932,7 +938,12 @@ int unload(int fd, int drive, int slot)
     {
       if (pDev[INDEX_TAPE].avail == 1 && (chg.emubarcode == 1 || BarCode(INDEX_CHANGER)))
 	{
-	  pDev[INDEX_TAPE].functions->function_rewind(INDEX_TAPE);
+
+	  if (pDev[INDEX_TAPECTL].SCSI == 1 && pDev[INDEX_TAPECTL].avail) {
+	    pDev[INDEX_TAPECTL].functions->function_rewind(INDEX_TAPECTL);
+	  } else {
+	    pDev[INDEX_TAPE].functions->function_rewind(INDEX_TAPE);
+	  }
 	  
 	  if (pDev[INDEX_TAPE].devopen == 1)
 	    {
@@ -1094,7 +1105,12 @@ int load(int fd, int drive, int slot)
    */
   if (pDev[INDEX_TAPE].avail == 1 && (chg.emubarcode == 1 || BarCode(INDEX_CHANGER)))
     {
-      pDev[INDEX_TAPE].functions->function_rewind(INDEX_TAPE);
+
+      if (pDev[INDEX_TAPECTL].SCSI == 1 && pDev[INDEX_TAPECTL].avail) {
+	pDev[INDEX_TAPECTL].functions->function_rewind(INDEX_TAPECTL);
+      } else {
+	pDev[INDEX_TAPE].functions->function_rewind(INDEX_TAPE);
+      }
       
       if (pDev[INDEX_TAPE].devopen == 1)
 	{
@@ -3670,7 +3686,6 @@ int GetElementStatus(int DeviceFD)
   int offset = 0;
   int barcode = 0;                   /* To store the result of the BarCode function */
   int NoOfElements;
-
  
   DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"##### START GetElementStatus\n");
   
@@ -3701,7 +3716,8 @@ int GetElementStatus(int DeviceFD)
                                      0,
                                      barcode,
                                      V2(pEAAPage->MediumTransportElementAddress),
-                                     MTE,
+                                     MTE+1,
+				     sizeof(MediumTransportElementDescriptor_T),
                                      (char **)&DataBuffer) != 0)
             {
               if (DataBuffer != 0)
@@ -3722,7 +3738,7 @@ int GetElementStatus(int DeviceFD)
               if (ElementStatusPage->pvoltag == 1)
                 {
                   strncpy(pMTE[x].VolTag, 
-                          MediumTransportElementDescriptor->res4,
+                          MediumTransportElementDescriptor->pvoltag,
                           TAG_SIZE);
                   TerminateString(pMTE[x].VolTag, TAG_SIZE+1);
                 }
@@ -3765,6 +3781,7 @@ int GetElementStatus(int DeviceFD)
                                      barcode,
                                      V2(pEAAPage->FirstStorageElementAddress),
                                      STE,
+				     sizeof(StorageElementDescriptor_T),
                                      (char **)&DataBuffer) != 0)
             {
               if (DataBuffer != 0)
@@ -3786,7 +3803,7 @@ int GetElementStatus(int DeviceFD)
               if (ElementStatusPage->pvoltag == 1)
                 {
                   strncpy(pSTE[x].VolTag, 
-                          StorageElementDescriptor->res4,
+                          StorageElementDescriptor->pvoltag,
                           TAG_SIZE);
                   TerminateString(pSTE[x].VolTag, TAG_SIZE+1);
                 }
@@ -3831,6 +3848,7 @@ int GetElementStatus(int DeviceFD)
                                      barcode,
                                      V2(pEAAPage->FirstImportExportElementAddress),
                                      IEE,
+				     sizeof(ImportExportElementDescriptor_T),
                                      (char **)&DataBuffer) != 0)
             {
               if (DataBuffer != 0)
@@ -3852,7 +3870,7 @@ int GetElementStatus(int DeviceFD)
               if (ElementStatusPage->pvoltag == 1)
                 {
                   strncpy(pIEE[x].VolTag, 
-                          ImportExportElementDescriptor->res4,
+                          ImportExportElementDescriptor->pvoltag,
                           TAG_SIZE);
                   TerminateString(pIEE[x].VolTag, TAG_SIZE+1);
                 }
@@ -3895,6 +3913,7 @@ int GetElementStatus(int DeviceFD)
                                      barcode,
                                      V2(pEAAPage->FirstDataTransferElementAddress),
                                      DTE,
+				     sizeof(DataTransferElementDescriptor_T),
                                      (char **)&DataBuffer) != 0)
             {
               if (DataBuffer != 0)
@@ -3916,7 +3935,7 @@ int GetElementStatus(int DeviceFD)
               if (ElementStatusPage->pvoltag == 1)
                 {
                   strncpy(pDTE[x].VolTag, 
-                          DataTransferElementDescriptor->res4,
+                          DataTransferElementDescriptor->pvoltag,
                           TAG_SIZE);
                   TerminateString(pDTE[x].VolTag, TAG_SIZE+1);
                 }
@@ -3942,13 +3961,14 @@ int GetElementStatus(int DeviceFD)
       /*
        * And now the old way, when we get here the read mode sense page has failed ...
        */
-      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Reading Element Status the old way ....\n");
+      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Reading Element Status the old way .... (max 255 elements)\n");
       if (SCSI_ReadElementStatus(DeviceFD, 
                                  0, 
                                  0,
                                  barcode,
                                  0,
-                                 0xffff,
+                                 0xff,
+				 0x7f,
                                  (char **)&DataBuffer) != 0)
         {
 	  if (DataBuffer != 0)
@@ -3991,7 +4011,7 @@ int GetElementStatus(int DeviceFD)
                   if (ElementStatusPage->pvoltag == 1)
                     {
                       strncpy(pMTE[x].VolTag, 
-                              MediumTransportElementDescriptor->res4,
+                              MediumTransportElementDescriptor->pvoltag,
                               TAG_SIZE);
                       TerminateString(pMTE[x].VolTag, TAG_SIZE+1);
                     }
@@ -4026,7 +4046,7 @@ int GetElementStatus(int DeviceFD)
                   if (ElementStatusPage->pvoltag == 1)
                     {
                       strncpy(pSTE[x].VolTag, 
-                              StorageElementDescriptor->res4,
+                              StorageElementDescriptor->pvoltag,
                               TAG_SIZE);
                       TerminateString(pSTE[x].VolTag, TAG_SIZE+1);
                     }
@@ -4063,7 +4083,7 @@ int GetElementStatus(int DeviceFD)
                   if (ElementStatusPage->pvoltag == 1)
                     {
                       strncpy(pIEE[x].VolTag, 
-                              ImportExportElementDescriptor->res4,
+                              ImportExportElementDescriptor->pvoltag,
                               TAG_SIZE);
                       TerminateString(pIEE[x].VolTag, TAG_SIZE+1);
                     }
@@ -4100,7 +4120,7 @@ int GetElementStatus(int DeviceFD)
                   if (ElementStatusPage->pvoltag == 1)
                     {
                       strncpy(pSTE[x].VolTag, 
-                              DataTransferElementDescriptor->res4,
+                              DataTransferElementDescriptor->pvoltag,
                               TAG_SIZE);
                       TerminateString(pSTE[x].VolTag, TAG_SIZE+1);
                     }
@@ -4428,6 +4448,11 @@ int LogSense(DeviceFD)
             }
             p++;
           }
+
+	  /*
+	  *  Hack to disable the printing of unknown pages
+	  */
+	  found = 1;
 
           if (!found) {
             fprintf(StatFile, "Logpage No %d = %x\n", count ,logpages[count]);
@@ -5705,12 +5730,24 @@ int SCSI_Inquiry(int DeviceFD, SCSIInquiry_T *buffer, u_char size)
   return(ret);
 }
 
+/*
+ * Read the Element Status. If DescriptorSize  != 0 then 
+ * allocate DescriptorSize * NoOfElements for the result from the
+ * Read Element Status command. 
+ * If DescriptorSize == 0 than try to figure out how much space is needed
+ * by 
+ * 1. do an read with an allocation size of 8
+ * 2. from the result take the 'Byte Count of Descriptor Available'
+ * 3. do again an Read Element Status with the result from 2.
+ *
+ */
 int SCSI_ReadElementStatus(int DeviceFD, 
                            unsigned char type, 
                            unsigned char lun,
                            unsigned char VolTag,
                            int StartAddress,
                            int NoOfElements,
+			   int DescriptorSize,
                            char **data)
 {
   CDB_T CDB;
@@ -5723,91 +5760,106 @@ int SCSI_ReadElementStatus(int DeviceFD,
   DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### START SCSI_ReadElementStatus\n");
 
   if ((pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
-      {
-          DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ReadElementStatus : malloc failed\n");
-          ChgExit("SCSI_ReadElementStatus","malloc failed", FATAL);
-      }
-
-  
-  if (*data != NULL)
     {
-      *data = realloc(*data, 8);
-    } else {
-      *data = malloc(8);
+      DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ReadElementStatus : malloc failed\n");
+      ChgExit("SCSI_ReadElementStatus","malloc failed", FATAL);
     }
-
-  memset(*data, 0, 8);
+  
+  /*
+   * How many elements, if <= 0 than exit with an fatal error
+   */
+  if (NoOfElements <= 0)
+    {
+      ChgExit("SCSI_ReadElementStatus","No of Elements passed are le 0",FATAL);
+    }
 
   VolTag = (VolTag << 4) & 0x10;
   type = type & 0xf;
   lun = (lun << 5) & 0xe0;
- 
-  /* 
-   * First try to get the allocation length for a second call
+
+
+  /* if  DescriptorSize == 0
+   * try to get the allocation length for the second call
    */
-
-  while (retry > 0 && retry < MAX_RETRIES)
+  if (DescriptorSize == 0)
     {
-      memset(pRequestSense, 0, sizeof(RequestSense_T) );
+      if (*data != NULL)
+	{
+	  *data = realloc(*data, 8);
+	} else {
+	  *data = malloc(8);
+	}
       
-      CDB[0] = SC_COM_RES;          /* READ ELEMENT STATUS */
-      CDB[1] = VolTag | type | lun; /* Element Type Code , VolTag, LUN */
-      MSB2(&CDB[2], StartAddress);  /* Starting Element Address */
-      MSB2(&CDB[4], NoOfElements);  /* Number Of Element */
-      CDB[6] = 0;                             /* Reserved */                          
-      MSB3(&CDB[7],8);                   /* Allocation Length */    
-      CDB[10] = 0;                           /* Reserved */                           
-      CDB[11] = 0;                           /* Control */                             
-      
-      ret = SCSI_Run(DeviceFD, Input, CDB, 12,                      
-                                *data, 8, 
-                                (char *)pRequestSense, sizeof(RequestSense_T));
+      memset(*data, 0, 8);
       
       
-      DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ReadElementStatus : (1) SCSI_Run %d\n", ret);
-      if (ret < 0)
-        {
-          DecodeSense(pRequestSense, "SCSI_ReadElementStatus :",debug_file);
+      
+      while (retry > 0 && retry < MAX_RETRIES)
+	{
+	  memset(pRequestSense, 0, sizeof(RequestSense_T) );
+	  
+	  CDB[0] = SC_COM_RES;          /* READ ELEMENT STATUS */
+	  CDB[1] = VolTag | type | lun; /* Element Type Code , VolTag, LUN */
+	  MSB2(&CDB[2], StartAddress);  /* Starting Element Address */
+	  MSB2(&CDB[4], NoOfElements);  /* Number Of Element */
+	  CDB[6] = 0;                             /* Reserved */                          
+	  MSB3(&CDB[7],8);                   /* Allocation Length */    
+	  CDB[10] = 0;                           /* Reserved */                           
+	  CDB[11] = 0;                           /* Control */                             
+	  
+	  ret = SCSI_Run(DeviceFD, Input, CDB, 12,                      
+			 *data, 8, 
+			 (char *)pRequestSense, sizeof(RequestSense_T));
+	  
+	  
+	  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ReadElementStatus : (1) SCSI_Run %d\n", ret);
+	  if (ret < 0)
+	    {
+	      DecodeSense(pRequestSense, "SCSI_ReadElementStatus :",debug_file);
+	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_ReadElementStatus (%d)\n",ret);
+	      return(ret);
+	    }
+	  if ( ret > 0)
+	    {
+	      switch(SenseHandler(DeviceFD, 0, pRequestSense->SenseKey, pRequestSense->AdditionalSenseCode, pRequestSense->AdditionalSenseCodeQualifier, (char *)pRequestSense))
+		{
+		case SENSE_IGNORE:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ModeSense : SENSE_IGNORE\n");
+		  retry = 0;
+		  break;
+		case SENSE_RETRY:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ModeSense : SENSE_RETRY no %d\n", retry);
+		  sleep(2);
+		  break;
+		default:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ModeSense : end %d\n", pRequestSense->SenseKey);
+		  return(pRequestSense->SenseKey);
+		  break;
+		}
+	    }
+	  retry++;
+	  if (ret == 0)
+	    {
+	      retry=0;
+	    }
+	}
+      if (retry > 0)
+	{
 	  DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_ReadElementStatus (%d)\n",ret);
-          return(ret);
-        }
-      if ( ret > 0)
-        {
-          switch(SenseHandler(DeviceFD, 0, pRequestSense->SenseKey, pRequestSense->AdditionalSenseCode, pRequestSense->AdditionalSenseCodeQualifier, (char *)pRequestSense))
-            {
-            case SENSE_IGNORE:
-              DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ModeSense : SENSE_IGNORE\n");
-              retry = 0;
-              break;
-            case SENSE_RETRY:
-              DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ModeSense : SENSE_RETRY no %d\n", retry);
-              sleep(2);
-              break;
-            default:
-              DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ModeSense : end %d\n", pRequestSense->SenseKey);
-              return(pRequestSense->SenseKey);
-              break;
-            }
-        }
-      retry++;
-      if (ret == 0)
-        {
-          retry=0;
-        }
+	  return(ret);
+	}
+ 
+      ElementStatusData = (ElementStatusData_T *)*data;
+      DataBufferLength = V3(ElementStatusData->count);
+
+      DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ReadElementStatus: DataBufferLength %X, ret %d\n",DataBufferLength, ret);
+      
+      dump_hex(*data, 8, DEBUG_INFO, SECTION_ELEMENT);
+    } else { /* DescriptorSize != 0 */
+      DataBufferLength = NoOfElements * DescriptorSize;
     }
-  if (retry > 0)
-    {
-      DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_ReadElementStatus (%d)\n",ret);
-      return(ret);
-    }
-  
-  ElementStatusData = (ElementStatusData_T *)*data;
-  DataBufferLength = V3(ElementStatusData->count);
+
   DataBufferLength = DataBufferLength + 8;
-  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ReadElementStatus: DataBufferLength %X, ret %d\n",DataBufferLength, ret);
-
-  dump_hex(*data, 8, DEBUG_INFO, SECTION_ELEMENT);
-
   *data = realloc(*data, DataBufferLength);
   memset(*data, 0, DataBufferLength);
   retry = 1;
