@@ -1,3 +1,12 @@
+2002-11-12  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* client-src/client_util.c (test_name_len) Remove variable.
+	* common-src/match.c (len_prefix): Change type to int.
+	* server-src/taper.c: Use %p to print pointer.
+	* tape-src/amdd.c (read_func, write_func):Change return type to ssize_t.
+	* tape-src/amdd.c (debug): Renamed to debug_amdd.
+	* tape-src/ammt.c (debug): Renamed to debug_ammt.
+
 2002-11-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* restore-src/amidxtaped.c: Fix restore from file.

@@ -20,7 +20,7 @@
 #include "tapeio.h"
 #endif
 
-static int debug = 0;
+static int debug_amdd = 0;
 static char *pgm = NULL;
 
 static void
@@ -55,8 +55,8 @@ main(int argc, char **argv) {
     char *eq;
     int length = 0;
     int have_length = 0;
-    int (*read_func)();
-    int (*write_func)();
+    ssize_t (*read_func)();
+    ssize_t (*write_func)();
 
     if((pgm = strrchr(argv[0], '/')) != NULL) {
 	pgm++;
@@ -66,7 +66,7 @@ main(int argc, char **argv) {
     while(-1 != (ch = getopt(argc, argv, "hdl:"))) {
 	switch(ch) {
 	case 'd':
-	    debug = 1;
+	    debug_amdd = 1;
 	    fprintf(stderr, "debug mode!\n");
 	    break;
 	case 'l':
@@ -108,7 +108,7 @@ main(int argc, char **argv) {
 		return 1;
 	    }
 	    read_func = tapefd_read;
-            if(debug) {
+            if(debug_amdd) {
 		fprintf(stderr, "input opened \"%s\", got fd %d\n",
 				eq + 1, infd);
 	    }
@@ -121,12 +121,12 @@ main(int argc, char **argv) {
 		return 1;
 	    }
 	    write_func = tapefd_write;
-            if(debug) {
+            if(debug_amdd) {
 		fprintf(stderr, "output opened \"%s\", got fd %d\n",
 				eq + 1, outfd);
 	    }
 	    if(have_length) {
-		if(debug) {
+		if(debug_amdd) {
 		    fprintf(stderr, "length set to %d\n", length);
 		}
 		tapefd_setinfo_length(outfd, length);
@@ -141,18 +141,18 @@ main(int argc, char **argv) {
 		case 'M': blocksize *= 1024 * 1024;	break;
 		}
 	    }
-	    if(debug) {
+	    if(debug_amdd) {
 		fprintf(stderr, "blocksize set to %d\n", blocksize);
 	    }
 	} else if(0 == strncmp("count", argv[optind], len)) {
 	    count = atoi(eq + 1);
 	    have_count = 1;
-	    if(debug) {
+	    if(debug_amdd) {
 		fprintf(stderr, "count set to %d\n", count);
 	    }
 	} else if(0 == strncmp("skip", argv[optind], len)) {
 	    skip = atoi(eq + 1);
-	    if(debug) {
+	    if(debug_amdd) {
 		fprintf(stderr, "skip set to %d\n", skip);
 	    }
 	} else {

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: match.c,v 1.10.4.1.4.1.2.3 2002/03/24 19:23:23 jrjackson Exp $
+ * $Id: match.c,v 1.10.4.1.4.1.2.4 2002/11/12 18:01:19 martinea Exp $
  *
  * functions for checking and matching regular expressions
  */
@@ -408,7 +408,8 @@ int match_datestamp(dateexp, datestamp)
 char *dateexp, *datestamp;
 {
     char *dash;
-    size_t len, len_suffix, len_prefix;
+    size_t len, len_suffix;
+    int len_prefix;
     char firstdate[100], lastdate[100];
     char mydateexp[100];
     int match_exact;
