@@ -54,7 +54,7 @@ EXTRA_DIST = 		getcwd.c	mktime.c	strerror.c	\
 version.c:	$(srcdir)/genversion.c versuff.c $(srcdir)/version.h
 	$(COMPILE) -DCC="\"$(CC)\"" -DBUILT_DATE="\"`date`\"" -DBUILT_MACH="\"`uname -a`\"" -c $(srcdir)/genversion.c
 	$(COMPILE) -c versuff.c
-	$(CC) $(LDFLAGS) genversion.o versuff.o -o genversion
+	$(CC) $(LDFLAGS) genversion.o versuff.o -o genversion $(LIBS)
 	./genversion > version.c
 	rm -f genversion genversion.o versuff.o
 
@@ -86,7 +86,7 @@ regerror.ih: $(REGsrcdir)/regerror.c $(REGsrcdir)/mkh
 	sh $(REGsrcdir)/mkh -o -p $(REGsrcdir)/regerror.c >$@
 
 
-LINK_TEST=$(COMPILE) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -DTEST
+LINK_TEST=$(COMPILE) $(LDFLAGS) -DTEST
 
 statfs: $(srcdir)/statfs.c $(srcdir)/statfs.h
 	$(LINK_TEST) $(srcdir)/statfs.c -o statfs
