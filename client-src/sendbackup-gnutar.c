@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.57 1998/11/09 16:36:35 kashmir Exp $
+ * $Id: sendbackup-gnutar.c,v 1.58 1999/01/20 07:22:26 oliva Exp $
  *
  * send backup data using GNU tar
  */
@@ -64,7 +64,7 @@ static regex_t re_table[] = {
   { DMP_NORMAL, ": Error exit delayed from previous errors", 1},
 #endif
   
-  /* samba 1.9.17 has introduced these output messages */
+  /* samba may produce these output messages */
   { DMP_NORMAL, "^doing parameter", 1},
   { DMP_NORMAL, "^pm_process\\(\\)", 1},
   { DMP_NORMAL, "^adding IPC", 1},
@@ -90,12 +90,13 @@ static regex_t re_table[] = {
   { DMP_NORMAL, "^nread=", 1},
   { DMP_NORMAL, "^\\([0-9][0-9]* kb/s\\)", 1},
   { DMP_NORMAL, "^\\([0-9][0-9]*\\.[0-9][0-9]* kb/s\\)", 1},
+  { DMP_NORMAL, "^[ ]*directory ", 1},
   { DMP_NORMAL, "^tar: dumped [0-9][0-9]* tar files", 1},
   { DMP_NORMAL, "^load_client_codepage", 1},
 #ifdef IGNORE_SMBCLIENT_ERRORS
   /* This will cause amanda to ignore real errors, but that may be
-   * unavoidable when you're backing up system disks.  Add this at
-   * your own risk! */
+   * unavoidable when you're backing up system disks.  It seems to be
+   * a safe thing to do if you know what you're doing.  */
   { DMP_NORMAL, "^ERRDOS - ERRbadshare opening remote file", 1},
   { DMP_NORMAL, "^ERRDOS - ERRbadfile opening remote file", 1},
   { DMP_NORMAL, "^ERRDOS - ERRnoaccess setting attributes on file", 1},
