@@ -1,5 +1,5 @@
  #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.27.2.7 2001/09/16 18:10:26 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.27.2.7.2.1 2001/12/20 07:59:28 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -915,6 +915,11 @@ int unload(int fd, int drive, int slot)
 	}
       
       slot = find_empty(fd, 0, 0);
+      if (slot == -1 )
+      {
+	      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "unload: No Empty slot found\n");
+	      return(-1);
+      }
       DebugPrint(DEBUG_INFO, SECTION_TAPE,"unload : found empty one, try to unload to slot %d\n", slot);
     }
 
@@ -1990,7 +1995,7 @@ int TapeStatus()
    * normal ioctl (MTIOCGET for example) may fail
    * So try an Inquiry
    */
-  if (pDev[INDEX_TAPE].SCSI == 1)
+  if (pDev[INDEX_TAPECTL].SCSI == 1)
     {
       if ((pRequestSense = malloc(sizeof(RequestSense_T))) == NULL)
 	{
@@ -2741,6 +2746,11 @@ int SDXMove(int DeviceFD, int from, int to)
            DebugPrint(DEBUG_INFO, SECTION_MOVE,"SDXMove : Destination Element %d Type %d is full\n",
                 pto->address, pto->type);
             to = find_empty(DeviceFD, 0, 0);
+	    if (to == -1 )
+	    {
+		    DebugPrint(DEBUG_ERROR, SECTION_MOVE,"SDXMove : no empty slot found for unload\n");
+		    return(-1);
+	    }
             DebugPrint(DEBUG_INFO, SECTION_MOVE,"SDXMove : Unload to %d\n", to);
             if ((pto = LookupElement(to)) == NULL)
             {
@@ -2875,6 +2885,11 @@ int GenericMove(int DeviceFD, int from, int to)
       DebugPrint(DEBUG_INFO, SECTION_MOVE, "GenericMove : Destination Element %d Type %d is full\n",
 		 pto->address, pto->type);
       to = find_empty(DeviceFD, 0, 0);
+      if ( to == -1)
+      {
+	      DebugPrint(DEBUG_ERROR, SECTION_MOVE, "GenericMove : no empty slot found\n");
+	      return(-1);
+      }
       DebugPrint(DEBUG_INFO, SECTION_MOVE, "GenericMove : Unload to %d\n", to);
       if ((pto = LookupElement(to)) == NULL)
         {
@@ -4289,7 +4304,7 @@ int LogSense(DeviceFD)
   char *buffer;
   char *logpages;
   int nologpages;
-  int size = 2048;
+  int size = 128;
 
   DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### START LogSense\n");
 
@@ -4404,6 +4419,8 @@ int LogSense(DeviceFD)
           p = (struct LogPageDecode *)&DecodePages;
           found = 0;
 
+	  dump_hex((char *)LogParameter, 64, DEBUG_INFO, SECTION_SCSI);
+
           while(p->ident != NULL) {
             if ((strcmp(pDev[INDEX_TAPECTL].ident, p->ident) == 0 ||strcmp("*", p->ident) == 0)  && p->LogPage == logpages[count]) {
               p->decode(LogParameter, length);
@@ -4414,7 +4431,7 @@ int LogSense(DeviceFD)
             p++;
           }
 
-          if (!found && 0 == 1) {
+          if (!found) {
             fprintf(StatFile, "Logpage No %d = %x\n", count ,logpages[count]);
       
             while ((char *)LogParameter < (buffer + length)) {
@@ -4450,6 +4467,34 @@ int LogSense(DeviceFD)
           }
         }
       }
+
+      /*
+       * Test only !!!!
+       * Reset the cumulative counters 
+       */
+      CDB[0] = SC_COM_LOG_SELECT;
+      CDB[1] = 2;
+      CDB[2] = 0xc0;  
+      CDB[3] = 0;
+      CDB[4] = 0;
+      CDB[5] = 0;
+      CDB[6] = 0;
+      CDB[7] = 0;
+      CDB[8] = 0;
+      CDB[9] = 0;
+      
+            if (SCSI_Run(INDEX_TAPECTL, Input, CDB, 10,
+                              buffer,
+                              size, 
+                              (char *)pRequestSense,
+                              sizeof(RequestSense_T)) != 0)
+        {
+          DecodeSense(pRequestSense, "LogSense : ",debug_file);
+          free(buffer);
+          free(pRequestSense);
+          return(0);
+        }
+
       free(pRequestSense);
       free(buffer);
     }
@@ -4472,6 +4517,7 @@ void WriteErrorCountersPage(LogParameter_T *buffer, int length)
     i = LogParameter->ParameterLength;
     ParameterCode = V2(LogParameter->ParameterCode);
 
+    value = 0;
     if (Decode(LogParameter, &value) == 0) {
       switch (ParameterCode) {
       case 2:
@@ -4742,8 +4788,8 @@ void EXB85058HEPage3c(LogParameter_T *buffer, int length)
 int Decode(LogParameter_T *LogParameter, int *value)
 {
 
-  dbprintf(("##### START Decode\n"));
-
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### START Decode\n");
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"Decode Parameter with length %d\n", LogParameter->ParameterLength);
   switch (LogParameter->ParameterLength) {
   case 1:
     *value = V1((char *)LogParameter + sizeof(LogParameter_T));
@@ -4766,8 +4812,11 @@ int Decode(LogParameter_T *LogParameter, int *value)
   default:
     fprintf(StatFile, "Can't decode ParameterCode %02X size %d\n",
             V2(LogParameter->ParameterCode), LogParameter->ParameterLength);
+    DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP Decode (1)\n");
     return(1);
   }
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"Result = %d\n", *value);
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP Decode(0)\n");
   return(0);
 }
 
