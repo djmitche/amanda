@@ -1,3 +1,8 @@
+2001-01-06  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* common-src/match.c (match_word): Support for leading ^ and
+	  trailing $.
+
 2001-01-04 John R. Jackson <jrj@purdue.edu>
 
 	* common-src/error.c (error): If the debug file pointer is set, log

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: match.c,v 1.12 2000/12/30 15:22:09 martinea Exp $
+ * $Id: match.c,v 1.13 2001/01/06 16:32:12 martinea Exp $
  *
  * functions for checking and matching regular expressions
  */
@@ -217,17 +217,19 @@ char *glob;
 }
 
 
-int match_word(glob, word, delim)
+int match_word(glob, word, separator)
 char *glob, *word;
-char delim;
+char separator;
 {
     char *regex;
     char *r;
     int  len;
     int  ch;
     int  last_ch;
+    int  next_ch;
     int  lenword;
     char *nword;
+    char *nglob;
     char *g, *w;
     int  i;
 
@@ -236,17 +238,17 @@ char delim;
 
     r = nword;
     w = word;
-    if(lenword == 1 && *w == delim) {
-	*r++ = delim;
-	*r++ = delim;
+    if(lenword == 1 && *w == separator) {
+	*r++ = separator;
+	*r++ = separator;
     }
     else {
-	if(*w != delim)
-	    *r++ = delim;
+	if(*w != separator)
+	    *r++ = separator;
 	while(*w != '\0')
 	    *r++ = *w++;
-	if(*(r-1) != delim)
-	    *r++ = delim;    
+	if(*(r-1) != separator)
+	    *r++ = separator;    
     }
     *r = '\0';
 
@@ -257,23 +259,29 @@ char delim;
     len = strlen(glob);
     regex = (char *)malloc(1 + len * 6 + 1 + 1 + 2 + 2);
     r = regex;
-    g = glob;
+    nglob = strdup(glob);
+    g = nglob;
 
-    if(len == 1 && *g == delim) {
+    if((len == 1 && nglob[0] == separator) ||
+       (len == 2 && nglob[0] == '^' && nglob[1] == separator) ||
+       (len == 2 && nglob[0] == separator && nglob[1] == '$') ||
+       (len == 3 && nglob[0] == '^' && nglob[1] == separator &&
+        nglob[2] == '$')) {
 	*r++ = '^';
 	*r++ = '\\';
-	*r++ = delim;
+	*r++ = separator;
 	*r++ = '\\';
-	*r++ = delim;
+	*r++ = separator;
 	*r++ = '$';
     }
     else {
 	/*
 	 * Do the conversion:
 	 *
-	 *  ?      -> [^\delim]
-	 *  *      -> [^\delim]
+	 *  ?      -> [^\separator]
+	 *  *      -> [^\separator]*
 	 *  [!...] -> [^...]
+	 *  **     -> .*
 	 *
 	 * The following are given a leading backslash to protect them
 	 * unless they already have a backslash:
@@ -285,14 +293,22 @@ char delim;
 	 * error when the regex is compiled.
 	 */
 
-	if(*glob == delim)	/* add a leading ^ */
+	if(*g == separator)	/* add a leading ^ */
 	    *r++ = '^';
+	else if(*g == '^') {
+	    *r++ = '^';
+	    *r++ = '\\';	/* escape the separator */
+	    *r++ = separator;
+	    g++;
+	    if(*g == separator) g++;
+	}
 	else {
-	    *r++ = '\\';	/* add a leading \delim */
-	    *r++ = delim;
+	    *r++ = '\\';	/* add a leading \separator */
+	    *r++ = separator;
 	}
 	last_ch = '\0';
 	for (ch = *g++; ch != '\0'; last_ch = ch, ch = *g++) {
+	    next_ch = *g;
 	    if (last_ch == '\\') {
 		*r++ = ch;
 		ch = '\0';		/* so last_ch != '\\' next time */
@@ -301,13 +317,26 @@ char delim;
 	    } else if (ch == '\\') {
 		*r++ = ch;
 	    } else if (ch == '*' || ch == '?') {
-		*r++ = '[';
-		*r++ = '^';
-		*r++ = delim;
-		*r++ = ']';
+		if(ch == '*' && next_ch == '*') {
+		    *r++ = '.';
+		    g++;
+		}
+		else {
+		    *r++ = '[';
+		    *r++ = '^';
+		    *r++ = '\\';
+		    *r++ = separator;
+		    *r++ = ']';
+		}
 		if (ch == '*') {
 		    *r++ = '*';
 		}
+	    } else if (ch == '$' && next_ch == '\0') {
+		if(last_ch != separator) {
+		    *r++ = '\\';
+		    *r++ = separator;
+		}
+		*r++ = ch;
 	    } else if (   ch == '('
 		       || ch == ')'
 		       || ch == '{'
@@ -323,11 +352,13 @@ char delim;
 		*r++ = ch;
 	    }
 	}
-	if (last_ch == '.')	/* add a trailing $ */
-	    *r++ = '$';
-	else  {			/* add a trailing \delim */
-	    *r++ = '\\';
-	    *r++ = delim;
+	if(last_ch != '\\') {
+	    if (last_ch == separator)		/* add a trailing $ */
+		*r++ = '$';
+	    else if(last_ch != '$') {		/* add a trailing \separator */
+		*r++ = '\\';
+		*r++ = separator;
+	    }
 	}
     }
     *r = '\0';
@@ -335,6 +366,7 @@ char delim;
     i = match(regex,nword);
 
     amfree(nword);
+    amfree(nglob);
     amfree(regex);
     return i;
 }
