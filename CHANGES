@@ -1,5 +1,3 @@
-Version 2.4.1?
-
 	chg-chio was renamed to chg-scsi, and now it will support not
 	only chio.h, but also tape changer interfaces available on
 	HPUX, Solaris 2.5, IRIX and possibly others.  Currently, only
@@ -21,11 +19,14 @@ Version 2.4.1?
 
 	--with-user and --with-group become are now required.  -oliva
 
-	bsd-security is now enabled by default.  -oliva
-
 	patch-system script much more configurable.  -oliva
 
 Version 2.4.0
+
+	# directives must not be indented in configure scripts.
+	-Gregory Neil Shapiro <gshapiro@WPI.EDU>
+
+	bsd-security is now enabled by default.  -oliva
 
 	fixed estimate command for XFSDUMP.
 	-Mark Radleigh <radleigh@image.ucr.edu>
