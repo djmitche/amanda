@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-aix.c,v 1.1.2.3 1998/11/18 07:03:31 oliva Exp $";
+static char rcsid[] = "$Id: scsi-aix.c,v 1.1.2.4 1998/11/27 04:25:48 oliva Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an AIX Workstation
@@ -27,7 +27,6 @@ static char rcsid[] = "$Id: scsi-aix.c,v 1.1.2.3 1998/11/18 07:03:31 oliva Exp $
 #include <sys/tape.h>
 #include <scsi-defs.h>
 
-
 int SCSI_OpenDevice(char *DeviceName)
 {
   extern int errno;
@@ -47,18 +46,19 @@ int SCSI_ExecuteCommand(int DeviceFD,
 			int CDB_Length,
 			void *DataBuffer,
 			int DataBufferLength,
-			char *RequestSense,
+			char *RequestSenseBuf,
 			 int RequestSenseLength)
 {
   CDB_T CDBSENSE;
+  ExtendedRequestSense_T ExtendedRequestSense;
   struct sc_iocmd ds;
   int Result;
   int isbusy = 0;
   int target = 3;
-  
   bzero(&ds, sizeof(struct sc_iocmd));
-  bzero(RequestSense, RequestSenseLength);
-  
+  bzero(RequestSenseBuf, RequestSenseLength);
+  bzero(&ExtendedRequestSense, sizeof(ExtendedRequestSense_T));
+
   ds.flags = SC_ASYNC; 
   /* Timeout */
   ds.timeout_value = 60;
@@ -90,23 +90,16 @@ int SCSI_ExecuteCommand(int DeviceFD,
 	  return(SC_GOOD_STATUS);
 	  break;
 	case SC_CHECK_CONDITION:
-/* 	  CDBSENSE[0] = 0x03; */
-/* 	  CDBSENSE[1] = 0; */
-/* 	  CDBSENSE[2] = 0; */
-/* 	  CDBSENSE[3] = 0; */
-/* 	  CDBSENSE[4] = 0x1d; */
-/* 	  CDBSENSE[5] = 0; */
-/* 	  ds.timeout_value = 60; */
-/* 	  bcopy(CDBSENSE, ds.scsi_cdb, CDB_Length); */
-/* 	  ds.command_length = CDB_Length; */
-	  /* Data buffer for results */
-/* 	  ds.buffer = RequestSense; */
-/* 	  ds.data_length = RequestSenseLength; */
-/* 	  ioctl(DeviceFD, STIOCMD, &ds); */
+	  RequestSense(DeviceFD, &ExtendedRequestSense, 0);
+	  DecodeExtSense(&ExtendedRequestSense);
+	  bcopy(&ExtendedRequestSense, RequestSenseBuf, RequestSenseLength); 
 	  return(SC_CHECK_CONDITION);
 	  break;
 	default:
-	  dbprintf((stderr,"ioctl on %d return %d\n", DeviceFD, Result));
+	  RequestSense(DeviceFD, &ExtendedRequestSense, 0);
+	  DecodeExtSense(&ExtendedRequestSense);
+	  bcopy(&ExtendedRequestSense, RequestSenseBuf, RequestSenseLength); 
+	  dbprintf(("ioctl on %d return %d\n", DeviceFD, Result));
 	  dbprintf(("ret: %d errno: %d (%s)\n", Result, errno, ""));
 	  dbprintf(("data_length:     %d\n", ds.data_length));
 	  dbprintf(("buffer:          0x%X\n", ds.buffer));
@@ -117,6 +110,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
 	  dbprintf(("adap_q_status:   0x%X\n", ds.adap_q_status));
 	  dbprintf(("q_tag_msg:       0x%X\n", ds.q_tag_msg));
 	  dbprintf(("flags:           0X%X\n", ds.flags));
+	  return(ds.scsi_bus_status);
 	}
     }
   return(Result);

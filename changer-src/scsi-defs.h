@@ -10,6 +10,28 @@ typedef unsigned int PackedBit;
 typedef unsigned char PackedBit;
 #endif
 
+/* macros for building scsi msb array parameter lists */
+#define B(s,i) ((unsigned char)((s) >> i))
+#define B1(s)                           ((unsigned char)(s))
+#define B2(s)                       B((s),8),   B1(s)
+#define B3(s)            B((s),16), B((s),8),   B1(s)
+#define B4(s) B((s),24), B((s),16), B((s),8),   B1(s)
+
+/* macros for converting scsi msb array to binary */
+#define V1(s)           (s)[0]
+#define V2(s)         (((s)[0] << 8) | (s)[1])
+#define V3(s)       (((((s)[0] << 8) | (s)[1]) << 8) | (s)[2])
+#define V4(s)     (((((((s)[0] << 8) | (s)[1]) << 8) | (s)[2]) << 8) | (s)[3])
+#define V5(s)   (((((((((s)[0] << 8) | (s)[1]) << 8) | (s)[2]) << 8) | (s)[3]) << 8) | (s)[4])
+#define V6(s) (((((((((((s)[0] << 8) | (s)[1]) << 8) | (s)[2]) << 8) | (s)[3]) << 8) | (s)[4]) << 8) | (s)[5])
+
+/* macros for converting binary into scsi msb array */
+#define MSB1(s,v)                                               *(s)=B1(v)
+#define MSB2(s,v)                                *(s)=B(v,8), (s)[1]=B1(v)
+#define MSB3(s,v)               *(s)=B(v,16),  (s)[1]=B(v,8), (s)[2]=B1(v)
+#define MSB4(s,v) *(s)=B(v,24),(s)[1]=B(v,16), (s)[2]=B(v,8), (s)[3]=B1(v)
+
+
 /* ======================================================= */
 /* RequestSense_T */
 /* ======================================================= */
