@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.10 1999/04/15 23:28:35 kashmir Exp $
+ * $Id: event.c,v 1.11 1999/04/16 04:30:51 kashmir Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
  * a uniform interface, central state storage, and centralized
@@ -45,7 +45,7 @@ struct event_handle {
     event_fn_t fn;		/* function to call when this fires */
     void *arg;			/* argument to pass to previous function */
     event_type_t type;		/* type of event */
-    int data;			/* type data */
+    event_id_t data;		/* type data */
     time_t lastfired;		/* timestamp of last fired (EV_WAIT only) */
     TAILQ_ENTRY(event_handle) tq;	/* queue handle */
 };
@@ -90,14 +90,13 @@ static void signal_handler P((int));
  */
 event_handle_t *
 event_register(data, type, fn, arg)
-    int data;
+    event_id_t data;
     event_type_t type;
     event_fn_t fn;
     void *arg;
 {
     event_handle_t *handle;
 
-    assert(data >= 0);
     /* make sure signals are within range */
     assert(type != EV_SIG || data < NSIG);
     /* make sure we don't double-register a signal */
@@ -115,7 +114,7 @@ event_register(data, type, fn, arg)
     eventq.qlength++;
 
 #ifdef EVENT_DEBUG
-    fprintf(stderr, "event: register: %X data=%d, type=%s\n", (int)handle,
+    fprintf(stderr, "event: register: %X data=%lu, type=%s\n", (int)handle,
 	handle->data, event_type2str(handle->type));
 #endif
     return (handle);
@@ -134,7 +133,7 @@ event_release(handle)
     assert(handle != NULL);
 
 #ifdef EVENT_DEBUG
-    fprintf(stderr, "event: release (mark): %X data=%d, type=%s\n",
+    fprintf(stderr, "event: release (mark): %X data=%lu, type=%s\n",
 	(int)handle, handle->data, event_type2str(handle->type));
 #endif
     assert(handle->type != EV_DEAD);
@@ -169,7 +168,7 @@ event_release(handle)
  */
 int
 event_wakeup(id)
-    int id;
+    event_id_t id;
 {
     event_handle_t *eh;
     int nwaken = 0;
@@ -240,7 +239,7 @@ event_loop(dontblock)
 	fprintf(stderr, "event: loop: dontblock=%d, qlength=%d\n", dontblock,
 	    eventq.qlength);
 	for (eh = eventq_first(); eh != NULL; eh = eventq_next(eh)) {
-	    fprintf(stderr, "%X: %s data=%d fn=0x%x arg=0x%x\n", (int)eh,
+	    fprintf(stderr, "%X: %s data=%lu fn=0x%x arg=0x%x\n", (int)eh,
 		event_type2str(eh->type), eh->data, (int)eh->fn, (int)eh->arg);
 	}
 #endif

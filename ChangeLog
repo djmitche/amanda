@@ -1,3 +1,19 @@
+1999-04-16  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/event.h (event_id_t): a new typedef for the
+	first arg to event_register.  Should be wide enough to
+	reasonably hold an int or a pointer (but it is ok to trunc
+	the pointer if necessary).  Update proto for event_register()
+	and event_wakeup().
+	* common-src/event.c: struct event_handle->data is now an
+	event_id_t.
+	(event_register, event_wakeup): adjust args for event_id_t)
+	(event_register): event_id_t is unsigned, no need to assert
+	positivity anymore.
+	* common-src/rsh-security.c (rsh_stream_read): cast first arg to
+	event_register() to event_id_t.
+
+
 1999-04-15  Mike Grupenhoff <kashmir@munge.com>
 
 	* common-src/event.c (release): nuke, and inline into event_loop.

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.h,v 1.3 1999/04/15 23:28:37 kashmir Exp $
+ * $Id: event.h,v 1.4 1999/04/16 04:30:53 kashmir Exp $
  */
 #ifndef EVENT_H
 #define EVENT_H
@@ -43,10 +43,12 @@ struct event_handle;
 typedef struct event_handle event_handle_t;
 
 /*
- * The function signature for functions that get called when an event
- * fires.
+ * The 'id' of the event.  The meaning of this is dependant on the type
+ * of event we are registering.  This is hopefully wide enough that
+ * callers can cast pointers to it and keep the value untruncated and
+ * unique.
  */
-typedef void (*event_fn_t) P((void *));
+typedef	unsigned long event_id_t;
 
 /*
  * The types of events we can register.
@@ -59,6 +61,12 @@ typedef enum {
     EV_WAIT,			/* event_wakeup() was called with this id */
     EV_DEAD,			/* internal use only */
 } event_type_t;
+
+/*
+ * The function signature for functions that get called when an event
+ * fires.
+ */
+typedef void (*event_fn_t) P((void *));
 
 /*
  * Register an event handler.
@@ -74,7 +82,8 @@ typedef enum {
  * count on the time events being too accurate.  They depend on the
  * caller calling event_loop() often enough.
  */
-event_handle_t *event_register P((int, event_type_t, event_fn_t, void *));
+event_handle_t *event_register P((event_id_t, event_type_t,
+    event_fn_t, void *));
 
 /*
  * Release an event handler.
@@ -84,7 +93,7 @@ void event_release P((event_handle_t *));
 /*
  * Wake up all EV_WAIT events waiting on a specific id
  */
-int event_wakeup P((int));
+int event_wakeup P((event_id_t));
 
 /*
  * Process events.  If the argument is nonzero, then the loop does

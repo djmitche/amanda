@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.1 1999/04/10 22:10:13 kashmir Exp $
+ * $Id: rsh-security.c,v 1.2 1999/04/16 04:30:54 kashmir Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -847,7 +847,7 @@ rsh_stream_read(s, fn, arg)
      * Only one read request can be active per stream.
      */
     if (rs->ev_read == NULL) {
-	rs->ev_read = event_register((int)rs->rc, EV_WAIT,
+	rs->ev_read = event_register((event_id_t)rs->rc, EV_WAIT,
 	    stream_read_callback, rs);
 	conn_read(rs->rc);
     }
