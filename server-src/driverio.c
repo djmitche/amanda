@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.48 1999/05/04 21:15:51 kashmir Exp $
+ * $Id: driverio.c,v 1.49 1999/05/14 21:40:23 kashmir Exp $
  *
  * I/O-related functions for driver program
  */
@@ -49,6 +49,7 @@ static const char *cmdstr[] = {
     NULL
 };
 
+static const char *childstr P((int));
 
 void init_driverio()
 {
@@ -62,21 +63,22 @@ void init_driverio()
 }
 
 
-char *childstr(fd)
-int fd;
+static const char *
+childstr(fd)
+    int fd;
 {
-    static char *str = NULL;
-    char fd_str[NUM_STR_SIZE];
+    static char buf[NUM_STR_SIZE + 32];
     dumper_t *dumper;
 
-    if(fd == taper) return "taper";
+    if (fd == taper)
+	return ("taper");
 
-    for(dumper = dmptable; dumper < dmptable + MAX_DUMPERS; dumper++)
-	if(dumper->fd == fd) return dumper->name;
-
-    snprintf(fd_str, sizeof(fd_str), "%d", fd);
-    str = newvstralloc(str, "unknown child (fd ", fd_str, ")", NULL);
-    return str;
+    for (dumper = dmptable; dumper < dmptable + MAX_DUMPERS; dumper++) {
+	if (dumper->fd == fd)
+	    return (dumper->name);
+    }
+    snprintf(buf, sizeof(buf), "unknown child (fd %d)", fd);
+    return (buf);
 }
 
 

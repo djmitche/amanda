@@ -24,11 +24,12 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.c,v 1.3 1999/04/17 22:35:34 martinea Exp $
+ * $Id: server_util.c,v 1.4 1999/05/14 21:40:19 kashmir Exp $
  *
  */
 
 #include "amanda.h"
+#include "server_util.h"
 
 char *construct_datestamp()
 {

@@ -1,5 +1,12 @@
 1999-05-14  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/server_util.c: include server_util.h for prototypes
+	* server-src/tapefile.h: properly prototype lookup_nb_tape()
+	* server-src/driverio.c (childstr): make static, make return
+	val const.
+
+1999-05-14  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/find.h: properly prototype find_log()
 	* server-src/amtrmlog.c (main): prototype.  find_log() takes
 	no arguments.
