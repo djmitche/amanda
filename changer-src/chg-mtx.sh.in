@@ -178,7 +178,7 @@ loadslot() {
     if [ $status -eq 0 ];then
       echo "     -> rew $load" >> $DBGFILE
       $MT $MTF $tape rewind
-      $DD if=$tape count=1 >> $DBGFILE 2>&1
+      $DD if=$tape bs=32k count=1 >> $DBGFILE 2>&1
       echo "$load $tape"
       exit 0
     else

@@ -215,7 +215,7 @@ loadslot() {
 			used=`$MT $MTF $tape status 2>&1 | tee -a $logfile | $EGREP "$ONLINEREGEX"`
 			echo "     -> loaded <$used>" >> $logfile
 		done
-		$DD if=$tape count=1 >> $logfile 2>&1
+		$DD if=$tape bs=32k count=1 >> $logfile 2>&1
 	fi
 	echo $load > $slotfile
 	answer="$load $tape"
