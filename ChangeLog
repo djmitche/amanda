@@ -1,3 +1,9 @@
+1998-10-14  John R. Jackson  <jrj@purdue.edu>
+
+	* restore-src/amrestore.c (read_file_header): make a couple of error
+	messages clearer that they refer to problems with a header rather
+	than the image data.
+
 1998-10-08  John R. Jackson  <jrj@purdue.edu>
 
 	* example/amanda.conf.in: fix runspercycle example and comments

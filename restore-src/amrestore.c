@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.27 1998/07/04 00:19:20 oliva Exp $
+ * $Id: amrestore.c,v 1.27.2.1 1998/10/14 22:35:19 jrj Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -147,11 +147,15 @@ int tapedev;
     int bytes_read;
     bytes_read = tapefd_read(tapedev, buffer, buflen);
     if(bytes_read < 0) {
-	error("error reading tape: %s", strerror(errno));
+	error("error reading file header: %s", strerror(errno));
     }
     else if(bytes_read < buflen) {
-	fprintf(stderr, "%s: short block %d byte%s\n",
-		get_pname(), bytes_read, (bytes_read == 1) ? "" : "s");
+	if(bytes_read == 0) {
+	    fprintf(stderr, "%s: missing file header block\n", get_pname());
+	} else {
+	    fprintf(stderr, "%s: short file header block: %d byte%s\n",
+		    get_pname(), bytes_read, (bytes_read == 1) ? "" : "s");
+	}
 	file->type = F_TAPEEND;
     }
     else {
