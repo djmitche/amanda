@@ -1,5 +1,17 @@
 2001-09-17 John R. Jackson (jrj@purdue.edu)
 
+	* server-src/getconf.c: Add capabilities to amgetconf to return
+	  build environment values and also to open and close a debug file
+	  (e.g. for scripts).
+	* man/amgetconf.8.in: Ditto.
+	* changer-src/chg-scsi.c: Ditto.
+	* common-src/amanda.h: Ditto.
+	* common-src/debug.c: Ditto.
+	* common-src/error.c: Ditto.
+	* server-src/dumper.c: Ditto.
+
+2001-09-17 John R. Jackson (jrj@purdue.edu)
+
 	* server-src/planner.c: Make sure we do not attempt to bump beyond
 	  level 9.
 
