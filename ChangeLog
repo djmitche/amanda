@@ -1,5 +1,9 @@
 2001-06-19 John R. Jackson <jrj@purdue.edu>
 
+	* server-src/amverify.sh.in: More of the vrestore vs. 'b' flag change.
+
+2001-06-19 John R. Jackson <jrj@purdue.edu>
+
 	* recover-src/amrecover.c: Add more debugging to guess_disk()
 	  function to better track how the disk is determined from the
 	  current working directory.  Report current working directory in
