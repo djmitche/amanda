@@ -1,5 +1,9 @@
 1998-10-31  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* configure.in (snprintf): arrange that it is included in the
+	distribution automatically
+	* common-src/Makefile.am (EXTRA_DIST): removed, not needed
+
 	* configure.in (NO_SCSI_CHANGER_MODE): chg-scsi does not support the
 	new FreeBSD 3.0 chio.h, so disable it if camlib.h is found.
 	* docs/SYSTEM.NOTES (FreeBSD 3.0): add a note about this

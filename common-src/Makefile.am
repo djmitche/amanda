@@ -38,10 +38,6 @@ noinst_HEADERS =	amanda.h	arglist.h	\
 			token.h		version.h	\
 			amregex.h	fileheader.h
 
-EXTRA_DIST = 		genversion.c	getcwd.c	memmove.c	\
-			mktime.c	snprintf.c	strerror.c	\
-			strftime.c	strstr.c	waitpid.c
-
 .sh:
 	cat $< > $@
 	chmod a+x $@
