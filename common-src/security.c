@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: security.c,v 1.7.2.2 1998/03/02 15:34:57 amcore Exp $
+ * $Id: security.c,v 1.7.2.3 1998/03/06 03:00:43 amcore Exp $
  *
  * wrapper file for kerberos security
  */
@@ -116,7 +116,7 @@ char **errstr;
     }
 
     /* Verify that the hostnames match -- they should theoretically */
-    if( strcasecmp( remotehost, hp->h_name ) ) {
+    if( strncasecmp( remotehost, hp->h_name, strlen(remotehost)+1 ) != 0 ) {
 	*errstr = vstralloc("[",
 			    "hostnames do not match: ",
 			    remotehost, " ", hp->h_name,
