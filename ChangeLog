@@ -6,6 +6,10 @@
 	* restore-src/amidxtaped.c -- use tape_stat() on tapename
 	* restore-src/amrestore.c -- use tape_stat() on tapename
 	* server-src/amcheck.c -- use tape_access() on tapename
+	* client-src/Makefile.am -- now needs libamtape.a twice
+	* server-src/Makefile.am -- now needs libamtape.a twice
+	* recover-src/Makefile.am -- now needs libamtape.a twice
+	* Makefile.am -- tape-src before client-src
 
 2000-07-05 Thomas Hepper <th@ant.han.de>
 	* changer-src/chg-scsi.c: fixed an core dump if tapeident was set

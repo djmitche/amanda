@@ -28,6 +28,9 @@ libamclient_la_LDFLAGS = -release $(VERSION)
 libamclient_a_SOURCES=  $(libamclient_la_SOURCES)
 
 LDADD =	libamclient.$(LIB_EXTENSION) \
+	../tape-src/libamtape.$(LIB_EXTENSION) \
+	../common-src/libamanda.$(LIB_EXTENSION) \
+	../tape-src/libamtape.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
 
 SUFFIXES =		.sh .pl

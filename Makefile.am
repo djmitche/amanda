@@ -28,8 +28,8 @@ endif
 SUBDIRS = \
 	config \
 	common-src \
-	$(CLIENT_SUBDIRS) \
 	$(TAPE_SUBDIRS) \
+	$(CLIENT_SUBDIRS) \
 	$(SERVER_SUBDIRS) \
 	$(RESTORE_SUBDIRS) \
 	$(RECOVER_SUBDIRS) \

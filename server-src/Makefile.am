@@ -34,6 +34,8 @@ libamserver_a_SOURCES=	$(libamserver_la_SOURCES)
 
 LDADD =	libamserver.$(LIB_EXTENSION) \
 	../tape-src/libamtape.$(LIB_EXTENSION) \
+	../common-src/libamanda.$(LIB_EXTENSION) \
+	../tape-src/libamtape.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
 
 SUFFIXES =		.sh .pl
