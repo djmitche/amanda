@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.35.2.9 1999/03/02 01:08:16 martinea Exp $
+ * $Id: driverio.c,v 1.35.2.10 1999/05/15 15:07:20 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -221,7 +221,7 @@ int max_arg;
 }
 
 
-void taper_cmd(cmd, /* optional */ ptr, destname, level, datestamp)
+int taper_cmd(cmd, /* optional */ ptr, destname, level, datestamp)
 tok_t cmd;
 void *ptr;
 char *destname;
@@ -274,13 +274,16 @@ char *datestamp;
     fflush(stdout);
     for(l = 0, n = strlen(cmdline); l < n; l += s) {
 	if((s = write(taper, cmdline + l, n - l)) < 0) {
-	    error("writing taper command: %s", strerror(errno));
+	    printf("writing taper command: %s\n", strerror(errno));
+	    fflush(stdout);
+	    return 0;
 	}
     }
     amfree(cmdline);
+    return 1;
 }
 
-void dumper_cmd(dumper, cmd, /* optional */ dp)
+int dumper_cmd(dumper, cmd, /* optional */ dp)
 dumper_t *dumper;
 tok_t cmd;
 disk_t *dp;
@@ -345,11 +348,15 @@ disk_t *dp;
 	fflush(stdout);
 	for(l = 0, n = strlen(cmdline); l < n; l += s) {
 	    if((s = write(dumper->infd, cmdline + l, n - l)) < 0) {
-		error("writing %s command: %s", dumper->name, strerror(errno));
+		printf("writing %s command: %s\n", dumper->name, 
+		       strerror(errno));
+		fflush(stdout);
+		return 0;
 	    }
 	}
     }
     amfree(cmdline);
+    return 1;
 }
 
 #define MAX_SERIAL MAX_DUMPERS+1	/* one for the taper */

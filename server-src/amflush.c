@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.41.2.9 1999/04/17 22:13:33 martinea Exp $
+ * $Id: amflush.c,v 1.41.2.10 1999/05/15 15:07:14 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -76,6 +76,8 @@ char **main_argv;
     }
 
     set_pname("amflush");
+
+    signal(SIGPIPE, SIG_IGN);
 
     erroutput_type = ERR_INTERACTIVE;
     foreground = 0;
