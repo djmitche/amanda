@@ -167,11 +167,16 @@
 #undef ASSERTIONS
 
 /* Defined to the switch to be used when invoking mt to specify the
- * tape device */
+ * tape device.  */
 #undef MT_FILE_FLAG
 
-/* Define if you want to use an alternate service name.  This is useful when
-** you are trying to run a test installation in parallel to a production one.  */
+/* Define the names for the Amanda and Kerberos Amanda services.  If you
+ * wish to use an alternate service name, then the alternate service name
+ * must be appended to the Amanda and Kamanda service names.  This is
+ * useful when you are trying to run a test installation in parallel to a
+ * production one.  */
+#undef AMANDA_SERVICE_NAME
+#undef KAMANDA_SERVICE_NAME
 #undef SERVICE_SUFFIX
 
 /* Kerberos security defines.  */
@@ -237,6 +242,7 @@
 #undef HAVE_GETSOCKOPT_DECL
 #undef HAVE_GETTIMEOFDAY_DECL
 #undef HAVE_INITGROUPS_DECL
+#undef HAVE_IOCTL_DECL
 #undef HAVE_LISTEN_DECL
 #undef HAVE_LSTAT_DECL
 #undef HAVE_MALLOC_DECL

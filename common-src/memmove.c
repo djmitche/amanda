@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: memmove.c,v 1.2 1997/08/27 08:12:03 amcore Exp $
+/* $Id: memmove.c,v 1.3 1997/11/12 23:06:27 blair Exp $
  *
  * wrapper file for Henry Spencer's memmove.c
  */
@@ -35,16 +35,12 @@
 
 #ifdef HAVE_BCOPY
 
-#ifdef HAVE_STRING_H
-#include <string.h>
-#endif
-
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
 
 char *memmove(to, from, n)
-char *to, from;
+char *to, *from;
 size_t n;
 {
   bcopy(from, to, n);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.22 1997/11/07 04:01:14 blair Exp $
+ * $Id: conffile.c,v 1.23 1997/11/12 23:06:31 blair Exp $
  *
  * read configuration file
  */
@@ -518,31 +518,37 @@ static void init_defaults()
 				  "/dev/null"
 #endif
 				  );
-    conf_chngrfile.s = newstralloc(conf_chngrfile.s,
+    conf_chngrfile.s =
 #ifdef LOG_DIR
-				   LOG_DIR "/changer-status"
+			newstralloc2(conf_chngrfile.s,
+				     LOG_DIR, "/changer-status"
 #else
-				   "/usr/adm/amanda/changer-status"
+			newstralloc (conf_chngrfile.s,
+				     "/usr/adm/amanda/changer-status"
 #endif
-	);
+				     );
     conf_labelstr.s = newstralloc(conf_labelstr.s, ".*");
     conf_tapelist.s = newstralloc(conf_tapelist.s, "tapelist");
-    conf_infofile.s = newstralloc(conf_infofile.s,
+    conf_infofile.s =
 #ifdef DB_DIR
-		DB_DIR "/curinfo"
+		      newstralloc2(conf_infofile.s,
+				   DB_DIR, "/curinfo"
 #else
-		"/usr/adm/amanda/curinfo"
+		      newstralloc (conf_infofile.s,
+				   "/usr/adm/amanda/curinfo"
 #endif
-		);
-    conf_logfile.s = newstralloc(conf_logfile.s,
+				   );
+    conf_logfile.s =
 #ifdef LOG_DIR
-		LOG_DIR "/log"
+		     newstralloc2(conf_logfile.s,
+				  LOG_DIR, "/log"
 #else
-		"/usr/adm/amanda/log"
+		     newstralloc (conf_logfile.s,
+				  "/usr/adm/amanda/log"
 #endif
-		);
+				  );
     conf_diskfile.s = newstralloc(conf_diskfile.s, "disklist");
-    conf_diskdir.s = newstralloc(conf_diskdir.s, "/dumps/amanda");
+    conf_diskdir.s  = newstralloc(conf_diskdir.s,  "/dumps/amanda");
     conf_tapetype.s = newstralloc(conf_tapetype.s, "EXABYTE");
     conf_indexdir.s = newstralloc(conf_indexdir.s,
 #ifdef INDEX_DIR

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amregex.h,v 1.5 1997/11/07 20:43:22 amcore Exp $
+ * $Id: amregex.h,v 1.6 1997/11/12 23:06:26 blair Exp $
  *
  * compatibility header file for Henry Spencer's regex library.
  */
@@ -74,6 +74,10 @@ extern void bcopy P((const void *from, void *to, size_t n));
 
 #ifndef HAVE_MEMMOVE_DECL
 extern char *memmove P((char *to, char *from, size_t n));
+#endif
+
+#ifndef HAVE_MEMSET_DECL
+extern void *memset P((void *s, int c, size_t n));
 #endif
 
 #if !defined(HAVE_MEMMOVE) && defined(HAVE_BCOPY)

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.26 1997/11/07 20:43:21 amcore Exp $
+ * $Id: amanda.h,v 1.27 1997/11/12 23:06:24 blair Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -295,17 +295,21 @@ extern void debug_printf P((char *format, ...))
 #define days_diff(a, b)	(((b) - (a) + SECS_PER_DAY/2) / SECS_PER_DAY)
 
 /* Global constants.  */
-#ifdef SERVICE_SUFFIX
-#define AMANDA_SERVICE_NAME "amanda" SERVICE_SUFFIX
-#define KAMANDA_SERVICE_NAME "kamanda" SERVICE_SUFFIX
-#else
-#define SERVICE_SUFFIX ""
+#ifndef AMANDA_SERVICE_NAME
 #define AMANDA_SERVICE_NAME "amanda"
+#endif
+#ifndef KAMANDA_SERVICE_NAME
 #define KAMANDA_SERVICE_NAME "kamanda"
 #endif
-
+#ifndef SERVICE_SUFFIX
+#define SERVICE_SUFFIX ""
+#endif
+#ifndef AMANDA_SERVICE_DEFAULT
 #define AMANDA_SERVICE_DEFAULT	10080
+#endif
+#ifndef KAMANDA_SERVICE_DEFAULT
 #define KAMANDA_SERVICE_DEFAULT	10081
+#endif
 
 /* Size of a tape block in kbytes.  Do not change lightly.  */
 #define TAPE_BLOCK_SIZE 32
@@ -322,14 +326,16 @@ extern void   error     P((char *format, ...))
      __attribute__ ((format (printf, 1, 2)))
 #endif
      ;
-extern int    onerror   P((void (*errf)(void)));
-extern void  *alloc     P((int size));
-extern void  *newalloc  P((void *old, int size));
-extern char  *stralloc  P((char *str));
-extern char  *newstralloc P((char *oldstr, char *newstr));
+extern int    onerror         P((void (*errf)(void)));
+extern void  *alloc           P((int size));
+extern void  *newalloc        P((void *old, int size));
+extern char  *stralloc        P((char *str));
+extern char  *stralloc2       P((char *str1, char *str2));
+extern char  *newstralloc     P((char *oldstr, char *newstr));
+extern char  *newstralloc2    P((char *oldstr, char *newstr1, char *newstr2));
 extern char  *validate_regexp P((char *regex));
-extern int    match     P((char *regex, char *str));
-extern time_t unctime   P((char *timestr));
+extern int    match           P((char *regex, char *str));
+extern time_t unctime         P((char *timestr));
 
 /* from amflock.c */
 extern int    amflock   P((int fd, char *resource));
@@ -355,6 +361,10 @@ extern int accept P((int s, struct sockaddr *addr, int *addrlen));
 
 #ifndef HAVE_ATOF_DECL
 extern double atof P((const char *ptr));
+#endif
+
+#ifndef HAVE_BCOPY_DECL
+extern void bcopy P((const void *s1, void *s2, size_t n));
 #endif
 
 #ifndef HAVE_BIND_DECL
@@ -462,6 +472,10 @@ extern int gettimeofday P((struct timeval *tp));
 extern int initgroups P((const char *name, gid_t basegid));
 #endif
 
+#ifndef HAVE_IOCTL_DECL
+extern int ioctl P((int fildes, int request, ...));
+#endif
+
 #ifndef HAVE_LISTEN_DECL
 extern int listen P((int s, int backlog));
 #endif
@@ -472,6 +486,14 @@ extern int lstat P((const char *path, struct stat *buf));
 
 #ifndef HAVE_MALLOC_DECL
 extern void *malloc P((size_t size));
+#endif
+
+#ifndef HAVE_MEMMOVE_DECL
+#ifdef HAVE_MEMMOVE
+extern void *memmove P((void *to, const void *from, size_t n));
+#else
+extern char *memmove P((char *to, const char *from, size_t n));
+#endif
 #endif
 
 #ifndef HAVE_MEMSET_DECL

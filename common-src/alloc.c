@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: alloc.c,v 1.5 1997/10/08 05:33:19 george Exp $
+ * $Id: alloc.c,v 1.6 1997/11/12 23:06:23 blair Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -77,6 +77,22 @@ char *str;
 
 
 /*
+** stralloc2 - copies the two given strings into newly allocated memory.
+*/
+char *stralloc2(str1, str2)
+char *str1;
+char *str2;
+{
+    char *addr;
+
+    addr = alloc(strlen(str1)+strlen(str2)+1);
+    strcpy(addr, str1);
+    strcat(addr, str2);
+    return addr;
+}
+
+
+/*
 ** newstralloc - free existing string and then stralloc a new one.
 */
 char *newstralloc(oldstr, newstr)
@@ -85,4 +101,17 @@ char *newstr;
 {
     if (oldstr != (char *)0) free(oldstr);
     return stralloc(newstr);
+}
+
+
+/*
+** newstralloc2 - free existing string and then stralloc2 a new one.
+*/
+char *newstralloc2(oldstr, newstr1, newstr2)
+char *oldstr;
+char *newstr1;
+char *newstr2;
+{
+    if (oldstr != (char *)0) free(oldstr);
+    return stralloc2(newstr1, newstr2);
 }

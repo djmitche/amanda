@@ -859,8 +859,12 @@ n | no) SERVICE_SUFFIX="";;
 y |  ye | yes) SERVICE_SUFFIX="-test";;
 *) SERVICE_SUFFIX="-$TESTING";;
 esac
-AC_DEFINE_UNQUOTED(SERVICE_SUFFIX, "$SERVICE_SUFFIX")
+AMANDA_SERVICE_NAME="amanda$SERVICE_SUFFIX"
+KAMANDA_SERVICE_NAME="kamanda$SERVICE_SUFFIX"
 AC_SUBST(SERVICE_SUFFIX)
+AC_DEFINE_UNQUOTED(SERVICE_SUFFIX, "$SERVICE_SUFFIX")
+AC_DEFINE_UNQUOTED(AMANDA_SERVICE_NAME,  "$AMANDA_SERVICE_NAME")
+AC_DEFINE_UNQUOTED(KAMANDA_SERVICE_NAME, "$KAMANDA_SERVICE_NAME")
 
 (
     test "x$prefix" = xNONE && prefix=$ac_default_prefix
@@ -1682,6 +1686,7 @@ ICE_CHECK_DECL(gettimeofday,time.h sys/time.h)
 AMANDA_FUNC_GETTIMEOFDAY_ARGS
 AC_CHECK_FUNCS(getvfsent isascii)
 ICE_CHECK_DECL(initgroups,grp.h sys/types.h unistd.h)
+ICE_CHECK_DECL(ioctl,sys/ioctl.h unistd.h)
 ICE_CHECK_DECL(listen,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(lstat,sys/types.h sys/stat.h)
 ICE_CHECK_DECL(malloc,stdlib.h)
