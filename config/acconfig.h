@@ -319,4 +319,9 @@
 /* Defined if wait() puts the status in a union wait instead of int.  */
 #undef WAIT_USES_UNION
 
+/* A comma-separated list of two integers, determining the minimum and
+   maximum port number unreserved TCP server sockets should be bound
+   to.  */
+#undef PORTRANGE
+
 #endif

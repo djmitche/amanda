@@ -282,6 +282,17 @@
 # USE_AMANDAHOSTS=yes
 
 
+# PORTRANGE             --with-portrange=min,max
+#			Default: unlimited
+#			Limits the range of ports that TCP server
+#			sockets will be bound to.  It does not affect
+#			reserved (<1024) ports, though.  This is useful 
+#			for backing up hosts behind firewalls: they can
+#			be configured to use this limited range of
+#			ports for data, message and index connections.
+# PORTRANGE=50000,50100
+
+
 # KRB4_SECURITY		--with-krb4-security
 #			Default: no
 #			KRB4_SECURITY selects MIT Kerberos version 4 style

@@ -1,3 +1,11 @@
+1998-08-13  Alexandre Oliva  <oliva@dcc.unicamp.br>, Marcel Hild  <hild@id-pro.de>
+
+	* configure.in (--with-portrange): validate and define PORTRANGE
+	* example/config.site: document it
+	* config/acconfig.h (PORTRANGE): prepare for configure define
+	* common-src/stream.c (stream_server): use PORTRANGE to limit TCP
+	unreserved server sockets
+
 1998-08-12  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/FAQ: working around `dumps way too big'

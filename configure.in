@@ -845,6 +845,24 @@ AC_ARG_WITH(ticket-lifetime,
 )
 AC_DEFINE_UNQUOTED(TICKET_LIFETIME,$TICKET_LIFETIME)
 
+AC_ARG_WITH(portrange,
+    [  --with-portrange=low,high  bind unreserved TCP server sockets to ports within this range [unlimited]],
+    [
+	PORTRANGE="$withval"
+    ]
+)
+if test x"${PORTRANGE+set}" = x"set"; then
+    if test x`echo "$PORTRANGE" | sed 's/[[0-9]]*,[[0-9]]*//'` != x""; then
+    	AC_MSG_ERROR([*** --with-portrange requires two comma-separated non-negative numbers])
+    fi
+    if echo "$PORTRANGE" | sed s/,/\ / | {
+       read min max && test "$min" -le "$max"; }; then :
+    else
+	AC_MSG_ERROR([*** the second port number must be greater than the first one in --with-portrange])
+    fi
+    AC_DEFINE_UNQUOTED(PORTRANGE,$PORTRANGE)
+fi
+
 AC_ARG_WITH(db,
     [  --with-db={text,db,dbm,gdbm,ndbm} use the selected database format [text]],
     [

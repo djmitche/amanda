@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.7 1998/07/04 00:18:59 oliva Exp $
+ * $Id: stream.c,v 1.7.2.1 1998/08/13 21:54:10 oliva Exp $
  *
  * functions for managing stream sockets
  */
@@ -61,14 +61,35 @@ int *portp;
 	}
     }
     else {
-	/* pick any available non-reserved port */
-	server.sin_port = INADDR_ANY;
+#ifdef PORTRANGE
+	/* portrange is supposed to be a pair of port numbers */
+	static unsigned portrange[2] = { PORTRANGE };
+	unsigned portnum;
+	assert(portrange[0] <= portrange[1]);
+	
+	for (portnum = portrange[0]; portnum <= portrange[1]; ++portnum) {
+	    server.sin_port = htons(portnum);
+#else
 
-	if(bind(server_socket, (struct sockaddr *)&server, sizeof(server)) 
-	   == -1) {
-	    aclose(server_socket);
-	    return -1;
+	    /* pick any available non-reserved port */
+	    server.sin_port = INADDR_ANY;
+#endif
+
+	    if(bind(server_socket, (struct sockaddr *)&server, sizeof(server)) 
+	       == -1) {
+#ifdef PORTRANGE
+		if (portnum != portrange[1])
+		    continue;
+#endif
+		aclose(server_socket);
+		*portp = -1;
+		return -1;
+	    }
+
+#ifdef PORTRANGE
+	    break;
 	}
+#endif
     }
 
     listen(server_socket, 1);
