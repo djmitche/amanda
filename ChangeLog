@@ -1,5 +1,9 @@
 2002-04-11  John R. Jackson (jrj@purdue.edu)
 
+	* server-src/driver.c: Protect against crash when taper has died.
+
+2002-04-11  John R. Jackson (jrj@purdue.edu)
+
 	* common-src/stream.c: Clean up an error message.
 
 2002-04-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.122 2002/04/10 02:09:28 jrjackson Exp $
+ * $Id: driver.c,v 1.123 2002/04/12 01:21:28 jrjackson Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -942,8 +942,10 @@ handle_taper_result(cookie)
 	    if(empty(tapeq)) {
 		taper_busy = 0;
 		taper_disk = NULL;
-		event_release(taper_ev_read);
-		taper_ev_read = NULL;
+		if(taper_ev_read != NULL) {
+		    event_release(taper_ev_read);
+		    taper_ev_read = NULL;
+		}
 	    }
 	    else {
 		dp = dequeue_disk(&tapeq);
@@ -988,8 +990,10 @@ handle_taper_result(cookie)
 	    if(empty(tapeq)) {
 		taper_busy = 0;
 		taper_disk = NULL;
-		event_release(taper_ev_read);
-		taper_ev_read = NULL;
+		if(taper_ev_read != NULL) {
+		    event_release(taper_ev_read);
+		    taper_ev_read = NULL;
+		}
 	    }
 	    else {
 		dp = dequeue_disk(&tapeq);
@@ -1024,8 +1028,10 @@ handle_taper_result(cookie)
 	    tapeq.head = tapeq.tail = NULL;
 	    taper_busy = 0;
 	    taper_disk = NULL;
-	    event_release(taper_ev_read);
-	    taper_ev_read = NULL;
+	    if(taper_ev_read != NULL) {
+		event_release(taper_ev_read);
+		taper_ev_read = NULL;
+	    }
 	    if(cmd != TAPE_ERROR) aclose(taper);
 	    continue_dumps();
 	    break;
