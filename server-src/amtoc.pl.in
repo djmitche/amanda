@@ -55,6 +55,8 @@ sub read_info {
 # ------------------------------------------------------------------------
     if (! $use_dbm) {
 	($host, $fs)=split (':', $_[0]);
+	$fs =~ s,_,__,g;
+	$fs =~ s,[/\s],_,g;
 	if (open (I, "$infofile/$host/$fs/info")) {
 	    while (<I>) {
 		chomp;
