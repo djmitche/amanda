@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.18.2.2 1998/03/06 03:50:03 amcore Exp $
+ * $Id: amflush.c,v 1.18.2.3 1998/03/07 15:45:20 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -241,13 +241,15 @@ char *diskdir;
 	    if(argc != 5) {
 		error("error [DONE argc != 5: %d]", argc);
 	    }
+	    free_serial(argv[2]);
 
 	    filenum = atoi(argv[4]);
 	    update_info_taper(dp, argv[3], filenum);
 
 	    unlink(destname);
 	    break;
-	case TRYAGAIN:
+	case TRYAGAIN: /* TRY-AGAIN <handle> <err mess> */
+	    free_serial(argv[2]);
 	    log(L_WARNING, "%s: too many taper retries, leaving file on disk",
 		destname);
 	    break;
@@ -257,7 +259,6 @@ char *diskdir;
 	    break;
 	}
 
-	free_serial(disk2serial(dp));
     }
 
     closedir(workdir);
