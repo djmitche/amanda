@@ -327,6 +327,29 @@ the preferred tape isn't present and nothing can be done, Amanda picks the
 first tape (starting at the current position) that matches the labelstr
 and is not active, regardless of whether it is the preferred tape.
 
+========
+chg-disk
+========
+
+Clone of the chg-zd-mtx, but modified to be applied on local directories
+instead of tapes. This changer emulates a robotic that uses virtual
+tapes instead of real ones, where the virtual tapes are real directories
+on a hard disk.
+
+The directory tree should be:
+slot_root_dir -|
+               |- info
+               |- data -> slot1/
+               |- slot1/
+	       |- slot2/
+	       |- ...
+	       |- slotn/
+
+Where "slot_root_dir" is the tapedev "file:xxx" parameter and "n" the
+tapecycle parameter.
+
+Please refer to the HOWTO-FILE-DRIVER for details of usage.
+
 
 7. BUILT-IN TAPE CHANGERS
 

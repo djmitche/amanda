@@ -6,6 +6,7 @@ pkgdata_DATA = \
 	FAQ			\
 	HOWTO-AFS		\
 	HOWTO-CYGWIN.html       \
+	HOWTO-FILE-DRIVER	\
 	INDEXING		\
 	INSTALL			\
 	INTERNALS		\

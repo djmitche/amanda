@@ -1,3 +1,9 @@
+2003-12-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* docs/HOWTO-FILE-DRIVER: New file.
+	* docs/TAPE.CHANGERS: Explain chg-disk.
+	* docs/Makefile.am (pkgdata_DATA): add HOWTO-FILE-DRIVER.
+
 2003-12-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* docs/SYSTEM.NOTES: Add a note about sendsize coredump on AIX.
