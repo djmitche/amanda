@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.68 1999/02/13 19:36:17 martinea Exp $
+ * $Id: driver.c,v 1.69 1999/02/16 03:11:30 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -54,6 +54,7 @@ int big_dumpers;
 int degraded_mode;
 unsigned long reserved_space;
 unsigned long total_disksize;
+char *dumper_program;
 
 int driver_main P((int argc, char **argv));
 int client_constrained P((disk_t *dp));
@@ -269,7 +270,7 @@ int main(main_argc, main_argv)
 
     /* fire up the dumpers now while we are waiting */
 
-    startup_dump_processes();
+    startup_dump_processes(dumper_program);
 
     /*
      * Read schedule from stdin.  Usually, this is a pipe from planner,
@@ -908,7 +909,7 @@ int fd;
 		    dumper->name, (long)dumper->pid);
 	    FD_CLR(fd,&readset);
 	    aclose(fd);
-	    startup_dump_process(dumper);
+	    startup_dump_process(dumper, dumper_program);
 	}
 	/* sleep in case the dumper failed because of a temporary network
 	   problem, as NIS or NFS... */
