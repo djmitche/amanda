@@ -1,5 +1,11 @@
 1998-12-02  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/krb5-security.c: new stub file that pulls in the
+	krb5 bits from the amanda-krb-2 tree if KRB5_SECURITY is
+	defined
+
+1998-12-02  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/base64.{c,h}: new files, implement base64 encoding
 	and decoding.  Implementation based on routines in bind, and so
 	copyright is held by ISC and IBM (but is BSD-like).
