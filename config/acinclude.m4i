@@ -399,6 +399,13 @@ dnl
 dnl     Don't use HAVE_UNION_WAIT, because the autoconf documentation implies
 dnl     that if we've got union-wait, we'll automatically use it.
 dnl
+dnl Garrett Wollman adds:
+dnl	The tests described above don't quite do the right thing,
+dnl	since some systems have hacks which allow `union wait' to
+dnl	still work even though `int' is preferred (and generates
+dnl	fewer warnings).  Since all of these systems use prototypes,
+dnl	we can use the prototype of wait(2) to disambiguate them.
+dnl
 AC_DEFUN([CF_WAIT],
 [
 AC_HAVE_HEADERS(wait.h)
@@ -427,7 +434,11 @@ if test $cf_cv_decl_union_wait = yes; then
         AC_MSG_CHECKING(union wait used as wait-arg)
         AC_CACHE_VAL(cf_cv_arg_union_wait,[
                 AC_TRY_COMPILE($cf_decl,
-                        [union wait x; int i; wait(&x); i = WIFEXITED(x)],
+                        [union wait x; int i;
+#ifdef __STDC__
+			 pid_t wait(union wait *);
+#endif
+			 wait(&x); i = WIFEXITED(x)],
                         [cf_cv_arg_union_wait=yes],
                         [cf_cv_arg_union_wait=no])
                 ])

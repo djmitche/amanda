@@ -1,3 +1,8 @@
+2000-01-21  Garrett Wollman  <wollman@khavrinen.lcs.mit.edu>
+
+	* config/acinclude.m4i (CF_WAIT): Avoid warnings on systems
+	where `union wait' works but is deprecated.
+
 2000-01-21  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
 	* recover-src/uscan.l (settape): Recognize it.
