@@ -24,6 +24,7 @@ genmakefile () {
     echo ${AUTOMAKE-"automake -i"} --foreign $srcdir/Makefile
     eval ${AUTOMAKE-"automake -i"} '--foreign $srcdir/Makefile'
   fi
+  srcdir=$top_srcdir/$srcdir
   sed <$srcdir/Makefile.in >$makefilename \
     -e s/@SET_MAKE@/MAKE=${MAKE-make}/ \
     -e s/@srcdir@/`echo $srcdir | sed s%/%\\\\\\\\/%g`/ \
@@ -58,6 +59,7 @@ make -f $makefilename \
 find . -name Makefile.am -print | while read f; do
     (srcdir=`dirname $f` &&
      genmakefile &&
+     cd $srcdir &&
      make -f $makefilename $srcdir/Makefile.in)
 done
 
