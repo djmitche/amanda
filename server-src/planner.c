@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.53 1998/01/12 22:32:54 blair Exp $
+ * $Id: planner.c,v 1.54 1998/01/13 17:15:17 blair Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -884,7 +884,7 @@ host_t *hostp;
 
     ap_snprintf(number, sizeof(number), "%d", hostp->maxdumps);
     req = vstralloc("SERVICE sendsize\n",
-		    "OPTIONS "
+		    "OPTIONS ",
 		    "maxdumps=", number, ";",
 		    "hostname=", hostp->hostname, ";",
 		    "\n",
@@ -1441,7 +1441,7 @@ static void delay_dumps P((void))
 	    errbuf = vstralloc(dp->host->hostname,
 			       " ", dp->name,
 			       " ", level_str,
-			       " ", "[dump larger than tape,"
+			       " ", "[dump larger than tape,",
 			       " ", "skipping incremental]",
 			       NULL);
 	    delay_remove_dump(dp, errbuf);
@@ -1514,7 +1514,7 @@ static void delay_dumps P((void))
 	    errbuf = vstralloc(dp->host->hostname,
 			       " ", dp->name,
 			       " ", level_str,
-			       " ", "[dumps way too big,"
+			       " ", "[dumps way too big,",
 			       " ", "must skipp incremental dumps]",
 			       NULL);
 	    delay_remove_dump(dp, errbuf);

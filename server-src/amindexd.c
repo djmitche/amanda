@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.23 1998/01/12 22:32:45 blair Exp $
+ * $Id: amindexd.c,v 1.24 1998/01/13 17:11:36 blair Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -87,7 +87,8 @@ static int amindexd_debug = 0;
 static REMOVE_ITEM *uncompress_remove = NULL;
 					/* uncompressed files to remove */
 
-REMOVE_ITEM *remove_files(REMOVE_ITEM *remove)
+REMOVE_ITEM *remove_files(remove)
+REMOVE_ITEM *remove;
 {
     REMOVE_ITEM *prev;
 

@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.44 1998/01/02 18:48:29 jrj Exp $
+/* $Id: dumper.c,v 1.45 1998/01/13 17:11:38 blair Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -455,14 +455,14 @@ int got_sizeline;
 int got_endline;
 int dump_result;
 char *backup_name, *recover_cmd, *compress_suffix;
-#define max(a,b) (a>b?a:b)
+#define max(a,b) ((a)>(b)?(a):(b))
 
 static void process_dumpeof()
 {
     /* process any partial line in msgbuf? !!! */
     if(msgbuf != NULL) {
-	fprintf(errf,"? dumper: error [partial line in msgbuf: %d bytes]\n",
-		strlen(msgbuf));
+	fprintf(errf,"? dumper: error [partial line in msgbuf: %ld bytes]\n",
+		(long int) strlen(msgbuf));
 	fprintf(errf,"? dumper: error [partial line in msgbuf: \"%s\"]\n",
 		msgbuf);
     }
