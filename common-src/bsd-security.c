@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.13 1999/01/14 20:09:58 kashmir Exp $
+ * $Id: bsd-security.c,v 1.14 1999/01/22 18:06:53 oliva Exp $
  *
  * "BSD" security module
  */
@@ -805,7 +805,7 @@ check_user(bh, remoteuser)
     saved_stderr = dup(2);
     close(2);
 
-    if (ruserok(bh->hostname, uid == 0, remoteuser, CLIENT_LOGIN) < 0) {
+    if (ruserok(bh->hostname, getuid() == 0, remoteuser, CLIENT_LOGIN) < 0) {
 	dup2(saved_stderr,2);
 	close(saved_stderr);
 	return (-1);

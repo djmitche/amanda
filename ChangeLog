@@ -1,5 +1,10 @@
 1999-01-22  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* common-src/bsd-security.c (check_user): there was no uid variable
+	here; replace with getuid()
+
+1999-01-22  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
 	* server-src/planner.c (output_scheduleline): removed `or historical
 	data' from `no estimate' message; historical data doesn't matter any 
 	more
