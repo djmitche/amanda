@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: fileheader.c,v 1.7 1998/04/08 16:24:41 amcore Exp $
+ * $Id: fileheader.c,v 1.8 1998/04/11 13:10:04 martinea Exp $
  *
  */
 
@@ -45,7 +45,7 @@ char *buffer;
 dumpfile_t *file;
 int buflen;
 {
-    string_t line;
+    string_t line, save_line;
     char *bp, *str;
     int nchars;
     char *verify;
@@ -64,6 +64,7 @@ int buflen;
 	*s = ch;
     }
     line[sizeof(line)-1] = '\0';
+    strncpy(save_line, line, sizeof(save_line));
 
     fh_init(file); 
     s = line;
@@ -256,7 +257,7 @@ int buflen;
 
  weird_header:
 
-    fprintf(stderr, "%s: strange amanda header: \"%s\"\n", get_pname(), line);
+    fprintf(stderr, "%s: strange amanda header: \"%s\"\n", get_pname(), save_line);
     file->type = F_WEIRD;
     return;
 }
