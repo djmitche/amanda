@@ -1232,7 +1232,7 @@ searchtape() {
 	LogAppend "         -> barcode is \"$labelfile_barcode\""
 	get_mtx_status
 	foundslot=`sed -n '
-/VolumeTag *= *'$labelfile_barcode'$/			{
+/VolumeTag *= *'$labelfile_barcode' *$/			{
 	s/.*Storage Element \([0-9][0-9]*\).*/\1/p
 	q
 }
