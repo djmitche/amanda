@@ -772,3 +772,7 @@ extern backup_program_t dump_program, backup_program;
 backup_program_t *programs[] = {
   &dump_program, &backup_program, NULL
 };
+
+#ifdef KRB4_SECURITY
+#include "sendbackup-krb4.c"
+#endif

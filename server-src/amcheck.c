@@ -610,7 +610,7 @@ pkt_t *pkt;
 
 #ifdef KRB4_SECURITY
     if(hostp->disks->auth == AUTH_KRB4 &&
-       !check_mutual_authenticator(host2key(hostp), pkt, p)) {
+       !check_mutual_authenticator(host2key(hostp->hostname), pkt, p)) {
 	fprintf(outf, "ERROR: %s [mutual-authentication failed]\n", 
 		hostp->hostname);
 	remote_errors++;
