@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.6 1998/12/01 17:05:15 kashmir Exp $
+ * $Id: event.c,v 1.7 1999/03/01 21:37:37 kashmir Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
  * a uniform interface, central state storage, and localized
@@ -47,6 +47,7 @@ struct event_handle {
     event_type_t type;		/* type of event */
     int data;			/* type data */
     time_t lastfired;		/* timestamp when this last fired */
+    int wakeup;			/* if nonzero, and EV_WAIT, then fire */
     TAILQ_ENTRY(event_handle) tq;	/* queue handle */
 };
 
@@ -59,6 +60,10 @@ static struct {
 } eventq = {
     TAILQ_HEAD_INITIALIZER(eventq.tailq), 0
 };
+#define	eventq_first()		TAILQ_FIRST(&eventq.tailq)
+#define	eventq_next(eh)		TAILQ_NEXT(eh, tq)
+#define	eventq_append(eh)	TAILQ_INSERT_TAIL(&eventq.tailq, eh, tq);
+#define	eventq_remove(eh)	TAILQ_REMOVE(&eventq.tailq, eh, tq);
 
 /*
  * A table of currently set signal handlers.
@@ -107,11 +112,12 @@ event_register(data, type, fn, arg)
     handle->type = type;
     handle->data = data;
     handle->lastfired = -1;
-    TAILQ_INSERT_TAIL(&eventq.tailq, handle, tq);
+    handle->wakeup = 0;
+    eventq_append(handle);
     eventq.qlength++;
 
 #ifdef EVENT_DEBUG
-    fprintf(stderr, "event: register: %X data=%d, type=%s\n", handle,
+    fprintf(stderr, "event: register: %X data=%d, type=%s\n", (int)handle,
 	handle->data, event_type2str(handle->type));
 #endif
     return (handle);
@@ -128,12 +134,12 @@ event_release(handle)
 {
 
     assert(handle != NULL);
-    assert(handle->type != EV_DEAD);
 
 #ifdef EVENT_DEBUG
-    fprintf(stderr, "event: release (mark): %X data=%d, type=%s\n", handle,
-	handle->data, event_type2str(handle->type));
+    fprintf(stderr, "event: release (mark): %X data=%d, type=%s\n",
+	(int)handle, handle->data, event_type2str(handle->type));
 #endif
+    assert(handle->type != EV_DEAD);
 
     /*
      * For signal events, we need to specially remove then from the
@@ -170,16 +176,45 @@ release(handle)
 
     assert(handle != NULL);
     assert(handle->type == EV_DEAD);
-    assert(eventq.qlength > 0);
 
 #ifdef EVENT_DEBUG
-    fprintf(stderr, "event: release (actual): %X data=%d, type=%s\n", handle,
-	handle->data, event_type2str(handle->type));
+    fprintf(stderr, "event: release (actual): %X data=%d, type=%s\n",
+	(int)handle, handle->data, event_type2str(handle->type));
 #endif
 
-    TAILQ_REMOVE(&eventq.tailq, handle, tq);
+    eventq_remove(handle);
     amfree(handle);
 }
+
+/*
+ * Wakeup all EV_WAIT events waiting on the specified id.
+ */
+int
+event_wakeup(id)
+    int id;
+{
+    event_handle_t *eh;
+    int nwaken = 0;
+
+#ifdef EVENT_DEBUG
+	fprintf(stderr, "event: wakeup: enter (%d)\n", id);
+#endif
+
+    assert(id >= 0);
+
+    for (eh = eventq_first(); eh != NULL; eh = eventq_next(eh)) {
+
+	if (eh->type == EV_WAIT && eh->data == id) {
+#ifdef EVENT_DEBUG
+	    fprintf(stderr, "event: wakeup: %X id=%d\n", (int)eh, id);
+#endif
+	    eh->wakeup = 1;
+	    nwaken++;
+	}
+    }
+    return (nwaken);
+}
+
 
 /*
  * The event loop.  We need to be specially careful here with adds and
@@ -197,6 +232,11 @@ event_loop(dontblock)
     time_t curtime;
     event_handle_t *eh, *nexteh;
     struct sigtabent *se;
+
+#ifdef EVENT_DEBUG
+	fprintf(stderr, "event: loop: enter: dontblock=%d, qlength=%d\n",
+	    dontblock, eventq.qlength);
+#endif
 
     /*
      * If we have no events, we have nothing to do
@@ -221,6 +261,10 @@ event_loop(dontblock)
 #ifdef EVENT_DEBUG
 	fprintf(stderr, "event: loop: dontblock=%d, qlength=%d\n", dontblock,
 	    eventq.qlength);
+	for (eh = eventq_first(); eh != NULL; eh = eventq_next(eh)) {
+	    fprintf(stderr, "%X: %s data=%d fn=0x%x arg=0x%x\n", (int)eh,
+		event_type2str(eh->type), eh->data, (int)eh->fn, (int)eh->arg);
+	}
 #endif
 	/*
 	 * Set ourselves up with no timeout initially.
@@ -251,10 +295,10 @@ event_loop(dontblock)
 	/*
 	 * Run through each event handle and setup the events.
 	 * We save our next pointer early in case we GC some dead
-	 * events.
+	 * events.  We also fire EV_WAIT events that have arisen.
 	 */
-	for (eh = TAILQ_FIRST(&eventq.tailq); eh != NULL; eh = nexteh) {
-	    nexteh = TAILQ_NEXT(eh, tq);
+	for (eh = eventq_first(); eh != NULL; eh = nexteh) {
+	    nexteh = eventq_next(eh);
 
 	    switch (eh->type) {
 
@@ -318,10 +362,10 @@ event_loop(dontblock)
 		break;
 
 	    /*
-	     * Prune dead events
+	     * Do nothing with these events right now.
 	     */
+	    case EV_WAIT:
 	    case EV_DEAD:
-		release(eh);
 		break;
 
 	    default:
@@ -334,7 +378,7 @@ event_loop(dontblock)
 	 * Let 'er rip
 	 */
 #ifdef EVENT_DEBUG
-	fprintf(stderr, "event: select: dontblock=%d, maxfd=%d, timeout=%d\n",
+	fprintf(stderr, "event: select: dontblock=%d, maxfd=%d, timeout=%ld\n",
 	    dontblock, maxfd, tvptr != NULL ? timeout.tv_sec : -1);
 #endif
 	rc = select(maxfd + 1, &readfds, &writefds, &errfds, tvptr);
@@ -377,8 +421,7 @@ event_loop(dontblock)
 	 * Now run through the events and fire the ones that are ready.
 	 * Don't handle file descriptor events if the select failed.
 	 */
-	for (eh = TAILQ_FIRST(&eventq.tailq); eh != NULL;
-	    eh = TAILQ_NEXT(eh, tq)) {
+	for (eh = eventq_first(); eh != NULL; eh = eventq_next(eh)) {
 	    fired = 0;
 
 	    switch (eh->type) {
@@ -429,11 +472,17 @@ event_loop(dontblock)
 		    eh->lastfired = curtime;
 		if (curtime - eh->lastfired >= eh->data) {
 #ifdef EVENT_DEBUG
-		    fprintf(stderr, "event: %X fired: time=%d\n",
-			eh, eh->data);
+		    fprintf(stderr, "event: %X fired: time=%d\n", (int)eh,
+			eh->data);
 #endif
 		    fired = 1;
 		}
+		break;
+
+	    /*
+	     * Wait events are fired before the select call.
+	     */
+	    case EV_WAIT:
 		break;
 
 	    /*
@@ -450,13 +499,50 @@ event_loop(dontblock)
 	    if (fired) {
 #ifdef EVENT_DEBUG
 		fprintf(stderr, "event: %X fired: data=%d, type=%s (qlen=%d)\n",
-		    eh, eh->data, event_type2str(eh->type), eventq.qlength);
+		    (int)eh, eh->data, event_type2str(eh->type),
+		    eventq.qlength);
 #endif
 		assert(eh->type != EV_DEAD);
 		eh->lastfired = curtime;
 		(*eh->fn)(eh->arg);
 	    }
 	}
+	/*
+	 * Do a separate pass for these events, which are usually caused by
+	 * events above, and need to run afterwards.
+	 */
+	for (eh = eventq_first(); eh != NULL; eh = nexteh) {
+	    nexteh = eventq_next(eh);
+	    switch (eh->type) {
+	    /*
+	     * If this EV_WAIT event has been woken up, then fire it.
+	     */
+	    case EV_WAIT:
+		if (eh->wakeup == 0)
+		    break;
+		eh->wakeup = 0;
+#ifdef EVENT_DEBUG
+		fprintf(stderr, "event: %X fired: data=%d, type=%s (qlen=%d)\n",
+		    (int)eh, eh->data, event_type2str(eh->type),
+		    eventq.qlength);
+#endif
+		assert(eh->type != EV_DEAD);
+		eh->lastfired = curtime;
+		(*eh->fn)(eh->arg);
+		break;
+
+	    /*
+	     * Prune dead events
+	     */
+	    case EV_DEAD:
+		release(eh);
+		break;
+
+	    default:
+		break;
+	    }
+	}
+
     } while (!dontblock && eventq.qlength > 0);
 
     assert(--entry == 0);
@@ -492,6 +578,7 @@ event_type2str(type)
 	X(EV_WRITEFD),
 	X(EV_SIG),
 	X(EV_TIME),
+	X(EV_WAIT),
 	X(EV_DEAD),
 #undef X
     };

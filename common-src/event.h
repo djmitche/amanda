@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.h,v 1.1 1998/11/04 20:08:35 kashmir Exp $
+ * $Id: event.h,v 1.2 1999/03/01 21:37:39 kashmir Exp $
  */
 #ifndef EVENT_H
 #define EVENT_H
@@ -52,7 +52,8 @@ typedef void (*event_fn_t) P((void *));
  * The types of events we can register.
  * EV_DEAD is for internal use only.
  */
-typedef enum { EV_READFD, EV_WRITEFD, EV_SIG, EV_TIME, EV_DEAD } event_type_t;
+typedef enum { EV_READFD, EV_WRITEFD, EV_SIG, EV_TIME, EV_WAIT,
+    EV_DEAD } event_type_t;
 
 /*
  * Register an event handler.
@@ -74,6 +75,11 @@ event_handle_t *event_register P((int, event_type_t, event_fn_t, void *));
  * Release an event handler.
  */
 void event_release P((event_handle_t *));
+
+/*
+ * Wake up all EV_WAIT events waiting on a specific id
+ */
+int event_wakeup P((int));
 
 /*
  * Process events.  If the argument is nonzero, then the loop does
