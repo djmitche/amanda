@@ -31,6 +31,20 @@ setuid programs to `root', then `chmod u+s' them again, if `chown'
 drops the setuid bit.
 
 
+Q: Why does `amcheck' claim that the tape is `not an amanda tape'?
+
+A: Because amanda requires you to label tapes before it uses them.
+Run `amlabel' in order to label a tape.
+
+   If, even after labeling a tape, `amcheck' still complains about it,
+make sure the regular expression specified in amanda.conf matches the
+label you have specified, and check whether you have configured
+non-rewinding tape devices for amanda to use.  For example, use
+/dev/nrst0 instead of /dev/rst0, /dev/rmt/0bn instead of /dev/rmt/0b,
+or some other system-dependent device name that contains an `n',
+instead of one that does not.  The `n' stands for non-rewinding.
+
+
 Q: Why does `amcheck' report `selfcheck timed out'?
 
 A: This can occur under several different situations.  First, make
