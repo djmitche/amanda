@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.46.2.6 1998/11/02 21:48:09 jrj Exp $
+ * $Id: driver.c,v 1.46.2.7 1998/11/03 20:04:35 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -882,7 +882,7 @@ int fd;
 	break;
 
     case NO_ROOM: /* NO-ROOM <handle> */
-	if(empty(tapeq) && pending_aborts == 0) {
+	if(!taper_busy && empty(tapeq) && pending_aborts == 0) {
 	    /* no disk space due to be freed */
 	    dumper_cmd(dumper, ABORT, NULL);
 	    pending_aborts++;

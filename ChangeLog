@@ -1,5 +1,12 @@
 1998-11-03  John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/driver.c (handle_dumper_result): do not abort a dumper
+	that reports NO-ROOM if taper is busy since some holding disk space
+	will eventually be released (this code it not used when PORT-DUMP is
+	in progress).
+
+1998-11-03  John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/taper.c (write_buffer): calling lseek after every tape
 	write is wasteful and makes utilities like lsof less useful.  Only
 	reset the offset when the amount written is about to go over 2 GBytes.
