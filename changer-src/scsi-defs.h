@@ -1,32 +1,4 @@
-/*
- * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998, 2000 University of Maryland at College Park
- * All Rights Reserved.
- *
- * Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of U.M. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  U.M. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty.
- *
- * U.M. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL U.M.
- * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
- * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- * Authors: the Amanda Development Team.  Its members are listed in a
- * file named AUTHORS, in the root directory of this distribution.
- */
-/*
- * $Id: scsi-defs.h,v 1.1.2.18 2001/01/08 20:08:05 ant Exp $
- *
- */
+
 /*
  * Copyright (c) 1998 T.Hepper
  */
@@ -39,16 +11,25 @@ typedef unsigned char CDB_T[12];
 
 #ifdef _AIX
 typedef unsigned int PackedBit;
+#define AIX_USE_GSC 1
 #else
 typedef unsigned char PackedBit;
 #endif
+
+#define INDEX_CHANGER 0
+#define INDEX_TAPE 1
+#define INDEX_TAPECTL 2
+
+#define CHG_MAXDEV 32		/* Maximum number of devices handled by pDev */
+				/* Must be large to hold the result of ScanBus */
+
 #define TAPETYPE 4
 #define IMPORT 3
 #define STORAGE 2
 #define CHANGER 1
 
 #define TAG_SIZE 36
-
+#define MAXTRIES 100  /* How many tries until SCSI_TestUnitReady should return an ok */
 /*
  * Sense Key definitions
 */
@@ -65,15 +46,26 @@ typedef unsigned char PackedBit;
 #define SENSE_UNIT_ATTENTION 6
 #define SENSE_DATA_PROTECT 7
 #define SENSE_BLANK_CHECK 8
+#define SENSE_VENDOR_SPECIFIC 0x9
 #define SENSE_ABORTED_COMMAND 0xb
 #define SENSE_VOLUME_OVERFLOW 0xd
+#define SENSE_CHG_ELEMENT_STATUS 0xe
 
 #define MAX_RETRIES 100
 
 #define INQUIRY_SIZE sizeof(SCSIInquiry_T)
 
+/*
+ * Return values from the OS dependent part
+ * of the SCSI interface
+ *
+ * The underlaying functions must decide what to do
+ */
+#define SCSI_ERROR -1
 #define SCSI_OK 0
 #define SCSI_SENSE 1
+#define SCSI_BUSY 2
+#define SCSI_CHECK 3
 
 
 /*
@@ -105,11 +97,13 @@ typedef unsigned char PackedBit;
  */
 #define SENSE_ABORT -1
 #define SENSE_IGNORE 0
-#define SENSE_NO_TAPE_ONLINE 1
 #define SENSE_RETRY 2
 #define SENSE_IES 3
-#define SENSE_TAPE_NOT_UNLOADED 4
-#define SENSE_NO 5
+#define SENSE_TAPE_NOT_ONLINE 4
+#define SENSE_TAPE_NOT_LOADED 5
+#define SENSE_NO 6
+#define SENSE_TAPE_NOT_UNLOADED 7
+#define SENSE_CHM_FULL 8
 /*
  * Defines for the type field in the inquiry command
  */
@@ -129,6 +123,10 @@ typedef unsigned char PackedBit;
 #define TAPE_BOT 2           /* Tape is at begin of tape */
 #define TAPE_EOT 4           /* Tape is at end of tape */
 #define TAPE_WR_PROT 8       /* Tape is write protected */
+#define TAPE_NOT_LOADED 16   /* Tape is not loaded */
+
+/* Defines for the function Tape_Ioctl */
+#define IOCTL_EJECT 0
 
 /* Defines for exit status */
 #define WARNING 1
@@ -155,11 +153,28 @@ typedef unsigned char PackedBit;
 #define MSB3(s,v)               *(s)=B(v,16),  (s)[1]=B(v,8), (s)[2]=B1(v)
 #define MSB4(s,v) *(s)=B(v,24),(s)[1]=B(v,16), (s)[2]=B(v,8), (s)[3]=B1(v)
 
-#define LABEL_DB_VERSION 1
+#define LABEL_DB_VERSION 2
 #define BARCODE_PUT 1
 #define BARCODE_VOL 2
 #define BARCODE_BARCODE 3
+#define UPDATE_SLOT 4
+#define FIND_SLOT 5
+#define RESET_VALID 6
+#define BARCODE_DUMP 7
 
+#define DEBUG_INFO 9
+#define DEBUG_ERROR 1
+#define DEBUG_ALL 0
+
+#define SECTION_ALL 0
+#define SECTION_INFO 1
+#define SECTION_SCSI 2
+#define SECTION_MAP_BARCODE 3
+#define SECTION_ELEMENT 4
+#define SECTION_BARCODE 5
+#define SECTION_TAPE 6
+#define SECTION_MOVE 7
+/*----------------------------------------------------------------------------*/
 /* Some stuff for our own configurationfile */
 typedef struct {  /* The information we can get for any drive (configuration) */
   int drivenum;      /* Which drive to use in the library */
@@ -179,7 +194,9 @@ typedef struct {  /* The information we can get for any drive (configuration) */
 typedef struct {
   int number_of_configs; /* How many different configurations are used */
   int eject;             /* Do the drives need an eject-command */
-  int havebarcode;	 /* Do we have an barcode reader installed */
+  int havebarcode;       /* Do we have an barcode reader installed */
+  char *debuglevel;      /* How many debug info to print */
+  unsigned char emubarcode;	/* Emulate the barcode feature,  used for keeping an inventory of the lib */
   int sleep;             /* How many seconds to wait for the drive to get ready */
   int cleanmax;          /* How many runs could be done with one cleaning tape */
   char *device;          /* Which device is our changer */
@@ -192,6 +209,20 @@ typedef struct {
   char barcode[TAG_SIZE];
   unsigned char valid;
 } LabelV1_T;
+
+typedef struct {
+  char voltag[128];
+  char barcode[TAG_SIZE];
+  unsigned int slot;             /* in which slot is the tape */
+  unsigned int from;      	 /* from where it comes, needed to move
+				 * a tape back to the right slot from the drive
+				 */
+
+  unsigned int LoadCount;	/* How many times has the tape been loaded */
+  unsigned int RecovError;	/* How many recovered errors */
+  unsigned int UnrecovError;	/* How man unrecoverd errors */
+  unsigned char valid;		/* Is this tape in the current magazin */
+} LabelV2_T;
 
 /* ======================================================= */
 /* RequestSense_T */
@@ -1023,6 +1054,7 @@ typedef struct ElementInfo
 } ElementInfo_T;
 
 
+
 typedef struct {
     char *ident;                  /* Name of the device from inquiry */
     char *type;                   /* Device Type, tape|robot */
@@ -1035,7 +1067,7 @@ typedef struct {
     int (*function_rewind)(int);
     int (*function_barcode)(int);
     int (*function_search)();
-    int (*function_error)(int, int , char *);
+    int (*function_error)(int, int, unsigned char, unsigned char, unsigned char, char *);
 } ChangerCMD_T ;
 
 typedef struct {
@@ -1045,13 +1077,20 @@ typedef struct {
 } SC_COM_T;
 
 typedef struct OpenFiles {
-    int fd;                       /* The foledescriptor */
-    unsigned char SCSI;           /* Can we send SCSI commands */
-    char *dev;                    /* The device which is used */
-    char *ConfigName;             /* The name in the config */
-    char ident[17];               /* The identifier from the inquiry command */
-    ChangerCMD_T *functions;      /* Pointer to the function array for this device */
-    SCSIInquiry_T *inquiry;       /* The result from the Inquiry */
+    int fd;                       /* The filedescriptor */
+#ifdef HAVE_CAM_LIKE_SCSI
+    struct cam_device *curdev;
+#endif
+  unsigned char avail;          /* Is this device available */
+  unsigned char devopen;        /* Is the device open */
+  unsigned char inqdone;        /* Did we try to get device infos, was an open sucessfull */
+  unsigned char SCSI;           /* Can we send SCSI commands */
+  int flags;                    /* Can be used for some flags ... */
+  char *dev;                    /* The device which is used */
+  char *ConfigName;             /* The name in the config */
+  char ident[17];               /* The identifier from the inquiry command */
+  ChangerCMD_T *functions;      /* Pointer to the function array for this device */
+  SCSIInquiry_T *inquiry;       /* The result from the Inquiry */
 } OpenFiles_T;
 
 typedef struct LogPageDecode {
@@ -1060,16 +1099,30 @@ typedef struct LogPageDecode {
     void (*decode)(LogParameter_T *, int);
 } LogPageDecode_T;
 
+typedef struct {
+   char *ident;      /* Ident as returned from the inquiry */
+   char *vendor;     /* Vendor as returned from the inquiry */
+   int type;         /* removable .... */
+   int sense;        /* Sense key as returned from the device */
+   int asc;          /* ASC as set in the sense struct */
+   int ascq;         /* ASCQ as set in the sense struct */
+   int  ret;         /* What we think that we should return on this conditon */
+   char text[80];    /* A short text describing this condition */
+} SenseType_T;                                                                                    
+
 /* ======================================================= */
 /* Funktion-Declaration */
 /* ======================================================= */
-OpenFiles_T *SCSI_OpenDevice(char *DeviceName);
-OpenFiles_T *OpenDevice(char *DeviceName, char *ConfigName, char *ident);
+int SCSI_OpenDevice(int );
+int OpenDevice(int ,char *DeviceName, char *ConfigName, char *ident);
 
 int SCSI_CloseDevice(int DeviceFD); 
 int CloseDevice(int ); 
 int Tape_Eject(int);
 int Tape_Status(int);
+void DumpSense();
+int Sense2Action(char *ident, unsigned char type, unsigned char ignsense, unsigned char sense, unsigned
+char asc, unsigned char ascq, char **text) ;
 
 int SCSI_ExecuteCommand(int DeviceFD,
                         Direction_T Direction,
@@ -1079,18 +1132,29 @@ int SCSI_ExecuteCommand(int DeviceFD,
                         int DataBufferLength,
                         char *RequestSense,
                         int RequestSenseLength);
+
+void ChangerStatus(char * option, char * labelfile, int HasBarCode, char *changer_file, char *changer_dev, char *tape_device);
+
 int SCSI_Inquiry(int, SCSIInquiry_T *, unsigned char);
 int PrintInquiry(SCSIInquiry_T *);
 int DecodeSCSI(CDB_T CDB, char *string);
 
+int RequestSense P((int fd, ExtendedRequestSense_T *s, int ClearErrorCounters));
+int DecodeExtSense P((ExtendedRequestSense_T *sense, char *pstring, FILE *out));
+
 void ChangerReplay(char *option);
 void ChangerStatus(char * option, char * labelfile, int HasBarCode, char *changer_file, char *changer_dev, char *tape_device);
-
 int BarCode(int fd);
-char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action);
+char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action, int slot, int from);
 
-int Tape_Ready(char *tapedev, int wait_time);
+int Tape_Ready(int fd, int wait_time);
 
+void Inventory(char *labelfile, int drive, int eject, int start, int stop, int clean);
+void ChangerDriverVersion();
+void PrintConf();
+int LogSense(int fd);
+int ScanBus(int print);
+void DebugPrint(int level, int section, char * fmt, ...);
 /*
  * Local variables:
  * indent-tabs-mode: nil
