@@ -24,13 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.c,v 1.6 2001/03/20 00:27:18 jrjackson Exp $
+ * $Id: server_util.c,v 1.7 2001/12/29 21:58:00 martinea Exp $
  *
  */
 
 #include "amanda.h"
 #include "server_util.h"
 #include "arglist.h"
+#include "token.h"
 
 const char *cmdstr[] = {
     "BOGUS", "QUIT", "QUITTING", "DONE",

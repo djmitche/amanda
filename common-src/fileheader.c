@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.18 2001/07/31 23:19:57 jrjackson Exp $
+ * $Id: fileheader.c,v 1.19 2001/12/29 21:57:59 martinea Exp $
  */
 
 #include "amanda.h"
@@ -271,7 +271,7 @@ build_header(buffer, file, buflen, blocksize)
 
 	/* \014 == ^L */
 	n = snprintf(buffer, buflen,
-	    "\tdd if=<tape> bs=%dk skip=1 |%s %s\n\014\n",
+	    "\tdd if=<tape> bs=%ldk skip=1 |%s %s\n\014\n",
 	    blocksize / 1024, file->uncompress_cmd, file->recover_cmd);
 	buffer += n;
 	buflen -= n;

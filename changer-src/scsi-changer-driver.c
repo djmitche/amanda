@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.38 2001/09/16 18:08:52 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.39 2001/12/29 21:57:59 martinea Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -92,6 +92,7 @@ ElementInfo_T *LookupElement(int address);
 int eject_tape(char *tapedev, int type);
 int unload(int fd, int drive, int slot);
 int load(int fd, int drive, int slot);
+int GetElementStatus(int DeviceFD);
 
 /*
  * Log Pages Decode
@@ -589,7 +590,6 @@ void Inventory(char *labelfile, int drive, int eject, int start, int stop, int c
   char *datestamp = malloc(1);   /* stupid, but tapefd_rdlabel does an free at the begining ... */
   char *label = malloc(1);       /* the same here ..... */
   char *result;                    /* Used to store the result of MapBarCode */
-  int fd;                        /* fd from tape_open */
   int barcode;                   /* cache the result from the BarCode function */
   static int inv_done = 0;       /* Inventory function called ?, marker to disable recursion */
   MBC_T *pbarcoderes = malloc(sizeof(MBC_T));    /* Here we will pass the parameter to MapBarCode and get the result */
@@ -861,7 +861,6 @@ int unload(int fd, int drive, int slot)
 {
   extern OpenFiles_T *pDev;
   int ret;
-  int result;                 /* Needed by MapBarCode */
   extern changer_t chg;         /* Needed for the infos about emubarcode and labelfile */
   extern int do_inventory;
   MBC_T *pbarcoderes = malloc(sizeof(MBC_T));
@@ -1011,11 +1010,10 @@ int unload(int fd, int drive, int slot)
 int load(int fd, int drive, int slot)
 {
   extern changer_t chg;         /* Needed for the infos about emubarcode and labelfile */
-  char *result;                 /* Needed for the result of tape_rdlabel */
+  char *result = NULL;          /* Needed for the result of tape_rdlabel */
   char *datestamp = NULL;       /* Result pointer for tape_rdlabel */       
   char *label = NULL;           /* Result pointer for tape_rdlabel */
-  extern int clean_slot;
-  int ret, scanret;
+  int ret;
   extern OpenFiles_T *pDev;
   extern int do_inventory;
   MBC_T *pbarcoderes = malloc(sizeof(MBC_T));
@@ -1994,7 +1992,7 @@ int TapeStatus()
     {
       if ((pRequestSense = malloc(sizeof(RequestSense_T))) == NULL)
 	{
-	  dbprintf(("%-20s : malloc failed\n",TapeStatus));
+	  dbprintf(("%-20s : malloc failed\n","TapeStatus"));
 	  return(-1);
 	}
       
@@ -2062,6 +2060,7 @@ int TapeStatus()
 	}
       DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP TapeStatus\n");
     }
+    return(0);
 }
 
 int DLT4000Eject(char *Device, int type)
@@ -4280,7 +4279,6 @@ int LogSense(DeviceFD)
   char *label = NULL;
   char *result = NULL;
   extern char *tapestatfile;
-  int fd;                        /* for tape_open */
   int i;
   int ParameterCode;
   unsigned int value;
@@ -4813,7 +4811,6 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
   extern OpenFiles_T *pDev;
   int x;
   FILE *out;
-  char *label;
   ExtendedRequestSense_T ExtRequestSense;
   MBC_T *pbarcoderes = malloc(sizeof(MBC_T));
   

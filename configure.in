@@ -1274,7 +1274,7 @@ if test -n "$xenix_tapeio"; then
 fi
 
 case "$target" in
-  *-linux-*) AC_DEFINE(MAX_TAPE_BLOCK_KB,(2 * 1024),[Define this if MAX_TAPE_BLOCK_KB must be smaller than 4 MBytes.])
+  *-linux-*) AC_DEFINE(MAX_TAPE_BLOCK_KB,(1024),[Define this if MAX_TAPE_BLOCK_KB must be smaller than 4 MBytes.])
 
 esac
 
