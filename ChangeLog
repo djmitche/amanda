@@ -1,5 +1,16 @@
 2000-12-13 John R. Jackson <jrj@purdue.edu>
 
+	* tape-src/Makefile.am: Add RAIT feature to 2.4.2-multitape branch.
+	* tape-src/tapeio.c: Ditto.
+	* tape-src/tapeio.h: Ditto.
+	* tape-src/output-rait.c: Ditto (new file).
+	* tape-src/output-rait.h: Ditto (new file).
+	* docs/Makefile.am: Ditto.
+	* docs/RAIT: Ditto (new file).
+	* docs/VTAPE_API: Ditto (new file).
+
+2000-12-13 John R. Jackson <jrj@purdue.edu>
+
 	* tape-src/tapeio.c: De-commit the RAIT feature from 2.4.2.  It will
 	  be in 2.5 and 2.4.2-multitape.
 	* tape-src/tapeio.h: Ditto.
@@ -1301,7 +1312,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.423 2000/12/13 18:33:30 jrjackson Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.423.2.1 2000/12/13 19:25:28 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

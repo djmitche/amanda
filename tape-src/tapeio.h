@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.h,v 1.9.2.2 2000/12/13 18:33:31 jrjackson Exp $
+ * $Id: tapeio.h,v 1.9.2.2.2.1 2000/12/13 19:25:29 jrjackson Exp $
  *
  * interface for tapeio.c
  */
@@ -35,6 +35,8 @@
 #include "amanda.h"
 
 int tape_open P((char *filename, int mode));
+int tape_stat P((char *filename, struct stat *buf));
+int tape_access P((char *filename, int mode));
 
 int tapefd_rewind P((int tapefd));
 int tapefd_fsf P((int tapefd, int count));
@@ -42,7 +44,7 @@ int tapefd_weof P((int tapefd, int count));
 void tapefd_resetofs P((int tapefd));
 
 int tapefd_read P((int tapefd, void *buffer, int count));
-int tapefd_write P((int tapefd, void *buffer, int count));
+int tapefd_write P((int tapefd, const void *buffer, int count));
 
 char *tapefd_rdlabel P((int tapefd, char **datestamp, char **label));
 char *tapefd_wrlabel P((int tapefd, char  *datestamp, char  *label));
