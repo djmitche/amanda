@@ -1,5 +1,9 @@
 2002-03-30  John R. Jackson (jrj@purdue.edu)
 
+	* server-src/planner.c: General delay_dumps code cleanup.
+
+2002-03-30  John R. Jackson (jrj@purdue.edu)
+
 	* server-src/planner.c: Make sure individual dumps larger than a tape
 	  are not added back into the schedule.  Found by Uncle George
 	  <gatgul@voicenet.com>.
