@@ -1,5 +1,13 @@
 2004-08-31  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* client-src/sendbackup-gnutar.c (end_backup): Write warning message
+	  in not fatal error.
+	* server-src/dumper.c (process_dumpline): Parse warning message.
+	* server-src/reporter.c (handle_strange): Print warning message in
+	  the STRANGE summary.
+
+2004-08-31  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/driverio.c (free_serial): Set stable[s].dp to NULL.
 	* server-src/driverio.c (disk2serial): Check that stable[s].dp == NULL.
 
