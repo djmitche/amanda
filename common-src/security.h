@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.h,v 1.1 1998/11/04 20:26:58 kashmir Exp $
+ * $Id: security.h,v 1.2 1998/11/05 23:12:25 kashmir Exp $
  *
  * security api
  */
@@ -32,6 +32,12 @@
 #define	SECURITY_H
 
 struct security_handle;
+
+/*
+ * This is a type that gets passed to the security_recvpkt() callback.
+ * It details what the status of this callback is.
+ */
+typedef enum { RECV_OK, RECV_TIMEOUT, RECV_ERROR } security_recvpkt_status_t;
 
 /*
  * This structure defines a security driver.  This driver abstracts
@@ -73,14 +79,16 @@ typedef struct security_driver {
      * This creates an event in the event handler for receiving pkt_t's
      * on a security_handle.  The given callback with the given arg
      * will be called when the driver determines that it has data
-     * for that handle.
+     * for that handle.  The last argument is a timeout, in seconds.
+     * This may be -1 to indicate no timeout.
      *
-     * If the callback is called with a NULL packet, then an error
-     * occurred in receiving.
+     * If there was an error or timeout, this will be indicated in
+     * the status argument.
      * 
      * Only one recvpkt request can exist per handle.
      */
-    void (*recvpkt) P((void *, void (*)(void *, pkt_t *), void *));
+    void (*recvpkt) P((void *, void (*)(void *, pkt_t *,
+	security_recvpkt_status_t), void *, int));
 
     /*
      * Cancel an outstanding recvpkt request on a handle.
@@ -165,10 +173,10 @@ void security_close P((security_handle_t *));
 #define	security_sendpkt(handle, pkt)		\
     (*(handle)->driver->sendpkt)(handle, pkt)
 
-/* void security_recvpkt P((security_handle_t *, void (*)(void *, pkt_t *),
-    void *); */
-#define	security_recvpkt(handle, fn, arg)	\
-    (*(handle)->driver->recvpkt)(handle, fn, arg)
+/* void security_recvpkt P((security_handle_t *,
+    void (*)(void *, pkt_t *, security_recvpkt_status_t), void *, int); */
+#define	security_recvpkt(handle, fn, arg, timeout)	\
+    (*(handle)->driver->recvpkt)(handle, fn, arg, timeout)
 
 /* void security_recvpkt_cancel P((security_handle_t *)); */
 #define	security_recvpkt_cancel(handle)		\
