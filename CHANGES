@@ -1,5 +1,8 @@
 Version 2.4.0b5
 
+	If krb4 auth was compiled in but not enabled, clients would hang
+	forever.  -Aidan Cully <aidan@panix.com>
+
 	Make sure SAMBA will not clear archive bits when performing an
 	incremental backup, so any incremental will be a level 1.
 	-martineau

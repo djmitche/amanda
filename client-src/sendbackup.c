@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.20 1997/12/16 17:52:52 jrj Exp $
+ * $Id: sendbackup.c,v 1.21 1997/12/22 01:10:00 amcore Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -267,19 +267,21 @@ char **argv;
     dbprintf(("  got all connections\n"));
 
 #ifdef KRB4_SECURITY
-    if(kerberos_handshake(dataf, session_key) == 0) {
-	dbprintf(("kerberos_handshake on data socket failed\n"));
-	dbclose();
-	exit(1);
-    }
+    if (krb4_auth) {
+        if(kerberos_handshake(dataf, session_key) == 0) {
+	    dbprintf(("kerberos_handshake on data socket failed\n"));
+	    dbclose();
+	    exit(1);
+        }
 
-    if(kerberos_handshake(mesgf, session_key) == 0) {
-	dbprintf(("kerberos_handshake on mesg socket failed\n"));
-	dbclose();
-	exit(1);
-    }
+        if(kerberos_handshake(mesgf, session_key) == 0) {
+	    dbprintf(("kerberos_handshake on mesg socket failed\n"));
+	    dbclose();
+	    exit(1);
+        }
 
-    dbprintf(("%s: kerberos handshakes succeeded!\n", argv[0]));
+        dbprintf(("%s: kerberos handshakes succeeded!\n", argv[0]));
+    }
 #endif
 	
     /* redirect stderr */
