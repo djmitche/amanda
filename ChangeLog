@@ -1,5 +1,11 @@
 1999-10-03 John R. Jackson  <jrj@purdue.edu>
 
+	* common-src/amflock.c (main): do not use aclose() in the configure
+	  test case.  During configure we do not have areads_relbuf()
+	  available and it makes configure think all the tests have failed.
+
+1999-10-03 John R. Jackson  <jrj@purdue.edu>
+
 	* common-src/amanda.h: protect the close macros and areads* from
 	  out of range file descriptors.
 	* common-src/file.c: ditto.
