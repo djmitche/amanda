@@ -1,3 +1,7 @@
+1998-10-08  John R. Jackson  <jrj@purdue.edu>
+
+	* example/amanda.conf.in: fix runspercycle example and comments
+
 1998-10-02  Josef Karthauser  <joe@pavilion.net>
 
 	* changer-src/chg-chio.pl.in (getTapeParams): fix regular expression 
