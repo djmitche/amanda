@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.22.2.1 1998/11/18 07:37:09 oliva Exp $
+ * $Id: amtape.c,v 1.22.2.2 1998/11/24 23:59:50 jrj Exp $
  *
  * tape changer interface program
  */
@@ -88,6 +88,10 @@ char **argv;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     int fd;
+    uid_t uid_me;
+    uid_t uid_dumpuser;
+    char *dumpuser;
+    struct passwd *pw;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -115,6 +119,25 @@ char **argv;
 
     if(read_conffile(CONFFILE_NAME))
 	error("could not read amanda config file");
+
+    uid_me = getuid();
+    uid_dumpuser = uid_me;
+    dumpuser = getconf_str(CNF_DUMPUSER);
+
+    if ((pw = getpwnam(dumpuser)) == NULL) {
+	error("cannot look up dump user \"%s\"", dumpuser);
+	/* NOTREACHED */
+    }
+    uid_dumpuser = pw->pw_uid;
+    if ((pw = getpwuid(uid_me)) == NULL) {
+	error("cannot look up my own uid %ld", (long)uid_me);
+	/* NOTREACHED */
+    }
+    if (uid_me != uid_dumpuser) {
+	error("running as user \"%s\" instead of \"%s\"",
+	      pw->pw_name, dumpuser);
+	/* NOTREACHED */
+    }
 
     if(!changer_init())
 	error("no tpchanger specified in %s/%s", confdir, CONFFILE_NAME);
