@@ -1,3 +1,9 @@
+1998-10-30  John R. Jackson  <jrj@purdue.edu>
+
+	* common-src/security.c (bsd_security_ok): change error message to
+	reflect that it is a host name we were looking up rather than an
+	address (also makes the two similar messages unique).
+
 1998-10-28  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/SYSTEM.NOTES: Debian 2's dump uses /var/lib/dumpdates 
