@@ -239,7 +239,7 @@ Some number of kilobytes (bytes*1024).
 .B "kps kbps"
 Some number of kilobytes per second (bytes*1024).
 .TP
-.B "m meg mbytes megabytes"
+.B "m mb meg mbytes megabytes"
 Some number of megabytes (bytes*1024*1024).
 .TP
 .B "mps mbps"
