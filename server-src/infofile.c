@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.21 1997/11/17 16:39:41 amcore Exp $
+ * $Id: infofile.c,v 1.22 1997/11/20 19:50:03 jrj Exp $
  *
  * manage current info file
  */
@@ -189,7 +189,11 @@ info_t *info;
 	rc = sscanf(line, "stats: %d %ld %ld %ld %ld %d %80[^\n]",
 		    &level, &onestat.size, &onestat.csize, &onestat.secs,
 		    &onedate, &onestat.filenum, onestat.label);
-	if(rc != 7) return -2;
+	/*
+	 * Note: the label field might be empty.  That just means
+	 * the dump got done but it has not made it to tape yet.
+	 */
+	if(rc < 6) return -2;
 
 	/* time_t not guarranteed to be long */
 	onestat.date = onedate;
