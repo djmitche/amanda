@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.20 2001/02/28 01:57:37 jrjackson Exp $
+ * $Id: dgram.c,v 1.21 2001/06/18 22:25:21 jrjackson Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -52,7 +52,6 @@ int *portp;
 {
     int s, len;
     struct sockaddr_in name;
-    struct in_addr in_addr;
     int save_errno;
 
     if((s = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
@@ -119,10 +118,9 @@ out:
     }
     *portp = ntohs(name.sin_port);
     dgram->socket = s;
-    memcpy(&in_addr, &name.sin_addr, sizeof(name.sin_addr));
     dbprintf(("%s: dgram_bind: socket bound to %s.%d\n",
 	      get_pname(),
-	      inet_ntoa(in_addr),
+	      inet_ntoa(name.sin_addr),
 	      *portp));
     return 0;
 }
@@ -134,7 +132,7 @@ dgram_t *dgram;
 {
     int s;
     int socket_opened;
-    struct in_addr in_addr;
+    struct sockaddr_in addr_save;
     int save_errno;
     int max_wait;
     int wait_count;
@@ -165,7 +163,7 @@ dgram_t *dgram;
 	return -1;
     }
 
-    memcpy(&in_addr, &addr.sin_addr, sizeof(addr.sin_addr));
+    memcpy(&addr_save, &addr, sizeof(addr));
     max_wait = 300 / 5;				/* five minutes */
     wait_count = 0;
     while(sendto(s,
@@ -179,7 +177,7 @@ dgram_t *dgram;
 	    sleep(5);
 	    dbprintf(("%s: dgram_send_addr: sendto(%s.%d): retry %d after ECONNREFUSED\n",
 		      get_pname(),
-		      inet_ntoa(in_addr),
+		      inet_ntoa(addr_save.sin_addr),
 		      (int) ntohs(addr.sin_port),
 		      wait_count));
 	    continue;
@@ -188,7 +186,7 @@ dgram_t *dgram;
 	save_errno = errno;
 	dbprintf(("%s: dgram_send_addr: sendto(%s.%d) failed: %s \n",
 		  get_pname(),
-		  inet_ntoa(in_addr),
+		  inet_ntoa(addr_save.sin_addr),
 		  (int) ntohs(addr.sin_port),
 		  strerror(save_errno)));
 	errno = save_errno;
@@ -199,7 +197,7 @@ dgram_t *dgram;
 	if(close(s) == -1) {
 	    dbprintf(("%s: dgram_send_addr: close(%s.%d): failed: %s\n",
 		      get_pname(),
-		      inet_ntoa(in_addr),
+		      inet_ntoa(addr_save.sin_addr),
 		      (int) ntohs(addr.sin_port),
 		      strerror(save_errno)));
 	    return -1;
