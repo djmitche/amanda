@@ -74,7 +74,7 @@ char **argv;
 	    continue;
 	}
 
-	if(sscanf(line, "%s %s %d\n", program, disk, &level) != 2) goto err;
+	if(sscanf(line, "%s %s %d\n", program, disk, &level) != 3) goto err;
 	check_disk(program, disk, level);
     }
 
@@ -82,6 +82,7 @@ char **argv;
 
     dbclose();
     return 0;
+
  err:
     printf("ERROR [BOGUS REQUEST PACKET]\n");
     dbprintf(("REQ packet is bogus\n"));
