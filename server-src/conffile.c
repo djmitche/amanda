@@ -63,18 +63,21 @@ typedef enum {
     TPCHANGER, RUNTAPES,
     DEFINE, DUMPTYPE, TAPETYPE, INTERFACE,
 
+    /* holding disk */
+    COMMENT, DIRECTORY, USE,
+
     /* dump type */
-    COMMENT, PROGRAM, DUMPCYCLE, MAXCYCLE, MAXDUMPS,
+    /*COMMENT,*/ PROGRAM, DUMPCYCLE, MAXCYCLE, MAXDUMPS,
     OPTIONS, PRIORITY, FREQUENCY, INDEX,
     STARTTIME, COMPRESS, AUTH, STRATEGY,
     SKIP_INCR, SKIP_FULL, RECORD, HOLDING,
     EXCLUDE, KENCRYPT, IGNORE, COMPRATE,
 
     /* tape type */
-    FILEMARK, LENGTH, SPEED,
+    /*COMMENT,*/ FILEMARK, LENGTH, SPEED,
 
     /* network interface */
-    USE,
+    /*COMMENT, USE,*/
 
     /* dump options (obsolete) */
     EXCLUDE_FILE, EXCLUDE_LIST,
@@ -154,6 +157,8 @@ static val_t conf_bumpdays;
 static val_t conf_bumpmult;
 
 /* other internal variables */
+static holdingdisk_t hdcur;
+
 static tapetype_t tpcur;
 
 static dumptype_t dpcur;
@@ -188,6 +193,9 @@ static void read_conffile_recursively P((char *filename));
 static void init_string P((char **ptrp, char *str));
 
 static int read_confline P((void));
+static void get_holdingdisk P((void));
+static void init_holdingdisk_defaults P((void));
+static void save_holdingdisk P((void));
 static void get_dumptype P((void));
 static void init_dumptype_defaults P((void));
 static void save_dumptype P((void));
@@ -270,20 +278,20 @@ struct byname {
     { "DISKFILE", CNF_DISKFILE, STRING },
     { "INFOFILE", CNF_INFOFILE, STRING },
     { "LOGFILE", CNF_LOGFILE, STRING },
-    { "DISKDIR", CNF_DISKDIR, STRING },
+    /*{ "DISKDIR", CNF_DISKDIR, STRING },*/
     { "INDEXDIR", CNF_INDEXDIR, STRING },
     { "TAPETYPE", CNF_TAPETYPE, STRING },
     { "DUMPCYCLE", CNF_DUMPCYCLE, INT },
     { "MINCYCLE",  CNF_DUMPCYCLE, INT },
     { "RUNTAPES",   CNF_RUNTAPES, INT },
     { "TAPECYCLE", CNF_TAPECYCLE, INT },
-    { "DISKSIZE", CNF_DISKSIZE, INT },
+    /*{ "DISKSIZE", CNF_DISKSIZE, INT },*/
     { "BUMPDAYS", CNF_BUMPDAYS, INT },
     { "BUMPSIZE", CNF_BUMPSIZE, INT },
     { "BUMPMULT", CNF_BUMPMULT, REAL },
     { "NETUSAGE", CNF_NETUSAGE, INT },
     { "INPARALLEL", CNF_INPARALLEL, INT },
-    { "TIMEOUT", CNF_TIMEOUT, INT },
+    /*{ "TIMEOUT", CNF_TIMEOUT, INT },*/
     { "MAXDUMPS", CNF_MAXDUMPS, INT },
     { NULL }
 };
@@ -316,34 +324,34 @@ char *str;
 int getconf_seen(parm)
 confparm_t parm;
 {
-  switch(parm) {
-  case CNF_ORG: return seen_org;
-  case CNF_MAILTO: return seen_mailto;
-  case CNF_DUMPUSER: return seen_dumpuser;
-  case CNF_TAPEDEV: return seen_tapedev;
-  case CNF_TPCHANGER: return seen_tpchanger;
-  case CNF_LABELSTR: return seen_labelstr;
-  case CNF_RUNTAPES: return seen_runtapes;
-  case CNF_MAXDUMPS: return seen_maxdumps;
-  case CNF_TAPELIST: return seen_tapelist;
-  case CNF_INFOFILE: return seen_infofile;
-  case CNF_DISKFILE: return seen_diskfile;
-  case CNF_DISKDIR: return seen_diskdir;
-  case CNF_LOGFILE: return seen_logfile;
-  case CNF_BUMPSIZE: return seen_bumpsize;
-  case CNF_BUMPMULT: return seen_bumpmult;
-  case CNF_BUMPDAYS: return seen_bumpdays;
-  case CNF_TAPETYPE: return seen_tapetype;
-  case CNF_DUMPCYCLE: return seen_dumpcycle;
-  case CNF_MAXCYCLE: return seen_maxcycle;
-  case CNF_TAPECYCLE: return seen_tapecycle;
-  case CNF_DISKSIZE: return seen_disksize;
-  case CNF_NETUSAGE: return seen_netusage;
-  case CNF_INPARALLEL: return seen_inparallel;
-  case CNF_TIMEOUT: return seen_timeout;
-  case CNF_INDEXDIR: return seen_indexdir;
-  default: return 0;
-  }
+    switch(parm) {
+    case CNF_ORG: return seen_org;
+    case CNF_MAILTO: return seen_mailto;
+    case CNF_DUMPUSER: return seen_dumpuser;
+    case CNF_TAPEDEV: return seen_tapedev;
+    case CNF_TPCHANGER: return seen_tpchanger;
+    case CNF_LABELSTR: return seen_labelstr;
+    case CNF_RUNTAPES: return seen_runtapes;
+    case CNF_MAXDUMPS: return seen_maxdumps;
+    case CNF_TAPELIST: return seen_tapelist;
+    case CNF_INFOFILE: return seen_infofile;
+    case CNF_DISKFILE: return seen_diskfile;
+    /*case CNF_DISKDIR: return seen_diskdir;*/
+    case CNF_LOGFILE: return seen_logfile;
+    case CNF_BUMPSIZE: return seen_bumpsize;
+    case CNF_BUMPMULT: return seen_bumpmult;
+    case CNF_BUMPDAYS: return seen_bumpdays;
+    case CNF_TAPETYPE: return seen_tapetype;
+    case CNF_DUMPCYCLE: return seen_dumpcycle;
+    /*case CNF_MAXCYCLE: return seen_maxcycle;*/
+    case CNF_TAPECYCLE: return seen_tapecycle;
+    /*case CNF_DISKSIZE: return seen_disksize;*/
+    case CNF_NETUSAGE: return seen_netusage;
+    case CNF_INPARALLEL: return seen_inparallel;
+    /*case CNF_TIMEOUT: return seen_timeout;*/
+    case CNF_INDEXDIR: return seen_indexdir;
+    default: return 0;
+    }
 }
 
 int getconf_int(parm)
@@ -356,12 +364,12 @@ confparm_t parm;
     case CNF_DUMPCYCLE: r = conf_dumpcycle.i; break;
     case CNF_TAPECYCLE: r = conf_tapecycle.i; break;
     case CNF_RUNTAPES: r = conf_runtapes.i; break;
-    case CNF_DISKSIZE: r = conf_disksize.i; break;
+    /*case CNF_DISKSIZE: r = conf_disksize.i; break;*/
     case CNF_BUMPSIZE: r = conf_bumpsize.i; break;
     case CNF_BUMPDAYS: r = conf_bumpdays.i; break;
     case CNF_NETUSAGE: r = conf_netusage.i; break;
     case CNF_INPARALLEL: r = conf_inparallel.i; break;
-    case CNF_TIMEOUT: r = conf_timeout.i; break;
+    /*case CNF_TIMEOUT: r = conf_timeout.i; break;*/
     case CNF_MAXDUMPS: r = conf_maxdumps.i; break;
 
     default:
@@ -404,7 +412,7 @@ confparm_t parm;
     case CNF_INFOFILE: r = conf_infofile.s; break;
     case CNF_LOGFILE: r = conf_logfile.s; break;
     case CNF_DISKFILE: r = conf_diskfile.s; break;
-    case CNF_DISKDIR: r = conf_diskdir.s; break;
+    /*case CNF_DISKDIR: r = conf_diskdir.s; break;*/
     case CNF_TAPETYPE: r = conf_tapetype.s; break;
     case CNF_INDEXDIR: r = conf_indexdir.s; break;
 
@@ -458,10 +466,6 @@ char *str;
 
 static void init_defaults()
 {
-    dumptype_t *dp;
-    tapetype_t *tp;
-    holdingdisk_t *hp;
-
     /* defaults for exported variables */
 
     init_string(&conf_org.s,
@@ -526,14 +530,6 @@ static void init_defaults()
     conf_bumpdays.i	= 2;
     conf_bumpmult.r	= 1.5;
 
-    hp = alloc(sizeof(holdingdisk_t));
-    hp->disksize = conf_disksize.i;
-    hp->diskdir = stralloc(conf_diskdir.s);
-    hp->next = NULL;
-
-    holdingdisks = hp;
-    num_holdingdisks = 1;
-
     /* defaults for internal variables */
 
     seen_org = seen_mailto = seen_dumpuser = seen_tapedev = 0;
@@ -547,14 +543,27 @@ static void init_defaults()
     allow_overwrites = 0;
     token_pushed = 0;
 
+    while(holdingdisks != NULL) {
+	holdingdisk_t *hp;
+
+	hp = holdingdisks;
+	holdingdisks = holdingdisks->next;
+	free(hp);
+    }
+    num_holdingdisks = 0;
+
     /* free any previously declared dump, tape and interface types */
 
     while(dumplist != NULL) {
+	dumptype_t *dp;
+
 	dp = dumplist;
 	dumplist = dumplist->next;
 	free(dp);
     }
     while(tapelist != NULL) {
+	tapetype_t *tp;
+
 	tp = tapelist;
 	tapelist = tapelist->next;
 	free(tp);
@@ -659,12 +668,13 @@ keytab_t main_keytable[] = {
     { "BUMPMULT", BUMPMULT },
     { "BUMPSIZE", BUMPSIZE },
     { "DEFINE", DEFINE },
-    { "DISKDIR", DISKDIR },
+    { "DISKDIR", DISKDIR },	/* XXX - historical */
     { "DISKFILE", DISKFILE },
-    { "DISKSIZE", DISKSIZE },
+    { "DISKSIZE", DISKSIZE },	/* XXX - historical */
     { "DUMPCYCLE", DUMPCYCLE },
     { "DUMPTYPE", DUMPTYPE },
     { "DUMPUSER", DUMPUSER },
+    { "HOLDINGDISK", HOLDING },
     { "INCLUDEFILE", INCLUDEFILE },
     { "INDEXDIR", INDEXDIR },
     { "INFOFILE", INFOFILE },
@@ -730,36 +740,47 @@ static int read_confline()
     case INDEXDIR:  get_simple(&conf_indexdir,  &seen_indexdir,  STRING); break;
 
     case DISKDIR:
-	assert(holdingdisks != NULL);
+	{
+	    char *s;
 
-	get_conftoken(STRING);
-	if(!seen_diskdir) {
-	    /* for the first one, replace the prev allocated disk rec */
-	    holdingdisks->diskdir = conf_diskdir.s = stralloc(tokenval.s);
-	    seen_diskdir = 1;
-	}
-	else {
-	    /* for subsequent disks, make a new disk rec */
-	    holdingdisk_t *hp;
+	    get_conftoken(STRING);
+	    s = tokenval.s;
+	
+	    if(!seen_diskdir) {
+		init_string(&conf_diskdir.s, s);
+		seen_diskdir = line_num;
+	    }
 
-	    hp = alloc(sizeof(holdingdisk_t));
-	    hp->diskdir = stralloc(tokenval.s);
-	    hp->disksize = holdingdisks->disksize;
-	    hp->next = holdingdisks;
-	    holdingdisks = hp;
-	    num_holdingdisks++;
+	    init_holdingdisk_defaults();
+	    hdcur.name = "default from DISKDIR";
+	    hdcur.seen = line_num;
+	    hdcur.diskdir = stralloc(s);
+	    hdcur.s_disk = line_num;
+	    hdcur.disksize = conf_disksize.i;
+	    hdcur.s_size = seen_disksize;
+	    save_holdingdisk();
 	}
 	break;
 
     case DISKSIZE:
-	assert(holdingdisks != NULL);
-	holdingdisks->disksize = get_number();
+	{
+	    int i;
 
-	if(!seen_disksize) {
-	    conf_disksize.i = holdingdisks->disksize;
-	    seen_disksize = 1;
+	    i = get_number();
+
+	    if(!seen_disksize) {
+		conf_disksize.i = i;
+		seen_disksize = line_num;
+	    }
+
+	    if(holdingdisks != NULL)
+		holdingdisks->disksize = i;
 	}
 
+	break;
+
+    case HOLDING:
+	get_holdingdisk();
 	break;
 
     case DEFINE:
@@ -780,6 +801,95 @@ static int read_confline()
     if(tok != NL) get_conftoken(NL);
     return 1;
 }
+
+keytab_t holding_keytable[] = {
+    { "DIRECTORY", DIRECTORY },
+    { "COMMENT", COMMENT },
+    { "USE", USE },
+    { NULL, IDENT }
+};
+
+static void get_holdingdisk()
+{
+    int done;
+    int save_overwrites;
+    keytab_t *save_kt;
+
+    save_overwrites = allow_overwrites;
+    allow_overwrites = 1;
+
+    save_kt = keytable;
+    keytable = holding_keytable;
+
+    init_holdingdisk_defaults();
+
+    get_conftoken(IDENT);
+    hdcur.name = stralloc(tokenval.s);
+    hdcur.seen = line_num;
+
+    get_conftoken(LBRACE);
+    get_conftoken(NL);
+
+    done = 0;
+    do {
+	line_num += 1;
+	get_conftoken(ANY);
+	switch(tok) {
+
+	case COMMENT:
+	    get_simple((val_t *)&hdcur.comment, &hdcur.s_comment, STRING);
+	    break;
+	case DIRECTORY:
+	    get_simple((val_t *)&hdcur.diskdir, &hdcur.s_disk, STRING);
+	    break;
+	case USE:
+	    get_simple((val_t *)&hdcur.disksize, &hdcur.s_size, INT);
+	    break;
+
+	case RBRACE:
+	    done = 1;
+	    break;
+	case NL:	/* empty line */
+	    break;
+	case END:	/* end of file */
+	    done = 1;
+	default:
+	    parserror("holding disk parameter expected");
+	}
+	if(tok != NL && tok != END) get_conftoken(NL);
+    } while(!done);
+
+    save_holdingdisk();
+
+    allow_overwrites = save_overwrites;
+    keytable = save_kt;
+}
+
+static void init_holdingdisk_defaults()
+{
+    hdcur.comment = "";
+    hdcur.diskdir = (char *)0;
+    hdcur.disksize = 0;
+
+    hdcur.s_comment = 0;
+    hdcur.s_disk = 0;
+    hdcur.s_size = 0;
+
+    hdcur.up = (void *)0;
+}
+
+static void save_holdingdisk()
+{
+    holdingdisk_t *hp;
+
+    hp = alloc(sizeof(holdingdisk_t));
+    *hp = hdcur;
+    hp->next = holdingdisks;
+    holdingdisks = hp;
+
+    num_holdingdisks++;
+}
+
 
 keytab_t dumptype_keytable[] = {
     { "AUTH", AUTH },
@@ -1948,11 +2058,11 @@ dump_configuration()
     printf("conf_bumpmult = %f\n", getconf_real(CNF_BUMPMULT));
     printf("conf_netusage = %d\n", getconf_int(CNF_NETUSAGE));
     printf("conf_inparallel = %d\n", getconf_int(CNF_INPARALLEL));
-    printf("conf_timeout = %d\n", getconf_int(CNF_TIMEOUT));
+    /*printf("conf_timeout = %d\n", getconf_int(CNF_TIMEOUT));*/
     printf("conf_maxdumps = %d\n", getconf_int(CNF_MAXDUMPS));
 
-    printf("conf_diskdir = \"%s\"\n", getconf_str(CNF_DISKDIR));
-    printf("conf_disksize = %d\n", getconf_int(CNF_DISKSIZE));
+    /*printf("conf_diskdir = \"%s\"\n", getconf_str(CNF_DISKDIR));*/
+    /*printf("conf_disksize = %d\n", getconf_int(CNF_DISKSIZE));*/
     printf("conf_indexdir = \"%s\"\n", getconf_str(CNF_INDEXDIR));
     printf("num_holdingdisks = %d\n", num_holdingdisks);
     for(hp = holdingdisks; hp != NULL; hp = hp->next)

@@ -148,10 +148,20 @@ typedef struct interface_s {
     int curusage;		/* current usage */
 } interface_t;
 
+/* A holding disk */
 typedef struct holdingdisk_s {
     struct holdingdisk_s *next;
+    int seen;
+    char *name;
+
+    char *comment;
     char *diskdir;
     long disksize;
+
+    int s_comment;
+    int s_disk;
+    int s_size;
+
     void *up;			/* generic user pointer */
 } holdingdisk_t;
 
