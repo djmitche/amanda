@@ -1,5 +1,17 @@
 Version 2.4.0
 
+	patch file for automake 1.2d provided. -oliva
+
+	sendbackup.debug now contains the argument list of child
+	processes. -oliva
+
+	wait() for child processes, such as server compressor, before
+	accepting other commands.
+	-Liudvikas Bukys <bukys@cs.rochester.edu>
+
+	amrecover will print an error message if it is not run by root.
+	It will not crash if you `pwd' before selecting a disk.  -oliva
+
 	updated to libtool 1.0i. -oliva
 
 	fixed tape block size of vxdump on HPUX 10.20.
@@ -10,7 +22,7 @@ Version 2.4.0
 
 	allow multiple concurrent gnutar backups, by fixing amandates
 	locking mechanism.
-	-Liudvikas Bukys <bukys@cs.rochester.edu> & oliva
+	-Liudvikas Bukys <bukys@cs.rochester.edu>
 
 	amdump should check for a hold file, as says the man-page.
 	-oliva
