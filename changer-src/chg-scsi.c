@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.22.2.7.2.7 2002/11/05 01:59:23 martinea Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.22.2.7.2.8 2003/01/26 19:20:56 martinea Exp $";
 #endif
 /*
  * 
@@ -347,7 +347,7 @@ int read_config(char *configfile, changer_t *chg)
           chg->emubarcode = 1;
           break;
         case DEBUGLEVEL:
-          chg->debuglevel = strdup(value);
+          chg->debuglevel = stralloc(value);
           break;
         case EJECT:
           chg->eject = atoi(value);
@@ -359,19 +359,19 @@ int read_config(char *configfile, changer_t *chg)
           chg->sleep = atoi(value);
           break;
         case LABELFILE:
-          chg->labelfile = strdup(value);
+          chg->labelfile = stralloc(value);
           break;
         case CHANGERDEV:
-          chg->device = strdup(value);
+          chg->device = stralloc(value);
           break;
         case SCSITAPEDEV:
-          chg->conf[drivenum].scsitapedev = strdup(value);
+          chg->conf[drivenum].scsitapedev = stralloc(value);
           break;
         case TAPESTATFILE:
-          chg->conf[drivenum].tapestatfile = strdup(value);
+          chg->conf[drivenum].tapestatfile = stralloc(value);
           break;
         case CHANGERIDENT:
-          chg->conf[drivenum].changerident = strdup(value);
+          chg->conf[drivenum].changerident = stralloc(value);
           p = chg->conf[drivenum].changerident;
           while (*p != '\0')
           {
@@ -383,7 +383,7 @@ int read_config(char *configfile, changer_t *chg)
           }
           break;
         case TAPEIDENT:
-          chg->conf[drivenum].tapeident = strdup(value);
+          chg->conf[drivenum].tapeident = stralloc(value);
           break;
         case CLEANMAX:
           chg->cleanmax = atoi(value);
@@ -428,7 +428,7 @@ int read_config(char *configfile, changer_t *chg)
           break;
         case DEVICE:
           if (drivenum < numconf){
-            chg->conf[drivenum].device = strdup(value);
+            chg->conf[drivenum].device = stralloc(value);
           } else {
             fprintf(stderr,"Error: drive is not less than number_drives"\
                     " device ignored\n");
@@ -436,7 +436,7 @@ int read_config(char *configfile, changer_t *chg)
           break;
         case STATFILE:
           if (drivenum < numconf){
-            chg->conf[drivenum].slotfile = strdup(value);
+            chg->conf[drivenum].slotfile = stralloc(value);
           } else {
             fprintf(stderr,"Error: drive is not less than number_drives"\
                     " slotfile ignored\n");
@@ -444,7 +444,7 @@ int read_config(char *configfile, changer_t *chg)
           break;
         case CLEANFILE:
           if (drivenum < numconf){
-            chg->conf[drivenum].cleanfile = strdup(value);
+            chg->conf[drivenum].cleanfile = stralloc(value);
           } else {
             fprintf(stderr,"Error: drive is not less than number_drives"\
                     " cleanfile ignored\n");
@@ -452,7 +452,7 @@ int read_config(char *configfile, changer_t *chg)
           break;
         case USAGECOUNT:
           if (drivenum < numconf){
-            chg->conf[drivenum].timefile = strdup(value);
+            chg->conf[drivenum].timefile = stralloc(value);
           } else {
             fprintf(stderr,"Error: drive is not less than number_drives"\
                     " usagecount ignored\n");
@@ -1136,7 +1136,7 @@ int main(int argc, char *argv[])
     need_sleep   = chg.sleep;
 
     if ( NULL != chg.conf[confnum].cleanfile)
-      clean_file   = strdup(chg.conf[confnum].cleanfile);
+      clean_file   = stralloc(chg.conf[confnum].cleanfile);
     else
       clean_file = NULL;
 
@@ -1144,24 +1144,24 @@ int main(int argc, char *argv[])
     maxclean     = chg.cleanmax;
     emubarcode   = chg.emubarcode;
     if (NULL != chg.conf[confnum].timefile)
-      time_file = strdup(chg.conf[confnum].timefile);
+      time_file = stralloc(chg.conf[confnum].timefile);
 
     if (NULL != chg.conf[confnum].slotfile)
-      slot_file = strdup(chg.conf[confnum].slotfile);
+      slot_file = stralloc(chg.conf[confnum].slotfile);
     else
       slot_file = NULL;
 
     if (NULL != chg.conf[confnum].device)
-      tape_device  = strdup(chg.conf[confnum].device);
+      tape_device  = stralloc(chg.conf[confnum].device);
 
     if (NULL != chg.device)
-      changer_dev  = strdup(chg.device); 
+      changer_dev  = stralloc(chg.device); 
 
     if (NULL != chg.conf[confnum].scsitapedev)
-      scsitapedevice = strdup(chg.conf[confnum].scsitapedev);
+      scsitapedevice = stralloc(chg.conf[confnum].scsitapedev);
 
     if (NULL != chg.conf[confnum].tapestatfile)
-      tapestatfile = strdup(chg.conf[confnum].tapestatfile);
+      tapestatfile = stralloc(chg.conf[confnum].tapestatfile);
     dump_changer_struct(chg);
 
 

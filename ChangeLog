@@ -1,5 +1,20 @@
 2003-01-26  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* changer-src/chg-scsi-chio.c: Change strdup to stralloc.
+	* changer-src/chg-scsi.c: Ditto.
+	* changer-src/scsi-aix.c: Ditto.
+	* changer-src/scsi-bsd.c: Ditto.
+	* changer-src/scsi-cam.c: Ditto.
+	* changer-src/scsi-changer-driver.c: Ditto.
+	* changer-src/scsi-hpux_new.c: Ditto.
+	* changer-src/scsi-irix.c: Ditto.
+	* changer-src/scsi-linux.c: Ditto.
+	* changer-src/scsi-solaris.c: Ditto.
+	* changer-src/sense.c: Ditto.
+	* tape-src/output-rait.c: Ditto.
+
+2003-01-26  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/taper.c (read_file): Don't count header in filesize.
 
 2003-01-25  John R. Jackson (jrj@purdue.edu)

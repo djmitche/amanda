@@ -656,7 +656,7 @@ int Sense2Action(char *ident,
 			/* End of definitions for this device */
 			if (pwork->sense == -1)
 			{
-				*text = (char *)strdup(pwork->text);
+				*text = (char *)stralloc(pwork->text);
 				dbprintf(("Sense2Action   END : no match for %s %s\n",
 					pwork->ident,
 					pwork->vendor));
@@ -667,7 +667,7 @@ int Sense2Action(char *ident,
 			{
 				if (pwork->asc ==  asc && pwork->ascq == ascq)
 				{
-					*text = (char *)strdup(pwork->text);
+					*text = (char *)stralloc(pwork->text);
 					dbprintf(("Sense2Action END(IGN) : match for %s %s  return -> %d/%s\n",
 						pwork->ident,
 						pwork->vendor,
@@ -684,7 +684,7 @@ int Sense2Action(char *ident,
 				/* Matching ASC/ASCQ, if yes return the defined result code */
 				if (pwork->asc ==  asc && pwork->ascq == ascq)
 				{
-					*text = (char *)strdup(pwork->text);
+					*text = (char *)stralloc(pwork->text);
 					dbprintf(("Sense2Action   END : match for %s %s  return -> %d/%s\n",
 						pwork->ident,
 						pwork->vendor,
@@ -698,7 +698,7 @@ int Sense2Action(char *ident,
 				 */
 				if ( 	pwork->asc == -1 && pwork->ascq == -1)
 				{
-					*text = (char *)strdup(pwork->text);
+					*text = (char *)stralloc(pwork->text);
 					dbprintf(("Sense2Action   END : no match for %s %s  return -> %d/%s\n",
 						pwork->ident,
 						pwork->vendor,
@@ -725,7 +725,7 @@ int Sense2Action(char *ident,
 	{	  
 		if (generic->sense == -1)
 		{
-			*text = (char *)strdup(generic->text);
+			*text = (char *)stralloc(generic->text);
 			dbprintf(("Sense2Action generic END : match for %s %s  return -> %d/%s\n",
 				generic->ident,
 				generic->vendor,
@@ -738,7 +738,7 @@ int Sense2Action(char *ident,
 		{
 			if (generic->asc ==  asc && generic->ascq == ascq)
 			{
-				*text = (char *)strdup(generic->text);
+				*text = (char *)stralloc(generic->text);
 				dbprintf(("Sense2Action generic END(IGN) : match for %s %s  return -> %d/%s\n",
 					generic->ident,
 					generic->vendor,
@@ -755,7 +755,7 @@ int Sense2Action(char *ident,
 			/* Matching ASC/ASCQ, if yes return the defined result code */
 			if (generic->asc ==  asc && generic->ascq == ascq)
 			{
-				*text = (char *)strdup(generic->text);
+				*text = (char *)stralloc(generic->text);
 				dbprintf(("Sense2Action generic END : match for %s %s  return -> %d/%s\n",
 					generic->ident,
 					generic->vendor,
@@ -769,7 +769,7 @@ int Sense2Action(char *ident,
 			 */
 			if ( 	generic->asc == -1 && generic->ascq == -1)
 			{
-				*text = (char *)strdup(generic->text);
+				*text = (char *)stralloc(generic->text);
 				dbprintf(("Sense2Action generic END : no match for %s %s  return -> %d/%s\n",
 					generic->ident,
 					generic->vendor,
@@ -784,6 +784,6 @@ int Sense2Action(char *ident,
 	}	
 
 	dbprintf(("Sense2Action END:\n"));
-	*text = (char *)strdup("No match found");
+	*text = (char *)stralloc("No match found");
 	return(SENSE_ABORT);
 }
