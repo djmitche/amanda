@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmidx.c,v 1.21.4.1.4.2.2.1 2001/12/30 17:26:22 martinea Exp $
+ * $Id: amtrmidx.c,v 1.21.4.1.4.2.2.2 2002/08/21 18:59:08 martinea Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -61,7 +61,6 @@ char **argv;
 {
     disk_t *diskp;
     disklist_t *diskl;
-    int no_keep;			/* files per system to keep */
     int i;
     char *conffile;
     char *conf_diskfile;
@@ -138,10 +137,6 @@ char **argv;
 	conf_indexdir = stralloc2(config_dir, conf_indexdir);
     }
 
-    /* determine how many indices to keep */
-    no_keep = getconf_int(CNF_TAPECYCLE) + 1;
-    dbprintf(("Keeping %d index file%s\n", no_keep, (no_keep == 1) ? "" : "s"));
-
     /* now go through the list of disks and find which have indexes */
     time(&tmp_time);
     tmp_time -= 7*24*60*60;			/* back one week */
@@ -153,8 +148,6 @@ char **argv;
 	    char **names;
 	    int name_length;
 	    int name_count;
-	    char *path;
-	    int deleting;
 	    char *host;
 	    char *disk;
 
@@ -170,7 +163,8 @@ char **argv;
 	    amfree(host);
 	    amfree(disk);
 	    if((d = opendir(indexdir)) == NULL) {
-		error("could not open index directory \"%s\"", indexdir);
+		dbprintf(("could not open index directory \"%s\"", indexdir));
+		continue;
 	    }
 	    name_length = 100;
 	    names = (char **)alloc(name_length * sizeof(char *));
@@ -198,6 +192,7 @@ char **argv;
 		if(l > sizeof("YYYYMMDD_L")-1
 		    && strcmp (f->d_name + l, ".tmp") == 0) {
 		    struct stat sbuf;
+		    char *path;
 
 		    path = stralloc2(indexdir, f->d_name);
 		    if(lstat(path, &sbuf) != -1
@@ -230,17 +225,12 @@ char **argv;
 	     * Search for the first full dump past the minimum number
 	     * of index files to keep.
 	     */
-	    deleting = 0;
 	    for(i = 0; i < name_count; i++) {
-		if(i < no_keep) {
-		} else if(! deleting
-			  && names[i][sizeof("YYYYMMDD_L")-1-1] == '0') {
-		    deleting = 1;
-		} else if(deleting
-			  && !dump_exist(output_find,
+		if(!dump_exist(output_find,
 					 diskp->host->hostname,diskp->name,
 					 atoi(names[i]),
 					 names[i][sizeof("YYYYMMDD_L")-1-1] - '0')) {
+		    char *path;
 		    path = stralloc2(indexdir, names[i]);
 		    dbprintf(("rm %s\n", path));
 		    if(amtrmidx_debug == 0 && unlink(path) == -1) {

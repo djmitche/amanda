@@ -1,5 +1,9 @@
 2002-07-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amtrmidx.c: Continue if a directory doesn't exist.
+
+2002-07-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* man/amanda.8.in (tapecycle): Improve documentation.
 
 2002-07-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
