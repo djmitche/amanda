@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.46.2.1 1998/07/23 22:15:08 oliva Exp $
+ * $Id: driver.c,v 1.46.2.2 1998/07/31 03:20:40 oliva Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -116,18 +116,6 @@ char *idle_strings[] = {
 struct timeval sleep_time = { SLEEP_MAX, 0 };
 /* enabled if any disks are in start-wait: */
 int any_delayed_disk = 0;
-
-#ifndef MAXFILESIZE
-/*
-** file size must not exceed MAX_IOV, stored in iov_len
-** usually of type size_t (== signed long)
-** HP-UX-9, Solaris-2, IRIX-3/4/5/6, AIX-3: 2 GB
-** HP-UX-10: 4 GB
-** Irix64: >> n GB
-*/
-# include <limits.h>
-# define MAXFILESIZE	(LONG_MAX/1024)
-#endif
 
 int main(main_argc, main_argv)
 int main_argc;
@@ -1192,7 +1180,7 @@ int *cur_idle;
 
     minp = NULL;
     for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next) {
-	if(hdp->chunksize == -1 && size > MAXFILESIZE) {
+	if(hdp->chunksize < 0 && size > -hdp->chunksize) {
 	    *cur_idle = max(*cur_idle, IDLE_TOO_LARGE);
 	}
 	/* We add 10 MB per active dumper to give a bit of protection

@@ -607,10 +607,21 @@ is negative, then amanda will use all available space except that value.
 .BN chunksize int
 Default:
 .IR "-1" .
-Size of chunk if you want big dump to be dumped on multiple
-files on holding disks. A value of -1 will not allow splitting, a value
-of 0 will use INT_MAX, otherwise, each chunk will have the size of this
-parameter (ex. 200 Mb).
+Holding disk chunk size: dumps larger than the specified size will be
+stored in multiple holding disk files, so that the size of each chunk
+does not exceed the specified value.  However, even though dump images
+are split in the holding disk, they are concatenated as they are
+written to tape, so that each dump image will be correspond to a
+single continuous tape section.  If you specify 0, Amanda will create
+holding disk chunks as large as INT_MAX/1024 Kb.  A negative value
+will cause filesystems larger than the modulus or the value to be
+dumped directly to tape, without using the holding disk, but note that
+this is likely to be very slow.  The default value, -1, is interpreted
+as -INT_MAX/1024 Kb.  So, by default, Amanda will dump filesystems
+larger than 2 GB (assuming 32 bit integers) directly to tape.  This
+default is provided mainly for backward compatibility; you are
+encouraged to specify a positive value smaller than the maximum file
+size in the holding disk filesystem.
 .RE
 .RE
 .SH DUMPTYPE SECTION

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.49 1998/07/15 00:10:57 martinea Exp $
+ * $Id: conffile.c,v 1.49.2.1 1998/07/31 03:20:38 oliva Exp $
  *
  * read configuration file
  */
@@ -954,7 +954,9 @@ static void get_holdingdisk()
 	case CHUNKSIZE:
 	    get_simple((val_t *)&hdcur.chunksize, &hdcur.s_csize, INT);
 	    if(hdcur.chunksize == 0)
-		hdcur.chunksize = INT_MAX;
+		hdcur.chunksize = INT_MAX/1024;
+	    else if(hdcur.chunksize == -1)
+	        hdcur.chunksize = -INT_MAX/1024;
 	    break;
 	case RBRACE:
 	    done = 1;

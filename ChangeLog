@@ -1,3 +1,13 @@
+1998-07-31  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/conffile.c (get_holdingdisk): define chunksize 0 as
+	INT_MAX/1024, and chunksize -1 as -INT_MAX/1024
+	* server-src/driver.c (find_diskspace): accept negative chunksizes
+	as the maximum size (in modulus) for using the holding disk
+	* man/amanda.8.in (chunksize): document the usage of negative
+	values, and improve the explanation of chunking
+	* example/amanda.conf.in: ditto
+
 1998-07-29  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/FAQ: disk offline
