@@ -9,6 +9,18 @@ AM_CONFIG_HEADER(config/config.h)
 
 AC_PREREQ(2.13)		dnl Minimum Autoconf version required.
 
+if test -f "$srcdir/SNAPSHOT"; then
+  cat < "$srcdir/SNAPSHOT"
+changequote(,)
+  snapdate=`sed -n '/^Snapshot Date: \([0-9]*\)/ s//\1/p' < $srcdir/SNAPSHOT`
+changequote([,])
+  test -z "$snapdate" || VERSION="$VERSION-$snapdate"
+  SNAPSHOT_STAMP=SNAPSHOT
+else
+  SNAPSHOT_STAMP=
+fi
+AC_SUBST(SNAPSHOT_STAMP)
+
 dnl host system/type
 AC_ARG_PROGRAM
 
