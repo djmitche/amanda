@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.26 1997/12/30 05:25:16 jrj Exp $
+ * $Id: infofile.c,v 1.27 1998/01/02 01:05:48 jrj Exp $
  *
  * manage current info file
  */
@@ -317,7 +317,7 @@ int delete_txinfofile(host, disk)
 char *host;
 char *disk;
 {
-    char *fn, *fn_new;
+    char *fn = NULL, *fn_new = NULL;
     int rc, rc2;
 
     fn = vstralloc(infodir,

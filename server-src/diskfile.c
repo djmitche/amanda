@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.17 1997/12/30 05:25:06 jrj Exp $
+ * $Id: diskfile.c,v 1.18 1998/01/02 01:05:41 jrj Exp $
  *
  * read disklist file
  */
@@ -203,7 +203,7 @@ static int read_diskline()
     disk_t *disk;
     dumptype_t *dtype;
     interface_t *netif = 0;
-    char *hostname;
+    char *hostname = NULL;
     static char *line = NULL;
     char *s, *fp;
     int ch;

@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.19 1997/12/30 05:25:27 jrj Exp $
+/* $Id: taper.c,v 1.20 1998/01/02 01:05:56 jrj Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -203,7 +203,7 @@ int rdpipe, wrpipe;
     cmd_t cmd;
     int argc;
     char **argv;
-    char *handle, *hostname, *diskname, *result;
+    char *handle = NULL, *hostname = NULL, *diskname = NULL, *result;
     char tok;
     int level, fd, data_port, data_socket, retstat, wpid;
 
@@ -378,7 +378,7 @@ buffer_t *bp;
     char pn[2];
     char bt[NUM_STR_SIZE];
     char status[NUM_STR_SIZE];
-    char *str;
+    char *str = NULL;
 
     pn[0] = procname[0];
     pn[1] = '\0';
@@ -1217,8 +1217,8 @@ int label_tape P((void));
 
 int label_tape()
 {
-    char *oldtapefilename;
-    char *olddatestamp;
+    char *oldtapefilename = NULL;
+    char *olddatestamp = NULL;
     char *result;
     tape_t *tp;
 

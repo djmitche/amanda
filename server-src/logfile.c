@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.8 1997/12/30 05:25:20 jrj Exp $
+ * $Id: logfile.c,v 1.9 1998/01/02 01:05:50 jrj Exp $
  *
  * common log file writing routine
  */
@@ -83,7 +83,7 @@ arglist_function(void log, logtype_t, typ)
     char *format;
     extern char *pname;
     int rc, saved_errout;
-    char *leader;
+    char *leader = NULL;
     char linebuf[STR_SIZE];
     int l, n, s;
 

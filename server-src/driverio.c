@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.21 1997/12/30 05:25:10 jrj Exp $
+ * $Id: driverio.c,v 1.22 1998/01/02 01:05:44 jrj Exp $
  *
  * I/O-related functions for driver program
  */
@@ -142,8 +142,9 @@ void startup_dump_processes()
     }
 }
 
-tok_t getresult(fd)
+tok_t getresult(fd, show)
 int fd;
+int show;
 {
     int arg, len;
     tok_t t;
@@ -159,13 +160,15 @@ int fd;
 	argc = split(line, argv, sizeof(argv) / sizeof(argv[0]), " ");
     }
 
-    printf("driver: result time %s from %s:",
-	   walltime_str(curclock()),
-	   childstr(fd));
-    for(arg = 1; arg <= argc; arg++)
-	printf(" %s", argv[arg]);
-    printf("\n");
-    fflush(stdout);
+    if(show) {
+	printf("driver: result time %s from %s:",
+	       walltime_str(curclock()),
+	       childstr(fd));
+	for(arg = 1; arg <= argc; arg++)
+	    printf(" %s", argv[arg]);
+	printf("\n");
+	fflush(stdout);
+    }
 
 #ifdef DEBUG
     printf("argc = %d\n", argc);
@@ -182,9 +185,11 @@ int fd;
 }
 
 
-void taper_cmd(cmd, /* optional */ ptr)
+void taper_cmd(cmd, /* optional */ ptr, destname, level)
 tok_t cmd;
 void *ptr;
+char *destname;
+int level;
 {
     char *cmdline = NULL;
     char number[NUM_STR_SIZE];
@@ -197,10 +202,10 @@ void *ptr;
 	break;
     case FILE_WRITE:
 	dp = (disk_t *) ptr;
-	ap_snprintf(number, sizeof(number), "%d", sched(dp)->level);
+	ap_snprintf(number, sizeof(number), "%d", level);
 	cmdline = vstralloc("FILE-WRITE",
 			    " ", disk2serial(dp),
-			    " ", sched(dp)->destname,
+			    " ", destname,
 			    " ", dp->host->hostname,
 			    " ", dp->name,
 			    " ", number,
@@ -208,7 +213,7 @@ void *ptr;
 	break;
     case PORT_WRITE:
 	dp = (disk_t *) ptr;
-	ap_snprintf(number, sizeof(number), "%d", sched(dp)->level);
+	ap_snprintf(number, sizeof(number), "%d", level);
 	cmdline = vstralloc("PORT-WRITE",
 			    " ", disk2serial(dp),
 			    " ", dp->host->hostname,

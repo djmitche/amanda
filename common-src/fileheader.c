@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: fileheader.c,v 1.4 1997/12/30 05:24:14 jrj Exp $
+ * $Id: fileheader.c,v 1.5 1998/01/02 01:05:15 jrj Exp $
  *
  */
 
@@ -267,7 +267,7 @@ char *buffer;
 dumpfile_t *file;
 int buflen;
 {
-    char *line;
+    char *line = NULL;
     char number[NUM_STR_SIZE];
 
     memset(buffer,'\0',buflen);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.16 1997/12/30 05:24:52 jrj Exp $
+ * $Id: amflush.c,v 1.17 1998/01/02 01:05:34 jrj Exp $
  *
  * write files from work directory onto tape
  */
@@ -163,7 +163,7 @@ char *diskdir;
 {
     DIR *workdir;
     struct dirent *entry;
-    char *dirname;
+    char *dirname = NULL;
     char *destname = NULL;
     char *hostname = NULL;
     char *diskname = NULL;
@@ -217,12 +217,12 @@ char *diskdir;
 	    continue;
 	}
 
-	taper_cmd(FILE_WRITE, dp);
-	tok = getresult(taper);
+	taper_cmd(FILE_WRITE, dp, destname, level);
+	tok = getresult(taper, 0);
 	if(tok == TRYAGAIN) {
 	    /* we'll retry one time */
-	    taper_cmd(FILE_WRITE, dp);
-	    tok = getresult(taper);
+	    taper_cmd(FILE_WRITE, dp, destname, level);
+	    tok = getresult(taper, 0);
 	}
 
 	switch(tok) {
@@ -230,9 +230,6 @@ char *diskdir;
 	    if(argc != 5) {
 		error("error [DONE argc != 5: %d]", argc);
 	    }
-
-	    update_info_taper(dp, argv[3], atoi(argv[4]));
-
 	    unlink(destname);
 	    break;
 	case TRYAGAIN:
@@ -268,8 +265,8 @@ void run_dumps()
 
     chdir(confdir);
     startup_tape_process();
-    taper_cmd(START_TAPER, datestamp);
-    tok = getresult(taper);
+    taper_cmd(START_TAPER, datestamp, NULL, 0);
+    tok = getresult(taper, 0);
 
     if(tok != TAPER_OK) {
 	/* forget it */
@@ -283,7 +280,7 @@ void run_dumps()
 	    flush_holdingdisk(hdisk->diskdir);
 
 	/* tell taper to quit, then wait for it */
-	taper_cmd(QUIT, NULL);
+	taper_cmd(QUIT, NULL, NULL, 0);
 	while(wait(NULL) != -1);
 
     }

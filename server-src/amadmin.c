@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.19 1997/12/30 05:24:49 jrj Exp $
+ * $Id: amadmin.c,v 1.20 1998/01/02 01:05:31 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -88,7 +88,7 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    char *confdir;
+    char *confdir = NULL;
 
     erroutput_type = ERR_INTERACTIVE;
 
@@ -1172,7 +1172,7 @@ char **argv;
 {
     int vers_maj, vers_min, vers_patch, newer;
     char *org, *vers_comment;
-    char *line;
+    char *line = NULL;
     char *hdr;
     char *s;
     int ch;
@@ -1271,11 +1271,11 @@ int import_one P((void))
     stats_t onestat;
     int rc, level;
     long onedate;
-    char *line;
+    char *line = NULL;
     char *s, *fp;
     int ch;
-    char *hostname;
-    char *diskname;
+    char *hostname = NULL;
+    char *diskname = NULL;
 
     memset(&info, 0, sizeof(info_t));
 

@@ -96,7 +96,7 @@ int isempty(fd, slot, nslots)
     int type=CHET_ST;
 
     ces.ces_type = type;
-    ces.ces_data = malloc(nslots);
+    ces.ces_data = alloc(nslots);
 
     rc = ioctl(fd,CHIOGSTATUS,&ces);
     if (rc) {
@@ -119,7 +119,7 @@ int find_empty(fd, count)
     int type=CHET_ST;
 
     ces.ces_type = type;
-    ces.ces_data = malloc(count);
+    ces.ces_data = alloc(count);
 
     rc = ioctl(fd,CHIOGSTATUS,&ces);
     if (rc) {
@@ -143,7 +143,7 @@ int drive_loaded(fd, drivenum)
     int type=CHET_DT;
 
     ces.ces_type = type;
-    ces.ces_data = malloc(1);
+    ces.ces_data = alloc(1);
 
     rc = ioctl(fd,CHIOGSTATUS,&ces);
     if (rc) {

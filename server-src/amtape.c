@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtape.c,v 1.10 1997/12/30 05:24:57 jrj Exp $
+ * $Id: amtape.c,v 1.11 1998/01/02 01:05:37 jrj Exp $
  *
  * tape changer interface program
  */
@@ -163,7 +163,7 @@ void load_slot(argc, argv)
 int argc;
 char **argv;
 {
-    char *slotstr = NULL, *devicename;
+    char *slotstr = NULL, *devicename = NULL;
 
     if(argc != 2)
 	usage();
@@ -360,7 +360,7 @@ void taper_scan(argc, argv)
 int argc;
 char **argv;
 {
-    char *slotstr = NULL, *device;
+    char *slotstr = NULL, *device = NULL;
 
     if(read_tapelist(getconf_str(CNF_TAPELIST)))
 	error("could not load \"%s\"\n", getconf_str(CNF_TAPELIST));

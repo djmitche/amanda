@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: changer.c,v 1.5 1997/12/30 05:24:59 jrj Exp $
+ * $Id: changer.c,v 1.6 1998/01/02 01:05:39 jrj Exp $
  *
  * interface routines for tape changers
  */
@@ -83,7 +83,7 @@ char **slotstr;
 char **rest;
 {
     int exitcode, rc;
-    char *changer_cmd;
+    char *changer_cmd = NULL;
     char *result_copy;
     char *slot;
     char *s;
@@ -177,7 +177,7 @@ void changer_scan(user_init, user_slot)
 int (*user_init) P((int rc, int nslots, int backwards));
 int (*user_slot) P((int rc, char *slotstr, char *device));
 {
-    char *slotstr, *device, *curslotstr = NULL;
+    char *slotstr, *device = NULL, *curslotstr = NULL;
     int nslots, checked, backwards, rc, done;
 
     rc = changer_info(&nslots, &curslotstr, &backwards);
@@ -206,7 +206,7 @@ void changer_current(user_init, user_slot)
 int (*user_init) P((int rc, int nslots, int backwards));
 int (*user_slot) P((int rc, char *slotstr, char *device));
 {
-    char *slotstr, *device, *curslotstr = NULL;
+    char *slotstr, *device = NULL, *curslotstr = NULL;
     int nslots, checked, backwards, rc, done;
 
     rc = changer_info(&nslots, &curslotstr, &backwards);
@@ -231,7 +231,7 @@ static int changer_command(cmdstr)
 char *cmdstr;
 {
     FILE *cmdpipe;
-    char *cmd;
+    char *cmd = NULL;
     int exitcode;
     int len;
     int ch;

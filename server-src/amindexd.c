@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.16 1997/12/31 01:42:01 jrj Exp $
+ * $Id: amindexd.c,v 1.17 1998/01/02 01:05:36 jrj Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -82,6 +82,8 @@ char *config = NULL;				/* config we are restoring */
 char *target_date = NULL;
 disklist_t *disk_list;				/* all disks in cur config */
 
+static int amindexd_debug = 0;
+
 static REMOVE_ITEM *uncompress_remove = NULL;
 					/* uncompressed files to remove */
 
@@ -104,7 +106,7 @@ char *uncompress_file(filename_gz)
 char *filename_gz;
 {
     char *cmd = NULL;
-    char *filename;
+    char *filename = NULL;
     struct stat stat_filename;
     int result;
     int len;
@@ -378,7 +380,7 @@ char *disk;
 int is_config_valid(config)
 char *config;
 {
-    char *conf_dir;
+    char *conf_dir = NULL;
 
     /* check that the config actually exists */
     if (config == NULL) {
@@ -430,7 +432,7 @@ int build_disk_table P((void))
     char *tape;
     int file;
     char *status;
-    char *cmd;
+    char *cmd = NULL;
     FILE *fp;
     int first_line = 0;
     char *s;
@@ -810,9 +812,26 @@ char **argv;
 #endif	/* FORCE_USERID */
 
     /* initialize */
+
+    argc--;
+    argv++;
+
+    if(argc > 0 && strcmp(*argv, "-t") == 0) {
+	amindexd_debug = 1;
+	argc--;
+	argv++;
+    }
+
+    afree(config);
+    if (argc > 0) {
+	config = newstralloc(config, *argv);
+	argc--;
+	argv++;
+    }
+
     umask(0007);
     dbopen();
-    dbprintf(("%s: version %s\n", argv[0], version()));
+    dbprintf(("%s: version %s\n", pname, version()));
 
     if(gethostname(local_hostname, sizeof(local_hostname)-1) == -1)
 	error("gethostname: %s", strerror(errno));
@@ -824,32 +843,32 @@ char **argv;
     while(ch && ch != '.') ch = *s++;
     s[-1] = '\0';
 
-    /* who are we talking to? */
-    i = sizeof (his_addr);
-    if (getpeername(0, (struct sockaddr *)&his_addr, &i) == -1)
+    if(amindexd_debug) {
+	remote_hostname = newstralloc(remote_hostname, local_hostname);
+    } else {
+	/* who are we talking to? */
+	i = sizeof (his_addr);
+	if (getpeername(0, (struct sockaddr *)&his_addr, &i) == -1)
 	error("getpeername: %s", strerror(errno));
-    if ((his_name = gethostbyaddr((char *)&(his_addr.sin_addr),
-				  sizeof(struct in_addr), AF_INET)) == NULL) {
-	error("gethostbyaddr: %s", strerror(errno));
+	if ((his_name = gethostbyaddr((char *)&(his_addr.sin_addr),
+				      sizeof(struct in_addr),
+				      AF_INET)) == NULL) {
+	    error("gethostbyaddr: %s", strerror(errno));
+	}
+	s = his_name->h_name;
+	ch = *s++;
+	while(ch && ch != '.') ch = *s++;
+	s[-1] = '\0';
+	remote_hostname = newstralloc(remote_hostname, fp);
+	s[-1] = ch;
     }
-    s = his_name->h_name;
-    ch = *s++;
-    while(ch && ch != '.') ch = *s++;
-    s[-1] = '\0';
-    remote_hostname = newstralloc(remote_hostname, fp);
-    s[-1] = ch;
 
     /* clear these so we can detect when the have not been set by the client */
     afree(dump_hostname);
     afree(disk_name);
     afree(target_date);
 
-    if (argc == 2) {
-	config = newstralloc(config, argv[1]);
-	if (is_config_valid(config) != -1) return 1;
-    } else {
-	afree(config);
-    }
+    if (config != NULL && is_config_valid(config) != -1) return 1;
 
     reply(220, "%s AMANDA index server (%s) ready.", local_hostname,
 	  server_version);
@@ -884,6 +903,9 @@ char **argv;
 	    } else {
 		line = part;
 		part = NULL;
+	    }
+	    if(amindexd_debug) {
+		break;			/* we have a whole line */
 	    }
 	    if((len = strlen(line)) > 0 && line[len-1] == '\r') {
 		line[len-1] = '\0';	/* zap the '\r' */

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.21 1997/12/31 22:26:03 jrj Exp $
+ * $Id: selfcheck.c,v 1.22 1998/01/02 01:05:04 jrj Exp $
  *
  * do self-check and send back any error messages
  */
@@ -249,13 +249,19 @@ int level;
     if (strcmp(program, "GNUTAR") == 0) {
 #ifdef SAMBA_CLIENT
         if(disk[0] == '/' && disk[1] == '/') {
-	    char *cmd, *pass, *domain;
+	    char *cmd, *pass, *domain = NULL;
 
 	    if ((pass = findpass(disk, &domain) == NULL) {
 		printf("ERROR [can't find password for %s]\n", disk);
 		return;
 	    }
 	    if ((device = makesharename(disk, 1)) == NULL) {
+		memset(pass, '\0', strlen(pass));
+		afree(pass);
+		if(domain) {
+		    memset(domain, '\0', strlen(domain));
+		    afree(domain);
+		}
 		printf("ERROR [can't make share name of %s]\n", disk);
 		return;
 	    }
@@ -268,9 +274,13 @@ int level;
 			    " -c quit",
 			    NULL);
 	    memset(pass, '\0', strlen(pass));
-	    if(domain) memset(domain, '\0', strlen(domain));
+	    afree(pass);
 	    printf("running %s %s XXXX -E -U %s%s%s -c quit\n",
 		   SAMBA_CLIENT, device, SAMBA_USER, domain[0] ? " -W " : "", domain);
+	    if(domain) {
+		memset(domain, '\0', strlen(domain));
+		afree(domain);
+	    }
 	    if (system(cmd) & 0xff00)
 		printf("ERROR [PC SHARE %s access error: host down or invalid password?]\n", disk);
 	    else

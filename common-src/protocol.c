@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: protocol.c,v 1.14 1997/12/30 05:24:19 jrj Exp $
+ * $Id: protocol.c,v 1.15 1998/01/02 01:05:17 jrj Exp $
  *
  * implements amanda protocol
  */
@@ -375,8 +375,9 @@ char *str;
     /* if we didn't eat all of str, we've failed */
     if(*str) {
 	int len = strlen(saved_str);
-	char *tmp = alloc(len+1);
-
+	char *tmp = NULL;
+	
+	tmp = alloc(len+1);
 	strncpy(tmp, saved_msg, len);
 	tmp[len] = '\0';
 	parse_errmsg = newvstralloc(parse_errmsg,
@@ -533,7 +534,7 @@ proto_t *p;
 dgram_t *msg;
 char *security, *typestr;
 {
-    char *linebuf;
+    char *linebuf = NULL;
     char major_str[NUM_STR_SIZE];
     char minor_str[NUM_STR_SIZE];
     char seq_str[NUM_STR_SIZE];
@@ -592,7 +593,7 @@ static void send_ack_repl(pkt)
 pkt_t *pkt;
 {
     dgram_t outmsg;
-    char *linebuf;
+    char *linebuf = NULL;
     char major_str[NUM_STR_SIZE];
     char minor_str[NUM_STR_SIZE];
     char seq_str[NUM_STR_SIZE];

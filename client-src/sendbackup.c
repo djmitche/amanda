@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.23 1997/12/31 01:32:26 jrj Exp $
+ * $Id: sendbackup.c,v 1.24 1998/01/02 01:05:07 jrj Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -183,7 +183,7 @@ char **argv;
     int level, mesgpipe[2];
     char *prog, *disk, *dumpdate, *options;
     char *host;				/* my hostname from the server */
-    char *line;
+    char *line = NULL;
     char *err_extra = NULL;
     char *s, *fp;
     int ch;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.16 1997/12/31 23:21:16 jrj Exp $
+ * $Id: extract_list.c,v 1.17 1998/01/02 01:05:23 jrj Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -370,8 +370,8 @@ void add_file(path)
 char *path;
 {
     DIR_ITEM *ditem, lditem;
-    char *path_on_disk;
-    char *path_on_disk_slash;
+    char *path_on_disk = NULL;
+    char *path_on_disk_slash = NULL;
     char *cmd = NULL;
     char *err = NULL;
     int  i;
@@ -589,8 +589,8 @@ void delete_file(path)
 char *path;
 {
     DIR_ITEM *ditem, lditem;
-    char *path_on_disk;
-    char *path_on_disk_slash;
+    char *path_on_disk = NULL;
+    char *path_on_disk_slash = NULL;
     char *cmd = NULL;
     char *err = NULL;
     int  i;
@@ -897,8 +897,8 @@ static int extract_files_setup P((void))
     struct servent *sp;
     struct hostent *hp;
     int tape_server_socket;
-    char *disk_regex;
-    char *service_name;
+    char *disk_regex = NULL;
+    char *service_name = NULL;
 
     service_name = stralloc2("amidxtape", SERVICE_SUFFIX);
 
@@ -988,7 +988,7 @@ EXTRACT_LIST *elist;
 {
     int no_initial_params;
     int i;
-    char **restore_args;
+    char **restore_args = NULL;
     int files_off_tape;
     EXTRACT_LIST_ITEM *fn;
     int istar;
@@ -1077,7 +1077,7 @@ EXTRACT_LIST *elist;
     restore_args[no_initial_params + files_off_tape] = NULL;
 
     if(istar) {
-	char *cmd;
+	char *cmd = NULL;
 #ifndef GNUTAR
         fprintf(stderr, "GNUTAR program not available.\n");
 #else

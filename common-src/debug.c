@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.10 1997/12/30 05:24:09 jrj Exp $
+ * $Id: debug.c,v 1.11 1998/01/02 01:05:13 jrj Exp $
  *
  * debug log subroutines
  */
@@ -68,7 +68,7 @@ void debug_open()
     time_t curtime;
     int saved_debug;
     int maxtries;
-    char *dbfilename;
+    char *dbfilename = NULL;
     struct passwd *pwent;
     uid_t uid;
     gid_t gid;

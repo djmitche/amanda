@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: set_commands.c,v 1.6 1997/12/31 01:41:58 jrj Exp $
+ * $Id: set_commands.c,v 1.7 1998/01/02 01:05:24 jrj Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -38,7 +38,7 @@
 int set_date(date)
 char *date;
 {
-    char *cmd;
+    char *cmd = NULL;
 
     clear_dir_list();
 
@@ -75,7 +75,7 @@ char *date;
 void set_host(host)
 char *host;
 {
-    char *cmd;
+    char *cmd = NULL;
 
     if (is_extract_list_nonempty())
     {
@@ -89,8 +89,7 @@ char *host;
 	exit(1);
     if (server_happy())
     {
-	strncpy(dump_hostname, host, sizeof(dump_hostname)-1);
-	dump_hostname[sizeof(dump_hostname)-1] = '\0';
+	dump_hostname = newstralloc(dump_hostname, host);
 	afree(disk_name);
 	afree(mount_point);
 	afree(disk_path);
@@ -104,7 +103,7 @@ void set_disk(dsk, mtpt)
 char *dsk;
 char *mtpt;
 {
-    char *cmd;
+    char *cmd = NULL;
 
     if (is_extract_list_nonempty())
     {
@@ -176,10 +175,10 @@ char *mtpt;
 void set_directory(dir)
 char *dir;
 {
-    char *cmd;
-    char *new_dir;
+    char *cmd = NULL;
+    char *new_dir = NULL;
     char *dp, *de;
-    char *ldir;
+    char *ldir = NULL;
 
     /* do nothing if "." */
     if(strcmp(dir,".")==0) {

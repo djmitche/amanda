@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapefile.c,v 1.7 1997/12/30 05:25:25 jrj Exp $
+ * $Id: tapefile.c,v 1.8 1998/01/02 01:05:54 jrj Exp $
  *
  * routines to read and write the amanda active tape list
  */
@@ -199,7 +199,7 @@ int guess_runs_from_tapelist()
 static tape_t *parse_tapeline(line)
 char *line;
 {
-    tape_t *tp;
+    tape_t *tp = NULL;
     int len;
     char *s;
     int ch;

@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.42 1997/12/31 01:19:48 jrj Exp $
+/* $Id: dumper.c,v 1.43 1998/01/02 01:05:47 jrj Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1007,7 +1007,7 @@ int mesgfd, datafd, indexfd, outfd;
     unlink(errfname);
 
     if (indexfile) {
-	char *tmpname;
+	char *tmpname = NULL;
 	int len;
 
 	if((len = strlen(indexfile)) < 4) {
@@ -1308,7 +1308,7 @@ int level;
 {
     char level_string[NUM_STR_SIZE];
     char rc_str[NUM_STR_SIZE];
-    char *req;
+    char *req = NULL;
     int rc;
 
     ap_snprintf(level_string, sizeof(level_string), "%d", level);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.22 1997/12/30 05:25:08 jrj Exp $
+ * $Id: driver.c,v 1.23 1998/01/02 01:05:43 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -163,7 +163,7 @@ char **main_argv;
     /* taper takes a while to get going, so start it up right away */
 
     startup_tape_process();
-    taper_cmd(START_TAPER, datestamp);
+    taper_cmd(START_TAPER, datestamp, NULL, 0);
 
     /* start initializing: read in databases */
 
@@ -253,7 +253,7 @@ char **main_argv;
 
     /* ok, planner is done, now lets see if the tape is ready */
 
-    tok = getresult(taper);
+    tok = getresult(taper, 1);
 
     if(tok != TAPER_OK) {
 	/* no tape, go into degraded mode: dump to holding disk */
@@ -308,7 +308,7 @@ printf("driver: QUITTING time %s telling children to quit\n",
 fflush(stdout);
 
     if(!degraded_mode)
-	taper_cmd(QUIT, NULL);
+	taper_cmd(QUIT, NULL, NULL, 0);
 
     for(dumper = dmptable; dumper < dmptable + inparallel; dumper++)
 	dumper_cmd(dumper, QUIT, NULL);
@@ -550,7 +550,7 @@ void handle_taper_result()
     disk_t *dp;
     int filenum;
 
-    tok = getresult(taper);
+    tok = getresult(taper, 1);
 
     switch(tok) {
 
@@ -578,7 +578,7 @@ void handle_taper_result()
 	else {
 	    dp = dequeue_disk(&tapeq);
 	    taper_disk = dp;
-	    taper_cmd(FILE_WRITE, dp);
+	    taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level);
 	}
 	/*
 	 * we need to restart some stopped dumps; without a good
@@ -624,7 +624,7 @@ void handle_taper_result()
 
 	dp = dequeue_disk(&tapeq);
 	taper_disk = dp;
-	taper_cmd(FILE_WRITE, dp);
+	taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level);
 	break;
 
     case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
@@ -726,7 +726,7 @@ int fd;
     dp = dumper->dp;
     assert(dp && sched(dp));
 
-    tok = getresult(fd);
+    tok = getresult(fd, 1);
 
     if(tok != BOGUS) {
 	sdp = serial2disk(argv[2]); /* argv[2] always contains the serial number */
@@ -765,7 +765,7 @@ int fd;
 	else if(!degraded_mode) {
 	    taper_disk = dp;
 	    taper_busy = 1;
-	    taper_cmd(FILE_WRITE, dp);
+	    taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level);
 	}
 	dp = NULL;
 	break;
@@ -1263,8 +1263,8 @@ disk_t *dp;
 
     /* tell the taper to read from a port number of its choice */
 
-    taper_cmd(PORT_WRITE, dp);
-    tok = getresult(taper);
+    taper_cmd(PORT_WRITE, dp, NULL, sched(dp)->level);
+    tok = getresult(taper, 1);
     if(tok != PORT) {
 	printf("driver: did not get PORT from taper for %s:%s\n",
 		dp->host->hostname, dp->name);
@@ -1294,7 +1294,7 @@ disk_t *dp;
 
     /* wait for result from dumper */
 
-    tok = getresult(dumper->outfd);
+    tok = getresult(dumper->outfd, 1);
 
     if(tok != BOGUS)
 	free_serial(argv[2]);
@@ -1319,7 +1319,7 @@ disk_t *dp;
 
     case NO_ROOM: /* NO-ROOM <handle> */
 	dumper_cmd(dumper, ABORT, dp);
-	tok = getresult(dumper->outfd);
+	tok = getresult(dumper->outfd, 1);
 	if(tok != BOGUS)
 	    free_serial(argv[2]);
 	assert(tok == ABORT_FINISHED);
@@ -1338,7 +1338,7 @@ disk_t *dp;
      * "no space on device", etc., since taper closed the port first.
      */
 
-    tok = getresult(taper);
+    tok = getresult(taper, 1);
 
     switch(tok) {
     case DONE: /* DONE <handle> <label> <tape file> <err mess> */

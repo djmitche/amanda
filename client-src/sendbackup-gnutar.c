@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.36 1997/12/30 05:23:58 jrj Exp $
+ * $Id: sendbackup-gnutar.c,v 1.37 1998/01/02 01:05:05 jrj Exp $
  *
  * send backup data using GNU tar
  */
@@ -139,7 +139,7 @@ char *dumpdate;
 #endif
     {
 	int i;
-	char *basename;
+	char *basename = NULL;
 	char number[NUM_STR_SIZE];
 	char *s;
 	int ch;
@@ -259,12 +259,19 @@ notincremental:
 #ifdef SAMBA_CLIENT
     /* Use sambatar if the disk to back up is a PC disk */
    if (disk[0] == '/' && disk[1]=='/') {
-	char *sharename, *pass, *domain, *tarcmd, *taropt;
+	char *sharename = NULL, *pass, *domain = NULL;
+	char *tarcmd, *taropt;
 
 	if ((pass = findpass(disk, &domain)) == NULL) {
 	    error("[invalid samba host or password not found?]");
 	}
 	if ((sharename = makesharename(disk, 0)) == 0) {
+	    memset(pass, '\0', strlen(pass));
+	    afree(pass);
+	    if(domain) {
+		memset(domain, '\0', strlen(domain));
+		afree(domain);
+	    }
 	    error("[can't make share name of %s]", disk);
 	}
 	if (level==0)
@@ -301,7 +308,11 @@ notincremental:
 			    domain ? "-" : (char *)0,
 			    (char *) 0);
 	memset(pass, '\0', strlen(pass));
-	if(domain) memset(domain, '\0', strlen(domain));
+	afree(pass);
+	if(domain) {
+	    memset(domain, '\0', strlen(domain));
+	    afree(domain);
+	}
 	afree(sharename);
     } else {
 #endif
@@ -409,10 +420,10 @@ int goterror;
 {
     if(!no_record && !goterror) {
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-#ifdef SAMBA_CLIENT
-      if (incrname != NULL) {
-#endif
-        char *nodotnew = stralloc(incrname);
+      if (incrname != NULL && strlen(incrname) > 4) {
+        char *nodotnew;
+	
+	nodotnew = stralloc(incrname);
         nodotnew[strlen(nodotnew)-4] = '\0';
 	unlink(nodotnew);
         if (rename(incrname, nodotnew))
@@ -420,9 +431,7 @@ int goterror;
 		  incrname, nodotnew, strerror(errno));
 	afree(nodotnew);
 	afree(incrname);
-#ifdef SAMBA_CLIENT
       }
-#endif
 #endif
 
 	amandates_updateone(cur_disk, cur_level, cur_dumptime);

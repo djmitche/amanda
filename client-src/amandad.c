@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.16 1997/12/30 05:23:47 jrj Exp $
+ * $Id: amandad.c,v 1.17 1998/01/02 01:05:03 jrj Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -520,6 +520,7 @@ int bsd_security_ok(msg)
 pkt_t *msg;
 {
     char *remotehost = NULL, *remoteuser = NULL, *localuser = NULL;
+    char *bad_bsd = NULL;
     struct hostent *hp;
     struct passwd *pwptr;
     int myuid, rc, i;
@@ -586,7 +587,7 @@ pkt_t *msg;
      * to pull a fast one on you. :(
      */
     if( !hp->h_addr_list[i] ) {
-	errstr = newvstralloc(errstr
+	errstr = newvstralloc(errstr,
 			      "[",
 			      "ip address ", addrstr(msg->peer.sin_addr),
 			      " is not in the ip list for ", remotehost,
@@ -624,6 +625,7 @@ pkt_t *msg;
 
 #define sc "USER"
     if(strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	afree(errstr);
 	errstr = bad_bsd;
 	bad_bsd = NULL;
 	afree(remotehost);
@@ -635,6 +637,7 @@ pkt_t *msg;
 
     skip_whitespace(s, ch);
     if(ch == '\0') {
+	afree(errstr);
 	errstr = bad_bsd;
 	bad_bsd = NULL;
 	afree(remotehost);
@@ -734,7 +737,7 @@ pkt_t *msg;
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';				/* terminate remoteuser field */
 
-	if(strcmp(pbuf, remotehost) && strcmp(ptmp, remoteuser) == 0) {
+	if(strcmp(pbuf, remotehost) == 0 && strcmp(ptmp, remoteuser) == 0) {
 	    amandahostsauth = 1;
 	    break;
 	}
@@ -745,7 +748,6 @@ pkt_t *msg;
     if( amandahostsauth ) {
 	chdir("/");      /* now go someplace where I can't drop core :-) */
 	dbprintf(("amandahosts security check passed\n"));
-	afree(pbuf);
 	afree(remotehost);
 	afree(localuser);
 	afree(remoteuser);
@@ -759,8 +761,6 @@ pkt_t *msg;
 			  "]", NULL);
     dbprintf(("check failed: %s\n", errstr));
 
-    memset(pbuf, '\0', pbuf_len);		/* leave no trace */
-    afree(pbuf);
     afree(remotehost);
     afree(localuser);
     afree(remoteuser);

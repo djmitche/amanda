@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtrmidx.c,v 1.13 1997/12/30 05:24:58 jrj Exp $
+ * $Id: amtrmidx.c,v 1.14 1998/01/02 01:05:38 jrj Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -48,7 +48,7 @@ int argc;
 char **argv;
 {
     char *line;
-    char *cmd;
+    char *cmd = NULL;
     disk_t *diskp;
     disklist_t *diskl;
     int no_keep;			/* files per system to keep */

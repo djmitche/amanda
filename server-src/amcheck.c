@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.26 1997/12/30 05:24:51 jrj Exp $
+ * $Id: amcheck.c,v 1.27 1998/01/02 01:05:33 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -61,7 +61,7 @@
 char *pname = "amcheck";
 
 static int mailout, overwrite;
-dgram_t *msg;
+dgram_t *msg = NULL;
 
 /* local functions */
 
@@ -82,7 +82,7 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    char buffer[BUFFER_SIZE], *cmd;
+    char buffer[BUFFER_SIZE], *cmd = NULL;
     char *confdir, *version_string;
     char *mainfname = NULL, *tempfname = NULL;
     char pid_str[NUM_STR_SIZE];
@@ -209,7 +209,7 @@ char **argv;
 	}
 	else {
 	    char number[NUM_STR_SIZE];
-	    char *msg;
+	    char *msg = NULL;
 
 	    ap_snprintf(number, sizeof(number), "%ld", (long)pid);
 	    msg = vstralloc("parent: reaped bogus pid ", number, "\n", NULL);
@@ -556,7 +556,7 @@ int fd;
     disklist_t *origqp;
     disk_t *dp;
     host_t *hostp;
-    char *req;
+    char *req = NULL;
     int hostcount, rc, pid;
     int amanda_port;
     struct servent *amandad;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflock.c,v 1.12 1997/12/31 01:32:30 jrj Exp $
+ * $Id: amflock.c,v 1.13 1998/01/02 01:05:12 jrj Exp $
  *
  * file locking routines, put here to hide the system dependant stuff
  * from the rest of the code
@@ -270,9 +270,9 @@ char *res; /* name of resource to lock */
 int op;    /* true to lock; false to unlock */
 {
 	long mypid;
-	char *lockf;
-	char *tlockf;
-	char *mres;
+	char *lockf = NULL;
+	char *tlockf = NULL;
+	char *mres = NULL;
 	int rc;
 	char pid_str[NUM_STR_SIZE];
 

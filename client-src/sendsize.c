@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.48 1997/12/31 22:15:28 jrj Exp $
+ * $Id: sendsize.c,v 1.49 1998/01/02 01:05:08 jrj Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -763,13 +763,19 @@ int level;
     int pipefd[2], nullfd, dumppid;
     long size;
     FILE *dumpout;
-    char *tarkeys, *sharename, *pass, *domain;
+    char *tarkeys, *sharename, *pass, *domain = NULL;
     char *line;
 
     if ((pass = findpass(disk, &domain) == NULL) {
 	error("[sendsize : error in smbtar diskline, unable to find password]");
     }
-    if ((sharename = makesharename(disk, 0)) == 0) {
+    if ((sharename = makesharename(disk, 0)) == NULL) {
+	memset(pass, '\0', strlen(pass));
+	afree(pass);
+	if(domain) {
+	    memset(domain, '\0', strlen(domain));
+	    afree(domain);
+	}
 	error("[sendsize : can't make share name of %s]", disk);
     }
     nullfd = open("/dev/null", O_RDWR);
@@ -786,6 +792,12 @@ int level;
 
     switch(dumppid = fork()) {
     case -1:
+	memset(pass, '\0', strlen(pass));
+	afree(pass);
+	if(domain) {
+	    memset(domain, '\0', strlen(domain));
+	    afree(domain);
+	}
 	afree(sharename);
 	return -1;
     default:
@@ -807,11 +819,24 @@ int level;
 	       domain ? tarkeys : (char *)0,
 	       (char *)0,
 	       safe_env());
+	/* should not get here */
+	memset(pass, '\0', strlen(pass));
+	afree(pass);
+	if(domain) {
+	    memset(domain, '\0', strlen(domain));
+	    afree(domain);
+	}
+	afree(sharename);
 	exit(1);
-	break;
+	/* NOTREACHED */
     }
     memset(pass, '\0', strlen(pass));
-    if(domain) memset(domain, '\0', strlen(domain));
+    afree(pass);
+    if(domain) {
+	memset(domain, '\0', strlen(domain));
+	afree(domain);
+    }
+    afree(sharename);
     aclose(pipefd[1]);
     dumpout = fdopen(pipefd[0],"r");
 
@@ -864,7 +889,7 @@ time_t dumpsince;
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
     {
       int i;
-      char *basename;
+      char *basename = NULL;
       char number[NUM_STR_SIZE];
       char *s;
       int ch;

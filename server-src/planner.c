@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.47 1997/12/30 05:25:22 jrj Exp $
+ * $Id: planner.c,v 1.48 1998/01/02 01:05:51 jrj Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -864,7 +864,7 @@ host_t *hostp;
 {
     disklist_t *destqp;
     disk_t *dp;
-    char *req, *errstr;
+    char *req = NULL, *errstr = NULL;
     int i, disks, rc;
     char number[NUM_STR_SIZE];
 
@@ -1725,7 +1725,7 @@ static int promote_hills P((void))
     struct balance_stats {
 	int disks;
 	long size;
-    } *sp;
+    } *sp = NULL;
     int tapecycle;
     int days;
     int hill_days;

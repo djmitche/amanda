@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.12 1997/12/30 05:25:24 jrj Exp $
+ * $Id: reporter.c,v 1.13 1998/01/02 01:05:53 jrj Exp $
  *
  * nightly Amanda Report generator
  */
@@ -162,7 +162,7 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    char *logfname, *subj_str;
+    char *logfname, *subj_str = NULL;
 
     /* open input log file */
 
@@ -240,7 +240,7 @@ char **argv;
 	fprintf(mailf, "Subject: %s\n\n", subj_str);
     }
     else {
-	char *cmd;
+	char *cmd = NULL;
 
 	cmd = vstralloc(MAILER,
 			" -s", " \"", subj_str, "\"",
@@ -804,7 +804,7 @@ void handle_stats()
 
 void handle_note()
 {
-    char *str;
+    char *str = NULL;
 
     str = vstralloc("  ", program_str[curprog], ": ", curstr, NULL);
     addline(&notes, str);
@@ -817,7 +817,7 @@ void handle_note()
 void handle_error()
 {
     int rc;
-    char *s, *nl;
+    char *s = NULL, *nl;
     int ch;
 
     if(curlog == L_ERROR && curprog == P_TAPER) {
@@ -930,7 +930,7 @@ void handle_success()
 
     dp = lookup_disk(hostname, diskname);
     if(dp == NULL) {
-	char *str;
+	char *str = NULL;
 
 	str = vstralloc("  ", prefix(hostname, diskname, level),
 			" ", "ERROR [not in disklist]",
@@ -981,7 +981,7 @@ void handle_success()
 
 void handle_strange()
 {
-    char *str;
+    char *str = NULL;
 
     handle_success();
 
@@ -1014,7 +1014,7 @@ void handle_failed()
     int level;
     char *s;
     int ch;
-    char *str;
+    char *str = NULL;
 
     hostname = NULL;
     diskname = NULL;
@@ -1097,7 +1097,7 @@ void handle_failed()
 void generate_missing()
 {
     disk_t *dp;
-    char *str;
+    char *str = NULL;
 
     for(dp = diskq->head; dp != NULL; dp = dp->next) {
 	if(data(dp)->result == L_BOGUS) {

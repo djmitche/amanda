@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.13 1997/12/31 23:00:38 jrj Exp $
+ * $Id: amrecover.c,v 1.14 1998/01/02 01:05:19 jrj Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -70,7 +70,7 @@ char *config = NULL;
 char *server_name = NULL;
 int server_socket;
 char *server_line = NULL;
-char dump_hostname[MAX_HOSTNAME_LENGTH];/* which machine we are restoring */
+char *dump_hostname;			/* which machine we are restoring */
 char *disk_name = NULL;			/* disk we are restoring */
 char *mount_point = NULL;		/* where disk was mounted */
 char *disk_path = NULL;			/* path relative to mount point */
@@ -105,7 +105,7 @@ char *prompt;
 int get_line ()
 {
     char *line = NULL;
-    char *part;
+    char *part = NULL;
     int len;
 
     while(1) {
@@ -382,13 +382,13 @@ char **argv;
     struct hostent *hp;
     int i;
     time_t timer;
-    char *lineread;
+    char *lineread = NULL;
     struct sigaction act, oact;
     extern char *optarg;
     extern int optind;
-    char cwd[STR_SIZE], *dn_guess, *mpt_guess;
+    char cwd[STR_SIZE], *dn_guess = NULL, *mpt_guess = NULL;
     char *service_name;
-    char *line;
+    char *line = NULL;
 
     config = newstralloc(config, DEFAULT_CONFIG);
     server_name = newstralloc(server_name, DEFAULT_SERVER);
@@ -545,16 +545,18 @@ char **argv;
     if (server_happy())
     {
 	/* set host we are restoring to this host by default */
-	if (gethostname(dump_hostname, sizeof(dump_hostname)-1) == -1)
+	afree(dump_hostname);
+	dump_hostname = alloc(MAX_HOSTNAME_LENGTH+1);
+	if (gethostname(dump_hostname, MAX_HOSTNAME_LENGTH) == -1)
 	{
-	    dump_hostname[0] = '\0';		/* just to be sure */
 	    perror("amrecover: Can't get local host name");
+	    afree(dump_hostname);
 	    /* fake an unhappy server */
 	    server_line[0] = '5';
 	}
 	else
 	{
-	    dump_hostname[sizeof(dump_hostname)-1] = '\0';
+	    dump_hostname[MAX_HOSTNAME_LENGTH] = '\0';
 #ifndef USE_FQDN
 	    /* trim domain off name */
 	    for (i = 0; i < strlen(dump_hostname); i++)

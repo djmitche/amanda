@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.14 1997/12/30 05:24:47 jrj Exp $
+ * $Id: amrestore.c,v 1.15 1998/01/02 01:05:29 jrj Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -184,7 +184,7 @@ int isafile;
     if(pipeflag)
 	dest = 1;		/* standard output */
     else {
-	char *filename_ext;
+	char *filename_ext = NULL;
 
 	if(compflag) {
 	    filename_ext = file->compressed ? file->comp_suffix

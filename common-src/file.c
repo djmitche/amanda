@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.5 1997/12/30 05:24:13 jrj Exp $
+ * $Id: file.c,v 1.6 1998/01/02 01:05:14 jrj Exp $
  *
  * file and directory bashing routines
  */
@@ -70,7 +70,7 @@ int mode;	/* mode for new directories */
 uid_t uid;	/* uid for new directories */
 gid_t gid;	/* gid for new directories */
 {
-    char *dir, *p;
+    char *dir = NULL, *p;
     int rc;	/* return code */
 
     rc = 0;
@@ -103,7 +103,7 @@ char *file;	/* directory hierarchy to remove */
 char *topdir;	/* where to stop removing */
 {
     int rc;
-    char *p, *dir;
+    char *p, *dir = NULL;
 
     if(strcmp(file, topdir) == 0) return 0; /* all done */
 
@@ -207,7 +207,7 @@ char *
 agets(file)
     FILE *file;
 {
-    char *line, *line_ptr;
+    char *line = NULL, *line_ptr;
     int line_size, line_free, size_save, line_len;
     char *cp;
     char *f;
