@@ -110,7 +110,7 @@ char *sep;	/* Token separators - usually " " */
 	}
 	*po = '\0';
 
-	assert(po-buff == len);	/* Just checking! */
+	assert(po - buf == len);	/* Just checking! */
 
 	return fld;
 }
@@ -195,7 +195,7 @@ char *str;	/* the string to quote */
 	}
 	*po = '\0';
 
-	assert(po - buff == len);	/* Just checking! */
+	assert(po - buf == len);	/* Just checking! */
 
 	return buf;
 }
