@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.116 2001/12/30 23:11:20 martinea Exp $
+ * $Id: driver.c,v 1.117 2002/01/25 22:58:56 jrjackson Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -149,6 +149,7 @@ main(main_argc, main_argv)
     int result_argc;
     char *result_argv[MAX_ARGS+1];
     char *taper_program;
+    amwait_t retstat;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -412,7 +413,6 @@ main(main_argc, main_argv)
     if(!nodump) {
 	for(dumper = dmptable; dumper < dmptable + inparallel; dumper++) {
 	    dumper_cmd(dumper, QUIT, NULL);
-	    amfree(dumper->name);
 	}
     }
 
@@ -421,7 +421,49 @@ main(main_argc, main_argv)
 
     /* wait for all to die */
 
-    while(wait(NULL) != -1);
+    while(1) {
+	char number[NUM_STR_SIZE];
+	pid_t pid;
+	char *who;
+	char *what;
+	int code;
+
+	if((pid = wait(&retstat)) == -1) {
+	    if(errno == EINTR) continue;
+	    else break;
+	}
+	what = NULL;
+	if(! WIFEXITED(retstat)) {
+	    what = "signal";
+	    code = WTERMSIG(retstat);
+	} else if(WEXITSTATUS(retstat) != 0) {
+	    what = "code";
+	    code = WEXITSTATUS(retstat);
+	}
+	who = NULL;
+	for(dumper = dmptable; dumper < dmptable + inparallel; dumper++) {
+	    if(pid == dumper->pid) {
+		who = stralloc(dumper->name);
+		break;
+	    }
+	}
+	if(who == NULL && pid == taper_pid) {
+	    who = stralloc("taper");
+	}
+	if(what != NULL && who == NULL) {
+	    snprintf(number, sizeof(number), "%ld", (long)pid);
+	    who = stralloc2("unknown pid ", number);
+	}
+	if(who && what) {
+	    log_add(L_WARNING, "%s exited with %s %d\n", who, what, code);
+	    printf("driver: %s exited with %s %d\n", who, what, code);
+	}
+	amfree(who);
+    }
+
+    for(dumper = dmptable; dumper < dmptable + inparallel; dumper++) {
+	amfree(dumper->name);
+    }
 
     for(hdp = getconf_holdingdisks(); hdp != NULL; hdp = hdp->next) {
 	cleanup_holdingdisk(hdp->diskdir, 0);
