@@ -45,30 +45,39 @@ typedef long sopno;
 #define	OPND(n)	((n)&OPDMASK)
 #define	SOP(op, opnd)	((op)|(opnd))
 
-#define AMNUMBER(num) ((AM_UNSIGNED_LONG(num))<<OPSHIFT)
+#ifndef UNSIGNEDLONG1
+#ifndef NO_UL_CNSTS
+#define UNSIGNEDLONG1 1ul
+#else
+#define UNSIGNEDLONG1 ((unsigned long)1)
+#endif
+#endif
+
+#define MAKE_UNSIGNED_LONG(num) (UNSIGNEDLONG1*num)
+#define SHIFTED_UL(num) (MAKE_UNSIGNED_LONG(num) << OPSHIFT)
 
 /* operators			   meaning	operand			*/
 /*						(back, fwd are offsets)	*/
-#define	OEND	(AMNUMBER(1))	/* endmarker	-			*/
-#define	OCHAR	(AMNUMBER(2))	/* character	unsigned char		*/
-#define	OBOL	(AMNUMBER(3))	/* left anchor	-			*/
-#define	OEOL	(AMNUMBER(4))	/* right anchor	-			*/
-#define	OANY	(AMNUMBER(5))	/* .		-			*/
-#define	OANYOF	(AMNUMBER(6))	/* [...]	set number		*/
-#define	OBACK_	(AMNUMBER(7))	/* begin \d	paren number		*/
-#define	O_BACK	(AMNUMBER(8))	/* end \d	paren number		*/
-#define	OPLUS_	(AMNUMBER(9))	/* + prefix	fwd to suffix		*/
-#define	O_PLUS	(AMNUMBER(10))	/* + suffix	back to prefix		*/
-#define	OQUEST_	(AMNUMBER(11))	/* ? prefix	fwd to suffix		*/
-#define	O_QUEST	(AMNUMBER(12))	/* ? suffix	back to prefix		*/
-#define	OLPAREN	(AMNUMBER(13))	/* (		fwd to )		*/
-#define	ORPAREN	(AMNUMBER(14))	/* )		back to (		*/
-#define	OCH_	(AMNUMBER(15))	/* begin choice	fwd to OOR2		*/
-#define	OOR1	(AMNUMBER(16))	/* | pt. 1	back to OOR1 or OCH_	*/
-#define	OOR2	(AMNUMBER(17))	/* | pt. 2	fwd to OOR2 or O_CH	*/
-#define	O_CH	(AMNUMBER(18))	/* end choice	back to OOR1		*/
-#define	OBOW	(AMNUMBER(19))	/* begin word	-			*/
-#define	OEOW	(AMNUMBER(20))	/* end word	-			*/
+#define	OEND	(SHIFTED_UL(1))	/* endmarker	-			*/
+#define	OCHAR	(SHIFTED_UL(2))	/* character	unsigned char		*/
+#define	OBOL	(SHIFTED_UL(3))	/* left anchor	-			*/
+#define	OEOL	(SHIFTED_UL(4))	/* right anchor	-			*/
+#define	OANY	(SHIFTED_UL(5))	/* .		-			*/
+#define	OANYOF	(SHIFTED_UL(6))	/* [...]	set number		*/
+#define	OBACK_	(SHIFTED_UL(7))	/* begin \d	paren number		*/
+#define	O_BACK	(SHIFTED_UL(8))	/* end \d	paren number		*/
+#define	OPLUS_	(SHIFTED_UL(9))	/* + prefix	fwd to suffix		*/
+#define	O_PLUS	(SHIFTED_UL(10))	/* + suffix	back to prefix		*/
+#define	OQUEST_	(SHIFTED_UL(11))	/* ? prefix	fwd to suffix		*/
+#define	O_QUEST	(SHIFTED_UL(12))	/* ? suffix	back to prefix		*/
+#define	OLPAREN	(SHIFTED_UL(13))	/* (		fwd to )		*/
+#define	ORPAREN	(SHIFTED_UL(14))	/* )		back to (		*/
+#define	OCH_	(SHIFTED_UL(15))	/* begin choice	fwd to OOR2		*/
+#define	OOR1	(SHIFTED_UL(16))	/* | pt. 1	back to OOR1 or OCH_	*/
+#define	OOR2	(SHIFTED_UL(17))	/* | pt. 2	fwd to OOR2 or O_CH	*/
+#define	O_CH	(SHIFTED_UL(18))	/* end choice	back to OOR1		*/
+#define	OBOW	(SHIFTED_UL(19))	/* begin word	-			*/
+#define	OEOW	(SHIFTED_UL(20))	/* end word	-			*/
 
 /*
  * Structure for [] character-set representation.  Character sets are

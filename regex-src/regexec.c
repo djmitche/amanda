@@ -22,9 +22,9 @@ static int nope = 0;		/* for use in asserts; shuts lint up */
 #define	states	long
 #define	states1	states		/* for later use in regexec() decision */
 #define	CLEAR(v)	((v) = 0)
-#define	SET0(v, n)	((v) &= ~(1ul << (n)))
-#define	SET1(v, n)	((v) |= (AM_UNSIGNED_LONG(1)) << (n))
-#define	ISSET(v, n)	((v) & ((AM_UNSIGNED_LONG(1)) << (n)))
+#define	SET0(v, n)	((v) &= ~(MAKE_UNSIGNED_LONG(1) << (n)))
+#define	SET1(v, n)	((v) |= (MAKE_UNSIGNED_LONG(1)) << (n))
+#define	ISSET(v, n)	((v) & ((MAKE_UNSIGNED_LONG(1)) << (n)))
 #define	ASSIGN(d, s)	((d) = (s))
 #define	EQ(a, b)	((a) == (b))
 #define	STATEVARS	int dummy	/* dummy version */

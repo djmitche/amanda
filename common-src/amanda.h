@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.25 1997/11/07 10:29:16 amcore Exp $
+ * $Id: amanda.h,v 1.26 1997/11/07 20:43:21 amcore Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -293,14 +293,6 @@ extern void debug_printf P((char *format, ...))
 
 #define SECS_PER_DAY	(24*60*60)
 #define days_diff(a, b)	(((b) - (a) + SECS_PER_DAY/2) / SECS_PER_DAY)
-
-/* String concatenation.  */
-#undef Concatenate
-#ifdef HAVE_ANSI_CONCATENATE
-#define Concatenate(a,b)a##b
-#else
-#define Concatenate(a,b)a/**/b
-#endif
 
 /* Global constants.  */
 #ifdef SERVICE_SUFFIX

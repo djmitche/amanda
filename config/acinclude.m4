@@ -1,26 +1,3 @@
-dnl Find out how the compiler catenates strings.
-AC_DEFUN(AMANCA_C_CONCATENATE_STRINGS,
-    [
-	AC_CACHE_CHECK(
-	    [for ANSI C string concatenation],
-	    amanda_cv_c_ansi_string_concatenation,
-	    [
-		AC_EGREP_CPP(123456,
-		    [
-			#define Concat(a,b)a##b
-			Concat(123,456)
-		    ],
-		    amanda_cv_c_ansi_string_concatenation=yes,
-		    amanda_cv_c_ansi_string_concatenation=no
-		)
-	    ]
-	)
-	if test "$amanda_cv_c_ansi_string_concatenation" = yes; then
-	    AC_DEFINE(HAVE_ANSI_CONCATENATE)
-	fi
-    ]
-)
-
 dnl Check if the compiler can handle unsigned long constants, ie 2ul.
 AC_DEFUN(AMANDA_C_UNSIGNED_LONG_CONSTANTS,
     [

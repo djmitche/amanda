@@ -200,7 +200,6 @@
 
 /* Compiler characteristics.  */
 #undef HAVE_UNSIGNED_LONG_CONSTANTS
-#undef HAVE_ANSI_CONCATENATE
 
 /* Type of file locking.  Define none or one of these.  */
 #undef USE_POSIX_FCNTL

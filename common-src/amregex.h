@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amregex.h,v 1.4 1997/09/11 14:08:30 amcore Exp $
+ * $Id: amregex.h,v 1.5 1997/11/07 20:43:22 amcore Exp $
  *
  * compatibility header file for Henry Spencer's regex library.
  */
@@ -81,5 +81,11 @@ extern char *memmove P((char *to, char *from, size_t n));
 #endif
 
 #define POSIX_MISTAKE
+
+#ifdef HAVE_UNSIGNED_LONG_CONSTANTS
+#undef NO_UL_CNSTS
+#else
+#define NO_UL_CNSTS
+#endif
 
 #endif

@@ -24,13 +24,13 @@ Amanda calls to interact with the tape changer.
 The name of this changer program is given by the new "tpchanger" variable
 in the amanda.conf file.  Example entry:
 
-	tpchanger "chg-generic"		# use generic tape changer script
+	tpchanger "chg-multi"	   # use multi-unit tape changer emulator
 	changerfile "/etc/amanda/changer.conf"    # changer configuration
 
 The older tapedev parameter is ignored if a tpchanger program is
 specified, unless the changer program itself reads tapedev from
-amanda.conf.  chg-generic doesn't, as it reads all its configuration
-arguments from its own configuration file, specified in changerfile.
+amanda.conf.  chg-multi doesn't, as it reads all its configuration
+arguments from its own configuration file, specified as changerfile.
 
 If the tpchanger program does not begin with a '/', then amanda will expect
 it to reside in libexecdir, and possibly have the version suffix appended
@@ -52,13 +52,13 @@ The tape changer program must support the following commands:
 			error messages to stdout in place of device name
 
 	Examples:
-		% chg-generic -slot 0
+		% chg-multi -slot 0
 		0 /dev/nrst8			# exitcode returned is 0
 
-		% chg-generic -slot 1
+		% chg-multi -slot 1
 		1 slot 1 is empty		# exitcode returned is 1
 
-		% chg-generic -slot bogus-slot
+		% chg-multi -slot bogus-slot
 		<none> no slot `bogus-slot'       # exitcode returned is 2
 
 
@@ -68,7 +68,7 @@ The tape changer program must support the following commands:
 		if it can't, 1 if it can).  Same error handling as above.
 
 	Example:
-		% chg-generic -info
+		% chg-multi -info
 		0 10 1				# exitcode returned is 0
 
     <tpchanger> -reset
@@ -80,13 +80,13 @@ The tape changer program must support the following commands:
 		the top.
 
 	Examples:
-		% chg-generic -reset
+		% chg-multi -reset
 		0 /dev/nrst8			# exitcode returned is 0
 
-		% chg-generic -reset
+		% chg-multi -reset
 		0 slot 0 is empty		# exitcode returned is 1
 
-		% chg-generic -reset
+		% chg-multi -reset
 		0 tape-changer not responding	# exitcode returned is 2
 
     <tpchanger> -eject
@@ -94,10 +94,10 @@ The tape changer program must support the following commands:
 		and error handling are the same as the -slot command.
 
 	Examples:
-		% chg-generic -eject
+		% chg-multi -eject
 		0 /dev/nrst8			# exitcode returned is 0
 
-		% chg-generic -eject
+		% chg-multi -eject
 		0 drive was not loaded		# exitcode returned is 1
 
 For all the commands:
@@ -132,8 +132,8 @@ notion of a "current" position.  This is for performance reasons: as
 tapes tend to be loaded into the rack in order, and Amanda uses them
 in order, the next tape to use can be found much quicker if the
 position of the previous one is remembered.  As an example, the
-chg-generic.sh script maintains the current position in a
-"chg-generic.state" file (or any other file specified in a `statefile'
+chg-multi.sh script maintains the current position in a
+"chg-multi.state" file (or any other file specified in a `statefile'
 line in the changer configuration file).
 
 Amanda does not care how slots are specified: they could be numbered 0 to
@@ -228,29 +228,22 @@ tape.
 
 7. BUILT-IN TAPE CHANGERS
 
-no-changer:
+chg-multi: (former chg-generic)
+
+A tape changer script that allows multiple tape drives in a single
+host to emulate a tape changer.  It ignores `tapedev' and
+`changerdev', as `changerfile' may specify several tape devices to be
+used.  A sample configuration file can be found in
+example/chg-multi.conf.
+
+chg-manual: (former no-changer)
 
 This is a poor man's tape changer, as it requires the backup operator
 to change tapes manually.  It expects `tapedev' to point to a valid
 tape device, and stores some status data in files whose names start
 with the `changerfile'.  `changerdev' is ignored.
 
-chg-generic:
-
-A generic tape changer script that allows multiple tape drives in a
-single host to emulate a tape changer.  It ignores `tapedev' and
-`changerdev', as `changerfile' may specify several tape devices to be
-used.  A sample configuration file can be found in
-example/chg-generic.conf.
-
-chs-changer:
-
-A tape changer script very similar to chg-generic, that uses the `chs'
-program to change tapes.  As in chg-generic, `tapedev' and
-`changerdev' are ignored, whereas `changerfile' names its
-configuration file, similar to chg-generic.conf.
-
-hp-changer:
+chg-mtx: (former hp-changer)
 
 A mtx-based tape changer script.  `tapedev' must specify the tape
 device controlled by the mtx program, but `changerdev' is ignored.
@@ -259,14 +252,7 @@ this script.  If `changerfile' is defined as
 `/usr/adm/amanda/csd/changer', this script will maintain files named
 `changer-clean' and `changer-access' in the log directory.
 
-rth-changer:
-
-A perl5 script that controls an HPc1553 tape drive via a Peripheral
-Vision Inc. SCSI control subsystem that interprets commands sent on
-the SCSI bus.  It expects `tapedev' to specify the tape device to be
-used.  `changerfile' and `changerdev' are ignored.
-
-seagate-changer:
+chg-chio: (former seagate-changer)
 
 A C program that relies on the tape changer interface specified in
 chio.h (Gerd Knor's SCSI media changer driver, a Linux kernel loadable
@@ -274,3 +260,17 @@ module).  `tapedev' specifies the tape device to be used;
 `changer_dev' is the device used to talk to the kernel module (usually
 /dev/ch0), and `changerfile' specifies a filename in which the current
 slot number will be stored.
+
+chg-chs: (former chs-changer)
+
+A tape changer script very similar to chg-multi, that uses the `chs'
+program to change tapes.  As in chg-multi, `tapedev' and
+`changerdev' are ignored, whereas `changerfile' names its
+configuration file, similar to chg-multi.conf.
+
+chg-rth: (former rth-changer)
+
+A perl5 script that controls an HPc1553 tape drive via a Peripheral
+Vision Inc. SCSI control subsystem that interprets commands sent on
+the SCSI bus.  It expects `tapedev' to specify the tape device to be
+used.  `changerfile' and `changerdev' are ignored.

@@ -22,8 +22,8 @@ EXTRA_PROGRAMS =	chg-chio
 
 libexec_SCRIPTS =	@BUILD_CHANGER_SCRIPTS_LIBEXEC@
 
-EXTRA_SCRIPTS =		chg-generic	hp-changer	no-changer	\
-			rth-changer	chs-changer
+EXTRA_SCRIPTS =		chg-manual	chg-multi	chg-mtx		\
+			chg-rth		chg-chs
 
 DISTCLEANFILES = $(EXTRA_SCRIPTS)
 
