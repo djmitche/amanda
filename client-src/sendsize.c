@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.134 2002/04/26 00:45:23 martinea Exp $
+ * $Id: sendsize.c,v 1.135 2002/09/17 15:32:03 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -817,6 +817,9 @@ long getsize_dump(disk, amdevice, level, options)
 
     device = amname_to_devname(amdevice);
     fstype = amname_to_fstype(amdevice);
+
+    dbprintf(("%s: calculating for device '%s' with '%s'\n",
+	      debug_prefix_time(NULL), device, fstype));
 
     cmd = vstralloc(libexecdir, "/rundump", versionsuffix(), NULL);
     rundump_cmd = stralloc(cmd);

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.83 2002/05/27 19:55:53 martinea Exp $
+ * $Id: sendbackup-dump.c,v 1.84 2002/09/17 15:32:03 martinea Exp $
  *
  * send backup data using BSD dump
  */
@@ -117,6 +117,7 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
     int dumpin, dumpout;
     char *dumpkeys = NULL;
     char *device = NULL;
+    char *fstype = NULL;
     char *cmd = NULL;
     char *indexcmd = NULL;
     char level_str[NUM_STR_SIZE];
@@ -152,6 +153,10 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 
     /* invoke dump */
     device = amname_to_devname(amdevice);
+    fstype = amname_to_fstype(amdevice);
+
+    dbprintf(("%s: dumping device '%s' with '%s'\n",
+	      debug_prefix_time(NULL), device, fstype));
 
 #if defined(USE_RUNDUMP) || !defined(DUMP)
     cmd = vstralloc(libexecdir, "/", "rundump", versionsuffix(), NULL);
