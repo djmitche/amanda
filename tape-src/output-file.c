@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-file.c,v 1.1.2.4.2.1 2002/11/12 21:24:20 martinea Exp $
+ * $Id: output-file.c,v 1.1.2.4.2.2 2003/03/05 21:02:56 martinea Exp $
  *
  * tapeio.c virtual tape interface for a file device.
  *
@@ -780,8 +780,11 @@ file_tapefd_write(fd, buffer, count)
     /*
      * Open the file, if needed.
      */
-    if ((file_fd = file_open(fd)) < 0) {
-	return file_fd;
+    if((file_fd = volume_info[fd].fd) < 0) {
+	file_release(fd);
+	if ((file_fd = file_open(fd)) < 0) {
+	    return file_fd;
+	}
     }
 
     /*
@@ -795,7 +798,6 @@ file_tapefd_write(fd, buffer, count)
     }
     volume_info[fd].amount_written += (write_count + 1023) / 1024;
     if (write_count <= 0) {
-	file_release(fd);
 	volume_info[fd].at_bof = 0;
 	volume_info[fd].at_eom = 1;
 	errno = ENOSPC;
@@ -809,7 +811,6 @@ file_tapefd_write(fd, buffer, count)
      */
     if (! volume_info[fd].last_operation_write) {
 	(void)ftruncate(file_fd, lseek(file_fd, 0, SEEK_CUR));
-	file_release(fd);
 	volume_info[fd].at_bof = 0;
 	volume_info[fd].at_eom = 1;
     }
