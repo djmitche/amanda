@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.1 1997/11/01 09:21:37 george Exp $
+ * $Id: file.c,v 1.2 1997/11/02 23:13:45 george Exp $
  *
  * file and directory bashing routines
  */
@@ -31,10 +31,15 @@
 #include "amanda.h"
 
 /* Make a directory hierarchy.
+** XXX - I'm not sure about the use of the chown() stuff.  On most systems
+**       it will do nothing - only root is permitted to change the owner
+**       of a file.
 */
-int mkpdir(file, mode)
+int mkpdir(file, mode, uid, gid)
 char *file;	/* file to create parent directories for */
 int mode;	/* mode for new directories */
+uid_t uid;	/* uid for new directories */
+gid_t gid;	/* gid for new directories */
 {
     char *dir, *p;
     int rc;	/* return code */
@@ -50,10 +55,12 @@ int mode;	/* mode for new directories */
 	if(access(dir, F_OK) == 0)
 	    rc = 0; /* already exists */
 	else {
-	    if(mkpdir(dir, mode) == 0 &&
+	    if(mkpdir(dir, mode, uid, gid) == 0 &&
 	       mkdir(dir, mode) == 0 &&
-	       chmod(dir, mode) == 0)	/* mkdir() is affected by the umask */
+	       chmod(dir, mode) == 0) {	/* mkdir() is affected by the umask */
+		chown(dir, uid, gid);
 		rc = 0; /* all done */
+	    }
 	    else
 		rc = -1; /* create failed */
 	}
@@ -157,7 +164,7 @@ int main() {
 	int rc;
 
 	printf("Create...");
-	rc = mkpdir("/tmp/a/b/c/d/e", 0777);
+	rc = mkpdir("/tmp/a/b/c/d/e", 0777, (uid_t)-1, (gid_t)-1);
 	if (rc == 0)
 		printf("done\n");
 	else {
