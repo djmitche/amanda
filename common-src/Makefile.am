@@ -13,7 +13,7 @@ libamanda_la_SOURCES = \
 	amfeatures.c	match.c						\
 	protocol.c	regcomp.c	regerror.c	regexec.c	\
 	regfree.c	security.c	statfs.c	stream.c	\
-	token.c		util.c		version.c	versuff.c       \
+	token.c		util.c		versuff.c	version.c	\
         pipespawn.c	sl.c
 
 libamanda_la_LIBADD =	@LTLIBOBJS@ @LTALLOCA@
@@ -45,8 +45,8 @@ STANDARD_COMMON_STUFF = \
 
 EXTRA_PROGRAMS = genversion $(TEST_PROGS)
 
-genversion_SOURCES = genversion.c versuff.c
-genversion_LDADD = $(libamanda_la_LIBADD) $(STANDARD_COMMON_STUFF)
+genversion_SOURCES = genversion.c
+genversion_LDADD = $(libamanda_la_LIBADD) $(STANDARD_COMMON_STUFF) versuff.o
 
 genversion.o: genversion.h
 genversion.h: $(top_builddir)/config.status
