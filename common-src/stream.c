@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.8 1998/09/02 03:39:33 oliva Exp $
+ * $Id: stream.c,v 1.9 1998/09/10 01:31:43 oliva Exp $
  *
  * functions for managing stream sockets
  */
@@ -41,6 +41,7 @@ int stream_server(portp)
 int *portp;
 {
     int server_socket, len;
+    int on = 1;
     struct sockaddr_in server;
 
     if((server_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1)
@@ -102,6 +103,14 @@ int *portp;
 	return -1;
     }
 
+#ifdef SO_KEEPALIVE
+    if(setsockopt(server_socket, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on)) 
+       == -1) {
+        aclose(server_socket);
+        return -1;
+    }
+#endif
+
     *portp = (int) ntohs(server.sin_port);
     return server_socket;
 }
@@ -111,6 +120,7 @@ char *hostname;
 int port, sendsize, recvsize;
 {
     int client_socket;
+    int on = 1;
     struct sockaddr_in svaddr, claddr;
     struct hostent *hostp;
 
@@ -129,6 +139,14 @@ int port, sendsize, recvsize;
 	errno = EMFILE;				/* out of range */
 	return -1;
     }
+
+#ifdef SO_KEEPALIVE
+    if(setsockopt(client_socket, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on)) 
+       == -1) {
+        aclose(client_socket);
+        return -1;
+    }
+#endif
 
     if(geteuid() == 0) {	
 	/* bind client side to reserved port before connect */
