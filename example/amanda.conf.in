@@ -199,15 +199,20 @@ define tapetype MIMSY-MEGATAPE {
 #   exclude	- specify files and directories to be excluded from the dump.
 #		  Useful with gnutar only; silently ignored by dump and samba.
 #		  Valid values are:
-#		  "regular expression" - an re defining which files to exclude
-#					 gnutar gets --exclude="expression"
-#		  list "filename"      - a file (on the client!) containing
-#					 re's (1 per line) defining which files
-#					 to exclude
-#					 gnutar gets --exclude-from="filename"
-#		  Note that the `full pathname' of a file within its filesystem
-#		  starts with `./'.  So, if you're backing up `/', but you want
-#		  to exclude `/tmp', you should specify `./tmp'.
+#		  "pattern"       - a shell glob pattern defining which files
+#				    to exclude.
+#				    gnutar gets --exclude="pattern"
+#		  list "filename" - a file (on the client!) containing patterns
+#				    re's (1 per line) defining which files to
+#				    exclude.
+#				    gnutar gets --exclude-from="filename"
+#		  Note that the `full pathname' of a file within its
+#		  filesystem starts with `./', because of the way amanda runs
+#		  gnutar: `tar -C $mountpoint -cf - --lots-of-options .' (note
+#		  the final dot!)  Thus, if you're backing up `/usr' with a
+#		  diskfile entry like ``host /usr gnutar-root', but you don't
+#		  want to backup /usr/tmp, your exclude list should contain
+#		  the pattern `./tmp', as this is relative to the `/usr' above.
 #		  Please refer to the man-page of gnutar for more information.
 #		  Default: include all files
 #   holdingdisk	- should the holding disk be used for this dump.  Useful for
