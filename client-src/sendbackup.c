@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.33 1998/02/15 06:41:14 amcore Exp $
+ * $Id: sendbackup.c,v 1.34 1998/02/19 10:04:08 amcore Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -84,7 +84,7 @@ int main P((int argc, char **argv));
 void parse_options P((char *str));
 char *optionstr P((void));
 char *childstr P((int pid));
-int check_status P((int pid, int w));
+int check_status P((int pid, amwait_t w));
 
 int pipefork P((void (*func) P((void)), char *fname, int *stdinfd,
 		int stdoutfd, int stderrfd));
@@ -499,7 +499,8 @@ int pid;
 
 
 int check_status(pid, w)
-int pid, w;
+int pid;
+amwait_t w;
 /*
  * Determine if the child return status really indicates an error.
  * If so, add the error message to the error string; more than one
@@ -706,7 +707,8 @@ int stdoutfd, stderrfd;
 void parse_backup_messages(mesgin)
 int mesgin;
 {
-    int goterror, wpid, retstat;
+    int goterror, wpid;
+    amwait_t retstat;
     char *line;
 
     goterror = 0;

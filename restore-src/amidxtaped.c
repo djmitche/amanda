@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: amidxtaped.c,v 1.18 1998/01/17 19:38:26 amcore Exp $
+/* $Id: amidxtaped.c,v 1.19 1998/02/19 10:04:22 amcore Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -112,6 +112,7 @@ char **argv;
     int ch;
     char *errstr = NULL;
     struct sockaddr_in addr;
+    amwait_t status;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -249,7 +250,7 @@ char **argv;
     }
 
     /* wait for the child to do the restore */
-    if (waitpid(pid, &i, 0) == -1)
+    if (waitpid(pid, &status, 0) == -1)
     {
 	dbprintf(("Error waiting for child"));
 	dbclose();
@@ -261,11 +262,11 @@ char **argv;
        status returned by many errors. Only when the exit status is 1 is it
        guaranteed that an error existed. In all cases we should rewind the
        tape if we can so that a retry starts from the correct place */
-    if (WIFEXITED(i) != 0)
+    if (WIFEXITED(status) != 0)
     {
 
 	dbprintf(("amidxtaped: amrestore terminated normally with status: %d\n",
-		  WEXITSTATUS(i)));
+		  WEXITSTATUS(status)));
     }
     else
     {

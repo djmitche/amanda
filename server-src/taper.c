@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.23 1998/02/18 18:20:59 jrj Exp $
+/* $Id: taper.c,v 1.24 1998/02/19 10:04:26 amcore Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -220,7 +220,7 @@ int rdpipe, wrpipe;
     char **argv;
     char *handle = NULL, *hostname = NULL, *diskname = NULL, *result;
     char tok;
-    int level, fd, data_port, data_socket, retstat, wpid;
+    int level, fd, data_port, data_socket, wpid;
 
     procname = "reader";
     syncpipe_init(rdpipe, wrpipe);
@@ -340,7 +340,7 @@ int rdpipe, wrpipe;
 	    syncpipe_put('Q');	/* tell writer we're exiting gracefully */
 	    aclose(wrpipe);
 
-	    if((wpid = wait(&retstat)) != writerpid) {
+	    if((wpid = wait(NULL)) != writerpid) {
 		fprintf(stderr,
 			"taper: writer wait returned %d instead of %d: %s\n",
 			wpid, writerpid, strerror(errno));

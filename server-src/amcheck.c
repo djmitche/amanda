@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.33 1998/02/04 22:01:36 amcore Exp $
+ * $Id: amcheck.c,v 1.34 1998/02/19 10:04:24 amcore Exp $
  *
  * checks for common problems in server and clients
  */
@@ -94,7 +94,8 @@ char **argv;
     char pid_str[NUM_STR_SIZE];
     int do_clientchk, clientchk_pid, client_probs;
     int do_serverchk, serverchk_pid, server_probs;
-    int opt, size, retstat, result_port, tempfd, mainfd;
+    int opt, size, result_port, tempfd, mainfd;
+    amwait_t retstat;
     pid_t pid;
     extern int optind;
     int l, n, s;

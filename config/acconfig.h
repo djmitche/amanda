@@ -297,4 +297,7 @@
 #undef HAVE_VPRINTF_DECL
 #undef HAVE_VSNPRINTF_DECL
 
+/* Defined if wait() puts the status in a union wait instead of int.  */
+#undef WAIT_USES_UNION
+
 #endif
