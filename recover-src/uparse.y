@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-1998, 2000 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: uparse.y,v 1.5.4.1 1999/03/05 01:31:04 martinea Exp $
+ * $Id: uparse.y,v 1.5.4.2 2000/01/21 05:08:43 oliva Exp $
  *
  * parser for amrecover interactive language
  */
@@ -46,7 +46,8 @@ extern int yylex P((void));
 
 	/* literal keyword tokens */
 
-%token SETHOST SETDISK SETDATE SETMODE CD QUIT DHIST LS ADD ADDX EXTRACT
+%token SETHOST SETDISK SETDATE SETTAPE SETMODE
+%token CD QUIT DHIST LS ADD ADDX EXTRACT
 %token LIST DELETE DELETEX PWD CLEAR HELP LCD LPWD MODE SMB TAR
 
         /* typed tokens */
@@ -76,6 +77,8 @@ set_command:
   |     SETHOST PATH { set_host($2); }
   |     SETDISK PATH PATH { set_disk($2, $3); }
   |     SETDISK PATH { set_disk($2, NULL); }
+  |     SETTAPE PATH { set_tape($2); }
+  |     SETTAPE { set_tape(""); }
   |     CD PATH { set_directory($2); }
   |     SETMODE SMB {
 #ifdef SAMBA_CLIENT

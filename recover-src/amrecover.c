@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-1998, 2000 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.29.4.5 1999/09/19 19:10:23 jrj Exp $
+ * $Id: amrecover.c,v 1.29.4.6 2000/01/21 05:08:31 oliva Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -429,10 +429,8 @@ char **argv;
     server_name = newstralloc(server_name, DEFAULT_SERVER);
 #ifdef DEFAULT_TAPE_SERVER
     tape_server_name = newstralloc(tape_server_name, DEFAULT_TAPE_SERVER);
-    tape_device_name = newstralloc(tape_device_name, DEFAULT_TAPE_DEVICE);
 #else
     amfree(tape_server_name);
-    amfree(tape_device_name);
 #endif
     if (argc > 1 && argv[1][0] != '-')
     {

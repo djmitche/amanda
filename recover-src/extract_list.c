@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-1998, 2000 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43.2.9 1999/11/12 00:54:04 jrj Exp $
+ * $Id: extract_list.c,v 1.43.2.10 2000/01/21 05:08:36 oliva Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1460,6 +1460,12 @@ void extract_files P((void))
 	}
 	/* skip reply number */
 	tape_device_name = newstralloc(tape_device_name, l+4);
+    }
+
+    if (strcmp(tape_device_name, "/dev/null") == 0)
+    {
+	printf("amrecover: warning: using %s as the tape device will not work\n",
+	       tape_device_name);
     }
 
     first=1;

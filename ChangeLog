@@ -1,3 +1,16 @@
+2000-01-21  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* recover-src/uscan.l (settape): Recognize it.
+	* recover-src/uparse.y: Parse it.
+	* recover-src/amrecover.h (set_tape): Declare it.
+	* recover-src/set_commands.c (set_tape): Implement it.
+	* recover-src/help.c (help_list): Document it.
+	* man/amrecover.8.in: Likewise.
+	* recover-src/extract_list.c (extract_files): Warn if tape device is
+	/dev/null.
+	* recover-src/amrecover.c (tape_device_name): Default to
+	server-determined default.
+
 2000-01-17  Thomas Hepper <th@ant.han.de>
 	* changer-src/scsi-changer-driver.c : Typo in CheckMove fixed .
 
@@ -698,7 +711,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.320 2000/01/17 22:43:41 th Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.321 2000/01/21 05:08:04 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
