@@ -1,3 +1,8 @@
+2001-03-13 John R. Jackson <jrj@purdue.edu>
+
+	* recover-src/extract_list.c (extract_files_child): Fix xfsrestore
+	  argument list processing.
+
 2001-03-09 John R. Jackson <jrj@purdue.edu>
 
 	* server-src/taper.c: Initialize tape_fd to -1 and test in a couple
