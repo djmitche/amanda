@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: token.c,v 1.25 2002/02/11 01:32:10 jrjackson Exp $
+ * $Id: token.c,v 1.26 2003/03/26 20:17:13 kovert Exp $
  *
  * token bashing routines
  */
@@ -294,6 +294,7 @@ char *str;	/* the string to quote */
     return buf;
 }
 
+#ifndef HAVE_SHQUOTE
 /* Quote a string so that it can be safely passed to a shell */
 char *shquote(str)
 char *str;	/* the string to quote */
@@ -367,6 +368,7 @@ char *str;	/* the string to quote */
 
     return buf;
 }
+#endif
 
 /* Table lookup.
 */
