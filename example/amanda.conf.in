@@ -77,14 +77,14 @@ holdingdisk hd1 {
 
 # Amanda needs a few Mb of diskspace for the log and debug files,
 # as well as a database.  This stuff can grow large, so the conf directory
-# isn't usually appropriate.  We use /usr/adm.  Create an amanda directory
-# under there.  You need a separate infofile and logfile for each
-# configuration, so create subdirectories for each conf and put the files
-# there.  Specify the filenames below.
+# isn't usually appropriate.  Some sites use /usr/local/var and some /usr/adm.
+# Create an amanda directory under there.  You need a separate infofile and
+# logfile for each configuration, so create subdirectories for each conf and
+# put the files there.  Specify the filenames below.
 
-infofile "@DB_DIR@/@DEFAULT_CONFIG@/curinfo"	# database filename
+infofile "/usr/adm/amanda/@DEFAULT_CONFIG@/curinfo"	# database filename
 logfile  "@LOG_DIR@/@DEFAULT_CONFIG@/log"	# log filename
-indexdir "@DB_DIR@/@DEFAULT_CONFIG@/index"	# index directory
+indexdir "/usr/adm/amanda/@DEFAULT_CONFIG@/index"	# index directory
 
 # tapetypes
 #

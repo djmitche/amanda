@@ -74,14 +74,6 @@
 # CONFIG_DIR=/usr/local/etc/amanda
 
 
-# DB_DIR		--with-dbdir=DIR
-#			Default: $localstatedir/amanda = /usr/local/var/amanda
-#			Directory containing the curinfo database files.
-#			Amanda supports multiple configurations per site;
-#			these are contained in subdirectories of DB_DIR.
-# DB_DIR=/usr/adm/amanda
-
-
 # LOG_DIR		--with-logdir=DIR
 #			Default: $localstatedir/amanda = /usr/local/var/amanda
 #			Directory containing the log files.  Amanda

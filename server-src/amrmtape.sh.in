@@ -71,27 +71,9 @@ CleanTapelist () {
   fi
 
   # Get the location and name of the database filename.
-  exec < amanda.conf || return $?
-  FoundInfoFile=no
-  InfoFile="@DB_DIR@/curinfo"
-  while read Line; do
-    case $Line in
-      infofile*)
-        FoundInfoFile=yes
-        set $Line
-        eval InfoFile=$2
-        ;;
-      *)
-        ;;
-    esac
-  done
-  exec </dev/tty >/dev/tty
-  if [ "xno" = "x${FoundInfoFile}" ]; then
-    log "${Program}: no infofile line found in ${ConfigDir}/${Config}/amanda.conf."
-    return 1
-  fi
+  InfoFile=`getconf${SUF} infofile`
   if [ ! "$InfoFile" ]; then
-    log "${Program}: unable to extract name of infofile from ${ConfigDir}/${Config}/amanda.conf."
+    log "${Program}: unable to find name of infofile from ${ConfigDir}/${Config}/amanda.conf."
     return 1
   fi
   VarDir=`dirname $InfoFile`

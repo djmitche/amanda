@@ -1,9 +1,14 @@
 Version 2.4.0b5
 
+	Remove --with-dbdir option from configure.  This was only used
+	to setup things for the man pages and example files.  Oh.. and
+	amrmtape.  Fix this as well.
+	-scott
+
 	Remove --with-indexdir option from configure.  This is obtained
 	from amanda.conf at run time.  Also fix things so that it *is*
 	obtained from amanda.conf in all cases.
-	- scott
+	-scott
 
 	This is no longer tested on configure.in, since it is
 	expressly forbidden to include kernel headers under glibc,

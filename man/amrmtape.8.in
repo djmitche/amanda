@@ -41,7 +41,7 @@ and database files with
 .I label
 removed, but leave them in
 .I /tmp
-and do not copy them back to @DB_DIR@/\fIconfig\fP.
+and do not update the original copies.
 .TP
 .B -v
 List backups of hosts and disks that are being discarded.
