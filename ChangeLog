@@ -1,4 +1,8 @@
-2004-08-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+2004-08-05  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* man/amanda.8.in: Document 'estimate' dumptype option.
+
+2004-08-05  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* client-src/amqde.c: Change snprintf for ap_snprintf.
 
