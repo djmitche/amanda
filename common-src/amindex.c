@@ -30,14 +30,6 @@
 
 #include "amindex.h"
 
-char *getindexdir(dir)
-char *dir;
-{
-  static char name[1024];
-  sprintf(name, "%s/%s", INDEX_DIR, dir);
-  return name;
-}
-
 char *getindexfname(host, disk, date, level)
 char *host, *disk, *date;
 int level;
@@ -57,9 +49,9 @@ char *getindexname(dir, host, disk, date, level)
 char *dir, *host, *disk, *date;
 int level;
 {
-  char *name = getindexdir(dir);
+  static char name[1024];
   
-  sprintf(name + strlen(name), "/%s", getindexfname(host, disk, date, level));
+  sprintf(name, "%s/%s", dir, getindexfname(host, disk, date, level));
 
   return name;
 }

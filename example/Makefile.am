@@ -3,3 +3,5 @@
 
 EXTRA_DIST =	chg-generic.conf		config.site	\
 		disklist
+
+all : amanda.conf

@@ -239,19 +239,55 @@ static void init_defaults()
 
     /* defaults for exported variables */
 
-    init_string(&conf_org.s, "YOUR ORG");
+    init_string(&conf_org.s,
+#ifdef DEFAULT_CONFIG
+		DEFAULT_CONFIG
+#else
+		"YOUR ORG"
+#endif
+		);
     init_string(&conf_mailto.s, "operators");
-    init_string(&conf_dumpuser.s, "bin");
-    init_string(&conf_tapedev.s, "/dev/rmt8");
+    init_string(&conf_dumpuser.s,
+#ifdef CLIENT_LOGIN
+		CLIENT_LOGIN
+#else
+		"bin"
+#endif
+		);
+    init_string(&conf_tapedev.s,
+#ifdef DEFAULT_TAPE_DEVICE
+		DEFAULT_TAPE_DEVICE
+#else
+		"/dev/rmt8"
+#endif
+		);
     init_string(&conf_tpchanger.s, "");
     init_string(&conf_labelstr.s, ".*");
     init_string(&conf_tapelist.s, "tapelist");
-    init_string(&conf_infofile.s, "/usr/adm/amanda/curinfo");
-    init_string(&conf_logfile.s, "/usr/adm/amanda/log");
+    init_string(&conf_infofile.s,
+#ifdef DB_DIR
+		DB_DIR "/curinfo"
+#else
+		"/usr/adm/amanda/curinfo"
+#endif
+		);
+    init_string(&conf_logfile.s,
+#ifdef LOG_DIR
+		LOG_DIR "/log"
+#else
+		"/usr/adm/amanda/log"
+#endif
+		);
     init_string(&conf_diskfile.s, "disklist");
     init_string(&conf_diskdir.s, "/dumps/amanda");
     init_string(&tapetype_id.s, "EXABYTE");
-    init_string(&conf_indexdir.s, DEFAULT_CONFIG);
+    init_string(&conf_indexdir.s,
+#ifdef INDEX_DIR
+		INDEX_DIR
+#else
+		"/usr/adm/amanda/index"
+#endif
+		);
 
     conf_dumpcycle.i	= 10;
     conf_tapecycle.i	= 15;

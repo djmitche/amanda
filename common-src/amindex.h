@@ -32,7 +32,6 @@
 
 #include "amanda.h"
 
-char *getindexdir P((char *dir));
 char *getindexfname P((char *host, char *disk,
 		       char *date, int level));
 char *getindexname P((char *dir, char *host, char *disk,

@@ -456,7 +456,7 @@ int fd;
 	fprintf(outf, "Tape %s label ok.\n", label);
 
     {
-      char *indexdir = getindexdir(getconf_str(CNF_INDEXDIR));
+      char *indexdir = getconf_str(CNF_INDEXDIR);
       struct stat statbuf;
       if ((stat(indexdir, &statbuf) == -1)
 	  || !S_ISDIR(statbuf.st_mode)

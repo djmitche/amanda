@@ -149,7 +149,7 @@ amcheck.8.in amcleanup.8.in amdump.8.in amflush.8.in amlabel.8.in
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
-TAR = gnutar
+TAR = tar
 default: all
 
 .SUFFIXES:
@@ -293,9 +293,6 @@ distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
 subdir = man
 distdir: $(DISTFILES)
-	here=`cd $(top_builddir) && pwd`; top_distdir=`cd $$top_distdir && pwd` \
-	  && cd $(top_srcdir) \
-	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --foreign man/Makefile
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  test -f $(distdir)/$$file \

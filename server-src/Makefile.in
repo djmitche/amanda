@@ -256,12 +256,7 @@ amtoc.pl.in amverify.sh.in
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
-TAR = gnutar
-DEP_FILES =  .deps/amadmin.P .deps/amcheck.P .deps/amflush.P \
-.deps/amidxtaped.P .deps/amindexd.P .deps/amlabel.P .deps/amtape.P \
-.deps/amtrmidx.P .deps/disk_history.P .deps/driver.P .deps/driverio.P \
-.deps/dumper.P .deps/getconf.P .deps/list_dir.P .deps/planner.P \
-.deps/reporter.P .deps/taper.P
+TAR = tar
 SOURCES = amadmin.c amcheck.c amflush.c amidxtaped.c $(amindexd_SOURCES) amlabel.c amtape.c amtrmidx.c $(driver_SOURCES) dumper.c getconf.c planner.c reporter.c taper.c
 OBJECTS = amadmin.o amcheck.o amflush.o amidxtaped.o $(amindexd_OBJECTS) amlabel.o amtape.o amtrmidx.o $(driver_OBJECTS) dumper.o getconf.o planner.o reporter.o taper.o
 
@@ -455,40 +450,12 @@ distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
 subdir = server-src
 distdir: $(DISTFILES)
-	here=`cd $(top_builddir) && pwd`; top_distdir=`cd $$top_distdir && pwd` \
-	  && cd $(top_srcdir) \
-	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --foreign server-src/Makefile
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  test -f $(distdir)/$$file \
 	  || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
 	  || cp -p $$d/$$file $(distdir)/$$file; \
 	done
-
-MKDEP = gcc -M $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
-
--include .deps/.P
-.deps/.P:
-	test -d .deps || mkdir .deps
-	echo > $@
-
--include $(DEP_FILES)
-$(DEP_FILES): .deps/.P
-
-mostlyclean-depend:
-
-clean-depend:
-
-distclean-depend:
-
-maintainer-clean-depend:
-	rm -rf .deps
-
-.deps/%.P: $(srcdir)/%.c
-	@echo "Computing dependencies for $<..."
-	@o='o';				\
-	test -n "$o" && o='$$o';	\
-	$(MKDEP) $< | sed "s,^\(.*\)\.o:,\1.$$o \1.l$$o $@:," > $@
 info:
 dvi:
 check: all
@@ -529,22 +496,21 @@ maintainer-clean-generic:
 	test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 	test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 mostlyclean:  mostlyclean-binPROGRAMS mostlyclean-libexecPROGRAMS \
-		mostlyclean-compile mostlyclean-tags mostlyclean-depend \
+		mostlyclean-compile mostlyclean-tags \
 		mostlyclean-generic
 
 clean:  clean-binPROGRAMS clean-libexecPROGRAMS clean-compile clean-tags \
-		clean-depend clean-generic mostlyclean
+		clean-generic mostlyclean
 
 distclean:  distclean-binPROGRAMS distclean-libexecPROGRAMS \
-		distclean-compile distclean-tags distclean-depend \
-		distclean-generic clean
+		distclean-compile distclean-tags distclean-generic \
+		clean
 	rm -f config.status
 
 maintainer-clean:  maintainer-clean-binPROGRAMS \
 		maintainer-clean-libexecPROGRAMS \
 		maintainer-clean-compile maintainer-clean-tags \
-		maintainer-clean-depend maintainer-clean-generic \
-		distclean
+		maintainer-clean-generic distclean
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 
@@ -556,8 +522,7 @@ maintainer-clean-libexecPROGRAMS uninstall-libexecPROGRAMS \
 install-libexecPROGRAMS mostlyclean-compile distclean-compile \
 clean-compile maintainer-clean-compile uninstall-binSCRIPTS \
 install-binSCRIPTS tags mostlyclean-tags distclean-tags clean-tags \
-maintainer-clean-tags distdir mostlyclean-depend distclean-depend \
-clean-depend maintainer-clean-depend info dvi installcheck install-exec \
+maintainer-clean-tags distdir info dvi installcheck install-exec \
 install-data install uninstall all installdirs mostlyclean-generic \
 distclean-generic clean-generic maintainer-clean-generic clean \
 mostlyclean distclean maintainer-clean
