@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.74 1998/10/15 02:43:11 martinea Exp $
+ * $Id: planner.c,v 1.75 1998/11/04 01:38:44 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -810,8 +810,10 @@ info_t *ip;
 	if(conf_reserve < 100) {
 	    if(i == 0) lev0_date = ip->inf[0].date;
 	    else if(ip->inf[i].date < lev0_date) continue;
-	    if(ip->inf[i].date > last_date)
+	    if(ip->inf[i].date > last_date) {
+		last_date = ip->inf[i].date;
 		min_level = i;
+	    }
 	}
 	else {
 	    if((tp = lookup_tapelabel(ip->inf[i].label)) == NULL) continue;

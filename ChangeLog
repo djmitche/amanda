@@ -1,3 +1,8 @@
+1998-11-03  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/planner.c (last_level): update last_date otherwise only
+	level 0 or the highest is returned.
+
 1998-11-03  Mike Grupenhoff  <kashmir@munge.com>
 
 	* common-src/alloc.c: const arguments to the stralloc functions
