@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.78 2001/01/25 00:25:30 jrjackson Exp $
+ * $Id: amcheck.c,v 1.79 2001/03/15 02:36:07 jrjackson Exp $
  *
  * checks for common problems in server and clients
  */
@@ -620,7 +620,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	}
 	holdfile = vstralloc(config_dir, "/", "hold", NULL);
 	if(access(holdfile, F_OK) != -1) {
-	    fprintf(outf, "NOTE: hold file %s exists\n", holdfile);
+	    fprintf(outf, "WARNING: hold file %s exists\n", holdfile);
 	}
 	amfree(tapefile);
 	amfree(tape_dir);

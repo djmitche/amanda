@@ -388,7 +388,7 @@ is set to
 .B /dev/null
 and Amanda uses that when debugging to throw all the dump images away.
 .TP
-NOTE: hold file \fIfile\fP exists
+WARNING: hold file \fIfile\fP exists
 (info)
 Hold file
 .I file

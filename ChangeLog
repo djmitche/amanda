@@ -1,5 +1,11 @@
 2001-03-14 John R. Jackson <jrj@purdue.edu>
 
+	* server-src/amcheck.c: Change message from NOTE to WARNING when
+	  the hold file exists.
+	* man/amcheck.8.in: Ditto.
+
+2001-03-14 John R. Jackson <jrj@purdue.edu>
+
 	* client-src/selfcheck.c: Send smbclient via pipe instead of command
 	  line arg.  Various minor cleanups.  Use pipespawn instead of system()
 	  to clean up quoting problems and be consistent with sendsize and
