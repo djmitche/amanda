@@ -1064,7 +1064,7 @@ if test -z "$show_help"; then
         $echo "$progname: warning: \`-version-info' is ignored while linking programs" 1>&2
       fi
 
-      if test -n "$libobjs"; then
+      if test -n "$libobjs" && test "$build_old_libs" = yes; then
         # Transform all the library objects into standard objects.
         compile_command=`$echo "$compile_command " | sed -e 's/\.lo /.o /g' -e 's/ $//'`
         finalize_command=`$echo "$finalize_command " | sed -e 's/\.lo /.o /g' -e 's/ $//'`
