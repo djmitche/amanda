@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-1998, 2000 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.18.2.11 2000/03/06 18:33:06 martinea Exp $
+ * $Id: amlabel.c,v 1.18.2.12 2000/04/09 07:11:58 oliva Exp $
  *
  * write an Amanda label on a tape
  */
@@ -270,39 +270,8 @@ int main(argc, argv)
 	    putchar('\n');
 	    error(errstr);
 	} else {
-	    printf(", checking label"); fflush(stdout);
-
-	    if((errstr = tape_rdlabel(tapename, &olddatestamp, &oldlabel)) != NULL) {
-		putchar('\n');
-		if (strcmp(errstr, "not an amanda tape") != 0)
-		    error(errstr);
-		error("no label found, are you sure %s is non-rewinding?",
-		      tapename);
-	    }
-
-	    if (strcmp("X", olddatestamp) != 0 ||
-		strcmp(label, oldlabel) != 0) {
-		putchar('\n');
-		error("read label %s back, timestamp %s (expected X), what now?",
-		      oldlabel, olddatestamp);
-	    }
-
-	    /* write tape list */
-
-    	    /* XXX add cur_tape number to tape list structure */
-	    remove_tapelabel(label);
-    	    add_tapelabel(0, label);
-       	    conf_tapelist_old = stralloc2(conf_tapelist, ".amlabel");
-	    if (rename(conf_tapelist, conf_tapelist_old) != 0) {
-		if(errno != ENOENT)
-		    error("could not rename \"%s\" to \"%s\": %s",
-			  conf_tapelist, conf_tapelist_old, strerror(errno));
-	    }
-	    amfree(conf_tapelist_old);
-	    if(write_tapelist(conf_tapelist)) {
-	        error("couldn't write tapelist: %s", strerror(errno));
-	    }
-	} /* write tape list */
+	    tape_ok = 0;
+	}
 
 #ifdef HAVE_LINUX_ZFTAPE_H
 	if (is_zftape(tapename) == 1){
@@ -400,6 +369,41 @@ int main(argc, argv)
 #endif /* HAVE_LIBVTBLC */
 	}
 #endif /* HAVE_LINUX_ZFTAPE_H */
+
+	if (tape_ok) {
+	    printf(", checking label"); fflush(stdout);
+
+	    if((errstr = tape_rdlabel(tapename, &olddatestamp, &oldlabel)) != NULL) {
+		putchar('\n');
+		if (strcmp(errstr, "not an amanda tape") != 0)
+		    error(errstr);
+		error("no label found, are you sure %s is non-rewinding?",
+		      tapename);
+	    }
+
+	    if (strcmp("X", olddatestamp) != 0 ||
+		strcmp(label, oldlabel) != 0) {
+		putchar('\n');
+		error("read label %s back, timestamp %s (expected X), what now?",
+		      oldlabel, olddatestamp);
+	    }
+
+	    /* write tape list */
+
+    	    /* XXX add cur_tape number to tape list structure */
+	    remove_tapelabel(label);
+    	    add_tapelabel(0, label);
+       	    conf_tapelist_old = stralloc2(conf_tapelist, ".amlabel");
+	    if (rename(conf_tapelist, conf_tapelist_old) != 0) {
+		if(errno != ENOENT)
+		    error("could not rename \"%s\" to \"%s\": %s",
+			  conf_tapelist, conf_tapelist_old, strerror(errno));
+	    }
+	    amfree(conf_tapelist_old);
+	    if(write_tapelist(conf_tapelist)) {
+	        error("couldn't write tapelist: %s", strerror(errno));
+	    }
+	} /* write tape list */
 
         if(have_changer) {
 	    /* Now we try to inform the changer, about the new label */

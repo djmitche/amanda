@@ -1,3 +1,7 @@
+2000-04-09  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* server-src/amlabel.c (main): Check label *after* writing end mark.
+	
 2000-03-06 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amlabel.c: don't crash if the tapelist file
@@ -790,7 +794,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.339 2000/03/06 18:33:06 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.340 2000/04/09 07:11:56 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
