@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.18 2000/11/21 22:07:32 jrjackson Exp $
+ * $Id: amcheck.c,v 1.50.2.18.2.1 2000/12/24 21:42:58 jrjackson Exp $
  *
  * checks for common problems in server and clients
  */
@@ -609,14 +609,17 @@ int start_server_check(fd, do_localchk, do_tapechk)
     }
 
     /*
-     * Check that the tapelist file is writable if it already exists.
-     * Also, check for a "hold" file (just because it is convenient
-     * to do it here) and warn if tapedev is set to "/dev/null".
+     * Check that the directory for the tapelist file is writable, as well
+     * as the tapelist file itself (if it already exists).  Also, check for
+     * a "hold" file (just because it is convenient to do it here) and warn
+     * if tapedev is set to "/dev/null".
      */
 
     if(do_localchk || do_tapechk) {
 	char *conf_tapelist;
 	char *tapefile;
+	char *tape_dir;
+	char *lastslash;
 	char *holdfile;
 
 	conf_tapelist=getconf_str(CNF_TAPELIST);
@@ -625,9 +628,18 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	} else {
 	    tapefile = stralloc2(config_dir, conf_tapelist);
 	}
-	holdfile = vstralloc(config_dir, "/", "hold", NULL);
-	if(access(config_dir, W_OK) == -1) {
-	    fprintf(outf, "ERROR: conf dir %s: not writable\n", config_dir);
+	/*
+	 * XXX There Really Ought to be some error-checking here... dhw
+	 */
+	tape_dir = stralloc(tapefile);
+	if ((lastslash = strrchr((const char *)tape_dir, '/')) != NULL) {
+	    *lastslash = '\0';
+	/*
+	 * else whine Really Loudly about a path with no slashes??!?
+	 */
+	}
+	if(access(tape_dir, W_OK) == -1) {
+	    fprintf(outf, "ERROR: tapelist dir %s: not writable\n", tape_dir);
 	    tapebad = 1;
 	} else if(access(tapefile, F_OK) == 0 && access(tapefile, W_OK) != 0) {
 	    fprintf(outf, "ERROR: tape list %s: not writable\n", tapefile);
@@ -636,10 +648,12 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	    fprintf(outf, "ERROR: tape list %s: parse error\n", tapefile);
 	    tapebad = 1;
 	}
+	holdfile = vstralloc(config_dir, "/", "hold", NULL);
 	if(access(holdfile, F_OK) != -1) {
 	    fprintf(outf, "NOTE: hold file %s exists\n", holdfile);
 	}
 	amfree(tapefile);
+	amfree(tape_dir);
 	amfree(holdfile);
 	tapename = getconf_str(CNF_TAPEDEV);
 	if (strcmp(tapename, "/dev/null") == 0) {

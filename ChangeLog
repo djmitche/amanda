@@ -1,3 +1,11 @@
+2000-12-23 David Wolfskill  <dhw@whistle.com>
+
+        * server-src/amcheck.c (start_server_check): Change directory
+          writable check to be for the tapelist directory instead of
+	  the config file directory.  Remove config file directory test.
+        * man/amcheck.8.in: Add mention of tapelist directory and do
+	  some other directory writable cleanup.
+
 2000-12-13 John R. Jackson <jrj@purdue.edu>
 
 	* tape-src/Makefile.am: Add RAIT feature to 2.4.2-multitape branch.
@@ -1312,7 +1320,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.423.2.1 2000/12/13 19:25:28 jrjackson Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.423.2.2 2000/12/24 21:42:57 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
