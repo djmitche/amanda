@@ -1,5 +1,5 @@
 #
-# $Id: makefile,v 1.1 2001/04/15 11:12:37 ant Exp $
+# $Id: makefile,v 1.2 2001/08/10 17:12:22 ant Exp $
 # Copyright (c) 1997 by Matthew Jacob
 #
 #	This software is free software; you can redistribute it and/or
@@ -25,14 +25,15 @@
 #		1831 Castro Street
 #		San Francisco, CA, 94131
 
-CC		= cc -qextchk -qlanglvl=ansi -qproto -qmaxmem=3000
+#CC		= cc -qextchk -qlanglvl=ansi -qproto -qmaxmem=3000
+CC		= gcc
 RM		= rm -f
 DEBUG_FLAG	=
 KCFLAGS		= $(DEBUG_FLAG) -O
 CFLAGS		= $(DEBUG_FLAG) -O
 
 LDF1	=	-bI:/lib/kernex.exp -bI:/usr/lib/lowsys.exp
-LDF2	=	-lsys -lcsys
+#LDF2	=	-lsys -lcsys
 
 BINS	=	gscdd defgsc cfggsc ucfggsc tstinq
 DATA	=	gsc.cat
