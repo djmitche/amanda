@@ -1,7 +1,8 @@
 
 AMANDA TAPE CHANGER SUPPORT
 
-Draft 5 - 94/04/02  (send comments to James da Silva <jds@cs.umd.edu>)
+Originally by James da Silva <jds@cs.umd.edu>
+Heavily modified by various contributors
 
 1. INTRODUCTION
 
@@ -46,8 +47,9 @@ The tape changer program must support the following commands:
 		changes to a particular slot
 		outputs to stdout the slot name and name of the 
 			device file to access the tape
-		returns 0 on success, 1 on positioning error (eg
-			at bottom of gravity stacker)
+		returns 0 on success, 
+		returns 1 on positioning error (eg at bottom of
+		    gravity stacker or slot empty)
 		returns 2 any other fatal error
 			error messages to stdout in place of device name
 
@@ -234,11 +236,26 @@ tape.
 
 chg-multi: (former chg-generic)
 
-A tape changer script that allows multiple tape drives in a single
-host to emulate a tape changer.  It ignores `tapedev' and
-`changerdev', as `changerfile' may specify several tape devices to be
-used.  A sample configuration file can be found in
-example/chg-multi.conf.
+A tape changer script that supports several common configurations:
+  - Use multiple tape drives in a single host to emulate a tape
+    changer. This can also be used with a single physical drive to
+    write several tape in an amanda run (check the FAQ: dumps way too big).
+  - Use a gravity stacker or a real changer configured to sequentially
+    load the next tape when the current one is ejected. Also supports
+    a changer which cycles to the first tape after loading the last
+    one.
+  - Use a changer accessed through several "virtual" tape devices
+    which determine which slot actually gets loaded in the tape drive.
+
+The advantage of this changer script is that you do not need to get
+into the complexity of dealing with a real changer interface. All the
+action goes through the tape device interface, with standard "mt"
+commands, which eases many portability issues. Many common tape
+jukeboxes can be configured in a sequential or cycle mode.
+
+chg-multi ignores `tapedev' and `changerdev', as `changerfile' may
+specify several tape devices to be used.  A sample configuration file
+can be found in example/chg-multi.conf.
 
 chg-manual: (former no-changer)
 

@@ -1,3 +1,16 @@
+1999-02-17  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* changer-src/chg-multi.sh.in: minor portability changes
+	* docs/TAPE.CHANGERS: originally by James da Silva
+
+1999-02-17  Jean-Francois Dockes <dockes@cdkit.remcomp.fr>
+
+	* changer-src/chg-multi.sh.in: various portability changes and
+	general fixes, particularly for multieject; new cycle mode
+	* docs/TAPE.CHANGERS: detailed description of chg-multi
+	* example/chg-multi.conf: updated; added reference to
+	docs/TAPE.CHANGERS for details
+
 1999-02-16  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/driverio.h: remove declaration of addfd.

@@ -1,7 +1,7 @@
-#!/bin/sh
+#! /bin/sh
 #
 # Amanda, The Advanced Maryland Automatic Network Disk Archiver
-# Copyright (c) 1991-1998 University of Maryland at College Park
+# Copyright (c) 1991-1999 University of Maryland at College Park
 # All Rights Reserved.
 #
 # Permission to use, copy, modify, distribute, and sell this software and its
@@ -50,68 +50,76 @@ ourconf=`getconf$SUF changerfile`
 
 MT=@MT@
 MTF=@MT_FILE_FLAG@
+EXPR=expr
+# EXPR=/usr/local/bin/expr # in case you need a more powerful expr...
 
 # read in some config parameters
 
-if [ \! -f $ourconf ]; then
+if [ ! -f "$ourconf" ]; then
 	echo "<none> $pname: $ourconf does not exist"
 	exit 2
 fi
 
 firstslot=`awk '$1 == "firstslot" {print $2}' $ourconf 2>/dev/null`
-if [ "$firstslot" = "" ]; then
+if [ -z "$firstslot" ]; then
 	echo "<none> $pname: firstslot not specified in $ourconf"
 	exit 2
 fi
 
 lastslot=`awk '$1 == "lastslot" {print $2}' $ourconf 2>/dev/null`
-if [ "$lastslot" = "" ]; then
+if [ -z "$lastslot" ]; then
 	echo "<none> $pname: lastslot not specified in $ourconf"
 	exit 2
 fi
 
-nslots=`expr $lastslot - $firstslot + 1`
+nslots=`$EXPR $lastslot - $firstslot + 1`
 
 gravity=`awk '$1 == "gravity" {print $2}' $ourconf 2>/dev/null`
-if [ "$gravity" = "" ]; then
+if [ -z "$gravity" ]; then
 	echo "<none> $pname: gravity not specified in $ourconf"
 	exit 2
 fi
 
 needeject=`awk '$1 == "needeject" {print $2}' $ourconf 2>/dev/null`
-if [ "$needeject" = "" ]; then
+if [ -z "$needeject" ]; then
 	echo "<none> $pname: needeject not specified in $ourconf"
 	exit 2
 fi
 
 multieject=`awk '$1 == "multieject" {print $2}' $ourconf 2>/dev/null`
-if [ "$multieject" = "" ]; then
+if [ -z "$multieject" ]; then
 	echo "<none> $pname: multieject not specified in $ourconf"
 	multieject=0
 #	exit 2
 fi
 
 ejectdelay=`awk '$1 == "ejectdelay" {print $2}' $ourconf 2>/dev/null`
-if [ "$ejectdelay" = "" ]; then
+if [ -z "$ejectdelay" ]; then
 	echo "<none> $pname: ejectdelay not specified in $ourconf"
 	ejectdelay=0
 fi
 
 ourstate=`awk '$1 == "statefile" {print $2}' $ourconf 2>/dev/null`
-if [ "$ourstate" = "" ]; then
+if [ -z "$ourstate" ]; then
 	echo "<none> $pname: statefile not specified in $ourconf"
+	exit 2
+fi
+
+# needeject and multieject are incompatible
+if [ $needeject -eq 1 ] && [ $multieject -eq 1 ] ; then
+	echo "<none> $pname: needeject and multieject can't be both enabled in $ourconf"
 	exit 2
 fi
 
 # read in state: only curslot and curloaded at the present time
 
 curslot=`awk '$1 == "curslot" {print $2}' $ourstate 2>/dev/null`
-if [ "$curslot" = "" ]; then
+if [ -z "$curslot" ]; then
 	curslot=$firstslot
 fi
 
 curloaded=`awk '$1 == "curloaded" {print $2}' $ourstate 2>/dev/null`
-if [ "$curloaded" = "" ]; then
+if [ -z "$curloaded" ]; then
 	curloaded=0
 fi
 
@@ -124,6 +132,7 @@ checkgravity=0
 ejectslot=0
 loadslot=0
 slotempty=0
+ejectonly=0
 
 if [ $# -ge 1 ]; then command=$1; else command="-usage"; fi
 
@@ -131,27 +140,43 @@ case "$command" in
 
 -info) # return basic information about changer
 
-	backwards=`expr 1 - $gravity`
+	backwards=`$EXPR 1 - $gravity`
 	echo $curslot $nslots $backwards
 	exit 0
 	;;
 
--reset) # reset changer
+-reset) # reset changer. Actually, we only reset changer state. We
+	# trust that the operator has reloaded a stack and reset the
+	# hardware. In most cases, we do not want to actually do
+	# anything: if the operator has done something with the
+	# hardware, we have no way to know what the actual current
+	# slot is. If the hardware state has not changed, and what is
+	# really wanted is to load the first slot, use "slot first"
+	# instead 
 
 	checkgravity=0
 	loadslot=1
 	newslot=$firstslot
-
+	curslot=$firstslot
 	# XXX put changer-specific reset here, if applicable
 	;;
 
--eject) # eject tape if loaded
+-eject) # eject tape if loaded. Note that if multieject is set, this
+        # only can make sense if the position is last and gravity 1
 
 	checkgravity=0
 	loadslot=0
 	newslot=$curslot
 	ejectslot=1
-
+	ejectonly=1
+	if [ $multieject -eq 1 ] && \
+	    ([ $gravity -eq 0 ] || [ $curslot -ne $lastslot ]) ; then 
+		# Can't do this: if we eject, the stacker is going to
+		# load the next tape, and our state will be botched
+		echo $curslot \
+		   "Can't use -eject with multieject/nogravity/notlastslot"
+		exit 1
+	fi    
 	if [ $curloaded -eq 0 ]; then
 		echo $curslot "slot already empty"
 		exit 1
@@ -167,8 +192,8 @@ case "$command" in
 	case "$slotparm" in
 	[0-9]*)	
 		newslot=$slotparm
-		if [ \( $newslot -gt $lastslot \) -o \
-		     \( $newslot -lt $firstslot \) ]; then
+		if [ $newslot -gt $lastslot ] || \
+		     [ $newslot -lt $firstslot ] ; then
 			echo $newslot "no slot $newslot: legal range is" \
 				"$firstslot ... $lastslot"
 			exit 1
@@ -184,7 +209,7 @@ case "$command" in
 		newslot=$lastslot
 		;;
 	next|advance)
-		newslot=`expr $curslot + 1`
+		newslot=`$EXPR $curslot + 1`
 		if [ $newslot -gt $lastslot ]; then
 			newslot=$firstslot
 		fi
@@ -193,7 +218,7 @@ case "$command" in
 		fi
 		;;
 	prev)
-		newslot=`expr $curslot - 1`
+		newslot=`$EXPR $curslot - 1`
 		if [ $newslot -lt $firstslot ]; then
 			newslot=$lastslot
 		fi
@@ -211,16 +236,15 @@ esac
 
 
 if [ $usage -eq 1 ]; then
-	echo "<none> usage: $pname {-reset | -slot [<slot-number>|current|next|prev|advance]}"
+	echo "<none> usage: $pname {-reset | -slot [<slot-number>|current|next|prev|advance] | -info | -eject}"
 	exit 2
 fi
 
 
 # check for legal move
 
-if [ \( $checkgravity -eq 1 \) -a \( $gravity -ne 0 \) ]; then
-	if [ \( $newslot -lt $curslot \) -o \( "$slotparm" = "prev" \) ]
-	then
+if [ $checkgravity -eq 1 ] && [ $gravity -ne 0 ] ; then
+	if [ $newslot -lt $curslot ] || [ "$slotparm" = "prev" ] ; then
 		echo "$newslot cannot go backwards in gravity stacker"
 		exit 1
 	fi
@@ -234,42 +258,50 @@ if [ "$device" = "" ]; then
 	exit 2
 fi
 
-# check if load needs an eject first
-
-if [ \( $needeject -eq 1 \) -a \( $loadslot -eq 1 \) -a \
-     \( $curloaded -eq 1 \) -a \( $newslot -ne $curslot \) ]; then
-	ejectslot=1
+# generically, first check that the device is there
+if [ ! -c "$device" ]; then
+	echo "$newslot $device: not a device file"
+	exit 2
 fi
 
-
-if [ $ejectslot -eq 1 ]; then	# eject the tape from the drive
-
+# Do the 'mt offline' style of stacker control if applicable
+if [ $multieject -eq 1 ] && [ $loadslot -eq 1 ] && [ $newslot -ne $curslot ]
+then
 	# XXX put changer-specific load command here, if applicable
 
 	curloaded=0		# unless something goes wrong
 	slotempty=0
 
-	# generically, first check that the device is there
-
-	if [ ! -c $device ]; then
-		echo "$newslot $device: not a device file"
-		exit 2
+	if [ $curslot -le $newslot ] ; then
+	    ejectcnt=`$EXPR $newslot - $curslot`
+	else 
+	    ejectcnt=`$EXPR $lastslot - $curslot + $newslot`
 	fi
+	loopslot=$curslot
+	while [ $ejectcnt -gt 0 ]; do
+		$MT $MTF $device offline >/dev/null 2>&1
+		if [ $? -ne 0 ]; then
+		    echo "$newslot $device: unable to change slot $loopslot"
+		    exit 2
+		fi
+		sleep $ejectdelay
+		loopslot=`$EXPR $loopslot + 1`
+		if [ $loopslot -gt $lastslot ] ; then
+		    loopslot=$firstslot
+		fi
+		ejectcnt=`$EXPR $ejectcnt - 1`
+	done
+fi
 
-	# if multiple eject is required, do it now
-	if [ $multieject -eq 1 ]; then
-		loopslot=$curslot
-		while [ $loopslot -lt $newslot ]; do
-			$MT $MTF $device offline >/dev/null 2>&1
-			if [ $? -ne 0 ]; then
-				echo "$newslot $device: unable to change slot $loopslot"
-				exit 2
-			fi
-			loopslot=`/usr/bin/expr $loopslot + 1`
-		done
-	fi
-  
-	# second, try to unload the device
+if [ $ejectonly -eq 1 ] || ([ $needeject -eq 1 ] && \
+   [ $loadslot -eq 1 ] && [ $curloaded -eq 1 ] && [ $newslot -ne $curslot ])
+then
+	# XXX put changer-specific load command here, if applicable
+
+	curloaded=0		# unless something goes wrong
+	slotempty=0
+
+	# try to unload the device
 	$MT $MTF $device offline >/dev/null 2>&1
 	if [ $? -ne 0 ]; then
 		#
@@ -280,7 +312,7 @@ if [ $ejectslot -eq 1 ]; then	# eject the tape from the drive
 		#
 		slotempty=1
 	else
-		sleep $ejectdelay
+	    [ $ejectonly -eq 0 ] && sleep $ejectdelay
 	fi
 fi
 
@@ -291,14 +323,7 @@ if [ $loadslot -eq 1 ]; then	# load the tape from the slot
 	curloaded=1		# unless something goes wrong
 	slotempty=0
 
-	# generically, first check that the device is there
-
-	if [ ! -c $device ]; then
-		echo "$newslot $device: not a device file"
-		exit 2
-	fi
-
-	# second, try to rewind the device
+	# try to rewind the device
 	$MT $MTF $device rewind >/dev/null 2>&1
 	if [ $? -ne 0 ]; then
 		#
