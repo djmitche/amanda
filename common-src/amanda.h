@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.38 1998/01/14 23:48:48 george Exp $
+ * $Id: amanda.h,v 1.39 1998/01/17 14:59:32 amcore Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -285,15 +285,18 @@ extern int errno;
 #   define dbopen()    debug_open()
 #   define dbclose()    debug_close()
 #   define dbprintf(p)  (debug? (debug_printf p, 0) : 0)
+#   define dbfd()    debug_fd()
 
 extern void debug_open P((void));
 extern void debug_close P((void));
 extern void debug_printf P((char *format, ...))
     __attribute__ ((format (printf, 1, 2)));
+extern int  debug_fd P((void));
 #else
 #   define dbopen()
 #   define dbclose()
 #   define dbprintf(p)
+#   define dbfd()    (-1)
 #endif
 
 /* amanda #days calculation, with roundoff */

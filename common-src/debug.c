@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.12 1998/01/07 21:12:01 jrj Exp $
+ * $Id: debug.c,v 1.13 1998/01/17 14:59:34 amcore Exp $
  *
  * debug log subroutines
  */
@@ -146,4 +146,9 @@ void debug_close()
 	error("close debug file: %s", strerror(errno));
     db_fd = -1;
     db_file = NULL;
+}
+
+int debug_fd()
+{
+    return db_fd;
 }

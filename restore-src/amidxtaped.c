@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: amidxtaped.c,v 1.16 1998/01/11 21:14:17 jrj Exp $
+/* $Id: amidxtaped.c,v 1.17 1998/01/17 14:59:37 amcore Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -147,9 +147,20 @@ char **argv;
 #ifdef DEBUG_CODE
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
-#else
-    if ((i = open("/dev/null", O_WRONLY)) != STDERR_FILENO)
+    if(dbfd() != -1 && dbfd() != STDERR_FILENO)
     {
+	if(dup2(dbfd(),STDERR_FILENO) != STDERR_FILENO)
+	{
+	    perror("amidxtaped can't redirect stderr to the debug file");
+	    dbprintf(("amidxtaped can't redirect stderr to the debug file"));
+	    return 1;
+	}
+    }
+#else
+    if ((i = open("/dev/null", O_WRONLY)) == -1 ||
+	(i != STDERR_FILENO &&
+	 (dup2(i, STDERR_FILENO) != STDERR_FILENO ||
+	  close(i) != 0))) {
 	perror("amidxtaped can't redirect stderr");
 	return 1;
     }
