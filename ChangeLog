@@ -1,3 +1,11 @@
+2004-03-19  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* docs/Makefile.am (pkgdata_DATA): Add TOP-TEN-QUESTIONS.
+
+2004-03-18  Stefan G. Weichinger <monitor@oops.co.at>
+
+	* docs/TOP-TEN-QUESTIONS: New file.
+
 2004-03-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/reporter.c (handle_success): Set stats[i].coutsize
