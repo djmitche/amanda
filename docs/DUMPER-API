@@ -1,6 +1,6 @@
 AMANDA DUMPER API
 
-Last modified $Date: 1998/10/01 05:48:34 $
+Last modified $Date: 1998/10/03 13:05:17 $
 
 by Alexandre Oliva <oliva@dcc.unicamp.br>
 
@@ -289,10 +289,14 @@ image should be written to standard output, whereas stderr should be
 used for the user-oriented output of the backup program and other
 messages.
 
-The standard error of `backup' will *always* be fed to the command
-`backup-parse', started with the same syntax as that of `backup'.
-This command must edit its input so that it prints in standard output
-only lines that start with either `| ' for normal output, `? ' for
+If the first line of the standard error of the backup command contains only
+the word PARSE, any further output (stderr) will be fed to the `backup-parse'
+command, that should edit its input so that it prints in standard output
+a formatted-output-backup, otherwise the standard error of the backup
+command should contains the formatted-output-backup.
+
+The syntax of the formatted-output-backup is as follow:
+All lines should start with either `| ' for normal output, `? ' for
 strange output or `& ' for error output.  If the wrapper can determine
 the total backup size from the output of the backup program, it should
 print a line starting with `# ', followed by the total backup size in

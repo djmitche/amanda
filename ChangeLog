@@ -1,3 +1,8 @@
+1998-09-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* docs/DUMPER-API: define PARSE keyword in stderr of the backup
+	command
+
 1998-10-03  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* man/Makefile.am (EXTRA_DIST): make sure the man-pages that are not 
