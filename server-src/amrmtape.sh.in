@@ -145,7 +145,7 @@ CleanCurinfo () {
   DeadLevel=10
   while read Line; do
     case ${Line} in
-      CURINFO*|"#"*|command*|full*|incr*)
+      CURINFO*|"#"*|command*|last_level*|consecutive_runs*|full*|incr*)
 	echo "${Line}"
         ;;
       host*)
