@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.41 1998/04/14 17:11:33 jrj Exp $
+ * $Id: amcheck.c,v 1.42 1998/05/28 15:24:09 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -74,7 +74,7 @@ char *taper_scan P((void));
 
 void usage()
 {
-    error("Usage: amcheck%s [-mwsc] <conf>", versionsuffix());
+    error("Usage: amcheck%s [-M <username>] [-mwsc] <conf>", versionsuffix());
 }
 
 static unsigned long malloc_hist_1, malloc_size_1;
@@ -98,7 +98,9 @@ char **argv;
     extern int optind;
     int l, n, s;
     int fd;
-
+    char *mailto = NULL;
+    extern char *optarg;
+    
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
 	 * Make sure nobody spoofs us with a lot of extra open files
@@ -137,9 +139,10 @@ char **argv;
 
     /* process arguments */
 
-    while((opt = getopt(argc, argv, "mwsc")) != EOF) {
+    while((opt = getopt(argc, argv, "M:mwsc")) != EOF) {
 	switch(opt) {
 	case 'm':	mailout = 1; break;
+	case 'M':	mailout = 1; mailto=optarg; break;
 	case 'w':	overwrite = 1; break;
 	case 's':	do_serverchk = 1; do_clientchk = 0; break;
 	case 'c':	do_serverchk = 0; do_clientchk = 1; break;
@@ -288,7 +291,7 @@ char **argv;
 			" -s ", "\"",
 			  getconf_str(CNF_ORG),
 			  " AMANDA PROBLEM: FIX BEFORE RUN, IF POSSIBLE\"",
-			" ", getconf_str(CNF_MAILTO),
+			" ", (mailto ? mailto : getconf_str(CNF_MAILTO)),
 			" < ", mainfname,
 			NULL);
 	if(system(cmd) != 0)

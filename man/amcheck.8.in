@@ -13,6 +13,9 @@ amcheck \- run Amanda self\-checks
 .SH SYNOPSIS
 .B amcheck
 [
+.BI -M address
+]
+[
 .B -mwsc
 ]
 .I config
@@ -40,6 +43,16 @@ See the
 man page for more details about Amanda.
 .SH OPTIONS
 .TP
+.BI -M address
+When
+.B -m
+is also set, mail the report to
+.I address
+instead of the
+.B mailto
+value from
+.IR amanda.conf .
+.TP
 .B -s
 Only the tape server host checks are run.
 .TP
@@ -58,11 +71,17 @@ non\-destructive way to check for write\-protection).
 The check is only made if the tape is otherwise correct.
 .TP
 .B -m
-Nothing is printed, but mail is sent to the
+Nothing is printed, but mail is sent
+if any errors are detected.
+The mail goes to the
 .B mailto
 address as specified in the
 .I amanda.conf
-file if any errors are detected.
+file or the
+.I address
+value if
+.B -M
+is set.
 .SH EXAMPLES
 In this example, both the tape server and backup client tests are run.
 The results are displayed on standard output.

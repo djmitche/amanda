@@ -1,3 +1,10 @@
+1998-05-28  Tom Lear <toml@accesscom.com>, John R. Jackson  <jrj@purdue.edu>
+
+	* man/amcheck.8.in: document new -Maddress command line flag.
+	* server-src/amcheck.c (usage, main): add -Maddress command line
+	flag to send mail to a specific address instead of mailto from
+	amanda.conf.
+
 1998-05-27  John R. Jackson  <jrj@purdue.edu>
 
 	* man/amrestore.8: update for host/disk/date triplets.
