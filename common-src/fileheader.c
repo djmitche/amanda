@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.11 1998/07/04 00:18:44 oliva Exp $
+ * $Id: fileheader.c,v 1.12 1998/12/07 23:52:53 martinea Exp $
  *
  */
 
@@ -258,6 +258,14 @@ int buflen;
 			    sizeof(file->cont_filename), bp);
 	    }
 #undef SC
+#define SC "PARTIAL="
+	    else if(strncmp(line,SC,strlen(SC)) == 0) {
+		s = line + strlen(SC);
+		if(strncmp(s,"yes",3)==0 || strncmp(s,"YES",3)==0)
+		    file->is_partial=1;
+		ch = *s++;
+	    }
+#undef SC
 #define SC "To restore, position tape at start of file and run:"
 	    else if(strncmp(line,SC,strlen(SC)) == 0) {
 	    }
@@ -360,6 +368,9 @@ int buflen;
 			line = newvstralloc(line, "CONT_FILENAME=",
 					    file->cont_filename, "\n", NULL);
 		        strncat(buffer,line,buflen-strlen(buffer));
+		      }
+		      if(file->is_partial != 0) {
+			strncat(buffer,"PARTIAL=YES\n",buflen-strlen(buffer));
 		      }
 		      strncat(buffer,
 			"To restore, position tape at start of file and run:\n",

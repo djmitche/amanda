@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.h,v 1.6 1998/07/04 00:18:45 oliva Exp $
+ * $Id: fileheader.h,v 1.7 1998/12/07 23:52:54 martinea Exp $
  *
  */
 
@@ -53,6 +53,7 @@ typedef struct file_s {
     string_t recover_cmd;
     string_t uncompress_cmd;
     string_t cont_filename;
+    int is_partial;
 } dumpfile_t;
 
 /* local functions */

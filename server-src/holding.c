@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.19 1998/12/07 01:34:03 martinea Exp $
+ * $Id: holding.c,v 1.20 1998/12/07 23:53:03 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -371,5 +371,50 @@ char *holding_file;
 	filename = newstralloc(filename,file.cont_filename);
     }
     amfree(filename);
+    return 1;
+}
+
+
+int rename_tmp_holding( holding_file, complete )
+char *holding_file;
+int complete;
+{
+    int fd;
+    int buflen;
+    char buffer[TAPE_BLOCK_BYTES];
+    dumpfile_t file;
+    char *filename;
+    char *filename_tmp = NULL;
+
+    filename = stralloc(holding_file);
+    while(filename != NULL && filename[0] != '\0') {
+	filename_tmp = newvstralloc(filename_tmp, filename, ".tmp", NULL);
+	if((fd = open(filename_tmp,O_RDONLY)) == -1) {
+	    fprintf(stderr,"open of %s failed: %s\n",filename_tmp,strerror(errno));
+	    amfree(filename);
+	    amfree(filename_tmp);
+	    return 0;
+	}
+	buflen=fill_buffer(fd, buffer, sizeof(buffer));
+	parse_file_header(buffer, &file, buflen);
+	close(fd);
+	if(complete == 0 ) {
+	    if((fd = open(filename_tmp,O_RDWR)) == -1) {
+		fprintf(stderr,"open of %s failed: %s\n",filename_tmp,strerror(errno));
+		amfree(filename);
+		amfree(filename_tmp);
+		return 0;
+
+	    }
+	    file.is_partial = 1;
+	    write_header(buffer, &file, sizeof(buffer));
+	    write(fd, buffer, sizeof(buffer));
+	    close(fd);
+	}
+	rename(filename_tmp, filename);
+	filename = newstralloc(filename, file.cont_filename);
+    }
+    amfree(filename);
+    amfree(filename_tmp);
     return 1;
 }
