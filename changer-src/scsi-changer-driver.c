@@ -1,5 +1,5 @@
  #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.27.2.7.2.4 2002/01/11 21:11:33 martinea Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.27.2.7.2.5 2002/01/17 19:34:49 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -1680,8 +1680,13 @@ int DecodeSense(RequestSense_T *sense, char *pstring, FILE *out)
     }
   fprintf(out,"##### START DecodeSense\n");
   fprintf(out,"%sSense Keys\n", pstring);
-  fprintf(out,"\tErrorCode                     %02x\n", sense->ErrorCode);
-  fprintf(out,"\tValid                         %d\n", sense->Valid);
+  if (sense->ErrorCode == 0x70)
+    {
+    fprintf(out,"\tExtended Sense                     \n");
+    } else {
+      fprintf(out,"\tErrorCode                     %02x\n", sense->ErrorCode);
+      fprintf(out,"\tValid                         %d\n", sense->Valid);
+    }
   fprintf(out,"\tASC                           %02X\n", sense->AdditionalSenseCode);
   fprintf(out,"\tASCQ                          %02X\n", sense->AdditionalSenseCodeQualifier);
   fprintf(out,"\tSense key                     %02X\n", sense->SenseKey);
@@ -1752,54 +1757,57 @@ int DecodeExtSense(ExtendedRequestSense_T *sense, char *pstring, FILE *out)
   fprintf(out,"\tLog Parameter Code              %02X\n", sense->LogParameterCode);
   fprintf(out,"\tUnderrun/Overrun Counter        %02X\n", sense->UnderrunOverrunCounter);
   fprintf(out,"\tRead/Write Error Counter        %d\n", V3((char *)sense->ReadWriteDataErrorCounter)); 
-  if (sense->PF)
-    fprintf(out,"\tPower Fail\n");
-  if (sense->BPE)
-    fprintf(out,"\tSCSI Bus Parity Error\n");
-  if (sense->FPE)
-    fprintf(out,"\tFormatted Buffer parity Error\n");
-  if (sense->ME)
-    fprintf(out,"\tMedia Error\n");
-  if (sense->ECO)
-    fprintf(out,"\tError Counter Overflow\n");
-  if (sense->TME)
-    fprintf(out,"\tTapeMotion Error\n");
-  if (sense->TNP)
-    fprintf(out,"\tTape Not Present\n");
-  if (sense->LBOT)
-    fprintf(out,"\tLogical Beginning of tape\n");
-  if (sense->TMD)
-    fprintf(out,"\tTape Mark Detect Error\n");
-  if (sense->WP)
-    fprintf(out,"\tWrite Protect\n");
-  if (sense->FMKE)
-    fprintf(out,"\tFilemark Error\n");
-  if (sense->URE)
-    fprintf(out,"\tUnder Run Error\n");
-  if (sense->WEI)
-    fprintf(out,"\tWrite Error 1\n");
-  if (sense->SSE)
-    fprintf(out,"\tServo System Error\n");
-  if (sense->FE)
-    fprintf(out,"\tFormatter Error\n");
-  if (sense->UCLN)
-    fprintf(out,"\tCleaning Cartridge is empty\n");
-  if (sense->RRR)
-    fprintf(out,"\tReverse Retries Required\n");
-  if (sense->CLND)
-    fprintf(out,"\tTape Drive has been cleaned\n");
-  if (sense->CLN)
-    fprintf(out,"\tTape Drive needs to be cleaned\n");
-  if (sense->PEOT)
-    fprintf(out,"\tPhysical End of Tape\n");
-  if (sense->WSEB)
-    fprintf(out,"\tWrite Splice Error\n");
-  if (sense->WSEO)
-    fprintf(out,"\tWrite Splice Error\n");
-  fprintf(out,"\tRemaing 1024 byte tape blocks   %d\n", V3((char *)sense->RemainingTape));
-  fprintf(out,"\tTracking Retry Counter          %02X\n", sense->TrackingRetryCounter);
-  fprintf(out,"\tRead/Write Retry Counter        %02X\n", sense->ReadWriteRetryCounter);
-  fprintf(out,"\tFault Sympton Code              %02X\n", sense->FaultSymptomCode);
+  if (sense->AdditionalSenseLength > sizeof(RequestSense_T))
+    {
+      if (sense->PF)
+        fprintf(out,"\tPower Fail\n");
+      if (sense->BPE)
+        fprintf(out,"\tSCSI Bus Parity Error\n");
+      if (sense->FPE)
+        fprintf(out,"\tFormatted Buffer parity Error\n");
+      if (sense->ME)
+        fprintf(out,"\tMedia Error\n");
+      if (sense->ECO)
+        fprintf(out,"\tError Counter Overflow\n");
+      if (sense->TME)
+        fprintf(out,"\tTapeMotion Error\n");
+      if (sense->TNP)
+        fprintf(out,"\tTape Not Present\n");
+      if (sense->LBOT)
+        fprintf(out,"\tLogical Beginning of tape\n");
+      if (sense->TMD)
+        fprintf(out,"\tTape Mark Detect Error\n");
+      if (sense->WP)
+        fprintf(out,"\tWrite Protect\n");
+      if (sense->FMKE)
+        fprintf(out,"\tFilemark Error\n");
+      if (sense->URE)
+        fprintf(out,"\tUnder Run Error\n");
+      if (sense->WEI)
+        fprintf(out,"\tWrite Error 1\n");
+      if (sense->SSE)
+        fprintf(out,"\tServo System Error\n");
+      if (sense->FE)
+        fprintf(out,"\tFormatter Error\n");
+      if (sense->UCLN)
+        fprintf(out,"\tCleaning Cartridge is empty\n");
+      if (sense->RRR)
+        fprintf(out,"\tReverse Retries Required\n");
+      if (sense->CLND)
+        fprintf(out,"\tTape Drive has been cleaned\n");
+      if (sense->CLN)
+        fprintf(out,"\tTape Drive needs to be cleaned\n");
+      if (sense->PEOT)
+        fprintf(out,"\tPhysical End of Tape\n");
+      if (sense->WSEB)
+        fprintf(out,"\tWrite Splice Error\n");
+      if (sense->WSEO)
+        fprintf(out,"\tWrite Splice Error\n");
+      fprintf(out,"\tRemaing 1024 byte tape blocks   %d\n", V3((char *)sense->RemainingTape));
+      fprintf(out,"\tTracking Retry Counter          %02X\n", sense->TrackingRetryCounter);
+      fprintf(out,"\tRead/Write Retry Counter        %02X\n", sense->ReadWriteRetryCounter);
+      fprintf(out,"\tFault Sympton Code              %02X\n", sense->FaultSymptomCode);
+    }
   return(0);
 }
 
@@ -4194,22 +4202,15 @@ int GetElementStatus(int DeviceFD)
 int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int ClearErrorCounters )
 {
   CDB_T CDB;
-  RequestSense_T *pRequestSense;
   int ret;
   
   DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### START RequestSense\n");
   
-  if ((pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
-    {
-      DebugPrint(DEBUG_INFO, SECTION_SCSI,"RequestSense : malloc failed\n");
-        return(-1);
-    }
-  
-  CDB[0] = SC_COM_REQUEST_SENSE; /* REQUEST SENSE */                       
-  CDB[1] = 0;                   /* Logical Unit Number = 0, Reserved */ 
-  CDB[2] = 0;                   /* Reserved */              
-  CDB[3] = 0;                   /* Reserved */
-  CDB[4] = 0x1D;                /* Allocation Length */                    
+  CDB[0] = SC_COM_REQUEST_SENSE;               /* REQUEST SENSE */                       
+  CDB[1] = 0;                                  /* Logical Unit Number = 0, Reserved */ 
+  CDB[2] = 0;                                  /* Reserved */              
+  CDB[3] = 0;                                  /* Reserved */
+  CDB[4] = sizeof(ExtendedRequestSense_T);     /* Allocation Length */                    
   CDB[5] = (ClearErrorCounters << 7) & 0x80;                 /*  */
   
   memset(ExtendedRequestSense, 0, sizeof(ExtendedRequestSense_T));
@@ -4217,7 +4218,7 @@ int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int
   ret = SCSI_Run(DeviceFD, Input, CDB, 6,                      
 		 (char *) ExtendedRequestSense,
 		 sizeof(ExtendedRequestSense_T),  
-		 (char *) pRequestSense, sizeof(RequestSense_T));
+		 (char *) ExtendedRequestSense, sizeof(ExtendedRequestSense_T));
   
   
   if (ret < 0)
@@ -4228,8 +4229,9 @@ int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int
   if ( ret > 0)
     {
       DecodeExtSense(ExtendedRequestSense, "RequestSense : ",debug_file);
-      return(pRequestSense->SenseKey);
+      return(ExtendedRequestSense->SenseKey);
     }
+  dump_hex((char *)ExtendedRequestSense , sizeof(ExtendedRequestSense_T) , DEBUG_INFO, SECTION_SCSI);
   return(0);
 }
 
@@ -5029,15 +5031,26 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
 
   if (strcmp("sense", option) == 0 || strcmp("all", option) == 0)
     {
-      printf("\nSense Status from robot:\n");
-      RequestSense(INDEX_CHANGER , &ExtRequestSense, 0);
-      DecodeExtSense(&ExtRequestSense, "", out);
+      if (pDev[INDEX_CHANGER].SCSI == 1)
+	{
+           printf("\nSense Status from robot:\n");
+           RequestSense(INDEX_CHANGER , &ExtRequestSense, 0);
+           DecodeExtSense(&ExtRequestSense, "", out);
+	}
       
-      if (pDev[2].SCSI == 1)
+      if (pDev[INDEX_TAPE].SCSI == 1)
         {
           printf("\n");
-          printf("Sense Status from tape:\n");
-          RequestSense(2, &ExtRequestSense, 0); 
+          printf("Sense Status from tape (tapectl):\n");
+          RequestSense(INDEX_TAPE, &ExtRequestSense, 0); 
+          DecodeExtSense(&ExtRequestSense, "", out);
+        }
+
+      if (pDev[INDEX_TAPECTL].SCSI == 1)
+        {
+          printf("\n");
+          printf("Sense Status from tape (tapectl):\n");
+          RequestSense(INDEX_TAPECTL, &ExtRequestSense, 0); 
           DecodeExtSense(&ExtRequestSense, "", out);
         }
     }
@@ -5196,8 +5209,11 @@ int SCSI_Run(int DeviceFD,
 	  DebugPrint(DEBUG_ERROR, SECTION_SCSI,"SCSI_Run (TestUnitReady) unknown (%d)\n",ret);
 	  break;
 	}
-      maxtries++;
-      sleep(1);
+      if (!ok)
+      {
+	sleep(1);
+        maxtries++;
+      }
     }
   
   DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_Run TestUnitReady after %d sec:\n",maxtries);
@@ -5932,6 +5948,9 @@ arglist_function2(void DebugPrint, int, level, int, section, char *, fmt)
   extern changer_t chg;
   int dlevel,dsection;
 
+  time_t ti;
+
+  time(&ti);
   if (chg.debuglevel)
     {
       sscanf(chg.debuglevel,"%d:%d", &dlevel, &dsection);
@@ -5946,7 +5965,12 @@ arglist_function2(void DebugPrint, int, level, int, section, char *, fmt)
     {
       if (section == dsection || dsection == 0)
 	{
-	  dbprintf(("%s", buf));
+	  if (index(buf, '\n') != NULL && strlen(buf) > 1)
+          {
+	     dbprintf(("%d:%s", ti, buf));
+	  } else {
+	     dbprintf(("%s", buf));
+	  }
 	}
     }
   arglist_end(argp);  

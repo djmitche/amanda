@@ -1,3 +1,20 @@
+2002-01-17  Thomas Hepper <th@ant.han.de>
+
+	* changer-src/scsi-changer-driver.c (DecodeSense): Check if it is
+	  an normal or an extended result from request sense, and only
+	  print the correct infos for the detected type.
+	* changer-src/scsi-changer-driver.c (RequestSense): Use the passed
+	  pointer to store the result from request sense. Do not allocate
+	  an own buffer. Fixed the bufer size which is passed to teh SCSI
+	  function.
+	* changer-src/scsi-changer-driver.c (ChangerStatus): Use the macros
+	  for setting the device to use for query, don't use fix values.
+	* changer-src/scsi-changer-driver.c (SCSI_Run): skip the sleep
+	  if the status is ok, only sleep if we will loop.
+	* changer-src/scsi-changer-driver.c (DebugPrint): Print an timestamp
+	  to see how many time is used between the prints and so see where
+	  the time is gone.
+
 2002-01-13  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* common-src/fileheader.h (dumpfile_t): Add blocksize field.
