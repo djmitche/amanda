@@ -562,6 +562,14 @@ The file name for the active
 .I tapelist
 file.
 .TP
+.BS tapebufs int
+Default:
+.IR 20 .
+The number of buffers used by the tape process to hold data as it
+is read from the network or disk before it is written to tape.
+Each buffer is a little larger than 32 KBytes and is held in
+a shared memory region.
+.TP
 .BN reserve number
 Default:
 .IR 100 (percent)

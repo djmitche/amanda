@@ -1,3 +1,7 @@
+1998-09-21  John R. Jackson  <jrj@purdue.edu>
+
+	* man/amanda.8.in: document the new "tapebufs" parameter.
+
 1998-09-21  Kelly Setzer  <setzer@telalink.net>
 
 	* server-src/taper.c (NBUFS): replaced with conf_tapebufs
