@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.28.2.4.4.3.2.2 2001/12/29 21:41:31 martinea Exp $
+ * $Id: amrestore.c,v 1.28.2.4.4.3.2.3 2002/01/14 00:27:27 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -298,7 +298,8 @@ int isafile;
 	/* remove CONT_FILENAME from header */
 	cont_filename = stralloc(file->cont_filename);
 	memset(file->cont_filename,'\0',sizeof(file->cont_filename));
-	build_header(buffer, file, bytes_read, DISK_BLOCK_BYTES);
+	file->blocksize = DISK_BLOCK_BYTES;
+	build_header(buffer, file, bytes_read);
 
 	if((w = fullwrite(out, buffer, DISK_BLOCK_BYTES)) != DISK_BLOCK_BYTES) {
 	    if(w < 0) {

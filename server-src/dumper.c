@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.14.2.7.2.2 2001/12/30 17:26:23 martinea Exp $
+/* $Id: dumper.c,v 1.75.2.14.2.7.2.3 2002/01/14 00:27:27 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -851,6 +851,7 @@ filetype_t type;
     file->program[sizeof(file->program)-1] = '\0';
     strncpy(file->recover_cmd, recover_cmd, sizeof(file->recover_cmd)-1);
     file->recover_cmd[sizeof(file->recover_cmd)-1] = '\0';
+    file->blocksize = DISK_BLOCK_BYTES;
 
     if (srvcompress) {
 	file->compressed=1;
@@ -892,7 +893,7 @@ dumpfile_t *file;
     char buffer[DISK_BLOCK_BYTES];
     int	 written;
 
-    build_header(buffer, file, sizeof(buffer), sizeof(buffer));
+    build_header(buffer, file, sizeof(buffer));
 
     written = fullwrite(outfd, buffer, sizeof(buffer));
     if(written == sizeof(buffer)) return 0;

@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: tapeio.c,v 1.20.4.7.4.4.2.1 2001/12/30 17:26:23 martinea Exp $
+ * $Id: tapeio.c,v 1.20.4.7.4.4.2.2 2002/01/14 00:27:28 martinea Exp $
  *
  * implements generic tape I/O functions
  */
@@ -851,7 +851,8 @@ tapefd_wrlabel(fd, datestamp, label, size)
 	strncpy(file.name, label, sizeof(file.name) - 1);
 	file.name[sizeof(file.name) - 1] = '\0';
 	buffer = alloc(size);
-	build_header(buffer, &file, size, 0);
+	file.blocksize = size;
+	build_header(buffer, &file, size);
 	tapefd_setinfo_host(fd, NULL);
 	tapefd_setinfo_disk(fd, label);
 	tapefd_setinfo_level(fd, -1);
@@ -906,7 +907,8 @@ tapefd_wrendmark(fd, datestamp, size)
     strncpy(file.datestamp, datestamp, sizeof(file.datestamp) - 1);
     file.datestamp[sizeof(file.datestamp) - 1] = '\0';
     buffer = alloc(size);
-    build_header(buffer, &file, size, 0);
+    file.blocksize = size;
+    build_header(buffer, &file, size);
     tapefd_setinfo_host(fd, NULL);
     tapefd_setinfo_disk(fd, "TAPEEND");
     tapefd_setinfo_level(fd, -1);

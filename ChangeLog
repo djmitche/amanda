@@ -1,3 +1,18 @@
+2002-01-13  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* common-src/fileheader.h (dumpfile_t): Add blocksize field.
+	* common-src/fileheader.h (build_header): Change prototype.
+	* common-src/fileheader.c (fh_init): blocksize default to
+	  DISK_BLOCK_BYTES.
+	* common-src/fileheader.c (parse_file_header): Parse BLOCKSIZE= line.
+	* common-src/fileheader.c (build_header): Remove blocksize parameter,
+	  write the BLOCKSIZE= line.
+	* tape-src/tapeio.c: set file.blocksize, Change call to build_header.
+	* restore-src/amrestore.c: Ditto.
+	* server-src/dumper.c: Ditto.
+	* server-src/taper.c: Ditto.
+	* server-src/holding.c: Ditto.
+
 2002-01-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* changer-src/scsi-changer-driver.c (SCSI_ReadElementStatus):
