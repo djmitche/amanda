@@ -94,8 +94,8 @@ BEGIN{
 			  file_dump++;
 			  dmpr_strt[$6]=$4;
 			  host[$6]=$10;
-			  disk[$6]=$11;
-			  level[$6]=$12;
+			  disk[$6]=$12;
+			  level[$6]=$14;
 			}
 			else if( $7 == "FILE-WRITE") file_write++;
 			else if( $7 == "START-TAPER") fil = $8;
@@ -115,6 +115,7 @@ BEGIN{
 		}
 	}
 	else if( $1 == "GENERATING")        sched_start=NR;
+	else if( $1 == "ENDFLUSH")          sched_start=NR;
 	else if( $1 == "DELAYING")          do_moves();    # find estimated size
 	else if( $1 == "dumper:") {
 		if($4 != "starting" && $2 != "pid" && $2 != "stream_client:" && $2 != "dgram_bind:") 
