@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.39.2.1 1998/11/05 21:07:45 martinea Exp $
+ * $Id: amindexd.c,v 1.39.2.2 1999/02/14 16:46:14 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -47,13 +47,13 @@
 #include "dgram.h"
 #include "version.h"
 #include "protocol.h"
-#include "version.h"
 #include "amindex.h"
 #include "disk_history.h"
 #include "list_dir.h"
 #include "logfile.h"
 #include "token.h"
 #include "find.h"
+#include "tapefile.h"
 
 #ifdef HAVE_NETINET_IN_SYSTM_H
 #include <netinet/in_systm.h>
@@ -429,17 +429,6 @@ char *config;
 int build_disk_table P((void))
 {
     char date[100];
-    char *host;
-    int level;
-    char *tape;
-    int file;
-    char *status;
-    char *cmd = NULL;
-    FILE *fp;
-    int first_line = 0;
-    char *s;
-    int ch;
-    char *line;
     find_result_t *find_output;
 
     if (config == NULL || dump_hostname == NULL || disk_name == NULL) {

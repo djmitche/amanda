@@ -1,5 +1,13 @@
 1999-02-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amindexd.c: remove duplication inclusion of version.h.
+	Include tapefile.h to get read_tapelist() prototype.
+	* server-src/amindexd.c (build_disk_table): remove a plethora of
+	unused local vars.
+	* server-src/planner.c: FORCE_FULL command was not cleared.
+
+1999-02-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amflush.c (flush_holdingdisk): don't update the database
 	when flushing a partial dump.
 

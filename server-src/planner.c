@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.7 1999/01/23 14:11:53 martinea Exp $
+ * $Id: planner.c,v 1.76.2.8 1999/02/14 16:46:16 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -548,7 +548,7 @@ disk_t *dp;
 
 	    /* clear force command */
 	    if(info.command & FORCE_FULL)
-		info.command ^ FORCE_FULL;
+		info.command ^= FORCE_FULL;
 	    if(put_info(dp->host->hostname, dp->name, &info))
 		error("could not put info record for %s:%s: %s",
 		      dp->host->hostname, dp->name, strerror(errno));
@@ -606,7 +606,7 @@ disk_t *dp;
 	    /* update the date field */
 	    info.inf[0].date = today;
 	    if(info.command & FORCE_FULL)
-		info.command ^ FORCE_FULL;
+		info.command ^= FORCE_FULL;
 	    ep->next_level0 += conf_dumpcycle;
 	    ep->last_level = 0;
 	    if(put_info(dp->host->hostname, dp->name, &info))
