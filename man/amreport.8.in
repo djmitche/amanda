@@ -130,7 +130,7 @@ hardcopy log of the tapes which can be kept in a 3-ring binder.
 amanda(8),
 amflush(8)
 .SH BUGS
-.B The function of rotating logs probably should not be part of
+The function of rotating logs probably should not be part of
 .B amreport
-since they are 2 different funtions and really have nothing to
-do with each other.
+since it is a different funtion and really has nothing to
+do with generating the report.
