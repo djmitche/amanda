@@ -1,3 +1,9 @@
+1998-06-10  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* tape-src/tapetype.c: new program: calculates tapetype parameters.
+	* tape-src/Makefile.am (EXTRA_PROGRAMS): added tapetype.
+	* example/amanda.conf.in: point to tapetype program.
+
 1998-06-09  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/SAMBA: added notes about (not) backing up registry files and

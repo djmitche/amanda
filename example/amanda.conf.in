@@ -102,47 +102,44 @@ indexdir "/usr/adm/amanda/@DEFAULT_CONFIG@/index"	# index directory
 #tapelist "/usr/adm/amanda/@DEFAULT_CONFIG@/tapelist"	# list of used tapes
 # tapelist is stored, by default, in the directory that contains amanda.conf
 
+
 # tapetypes
-#
-# Define the type of tape you use here, and use it in "tapetype" above.
-# Some typical types of tapes are included here.  The tapetype tells amanda
-# how many MB will fit on the tape, how big the filemarks are, and how
-# fast the tape device is.
-#
+
+# Define the type of tape you use here, and use it in "tapetype"
+# above.  Some typical types of tapes are included here.  The tapetype
+# tells amanda how many MB will fit on the tape, how big the filemarks
+# are, and how fast the tape device is.
+
 # A filemark is the amount of wasted space every time a tape section
-# ends.  The only way I can think of to find it out is to write a
-# single tape section until tape finishes, rewind it, then write fixed
-# size tape sections, then compute how much space was wasted.
-#
-# There's a script by Icarus Sparry <I.Sparry@bath.ac.uk> that may help
-# calculating the size of a tape.  Get it from the URL
-# http://www.amanda.org/amanda-users/users/Oct-Dec.1995/msg00208.html
-#
-# For completeness Amanda should calculate the inter-record gaps too, but it
-# doesn't.  For EXABYTE and DAT tapes this is ok.  Anyone using 9 tracks for
-# amanda and need IRG calculations?  Drop me a note if so.
+# ends.  If you run `make tapetype' in tape-src, you'll get a program
+# that generates tapetype entries, but it is slow as hell, use it only
+# if you really must and, if you do, make sure you post the data to
+# the amanda mailing list, so that others can use what you found out
+# by searching the archives.
+
+# For completeness Amanda should calculate the inter-record gaps too,
+# but it doesn't.  For EXABYTE and DAT tapes this is ok.  Anyone using
+# 9 tracks for amanda and need IRG calculations?  Drop me a note if
+# so.
 
 # If you want amanda to print postscript paper tape labels
 # add a line after the comment in the tapetype of the form
 #    lbl-templ "/path/to/postscript/template/label.ps"
-#
+
 # if you want the label to go to a printer other than the default
 # for your system, you can also add a line above for a different
 # printer. (i usually add that line after the dumpuser specification)
-#
+
 # dumpuser "operator"     # the user to run dumps under
 # printer "mypostscript"  # printer to print paper label on
-#
+
 # here is an example of my definition for an EXB-8500
-#
+
 # define tapetype EXB-8500 {
-#     comment "Exabyte EXB-8500 drive on decent machine"
+# ...
 #     lbl-templ "/usr/local/amanda/config/lbl.exabyte.ps"
-#     length 4200 mbytes
-#     filemark 48 kbytes
-#     speed 474 kbytes                    
 # }
-#
+
 
 define tapetype QIC-60 {
     comment "Archive Viper"
@@ -439,3 +436,9 @@ define interface le0 {
     comment "10 Mbps ethernet"
     use 400 kbps
 }
+
+# You may include other amanda configuration files, so you can share
+# dumptypes, tapetypes and interface definitions among several
+# configurations.
+
+#includefile "/usr/local/amanda.conf.main"

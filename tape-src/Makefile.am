@@ -25,3 +25,6 @@ libamtape_a_SOURCES =	$(libamtape_la_SOURCES)
 
 noinst_HEADERS = 	tapeio.h
 
+EXTRA_PROGRAMS = 	tapetype
+tapetype_LDADD = libamtape.$(LIB_EXTENSION) \
+	../common-src/libamanda.$(LIB_EXTENSION)
