@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.38.2.6 1998/10/02 17:06:23 jrj Exp $
+/* $Id: taper.c,v 1.38.2.7 1998/11/04 04:13:00 oliva Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -471,8 +471,8 @@ buffer_t *bp;
 
 
 void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
-int fd, level, port_flag;
-char *handle, *hostname, *diskname, *datestamp;
+    int fd, level, port_flag;
+    char *handle, *hostname, *diskname, *datestamp;
 {
     buffer_t *bp;
     char tok;
@@ -678,8 +678,11 @@ char *handle, *hostname, *diskname, *datestamp;
 		        hostname, diskname, level, errstr);
 	    } else {
 		putresult("TAPE-ERROR %s %s\n", handle, q);
-		log_add(L_FAIL, "%s %s %d %s",
-			hostname, diskname, level, errstr);
+		log_add(L_FAIL, "%s %s %d [out of tape]",
+			hostname, diskname, level);
+		log_add(L_ERROR,"no-tape [%s]", errstr);
+		amfree(q);
+		exit(1);
 	    }
 	    amfree(q);
 	    return;
