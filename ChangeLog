@@ -1,5 +1,9 @@
 2002-11-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* docs/TAPE.CHANGERS: Sync with 2.4.3.
+
+2002-11-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amadmin.c: Cleanup.
 
 2002-11-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>

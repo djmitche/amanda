@@ -521,6 +521,28 @@ Use the mtio ioctl to eject the tape, use only if the standard (1) does
 not work, and send the debug output (/tmp/amanda/chg-scsi.debug) to
 th@ant.han.de
 
+changerident <ident>
+
+With this it is possible to specify which internal driver to use for
+controlling/error handling of the robot
+
+tapeident <ident>
+
+Some as above but for the tape.
+
+
+New command line option:
+-status [all|types|robot|sense|ModeSenseRobot|ModeSenseTape|fd]
+
+<all> will show the result form all options.
+<types> will list the known driver types.
+<robot> will show the status of all elements (tape/robot/slots..)
+<sense> will show the result from a request sense
+<ModeSenseRobot> will show the sense page from the robot
+<ModeSenseTape> will show the sense page from the tape
+<fd> will show the devices which are open, and some info about it.
+
+
 At the moment changer with tape and robot on the same SCSI id (
 but on different luns) will run on the following plattforms
 HP_UX 10.20	
@@ -538,18 +560,21 @@ FreeBSD
 
 Tape and robot on different IDs with special modules run on:
 
-Solaris	with sst kernel module, which is not any longer neede in solaris 2.8. See in the contrib/sst directory
-The configuration on solaris 2.8 with the sgen driver is done by creating the file 
-/kernel/drv/sgen.conf
+Solaris	with sst kernel module, which is not any longer needed in solaris 2.8.
+See in the contrib/sst directory
+The configuration on solaris 2.8 with the sgen driver is done by creating
+the file /kernel/drv/sgen.conf
 This file should contain at the beginning the following
 device-type-config-list="changer","sequential"
 
-This will force the driver to attach only to the devices with type either changer (the robot) and sequential (the tape).
-Next you must tell the driver on which id it should check for devices (tape on id 5, robot on id 6),
+This will force the driver to attach only to the devices with type either
+changer (the robot) and sequential (the tape).
+Next you must tell the driver on which id it should check for devices
+(tape on id 5, robot on id 6 in this example),
 name="sgen" class="scsi" target=5 lun=0;
 name="sgen" class="scsi" target=6 lun=0;
 
-This will create the 2 device files 
+This will create the 2 device files
 /dev/scsi/sequential/c0t5d0         (scsitapedev option in chg-scsi.conf)
 /dev/scsi/changer/c0t6d0            (changer option in chg-scsi.conf)
 
@@ -586,7 +611,7 @@ will give you a list of known devices.
 Don't specify dev and scsitapedev in your chg-scsi.conf !!, this will
 not work.
 
-On Linux you need either sg (generic scsi) as module or it mus be compiled
+On Linux you need either sg (generic scsi) as module or it must be compiled
 into the kernel. If the sg driver doses not work try to use the ioctl interface.
 For that you have to undef the LINUX_CHG define in changer-src/scsi-linux.c
 Also you have to change the NORMAL_TIMEOUT in /usr/src/linux/drivers/scsi/scsi_ioctl.c
@@ -603,6 +628,7 @@ BreeceHill Q2.15 (EXB-120) and DLT7000 tape
 Powerstor L200 and DLT7000 
 ARCHIVE Python 28849-XXX 
 TANDBERG TDS 1420
+ADIC VLS DLT Library
 
 It is now possible with a changer that has barcode reader to load tapes faster.
 Also amdump will find tapes faster. Every time a tape is labeled the information
