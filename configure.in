@@ -47,6 +47,17 @@ LOCPATH=`(
 SYSLOCPATH="$SYSPATH:$LOCPATH"
 LOCSYSPATH="$LOCPATH:$SYSPATH"
 
+AC_ARG_WITH(cflags,
+    [  --with-cflags=CFLAGS   arguments to the c compiler (-Wall, -g, etc)],
+    [
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-includes option.])
+	    ;;
+	esac
+	CFLAGS="$withval"
+    ])
+
 AC_ARG_WITH(includes,
     [  --with-includes=DIR    site header files for readline, etc in DIR],
     [

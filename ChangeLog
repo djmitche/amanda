@@ -1,5 +1,10 @@
 1999-04-16  Mike Grupenhoff <kashmir@munge.com>
 
+	* configure.in: implement --with-cflags to allow turning on
+	compiler warnings and optimizations
+
+1999-04-16  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/event.c (gethandle, puthandle): new functions that
 	keep a cache of handles to reduce calls to malloc/free.
 
