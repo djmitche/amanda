@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.h,v 1.9 1997/08/27 08:13:14 amcore Exp $
+ * $Id: driver.h,v 1.10 1997/09/23 02:41:08 george Exp $
  *
  * defines and globals for the Amanda driver
  */
@@ -69,7 +69,7 @@ typedef struct sched_s {
 
 typedef struct holdalloc_s {
     int allocated_dumpers;
-    int allocated_space;
+    unsigned long allocated_space;
 } holdalloc_t;
 
 #define holdalloc(hp)	((holdalloc_t *) (hp)->up)
@@ -130,7 +130,7 @@ disklist_t read_schedule P((disklist_t *waitqp));
 int free_kps P((interface_t *ip));
 void allocate_bandwidth P((interface_t *ip, int kps));
 void deallocate_bandwidth P((interface_t *ip, int kps));
-int free_space P((void));
+unsigned long free_space P((void));
 holdingdisk_t *find_diskspace P((unsigned long size));
 char *diskname2filename P((char *dname));
 void assign_holdingdisk P((holdingdisk_t *holdp, disk_t *diskp));

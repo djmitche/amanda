@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.12 1997/09/11 06:28:58 amcore Exp $
+ * $Id: driver.c,v 1.13 1997/09/23 02:41:06 george Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -136,7 +136,7 @@ char **main_argv;
 	for(hdp = holdingdisks, dsk = 0; hdp != NULL; hdp = hdp->next, dsk++) {
 	    hdp->up = (void *)alloc(sizeof(holdalloc_t));
 	    holdalloc(hdp)->allocated_dumpers = 0;
-	    holdalloc(hdp)->allocated_space = 0;
+	    holdalloc(hdp)->allocated_space = 0L;
 
 	    if(get_fs_stats(hdp->diskdir, &fs) == -1
 	       || access(hdp->diskdir, W_OK) == -1) {
@@ -180,7 +180,7 @@ char **main_argv;
 
     log(L_STATS, "startup time %s", walltime_str(curclock()));
 
-printf("driver: start time %s inparallel %d bandwidth %d diskspace %d",
+printf("driver: start time %s inparallel %d bandwidth %d diskspace %ld",
        walltime_str(curclock()), inparallel, free_kps((interface_t *)0), free_space());
 printf(" dir %s datestamp %s driver: drain-ends tapeq %s big-dumpers %d\n",
        "OBSOLETE", datestamp,  use_lffo? "LFFO" : "FIFO", big_dumpers);
@@ -915,15 +915,17 @@ int kps;
 }
 
 /* ------------ */
-int free_space()
+unsigned long free_space()
 {
     holdingdisk_t *hdp;
-    int total_free, diff;
+    unsigned long total_free;
+    long diff;
 
-    total_free = 0;
+    total_free = 0L;
     for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next) {
 	diff = hdp->disksize - holdalloc(hdp)->allocated_space;
-	if(diff > 0) total_free += diff;
+	if(diff > 0)
+	    total_free += diff;
     }
     return total_free;
 }
@@ -936,7 +938,7 @@ unsigned long size;
 
     minp = NULL;
     for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next)
-	if(hdp->disksize - holdalloc(hdp)->allocated_space >= size) {
+	if(holdalloc(hdp)->allocated_space + size <= hdp->disksize) {
 	    if(!minp || (holdalloc(minp)->allocated_dumpers >
 			 holdalloc(hdp)->allocated_dumpers))
 		minp = hdp;
@@ -1000,7 +1002,7 @@ tok_t tok;
     holdp = sched(diskp)->holdp;
 
 #ifdef HOLD_DEBUG
-    printf("adjust: before: hdisk %s alloc space %d dumpers %d\n",
+    printf("adjust: before: hdisk %s alloc space %ld dumpers %d\n",
 	   holdp->diskdir, holdalloc(holdp)->allocated_space,
 	   holdalloc(holdp)->allocated_dumpers);
 #endif
@@ -1038,7 +1040,7 @@ tok_t tok;
 	assert(0);
     }
 #ifdef HOLD_DEBUG
-    printf("adjust: after: hdisk %s alloc space %d dumpers %d\n",
+    printf("adjust: after: hdisk %s alloc space %ld dumpers %d\n",
 	   holdp->diskdir, holdalloc(holdp)->allocated_space,
 	   holdalloc(holdp)->allocated_dumpers);
 #endif
@@ -1063,13 +1065,14 @@ void holdingdisk_state(time_str)
 char *time_str;
 {
     holdingdisk_t *hdp;
-    int dsk, diff;
+    int dsk;
+    long diff;
 
     printf("driver: hdisk-state time %s", time_str);
 
     for(hdp = holdingdisks, dsk = 0; hdp != NULL; hdp = hdp->next, dsk++) {
 	diff = hdp->disksize - holdalloc(hdp)->allocated_space;
-	printf(" hdisk %d: free %d dumpers %d", dsk, diff,
+	printf(" hdisk %d: free %ld dumpers %d", dsk, diff,
 	       holdalloc(hdp)->allocated_dumpers);
     }
     printf("\n");
@@ -1227,7 +1230,7 @@ void short_dump_state()
     wall_time = walltime_str(curclock());
 
     printf("driver: state time %s ", wall_time);
-    printf("free kps: %d space: %d taper: ", free_kps((interface_t *)0), free_space());
+    printf("free kps: %d space: %ld taper: ", free_kps((interface_t *)0), free_space());
     if(degraded_mode) printf("DOWN");
     else if(!taper_busy) printf("idle");
     else printf("writing");
@@ -1251,7 +1254,7 @@ char *str;
 
     printf("================\n");
     printf("driver state at time %s: %s\n", walltime_str(curclock()), str);
-    printf("free kps: %d, space: %d\n", free_kps((interface_t *)0), free_space());
+    printf("free kps: %d, space: %ld\n", free_kps((interface_t *)0), free_space());
     if(degraded_mode) printf("taper: DOWN\n");
     else if(!taper_busy) printf("taper: idle\n");
     else printf("taper: writing %s:%s.%d est size %ld\n",
