@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb5-security.c,v 1.8 2003/05/25 17:22:20 kovert Exp $
+ * $Id: krb5-security.c,v 1.9 2003/05/25 23:38:54 kovert Exp $
  *
  * krb5-security.c - kerberos V5 security module
  */
@@ -58,7 +58,11 @@
 #endif  /* ! HAVE_ATEXIT */
 #endif
 
+#ifndef KRB5_HEIMDAL_INCLUDES
 #include <gssapi/gssapi_generic.h>
+#else
+#include <gssapi/gssapi.h>
+#endif
 #include <krb5.h>
 #include <com_err.h>
 

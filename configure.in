@@ -113,7 +113,7 @@ if test "$LIBRARY_DIRS"; then
 	for dir in $LIBRARY_DIRS; do
 	    if test -d "$dir"; then
 		case "$target" in
-		  *-solaris2*)
+		  *-solaris2*,*-netbsd*)
 			AMANDA_LDFLAGS="$AMANDA_LDFLAGS -R$dir"
 			;;
 		esac
@@ -923,7 +923,12 @@ y | ye | yes) : ;;
    ;;
 esac
 
+# if found, force the static versions of these libs (.a) by linking directly
+# with the .a files.  I don't know how to get -R dependancies checked
+# in autoconf at this time. -kashmir
 AC_MSG_CHECKING(for Kerberos V)
+KRB5_DIR_FOUND=""
+KRB5_CFLAGS=""
 for dir in $KRB5_SPOTS; do
     k5libdir=${dir}/lib
     if test -f ${k5libdir}/libkrb5.a -a -f ${k5libdir}/libgssapi_krb5.a -a -f ${k5libdir}/libcom_err.a; then
@@ -934,18 +939,39 @@ for dir in $KRB5_SPOTS; do
 	else
 	    K5CRYPTO=""
 	fi
-	AC_MSG_RESULT(found in $dir)
-	KRB5_SECURITY=yes
-	AC_DEFINE(KRB5_SECURITY,1,[Define if Kerberos 5 security is to be enabled. ])
-	KRB5INCLUDES=-I$dir/include
-	KRB5LDFLAGS=-L$k5libdir
-	# force the static versions of these libs by linking directly
-	# with the .a files.  I don't know how to get -R dependancies checked
-	# in autoconf at this time. -kashmir
+	KRB5_DIR_FOUND=$dir
 	KRB5LIBS="${k5libdir}/libgssapi_krb5.a ${k5libdir}/libkrb5.a $K5CRYPTO ${k5libdir}/libcom_err.a"
+	KRB5CFLAGS=""
+	break
+    elif test -f ${k5libdir}/libkrb5.a -a -f ${k5libdir}/libasn1.a -a -f ${k5libdir}/libgssapi.a; then
+	KRB5_DIR_FOUND=$dir
+	KRB5LIBS="${k5libdir}/libgssapi.a ${k5libdir}/libkrb5.a ${k5libdir}/libasn1.a"
+	KRB5_CFLAGS="-DKRB5_HEIMDAL_INCLUDES"
 	break
     fi
 done
+
+if test "$KRB5_DIR_FOUND"; then
+	AC_MSG_RESULT(found in $KRB5_DIR_FOUND)
+	KRB5_SECURITY=yes
+	AC_DEFINE(KRB5_SECURITY,1,[Define if Kerberos 5 security is to be enabled. ])
+	#
+	# some OS's, such as NetBSD, stick krb5 includes out of the way...
+	# should probably just use autoconf to look for various include
+	# options and set them, but don't quite want to do that until I've
+	# dug into it a bit more.
+	#
+	if test -d "$KRB5_DIR_FOUND/krb5" ; then
+		KRB5INCLUDES="-I$KRB5_DIR_FOUND/include/krb5"
+	else
+		KRB5INCLUDES="-I$KRB5_DIR_FOUND/include"
+	fi
+	if test "$KRB5_CFLAGS" ; then
+		KRB5INCLUDES="$KRB5INCLUDES $KRB5_CFLAGS"
+	fi
+	KRB5LDFLAGS=-L$k5libdir
+	break
+fi
 
 if test "$KRB5LDFLAGS" = "" ; then
     AC_MSG_RESULT(no krb5 system libraries found)
