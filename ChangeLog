@@ -1,5 +1,7 @@
 1998-07-15  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* configure.in: created Amanda 2.4.1 branch
+
 	* example/amanda.conf.in: strategy noinc is not implemented yet
 
 1998-07-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
