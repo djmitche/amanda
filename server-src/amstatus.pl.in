@@ -7,6 +7,7 @@ eval '(exit $?0)' && eval 'exec @PERL@ -S $0 ${1+"$@"}'
 		if 0;
 
 require "newgetopt.pl";
+use Time::Local;
 
 $confdir="@CONFIG_DIR@";
 $prefix='@prefix@';
@@ -85,11 +86,16 @@ if( defined $opt_file) {
 	$errfile = "$logdir/$opt_file" if ( ! (-f $errfile ));
 }
 
-open(AMDUMP,"<$errfile") || die("no $errfile file");
-print "Using $errfile\n\n";
+open(AMDUMP,"<$errfile") || die("$errfile: $!");
+print "Using $errfile";
 
 while(<AMDUMP>) {
-	if(/^setup_estimate: (\S+):(\S+): command .*, options:.*$/) {
+	chomp;
+	if(/^amdump: start at (.*)/) {
+		print " from $1";
+		$starttime=&unctime(split(/[ 	]+/,$1));
+	}
+	elsif(/^setup_estimate: (\S+):(\S+): command .*, options:.*$/) {
 		$host=$1;
 		$partition=$2;
 		if($hosts{$host} != 1 ) {
@@ -141,73 +147,81 @@ while(<AMDUMP>) {
 			$degr_size{$hostpart}=32 if ($7 < 32);
 		}
 	}
-	elsif(/^driver: send-cmd time \S+ to dumper\d*: (FILE-DUMP|PORT-DUMP) (\d+-\d+) (\S+) (\S+) (\S+) (\d+) .*$/) {
-		$host=$4;
-		$partition=$5;
+	elsif(/^driver: send-cmd time (\S+) to dumper\d*: (FILE-DUMP|PORT-DUMP) (\d+-\d+) (\S+) (\S+) (\S+) (\d+) .*$/) {
+		$host=$5;
+		$partition=$6;
 		$hostpart="$host$partition";
-		$serial=$2;
+		$serial=$3;
 		$dump_started{$hostpart}=1;
+		$dump_time{$hostpart}=$1;
 		$dump_finished{$hostpart}=0;
-		$holding_file{$hostpart}=$3;
-		if(     $level{$hostpart} != $6 &&
-		   $degr_level{$hostpart} == $6) {
+		$holding_file{$hostpart}=$4;
+		if(     $level{$hostpart} != $7 &&
+		   $degr_level{$hostpart} == $7) {
 			$level{$hostpart}=$degr_level{$hostpart};
 			$size{$hostpart} =$degr_size{$hostpart};
 			$esize{$hostpart}=$degr_size{$hostpart};
 		}
 		$serial{"$serial"}=$hostpart;
 	}
-	elsif(/^driver: result time \S+ from dumper\d+: FAILED (\d+-\d+) (.*)$/) {
-		$serial=$1;
-		$error=$2;
+	elsif(/^driver: result time (\S+) from dumper\d+: FAILED (\d+-\d+) (.*)$/) {
+		$serial=$2;
+		$error=$3;
 		$hostpart=$serial{$serial};
 		$dump_finished{$hostpart}=-1;
+		$dump_time{$hostpart}=$1;
 		$error{$hostpart}=$error;
 	}
-	elsif(/^driver: result time \S+ from dumper\d+: TRY-AGAIN (\d+-\d+) (.*)$/) {
-		$serial=$1;
-		$error=$2;
+	elsif(/^driver: result time (\S+) from dumper\d+: TRY-AGAIN (\d+-\d+) (.*)$/) {
+		$serial=$2;
+		$error=$3;
 		$hostpart=$serial{$serial};
 		$dump_finished{$hostpart}=-1;
+		$dump_time{$hostpart}=$1;
 		$error{$hostpart}=$error;
 	}
-	elsif(/^driver: result time \S+ from dumper\d+: DONE (\d+-\d+) (\d+) (\d+) (\d+) \[.*\]$/) {
-		$serial=$1;
-		$origsize=$2;
-		$outputsize=$3;
+	elsif(/^driver: result time (\S+) from dumper\d+: DONE (\d+-\d+) (\d+) (\d+) (\d+) \[.*\]$/) {
+		$serial=$2;
+		$origsize=$3;
+		$outputsize=$4;
 		$hostpart=$serial{$serial};
 		$size{$hostpart}=$outputsize;
 		$dump_finished{$hostpart}=1;
+		$dump_time{$hostpart}=$1;
 	}
-	elsif(/^driver: finished-cmd time \S+ dumper\d+ dumped (\S+):(\S+)$/){
+	elsif(/^driver: finished-cmd time (\S+) dumper\d+ dumped (\S+):(\S+)$/){
 	}
-	elsif(/^driver: send-cmd time \S+ to taper: FILE-WRITE (\d+-\d+) (\S+) (\S+) (\S+) \d*.*$/){
-		$serial=$1;
+	elsif(/^driver: send-cmd time (\S+) to taper: FILE-WRITE (\d+-\d+) (\S+) (\S+) (\S+) \d*.*$/){
+		$serial=$2;
+		$host=$4;
+		$partition=$5;
+		$hostpart="$host$partition";
+		$serial{$serial}=$hostpart;
+		$taper_started{$hostpart}=1;
+		$taper_time{$hostpart}=$1;
+	}
+	elsif(/^driver: send-cmd time (\S+) to taper: PORT-WRITE (\d+-\d+) (\S+) (\S+) \d*( \d*|)$/){
+		$serial=$2;
 		$host=$3;
 		$partition=$4;
 		$hostpart="$host$partition";
 		$serial{$serial}=$hostpart;
 		$taper_started{$hostpart}=1;
+		$taper_time{$hostpart}=$1;
 	}
-	elsif(/^driver: send-cmd time \S+ to taper: PORT-WRITE (\d+-\d+) (\S+) (\S+) \d*( \d*|)$/){
-		$serial=$1;
-		$host=$2;
-		$partition=$3;
-		$hostpart="$host$partition";
-		$serial{$serial}=$hostpart;
-		$taper_started{$hostpart}=1;
-	}
-	elsif(/^driver: result time \S+ from taper: DONE (\d+-\d+) (\S+) .*$/) {
-		$serial=$1;
-		$label=$2;
+	elsif(/^driver: result time (\S+) from taper: DONE (\d+-\d+) (\S+) .*$/) {
+		$serial=$2;
+		$label=$3;
 		$hostpart=$serial{$serial};
 		$taper_finished{$hostpart}=1;
+		$taper_time{$hostpart}=$1;
 	}
-	elsif(/^driver: result time \S+ from taper: TAPE-ERROR (\d+-\d+) (.+)$/) {
-		$serial=$1;
-		$error=$2;
+	elsif(/^driver: result time (\S+) from taper: TAPE-ERROR (\d+-\d+) (.+)$/) {
+		$serial=$2;
+		$error=$3;
 		$hostpart=$serial{$serial};
 		$taper_finished{$hostpart}=-1;
+		$taper_time{$hostpart}=$1;
 		$error{$hostpart}=$error;
 	}
 	elsif(/^planner: FAILED (\S+) (\S+) (\d+) (.*)$/) {
@@ -221,20 +235,22 @@ while(<AMDUMP>) {
 	elsif(/^dump of driver schedule after start degraded mode:$/) {
 		$start_degraded_mode=1;
 	}
-	elsif(/^driver: state time \S+ free kps: (\d+) space: (\d+) taper: (\S+) idle-dumpers: (\d+) qlen tapeq: (\d+) runq: (\d+) stoppedq: (\d+) wakeup: (\d+) driver-idle: (\S+)$/) {
-		$free_kps=$1;
-		$free_space=$2;
-		$status_taper=$3;
-		$idle_dumpers=$4;
-		$qlen_tapeq=$5;
-		$runq=$6;
-		$stoppedq=$7;
-		$wakeup=$8;
-		$status_driver=$9;
+	elsif(/^driver: state time (\S+) free kps: (\d+) space: (\d+) taper: (\S+) idle-dumpers: (\d+) qlen tapeq: (\d+) runq: (\d+) stoppedq: (\d+) wakeup: (\d+) driver-idle: (\S+)$/) {
+		$free_kps=$2;
+		$free_space=$3;
+		$status_taper=$4;
+		$idle_dumpers=$5;
+		$qlen_tapeq=$6;
+		$runq=$7;
+		$stoppedq=$8;
+		$wakeup=$9;
+		$status_driver=$10;
 	}
 }
 
 close(AMDUMP);
+
+print "\n\n";
 
 foreach $host (sort @hosts) {
 	foreach $partition (sort @$host) {
@@ -291,7 +307,11 @@ foreach $host (sort @hosts) {
 					$dump_finished{$hostpart} == -1) {
 				if( defined $opt_failed ) {
 					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
-					printf " " . $error{$hostpart} . "\n";
+					print " ", $error{$hostpart};
+					if( defined $starttime ) {
+						print " (", &showtime($dump_time{$hostpart}), ")";
+					}
+					print "\n";
 				}
 				$fpartition++;
 				$fsize+=$esize{$hostpart};
@@ -302,24 +322,28 @@ foreach $host (sort @hosts) {
 				if( defined $opt_dumpingtape ) {
 					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
 					printf "%8dk", $size{$hostpart};
-					print " dumping to tape\n";
+					print " dumping to tape";
+					if( defined $starttime ) {
+						print " (", &showtime($taper_time{$hostpart}), ")";
+					}
+					print "\n";
 				}
 				$dtpartition++;
 				$dtesize += $esize{$hostpart};
 			}
 			elsif($dump_started{$hostpart} == 1 &&
 					$dump_finished{$hostpart} != 1) {
+				$size = dump_size($holding_file{$hostpart});
 				if( defined $opt_dumping ) {
 					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
 					printf "%8dk", $esize{$hostpart};
-					print " dumping";
-				}
-				$size = dump_size($holding_file{$hostpart});
-				if( defined $opt_dumping ) {
-					printf "%8dk", $size/1024;
+					printf " dumping %8dk", $size/1024;
 					if($size{$hostpart} != 0) {
 						printf " (%6.2f\%)", 
 								 (100.0*$size)/(1024.0*$esize{$hostpart});
+					}
+					if( defined $starttime ) {
+						print " (", &showtime($dump_time{$hostpart}), ")";
 					}
 					print "\n";
 				}
@@ -332,7 +356,11 @@ foreach $host (sort @hosts) {
 				if( defined $opt_waittaper ) {
 					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
 					printf "%8dk", $size{$hostpart};
-					print " dump done, wait for writing to tape\n";
+					print " dump done";
+					if( defined $starttime ) {
+						print " (", &showtime($dump_time{$hostpart}), ")";
+					}
+					print ", wait for writing to tape\n";
 				}
 				$dpartition++;
 				$dsize += $size{$hostpart};
@@ -346,7 +374,11 @@ foreach $host (sort @hosts) {
 				if( defined $opt_writingtape ) {
 					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
 					printf "%8dk", $size{$hostpart};
-					print " writing to tape\n";
+					print " writing to tape";
+					if( defined $starttime ) {
+						print " (", &showtime($taper_time{$hostpart}), ")";
+					}
+					print "\n";
 				}
 				$dpartition++;
 				$dsize += $size{$hostpart};
@@ -360,7 +392,11 @@ foreach $host (sort @hosts) {
 				if( defined $opt_failed ) {
 					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
 					printf "%8dk", $size{$hostpart};
-					print " failed to taped\n";
+					print " failed to taped";
+					if( defined $starttime ) {
+						print " (", &showtime($taper_time{$hostpart}), ")";
+					}
+					print "\n";
 				}
 				$dpartition++;
 				$dsize += $size{$hostpart};
@@ -373,7 +409,11 @@ foreach $host (sort @hosts) {
 				if( defined $opt_finished ) {
 					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
 					printf "%8dk", $size{$hostpart};
-					print " finished\n";
+					print " finished";
+					if( defined $starttime ) {
+						print " (", &showtime($taper_time{$hostpart}), ")";
+					}
+					print "\n";
 				}
 				$dpartition++;
 				$dsize += $size{$hostpart};
@@ -441,6 +481,85 @@ sub dump_size() {
 		close(DUMP);
    }
 	return $dsize;
+}
+
+sub unctime() {
+	my (@MoY);
+	my (@tl);
+	my ($a);
+	my ($m);
+	my ($month);
+	my ($time);
+
+	@MoY = ('Jan','Feb','Mar','Apr','May','Jun',
+		'Jul','Aug','Sep','Oct','Nov','Dec');
+
+	# Preset an array of values in case some parts are not passed as
+	# arguments.  This lets the date, etc, be omitted and default to
+	# today.
+
+	@tl = localtime;
+
+	foreach $a (@_) {
+		next
+		  if ($a eq '');
+
+		# See if this argument looks like a month name.
+
+		$month = 0;
+		foreach $m (@MoY) {
+			last
+			  if ($m eq $a);
+			$month = $month + 1;
+		}
+		if ($month < 12) {
+			$tl[4] = $month;
+			next;
+		}
+
+		# See if this is a day of the month.
+
+		if ($a =~ /^\d+$/ && $a >= 1 && $a <= 32) {
+			$tl[3] = $a;
+			next;
+		}
+
+		# See if the next argument looks like a time.
+
+		if ($a =~ /^(\d+):(\d+)/) {
+			$tl[2] = $1;
+			$tl[1] = $2;
+			if ($a =~ /^(\d+):(\d+):(\d+)/) {
+				$tl[0] = $3;
+			}
+			next;
+		}
+
+		# See if this is a year.
+
+		if ($a =~ /^\d\d\d\d$/ && $a >= 1900) {
+			$tl[5] = $a;
+			next;
+		}
+	}
+
+	$time = &timelocal (@tl);
+
+	return $time;
+}
+
+sub showtime() {
+	my($delta)=shift;
+	my($oneday)=24*60*60;
+
+	@now=localtime($starttime+$delta);
+	if($delta > $oneday) {
+		$result=sprintf("%d+",$delta/$oneday);
+	} else {
+		$result="";
+	}
+	$result.=sprintf("%d:%02d:%02d",$now[2],$now[1],$now[0]);
+	return $result;
 }
 
 sub usage() {

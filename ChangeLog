@@ -1,3 +1,7 @@
+1998-10-01  John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/amstatus.pl.in: add timestamps.
+
 1998-10-01  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/DUMPER-API: define `support index', to be used instead of the
