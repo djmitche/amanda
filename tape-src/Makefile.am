@@ -8,16 +8,12 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
-if WANT_TAPE
-
 if WANT_LIBTOOL
 lib_LTLIBRARIES = 	libamtape.la
 LIB_EXTENSION = la
 else
 noinst_LIBRARIES = 	libamtape.a
 LIB_EXTENSION = a
-endif
-
 endif
 
 libamtape_la_SOURCES = 	tapeio.c

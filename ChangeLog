@@ -1,3 +1,14 @@
+1999-01-28  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* Makefile.am: select which SUBDIRS to descend to here
+	* client-src/Makefile.am: removed if WANT_CLIENT
+	* tape-src/Makefile.am: removed if WANT_TAPE
+	* server-src/Makefile.am: removed if WANT_SERVER
+	* changer-src/Makefile.am: ditto
+	* restore-src/Makefile.am: removed if WANT_RESTORE
+	* recover-src/Makefile.am: removed if WANT_RECOVER
+	* amplot/Makefile.am: removed if WANT_AMPLOT
+
 1999-01-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* NEWS: chg-scsi ports, Samba 2.0.0 support and SECURITY API

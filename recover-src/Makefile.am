@@ -9,8 +9,6 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
-if WANT_RECOVER
-
 if WANT_LIBTOOL
 LIB_EXTENSION = la
 else
@@ -18,8 +16,6 @@ LIB_EXTENSION = a
 endif
 
 sbin_PROGRAMS =		amrecover
-
-endif
 
 LDADD = @LEXLIB@ \
 	../client-src/libamclient.$(LIB_EXTENSION) \
