@@ -64,7 +64,7 @@ GetOptions('config=s'		=> \$opt_config,
 or Usage();
 
 if($#ARGV == 0) {
-  $opt_config = @ARGV[0];
+  $opt_config = $ARGV[0];
 }
 elsif($#ARGV > 0) {
   Usage();
@@ -74,23 +74,23 @@ elsif($#ARGV > 0) {
 	die "$0: directory `$confdir/$opt_config' does not exist.\n";
 
 # read disklist
-my $disklist = "$confdir/$opt_config/disklist";
 my %disks = ();
 $::host = '';
 $::disk = '';
-my ($type, $spindle);
-my $dlfh = new FileHandle $disklist or
-    die "$0: unable to open `$disklist' for reading: $!\n";
+$opt_verbose and
+    print STDERR "Running $amadmin $opt_config disklist\n";
+my $dlfh = new FileHandle "$amadmin $opt_config disklist|" or
+    die "$0: error in opening `$amadmin $opt_config disklist' pipe: $!\n";
+$/ = "";
 while (<$dlfh>) {
-    chomp;
-    next if /^#/;
-    ($host, $disk, $type, $spindle) = split ' ', $_;
+    ($host, $disk) = m/    host (.*?):.*    disk (.*?):/s;
     next unless $host;
     $disks{$host}{$disk}++;
 }
 
+$/ = "\n";
 $dlfh->close or
-    die "$0: error in closing `$disklist': $!\n";
+    die "$0: error in closing `$amadmin $opt_config disklist|' pipe: $!\n";
 
 # Get backup dates
 %::dates = ();
