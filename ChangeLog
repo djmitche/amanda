@@ -1,3 +1,7 @@
+2000-10-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* AUTHORS: add Thomas Hepper.
+
 2000-10-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/driverio.c (chunker_cmd): send ABORT command.
