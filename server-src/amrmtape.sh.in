@@ -67,6 +67,13 @@ CleanTapelist () {
     return 1
   fi
 
+  dumpuser=`$libexecdir/getconf$SUF dumpuser`
+  runuser=`whoami`
+  if [ $runuser != $dumpuser ]; then
+    log "${Program}: must be run as user $dumpuser"
+    return 1
+  fi
+
   # Get the location and name of the tapelist filename.  If tapelist is not
   # specified in the amanda.conf file, then use tapelist in the config
   # directory.
