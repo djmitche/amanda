@@ -1,5 +1,11 @@
 1999-05-24  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/bsd-security.c (bsd_stream_read): remove old
+	code that was part of something that ended up not happening.
+	(stream_read_callback): use ssize_t.
+
+1999-05-24  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/event.c (event_register): restructure asserts, and
 	for EV_READFD/EV_WRITEFD, assert that the fd is < FD_SETSIZE.
 

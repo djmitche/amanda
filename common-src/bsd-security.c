@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.27 1999/04/17 18:56:42 kashmir Exp $
+ * $Id: bsd-security.c,v 1.28 1999/05/24 18:43:23 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -1068,7 +1068,6 @@ bsd_stream_read(s, fn, arg)
     void (*fn) P((void *, void *, ssize_t));
 {
     struct bsd_stream *bs = s;
-    int fd;
 
     /*
      * Only one read request can be active per stream.
@@ -1076,15 +1075,7 @@ bsd_stream_read(s, fn, arg)
     if (bs->ev_read != NULL)
 	event_release(bs->ev_read);
 
-    /*
-     * If we haven't accepted a connection yet, just select on the socket.
-     */
-    if (bs->fd < 0)
-	fd = bs->socket;
-    else
-	fd = bs->fd;
-
-    bs->ev_read = event_register(fd, EV_READFD, stream_read_callback, bs);
+    bs->ev_read = event_register(bs->fd, EV_READFD, stream_read_callback, bs);
     bs->fn = fn;
     bs->arg = arg;
 }
@@ -1115,7 +1106,7 @@ stream_read_callback(arg)
     void *arg;
 {
     struct bsd_stream *bs = arg;
-    int n;
+    ssize_t n;
 
     assert(bs != NULL);
 
