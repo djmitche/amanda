@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: changer.h,v 1.4 1997/12/30 05:25:00 jrj Exp $
+ * $Id: changer.h,v 1.5 1998/06/13 06:23:22 oliva Exp $
  *
  * interface routines for tape changers
  */
@@ -35,6 +35,7 @@ extern char *changer_resultstr;
 
 int changer_init P((void));
 int changer_reset P((char **slotstr));
+int changer_clean P((char **slotstr));
 int changer_eject P((char **slotstr));
 int changer_info P((int *nslotsp, char **curslotstr, int *backwards));
 int changer_loadslot P((char *inslotstr, char **outslotstr, char **devicename));

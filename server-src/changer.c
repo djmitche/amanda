@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: changer.c,v 1.12 1998/04/08 16:25:08 amcore Exp $
+ * $Id: changer.c,v 1.13 1998/06/13 06:23:20 oliva Exp $
  *
  * interface routines for tape changers
  */
@@ -130,6 +130,14 @@ char **slotstr;
     char *rest;
 
     return run_changer_command("-reset", (char *) NULL, slotstr, &rest);
+}
+
+int changer_clean(slotstr)
+char **slotstr;
+{
+    char *rest;
+
+    return run_changer_command("-clean", (char *) NULL, slotstr, &rest);
 }
 
 int changer_eject(slotstr)
