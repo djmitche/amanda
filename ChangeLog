@@ -1,3 +1,10 @@
+2004-03-09  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* common-src/fileheader.c (print_header): Fix fprintf use.
+	* client-src/amqde.c (parse_exclude_path): Fix = by ==.
+	* common-src/protocol.c (s_repwait): Fix compiler warning.
+	* common-src/rsh-security.c (runrsh): Fix compiler warning.
+
 2004-03-05  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* common-src/pipespawn.c (pipespawn): Remove passwdvar and passwdfd.

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amqde.c,v 1.2 2003/10/29 23:29:34 kovert Exp $
+ * $Id: amqde.c,v 1.3 2004/03/09 19:37:04 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -218,7 +218,7 @@ parse_exclude_path(rootpath, infile)
 	exent_t *fe = NULL, *e = NULL;
 	struct stat st;
 
-	if(infile[0] = '/') {
+	if(infile[0] == '/') {
 		if( stat(infile, &st) != 0 ) {
 			fprintf(stderr, "could not find exclude file %s\n",
 				infile);
