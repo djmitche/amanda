@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: alloc.c,v 1.32 2002/03/24 19:25:50 jrjackson Exp $
+ * $Id: alloc.c,v 1.33 2002/10/27 14:31:00 martinea Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * errordump() is called, relieving the caller from checking the return
@@ -367,6 +367,9 @@ safe_env()
 {
     static char *safe_env_list[] = {
 	"TZ",
+#ifdef NEED_PATH_ENV
+	"PATH",
+#endif
 	"DISPLAY",
 	NULL
     };

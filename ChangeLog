@@ -1,3 +1,17 @@
+2002-10-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* configure.in (NEED_PATH_ENV, IGNORE_UID_CHECK, IGNORE_FSTAB,
+	  DONT_SUID_ROOT): Defined if on *-pc-cygwin.
+	* client-src/Makefile.am: Fix for cygwin.
+	* client-src/getfsent.c: Don't use fstab if IGNORE_FSTAB.
+	* client-src/killpgrp.c: Don't suid(0) if DONT_SUID_ROOT.
+	* client-src/rundump.c: Don't suid(0) if DONT_SUID_ROOT.
+	* client-src/runtar.c: Don't suid(0) if DONT_SUID_ROOT.
+	* client-src/selfcheck.c (check_suid): Don't check uid if
+	  IGNORE_UID_CHECK.
+	* common-src/alloc.c (safe_env): Add PATH to ENV if NEED_PATH_ENV.
+	* recover-src/amrecover.c: Don't check uid if IGNORE_UID_CHECK.
+
 2002-10-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* client-src/getfsent.h (open_fstab, close_fstab, get_fstab_nextentry,

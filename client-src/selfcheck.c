@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.66 2002/04/26 00:45:23 martinea Exp $
+ * $Id: selfcheck.c,v 1.67 2002/10/27 14:31:00 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -867,6 +867,8 @@ int mode;
 static void check_suid(filename)
 char *filename;
 {
+/* The following is only valid for real Unixs */
+#ifndef IGNORE_UID_CHECK
     struct stat stat_buf;
     if(!stat(filename, &stat_buf)) {
 	if(stat_buf.st_uid != 0 ) {
@@ -879,4 +881,5 @@ char *filename;
     else {
 	printf("ERROR [can not stat %s]\n",filename);
     }
+#endif
 }

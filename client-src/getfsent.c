@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: getfsent.c,v 1.28 2002/10/25 00:52:21 martinea Exp $
+ * $Id: getfsent.c,v 1.29 2002/10/27 14:31:00 martinea Exp $
  *
  * generic version of code to read fstab
  */
@@ -473,6 +473,12 @@ int search_fstab(name, fsent, check_dev)
      generic_fsent_t *fsent;
      int check_dev;
 {
+#ifdef IGNORE_FSTAB
+  /* There is no real mount table so this will always fail and
+   * we are using GNU tar so we can just return here.
+   */
+  return 0;
+#else
   struct stat stats[3];
   char *fullname = NULL;
   char *rdev = NULL;
@@ -538,6 +544,7 @@ int search_fstab(name, fsent, check_dev)
   amfree(rdev);
   close_fstab();
   return rc;
+#endif /* !IGNORE_FSTAB */
 }
 
 int is_local_fstype(fsent)
