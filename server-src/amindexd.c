@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.60 2001/12/30 17:42:07 martinea Exp $
+ * $Id: amindexd.c,v 1.61 2002/01/25 22:26:29 jrjackson Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -840,7 +840,9 @@ char **argv;
 	 */
 	his_name = gethostbyname(local_hostname);
 	if(his_name == NULL) {
-	    error("gethostbyname: %s: %s\n", local_hostname, strerror(errno));
+	    error("%s: gethostbyname(%s) failed\n",
+		  get_pname(),
+		  local_hostname);
 	}
 	assert(his_name->h_addrtype == AF_INET);
 	his_addr.sin_family = his_name->h_addrtype;
@@ -862,7 +864,9 @@ char **argv;
     if ((his_name = gethostbyaddr((char *)&(his_addr.sin_addr),
 				  sizeof(his_addr.sin_addr),
 				  AF_INET)) == NULL) {
-	error("gethostbyaddr: %s", strerror(errno));
+	error("%s: gethostbyaddr(%s): hostname lookup failed",
+	      get_pname(),
+	      inet_ntoa(his_addr.sin_addr));
     }
     fp = s = his_name->h_name;
     ch = *s++;

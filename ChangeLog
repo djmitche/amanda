@@ -1,3 +1,9 @@
+2002-01-25 John R. Jackson (jrj@purdue.edu)
+
+	* server-src/amindexd.c: Clean up reporting of errors by gethostby*()
+	  functions.  Make sure they always report what they were trying to
+	  look up, and don't bother reporting errno (it would be h_errno).
+
 2002-01-13  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* common-src/fileheader.h (dumpfile_t): Add blocksize field.
