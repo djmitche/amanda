@@ -364,7 +364,7 @@ plattforms:
 HP_UX 10.20	SureStore 1200e, Exabyte 10h
 IRIX 6.x	SureStore 1200e, Exabyte 10h
 Solaris 2.5/6 Exabyte 10h
-Linux	SureStore 1200e
+Linux	SureStore 1200e 
 AIX		SureStore 1200e
 
 The Exabyte library uses 2 SCSI Addresses, one for the tape, one for the robot.
@@ -377,7 +377,8 @@ at sun or ask me (th@icem.de) for a copy.
 For HP you have to create the special device files for the pass throu
 interface.
 
-
+To work on AIX the tape must be loaded, else the open call will fail.
+(Fixes are welcome ;-))
 
 chg-chio: (new perl script, that replaces the original chg-chio written in C)
 

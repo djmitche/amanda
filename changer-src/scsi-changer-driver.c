@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.3 1998/11/18 07:03:11 oliva Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.4 1998/11/27 04:25:31 oliva Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -57,8 +57,8 @@ int GenericStatus();
 int GenericFree();
 int GenericEject();
 int GenericClean(int);
-int ExabyteClean(int);
- 
+int RequestSense(int, ExtendedRequestSense_T *, int  );
+
 struct ChangerCMD ChangerIO[] = {
     {"C1553A",
      GenericMove,
@@ -139,7 +139,10 @@ int Inquiry(int DeviceFD)
 	return(ret);
       }
     if ( ret > 0)
-      return(RequestSense.SenseKey);
+      {
+	DecodeSense(&RequestSense);
+	return(RequestSense.SenseKey);
+      }
 
     for (i=0;i < 16 && SCSIInquiry->prod_ident[i] != ' ';i++)
       SCSIIdent[i] = SCSIInquiry->prod_ident[i];
@@ -148,20 +151,142 @@ int Inquiry(int DeviceFD)
     return(ret);
 }
 
+int DecodeSense(RequestSense_T *sense)
+{
+  dbprintf(("Sense Keys\n"));
+  dbprintf(("\tErrorCode                     %02x\n", sense->ErrorCode));
+  dbprintf(("\tValid                         %d\n", sense->Valid));
+  dbprintf(("\tSense key                     %02X\n", sense->SenseKey));
+  switch (sense->SenseKey)
+    {
+    case 0:
+      dbprintf(("\t\tNo Sense\n"));
+      break;
+    case 1:
+      dbprintf(("\t\tRecoverd Error\n"));
+      break;
+    case 2:
+      dbprintf(("\t\tNot Ready\n"));
+      break;
+    case 3:
+      dbprintf(("\t\tMedium Error\n"));
+      break;
+    case 4:
+      dbprintf(("\t\tHardware Error\n"));
+      break;
+    case 5:
+      dbprintf(("\t\tIllegal Request\n"));
+      break;
+    case 6:
+      dbprintf(("\t\tUnit Attention\n"));
+      break;
+    case 7:
+      dbprintf(("\t\tData Protect\n"));
+      break;
+    case 8:
+      dbprintf(("\t\tBlank Check\n"));
+      break;
+    case 9:
+      dbprintf(("\t\tVendor uniq\n"));
+      break;
+    case 0xa:
+      dbprintf(("\t\tCopy Aborted\n"));
+      break;
+    case 0xb:
+      dbprintf(("\t\tAborted Command\n"));
+      break;
+    case 0xc:
+      dbprintf(("\t\tEqual\n"));
+      break;
+    case 0xd:
+      dbprintf(("\t\tVolume Overflow\n"));
+      break;
+    case 0xe:
+      dbprintf(("\t\tMiscompare\n"));
+      break;
+    case 0xf:
+      dbprintf(("\t\tReserved\n"));
+      break;
+    }
+      
+}
+
+int DecodeExtSense(ExtendedRequestSense_T *sense)
+{
+  RequestSense_T *p;
+
+  p = sense;
+
+  dbprintf(("Extended Sense\n"));
+  DecodeSense(p);
+  dbprintf(("\tLog Parameter Page Code         %02X\n", sense->LogParameterPageCode));
+  dbprintf(("\tLog Parameter Code              %02X\n", sense->LogParameterCode));
+  dbprintf(("\tUnderrun/Overrun Counter        %02X\n", sense->UnderrunOverrunCounter));
+  dbprintf(("\tRead/Write Error Counter        %d\n", V3((char *)sense->ReadWriteDataErrorCounter))); 
+  if (sense->PF)
+    dbprintf(("\tPower Fail\n"));
+  if (sense->BPE)
+    dbprintf(("\tSCSI Bus Parity Error\n"));
+  if (sense->FPE)
+    dbprintf(("\tFormatted Buffer parity Error\n"));
+  if (sense->ME)
+    dbprintf(("\tMedia Error\n"));
+  if (sense->ECO)
+    dbprintf(("\tError Counter Overflow\n"));
+  if (sense->TME)
+    dbprintf(("\tTape Motion Error\n"));
+  if (sense->TNP)
+    dbprintf(("\tTape Not Present\n"));
+  if (sense->LBOT)
+    dbprintf(("\tLogical Beginning of tape\n"));
+  if (sense->TMD)
+    dbprintf(("\tTape Mark Detect Error\n"));
+  if (sense->WP)
+    dbprintf(("\tWrite Protect\n"));
+  if (sense->FMKE)
+    dbprintf(("\tFilemark Error\n"));
+  if (sense->URE)
+    dbprintf(("\tUnder Run Error\n"));
+  if (sense->WEI)
+    dbprintf(("\tWrite Error 1\n"));
+  if (sense->SSE)
+    dbprintf(("\tServo System Error\n"));
+  if (sense->FE)
+    dbprintf(("\tFormatter Error\n"));
+  if (sense->UCLN)
+    dbprintf(("\tCleaning Cartridge is empty\n"));
+  if (sense->RRR)
+    dbprintf(("\tReverse Retries Required\n"));
+  if (sense->CLND)
+    dbprintf(("\tTape Drive has been cleaned\n"));
+  if (sense->CLN)
+    dbprintf(("\tTape Drive needs to be cleaned\n"));
+  if (sense->PEOT)
+    dbprintf(("\tPhysical End of Tape\n"));
+  if (sense->WSEB)
+    dbprintf(("\tWrite Splice Error\n"));
+  if (sense->WSEO)
+    dbprintf(("\tWrite Splice Error\n"));
+  dbprintf(("\tRemaing 1024 byte tape blocks   %d\n", V3((char *)sense->RemainingTape)));
+  dbprintf(("\tTracking Retry Counter          %02X\n", sense->TrackingRetryCounter));
+  dbprintf(("\tRead/Write Retry Counter        %02X\n", sense->ReadWriteRetryCounter));
+  dbprintf(("\tFault Sympton Code              %02X\n", sense->FaultSymptomCode));
+}
+
 int PrintInquiry()
 {
-    dbprintf((stderr,"%-15s %x\n", "qualifier", SCSIInquiry->qualifier));
-    dbprintf((stderr,"%-15s %x\n", "type", SCSIInquiry->type));
-    dbprintf((stderr,"%-15s %x\n", "data_format", SCSIInquiry->data_format));
-    dbprintf((stderr,"%-15s %X\n", "ansi_version", SCSIInquiry->ansi_version));
-    dbprintf((stderr,"%-15s %X\n", "ecma_version", SCSIInquiry->ecma_version));
-    dbprintf((stderr,"%-15s %X\n", "iso_version", SCSIInquiry->iso_version));
-    dbprintf((stderr,"%-15s %X\n", "type_modifier", SCSIInquiry->type_modifier));
-    dbprintf((stderr,"%-15s %x\n", "removable", SCSIInquiry->removable));
-    dbprintf((stderr,"%-15s %.8s\n", "vendor_info", SCSIInquiry->vendor_info));
-    dbprintf((stderr,"%-15s %.16s\n", "prod_ident", SCSIInquiry->prod_ident));
-    dbprintf((stderr,"%-15s %.4s\n", "prod_version", SCSIInquiry->prod_version));
-    dbprintf((stderr,"%-15s %.20s\n", "vendor_specific", SCSIInquiry->vendor_specific));
+    dbprintf(("%-15s %x\n", "qualifier", SCSIInquiry->qualifier));
+    dbprintf(("%-15s %x\n", "type", SCSIInquiry->type));
+    dbprintf(("%-15s %x\n", "data_format", SCSIInquiry->data_format));
+    dbprintf(("%-15s %X\n", "ansi_version", SCSIInquiry->ansi_version));
+    dbprintf(("%-15s %X\n", "ecma_version", SCSIInquiry->ecma_version));
+    dbprintf(("%-15s %X\n", "iso_version", SCSIInquiry->iso_version));
+    dbprintf(("%-15s %X\n", "type_modifier", SCSIInquiry->type_modifier));
+    dbprintf(("%-15s %x\n", "removable", SCSIInquiry->removable));
+    dbprintf(("%-15s %.8s\n", "vendor_info", SCSIInquiry->vendor_info));
+    dbprintf(("%-15s %.16s\n", "prod_ident", SCSIInquiry->prod_ident));
+    dbprintf(("%-15s %.4s\n", "prod_version", SCSIInquiry->prod_version));
+    dbprintf(("%-15s %.20s\n", "vendor_specific", SCSIInquiry->vendor_specific));
 }
 
 
@@ -187,30 +312,6 @@ int GenericClean(int TapeFd)
 		return(0);
 	}
 }
-int ExabyteClean(int TapeFd)
-{
-	ExtendedRequestSense_T ExtRequestSense;
-	RequestSense(TapeFd, &ExtRequestSense, 0);	
-	if(ExtRequestSense.CLN) {
-		return(1);
-	} else {
-		return(0);
-	}
-}
-
-
-static int Endian16(unsigned char *BigEndianData)
-{
-  return (BigEndianData[0] << 8) + BigEndianData[1];
-}
-
-static int Endian24(unsigned char *BigEndianData)
-{
-  return (BigEndianData[0] << 16) + (BigEndianData[1] << 8) + BigEndianData[2];
-}
-
-
-
 
 /* Function Prototypes */
 /* =================== */
@@ -246,7 +347,10 @@ int ResetStatus(int DeviceFD)
       return(ret);
     }
   if ( ret > 0)
-    return(RequestSense.SenseKey);
+    {
+      DecodeSense(&RequestSense);
+      return(RequestSense.SenseKey);
+    }
   
   return(ret);
 }
@@ -278,10 +382,8 @@ int GenericMove(int DeviceFD, int from, int to)
   CDB[1]  = 0;
   CDB[2]  = 0;
   CDB[3]  = 0;     /* Address of CHM */
-  CDB[4]  = (from >> 8) & 0xFF;
-  CDB[5]  = from & 0xFF;
-  CDB[6]  = (to >> 8) & 0xFF;
-  CDB[7]  = to & 0xFF;
+  MSB2(&CDB[4],from);
+  MSB2(&CDB[6], to);
   CDB[8]  = 0;
   CDB[9]  = 0;
   CDB[10] = 0;
@@ -297,12 +399,15 @@ int GenericMove(int DeviceFD, int from, int to)
       dbprintf(("%s: Request Sense[Inquiry]: %02X", 
 	      "chs", ((unsigned char *) &RequestSense)[0])); 
       for (i = 1; i < sizeof(RequestSense_T); i++)                
-	dbprintf((stderr, " %02X", ((unsigned char *) &RequestSense)[i])); 
+	dbprintf((" %02X", ((unsigned char *) &RequestSense)[i])); 
       dbprintf(("\n"));    
       return(ret);
     }
   if ( ret > 0)
-    return(RequestSense.SenseKey);
+    {
+      DecodeSense(&RequestSense);
+      return(RequestSense.SenseKey);
+    }
   
   return(ret);
 
@@ -349,7 +454,7 @@ int ReadElementStatus(int DeviceFD, ElementInfo_T **ElementInfo)
   CDB_T CDB;
   unsigned char DataBuffer[MaxReadElementStatusData];
   int DataBufferLength;
-  RequestSense_T RequestSense;
+  RequestSense_T RequestSenseBuf;
   ElementStatusData_T *ElementStatusData;
   ElementStatusPage_T *ElementStatusPage;
   MediumTransportElementDescriptor_T *MediumTransportElementDescriptor;
@@ -377,8 +482,7 @@ int ReadElementStatus(int DeviceFD, ElementInfo_T **ElementInfo)
   CDB[5] = 255;                 /* Number Of Elements LSB */                   
   CDB[6] = 0;                   /* Reserved */                                 
   CDB[7] = 0;                   /* Allocation Length MSB */                    
-  CDB[8] = (MaxReadElementStatusData >> 8) & 0xFF; /* Allocation Length */    
-  CDB[9] = MaxReadElementStatusData & 0xFF; /* Allocation Length LSB */      
+  MSB2(&CDB[8], MaxReadElementStatusData); /* Allocation Length */    
   CDB[10] = 0;                  /* Reserved */                                
   CDB[11] = 0;                  /* Control */                                  
 
@@ -386,29 +490,42 @@ int ReadElementStatus(int DeviceFD, ElementInfo_T **ElementInfo)
 
   ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 12,                      
                           DataBuffer, sizeof(DataBuffer), 
-                          (char *) &RequestSense, sizeof(RequestSense_T));
+                          (char *) &RequestSenseBuf, sizeof(RequestSense_T));
 
 
   if (ret < 0)
     {
       dbprintf(("%s: Request Sense[Inquiry]: %02X",
-	      "chs", ((unsigned char *) &RequestSense)[0]));
+	      "chs", ((unsigned char *) &RequestSenseBuf)[0]));
       for (i = 1; i < sizeof(RequestSense_T); i++)               
-	dbprintf((" %02X", ((unsigned char *) &RequestSense)[i]));
+	dbprintf((" %02X", ((unsigned char *) &RequestSenseBuf)[i]));
       dbprintf(("\n"));   
       return(ret);
     }
   if ( ret > 0)
-    return(RequestSense.SenseKey);
+    {
+      dbprintf(("\tSCSI_ExecuteCommand return %d\n",ret));
+      DecodeSense(&RequestSenseBuf);
+      
+      if (RequestSenseBuf.SenseKey)
+	return(RequestSenseBuf.SenseKey);
+      return(ret);
+    }
   
   
   ElementStatusData = (ElementStatusData_T *)&DataBuffer[offset];
-  DataBufferLength = Endian24(ElementStatusData->count);
+  DataBufferLength = V3(ElementStatusData->count);
+  dbprintf(("DataBufferLength %d, ret %d\n",DataBufferLength, ret));
   offset = sizeof(ElementStatusData_T);
+  if (DataBufferLength <= 0) 
+    {
+      dbprintf(("DataBufferLength %d\n",DataBufferLength));
+      return(1);
+    }
   while (offset < DataBufferLength) 
     {
       ElementStatusPage = (ElementStatusPage_T *)&DataBuffer[offset];
-      NoOfElements = Endian24(ElementStatusPage->count) / sizeof(StorageElementDescriptor_T);
+      NoOfElements = V3(ElementStatusPage->count) / sizeof(StorageElementDescriptor_T);
      offset = offset + sizeof(ElementStatusPage_T);
       switch (ElementStatusPage->type)
 	{
@@ -418,7 +535,10 @@ int ReadElementStatus(int DeviceFD, ElementInfo_T **ElementInfo)
 	      NewElement(ElementInfo);
 	      MediumTransportElementDescriptor = (MediumTransportElementDescriptor_T *)&DataBuffer[offset];
 	      (*ElementInfo)->type = ElementStatusPage->type;
-	      (*ElementInfo)->address = Endian16(MediumTransportElementDescriptor->address);
+/*
+	      (*ElementInfo)->address = V2((char *)MediumTransportElementDescriptor->address);
+*/
+	      (*ElementInfo)->address = V2(MediumTransportElementDescriptor->address);
 	      (*ElementInfo)->ASC = MediumTransportElementDescriptor->asc;
 	      (*ElementInfo)->ASCQ = MediumTransportElementDescriptor->ascq;
 	      (*ElementInfo)->status = (MediumTransportElementDescriptor->full > 0) ? 'F':'E';
@@ -436,7 +556,7 @@ int ReadElementStatus(int DeviceFD, ElementInfo_T **ElementInfo)
 	      StorageElementDescriptor = (StorageElementDescriptor_T *)&DataBuffer[offset];
 	      NewElement(ElementInfo);
 	      (*ElementInfo)->type = ElementStatusPage->type;
-	      (*ElementInfo)->address = Endian16(StorageElementDescriptor->address);
+	      (*ElementInfo)->address = V2(StorageElementDescriptor->address);
 	      (*ElementInfo)->ASC = StorageElementDescriptor->asc;
        	      (*ElementInfo)->ASCQ = StorageElementDescriptor->ascq;
 	      (*ElementInfo)->status = (StorageElementDescriptor->full > 0) ? 'F':'E';
@@ -456,7 +576,7 @@ int ReadElementStatus(int DeviceFD, ElementInfo_T **ElementInfo)
 	      DataTransferElementDescriptor = (DataTransferElementDescriptor_T *)&DataBuffer[offset];
 	      NewElement(ElementInfo);
 	      (*ElementInfo)->type = ElementStatusPage->type;
-	      (*ElementInfo)->address = Endian16(DataTransferElementDescriptor->address);
+	      (*ElementInfo)->address = V2((char *)DataTransferElementDescriptor->address);
 	      (*ElementInfo)->ASC = DataTransferElementDescriptor->asc;
 	      (*ElementInfo)->ASCQ = DataTransferElementDescriptor->ascq;
 	      (*ElementInfo)->status = (DataTransferElementDescriptor->full > 0) ? 'F':'E';
@@ -494,8 +614,6 @@ void NewElement(ElementInfo_T **ElementInfo)
 }
 
 
-/* ======================================================= */
-/* Added 11.05.98 Wolfgang Bressgott */
 int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int ClearErrorCounters )
 {
   CDB_T CDB;
@@ -520,17 +638,19 @@ int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int
 			    (char *) ExtendedRequestSense,
 			    sizeof(ExtendedRequestSense_T),  
 			    (char *) &RequestSense, sizeof(RequestSense_T));
+
+  DecodeExtSense(ExtendedRequestSense);
+
   if (ret < 0)
     {
-      dbprintf(("%s: Request Sense[Inquiry]: %02X",
-       		"chs", ((unsigned char *) &RequestSense)[0]));
-       	for (i = 1; i < sizeof(RequestSense_T); i++)               
-       	  dbprintf((" %02X", ((unsigned char *) &RequestSense)[i]));
-       	dbprintf(("\n"));   
       return(ret);
     }
+
   if ( ret > 0)
-    return(RequestSense.SenseKey);
+    {
+      return(RequestSense.SenseKey);
+    }
+  return(0);
 }
 
 
@@ -788,7 +908,9 @@ int get_slot_count(int fd)
 }
  
 
- 
+/*
+ * retreive the number of data-transfer devices
+ */ 
 int get_drive_count(int fd)
 {
     int count = 0;
@@ -803,7 +925,5 @@ int get_drive_count(int fd)
     }
 
     return(count);
-    /*
-     * retreive the number of data-transfer devices
-     */
 }
+

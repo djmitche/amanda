@@ -1,3 +1,14 @@
+1998-11-27  Thomas Hepper    <th@icem.de>
+
+	* changer-src/scsi-aix.c Some changes in the error handling in
+	scsi command execution
+	* changer-src/scsi-changer-driver.c More debug prints.
+	removed Endian16/Endian24 (replaced with macros)
+	* changer-src/scsi-chio.c make get_clean_state work on linux
+	* changer-src/scsi-defs.h  added macros for converting from/to
+	SCSI CDB MSB type
+	* docs/TAPE.CHANGERS add note about AIX and chg-scsi
+
 1998-11-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amadmin.c(export_one): export the last_level and

@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-chio.c,v 1.6 1998/11/18 07:03:13 oliva Exp $
+ *	$Id: scsi-chio.c,v 1.7 1998/11/27 04:25:33 oliva Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -51,17 +51,22 @@ int rc = 0;
     return (rc);
 }
 
-int get_clean_state(char *dev)
+int get_clean_state(int changerfd, char *changerdev, char *dev)
 {
     int status;
     unsigned char *cmd;
     unsigned char buffer[255];
     int filenr;
 
-    if ((filenr = open(dev, O_RDWR)) < 0) {
-        perror(dev);
-        return 0;
-    }
+    if (strcmp(changerdev, dev) == 0)
+      {
+	filenr = changerfd;
+      } else {
+    	if ((filenr = open(dev, O_RDWR)) < 0) {
+	  perror(dev);
+	  return 0;
+    	}
+      }
     memset(buffer, 0, sizeof(buffer));
 
     *((int *) buffer) = 0;      /* length of input data */
@@ -79,13 +84,15 @@ int get_clean_state(char *dev)
     if (status)
         printf("ioctl(SCSI_IOCTL_SEND_COMMAND) status\t= %u\n", status);
 */
-
+    if (strcmp(changerdev, dev) != 0)
+      close(filenr);
+    
     if (status)
-        return 0;
-
+      return 0;
+    
     if ((buffer[16] & 0x1) == 1)
-          return 1;
-
+      return 1;
+    
     return 0;
 
 }
