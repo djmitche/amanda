@@ -1,3 +1,9 @@
+2004-03-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/reporter.c (handle_success): Set stats[i].coutsize
+	  correctly.
+	* server-src/taper.c: Do not subtract tt_blocksize_kb from filesize.
+
 2004-03-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* common-src/ssh-security.c: New ssh security driver.

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.86 2004/02/13 13:42:22 martinea Exp $
+ * $Id: reporter.c,v 1.87 2004/03/17 13:05:06 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -1843,8 +1843,12 @@ handle_success()
 	stats[i].tapedisks +=1;
 	stats[i].tapesize += kbytes;
 	sp->outsize = kbytes;
-	if(repdata->chunker.outsize == 0.0) /* dump to tape OR flush */
+	if(repdata->chunker.outsize == 0.0) {/* dump to tape OR flush */
 	    stats[i].outsize += kbytes;
+	    if(dp->compress != COMP_NONE) {
+		stats[i].coutsize += kbytes;
+	    }
+	}
 	current_tape->taper_time += sec;
 	current_tape->coutsize += kbytes;
 	current_tape->corigsize += origkb;
@@ -1857,7 +1861,6 @@ handle_success()
 	    sp->origsize = kbytes;
 	}
 	else {
-	    stats[i].coutsize += kbytes;
 	    stats[i].corigsize += sp->origsize;
 	}
 	dumpdisks[level] +=1;
@@ -1868,6 +1871,9 @@ handle_success()
     if(curprog == P_CHUNKER) {
 	sp->outsize = kbytes;
 	stats[i].outsize += kbytes;
+	if(dp->compress != COMP_NONE) {
+	    stats[i].coutsize += kbytes;
+	}
     }
     return repdata;
 }
