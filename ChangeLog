@@ -1,3 +1,8 @@
+2000-12-24 John R. Jackson <jrj@purdue.edu>
+
+	* server-src/getconf.c: Fix free() of static text string (BUGGY) when
+	  the parameter being looked up is bad.
+
 2000-12-23 David Wolfskill  <dhw@whistle.com>
 
         * server-src/amcheck.c (start_server_check): Change directory
