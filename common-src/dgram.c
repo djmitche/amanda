@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.9 1998/07/04 00:18:39 oliva Exp $
+ * $Id: dgram.c,v 1.10 1998/09/03 22:11:10 oliva Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -160,8 +160,11 @@ dgram_t *dgram;
 	return -1;
     }
 
-    if(sendto(s, dgram->data, dgram->len, 0, 
+    while(sendto(s, dgram->data, dgram->len, 0, 
               (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) == -1)
+#ifdef ECONNREFUSED
+	if (errno != ECONNREFUSED)
+#endif
         return -1;
 
     if(dgram->socket == -1) {

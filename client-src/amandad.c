@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.29 1998/07/04 00:18:07 oliva Exp $
+ * $Id: amandad.c,v 1.30 1998/09/03 22:10:32 oliva Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -73,40 +73,6 @@ void sendnak P((pkt_t *hdr, pkt_t *msg, char *str));
 void setup_rep P((pkt_t *hdr, pkt_t *msg));
 char *strlower P((char *str));
 
-void sigchild_jump P((int sig));
-void sigchild_flag P((int sig));
-
-
-/*
- * We trap SIGCHLD to break out of our select loop.
- */
-
-jmp_buf sigjmp;
-int got_sigchild = 0;
-
-void sigchild_jump(sig) 
-int sig;
-{ 
-    got_sigchild = 1;
-    longjmp(sigjmp, 1);
-}
-
-void sigchild_flag(sig) 
-int sig;
-{ 
-    got_sigchild = 1;
-}
-
-/* XXX these moved out of main because of the setjmp.  restructure! */
-struct service_s *servp;
-fd_set insock;
-pkt_t in_msg, out_msg, dup_msg;
-char *cmd = NULL, *base = NULL;
-char *pwname, **vp;
-struct passwd *pwptr;
-int retry_count, rc, reqlen;
-int req_pipe[2], rep_pipe[2];
-
 int main(argc, argv)
 int argc;
 char **argv;
@@ -116,6 +82,22 @@ char **argv;
     char *errstr = NULL;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
+
+    /* in_msg: The first incoming request.
+       dup_msg: Any other incoming message.
+       out_msg: Standard, i.e. non-repeated, ACK and REP.
+       rej_msg: Any other outgoing message.
+     */
+    pkt_t in_msg, out_msg, rej_msg, dup_msg;
+    char *cmd = NULL, *base = NULL;
+    char *pwname, **vp;
+    struct passwd *pwptr;
+    int retry_count, rc, reqlen;
+    int req_pipe[2], rep_pipe[2];
+    int dglen = 0;
+
+    struct service_s *servp;
+    fd_set insock;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -182,6 +164,12 @@ char **argv;
     dgram_zero(&out_msg.dgram);
     dgram_socket(&out_msg.dgram, 0);
 
+    dgram_zero(&rej_msg.dgram);
+    dgram_socket(&rej_msg.dgram, 0);
+
+    dgram_zero(&rej_msg.dgram);
+    dgram_socket(&rej_msg.dgram, 0);
+
     /* set up input and response pipes */
 
     if(pipe(req_pipe) == -1 || pipe(rep_pipe) == -1)
@@ -224,7 +212,7 @@ char **argv;
 		in_msg.type == P_REP? "rep ": "",
 		"packet", NULL);
 	}
-	sendnak(&in_msg, &out_msg, parse_errmsg);
+	sendnak(&in_msg, &rej_msg, parse_errmsg);
 	dbclose();
 	return 1;
     }
@@ -241,7 +229,7 @@ char **argv;
 
     if(servp->name == NULL) {
 	errstr = newstralloc2(errstr, "unknown service: ", in_msg.service);
-	sendnak(&in_msg, &out_msg, errstr);
+	sendnak(&in_msg, &rej_msg, errstr);
 	dbclose();
 	return 1;
     }
@@ -255,7 +243,7 @@ char **argv;
 			      "service ", base, " unavailable",
 			      NULL);
 	amfree(base);
-	sendnak(&in_msg, &out_msg, errstr);
+	sendnak(&in_msg, &rej_msg, errstr);
 	dbclose();
 	return 1;
     }
@@ -313,8 +301,6 @@ char **argv;
 
     /* spawn child to handle request */
 
-    signal(SIGCHLD, sigchild_flag);
-
     switch(fork()) {
     case -1: error("could not fork service: %s", strerror(errno));
 
@@ -352,17 +338,31 @@ char **argv;
     }
     amfree(cmd);
 
-    if(!setjmp(sigjmp))
-	signal(SIGCHLD, sigchild_jump);
-    else /* got jump, turn it off now */
-	signal(SIGCHLD, sigchild_flag);
+    setup_rep(&in_msg, &out_msg);
+#ifdef KRB4_SECURITY
+    add_mutual_authenticator(&out_msg.dgram);
+#endif
 
-    while(!got_sigchild) {
+    while(1) {
 
 	FD_ZERO(&insock);
 	FD_SET(0, &insock);
-	if(select(1, (SELECT_ARG_TYPE *)&insock, NULL, NULL, NULL) < 0)
+	FD_SET(rep_pipe[0], &insock);
+
+	if(select(rep_pipe[0]+1, (SELECT_ARG_TYPE *)&insock, NULL, NULL, NULL) < 0)
 	    error("select failed: %s", strerror(errno));
+
+	if(FD_ISSET(rep_pipe[0],&insock)) {
+	    if((rc = read(rep_pipe[0], out_msg.dgram.cur+dglen,
+			  MAX_DGRAM-out_msg.dgram.len)) <= 0) {
+		if (rc < 0)
+		    error("reading response pipe: %s", strerror(errno));
+		break;
+	    }
+	    dglen += rc;
+	}
+	if(!FD_ISSET(0,&insock))
+	    continue;
 
 	if((n = dgram_recv(&dup_msg.dgram, RECV_TIMEOUT, &dup_msg.peer)) <= 0) {
 	    char *s;
@@ -388,32 +388,20 @@ char **argv;
 	if(dup_msg.peer.sin_addr.s_addr == in_msg.peer.sin_addr.s_addr &&
 	   dup_msg.peer.sin_port == in_msg.peer.sin_port) {
 	    dbprintf(("%s: received dup packet, ACKing it\n", argv[0]));
-	    sendack(&in_msg, &out_msg);
+	    sendack(&in_msg, &rej_msg);
 	}
 	else {
 	    dbprintf(("%s: received other packet, NAKing it\n", argv[0]));
 	    /* XXX dup_msg filled in? */
-	    sendnak(&dup_msg, &out_msg, "amandad busy");
+	    sendnak(&dup_msg, &rej_msg, "amandad busy");
 	}
 
     }
 
     /* XXX reap child?  log if non-zero status?  don't respond if non zero? */
-
     /* setup header for out_msg */
 
-    setup_rep(&in_msg, &out_msg);
-#ifdef KRB4_SECURITY
-    add_mutual_authenticator(&out_msg.dgram);
-#endif
-
-    /* read response packet from pipe: up to MAX_DGRAM bytes are sent */
-
-    if((rc = read(rep_pipe[0], out_msg.dgram.cur,
-                  MAX_DGRAM-out_msg.dgram.len)) < 0)
-        error("reading response pipe: %s", strerror(errno));
-
-    out_msg.dgram.len += rc;
+    out_msg.dgram.len += dglen;
     out_msg.dgram.data[out_msg.dgram.len] = '\0';
     aclose(rep_pipe[0]);
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.48 1998/09/03 20:13:43 martinea Exp $
+ * $Id: driver.c,v 1.49 1998/09/03 22:11:47 oliva Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1089,13 +1089,13 @@ disklist_t *waitqp;
 	    sp->degr_level = -1;
 	}
 
-	if(time == 0)
+	if(time <= 0)
 	    sp->est_kps = 10;
 	else
 	    sp->est_kps = size/time;
 
 	if(sp->degr_level != -1) {
-	    if(degr_time == 0)
+	    if(degr_time <= 0)
 		sp->degr_kps = 10;
 	    else
 		sp->degr_kps = degr_size/degr_time;

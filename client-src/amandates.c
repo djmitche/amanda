@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amandates.c,v 1.14 1998/07/04 00:18:09 oliva Exp $
+ * $Id: amandates.c,v 1.15 1998/09/03 22:10:40 oliva Exp $
  *
  * manage amandates file, that mimics /etc/dumpdates, but stores
  * GNUTAR dates
@@ -80,7 +80,7 @@ int open_readwrite;
 
     /* create it if we need to */
 
-    if(amdf == NULL && errno == EINTR && open_readwrite)
+    if(amdf == NULL && (errno == EINTR || errno == ENOENT) && open_readwrite)
 	amdf = fopen(AMANDATES_FILE, "w");
 
     if(amdf == NULL)

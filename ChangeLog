@@ -1,8 +1,49 @@
+1998-09-03  Matthias Urlichs    <smurf@noris.net>
+
+	* recover-src/uscan.l: recognize "?" as alias for "help"
+
+	* configure.in (MAILER): recognize "mail" as well as "Mail" and
+ 	"mailx"
+
+	* client-src/calcsize.c (add_file_dump, add_file_unknown): only get
+ 	sizes of directories and files
+
+	* client-src/amandates.c (start_amandates): create amandates if
+ 	error is either EINTR or ENOENT
+
+	* common-src/dgram.c (dgram_send_addr): handle ECONNREFUSED by not
+ 	dying when receiving, and retrying when sending, a packet.  The
+ 	server may get this error when a client reboots and hasn't started
+ 	inetd yet.
+	* common-src/protocol.c (handle_incoming_packet): ditto
+
+	* server-src/driver.c (read_schedule): catch cases when the time
+ 	goes negative.  Some operators have the bad habit of syncing clocks
+ 	late at night. ;-)
+
+	* common-src/dgram.h (MAX_DGRAM): increased to 64Kb
+	* NEWS: ditto
+	* client-src/amandad.c (main): read the pipe from the child
+ 	incrementally: the pipe buffer of many OSes is shorter than
+ 	MAX_DGRAM.  Instead of SIGCHLD, note end-of-data by way of
+ 	end-of-file
+	(sigchild_jump, sigchild_flag): removed
+	* client-src/sendbackup.c (main): instead of fork-and-exit, tell
+ 	amandad to process our data by closing our end of the pipe
+	
+1998-09-03  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* NEWS: another typo (too late :-(
+
 1998-09-03  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/driver.c: amanda will not use an holding disk
 	if the directory with the datestamp already exist.
 
+1998-09-03  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* Amanda 2.4.1 released
+	
 1998-08-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* NEWS: typo

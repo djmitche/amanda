@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.25 1998/07/04 00:18:49 oliva Exp $
+ * $Id: protocol.c,v 1.26 1998/09/03 22:11:26 oliva Exp $
  *
  * implements amanda protocol
  */
@@ -893,8 +893,13 @@ static void handle_incoming_packet()
 
     dgram_zero(&inpkt.dgram);
     dgram_socket(&inpkt.dgram, proto_socket);
-    if(dgram_recv(&inpkt.dgram, 0, &inpkt.peer) == -1)
+    if(dgram_recv(&inpkt.dgram, 0, &inpkt.peer) == -1) {
+#ifdef ECONNREFUSED
+	if(errno == ECONNREFUSED)
+	    return;
+#endif
 	fprintf(stderr,"protocol packet receive: %s\n", strerror(errno));
+    }
 
 #ifdef PROTO_DEBUG
     fprintf(stderr, "time %d: got packet:\n----\n%s----\n\n",

@@ -1260,7 +1260,7 @@ else
     fi
 fi
 
-AC_PATH_PROGS(MAILER,Mail mailx)
+AC_PATH_PROGS(MAILER,Mail mailx mail)
 if test "$MAILER"; then
     AC_DEFINE_UNQUOTED(MAILER,"$MAILER")
 fi

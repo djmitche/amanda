@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: calcsize.c,v 1.23 1998/07/04 00:18:11 oliva Exp $
+ * $Id: calcsize.c,v 1.24 1998/09/03 22:10:46 oliva Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -442,7 +442,8 @@ int level;
 struct stat *sp;
 {
     /* keep the size in kbytes, rounded up, plus a 1k header block */
-    dumpstats[level].total_size += (ST_BLOCKS(*sp) + 1)/2 + 1;
+    if((sp->st_mode & S_IFMT) == S_IFREG || (sp->st_mode & S_IFMT) == S_IFDIR)
+    	dumpstats[level].total_size += (ST_BLOCKS(*sp) + 1)/2 + 1;
 }
 
 long final_size_dump(level, topdir)
@@ -505,7 +506,8 @@ int level;
 struct stat *sp;
 {
     /* just add up the block counts */
-    dumpstats[level].total_size += ST_BLOCKS(*sp);
+    if((sp->st_mode & S_IFMT) == S_IFREG || (sp->st_mode & S_IFMT) == S_IFDIR)
+    	dumpstats[level].total_size += ST_BLOCKS(*sp);
 }
 
 long final_size_unknown(level, topdir)

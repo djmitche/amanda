@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.42 1998/07/04 00:18:23 oliva Exp $
+ * $Id: sendbackup.c,v 1.43 1998/09/03 22:10:55 oliva Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -210,8 +210,8 @@ char **argv;
     if(interactive) {
 	/*
 	 * In interactive (debug) mode, the backup data is sent to
-	 * /dev/null, the program does not fork and none of the network
-	 * connections back to driver programs on the tape host are set up.
+        * /dev/null and none of the network connections back to driver
+        * programs on the tape host are set up.
 	 * Index service is run and goes to stdout.
 	 */
 	fprintf(stderr, "%s: running in interactive test mode\n", get_pname());
@@ -353,21 +353,10 @@ char **argv;
       index_port = -1;
     }
 
-    if(!interactive) {
-      switch(fork()) {
-      case -1:	/* fork error */
-	s = strerror(errno);
-        dbprintf(("ERROR [%s: could not fork: %s]\n", argv[0], s));
-        error("ERROR [%s: could not fork: %s]\n", argv[0], s);
-      default:	/* parent */
-        printf("CONNECT DATA %d MESG %d INDEX %d\n",
-	       data_port, mesg_port, index_port);
-        printf("OPTIONS %s\n", optionstr());
-        exit(0);
-      case 0:	/* child, keep going */
-        break;
-      }
-    }
+    printf("CONNECT DATA %d MESG %d INDEX %d\n",
+	   data_port, mesg_port, index_port);
+    printf("OPTIONS %s\n", optionstr());
+    freopen("/dev/null","w",stdout);
 
     if (createindex)
       dbprintf(("  waiting for connect on %d, then %d, then %d\n",
