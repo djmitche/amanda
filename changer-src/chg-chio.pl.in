@@ -90,6 +90,7 @@ $nr_tapes = 0;
 
 sub do_time {
 	my (@t);
+	my ($r);
 
 	###
 	# Get the local time for the value.
@@ -98,15 +99,17 @@ sub do_time {
 	@t = localtime (time ());
 
 	###
-	# Print the result.
+	# Return the result.
 	###
 
-	printf "%s %s %2d %2d:%02d:%02d %4d",
+	$r = sprintf "%s %s %2d %2d:%02d:%02d %4d",
 	  $dow[$t[6]],
 	  $moy[$t[4]],
 	  $t[3],
 	  $t[2], $t[1], $t[0],
 	  1900 + $t[5];
+
+	return $r;
 }
 
 sub getCurrentTape {
