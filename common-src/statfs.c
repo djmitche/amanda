@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: statfs.c,v 1.5.2.1 1998/03/14 13:40:44 amcore Exp $
+ * $Id: statfs.c,v 1.5.2.2 1998/03/14 13:55:57 amcore Exp $
  *
  * a generic statfs-like routine
  */
@@ -38,43 +38,41 @@
  */
 
 #ifdef STATFS_ULTRIX
-#   include <sys/param.h>
-#   include <sys/mount.h>
-#   define STATFS_STRUCT	struct fs_data
-#   define STATFS_TOTAL(buf)	(buf).fd_btot
-#   define STATFS_AVAIL(buf)	(buf).fd_bfreen
-#   define STATFS_FREE(buf)	(buf).fd_bfree
-#   define STATFS_FILES(buf)	(buf).fd_gtot
-#   define STATFS_FAVAIL(buf)	(buf).fd_gfree
-#   define STATFS_FFREE(buf)	(buf).fd_gfree
-#   define STATFS_SCALE(buf)	1024
-#   define STATFS(path, buffer)	statfs(path, &buffer)
-#else /* () line 0 */
-#  if defined(HAVE_SYS_STATVFS_H) && !defined(STATFS_SCO_OS5)
+# include <sys/param.h>
+# include <sys/mount.h>
+# define STATFS_STRUCT	struct fs_data
+# define STATFS_TOTAL(buf)	(buf).fd_btot
+# define STATFS_AVAIL(buf)	(buf).fd_bfreen
+# define STATFS_FREE(buf)	(buf).fd_bfree
+# define STATFS_FILES(buf)	(buf).fd_gtot
+# define STATFS_FAVAIL(buf)	(buf).fd_gfree
+# define STATFS_FFREE(buf)	(buf).fd_gfree
+# define STATFS_SCALE(buf)	1024
+# define STATFS(path, buffer)	statfs(path, &buffer)
+#else
+# if defined(HAVE_SYS_STATVFS_H) && !defined(STATFS_SCO_OS5)
 /*
 ** System V.4 (STATFS_SVR4)
 */
-#   include <sys/statvfs.h>
-#   define STATFS_TYP		"SVR4 (Irix-5, Solaris-2)"
-#   define STATFS_STRUCT	struct statvfs
-#   define STATFS_TOTAL(buf)	(buf).f_blocks
-#   define STATFS_AVAIL(buf)	(buf).f_bavail
-#   define STATFS_FREE(buf)	(buf).f_bfree
-#   define STATFS_FILES(buf)	(buf).f_files
-#   define STATFS_FAVAIL(buf)	(buf).f_favail
-#   define STATFS_FFREE(buf)	(buf).f_ffree
-#   define STATFS_SCALE(buf)	(buf).f_frsize
-#   define STATFS(path, buffer)	statvfs(path, &buffer)
-#  else
-#    if HAVE_SYS_VFS_H
+#  include <sys/statvfs.h>
+#  define STATFS_TYP		"SVR4 (Irix-5, Solaris-2)"
+#  define STATFS_STRUCT	struct statvfs
+#  define STATFS_TOTAL(buf)	(buf).f_blocks
+#  define STATFS_AVAIL(buf)	(buf).f_bavail
+#  define STATFS_FREE(buf)	(buf).f_bfree
+#  define STATFS_FILES(buf)	(buf).f_files
+#  define STATFS_FAVAIL(buf)	(buf).f_favail
+#  define STATFS_FFREE(buf)	(buf).f_ffree
+#  define STATFS_SCALE(buf)	(buf).f_frsize
+#  define STATFS(path, buffer)	statvfs(path, &buffer)
+# else
+#  if HAVE_SYS_VFS_H
 /*
 ** (STATFS_AIX, STATFS_VFS, STATFS_NEXT)
 */
-# ifdef HAVE_SYS_STATFS_H /* AIX */
-#   include <sys/statfs.h>
-#    endif
-#  endif
-# endif
+#   ifdef HAVE_SYS_STATFS_H /* AIX */
+#    include <sys/statfs.h>
+#   endif
 #   include <sys/vfs.h>
 #   define STATFS_TYP		"Posix (NeXTstep, AIX, Linux, HP-UX)"
 #   define STATFS_STRUCT	struct statfs
@@ -86,47 +84,49 @@
 #   define STATFS_FFREE(buf)	(buf).f_ffree
 #   define STATFS_SCALE(buf)	(buf).f_bsize
 #   define STATFS(path, buffer)	statfs(path, &buffer)
-# else
-# if HAVE_SYS_STATFS_H
+#  else
+#   if HAVE_SYS_STATFS_H
 /*
 ** System V.3 (STATFS_SVR3)
 */
-#   include <sys/statfs.h>
-#   define STATFS_TYP		"SVR3 (Irix-3, Irix-4, Irix-6)"
-#   define STATFS_STRUCT	struct statfs
-#   define STATFS_TOTAL(buf)	(buf).f_blocks
-#   define STATFS_AVAIL(buf)	(buf).f_bfree
-#   define STATFS_FREE(buf)	(buf).f_bfree
-#   define STATFS_FILES(buf)	(buf).f_files
-#   define STATFS_FAVAIL(buf)	(buf).f_ffree
-#   define STATFS_FFREE(buf)	(buf).f_ffree
-#   define STATFS_SCALE(buf)	(buf).f_bsize
-#   define STATFS(path, buffer)	statfs(path, &buffer, sizeof(STATFS_STRUCT), 0)
-# else
-#  if HAVE_SYS_MOUNT_H
+#    include <sys/statfs.h>
+#    define STATFS_TYP		"SVR3 (Irix-3, Irix-4, Irix-6)"
+#    define STATFS_STRUCT	struct statfs
+#    define STATFS_TOTAL(buf)	(buf).f_blocks
+#    define STATFS_AVAIL(buf)	(buf).f_bfree
+#    define STATFS_FREE(buf)	(buf).f_bfree
+#    define STATFS_FILES(buf)	(buf).f_files
+#    define STATFS_FAVAIL(buf)	(buf).f_ffree
+#    define STATFS_FFREE(buf)	(buf).f_ffree
+#    define STATFS_SCALE(buf)	(buf).f_bsize
+#    define STATFS(path, buffer)	statfs(path, &buffer, sizeof(STATFS_STRUCT), 0)
+#   else
+#    if HAVE_SYS_MOUNT_H
 /*
 ** BSD (STATFS_BSD43, STATFS_BSD44)
 */
-#   ifdef HAVE_SYS_PARAM_H /* BSD-4.4 */
-#     include <sys/param.h>
+#     ifdef HAVE_SYS_PARAM_H /* BSD-4.4 */
+#      include <sys/param.h>
+#     endif
+#     include <sys/mount.h>
+#     define STATFS_TYP		"BSD43/44"
+#     define STATFS_STRUCT	struct statfs
+#     define STATFS_TOTAL(buf)	(buf).f_blocks
+#     define STATFS_AVAIL(buf)	(buf).f_bavail
+#     define STATFS_FREE(buf)	(buf).f_bfree
+#     define STATFS_FILES(buf)	(buf).f_files
+#     define STATFS_FAVAIL(buf)	(buf).f_ffree
+#     define STATFS_FFREE(buf)	(buf).f_ffree
+#     define STATFS_SCALE(buf)	(buf).f_bsize
+#     define STATFS(path, buffer)	statfs(path, &buffer)
+#     ifdef STATFS_OSF1
+#      define STATFS(path, buffer)	statfs(path, &buffer, sizeof(STATFS_STRUCT))
+#     endif
+#    endif
 #   endif
-#   endif
-#   endif
-#   include <sys/mount.h>
-#   define STATFS_TYP		"BSD43/44"
-#   define STATFS_STRUCT	struct statfs
-#   define STATFS_TOTAL(buf)	(buf).f_blocks
-#   define STATFS_AVAIL(buf)	(buf).f_bavail
-#   define STATFS_FREE(buf)	(buf).f_bfree
-#   define STATFS_FILES(buf)	(buf).f_files
-#   define STATFS_FAVAIL(buf)	(buf).f_ffree
-#   define STATFS_FFREE(buf)	(buf).f_ffree
-#   define STATFS_SCALE(buf)	(buf).f_bsize
-#   define STATFS(path, buffer)	statfs(path, &buffer)
-#  ifdef STATFS_OSF1
-#   define STATFS(path, buffer)	statfs(path, &buffer, sizeof(STATFS_STRUCT))
 #  endif
 # endif
+#endif
 
 #define scale(r,s)	( (r) == -1? -1 : (int)((r)*(double)(s)/1024.0) )
 
