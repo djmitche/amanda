@@ -1,5 +1,8 @@
 2000-01-21  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* server-src/amstatus.pl.in (prefix, exec_prefix): Refer to them
+	twice to avoid warnings of possible typo.
+
 	* amplot/amplot.awk: Ignore dumper's RQ-MORE-DISK.
 	Reported by David Wolfskill <dhw@whistle.com>
 	* amplot/amplot.awk: Handle taper's TRY-AGAIN like TAPE-ERROR.

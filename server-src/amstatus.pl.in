@@ -11,8 +11,9 @@ use Time::Local;
 
 $confdir="@CONFIG_DIR@";
 $prefix='@prefix@';
-
+$prefix=$prefix;		# avoid warnings about possible typo
 $exec_prefix="@exec_prefix@";
+$exec_prefix=$exec_prefix;	# ditto
 $sbindir="@sbindir@";
 
 $USE_VERSION_SUFFIXES='@USE_VERSION_SUFFIXES@';
