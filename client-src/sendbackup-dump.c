@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.72 1999/05/14 21:52:15 kashmir Exp $
+ * $Id: sendbackup-dump.c,v 1.73 1999/06/19 22:02:43 oliva Exp $
  *
  * send backup data using BSD dump
  */
@@ -103,6 +103,7 @@ static regex_t re_table[] = {
   { DMP_NORMAL, "^dump:" },					/* OSF/1 */
   { DMP_NORMAL, "^vdump:" },					/* OSF/1 */
   { DMP_NORMAL, "^ *vxdump:" },					/* HPUX10 */
+  { DMP_NORMAL, "^ *vxfs *vxdump:" },				/* Solaris */
   { DMP_NORMAL, "^xfsdump:" },					/* IRIX xfs */
   { DMP_NORMAL, "^ *VXDUMP:" },                                 /* Sinix */
   { DMP_NORMAL, "^ *UFSDUMP:" },                                /* Sinix */

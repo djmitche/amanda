@@ -1,3 +1,8 @@
+1999-06-19  Alexander Zangerl  <az@Austria.EU.net>
+
+	* client-src/sendbackup-dump.c (re_table): Match Solaris vxdump
+	output.
+
 1999-06-18 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/dumper.c (read_indexfd): typo
