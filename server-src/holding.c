@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.34 2001/11/08 18:46:26 martinea Exp $
+ * $Id: holding.c,v 1.35 2001/12/09 20:36:03 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -269,6 +269,9 @@ int amflush, verbose;
     char **datearg;
     holding_t *date;
     holdingdisk_t *hdisk;
+    char current_dir[1000];
+
+    getcwd(current_dir, 999);
 
     if(dateargs) {
 	holding_t *prev_date = NULL, *next_date;
@@ -310,6 +313,7 @@ int amflush, verbose;
 	}
     }
 
+    chdir(current_dir);
 }
 
 
