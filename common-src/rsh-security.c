@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.5 1999/09/14 06:45:41 oliva Exp $
+ * $Id: rsh-security.c,v 1.6 1999/11/02 21:18:26 oliva Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -1137,7 +1137,7 @@ net_writev(fd, iov, iovcnt)
 	    assert(n >= 0);
 	    /* subtract from this iovec */
 	    iov->iov_len -= delta;
-	    (char *)iov->iov_base += delta;
+	    iov->iov_base = (char *)iov->iov_base + delta;
 	    /* if this iovec isn't empty, run the writev again */
 	    if (iov->iov_len > 0)
 		break;

@@ -1,3 +1,8 @@
+1999-11-02  David M. Olsen  <David.M.Olsen@boeing.com>
+
+	* common-src/rsh-security.c (net_writev): The result of a cast is
+	not an lvalue; fixed.
+
 1999-10-26  Nicolas Mayencourt  <Nicolas.Mayencourt@cui.unige.ch>
 
 	* server-src/amtoc.pl.in: Correct a bug for total report.
