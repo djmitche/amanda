@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.16 2001/02/25 16:03:13 martinea Exp $
+ * $Id: planner.c,v 1.76.2.17 2001/02/28 14:21:54 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -749,7 +749,7 @@ setup_estimate(dp)
 	    curr_level = ep->last_level;
 
 	    if(info.command & FORCE_NO_BUMP) {
-		if(curr_level >= 0) { /* level 0 already asked for */
+		if(curr_level > 0) { /* level 0 already asked for */
 		    askfor(ep, i++, curr_level, &info);
 		}
 		log_add(L_INFO,"Preventing bump of %s:%s as directed.",
