@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindex.c,v 1.3 1997/08/27 08:12:49 amcore Exp $
+ * $Id: amindex.c,v 1.4 1997/08/28 16:49:23 amcore Exp $
  *
  * index control
  */
@@ -37,8 +37,26 @@ char *host, *disk, *date;
 int level;
 {
   static char buf[1024];
+  char datebuf[8 + 1];
+  char *dc;
   char *pc;
-  sprintf(buf, "%s_%s_%s_%d%s", host, disk, date, level, COMPRESS_SUFFIX);
+  int ch;
+
+  dc = date;
+  pc = datebuf;
+  while (pc < datebuf + sizeof (datebuf))
+  {
+    if ((*pc++ = ch = *dc++) == '\0')
+    {
+      break;
+    }
+    else if (! isdigit (ch))
+    {
+      pc--;
+    }
+  }
+  datebuf[sizeof (datebuf) - 1] = '\0';
+  sprintf(buf, "%s_%s_%s_%d%s", host, disk, datebuf, level, COMPRESS_SUFFIX);
 
   for (pc = buf; *pc != '\0'; pc++)
     if ((*pc == '/') || (*pc == ' '))
