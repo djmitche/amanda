@@ -1,3 +1,7 @@
+1999-09-20  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* configure.in (AMANDA_TMPDIR): Added comment for config.h.in.
+
 1999-09-19 John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/amverify.sh.in: this script is important enough it should
