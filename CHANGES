@@ -1,4 +1,4 @@
-Version 2.4.0
+Version 2.4.0b6p4
 
 	check whether exclude-list file exists before calling gnutar.
 	If it does not, log a message to debugging file and discard it.
