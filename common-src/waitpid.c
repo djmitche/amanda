@@ -52,9 +52,14 @@ static void foo() {};
 
 #else
 
+#if 1
+#include "amanda.h"
+#else
+/* these are all included in amanda.h */
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <errno.h>
+#endif
 
 #ifdef DEBUG
 #   include <stdio.h>
