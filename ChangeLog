@@ -1,5 +1,10 @@
 1999-09-01 John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/reporter.c: handle/report a common columnspec syntax
+	  error instead of dumping core.
+
+1999-09-01 John R. Jackson  <jrj@purdue.edu>
+
 	* man/amanda.8.in: typo in columnspec description.
 
 1999-09-01 John R. Jackson  <jrj@purdue.edu>
