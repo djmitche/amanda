@@ -1,3 +1,9 @@
+2001-11-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* Amanda 2.4.3b1 released
+	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.4.3b1)
+	* NEWS: New feature of amanda-2.4.3
+
 2001-11-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/diskfile.c (lookup_host): Match must be exact.
