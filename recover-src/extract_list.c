@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.64 2001/08/14 22:38:26 jrjackson Exp $
+ * $Id: extract_list.c,v 1.65 2001/12/07 22:10:04 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -997,6 +997,34 @@ static int okay_to_continue P((void))
     return ret;
 }
 
+/* prints continue prompt and waits for response,
+   returns 0 if don't, non-0 if do */
+static int okay_to_continue_tape P((void))
+{
+    int ch;
+    int ret;
+
+    printf("Continue? [Y/n/t]: ");
+    fflush(stdout); fflush(stderr);
+    while((ch = getchar()) != EOF && ch != '\n' && isspace(ch)) {}
+    if (ch == '\n' || ch == 'Y' || ch == 'y') {
+	ret = 1;
+    } else if (ch == 'T' || ch == 't') {
+	char device[100];
+
+	while(ch != EOF && ch != '\n') ch = getchar();
+	printf("Tape device: ");
+	fflush(stdout); fflush(stderr);
+	fgets(device, 100, stdin);
+	set_tape(device);
+	return okay_to_continue_tape();
+    } else {
+	ret = 0;
+    }
+    while(ch != EOF && ch != '\n') ch = getchar();
+    return ret;
+}
+
 static void send_to_tape_server(tss, cmd)
 int tss;
 char *cmd;
@@ -1517,7 +1545,7 @@ void extract_files P((void))
 	else {
 	    dump_device_name = newstralloc(dump_device_name, tape_device_name);
 	    printf("Load tape %s now\n", elist->tape);
-	    if (!okay_to_continue())
+	    if (!okay_to_continue_tape())
 	        return;
 	}
 	dump_datestamp = newstralloc(dump_datestamp, elist->date);
