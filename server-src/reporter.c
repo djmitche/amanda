@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.87 2004/03/17 13:05:06 martinea Exp $
+ * $Id: reporter.c,v 1.88 2004/08/31 13:38:51 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -1899,16 +1899,10 @@ static void
 handle_strange()
 {
     char *str = NULL;
+    char *strangestr = NULL;
     repdata_t *repdata;
 
     repdata = handle_success();
-
-    str = vstralloc("  ", prefix(repdata->disk->host->hostname, 
-				 repdata->disk->name, repdata->level),
-		    " ", "STRANGE",
-		    NULL);
-    addline(&errsum, str);
-    amfree(str);
 
     addline(&errdet,"");
     str = vstralloc("/-- ", prefix(repdata->disk->host->hostname, 
@@ -1920,9 +1914,21 @@ handle_strange()
 
     while(contline_next()) {
 	get_logline(logfile);
+#define sc "sendbackup: warning "
+	if(strncmp(curstr, sc, sizeof(sc)-1) == 0) {
+	    strangestr = newstralloc(strangestr, curstr+sizeof(sc)-1);
+	}
 	addline(&errdet, curstr);
     }
     addline(&errdet,"\\--------");
+
+    str = vstralloc("  ", prefix(repdata->disk->host->hostname, 
+				 repdata->disk->name, repdata->level),
+		    " ", "STRANGE", " ", strangestr,
+		    NULL);
+    addline(&errsum, str);
+    amfree(str);
+    amfree(strangestr);
 }
 
 static void
