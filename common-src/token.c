@@ -23,7 +23,7 @@
  * Author: George Scott, Computer Centre, Monash University.
  */
 /*
- * $Id: token.c,v 1.8 1997/10/03 08:29:16 george Exp $
+ * $Id: token.c,v 1.9 1997/10/06 04:25:34 george Exp $
  *
  * token bashing routines
  */
@@ -56,65 +56,77 @@ char **token;	/* Array of token pointers */
 int toklen;	/* Size of token[] */
 char *sep;	/* Token separators - usually " " */
 {
-	register char *pi, *po;
-	register int fld;
-	register int len;
+    register char *pi, *po;
+    register int fld;
+    register int len;
+    int in_quotes;
 
-	assert(str && token && toklen > 0 && sep);
+    assert(str && token && toklen > 0 && sep);
 
-	token[0] = str;
+    token[0] = str;
 
-	for (fld = 1; fld < toklen; fld++) token[fld] = (char *)0;
+    for (fld = 1; fld < toklen; fld++) token[fld] = (char *)0;
 
-	fld = 0;
+    fld = 0;
 
-	if (*sep == '\0' || *str == '\0' || toklen == 1) return fld;
+    if (*sep == '\0' || *str == '\0' || toklen == 1) return fld;
 
-	/* Calculate the length of the unquoted string. */
+    /* Calculate the length of the unquoted string. */
 
-	len = 0;
-	for (pi = str; *pi && *pi != '\n'; pi++) {
-		if (*pi == '\\') {	/* had better not be trailing... */
-			pi++;
-			if (*pi >= '0' && *pi <= '3') pi = pi + 3;
-		}
-		len++;
+    len = 0;
+    for (pi = str; *pi && *pi != '\n'; pi++) {
+	switch(*pi) {
+	case '\\':	/* had better not be trailing... */
+	    pi++;
+	    if (*pi >= '0' && *pi <= '3') pi = pi + 2;
+	    len++;
+	    break;
+	case '"':	/* just ignore "'s */
+	    break;
+	default:
+	    len++;
 	}
+    }
 
-	/* Allocate some space */
+    /* Allocate some space */
 
-	if (buf != (char *)0) free(buf); /* clean up from last time */
-	buf = alloc(len+1);
+    if (buf != (char *)0) free(buf); /* clean up from last time */
+    buf = alloc(len+1);
 
-	/* Copy it across and tokenise it */
+    /* Copy it across and tokenise it */
 
-	po = buf;
-	token[++fld] = po;
-	for (pi = str; *pi && *pi != '\n'; pi++) {
-		if (*pi == '\\') {	/* escape */
-			pi++;
-			if (*pi >= '0' && *pi <= '3') {
-				*po =       (*pi++ - '0') << 6;
-				*po = *po +((*pi++ - '0') << 3);
-				*po = *po + (*pi   - '0')     ;
-			}
-			else *po = *pi;
-		}
-		else if (strchr(sep, *pi)) {	/* separator */
-			*po = '\0';	/* end of token */
-			if (fld+1 >= toklen) return fld;
-			token[++fld] = po + 1;
-		}
-		else {
-			*po = *pi;	/* normal */
-		}
-		po++;
+    in_quotes = 0;
+    po = buf;
+    token[++fld] = po;
+    for (pi = str; *pi && *pi != '\n'; pi++) {
+	if (*pi == '\\') {	/* escape */
+	    pi++;
+	    if (*pi >= '0' && *pi <= '3') {
+		*po =       ((*pi++ - '0') << 6);
+		*po = *po + ((*pi++ - '0') << 3);
+		*po = *po + ((*pi   - '0')     );
+	    }
+	    else *po = *pi;
+	    po++;
 	}
-	*po = '\0';
+	else if (*pi == '"') {	/* quotes */
+	    in_quotes = !in_quotes;
+	}
+	else if (!in_quotes && strchr(sep, *pi)) {	/* separator */
+	    *po = '\0';	/* end of token */
+	    if (fld+1 >= toklen) return fld; /* too many tokens */
+	    token[++fld] = po + 1;
+	    po++;
+	}
+	else {
+	    *po++ = *pi;	/* normal */
+	}
+    }
+    *po = '\0';
 
-	assert(po - buf == len);	/* Just checking! */
+    assert(po == buf + len);	/* Just checking! */
 
-	return fld;
+    return fld;
 }
 
 /*
@@ -158,51 +170,66 @@ char *str;	/* the string to quote */
 	return quote(" ", str);
 }
 
-char *quote(sep, str)
-char *sep;	/* separators that also need quoting */
+char *quote(sepchr, str)
+char *sepchr;	/* separators that also need quoting */
 char *str;	/* the string to quote */
 {
-	register char *pi, *po;
-	register int len;
+    register char *pi, *po;
+    register int len;
+    int sep, need_quotes;
 
-	/* Calculate the length of the quoted token. */
+    /* Calculate the length of the quoted token. */
 
-	len = 0;
-	for (pi = str; *pi; pi++) {
-		if (*pi < ' ' || *pi > '~')
-		  len = len + 4;
-		else if ((*sep && strchr(sep, *pi)) || *pi == '\\')
-		  len = len + 2;
-		else
-		  len++;
+    len = sep = 0;
+    for (pi = str; *pi; pi++) {
+	if (*pi < ' ' || *pi > '~')
+	    len = len + 4;
+	else if (*pi == '\\' || *pi == '"')
+	    len = len + 2;
+	else if (*sepchr && strchr(sepchr, *pi)) {
+	    len = len + 1;
+	    sep++;
 	}
+	else
+	    len++;
+    }
 
-	/* Allocate some space */
+    need_quotes = (sep != 0);
 
-	if (buf != (char *)0) free(buf); /* Clean up from last time */
-	buf = alloc(len+1);	/* trailing null */
+    if (need_quotes) len = len + 2;
 
-	/* Copy it across */
+    /* Allocate some space */
 
-	po = buf;
-	for (pi = str; *pi; pi++) {
-		if (*pi < ' ' || *pi > '~') {
-			*po++ = '\\';
-			*po++ = ((*pi >> 6) & 07) + '0';
-			*po++ = ((*pi >> 3) & 07) + '0';
-			*po++ = ((*pi     ) & 07) + '0';
-		}
-		else if ((*sep && strchr(sep, *pi)) || *pi == '\\') {
-			*po++ = '\\';
-			*po++ = *pi;
-		}
-		else *po++ = *pi;
+    if (buf != (char *)0) free(buf); /* Clean up from last time */
+    buf = alloc(len+1);	/* trailing null */
+
+    /* Copy it across */
+
+    po = buf;
+
+    if (need_quotes) *po++ = '"';
+
+    for (pi = str; *pi; pi++) {
+	if (*pi < ' ' || *pi > '~') {
+	    *po++ = '\\';
+	    *po++ = ((*pi >> 6) & 07) + '0';
+	    *po++ = ((*pi >> 3) & 07) + '0';
+	    *po++ = ((*pi     ) & 07) + '0';
 	}
-	*po = '\0';
+	else if (*pi == '\\' || *pi == '"') {
+	    *po++ = '\\';
+	    *po++ = *pi;
+	}
+	else *po++ = *pi;
+    }
 
-	assert(po - buf == len);	/* Just checking! */
+    if (need_quotes) *po++ = '"';
 
-	return buf;
+    *po = '\0';
+
+    assert(po - buf == len);	/* Just checking! */
+
+    return buf;
 }
 
 /* Table lookup.
@@ -270,7 +297,7 @@ char *inp;
 
 #ifdef TEST
 
-char pname[] = "token test";
+char *pname = "token test";
 
 int main()
 {
@@ -279,6 +306,8 @@ int main()
 	int r;
 	char *sr;
 	int i;
+
+	erroutput_type = ERR_INTERACTIVE;
 
 	printf("Testing split() with \" \" token separator\n");
 	while(1) {
