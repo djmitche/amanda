@@ -1,5 +1,9 @@
 2003-01-26  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* tape-src/output-rait.c (tapeio_next_devname): Use vstralloc.
+
+2003-01-26  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* changer-src/chg-scsi-chio.c: Change strdup to stralloc.
 	* changer-src/chg-scsi.c: Ditto.
 	* changer-src/scsi-aix.c: Ditto.
