@@ -19,6 +19,13 @@
 
 Version 2.4.0
 
+	allow multiple concurrent gnutar backups, by fixing amandates
+	locking mechanism.
+	-Liudvikas Bukys <bukys@cs.rochester.edu> & oliva
+
+	amdump should check for a hold file, as says the man-page.
+	-oliva
+
 	fix automatic enabling of USE_RUNDUMP for systems that require
 	this.  xfsdump support no longer requires USE_RUNDUMP to be
 	defined, rundump will be enabled and used for xfs filesystems

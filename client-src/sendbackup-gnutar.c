@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.45 1998/02/04 22:23:44 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.46 1998/02/04 22:42:10 amcore Exp $
  *
  * send backup data using GNU tar
  */
@@ -247,7 +247,7 @@ notincremental:
 
     /* find previous dump time */
 
-    if(!start_amandates(1))
+    if(!start_amandates(0))
 	error("error [opening %s: %s]", AMANDATES_FILE, strerror(errno));
 
     amdates = amandates_lookup(disk);
@@ -257,6 +257,9 @@ notincremental:
 	if(amdates->dates[l] > prev_dumptime)
 	    prev_dumptime = amdates->dates[l];
     }
+
+    finish_amandates();
+    free_amandates();
 
     gmtm = gmtime(&prev_dumptime);
     ap_snprintf(dumptimestr, sizeof(dumptimestr),
@@ -455,11 +458,12 @@ int goterror;
       }
 #endif
 
+        if(!start_amandates(1))
+	    error("error [opening %s: %s]", AMANDATES_FILE, strerror(errno));
 	amandates_updateone(cur_disk, cur_level, cur_dumptime);
+	finish_amandates();
+	free_amandates();
     }
-
-    finish_amandates();
-    free_amandates();
 }
 
 backup_program_t backup_program = {
