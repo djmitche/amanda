@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.25.2.4 1998/04/08 16:26:37 amcore Exp $
+ * $Id: amindexd.c,v 1.25.2.5 1998/04/11 06:14:52 amcore Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -326,7 +326,8 @@ char *host;
 
     while ((direntp = readdir(dirp)) != NULL)
     {
-	if (strncmp(direntp->d_name, host, strlen(host)) == 0)
+	if (strncmp(direntp->d_name, host, strlen(host)) == 0 &&
+	    direntp->d_name[strlen(host)] == '_')
 	{
 	    (void)closedir(dirp);
 	    return 0;
