@@ -109,13 +109,9 @@
 #     time whenever the cleaning tape is referenced.  The default is 120
 #     seconds (two minutes).
 #
-#   * Figure out the drive slot number.  By default, the script takes
-#     any digits in the tape drive device name and assumes they match
-#     the robot slot number for the drive.  In the example above, the
-#     tape drive ("Data Transfer Element") is in slot 0.  If the tape
-#     drive device name happens to be (e.g.) /dev/rmt/0mn, the numbers
-#     match and you do not have to do anything else.  If they do not match
-#     (e.g. the robot number was 128, or the drive was /dev/nst3) you
+#   * Figure out the drive slot number.  By default, it is set to 0.
+#     In the example above, the tape drive ("Data Transfer Element")
+#     is in slot 0. If your drive slot is not 0, you
 #     need to set the drive slot number with the "driveslot" variable.
 #
 #   * Figure out whether your robot has a barcode reader and whether
@@ -172,6 +168,8 @@
 # lastslot=?		    #### Last storage slot (element) -- required
 # cleanslot=-1		    #### Slot with cleaner tape -- default is "-1"
 #			    #### Set negative to indicate no cleaner available
+# driveslot=0		    #### Drive slot number.  Defaults to 0
+#			    #### Use the 'Data Transfer Element' you want
 #
 #   # Do you want to clean the drive after a certain number of accesses?
 #   # NOTE - This is unreliable, since 'accesses' aren't 'uses', and we
@@ -187,10 +185,6 @@
 #
 # offline_before_unload=0   #### Does your robot require an
 #			    #### 'mt offline' before mtx unload?
-#
-# driveslot=NN		    #### Drive slot number.  Defaults to the
-#			    #### tape device number (e.g. /dev/nst0 is
-#			    #### assumed to be robot drive 0).
 #
 # poll_drive_ready=NN	    #### Time (seconds) between tests to see if
 #			    #### the tape drive has gone ready (default: 3).
@@ -656,20 +650,7 @@ done
 # using the old amgetconf.
 
 if [ -z "$driveslot" ]; then
-	###
-	# Grabs the slot number from tape device.  Should not care if
-	# it's /dev/nst3, /dev/stuff/p00p/0hn or what.
-	###
-
-	###
-	# If the robot drive number is different than the tape drive
-	# number (e.g. the tape is /dev/nst0 but the robot slot is 14),
-	# put "driveslot = NN" in the config file to set the robot
-	# drive number.
-	###
-
-	driveslot=`echo $tape \
-		  | sed -n "s/\/dev\/\(.*\)\([0-9][0-9]*\)\(.*\)/\2/p"`
+	driveslot=0;
 fi
 
 # Get DBGFILE set if it is not already.
