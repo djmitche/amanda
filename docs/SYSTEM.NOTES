@@ -66,8 +66,8 @@ If you use logical volumes, you may refer to mountpoints or full
 device pathnames instead of device names in the disk list file.
  
 ---------------------------------------------------------------------------
-AIX 3.2
--------
+AIX
+---
 
 People have found problems regarding shared libraries support on AIX.
 We hope libtool 1.0f, distributed with amanda-2.4.0b4, fixes this
