@@ -59,6 +59,8 @@ TEST_PROGS = diskfile conffile infofile
 
 EXTRA_PROGRAMS = $(TEST_PROGS)
 
+EXTRA_DIST = dumper-krb4.c
+
 CLEANFILES = *.test.c
 
 amindexd_SOURCES =	amindexd.c					\

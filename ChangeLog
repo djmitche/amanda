@@ -1,5 +1,17 @@
+2003-12-19  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* client-src/Makefile.am (EXTRA_DIST): Add amandad-krb4.c,
+	  sendbackup-krb4.c and sendbackup-krb4.h.
+	* common-src/Makefile.am (EXTRA_DIST): Add krb4-security.c and
+	  krb4-security.h.
+	* server-src/Makefile.am (EXTRA_DIST): Add dumper-krb4.c.
+	* NEWS: Kerberos 4 support integrated and functional again.
+
 2003-12-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	patch by Greg Troxel <gdt@ir.bbn.com>
+             and Beverly Schwartz <bschwart@bbn.com>
+
+	Original *krb4* files are taken form the amanda-krb repository.
 
 	Add kerberos 4 support.
 	* client-src/amandad-krb4.c: New file.

@@ -58,7 +58,9 @@ EXTRA_SCRIPTS =		amhpfixdevs		amsinixfixdevs
 
 DISTCLEANFILES = 	$(EXTRA_SCRIPTS)
 
-EXTRA_DIST =		amhpfixdevs.sh		amsinixfixdevs.sh
+EXTRA_DIST =		amhpfixdevs.sh		amsinixfixdevs.sh	\
+			amandad-krb4.c		sendbackup-krb4.c	\
+			sendbackup-krb4.h
 
 sendbackup_SOURCES = 	sendbackup.c		sendbackup.h	\
 			sendbackup-dump.c	sendbackup-gnutar.c

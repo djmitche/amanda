@@ -45,6 +45,8 @@ STANDARD_COMMON_STUFF = \
 
 EXTRA_PROGRAMS = genversion $(TEST_PROGS)
 
+EXTRA_DIST = krb4-security.c	krb4-security.h
+
 genversion_SOURCES = genversion.c
 genversion_LDADD = $(libamanda_la_LIBADD) $(STANDARD_COMMON_STUFF) versuff.o
 
