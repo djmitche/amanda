@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.104 2003/01/02 04:00:21 martinea Exp $
+ * $Id: amanda.h,v 1.105 2003/01/31 20:42:05 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -1171,6 +1171,14 @@ extern ssize_t writev P((int fd, const struct iovec *iov, int iovcnt));
 
 #ifndef STDERR_FILENO
 #define STDERR_FILENO 2
+#endif
+
+/* S_ISDIR is not defined on Nextstep */
+#ifndef S_ISDIR
+#if defined(_S_IFMT) && defined(_S_IFDIR)
+#define S_ISDIR(mode)   (((mode) & (_S_IFMT)) == (_S_IFDIR))
+#endif
+error: Don t know how to define S_ISDIR
 #endif
 
 #endif	/* !AMANDA_H */
