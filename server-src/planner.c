@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.70.2.1 1998/08/04 03:51:21 oliva Exp $
+ * $Id: planner.c,v 1.70.2.2 1998/09/08 17:59:15 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -58,6 +58,7 @@ int conf_tapecycle;
 int conf_bumpdays;
 int conf_bumpsize;
 int conf_etimeout;
+int conf_reserve;
 double conf_bumpmult;
 
 typedef struct est_s {
@@ -224,6 +225,7 @@ char **argv;
     conf_bumpsize = getconf_int(CNF_BUMPSIZE);
     conf_bumpmult = getconf_real(CNF_BUMPMULT);
     conf_etimeout = getconf_int(CNF_ETIMEOUT);
+    conf_reserve  = getconf_int(CNF_RESERVE);
 
     amfree(datestamp);
     datestamp = construct_datestamp();
@@ -654,7 +656,8 @@ disk_t *dp;
 	return;
     }
 
-    if(ep->last_level == -1 && ep->next_level0 > 0 && dp->strategy != DS_NOFULL) {
+    if( ep->last_level == -1 && ep->next_level0 > 0 && 
+	dp->strategy != DS_NOFULL && conf_reserve == 100) {
 	log_add(L_WARNING,
 	     "%s:%s mismatch: no tapelist record, but curinfo next_level0: %d.",
 	        dp->host->hostname, dp->name, ep->next_level0);

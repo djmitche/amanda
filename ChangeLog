@@ -1,5 +1,11 @@
 1998-09-08  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/planner.c (setup_estimate): Don't write a
+	"mismatch: no tapelist record, but curinfo next_level0" message
+	and force a level 0 when reserve < 100.
+
+1998-09-08  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/holding.h (get_amanda_names): return a filetype_t 
 	instead of an int.
 	* server-src/holding.c (get_amanda_names): return the filetype_t
