@@ -1,3 +1,8 @@
+2001-04-10 John R. Jackson <jrj@purdue.edu>
+
+	* docs/INSTALL: Update location to GNUPLOT per Lars Hecking
+	  <lhecking@nmrc.ie>.
+
 2001-04-08  Alexandre Oliva  <aoliva@redhat.com>
 
 	* client-src/getfsent.c (search_fstab): Don't skip entry just
