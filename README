@@ -114,20 +114,9 @@ WHERE DO I GET AMANDA?
 ----------------------
 
 There are several versions of Amanda.  The latest version at the time
-of this writing is 2.3.0.4 available at
-
-	ftp://ftp.gps.caltech.edu/pub/amanda
-
-However, the it appears that the development of Amanda will shift from
-one where Blair Zajac did much of the maintenance, to a team oriented
-one lead by James da Silva, the original author of Amanda.  The Amanda
-releases will probably then be found on the primary ftp site for Amanda 
-at the University of Maryland at College Park at
+of this writing is 2.4.0 available at:
 
 	ftp://ftp.cs.umd.edu/pub/amanda
-
-At the time of this writing, the Maryland ftp site had only Amanda
-version 2.3.0.
 
 
 HOW DO I GET AMANDA UP AND RUNNING?

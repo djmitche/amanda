@@ -1,3 +1,5 @@
+Version 2.4.0
+
 	Have sendbackup-dump and sendbackup-gnutar list the actual
 	program that should be used to restore a file from a backup
 	instead of just listing restore or gtar. -blair
@@ -12,6 +14,12 @@
 	Change umask to 066 before creating index file in /tmp. -oliva
 
 	Fixed autoconf for gdbm on linux. -oliva
+
+	configure now seeks out a few possible locations for
+	kerberos4 includes and tries to find the correct path if
+	the kerberos bits have been installed.  It's possible for
+	someone to just specify the root of a kerberos tree for
+	where the bits live, as well. -kovert
 
 Version 2.3.0.4
 
