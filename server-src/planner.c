@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.133 2002/11/07 23:20:11 martinea Exp $
+ * $Id: planner.c,v 1.134 2002/11/14 18:15:29 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1768,6 +1768,7 @@ static void delay_dumps P((void))
     disk_t *dp, *ndp, *preserve;
     bi_t *bi, *nbi;
     long new_total;	/* New total_size */
+    char est_kb[20];     /* Text formatted dump size */
 
     biq.head = biq.tail = NULL;
 
@@ -1789,10 +1790,14 @@ static void delay_dumps P((void))
 	    continue;
 	}
 
+        /* Format dumpsize for messages */
+	sprintf(est_kb, "%ld KB,", est(dp)->dump_size);
+
 	if(est(dp)->dump_level == 0) {
 	    if(est(dp)->last_level == -1 || dp->skip_incr) {
 		delay_one_dump(dp, 1,
 			       "dump larger than tape,",
+			       est_kb,
 			       "but cannot incremental dump",
 			       dp->skip_incr ? "skip-incr": "new",
 			       "disk",
@@ -1801,6 +1806,7 @@ static void delay_dumps P((void))
 	    else {
 		delay_one_dump(dp, 0,
 			       "dump larger than tape,",
+			       est_kb,
 			       "full dump delayed",
 			       NULL);
 	    }
@@ -1808,6 +1814,7 @@ static void delay_dumps P((void))
 	else {
 	    delay_one_dump(dp, 1,
 			   "dump larger than tape,",
+			   est_kb,
 			   "skipping incremental",
 			   NULL);
 	}
@@ -1837,9 +1844,14 @@ static void delay_dumps P((void))
 	ndp = dp->prev;
 
 	if(est(dp)->dump_level == 0 && dp != preserve) {
+
+            /* Format dumpsize for messages */
+	    sprintf(est_kb, "%ld KB,", est(dp)->dump_size);
+
 	    if(est(dp)->last_level == -1 || dp->skip_incr) {
 		delay_one_dump(dp, 1,
 			       "dumps too big,",
+			       est_kb,
 			       "but cannot incremental dump",
 			       dp->skip_incr ? "skip-incr": "new",
 			       "disk",
@@ -1848,6 +1860,7 @@ static void delay_dumps P((void))
 	    else {
 		delay_one_dump(dp, 0,
 			       "dumps too big,",
+			       est_kb,
 			       "full dump delayed",
 			       NULL);
 	    }
@@ -1868,8 +1881,13 @@ static void delay_dumps P((void))
 	ndp = dp->prev;
 
 	if(est(dp)->dump_level != 0) {
+
+            /* Format dumpsize for messages */
+	    sprintf(est_kb, "%ld KB,", est(dp)->dump_size);
+
 	    delay_one_dump(dp, 1,
 			   "dumps way too big,",
+			   est_kb,
 			   "must skip incremental dumps",
 			   NULL);
 	}
