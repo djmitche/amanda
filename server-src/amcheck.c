@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.56 1999/03/07 17:44:26 martinea Exp $
+ * $Id: amcheck.c,v 1.57 1999/04/01 15:34:11 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -566,7 +566,7 @@ int fd;
      * to do it here).
      */
 
-    if(do_localchk) {
+    if(do_localchk || do_tapechk) {
 	char *conf_tapelist;
 	char *confdir;
 	char *tapefile;
