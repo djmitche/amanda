@@ -89,6 +89,26 @@ if test "$LIBRARY_DIRS"; then
 	done
 fi
 
+AC_ARG_WITH(dumperdir,
+    [  --with-dumperdir=DIR   where we install the dumpers [libexecdir/dumper]],
+    [
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-dumperdir option.])
+	  ;;
+	esac
+	DUMPER_DIR="$withval"
+    ],
+    : ${DUMPER_DIR=$libexecdir/dumper}
+)
+DUMPER_DIR=`(
+    test "x$prefix" = xNONE && prefix=$ac_default_prefix
+    test "x$exec_prefix" = xNONE && exec_prefix=${prefix}
+    eval echo "$DUMPER_DIR"
+)`
+AC_DEFINE_UNQUOTED(DUMPER_DIR,"$DUMPER_DIR")
+AC_SUBST(DUMPER_DIR)
+
 AC_ARG_WITH(configdir,
     [  --with-configdir=DIR   runtime config files in DIR [sysconfdir/amanda]],
     [

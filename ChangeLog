@@ -1,5 +1,11 @@
 1999-03-07 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* configure.in: new option --with-dumperdir=DIR to specify the 
+	directory for the dumpers (dumper api).
+	* config/acconfig.h: add def of DUMPER_DIR
+
+1999-03-07 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/conffile.c: accept any string for the program.
 	* server-src/amcheck.c: add the keyword DUMPER to the request if 
 	the program is not DUMP or GNUTAR.

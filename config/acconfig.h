@@ -18,6 +18,7 @@
 #undef sbindir
 #undef libexecdir
 #undef mandir
+#undef DUMPER_DIR
 #undef CONFIG_DIR
 #undef DEBUG_DIR
 
