@@ -167,3 +167,14 @@ such, and these backups won't happen.  This is yet another known
 limitation of Amanda; fixing it involves modifying the way estimate
 requests are issued, so that no packet exceeds the maximum packet
 size.
+
+
+Q: Why does `amrecover' report `no index records'?
+
+A: Probably because you have not enabled index generation in
+amanda.conf.  The `index yes' option must be present in every dumptype
+for whose disks indexes should be generated.
+
+   Indexes are currently generated at backup-time only, so, if a
+backup was performed without creating an index, you won't be able to
+use `amrecover' to restore it, 'll have to use `amrestore'.
