@@ -772,8 +772,9 @@ static void get_priority()
     case LOW: pri = 0; break;
     case MEDIUM: pri = 1; break;
     case HIGH: pri = 2; break;
+    case INT: pri = tokenval.i; break;
     default:
-	parserror("LOW, MEDIUM or HIGH expected");
+	parserror("LOW, MEDIUM, HIGH or integer expected");
 	pri = 0;
     }
     dpcur.priority = pri;
