@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.67 2000/02/01 01:36:54 martinea Exp $
+ * $Id: amadmin.c,v 1.68 2000/12/31 18:20:36 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -316,40 +316,25 @@ char **argv;
 char *cmdname;
 void (*func) P((disk_t *dp));
 {
-    host_t *hp;
     disk_t *dp;
-    char *diskname;
-    int count;
+    int count = 0;
 
     if(argc < 4) {
-	fprintf(stderr,"%s: expecting \"%s <hostname> {<disks> ...}\"\n",
-		argv[0], cmdname);
+	fprintf(stderr,"%s: expecting \"%s [<hostname> <disks>]+\"\n",
+		get_pname(), cmdname);
 	usage();
     }
 
-    if((hp = lookup_host(argv[3])) == NULL) {
-	fprintf(stderr, "%s: host %s not in current disklist database.\n",
-		argv[0], argv[3]);
-	exit(1);
-    }
-    if(argc < 5) {
-	for(dp = hp->disks; dp != NULL; dp = dp->hostnext)
+    match_disklist(diskqp,argc-3,argv+3);
+
+    for(dp = diskqp->head; dp != NULL; dp = dp->next) {
+	if(dp->todo) {
+	    count++;
 	    func(dp);
-    }
-    else {
-	for(argc -= 4, argv += 4; argc; argc--, argv++) {
-	    count = 0;
-	    diskname = *argv;
-	    for(dp = hp->disks; dp != NULL; dp = dp->hostnext) {
-		if(match(diskname, dp->name)) {
-		    count++;
-		    func(dp);
-		}
-	    }
-	    if(count == 0)
-		fprintf(stderr, "%s: host %s has no disks that match \"%s\"\n",
-			argv[0], hp->hostname, diskname);
 	}
+    }
+    if(count==0) {
+	fprintf(stderr,"%s: no disk matched\n",get_pname());
     }
 }
 
@@ -561,7 +546,7 @@ char **argv;
 
     if(argc < 4) {
 	fprintf(stderr,"%s: expecting \"reuse <tapelabel> ...\"\n",
-		argv[0]);
+		get_pname());
 	usage();
     }
 
@@ -597,7 +582,7 @@ char **argv;
 
     if(argc < 4) {
 	fprintf(stderr,"%s: expecting \"no-reuse <tapelabel> ...\"\n",
-		argv[0]);
+		get_pname());
 	usage();
     }
 

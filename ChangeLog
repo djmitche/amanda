@@ -1,5 +1,11 @@
 2000-12-31  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amadmin.c (diskloop): New [host disk]* pair arguments.
+	* server-src/amadmin.c (diskloop, reuse, noreuse): use get_pname()
+	instead of argv[0].
+
+2000-12-31  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amflush.c (main):log DISK after checking if logfile exist.
 
 2000-12-30 John R. Jackson <jrj@purdue.edu>
