@@ -1,5 +1,11 @@
 1998-12-02  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/base64.{c,h}: new files, implement base64 encoding
+	and decoding.  Implementation based on routines in bind, and so
+	copyright is held by ISC and IBM (but is BSD-like).
+
+1998-12-02  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/security.h: add 'handlesize' to the driver struct, also
 	make the connect function pointer return int and take a handle
 	argument
