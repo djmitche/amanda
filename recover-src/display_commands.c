@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: display_commands.c,v 1.14 2002/02/11 01:32:10 jrjackson Exp $
+ * $Id: display_commands.c,v 1.15 2002/03/24 19:25:51 jrjackson Exp $
  *
  * implements the directory-display related commands in amrecover
  */
@@ -74,8 +74,7 @@ char *path;
 
     if (dir_list == NULL)
     {
-	if ((dir_list = (DIR_ITEM *)malloc(sizeof(DIR_ITEM))) == NULL)
-	    return -1;
+	dir_list = (DIR_ITEM *)alloc(sizeof(DIR_ITEM));
 	dir_list->next = NULL;
 	strncpy(dir_list->date, date, sizeof(dir_list->date)-1);
 	dir_list->date[sizeof(dir_list->date)-1] = '\0';
@@ -94,8 +93,7 @@ char *path;
 	last = last->next;
     }
 
-    if ((last->next = (DIR_ITEM *)malloc(sizeof(DIR_ITEM))) == NULL)
-	return -1;
+    last->next = (DIR_ITEM *)alloc(sizeof(DIR_ITEM));
     last->next->next = NULL;
     strncpy(last->next->date, date, sizeof(last->next->date)-1);
     last->next->date[sizeof(last->next->date)-1] = '\0';

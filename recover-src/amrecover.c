@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.44 2002/03/24 04:12:55 jrjackson Exp $
+ * $Id: amrecover.c,v 1.45 2002/03/24 19:25:51 jrjackson Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -458,11 +458,7 @@ char **argv;
 	 */
 	char **new_argv;
 
-	new_argv = (char **) malloc ((argc + 1 + 1) * sizeof (*new_argv));
-	if (new_argv == NULL)
-	{
-	    error("no memory for argument list");
-	}
+	new_argv = (char **) alloc ((argc + 1 + 1) * sizeof (*new_argv));
 	new_argv[0] = argv[0];
 	new_argv[1] = "-C";
 	for (i = 1; i < argc; i++)

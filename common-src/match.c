@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: match.c,v 1.16 2002/02/11 01:32:10 jrjackson Exp $
+ * $Id: match.c,v 1.17 2002/03/24 19:25:50 jrjackson Exp $
  *
  * functions for checking and matching regular expressions
  */
@@ -56,7 +56,7 @@ char *regex;
     char *result;
     int j;
     size_t i;
-    result = malloc(2*strlen(regex)+1);
+    result = alloc(2*strlen(regex)+1);
 
     for(i=0,j=0;i<strlen(regex);i++) {
 	if(!isalnum((int)regex[i]))
@@ -235,7 +235,7 @@ char separator;
     int  i;
 
     lenword = strlen(word);
-    nword = (char *)malloc(lenword + 3);
+    nword = (char *)alloc(lenword + 3);
 
     r = nword;
     w = word;
@@ -258,9 +258,9 @@ char separator;
      * one expansion.
      */
     len = strlen(glob);
-    regex = (char *)malloc(1 + len * 6 + 1 + 1 + 2 + 2);
+    regex = (char *)alloc(1 + len * 6 + 1 + 1 + 2 + 2);
     r = regex;
-    nglob = strdup(glob);
+    nglob = stralloc(glob);
     g = nglob;
 
     if((len == 1 && nglob[0] == separator) ||
@@ -377,13 +377,13 @@ char *glob, *host;
     int i;
 
     
-    lglob = (char *)malloc(strlen(glob)+1);
+    lglob = (char *)alloc(strlen(glob)+1);
     c = lglob, d=glob;
     while( *d != '\0')
 	*c++ = tolower(*d++);
     *c = *d;
 
-    lhost = (char *)malloc(strlen(host)+1);
+    lhost = (char *)alloc(strlen(host)+1);
     c = lhost, d=host;
     while( *d != '\0')
 	*c++ = tolower(*d++);

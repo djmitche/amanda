@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.14 2002/03/24 04:12:55 jrjackson Exp $
+ * $Id: client_util.c,v 1.15 2002/03/24 19:25:50 jrjackson Exp $
  *
  */
 
@@ -376,7 +376,7 @@ int verbose;
     option_t *options;
     char *p, *tok;
 
-    options = malloc(sizeof(option_t));
+    options = alloc(sizeof(option_t));
     init_options(options);
     options->str = stralloc(str);
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: alloc.c,v 1.31 2002/02/11 01:32:10 jrjackson Exp $
+ * $Id: alloc.c,v 1.32 2002/03/24 19:25:50 jrjackson Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * errordump() is called, relieving the caller from checking the return
@@ -36,13 +36,11 @@
 
 static char *internal_vstralloc P((const char *, va_list));
 
-#if defined(USE_DBMALLOC)
-
 /*
  *=====================================================================
- * dbmalloc_caller_loc -- keep track of all allocation callers
+ * debug_caller_loc -- keep track of all allocation callers
  *
- * const char *dbmalloc_caller_loc(const char *file, int line)
+ * const char *debug_caller_loc(const char *file, int line)
  *
  * entry:	file = source file
  *		line = source line
@@ -65,7 +63,7 @@ static char *internal_vstralloc P((const char *, va_list));
  */
 
 const char *
-dbmalloc_caller_loc(file, line)
+debug_caller_loc(file, line)
     const char *file;
     int line;
 {
@@ -172,29 +170,26 @@ debug_alloc_pop ()
     saved_line = debug_alloc_loc_info[debug_alloc_ptr].line;
 }
 
-#endif
-
 /*
  * alloc - a wrapper for malloc.
  */
 void *
-#if defined(USE_DBMALLOC)
 debug_alloc(s, l, size)
     const char *s;
     int l;
-#else
-alloc(size)
-#endif
     size_t size;
 {
     void *addr;
 
-    malloc_enter(dbmalloc_caller_loc(s, l));
+    malloc_enter(debug_caller_loc(s, l));
     addr = (void *)malloc(max(size, 1));
     if (addr == NULL) {
-	errordump("memory allocation failed (%u bytes requested)", size);
+	errordump("%s@%d: memory allocation failed (%u bytes requested)",
+		  s ? s : "(unknown)",
+		  s ? l : -1,
+		  size);
     }
-    malloc_leave(dbmalloc_caller_loc(s, l));
+    malloc_leave(debug_caller_loc(s, l));
     return addr;
 }
 
@@ -203,22 +198,18 @@ alloc(size)
  * newalloc - free existing buffer and then alloc a new one.
  */
 void *
-#if defined(USE_DBMALLOC)
 debug_newalloc(s, l, old, size)
     const char *s;
     int l;
-#else
-newalloc(old, size)
-#endif
     void *old;
     size_t size;
 {
     char *addr;
 
-    malloc_enter(dbmalloc_caller_loc(s, l));
-    addr = alloc(max(size, 1));
+    malloc_enter(debug_caller_loc(s, l));
+    addr = debug_alloc(s, l, size);
     amfree(old);
-    malloc_leave(dbmalloc_caller_loc(s, l));
+    malloc_leave(debug_caller_loc(s, l));
     return addr;
 }
 
@@ -228,21 +219,17 @@ newalloc(old, size)
  *            Just like strdup()!
  */
 char *
-#if defined(USE_DBMALLOC)
 debug_stralloc(s, l, str)
     const char *s;
     int l;
-#else
-stralloc(str)
-#endif
     const char *str;
 {
     char *addr;
 
-    malloc_enter(dbmalloc_caller_loc(s, l));
-    addr = alloc(strlen(str) + 1);
+    malloc_enter(debug_caller_loc(s, l));
+    addr = debug_alloc(s, l, strlen(str) + 1);
     strcpy(addr, str);
-    malloc_leave(dbmalloc_caller_loc(s, l));
+    malloc_leave(debug_caller_loc(s, l));
     return (addr);
 }
 
@@ -286,8 +273,11 @@ internal_vstralloc(str, argp)
 	    continue;				/* minor optimisation */
 	}
 	if (a >= MAX_VSTRALLOC_ARGS) {
-	    errordump("more than %d arg%s to vstralloc",
-		      MAX_VSTRALLOC_ARGS, (MAX_VSTRALLOC_ARGS == 1) ? "" : "s");
+	    errordump("%s@%d: more than %d arg%s to vstralloc",
+		      saved_file ? saved_file : "(unknown)",
+		      saved_file ? saved_line : -1,
+		      MAX_VSTRALLOC_ARGS,
+		      (MAX_VSTRALLOC_ARGS == 1) ? "" : "s");
 	}
 	arg[a] = next;
 	len[a] = l;
@@ -297,7 +287,7 @@ internal_vstralloc(str, argp)
     arg[a] = NULL;
     len[a] = 0;
 
-    next = result = alloc(total_len+1);
+    next = result = debug_alloc(saved_file, saved_line, total_len+1);
     for (a = 0; (s = arg[a]) != NULL; a++) {
 	memcpy(next, s, len[a]);
 	next += len[a];
@@ -311,21 +301,17 @@ internal_vstralloc(str, argp)
 /*
  * vstralloc - copies multiple strings into newly allocated memory.
  */
-#if defined(USE_DBMALLOC)
 arglist_function(char *debug_vstralloc, const char *, str)
-#else
-arglist_function(char *vstralloc, const char *, str)
-#endif
 {
     va_list argp;
     char *result;
 
     debug_alloc_pop();
-    malloc_enter(dbmalloc_caller_loc(saved_file, saved_line));
+    malloc_enter(debug_caller_loc(saved_file, saved_line));
     arglist_start(argp, str);
     result = internal_vstralloc(str, argp);
     arglist_end(argp);
-    malloc_leave(dbmalloc_caller_loc(saved_file, saved_line));
+    malloc_leave(debug_caller_loc(saved_file, saved_line));
     return result;
 }
 
@@ -334,22 +320,18 @@ arglist_function(char *vstralloc, const char *, str)
  * newstralloc - free existing string and then stralloc a new one.
  */
 char *
-#if defined(USE_DBMALLOC)
 debug_newstralloc(s, l, oldstr, newstr)
     const char *s;
     int l;
-#else
-newstralloc(oldstr, newstr)
-#endif
     char *oldstr;
     const char *newstr;
 {
     char *addr;
 
-    malloc_enter(dbmalloc_caller_loc(s, l));
-    addr = stralloc(newstr);
+    malloc_enter(debug_caller_loc(s, l));
+    addr = debug_stralloc(s, l, newstr);
     amfree(oldstr);
-    malloc_leave(dbmalloc_caller_loc(s, l));
+    malloc_leave(debug_caller_loc(s, l));
     return (addr);
 }
 
@@ -357,23 +339,22 @@ newstralloc(oldstr, newstr)
 /*
  * newvstralloc - free existing string and then vstralloc a new one.
  */
-#if defined(USE_DBMALLOC)
-arglist_function1(char *debug_newvstralloc, char *, oldstr, const char *,
-    newstr)
-#else
-arglist_function1(char *newvstralloc, char *, oldstr, const char *, newstr)
-#endif
+arglist_function1(char *debug_newvstralloc,
+		  char *,
+		  oldstr,
+		  const char *,
+		  newstr)
 {
     va_list argp;
     char *result;
 
     debug_alloc_pop();
-    malloc_enter(dbmalloc_caller_loc(saved_file, saved_line));
+    malloc_enter(debug_caller_loc(saved_file, saved_line));
     arglist_start(argp, newstr);
     result = internal_vstralloc(newstr, argp);
     arglist_end(argp);
     amfree(oldstr);
-    malloc_leave(dbmalloc_caller_loc(saved_file, saved_line));
+    malloc_leave(debug_caller_loc(saved_file, saved_line));
     return result;
 }
 
@@ -441,7 +422,9 @@ safe_env()
  */
 
 int
-amtable_alloc(table, current, elsize, count, bump, init_func)
+debug_amtable_alloc(s, l, table, current, elsize, count, bump, init_func)
+    const char *s;
+    int l;
     void **table;
     int *current;
     size_t elsize;
@@ -455,11 +438,7 @@ amtable_alloc(table, current, elsize, count, bump, init_func)
 
     if (count >= *current) {
 	table_count_new = ((count + bump) / bump) * bump;
-	table_new = malloc(table_count_new * elsize);
-	if (0 == table_new) {
-	    errno = ENOMEM;
-	    return -1;
-	}
+	table_new = debug_alloc(s, l, table_count_new * elsize);
 	if (0 != *table) {
 	    memcpy(table_new, *table, *current * elsize);
 	    free(*table);

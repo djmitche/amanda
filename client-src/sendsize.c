@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.124 2002/03/24 03:46:16 jrjackson Exp $
+ * $Id: sendsize.c,v 1.125 2002/03/24 19:25:50 jrjackson Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -274,7 +274,7 @@ char **argv;
 		    options = parse_options(s+8, disk, amdevice, 0);
 		}
 		else {
-		    options = malloc(sizeof(option_t));
+		    options = alloc(sizeof(option_t));
 		    init_options(options);
 		    if(strncmp(s-1, "exclude-file=", 13) == 0) {
 			options->exclude_file =
@@ -293,7 +293,7 @@ char **argv;
 		}
 	    }
 	    else {
-		options = malloc(sizeof(option_t));
+		options = alloc(sizeof(option_t));
 		init_options(options);
 	    }
 	}
@@ -1202,7 +1202,7 @@ time_t dumpsince;
     if(nb_exclude > 0) file_exclude = build_exclude(disk, amdevice, options, 0);
     if(nb_include > 0) file_include = build_include(disk, amdevice, options, 0);
 
-    my_argv = malloc(sizeof(char *) * 21);
+    my_argv = alloc(sizeof(char *) * 21);
     i = 0;
 
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR

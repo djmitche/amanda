@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.120 2002/03/23 19:58:09 martinea Exp $
+ * $Id: driver.c,v 1.121 2002/03/24 19:25:51 jrjackson Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1996,6 +1996,7 @@ assign_holdingdisk(holdp, diskp)
     unsigned long size;
     char *sfn = sanitise_filename(diskp->name);
     char lvl[64];
+    assignedhd_t **new_holdp;
 
     snprintf( lvl, sizeof(lvl), "%d", sched(diskp)->level );
 
@@ -2005,13 +2006,14 @@ assign_holdingdisk(holdp, diskp)
     for( c = 0; holdp[c]; c++ ); /* count number of disks */
 
     /* allocate memory for sched(diskp)->holdp */
-    if( sched(diskp)->holdp ) {
-	for( j = 0; sched(diskp)->holdp[j]; j++ );
-	sched(diskp)->holdp = realloc(sched(diskp)->holdp,sizeof(assignedhd_t*)*(j+c+1));
-    } else {
-	sched(diskp)->holdp = alloc(sizeof(assignedhd_t*)*(c+1));
-	j = 0;
+    for(j = 0; sched(diskp)->holdp && sched(diskp)->holdp[j]; j++) {}
+    new_holdp = (assignedhd_t **)alloc(sizeof(assignedhd_t*)*(j+c+1));
+    if (sched(diskp)->holdp) {
+	memcpy(new_holdp, sched(diskp)->holdp, j * sizeof(*new_holdp));
+	amfree(sched(diskp)->holdp);
     }
+    sched(diskp)->holdp = new_holdp;
+    new_holdp = NULL;
 
     i = 0;
     if( j > 0 ) { /* This is a request for additional diskspace. See if we can

@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.27 2002/02/11 01:32:10 jrjackson Exp $
+ * $Id: file.c,v 1.28 2002/03/24 19:25:50 jrjackson Exp $
  *
  * file and directory bashing routines
  */
@@ -360,13 +360,9 @@ char *inp;
  */
 
 char *
-#if defined(USE_DBMALLOC)
-dbmalloc_agets(s, l, file)
+debug_agets(s, l, file)
     const char *s;
     int l;
-#else
-agets(file)
-#endif
     FILE *file;
 {
     char *line = NULL, *line_ptr;
@@ -380,7 +376,7 @@ agets(file)
 #define	AGETS_LINE_INCR	128
 
     line_size = AGETS_LINE_INCR;
-    line = alloc (line_size);
+    line = debug_alloc (s, l, line_size);
     line_free = line_size;
     line_ptr = line;
     line_len = 0;
@@ -402,7 +398,7 @@ agets(file)
 	} else {
 	    line_size += 256 * AGETS_LINE_INCR;
 	}
-	cp = alloc (line_size);			/* get more space */
+	cp = debug_alloc (s, l, line_size);	/* get more space */
 	memcpy (cp, line, size_save);		/* copy old to new */
 	free (line);				/* and release the old */
 	line = cp;
@@ -429,9 +425,10 @@ agets(file)
  * Find/create a buffer for a particular file descriptor for use with
  * areads().
  *
- * void areads_getbuf (int fd)
+ * void areads_getbuf (char *file, int line, int fd)
  *
- * entry:	fd = file descriptor to look up
+ * entry:	file, line = caller source location
+ *		fd = file descriptor to look up
  * exit:	returns a pointer to the buffer, possibly new
  *=====================================================================
  */
@@ -445,7 +442,9 @@ static int areads_bufcount = 0;
 static ssize_t areads_bufsize = BUFSIZ;		/* for the test program */
 
 static void
-areads_getbuf(fd)
+areads_getbuf(s, l, fd)
+    char *s;
+    int l;
     int fd;
 {
     struct areads_buffer *new;
@@ -454,7 +453,7 @@ areads_getbuf(fd)
     assert(fd >= 0);
     if(fd >= areads_bufcount) {
 	size = (fd + 1) * sizeof(*areads_buffer);
-	new = (struct areads_buffer *) alloc(size);
+	new = (struct areads_buffer *) debug_alloc(s, l, size);
 	memset((char *)new, 0, size);
 	if(areads_buffer) {
 	    size = areads_bufcount * sizeof(*areads_buffer);
@@ -466,7 +465,8 @@ areads_getbuf(fd)
     }
     if(areads_buffer[fd].buffer == NULL) {
 	areads_buffer[fd].bufsize = areads_bufsize;
-	areads_buffer[fd].buffer = alloc(areads_buffer[fd].bufsize + 1);
+	areads_buffer[fd].buffer = debug_alloc(s, l,
+					       areads_buffer[fd].bufsize + 1);
 	areads_buffer[fd].buffer[0] = '\0';
 	areads_buffer[fd].endptr = areads_buffer[fd].buffer;
     }
@@ -533,13 +533,9 @@ areads_relbuf(fd)
  */
 
 char *
-#if defined(USE_DBMALLOC)
-dbmalloc_areads (s, l, fd)
+debug_areads (s, l, fd)
     const char *s;
     int l;
-#else
-areads (fd)
-#endif
     int fd;
 {
     char *nl;
@@ -557,7 +553,7 @@ areads (fd)
 	errno = EBADF;
 	return NULL;
     }
-    areads_getbuf(fd);
+    areads_getbuf(s, l, fd);
     buffer = areads_buffer[fd].buffer;
     endptr = areads_buffer[fd].endptr;
     buflen = areads_buffer[fd].bufsize - (endptr - buffer);
@@ -571,7 +567,7 @@ areads (fd)
 	    } else {
 		size += 256 * areads_bufsize;
 	    }
-	    newbuf = alloc(size + 1);
+	    newbuf = debug_alloc(s, l, size + 1);
 	    memcpy (newbuf, buffer, areads_buffer[fd].bufsize + 1);
 	    amfree(areads_buffer[fd].buffer);
 	    buffer = NULL;

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: list_dir.c,v 1.16 2000/06/26 13:45:51 martinea Exp $
+/* $Id: list_dir.c,v 1.17 2002/03/24 19:25:51 jrjackson Exp $
  *
  * manage directory listings from index files
  */
@@ -76,8 +76,7 @@ char *path;
 
     if (dir_list == NULL)
     {
-	if ((dir_list = (DIR_ITEM *)malloc(sizeof(DIR_ITEM))) == NULL)
-	    return -1;
+	dir_list = (DIR_ITEM *)alloc(sizeof(DIR_ITEM));
 	dir_list->next = NULL;
 	dir_list->dump = dump;
 	dir_list->path = stralloc(path);
@@ -92,8 +91,7 @@ char *path;
     /* add at head of list */
     if(strcmp(path,dir_list->path) < 0)
     {
-	if ((cur_list = (DIR_ITEM *)malloc(sizeof(DIR_ITEM))) == NULL)
-	    return -1;
+	cur_list = (DIR_ITEM *)alloc(sizeof(DIR_ITEM));
 	cur_list->next = dir_list;
 	cur_list->dump = dump;
 	cur_list->path = stralloc(path);
@@ -126,9 +124,7 @@ char *path;
 	}
 
 	/* add at cur_list */
-	if((cur = (DIR_ITEM *)malloc(sizeof(DIR_ITEM))) == NULL)
-	    return -1;
-
+	cur = (DIR_ITEM *)alloc(sizeof(DIR_ITEM));
 	cur->next = cur_list->next;
 	cur->dump = dump;
 	cur->path = stralloc(path);
@@ -138,9 +134,7 @@ char *path;
     }
     else /* add at end of list */
     {
-	if ((dir_last->next = (DIR_ITEM *)malloc(sizeof(DIR_ITEM))) == NULL)
-	    return -1;
-
+	dir_last->next = (DIR_ITEM *)alloc(sizeof(DIR_ITEM));
 	dir_last=dir_last->next;
 	dir_last->next = NULL;
 	dir_last->dump = dump;
