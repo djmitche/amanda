@@ -1,4 +1,10 @@
 2003-07-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Fix by John E. Hein <jhein@timing.com>
+
+	* changer-src/chg-manual.sh.in: Quote @EGREP@.
+	* changer-src/chg-null.sh.in: Quote @EGREP@.
+
+2003-07-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* amplot/amplot.sh.in: Remove files before runnig amplot.awk.
 	* amplot/amplot.awk: Parse 'flush line', fix tape_wait line.

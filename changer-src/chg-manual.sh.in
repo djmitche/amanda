@@ -30,7 +30,7 @@ fi
 
 myname=$0
 
-EGREP=@EGREP@
+EGREP='@EGREP@'
 
 if [ -x $sbindir/ammt$SUF ]; then
 	MT=$sbindir/ammt$SUF
