@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.34 1997/09/26 11:24:28 george Exp $
+ * $Id: sendsize.c,v 1.35 1997/09/26 13:13:34 george Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -424,6 +424,7 @@ regex_t re_size[] = {
     {"  DUMP: estimated [0-9][0-9]* tape blocks", 1024},
     {"  DUMP: [Ee]stimated [0-9][0-9]* blocks", 512},
     {"  DUMP: [Ee]stimated [0-9][0-9]* bytes", 1},	       /* Ultrix 4.4 */
+    {" UFSDUMP: estimated [0-9][0-9]* blocks", 512},           /* NEC EWS-UX */
     {"vdump: Dumping [0-9][0-9]* bytes, ", 1},		      /* OSF/1 vdump */
     {"dump: Estimate: [0-9][0-9]* tape blocks", 1024},		    /* OSF/1 */
     {"vxdump: estimated [0-9][0-9]* blocks", 512},          /* HPUX's vxdump */
