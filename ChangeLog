@@ -1,3 +1,8 @@
+1999-09-15 John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/amstatus.pl.in: generalize the "driver: state" parsing
+	  so it can handle current and future information.
+
 1999-09-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server/driver.c (main): use the holding disk even if the
@@ -414,7 +419,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.273 1999/09/16 00:02:18 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.274 1999/09/16 01:23:28 jrj Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
