@@ -165,6 +165,32 @@ must be specified.
 If no argument is specified, or the argument is an
 empty string, no changes occur, and the current settings are
 displayed.
+.IP
+If you need to change the protocol (tape:, rait:, file:, null:) then you
+must specify the hostname.
+.LP
+.RS
+.RS
+.nf
+settape @DEFAULT_TAPE_SERVER@:file:/file1
+.fi
+.RE
+.RE
+.IP
+You can change the tape device when amrecover ask you to load the tape:
+.LP
+.RS
+.RS
+.nf
+Load tape DMP014 now
+Continue? [Y/n/t]: t
+Tape device: server2:/dev/nst2
+Continue? [Y/n/t]: Y
+Using tape /dev/nst2 from server server2.
+.fi
+.RE
+.RE
+.IP
 .TP
 .CP setmode mode
 Set the extraction mode for Samba shares.
@@ -323,7 +349,7 @@ Restoring files into directory /var
 Continue? [Y/n]: y
 
 Load tape DMP014 now
-Continue? [Y/n]: y
+Continue? [Y/n/t]: y
 set owner/mode for '.'? [yn] n
 amrecover> quit
 200 Good bye.

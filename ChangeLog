@@ -1,5 +1,12 @@
 2002-02-03  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* man/amrecover.8.in (settape): Document that the hostname is required
+	  if the protocol (tape:, file:, rait:, null:) is specified.
+	* man/amrecover.8.in (settape): Document that it is posible to
+	  change the tape device when asked to load tape.
+
+2002-02-03  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/holding.c (scan_holdingdir): Create the list in
 	  datestamp order.
 
