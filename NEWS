@@ -1,4 +1,11 @@
-Please read the CHANGES file for news since release 2.3.0.4 up to 2.4.0
+Changes in release 2.4.1
+ 
+* check ChangeLog for more NEWS, until we find time to update this file. 
+
+Changes in release 2.4.0
+
+* the NEWS file was not maintained in the 2.4.0 release cycle.  There are
+  plans to update it, though.
 
 Changes in release 2.3.0.4
 * New chg-generic.conf option 'multieject' added which lets
