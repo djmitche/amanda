@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.57 1998/01/13 17:23:27 blair Exp $
+ * $Id: sendsize.c,v 1.58 1998/01/14 18:24:06 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -739,7 +739,7 @@ int level;
     /*
      * We know xfsdump ignores SIGTERM, so arrange to hit it hard.
      */
-    sig = (strcmp(amname_to_fstype(device), "xfs") == 0 ? SIGKILL : SIGTERM;
+    sig = (strcmp(amname_to_fstype(device), "xfs") == 0 ? SIGKILL : SIGTERM);
 #else
     sig = SIGTERM;
 #endif
