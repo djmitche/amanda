@@ -58,7 +58,8 @@ if [ $# -eq 0 ] ; then
 	echo "	-e	Extends x (time) axes if needed"
 	echo "	-g	Run gnuplot directly no postscript file generated DEFAULT"
 	echo "	-l	Landscape mode suitable for printing"
-	echo "	-p	Postscript output"
+	echo "	-p	Postscript output (color)"
+	echo "	-b	The postscipt will be b/w"
 	echo "	-t T	Set the right edge of the plot to be T hours"
 	exit 1 
 fi
@@ -75,6 +76,7 @@ gnuplot=1
 cmpres=0
 para=""
 maxtime=4
+bw=0
 
 # setting up the parameters to pass to [gn]awk 
 while :; do 
@@ -84,6 +86,7 @@ while :; do
    -g)  gnuplot=1; shift;;
    -l)  paper=1; para=$para"$AVARFLAG paper=1 "; shift;;
    -p)  gnuplot=0; shift;;
+   -b)	bw=1; shift;;
    -t)  shift
 	if test "$#" -eq 0; then
 	    echo "amplot: no argument for -t option" 1>&2
@@ -109,6 +112,14 @@ if [ $gnuplot  -eq 1 ] ; then
 		echo "amplot: -l requires -p flag at the same time" 1>&2
 		exit 6 
 	fi
+	if [ "$bw" -eq 1 ] ; then
+		echo "amplot: -b requires -p flag at the same time" 1>&2
+		exit 6 
+	fi
+fi
+
+if [ $bw -eq 1 ]; then
+	para=$para" bw=1"
 fi
 
 list="";		# files to compress at the end

@@ -485,8 +485,14 @@ function print_t(){		# printing out the labels for the graph
 
 	if (gnuplot==0) {
 		printf "set output \"%s.ps\"\n",fil >>"title";
-		if(paper==1) printf "set term postscript landscape \"Times-Roman\" 10\n" >>"title";
-		else printf "set term postscript portrait \"Times-Roman\" 10\n" >>"title";
+		if(bw==1) {
+			if(paper==1) printf "set term postscript landscape \"Times-Roman\" 10\n" >>"title";
+			else printf "set term postscript portrait \"Times-Roman\" 10\n" >>"title";
+		}
+		else {
+			if(paper==1) printf "set term postscript landscape color \"Times-Roman\" 10\n" >>"title";
+			else printf "set term postscript portrait color \"Times-Roman\" 10\n" >>"title";
+		}
 	}
 	printf "set ylabel """";" >>"title"; 	# make sure there is no ylabel
 	fmt= "set label %d \"%s\" at "third_col", %d\n";

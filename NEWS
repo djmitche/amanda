@@ -1,3 +1,8 @@
+Changes in release 2.4.4p1
+
+* amplot generate color postscript by default.
+* amplot -b flag to generate b/w postscript.
+
 Changes in release 2.4.4
 
 * New -a option to amcheck to always send an email.
