@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.81 2003/01/01 23:28:20 martinea Exp $
+ * $Id: reporter.c,v 1.82 2003/04/01 21:09:23 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -56,14 +56,13 @@ typedef struct line_s {
     char *str;
 } line_t;
 
-#define	MAX_TAPER 31
-
 typedef struct timedata_s {
     logtype_t result;
     float origsize, outsize;
     char *datestamp;
     float sec, kps;
     int filenum;
+    char *tapelabel;
 } timedata_t;
 
 typedef struct repdata_s {
@@ -90,7 +89,7 @@ static int dumpdisks[10], tapedisks[10];	/* by-level breakdown of disk count */
 typedef struct taper_s {
     char *label;
     double taper_time;
-    double size;
+    double coutsize, corigsize;
     int tapedisks;
     struct taper_s *next;
 } taper_t;
@@ -139,6 +138,7 @@ static void usage P((void));
 int main P((int argc, char **argv));
 
 static void copy_template_file P((char *lbl_templ));
+static void do_postscript_output P((void));
 static void handle_start P((void));
 static void handle_finish P((void));
 static void handle_note P((void));
@@ -598,16 +598,6 @@ main(argc, argv)
 
     amfree(subj_str);
 
-    if (postscript) {
-      copy_template_file(tp->lbl_templ);
-    }
-    if (postscript) {
-      /* generate a few elements */
-      fprintf(postscript,"(%s) DrawDate\n\n",
-	      nicedate(run_datestamp ? atoi(run_datestamp) : 0));
-      fprintf(postscript,"(Amanda Version %s) DrawVers\n",version());
-      fprintf(postscript,"(%s) DrawTitle\n",tape_labels ? tape_labels : "");
-    }
 
     if(!got_finish) fputs("*** THE DUMPS DID NOT FINISH PROPERLY!\n\n", mailf);
 
@@ -637,7 +627,9 @@ main(argc, argv)
     fprintf(mailf,"\n(brought to you by Amanda version %s)\n",
 	    version());
 
-    if (postscript) fprintf(postscript,"\nshowpage\n");
+    if (postscript) {
+	do_postscript_output();
+    }
 
 
     /* close postscript file */
@@ -844,27 +836,14 @@ output_stats()
 	    current_tape = current_tape->next) {
 	    fprintf(mailf, "  %-*s", label_length, current_tape->label);
 	    fprintf(mailf, " %2d:%02d", hrmn(current_tape->taper_time));
-	    fprintf(mailf, " %9.1f  ", mb(current_tape->size));
-	    divzero(mailf, pct(current_tape->size + 
+	    fprintf(mailf, " %9.1f  ", mb(current_tape->coutsize));
+	    divzero(mailf, pct(current_tape->coutsize + 
 			       marksize * current_tape->tapedisks),
 			   tapesize);
 	    fprintf(mailf, "  %4d\n", current_tape->tapedisks);
 	}
     }
 
-    if (postscript) {
-      fprintf(postscript, "(Total Size:        %6.1f MB) DrawStat\n",
-	      mb(stats[2].tapesize));
-      fprintf(postscript, "(Tape Used (%%)       ");
-      divzero(postscript, pct(stats[2].tapesize+marksize*stats[2].tapedisks),
-	      tapesize);
-      fprintf(postscript," %%) DrawStat\n");
-      fprintf(postscript, "(Compression Ratio:  ");
-      divzero(postscript, pct(stats[2].coutsize),stats[2].corigsize);
-      fprintf(postscript," %%) DrawStat\n");
-      fprintf(postscript,"(Filesystems Taped: %4d) DrawStat\n",
-	      stats[2].tapedisks);
-    }
 }
 
 /* ----- */
@@ -1116,7 +1095,7 @@ output_summary()
     TapeTime = StringToColumn("TapeTime");
     TapeRate = StringToColumn("TapeRate");
 
-    /* at first determine if we have recalculate our widths */
+    /* at first determine if we have to recalculate our widths */
     if (MaxWidthsRequested)
 	CalcMaxWidth();
 
@@ -1162,13 +1141,6 @@ output_summary()
     fputs(tmp=Rule(OrigKB, DumpRate), mailf); amfree(tmp);
     fputs(tmp=Rule(TapeTime, TapeRate), mailf); amfree(tmp);
     fputc('\n', mailf);
-
-    /* print out postscript line for Amanda label file */
-    if (postscript) {
-	fprintf(postscript,
-	  "(-) (%s) (-) (  0) (      32) (      32) DrawHost\n",
-          tape_labels ? tape_labels : "");
-    }
 
     for(dp = sortq.head; dp != NULL; dp = dp->next) {
       if(dp->todo) {
@@ -1231,7 +1203,8 @@ output_summary()
 	    else
 		origsize = repdata->chunker.origsize;
 
-	    if(repdata->taper.result == L_SUCCESS || repdata->taper.result == L_PARTIAL)
+	    if(repdata->taper.result == L_SUCCESS ||
+	       repdata->taper.result == L_PARTIAL)
 		outsize  = repdata->taper.outsize;
 	    else if(repdata->chunker.result == L_SUCCESS ||
 		    repdata->chunker.result == L_PARTIAL)
@@ -1309,22 +1282,6 @@ output_summary()
 		fprintf(mailf, " PARTIAL");
 	    }
 	    fputc('\n', mailf);
-
-	    if ((postscript) && (repdata->taper.result == L_SUCCESS ||
-				 repdata->taper.result == L_PARTIAL)) {
-		if(origsize != 0.0) {
-		    fprintf(postscript,"(%s) (%s) (%d) (%3.0d) (%8.0f) (%8.0f) DrawHost\n",
-			dp->host->hostname, dp->name, repdata->level,
-                        repdata->taper.filenum, origsize, 
-			outsize);
-		}
-		else {
-		    fprintf(postscript,"(%s) (%s) (%d) (%3.0d) (%8s) (%8.0f) DrawHost\n",
-			dp->host->hostname, dp->name, repdata->level,
-                        repdata->taper.filenum, "N/A", 
-			outsize);
-		}
-	    }
 	}
       }
     }
@@ -1436,7 +1393,8 @@ handle_start()
 	}
 	current_tape->label = label;
 	current_tape->taper_time = 0.0;
-	current_tape->size = 0.0;
+	current_tape->coutsize = 0.0;
+	current_tape->corigsize = 0.0;
 	current_tape->tapedisks = 0;
 	current_tape->next = NULL;
 
@@ -1847,28 +1805,28 @@ handle_success()
     sp->outsize = kbytes;
 
     if(curprog == P_TAPER) {
+	if(current_tape == NULL) {
+	    error("current_tape == NULL");
+	}
 	stats[i].taper_time += sec;
-        sp->filenum = ++tapefcount;
+	sp->filenum = ++tapefcount;
+	sp->tapelabel = current_tape->label;
 	tapedisks[level] +=1;
 	stats[i].tapedisks +=1;
 	stats[i].tapesize += kbytes;
 	sp->outsize = kbytes;
 	if(repdata->chunker.outsize == 0.0) /* dump to tape OR flush */
 	    stats[i].outsize += kbytes;
-
-	if(current_tape == NULL) {
-	    error("current_tape == NULL");
-	}
 	current_tape->taper_time += sec;
-	current_tape->size += kbytes;
+	current_tape->coutsize += kbytes;
+	current_tape->corigsize += origkb;
 	current_tape->tapedisks += 1;
     }
 
     if(curprog == P_DUMPER) {
 	stats[i].dumper_time += sec;
 	if(dp->compress == COMP_NONE) {
-/*	    if(sp->origsize == -1 || sp->origsize == 0.0)*/
-		sp->origsize = kbytes;
+	    sp->origsize = kbytes;
 	}
 	else {
 	    stats[i].coutsize += kbytes;
@@ -2184,4 +2142,95 @@ find_repdata(dp, datestamp, level)
 	    dp->up = (void *)repdata;
     }
     return repdata;
+}
+
+
+void do_postscript_output()
+{
+    tapetype_t *tp = lookup_tapetype(getconf_str(CNF_TAPETYPE));
+    disk_t *dp;
+    repdata_t *repdata;
+    float outsize, origsize;
+    int tapesize, marksize;
+
+    tapesize = tp->length;
+    marksize = tp->filemark;
+
+    for(current_tape = stats_by_tape; current_tape != NULL;
+	    current_tape = current_tape->next) {
+
+	if (current_tape->label == NULL) {
+	    break;
+	}
+
+	copy_template_file(tp->lbl_templ);
+
+	/* generate a few elements */
+	fprintf(postscript,"(%s) DrawDate\n\n",
+		    nicedate(run_datestamp ? atoi(run_datestamp) : 0));
+	fprintf(postscript,"(Amanda Version %s) DrawVers\n",version());
+	fprintf(postscript,"(%s) DrawTitle\n", current_tape->label);
+
+	/* Stats */
+	fprintf(postscript, "(Total Size:        %6.1f MB) DrawStat\n",
+	      mb(current_tape->coutsize));
+	fprintf(postscript, "(Tape Used (%%)       ");
+	divzero(postscript, pct(current_tape->coutsize + 
+				marksize * current_tape->tapedisks),
+				tapesize);
+	fprintf(postscript," %%) DrawStat\n");
+	fprintf(postscript, "(Compression Ratio:  ");
+	divzero(postscript, pct(current_tape->coutsize),current_tape->corigsize);
+	fprintf(postscript," %%) DrawStat\n");
+	fprintf(postscript,"(Filesystems Taped: %4d) DrawStat\n",
+		  current_tape->tapedisks);
+
+	/* Summary */
+
+	fprintf(postscript,
+	      "(-) (%s) (-) (  0) (      32) (      32) DrawHost\n",
+	      current_tape->label);
+
+	for(dp = sortq.head; dp != NULL; dp = dp->next) {
+	    if (dp->todo == 0) {
+		 continue;
+	    }
+	    for(repdata = data(dp); repdata != NULL; repdata = repdata->next) {
+
+		if(repdata->taper.tapelabel != current_tape->label) {
+		    continue;
+		}
+
+		if(repdata->dumper.result == L_SUCCESS ||
+		   repdata->dumper.result == L_PARTIAL)
+		    origsize = repdata->dumper.origsize;
+		else
+		    origsize = repdata->taper.origsize;
+
+		if(repdata->taper.result == L_SUCCESS ||
+		   repdata->taper.result == L_PARTIAL)
+		    outsize  = repdata->taper.outsize;
+		else
+		    outsize  = repdata->dumper.outsize;
+
+		if (repdata->taper.result == L_SUCCESS ||
+		    repdata->taper.result == L_PARTIAL) {
+		    if(origsize != 0.0) {
+			fprintf(postscript,"(%s) (%s) (%d) (%3.0d) (%8.0f) (%8.0f) DrawHost\n",
+			    dp->host->hostname, dp->name, repdata->level,
+			    repdata->taper.filenum, origsize, 
+			    outsize);
+		    }
+		    else {
+			fprintf(postscript,"(%s) (%s) (%d) (%3.0d) (%8s) (%8.0f) DrawHost\n",
+			    dp->host->hostname, dp->name, repdata->level,
+			    repdata->taper.filenum, "N/A", 
+			    outsize);
+		    }
+		}
+	    }
+	}
+	
+	fprintf(postscript,"\nshowpage\n");
+    }
 }

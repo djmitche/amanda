@@ -1,3 +1,8 @@
+2003-04-01  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Paul Bijnens <paul.bijnens@xplanation.com>
+
+	* server-src/reporter.c: Print a postscript label for each tape used.
+
 2003-03-18  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* configure.in (*-sco3.2v4*): It is not like *-sco3.2v5*,
