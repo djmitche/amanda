@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.14.4.6.4.2 2001/07/11 20:55:05 jrjackson Exp $
+ * $Id: file.c,v 1.14.4.6.4.2.2.1 2001/12/18 20:11:56 martinea Exp $
  *
  * file and directory bashing routines
  */
@@ -212,11 +212,11 @@ safe_cd()
     if (client_uid != (uid_t) -1) {
 #if defined(AMANDA_DBGDIR)
 	d = stralloc2(AMANDA_DBGDIR, "/.");
-	(void) mkpdir(AMANDA_DBGDIR, 02700, client_uid, client_gid);
+	(void) mkpdir(d, 02700, client_uid, client_gid);
 	amfree(d);
 #endif
 	d = stralloc2(AMANDA_TMPDIR, "/.");
-	(void) mkpdir(AMANDA_TMPDIR, 02700, client_uid, client_gid);
+	(void) mkpdir(d, 02700, client_uid, client_gid);
 	amfree(d);
     }
 
