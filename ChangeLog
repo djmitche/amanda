@@ -1,5 +1,10 @@
 1999-01-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* configure.in: require autoconf 2.13, and use
+	AC_VALIDATE_CACHED_SYSTEM_TUPLE instead of
+	AC_VALIDATE_CACHE_SYSTEM_TYPE
+	* config/acinclude.m4i: removed AC_VALIDATE_CACHE_SYSTEM_TYPE
+
 	* configure.in (SAMBA_CLIENT): updated check for smbclient to
 	support Samba 2.0.0
 
