@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.18.2.7 1999/02/26 19:42:28 th Exp $
+ * $Id: amlabel.c,v 1.18.2.8 1999/02/27 19:47:59 th Exp $
  *
  * write an Amanda label on a tape
  */
@@ -387,7 +387,7 @@ int main(argc, argv)
 
         if(changer_init()) {
 /*	Now we try to inform the changer, about the new label */
-	  changer_label(outslot,label); 
+	  changer_label(0,label); 
 	}
 	printf(", done.\n");
     }
