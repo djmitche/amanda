@@ -354,11 +354,10 @@ AC_ARG_WITH(rundump,
     [  --with-rundump         use rundump (setuid-root) to invoke dump],
     [
     case "$withval" in
-	n | no | y | ye | yes) USE_RUNDUMP="$withval";;
+	n | no | y | ye | yes) FORCE_USE_RUNDUMP="$withval";;
 	*) AC_MSG_ERROR([*** You must not supply an argument to --with-rundump option.]);;
     esac
-    ],
-    : ${USE_RUNDUMP=no}
+    ]
 )
 
 AC_ARG_WITH(config,
@@ -950,7 +949,7 @@ case "$target" in
 			;;
     *-dg-*)
 			DUMP_PROGRAMS="dump "$DUMP_PROGRAMS
-			USE_RUNDUMP=yes
+			: ${USE_RUNDUMP=yes}
 			AC_DEFINE(DUMP_RETURNS_1)
 			;;
     *-netbsd*)
@@ -1219,7 +1218,11 @@ case "$DUMP" in
     *vdump*)
 	AC_DEFINE(OSF1_VDUMP)
 	: ${USE_RUNDUMP=yes}
-	AC_MSG_WARN([*** enabling rundump because vdump must run as root])
+	case "${FORCE_USE_RUNDUMP-${USE_RUNDUMP}}" in
+	y | ye | yes) :;;
+	n | no) AC_MSG_ERROR([*** rundump must be enabled for vdump to work]);;
+	*) AC_MSG_WARN([*** enabling rundump because vdump must run as root]);;
+	esac
 	;;
 esac
 
@@ -1231,8 +1234,8 @@ fi
 AC_PATH_PROGS(XFSDUMP,xfsdump,,$SYSLOCPATH)
 if test "$XFSDUMP"; then
     AC_DEFINE_UNQUOTED(XFSDUMP,"$XFSDUMP")
-    : ${USE_RUNDUMP=yes}
-    AC_MSG_WARN([*** enabling rundump because xfsdump must be run as root])
+    AC_MSG_WARN([*** xfsdump causes the setuid-root rundump program to be enabled])
+    AC_MSG_WARN([*** to disable it, just #undef XFSDUMP in config/config.h])
 fi
 AC_PATH_PROGS(XFSRESTORE,xfsrestore,,$SYSLOCPATH)
 if test "$XFSRESTORE"; then
@@ -2139,7 +2142,7 @@ if ${NO_RECOVER_MODE-false}; then
     BUILD_RECOVER_PROGS_SBIN=
 fi
 
-case "$USE_RUNDUMP" in
+case "${FORCE_USE_RUNDUMP-${USE_RUNDUMP}}" in
 y |  ye | yes) AC_DEFINE(USE_RUNDUMP);;
 esac
 

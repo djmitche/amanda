@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.61.2.2 1998/01/29 10:07:08 amcore Exp $
+ * $Id: sendsize.c,v 1.61.2.3 1998/02/04 21:53:54 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -573,12 +573,7 @@ int level;
     if (1)
 #endif							/* } */
     {
-#ifdef USE_RUNDUMP					/* { */
         char *name = " (xfsdump)";
-#else							/* } { */
-        char *name = "";
-	cmd = newstralloc(cmd, XFSDUMP);
-#endif							/* } */
 	dbprintf(("%s: running \"%s%s -F -J -l %s - %s\"\n",
 		  pname, cmd, name, level_str, device));
     }
