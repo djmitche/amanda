@@ -350,6 +350,28 @@ if test "x${SETUID_GROUP+set}" != xset; then
 fi
 AC_SUBST(SETUID_GROUP)
 
+echo BINARY_OWNER is $BINARY_OWNER
+AC_ARG_WITH(owner,
+    [  --with-owner=USER       force ownership of files to USER [default == --with-user value]],
+    [
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-owner option.])
+	  ;;
+	*) BINARY_OWNER="$withval"
+	  ;;
+	esac
+    ]
+)
+echo BINARY_OWNER is $BINARY_OWNER
+if test "x${BINARY_OWNER+set}" != xset ; then
+   BINARY_OWNER=$CLIENT_LOGIN
+fi
+echo BINARY_OWNER is $BINARY_OWNER
+AC_DEFINE_UNQUOTED(BINARY_OWNER,"$BINARY_OWNER")
+AC_SUBST(BINARY_OWNER)
+
+
 AC_ARG_WITH(rundump,
     [  --with-rundump         use rundump (setuid-root) to invoke dump],
     [

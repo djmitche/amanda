@@ -17,8 +17,8 @@ install-data-hook:
 	@list="$(man_MANS)"; \
 	for p in $$list; do \
 		pa=$(mandir)/man8/`echo $$p|sed '$(transform)'`; \
-		echo chown $(CLIENT_LOGIN) $$pa; \
-		chown $(CLIENT_LOGIN) $$pa; \
+		echo chown $(BINARY_OWNER) $$pa; \
+		chown $(BINARY_OWNER) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \
 		chgrp $(SETUID_GROUP) $$pa; \
 	done
