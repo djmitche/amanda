@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.c,v 1.7 2002/08/21 18:48:28 martinea Exp $
+ * $Id: amfeatures.c,v 1.8 2002/09/06 13:59:31 martinea Exp $
  *
  * Feature test related code.
  */
@@ -142,6 +142,8 @@ am_set_default_feature_set(void)
 	am_add_feature(f, fe_req_options_maxdumps);
 	am_add_feature(f, fe_req_options_hostname);
 	am_add_feature(f, fe_req_options_features);
+
+	am_add_feature(f, fe_rep_options_sendbackup_options);
     }
     return f;
 }
