@@ -4,6 +4,8 @@ Makefile
 Makefile.in
 amdd
 ammt
+amtapeio
+amtapeio.test.c
 libamtape.la
 output-file.lo
 output-null.lo
