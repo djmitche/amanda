@@ -7,11 +7,14 @@
 
 extern char skip_argument[1];
 
-#define STDIN_PIPE 1
-#define STDOUT_PIPE 2
-#define STDERR_PIPE 4
-int pipespawn P((char *prog, int pipedef, int *stdinfd, int *stdoutfd,
-		 int *stderrfd, ...));
+#define STDIN_PIPE	(1 << 0)
+#define STDOUT_PIPE	(1 << 1)
+#define STDERR_PIPE	(1 << 2)
+#define PASSWD_PIPE	(1 << 3)
+
+int pipespawn P((char *prog, int pipedef,
+		 int *stdinfd, int *stdoutfd, int *stderrfd,
+		 ...));
 
 
 #endif /* PIPESPAWN_H */

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.40.2.3 2000/10/31 01:00:24 martinea Exp $
+ * $Id: selfcheck.c,v 1.40.2.3.4.1 2001/03/15 02:18:24 jrjackson Exp $
  *
  * do self-check and send back any error messages
  */
@@ -35,6 +35,8 @@
 #include "version.h"
 #include "getfsent.h"
 #include "amandates.h"
+#include "util.h"
+#include "pipespawn.h"
 
 #ifdef SAMBA_CLIENT
 #include "findpass.h"
@@ -286,75 +288,138 @@ int level;
 {
     char *device = NULL;
     char *err = NULL;
+    char *user_and_password = NULL, *domain = NULL;
     int amode;
+    int access_result;
+    char *access_type;
+    char *extra_info = NULL;
+
+    dbprintf(("%s: checking disk %s\n", get_pname(), disk));
 
     if (strcmp(program, "GNUTAR") == 0) {
-#ifdef SAMBA_CLIENT
         if(disk[0] == '/' && disk[1] == '/') {
-	    char *cmd, *pass, *domain = NULL;
+#ifdef SAMBA_CLIENT
+	    int nullfd, checkerr;
+	    int passwdfd;
+	    char *pwtext;
+	    int checkpid;
+	    amwait_t retstat;
+	    char number[NUM_STR_SIZE];
+	    int wpid;
+	    int ret, sig, rc;
+	    char *line;
+	    char *sep;
+	    FILE *ferr;
 
-	    if ((pass = findpass(disk, &domain)) == NULL) {
-		printf("ERROR [can't find password for %s]\n", disk);
-		return;
+	    if ((user_and_password = findpass(disk, &domain)) == NULL) {
+		err = stralloc2("cannot find password for ", disk);
+		goto common_exit;
 	    }
-	    if ((device = makesharename(disk, 1)) == NULL) {
-		memset(pass, '\0', strlen(pass));
-		amfree(pass);
-		if(domain) {
-		    memset(domain, '\0', strlen(domain));
-		    amfree(domain);
-		}
-		printf("ERROR [can't make share name of %s]\n", disk);
-		return;
+	    if ((pwtext = strchr(user_and_password, '%')) == NULL) {
+		err = stralloc2("password field not \'user%pass\' for ", disk);
+		goto common_exit;
 	    }
-	    cmd = vstralloc(SAMBA_CLIENT,
-			    " ", device,
-			    " -E",
-			    " -U ", " \'", pass, "\'",
-			    /* if domain is NULL, just quit */
-			    domain ? " -W " : " -c quit",
-			    domain ? domain : NULL,
-			    " -c quit",
-			    NULL);
-	    memset(pass, '\0', strlen(pass));
-	    amfree(pass);
-	    printf("running %s %s -E -U %s%s%s -c quit\n",
-		   SAMBA_CLIENT, device, "(see amandapass)",
-		   domain ? " -W " : "", domain ? domain : "");
-	    if(domain) {
+	    *pwtext++ = '\0';
+	    if ((device = makesharename(disk, 0)) == NULL) {
+		err = stralloc2("cannot make share name of ", disk);
+		goto common_exit;
+	    }
+
+	    nullfd = open("/dev/null", O_RDWR);
+	    checkpid = pipespawn(SAMBA_CLIENT, STDERR_PIPE|PASSWD_PIPE,
+				 &nullfd, &nullfd, &checkerr,
+				 "PASSWD_FD", &passwdfd,
+				 "smbclient",
+				 device,
+				 "-U", user_and_password,	/* user only */
+				 "-E",
+				 domain ? "-W" : skip_argument,
+				 domain ? domain : skip_argument,
+				 "-c", "quit",
+				 NULL);
+	    if (domain) {
 		memset(domain, '\0', strlen(domain));
 		amfree(domain);
 	    }
-	    if (system(cmd) & 0xff00)
-		printf("ERROR [PC SHARE %s access error: host down or invalid password?]\n", disk);
-	    else
-		printf("OK %s\n", disk);
-	    memset(cmd, '\0', strlen(cmd));
-	    amfree(cmd);
-	    return;
-	}
+	    aclose(nullfd);
+	    if (fullwrite(passwdfd, pwtext, strlen(pwtext)) < 0) {
+		err = vstralloc("password write failed: ",
+				disk,
+				": ",
+				strerror(errno),
+				NULL);
+		aclose(passwdfd);
+		goto common_exit;
+	    }
+	    memset(user_and_password, '\0', strlen(user_and_password));
+	    amfree(user_and_password);
+	    aclose(passwdfd);
+	    ferr = fdopen(checkerr, "r");
+	    sep = "";
+	    for(sep = ""; (line = agets(ferr)) != NULL; free(line)) {
+		strappend(extra_info, sep);
+		strappend(extra_info, line);
+		sep = ": ";
+	    }
+	    afclose(ferr);
+	    checkerr = -1;
+	    rc = 0;
+	    while ((wpid = wait(&retstat)) != -1) {
+		if (WIFSIGNALED(retstat)) {
+		    ret = 0;
+		    rc = sig = WTERMSIG(retstat);
+		} else {
+		    sig = 0;
+		    rc = ret = WEXITSTATUS(retstat);
+		}
+		if (rc != 0) {
+		    strappend(err, sep);
+		    if (ret == 0) {
+			strappend(err, "got signal ");
+			ret = sig;
+		    } else {
+			strappend(err, "returned ");
+		    }
+		    ap_snprintf(number, sizeof(number), "%d", ret);
+		    strappend(err, number);
+		}
+	    }
+	    if (rc != 0) {
+		err = newvstralloc(err,
+				   "samba access error: ",
+				   disk,
+				   ": ",
+				   extra_info ? extra_info : "",
+				   err,
+				   NULL);
+		amfree(extra_info);
+	    }
+#else
+	    err = stralloc2("This client is not configured for samba: ", disk);
 #endif
-        if(disk[0] == '/' && disk[1] == '/') {
-	    printf("ERROR [The client is not configured for samba: %s]\n", disk);
-	    return;
+	    goto common_exit;
 	}
 	amode = F_OK;
 	device = amname_to_dirname(disk);
     } else {
-        if(disk[0] == '/' && disk[1] == '/') {
-	    printf("ERROR [The DUMP program can't handle samba share, use GNUTAR: %s]\n", disk);
-	    return;
+	if(disk[0] == '/' && disk[1] == '/') {
+	    err = vstralloc("The DUMP program cannot handle samba shares,",
+			    " use GNUTAR: ",
+			    disk,
+			    NULL);
+	    goto common_exit;
 	}
-#ifdef VDUMP
-#ifdef DUMP
-        if (strcmp(amname_to_fstype(disk), "advfs") == 0) {
-#else
-	if (1) {
-#endif
+#ifdef VDUMP								/* { */
+#ifdef DUMP								/* { */
+        if (strcmp(amname_to_fstype(disk), "advfs") == 0)
+#else									/* }{ */
+	if (1)
+#endif									/* } */
+	{
 	    device = amname_to_dirname(disk);
 	    amode = F_OK;
 	} else
-#endif
+#endif									/* } */
 	{
 	    device = amname_to_devname(disk);
 #ifdef USE_RUNDUMP
@@ -365,31 +430,46 @@ int level;
 	}
     }
 
-    dbprintf(("checking disk %s: device %s", disk, device));
+    dbprintf(("%s: device %s\n", get_pname(), device));
 
-#ifndef CHECK_FOR_ACCESS_WITH_OPEN
-    if(access(device, amode) == -1) {
-	    err = strerror(errno);
-	    printf("ERROR [can not access %s (%s): %s]\n", device, disk, err);
-    } else {
-	    printf("OK %s\n", disk);
-    }
-
+#ifdef CHECK_FOR_ACCESS_WITH_OPEN
+    access_result = open(device, O_RDONLY);
+    access_type = "open";
 #else
-    {
-	/* XXX better check in this case */
-	int tstfd;
-	if((tstfd = open(device, O_RDONLY)) == -1) {
-	    err = strerror(errno);
-	    printf("ERROR [could not open %s (%s): %s]\n", device, disk, err);
-	} else {
-	    printf("OK %s\n", device);
-	}
-	aclose(tstfd);
+    access_result = access(device, amode);
+    access_type = "access";
+#endif
+    if(access_result == -1) {
+	err = vstralloc("could not ", access_type, " ", device,
+			" (", disk, "): ", strerror(errno), NULL);
     }
+#ifdef CHECK_FOR_ACCESS_WITH_OPEN
+    aclose(access_result);
 #endif
 
-    dbprintf((": %s\n", err ? err : "OK"));
+common_exit:
+
+    if(user_and_password) {
+	memset(user_and_password, '\0', strlen(user_and_password));
+	amfree(user_and_password);
+    }
+    if(domain) {
+	memset(domain, '\0', strlen(domain));
+	amfree(domain);
+    }
+
+    if(err) {
+	printf("ERROR [%s]\n", err);
+	dbprintf(("%s: %s\n", get_pname(), err));
+	amfree(err);
+    } else {
+	printf("OK %s\n", device);
+	dbprintf(("%s: OK\n", get_pname()));
+    }
+    if(extra_info) {
+	dbprintf(("%s: extra info: %s\n", get_pname(), extra_info));
+	amfree(extra_info);
+    }
     amfree(device);
 
     /* XXX perhaps do something with level: read dumpdates and sanity check */
@@ -503,17 +583,20 @@ static void check_overall()
 #endif
 	testfd = open("/etc/amandapass", R_OK);
 	if (testfd >= 0) {
-	    if(!fstat(testfd, &buf)) {
-		if (buf.st_mode & 0x7)
+	    if(fstat(testfd, &buf) == 0) {
+		if ((buf.st_mode & 0x7) != 0) {
 		    printf("ERROR [/etc/amandapass is world readable!]\n");
-		else
+		} else {
 		    printf("OK [/etc/amandapass is readable, but not by all]\n");
+		}
 	    } else {
-		printf("OK [unable to access /etc/amandapass?]\n");
+		printf("OK [unable to stat /etc/amandapass: %s]\n",
+		       strerror(errno));
 	    }
 	    aclose(testfd);
 	} else {
-	    printf("ERROR [unable to access /etc/amandapass?]\n");
+	    printf("ERROR [unable to open /etc/amandapass: %s]\n",
+		   strerror(errno));
 	}
     }
 
