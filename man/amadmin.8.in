@@ -162,7 +162,7 @@ See also
 Display the current bump threshold parameters, calculated for all backup
 levels.
 .TP
-.B balance
+.P3 "balance\fP [ \fB--days\fP \fB<num>\fP ]\fB"
 Display the distribution of full backups throughout the dump schedule.
 .TP
 .P1 export [ hostname [ disks ]* ]*
