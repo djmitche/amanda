@@ -111,6 +111,13 @@ install the dump package, as it is not installed by default on most
 Linux distributions.  It is possible to find compiled versions of dump
 on most Linux sites and CD-ROMs.
 
+Note, however, that DUMP for Linux has been quite unreliable,
+sometimes being unable to perform backups, producing weird error
+messages such as `master/slave protocol botched', and sometimes
+creating unrestorable dump images, especially of active filesystems.
+The first problem can sometimes be fixed by cleaning up outdated
+entries in /etc/dumpdates, but your best bet is probably GNU tar.
+
 
 Make sure the user that runs configure has permission to run the dump
 program, otherwise configure may misdetect an ability of dump to
