@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.30 2000/11/08 01:55:45 martinea Exp $
+ * $Id: driver.c,v 1.58.2.31 2001/01/05 00:49:27 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -759,11 +759,15 @@ dumper_t *dumper;
 	if( busy_dumpers == 1 ) { /* case c */
 	    assignedhd_t **holdp;
 	    int i;
+	    long est_size;
 	    /* set estimate to more than what is already use */
-	    sched(dp)->est_size = 20 * TAPE_BLOCK_SIZE;
+	    est_size = 20 * TAPE_BLOCK_SIZE;
 	    holdp = sched(dp)->holdp;
 	    for(i=0; holdp[i]; i++ ) { /* for each disk */
-		sched(dp)->est_size += holdp[i]->used;
+		est_size += holdp[i]->used;
+	    }
+	    if(est_size > sched(dp)->est_size) {
+		sched(dp)->est_size = est_size;
 	    }
 	}
 	/* case b */

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.13 2000/10/11 00:44:01 martinea Exp $
+/* $Id: dumper.c,v 1.75.2.14 2001/01/05 00:49:28 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -290,14 +290,22 @@ char **main_argv;
 	    cont_filename[0] = '\0';
 
 	    tmp_filename = newvstralloc(tmp_filename, filename, ".tmp", NULL);
-	    if((outfd = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600)) == -1) {
-		q = squotef("[holding file \"%s\": %s]",
+	    outfd = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600);
+	    if(outfd == -1) {
+		int save_errno = errno;
+		q = squotef("[main holding file \"%s\": %s]",
 			    tmp_filename, strerror(errno));
-		putresult("FAILED %s %s\n", handle, q);
+		if(save_errno == ENOSPC) {
+		    putresult("NO-ROOM %s %lu\n", handle, use);
+		    putresult("TRY-AGAIN %s %s\n", handle, q);
+		}
+		else {
+		    putresult("FAILED %s %s\n", handle, q);
+		}
 		amfree(q);
 		break;
 	    }
-	    filename_seq = 0;
+	    filename_seq = 1;
 
 	    check_options(options);
 
@@ -363,7 +371,7 @@ char **main_argv;
 		amfree(q);
 		break;
 	    }
-	    filename_seq = 0;
+	    filename_seq = 1;
 
 	    check_options(options);
 
@@ -533,7 +541,7 @@ int outf, size, split;
  * written if it is full, or the remainder is zeroed if at eof.
  */
 {
-int rc=0;
+    int rc=0;
 
     spaceleft -= size;
     dataptr += size;
@@ -548,7 +556,7 @@ int rc=0;
 
 	NAUGHTY_BITS;
 
-	if(split && split_size > 0 && dumpsize >= split_size) {
+	while(split && split_size > 0 && dumpsize >= split_size) {
 	    char *new_filename = NULL;
 	    char sequence[10];
 	    int new_outf;
@@ -594,7 +602,6 @@ int rc=0;
 	    if( !new_filename ) { /* use another file */
 		int save_type, tmp_outf;
 
-		filename_seq++;
 		ap_snprintf(sequence, sizeof(sequence), "%d", filename_seq);
 		new_filename = newvstralloc(new_filename,
 					    filename,
@@ -603,60 +610,76 @@ int rc=0;
 					    NULL);
    
 		tmp_filename = newvstralloc(tmp_filename, new_filename, ".tmp", NULL);
-		if((new_outf = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600)) == -1) {
-		    close(outf);
-		    errstr = squotef("holding file \"%s\": %s",
-		 		     tmp_filename, strerror(errno));
-		    return 1;
+		new_outf = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600);
+		if(new_outf == -1) {
+		    int save_errno = errno;
+		    errstr = squotef("chunk holding file \"%s\": %s",
+		 		     tmp_filename, strerror(save_errno));
+		    if(save_errno == ENOSPC) {
+			putresult("NO-ROOM %s %lu\n", handle, 
+				  use+split_size-dumpsize);
+			use = 0; /* force RQ_MORE_DISK */
+			split_size = dumpsize;
+		    }
+		    else {
+			close(outf);
+			return 1;
+		    }
 		}
-		save_type = file.type;
-		file.type = F_CONT_DUMPFILE;
-		file.cont_filename[0] = '\0';
-		if( write_tapeheader(new_outf, &file) ) { /*failed-disk full?*/
-		    close(new_outf);
-		    unlink(new_filename);
-		    filename_seq--;
-		    putresult("NO-ROOM %s %lu\n", handle, use);
-		    use = 0; /* force RQ_MORE_DISK */
-                } else { /* everything is fine */
- 
-		    strncpy(file.cont_filename, new_filename, 
-			    sizeof(file.cont_filename));
-		    file.cont_filename[sizeof(file.cont_filename)-1] = '\0';
-    
-		    tmp_filename = newvstralloc(tmp_filename, cont_filename, ".tmp", NULL);
-		    close(outf);
-		    if((tmp_outf = open(tmp_filename,O_RDWR)) == -1) {
-			close(new_outf);
-			errstr = squotef("holding file \"%s\": %s",
-					 tmp_filename, strerror(errno));
-			return 1;
-		    }
-		    strncpy(file.cont_filename, new_filename, 
-			    sizeof(file.cont_filename));
-		    file.cont_filename[sizeof(file.cont_filename)-1] = '\0';
-		    file.type = save_type;
-		    write_tapeheader(tmp_outf, &file);
-		    close(tmp_outf);
+		else {
+		    save_type = file.type;
 		    file.type = F_CONT_DUMPFILE;
-		    if(dup2(new_outf,outf) == -1) {
+		    file.cont_filename[0] = '\0';
+		    if(write_tapeheader(new_outf, &file)) {/*failed-disk full?*/
 			close(new_outf);
- 			errstr = squotef("can't dup2: %s", strerror(errno));
-			return 1;
-		    }
-		    close(new_outf);
+			unlink(tmp_filename);
+			putresult("NO-ROOM %s %lu\n", handle, 
+				  use+split_size-dumpsize);
+			use = 0; /* force RQ_MORE_DISK */
+			split_size = dumpsize;
+		    } else { /* everything is fine */
  
-		    strncpy(cont_filename, new_filename, sizeof(cont_filename));
-		    cont_filename[sizeof(cont_filename)-1] = '\0';
+			strncpy(file.cont_filename, new_filename, 
+				sizeof(file.cont_filename));
+			file.cont_filename[sizeof(file.cont_filename)-1] = '\0';
     
-		    split_size += (chunksize>use)?use:chunksize;
-		    use = (chunksize>use)?0:use-chunksize;
-		    spaceleft = sizeof(databuf);
-		    dataptr = databuf;
-		    dumpsize += TAPE_BLOCK_SIZE;
-		    filesize = TAPE_BLOCK_SIZE;
-		    nb_header_block++;
-		} 
+			tmp_filename = newvstralloc(tmp_filename,
+						   cont_filename, ".tmp", NULL);
+			close(outf);
+			if((tmp_outf = open(tmp_filename,O_RDWR)) == -1) {
+			    close(new_outf);
+			    errstr = squotef("rewrite holding file \"%s\": %s",
+					     tmp_filename, strerror(errno));
+			    return 1;
+			}
+			strncpy(file.cont_filename, new_filename, 
+				sizeof(file.cont_filename));
+			file.cont_filename[sizeof(file.cont_filename)-1] = '\0';
+			file.type = save_type;
+			write_tapeheader(tmp_outf, &file);
+			close(tmp_outf);
+			file.type = F_CONT_DUMPFILE;
+			if(dup2(new_outf,outf) == -1) {
+			    close(new_outf);
+ 			    errstr = squotef("can't dup2: %s", strerror(errno));
+			    return 1;
+			}
+			close(new_outf);
+ 
+			strncpy(cont_filename, new_filename, 
+				sizeof(cont_filename));
+			cont_filename[sizeof(cont_filename)-1] = '\0';
+    
+			split_size += (chunksize>use)?use:chunksize;
+			use = (chunksize>use)?0:use-chunksize;
+			spaceleft = sizeof(databuf);
+			dataptr = databuf;
+			dumpsize += TAPE_BLOCK_SIZE;
+			filesize = TAPE_BLOCK_SIZE;
+			nb_header_block++;
+			filename_seq++;
+		    }
+		}
 		memcpy(databuf, save_databuf, sizeof(databuf)); 
 	    }
 	    spaceleft = save_spaceleft;
@@ -929,6 +952,7 @@ int do_dump(mesgfd, datafd, indexfd, outfd)
 int mesgfd, datafd, indexfd, outfd;
 {
     int maxfd, nfound, size1, size2, eof1, eof2;
+    int rc;
     fd_set readset, selectset;
     struct timeval timeout;
     int outpipe[2];
@@ -990,6 +1014,7 @@ int mesgfd, datafd, indexfd, outfd;
 			      strerror(errno),
 			      NULL);
 	amfree(errfname);
+	rc = 2;
 	goto failed;
     } else {
 	unlink(errfname);			/* so it goes away on close */
@@ -1009,11 +1034,13 @@ int mesgfd, datafd, indexfd, outfd;
 	    aclose(outpipe[1]);
 	    errstr = newstralloc(errstr, "descriptor out of range");
 	    errno = EMFILE;
+	    rc = 2;
 	    goto failed;
 	}
 	switch(compresspid=fork()) {
 	case -1:
 	    errstr = newstralloc2(errstr, "couldn't fork: ", strerror(errno));
+	    rc = 2;
 	    goto failed;
 	default:
 	    aclose(outpipe[1]);
@@ -1055,12 +1082,14 @@ int mesgfd, datafd, indexfd, outfd;
 				 NULL);
 	   amfree(indexfile_real);
 	   amfree(indexfile_tmp);
+	   rc = 2;
 	   goto failed;
 	}
 
 	switch(indexpid=fork()) {
 	case -1:
 	    errstr = newstralloc2(errstr, "couldn't fork: ", strerror(errno));
+	    rc = 2;
 	    goto failed;
 	default:
 	    aclose(indexfd);
@@ -1179,10 +1208,12 @@ int mesgfd, datafd, indexfd, outfd;
 
 	if(nfound == 0)  {
 	    errstr = newstralloc(errstr, "data timeout");
+	    rc = 2;
 	    goto failed;
 	}
 	if(nfound == -1) {
 	    errstr = newstralloc2(errstr, "select: ", strerror(errno));
+	    rc = 2;
 	    goto failed;
 	}
 
@@ -1193,15 +1224,22 @@ int mesgfd, datafd, indexfd, outfd;
 	    switch(size1) {
 	    case -1:
 		errstr = newstralloc2(errstr, "data read: ", strerror(errno));
+		rc = 2;
 		goto failed;
 	    case 0:
-		if(update_dataptr(outfd, size1, 1)) goto failed;
+		if(update_dataptr(outfd, size1, 1)) {
+		    rc = 2;
+		    goto failed;
+		}
 		eof1 = 1;
 		FD_CLR(datafd, &readset);
 		aclose(datafd);
 		break;
 	    default:
-		if(update_dataptr(outfd, size1, 1)) goto failed;
+		if(update_dataptr(outfd, size1, 1)) {
+		    rc = 2;
+		    goto failed;
+		}
 	    }
 	}
 
@@ -1210,6 +1248,7 @@ int mesgfd, datafd, indexfd, outfd;
 	    switch(size2) {
 	    case -1:
 		errstr = newstralloc2(errstr, "mesg read: ", strerror(errno));
+		rc = 2;
 		goto failed;
 	    case 0:
 		eof2 = 1;
@@ -1225,8 +1264,19 @@ int mesgfd, datafd, indexfd, outfd;
 	    if (got_info_endline && !header_done) { /* time to do the header */
 		make_tapeheader(&file, F_DUMPFILE);
 		if (write_tapeheader(outfd, &file)) {
+		    int save_errno = errno;
 		    errstr = newstralloc2(errstr, "write_tapeheader: ", 
 					  strerror(errno));
+		    if(save_errno == ENOSPC) {
+			putresult("NO-ROOM %s %lu\n", handle, 
+				  use+split_size-dumpsize);
+			use = 0; /* force RQ_MORE_DISK */
+			split_size = dumpsize;
+			rc = 1;
+		    }
+		    else {
+			rc = 2;
+		    }
 		    goto failed;
 		}
 		dumpsize += TAPE_BLOCK_SIZE;
@@ -1242,7 +1292,10 @@ int mesgfd, datafd, indexfd, outfd;
 	}
     } /* end while */
 
-    if(dump_result > 1) goto failed;
+    if(dump_result > 1) {
+	rc = 2;
+	goto failed;
+    }
 
     runtime = stopclock();
     dumptime = runtime.r.tv_sec + runtime.r.tv_usec/1000000.0;
@@ -1293,13 +1346,16 @@ int mesgfd, datafd, indexfd, outfd;
 	amfree(indexfile_real);
     }
 
-    return 1;
+    return 0;
 
  failed:
 
     if(!abort_pending) {
 	q = squotef("[%s]", errstr);
-	putresult("FAILED %s %s\n", handle, q);
+	if(rc==2)
+	    putresult("FAILED %s %s\n", handle, q);
+	else
+	    putresult("TRY-AGAIN %s %s\n", handle, q);
 	amfree(q);
     }
 
@@ -1345,7 +1401,7 @@ int mesgfd, datafd, indexfd, outfd;
 	amfree(indexfile_real);
     }
 
-    return 0;
+    return rc;
 }
 
 /* -------------------- */
