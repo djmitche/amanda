@@ -1,5 +1,10 @@
 1999-09-19 John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/driver.c: do not send a FILE_WRITE to the taper when the
+	  tape queue is empty during a TRYAGAIN (driver core dumped).
+
+1999-09-19 John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/taper.c: fix protocol problems when out of tape.  Add
 	  FAKE_TAPE_ERROR debugging code to simulate tape errors.  Fix problem
 	  with command line argument processing.
