@@ -175,8 +175,6 @@ case "$target" in
 esac
 
 AC_SUBST(CLIENT_SCRIPTS)
-AC_SUBST(LIBSRCS_CLIENT)
-AC_SUBST(LIBOBJS_CLIENT)
 
 AC_ARG_WITH(client-only,
     [  --with-client-only     deprecated, use --without-server],
@@ -516,37 +514,28 @@ y |  ye | yes) AC_DEFINE(USE_FQDN)
 esac
 
 AC_ARG_WITH(gnutar,
-    [  --with-gnutar=PROG      use PROG as GNU tar executable [default: looks for one]],
+    [  --with-gnutar[=PROG]      use PROG as GNU tar executable [default: looks for one]],
     [
 	case "$withval" in
 	    /*)	GNUTAR="$withval";;
+	    y|ye|yes) :;;
+	    n|no) GNUTAR=;;
 	    *)  AC_MSG_ERROR([*** You must supply a full pathname to --with-gnutar]);;
 	esac
     ]
 )
 
 AC_ARG_WITH(smbclient,
-    [  --with-smbclient[=PATH] Compile in Samba PC backup support, where PATH is the location of smbclient],
+    [  --with-smbclient[=PROG]   use PROG as Samba's smbclient executable [default: looks for one]],
     [
 	case "$withval" in
-	y | ye | yes)
-	    AC_PATH_PROGS(SAMBA_CLIENT,smbclient,,$LOCSYSPATH)
-	    if test -z "$SAMBA_CLIENT"; then
-		AC_MSG_ERROR([*** please specify --with-smbclient=/some/dir/smbclient])
-	    fi
-	  ;;
-	n | no) unset SAMBA_CLIENT
-	  ;;
-	*) SAMBA_CLIENT="$withval"
-	  ;;
+	    /*) SAMBA_CLIENT="$withval";;
+	    y|ye|yes) :;;
+	    n|no) SAMBA_CLIENT=;;
+	    *)  AC_MSG_ERROR([*** You must supply a full pathname to --with-smbclient]);;
 	esac
     ]
 )
-if test "$SAMBA_CLIENT"; then
-    LIBSRCS_CLIENT="$LIBSRCS_CLIENT findpass.c"
-    LIBOBJS_CLIENT="$LIBOBJS_CLIENT findpass.o"
-    AC_DEFINE_UNQUOTED(SAMBA_CLIENT,"$SAMBA_CLIENT")
-fi
 
 AC_ARG_WITH(samba-user,
     [    --with-samba-user=USER User for smbclient ["backup"]],
@@ -1155,7 +1144,7 @@ fi
 AC_DEFINE_UNQUOTED(GREP,"$GREP")
 
 AC_PATH_PROGS(GNUTAR,gtar gnutar tar,,$LOCSYSPATH)
-if test "$GNUTAR"; then
+if test ! -z "$GNUTAR"; then
   case "`\"$GNUTAR\" --version 2>&1`" in
    *GNU*tar*)
 		AC_DEFINE_UNQUOTED(GNUTAR,"$GNUTAR")
@@ -1163,6 +1152,19 @@ if test "$GNUTAR"; then
    *)
 		AC_MSG_WARN([*** $GNUTAR is not GNU tar, so it will not be used.])
 		GNUTAR=
+		;;
+  esac
+fi
+
+AC_PATH_PROGS(SAMBA_CLIENT,smbclient,,$LOCSYSPATH)
+if test ! -z "$SAMBA_CLIENT"; then
+  case "`\"$SAMBA_CLIENT\" '\\\\not.a.host.name\\notashare' -U nosuchuser -N -Tx /dev/null 2>&1'" in
+  *"Unknown host"*)
+		AC_DEFINE_UNQUOTED(SAMBA_CLIENT,"$SAMBA_CLIENT")
+		;;
+  *)
+		AC_MSG_WARN([*** $SAMBA_CLIENT does not seem to be smbclient, so it will not be used.])
+		SAMBA_CLIENT=
 		;;
   esac
 fi
@@ -2202,6 +2204,7 @@ AC_SUBST(ac_n)
 AC_SUBST(ac_c)
 
 AM_CONDITIONAL(WANT_CLIENT, test x"$NO_CLIENT_MODE" != x"true")
+AM_CONDITIONAL(WANT_SAMBA, test ! -z "$SAMBA_CLIENT")
 AM_CONDITIONAL(WANT_RESTORE, test x"$NO_RESTORE_MODE" != x"true")
 AM_CONDITIONAL(WANT_SERVER, test x"$NO_SERVER_MODE" != x"true")
 AM_CONDITIONAL(WANT_RECOVER, test x"$NO_RECOVER_MODE" != x"true" && test x"$NO_CLIENT_MODE" != x"true")
@@ -2215,7 +2218,6 @@ esac
 
 dnl for libtool support on autoconf 2.12 and earlier
 LIBOBJS=`echo "$LIBOBJS" | sed 's/\.o/\.$(OBJ_EXTENSION)/g'`
-LIBOBJS_CLIENT=`echo "$LIBOBJS_CLIENT" | sed 's/\.o/\.$(OBJ_EXTENSION)/g'`
 ALLOCA=`echo "$ALLOCA" | sed 's/\.o/\.$(OBJ_EXTENSION)/g'`
 
 AC_OUTPUT( \

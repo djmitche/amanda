@@ -11,11 +11,9 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 if WANT_CLIENT
 if WANT_LIBTOOL
 lib_LTLIBRARIES =	libamclient.la
-OBJ_EXTENSION = lo
 LIB_EXTENSION = la
 else
 noinst_LIBRARIES =	libamclient.a
-OBJ_EXTENSION = o
 LIB_EXTENSION = a
 endif
 
@@ -26,18 +24,14 @@ sbin_SCRIPTS =		@CLIENT_SCRIPTS@
 libexec_SCRIPTS =	patch-system
 endif
 
+if WANT_SAMBA
+samba_sources = findpass.c
+endif
+
 libamclient_la_SOURCES=	amandates.c		getfsent.c	\
-			unctime.c		@LIBSRCS_CLIENT@
+			unctime.c		$(samba_sources)
 
-EXTRA_libamclient_la_SOURCES = findpass.c
-libamclient_la_DEPENDENCIES =	@LIBOBJS_CLIENT@
-libamclient_la_LIBADD =	@LIBOBJS_CLIENT@
 libamclient_la_LDFLAGS = -release $(VERSION)
-
-libamclient_a_SOURCES = $(libamclient_la_SOURCES)
-EXTRA_libamclient_a_SOURCES = $(EXTRA_libamclient_la_SOURCES)
-libamclient_a_DEPENDENCIES = $(libamclient_la_DEPENDENCIES)
-libamclient_a_LIBADD = $(libamclient_la_LIBADD)
 
 LDADD =	libamclient.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)

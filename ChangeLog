@@ -1,5 +1,12 @@
 1998-10-08  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* configure.in (SAMBA_CLIENT): try to find it by default; minimal
+ 	checking
+	* client-src/Makefile.am (WANT_SAMBA): use automake conditionals to
+ 	enable findpass.o
+	* docs/SAMBA: document that --with-smbclient is no longer required
+	to enable SAMBA support
+	
 	* docs/FAQ: about inconsistencies in active filesystems
 
 1998-10-06  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>

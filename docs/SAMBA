@@ -29,9 +29,9 @@ add the following argument:
 
  --with-smbclient=/full/path/to/smbclient
 
-If you configure --with-smbclient, amanda will try to find smbclient
-in the PATH, but if the --with-smbclient switch is not issued at all,
-amanda will *not* enable its SAMBA hooks.
+By default, amanda will try to find smbclient in the PATH.  If it is
+not found, or it appears not to be smbclient, SAMBA support won't be
+enabled.
 
 Setup
 
