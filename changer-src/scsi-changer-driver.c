@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.36 2001/08/10 17:12:22 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.37 2001/08/15 18:36:00 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -588,12 +588,15 @@ void Inventory(char *labelfile, int drive, int eject, int start, int stop, int c
   int x;
   char *datestamp = malloc(1);   /* stupid, but tapefd_rdlabel does an free at the begining ... */
   char *label = malloc(1);       /* the same here ..... */
-  char *result;
+  char *result;                    /* Used to store the result of MapBarCode */
   int fd;                        /* fd from tape_open */
   int barcode;                   /* cache the result from the BarCode function */
   static int inv_done = 0;       /* Inventory function called ?, marker to disable recursion */
-
+  MBC_T *pbarcoderes = malloc(sizeof(MBC_T));    /* Here we will pass the parameter to MapBarCode and get the result */
+  
   DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE, "##### START Inventory\n");
+  memset(pbarcoderes, 0 , sizeof(MBC_T));
+
   if (inv_done != 0)
     {
       DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE, "##### STOP inv_done -> %d Inventory\n",inv_done);
@@ -602,7 +605,9 @@ void Inventory(char *labelfile, int drive, int eject, int start, int stop, int c
   inv_done = 1;
   barcode = BarCode(INDEX_CHANGER);
   
-  MapBarCode(labelfile,  "", "", RESET_VALID, 0, 0);
+  pbarcoderes->action = RESET_VALID;
+
+  MapBarCode(labelfile,pbarcoderes);
   
   /*
    * Check if an tape is loaded, if yes unload it
@@ -646,11 +651,17 @@ void Inventory(char *labelfile, int drive, int eject, int start, int stop, int c
 
       if ((result = (char *)tape_rdlabel(pDev[INDEX_TAPE].dev, &datestamp, &label)) == NULL)
       {
+	pbarcoderes->action = UPDATE_SLOT;
+	strcpy(pbarcoderes->data.voltag, label);
+	pbarcoderes->data.slot = x;
+	pbarcoderes->data.from = 0;
+	pbarcoderes->data.LoadCount = 1;
 	if (BarCode(INDEX_CHANGER) == 1)
 	  {
-	    MapBarCode(labelfile, label, pDTE[drive].VolTag, UPDATE_SLOT, x, 0);
+	    strcpy(pbarcoderes->data.barcode, pDTE[drive].VolTag);
+	    MapBarCode(labelfile, pbarcoderes);
 	  } else {
-	    MapBarCode(labelfile, label, "", UPDATE_SLOT, x, 0);
+	    MapBarCode(labelfile, pbarcoderes);
 	  }
       } else {
 	DebugPrint(DEBUG_ERROR,SECTION_MAP_BARCODE, "Read label failed\n");
@@ -850,14 +861,14 @@ int unload(int fd, int drive, int slot)
 {
   extern OpenFiles_T *pDev;
   int ret;
-  char *result;                 /* Needed by MapBarCode */
+  int result;                 /* Needed by MapBarCode */
   extern changer_t chg;         /* Needed for the infos about emubarcode and labelfile */
-  int scanret, fslot, ffrom;
   extern int do_inventory;
+  MBC_T *pbarcoderes = malloc(sizeof(MBC_T));
 
   DebugPrint(DEBUG_INFO, SECTION_TAPE,"###### START unload\n");
   DebugPrint(DEBUG_INFO, SECTION_TAPE,"%-20s : fd %d, slot %d, drive %d \n", "unload", fd, slot, drive);
-  
+  memset(pbarcoderes, 0, sizeof(MBC_T));
   
   /*
    * If the Element Status is not valid try to
@@ -954,24 +965,31 @@ int unload(int fd, int drive, int slot)
      * but before check if the db has as entry the slot
      * to where we placed the tape, if no force an inventory
      */
-    result = MapBarCode(chg.labelfile, chgscsi_label, pSTE[slot].VolTag ,FIND_SLOT, 0, 0);
-    if ( result == NULL) /* Nothing known about this, do an Inventory */
+    pbarcoderes->action = FIND_SLOT;
+    strcpy(pbarcoderes->data.voltag, chgscsi_label);
+    strcpy(pbarcoderes->data.barcode, pSTE[slot].VolTag );
+    pbarcoderes->data.slot = 0;
+    pbarcoderes->data.from = 0;
+    pbarcoderes->data.LoadCount = 1;
+
+    if ( MapBarCode(chg.labelfile, pbarcoderes) == 0) /* Nothing known about this, do an Inventory */
       {
 	do_inventory = 1;
       } else {
-	scanret = sscanf(result, "%d:%d", &fslot, &ffrom);
-	if (scanret == 2)
+	if (slot != pbarcoderes->data.slot)
 	  {
-	    DebugPrint(DEBUG_INFO, SECTION_TAPE,"Result from MapBarCode (%s),result, slot -> %d, from -> %d\n",result,fslot, ffrom);
-	    if (slot != fslot)
+	    DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Slot DB out of sync, slot %d != map %d",slot, pbarcoderes->data.slot);
+	      do_inventory = 1;
+	  } else {
+	    pbarcoderes->data.slot = slot;
+	    pbarcoderes->data.from = 0;
+	    pbarcoderes->action = UPDATE_SLOT;
+	    if (MapBarCode(chg.labelfile, pbarcoderes))
 	      {
-		DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Slot DB out of sync, slot %d != map %d",slot, fslot);
-		do_inventory = 1;
+		DebugPrint(DEBUG_INFO, SECTION_TAPE,"Update barcode file ok\n");
 	      } else {
-		result = MapBarCode(chg.labelfile, chgscsi_label, pSTE[slot].VolTag ,UPDATE_SLOT, slot, 0);
+		ChgExit("unload", "Update barcode file failed in unload\n", FATAL);
 	      }
-	  } else { /* if scanret != 2 */
-	    DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Got an error from sscanf %d\n", scanret);
 	  }
       }
   }
@@ -994,17 +1012,18 @@ int unload(int fd, int drive, int slot)
 int load(int fd, int drive, int slot)
 {
   extern changer_t chg;         /* Needed for the infos about emubarcode and labelfile */
-  int fslot,ffrom;              /* Store the result from the label/slot db (MapBarCode) */
-  char *result = NULL;          /* Needed for the result string of MapBarCode */
+  char *result;                 /* Needed for the result of tape_rdlabel */
   char *datestamp = NULL;       /* Result pointer for tape_rdlabel */       
   char *label = NULL;           /* Result pointer for tape_rdlabel */
   extern int clean_slot;
   int ret, scanret;
   extern OpenFiles_T *pDev;
   extern int do_inventory;
+  MBC_T *pbarcoderes = malloc(sizeof(MBC_T));
 
   DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"###### START load\n");
   DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"%-20s : fd %d, drive %d, slot %d \n", "load", fd, drive, slot);
+  memset(pbarcoderes, 0 , sizeof(MBC_T));
 
   if (ElementStatusValid == 0)
       {
@@ -1089,34 +1108,38 @@ int load(int fd, int drive, int slot)
    */
   if (result  == NULL && chg.labelfile != NULL && label != NULL )
   {
-    result = MapBarCode(chg.labelfile, label, "" , FIND_SLOT, 0, 0);
-    if (result == NULL) /* Nothing found, do an inventory */
+    /* 
+     * We got something, update the db
+     * but before check if the db has as entry the slot
+     * to where we placed the tape, if no force an inventory
+     */
+    pbarcoderes->action = FIND_SLOT;
+    strcpy(pbarcoderes->data.voltag, label);
+    pbarcoderes->data.slot = 0;
+    pbarcoderes->data.from = 0;
+    pbarcoderes->data.LoadCount = 1;
+    
+
+    if (MapBarCode(chg.labelfile, pbarcoderes) == 0) /* Nothing found, do an inventory */
       {
 	do_inventory = 1;
       } else { /* We got something, is it correct ? */
-	scanret = sscanf(result, "%d:%d", &fslot, &ffrom);
-	if (scanret == 2)
+	if (slot != pbarcoderes->data.slot)
 	  {
-	    DebugPrint(DEBUG_INFO, SECTION_TAPE,"Result from MapBarCode (%s),result, slot -> %d, from -> %d\n",result,fslot, ffrom);
-	    if (slot != fslot)
-	      {
-		DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Slot DB out of sync, slot %d != map %d",slot, fslot);
-		do_inventory = 1;
-	      } else {
-	        /*
-		* Don't do anything ... 
-		result = MapBarCode(chg.labelfile, label, pDTE[drive].VolTag ,UPDATE_SLOT, slot, 0);
-		*/
-	      }
+	    DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Slot DB out of sync, slot %d != map %d",slot, pbarcoderes->data.slot);
+	    do_inventory = 1;
 	  } else {
-	    DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Error in result from MapBarCode 2 != %d\n",ret);
+	    /*
+	     * Don't do anything ... 
+	     result = MapBarCode(chg.labelfile, pbarcoderes);
+	    */
 	  }
       }
   }
 
   DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"##### STOP load (%d)\n",ret);
   return(ret);
-}
+  }
 
 /*
  * Returns the number of Storage Slots which the library has
@@ -2296,7 +2319,9 @@ int GenericRewind(int DeviceFD)
 	  switch (ret)
 	    {
 	    case SCSI_OK:
-	    case SCSI_SENSE:
+	      true= 0;
+	      break;
+       	    case SCSI_SENSE:
 	      switch (SenseHandler(DeviceFD, 0, pRequestSense->SenseKey, pRequestSense->AdditionalSenseCode, pRequestSense->AdditionalSenseCodeQualifier, (char *)pRequestSense))
 		{
 		case SENSE_NO:
@@ -2304,9 +2329,9 @@ int GenericRewind(int DeviceFD)
 		  true = 0;
 		  break;
 		case SENSE_TAPE_NOT_ONLINE:
-	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_TAPE_NOT_ONLINE\n");
-	      return(-1);
-	      break;
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_TAPE_NOT_ONLINE\n");
+		  return(-1);
+		  break;
 		case SENSE_IGNORE:
 		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_IGNORE\n");
 		  true = 0;
@@ -2322,8 +2347,9 @@ int GenericRewind(int DeviceFD)
 		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) default (SENSE)\n");
 		  true = 0;
 		  break;
-		}
+		}  /* switch (SenseHandler(DeviceFD, 0, pRequestSense->SenseKey.... */
 	      break;
+
 	    case SCSI_ERROR:
 	      DebugPrint(DEBUG_ERROR, SECTION_SCSI,"GenericRewind (TestUnitReady) SCSI_ERROR\n");
 	      return(-1);
@@ -2346,7 +2372,7 @@ int GenericRewind(int DeviceFD)
 	      DebugPrint(DEBUG_ERROR, SECTION_TAPE,"##### STOP GenericRewind (-1)\n");
 	      return(-1);
 	    }
-	}
+	} /* while true == 1 */
       
       cnt = 0;
       true = 1;
@@ -2438,10 +2464,10 @@ int GenericRewind(int DeviceFD)
 	      DebugPrint(DEBUG_ERROR, SECTION_SCSI,"GenericRewind (TestUnitReady) unknown (%d)\n",ret);
 	      break;
 	    }
+
 	  cnt++;
 	  sleep(2);
 	}
-      
       
       free(pRequestSense);
       
@@ -4734,8 +4760,10 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
   FILE *out;
   char *label;
   ExtendedRequestSense_T ExtRequestSense;
+  MBC_T *pbarcoderes = malloc(sizeof(MBC_T));
+  
   ChangerCMD_T *p = (ChangerCMD_T *)&ChangerIO;
-
+  memset(pbarcoderes, 0, sizeof(MBC_T));
 
   if ((pModePage = (char *)malloc(0xff)) == NULL)
     {
@@ -4785,11 +4813,15 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
           printf("%07d MTE  %s  %04d %s ",pMTE[x].address,
                  (pMTE[x].full ? "Full " :"Empty"),
                  pMTE[x].from, pMTE[x].VolTag);
-          if ((label = (char *)MapBarCode(labelfile, "", pMTE[x].VolTag, BARCODE_BARCODE, 0, 0)) == NULL)
+
+	  pbarcoderes->action = BARCODE_BARCODE;
+	  strcpy(pbarcoderes->data.barcode, pMTE[x].VolTag);
+
+          if (MapBarCode(labelfile, pbarcoderes) == 0 )
           { 
 		printf("No mapping\n");
           } else {
-                printf("%s \n",label);
+                printf("%s \n",pbarcoderes->data.barcode);
           }
 	} else {
           printf("%07d MTE  %s  %04d \n",pMTE[x].address,
@@ -4804,11 +4836,15 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
           printf("%07d STE  %s  %04d %s ",pSTE[x].address,  
                  (pSTE[x].full ? "Full ":"Empty"),
                  pSTE[x].from, pSTE[x].VolTag);
-	  if ((label = (char *)MapBarCode(labelfile, "", pSTE[x].VolTag,  BARCODE_BARCODE, 0, 0)) == NULL)
+
+	  pbarcoderes->action = BARCODE_BARCODE;
+	  strcpy(pbarcoderes->data.barcode, pSTE[x].VolTag);
+	  
+          if (MapBarCode(labelfile, pbarcoderes) == 0 )
           {
                 printf("No mapping\n");
           } else {
-                printf("%s \n",label);
+                printf("%s \n",pbarcoderes->data.barcode);
           }
 	} else {
           printf("%07d STE  %s  %04d %s\n",pSTE[x].address,  
@@ -4823,12 +4859,17 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
           printf("%07d DTE  %s  %04d %s ",pDTE[x].address,  
                  (pDTE[x].full ? "Full " : "Empty"),
                  pDTE[x].from, pDTE[x].VolTag);
-	  if (( label = (char *)MapBarCode(labelfile, "", pDTE[x].VolTag,  BARCODE_BARCODE, 0, 0)) == NULL)
+
+	  pbarcoderes->action = BARCODE_BARCODE;
+	  strcpy(pbarcoderes->data.barcode, pDTE[x].VolTag);
+	  
+          if (MapBarCode(labelfile, pbarcoderes) == 0 )
           {
                 printf("No mapping\n");
           } else {
-                printf("%s \n",label);
+                printf("%s \n",pbarcoderes->data.barcode);
           }
+
 	} else {
           printf("%07d DTE  %s  %04d %s\n",pDTE[x].address,  
                  (pDTE[x].full ? "Full " : "Empty"),
@@ -4841,12 +4882,17 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
           printf("%07d IEE  %s  %04d %s ",pIEE[x].address,  
                  (pIEE[x].full ? "Full " : "Empty"),
                  pIEE[x].from, pIEE[x].VolTag);
-	  if ((label = (char *)MapBarCode(labelfile, "", pIEE[x].VolTag,  BARCODE_BARCODE, 0, 0)) == NULL)
+
+	  pbarcoderes->action = BARCODE_BARCODE;
+	  strcpy(pbarcoderes->data.barcode, pIEE[x].VolTag);
+	  
+          if (MapBarCode(labelfile, pbarcoderes) == 0 )
           {
                 printf("No mapping\n");
           } else {
-                printf("%s \n",label);
+                printf("%s \n",pbarcoderes->data.barcode);
           }
+
 	} else {
           printf("%07d IEE  %s  %04d %s\n",pIEE[x].address,  
                  (pIEE[x].full ? "Full " : "Empty"),
