@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.30 1998/02/08 19:58:03 amcore Exp $
+ * $Id: sendbackup.c,v 1.31 1998/02/12 22:01:42 jrj Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -923,6 +923,7 @@ char *cmd;
     char buffer[BUFSIZ], *ptr;
     int bytes_read;
     int bytes_written;
+    int just_written;
 
     bytes_read = read(0, buffer, sizeof(buffer));
     if ((bytes_read < 0) && (errno == EINTR))
@@ -938,25 +939,42 @@ char *cmd;
       break; /* finished */
 
     /* write the stuff to the subprocess */
+    ptr = buffer;
+    bytes_written = 0;
+    while (bytes_read > bytes_written && !index_finished) {
+      just_written = write(fileno(pipe_fp), ptr, bytes_read - bytes_written);
+      if (just_written < 0) {
+	e = strerror(errno);
+	dbprintf(("index tee cannot write to index creator [%s]\n", e));
+#if 0
+	/* only write debugging info for write error
+           to index pipe. */
+	error("index tee cannot write to index creator [%s]", e);
+#endif
+	index_finished = 1;
+      } else {
+	bytes_written += just_written;
+	ptr += just_written;
+      }
+    }
     /* we are likely to be interrupted part way through one write by
        the subprocess finishing. But we don't care at that point */
-    if (!index_finished)
-      fwrite(buffer, sizeof(buffer), 1, pipe_fp);
-
     /* write the stuff to stdout, ensuring none lost when interrupt
        occurs */
     ptr = buffer;
-    while (bytes_read > 0) {
-      bytes_written = write(3, ptr, bytes_read);
-      if ((bytes_written < 0) && (errno == EINTR))
+    bytes_written = 0;
+    while (bytes_read > bytes_written) {
+      just_written = write(3, ptr, bytes_read - bytes_written);
+      if ((just_written < 0) && (errno == EINTR))
 	continue;
-      if (bytes_written < 0) {
+      if (just_written < 0) {
 	e = strerror(errno);
 	dbprintf(("index tee cannot write [%s]\n", e));
 	error("index tee cannot write [%s]", e);
+      } else {
+	bytes_written += just_written;
+	ptr += just_written;
       }
-      bytes_read -= bytes_written;
-      ptr += bytes_written;
     }
   }
 

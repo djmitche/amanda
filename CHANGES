@@ -1,3 +1,6 @@
+	Fix buffer use and write() error handling in the index pipeline.
+	-Dietmar Goldbeck <dietmar@telemedia.de>
+
 	Use "a" mode instead of "w" for the fdopen of the debug file.
 	-David Lamkin <drl@net-tel.co.uk>
 
