@@ -2,7 +2,7 @@ Version 2.4.0
 
 	Have sendbackup-dump and sendbackup-gnutar list the actual
 	program that should be used to restore a file from a backup
-	instead of just listing restore or gtar. -blair
+	instead of just listing restore or gtar. -blair&oliva
 
 	Have configure check for the initgroups() declaration in
 	unistd.h in addition to grp.h and sys/types.h, which is where
@@ -10,6 +10,12 @@ Version 2.4.0
 
 	SAMBA backups won't succeed if GNUTAR listed incrementals are
 	enabled. -oliva
+
+	Fixed xfsdump support. -oliva
+
+	Fixed srvcompress option. -oliva
+
+	Fixed exclude/exclude-list support. -oliva
 
 	Change umask to 066 before creating index file in /tmp. -oliva
 
