@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.145 2003/06/18 13:21:36 martinea Exp $
+ * $Id: planner.c,v 1.146 2003/06/20 18:42:46 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1902,7 +1902,7 @@ static void delay_dumps P((void))
 	    if(est(dp)->dump_level == 0 && dp != preserve) {
 
 		/* Format dumpsize for messages */
-		ap_snprintf(est_kb, 20, "%ld KB,", est(dp)->dump_size);
+		snprintf(est_kb, 20, "%ld KB,", est(dp)->dump_size);
 
 		if(est(dp)->last_level == -1 || dp->skip_incr) {
 		    delay_one_dump(dp, 1,

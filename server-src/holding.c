@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.44 2003/06/13 23:45:39 kovert Exp $
+ * $Id: holding.c,v 1.45 2003/06/20 18:42:46 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -567,7 +567,7 @@ int verbose;
 	        puts("skipping cruft file, perhaps you should delete it.");
 	}
 	else if(!is_datestr(workdir->d_name)) {
-	    if(verbose && (strcmp(workdir->d_name, "lost+found")!=0) ) {
+	    if(verbose && (strcmp(workdir->d_name, "lost+found")!=0) )
 	        puts("skipping cruft directory, perhaps you should delete it.");
 	}
 	else if(rmdir(workdir->d_name) == 0) {

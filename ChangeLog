@@ -1,4 +1,9 @@
 2003-06-20  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/holding.c: Fix compiler error.
+	* server-src/planner.c: Use snprintf.
+
+2003-06-20  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	patch by Paul Bijnens <paul.bijnens@xplanation.com>
 
 	* tape-src/tapetype.c: Avoid a numerical overflow for large tape
