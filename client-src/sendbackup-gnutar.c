@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.26 1997/11/12 10:49:24 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.27 1997/12/02 23:58:05 amcore Exp $
  *
  * send backup data using GNU tar
  */
@@ -52,8 +52,29 @@ static regex_t re_table[] = {
   { DMP_SIZE, 
 	"^Total bytes written: [0-9][0-9]*",				1},
 
-  /* samba 1.9.17 has introduced these output messages */
-  { DMP_NORMAL, "^\\(doing parameter\\|pm_process()\\|adding IPC\\|Added interface\\|Opening\\|Connect\\|max \\|capabilities \\|Sec mode \\|Got \\|Chose protocol \\|Server \\|Timezone \\|received\\|FINDFIRST\\|dos_clean_name\\|file\\|getting file\\|Rejected chained\\|nread=\\|([0-9][0-9]*\\.[0-9][0-9]* kb/s)\\|tar: dumped [0-9][0-9]* tar files\\)", 1},
+ /* samba 1.9.17 has introduced these output messages */
+  { DMP_NORMAL, "^doing parameter", 1},
+  { DMP_NORMAL, "^pm_process()", 1},
+  { DMP_NORMAL, "^adding IPC", 1},
+  { DMP_NORMAL, "^Added interface", 1},
+  { DMP_NORMAL, "^Opening", 1},
+  { DMP_NORMAL, "^Connect", 1},
+  { DMP_NORMAL, "^max", 1},
+  { DMP_NORMAL, "^capabilities", 1},
+  { DMP_NORMAL, "^Sec mode ", 1},
+  { DMP_NORMAL, "^Got ", 1},
+  { DMP_NORMAL, "^Chose protocol ", 1},
+  { DMP_NORMAL, "^Server ", 1},
+  { DMP_NORMAL, "^Timezone ", 1},
+  { DMP_NORMAL, "^received", 1},
+  { DMP_NORMAL, "^FINDFIRST", 1},
+  { DMP_NORMAL, "^dos_clean_name", 1},
+  { DMP_NORMAL, "^file", 1},
+  { DMP_NORMAL, "^getting file", 1},
+  { DMP_NORMAL, "^Rejected chained", 1},
+  { DMP_NORMAL, "^nread=", 1},
+  { DMP_NORMAL, "^([0-9][0-9]*\\.[0-9][0-9]* kb/s)", 1},
+  { DMP_NORMAL, "^tar: dumped [0-9][0-9]* tar files", 1},
 
   /* catch-all: DMP_STRANGE is returned for all other lines */
   { DMP_STRANGE, NULL, 0}
