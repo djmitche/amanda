@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.12 1998/12/15 00:57:56 kashmir Exp $
+ * $Id: diskfile.h,v 1.13 1999/02/13 19:36:15 martinea Exp $
  *
  * interface for disklist file reading code
  */
@@ -42,6 +42,7 @@ typedef struct host_s {
     int inprogress;			/* # dumps in progress */
     int maxdumps;			/* maximum dumps in parallel */
     interface_t *netif;			/* network interface this host is on */
+    time_t start_t;			/* start dump after this time */
     char *up;				/* generic user pointer */
 } host_t;
 
