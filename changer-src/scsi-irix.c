@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-irix.c,v 1.18 2001/12/30 17:42:07 martinea Exp $
+ * $Id: scsi-irix.c,v 1.19 2002/01/01 21:18:28 martinea Exp $
  *
  * Interface to execute SCSI commands on an SGI Workstation
  *
@@ -79,7 +79,7 @@ int SCSI_OpenDevice(int ip)
                 {
                   for (i=0;i < 16 ;i++)
                     pDev[ip].ident[i] = pDev[ip].inquiry->prod_ident[i];
-                  for (i=15; i >= 0 && !isalnum(pDev[ip].ident[i]) ; i--)
+                  for (i=15; i >= 0 && !isalnum((int)pDev[ip].ident[i]) ; i--)
                     {
                       pDev[ip].ident[i] = '\0';
                     }

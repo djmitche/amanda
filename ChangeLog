@@ -1,4 +1,11 @@
 2002-01-01  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* tape-src/output-tape.c (tape_tapefd_rewind, tape_tapefd_unload):
+	  Init rc to -1.
+	* changer-src/scsi-irix.c (SCSI_OpenDevice): Cast to int.
+	* common-src/match.c (clean_regex): Cast to int.
+
+2002-01-01  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	Reported by <ian.willis@sge.net>
 
 	* common-src/rsh-security.c: Fix for RSH_DEBUG.

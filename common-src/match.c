@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: match.c,v 1.14 2001/01/07 23:02:56 martinea Exp $
+ * $Id: match.c,v 1.15 2002/01/01 21:18:28 martinea Exp $
  *
  * functions for checking and matching regular expressions
  */
@@ -58,7 +58,7 @@ char *regex;
     result = malloc(2*strlen(regex)+1);
 
     for(i=0,j=0;i<strlen(regex);i++) {
-	if(!isalnum(regex[i]))
+	if(!isalnum((int)regex[i]))
 	    result[j++]='\\';
 	result[j++]=regex[i];
     }
