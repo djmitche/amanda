@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.36 1998/01/26 21:16:29 jrj Exp $
+ * $Id: infofile.c,v 1.37 1998/01/30 01:51:04 blair Exp $
  *
  * manage current info file
  */
@@ -69,7 +69,8 @@ char *mode;
 			 "/info",
 			 NULL);
 
-    afree(host); afree(disk);
+    afree(host);
+    afree(disk);
 
     /* create the directory structure if in write mode */
     if (writing) {
@@ -103,7 +104,7 @@ char *mode;
 int close_txinfofile(infof)
 FILE *infof;
 {
-    int rc;
+    int rc = 0;
 
     assert(infofile != (char *)0);
 
@@ -116,9 +117,9 @@ FILE *infof;
     afree(infofile);
     afree(newinfofile);
 
-    rc = fclose(infof);
+    rc = rc || fclose(infof);
     infof = NULL;
-    if (rc == EOF) rc = -1;
+    if (!rc) rc = -1;
 
     return rc;
 }
@@ -616,7 +617,7 @@ info_t *record;
 
     rc = write_txinfofile(infof, record);
 
-    close_txinfofile(infof);
+    rc = rc || close_txinfofile(infof);
 
     return rc;
 #else
