@@ -1,3 +1,14 @@
+Version 2.4.0
+
+	chg-multi updates and bugfixes.
+	-Liudvikas Bukys <bukys@cs.rochester.edu>
+
+	incorrect NO-ROOM when dumping directly to tape fixed.  -oliva
+
+	patch-system script much more configurable.  -oliva
+
+	new index generation commands.  -oliva
+
 Version 2.4.0b6
 
 	amindexd bugfix -Jos Alsters <Jos.Alsters@sci.kun.nl>
