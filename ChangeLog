@@ -1,5 +1,14 @@
 1999-04-15  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/event.c (fire): inline this with a macro.  Remove
+	timestamp arg.  eh->lastfired is now only valid for EV_TIME
+	events.  Removes several time() systems from the critical path.
+	* common-src/event.c (event_wakeup): have this fire EV_WAIT events
+	directly instead of deferring back to the event loop.  Removes the
+	sequencing restriction for event_wakeup.
+
+1999-04-15  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/planner.c (getsize): put the hosts disks on the waitq
 	before sending the request, not after.
 

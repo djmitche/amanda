@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-1999 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.8 1999/04/12 20:24:13 kashmir Exp $
+ * $Id: event.c,v 1.9 1999/04/15 21:40:17 kashmir Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
  * a uniform interface, central state storage, and centralized
@@ -46,8 +46,7 @@ struct event_handle {
     void *arg;			/* argument to pass to previous function */
     event_type_t type;		/* type of event */
     int data;			/* type data */
-    time_t lastfired;		/* timestamp when this last fired */
-    int wakeup;			/* if nonzero, and EV_WAIT, then fire */
+    time_t lastfired;		/* timestamp of last fired (EV_WAIT only) */
     TAILQ_ENTRY(event_handle) tq;	/* queue handle */
 };
 
@@ -70,14 +69,14 @@ static struct {
  */
 static struct sigtabent {
     event_handle_t *handle;	/* handle for this signal */
-    int scoreboard;		/* number of signals recvd since last checked */
+    int score;			/* number of signals recvd since last checked */
     void (*oldhandler) P((int));/* old handler (for unsetting) */
 } sigtable[NSIG];
 
 #ifdef EVENT_DEBUG
 static const char *event_type2str P((event_type_t));
 #endif
-static void fire P((event_handle_t *, time_t));
+#define	fire(eh)	(*(eh)->fn)((eh)->arg)
 static void release P((event_handle_t *));
 static void signal_handler P((int));
 
@@ -113,7 +112,6 @@ event_register(data, type, fn, arg)
     handle->type = type;
     handle->data = data;
     handle->lastfired = -1;
-    handle->wakeup = 0;
     eventq_append(handle);
     eventq.qlength++;
 
@@ -152,7 +150,7 @@ event_release(handle)
 	assert(se->handle == handle);
 	signal(handle->data, se->oldhandler);
 	se->handle = NULL;
-	se->scoreboard = 0;
+	se->score = 0;
     }
 
     /*
@@ -188,7 +186,7 @@ release(handle)
 }
 
 /*
- * Wakeup all EV_WAIT events waiting on the specified id.
+ * Fire all EV_WAIT events waiting on the specified id.
  */
 int
 event_wakeup(id)
@@ -209,7 +207,7 @@ event_wakeup(id)
 #ifdef EVENT_DEBUG
 	    fprintf(stderr, "event: wakeup: %X id=%d\n", (int)eh, id);
 #endif
-	    eh->wakeup = 1;
+	    fire(eh);
 	    nwaken++;
 	}
     }
@@ -334,7 +332,7 @@ event_loop(dontblock)
 		/* no previous handle */
 		assert(se->handle == NULL);
 		se->handle = eh;
-		se->scoreboard = 0;
+		se->score = 0;
 		se->oldhandler = signal(eh->data, signal_handler);
 		break;
 
@@ -363,7 +361,7 @@ event_loop(dontblock)
 		break;
 
 	    /*
-	     * Process wait events after the regular events are handled.
+	     * Wait events are processed immediately by event_wakeup()
 	     */
 	    case EV_WAIT:
 		break;
@@ -439,7 +437,7 @@ event_loop(dontblock)
 		    FD_ISSET(eh->data, &errfds)) {
 		    FD_CLR(eh->data, &readfds);
 		    FD_CLR(eh->data, &errfds);
-		    fire(eh, curtime);
+		    fire(eh);
 		}
 		break;
 
@@ -451,20 +449,20 @@ event_loop(dontblock)
 		    FD_ISSET(eh->data, &werrfds)) {
 		    FD_CLR(eh->data, &writefds);
 		    FD_CLR(eh->data, &werrfds);
-		    fire(eh, curtime);
+		    fire(eh);
 		}
 		break;
 
 	    /*
-	     * Signal events: check the scoreboard for fires, and run the
+	     * Signal events: check the score for fires, and run the
 	     * event if we got one.
 	     */
 	    case EV_SIG:
 		se = &sigtable[eh->data];
-		if (se->scoreboard > 0) {
+		if (se->score > 0) {
 		    assert(se->handle == eh);
-		    se->scoreboard = 0;
-		    fire(eh, curtime);
+		    se->score = 0;
+		    fire(eh);
 		}
 		break;
 
@@ -476,11 +474,11 @@ event_loop(dontblock)
 		if (eh->lastfired == -1)
 		    eh->lastfired = curtime;
 		if (curtime - eh->lastfired >= eh->data)
-		    fire(eh, curtime);
+		    fire(eh);
 		break;
 
 	    /*
-	     * Wait events are fired before the select call.
+	     * Wait events are handled immediately by event_wakeup()
 	     */
 	    case EV_WAIT:
 		break;
@@ -496,51 +494,9 @@ event_loop(dontblock)
 		break;
 	    }
 	}
-	/*
-	 * Do a separate pass for these events, which are caused by
-	 * events above, and need to run afterwards.
-	 */
-	for (eh = eventq_first(); eh != NULL; eh = eventq_next(eh)) {
-	    switch (eh->type) {
-	    /*
-	     * If this EV_WAIT event has been woken up, then fire it.
-	     */
-	    case EV_WAIT:
-		if (eh->wakeup != 0) {
-		    eh->wakeup = 0;
-		    fire(eh, curtime);
-		}
-		break;
-
-	    default:
-		break;
-	    }
-	}
-
     } while (!dontblock && eventq.qlength > 0);
 
     assert(--entry == 0);
-}
-
-/*
- * "Fire" the event, and timestamp the event.
- */
-static void
-fire(eh, curtime)
-    event_handle_t *eh;
-    time_t curtime;
-{
-    assert(eh != NULL);
-    assert(eh->type != EV_DEAD);
-
-#ifdef EVENT_DEBUG
-    fprintf(stderr, "event: %X fired: data=%d, type=%s (qlen=%d)\n",
-	(int)eh, eh->data, event_type2str(eh->type),
-	eventq.qlength);
-#endif
-
-    eh->lastfired = curtime;
-    (*eh->fn)(eh->arg);
 }
 
 /*
@@ -553,7 +509,7 @@ signal_handler(signo)
 {
 
     assert(signo >= 0 && signo < sizeof(sigtable) / sizeof(sigtable[0]));
-    sigtable[signo].scoreboard++;
+    sigtable[signo].score++;
 }
 
 #ifdef EVENT_DEBUG
