@@ -60,7 +60,8 @@ EXTRA_DIST =		amhpfixdevs.sh		amsinixfixdevs.sh
 sendbackup_SOURCES = 	sendbackup.c		sendbackup.h	\
 			sendbackup-dump.c	sendbackup-gnutar.c
 
-noinst_HEADERS	= 	amandates.h	getfsent.h	findpass.h
+noinst_HEADERS	= 	amandad.h	amandates.h	getfsent.h	\
+			findpass.h
 
 install-exec-hook:
 	@list="$(sbin_SCRIPTS)"; \
