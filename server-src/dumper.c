@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.81 1998/12/10 00:16:55 kashmir Exp $
+/* $Id: dumper.c,v 1.82 1998/12/10 01:00:05 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -73,14 +73,18 @@ struct cmdargs {
     char *argv[MAX_ARGS + 1];
 };
 
+struct databuf {
+    char buf[DATABUF_SIZE];
+    char *dataptr;		/* data buffer markers */
+    int spaceleft;
+};
+
 int interactive;
 char *handle = NULL;
 
-char databuf[DATABUF_SIZE];
 char mesgbuf[MESGBUF_SIZE+1];
 char *errstr = NULL;
-char *dataptr;		/* data buffer markers */
-int spaceleft, abort_pending;
+int abort_pending;
 long dumpsize, origsize;
 int nb_header_block;
 static enum { srvcomp_none, srvcomp_fast, srvcomp_best } srvcompress;
@@ -121,8 +125,8 @@ void check_options P((char *options));
 void service_ports_init P((void));
 static char *construct_datestamp P((void));
 int write_tapeheader P((int outfd, dumpfile_t *type));
-int write_dataptr P((int outf));
-int update_dataptr P((int outf, int size, int split));
+int write_dataptr P((int outf, struct databuf *));
+int update_dataptr P((int outf, struct databuf *, int size, int split));
 static void process_dumpeof P((void));
 static void process_dumpline P((char *str));
 static void add_msg_data P((char *str, int len));
@@ -184,7 +188,8 @@ static char *construct_datestamp()
 }
 
 
-int main(main_argc, main_argv)
+int
+main(main_argc, main_argv)
     int main_argc;
     char **main_argv;
 {
@@ -249,7 +254,6 @@ int main(main_argc, main_argv)
 
     interactive = isatty(0);
 
-    amfree(datestamp);
     datestamp = construct_datestamp();
     conf_dtimeout = getconf_int(CNF_DTIMEOUT);
 
@@ -358,7 +362,7 @@ int main(main_argc, main_argv)
 	    } else {
 		abort_pending = 0;
 		split_size = -1;
-		if(do_dump(mesgfd, datafd, indexfd, outfd)) {
+		if (do_dump(mesgfd, datafd, indexfd, outfd)) {
 		}
 		if (abort_pending)
 		    putresult("ABORT-FINISHED %s\n", handle);
@@ -369,9 +373,12 @@ int main(main_argc, main_argv)
 	    q = squote(cmdargs.argv[1]);
 	    putresult("BAD-COMMAND %s\n", q);
 	    amfree(q);
+	    break;
 	}
+
 	while (wait(NULL) != -1)
 	    continue;
+
 	if (outfd != -1)
 	    aclose(outfd);
 	if (datafd != -1)
@@ -462,27 +469,30 @@ arglist_function(static void putresult, char *, format)
 }
 
 
-int write_dataptr(outf)
-int outf;
 /*
  * Updates the buffer pointer for the input data buffer.  The buffer is
  * written if it is full, or the remainder is zeroed if at eof.
  */
+int
+write_dataptr(outf, db)
+    int outf;
+    struct databuf *db;
 {
     struct cmdargs cmdargs;
     int written;
     cmd_t cmd;
 
     do {
-	written = write(outf, databuf + spaceleft,
-	sizeof(databuf) - spaceleft);
-	if(written > 0) {
-	    spaceleft += written;
+	written = write(outf, db->buf + db->spaceleft,
+	sizeof(db->buf) - db->spaceleft);
+	if (written > 0) {
+	    db->spaceleft += written;
 	    continue;
-	} else if(written < 0 && errno != ENOSPC) {
+	} else if (written < 0 && errno != ENOSPC) {
 	    errstr = squotef("data write: %s", strerror(errno));
-	    return 1;
+	    return (1);
 	}
+
 	putresult("NO-ROOM %s\n", handle);
 	cmd = getcmd(&cmdargs);
 	switch (cmd) {
@@ -495,34 +505,36 @@ int outf;
 	default:
 	    error("error [bad command after NO-ROOM: %d]", cmd);
 	}
-    } while (spaceleft != sizeof(databuf));
-    dataptr = databuf;
-    dumpsize += (sizeof(databuf)/1024);
-    return 0;
+    } while (db->spaceleft != sizeof(db->buf));
+    db->dataptr = db->buf;
+    dumpsize += (sizeof(db->buf) / 1024);
+    return (0);
 }
 
 
-int update_dataptr(outf, size, split)
-int outf, size, split;
 /*
  * Updates the buffer pointer for the input data buffer.  The buffer is
  * written if it is full, or the remainder is zeroed if at eof.
  */
+int
+update_dataptr(outf, db, size, split)
+    int outf, size, split;
+    struct databuf *db;
 {
-    spaceleft -= size;
-    dataptr += size;
+    db->spaceleft -= size;
+    db->dataptr += size;
 
-    if(size == 0) {	/* eof, zero rest of buffer */
-	memset(dataptr, '\0', spaceleft);
-	/* dataptr still points to the point where padding started */
-	spaceleft = 0;
+    if (size == 0) {	/* eof, zero rest of buffer */
+	memset(db->dataptr, '\0', db->spaceleft);
+	/* db->dataptr still points to the point where padding started */
+	db->spaceleft = 0;
     }
 
-    if(spaceleft == 0) {	/* buffer is full, write it */
+    if (db->spaceleft == 0) {	/* buffer is full, write it */
 
 	NAUGHTY_BITS;
 
-	if(split && split_size > 0 && dumpsize >= split_size) {
+	if (split && split_size > 0 && dumpsize >= split_size) {
 	    char *new_filename = NULL;
 	    char sequence[10];
 	    int save_outf;
@@ -532,11 +544,12 @@ int outf, size, split;
 	    char *tmp_filename = NULL;
 
 
-	    memcpy(save_databuf, databuf, sizeof(databuf)); 
-	    save_spaceleft = spaceleft;
-	    save_dataptr = dataptr;
-    	    spaceleft = sizeof(databuf);
-	    dataptr = databuf;
+	    assert(sizeof(save_databuf) == sizeof(db->buf));
+	    memcpy(save_databuf, db->buf, sizeof(db->buf)); 
+	    save_spaceleft = db->spaceleft;
+	    save_dataptr = db->dataptr;
+    	    db->spaceleft = sizeof(db->buf);
+	    db->dataptr = db->buf;
 
 	    save_outf = outf;
 
@@ -554,7 +567,8 @@ int outf, size, split;
 		    sizeof(file.cont_filename));
 	    file.cont_filename[sizeof(file.cont_filename)-1] = '\0';
 
-	    tmp_filename = newvstralloc(tmp_filename, cont_filename, ".tmp", NULL);
+	    tmp_filename = newvstralloc(tmp_filename, cont_filename,
+		".tmp", NULL);
 	    if((outf = open(tmp_filename,O_RDWR)) == -1) {
 		errstr = squotef("holding file \"%s\": %s",
 			    tmp_filename, strerror(errno));
@@ -585,17 +599,17 @@ int outf, size, split;
 	    }
 	    /*outf = save_outf;*/
 	    split_size += chunksize;
-    	    spaceleft = sizeof(databuf);
-	    dataptr = databuf;
+    	    db->spaceleft = sizeof(db->buf);
+	    db->dataptr = db->buf;
 	    file.type = F_CONT_DUMPFILE;
 	    file.cont_filename[0] = '\0';
 	    write_tapeheader(outf, &file);
 
-	    memcpy(databuf, save_databuf, sizeof(databuf)); 
-	    spaceleft = save_spaceleft;
-	    dataptr = save_dataptr;
+	    memcpy(db->buf, save_databuf, sizeof(db->buf)); 
+	    db->spaceleft = save_spaceleft;
+	    db->dataptr = save_dataptr;
 	}
-	return write_dataptr(outf);
+	return write_dataptr(outf, db);
     }
     return 0;
 }
@@ -841,58 +855,23 @@ filetype_t type;
 /* Send an Amanda dump header to the output file.
 */
 
-int write_tapeheader(outfd, file)
-int outfd;
-dumpfile_t *file;
+int
+write_tapeheader(outfd, file)
+    int outfd;
+    dumpfile_t *file;
 {
     char buffer[TAPE_BLOCK_BYTES];
-#if 0
-    char *bufptr;
-    int len;
-    int count;
-#endif
 
     write_header(buffer, file, sizeof(buffer));
-
-#if 0
-    /*
-     * NB: This chuck of code had to be removed.  As far as I can tell, the
-     * only use for this code would be if buffer were larger than spaceleft,
-     * which it should never be at this point, as no data has previously been
-     * written (via update_dataptr()).
-     *   Additionally, if this code is left in place on a system using
-     * kerberos encryption, it will break things.  update_dataptr() assumes
-     * that any data passed to it is encrypted if the filesystem was supposed
-     * to be encrypted.  As this buffer is generated on the server side, it
-     * is *not* encrypted, and an attempt to decrypt it in update_dataptr()
-     * will screw the whole thing.
-     *   PLEASE DO NOT ADD THIS CODE BACK IN unless you really understand the
-     * kerberos encryption code...
-     *
-     *                    - Chris Ross (cross@uu.net)   4-Jun-1998
-     */
-
-    bufptr = buffer;
-    for (count = sizeof(buffer); count > 0; ) {
-	len = count > spaceleft ? spaceleft : count;
-	memcpy(dataptr, bufptr, len);
-
-	if (update_dataptr(outfd, len, 0)) return 1;
-
-	bufptr += len;
-	count -= len;
-    }
-    nb_header_block++;
-#else
     write(outfd, buffer, sizeof(buffer));
-#endif
-    return 0;
+    return (0);
 }
 
 
 int do_dump(mesgfd, datafd, indexfd, outfd)
 int mesgfd, datafd, indexfd, outfd;
 {
+    static struct databuf db;
     int maxfd, nfound, size1, size2, eof1, eof2;
     fd_set readset, selectset;
     struct timeval timeout;
@@ -927,8 +906,8 @@ int mesgfd, datafd, indexfd, outfd;
 
     startclock();
 
-    dataptr = databuf;
-    spaceleft = sizeof(databuf);
+    db.dataptr = db.buf;
+    db.spaceleft = sizeof(db.buf);
     dumpsize = origsize = dump_result = 0;
     dumpsize = TAPE_BLOCK_SIZE;
     nb_header_block = 1;
@@ -1152,19 +1131,19 @@ int mesgfd, datafd, indexfd, outfd;
 	/* read/write any data */
 
 	if(datafd >= 0 && FD_ISSET(datafd, &selectset)) {
-	    size1 = read(datafd, dataptr, spaceleft);
+	    size1 = read(datafd, db.dataptr, db.spaceleft);
 	    switch(size1) {
 	    case -1:
 		errstr = newstralloc2(errstr, "data read: ", strerror(errno));
 		goto failed;
 	    case 0:
-		if(update_dataptr(outfd, size1, 1)) goto failed;
+		if(update_dataptr(outfd, &db, size1, 1)) goto failed;
 		eof1 = 1;
 		FD_CLR(datafd, &readset);
 		aclose(datafd);
 		break;
 	    default:
-		if(update_dataptr(outfd, size1, 1)) goto failed;
+		if(update_dataptr(outfd, &db, size1, 1)) goto failed;
 	    }
 	}
 

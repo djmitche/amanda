@@ -1,5 +1,19 @@
 1998-12-09  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c (write_tapeheader): kill dead code
+	* server-src/dumper.c (main): remove useless amfree of datestamp.
+	Add missing break to 'default' case in command loop.
+	* server-src/dumper.c: kill databuf, spaceleft, and dataptr globals.
+	Create a 'struct databuf' that holds all three.
+	* server-src/dumper.c (write_dataptr, update_dataptr): make
+	these take a 'struct databuf *' as an argument, and have them
+	operate on its contents instead of the aforementioned globals
+	* server-src/dumper.c (do_dump): declare a 'struct databuf' here.
+	Make it static, because it's large.  Use it instead of the
+	globals.
+
+1998-12-09  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c (main): rework the command loop a bit.
 	Consolidate all duplicated error cleanup into one place at the
 	end of the loop after each command has been processed.  Exit
