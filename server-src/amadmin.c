@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.12 1997/11/11 06:39:41 amcore Exp $
+ * $Id: amadmin.c,v 1.13 1997/11/11 20:34:52 blair Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -522,7 +522,7 @@ char **argv;
 {
     char *conflog, logfile[1024];
     host_t *hp;
-    int tape, maxtape, len, seq, logs;
+    int tape, maxtape, seq, logs;
     tape_t *tp;
 
     if(argc < 4) {
@@ -585,12 +585,9 @@ char **argv;
 
 void search_holding_disk()
 {
-    int i;
-    int ok;
     holdingdisk_t *hdisk;
     struct dirname *dir;
     char sdirname[80], destname[128], hostname[256], diskname[80];
-    int picked;
     DIR *workdir;
     struct dirent *entry;
     int level;
