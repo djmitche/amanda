@@ -1,4 +1,11 @@
 2005-02-09  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Orion Poplawski <orion@cora.nwra.com>
+
+	* server-src/amoverview.pl.in: Print the total number of level 0
+	  dumps for each disk and the number of runs until the last level 0
+	  dump will be overwritten.
+
+2005-02-09  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Phil Homewood <pdh@snapgear.com>
 
 	* server-src/amoverview.pl.in: Add -skipmissed option.
