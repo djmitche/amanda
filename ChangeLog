@@ -1,3 +1,10 @@
+1998-06-04  John R. Jackson  <jrj@purdue.edu>
+
+	* client-src/getfsent.c (main): use a dynamically allocated string
+	for the lookups since dev2rdev alters it on the fly and some systems
+	drop core for trying to write into read only memory.  Also add the
+	capability of passing additional lookups on the command line.
+
 1998-06-03  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* amplot/amplot.sh.in: modified command line argument parsing

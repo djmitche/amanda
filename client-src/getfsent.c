@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getfsent.c,v 1.18 1998/04/08 16:24:23 amcore Exp $
+ * $Id: getfsent.c,v 1.19 1998/06/04 17:14:55 jrj Exp $
  *
  * generic version of code to read fstab
  */
@@ -518,6 +518,7 @@ char *str;
 
 #ifdef TEST
 
+void
 print_entry(fsent)
 generic_fsent_t *fsent;
 {
@@ -527,11 +528,14 @@ generic_fsent_t *fsent;
 	   fsent->freq, fsent->passno, nchk(fsent->mntopts));
 }
 
-int main()
+int main(argc, argv)
+    int argc;
+    char **argv;
 {
     generic_fsent_t fsent;
     int fd;
     char *s;
+    char *name = NULL;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
 
@@ -564,45 +568,68 @@ int main()
 
     close_fstab();
 
-    if(search_fstab("/usr", &fsent)) {
-	printf("Found %s mount for /usr:\n",
-	       is_local_fstype(&fsent)? "local" : "remote");
+    name = newstralloc(name, "/usr");
+    if(search_fstab(name, &fsent)) {
+	printf("Found %s mount for %s:\n",
+	       is_local_fstype(&fsent)? "local" : "remote", name);
 	print_entry(&fsent);
     }
     else 
-	printf("Mount for /usr not found\n");
+	printf("Mount for %s not found\n", name);
 
-    s = amname_to_fstype("/");
-    printf("fstype of `/': %s\n", s);
+    name = newstralloc(name, "/");
+    s = amname_to_fstype(name);
+    printf("fstype of `%s': %s\n", name, s);
     amfree(s);
-    s = amname_to_fstype("/dev/root");
-    printf("fstype of `/dev/root': %s\n", s);
+    name = newstralloc(name, "/dev/root");
+    s = amname_to_fstype(name);
+    printf("fstype of `%s': %s\n", name, s);
     amfree(s);
-    s = amname_to_fstype("/usr");
-    printf("fstype of `/usr': %s\n", s);
+    name = newstralloc(name, "/usr");
+    s = amname_to_fstype(name);
+    printf("fstype of `%s': %s\n", name, s);
     amfree(s);
-    s = amname_to_fstype("c0t3d0s0");
-    printf("fstype of `c0t3d0s0': %s\n", s);
+    name = newstralloc(name, "c0t3d0s0");
+    s = amname_to_fstype(name);
+    printf("fstype of `%s': %s\n", name, s);
     amfree(s);
 
-    s = amname_to_devname("/tmp/foo");
-    printf("device of `/tmp/foo': %s\n", s);
+    name = newstralloc(name, "/tmp/foo");
+    s = amname_to_devname(name);
+    printf("device of `%s': %s\n", name, s);
     amfree(s);
-    s = amname_to_dirname("/tmp/foo");
-    printf("dirname of `/tmp/foo': %s\n", s);
+    s = amname_to_dirname(name);
+    printf("dirname of `%s': %s\n", name, s);
     amfree(s);
-    s = amname_to_fstype("/tmp/foo");
-    printf("fstype of `/tmp/foo': %s\n", s);
+    s = amname_to_fstype(name);
+    printf("fstype of `%s': %s\n", name, s);
     amfree(s);
-    s = amname_to_devname("./foo");
-    printf("device of `./foo': %s\n", s);
+
+    name = newstralloc(name, "./foo");
+    s = amname_to_devname(name);
+    printf("device of `%s': %s\n", name, s);
     amfree(s);
-    s = amname_to_dirname("./foo");
-    printf("dirname of `./foo': %s\n", s);
+    s = amname_to_dirname(name);
+    printf("dirname of `%s': %s\n", name, s);
     amfree(s);
-    s = amname_to_fstype("./foo");
-    printf("fstype of `./foo': %s\n", s);
+    s = amname_to_fstype(name);
+    printf("fstype of `%s': %s\n", name, s);
     amfree(s);
+
+    while (--argc > 0) {
+	name = newstralloc(name, *++argv);
+	s = amname_to_devname(name);
+	printf("device of `%s': %s\n", name, s);
+	amfree(s);
+	s = amname_to_dirname(name);
+	printf("dirname of `%s': %s\n", name, s);
+	amfree(s);
+	s = amname_to_fstype(name);
+	printf("fstype of `%s': %s\n", name, s);
+	amfree(s);
+    }
+
+    amfree(name);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
