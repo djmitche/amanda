@@ -24,8 +24,25 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
+
 /* 
  * sendbackup-dump.c - send backup data using BSD dump
+ */
+
+/*
+ * File:	$RCSFile: sendbackup-dump.c,v $
+ * Part of:	
+ *
+ * Revision:	$Revision: 1.3 $
+ * Last Edited:	$data: 1997/03/24 10:10:10 $
+ * Author:	$Author: blair $
+ *
+ * History:	$Log: sendbackup-dump.c,v $
+ * History:	Revision 1.3  1997/03/24 17:12:26  blair
+ * History:	Put the dump/restore program locations that configure found into the
+ * History:	header for printing, instead of always printing out restore or dump.
+ * History:
+ *
  */
 
 #include "sendbackup-common.h"
@@ -105,8 +122,18 @@ regex_t re_table[] = {
   { DMP_STRANGE, NULL, 0}
 };
 
+#ifdef DUMP
+char *backup_program_name = DUMP;	/* for printing */
+#else
 char *backup_program_name = "dump";	/* for printing */
+#endif
+
+#ifdef RESTORE
+char *restore_program_name = RESTORE;
+#else
 char *restore_program_name = "restore";
+#endif
+
 char *amanda_backup_program = "DUMP";	/* for the header */
 
 void start_backup(disk, level, datestamp, dataf, mesgf)
@@ -179,6 +206,8 @@ int level, dataf, mesgf;
 #ifdef XFSDUMP
     if (!strcmp(amname_to_fstype(device), "xfs"))
     {
+	backup_program_name  = XFSDUMP;
+	restore_program_name = XFSRESTORE;
 	sprintf(dumpkeys, "%d", level);
 	if (no_record)
 	{
