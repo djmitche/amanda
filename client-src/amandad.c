@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.32 1998/10/27 21:47:09 martinea Exp $
+ * $Id: amandad.c,v 1.32.2.1 1999/09/05 22:12:51 jrj Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -400,11 +400,11 @@ char **argv;
 	}
 	else {
 	    dbprintf(("%s: received other packet, NAKing it\n", argv[0]));
-	    dbprintf(("  addr: peer %lX dup %lX, port: peer %lX dup %lX\n",
-		      (unsigned long)in_msg.peer.sin_addr.s_addr,
-		      (unsigned long)dup_msg.peer.sin_addr.s_addr,
-		      (unsigned long)in_msg.peer.sin_port,
-		      (unsigned long)dup_msg.peer.sin_port));
+	    dbprintf(("  addr: peer %s dup %s, port: peer %d dup %d\n",
+		      inet_ntoa(in_msg.peer.sin_addr),
+		      inet_ntoa(dup_msg.peer.sin_addr),
+		      (int)ntohs(in_msg.peer.sin_port),
+		      (int)ntohs(dup_msg.peer.sin_port)));
 	    /* XXX dup_msg filled in? */
 	    sendnak(&dup_msg, &rej_msg, "amandad busy");
 	}
@@ -461,11 +461,11 @@ send_response:
 	}
 	else {
 	    dbprintf(("%s: weird, it's not a proper ack\n", argv[0]));
-	    dbprintf(("  addr: peer %lX dup %lX, port: peer %lX dup %lX\n",
-		      (unsigned long)in_msg.peer.sin_addr.s_addr,
-		      (unsigned long)dup_msg.peer.sin_addr.s_addr,
-		      (unsigned long)in_msg.peer.sin_port,
-		      (unsigned long)dup_msg.peer.sin_port));
+	    dbprintf(("  addr: peer %s dup %s, port: peer %d dup %d\n",
+		      inet_ntoa(in_msg.peer.sin_addr),
+		      inet_ntoa(dup_msg.peer.sin_addr),
+		      (int)ntohs(in_msg.peer.sin_port),
+		      (int)ntohs(dup_msg.peer.sin_port)));
 	}		
     }
     /* XXX log if retry count exceeded */
