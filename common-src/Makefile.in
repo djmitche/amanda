@@ -126,7 +126,7 @@ libamanda_a_SOURCES =	alloc.c		amandates.c	changer.c	\
 			regex.c		statfs.c	stralloc.c	\
 			stream.c	tapefile.c	tapeio.c	\
 			unctime.c	version.c	version.h	\
-			versuff.c
+			versuff.c	@KRB4COMMON_C@
 
 EXTRA_DIST =		genversion.c
 
@@ -153,7 +153,7 @@ libamanda_a_DEPENDENCIES =  @LIBOBJS@
 libamanda_a_OBJECTS =  alloc.o amandates.o changer.o clock.o conffile.o \
 debug.o dgram.o diskfile.o error.o fnmatch.o getfsent.o infofile.o \
 logfile.o match.o protocol.o regex.o statfs.o stralloc.o stream.o \
-tapefile.o tapeio.o unctime.o version.o versuff.o
+tapefile.o tapeio.o unctime.o version.o versuff.o @KRB4COMMON_O@
 CFLAGS = @CFLAGS@
 LINK = $(CC) $(LDFLAGS) -o $@
 HEADERS =  $(noinst_HEADERS)
