@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.14 1998/07/04 00:19:35 oliva Exp $
+ * $Id: changer.c,v 1.15 1998/11/18 07:36:56 oliva Exp $
  *
  * interface routines for tape changers
  */
@@ -162,6 +162,34 @@ char *inslotstr, **outslotstr, **devicename;
     return 0;
 }
 
+/* This function is somewhat equal to changer_info with one additional
+   parameter, to get information, if the changer is able to search for
+   tapelabels himself. E.g. Barcodereader
+   The changer_script answers with an additional parameter, if it is able
+   to search. This one should be 1, if it is able to search, and 0 if it
+   knows about the extension. If the additional answer is omitted, the
+   changer is not able to search for a tape. 
+*/
+int changer_query(nslotsp, curslotstr, backwardsp, searchable)
+int *nslotsp, *backwardsp, *searchable;
+char **curslotstr;
+{
+    char *rest;
+    int rc;
+
+    rc = run_changer_command("-info", (char *) NULL, curslotstr, &rest);
+    if(rc) return rc;
+
+    if (sscanf(rest, "%d %d %d", nslotsp, backwardsp, searchable) != 3) {
+      if (sscanf(rest, "%d %d", nslotsp, backwardsp) != 2) {
+        return report_bad_resultstr();
+      } else {
+        *searchable = 0;
+      }
+    }
+    return 0;
+}
+
 int changer_info(nslotsp, curslotstr, backwardsp)
 int *nslotsp, *backwardsp;
 char **curslotstr;
@@ -209,6 +237,45 @@ int (*user_slot) P((int rc, char *slotstr, char *device));
     }
 }
 
+/* This function first uses searchlabel and changer_search, if
+   the library is able to find a tape itself. If it is not, or if 
+   the tape could not be found, then the normal scan is done like 
+   in changer_scan.
+*/
+void changer_find(user_init, user_slot,searchlabel)
+int (*user_init) P((int rc, int nslots, int backwards));
+int (*user_slot) P((int rc, char *slotstr, char *device));
+char *searchlabel;
+{
+    char *slotstr, *device = NULL, *curslotstr = NULL;
+    int nslots, checked, backwards, rc, done, searchable;
+
+    rc = changer_query(&nslots, &curslotstr, &backwards,&searchable);
+    done = user_init(rc, nslots, backwards);
+    amfree(curslotstr);
+
+    if ((searchlabel!=NULL) && searchable && !done){
+      rc=changer_search(searchlabel,&curslotstr,&device);
+      if(rc == 0)
+        done = user_slot(rc,curslotstr,device);
+    }
+ 
+    slotstr = "current";
+    checked = 0;
+
+    while(!done && checked < nslots) {
+	rc = changer_loadslot(slotstr, &curslotstr, &device);
+	if(rc > 0)
+	    done = user_slot(rc, curslotstr, device);
+	else if(!done)
+	    done = user_slot(0,  curslotstr, device);
+	amfree(curslotstr);
+	amfree(device);
+
+	checked += 1;
+	slotstr = "next";
+    }
+}
 
 /* ---------------------------- */
 
@@ -303,4 +370,36 @@ char *cmdstr;
 
     amfree(cmd);
     return exitcode;
+}
+
+/* This function commands the changerscript to look for a tape named
+   searchlabel. If is found, the changerscript answers with the device,
+   in which the tape can be accessed.
+*/
+int changer_search(searchlabel, outslotstr, devicename)
+char *searchlabel, **outslotstr, **devicename;
+{
+    char *rest;
+    int rc;
+
+    rc = run_changer_command("-search", searchlabel, outslotstr, &rest);
+    if(rc) return rc;
+
+    if(*rest == '\0') return report_bad_resultstr();
+
+    *devicename = newstralloc(*devicename, rest);
+    return 0;
+}
+
+/* Because barcodelabel are short, and may not be the same as the 
+   amandalabels, the changerscript should be informed, which tapelabel
+   is associated with a tape. This function should be called after 
+   giving a label for a tape. (Maybe also, when the label and the associated
+   slot is known. e.g. during library scan.
+*/
+int changer_label (slotsp,labelstr)
+int slotsp; 
+char *labelstr;
+{
+/* only dummy at the moment */
 }

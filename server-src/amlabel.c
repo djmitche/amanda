@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.18 1998/10/27 04:15:03 martinea Exp $
+ * $Id: amlabel.c,v 1.19 1998/11/18 07:36:53 oliva Exp $
  *
  * write an Amanda label on a tape
  */
@@ -342,6 +342,10 @@ int main(argc, argv)
 	}
 #endif /* HAVE_LINUX_ZFTAPE_H */
 
+        if(changer_init()) {
+/*	Now we try to inform the changer, about the new label */
+/*	  changer_label(label,outslot); */
+	}
 	printf(", done.\n");
     }
     else {

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.h,v 1.6 1998/07/04 00:19:36 oliva Exp $
+ * $Id: changer.h,v 1.7 1998/11/18 07:36:58 oliva Exp $
  *
  * interface routines for tape changers
  */
@@ -36,9 +36,16 @@ int changer_init P((void));
 int changer_reset P((char **slotstr));
 int changer_clean P((char **slotstr));
 int changer_eject P((char **slotstr));
+int changer_label P((int slotsp, char *labelstr));
 int changer_info P((int *nslotsp, char **curslotstr, int *backwards));
+int changer_query P((int *nslotsp, char **curslotstr, int *backwards,
+		     int *searchable));
+int changer_search P((char *searchlabel, char **outslotstr, char **devicename));
 int changer_loadslot P((char *inslotstr, char **outslotstr, char **devicename));
 void changer_current P((int (*user_init)(int rc, int nslots, int backwards),
 		     int (*user_slot)(int rc, char *slotstr, char *device)));
 void changer_scan P((int (*user_init)(int rc, int nslots, int backwards),
 		     int (*user_slot)(int rc, char *slotstr, char *device)));
+void changer_find P((int (*user_init)(int rc, int nslots, int backwards),
+		     int (*user_slot)(int rc, char *slotstr, char *device),
+                     char *searchlabel));

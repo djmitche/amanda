@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.22 1998/10/24 03:02:02 martinea Exp $
+ * $Id: amtape.c,v 1.23 1998/11/18 07:36:55 oliva Exp $
  *
  * tape changer interface program
  */
@@ -294,7 +294,7 @@ char **argv;
 
     found = 0;
 
-    changer_scan(scan_init, loadlabel_slot);
+    changer_find(scan_init, loadlabel_slot,searchlabel);
 
     if(found)
 	fprintf(stderr, "%s: label %s is now loaded.\n",
@@ -460,7 +460,10 @@ char **argv;
     if(searchlabel) fprintf(stderr, "tape label %s or ", searchlabel);
     fprintf(stderr, "a new tape.\n");
 
-    changer_scan(scan_init, taperscan_slot);
+    if (searchlabel != NULL)
+      changer_find(scan_init, taperscan_slot,searchlabel);
+    else
+      changer_scan(scan_init, taperscan_slot);
 
     if(found == 2) {
 	fprintf(stderr, "%s: %s: settling for first labelstr match\n",
