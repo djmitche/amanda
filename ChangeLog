@@ -1,3 +1,8 @@
+2002-02-10 John R. Jackson (jrj@purdue.edu)
+
+	* changer-src/chg-zd-mtx.sh.in: Major cleanup and general overhaul.
+	* docs/TAPE.CHANGERS: Cleanup.
+
 2002-02-09 John R. Jackson (jrj@purdue.edu)
 
 	* common-src/arglist.h: Clean up gcc detection of printf style variable
