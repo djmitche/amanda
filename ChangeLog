@@ -1,3 +1,13 @@
+1998-11-19  John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/conffile.c (get_holdingdisk, init_holdingdisk_defaults):
+	set the default chunksize and the "0" and "-1" special chunksizes
+	to 64 KBytes less than the maximum to allow the final read at EOF.
+	* server-src/dumper.c (main): leave the chunksize as it is when it
+	comes in except to truncate it to a 32 KByte boundary.
+	* man/amanda.8.in: add some chunksize comments and clean up a few
+	minor odds and ends.
+
 1998-11-19  Mike Grupenhoff <kashmir@munge.com>
 
 	Give amrecover its own security bits.  It has different needs

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54 1998/10/27 21:12:34 martinea Exp $
+ * $Id: conffile.c,v 1.55 1998/11/19 23:16:00 jrj Exp $
  *
  * read configuration file
  */
@@ -975,9 +975,9 @@ static void get_holdingdisk()
 	case CHUNKSIZE:
 	    get_simple((val_t *)&hdcur.chunksize, &hdcur.s_csize, INT);
 	    if(hdcur.chunksize == 0)
-		hdcur.chunksize = INT_MAX/1024;
+	        hdcur.chunksize =  ((INT_MAX/1024)-(2*TAPE_BLOCK_SIZE));
 	    else if(hdcur.chunksize == -1)
-	        hdcur.chunksize = -INT_MAX/1024;
+	        hdcur.chunksize = -((INT_MAX/1024)-(2*TAPE_BLOCK_SIZE));
 	    break;
 	case RBRACE:
 	    done = 1;
@@ -1004,7 +1004,7 @@ static void init_holdingdisk_defaults()
     hdcur.diskdir = stralloc(conf_diskdir.s);
     malloc_mark(hdcur.diskdir);
     hdcur.disksize = 0;
-    hdcur.chunksize = -INT_MAX/1024;
+    hdcur.chunksize = -((INT_MAX/1024)-(2*TAPE_BLOCK_SIZE));
 
     hdcur.s_comment = 0;
     hdcur.s_disk = 0;
