@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.112 1999/04/08 19:34:36 kashmir Exp $
+/* $Id: dumper.c,v 1.113 1999/04/08 20:36:37 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1035,7 +1035,6 @@ write_tapeheader(outfd, file)
     return (0);
 }
 
-
 static int
 do_dump(db)
     struct databuf *db;
@@ -1050,7 +1049,6 @@ do_dump(db)
     char *q;
     times_t runtime;
     double dumptime;	/* Time dump took in secs */
-    int killerr;
     pid_t indexpid;
 
 #ifndef DUMPER_SOCKET_BUFFERING
@@ -1314,7 +1312,8 @@ do_dump(db)
 	}
     } /* end while */
 
-    if(dump_result > 1) goto failed;
+    if (dump_result > 1)
+	goto failed;
 
     runtime = stopclock();
     dumptime = runtime.r.tv_sec + runtime.r.tv_usec/1000000.0;
@@ -1369,9 +1368,8 @@ do_dump(db)
 
     return 1;
 
- failed:
-
-    if(!abort_pending) {
+failed:
+    if (!abort_pending) {
 	q = squotef("[%s]", errstr);
 	putresult("FAILED %s %s\n", handle, q);
 	amfree(q);
@@ -1381,30 +1379,24 @@ do_dump(db)
 
     /* kill all child process */
     if (db->compresspid != -1) {
-	killerr = kill(db->compresspid,SIGTERM);
-	if(killerr == 0) {
-	    fprintf(stderr,"%s: kill compress command\n",get_pname());
-	}
-	else if ( killerr == -1 ) {
-	    if(errno != ESRCH)
+	fprintf(stderr,"%s: kill compress command\n",get_pname());
+	if (kill(db->compresspid, SIGTERM) < 0) {
+	    if (errno != ESRCH)
 		fprintf(stderr,"%s: can't kill compress command: %s\n", 
-			       get_pname(), strerror(errno));
+		    get_pname(), strerror(errno));
 	}
     }
 
-    if(indexpid != -1) {
-	killerr = kill(indexpid,SIGTERM);
-	if(killerr == 0) {
-	    fprintf(stderr,"%s: kill index command\n",get_pname());
-	}
-	else if ( killerr == -1 ) {
-	    if(errno != ESRCH)
+    if (indexpid != -1) {
+	fprintf(stderr,"%s: kill index command\n",get_pname());
+	if (kill(indexpid, SIGTERM) < 0) {
+	    if (errno != ESRCH)
 		fprintf(stderr,"%s: can't kill index command: %s\n", 
-			       get_pname(),strerror(errno));
+		    get_pname(),strerror(errno));
 	}
     }
 
- log_failed:
+log_failed:
 
     if(!abort_pending) {
 	log_start_multiline();
