@@ -8,6 +8,7 @@ pkgdata_DATA = \
 	KERBEROS		\
 	LABEL.PRINTING		\
 	MULTITAPE		\
+	RAIT			\
 	RESTORE			\
 	SAMBA			\
 	SECURITY		\
@@ -15,7 +16,10 @@ pkgdata_DATA = \
 	TAPE.CHANGERS		\
 	TAPETYPES		\
 	UPGRADE			\
+	VTAPE-API		\
 	WHATS.NEW		\
 	WISHLIST		\
 	YEAR2000		\
 	ZFTAPE
+
+EXTRA_DIST = $(pkgdata_DATA)

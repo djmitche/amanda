@@ -1,3 +1,47 @@
+2000-12-12 John R. Jackson  <jrj@purdue.edu> and Marc Mengel <mengel@fnal.gov>
+
+	* Makefile.am: Work around problem with automake 1.4 not including
+	  pkgdata_DATA.
+	* docs/RAIT: New file.
+	* docs/VTAPE-API: New file.
+	* docs/Makefile.am: Include RAIT and VTAPE-API in distribution.
+	  Work around problem with automake 1.4 not including pkgdata_DATA.
+	* tape-src/output-rait.h: New File providing RAIT virtual tape type.
+	* tape-src/output-rait.c: New File providing RAIT virtual tape type.
+	* tape-src/Makefile.am: Add output-rait.c.
+	* tape-src/tapeio.c: Major Surgery.
+	  (vtable): New static table of virtual tape types.
+	  (fdtable): New static table mapping file descriptors.
+	  (tapefd_fsf_ioctl): Renamed tapefd_fsf, with added ioctl argument.
+	  (tapefd_rewind_ioctl): Likewise.
+	  (tapefd_unload_ioctl): Likewise.
+	  (tapefd_weof_ioctl): Likewise.
+	  (tapefd_status_ioctl): Likewise.
+	  (tape_open): Now is a virtual tape table lookup and call.
+	  (tape_access): Now is a switch through virtual tape table.
+	  (tape_stat): Likewise.
+	  (tapefd_close): Likewise.
+	  (tapefd_fsf): Likewise.
+	  (tapefd_read): Likewise.
+	  (tapefd_rewind): Likewise.
+	  (tapefd_resetofs): Likewise.
+	  (tapefd_unload): Likewise.
+	  (tapefd_status): Likewise.
+	  (tapefd_weof): Likewise.
+	  (tapefd_write): Likewise.
+	  (plain_tape_access): Rename of tape_access.
+	  (plain_tape_open): Likewise.
+	  (plain_tapefd_read): Likewise.
+	  (plain_tape_stat): Likewise.
+	  (plain_tapefd_write): Likewise.
+	  (plain_tapefd_close): Likewise.
+	  (plain_tapefd_fsf): Now calls tapefd_fsf_ioctl with &ioctl().
+	  (plain_tapefd_rewind): Likewise.
+	  (plain_tapefd_resetofs): Likewise.
+	  (plain_tapefd_unload): Likewise.
+	  (plain_tapefd_status): Likewise.
+	  (plain_tapefd_weof): Likewise.
+
 2000-12-07 Thomas Hepper <th@ant.han.de>
 
 	changer-src/scsi-changer-driver.c: Added Exabyte 230D Sense Handler
@@ -1245,7 +1289,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.420 2000/12/07 19:58:51 ant Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.421 2000/12/12 21:59:24 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

@@ -42,6 +42,7 @@ pkgdata_DATA = \
 	COPYRIGHT-REGEX
 
 EXTRA_DIST = $(SNAPSHOT_STAMP) \
+	$(pkgdata_DATA)			\
 	contrib/README			\
 	contrib/dbbackup.README		\
 	contrib/dbbackup.ksh		\
