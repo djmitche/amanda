@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.5 1997/12/30 05:24:10 jrj Exp $
+ * $Id: dgram.c,v 1.6 1998/01/02 18:47:55 jrj Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -75,6 +75,10 @@ void dgram_socket(dgram, socket)
 dgram_t *dgram;
 int socket;
 {
+    if(socket < 0 || socket >= FD_SETSIZE) {
+	error("dgram_socket: socket %d out of range (0 .. %d)\n",
+	      socket, FD_SETSIZE-1);
+    }
     dgram->socket = socket;
 }
 
@@ -88,6 +92,11 @@ int *portp;
 
     if((s = socket(AF_INET, SOCK_DGRAM, 0)) == -1) 
 	return -1;
+    if(s < 0 || s >= FD_SETSIZE) {
+	aclose(s);
+	errno = EMFILE;				/* out of range */
+	return -1;
+    }
 
     memset(&name, 0, sizeof(name));
     name.sin_family = AF_INET;
@@ -143,6 +152,12 @@ dgram_t *dgram;
     else if((s = socket(AF_INET, SOCK_DGRAM, 0)) == -1) 
 	return -1;
 
+    if(s < 0 || s >= FD_SETSIZE) {
+	aclose(s);
+	errno = EMFILE;				/* out of range */
+	return -1;
+    }
+
     if(sendto(s, dgram->data, dgram->len, 0, 
               (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) == -1)
         return -1;
@@ -184,7 +199,6 @@ struct sockaddr_in *fromaddr;
     int size, addrlen, sock;
 
     sock = dgram->socket;
-    assert(sock >= 0);
 
     FD_ZERO(&ready);
     FD_SET(sock, &ready);

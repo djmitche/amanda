@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.17 1998/01/02 01:05:23 jrj Exp $
+ * $Id: extract_list.c,v 1.18 1998/01/02 18:48:06 jrj Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -78,7 +78,10 @@ int buflen;
     int spaceleft;
     int eof;
 
-    assert(datafd >= 0);
+    if(datafd < 0 || datafd >= FD_SETSIZE) {
+	errno = EMFILE;					/* out of range */
+	return -1;
+    }
 
     dataptr = buffer;
     spaceleft = buflen;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.18 1998/01/02 01:05:41 jrj Exp $
+ * $Id: diskfile.c,v 1.19 1998/01/02 18:48:25 jrj Exp $
  *
  * read disklist file
  */
@@ -503,6 +503,17 @@ int argc;
 char *argv[];
 {
   int result;
+  int fd;
+
+  for(fd = 3; fd < FD_SETSIZE; fd++) {
+    /*
+     * Make sure nobody spoofs us with a lot of extra open files
+     * that would cause an open we do to get a very high file
+     * descriptor, which in turn might be used as an index into
+     * an array (e.g. an fd_set).
+     */
+    close(fd);
+  }
 
   if (argc>1)
     chdir(argv[1]);

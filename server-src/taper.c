@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.20 1998/01/02 01:05:56 jrj Exp $
+/* $Id: taper.c,v 1.21 1998/01/02 18:48:38 jrj Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -132,6 +132,17 @@ int main_argc;
 char **main_argv;
 {
     int p2c[2], c2p[2];		/* parent-to-child, child-to-parent pipes */
+    int fd;
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
     /* print prompts and debug messages if running interactive */
 

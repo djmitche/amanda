@@ -339,6 +339,17 @@ int main(argc, argv)
 {
     int target,oldtarget;
     command com;   /* a little DOS joke */
+    int fd;
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
     struct changer_params params;
     int    fd,rc;

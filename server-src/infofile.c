@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.27 1998/01/02 01:05:48 jrj Exp $
+ * $Id: infofile.c,v 1.28 1998/01/02 18:48:33 jrj Exp $
  *
  * manage current info file
  */
@@ -733,6 +733,18 @@ int argc;
 char *argv[];
 {
   int i;
+  int fd;
+
+  for(fd = 3; fd < FD_SETSIZE; fd++) {
+    /*
+     * Make sure nobody spoofs us with a lot of extra open files
+     * that would cause an open we do to get a very high file
+     * descriptor, which in turn might be used as an index into
+     * an array (e.g. an fd_set).
+     */
+    close(fd);
+  }
+
   for(i = 1; i < argc; ++i) {
 #ifdef TEXTDB
     open_infofile("curinfo");

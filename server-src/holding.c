@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: holding.c,v 1.8 1998/01/02 03:29:45 jrj Exp $
+ * $Id: holding.c,v 1.9 1998/01/02 18:48:32 jrj Exp $
  *
  * Functions to access holding disk
  */
@@ -52,7 +52,6 @@ char *taper_program, *reporter_program;
 char host[MAX_HOSTNAME_LENGTH+1], *domain;
 
 /* local functions */
-int main P((int argc, char **argv));
 void get_host_and_domain();
 
 

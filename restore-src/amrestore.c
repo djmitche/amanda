@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.15 1998/01/02 01:05:29 jrj Exp $
+ * $Id: amrestore.c,v 1.16 1998/01/02 18:48:11 jrj Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -333,6 +333,17 @@ char **argv;
     char *tapename, *hostname, *diskname;
     int compress_status;
     int tapedev;
+    int fd;
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
     erroutput_type = ERR_INTERACTIVE;
 

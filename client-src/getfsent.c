@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getfsent.c,v 1.10 1997/12/31 22:26:02 jrj Exp $
+ * $Id: getfsent.c,v 1.11 1998/01/02 18:47:44 jrj Exp $
  *
  * generic version of code to read fstab
  */
@@ -524,6 +524,17 @@ generic_fsent_t *fsent;
 int main()
 {
     generic_fsent_t fsent;
+    int fd;
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
     if(!open_fstab()) {
 	fprintf(stderr, "getfsent_test: could not open fstab\n");

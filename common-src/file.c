@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.6 1998/01/02 01:05:14 jrj Exp $
+ * $Id: file.c,v 1.7 1998/01/02 18:47:56 jrj Exp $
  *
  * file and directory bashing routines
  */
@@ -324,8 +324,18 @@ areads (fd)
 char *pname = "file test";
 
 int main() {
-
 	int rc;
+	int fd;
+
+	for(fd = 3; fd < FD_SETSIZE; fd++) {
+		/*
+		 * Make sure nobody spoofs us with a lot of extra open files
+		 * that would cause an open we do to get a very high file
+		 * descriptor, which in turn might be used as an index into
+		 * an array (e.g. an fd_set).
+		 */
+		close(fd);
+	}
 
 	printf("Create...");
 	rc = mkpdir("/tmp/a/b/c/d/e", 0777, (uid_t)-1, (gid_t)-1);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.21 1998/01/02 03:29:42 jrj Exp $
+ * $Id: amadmin.c,v 1.22 1998/01/02 18:48:14 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -89,6 +89,17 @@ int argc;
 char **argv;
 {
     char *confdir = NULL;
+    int fd;
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
     erroutput_type = ERR_INTERACTIVE;
 

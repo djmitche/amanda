@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.25 1998/01/02 03:29:37 jrj Exp $
+ * $Id: sendbackup.c,v 1.26 1998/01/02 18:47:48 jrj Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -187,8 +187,19 @@ char **argv;
     char *err_extra = NULL;
     char *s, *fp;
     int ch;
+    int fd;
 
     /* initialize */
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
     chdir("/tmp");
     interactive = (argc > 1 && strcmp(argv[1],"-t") == 0);

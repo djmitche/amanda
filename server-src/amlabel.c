@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlabel.c,v 1.6 1997/12/30 05:24:56 jrj Exp $
+ * $Id: amlabel.c,v 1.7 1998/01/02 18:48:20 jrj Exp $
  *
  * write an Amanda label on a tape
  */
@@ -56,6 +56,17 @@ char **argv;
 {
     char *confdir, *outslot = NULL;
     char *errstr, *confname, *label, *tapename = NULL, *labelstr, *slotstr;
+    int fd;
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
     erroutput_type = ERR_INTERACTIVE;
 

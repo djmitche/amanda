@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.43 1998/01/02 01:05:47 jrj Exp $
+/* $Id: dumper.c,v 1.44 1998/01/02 18:48:29 jrj Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -180,6 +180,17 @@ char **main_argv;
     int outfd, protocol_port, taper_port, rc;
     struct passwd *pwptr;
     dgram_t *msg;
+    int fd;
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
 
@@ -742,8 +753,17 @@ int mesgfd, datafd, indexfd, outfd;
 	tmpfd = datafd;
 	pipe(outpipe); /* outpipe[0] is pipe's stdin, outpipe[1] is stdout. */
 	datafd = outpipe[0];
+	if(datafd < 0 || datafd >= FD_SETSIZE) {
+	    aclose(outpipe[0]);
+	    aclose(outpipe[1]);
+	    errstr = newstralloc(errstr, "descriptor out of range");
+	    errno = EMFILE;
+	    goto failed;
+	}
 	switch(fork()) {
-	case -1: fprintf(stderr, "couldn't fork: %s\n", strerror(errno));
+	case -1:
+	    errstr = newstralloc2(errstr, "couldn't fork: ", strerror(errno));
+	    goto failed;
 	default:
 	    aclose(outpipe[1]);
 	    aclose(tmpfd);
@@ -779,7 +799,9 @@ int mesgfd, datafd, indexfd, outfd;
 			      NULL);
 
 	switch(fork()) {
-	case -1: fprintf(stderr, "couldn't fork: %s\n", strerror(errno));
+	case -1:
+	    errstr = newstralloc2(errstr, "couldn't fork: ", strerror(errno));
+	    goto failed;
 	default:
 	    aclose(indexfd);
 	    indexfd = -1;			/* redundant */
@@ -1019,6 +1041,7 @@ int mesgfd, datafd, indexfd, outfd;
 	unlink(indexfile);
 	rename(tmpname, indexfile);
 	afree(tmpname);
+	afree(indexfile);
     }
 
     return;

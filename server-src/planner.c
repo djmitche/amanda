@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.48 1998/01/02 01:05:51 jrj Exp $
+ * $Id: planner.c,v 1.49 1998/01/02 18:48:35 jrj Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -146,6 +146,17 @@ char **argv;
     int moved_one;
     char *datestamp = NULL, **vp;
     struct passwd *pwptr;
+    int fd;
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
     startclock();

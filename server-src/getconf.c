@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.3 1997/08/27 08:13:18 amcore Exp $
+ * $Id: getconf.c,v 1.4 1998/01/02 18:48:31 jrj Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -41,6 +41,17 @@ int argc;
 char **argv;
 {
     char *result;
+    int fd;
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
     if(argc != 2) {
 	fprintf(stderr, "Usage: %s <parmname>\n", argv[0]);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.23 1998/01/02 01:05:43 jrj Exp $
+ * $Id: driver.c,v 1.24 1998/01/02 18:48:27 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -140,6 +140,16 @@ char **main_argv;
     char *newdir = NULL;
     generic_fs_stats_t fs;
     holdingdisk_t *hdp;
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
 

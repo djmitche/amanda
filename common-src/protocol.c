@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: protocol.c,v 1.16 1998/01/02 03:26:56 jrj Exp $
+ * $Id: protocol.c,v 1.17 1998/01/02 18:47:59 jrj Exp $
  *
  * implements amanda protocol
  */
@@ -161,6 +161,10 @@ int socket, startseq, handles;
     fprintf(stderr, "proto_init(socket %d, startseq %d, handles %d)\n",
 	    socket, startseq, handles);
 #endif
+    if(socket < 0 || socket >= FD_SETSIZE) {
+	error("proto_init: socket %d out of range (0 .. %d)\n",
+	      socket, FD_SETSIZE-1);
+    }
     proto_socket = socket;
     proto_global_seq = startseq;
     proto_handles = handles;

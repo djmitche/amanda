@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: statfs.c,v 1.4 1997/12/30 05:24:22 jrj Exp $
+ * $Id: statfs.c,v 1.5 1998/01/02 18:48:00 jrj Exp $
  *
  * a generic statfs-like routine
  */
@@ -155,6 +155,17 @@ char **argv;
 {
     char *pname = argv[0];
     generic_fs_stats_t statbuf;
+    int fd;
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
     if(argc < 2) {
 	fprintf(stderr, "Usage: %s files ...\n", pname);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.22 1998/01/02 01:05:04 jrj Exp $
+ * $Id: selfcheck.c,v 1.23 1998/01/02 18:47:47 jrj Exp $
  *
  * do self-check and send back any error messages
  */
@@ -74,8 +74,19 @@ char **argv;
     char *optstr = NULL;
     char *s;
     int ch;
+    int fd;
 
     /* initialize */
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
     chdir("/tmp");
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);

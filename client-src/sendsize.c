@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.50 1998/01/02 03:29:39 jrj Exp $
+ * $Id: sendsize.c,v 1.51 1998/01/02 18:47:50 jrj Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -102,8 +102,19 @@ char **argv;
     char *s, *fp;
     int ch;
     char *err_extra = NULL;
+    int fd;
 
     /* initialize */
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
     chdir("/tmp");
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);

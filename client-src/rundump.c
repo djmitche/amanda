@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: rundump.c,v 1.13 1997/12/30 05:23:54 jrj Exp $
+ * $Id: rundump.c,v 1.14 1998/01/02 18:47:45 jrj Exp $
  *
  * runs DUMP program as root
  */
@@ -44,6 +44,17 @@ char **argv;
 #ifdef USE_RUNDUMP
     int i;
 #endif /* USE_RUNDUMP */
+    int fd;
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));

@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: amidxtaped.c,v 1.12 1998/01/02 01:05:28 jrj Exp $
+/* $Id: amidxtaped.c,v 1.13 1998/01/02 18:48:10 jrj Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -107,6 +107,17 @@ char **argv;
     int isafile;
     struct stat stat_tape;
     char *tapename = NULL;
+    int fd;
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
 #ifdef FORCE_USERID
 

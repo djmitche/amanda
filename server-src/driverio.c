@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.22 1998/01/02 01:05:44 jrj Exp $
+ * $Id: driverio.c,v 1.23 1998/01/02 18:48:28 jrj Exp $
  *
  * I/O-related functions for driver program
  */
@@ -53,6 +53,10 @@ char *cmdstr[] = {
 void addfd(fd)
 int fd;
 {
+    if(fd < 0 || fd >= FD_SETSIZE) {
+	error("addfd: descriptor %d out of range (0 .. %d)\n",
+	      fd, FD_SETSIZE-1);
+    }
     FD_SET(fd, &readset);
     if(fd > maxfd) maxfd = fd;
 }
@@ -81,6 +85,14 @@ void startup_tape_process()
 
     if(socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1)
 	error("taper pipe: %s", strerror(errno));
+    if(fd[0] < 0 || fd[0] >= FD_SETSIZE) {
+	error("taper socketpair 0: descriptor %d out of range (0 .. %d)\n",
+	      fd[0], FD_SETSIZE-1);
+    }
+    if(fd[1] < 0 || fd[1] >= FD_SETSIZE) {
+	error("taper socketpair 1: descriptor %d out of range (0 .. %d)\n",
+	      fd[1], FD_SETSIZE-1);
+    }
 
     switch(taper_pid = fork()) {
     case -1:

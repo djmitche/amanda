@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtape.c,v 1.11 1998/01/02 01:05:37 jrj Exp $
+ * $Id: amtape.c,v 1.12 1998/01/02 18:48:21 jrj Exp $
  *
  * tape changer interface program
  */
@@ -82,6 +82,17 @@ char **argv;
     char *confdir;
     char *confname;
     char *argv0 = argv[0];
+    int fd;
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
     erroutput_type = ERR_INTERACTIVE;
 

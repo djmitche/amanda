@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.17 1998/01/02 01:05:03 jrj Exp $
+ * $Id: amandad.c,v 1.18 1998/01/02 18:47:41 jrj Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -118,6 +118,17 @@ int argc;
 char **argv;
 {
     int l, n, s;
+    int fd;
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
 

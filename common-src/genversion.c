@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: genversion.c,v 1.11 1997/12/31 01:19:46 jrj Exp $
+ * $Id: genversion.c,v 1.12 1998/01/02 18:47:57 jrj Exp $
  *
  * dump the current Amanda version info
  */
@@ -66,6 +66,17 @@ int main()
 #ifdef KRB4_SECURITY
     char lifetime_str[NUM_STR_SIZE];
 #endif
+    int fd;
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
     pname = "genversion";
 

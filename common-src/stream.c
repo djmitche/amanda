@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.4 1997/12/31 01:56:24 jrj Exp $
+ * $Id: stream.c,v 1.5 1998/01/02 18:48:01 jrj Exp $
  *
  * functions for managing stream sockets
  */
@@ -45,6 +45,11 @@ int *portp;
 
     if((server_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	return -1;
+    if(server_socket < 0 || server_socket >= FD_SETSIZE) {
+	aclose(server_socket);
+	errno = EMFILE;				/* out of range */
+	return -1;
+    }
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = INADDR_ANY;
@@ -98,6 +103,11 @@ int port, sendsize, recvsize;
 
     if((client_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	return -1;
+    if(client_socket < 0 || client_socket >= FD_SETSIZE) {
+	aclose(client_socket);
+	errno = EMFILE;				/* out of range */
+	return -1;
+    }
 
     if(geteuid() == 0) {	
 	/* bind client side to reserved port before connect */

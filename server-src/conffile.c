@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.30 1997/12/30 05:25:03 jrj Exp $
+ * $Id: conffile.c,v 1.31 1998/01/02 18:48:24 jrj Exp $
  *
  * read configuration file
  */
@@ -2214,6 +2214,17 @@ int argc;
 char *argv[];
 {
   int result;
+  int fd;
+
+  for(fd = 3; fd < FD_SETSIZE; fd++) {
+    /*
+     * Make sure nobody spoofs us with a lot of extra open files
+     * that would cause an open we do to get a very high file
+     * descriptor, which in turn might be used as an index into
+     * an array (e.g. an fd_set).
+     */
+    close(fd);
+  }
 
   startclock();
   if (argc>1)

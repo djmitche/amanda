@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflock.c,v 1.13 1998/01/02 01:05:12 jrj Exp $
+ * $Id: amflock.c,v 1.14 1998/01/02 18:47:53 jrj Exp $
  *
  * file locking routines, put here to hide the system dependant stuff
  * from the rest of the code
@@ -416,6 +416,17 @@ main()
     int lockfd;
     char *filen = "/tmp/conftest.lock";
     char *resn = "test";
+    int fd;
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
     unlink(filen);
     if ((lockfd = open(filen, O_RDONLY|O_CREAT|O_EXCL, 0600)) == -1)
