@@ -33,11 +33,15 @@
  * File:	$RCSFile: sendbackup-dump.c,v $
  * Part of:	
  *
- * Revision:	$Revision: 1.3 $
+ * Revision:	$Revision: 1.4 $
  * Last Edited:	$data: 1997/03/24 10:10:10 $
- * Author:	$Author: blair $
+ * Author:	$Author: oliva $
  *
  * History:	$Log: sendbackup-dump.c,v $
+ * History:	Revision 1.4  1997/04/01 20:50:11  oliva
+ * History:	Make rundump xfsdump-aware.
+ * History:	Fix sendbackup-dump so that it invokes rundump for xfsdumps.
+ * History:
  * History:	Revision 1.3  1997/03/24 17:12:26  blair
  * History:	Put the dump/restore program locations that configure found into the
  * History:	header for printing, instead of always printing out restore or dump.
@@ -206,18 +210,22 @@ int level, dataf, mesgf;
 #ifdef XFSDUMP
     if (!strcmp(amname_to_fstype(device), "xfs"))
     {
+#ifdef USE_RUNDUMP
+        backup_program_name  = cmd;
+#else
 	backup_program_name  = XFSDUMP;
+#endif
 	restore_program_name = XFSRESTORE;
 	sprintf(dumpkeys, "%d", level);
 	if (no_record)
 	{
-	    dumppid = pipespawn(XFSDUMP, &dumpin, dumpout, mesgf,
+	    dumppid = pipespawn(backup_program_name, &dumpin, dumpout, mesgf,
 				"xfsdump", "-J", "-F", "-l", dumpkeys, "-",
 				device, (char *)0);
 	}
 	else
 	{
-	    dumppid = pipespawn(XFSDUMP, &dumpin, dumpout, mesgf,
+	    dumppid = pipespawn(backup_program_name, &dumpin, dumpout, mesgf,
 				"xfsdump", "-F", "-l", dumpkeys, "-",
 				device, (char *)0);
 	}
