@@ -1,5 +1,10 @@
 1998-12-27  John R. Jackson  <jrj@purdue.edu>
 
+	* man/amreport.8.in: remove reference to 8.5x11 paper size for the
+	3-hole binder.
+
+1998-12-27  John R. Jackson  <jrj@purdue.edu>
+
 	* example/3hole.ps: new lbl-templ file for 3 hole punch reports
 	* example/Makefile.am: add 3hole.ps
 
