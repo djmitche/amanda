@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.11.2.2 1999/06/07 16:36:42 kashmir Exp $
+ * $Id: dgram.c,v 1.11.2.3 1999/09/19 19:10:11 jrj Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -78,7 +78,7 @@ int *portp;
 	goto out;
 #endif
 
-    if (bind_portrange(s, &name, 512, IPPORT_RESERVED) == 0)
+    if (bind_portrange(s, &name, 512, IPPORT_RESERVED - 1) == 0)
 	goto out;
 
     name.sin_port = INADDR_ANY;

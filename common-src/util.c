@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.2.2.1 1999/06/07 16:36:37 kashmir Exp $
+ * $Id: util.c,v 1.2.2.2 1999/09/19 19:10:18 jrj Exp $
  */
 
 #include "amanda.h"
@@ -43,33 +43,34 @@ bind_portrange(s, addrp, first_port, last_port)
     int first_port, last_port;
 {
     int port, cnt;
-    const int num_ports = last_port - first_port;
+    const int num_ports = last_port - first_port + 1;
 
-    assert(first_port < last_port);
+    assert(first_port > 0 && first_port <= last_port && last_port < 65536);
 
     /*
-     * We pick a different starting port based on our pid to avoid
-     * always picking the same reserved port twice.
+     * We pick a different starting port based on our pid and the current
+     * time to avoid always picking the same reserved port twice.
      */
-    port = (first_port + getpid()) % num_ports;
+    port = ((getpid() + time(0)) % num_ports) + first_port;
 
     /*
      * Scan through the range, trying all available ports.  Wrap around
      * if we don't happen to start at the beginning.
      */
-    for (cnt = 0; cnt < num_ports; cnt++, port = (port + 1) % num_ports) {
+    for (cnt = 0; cnt < num_ports; cnt++) {
 	addrp->sin_port = htons(port);
 	if (bind(s, (struct sockaddr *)addrp, sizeof(*addrp)) >= 0)
-	    break;
+	    return 0;
 	/*
 	 * If the error was something other then port in use, stop.
 	 */
 	if (errno != EADDRINUSE)
-	    return (-1);
+	    break;
+	if (++port > last_port)
+	    port = first_port;
     }
     if (cnt == num_ports) {
 	errno = EAGAIN;
-	return (-1);
     }
-    return (0);
+    return -1;
 }

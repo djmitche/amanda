@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.29.4.4 1999/09/05 22:07:52 jrj Exp $
+ * $Id: amrecover.c,v 1.29.4.5 1999/09/19 19:10:23 jrj Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -557,7 +557,7 @@ char **argv;
     memset((char *)&myname, 0, sizeof(myname));
     memcpy((char *)&myname.sin_addr, hp->h_addr, hp->h_length);
     myname.sin_family = hp->h_addrtype;
-    if (bind_portrange(server_socket, &myname, 512, IPPORT_RESERVED) != 0)
+    if (bind_portrange(server_socket, &myname, 512, IPPORT_RESERVED - 1) != 0)
     {
 	int save_errno = errno;
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.10.2.4 1999/09/05 22:28:28 jrj Exp $
+ * $Id: stream.c,v 1.10.2.5 1999/09/19 19:10:15 jrj Exp $
  *
  * functions for managing stream sockets
  */
@@ -83,7 +83,7 @@ int sendsize, recvsize;
 	goto out;
 #endif
 
-    if (bind_portrange(server_socket, &server, 512, IPPORT_RESERVED) == 0)
+    if (bind_portrange(server_socket, &server, 512, IPPORT_RESERVED - 1) == 0)
 	goto out;
 
     server.sin_port = INADDR_ANY;
@@ -180,7 +180,7 @@ int port, sendsize, recvsize, *localport;
 	goto out;
 #endif
 
-    if (bind_portrange(client_socket, &claddr, 512, IPPORT_RESERVED) == 0)
+    if (bind_portrange(client_socket, &claddr, 512, IPPORT_RESERVED - 1) == 0)
 	goto out;
 
     claddr.sin_port = INADDR_ANY;
