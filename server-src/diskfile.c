@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.27 1998/07/04 00:19:47 oliva Exp $
+ * $Id: diskfile.c,v 1.27.4.1 1999/02/13 19:37:10 martinea Exp $
  *
  * read disklist file
  */
@@ -341,6 +341,7 @@ static int read_diskline()
 	host->up = NULL;
 	host->inprogress = 0;
 	host->maxdumps = 1;		/* will be overwritten */
+	host->start_t = 0;
     }
 
     host->netif = netif;

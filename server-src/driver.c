@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.9 1998/12/18 22:27:04 jrj Exp $
+ * $Id: driver.c,v 1.58.2.10 1999/02/13 19:37:14 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -479,9 +479,16 @@ disklist_t *rq;
 	while(diskp) {
 	    assert(diskp->host != NULL && sched(diskp) != NULL);
 
-	    if(diskp->start_t > now) {
+	    if(diskp->host->start_t > now) {
 		cur_idle = max(cur_idle, IDLE_START_WAIT);
-		sleep_time.tv_sec = min(diskp->start_t - now, sleep_time.tv_sec);
+		sleep_time.tv_sec = min(diskp->host->start_t - now, 
+					sleep_time.tv_sec);
+		any_delayed_disk = 1;
+	    }
+	    else if(diskp->start_t > now) {
+		cur_idle = max(cur_idle, IDLE_START_WAIT);
+		sleep_time.tv_sec = min(diskp->start_t - now, 
+					sleep_time.tv_sec);
 		any_delayed_disk = 1;
 	    }
 	    else if(sched(diskp)->est_kps > free_kps(diskp->host->netif))
@@ -530,6 +537,7 @@ disklist_t *rq;
 	    total++;
 	    remove_disk(rq, diskp);		/* take it off the run queue */
 	    dumper_cmd(dumper, FILE_DUMP, diskp);
+	    diskp->host->start_t = time(NULL) + 15;
 	}
 	idle_reason = max(idle_reason, cur_idle);
     }
@@ -1456,6 +1464,7 @@ disk_t *dp;
     /* tell the dumper to dump to a port */
 
     dumper_cmd(dumper, PORT_DUMP, dp);
+    dp->host->start_t = time(NULL) + 15;
 
     /* update statistics & print state */
 
