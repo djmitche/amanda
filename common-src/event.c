@@ -24,14 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.7 1999/03/01 21:37:37 kashmir Exp $
+ * $Id: event.c,v 1.8 1999/04/12 20:24:13 kashmir Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
- * a uniform interface, central state storage, and localized
+ * a uniform interface, central state storage, and centralized
  * interdependency logic.
  */
 
-/*#define	EVENT_DEBUG */
+/*#define	EVENT_DEBUG*/
 
 #include "amanda.h"
 #include "event.h"
@@ -77,6 +77,7 @@ static struct sigtabent {
 #ifdef EVENT_DEBUG
 static const char *event_type2str P((event_type_t));
 #endif
+static void fire P((event_handle_t *, time_t));
 static void release P((event_handle_t *));
 static void signal_handler P((int));
 
@@ -228,7 +229,7 @@ event_loop(dontblock)
     static int entry = 0;
     fd_set readfds, writefds, errfds, werrfds;
     struct timeval timeout, *tvptr;
-    int ntries, maxfd, rc, interval, fired;
+    int ntries, maxfd, rc, interval;
     time_t curtime;
     event_handle_t *eh, *nexteh;
     struct sigtabent *se;
@@ -295,7 +296,7 @@ event_loop(dontblock)
 	/*
 	 * Run through each event handle and setup the events.
 	 * We save our next pointer early in case we GC some dead
-	 * events.  We also fire EV_WAIT events that have arisen.
+	 * events.
 	 */
 	for (eh = eventq_first(); eh != NULL; eh = nexteh) {
 	    nexteh = eventq_next(eh);
@@ -362,10 +363,16 @@ event_loop(dontblock)
 		break;
 
 	    /*
-	     * Do nothing with these events right now.
+	     * Process wait events after the regular events are handled.
 	     */
 	    case EV_WAIT:
+		break;
+
+	    /*
+	     * Prune dead events
+	     */
 	    case EV_DEAD:
+		release(eh);
 		break;
 
 	    default:
@@ -422,8 +429,6 @@ event_loop(dontblock)
 	 * Don't handle file descriptor events if the select failed.
 	 */
 	for (eh = eventq_first(); eh != NULL; eh = eventq_next(eh)) {
-	    fired = 0;
-
 	    switch (eh->type) {
 
 	    /*
@@ -434,7 +439,7 @@ event_loop(dontblock)
 		    FD_ISSET(eh->data, &errfds)) {
 		    FD_CLR(eh->data, &readfds);
 		    FD_CLR(eh->data, &errfds);
-		    fired = 1;
+		    fire(eh, curtime);
 		}
 		break;
 
@@ -446,7 +451,7 @@ event_loop(dontblock)
 		    FD_ISSET(eh->data, &werrfds)) {
 		    FD_CLR(eh->data, &writefds);
 		    FD_CLR(eh->data, &werrfds);
-		    fired = 1;
+		    fire(eh, curtime);
 		}
 		break;
 
@@ -459,7 +464,7 @@ event_loop(dontblock)
 		if (se->scoreboard > 0) {
 		    assert(se->handle == eh);
 		    se->scoreboard = 0;
-		    fired = 1;
+		    fire(eh, curtime);
 		}
 		break;
 
@@ -470,13 +475,8 @@ event_loop(dontblock)
 	    case EV_TIME:
 		if (eh->lastfired == -1)
 		    eh->lastfired = curtime;
-		if (curtime - eh->lastfired >= eh->data) {
-#ifdef EVENT_DEBUG
-		    fprintf(stderr, "event: %X fired: time=%d\n", (int)eh,
-			eh->data);
-#endif
-		    fired = 1;
-		}
+		if (curtime - eh->lastfired >= eh->data)
+		    fire(eh, curtime);
 		break;
 
 	    /*
@@ -495,47 +495,21 @@ event_loop(dontblock)
 		assert(0);
 		break;
 	    }
-
-	    if (fired) {
-#ifdef EVENT_DEBUG
-		fprintf(stderr, "event: %X fired: data=%d, type=%s (qlen=%d)\n",
-		    (int)eh, eh->data, event_type2str(eh->type),
-		    eventq.qlength);
-#endif
-		assert(eh->type != EV_DEAD);
-		eh->lastfired = curtime;
-		(*eh->fn)(eh->arg);
-	    }
 	}
 	/*
-	 * Do a separate pass for these events, which are usually caused by
+	 * Do a separate pass for these events, which are caused by
 	 * events above, and need to run afterwards.
 	 */
-	for (eh = eventq_first(); eh != NULL; eh = nexteh) {
-	    nexteh = eventq_next(eh);
+	for (eh = eventq_first(); eh != NULL; eh = eventq_next(eh)) {
 	    switch (eh->type) {
 	    /*
 	     * If this EV_WAIT event has been woken up, then fire it.
 	     */
 	    case EV_WAIT:
-		if (eh->wakeup == 0)
-		    break;
-		eh->wakeup = 0;
-#ifdef EVENT_DEBUG
-		fprintf(stderr, "event: %X fired: data=%d, type=%s (qlen=%d)\n",
-		    (int)eh, eh->data, event_type2str(eh->type),
-		    eventq.qlength);
-#endif
-		assert(eh->type != EV_DEAD);
-		eh->lastfired = curtime;
-		(*eh->fn)(eh->arg);
-		break;
-
-	    /*
-	     * Prune dead events
-	     */
-	    case EV_DEAD:
-		release(eh);
+		if (eh->wakeup != 0) {
+		    eh->wakeup = 0;
+		    fire(eh, curtime);
+		}
 		break;
 
 	    default:
@@ -549,6 +523,27 @@ event_loop(dontblock)
 }
 
 /*
+ * "Fire" the event, and timestamp the event.
+ */
+static void
+fire(eh, curtime)
+    event_handle_t *eh;
+    time_t curtime;
+{
+    assert(eh != NULL);
+    assert(eh->type != EV_DEAD);
+
+#ifdef EVENT_DEBUG
+    fprintf(stderr, "event: %X fired: data=%d, type=%s (qlen=%d)\n",
+	(int)eh, eh->data, event_type2str(eh->type),
+	eventq.qlength);
+#endif
+
+    eh->lastfired = curtime;
+    (*eh->fn)(eh->arg);
+}
+
+/*
  * Generic signal handler.  Used to count caught signals for the event
  * loop.
  */
@@ -557,7 +552,7 @@ signal_handler(signo)
     int signo;
 {
 
-    assert(signo >= 0 && signo < NSIG);
+    assert(signo >= 0 && signo < sizeof(sigtable) / sizeof(sigtable[0]));
     sigtable[signo].scoreboard++;
 }
 
