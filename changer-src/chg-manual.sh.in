@@ -61,7 +61,7 @@ fi
 echo DD "->" $DD >> $logfile
 
 MAILER=@MAILER@
-ONLINEREGEX="ONLINE|READY|sense[_ ]key[(]0x0[)]|sense key error = 0|^er=0$|, mt_erreg: 0x0$"
+ONLINEREGEX="ONLINE|READY|sense[_ ]key[(]0x0[)]|sense key error = 0|^er=0$|, mt_erreg: 0x0|^Current Driver State: at rest$"
 REPORTTO=`amgetconf$SUF mailto`
 tape=`amgetconf$SUF tapedev`
 ORG=`amgetconf$SUF ORG`

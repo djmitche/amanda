@@ -1,3 +1,8 @@
+2001-07-02 John R. Jackson <jrj@purdue.edu>
+
+	* changer-src/chg-manual.sh.in: Add yet another ONLINEREGEX, this one
+	  compliments of Nick (n_hibma@qubesoft.com) for some FreeBSD variant.
+
 2001-06-29 John R. Jackson <jrj@purdue.edu>
 
 	* tape-src/tapeio.c: Move the device name parsing routines from the
