@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.40 1998/01/21 01:06:42 jrj Exp $
+ * $Id: amanda.h,v 1.41 1998/01/26 18:35:40 jrj Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -905,11 +905,6 @@ extern int vfprintf P((FILE *stream, const char *format, va_list ap));
 #ifndef HAVE_VPRINTF_DECL
 #include "arglist.h"
 extern int vprintf P((const char *format, va_list ap));
-#endif
-
-#ifndef HAVE_VSPRINTF_DECL
-#include "arglist.h"
-extern int vsprintf P((char *s, const char *format, va_list ap));
 #endif
 
 #endif	/* !AMANDA_H */
