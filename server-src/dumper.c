@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.46.2.5 1998/02/08 19:51:56 amcore Exp $
+/* $Id: dumper.c,v 1.46.2.6 1998/02/08 20:33:33 amcore Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -411,7 +411,6 @@ int outf, size;
     spaceleft -= size;
     dataptr += size;
 
- retry:
     if(size == 0) {	/* eof, zero rest of buffer */
 	memset(dataptr, '\0', spaceleft);
 	/* dataptr still points to the point where padding started */
@@ -419,47 +418,17 @@ int outf, size;
     }
 
     if(spaceleft == 0) {	/* buffer is full, write it */
+	int written;
 
-        /* FIXME: will this break if an incomplete block is written,
-	 * and we retry later with the remaining part, plus any
-	 * additional data? */
 	NAUGHTY_BITS;
 
-	while((spaceleft = write(outf, databuf, sizeof(databuf)))
-	      < sizeof(databuf)) {
-	    if(spaceleft > 0) {
-		static unsigned remainder = 0;
-		dumpsize += (spaceleft + remainder) / 1024;
-		remainder = (spaceleft + remainder) % 1024;
-		log(L_WARNING,
-		    "retrying incomplete write to %s while dumping %s:%s",
-		    filename, hostname, diskname);
-		/* If only padding bytes remained, there's no need to
-		 * retry.  This works because, when padding bytes are
-		 * added, dataptr remains pointing to the first
-		 * padding byte.  dataptr-databuf is the number of
-		 * important bytes to be written, whereas spaceleft is
-		 * the number of bytes actually written.  If we wrote
-		 * them all, consider the operation a success.  */
-		if (dataptr - databuf > spaceleft) {
-		    spaceleft = sizeof(databuf);
-		    dataptr = databuf;
-		    if (remainder != 0) {
-			++dumpsize;
-		    }
-		    remainder = 0;
-		    return 0;
-		}
-		dataptr = databuf + sizeof(databuf) - spaceleft;
-	        memmove(databuf, databuf + spaceleft, dataptr - databuf);
-		if (size == 0) {
-		    /* In the last write, we're expected to flush the
-		     * buffer completely, so we must retry until
-		     * everything is written successfully. */
-		    goto retry;
-		}
-		return 0;
-	    } else if(spaceleft < 0 && errno != ENOSPC) {
+	do {
+	    written = write(outf, databuf + spaceleft,
+			    sizeof(databuf) - spaceleft);
+	    if(written > 0) {
+		spaceleft += written;
+		continue;
+	    } else if(written < 0 && errno != ENOSPC) {
 		putresult("FAILED %s %s\n", handle,
 			  squotef("[data write: %s]", strerror(errno)));
 		return 1;
@@ -472,8 +441,7 @@ int outf, size;
 	    if(cmd == CONTINUE) continue;
 	    abort_pending = 1;
 	    return 1;
-	}
-	spaceleft = sizeof(databuf);
+	} while (spaceleft != sizeof(databuf));
 	dataptr = databuf;
 	dumpsize += (sizeof(databuf)/1024);
     }
