@@ -24,8 +24,8 @@ estimate of backup size, those need to be done within Amanda.  Amanda
 maintains an /etc/amandates file to track the backup dates analogously to
 how dump does it.
 
-NOTE: if your /etc directory is not writeable by your dumpuser, you'll have
-to create the empty file initially by hand, and make it writeable by your
+NOTE: if your /etc directory is not writable by your dumpuser, you'll have
+to create the empty file initially by hand, and make it writable by your
 dumpuser ala /etc/dumpdates.
 
 NOTE: Since tar traverses the directory heirarchy and reads files as a

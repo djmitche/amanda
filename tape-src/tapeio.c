@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.5 1997/12/16 18:14:56 jrj Exp $
+ * $Id: tapeio.c,v 1.6 1997/12/17 04:39:31 jrj Exp $
  *
  * implements tape I/O functions
  */
@@ -432,7 +432,7 @@ char *devname, *datestamp;
 }
 
 
-char *tape_writeable(devname)
+char *tape_writable(devname)
 char *devname;
 {
     int fd;

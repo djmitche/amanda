@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getfsent.h,v 1.2 1997/08/27 08:11:33 amcore Exp $
+ * $Id: getfsent.h,v 1.3 1997/12/17 04:39:19 jrj Exp $
  *
  * interfaces for obtaining filesystem information
  */
@@ -36,8 +36,8 @@
 #include "amanda.h"
 #endif
 
-#define FSTAB_RW	"rw"	/* writeable filesystem */
-#define FSTAB_RQ	"rq"	/* writeable, with quotas */
+#define FSTAB_RW	"rw"	/* writable filesystem */
+#define FSTAB_RQ	"rq"	/* writable, with quotas */
 #define FSTAB_RO	"ro"	/* read-only filesystem */
 #define FSTAB_SW	"sw"	/* swap device */
 #define FSTAB_XX	"xx"	/* ignore this entry */

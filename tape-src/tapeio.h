@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.h,v 1.3 1997/08/27 08:13:35 amcore Exp $
+ * $Id: tapeio.h,v 1.4 1997/12/17 04:39:32 jrj Exp $
  *
  * interface for tapeio.c
  */
@@ -56,6 +56,6 @@ char *tape_fsf P((char *dev, int count));
 char *tape_rdlabel P((char *dev, char *datestamp, char *label));
 char *tape_wrlabel P((char *dev, char *datestamp, char *label));
 char *tape_wrendmark P((char *dev, char *datestamp));
-char *tape_writeable P((char *dev));
+char *tape_writable P((char *dev));
 
 #endif /* ! TAPEIO_H */

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.16 1997/12/16 17:52:48 jrj Exp $
+ * $Id: selfcheck.c,v 1.17 1997/12/17 04:39:21 jrj Exp $
  *
  * do self-check and send back any error messages
  */
@@ -388,7 +388,7 @@ int mode;
     if((mode & X_OK) == X_OK)
 	noun = "execute", adjective = "executable";
     else if((mode & (W_OK|R_OK)) == (W_OK|R_OK))
-	noun = "read/write", adjective = "read/writeable";
+	noun = "read/write", adjective = "read/writable";
     else 
 	noun = "access", adjective = "accessible";
 

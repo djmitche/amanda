@@ -52,7 +52,7 @@ tape (which would cause the subsequent
 .B amdump
 to fail).
 If the tape
-is writeable, this check causes all data after the tape label to be
+is writable, this check causes all data after the tape label to be
 erased (actually depends on the device driver: there is no portable
 non\-destructive way to check for write\-protection).
 The check is only made if the tape is otherwise correct.
@@ -73,7 +73,7 @@ The results are displayed on standard output.
 Amanda Tape Server Host Check
 -----------------------------
 /amanda2/amanda/work: 911475 KB disk space available, that's plenty.
-NOTE: skipping tape-writeable test.
+NOTE: skipping tape-writable test.
 Tape VOL10 label ok.
 Server check took 34.966 seconds.
 
@@ -169,7 +169,7 @@ system call on holding disk
 .I disk
 (maybe because it does not exist).
 .TP
-ERROR: \fIdisk\fP is unwriteable: \fIerror message\fP
+ERROR: \fIdisk\fP is unwritable: \fIerror message\fP
 (error)
 An error was returned from the
 .I access
@@ -256,19 +256,19 @@ The tape is not OK and either tape
 .I label
 or a new tape was expected.
 .TP
-ERROR: tape \fIlabel\fP label ok, but is not writeable.
+ERROR: tape \fIlabel\fP label ok, but is not writable.
 (error)
 Tape
 .I label
 is OK, but the write enable test failed.
 .TP
-Tape \fIlabel\fP is writeable.
+Tape \fIlabel\fP is writable.
 (info)
 Tape
 .I label
 is OK and the write enable test succeeded.
 .TP
-NOTE: skipping tape-writeable test.
+NOTE: skipping tape-writable test.
 (info)
 The tape write test (see the
 .B -w
@@ -281,7 +281,7 @@ Tape
 is OK for the next
 run.
 .TP
-Index dir "\fIdirectory\fP" doesn't exist or is not writeable.
+Index dir "\fIdirectory\fP" doesn't exist or is not writable.
 (warning)
 The directory used to collect backup index files
 (from the

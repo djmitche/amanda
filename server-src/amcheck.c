@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.21 1997/12/16 18:02:13 jrj Exp $
+ * $Id: amcheck.c,v 1.22 1997/12/17 04:39:28 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -414,7 +414,7 @@ int fd;
 	    disklow = 1;
 	}
 	else if(access(hdp->diskdir, W_OK) == -1) {
-	    fprintf(outf, "ERROR: %s is unwriteable: %s\n",
+	    fprintf(outf, "ERROR: %s is unwritable: %s\n",
 		    hdp->diskdir, strerror(errno));
 	    disklow = 1;
 	}
@@ -476,14 +476,14 @@ int fd;
     }
 
     if(!tapebad && overwrite) {
-	if((errstr = tape_writeable(tapename)) != NULL) {
+	if((errstr = tape_writable(tapename)) != NULL) {
 	    fprintf(outf,
-		    "ERROR: tape %s label ok, but is not writeable.\n", label);
+		    "ERROR: tape %s label ok, but is not writable.\n", label);
 	    tapebad = 1;
 	}
-	else fprintf(outf, "Tape %s is writeable.\n", label);
+	else fprintf(outf, "Tape %s is writable.\n", label);
     }
-    else fprintf(outf, "NOTE: skipping tape-writeable test.\n");
+    else fprintf(outf, "NOTE: skipping tape-writable test.\n");
 
     if(!tapebad)
 	fprintf(outf, "Tape %s label ok.\n", label);
@@ -494,7 +494,7 @@ int fd;
 	if((stat(indexdir, &statbuf) == -1)
 	   || !S_ISDIR(statbuf.st_mode)
 	   || (access(indexdir, W_OK) == -1)) {
-	    fprintf(outf, "Index dir \"%s\" doesn't exist or is not writeable.\n",
+	    fprintf(outf, "Index dir \"%s\" doesn't exist or is not writable.\n",
 		    indexdir);
 	}
     }
