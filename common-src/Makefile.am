@@ -27,7 +27,8 @@ libamanda_la_SOURCES =	alloc.c		debug.c		dgram.c		\
 			statfs.c	stream.c	token.c		\
 			version.c	versuff.c	amflock.c	\
 			regcomp.c	regexec.c	security.c	\
-			regerror.c	regfree.c	maketree.c
+			regerror.c	regfree.c	maketree.c	\
+			file.c
 
 libamanda_la_LIBADD =	@LTLIBOBJS@
 
@@ -92,4 +93,7 @@ statfs: $(srcdir)/statfs.c $(srcdir)/statfs.h
 	$(LINK_TEST) $(srcdir)/statfs.c -o statfs
 
 token: $(srcdir)/token.c $(srcdir)/token.h libamanda.la libamnolog.la
-	$(LINK_TEST) $(srcdir)/token.c -o token _libs/libamanda.a _libs/libamnolog.a
+	$(LINK_TEST) $(srcdir)/token.c -o token .libs/libamanda.a .libs/libamnolog.a
+
+file: $(srcdir)/file.c libamanda.la libamnolog.la
+	$(LINK_TEST) $(srcdir)/file.c -o file .libs/libamanda.a .libs/libamnolog.a

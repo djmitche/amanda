@@ -23,7 +23,7 @@
  * Author: George Scott, Computer Centre, Monash University.
  */
 /*
- * $Id: token.c,v 1.11 1997/10/17 06:26:41 george Exp $
+ * $Id: token.c,v 1.12 1997/11/01 09:21:38 george Exp $
  *
  * token bashing routines
  */
@@ -255,40 +255,6 @@ int val;
 	}
 
 	return (char *)0;
-}
-
-/*
-** Sanitise a file name.
-** 
-** Convert all funny characters to '_' so that we can use,
-** for example, disk names as part of file names.
-** Note: the internal buffer is static.
-** XXX - We only look for '/' and ' ' at the moment.  May
-** XXX - be we should also do all unprintables.
-*/
-char *sanitise_filename(inp)
-char *inp;
-{
-    static char buf[512]; /* XXX string overflow */
-    char *s, *d;
-
-    d = buf;
-    for(s = inp; *s != '\0'; s++) {
-	switch(*s) {
-	case '_':	/* convert _ to __ to ensure unique output */
-	    *d++ = '_';
-	    /* fall through */
-	case '/':
-	case ' ':	/* convert ' ' for convenience */
-	    *d++ = '_';
-	    break;
-        default:
-	    *d++ = *s;
-	}
-    }
-    *d = '\0';
-
-    return buf;
 }
 
 #ifdef TEST

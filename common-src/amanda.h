@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.19 1997/10/30 14:49:17 amcore Exp $
+ * $Id: amanda.h,v 1.20 1997/11/01 09:21:36 george Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -330,6 +330,8 @@ extern time_t unctime   P((char *timestr));
 extern int    amflock   P((int fd, char *resource));
 extern int    amroflock P((int fd, char *resource));
 extern int    amfunlock P((int fd, char *resource));
+extern int    mkpdir    P((char *file, int mode));
+extern char  *sanitise_filename P((char *inp));
 extern int    maketreefor P((char *file, int mode, uid_t uid, gid_t gid));
 
 extern int debug;

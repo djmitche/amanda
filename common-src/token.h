@@ -23,7 +23,7 @@
  * Author: George Scott, Computer Centre, Monash University
  */
 /*
- * $Id: token.h,v 1.6 1997/10/03 08:29:17 george Exp $
+ * $Id: token.h,v 1.7 1997/11/01 09:21:39 george Exp $
  *
  * interface to token module
  */
@@ -43,6 +43,5 @@ extern char *quotef P((char *sep, char *format, ...));
 extern char *quote P((char *sep, char *str));
 extern int table_lookup P((table_t *table, char *str));
 extern char *table_lookup_r P((table_t *table, int val));
-extern char *sanitise_filename P((char *inp));
 
 #endif
