@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.34 1998/01/12 22:32:51 blair Exp $
+ * $Id: infofile.c,v 1.35 1998/01/15 23:24:58 jrj Exp $
  *
  * manage current info file
  */
@@ -83,7 +83,8 @@ char *mode;
 
     if(writing) {
 	infof = fopen(newinfofile, mode);
-	amflock(fileno(infof), "info");
+	if(infof != NULL)
+	    amflock(fileno(infof), "info");
     }
     else {
 	infof = fopen(infofile, mode);
