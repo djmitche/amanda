@@ -74,6 +74,7 @@ extern void rait_tapefd_resetofs P((int rait_tapefd));
 extern int  rait_tapefd_unload P((int rait_tapefd));
 extern int  rait_tapefd_status P((int rait_tapefd, struct am_mt_status *stat));
 extern int  rait_tapefd_weof P((int rait_tapefd, int count));
+extern int  rait_tapefd_can_fork P((int));
 
 #ifdef RAIT_REDIRECT
 

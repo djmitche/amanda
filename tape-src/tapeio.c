@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: tapeio.c,v 1.20.4.7.4.4.2.6 2003/01/25 23:00:59 jrjackson Exp $
+ * $Id: tapeio.c,v 1.20.4.7.4.4.2.7 2003/03/06 21:44:21 martinea Exp $
  *
  * implements generic tape I/O functions
  */
@@ -60,6 +60,7 @@ static struct virtualtape {
     int (*xxx_tapefd_status) P((int, struct am_mt_status *));
     int (*xxx_tapefd_weof) P((int, int));
     ssize_t (*xxx_tapefd_write) P((int, const void *, size_t));
+    int (*xxx_tapefd_can_fork) P((int));
 } vtable[] = {
   /* note: "tape" has to be the first entry because it is the
   **        default if no prefix match is found.
@@ -68,22 +69,22 @@ static struct virtualtape {
 	tape_tapefd_close, tape_tapefd_fsf,
 	tape_tapefd_read, tape_tapefd_rewind, tape_tapefd_resetofs,
 	tape_tapefd_unload, tape_tapefd_status, tape_tapefd_weof,
-        tape_tapefd_write },
+        tape_tapefd_write, tape_tapefd_can_fork },
   {"null", null_tape_access, null_tape_open, null_tape_stat,
 	null_tapefd_close, null_tapefd_fsf,
 	null_tapefd_read, null_tapefd_rewind, null_tapefd_resetofs,
 	null_tapefd_unload, null_tapefd_status, null_tapefd_weof,
-        null_tapefd_write },
+        null_tapefd_write, null_tapefd_can_fork },
   {"rait", rait_access, rait_tape_open, rait_stat,
 	rait_close, rait_tapefd_fsf,
 	rait_read, rait_tapefd_rewind, rait_tapefd_resetofs,
 	rait_tapefd_unload, rait_tapefd_status, rait_tapefd_weof,
-        rait_write },
+        rait_write, rait_tapefd_can_fork },
   {"file", file_tape_access, file_tape_open, file_tape_stat,
 	file_tapefd_close, file_tapefd_fsf,
 	file_tapefd_read, file_tapefd_rewind, file_tapefd_resetofs,
 	file_tapefd_unload, file_tapefd_status, file_tapefd_weof,
-        file_tapefd_write },
+        file_tapefd_write, file_tapefd_can_fork },
   {NULL,},
 };
 
@@ -553,6 +554,23 @@ tapefd_close(fd)
 	memset(tape_info + fd, 0, sizeof(*tape_info));
         tape_info_init((void *)(tape_info + fd));
     }
+    return res;
+}
+
+int
+tapefd_can_fork(fd)
+    int fd;
+{
+    int vslot, res = -1;
+
+    if(fd < 0
+       || fd >= tape_info_count
+       || (vslot = tape_info[fd].vtape_index) < 0) {
+	errno = EBADF;
+	return -1;
+    }
+    res = vtable[vslot].xxx_tapefd_can_fork(fd);
+
     return res;
 }
 

@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-file.c,v 1.1.2.4.2.2 2003/03/05 21:02:56 martinea Exp $
+ * $Id: output-file.c,v 1.1.2.4.2.3 2003/03/06 21:44:20 martinea Exp $
  *
  * tapeio.c virtual tape interface for a file device.
  *
@@ -1214,4 +1214,11 @@ file_tapefd_weof(fd, count)
     errno = save_errno;
 
     return result;
+}
+
+int
+file_tapefd_can_fork(fd)
+    int fd;
+{
+    return 0;
 }

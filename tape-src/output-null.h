@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-null.h,v 1.1.2.2.2.1 2002/11/12 21:24:20 martinea Exp $
+ * $Id: output-null.h,v 1.1.2.2.2.2 2003/03/06 21:44:20 martinea Exp $
  *
  * tapeio.c virtual tape interface for a null device.
  */
@@ -48,5 +48,6 @@ extern int null_tapefd_unload P((int));
 extern int null_tapefd_status P((int, struct am_mt_status *));
 extern int null_tapefd_weof P((int, int));
 extern ssize_t null_tapefd_write P((int, const void *, size_t));
+extern int null_tapefd_can_fork P((int));
 
 #endif /* OUTPUT_NULL_H */

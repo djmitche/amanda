@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-tape.c,v 1.1.2.6.2.6 2003/01/02 22:40:41 martinea Exp $
+ * $Id: output-tape.c,v 1.1.2.6.2.7 2003/03/06 21:44:21 martinea Exp $
  *
  * tapeio.c virtual tape interface for normal tape drives.
  */
@@ -640,3 +640,11 @@ int tape_tape_access(filename, mode)
 {
      return access(filename, mode);
 }
+
+int 
+tape_tapefd_can_fork(fd)
+    int fd;
+{
+    return 1;
+}
+
