@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.156 2004/04/23 11:38:49 martinea Exp $
+ * $Id: planner.c,v 1.157 2004/05/03 18:11:49 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1555,6 +1555,7 @@ security_handle_t *sech;
 			est(dp)->level[0], est(dp)->est_size[0],
 			est(dp)->level[1], est(dp)->est_size[1],
 			est(dp)->level[2], est(dp)->est_size[2]);
+	    enqueue_disk(&pestq, dp);
 	}
 	else if(pkt->type == P_REP) {
 		fprintf(stderr,"%s: time %s: got result for host %s disk %s:",
@@ -1606,9 +1607,6 @@ security_handle_t *sech;
 						NULL);
 		}
 	    }
-	}
-	else if(pkt->type == P_PREP) {
-	    enqueue_disk(&pestq, dp);
 	}
     }
     getsize(hostp);
