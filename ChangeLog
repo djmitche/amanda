@@ -1,3 +1,8 @@
+2005-04-06  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	- https://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=144052
+
+	* server-src/amverifyrun.sh.in: Filter changer log file.
+
 2005-01-23  Stefan G. Weichinger <monitor@oops.co.at>
         Patch by Jon LaBadie <jon@jgcomp.com>
 	
