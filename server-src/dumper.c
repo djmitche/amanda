@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.118 1999/04/10 06:19:52 kashmir Exp $
+/* $Id: dumper.c,v 1.119 1999/04/10 21:11:46 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1403,7 +1403,7 @@ runcompress(outfd, pid, comptype)
     pid_t *pid;
     comp_t comptype;
 {
-    int outpipe[2], tmpfd;
+    int outpipe[2], tmpfd, rval;
 
     assert(outfd >= 0);
     assert(pid != NULL);
@@ -1416,22 +1416,19 @@ runcompress(outfd, pid, comptype)
 
     switch (*pid = fork()) {
     case -1:
+	errstr = newstralloc2(errstr, "couldn't fork: ", strerror(errno));
 	aclose(outpipe[0]);
 	aclose(outpipe[1]);
-	errstr = newstralloc2(errstr, "couldn't fork: ", strerror(errno));
 	return (-1);
     default:
-	if (dup2(outpipe[0], outfd) < 0) {
-	    aclose(outpipe[1]);
-	    aclose(outpipe[0]);
-	    return (-1);
-	}
+	rval = dup2(outpipe[1], outfd);
+	if (rval < 0)
+	    errstr = newstralloc2(errstr, "couldn't dup2: ", strerror(errno));
 	aclose(outpipe[1]);
 	aclose(outpipe[0]);
-	return (0);
+	return (rval);
     case 0:
-	aclose(outpipe[0]);
-	if (dup2(outpipe[1], 0) < 0)
+	if (dup2(outpipe[0], 0) < 0)
 	    error("err dup2 in: %s", strerror(errno));
 	if (dup2(outfd, 1) == -1)
 	    error("err dup2 out: %s", strerror(errno));
@@ -1580,6 +1577,15 @@ bad_nak:
 		security_stream_geterror(streams[i].fd), "]", NULL);
 	    goto connect_error;
 	}
+    }
+
+    /*
+     * The MESGFD and INDEXFD streams are mandatory.  If we didn't get
+     * them, complain.
+     */
+    if (streams[MESGFD].fd == NULL || streams[INDEXFD].fd == NULL) {
+	errstr = newstralloc(errstr, "[couldn't open MESG or INDEX streams]");
+	goto connect_error;
     }
 
     /* everything worked */

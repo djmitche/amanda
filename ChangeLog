@@ -1,5 +1,13 @@
 1999-04-10  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c (runcompress): use the proper end of the pipe
+	for writing and reading.  Also, grab errno early on fork error
+	before calling close.
+	* server-src/dumper.c (sendbackup_response): make sure the client
+	at least send us a mesgfd and datafd.
+
+1999-04-10  Mike Grupenhoff <kashmir@munge.com>
+
 	* client-src/amandad.c (main): don't dup stdout to db_fd - it might
 	be needed by the security driver
 	* client-src/amandad.c (s_ackwait, allocstream,): on error, don't
