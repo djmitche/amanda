@@ -1,5 +1,8 @@
 1998-07-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* restore-src/amidxtaped.c (main): use tape_rewind() instead of
+	running `mt'
+
 	* server-src/amcleanup.sh.in (reporter): update to call amreport.
 	(amdump.<n>) update to use the same renaming technique introduced in
  	June 30's change to amdump.
