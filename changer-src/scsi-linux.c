@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-linux.c,v 1.15 2001/02/17 18:48:42 ant Exp $
+ * $Id: scsi-linux.c,v 1.16 2001/02/25 16:54:08 martinea Exp $
  *
  * Interface to execute SCSI commands on Linux
  *
@@ -529,8 +529,7 @@ int ScanBus(int print)
         pDev[count].inqdone = 0;
         sprintf(pDev[count].dev,"/dev/%s", dirent->d_name);
         if (OpenDevice(count,pDev[count].dev, "Scan", NULL ))
-          {  char btl[9];
-
+          {
             SCSI_CloseDevice(count);
             pDev[count].inqdone = 0;
             
@@ -583,6 +582,7 @@ int ScanBus(int print)
           }
       }
     }
+  return 0;
 }
 #endif
 /*

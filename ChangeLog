@@ -1,5 +1,11 @@
 2001-02-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* changer-src/scsi-defs.h (PrintConf): Add prototype.
+	* changer-src/scsi-changer-driver.c (SCSI_Run): Add prototype.
+	* changer-src/scsi-linux.c (ScanBus): remove btl variable, return 0.
+
+2001-02-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* man/Makefile.am (EXTRA_DIST): add amdd.8 and ammt.8.
 
 2001-02-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>

@@ -1132,6 +1132,7 @@ int Tape_Ready(int fd, int wait_time);
 
 void Inventory(char *labelfile, int drive, int eject, int start, int stop, int clean);
 void ChangerDriverVersion();
+void PrintConf();
 int LogSense(int fd);
 int ScanBus(int print);
 void DebugPrint(int level, int section, char * fmt, ...);

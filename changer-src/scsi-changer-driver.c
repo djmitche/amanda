@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.20 2001/02/17 18:48:42 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.21 2001/02/25 16:54:08 martinea Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -100,6 +100,14 @@ void EXB85058HEPage3c(LogParameter_T *, int);
 int Decode(LogParameter_T *, int *); 
 int DecodeModeSense(char *buffer, int offset, char *pstring, char block, FILE *out);
 
+int SCSI_Run(int DeviceFD,
+	     Direction_T Direction,
+	     CDB_T CDB,
+	     int CDB_Length,
+	     void *DataBuffer,
+	     int DataBufferLength,
+	     char *pRequestSense,
+	     int RequestSenseLength);
 int SCSI_Move(int DeviceFD, unsigned char chm, int from, int to);
 int SCSI_LoadUnload(int DeviceFD, RequestSense_T *pRequestSense, unsigned char byte1, unsigned char load);
 int SCSI_TestUnitReady(int, RequestSense_T *);
