@@ -1,0 +1,240 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+  <meta name="GENERATOR" content="SGML-Tools 1.0.9">
+  <title>Amanda on Cygwin HOWTO</title>
+  <link href="amanda-cyg-howto-4.html" rel="next">
+  <link href="amanda-cyg-howto-2.html" rel="previous">
+  <link href="amanda-cyg-howto.html#toc3" rel="contents">
+  <meta name="author" content="Doug Kingston">
+</head>
+<body>
+<h1 style="text-align: center;"><a name="s3">Amanda on Cygwin HOWTO</a></h1>
+<p>by Doug Kingston, 30 January 2003.&nbsp; Based on Cygwin 1.3.18, and
+Amanda 2.4.3-20021027 and some fixes which will be in the official
+release by the time you see this.<br>
+</p>
+<p>With thanks to Enrico Bernardini from whom I have borrowed some
+material from an earlier attempt at documenting the installation of
+Amanda on Cygwin in 2001.&nbsp; Please send annotations and corrections
+to amanda-hackers@amanda.org. I can be reached as dpk (at)
+randomnotes.org (do the obvious).<br>
+</p>
+<h2><a name="Install">1. Install Cygwin</a></h2>
+<h2> </h2>
+<p> The following Cygwin packages are required for binary installation
+(may be incomplete): </p>
+<ul>
+  <li> Category BASE: standard</li>
+  <li>Category MISC: gzip<br>
+  </li>
+  <li>Category MISC: tar<br>
+  </li>
+  <li> Category NET: inetutils</li>
+</ul>
+<p> You need also these packages to build from source (may be
+incomplete): </p>
+<ul>
+  <li> Category DEVELOP: ALL</li>
+  <li> Category INTERPRETERS: m4, gawk ?</li>
+  <li> Category LIBS:<span style="font-style: italic;">default
+selection? (libc, libiconv, others?)<br>
+    </span></li>
+</ul>
+I have most or the basic utilities and libraries installed so I cannot
+give you a more specific list of what is required.&nbsp; If someone has
+a more definitive list, I would appreciate and email to amanda-hackers.<br>
+<br>
+One user reported some problems with access rights when running under
+Cygwin, which he solved by setting the CYGWIN environment variable to
+nontsec.&nbsp; I do not believe this is necessary if you run the amanda
+daemon as System (see below).<br>
+<p> </p>
+<h2><a name="Compile"></a>2. Other Preparation</h2>
+When doing backups on a NT, Windows 2000 or Windows XP system, the
+choice of user and group will be important if you are to properly
+interact with the security mechanisms of these more modern Microsoft
+product.&nbsp; For Windows 95/98/ME this is probably a non-issue.&nbsp;
+The most privileged account on the Windows systems is 'System', and I
+have chosen to use this account for Amanda backups to ensure that I can
+access the widest set of files.&nbsp; On Unix we would run as root, with
+equivalent access permissions.&nbsp; I have also chose to run under the
+'Administrators' group, another standard Windows group.&nbsp; Ensure
+these exist before you continue - or identify another account to
+use.&nbsp; The Cygwin installation postinstall script should have
+already populated /etc/passwd and /etc/group with these entries.<br>
+<ul>
+  <li>Make sure that System (or SYSTEM) has a home directory specified
+in /etc/passwd.</li>
+</ul>
+I used <span style="font-family: monospace;">/home/root</span>.&nbsp;
+You'll need to put the .amandahosts file here later.&nbsp; The relevant
+lines from my /etc/passwd file are:<br>
+<div style="margin-left: 40px;"><span style="font-family: monospace;">SYSTEM:*:18:18:,S-1-5-18:/home/root:</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">root:*:18:18:,S-1-5-18:/home/root:</span></div>
+<h2><a name="Compile">3. Compile Amanda</a></h2>
+After installing Cygwin, unpack the Amanda sources, typically in
+/usr/src/amanda or something similar.&nbsp; In the Amanda directory, you
+will need to execute:<br>
+<div style="margin-left: 40px;"><span style="font-family: monospace;">automake&nbsp;
+# this may not be necessary in the official release</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">autoconf&nbsp; # this may not be
+necessary in the official release</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">./configure --without-server \</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp; --without-force-uid \</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp; --with-user=<span
+ style="font-style: italic;">yourlogin</span> \</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp; --with-group=Administrators</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">make</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">make&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+# yes, I needed to run it a second time</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">make install</span><br>
+</div>
+<br>
+The use of&nbsp; your own login instead of SYSTEM requires some
+explanation.&nbsp; If you were to call runconfigure with SYSTEM instead
+of your own login id as part of the -with-user parameter, the
+installation process will fail due to the way Cygwin and the NT/W2K/XP
+security system interact.&nbsp; Once you chown a file to another user
+(like SYSTEM) you are no longer able to chgrp or chmod the file.&nbsp;
+The installations process will abort at this point.&nbsp; By installing
+the files owned by yourself, you will be able to chgrp and chmod them
+as expected.&nbsp; Note that you still RUN as SYSTEM from inetd.conf
+(see below).<br>
+<h2><a name="Configure">4. Configure Cygwin files</a> </h2>
+<p>You have to modify some config files: </p>
+<ul>
+  <li>/etc/inetd.conf: cleanup un-needed entries:</li>
+</ul>
+<p style="margin-left: 40px;">Comment out any entries you do not need
+by placing a '#' at the start of the lines.&nbsp; This is just good
+practice, and if any of the entries reference non-existent users (e.g.
+uucp) inetd may not start up.</p>
+<ul>
+  <li> /etc/inetd.conf: add
+    <blockquote><code> amanda  dgram   udp     wait    System
+/usr/local/libexec/amandad amandad </code></blockquote>
+ATTENTION: Use tabs, don't use spaces.<br>
+  </li>
+</ul>
+<ul>
+  <li> create <span style="font-family: monospace;">/home/root/.amandahosts</span>
+(or whereever System's home directory is):
+    <pre> &lt;amanda server&gt; &lt;amanda user&gt; <br></pre>
+  </li>
+</ul>
+Then create the following AMANDA directories and the amandates file:
+<blockquote><code> mkdir -p /usr/local/var/amanda/gnutar-lists<br>
+  <br>
+mkdir /tmp/amanda<br>
+  <br>
+touch /etc/amandates<br>
+  </code></blockquote>
+<h2><a name="Configure">5. Configure Windows system files</a> </h2>
+Update the Windows services list<br>
+<ul>
+  <li> &lt;WINDIR&gt;\Services: add
+    <blockquote><code> amanda              10080/udp                   #
+amanda backup services<br>
+amandaidx           10082/tcp                   # amanda backup services<br>
+amidxtape           10083/tcp                   # amanda backup services<br>
+      </code></blockquote>
+  </li>
+</ul>
+where WINDIR is C:\WINNT\system32\drivers\etc or something
+similar.&nbsp; The last two lines are needed if you want to use
+amrecover.<br>
+<br>
+Ensure that the default Windows PATH environment variable include your
+Cygwin /bin directory.&nbsp; This is necessary since inetd and hence the
+amandad that it spawns will not have the advantage of being started by
+the standard bash shell startup script and won't find the needed dynamic
+libraries (e.g. cygwin1.dll). My PATH is:<br>
+<span style="font-family: monospace;"><br>
+&nbsp;
+%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;C:\cygwin\bin</span><br>
+<br>
+This is on XP; My Computer, right click - Properties, click on
+Environment Variables (at the bottom).&nbsp; Yours may vary, but make
+sure the Cygwin bin directory is represented somewhere in the PATH.<br>
+<p> </p>
+<h2><a name="Inetd">6. Configure Inetd to run automatically as a service</a> </h2>
+<p>If you want to test your installation, you can call inetd from bash
+prompt: </p>
+<blockquote><code> /usr/sbin/inetd -d </code></blockquote>
+<p> </p>
+<h3>Windows 98/ME<br>
+</h3>
+<p> </p>
+<ul>
+  <li> To start after the user logs in: Create a shortcut to
+    <pre>c:\cygwin\usr\sbin\inetd.exe<br></pre>
+in
+    <pre>&lt;WINDIR&gt;\start menu\programs\startup<br></pre>
+  </li>
+  <li> To start before the user logs in: Add the string key
+    <pre>CygwinInetd=C:\cygwin\usr\sbin\inetd.exe<br></pre>
+under
+    <pre>HKLM\Software\Microsoft\Windows\CurrentVersion\RunServices<br></pre>
+in the registry. You'll see a dos-like window on the startup: I not
+found a solution to iconize or to make invisible (suggestions are
+welcome).</li>
+</ul>
+<h3>Windows NT/2000/XP</h3>
+<p>From bash prompt, type: </p>
+<pre> /usr/sbin/inetd --install-as-service<br></pre>
+Then, to start/stop inetd service use the Services control panel or the
+following Windows command:
+<pre> net start/stop inetd<br></pre>
+<h2><a name="Notes"></a>7. Notes on Amanda backup options</h2>
+<p><span style="font-weight: bold; text-decoration: underline;">Compression</span><br>
+Currently, client side compression does not work, probably due to
+problems in pipe emulation in Cygwin.&nbsp; I have not tried to debug
+this yet.&nbsp; This may be addressed in a subsequent release, or it
+could be fixed in later releases of Cygwin.&nbsp; Due to this issue, we
+recommend that if you want compressed dumps from Windows clients, you
+configure Amanda for server compression in amanda.conf on your Amanda
+server:</p>
+<div style="margin-left: 40px;"><span style="font-family: monospace;">define
+dumptype srv-comp-tar {</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; global</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; comment
+"partitions dumped via tar with server compression"</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; program
+"GNUTAR"</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; compress
+server fast</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; exclude list
+".amanda.exclude"</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">}</span></div>
+<p><span style="font-weight: bold; text-decoration: underline;">Exclude
+Lists</span><br>
+A note on exclude lists is also in order.&nbsp; If you specify a
+relative path, it will be expect ed that the file is in or relative to
+the root of the directory you are planning to dump.&nbsp; Typically this
+will not be '/' but '/cygdrive/c' or something similar if you want to
+get the Windows files and the Cygwin files.&nbsp; '/' is taken to be the
+root of the Cygwin tree, normally something like C:\cygwin or possibly
+C:\Program Files\cygwin.</p>
+<p><span style="font-weight: bold; text-decoration: underline;">Debugging
+Files</span><br>
+Amanda will leave debugging files in /tmp/amanda if it exists.&nbsp; I
+have recommended creating the directory above.&nbsp; <br>
+</p>
+<p><br>
+</p>
+</body>
+</html>
