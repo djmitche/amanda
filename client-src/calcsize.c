@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: calcsize.c,v 1.30 2004/08/03 12:12:08 martinea Exp $
+ * $Id: calcsize.c,v 1.31 2005/02/09 14:10:22 martinea Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -45,7 +45,7 @@ unsigned long n, x;
 }
 */
 
-# define ST_BLOCKS(s)	((s).st_size / 512 + (((s).st_size % 512) ? 1 : 0))
+#define ST_BLOCKS(s)	((((s).st_blocks * 512) <= (s).st_size) ? (s).st_blocks+1 : ((s).st_size / 512 + (((s).st_size % 512) ? 1 : 0)))
 
 #define	FILETYPES	(S_IFREG|S_IFLNK|S_IFDIR)
 
@@ -63,12 +63,14 @@ struct {
     int total_dirs;
     int total_files;
     long total_size;
+    long total_size_name;
 } dumpstats[MAXDUMPS];
 
 time_t dumpdate[MAXDUMPS];
 int  dumplevel[MAXDUMPS];
 int ndumps;
 
+void (*add_file_name) P((int, char *));
 void (*add_file) P((int, struct stat *));
 long (*final_size) P((int, char *));
 
@@ -77,12 +79,15 @@ int main P((int, char **));
 void traverse_dirs P((char *, char *));
 
 
+void add_file_name_dump P((int, char *));
 void add_file_dump P((int, struct stat *));
 long final_size_dump P((int, char *));
 
+void add_file_name_gnutar P((int, char *));
 void add_file_gnutar P((int, struct stat *));
 long final_size_gnutar P((int, char *));
 
+void add_file_name_unknown P((int, char *));
 void add_file_unknown P((int, struct stat *));
 long final_size_unknown P((int, char *));
 
@@ -178,6 +183,7 @@ char **argv;
 	error("dump not available on this system");
 	return 1;
 #else
+	add_file_name = add_file_name_dump;
 	add_file = add_file_dump;
 	final_size = final_size_dump;
 #endif
@@ -187,12 +193,14 @@ char **argv;
 	error("gnutar not available on this system");
 	return 1;
 #else
+	add_file_name = add_file_name_gnutar;
 	add_file = add_file_gnutar;
 	final_size = final_size_gnutar;
 	use_gtar_excl++;
 #endif
     }
     else {
+	add_file_name = add_file_name_unknown;
 	add_file = add_file_unknown;
 	final_size = final_size_unknown;
     }
@@ -364,6 +372,9 @@ char *include;
 	}
 
 	while((f = readdir(d)) != NULL) {
+	    int is_symlink = 0;
+	    int is_dir;
+	    int is_file;
 	    if(is_dot_or_dotdot(f->d_name)) {
 		continue;
 	    }
@@ -378,26 +389,21 @@ char *include;
 	    if(finfo.st_dev != parent_dev)
 		continue;
 
-	    {
-		int is_symlink = 0;
 #ifdef S_IFLNK
-		is_symlink = ((finfo.st_mode & S_IFMT) == S_IFLNK);
+	    is_symlink = ((finfo.st_mode & S_IFMT) == S_IFLNK);
 #endif
-		if (   /* regular files */
-		    !((finfo.st_mode & S_IFMT) == S_IFREG
-		       /* directories */
-		       || (finfo.st_mode & S_IFMT) == S_IFDIR
-		       /* symbolic links */
-		       || is_symlink)) {
-		    continue;
-		}
+	    is_dir = ((finfo.st_mode & S_IFMT) == S_IFDIR);
+	    is_file = ((finfo.st_mode & S_IFMT) == S_IFREG);
+
+	    if (!(is_file || is_dir || is_symlink)) {
+		continue;
 	    }
 
 	    {
 		int is_excluded = -1;
-		int added_file = 0;
 		for(i = 0; i < ndumps; i++) {
-		    if(finfo.st_ctime >= dumpdate[i]) {
+		    add_file_name(i, newname);
+		    if(is_file && finfo.st_ctime >= dumpdate[i]) {
 
 			if(has_exclude) {
 			    if(is_excluded == -1)
@@ -409,11 +415,11 @@ char *include;
 			    }
 			}
 			add_file(i, &finfo);
-			added_file = 1;
 		    }
 		}
-		if((added_file == 1) &&
-		   (finfo.st_mode & S_IFMT) == S_IFDIR) {
+		if(is_dir) {
+		    if(has_exclude && calc_check_exclude(newname+parent_len+1))
+			continue;
 		    push_name(newname);
 		}
 	    }
@@ -473,6 +479,13 @@ char *pop_name()
  * requirements for files with holes, nor the dumping of directories that
  * are not themselves modified.
  */
+void add_file_name_dump(level, name)
+int level;
+char *name;
+{
+    return;
+}
+
 void add_file_dump(level, sp)
 int level;
 struct stat *sp;
@@ -517,12 +530,20 @@ char *topdir;
  *
  * As with DUMP, we only need a reasonable estimate, not an exact figure.
  */
+void add_file_name_gnutar(level, name)
+int level;
+char *name;
+{
+/*    dumpstats[level].total_size_name += strlen(name) + 64;*/
+      dumpstats[level].total_size += 1;
+}
+
 void add_file_gnutar(level, sp)
 int level;
 struct stat *sp;
 {
     /* the header takes one additional block */
-    dumpstats[level].total_size += ROUND(4,(ST_BLOCKS(*sp) + 1));
+    dumpstats[level].total_size += ST_BLOCKS(*sp);
 }
 
 long final_size_gnutar(level, topdir)
@@ -531,7 +552,7 @@ char *topdir;
 {
     /* divide by two to get kbytes, rounded up */
     /* + 4 blocks for security */
-    return (dumpstats[level].total_size + 5) / 2;
+    return (dumpstats[level].total_size + 5 + (dumpstats[level].total_size_name/512)) / 2;
 }
 
 /*
@@ -540,6 +561,13 @@ char *topdir;
  *
  * Here we'll just add up the file sizes and output that.
  */
+
+void add_file_name_unknown(level, name)
+int level;
+char *name;
+{
+    return;
+}
 
 void add_file_unknown(level, sp)
 int level;
