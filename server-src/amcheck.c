@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.103 2003/11/25 12:20:54 martinea Exp $
+ * $Id: amcheck.c,v 1.104 2004/02/13 14:09:16 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -928,7 +928,11 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	    tapebad = 1;
 	} else if(strcmp(label, FAKE_LABEL) != 0) {
 	    tp = lookup_tapelabel(label);
-	    if(tp != NULL && !reusable_tape(tp)) {
+	    if(tp == NULL) {
+		fprintf(outf, "ERROR: label %s match labelstr but it not listed in the tapelist file.\n", label);
+		tapebad = 1;
+	    }
+	    else if(tp != NULL && !reusable_tape(tp)) {
 		fprintf(outf, "ERROR: cannot overwrite active tape %s\n", label);
 		tapebad = 1;
 	    }
