@@ -1,5 +1,9 @@
 2002-04-13  John R. Jackson (jrj@purdue.edu)
 
+	* server-src/amcheck.c: Fix error parsing in packet.
+
+2002-04-13  John R. Jackson (jrj@purdue.edu)
+
 	* common-src/features.c: New file.  Add support for feature sets so
 	  different Amanda versions can work together.
 	* common-src/features.h: Ditto.

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.87 2002/04/13 19:24:51 jrjackson Exp $
+ * $Id: amcheck.c,v 1.88 2002/04/13 22:15:00 jrjackson Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1417,7 +1417,7 @@ security_handle_t *sech;
 
 #define sc "ERROR "
 	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
-	    t += sizeof(sc)-1;
+	    t = line + sizeof(sc) - 1;
 	    tch = t[-1];
 #undef sc
 
