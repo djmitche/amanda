@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflock.c,v 1.17.4.4 1999/09/08 23:26:40 jrj Exp $
+ * $Id: amflock.c,v 1.17.4.5 1999/10/03 16:06:01 jrj Exp $
  *
  * file locking routines, put here to hide the system dependant stuff
  * from the rest of the code
@@ -442,7 +442,12 @@ main()
 	exit(2);
     }
 
-    aclose(lockfd);
+    /*
+     * Do not use aclose() here.  During configure we do not have
+     * areads_relbuf() available and it makes configure think all
+     * the tests have failed.
+     */
+    close(lockfd);
 
     unlink(filen);
     if ((lockfd = open(filen, O_WRONLY|O_CREAT|O_EXCL, 0600)) == -1) {
@@ -459,7 +464,7 @@ main()
 	exit(4);
     }
 
-    aclose(lockfd);
+    close(lockfd);
 
     exit(0);
 }
