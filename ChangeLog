@@ -1,3 +1,8 @@
+2001-03-21 John R. Jackson <jrj@purdue.edu>
+
+	* recover-src/extract_list.c (extract_files_child): Fix problem that
+	  caused xfsrestore arg list to not be NULL terminated.
+
 2001-03-19 John R. Jackson <jrj@purdue.edu>
 
 	* configure.in: Add --with-debug-days (default is 4) and remove
