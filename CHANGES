@@ -22,6 +22,9 @@
 
 Version 2.4.0
 
+	improved vxdump support so that rundump will be used for vxfs
+	filesystems only, and it will be enabled automatically.  -oliva
+
 	various portability problems fixed.
 
 	taper will now log reason for tape error to log.<DATE> file,
