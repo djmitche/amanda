@@ -2,9 +2,6 @@
 
 ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
 
-# last updated on amanda 2.4.1
-libserver_version = 4:0:0
-
 INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/tape-src
 
 AMANDA_CFLAGS =		@AMANDA_CFLAGS@
@@ -69,7 +66,7 @@ libamserver_la_SOURCES=	amindex.c	changer.c	clock.c		\
 			holding.c	infofile.c	logfile.c	\
 			tapefile.c	find.c
 
-libamserver_la_LDFLAGS= -version-info $(libserver_version) -rpath $(libdir)
+libamserver_la_LDFLAGS= -release $(VERSION) -rpath $(libdir)
 
 libamserver_a_SOURCES=	$(libamserver_la_SOURCES)
 

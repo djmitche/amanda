@@ -1,3 +1,12 @@
+1998-09-18  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* common-src/Makefile.am (libamanda_la_LDFLAGS): use libtool
+ 	-release instead of -version_info, so as to encode the Amanda
+ 	release number in the library name.  Problems related with
+ 	pre-installed libraries should disappear, and separate releases can
+ 	now be installed into the same directory without the risk of one
+ 	using libraries from the other.
+
 1998-09-18  Michael C. Povel  <Michael.Povel@hub.de>
 
 	* changer-src/chg-scsi.c (wait_ready): new function; keeps retrying

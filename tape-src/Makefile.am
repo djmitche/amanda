@@ -2,9 +2,6 @@
 
 ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
 
-# last updated on amanda 2.4.1
-libtape_version = 2:0:1
-
 INCLUDES =		-I$(top_srcdir)/common-src
 
 AMANDA_CFLAGS =		@AMANDA_CFLAGS@
@@ -19,7 +16,7 @@ EXTRA_LIBRARIES = 	libamtape.a
 
 libamtape_la_SOURCES = 	tapeio.c
 
-libamtape_la_LDFLAGS =  -version-info $(libtape_version) -rpath $(libdir)
+libamtape_la_LDFLAGS =  -release $(VERSION) -rpath $(libdir)
 
 libamtape_a_SOURCES =	$(libamtape_la_SOURCES)
 

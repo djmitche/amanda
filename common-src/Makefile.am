@@ -2,9 +2,6 @@
 
 ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
 
-# last updated on amanda 2.4.1
-libamanda_version = 6:0:0
-
 AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
@@ -30,7 +27,7 @@ libamanda_la_SOURCES = \
 	token.c		version.c	versuff.c
 
 libamanda_la_LIBADD =	@LIBOBJS@ @ALLOCA@
-libamanda_la_LDFLAGS =  -version-info $(libamanda_version) -rpath $(libdir)
+libamanda_la_LDFLAGS =  -release $(VERSION) -rpath $(libdir)
 
 libamanda_a_SOURCES =	$(libamanda_la_SOURCES)
 libamanda_a_LIBADD =	$(libamanda_la_LIBADD)

@@ -2,9 +2,6 @@
 
 ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
 
-# last updated on amanda 2.4.1
-libclient_version = 0:5:0
-
 INCLUDES =		-I$(top_srcdir)/common-src
 
 AMANDA_CFLAGS =		@AMANDA_CFLAGS@
@@ -62,7 +59,7 @@ libamclient_la_SOURCES=	amandates.c		getfsent.c	\
 EXTRA_libamclient_la_SOURCES = findpass.c
 libamclient_la_DEPENDENCIES =	@LIBOBJS_CLIENT@
 libamclient_la_LIBADD =	@LIBOBJS_CLIENT@
-libamclient_la_LDFLAGS = -version-info $(libclient_version) -rpath $(libdir)
+libamclient_la_LDFLAGS = -release $(VERSION) -rpath $(libdir)
 
 libamclient_a_SOURCES = $(libamclient_la_SOURCES)
 EXTRA_libamclient_a_SOURCES = $(EXTRA_libamclient_la_SOURCES)
