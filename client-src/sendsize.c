@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.103 1999/04/24 00:03:00 martinea Exp $
+ * $Id: sendsize.c,v 1.104 1999/05/10 19:22:33 kashmir Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -812,7 +812,8 @@ long getsize_dump(disk, level)
 		close(killctl[1]);
 		close(nullfd);
 		execle(killpgrp_cmd, killpgrp_cmd, (char *)0, safe_env());
-		dbprintf(("cannot execute %s\n", killpgrp_cmd));
+		dbprintf(("cannot execute %s: %s\n", killpgrp_cmd,
+		    strerror(errno)));
 		exit(-1);
 	    }
 

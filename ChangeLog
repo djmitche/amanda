@@ -1,5 +1,10 @@
 1999-05-10  Mike Grupenhoff <kashmir@munge.com>
 
+	* client-src/sendsize.c (getsize_dump): print out the strerror
+	if we can't exec killpgrp.
+
+1999-05-10  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c (add_msg_data): first two arguments
 	to memmove() were backwards.
 
