@@ -34,6 +34,8 @@ libexec_SCRIPTS =	@BUILD_CLIENT_SCRIPTS_LIBEXEC@
 
 EXTRA_SCRIPTS =		amhpfixdevs			patch-system
 
+DISTCLEANFILES = $(EXTRA_SCRIPTS)
+
 EXTRA_DIST =		amhpfixdevs.sh
 
 sendbackup_SOURCES = 	sendbackup.c			sendbackup.h	\

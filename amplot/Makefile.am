@@ -16,10 +16,14 @@ amplot_DATA =		@BUILD_AMPLOT_LIBEXEC@
 EXTRA_DATA =		amplot.awk		amplot.g
 EXTRA_DIST =		$(EXTRA_DATA)
 
+CLEANFILES = amplot.gp.new
+DISTCLEANFILES = amplot.gp
+
 amplot.gp:		amplot.g
+			cat $(srcdir)/amplot.g > amplot.gp.new
+			echo "pause -1;" >> amplot.gp.new
 			rm -f amplot.gp
-			cat $(srcdir)/amplot.g > amplot.gp
-			echo "pause -1;" >> amplot.gp
+			mv amplot.gp.new amplot.gp
 
 install-exec-hook:
 	@list="$(sbin_SCRIPTS)"; for p in $$list; do \

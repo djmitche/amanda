@@ -41,6 +41,8 @@ EXTRA_SCRIPTS =		amcheckdb			amcleanup	\
 			amrmtape			amtoc		\
 			amverify
 
+DISTCLEANFILES = $(EXTRA_SCRIPTS)
+
 amindexd_SOURCES =	amindexd.c			amindexd.h	\
 			disk_history.c			disk_history.h	\
 			list_dir.c
