@@ -1,3 +1,10 @@
+1999-04-22 John R. Jackson  <jrj@purdue.edu>
+
+	* configure.in: add --with-broken-fsf to use a read() loop instead
+	of the fsf ioctl on some broken systems.
+	* config/acconfig.h: ditto
+	* tape-src/tapeio.c (tapefd_fsf): ditto
+
 1999-04-22  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/SYSTEM.NOTES: Typo
