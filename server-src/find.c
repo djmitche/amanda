@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.15 2001/12/30 17:42:07 martinea Exp $
+ * $Id: find.c,v 1.16 2002/02/11 22:48:53 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -190,7 +190,8 @@ void search_holding_disk(output_find)
 find_result_t **output_find;
 {
     holdingdisk_t *hdisk;
-    holding_t     *holding_list, *dir;
+    sl_t  *holding_list;
+    sle_t *dir;
     char *sdirname = NULL;
     char *destname = NULL;
     char *hostname = NULL;
@@ -203,7 +204,7 @@ find_result_t **output_find;
     holding_list = pick_all_datestamp(1);
 
     for(hdisk = getconf_holdingdisks(); hdisk != NULL; hdisk = hdisk->next) {
-	for(dir = holding_list; dir != NULL; dir = dir->next) {
+	for(dir = holding_list->first; dir != NULL; dir = dir->next) {
 	    sdirname = newvstralloc(sdirname,
 				    hdisk->diskdir, "/", dir->name,
 				    NULL);
@@ -260,6 +261,8 @@ find_result_t **output_find;
 	    closedir(workdir);
 	}	
     }
+    free_sl(holding_list);
+    holding_list = NULL;
     amfree(destname);
     amfree(sdirname);
     amfree(hostname);

@@ -1,3 +1,12 @@
+2002-02-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/holding.h: Use sl_t instead of holding_t
+	* server-src/holding.c: Ditto.
+	* server-src/amcleanupdisk.c: Ditto.
+	* server-src/amflush.c: Ditto.
+	* server-src/find.c: Ditto.
+	* server-src/planner.c: Ditto.
+
 2002-02-11 John R. Jackson (jrj@purdue.edu)
 
 	* configure.in: AIX needs the "other" getconf argument to find out

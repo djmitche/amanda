@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.38 2002/02/03 15:51:40 martinea Exp $
+ * $Id: holding.c,v 1.39 2002/02/11 22:48:53 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -36,8 +36,7 @@
 #include "util.h"
 #include "logfile.h"
 
-static holding_t *insert_dirname P((holding_t **, char *));
-static void scan_holdingdisk P((holding_t **, char *, int));
+static sl_t *scan_holdingdisk P((sl_t *holding_list, char *diskdir, int verbose));
 
 int is_dir(fname)
 char *fname;
@@ -110,43 +109,9 @@ char *fname;
     return gotentry;
 }
 
-#define MAX_DIRS 26	/* so we can select them A .. Z */
 
-static holding_t *insert_dirname(holding_list, name)
-holding_t **holding_list;
-char *name;
-{
-    holding_t *d, *p, *n;
-    int cmp;
-
-    for(p = NULL, d = *holding_list; d != NULL; p = d, d = d->next)
-	if((cmp = strcmp(name, d->name)) > 0) continue;
-	else if(cmp == 0) return d;
-	else break;
-    n = (holding_t *)alloc(sizeof(holding_t));
-    n->name = stralloc(name);
-    n->next = d;
-    if(p) p->next = n;
-    else *holding_list = n;
-    return n;
-}
-
-
-void free_holding_list(holding_list)
-holding_t *holding_list;
-{
-    holding_t *p, *n;
-    p = holding_list;
-    while(p != NULL) {
-	n = p;
-	p = p->next;
-	amfree(n->name);
-	amfree(n);
-    }
-}
-
-static void scan_holdingdisk(holding_list, diskdir, verbose)
-holding_t **holding_list;
+sl_t *scan_holdingdisk(holding_list, diskdir, verbose)
+sl_t *holding_list;
 char *diskdir;
 int verbose;
 {
@@ -158,7 +123,7 @@ int verbose;
 	if(verbose && errno != ENOENT)
 	   printf("Warning: could not open holding dir %s: %s\n",
 		  diskdir, strerror(errno));
-	return;
+	return holding_list;
     }
 
     /* find all directories of the right format  */
@@ -183,24 +148,20 @@ int verbose;
 	        puts("skipping cruft directory, perhaps you should delete it.");
 	    }
 	} else {
-	    if(insert_dirname(holding_list, workdir->d_name) == NULL) {
-	        if(verbose) {
-		    puts("too many non-empty Amanda dirs, can't handle this one.");
-		}
-	    } else {
-	        if(verbose) {
-		    puts("found Amanda directory.");
-		}
+	    holding_list = insert_sort_sl(holding_list, workdir->d_name);
+	    if(verbose) {
+		puts("found Amanda directory.");
 	    }
 	}
     }
     closedir(topdir);
     amfree(entryname);
+    return holding_list;
 }
 
 
-void scan_holdingdir(holding_list, holdp, datestamp)
-holding_t **holding_list;
+sl_t *scan_holdingdir(holding_list, holdp, datestamp)
+sl_t *holding_list;
 holdingdisk_t *holdp;
 char *datestamp;
 {
@@ -210,13 +171,6 @@ char *datestamp;
     char *destname = NULL;
     disk_t *dp;
     dumpfile_t file;
-    holding_t *n, *last_holding_list;
-
-    last_holding_list = *holding_list;
-    if(last_holding_list) {
-	while(last_holding_list->next !=NULL)
-	    last_holding_list = last_holding_list->next;
-    }
 
     dirname = vstralloc(holdp->diskdir, "/", datestamp, NULL);
     if((workdir = opendir(dirname)) == NULL) {
@@ -224,7 +178,7 @@ char *datestamp;
 	    log_add(L_INFO, "%s: could not open dir: %s",
 		    dirname, strerror(errno));
 	amfree(dirname);
-	return;
+	return holding_list;
     }
     chdir(dirname);
     while((entry = readdir(workdir)) != NULL) {
@@ -258,54 +212,46 @@ char *datestamp;
 	    continue;
 	}
 
-	n = (holding_t *)alloc(sizeof(holding_t));
-	n->name = stralloc(destname);
-	n->next = NULL;
-	if(last_holding_list) /* add at end */
-	    last_holding_list->next = n;
-	else /* first */
-	    *holding_list = n;
-	last_holding_list = n;
+	holding_list = append_sl(holding_list, destname);
     }
+    return holding_list;
 }
 
 
-void get_flush(dateargs, holding_list, datestamp, amflush, verbose)
-char **dateargs;  /* NULL terminated array */
-holding_t **holding_list;
+
+sl_t *get_flush(dateargs, datestamp, amflush, verbose)
+sl_t *dateargs;
 char *datestamp;  /* don't do this date */
 int amflush, verbose;
 {
-    holding_t *date_list;
-    char **datearg;
-    holding_t *date;
+    sl_t *holding_list;
+    sl_t *date_list;
+    sle_t *datearg;
+    sle_t *date, *next_date;
     holdingdisk_t *hdisk;
     char current_dir[1000];
 
     getcwd(current_dir, 999);
 
+    holding_list = new_sl();
+
     if(dateargs) {
-	holding_t *prev_date = NULL, *next_date;
 	int ok;
 
 	date_list = pick_all_datestamp(verbose);
-	for(date = date_list; date != NULL;) {
+	for(date = date_list->first; date != NULL;) {
 	    next_date = date->next;
 	    ok = 0;
-	    for(datearg=dateargs; datearg != NULL && ok==0; datearg++) {
-		ok = match_datestamp(*datearg, date->name);
+	    for(datearg=dateargs->first; datearg != NULL && ok==0;
+		datearg = datearg->next) {
+		ok = match_datestamp(datearg->name, date->name);
 	    }
 	    if(ok == 0) { /* remove dir */
+		remove_sl(date_list, date);
+		amfree(date->name);
 		amfree(date);
-		if(prev_date)
-		    prev_date->next = next_date;
-		else
-		    date_list = next_date;
 	    }
-	    else {
-		prev_date = date;
-	    }
-	    date=next_date;
+	    date = next_date;
 	}
     }
     else if (amflush) {
@@ -315,65 +261,63 @@ int amflush, verbose;
 	date_list = pick_all_datestamp(verbose);
     }
 
-    for(date = date_list; date !=NULL; date = date->next) {
+    for(date = date_list->first; date !=NULL; date = date->next) {
 	if(!datestamp || strcmp(datestamp,date->name) != 0) {
 	    for(hdisk = getconf_holdingdisks(); hdisk != NULL;
 						hdisk = hdisk->next) {
-		scan_holdingdir(holding_list, hdisk, date->name);
+		holding_list = scan_holdingdir(holding_list, hdisk, date->name);
 	    }
 	}
     }
 
+    free_sl(date_list);
+    date_list = NULL;
     chdir(current_dir);
+    return(holding_list);
 }
 
 
-holding_t *pick_all_datestamp(verbose)
+sl_t *pick_all_datestamp(verbose)
 int verbose;
 {
+    sl_t *holding_list = NULL;
     holdingdisk_t *hdisk;
-    holding_t *holding_list = NULL;
 
+    holding_list = new_sl();
     for(hdisk = getconf_holdingdisks(); hdisk != NULL; hdisk = hdisk->next)
-	scan_holdingdisk(&holding_list, hdisk->diskdir, verbose);
+	holding_list = scan_holdingdisk(holding_list, hdisk->diskdir, verbose);
 
     return holding_list;
 }
 
 
-holding_t *pick_datestamp(verbose)
+sl_t *pick_datestamp(verbose)
 int verbose;
 {
-    holding_t *holding_list;
-    holding_t *dir, **directories;
+    sl_t *holding_list;
+    sle_t *dir;
+    char **directories;
     int i;
-    int ndirs;
     char answer[1024];
     char max_char = '\0', *ch, chupper = '\0';
 
     holding_list = pick_all_datestamp(verbose);
 
-    ndirs=0;
-    for(dir = holding_list; dir != NULL;
-	dir = dir->next) {
-	ndirs++;
-    }
-
-    if(ndirs == 0) {
+    if(holding_list->nb_element == 0) {
 	return holding_list;
     }
-    else if(ndirs == 1 || !verbose) {
+    else if(holding_list->nb_element == 1 || !verbose) {
 	return holding_list;
     }
     else {
-	directories = alloc((ndirs) * sizeof(holding_t *));
-	for(dir = holding_list, i=0; dir != NULL; dir = dir->next,i++) {
-	    directories[i] = dir;
+	directories = alloc((holding_list->nb_element) * sizeof(char *));
+	for(dir = holding_list->first, i=0; dir != NULL; dir = dir->next,i++) {
+	    directories[i] = dir->name;
 	}
 
 	while(1) {
 	    puts("\nMultiple Amanda directories, please pick one by letter:");
-	    for(dir = holding_list, i = 0; dir != NULL && i < 26; dir = dir->next, i++) {
+	    for(dir = holding_list->first, i = 0; dir != NULL && i < 26; dir = dir->next, i++) {
 		printf("  %c. %s\n", 'A'+i, dir->name);
 		max_char = 'A'+i;
 	    }
@@ -381,7 +325,7 @@ int verbose;
 	    fgets(answer, sizeof(answer), stdin);
 	    if(strlen(answer) == 1 || !strncasecmp(answer,"ALL",3)) {
 		amfree(directories);
-		return(holding_list);
+		return holding_list;
 	    }
 	    else {
 		i=1;
@@ -392,33 +336,24 @@ int verbose;
 			i=0;
 		}
 		if(i==1) {
-		    holding_t *r_holding_list, *hlist, *p;
-		    r_holding_list = p = NULL;
+		    sl_t *r_holding_list = NULL;
 		    for(ch = answer; *ch != '\0'; ch++) {
 			chupper = toupper(*ch);
 			if(chupper >= 'A' && chupper <= max_char) {
-			    hlist = malloc(sizeof(holding_t));
-			    hlist->next = NULL;
-			    hlist->name = stralloc(directories[chupper-'A']->name);
-			    if(p == NULL)
-				r_holding_list = p = hlist;
-			    else {
-				p->next = hlist;
-				p = hlist;
-			    }
+			    r_holding_list = append_sl(r_holding_list, directories[chupper-'A']);
 			}
 		    }
 		    amfree(directories);
-		    free_holding_list(holding_list);
+		    free_sl(holding_list);
+		    holding_list = NULL;
 		    return(r_holding_list);
 		}
 	    }
-
 	}
     }
-
-    return NULL;
+    return holding_list;
 }
+
 
 filetype_t get_amanda_names(fname, hostname, diskname, level)
 char *fname, **hostname, **diskname;
