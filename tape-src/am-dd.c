@@ -1,4 +1,5 @@
 #include "amanda.h"
+#include "tapeio.h"
 
 int
 main(int argc, char **argv) {
@@ -28,7 +29,8 @@ main(int argc, char **argv) {
                perror("open");
                exit(2);
            }
-           debug && fprintf(stderr, "input opened %s, got fd %d\n", *argv+3, infd);
+           if(debug)
+	       fprintf(stderr, "input opened %s, got fd %d\n", *argv+3, infd);
        }
        if (0 == strncmp( *argv, "of=", 3)) {
 	   outfd = tape_open((*argv)+3, O_RDWR|O_CREAT|O_TRUNC );
@@ -36,7 +38,8 @@ main(int argc, char **argv) {
                perror("open");
                exit(2);
            }
-           debug && fprintf(stderr, "output opened %s, got fd %d\n", *argv+3, outfd);
+           if(debug)
+	       fprintf(stderr, "output opened %s, got fd %d\n", *argv+3, outfd);
        }
 
        if (0 == strncmp( *argv, "bs=", 3)) {
@@ -47,11 +50,11 @@ main(int argc, char **argv) {
           case 'b': blocksize *= 512; 		break;
           case 'M': blocksize *= 1024 * 1024;	break;
           }
-          debug &&  fprintf(stderr, "got blocksize %d\n", blocksize);
+          if(debug) fprintf(stderr, "got blocksize %d\n", blocksize);
        }
        if (0 == strncmp( *argv, "count=", 6)) {
 	  count = atoi(*argv+6);
-          debug &&  fprintf(stderr, "got count %d\n", count);
+          if(debug) fprintf(stderr, "got count %d\n", count);
        }
    }
    pread = fread = pwrite = fwrite = 0;

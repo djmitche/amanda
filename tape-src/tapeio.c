@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.33 2001/01/01 23:36:14 martinea Exp $
+ * $Id: tapeio.c,v 1.34 2001/01/05 02:29:13 martinea Exp $
  *
  * implements tape I/O functions
  */
@@ -159,7 +159,6 @@ int tape_open(char *filename, int mode) {
 }
 
 int tapefd_close(int tapefd) {
-    int tfd;
     int vslot, i, res;
 
     if (tapefd >= TAPE_OFFSET) {
@@ -177,7 +176,6 @@ int tapefd_close(int tapefd) {
 }
 
 int tapefd_fsf(int tapefd, int count) {
-    int tfd;
     int vslot, i;
 
     if (tapefd >= TAPE_OFFSET) {
@@ -190,7 +188,6 @@ int tapefd_fsf(int tapefd, int count) {
 }
 
 int tapefd_rewind(tapefd) {
-    int tfd;
     int vslot, i;
 
     if (tapefd >= TAPE_OFFSET) {
@@ -203,7 +200,6 @@ int tapefd_rewind(tapefd) {
 }
 
 void tapefd_resetofs(tapefd) {
-    int tfd;
     int vslot, i;
 
     if (tapefd >= TAPE_OFFSET) {
@@ -216,7 +212,6 @@ void tapefd_resetofs(tapefd) {
 }
 
 int tapefd_unload(tapefd) {
-    int tfd;
     int vslot, i;
 
     if (tapefd >= TAPE_OFFSET) {
@@ -229,7 +224,6 @@ int tapefd_unload(tapefd) {
 }
 
 int tapefd_status(tapefd) {
-    int tfd;
     int vslot, i;
 
     if (tapefd >= TAPE_OFFSET) {
@@ -242,7 +236,6 @@ int tapefd_status(tapefd) {
 }
 
 int tapefd_weof(tapefd, count){
-    int tfd;
     int vslot, i;
 
     if (tapefd >= TAPE_OFFSET) {
@@ -255,7 +248,6 @@ int tapefd_weof(tapefd, count){
 }
 
 int tapefd_read(int tapefd, void *buffer, int count) {
-    int tfd;
     int vslot, i;
 
     if (tapefd >= TAPE_OFFSET) {
@@ -267,7 +259,6 @@ int tapefd_read(int tapefd, void *buffer, int count) {
     }
 }
 int tapefd_write(int tapefd, const void *buffer, int count){
-    int tfd;
     int vslot, i;
 
     if (tapefd >= TAPE_OFFSET) {

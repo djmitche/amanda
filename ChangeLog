@@ -1,3 +1,12 @@
+2001-01-04  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* taper-src/am-dd.c: include "tapeio.h", fix debug warning.
+	* taper-src/am-mt.c: include "tapeio.h", fix debug warning.
+	* taper-src/output-rait.c: include "tapeio.h", new define for
+	   rait_debug
+	* taper-src/tapeio.c(many): Remove unused tfd variable.
+	* taper-src/tapeio.h (tape_unload,tape_status): Prototype.
+
 2001-01-04 John R. Jackson <jrj@purdue.edu>
 
 	* client-src/killpgrp.c: Calls to error() do not need a newline.

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.h,v 1.11 2000/11/26 15:55:45 martinea Exp $
+ * $Id: tapeio.h,v 1.12 2001/01/05 02:29:13 martinea Exp $
  *
  * interface for tapeio.c
  */
@@ -37,6 +37,8 @@
 int tape_open P((char *filename, int mode));
 int tape_stat P((char *filename, struct stat *buf));
 int tape_access P((char *filename, int mode));
+char *tape_unload P((char *devname));
+char *tape_status P((char *devname));
 
 int tapefd_rewind P((int tapefd));
 int tapefd_fsf P((int tapefd, int count));

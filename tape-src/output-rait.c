@@ -1,5 +1,6 @@
 #include "amanda.h"
 #include "output-rait.h"
+#include "tapeio.h"
 
 /*
 ** RAIT -- redundant array of (inexpensive?) tapes
@@ -66,9 +67,9 @@
 
 #ifdef RAIT_DEBUG
 #include <stdio.h>
-#define rait_debug (0!=getenv("RAIT_DEBUG"))&&fprintf
+#define rait_debug(a) (0!=getenv("RAIT_DEBUG"))&&fprintf a
 #else
-#define rait_debug (void)
+#define rait_debug(void)
 #endif
 
 #define MAX_RAITS 20			/* maximum simul. RAIT sets */
@@ -92,7 +93,7 @@ rait_open(char *dev, int flags, int mode) {
 	return open(dev,flags,mode);
 
     } else {
-	rait_debug(stderr,"rait_open( %s, %d, %d, )\n", dev, flags, mode);
+	rait_debug((stderr,"rait_open( %s, %d, %d, )\n", dev, flags, mode));
 	/* copy the strings so we can scribble on the copy */
         dev = rait_init_namelist(dev);
 	if (0 == dev) {
@@ -115,10 +116,10 @@ rait_open(char *dev, int flags, int mode) {
 	res->nopen = 1;
 
 
-	while ( path = rait_next_name() ) {
+	while ( (path = rait_next_name()) ) {
 	    res->fds[ res->nfds ] = open(path,flags,mode);
-	    rait_debug(stderr,"rait_open:opening %s yeilds %d\n",
-			path, res->fds[res->nfds] );
+	    rait_debug((stderr,"rait_open:opening %s yeilds %d\n",
+			path, res->fds[res->nfds] ));
 	    if ( res->fds[res->nfds] < 0 ) {
 		rait_close(RAIT_OFFSET + (res - rait_table));
 		return -1;
@@ -130,8 +131,8 @@ rait_open(char *dev, int flags, int mode) {
     /* clean up our copied string */
     free(dev);
 
-    rait_debug(stderr,"rait_open:returning %d\n",
-    	RAIT_OFFSET + (res - rait_table));
+    rait_debug((stderr,"rait_open:returning %d\n",
+    	RAIT_OFFSET + (res - rait_table)));
 
     return RAIT_OFFSET + (res - rait_table);
 }
@@ -271,7 +272,7 @@ rait_write(int fd, const char *buf, int len) {
 
     } else {
 
-	rait_debug(stderr, "rait_write(%d,%lx,%d)\n",fd,buf,len);
+	rait_debug((stderr, "rait_write(%d,%lx,%d)\n",fd,buf,len));
 	pr = rait_table + (fd - RAIT_OFFSET);
 
 	/* need to be able to slice it up evenly... */
@@ -300,8 +301,8 @@ rait_write(int fd, const char *buf, int len) {
         /* write the chunks in the main buffer */
 	for( i = 0; i < (pr->nfds - 1); i++ ) {
 	    res = write(pr->fds[i], buf + len*i , len);
-	    rait_debug(stderr, "rait_write: write(%d,%lx,%d) returns %d\n",
-		    pr->fds[i], buf + len*i , len, res);
+	    rait_debug((stderr, "rait_write: write(%d,%lx,%d) returns %d\n",
+		    pr->fds[i], buf + len*i , len, res));
 	    if (res < 0) return res;
 	    total += res;
 	}
@@ -309,7 +310,7 @@ rait_write(int fd, const char *buf, int len) {
 	res = write(pr->fds[i], pr->xorbuf, len);
 	if (res < 0) return res;
     }
-    rait_debug(stderr, "rait_write: returning %d\n", total);
+    rait_debug((stderr, "rait_write: returning %d\n", total));
 
     return total;
 }
@@ -330,15 +331,15 @@ rait_read(int fd, char *buf, int len) {
     int nerrors, 
         neofs, 
         total, 
-        errorblock;
+        errorblock=0;
     int readres[MAXRAIT];
-    int i,j,res;
+    int i,j;
     RAIT *pr;
 
     if (fd < RAIT_OFFSET ) {
 	return read(fd, buf, len);
     } else {
-	rait_debug(stderr, "rait_read(%d,%lx,%d)\n",fd,buf,len);
+	rait_debug((stderr, "rait_read(%d,%lx,%d)\n",fd,buf,len));
 	pr = rait_table + (fd - RAIT_OFFSET);
 
 	nerrors = 0;
@@ -355,7 +356,7 @@ rait_read(int fd, char *buf, int len) {
 	/* count the eof/errors */
 	for( i = 0; i < (pr->nfds - 1); i++ ) {
 	    readres[i] = read(pr->fds[i], buf + len*i , len);
-	    rait_debug(stderr, "rait_read: read on fd %d returns %d",fd,readres[i]);
+	    rait_debug((stderr, "rait_read: read on fd %d returns %d",fd,readres[i]));
 	    if ( readres[i] <= 0 ) {
 		nerrors++;
 		errorblock = i;
@@ -431,7 +432,7 @@ rait_read(int fd, char *buf, int len) {
             }
 	    total += readres[i];
 	}
-	rait_debug(stderr, "rait_read: returning %d",total);
+	rait_debug((stderr, "rait_read: returning %d",total));
 	return total;
     }
 }
@@ -439,7 +440,7 @@ rait_read(int fd, char *buf, int len) {
 /**/
 
 int rait_ioctl(int fd, int op, void *p) {
-    int i, res;
+    int i, res=0;
     RAIT *pr;
     int errors = 0;
 
@@ -469,7 +470,6 @@ int rait_access(char *devname, int flags) {
     char *path;
     int res;
     char *p;			/* temp char pointer */
-    RAIT *pr;
 
     if (0 == (p = strchr(devname, '{'))) {
         return access(devname, flags);
@@ -479,10 +479,10 @@ int rait_access(char *devname, int flags) {
 	   free(devname);
 	   return -1;
 	}
-	while( path = rait_next_name() ) {
+	while( (path = rait_next_name()) ) {
 	   res = access(path, flags);
-	    rait_debug(stderr,"rait_access:access( %s, %d ) yeilds %d\n",
-			path, flags, res );
+	    rait_debug((stderr,"rait_access:access( %s, %d ) yeilds %d\n",
+			path, flags, res ));
 	   if (res < 0) { 
 	        free(devname);
 		return res;
@@ -500,7 +500,6 @@ int rait_stat(char *devname, struct stat *buf) {
     char *path;
     int res;
     char *p;			/* temp char pointer */
-    RAIT *pr;
 
     if (0 == (p = strchr(devname, '{'))) {
         return stat(devname, buf);
@@ -510,10 +509,10 @@ int rait_stat(char *devname, struct stat *buf) {
 	   free(devname);
 	   return -1;
 	}
-	while( path = rait_next_name() ) {
+	while( (path = rait_next_name()) ) {
 	   res = stat(path, buf);
-	   rait_debug(stderr,"rait_stat:stat( %s, %lx ) yeilds %d\n",
-			path, buf, res );
+	   rait_debug((stderr,"rait_stat:stat( %s, %lx ) yeilds %d\n",
+			path, buf, res ));
 	   if (res < 0) { 
 	        free(devname);
 		return res;
@@ -526,11 +525,10 @@ int rait_stat(char *devname, struct stat *buf) {
 
 /**/
 
-rait_copy(char *f1, char *f2) {
+int rait_copy(char *f1, char *f2) {
     int t1, t2;
     int len, wres;
     static char buf[MAXBUFSIZE*MAXRAIT];
-    int i;
 
     t1 = rait_open(f1,O_RDONLY,0644);
     t2 = rait_open(f2,O_CREAT|O_RDWR,0644);
@@ -582,7 +580,7 @@ int rait_tapefd_status(int rait_tapefd) {
 }
 
 int rait_tapefd_weof(int rait_tapefd, int count) {
-    return tapefd_weof(rait_tapefd, count, &rait_ioctl);
+    return tapefd_weof_ioctl(rait_tapefd, count, &rait_ioctl);
 }
 
 int rait_tape_open(char *name,  int mode) {
