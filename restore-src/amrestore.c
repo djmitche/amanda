@@ -40,7 +40,6 @@
  */
 
 #include "amanda.h"
-#include "regex.h"
 #include "tapeio.h"
 
 #define STRMAX		256
@@ -471,7 +470,7 @@ char **argv;
     if(optind >= argc) hostname = "";
     else {
 	hostname = argv[optind++];
-	if((errstr=re_comp(hostname)) != NULL) {
+	if((errstr=validate_regexp(hostname)) != NULL) {
 	    fprintf(stderr, "amrestore: bad hostname regex \"%s\": %s\n",
 		    hostname, errstr);
 	    usage();
@@ -481,7 +480,7 @@ char **argv;
     if(optind >= argc) diskname = "";
     else {
 	diskname = argv[optind++];
-	if((errstr=re_comp(diskname)) != NULL) {
+	if((errstr=validate_regexp(diskname)) != NULL) {
 	    fprintf(stderr, "amrestore: bad diskname regex \"%s\": %s\n",
 		    diskname, errstr);
 	    usage();

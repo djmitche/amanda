@@ -28,17 +28,44 @@
 #include "amanda.h"
 #include "regex.h"
 
+char *validate_regexp(regex)
+char *regex;
+{
+    regex_t regc;
+    int result;
+    static char errmsg[1024];
+    
+    if ((result = regcomp(&regc, regex,
+			  REG_EXTENDED|REG_NOSUB|REG_NEWLINE)) != 0) {
+      regerror(result, &regc, errmsg, sizeof(errmsg));
+      return errmsg;
+    }
+
+    regfree(&regc);
+
+    return NULL;
+}
+
 int match(regex, str)
 char *regex, *str;
 {
-    char *comp_result;
-    int exec_result;
+    regex_t regc;
+    int result;
+    char errmsg[1024];
 
-    if((comp_result = re_comp(regex)) != NULL)
-	error("regex \"%s\": %s", regex, comp_result);
+    if((result = regcomp(&regc, regex,
+			 REG_EXTENDED|REG_NOSUB|REG_NEWLINE)) != 0) {
+        regerror(result, &regc, errmsg, sizeof(errmsg));
+	error("regex \"%s\": %s", regex, error);
+    }
 
-    if((exec_result = re_exec(str)) == -1)
-	error("regex \"%s\": internal re_exec error", regex);
+    if((result = regexec(&regc, str, 0, 0, 0)) != 0
+       && result != REG_NOMATCH) {
+        regerror(result, &regc, errmsg, sizeof(errmsg));
+	error("regex \"%s\": %s", regex, error);
+    }
 
-    return exec_result;
+    regfree(&regc);
+
+    return result == 0;
 }

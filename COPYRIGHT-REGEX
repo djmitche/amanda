@@ -1,0 +1,3 @@
+The regular expressions library used by amanda was written by Henry
+Spencer.  The full library distribution is in the regex-src diretory,
+as well as its copyright notice and license.

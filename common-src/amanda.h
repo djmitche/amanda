@@ -317,6 +317,7 @@ extern void   error     P((char *format, ...));
 extern int    onerror   P((void (*errf)(void)));
 extern void  *alloc     P((int size));
 extern char  *stralloc  P((char *str));
+extern char  *validate_regexp P((char *regex));
 extern int    match     P((char *regex, char *str));
 extern time_t unctime   P((char *timestr));
 extern int    amflock   P((int fd, char *resource));

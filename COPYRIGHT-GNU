@@ -1,6 +1,6 @@
 /*
 ** This Version of Amanda contains parts of GNU programs
-** (alloca.c, exclude_file.c)
+** (fnmatch.[ch], add_exclude.c, check_exclude.c)
 */
 
 		    GNU GENERAL PUBLIC LICENSE
