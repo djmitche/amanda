@@ -95,8 +95,8 @@ BEGIN{
 			  disk[$6]=$11;
 			  level[$6]=$12;
 			}
-			else if( $7=="FILE-WRITE")file_wirte++;
-			else if( $7 == "START-TAPE") fil = $8;
+			else if( $7 == "FILE-WRITE") file_write++;
+			else if( $7 == "START-TAPER") fil = $8;
 		}
 		else if( $2=="finished-cmd") cmd_fin++;
 		else if ($2=="started")      forked++;
