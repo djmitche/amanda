@@ -2106,6 +2106,7 @@ AC_OUTPUT( \
 	man/amcheck.8			man/amcleanup.8			\
 	man/amdump.8			man/amflush.8			\
 	man/amlabel.8			man/Makefile			\
+	man/amrecover.8							\
 									\
 	recover-src/Makefile						\
 									\
