@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.10 1999/02/12 19:58:25 th Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.11 1999/02/14 20:08:02 th Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -81,6 +81,7 @@ void EXB85058HEPage3c(LogParameter_T *, int);
 int Decode(LogParameter_T *, int *); 
 int DecodeModeSense(char *buffer, char *pstring);
 
+int SCSI_Move(int DeviceFD, unsigned char chm, int from, int to);
 int SCSI_LoadUnload(int DeviceFD, RequestSense_T *pRequestSense, unsigned char byte1, unsigned char load);
 int SCSI_TestUnitReady(int, RequestSense_T *);
 int SCSI_Inquiry(int, char *, unsigned char);
@@ -245,8 +246,8 @@ int InErrorHandler = 0;
 int ElementStatusValid = 0;
 char *SlotArgs = 0;
 /* Pointer to MODE SENSE Pages */
-EAAPage_T *EAAPage = NULL;
-DeviceCapabilitiesPage_T *DeviceCapabilitiesPage = NULL;
+EAAPage_T *pEAAPage = NULL;
+DeviceCapabilitiesPage_T *pDeviceCapabilitiesPage = NULL;
 
 /*
   New way, every element type has its on array
@@ -821,71 +822,72 @@ int DecodeModeSense(char *buffer, char *pstring)
       switch (*buffer & 0x3f)
         {
         case 0x1d:
-          EAAPage = (EAAPage_T *)buffer;
+          pEAAPage = (EAAPage_T *)buffer;
           dbprintf(("DecodeModeSense : Medium Transport Element Address %d\n", 
-                    V2(EAAPage->MediumTransportElementAddress)));
+                    V2(pEAAPage->MediumTransportElementAddress)));
           dbprintf(("DecodeModeSense : Number of Medium Transport Elements %d\n", 
-                    V2(EAAPage->NoMediumTransportElements)));
+                    V2(pEAAPage->NoMediumTransportElements)));
           dbprintf(("DecodeModeSense : First Storage Element Address %d\n", 
-                    V2(EAAPage->FirstStorageElementAddress)));
+                    V2(pEAAPage->FirstStorageElementAddress)));
           dbprintf(("DecodeModeSense : Number of  Storage Elements %d\n", 
-                    V2(EAAPage->NoStorageElements)));
+                    V2(pEAAPage->NoStorageElements)));
           dbprintf(("DecodeModeSense : First Import/Export Element Address %d\n", 
-                    V2(EAAPage->FirstImportExportElementAddress)));
+                    V2(pEAAPage->FirstImportExportElementAddress)));
           dbprintf(("DecodeModeSense : Number of  ImportExport Elements %d\n", 
-                    V2(EAAPage->NoImportExportElements)));
+                    V2(pEAAPage->NoImportExportElements)));
           dbprintf(("DecodeModeSense : First Data Transfer Element Address %d\n", 
-                    V2(EAAPage->FirstDataTransferElementAddress)));
+                    V2(pEAAPage->FirstDataTransferElementAddress)));
           dbprintf(("DecodeModeSense : Number of  Data Transfer Elements %d\n", 
-                    V2(EAAPage->NoDataTransferElements)));
+                    V2(pEAAPage->NoDataTransferElements)));
           buffer++;
           break;
         case 0x1f:
-          DeviceCapabilitiesPage = (DeviceCapabilitiesPage_T *)buffer;
+          pDeviceCapabilitiesPage = (DeviceCapabilitiesPage_T *)buffer;
           dbprintf(("DecodeModeSense : MT can store data cartridges %d\n",
-                    DeviceCapabilitiesPage->MT));
+                    pDeviceCapabilitiesPage->MT));
           dbprintf(("DecodeModeSense : ST can store data cartridges %d\n",
-                    DeviceCapabilitiesPage->ST));
+                    pDeviceCapabilitiesPage->ST));
           dbprintf(("DecodeModeSense : IE can store data cartridges %d\n",
-                    DeviceCapabilitiesPage->IE));
+                    pDeviceCapabilitiesPage->IE));
           dbprintf(("DecodeModeSense : DT can store data cartridges %d\n",
-                    DeviceCapabilitiesPage->DT));
+                    pDeviceCapabilitiesPage->DT));
           dbprintf(("DecodeModeSense : MT to MT %d\n",
-                    DeviceCapabilitiesPage->MT2MT));
+                    pDeviceCapabilitiesPage->MT2MT));
           dbprintf(("DecodeModeSense : MT to ST %d\n",
-                    DeviceCapabilitiesPage->MT2ST));
+                    pDeviceCapabilitiesPage->MT2ST));
           dbprintf(("DecodeModeSense : MT to IE %d\n",
-                    DeviceCapabilitiesPage->MT2IE));
+                    pDeviceCapabilitiesPage->MT2IE));
           dbprintf(("DecodeModeSense : MT to DT %d\n",
-                    DeviceCapabilitiesPage->MT2DT));
+                    pDeviceCapabilitiesPage->MT2DT));
           dbprintf(("DecodeModeSense : ST to MT %d\n",
-                    DeviceCapabilitiesPage->ST2ST));
+                    pDeviceCapabilitiesPage->ST2ST));
           dbprintf(("DecodeModeSense : ST to MT %d\n",
-                    DeviceCapabilitiesPage->ST2ST));
+                    pDeviceCapabilitiesPage->ST2ST));
           dbprintf(("DecodeModeSense : ST to DT %d\n",
-                    DeviceCapabilitiesPage->ST2DT));
+                    pDeviceCapabilitiesPage->ST2DT));
           dbprintf(("DecodeModeSense : IE to MT %d\n",
-                    DeviceCapabilitiesPage->IE2MT));
+                    pDeviceCapabilitiesPage->IE2MT));
           dbprintf(("DecodeModeSense : IE to ST %d\n",
-                    DeviceCapabilitiesPage->IE2IE));
+                    pDeviceCapabilitiesPage->IE2IE));
           dbprintf(("DecodeModeSense : IE to ST %d\n",
-                    DeviceCapabilitiesPage->IE2DT));
+                    pDeviceCapabilitiesPage->IE2DT));
           dbprintf(("DecodeModeSense : IE to ST %d\n",
-                    DeviceCapabilitiesPage->IE2DT));
+                    pDeviceCapabilitiesPage->IE2DT));
           dbprintf(("DecodeModeSense : DT to MT %d\n",
-                    DeviceCapabilitiesPage->DT2MT));
+                    pDeviceCapabilitiesPage->DT2MT));
           dbprintf(("DecodeModeSense : DT to ST %d\n",
-                    DeviceCapabilitiesPage->DT2ST));
+                    pDeviceCapabilitiesPage->DT2ST));
           dbprintf(("DecodeModeSense : DT to IE %d\n",
-                    DeviceCapabilitiesPage->DT2IE));
+                    pDeviceCapabilitiesPage->DT2IE));
           dbprintf(("DecodeModeSense : DT to DT %d\n",
-                    DeviceCapabilitiesPage->DT2DT));
+                    pDeviceCapabilitiesPage->DT2DT));
           buffer++;
           break;
         default:
           buffer++;  /* set pointer to the length information */
           break;
         }
+      /* Error if *buffer (length) is 0 */
       if (*buffer == 0)
         {
           /*           EAAPage = NULL; */
@@ -1282,7 +1284,7 @@ int GenericClean(char * Device)
 
   RequestSense(pwork->fd, &ExtRequestSense, 0);
   dbprintf(("GenericClean :\n"));
-  DecodeExtSense(&ExtRequestSense, "GenericClean :");
+  DecodeExtSense(&ExtRequestSense, "GenericClean : ");
   if(ExtRequestSense.CLN) {
     return(1);
   } else {
@@ -1890,13 +1892,11 @@ int EXB120SenseHandler(int DeviceFD, int flag, char *buffer)
 /* ======================================================= */
 int GenericMove(int DeviceFD, int from, int to)
 {
-  CDB_T CDB;
-  RequestSense_T pRequestSense;
   OpenFiles_T *pwork;
-  ElementInfo_T *psource;
-  ElementInfo_T *pdest;
+  ElementInfo_T *pfrom;
+  ElementInfo_T *pto;
   int ret;
-  int i;
+  int moveok = 0;
 
   dbprintf(("GenericMove: from = %d, to = %d\n", from, to));
 
@@ -1910,58 +1910,194 @@ int GenericMove(int DeviceFD, int from, int to)
         }
     }
 
-  if ((psource = LookupElement(from)) == NULL)
+  if ((pfrom = LookupElement(from)) == NULL)
     {
+      dbprintf(("GenericMove : ElementInfo for %d not found\n", from));
     }
   
-  if ((pdest = LookupElement(to)) == NULL)
+  if ((pto = LookupElement(to)) == NULL)
     {
+      dbprintf(("GenericMove : ElementInfo for %d not found\n", to));
     }
   
-  if (psource->status == 'E') 
+  if (pfrom->status == 'E') 
     {
+      dbprintf(("GenericMove : from %d is empty\n", from));
     }
 
-  if (pdest->status == 'F') 
+  if (pto->status == 'F') 
     {
       dbprintf(("GenericMove : Destination Element %d Type %d is full\n",
-                pdest->address, pdest->type));
+                pto->address, pto->type));
       to = find_empty(DeviceFD);
       dbprintf(("GenericMove : Unload to %d\n", to));
-    }
-
-  CDB[0]  = SC_MOVE_MEDIUM;
-  CDB[1]  = 0;
-  CDB[2]  = 0;
-  CDB[3]  = 0;     /* Address of CHM */
-  MSB2(&CDB[4],from);
-  MSB2(&CDB[6],to);
-  CDB[8]  = 0;
-  CDB[9]  = 0;
-  CDB[10] = 0;
-  CDB[11] = 0;
- 
-  ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 12,
-                            0, 0, (char *) &pRequestSense, sizeof(RequestSense_T)); 
-
-  dbprintf(("GenericMove SCSI_ExecuteCommand = %d\n", ret));
-
-  if (ret < 0)
-    {
-      dbprintf(("%s: Request Sense[Inquiry]: %02X", 
-                "chs", ((unsigned char *) &pRequestSense)[0])); 
-      for (i = 1; i < sizeof(RequestSense_T); i++)                
-        dbprintf((" %02X", ((unsigned char *) &pRequestSense)[i])); 
-      dbprintf(("\n"));    
-      return(ret);
-    }
-  if ( ret > 0)
-    {
-      dbprintf(("GenericMove: ret = %d\n",ret));
-      DecodeSense(&pRequestSense, "GenericMove : ");
-      return(pRequestSense.SenseKey);
+      if ((pto = LookupElement(to)) == NULL)
+        {
+          
+        }
     }
   
+  if (pDeviceCapabilitiesPage != NULL )
+    {
+      dbprintf(("GenericMove : checking if move from %d to %d is legal\n", from, to));
+      switch (pfrom->type)
+        {
+        case CHANGER:
+          dbprintf(("GenericMove : MT2"));
+          switch (pto->type)
+            {
+            case CHANGER:
+              if (pDeviceCapabilitiesPage->MT2MT == 1)
+                {
+                  dbprintf(("MT\n"));
+                  moveok = 1;
+                }
+              break;
+            case STORAGE:
+              if (pDeviceCapabilitiesPage->MT2ST == 1)
+                {
+                  dbprintf(("ST\n"));
+                  moveok = 1;
+                }
+              break;
+            case IMPORT:
+              if (pDeviceCapabilitiesPage->MT2IE == 1)
+                {
+                  dbprintf(("IE\n"));
+                  moveok = 1;
+                }
+              break;
+            case TAPETYPE:
+              if (pDeviceCapabilitiesPage->MT2DT == 1)
+                {
+                  dbprintf(("DT\n"));
+                  moveok = 1;
+                }
+              break;
+            default:
+              break;
+            }
+          break;
+        case STORAGE:
+          dbprintf(("GenericMove : ST2"));
+          switch (pto->type)
+            {
+            case CHANGER:
+              if (pDeviceCapabilitiesPage->ST2MT == 1)
+                {
+                  dbprintf(("MT\n"));
+                  moveok = 1;
+                }
+              break;
+            case STORAGE:
+              if (pDeviceCapabilitiesPage->ST2ST == 1)
+                {
+                  dbprintf(("ST\n"));
+                  moveok = 1;
+                }
+              break;
+            case IMPORT:
+              if (pDeviceCapabilitiesPage->ST2IE == 1)
+                {
+                  dbprintf(("IE\n"));
+                  moveok = 1;
+                }
+              break;
+            case TAPETYPE:
+              if (pDeviceCapabilitiesPage->ST2DT == 1)
+                {
+                  dbprintf(("DT\n"));
+                  moveok = 1;
+                }
+              break;
+            default:
+              break;
+            }
+          break;
+        case IMPORT:
+          dbprintf(("GenericMove : IE2"));
+          switch (pto->type)
+            {
+            case CHANGER:
+              if (pDeviceCapabilitiesPage->IE2MT == 1)
+                {
+                  dbprintf(("MT\n"));
+                  moveok = 1;
+                }
+              break;
+            case STORAGE:
+              if (pDeviceCapabilitiesPage->IE2ST == 1)
+                {
+                  dbprintf(("ST\n"));
+                  moveok = 1;
+                }
+              break;
+            case IMPORT:
+              if (pDeviceCapabilitiesPage->IE2IE == 1)
+                {
+                  dbprintf(("IE\n"));
+                  moveok = 1;
+                }
+              break;
+            case TAPETYPE:
+              if (pDeviceCapabilitiesPage->IE2DT == 1)
+                {
+                  dbprintf(("DT\n"));
+                  moveok = 1;
+                }
+              break;
+            default:
+              break;
+            }
+          break;
+        case TAPETYPE:
+          dbprintf(("GenericMove : DT2"));
+          switch (pto->type)
+            {
+            case CHANGER:
+              if (pDeviceCapabilitiesPage->DT2MT == 1)
+                {
+                  dbprintf(("MT\n"));
+                  moveok = 1;
+                }
+              break;
+            case STORAGE:
+              if (pDeviceCapabilitiesPage->DT2ST == 1)
+                {
+                  dbprintf(("ST\n"));
+                  moveok = 1;
+                }
+              break;
+            case IMPORT:
+              if (pDeviceCapabilitiesPage->DT2IE == 1)
+                {
+                  dbprintf(("IE\n"));
+                  moveok = 1;
+                }
+              break;
+            case TAPETYPE:
+              if (pDeviceCapabilitiesPage->DT2DT == 1)
+                {
+                  dbprintf(("DT\n"));
+                  moveok = 1;
+                }
+              break;
+            default:
+              break;
+            }
+          break;
+        default:
+          break;
+        }
+    }
+
+  if (moveok == 0)
+    { 
+      dbprintf(("?? failed\n"));
+      return(-1);
+    }
+
+  ret = SCSI_Move(DeviceFD, 0, from, to);
   return(ret);
 }
 
@@ -2021,7 +2157,7 @@ int GetCurrentSlot(int fd, int drive)
 int GenericElementStatus(int DeviceFD, int InitStatus)
 {
   unsigned char *DataBuffer = NULL;
-  char ModeSenseBuffer[0xff];
+  char *ModeSenseBuffer;
   int DataBufferLength;
   ElementStatusData_T *ElementStatusData;
   ElementStatusPage_T *ElementStatusPage;
@@ -2035,26 +2171,38 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
   int offset = 0;
   int NoOfElements;
   
-  /* If the MODE_SENSE was successfull we use this Information to read the Elelement Info */
-  if (SCSI_ModeSense(DeviceFD, (char *)&ModeSenseBuffer, 0xff, 0x8, 0x3f) == 0)
+  if (pEAAPage == NULL)
     {
-      DecodeModeSense((char *)&ModeSenseBuffer, "GenericElementStatus :");
-      /* First the Medim Transport*/
-      if (V2(EAAPage->NoMediumTransportElements)  > 0)
+      if ((ModeSenseBuffer = malloc(0xff)) == NULL)
         {
-          MTE = V2(EAAPage->NoMediumTransportElements) ;
-          if ((pMTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * MTE)) == NULL)
-              {
+          dbprintf(("GenericElementStatus : malloc failed\n"));
+          return(-1);
+        }
+      if (SCSI_ModeSense(DeviceFD, ModeSenseBuffer, 0xff, 0x8, 0x3f) == 0)
+        DecodeModeSense(ModeSenseBuffer, "GenericElementStatus :");
+    }
+  /* If the MODE_SENSE was successfull we use this Information to read the Elelement Info */
+  if (pEAAPage != NULL)
+    {
+      /* First the Medim Transport*/
+      if (V2(pEAAPage->NoMediumTransportElements)  > 0)
+        {
+          MTE = V2(pEAAPage->NoMediumTransportElements) ;
+          if (pMTE == NULL)
+            {
+              if ((pMTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * MTE)) == NULL)
+                {
                   dbprintf(("GenericElementStatus : malloc failed\n"));
                   return(-1);
-              }
+                }
+            }
           memset(pMTE, 0, sizeof(ElementInfo_T) * MTE);
 
           if (SCSI_ReadElementStatus(DeviceFD, 
                                      CHANGER, 
                                      0,
                                      BarCode(DeviceFD),
-                                     V2(EAAPage->MediumTransportElementAddress),
+                                     V2(pEAAPage->MediumTransportElementAddress),
                                      MTE,
                                      (char **)&DataBuffer) != 0)
             {
@@ -2104,21 +2252,24 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
             }
         }
       /* Storage Elements */
-      if ( V2(EAAPage->NoStorageElements)  > 0)
+      if ( V2(pEAAPage->NoStorageElements)  > 0)
         {
-          STE = V2(EAAPage->NoStorageElements);
-          if ((pSTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * STE)) == NULL)
-              {
+          STE = V2(pEAAPage->NoStorageElements);
+          if (pSTE == NULL)
+            {
+              if ((pSTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * STE)) == NULL)
+                {
                   dbprintf(("GenericElementStatus : malloc failed\n"));
                   return(-1);
-              }
+                }
+            }
           memset(pSTE, 0, sizeof(ElementInfo_T) * STE);
           
           if (SCSI_ReadElementStatus(DeviceFD, 
                                      STORAGE, 
                                      0,
                                      BarCode(DeviceFD),
-                                     V2(EAAPage->FirstStorageElementAddress),
+                                     V2(pEAAPage->FirstStorageElementAddress),
                                      STE,
                                      (char **)&DataBuffer) != 0)
             {
@@ -2173,20 +2324,23 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
           
         }
       /* Import/Export Elements */
-      if ( V2(EAAPage->NoImportExportElements) > 0)
+      if ( V2(pEAAPage->NoImportExportElements) > 0)
         {
-          IEE = V2(EAAPage->NoImportExportElements);
-          if ((pIEE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * IEE)) == NULL)
-              {
+          IEE = V2(pEAAPage->NoImportExportElements);
+          if (pIEE == NULL)
+            {
+              if ((pIEE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * IEE)) == NULL)
+                {
                   dbprintf(("GenericElementStatus : malloc failed\n"));
                   return(-1);
-              }
+                }
+            }
           memset(pIEE, 0, sizeof(ElementInfo_T) * IEE);
           if (SCSI_ReadElementStatus(DeviceFD, 
                                      IMPORT, 
                                      0,
                                      BarCode(DeviceFD),
-                                     V2(EAAPage->FirstImportExportElementAddress),
+                                     V2(pEAAPage->FirstImportExportElementAddress),
                                      IEE,
                                      (char **)&DataBuffer) != 0)
             {
@@ -2239,20 +2393,23 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
           
         }
       /* Data Transfer Elements*/
-      if (V2(EAAPage->NoDataTransferElements) >0)
+      if (V2(pEAAPage->NoDataTransferElements) >0)
         {
-          DTE = V2(EAAPage->NoDataTransferElements) ;
-          if ((pDTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * DTE)) == NULL)
-              {
+          DTE = V2(pEAAPage->NoDataTransferElements) ;
+          if (pDTE == NULL)
+            {
+              if ((pDTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * DTE)) == NULL)
+                {
                   dbprintf(("GenericElementStatus : malloc failed\n"));
                   return(-1);
-              }
+                }
+            }
           memset(pDTE, 0, sizeof(ElementInfo_T) * DTE);
           if (SCSI_ReadElementStatus(DeviceFD, 
                                      TAPETYPE, 
                                      0,
                                      BarCode(DeviceFD),
-                                     V2(EAAPage->FirstDataTransferElementAddress),
+                                     V2(pEAAPage->FirstDataTransferElementAddress),
                                      DTE,
                                      (char **)&DataBuffer) != 0)
             {
@@ -3237,6 +3394,77 @@ void dump_hex(char *p, int size)
    Every function is for one SCSI command.
    Prefix is SCSI_ and then the SCSI command name
 */
+
+int SCSI_Move(int DeviceFD, unsigned char chm, int from, int to)
+{
+  RequestSense_T *pRequestSense;
+  int retry = 1;
+  CDB_T CDB;
+  int ret;
+  int i;
+
+  if ((pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
+    {
+      dbprintf(("SCSI_Move : malloc failed\n"));
+      return(-1);
+    }
+
+  while (retry > 0 && retry < MAX_RETRIES)
+    {
+      CDB[0]  = SC_MOVE_MEDIUM;
+      CDB[1]  = 0;
+      CDB[2]  = 0;
+      CDB[3]  = chm;     /* Address of CHM */
+      MSB2(&CDB[4],from);
+      MSB2(&CDB[6],to);
+      CDB[8]  = 0;
+      CDB[9]  = 0;
+      CDB[10] = 0;
+      CDB[11] = 0;
+      
+      ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 12,
+                                0, 0, (char *)pRequestSense, sizeof(RequestSense_T)); 
+
+      dbprintf(("SCSI_Move : SCSI_ExecuteCommand = %d\n", ret));
+
+      if (ret < 0)
+        {
+          dbprintf(("%s: Request Sense[Inquiry]: %02X", 
+                    "chs", ((unsigned char *) &pRequestSense)[0])); 
+          for (i = 1; i < sizeof(RequestSense_T); i++)                
+            dbprintf((" %02X", ((unsigned char *) &pRequestSense)[i])); 
+          dbprintf(("\n"));    
+          return(ret);
+        }
+      if ( ret > 0)
+        {
+          switch(SenseHandler(DeviceFD, 0 ,(char *)pRequestSense))
+            {
+            case SENSE_IGNORE:
+              dbprintf(("SCSI_Move : SENSE_IGNORE\n"));
+              return(0);
+              break;
+            case SENSE_RETRY:
+              dbprintf(("SCSI_Move : SENSE_RETRY no %d\n", retry));
+              break;
+            case SENSE_ABORT:
+              dbprintf(("SCSI_Move : SENSE_ABORT\n"));
+              return(-1);
+              break;
+            default:
+              dbprintf(("SCSI_Move : end %d\n", pRequestSense->SenseKey));
+              return(pRequestSense->SenseKey);
+              break;
+            }
+        }
+      if (ret == 0)
+        {
+          dbprintf(("SCSI_Move : end %d\n", ret));
+          return(ret);
+        } 
+    }
+  return(ret);
+}
 
 int SCSI_LoadUnload(int DeviceFD, RequestSense_T *pRequestSense, unsigned char byte1, unsigned char load)
 {

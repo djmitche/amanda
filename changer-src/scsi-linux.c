@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.9 1999/02/12 19:58:35 th Exp $";
+static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.10 1999/02/14 20:08:06 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on Linux
@@ -51,15 +51,65 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
   int i;
   int timeout;
   OpenFiles_T *pwork;
+  struct stat pstat;
+  char *buffer;
 
   if ((DeviceFD = open(DeviceName, O_RDWR)) > 0)
     {
       pwork = (OpenFiles_T *)malloc(sizeof(OpenFiles_T));
       pwork->next = NULL;
       pwork->fd = DeviceFD;
-      pwork->SCSI = 0;
+      if (strncmp("/dev/sg", DeviceName, 7) != 0)
+        {
+          dbprintf(("SCSI_OpenDevice : checking if %s is a sg device\n", DeviceName));
+          if (lstat(DeviceName, &pstat) != -1)
+            {
+              if (S_ISLNK(pstat.st_mode) == 1)
+                {
+                  dbprintf(("SCSI_OpenDevice : is a link, checking destination\n"));
+                  if ((buffer = (char *)malloc(512)) == NULL)
+                    {
+                      dbprintf(("SCSI_OpenDevice : malloc failed\n"));
+                      return(NULL);
+                    }
+                  memset(buffer, 0, 512);
+                  if (( i = readlink(DeviceName, buffer, 512)) == -1)
+                    {
+                      if (errno == ENAMETOOLONG )
+                        {
+                        } else {
+                          pwork->SCSI = 0;
+                        }
+                    }
+                  if ( i >= 7)
+                    {
+                      if (strncmp("/dev/sg", buffer, 7) == 0)
+                        {
+                          dbprintf(("SCSI_OpenDevice : link points to %s\n", buffer));
+                          pwork->SCSI = 1;
+                        } else {
+                          dbprintf(("SCSI_OpenDevice : link %s does not point to /dev/sg device\n",
+                                    DeviceName));
+                        }
+                    } else {
+                      dbprintf(("SCSI_OpenDevice : link %s does not point to /dev/sg device\n",
+                                DeviceName));
+                    }
+                  dbprintf(("SCSI_OpenDevice : link points to %s\n", buffer));
+                } else {
+                  dbprintf(("SCSI_OpenDevice : %s is neither a link nor an sg device\n", DeviceName));
+                  pwork->SCSI = 0;
+                }
+            } else {
+              dbprintf(("SCSI_OpenDevice : lstat on %s failed\n", DeviceName));
+              pwork->SCSI=0;
+            }
+        } else {
+          pwork->SCSI = 1;
+        }
+      
       pwork->dev = strdup(DeviceName);
-      if (strncmp("/dev/sg", DeviceName, 7) == 0)
+      if (pwork->SCSI == 1)
         {
           dbprintf(("SCSI_OpenDevice : use SG interface\n"));
           if ((timeout = ioctl(DeviceFD, SG_GET_TIMEOUT)) > 0) 
@@ -77,11 +127,11 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
               if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
                 {
                   for (i=0;i < 16 && pwork->inquiry->prod_ident[i] != ' ';i++)
-                    pwork->ident[i] = pwork->inquiry->prod_ident[i];
-                  pwork->ident[i] = '\0';
-                  pwork->SCSI = 1;
-                  PrintInquiry(pwork->inquiry);
-                  return(pwork);
+                pwork->ident[i] = pwork->inquiry->prod_ident[i];
+              pwork->ident[i] = '\0';
+              pwork->SCSI = 1;
+              PrintInquiry(pwork->inquiry);
+              return(pwork);
                 } else {
                   free(pwork->inquiry);
                   free(pwork);
@@ -89,15 +139,14 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
                   return(NULL);
                 }
             } else {
+              pwork->SCSI = 0;
               free(pwork->inquiry);
               pwork->inquiry = NULL;
               return(pwork);
             }
-
         }
-      return(pwork); 
     }
-  return(NULL);
+  return(pwork); 
 }
 
 #define SCSI_OFF sizeof(struct sg_header)
@@ -110,8 +159,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
                         char *pRequestSense,
                         int RequestSenseLength)
 {
-  unsigned char *Command;
-  struct sg_header *psg_header;
+ struct sg_header *psg_header;
   char *buffer;
   int osize;
   int status;
@@ -281,7 +329,7 @@ int Tape_Eject ( int DeviceFD)
   mtop.mt_op = MTUNLOAD;
   mtop.mt_count = 1;
   ioctl(DeviceFD, MTIOCTOP, &mtop);
-  return;
+  return(0);
 }
 
 #endif

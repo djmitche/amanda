@@ -1,3 +1,15 @@
+1999-02-14  Thomas Hepper <th@ant.han.de>
+
+	* changer-src/scsi-changer-driver.c New function SCSI_Move
+	removed move in GenericMove, call now SCSI_Move
+	Now check in GenericMove if the move is legal, based on the info
+	from the device capabilities page
+	* changer-src/scsi-linux.c (SCSI_OpenDevice) check if the device
+	is an sg device, or an link to an sg device. If no set SCSI flag to 0
+	Set timeout for SCSI commands, the default will not work if there is an
+	IES on slow changers, if not set high maschine hangs with lot of SCSI  bus
+	resets.....
+
 1999-02-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amindexd.c: remove duplication inclusion of version.h.

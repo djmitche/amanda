@@ -407,7 +407,10 @@ mknod /dev/scsi/1 c 203 0x001000
                           2 digit instance number from ioscan
 
 On Linux you need either sg (generic scsi) as module or it mus be compiled
-into the kernel.
+into the kernel. If the sg driver doses not work try to use the ioctl interface.
+For that you have to undef the LINUX_CHG define in changer-src/scsi-linux.c
+Also you have to change the NORMAL_TIMEOUT in /usr/src/linux/drivers/scsi/scsi_ioctl.c
+from (10 * HZ) to (5 * 60 * HZ).
 
 On IRIX you find the SCSI pass through interfaces for every device in /dev/scsi
 
