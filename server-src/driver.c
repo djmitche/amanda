@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.26 2000/01/16 06:34:22 oliva Exp $
+ * $Id: driver.c,v 1.58.2.27 2000/10/10 21:33:23 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -834,8 +834,7 @@ void handle_taper_result()
 	}
 	else {
 	    sched(dp)->attempted++;
-	    if(use_lffo)insert_disk(&tapeq, dp, sort_by_size_reversed);
-	    else enqueue_disk(&tapeq, dp);
+	    headqueue_disk(&tapeq, dp);
 	}
 
 	/* run next thing from queue */
@@ -1863,7 +1862,7 @@ int dump_to_tape(dp)
     tryagain:
 	update_failed_dump_to_tape(dp);
 	free_serial(result_argv[2]);
-	enqueue_disk(&runq, dp);
+	headqueue_disk(&runq, dp);
 	break;
 
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.27.4.5 1999/09/08 23:27:58 jrj Exp $
+ * $Id: diskfile.c,v 1.27.4.6 2000/10/10 21:33:23 martinea Exp $
  *
  * read disklist file
  */
@@ -112,6 +112,18 @@ disk_t *disk;
 
     list->tail = disk;
     disk->next = NULL;
+}
+
+void headqueue_disk(list, disk)	/* put disk on head of queue */
+disklist_t *list;
+disk_t *disk;
+{
+    if(list->head == NULL) list->tail = disk;
+    else list->head->prev = disk;
+    disk->next = list->head;
+
+    list->head = disk;
+    disk->prev = NULL;
 }
 
 void insert_disk(list, disk, cmp)	/* insert in sorted order */

@@ -1,5 +1,13 @@
 2000-10-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/diskfile.c (headqueue_disk): new function to
+	insert at the head of the queue.
+	* server-src/diskfile.h (headqueue_disk): prototype.
+	* server-src/driver.c (handle_taper_result,dump_to_tape):
+	insert with headqueue_disk() after a TRY-AGAIN.
+
+2000-10-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/dumper.c (do_dump): wait for index compress
 	process to terminate before renaming the index file.
 
@@ -1002,7 +1010,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.381 2000/10/10 21:17:36 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.382 2000/10/10 21:33:22 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
