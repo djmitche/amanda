@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.c,v 1.1.2.9.2.2 2004/08/03 12:13:35 martinea Exp $
+ * $Id: amfeatures.c,v 1.1.2.9.2.3 2004/08/11 19:16:28 martinea Exp $
  *
  * Feature test related code.
  */
@@ -111,6 +111,7 @@ am_init_feature_set()
 
 	am_add_feature(f, fe_partial_estimate);
 	am_add_feature(f, fe_calcsize_estimate);
+	am_add_feature(f, fe_selfcheck_calcsize);
     }
     return f;
 }

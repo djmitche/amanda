@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.19.2.7.2.20.2.5 2004/08/03 12:13:36 martinea Exp $
+ * $Id: amcheck.c,v 1.50.2.19.2.7.2.20.2.6 2004/08/11 19:16:28 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1333,6 +1333,7 @@ int start_host(hostp)
 	    char *l;
 	    int l_len;
 	    char *o;
+	    char* calcsize;
 
 	    if(dp->todo == 0) continue;
 
@@ -1374,10 +1375,16 @@ int start_host(hostp)
 			hostp->hostname, dp->name);
 		dp->estimate = ES_CLIENT;
 	    }
-	    l = vstralloc(dp->program, 
-			  " ",
-			  dp->name,
-			  " ",
+
+	    if(dp->estimate == ES_CALCSIZE &&
+	       am_has_feature(hostp->features, fe_selfcheck_calcsize))
+		calcsize = "CALCSIZE ";
+	    else
+		calcsize = "";
+
+	    l = vstralloc(calcsize, 
+			  dp->program, " ",
+			  dp->name, " ",
 			  dp->device ? dp->device : "",
 			  " 0 OPTIONS |",
 			  o,

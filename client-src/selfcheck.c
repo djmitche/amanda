@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.40.2.3.4.4.2.22 2003/11/18 18:04:26 martinea Exp $
+ * $Id: selfcheck.c,v 1.40.2.3.4.4.2.22.2.1 2004/08/11 19:16:27 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -58,6 +58,7 @@ int need_vxrestore=0;
 int need_runtar=0;
 int need_gnutar=0;
 int need_compress_path=0;
+int need_calcsize=0;
 
 static am_feature_t *our_features = NULL;
 static char *our_feature_string = NULL;
@@ -66,7 +67,7 @@ static g_option_t *g_options = NULL;
 /* local functions */
 int main P((int argc, char **argv));
 
-static void check_options P((char *program, char *disk, char *device, option_t *options));
+static void check_options P((char *program, char *calcprog, char *disk, char *device, option_t *options));
 static void check_disk P((char *program, char *disk, char *amdevice, int level));
 static void check_overall P((void));
 static void check_access P((char *filename, int mode));
@@ -82,6 +83,7 @@ char **argv;
     int level;
     char *line = NULL;
     char *program = NULL;
+    char *calcprog = NULL;
     char *disk = NULL;
     char *device = NULL;
     char *optstr = NULL;
@@ -155,6 +157,19 @@ char **argv;
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';				/* terminate the program name */
 
+	if(strncmp(program, "CALCSIZE", 8) == 0) {
+	    skip_whitespace(s, ch);		/* find program name */
+	    if (ch == '\0') {
+		goto err;			/* no program */
+	    }
+	    calcprog = s - 1;
+	    skip_non_whitespace(s, ch);
+	    s[-1] = '\0';
+	}
+	else {
+	    calcprog = NULL;
+	}
+
 	skip_whitespace(s, ch);			/* find disk name */
 	if (ch == '\0') {
 	    goto err;				/* no disk */
@@ -198,7 +213,7 @@ char **argv;
 	    skip_non_whitespace(s, ch);
 	    s[-1] = '\0';			/* terminate the options */
 	    options = parse_options(optstr, disk, device, g_options->features, 1);
-	    check_options(program, disk, device, options);
+	    check_options(program, calcprog, disk, device, options);
 	    check_disk(program, disk, device, level);
 	    free_sl(options->exclude_file);
 	    free_sl(options->exclude_list);
@@ -221,6 +236,7 @@ char **argv;
 	    need_runtar=1;
 	    need_gnutar=1;
 	    need_compress_path=1;
+	    need_calcsize=1;
 	    check_disk(program, disk, device, level);
 	} else {
 	    goto err;				/* bad syntax */
@@ -265,11 +281,34 @@ char **argv;
 
 
 static void
-check_options(program, disk, device, options)
-    char *program, *disk, *device;
+check_options(program, calcprog, disk, device, options)
+    char *program, *calcprog, *disk, *device;
     option_t *options;
 {
-    if(strcmp(program,"GNUTAR") == 0) {
+    char *myprogram = program;
+
+    if(strcmp(myprogram,"CALCSIZE") == 0) {
+	int nb_exclude = 0;
+	int nb_include = 0;
+	char *file_exclude = NULL;
+	char *file_include = NULL;
+
+	if(options->exclude_file) nb_exclude += options->exclude_file->nb_element;
+	if(options->exclude_list) nb_exclude += options->exclude_list->nb_element;
+	if(options->include_file) nb_include += options->include_file->nb_element;
+	if(options->include_list) nb_include += options->include_list->nb_element;
+
+	if(nb_exclude > 0) file_exclude = build_exclude(disk, device, options, 1);
+	if(nb_include > 0) file_include = build_include(disk, device, options, 1);
+
+	amfree(file_exclude);
+	amfree(file_include);
+
+	need_calcsize=1;
+	myprogram = calcprog;
+    }
+
+    if(strcmp(myprogram,"GNUTAR") == 0) {
 	need_gnutar=1;
         if(disk[0] == '/' && disk[1] == '/') {
 	    if(options->exclude_file && options->exclude_file->nb_element > 1) {
@@ -308,7 +347,8 @@ check_options(program, disk, device, options)
 	    need_runtar=1;
 	}
     }
-    if(strcmp(program,"DUMP") == 0) {
+
+    if(strcmp(myprogram,"DUMP") == 0) {
 	if(options->exclude_file && options->exclude_file->nb_element > 0) {
 	    printf("ERROR [DUMP does not support exclude file]\n");
 	}
@@ -716,6 +756,16 @@ static void check_overall()
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
 	check_dir(GNUTAR_LISTED_INCREMENTAL_DIR,R_OK|W_OK);
 #endif
+    }
+
+    if( need_calcsize ) {
+	char *cmd;
+
+	cmd = vstralloc(libexecdir, "/", "calcsize", versionsuffix(), NULL);
+
+	check_file(cmd, X_OK);
+
+	amfree(cmd);
     }
 
     if( need_samba ) {
