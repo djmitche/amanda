@@ -685,7 +685,7 @@ y | ye | yes) : ;;
 esac
 
 AC_MSG_CHECKING(for Kerberos and Amanda kerberos4 bits)
-if test "${KRB4_SECURITY}" = yes -a -f common-src/krb4-security.c ; then
+if test "${KRB4_SECURITY}" = yes -a -f  ${srcdir-.}/common-src/krb4-security.c ; then
     for dir in $KRB4_SPOTS; do
 	if test -f ${dir}/lib/libkrb.a -a -f ${dir}/lib/libdes.a ; then
 	    #
@@ -810,6 +810,12 @@ AC_ARG_WITH(client-keyfile,
     ],
     : ${CLIENT_HOST_KEY_FILE=KEYFILE}
 )
+
+# Assume it's either KEYFILE (defined in krb.h), or a string filename...
+if test "$CLIENT_HOST_KEY_FILE" != "KEYFILE"; then
+  CLIENT_HOST_KEY_FILE="\"$CLIENT_HOST_KEY_FILE\""
+fi
+
 AC_DEFINE_UNQUOTED(CLIENT_HOST_KEY_FILE,$CLIENT_HOST_KEY_FILE)
 
 AC_ARG_WITH(ticket-lifetime,

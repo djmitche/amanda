@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.65 1998/05/19 15:00:27 martinea Exp $
+/* $Id: dumper.c,v 1.66 1998/06/08 01:05:15 kovert Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -59,6 +59,10 @@
 #define CONNECT_TIMEOUT	5*60
 #define READ_TIMEOUT	30*60
 #define MAX_ARGS	10
+/* Note: This must be kept in sync with the DATABUF_SIZE defined in
+ * client-src/sendbackup-krb4.c, or kerberos encryption won't work...
+ *	- Chris Ross (cross@uu.net)  4-Jun-1998
+ */
 #define DATABUF_SIZE	TAPE_BLOCK_BYTES
 #define MESGBUF_SIZE	4*1024
 
@@ -841,6 +845,24 @@ dumpfile_t *file;
 
     write_header(buffer, file, sizeof(buffer));
 
+#if 0
+    /*
+     * NB: This chuck of code had to be removed.  As far as I can tell, the
+     * only use for this code would be if buffer were larger than spaceleft,
+     * which it should never be at this point, as no data has previously been
+     * written (via update_dataptr()).
+     *   Additionally, if this code is left in place on a system using
+     * kerberos encryption, it will break things.  update_dataptr() assumes
+     * that any data passed to it is encrypted if the filesystem was supposed
+     * to be encrypted.  As this buffer is generated on the server side, it
+     * is *not* encrypted, and an attempt to decrypt it in update_dataptr()
+     * will screw the whole thing.
+     *   PLEASE DO NOT ADD THIS CODE BACK IN unless you really understand the
+     * kerberos encryption code...
+     *
+     *                    - Chris Ross (cross@uu.net)   4-Jun-1998
+     */
+
     bufptr = buffer;
     for (count = sizeof(buffer); count > 0; ) {
 	len = count > spaceleft ? spaceleft : count;
@@ -852,6 +874,9 @@ dumpfile_t *file;
 	count -= len;
     }
     nb_header_block++;
+#else
+    write(outfd, buffer, sizeof(buffer));
+#endif
     return 0;
 }
 
