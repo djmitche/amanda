@@ -424,6 +424,19 @@ amrecover> history
 amrecover> quit
 .EE
 .RE
+.SH ENVIRONMENT
+.LP
+.B PAGER
+.RS
+The 
+.B ls
+and 
+.B list
+commands will use $PAGER to display the file lists.
+Defaults to
+.I more
+if PAGER is not set.
+.RE
 .SH AUTHOR
 Alan M. McIvor <alan@kauri.auck.irl.cri.nz>
 .SH "SEE ALSO"

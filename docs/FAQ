@@ -6,11 +6,8 @@ spent improving Amanda and its documentation.
 New entries and modifications are welcome; send them to
 amanda-users@amanda.org or amanda-hackers@amanda.org.
 
-You may also want to take a look at Oren Teich's Amanda FAQ Page,
-http://ugrad-www.cs.colorado.edu/~teich/amanda
-
-He is no longer maintaining that page, but it still contains useful
-and accurate information.
+You may also want to take a look at the Amanda FAQ-O-Matic
+http://www.amanda.org/fom-serve/cache/1.html
 
 
 Q: Why does Amanda fail to build on my system?
