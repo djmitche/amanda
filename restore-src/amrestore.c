@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.49 2004/11/19 13:17:00 martinea Exp $
+ * $Id: amrestore.c,v 1.50 2004/11/19 18:12:06 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -478,6 +478,7 @@ char **argv;
     char *e;
     char *err;
     char *label = NULL;
+    int count_error;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -663,24 +664,28 @@ char **argv;
 			get_pname());
     }
 
-    while(file.type == F_TAPESTART || file.type == F_DUMPFILE) {
-	amfree(filename);
-	filename = make_filename(&file);
+    count_error=0;
+    while(count_error < 10) {
+	if(file.type == F_TAPEEND) break;
 	found_match = 0;
-	for(me = match_list; me; me = me->next) {
-	    if(disk_match(&file,me->datestamp,me->hostname,me->diskname) != 0) {
-		found_match = 1;
-		break;
+	if(file.type == F_DUMPFILE) {
+	    amfree(filename);
+	    filename = make_filename(&file);
+	    for(me = match_list; me; me = me->next) {
+		if(disk_match(&file,me->datestamp,me->hostname,me->diskname) != 0) {
+		    found_match = 1;
+		    break;
+		}
 	    }
-	}
-	fprintf(stderr, "%s: %3d: %s ",
-			get_pname(),
-			file_number,
-			found_match ? "restoring" : "skipping");
-	if(file.type != F_DUMPFILE) {
-	    print_header(stderr, &file);
-	} else {
-	    fprintf(stderr, "%s\n", filename);
+	    fprintf(stderr, "%s: %3d: %s ",
+			    get_pname(),
+			    file_number,
+			    found_match ? "restoring" : "skipping");
+	    if(file.type != F_DUMPFILE) {
+		print_header(stderr, &file);
+	    } else {
+		fprintf(stderr, "%s\n", filename);
+	    }
 	}
 	if(found_match) {
 	    restore(&file, filename, isafile);
@@ -714,6 +719,7 @@ char **argv;
 	    if((tapedev = tape_open(tapename, 0)) < 0) {
 		error("could not open %s: %s", tapename, strerror(errno));
 	    }
+	    count_error++;
 	} else {
 	    /*
 	     * If the last read got something (even an error), we can
@@ -722,6 +728,7 @@ char **argv;
 	    if(tapefd_fsf(tapedev, 1) < 0) {
 		error("could not fsf %s: %s", tapename, strerror(errno));
 	    }
+	    count_error=0;
 	}
 	file_number++;
 	read_file_header(&file, isafile);
