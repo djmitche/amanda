@@ -523,7 +523,8 @@ while(<AMDUMP>) {
 		$taper_time{$hostpart}=$1;
 		$error{$hostpart}="driver: $error";
 	}
-	elsif(/planner: FAILED (\S+) (\S+) (\S+) (\d+) (.*)/) {
+	elsif(/planner: FAILED (\S+) (\S+) (\S+) (-*\d+) (.*)/) {
+print $_ . "\n";
 		$host=$1;
 		$partition=$2;
 		$datestamp=$3;

@@ -1,3 +1,7 @@
+2004-11-15  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amstatus.pl.in Fix for level -1.
+
 2004-11-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* restore-src/amrestore.c: Read empty file.
