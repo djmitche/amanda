@@ -1,3 +1,8 @@
+1999-11-01 John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/amcleanupdisk.c (main): do not free the config name (it
+	  was never alloc-d).
+
 1999-10-24  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
 	* common-src/debug.c: Do not assume stderr is a compile-time
@@ -552,7 +557,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.295 1999/10/24 17:52:23 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.296 1999/11/01 22:22:04 jrj Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
