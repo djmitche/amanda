@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-solaris.c,v 1.1.2.18.4.1.2.1 2002/03/24 19:04:12 ant Exp $
+ * $Id: scsi-solaris.c,v 1.1.2.18.4.1.2.2 2002/03/31 21:26:25 jrjackson Exp $
  *
  * Interface to execute SCSI commands on an Sun Workstation
  *
@@ -60,7 +60,7 @@
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-solaris.c,v 1.1.2.18.4.1.2.1 2002/03/24 19:04:12 ant Exp $";
+   static char rcsid[] = "$Id: scsi-solaris.c,v 1.1.2.18.4.1.2.2 2002/03/31 21:26:25 jrjackson Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -148,7 +148,9 @@ int SCSI_ExecuteCommand(int DeviceFD,
   int retries = 1;
   extern int errno;
   struct uscsi_cmd Command;
+#if 0
   ExtendedRequestSense_T pExtendedRequestSense;
+#endif
   static int depth = 0;
 
   if (pDev[DeviceFD].avail == 0)
@@ -212,10 +214,11 @@ int SCSI_ExecuteCommand(int DeviceFD,
       break;
     }
     dbprintf(("ioctl on %d failed, errno %d, ret %d\n",pDev[DeviceFD].fd, errno, ret));
-    /*
-     * RequestSense(DeviceFD, &pExtendedRequestSense, 0);
-    */
-    DecodeSense(RequestSense, "SCSI_ExecuteCommand:", debug_file);
+#if 0
+    RequestSense(DeviceFD, &pExtendedRequestSense, 0);
+#endif
+    DecodeSense((RequestSense_T *)pRequestSense,
+		"SCSI_ExecuteCommand:", debug_file);
     retries--;
   }
   --depth;

@@ -1,5 +1,10 @@
 2002-03-31  John R. Jackson (jrj@purdue.edu)
 
+	* changer-src/scsi-defs.h: Fix compiler warning and bug it was hiding.
+	* changer-src/scsi-solaris.c: Ditto.
+
+2002-03-31  John R. Jackson (jrj@purdue.edu)
+
 	* client-src/amandad.c: Add relative timestamps to a lot of debug
 	  file messages, and add more messages, to better track what is
 	  going on.  Various general cleanup.
