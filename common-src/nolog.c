@@ -24,7 +24,7 @@
  * Changed by Alexandre Oliva
  */
 /*
- *  log_dummy.c - dummy log() replacement for error.c to call on clients.
+ *  nolog.c - dummy logerror() replacement for error.c to call on clients.
  */
 
 void logerror(ignore)
