@@ -126,7 +126,7 @@ Version 2.3.0.4
 	selfcheck check if the index holding directory has enough space
 	in it.  Add a new program called sendindex which sends the
 	index files.  Add the file docs/INDEXING which describes the
-	index code.  Patch from Alan IcIvor <alan@auck.irl.cri.nz>.
+	index code.  Patch from Alan McIvor <alan@auck.irl.cri.nz>.
 
 	Have configure set up mt to use either the -f or the -t option
 	depending upon the operating system.  Patch from Blair Zajac
