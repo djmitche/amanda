@@ -154,7 +154,7 @@ my $out_format = "format STDOUT =\n" .
     "@" . "<" x ($opt_diskwidth - 1) . ' ' .
     '@> ' x scalar(keys %dates) . "\n" .
     join(', ', '$host', '$disk', 
-	 map("\$level{\$host}{\$disk}{'$_'}", sort keys %dates)) . "\n" .
+	 map("substr(\$level{\$host}{\$disk}{'$_'},-2)", sort keys %dates)) . "\n" .
     ".\n";
 
 eval $top_format;
