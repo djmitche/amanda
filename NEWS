@@ -1,5 +1,6 @@
 Changes in release 2.4.4p1
 
+* default driveslot for chg-zd-mtx is nom 0.
 * amplot generate color postscript by default.
 * amplot -b flag to generate b/w postscript.
 

@@ -1,5 +1,10 @@
 2003-04-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* changer-src/chg-zd-mtx.sh.in: Default for driveslot is 0.
+	* NEWS: default driveslot for chg-zd-mtx is nom 0.
+
+2003-04-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* amplot/amplot.sh.in: New -b option for b/w postscript.
 	* amplot/amplot.awk: Add 'color' to command if bw is set.
 	* amplot/amplot.g: Change line 6 to line 8.
