@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: alloc.c,v 1.16 1998/07/04 00:18:32 oliva Exp $
+ * $Id: alloc.c,v 1.17 1998/11/04 00:43:18 kashmir Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -264,7 +264,7 @@ int l;
 #else
 char *stralloc(str)
 #endif
-char *str;
+const char *str;
 {
     char *addr;
 
@@ -287,17 +287,17 @@ char *str;
 #define	MAX_VSTRALLOC_ARGS	32
 
 static char *internal_vstralloc(str, argp)
-char *str;
+const char *str;
 va_list argp;
 {
     char *next;
     char *result;
     int a;
     int total_len;
-    char *arg[MAX_VSTRALLOC_ARGS+1];
+    const char *arg[MAX_VSTRALLOC_ARGS+1];
     int len[MAX_VSTRALLOC_ARGS+1];
     int l;
-    char *s;
+    const char *s;
 
     if (str == NULL) {
 	return NULL;				/* probably will not happen */
@@ -340,9 +340,9 @@ va_list argp;
 ** vstralloc - copies multiple strings into newly allocated memory.
 */
 #if defined(USE_DBMALLOC)
-arglist_function(char *debug_vstralloc, char *, str)
+arglist_function(char *debug_vstralloc, const char *, str)
 #else
-arglist_function(char *vstralloc, char *, str)
+arglist_function(char *vstralloc, const char *, str)
 #endif
 {
     va_list argp;
@@ -369,7 +369,7 @@ int l;
 char *newstralloc(oldstr, newstr)
 #endif
 char *oldstr;
-char *newstr;
+const char *newstr;
 {
     char *addr;
 
@@ -385,9 +385,10 @@ char *newstr;
 ** newvstralloc - free existing string and then vstralloc a new one.
 */
 #if defined(USE_DBMALLOC)
-arglist_function1(char *debug_newvstralloc, char *, oldstr, char *, newstr)
+arglist_function1(char *debug_newvstralloc, char *, oldstr, const char *,
+    newstr)
 #else
-arglist_function1(char *newvstralloc, char *, oldstr, char *, newstr)
+arglist_function1(char *newvstralloc, char *, oldstr, const char *, newstr)
 #endif
 {
     va_list argp;

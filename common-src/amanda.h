@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.65 1998/10/31 06:19:41 oliva Exp $
+ * $Id: amanda.h,v 1.66 1998/11/04 00:43:20 kashmir Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -420,8 +420,8 @@ extern int    onerror         P((void (*errf)(void)));
 #if defined(USE_DBMALLOC)
 extern void  *debug_alloc           P((char *c, int l, int size));
 extern void  *debug_newalloc        P((char *c, int l, void *old, int size));
-extern char  *debug_stralloc        P((char *c, int l, char *str));
-extern char  *debug_newstralloc     P((char *c, int l, char *oldstr, char *newstr));
+extern char  *debug_stralloc        P((char *c, int l, const char *str));
+extern char  *debug_newstralloc     P((char *c, int l, char *oldstr, const char *newstr));
 extern char  *dbmalloc_caller_loc   P((char *file, int line));
 extern int   debug_alloc_push	    P((char *file, int line));
 extern void  debug_alloc_pop	    P((void));
@@ -464,17 +464,17 @@ extern void  debug_alloc_pop	    P((void));
 #define vstralloc debug_alloc_push(__FILE__,__LINE__)?0:debug_vstralloc
 #define newvstralloc debug_alloc_push(__FILE__,__LINE__)?0:debug_newvstralloc
 
-extern char  *debug_vstralloc       P((char *str, ...));
-extern char  *debug_newvstralloc    P((char *oldstr, char *newstr, ...));
+extern char  *debug_vstralloc       P((const char *str, ...));
+extern char  *debug_newvstralloc    P((char *oldstr, const char *newstr, ...));
 
 #else
 
 extern void  *alloc           P((int size));
 extern void  *newalloc        P((void *old, int size));
-extern char  *stralloc        P((char *str));
-extern char  *newstralloc     P((char *oldstr, char *newstr));
-extern char  *vstralloc       P((char *str, ...));
-extern char  *newvstralloc    P((char *oldstr, char *newstr, ...));
+extern char  *stralloc        P((const char *str));
+extern char  *newstralloc     P((char *oldstr, const char *newstr));
+extern char  *vstralloc       P((const char *str, ...));
+extern char  *newvstralloc    P((char *oldstr, const char *newstr, ...));
 
 #define debug_alloc_push(s,l)
 #define debug_alloc_pop()

@@ -1,3 +1,9 @@
+1998-11-03  Mike Grupenhoff  <kashmir@munge.com>
+
+	* common-src/alloc.c: const arguments to the stralloc functions
+	* common-src/amanda.h: update stralloc prototypes for const
+	poisoning
+
 1998-11-03  John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/dumper.c (do_dump): do not report FAILED back to driver
