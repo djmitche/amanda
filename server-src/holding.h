@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: holding.h,v 1.3 1997/12/30 05:25:15 jrj Exp $
+ * $Id: holding.h,v 1.4 1998/01/02 03:29:46 jrj Exp $
  *
  */
 
@@ -41,7 +41,7 @@ extern struct dirname {
     char *name;
 } *dir_list;
 extern int ndirs;
-char host[MAX_HOSTNAME_LENGTH], *domain;
+char host[MAX_HOSTNAME_LENGTH+1], *domain;
 
 /* local functions */
 int is_dir P((char *fname));

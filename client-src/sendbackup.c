@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.24 1998/01/02 01:05:07 jrj Exp $
+ * $Id: sendbackup.c,v 1.25 1998/01/02 03:29:37 jrj Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -207,9 +207,9 @@ char **argv;
 	fflush(stderr);
     }
 
-    host = alloc(MAX_HOSTNAME_LENGTH);
-    gethostname(host, MAX_HOSTNAME_LENGTH-1);
-    host[MAX_HOSTNAME_LENGTH-1] = '\0';
+    host = alloc(MAX_HOSTNAME_LENGTH+1);
+    gethostname(host, MAX_HOSTNAME_LENGTH);
+    host[MAX_HOSTNAME_LENGTH] = '\0';
 
     /* parse dump request */
 

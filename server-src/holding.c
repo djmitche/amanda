@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: holding.c,v 1.7 1997/12/30 05:25:14 jrj Exp $
+ * $Id: holding.c,v 1.8 1998/01/02 03:29:45 jrj Exp $
  *
  * Functions to access holding disk
  */
@@ -49,7 +49,7 @@ disklist_t *diskqp;
 int result_argc;
 char *datestamp = NULL;
 char *taper_program, *reporter_program;
-char host[MAX_HOSTNAME_LENGTH], *domain;
+char host[MAX_HOSTNAME_LENGTH+1], *domain;
 
 /* local functions */
 int main P((int argc, char **argv));

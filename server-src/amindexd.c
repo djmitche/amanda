@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.17 1998/01/02 01:05:36 jrj Exp $
+ * $Id: amindexd.c,v 1.18 1998/01/02 03:29:43 jrj Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -74,7 +74,7 @@ char *pname = "amindexd";
 char *server_version = "1.1";
 
 /* state */
-char local_hostname[MAX_HOSTNAME_LENGTH];	/* me! */
+char local_hostname[MAX_HOSTNAME_LENGTH+1];	/* me! */
 char *remote_hostname = NULL;			/* the client */
 char *dump_hostname = NULL;			/* machine we are restoring */
 char *disk_name;				/* disk we are restoring */

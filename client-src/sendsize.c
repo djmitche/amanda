@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.49 1998/01/02 01:05:08 jrj Exp $
+ * $Id: sendsize.c,v 1.50 1998/01/02 03:29:39 jrj Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -111,9 +111,9 @@ char **argv;
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 
-    host = alloc(MAX_HOSTNAME_LENGTH);
-    gethostname(host, MAX_HOSTNAME_LENGTH-1);
-    host[MAX_HOSTNAME_LENGTH-1] = '\0';
+    host = alloc(MAX_HOSTNAME_LENGTH+1);
+    gethostname(host, MAX_HOSTNAME_LENGTH);
+    host[MAX_HOSTNAME_LENGTH] = '\0';
 
     /* handle all service requests */
 
