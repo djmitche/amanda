@@ -1,5 +1,33 @@
 1999-04-09  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c: security changes:
+	Remove krb4 includes and NAUGHTY_BITS macros.
+	Remove no-longer-true comment about DATABUF_SIZE ==
+	TAPE_BLOCK_BYTES for krb4
+	Remove file descriptor and event handle from streams array.  Add
+	a security_stream_t.
+	Remove global read buffer.
+	(check_options): remove krb4 code.
+	(service_ports_init): remove, now handled by individual security
+	drivers.
+	(main): remove dgram usage.
+	(do_dump): remove DUMPER_SOCKET_BUFFERING - now handled in the
+	bsd driver.  schedule reads on the streams using
+	security_stream_read.
+	(read_mesgfd,read_datafd,read_indexfd): adapt to
+	security_stream_read callback interface.
+	(stop_dump): just call security_stream_close on all non-null
+	streams.
+	(sendbackup_response): adapt to new protocol layer error return.
+	Remove krb4 code.
+	(startup_dump): stinky hack to parse the security driver string out of
+	the options passed to us from driver.
+	Lookup the security driver with said string.
+	Remove krb4 code.
+	Free request after calling protocol_sendreq().
+
+1999-04-09  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/planner.c: security changes:
 	(main): Remove dgram usage.  Call protocol_init().  Remove
 	krb4 code.

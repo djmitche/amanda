@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.116 1999/04/09 18:49:29 kashmir Exp $
+/* $Id: dumper.c,v 1.117 1999/04/09 20:24:11 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -34,19 +34,13 @@
 #include "conffile.h"
 #include "event.h"
 #include "logfile.h"
+#include "packet.h"
 #include "protocol.h"
+#include "security.h"
 #include "stream.h"
 #include "token.h"
 #include "version.h"
 #include "fileheader.h"
-
-#ifdef KRB4_SECURITY
-#include "dumper-krb4.c"
-#else
-#define NAUGHTY_BITS_INITIALIZE		/* I'd tell you what these do */
-#define NAUGHTY_BITS			/* but then I'd have to kill you */
-#endif
-
 
 #ifndef SEEK_SET
 #define SEEK_SET 0
@@ -58,10 +52,6 @@
 
 #define CONNECT_TIMEOUT	5*60
 #define MAX_ARGS	10
-/* Note: This must be kept in sync with the DATABUF_SIZE defined in
- * client-src/sendbackup-krb4.c, or kerberos encryption won't work...
- *	- Chris Ross (cross@uu.net)  4-Jun-1998
- */
 #define DATABUF_SIZE	TAPE_BLOCK_BYTES
 
 #define STARTUP_TIMEOUT 60
@@ -110,19 +100,16 @@ static dumpfile_t file;
 
 static struct {
     const char *name;
-    int fd;
-    event_handle_t *ev_read;
+    security_stream_t *fd;
 } streams[] = {
 #define	DATAFD	0
-    { "DATA", -1, NULL },
+    { "DATA", NULL },
 #define	MESGFD	1
-    { "MESG", -1, NULL },
+    { "MESG", NULL },
 #define	INDEXFD	2
-    { "INDEX", -1, NULL },
+    { "INDEX", NULL },
 };
 #define	NSTREAMS	(sizeof(streams) / sizeof(streams[0]))
-
-int amanda_port;
 
 /* local functions */
 #define	min(a,b)	((a)<(b)?(a):(b))
@@ -133,7 +120,6 @@ static void putresult P((char *format, ...))
     __attribute__ ((format (printf, 1, 2)));
 static int do_dump P((struct databuf *));
 void check_options P((char *options));
-void service_ports_init P((void));
 static char *construct_datestamp P((void));
 static void finish_tapeheader P((dumpfile_t *));
 static int write_tapeheader P((int outfd, dumpfile_t *type));
@@ -147,54 +133,27 @@ static void log_msgout P((logtype_t typ));
 
 static int runcompress P((int, pid_t *, comp_t));
 
-static void sendbackup_response P((proto_t *p, pkt_t *pkt));
+static void sendbackup_response P((void *, pkt_t *, security_handle_t *));
 static int startup_dump P((const char *, const char *, int, const char *,
 		    const char *, const char *));
 static void stop_dump P((void));
 static int startup_chunker P((const char *, long));
 
-static void read_mesgfd P((void *));
-static void read_datafd P((void *));
-static void read_indexfd P((void *));
+static void read_indexfd P((void *, void *, ssize_t));
+static void read_datafd P((void *, void *, ssize_t));
+static void read_mesgfd P((void *, void *, ssize_t));
 static void timeout P((int));
 static void timeout_callback P((void *));
 
 void check_options(options)
 char *options;
 {
-#ifdef KRB4_SECURITY
-    krb4_auth = strstr(options, "krb4-auth;") != NULL;
-    kencrypt = strstr(options, "kencrypt;") != NULL;
-#endif
     if (strstr(options, "srvcomp-best;") != NULL)
       srvcompress = COMP_BEST;
     else if (strstr(options, "srvcomp-fast;") != NULL)
       srvcompress = COMP_FAST;
     else
       srvcompress = COMP_NONE;
-}
-
-void service_ports_init()
-{
-    struct servent *amandad;
-
-    if((amandad = getservbyname(AMANDA_SERVICE_NAME, "udp")) == NULL) {
-	amanda_port = AMANDA_SERVICE_DEFAULT;
-	log_add(L_WARNING, "no %s/udp service, using default port %d",
-	        AMANDA_SERVICE_NAME, AMANDA_SERVICE_DEFAULT);
-    }
-    else
-	amanda_port = ntohs(amandad->s_port);
-
-#ifdef KRB4_SECURITY
-    if((amandad = getservbyname(KAMANDA_SERVICE_NAME, "udp")) == NULL) {
-	kamanda_port = KAMANDA_SERVICE_DEFAULT;
-	log_add(L_WARNING, "no %s/udp service, using default port %d",
-	        KAMANDA_SERVICE_NAME, KAMANDA_SERVICE_DEFAULT);
-    }
-    else
-	kamanda_port = ntohs(amandad->s_port);
-#endif
 }
 
 static char *construct_datestamp()
@@ -219,8 +178,7 @@ main(main_argc, main_argv)
     static struct databuf db;
     struct cmdargs cmdargs;
     cmd_t cmd;
-    int outfd, protocol_port, taper_port, rc;
-    dgram_t *msg;
+    int outfd, taper_port, rc;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     char *q = NULL;
@@ -246,12 +204,6 @@ main(main_argc, main_argv)
 
     if(read_conffile(CONFFILE_NAME))
 	error("could not read conf file");
-
-    /* set up dgram port first thing */
-
-    msg = dgram_alloc();
-    if(dgram_bind(msg, &protocol_port) == -1)
-	error("could not bind result datagram port: %s", strerror(errno));
 
     /*
      * Make our effective uid nonprivlidged, but keep our real uid as root
@@ -286,8 +238,7 @@ main(main_argc, main_argv)
     datestamp = construct_datestamp();
     conf_dtimeout = getconf_int(CNF_DTIMEOUT);
 
-    service_ports_init();
-    proto_init(msg->socket, time(0), 16);
+    protocol_init();
 
     do {
 	cmd = getcmd(&cmdargs);
@@ -430,7 +381,6 @@ main(main_argc, main_argv)
     } while(cmd != QUIT);
 
     amfree(errstr);
-    amfree(msg);
     amfree(datestamp);
     amfree(handle);
     amfree(hostname);
@@ -645,8 +595,6 @@ databuf_flush(db)
 	memset(db->dataptr, 0, db->spaceleft);
 	db->spaceleft = 0;
     }
-
-    NAUGHTY_BITS;
 
     /*
      * See if we need to split this file.
@@ -1042,11 +990,6 @@ write_tapeheader(outfd, file)
     return (0);
 }
 
-/*
- * This buffer is shared by all of the read callbacks.
- */
-static char buf[DATABUF_SIZE];
-
 static int
 do_dump(db)
     struct databuf *db;
@@ -1059,14 +1002,6 @@ do_dump(db)
     double dumptime;	/* Time dump took in secs */
     int indexout;
     pid_t indexpid;
-
-#if defined(DUMPER_SOCKET_BUFFERING) && defined(SO_RCVBUF)
-    int recbuf = sizeof(buf) * 2;
-    if (setsockopt(streams[DATAFD].fd, SOL_SOCKET, SO_RCVBUF,
-	(void *)&recbuf, sizeof(recbuf)) < 0)
-	fprintf(stderr, "dumper: pid %ld setsockopt(SO_RCVBUF): %s\n",
-	    (long)getpid(), strerror(errno));
-#endif
 
     startclock();
 
@@ -1095,7 +1030,7 @@ do_dump(db)
     }
 
     indexpid = -1;
-    if (streams[INDEXFD].fd != -1) {
+    if (streams[INDEXFD].fd != NULL) {
 	indexfile = vstralloc(getconf_str(CNF_INDEXDIR),
 			      "/",
 			      getindexfname(hostname, diskname,
@@ -1127,18 +1062,14 @@ do_dump(db)
 	/*
 	 * Schedule the indexfd for relaying to the index file
 	 */
-	streams[INDEXFD].ev_read = event_register(streams[INDEXFD].fd,
-	    EV_READFD, read_indexfd, &indexout);
+	security_stream_read(streams[INDEXFD].fd, read_indexfd, &indexout);
     }
-
-    NAUGHTY_BITS_INITIALIZE;
 
     /*
      * We only need to process messages initially.  Once we have done
      * the header, we will start processing data too.
      */
-    streams[MESGFD].ev_read = event_register(streams[MESGFD].fd, EV_READFD,
-	read_mesgfd, db);
+    security_stream_read(streams[MESGFD].fd, read_mesgfd, db);
 
     /*
      * Setup a read timeout
@@ -1261,18 +1192,18 @@ log_failed:
  * Callback for reads on the mesgfd stream
  */
 static void
-read_mesgfd(cookie)
-    void *cookie;
+read_mesgfd(cookie, buf, size)
+    void *cookie, *buf;
+    ssize_t size;
 {
     struct databuf *db = cookie;
-    ssize_t size = read(streams[MESGFD].fd, buf, sizeof(buf));
 
     assert(db != NULL);
 
     switch (size) {
     case -1:
 	errstr = newstralloc2(errstr, "mesg read: ",
-	    strerror(errno));
+	    security_stream_geterror(streams[MESGFD].fd));
 	dump_result = 2;
 	stop_dump();
 	return;
@@ -1283,6 +1214,7 @@ read_mesgfd(cookie)
     default:
 	assert(buf != NULL);
 	add_msg_data(buf, size);
+	security_stream_read(streams[MESGFD].fd, read_mesgfd, cookie);
 	break;
     }
 
@@ -1296,7 +1228,7 @@ read_mesgfd(cookie)
 	/* time to do the header */
 	finish_tapeheader(&file);
 	if (write_tapeheader(db->fd, &file)) {
-	    errstr = newstralloc2(errstr, "write_tapeheader: ",
+	    errstr = newstralloc2(errstr, "write_tapeheader: ", 
 				  strerror(errno));
 	    dump_result = 2;
 	    stop_dump();
@@ -1316,8 +1248,7 @@ read_mesgfd(cookie)
 		return;
 	    }
 	}
-	streams[DATAFD].ev_read = event_register(streams[DATAFD].fd,
-	    EV_READFD, read_datafd, db);
+	security_stream_read(streams[DATAFD].fd, read_datafd, db);
     }
 }
 
@@ -1325,11 +1256,11 @@ read_mesgfd(cookie)
  * Callback for reads on the datafd stream
  */
 static void
-read_datafd(cookie)
-    void *cookie;
+read_datafd(cookie, buf, size)
+    void *cookie, *buf;
+    ssize_t size;
 {
     struct databuf *db = cookie;
-    ssize_t size = read(streams[DATAFD].fd, buf, sizeof(buf));
 
     assert(db != NULL);
 
@@ -1338,7 +1269,7 @@ read_datafd(cookie)
      */
     if (size < 0) {
 	errstr = newstralloc2(errstr, "data read: ",
-	    strerror(errno));
+	    security_stream_geterror(streams[DATAFD].fd));
 	dump_result = 2;
 	stop_dump();
 	return;
@@ -1370,27 +1301,25 @@ read_datafd(cookie)
 	dump_result = 2;
 	stop_dump();
     }
+    security_stream_read(streams[DATAFD].fd, read_datafd, cookie);
 }
 
 /*
  * Callback for reads on the index stream
  */
 static void
-read_indexfd(cookie)
-    void *cookie;
+read_indexfd(cookie, buf, size)
+    void *cookie, *buf;
+    ssize_t size;
 {
-    ssize_t size = read(streams[INDEXFD].fd, buf, sizeof(buf));
     int n, fd;
     char *cbuf = buf;
 
     assert(cookie != NULL);
     fd = *(int *)cookie;
 
-    if (size <= 0) {
-	event_release(streams[INDEXFD].ev_read);
-	streams[INDEXFD].ev_read = NULL;
+    if (size <= 0)
 	return;
-    }
 
     assert(buf != NULL);
 
@@ -1401,6 +1330,7 @@ read_indexfd(cookie)
 	size -= n;
 	cbuf += n;
     }
+    security_stream_read(streams[INDEXFD].fd, read_indexfd, cookie);
 }
 
 /*
@@ -1452,13 +1382,9 @@ stop_dump()
     int i;
 
     for (i = 0; i < NSTREAMS; i++) {
-	if (streams[i].fd >= 0) {
-	    aclose(streams[i].fd);
-	    streams[i].fd = -1;
-	}
-	if (streams[i].ev_read != NULL) {
-	    event_release(streams[i].ev_read);
-	    streams[i].ev_read = NULL;
+	if (streams[i].fd != NULL) {
+	    security_stream_close(streams[i].fd);
+	    streams[i].fd = NULL;
 	}
     }
     timeout(0);
@@ -1521,17 +1447,20 @@ runcompress(outfd, pid, comptype)
 /* -------------------- */
 
 static void
-sendbackup_response(p, pkt)
-    proto_t *p;
+sendbackup_response(datap, pkt, sech)
+    void *datap;
     pkt_t *pkt;
+    security_handle_t *sech;
 {
-    int ports[NSTREAMS], *response_error = p->datap, i;
+    int ports[NSTREAMS], *response_error = datap, i;
     char *tok;
 
     assert(response_error != NULL);
+    assert(sech != NULL);
 
     if (pkt == NULL) {
-	errstr = newstralloc(errstr, "[request timeout]");
+	errstr = newvstralloc(errstr, "[request failed: ",
+	    security_geterror(sech), "]", NULL);
 	*response_error = 1;
 	return;
     }
@@ -1557,20 +1486,12 @@ bad_nak:
 
     if (pkt->type != P_REP) {
 	errstr = newvstralloc(errstr, "received strange packet type ",
-	    ": ", pkt->body, NULL);
+	    pkt_type2str(pkt->type), ": ", pkt->body, NULL);
 	*response_error = 1;
 	return;
     }
 
 /*     fprintf(stderr, "got response:\n----\n%s----\n\n", pkt->body); */
-
-#ifdef KRB4_SECURITY
-    if(krb4_auth && !check_mutual_authenticator(&cred.session, pkt, p)) {
-	errstr = newstralloc(errstr, "[mutual-authentication failed]");
-	*response_error = 2;
-	return;
-    }
-#endif
 
     /*
      * Get the first word out of the packet
@@ -1628,12 +1549,11 @@ bad_nak:
     for (i = 0; i < NSTREAMS; i++) {
 	if (ports[i] == -1)
 	    continue;
-	streams[i].fd = stream_client(hostname, ports[i], DEFAULT_SIZE,
-	    DEFAULT_SIZE, NULL, 0);
-	if (streams[i].fd == -1) {
+	streams[i].fd = security_stream_client(sech, ports[i]);
+	if (streams[i].fd == NULL) {
 	    errstr = newvstralloc(errstr,
 		"[could not connect ", streams[i].name, " stream: ",
-		strerror(errno), "]", NULL);
+		security_geterror(sech), "]", NULL);
 	    goto connect_error;
 	}
     }
@@ -1642,26 +1562,24 @@ bad_nak:
      * Authenticate the streams
      */
     for (i = 0; i < NSTREAMS; i++) {
-	if (streams[i].fd == -1)
+	if (streams[i].fd == NULL)
 	    continue;
 #ifdef KRB4_SECURITY
-	if (krb4_auth) {
-	    /*
-	     * XXX krb4 historically never authenticated the index stream!
-	     * We need to reproduce this lossage here to preserve
-	     * compatibility with old clients.
-	     */
-	    if (i == INDEXFD)
-		continue;
-
-	    if (kerberos_handshake(streams[i].fd, cred.session) == 0) {
-		errstr = newvstralloc(errstr,
-		    "[mutual authentication in ", streams[i].name,
-		    " stream failed]", NULL);
-		goto connect_error;
-	    }
-	}
+	/*
+	 * XXX krb4 historically never authenticated the index stream!
+	 * We need to reproduce this lossage here to preserve compatibility
+	 * with old clients.
+	 * It is wrong to delve into sech, but we have no choice here.
+	 */
+	if (strcasecmp(sech->driver->name, "krb4") != 0 && i == INDEXFD)
+	    continue;
 #endif
+	if (security_stream_auth(streams[i].fd) < 0) {
+	    errstr = newvstralloc(errstr,
+		"[could not authenticate ", streams[i].name, " stream: ",
+		security_stream_geterror(streams[i].fd), "]", NULL);
+	    goto connect_error;
+	}
     }
 
     /* everything worked */
@@ -1684,9 +1602,27 @@ startup_dump(hostname, disk, level, dumpdate, progname, options)
     int level;
 {
     char level_string[NUM_STR_SIZE];
-    char rc_str[NUM_STR_SIZE];
     char *req = NULL;
-    int rc, response_error;
+    char *authopt, *endauthopt, authoptbuf[64];
+    int response_error;
+    const security_driver_t *secdrv;
+
+    /*
+     * Default to bsd authentication if none specified.  This is gross.
+     *
+     * Options really need to be pre-parsed into some sort of structure
+     * much earlier, and then flattened out again before transmission.
+     */
+    if ((authopt = strstr(options, "auth=")) == NULL ||
+	(endauthopt = strchr(authopt, ';')) == NULL ||
+	(sizeof(authoptbuf) - 1 < endauthopt - authopt)) {
+	authopt = "BSD";
+    } else {
+	authopt += strlen("auth=");
+	strncpy(authoptbuf, authopt, endauthopt - authopt);
+	authoptbuf[endauthopt - authopt] = '\0';
+	authopt = authoptbuf;
+    }
 
     ap_snprintf(level_string, sizeof(level_string), "%d", level);
     if(strncmp(progname,"DUMP",4) == 0 || strncmp(progname,"GNUTAR",6) == 0)
@@ -1697,6 +1633,8 @@ startup_dump(hostname, disk, level, dumpdate, progname, options)
 			progname, " ", disk, " ", level_string, " ", 
 			dumpdate, " ",
 		        "OPTIONS ", options,
+			/* compat: if auth=krb4, send krb4-auth */
+			(strcasecmp(authopt, "krb4") ? "" : "krb4-auth"),
 		        "\n",
 		        NULL);
     else
@@ -1707,66 +1645,22 @@ startup_dump(hostname, disk, level, dumpdate, progname, options)
 			"DUMPER ", progname, " ", disk, " ", level_string, " ",
 			dumpdate, " ",
 		        "OPTIONS ", options,
+			/* compat: if auth=krb4, send krb4-auth */
+			(strcasecmp(authopt, "krb4") ? "" : "krb4-auth"),
 		        "\n",
 		        NULL);
 
-#ifdef KRB4_SECURITY
-    if(krb4_auth) {
-	rc = make_krb_request((char *)hostname, kamanda_port, req, NULL,
-			      STARTUP_TIMEOUT, sendbackup_response);
-	if(!rc) {
-	    char inst[256], realm[256];
-#define HOSTNAME_INSTANCE inst
-	    /*
-	     * This repeats a lot of work with make_krb_request, but it's
-	     * ultimately the kerberos library's fault: krb_mk_req calls
-	     * krb_get_cred, but doesn't make the session key available!
-	     * XXX: But admittedly, we could restructure a bit here and
-	     * at least eliminate the duplicate gethostbyname().
-	     */
-	    if(host2krbname((char *)hostname, inst, realm) == 0)
-		rc = -1;
-	    else
-		rc = krb_get_cred(CLIENT_HOST_PRINCIPLE, CLIENT_HOST_INSTANCE,
-				  realm, &cred);
-	    if(rc > 0 ) {
-		ap_snprintf(rc_str, sizeof(rc_str), "%d", rc);
-		errstr = newvstralloc(errstr,
-				      "[host ", hostname,
-				      ": krb4 error (krb_get_cred) ",
-				      rc_str,
-				      ": ", krb_err_txt[rc],
-				      NULL);
-		amfree(req);
-		return 2;
-	    }
-	}
-	if(rc > 0) {
-	    ap_snprintf(rc_str, sizeof(rc_str), "%d", rc);
-	    errstr = newvstralloc(errstr,
-				  "[host ", hostname,
-				  ": krb4 error (make_krb_req) ",
-				  rc_str,
-				  ": ", krb_err_txt[rc],
-				  NULL);
-	    amfree(req);
-	    return 2;
-	}
-    } else
-#endif
-	rc = make_request((char *)hostname, amanda_port, req, &response_error,
-			  STARTUP_TIMEOUT, sendbackup_response);
-
-    req = NULL;					/* do not own this any more */
-
-    if(rc) {
-	ap_snprintf(rc_str, sizeof(rc_str), "%d", rc);
-	errstr = newvstralloc(errstr,
-			      "[could not resolve name \"", hostname, "\"",
-			      ": error ", rc_str, "]",
-			      NULL);
-	return 2;
+    secdrv = security_getdriver(authopt);
+    if (secdrv == NULL) {
+	error("no '%s' security driver available for host '%s'",
+	    authopt, hostname);
     }
-    run_protocol();
+
+    protocol_sendreq(hostname, secdrv, req, STARTUP_TIMEOUT,
+	sendbackup_response, &response_error);
+
+    amfree(req);
+
+    protocol_run();
     return (response_error);
 }
