@@ -1,3 +1,8 @@
+2003-04-08  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* client-src/client_util.c (add_include): If include contain 2 '/' then
+	  use at asis, don't try to match it.
+
 2003-04-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* file tape-src/output-rait.c (rait_open): Call tapefd_set_master_fd();
@@ -40,7 +45,7 @@
 2003-04-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* changer-src/chg-zd-mtx.sh.in: Default for driveslot is 0.
-	* NEWS: default driveslot for chg-zd-mtx is nom 0.
+	* NEWS: default driveslot for chg-zd-mtx is now 0.
 
 2003-04-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
