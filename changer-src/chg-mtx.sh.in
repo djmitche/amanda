@@ -29,7 +29,7 @@ MT=@MT@
 MTF=@MT_FILE_FLAG@
 MTX=@MTX@
 DD=@DD@
-firstlost=1
+firstslot=1
 lastslot=5
 # counted from 1 !!!
 cleanslot=6
