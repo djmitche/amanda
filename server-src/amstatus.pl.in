@@ -137,6 +137,7 @@ while(<AMDUMP>) {
 		$dump_finished{$hostpart}=0;
 		$taper_started{$hostpart}=0;
 		$taper_finished{$hostpart}=0;
+		$error{$hostpart}="";
 	}
 	elsif(/got result for host (\S+) disk (\S+): (\d+) -> (\d+)K,/) {
 		$host=$1;
@@ -210,6 +211,7 @@ while(<AMDUMP>) {
 			$busy_time{$2}=0;
 		}
 		$running_dumper{$2} = $hostpart;
+		$error{$hostpart}="";
 		$dumpers_active++;
 		if(! defined($dumpers_active[$dumpers_active])) {
 			$dumpers_active[$dumpers_active]=0;
@@ -246,11 +248,12 @@ while(<AMDUMP>) {
 		$serial=$3;
 		$error=$4;
 		$hostpart=$serial{$serial};
-		$dump_finished{$hostpart}=-1;
+		$dump_started{$hostpart}=0;
+		$dump_finished{$hostpart}=0;
 		$busy_time{$2}+=($1-$dump_time{$hostpart});
 		$running_dumper{$2} = "0";
 		$dump_time{$hostpart}=$1;
-		$error{$hostpart}=$error;
+		$error{$hostpart}="(aborted:$error)";
 		$dumpers_active--;
 	}
 	elsif(/driver: result time (\S+) from (dumper\d+): DONE (\d+-\d+) (\d+) (\d+) (\d+) \[.*\]/) {
@@ -264,6 +267,19 @@ while(<AMDUMP>) {
 		$busy_time{$2}+=($1-$dump_time{$hostpart});
 		$running_dumper{$2} = "0";
 		$dump_time{$hostpart}=$1;
+		$error{$hostpart}="";
+		$dumpers_active--;
+	}
+	elsif(/driver: result time (\S+) from (dumper\d+): ABORT-FINISHED (\d+-\d+)/) {
+		$current_time=$1;
+		$serial=$3;
+		$hostpart=$serial{$serial};
+		$dump_started{$hostpart}=0;
+		$dump_finished{$hostpart}=0;
+		$busy_time{$2}+=($1-$dump_time{$hostpart});
+		$running_dumper{$2} = "0";
+		$dump_time{$hostpart}=$1;
+		$error{$hostpart}="(aborted)";
 		$dumpers_active--;
 	}
 	elsif(/driver: finished-cmd time (\S+) dumper\d+ dumped (\S+):(\S+)/){
@@ -435,7 +451,7 @@ foreach $host (sort @hosts) {
 				if( defined $opt_waitdumping ) {
 					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
 					printf "%8dk", $esize{$hostpart};
-					print " wait for dumping\n";
+					print " wait for dumping $error{$hostpart}\n";
 				}
 				$wpartition++;
 				$wsize += $esize{$hostpart};
