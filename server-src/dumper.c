@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.14.2.7.2.15 2003/04/27 01:17:50 martinea Exp $
+/* $Id: dumper.c,v 1.75.2.14.2.7.2.16 2003/06/03 20:14:43 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -40,6 +40,7 @@
 #include "fileheader.h"
 #include "amfeatures.h"
 #include "server_util.h"
+#include "holding.h"
 
 #ifdef KRB4_SECURITY
 #include "dumper-krb4.c"
@@ -179,7 +180,7 @@ char **main_argv;
     char *conffile;
     char *q = NULL;
     int fd;
-    char *tmp_filename = NULL;
+    char *tmp_filename = NULL, *pc;
     int a;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
@@ -358,6 +359,10 @@ char **main_argv;
 	    cont_filename[0] = '\0';
 
 	    tmp_filename = newvstralloc(tmp_filename, filename, ".tmp", NULL);
+	    pc = strrchr(tmp_filename, '/');
+	    *pc = '\0';
+	    mkholdingdir(tmp_filename);
+	    *pc = '/';
 	    outfd = open(tmp_filename, O_RDWR|O_CREAT|O_TRUNC, 0600);
 	    if(outfd == -1) {
 		int save_errno = errno;
@@ -648,6 +653,7 @@ int *p_outfd, size;
     char *arg_filename = NULL;
     char *new_filename = NULL;
     char *tmp_filename = NULL;
+    char *pc;
     char sequence[NUM_STR_SIZE];
     int new_outfd = -1;
     struct cmdargs cmdargs;
@@ -755,6 +761,10 @@ int *p_outfd, size;
 					new_filename,
 					".tmp",
 					NULL);
+	    pc = strrchr(tmp_filename, '/');
+	    *pc = '\0';
+	    mkholdingdir(tmp_filename);
+	    *pc = '/';
 	    new_outfd = open(tmp_filename, O_RDWR|O_CREAT|O_TRUNC, 0600);
 	    if(new_outfd == -1) {
 		int save_errno = errno;
