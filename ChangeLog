@@ -1,5 +1,17 @@
 1998-12-17  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c (databuf_flush): new function.  Writes
+	the contents of the databuf out to its backing file, doing splitting
+	if necessary
+	* server-src/dumper.c (databuf_write): call databuf_flush when the
+	databuf fills up.  Fully complete all writes (no short writes)
+	* server-src/dumper.c (do_dump): databuf_write now guarantees complete
+	writes, so remove retry loop.  Call databuf_flush() when eof is hit.
+	Do not close datafd on eof, because our caller (main) passed it to
+	us and therefore owns it (and main does close it again).
+
+1998-12-17  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c (databuf_init): new function, initializes
 	a struct databuf.
 	* server-src/dumper.c (update_dataptr): rename to databuf_write,

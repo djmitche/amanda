@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.86 1998/12/18 00:42:08 kashmir Exp $
+/* $Id: dumper.c,v 1.87 1998/12/18 01:18:02 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -127,6 +127,7 @@ static char *construct_datestamp P((void));
 int write_tapeheader P((int outfd, dumpfile_t *type));
 static void databuf_init P((struct databuf *, int));
 static int databuf_write P((struct databuf *, const void *, int));
+static int databuf_flush P((struct databuf *));
 static void process_dumpeof P((void));
 static void process_dumpline P((char *str));
 static void add_msg_data P((char *str, int len));
@@ -483,120 +484,140 @@ databuf_init(db, fd)
 /*
  * Updates the buffer pointer for the input data buffer.  The buffer is
  * written if it is full, or the remainder is zeroed if at eof.
- * Returns negative on error, else the number of bytes 'written'.
+ * Returns negative on error, else 0.
  */
 static int
-databuf_write(db, buf,size)
+databuf_write(db, buf, size)
     struct databuf *db;
     const void *buf;
     int size;
 {
-    struct cmdargs cmdargs;
-    int written;
-    cmd_t cmd;
+    int nwritten;
 
-    /* Short write if we can't fit it all in */
-    if (size > db->spaceleft)
-	size = db->spaceleft;
+    while (size > 0) {
+	nwritten = size < db->spaceleft ? size : db->spaceleft;
+	memcpy(db->dataptr, buf, nwritten);
+	size -= nwritten;
+	db->spaceleft -= nwritten;
+	db->dataptr += nwritten;
 
-    if (size == 0) {
-	/* eof, zero rest of buffer */
-	memset(db->dataptr, 0, db->spaceleft);
-	db->spaceleft = 0;
-    } else {
-	memcpy(db->dataptr, buf, size);
-	db->spaceleft -= size;
-	db->dataptr += size;
+	/* If the buffer is full, write it */
+	if (db->spaceleft == 0 && databuf_flush(db) < 0)
+	    return (-1);
     }
 
-    if (db->spaceleft == 0) {	/* buffer is full, write it */
+    return (0);
+}
 
-	NAUGHTY_BITS;
+/*
+ * Write out the buffer to the backing file
+ */
+static int
+databuf_flush(db)
+    struct databuf *db;
+{
+    struct cmdargs cmdargs;
+    int fd, written;
+    cmd_t cmd;
+    char *tmp_filename;
 
-	if (split_size > 0 && dumpsize >= split_size) {
-	    char *tmp_filename;
-	    int fd;
+    /*
+     * If there's no data, do nothing.
+     */
+    if (db->dataptr == db->buf)
+	return;
 
-	    /*
-	     * First, update the header of the current file to point
-	     * to the next chunk, and then close it.
-	     */
-	    fd = db->fd;
-	    if (lseek(fd, (off_t)0, 0) < 0) {
-		errstr = squotef("lseek holding file: %s", strerror(errno));
-		return (-1);
-	    }
-	    ap_snprintf(file.cont_filename, sizeof(file.cont_filename),
-		"%s.%d", filename, ++filename_seq);
-	    write_tapeheader(fd, &file);
-	    aclose(fd);
+    /*
+     * If buffer isn't full, zero out the rest.
+     */
+    if (db->spaceleft > 0) {
+	memset(db->dataptr, 0, db->spaceleft);
+	db->spaceleft = 0;
+    }
 
-	    /*
-	     * Now, open the new chunk file, and give it a new header
-	     * that has no cont_filename pointer.
-	     */
-	    tmp_filename = vstralloc(file.cont_filename, ".tmp", NULL);
-	    if ((fd = open(tmp_filename, O_WRONLY|O_CREAT, 0666)) == -1) {
-		errstr = squotef("holding file \"%s\": %s",
-			    tmp_filename, strerror(errno));
-		amfree(tmp_filename);
-		return (-1);
-	    }
-	    file.type = F_CONT_DUMPFILE;
-	    file.cont_filename[0] = '\0';
-	    write_tapeheader(fd, &file);
+    NAUGHTY_BITS;
+
+    /*
+     * See if we need to split this file.
+     */
+    if (split_size > 0 && dumpsize >= split_size) {
+	/*
+	 * First, update the header of the current file to point
+	 * to the next chunk, and then close it.
+	 */
+	fd = db->fd;
+	if (lseek(fd, (off_t)0, 0) < 0) {
+	    errstr = squotef("lseek holding file: %s", strerror(errno));
+	    return (-1);
+	}
+	ap_snprintf(file.cont_filename, sizeof(file.cont_filename),
+	    "%s.%d", filename, ++filename_seq);
+	write_tapeheader(fd, &file);
+	aclose(fd);
+
+	/*
+	 * Now, open the new chunk file, and give it a new header
+	 * that has no cont_filename pointer.
+	 */
+	tmp_filename = vstralloc(file.cont_filename, ".tmp", NULL);
+	if ((fd = open(tmp_filename, O_WRONLY|O_CREAT, 0666)) == -1) {
+	    errstr = squotef("holding file \"%s\": %s",
+			tmp_filename, strerror(errno));
 	    amfree(tmp_filename);
+	    return (-1);
+	}
+	file.type = F_CONT_DUMPFILE;
+	file.cont_filename[0] = '\0';
+	write_tapeheader(fd, &file);
+	amfree(tmp_filename);
 
-	    /*
-	     * Now put give the new file the old file's descriptor
-	     */
-	    if (fd != db->fd) {
-		if (dup2(fd, db->fd) == -1) {
-		    errstr = squotef("can't dup2: %s", strerror(errno));
-		    return (-1);
-		}
-		aclose(fd);
+	/*
+	 * Now put give the new file the old file's descriptor
+	 */
+	if (fd != db->fd) {
+	    if (dup2(fd, db->fd) == -1) {
+		errstr = squotef("can't dup2: %s", strerror(errno));
+		return (-1);
 	    }
-
-	    /*
-	     * Update when we need to chunk again
-	     */
-	    split_size += chunksize;
+	    aclose(fd);
 	}
 
 	/*
-	 * Write out the buffer
+	 * Update when we need to chunk again
 	 */
-	do {
-	    written = write(db->fd, db->buf + db->spaceleft,
-	    sizeof(db->buf) - db->spaceleft);
-	    if (written > 0) {
-		db->spaceleft += written;
-		continue;
-	    } else if (written < 0 && errno != ENOSPC) {
-		errstr = squotef("data write: %s", strerror(errno));
-		return (-1);
-	    }
-
-	    putresult("NO-ROOM %s\n", handle);
-	    cmd = getcmd(&cmdargs);
-	    switch (cmd) {
-	    case ABORT:
-		abort_pending = 1;
-		errstr = "ERROR";
-		return (-1);
-	    case CONTINUE:
-		continue;
-	    default:
-		error("error [bad command after NO-ROOM: %d]", cmd);
-	    }
-	} while (db->spaceleft != sizeof(db->buf));
-	db->dataptr = db->buf;
-	dumpsize += (sizeof(db->buf) / 1024);
+	split_size += chunksize;
     }
-    return (size);
-}
 
+    /*
+     * Write out the buffer
+     */
+    do {
+	written = write(db->fd, db->buf + db->spaceleft,
+	sizeof(db->buf) - db->spaceleft);
+	if (written > 0) {
+	    db->spaceleft += written;
+	    continue;
+	} else if (written < 0 && errno != ENOSPC) {
+	    errstr = squotef("data write: %s", strerror(errno));
+	    return (-1);
+	}
+
+	putresult("NO-ROOM %s\n", handle);
+	cmd = getcmd(&cmdargs);
+	switch (cmd) {
+	case ABORT:
+	    abort_pending = 1;
+	    errstr = "ERROR";
+	    return (-1);
+	case CONTINUE:
+	    continue;
+	default:
+	    error("error [bad command after NO-ROOM: %d]", cmd);
+	}
+    } while (db->spaceleft != sizeof(db->buf));
+    db->dataptr = db->buf;
+    dumpsize += (sizeof(db->buf) / 1024);
+}
 
 static char *msgbuf = NULL;
 int got_info_endline;
@@ -1113,8 +1134,7 @@ int mesgfd, datafd, indexfd, outfd;
 	/* read/write any data */
 
 	if(datafd >= 0 && FD_ISSET(datafd, &selectset)) {
-	    char *p;
-	    int n, size1 = read(datafd, buf, sizeof(buf));
+	    int size1 = read(datafd, buf, sizeof(buf));
 
 	    switch(size1) {
 	    case -1:
@@ -1122,21 +1142,15 @@ int mesgfd, datafd, indexfd, outfd;
 		goto failed;
 	    case 0:
 		/* flush */
-		if (databuf_write(&db, NULL, 0) < 0)
+		if (databuf_flush(&db) < 0)
 		    goto failed;
 		eof1 = 1;
 		FD_CLR(datafd, &readset);
-		aclose(datafd);
 		break;
 	    default:
-		p = buf;
-		while (size1 > 0) {
-		    n = databuf_write(&db, p, size1);
-		    if (n < 0)
+		if (databuf_write(&db, buf, size1) < 0)
 			goto failed;
-		    p += n;
-		    size1 -= n;
-		}
+		break;
 	    }
 	}
 
