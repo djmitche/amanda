@@ -216,8 +216,8 @@ AMCLIENT_EXTRA_OBJS=
 
 BUILD_RECOVER_PROGS_SBIN="amrecover"
 
-BUILD_CHANGER_PROGS_LIBEXEC="seagate-changer"
-BUILD_CHANGER_SCRIPTS_LIBEXEC="chg-generic hp-changer no-changer rth-changer chs-changer"
+BUILD_CHANGER_PROGS_LIBEXEC="chg-chio"
+BUILD_CHANGER_SCRIPTS_LIBEXEC="chg-manual chg-multi chg-mtx chg-rth chg-chs"
 
 BUILD_TAPE_LIB="libamtape.la"
 
@@ -1330,11 +1330,6 @@ AC_CHECK_HEADERS(\
 	syslog.h \
 	unistd.h)
 
-dnl Do not build seagate-changer if we can't find chio.h.
-if test "$ac_cv_header_chio_h" = no -a "$ac_cv_header_sys_chio_h" = no; then
-    BUILD_CHANGER_PROGS_LIBEXEC=
-fi
-
 dnl cur_colr is on some HP's
 AC_CHECK_LIB(cur_colr,main)
 
@@ -2075,9 +2070,9 @@ AC_OUTPUT( \
 	amplot/amcat.awk		amplot/amplot.sh		\
 	amplot/Makefile							\
 									\
-	changer-src/chg-generic.sh	changer-src/chs-changer.sh	\
-	changer-src/hp-changer.sh	changer-src/no-changer.sh	\
-	changer-src/rth-changer.pl	changer-src/Makefile		\
+	changer-src/chg-manual.sh	changer-src/chg-multi.sh	\
+	changer-src/chg-mtx.sh		changer-src/chg-chs.sh		\
+	changer-src/chg-rth.sh		changer-src/Makefile		\
 									\
 	client-src/patch-system.sh	client-src/Makefile		\
 									\
