@@ -20,6 +20,8 @@ noinst_HEADERS = 	tapeio.h
 
 EXTRA_PROGRAMS = 	tapetype
 
+CLEANFILES = *.test.c
+
 ###
 # Because libamanda includes routines (e.g. regex) provided by some system
 # libraries, and because of the way libtool sets up the command line, we

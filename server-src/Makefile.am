@@ -54,7 +54,9 @@ SUFFIXES =		.sh .pl
 			chmod a+x $@
 
 # there are used for testing only:
-EXTRA_PROGRAMS = diskfile conffile infofile
+TEST_PROGS = diskfile conffile infofile
+
+EXTRA_PROGRAMS = $(TEST_PROGS)
 
 CLEANFILES = *.test.c
 
