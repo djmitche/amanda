@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.1 1998/11/04 20:08:33 kashmir Exp $
+ * $Id: event.c,v 1.2 1998/11/04 22:24:11 kashmir Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
  * a uniform interface, central state storage, and localized
@@ -114,13 +114,6 @@ event_register(data, type, fn, arg)
     fprintf(stderr, "event: register: %X data=%d, type=%s\n", handle,
 	handle->data, event_type2str(handle->type));
 #endif
-
-{
-event_handle_t *h;
-for (h = TAILQ_FIRST(&eventq.tailq); h != NULL; h = TAILQ_NEXT(h, tq))
-    if (h->data == handle->data && h->type == handle->type && h != handle)
-	assert(0 && "duplicate handles in event queue");
-}
     return (handle);
 }
 
