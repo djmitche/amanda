@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.4 1998/11/05 19:12:36 kashmir Exp $
+ * $Id: event.c,v 1.5 1998/11/05 21:22:25 kashmir Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
  * a uniform interface, central state storage, and localized
@@ -192,7 +192,7 @@ event_loop(dontblock)
     const int dontblock;
 {
     static int entry = 0;
-    fd_set readfds, writefds;
+    fd_set readfds, writefds, errfds, werrfds;
     struct timeval timeout, *tvptr;
     int ntries, maxfd, rc, interval, fired;
     time_t curtime;
@@ -246,6 +246,7 @@ event_loop(dontblock)
 	 */
 	FD_ZERO(&readfds);
 	FD_ZERO(&writefds);
+	FD_ZERO(&errfds);
 	maxfd = 0;
 
 	/*
@@ -263,6 +264,7 @@ event_loop(dontblock)
 	     */
 	    case EV_READFD:
 		FD_SET(eh->data, &readfds);
+		FD_SET(eh->data, &errfds);
 		maxfd = max(maxfd, eh->data);
 		break;
 
@@ -271,6 +273,7 @@ event_loop(dontblock)
 	     */
 	    case EV_WRITEFD:
 		FD_SET(eh->data, &writefds);
+		FD_SET(eh->data, &errfds);
 		maxfd = max(maxfd, eh->data);
 		break;
 
@@ -335,7 +338,7 @@ event_loop(dontblock)
 	fprintf(stderr, "event: select: dontblock=%d, maxfd=%d, timeout=%d\n",
 	    dontblock, maxfd, tvptr != NULL ? timeout.tv_sec : -1);
 #endif
-	rc = select(maxfd + 1, &readfds, &writefds, NULL, tvptr);
+	rc = select(maxfd + 1, &readfds, &writefds, &errfds, tvptr);
 #ifdef EVENT_DEBUG
 	fprintf(stderr, "event: select returns %d\n", rc);
 #endif
@@ -356,12 +359,20 @@ event_loop(dontblock)
 	    /* contents cannot be trusted */
 	    FD_ZERO(&readfds);
 	    FD_ZERO(&writefds);
+	    FD_ZERO(&errfds);
 	}
 
 	/*
 	 * Grab the current time again for use in timed events.
 	 */
 	curtime = time(NULL);
+
+	/*
+	 * We need to copy the errfds into werrfds, so file descriptors
+	 * that are being polled for both reading and writing have
+	 * both of their poll events 'see' the error.
+	 */
+	memcpy(&werrfds, &errfds, sizeof(werrfds));
 
 	/*
 	 * Now run through the events and fire the ones that are ready.
@@ -377,8 +388,10 @@ event_loop(dontblock)
 	     * Read fds: just fire the event if set in the bitmask
 	     */
 	    case EV_READFD:
-		if (FD_ISSET(eh->data, &readfds)) {
+		if (FD_ISSET(eh->data, &readfds) ||
+		    FD_ISSET(eh->data, &errfds)) {
 		    FD_CLR(eh->data, &readfds);
+		    FD_CLR(eh->data, &errfds);
 		    fired = 1;
 		}
 		break;
@@ -387,8 +400,10 @@ event_loop(dontblock)
 	     * Write fds: same as Read fds
 	     */
 	    case EV_WRITEFD:
-		if (FD_ISSET(eh->data, &writefds)) {
+		if (FD_ISSET(eh->data, &writefds) ||
+		    FD_ISSET(eh->data, &werrfds)) {
 		    FD_CLR(eh->data, &writefds);
+		    FD_CLR(eh->data, &werrfds);
 		    fired = 1;
 		}
 		break;
