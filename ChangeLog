@@ -1,4 +1,10 @@
 2002-10-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	Patch by Paul Bijnens <paul.bijnens@xplanation.com>
+
+	* tape-src/tapetype.c: Detects and warns the user if the tape drive
+	  has hardware compression enabled.
+
+2002-10-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* restore-src/amrestore.c: New '-f <fileno>' flag, Do a rewind and
 	  'fsf <fileno>' if -f is set.
