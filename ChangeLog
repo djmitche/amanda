@@ -1,6 +1,11 @@
+2004-03-26  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* amplot/amplot.awk: Parse "driver: tape size" line.
+
 2004-03-22  Stefan G. Weichinger <monitor@oops.co.at>
 
-        * server-src/amcheck.c (start_host): Added warning for hostname localhost.
+        * server-src/amcheck.c (start_host): Added warning for hostname
+	  localhost.
 	* docs/TOP-TEN-QUESTIONS: added note about localhost-warning.
 
 2004-03-19  Jean-Louis Martineau <martineau@iro.umontreal.ca>
