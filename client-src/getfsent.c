@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: getfsent.c,v 1.24 2001/04/09 02:01:45 oliva Exp $
+ * $Id: getfsent.c,v 1.25 2001/04/12 00:59:01 martinea Exp $
  *
  * generic version of code to read fstab
  */
@@ -147,24 +147,29 @@ generic_fsent_t *fsent;
 #include <mntent.h>
 
 static FILE *fstabf1 = NULL;		/* /proc/mounts */
-static FILE *fstabf2 = NULL;		/* MNTTAB */
+static FILE *fstabf2 = NULL;		/* MOUNTED */
+static FILE *fstabf3 = NULL;		/* MNTTAB */
 
 int open_fstab()
 {
     close_fstab();
 #if defined(HAVE_SETMNTENT)
     fstabf1 = setmntent("/proc/mounts", "r");
-    fstabf2 = setmntent(MNTTAB, "r");
+# if defined(MOUNTED)
+    fstabf2 = setmntent(MOUNTED, "r");
+# endif
+    fstabf3 = setmntent(MNTTAB, "r");
 #else
-    fstabf2 = fopen(MNTTAB, "r");
+    fstabf3 = fopen(MNTTAB, "r");
 #endif
-    return (fstabf1 != NULL || fstabf2 != NULL);
+    return (fstabf1 != NULL || fstabf2 != NULL || fstabf3 != NULL);
 }
 
 void close_fstab()
 {
     afclose(fstabf1);
     afclose(fstabf2);
+    afclose(fstabf3);
 }
 
 int get_fstab_nextentry(fsent)
@@ -182,6 +187,12 @@ generic_fsent_t *fsent;
 	sys_fsent = getmntent(fstabf2);
 	if(!sys_fsent) {
 	    afclose(fstabf2);
+	}
+    }
+    if(!sys_fsent && fstabf3) {
+	sys_fsent = getmntent(fstabf3);
+	if(!sys_fsent) {
+	    afclose(fstabf3);
 	}
     }
     if(!sys_fsent) {
@@ -430,9 +441,10 @@ struct stat stats[3], *estat;
   return 0;
 }
 
-int search_fstab(name, fsent)
+int search_fstab(name, fsent, check_dev)
      char *name;
      generic_fsent_t *fsent;
+     int check_dev;
 {
   struct stat stats[3];
   char *fullname = NULL;
@@ -479,8 +491,8 @@ int search_fstab(name, fsent)
     if(fsent->fsname != NULL) {
       sfs = stat(fsent->fsname, &fsstat);
       sfsr = stat((rdev = dev2rdev(fsent->fsname)), &fsrstat);
-      /* We don't want to `continue;' even if both sfs and sfsr are
-	 -1, because, if we get here, at least smnt is not -1.  */
+      if(check_dev == 1 && sfs == -1 && sfsr == -1)
+	continue;
     }
 
     if((fsent->mntdir != NULL &&
@@ -523,8 +535,9 @@ char *str;
 {
     generic_fsent_t fsent;
 
-    if(search_fstab(str, &fsent))
-      if (fsent.fsname != NULL)
+    if(search_fstab(str, &fsent, 1) && fsent.fsname != NULL)
+	str = fsent.fsname;
+    else if(search_fstab(str, &fsent, 0) && fsent.fsname != NULL)
 	str = fsent.fsname;
 
     return dev2rdev(str);
@@ -535,8 +548,9 @@ char *str;
 {
     generic_fsent_t fsent;
 
-    if(search_fstab(str, &fsent))
-      if (fsent.mntdir != NULL)
+    if(search_fstab(str, &fsent, 1) && fsent.mntdir != NULL)
+	str = fsent.mntdir;
+    else if(search_fstab(str, &fsent, 0) && fsent.mntdir != NULL)
 	str = fsent.mntdir;
 
     return stralloc(str);
@@ -547,7 +561,7 @@ char *str;
 {
     generic_fsent_t fsent;
 
-    if (!search_fstab(str, &fsent))
+    if (!search_fstab(str, &fsent, 1) && !search_fstab(str, &fsent, 0))
       return stralloc("");
 
     return stralloc(fsent.fstype);
@@ -606,7 +620,7 @@ int main(argc, argv)
     close_fstab();
 
     name = newstralloc(name, "/usr");
-    if(search_fstab(name, &fsent)) {
+    if(search_fstab(name, &fsent, 1) || search_fstab(name, &fsent, 0)) {
 	printf("Found %s mount for %s:\n",
 	       is_local_fstype(&fsent)? "local" : "remote", name);
 	print_entry(&fsent);
@@ -615,7 +629,7 @@ int main(argc, argv)
 	printf("Mount for %s not found\n", name);
 
     name = newstralloc(name, "/");
-    if(search_fstab(name, &fsent)) {
+    if(search_fstab(name, &fsent, 1) || search_fstab(name, &fsent, 0)) {
 	printf("Found %s mount for %s:\n",
 	       is_local_fstype(&fsent)? "local" : "remote", name);
 	print_entry(&fsent);

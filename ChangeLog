@@ -1,3 +1,15 @@
+2001-04-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* client-src/getfsent.h (search_fstab): New prototype.
+	* client-src/getfsent.c (search_fstab): New arg check_dev, skip
+	entry if check_dev==1 and device stats failed.
+	* client-src/getfsent.c (open_fstab for linux): Open MOUNTED.
+	* client-src/getfsent.c (close_fstab for linux): close MOUNTED.
+	* client-src/getfsent.c (get_fstab_nextentry for linux): parse MOUNTED.
+	* client-src/getfsent.c (amname_to_devname, amname_to_dirname, 
+	amname_to_fstype): Call search_fstab sequentialy with 1 and 0 
+	for check_dev.
+
 2001-04-10 John R. Jackson <jrj@purdue.edu>
 
 	* docs/INSTALL: Update location to GNUPLOT per Lars Hecking
