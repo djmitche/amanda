@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.3.2.3.4.3.2.6 2003/02/20 21:45:30 martinea Exp $
+ * $Id: tapetype.c,v 1.3.2.3.4.3.2.7 2003/06/20 14:46:30 martinea Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -461,7 +461,8 @@ int main(argc, argv)
    * Inform about estimated time needed to run the remaining of this program
    */
   fprintf(stderr, "Estimated time to write 2 * %d Mbyte: ", estsize / 1024);
-  pass1time = 2 * pass2time * estsize / (pass0size * blockkb);
+  pass1time = (time_t)(2.0 * pass2time * estsize / (1.0 * pass0size * blockkb));
+	/* avoid overflow and underflow by doing math in floating point */
   fprintf(stderr, "%ld sec = ", pass1time);
   fprintf(stderr, "%ld h %ld min\n", (pass1time/3600), ((pass1time%3600) / 60));
 
