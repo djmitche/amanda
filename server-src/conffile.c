@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.100 2003/02/20 19:35:44 martinea Exp $
+ * $Id: conffile.c,v 1.101 2003/03/27 17:50:41 kovert Exp $
  *
  * read configuration file
  */
@@ -1468,7 +1468,7 @@ static void init_dumptype_defaults()
     dpcur.maxdumps = conf_maxdumps.i;
     dpcur.maxpromoteday = 10000;
     dpcur.start_t = 0;
-    dpcur.security_driver = "BSD";
+    dpcur.security_driver = stralloc("BSD");
 
     /* options */
     dpcur.record = 1;
