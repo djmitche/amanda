@@ -1,5 +1,9 @@
 2000-11-21 John R. Jackson  <jrj@purdue.edu>
 
+	* configure.in: Forgot to check in this part of new amgetconf.8.in.
+
+2000-11-21 John R. Jackson  <jrj@purdue.edu>
+
 	* contrib/sst/README.Amanda: New file of Amanda specific sst notes.
 	* contrib/sst/sst.c: Attempt at letting gcc compile sst.
 
