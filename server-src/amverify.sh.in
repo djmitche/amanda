@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.15 1999/09/20 00:24:58 jrj Exp $
+#	$Id: amverify.sh.in,v 1.16 2000/09/24 22:35:20 martinea Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -230,7 +230,7 @@ fi
 SLOT=0
 CONFIG=$1
 [ X"$CONFIG" = X"" ] \
-	&& $Echoe "usage: amverify$SUF <config>" \
+	&& $Echoe "usage: amverify$SUF <config> [slot]" \
 	&& exit 1
 
 AMCONFIG=$CONFIG_DIR/$CONFIG/amanda.conf

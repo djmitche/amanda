@@ -24,12 +24,12 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.33 2000/07/10 19:50:23 mengel Exp $
+ * $Id: amrestore.c,v 1.34 2000/09/24 22:35:20 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
 /*
- * usage: amrestore [-p] [-h] [-r|-c] tape-device [hostname [diskname [datestamp [hostname [diskname [datestamp ... ]]]]]]
+ * usage: amrestore [-r|-c] [-p] [-h] tape-device|holdingfile [hostname [diskname [datestamp [hostname [diskname [datestamp ... ]]]]]]
  *
  * Pulls all files from the tape that match the hostname, diskname and
  * datestamp regular expressions.
@@ -370,7 +370,7 @@ void usage()
  * Print usage message and terminate.
  */
 {
-    error("Usage: amrestore [-r|-c] [-h] [-p] tapedev [host [disk [date ... ]]]");
+    error("Usage: amrestore [-r|-c] [-p] [-h] tape-device|holdingfile [hostname [diskname [datestamp [hostname [diskname [datestamp ... ]]]]]]");
 }
 
 
@@ -438,7 +438,7 @@ char **argv;
     }
 
     if(optind >= argc) {
-	fprintf(stderr, "%s: Must specify tape device\n", get_pname());
+	fprintf(stderr, "%s: Must specify tape-device or holdingfile\n", get_pname());
 	usage();
     }
     else tapename = argv[optind++];

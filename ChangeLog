@@ -1,5 +1,13 @@
 2000-09-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* man/amreport.8.in: amreport does not rotate the log.
+	* man/amrestore.8: note on holdingdisk.
+	* restore-src/amrestore.c: update usage.
+	* server-src/amrmtape.sh.in: update usage.
+	* server-src/amverify.sh.in.usage: update usage.
+
+2000-09-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amoverview.pl.in: update usage information,
 	-config is no longer needed for ccompatibility with other program.
 	* man/amoverview.8.in: -config is no longer needed.
