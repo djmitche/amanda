@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.31 1998/01/26 21:16:11 jrj Exp $
+ * $Id: amcheck.c,v 1.32 1998/01/30 23:41:36 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -62,6 +62,7 @@ char *pname = "amcheck";
 
 static int mailout, overwrite;
 dgram_t *msg = NULL;
+char *confname;
 
 /* local functions */
 
@@ -91,7 +92,6 @@ char **argv;
     char *confdir, *version_string;
     char *mainfname = NULL;
     char pid_str[NUM_STR_SIZE];
-    char *confname;
     int do_clientchk, clientchk_pid, client_probs;
     int do_serverchk, serverchk_pid, server_probs;
     int opt, size, retstat, result_port, tempfd, mainfd;
@@ -440,15 +440,36 @@ int fd;
 
     startclock();
 
-    if(read_tapelist(getconf_str(CNF_TAPELIST)))
-	error("parse error in %s", getconf_str(CNF_TAPELIST));
-
     if((outf = fdopen(fd, "w")) == NULL)
 	error("fdopen %d: %s", fd, strerror(errno));
     errf = outf;
 
     fprintf(outf, "Amanda Tape Server Host Check\n");
     fprintf(outf, "-----------------------------\n");
+
+    /* check that the tapelist file is writable if it already exists */
+
+    {
+	char *confdir;
+	char *tapefile;
+	char *conf_tapelist;
+
+	conf_tapelist=getconf_str(CNF_TAPELIST);
+	confdir = vstralloc(CONFIG_DIR, "/", confname, NULL);
+	tapefile = vstralloc(confdir, "/", conf_tapelist, NULL);
+	if(access(confdir, W_OK) == -1)
+	    fprintf(outf, "ERROR: %s is unwritable: %s\n",
+		    confdir, strerror(errno));
+
+	if(access(tapefile, F_OK) == 0 && access(tapefile, W_OK) != 0)
+	    fprintf(outf, "ERROR: %s is not writable\n", tapefile);
+
+	afree(confdir);
+	afree(tapefile);
+
+	if(read_tapelist(conf_tapelist))
+	    fprintf(outf, "ERROR: parse error in %s", conf_tapelist);
+    }
 
     /* check available disk space */
 
