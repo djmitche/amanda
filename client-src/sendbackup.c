@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.11 1997/09/09 22:14:49 amcore Exp $
+ * $Id: sendbackup.c,v 1.12 1997/09/10 22:03:22 amcore Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -662,11 +662,11 @@ int *fd, min;
   while (*fd >= 0 && *fd < min) {
     int newfd = dup(*fd);
     if (newfd == -1)
-      dbprintf(("unable to save file descriptor [%s]", strerror(errno)));
+      dbprintf(("unable to save file descriptor [%s]\n", strerror(errno)));
     *fd = newfd;
   }
   if (origfd != *fd)
-    dbprintf(("dupped file descriptor %i to %i", origfd, *fd));
+    dbprintf(("dupped file descriptor %i to %i\n", origfd, *fd));
 }
 
 void start_index(createindex, input, mesg, index, cmd)
