@@ -1,3 +1,10 @@
+2004-04-29  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* config/acinclude.m4i (AX_CREATE_STDINT_H) : New macro.
+	* configure.in: Use AX_CREATE_STDINT_H(common-src/amanda-int.h).
+	* common-src/amanda.h: include "common-src/amanda-int.h".
+	* changer-src/scsi-cam.c: Change u_int32_t for uint32_t.
+
 2004-04-27  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* configure.in: Fix for automake 1.8.4.
