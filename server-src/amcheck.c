@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.71 2000/09/23 00:13:32 martinea Exp $
+ * $Id: amcheck.c,v 1.72 2000/09/23 13:04:58 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -659,6 +659,8 @@ int start_server_check(fd, do_localchk, do_tapechk)
     if(do_localchk) {
 	char *conf_logdir;
 	char *logfile;
+	char *olddir;
+	struct stat stat_old;
 
 	conf_logdir = getconf_str(CNF_LOGDIR);
 	if (*conf_logdir == '/') {
@@ -679,6 +681,19 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	    if(access(logfile, W_OK) != 0)
 		fprintf(outf, "ERROR: log file %s: not writable\n",
 			logfile);
+	}
+
+	olddir = vstralloc(conf_logdir, "/oldlog", NULL);
+	if (stat(olddir,&stat_old) == 0) { /* oldlog exist */
+	    if(!(S_ISDIR(stat_old.st_mode))) {
+		fprintf(outf, "ERROR: Oldlog directory \"%s\" is not a directory\n", olddir);
+	    }
+	    if(access(olddir, W_OK) == -1) {
+		fprintf(outf, "ERROR: oldlog dir %s: not writable\n", olddir);
+	    }
+	}
+	else if(lstat(olddir,&stat_old) == 0) {
+	    fprintf(outf, "ERROR: Oldlog directory \"%s\" is not a directory\n", olddir);
 	}
 
 	if (testtape) {
