@@ -1,3 +1,8 @@
+2001-04-10 John R. Jackson <jrj@purdue.edu>
+
+	* docs/INSTALL: Update location to GNUPLOT per Lars Hecking
+	  <lhecking@nmrc.ie>.
+
 2001-04-09 Thomas Hepper <th@ant.han.de>
 	* changer-src/scsi-changer-driver.c: More rework on the debug output.
 	changed definition SENSE_NO_TAPE to SENSE_TAPE_NOT_ONLINE
