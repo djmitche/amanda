@@ -1,7 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 
 ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
-ACLOCAL = @ACLOCAL@ -I $(top_srcdir)/config
+LIBTOOL_M4 = @LIBTOOL_M4@
+ACLOCAL = @ACLOCAL@ -I $(top_srcdir)/config @LIBTOOL_M4_MACRO_DIR@
 AUTOCONF = @AUTOCONF@ --localdir=$(top_srcdir)/config
 
 SUBDIRS=config		\
@@ -36,5 +37,8 @@ EXTRA_DIST = \
 	regex-src/fake/limits.h		regex-src/fake/memmove.c	\
 	regex-src/fake/stdlib.h
 
-$(ACLOCAL_M4): $(srcdir)/config/acinclude.m4 $(srcdir)/config/libtool.m4
+$(ACLOCAL_M4): $(srcdir)/config/acinclude.m4 $(LIBTOOL_M4)
+	rm -f $(srcdir)/aclocal.m4 $(ACLOCAL_M4)
 	cd $(srcdir) && $(ACLOCAL) --output=$(ACLOCAL_M4)
+	test -f $(srcdir)/aclocal.m4 && \
+	mv $(srcdir)/aclocal.m4 $(ACLOCAL_M4)
