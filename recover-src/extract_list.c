@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43.2.13 2000/11/21 22:23:31 jrjackson Exp $
+ * $Id: extract_list.c,v 1.43.2.13.2.1 2001/02/28 02:16:26 jrjackson Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -34,6 +34,7 @@
 #include "amrecover.h"
 #include "fileheader.h"
 #include "dgram.h"
+#include "stream.h"
 #ifdef SAMBA_CLIENT
 #include "findpass.h"
 #endif
@@ -1028,10 +1029,8 @@ char *cmd;
    Return tape server socket on success, -1 on error. */
 static int extract_files_setup P((void))
 {
-    struct sockaddr_in tape_server;
-    struct sockaddr_in myname;
     struct servent *sp;
-    struct hostent *hp;
+    int my_port;
     int tape_server_socket;
     char *disk_regex = NULL;
     char *service_name = NULL;
@@ -1048,56 +1047,25 @@ static int extract_files_setup P((void))
 	return -1;
     }
     amfree(service_name);
-    if ((hp = gethostbyname(tape_server_name)) == NULL)
-    {
-	printf("%s is an unknown host\n", tape_server_name);
-	return -1;
-    }
-    memset((char *)&tape_server, 0, sizeof(tape_server));
-    memcpy((char *)&tape_server.sin_addr, hp->h_addr, hp->h_length);
-    tape_server.sin_family = hp->h_addrtype;
-    tape_server.sin_port = sp->s_port;
-
-    /* contact the tape server */
-    if ((tape_server_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-    {
-	perror("Error creating socket");
-	exit(1);
-    }
-    if ((hp = gethostbyname(localhost)) == NULL)
-    {
-	(void)fprintf(stderr, "%s: %s is an unknown host\n",
-		      get_pname(), localhost);
-	dbprintf(("%s is an unknown host\n", localhost));
-	dbclose();
-	exit(1);
-    }
-    memset((char *)&myname, 0, sizeof(myname));
-    memcpy((char *)&myname.sin_addr, hp->h_addr, hp->h_length);
-    myname.sin_family = hp->h_addrtype;
     seteuid(0);					/* it either works ... */
     setegid(0);
-    if (bind_portrange(tape_server_socket, &myname, 512, IPPORT_RESERVED - 1) != 0)
+    tape_server_socket = stream_client(tape_server_name,
+				       ntohs(sp->s_port),
+				       DEFAULT_SIZE,
+				       DATABUF_SIZE*2,
+				       &my_port);
+    if (tape_server_socket < 0)
     {
-	perror("amrecover: Error binding socket");
-	exit(2);
+	printf("cannot connect to %s: %s\n", tape_server_name, strerror(errno));
+	return -1;
     }
-    if (ntohs(myname.sin_port) >= IPPORT_RESERVED) {
-	(void)fprintf(stderr, "%s: can't get a reserved udp port\n",
-		      get_pname());
-	dbprintf(("can't get a reserved udp port\n"));
-	dbclose();                    
-	exit(1);
+    if (my_port >= IPPORT_RESERVED) {
+	aclose(tape_server_socket);
+	printf("did not get a reserved port: %d\n", my_port);
+	return -1;
     }
-
     setegid(getgid());
     seteuid(getuid());				/* put it back */
-    if (connect(tape_server_socket, (struct sockaddr *)&tape_server,
-		sizeof(struct sockaddr_in)) == -1)
-    {
-	perror("Error connecting to tape server");
-	exit(2);
-    }
 
     /* do the security thing */
 #if defined(KRB4_SECURITY)

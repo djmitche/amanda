@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.h,v 1.4.2.1 1998/11/17 18:10:04 jrj Exp $
+ * $Id: stream.h,v 1.4.2.1.2.1 2001/02/28 02:16:26 jrjackson Exp $
  *
  * interface to stream module
  */
@@ -34,6 +34,11 @@
 
 #include "amanda.h"
 
+/* Note: This must be kept in sync with the DATABUF_SIZE defined in
+ * client-src/sendbackup-krb4.c, or kerberos encryption won't work...
+ *	- Chris Ross (cross@uu.net)  4-Jun-1998
+ */
+#define DATABUF_SIZE TAPE_BLOCK_BYTES
 #define DEFAULT_SIZE -1
 
 int stream_server P((int *port, int sendsize, int recvsize));

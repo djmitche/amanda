@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.13 2000/10/11 00:44:01 martinea Exp $
+/* $Id: dumper.c,v 1.75.2.13.2.1 2001/02/28 02:16:26 jrjackson Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -58,11 +58,6 @@
 
 #define CONNECT_TIMEOUT	5*60
 #define MAX_ARGS	11
-/* Note: This must be kept in sync with the DATABUF_SIZE defined in
- * client-src/sendbackup-krb4.c, or kerberos encryption won't work...
- *	- Chris Ross (cross@uu.net)  4-Jun-1998
- */
-#define DATABUF_SIZE	TAPE_BLOCK_BYTES
 #define MESGBUF_SIZE	4*1024
 
 #define STARTUP_TIMEOUT 60
@@ -356,7 +351,7 @@ char **main_argv;
 	    /* connect outf to taper port */
 
 	    outfd = stream_client("localhost", taper_port,
-				  DATABUF_SIZE, DEFAULT_SIZE, NULL);
+				  DATABUF_SIZE*2, DEFAULT_SIZE, NULL);
 	    if(outfd == -1) {
 		q = squotef("[taper port open: %s]", strerror(errno));
 		putresult("FAILED %s %s\n", handle, q);
@@ -491,8 +486,7 @@ int outf;
     int written;
 
     do {
-	written = write(outf, databuf + spaceleft,
-	sizeof(databuf) - spaceleft);
+	written = write(outf, databuf + spaceleft, sizeof(databuf) - spaceleft);
 	if(written > 0) {
 	    spaceleft += written;
 	    continue;
@@ -679,19 +673,21 @@ static void process_dumpeof()
 {
     /* process any partial line in msgbuf? !!! */
     if(msgbuf != NULL) {
-	fprintf(errf,"? dumper: error [partial line in msgbuf: %ld bytes]\n",
-		(long int) strlen(msgbuf));
-	fprintf(errf,"? dumper: error [partial line in msgbuf: \"%s\"]\n",
-		msgbuf);
+	fprintf(errf,"? %s: error [partial line in msgbuf: %ld bytes]\n",
+		get_pname(), (long) strlen(msgbuf));
+	fprintf(errf,"? %s: error [partial line in msgbuf: \"%s\"]\n",
+		get_pname(), msgbuf);
     }
     if(!got_sizeline && dump_result < 2) {
 	/* make a note if there isn't already a failure */
-	fputs("? dumper: strange [missing size line from sendbackup]\n",errf);
+	fprintf(errf,"? %s: strange [missing size line from sendbackup]\n",
+		get_pname());
 	dump_result = max(dump_result, 1);
     }
 
     if(!got_endline && dump_result < 2) {
-	fputs("? dumper: strange [missing end line from sendbackup]\n",errf);
+	fprintf(errf,"? %s: strange [missing end line from sendbackup]\n",
+		get_pname());
 	dump_result = max(dump_result, 1);
     }
 }
@@ -958,8 +954,9 @@ int mesgfd, datafd, indexfd, outfd;
 #if DUMPER_SOCKET_BUFFERING
     int lowat = DATABUF_SIZE;
     int recbuf = 0;
-    int lowwatset = 0;
     int sizeof_recbuf = sizeof(recbuf);
+    int lowwatset = 0;
+    int lowwatset_count = 0;
 #endif
 
     startclock();
@@ -1111,14 +1108,14 @@ int mesgfd, datafd, indexfd, outfd;
 	if (setsockopt(datafd, SOL_SOCKET, SO_RCVBUF,
 		       (void *) &recbuf, sizeof_recbuf)) {
 	    const int errornumber = errno;
-	    fprintf(stderr, "dumper: pid %ld setsockopt(SO_RCVBUF): %s\n",
-		    (long) getpid(), strerror(errornumber));
+	    fprintf(stderr, "%s: pid %ld setsockopt(SO_RCVBUF): %s\n",
+		    get_pname(), (long) getpid(), strerror(errornumber));
 	}
 	if (getsockopt(datafd, SOL_SOCKET, SO_RCVBUF,
 		       (void *) &recbuf, (void *)&sizeof_recbuf)) {
 	    const int errornumber = errno;
-	    fprintf(stderr, "dumper: pid %ld getsockopt(SO_RCVBUF): %s\n",
-		    (long) getpid(), strerror(errornumber));
+	    fprintf(stderr, "%s: pid %ld getsockopt(SO_RCVBUF): %s\n",
+		    get_pname(), (long) getpid(), strerror(errornumber));
 	    recbuf = 0;
 	}
 
@@ -1129,6 +1126,8 @@ int mesgfd, datafd, indexfd, outfd;
 	/* if lowwat < ~512, don't bother */
 	if (lowat < EST_PACKET_SIZE)
 	    recbuf = 0;
+	fprintf(stderr, "%s: pid %ld receive size is %d, low water is %d\n",
+		get_pname(), (long) getpid(), recbuf, lowat);
     }
 #endif
 
@@ -1141,10 +1140,11 @@ int mesgfd, datafd, indexfd, outfd;
 			   (void *) &lowat, sizeof(lowat))) {
 		const int errornumber = errno;
 		fprintf(stderr,
-			"dumper: pid %ld setsockopt(SO_RCVLOWAT): %s\n",
-			(long) getpid(), strerror(errornumber));
+			"%s: pid %ld setsockopt(SO_RCVLOWAT): %s\n",
+			get_pname(), (long) getpid(), strerror(errornumber));
 	    }
 	    lowwatset = 1;
+	    lowwatset_count++;
 	}
 #endif
 
@@ -1164,8 +1164,8 @@ int mesgfd, datafd, indexfd, outfd;
 			   (void *) &zero, sizeof(zero))) {
 		const int errornumber = errno;
 		fprintf(stderr,
-			"dumper: pid %ld setsockopt(SO_RCVLOWAT): %s\n",
-			(long) getpid(), strerror(errornumber));
+			"%s: pid %ld setsockopt(SO_RCVLOWAT): %s\n",
+			get_pname(), (long) getpid(), strerror(errornumber));
 	    }
 	    lowwatset = 0;
 
@@ -1242,6 +1242,13 @@ int mesgfd, datafd, indexfd, outfd;
 	}
     } /* end while */
 
+#if DUMPER_SOCKET_BUFFERING
+    if(lowwatset_count > 1) {
+	fprintf(stderr, "%s: pid %ld low water set %d times\n",
+	        get_pname(), (long) getpid(), lowwatset_count);
+    }
+#endif
+
     if(dump_result > 1) goto failed;
 
     runtime = stopclock();
@@ -1296,6 +1303,13 @@ int mesgfd, datafd, indexfd, outfd;
     return 1;
 
  failed:
+
+#if DUMPER_SOCKET_BUFFERING
+    if(lowwatset_count > 1) {
+	fprintf(stderr, "%s: pid %ld low water set %d times\n",
+	        get_pname(), (long) getpid(), lowwatset_count);
+    }
+#endif
 
     if(!abort_pending) {
 	q = squotef("[%s]", errstr);
@@ -1588,7 +1602,9 @@ pkt_t *pkt;
 
  request_NAK:
 
-/*  fprintf(stderr, "dumper: got strange NAK: %s", pkt->body); */
+#if 0
+    fprintf(stderr, "%s: got strange NAK: %s\n", get_pname(), pkt->body);
+#endif
     errstr = newstralloc(errstr, "[request NAK]");
     response_error = 2;
     amfree(optionstr);
