@@ -1,5 +1,12 @@
 1999-05-11  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/security.c (security_handleinit, security_streaminit):
+	change default error message "unknown error" to "unknown protocol
+	error" or "unknown stream error" to help identify where an
+	messageless error was triggered.
+
+1999-05-11  Mike Grupenhoff <kashmir@munge.com>
+
 	* client-src/amandad.c (main): call initgroups(), and also set
 	the real gid.
 
