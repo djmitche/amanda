@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.17 1998/01/12 22:32:40 blair Exp $
+ * $Id: amrestore.c,v 1.17.2.1 1998/02/22 02:08:16 amcore Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -331,7 +331,7 @@ char **argv;
     dumpfile_t file;
     char *filename = NULL;
     char *tapename, *hostname, *diskname;
-    int compress_status;
+    amwait_t compress_status;
     int tapedev;
     int fd;
 
