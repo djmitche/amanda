@@ -102,6 +102,13 @@ if( defined $opt_file) {
 }
 else {
 	$errfile="$logdir/amflush" if(! (-f $errfile));
+	if (! -f $errfile) {
+		if (-M "$logdir/amflush.1" < -M "$logdir/amdump.1") {
+			$errfile="$logdir/amflush.1";
+		} else {
+			$errfile="$logdir/amdump.1";
+		}
+	}
 }
 
 open(AMDUMP,"<$errfile") || die("$errfile: $!");

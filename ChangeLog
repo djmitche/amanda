@@ -1,3 +1,10 @@
+2003-06-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Paul Bijnens <paul.bijnens@xplanation.com>
+
+	* server-src/amstatus.pl.in: If nothing is active, it now gives the
+	  status of the last run (amdump or amflush).
+	* man/amstatus.8.in: Document it.
+
 2003-05-29  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* tape-src/output-file.c (check_online): Write error if opendir failed.
