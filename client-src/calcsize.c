@@ -24,14 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: calcsize.c,v 1.25 1999/05/14 21:52:11 kashmir Exp $
+ * $Id: calcsize.c,v 1.26 1999/06/15 08:16:50 oliva Exp $
  *
  * traverse directory tree to get backup size estimates
  */
 #include "amanda.h"
 #include "statfs.h"
 
-#define ROUND(n,x)	(x + (x % n) ? (n - x % n) : 0)
+#define ROUND(n,x)	((x) + (n) - 1 - (((x) + (n) - 1) % (n)))
 
 /*
 static unsigned long round_function(n, x)
