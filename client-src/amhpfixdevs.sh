@@ -44,7 +44,7 @@ print "\n\nFixing device entries...\n";
 foreach $v ( keys(%vg) ) {
 	foreach $w ( split(/[\s]+/, $vg{$v} ) ) {
 		# First the link for the block device.
-		if ( ! -e "/dev/dsk/${v_}$w" ) {
+		if ( ! -e "/dev/dsk/${v}_$w" ) {
 			print "Creating link for /dev/dsk/${v}_$w...";
 			if ( ! symlink("/dev/$v/$w", "/dev/dsk/${v}_$w") ) {
 				print "FAILED\n";
