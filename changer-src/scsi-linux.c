@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.15 2000/01/17 22:27:05 th Exp $";
+static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.16 2000/02/08 18:38:37 ant Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on Linux
@@ -31,8 +31,6 @@ static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.15 2000/01/17 22:27:05 th Exp $
 #ifdef HAVE_SCSI_SCSI_IOCTL_H
 #include <scsi/scsi_ioctl.h>
 #endif
-
-#define HAVE_SCSI_SG_H
 
 #ifdef HAVE_SCSI_SG_H
 #include <scsi/sg.h>
@@ -231,7 +229,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
   memset(buffer, 0, SCSI_OFF + DataBufferLength);
   status = read(DeviceFD, buffer, SCSI_OFF + DataBufferLength);
   memset(pRequestSense, 0, RequestSenseLength);
-  memcpy(psg_header->sense_buffer, pRequestSense, 16);
+  memcpy(pRequestSense, psg_header->sense_buffer, 16);
 
   if ( status < 0 || status != SCSI_OFF + DataBufferLength || 
     psg_header->result ) 

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.20 2000/01/17 22:43:51 th Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.21 2000/02/08 18:38:37 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -56,6 +56,8 @@ void ChgExit(char *, char *, int);
 int BarCode(int fd);
 int LogSense(int fd);
 int SenseHandler(int fd, int flag, char *buffer);
+
+int SCSI_AlignElements(int DeviceFD, int MTE, int DTE, int STE);
 
 int DoNothing();
 int GenericMove(int, int, int);
@@ -489,7 +491,7 @@ int drive_loaded(int fd, int drivenum)
 
 
 
-int unload(int fd, int drive, int slot)
+int unload(int fd, int drive, int slot) 
 {
   /*
    * unload the specified drive into the specified slot
@@ -544,12 +546,14 @@ int unload(int fd, int drive, int slot)
   return(0);
 }
 
+
+
+int load(int fd, int drive, int slot)
+{
 /*
  * load the media from the specified element (slot) into the
  * specified data transfer unit (drive)
  */
-int load(int fd, int drive, int slot)
-{
   int ret;
 
   dbprintf(("###### START load\n"));
@@ -598,7 +602,6 @@ int load(int fd, int drive, int slot)
   
   return(ret);
 }
-
 
 int get_slot_count(int fd)
 {
@@ -735,6 +738,7 @@ int BarCode(int fd)
 int Tape_Ready(char *tapedev, int wait)
 {
   int true = 1;
+  int ret;
   int cnt = 0;
   OpenFiles_T *pwork = NULL;
 
@@ -754,7 +758,9 @@ int Tape_Ready(char *tapedev, int wait)
     }
    
   
+/*
   sleep(wait);
+*/
 
   if (pwork == NULL || pwork->SCSI == 0)
       {
@@ -769,28 +775,29 @@ int Tape_Ready(char *tapedev, int wait)
         return(-1);
       }
 
+
   GenericRewind(pwork->fd);
+ 
 
   while (true && cnt < wait)
     {
-      if (SCSI_TestUnitReady(pwork->fd, pRequestSense ))
+      ret = SCSI_TestUnitReady(pwork->fd, pRequestSense );
+      switch (SenseHandler(pwork->fd, 2, (char *)pRequestSense))
         {
-          true = 0;
-        } else { 
-          switch (SenseHandler(pwork->fd, 0, (char *)pRequestSense))
-            {
-            case SENSE_NO_TAPE_ONLINE:
-              break;
-            case SENSE_IGNORE:
-              break;
-            case SENSE_ABORT:
-              return(-1);
-              break;
-            case SENSE_RETRY:
-              break;
-            default:
-              break;
-            }
+	  case SENSE_NO:
+		  true=0;
+		  break;
+          case SENSE_NO_TAPE_ONLINE:
+            break;
+          case SENSE_IGNORE:
+            break;
+          case SENSE_ABORT:
+            return(-1);
+            break;
+          case SENSE_RETRY:
+            break;
+          default:
+            break;
         }
       sleep(1);
       cnt++;
@@ -821,10 +828,13 @@ int DecodeSCSI(CDB_T CDB, char *string)
               dbprintf((" %02X", CDB[x]));
             }
           dbprintf(("\n"));
-          break;
-        }
+          dbprintf(("##### STOP DecodeSCSI\n"));
+          return(0);
+	}
       pSCSICommand++;
     }
+  dbprintf(("Not found %X\n", CDB[0]));
+  dbprintf(("##### STOP DecodeSCSI\n"));
   return(0);
 }
 
@@ -1249,6 +1259,7 @@ int SenseHandler(int DeviceFD, int flag, char *buffer)
       dbprintf(("Ident = [%s], function = [%s]\n", pChangerDev->ident,
                 pChangerDev->functions->ident));
       ret = pChangerDev->functions->function[CHG_ERROR](DeviceFD, flag, buffer);
+      dbprintf(("#### STOP SenseHandler\n"));
       return(ret);
     }
 
@@ -1257,7 +1268,9 @@ int SenseHandler(int DeviceFD, int flag, char *buffer)
       dbprintf(("Ident = [%s], function = [%s]\n", pTapeDev->ident,
                pTapeDev->functions->ident));
       ret = pTapeDev->functions->function[CHG_ERROR](DeviceFD, flag, buffer);
-      return(ret);
+      dbprintf(("#### STOP SenseHandler\n"));
+    
+       return(ret);
     }
   
   if (pTapeDevCtl != NULL && pTapeDevCtl->fd == DeviceFD)
@@ -1265,8 +1278,10 @@ int SenseHandler(int DeviceFD, int flag, char *buffer)
       dbprintf(("Ident = [%s], function = [%s]\n", pTapeDev->ident,
                pTapeDevCtl->functions->ident));
       ret = pTapeDevCtl->functions->function[CHG_ERROR](DeviceFD, flag, buffer);
+      dbprintf(("#### STOP SenseHandler\n"));
       return(ret);
     }
+  dbprintf(("#### STOP SenseHandler\n"));
   return(SENSE_ABORT);
 }
 
@@ -1389,6 +1404,7 @@ int DLT4000Eject(char *Device, int type)
   return(0);
   
 }
+
 int GenericEject(char *Device, int type)
 {
   RequestSense_T *pRequestSense;
@@ -1639,14 +1655,75 @@ int GenericResetStatus(int DeviceFD)
 
 int GenericSenseHandler(int DeviceFD, int flag, char *buffer)
 { 
+  /*
+   * This is the default handler for the sense codes
+   * flag  tells the handler how to decode 
+   * 0 -> Sense Key available
+   * 1 -> No Sense key available
+   * 2 -> Sense Key enable, sense keys are for a tape device
+   */
   RequestSense_T *pRequestSense = (RequestSense_T *)buffer;
   int ret = 0;
   InErrorHandler = 1;
 
   dbprintf(("##### START GenericSenseHandler\n"));
 
-  if (flag == 1)
+  if (flag == 2)
     {
+      DecodeSense(pRequestSense, "GenericSenseHandler : ", debug_file);
+      switch (pRequestSense->SenseKey)
+    	{
+			case SENSE_NULL:
+				ret = SENSE_NO;
+				break;
+			case SENSE_RECOVERED_ERROR:
+		      	ret = SENSE_NO; 
+				break;
+			case NOT_READY:
+				dbprintf(("GenericSenseHandler : NOT_READY ASC = %x ASCQ = %x\n",
+				pRequestSense->AdditionalSenseCode,
+				pRequestSense->AdditionalSenseCodeQualifier));
+				switch (pRequestSense->AdditionalSenseCode)
+				{
+					case 0x3A:
+              			dbprintf(("GenericSenseHandler : No tape online/loaded\n"));
+              			ret = SENSE_NO_TAPE_ONLINE;
+              			break;
+					default:
+						ret = SENSE_RETRY;
+						break;
+				}
+				break;
+			case UNIT_ATTENTION:
+				dbprintf(("GenericSenseHandler : UNIT_ATTENTION ASC = %x ASCQ = %x\n",
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+				switch (pRequestSense->AdditionalSenseCode)
+            	{
+					default:
+						ret = SENSE_RETRY;
+						break;
+				}
+				break;
+        case ILLEGAL_REQUEST:
+          dbprintf(("GenericSenseHandler : ILLEGAL_REQUEST  ASC = %x ASCQ = %x\n",
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          switch (pRequestSense->AdditionalSenseCode)
+            {
+            default:
+              ret = SENSE_ABORT;
+              break;
+            }
+          break;
+        default:
+          dbprintf(("GenericSenseHandler : Unknow %x ASC = %x ASCQ = %x\n",
+                    pRequestSense->SenseKey,
+                    pRequestSense->AdditionalSenseCode,
+                    pRequestSense->AdditionalSenseCodeQualifier));
+          ret = SENSE_ABORT;
+          break;
+        }
     } else {
       DecodeSense(pRequestSense, "GenericSenseHandler : ", debug_file);
       switch (pRequestSense->SenseKey)
@@ -4442,6 +4519,7 @@ void EXB85058HEPage3c(LogParameter_T *buffer, int length)
     LogParameter = (LogParameter_T *)((char *)LogParameter +  sizeof(LogParameter_T) + i); 
   }
 }
+
 int Decode(LogParameter_T *LogParameter, int *value)
 {
 
@@ -5310,9 +5388,3 @@ int SCSI_ReadElementStatus(int DeviceFD,
   return(ret);
 }
 
-/*
- * Local variables:
- * indent-tabs-mode: nil
- * c-file-style: gnu
- * End:
- */
