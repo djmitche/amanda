@@ -1,3 +1,7 @@
+1998-08-05  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* man/amreport.8.in (SYNOPSIS): replace `amtoc' with `amreport'
+
 1998-08-04  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* client-src/sendsize.c: revert 1998-08-01's change, it wouldn't
