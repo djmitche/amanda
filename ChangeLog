@@ -1,3 +1,14 @@
+2004-08-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/conffile.h (ES_CLIENT, ES_SERVER, ES_CALCSIZE): New define
+	  for estimate type.
+	* server-src/conffile.h (dumptype_t): Add 'estimate' and 's_estimate'
+	* server-src/conffile.c (get_estimate): New function to parse estimate
+	  type, ....
+	* server-src/diskfile.c (read_diskline): Copy 'estimate'.
+	* server-src/diskfile.h (disk_t): Add 'estimate'.
+	* server-src/amadmin.c (disklist_one): Print estimate type.
+
 2004-08-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* common-src/match.c (match_tar, tar_to_regex): New fonction similar

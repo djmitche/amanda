@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.13.2.3.2.15.2.4 2004/08/02 18:54:00 martinea Exp $
+ * $Id: amadmin.c,v 1.49.2.13.2.3.2.15.2.5 2004/08/03 11:27:16 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1639,6 +1639,19 @@ disk_t *dp;
 	break;
     case DS_INCRONLY:
 	printf("INCRONLY\n");
+	break;
+    }
+
+    printf("        estimate ");
+    switch(dp->estimate) {
+    case ES_CLIENT:
+	printf("CLIENT\n");
+	break;
+    case ES_SERVER:
+	printf("SERVER\n");
+	break;
+    case ES_CALCSIZE:
+	printf("CALCSIZE\n");
 	break;
     }
 
