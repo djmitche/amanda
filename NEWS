@@ -23,7 +23,7 @@ Changes in release 2.4.1
 * amlabel will only overwrite an Amanda tape if `-f' is specified.
 * Tapes can now be marked so as not to be recycled with amadmin no-reuse.
 * amidxtrm will no longer remove index files of backups in active tapes.
-* Large dumps can nwo be split into multiple files on holding disk
+* Large dumps can now be split into multiple files on holding disk
   (but they won't span across tapes yet).
 * A total estimate time-out may be specified.
 * Fixed skip-incr and skip-full support.
