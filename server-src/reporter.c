@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.17 2000/09/27 00:30:43 martinea Exp $
+ * $Id: reporter.c,v 1.44.2.18 2001/02/02 19:07:56 jrjackson Exp $
  *
  * nightly Amanda Report generator
  */
@@ -142,56 +142,11 @@ char *nicedate P((int datestamp));
 void setup_disk P((disk_t *dp));
 static char *prefix P((char *host, char *disk, int level));
 
-/* enumeration of our reporter columns */
-typedef enum {
-    HostName,
-    Disk,
-    Level,
-    OrigKB,
-    OutKB,
-    Compress,
-    DumpTime,
-    DumpRate,
-    TapeTime,
-    TapeRate,
-    ColumnNameCount
-} ColumnName;
-
-/* the corresponding strings for the above enumeration
- */
-static char *ColumnNameStrings[ColumnNameCount] = {
-    "HostName",
-    "Disk",
-    "Level",
-    "OrigKB",
-    "OutKB",
-    "Compress",
-    "DumpTime",
-    "DumpRate",
-    "TapeTime",
-    "TapeRate"
-};
-
-/* conversion from string to enumeration
- */
-static int StringToColumnName(char *s) {
-    ColumnName cn;
-    for (cn= 0; cn<ColumnNameCount; cn++) {
-    	if (strcmp(s, ColumnNameStrings[cn]) == 0) {
-	    return cn;
-	}
-    }
-    return -1;
-}
-
-char LastChar(char *s) {
-    return s[strlen(s)-1];
-}
-
 /* for each column we define some values on how to
  * format this column element
  */
 typedef struct {
+    char *Name;		/* column name */
     char PrefixSpace;	/* the blank space to print before this
    			 * column. It is used to get the space
 			 * between the colums
@@ -209,20 +164,37 @@ typedef struct {
 /* this corresponds to the normal output of amanda, but may
  * be adapted to any spacing as you like.
  */
-ColumnInfo ColumnData[ColumnNameCount] = {
-    /*HostName */	{  0, 12, 12, 0, "%-*.*s", "HOSTNAME" },
-    /*Disk     */	{  1, 11, 11, 0, "%-*.*s", "DISK" },
-    /*Level    */	{  1, 1,  1,  0, "%*.*d",  "L" },
-    /*OrigKB   */	{  1, 7,  0,  0, "%*.*f",  "ORIG-KB" },
-    /*OutKB    */	{  0, 7,  0,  0, "%*.*f",  "OUT-KB" },
-    /*Compress */	{  0, 6,  1,  0, "%*.*f",  "COMP%" },
-    /*DumpTime */	{  0, 7,  7,  0, "%*.*s",  "MMM:SS" },
-    /*DumpRate */       {  0, 6,  1,  0, "%*.*f",  "KB/s" },
-    /*TapeTime */	{  1, 6,  6,  0, "%*.*s",  "MMM:SS" },
-    /*TapeRate */	{  0, 6,  1,  0, "%*.*f",  "KB/s" }
+ColumnInfo ColumnData[] = {
+    { "HostName",   0, 12, 12, 0, "%-*.*s", "HOSTNAME" },
+    { "Disk",       1, 11, 11, 0, "%-*.*s", "DISK" },
+    { "Level",      1, 1,  1,  0, "%*.*d",  "L" },
+    { "OrigKB",     1, 7,  0,  0, "%*.*f",  "ORIG-KB" },
+    { "OutKB",      0, 7,  0,  0, "%*.*f",  "OUT-KB" },
+    { "Compress",   0, 6,  1,  0, "%*.*f",  "COMP%" },
+    { "DumpTime",   0, 7,  7,  0, "%*.*s",  "MMM:SS" },
+    { "DumpRate",   0, 6,  1,  0, "%*.*f",  "KB/s" },
+    { "TapeTime",   1, 6,  6,  0, "%*.*s",  "MMM:SS" },
+    { "TapeRate",   0, 6,  1,  0, "%*.*f",  "KB/s" },
+    { NULL,         0, 0,  0,  0, NULL,     NULL }
 };
 static char *ColumnSpec="";		/* filled from config */
 static char MaxWidthsRequested=0;	/* determined via config data */
+
+/* conversion from string to table index
+ */
+static int StringToColumn(char *s) {
+    int cn;
+    for (cn=0; ColumnData[cn].Name != NULL; cn++) {
+    	if (strcasecmp(s, ColumnData[cn].Name) == 0) {
+	    break;
+	}
+    }
+    return cn;
+}
+
+char LastChar(char *s) {
+    return s[strlen(s)-1];
+}
 
 static int SetColumDataFromString(ColumnInfo* ci, char *s) {
     /* Convert from a Columspec string to our internal format
@@ -234,7 +206,7 @@ static int SetColumDataFromString(ColumnInfo* ci, char *s) {
      *
      * The format for such a ColumnSpec string s is a ',' seperated
      * list of triples. Each triple consists of
-     *   -the name of the column (as in ColumnNameStrings)
+     *   -the name of the column (as in ColumnData.Name)
      *   -prefix before the column
      *   -the width of the column
      *       if set to -1 it will be recalculated
@@ -254,7 +226,7 @@ static int SetColumDataFromString(ColumnInfo* ci, char *s) {
 
     while (s && *s) {
 	int Space, Width;
-	ColumnName cn;
+	int cn;
     	char *eon= strchr(s, '=');
 
 	if (eon == NULL) {
@@ -262,8 +234,9 @@ static int SetColumDataFromString(ColumnInfo* ci, char *s) {
 	    return -1;
 	}
 	*eon= '\0';
-	if ((cn=StringToColumnName(s)) < 0) {
-	    fprintf(stderr, "%s: invalid ColumnName: %s\n", myname, s);
+	cn=StringToColumn(s);
+	if (ColumnData[cn].Name == NULL) {
+	    fprintf(stderr, "%s: invalid column name: %s\n", myname, s);
 	    return -1;
 	}
 	if (sscanf(eon+1, "%d:%d", &Space, &Width) != 2) {
@@ -288,16 +261,17 @@ static int SetColumDataFromString(ColumnInfo* ci, char *s) {
     return 0;
 }
 
-static int ColWidth(ColumnName From, ColumnName To) {
+static int ColWidth(int From, int To) {
     int i, Width= 0;
-    for (i=From; i<=To; i++)
+    for (i=From; i<=To && ColumnData[i].Name != NULL; i++) {
     	Width+= ColumnData[i].PrefixSpace + ColumnData[i].Width;
+    }
     return Width;
 }
 
-static char *Rule(ColumnName From, ColumnName To) {
+static char *Rule(int From, int To) {
     int i, ThisLeng;
-    int Leng= ColWidth(0, ColumnNameCount-1);
+    int Leng= ColWidth(0, (sizeof(ColumnData) / sizeof(ColumnData[0])));
     char *RuleSpace= alloc(Leng+1);
     ThisLeng= ColWidth(From, To);
     for (i=0;i<ColumnData[From].PrefixSpace; i++)
@@ -308,10 +282,11 @@ static char *Rule(ColumnName From, ColumnName To) {
     return RuleSpace;
 }
 
-static char *TextRule(ColumnName From, ColumnName To, char *s) {
+static char *TextRule(int From, int To, char *s) {
     ColumnInfo *cd= &ColumnData[From];
     int leng, nbrules, i, txtlength;
-    int RuleSpaceSize= ColWidth(0, ColumnNameCount-1)+1;
+    int RuleSpaceSize= ColWidth(0,
+				(sizeof(ColumnData) / sizeof(ColumnData[0])));
     char *RuleSpace= alloc(RuleSpaceSize), *tmp;
 
     leng= strlen(s);
@@ -327,7 +302,7 @@ static char *TextRule(ColumnName From, ColumnName To, char *s) {
     return RuleSpace;
 }
 
-char *sDivZero(float a, float b, ColumnName cn) {
+char *sDivZero(float a, float b, int cn) {
     ColumnInfo *cd= &ColumnData[cn];
     static char PrtBuf[256];
     if (b == 0.0)
@@ -528,7 +503,7 @@ char **argv;
     } else {
     	int cn;
 
-    	for (cn = 0; cn < ColumnNameCount; cn++) {
+    	for (cn = 0; ColumnData[cn].Name != NULL; cn++) {
 	    if (ColumnData[cn].MaxWidth) {
 	    	MaxWidthsRequested = 1;
 		break;
@@ -1036,6 +1011,17 @@ void CheckFloatMax(ColumnInfo *cd, double d) {
     }
 }
 
+static int HostName;
+static int Disk;
+static int Level;
+static int OrigKB;
+static int OutKB;
+static int Compress;
+static int DumpTime;
+static int DumpRate;
+static int TapeTime;
+static int TapeRate;
+
 void CalcMaxWidth() {
     /* we have to look for columspec's, that require the recalculation.
      * we do here the same loops over the sortq as is done in
@@ -1116,6 +1102,17 @@ void output_summary()
     float outsize, origsize;
     float f;
 
+    HostName = StringToColumn("HostName");
+    Disk = StringToColumn("Disk");
+    Level = StringToColumn("Level");
+    OrigKB = StringToColumn("OrigKB");
+    OutKB = StringToColumn("OutKB");
+    Compress = StringToColumn("Compress");
+    DumpTime = StringToColumn("DumpTime");
+    DumpRate = StringToColumn("DumpRate");
+    TapeTime = StringToColumn("TapeTime");
+    TapeRate = StringToColumn("TapeRate");
+
     /* at first determine if we have recalculate our widths */
     if (MaxWidthsRequested)
 	CalcMaxWidth();
@@ -1135,7 +1132,7 @@ void output_summary()
     fputc('\n', mailf);
 
     /* print the titles */
-    for (i=0; i<ColumnNameCount; i++) {
+    for (i=0; ColumnData[i].Name != NULL; i++) {
     	char *fmt;
     	ColumnInfo *cd= &ColumnData[i];
     	fprintf(mailf, "%*s", cd->PrefixSpace, "");
