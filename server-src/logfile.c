@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.12 1998/01/12 22:32:52 blair Exp $
+ * $Id: logfile.c,v 1.12.2.1 1998/01/24 06:03:48 amcore Exp $
  *
  * common log file writing routine
  */
@@ -163,6 +163,8 @@ char *datestamp;
     char seq_str[NUM_STR_SIZE];
     unsigned int seq;
     struct stat statbuf;
+
+    if(datestamp == NULL) datestamp = "error";
 
     logfile = vstralloc(getconf_str(CNF_LOGDIR), "/log", NULL);
 
