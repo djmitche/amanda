@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44 1998/10/24 03:02:11 martinea Exp $
+ * $Id: reporter.c,v 1.45 1998/11/09 20:59:17 jrj Exp $
  *
  * nightly Amanda Report generator
  */
@@ -221,17 +221,17 @@ char **argv;
 	    switch(opt) {
             case 'f':
 		if (outfname != NULL)
-		    error("you may specify at most one -f\n");
+		    error("you may specify at most one -f");
                 outfname = stralloc(optarg);
                 break;
             case 'l':
 		if (logfname != NULL)
-		    error("you may specify at most one -l\n");
+		    error("you may specify at most one -l");
                 logfname = stralloc(optarg);
                 break;
             case 'p':
 		if (psfname != NULL)
-		    error("you may specify at most one -p\n");
+		    error("you may specify at most one -p");
                 psfname = stralloc(optarg);
                 break;
             case '?':
@@ -255,16 +255,14 @@ char **argv;
 
     /* read configuration files */
 
-    if(read_conffile(conffname)) {
-        fprintf(stderr,"%s: could not find config file %s\n", argv[0], conffname);
-        error("could not read amanda config file\n");
-    }
+    if(read_conffile(conffname))
+        error("could not read amanda config file");
     if((diskq = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
-	error("could not read disklist file\n");
+	error("could not read disklist file");
     if(read_tapelist(getconf_str(CNF_TAPELIST)))
 	error("parse error in %s", getconf_str(CNF_TAPELIST));
     if(open_infofile(getconf_str(CNF_INFOFILE)))
-	error("could not read info database file\n");
+	error("could not read info database file");
 
     if(!logfname) {
 	logfname = vstralloc(getconf_str(CNF_LOGDIR), "/log", NULL);
@@ -316,6 +314,9 @@ char **argv;
     /* lookup the tapetype and printer type from the amanda.conf file. */
     tp = lookup_tapetype(getconf_str(CNF_TAPETYPE));
     printer = getconf_str(CNF_PRINTER);
+
+    /* ignore SIGPIPE so if a child process dies we do not also go away */
+    signal(SIGPIPE, SIG_IGN);
 
    /* open pipe to mailer */
 
