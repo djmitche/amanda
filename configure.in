@@ -1285,7 +1285,9 @@ if test "$DUMP"; then
 	AC_DEFINE(HAVE_DUMP_ESTIMATE)
     fi
 
-    AC_CACHE_CHECK(
+    AC_ARG_WITH(dump-honor-nodump,
+    [  --with-dump-honor-nodump  if dump supports -h, use it for level0s too],
+    [AC_CACHE_CHECK(
 	[whether $DUMP supports -h (honor nodump flag)],
 	amanda_cv_honor_nodump,
 	[
@@ -1305,9 +1307,10 @@ if test "$DUMP"; then
 	      ;;
 	    esac
 	])
-    if test "$amanda_cv_honor_nodump" = yes; then
+      if test "$amanda_cv_honor_nodump" = yes; then
 	AC_DEFINE(HAVE_HONOR_NODUMP)
-    fi
+      fi
+    ])
 fi
 
 AC_PATH_PROGS(RESTORE,ufsrestore restore,,$SYSLOCPATH)
