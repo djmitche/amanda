@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.31 1998/06/13 04:39:44 oliva Exp $
+ * $Id: amflush.c,v 1.32 1998/06/25 18:52:24 blair Exp $
  *
  * write files from work directory onto tape
  */
@@ -113,7 +113,7 @@ char **main_argv;
 
     logfile = vstralloc(getconf_str(CNF_LOGDIR), "/log", NULL);
     if (access(logfile, F_OK) == 0)
-	error("amdump or amflush is already running, or you must run amcleanup", logfile);
+	error("%s exists: amdump or amflush is already running, or you must run amcleanup", logfile);
     amfree(logfile);
     
     taper_program = vstralloc(libexecdir, "/", "taper", versionsuffix(), NULL);

@@ -1,3 +1,7 @@
+1998-06-25  Blair Zajac  <blair@gps.caltech.edu>
+
+	* server-src/amflush.c: fix mismatch arguments to error()
+
 1998-06-24  Steven Freed  <sfreed@gilasoft.com>
 
 	* configure.in (dump-honor-nodump): fix test for `-h' support
