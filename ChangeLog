@@ -1,3 +1,13 @@
+2004-04-23  Eric Siegerman <eric_97@pobox.com>
+
+	Bug fix: amflush would run, and consume a tape, even if there
+	were no Amanda directories waiting to be flushed:
+	* common-src/sl.c (is_empty_sl): New function to test
+	  whether a list is empty.
+	* common-src/sl.h (is_empty_sl): Prototype.
+	* server-src/amflush.sh (main): Use is_empty_sl(),
+	  rather than ==NULL, to test emptiness of datestamp_list.
+
 2004-04-23  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/planner.c (setup_estimate): Typo.
