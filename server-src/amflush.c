@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.48 1999/03/02 00:58:59 martinea Exp $
+ * $Id: amflush.c,v 1.49 1999/03/02 01:08:49 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -270,7 +270,6 @@ char *diskdir, *datestamp;
     char *destname = NULL;
     int filenum;
     disk_t *dp;
-    sched_t sp;
     tok_t tok;
     int result_argc;
     char *result_argv[MAX_ARGS+1];
@@ -303,7 +302,6 @@ char *diskdir, *datestamp;
 				NULL);
 
 	get_dumpfile(destname, &file);
-	sp.level = file.dumplevel;
 	if( file.type != F_DUMPFILE) {
 	    if( file.type != F_CONT_DUMPFILE )
 		log_add(L_INFO, "%s: ignoring cruft file.", entry->d_name);
@@ -324,7 +322,7 @@ char *diskdir, *datestamp;
 	    continue;
 	}
 
-	dp->up = &sp;
+	dp->up = NULL;
 	taper_cmd(FILE_WRITE, dp, destname, file.dumplevel, file.datestamp);
 
 	tok = getresult(taper, 0, &result_argc, result_argv, MAX_ARGS+1);
@@ -345,7 +343,7 @@ char *diskdir, *datestamp;
 
 	    filenum = atoi(result_argv[4]);
 	    if(file.is_partial == 0)
-		update_info_taper(dp, result_argv[3], filenum);
+		update_info_taper(dp, result_argv[3], filenum, file.dumplevel);
 
 	    unlink_holding_files(destname);
 	    break;

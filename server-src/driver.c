@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.71 1999/03/02 00:59:02 martinea Exp $
+ * $Id: driver.c,v 1.72 1999/03/02 01:08:51 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -669,7 +669,7 @@ void handle_taper_result()
 	free_serial(result_argv[2]);
 
 	filenum = atoi(result_argv[4]);
-	update_info_taper(dp, result_argv[3], filenum);
+	update_info_taper(dp, result_argv[3], filenum, sched(dp)->level);
 
 	delete_diskspace(dp);
 
@@ -1540,7 +1540,7 @@ disk_t *dp;
 	/* every thing went fine */
 	update_info_dumper(dp, origsize, dumpsize, dumptime);
 	filenum = atoi(result_argv[4]);
-	update_info_taper(dp, result_argv[3], filenum);
+	update_info_taper(dp, result_argv[3], filenum, sched(dp)->level);
 
 	break;
 
