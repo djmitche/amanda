@@ -1,3 +1,8 @@
+1999-08-16  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* common-src/Makefile.am (genversion.o): Revert last change, it was
+	just a bug in automake's --disable-dependency-tracking.
+
 1999-08-15  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* README (platforms): Added OpenBSD.
@@ -93,7 +98,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.236 1999/08/15 10:22:53 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.237 1999/08/16 22:17:21 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
