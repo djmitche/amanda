@@ -1,3 +1,9 @@
+2000-01-21  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* server-src/amstatus.pl.in: New option --stats, to display
+	statistics about dumpers and taper.
+	* man/amstatus.8.in: Document it.
+
 2000-01-21  David Wolfskill  <dhw@whistle.com>
 
 	* server-src/amstatus.pl.in: Sort dumpers by number.
@@ -733,7 +739,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.327 2000/01/21 07:43:23 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.328 2000/01/21 07:57:19 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
