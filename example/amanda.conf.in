@@ -34,6 +34,9 @@ disksize 290 MB			# how much space can we use on it
 #diskdir "/mnt/disk4"
 #disksize 1000 MB		# 	they are used round-robin
 
+# If you don't want to use a holding disk:
+#diskdir "/tmp"
+#disksize 0 MB
 
 # Amanda needs a few MB of diskspace for the log and debug files,
 # as well as a database.  This stuff can grow large, so the conf directory
