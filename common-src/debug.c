@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.17.4.3.4.3.2.1 2002/02/10 03:31:53 jrjackson Exp $
+ * $Id: debug.c,v 1.17.4.3.4.3.2.2 2002/02/11 01:30:42 jrjackson Exp $
  *
  * debug log subroutines
  */
@@ -106,13 +106,13 @@ void debug_open()
     DIR *d;
     struct dirent *entry;
     char *pname;
-    int pname_len;
+    size_t pname_len;
     int do_rename;
     char *test_name = NULL;
-    int test_name_len;
+    size_t test_name_len;
     int fd = -1;
     int i;
-    int d_name_len;
+    size_t d_name_len;
     int fd_close[MIN_DB_FD+1];
     struct passwd *pwent;
     struct stat sbuf;

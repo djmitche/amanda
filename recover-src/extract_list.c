@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43.2.13.4.6.2.2 2002/01/05 18:59:47 martinea Exp $
+ * $Id: extract_list.c,v 1.43.2.13.4.6.2.3 2002/02/11 01:30:42 jrjackson Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -80,16 +80,17 @@ unsigned short samba_extract_method = SAMBA_TAR;
 #define READ_TIMEOUT	30*60
 
 
-int read_buffer(datafd, buffer, buflen)
+ssize_t read_buffer(datafd, buffer, buflen)
 int datafd;
 char *buffer;
-int buflen;
+size_t buflen;
 {
-    int maxfd, nfound, size = 0;
+    int maxfd, nfound = 0;
+    ssize_t size = 0;
     fd_set readset, selectset;
     struct timeval timeout;
     char *dataptr;
-    int spaceleft;
+    size_t spaceleft;
     int eof;
 
     if(datafd < 0 || datafd >= FD_SETSIZE) {
@@ -150,7 +151,7 @@ int buflen;
     if(size<0) {
 	return -1;
     }
-    return(buflen-spaceleft);
+    return (ssize_t)(buflen-spaceleft);
 }
 
 EXTRACT_LIST *first_tape_list P((void))
@@ -436,7 +437,8 @@ char *regex;
     char *path_on_disk_slash = NULL;
     char *cmd = NULL;
     char *err = NULL;
-    int  i;
+    int i;
+    size_t j;
     char *dir, *dir_undo, dir_undo_ch = '\0';
     char *ditem_path = NULL;
     char *l = NULL;
@@ -453,8 +455,8 @@ char *regex;
     dbprintf(("add_file: Looking for \"%s\"\n", regex));
 
     /* remove "/" at end of path */
-    i = strlen(regex)-1;
-    while(i >= 0 && regex[i] == '/') regex[i--] = '\0';
+    j = strlen(regex)-1;
+    while(j >= 0 && regex[j] == '/') regex[j--] = '\0';
 
     /* convert path (assumed in cwd) to one on disk */
     if (strcmp(disk_path, "/") == 0)
@@ -478,9 +480,9 @@ char *regex;
 	    || match(path_on_disk_slash, ditem->path))
 	{
 	    found_one = 1;
-	    i = strlen(ditem->path);
-	    if((i > 0 && ditem->path[i-1] == '/')
-	       || (i > 1 && ditem->path[i-2] == '/' && ditem->path[i-1] == '.'))
+	    j = strlen(ditem->path);
+	    if((j > 0 && ditem->path[j-1] == '/')
+	       || (j > 1 && ditem->path[j-2] == '/' && ditem->path[j-1] == '.'))
 	    {	/* It is a directory */
 
 		ditem_path = newstralloc(ditem_path, ditem->path);
@@ -700,7 +702,8 @@ char *regex;
     char *path_on_disk_slash = NULL;
     char *cmd = NULL;
     char *err = NULL;
-    int  i;
+    int i;
+    size_t j;
     char *date, *date_undo, date_undo_ch = '\0';
     char *tape, *tape_undo, tape_undo_ch = '\0';
     char *dir, *dir_undo, dir_undo_ch = '\0';
@@ -719,8 +722,8 @@ char *regex;
 
     dbprintf(("delete_file: Looking for \"%s\"\n", path));
     /* remove "/" at the end of the path */
-    i = strlen(regex)-1;
-    while(i >= 0 && regex[i] == '/') regex[i--] = '\0';
+    j = strlen(regex)-1;
+    while(j >= 0 && regex[j] == '/') regex[j--] = '\0';
 
     /* convert path (assumed in cwd) to one on disk */
     if (strcmp(disk_path, "/") == 0)
@@ -743,9 +746,9 @@ char *regex;
 	    || match(path_on_disk_slash, ditem->path))
 	{
 	    found_one = 1;
-	    i = strlen(ditem->path);
-	    if((i > 0 && ditem->path[i-1] == '/')
-	       || (i > 1 && ditem->path[i-2] == '/' && ditem->path[i-1] == '.'))
+	    j = strlen(ditem->path);
+	    if((j > 0 && ditem->path[j-1] == '/')
+	       || (j > 1 && ditem->path[j-2] == '/' && ditem->path[j-1] == '.'))
 	    {	/* It is a directory */
 		ditem_path = newstralloc(ditem_path, ditem->path);
 		clean_pathname(ditem_path);
@@ -1035,7 +1038,8 @@ static void send_to_tape_server(tss, cmd)
 int tss;
 char *cmd;
 {
-    int l, n, s;
+    size_t l, n;
+    ssize_t s;
     char *end;
 
     for (l = 0, n = strlen(cmd); l < n; l += s)
@@ -1171,30 +1175,30 @@ static int extract_files_setup P((void))
 }
 
 
-int read_file_header(buffer, file, buflen, tapedev)
+size_t read_file_header(buffer, file, buflen, tapedev)
 char *buffer;
 dumpfile_t *file;
-int buflen;
+size_t buflen;
 int tapedev;
 /*
  * Reads the first block of a tape file.
  */
 {
-    int bytes_read;
+    ssize_t bytes_read;
     bytes_read=read_buffer(tapedev,buffer,buflen);
     if(bytes_read < 0) {
 	error("error reading tape: %s", strerror(errno));
     }
-    else if(bytes_read < buflen) {
+    else if((size_t)bytes_read < buflen) {
 	fprintf(stderr, "%s: short block %d byte%s\n",
-		get_pname(), bytes_read, (bytes_read == 1) ? "" : "s");
+		get_pname(), (int)bytes_read, (bytes_read == 1) ? "" : "s");
 	print_header(stdout, file);
 	error("Can't read file header");
     }
     else { /* bytes_read == buflen */
 	parse_file_header(buffer, file, bytes_read);
     }
-    return(bytes_read);
+    return((size_t)bytes_read);
 }
 
 enum dumptypes {IS_UNKNOWN, IS_DUMP, IS_GNUTAR, IS_TAR, IS_SAMBA};
@@ -1213,8 +1217,8 @@ static void extract_files_child(in_fd, elist)
     enum dumptypes dumptype = IS_UNKNOWN;
     char buffer[DISK_BLOCK_BYTES];
     dumpfile_t file;
-    int buflen;
-    int len_program;
+    size_t buflen;
+    size_t len_program;
     char *cmd = NULL;
     int passwd_field = -1;
 #ifdef SAMBA_CLIENT

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: set_commands.c,v 1.11.2.3.4.2 2001/11/03 14:02:32 martinea Exp $
+ * $Id: set_commands.c,v 1.11.2.3.4.2.2.1 2002/02/11 01:30:42 jrjackson Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -298,7 +298,7 @@ char *default_dir;
     char *dir = NULL;
 
     int nb_found;
-    int i;
+    size_t i;
 
     DIR_ITEM *ditem;
 

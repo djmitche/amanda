@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.c,v 1.17.2.6.4.1 2001/07/20 19:37:20 jrjackson Exp $
+ * $Id: security.c,v 1.17.2.6.4.1.2.1 2002/02/11 01:30:42 jrjackson Exp $
  *
  * wrapper file for kerberos security
  */
@@ -159,7 +159,7 @@ int bsd_security_ok(addr, str, cksum, errstr)
 
     /* what host is making the request? */
 
-    hp = gethostbyaddr((char *)&addr->sin_addr, sizeof(addr->sin_addr),
+    hp = gethostbyaddr((char *)&addr->sin_addr, (int)sizeof(addr->sin_addr),
 		       AF_INET);
     if(hp == NULL) {
 	/* XXX include remote address in message */

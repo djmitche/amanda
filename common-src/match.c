@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: match.c,v 1.10.4.1.4.1.2.1 2002/01/01 21:18:12 martinea Exp $
+ * $Id: match.c,v 1.10.4.1.4.1.2.2 2002/02/11 01:30:42 jrjackson Exp $
  *
  * functions for checking and matching regular expressions
  */
@@ -54,7 +54,8 @@ char *clean_regex(regex)
 char *regex;
 {
     char *result;
-    int i, j;
+    int j;
+    size_t i;
     result = malloc(2*strlen(regex)+1);
 
     for(i=0,j=0;i<strlen(regex);i++) {
@@ -146,7 +147,7 @@ char *glob;
 {
     char *regex;
     char *r;
-    int len;
+    size_t len;
     int ch;
     int last_ch;
 
@@ -223,11 +224,11 @@ char separator;
 {
     char *regex;
     char *r;
-    int  len;
+    size_t  len;
     int  ch;
     int  last_ch;
     int  next_ch;
-    int  lenword;
+    size_t  lenword;
     char *nword;
     char *nglob;
     char *g, *w;
@@ -407,7 +408,7 @@ int match_datestamp(dateexp, datestamp)
 char *dateexp, *datestamp;
 {
     char *dash;
-    int len, len_suffix, len_prefix;
+    size_t len, len_suffix, len_prefix;
     char firstdate[100], lastdate[100];
     char mydateexp[100];
     int match_exact;

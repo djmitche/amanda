@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: alloc.c,v 1.17.2.1.4.3 2001/07/31 22:38:39 jrjackson Exp $
+ * $Id: alloc.c,v 1.17.2.1.4.3.2.1 2002/02/11 01:30:42 jrjackson Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * errordump() is called, relieving the caller from checking the return
@@ -294,10 +294,10 @@ va_list argp;
     char *next;
     char *result;
     int a;
-    int total_len;
+    size_t total_len;
     const char *arg[MAX_VSTRALLOC_ARGS+1];
-    int len[MAX_VSTRALLOC_ARGS+1];
-    int l;
+    size_t len[MAX_VSTRALLOC_ARGS+1];
+    size_t l;
     const char *s;
 
     if (str == NULL) {
@@ -468,7 +468,7 @@ char **safe_env()
     char **q;
     char *s;
     char *v;
-    int l1, l2;
+    size_t l1, l2;
 
     if ((q = (char **)malloc(sizeof(safe_env_list))) != NULL) {
 	envp = q;
