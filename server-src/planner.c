@@ -1118,15 +1118,16 @@ static int schedule_order(a, b)
 disk_t *a, *b;
 /*
  * insert-sort by decreasing priority, then
- * by increasing size within priority levels.
+ * by decreasing size within priority levels.
  */
 {
     int diff;
 
-    if((diff = est(b)->curr_priority - est(a)->curr_priority) != 0)
-	return diff;
-    else
-	return est(a)->size - est(b)->size;
+    diff = est(b)->curr_priority - est(a)->curr_priority;
+    if(diff != 0) return diff;
+
+    diff = est(b)->size - est(a)->size;
+    return diff;
 }
 
 
