@@ -1,5 +1,11 @@
 2000-11-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amdump.sh.in: exit if amgetconf exit with status != 0.
+	* server-src/amcleanup.sh.in: ditto
+	* server-src/amstatus.pl.in: ditto
+
+2000-11-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/driver.c (start_some_dumps): don't check free_kps if
 	curusage == 0.
 	* server-src/driver.c (free_kps): remove the kludge.
@@ -1150,7 +1156,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.405 2000/11/08 01:55:44 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.406 2000/11/08 01:58:53 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
