@@ -86,7 +86,7 @@ than the holding disk: Amanda will send those dumps directly to tape one at
 a time.  If you have many such dumps you will be limited by the dump speed
 of those machines.
 
-Amanda does not yet support dumps larger than a tape.
+Amanda does not yet support single backup images larger than a tape.
 
 
 WHAT SYSTEMS DOES AMANDA RUN ON?
