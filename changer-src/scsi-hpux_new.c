@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-hpux_new.c,v 1.16 2003/01/26 19:20:44 martinea Exp $
+ * $Id: scsi-hpux_new.c,v 1.17 2003/06/05 20:44:14 martinea Exp $
  *
  * Interface to execute SCSI commands on an HP-UX Workstation
  *
@@ -60,7 +60,7 @@
 void SCSI_OS_Version()
 {
 #ifndef lint
-    static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.16 2003/01/26 19:20:44 martinea Exp $";
+    static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.17 2003/06/05 20:44:14 martinea Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -260,7 +260,7 @@ int Tape_Status( int DeviceFD)
   if (pDev[DeviceFD].devopen == 0)
     SCSI_OpenDevice(DeviceFD);
 
-  if (ioctl(DeviceFD, MTIOCGET, &mtget) != 0)
+  if (ioctl(pDev[DeviceFD].fd, MTIOCGET, &mtget) != 0)
   {
      dbprintf(("Tape_Status error ioctl %d\n",errno));
      SCSI_CloseDevice(DeviceFD);

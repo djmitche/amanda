@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-linux.c,v 1.25 2003/01/26 19:20:45 martinea Exp $
+ * $Id: scsi-linux.c,v 1.26 2003/06/05 20:44:14 martinea Exp $
  *
  * Interface to execute SCSI commands on Linux
  *
@@ -82,7 +82,7 @@
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-linux.c,v 1.25 2003/01/26 19:20:45 martinea Exp $";
+   static char rcsid[] = "$Id: scsi-linux.c,v 1.26 2003/06/05 20:44:14 martinea Exp $";
    DebugPrint(DEBUG_ERROR, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -195,11 +195,11 @@ int SCSI_OpenDevice(int ip)
       if (pDev[ip].SCSI == 1)
         {
           DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_OpenDevice : use SG interface\n");
-          if ((timeout = ioctl(DeviceFD, SG_GET_TIMEOUT)) > 0) 
+          if ((timeout = ioctl(pDev[ip].fd, SG_GET_TIMEOUT)) > 0) 
             {
               DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_OpenDevice : current timeout %d\n", timeout);
               timeout = 60000;
-              if (ioctl(DeviceFD, SG_SET_TIMEOUT, &timeout) == 0)
+              if (ioctl(pDev[ip].fd, SG_SET_TIMEOUT, &timeout) == 0)
                 {
                   DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_OpenDevice : timeout set to %d\n", timeout);
                 }
@@ -266,11 +266,11 @@ int SCSI_OpenDevice(int ip)
           pDev[ip].fd = DeviceFD;
           if (pDev[ip].flags == 1)
             {
-              if ((timeout = ioctl(DeviceFD, SG_GET_TIMEOUT)) > 0) 
+              if ((timeout = ioctl(pDev[ip].fd, SG_GET_TIMEOUT)) > 0) 
                 {
                   DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_OpenDevice : current timeout %d\n", timeout);
                   timeout = 60000;
-                  if (ioctl(DeviceFD, SG_SET_TIMEOUT, &timeout) == 0)
+                  if (ioctl(pDev[ip].fd, SG_SET_TIMEOUT, &timeout) == 0)
                     {
                       DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_OpenDevice : timeout set to %d\n", timeout);
                     }
