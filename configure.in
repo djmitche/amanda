@@ -811,7 +811,7 @@ dnl and AIX, have both the backup and dump programs.  HP-UX can't use the
 dnl the backup program while AIX systems can't use the dump program.  So
 dnl a variable is set up here to specify the order of dump programs to
 dnl search for on the system.
-DUMP_PROGRAMS="ufsdump vdump dump backup"
+DUMP_PROGRAMS="ufsdump vxdump vdump dump backup"
 
 dnl This specifies the flag for mt that tells mt the proper tape drive
 dnl to use.
@@ -840,7 +840,7 @@ case "$target" in
 			esac
 			;;
   *-ibm-aix*)
-			DUMP_PROGRAMS="ufsdump vdump backup dump"
+			DUMP_PROGRAMS="backup "$DUMP_PROGRAMS
 			AC_DEFINE(AIX_TAPEIO)
 			AC_DEFINE(AIX_BACKUP)
 			;;
