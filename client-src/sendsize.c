@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.94 1998/07/06 15:38:33 jrj Exp $
+ * $Id: sendsize.c,v 1.94.2.1 1998/08/01 20:04:50 oliva Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -143,7 +143,7 @@ char **argv;
 
     start_amandates(0);
 
-    for(; (line = agets(stdin)) != NULL; free(line)) {
+    for(; (line = agets(stdin)) != NULL; amfree(line)) {
 #define sc "OPTIONS"
 	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
 #undef sc
@@ -812,7 +812,7 @@ int level;
 	aclose(killctl[0]);
     dumpout = fdopen(pipefd[0],"r");
 
-    for(size = -1; (line = agets(dumpout)) != NULL; free(line)) {
+    for(size = -1; (line = agets(dumpout)) != NULL; amfree(line)) {
 	dbprintf(("%s\n",line));
 	size = handle_dumpline(line);
 	if(size > -1) {
@@ -965,7 +965,7 @@ int level;
     aclose(pipefd[1]);
     dumpout = fdopen(pipefd[0],"r");
 
-    for(size = -1; (line = agets(dumpout)) != NULL; free(line)) {
+    for(size = -1; (line = agets(dumpout)) != NULL; amfree(line)) {
 	dbprintf(("%s\n",line));
 	size = handle_dumpline(line);
 	if(size > -1) {
@@ -1248,7 +1248,7 @@ notincremental:
     aclose(pipefd[1]);
     dumpout = fdopen(pipefd[0],"r");
 
-    for(size = -1; (line = agets(dumpout)) != NULL; free(line)) {
+    for(size = -1; (line = agets(dumpout)) != NULL; amfree(line)) {
 	dbprintf(("%s\n",line));
 	size = handle_dumpline(line);
 	if(size > -1) {

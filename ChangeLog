@@ -1,5 +1,8 @@
 1998-08-01  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* client-src/sendsize.c: replace free(line) with amfree(line),
+	because line is not ensured to be non-NULL
+	
 	* docs/FAQ: amandad: error receiving message
 	
 	* docs/FAQ: difference between skip-full and strategy nofull
