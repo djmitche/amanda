@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: killpgrp.c,v 1.2 1998/03/30 21:58:58 amcore Exp $
+ * $Id: killpgrp.c,v 1.3 1998/03/30 23:25:03 blair Exp $
  *
  * if it is the process group leader, it kills all processes in its
  * process group when it is killed itself.
@@ -139,7 +139,7 @@ int sig;
      * First, try to kill the dump process nicely.  If it ignores us
      * for five seconds, hit it harder.
      */
-    dbprintf(("sending SIGTERM to process group %ld\n", dumppid));
+    dbprintf(("sending SIGTERM to process group %ld\n", (long) dumppid));
     killerr = kill(-dumppid, SIGTERM);
     if (killerr == -1) {
 	dbprintf(("kill failed: %s\n", strerror(errno)));

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.83 1998/03/30 21:59:04 amcore Exp $
+ * $Id: sendsize.c,v 1.84 1998/03/30 23:25:05 blair Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -817,7 +817,7 @@ int level;
      * First, try to kill the dump process nicely.  If it ignores us
      * for several seconds, hit it harder.
      */
-    dbprintf(("sending SIGTERM to process group %ld\n", dumppid));
+    dbprintf(("sending SIGTERM to process group %ld\n", (long) dumppid));
     killerr = kill(-dumppid, SIGTERM);
     if (killerr == -1) {
 	dbprintf(("kill failed: %s\n", strerror(errno)));
