@@ -1,3 +1,7 @@
+1999-03-14  Mathias Herberts  <Mathias.Herberts@ago.fr>
+
+	* man/amrecover.8.in: document mode and setmode
+
 1999-03-14  Jon Stevens  <jon@clearink.com>
 
 	* common-src/security.c (bsd_security_ok): increase the verbosity of 
