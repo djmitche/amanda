@@ -1,3 +1,8 @@
+2003-11-28  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by C.Scheeder <christoph.scheeder@scheeder.de>
+
+	* changer-src/sense.c (SenseType): Add "DAT AutoChanger" and "C1537A".
+
 2003-11-27  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/driver.c: Print the tape size.

@@ -77,6 +77,37 @@
 	{ "generic", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, -1, -1, SENSE_IGNORE, "Default for SENSE_CHG_ELEMENT_STATUS"},
 
 	{ "generic", "", TYPE_CHANGER , -1, 0x0, 0x0, SENSE_ABORT, "Nothing Found"},
+/* 
+ *
+ * ADIC DAT Autochanger
+ *
+ */
+	{ "DAT AutoChanger", "", TYPE_CHANGER,  SENSE_NULL, 0x0, 0x0, SENSE_NO, "No Sense"},
+	{ "DAT AutoChanger", "", TYPE_CHANGER,  SENSE_NULL , -1, -1, SENSE_RETRY, "Default for SENSE_NULL"},
+
+	{ "DAT AutoChanger", "", TYPE_CHANGER , SENSE_RECOVERED_ERROR, 0x0, 0x0, SENSE_IGNORE, "Recovered Error"},
+	{ "DAT AutoChanger", "", TYPE_CHANGER,  SENSE_RECOVERED_ERROR , -1, -1, SENSE_RETRY, "Default for SENSE_RECOVERED_ERROR"},
+
+	{ "DAT AutoChanger", "", TYPE_CHANGER , SENSE_NOT_READY, 0x0, 0x0, SENSE_IGNORE, "Not Ready"},
+	{ "DAT AutoChanger", "", TYPE_CHANGER,  SENSE_NOT_READY , -1, -1, SENSE_RETRY, "Default for SENSE_NOT_READY"},
+
+	{ "DAT AutoChanger", "", TYPE_CHANGER , SENSE_MEDIUM_ERROR, 0x0, 0x0, SENSE_ABORT, "Medium Error"},
+	{ "DAT AutoChanger", "", TYPE_CHANGER,  SENSE_MEDIUM_ERROR , -1, -1, SENSE_ABORT, "Default for SENSE_MEDIUM_ERROR"},
+
+	{ "DAT AutoChanger", "", TYPE_CHANGER , SENSE_HARDWARE_ERROR, 0x0, 0x0, SENSE_ABORT, "Hardware Error"},
+	{ "DAT AutoChanger", "", TYPE_CHANGER,  SENSE_HARDWARE_ERROR , -1, -1, SENSE_ABORT, "Default for SENSE_HARDWARE_ERROR"},
+
+	{ "DAT AutoChanger", "", TYPE_CHANGER , SENSE_ILLEGAL_REQUEST, 0x0, 0x0, SENSE_ABORT, "Illegal Request"},
+	{ "DAT AutoChanger", "", TYPE_CHANGER,  SENSE_ILLEGAL_REQUEST , -1, -1, SENSE_ABORT, "Default for SENSE_ILLEGAL_REQUEST"},
+
+	{ "DAT AutoChanger", "", TYPE_CHANGER , SENSE_UNIT_ATTENTION, 0x0, 0x0, SENSE_RETRY, "Unit Attention"},
+	{ "DAT AutoChanger", "", TYPE_CHANGER , SENSE_UNIT_ATTENTION, 0x28, 0x01, SENSE_IES, "Door opend"},
+	{ "DAT AutoChanger", "", TYPE_CHANGER,  SENSE_UNIT_ATTENTION, -1, -1, SENSE_ABORT, "Default for SENSE_UNIT_ATTENTION"},
+
+	{ "DAT AutoChanger", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, -1, -1, SENSE_IGNORE, "Default for SENSE_CHG_ELEMENT_STATUS"},
+
+	{ "DAT AutoChanger", "", TYPE_CHANGER , -1, 0x0, 0x0, SENSE_ABORT, "Nothing Found"},
+
 /*
  *
  *	L500 (for the L500 ATL library)
@@ -231,6 +262,37 @@
 	{ "C1553A", "", TYPE_CHANGER,  SENSE_CHG_ELEMENT_STATUS, -1, -1, SENSE_IGNORE, "Default for SENSE_CHG_ELEMENT_STATUS"},
 
 	{ "C1553A", "", TYPE_CHANGER , -1, 0x0, 0x0, SENSE_ABORT, "Nothing Found"},
+/*
+ * HP C1537A Tape
+ */
+	{ "C1537A", "", TYPE_TAPE,  SENSE_NULL, 0x0, 0x0, SENSE_NO, "No Sense"},
+	{ "C1537A", "", TYPE_TAPE,  SENSE_NULL , -1, -1, SENSE_RETRY, "Default for SENSE_NULL"},
+
+	{ "C1537A", "", TYPE_TAPE , SENSE_RECOVERED_ERROR, 0x0, 0x0, SENSE_IGNORE, "Recovered Error"},
+	{ "C1537A", "", TYPE_TAPE,  SENSE_RECOVERED_ERROR , -1, -1, SENSE_RETRY, "Default for SENSE_RECOVERED_ERROR"},
+
+	{ "C1537A", "", TYPE_TAPE , SENSE_NOT_READY, 0x0, 0x0, SENSE_IGNORE, "Not Ready"},
+	{ "C1537A", "", TYPE_TAPE , SENSE_NOT_READY, 0x3A, 0x0, SENSE_TAPE_NOT_ONLINE, "No Tape online"},
+	{ "C1537A", "", TYPE_TAPE , SENSE_NOT_READY, 0x04, 0x0, SENSE_RETRY, "tape is being ejected"},
+	{ "C1537A", "", TYPE_TAPE , SENSE_NOT_READY, 0x04, 0x01, SENSE_RETRY, "tape is being loaded"},
+	{ "C1537A", "", TYPE_TAPE,  SENSE_NOT_READY , -1, -1, SENSE_RETRY, "Default for SENSE_NOT_READY"},
+
+	{ "C1537A", "", TYPE_TAPE , SENSE_MEDIUM_ERROR, 0x0, 0x0, SENSE_ABORT, "Medium Error"},
+	{ "C1537A", "", TYPE_TAPE,  SENSE_MEDIUM_ERROR , -1, -1, SENSE_ABORT, "Default for SENSE_MEDIUM_ERROR"},
+
+	{ "C1537A", "", TYPE_TAPE , SENSE_HARDWARE_ERROR, 0x0, 0x0, SENSE_ABORT, "Hardware Error"},
+	{ "C1537A", "", TYPE_TAPE,  SENSE_HARDWARE_ERROR , -1, -1, SENSE_ABORT, "Default for SENSE_HARDWARE_ERROR"},
+
+	{ "C1537A", "", TYPE_TAPE , SENSE_ILLEGAL_REQUEST, 0x0, 0x0, SENSE_ABORT, "Illegal Request"},
+	{ "C1537A", "", TYPE_TAPE,  SENSE_ILLEGAL_REQUEST , -1, -1, SENSE_ABORT, "Default for SENSE_ILLEGAL_REQUEST"},
+	
+	{ "C1537A", "", TYPE_TAPE , SENSE_UNIT_ATTENTION, 0x0, 0x0, SENSE_RETRY, "Unit Attention"},
+	{ "C1537A", "", TYPE_TAPE , SENSE_UNIT_ATTENTION, 0x28, 0x0, SENSE_RETRY, "Not Ready to Ready Transition"},
+	{ "C1537A", "", TYPE_TAPE,  SENSE_UNIT_ATTENTION , -1, -1, SENSE_ABORT, "Default for SENSE_UNIT_ATTENTION"},
+	
+	{ "C1537A", "", TYPE_TAPE,  SENSE_CHG_ELEMENT_STATUS, -1, -1, SENSE_IGNORE, "Default for SENSE_CHG_ELEMENT_STATUS"},
+
+	{ "C1537A", "", TYPE_TAPE , -1, 0x0, 0x0, SENSE_ABORT, "Nothing Found"},
 /*
  * Tandberg Tape
  */
