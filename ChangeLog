@@ -1,3 +1,8 @@
+2004-10-22  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* Amanda 2.4.4p4 released.
+	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.4.4p4).
+
 2004-10-21  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/driver.c (dump_to_tape): Don't retry a dump indefinitely
