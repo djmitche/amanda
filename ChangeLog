@@ -1,4 +1,9 @@
-2000-12-04 John R. Jackson  <jrj@purdue.edu>
+2000-12-12 John R. Jackson <jrj@purdue.edu>
+
+	* client-src/sendbackup-gnutar.c: Fix regex pattern to accept blanks
+	  or tabs.
+
+2000-12-12 John R. Jackson <jrj@purdue.edu>
 
 	* Makefile.am: Work around problem with automake 1.4 not including
 	  pkgdata_DATA.
