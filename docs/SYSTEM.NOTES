@@ -52,7 +52,12 @@ Since the restore program is invoked in the clients in order to create
 index files, and it the client is not connected to a tty, index
 creation will fail.  Using GNUTAR instead of DUMP is an option.
 Thanks to Edwin Wiles <ewiles@mclean.sterling.com> for the
-investigation.
+investigation.  Another alternative proposed by Martyn Johnson
+<Martyn.Johnson@cl.cam.ac.uk> is to use a modified restore program:
+use a binary program editor and replace `/dev/tty' with `/dev/nul',
+for instance, and link /dev/nul to /dev/null.  Note that the chosen
+file name must be exactly 8 bytes long, otherwise you'll break the
+restore program.
 
 ---------------------------------------------------------------------------
 HP/UX
@@ -133,7 +138,12 @@ amanda.conf.
 4) use dump instead of vdump, by setting the DUMP environment variable
 before running configure, or by changing its definition in
 config/config.h, and undefining both USE_RUNDUMP and OSF1_VDUMP.
-However, you won't be able to dump advfs filesystems.
+However, you won't be able to dump advfs filesystems.  You should set
+RESTORE too, otherwise you won't be able to create indexes, and you
+must fix the RESTORE index command so that it does not redirect
+`2>/dev/null'.  Use `2>&1' instead, because DU's restore prints file
+lists to stderr, according to Martyn Johnson
+<Martyn.Johnson@cl.cam.ac.uk>.
 
 ---------------------------------------------------------------------------
 Sinix 5.43 (Reliant Unix)
