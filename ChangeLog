@@ -1,3 +1,10 @@
+2001-03-09 John R. Jackson <jrj@purdue.edu>
+
+	* server-src/taper.c: Initialize tape_fd to -1 and test in a couple
+	  more places.	Run normal protocol after a tape startup error (e.g.
+	  "cannot overwrite") instead of just exiting to keep driver from
+	  reporting a broken pipe.
+
 2001-03-08  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	Reported by Eric Schnoebelen <eric@cirr.com>
 
