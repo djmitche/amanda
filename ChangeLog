@@ -1,5 +1,10 @@
 2000-09-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* example/amanda.conf.in: chunk should not be larger than
+	MAX_FILE_SIZE - 1Mb.
+
+2000-09-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* client-src/sendsize.c (getsize_smbtar): remove unused debug_level
 	variable.
 	* server-src/amlabel.c (main): init errstr to NULL, 
