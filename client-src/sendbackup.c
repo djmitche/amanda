@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.27 1998/01/07 21:11:57 jrj Exp $
+ * $Id: sendbackup.c,v 1.28 1998/01/12 22:32:28 blair Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -678,7 +678,7 @@ int stdoutfd, stderrfd;
 void parse_backup_messages(mesgin)
 int mesgin;
 {
-    int goterror, size, wpid, retstat;
+    int goterror, wpid, retstat;
     char *line;
 
     goterror = 0;

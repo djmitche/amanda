@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: security.c,v 1.4 1998/01/08 19:33:36 jrj Exp $
+ * $Id: security.c,v 1.5 1998/01/12 22:32:33 blair Exp $
  *
  * wrapper file for kerberos security
  */
@@ -74,7 +74,7 @@ char **errstr;
     char *bad_bsd = NULL;
     struct hostent *hp;
     struct passwd *pwptr;
-    int myuid, rc, i;
+    int myuid, i;
     char *s, *fp;
     int ch;
 #ifdef USE_AMANDAHOSTS
@@ -84,8 +84,6 @@ char **errstr;
     int pbuf_len;
     int amandahostsauth = 0;
 #endif
-    char *err = NULL;
-
     *errstr = NULL;
 
     /* what host is making the request? */
@@ -220,7 +218,7 @@ char **errstr;
      */
     chdir(pwptr->pw_dir);       /* pamper braindead ruserok's */
 #ifndef USE_AMANDAHOSTS
-    aclose(2);			/*  " */
+    close(2);			/*  " */
 
     if(ruserok(remotehost, myuid == 0, remoteuser, localuser) == -1) {
 	dup2(1,2);

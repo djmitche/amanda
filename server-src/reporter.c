@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.15 1998/01/05 06:03:28 george Exp $
+ * $Id: reporter.c,v 1.16 1998/01/12 22:32:55 blair Exp $
  *
  * nightly Amanda Report generator
  */
@@ -631,7 +631,6 @@ void handle_start()
 {
     static int started = 0;
     char *label;
-    int rc;
     char *s, *fp;
     int ch;
 
@@ -829,7 +828,6 @@ void handle_note()
 
 void handle_error()
 {
-    int rc;
     char *s = NULL, *nl;
     int ch;
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: changer.c,v 1.6 1998/01/02 01:05:39 jrj Exp $
+ * $Id: changer.c,v 1.7 1998/01/12 22:32:47 blair Exp $
  *
  * interface routines for tape changers
  */
@@ -82,7 +82,7 @@ char *arg;
 char **slotstr;
 char **rest;
 {
-    int exitcode, rc;
+    int exitcode;
     char *changer_cmd = NULL;
     char *result_copy;
     char *slot;
@@ -233,8 +233,6 @@ char *cmdstr;
     FILE *cmdpipe;
     char *cmd = NULL;
     int exitcode;
-    int len;
-    int ch;
     char number[NUM_STR_SIZE];
 
     if (*tapechanger != '/') {

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.52 1998/01/11 21:59:22 jrj Exp $
+ * $Id: planner.c,v 1.53 1998/01/12 22:32:54 blair Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -975,14 +975,14 @@ static void handle_result(p, pkt)
 proto_t *p;
 pkt_t *pkt;
 {
-    int rc, level, i;
+    int level, i;
     long size;
     disk_t *dp;
     host_t *hostp;
     char *resp;
     char *msgdisk=NULL, *msgdisk_undo=NULL, msgdisk_undo_ch;
     char *remoterr, *errbuf = NULL;
-    char *s, *fp;
+    char *s;
     int ch;
 
     hostp = (host_t *) p->datap;

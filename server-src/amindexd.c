@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.22 1998/01/11 21:14:19 jrj Exp $
+ * $Id: amindexd.c,v 1.23 1998/01/12 22:32:45 blair Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -427,7 +427,6 @@ int build_disk_table P((void))
 {
     char *date;
     char *host;
-    char *disk;
     int level;
     char *tape;
     int file;
@@ -571,7 +570,6 @@ char *dir;
     char *ldir = NULL;
     char *filename_gz;
     char *filename = NULL;
-    int len;
     int ldir_len;
 
     if (config == NULL || dump_hostname == NULL || disk_name == NULL) {

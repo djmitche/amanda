@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.21 1998/01/11 21:19:42 jrj Exp $
+ * $Id: extract_list.c,v 1.22 1998/01/12 22:32:38 blair Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -34,6 +34,7 @@
 #include "version.h"
 #include "amrecover.h"
 #include "fileheader.h"
+#include "dgram.h"
 
 #if defined(KRB4_SECURITY)
 #include "krb4-security.h"

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: display_commands.c,v 1.7 1998/01/12 03:31:06 amcore Exp $
+ * $Id: display_commands.c,v 1.8 1998/01/12 22:32:37 blair Exp $
  *
  * implements the directory-display related commands in amrecover
  */
@@ -129,7 +129,7 @@ void suck_dir_list_from_server P((void))
     char *dir, *dir_undo, dir_undo_ch;
     char *disk_path_slash = NULL;
     char *disk_path_slash_dot = NULL;
-    char *s, *fp;
+    char *s;
     int ch;
 
     if (disk_path == NULL) {

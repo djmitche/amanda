@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.37 1998/01/02 01:05:05 jrj Exp $
+ * $Id: sendbackup-gnutar.c,v 1.38 1998/01/12 22:32:27 blair Exp $
  *
  * send backup data using GNU tar
  */
@@ -138,7 +138,6 @@ char *dumpdate;
     else
 #endif
     {
-	int i;
 	char *basename = NULL;
 	char number[NUM_STR_SIZE];
 	char *s;

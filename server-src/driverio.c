@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.23 1998/01/02 18:48:28 jrj Exp $
+ * $Id: driverio.c,v 1.24 1998/01/12 22:32:50 blair Exp $
  *
  * I/O-related functions for driver program
  */
@@ -158,7 +158,7 @@ tok_t getresult(fd, show)
 int fd;
 int show;
 {
-    int arg, len;
+    int arg;
     tok_t t;
     static char *line = NULL;
 

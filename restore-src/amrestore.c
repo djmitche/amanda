@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.16 1998/01/02 18:48:11 jrj Exp $
+ * $Id: amrestore.c,v 1.17 1998/01/12 22:32:40 blair Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -168,7 +168,7 @@ int isafile;
 {
     int rc, dest, out, outpipe[2];
     int wc;
-    int l, n, s;
+    int l, s;
 
     /* adjust compression flag */
 

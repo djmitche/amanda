@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.54 1998/01/11 04:17:28 amcore Exp $
+ * $Id: sendsize.c,v 1.55 1998/01/12 22:32:30 blair Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -97,7 +97,6 @@ char **argv;
     int level, new_maxdumps, spindle;
     char *prog, *disk, *dumpdate, *exclude;
     disk_estimates_t *est;
-    int scanres;
     char *line;
     char *s, *fp;
     int ch;
@@ -899,7 +898,6 @@ time_t dumpsince;
 
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
     {
-      int i;
       char *basename = NULL;
       char number[NUM_STR_SIZE];
       char *s;
@@ -1157,7 +1155,7 @@ char *str;
  * Returns the value of the first integer in a string.
  */
 {
-    char *start, *tp;
+    char *start;
     int ch;
     double d;
 

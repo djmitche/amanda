@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.24 1998/01/08 08:28:41 amcore Exp $
+ * $Id: amadmin.c,v 1.25 1998/01/12 22:32:42 blair Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -883,7 +883,7 @@ int datestamp;
     return nice;
 }
 
-static parse_taper_datestamp_log(logline, datestamp, label)
+static int parse_taper_datestamp_log(logline, datestamp, label)
 char *logline;
 int *datestamp;
 char **label;
@@ -944,7 +944,7 @@ int datestamp;
     char *disk, *disk_undo, disk_undo_ch;
     char *rest;
     char *ck_label;
-    int level, rc, filenum, ck_datestamp, tapematch;
+    int level, filenum, ck_datestamp, tapematch;
     int passlabel, ck_datestamp2;
     char *s;
     int ch;
@@ -1044,8 +1044,6 @@ int datestamp;
 		    output_find=new_output_find;
 		}
 		else if(curlog == L_FAIL) {	/* print other failures too */
-		    int len;
-
 		    struct find_result *new_output_find=
 			alloc(sizeof(struct find_result));
 		    new_output_find->next=output_find;

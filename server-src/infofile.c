@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.33 1998/01/09 01:28:51 george Exp $
+ * $Id: infofile.c,v 1.34 1998/01/12 22:32:51 blair Exp $
  *
  * manage current info file
  */
@@ -55,7 +55,6 @@ char *disk;
 char *mode;
 {
     FILE *infof;
-    int rc;
 
     assert(infofile == (char *)0);
 
@@ -130,7 +129,6 @@ info_t *info;
     char *line = NULL;
     int version;
     int rc;
-    stats_t *sp;
     perf_t *pp;
     char *s;
     int ch;
@@ -264,7 +262,7 @@ int write_txinfofile(infof, info)
 FILE *infof;
 info_t *info;
 {
-    int i, l;
+    int i;
     stats_t *sp;
     perf_t *pp;
     int level;
@@ -323,7 +321,7 @@ char *host;
 char *disk;
 {
     char *fn = NULL, *fn_new = NULL;
-    int rc, rc2;
+    int rc;
 
     host = stralloc(sanitise_filename(host));
     disk = stralloc(sanitise_filename(disk));
@@ -524,6 +522,7 @@ int hostname_size, diskname_size;
 {
 #ifdef TEXTDB
     assert(0);
+    return 0;
 #else
     datum k;
     int rc;
@@ -566,6 +565,7 @@ int hostname_size, diskname_size;
 {
 #ifdef TEXTDB
     assert(0);
+    return 0;
 #else
     datum k;
     int rc;

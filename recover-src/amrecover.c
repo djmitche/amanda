@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.19 1998/01/11 21:19:41 jrj Exp $
+ * $Id: amrecover.c,v 1.20 1998/01/12 22:32:35 blair Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -40,6 +40,7 @@
 #endif
 #include "amrecover.h"
 #include "getfsent.h"
+#include "dgram.h"
 
 #if defined(KRB4_SECURITY)
 #include "krb4-security.h"

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.25 1998/01/08 04:56:03 george Exp $
+ * $Id: driver.c,v 1.26 1998/01/12 22:32:48 blair Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -905,7 +905,7 @@ disklist_t *waitqp;
     sched_t *sp;
     disk_t *dp;
     disklist_t rq;
-    int rc, level, line, priority;
+    int level, line, priority;
     char *dumpdate, *degr_dumpdate;
     int degr_level;
     long time, degr_time;

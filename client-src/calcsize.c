@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: calcsize.c,v 1.17 1998/01/09 01:01:04 jrj Exp $
+ * $Id: calcsize.c,v 1.18 1998/01/12 22:32:26 blair Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -137,7 +137,6 @@ char **argv;
 #else
     int i;
     char *dirname, *amname;
-    char *result = NULL;
     int fd;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
@@ -203,7 +202,8 @@ char **argv;
     argc--, argv++;
 #ifdef BUILTIN_EXCLUDE_SUPPORT
     if ((argc > 1) && strcmp(*argv,"-X") == 0) {
-	char *cp = (char *)0;
+	char *result = NULL;
+	char *cp = NULL;
 	argv++;
 
 	if (!use_gtar_excl) {
