@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.3.2.3 2000/09/24 02:00:34 martinea Exp $
+ * $Id: tapetype.c,v 1.3.2.4 2001/07/11 19:38:47 jrjackson Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -125,6 +125,17 @@ Note: disable hardware compression when running this program.\n\
 }
 
 
+int do_tty;
+
+void show_progress(blocks, files)
+  size_t *blocks, *files;
+{
+  fprintf(stderr, "wrote %ld %dKb block%s in %ld file%s",
+	  (long)*blocks, BLOCKKB, (*blocks == 1) ? "" : "s",
+	  (long)*files, (*files == 1) ? "" : "s");
+}
+
+
 void do_pass(size, blocks, files, seconds)
   size_t size, *blocks, *files;
   time_t *seconds;
@@ -147,10 +158,10 @@ void do_pass(size, blocks, files, seconds)
       break;
     *blocks += blks;
     (*files)++;
-    fprintf(stderr, "\rwrote %ld %dKb block%s in %ld file%s",
-	    (long)*blocks, BLOCKKB, (*blocks == 1) ? "" : "s",
-	    (long)*files, (*files == 1) ? "" : "s");
-
+    if(do_tty) {
+      putc('\r', stderr);
+      show_progress(blocks, files);
+    }
   }
   save_errno = errno;
 
@@ -162,9 +173,22 @@ void do_pass(size, blocks, files, seconds)
     exit(1);
   }
 
-  *seconds = end - start;
-  fprintf(stderr, " in %ld seconds (%s)\n",
-	  (long)*seconds, short_write ? "short write" : strerror(save_errno));
+  if(end <= start) {
+    /*
+     * Just in case time warped backward or the device is really, really
+     * fast (e.g. /dev/null testing).
+     */
+    *seconds = 1;
+  } else {
+    *seconds = end - start;
+  }
+  if(do_tty) {
+    putc('\r', stderr);
+  }
+  show_progress(blocks, files);
+  fprintf(stderr, " in %ld second%s (%s)\n",
+	  (long)*seconds, ((long)*seconds == 1) ? "" : "s",
+	  short_write ? "short write" : strerror(save_errno));
 }
 
 
@@ -252,6 +276,8 @@ int main(argc, argv)
   srandom(now);
   initrandombytes();
 
+  do_tty = isatty(fileno(stderr));
+
   /*
    * Do pass 1 -- write files that are 1% of the estimated size until error.
    */
@@ -271,7 +297,7 @@ int main(argc, argv)
    * to be careful in case size_t is unsigned (i.e. do not subtract
    * things and then check for less than zero).
    */
-  if (pass1blocks < pass2blocks) {
+  if (pass1blocks <= pass2blocks) {
     /*
      * If tape marks take up space, there should be fewer blocks in pass
      * 2 than in pass 1 since we wrote twice as many tape marks.  But
@@ -281,7 +307,7 @@ int main(argc, argv)
   } else {
     blockdiff = pass1blocks - pass2blocks;
   }
-  if (pass2files < pass1files) {
+  if (pass2files <= pass1files) {
     /*
      * This should not happen, but just in case ...
      */

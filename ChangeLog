@@ -1,5 +1,10 @@
 2001-07-10 John R. Jackson <jrj@purdue.edu>
 
+	* tape-src/tapetype.c: Only report a pass summary when stderr is not
+	  a tty.  Deal with some obscure end cases.
+
+2001-07-10 John R. Jackson <jrj@purdue.edu>
+
 	* server-src/Makefile.am: Backport development branch chg-scsi code
 	  to 2.4.2.
 	* changer-src/chg-scsi.c: Ditto.
