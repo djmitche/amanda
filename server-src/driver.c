@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.55 1998/10/25 17:01:45 martinea Exp $
+ * $Id: driver.c,v 1.56 1998/10/26 00:01:44 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -870,6 +870,9 @@ int fd;
 	    aclose(fd);
 	    startup_dump_process(dumper);
 	}
+	/* sleep in case the dumper failed because of a temporary network
+	   problem, as NIS or NFS... */
+	sleep(15);
 	break;
 
     case FAILED: /* FAILED <handle> <errstr> */
@@ -882,6 +885,9 @@ int fd;
 	dp->inprogress = 1;
 
 	/* no need to log this, dumper will do it */
+	/* sleep in case the dumper failed because of a temporary network
+	   problem, as NIS or NFS... */
+	sleep(15);
 	break;
 
     case NO_ROOM: /* NO-ROOM <handle> */
