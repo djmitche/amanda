@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: tapefile.c,v 1.15.2.3 1999/01/22 20:51:27 oliva Exp $
+ * $Id: tapefile.c,v 1.15.2.4 1999/05/23 01:51:48 martinea Exp $
  *
  * routines to read and write the amanda active tape list
  */
@@ -138,7 +138,7 @@ int datestamp;
 int lookup_nb_tape()
 {
     tape_t *tp;
-    int pos;
+    int pos=0;
 
     for(tp = tape_list; tp != NULL; tp = tp->next) {
 	pos=tp->position;

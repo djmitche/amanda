@@ -1,3 +1,9 @@
+1999-05-22 Alex Pilosov <alex@pilosoft.com>
+
+	* server-src/amindexd.c (is_dump_host_valid): sanitize_name(host)
+	before doing a stat.
+	* server-src/tapefile.c (lookup_nb_tape): init pos to 0.
+
 1999-05-19 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/reporter.c: take the orig size from the SUCCESS line.
