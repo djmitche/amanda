@@ -72,19 +72,19 @@ typedef struct est_s {
     int got_estimate;
     int curr_priority;
     int curr_level;
-    int size;
+    long size;
     int degr_level;	/* if curr_level == 0, what would be the inc level */
-    int degr_size;
+    long degr_size;
     int last_level;
-    int last_lev0size;
+    long last_lev0size;
     int next_level0;
     int level_days;
-    float fullrate, incrrate;
-    float fullcomp, incrcomp;
+    double fullrate, incrrate;
+    double fullcomp, incrcomp;
     char *errstr;
     int level[MAX_LEVELS];
     char *dumpdate[MAX_LEVELS];
-    int est_size[MAX_LEVELS];
+    long est_size[MAX_LEVELS];
 } est_t;
 
 #define est(dp)	((est_t *)(dp)->up)
@@ -120,7 +120,7 @@ typedef struct bi_s {
     int deleted;		/* 0=modified, 1=deleted */
     disk_t *dp;			/* The disk that was changed */
     int level;			/* The original level */
-    int size;			/* The original size */
+    long size;			/* The original size */
     char *errstr;		/* A message describing why this disk is here */
 } bi_t;
 
@@ -319,7 +319,7 @@ char **argv;
 
 	fprintf(stderr, "INITIAL SCHEDULE (size %ld):\n", total_size);
 	for(pos = 0, dp = schedq.head; dp != NULL; dp = dp->next, pos++) {
-	    fprintf(stderr, "  %s %s pri %d lev %d size %d\n",
+	    fprintf(stderr, "  %s %s pri %d lev %d size %ld\n",
 		    dp->host->hostname, dp->name, est(dp)->curr_priority,
 		    est(dp)->curr_level, est(dp)->size);
 	}
@@ -370,7 +370,7 @@ char **argv;
      */
 
     fprintf(stderr,
-     "\nPROMOTING DUMPS IF NEEDED, total_lev0 %1.2f, balanced_size %1.2f...\n",
+     "\nPROMOTING DUMPS IF NEEDED, total_lev0 %1.0f, balanced_size %1.0f...\n",
 	    total_lev0, balanced_size);
 
     balance_threshold = balanced_size * PROMOTE_THRESHOLD;
@@ -419,10 +419,10 @@ char *buf;
  */
 
 static int last_level P((disk_t *dp, info_t *ip));	  /* subroutines */
-static int est_size P((disk_t *dp, int level));
+static long est_size P((disk_t *dp, int level));
 static int next_level0 P((disk_t *dp, info_t *ip));
 static int runs_at P((disk_t *dp, info_t *ip, int lev));
-static int bump_thresh P((int level));
+static long bump_thresh P((int level));
 static int when_overwrite P((char *label));
 
 static void askfor(ep, seq, lev, inf)
@@ -667,7 +667,7 @@ disk_t *dp;
     if(dp->dtype->skip_incr) fputs(" skip-incr", stderr);
     fprintf(stderr, "\n    last_level %d next_level0 %d level_days %d\n",
 	    ep->last_level, ep->next_level0, ep->level_days);
-    fprintf(stderr, "    getting estimates %d (%d) %d (%d) %d (%d)\n",
+    fprintf(stderr, "    getting estimates %d (%ld) %d (%ld) %d (%ld)\n",
 	    ep->level[0], ep->est_size[0], 
 	    ep->level[1], ep->est_size[1],
 	    ep->level[2], ep->est_size[2]);
@@ -687,7 +687,7 @@ char *label;
 	return (getconf_int(CNF_TAPECYCLE) - tp->position) / runtapes;
 }
 
-static int est_size(dp, level)
+static long est_size(dp, level)
 disk_t *dp;
 int level;
 {
@@ -761,14 +761,14 @@ int lev;
 }
 
 
-static int bump_thresh(level)
+static long bump_thresh(level)
 int level;
 {
-    int bump = getconf_int(CNF_BUMPSIZE);
+    double bump = getconf_int(CNF_BUMPSIZE);
     double mult = getconf_real(CNF_BUMPMULT);
 
-    while(--level) bump = (int) bump * mult;
-    return bump;
+    while(--level) bump = bump * mult;
+    return (long)bump;
 }
 
 
@@ -889,7 +889,8 @@ static void handle_result(p, pkt)
 proto_t *p;
 pkt_t *pkt;
 {
-    int rc, level, size, i;
+    int rc, level, i;
+    long size;
     disk_t *dp;
     host_t *hostp;
     char *resp, msgdisk[256], remoterr[256], errbuf[1024], *errstr;
@@ -935,7 +936,7 @@ pkt_t *pkt;
     }
 
     while(*resp) {
-	rc = sscanf(resp, "%s %d SIZE %d\n", msgdisk, &level, &size);
+	rc = sscanf(resp, "%s %d SIZE %ld\n", msgdisk, &level, &size);
 	if(rc < 3) goto bad_msg;
 	eatline(resp);
 
@@ -973,7 +974,7 @@ pkt_t *pkt;
 
 	    fprintf(stderr,"got result for host %s disk %s:",
 		    dp->host->hostname, dp->name);
-	    fprintf(stderr," %d -> %dK, %d -> %dK, %d -> %dK\n",
+	    fprintf(stderr," %d -> %ldK, %d -> %ldK, %d -> %ldK\n",
 		    est(dp)->level[0], est(dp)->est_size[0],
 		    est(dp)->level[1], est(dp)->est_size[1],
 		    est(dp)->level[2], est(dp)->est_size[2]);
@@ -1023,7 +1024,7 @@ static int pick_inclevel P((disk_t *dp));
 static void analyze_estimate(dp)
 disk_t *dp;
 {
-    int lev0size;
+    long lev0size;
 
     fprintf(stderr,"pondering %s:%s... ",
 	    dp->host->hostname, dp->name);
@@ -1056,7 +1057,7 @@ disk_t *dp;
 	    est_size(dp,est(dp)->curr_level) * compratio(dp,incrcomp);
     }
 
-    fprintf(stderr,"  curr level %d size %d ", est(dp)->curr_level,
+    fprintf(stderr,"  curr level %d size %ld ", est(dp)->curr_level,
 	    est(dp)->size);
 
     insert_disk(&schedq, dp, schedule_order);
@@ -1070,7 +1071,7 @@ disk_t *dp;
 	balanced_size += (lev0size / runs_per_cycle);
     }
 
-    fprintf(stderr,"total size %ld total_lev0 %1.2f balanced-lev0size %1.2f\n",
+    fprintf(stderr,"total size %ld total_lev0 %1.0f balanced-lev0size %1.0f\n",
 	    total_size, total_lev0, balanced_size);
 }
 
@@ -1122,19 +1123,24 @@ disk_t *a, *b;
  */
 {
     int diff;
+    long ldiff;
 
     diff = est(b)->curr_priority - est(a)->curr_priority;
     if(diff != 0) return diff;
 
-    diff = est(b)->size - est(a)->size;
-    return diff;
+    ldiff = est(b)->size - est(a)->size;
+    if(ldiff < 0) return -1; /* XXX - there has to be a better way to dothis */
+    if(ldiff > 0) return 1;
+    return 0;
 }
 
 
 static int pick_inclevel(dp)
 disk_t *dp;
 {
-    int base_level, size1, size2;
+    int base_level;
+    long thresh;
+    long size1, size2;
 
     base_level = est(dp)->last_level;
 
@@ -1149,25 +1155,27 @@ disk_t *dp;
 	return 1;
     }
 
-    size1 = (int) est_size(dp, base_level);
-    fprintf(stderr,
-	    "   pick: orig sz %d comp %1.3f out sz %d rate %1.3f time %d\n",
-	    size1, compratio(dp,incrcomp),
-	    (int)(est_size(dp, base_level)* compratio(dp,incrcomp)),
-	    est(dp)->incrrate, (int)est_time(dp, base_level));
+    size1 = est_size(dp, base_level);
+    thresh = bump_thresh(base_level);
 
     fprintf(stderr,
-    "   pick: base size %d base level %d days %d (thresh %dK, %d days)\n",
+	    "   pick: orig sz %ld comp %1.3f out sz %ld rate %1.3f time %ld\n",
+	    size1, compratio(dp,incrcomp),
+	    (long)(size1 * compratio(dp,incrcomp)),
+	    est(dp)->incrrate, (long)est_time(dp, base_level));
+
+    fprintf(stderr,
+    "   pick: base size %ld base level %d days %d (thresh %ldK, %d days)\n",
 	    size1, base_level, est(dp)->level_days, 
-	    bump_thresh(base_level), getconf_int(CNF_BUMPDAYS));
+	    thresh, getconf_int(CNF_BUMPDAYS));
 
     if(base_level != 9 && est(dp)->level_days >= getconf_int(CNF_BUMPDAYS)
        && est_size(dp, base_level+1) != -1 
-       && size1 > bump_thresh(base_level)) {
+       && size1 > thresh) {
 
-	size2 = (int) est_size(dp, base_level+1);
-	fprintf(stderr,"   picklev: next size %d... ", size2);
-	if(size1 - size2 > bump_thresh(base_level)) {
+	size2 = est_size(dp, base_level+1);
+	fprintf(stderr,"   picklev: next size %ld... ", size2);
+	if(size1 - size2 > thresh) {
 	    base_level++;
 	    fputs("BUMPED\n",stderr);
 	    log(L_INFO, "Incremental of %s:%s bumped to level %d.",
@@ -1464,7 +1472,8 @@ static void delay_modify_dump P((disk_t *dp, char *errstr))
 static int promote_highest_priority_incremental P((void))
 {
     disk_t *ptr;
-    int new_size, new_total, check_days, check_limit;
+    long new_size, new_total;
+    int check_days, check_limit;
 
     /*
      * return 1 if did so; must update total_size correctly; must not
@@ -1485,7 +1494,7 @@ static int promote_highest_priority_incremental P((void))
                 continue;
             }
 	    if(est(ptr)->next_level0 == check_days) {
-		new_size = (int) (est_size(ptr, 0) * compratio(ptr,fullcomp));
+		new_size = est_size(ptr, 0) * compratio(ptr,fullcomp);
 		new_total = total_size - est(ptr)->size + new_size;
 		if(new_total <= tape_length && 
 		   total_lev0 + new_size <=
@@ -1499,7 +1508,7 @@ static int promote_highest_priority_incremental P((void))
 		    est(ptr)->size = new_size;
 
 		    fprintf(stderr,
-	     "   promote: moving %s:%s up, total_lev0 %1.2f, total_size %ld\n",
+	     "   promote: moving %s:%s up, total_lev0 %1.0f, total_size %ld\n",
 			    ptr->host->hostname, ptr->name, 
 			    total_lev0, total_size);
 
@@ -1510,7 +1519,7 @@ static int promote_highest_priority_incremental P((void))
 		}
 		else {
 		    fprintf(stderr,
-			    "  promote: %s:%s too big: new size %d total %1.1f, bal size %1.1f thresh %1.1f\n",
+			    "  promote: %s:%s too big: new size %ld total %1.0f, bal size %1.0f thresh %1.0f\n",
 			    ptr->host->hostname, ptr->name, new_size, 
 			    total_lev0+new_size, balanced_size, 
 			    balance_threshold);
@@ -1576,7 +1585,7 @@ static int promote_hills P((void))
 	    ptr->dtype->skip_full ||
 	    ptr->dtype->no_full)
 		continue;
-	    new_size = (long) (est_size(ptr, 0) * compratio(ptr,fullcomp));
+	    new_size = est_size(ptr, 0) * compratio(ptr,fullcomp);
 	    new_total = total_size - est(ptr)->size + new_size;
 	    if(new_total > tape_length)
 		continue;
@@ -1590,7 +1599,7 @@ static int promote_hills P((void))
 	    est(ptr)->size = new_size;
 
 	    fprintf(stderr,
-		    "   promote: moving %s:%s up, total_lev0 %1.2f, total_size %ld\n",
+		    "   promote: moving %s:%s up, total_lev0 %1.0f, total_size %ld\n",
 		    ptr->host->hostname, ptr->name,
 		    total_lev0, total_size);
 
@@ -1618,7 +1627,7 @@ static int promote_hills P((void))
 static void output_scheduleline(dp)
 disk_t *dp;
 {
-    int time, degr_time;
+    long time, degr_time;
     char schedline[1024];
 
     if(est(dp)->size == -1) {
@@ -1634,7 +1643,7 @@ disk_t *dp;
     if(est(dp)->curr_level == 0 && est(dp)->degr_level != -1) {
 	time = est(dp)->size / est(dp)->fullrate;
 	degr_time = est(dp)->degr_size / est(dp)->incrrate;
-	sprintf(schedline, "%s %s %d %d %d %d %d %d %d\n",
+	sprintf(schedline, "%s %s %d %d %ld %ld %d %ld %ld\n",
 		dp->host->hostname, dp->name, est(dp)->curr_priority,
 		est(dp)->curr_level, est(dp)->size, time,
 		est(dp)->degr_level, est(dp)->degr_size, degr_time);
@@ -1644,7 +1653,7 @@ disk_t *dp;
 	    time = est(dp)->size / est(dp)->fullrate;
 	else
 	    time = est(dp)->size / est(dp)->incrrate;
-	sprintf(schedline, "%s %s %d %d %d %d\n",
+	sprintf(schedline, "%s %s %d %d %ld %ld\n",
 		dp->host->hostname, dp->name, est(dp)->curr_priority,
 		est(dp)->curr_level, est(dp)->size, time);
     }
