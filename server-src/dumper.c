@@ -216,7 +216,7 @@ char **main_argv;
 	case FILE_DUMP:	
 	    /* FILE-DUMP handle filename host disk level dumpdate progname options */
 
-	    assert(argc == 8);
+	    assert(argc == 9);
 	    handle = argv[2];
 	    filename = argv[3];
 	    hostname = argv[4];
@@ -260,7 +260,7 @@ char **main_argv;
 	case PORT_DUMP: 
 
 	    /* PORT-DUMP handle port host disk level dumpdate progname options */
-	    assert(argc == 8);
+	    assert(argc == 9);
 	    handle = argv[2];
 	    taper_port = atoi(argv[3]);
 	    hostname = argv[4];
