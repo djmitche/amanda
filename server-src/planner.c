@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.33 1997/09/05 03:35:25 amcore Exp $
+ * $Id: planner.c,v 1.34 1997/09/05 04:44:32 george Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -434,7 +434,8 @@ info_t *inf;	/* info block for disk */
 {
     stats_t *stat;
 
-    assert(seq >= -1 && seq < MAX_LEVELS);
+    assert(seq >= 0 && seq < MAX_LEVELS);
+    assert(lev >= -1 && lev < DUMP_LEVELS);
 
     if (lev == -1) {
 	ep->level[seq] = -1;
