@@ -1,3 +1,11 @@
+1998-12-02  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/security.h: add 'handlesize' to the driver struct, also
+	make the connect function pointer return int and take a handle
+	argument
+	* common-src/security.h (security_connect): addd a 'const char **'
+	errmsg argument for returning connect errors
+
 1998-12-01  John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/amcheck.c: make -t mean do the tape checks, add new -l

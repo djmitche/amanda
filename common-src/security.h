@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.h,v 1.4 1998/11/11 20:32:43 kashmir Exp $
+ * $Id: security.h,v 1.5 1998/12/02 20:14:40 kashmir Exp $
  *
  * security api
  */
@@ -51,12 +51,15 @@ typedef struct security_driver {
     const char *name;
 
     /*
-     * Returns a security handle, for this driver.  This handle
-     * is used in protocol communications.
-     *
-     * The first form gets a handle given a hostname.
+     * The amount of memory to allocate for its handle.
      */
-    void *(*connect) P((const char *));
+    const size_t handlesize;
+
+    /*
+     * Connects a security handle, for this driver to a remote
+     * host.
+     */
+    int (*connect) P((void *, const char *));
 
     /*
      * This form sets up a callback that returns new handles as
@@ -174,7 +177,7 @@ const char *security_geterror P((security_handle_t *));
 void security_seterror P((security_handle_t *, const char *, ...));
 
 security_handle_t *security_connect P((const security_driver_t *,
-    const char *));
+    const char *, const char **));
 void security_accept P((const security_driver_t *, int, int,
     void (*)(security_handle_t *, pkt_t *)));
 void security_close P((security_handle_t *));
