@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.17.2.8 1999/02/26 22:07:25 martinea Exp $
+ * $Id: holding.c,v 1.17.2.9 1999/09/05 23:18:09 jrj Exp $
  *
  * Functions to access holding disk
  */
@@ -63,7 +63,7 @@ char *fname;
 
     /* must be 8 digits */
     for(cp = fname; *cp; cp++)
-	if(!isdigit(*cp)) break;
+	if(!isdigit((int)*cp)) break;
     if(*cp != '\0' || cp-fname != 8) return 0;
 
     /* sanity check year, month, and day */

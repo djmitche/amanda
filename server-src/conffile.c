@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.10 1999/09/05 21:22:25 jrj Exp $
+ * $Id: conffile.c,v 1.54.2.11 1999/09/05 23:18:04 jrj Exp $
  *
  * read configuration file
  */
@@ -357,7 +357,7 @@ char *str;
     tmpstr = stralloc(str);
     s = tmpstr;
     while((ch = *s++) != '\0') {
-	if(islower(ch)) s[-1] = toupper(ch);
+	if(islower((int) ch)) s[-1] = toupper(ch);
     }
 
     for(np = byname_table; np->name != NULL; np++)

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.27 1998/10/01 21:21:46 jrj Exp $
+ * $Id: protocol.c,v 1.27.2.1 1999/09/05 23:17:47 jrj Exp $
  *
  * implements amanda protocol
  */
@@ -368,7 +368,7 @@ char *str;
     char *saved_str, *saved_msg;
 
     /* eat leading whitespace */
-    while(isspace(*msg->cur)) msg->cur++;
+    while(isspace((int)(*msg->cur))) msg->cur++;
 
     saved_msg = msg->cur;
     saved_str = str;
@@ -400,7 +400,7 @@ dgram_t *msg;
     int sign = 1;
 
     /* eat leading whitespace */
-    while(isspace(*msg->cur)) msg->cur++;
+    while(isspace((int)(*msg->cur))) msg->cur++;
 
     /* handle negative values */
     if(*msg->cur == '-') {
@@ -433,13 +433,13 @@ dgram_t *msg;
     char *str;
 
     /* eat leading whitespace */
-    while(isspace(*msg->cur)) msg->cur++;
+    while(isspace((int)(*msg->cur))) msg->cur++;
 
     /* mark start of string */
     str = msg->cur;
 
     /* stop at whitespace (including newlines) or end-of-packet */
-    while(*msg->cur && !isspace(*msg->cur)) msg->cur++;
+    while(*msg->cur && !isspace((int)(*msg->cur))) msg->cur++;
 
     /* empty fields not allowed */
     if(msg->cur == str) {
@@ -460,7 +460,7 @@ dgram_t *msg;
     char *str;
 
     /* eat leading whitespace */
-    while(isspace(*msg->cur)) msg->cur++;
+    while(isspace((int)(*msg->cur))) msg->cur++;
 
     /* mark start of string */
     str = msg->cur;

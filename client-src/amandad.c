@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.32.2.1 1999/09/05 22:12:51 jrj Exp $
+ * $Id: amandad.c,v 1.32.2.2 1999/09/05 23:17:43 jrj Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -543,6 +543,6 @@ char *str;
 {
     char *s;
     for(s=str; *s; s++)
-	if(isupper(*s)) *s = tolower(*s);
+	if(isupper((int)*s)) *s = tolower(*s);
     return str;
 }

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.12 1999/08/15 07:41:37 oliva Exp $
+ * $Id: planner.c,v 1.76.2.13 1999/09/05 23:18:12 jrj Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1064,7 +1064,7 @@ pkt_t *pkt;
     disk_t *dp;
     host_t *hostp;
     char *resp;
-    char *msgdisk=NULL, *msgdisk_undo=NULL, msgdisk_undo_ch;
+    char *msgdisk=NULL, *msgdisk_undo=NULL, msgdisk_undo_ch = '\0';
     char *remoterr, *errbuf = NULL;
     char *s;
     int ch;
@@ -1831,7 +1831,7 @@ static int promote_hills P((void))
     } *sp = NULL;
     int tapecycle;
     int days;
-    int hill_days;
+    int hill_days = 0;
     long hill_size;
     long new_size;
     long new_total;
@@ -1922,7 +1922,7 @@ static void output_scheduleline(dp)
     disk_t *dp;
 {
     est_t *ep;
-    long dump_time, degr_time;
+    long dump_time = 0, degr_time = 0;
     char *schedline = NULL, *degr_str = NULL;
     char dump_priority_str[NUM_STR_SIZE];
     char dump_level_str[NUM_STR_SIZE];
