@@ -1,3 +1,9 @@
+2002-03-24  John R. Jackson (jrj@purdue.edu)
+
+	* common-src/Makefile.am: Move clock routines to common-src so
+	  everyone may use them.
+	* server-src/Makefile.am: Ditto.
+
 2002-03-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* client-src/sendbackup-gnutar.c: Fix use of no_record.

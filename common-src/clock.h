@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clock.h,v 1.3 1998/07/04 00:19:40 oliva Exp $
+ * $Id: clock.h,v 1.3 2002/03/24 22:54:02 jrjackson Exp $
  *
  * interface for timing functions
  */

@@ -14,6 +14,7 @@ INCLUDES = -I$(REGsrcdir)
 libamanda_la_SOURCES = \
 	alloc.c		amflock.c	\
 	bsd-security.c	\
+	clock.c		\
 	debug.c		dgram.c		\
 	event.c		error.c		\
 	file.c		fileheader.c	\
@@ -34,6 +35,7 @@ libamanda_a_SOURCES =	$(libamanda_la_SOURCES)
 libamanda_a_LIBADD =	@LIBOBJS@ @ALLOCA@
 
 noinst_HEADERS =	amanda.h	amregex.h	arglist.h	\
+			clock.h		\
 			dgram.h		\
 			event.h		\
 			packet.h	pipespawn.h	protocol.h	\

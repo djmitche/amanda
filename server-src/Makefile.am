@@ -30,7 +30,7 @@ sbin_SCRIPTS =		amcheckdb	amcleanup	amdump		\
 			amoverview	amrmtape	amtoc		\
 			amverify	amstatus
 
-libamserver_la_SOURCES=	amindex.c	changer.c	clock.c		\
+libamserver_la_SOURCES=	amindex.c	changer.c			\
 			conffile.c	diskfile.c	driverio.c	\
 			holding.c	infofile.c	logfile.c	\
 			tapefile.c	find.c		server_util.c
@@ -79,7 +79,7 @@ amreport_SOURCES =	reporter.c
 
 amgetconf_SOURCES =	getconf.c
 
-noinst_HEADERS = 	amindex.h	changer.h	clock.h		\
+noinst_HEADERS = 	amindex.h	changer.h			\
 			conffile.h	diskfile.h	driverio.h	\
 			holding.h	infofile.h	logfile.h	\
 			tapefile.h	find.h		server_util.h
