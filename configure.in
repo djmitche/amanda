@@ -515,21 +515,31 @@ if test "$SAMBA_CLIENT"; then
     AC_DEFINE_UNQUOTED(SAMBA_CLIENT,"$SAMBA_CLIENT")
 fi
 
-AC_ARG_WITH(gnutar-listed-incremental,
-   [   --with-gnutar-listed-incremental=DIR  gnutar directory lists go in DIR [localstatedir/amanda/gnutar-lists]],
+AC_ARG_WITH(gnutar-listdir,
+   [   --with-gnutar-listdir=DIR  gnutar directory lists go in DIR [localstatedir/amanda/gnutar-lists]],
    [
 	case "$withval" in
-	    n | no)		unset GNUTAR_LIST_DIR ;;
-	    y | ye | yes)	: ${GNUTAR_LIST_DIR=$localstatedir/amanda/gnutar-lists} ;;
-	    *)			GNUTAR_LIST_DIR="$withval" ;;
+	    n | no)		unset GNUTAR_LISTDIR ;;
+	    y | ye | yes)	: ${GNUTAR_LISTDIR=$localstatedir/amanda/gnutar-lists} ;;
+	    /*)			GNUTAR_LISTDIR="$withval" ;;
+	    *)			AC_MSG_ERROR([*** You must supply a full pathname to --with-gnutar-listdir])
 	esac
     ],
-    : ${GNUTAR_LIST_DIR=$localstatedir/amanda/gnutar-lists}
+    : ${GNUTAR_LISTDIR=$localstatedir/amanda/gnutar-lists}
 )
-if test "$GNUTAR_LIST_DIR"; then
-    tmp=`eval echo $GNUTAR_LIST_DIR`
-    AC_DEFINE_UNQUOTED(GNUTAR_LISTED_INCREMENTAL_DIR,"$tmp")
+if test "$GNUTAR_LISTDIR"; then
+    GNUTAR_LISTDIR=`(
+        test "x$prefix" = xNONE && prefix=$ac_default_prefix
+        eval echo "$GNUTAR_LISTDIR"
+    )`
+    AC_DEFINE_UNQUOTED(GNUTAR_LISTED_INCREMENTAL_DIR,"$GNUTAR_LISTDIR")
 fi
+
+AC_ARG_WITH(gnutar-listed-incremental,
+   [   --with-gnutar-listed-incremental was deprecated, use --with-gnutar-listdir],
+   [    AC_MSG_ERROR([*** The gnutar-listed-incremental option was deprecated, use gnutar-listdir instead])
+   ]
+)
 
 AC_ARG_WITH(bsd-security,
     [   --with-bsd-security    use BSD rsh/rlogin style security],
