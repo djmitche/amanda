@@ -165,7 +165,8 @@ otherwise they are relative to the current backup working directory.
 .CP lpwd
 Print the
 .B amrecover
-working directory.
+working directory.  When you restore files, this directory will be
+considered the root of the backed up filesystem.
 .TP
 .CP lcd path
 Change the
@@ -204,7 +205,13 @@ Close the connection to the index server and exit.
 Close the connection to the index server and exit.
 .TP
 .CP extract
-Start the extract sequence (see the examples below).
+Start the extract sequence (see the examples below).  Make sure the
+local working directory is the root of the backed up filesystem, or
+another directory that will behave like that.  Use
+.BR lpwd
+to print the local working directory, and
+.BR lcd
+to change it.
 .TP
 .CP help
 Display a brief list of these commands.
@@ -227,6 +234,8 @@ Setting restore date to today (1997-12-09)
 200 Dump host set to this-host.some.org.
 $CWD '/var/log' is on disk '/var' mounted at '/var'.
 200 Disk set to /var.
+/var/log
+$LCWD '/var'.
 amrecover> ls
 1997-12-09 daemon.log
 1997-12-09 syslog
@@ -242,6 +251,8 @@ amrecover> ls
 1997-12-08 syslog.7
 amrecover> add syslog.7
 Added /log/syslog.7
+amrecover> lpwd
+/var
 amrecover> extract
 
 Extracting files using tape drive @DEFAULT_TAPE_DEVICE@ on host @DEFAULT_TAPE_SERVER@
@@ -281,6 +292,8 @@ amrecover> ls
 \&...
 amrecover> add syslog.7
 Added /log/syslog.7
+amrecover> lpwd
+/var/.restore
 amrecover> extract
 
 Extracting files using tape drive @DEFAULT_TAPE_DEVICE@ on host @DEFAULT_TAPE_SERVER@
