@@ -1,5 +1,7 @@
 1999-08-15  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* man/amanda.8.in (skip-full, incronly): Document existing bugs.
+
 	* server-src/conffile.c (init_defaults): Default disksize to 0.
 	* man/amanda.8.in (holdingdisk use): Document it.
 	Reported by Grant Beattie <Grant.Beattie@fulcrum.com.au>
