@@ -1,3 +1,8 @@
+1998-09-03  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/driver.c: amanda will not use an holding disk
+	if the directory with the datestamp already exist.
+
 1998-08-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* NEWS: typo
