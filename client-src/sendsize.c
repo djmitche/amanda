@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.53 1998/01/08 04:55:53 george Exp $
+ * $Id: sendsize.c,v 1.54 1998/01/11 04:17:28 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -1027,7 +1027,7 @@ notincremental:
 
     cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
 
-    if (efile == NULL) {
+    if (efile == NULL || *efile == '\0') {
 	/* do nothing */
 #define sc "--exclude-list"
     } else if (strncmp(efile, sc, sizeof(sc)-1)==0) {
@@ -1043,8 +1043,8 @@ notincremental:
 	t = NULL;
 #undef sc
     } else {
-	dbprintf(("error [efile not --exclude-list or -file: %s]\n", efile));
-	error("error: efile not --exclude-list or -file: %s]", efile);
+	dbprintf(("error [efile is neither --exclude-list nor --exclude-file: %s]\n", efile));
+	error("error: efile is neither --exclude-list nor --exclude-file: %s]", efile);
     }
 
     cmd_line = vstralloc(cmd,
