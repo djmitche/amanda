@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.29 1998/01/03 18:02:04 kovert Exp $
+ * $Id: infofile.c,v 1.30 1998/01/03 20:27:01 kovert Exp $
  *
  * manage current info file
  */
@@ -354,10 +354,19 @@ char *filename;
     if((lockfd = open(lockname, O_CREAT|O_RDWR, 0644)) == -1)
 	return 2;
 
-    if(amflock(lockfd, "info") == -1)
+    if(amflock(lockfd, "info") == -1) {
+	aclose(lockfd);
+	unlink(lockname);
 	return 3;
+    }
 
-    infodb = dbm_open(filename, O_CREAT|O_RDWR, 0644);
+    if(!(infodb = dbm_open(filename, O_CREAT|O_RDWR, 0644))) {
+	amfunlock(lockfd, "info");
+	aclose(lockfd);
+	unlink(lockname);
+	return 1;
+    }
+
     return (infodb == NULL);	/* return 1 on error */
 #endif
 }
