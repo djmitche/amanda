@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.75 1999/04/28 21:48:25 kashmir Exp $
+ * $Id: driver.c,v 1.76 1999/04/29 19:47:58 kashmir Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -872,7 +872,6 @@ int fd;
 	break;
 
     case TRYAGAIN: /* TRY-AGAIN <handle> <err str> */
-    case FATAL_TRYAGAIN:
 	free_serial(result_argv[2]);
 
 	rename_tmp_holding(sched(dp)->destname, 0);
@@ -893,14 +892,6 @@ int fd;
 	    enqueue_disk(&runq, dp);
 	}
 
-	if(tok == FATAL_TRYAGAIN) {
-	    /* dumper is confused, start another */
-	    log_add(L_WARNING, "%s (pid %ld) confused, restarting it.",
-		    dumper->name, (long)dumper->pid);
-	    FD_CLR(fd,&readset);
-	    aclose(fd);
-	    startup_dump_process(dumper, dumper_program);
-	}
 	/* sleep in case the dumper failed because of a temporary network
 	   problem, as NIS or NFS... */
 	sleep(15);

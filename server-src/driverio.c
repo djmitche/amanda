@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.45 1999/04/10 06:19:50 kashmir Exp $
+ * $Id: driverio.c,v 1.46 1999/04/29 19:48:00 kashmir Exp $
  *
  * I/O-related functions for driver program
  */
@@ -40,11 +40,10 @@
 #define GLOBAL		/* the global variables defined here */
 #include "driverio.h"
 
-char *cmdstr[] = {
+static const char *cmdstr[] = {
     "BOGUS", "QUIT", "DONE",
     "FILE-DUMP", "PORT-DUMP", "CONTINUE", "ABORT",	/* dumper cmds */
     "FAILED", "TRY-AGAIN", "NO-ROOM", "ABORT-FINISHED",	/* dumper results */
-    "FATAL-TRY-AGAIN",
     "START-TAPER", "FILE-WRITE", "PORT-WRITE",		/* taper cmds */
     "PORT", "TAPE-ERROR", "TAPER-OK",			/* taper results */
     NULL

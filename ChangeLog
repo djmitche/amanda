@@ -1,3 +1,10 @@
+1999-04-29  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/driver.c (handle_dumper_result): remove FATAL_TRYAGAIN
+	case, nothing uses it.
+	* server-src/driverio.c, server-src/driverio.h: garbage collect
+	FATAL_TRYAGAIN.  static & const cmdstr.
+
 1999-04-28  Mike Grupenhoff <kashmir@munge.com>
 
 	* server-src/diskfile.c (read_diskfile): rework to take a

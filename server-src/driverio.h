@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.18 1999/03/02 01:08:55 martinea Exp $
+ * $Id: driverio.h,v 1.19 1999/04/29 19:48:02 kashmir Exp $
  *
  * driver-related helper functions
  */
@@ -82,7 +82,6 @@ typedef enum {
     BOGUS, QUIT, DONE,
     FILE_DUMP, PORT_DUMP, CONTINUE, ABORT,		/* dumper cmds */
     FAILED, TRYAGAIN, NO_ROOM, ABORT_FINISHED,		/* dumper results */
-    FATAL_TRYAGAIN,
     START_TAPER, FILE_WRITE, PORT_WRITE,		/* taper cmds */
     PORT, TAPE_ERROR, TAPER_OK,				/* taper results */
     LAST_TOK
