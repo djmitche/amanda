@@ -1,4 +1,16 @@
-2002-04-22  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+2002-04-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	New features to describe the OPTIONS line of a REP packet.
+	* common-src/amfeatures.h: Add fetures fe_rep_options_maxdumps,
+	  fe_rep_options_hostname, fe_rep_options_features and
+	  fe_rep_options_sendbackup_options.
+	* common-src/amfeatures.c (am_init_feature_set): Add
+	  fe_rep_options_features.
+	* client-src/selfcheck.c: Write REP packet according to server features.
+	* client-src/sendbackup.c: Ditto.
+	* client-src/sendsize.c: Ditto.
+
+2002-04-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* common-src/amfeatures.h: 
 	     Rename fe_g_options_maxdump  to fe_req_options_maxdumps

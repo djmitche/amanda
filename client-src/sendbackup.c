@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.44.2.9.4.4.2.10 2002/04/22 20:47:42 martinea Exp $
+ * $Id: sendbackup.c,v 1.44.2.9.4.4.2.11 2002/04/26 00:45:38 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -360,8 +360,17 @@ char **argv;
 
     printf("CONNECT DATA %d MESG %d INDEX %d\n",
 	   data_port, mesg_port, index_port);
-    printf("OPTIONS features=%s;hostname=%s;%s\n",
-	   our_feature_string, g_options->hostname, optionstr(options));
+    printf("OPTIONS ");
+    if(am_has_feature(g_options->features, fe_rep_options_features)) {
+	printf("features=%s;", our_feature_string);
+    }
+    if(am_has_feature(g_options->features, fe_rep_options_hostname)) {
+	printf("hostname=%s;", g_options->hostname);
+    }
+    if(am_has_feature(g_options->features, fe_rep_options_sendbackup_options)) {
+	printf("%s", optionstr(options));
+    }
+    printf("\n");
     fflush(stdout);
     freopen("/dev/null", "w", stdout);
 

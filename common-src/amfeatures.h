@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.h,v 1.1.2.3 2002/04/23 14:26:55 martinea Exp $
+ * $Id: amfeatures.h,v 1.1.2.4 2002/04/26 00:45:38 martinea Exp $
  *
  * Define feature test related items.
  */
@@ -116,6 +116,11 @@ typedef enum {
     fe_req_options_maxdumps,
     fe_req_options_hostname,
     fe_req_options_features,
+
+    fe_rep_options_maxdumps,
+    fe_rep_options_hostname,
+    fe_rep_options_features,
+    fe_rep_options_sendbackup_options,
 
     /*
      * All new features must be inserted immediately *before* this entry.
