@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.20.2.13 2005/02/09 14:31:23 martinea Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.20.2.14 2005/02/09 18:12:31 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -278,8 +278,8 @@ int main(main_argc, main_argv)
 		hdp->disksize += fs.avail;
 	}
 
-	printf("driver: adding holding disk %d dir %s size %ld\n",
-	       dsk, hdp->diskdir, hdp->disksize);
+	printf("driver: adding holding disk %d dir %s size %ld chunksize %ld\n",
+	       dsk, hdp->diskdir, hdp->disksize, hdp->chunksize);
 
 	newdir = newvstralloc(newdir,
 			      hdp->diskdir, "/", timestamp,
