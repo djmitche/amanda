@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.10 2002/10/27 22:00:47 martinea Exp $
+ * $Id: tapetype.c,v 1.11 2002/11/26 22:53:24 martinea Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -401,8 +401,9 @@ int main(argc, argv)
    */
   printf("Estimated time to write 2 * %d Mbyte: ", estsize / 1024);
   pass1time = 2 * pass2time * estsize / (16 * 1024);
-  printf("%d sec = ", pass1time);
-  printf("%d h %d min\n", (pass1time / 3600), ((pass1time % 3600) / 60));
+  printf("%ld sec = ", (long)pass1time);
+  printf("%ld h %ld min\n", ((long)pass1time / 3600),
+	 (((long)pass1time % 3600) / 60));
 
   /*
    * Do pass 1 -- write files that are 1% of the estimated size until error.
