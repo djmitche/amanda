@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.39 2001/01/08 02:10:15 martinea Exp $
+ * $Id: diskfile.c,v 1.40 2001/01/08 22:04:01 martinea Exp $
  *
  * read disklist file
  */
@@ -595,6 +595,9 @@ void match_disklist(disklist_t *origqp, int sargc, char **sargv)
     int match_a_disk;
     int prev_match;
     disk_t *dp;
+
+    if(sargc <= 0)
+	return;
 
     for(dp = origqp->head; dp != NULL; dp = dp->next) {
 	if(dp->todo == 1)
