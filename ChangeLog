@@ -1,5 +1,9 @@
 2003-06-05  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* client-src/noop.c: #include "util.h".
+
+2003-06-05  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/amflush.c: Implement new -b and -s options.
 	* man/amflush.8.in: Document it.
 

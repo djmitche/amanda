@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: noop.c,v 1.1 2003/05/26 03:52:52 kovert Exp $
+ * $Id: noop.c,v 1.2 2003/06/05 17:26:59 martinea Exp $
  *
  * send back features.  This was pulled out to it's own program for
  * consistancy and because it's a hell of a lot easier to code in
@@ -34,6 +34,7 @@
 
 #include "amanda.h"
 #include "amfeatures.h"
+#include "util.h"
 
 int main P((int argc, char **argv));
 
