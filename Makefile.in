@@ -143,7 +143,7 @@ configure.in install-sh missing mkinstalldirs stamp-h.in
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
-TAR = tar
+TAR = gnutar
 default: all
 
 .SUFFIXES:
@@ -264,6 +264,9 @@ distdir: $(DISTFILES)
 	rm -rf $(distdir)
 	mkdir $(distdir)
 	-chmod 777 $(distdir)
+	here=`cd $(top_builddir) && pwd`; top_distdir=`cd $$top_distdir && pwd` \
+	  && cd $(top_srcdir) \
+	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --foreign Makefile
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  test -f $(distdir)/$$file \

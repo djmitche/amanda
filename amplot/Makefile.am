@@ -23,16 +23,18 @@ amplot.gp:		amplot.g
 
 install-exec-hook:
 	@list="$(bin_SCRIPTS)"; for p in $$list; do \
-		echo chown $(CLIENT_LOGIN) $(bindir)/`echo $$p|sed '$(transform)'`; \
-		chown $(CLIENT_LOGIN) $(bindir)/`echo $$p|sed '$(transform)'`; \
-		echo chgrp $(SETUID_GROUP) $(bindir)/`echo $$p|sed '$(transform)'`; \
-		chgrp $(SETUID_GROUP) $(bindir)/`echo $$p|sed '$(transform)'`; \
+		pa=$(bindir)/`echo $$p|sed '$(transform)'`; \
+		echo chown $(CLIENT_LOGIN) $$pa; \
+		chown $(CLIENT_LOGIN) $$pa; \
+		echo chgrp $(SETUID_GROUP) $$pa; \
+		chgrp $(SETUID_GROUP) $$pa; \
 	done
 
 install-data-hook:
 	@list="$(amplot_DATA)"; for p in $$list; do \
-		echo chown $(CLIENT_LOGIN) $(libexecdir)/$$p; \
-		chown $(CLIENT_LOGIN) $(libexecdir)/$$p; \
-		echo chgrp $(SETUID_GROUP) $(libexecdir)/$$p; \
-		chgrp $(SETUID_GROUP) $(libexecdir)/$$p; \
+		pa=$(libexecdir)/$$p; \
+		echo chown $(CLIENT_LOGIN) $$pa; \
+		chown $(CLIENT_LOGIN) $$pa; \
+		echo chgrp $(SETUID_GROUP) $$pa; \
+		chgrp $(SETUID_GROUP) $$pa; \
         done

@@ -154,7 +154,7 @@ DIST_COMMON =  Makefile.am Makefile.in amcat.awk.in amplot.sh.in
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
-TAR = tar
+TAR = gnutar
 default: all
 
 .SUFFIXES:
@@ -216,6 +216,9 @@ distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
 subdir = amplot
 distdir: $(DISTFILES)
+	here=`cd $(top_builddir) && pwd`; top_distdir=`cd $$top_distdir && pwd` \
+	  && cd $(top_srcdir) \
+	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --foreign amplot/Makefile
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  test -f $(distdir)/$$file \
@@ -291,18 +294,20 @@ amplot.gp:		amplot.g
 
 install-exec-hook:
 	@list="$(bin_SCRIPTS)"; for p in $$list; do \
-		echo chown $(CLIENT_LOGIN) $(bindir)/`echo $$p|sed '$(transform)'`; \
-		chown $(CLIENT_LOGIN) $(bindir)/`echo $$p|sed '$(transform)'`; \
-		echo chgrp $(SETUID_GROUP) $(bindir)/`echo $$p|sed '$(transform)'`; \
-		chgrp $(SETUID_GROUP) $(bindir)/`echo $$p|sed '$(transform)'`; \
+		pa=$(bindir)/`echo $$p|sed '$(transform)'`; \
+		echo chown $(CLIENT_LOGIN) $$pa; \
+		chown $(CLIENT_LOGIN) $$pa; \
+		echo chgrp $(SETUID_GROUP) $$pa; \
+		chgrp $(SETUID_GROUP) $$pa; \
 	done
 
 install-data-hook:
 	@list="$(amplot_DATA)"; for p in $$list; do \
-		echo chown $(CLIENT_LOGIN) $(libexecdir)/$$p; \
-		chown $(CLIENT_LOGIN) $(libexecdir)/$$p; \
-		echo chgrp $(SETUID_GROUP) $(libexecdir)/$$p; \
-		chgrp $(SETUID_GROUP) $(libexecdir)/$$p; \
+		pa=$(libexecdir)/$$p; \
+		echo chown $(CLIENT_LOGIN) $$pa; \
+		chown $(CLIENT_LOGIN) $$pa; \
+		echo chgrp $(SETUID_GROUP) $$pa; \
+		chgrp $(SETUID_GROUP) $$pa; \
         done
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

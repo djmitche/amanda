@@ -52,22 +52,25 @@ sendbackup_gnutar_SOURCES = sendbackup-gnutar.c		sendbackup-common.c \
 
 install-exec-hook:
 	@list="$(bin_PROGRAMS) $(bin_SCRIPTS)"; for p in $$list; do \
-		echo chown $(CLIENT_LOGIN) $(bindir)/`echo $$p|sed '$(transform)'`; \
-		chown $(CLIENT_LOGIN) $(bindir)/`echo $$p|sed '$(transform)'`; \
-		echo chgrp $(SETUID_GROUP) $(bindir)/`echo $$p|sed '$(transform)'`; \
-		chgrp $(SETUID_GROUP) $(bindir)/`echo $$p|sed '$(transform)'`; \
+		pa=$(bindir)/`echo $$p|sed '$(transform)'`; \
+		echo chown $(CLIENT_LOGIN) $$pa; \
+		chown $(CLIENT_LOGIN) $$pa; \
+		echo chgrp $(SETUID_GROUP) $$pa; \
+		chgrp $(SETUID_GROUP) $$pa; \
 	done; \
 	list="$(libexec_PROGRAMS) $(libexec_SCRIPTS)"; for p in $$list; do \
-		echo chown $(CLIENT_LOGIN) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
-		chown $(CLIENT_LOGIN) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
-		echo chgrp $(SETUID_GROUP) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
-		chgrp $(SETUID_GROUP) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
+		pa=$(libexecdir)/`echo $$p|sed '$(transform)'`; \
+		echo chown $(CLIENT_LOGIN) $$pa; \
+		chown $(CLIENT_LOGIN) $$pa; \
+		echo chgrp $(SETUID_GROUP) $$pa; \
+		chgrp $(SETUID_GROUP) $$pa; \
 	done; \
 	list="$(libexecdir)/calcsize $(libexecdir)/rundump $(libexecdir)/runtar"; for p in $$list; do \
 		if echo "$(bin_PROGRAMS) $(bin_SCRIPTS) $(libexec_PROGRAMS) $(libexec_SCRIPTS)" | grep `basename $$p` >/dev/null 2>&1; then \
-			echo chown root `echo $$p|sed '$(transform)'`; \
-			chown root `echo $$p|sed '$(transform)'`; \
-			echo chmod u+s,o-rwx `echo $$p|sed '$(transform)'`; \
-			chmod u+s,o-rwx `echo $$p|sed '$(transform)'`; \
+			pa=`echo $$p|sed '$(transform)'`; \
+			echo chown root $$pa; \
+			chown root $$pa; \
+			echo chmod u+s,o-rwx $$pa; \
+			chmod u+s,o-rwx $$pa; \
 		fi; \
 	done

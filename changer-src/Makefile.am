@@ -26,14 +26,16 @@ EXTRA_SCRIPTS =		chg-generic hp-changer no-changer rth-changer
 
 install-exec-hook:
 	@list="$(bin_PROGRAMS) $(bin_SCRIPTS)"; for p in $$list; do \
-		echo chown $(CLIENT_LOGIN) $(bindir)/`echo $$p|sed '$(transform)'`; \
-		chown $(CLIENT_LOGIN) $(bindir)/`echo $$p|sed '$(transform)'`; \
-		echo chgrp $(SETUID_GROUP) $(bindir)/`echo $$p|sed '$(transform)'`; \
-		chgrp $(SETUID_GROUP) $(bindir)/`echo $$p|sed '$(transform)'`; \
+		pa=$(bindir)/`echo $$p|sed '$(transform)'`; \
+		echo chown $(CLIENT_LOGIN) $$pa; \
+		chown $(CLIENT_LOGIN) $$pa; \
+		echo chgrp $(SETUID_GROUP) $$pa; \
+		chgrp $(SETUID_GROUP) $$pa; \
 	done; \
 	list="$(libexec_PROGRAMS) $(libexec_SCRIPTS)"; for p in $$list; do \
-		echo chown $(CLIENT_LOGIN) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
-		chown $(CLIENT_LOGIN) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
-		echo chgrp $(SETUID_GROUP) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
-		chgrp $(SETUID_GROUP) $(libexecdir)/`echo $$p|sed '$(transform)'`; \
+		pa=$(libexecdir)/`echo $$p|sed '$(transform)'`; \
+		echo chown $(CLIENT_LOGIN) $$pa; \
+		chown $(CLIENT_LOGIN) $$pa; \
+		echo chgrp $(SETUID_GROUP) $$pa; \
+		chgrp $(SETUID_GROUP) $$pa; \
 	done

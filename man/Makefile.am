@@ -8,8 +8,9 @@ man_MANS =	amadmin.8	amanda.8	amcheck.8	\
 
 install-data-hook:
 	@list="$(man_MANS)"; echo $$list; for p in $$list; do \
-		echo chown $(CLIENT_LOGIN) $(mandir)/man8/`echo $$p|sed '$(transform)'`; \
-		chown $(CLIENT_LOGIN) $(mandir)/man8/`echo $$p|sed '$(transform)'`; \
-		echo chgrp $(SETUID_GROUP) $(mandir)/man8/`echo $$p|sed '$(transform)'`; \
-		chgrp $(SETUID_GROUP) $(mandir)/man8/`echo $$p|sed '$(transform)'`; \
+		pa=$(mandir)/man8/`echo $$p|sed '$(transform)'`; \
+		echo chown $(CLIENT_LOGIN) $$pa; \
+		chown $(CLIENT_LOGIN) $$pa; \
+		echo chgrp $(SETUID_GROUP) $$pa; \
+		chgrp $(SETUID_GROUP) $$pa; \
 	done
