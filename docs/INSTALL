@@ -90,7 +90,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	Although Amanda uses libtool in order to build shared
 	libraries (if --enable-libtool is issued), you shouldn't have
 	any version of libtool different from the one distributed with
-	Amanda, otherwise you ay find incompatibilities between the
+	Amanda, otherwise you may find incompatibilities between the
 	libtool scripts and its autoconf macros.
 
     E.  Read about the different configuration options available for
