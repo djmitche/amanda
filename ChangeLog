@@ -1,5 +1,10 @@
 2001-06-19 John R. Jackson <jrj@purdue.edu>
 
+	* server-src/amindexd.c: Minor gethostbyaddr() argument change to be
+	  consistent with other Amanda usage.
+
+2001-06-19 John R. Jackson <jrj@purdue.edu>
+
 	* server-src/amverify.sh.in: Better cross platform tar detection.
 
 2001-06-19 John R. Jackson <jrj@purdue.edu>
