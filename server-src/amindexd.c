@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.25.2.2 1998/01/29 08:28:38 amcore Exp $
+ * $Id: amindexd.c,v 1.25.2.3 1998/03/01 23:36:01 amcore Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -71,7 +71,6 @@ typedef struct REMOVE_ITEM
 } REMOVE_ITEM;
 
 char *pname = "amindexd";
-char *server_version = "1.1";
 
 /* state */
 char local_hostname[MAX_HOSTNAME_LENGTH+1];	/* me! */
@@ -909,7 +908,7 @@ char **argv;
     if (config != NULL && is_config_valid(config) != -1) return 1;
 
     reply(220, "%s AMANDA index server (%s) ready.", local_hostname,
-	  server_version);
+	  version());
 
     /* a real simple parser since there are only a few commands */
     while (1)
