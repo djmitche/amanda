@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.64 1999/05/14 21:52:30 kashmir Exp $
+ * $Id: amadmin.c,v 1.65 1999/09/15 00:32:10 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -77,7 +77,11 @@ void disklist_one P((disk_t *dp));
 void show_version P((int argc, char **argv));
 static void check_dumpuser P((void));
 
-static char *confname;
+char *config_name = NULL;
+char *config_dir = NULL;
+
+static char *conffile = NULL;
+static char *conf_tapelist = NULL;
 
 static const struct {
     const char *name;
@@ -127,8 +131,9 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    char *confdir = NULL;
     int fd, i;
+    char *conf_diskfile;
+    char *conf_infofile;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
 
@@ -142,6 +147,8 @@ char **argv;
 	close(fd);
     }
 
+    safe_cd();
+
     set_pname("amadmin");
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
@@ -150,26 +157,48 @@ char **argv;
 
     if(argc < 3) usage();
 
-    confname = argv[1];
-    confdir = vstralloc(CONFIG_DIR, "/", confname, NULL);
-    if(chdir(confdir)) {
-	fprintf(stderr,"%s: could not find config dir %s\n", argv[0], confdir);
-	amfree(confdir);
-	usage();
+    if(strcmp(argv[2],"version") == 0) {
+	show_version(argc, argv);
+	goto done;
     }
-    amfree(confdir);
 
-    if(read_conffile(CONFFILE_NAME))
-	error("could not find \"%s\" in this directory.\n", CONFFILE_NAME);
+    config_name = argv[1];
+    config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
+    conffile = stralloc2(config_dir, CONFFILE_NAME);
 
-    if (read_diskfile(getconf_str(CNF_DISKFILE), &diskq) < 0)
-	error("could not load \"%s\"\n", getconf_str(CNF_DISKFILE));
+    if(read_conffile(conffile))
+	error("could not find config file \"%s\"", conffile);
+    amfree(conffile);
 
-    if(read_tapelist(getconf_str(CNF_TAPELIST)))
-	error("could not load \"%s\"\n", getconf_str(CNF_TAPELIST));
+    conf_diskfile = getconf_str(CNF_DISKFILE);
+    if (*conf_diskfile == '/') {
+	conf_diskfile = stralloc(conf_diskfile);
+    } else {
+	conf_diskfile = stralloc2(config_dir, conf_diskfile);
+    }
+    if (read_diskfile(conf_diskfile, &diskq) < 0)
+	error("could not load disklist \"%s\"", conf_diskfile);
+    amfree(conf_diskfile);
 
-    if(open_infofile(getconf_str(CNF_INFOFILE)))
-	error("could not open info db \"%s\"\n", getconf_str(CNF_INFOFILE));
+    conf_tapelist = getconf_str(CNF_TAPELIST);
+    if (*conf_tapelist == '/') {
+	conf_tapelist = stralloc(conf_tapelist);
+    } else {
+	conf_tapelist = stralloc2(config_dir, conf_tapelist);
+    }
+    if(read_tapelist(conf_tapelist))
+	error("could not load tapelist \"%s\"", conf_tapelist);
+    amfree(conf_tapelist);
+
+    conf_infofile = getconf_str(CNF_TAPELIST);
+    if (*conf_infofile == '/') {
+	conf_infofile = stralloc(conf_infofile);
+    } else {
+	conf_infofile = stralloc2(config_dir, conf_infofile);
+    }
+    if(open_infofile(conf_infofile))
+	error("could not open info db \"%s\"", conf_infofile);
+    amfree(conf_infofile);
 
     for (i = 0; i < NCMDS; i++)
 	if (strcmp(argv[2], cmdtab[i].name) == 0) {
@@ -183,6 +212,10 @@ char **argv;
 
     close_infofile();
     clear_tapelist();
+    amfree(conf_tapelist);
+    amfree(config_dir);
+
+done:
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -269,7 +302,7 @@ static void check_dumpuser()
     if (uid_me != uid_dumpuser) {
 	fprintf(stderr, "WARNING: running as user \"%s\" instead of \"%s\".\n",
 	        pw->pw_name, dumpuser);
-	fprintf(stderr, "WARNING: run \"amcheck -st %s\"\n", confname);
+	fprintf(stderr, "WARNING: run \"amcheck -st %s\"\n", config_name);
     }
     been_here = 1;
     return;
@@ -540,8 +573,9 @@ char **argv;
 	}
     }
 
-    if(write_tapelist(getconf_str(CNF_TAPELIST)))
-	error("could not write \"%s\"\n", getconf_str(CNF_TAPELIST));
+    if(write_tapelist(conf_tapelist)) {
+	error("could not write tapelist \"%s\"", conf_tapelist);
+    }
 }
 
 void noreuse(argc, argv)
@@ -575,8 +609,9 @@ char **argv;
 	}
     }
 
-    if(write_tapelist(getconf_str(CNF_TAPELIST)))
-	error("could not write \"%s\"\n", getconf_str(CNF_TAPELIST));
+    if(write_tapelist(conf_tapelist)) {
+	error("could not write tapelist \"%s\"", conf_tapelist);
+    }
 }
 
 

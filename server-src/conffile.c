@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.70 1999/09/05 21:30:16 jrj Exp $
+ * $Id: conffile.c,v 1.71 1999/09/15 00:32:50 jrj Exp $
  *
  * read configuration file
  */
@@ -1057,8 +1057,8 @@ dumptype_t *read_dumptype(name, from, fname, linenum)
     int save_overwrites;
     keytab_t *save_kt;
     val_t tmpval;
-    FILE *saved_conf;
-    char *saved_fname;
+    FILE *saved_conf = NULL;
+    char *saved_fname = NULL;
 
     if (from) {
 	saved_conf = conf;

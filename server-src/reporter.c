@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.57 1999/09/14 06:37:08 oliva Exp $
+ * $Id: reporter.c,v 1.58 1999/09/15 00:33:19 jrj Exp $
  *
  * nightly Amanda Report generator
  */
@@ -93,11 +93,14 @@ static int normal_run = 0;
 static int amflush_run = 0;
 static int got_finish = 0;
 
+char *config_name = NULL;
+char *config_dir = NULL;
+
 static char *tapestart_error = NULL;
 
 static FILE *logfile, *mailf;
 
-static FILE *template_file, *postscript;
+static FILE *postscript;
 static char *printer;
 
 static disklist_t diskq;
@@ -408,14 +411,18 @@ main(argc, argv)
     int argc;
     char **argv;
 {
-    char *confname, *conffname;
+    char *conffile;
+    char *conf_diskfile;
+    char *conf_tapelist;
+    char *conf_infofile;
     char *logfname, *psfname, *outfname, *subj_str = NULL;
     tapetype_t *tp;
-    int fd, rename, opt;
+    int fd, opt;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
-    char *mail_cmd, *printer_cmd;
+    char *mail_cmd = NULL, *printer_cmd = NULL;
     extern int optind;
+    char my_cwd[STR_SIZE];
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -434,39 +441,55 @@ main(argc, argv)
     /* Process options */
     
     erroutput_type = ERR_INTERACTIVE;
-    confname = NULL;
     outfname = NULL;
     psfname = NULL;
     logfname = NULL;
-    rename = 0;
+
+    if (getcwd(my_cwd, sizeof(my_cwd)) == NULL) {
+	error("cannot determine current working directory");
+    }
 
     if (argc < 2) {
-	rename = 1;
-
-	conffname = stralloc(CONFFILE_NAME);
+	config_dir = stralloc2(my_cwd, "/");
+	if ((config_name = strrchr(my_cwd, '/')) != NULL) {
+	    config_name = stralloc(config_name + 1);
+	}
     } else {
 	if (argv[1][0] == '-') {
 	    usage();
 	    return 1;
 	}
-	confname = stralloc(argv[1]);
+	config_name = stralloc(argv[1]);
+	config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
 	--argc; ++argv;
 	while((opt = getopt(argc, argv, "f:l:p:")) != EOF) {
 	    switch(opt) {
             case 'f':
 		if (outfname != NULL)
 		    error("you may specify at most one -f");
-                outfname = stralloc(optarg);
+		if (*optarg == '/') {
+                    outfname = stralloc(optarg);
+		} else {
+                    outfname = vstralloc(my_cwd, "/", optarg, NULL);
+		}
                 break;
             case 'l':
 		if (logfname != NULL)
 		    error("you may specify at most one -l");
-                logfname = stralloc(optarg);
+		if (*optarg == '/') {
+		    logfname = stralloc(optarg);
+		} else {
+                    logfname = vstralloc(my_cwd, "/", optarg, NULL);
+		}
                 break;
             case 'p':
 		if (psfname != NULL)
 		    error("you may specify at most one -p");
-                psfname = stralloc(optarg);
+		if (*optarg == '/') {
+                    psfname = stralloc(optarg);
+		} else {
+                    psfname = stralloc2(my_cwd, optarg);
+		}
                 break;
             case '?':
             default:
@@ -482,15 +505,47 @@ main(argc, argv)
 	    usage();
 	    return 1;
 	}
-
-	conffname = vstralloc(CONFIG_DIR, "/", confname,
-			      "/", CONFFILE_NAME, NULL);
     }
+
+    safe_cd();
 
     /* read configuration files */
 
-    if(read_conffile(conffname))
-        error("could not read amanda config file");
+    conffile = stralloc2(config_dir, CONFFILE_NAME);
+    if(read_conffile(conffile))
+        error("could not read config file \"%s\"", conffile);
+    amfree(conffile);
+
+    conf_diskfile = getconf_str(CNF_DISKFILE);
+    if (*conf_diskfile == '/') {
+	conf_diskfile = stralloc(conf_diskfile);
+    } else {
+	conf_diskfile = stralloc2(config_dir, conf_diskfile);
+    }
+    if (read_diskfile(conf_diskfile, &diskq) < 0)
+	error("could not read disklist file");
+    amfree(conf_diskfile);
+
+    conf_tapelist = getconf_str(CNF_TAPELIST);
+    if (*conf_tapelist == '/') {
+	conf_tapelist = stralloc(conf_tapelist);
+    } else {
+	conf_tapelist = stralloc2(config_dir, conf_tapelist);
+    }
+    if(read_tapelist(conf_tapelist))
+	error("could not read tapelist \"%s\"", conf_tapelist);
+    amfree(conf_tapelist);
+
+    conf_infofile = getconf_str(CNF_INFOFILE);
+    if (*conf_infofile == '/') {
+	conf_infofile = stralloc(conf_infofile);
+    } else {
+	conf_infofile = stralloc2(config_dir, conf_infofile);
+    }
+    if(open_infofile(conf_infofile))
+	error("could not open info db \"%s\"", conf_infofile);
+    amfree(conf_infofile);
+
     ColumnSpec= getconf_str(CNF_COLUMNSPEC);
     if(SetColumDataFromString(ColumnData, ColumnSpec) < 0)
         error("wrong column specification\n");
@@ -503,24 +558,22 @@ main(argc, argv)
 	    }
 	}
     }
-    if (read_diskfile(getconf_str(CNF_DISKFILE), &diskq) < 0)
-	error("could not read disklist file");
-    if(read_tapelist(getconf_str(CNF_TAPELIST)))
-	error("parse error in %s", getconf_str(CNF_TAPELIST));
-    if(open_infofile(getconf_str(CNF_INFOFILE)))
-	error("could not read info database file");
 
     if(!logfname) {
-	logfname = vstralloc(getconf_str(CNF_LOGDIR), "/log", NULL);
+	char *conf_logdir;
+
+	conf_logdir = getconf_str(CNF_LOGDIR);
+	if (*conf_logdir == '/') {
+	    conf_logdir = stralloc(conf_logdir);
+	} else {
+	    conf_logdir = stralloc2(config_dir, conf_logdir);
+	}
+	logfname = vstralloc(conf_logdir, "/", "log", NULL);
+	amfree(conf_logdir);
     }
 
     if((logfile = fopen(logfname, "r")) == NULL)
 	error("could not open log %s: %s", logfname, strerror(errno));
-
-    if (rename != 0) {
-	erroutput_type |= ERR_AMANDALOG;
-	set_logerror(logerror);
-    }
 
     setup_data();    /* setup per-disk data */
 
@@ -564,7 +617,7 @@ main(argc, argv)
     /* ignore SIGPIPE so if a child process dies we do not also go away */
     signal(SIGPIPE, SIG_IGN);
 
-   /* open pipe to mailer */
+    /* open pipe to mailer */
 
     if(outfname) {
 	/* output to a file */
@@ -585,18 +638,17 @@ main(argc, argv)
 
     }
 
-   /* open pipe to print spooler if necessary) */
+    /* open pipe to print spooler if necessary) */
 
     if(psfname) {
 	/* if the postscript_label_template (tp->lbl_templ) field is not */
 	/* the empty string (i.e. it is set to something), open the      */
 	/* postscript debugging file for writing.                        */
 	if ((strcmp(tp->lbl_templ,"")) != 0) {
-	  if ((postscript = fopen(psfname,"w")) == NULL)
-	    error("could not open %s: %s", psfname, strerror(errno));
+	    if ((postscript = fopen(psfname,"w")) == NULL)
+		error("could not open %s: %s", psfname, strerror(errno));
 	}
-    }
-    else {
+    } else {
 #ifdef LPRCMD
 	if (strcmp(printer,"") != 0)	/* alternate printer is defined */
 	    /* print to the specified printer */
@@ -683,16 +735,12 @@ main(argc, argv)
         mailf = NULL;
     }
 
-  
-    /* rotate log only if requested */
-    if(rename)
-	log_rename(datestamp);
-
-    
     amfree(hostname);
     amfree(diskname);
     amfree(datestamp);
     amfree(tape_labels);
+    amfree(config_dir);
+    amfree(config_name);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -1945,20 +1993,25 @@ copy_template_file(lbl_templ)
     char *lbl_templ;
 {
   char buf[BUFSIZ];
-  int numread, l, n, s;
+  int fd;
+  int numread;
 
-  if ((template_file = fopen(lbl_templ,"r")) == NULL)
-    error("could not open template file \"%s\":%s",
-	  lbl_templ ,strerror(errno));
-
-  while ((numread = (read((fileno(template_file)), buf, sizeof(buf)))) > 0) {
-    for(l = 0, n = numread; l < n; l += s) {
-      if((s = write(fileno(postscript), buf + l, n - l)) < 0) {
-	error("error copying template file: %s",strerror(errno));
-      }
+  if (strchr(lbl_templ, '/') == NULL) {
+    lbl_templ = stralloc2(config_dir, lbl_templ);
+  } else {
+    lbl_templ = stralloc(lbl_templ);
+  }
+  if ((fd = open(lbl_templ, 0)) < 0) {
+    error("could not open template file \"%s\": %s",
+	  lbl_templ, strerror(errno));
+  }
+  while ((numread = read(fd, buf, sizeof(buf))) > 0) {
+    if (fwrite(buf, numread, 1, postscript) != 1) {
+      error("error copying template file");
     }
   }
   if (numread < 0)
     error("error reading template file: %s",strerror(errno));
-  fclose(template_file);
+  close(fd);
+  amfree(lbl_templ);
 }

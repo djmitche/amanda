@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcleanupdisk.c,v 1.6 1999/04/28 21:48:12 kashmir Exp $
+ * $Id: amcleanupdisk.c,v 1.7 1999/09/15 00:32:18 jrj Exp $
  */
 #include "amanda.h"
 
@@ -36,8 +36,6 @@
 #include "infofile.h"
 #include "server_util.h"
 
-static char *config;
-char *confdir;
 holding_t *holding_list;
 char *datestamp;
 
@@ -45,6 +43,8 @@ char *datestamp;
 int main P((int argc, char **argv));
 void check_holdingdisk P((char *diskdir, char *datestamp));
 void check_disks P((void));
+char *config_name = NULL;
+char *config_dir = NULL;
 
 int main(main_argc, main_argv)
 int main_argc;
@@ -54,6 +54,9 @@ char **main_argv;
     char *dumpuser;
     int fd;
     disklist_t diskq;
+    char *conffile;
+    char *conf_diskfile;
+    char *conf_infofile;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -65,23 +68,43 @@ char **main_argv;
 	close(fd);
     }
 
+    safe_cd();
+
     set_pname("amcleanupdisk");
 
     if(main_argc != 2)
 	error("Usage: amcleanupdisk%s <confdir>", versionsuffix());
 
-    config = main_argv[1];
-    confdir = vstralloc(CONFIG_DIR, "/", main_argv[1], NULL);
-    if(chdir(confdir) != 0)
-	error("could not cd to confdir %s: %s",	confdir, strerror(errno));
+    config_name = main_argv[1];
 
-    if(read_conffile(CONFFILE_NAME))
-	error("could not read amanda config file\n");
+    config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
+
+    conffile = stralloc2(config_dir, CONFFILE_NAME);
+    if(read_conffile(conffile))
+	error("could not find config file \"%s\"", conffile);
+    amfree(conffile);
+
+    conf_diskfile = getconf_str(CNF_DISKFILE);
+    if (*conf_diskfile == '/') {
+	conf_diskfile = stralloc(conf_diskfile);
+    } else {
+	conf_diskfile = stralloc2(config_dir, conf_diskfile);
+    }
+    if (read_diskfile(conf_diskfile, &diskq) < 0)
+	error("could not load disklist %s", conf_diskfile);
+    amfree(conf_diskfile);
+
+    conf_infofile = getconf_str(CNF_INFOFILE);
+    if (*conf_infofile == '/') {
+	conf_infofile = stralloc(conf_infofile);
+    } else {
+	conf_infofile = stralloc2(config_dir, conf_infofile);
+    }
+    if (open_infofile(conf_infofile) < 0)
+	error("could not open info db \"%s\"", conf_infofile);
+    amfree(conf_infofile);
 
     datestamp = construct_datestamp();
-
-    if (read_diskfile(getconf_str(CNF_DISKFILE), &diskq) < 0)
-	error("could not read disklist file\n");
 
     dumpuser = getconf_str(CNF_DUMPUSER);
     if((pw = getpwnam(dumpuser)) == NULL)
@@ -89,14 +112,14 @@ char **main_argv;
     if(pw->pw_uid != getuid())
 	error("must run amcleanupdisk as user %s", dumpuser);
 
-    open_infofile(getconf_str(CNF_INFOFILE));
-
     holding_list = pick_all_datestamp();
 
     check_disks();
 
     close_infofile();
 
+    amfree(config_dir);
+    amfree(config_name);
     return 0;
 }
 
@@ -115,35 +138,42 @@ char *diskdir, *datestamp;
     filetype_t filetype;
     info_t info;
     int level;
+    int dl, l;
 
     dirname = vstralloc(diskdir, "/", datestamp, NULL);
+    dl = strlen(dirname);
 
     if((workdir = opendir(dirname)) == NULL) {
 	amfree(dirname);
 	return;
     }
-    chdir(dirname);
 
     while((entry = readdir(workdir)) != NULL) {
-	if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+	if(is_dot_or_dotdot(entry->d_name)) {
 	    continue;
+	}
 
-	if(strlen(entry->d_name) < 7 ) continue;
-
-	if(strncmp(&entry->d_name[strlen(entry->d_name)-4],".tmp",4) != 0) 
+	if((l = strlen(entry->d_name)) < 7 ) {
 	    continue;
+	}
 
-	tmpname = newvstralloc( destname,
-				dirname, "/", entry->d_name,
-				NULL);
+	if(strncmp(&entry->d_name[l-4],".tmp",4) != 0) {
+	    continue;
+	}
 
-	destname = newvstralloc(destname, tmpname, NULL);
-	destname[strlen(destname)-4] = '\0';
+	tmpname = newvstralloc(tmpname,
+			       dirname, "/", entry->d_name,
+			       NULL);
+
+	destname = newstralloc(destname, tmpname);
+	destname[dl + 1 + l - 4] = '\0';
 
 	amfree(hostname);
 	amfree(diskname);
 	filetype = get_amanda_names(tmpname, &hostname, &diskname, &level);
-	if( filetype != F_DUMPFILE) continue;
+	if(filetype != F_DUMPFILE) {
+	    continue;
+	}
 
 	dp = lookup_disk(hostname, diskname);
 
@@ -157,15 +187,14 @@ char *diskdir, *datestamp;
 
 	if(rename_tmp_holding(destname, 0)) {
 	    get_info(dp->host->hostname, dp->name, &info);
-	    if( info.command & FORCE_BUMP)
-		info.command ^= FORCE_BUMP;
+	    info.command &= ~FORCE_BUMP;
 	    info.command |= FORCE_NO_BUMP;
-	    if(put_info(dp->host->hostname, dp->name, &info))
+	    if(put_info(dp->host->hostname, dp->name, &info)) {
 		error("could not put info record for %s:%s: %s",
 		      dp->host->hostname, dp->name, strerror(errno));
-	}
-	else {
-	    fprintf(stderr,"rename_tmp_holding failed\n");
+	    }
+	} else {
+	    fprintf(stderr,"rename_tmp_holding(%s) failed\n", destname);
 	}
     }
     closedir(workdir);
@@ -182,8 +211,6 @@ void check_disks()
 {
     holdingdisk_t *hdisk;
     holding_t *dir;
-
-    chdir(confdir);
 
     for(dir = holding_list; dir !=NULL; dir = dir->next) {
 	for(hdisk = getconf_holdingdisks(); hdisk != NULL; hdisk = hdisk->next)

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmlog.c,v 1.3 1999/05/14 21:34:03 kashmir Exp $
+ * $Id: amtrmlog.c,v 1.4 1999/09/15 00:32:42 jrj Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -44,13 +44,15 @@
 
 int main P((int, char **));
 
+char *config_name = NULL;
+char *config_dir = NULL;
+
 int main(argc, argv)
 int argc;
 char **argv;
 {
     disklist_t diskl;
     int no_keep;			/* files per system to keep */
-    char *ptr;
     int fd;
     char **output_find_log;
     DIR *dir;
@@ -62,6 +64,11 @@ char **argv;
     time_t today, date_keep;
     char *logname = NULL;
     struct stat stat_log;
+    char *conffile;
+    char *conf_diskfile;
+    char *conf_tapelist;
+    char *conf_logdir;
+    int amtrmidx_debug = 0;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -73,49 +80,78 @@ char **argv;
 	close(fd);
     }
 
+    safe_cd();
+
     set_pname("amtrmlog");
 
-    if (argc != 2)
-    {
-	fprintf(stderr, "Usage: %s <config>\n", argv[0]);
+    if (argc > 1 && strcmp(argv[1], "-t") == 0) {
+	amtrmidx_debug = 1;
+	argc--;
+	argv++;
+    }
+
+    if (argc < 2) {
+	fprintf(stderr, "Usage: %s [-t] <config>\n", argv[0]);
 	return 1;
     }
 
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 
-    /* read the config file */
-    ptr = vstralloc(CONFIG_DIR, "/", argv[1], NULL);
-    if (chdir(ptr) != 0)
-	error("could not cd to confdir \"%s\": %s", ptr, strerror(errno));
+    config_name = argv[1];
 
-    if (read_conffile(CONFFILE_NAME))
-	error("could not read amanda config file");
+    config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
+    conffile = stralloc2(config_dir, CONFFILE_NAME);
+    if (read_conffile(conffile))
+	error("could not find amanda config file \"%s\"", conffile);
+    amfree(conffile);
+
+    conf_diskfile = getconf_str(CNF_DISKFILE);
+    if (*conf_diskfile == '/') {
+	conf_diskfile = stralloc(conf_diskfile);
+    } else {
+	conf_diskfile = stralloc2(config_dir, conf_diskfile);
+    }
+    if (read_diskfile(conf_diskfile, &diskl) < 0)
+	error("could not load disklist \"%s\"", conf_diskfile);
+    amfree(conf_diskfile);
+
+    conf_tapelist = getconf_str(CNF_TAPELIST);
+    if (*conf_tapelist == '/') {
+	conf_tapelist = stralloc(conf_tapelist);
+    } else {
+	conf_tapelist = stralloc2(config_dir, conf_tapelist);
+    }
+    if (read_tapelist(conf_tapelist))
+	error("could not load tapelist \"%s\"", conf_tapelist);
+    amfree(conf_tapelist);
 
     today = time((time_t *)NULL);
     date_keep = today - (getconf_int(CNF_DUMPCYCLE)*86400);
 
-    /* get the list of disks being dumped and their types */
-    if (read_diskfile(getconf_str(CNF_DISKFILE), &diskl) < 0)
-	error("could not load \"%s\".", getconf_str(CNF_DISKFILE));
-
-    if(read_tapelist(getconf_str(CNF_TAPELIST)))
-	error("could not load \"%s\"\n", getconf_str(CNF_TAPELIST));
     output_find_log = find_log();
-
-    /* change into the log directory */
-    if (chdir(getconf_str(CNF_LOGDIR)) == -1)
-	error("could not cd to log directory \"%s\": %s",
-	      getconf_str(CNF_LOGDIR), strerror(errno));
 
     /* determine how many log to keep */
     no_keep = getconf_int(CNF_TAPECYCLE) * 2;
     dbprintf(("Keeping %d log file%s\n", no_keep, (no_keep == 1) ? "" : "s"));
 
+    conf_logdir = getconf_str(CNF_LOGDIR);
+    if (*conf_logdir == '/') {
+	conf_logdir = stralloc(conf_logdir);
+    } else {
+	conf_logdir = stralloc2(config_dir, conf_logdir);
+    }
+    olddir = vstralloc(conf_logdir, "/oldlog", NULL);
+    if (mkpdir(olddir, 02700, (uid_t)-1, (gid_t)-1) != 0)
+	error("could not create parents of %s: %s", olddir, strerror(errno));
+    if (mkdir(olddir, 02700) != 0)
+	error("could not create %s: %s", olddir, strerror(errno));
+
     olddir = vstralloc(getconf_str(CNF_LOGDIR),"/oldlog",NULL);
     mkdir(olddir, 0700);
 
-    dir = opendir(getconf_str(CNF_LOGDIR));
+    if ((dir = opendir(conf_logdir)) == NULL)
+	error("could not open log directory \"%s\"", conf_logdir);
     while ((adir=readdir(dir)) != NULL) {
 	if(strncmp(adir->d_name,"log.",4)==0) {
 	    useful=0;
@@ -125,20 +161,29 @@ char **argv;
 		}
 	    }
 	    logname=newvstralloc(logname,
-				 getconf_str(CNF_LOGDIR),"/",adir->d_name, NULL);
+				 conf_logdir, "/" ,adir->d_name, NULL);
 	    if(stat(logname,&stat_log)==0) {
 		if(stat_log.st_mtime > date_keep) {
 		    useful = 1;
 		}
 	    }
 	    if(useful == 0) {
-		oldfile = newvstralloc(oldfile, getconf_str(CNF_LOGDIR),"/", adir->d_name, NULL);
-		newfile = newvstralloc(newfile, olddir, "/",adir->d_name, NULL);
-		rename(oldfile,newfile);
+		oldfile = newvstralloc(oldfile,
+				       conf_logdir, "/", adir->d_name, NULL);
+		newfile = newvstralloc(newfile,
+				       olddir, "/", adir->d_name, NULL);
+		if (rename(oldfile,newfile) != 0)
+		    error("could not rename \"%s\" to \"%s\": %s",
+			  oldfile, newfile, strerror(errno));
 	    }
 	}
     }
     closedir(dir);
+    amfree(logname);
+    amfree(oldfile);
+    amfree(newfile);
+    amfree(olddir);
+    amfree(config_dir);
 
     dbclose();
 

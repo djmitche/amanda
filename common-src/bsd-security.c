@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.30 1999/09/14 06:45:36 oliva Exp $
+ * $Id: bsd-security.c,v 1.31 1999/09/15 00:31:50 jrj Exp $
  *
  * "BSD" security module
  */
@@ -787,24 +787,45 @@ recv_security_ok(bh)
     return (0);
 }
 
-#ifndef USE_AMANDAHOSTS
-/*
- * See if a remote user is allowed in.  This version uses ruserok()
- * and friends.
- *
- * Returns 0 on success, or negative on error.
- */
 static int
 check_user(bh, remoteuser)
     struct bsd_handle *bh;
     const char *remoteuser;
 {
     struct passwd *pwd;
-    int saved_stderr;
 
     /* lookup our local user name */
     if ((pwd = getpwnam(CLIENT_LOGIN)) == NULL)
         error("error [getpwnam(%s) fails]", CLIENT_LOGIN);
+
+#ifndef USE_AMANDAHOSTS
+    return check_user_ruserok(bh->hostname, pwd, remoteuser);
+#else
+    return check_user_amandahosts(bh->hostname, pwd, remoteuser);
+#endif
+}
+
+/*
+ * See if a remote user is allowed in.  This version uses ruserok()
+ * and friends.
+ *
+ * Returns 0 on success, or negative on error.
+ */
+int
+check_user_ruserok(host, pwd, remoteuser)
+    const char *host;
+    struct passwd *pwd;
+    const char *remoteuser;
+{
+    int saved_stderr;
+    int fd[2];
+    FILE *fError;
+    amwait_t exitcode;
+    pid_t ruserok_pid;
+    pid_t pid;
+    int ec;
+    char *es;
+    int ok;
 
     /*
      * note that some versions of ruserok (eg SunOS 3.2) look in
@@ -817,55 +838,86 @@ check_user(bh, remoteuser)
      * into our stderr output even though the initgroup failure is not a
      * problem and is expected.  Thanks a lot.  Not.
      */
-    chdir(pwd->pw_dir);       /* pamper braindead ruserok's */
-    saved_stderr = dup(2);
-    close(2);
+    if (pipe(fd) != 0) {
+	error("error [pipe() fails: %s]", strerror(errno));
+    }
+    if ((ruserok_pid = fork()) < 0) {
+	error("error [fork() fails: %s]", strerror(errno));
+    } else if (ruserok_pid == 0) {
+	int ec;
 
-    if (ruserok(bh->hostname, getuid() == 0, remoteuser, CLIENT_LOGIN) < 0) {
+	close(fd[0]);
+	fError = fdopen(fd[1], "w");
+	/* pamper braindead ruserok's */
+	if (chdir(pwd->pw_dir) != 0) {
+	    fprintf(fError, "error [chdir(%s) failed: %s]",
+		    pwd->pw_dir, strerror(errno));
+	    fclose(fError);
+	    exit(1);
+	}
+	saved_stderr = dup(2);
+	close(2);
+	(void) open("/dev/null", 2);
+
+	ok = ruserok(host, getuid() == 0, remoteuser, CLIENT_LOGIN);
+	if (ok < 0) {
+	    ec = 1;
+	} else {
+	    ec = 0;
+	}
 	dup2(saved_stderr,2);
 	close(saved_stderr);
-	return (-1);
+	exit(ec);
     }
+    close(fd[1]);
+    fError = fdopen(fd[0], "r");
 
-    /*
-     * Restore stderr
-     */
-    dup2(saved_stderr, 2);
-    close(saved_stderr);
+    while (1) {
+	if ((pid = wait(&exitcode)) == (pid_t) -1) {
+	    if (errno == EINTR) {
+		continue;
+	    }
+	    error("error [ruserok wait failed: %s]", strerror(errno));
+	}
+	if (pid == ruserok_pid) {
+	    break;
+	}
+    }
+    if (WIFSIGNALED(exitcode)) {
+	error("error [ruserok child got signal %d]", WTERMSIG(exitcode));
+    }
+    ec = WEXITSTATUS(exitcode);
+    if (ec) {
+	if ((es = agets(fError)) != NULL) {
+	    error(es);
+	}
+    }
+    close(fd[0]);
 
-    /*
-     * Get out of the homedir and go somewhere where we can't drop core :)
-     */
-    chdir("/");	
-
-    return (0);
+    return ec;
 }
-
-#else	/* USE_AMANDAHOSTS */
 
 /*
  * Check to see if a user is allowed in.  This version uses .amandahosts
  * Returns -1 on failure, or 0 on success.
  */
-static int
-check_user(bh, remoteuser)
-    struct bsd_handle *bh;
+int
+check_user_amandahosts(host, pwd, remoteuser)
+    const char *host;
+    struct passwd *pwd;
     const char *remoteuser;
 {
     char buf[256], *filehost;
     const char *fileuser;
-    struct passwd *pwd;
+    char *ptmp;
     FILE *fp;
     int rval;
 
-    /* lookup our local user name */
-
-    if ((pwd = getpwnam(CLIENT_LOGIN)) == NULL)
-        error("error [getpwnam(%s) fails]", CLIENT_LOGIN);
-
-    chdir(pwd->pw_dir);
-    if ((fp = fopen(".amandahosts", "r")) == NULL) {
-	dbprintf(("can't open .amandahosts: %s\n", strerror(errno)));
+    ptmp = stralloc2(pwd->pw_dir, "/.amandahosts");
+    if ((fp = fopen(ptmp, "r")) == NULL) {
+	dbprintf(("can't open %s/.amandahosts: %s\n",
+		  pwd->pw_dir, strerror(errno)));
+	amfree(ptmp);
 	return (-1);
     }
 
@@ -880,7 +932,7 @@ check_user(bh, remoteuser)
 	    fileuser = remoteuser;
 
 	/* compare */
-	if (strcasecmp(filehost, bh->hostname) == 0 &&
+	if (strcasecmp(filehost, host) == 0 &&
 	    strcasecmp(fileuser, remoteuser) == 0) {
 		/* success */
 		rval = 0;
@@ -888,10 +940,9 @@ check_user(bh, remoteuser)
 	}
     }
     afclose(fp);
-    chdir("/");      /* now go someplace where I can't drop core :-) */
+    amfree(ptmp);
     return (rval);
 }
-#endif	/* USE_AMANDAHOSTS */
 
 /*
  * Create the server end of a stream.  For bsd, this means setup a tcp

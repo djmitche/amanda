@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.68 1999/05/14 21:52:17 kashmir Exp $
+ * $Id: sendbackup-gnutar.c,v 1.69 1999/09/15 00:31:35 jrj Exp $
  *
  * send backup data using GNU tar
  */
@@ -181,7 +181,6 @@ char *dumpdate;
 	snprintf(number, sizeof(number), "%d", level);
 	incrname = vstralloc(basename, "_", number, ".new", NULL);
 	unlink(incrname);
-	umask(0007);
 
 	if (level == 0) {
 	  FILE *out;
@@ -465,7 +464,6 @@ int goterror;
 	
 	nodotnew = stralloc(incrname);
         nodotnew[strlen(nodotnew)-4] = '\0';
-	unlink(nodotnew);
         if (rename(incrname, nodotnew))
             error("error [renaming %s to %s: %s]", 
 		  incrname, nodotnew, strerror(errno));

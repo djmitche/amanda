@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.28 1999/06/02 21:43:08 kashmir Exp $
+ * $Id: holding.c,v 1.29 1999/09/15 00:33:09 jrj Exp $
  *
  * Functions to access holding disk
  */
@@ -62,12 +62,17 @@ char *fname;
 /* sanity check on datestamp of the form YYYYMMDD */
 {
     char *cp;
-    int num, date, year, month;
+    int ch, num, date, year, month;
 
     /* must be 8 digits */
-    for(cp = fname; *cp; cp++)
-	if(!isdigit((int)*cp)) break;
-    if(*cp != '\0' || cp-fname != 8) return 0;
+    for(cp = fname; (ch = *cp) != '\0'; cp++) {
+	if(!isdigit(ch)) {
+	    break;
+	}
+    }
+    if(ch != '\0' || cp-fname != 8) {
+	return 0;
+    }
 
     /* sanity check year, month, and day */
 
@@ -95,8 +100,9 @@ char *fname;
 	return 0;
 
     gotentry = 0;
-    while(!gotentry && (entry = readdir(dir)) != NULL)
-	gotentry = strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..");
+    while(!gotentry && (entry = readdir(dir)) != NULL) {
+	gotentry = !is_dot_or_dotdot(entry->d_name);
+    }
 
     closedir(dir);
     return gotentry;
@@ -144,6 +150,7 @@ int verbose;
 {
     DIR *topdir;
     struct dirent *workdir;
+    char *entryname = NULL;
 
     if((topdir = opendir(diskdir)) == NULL) {
 	printf("Warning: could not open holding dir %s: %s\n",
@@ -154,39 +161,40 @@ int verbose;
     /* find all directories of the right format  */
 
     printf("Scanning %s...\n", diskdir);
-    chdir(diskdir);
     while((workdir = readdir(topdir)) != NULL) {
-	if(strcmp(workdir->d_name, ".") == 0
-	   || strcmp(workdir->d_name, "..") == 0
-	   || strcmp(workdir->d_name, "lost+found") == 0)
+	if(is_dot_or_dotdot(workdir->d_name)) {
 	    continue;
-
-	if(verbose)
+	}
+	entryname = newvstralloc(entryname,
+				 diskdir, "/", workdir->d_name, NULL);
+	if(verbose) {
 	    printf("  %s: ", workdir->d_name);
-	if(!is_dir(workdir->d_name)) {
-	    if(verbose)
+	}
+	if(!is_dir(entryname)) {
+	    if(verbose) {
 	        puts("skipping cruft file, perhaps you should delete it.");
-	}
-	else if(!is_datestr(workdir->d_name)) {
-	    if(verbose)
-	        puts("skipping cruft directory, perhaps you should delete it.");
-	}
-	else if(rmdir(workdir->d_name) == 0) {
-	    if(verbose)
-	        puts("deleted empty Amanda directory.");
-	}
-	else {
-	    if(insert_dirname(holding_list, workdir->d_name) == NULL) {
-	        if(verbose)
-		    puts("too many non-empty Amanda dirs, can't handle this one.");
 	    }
-	    else {
+	} else if(!is_datestr(workdir->d_name)) {
+	    if(verbose) {
+	        puts("skipping cruft directory, perhaps you should delete it.");
+	    }
+	} else if(rmdir(entryname) == 0) {
+	    if(verbose) {
+	        puts("deleted empty Amanda directory.");
+	    }
+	} else {
+	    if(insert_dirname(holding_list, workdir->d_name) == NULL) {
+	        if(verbose) {
+		    puts("too many non-empty Amanda dirs, can't handle this one.");
+		}
+	    } else {
 	        if(verbose)
 		    puts("found non-empty Amanda directory.");
 	    }
 	}
     }
     closedir(topdir);
+    amfree(entryname);
 }
 
 holding_t *pick_all_datestamp()
@@ -208,7 +216,7 @@ holding_t *pick_datestamp()
     int i;
     int ndirs;
     char answer[1024], *result;
-    char max_char, *ch, chupper;
+    char max_char = '\0', *ch, chupper = '\0';
 
     holding_list = pick_all_datestamp();
 
@@ -237,7 +245,7 @@ holding_t *pick_datestamp()
 		max_char = 'A'+i;
 	    }
 	    printf("Select directories to flush [A..%c]: [ALL] ", 'A' + i - 1);
-	    result = fgets(answer, 1000, stdin);
+	    result = fgets(answer, sizeof(answer), stdin);
 	    if(strlen(answer) == 1 || !strncasecmp(answer,"ALL",3)) {
 		amfree(directories);
 		return(holding_list);
@@ -423,7 +431,8 @@ int complete;
 	close(fd);
 	if(complete == 0 ) {
 	    if((fd = open(filename_tmp,O_RDWR)) == -1) {
-		fprintf(stderr,"rename_tmp_holdingX: open of %s failed: %s\n",filename_tmp,strerror(errno));
+		fprintf(stderr, "rename_tmp_holdingX: open of %s failed: %s\n",
+			filename_tmp, strerror(errno));
 		amfree(filename);
 		amfree(filename_tmp);
 		return 0;
@@ -434,7 +443,11 @@ int complete;
 	    fullwrite(fd, buffer, sizeof(buffer));
 	    close(fd);
 	}
-	rename(filename_tmp, filename);
+	if(rename(filename_tmp, filename) != 0) {
+	    fprintf(stderr,
+		    "rename_tmp_holding(): could not rename \"%s\" to \"%s\": %s",
+		    filename_tmp, filename, strerror(errno));
+	}
 	filename = newstralloc(filename, file.cont_filename);
     }
     amfree(filename);

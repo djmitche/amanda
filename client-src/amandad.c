@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.41 1999/06/02 19:00:59 kashmir Exp $
+ * $Id: amandad.c,v 1.42 1999/09/15 00:31:23 jrj Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -173,6 +173,8 @@ main(argc, argv)
     for (i = 3; i < FD_SETSIZE; i++)
 	close(i);
 
+    safe_cd();
+
     set_pname("amandad");
 
 #ifdef USE_DBMALLOC
@@ -184,22 +186,13 @@ main(argc, argv)
 #ifdef FORCE_USERID
     /* we'd rather not run as root */
     if (geteuid() == 0) {
-	struct passwd *pwptr;
-
-	pwptr = getpwnam(CLIENT_LOGIN);
-        if(pwptr == NULL)
-	    error("error [cannot find user %s in passwd file]\n",
-		CLIENT_LOGIN);
-
-        /*
-	 * if we're using kerberos security, we'll need to be root in
-	 * order to get at the machine's srvtab entry, so we hang on to
-	 * some root privledges for now.  We give them up entirely later.
-	 */
-	initgroups(CLIENT_LOGIN, pwptr->pw_gid);
-	setgid(pwptr->pw_gid);
-	setegid(pwptr->pw_gid);
-	seteuid(pwptr->pw_uid);
+	if(client_uid == (uid_t) -1) {
+	    error("error [cannot find user %s in passwd file]\n", CLIENT_LOGIN);
+	}
+	initgroups(CLIENT_LOGIN, client_gid);
+	setgid(client_gid);
+	setegid(client_gid);
+	seteuid(client_uid);
     }
 #endif	/* FORCE_USERID */
 
@@ -300,8 +293,6 @@ main(argc, argv)
 
     /* initialize */
 
-    chdir(DEBUG_DIR);
-    umask(077);
     dbopen();
     {
 	/* this lameness is for error() */

@@ -1,5 +1,5 @@
 /*
- *  $Id: chg-scsi.c,v 1.14 1999/03/16 21:20:56 th Exp $
+ *  $Id: chg-scsi.c,v 1.15 1999/09/15 00:31:17 jrj Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -69,6 +69,9 @@
 #include "scsi-defs.h"
 
 char *tapestatfile = NULL;
+
+char *config_name = NULL;
+char *config_dir = NULL;
 
 /* So we have 3 devices, here will all the infos be stored after an
  * successfull open 

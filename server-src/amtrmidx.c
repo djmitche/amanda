@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmidx.c,v 1.23 1999/05/14 21:52:40 kashmir Exp $
+ * $Id: amtrmidx.c,v 1.24 1999/09/15 00:32:40 jrj Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -42,24 +42,39 @@
 #include "find.h"
 #include "version.h"
 
+char *config_name = NULL;
+char *config_dir = NULL;
+
+static int sort_by_name_reversed(a, b)
+    const void *a;
+    const void *b;
+{
+    char **ap = (char **) a;
+    char **bp = (char **) b;
+
+    return -1 * strcmp(*ap, *bp);
+}
+
 int main P((int, char **));
 
 int main(argc, argv)
 int argc;
 char **argv;
 {
-    char *line;
-    char *cmd = NULL;
     disk_t *diskp;
     disklist_t diskl;
     int no_keep;			/* files per system to keep */
     int i;
     int level_position;			/* where (from end) is level in name */
     int datestamp_position;
-    FILE *fp;
-    char *ptr;
+    char *conffile;
+    char *conf_diskfile;
+    char *conf_tapelist;
+    char *conf_indexdir;
     int fd;
     find_result_t *output_find;
+    time_t tmp_time;
+    int amtrmidx_debug = 0;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -71,38 +86,60 @@ char **argv;
 	close(fd);
     }
 
-    set_pname("amtrmidx");
+    safe_cd();
 
-    if (argc != 2)
-    {
-	fprintf(stderr, "Usage: %s <config>\n", argv[0]);
-	return 1;
-    }
+    set_pname("amtrmidx");
 
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 
-    /* read the config file */
-    ptr = vstralloc(CONFIG_DIR, "/", argv[1], NULL);
-    if (chdir(ptr) != 0)
-	error("could not cd to confdir \"%s\": %s", ptr, strerror(errno));
+    if (argc > 1 && strcmp(argv[1], "-t") == 0) {
+	amtrmidx_debug = 1;
+	argc--;
+	argv++;
+    }
 
-    if (read_conffile(CONFFILE_NAME))
-	error("could not read amanda config file");
+    if (argc < 2) {
+	fprintf(stderr, "Usage: %s [-t] <config>\n", argv[0]);
+	return 1;
+    }
 
-    /* get the list of disks being dumped and their types */
-    if (read_diskfile(getconf_str(CNF_DISKFILE), &diskl) < 0)
-	error("could not load \"%s\".", getconf_str(CNF_DISKFILE));
+    config_name = argv[1];
 
-    if(read_tapelist(getconf_str(CNF_TAPELIST)))
-	error("could not load \"%s\"\n", getconf_str(CNF_TAPELIST));
+    config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
+    conffile = stralloc2(config_dir, CONFFILE_NAME);
+    if (read_conffile(conffile))
+	error("could not find config file \"%s\"", conffile);
+    amfree(conffile);
+
+    conf_diskfile = getconf_str(CNF_DISKFILE);
+    if(*conf_diskfile == '/') {
+	conf_diskfile = stralloc(conf_diskfile);
+    } else {
+	conf_diskfile = stralloc2(config_dir, conf_diskfile);
+    }
+    if (read_diskfile(conf_diskfile, &diskl) < 0)
+	error("could not load disklist \"%s\"", conf_diskfile);
+    amfree(conf_diskfile);
+
+    conf_tapelist = getconf_str(CNF_TAPELIST);
+    if(*conf_tapelist == '/') {
+	conf_tapelist = stralloc(conf_tapelist);
+    } else {
+	conf_tapelist = stralloc2(config_dir, conf_tapelist);
+    }
+    if(read_tapelist(conf_tapelist))
+	error("could not load tapelist \"%s\"", conf_tapelist);
+    amfree(conf_tapelist);
 
     output_find = find_dump(NULL,0,NULL);
 
-    /* change into the index directory */
-    if (chdir(getconf_str(CNF_INDEXDIR)) == -1)
-	error("could not cd to index directory \"%s\": %s",
-	      getconf_str(CNF_INDEXDIR), strerror(errno));
+    conf_indexdir = getconf_str(CNF_INDEXDIR);
+    if(*conf_indexdir == '/') {
+	conf_indexdir = stralloc(conf_indexdir);
+    } else {
+	conf_indexdir = stralloc2(config_dir, conf_indexdir);
+    }
 
     /* determine how many indices to keep */
     no_keep = getconf_int(CNF_TAPECYCLE) + 1;
@@ -112,73 +149,123 @@ char **argv;
     datestamp_position = level_position + 9;
 
     /* now go through the list of disks and find which have indexes */
-    cmd = NULL;
+    time(&tmp_time);
+    tmp_time -= 7*24*60*60;			/* back one week */
     for (diskp = diskl.head; diskp != NULL; diskp = diskp->next)
     {
 	if (diskp->index)
 	{
+	    char *indexdir;
+	    DIR *d;
+	    struct dirent *f;
+	    char **names;
+	    int name_length;
+	    int name_count;
+	    char *path;
+	    int deleting;
 	    char *host;
 	    char *disk;
 
 	    dbprintf(("%s %s\n", diskp->host->hostname, diskp->name));
 
 	    /* get listing of indices, newest first */
-	    host = stralloc(sanitise_filename(diskp->host->hostname));
-	    disk = stralloc(sanitise_filename(diskp->name));
-	    cmd = newvstralloc(cmd,
-			       "ls", " -r",
-			       " ", "\'", host, "\'",
-			       "/", "\'", disk, "\'",
-			       "/", "????????",
-			       "_", "?",
-			       COMPRESS_SUFFIX,
-			       NULL);
+	    host = sanitise_filename(diskp->host->hostname);
+	    disk = sanitise_filename(diskp->name);
+	    indexdir = vstralloc(conf_indexdir, "/",
+				 host, "/",
+				 disk, "/",
+				 NULL);
 	    amfree(host);
 	    amfree(disk);
-	    if ((fp = popen(cmd, "r")) == NULL) {
-		error("couldn't open cmd \"%s\".", cmd);
+	    if ((d = opendir(indexdir)) == NULL) {
+		error("could not open index directory \"%s\"", indexdir);
 	    }
+	    name_length = 100;
+	    names = (char **)alloc(name_length * sizeof(char *));
+	    name_count = 0;
+	    while ((f = readdir(d)) != NULL) {
+		int l;
 
-	    /* skip over the first no_keep indices */
-	    for (i = 0; i < no_keep && (line = agets(fp)) != NULL; i++) {}
-
-	    /* skip indices until find a level 0 */
-	    while ((line = agets(fp)) != NULL) {
-		int len;
-
-		if ((len = strlen(line)) < level_position + 1) {
-		    error("file name \"%s\" too short.", line);
+		if(is_dot_or_dotdot(f->d_name)) {
+		    continue;
 		}
-		if (line[len - level_position - 1] == '0') {
-		    break;
-		}
-	    }
-
-	    /* okay, delete the rest */
-	    while ((line = agets(fp)) != NULL) {
-		int len;
-		char datestamp[20];
-		int level;
-
-		len = strlen(line);
-		strncpy(datestamp, &line[len - datestamp_position - 1], 
-			sizeof(datestamp) );
-		datestamp[8] = '\0';
-		level = line[len - level_position - 1] - '0';
-		if(!dump_exist(output_find, diskp->host->hostname,diskp->name, 
-			       atoi(datestamp), level)) {
-		    dbprintf(("rm %s\n", line));
-		    if (remove(line) == -1) {
-			dbprintf(("Error removing \"%s\": %s\n",
-				  line, strerror(errno)));
+		for(i = 0; i < sizeof("YYYYMMDD")-1; i++) {
+		    if(! isdigit((int)(f->d_name[i]))) {
+			break;
 		    }
 		}
+		if(i < sizeof("YYYYMMDD")-1
+		    || f->d_name[i] != '_'
+		    || ! isdigit((int)(f->d_name[i+1]))) {
+		    continue;			/* not an index file */
+		}
+		/*
+		 * Clear out old index temp files.
+		 */
+		l = strlen(f->d_name) - (sizeof(".tmp")-1);
+		if(l > sizeof("YYYYMMDD_L")-1
+		    && strcmp (f->d_name + l, ".tmp") == 0) {
+		    struct stat sbuf;
+
+		    path = stralloc2(indexdir, f->d_name);
+		    if(lstat(path, &sbuf) != -1
+			&& (sbuf.st_mode & S_IFMT) == S_IFREG
+			&& sbuf.st_mtime < tmp_time) {
+			dbprintf(("rm %s\n", path));
+		        if(amtrmidx_debug == 0 && unlink(path) == -1) {
+			    dbprintf(("Error removing \"%s\": %s\n",
+				      path, strerror(errno)));
+		        }
+		    }
+		    amfree(path);
+		    continue;
+		}
+		if(name_count >= name_length) {
+		    char **new_names;
+
+		    new_names = alloc((name_length + 100) * sizeof(char *));
+		    memcpy(new_names, names, name_length * sizeof(char *));
+		    name_length += 100;
+		    amfree(names);
+		    names = new_names;
+		}
+		names[name_count++] = stralloc(f->d_name);
 	    }
-	    apclose(fp);
+	    closedir(d);
+	    qsort(names, name_count, sizeof(char *), sort_by_name_reversed);
+
+	    /*
+	     * Search for the first full dump past the minimum number
+	     * of index files to keep.
+	     */
+	    deleting = 0;
+	    for(i = 0; i < name_count; i++) {
+		if(i < no_keep) {
+		} else if(! deleting
+			  && names[i][sizeof("YYYYMMDD_L")-1-1] == '0') {
+		    deleting = 1;
+		} else if(deleting
+			  && !dump_exist(output_find,
+					 diskp->host->hostname,diskp->name,
+					 atoi(names[i]),
+					 names[i][sizeof("YYYYMMDD_L")-1-1] - '0')) {
+		    path = stralloc2(indexdir, names[i]);
+		    dbprintf(("rm %s\n", path));
+		    if(amtrmidx_debug == 0 && unlink(path) == -1) {
+			dbprintf(("Error removing \"%s\": %s\n",
+				  path, strerror(errno)));
+		    }
+		    amfree(path);
+		}
+		amfree(names[i]);
+	    }
+	    amfree(names);
 	}
     }
 
-    amfree(cmd);
+    amfree(conf_indexdir);
+    amfree(config_dir);
+
     dbclose();
 
     return 0;

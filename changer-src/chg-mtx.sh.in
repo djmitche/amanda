@@ -9,11 +9,17 @@
 # try to hit all the possibilities here
 prefix=@prefix@
 exec_prefix=@exec_prefix@
+sbindir=@sbindir@
 libexecdir=@libexecdir@
  
-PATH=$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb:/usr/local/bin
+PATH=$sbindir:$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb:/usr/local/bin
 export PATH
 
+if [ -d "@AMANDA_DBGDIR@" ]; then
+	DBGFILE=@AMANDA_DBGDIR@/changer.debug
+else
+	DBGFILE=/dev/null
+fi
 
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
 if test "$USE_VERSION_SUFFIXES" = "yes"; then
@@ -23,8 +29,8 @@ else
 fi
 
 myname=$0
-tape=`getconf$SUF tapedev`
-TAPE=`getconf$SUF changerdev`; export TAPE # for mtx command
+tape=`amgetconf$SUF tapedev`
+TAPE=`amgetconf$SUF changerdev`; export TAPE # for mtx command
 if [ "$tape" = "/dev/null" -o "$TAPE" = "/dev/null" ]; then
   echo "Both tapedev and changerdev must be specified in config file";
   exit 2;
@@ -38,7 +44,7 @@ lastslot=5
 # counted from 1 !!!
 cleanslot=6
 
-changerfile=`getconf$SUF changerfile`
+changerfile=`amgetconf$SUF changerfile`
 
 cleanfile=$changerfile-clean
 accessfile=$changerfile-access
@@ -88,7 +94,7 @@ reset() {
 #
 loadslot() {
   readstatus
-  echo "     -> loaded $used" >> /tmp/changer.debug
+  echo "     -> loaded $used" >> $DBGFILE
   whichslot=$1
   case $whichslot in
     current)
@@ -150,11 +156,11 @@ loadslot() {
 	
 
     if [ $used -gt 0 ];then
-      echo "     -> unload $used" >> /tmp/changer.debug
+      echo "     -> unload $used" >> $DBGFILE
       res=`$MTX -u $used`
       status=$?
-      echo "     -> status $status" >> /tmp/changer.debug
-      echo "     -> res    $res" >> /tmp/changer.debug
+      echo "     -> status $status" >> $DBGFILE
+      echo "     -> res    $res" >> $DBGFILE
       if [ $status -ne 0 ];then
         echo "$res"
         exit 2
@@ -164,15 +170,15 @@ loadslot() {
       echo "$load /dev/null"
       exit 0
     fi
-    echo "     -> load   $load" >> /tmp/changer.debug
+    echo "     -> load   $load" >> $DBGFILE
     res=`$MTX -l $load`
     status=$?
-    echo "     -> status $status" >> /tmp/changer.debug
-    echo "     -> res    $res" >> /tmp/changer.debug
+    echo "     -> status $status" >> $DBGFILE
+    echo "     -> res    $res" >> $DBGFILE
     if [ $status -eq 0 ];then
-      echo "     -> rew $load" >> /tmp/changer.debug
+      echo "     -> rew $load" >> $DBGFILE
       $MT $MTF $tape rewind
-      $DD if=$tape count=1 >> /tmp/changer.debug 2>&1
+      $DD if=$tape count=1 >> $DBGFILE 2>&1
       echo "$load $tape"
       exit 0
     else
@@ -183,7 +189,7 @@ loadslot() {
 #
 info() {
   readstatus
-  echo "     -> info   $used" >> /tmp/changer.debug
+  echo "     -> info   $used" >> $DBGFILE
   if [ $used -lt 0 ];then
     echo "0 $lastslot 1"
   else
@@ -192,7 +198,7 @@ info() {
   exit 0
 }
 #
-echo "Args -> $*" >> /tmp/changer.debug
+echo Args "->" "$@" >> $DBGFILE
 while [ $# -ge 1 ];do
   case $1 in
     -slot)

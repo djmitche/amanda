@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.65 1999/06/15 04:29:05 oliva Exp $
+ * $Id: amcheck.c,v 1.66 1999/09/15 00:32:12 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -47,7 +47,10 @@
 #define BUFFER_SIZE	32768
 
 static int overwrite;
-char *confname;
+char *config_name = NULL;
+char *config_dir = NULL;
+
+static disklist_t origq;
 
 /* local functions */
 
@@ -63,7 +66,7 @@ int test_server_pgm P((FILE *outf, char *dir, char *pgm,
 
 void usage()
 {
-    error("Usage: amcheck%s [-M <username>] [-mwsct] <conf>", versionsuffix());
+    error("Usage: amcheck%s [-M <username>] [-mwsclt] <conf>", versionsuffix());
 }
 
 static unsigned long malloc_hist_1, malloc_size_1;
@@ -74,7 +77,7 @@ int argc;
 char **argv;
 {
     char buffer[BUFFER_SIZE], *cmd = NULL;
-    char *confdir, *version_string;
+    char *version_string;
     char *mainfname = NULL;
     char pid_str[NUM_STR_SIZE];
     int do_clientchk, clientchk_pid, client_probs;
@@ -89,6 +92,8 @@ char **argv;
     extern char *optarg;
     int mailout;
     char *tempfname = NULL;
+    char *conffile;
+    char *conf_diskfile;
     
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -101,6 +106,8 @@ char **argv;
     }
 
     signal(SIGPIPE, SIG_IGN);
+
+    safe_cd();
 
     set_pname("amcheck");
 
@@ -153,15 +160,25 @@ char **argv;
 
     if(argc != 1) usage();
 
-    confname = *argv;
+    config_name = stralloc(*argv);
 
-    confdir = vstralloc(CONFIG_DIR, "/", confname, NULL);
-    if(chdir(confdir) != 0)
-	error("could not cd to confdir %s: %s", confdir, strerror(errno));
-    amfree(confdir);
+    config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
+    conffile = stralloc2(config_dir, CONFFILE_NAME);
+    if(read_conffile(conffile)) {
+	error("could not find config file \"%s\"", conffile);
+    }
+    amfree(conffile);
 
-    if(read_conffile(CONFFILE_NAME))
-	error("could not read amanda config file");
+    conf_diskfile = getconf_str(CNF_DISKFILE);
+    if (*conf_diskfile == '/') {
+	conf_diskfile = stralloc(conf_diskfile);
+    } else {
+	conf_diskfile = stralloc2(config_dir, conf_diskfile);
+    }
+    if(read_diskfile(conf_diskfile, &origq) < 0) {
+	error("could not load disklist %s", conf_diskfile);
+    }
+    amfree(conf_diskfile);
 
     /*
      * If both server and client side checks are being done, the server
@@ -173,14 +190,16 @@ char **argv;
      */
     if(do_clientchk && (do_localchk || do_tapechk)) {
 	/* we need the temp file */
-	tempfname = vstralloc("/tmp/amcheck.temp.", pid_str, NULL);
+	tempfname = vstralloc(AMANDA_TMPDIR, "/amcheck.temp.", pid_str, NULL);
+	malloc_mark(tempfname);
 	if((tempfd = open(tempfname, O_RDWR|O_CREAT|O_TRUNC, 0600)) == -1)
 	    error("could not open %s: %s", tempfname, strerror(errno));
     }
 
     if(mailout) {
 	/* the main fd is a file too */
-	mainfname = vstralloc("/tmp/amcheck.main.", pid_str, NULL);
+	mainfname = vstralloc(AMANDA_TMPDIR, "/amcheck.main.", pid_str, NULL);
+	malloc_mark(mainfname);
 	if((mainfd = open(mainfname, O_RDWR|O_CREAT|O_TRUNC, 0600)) == -1)
 	    error("could not open %s: %s", mainfname, strerror(errno));
     }
@@ -199,9 +218,9 @@ char **argv;
 
     if(do_clientchk) {
 	clientchk_pid = start_client_checks((do_localchk || do_tapechk) ? tempfd : mainfd);
-    }
-    else
+    } else {
 	clientchk_pid = 0;
+    }
 
     /* wait for child processes and note any problems */
 
@@ -209,16 +228,13 @@ char **argv;
 	if((pid = wait(&retstat)) == -1) {
 	    if(errno == EINTR) continue;
 	    else break;
-	}
-	else if(pid == clientchk_pid) {
+	} else if(pid == clientchk_pid) {
 	    client_probs = WIFSIGNALED(retstat) || WEXITSTATUS(retstat);
 	    clientchk_pid = 0;
-	}
-	else if(pid == serverchk_pid) {
+	} else if(pid == serverchk_pid) {
 	    server_probs = WIFSIGNALED(retstat) || WEXITSTATUS(retstat);
 	    serverchk_pid = 0;
-	}
-	else {
+	} else {
 	    char number[NUM_STR_SIZE];
 	    char *wait_msg = NULL;
 
@@ -246,7 +262,6 @@ char **argv;
 	aclose(tempfd);
 	unlink(tempfname);
     }
-    amfree(tempfname);
 
     version_string = vstralloc("\n",
 			       "(brought to you by Amanda ", version(), ")\n",
@@ -254,6 +269,8 @@ char **argv;
     if (fullwrite(mainfd, version_string, strlen(version_string)) < 0)
 	error("write main file: %s", strerror(errno));
     amfree(version_string);
+    amfree(config_dir);
+    amfree(config_name);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -519,10 +536,10 @@ int start_server_check(fd, do_localchk, do_tapechk)
 		     || test_server_pgm(outf, libexecdir, "taper",
 					0, uid_dumpuser);
 	    pgmbad = pgmbad \
-		     || test_server_pgm(outf, libexecdir, "getconf",
+		     || test_server_pgm(outf, libexecdir, "amtrmidx",
 					0, uid_dumpuser);
 	    pgmbad = pgmbad \
-		     || test_server_pgm(outf, libexecdir, "amtrmidx",
+		     || test_server_pgm(outf, libexecdir, "amlogroll",
 					0, uid_dumpuser);
 	}
 	if(access(sbindir, X_OK) == -1) {
@@ -530,6 +547,9 @@ int start_server_check(fd, do_localchk, do_tapechk)
 		    sbindir);
 	    pgmbad = 1;
 	} else {
+	    pgmbad = pgmbad \
+		     || test_server_pgm(outf, sbindir, "amgetconf",
+					0, uid_dumpuser);
 	    pgmbad = pgmbad \
 		     || test_server_pgm(outf, sbindir, "amcheck",
 					1, uid_dumpuser);
@@ -550,32 +570,29 @@ int start_server_check(fd, do_localchk, do_tapechk)
 
     if(do_localchk || do_tapechk) {
 	char *conf_tapelist;
-	char *confdir;
 	char *tapefile;
 	char *holdfile;
 
 	conf_tapelist=getconf_str(CNF_TAPELIST);
-	confdir = vstralloc(CONFIG_DIR, "/", confname, NULL);
-	tapefile = vstralloc(confdir, "/", conf_tapelist, NULL);
-	holdfile = vstralloc(confdir, "/", "hold", NULL);
-	if(access(confdir, W_OK) == -1) {
-	    fprintf(outf, "ERROR: conf dir %s: not writable\n",
-		    confdir);
+	if (*conf_tapelist == '/') {
+	    tapefile = stralloc(conf_tapelist);
+	} else {
+	    tapefile = stralloc2(config_dir, conf_tapelist);
+	}
+	holdfile = vstralloc(config_dir, "/", "hold", NULL);
+	if(access(config_dir, W_OK) == -1) {
+	    fprintf(outf, "ERROR: conf dir %s: not writable\n", config_dir);
 	    tapebad = 1;
 	} else if(access(tapefile, F_OK) == 0 && access(tapefile, W_OK) != 0) {
-	    fprintf(outf, "ERROR: tape list %s: not writable\n",
-		    tapefile);
+	    fprintf(outf, "ERROR: tape list %s: not writable\n", tapefile);
 	    tapebad = 1;
-	} else if(read_tapelist(conf_tapelist)) {
-	    fprintf(outf, "ERROR: tape list %s: parse error\n",
-		    conf_tapelist);
+	} else if(read_tapelist(tapefile)) {
+	    fprintf(outf, "ERROR: tape list %s: parse error\n", tapefile);
 	    tapebad = 1;
 	}
 	if(access(holdfile, F_OK) != -1) {
-	    fprintf(outf, "NOTE: hold file %s exists\n",
-		    holdfile);
+	    fprintf(outf, "NOTE: hold file %s exists\n", holdfile);
 	}
-	amfree(confdir);
 	amfree(tapefile);
 	amfree(holdfile);
     }
@@ -583,7 +600,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
     /* check available disk space */
 
     if(do_localchk) {
-	for(hdp = getconf_holdingdisks(); hdp != NULL; hdp = hdp->next) {
+	for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next) {
 	    if(get_fs_stats(hdp->diskdir, &fs) == -1) {
 		fprintf(outf, "ERROR: holding disk %s: statfs: %s\n",
 			hdp->diskdir, strerror(errno));
@@ -597,14 +614,14 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	    else if(fs.avail == -1) {
 		fprintf(outf,
 			"WARNING: holding disk %s: available space unknown (%ld KB requested)\n",
-			hdp->diskdir, hdp->disksize);
+			hdp->diskdir, (long)hdp->disksize);
 		disklow = 1;
 	    }
 	    else if(hdp->disksize > 0) {
 		if(fs.avail < hdp->disksize) {
 		    fprintf(outf,
 			    "WARNING: holding disk %s: only %ld KB free (%ld KB requested)\n",
-			    hdp->diskdir, fs.avail, hdp->disksize);
+			    hdp->diskdir, (long)fs.avail, (long)hdp->disksize);
 		    disklow = 1;
 		}
 		else
@@ -630,14 +647,19 @@ int start_server_check(fd, do_localchk, do_tapechk)
     /* check that the log file is writable if it already exists */
 
     if(do_localchk) {
-	char *logdir;
+	char *conf_logdir;
 	char *logfile;
 
-	logdir = getconf_str(CNF_LOGDIR);
-	logfile = vstralloc(logdir, "/log", NULL);
+	conf_logdir = getconf_str(CNF_LOGDIR);
+	if (*conf_logdir == '/') {
+	    conf_logdir = stralloc(conf_logdir);
+	} else {
+	    conf_logdir = stralloc2(config_dir, conf_logdir);
+	}
+	logfile = vstralloc(conf_logdir, "/log", NULL);
 
-	if(access(logdir, W_OK) == -1) {
-	    fprintf(outf, "ERROR: log dir %s: not writable\n", logdir);
+	if(access(conf_logdir, W_OK) == -1) {
+	    fprintf(outf, "ERROR: log dir %s: not writable\n", conf_logdir);
 	    logbad = 1;
 	}
 
@@ -650,7 +672,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	}
 
 	if (testtape) {
-	    logfile = newvstralloc(logfile, logdir, "/amdump", NULL);
+	    logfile = newvstralloc(logfile, conf_logdir, "/amdump", NULL);
 	    if (access(logfile, F_OK) == 0) {
 		testtape = 0;
 		logbad = 1;
@@ -658,6 +680,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	}
 
 	amfree(logfile);
+	amfree(conf_logdir);
     }
 
     if (testtape) {
@@ -728,14 +751,13 @@ int start_server_check(fd, do_localchk, do_tapechk)
      * the first time, these are just warnings, not errors.
      */
     if(do_localchk) {
-	char *infodir = stralloc(getconf_str(CNF_INFOFILE));
-	char *indexdir = stralloc(getconf_str(CNF_INDEXDIR));
+	char *conf_infofile;
+	char *conf_indexdir;
 	char *hostinfodir = NULL;
 	char *hostindexdir = NULL;
 	char *diskdir = NULL;
 	char *infofile = NULL;
 	struct stat statbuf;
-	disklist_t origq;
 	disk_t *dp;
 	host_t *hostp;
 	int indexdir_checked = 0;
@@ -743,35 +765,44 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	char *host;
 	char *disk;
 
+	conf_infofile = getconf_str(CNF_INFOFILE);
+	if (*conf_infofile == '/') {
+	    conf_infofile = stralloc(conf_infofile);
+	} else {
+	    conf_infofile = stralloc2(config_dir, conf_infofile);
+	}
+
+	conf_indexdir = getconf_str(CNF_INDEXDIR);
+	if (*conf_indexdir == '/') {
+	    conf_indexdir = stralloc(conf_indexdir);
+	} else {
+	    conf_indexdir = stralloc2(config_dir, conf_indexdir);
+	}
+
 #if TEXTDB
-	if(stat(infodir, &statbuf) == -1) {
-	    fprintf(outf, "NOTE: info dir %s: does not exist\nNOTE: it is supposed to be created on the next run\n",
-		    infodir);
-	    amfree(infodir);
+	if(stat(conf_infofile, &statbuf) == -1) {
+	    fprintf(outf, "NOTE: info dir %s: does not exist\n", conf_infofile);
+	    fprintf(outf, "NOTE: it is supposed to be created on the next run\n");
+	    amfree(conf_infofile);
 	} else if (!S_ISDIR(statbuf.st_mode)) {
-	    fprintf(outf, "ERROR: info dir %s: not a directory\n",
-		    infodir);
-	    amfree(infodir);
+	    fprintf(outf, "ERROR: info dir %s: not a directory\n", conf_infofile);
+	    amfree(conf_infofile);
 	    infobad = 1;
-	} else if (access(infodir, W_OK) == -1) {
-	    fprintf(outf, "ERROR: info dir %s: not writable\n",
-		    infodir);
-	    amfree(infodir);
+	} else if (access(conf_infofile, W_OK) == -1) {
+	    fprintf(outf, "ERROR: info dir %s: not writable\n", conf_infofile);
+	    amfree(conf_infofile);
 	    infobad = 1;
 	} else {
-	    strappend(infodir, "/");
+	    strappend(conf_infofile, "/");
 	}
 #endif
-
-	if (read_diskfile(getconf_str(CNF_DISKFILE), &origq) < 0)
-	    error("could not load diskfile %s\n", getconf_str(CNF_DISKFILE));
 
 	while(!empty(origq)) {
 	    hostp = origq.head->host;
 	    host = sanitise_filename(hostp->hostname);
 #if TEXTDB
-	    if(infodir) {
-		hostinfodir = newstralloc2(hostinfodir, infodir, host);
+	    if(conf_infofile) {
+		hostinfodir = newstralloc2(hostinfodir, conf_infofile, host);
 		if(stat(hostinfodir, &statbuf) == -1) {
 		    fprintf(outf, "NOTE: info dir %s: does not exist\n",
 			    hostinfodir);
@@ -825,28 +856,28 @@ int start_server_check(fd, do_localchk, do_tapechk)
 #endif
 		if(dp->index) {
 		    if(! indexdir_checked) {
-			if(stat(indexdir, &statbuf) == -1) {
+			if(stat(conf_indexdir, &statbuf) == -1) {
 			    fprintf(outf, "NOTE: index dir %s: does not exist\n",
-				    indexdir);
-			    amfree(indexdir);
+				    conf_indexdir);
+			    amfree(conf_indexdir);
 			} else if (!S_ISDIR(statbuf.st_mode)) {
 			    fprintf(outf, "ERROR: index dir %s: not a directory\n",
-				    indexdir);
-			    amfree(indexdir);
+				    conf_indexdir);
+			    amfree(conf_indexdir);
 			    indexbad = 1;
-			} else if (access(indexdir, W_OK) == -1) {
+			} else if (access(conf_indexdir, W_OK) == -1) {
 			    fprintf(outf, "ERROR: index dir %s: not writable\n",
-				    indexdir);
-			    amfree(indexdir);
+				    conf_indexdir);
+			    amfree(conf_indexdir);
 			    indexbad = 1;
 			} else {
-			    strappend(indexdir, "/");
+			    strappend(conf_indexdir, "/");
 			}
 			indexdir_checked = 1;
 		    }
-		    if(indexdir) {
+		    if(conf_indexdir) {
 			if(! hostindexdir_checked) {
-			    hostindexdir = stralloc2(indexdir, host);
+			    hostindexdir = stralloc2(conf_indexdir, host);
 			    if(stat(hostindexdir, &statbuf) == -1) {
 			        fprintf(outf, "NOTE: index dir %s: does not exist\n",
 				        hostindexdir);
@@ -892,8 +923,8 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	}
 	amfree(diskdir);
 	amfree(hostinfodir);
-	amfree(infodir);
-	amfree(indexdir);
+	amfree(conf_infofile);
+	amfree(conf_indexdir);
     }
 
     if(do_localchk) {
@@ -905,6 +936,8 @@ int start_server_check(fd, do_localchk, do_tapechk)
 
     amfree(datestamp);
     amfree(label);
+    amfree(config_dir);
+    amfree(config_name);
 
     fprintf(outf, "Server check took %s seconds\n", walltime_str(curclock()));
 
@@ -937,7 +970,6 @@ static void handle_result P((void *, pkt_t *, security_handle_t *));
 int start_client_checks(fd)
 int fd;
 {
-    disklist_t origq;
     disk_t *dp;
     host_t *hostp;
     char *req = NULL;
@@ -958,9 +990,6 @@ int fd;
     set_pname("amcheck-clients");
 
     startclock();
-
-    if (read_diskfile(getconf_str(CNF_DISKFILE), &origq) < 0)
-	error("could not load diskfile %s\n", getconf_str(CNF_DISKFILE));
 
     if((outf = fdopen(fd, "w")) == NULL)
 	error("fdopen %d: %s", fd, strerror(errno));
@@ -1057,6 +1086,9 @@ int fd;
 	    walltime_str(curclock()),
 	    remote_errors, (remote_errors == 1) ? "" : "s");
     fflush(outf);
+
+    amfree(config_dir);
+    amfree(config_name);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 

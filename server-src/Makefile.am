@@ -10,11 +10,17 @@ noinst_LIBRARIES = 	libamserver.a
 LIB_EXTENSION = a
 endif
 
-sbin_PROGRAMS =		amadmin amcheck amflush amlabel amtape amreport
+sbin_PROGRAMS =		amadmin		amcheck		amflush		\
+			amgetconf	amlabel		amtape		\
+			amreport
 
-libexec_PROGRAMS =	amindexd amtrmidx amtrmlog driver dumper getconf planner taper amcleanupdisk
+libexec_PROGRAMS =	amindexd	amlogroll	amtrmidx	\
+			amtrmlog	driver		dumper		\
+			planner		taper		amcleanupdisk
 
-sbin_SCRIPTS =		amcheckdb amcleanup amdump amoverview amrmtape amtoc amverify amstatus
+sbin_SCRIPTS =		amcheckdb	amcleanup	amdump		\
+			amoverview	amrmtape	amtoc		\
+			amverify	amstatus
 
 libamserver_la_SOURCES=	amindex.c	changer.c	clock.c		\
 			conffile.c	diskfile.c	driverio.c	\
@@ -49,6 +55,8 @@ amindexd_SOURCES =	amindexd.c					\
 			list_dir.c			list_dir.h
 
 amreport_SOURCES =	reporter.c
+
+amgetconf_SOURCES =	getconf.c
 
 noinst_HEADERS = 	amindex.h	changer.h	clock.h		\
 			conffile.h	diskfile.h	driverio.h	\

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: calcsize.c,v 1.26 1999/06/15 08:16:50 oliva Exp $
+ * $Id: calcsize.c,v 1.27 1999/09/15 00:31:25 jrj Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -149,6 +149,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    safe_cd();
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
@@ -314,13 +316,13 @@ char *parent_dir;
     DIR *d;
     struct dirent *f;
     struct stat finfo;
-    char *dirname, *newdir;
-    char *newname = NULL;
+    char *dirname, *newname = NULL;
+    char *newbase = NULL;
     dev_t parent_dev = 0;
     int i;
     int l;
 
-    if(parent_dir && chdir(parent_dir) != -1 && stat(".", &finfo) != -1)
+    if(parent_dir && stat(parent_dir, &finfo) != -1)
 	parent_dev = finfo.st_dev;
 
     push_name(parent_dir);
@@ -335,26 +337,25 @@ char *parent_dir;
 	    continue;
 #endif
 
-	if(chdir(dirname) == -1 || (d = opendir(".")) == NULL) {
+	if((d = opendir(dirname)) == NULL) {
 	    perror(dirname);
 	    continue;
 	}
 
 	l = strlen(dirname);
 	if(l > 0 && dirname[l - 1] != '/') {
-	    newname = newstralloc2(newname, dirname, "/");
+	    newbase = newstralloc2(newbase, dirname, "/");
 	} else {
-	    newname = newstralloc(newname, dirname);
+	    newbase = newstralloc(newbase, dirname);
 	}
 
 	while((f = readdir(d)) != NULL) {
-	    if(f->d_name[0] == '.' && f->d_name[1] == '\0')
+	    if(is_dot_or_dotdot(f->d_name)) {
 		continue;
-	    if(f->d_name[0] == '.' && f->d_name[1] == '.' &&
-	       f->d_name[2] == '\0')
-		continue;
+	    }
 
-	    if(lstat(f->d_name, &finfo) == -1) {
+	    newname = newstralloc2(newname, newbase, f->d_name);
+	    if(lstat(newname, &finfo) == -1) {
 		fprintf(stderr, "%s/%s: %s\n",
 			dirname, f->d_name, strerror(errno));
 		continue;
@@ -364,26 +365,30 @@ char *parent_dir;
 		continue;
 
 	    if((finfo.st_mode & S_IFMT) == S_IFDIR) {
-		newdir = stralloc2(newname, f->d_name);
-		push_name(newdir);
-		amfree(newdir);
+		push_name(newname);
 	    }
 
 	    for(i = 0; i < ndumps; i++) {
-		if(finfo.st_ctime >= dumpdate[i])
-		    if (
+		if(finfo.st_ctime >= dumpdate[i]) {
+		    int exclude = 0;
+		    int is_symlink = 0;
+
 #ifdef BUILTIN_EXCLUDE_SUPPORT
-			!check_exclude(f->d_name) &&
+		    exclude = check_exclude(f->d_name);
 #endif
-			/* regular files */
-			((finfo.st_mode & S_IFMT) == S_IFREG)
-			  /* directories */
-			  || ((finfo.st_mode & S_IFMT) == S_IFDIR)
 #ifdef S_IFLNK
-			  /* symlinks */
-			  || ((finfo.st_mode & S_IFMT) == S_IFLNK)
+		    is_symlink = ((finfo.st_mode & S_IFMT) == S_IFLNK);
 #endif
-			) add_file(i, &finfo);
+		    if (! exclude &&
+			  /* regular files */
+			((finfo.st_mode & S_IFMT) == S_IFREG
+			  /* directories */
+			  || (finfo.st_mode & S_IFMT) == S_IFDIR
+			  /* symbolic links */
+			  || is_symlink)) {
+			add_file(i, &finfo);
+		    }
+		}
 	    }
 	}
 
@@ -394,6 +399,7 @@ char *parent_dir;
 	    perror(dirname);
 #endif
     }
+    amfree(newbase);
     amfree(newname);
 }
 
@@ -454,11 +460,15 @@ char *topdir;
 {
     generic_fs_stats_t stats;
     int mapsize;
+    char *s;
 
     /* calculate the map sizes */
 
-    if(chdir(topdir) == -1 || get_fs_stats(".", &stats) == -1)
-	error("statfs %s: %s", topdir, strerror(errno));
+    s = stralloc2(topdir, "/.");
+    if(get_fs_stats(s, &stats) == -1) {
+	error("statfs %s: %s", s, strerror(errno));
+    }
+    amfree(s);
 
     mapsize = (stats.files + 7) / 8;	/* in bytes */
     mapsize = (mapsize + 1023) / 1024;  /* in kbytes */

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.20 1999/09/14 03:21:51 oliva Exp $
+ * $Id: changer.c,v 1.21 1999/09/15 00:32:46 jrj Exp $
  *
  * interface routines for tape changers
  */
@@ -34,12 +34,13 @@
 
 #include "changer.h"
 
+int changer_debug = 0;
 char *changer_resultstr = NULL;
 
 static char *tapechanger = NULL;
 
 /* local functions */
-static int changer_command P((char *cmdstr));
+static int changer_command P((char *cmdstr, char *arg));
 static int report_bad_resultstr P((void));
 static int run_changer_command P((char *, char *, char **, char **));
 
@@ -69,7 +70,6 @@ char **slotstr;
 char **rest;
 {
     int exitcode;
-    char *changer_cmd = NULL;
     char *result_copy;
     char *slot;
     char *s;
@@ -77,15 +77,7 @@ char **rest;
 
     *slotstr = NULL;
     *rest = NULL;
-    if(arg) {
-	changer_cmd = vstralloc(cmd, " ", arg, NULL);
-    } else {
-	changer_cmd = cmd;
-    }
-    exitcode = changer_command(changer_cmd);
-    if(changer_cmd != cmd) {
-	amfree(changer_cmd);
-    }
+    exitcode = changer_command(cmd, arg);
     s = changer_resultstr;
     ch = *s++;
 
@@ -291,72 +283,185 @@ int (*user_slot) P((int rc, char *slotstr, char *device));
 
 /* ---------------------------- */
 
-static int changer_command(cmdstr)
-     char *cmdstr;
+static int changer_command(cmd, arg)
+    char *cmd;
+    char *arg;
 {
-    FILE *cmdpipe;
-    char *cmd = NULL;
-    char *cmd_and_io = NULL;
-    amwait_t wait_exitcode;
+    int fd[2];
     int exitcode;
-    char number[NUM_STR_SIZE];
+    amwait_t wait_exitcode;
+    char num1[NUM_STR_SIZE];
+    char num2[NUM_STR_SIZE];
+    char *cmdstr;
+    pid_t pid, changer_pid;
 
     if (*tapechanger != '/') {
-	cmd = vstralloc(libexecdir, "/", tapechanger, versionsuffix(),
-			" ", cmdstr,
-			NULL);
-    } else {
-	cmd = vstralloc(tapechanger, " ", cmdstr, NULL);
+	tapechanger = vstralloc(libexecdir, "/", tapechanger, versionsuffix(),
+			        NULL);
+	malloc_mark(tapechanger);
     }
-    cmd_and_io = stralloc2(cmd, " 2>&1");
+    cmdstr = vstralloc(tapechanger, " ",
+		       cmd, arg ? " " : "", 
+		       arg ? arg : "",
+		       NULL);
 
-/* fprintf(stderr, "changer: opening pipe from: %s\n", cmd); */
+    if(changer_debug) {
+	fprintf(stderr, "changer: opening pipe to: %s\n", cmdstr);
+	fflush(stderr);
+    }
 
     amfree(changer_resultstr);
 
-    if((cmdpipe = popen(cmd_and_io, "r")) == NULL) {
+    if(socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1) {
 	changer_resultstr = vstralloc ("<error> ",
-				       "could not open pipe to \"",
-				       cmd,
+				       "could not create pipe for \"",
+				       cmdstr,
 				       "\": ",
 				       strerror(errno),
 				       NULL);
-	amfree(cmd);
-	amfree(cmd_and_io);
-	return 2;
+	exitcode = 2;
+	goto done;
     }
-    amfree(cmd_and_io);
+    if(fd[0] < 0 || fd[0] >= FD_SETSIZE) {
+	snprintf(num1, sizeof(num1), "%d", fd[0]);
+	snprintf(num2, sizeof(num2), "%d", FD_SETSIZE-1);
+	changer_resultstr = vstralloc ("<error> ",
+				       "could not create pipe for \"",
+				       cmdstr,
+				       "\": ",
+				       "socketpair 0: descriptor ",
+				       num1,
+				       " out of range ( .. ",
+				       num2,
+				       ")",
+				       NULL);
+	exitcode = 2;
+	goto done;
+    }
+    if(fd[1] < 0 || fd[1] >= FD_SETSIZE) {
+	snprintf(num1, sizeof(num1), "%d", fd[1]);
+	snprintf(num2, sizeof(num2), "%d", FD_SETSIZE-1);
+	changer_resultstr = vstralloc ("<error> ",
+				       "could not create pipe for \"",
+				       cmdstr,
+				       "\": ",
+				       "socketpair 1: descriptor ",
+				       num1,
+				       " out of range ( .. ",
+				       num2,
+				       ")",
+				       NULL);
+	exitcode = 2;
+	goto done;
+    }
 
-    if((changer_resultstr = agets(cmdpipe)) == NULL) {
+    switch(changer_pid = fork()) {
+    case -1:
+	changer_resultstr = vstralloc ("<error> ",
+				       "could not fork for \"",
+				       cmdstr,
+				       "\": ",
+				       strerror(errno),
+				       NULL);
+	exitcode = 2;
+	goto done;
+    case 0:
+	if(dup2(fd[1], 1) == -1 || dup2(fd[1], 2) == -1) {
+	    changer_resultstr = vstralloc ("<error> ",
+				           "could not open pipe to \"",
+				           cmdstr,
+				           "\": ",
+				           strerror(errno),
+				           NULL);
+	    (void)write(fd[1], changer_resultstr, strlen(changer_resultstr));
+	    exit(1);
+	}
+	aclose(fd[0]);
+	aclose(fd[1]);
+	if(config_dir && chdir(config_dir) == -1) {
+	    changer_resultstr = vstralloc ("<error> ",
+				           "could not cd to \"",
+				           config_dir,
+				           "\": ",
+				           strerror(errno),
+				           NULL);
+	    (void)write(2, changer_resultstr, strlen(changer_resultstr));
+	    exit(1);
+	}
+	if(arg) {
+	    execle(tapechanger, tapechanger, cmd, arg, NULL, safe_env());
+	} else {
+	    execle(tapechanger, tapechanger, cmd, NULL, safe_env());
+	}
+	changer_resultstr = vstralloc ("<error> ",
+				       "could not exec \"",
+				       tapechanger,
+				       "\": ",
+				       strerror(errno),
+				       NULL);
+	(void)write(2, changer_resultstr, strlen(changer_resultstr));
+	exit(1);
+    default:
+	aclose(fd[1]);
+    }
+
+    if((changer_resultstr = areads(fd[0])) == NULL) {
 	changer_resultstr = vstralloc ("<error> ",
 				       "could not read result from \"",
-				       cmd,
+				       tapechanger,
 				       errno ? "\": " : "\"",
 				       errno ? strerror(errno) : "",
 				       NULL);
     }
 
-    exitcode = pclose(cmdpipe);
-    cmdpipe = NULL;
+    while(1) {
+	if ((pid = wait(&wait_exitcode)) == -1) {
+	    if(errno == EINTR) {
+		continue;
+	    } else {
+		changer_resultstr = vstralloc ("<error> ",
+					       "wait for \"",
+					       tapechanger,
+					       "\" failed: ",
+					       strerror(errno),
+					       NULL);
+		exitcode = 2;
+		goto done;
+	    }
+	} else if (pid != changer_pid) {
+	    snprintf(num1, sizeof(num1), "%ld", (long)pid);
+	    changer_resultstr = vstralloc ("<error> ",
+					   "wait for \"",
+					   tapechanger,
+					   "\" returned unexpected pid ",
+					   num1,
+					   NULL);
+	    exitcode = 2;
+	    goto done;
+	} else {
+	    break;
+	}
+    }
+
     /* mark out-of-control changers as fatal error */
     if(WIFSIGNALED(wait_exitcode)) {
-	snprintf(number, sizeof(number), "%d", WTERMSIG(wait_exitcode));
-	cmd = newvstralloc(cmd,
-			   "<error> ",
-			   changer_resultstr,
-			   " (got signal ", number, ")",
-			   NULL);
-	amfree(changer_resultstr);
-	changer_resultstr = cmd;
-	cmd = NULL;
+	snprintf(num1, sizeof(num1), "%d", WTERMSIG(wait_exitcode));
+	changer_resultstr = newvstralloc (changer_resultstr,
+					  "<error> ",
+					  changer_resultstr,
+					  " (got signal ", num1, ")",
+					  NULL);
 	exitcode = 2;
     } else {
 	exitcode = WEXITSTATUS(wait_exitcode);
     }
 
-/* fprintf(stderr, "changer: got exit: %d str: %s\n", exitcode, resultstr); */
+done:
 
-    amfree(cmd);
+    dbprintf(("changer: got exit: %d str: %s\n", exitcode, changer_resultstr)); 
+
+    amfree(cmdstr);
+
     return exitcode;
 }
 

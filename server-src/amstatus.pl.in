@@ -13,7 +13,7 @@ $confdir="@CONFIG_DIR@";
 $prefix='@prefix@';
 
 $exec_prefix="@exec_prefix@";
-$libexecdir="@libexecdir@";
+$sbindir="@sbindir@";
 
 $USE_VERSION_SUFFIXES='@USE_VERSION_SUFFIXES@';
 $suf = '';
@@ -58,7 +58,7 @@ $pwd = `pwd`;
 chomp $pwd;
 chdir "$confdir/$conf";
 
-$logdir=`$libexecdir/getconf$suf logdir`;
+$logdir=`$sbindir/amgetconf$suf logdir`;
 chomp $logdir;
 $errfile="$logdir/amdump";
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.99 1999/09/05 23:27:29 jrj Exp $
+ * $Id: planner.c,v 1.100 1999/09/15 00:33:16 jrj Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -49,9 +49,9 @@
 #define DEFAULT_DUMPRATE	 30.0	/* K/s */
 
 /* configuration file stuff */
-char *conf_diskfile;
-char *conf_tapelist;
-char *conf_infofile;
+char *config_name = NULL;
+char *config_dir = NULL;
+
 char *conf_tapetype;
 int conf_runtapes;
 int conf_dumpcycle;
@@ -142,6 +142,10 @@ char **argv;
     unsigned long malloc_hist_2, malloc_size_2;
     long initial_size;
     int fd, i;
+    char *conffile;
+    char *conf_diskfile;
+    char *conf_tapelist;
+    char *conf_infofile;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -152,6 +156,23 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    if (argc > 1) {
+	config_name = stralloc(argv[1]);
+	config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
+    } else {
+	char my_cwd[STR_SIZE];
+
+	if (getcwd(my_cwd, sizeof(my_cwd)) == NULL) {
+	    error("cannot determine current working directory");
+	}
+	config_dir = stralloc2(my_cwd, "/");
+	if ((config_name = strrchr(my_cwd, '/')) != NULL) {
+	    config_name = stralloc(config_name + 1);
+	}
+    }
+
+    safe_cd();
 
     set_pname("planner");
 
@@ -203,12 +224,45 @@ char **argv;
 
     fprintf(stderr,"READING CONF FILES...\n");
 
-    if(read_conffile(CONFFILE_NAME))
-	error("could not find \"%s\" in this directory.\n", CONFFILE_NAME);
+    conffile = stralloc2(config_dir, CONFFILE_NAME);
+    if(read_conffile(conffile)) {
+	error("could not find config file \"%s\"", conffile);
+    }
+    amfree(conffile);
 
     conf_diskfile = getconf_str(CNF_DISKFILE);
+    if (*conf_diskfile == '/') {
+	conf_diskfile = stralloc(conf_diskfile);
+    } else {
+	conf_diskfile = stralloc2(config_dir, conf_diskfile);
+    }
+    if (read_diskfile(conf_diskfile, &origq) < 0) {
+	error("could not load disklist \"%s\"", conf_diskfile);
+    }
+    amfree(conf_diskfile);
+
     conf_tapelist = getconf_str(CNF_TAPELIST);
+    if (*conf_tapelist == '/') {
+	conf_tapelist = stralloc(conf_tapelist);
+    } else {
+	conf_tapelist = stralloc2(config_dir, conf_tapelist);
+    }
+    if(read_tapelist(conf_tapelist)) {
+	error("could not load tapelist \"%s\"", conf_tapelist);
+    }
+    amfree(conf_tapelist);
+
     conf_infofile = getconf_str(CNF_INFOFILE);
+    if (*conf_infofile == '/') {
+	conf_infofile = stralloc(conf_infofile);
+    } else {
+	conf_infofile = stralloc2(config_dir, conf_infofile);
+    }
+    if(open_infofile(conf_infofile)) {
+	error("could not open info db \"%s\"", conf_infofile);
+    }
+    amfree(conf_infofile);
+
     conf_tapetype = getconf_str(CNF_TAPETYPE);
     conf_runtapes = getconf_int(CNF_RUNTAPES);
     conf_dumpcycle = getconf_int(CNF_DUMPCYCLE);
@@ -224,16 +278,6 @@ char **argv;
     today = time(0);
     datestamp = construct_datestamp();
     log_add(L_START, "date %s", datestamp);
-
-    if (read_diskfile(conf_diskfile, &origq) < 0)
-	error("could not load \"%s\"\n", conf_diskfile);
-
-    if(read_tapelist(conf_tapelist))
-	error("could not load \"%s\"\n", conf_tapelist);
-
-    if(open_infofile(conf_infofile))
-	error("could not open info db \"%s\"\n", conf_infofile);
-
 
     /* some initializations */
 
@@ -413,6 +457,8 @@ char **argv;
     log_add(L_FINISH, "date %s", datestamp);
 
     amfree(datestamp);
+    amfree(config_dir);
+    amfree(config_name);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 

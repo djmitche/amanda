@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.83 1999/06/15 07:10:15 oliva Exp $
+ * $Id: amanda.h,v 1.84 1999/09/15 00:31:46 jrj Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -238,7 +238,7 @@ struct iovec {
  *
  *  malloc_enter(char *) -- stack trace for malloc reports
  *  malloc_leave(char *) -- stack trace for malloc reports
- *  malloc_leave(void *) -- mark an area as never to be free-d
+ *  malloc_mark(void *) -- mark an area as never to be free-d
  *  malloc_chain_check(void) -- check the malloc area now
  *  malloc_dump(int fd) -- report the malloc contents to a file descriptor
  *  malloc_list(int fd, ulong a, ulong b) -- report memory activated since
@@ -417,7 +417,7 @@ extern char *debug_stralloc P((const char *c, int l, const char *str));
 extern char *debug_newstralloc P((const char *c, int l, char *oldstr,
     const char *newstr));
 extern const char *dbmalloc_caller_loc P((const char *file, int line));
-extern int debug_alloc_push P((const char *file, int line));
+extern int debug_alloc_push P((char *file, int line));
 extern void debug_alloc_pop P((void));
 
 #define	alloc(s)		debug_alloc(__FILE__, __LINE__, (s))
@@ -477,6 +477,10 @@ extern char  *newvstralloc    P((char *oldstr, const char *newstr, ...));
 #define	stralloc2(s1,s2)      vstralloc((s1),(s2),NULL)
 #define	newstralloc2(p,s1,s2) newvstralloc((p),(s1),(s2),NULL)
 
+extern uid_t  client_uid;
+extern gid_t  client_gid;
+extern void   safe_cd         P((void));
+extern void   save_core       P((void));
 extern char **safe_env        P((void));
 extern char  *validate_regexp P((char *regex));
 extern char  *validate_glob   P((char *glob));
@@ -691,6 +695,11 @@ extern char  *areads	      P((int fd));
     if(fp) *fp = '\0';							\
 } while(0)
 
+#define is_dot_or_dotdot(s)						\
+    ((s)[0] == '.'							\
+     && ((s)[1] == '\0'							\
+	 || ((s)[1] == '.' && (s)[2] == '\0')))
+
 /* from amflock.c */
 extern int    amflock   P((int fd, char *resource));
 extern int    amroflock P((int fd, char *resource));
@@ -700,6 +709,14 @@ extern int    amfunlock P((int fd, char *resource));
 extern int    mkpdir    P((char *file, int mode, uid_t uid, gid_t gid));
 extern int    rmpdir    P((char *file, char *topdir));
 extern char  *sanitise_filename P((char *inp));
+
+/* from bsd-security.c */
+extern int    check_user_ruserok     P((const char *host,
+					struct passwd *pwd,
+					const char *user));
+extern int    check_user_amandahosts P((const char *host,
+					struct passwd *pwd,
+					const char *user));
 
 extern int debug;
 

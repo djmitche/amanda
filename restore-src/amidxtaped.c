@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.27 1999/04/10 06:19:20 kashmir Exp $
+/* $Id: amidxtaped.c,v 1.28 1999/09/15 00:32:03 jrj Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -95,10 +95,6 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-#ifdef FORCE_USERID
-    char *pwname;
-    struct passwd *pwptr;
-#endif	/* FORCE_USERID */
     int amrestore_nargs;
     char **amrestore_args;
     char *buf = NULL;
@@ -125,6 +121,8 @@ char **argv;
 	close(fd);
     }
 
+    safe_cd();
+
     set_pname("amidxtaped");
 
 #ifdef FORCE_USERID
@@ -132,13 +130,13 @@ char **argv;
     /* we'd rather not run as root */
 
     if(geteuid() == 0) {
-	pwname = CLIENT_LOGIN;
-	if((pwptr = getpwnam(pwname)) == NULL)
-	    error("error [cannot find user %s in passwd file]\n", pwname);
+	if(client_uid == (uid_t) -1) {
+	    error("error [cannot find user %s in passwd file]\n", CLIENT_LOGIN);
+	}
 
-	initgroups(pwname, pwptr->pw_gid);
-	setgid(pwptr->pw_gid);
-	setuid(pwptr->pw_uid);
+	initgroups(CLIENT_LOGIN, client_gid);
+	setgid(client_gid);
+	setuid(client_uid);
     }
 
 #endif	/* FORCE_USERID */
@@ -317,22 +315,14 @@ char *str;
 unsigned long cksum;
 char **errstr;
 {
-    char *remotehost = NULL, *remoteuser = NULL, *localuser = NULL;
+    char *remotehost = NULL, *remoteuser = NULL;
     char *bad_bsd = NULL;
     struct hostent *hp;
     struct passwd *pwptr;
     int myuid, i, j;
     char *s, *fp;
     int ch;
-#ifdef USE_AMANDAHOSTS
-    FILE *fPerm;
-    char *pbuf = NULL;
-    char *ptmp;
-    int pbuf_len;
-    int amandahostsauth = 0;
-#else
-    int saved_stderr;
-#endif
+    int ec;
 
     *errstr = NULL;
 
@@ -393,15 +383,15 @@ char **errstr;
 	     if ( strcmp(hp->h_aliases[j],inet_ntoa(addr->sin_addr)) == 0)
 	         break;                          /* name is good, keep it */
         }
-    }
-    if( !hp->h_addr_list[i] && !hp->h_aliases[j] ) {
-	*errstr = vstralloc("[",
-			    "ip address ", inet_ntoa(addr->sin_addr),
-			    " is not in the ip list for ", remotehost,
-			    "]",
-			    NULL);
-	amfree(remotehost);
-	return 0;
+    	if ( !hp->h_aliases[j] ) {
+	    *errstr = vstralloc("[",
+			        "ip address ", inet_ntoa(addr->sin_addr),
+			        " is not in the ip list for ", remotehost,
+			        "]",
+			        NULL);
+	    amfree(remotehost);
+	    return 0;
+	}
     }
 
     /* next, make sure the remote port is a "reserved" one */
@@ -459,153 +449,19 @@ char **errstr;
     if((pwptr = getpwuid(myuid)) == NULL)
         error("error [getpwuid(%d) fails]", myuid);
 
-    localuser = stralloc(pwptr->pw_name);
-
     dbprintf(("bsd security: remote host %s user %s local user %s\n",
-	      remotehost, remoteuser, localuser));
+	      remotehost, remoteuser, pwptr->pw_name));
 
-    /*
-     * note that some versions of ruserok (eg SunOS 3.2) look in
-     * "./.rhosts" rather than "~localuser/.rhosts", so we have to
-     * chdir ourselves.  Sigh.
-     *
-     * And, believe it or not, some ruserok()'s try an initgroup just
-     * for the hell of it.  Since we probably aren't root at this point
-     * it'll fail, and initgroup "helpfully" will blatt "Setgroups: Not owner"
-     * into our stderr output even though the initgroup failure is not a
-     * problem and is expected.  Thanks a lot.  Not.
-     */
-    chdir(pwptr->pw_dir);       /* pamper braindead ruserok's */
 #ifndef USE_AMANDAHOSTS
-    saved_stderr = dup(2);
-    close(2);			/*  " */
-
-#if defined(TEST)
-    {
-	char *dir = stralloc(pwptr->pw_dir);
-
-	dbprintf(("calling ruserok(%s, %d, %s, %s)\n",
-	          remotehost, myuid == 0, remoteuser, localuser));
-	if (myuid == 0) {
-	    dbprintf(("because you are running as root, "));
-	    dbprintf(("/etc/hosts.equiv will not be used\n"));
-	} else {
-	    show_stat_info("/etc/hosts.equiv", NULL);
-	}
-	show_stat_info(dir, "/.rhosts");
-	amfree(dir);
-    }
-#endif
-
-    if(ruserok(remotehost, myuid == 0, remoteuser, localuser) == -1) {
-	dup2(saved_stderr,2);
-	close(saved_stderr);
-	*errstr = vstralloc("[",
-			    "access as ", localuser, " not allowed",
-			    " from ", remoteuser, "@", remotehost,
-			    "]", NULL);
-	dbprintf(("check failed: %s\n", *errstr));
-	amfree(remotehost);
-	amfree(localuser);
-	amfree(remoteuser);
-	return 0;
-    }
-
-    dup2(saved_stderr,2);
-    close(saved_stderr);
-    chdir("/");		/* now go someplace where I can't drop core :-) */
-    dbprintf(("bsd security check passed\n"));
-    amfree(remotehost);
-    amfree(localuser);
-    amfree(remoteuser);
-    return 1;
+    ec = check_user_ruserok(remotehost, pwptr, remoteuser);
 #else
-    /* We already chdired to ~amandauser */
-
-#if defined(TEST)
-    show_stat_info(pwptr->pw_dir, "/.amandahosts");
+    ec = check_user_amandahosts(remotehost, pwptr, remoteuser);
 #endif
-
-    if((fPerm = fopen(".amandahosts", "r")) == NULL) {
-#if defined(TEST)
-	dbprintf(("fopen failed: %s\n", strerror(errno)));
-#endif
+    if (ec != 0) {
 	*errstr = vstralloc("[",
-			    "access as ", localuser, " not allowed",
+			    "access as ", pwptr->pw_name, " not allowed",
 			    " from ", remoteuser, "@", remotehost,
 			    "]", NULL);
-	dbprintf(("check failed: %s\n", *errstr));
-	amfree(remotehost);
-	amfree(localuser);
-	amfree(remoteuser);
-	return 0;
     }
-
-    for(; (pbuf = agets(fPerm)) != NULL; free(pbuf)) {
-#if defined(TEST)
-	dbprintf(("processing line: <%s>\n", pbuf));
-#endif
-	pbuf_len = strlen(pbuf);
-	s = pbuf;
-	ch = *s++;
-
-	/* Find end of remote host */
-	skip_non_whitespace(s, ch);
-	if(s - 1 == pbuf) {
-	    memset(pbuf, '\0', pbuf_len);	/* leave no trace */
-	    continue;				/* no remotehost field */
-	}
-	s[-1] = '\0';				/* terminate remotehost field */
-
-	/* Find start of remote user */
-	skip_whitespace(s, ch);
-	if(ch == '\0') {
-	    ptmp = localuser;			/* no remoteuser field */
-	} else {
-	    ptmp = s-1;				/* start of remoteuser field */
-
-	    /* Find end of remote user */
-	    skip_non_whitespace(s, ch);
-	    s[-1] = '\0';			/* terminate remoteuser field */
-	}
-#if defined(TEST)
-	dbprintf(("comparing %s with\n", pbuf));
-	dbprintf(("          %s (%s)\n",
-		  remotehost,
-		  (strcasecmp(pbuf, remotehost) == 0) ? "match" : "no match"));
-	dbprintf(("      and %s with\n", ptmp));
-	dbprintf(("          %s (%s)\n",
-		  remoteuser,
-		  (strcasecmp(ptmp, remoteuser) == 0) ? "match" : "no match"));
-#endif
-	if(strcasecmp(pbuf, remotehost) == 0 && strcasecmp(ptmp, remoteuser) == 0) {
-	    amandahostsauth = 1;
-	    break;
-	}
-	memset(pbuf, '\0', pbuf_len);		/* leave no trace */
-    }
-    afclose(fPerm);
-    amfree(pbuf);
-
-    if( amandahostsauth ) {
-	chdir("/");      /* now go someplace where I can't drop core :-) */
-	dbprintf(("amandahosts security check passed\n"));
-	amfree(remotehost);
-	amfree(localuser);
-	amfree(remoteuser);
-	return 1;
-    }
-
-    *errstr = vstralloc("[",
-			"access as ", localuser, " not allowed",
-			" from ", remoteuser, "@", remotehost,
-			"]", NULL);
-    dbprintf(("check failed: %s\n", *errstr));
-
-    amfree(remotehost);
-    amfree(localuser);
-    amfree(remoteuser);
-    return 0;
-
-#endif
+    return ec == 0;
 }

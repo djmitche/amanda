@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.19 1999/06/02 21:43:10 kashmir Exp $
+ * $Id: logfile.c,v 1.20 1999/09/15 00:33:13 jrj Exp $
  *
  * common log file writing routine
  */
@@ -152,6 +152,7 @@ void log_end_multiline()
 void log_rename(datestamp)
 char *datestamp;
 {
+    char *conf_logdir;
     char *logfile;
     char *fname = NULL;
     char seq_str[NUM_STR_SIZE];
@@ -160,7 +161,13 @@ char *datestamp;
 
     if(datestamp == NULL) datestamp = "error";
 
-    logfile = vstralloc(getconf_str(CNF_LOGDIR), "/log", NULL);
+    conf_logdir = getconf_str(CNF_LOGDIR);
+    if (*conf_logdir == '/') {
+	conf_logdir = stralloc(conf_logdir);
+    } else {
+	conf_logdir = stralloc2(config_dir, conf_logdir);
+    }
+    logfile = vstralloc(conf_logdir, "/log", NULL);
 
     for(seq = 0; 1; seq++) {	/* if you've got MAXINT files in your dir... */
 	snprintf(seq_str, sizeof(seq_str), "%d", seq);
@@ -173,7 +180,8 @@ char *datestamp;
     }
 
     if(rename(logfile, fname) == -1)
-	error("could not rename log file to `%s': %s", fname, strerror(errno));
+	error("could not rename \"%s\" to \"%s\": %s",
+	      logfile, fname, strerror(errno));
 
     amfree(fname);
     amfree(logfile);
@@ -182,7 +190,15 @@ char *datestamp;
 
 static void open_log()
 {
-    logfile = vstralloc(getconf_str(CNF_LOGDIR), "/log", NULL);
+    char *conf_logdir;
+
+    conf_logdir = getconf_str(CNF_LOGDIR);
+    if (*conf_logdir == '/') {
+	conf_logdir = stralloc(conf_logdir);
+    } else {
+	conf_logdir = stralloc2(config_dir, conf_logdir);
+    }
+    logfile = vstralloc(conf_logdir, "/log", NULL);
 
     logfd = open(logfile, O_WRONLY|O_CREAT|O_APPEND, 0600);
 

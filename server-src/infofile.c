@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.48 1999/05/14 21:52:49 kashmir Exp $
+ * $Id: infofile.c,v 1.49 1999/09/15 00:33:11 jrj Exp $
  *
  * manage current info file
  */
@@ -82,7 +82,7 @@ char *mode;
 
     /* create the directory structure if in write mode */
     if (writing) {
-        if (mkpdir(infofile, 0755, (uid_t)-1, (gid_t)-1) == -1) {
+        if (mkpdir(infofile, 02755, (uid_t)-1, (gid_t)-1) == -1) {
 	    amfree(infofile);
 	    return NULL;
 	}

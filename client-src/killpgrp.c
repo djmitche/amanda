@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: killpgrp.c,v 1.8 1998/07/04 00:18:16 oliva Exp $
+ * $Id: killpgrp.c,v 1.9 1999/09/15 00:31:27 jrj Exp $
  *
  * if it is the process group leader, it kills all processes in its
  * process group when it is killed itself.
@@ -64,28 +64,26 @@ char **argv;
 	close(fd);
     }
 
+    safe_cd();
+
     set_pname("killpgrp");
 
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 
-    /* we should be invoked by CLIENT_LOGIN */
-    {
-	struct passwd *pwptr;
-	char *pwname = CLIENT_LOGIN;
-	if((pwptr = getpwnam(pwname)) == NULL)
-	    error("error [cannot find user %s in passwd file]\n", pwname);
+    if(client_uid == (uid_t) -1) {
+	error("error [cannot find user %s in passwd file]\n", CLIENT_LOGIN);
+    }
 
 #ifdef FORCE_USERID
-	if (getuid() != pwptr->pw_uid)
-	    error("error [must be invoked by %s]\n", pwname);
+    if (getuid() != client_uid)
+	error("error [must be invoked by %s]\n", CLIENT_LOGIN);
 
-	if (geteuid() != 0)
-	    error("error [must be setuid root]\n");
+    if (geteuid() != 0)
+	error("error [must be setuid root]\n");
 #endif	/* FORCE_USERID */
 
-	setuid(0);
-    }
+    setuid(0);
 
     if (AM_GETPGRP() != getpid()) {
 	error("error [must be the process group leader]\n");

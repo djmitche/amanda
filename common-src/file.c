@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.17 1999/05/14 21:52:26 kashmir Exp $
+ * $Id: file.c,v 1.18 1999/09/15 00:31:54 jrj Exp $
  *
  * file and directory bashing routines
  */
@@ -31,6 +31,9 @@
 #include "amanda.h"
 
 static int mk1dir P((const char *, int, uid_t, gid_t));
+
+uid_t client_uid = (uid_t) -1;
+gid_t client_gid = (gid_t) -1;
 
 /* Make a directory (internal function).
 ** If the directory already exists then we pretend we created it.
@@ -51,8 +54,7 @@ gid_t gid;	/* gid for new directory */
     if(mkdir(dir, mode) == 0) {
 	chmod(dir, mode);	/* mkdir() is affected by the umask */
 	chown(dir, uid, gid);	/* XXX - no-op on most systems? */
-    }
-    else {	/* maybe someone beat us to it */
+    } else {			/* maybe someone beat us to it */
 	int serrno;
 
 	serrno = errno;
@@ -64,8 +66,12 @@ gid_t gid;	/* gid for new directory */
 }
 
 
-/* Make a directory hierarchy.
-*/
+/*
+ * Make a directory hierarchy given an entry to be created (by the caller)
+ * in the new target.  In other words, create all the directories down to
+ * the last element, but not the last element.  So a (potential) file name
+ * may be passed to mkpdir and all the parents of that file will be created.
+ */
 int mkpdir(file, mode, uid, gid)
 char *file;	/* file to create parent directories for */
 int mode;	/* mode for new directories */
@@ -145,12 +151,162 @@ char *topdir;	/* where to stop removing */
 
 
 /*
+ *=====================================================================
+ * Do Amanda setup for all programs.
+ *
+ * void amanda_setup (int argc, char **argv, int setup_flags)
+ *
+ * entry:	setup_flags (see AMANDA_SETUP_FLAG_xxx)
+ * exit:	none
+ *=====================================================================
+ */
+
+void
+amanda_setup (argc, argv, setup_flags)
+    int			argc;
+    char		**argv;
+    int			setup_flags;
+{
+}
+
+/*
+ *=====================================================================
+ * Change directory to a "safe" location and set some base environment.
+ *
+ * void safe_cd (void)
+ *
+ * entry:	client_uid and client_gid set to CLIENT_LOGIN information
+ * exit:	none
+ *
+ * Set a default umask of 0077.
+ *
+ * Create the Amada debug directory (if defined) and the Amanda temp
+ * directory.
+ *
+ * Try to chdir to the Amanda debug directory first, but it must be owned
+ * by the Amanda user and not allow rwx to group or other.  Otherwise,
+ * try the same thing to the Amanda temp directory.
+ *
+ * If that is all OK, call save_core().
+ *
+ * Otherwise, cd to "/" so if we take a signal we cannot drop core
+ * unless the system administrator has made special arrangements (e.g.
+ * pre-created a core file with the right ownership and permissions).
+ *=====================================================================
+ */
+
+void
+safe_cd()
+{
+    int			cd_ok = 0;
+    struct stat		sbuf;
+    struct passwd	*pwent;
+    char		*d;
+
+    if(client_uid == (uid_t) -1 && (pwent = getpwnam(CLIENT_LOGIN)) != NULL) {
+	client_uid = pwent->pw_uid;
+	client_gid = pwent->pw_gid;
+    }
+
+    (void) umask(0077);
+
+    if (client_uid != (uid_t) -1) {
+#if defined(AMANDA_DBGDIR)
+	d = stralloc2(AMANDA_DBGDIR, "/.");
+	(void) mkpdir(AMANDA_DBGDIR, 02700, client_uid, client_gid);
+	amfree(d);
+#endif
+	d = stralloc2(AMANDA_TMPDIR, "/.");
+	(void) mkpdir(AMANDA_TMPDIR, 02700, client_uid, client_gid);
+	amfree(d);
+    }
+
+#if defined(AMANDA_DBGDIR)
+    if (chdir(AMANDA_DBGDIR) != -1
+	&& stat(".", &sbuf) != -1
+	&& (sbuf.st_mode & 0777) == 0700	/* drwx------ */
+	&& sbuf.st_uid == client_uid) {		/* owned by Amanda user */
+	cd_ok = 1;				/* this is a good place to be */
+    }
+#endif
+    if (! cd_ok
+	&& chdir(AMANDA_TMPDIR) != -1
+	&& stat(".", &sbuf) != -1
+	&& (sbuf.st_mode & 0777) == 0700	/* drwx------ */
+	&& sbuf.st_uid == client_uid) {		/* owned by Amanda user */
+	cd_ok = 1;				/* this is a good place to be */
+    }
+    if(cd_ok) {
+	save_core();				/* save any old core file */
+    } else {
+	(void) chdir("/");			/* assume this works */
+    }
+}
+
+/*
+ *=====================================================================
+ * Save an existing core file.
+ *
+ * void save_core (void)
+ *
+ * entry:	none
+ * exit:	none
+ *
+ * Renames:
+ *
+ *	"core"          to "coreYYYYMMDD",
+ *	"coreYYYYMMDD"  to "coreYYYYMMDDa",
+ *	"coreYYYYMMDDa" to "coreYYYYMMDDb",
+ *	...
+ *
+ * ... where YYYYMMDD is the modification time of the original file.
+ * If it gets that far, an old "coreYYYYMMDDz" is thrown away.
+ *=====================================================================
+ */
+
+void
+save_core()
+{
+    struct stat sbuf;
+
+    if(stat("core", &sbuf) != -1) {
+        struct tm *tm;
+        char ts[8+1];
+        char suffix[2];
+        char *old, *new;
+
+        tm = localtime(&sbuf.st_mtime);
+        snprintf(ts, sizeof(ts),
+                 "%04d%02d%02d",
+                 tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
+        suffix[0] = 'z';
+        suffix[1] = '\0';
+        old = vstralloc("core", ts, suffix, NULL);
+        new = NULL;
+        while(ts[0] != '\0') {
+            amfree(new);
+            new = old;
+            if(suffix[0] == 'a') {
+                suffix[0] = '\0';
+            } else if(suffix[0] == '\0') {
+                ts[0] = '\0';
+            } else {
+                suffix[0]--;
+            }
+            old = vstralloc("core", ts, suffix, NULL);
+            (void)rename(old, new);         /* it either works ... */
+        }
+        amfree(old);
+        amfree(new);
+    }
+}
+
+/*
 ** Sanitise a file name.
 ** 
 ** Convert all funny characters to '_' so that we can use,
 ** for example, disk names as part of file names.
 ** Notes: 
-**  - the internal buffer is static.
 **  - there is a many-to-one mapping between input and output
 ** XXX - We only look for '/' and ' ' at the moment.  May
 ** XXX - be we should also do all unprintables.
@@ -370,8 +526,8 @@ int main(argc, argv)
 		top = "/tmp";
 	}
 
-	printf("Create %s ...", name);
-	rc = mkpdir(name, 0777, (uid_t)-1, (gid_t)-1);
+	printf("Create parent directories of %s ...", name);
+	rc = mkpdir(name, 02777, (uid_t)-1, (gid_t)-1);
 	if (rc == 0)
 		printf("done\n");
 	else {

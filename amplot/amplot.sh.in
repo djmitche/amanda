@@ -43,7 +43,7 @@ libexecdir=@libexecdir@
  
 confdir=@CONFIG_DIR@
  
-PATH=$libexecdir:@sbindir@:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb:$PATH
+PATH=$sbindir:$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb:$PATH
 export PATH
 
 AWK=@AWK@
