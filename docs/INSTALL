@@ -40,10 +40,9 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	Samba allows Unix systems to talk to PC clients.  Amanda can
 	now back up PC clients using the following package
 		ftp://nimbus.anu.edu.au/pub/tridge/samba/samba-1.9.17p4.tar.gz
-	You may want to apply patches/samba-largefs.patch and
-	patches/samba-longnames.patch.  If you want to use a
-	pre-1.9.17 version of samba, you may need to apply
-	patches/samba-1.9.16p2.patch.
+	You may want to apply patches/samba-largefs.patch.  If you
+	want to use a pre-1.9.17 version of samba, you may need to
+	apply patches/samba-1.9.16p2.patch.
 
     B.  If you wish to make use of some of the scripts that come with
 	Amanda, you will need to install Perl.  You can get Perl from
