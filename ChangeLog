@@ -1,3 +1,9 @@
+2001-01-22  Marc W. Mengel <mengel@fnal.gov>
+
+	* recover-src/extract_list.c: Added -U to tar recover options
+	to reduce errors recovering shared libs and/or binaries on
+	active filesystems.
+
 2001-01-20  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* docs/INSTALL: Notes about tar-1.13.19
