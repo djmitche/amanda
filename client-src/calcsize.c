@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: calcsize.c,v 1.16 1998/01/02 18:47:43 jrj Exp $
+ * $Id: calcsize.c,v 1.17 1998/01/09 01:01:04 jrj Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -138,6 +138,17 @@ char **argv;
     int i;
     char *dirname, *amname;
     char *result = NULL;
+    int fd;
+
+    for(fd = 3; fd < FD_SETSIZE; fd++) {
+	/*
+	 * Make sure nobody spoofs us with a lot of extra open files
+	 * that would cause an open we do to get a very high file
+	 * descriptor, which in turn might be used as an index into
+	 * an array (e.g. an fd_set).
+	 */
+	close(fd);
+    }
 
 #if 0
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
