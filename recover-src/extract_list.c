@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43.2.15 2001/03/13 21:28:13 jrjackson Exp $
+ * $Id: extract_list.c,v 1.43.2.16 2001/03/21 20:55:21 jrjackson Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1347,12 +1347,10 @@ static void extract_files_child(in_fd, elist)
     if (strcmp(file.program, XFSDUMP) == 0) {
 	restore_args[j++] = stralloc("-");
 	restore_args[j++] = stralloc(".");
-    } else
-#endif
-    {
-    restore_args[j] = NULL;
     }
-  
+#endif
+    restore_args[j] = NULL;
+
     switch (dumptype) {
     case IS_SAMBA:
 #ifdef SAMBA_CLIENT
