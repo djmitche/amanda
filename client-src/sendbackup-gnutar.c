@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.38 1998/01/12 22:32:27 blair Exp $
+ * $Id: sendbackup-gnutar.c,v 1.39 1998/01/14 23:09:14 amcore Exp $
  *
  * send backup data using GNU tar
  */
@@ -273,9 +273,12 @@ notincremental:
 	    }
 	    error("[can't make share name of %s]", disk);
 	}
-	if (level==0)
-	    taropt = "-Tca";
-	else
+	if (level==0) {
+	    if (no_record)
+		taropt = "-Tc";
+	    else
+		taropt = "-Tca";
+	} else
 	    taropt = "-Tcg";
 	dbprintf(("backup from %s, user %s, pass %s\n", 
 		  sharename, SAMBA_USER, "XXXXX"));
