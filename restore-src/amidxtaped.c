@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.38 2002/11/11 21:53:03 martinea Exp $
+/* $Id: amidxtaped.c,v 1.39 2003/01/25 21:36:25 jrjackson Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -520,7 +520,7 @@ char **argv;
 	tapename = stralloc(amrestore_args[i]);
     }
     if (tape_stat(tapename, &stat_tape) != 0)
-      error("could not stat %s", tapename);
+      error("could not stat %s: %s", tapename, strerror(errno));
     isafile = S_ISREG((stat_tape.st_mode));
     if (!isafile) {
 	char *errstr = NULL;
