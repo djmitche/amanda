@@ -1,5 +1,12 @@
 #!/bin/sh
 
+# This script is Free Software.
+
+# Please refer to http://www.gnu.ai.mit.edu/copyleft/gpl.html for full
+# license information.
+
+# by Alexandre Oliva <oliva@dcc.unicamp.br>
+
 # This script updates automatically generated files if needed
 
 # Arguments to this program are passed on to `make'
