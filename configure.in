@@ -988,6 +988,7 @@ AM_CONDITIONAL(WANT_LIBTOOL, test x"$USE_LIBTOOL" = x"yes")
 )
 
 AC_PROG_CC
+AC_OBJEXT
 AC_EXEEXT
 
 dnl Set the order of dump programs to look for.  Finding the proper file
@@ -2158,7 +2159,7 @@ ICE_CHECK_DECL(snprintf,stdio.h)
 ICE_CHECK_DECL(vsnprintf,stdio.h)
 if test x"$ice_have_snprintf" != x"yes" ||
    test x"$ice_have_vsnprintf" != x"yes"; then
-    LIBOBJS="$LIBOBJS snprintf.o"
+    LIBOBJS="$LIBOBJS snprintf.${ac_objext}"
     if false; then :
 	dnl so that automake includes snprintf.c in the distribution
 	AC_REPLACE_FUNCS(snprintf) 
@@ -2404,9 +2405,10 @@ case "${FORCE_USE_RUNDUMP-${USE_RUNDUMP}}" in
 y |  ye | yes) AC_DEFINE(USE_RUNDUMP);;
 esac
 
-dnl for libtool support on autoconf 2.12 and earlier
-LIBOBJS=`echo "$LIBOBJS" | sed 's/\.o/\.$(OBJ_EXTENSION)/g'`
-ALLOCA=`echo "$ALLOCA" | sed 's/\.o/\.$(OBJ_EXTENSION)/g'`
+AC_SUBST(LTLIBOBJS)
+AC_SUBST(LTALLOCA)
+LTLIBOBJS=`echo "$LIBOBJS" | sed 's/\.'"${ac_objext}"'/\.lo/g'`
+LTALLOCA=`echo "$ALLOCA" | sed 's/\.'"${ac_objext}"'/\.lo/g'`
 
 AC_OUTPUT( \
 	amplot/amcat.awk		amplot/amplot.sh		\

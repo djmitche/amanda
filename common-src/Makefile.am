@@ -20,11 +20,11 @@ libamanda_la_SOURCES = \
 	regfree.c	security.c	statfs.c	stream.c	\
 	token.c		util.c		version.c	versuff.c
 
-libamanda_la_LIBADD =	@LIBOBJS@ @ALLOCA@
+libamanda_la_LIBADD =	@LTLIBOBJS@ @LTALLOCA@
 libamanda_la_LDFLAGS =  -release $(VERSION)
 
 libamanda_a_SOURCES =	$(libamanda_la_SOURCES)
-libamanda_a_LIBADD =	$(libamanda_la_LIBADD)
+libamanda_a_LIBADD =	@LIBOBJS@ @ALLOCA@
 
 noinst_HEADERS =	amanda.h	arglist.h	\
 			dgram.h		protocol.h	\
