@@ -56,6 +56,12 @@
 #define CHAR_BIT 8
 #endif
 
+#if STDC_HEADERS
+#  define P(parms)	parms
+#else
+#  define P(parms)	()
+#endif
+
 #ifndef HAVE_BCOPY_DECL
 extern void bcopy P((const void *from, void *to, size_t n));
 #endif
