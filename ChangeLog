@@ -1,5 +1,11 @@
 1999-06-02  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c (read_mesgfd, read_datafd): upon EOF,
+	close the stream.  If the other stream is also closed, shut
+	down.
+
+1999-06-02  Mike Grupenhoff <kashmir@munge.com>
+
 	* client-src/amandad.c (REP_TIMEOUT): bump up to six hours, for slow
 	machines.
 	(exit_check): remove waitpid(), let the service reap its own

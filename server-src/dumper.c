@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.128 1999/05/14 21:59:28 kashmir Exp $
+/* $Id: dumper.c,v 1.129 1999/06/02 19:36:27 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -680,7 +680,8 @@ static int status;
 #define	HEADER_DONE		(1 << 3)
 
 
-static void process_dumpeof()
+static void
+process_dumpeof()
 {
     /* process any partial line in msgbuf? !!! */
     add_msg_data(NULL, 0);
@@ -1198,10 +1199,16 @@ read_mesgfd(cookie, buf, size)
 	return;
     case 0:
 	/*
-	 * EOF.  Just stop reading the mesg stream.  EOF on the data
-	 * stream will cause everything to shut down.
+	 * EOF.  Just shut down the mesg stream.
 	 */
 	process_dumpeof();
+	security_stream_close(streams[MESGFD].fd);
+	streams[MESGFD].fd = NULL;
+	/*
+	 * If the data fd has also shut down, then we're done.
+	 */
+	if (streams[DATAFD].fd == NULL)
+	    stop_dump();
 	return;
     default:
 	assert(buf != NULL);
@@ -1280,7 +1287,13 @@ read_datafd(cookie, buf, size)
      */
     if (size == 0) {
 	databuf_flush(db);
-	stop_dump();
+	security_stream_close(streams[DATAFD].fd);
+	streams[DATAFD].fd = NULL;
+	/*
+	 * If the mesg fd has also shut down, then we're done.
+	 */
+	if (streams[MESGFD].fd == NULL)
+	    stop_dump();
 	return;
     }
 
