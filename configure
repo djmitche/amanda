@@ -14753,7 +14753,7 @@ if test $? = 0; then
     if test "$STATUS" = 0; then
 	amanda_cv_posix_filelocking=yes
     else
-	amanda_cv_posix_filelocking="no $(STATUS)"
+	amanda_cv_posix_filelocking="no ${STATUS}"
     fi
 else
     amanda_cv_posix_filelocking="no (compiler error)"
