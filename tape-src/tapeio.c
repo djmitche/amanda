@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.27 2000/07/10 19:50:24 mengel Exp $
+ * $Id: tapeio.c,v 1.28 2000/07/25 16:23:16 mengel Exp $
  *
  * implements tape I/O functions
  */
@@ -41,7 +41,7 @@
 static char *namefix( name )
    char *name;
 {
-    if (strncmp(name, "plain:", 6)) {
+    if (strncmp(name, "plain:", 6) == 0) {
  	return name+6;
     }
     return name;
