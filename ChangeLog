@@ -1,5 +1,9 @@
 2005-03-29  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* NEWS: new amoverview -skipmissed option.
+
+2005-03-29  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/conffile.h: Rename getcont_unit_divisor to
 	  getconf_unit_divisor.
 	* server-src/amadmin.c: Use getconf_unit_divisor.
