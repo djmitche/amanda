@@ -1,4 +1,9 @@
 2003-02-12  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Paul Bijnens <paul.bijnens@xplanation.com>
+
+	* tape-src/tapetype.c: Document -c option.
+
+2003-02-12  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* changer-src/chg-zd-mtx.sh.in:Print "are you sure your drive slot is n"
 
