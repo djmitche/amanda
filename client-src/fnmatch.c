@@ -43,7 +43,7 @@ static char sccsid[] = "@(#)fnmatch.c	8.1 (Berkeley) 6/4/93";
  * Compares a filename or pathname to a pattern.
  */
 
-#include <fnmatch.h>
+#include "fnmatch.h"
 #include <string.h>
 
 #define	EOS	'\0'
@@ -60,6 +60,8 @@ fnmatch(pattern, string, flags)
 	for (;;)
 		switch (c = *pattern++) {
 		case EOS:
+			if(flags & FNM_LEADING_DIR && *string == '/')
+				return ( 0 );
 			return (*string == EOS ? 0 : FNM_NOMATCH);
 		case '?':
 			if ((test = *string++) == EOS ||
