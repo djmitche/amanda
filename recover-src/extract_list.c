@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.42 1998/09/26 07:09:26 oliva Exp $
+ * $Id: extract_list.c,v 1.43 1998/09/29 03:42:12 oliva Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1214,28 +1214,32 @@ static void extract_files_child(in_fd, elist)
     }
 
     /* read the file header */
+    fh_init(&file);
     buflen=read_file_header(buffer, &file, sizeof(buffer), STDIN_FILENO);
 
-    if(file.type != F_DUMPFILE) {
+    if(buflen == 0 || file.type != F_DUMPFILE) {
 	print_header(stdout, &file);
 	error("bad header");
     }
 
+    if (file.program != NULL) {
 #ifdef GNUTAR
-    if (strcmp(file.program, GNUTAR) == 0)
-	dumptype = IS_GNUTAR;
+	if (strcmp(file.program, GNUTAR) == 0)
+	    dumptype = IS_GNUTAR;
 #endif
-    if (dumptype == IS_UNKNOWN) {
-	len_program = strlen(file.program);
-	if(len_program >= 3 &&
-	   strcmp(&file.program[len_program-3],"tar") == 0)
-	    dumptype = IS_TAR;
-    }
+
+	if (dumptype == IS_UNKNOWN) {
+	    len_program = strlen(file.program);
+	    if(len_program >= 3 &&
+	       strcmp(&file.program[len_program-3],"tar") == 0)
+		dumptype = IS_TAR;
+	}
 
 #ifdef SAMBA_CLIENT
-    if ((dumptype == IS_UNKNOWN) && (strcmp(file.program, SAMBA_CLIENT) == 0))
-    	dumptype = IS_SAMBA;
+	if (dumptype == IS_UNKNOWN && strcmp(file.program, SAMBA_CLIENT) == 0)
+	    dumptype = IS_SAMBA;
 #endif
+    }
 
     /* form the arguments to restore */
     switch (dumptype) {
