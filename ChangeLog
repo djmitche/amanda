@@ -1,3 +1,9 @@
+1998-09-29  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* recover-src/extract_list.c (extract_files_child): do not crash
+	after failing to read the dump file header
+	Reported by Jose Cheng <jcheng@math.ist.utl.pt>
+
 1998-09-28  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/taper.c (taperscan_slot): initialize scan_datestamp, to
