@@ -226,14 +226,14 @@ sub getTapeParams {
 
 	while( defined ($line = <FH>) ) {
 		chomp $line;
-		print LOG, &do_time(), ": $line\n";
+		print LOG &do_time(), ": $line\n";
 		$max_slot 	= $1 if $line =~ m/(\d+) slot/i;
 		$max_drive	= $1 if $line =~ m/(\d+) drive/i;
 		$max_picker 	= $1 if $line =~ m/(\d+) picker/i;
 
 	}
 	close(FH);
-	if ( $max_drive == r or $max_picker == 0 ) {
+	if ( $max_drive == 0 or $max_picker == 0 ) {
 		print "$progname: No drive or picker ? ($max_drive/$max_picker)\n";
 		exit(2);
 	}

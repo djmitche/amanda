@@ -1,3 +1,9 @@
+2000-10-28  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	reported by The Hermit Hacker <scrappy@hub.org>
+
+	* changer-src/chg-chio.pl.in: remove comma after LOG,
+	typo: r should be 0.
+
 2000-10-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* docs/INDEXING: doc updated.
@@ -1091,7 +1097,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.395 2000/10/26 02:51:19 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.396 2000/10/28 13:53:21 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
