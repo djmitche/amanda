@@ -1,3 +1,8 @@
+2004-10-14  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Eric Siegerman <erics@telepres.com>
+
+	* example/3hole.ps: Fix for multiple tape.
+
 2004-10-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/amverify.sh.in: Terminate if no tape online.
