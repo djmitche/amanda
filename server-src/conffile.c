@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.98 2003/01/04 03:35:04 martinea Exp $
+ * $Id: conffile.c,v 1.99 2003/01/04 17:45:52 martinea Exp $
  *
  * read configuration file
  */
@@ -326,17 +326,19 @@ char *filename;
     /* We assume that confname & conf are initialized to NULL above */
     read_conffile_recursively(filename);
 
-    if(lookup_tapetype(conf_tapetype.s) == NULL) {
-	char *save_confname = confname;
+    if(got_parserror != -1 ) {
+	if(lookup_tapetype(conf_tapetype.s) == NULL) {
+	    char *save_confname = confname;
 
-	confname = filename;
-	if(!seen_tapetype)
-	    parserror("default tapetype %s not defined", conf_tapetype.s);
-	else {
-	    line_num = seen_tapetype;
-	    parserror("tapetype %s not defined", conf_tapetype.s);
+	    confname = filename;
+	    if(!seen_tapetype)
+		parserror("default tapetype %s not defined", conf_tapetype.s);
+	    else {
+		line_num = seen_tapetype;
+		parserror("tapetype %s not defined", conf_tapetype.s);
+	    }
+	    confname = save_confname;
 	}
-	confname = save_confname;
     }
 
     ip = alloc(sizeof(interface_t));
@@ -856,8 +858,13 @@ char *filename;
 	confname = stralloc2(config_dir, filename);
     }
 
-    if((conf = fopen(confname, "r")) == NULL)
-	error("could not open conf file \"%s\": %s", confname, strerror(errno));
+    if((conf = fopen(confname, "r")) == NULL) {
+	fprintf(stderr, "could not open conf file \"%s\": %s\n", confname,
+		strerror(errno));
+	amfree(confname);
+	got_parserror = -1;
+	return;
+    }
 
     line_num = 0;
 

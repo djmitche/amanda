@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.52 2002/11/26 23:54:40 martinea Exp $
+ * $Id: amandad.c,v 1.53 2003/01/04 17:45:43 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -317,8 +317,10 @@ main(argc, argv)
     dbopen();
     {
 	/* this lameness is for error() */
-	extern int db_fd;
-	dup2(db_fd, 2);
+	int db_fd = dbfd();
+	if(db_fd != -1) {
+	    dup2(db_fd, 2);
+	}
     }
 
     startclock();
@@ -384,9 +386,7 @@ exit_check(cookie)
     dbmalloc_info.end.size = malloc_inuse(&dbmalloc_info.end.hist);
 
     if (dbmalloc_info.start.size != dbmalloc_info.end.size) {
-	extern int db_fd;
-
-	malloc_list(db_fd, dbmalloc_info.start.hist,
+	malloc_list(dbfd(), dbmalloc_info.start.hist,
 	    dbmalloc_info.end.hist);
     }
 #endif

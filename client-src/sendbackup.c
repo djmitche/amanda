@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.70 2003/01/01 23:28:15 martinea Exp $
+ * $Id: sendbackup.c,v 1.71 2003/01/04 17:45:45 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -782,9 +782,7 @@ char *cmd;
   dup2(mesg, 2);
   dup2(input, 3);
   for(index = 4; index < FD_SETSIZE; index++) {
-    extern int db_fd;
-
-    if (index != db_fd) {
+    if (index != dbfd()) {
       close(index);
     }
   }

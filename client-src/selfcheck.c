@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.68 2003/01/01 23:28:15 martinea Exp $
+ * $Id: selfcheck.c,v 1.69 2003/01/04 17:45:44 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -258,9 +258,9 @@ char **argv;
 
     if(malloc_size_1 != malloc_size_2) {
 #if defined(USE_DBMALLOC)
-	extern int db_fd;
+	extern int dbfd;
 
-	malloc_list(db_fd, malloc_hist_1, malloc_hist_2);
+	malloc_list(dbfd(), malloc_hist_1, malloc_hist_2);
 #endif
     }
 
