@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: security.c,v 1.7.2.1 1998/02/26 12:20:16 amcore Exp $
+ * $Id: security.c,v 1.7.2.2 1998/03/02 15:34:57 amcore Exp $
  *
  * wrapper file for kerberos security
  */
@@ -74,7 +74,7 @@ char **errstr;
     char *bad_bsd = NULL;
     struct hostent *hp;
     struct passwd *pwptr;
-    int myuid, i;
+    int myuid, i, j;
     char *s, *fp;
     int ch;
 #ifdef USE_AMANDAHOSTS
@@ -142,12 +142,12 @@ char **errstr;
    /*   Check even the aliases list. Work around for Solaris if dns goes over NIS */
 
     if( !hp->h_addr_list[i] ) {
-        for (i = 0; hp->h_aliases[i] !=0 ; i++) {
-	     if ( strcmp(hp->h_aliases[i],inet_ntoa(addr->sin_addr)) == 0)
+        for (j = 0; hp->h_aliases[j] !=0 ; j++) {
+	     if ( strcmp(hp->h_aliases[j],inet_ntoa(addr->sin_addr)) == 0)
 	         break;                          /* name is good, keep it */
         }
     }
-    if( !hp->h_aliases[i] ) {
+    if( !hp->h_addr_list[i] && !hp->h_aliases[j] ) {
 	*errstr = vstralloc("[",
 			    "ip address ", inet_ntoa(addr->sin_addr),
 			    " is not in the ip list for ", remotehost,
