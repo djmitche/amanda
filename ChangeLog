@@ -1,5 +1,10 @@
 2002-02-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* common-src/amanda.h (amfree): Change e local variable to e__errno.
+	* common-src/amanda.h (strappend): Change t local variable to t_t_t.
+
+2002-02-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* client-src/sendsize.c: Set include_file and include_list to NULL
 	  when using old protocol.
 	* client-src/sendbackup-gnutar.c: Include "." when using old protocol.
