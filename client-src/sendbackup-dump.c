@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.76 2001/05/07 20:30:46 jrjackson Exp $
+ * $Id: sendbackup-dump.c,v 1.77 2001/06/07 12:33:28 ant Exp $
  *
  * send backup data using BSD dump
  */
@@ -216,7 +216,6 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
 			    "-",
 			    device,
 			    NULL);
-	}
     }
     else
 #endif							/* } */

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.31 2001/06/04 15:20:46 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.32 2001/06/07 12:33:28 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -74,7 +74,7 @@ int CheckMove(ElementInfo_T *from, ElementInfo_T *to);
 int GenericRewind(int);
 /* int GenericStatus(); */
 int GenericFree();
-void TapeStatus();                   /* Is the tape loaded ? */
+int TapeStatus();                   /* Is the tape loaded ? */
 int DLT4000Eject(char *Device, int type);
 int GenericEject(char *Device, int type);
 int GenericClean(char *Device);                 /* Does the tape need a clean */
@@ -458,7 +458,7 @@ void PrintConf()
   printf("                     # the tape\n");
   printf("                     #\n");
   
-  for (count = 0; count < 3; count++)
+  for (count = 0; count < CHG_MAXDEV ; count++)
     {
       if (pDev[count].dev)
 	{
@@ -470,7 +470,7 @@ void PrintConf()
 	}
     }
   
-  if (pDev[count].inquiry->type !=  TYPE_CHANGER)
+  if (pDev[count].inquiry != NULL && pDev[count].inquiry->type !=  TYPE_CHANGER)
     {
       printf("changerdev   ??? # Ups nothing found. Please check the docs\n");
     } else {
@@ -493,11 +493,11 @@ void PrintConf()
   printf("                     # /dev/nrst0 on linux, /dev/nrsa0 on BSD ....\n");
   printf("                     #\n");
 
-  for (count = 0; count < 3; count++)
+  for (count = 0; count < CHG_MAXDEV; count++)
     {
       if (pDev[count].dev)
 	{
-	  if (pDev[count].inquiry->type == TYPE_TAPE)
+	  if (pDev[count].inquiry != NULL && pDev[count].inquiry->type == TYPE_TAPE)
 	    {
 	      printf("scsitapedev   %s # This is the device to communicate with the tape\n", pDev[count].dev);
 	      printf("                     # to get some device stats, not so importatn, and\n");
@@ -1694,7 +1694,7 @@ int SenseHandler(int DeviceFD, unsigned char flag, unsigned char SenseKey, unsig
  * if there are more than one
  * Implement the SCSI path if available
 */
-void TapeStatus()
+int TapeStatus()
 {
   extern OpenFiles_T *pDev;
   int ret;

@@ -1,3 +1,12 @@
+2001-06-07 Thomas Hepper <th@ant.han.de>
+	* changer-src/scsi-changer-driver.c: Change the type of TapeStatus from void to int.
+	In PrintConf changed the loop variable for scan of pDev from 3 to CHG_MAXDEV.
+	In PrintConf check if pDev[count].inquiry is a NULL pointer, and if yes skip.
+	* changer-src/scsi-irix.c: Changed a lot, now it should work.
+	* client-src/sendbackup-dump.c: Removed a { in the vxfsdump part. 
+	* tape-src/output-tape.c: Fixed the tape status checks, the structure elelemt
+	is called buf.mt_dposn not buf.mt.dposn.
+	
 2001-06-04 Thomas Hepper <th@ant.han.de>
 	* changer-src/scsi-changer-driver.c: Renamed Tape_Eject to Tape_Ioctl
 	incl. change of passwd parameter.

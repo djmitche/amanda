@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-irix.c,v 1.16 2001/06/04 12:07:41 ant Exp $
+ * $Id: scsi-irix.c,v 1.17 2001/06/07 12:33:28 ant Exp $
  *
  * Interface to execute SCSI commands on an SGI Workstation
  *
@@ -67,12 +67,13 @@ int SCSI_OpenDevice(int ip)
   
   if (pDev[ip].inqdone == 0)
     {
-      if ((DeviceFD = open(DeviceName, O_RDONLY)) > 0)
+      if ((DeviceFD = open(pDev[ip].dev, O_RDWR | O_EXCL)) > 0)
         {
-          pDev[ip].SCSI = 0;
+          pDev[ip].inqdone = 1;          pDev[ip].SCSI = 0;
           pDev[ip].avail = 1;
+          pDev[ip].fd = DeviceFD;
           pDev[ip].inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
-          if (SCSI_Inquiry(DeviceFD, pDev[ip].inquiry, INQUIRY_SIZE) == 0)
+          if (SCSI_Inquiry(ip, pDev[ip].inquiry, INQUIRY_SIZE) == 0)
             {
               if (pDev[ip].inquiry->type == TYPE_TAPE || pDev[ip].inquiry->type == TYPE_CHANGER)
                 {
@@ -86,22 +87,33 @@ int SCSI_OpenDevice(int ip)
                   close(DeviceFD);
                   PrintInquiry(pDev[ip].inquiry);
                   return(1);
-                } else {
+                } else { /* ! TYPE_TAPE ! TYPE_CHANGER */
                   close(DeviceFD);
                   free(pDev[ip].inquiry);
+                  pDev[ip].inquiry = NULL;
+                  pDev[ip].avail = 0;
                   return(0);
                 }
-            } else {
+            } else { /* inquiry failed */
               close(DeviceFD);
-              free(pwork->inquiry);
-              pwork->inquiry = NULL;
-              return(1);
+              free(pDev[ip].inquiry);
+              pDev[ip].inquiry = NULL;
+              pDev[ip].avail = 0;
+              return(0);
             }
+
+          /*
+           * Open ok, but no SCSI communication available 
+           */
+
+          free(pDev[ip].inquiry);
+          pDev[ip].inquiry = NULL;
           close(DeviceFD);
-          return(1); /* Open OK, but no SCSI control */
+          pDev[ip].avail = 0;
+          return(0);
         }
     } else {
-      if ((DeviceFD = open(DeviceName, O_RDONLY)) > 0)
+      if ((DeviceFD = open(pDev[ip].dev, O_RDWR | O_EXCL)) > 0)
         {
           pDev[ip].fd = DeviceFD;
           pDev[ip].devopen = 1;
@@ -199,9 +211,12 @@ int SCSI_ExecuteCommand(int DeviceFD,
         if (retries > 0)
           sleep(2);
         continue;
-      case ST_GOOD:                /*  GOOD */
+      case ST_GOOD:                /*  GOOD 0x00 */
         switch (RET(&ds))
           {
+          case DSRT_SENSE:
+            return(SCSI_SENSE);
+            break;
           case DSRT_SHORT:
             return(SCSI_OK);
             break;
@@ -209,10 +224,19 @@ int SCSI_ExecuteCommand(int DeviceFD,
           default:
             return(SCSI_OK);
           }
-      case ST_CHECK:               /*  CHECK CONDITION */ 
+      case ST_CHECK:               /*  CHECK CONDITION 0x02 */ 
+        switch (RET(&ds))
+          {
+          case DSRT_SENSE:
+            return(SCSI_SENSE);
+            break;
+          default:
+            return(SCSI_CHECK);
+            break;
+          }
         return(SCSI_CHECK);
         break;
-      case ST_COND_MET:            /*  INTERM/GOOD */
+      case ST_COND_MET:            /*  INTERM/GOOD 0x10 */
       default:
         continue;
       }
@@ -220,18 +244,26 @@ int SCSI_ExecuteCommand(int DeviceFD,
   return(SCSI_ERROR);
 }
 
-int Tape_Eject ( int DeviceFD)
+int Tape_Ioctl ( int DeviceFD, int command)
 {
   extern OpenFiles_T *pDev;
   struct mtop mtop;
-
+  
   if (pDev[DeviceFD].devopen == 0)
     {
       SCSI_OpenDevice(DeviceFD);
     }
-
-  mtop.mt_op = MTUNLOAD;
-  mtop.mt_count = 1;
+  
+  switch (command)
+    {
+    case IOCTL_EJECT:
+      mtop.mt_op = MTUNLOAD;
+      mtop.mt_count = 1;
+      break;
+    default:
+      break;
+    }
+  
   ioctl(pDev[DeviceFD].fd, MTIOCTOP, &mtop);
   SCSI_CloseDevice(DeviceFD);
   return(0);
@@ -239,18 +271,121 @@ int Tape_Eject ( int DeviceFD)
 
 int Tape_Status( int DeviceFD)
 {
-/*
-  Not yet
-*/
-  return(-1);
+  extern OpenFiles_T *pDev;
+  struct mtget mtget;
+  int ret = 0;
+
+  if (pDev[DeviceFD].devopen == 0)
+    {
+      SCSI_OpenDevice(DeviceFD);
+    }
+
+  if (ioctl(pDev[DeviceFD].fd , MTIOCGET, &mtget) != 0)
+    {
+      dbprintf(("Tape_Status error ioctl %d\n",errno));
+      SCSI_CloseDevice(DeviceFD);
+      return(-1);
+    }
+  
+  switch(mtget.mt_dposn)
+    {
+    case MT_EOT:
+      ret = ret | TAPE_EOT;
+      break;
+    case MT_BOT:
+      ret = ret | TAPE_BOT;
+      break;
+    case MT_WPROT:
+      ret = ret | TAPE_WR_PROT;
+      break;
+    case MT_ONL:
+      ret = TAPE_ONLINE;
+      break;
+    case MT_EOD:
+      break;
+    case MT_FMK:
+      break;
+    default:
+      break;
+    }
+
+  SCSI_CloseDevice(DeviceFD);
+  return(ret); 
 }
 
 int ScanBus(int print)
 {
-/*
-  Not yet
-*/
-  return(-1);
+  DIR *dir;
+  struct dirent *dirent;
+  extern OpenFiles_T *pDev;
+  extern int errno;
+  int count = 0;
+
+  dir = opendir("/dev/scsi");
+
+  while ((dirent = readdir(dir)) != NULL)
+    {
+      if (strstr(dirent->d_name, "sc") != NULL)
+      {
+        pDev[count].dev = malloc(10);
+        pDev[count].inqdone = 0;
+        sprintf(pDev[count].dev,"/dev/scsi/%s", dirent->d_name);
+        if (OpenDevice(count,pDev[count].dev, "Scan", NULL ))
+          {
+            SCSI_CloseDevice(count);
+            pDev[count].inqdone = 0;
+            
+            if (print)
+              {
+                printf("name /dev/scsi/%s ", dirent->d_name);
+                
+                switch (pDev[count].inquiry->type)
+                  {
+                  case TYPE_DISK:
+                    printf("Disk");
+                    break;
+                  case TYPE_TAPE:
+                    printf("Tape");
+                    break;
+                  case TYPE_PRINTER:
+                    printf("Printer");
+                    break;
+                  case TYPE_PROCESSOR:
+                    printf("Processor");
+                    break;
+                  case TYPE_WORM:
+                    printf("Worm");
+                    break;
+                  case TYPE_CDROM:
+                    printf("Cdrom");
+                    break;
+                  case TYPE_SCANNER:
+                    printf("Scanner");
+                    break;
+                  case TYPE_OPTICAL:
+                    printf("Optical");
+                    break;
+                  case TYPE_CHANGER:
+                    printf("Changer");
+                    break;
+                  case TYPE_COMM:
+                    printf("Comm");
+                    break;
+                  default:
+                    printf("unknown %d",pDev[count].inquiry->type);
+                    break;
+                  }
+                printf("\n");
+              }
+            count++;
+	    printf("Count %d\n",count);
+          } else {
+            free(pDev[count].dev);
+            pDev[count].dev=NULL;
+          }
+      }
+    }
+  return 0;
 }
 
 #endif
