@@ -174,8 +174,8 @@ mt -f /dev/rmt/0cn fsf 1
 and try the dd/restore command shown above.  Do this until you find /opt 
 on the disk.
 
-Another possibility: quick and dirty tape index in case you know which
-partition /usr/local was on: (from ralf@atg.venture.de)
+Another possibility: quick and dirty tape index in case you don't know
+which partition /usr/local was on: (from ralf@atg.venture.de)
 
 #!/bin/sh
 TAPEDEV=</dev/nrtape>
