@@ -16,13 +16,13 @@ if WANT_SERVER
 SERVER_SUBDIRS = server-src changer-src
 endif
 if WANT_RESTORE
-RESTORE_SUBDIRS += restore-src
+RESTORE_SUBDIRS = restore-src
 endif
 if WANT_RECOVER
-RECOVER_SUBDIRS += recover-src
+RECOVER_SUBDIRS = recover-src
 endif
 if WANT_AMPLOT
-PLOT_SUBDIRS += amplot
+PLOT_SUBDIRS = amplot
 endif
 # order is significant, don't change it arbitrarily
 SUBDIRS = \
