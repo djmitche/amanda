@@ -1,3 +1,8 @@
+2001-05-18 John R. Jackson <jrj@purdue.edu>
+
+	* client-src/patch-system.sh.in: Missed a reference to kamanda in the
+	  last patch.  Compliments of Tom Schutter <t.schutter@att.net>.
+
 2001-05-16 John R. Jackson <jrj@purdue.edu>
 
 	* client-src/patch-system.sh.in: Go ahead and update /etc/services
