@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.35 1997/09/11 06:28:59 amcore Exp $
+ * $Id: planner.c,v 1.36 1997/09/11 08:44:10 amcore Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -969,7 +969,7 @@ pkt_t *pkt;
 	/* this is an error response packet */
 	if(sscanf(resp, "ERROR %[^\n]", remoterr) != 1)
 	    sprintf(remoterr, "[bogus error packet]");
-	sprintf(errstr, "%s: %s", hostp->hostname, remoterr);
+	sprintf(errbuf, "%s: %s", hostp->hostname, remoterr);
 	goto error_return;
     }
 
