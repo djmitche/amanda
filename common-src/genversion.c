@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: genversion.c,v 1.18 1998/07/04 00:18:46 oliva Exp $
+ * $Id: genversion.c,v 1.19 1998/12/15 01:12:36 kashmir Exp $
  *
  * dump the current Amanda version info
  */
@@ -278,23 +278,6 @@ int main()
 
 #ifdef USE_RUNDUMP
     prstr(" USE_RUNDUMP");
-#endif
-
-#ifdef KRB4_SECURITY
-#define HOSTNAME_INSTANCE "<hostname>"
-    {
-	char lifetime_str[NUM_STR_SIZE];
-
-	prstr(" KRB4_SECURITY");
-	prvar(" SERVER_HOST_PRINCIPLE", SERVER_HOST_PRINCIPLE);
-	prvar(" SERVER_HOST_INSTANCE", SERVER_HOST_INSTANCE);
-	prvar(" SERVER_HOST_KEY_FILE", SERVER_HOST_KEY_FILE);
-	prvar(" CLIENT_HOST_PRINCIPLE", CLIENT_HOST_PRINCIPLE);
-	prvar(" CLIENT_HOST_INSTANCE", CLIENT_HOST_INSTANCE);
-	prvar(" CLIENT_HOST_KEY_FILE", CLIENT_HOST_KEY_FILE);
-	ap_snprintf(lifetime_str, sizeof(lifetime_str), "%d", TICKET_LIFETIME);
-	prvar(" TICKET_LIFETIME", lifetime_str);
-    }
 #endif
 
 #ifdef CLIENT_LOGIN

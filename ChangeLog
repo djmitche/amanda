@@ -1,5 +1,10 @@
 1998-12-14  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/genversion.c (main): rip out krb4 defines.  If we
+	need this info, each driver will have to do it individually.
+
+1998-12-14  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/conffile.c: remove KRB4_AUTH, BSD_AUTH tokens, auth
 	element from dumptype_t, and get_auth() lookup func.  Add
 	security_driver to dumptype_t and parse value of AUTH keyword
