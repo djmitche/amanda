@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: error.c,v 1.15 2002/02/10 03:34:04 jrjackson Exp $
+ * $Id: error.c,v 1.16 2002/03/31 21:02:00 jrjackson Exp $
  *
  * error handling common to Amanda programs
  */
@@ -82,12 +82,21 @@ char *msg;
     }
 
     if(erroutput_type & ERR_INTERACTIVE) {
-	fprintf(stderr, "%s: %s\n", get_pname(), msg);
+	/*
+	 * If the message starts with "ERROR [" it should be passed back
+	 * to the caller as is.  Otherwise we prepend our program name.
+	 */
+#define sc "ERROR ["
+	if(strncmp(msg, sc, sizeof(sc)-1) != 0) {
+#undef sc
+	    fprintf(stderr, "%s: ", get_pname());
+	}
+	fprintf(stderr, "%s\n", msg);
 	fflush(stderr);
     }
 
     if(dbfp() != NULL) {
-	dbprintf(("%s\n", msg));
+	dbprintf(("%s: %s\n", debug_prefix_time(NULL), msg));
 	dbclose();
     }
 }

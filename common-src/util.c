@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.10 2001/05/11 18:45:23 jrjackson Exp $
+ * $Id: util.c,v 1.11 2002/03/31 21:02:00 jrjackson Exp $
  */
 
 #include "amanda.h"
@@ -126,14 +126,21 @@ bind_portrange(s, addrp, first_port, last_port)
     }
     if (cnt == num_ports) {
 	dbprintf(("%s: bind_portrange: all ports between %d and %d busy\n",
-		  get_pname(),
+		  debug_prefix_time(NULL),
 		  first_port,
 		  last_port));
 	errno = EAGAIN;
+    } else if (last_port < IPPORT_RESERVED
+	       && getuid() != 0
+	       && errno == EACCES) {
+	/*
+	 * Do not bother with an error message in this case because it
+	 * is expected.
+	 */
     } else {
 	save_errno = errno;
 	dbprintf(("%s: bind_portrange: port %d: %s\n",
-		  get_pname(),
+		  debug_prefix_time(NULL),
 		  port,
 		  strerror(errno)));
 	errno = save_errno;

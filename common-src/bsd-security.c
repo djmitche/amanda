@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.38 2002/02/11 01:32:10 jrjackson Exp $
+ * $Id: bsd-security.c,v 1.39 2002/03/31 21:02:00 jrjackson Exp $
  *
  * "BSD" security module
  */
@@ -277,7 +277,8 @@ void show_stat_info(a, b)
     char *group;
 
     if (stat(name, &sbuf) != 0) {
-	dbprintf(("cannot stat %s: %s\n", name, strerror(errno)));
+	dbprintf(("%s: cannot stat %s: %s\n",
+		  debug_prefix_time(NULL), name, strerror(errno)));
 	amfree(name);
 	return;
     }
@@ -293,9 +294,9 @@ void show_stat_info(a, b)
     } else {
 	group = stralloc(grptr->gr_name);
     }
-    dbprintf(("processing file: %s\n", name));
-    dbprintf(("                 owner=%s group=%s mode=%03o\n",
-	      owner, group, (int) (sbuf.st_mode & 0777)));
+    dbprintf(("%s: processing file: %s\n", debug_prefix(NULL), name));
+    dbprintf(("%s:                  owner=%s group=%s mode=%03o\n",
+	      debug_prefix(NULL), owner, group, (int) (sbuf.st_mode & 0777)));
     amfree(name);
     amfree(owner);
     amfree(group);
@@ -924,10 +925,12 @@ check_user_ruserok(host, pwd, remoteuser)
 	{
 	char *dir = stralloc(pwd->pw_dir);
 
-	dbprintf(("calling ruserok(%s, %d, %s, %s)\n",
+	dbprintf(("%s: calling ruserok(%s, %d, %s, %s)\n",
+		  debug_prefix_time(NULL),
 	          host, myuid == 0, remoteuser, pwd->pw_name));
 	if (myuid == 0) {
-	    dbprintf(("because you are running as root, "));
+	    dbprintf(("%s: because you are running as root, "
+		      debug_prefix(NULL)));
 	    dbprintf(("/etc/hosts.equiv will not be used\n"));
 	} else {
 	    show_stat_info("/etc/hosts.equiv", NULL);
@@ -1062,7 +1065,7 @@ check_user_amandahosts(host, pwd, remoteuser)
     found = 0;
     while ((line = agets(fp)) != NULL) {
 #if defined(SHOW_SECURITY_DETAIL)				/* { */
-	dbprintf(("processing line: <%s>\n", line));
+	dbprintf(("%s: processing line: <%s>\n", debug_prefix(NULL), line));
 #endif								/* } */
 	/* get the host out of the file */
 	if ((filehost = strtok(line, " \t")) == NULL) {
@@ -1078,12 +1081,12 @@ check_user_amandahosts(host, pwd, remoteuser)
 	hostmatch = (strcasecmp(filehost, host) == 0);
 	usermatch = (strcasecmp(fileuser, remoteuser) == 0);
 #if defined(SHOW_SECURITY_DETAIL)				/* { */
-	dbprintf(("comparing \"%s\" with\n", filehost));
-	dbprintf(("          \"%s\" (%s)\n", host,
-		  hostmatch ? "match" : "no match"));
-	dbprintf(("      and \"%s\" with\n", fileuser));
-	dbprintf(("          \"%s\" (%s)\n", remoteuser,
-		  usermatch ? "match" : "no match"));
+	dbprintf(("%s: comparing \"%s\" with\n", debug_prefix(NULL), filehost));
+	dbprintf(("%s:           \"%s\" (%s)\n", host,
+		  debug_prefix(NULL), hostmatch ? "match" : "no match"));
+	dbprintf(("%s:       and \"%s\" with\n", fileuser, debug_prefix(NULL)));
+	dbprintf(("%s:           \"%s\" (%s)\n", remoteuser,
+		  debug_prefix(NULL), usermatch ? "match" : "no match"));
 #endif								/* } */
 	/* compare */
 	if (hostmatch && usermatch) {
@@ -1474,6 +1477,30 @@ main (argc, argv)
     struct hostent *hp;
     struct bsd_handle *bh;
     void *save_cur;
+    struct passwd *pwent;
+
+    /*
+     * The following is stolen from amandad to emulate what it would
+     * do on startup.
+     */
+    if(client_uid == (uid_t) -1 && (pwent = getpwnam(CLIENT_LOGIN)) != NULL) {
+	client_uid = pwent->pw_uid;
+	client_gid = pwent->pw_gid;
+	endpwent();
+    }
+
+#ifdef FORCE_USERID
+    /* we'd rather not run as root */
+    if (geteuid() == 0) {
+	if(client_uid == (uid_t) -1) {
+	    error("error [cannot find user %s in passwd file]\n", CLIENT_LOGIN);
+	}
+	initgroups(CLIENT_LOGIN, client_gid);
+	setgid(client_gid);
+	setegid(client_gid);
+	seteuid(client_uid);
+    }
+#endif	/* FORCE_USERID */
 
     if (isatty(0)) {
 	fputs("Remote user: ", stdout);
@@ -1490,6 +1517,10 @@ main (argc, argv)
     if ((remotehost = agets(stdin)) == NULL) {
 	return 0;
     }
+
+    set_pname("security");
+    startclock();
+
     if ((hp = gethostbyname(remotehost)) == NULL) {
 	fprintf(stderr, "cannot look up remote host %s\n", remotehost);
 	return 1;

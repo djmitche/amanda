@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.65 2002/03/24 20:26:18 jrjackson Exp $
+ * $Id: amindexd.c,v 1.66 2002/03/31 21:02:00 jrjackson Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -44,6 +44,7 @@
 #include "conffile.h"
 #include "diskfile.h"
 #include "arglist.h"
+#include "clock.h"
 #include "version.h"
 #include "amindex.h"
 #include "disk_history.h"
@@ -80,8 +81,6 @@ char *target_date = NULL;
 disklist_t disk_list;				/* all disks in cur config */
 find_result_t *output_find = NULL;
 
-static char *pgm = "amindexd";			/* in case argv[0] is not set */
-
 static int amindexd_debug = 0;
 
 static REMOVE_ITEM *uncompress_remove = NULL;
@@ -115,7 +114,8 @@ REMOVE_ITEM *remove;
     REMOVE_ITEM *prev;
 
     while(remove) {
-	dbprintf(("Removing index file: %s\n", remove->filename));
+	dbprintf(("%s: removing index file: %s\n",
+		  debug_prefix_time(NULL), remove->filename));
 	unlink(remove->filename);
 	amfree(remove->filename);
 	prev = remove;
@@ -156,7 +156,8 @@ char **emsg;
 			" | sort",
 			" > ", "\'", filename, "\'",
 			NULL);
-	dbprintf(("Uncompress command: %s\n",cmd));
+	dbprintf(("%s: uncompress command: %s\n",
+		  debug_prefix_time(NULL), cmd));
 	if (system(cmd)!=0) {
 	    amfree(*emsg);
 	    *emsg = vstralloc("\"", cmd, "\" failed", NULL);
@@ -267,17 +268,19 @@ printf_arglist_function1(static void reply, int, n, char *, fmt)
 
     if (printf("%s\r\n", buf) < 0)
     {
-	dbprintf(("! error %d (%s) in printf\n", errno, strerror(errno)));
+	dbprintf(("%s: ! error %d (%s) in printf\n",
+		  debug_prefix_time(NULL), errno, strerror(errno)));
 	uncompress_remove = remove_files(uncompress_remove);
 	exit(1);
     }
     if (fflush(stdout) != 0)
     {
-	dbprintf(("! error %d (%s) in fflush\n", errno, strerror(errno)));
+	dbprintf(("%s: ! error %d (%s) in fflush\n",
+		  debug_prefix_time(NULL), errno, strerror(errno)));
 	uncompress_remove = remove_files(uncompress_remove);
 	exit(1);
     }
-    dbprintf(("< %s\n", buf));
+    dbprintf(("%s: < %s\n", debug_prefix_time(NULL), buf));
 }
 
 /* send one line of a multi-line response */
@@ -293,18 +296,20 @@ printf_arglist_function1(static void lreply, int, n, char *, fmt)
 
     if (printf("%s\r\n", buf) < 0)
     {
-	dbprintf(("! error %d (%s) in printf\n", errno, strerror(errno)));
+	dbprintf(("%s: ! error %d (%s) in printf\n",
+		  debug_prefix_time(NULL), errno, strerror(errno)));
 	uncompress_remove = remove_files(uncompress_remove);
 	exit(1);
     }
     if (fflush(stdout) != 0)
     {
-	dbprintf(("! error %d (%s) in fflush\n", errno, strerror(errno)));
+	dbprintf(("%s: ! error %d (%s) in fflush\n",
+		  debug_prefix_time(NULL), errno, strerror(errno)));
 	uncompress_remove = remove_files(uncompress_remove);
 	exit(1);
     }
 
-    dbprintf(("< %s\n", buf));
+    dbprintf(("%s: < %s\n", debug_prefix_time(NULL), buf));
 }
 
 /* send one line of a multi-line response */
@@ -320,7 +325,8 @@ printf_arglist_function1(static void fast_lreply, int, n, char *, fmt)
 
     if (printf("%s\r\n", buf) < 0)
     {
-	dbprintf(("! error %d (%s) in printf\n", errno, strerror(errno)));
+	dbprintf(("%s: ! error %d (%s) in printf\n",
+		  debug_prefix_time(NULL), errno, strerror(errno)));
 	uncompress_remove = remove_files(uncompress_remove);
 	exit(1);
     }
@@ -503,7 +509,8 @@ static int build_disk_table()
 			find_output->datestamp %100);
 	    add_dump(date, find_output->level, find_output->label, 
 		     find_output->filenum);
-	    dbprintf(("- %s %d %s %d\n", date, find_output->level, 
+	    dbprintf(("%s: - %s %d %s %d\n",
+		     debug_prefix_time(NULL), date, find_output->level, 
 		     find_output->label, find_output->filenum));
 	}
     }
@@ -592,7 +599,7 @@ char *dir;
 	    return -1;
 	}
 	amfree(filename_gz);
-	dbprintf(("f %s\n", filename));
+	dbprintf(("%s: f %s\n", debug_prefix_time(NULL), filename));
 	if ((fp = fopen(filename, "r")) == NULL) {
 	    reply(599, "System error %s", strerror(errno));
 	    amfree(filename);
@@ -776,6 +783,7 @@ char **argv;
     int fd;
     int user_validated = 0;
     char *errstr = NULL;
+    char *pgm = "amindexd";			/* in case argv[0] is not set */
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -825,7 +833,8 @@ char **argv;
     dbprintf(("%s: version %s\n", get_pname(), version()));
 
     if (! (argc >= 1 && argv != NULL && argv[0] != NULL)) {
-	dbprintf(("%s: WARNING: argv[0] not defined: check inetd.conf\n", pgm));
+	dbprintf(("%s: WARNING: argv[0] not defined: check inetd.conf\n",
+		  debug_prefix_time(NULL)));
     }
 
     /* initialize */
@@ -863,9 +872,7 @@ char **argv;
 	 */
 	his_name = gethostbyname(local_hostname);
 	if(his_name == NULL) {
-	    error("%s: gethostbyname(%s) failed\n",
-		  get_pname(),
-		  local_hostname);
+	    error("gethostbyname(%s) failed\n", local_hostname);
 	}
 	assert(his_name->h_addrtype == AF_INET);
 	his_addr.sin_family = his_name->h_addrtype;
@@ -887,8 +894,7 @@ char **argv;
     if ((his_name = gethostbyaddr((char *)&(his_addr.sin_addr),
 				  sizeof(his_addr.sin_addr),
 				  AF_INET)) == NULL) {
-	error("%s: gethostbyaddr(%s): hostname lookup failed",
-	      get_pname(),
+	error("gethostbyaddr(%s): hostname lookup failed",
 	      inet_ntoa(his_addr.sin_addr));
     }
     fp = s = his_name->h_name;
@@ -918,12 +924,15 @@ char **argv;
 	while(1) {
 	    if((part = agets(stdin)) == NULL) {
 		if(errno != 0) {
-		    dbprintf(("? read error: %s\n", strerror(errno)));
+		    dbprintf(("%s: ? read error: %s\n",
+			      debug_prefix_time(NULL), strerror(errno)));
 		} else {
-		    dbprintf(("? unexpected EOF\n"));
+		    dbprintf(("%s: ? unexpected EOF\n",
+			      debug_prefix_time(NULL)));
 		}
 		if(line) {
-		    dbprintf(("? unprocessed input:\n"));
+		    dbprintf(("%s: ? unprocessed input:\n",
+			      debug_prefix_time(NULL)));
 		    dbprintf(("-----\n"));
 		    dbprintf(("? %s\n", line));
 		    dbprintf(("-----\n"));
@@ -956,7 +965,7 @@ char **argv;
 	    strappend(line, "\n");
 	}
 
-	dbprintf(("> %s\n", line));
+	dbprintf(("%s: > %s\n", debug_prefix_time(NULL), line));
 
 	arg = NULL;
 	s = line;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.30 2002/03/24 22:56:54 jrjackson Exp $
+ * $Id: debug.c,v 1.31 2002/03/31 21:02:00 jrjackson Exp $
  *
  * debug log subroutines
  */
@@ -33,6 +33,7 @@
 #include "amanda.h"
 #include "util.h"
 #include "arglist.h"
+#include "clock.h"
 
 int debug = 1;
 
@@ -45,6 +46,8 @@ int db_fd = -1;				/* default is to throw away */
 #endif
 static FILE *db_file = NULL;		/* stderr may not be a constant */
 static char *db_filename = NULL;
+
+static pid_t debug_prefix_pid = 0;
 
 #ifndef AMANDA_DBGDIR
 #  define AMANDA_DBGDIR		AMANDA_TMPDIR
@@ -255,17 +258,26 @@ void debug_open()
 void debug_close()
 {
     time_t curtime;
+    int save_debug;
+    pid_t save_pid;
 
     time(&curtime);
+    save_debug = debug;
     debug = 1;
-    debug_printf("%s: pid %ld finish time %s", get_pname(), (long)getpid(),
+    save_pid = debug_prefix_pid;
+    debug_prefix_pid = 0;
+    debug_printf("%s: pid %ld finish time %s",
+		 debug_prefix_time(NULL),
+		 (long)getpid(),
 		 ctime(&curtime));
+    debug_prefix_pid = save_pid;
+    debug = save_debug;
 
     if(db_file && fclose(db_file) == EOF) {
 	int save_errno = errno;
 
 	db_file = NULL;				/* prevent recursion */
-	error("%s: close debug file: %s", get_pname(), strerror(save_errno));
+	error("close debug file: %s", strerror(save_errno));
     }
     db_fd = -1;
     db_file = NULL;
@@ -287,3 +299,56 @@ char *debug_fn()
     return db_filename;
 }
 
+/*
+ * Routines for returning a common debug file line prefix.  Always starts
+ * with the current program name, possibly with an optional suffix.
+ * May then be followed by a PID.  May then be followed by an elapsed
+ * time indicator.
+ */ 
+
+void set_debug_prefix_pid(p)
+    pid_t p;
+{
+    debug_prefix_pid = p;
+}
+
+char *debug_prefix(suffix)
+    char *suffix;
+{
+    int save_errno;
+    static char *s = NULL;
+    char debug_pid[NUM_STR_SIZE];
+
+    save_errno = errno;
+    s = newvstralloc(s, get_pname(), suffix, NULL);
+    if (debug_prefix_pid != (pid_t) 0) {
+	snprintf(debug_pid, sizeof(debug_pid),
+		 "%ld",
+		 (long) debug_prefix_pid);
+	s = newvstralloc(s, s, "[", debug_pid, "]", NULL);
+    }
+    errno = save_errno;
+    return s;
+}
+
+char *debug_prefix_time(suffix)
+    char *suffix;
+{
+    int save_errno;
+    static char *s = NULL;
+    char *t1;
+    char *t2;
+
+    save_errno = errno;
+    if (clock_is_running()) {
+	t1 = ": time ";
+	t2 = walltime_str(curclock());
+    } else {
+	t1 = t2 = NULL;
+    }
+
+    s = newvstralloc(s, debug_prefix(suffix), t1, t2, NULL);
+
+    errno = save_errno;
+    return s;
+}

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.12 2001/09/17 22:18:27 jrjackson Exp $
+ * $Id: getconf.c,v 1.13 2002/03/31 21:02:00 jrjackson Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -330,8 +330,6 @@ char **argv;
 	close(fd);
     }
 
-    set_pname("amgetconf");
-
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     if((pgm = strrchr(argv[0], '/')) == NULL) {
@@ -339,6 +337,7 @@ char **argv;
     } else {
 	pgm++;
     }
+    set_pname(pgm);
 
     if(argc < 2) {
 	fprintf(stderr, "Usage: %s [config] <parmname>\n", pgm);
@@ -441,7 +440,7 @@ char **argv;
 
 	t = stralloc(parmname + sizeof(p) - 1);
 	if((dbname = strchr(t, ':')) == NULL) {
-	    error("%s: cannot parse %s", pgm, parmname);
+	    error("cannot parse %s", parmname);
 	}
 	*dbname++ = '\0';
 	if((pname = strrchr(t, '/')) == NULL) {
@@ -451,7 +450,7 @@ char **argv;
 	}
 	fflush(stderr);
 	if((old_fd2 = dup(2)) < 0) {
-	    error("%s: cannot dup2 fd2", pgm);
+	    error("cannot dup2 fd2");
 	}
 	close(2);
 	if((new_fd2 = open(dbname, O_RDWR|O_APPEND, 0600)) != 2) {
@@ -462,7 +461,7 @@ char **argv;
 		/* give up */
 		return 3;
 	    }
-	    fprintf(f, "%s: cannot open %s: ", pgm, dbname);
+	    fprintf(f, "%s: cannot open %s: ", get_pname(), dbname);
 	    if(new_fd2 < 0) {
 		fputs(strerror(save_errno), f);
 	    } else {
@@ -486,7 +485,8 @@ char **argv;
     }
     if(result == NULL) {
 	result = stralloc("BUGGY");
-	fprintf(stderr, "%s: no such parameter \"%s\"\n", pgm, parmname);
+	fprintf(stderr, "%s: no such parameter \"%s\"\n",
+		get_pname(), parmname);
 	fflush(stderr);
     }
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.24 2002/02/11 01:32:10 jrjackson Exp $
+ * $Id: stream.c,v 1.25 2002/03/31 21:02:00 jrjackson Exp $
  *
  * functions for managing stream sockets
  */
@@ -54,7 +54,7 @@ int sendsize, recvsize;
     if((server_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 	save_errno = errno;
 	dbprintf(("%s: stream_server: socket() failed: %s\n",
-		  get_pname(),
+		  debug_prefix(NULL),
 		  strerror(save_errno)));
 	errno = save_errno;
 	return -1;
@@ -64,7 +64,7 @@ int sendsize, recvsize;
 	errno = EMFILE;				/* out of range */
 	save_errno = errno;
 	dbprintf(("%s: stream_server: socket out of range: %d\n",
-		  get_pname(),
+		  debug_prefix(NULL),
 		  server_socket));
 	errno = save_errno;
 	return -1;
@@ -99,7 +99,7 @@ int sendsize, recvsize;
     if (bind(server_socket, (struct sockaddr *)&server, (socklen_t) sizeof(server)) == -1) {
 	save_errno = errno;
 	dbprintf(("%s: stream_server: bind(INADDR_ANY) failed: %s\n",
-		  get_pname(),
+		  debug_prefix(NULL),
 		  strerror(save_errno)));
 	aclose(server_socket);
 	errno = save_errno;
@@ -115,7 +115,7 @@ out:
     if(getsockname(server_socket, (struct sockaddr *)&server, &len) == -1) {
 	save_errno = errno;
 	dbprintf(("%s: stream_server: getsockname() failed: %s\n",
-		  get_pname(),
+		  debug_prefix(NULL),
 		  strerror(save_errno)));
 	aclose(server_socket);
 	errno = save_errno;
@@ -128,7 +128,7 @@ out:
     if(r == -1) {
 	save_errno = errno;
 	dbprintf(("%s: stream_server: setsockopt(SO_KEEPALIVE) failed: %s\n",
-		  get_pname(),
+		  debug_prefix(NULL),
 		  strerror(save_errno)));
         aclose(server_socket);
 	errno = save_errno;
@@ -138,7 +138,7 @@ out:
 
     *portp = (int) ntohs(server.sin_port);
     dbprintf(("%s: stream_server: waiting for connection: %s.%d\n",
-	      get_pname(),
+	      debug_prefix_time(NULL),
 	      inet_ntoa(server.sin_addr),
 	      *portp));
     return server_socket;
@@ -170,7 +170,7 @@ stream_client_internal(hostname,
     if((hostp = gethostbyname(hostname)) == NULL) {
 	save_errno = errno;
 	dbprintf(("%s: %s: gethostbyname(%s) failed\n",
-		  get_pname(),
+		  debug_prefix(NULL),
 		  f,
 		  hostname));
 	errno = save_errno;
@@ -185,7 +185,7 @@ stream_client_internal(hostname,
     if((client_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 	save_errno = errno;
 	dbprintf(("%s: %s: socket() failed: %s\n",
-		  get_pname(),
+		  debug_prefix(NULL),
 		  f,
 		  strerror(save_errno)));
 	errno = save_errno;
@@ -203,7 +203,7 @@ stream_client_internal(hostname,
     if(r == -1) {
 	save_errno = errno;
 	dbprintf(("%s: %s: setsockopt() failed: %s\n",
-		  get_pname(),
+		  debug_prefix(NULL),
 		  f,
 		  strerror(save_errno)));
         aclose(client_socket);
@@ -235,7 +235,7 @@ stream_client_internal(hostname,
 	}
 	save_errno = errno;
 	dbprintf(("%s: %s: bind(IPPORT_RESERVED) failed: %s\n",
-		  get_pname(),
+		  debug_prefix(NULL),
 		  f,
 		  strerror(save_errno)));
 	aclose(client_socket);
@@ -252,7 +252,7 @@ stream_client_internal(hostname,
     if (bind(client_socket, (struct sockaddr *)&claddr, sizeof(claddr)) == -1) {
 	save_errno = errno;
 	dbprintf(("%s: %s: bind(INADDR_ANY) failed: %s\n",
-		  get_pname(),
+		  debug_prefix(NULL),
 		  f,
 		  strerror(save_errno)));
 	aclose(client_socket);
@@ -268,7 +268,7 @@ out:
     if(getsockname(client_socket, (struct sockaddr *)&claddr, &len) == -1) {
 	save_errno = errno;
 	dbprintf(("%s: %s: getsockname() failed: %s\n",
-		  get_pname(),
+		  debug_prefix(NULL),
 		  f,
 		  strerror(save_errno)));
 	aclose(client_socket);
@@ -284,7 +284,7 @@ out:
        == -1 && !nonblock) {
 	save_errno = errno;
 	dbprintf(("%s: %s: connect(%d) failed: %s\n",
-		  get_pname(),
+		  debug_prefix_time(NULL),
 		  f,
 		  port,
 		  strerror(save_errno)));
@@ -294,12 +294,12 @@ out:
     }
 
     dbprintf(("%s: %s: connected to %s.%d\n",
-	      get_pname(),
+	      debug_prefix_time(NULL),
 	      f,
 	      inet_ntoa(svaddr.sin_addr),
 	      ntohs(svaddr.sin_port)));
     dbprintf(("%s: %s: our side is %s.%d\n",
-	      get_pname(),
+	      debug_prefix(NULL),
 	      f,
 	      inet_ntoa(claddr.sin_addr),
 	      ntohs(claddr.sin_port)));
@@ -371,11 +371,11 @@ int server_socket, timeout, sendsize, recvsize;
 	save_errno = errno;
 	if(nfound < 0) {
 	    dbprintf(("%s: stream_accept: select() failed: %s\n",
-		      get_pname(),
+		      debug_prefix_time(NULL),
 		      strerror(save_errno)));
 	} else if(nfound == 0) {
 	    dbprintf(("%s: stream_accept: timeout after %d second%s\n",
-		      get_pname(),
+		      debug_prefix_time(NULL),
 		      timeout,
 		      (timeout == 1) ? "" : "s"));
 	    save_errno = ENOENT;			/* ??? */
@@ -385,7 +385,7 @@ int server_socket, timeout, sendsize, recvsize;
 	    for(i = 0; i < server_socket + 1; i++) {
 		if(FD_ISSET(i, &readset)) {
 		    dbprintf(("%s: stream_accept: got fd %d instead of %d\n",
-			      get_pname(),
+			      debug_prefix_time(NULL),
 			      i,
 			      server_socket));
 		}
@@ -404,13 +404,13 @@ int server_socket, timeout, sendsize, recvsize;
 	if(connected_socket < 0) {
 	    save_errno = errno;
 	    dbprintf(("%s: stream_accept: accept() failed: %s\n",
-		      get_pname(),
+		      debug_prefix_time(NULL),
 		      strerror(save_errno)));
 	    errno = save_errno;
 	    return -1;
 	}
 	dbprintf(("%s: stream_accept: connection from %s.%d\n",
-	          get_pname(),
+	          debug_prefix_time(NULL),
 	          inet_ntoa(addr.sin_addr),
 	          ntohs(addr.sin_port)));
 	/*
@@ -422,13 +422,13 @@ int server_socket, timeout, sendsize, recvsize;
 	}
 	if(addr.sin_family != AF_INET) {
 	    dbprintf(("%s: family is %d instead of %d(AF_INET): ignored\n",
-		      get_pname(),
+		      debug_prefix_time(NULL),
 		      addr.sin_family,
 		      AF_INET));
 	}
 	if(ntohs(addr.sin_port) == 20) {
 	    dbprintf(("%s: remote port is %d: ignored\n",
-		      get_pname(),
+		      debug_prefix_time(NULL),
 		      ntohs(addr.sin_port)));
 	}
 	aclose(connected_socket);
@@ -454,12 +454,12 @@ int sock, which, size;
 	size -= 1024;
     if(size > 1024) {
 	dbprintf(("%s: try_socksize: %s buffer size is %d\n",
-		  get_pname(),
+		  debug_prefix(NULL),
 		  (which == SO_SNDBUF) ? "send" : "receive",
 		  size));
     } else {
 	dbprintf(("%s: try_socksize: could not allocate %s buffer of %d\n",
-		  get_pname(),
+		  debug_prefix(NULL),
 		  (which == SO_SNDBUF) ? "send" : "receive",
 		  origsize));
     }

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: calcsize.c,v 1.28 2000/09/24 01:52:16 martinea Exp $
+ * $Id: calcsize.c,v 1.29 2002/03/31 21:02:00 jrjackson Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -183,7 +183,7 @@ char **argv;
 
     if(strcmp(*argv, "DUMP") == 0) {
 #if !defined(DUMP) && !defined(XFSDUMP)
-	error("%s: dump not available on this system", get_pname());
+	error("dump not available on this system");
 	return 1;
 #else
 	add_file = add_file_dump;
@@ -192,7 +192,7 @@ char **argv;
     }
     else if(strcmp(*argv, "GNUTAR") == 0) {
 #ifndef GNUTAR
-	error("%s: gnutar not available on this system", get_pname());
+	error("gnutar not available on this system");
 	return 1;
 #else
 	add_file = add_file_gnutar;
@@ -214,7 +214,7 @@ char **argv;
 	argv++;
 
 	if (!use_gtar_excl) {
-	  error("%s: exclusion specification not supported", get_pname());
+	  error("exclusion specification not supported");
 	  return 1;
 	}
 

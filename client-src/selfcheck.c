@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.58 2002/03/25 18:42:30 martinea Exp $
+ * $Id: selfcheck.c,v 1.59 2002/03/31 21:02:00 jrjackson Exp $
  *
  * do self-check and send back any error messages
  */
@@ -35,6 +35,7 @@
 #include "version.h"
 #include "getfsent.h"
 #include "amandates.h"
+#include "clock.h"
 #include "util.h"
 #include "pipespawn.h"
 #include "client_util.h"
@@ -107,7 +108,8 @@ char **argv;
 
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
     dbopen();
-    dbprintf(("%s: version %s\n", argv[0], version()));
+    startclock();
+    dbprintf(("%s: version %s\n", get_pname(), version()));
 
     /* handle all service requests */
 
@@ -228,7 +230,7 @@ char **argv;
  err:
     amfree(line);
     printf("ERROR [BOGUS REQUEST PACKET]\n");
-    dbprintf(("REQ packet is bogus\n"));
+    dbprintf(("%s: REQ packet is bogus\n", debug_prefix_time(NULL)));
     dbclose();
     return 1;
 }
@@ -369,7 +371,7 @@ char *optstr;
     char *access_type;
     char *extra_info = NULL;
 
-    dbprintf(("%s: checking disk %s\n", get_pname(), disk));
+    dbprintf(("%s: checking disk %s\n", debug_prefix_time(NULL), disk));
 
     if (strcmp(program, "GNUTAR") == 0) {
         if(amdevice[0] == '/' && amdevice[1] == '/') {
@@ -563,7 +565,7 @@ char *optstr;
 	return;
     }
 
-    dbprintf(("%s: device %s\n", get_pname(), device));
+    dbprintf(("%s: device %s\n", debug_prefix_time(NULL), device));
 
 #ifdef CHECK_FOR_ACCESS_WITH_OPEN
     access_result = open(device, O_RDONLY);
@@ -595,16 +597,19 @@ common_exit:
 
     if(err) {
 	printf("ERROR [%s]\n", err);
-	dbprintf(("%s: %s\n", get_pname(), err));
+	dbprintf(("%s: %s\n", debug_prefix_time(NULL), err));
 	amfree(err);
     } else {
 	printf("OK %s\n", disk);
+	dbprintf(("%s: disk \"%s\" OK\n", debug_prefix_time(NULL), disk));
 	printf("OK %s\n", amdevice);
+	dbprintf(("%s: amdevice \"%s\" OK\n",
+		  debug_prefix_time(NULL), amdevice));
 	printf("OK %s\n", device);
-	dbprintf(("%s: OK\n", get_pname()));
+	dbprintf(("%s: device \"%s\" OK\n", debug_prefix_time(NULL), device));
     }
     if(extra_info) {
-	dbprintf(("%s: extra info: %s\n", get_pname(), extra_info));
+	dbprintf(("%s: extra info: %s\n", debug_prefix_time(NULL), extra_info));
 	amfree(extra_info);
     }
     amfree(device);

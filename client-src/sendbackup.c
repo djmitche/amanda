@@ -24,13 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.60 2002/03/24 03:46:16 jrjackson Exp $
+ * $Id: sendbackup.c,v 1.61 2002/03/31 21:02:00 jrjackson Exp $
  *
  * common code for the sendbackup-* programs.
  */
 
 #include "amanda.h"
 #include "sendbackup.h"
+#include "clock.h"
 #include "pipespawn.h"
 #include "amandad.h"
 #include "arglist.h"
@@ -159,7 +160,8 @@ char **argv;
     interactive = (argc > 1 && strcmp(argv[1],"-t") == 0);
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
     dbopen();
-    dbprintf(("%s: version %s\n", argv[0], version()));
+    startclock();
+    dbprintf(("%s: version %s\n", get_pname(), version()));
 
     if(interactive) {
 	/*
@@ -210,7 +212,7 @@ char **argv;
 	}
     }
 
-    dbprintf(("%s: got input request: %s\n", get_pname(), line));
+    dbprintf(("%s: got input request: %s\n", debug_prefix_time(NULL), line));
 
     s = line;
     ch = *s++;
@@ -336,13 +338,11 @@ char **argv;
       }
     }
 
-    dbprintf(("  got all connections\n"));
-
     if(!interactive) {
       /* redirect stderr */
       if(dup2(mesgfd, 2) == -1) {
-	  dbprintf(("error redirecting stderr to fd %d: %s\n", mesgfd,
-	      strerror(errno)));
+	  dbprintf(("%s: error redirecting stderr to fd %d: %s\n",
+	      debug_prefix_time(NULL), mesgfd, strerror(errno)));
 	  dbclose();
 	  exit(1);
       }
@@ -354,9 +354,9 @@ char **argv;
 
     program->start_backup(host, disk, amdevice, level, dumpdate, datafd, mesgpipe[1],
 			  indexfd);
-    dbprintf(("%s: started backup\n", get_pname()));
+    dbprintf(("%s: started backup\n", debug_prefix_time(NULL)));
     parse_backup_messages(mesgpipe[0]);
-    dbprintf(("%s: parsed backup messages\n", get_pname()));
+    dbprintf(("%s: parsed backup messages\n", debug_prefix_time(NULL)));
 
     dbclose();
 
@@ -370,11 +370,10 @@ char **argv;
 
  err:
     printf("FORMAT ERROR IN REQUEST PACKET\n");
-    if(err_extra) {
-	dbprintf(("REQ packet is bogus: %s\n", err_extra));
-    } else {
-	dbprintf(("REQ packet is bogus\n"));
-    }
+    dbprintf(("%s: REQ packet is bogus%s%s\n",
+	      debug_prefix_time(NULL),
+	      err_extra ? ": " : "",
+	      err_extra ? err_extra : ""));
     dbclose();
     return 1;
 }
@@ -519,7 +518,8 @@ int stdoutfd, stderrfd;
 {
     int pid, inpipe[2];
 
-    dbprintf(("%s: forking function %s in pipeline\n", get_pname(), fname));
+    dbprintf(("%s: forking function %s in pipeline\n",
+	debug_prefix_time(NULL), fname));
 
     if(pipe(inpipe) == -1) {
 	error("error [open pipe to %s: %s]", fname, strerror(errno));
@@ -591,7 +591,6 @@ int mesgin;
 
 
 double first_num P((char *str));
-dmpline_t parse_dumpline P((char *str));
 
 double first_num(str)
 char *str;
@@ -613,42 +612,53 @@ char *str;
     return d;
 }
 
-dmpline_t parse_dumpline(str)
-char *str;
-/*
- * Checks the dump output line in str against the regex table.
- */
-{
-    regex_t *rp;
-
-    /* check for error match */
-    for(rp = program->re_table; rp->regex != NULL; rp++) {
-	if(match(rp->regex, str))
-	    break;
-    }
-    if(rp->typ == DMP_SIZE) 
-	dump_size = (long)((first_num(str) * rp->scale + 1023.0)/1024.0);
-    return rp->typ;	
-}
-
 
 static void process_dumpline(str)
 char *str;
 {
+    regex_t *rp;
+    char *type;
     char startchr;
-    dmpline_t typ;
 
-    typ = parse_dumpline(str);
-    switch(typ) {
+    for(rp = program->re_table; rp->regex != NULL; rp++) {
+	if(match(rp->regex, str)) {
+	    break;
+	}
+    }
+    if(rp->typ == DMP_SIZE) {
+	dump_size = (long)((first_num(str) * rp->scale + 1023.0)/1024.0);
+    }
+    switch(rp->typ) {
     case DMP_NORMAL:
-    case DMP_SIZE:
+	type = "normal";
 	startchr = '|';
 	break;
-    default:
     case DMP_STRANGE:
+	type = "strange";
 	startchr = '?';
 	break;
+    case DMP_SIZE:
+	type = "size";
+	startchr = '|';
+	break;
+    case DMP_ERROR:
+	type = "error";
+	startchr = '?';
+	break;
+    default:
+	/*
+	 * Should never get here.
+	 */
+	type = "unknown";
+	startchr = '!';
+	break;
     }
+    dbprintf(("%s: %3d: %7s(%c): %s\n",
+	      debug_prefix_time(NULL),
+	      rp->srcline,
+	      type,
+	      startchr,
+	      str));
     fprintf(stderr, "%c %s\n", startchr, str);
 }
 
@@ -689,11 +699,13 @@ int *fd, min;
   while (*fd >= 0 && *fd < min) {
     int newfd = dup(*fd);
     if (newfd == -1)
-      dbprintf(("unable to save file descriptor [%s]\n", strerror(errno)));
+      dbprintf(("%s: unable to save file descriptor [%s]\n",
+	debug_prefix_time(NULL), strerror(errno)));
     *fd = newfd;
   }
   if (origfd != *fd)
-    dbprintf(("dupped file descriptor %i to %i\n", origfd, *fd));
+    dbprintf(("%s: dupped file descriptor %i to %i\n",
+      debug_prefix_time(NULL), origfd, *fd));
 }
 
 void start_index(createindex, input, mesg, index, cmd)
@@ -759,7 +771,8 @@ char *cmd;
     error("couldn't start index creator [%s]", strerror(errno));
   }
 
-  dbprintf(("%s: started index creator: \"%s\"\n", get_pname(), cmd));
+  dbprintf(("%s: started index creator: \"%s\"\n",
+    debug_prefix_time(NULL), cmd));
   while(1) {
     char buffer[BUFSIZ], *ptr;
     int bytes_read;
@@ -786,8 +799,8 @@ char *cmd;
 	  /* the signal handler may have assigned to index_finished
 	   * just as we waited for write() to complete. */
 	  if (!index_finished) {
-	      dbprintf(("index tee cannot write to index creator [%s]\n",
-			strerror(errno)));
+	      dbprintf(("%s: index tee cannot write to index creator [%s]\n",
+			debug_prefix_time(NULL), strerror(errno)));
 	      index_finished = 1;
 	}
       } else {
@@ -818,9 +831,10 @@ char *cmd;
   /* finished */
   /* check the exit code of the pipe and moan if not 0 */
   if ((exitcode = pclose(pipe_fp)) != 0) {
-    dbprintf(("%s: index pipe returned %d\n", get_pname(), exitcode));
+    dbprintf(("%s: index pipe returned %d\n",
+      debug_prefix_time(NULL), exitcode));
   } else {
-    dbprintf(("%s: index created successfully\n", get_pname()));
+    dbprintf(("%s: index created successfully\n", debug_prefix_time(NULL)));
   }
   pipe_fp = NULL;
 
