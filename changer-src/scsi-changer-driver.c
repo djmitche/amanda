@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.6 1998/12/22 05:12:08 oliva Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.7 1999/01/10 17:07:27 th Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -27,9 +27,6 @@ static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.6 1998/12/22 05:12:08 
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
-#ifdef HAVE_MTIO_H
-#include <sys/mtio.h>
-#endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -43,19 +40,20 @@ static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.6 1998/12/22 05:12:08 
 int Inquiry(int, SCSIInquiry_T *);
 int TestUnitReady(int, RequestSense_T *);
 int PrintInquiry(SCSIInquiry_T *);
-int Move(int, int, int);
-int Status(int, ElementInfo_T **);
-int Eject(char *);
-int Clean(char *);
-int ReadElementStatus(int DeviceFD, ElementInfo_T **ElementInfo);
+int ReadElementStatus(int DeviceFD);
+ElementInfo_T *LookupElement(int addr);
 int ResetStatus(int DeviceFD);
+int RequestSense(int, ExtendedRequestSense_T *, int  );
+
 int DoNothing();
 int GenericMove(int, int, int);
+int GenericRewind(int);
 int GenericStatus();
 int GenericFree();
-int GenericEject(int);
-int GenericClean(int);
-int RequestSense(int, ExtendedRequestSense_T *, int  );
+int GenericEject(char *Device);
+int GenericClean(char *Device);
+ChangerCMD_T *LookupFunction(int fd, char *dev);
+
 /*
  * Log Pages Decode
  */
@@ -98,34 +96,38 @@ SC_COM_T SCSICommand[] = {
 
 ChangerCMD_T ChangerIO[] = {
   {"C1553A",
-   GenericMove,
-   ReadElementStatus,
-   DoNothing,
-   GenericFree,
-   GenericEject,
-   GenericClean},
+   {GenericMove,
+    ReadElementStatus,
+    DoNothing,
+    GenericFree,
+    GenericEject,
+    GenericClean,
+    GenericRewind}},
   {"EXB-10e",                 /* Exabyte Robot */
-   GenericMove,
-   ReadElementStatus,
-   ResetStatus,
-   GenericFree,
-   GenericEject,
-   GenericClean},
+   {GenericMove,
+    ReadElementStatus,
+    ResetStatus,
+    GenericFree,
+    GenericEject,
+    GenericClean,
+    GenericRewind}},
   {"EXB-85058HE-0000",        /* Exabyte TapeDrive */
-   DoNothing,
-   DoNothing,
-   DoNothing,
-   DoNothing,
-   GenericEject,
-   GenericClean},
+   {DoNothing,
+    DoNothing,
+    DoNothing,
+    DoNothing,
+    GenericEject,
+    GenericClean,
+    GenericRewind}},
   {"generic",
-   GenericMove,
-   ReadElementStatus,
-   DoNothing,
-   GenericFree,
-   GenericEject,
-   GenericClean},
-  {NULL, NULL, NULL, NULL, NULL}
+   {GenericMove,
+    ReadElementStatus,
+    ResetStatus,
+    GenericFree,
+    GenericEject,
+    GenericClean,
+    GenericRewind}},
+  {NULL, {NULL, NULL, NULL, NULL, NULL, NULL, NULL}}
 };           
 
 
@@ -159,8 +161,9 @@ LogPageDecode_T DecodePages[] = {
 
 OpenFiles_T *pOpenFiles = NULL;
 
-int MaxSlots = 0;
-int MinSlots = 99;
+int MaxSlots = -1;
+int MinSlots = -1;
+int ElementStatusValid = 0;
 int TapeDrive = 0;
 int NoTapeDrive = 0;
 int NoRobot = 0;
@@ -168,12 +171,260 @@ char *SlotArgs = 0;
 ElementInfo_T *pElementInfo = NULL;
 ElementInfo_T *pwElementInfo = NULL;
 
+
+/*
+ * First all functions which are called from extern
+ */
+int isempty(int fd, int slot)
+{
+  int rslot;
+  ChangerCMD_T *pwork;
+
+  if ((pwork = LookupFunction(fd, "")) == NULL)
+    {
+      return(-1);
+    }
+
+  if (MinSlots < 0)
+    {
+      if ( pwork->function[CHG_STATUS](fd) != 0)
+        {
+          return(-1);
+        }
+    }
+
+  rslot = slot + MinSlots;
+  
+  for (pwElementInfo = pElementInfo; pwElementInfo != NULL ; pwElementInfo = pwElementInfo->next) {
+    if (pwElementInfo->address == rslot)
+      {
+        /*
+          fprintf(stderr, "Element #%d %c ASC = %02X ASCQ = %02X Type %d\n",
+          pwElementInfo->address, pwElementInfo->status,
+          pwElementInfo->ASC, pwElementInfo->ASCQ, pwElementInfo->type );
+        */
+        if(pwElementInfo->status == 'E')
+          return(1);
+        return(0);
+      }
+  }
+
+  return(0);
+}
+
+int get_clean_state(char *tapedev)
+{
+  /* Return 1 it cleaning is needed */
+  int ret;
+  ChangerCMD_T *pwork;
+
+  if ((pwork = LookupFunction(0, tapedev)) == NULL )
+      {
+          return(-1);
+      }
+  ret=pwork->function[CHG_CLEAN](tapedev);
+  return(ret);    
+}
+
+int eject_tape(char *tapedev)
+  /* This function ejects the tape from the drive */
+{
+  int ret = 0;
+  ChangerCMD_T *pwork;
+
+  if ((pwork = LookupFunction(0, tapedev)) == NULL )
+      {
+          return(-1);
+      }
+  ret=pwork->function[CHG_EJECT](tapedev);
+  return(ret);    
+}
+
+
+int find_empty(int fd)
+{
+  dbprintf(("find_empty %d\n", fd));
+  return(0);
+}
+
+int drive_loaded(int fd, int drivenum)
+{
+  ChangerCMD_T *pwork;
+
+  dbprintf(("\ndrive_loaded : fd %d drivenum %d \n", fd, drivenum));
+
+  if ((pwork = LookupFunction(fd, "")) == NULL)
+    {
+      return(-1);
+    }
+
+  if (ElementStatusValid == 0)
+      {
+          if (pwork->function[CHG_STATUS](fd) != 0)
+              {
+                  return(-1);
+              }
+      }
+
+  for (pwElementInfo = pElementInfo; pwElementInfo; pwElementInfo = pwElementInfo->next) {
+    if (pwElementInfo->address == TapeDrive)
+      {
+        dbprintf(("drive_loaded : Element #%d %c ASC = %02X ASCQ = %02X Type %d\n",
+                  pwElementInfo->address, pwElementInfo->status,
+                  pwElementInfo->ASC, pwElementInfo->ASCQ, pwElementInfo->type));
+        if(pwElementInfo->status == 'E')
+          {
+            return(0);
+          } else {
+            return(1);
+          }
+      }
+  }
+  /*
+   * check the status of the transport (tape drive).
+   *
+   * return 1 if the drive is occupied, 0 otherwise.
+   */
+  return(0);
+}
+
+
+
+int unload(int fd, int drive, int slot)
+{
+  /*
+   * unload the specified drive into the specified slot
+   * (storage element)
+   */
+  int empty = 0;
+  ChangerCMD_T *pwork;
+
+  if ((pwork = LookupFunction(fd, "")) == NULL)
+    {
+      return(-1);
+    }
+
+  if (ElementStatusValid == 0)
+      {
+          if (pwork->function[CHG_STATUS](fd) != 0)
+              {
+                  return(-1);
+              }
+      }
+
+  for (pwElementInfo = pElementInfo; pwElementInfo; pwElementInfo = pwElementInfo->next) {
+    if (pwElementInfo->status == 'E' && pwElementInfo->type == STORAGE )
+      empty=pwElementInfo->address;
+  }
+  if (empty == slot+MinSlots) {
+    pwork->function[CHG_MOVE](fd, TapeDrive, slot+MinSlots);
+  } else {
+    pwork->function[CHG_MOVE](fd, TapeDrive, empty);
+  }
+  return(0);
+}
+
+int load(int fd, int drive, int slot)
+{
+  int ret;
+  ChangerCMD_T *pwork;
+
+  if ((pwork = LookupFunction(fd, "")) == NULL)
+    {
+      return(-1);
+    }
+  
+  if (ElementStatusValid == 0)
+      {
+          if (pwork->function[CHG_STATUS](fd) != 0)
+              {
+                  return(-1);
+              }
+      }
+  
+  ret = pwork->function[CHG_MOVE](fd, slot+MinSlots, TapeDrive);
+  
+  /*
+   * Update the Status
+   */
+  if (pwork->function[CHG_STATUS](fd) != 0)
+      {
+          return(-1);
+      }
+  
+  return(ret);
+  /*
+   * load the media from the specified element (slot) into the
+   * specified data transfer unit (drive)
+   */
+}
+
+
+int get_slot_count(int fd)
+{
+  ChangerCMD_T *pwork;
+
+  if (MaxSlots < 0)
+    {
+      if ((pwork = LookupFunction(fd, "")) == NULL)
+        {
+          return(-1);
+        }
+      if (ElementStatusValid == 0)
+          {
+              pwork->function[CHG_STATUS](fd);
+          }
+    }
+  return(MaxSlots-MinSlots);
+  /*
+   * return the number of slots in the robot
+   * to the caller
+   */
+  
+}
+
+
+/*
+ * retreive the number of data-transfer devices
+ */ 
+int get_drive_count(int fd)
+{
+  int count = 0;
+  ChangerCMD_T *pwork;
+
+  if ((pwork = LookupFunction(fd, "")) == NULL)
+    {
+      return(-1);
+    }
+
+  if (ElementStatusValid == 0)
+      {
+          if ( pwork->function[CHG_STATUS](fd) != 0)
+              {
+                  return(-1);
+              }
+      }
+
+  for (pwElementInfo = pElementInfo; pwElementInfo; pwElementInfo = pwElementInfo->next) {
+    if (pwElementInfo->type == TAPETYPE)
+      {
+        count++;
+      }
+  }
+  
+  return(count);
+}
+
+/*
+ * Now the internal functions
+ */
+
 /*
  * Open the device and placeit in the list of open files
  * The OS has to decide if it is an SCSI Commands capable device
  */
 
-int OpenDevice(char *DeviceName)
+int OpenDevice(char *DeviceName, char *ConfigName)
 {
   int i;
   OpenFiles_T *pwork, *pprev;
@@ -197,110 +448,161 @@ int OpenDevice(char *DeviceName)
         } else {
           pprev->next = pwork;
         }
+      if (strlen(ConfigName) > 0)
+        {
+          pwork->ConfigName = strdup(ConfigName);
+        } else {
+          pwork->ConfigName = NULL;
+        }
       return(pwork->fd);
     }
   
   return(-1); 
 }
 
-OpenFiles_T * LookupDevice(char *DeviceName, int DeviceFD)
+OpenFiles_T * LookupDevice(char *DeviceName, int DeviceFD, int what)
 {
   OpenFiles_T *pwork, *pprev;
-
-  for (pwork = pOpenFiles; pwork != NULL; pwork = pwork->next)
+  
+  switch (what)
     {
-      if (pwork->fd == DeviceFD || strcmp(DeviceName, pwork->dev) == 0)
+    case LOOKUP_NAME:
+      for (pwork = pOpenFiles; pwork != NULL; pwork = pwork->next)
         {
+          if (strcmp(DeviceName, pwork->dev) == 0)
+            {
+              return(pwork);
+            }
+          pprev = pwork;
+        }
+      break;
+    case LOOKUP_CONFIG:
+      for (pwork = pOpenFiles; pwork != NULL; pwork = pwork->next)
+        {
+          if (strcmp(DeviceName, pwork->ConfigName) == 0)
+            {
+              return(pwork);
+            }
+          pprev = pwork;
+        }
+      break;
+    case LOOKUP_FD:
+      for (pwork = pOpenFiles; pwork != NULL; pwork = pwork->next)
+        {
+          if (DeviceFD == pwork->fd)
+            {
+              return(pwork);
+            }
+          pprev = pwork;
+        }
+      break;
+    case LOOKUP_TYPE:
+      for (pwork = pOpenFiles; pwork != NULL; pwork = pwork->next)
+        {
+          if (pwork->SCSI == 1 && DeviceFD == pwork->inquiry->data_format)
+            {
+              return(pwork);
+            }
+          pprev = pwork;
+        }
+      break;
+    }
+  /*
+   * Nothing matching found, try to open 
+   */
+  if (strlen(DeviceName) > 0)
+    {
+      if ((pwork = SCSI_OpenDevice(DeviceName)) != NULL)
+        {
+          pprev->next = pwork;
           return(pwork);
         }
-        pprev = pwork;
     }
-
-  if (strlen(DeviceName) > 0)
-  {
-     if ((pwork = SCSI_OpenDevice(DeviceName)) != NULL)
-       {
-         pprev->next = pwork;
-         return(pwork);
-       }
-  }
-
+  
   return(NULL);
 }
 
 int CloseDevice(char *DeviceName, int DeviceFD)
 {
   OpenFiles_T *pwork, *pprev;
+  int found = 0;
   pprev = NULL;
 
-  if (DeviceName == NULL)
+  if (strlen(DeviceName) == 0)
     {
       for (pwork = pOpenFiles; pwork != NULL; pwork = pwork->next)
         {
-          dbprintf(("SCSI_CloseDevice %s %s\n", pwork->dev, pwork->name));
-          close(pwork->fd);
+          if (pwork->fd == DeviceFD)
+            {
+              found = 1;
+              break;
+            }
+          pprev = pwork;
         }
-      return;
-    }
-
-  for (pwork = pOpenFiles; pwork != NULL; pwork = pwork->next)
-    {
-      if (strcmp(DeviceName,pwork->dev) == 0)
+    } else {
+      for (pwork = pOpenFiles; pwork != NULL; pwork = pwork->next)
         {
-          if(SCSI_CloseDevice(pwork->fd) < 0)
+          if (strcmp(DeviceName,pwork->dev) == 0)
             {
-              dbprintf(("SCSI_CloseDevice %s failed\n", pwork->name));
-              return;
+              found = 1;
+              break;
             }
-          if (pwork == pOpenFiles && pwork->next == NULL)
-            {
-              free(pOpenFiles);
-              pOpenFiles == NULL;
-              return;
-            }
-          if (pwork == pOpenFiles)
-            {
-              pOpenFiles = pwork->next;
-              free(pwork);
-              return;
-            }
-          if (pwork->next == NULL)
-            {
-              pprev->next = NULL;
-              free(pwork);
-              return;
-            }
-          pprev->next = pwork->next;
-          free(pwork);
-          return;
+          pprev = pwork;
         }
-      pprev = pwork;
     }
+  
+  if (pwork != NULL && found == 1)
+    {
+      if(SCSI_CloseDevice(pwork->fd) < 0)
+        {
+          dbprintf(("SCSI_CloseDevice %s failed\n", pwork->ident));
+          return(0);
+        }
+      if (pwork == pOpenFiles && pwork->next == NULL)
+        {
+          free(pOpenFiles);
+          pOpenFiles == NULL;
+          return(0);
+        }
+      if (pwork == pOpenFiles)
+        {
+          pOpenFiles = pwork->next;
+          free(pwork);
+          return(0);
+        }
+      if (pwork->next == NULL)
+        {
+          pprev->next = NULL;
+          free(pwork);
+          return(0);
+        }
+      pprev->next = pwork->next;
+      free(pwork);
+      return(0);
+    }
+  return(0);
 }
 
-int Tape_Ready(char *tapedev, char *changerdev, int changerfd, int wait)
+
+int Tape_Ready(char *tapedev, int wait)
 {
   int true = 1;
-  int cnt;
-  int DeviceFD;
+  int cnt = 0;
   RequestSense_T *pRequestSense;
+  OpenFiles_T *pwork;
 
-  if (tapedev == NULL || strcmp(tapedev, changerdev) == 0) 
+  if ((pwork = LookupDevice(tapedev, 0, LOOKUP_NAME)) == NULL)
     {
-      DeviceFD = changerfd;
-    } else {
-      if ((DeviceFD = OpenDevice(tapedev)) < 0)
-        {
-          sleep(wait);
-          return;
-        }
+      dbprintf(("Tape_Ready : LookupDevice %s failed \n", tapedev));
+      sleep(wait);
+      return(0);
     }
 
   pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T));
 
   while (true && cnt < wait)
     {
-      if (TestUnitReady(DeviceFD, pRequestSense ))
+      if (TestUnitReady(pwork->fd, pRequestSense ))
         {
           true = 0;
         } else {
@@ -312,7 +614,7 @@ int Tape_Ready(char *tapedev, char *changerdev, int changerfd, int wait)
   free(pRequestSense);
 
   dbprintf(("Tape_Ready after %d sec\n", cnt));
-  return;
+  return(0);
 }
 
 int TestUnitReady(int DeviceFD, RequestSense_T *pRequestSense)
@@ -407,6 +709,7 @@ int DecodeSCSI(CDB_T CDB, char *string)
         }
       pSCSICommand++;
     }
+  return(0);
 }
 
 int DecodeSense(RequestSense_T *sense, char *pstring)
@@ -494,7 +797,7 @@ int DecodeExtSense(ExtendedRequestSense_T *sense, char *pstring)
   if (sense->ECO)
     dbprintf(("\tError Counter Overflow\n"));
   if (sense->TME)
-    dbprintf(("\tTape Motion Error\n"));
+    dbprintf(("\tTapeMotion Error\n"));
   if (sense->TNP)
     dbprintf(("\tTape Not Present\n"));
   if (sense->LBOT)
@@ -548,28 +851,44 @@ int PrintInquiry(SCSIInquiry_T *SCSIInquiry)
   dbprintf(("%-15s %.16s\n", "prod_ident", SCSIInquiry->prod_ident));
   dbprintf(("%-15s %.4s\n", "prod_version", SCSIInquiry->prod_version));
   dbprintf(("%-15s %.20s\n", "vendor_specific", SCSIInquiry->vendor_specific));
+  return(0);
 }
 
 
 int DoNothing()
 {
+  return(0);
 }
 
 int GenericFree()
 {
+  return(0);
 }
 
-int GenericEject(int DeviceFD)
+int GenericEject(char *Device)
 {
   CDB_T CDB;
   RequestSense_T *pRequestSense;
   int ret;
   int cnt = 0;
   int true = 1;
+  OpenFiles_T *pwork;
+  OpenFiles_T *ptape;
 
+  if ((ptape = LookupDevice(Device, 0, LOOKUP_NAME)) == NULL) 
+    {
+      return(-1);
+    }
   pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T));
 
-  LogSense(DeviceFD);
+  LogSense(ptape->fd);
+
+  if ((pwork = LookupDevice("tape_device", 0, LOOKUP_CONFIG)) == NULL) 
+    {
+      return(-1);
+    }
+
+  CloseDevice("", pwork->fd);
 
   CDB[0] = SC_COM_UNLOAD;
   CDB[1] = 1;             /* Don't wait for success */
@@ -580,7 +899,7 @@ int GenericEject(int DeviceFD)
 
   while (true)
     {
-      ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,
+      ret = SCSI_ExecuteCommand(ptape->fd, Input, CDB, 6,
                                 0, 0, 
                                 (char *) pRequestSense,
                                 sizeof(RequestSense_T));
@@ -608,7 +927,7 @@ int GenericEject(int DeviceFD)
 
   while (true && cnt < 300)
     {
-      if (TestUnitReady(DeviceFD, pRequestSense))
+      if (TestUnitReady(ptape->fd, pRequestSense))
         {
           true = 0;
           break;
@@ -631,20 +950,96 @@ int GenericEject(int DeviceFD)
 
 }
 
-int GenericClean(int TapeFd)
+int GenericRewind(int DeviceFD)
+{
+  CDB_T CDB;
+  RequestSense_T *pRequestSense;
+  int ret;
+  int cnt = 0;
+  int true = 1;
+
+  pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T));
+
+  CDB[0] = SC_COM_REWIND;
+  CDB[1] = 1;             
+  CDB[2] = 0;
+  CDB[3] = 0;
+  CDB[4] = 0;
+  CDB[5] = 0;
+
+  while (true)
+    {
+      ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,
+                                0, 0, 
+                                (char *) pRequestSense,
+                                sizeof(RequestSense_T));
+      
+      DecodeSense(pRequestSense, "GenericRewind : ");
+      
+      if (ret > 0) 
+        {
+          if (pRequestSense->SenseKey != UNIT_ATTENTION)
+            {
+              true = 0;
+            }
+        }
+      if (ret == 0)
+        {
+          true = 0;
+        }
+      if (ret < 0)
+        {
+          dbprintf(("GenericRewind : failed %d\n", ret));
+          true = 0;
+        }
+    }
+  true = 1;
+
+  while (true && cnt < 300)
+    {
+      if (TestUnitReady(DeviceFD, pRequestSense))
+        {
+          true = 0;
+          break;
+        }
+      if ((pRequestSense->SenseKey == SENSE_NOT_READY) &&
+          (pRequestSense->AdditionalSenseCode == 0x3A))
+        {
+          true=0;
+          break;
+        } else {
+          cnt++;
+          sleep(2);
+        }
+    }
+
+  free(pRequestSense);
+
+  dbprintf(("GenericRewind : Ready after %d sec, true = %d\n", cnt * 2, true));
+  return(0);
+
+}
+
+int GenericClean(char * Device)
 {
   ExtendedRequestSense_T ExtRequestSense;
-  RequestSense(TapeFd, &ExtRequestSense, 0);      
+
+  OpenFiles_T *pwork;
+
+  if ((pwork = LookupDevice(Device, 0, LOOKUP_NAME)) == NULL) 
+    {
+      return(-1);
+    }
+
+  RequestSense(pwork->fd, &ExtRequestSense, 0);
+  dbprintf(("GenericClean :\n"));
+  DecodeExtSense(&ExtRequestSense, "GenericClean :");
   if(ExtRequestSense.CLN) {
     return(1);
   } else {
     return(0);
   }
 }
-
-/* Function Prototypes */
-/* =================== */
-void NewElement(ElementInfo_T **ElementInfo);
 
 int ResetStatus(int DeviceFD)
 {
@@ -658,7 +1053,7 @@ int ResetStatus(int DeviceFD)
 
   while (retry)
     {
-      CDB[0] = 0x7;   /* */
+      CDB[0] = SC_COM_IES;   /* */
       CDB[1] = 0;
       CDB[2] = 0;
       CDB[3] = 0;
@@ -714,20 +1109,16 @@ int GenericMove(int DeviceFD, int from, int to)
 {
   CDB_T CDB;
   RequestSense_T pRequestSense;
+  OpenFiles_T *pwork;
   int ret;
   int i;
 
   dbprintf(("GenericMove: from = %d, to = %d\n", from, to));
 
-  if (Status(DeviceFD,&pElementInfo) > 0)
+  if ((pwork = LookupDevice("", TYPE_TAPE, LOOKUP_TYPE)) != NULL)
     {
-      dbprintf(("GenericMove : ResetStatus\n"));
-      ret = ResetStatus(DeviceFD);
-      if (ret != 0)
-        return(ret);
+      LogSense(pwork->fd);
     }
-
-  LogSense(DeviceFD);
 
   CDB[0]  = SC_MOVE_MEDIUM;
   CDB[1]  = 0;
@@ -763,8 +1154,9 @@ int GenericMove(int DeviceFD, int from, int to)
   
   return(ret);
 }
+
 /* ======================================================= */
-int ReadElementStatus(int DeviceFD, ElementInfo_T **ElementInfo)
+int ReadElementStatus(int DeviceFD)
 {
   CDB_T CDB;
   unsigned char DataBuffer[MaxReadElementStatusData];
@@ -775,6 +1167,8 @@ int ReadElementStatus(int DeviceFD, ElementInfo_T **ElementInfo)
   MediumTransportElementDescriptor_T *MediumTransportElementDescriptor;
   StorageElementDescriptor_T *StorageElementDescriptor;
   DataTransferElementDescriptor_T *DataTransferElementDescriptor;
+  ElementInfo_T *pwork;
+
   int error = 0;                /* Is set if ASC for an element is set */
   int i;
   int x = 0;
@@ -783,8 +1177,8 @@ int ReadElementStatus(int DeviceFD, ElementInfo_T **ElementInfo)
   int ret; 
   int retry = 1;
 
-  MinSlots = 99;
-  MaxSlots = 0;
+  MinSlots = -1;
+  MaxSlots = -1;
   NoTapeDrive = 0;
   NoRobot = 0;
 
@@ -792,7 +1186,7 @@ int ReadElementStatus(int DeviceFD, ElementInfo_T **ElementInfo)
     {
       bzero(&RequestSenseBuf, sizeof(RequestSense_T) );
 
-      CDB[0] = 0xB8;                /* READ ELEMENT STATUS */
+      CDB[0] = SC_COM_RES;          /* READ ELEMENT STATUS */
       CDB[1] = 0;                   /* Element Type Code = 0, VolTag = 0 */
       CDB[2] = 0;                   /* Starting Element Address MSB */   
       CDB[3] = 0;                   /* Starting Element Address LSB */   
@@ -864,19 +1258,18 @@ int ReadElementStatus(int DeviceFD, ElementInfo_T **ElementInfo)
         case 1:
           for (x = 0; x < NoOfElements; x++)
             {
-              NewElement(ElementInfo);
               MediumTransportElementDescriptor = (MediumTransportElementDescriptor_T *)&DataBuffer[offset];
-              (*ElementInfo)->type = ElementStatusPage->type;
-              /*
-                (*ElementInfo)->address = V2((char *)MediumTransportElementDescriptor->address);
-              */
-              (*ElementInfo)->address = V2(MediumTransportElementDescriptor->address);
-              (*ElementInfo)->ASC = MediumTransportElementDescriptor->asc;
-              (*ElementInfo)->ASCQ = MediumTransportElementDescriptor->ascq;
-              (*ElementInfo)->status = (MediumTransportElementDescriptor->full > 0) ? 'F':'E';
-              if ((*ElementInfo)->ASC > 0)
+              if ((pwork = LookupElement(V2(MediumTransportElementDescriptor->address))) == NULL)
+                {
+                  return(-1);
+                }
+              pwork->type = ElementStatusPage->type;
+              pwork->address = V2(MediumTransportElementDescriptor->address);
+              pwork->ASC = MediumTransportElementDescriptor->asc;
+              pwork->ASCQ = MediumTransportElementDescriptor->ascq;
+              pwork->status = (MediumTransportElementDescriptor->full > 0) ? 'F':'E';
+              if (pwork->ASC > 0)
                 error = 1;
-              ElementInfo = &((*ElementInfo)->next);
               offset = offset + V2(ElementStatusPage->length); 
               NoRobot++;
             }
@@ -886,19 +1279,21 @@ int ReadElementStatus(int DeviceFD, ElementInfo_T **ElementInfo)
             {
               
               StorageElementDescriptor = (StorageElementDescriptor_T *)&DataBuffer[offset];
-              NewElement(ElementInfo);
-              (*ElementInfo)->type = ElementStatusPage->type;
-              (*ElementInfo)->address = V2(StorageElementDescriptor->address);
-              (*ElementInfo)->ASC = StorageElementDescriptor->asc;
-              (*ElementInfo)->ASCQ = StorageElementDescriptor->ascq;
-              (*ElementInfo)->status = (StorageElementDescriptor->full > 0) ? 'F':'E';
-              if ((*ElementInfo)->ASC > 0)
+              if ((pwork = LookupElement(V2(StorageElementDescriptor->address))) == NULL)
+                {
+                  return(-1);;
+                }
+              pwork->type = ElementStatusPage->type;
+              pwork->address = V2(StorageElementDescriptor->address);
+              pwork->ASC = StorageElementDescriptor->asc;
+              pwork->ASCQ = StorageElementDescriptor->ascq;
+              pwork->status = (StorageElementDescriptor->full > 0) ? 'F':'E';
+              if (pwork->ASC > 0)
                 error = 1;
-              if ((*ElementInfo)->address > MaxSlots)
-                MaxSlots = (*ElementInfo)->address;
-              if ((*ElementInfo)->address < MinSlots)
-                MinSlots = (*ElementInfo)->address;
-              ElementInfo = &((*ElementInfo)->next);
+              if (pwork->address > MaxSlots)
+                MaxSlots = pwork->address;
+              if (MinSlots == -1 || pwork->address < MinSlots)
+                MinSlots = pwork->address;
               offset = offset + V2(ElementStatusPage->length); 
             }
           break;
@@ -906,17 +1301,19 @@ int ReadElementStatus(int DeviceFD, ElementInfo_T **ElementInfo)
           for (x = 0; x < NoOfElements; x++)
             {
               DataTransferElementDescriptor = (DataTransferElementDescriptor_T *)&DataBuffer[offset];
-              NewElement(ElementInfo);
-              (*ElementInfo)->type = ElementStatusPage->type;
-              (*ElementInfo)->address = V2((char *)DataTransferElementDescriptor->address);
-              (*ElementInfo)->ASC = DataTransferElementDescriptor->asc;
-              (*ElementInfo)->ASCQ = DataTransferElementDescriptor->ascq;
-              (*ElementInfo)->status = (DataTransferElementDescriptor->full > 0) ? 'F':'E';
-              if ((*ElementInfo)->ASC > 0)
+              if ((pwork = LookupElement(V2(DataTransferElementDescriptor->address))) == NULL)
+                {
+                  return(-1);
+                }
+              pwork->type = ElementStatusPage->type;
+              pwork->address = V2((char *)DataTransferElementDescriptor->address);
+              pwork->ASC = DataTransferElementDescriptor->asc;
+              pwork->ASCQ = DataTransferElementDescriptor->ascq;
+              pwork->status = (DataTransferElementDescriptor->full > 0) ? 'F':'E';
+              if (pwork->ASC > 0)
                 error = 1;
-              TapeDrive = (*ElementInfo)->address;
+              TapeDrive = pwork->address;
               NoTapeDrive++;
-              ElementInfo = &((*ElementInfo)->next);
               offset = offset + V2(ElementStatusPage->length); 
             }
           break;
@@ -928,17 +1325,31 @@ int ReadElementStatus(int DeviceFD, ElementInfo_T **ElementInfo)
   dbprintf(("\tMinSlots %d, MaxSlots %d\n", MinSlots, MaxSlots));
   dbprintf(("\tTapeDrive %d, Changer %d\n", NoTapeDrive, NoRobot));
   dbprintf(("\tTapeDrive is Element %d\n", TapeDrive));
-  for (pwElementInfo = pElementInfo; 
-       pwElementInfo; 
-       pwElementInfo = (ElementInfo_T *)pwElementInfo->next)
+  for (pwork = pElementInfo; 
+       pwork; 
+       pwork= pwork->next)
     dbprintf(("\t\tElement #%d %c ASC = %02X ASCQ = %02X Type %d\n",
-              pwElementInfo->address, pwElementInfo->status,
-              pwElementInfo->ASC, pwElementInfo->ASCQ, pwElementInfo->type ));
-  
-  return(error);
+              pwork->address, pwork->status,
+              pwork->ASC, pwork->ASCQ, pwork->type ));
+
+  if (error != 0)
+      {
+          if (ResetStatus(DeviceFD) != 0)
+              {
+                  ElementStatusValid = 0;
+                  return(-1);
+              }
+          if (ReadElementStatus(DeviceFD) != 0)
+              {
+                  ElementStatusValid = 0;
+                  return(-1);
+              }
+      } 
+
+  ElementStatusValid = 1;
+  return(0);
 }
 
-/* ======================================================= */
 void NewElement(ElementInfo_T **ElementInfo)
 {
   if (*ElementInfo == 0)
@@ -948,6 +1359,34 @@ void NewElement(ElementInfo_T **ElementInfo)
     }
 }
 
+ElementInfo_T *LookupElement(int addr)
+{
+  ElementInfo_T *pwork;
+  ElementInfo_T *pprev;
+
+
+  if (pElementInfo == NULL)
+    {
+      pElementInfo = (ElementInfo_T *)malloc(sizeof(ElementInfo_T));
+      return(pElementInfo);
+    }
+
+  for (pwork = pElementInfo; pwork; pwork = pwork->next)
+    {
+      if (pwork->address == addr)
+        {
+              return(pwork);
+        }
+      pprev = pwork;
+    }
+
+  if ( pwork == NULL)
+    {
+      pprev->next  = (ElementInfo_T *)malloc(sizeof(ElementInfo_T));
+      pprev->next->next = NULL;
+    }
+  return(pprev->next);
+}
 
 int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int ClearErrorCounters )
 {
@@ -960,7 +1399,7 @@ int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int
   int NoOfElements;
   int ret;
   
-  CDB[0] = 0x03;                /* REQUEST SENSE */                       
+  CDB[0] = SC_COM_REQUEST_SENSE; /* REQUEST SENSE */                       
   CDB[1] = 0;                   /* Logical Unit Number = 0, Reserved */ 
   CDB[2] = 0;                   /* Reserved */              
   CDB[3] = 0;                   /* Reserved */
@@ -989,326 +1428,82 @@ int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int
 }
 
 
-int Move(int fd, int from, int to)
-{
-  ChangerCMD_T *p = (ChangerCMD_T *)&ChangerIO;
-  int ret;
-  OpenFiles_T *pwork ;
-
-  if ((pwork = LookupDevice("", fd)) == NULL)
-    {
-      return(-1);
-    }
-
-  if (pwork->SCSI == 0)
-    {
-      dbprintf(("Move : Device %s not SCSI capable\n", pwork->dev));
-      return(-1);
-    }
-
-  while(p->ident != NULL)
-    {
-      if (strcmp(pwork->name, p->ident) == 0)
-        {
-          ret = p->move(fd, from, to);
-          dbprintf(("Move for %s returned %d\n", pwork->name, ret));
-          return(ret);
-        }
-      p++;
-    }
-  /* Nothing matching found, try generic */
-  p = (ChangerCMD_T *)&ChangerIO;
-  while(p->ident != NULL)
-    {
-      if (strcmp("generic", p->ident) == 0)
-        {
-          ret = p->move(fd, from, to);
-          dbprintf(("Move for %s returned %d\n", pwork->name, ret));
-          return(ret);
-        }
-      p++;
-    }
-  
-}
-
-int Status(int fd, ElementInfo_T ** ElementInfo_T)
-{
-  ChangerCMD_T *p = (ChangerCMD_T *)&ChangerIO;
-  int ret;
-  int retries = 10;
-  OpenFiles_T *pwork ;
-
-  if ((pwork = LookupDevice("", fd)) == NULL)
-    {
-      return(-1);
-    }
-
-  if (pwork->SCSI == 0)
-    {
-      dbprintf(("Status : Device %s not SCSI capable\n", pwork->dev));
-      return(-1);
-    }
-
-  dbprintf(("TYPE %s, fd %d, fdin %d\n", pwork->name, pwork->fd, fd));
-  while(p->ident != NULL)
-    {
-      if (strcmp(pwork->name, p->ident) == 0)
-        {
-          if ((ret = p->status(fd, ElementInfo_T)) != 0 )
-            {
-              ret = p->resetstatus(fd);
-              return(ret);
-            }
-          return(0);
-        }
-      p++;
-    }
-  /* Nothing matching found, try generic */
-  p = (ChangerCMD_T *)&ChangerIO;
-  while(p->ident != NULL)
-    {
-      if (strcmp("generic", p->ident) == 0)
-        {
-          if ((ret = p->status(fd, ElementInfo_T)) != 0 ) 
-            {
-              ret=p->resetstatus(fd);
-              return(ret);
-            } 
-          return(0);
-        }
-      p++;
-    }     
-}
-
-int Eject(char *tapedev)
-{
-  ChangerCMD_T *p = (ChangerCMD_T *)&ChangerIO;
-  OpenFiles_T *pwork ;
-
-  if ((pwork = LookupDevice(tapedev, 0)) == NULL)
-    {
-      return(-1);
-    }
-
-  if (pwork->SCSI == 0)
-    {
-      dbprintf(("Eject : Device %s not SCSI capable\n", pwork->dev));
-      return(-1);
-    }
-
-  while(p->ident != NULL)
-    {
-      if (strcmp(pwork->name, p->ident) == 0)
-        {
-          p->eject(pwork->fd);
-          return(0);
-        }
-      p++;
-    }
-  /* Nothing matching found, try generic */
-  p = (ChangerCMD_T *)&ChangerIO;
-  while(p->ident != NULL)
-    {
-      if (strcmp("generic", p->ident) == 0)
-        {
-          p->eject(pwork->fd);
-          return(0);
-        }
-      p++;
-    }
-}
 
 
-int Clean(char *tapedev)
-{
-  int ret;
-  ChangerCMD_T *p = (ChangerCMD_T *)&ChangerIO;
-  OpenFiles_T *pwork ;
-
-  if ((pwork = LookupDevice(tapedev, 0)) == NULL)
-    {
-      return(-1);
-    }
-
-  if (pwork->SCSI == 0)
-    {
-      dbprintf(("Clean : Device %s not SCSI capable\n", pwork->dev));
-      return(-1);
-    }
-
-  while(p->ident != NULL)
-    {
-      if (strcmp(pwork->name, p->ident) == 0)
-        {
-          ret=p->clean(tapedev);
-          return(ret);
-        }
-      p++;
-    }
-  /* Nothing matching found, try generic */
-  p = (ChangerCMD_T *)&ChangerIO;
-  while(p->ident != NULL)
-    {
-      if (strcmp("generic", p->ident) == 0)
-        {
-          ret=p->clean(tapedev);
-          return(ret);
-        }
-      p++;
-    }   
-}
-
-int isempty(int fd, int slot)
-{
-  int rslot;
-  Status(fd, &pElementInfo);
-  rslot = slot + MinSlots;
-  
-  for (pwElementInfo = pElementInfo; pwElementInfo != NULL ; pwElementInfo = pwElementInfo->next) {
-    if (pwElementInfo->address == rslot)
-      {
-        /*
-          fprintf(stderr, "Element #%d %c ASC = %02X ASCQ = %02X Type %d\n",
-          pwElementInfo->address, pwElementInfo->status,
-          pwElementInfo->ASC, pwElementInfo->ASCQ, pwElementInfo->type );
-        */
-        if(pwElementInfo->status == 'E')
-          return(1);
-        return(0);
-      }
-  }
-}
-
-int get_clean_state(char *tapedev)
-{
-  /* Return 1 it cleaning is needed */
-  int ret;
-  ret=Clean(tapedev);
-  return(ret);    
-}
-
-int eject_tape(char *tapedev)
-  /* This function ejects the tape from the drive */
-{
-  int ret = 0;
-
-  ret=Eject(tapedev);
-  return(ret);    
-}
-
-
-int find_empty(int fd)
-{
-  dbprintf(("find_empty %d\n", fd));
-}
-
-int drive_loaded(int fd, int drivenum)
-{
-  
-  dbprintf(("\ndrive_loaded : fd %d drivenum %d \n", fd, drivenum));
-  Status(fd, &pElementInfo);
-  for (pwElementInfo = pElementInfo; pwElementInfo; pwElementInfo = pwElementInfo->next) {
-    if (pwElementInfo->address == TapeDrive)
-      {
-        dbprintf(("drive_loaded : Element #%d %c ASC = %02X ASCQ = %02X Type %d\n",
-                  pwElementInfo->address, pwElementInfo->status,
-                  pwElementInfo->ASC, pwElementInfo->ASCQ, pwElementInfo->type));
-        if(pwElementInfo->status == 'E')
-          {
-            return(0);
-          } else {
-            return(1);
-          }
-      }
-  }
-  /*
-   * check the status of the transport (tape drive).
-   *
-   * return 1 if the drive is occupied, 0 otherwise.
-   */
-  return(0);
-}
-
-
-
-int unload(int fd, int drive, int slot)
-{
-  /*
-   * unload the specified drive into the specified slot
-   * (storage element)
-   */
-  int empty = 0;
-  
-  Status(fd, &pElementInfo);    
-  for (pwElementInfo = pElementInfo; pwElementInfo; pwElementInfo = pwElementInfo->next) {
-    if (pwElementInfo->status == 'E' && pwElementInfo->type == STORAGE )
-      empty=pwElementInfo->address;
-  }
-  if (empty == slot+MinSlots) {
-    Move(fd, TapeDrive, slot+MinSlots);
-  } else {
-    Move(fd, TapeDrive, empty);
-  }
-  return(0);
-}
-
-int load(int fd, int drive, int slot)
-{
-  int ret;
-  
-  Status(fd, &pElementInfo);
-  ret = Move(fd, slot+MinSlots, TapeDrive);
-  return(ret);
-  /*
-   * load the media from the specified element (slot) into the
-   * specified data transfer unit (drive)
-   */
-}
-
-
-int get_slot_count(int fd)
-{
-  Status(fd, &pElementInfo);
-  return(MaxSlots-MinSlots);
-  /*
-   * return the number of slots in the robot
-   * to the caller
-   */
-  
-}
 
 
 /*
- * retreive the number of data-transfer devices
- */ 
-int get_drive_count(int fd)
+ * Lookup function pointer for device ....
+ */
+
+ChangerCMD_T *LookupFunction(int fd, char *dev)
 {
-  int count = 0;
-  Status(fd, &pElementInfo);
+  OpenFiles_T *pwork =NULL ;
+  ChangerCMD_T *p = (ChangerCMD_T *)&ChangerIO;
+
+  if (fd > 0 && strlen(dev) == 0) 
+    {
+      if ((pwork = LookupDevice("", fd, LOOKUP_FD)) == NULL)
+        {
+          return(NULL);
+        }
+    }
   
-  for (pwElementInfo = pElementInfo; pwElementInfo; pwElementInfo = pwElementInfo->next) {
-    if (pwElementInfo->type == TAPETYPE)
-      {
-        count++;
-      }
-  }
-  
-  return(count);
+  if (fd == 0 && strlen(dev) > 0)
+    {
+      if ((pwork = LookupDevice(dev, 0, LOOKUP_NAME)) == NULL)
+        {
+          return(NULL);
+        }
+      
+    }
+
+  if (pwork == NULL)
+    {
+      return(NULL);
+    }
+
+  while(p->ident != NULL)
+    {
+      if (strcmp(pwork->ident, p->ident) == 0)
+        {
+          return(p);
+        }
+      p++;
+    }
+  /* Nothing matching found, try generic */
+  p = (ChangerCMD_T *)&ChangerIO;
+  while(p->ident != NULL)
+    {
+      if (strcmp("generic", p->ident) == 0)
+        {
+          return(p);
+        }
+      p++;
+    }
+  return(NULL);
 }
 
+/*
+ * Here comes everything what decode the log Pages
+ */
 
 int LogSense(DeviceFD)
 {
   CDB_T CDB;
-  RequestSense_T RequestSense;
+  RequestSense_T *pRequestSense;
   extern OpenFiles_T *pOpenFiles;
   OpenFiles_T *pwork;
   LogSenseHeader_T *LogSenseHeader;
   LogParameter_T *LogParameter;
   struct LogPageDecode *p;
   int found;
+  int fd;
+  char *datestamp = NULL;
+  char *label = NULL;
+  char *result = NULL;
   extern char *tapestatfile;
-
+  
   int i;
   int ParameterCode;
   unsigned int value;
@@ -1321,13 +1516,37 @@ int LogSense(DeviceFD)
 
   if (tapestatfile != NULL && (StatFile = fopen(tapestatfile,"a")) != NULL) 
     {
+      pRequestSense  = (RequestSense_T *)malloc(sizeof(RequestSense_T));
+
+      if (TestUnitReady(DeviceFD, pRequestSense) == 0)
+        {
+          dbprintf(("LogSense : Tape_Ready failed\n"));
+          return(0);
+        }
+       if (GenericRewind(DeviceFD) < 0) 
+         { 
+           dbprintf(("LogSense : Rewind failed\n")); 
+           return(0); 
+         } 
+      /*
+       * Try to read the tape label
+       */
+      if ((pwork = LookupDevice("tape_device", 0, LOOKUP_CONFIG)) != NULL)
+        {
+          if ((result = (char *)tapefd_rdlabel(pwork->fd, &datestamp, &label)) == NULL)
+            {
+              fprintf(StatFile, "==== %s ==== %s ====\n", datestamp, label);
+            } else {
+              fprintf(StatFile, "%s\n", result);
+            }
+        }
       buffer = (char *)malloc(size);
       bzero(buffer, size);
       /*
        * Get the known log pages 
        */
 
-      CDB[0] = 0x4d;
+      CDB[0] = SC_COM_LOG_SENSE;
       CDB[1] = 0;
       CDB[2] = 0x40;    /* 0x40 for current values */
       CDB[3] = 0;
@@ -1341,12 +1560,14 @@ int LogSense(DeviceFD)
       dbprintf(("LogSense\n"));
 
       if (SCSI_ExecuteCommand(DeviceFD, Input, CDB, 10,
-                              buffer, size, 
-                              (char *) &RequestSense,
+                              buffer,
+                              size, 
+                              (char *)pRequestSense,
                               sizeof(RequestSense_T)) != 0)
         {
-          DecodeSense(&RequestSense, "LogSense : ");
-          return;
+          DecodeSense(pRequestSense, "LogSense : ");
+          free(pRequestSense);
+          return(0);
         }
 
       for (pwork = pOpenFiles; pwork != NULL; pwork = pwork->next)
@@ -1359,6 +1580,7 @@ int LogSense(DeviceFD)
 
       if (pwork == NULL)
         {
+          free(pRequestSense);
           return(-1);
         }
 
@@ -1373,7 +1595,7 @@ int LogSense(DeviceFD)
           bzero(buffer, size);
       
       
-          CDB[0] = 0x4d;
+          CDB[0] = SC_COM_LOG_SENSE;
           CDB[1] = 0;
           CDB[2] = 0x40 | logpages[count];    /* 0x40 for current values */
           CDB[3] = 0;
@@ -1386,10 +1608,12 @@ int LogSense(DeviceFD)
           if (SCSI_ExecuteCommand(DeviceFD, Input, CDB, 10,
                                   buffer,
                                   size, 
-                                  (char *) &RequestSense, sizeof(RequestSense_T)) != 0)
+                                  (char *)pRequestSense,
+                                  sizeof(RequestSense_T)) != 0)
             { 
-              DecodeSense(&RequestSense, "LogSense : ");
-              return;
+              DecodeSense(pRequestSense, "LogSense : ");
+              free(pRequestSense);
+              return(0);
             }
           LogSenseHeader = (LogSenseHeader_T *)buffer;
           length = V2(LogSenseHeader->PageLength);
@@ -1401,7 +1625,7 @@ int LogSense(DeviceFD)
           found = 0;
 
           while(p->ident != NULL) {
-            if ((strcmp(pwork->name, p->ident) == 0 ||strcmp("*", p->ident) == 0)  && p->LogPage == logpages[count]) {
+            if ((strcmp(pwork->ident, p->ident) == 0 ||strcmp("*", p->ident) == 0)  && p->LogPage == logpages[count]) {
               p->decode(LogParameter, length);
               found = 1;
               fprintf(StatFile, "\n");
@@ -1447,7 +1671,8 @@ int LogSense(DeviceFD)
         }
       }
     }
-  return(0);
+    free(pRequestSense);
+    return(0);
 }
 
 void WriteErrorCountersPage(LogParameter_T *buffer, int length)
