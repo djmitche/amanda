@@ -1,5 +1,8 @@
 1998-07-31  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* server-src/driver.c (adjust_diskspace): do not abort just because
+	a holding disk file is missing
+
 	* example/Makefile.am (EXTRA_DIST): add 8.5x11.ps to the
 	distribution
 	Reported by Jason L Tibbitts III <tibbs@hpc.uh.edu>

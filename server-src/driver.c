@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.46.2.2 1998/07/31 03:20:40 oliva Exp $
+ * $Id: driver.c,v 1.46.2.3 1998/07/31 05:05:54 oliva Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1240,8 +1240,10 @@ tok_t tok;
     unsigned long kbytes;
     long diff;
 
-    if(stat(sched(diskp)->destname, &finfo) == -1)
-	error("stat %s: %s", sched(diskp)->destname, strerror(errno));
+    if(stat(sched(diskp)->destname, &finfo) == -1) {
+	printf("stat %s: %s\n", sched(diskp)->destname, strerror(errno));
+	finfo.st_size = 0;
+    }
 
     holdp = sched(diskp)->holdp;
 
