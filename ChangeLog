@@ -1,3 +1,8 @@
+2001-06-18 John R. Jackson <jrj@purdue.edu>
+
+	* changer-src/chg-manual.sh.in: Add yet another online regex.  Found
+	  by George Herson <gherson@snet.net>.
+
 2001-06-01 John R. Jackson <jrj@purdue.edu>
 
 	* server-src/amindexd.c (build_disk_table): Make sure a holding disk
