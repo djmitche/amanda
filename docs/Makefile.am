@@ -9,7 +9,7 @@ pkgdata_DATA = \
 	KERBEROS		\
 	LABEL.PRINTING		\
 	MULTITAPE		\
-	PORTS.USAGE		\
+	PORT.USAGE		\
 	RESTORE			\
 	SAMBA			\
 	SECURITY		\

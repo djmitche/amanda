@@ -1,3 +1,7 @@
+2001-08-16 John R. Jackson (jrj@purdue.edu)
+
+	* docs/Makefile.am: Fix PORTS.USAGE -> PORT.USAGE typo.
+
 2001-08-16 Thomas Hepper (th@ant.han.de) via John R. Jackson (jrj@purdue.edu)
 	* changer-src/chg-scsi.c. Removed version 1 DB support from mapBarCode. Changed the way parameter
 	are given to MapBarCode and returned from there. No a struct is passed where all infos
