@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.38 2001/01/25 00:25:30 jrjackson Exp $
+ * $Id: amrestore.c,v 1.39 2001/02/25 17:00:49 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -417,7 +417,7 @@ char **argv;
     int arg_state;
     amwait_t compress_status;
     int fd;
-    int r;
+    int r = 0;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
