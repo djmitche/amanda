@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.6 1998/12/03 03:02:42 martinea Exp $
+ * $Id: amadmin.c,v 1.49.2.7 1998/12/06 20:19:53 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -47,6 +47,12 @@ void force P((int argc, char **argv));
 void force_one P((disk_t *dp));
 void unforce P((int argc, char **argv));
 void unforce_one P((disk_t *dp));
+void force_bump P((int argc, char **argv));
+void force_bump_one P((disk_t *dp));
+void force_no_bump P((int argc, char **argv));
+void force_no_bump_one P((disk_t *dp));
+void unforce_bump P((int argc, char **argv));
+void unforce_bump_one P((disk_t *dp));
 void reuse P((int argc, char **argv));
 void noreuse P((int argc, char **argv));
 void info P((int argc, char **argv));
@@ -123,7 +129,10 @@ char **argv;
     if(open_infofile(getconf_str(CNF_INFOFILE)))
 	error("could not open info db \"%s\"\n", getconf_str(CNF_INFOFILE));
 
-    if(strcmp(argv[2],"force") == 0) force(argc, argv);
+    if(strcmp(argv[2],"force-bump") == 0) force_bump(argc, argv);
+    else if(strcmp(argv[2],"force-no-bump") == 0) force_no_bump(argc, argv);
+    else if(strcmp(argv[2],"unforce-bump") == 0) unforce_bump(argc, argv);
+    else if(strcmp(argv[2],"force") == 0) force(argc, argv);
     else if(strcmp(argv[2],"unforce") == 0) unforce(argc, argv);
     else if(strcmp(argv[2],"reuse") == 0) reuse(argc, argv);
     else if(strcmp(argv[2],"no-reuse") == 0) noreuse(argc, argv);
@@ -161,9 +170,15 @@ void usage P((void))
     fprintf(stderr, "    Valid <command>s are:\n");
     fprintf(stderr,"\tversion\t\t\t\t# Show version info.\n");
     fprintf(stderr,
-	    "\tforce <hostname> <disks> ...\t# Force level 0 tonight.\n");
+	    "\tforce <hostname> <disks> ...\t# Force level 0 at next run.\n");
     fprintf(stderr,
 	    "\tunforce <hostname> <disks> ...\t# Clear force command.\n");
+    fprintf(stderr,
+	    "\tforce-bump <hostname> <disks> ...\t# Force bump at next run.\n");
+    fprintf(stderr,
+	    "\tforce-no-bump <hostname> <disks> ...\t# Force no-bump at next run.\n");
+    fprintf(stderr,
+	    "\tunforce-bump <hostname> <disks> ...\t# Clear bump command.\n");
     fprintf(stderr,
 	    "\treuse <tapelabel> ...\t\t# re-use this tape.\n");
     fprintf(stderr,
@@ -322,7 +337,7 @@ disk_t *dp;
     get_info(hostname, diskname, &info);
     info.command |= FORCE_FULL;
     if(put_info(hostname, diskname, &info) == 0) {
-	printf("%s: %s:%s is set to a forced level 0 tonight.\n",
+	printf("%s: %s:%s is set to a forced level 0 at next run.\n",
 	       get_pname(), hostname, diskname);
     } else {
 	fprintf(stderr, "%s: %s:%s could not be forced.\n",
@@ -375,6 +390,124 @@ int argc;
 char **argv;
 {
     diskloop(argc, argv, "unforce", unforce_one);
+}
+
+
+/* ----------------------------------------------- */
+
+
+void force_bump_one(dp)
+disk_t *dp;
+{
+    char *hostname = dp->host->hostname;
+    char *diskname = dp->name;
+    info_t info;
+
+#if TEXTDB
+    check_dumpuser();
+#endif
+    get_info(hostname, diskname, &info);
+    info.command |= FORCE_BUMP;
+    if(info.command & FORCE_NO_BUMP) {
+	info.command ^= FORCE_NO_BUMP;
+	printf("%s: WARNING: %s:%s FORCE_NO_BUMP command was cleared.\n",
+	       get_pname(), hostname, diskname);
+    }
+    if(put_info(hostname, diskname, &info) == 0) {
+	printf("%s: %s:%s is set to bump at next run.\n",
+	       get_pname(), hostname, diskname);
+    } else {
+	fprintf(stderr, "%s: %s:%s could not be forced to bump.\n",
+		get_pname(), hostname, diskname);
+    }
+}
+
+
+void force_bump(argc, argv)
+int argc;
+char **argv;
+{
+    diskloop(argc, argv, "force-bump", force_bump_one);
+}
+
+
+/* ----------------------------------------------- */
+
+
+void force_no_bump_one(dp)
+disk_t *dp;
+{
+    char *hostname = dp->host->hostname;
+    char *diskname = dp->name;
+    info_t info;
+
+#if TEXTDB
+    check_dumpuser();
+#endif
+    get_info(hostname, diskname, &info);
+    info.command |= FORCE_NO_BUMP;
+    if(info.command & FORCE_BUMP) {
+	info.command ^= FORCE_BUMP;
+	printf("%s: WARNING: %s:%s FORCE_BUMP command was cleared.\n",
+	       get_pname(), hostname, diskname);
+    }
+    if(put_info(hostname, diskname, &info) == 0) {
+	printf("%s: %s:%s is set to bump at next run.\n",
+	       get_pname(), hostname, diskname);
+    } else {
+	fprintf(stderr, "%s: %s:%s could not be force to not bump.\n",
+		get_pname(), hostname, diskname);
+    }
+}
+
+
+void force_no_bump(argc, argv)
+int argc;
+char **argv;
+{
+    diskloop(argc, argv, "force-no-bump", force_no_bump_one);
+}
+
+
+/* ----------------------------------------------- */
+
+
+void unforce_bump_one(dp)
+disk_t *dp;
+{
+    char *hostname = dp->host->hostname;
+    char *diskname = dp->name;
+    info_t info;
+
+    get_info(hostname, diskname, &info);
+    if(info.command & (FORCE_BUMP | FORCE_NO_BUMP)) {
+#if TEXTDB
+	check_dumpuser();
+#endif
+	if(info.command & FORCE_BUMP)
+	    info.command ^= FORCE_BUMP;
+	if(info.command & FORCE_NO_BUMP)
+	    info.command ^= FORCE_NO_BUMP;
+	if(put_info(hostname, diskname, &info) == 0) {
+	    printf("%s: bump command for %s:%s cleared.\n",
+		   get_pname(), hostname, diskname);
+	} else {
+	    fprintf(stderr, "%s: %s:%s bump command could not be cleared.\n",
+		    get_pname(), hostname, diskname);
+	}
+    }
+    else {
+	printf("%s: no bump command outstanding for %s:%s, unchanged.\n",
+	       get_pname(), hostname, diskname);
+    }
+}
+
+
+void unforce_bump(argc, argv)
+int argc;
+char **argv;
+{
+    diskloop(argc, argv, "unforce-bump", unforce_bump_one);
 }
 
 
@@ -504,11 +637,11 @@ disk_t *dp;
 
     printf("\nCurrent info for %s %s:\n", dp->host->hostname, dp->name);
     if(info.command & FORCE_FULL) 
-	printf("  (Forcing to level 0 dump on next run)\n");
+	printf("  (Forcing to level 0 dump at next run)\n");
     if(info.command & FORCE_BUMP) 
-	printf("  (Forcing bump on next run)\n");
+	printf("  (Forcing bump at next run)\n");
     if(info.command & FORCE_NO_BUMP) 
-	printf("  (Preventing bump on next run)\n");
+	printf("  (Forecing no-bump at next run)\n");
     printf("  Stats: dump rates (kps), Full:  %5.1f, %5.1f, %5.1f\n",
 	   info.full.rate[0], info.full.rate[1], info.full.rate[2]);
     printf("                    Incremental:  %5.1f, %5.1f, %5.1f\n",
