@@ -1,0 +1,354 @@
+AMANDA SECURITY API
+
+$Id: SECURITY-API,v 1.1 1998/11/04 19:32:35 kashmir Exp $
+
+by Mike Grupenhoff <kashmir@munge.com>
+
+1. INTRODUCTION
+
+This is a document of the API for defining and utilizing multiple
+security and transport mechanisms for the Amanda network protocol.
+
+The goal of this API is to allow several different forms of
+communication and authentication to exist between the Amanda server and
+its clients.
+
+2. THE PROBLEM
+
+There exist many potential ways that a user might wish to grant access
+to the Amanda daemon.  The two currently supported are BSD (reserved
+port) and Kerberos IV security.  The current implementation of these
+two methods is not very general, and adding additional methods requires
+a large amount of code to be modified.
+
+Additionally, the current methods require the protocol and dump
+transport to be transmitted across the network using a pre-defined
+method.  The Amanda protocol currently must be sent using udp datagrams
+to a well-known port, and the dumps are transported using tcp
+connections between ports negotiated via the protocol.
+
+3. THE API
+
+The security API was designed to be a layer in between the core logic
+of Amanda and the transport and authentication of the protocol and
+dumps.
+
+The component server and client programs now deal with abstract
+concepts instead of concrete udp and tcp handles.
+
+The prefix "security_" is reserved for use as the namespace of this
+API.
+
+3.1. protocol packet transmission functions
+
+These functions exist for transmitting pkt_t's between the client and
+server.
+
+These functions operate on security_handle_t objects.  These objects
+are described later.
+
+3.1.1. security_getdriver
+
+    const security_driver_t *security_getdriver(const char *drivername);
+
+Given a security type ("KRB4", "BSD", "SSH", etc), returns a pointer to
+that type's security_driver_t (section 3.2), or NULL if no driver exists.
+
+3.1.2. security_connect
+
+    security_handle_t *security_connect(const security_driver_t *h,
+	const char *hostname);
+
+Given a security driver, and a hostname, returns a security_handle_t
+(section 3.3) that can be used to communicate with that host.  Returns
+NULL if no connection could be made.
+
+This is expected to be the Amanda server's interface for setting up
+connections to clients.
+
+3.1.3. security_accept
+
+    void security_accept(const security_driver_t *h, int in, int out,
+	void (*callback)(security_handle_t *, pkt_t *));
+
+Given a security driver, an input file descriptor, and an output file
+descriptor, and a callback, when new connections are detected on the
+given file descriptors, the function is called with a newly created
+security handle and the initial packet received.
+
+This is expected to be the Amanda daemon's interface for setting up
+incoming connections from the Amanda server.  The file descriptors are
+typically 0 and 1 (stdin/stdout).
+
+This function uses the event interface, and only works properly when
+event_loop() is called later in the program.
+
+3.1.4. security_close
+
+    void security_close(security_handle_t *h);
+
+Closes a connection created by a security_connect() or security_accept().
+
+3.1.5. security_sendpkt
+
+    int security_sendpkt(security_handle_t *h, const pkt_t *pkt);
+
+Transmits a pkt_t over a security handle.  Returns 0 on success, or
+negative on error.  A descriptive error message can be obtained via
+security_geterror().
+
+3.1.6. security_recvpkt
+
+    int security_recvpkt(security_handle_t *h,
+	void (*callback)(void *arg, pkt_t *pkt), void *arg);
+
+Requests that when incoming packets arrive for this handle, the given
+function is called with the given argument and the received packet.
+
+On receive error, the callback will be passed NULL for the pkt arg.  An
+error message can be retrieved via security_geterror().
+
+This function uses the event interface.  Callbacks will only be generated
+when event_loop() is called.
+
+3.1.7. security_recvpkt_cancel
+
+    int security_recvpkt_cancel(security_handle_t *h);
+
+Cancels a previous recvpkt request for this handle.
+
+3.1.8. security_geterror
+
+    const char *security_geterror(security_handle_t *h);
+
+Returns a descriptive error message for the last error condition on this
+handle or a stream associated with this handle.
+
+3.1.9. security_seterror
+
+    void security_seterror(security_handle_t *h, const char *msg, ...);
+
+Sets the string that security_geterror() returns.
+
+3.2. stream functions
+
+These functions exist for transmitting random data over a stream-like
+connection.
+
+These functions operate on security_stream_t objects, which are
+described later.
+
+3.2.1. security_stream_server
+
+    security_stream_t *security_stream_server(security_handle_t *h);
+
+Creates the server end of a security stream, and will receive a
+connection from the host on the other end of the security handle
+passed.
+
+Returns a security_stream_t on success, and NULL on error.  Error
+messages can be obtained by calling security_geterror() on the security
+handle associated with this stream.
+
+3.2.2. security_stream_client
+
+    security_stream_t *security_stream_client(security_handle_t *h, int id);
+
+Creates the client end of a security stream, and connects it to the
+machine on the other end of the security handle.  The 'id' argument
+identifies which stream on the other end to connect to.
+
+Returns a security_stream_t on success, and NULL on error.  Error
+messages can be obtained by calling security_geterror() on the security
+handle associated with this stream.
+
+3.2.3. security_stream_id
+
+    int security_stream_id(security_stream_t *s);
+
+Returns an identifier which can be used to connect to this security
+stream with security_stream_client().
+
+Typical usage would be for one end of a connection to create a stream
+with security_stream_server(), and then transmit the id for that stream
+to the other side.  The other side will then connect to that id with
+security_stream_client().
+
+3.2.4. security_stream_write
+
+    int security_stream_write(security_stream_t *s, const void *buf,
+	size_t bufsize);
+
+Writes a chunk of data to the security stream.  Returns 0 on success,
+or negative on error.  Error messages can be obtained by calling
+security_geterror() on the security handle associated with this
+stream.
+
+3.2.5. security_stream_read
+
+    void security_stream_read(security_stream_t *s,
+	void (*callback)(void *arg, void *buf, size_t bufsize), void *arg);
+
+Requests that when data is ready to be read on this stream, the given
+function is called with the given arg, a buffer full of data, and the
+size of that buffer.
+
+On error, the bufsize will be negative.  An error message can be
+retrieved by calling security_geterror on the security handle
+associated with this stream.
+
+This function uses the event interface.  Callbacks will only be
+generated while in event_loop().
+
+3.2.6. security_stream_read_cancel
+
+    void security_stream_read_cancel(security_stream_t *s);
+
+Cancels a previous read request.
+
+4. DATA TYPES
+
+All visible data types are meant to be opaque to the caller.  At no
+time should a caller have to access a member of any data type
+directly.  The API should always be used instead.
+
+4.1. security_driver_t
+
+This is a static object containing function vectors that implement the
+API for a particular security type.
+
+4.2. security_handle_t
+
+This is an object that describes a protocol connection to a remote
+server.  There is one security_handle_t per request, and there can be
+many to the same remote host.
+
+4.3. security_stream_t
+
+This is an object that describes a data connection to a remote host.
+It is always associated and derived from a security_handle_t.
+Arbitrary data can be passed over a security stream.
+
+5. SECURITY DRIVERS
+
+Each security type is defined by a struct of function vectors.  These
+methods implement the details of this security type.
+
+This section will document each element of security_driver_t.
+
+
+5.1. name
+
+    const char *name;
+
+This is the name of the driver.  This is used by security_getdriver()
+to associate a name with a driver type.
+
+5.2. connect
+
+    void *(*connect)(const char *hostname);
+
+This is the implementation of security_connect().  It actually sets up
+the connection, and then returns a structure describing the connection.
+The first element of this structure MUST be a security_handle_t, because
+it will be cast to that after it is passed up to the caller.
+
+5.3. accept
+
+    void (*accept)(int in, int out,
+	void (*callback)(void *arg, void *handle, pkt_t *pkt), void *arg);
+
+This is the implementation of security_accept().  It is passed the
+input and output file descriptors, a callback, and an argument for the
+callback.  The callback also takes a handle argument, which, like
+connect, MUST be castable to security_handle_t, and also an initial
+packet received for that handle.
+
+5.4. close
+
+    void (*close)(void *handle);
+
+The implementation of security_close().
+
+
+5.5. sendpkt
+
+    int (*sendpkt)(void *handle, pkt_t *pkt);
+
+The implementation of security_sendpkt().  Security information is
+usually added by the driver before transmission.
+
+
+5.6. recvpkt
+
+    void (*recvpkt)(void *handle, void (*callback)(void *arg, pkt_t *pkt),
+	void *arg);
+
+The implementation of security_recvpkt().  It will typically be layered
+onto the event interface somehow.  It can assume that a caller will
+eventually call event_loop().
+
+5.7. recvpkt_cancel
+
+    void (*recvpkt_cancel)(void *handle);
+
+The implementation of security_recvpkt_cancel().  Drivers should allow
+this to be run even if no recvpkt was scheduled, or if one was
+previously cancelled.
+
+
+5.8. stream_server
+
+    void *(*stream_server)(void *handle);
+
+Implementation of security_stream_server().  The handle passed is reference
+counted by the general security layer, so it will persist even if the
+caller calls security_close() on it.
+
+This function returns a object describing the stream.  The first member
+of this object MUST be a security_stream_t, because it will be cast
+to that.
+
+5.9. stream_client
+
+    void *(*stream_client)(void *handle, int id);
+
+Implementation of security_stream_client().  The id argument is something
+returned by security_stream_id().  Again, the handle is referenced counted.
+
+This function returns a object describing the stream.  The first member
+of this object MUST be a security_stream_t, because it will be cast
+to that.
+
+5.10. stream_close
+
+    void (*stream_close)(void *stream);
+
+Close and free up resources for an open stream.
+
+5.11. stream_id
+
+    int (*stream_id)(void *stream);
+
+Return a unique id for this stream.  This is to be used by stream_client()
+to connect to this stream.
+
+
+5.12. stream_write
+
+    int (*stream_write)(void *stream, const void *buf, size_t bufsize);
+
+Implementation of security_stream_write.
+
+5.13. stream_read
+
+    void (*stream_read)(void *stream,
+	void (*callback)(void *arg, void *buf, size_t bufsize), void *arg);
+
+Implementation of security_stream_read.
+
+5.14. stream_read_cancel
+
+    void (*stream_read_cancel)(void *stream);
+
+Implementation of security_stream_read_cancel.
