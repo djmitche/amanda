@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-hpux.c,v 1.10 1999/03/06 09:09:32 th Exp $
+ *	$Id: scsi-hpux.c,v 1.11 1999/06/01 21:38:21 oliva Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -15,6 +15,7 @@
 
 #if defined(HAVE_HPUX_SCSI_CHIO)
 # include <sys/scsi.h>
+# include <sys/mtio.h>  /* for eject_tape ioctls */
 
 char *moddesc = "@(#)" __FILE__
 		": HP/UX SCSI changer support routines @(#)";
@@ -90,12 +91,11 @@ int get_clean_state(char *dev)
 
 
 void eject_tape(char *tape)
-/* This function ejects the tape from the drive */
+     /* This function ejects the tape from the drive */
 {
-#if 0
 /*
   This code works for Linux .... 
-  maybe someone can do something like this under HPUX
+  This code works for HPUX too, see 'man 7 mt'
 */
     int mtfd;
     struct mtop mt_com;
@@ -113,7 +113,6 @@ void eject_tape(char *tape)
 */
     }
     close(mtfd);
-#endif
 }
 
 /* 
