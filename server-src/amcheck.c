@@ -540,8 +540,7 @@ int fd;
 
     while(!empty(*origqp)) {
         hostp = origqp->head->host;
-        sprintf(req, "SERVICE selfcheck PROGRAM %s\n",
-                origqp->head->dtype->program);
+        sprintf(req, "SERVICE selfcheck\n");
 	strcat(req, "OPTIONS ;\n"); 	/* no options yet */
 
         for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {

@@ -800,10 +800,9 @@ host_t *hostp;
 
     assert(hostp->disks != NULL);
 
-    sprintf(req, "SERVICE sendsize PROGRAM %s\n",    /* XXX assumes all same */
-	    hostp->disks->dtype->program);
-
-    strcat(req, "OPTIONS ;\n");	     /* no options yet, but satisfy protocol */
+    sprintf(req, "SERVICE sendsize\nOPTIONS MAXDUMPS=%d;\n",
+	    /* XXX assumes all same PROGRAM */
+	    hostp->disks->dtype->program, hostp->maxdumps);
 
     disks = 0;
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {

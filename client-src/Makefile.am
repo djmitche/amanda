@@ -23,8 +23,8 @@ libexec_PROGRAMS =	versionsuffix					\
 
 EXTRA_PROGRAMS =	amandad				calcsize	\
 			rundump				runtar		\
-			selfcheck			sendbackup-dump	\
-			sendbackup-gnutar 		sendsize
+			selfcheck			sendbackup	\
+			sendsize
 
 sbin_SCRIPTS =		@BUILD_CLIENT_SCRIPTS_SBIN@
 
@@ -34,11 +34,8 @@ EXTRA_SCRIPTS =		amhpfixdevs			patch-system
 
 EXTRA_DIST =		amhpfixdevs.sh
 
-sendbackup_dump_SOURCES = sendbackup-dump.c		sendbackup-common.c \
-			sendbackup-common.h
-
-sendbackup_gnutar_SOURCES = sendbackup-gnutar.c		sendbackup-common.c \
-			sendbackup-common.h
+sendbackup_SOURCES = 	sendbackup.c			sendbackup.h	\
+			sendbackup-dump.c		sendbackup-gnutar.c
 
 noinst_LIBRARIES =	@BUILD_CLIENT_LIB@
 

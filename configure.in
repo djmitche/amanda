@@ -204,7 +204,7 @@ n | no) USE_VERSION_SUFFIXES=no
 esac
 AC_SUBST(USE_VERSION_SUFFIXES)
 
-BUILD_CLIENT_PROGS_LIBEXEC="amandad calcsize rundump runtar selfcheck sendbackup-dump sendbackup-gnutar sendsize"
+BUILD_CLIENT_PROGS_LIBEXEC="amandad calcsize rundump runtar selfcheck sendbackup sendsize"
 BUILD_CLIENT_SCRIPTS_LIBEXEC="patch-system"
 BUILD_CLIENT_LIB="libamclient.a"
 AMCLIENT_EXTRA_OBJS=

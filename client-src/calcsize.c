@@ -85,6 +85,10 @@ char exclude_list_string[] = "--exclude-list=";
 
 char *pname = "calcsize";
 
+#ifdef NEED_POSIX_FLOCK
+static struct flock lock = { F_UNLCK, SEEK_SET, 0, 0 };
+#endif
+
 int main(argc, argv)
 int argc;
 char **argv;
@@ -227,7 +231,23 @@ char **argv;
     for(i = 0; i < ndumps; i++) {
 	sprintf(result, "%s %d SIZE %ld\n", amname,
 		dumplevel[i], final_size(i, dirname));
+
+#ifdef NEED_POSIX_FLOCK
+	lock.l_type = F_WRLCK;
+	fcntl(1, F_SETLKW, &lock);
+#else
+	flock(1, LOCK_EX);
+#endif
+
+	lseek(1, SEEK_END, 0);
 	write(1, result, strlen(result));
+
+#ifdef NEED_POSIX_FLOCK
+	lock.l_type = F_UNLCK;
+	fcntl(1, F_SETLK, &lock);
+#else
+	flock(1, LOCK_UN);
+#endif
     }
 
     return 0;

@@ -25,16 +25,13 @@
  *			   University of Maryland at College Park
  */
 /* 
- * sendbackup-common.h - a few common decls for the sendbackup-* sources
+ * sendbackup.h - a few common decls for the sendbackup-* sources
  */
 #include "amanda.h"
 
 void write_tapeheader P((char *host, char *disk, int level, int compress, \
 			 char *datestamp, int outf));
 int pipespawn P((char *prog, int *stdinfd, int stdoutfd, int stderrfd, ...));
-void start_backup P((char *disk, int level, char *datestamp, \
-		     int dataf, int mesgf, int indexf));
-void end_backup P((int goterror));
 void start_index P((int createindex, int input, int mesg, \
 		    int index, char *cmd));
 
@@ -68,8 +65,18 @@ extern regex_t re_table[];
 
 extern int compress, comppid, dumppid, no_record;
 extern int indexpid, createindex;
-extern char *pname, *backup_program_name, *restore_program_name;
-extern char *amanda_backup_program;
+
+typedef struct backup_program_s {
+    char *name, *backup_name, *restore_name;
+    regex_t *re_table;
+    void (*start_backup) P((char *disk, int level, char *datestamp, \
+			    int dataf, int mesgf, int indexf));
+    void (*end_backup) P((int goterror));
+} backup_program_t;
+
+extern backup_program_t *programs[], *program;
+
+extern char *pname;
 
 #define COMPR_FAST 1
 #define COMPR_BEST 2

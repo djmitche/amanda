@@ -30,7 +30,7 @@
  */
 
 #include "amanda.h"
-#include "sendbackup-common.h"
+#include "sendbackup.h"
 #include "amandates.h"
 #include "getfsent.h"			/* for amname_to_dirname lookup */
 #include "version.h"
@@ -46,7 +46,7 @@
 #endif
 
 
-regex_t re_table[] = {
+static regex_t re_table[] = {
   /* tar prints the size in bytes */
   { DMP_SIZE, 
 	"^Total bytes written: [0-9][0-9]*",				1},
@@ -57,15 +57,6 @@ regex_t re_table[] = {
 
 extern char efile[256];
 
-#ifdef GNUTAR
-char *backup_program_name = GNUTAR;	/* for printing purposes */
-char *restore_program_name = GNUTAR;
-#else
-char *backup_program_name = "gtar";
-char *restore_program_name = "gtar";
-#endif
-char *amanda_backup_program = "GNUTAR";	/* for the header */
-
 int cur_level;
 char *cur_disk;
 time_t cur_dumptime;
@@ -74,7 +65,7 @@ time_t cur_dumptime;
 char *incrname;
 #endif
 
-void start_backup(disk, level, datestamp, dataf, mesgf, indexf)
+static void start_backup(disk, level, datestamp, dataf, mesgf, indexf)
 char *disk, *datestamp;
 int level, dataf, mesgf, indexf;
 {
@@ -227,7 +218,7 @@ int level, dataf, mesgf, indexf;
 	    taropt = "-Tcga";
 	dbprintf(("backup from %s, pass %s\n", sharename, "XXXXX"));
 
-	restore_program_name = SAMBA_CLIENT;
+	program->backup_name = program->restore_name = SAMBA_CLIENT;
 	
 	write_tapeheader(host, disk, level, compress, datestamp, dataf);
 	start_index(createindex, dumpout, mesgf, indexf,
@@ -238,8 +229,8 @@ int level, dataf, mesgf, indexf;
 #endif
 		    " -tf - 2>/dev/null | cut -c2-");
 
-	dumppid = pipespawn(SAMBA_CLIENT, &dumpin, dumpout, mesgf,
-			    "gtar",
+	dumppid = pipespawn(program->backup_name, &dumpin, dumpout, mesgf,
+			    "smbclient",
 			    sharename, pass, "-U", "backup",
 			    "-d0",
 			    taropt, "-",
@@ -321,7 +312,7 @@ int level, dataf, mesgf, indexf;
     close(indexf);
 }
 
-void end_backup(goterror)
+static void end_backup(goterror)
 int goterror;
 {
     if(!no_record && !goterror) {
@@ -347,3 +338,13 @@ int goterror;
     finish_amandates();
     free_amandates();
 }
+
+backup_program_t backup_program = {
+  "GNUTAR",
+#ifdef GNUTAR
+  GNUTAR, GNUTAR,
+#else
+  "gtar", "gtar",
+#endif
+  re_table, start_backup, end_backup
+};

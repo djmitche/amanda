@@ -496,7 +496,6 @@ pkt_t *pkt;
     if(pkt->type == P_REQ) {
         eat_string(msg, "HOSTNAME");    pkt->hostname = parse_string(msg);
 	eat_string(msg, "SERVICE");     pkt->service = parse_string(msg);
-	eat_string(msg, "PROGRAM");	pkt->program = parse_string(msg);
     }
 
     eat_string(msg, "");

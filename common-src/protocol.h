@@ -48,7 +48,6 @@ typedef struct {			/* a predigested datagram */
     char *handle;
     char *hostname;
     char *service;
-    char *program;
     char *security;
     char *body;
     dgram_t dgram;

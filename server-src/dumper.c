@@ -1030,8 +1030,8 @@ char *hostname, *disk, *levelstr, *dumpname, *options;
     int rc;
 
     sprintf(req,
-	    "SERVICE sendbackup PROGRAM %s\n%s %s DATESTAMP %s OPTIONS %s\n",
-            progname, disk, levelstr, datestamp, options);
+	    "SERVICE sendbackup\n%s %s %s DATESTAMP %s OPTIONS %s\n",
+            disk, levelstr, progname, datestamp, options);
 
     datafd = mesgfd = indexfd = -1;
 

@@ -29,7 +29,7 @@
  * sendbackup-dump.c - send backup data using BSD dump
  */
 
-#include "sendbackup-common.h"
+#include "sendbackup.h"
 #include "getfsent.h"
 #include "version.h"
 
@@ -39,8 +39,7 @@
 #define NAUGHTY_BITS			/* but then I'd have to kill you */
 #endif
 
-
-regex_t re_table[] = {
+static regex_t re_table[] = {
   /* the various encodings of dump size */
   { DMP_SIZE, 
 	"DUMP: [0-9][0-9]* tape blocks",				1024},
@@ -106,21 +105,7 @@ regex_t re_table[] = {
   { DMP_STRANGE, NULL, 0}
 };
 
-#ifdef DUMP
-char *backup_program_name = DUMP;	/* for printing */
-#else
-char *backup_program_name = "dump";	/* for printing */
-#endif
-
-#ifdef RESTORE
-char *restore_program_name = RESTORE;
-#else
-char *restore_program_name = "restore";
-#endif
-
-char *amanda_backup_program = "DUMP";	/* for the header */
-
-void start_backup(disk, level, datestamp, dataf, mesgf, indexf)
+static void start_backup(disk, level, datestamp, dataf, mesgf, indexf)
 char *disk, *datestamp;
 int level, dataf, mesgf, indexf;
 {
@@ -173,12 +158,14 @@ int level, dataf, mesgf, indexf;
     if (1)
 #endif
     {
+        char *progname = cmd
 #ifdef USE_RUNDUMP
-        backup_program_name  = cmd;
+        progname = cmd;
 #else
-	backup_program_name  = XFSDUMP;
+	progname = XFSDUMP;
 #endif
-	restore_program_name = XFSRESTORE;
+	program->backup_name  = XFSDUMP;
+	program->restore_name = XFSRESTORE;
 
 	write_tapeheader(host, disk, level, compress, datestamp, dataf);
 
@@ -189,13 +176,13 @@ int level, dataf, mesgf, indexf;
 	sprintf(dumpkeys, "%d", level);
 	if (no_record)
 	{
-	    dumppid = pipespawn(backup_program_name, &dumpin, dumpout, mesgf,
+	    dumppid = pipespawn(program->backup_name, &dumpin, dumpout, mesgf,
 				"xfsdump", "-J", "-F", "-l", dumpkeys, "-",
 				device, (char *)0);
 	}
 	else
 	{
-	    dumppid = pipespawn(backup_program_name, &dumpin, dumpout, mesgf,
+	    dumppid = pipespawn(program->backup_name, &dumpin, dumpout, mesgf,
 				"xfsdump", "-F", "-l", dumpkeys, "-",
 				device, (char *)0);
 	}
@@ -250,8 +237,25 @@ int level, dataf, mesgf, indexf;
     close(indexf);
 }
 
-void end_backup(status)
+static void end_backup(status)
 int status;
 {
     /* don't need to do anything for dump */
 }
+
+backup_program_t dump_program = {
+  "DUMP",
+#ifdef DUMP
+  DUMP
+#else
+  "dump"
+#endif
+  ,
+#ifdef RESTORE
+  RESTORE
+#else
+  "restore"
+#endif
+  ,
+  re_table, start_backup, end_backup
+};

@@ -25,10 +25,10 @@
  *			   University of Maryland at College Park
  */
 /* 
- * sendbackup-common.c - common code for the sendbackup-* programs.
+ * sendbackup.c - common code for the sendbackup-* programs.
  */
 
-#include "sendbackup-common.h"
+#include "sendbackup.h"
 #include "stream.h"
 #include "arglist.h"
 #include "../tape-src/tapeio.h"
@@ -76,6 +76,8 @@ static int srvcompress=0;
 #endif
 
 long dump_size = -1;
+
+backup_program_t *program = NULL;
 
 /* local functions */
 int main P((int argc, char **argv));
@@ -157,7 +159,7 @@ int argc;
 char **argv;
 {
     int level, mesgpipe[2];
-    char disk[1024], options[4096], datestamp[80];
+    char prog[80], disk[1024], options[4096], datestamp[80];
 
     /* initialize */
 
@@ -175,11 +177,24 @@ char **argv;
     if(fgets(line, MAX_LINE, stdin) == NULL)
 	goto err;
     dbprintf(("%s: got input request: %s", argv[0], line));
-    if(sscanf(line, "%s %d DATESTAMP %s OPTIONS %[^\n]\n", 
-	      disk, &level, datestamp, options) != 4)
+    if(sscanf(line, "%s %s %d DATESTAMP %s OPTIONS %[^\n]\n", 
+	      prog, disk, &level, datestamp, options) != 4)
 	goto err;
-    dbprintf(("  parsed request as: disk `%s' lev %d stamp `%s' opt `%s'\n",
-	      disk, level, datestamp, options));
+    dbprintf(("  parsed request as: program `%s' disk `%s' lev %d stamp `%s' opt `%s'\n",
+	      prog, disk, level, datestamp, options));
+
+    {
+      int i;
+      for(i = 0; programs[i]; ++i)
+	if (strcmp(programs[i]->name, prog) == 0)
+	  break;
+      if (programs[i])
+	program = programs[i];
+      else {
+	dbprintf(("ERROR [%s: unknown program %s]\n", argv[0], prog));
+	error("ERROR [%s: unknown program %s]\n", argv[0], prog);
+      }
+    }
 
     parse_options(options);
 
@@ -267,7 +282,7 @@ char **argv;
       error("error [opening mesg pipe: %s]", strerror(errno));
     }
 
-    start_backup(disk, level, datestamp, dataf, mesgpipe[1], indexf);
+    program->start_backup(disk, level, datestamp, dataf, mesgpipe[1], indexf);
     parse_backup_messages(mesgpipe[0]);
 
     dbclose();
@@ -287,7 +302,7 @@ int pid;
  * compress pids to see which it is.
  */
 {
-    if(pid == dumppid) return backup_program_name;
+    if(pid == dumppid) return program->backup_name;
     if(pid == comppid) return "compress";
     if(pid == encpid)  return "kencrypt";
     if(pid == indexpid) return "index";
@@ -345,7 +360,8 @@ int outf, compress, level;
      */
     sprintf(buffer, "AMANDA: FILE %s %s %s lev %d comp %s program %s\n",
             datestamp, host, disk, level, 
-	    (compress||srvcompress)? COMPRESS_SUFFIX : "N", amanda_backup_program);
+	    (compress||srvcompress)? COMPRESS_SUFFIX : "N",
+	    program->backup_name);
 
     strcat(buffer,"To restore, position tape at start of file and run:\n");
 
@@ -361,7 +377,7 @@ int outf, compress, level;
 	strcpy(unc, "");
 
     sprintf(line,"\tdd if=<tape> bs=%dk skip=1 |%s %s -f... -\n\014\n",
-            BUFFER_SIZE/1024, unc, restore_program_name);
+            BUFFER_SIZE/1024, unc, program->restore_name);
     strcat(buffer, line);
 
     len = strlen(buffer);
@@ -517,7 +533,7 @@ int mesgin;
       error("error [no backup size line]");
     }
 
-    end_backup(goterror);
+    program->end_backup(goterror);
 
     /*
      * XXX Amanda 2.2 protocol compatibility requires that the dump
@@ -560,7 +576,7 @@ char *str;
     regex_t *rp;
 
     /* check for error match */
-    for(rp = re_table; rp->regex != NULL; rp++) {
+    for(rp = program->re_table; rp->regex != NULL; rp++) {
 	if(match(rp->regex, str))
 	    break;
     }
@@ -775,3 +791,9 @@ char *cmd;
   dbprintf(("%s: index created successfully\n", pname));
   exit(0);
 }
+
+extern backup_program_t dump_program, backup_program;
+
+backup_program_t *programs[] = {
+  &dump_program, &backup_program, NULL
+};

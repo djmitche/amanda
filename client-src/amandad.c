@@ -40,20 +40,17 @@
 #define MAX_RETRIES   5
 
 /* 
- * Here are the services that we understand.  For each one we have to know,
- * whether to concatanate the PROGRAM parameter to the service name, e.g.
- * sendsize-DUMP and sendsize-GNUTAR.
+ * Here are the services that we understand.
  */
 struct service_s {
     char *name;
     int flags;
 #	define NONE		0
-#	define USE_PROGRAM	1	/* use PROGRAM parm in command name */
 #	define NEED_KEYPIPE	2	/* pass kerberos key in pipe */
 #	define NO_AUTH		4	/* doesn't need authentication */
 } service_table[] = {
     { "sendsize",	NONE },
-    { "sendbackup",	USE_PROGRAM|NEED_KEYPIPE },
+    { "sendbackup",	NEED_KEYPIPE },
     { "sendfsinfo",	NONE },
     { "selfcheck",	NONE },
     { NULL, NONE }
@@ -244,10 +241,7 @@ char **argv;
 	return 1;
     }
 
-    if(servp->flags & USE_PROGRAM)
-	sprintf(base, "%s-%s", servp->name, strlower(in_msg.program));
-    else
-	strcpy(base, servp->name);
+    strcpy(base, servp->name);
 
     sprintf(cmd, "%s/%s%s", libexecdir, base, versionsuffix());
 

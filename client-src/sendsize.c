@@ -65,7 +65,9 @@ typedef struct disk_estimates_s {
 
 disk_estimates_t *est_list;
 
-int maxdumps = 2;
+#define MAXMAXDUMPS 16
+
+int maxdumps = 1, dumpsrunning = 0;
 
 /* local functions */
 int main P((int argc, char **argv));
@@ -101,8 +103,12 @@ char **argv;
     while(fgets(line, MAXLINE, stdin)) {
 	if(!strncmp(line, "OPTIONS", 7)) {
 	    if((str = strstr(line, "MAXDUMPS=")) != NULL &&
-	       sscanf(str, "MAXDUMPS=%d", &new_maxdumps) == 1)
+	       sscanf(str, "MAXDUMPS=%d", &new_maxdumps) == 1) {
+	      if (new_maxdumps > MAXMAXDUMPS)
+		maxdumps = MAXMAXDUMPS;
+	      else if (new_maxdumps > 0)
 		maxdumps = new_maxdumps;
+	    }
 	    sprintf(opt, "OPTIONS MAXDUMPS=%d;\n", maxdumps);
 	    write(1, opt, strlen(opt));
 	    continue;
@@ -131,6 +137,11 @@ char **argv;
 
     for(est = est_list; est != NULL; est = est->next)
 	calc_estimates(est);
+
+    while(dumpsrunning > 0) {
+      wait(NULL);
+      --dumpsrunning;
+    }
 
     dbclose();
     return 0;
@@ -196,6 +207,21 @@ disk_estimates_t *est;
 {
     dbprintf(("calculating for amname '%s', dirname '%s'\n", est->amname,
 	      est->dirname));
+    while(dumpsrunning >= maxdumps) {
+      wait(NULL);
+      --dumpsrunning;
+    }
+    ++dumpsrunning;
+    switch(fork()) {
+    case 0:
+      break;
+      
+    case -1:
+    default:
+      return;
+    }
+
+    /* Now in the child process */
 #ifndef USE_GENERIC_CALCSIZE
     if(!strcmp(est->program, "DUMP"))
 	dump_calc_estimates(est);
@@ -207,6 +233,7 @@ disk_estimates_t *est;
 	else
 #endif
 	generic_calc_estimates(est);
+    exit(0);
 }
 
 void generic_calc_estimates(est)
@@ -249,7 +276,7 @@ disk_estimates_t *est;
     argv[argc] = 0;
     dbprintf(("\n"));
 
-    fflush(stderr); fflush(stdout);	/* XXX necessary? */
+    fflush(stderr); fflush(stdout);
 
     switch(calcpid = fork()) {
     case -1:
@@ -278,6 +305,10 @@ long getsize_smbtar P((char *disk, int level));
 long handle_dumpline P((char *str));
 double first_num P((char *str));
 
+#ifdef NEED_POSIX_FLOCK
+static struct flock lock = { F_UNLCK, SEEK_SET, 0, 0 };
+#endif
+
 void dump_calc_estimates(est)
 disk_estimates_t *est;
 {
@@ -291,7 +322,23 @@ disk_estimates_t *est;
 		      pname, est->amname, level));
 	    size = getsize_dump(est->amname, level);
 	    sprintf(result, "%s %d SIZE %ld\n", est->amname, level, size);
+
+#ifdef NEED_POSIX_FLOCK
+	    lock.l_type = F_WRLCK;
+	    fcntl(1, F_SETLKW, &lock);
+#else
+	    flock(1, LOCK_EX);
+#endif
+
+	    lseek(1, SEEK_END, 0);
 	    write(1, result, strlen(result));
+
+#ifdef NEED_POSIX_FLOCK
+	    lock.l_type = F_UNLCK;
+	    fcntl(1, F_SETLK, &lock);
+#else
+	    flock(1, LOCK_UN);
+#endif
 	}
     }
 }
@@ -310,7 +357,23 @@ disk_estimates_t *est;
 		      pname, est->amname, level));
 	    size = getsize_smbtar(est->amname, level);
 	    sprintf(result, "%s %d SIZE %ld\n", est->amname, level, size);
+
+#ifdef NEED_POSIX_FLOCK
+	    lock.l_type = F_WRLCK;
+	    fcntl(1, F_SETLKW, &lock);
+#else
+	    flock(1, LOCK_EX);
+#endif
+
+	    lseek(1, SEEK_END, 0);
 	    write(1, result, strlen(result));
+
+#ifdef NEED_POSIX_FLOCK
+	    lock.l_type = F_UNLCK;
+	    fcntl(1, F_SETLK, &lock);
+#else
+	    flock(1, LOCK_UN);
+#endif
 	}
     }
 }
