@@ -415,7 +415,7 @@ mail reports distinct.
 .BS mailto string
 Default:
 .IR operators .
-A comma separated list of recipients for mail reports.
+A space separated list of recipients for mail reports.
 .TP
 .BN dumpcycle int
 Default:
