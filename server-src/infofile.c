@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.44.4.3 1999/09/08 23:28:18 jrj Exp $
+ * $Id: infofile.c,v 1.44.4.4 1999/11/10 14:36:10 oliva Exp $
  *
  * manage current info file
  */
@@ -625,8 +625,8 @@ int hostname_size, diskname_size;
 
 
 int put_info(hostname, diskname, info)
-char *hostname, *diskname;
-info_t *info;
+     char *hostname, *diskname;
+     info_t *info;
 {
 #ifdef TEXTDB
     FILE *infof;
@@ -651,7 +651,7 @@ info_t *info;
     k.dsize = strlen(k.dptr)+1;
 
     d.dptr = (char *)info;
-    d.size = sizeof(info_t);
+    d.dsize = sizeof(info_t);
 
     /* store record */
 
