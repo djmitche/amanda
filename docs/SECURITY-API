@@ -1,6 +1,6 @@
 AMANDA SECURITY API
 
-$Id: SECURITY-API,v 1.6 1998/11/11 20:17:00 kashmir Exp $
+$Id: SECURITY-API,v 1.7 1998/12/02 20:11:28 kashmir Exp $
 
 by Mike Grupenhoff <kashmir@munge.com>
 
@@ -57,11 +57,12 @@ that type's security_driver_t (section 4.1), or NULL if no driver exists.
 3.1.2. security_connect
 
     security_handle_t *security_connect(const security_driver_t *h,
-	const char *hostname);
+	const char *hostname, char **errmsg);
 
 Given a security driver, and a hostname, returns a security_handle_t
 (section 4.2) that can be used to communicate with that host.  Returns
-NULL if no connection could be made.
+NULL if no connection could be made, and sets errmsg to point to an
+error message explaining why.
 
 This is expected to be the Amanda server's interface for setting up
 connections to clients.
@@ -291,16 +292,26 @@ This section will document each element of security_driver_t.
 This is the name of the driver.  This is used by security_getdriver()
 to associate a name with a driver type.
 
-5.2. connect
+5.3. handlesize
 
-    void *(*connect)(const char *hostname);
+    const size_t handlesize;
+
+This is the size od the security_handle_t for this driver.  The driver
+may have space at the end allocated for private storage.
+
+5.3. connect
+
+    int (*connect)(void *handle, const char *hostname);
 
 This is the implementation of security_connect().  It actually sets up
 the connection, and then returns a structure describing the connection.
 The first element of this structure MUST be a security_handle_t, because
 it will be cast to that after it is passed up to the caller.
 
-5.3. accept
+The first argument is a handle allocated by the security layer.  The
+second argument is the host to connect to.
+
+5.4. accept
 
     void (*accept)(int in, int out,
 	void (*callback)(void *arg, void *handle, pkt_t *pkt), void *arg);
@@ -311,14 +322,14 @@ callback.  The callback also takes a handle argument, which, like
 connect, MUST be castable to security_handle_t, and also an initial
 packet received for that handle.
 
-5.4. close
+5.5. close
 
     void (*close)(void *handle);
 
 The implementation of security_close().
 
 
-5.5. sendpkt
+5.6. sendpkt
 
     int (*sendpkt)(void *handle, pkt_t *pkt);
 
@@ -326,7 +337,7 @@ The implementation of security_sendpkt().  Security information is
 usually added by the driver before transmission.
 
 
-5.6. recvpkt
+5.7. recvpkt
 
     void (*recvpkt)(void *handle, void (*callback)(void *arg, pkt_t *pkt),
 	void *arg);
@@ -335,7 +346,7 @@ The implementation of security_recvpkt().  It will typically be layered
 onto the event interface somehow.  It can assume that a caller will
 eventually call event_loop().
 
-5.7. recvpkt_cancel
+5.8. recvpkt_cancel
 
     void (*recvpkt_cancel)(void *handle);
 
@@ -344,7 +355,7 @@ this to be run even if no recvpkt was scheduled, or if one was
 previously cancelled.
 
 
-5.8. stream_server
+5.9. stream_server
 
     void *(*stream_server)(void *handle);
 
@@ -356,14 +367,14 @@ This function returns a object describing the stream.  The first member
 of this object MUST be a security_stream_t, because it will be cast
 to that.
 
-5.9. stream_accept
+5.10. stream_accept
 
     int (*stream_accept)(void *stream);
 
 After calling stream_server, stream_accept must be called on the stream
 before it is fully connected.
 
-5.10. stream_client
+5.11. stream_client
 
     void *(*stream_client)(void *handle, int id);
 
@@ -374,19 +385,19 @@ This function returns a object describing the stream.  The first member
 of this object MUST be a security_stream_t, because it will be cast
 to that.
 
-5.11. stream_close
+5.12. stream_close
 
     void (*stream_close)(void *stream);
 
 Close and free up resources for an open stream.
 
-5.12. stream_auth
+5.13. stream_auth
 
     int (*streamauth)(void *stream);
 
 Authenticate a connected stream.
 
-5.13. stream_id
+5.14. stream_id
 
     int (*stream_id)(void *stream);
 
@@ -394,20 +405,20 @@ Return a unique id for this stream.  This is to be used by stream_client()
 to connect to this stream.
 
 
-5.14. stream_write
+5.15. stream_write
 
     int (*stream_write)(void *stream, const void *buf, size_t bufsize);
 
 Implementation of security_stream_write.
 
-5.15. stream_read
+5.16. stream_read
 
     void (*stream_read)(void *stream,
 	void (*callback)(void *arg, void *buf, int bufsize), void *arg);
 
 Implementation of security_stream_read.
 
-5.16. stream_read_cancel
+5.17. stream_read_cancel
 
     void (*stream_read_cancel)(void *stream);
 
