@@ -1,3 +1,7 @@
+2002-09-06  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amstatus.pl.in: Sort a disk in datestamp order.
+
 2002-09-05  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	Text by Jean-Francois Malouin <Jean-Francois.Malouin@bic.mni.mcgill.ca>
 
