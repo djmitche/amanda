@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.h,v 1.2 2002/02/14 01:51:04 martinea Exp $
+ * $Id: client_util.h,v 1.3 2002/02/15 14:19:37 martinea Exp $
  *
  */
 
@@ -50,6 +50,8 @@ typedef struct option_s {
 #define COMPR_FAST 1
 #define COMPR_BEST 2
 
+char *build_exclude P((char *disk, option_t *options, int verbose));
+char *build_include P((char *disk, option_t *options, int verbose));
 option_t *parse_options P((char *str, char *disk, int verbose));
 
 #endif

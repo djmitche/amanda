@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.54 2002/02/14 01:51:04 martinea Exp $
+ * $Id: selfcheck.c,v 1.55 2002/02/15 14:19:37 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -241,8 +241,25 @@ check_options(program, disk, options)
 	    }
 	    need_samba=1;
 	}
-	else
+	else {
+	    int nb_exclude = 0;
+	    int nb_include = 0;
+	    char *file_exclude = NULL;
+	    char *file_include = NULL;
+
+	    if(options->exclude_file) nb_exclude += options->exclude_file->nb_element;
+	    if(options->exclude_list) nb_exclude += options->exclude_list->nb_element;
+	    if(options->include_file) nb_include += options->include_file->nb_element;
+	    if(options->include_list) nb_include += options->include_list->nb_element;
+
+	    if(nb_exclude > 0) file_exclude = build_exclude(disk, options, 1);
+	    if(nb_include > 0) file_include = build_include(disk, options, 1);
+
+	    amfree(file_exclude);
+	    amfree(file_include);
+
 	    need_runtar=1;
+	}
     }
     if(strcmp(program,"DUMP") == 0) {
 	if(options->exclude_file && options->exclude_file->nb_element > 0) {

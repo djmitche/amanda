@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.118 2002/02/14 16:07:20 martinea Exp $
+ * $Id: sendsize.c,v 1.119 2002/02/15 14:19:37 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -1173,18 +1173,22 @@ time_t dumpsince;
     char *cmd = NULL;
     char dumptimestr[80];
     struct tm *gmtm;
-    sle_t *excl;
     int nb_exclude = 0;
     int nb_include = 0;
     char **my_argv;
     int i;
+    char *file_exclude = NULL;
+    char *file_include = NULL;
 
     if(options->exclude_file) nb_exclude += options->exclude_file->nb_element;
     if(options->exclude_list) nb_exclude += options->exclude_list->nb_element;
     if(options->include_file) nb_include += options->include_file->nb_element;
     if(options->include_list) nb_include += options->include_list->nb_element;
 
-    my_argv = malloc(sizeof(char *) * (17 + (nb_exclude*2) + (nb_include*2)));
+    if(nb_exclude > 0) file_exclude = build_exclude(disk, options, 0);
+    if(nb_include > 0) file_include = build_include(disk, options, 0);
+
+    my_argv = malloc(sizeof(char *) * 21);
     i = 0;
 
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
@@ -1322,41 +1326,26 @@ time_t dumpsince;
     my_argv[i++] = "--sparse";
     my_argv[i++] = "--ignore-failed-read";
     my_argv[i++] = "--totals";
-    if(options->exclude_file) {
-	for(excl = options->exclude_file->first; excl != NULL; excl = excl->next) {
-	    my_argv[i++] = "--exclude";
-	    my_argv[i++] = excl->name;
-	}
+
+    if(file_exclude) {
+	my_argv[i++] = "--exclude-from";
+	my_argv[i++] = file_exclude;
     }
-    if(options->exclude_list) {
-	for(excl = options->exclude_list->first; excl != NULL; excl = excl->next) {
-	    my_argv[i++] = "--exclude-from";
-	    my_argv[i++] = excl->name;
-	}
-    }
-    if(nb_include >= 1) {
-	if(options->include_file) {
-	   for(excl = options->include_file->first; excl != NULL; excl = excl->next) {
-		my_argv[i++] = excl->name;
-	    }
-	}
-	if(options->include_list) {
-	    for(excl = options->include_list->first; excl != NULL; excl = excl->next) {
-		my_argv[i++] = "--file-from";
-		my_argv[i++] = excl->name;
-	    }
-	}
+
+    if(file_include) {
+	my_argv[i++] = "--files-from";
+	my_argv[i++] = file_include;
     }
     else {
 	my_argv[i++] = ".";
     }
     my_argv[i++] = NULL;
-    if(i >= 17+2*nb_exclude+2*nb_include) {
-	error("i = %d (17 + 2*%d + 2*%d)", i, nb_exclude, nb_include);
-    }
+
     nullfd = open("/dev/null", O_RDWR);
     dumppid = pipespawnv(cmd, STDERR_PIPE, &nullfd, &nullfd, &pipefd, my_argv);
     amfree(cmd);
+    amfree(file_exclude);
+    amfree(file_include);
     amfree(my_argv);
 
     dumpout = fdopen(pipefd,"r");
