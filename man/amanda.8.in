@@ -1196,7 +1196,7 @@ If hardware compression is used (usually via a particular tape device name
 or
 .B mt
 option),
-Amanda (software) compression should be disabled.
+AMANDA (software) compression should be disabled.
 .TP
 .BN dumpcycle int
 Default:
@@ -1209,7 +1209,7 @@ Setting this to zero tries to do a full backup each run.
 .BN estimate (client|calcsize|server)
 Default:
 .IR client .
-Determine the way amanda do it's estimate.
+Determines the way AMANDA does its estimate.
 .LP
 .RS
 .RS
@@ -1225,7 +1225,8 @@ Use a faster program to do estimate, but the result is less acurate.
 .RS
 .TP
 server:
-Use only statistic from previous run to give an estimate, it take only a few second but the result is not accurate if your disk usage change from day to day.
+Use only statistics from previous run to give an estimate, it takes only a few
+seconds but the result is not accurate if your disk usage changes from day to day.
 .RE
 .RE
 .IP
