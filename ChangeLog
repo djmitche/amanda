@@ -1,5 +1,10 @@
 2000-10-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* NEWS: A new `ctimeout' keyword in amanda.conf to replace 
+	the CHECK_TIMEOUT constant in amcheck.c.
+
+2000-10-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amlabel.c: Don't set tape_ok to 0 if 
 	tape_wrlabel is successful.
 
