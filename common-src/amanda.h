@@ -272,8 +272,11 @@ extern int db_file;
 
 extern void debug_open P((char *filename));
 extern void debug_close P((void));
-extern void debug_printf P((char *format, ...));
-
+extern void debug_printf P((char *format, ...))
+#ifdef __GNUC__
+     __attribute__ ((format (printf, 1, 2)))
+#endif
+     ;
 #else
 #   define dbopen(filename)
 #   define dbclose()
@@ -309,7 +312,11 @@ extern void debug_printf P((char *format, ...));
 #define ERR_AMANDALOG	4
 
 extern int    erroutput_type;
-extern void   error     P((char *format, ...));
+extern void   error     P((char *format, ...))
+#ifdef __GNUC__
+     __attribute__ ((format (printf, 1, 2)))
+#endif
+     ;
 extern int    onerror   P((void (*errf)(void)));
 extern void  *alloc     P((int size));
 extern char  *stralloc  P((char *str));
@@ -586,7 +593,11 @@ extern int strncasecmp P((const char *s1, const char *s2, int n));
 #endif
 
 #ifndef HAVE_SYSLOG_DECL
-extern void syslog P((int priority, const char *logstring, ...));
+extern void syslog P((int priority, const char *logstring, ...))
+#ifdef __GNUC__
+     __attribute__ ((format (printf, 2, 3)))
+#endif
+     ;
 #endif
 
 #ifndef HAVE_SYSTEM_DECL

@@ -273,7 +273,8 @@ disk_t *dp;
 
     deleted++;
     if(del_info(hostname, diskname))
-	error("couldn't delete %s:%s from database: %s", strerror(errno));
+	error("couldn't delete %s:%s from database: %s",
+	      hostname, diskname, strerror(errno));
     else
 	printf("%s: %s:%s deleted from curinfo database.\n",
 	       pname, hostname, diskname);
@@ -986,8 +987,8 @@ disk_t *dp;
     printf("        program \"%s\"\n", dp->program);
     if(dp->exclude != (char *)0)
 	printf("        exclude %s\"%s\"\n", dp->exclude_list? "list ":"", dp->exclude);
-    printf("        priority %d\n", dp->priority);
-    printf("        dumpcycle %d\n", dp->dumpcycle);
+    printf("        priority %ld\n", dp->priority);
+    printf("        dumpcycle %ld\n", dp->dumpcycle);
     printf("        maxdumps %d\n", dp->maxdumps);
 
     printf("        strategy ");

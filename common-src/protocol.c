@@ -706,7 +706,7 @@ proto_t *p;
     struct passwd *pwptr;
 
     if((pwptr = getpwuid(getuid())) == NULL)
-	error("can't get login name for my uid %d", getuid());
+	error("can't get login name for my uid %ld", (long)getuid());
     sprintf(line, "SECURITY USER %s\n", pwptr->pw_name);
     p->security = stralloc(line);
 }

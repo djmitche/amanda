@@ -45,7 +45,11 @@ static void init_string P((char **ptrp, char *st));
 static char *upcase P((char *st));
 static int read_diskline P((void));
 static void get_string P((void));
-static void parserror P((char *format, ...));
+static void parserror P((char *format, ...))
+#ifdef __GNUC__
+     __attribute__ ((format (printf, 1, 2)))
+#endif
+     ;
 static void eat_line P((void));
 
 

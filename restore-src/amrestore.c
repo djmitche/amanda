@@ -330,7 +330,8 @@ void restore()
 	pipe(outpipe);
 	out = outpipe[1];
 	switch(fork()) {
-	case -1: error("could not fork for %s", COMPRESS_PATH,strerror(errno));
+	case -1: error("could not fork for %s: %s",
+		       COMPRESS_PATH, strerror(errno));
 	default:
 	    close(outpipe[0]);
 	    close(dest);

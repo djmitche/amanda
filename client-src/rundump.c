@@ -49,7 +49,7 @@ char **argv;
 	    error("error [must be invoked by %s]\n", pwname);
 
 	if (geteuid() != 0)
-	    error("error [must be setuid root]\n", pwname);
+	    error("error [must be setuid root]\n");
 #endif	/* FORCE_USERID */
     }
 

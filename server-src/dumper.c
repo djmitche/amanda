@@ -33,6 +33,7 @@
 #include "version.h"
 #include "arglist.h"
 #include "amindex.h"
+#include "token.h"
 
 
 #ifdef KRB4_SECURITY
@@ -99,7 +100,11 @@ int amanda_port;
 /* local functions */
 int main P((int main_argc, char **main_argv));
 static cmd_t getcmd P((void));
-static void putresult P((char *format, ...));
+static void putresult P((char *format, ...))
+#ifdef __GNUC__
+     __attribute__ ((format (printf, 1, 2)))
+#endif
+     ;
 static void do_dump P((int mesgfd, int datafd, int indexfd, int outfd));
 void check_options P((char *options));
 void service_ports_init P((void));
@@ -742,7 +747,7 @@ int mesgfd, datafd, indexfd, outfd;
 		error("err dup2 in: %s", strerror(errno));
 	    indexfd = open(indexfile, O_WRONLY | O_CREAT | O_TRUNC, 0600);
 	    if (indexfd == -1)
-		error("err open %s: %s", tmpfile, strerror(errno));
+		error("err open %s: %s", indexfile, strerror(errno));
 	    if (dup2(indexfd,1) == -1)
 		error("err dup2 out: %s", strerror(errno));
 	    for(tmpfd = 3; tmpfd <= 255; ++tmpfd)

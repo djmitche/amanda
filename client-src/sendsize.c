@@ -287,7 +287,7 @@ disk_estimates_t *est;
 	    argv[argc++] = str; 
 	    dbprintf((" %s", str));
 	    str += strlen(str) + 1;
-	    sprintf(str, "%d", est->est[level].dumpsince);
+	    sprintf(str, "%ld", (long)est->est[level].dumpsince);
 	    dbprintf((" %s", str));
 	    argv[argc++] = str;
 	    str += strlen(str) + 1;
@@ -300,12 +300,12 @@ disk_estimates_t *est;
 
     switch(calcpid = fork()) {
     case -1:
-        error("fork returned: %s", cmd, strerror(errno));
+        error("%s: fork returned: %s", cmd, strerror(errno));
     default:
         break;
     case 0:
 	execve(cmd, argv, NULL);
-	dbprintf(("%s: execve %s returned: %s", cmd, strerror(errno)));
+	dbprintf(("%s: execve %s returned: %s", pname, cmd, strerror(errno)));
 	exit(1);
     }
 

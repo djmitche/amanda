@@ -221,7 +221,11 @@ static int get_time P((void));
 static int get_number P((void));
 static int get_bool P((void));
 static void ckseen P((int *seen));
-static void parserror P((char *format, ...));
+static void parserror P((char *format, ...))
+#ifdef __GNUC__
+     __attribute__ ((format (printf, 1, 2)))
+#endif
+     ;
 static tok_t lookup_keyword P((char *str));
 static void unget_conftoken P((void));
 static void get_conftoken P((tok_t exp));

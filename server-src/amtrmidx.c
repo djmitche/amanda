@@ -1,5 +1,5 @@
 /* $RCSfile: amtrmidx.c,v $
-   $Date: 1997/07/24 08:04:13 $
+   $Date: 1997/08/26 23:46:19 $
 
    amtrmidx - trims number of index files to only those still in system.
    Well actually, it keeps a few extra, plus goes back to the last
@@ -57,7 +57,7 @@ char **argv;
 	error("couldn't change into index root directory \"%s\".", INDEX_DIR);
     if (chdir(getconf_str(CNF_INDEXDIR)) == -1)
 	error("couldn't change into index config directory \"%s\".",
-	      CNF_INDEXDIR);
+	      getconf_str(CNF_INDEXDIR));
 
     level_position = strlen(COMPRESS_SUFFIX)+1;
 
@@ -96,7 +96,7 @@ char **argv;
 	    while (fgets(buf, 1024, fp) != NULL)
 	    {
 		if (strlen(buf) < 11+level_position)
-		    error("file name \"%s\" too short.");
+		    error("file name \"%s\" too short.", buf);
 		buf[strlen(buf)-1] = '\0'; /* get rid of \n */
 		if (buf[strlen(buf)-level_position] == '0')
 		    break;

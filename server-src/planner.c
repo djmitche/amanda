@@ -182,7 +182,7 @@ char **argv;
      */
 
     if((pwptr = getpwuid(getuid())) == NULL)
-	error("can't get login name for my uid %d", getuid());
+	error("can't get login name for my uid %ld", (long)getuid());
     strcpy(loginid, pwptr->pw_name);
 
 

@@ -85,9 +85,9 @@ char *filename;
 
     time(&curtime);
     saved_debug = debug; debug = 1;
-    debug_printf("%s: debug %d pid %ld ruid %d euid %d start time %s",
-		 pname, debug, (long) getpid(), getuid(), geteuid(),
-		 ctime(&curtime));
+    debug_printf("%s: debug %d pid %ld ruid %ld euid %ld start time %s",
+		 pname, debug, (long) getpid(), (long) getuid(),
+		 (long) geteuid(), ctime(&curtime));
     debug = saved_debug;
 }
 

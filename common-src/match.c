@@ -56,13 +56,13 @@ char *regex, *str;
     if((result = regcomp(&regc, regex,
 			 REG_EXTENDED|REG_NOSUB|REG_NEWLINE)) != 0) {
         regerror(result, &regc, errmsg, sizeof(errmsg));
-	error("regex \"%s\": %s", regex, error);
+	error("regex \"%s\": %s", regex, errmsg);
     }
 
     if((result = regexec(&regc, str, 0, 0, 0)) != 0
        && result != REG_NOMATCH) {
         regerror(result, &regc, errmsg, sizeof(errmsg));
-	error("regex \"%s\": %s", regex, error);
+	error("regex \"%s\": %s", regex, errmsg);
     }
 
     regfree(&regc);

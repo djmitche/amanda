@@ -71,7 +71,11 @@ void tape_writer_side P((int rdpipe, int wrpipe));
 
 /* misc helper functions */
 cmd_t getcmd P((int *argcp, char ***argvp));
-void putresult P((char *format, ...));
+void putresult P((char *format, ...))
+#ifdef __GNUC__
+     __attribute__ ((format (printf, 1, 2)))
+#endif
+     ;
 
 /* shared-memory routines */
 buffer_t *attach_buffers P((void));
