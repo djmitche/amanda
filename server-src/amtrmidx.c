@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtrmidx.c,v 1.19 1998/04/14 17:11:34 jrj Exp $
+ * $Id: amtrmidx.c,v 1.20 1998/04/22 18:30:20 jrj Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -59,7 +59,6 @@ char **argv;
     char *ptr;
     int fd;
     find_result_t *output_find;
-    char *diskname = NULL;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -117,23 +116,24 @@ char **argv;
     {
 	if (diskp->index)
 	{
+	    char *host;
+	    char *disk;
+
 	    dbprintf(("%s %s\n", diskp->host->hostname, diskp->name));
 
-	    diskname = newstralloc(diskname, diskp->name);
-	    /* map '/' chars to '_' */
-	    for (ptr = diskname; *ptr != '\0'; ptr++)
-		if ( *ptr == '/' )
-		    *ptr = '_';
-
 	    /* get listing of indices, newest first */
+	    host = stralloc(sanitise_filename(diskp->host->hostname));
+	    disk = stralloc(sanitise_filename(diskp->name));
 	    cmd = newvstralloc(cmd,
 			       "ls", " -r",
-			       " ", "\'", diskp->host->hostname, "\'",
-			       "_", "\'", diskname, "\'",
-			       "_", "????????",
+			       " ", "\'", host, "\'",
+			       "/", "\'", disk, "\'",
+			       "/", "????????",
 			       "_", "?",
 			       COMPRESS_SUFFIX,
 			       NULL);
+	    amfree(host);
+	    amfree(disk);
 	    if ((fp = popen(cmd, "r")) == NULL) {
 		error("couldn't open cmd \"%s\".", cmd);
 	    }

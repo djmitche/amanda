@@ -45,6 +45,9 @@
 
 Version 2.4.0p1
 
+	index files are now stored in a directory tree ala curinfo instead
+	of a flat namespace. -JJ
+
 	amindexd no longer considers prefixes of hostnames as valid
 	hostnames. -oliva
 

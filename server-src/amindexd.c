@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.33 1998/04/22 15:57:43 jrj Exp $
+ * $Id: amindexd.c,v 1.34 1998/04/22 18:30:18 jrj Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -286,15 +286,14 @@ arglist_function1(void fast_lreply, int, n, char *, fmt)
 }
 
 /* see if hostname is valid */
-/* valid is defined to be that there are index records for it */
+/* valid is defined to be that there is an index directory for it */
 /* also do a security check on the requested dump hostname */
 /* to restrict access to index records if required */
 /* return -1 if not okay */
 int is_dump_host_valid(host)
 char *host;
 {
-    DIR *dirp;
-    struct dirent *direntp;
+    struct stat dir_stat;
 
     if (config == NULL) {
 	reply(501, "Must set config before setting host.");
@@ -316,63 +315,46 @@ char *host;
 
     /* check that the config actually handles that host */
     /* assume in index dir already */
-    if ((dirp = opendir(".")) == NULL)
+    if (stat (host, &dir_stat) != 0 || !S_ISDIR(dir_stat.st_mode))
     {
-	reply(599, "System error: %s.", strerror(errno));
+	reply(501, "No index records for host: %s. Invalid?", host);
 	return -1;
     }
 
-    while ((direntp = readdir(dirp)) != NULL)
-    {
-	if (strncmp(direntp->d_name, host, strlen(host)) == 0 &&
-	    direntp->d_name[strlen(host)] == '_')
-	{
-	    (void)closedir(dirp);
-	    return 0;
-	}
-    }
-
-    reply(501, "No index records for host: %s. Invalid?", host);
-    return -1;
+    return 0;
 }
 
 
 int is_disk_valid(disk)
 char *disk;
 {
-    DIR *dirp;
-    struct dirent *direntp;
     char *search_str;
-    int i;
+    char *last_slash;
+    struct stat dir_stat;
 
     if (config == NULL || dump_hostname == NULL) {
 	reply(501, "Must set config,host before setting disk.");
 	return -1;
     }
 
-    /* check that given disk is from given host and handled by given config */
-    if ((dirp = opendir(".")) == NULL)
+    search_str = getindexfname(dump_hostname, disk, "00000000", 0);
+    last_slash = strrchr (search_str, '/');
+    if (last_slash == NULL)
     {
-	reply(599, "System error: %s.", strerror(errno));
+	reply(599, "Cannot convert host/disk to index directory.");
 	return -1;
     }
-    search_str = getindexfname(dump_hostname, disk, "00000000", 0);
-    /* NOTE!!!!!! the following assumes knowledge of the
-       host,disk,date,level to file name mapping and may need changing if
-       that is changed */
-    i = strlen(dump_hostname) + strlen(disk) + 1;
 
-    while ((direntp = readdir(dirp)) != NULL)
+    /* check that the config actually handles that host and disk */
+    /* assume in index dir already */
+    *last_slash = '\0';
+    if (stat (search_str, &dir_stat) != 0 || !S_ISDIR(dir_stat.st_mode))
     {
-	if (strncmp(direntp->d_name, search_str, i) == 0)
-	{
-	    (void)closedir(dirp);
-	    return 0;
-	}
+	reply(501, "No index records for disk: %s. Invalid?", disk);
+	return -1;
     }
 
-    reply(501, "No index records for disk: %s. Invalid?", disk);
-    return -1;
+    return 0;
 }
 
 
