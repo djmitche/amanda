@@ -1,5 +1,8 @@
 2000-01-13  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* tape-src/Makefile.am (../common-src/libamanda.$(LIB_EXTENSION)):
+	Allow for `make tapetype' before libamanda is built.
+
 	* server-src/amoverview.pl.in: Year doesn't take just 2 bytes.
 
 2000-01-06  David Wolfskill  <dhw@whistle.com>
