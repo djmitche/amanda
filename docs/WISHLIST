@@ -7,8 +7,11 @@ of priority and feasibility.  Of course, we aren't promising to deliver
 anything, but it's a reasonable bet that at least the first few things will
 get done.
 
+You may find more up-to-date information in the Amanda Ongoing
+Projects page, http://www.amanda.org/ongoing.html.
+
 If you have any ideas about any of the following, please send an e-mail
-note to amanda-users@cs.umd.edu, or to jds@cs.umd.edu if you'd prefer.
+note to amanda-users@amanda.org or amanda-hackers@amanda.org.
 
 * Setting tapecycle to infinity (which is reasonable for archive
 configurations) will cause planner to crash, because it will try to
@@ -20,22 +23,15 @@ structure allocated by planner as needed.
 tape.
 
 * amcheck and amadmin should check whether the user that invoked it is
-* the user configured to run amanda.
+the user configured to run amanda.
 
 * Support for Solaris 2.[5-6]*'s ufsdump -S switch (for estimates)
 should be added.
-
-* It should be possible to configure estimate and data time-outs on a
-per-filesystem basis.
 
 * Amanda should be able to retry failed backups in a single run.  So,
 if backup fails because of active filesystems or lack of memory,
 amanda could throw the failed backup away and run it again, instead of
 trying it again in the next run only.
-
-* The location of the `tapelist' file should be configurable, and
-should not default to the `etc' directory.  Ideally, `etc'
-directories/files should be writable by root only.
 
 * SAMBA should be treated as a different backup program, not as
 GNUTAR, because it cannot handle dump-style incrementals (as of
@@ -64,10 +60,6 @@ would be equivalent to:
 //win-srv/F$ XXXX -U backup -W Win32-LAB
 //other/C$ XXXX -U amanda  (no domain specified)
 
-* We should try re-implement the functionality of runtar and rundump
-in a safer way, that would prevent arbitrary runs of tar and dump even
-from the backup user.
-
 * When a disk is configured to skip-incr, it will present no estimate
 errors every day except the day it is scheduled for a full dump.
 Besides, it will never be promoted, because no estimate is requested
@@ -76,22 +68,7 @@ skip incrementals after analysis takes place.
 
 * It should be possible to re-generate databases and indexes from tapes.
 
-* amdump should not run if files named either amdump or log exist in
-the log directory.  This should make it harder to mix results of a
-crashed amdump with a new one.  However, when amanda is expected to
-run unattended for long periods of time (1-2 weeks), a cron job should
-be configured to check whether those files exist and, if they do, run
-amcleanup before amdump.
-
-* it should be possible to enable full backups on degraded mode.
-There should be a way to specify the maximum amount of holding disk
-space to use for full backups on a single run.  This could be either
-an absolute value or a percentage of the total amount of available
-holding disk space.
-
-* amflush should be able to flush several runs into a single tape.
-
-* amanda should install man-pages for installed programs only
+* amanda should install man-pages for installed programs only.
 
 * we should provide for client-side configuration files, to specify
 default tape server, index server, and perhaps even pathnames to
@@ -139,36 +116,21 @@ dumps it is doing.  If someone does a full dump of one of its filesystems
 (and writes /etc/dumpdates) outside of Amanda, data could be lost.  I think
 Sun's Backup-Copilot handles this well.  We should too.
 
-* It should be possible to configure pre-backup and post-backup
-commands, so as to make it possible to lock filesystems or shutdown
-database servers.  It might also be possible to modify the actual
-command line used to run dump or tar commands.  However, as this might
-have security implications, this should be configured on the clients,
-not on the server.
-
-* Amanda should be able to tunnel its protocol through rsh-like
-commands such as SSH.  This would make it possible to back up hosts
-outside a firewall, by controlling the ports that can be used by
-amanda.  One disadvantage of this would be that UDP could no longer be
-used for requesting hundreds of estimates in parallel, since, when
-connection-oriented services are used, the number of open connections
-is limited.  So, planner should use a smarter algorithm for sending
-out estimate requests.  Additionally, when it uses UDP, it should make
-sure it doesn't build a datagram larger than the maximum UDP datagram
-size, even if it has to send more than one request to a single host.
-
 * Support for client-initiated backups might be interesting, but the
 server would have to keep listening for clients backup requests for a
 configurable period of time.  This could be used to back up secure
 hosts, for instance.
 
-* Backups to remote tape devices (i.e., not in the main amanda
-server), as well as to filesystems, should be supported.  Instead of
+* Backups to remote tape devices (i.e., not in the main amanda server),
+as well as to filesystems, should be supported.  Instead of
 hard-coding the interface with tape devices in amanda, there should be
 a higher level interface that allowed different storage devices to be
-used.
+used.  Amanda should also be able to retain backups in disk, even
+after they are taped, for faster restore of recently backed up data.
+It should also be possible to store a single backup in multiple tapes, 
+for redundancy.
 
-* Insert your favorite feature here, and send me mail telling about what
-you'd like to see!  Of course, I can't please everyone, and can't implement
-everything, but I am very interested in how other sites operate so that we
+* Insert your favorite feature here, and send us e-mail telling about what
+you'd like to see!  Of course, we can't please everyone, and can't implement
+everything, but we are very interested in how other sites operate so that we
 can find common ground and learn from each other.  Thanks!
