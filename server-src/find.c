@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.1 1998/03/21 17:24:30 martinea Exp $
+ * $Id: find.c,v 1.2 1998/03/30 21:13:27 blair Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -54,7 +54,6 @@ int lfind_ndisks;
 char **lfind_diskstrs;
 {
     char *conflogdir, *logfile = NULL;
-    host_t *hp;
     int tape, maxtape, seq, logs;
     tape_t *tp;
     find_result_t *output_find = NULL;
