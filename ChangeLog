@@ -1,3 +1,8 @@
+1998-10-02  Josef Karthauser  <joe@pavilion.net>
+
+	* changer-src/chg-chio.pl.in (getTapeParams): fix regular expression 
+	for $line; the trailing `s' of slots was missing
+
 1998-10-02  John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/amstatus.pl.in: fix error message.
