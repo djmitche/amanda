@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.26 1998/02/23 21:47:56 jrj Exp $
+/* $Id: taper.c,v 1.27 1998/02/24 22:28:08 blair Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1281,10 +1281,12 @@ int label_tape()
     char *result;
     tape_t *tp;
 
-    afree(tapedev);
-    if(have_changer && (tapedev = taper_scan()) == NULL) {
-	errstr = newstralloc(errstr, changer_resultstr);
-	return 0;
+    if(have_changer) {
+	afree(tapedev);
+	if ((tapedev = taper_scan()) == NULL) {
+	    errstr = newstralloc(errstr, changer_resultstr);
+	    return 0;
+	}
     }
 
     if((result = tape_rdlabel(tapedev, &olddatestamp, &label)) != NULL) {
