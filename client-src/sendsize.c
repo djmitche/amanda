@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.13.4.6.2.23.2.2 2005/02/09 17:56:52 martinea Exp $
+ * $Id: sendsize.c,v 1.97.2.13.4.6.2.23.2.3 2005/04/06 12:31:04 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -652,7 +652,7 @@ disk_estimates_t *est;
 	    printf("%s\n", line); /* write to amandad */
 	    dbprintf(("%s: estimate size for %s level %d: %ld KB\n",
 		      debug_prefix(NULL),
-		      est->dirname,
+		      est->amname,
 		      level,
 		      size));
 	}
@@ -668,7 +668,7 @@ disk_estimates_t *est;
     dbprintf(("%s: .....\n", debug_prefix_time(NULL)));
     dbprintf(("%s: estimate time for %s: %s\n",
 	      debug_prefix(NULL),
-	      est->dirname,
+	      est->amname,
 	      walltime_str(timessub(curclock(), start_time))));
 
     for(i = 0; i < my_argc; i++) {

@@ -1,3 +1,8 @@
+2005-04-06  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* client-src/sendsize.c (generic_calc_estimates): Use amname instead
+	  of dirname in message.
+
 2005-04-01  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* man/amanda.8, man/amdd.8, man/ammt.8: Updated.
