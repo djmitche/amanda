@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.40.2.5 1998/02/19 09:41:58 amcore Exp $
+ * $Id: amanda.h,v 1.40.2.6 1998/02/19 13:34:06 amcore Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -168,12 +168,13 @@
   typedef union wait amwait_t;
 #else
   typedef int amwait_t;
-# ifndef WEXITSTATUS
-#  define WEXITSTATUS(stat_val) ((unsigned)(stat_val) >> 8)
-# endif
-# ifndef WIFEXITED
-#  define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
-# endif
+#endif
+
+#ifndef WEXITSTATUS
+# define WEXITSTATUS(stat_val) (*(unsigned*)&(stat_val) >> 8)
+#endif
+#ifndef WIFEXITED
+# define WIFEXITED(stat_val) ((*(unsigned*)&(stat_val) & 255) == 0)
 #endif
 
 #ifdef HAVE_UNISTD_H
