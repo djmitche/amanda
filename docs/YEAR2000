@@ -1,0 +1,5 @@
+The amanda developers believe Amanda is Y2K-compliant, as long as the
+underlying operating system and C library are.  The only date
+manipulations performed by Amanda use C-language time manipulation
+functions and/or strings where years are represented with the
+century-included notation.
