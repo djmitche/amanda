@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.14.4.6.2.1 2001/03/20 00:25:52 jrjackson Exp $
+ * $Id: file.c,v 1.14.4.6.2.2 2001/07/11 20:55:43 jrjackson Exp $
  *
  * file and directory bashing routines
  */
@@ -395,8 +395,12 @@ agets(file)
 	}
 	line_len += line_free - 1;		/* bytes read minus '\0' */
 	size_save = line_size;
-	line_size += AGETS_LINE_INCR;		/* get more space */
-	cp = alloc (line_size);
+	if (line_size < 256 * AGETS_LINE_INCR) {
+	    line_size *= 2;
+	} else {
+	    line_size += 256 * AGETS_LINE_INCR;
+	}
+	cp = alloc (line_size);			/* get more space */
 	memcpy (cp, line, size_save);		/* copy old to new */
 	free (line);				/* and release the old */
 	line = cp;
@@ -561,9 +565,15 @@ areads (fd)
 	 * No newline yet, so get more data.
 	 */
 	if (buflen == 0) {
-	    size = areads_buffer[fd].bufsize + areads_bufsize;
+	    if ((size = areads_buffer[fd].bufsize) < 256 * areads_bufsize) {
+		size *= 2;
+	    } else {
+		size += 256 * areads_bufsize;
+	    }
 	    newbuf = alloc(size + 1);
 	    memcpy (newbuf, buffer, areads_buffer[fd].bufsize + 1);
+	    amfree(areads_buffer[fd].buffer);
+	    buffer = NULL;
 	    areads_buffer[fd].buffer = newbuf;
 	    areads_buffer[fd].endptr = newbuf + areads_buffer[fd].bufsize;
 	    areads_buffer[fd].bufsize = size;
