@@ -256,8 +256,8 @@ while [ $SLOT -lt $SLOTS ]; do
 		$AMTAPE $CONFIG slot $CHANGER_SLOT > $TEMP/amtape.out 2>&1
 		THIS_SLOT=$CHANGER_SLOT
 		CHANGER_SLOT=next
-		RESULT=`grep -v "changed to slot" $TEMP/amtape.out`
-		[ X"$RESULT" != X"" ] \
+		RESULT=`grep "changed to slot" $TEMP/amtape.out`
+		[ X"$RESULT" = X"" ] \
 			&& report "** Error loading slot $THIS_SLOT" \
 			&& report "`cat $TEMP/amtape.out`" \
 			&& cat $TEMP/amtape.out >> $DEFECTS \
@@ -355,8 +355,8 @@ done
 if [ X"$TPCHANGER" != X"" ]; then
 	report "Advancing past the last tape..."
 	$AMTAPE $CONFIG slot advance 2> $TEMP/amtape.out
-	RESULT=`grep -v "changed to slot" $TEMP/amtape.out`
-	[ X"$RESULT" != X"" ] \
+	RESULT=`grep "changed to slot" $TEMP/amtape.out`
+	[ X"$RESULT" = X"" ] \
 		&& report "** Error advancing after last slot" \
 		&& report "`cat $TEMP/amtape.out`" \
 		&& cat $TEMP/amtape.out >> $DEFECTS
