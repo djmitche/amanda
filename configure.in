@@ -1401,14 +1401,22 @@ case "$target" in
 			;;
 esac
 
-AC_CHECK_LIB(termcap,main)
-if test "$ac_cv_lib_termcap_main" = yes; then
-    AC_CHECK_LIB(readline,main)
-    if test "$ac_cv_lib_readline_main" != yes; then
-	AC_MSG_WARN([*** libreadline not found! No history and command line editing in amrecover!])
+AC_CHECK_LIB(termcap,tgetent)
+if test "$ac_cv_lib_termcap_tgetent" != yes; then
+    AC_CHECK_LIB(curses,tgetent)
+    if test "$ac_cv_lib_curses_tgetent" != yes; then
+	AC_CHECK_LIB(ncurses,tgetent)
+    fi
+fi
+if test "$ac_cv_lib_termcap_tgetent" = yes ||
+   test "$ac_cv_lib_curses_tgetent" = yes ||
+   test "$ac_cv_lib_ncurses_tgetent" = yes; then
+    AC_CHECK_LIB(readline,readline)
+    if test "$ac_cv_lib_readline_readline" != yes; then
+	AC_MSG_WARN([*** No readline library, no history and command line editing in amrecover!])
     fi
 else
-    AC_MSG_WARN([*** libtermcap not found! No history and command line editing in amrecover!])
+    AC_MSG_WARN([*** No terminal library, no history and command line editing in amrecover!])
 fi
 
 AC_CHECK_LIB(m,modf)
