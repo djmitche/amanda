@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: error.c,v 1.8.4.1 2001/01/05 02:29:08 jrjackson Exp $
+ * $Id: error.c,v 1.8.4.1.2.1 2001/07/19 22:41:37 jrjackson Exp $
  *
  * error handling common to Amanda programs
  */
@@ -62,11 +62,71 @@ void (*f) P((char *));
 }
 
 
-arglist_function(void error, char *, format)
+static void output_error_message(msg)
+char *msg;
+{
+    /* print and/or log message */
+
+    if((erroutput_type & ERR_AMANDALOG) != 0 && logerror != NULL) {
+	(*logerror)(msg);
+    }
+
+    if(erroutput_type & ERR_SYSLOG) {
+#ifdef LOG_AUTH
+	openlog(get_pname(), LOG_PID, LOG_AUTH);
+#else
+	openlog(get_pname(), LOG_PID);
+#endif
+	syslog(LOG_NOTICE, "%s", msg);
+	closelog();
+    }
+
+    if(erroutput_type & ERR_INTERACTIVE) {
+	fprintf(stderr, "%s: %s\n", get_pname(), msg);
+	fflush(stderr);
+    }
+
+    if(debug_fp() != NULL) {
+	dbprintf(("%s\n", msg));
+	dbclose();
+    }
+}
+
+
 /*
  * Prints an error message, calls the functions installed via onerror(),
  * then exits.
  */
+arglist_function(void error, char *, format)
+{
+    va_list argp;
+    int i;
+    char linebuf[STR_SIZE];
+
+
+    /* format and output the error message */
+
+    arglist_start(argp, format);
+    ap_vsnprintf(linebuf, sizeof(linebuf), format, argp);
+    arglist_end(argp);
+    output_error_message(linebuf);
+
+    /* traverse function list, calling in reverse order */
+
+    for(i=MAXFUNCS-1; i >= 0; i--) {
+	if(onerr[i] != NULL) (*onerr[i])();
+    }
+
+    /* terminate */
+    exit(1);
+}
+
+
+/*
+ * Prints an error message, calls the functions installed via onerror(),
+ * then calls abort() to drop core.
+ */
+arglist_function(void errordump, char *, format)
 {
     va_list argp;
     int i;
@@ -77,39 +137,16 @@ arglist_function(void error, char *, format)
     arglist_start(argp, format);
     ap_vsnprintf(linebuf, sizeof(linebuf), format, argp);
     arglist_end(argp);
-
-    /* print and/or log message */
-
-    if((erroutput_type & ERR_AMANDALOG) != 0 && logerror != NULL) {
-	(*logerror)(linebuf);
-    }
-
-    if(erroutput_type & ERR_SYSLOG) {
-#ifdef LOG_AUTH
-	openlog(get_pname(), LOG_PID, LOG_AUTH);
-#else
-	openlog(get_pname(), LOG_PID);
-#endif
-	syslog(LOG_NOTICE, "%s", linebuf);
-	closelog();
-    }
-
-    if(erroutput_type & ERR_INTERACTIVE) {
-	fprintf(stderr, "%s: %s\n", get_pname(), linebuf);
-	fflush(stderr);
-    }
-
-    if(debug_fp() != NULL) {
-	dbprintf(("%s\n", linebuf));
-	dbclose();
-    }
+    output_error_message(linebuf);
 
     /* traverse function list, calling in reverse order */
 
     for(i=MAXFUNCS-1; i >= 0; i--) {
 	if(onerr[i] != NULL) (*onerr[i])();
     }
-    exit(1);
+
+    /* terminate and drop core */
+    abort();
 }
 
 
