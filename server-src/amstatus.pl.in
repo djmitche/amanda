@@ -147,6 +147,7 @@ while(<AMDUMP>) {
 		$hostpart="$host$partition";
 		$serial=$2;
 		$dump_started{$hostpart}=1;
+		$dump_finished{$hostpart}=0;
 		$holding_file{$hostpart}=$3;
 		if(     $level{$hostpart} != $6 &&
 		   $degr_level{$hostpart} == $6) {
