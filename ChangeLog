@@ -1,5 +1,7 @@
 2002-03-24  Thomas Hepper ( th@ant.han.de)
 	* changer-src/chg-scsi-chio.c: Fixed problems introduced by the agets change
+	* client-src/sendbackup-dump.c: Fixed compile problem on AIX, no_record
+	  is no longeer defined, ist is now options->no_record.
 
 2002-03-24  John R. Jackson (jrj@purdue.edu)
 
