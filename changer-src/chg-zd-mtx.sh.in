@@ -144,6 +144,14 @@
 #     If you need a little delay, set the "unloadpause" variable to
 #     the number of seconds to wait before trying to take a tape from
 #     a drive back to storage.  The default is 0.
+#
+#   * Some drives also require a short pause after loading, or the drive
+#     will return an I/O error during a test to see if it's online (which
+#     this script uses "mt rewind" to test).  My drives don't recover from
+#     this, and must be reloaded before they will come online after failing
+#     such a test.  For this reason there is an "initial_poll_delay"
+#     variable which will pause for a certain number of seconds before
+#     looping through the online test for the first time.  The default is 0.
 ####
 
 ####
@@ -191,6 +199,9 @@
 #
 # max_drive_wait=NN	    #### Maximum time (seconds) to wait for the
 #			    #### tape drive to become ready (default: 120).
+#
+# initial_poll_delay=NN	    #### initial delay after load before polling for
+#			    #### readiness
 ####
 
 ####
@@ -630,6 +641,7 @@ varlist="$varlist autocleancount"
 varlist="$varlist havereader"
 varlist="$varlist driveslot"
 varlist="$varlist poll_drive_ready"
+varlist="$varlist initial_poll_delay"
 varlist="$varlist max_drive_wait"
 
 for var in $varlist
@@ -706,6 +718,7 @@ autoclean=${autoclean:-'0'}				# default: 0
 autocleancount=${autocleancount:-'99'}			# default: 99
 havereader=${havereader:-'0'}				# default: 0
 poll_drive_ready=${poll_drive_ready:-'3'}		# default: three seconds
+initial_poll_delay=${initial_poll_delay:-'0'}		# default: zero zeconds
 max_drive_wait=${max_drive_wait:-'120'}			# default: two minutes
 
 get_slot_list
@@ -1013,6 +1026,7 @@ loadslot() {
 	###
 	waittime=0
 	ready=0
+	sleep $initial_poll_delay
 	while [ $waittime -lt $max_drive_wait ]; do
 		result=`Run $MT $MTF $tape rewind 2>&1`
 		if [ $? -eq 0 ]; then

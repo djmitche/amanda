@@ -1,3 +1,7 @@
+Changes in release 2.4.4p2
+
+* New initial_poll_delay config in chg-zd-mtx
+
 Changes in release 2.4.4p1
 
 * amverfiy do not advance to next tape at the end.
