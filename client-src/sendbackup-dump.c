@@ -33,11 +33,14 @@
  * File:	$RCSFile: sendbackup-dump.c,v $
  * Part of:	
  *
- * Revision:	$Revision: 1.6 $
- * Last Edited:	$Date: 1997/04/18 05:21:56 $
- * Author:	$Author: amcore $
+ * Revision:	$Revision: 1.7 $
+ * Last Edited:	$Date: 1997/04/23 07:32:20 $
+ * Author:	$Author: oliva $
  *
  * History:	$Log: sendbackup-dump.c,v $
+ * History:	Revision 1.7  1997/04/23 07:32:20  oliva
+ * History:	if DUMP is not defined, force usage of XFSDUMP arguments.
+ * History:
  * History:	Revision 1.6  1997/04/18 05:21:56  amcore
  * History:	clean up kerberos a bit; make error messages more meaningful.
  * History:	options strings arrays are now 512 bytes instead of 80.  (with many
@@ -217,7 +220,11 @@ int level, dataf, mesgf;
 #ifndef AIX_BACKUP
     /* normal dump */
 #ifdef XFSDUMP
+#ifdef DUMP
     if (!strcmp(amname_to_fstype(device), "xfs"))
+#else
+    if (1)
+#endif
     {
 #ifdef USE_RUNDUMP
         backup_program_name  = cmd;
