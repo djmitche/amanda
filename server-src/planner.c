@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.3 2002/02/11 04:38:44 jrjackson Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.4 2002/02/11 22:49:15 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -490,15 +490,20 @@ char **argv;
 
     if(conf_autoflush) {
 	dumpfile_t file;
-	holding_t *holding_list=NULL, *holding_file;
-	get_flush(NULL, &holding_list, datestamp, 0, 0);
-	for(holding_file=holding_list; holding_file != NULL;
+	sl_t *holding_list;
+	sle_t *holding_file;
+	holding_list = get_flush(NULL, datestamp, 0, 0);
+	for(holding_file=holding_list->first; holding_file != NULL;
 				       holding_file = holding_file->next) {
 	    get_dumpfile(holding_file->name, &file);
 	    
-	    fprintf(stderr,"FLUSH %s %s %s %d %s\n", file.name, file.disk, file.datestamp, file.dumplevel, holding_file->name);
-	    fprintf(stdout,"FLUSH %s %s %s %d %s\n", file.name, file.disk, file.datestamp, file.dumplevel, holding_file->name);
+	    fprintf(stderr,"FLUSH %s %s %s %d %s\n", file.name, file.disk,
+		    file.datestamp, file.dumplevel, holding_file->name);
+	    fprintf(stdout,"FLUSH %s %s %s %d %s\n", file.name, file.disk,
+		    file.datestamp, file.dumplevel, holding_file->name);
 	}
+	free_sl(holding_list);
+	holding_list = NULL;
     }
     fprintf(stderr,"ENDFLUSH\n");
     fprintf(stdout,"ENDFLUSH\n");

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.41.2.13.4.6.2.1 2001/12/09 20:33:30 martinea Exp $
+ * $Id: amflush.c,v 1.41.2.13.4.6.2.2 2002/02/11 22:49:15 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -48,7 +48,7 @@ char *driver_program;
 char *reporter_program;
 char *logroll_program;
 char *datestamp;
-holding_t *datestamp_list;
+sl_t *datestamp_list;
 
 /* local functions */
 int main P((int main_argc, char **main_argv));
@@ -78,10 +78,8 @@ char **main_argv;
     amwait_t exitcode;
     int opt;
     dumpfile_t file;
-    holding_t *holding_list=NULL, *holding_file;
-    int nb_date;
-    char **datetoflush;
-    holding_t *dir;
+    sl_t *holding_list=NULL;
+    sle_t *holding_file;
     int driver_pipe[2];
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
@@ -184,27 +182,22 @@ char **main_argv;
 				NULL);
 
     if(datearg) {
-	holding_t *dir, *prev_dir = NULL, *next_dir;
+	sle_t *dir, *next_dir;
 	int i, ok;
 
 	datestamp_list = pick_all_datestamp(1);
-	for(dir = datestamp_list; dir != NULL;) {
+	for(dir = datestamp_list->first; dir != NULL;) {
 	    next_dir = dir->next;
 	    ok = 0;
 	    for(i=0; i<nb_datearg && ok==0; i++) {
 		ok = match_datestamp(datearg[i], dir->name);
 	    }
 	    if(ok == 0) { /* remove dir */
+		remove_sl(datestamp_list, dir);
+		amfree(dir->name);
 		amfree(dir);
-		if(prev_dir)
-		    prev_dir->next = next_dir;
-		else
-		    datestamp_list = next_dir;
 	    }
-	    else {
-		prev_dir = dir;
-	    }
-	    dir=next_dir;
+	    dir = next_dir;
 	}
     }
     else {
@@ -242,21 +235,8 @@ char **main_argv;
     }
     driver_stream = fdopen(driver_pipe[1], "w");
 
-    /* allocate datetoflush */
-    nb_date=0;
-    for(dir = datestamp_list; dir != NULL; dir=dir->next) nb_date ++;
-    datetoflush = malloc((nb_date+1)*sizeof(char *));
-
-    /* fill datetoflush */
-    nb_date=0;
-    for(dir = datestamp_list; dir != NULL; dir=dir->next) {
-	datetoflush[nb_date] = dir->name;
-	nb_date++;
-    }
-    datetoflush[nb_date]=NULL;
-
-    get_flush(datetoflush, &holding_list, NULL, 1, 0);
-    for(holding_file=holding_list; holding_file != NULL;
+    holding_list = get_flush(datestamp_list, NULL, 1, 0);
+    for(holding_file=holding_list->first; holding_file != NULL;
 				   holding_file = holding_file->next) {
 	get_dumpfile(holding_file->name, &file);
 
@@ -283,6 +263,10 @@ char **main_argv;
 	}
     }
 
+    free_sl(datestamp_list);
+    datestamp_list = NULL;
+    free_sl(holding_list);
+    holding_list = NULL;
 
     if(!foreground) { /* rename errfile */
 	char *errfile, *errfilex, *nerrfilex, number[100];
@@ -399,14 +383,14 @@ void confirm()
 {
     tape_t *tp;
     char *tpchanger;
-    holding_t *dir;
+    sle_t *dir;
 
     if(datestamp_list == NULL) {
 	printf("Could not find any Amanda directories to flush.\n");
 	exit(1);
     }
     printf("\nFlushing dumps in");
-    for(dir = datestamp_list; dir != NULL; dir = dir->next) {
+    for(dir = datestamp_list->first; dir != NULL; dir = dir->next) {
 	printf(" %s,",dir->name);
     }
     printf("\n");

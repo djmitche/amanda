@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcleanupdisk.c,v 1.1.2.6.4.3 2001/11/08 18:44:56 martinea Exp $
+ * $Id: amcleanupdisk.c,v 1.1.2.6.4.3.2.1 2002/02/11 22:49:15 martinea Exp $
  */
 #include "amanda.h"
 
@@ -36,7 +36,7 @@
 #include "infofile.h"
 #include "server_util.h"
 
-holding_t *holding_list;
+sl_t *holding_list;
 char *datestamp;
 
 /* local functions */
@@ -121,6 +121,8 @@ char **main_argv;
 
     close_infofile();
 
+    free_sl(holding_list);
+    holding_list = NULL;
     amfree(config_dir);
     return 0;
 }
@@ -215,9 +217,9 @@ char *diskdir, *datestamp;
 void check_disks()
 {
     holdingdisk_t *hdisk;
-    holding_t *dir;
+    sle_t *dir;
 
-    for(dir = holding_list; dir !=NULL; dir = dir->next) {
+    for(dir = holding_list->first; dir !=NULL; dir = dir->next) {
 	for(hdisk = getconf_holdingdisks(); hdisk != NULL; hdisk = hdisk->next)
 	    check_holdingdisk(hdisk->diskdir, dir->name);
     }
