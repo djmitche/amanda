@@ -1,3 +1,9 @@
+1998-09-18  Michael C. Povel  <Michael.Povel@hub.de>
+
+	* changer-src/chg-scsi.c (wait_ready): new function; keeps retrying
+	until success or timeout
+	(ask_clean, main): use it
+
 1998-09-18  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* client-src/rundump.c: fix support for VDUMP-only installation
