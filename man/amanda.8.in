@@ -723,7 +723,7 @@ Default:
 .IR 0.50 .
 The expected full and incremental compression factor for dumps.
 It is only used if Amanda does not have any history information on
-compression rates for a filesystem, so you should not usually have to
+compression rates for a filesystem, so you should not usually need to
 set it.  However, it may be useful for the first time you back up a
 very large filesystem that compresses very little.
 .TP
