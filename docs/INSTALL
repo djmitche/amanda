@@ -136,12 +136,6 @@ to compile some of the Amanda programs (see section 1.2.H below).
 					--libdir=
 	    $prefix/etc/amanda		Runtime configuration files
 					--with-configdir=
-	    $prefix/var/amanda		Directory for database files
-					--with-dbdir=
-	    $prefix/var/amanda		Directory for log files
-					--with-logdir=
-	    $prefix/var/amanda/index	Directory for index of dumps (server)
-					--with-indexdir=
 	    $prefix/var/amanda/gnutar-lists
 					Directory for GNUtar lists (client)
 					--with-gnutar-listdir=
