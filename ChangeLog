@@ -1,3 +1,8 @@
+2004-05-10  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Paul Bijnens <paul.bijnens@xplanation.com>
+
+	* server-src/planner.c: Log L_DISK for autoflush disk.
+
 2004-05-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/planner.c (handle_result): Add dp to pestq at the
