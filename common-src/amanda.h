@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.66.2.1 1999/06/15 07:10:34 oliva Exp $
+ * $Id: amanda.h,v 1.66.2.2 1999/06/20 17:28:27 th Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -361,6 +361,7 @@ extern void debug_close P((void));
 extern void debug_printf P((char *format, ...))
     __attribute__ ((format (printf, 1, 2)));
 extern int  debug_fd P((void));
+extern FILE *  debug_fp P((void));
 #else
 #   define dbopen()
 #   define dbclose()

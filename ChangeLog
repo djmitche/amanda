@@ -1,3 +1,17 @@
+1999-06-20  Thomas Hepper <th@ant.han.de>
+
+	* changer-src/chg-scsi.c: 2 new config keywords, changerident/tapeident
+	
+	* changer-src/scsi-changer-driver.c: deleted the linux driver at the
+	beginning, (wrong window on cut and paste .......)
+
+	* changer-src/scsi-defs.h: new element in Changer_IO which describes
+	the type of device which is handled by this entry (tape/robot)
+
+	* changer-src/scsi-changer-driver.c: New parameter to OpenDevice
+	to override the selection of the driver for this device. (See
+	also docs/TAPE.CHANGERS)
+
 1999-06-19  Alexander Zangerl  <az@Austria.EU.net>
 
 	* client-src/sendbackup-dump.c (re_table): Match Solaris vxdump
@@ -14,7 +28,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.220 1999/06/19 22:02:48 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.221 1999/06/20 17:28:03 th Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

@@ -1,8 +1,8 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.15 1999/06/18 20:43:22 th Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.16 1999/06/20 17:28:13 th Exp $";
 #endif
 /*
- *  $Id: chg-scsi.c,v 1.6.2.15 1999/06/18 20:43:22 th Exp $
+ *  $Id: chg-scsi.c,v 1.6.2.16 1999/06/20 17:28:13 th Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -108,6 +108,8 @@ typedef struct {  /* The information we can get for any drive (configuration) */
   char *cleanfile;   /* Where we count how many cleanings we did */
   char *timefile;    /* Where we count the time the tape was used*/
   char *tapestatfile;/* Where can we place some drive stats */
+  char *changerident;/* Config to use foe changer control, ovverride result from inquiry */
+  char *tapeident;   /* Same as above for the tape device */
 }config_t; 
 
 typedef struct {
@@ -122,7 +124,8 @@ typedef struct {
 
 typedef enum{
   NUMDRIVE,EJECT,SLEEP,CLEANMAX,DRIVE,START,END,CLEAN,DEVICE,STATFILE,CLEANFILE,DRIVENUM,
-    CHANGERDEV,USAGECOUNT,SCSITAPEDEV, TAPESTATFILE, LABELFILE
+    CHANGERDEV,USAGECOUNT,SCSITAPEDEV, TAPESTATFILE, LABELFILE, CHANGERIDENT,
+    TAPEIDENT
     } token_t;
 
 typedef struct {
@@ -148,6 +151,8 @@ tokentable_t t_table[]={
   { "scsitapedev", SCSITAPEDEV},
   { "tapestatus", TAPESTATFILE},
   { "labelfile", LABELFILE},
+  { "changerident" , CHANGERIDENT},
+  { "tapeident", TAPEIDENT},
   { NULL,-1 }
 };
 
@@ -175,6 +180,8 @@ void init_changer_struct(changer_t *chg,int number_of_config)
       chg->conf[i].timefile  = NULL;
       chg->conf[i].scsitapedev = NULL;
       chg->conf[i].tapestatfile = NULL;
+      chg->conf[i].changerident = NULL;
+      chg->conf[i].tapeident = NULL;
     }
   }
 }
@@ -197,26 +204,42 @@ void dump_changer_struct(changer_t chg)
     dbprintf(("  Startslot     : %d\n",chg.conf[i].start));
     dbprintf(("  Endslot       : %d\n",chg.conf[i].end));
     dbprintf(("  Cleanslot     : %d\n",chg.conf[i].cleanslot));
+
     if (chg.conf[i].device != NULL)
       dbprintf(("  Devicename    : %s\n",chg.conf[i].device));
     else
       dbprintf(("  Devicename    : none\n"));
+
+    if (chg.conf[i].changerident != NULL)
+      dbprintf(("  changerident  : %s\n",chg.conf[i].changerident));
+    else
+      dbprintf(("  changerident  : none\n"));
+
     if (chg.conf[i].scsitapedev != NULL)
       dbprintf(("  SCSITapedev   : %s\n",chg.conf[i].scsitapedev));
     else
       dbprintf(("  SCSITapedev   : none\n"));
+
+    if (chg.conf[i].tapeident != NULL)
+      dbprintf(("  tapeident     : %s\n",chg.conf[i].changerident));
+    else
+      dbprintf(("  tapeident     : none\n"));
+
     if (chg.conf[i].tapestatfile != NULL)
       dbprintf(("  statfile      : %s\n", chg.conf[i].tapestatfile));
     else
       dbprintf(("  statfile      : none\n"));
+
     if (chg.conf[i].slotfile != NULL)
       dbprintf(("  Slotfile      : %s\n",chg.conf[i].slotfile));
     else
       dbprintf(("  Slotfile      : none\n"));
+
     if (chg.conf[i].cleanfile != NULL)
       dbprintf(("  Cleanfile     : %s\n",chg.conf[i].cleanfile));
     else
       dbprintf(("  Cleanfile     : none\n"));
+
     if (chg.conf[i].timefile != NULL)
       dbprintf(("  Usagecount    : %s\n",chg.conf[i].timefile));
     else
@@ -326,6 +349,12 @@ int read_config(char *configfile, changer_t *chg)
           break;
         case TAPESTATFILE:
           chg->conf[drivenum].tapestatfile = strdup(value);
+          break;
+        case CHANGERIDENT:
+          chg->conf[drivenum].changerident = strdup(value);
+          break;
+        case TAPEIDENT:
+          chg->conf[drivenum].tapeident = strdup(value);
           break;
         case CLEANMAX:
           chg->cleanmax = atoi(value);
@@ -869,7 +898,7 @@ int main(int argc, char *argv[])
       tapestatfile = strdup(chg.conf[confnum].tapestatfile);
     dump_changer_struct(chg);
     /* get info about the changer */
-    if (NULL == (pChangerDev = OpenDevice(changer_dev, "changer_dev"))) {
+    if (NULL == (pChangerDev = OpenDevice(changer_dev, "changer_dev", chg.conf[confnum].changerident))) {
       int localerr = errno;
       fprintf(stderr, "%s: open: %s: %s\n", get_pname(), 
               changer_dev, strerror(localerr));
@@ -883,7 +912,7 @@ int main(int argc, char *argv[])
 
     if (tape_device != NULL)
       {
-        if ((pTapeDev = OpenDevice(tape_device, "tape_device")) == NULL)
+        if ((pTapeDev = OpenDevice(tape_device, "tape_device", chg.conf[confnum].tapeident)) == NULL)
           {
             dbprintf(("warning open of %s: failed\n",  tape_device));
           }
@@ -895,7 +924,7 @@ int main(int argc, char *argv[])
 
     if (scsitapedevice != NULL)
       {
-        if ((pTapeDevCtl = OpenDevice(scsitapedevice, "scsitapedevice")) == NULL)
+        if ((pTapeDevCtl = OpenDevice(scsitapedevice, "scsitapedevice", chg.conf[confnum].tapeident)) == NULL)
           {
             printf("open: %s: failed\n", scsitapedevice);
             return(2);
@@ -941,7 +970,7 @@ int main(int argc, char *argv[])
     free_changer_struct(&chg);
   } else {
     /* get info about the changer */
-    if (NULL == (pChangerDev = OpenDevice(changer_dev, "dev"))) {
+    if (NULL == (pChangerDev = OpenDevice(changer_dev, "dev", NULL))) {
       int localerr = errno;
       fprintf(stderr, "%s: open: %s: %s\n", get_pname(), 
               changer_dev, strerror(localerr));

@@ -393,6 +393,28 @@ Use the mtio ioctl to eject the tape, use only if the standard (1) does
 not work, and send the debug output (/tmp/amanda/chg-scsi.debug) to
 th@ant.han.de
 
+changerident <ident>
+
+With this it is possible to specify which internal driver to use for 
+controlling/error handling of the robot
+
+tapeident <ident>
+
+Some as above but for the tape.
+
+
+New command line option:
+-status [all|types|robot|sense|ModeSenseRobot|ModeSenseTape|fd]
+
+<all> will show the result form all options.
+<types> will list the known driver types.
+<robot> will show the status of all elements (tape/robot/slots..)
+<sense> will show the result from a request sense
+<ModeSenseRobot> will show the sense page from the robot
+<ModeSenseTape> will show the sense page from the tape
+<fd> will show the devices which are open, and some info about it.
+
+
 At the moment changer with tape and robot on the same SCSI id (
 but on different luns) will run on the following plattforms
 HP_UX 10.20	
@@ -429,7 +451,7 @@ mknod /dev/scsi/1 c 203 0x001000
                           ||SCSI ID of the device
                           2 digit instance number from ioscan
 
-On Linux you need either sg (generic scsi) as module or it mus be compiled
+On Linux you need either sg (generic scsi) as module or it must be compiled
 into the kernel. If the sg driver doses not work try to use the ioctl interface.
 For that you have to undef the LINUX_CHG define in changer-src/scsi-linux.c
 Also you have to change the NORMAL_TIMEOUT in /usr/src/linux/drivers/scsi/scsi_ioctl.c

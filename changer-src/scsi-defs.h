@@ -930,6 +930,7 @@ typedef struct ElementInfo
 
 typedef struct {
     char *ident;                  /* Name of the device from inquiry */
+    char *type;                   /* Device Type, tape|robot */
     int (*function[10])();        /* New way to call the device dependend functions move/eject ... */
 } ChangerCMD_T ;
 
@@ -959,10 +960,11 @@ typedef struct LogPageDecode {
 /* Funktion-Declaration */
 /* ======================================================= */
 OpenFiles_T *SCSI_OpenDevice(char *DeviceName);
-OpenFiles_T *OpenDevice(char *DeviceName, char *ConfigName);
+OpenFiles_T *OpenDevice(char *DeviceName, char *ConfigName, char *ident);
 
 int SCSI_CloseDevice(int DeviceFD); 
 int CloseDevice(int ); 
+int Tape_Eject(int);
 
 int SCSI_ExecuteCommand(int DeviceFD,
                         Direction_T Direction,
@@ -972,6 +974,10 @@ int SCSI_ExecuteCommand(int DeviceFD,
                         int DataBufferLength,
                         char *RequestSense,
                         int RequestSenseLength);
+
+void ChangerStatus(char * option, char * labelfile, int HasBarCode, char *changer_file, char *changer_dev, char *tape_device);
+
+int Tape_Ready(char *tapedev, int wait);
 
 /*
  * Local variables:

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.1.2.9 1999/03/04 20:47:46 th Exp $";
+static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.1.2.10 1999/06/20 17:28:23 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an HP-UX Workstation
@@ -113,6 +113,8 @@ int SCSI_ExecuteCommand(int DeviceFD,
     {
     case Input:
       sctl_io.flags = sctl_io.flags | SCTL_READ;
+      break;
+    case Output:
       break;
     }
 

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.47.2.4 1999/04/07 19:47:48 jrj Exp $
+/* $Id: taper.c,v 1.47.2.5 1999/06/20 17:28:36 th Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -251,7 +251,7 @@ int rdpipe, wrpipe;
     int argc;
     char **argv;
     char *handle = NULL, *hostname = NULL, *diskname = NULL, *result;
-    char *datestamp;
+    char *datestamp = NULL;
     char tok;
     char *q;
     int level, fd, data_port, data_socket, wpid;
