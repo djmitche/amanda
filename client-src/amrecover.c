@@ -4,13 +4,17 @@
 * Module:        
 * Part of:       
 *
-* Revision:      $Revision: 1.3 $
-* Last Edited:   $Date: 1997/04/29 09:40:13 $
-* Author:        $Author: amcore $
+* Revision:      $Revision: 1.4 $
+* Last Edited:   $Date: 1997/05/05 20:50:02 $
+* Author:        $Author: oliva $
 *
 * Notes:         
 * Private Func:  
 * History:       $Log: amrecover.c,v $
+* History:       Revision 1.4  1997/05/05 20:50:02  oliva
+* History:       changed functions definitions so that they do not use P((args));
+* History:       unprotoized argument declarations were provided instead.
+* History:
 * History:       Revision 1.3  1997/04/29 09:40:13  amcore
 * History:       Better guessing of disk name at startup
 * History:       Now handles disks specified by logical names
@@ -155,7 +159,7 @@ char *prompt;
 /* server_line is terminated with \0, \r\n is striped */
 /* returns -1 if error */
 /* NOTE server sends at least 6 chars: 3 for code, 1 for cont, 2 for \r\n */
-int get_line P((void))
+int get_line ()
 {
     int l;
     
@@ -183,7 +187,7 @@ int get_line P((void))
 /* return -1 if error */
 /* return code returned by server always occupies first 3 bytes of global
    variable server_line */
-int print_reply P((void))
+int print_reply ()
 {
     do
     {
@@ -200,7 +204,7 @@ int print_reply P((void))
 
 /* same as print_reply() but doesn't print reply on stdout */
 /* NOTE: reply still written to server_line[] */
-int grab_reply P((void))
+int grab_reply ()
 {
     do
     {
@@ -215,7 +219,7 @@ int grab_reply P((void))
 
 /* get 1 line of reply */
 /* returns -1 if error, 0 if last (or only) line, 1 if more to follow */
-int get_reply_line P((void))
+int get_reply_line ()
 {
     if (get_line() == -1)
 	return -1;
@@ -226,7 +230,7 @@ int get_reply_line P((void))
 
 
 /* returns pointer to returned line */
-char *reply_line P((void))
+char *reply_line ()
 {
     return server_line;
 }
@@ -235,7 +239,7 @@ char *reply_line P((void))
 
 /* returns 0 if server returned an error code (ie code starting with 5)
    and non-zero otherwise */
-int server_happy P((void))
+int server_happy ()
 {
     if (server_line[0] == '5')
 	return 0;
@@ -308,7 +312,8 @@ int signum;
    2 if disk local but can't guess name */
 /* do this by looking for the longest mount point which matches the
    current directory */
-int guess_disk P((char *cwd, char *dn_guess, char *mpt_guess))
+int guess_disk (cwd, dn_guess, mpt_guess)
+char *cwd, *dn_guess, *mpt_guess;
 {
     int longest_match = 0;
     int current_length;
@@ -370,7 +375,7 @@ int guess_disk P((char *cwd, char *dn_guess, char *mpt_guess))
 }
 
 
-void quit P((void))
+void quit ()
 {
     quit_prog = 1;
     (void)converse("QUIT");
