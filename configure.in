@@ -602,6 +602,8 @@ AC_ARG_WITH(gnutar-listed-incremental,
    [    AC_MSG_ERROR([*** The gnutar-listed-incremental option was deprecated, use gnutar-listdir instead])
    ]
 )
+GNUTAR_LISTED_INCREMENTAL_DIR=$GNUTAR_LISTDIR
+AC_SUBST(GNUTAR_LISTED_INCREMENTAL_DIR)
 
 AC_ARG_WITH(bsd-security,
     [  --without-bsd-security do not use BSD rsh/rlogin style security],

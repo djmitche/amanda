@@ -1,3 +1,8 @@
+1999-03-22 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* configure.in: AC_SUBST(GNUTAR_LISTED_INCREMENTAL_DIR)
+	* dumper-src/gnutar.pl.in: use @GNUTAR_LISTED_INCREMENTAL_DIR@
+
 1999-03-21 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* configure.in: default for DUMPER_DIR is $exec_prefix/dumper.

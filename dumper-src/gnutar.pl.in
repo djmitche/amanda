@@ -1,13 +1,29 @@
-#!/usr/local/bin/perl
+#!@PERL@
 #
+
+# Run perl.
+eval '(exit $?0)' && eval 'exec @PERL@ -S $0 ${1+"$@"}'
+	& eval 'exec @PERL@ -S $0 $argv:q'
+		if 0;
 
 use File::Copy;
 use IPC::Open3;
 use Sys::Hostname;
 
+$prefix='@prefix@';
+$exec_prefix="@exec_prefix@";
+$libexecdir="@libexecdir@";
+$USE_VERSION_SUFFIXES='@USE_VERSION_SUFFIXES@';
+$suf = '';
+if ( $USE_VERSION_SUFFIXES =~ /^yes$/i ) {
+   $suf='-@VERSION@';
+}
+
 $host = hostname;
 $host =~ s/\..*$//;
-$gnulist = "/home/ungava/martinea/gnutar-lists";
+$runtar="${libexecdir}/runtar${suf}";
+$gnulist = '@GNUTAR_LISTED_INCREMENTAL_DIR@';
+$gnutar = $runtar;
 
 
 
@@ -18,7 +34,6 @@ $level_incrementals = 9;
 @parse_backup     = ("direct","parse");
 @backup_type      = ("full","level","diff");
 
-$gnutar = "/bin/tar";
 
 #$user_support  = "";
 #$group_support = "";
@@ -278,4 +293,4 @@ sub command_index_from_image {
 sub command_print_command {
 }
 
-require "generic-dumper.pl"
+require "generic-dumper"
