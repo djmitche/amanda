@@ -4,7 +4,7 @@ AC_INIT(common-src/amanda.h)
 AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_SYSTEM
 AC_VALIDATE_CACHED_SYSTEM_TUPLE
-AM_INIT_AUTOMAKE(amanda, 2.4.2p2)
+AM_INIT_AUTOMAKE(amanda, 2.4.2p2-tapeio)
 AM_CONFIG_HEADER(config/config.h)
 
 AC_PREREQ(2.13)		dnl Minimum Autoconf version required.
@@ -1551,6 +1551,8 @@ AC_HEADER_TIME
 AC_CHECK_HEADERS(\
 	arpa/inet.h \
 	camlib.h \
+	cam/cam.h \
+	cam/scsi/scsi_message.h \
 	chio.h \
 	db.h \
 	dbm.h \

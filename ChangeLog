@@ -1,3 +1,8 @@
+2001-08-16 John R. Jackson (jrj@purdue.edu)
+
+	* configure.in: Change release name to "2.4.2p2-tapeio".  Add missing
+	  CAM header checks from the 2.5 branch.
+
 2001-08-15 Thomas Hepper (th@ant.han.de)
 	* changer-src/chg-scsi.c. Removed version 1 DB support from mapBarCode. Changed the way parameter
 	are given to MapBarCode and returned from there. No a struct is passed where all infos
