@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcleanupdisk.c,v 1.1.2.6 1999/11/10 23:26:47 jrj Exp $
+ * $Id: amcleanupdisk.c,v 1.1.2.7 2001/03/20 00:21:06 jrjackson Exp $
  */
 #include "amanda.h"
 
@@ -105,7 +105,7 @@ char **main_argv;
     }
     amfree(conf_infofile);
 
-    datestamp = construct_datestamp();
+    datestamp = construct_datestamp(NULL);
 
     dumpuser = getconf_str(CNF_DUMPUSER);
     if((pw = getpwnam(dumpuser)) == NULL) {

@@ -24,9 +24,12 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.h,v 1.1.2.1 1999/04/17 22:13:49 martinea Exp $
+ * $Id: server_util.h,v 1.1.2.2 2001/03/20 00:21:06 jrjackson Exp $
  *
  */
+#ifndef SERVER_UTIL_H
+#define	SERVER_UTIL_H
 
-char *construct_datestamp P((void));
+#include "util.h"
 
+#endif	/* SERVER_UTIL_H */
