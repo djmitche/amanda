@@ -1,5 +1,5 @@
 /* $RCSfile: amtrmidx.c,v $
-   $Date: 1997/05/01 19:03:43 $
+   $Date: 1997/07/03 14:32:23 $
 
    amtrmidx - trims number of index files to only those still in system.
    Well actually, it keeps a few extra, plus goes back to the last
@@ -64,7 +64,7 @@ char **argv;
     /* now go through the list of disks and find which have indexes */
     for (diskp = diskl->head; diskp != NULL; diskp = diskp->next)
     {
-	if (diskp->dtype->index)
+	if (diskp->index)
 	{
 	    dbprintf(("%s %s\n", diskp->host->hostname, diskp->name));
 

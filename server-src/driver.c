@@ -230,7 +230,7 @@ fflush(stdout);
 	else 
 	    log(L_FAIL, "%s %s %d [%s]",
 		diskp->host->hostname, diskp->name, sched(diskp)->level,
-		diskp->dtype->no_hold ?
+		diskp->no_hold ?
 		    "can't dump no-hold disk in degraded mode" :
 		    "no more holding disk space");
     }
@@ -345,17 +345,16 @@ disklist_t *rq;
 	    if(is_bigdumper(dumper)) nextp = diskp->prev;
 	    else nextp = diskp->next;
 
-	    if(diskp->dtype->start_t > now) {
+	    if(diskp->start_t > now) {
 		cur_idle = max(cur_idle, IDLE_START_WAIT);
-		sleep_time.tv_sec = min(diskp->dtype->start_t-now,
-					sleep_time.tv_sec);
+		sleep_time.tv_sec = min(diskp->start_t - now, sleep_time.tv_sec);
 	    } else if(sched(diskp)->est_kps > free_kps(diskp->host->netif))
 		cur_idle = max(cur_idle, IDLE_NO_BANDWIDTH);
 	    else if(sched(diskp)->est_size > MAXFILESIZE)
 		cur_idle = max(cur_idle, IDLE_TOO_LARGE);
 	    else if((holdp = find_diskspace(sched(diskp)->est_size)) == NULL)
 		cur_idle = max(cur_idle, IDLE_NO_DISKSPACE);
-	    else if(diskp->dtype->no_hold)
+	    else if(diskp->no_hold)
 		cur_idle = max(cur_idle, IDLE_NO_HOLD);
 	    else if(client_constrained(diskp))
 		cur_idle = max(cur_idle, IDLE_CLIENT_CONSTRAINED);
@@ -729,7 +728,7 @@ int fd;
 	     * next attempt.
 	     */
 	    if(num_busy_dumpers() <= 1)
-		dp->dtype->no_hold = 1;
+		dp->no_hold = 1;
 	}
 	else {
 	    adjust_diskspace(dp, NO_ROOM);

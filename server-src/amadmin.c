@@ -374,12 +374,12 @@ static int next_level0(dp, ip)
 disk_t *dp;
 info_t *ip;
 {
-    if(dp->dtype->no_full) 
+    if(dp->no_full) 
 	return 1;	/* fake it */
     else if(ip->inf[0].date == EPOCH)
 	return 0;	/* new disk */
     else
-	return dp->dtype->dumpcycle - days_diff(ip->inf[0].date, today);
+	return dp->dumpcycle - days_diff(ip->inf[0].date, today);
 }
 
 

@@ -138,6 +138,23 @@ int (*cmp) P((disk_t *a, disk_t *b));
     else ptr->prev = disk;
 }
 
+void sort_disk(in, out, cmp)	/* sort a whole queue */
+disklist_t *in;
+disklist_t *out;
+int (*cmp) P((disk_t *a, disk_t *b));
+{
+    disklist_t *tmp;
+    disk_t *disk;
+
+    tmp = in;		/* just in case in == out */
+
+    out->head = (disk_t *)0;
+    out->tail = (disk_t *)0;
+
+    while(disk = dequeue_disk(tmp))
+	insert_disk(out, disk, cmp);
+}
+
 disk_t *dequeue_disk(list)	/* remove disk from front of queue */
 disklist_t *list;
 {
@@ -192,6 +209,7 @@ static int read_diskline()
 {
     host_t *host;
     disk_t *disk;
+    dumptype_t *dtype;
 
     line_num += 1;
 
@@ -242,13 +260,30 @@ static int read_diskline()
 	return 1;
     }
 
-    if((disk->dtype = lookup_dumptype(upcase(str))) == NULL) {
+    if((dtype = lookup_dumptype(upcase(str))) == NULL) {
 	parserror("undefined dumptype `%s'", str);
 	free(disk->name);
 	free(disk);
 	eat_line();
 	return 1;
     }
+    disk->dtype_name = dtype->name;
+    disk->program   = dtype->program;
+    disk->exclude   = dtype->exclude;
+    disk->priority  = dtype->priority;
+    disk->dumpcycle = dtype->dumpcycle;
+    disk->frequency = dtype->frequency;
+    disk->auth      = dtype->auth;
+    disk->maxdumps  = dtype->maxdumps;
+    disk->start_t   = dtype->start_t;
+    disk->compress  = dtype->compress;
+    disk->record    = dtype->record;
+    disk->skip_incr = dtype->skip_incr;
+    disk->skip_full = dtype->skip_full;
+    disk->no_full   = dtype->no_full;
+    disk->no_hold   = dtype->no_hold;
+    disk->kencrypt  = dtype->kencrypt;
+    disk->index     = dtype->index;
 
     get_string();
     if(*str != '\n' && *str != '\0') {	/* got optional platter number */
@@ -277,7 +312,7 @@ static int read_diskline()
     disk->host = host;
     disk->hostnext = host->disks;
     host->disks = disk;
-    host->maxdumps = disk->dtype->maxdumps;
+    host->maxdumps = disk->maxdumps;
 
     return 1;
 }
@@ -402,7 +437,7 @@ dump_disk(dp)
 disk_t *dp;
 {
     printf("  DISK %s (HOST %s, LINE %d) TYPE %s FILESYS %s\n",
-	   dp->name, dp->host->hostname, dp->line, dp->dtype->name,
+	   dp->name, dp->host->hostname, dp->line, dp->dtype_name,
 	   dp->filesys == NULL? "(null)": dp->filesys);
 }
 #endif /* TEST */

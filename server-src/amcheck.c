@@ -546,13 +546,13 @@ int fd;
 
         for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
             remove_disk(origqp, dp);
-            sprintf(line, "%s %s 0\n", dp->dtype->program, dp->name);
+            sprintf(line, "%s %s 0\n", dp->program, dp->name);
             strcat(req, line);
         }
 	hostcount++;
 
 #ifdef KRB4_SECURITY
-	if(hostp->disks->dtype->auth == AUTH_KRB4)
+	if(hostp->disks->auth == AUTH_KRB4)
 	    rc = make_krb_request(hostp->hostname, kamanda_port, stralloc(req),
 				  hostp, CHECK_TIMEOUT, handle_response);
 	else
@@ -604,7 +604,7 @@ pkt_t *pkt;
     }
 
 #ifdef KRB4_SECURITY
-    if(hostp->disks->dtype->auth == AUTH_KRB4 &&
+    if(hostp->disks->auth == AUTH_KRB4 &&
        !check_mutual_authenticator(host2key(hostp), pkt, p)) {
 	fprintf(outf, "ERROR: %s [mutual-authentication failed]\n", 
 		hostp->hostname);

@@ -598,7 +598,7 @@ void output_summary()
 	fprintf(mailf,"%1d %8.0f %8.0f ", 
 		data(dp)->level, data(dp)->origsize, data(dp)->outsize);
 
-	if(dp->dtype->compress == COMP_NONE)
+	if(dp->compress == COMP_NONE)
 	    f = 0.0;
 	else 
 	    f = data(dp)->origsize;
@@ -813,7 +813,7 @@ void handle_success()
 	disks[level] += 1;
 	stats[i].disks += 1;
 	stats[i].outsize += kbytes;
-	if(dp->dtype->compress == COMP_NONE)
+	if(dp->compress == COMP_NONE)
 	    data(dp)->origsize = kbytes;
 	else {
 	    /* grab original size from record */

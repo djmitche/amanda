@@ -51,7 +51,24 @@ typedef struct disk_s {
     struct disk_s *hostnext;
 
     char *name;				/* device name for disk, eg "sd0g" */
-    dumptype_t *dtype;			/* dumptype structure */
+    char *dtype_name;			/* name of dump type   XXX shouldn't need this */
+    char *program;			/* dump program, eg DUMP, GNUTAR */
+    char *exclude;			/* file exclude list */
+    long priority;			/* priority of disk */
+    long dumpcycle;			/* days between fulls */
+    long frequency;			/* XXX - not used */
+    auth_t auth;			/* type of authentication (per system?) */
+    int maxdumps;			/* max number of parallel dumps (per system) */
+    time_t start_t;			/* start this dump after this time */
+    int compress;			/* type of compression to use */
+    /* flag options */
+    int record:1;			/* record dump in /etc/dumpdates ? */
+    int skip_incr:1;			/* incs done externally ? */
+    int skip_full:1;			/* fulls done externally ? */
+    int no_full:1;			/* only do level 1's ? */
+    int no_hold:1;			/* don't use holding disk ? */
+    int kencrypt:1;
+    int index:1;			/* produce an index ? */
     int platter;			/* platter # - for parallel dumps */
     int inprogress;			/* being dumped now? */
     void *up;				/* generic user pointer */
@@ -71,6 +88,7 @@ disk_t *lookup_disk P((char *hostname, char *diskname));
 
 void enqueue_disk P((disklist_t *list, disk_t *disk));
 void insert_disk P((disklist_t *list, disk_t *disk, int (*f)(disk_t *a, disk_t *b)));
+void sort_disk P((disklist_t *in, disklist_t *out, int (*f)(disk_t *a, disk_t *b)));
 disk_t *dequeue_disk P((disklist_t *list));
 void remove_disk P((disklist_t *list, disk_t *disk));
 

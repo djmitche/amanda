@@ -229,13 +229,13 @@ disk_t *dp;
 
     strcpy(str,";");
 
-    if(dp->dtype->auth == AUTH_BSD) strcat(str, "bsd-auth;");
-    else if(dp->dtype->auth == AUTH_KRB4) {
+    if(dp->auth == AUTH_BSD) strcat(str, "bsd-auth;");
+    else if(dp->auth == AUTH_KRB4) {
 	strcat(str, "krb4-auth;");
-	if(dp->dtype->kencrypt) strcat(str, "kencrypt;");
+	if(dp->kencrypt) strcat(str, "kencrypt;");
     }
 
-    switch(dp->dtype->compress) {
+    switch(dp->compress) {
     case COMP_FAST:
 	strcat(str, "compress-fast;");
 	break;
@@ -247,9 +247,9 @@ disk_t *dp;
 	break;
     }
 
-    if(!dp->dtype->record) strcat(str,"no-record;");
-    if(dp->dtype->index) strcat(str,"index;");
-    if(dp->dtype->exclude) strcat(str, dp->dtype->exclude);
+    if(!dp->record) strcat(str,"no-record;");
+    if(dp->index) strcat(str,"index;");
+    if(dp->exclude) strcat(str, dp->exclude);
 
     return str;
 }
@@ -269,7 +269,7 @@ disk_t *dp;
 	lev = sched(dp)->level;
 	sprintf(cmdline, "%s %s %s %s %s %d %s %s |%s\n", cmdstr[cmd],
 		disk2serial(dp), sched(dp)->destname, dp->host->hostname,
-		dp->name, lev, sched(dp)->dumpdate, dp->dtype->program,
+		dp->name, lev, sched(dp)->dumpdate, dp->program,
 		optionstr(dp));
 	break;
     case QUIT:
@@ -379,7 +379,7 @@ long dumptime;
     infp->size = origsize;
     infp->csize = dumpsize;
     infp->secs = dumptime;
-    if(dp->dtype->record) infp->date = sched(dp)->timestamp;
+    if(dp->record) infp->date = sched(dp)->timestamp;
 
     if(level == 0) perfp = &inf.full;
     else perfp = &inf.incr;

@@ -460,7 +460,7 @@ disk_t *dp;
     info_t inf;
     int i;
 
-    assert(dp && dp->dtype && dp->host);
+    assert(dp && dp->host);
 
     /* get current information about disk */
 
@@ -474,14 +474,14 @@ disk_t *dp;
     ep = alloc(sizeof(est_t));
     dp->up = (void *) ep;
     ep->size = -1;
-    ep->curr_priority = dp->dtype->priority;
+    ep->curr_priority = dp->priority;
     ep->errstr = 0;
 
     /* calculated fields */
 
     if(inf.command == PLANNER_FORCE) {
 	/* force a level 0, kind of like a new disk */
-	if(dp->dtype->no_full) {
+	if(dp->no_full) {
 	    /* 
 	     * XXX - Not sure what it means to force a no-full disk.  The
 	     * purpose of no-full is to just dump changes relative to a
@@ -546,7 +546,7 @@ disk_t *dp;
 
     /* handle external level 0 dumps */
 
-    if(dp->dtype->skip_full) {
+    if(dp->skip_full) {
 	if(ep->next_level0 <= 0) {
 	    /* update the date field */
 	    if(inf.inf[0].date == EPOCH || inf.command == PLANNER_FORCE)
@@ -587,7 +587,7 @@ disk_t *dp;
 
     /* handle "skip-incr" type archives */
 
-    if(dp->dtype->skip_incr && ep->next_level0 > 0) {
+    if(dp->skip_incr && ep->next_level0 > 0) {
 	fprintf(stderr,"%s:%s lev 1 skipped due to skip-incr flag\n",
 		dp->host->hostname, dp->name);
 	/* don't enqueue the disk */
@@ -603,7 +603,7 @@ disk_t *dp;
 	return;
     }
 
-    if(ep->last_level == -1 && ep->next_level0 > 0 && !dp->dtype->no_full) {
+    if(ep->last_level == -1 && ep->next_level0 > 0 && !dp->no_full) {
 	log(L_WARNING, 
 	    "%s:%s mismatch: no tapelist record, but curinfo next_level0: %d.",
 	    dp->host->hostname, dp->name, ep->next_level0);
@@ -623,14 +623,14 @@ disk_t *dp;
 
     i = 0;
 
-    if(!(dp->dtype->skip_full || dp->dtype->no_full))
+    if(!(dp->skip_full || dp->no_full))
 	askfor(ep, i++, 0, &inf);
 
-    if(!dp->dtype->skip_incr) {
+    if(!dp->skip_incr) {
 	if(ep->last_level == -1) {		/* a new disk */
-	    if(dp->dtype->no_full)
+	    if(dp->no_full)
 		askfor(ep, i++, 1, &inf);
-	    else assert(!dp->dtype->skip_full);	/* should be handled above */
+	    else assert(!dp->skip_full);	/* should be handled above */
 	}
 	else {				/* not new, pick normally */
 	    int curr_level;
@@ -662,9 +662,9 @@ disk_t *dp;
 
     fprintf(stderr, "setup_estimate: %s:%s: command %d, options:",
 	    dp->host->hostname, dp->name, inf.command);
-    if(dp->dtype->no_full) fputs(" no-full", stderr);
-    if(dp->dtype->skip_full) fputs(" skip-full", stderr);
-    if(dp->dtype->skip_incr) fputs(" skip-incr", stderr);
+    if(dp->no_full) fputs(" no-full", stderr);
+    if(dp->skip_full) fputs(" skip-full", stderr);
+    if(dp->skip_incr) fputs(" skip-incr", stderr);
     fprintf(stderr, "\n    last_level %d next_level0 %d level_days %d\n",
 	    ep->last_level, ep->next_level0, ep->level_days);
     fprintf(stderr, "    getting estimates %d (%ld) %d (%ld) %d (%ld)\n",
@@ -713,7 +713,7 @@ int level;
 
     if(size == -1) return size;
 
-    if(dp->dtype->compress == COMP_NONE)
+    if(dp->compress == COMP_NONE)
 	return size;
 
     if(level == 0) ratio = est(dp)->fullcomp;
@@ -764,12 +764,12 @@ static int next_level0(dp, ip)
 disk_t *dp;
 info_t *ip;
 {
-    if(dp->dtype->no_full) 
+    if(dp->no_full) 
 	return 1;		/* fake it */
     else if(ip->inf[0].date == EPOCH)
 	return -days_diff(EPOCH, today);        /* new disk  */
     else
-	return dp->dtype->dumpcycle - days_diff(ip->inf[0].date, today);
+	return dp->dumpcycle - days_diff(ip->inf[0].date, today);
 }
 
 /* how many runs at current level? */
@@ -868,9 +868,9 @@ host_t *hostp;
 	    int lev = est(dp)->level[i];
 	    if(lev == -1) break;
 
-	    sprintf(line, "%s %s %d %s %d %s\n", dp->dtype->program,
+	    sprintf(line, "%s %s %d %s %d %s\n", dp->program,
 		    dp->name, lev, est(dp)->dumpdate[i], dp->platter,
-		    (dp->dtype->exclude ? dp->dtype->exclude : ""));
+		    (dp->exclude ? dp->exclude : ""));
 	    strcat(req, line);
 	    disks++;
 	}
@@ -878,7 +878,7 @@ host_t *hostp;
     if(disks > max_disks) max_disks = disks;
 
 #ifdef KRB4_SECURITY
-    if(hostp->disks->dtype->auth == AUTH_KRB4)
+    if(hostp->disks->auth == AUTH_KRB4)
 	rc = make_krb_request(hostp->hostname, kamanda_port, stralloc(req),
 			      hostp, disks*ONE_TIMEOUT, handle_result);
     else
@@ -945,7 +945,7 @@ pkt_t *pkt;
     }
 
 #ifdef KRB4_SECURITY
-    if(hostp->disks->dtype->auth == AUTH_KRB4 &&
+    if(hostp->disks->auth == AUTH_KRB4 &&
        !check_mutual_authenticator(host2key(hostp), pkt, p)) {
 	sprintf(errbuf, "%s [mutual-authentication failed]", hostp->hostname);
 	goto error_return;
@@ -1071,9 +1071,9 @@ disk_t *dp;
 	ep->curr_level = 0;
 	ep->size = est_tape_size(dp, 0);
 	total_lev0 += (double) ep->size;
-	if(ep->last_level == -1 || dp->dtype->skip_incr) {
+	if(ep->last_level == -1 || dp->skip_incr) {
 	    fprintf(stderr,"(%s disk, can't switch to degraded mode)\n",
-		    dp->dtype->skip_incr? "skip-incr":"new");
+		    dp->skip_incr? "skip-incr":"new");
 	    ep->degr_level = -1;
 	    ep->degr_size = -1;
 	}
@@ -1097,7 +1097,7 @@ disk_t *dp;
     total_size += TAPE_BLOCK_SIZE + ep->size + tape_mark;
 
     /* update the balanced size */
-    if(!(dp->dtype->skip_full || dp->dtype->no_full)) {
+    if(!(dp->skip_full || dp->no_full)) {
 	long lev0size;
 
 	lev0size = est_tape_size(dp, 0);
@@ -1186,7 +1186,7 @@ disk_t *dp;
     }
 
     /* if no-full option set, always do level 1 */
-    if(dp->dtype->no_full) {
+    if(dp->no_full) {
 	fprintf(stderr,"   picklev: no-full set, so always level 1\n");
 	return 1;
     }
@@ -1278,11 +1278,11 @@ static void delay_dumps P((void))
 	ndp = dp->next; /* remove_disk zaps this */
 
 	if(est(dp)->curr_level == 0 && est(dp)->size > tape->length) {
-	    if(est(dp)->last_level == -1 || dp->dtype->skip_incr) {
+	    if(est(dp)->last_level == -1 || dp->skip_incr) {
 		sprintf(errbuf,
 "%s %s 0 [dump larger than tape, but cannot incremental dump %s disk]",
 		    dp->host->hostname, dp->name,
-		    dp->dtype->skip_incr? "skip-incr": "new");
+		    dp->skip_incr? "skip-incr": "new");
 
 		delay_remove_dump(dp, errbuf);
 	    }
@@ -1328,11 +1328,11 @@ static void delay_dumps P((void))
 	ndp = dp->prev;
 
 	if(est(dp)->curr_level == 0 && dp != preserve) {
-	    if(est(dp)->last_level == -1 || dp->dtype->skip_incr) {
+	    if(est(dp)->last_level == -1 || dp->skip_incr) {
 		sprintf(errbuf,
 "%s %s 0 [dumps too big, but cannot incremental dump %s disk]",
 		    dp->host->hostname, dp->name,
-		    dp->dtype->skip_incr? "skip-incr": "new");
+		    dp->skip_incr? "skip-incr": "new");
 
 		delay_remove_dump(dp, errbuf);
 	    }
@@ -1522,7 +1522,7 @@ static int promote_highest_priority_incremental P((void))
 	fprintf(stderr, "   promote: checking %d days now\n", check_days);
 
         for(dp = schedq.head; dp != NULL; dp = dp->next) {
-	    if(dp->dtype->skip_full || dp->dtype->no_full) {
+	    if(dp->skip_full || dp->no_full) {
 		fprintf(stderr,
 	"    promote: can't move %s:%s: no full dumps allowed.\n",
 			dp->host->hostname, dp->name);
@@ -1600,7 +1600,7 @@ static int promote_hills P((void))
 
     for(dp = schedq.head; dp != NULL; dp = dp->next) {
 	days = est(dp)->next_level0;   /* This is > 0 by definition */
-	if(days<tapecycle && !dp->dtype->skip_full && !dp->dtype->no_full) {
+	if(days<tapecycle && !dp->skip_full && !dp->no_full) {
 	    sp[days].disks++;
 	    sp[days].size += est(dp)->last_lev0size;
 	}
@@ -1622,8 +1622,8 @@ static int promote_hills P((void))
 	/* Find all the dumps in that hill and try and remove one */
 	for(dp = schedq.head; dp != NULL; dp = dp->next) {
 	    if(est(dp)->next_level0 != hill_days ||
-	    dp->dtype->skip_full ||
-	    dp->dtype->no_full)
+	    dp->skip_full ||
+	    dp->no_full)
 		continue;
 	    new_size = est_tape_size(dp, 0);
 	    new_total = total_size - est(dp)->size + new_size;
