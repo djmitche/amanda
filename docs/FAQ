@@ -1,7 +1,7 @@
-This file contains some questions that are frequently asked in the
-Amanda mailing lists, specially by new users.  Please take a look at
-this file before posting, this can save us time that could be spent
-improving amanda and its documentation.
+This file contains answers to some questions that are frequently asked
+in the Amanda mailing lists, specially by new users.  Please take a
+look at this file before posting, this can save us time that could be
+spent improving amanda and its documentation.
 
 New entries and modifications are welcome; send them to
 amanda-users@amanda.org or amanda-hackers@amanda.org.
@@ -13,12 +13,81 @@ He is no longer maintaining that page, but it still contains useful
 and accurate information.
 
 
+Q: Why does `amdump' report that all disks failed?
+
+A: Probably because the Amanda clients are not properly configured.
+Before you ever run `amdump', make sure `amcheck' succeeds.  When it
+does, so should `amdump'.
+
+   Make sure you run `amcheck' as the same user that is supposed to
+start `amdump', otherwise you may get incorrect results.
+
+
 Q: Why does `amcheck' say `port NNN is not secure'?
 
 A: Because `amcheck', as some other Amanda programs, must be installed
 as setuid-root.  Run `make install' as `root', or `chown' all Amanda
 setuid programs to `root', then `chmod u+s' them again, if `chown'
 drops the setuid bit.
+
+
+Q: Why does `amcheck' report `selfcheck timed out'?
+
+A: This can occur under several different situations.  First, make
+sure this problem is repeatable; if Amanda programs are
+NFS-auto-mounted, some clients may fail to mount the Amanda binaries
+in time.
+
+   If the error is repeatable, log into the client, and check whether
+the directory /tmp/amanda exists, and a file named /tmp/amandad.debug
+exists in there: amandad will create this file whenever it starts.  If
+this file does not exist, amandad is not starting properly, or it
+lacks permission to create /tmp/amanda/amandad.debug.
+
+   In the latter case, wipe out /tmp/amanda, and amandad should create
+it next time it runs.  In the former case, check your inetd
+configuration.  Make sure you have added the amanda services to
+/etc/services, that /etc/inetd.conf was properly configured, and that
+you have signalled inetd to reread this file.  Check section 2.2 from
+the INSTALL file for details.
+
+   Pay special attention to typos in inetd.conf; error messages will
+probably appear in /var/adm/messages if you have typed the amandad
+program name incorrectly.  Make sure the same user that you have
+specified at configure-time (--with-user=<USERNAME>) is listed in
+inetd.conf.  Check whether this user has permission to run amandad, as
+well as any shared libraries amandad depends upon, by running the
+specified amandad command by hand, as the amanda user.  If you type
+anything, amandad should abort because it can't read an UDP packet
+from the keyboard.
+
+   As soon as you have properly configured inetd.conf so as to run
+amandad, you should no longer get the `selfcheck timed out' message.
+
+
+Q: Why does `amcheck' say `access as <username> not allowed...'
+
+A: There must be something wrong with .amandahosts configuration (or
+.rhosts, if you have not configured --with-amandahosts).
+
+   First, if the <username> is not what you expect (i.e., not what you
+have specified in the --with-user flag, at configure time), check the
+inetd configuration file: you must have specified the wrong username
+there.
+
+   Make sure you specify a fully-qualified domain name in
+.amandahosts/.rhosts; aliases are better avoided, for security
+reasons.
+
+
+Q: Why does `amcheck' report `ip address #.#.#.# is not in the ip list 
+list for <hostname>'?
+
+A: Check your DNS configuration tables.  In order to avoid
+DNS-spoofing, amanda double-checks hostname<->IP address mapping.  If
+the IP address the request comes from maps to a hostname, but this
+hostname does not map back to the incoming IP address, the request is
+denied.
 
 
 Q: How can I configure amanda so that it performs full backups on the
