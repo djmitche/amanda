@@ -1,5 +1,9 @@
 2001-06-19 John R. Jackson <jrj@purdue.edu>
 
+	* server-src/amtape.c: Document "slot advance" in the help output.
+
+2001-06-19 John R. Jackson <jrj@purdue.edu>
+
 	* server-src/amindexd.c: Minor gethostbyaddr() argument change to be
 	  consistent with other Amanda usage.
 
