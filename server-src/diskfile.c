@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.58 2004/04/05 17:22:24 martinea Exp $
+ * $Id: diskfile.c,v 1.59 2004/04/22 19:22:07 martinea Exp $
  *
  * read disklist file
  */
@@ -439,6 +439,10 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
     disk->security_driver = dtype->security_driver;
     disk->maxdumps	= dtype->maxdumps;
     disk->maxpromoteday	= dtype->maxpromoteday;
+    disk->bumppercent	= dtype->bumppercent;
+    disk->bumpsize	= dtype->bumpsize;
+    disk->bumpdays	= dtype->bumpdays;
+    disk->bumpmult	= dtype->bumpmult;
     disk->start_t	= dtype->start_t;
     disk->strategy	= dtype->strategy;
     disk->compress	= dtype->compress;
