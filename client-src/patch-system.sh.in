@@ -105,7 +105,7 @@ if [ "$SERVICES" = /dev/null ]; then :
 elif [ -f "$SERVICES" ]; then
 	TEMP="$SERVICES.new"
 	{
-	    egrep < "$SERVICES" -v "^(amanda|amandaidx|amidxtape)${SERVICE_SUFFIX}[ 	]"
+	    egrep < "$SERVICES" -v "^(amanda|kamanda|amandaidx|amidxtape)${SERVICE_SUFFIX}[ 	]"
 	    echo "amanda${SERVICE_SUFFIX} ${CLIENT_PORT}/udp"
 	    echo "amanda${SERVICE_SUFFIX} ${CLIENT_PORT}/tcp"
 	    echo "kamanda${SERVICE_SUFFIX} ${KCLIENT_PORT}/udp"
