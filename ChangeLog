@@ -1,3 +1,10 @@
+2000-01-06  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* docs/TAPETYPES: Removed all tapetype entries.  Pointed to
+	example/amanda.conf, to the mailing list archives and to the on-line
+	tapetype list.  Explained the meaning of length, filemark and speed,
+	and how to build and use the tapetype utility.
+
 1999-12-12 John R. Jackson  <jrj@purdue.edu>
 
 	* configure.in: egrep was having trouble with quoting on some systems.
