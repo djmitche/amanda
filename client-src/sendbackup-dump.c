@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.65 1998/09/19 00:04:08 oliva Exp $
+ * $Id: sendbackup-dump.c,v 1.65.2.1 1998/11/09 17:25:58 kashmir Exp $
  *
  * send backup data using BSD dump
  */
@@ -354,7 +354,8 @@ static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
     aclose(dumpout);
     aclose(dataf);
     aclose(mesgf);
-    aclose(indexf);
+    if (createindex)
+	aclose(indexf);
 }
 
 static void end_backup(status)
