@@ -1241,53 +1241,68 @@ AC_PATH_PROGS(SHELL,sh,,$LOCSYSPATH)
 AC_PATH_PROGS(DUMP,$DUMP_PROGRAMS,,$SYSLOCPATH)
 if test "$DUMP"; then
     AC_DEFINE_UNQUOTED(DUMP,"$DUMP")
-    AC_CACHE_CHECK(
-	[whether $DUMP supports -E for estimates],
-	amanda_cv_dump_estimate,
-	[
-	    case "$DUMP" in
-	    *dump)
-		$DUMP 9Ef /dev/null /dev/null/invalid/fs >conftest.d-E 2>&1
-		$DUMP 9f /dev/null /dev/null/invalid/fs 2>&1 |
-		    $EGREP -v 'Dumping|Date of' >conftest.d
-		if diff conftest.d-E conftest.d >/dev/null 2>&1; then
-		    amanda_cv_dump_estimate=yes
-		else
-		    amanda_cv_dump_estimate=no
-		fi
-		rm -f conftest.d conftest.d-E
-	      ;;
-	    *) amanda_cv_dump_estimate=no
-	      ;;
-	    esac
-	])
+    if test -x $DUMP; then
+        AC_CACHE_CHECK(
+	    [whether $DUMP supports -E for estimates],
+	    amanda_cv_dump_estimate,
+	    [
+	        case "$DUMP" in
+	        *dump)
+		    AC_TRY_COMMAND($DUMP 9Ef /dev/null /dev/null/invalid/fs
+		        >conftest.d-E 2>&1)
+		    cat conftest.d-E >&AC_FD_CC
+		    AC_TRY_COMMAND($DUMP 9f /dev/null /dev/null/invalid/fs 2>&1
+		        | $EGREP -v "Dumping\|Date of" >conftest.d)
+		    cat conftest.d >&AC_FD_CC
+		    if AC_TRY_COMMAND(diff conftest.d-E conftest.d 1>&2); then
+		        amanda_cv_dump_estimate=yes
+		    else
+		        amanda_cv_dump_estimate=no
+		    fi
+		    rm -f conftest.d conftest.d-E conftest.d-noE
+	          ;;
+	        *) amanda_cv_dump_estimate=no
+	          ;;
+	        esac
+	    ])
+    else
+	AC_MSG_WARN([*** $DUMP is not executable, cannot run -E test])
+	amanda_cv_dump_estimate=no
+    fi
     if test "$amanda_cv_dump_estimate" = yes; then
 	AC_DEFINE(HAVE_DUMP_ESTIMATE)
     fi
 
     AC_ARG_WITH(dump-honor-nodump,
     [  --with-dump-honor-nodump  if dump supports -h, use it for level0s too],
-    [AC_CACHE_CHECK(
-	[whether $DUMP supports -h (honor nodump flag)],
-	amanda_cv_honor_nodump,
-	[
+    [ if test -x $DUMP; then
+        AC_CACHE_CHECK(
+	  [whether $DUMP supports -h (honor nodump flag)],
+	  amanda_cv_honor_nodump,
+	  [
 	    case "$DUMP" in
 	    *dump)
-		$DUMP 9hf 0 /dev/null /dev/null/invalid/fs 2>&1 |
-		    $EGREP -v 'Dumping|Date of' > conftest.d-E
-		$DUMP 9f /dev/null /dev/null/invalid/fs 2>&1 |
-		    $EGREP -v 'Dumping|Date of' >conftest.d
-		if diff conftest.d-E conftest.d >/dev/null 2>&1; then
+		AC_TRY_COMMAND($DUMP 9hf 0 /dev/null /dev/null/invalid/fs 2>&1
+		    | $EGREP -v "Dumping\|Date of" > conftest.d-h)
+		cat conftest.d-h >&AC_FD_CC
+		AC_TRY_COMMAND($DUMP 9f /dev/null /dev/null/invalid/fs 2>&1
+		    | $EGREP -v "Dumping\|Date of" >conftest.d)
+		cat conftest.d >&AC_FD_CC
+		if AC_TRY_COMMAND(diff conftest.d-h conftest.d 1>&2); then
 		    amanda_cv_honor_nodump=yes
 		else
 		    amanda_cv_honor_nodump=no
 		fi
-		rm -f conftest.d conftest.d-E
+		rm -f conftest.d conftest.d-h
 	      ;;
 	    *) amanda_cv_honor_nodump=no
 	      ;;
 	    esac
-	])
+	  ])
+      else
+	AC_MSG_WARN([*** $DUMP is not executable, cannot run -h test])
+	amanda_cv_honor_nodump=no
+      fi
       if test "$amanda_cv_honor_nodump" = yes; then
 	AC_DEFINE(HAVE_HONOR_NODUMP)
       fi
