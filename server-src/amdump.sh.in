@@ -71,6 +71,13 @@ if [ $runuser != $dumpuser ]; then
 	exit 1
 fi
 
+if test -f hold; then
+	echo "amdump: waiting for hold file to be removed"
+	while test -f hold; do
+		sleep 60
+	done
+fi
+
 umask 077
 
 # Plan and drive the dumps.
