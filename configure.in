@@ -763,7 +763,7 @@ AC_ARG_WITH(ticket-lifetime,
 AC_DEFINE_UNQUOTED(TICKET_LIFETIME,$TICKET_LIFETIME)
 
 AC_ARG_WITH(db,
-    [  --with-db={db,dbm,gdbm,ndbm,text} use the given library for dbm_open],
+    [  --with-db={text,db,dbm,gdbm,ndbm} use the selected database format [text]],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)

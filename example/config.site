@@ -300,11 +300,11 @@
 # TICKET_LIFETIME=128
 
 
-# DB_STYLE		--with-db={db,dbm,gdbm,ndbm}
-#			Default: auto-selection by configure
+# DB_STYLE		--with-db={text,db,dbm,gdbm,ndbm}
+#			Default: text
 #			This allows the user to force Amanda to use a
 #			particular database library.
-# DB_STYLE=dbm
+# DB_STYLE=text
 
 # FORCE_MMAP		--with-mmap
 #			Default: no
