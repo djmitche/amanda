@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.17 1997/11/17 12:41:24 amcore Exp $
+ * $Id: amcheck.c,v 1.18 1997/12/04 22:40:16 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -365,6 +365,7 @@ int fd;
     FILE *outf;
     holdingdisk_t *hdp;
     int pid, tapebad, disklow;
+    int inparallel;
 
     pname = "amcheck-server";
 
@@ -391,7 +392,11 @@ int fd;
 
     disklow = 0;
 
+    inparallel = getconf_int(CNF_INPARALLEL);
+
     for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next) {
+	long avail;
+
 	if(get_fs_stats(hdp->diskdir, &fs) == -1) {
 	    fprintf(outf, "ERROR: statfs %s: %s\n",
 		    hdp->diskdir, strerror(errno));
@@ -408,15 +413,15 @@ int fd;
 		    hdp->diskdir, hdp->disksize);
 	    disklow = 1;
 	}
-	else if(fs.avail < hdp->disksize) {
+	else if((avail = fs.avail - inparallel * 10 * 1024) < hdp->disksize) {
 	    fprintf(outf,
 		    "WARNING: %s: only %ld KB free (%ld KB requested).\n",
-		    hdp->diskdir, fs.avail, hdp->disksize);
+		    hdp->diskdir, avail, hdp->disksize);
 	    disklow = 1;
 	}
 	else
 	    fprintf(outf, "%s: %ld KB disk space available, that's plenty.\n",
-		    hdp->diskdir, fs.avail);
+		    hdp->diskdir, avail);
     }
 
     /* check that the tape is a valid amanda tape */

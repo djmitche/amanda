@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.18 1997/11/17 13:00:16 amcore Exp $
+ * $Id: driver.c,v 1.19 1997/12/04 22:40:15 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -154,7 +154,10 @@ char **main_argv;
 	    if(fs.avail != -1) { /* XXX - is this right? */
 		long avail;
 
-		avail = fs.avail - fs.avail / 10;
+		avail = fs.avail - inparallel * 10 * 1024;  /* 10 MB/dumper */
+		if (avail < 0L) {
+		    avail = 0L;
+		}
 
 		if(hdp->disksize > avail) {
 		    log(L_WARNING,
