@@ -21,8 +21,9 @@ EXTRA_DIST = \
 	docs/SUNOS4.BUG			docs/SYSTEM.NOTES		\
 	docs/TAPE.CHANGERS		docs/TAPETYPES			\
 	docs/UPGRADE			docs/WHATS.NEW			\
-	docs/WISHLIST			patches/regex-3.6alpha.patch	\
-	patches/samba-largefs.patch	patches/tar-1.12.patch		\
+	docs/WISHLIST			docs/YEAR2000			\
+	patches/regex-3.6alpha.patch	patches/samba-largefs.patch	\
+	patches/tar-1.12.patch		\
 	regex-src/COPYRIGHT		regex-src/Makefile 		\
 	regex-src/README		regex-src/WHATSNEW 		\
 	regex-src/cclass.h		regex-src/cname.h		\
