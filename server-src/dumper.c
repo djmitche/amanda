@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.14.2.7.2.16 2003/06/03 20:14:43 martinea Exp $
+/* $Id: dumper.c,v 1.75.2.14.2.7.2.17 2003/10/30 18:09:27 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -253,7 +253,6 @@ char **main_argv;
 	error("can't get login name for my uid %ld", (long)getuid());
 
     signal(SIGPIPE, SIG_IGN);
-    signal(SIGCHLD, SIG_IGN);
 
     interactive = isatty(0);
 
