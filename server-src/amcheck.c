@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.32 1998/01/30 23:41:36 martinea Exp $
+ * $Id: amcheck.c,v 1.33 1998/02/04 22:01:36 amcore Exp $
  *
  * checks for common problems in server and clients
  */
@@ -812,7 +812,8 @@ pkt_t *pkt;
 	    skip_whitespace(s, ch);
 	    errstr = s - 1;
 	    skip_line(s, ch);
-	    s[-1] = '\0';
+	    /* overwrite '\n'; s-1 points to the beginning of the next line */
+	    s[-2] = '\0';
 
 	    fprintf(outf, "ERROR: %s: %s\n", hostp->hostname, errstr);
 	    remote_errors++;
