@@ -662,6 +662,23 @@ this number a bit high.
 Some contention can occur with larger numbers
 of backups, but this effect is relatively small on most systems.
 .TP
+.BS dumporder string
+Default:
+.IR "sssSSSSSSS" .
+The priority order of each dumper:
+.RS
+.RS
+.nf
+s: smallest size
+S: largest size
+t: smallest time
+T: largest time
+b: smallest bandwidth
+B: largest bandwidth
+.fi
+.RE
+.RE
+.TP
 .BN maxdumps int
 Default:
 .IR 1 .

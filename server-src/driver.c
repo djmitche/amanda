@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.5 2001/11/03 13:43:40 martinea Exp $
+ * $Id: driver.c,v 1.58.2.31.2.6 2001/11/08 01:21:54 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -50,7 +50,6 @@ disklist_t waitq, runq, tapeq, roomq;
 int pending_aborts, inside_dump_to_tape;
 int use_lffo;
 disk_t *taper_disk;
-int big_dumpers;
 int degraded_mode;
 unsigned long reserved_space;
 unsigned long total_disksize;
@@ -87,8 +86,6 @@ int queue_length P((disklist_t q));
 void short_dump_state P((void));
 void dump_state P((char *str));
 int main P((int main_argc, char **main_argv));
-
-#define LITTLE_DUMPERS 3
 
 static int idle_reason;
 char *datestamp;
@@ -223,7 +220,6 @@ int main(main_argc, main_argv)
     /* set up any configuration-dependent variables */
 
     inparallel	= getconf_int(CNF_INPARALLEL);
-    big_dumpers	= inparallel - LITTLE_DUMPERS;
     use_lffo	= 1;
 
     reserve = getconf_int(CNF_RESERVE);
@@ -330,8 +326,8 @@ int main(main_argc, main_argv)
     printf("driver: start time %s inparallel %d bandwidth %d diskspace %lu",
 	   walltime_str(curclock()), inparallel, free_kps((interface_t *)0),
 	   free_space());
-    printf(" dir %s datestamp %s driver: drain-ends tapeq %s big-dumpers %d\n",
-	   "OBSOLETE", datestamp,  use_lffo? "LFFO" : "FIFO", big_dumpers);
+    printf(" dir %s datestamp %s driver: drain-ends tapeq %s big-dumpers %s\n",
+	   "OBSOLETE", datestamp,  use_lffo? "LFFO" : "FIFO", getconf_str(CNF_DUMPORDER));
     fflush(stdout);
 
     /* ok, planner is done, now lets see if the tape is ready */
@@ -478,15 +474,13 @@ disk_t *dp;
     return 0;
 }
 
-#define is_bigdumper(d) (((d)-dmptable) >= (inparallel-big_dumpers))
-
 int start_some_dumps(rq)
 disklist_t *rq;
 {
     int total, cur_idle;
-    disk_t *diskp, *big_degraded_diskp;
+    disk_t *diskp, *diskp_accept;
     dumper_t *dumper;
-    assignedhd_t **holdp=NULL, **big_degraded_holdp=NULL;
+    assignedhd_t **holdp=NULL, **holdp_accept;
     time_t now = time(NULL);
 
     total = 0;
@@ -521,9 +515,9 @@ disklist_t *rq;
     for(dumper = dmptable; dumper < dmptable+inparallel; dumper++) {
 	if(dumper->busy || dumper->down) continue;
 	/* found an idle dumper, now find a disk for it */
-	if(is_bigdumper(dumper)) diskp = rq->tail;
-	else diskp = rq->head;
-	big_degraded_diskp = NULL;
+	diskp = rq->head;
+	diskp_accept = NULL;
+	holdp_accept = NULL;
 
 	if(idle_reason == IDLE_NO_DUMPERS)
 	    idle_reason = NOT_IDLE;
@@ -565,28 +559,53 @@ disklist_t *rq;
 	    } else {
 
 		/* disk fits, dump it */
-		if(is_bigdumper(dumper) && degraded_mode) {
-		   if(!big_degraded_diskp || 
-		      sched(diskp)->priority > big_degraded_diskp->priority) {
-			big_degraded_diskp = diskp;
-			big_degraded_holdp = holdp;
+		int accept = !diskp_accept;
+		if(!accept) {
+		    char dumptype;
+		    char *dumporder = getconf_str(CNF_DUMPORDER);
+		    if((strlen(dumporder)+1) <= (dumper-dmptable)) {
+			if(dumper-dmptable < 3)
+			    dumptype = 's';
+			else
+			    dumptype = 'S';
+		    }
+		    else {
+			dumptype = dumporder[dumper-dmptable];
+		    }
+		    switch(dumptype) {
+		      case 's': accept = (sched(diskp)->est_size < sched(diskp_accept)->est_size);
+				break;
+		      case 'S': accept = (sched(diskp)->est_size > sched(diskp_accept)->est_size);
+				break;
+		      case 't': accept = (sched(diskp)->est_time < sched(diskp_accept)->est_time);
+				break;
+		      case 'T': accept = (sched(diskp)->est_time > sched(diskp_accept)->est_time);
+				break;
+		      case 'b': accept = (sched(diskp)->est_kps < sched(diskp_accept)->est_kps);
+				break;
+		      case 'B': accept = (sched(diskp)->est_kps > sched(diskp_accept)->est_kps);
+				break;
+		      default:	log_add(L_WARNING, "Unknown dumporder character \'%c\', using 's'.\n",
+					dumptype);
+				accept = (sched(diskp)->est_size < sched(diskp_accept)->est_size);
+				break;
 		    }
 		}
-		else {
-		    cur_idle = NOT_IDLE;
-		    break;
+		if(accept) {
+		    if( !diskp_accept || !degraded_mode || diskp->priority >= diskp_accept->priority) {
+			if(holdp_accept) free_assignedhd(holdp_accept);
+			diskp_accept = diskp;
+			holdp_accept = holdp;
+		    }
 		}
 	    }
-	    if(is_bigdumper(dumper)) diskp = diskp->prev;
-	    else diskp = diskp->next;
+	    diskp = diskp->next;
 	}
 
-	if(is_bigdumper(dumper) && degraded_mode) {
-	    diskp = big_degraded_diskp;
-	    holdp = big_degraded_holdp;
-	    if(big_degraded_diskp) cur_idle = NOT_IDLE;
-	}
-	if(diskp && cur_idle == NOT_IDLE) {
+	diskp = diskp_accept;
+	holdp = holdp_accept;
+	if(diskp) {
+	    cur_idle = NOT_IDLE;
 	    sched(diskp)->act_size = 0;
 	    allocate_bandwidth(diskp->host->netif, sched(diskp)->est_kps);
 	    sched(diskp)->activehd = assign_holdingdisk(holdp, diskp);

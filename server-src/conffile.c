@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.16.2.3 2001/07/31 22:38:39 jrjackson Exp $
+ * $Id: conffile.c,v 1.54.2.16.2.4 2001/11/08 01:21:54 martinea Exp $
  *
  * read configuration file
  */
@@ -72,7 +72,7 @@ typedef enum {
     TAPECYCLE, TAPEDEV, CHNGRDEV, CHNGRFILE, LABELSTR,
     BUMPSIZE, BUMPDAYS, BUMPMULT, ETIMEOUT, DTIMEOUT, CTIMEOUT,
     TAPEBUFS, TAPELIST, DISKFILE, INFOFILE, LOGDIR, LOGFILE,
-    DISKDIR, DISKSIZE, INDEXDIR, NETUSAGE, INPARALLEL, TIMEOUT,
+    DISKDIR, DISKSIZE, INDEXDIR, NETUSAGE, INPARALLEL, DUMPORDER, TIMEOUT,
     TPCHANGER, RUNTAPES,
     DEFINE, DUMPTYPE, TAPETYPE, INTERFACE,
     PRINTER, RESERVE,
@@ -160,6 +160,7 @@ static val_t conf_diskdir;
 static val_t conf_tapetype;
 static val_t conf_indexdir;
 static val_t conf_columnspec;
+static val_t conf_dumporder;
 
 /* ints */
 static val_t conf_dumpcycle;
@@ -220,6 +221,7 @@ static int seen_tapecycle;
 static int seen_disksize;
 static int seen_netusage;
 static int seen_inparallel;
+static int seen_dumporder;
 static int seen_timeout;
 static int seen_indexdir;
 static int seen_etimeout;
@@ -357,6 +359,7 @@ struct byname {
     { "BUMPMULT", CNF_BUMPMULT, REAL },
     { "NETUSAGE", CNF_NETUSAGE, INT },
     { "INPARALLEL", CNF_INPARALLEL, INT },
+    { "DUMPORDER", CNF_DUMPORDER, STRING },
     /*{ "TIMEOUT", CNF_TIMEOUT, INT },*/
     { "MAXDUMPS", CNF_MAXDUMPS, INT },
     { "ETIMEOUT", CNF_ETIMEOUT, INT },
@@ -434,6 +437,7 @@ confparm_t parm;
     /*case CNF_DISKSIZE: return seen_disksize;*/
     case CNF_NETUSAGE: return seen_netusage;
     case CNF_INPARALLEL: return seen_inparallel;
+    case CNF_DUMPORDER: return seen_dumporder;
     /*case CNF_TIMEOUT: return seen_timeout;*/
     case CNF_INDEXDIR: return seen_indexdir;
     case CNF_ETIMEOUT: return seen_etimeout;
@@ -511,6 +515,7 @@ confparm_t parm;
     case CNF_LABELSTR: r = conf_labelstr.s; break;
     case CNF_TAPELIST: r = conf_tapelist.s; break;
     case CNF_INFOFILE: r = conf_infofile.s; break;
+    case CNF_DUMPORDER: r = conf_dumporder.s; break;
     case CNF_LOGDIR: r = conf_logdir.s; break;
     /*case CNF_LOGFILE: r = conf_logfile.s; break;*/
     case CNF_DISKFILE: r = conf_diskfile.s; break;
@@ -635,6 +640,8 @@ static void init_defaults()
     malloc_mark(conf_indexdir.s);
     conf_columnspec.s = newstralloc(conf_columnspec.s, "");
     malloc_mark(conf_columnspec.s);
+    conf_dumporder.s = newstralloc(conf_dumporder.s, "sssSS");
+    malloc_mark(conf_dumporder.s);
 
     conf_dumpcycle.i	= 10;
     conf_runspercycle.i	= 0;
@@ -685,6 +692,7 @@ static void init_defaults()
     seen_disksize = 0;
     seen_netusage = 0;
     seen_inparallel = 0;
+    seen_dumporder = 0;
     seen_timeout = 0;
     seen_indexdir = 0;
     seen_etimeout = 0;
@@ -832,6 +840,7 @@ keytab_t main_keytable[] = {
     { "INDEXDIR", INDEXDIR },
     { "INFOFILE", INFOFILE },
     { "INPARALLEL", INPARALLEL },
+    { "DUMPORDER", DUMPORDER },
     { "INTERFACE", INTERFACE },
     { "LABELSTR", LABELSTR },
     { "LOGDIR", LOGDIR },
@@ -902,6 +911,7 @@ static int read_confline()
     case BUMPDAYS:  get_simple(&conf_bumpdays,  &seen_bumpdays,  INT);    break;
     case NETUSAGE:  get_simple(&conf_netusage,  &seen_netusage,  INT);    break;
     case INPARALLEL:get_simple(&conf_inparallel,&seen_inparallel,INT);    break;
+    case DUMPORDER: get_simple(&conf_dumporder, &seen_dumporder, STRING); break;
     case TIMEOUT:   get_simple(&conf_timeout,   &seen_timeout,   INT);    break;
     case MAXDUMPS:  get_simple(&conf_maxdumps,  &seen_maxdumps,  INT);    break;
     case TAPETYPE:  get_simple(&conf_tapetype,  &seen_tapetype,  IDENT);  break;
@@ -2418,6 +2428,7 @@ dump_configuration(filename)
     printf("conf_bumpmult = %f\n", getconf_real(CNF_BUMPMULT));
     printf("conf_netusage = %d\n", getconf_int(CNF_NETUSAGE));
     printf("conf_inparallel = %d\n", getconf_int(CNF_INPARALLEL));
+    printf("conf_dumporder = \"%s\"\n", getconf_int(CNF_DUMPORDER));
     /*printf("conf_timeout = %d\n", getconf_int(CNF_TIMEOUT));*/
     printf("conf_maxdumps = %d\n", getconf_int(CNF_MAXDUMPS));
     printf("conf_etimeout = %d\n", getconf_int(CNF_ETIMEOUT));
