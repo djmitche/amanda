@@ -1,5 +1,5 @@
 /*
- *  $Id: chg-scsi-chio.c,v 1.6 2002/08/22 17:42:47 martinea Exp $
+ *  $Id: chg-scsi-chio.c,v 1.7 2003/01/26 19:20:44 martinea Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -278,13 +278,13 @@ int read_config(char *configfile, changer_t *chg)
           chg->sleep = atoi(value);
           break;
         case CHANGERDEV:
-          chg->device = strdup(value);
+          chg->device = stralloc(value);
           break;
         case SCSITAPEDEV:
-          chg->conf[drivenum].scsitapedev = strdup(value);
+          chg->conf[drivenum].scsitapedev = stralloc(value);
           break;
         case TAPESTATFILE:
-          chg->conf[drivenum].tapestatfile = strdup(value);
+          chg->conf[drivenum].tapestatfile = stralloc(value);
           break;
         case CLEANMAX:
           chg->cleanmax = atoi(value);
@@ -329,7 +329,7 @@ int read_config(char *configfile, changer_t *chg)
           break;
         case DEVICE:
           if (drivenum < numconf){
-            chg->conf[drivenum].device = strdup(value);
+            chg->conf[drivenum].device = stralloc(value);
           } else {
             fprintf(stderr,"Error: drive is not less than number_drives"\
                     " device ignored\n");
@@ -337,7 +337,7 @@ int read_config(char *configfile, changer_t *chg)
           break;
         case STATFILE:
           if (drivenum < numconf){
-            chg->conf[drivenum].slotfile = strdup(value);
+            chg->conf[drivenum].slotfile = stralloc(value);
           } else {
             fprintf(stderr,"Error: drive is not less than number_drives"\
                     " slotfile ignored\n");
@@ -345,7 +345,7 @@ int read_config(char *configfile, changer_t *chg)
           break;
         case CLEANFILE:
           if (drivenum < numconf){
-            chg->conf[drivenum].cleanfile = strdup(value);
+            chg->conf[drivenum].cleanfile = stralloc(value);
           } else {
             fprintf(stderr,"Error: drive is not less than number_drives"\
                     " cleanfile ignored\n");
@@ -353,7 +353,7 @@ int read_config(char *configfile, changer_t *chg)
           break;
         case USAGECOUNT:
           if (drivenum < numconf){
-            chg->conf[drivenum].timefile = strdup(value);
+            chg->conf[drivenum].timefile = stralloc(value);
           } else {
             fprintf(stderr,"Error: drive is not less than number_drives"\
                     " usagecount ignored\n");
@@ -658,23 +658,23 @@ int main(int argc, char *argv[])
     drive_num    = chg.conf[confnum].drivenum;
     need_eject   = chg.eject;
     need_sleep   = chg.sleep;
-    clean_file   = strdup(chg.conf[confnum].cleanfile);
+    clean_file   = stralloc(chg.conf[confnum].cleanfile);
     clean_slot   = chg.conf[confnum].cleanslot;
     maxclean     = chg.cleanmax;
     if (NULL != chg.conf[confnum].timefile)
-      time_file = strdup(chg.conf[confnum].timefile);
+      time_file = stralloc(chg.conf[confnum].timefile);
     if (NULL != chg.conf[confnum].slotfile)
-      changer_file = strdup(chg.conf[confnum].slotfile);
+      changer_file = stralloc(chg.conf[confnum].slotfile);
     else
       changer_file = NULL;
     if (NULL != chg.conf[confnum].device)
-      tape_device  = strdup(chg.conf[confnum].device);
+      tape_device  = stralloc(chg.conf[confnum].device);
     if (NULL != chg.device)
-      changer_dev  = strdup(chg.device); 
+      changer_dev  = stralloc(chg.device); 
     if (NULL != chg.conf[confnum].scsitapedev)
-      scsitapedevice = strdup(chg.conf[confnum].scsitapedev);
+      scsitapedevice = stralloc(chg.conf[confnum].scsitapedev);
     if (NULL != chg.conf[confnum].tapestatfile)
-      tapestatfile = strdup(chg.conf[confnum].tapestatfile);
+      tapestatfile = stralloc(chg.conf[confnum].tapestatfile);
     dump_changer_struct(chg);
     /* get info about the changer */
     if (-1 == (fd = OpenDevice(changer_dev, "changer_dev"))) {
@@ -689,12 +689,12 @@ int main(int argc, char *argv[])
 
     if (tape_device == NULL)
       {
-        tape_device = strdup(changer_dev);
+        tape_device = stralloc(changer_dev);
       }
 
     if (scsitapedevice == NULL)
       {
-         scsitapedevice = strdup(tape_device);
+         scsitapedevice = stralloc(tape_device);
       }
 
     if ((chg.conf[confnum].end == -1) || (chg.conf[confnum].start == -1)){

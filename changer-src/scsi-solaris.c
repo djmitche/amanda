@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-solaris.c,v 1.23 2002/11/12 22:47:12 martinea Exp $
+ * $Id: scsi-solaris.c,v 1.24 2003/01/26 19:20:45 martinea Exp $
  *
  * Interface to execute SCSI commands on an Sun Workstation
  *
@@ -60,7 +60,7 @@
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-solaris.c,v 1.23 2002/11/12 22:47:12 martinea Exp $";
+   static char rcsid[] = "$Id: scsi-solaris.c,v 1.24 2003/01/26 19:20:45 martinea Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -96,12 +96,12 @@ int SCSI_OpenDevice(int ip)
 
 		  if (pDev[ip].inquiry->type == TYPE_TAPE)
 		  {
-		          pDev[ip].type = strdup("tape");
+		          pDev[ip].type = stralloc("tape");
 		  }
 
 		  if (pDev[ip].inquiry->type == TYPE_CHANGER)
 		  {
-		          pDev[ip].type = strdup("changer");
+		          pDev[ip].type = stralloc("changer");
 		  }
 
                   PrintInquiry(pDev[ip].inquiry);

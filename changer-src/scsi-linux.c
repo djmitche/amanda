@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-linux.c,v 1.24 2002/08/22 17:42:48 martinea Exp $
+ * $Id: scsi-linux.c,v 1.25 2003/01/26 19:20:45 martinea Exp $
  *
  * Interface to execute SCSI commands on Linux
  *
@@ -82,7 +82,7 @@
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-linux.c,v 1.24 2002/08/22 17:42:48 martinea Exp $";
+   static char rcsid[] = "$Id: scsi-linux.c,v 1.25 2003/01/26 19:20:45 martinea Exp $";
    DebugPrint(DEBUG_ERROR, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -158,14 +158,14 @@ int SCSI_OpenDevice(int ip)
                     }
                 } else {/* S_ISLNK(pstat.st_mode) == 1 */
                   DebugPrint(DEBUG_INFO, SECTION_SCSI,"No link %s\n", pDev[ip].dev) ;
-                  buffer = strdup(pDev[ip].dev);
+                  buffer = stralloc(pDev[ip].dev);
                 }
             } else {/* lstat(DeviceName, &pstat) != -1 */ 
               DebugPrint(DEBUG_ERROR, SECTION_SCSI,"can't stat device %s\n", pDev[ip].dev);
               return(0);
             }
         } else {
-          buffer = strdup(pDev[ip].dev);
+          buffer = stralloc(pDev[ip].dev);
           pDev[ip].flags = 1;
         }
       
@@ -191,7 +191,7 @@ int SCSI_OpenDevice(int ip)
           pDev[ip].SCSI = 1;
         }
       
-      pDev[ip].dev = strdup(buffer);
+      pDev[ip].dev = stralloc(buffer);
       if (pDev[ip].SCSI == 1)
         {
           DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_OpenDevice : use SG interface\n");
@@ -219,12 +219,12 @@ int SCSI_OpenDevice(int ip)
 
 		  if (pDev[ip].inquiry->type == TYPE_TAPE)
 		  {
-		          pDev[ip].type = strdup("tape");
+		          pDev[ip].type = stralloc("tape");
 		  }
 
 		  if (pDev[ip].inquiry->type == TYPE_CHANGER)
 		  {
-		          pDev[ip].type = strdup("changer");
+		          pDev[ip].type = stralloc("changer");
 		  }
 
                   PrintInquiry(pDev[ip].inquiry);

@@ -243,11 +243,11 @@ rait_open(char *dev, int flags, int mask) {
     if (rait_flag) {
 
 	/* copy and parse the dev string so we can scribble on it */
-	dev = strdup(dev);
+	dev = stralloc(dev);
 	if (0 == dev) {
 	    rait_debug((stderr, "rait_open:returning %d: %s\n",
 			        -1,
-			        "out of strdup memory"));
+			        "out of stralloc memory"));
 	    return -1;
         }
         if (0 != tapeio_init_devname(dev, &dev_left, &dev_right, &dev_next)) {
@@ -912,11 +912,11 @@ int rait_access(char *devname, int flags) {
     char *dev_real;		/* parsed device name */
 
     /* copy and parse the dev string so we can scribble on it */
-    devname = strdup(devname);
+    devname = stralloc(devname);
     if (0 == devname) {
 	rait_debug((stderr, "rait_access:returning %d: %s\n",
 			    -1,
-			    "out of strdup memory"));
+			    "out of stralloc memory"));
 	return -1;
     }
     if ( 0 != tapeio_init_devname(devname, &dev_left, &dev_right, &dev_next)) {
@@ -956,11 +956,11 @@ int rait_stat(char *devname, struct stat *buf) {
     char *dev_real;		/* parsed device name */
 
     /* copy and parse the dev string so we can scribble on it */
-    devname = strdup(devname);
+    devname = stralloc(devname);
     if (0 == devname) {
 	rait_debug((stderr, "rait_access:returning %d: %s\n",
 			    -1,
-			    "out of strdup memory"));
+			    "out of stralloc memory"));
 	return -1;
     }
     if ( 0 != tapeio_init_devname(devname, &dev_left, &dev_right, &dev_next)) {

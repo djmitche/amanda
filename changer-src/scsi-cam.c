@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-cam.c,v 1.11 2002/08/22 17:42:47 martinea Exp $
+ * $Id: scsi-cam.c,v 1.12 2003/01/26 19:20:44 martinea Exp $
  *
  * Interface to execute SCSI commands on an system with cam support
  * Current support is for FreeBSD 4.x
@@ -75,7 +75,7 @@ extern FILE *debug_file;
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-cam.c,v 1.11 2002/08/22 17:42:47 martinea Exp $";
+   static char rcsid[] = "$Id: scsi-cam.c,v 1.12 2003/01/26 19:20:44 martinea Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -127,7 +127,7 @@ int SCSI_OpenDevice(int ip)
   target_id_t target;
   lun_id_t lun;
 
-  DeviceName = strdup(pDev[ip].dev);
+  DeviceName = stralloc(pDev[ip].dev);
 
   if (pDev[ip].inqdone == 0) {
     pDev[ip].inqdone = 1;
@@ -155,12 +155,12 @@ int SCSI_OpenDevice(int ip)
 
 	  if (pDev[ip].inquiry->type == TYPE_TAPE)
 	  {
-	          pDev[ip].type = strdup("tape");
+	          pDev[ip].type = stralloc("tape");
 	  }
 
 	  if (pDev[ip].inquiry->type == TYPE_CHANGER)
 	  {
-	          pDev[ip].type = strdup("changer");
+	          pDev[ip].type = stralloc("changer");
 	  }
 
           PrintInquiry(pDev[ip].inquiry);

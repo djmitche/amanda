@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-aix.c,v 1.20 2002/08/22 17:42:47 martinea Exp $
+ * $Id: scsi-aix.c,v 1.21 2003/01/26 19:20:44 martinea Exp $
  *
  * Interface to execute SCSI commands on an AIX System
  *
@@ -64,7 +64,7 @@
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-aix.c,v 1.20 2002/08/22 17:42:47 martinea Exp $";
+   static char rcsid[] = "$Id: scsi-aix.c,v 1.21 2003/01/26 19:20:44 martinea Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -111,12 +111,12 @@ int SCSI_OpenDevice(int ip)
 
 		  if (pDev[ip].inquiry->type == TYPE_TAPE)
 		  {
-		          pDev[ip].type = strdup("tape");
+		          pDev[ip].type = stralloc("tape");
 		  }
 
 		  if (pDev[ip].inquiry->type == TYPE_CHANGER)
 		  {
-		          pDev[ip].type = strdup("changer");
+		          pDev[ip].type = stralloc("changer");
 		  }
 
                  PrintInquiry(pDev[ip].inquiry);

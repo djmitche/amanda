@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.43 2002/08/26 13:57:00 martinea Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.44 2003/01/26 19:20:44 martinea Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -1293,8 +1293,8 @@ int OpenDevice(int ip , char *DeviceName, char *ConfigName, char *ident)
   DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### START OpenDevice\n");
   DebugPrint(DEBUG_INFO, SECTION_SCSI,"OpenDevice : %s\n", DeviceName);
   
-  pDev[ip].ConfigName = strdup(ConfigName);
-  pDev[ip].dev = strdup(DeviceName);
+  pDev[ip].ConfigName = stralloc(ConfigName);
+  pDev[ip].dev = stralloc(DeviceName);
 
   if (SCSI_OpenDevice(ip) != 0 )
     {
