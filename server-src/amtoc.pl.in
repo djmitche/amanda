@@ -4,7 +4,7 @@
 
 # Author: Nicolas.Mayencourt@cui.unige.ch
 
-# release 3.1.3
+# release 3.1.4
 
 # HISTORY
 # 1.0 19??-??-?? nicolas@cui.unige.ch
@@ -29,6 +29,8 @@
 #	really print original size, instead of size-on-tape
 # 3.1.3 Nicolas.Mayencourt@cui.unige.ch
 #	correct a bug for total report
+# 3.1.4 2000-01-14 dhw@whistle.com
+#	Add a flag (-w) for vertical whitespace
 
 
 #--------------------------------------------------------
@@ -66,12 +68,13 @@ sub tfn($) {
 #--------------------------------------------------------
 sub usage($) {
   print STDERR "@_\n\n";
-  print STDERR "usage: amtoc [-a] [-i] [-t] [-f file] [-s subs] [--] logfile\n";
+  print STDERR "usage: amtoc [-a] [-i] [-t] [-f file] [-s subs] [-w] [--] logfile\n";
   print STDERR "         -a      : file output to `label`.toc\n";
   print STDERR "         -i      : Start TOC with a small help message\n";
   print STDERR "         -t      : tabular output\n";
   print STDERR "         -f file : output to file\n";
   print STDERR "         -s subs : output file name evaluated to `eval \$subs`\n";
+  print STDERR "         -w      : add vertical whitespace after each tape\n";
   print STDERR "         --      : last option\n";
   print STDERR "         logfile : input file ('-' for stdin)\n";
   exit;
@@ -102,6 +105,9 @@ sub init() {
         $i++;
         &usage("'-s' option require 'subs' parameter.")  if ($i > $#ARGV);
         push (@subs, $ARGV[$i]);
+      }
+    elsif ($ARGV[$i] eq '-w') {
+        $vwspace=1;
       }
     elsif ($ARGV[$i] eq '--') {
       # no more options: next arg == logfile
@@ -165,6 +171,7 @@ while ( <$IF> ) {
           $OF=OF;
         }
 
+	print $OF "\f" if ($vwspace && $filenumber);
 	if (defined($info)) {
 	  print $OF "AMANDA: To restore:\n";
 	  print $OF "    position tape at start of file and run:\n";
@@ -204,6 +211,7 @@ while ( <$IF> ) {
       $line =~ / kb (\d+) /;
       $size = $1;
       $line =~ / fm (\d+) /;
+      print "\n\n" if ($vwspace);
       &pr("$1","total","on_tape","-","-","$size");
       if (defined($flash_mode)) {
 	&pr("$1","total","origin","-","not","available");
