@@ -1,5 +1,10 @@
 1999-02-03  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* NEWS: support for ufsdump -S, incronly strategy and new chunksize
+	default
+
+1999-02-03  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
 	* server-src/conffile.c (init_holdingdisk_defaults, chunksize):
 	default to 1Gb
 	* example/amanda.conf.in: ditto
