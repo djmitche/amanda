@@ -1,5 +1,9 @@
 Version 2.4.0b5
 
+	Make sure SAMBA will not clear archive bits when performing an
+	incremental backup, so any incremental will be a level 1.
+	-martineau
+
 	Remove --with-dbdir option from configure.  This was only used
 	to setup things for the man pages and example files.  Oh.. and
 	amrmtape.  Fix this as well.
