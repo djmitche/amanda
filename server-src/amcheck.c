@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.48 1998/10/15 21:31:28 martinea Exp $
+ * $Id: amcheck.c,v 1.49 1998/10/17 01:57:21 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -57,7 +57,7 @@
 #define CHECK_TIMEOUT   30
 #define BUFFER_SIZE	32768
 
-static int mailout, overwrite;
+static int overwrite;
 dgram_t *msg = NULL;
 char *confname;
 
@@ -79,8 +79,6 @@ void usage()
 static unsigned long malloc_hist_1, malloc_size_1;
 static unsigned long malloc_hist_2, malloc_size_2;
 
-char *tempfname = NULL;
-
 int main(argc, argv)
 int argc;
 char **argv;
@@ -99,6 +97,8 @@ char **argv;
     int fd;
     char *mailto = NULL;
     extern char *optarg;
+    int mailout;
+    char *tempfname = NULL;
     
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -439,7 +439,6 @@ int fd;
     set_pname("amcheck-server");
 
     amfree(msg);
-    amfree(tempfname);
 
     startclock();
 
@@ -684,8 +683,6 @@ int fd;
     dup2(fd, 2);
 
     set_pname("amcheck-clients");
-
-    amfree(tempfname);
 
     startclock();
 
