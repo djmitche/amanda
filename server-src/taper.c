@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.47.2.14.4.8.2.3 2002/01/14 00:27:28 martinea Exp $
+/* $Id: taper.c,v 1.47.2.14.4.8.2.4 2002/02/11 04:38:44 jrjackson Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -145,7 +145,7 @@ tapetype_t *tt = NULL;
 long tt_blocksize;
 long tt_blocksize_kb;
 long buffer_size;
-int pad_tape_blocksize;
+int tt_file_pad;
 static unsigned long malloc_hist_1, malloc_size_1;
 static unsigned long malloc_hist_2, malloc_size_2;
 char *config_name = NULL;
@@ -253,13 +253,9 @@ char **main_argv;
 
     conf_tapebufs = getconf_int(CNF_TAPEBUFS);
 
-    if((tt_blocksize_kb = tt->blocksize) < 0) {
-	pad_tape_blocksize = 1;
-	tt_blocksize_kb = -tt_blocksize_kb;
-    } else {
-	pad_tape_blocksize = 0;
-    }
+    tt_blocksize_kb = tt->blocksize;
     tt_blocksize = tt_blocksize_kb * 1024;
+    tt_file_pad = tt->file_pad;
 
     if(interactive) {
 	fprintf(stderr,"taper: running in interactive test mode\n");
@@ -1004,7 +1000,7 @@ int buflen;
 	switch(cnt) {
 	case 0:	/* eof */
 	    if(interactive) fputs("r0", stderr);
-	    if(pad_tape_blocksize && curptr > bp->buffer) {
+	    if(tt_file_pad && curptr > bp->buffer) {
 		memset(curptr, 0, spaceleft);
 		bp->size += spaceleft;
 	    }

@@ -1363,13 +1363,16 @@ section later for exceptions).
 .TP
 .BS blocksize int
 Default:
-.IR "-32 kbytes" .
+.IR "32 kbytes" .
 How much data will be written in each tape record.
-.IP
-If the value is negative, every record, including the last one in the
-file, will have the same length, the absolute
-.B blocksize
-value.
+The minimum blocksize value is 32 KBytes.
+The maximum blocksize value is @MAXTAPEBLOCKSIZE@ KBytes.
+.TP
+.BS file-pad boolean
+Default:
+.IR "true" .
+If true, every record, including the last one in the
+file, will have the same length.
 This matches the way Amanda wrote tapes prior to the availability
 of this parameter.
 It may also be useful on devices that only support a fixed blocksize.
@@ -1381,16 +1384,11 @@ null byte padding, which will be passed back to
 or the restore program.
 Most programs just ignore this (although possibly with a warning).
 .IP
-If the
-.B blocksize
-value is positive, the last record in a file may be shorter
+If this parameter is false, the last record in a file may be shorter
 than the block size.
 The file will contain the same amount of data the dump program generated,
 without trailing null byte padding.
 When read, the same amount of data that was written will be returned.
-.IP
-The minimum absolute blocksize value is 32 KBytes.
-The maximum absolute blocksize value is 4 MBytes.
 .TP
 .BS speed int
 Default:
