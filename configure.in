@@ -615,8 +615,8 @@ AC_ARG_WITH(qde,
     : ${USE_QUICK_AND_DIRTY_ESTIMATES=no}
 )
 case "$USE_QUICK_AND_DIRTY_ESTIMATES" in
-n | no) : ;;
-y |  ye | yes) :
+n | no) : USE_QUICK_AND_DIRTY_ESTIMATES=no;;
+y |  ye | yes) : USE_QUICK_AND_DIRTY_ESTIMATES=yes
 	AC_DEFINE(USE_QUICK_AND_DIRTY_ESTIMATES,1,[ Define if you want to use amqde instead of gnutar for estimates ])
   ;;
 *) AC_MSG_ERROR([*** You must not supply an argument to --with-qde option.])
@@ -1773,6 +1773,7 @@ AC_CHECK_HEADERS(\
 	db.h \
 	dbm.h \
 	fcntl.h \
+	fnmatch.h \
 	fstab.h \
 	grp.h \
 	history.h \
@@ -2655,6 +2656,12 @@ AC_REPLACE_FUNCS(writev)
 ICE_CHECK_DECL(writev, unistd.h sys/uio.h)
 AC_REPLACE_FUNCS(strcasecmp)
 ICE_CHECK_DECL(strcasecmp,string.h strings.h)
+
+AC_CHECK_FUNCS(fnmatch)
+
+if test "$ac_cv_func_fnmatch" != yes -a "$USE_QUICK_AND_DIRTY_ESTIMATES" != yes ; then
+    AC_MSG_WARN([--with-qde and no fnmatch -- gnutar exclude files will not work])
+fi
 
 dnl disk device prefixes
 AC_MSG_CHECKING(disk device prefixes)

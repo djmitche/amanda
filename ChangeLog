@@ -3,7 +3,7 @@
 	* add amqde for "quick and dirty estimates" under gnutar (program
 	  that will traverse the filesystem rather than invoke gnutar).
 	  controlled via configure option --with-qde.  This really wants to
-	  be configured in the server.  exclude lists are not supported.
+	  be configured in the server.
 
 2003-10-24  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
