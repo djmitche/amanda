@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.56 1998/11/02 04:46:00 oliva Exp $
+ * $Id: sendbackup-gnutar.c,v 1.57 1998/11/09 16:36:35 kashmir Exp $
  *
  * send backup data using GNU tar
  */
@@ -442,7 +442,8 @@ notincremental:
     aclose(dumpout);
     aclose(dataf);
     aclose(mesgf);
-    aclose(indexf);
+    if (createindex)
+	aclose(indexf);
 }
 
 static void end_backup(goterror)

@@ -1,3 +1,9 @@
+1998-11-09  Mike Grupenhoff <kashmir@munge.com>
+
+	* client-src/sendbackup-dump.c (start_backup): don't close indexf
+	if it was never open
+	* client-src/sendbackup-gnutar.c (start_backup): ditto
+
 1998-11-08  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/driver.c (main): add hdp->disksize to total_disksize
