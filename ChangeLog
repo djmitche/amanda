@@ -1,5 +1,9 @@
 2003-01-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* recover-src/amrecover.c: Fix memory leak.
+
+2003-01-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	Add new maxpromoteday option in a dumptype.
 	* example/amanda.conf.in: Give an example
 	* man/amanda.8.in: Document it.

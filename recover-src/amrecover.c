@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.48 2003/01/01 23:28:16 martinea Exp $
+ * $Id: amrecover.c,v 1.49 2003/01/04 04:33:20 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -627,6 +627,7 @@ char **argv;
 		    set_directory(cwd);
 		    if (server_happy() && strcmp(cwd, mpt_guess) != 0)
 		        printf("WARNING: not on root of selected filesystem, check man-page!\n");
+		    amfree(dn_guess);
 		    amfree(mpt_guess);
 		    break;
 
