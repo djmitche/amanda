@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getfsent.c,v 1.11.2.1 1998/02/03 15:58:07 amcore Exp $
+ * $Id: getfsent.c,v 1.11.2.2 1998/02/03 16:06:58 amcore Exp $
  *
  * generic version of code to read fstab
  */
@@ -512,8 +512,6 @@ char *str;
 
 #ifdef TEST
 
-char *pname = "getfsent";
-
 print_entry(fsent)
 generic_fsent_t *fsent;
 {
@@ -522,6 +520,8 @@ generic_fsent_t *fsent;
 	   nchk(fsent->fsname), nchk(fsent->mntdir), nchk(fsent->fstype),
 	   fsent->freq, fsent->passno, nchk(fsent->mntopts));
 }
+
+char *pname = "getfsent";
 
 int main()
 {
