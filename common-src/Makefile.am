@@ -31,7 +31,7 @@ libamanda_la_SOURCES = \
 
 libamanda_la_LIBADD =	@LTLIBOBJS@
 
-libamanda_la_LDFLAGS =  -version-info $(libamanda_version) -allow-undefined
+libamanda_la_LDFLAGS =  -version-info $(libamanda_version)
 
 libamnolog_la_SOURCES =	nolog.c
 

@@ -55,7 +55,7 @@ EXTRA_libamclient_la_SOURCES = findpass.c
 libamclient_la_DEPENDENCIES = @LIBOBJS_CLIENT@
 libamclient_la_LIBADD =	@LIBOBJS_CLIENT@
 
-libamclient_la_LDFLAGS = -version-info $(libclient_version) -rpath $(libdir) -allow-undefined
+libamclient_la_LDFLAGS = -version-info $(libclient_version) -rpath $(libdir)
 
 noinst_HEADERS	= 	amandates.h	getfsent.h	findpass.h
 
