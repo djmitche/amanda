@@ -91,6 +91,10 @@ while ( <$IF> ) {
     $fail{$1}{$2} = 1;
     next;
   }
+  if ( /^SUCCESS dumper (\S+) (\S+)/ ) {
+    $fail{$1}{$2} = 0;
+    next;
+  }
   $line = $_;
   if ( ! /^([A-Z]+) taper (\S+) (\S+) (\S+) (\S+)/) { next;}
   # $_ = $1;
