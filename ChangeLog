@@ -1,5 +1,9 @@
 2000-01-21  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* amplot/amplot.awk: Ignore dumper's RQ-MORE-DISK.
+	Reported by David Wolfskill <dhw@whistle.com>
+	* amplot/amplot.awk: Handle taper's TRY-AGAIN like TAPE-ERROR.
+
 	* server-src/amstatus.pl.in: Compute and display TRY-AGAIN tape
 	errors.
 	Reported by David Wolfskill <dhw@whistle.com>
