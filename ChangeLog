@@ -1,5 +1,10 @@
 1999-05-14  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/packet.c (pkt_cat): remove a bogus assert - len is
+	a size_t, which is unsigned, so it will always be >= 0.
+
+1999-05-14  Mike Grupenhoff <kashmir@munge.com>
+
 	* client-src/amandad.c (action_t): consolidate A_PKTTIMEOUT and
 	A_REPTIMEOUT into just A_TIMEOUT.
 

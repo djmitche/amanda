@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: packet.c,v 1.3 1999/04/16 05:13:02 kashmir Exp $
+ * $Id: packet.c,v 1.4 1999/05/14 19:31:19 kashmir Exp $
  *
  * Routines for modifying the amanda protocol packet type
  */
@@ -77,7 +77,7 @@ arglist_function1(void pkt_cat, pkt_t *, pkt, const char *, fmt)
     assert(fmt != NULL);
 
     len = strlen(pkt->body);
-    assert(len >= 0 && len < sizeof(pkt->body));
+    assert(len < sizeof(pkt->body));
 
     bufsize = sizeof(pkt->body) - len;
     if (bufsize <= 0)
