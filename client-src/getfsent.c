@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getfsent.c,v 1.3 1997/10/07 21:34:53 amcore Exp $
+ * $Id: getfsent.c,v 1.4 1997/10/08 05:25:01 george Exp $
  *
  * generic version of code to read fstab
  */
@@ -73,7 +73,7 @@ generic_fsent_t *fsent;
 
     if(!sys_fsent)
 	return 0;
-    fsent->fsname  = strcpy(xfsname, ys_fsent->fs_spec);
+    fsent->fsname  = strcpy(xfsname, sys_fsent->fs_spec);
     fsent->mntdir  = strcpy(xmntdir, sys_fsent->fs_file);
     fsent->freq    = sys_fsent->fs_freq;
     fsent->passno  = sys_fsent->fs_passno;
