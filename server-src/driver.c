@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.29 1998/02/11 17:56:41 jrj Exp $
+ * $Id: driver.c,v 1.30 1998/02/13 05:16:08 amcore Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1268,6 +1268,20 @@ char *time_str;
     printf("\n");
 }
 
+static void update_failed_dump_to_tape(dp)
+disk_t *dp;
+{
+    time_t save_timestamp = sched(dp)->timestamp;
+    /* setting timestamp to 0 removes the current level from the
+     * database, so that we ensure that it will not be bumped to the
+     * next level on the next run.  If we didn't do this, dumpdates or
+     * gnutar-lists might have been updated already, and a bumped
+     * incremental might be created.  */
+    sched(dp)->timestamp = 0;
+    update_info_dumper(dp, -1, -1, -1);
+    sched(dp)->timestamp = save_timestamp;
+}
+
 /* ------------------- */
 int dump_to_tape(dp)
 disk_t *dp;
@@ -1346,11 +1360,9 @@ disk_t *dp;
 
     case DONE: /* DONE <handle> <origsize> <dumpsize> <dumptime> <err str> */
 	/* everything went fine */
-	/* XXX - maybe this should only be done if the taper works? */
 	origsize = (long)atof(argv[3]);
 	dumpsize = (long)atof(argv[4]);
 	dumptime = (long)atof(argv[5]);
-	update_info_dumper(dp, origsize, dumpsize, dumptime);
 	break;
 
     case NO_ROOM: /* NO-ROOM <handle> */
@@ -1387,17 +1399,21 @@ disk_t *dp;
 	if(failed) break;	/* dump didn't work */
 
 	/* every thing went fine */
+	update_info_dumper(dp, origsize, dumpsize, dumptime);
 	filenum = atoi(argv[4]);
 	update_info_taper(dp, argv[3], filenum);
 
 	break;
 
     case TRYAGAIN: /* TRY-AGAIN <handle> <err mess> */
+	update_failed_dump_to_tape(dp);
 	free_serial(argv[2]);
 	enqueue_disk(&runq, dp);
 	break;
 
+
     case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
+	update_failed_dump_to_tape(dp);
 	free_serial(argv[2]);
 	/* fall through */
 
