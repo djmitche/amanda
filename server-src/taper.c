@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.41 1998/09/21 11:55:54 oliva Exp $
+/* $Id: taper.c,v 1.42 1998/09/23 03:27:48 oliva Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1202,7 +1202,7 @@ getcmd(argcp, argvp)
       int arg;
       fprintf(stderr, "argc = %d\n", argc);
       for(arg = 0; arg <= argc; arg++)
-	printf(stderr, "argv[%d] = \"%s\"\n", arg, argv[arg]);
+	fprintf(stderr, "argv[%d] = \"%s\"\n", arg, argv[arg]);
     }
 #endif
 
