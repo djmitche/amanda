@@ -1,3 +1,8 @@
+1998-09-30  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/Makefile.am (libexec_PROGRAMS, sbin_SCRIPTS): don't use 
+	backslashes for continuation; this seems to break automake :-(
+
 1998-09-30  John R. Jackson  <jrj@purdue.edu>
 
 	* man/amanda.8.in: minor typo in "reserve" description.

@@ -20,11 +20,9 @@ endif
 
 sbin_PROGRAMS =		amadmin amcheck amflush amlabel amtape amreport
 
-libexec_PROGRAMS =	amindexd amtrmidx driver dumper \
-			getconf planner taper
+libexec_PROGRAMS =	amindexd amtrmidx driver dumper getconf planner taper
 
-sbin_SCRIPTS =		amcheckdb amcleanup amdump amoverview \
-			amrmtape amtoc amverify amstatus
+sbin_SCRIPTS =		amcheckdb amcleanup amdump amoverview amrmtape amtoc amverify amstatus
 
 endif
 
