@@ -13,6 +13,7 @@
 #define	tapefd_read	rait_read
 #define	tapefd_write	rait_write
 #define tapefd_setinfo_length(outfd, length)
+#define	tapefd_close	rait_close
 
 #else
 #include "amanda.h"
@@ -203,5 +204,23 @@ main(int argc, char **argv) {
 	res = 1;
     }
     fprintf(stderr, "%d+%d in\n%d+%d out\n", fread, pread, fwrite, pwrite);
+    if(read_func == tapefd_read) {
+	if(0 != tapefd_close(infd)) {
+	    save_errno = errno;
+	    fprintf(stderr, "%s: ", pgm);
+	    errno = save_errno;
+	    perror("input close");
+	    res = 1;
+	}
+    }
+    if(write_func == tapefd_write) {
+	if(0 != tapefd_close(outfd)) {
+	    save_errno = errno;
+	    fprintf(stderr, "%s: ", pgm);
+	    errno = save_errno;
+	    perror("output close");
+	    res = 1;
+	}
+    }
     return res;
 }
