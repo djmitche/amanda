@@ -20,13 +20,10 @@ search the mailing list archives or look up the on-line list of
 tapetype entries.  Just follow the links from www.amanda.org.
 
 
-Amanda provides a utility to calculate the size of a tape, to generate
-a `tapetype' entry for your amanda.conf.  However, this utility is
-neither built nor installed by default.  You can build it by entering
-the tape-src directory in the build tree (after running configure) and
-typing `make tapetype'.
+Amanda provides the 'amtapetype' utility to calculate the size of a tape,
+to generate a `tapetype' entry for your amanda.conf.
 
-As soon as it is built, run it, specifying the appropriate tape
+Specifying the appropriate tape
 device, but beware that it may take many hours to run.  Make sure you
 do not use hardware compression, even if you plan to use hardware
 compression in the future.  `tapetype' writes random data to tape, and
