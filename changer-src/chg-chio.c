@@ -38,6 +38,12 @@
 #include "amanda.h"
 #include "conffile.h"
 
+/*
+ * This is referenced off in libam*'s and won't build on some systems
+ * unless the pname definition is out here..
+ */
+char *pname = "seagate-changer";
+
 #if defined(HAVE_CHIO_H) || defined(HAVE_SYS_CHIO_H)
 
 /* This include comes with Gerd Knor's SCSI media changer driver.
@@ -52,8 +58,6 @@
 #else
 # error "Inside CHIO code without HAVE_CHIO_H or HAVE_SYS_CHIO_H defined"
 #endif
-
-char *pname = "seagate-changer";
 
 int loaded;
 
