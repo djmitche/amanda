@@ -1,3 +1,10 @@
+1999-09-15 John R. Jackson  <jrj@purdue.edu>
+
+	* common-src/bsd-security.c: if the user field is not present in the
+	  .amandahosts file, it should default to the local user, not the
+	  remote user.  For our purposes, that is CLIENT_USER, not the user
+	  we are running as (although they should be the same).
+
 1999-09-14 John R. Jackson  <jrj@purdue.edu>
 
 	* configure.in: Add --with-tmpdir to ./configure and use it for

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.31 1999/09/15 00:31:50 jrj Exp $
+ * $Id: bsd-security.c,v 1.32 1999/09/16 00:12:15 jrj Exp $
  *
  * "BSD" security module
  */
@@ -927,9 +927,9 @@ check_user_amandahosts(host, pwd, remoteuser)
 	if ((filehost = strtok(buf, " \t")) == NULL)
 	    continue;
 
-	/* get the username.  If no user specified, then use the remote user */
+	/* get the username.  If no user specified, then use the local user */
 	if ((fileuser = strtok(NULL, "\n")) == NULL)
-	    fileuser = remoteuser;
+	    fileuser = pwd->pw_name;
 
 	/* compare */
 	if (strcasecmp(filehost, host) == 0 &&
