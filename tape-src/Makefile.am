@@ -5,7 +5,7 @@ INCLUDES =		-I$(top_srcdir)/common-src
 lib_LTLIBRARIES = 	libamtape.la
 LIB_EXTENSION = la
 
-sbin_PROGRAMS=          ammt amdd
+sbin_PROGRAMS=          ammt amdd amtapetype
 
 libamtape_la_SOURCES = 	output-file.c \
 			output-null.c \
@@ -22,29 +22,19 @@ libamtape_la_LDFLAGS =  -release $(VERSION)
 # routines, and second to pick up any references in the other libraries.
 ###
 
-tapetype_LDADD =	../common-src/libamanda.$(LIB_EXTENSION) \
-			libamtape.$(LIB_EXTENSION) \
-			../common-src/libamanda.$(LIB_EXTENSION)
-
-ammt_LDADD =		../common-src/libamanda.$(LIB_EXTENSION) \
-			libamtape.$(LIB_EXTENSION) \
-			../common-src/libamanda.$(LIB_EXTENSION)
-
-amdd_LDADD =		../common-src/libamanda.$(LIB_EXTENSION) \
-			libamtape.$(LIB_EXTENSION) \
-			../common-src/libamanda.$(LIB_EXTENSION)
-
-## So that we can tell people to `cd tape-src && make tapetype':
-../common-src/libamanda.$(LIB_EXTENSION):
-	cd ../common-src && $(MAKE) libamanda.$(LIB_EXTENSION)
+LDADD =	../common-src/libamanda.$(LIB_EXTENSION) \
+	libamtape.$(LIB_EXTENSION) \
+	../common-src/libamanda.$(LIB_EXTENSION)
 
 # used for testing only
 
 TEST_PROGS =		amtapeio
 
-EXTRA_PROGRAMS = 	tapetype $(TEST_PROGS)
+EXTRA_PROGRAMS = 	$(TEST_PROGS)
 
 CLEANFILES = *.test.c
+
+amtapetype_SOURCES = tapetype.c
 
 noinst_HEADERS = 	\
 			output-file.h \
@@ -83,3 +73,6 @@ amtapeio.test.c: $(srcdir)/tapeio.c
 %.test.c: $(srcdir)/%.c
 	echo '#define TEST' >$@
 	echo '#include "$<"' >>$@
+
+tapetype:
+	@echo "Use amtapetype instead"

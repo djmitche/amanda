@@ -2835,6 +2835,7 @@ AC_CONFIG_FILES([\
 	man/amverify.8			man/Makefile			\
 	man/amstatus.8			man/amreport.8			\
 	man/amgetconf.8			man/amverifyrun.8		\
+	man/amtapetype.8						\
 									\
 	docs/Makefile							\
 									\
