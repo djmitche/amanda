@@ -1,3 +1,7 @@
+2000-02-12 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/amstatus.pl.in: "0 dumpers busy" should be "0 dumper busy".
+
 2000-01-31 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amadmin.c (force_one, force_bump_one): FORCE_FULL
