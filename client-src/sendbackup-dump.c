@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.61 1998/04/08 16:24:26 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.62 1998/05/05 15:24:20 jrj Exp $
  *
  * send backup data using BSD dump
  */
@@ -254,7 +254,7 @@ char *dumpdate;
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
 	dumppid = pipespawn(progname, &dumpin, dumpout, mesgf, 
-			    "vxdump", dumpkeys, "100000", "-", device,
+			    "vxdump", dumpkeys, "1048576", "-", device,
 			    (char *)0);
     }
     else

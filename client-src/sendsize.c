@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.86 1998/04/08 16:24:30 amcore Exp $
+ * $Id: sendsize.c,v 1.87 1998/05/05 15:24:22 jrj Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -633,7 +633,7 @@ int level;
 	cmd = newstralloc(cmd, VXDUMP);
 #endif
 	dumpkeys = vstralloc(level_str, "s", "f", NULL);
-        dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n",
+        dbprintf(("%s: running \"%s%s %s 1048576 - %s\"\n",
 		  get_pname(), cmd, name, dumpkeys, device));
     }
     else
@@ -684,10 +684,10 @@ int level;
 			     "s", "f", NULL);
 
 #  ifdef HAVE_HONOR_NODUMP				/* { */
-	dbprintf(("%s: running \"%s%s %s 0 100000 - %s\"\n",
+	dbprintf(("%s: running \"%s%s %s 0 1048576 - %s\"\n",
 		  get_pname(), cmd, name, dumpkeys, device));
 #  else							/* } { */
-	dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n",
+	dbprintf(("%s: running \"%s%s %s 1048576 - %s\"\n",
 		  get_pname(), cmd, name, dumpkeys, device));
 #  endif						/* } */
 # endif							/* } */
@@ -754,7 +754,7 @@ int level;
 #else
 	if (1)
 #endif
-	    execle(cmd, "vxdump", dumpkeys, "100000", "-", device, (char *)0,
+	    execle(cmd, "vxdump", dumpkeys, "1048576", "-", device, (char *)0,
 		   safe_env());
 	else
 #endif
@@ -776,7 +776,7 @@ int level;
 #ifdef HAVE_HONOR_NODUMP
 		   "0",
 #endif
-		   "100000", "-", device, (char *)0, safe_env());
+		   "1048576", "-", device, (char *)0, safe_env());
 # endif
 #endif
 	{

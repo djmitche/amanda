@@ -1,3 +1,6 @@
+	be consistent and use 1048576 as a dump size everyplace instead of
+	100000 in some places (mostly cosmetic).  -JJ
+
 	negative numbers are now accepted in the configuration file
 	parser.  -oliva
 
