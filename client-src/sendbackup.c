@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.44.2.9 2000/09/25 00:11:45 martinea Exp $
+ * $Id: sendbackup.c,v 1.44.2.9.2.1 2001/01/24 22:12:17 jrjackson Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -235,9 +235,9 @@ char **argv;
     if(interactive) {
 	/*
 	 * In interactive (debug) mode, the backup data is sent to
-        * /dev/null and none of the network connections back to driver
-        * programs on the tape host are set up.
-	 * Index service is run and goes to stdout.
+	 * /dev/null and none of the network connections back to driver
+	 * programs on the tape host are set up.  The index service is
+	 * run and goes to stdout.
 	 */
 	fprintf(stderr, "%s: running in interactive test mode\n", get_pname());
 	fflush(stderr);

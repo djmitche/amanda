@@ -16,9 +16,9 @@ PATH=$sbindir:$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb:/usr/local/bin
 export PATH
 
 if [ -d "@AMANDA_DBGDIR@" ]; then
-	DBGFILE=@AMANDA_DBGDIR@/changer.debug
+	logfile=@AMANDA_DBGDIR@/changer.debug
 else
-	DBGFILE=/dev/null
+	logfile=/dev/null
 fi
 
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
@@ -29,16 +29,44 @@ else
 fi
 
 myname=$0
+
 tape=`amgetconf$SUF tapedev`
 TAPE=`amgetconf$SUF changerdev`; export TAPE # for mtx command
 if [ "$tape" = "/dev/null" -o "$TAPE" = "/dev/null" ]; then
   echo "Both tapedev and changerdev must be specified in config file";
   exit 2;
 fi
-MT=@MT@
-MTF=@MT_FILE_FLAG@
+
 MTX=@MTX@
-DD=@DD@
+
+if [ -x $sbindir/ammt$SUF ]; then
+	MT=$sbindir/ammt$SUF
+	MTF=-f
+elif [ -x "@MT@" ]; then
+	MT=@MT@
+	MTF=@MT_FILE_FLAG@
+else
+	answer="<none> $myname: mt program not found"
+	code=1
+	echo "Exit -> $answer" >> $logfile
+	echo "$answer"
+	exit $code
+fi
+echo MT "->" $MT $MTF >> $logfile
+
+if [ -x $sbindir/amdd$SUF ]; then
+	DD=$sbindir/amdd$SUF
+elif [ -x "@DD@" ]; then
+	DD=@DD@
+else
+	answer="<none> $myname: dd program not found"
+	code=1
+	echo "Exit -> $answer" >> $logfile
+	echo "$answer"
+	exit $code
+fi
+echo DD "->" $DD >> $logfile
+
 firstslot=1
 lastslot=5
 # counted from 1 !!!
@@ -68,11 +96,17 @@ eject() {
   readstatus 
   if [ $used -gt 0 ];then
     $MTX -u $used
-    echo 0 $tape
-    exit 0
+    answer="0 $tape"
+    code=0
+    echo "Exit -> $answer" >> $logfile
+    echo "$answer"
+    exit $code
   else
-    echo "0 Drive was not loaded"
-    exit 1
+    answer="<none> $myname: Drive was not loaded"
+    code=1
+    echo "Exit -> $answer" >> $logfile
+    echo "$answer"
+    exit $code
   fi
 }
 
@@ -83,29 +117,36 @@ reset() {
   fi
   res=`$MTX -l 1`
   if [ $? -eq 0 ];then
-    echo "1 $tape"
-    exit 0
+    answer="1 $tape"
+    code=0
+    echo "Exit -> $answer" >> $logfile
+    echo "$answer"
+    exit $code
   else
-    echo "1 $res"
-    exit 1
+    answer="1 $res"
+    code=1
+    echo "Exit -> $answer" >> $logfile
+    echo "$answer"
+    exit $code
   fi
 }
 #
 #
 loadslot() {
   readstatus
-  echo "     -> loaded $used" >> $DBGFILE
+  echo "     -> loaded $used" >> $logfile
   whichslot=$1
   case $whichslot in
     current)
 	     if [ $used -lt 0 ];then
 	       $MTX -l 1
-	       echo "1 $tape"
-	       exit 0
-	     else 
-	       echo "$used $tape"
-	       exit 0
+	       used=1
 	     fi
+	     answer="$used $tape"
+	     code=0
+	     echo "Exit -> $answer" >> $logfile
+	     echo "$answer"
+	     exit $code
 	     ;;
     next|advance)
 	  load=`expr $used + 1`
@@ -128,14 +169,20 @@ loadslot() {
 	  load=$cleanslot
 	  ;;
     *)
-       echo "0 illegal request"
-       exit 1
+       answer="<none> $myname: illegal request: \"$whichslot\""
+       code=1
+       echo "Exit -> $answer" >> $logfile
+       echo "$answer"
+       exit $code
        ;;
     esac
 
     if [ $load = $used ]; then
-        echo "$used $tape"
-        exit 0
+        answer="$used $tape"
+        code=0
+        echo "Exit -> $answer" >> $logfile
+        echo "$answer"
+        exit $code
     fi
 
     if [ $load = $cleanslot ]; then
@@ -156,49 +203,60 @@ loadslot() {
 	
 
     if [ $used -gt 0 ];then
-      echo "     -> unload $used" >> $DBGFILE
+      echo "     -> unload $used" >> $logfile
       res=`$MTX -u $used`
       status=$?
-      echo "     -> status $status" >> $DBGFILE
-      echo "     -> res    $res" >> $DBGFILE
+      echo "     -> status $status" >> $logfile
+      echo "     -> res    $res" >> $logfile
       if [ $status -ne 0 ];then
-        echo "$res"
-        exit 2
+        answer="<none> $myname: $res"
+        code=2
+        echo "Exit -> $answer" >> $logfile
+        echo "$answer"
+        exit $code
       fi
     fi
     if [ $whichslot = advance ];then
-      echo "$load /dev/null"
-      exit 0
+      answer="$load /dev/null"
+      code=0
+      echo "Exit -> $answer" >> $logfile
+      echo "$answer"
+      exit $code
     fi
-    echo "     -> load   $load" >> $DBGFILE
+    echo "     -> load   $load" >> $logfile
     res=`$MTX -l $load`
     status=$?
-    echo "     -> status $status" >> $DBGFILE
-    echo "     -> res    $res" >> $DBGFILE
+    echo "     -> status $status" >> $logfile
+    echo "     -> res    $res" >> $logfile
     if [ $status -eq 0 ];then
-      echo "     -> rew $load" >> $DBGFILE
+      echo "     -> rew $load" >> $logfile
       $MT $MTF $tape rewind
-      $DD if=$tape count=1 >> $DBGFILE 2>&1
-      echo "$load $tape"
-      exit 0
+      $DD if=$tape count=1 >> $logfile 2>&1
+      answer="$load $tape"
+      code=0
     else
-      echo "$load $res"
-      exit 2
+      answer="$load $res"
+      code=2
     fi
+    echo "Exit -> $answer" >> $logfile
+    echo "$answer"
+    exit $code
 }
 #
 info() {
   readstatus
-  echo "     -> info   $used" >> $DBGFILE
+  echo "     -> info   $used" >> $logfile
   if [ $used -lt 0 ];then
-    echo "0 $lastslot 1"
-  else
-    echo "$used $lastslot 1"
+    used=0
   fi
-  exit 0
+  answer="$used $lastslot 1"
+  code=0
+  echo "Exit -> $answer" >> $logfile
+  echo "$answer"
+  exit $code
 }
 #
-echo Args "->" "$@" >> $DBGFILE
+echo Args "->" "$@" >> $logfile
 while [ $# -ge 1 ];do
   case $1 in
     -slot)
@@ -218,8 +276,11 @@ while [ $# -ge 1 ];do
 	    eject
 	    ;;
     *)
-       echo "Unknown option $1"
-       exit 2
+       answer="<none> $myname: Unknown option $1"
+       code=2
+       echo "Exit -> $answer" >> $logfile
+       echo "$answer"
+       exit $code
        ;;
   esac
 done

@@ -1,3 +1,79 @@
+2001-01-23 John R. Jackson <jrj@purdue.edu>
+
+	* configure.in: Add tapeio switch from Marc Mengel <mengel@fnal.gov>,
+	  enhance and add "null" and "file" output drivers.  Change all
+	  tape changers (except chg-scsi) to use amdd and ammt.  Change all
+	  tape changers (except chg-scsi) to log and use a consistent
+	  error reporting scheme.  Fix various bugs along the way.  Add new
+	  chg-multi config option, posteject, which is an optional script
+	  to call after each "tape" is ejected (e.g. to use to start a
+	  CDROM writer).  Remove special code for tapedev of /dev/null
+	  (now handled by the "null" output driver).  Changed the taper
+	  protocol to pass the host/disk/level so the write can send that
+	  along to the output driver.  Fairly major rework of amrestore
+	  to clean up tape/non-tape and other oddities.
+	* changer-src/chg-chio.pl.in: Ditto.
+	* changer-src/chg-chs.sh.in: Ditto.
+	* changer-src/chg-manual.sh.in: Ditto.
+	* changer-src/chg-mtx.sh.in: Ditto.
+	* changer-src/chg-multi.sh.in: Ditto.
+	* changer-src/chg-rth.pl.in: Ditto.
+	* changer-src/chg-zd-mtx.sh.in: Ditto.
+	* client-src/sendbackup.c: Ditto.
+	* common-src/alloc.c: Ditto.
+	* common-src/amanda.h: Ditto.
+	* docs/INTERNALS: Ditto.
+	* man/Makefile.am: Ditto.
+	* man/amanda.8.in: Ditto.
+	* man/amdd.8: Ditto.
+	* man/ammt.8: Ditto.
+	* restore-src/amrestore.c: Ditto.
+	* server-src/amcheck.c: Ditto.
+	* server-src/amlabel.c: Ditto.
+	* server-src/amtape.c: Ditto.
+	* server-src/amverify.sh.in: Ditto.
+	* server-src/conffile.c: Ditto.
+	* server-src/conffile.h: Ditto.
+	* server-src/taper.c: Ditto.
+	* tape-src/Makefile.am: Ditto.
+	* tape-src/amdd.c: Ditto.
+	* tape-src/ammt.c: Ditto.
+	* tape-src/output-file.c: Ditto.
+	* tape-src/output-file.h: Ditto.
+	* tape-src/output-null.c: Ditto.
+	* tape-src/output-null.h: Ditto.
+	* tape-src/output-rait.c: Ditto.
+	* tape-src/output-rait.h: Ditto.
+	* tape-src/output-tape.c: Ditto.
+	* tape-src/output-tape.h: Ditto.
+	* tape-src/tapeio.c: Ditto.
+	* tape-src/tapeio.h: Ditto.
+	* tape-src/tests/amtapeio.test.000: Ditto.
+	* tape-src/tests/amtapeio.test.001: Ditto.
+	* tape-src/tests/amtapeio.test.002: Ditto.
+	* tape-src/tests/amtapeio.test.003: Ditto.
+	* tape-src/tests/amtapeio.test.004: Ditto.
+	* tape-src/tests/amtapeio.test.005: Ditto.
+	* tape-src/tests/amtapeio.test.006: Ditto.
+	* tape-src/tests/amtapeio.test.007: Ditto.
+	* tape-src/tests/amtapeio.test.008: Ditto.
+	* tape-src/tests/amtapeio.test.009: Ditto.
+	* tape-src/tests/amtapeio.test.010: Ditto.
+	* tape-src/tests/amtapeio.test.011: Ditto.
+	* tape-src/tests/amtapeio.test.012: Ditto.
+	* tape-src/tests/amtapeio.test.013: Ditto.
+	* tape-src/tests/amtapeio.test.014: Ditto.
+	* tape-src/tests/amtapeio.test.015: Ditto.
+	* tape-src/tests/amtapeio.test.016: Ditto.
+	* tape-src/tests/amtapeio.test.017: Ditto.
+	* tape-src/tests/amtapeio.test.018: Ditto.
+	* tape-src/tests/cleartape: Ditto.
+	* tape-src/tests/newtest: Ditto.
+	* tape-src/tests/rerun: Ditto.
+	* tape-src/tests/runtest: Ditto.
+	* tape-src/tests/testdist: Ditto.
+	* tape-src/tests/torture: Ditto.
+
 2000-12-24 John R. Jackson <jrj@purdue.edu>
 
 	* server-src/getconf.c: Fix free() of static text string (BUGGY) when
@@ -1325,7 +1401,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.423.2.3 2000/12/24 23:15:58 jrjackson Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.423.2.4 2001/01/24 22:12:16 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

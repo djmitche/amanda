@@ -18,9 +18,9 @@ PATH=$sbindir:$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb:/usr/local/bin
 export PATH
 
 if [ -d "@AMANDA_DBGDIR@" ]; then
-	DBGFILE=@AMANDA_DBGDIR@/changer.debug
+	logfile=@AMANDA_DBGDIR@/changer.debug
 else
-	DBGFILE=/dev/null
+	logfile=/dev/null
 fi
 
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
@@ -34,14 +34,44 @@ myname=$0
 tape=`amgetconf$SUF tapedev`
 TAPE=`amgetconf$SUF changerdev`; export TAPE # for mtx command
 if [ "$tape" = "/dev/null" -o "$TAPE" = "/dev/null" ]; then
-  echo "Both tapedev and changerdev must be specified in config file";
-  exit 2;
+	answer="<none> $myname: Both tapedev and changerdev must be specified in config file"
+	code=2
+	echo "Exit -> $answer" >> $logfile
+	echo "$answer"
+	exit $code
 fi
 fake=0
-MT=@MT@
-MTF=@MT_FILE_FLAG@
+
 MTX=@MTX@
-DD=@DD@
+
+if [ -x $sbindir/ammt$SUF ]; then
+	MT=$sbindir/ammt$SUF
+	MTF=-f
+elif [ -x "@MT@" ]; then
+	MT=@MT@
+	MTF=@MT_FILE_FLAG@
+else
+	answer="<none> $myname: mt program not found"
+	code=1
+	echo "Exit -> $answer" >> $logfile
+	echo "$answer"
+	exit $code
+fi
+echo MT "->" $MT $MTF >> $logfile
+
+if [ -x $sbindir/amdd$SUF ]; then
+	DD=$sbindir/amdd$SUF
+elif [ -x "@DD@" ]; then
+	DD=@DD@
+else
+	answer="<none> $myname: dd program not found"
+	code=1
+	echo "Exit -> $answer" >> $logfile
+	echo "$answer"
+	exit $code
+fi
+echo DD "->" $DD >> $logfile
+
 firstslot=1
 lastslot=6
 # counted from 1 !!!
@@ -52,11 +82,30 @@ changerfile=`amgetconf$SUF changerfile`
 cleanfile=$changerfile-clean
 accessfile=$changerfile-access
 slotfile=$changerfile-slot
-[ ! -f $cleanfile ] && echo 0 > $cleanfile
-[ ! -f $accessfile ] && echo 0 > $accessfile
-[ ! -f $slotfile ] && echo 0 > $slotfile
+[ ! -s $cleanfile ] && echo 0 > $cleanfile
+[ ! -s $accessfile ] && echo 0 > $accessfile
+[ ! -s $slotfile ] && echo 0 > $slotfile
 cleancount=`cat $cleanfile`
+if expr $cleancount + 1000000 > /dev/null 2>&1
+then
+  : # the number is OK
+else
+  cleancount=0
+fi
 accesscount=`cat $accessfile`
+if expr $accesscount + 1000000 > /dev/null 2>&1
+then
+  : # the number is OK
+else
+  accesscount=0
+fi
+slot=`cat $slotfile`
+if expr $slot + 1000000 > /dev/null 2>&1
+then
+  : # the number is OK
+else
+  echo 0 > $slotfile
+fi
 #
 
 readstatus() {
@@ -74,12 +123,15 @@ eject() {
   readstatus 
   if [ $used -gt 0 ];then
     $MTX unload $used 2>/dev/null
-    echo 0 $tape
-    exit 0
+    answer="0 $tape"
+    code=0
   else
-    echo "0 Drive was not loaded"
-    exit 1
+    answer="<none> $myname: Drive was not loaded"
+    code=1
   fi
+  echo "Exit -> $answer" >> $logfile
+  echo "$answer"
+  exit $code
 }
 
 reset() {
@@ -89,29 +141,33 @@ reset() {
   fi
   res=`$MTX load 1 2>&1`
   if [ $? -eq 0 ];then
-    echo "1 $tape"
-    exit 0
+    answer="1 $tape"
+    code=0
   else
-    echo "1 $res"
-    exit 1
+    answer="1 $res"
+    code=1
   fi
+  echo "Exit -> $answer" >> $logfile
+  echo "$answer"
+  exit $code
 }
 #
 #
 loadslot() {
   readstatus
-  echo "     -> loaded $used" >> $DBGFILE
+  echo "     -> loaded $used" >> $logfile
   whichslot=$1
   case $whichslot in
     current)
 	     if [ $used -lt 0 ];then
 	       $MTX load 1 2>/dev/null
-	       echo "1 $tape"
-	       exit 0
-	     else 
-	       echo "$used $tape"
-	       exit 0
+	       used=1
 	     fi
+	     answer="$used $tape"
+	     code=0
+	     echo "Exit -> $answer" >> $logfile
+	     echo "$answer"
+	     exit $code
 	     ;;
     next|advance)
 	  load=`expr $used + 1`
@@ -134,14 +190,20 @@ loadslot() {
 	  load=$cleanslot
 	  ;;
     *)
-       echo "0 illegal request"
-       exit 1
+       answer="<none> $myname: illegal request: \"$whichslot\""
+       code=1
+       echo "Exit -> $answer" >> $logfile
+       echo "$answer"
+       exit $code
        ;;
     esac
 
     if [ $load = $used ]; then
-        echo "$used $tape"
-        exit 0
+	answer="$used $tape"
+	code=0
+	echo "Exit -> $answer" >> $logfile
+	echo "$answer"
+	exit $code
     fi
 
     if [ $load = $cleanslot ]; then
@@ -162,58 +224,71 @@ loadslot() {
 	
 
     if [ $fake -eq 0 ];then
-      echo "     -> unload $used" >> $DBGFILE
+      echo "     -> unload $used" >> $logfile
       res=`$MTX unload $used 2>&1`
       status=$?
-      echo "     -> status $status" >> $DBGFILE
-      echo "     -> res    $res" >> $DBGFILE
+      echo "     -> status $status" >> $logfile
+      echo "     -> res    $res" >> $logfile
       if [ $status -ne 0 ];then
+	answer="<none> $myname: $res"
         echo "$res"
-        exit 2
+	code=2
+	echo "Exit -> $answer" >> $logfile
+	echo "$answer"
+	exit $code
       fi
     fi
     if [ $whichslot = advance ];then
-      echo "$load /dev/null"
-      exit 0
+      answer="$load /dev/null"
+      code=0
+      echo "Exit -> $answer" >> $logfile
+      echo "$answer"
+      exit $code
     fi
-    echo "     -> load   $load" >> $DBGFILE
+    echo "     -> load   $load" >> $logfile
     res=`$MTX load $load 2>&1`
     status=$?
-    echo "     -> status $status" >> $DBGFILE
-    echo "     -> res    $res" >> $DBGFILE
+    echo "     -> status $status" >> $logfile
+    echo "     -> res    $res" >> $logfile
     if [ $status -eq 0 ];then
-      echo "     -> rew $load" >> $DBGFILE
+      echo "     -> rew $load" >> $logfile
       $MT $MTF $tape rewind
-      $DD if=$tape count=1 >> $DBGFILE 2>&1
-      echo "$load $tape"
+      $DD if=$tape count=1 >> $logfile 2>&1
       echo "$load" > $slotfile
-      exit 0
+      answer="$load $tape"
+      code=0
+      echo "Exit -> $answer" >> $logfile
+      echo "$answer"
+      exit $code
     else
 	res2=`echo $res | grep "Storage Element . is Empty"`
 	if [ -z $res2 ]; then
-   	  echo "$load $res"
-      	  exit 2
+	  code=2
 	else
-	  echo "$load $res"
 	  echo "$load" > $slotfile
-	  exit 1
+	  code=1
 	fi
+	answer="$load $res"
+	echo "Exit -> $answer" >> $logfile
+	echo "$answer"
+	exit $code
     fi
 }
 #
 info() {
   readstatus
-  echo "     -> info   $used" >> $DBGFILE
+  echo "     -> info   $used" >> $logfile
   if [ $used -lt 0 ];then
-    slot=`cat $slotfile`
-    echo "$slot $lastslot 1"
-  else
-    echo "$used $lastslot 1"
+    used=`cat $slotfile`
   fi
-  exit 0
+  answer="$used $lastslot 1"
+  code=0
+  echo "Exit -> $answer" >> $logfile
+  echo "$answer"
+  exit $code
 }
 #
-echo Args "->" "$@" >> $DBGFILE
+echo Args "->" "$@" >> $logfile
 while [ $# -ge 1 ];do
   case $1 in
     -slot)
@@ -233,8 +308,11 @@ while [ $# -ge 1 ];do
 	    eject
 	    ;;
     *)
-       echo "Unknown option $1"
-       exit 2
+	answer="<none> $myname: Unknown option $1"
+	code=2
+	echo "Exit -> $answer" >> $logfile
+	echo "$answer"
+	exit $code
        ;;
   esac
 done

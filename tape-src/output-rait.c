@@ -1,8 +1,26 @@
-#include "output-rait.h"
-#include <string.h>
-#include <sys/errno.h>
-#include <fcntl.h>
+#ifdef NO_AMANDA
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#else
+#include "amanda.h"
+#include "tapeio.h"
+#endif
+
+#include "output-rait.h"
+
+#ifdef NO_AMANDA
+#define	tape_open	open
+#define tapefd_read	read
+#define tapefd_write	write
+#define tapefd_close	close
+#define tape_access	access
+#define tape_stat	stat
+#endif
 
 /*
 ** RAIT -- redundant array of (inexpensive?) tapes
@@ -16,7 +34,6 @@
 
   rait.c..................................................1
 	MAX_RAITS.........................................2
-        RAIT_OFFSET.......................................2
         rait_table........................................2
 	rait_open(char *dev, int flags, int mode).........2
 	rait_close(int fd)................................3
@@ -32,14 +49,12 @@
 	    rait_tapefd_rewind(rait_tapefd)..............10
 	    rait_tapefd_resetofs(rait_tapefd)............10
 	    rait_tapefd_unload(rait_tapefd)..............10
-	    rait_tapefd_status(rait_tapefd)..............10
+	    rait_tapefd_status(rait_tapefd, stat)........10
 	    rait_tapefd_weof(rait_tapefd, count).........10
 
 	
 
    rait.h.................................................1
-	MAXRAIT...........................................1
-	MAXBUFSIZE .......................................1
         typedef RAIT......................................1
         ifdef RAIT_REDIRECT...............................1
              open.........................................1
@@ -62,142 +77,275 @@
 ** as a RAIT.
 **
 ** If it has no curly brace, we treat it as a plain device,
-** and do a normal open, and do normal operations on it; we
-** distinguish RAIT descriptors from regular file descriptors
-** by whether they greater than RAIT_OFFSET
+** and do a normal open, and do normal operations on it.
 */
 
+#define RAIT_DEBUG	/*JJ*/
+
 #ifdef RAIT_DEBUG
-#include <stdio.h>
-#define rait_debug (0!=getenv("RAIT_DEBUG"))&&fprintf
+#define rait_debug(p) do {						\
+  int save_errno = errno;						\
+									\
+  if (0!=getenv("RAIT_DEBUG")) {					\
+    fprintf p;								\
+  }									\
+  errno = save_errno;							\
+} while (0)
 #else
-#define rait_debug (void)
-#define stderr 1
+#define rait_debug(p)
 #endif
 
-#define MAX_RAITS 20			/* maximum simul. RAIT sets */
-#define RAIT_OFFSET 2048		/* offset of RAIT fd's */
-static RAIT rait_table[MAX_RAITS];	/* table to keep track of RAITS */
+static RAIT *rait_table = 0;		/* table to keep track of RAITS */
+static int rait_table_count;
 
-extern int errno;
+/*
+ * table_alloc -- (re)allocate enough space for some number of elements.
+ *
+ * input:	table -- pointer to pointer to table
+ *		elsize -- size of a table element
+ *		count -- desired number of elements
+ *		current -- pointer to current number of elements
+ *		bump -- round up factor
+ * output:	table -- possibly adjusted to point to new table area
+ *		current -- possibly adjusted to new number of elements
+ */
+
+static int
+table_alloc(void **table, size_t elsize, int count, int *current, int bump) {
+    void *table_new;
+    int table_count_new;
+
+    if (count >= *current) {
+	table_count_new = ((count + bump) / bump) * bump;
+	table_new = malloc(table_count_new * elsize);
+	if (0 == table_new) {
+	    errno = ENOMEM;
+	    return -1;
+	}
+	if (0 != *table) {
+	    memcpy(table_new, *table, *current * elsize);
+	    free(*table);
+	}
+	*table = table_new;
+	memset(((char *)*table) + *current * elsize,
+	       0,
+	       (table_count_new - *current) * elsize);
+	*current = table_count_new;
+    }
+    return 0;
+}
+
+#define rait_table_alloc(fd)	table_alloc((void **)&rait_table,	\
+					    sizeof(*rait_table),	\
+					    (fd),			\
+					    &rait_table_count,		\
+					    10)
 
 int
 rait_open(char *dev, int flags, int mode) {
-    char *path;			/* pathname */
-    int i;			/* index into drive slots in RAIT */
+    int fd;			/* the file descriptor number to return */
     RAIT *res;			/* resulting RAIT structure */
-    char *p;			/* temp char pointer */
+    char *dev_left;		/* string before { */
+    char *dev_right;		/* string after } */
+    char *dev_next;		/* string inside {} */
+    char *dev_real;		/* parsed device name */
+    int fd_count;		/* number of file descriptors allocated */
+    int rait_flag;		/* true if RAIT syntax in dev */
+    int save_errno;
+    int r;
 
-    if (0 == (p = strchr(dev, '{'))) {
+    rait_debug((stderr,"rait_open( %s, %d, %d )\n", dev, flags, mode));
+
+    rait_flag = (0 != strchr(dev, '{'));
+
+    if (rait_flag) {
 
 	/*
-        ** no percent sign, so a normal open...
-        */
-	return open(dev,flags,mode);
-
+	** we have to return a valid file descriptor, so use
+	** a dummy one to /dev/null
+	*/
+	fd = open("/dev/null",flags);
     } else {
-	rait_debug(stderr,"rait_open( %s, %d, %d, )\n", dev, flags, mode);
-	/* copy the strings so we can scribble on the copy */
-        dev = rait_init_namelist(dev);
+
+	/*
+	** call the normal tape_open function if we are not
+	** going to do RAIT
+	*/
+	fd = tape_open(dev,flags);
+    }
+    if(-1 == fd) {
+	rait_debug((stderr, "rait_open:returning %d: %s\n",
+			    fd,
+			    strerror(errno)));
+	return fd;
+    }
+
+    if(0 != rait_table_alloc(fd)) {
+	save_errno = errno;
+	(void)tapefd_close(fd);
+	errno = save_errno;
+	rait_debug((stderr, "rait_open:returning %d: %s\n",
+			    fd,
+			    strerror(errno)));
+	return -1;
+    }
+
+    res = &rait_table[fd];
+
+    memset(res, 0, sizeof(*res));
+    res->nopen = 1;
+
+    if (rait_flag) {
+
+	/* copy and parse the dev string so we can scribble on it */
+        dev = rait_init_namelist(dev, &dev_left, &dev_right, &dev_next);
 	if (0 == dev) {
+	    rait_debug((stderr, "rait_open:returning %d: %s\n",
+			        fd,
+			        strerror(errno)));
 	    return -1;
         }
 
-	for ( i = 0; i < MAX_RAITS && rait_table[i].nopen; i++) {
-	    ;
-	}
-
-        if( i < MAX_RAITS ) {
-	    res = &rait_table[i];
-        } else {
-	    errno = ENOMEM;
+	/*
+	** because the names we generate are subsets of the input name,
+	** the following guarantees we have enough working space
+	*/
+	dev_real = malloc(strlen(dev));
+	if (0 == dev_real) {
 	    free(dev);
+	    errno = ENOMEM;
+	    rait_debug((stderr, "rait_open:returning %d: %s\n",
+			        fd,
+			        strerror(errno)));
 	    return -1;
 	}
 
-	memset(res, 0, sizeof(RAIT));
-	res->nopen = 1;
-
-
-	while ( path = rait_next_name() ) {
-	    res->fds[ res->nfds ] = open(path,flags,mode);
-	    rait_debug(stderr,"rait_open:opening %s yeilds %d\n",
-			path, res->fds[res->nfds] );
+	fd_count = 0;
+	while (rait_next_name(dev_left, dev_right, &dev_next, dev_real)) {
+	    r = table_alloc((void **)&res->fds,
+			    sizeof(*res->fds),
+			    res->nfds,
+			    &fd_count,
+			    10);
+	    if (0 != r) {
+		(void)rait_close(fd);
+		fd = -1;
+		break;
+	    }
+	    res->fds[ res->nfds ] = tape_open(dev_real,flags);
+	    rait_debug((stderr,"rait_open:opening %s yields %d\n",
+			dev_real, res->fds[res->nfds] ));
 	    if ( res->fds[res->nfds] < 0 ) {
-		rait_close(RAIT_OFFSET + (res - rait_table));
-		return -1;
+		save_errno = errno;
+		(void)rait_close(fd);
+		errno = save_errno;
+		fd = -1;
+		break;
 	    }
 	    res->nfds++;
 	}
+
+	/* clean up our copied string */
+	save_errno = errno;
+	free(dev);
+	free(dev_real);
+	errno = save_errno;
+
+    } else {
+
+	/*
+	** set things up to treat this as a normal tape if we ever
+	** come in here again
+	*/
+
+	res->nfds = 1;
+	r = table_alloc((void **)&res->fds,
+			sizeof(*res->fds),
+			res->nfds,
+			&fd_count,
+			1);
+	if (0 == r) {
+	    (void)tapefd_close(fd);
+	    memset(res, 0, sizeof(*res));
+	    errno = ENOMEM;
+	    fd = -1;
+	} else {
+	    res->fds[0] = fd;
+	}
     }
 
-    /* clean up our copied string */
-    free(dev);
+    if (fd >= 0 && res->nfds > 0) {
+	res->readres = (int *) malloc(res->nfds * sizeof(*res->readres));
+	if (0 == res->readres) {
+	    (void)rait_close(fd);
+	    errno = ENOMEM;
+	    fd = -1;
+	} else {
+	    memset(res->readres, 0, res->nfds * sizeof(*res->readres));
+	}
+    }
 
-    rait_debug(stderr,"rait_open:returning %d\n",
-    	RAIT_OFFSET + (res - rait_table));
+    rait_debug((stderr, "rait_open:returning %d%s%s\n",
+			fd,
+			(fd < 0) ? ": " : "",
+			(fd < 0) ? strerror(errno) : ""));
 
-    return RAIT_OFFSET + (res - rait_table);
+    return fd;
 }
 
-static char 
-    *fmt, 		/* component of sprintf format */
-    *strlist, 		/* pointer to list of substrings */
-    *str;		/* pointer to current substring */
-static char fmt_buf[255];/* sprintf format for generating paths */
-static char path[255];	/* individual path name */
-
 char *
-rait_init_namelist(char * dev) {
+rait_init_namelist(char * dev,
+		   char **dev_left,
+		   char **dev_right,
+		   char **dev_next) {
 
     dev = strdup(dev);
     if (0 == dev) { 
 	return 0;
     }
 
-
-    if ( 0 == strchr(dev, '{') || 0 == strchr(dev, '}') ) {
+    /*
+    ** find the first { and then the first } that follows it
+    */
+    if ( 0 == (*dev_next = strchr(dev, '{'))
+	 || 0 == (*dev_right = strchr(*dev_next + 1, '}')) ) {
 	/* we dont have a {} pair */
+	free(dev);
 	errno = EINVAL;
 	return 0;
     }
 
-    /* make a printf format of whats outside the curlys */
-
-    strlist = strrchr(dev, '{');
-    fmt = strrchr(dev,'}') + 1;
-
-    *strlist = 0;
-
-    strcpy(fmt_buf, dev);
-    strcat(fmt_buf, "%s");
-    if ( *fmt ) {
-	strcat(fmt_buf, fmt);
-    }
-    fmt = fmt_buf;
-
-    /* and find the start of the list of substititions */
-    str = strlist = strlist + 1;
+    *dev_left = dev;				/* before the { */
+    **dev_next = 0;				/* zap the { */
+    (*dev_next)++;
+    (*dev_right)++;				/* after the } */
     return dev;
 }
 
-char *
-rait_next_name() {
-    if (0 != (strlist = strchr(str, ',')) || 0 != (strlist = strchr(str, '}'))){
+int
+rait_next_name(char * dev_left,
+	       char * dev_right,
+	       char **dev_next,
+	       char * dev_real) {
+    char *next;
+    int ret = 0;
+
+    next = *dev_next;
+    if (0 != (*dev_next = strchr(next, ','))
+	|| 0 != (*dev_next = strchr(next, '}'))){
     
-	*strlist = 0;
-	strlist++;
+	**dev_next = 0;				/* zap the terminator */
+	(*dev_next)++;
 
 	/* 
-	** we have one string picked out, sprintf() it into the
-	** buffer and open it...
+	** we have one string picked out, build it into the buffer
 	*/
-	sprintf(path,fmt,str);
-        str = strlist;
-        return path;
-    } else {
-	return 0;
+	strcpy(dev_real, dev_left);		/* safe */
+	strcat(dev_real, next);			/* safe */
+	strcat(dev_real, dev_right);		/* safe */
+        ret = 1;
     }
+    return ret;
 }
 
 /*
@@ -206,19 +354,96 @@ rait_next_name() {
 int 
 rait_close(int fd) {
     int i;			/* index into RAIT drives */
+    int j;			/* individual tapefd_close result */
     int res;			/* result from close */
     RAIT *pr;			/* RAIT entry from table */
+    int save_errno = errno;
+    int kid;
 
-    if ( fd < RAIT_OFFSET ) {
-	return close(fd);
-    } else {
-	pr = rait_table + (fd - RAIT_OFFSET);
-        res = 0;
-	for( i = 0; i < pr->nfds; i++ ) {
-	    res |= close(pr->fds[i]);
-	}
-	pr->nopen = 0;
+    rait_debug((stderr,"rait_close( %d )\n", fd));
+
+    if (fd < 0 || fd >= rait_table_count) {
+	errno = EBADF;
+	rait_debug((stderr, "rait_close:returning %d: %s\n",
+			    -1,
+			    strerror(errno)));
+	return -1;
     }
+
+    pr = &rait_table[fd];
+    if (0 == pr->nopen) {
+	errno = EBADF;
+	rait_debug((stderr, "rait_close:returning %d: %s\n",
+			    -1,
+			    strerror(errno)));
+	return -1;
+    }
+
+    if (0 == pr->readres && 0 < pr->nfds) {
+	pr->readres = (int *) malloc(pr->nfds * sizeof(*pr->readres));
+	if (0 == pr->readres) {
+	    errno = ENOMEM;
+	    rait_debug((stderr, "rait_close:returning %d: %s\n",
+			        -1,
+			        strerror(errno)));
+	    return -1;
+	}
+	memset(pr->readres, 0, pr->nfds * sizeof(*pr->readres));
+    }
+
+    res = 0;
+    /* 
+    ** this looks strange, but we start kids who are going to close the
+    ** drives in parallel just after the parent has closed their copy of
+    ** the descriptor. ('cause closing tape devices usually causes slow
+    ** activities like filemark writes, etc.)
+    */
+    for( i = 0; i < pr->nfds; i++ ) {
+	if ((kid = fork()) == 0) {
+	    /* we are the child process */
+	    sleep(0);
+	    j = tapefd_close(pr->fds[i]);
+	    exit(j);
+        } else {
+	    /* remember who the child is or that an error happened */
+  	    pr->readres[i] = kid;
+        }
+    }
+    for( i = 0; i < pr->nfds; i++ ) {
+	j = tapefd_close(pr->fds[i]);
+	if ( j != 0 )
+           res = j;
+    }
+    for( i = 0; i < pr->nfds; i++ ) {
+        int stat;
+	waitpid( pr->readres[i], &stat, 0);
+	if( WEXITSTATUS(stat) != 0 ) {
+	    res = WEXITSTATUS(stat);
+	    if( res == 255 ) 
+		res = -1;
+        }
+    }
+    if (pr->nfds > 1) {
+	(void)close(fd);	/* close the dummy /dev/null descriptor */
+    }
+    if (0 != pr->fds) {
+	free(pr->fds);
+	pr->fds = 0;
+    }
+    if (0 != pr->readres) {
+	free(pr->readres);
+	pr->readres = 0;
+    }
+    if (0 != pr->xorbuf) {
+	free(pr->xorbuf);
+	pr->xorbuf = 0;
+    }
+    pr->nopen = 0;
+    errno = save_errno;
+    rait_debug((stderr, "rait_close:returning %d%s%s\n",
+			res,
+			(res < 0) ? ": " : "",
+			(res < 0) ? strerror(errno) : ""));
     return res;
 }
 
@@ -234,26 +459,45 @@ rait_lseek(int fd, long pos, int whence) {
     long res, 			/* result of lseeks */
 	 total;			/* total of results */
     RAIT *pr;			/* RAIT slot in table */
-    
-    if ( fd < RAIT_OFFSET ) {
-	return lseek(fd, pos, whence);
+
+    rait_debug((stderr, "rait_lseek(%d,%ld,%d)\n",fd,pos,whence));
+
+    if (fd < 0 || fd >= rait_table_count) {
+	errno = EBADF;
+	rait_debug((stderr, "rait_lseek:returning %d: %s\n",
+			    -1,
+			    strerror(errno)));
+	return -1;
+    }
+
+    pr = &rait_table[fd];
+    if (0 == pr->nopen) {
+	errno = EBADF;
+	rait_debug((stderr, "rait_lseek:returning %d: %s\n",
+			    -1,
+			    strerror(errno)));
+	return -1;
+    }
+
+    if (pr->nfds > 1 && (pos % (pr->nfds-1)) != 0) {
+	errno = EDOM;
+	total = -1;
     } else {
-	pr = rait_table + (fd - RAIT_OFFSET);
-	if ((pos % (pr->nfds-1)) != 0) {
-	    errno = EDOM;
-	    return -1;
-	}
 	total = 0;
 	pos = pos / pr->nfds;
 	for( i = 0; i < pr->nfds; i++ ) {
-	    res = lseek(pr->fds[i], pos, whence);
-	    total += res;
-	    if (res < 0) {
-		return res;
+	    if (0 >= (res = lseek(pr->fds[i], pos, whence))) {
+		total = res;
+		break;
 	    }
+	    total += res;
 	}
-	return total;
     }
+    rait_debug((stderr, "rait_lseek:returning %ld%s%s\n",
+			total,
+			(total < 0) ? ": " : "",
+			(total < 0) ? strerror(errno) : ""));
+    return total;
 }
 
 /**/
@@ -264,56 +508,109 @@ rait_lseek(int fd, long pos, int whence) {
 ** writes...
 */
 int 
-rait_write(int fd, const char *buf, int len) {
-    int i, j;		/* drive number, byte offset */
+rait_write(int fd, const void *bufptr, int len) {
+    const char *buf = bufptr;
+    int i = 0, j;	/* drive number, byte offset */
     RAIT *pr;		/* RAIT structure for this RAIT */
     int res, total = 0;
+    int data_fds;	/* number of data stream file descriptors */
 
-    if (fd < RAIT_OFFSET ) {
+    rait_debug((stderr, "rait_write(%d,%lx,%d)\n",fd,(unsigned long)buf,len));
 
-	return write(fd, buf, len);
+    if (fd < 0 || fd >= rait_table_count) {
+	errno = EBADF;
+	rait_debug((stderr, "rait_write:returning %d: %s\n",
+			    -1,
+			    strerror(errno)));
+	return -1;
+    }
 
-    } else {
+    pr = &rait_table[fd];
+    if (0 == pr->nopen) {
+	errno = EBADF;
+	rait_debug((stderr, "rait_write:returning %d: %s\n",
+			    -1,
+			    strerror(errno)));
+	return -1;
+    }
 
-	rait_debug(stderr, "rait_write(%d,%lx,%d)\n",fd,buf,len);
-	pr = rait_table + (fd - RAIT_OFFSET);
-
-	/* need to be able to slice it up evenly... */
-	if ((len % (pr->nfds - 1)) != 0) {
+    /* need to be able to slice it up evenly... */
+    if (pr->nfds > 1) {
+	data_fds = pr->nfds - 1;
+	if (0 != len % data_fds) {
 	    errno = EDOM;
+	    rait_debug((stderr, "rait_write:returning %d: %s\n",
+			        -1,
+			        strerror(errno)));
 	    return -1;
 	}
-
 	/* each slice gets an even portion */
-	len = len / (pr->nfds - 1);
+	len = len / data_fds;
 
-	/* but it has to fit in our buffer */
-	if (len > MAXBUFSIZE) {
-	    errno = EINVAL;
-	    return -1;
-        }
+	/* make sure we have enough buffer space */
+	if (len > pr->xorbuflen) {
+	    if (0 != pr->xorbuf) {
+		free(pr->xorbuf);
+	    }
+	    pr->xorbuf = malloc(len);
+	    if (0 == pr->xorbuf) {
+		errno = ENOMEM;
+	        rait_debug((stderr, "rait_write:returning %d: %s\n",
+			            -1,
+			            strerror(errno)));
+		return -1;
+	    }
+	    pr->xorbuflen = len;
+	}
 
 	/* compute the sum */
-	memset(pr->xorbuf, 0, len);
-	for( i = 0; i < (pr->nfds - 1); i++ ) {
+	memcpy(pr->xorbuf, buf, len);
+	for( i = 1; i < data_fds; i++ ) {
 	    for( j = 0; j < len; j++ ) {
 		pr->xorbuf[j] ^= buf[len * i + j];
 	    }
 	}
+    } else {
+	data_fds = pr->nfds;
+    }
 
-        /* write the chunks in the main buffer */
-	for( i = 0; i < (pr->nfds - 1); i++ ) {
-	    res = write(pr->fds[i], buf + len*i , len);
-	    rait_debug(stderr, "rait_write: write(%d,%lx,%d) returns %d\n",
-		    pr->fds[i], buf + len*i , len, res);
-	    if (res < 0) return res;
+    /* write the chunks in the main buffer */
+    if (total >= 0) {
+	for( i = 0; i < data_fds; i++ ) {
+	    res = tapefd_write(pr->fds[i], buf + len*i , len);
+	    rait_debug((stderr, "rait_write: write(%d,%lx,%d) returns %d%s%s\n",
+		        pr->fds[i],
+			(unsigned long)(buf + len*i),
+			len,
+			res,
+			(res < 0) ? ": " : "",
+			(res < 0) ? strerror(errno) : ""));
+	    if (res < 0) {
+		total = res;
+		break;
+	    }
 	    total += res;
 	}
-        /* write the sum, don't include it in the total bytes written */
-	res = write(pr->fds[i], pr->xorbuf, len);
-	if (res < 0) return res;
     }
-    rait_debug(stderr, "rait_write: returning %d\n", total);
+    if (total >= 0 && pr->nfds > 1) {
+        /* write the sum, don't include it in the total bytes written */
+	res = tapefd_write(pr->fds[i], pr->xorbuf, len);
+	rait_debug((stderr, "rait_write: write(%d,%lx,%d) returns %d%s%s\n",
+		    pr->fds[i],
+		    (unsigned long)pr->xorbuf,
+		    len,
+		    res,
+		    (res < 0) ? ": " : "",
+		    (res < 0) ? strerror(errno) : ""));
+	if (res < 0) {
+	    total = res;
+	}
+    }
+
+    rait_debug((stderr, "rait_write:returning %d%s%s\n",
+			total,
+			(total < 0) ? ": " : "",
+			(total < 0) ? strerror(errno) : ""));
 
     return total;
 }
@@ -330,139 +627,243 @@ rait_write(int fd, const char *buf, int len) {
 ** garble the data...
 */
 int 
-rait_read(int fd, char *buf, int len) {
+rait_read(int fd, void *bufptr, int len) {
+    char *buf = bufptr;
     int nerrors, 
         neofs, 
         total, 
         errorblock;
-    int readres[MAXRAIT];
-    int i,j,res;
+    int i,j;
     RAIT *pr;
+    int data_fds;
+    int save_errno = errno;
+    int maxreadres = 0;
 
-    if (fd < RAIT_OFFSET ) {
-	return read(fd, buf, len);
-    } else {
-	rait_debug(stderr, "rait_read(%d,%lx,%d)\n",fd,buf,len);
-	pr = rait_table + (fd - RAIT_OFFSET);
+    rait_debug((stderr, "rait_read(%d,%lx,%d)\n",fd,(unsigned long)buf,len));
 
-	nerrors = 0;
-        neofs = 0;
-	total = 0;
-	/* once again , we slice it evenly... */
-	if ((len % (pr->nfds - 1)) != 0) {
+    if (fd < 0 || fd >= rait_table_count) {
+	errno = EBADF;
+	rait_debug((stderr, "rait_read:returning %d: %s\n",
+			    -1,
+			    strerror(errno)));
+	return -1;
+    }
+
+    pr = &rait_table[fd];
+    if (0 == pr->nopen) {
+	errno = EBADF;
+	rait_debug((stderr, "rait_read:returning %d: %s\n",
+			    -1,
+			    strerror(errno)));
+	return -1;
+    }
+
+    nerrors = 0;
+    neofs = 0;
+    total = 0;
+    errorblock = -1;
+    /* once again , we slice it evenly... */
+    if (pr->nfds > 1) {
+	data_fds = pr->nfds - 1;
+	if (0 != len % data_fds) {
 	    errno = EDOM;
+	    rait_debug((stderr, "rait_read:returning %d: %s\n",
+			        -1,
+			        strerror(errno)));
 	    return -1;
 	}
-	len = len / (pr->nfds - 1);
-
-	/* try all the reads, save the result codes */
-	/* count the eof/errors */
-	for( i = 0; i < (pr->nfds - 1); i++ ) {
-	    readres[i] = read(pr->fds[i], buf + len*i , len);
-	    rait_debug(stderr, "rait_read: read on fd %d returns %d",fd,readres[i]);
-	    if ( readres[i] <= 0 ) {
-		nerrors++;
-		errorblock = i;
-	    }
-            if ( readres[i] == 0 ) {
-		neofs++;
-            }
-	}
-	readres[i] = read(pr->fds[i], pr->xorbuf , len);
-
-	/* don't count this as an error read if none of the
-           data blocks failed ... */
-
-	if ( nerrors > 0 && readres[i] <= 0 ) {
-	    nerrors++;
-	    errorblock = i;
-	}
-
-	if ( readres[i] == 0 ) {
-	    neofs++;
-	}
-
-	/* 
-	** now decide what "really" happened --
-	** all n getting eof is a "real" eof
-	** just one getting an error/eof is recoverable
-	** anything else fails
-	*/
-
-	if (neofs == pr->nfds) {
-	    return 0;
-        }
-	if (nerrors > 1 ) {
-	     return -1;
-	}
-
-	/*
-        ** so now if we failed on a data block, we need to do a recovery
-        ** if we failed on the xor block -- who cares?
-	*/
-	if (nerrors == 1 && errorblock != (pr->nfds - 1)) {
-
-	    /* the reads were all *supposed* to be the same size, so... */
-	    if (0 == errorblock ) {
-		readres[0] = readres[1];
-	    } else {
-		readres[errorblock] = readres[0];
-	    }
-
-	    /* fill it in first with the xor sum */
-	    for( j = 0; j < len ; j++ ) {
-		buf[j + len * errorblock] = pr->xorbuf[j];
-            }
-
-	    /* xor back out the other blocks */
-	    for( i = 0; i < (pr->nfds - 1); i++ ) {
-		if( i != errorblock ) {
-		    for( j = 0; j < len ; j++ ) {
-			    buf[j + len * errorblock] ^= buf[j + len * i];
-		    }
-		}
-	    }
-	    /* there, now the block is back as if it never failed... */
-	}
-
-	/* pack together partial reads... */
-	total = readres[0];
-	for( i = 1; i < (pr->nfds - 1); i++ ) {
-	    if (total != len * i) {
-		for( j = 0; j < readres[i]; j++ ) {
-		    (buf+total)[j] = (buf + len*i)[j];
-		}
-            }
-	    total += readres[i];
-	}
-	rait_debug(stderr, "rait_read: returning %d",total);
-	return total;
+	len = len / data_fds;
+    } else {
+	data_fds = 1;
     }
+
+    /* try all the reads, save the result codes */
+    /* count the eof/errors */
+    for( i = 0; i < data_fds; i++ ) {
+	pr->readres[i] = tapefd_read(pr->fds[i], buf + len*i , len);
+	rait_debug((stderr, "rait_read: read on fd %d returns %d%s%s\n",
+		    pr->fds[i],
+		    pr->readres[i],
+		    (pr->readres[i] < 0) ? ": " : "",
+		    (pr->readres[i] < 0) ? strerror(errno) : ""));
+	if ( pr->readres[i] <= 0 ) {
+	    if ( pr->readres[i] == 0 ) {
+		neofs++;
+	    } else {
+	        if (0 == nerrors) {
+		    save_errno = errno;
+	        }
+	        nerrors++;
+	    }
+	    errorblock = i;
+	} else if (pr->readres[i] > maxreadres) {
+	    maxreadres = pr->readres[i];
+	}
+    }
+    if (pr->nfds > 1) {
+	/* make sure we have enough buffer space */
+	if (len > pr->xorbuflen) {
+	    if (0 != pr->xorbuf) {
+		free(pr->xorbuf);
+	    }
+	    pr->xorbuf = malloc(len);
+	    if (0 == pr->xorbuf) {
+		errno = ENOMEM;
+	        rait_debug((stderr, "rait_write:returning %d: %s\n",
+			            -1,
+			            strerror(errno)));
+		return -1;
+	    }
+	    pr->xorbuflen = len;
+	}
+	pr->readres[i] = tapefd_read(pr->fds[i], pr->xorbuf , len);
+	rait_debug((stderr, "rait_read: read on fd %d returns %d%s%s\n",
+		    pr->fds[i],
+		    pr->readres[i],
+		    (pr->readres[i] < 0) ? ": " : "",
+		    (pr->readres[i] < 0) ? strerror(errno) : ""));
+    }
+
+    /*
+     * Make sure all the reads were the same length or EOF.
+     */
+    for (j = 0; j < pr->nfds; j++) {
+	if (pr->readres[j] > 0 && pr->readres[j] != maxreadres) {
+	    nerrors++;
+	    errorblock = j;
+	}
+    }
+
+    /* don't count this as an error read if none of the
+       data blocks failed ... */
+
+    if ( nerrors == 0 && pr->nfds > 1 && pr->readres[i] <= 0 ) {
+	if ( pr->readres[i] == 0 ) {
+	    neofs++;
+	} else {
+	    if (0 == nerrors) {
+	        save_errno = errno;
+	    }
+	    nerrors++;
+	}
+	errorblock = i;
+    }
+
+    /* 
+    ** now decide what "really" happened --
+    ** all n getting eof is a "real" eof
+    ** just one getting an error/eof is recoverable if we are doing RAIT
+    ** anything else fails
+    */
+
+    if (neofs == pr->nfds) {
+	rait_debug((stderr, "rait_read:returning 0\n"));
+	return 0;
+    }
+
+    if (neofs > 1) {
+	errno = EIO;
+	rait_debug((stderr, "rait_read:returning %d: %s\n",
+			    -1,
+			    strerror(errno)));
+	return -1;
+    } else if (neofs == 1) {
+	nerrors++;
+    }
+
+    if (nerrors > 1 || (pr->nfds <= 1 && nerrors > 0)) {
+	errno = save_errno;
+	rait_debug((stderr, "rait_read:returning %d: %s\n",
+			    -1,
+			    strerror(errno)));
+	return -1;
+    }
+
+    /*
+    ** so now if we failed on a data block, we need to do a recovery
+    ** if we failed on the xor block -- who cares?
+    */
+    if (nerrors == 1 && pr->nfds > 1 && errorblock != i) {
+
+	rait_debug((stderr, "rait_read: fixing data from fd %d\n",
+			    pr->fds[errorblock]));
+
+	/* the reads were all *supposed* to be the same size, so... */
+	pr->readres[errorblock] = maxreadres;
+
+	/* fill it in first with the xor sum */
+	memcpy(buf + len * errorblock, pr->xorbuf, len);
+
+	/* xor back out the other blocks */
+	for( i = 0; i < data_fds; i++ ) {
+	    if( i != errorblock ) {
+		for( j = 0; j < len ; j++ ) {
+		    buf[j + len * errorblock] ^= buf[j + len * i];
+		}
+	    }
+	}
+	/* there, now the block is back as if it never failed... */
+    }
+
+    /* pack together partial reads... */
+    total = pr->readres[0];
+    for( i = 1; i < data_fds; i++ ) {
+	if (total != len * i) {
+	    memmove(buf + total, buf + len*i, pr->readres[i]);
+        }
+	total += pr->readres[i];
+    }
+
+    rait_debug((stderr, "rait_read:returning %d%s%s\n",
+			total,
+			(total < 0) ? ": " : "",
+			(total < 0) ? strerror(errno) : ""));
+
+    return total;
 }
 
 /**/
 
 int rait_ioctl(int fd, int op, void *p) {
-    int i, res;
+    int i, res = 0;
     RAIT *pr;
     int errors = 0;
 
-    if (fd < RAIT_OFFSET) {
-	return ioctl(fd, op, p);
-    } else {
-	pr = rait_table + (fd - RAIT_OFFSET);
-	for( i = 0; i < pr->nfds ; i++ ) {
-	    res = ioctl(pr->fds[i], op, p);
-	    if ( res != 0 ) { 
-		 errors++;
-		 if (errors > 1) {
-		    return res;
-		 } else {
-                    res = 0;
-                 }
+    rait_debug((stderr, "rait_ioctl(%d,%d)\n",fd,op));
+
+    if (fd < 0 || fd >= rait_table_count) {
+	errno = EBADF;
+	rait_debug((stderr, "rait_ioctl:returning %d: %s\n",
+			    -1,
+			    strerror(errno)));
+	return -1;
+    }
+
+    pr = &rait_table[fd];
+    if (0 == pr->nopen) {
+	errno = EBADF;
+	rait_debug((stderr, "rait_ioctl:returning %d: %s\n",
+			    -1,
+			    strerror(errno)));
+	return -1;
+    }
+
+    for( i = 0; i < pr->nfds ; i++ ) {
+	res = ioctl(pr->fds[i], op, p);
+	if ( res != 0 ) { 
+	    errors++;
+	    if (errors > 1) {
+		break;
 	    }
+	    res = 0;
 	}
     }
+
+    rait_debug((stderr, "rait_ioctl: returning %d%s%s\n",
+			res,
+			(res < 0) ? ": " : "",
+			(res < 0) ? strerror(errno) : ""));
+
     return res;
 }
 
@@ -470,92 +871,160 @@ int rait_ioctl(int fd, int op, void *p) {
 ** access() all the devices, returning if any fail
 */
 int rait_access(char *devname, int flags) {
-    char *path;
-    int res;
-    char *p;			/* temp char pointer */
-    RAIT *pr;
+    int res = 0;
+    char *dev_left;		/* string before { */
+    char *dev_right;		/* string after } */
+    char *dev_next;		/* string inside {} */
+    char *dev_real;		/* parsed device name */
+    int save_errno = errno;
 
-    if (0 == (p = strchr(devname, '{'))) {
-        return access(devname, flags);
-    } else {
-	devname = rait_init_namelist(devname);
-	if ( 0 == devname ) { 
-	   free(devname);
-	   return -1;
-	}
-	while( path = rait_next_name() ) {
-	   res = access(path, flags);
-	    rait_debug(stderr,"rait_access:access( %s, %d ) yeilds %d\n",
-			path, flags, res );
-	   if (res < 0) { 
-	        free(devname);
-		return res;
-           }
-        }
-        free(devname);
-	return 0;
+    if (0 == strchr(devname, '{')) {
+        return tape_access(devname, flags);
     }
+
+    devname = rait_init_namelist(devname, &dev_left, &dev_right, &dev_next);
+    if ( 0 == devname ) { 
+	rait_debug((stderr, "rait_access:returning %d: %s\n",
+			    -1,
+			    strerror(errno)));
+	return -1;
+    }
+
+    /*
+    ** because the names we generate are subsets of the input name,
+    ** the following guarantees we have enough working space
+    */
+    dev_real = malloc(strlen(devname));
+    if (0 == dev_real) {
+	free(devname);
+	errno = ENOMEM;
+	rait_debug((stderr, "rait_access:returning %d: %s\n",
+			    -1,
+			    strerror(errno)));
+	return -1;
+    }
+
+    while(rait_next_name(dev_left, dev_right, &dev_next, dev_real)) {
+	res = tape_access(dev_real, flags);
+	rait_debug((stderr,"rait_access:access( %s, %d ) yields %d\n",
+		dev_real, flags, res ));
+	if (res < 0) { 
+	    break;
+        }
+    }
+    save_errno = errno;
+    free(devname);
+    free(dev_real);
+    errno = save_errno;
+
+    rait_debug((stderr, "rait_access: returning %d%s%s\n",
+			res,
+			(res < 0) ? ": " : "",
+			(res < 0) ? strerror(errno) : ""));
+
+    return res;
 }
 
 /*
 ** stat all the devices, returning the last one unless one fails
 */
 int rait_stat(char *devname, struct stat *buf) {
-    char *path;
-    int res;
-    char *p;			/* temp char pointer */
-    RAIT *pr;
+    int res = 0;
+    char *dev_left;		/* string before { */
+    char *dev_right;		/* string after } */
+    char *dev_next;		/* string inside {} */
+    char *dev_real;		/* parsed device name */
+    int save_errno;
 
-    if (0 == (p = strchr(devname, '{'))) {
-        return stat(devname, buf);
-    } else {
-	devname = rait_init_namelist(devname);
-	if ( 0 == devname ) { 
-	   free(devname);
-	   return -1;
-	}
-	while( path = rait_next_name() ) {
-	   res = stat(path, buf);
-	   rait_debug(stderr,"rait_stat:stat( %s, %lx ) yeilds %d\n",
-			path, buf, res );
-	   if (res < 0) { 
-	        free(devname);
-		return res;
-           }
-        }
-        free(devname);
-	return 0;
+    if (0 == strchr(devname, '{')) {
+        return tape_stat(devname, buf);
     }
+
+    devname = rait_init_namelist(devname, &dev_left, &dev_right, &dev_next);
+    if ( 0 == devname ) { 
+	rait_debug((stderr, "rait_stat:returning %d: %s\n",
+			    -1,
+			    strerror(errno)));
+	return -1;
+    }
+
+    /*
+    ** because the names we generate are subsets of the input name,
+    ** the following guarantees we have enough working space
+    */
+    dev_real = malloc(strlen(devname));
+    if (0 == dev_real) {
+	free(devname);
+	errno = ENOMEM;
+	rait_debug((stderr, "rait_stat:returning %d: %s\n",
+			    -1,
+			    strerror(errno)));
+	return -1;
+    }
+
+    while(rait_next_name(dev_left, dev_right, &dev_next, dev_real)) {
+	res = tape_stat(dev_real, buf);
+	rait_debug((stderr,"rait_stat:stat( %s ) yields %d\n",
+		dev_real, res ));
+	if (res < 0) { 
+	    break;
+        }
+    }
+    save_errno = errno;
+    free(devname);
+    free(dev_real);
+    errno = save_errno;
+
+    rait_debug((stderr, "rait_access: returning %d%s%s\n",
+			res,
+			(res < 0) ? ": " : "",
+			(res < 0) ? strerror(errno) : ""));
+
+    return res;
 }
 
 /**/
 
-rait_copy(char *f1, char *f2) {
+int rait_copy(char *f1, char *f2, int buflen) {
     int t1, t2;
     int len, wres;
-    static char buf[MAXBUFSIZE*MAXRAIT];
-    int i;
+    char *buf;
+    int save_errno;
 
     t1 = rait_open(f1,O_RDONLY,0644);
+    if (t1 < 0) {
+	return t1;
+    }
     t2 = rait_open(f2,O_CREAT|O_RDWR,0644);
-    if (t1 == 0 || t2 == 0) {
+    if (t2 < 0) {
+	save_errno = errno;
+	(void)rait_close(t1);
+	errno = save_errno;
+	return -1;
+    }
+    buf = malloc(buflen);
+    if (0 == buf) {
+	(void)rait_close(t1);
+	(void)rait_close(t2);
+	errno = ENOMEM;
 	return -1;
     }
     do {
-	len = rait_read(t1,buf,21);
+	len = rait_read(t1,buf,buflen);
 	if (len > 0 ) {
 	    wres = rait_write(t2, buf, len);
 	    if (wres < 0) {
-		return wres;
+		len = -1;
+		break;
 	    }
 	}
     } while( len > 0 );
-    if (len < 0) {
-	return len;
-    }
-    rait_close(t1);
-    rait_close(t2);
-    return 0;
+    save_errno = errno;
+    free(buf);
+    (void)rait_close(t1);
+    (void)rait_close(t2);
+    errno = save_errno;
+    return (len < 0) ? -1 : 0;
 }
 
 /**/
@@ -565,32 +1034,149 @@ rait_copy(char *f1, char *f2) {
 ** Amanda Tape API routines:
 */
 
-int rait_tapefd_fsf(int rait_tapefd, int count) {
-    return tapefd_fsf_ioctl(rait_tapefd, count, &rait_ioctl);
+static int rait_tapefd_ioctl(int (*func0)(int),
+			     int (*func1)(int, int),
+			     int fd,
+			     int count) {
+    int i, res = 0;
+    RAIT *pr;
+    int errors = 0;
+    int kid;
+    int stat;
+
+    rait_debug((stderr, "rait_tapefd_ioctl(%d,%d)\n",fd,count));
+
+    if (fd < 0 || fd >= rait_table_count) {
+	errno = EBADF;
+	rait_debug((stderr, "rait_tapefd_ioctl:returning %d: %s\n",
+			    -1,
+			    strerror(errno)));
+	return -1;
+    }
+
+    pr = &rait_table[fd];
+    if (0 == pr->nopen) {
+	errno = EBADF;
+	rait_debug((stderr, "rait_tapefd_ioctl:returning %d: %s\n",
+			    -1,
+			    strerror(errno)));
+	return -1;
+    }
+
+    if (0 == pr->readres && 0 < pr->nfds) {
+	pr->readres = (int *) malloc(pr->nfds * sizeof(*pr->readres));
+	if (0 == pr->readres) {
+	    errno = ENOMEM;
+	    rait_debug((stderr, "rait_tapefd_ioctl:returning %d: %s\n",
+			        -1,
+			        strerror(errno)));
+	    return -1;
+	}
+	memset(pr->readres, 0, pr->nfds * sizeof(*pr->readres));
+    }
+
+    for( i = 0; i < pr->nfds ; i++ ) {
+        if ((kid = fork()) < 1) {
+	    rait_debug((stderr, "in kid, fork returned %d\n", kid));
+	    /* if we are the kid, or fork failed do the action */
+	    if (0 != func0) {
+		res = (*func0)(pr->fds[i]);
+	    } else {
+		res = (*func1)(pr->fds[i], count);
+	    }
+	    rait_debug((stderr, "in kid, func ( %d ) returned %d errno %d\n", pr->fds[i], res, errno));
+	    if (kid == 0)
+	        exit(res);
+        } else {
+	    rait_debug((stderr, "in parent, fork returned %d\n", kid));
+	    pr->readres[i] = kid;
+        }
+    }
+    for( i = 0; i < pr->nfds ; i++ ) {
+        rait_debug((stderr, "in parent, waiting for %d\n", pr->readres[i]));
+	waitpid( pr->readres[i], &stat, 0);
+	if( WEXITSTATUS(stat) != 0 ) {
+	    res = WEXITSTATUS(stat);
+	    if( res == 255 ) 
+		res = -1;
+        }
+        rait_debug((stderr, "in parent, return code was %d\n", res));
+	if ( res != 0 ) { 
+	    errors++;
+	    res = 0;
+	}
+    }
+    if (errors > 0) {
+	res = -1;
+    }
+
+    rait_debug((stderr, "rait_tapefd_ioctl: returning %d%s%s\n",
+			res,
+			(res < 0) ? ": " : "",
+			(res < 0) ? strerror(errno) : ""));
+
+    return res;
 }
 
-int rait_tapefd_rewind(int rait_tapefd) {
-    return tapefd_rewind_ioctl(rait_tapefd, &rait_ioctl);
+int rait_tapefd_fsf(int fd, int count) {
+    return rait_tapefd_ioctl(0, tapefd_fsf, fd, count);
 }
 
-void rait_tapefd_resetofs(int rait_tapefd) {
-    rait_lseek(rait_tapefd,  0L, SEEK_SET);
+int rait_tapefd_rewind(int fd) {
+    return rait_tapefd_ioctl(tapefd_rewind, 0, fd, -1);
 }
 
-int rait_tapefd_unload(int rait_tapefd) {
-    return tapefd_unload_ioctl(rait_tapefd, &rait_ioctl);
+int rait_tapefd_unload(int fd) {
+    return rait_tapefd_ioctl(tapefd_unload, 0, fd, -1);
 }
 
-int rait_tapefd_status(int rait_tapefd) {
-    return tapefd_status_ioctl(rait_tapefd, &rait_ioctl);
-}
-
-int rait_tapefd_weof(int rait_tapefd, int count) {
-    return tapefd_weof(rait_tapefd, count, &rait_ioctl);
+int rait_tapefd_weof(int fd, int count) {
+    return rait_tapefd_ioctl(0, tapefd_weof, fd, count);
 }
 
 int rait_tape_open(char *name,  int mode) {
     return rait_open(name, mode, 0644);
+}
+
+int rait_tapefd_status(int fd, struct am_mt_status *stat) {
+    int i;
+    RAIT *pr;
+    int res = 0;
+    int errors = 0;
+
+    rait_debug((stderr, "rait_tapefd_status(%d)\n",fd));
+
+    if (fd < 0 || fd >= rait_table_count) {
+	errno = EBADF;
+	rait_debug((stderr, "rait_tapefd_status:returning %d: %s\n",
+			    -1,
+			    strerror(errno)));
+	return -1;
+    }
+
+    pr = &rait_table[fd];
+    if (0 == pr->nopen) {
+	errno = EBADF;
+	rait_debug((stderr, "rait_tapefd_status:returning %d: %s\n",
+			    -1,
+			    strerror(errno)));
+	return -1;
+    }
+
+    for( i = 0; i < pr->nfds ; i++ ) {
+	res = tapefd_status(pr->fds[i], stat);
+	if(res != 0) {
+	    errors++;
+	}
+    }
+    if (errors > 0) {
+	res = -1;
+    }
+    return res;
+}
+
+void rait_tapefd_resetofs(int fd) {
+    rait_lseek(fd,  0L, SEEK_SET);
 }
 
 #endif

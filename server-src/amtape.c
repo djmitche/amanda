@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.22.2.6 1999/09/08 23:27:42 jrj Exp $
+ * $Id: amtape.c,v 1.22.2.6.2.1 2001/01/24 22:12:17 jrjackson Exp $
  *
  * tape changer interface program
  */
@@ -313,7 +313,8 @@ char *device;
     else {
 	fprintf(stderr, "%s: slot %s: date %-8s label %s",
 		get_pname(), slotstr, datestamp, label);
-	if(strcmp(label, searchlabel))
+	if(strcmp(label, FAKE_LABEL) != 0
+	   && strcmp(label, searchlabel) != 0)
 	    fprintf(stderr, " (wrong tape)\n");
 	else {
 	    fprintf(stderr, " (exact label match)\n");
@@ -479,7 +480,9 @@ char *device;
 	    /* got an amanda tape */
 	    fprintf(stderr, "%s: slot %s: date %-8s label %s",
 		    get_pname(), slotstr, datestamp, label);
-	    if(searchlabel != NULL && strcmp(label, searchlabel) == 0) {
+	    if(searchlabel != NULL
+	       && (strcmp(label, FAKE_LABEL) == 0
+		   || strcmp(label, searchlabel) == 0)) {
 		/* it's the one we are looking for, stop here */
 		fprintf(stderr, " (exact label match)\n");
 		found = 1;

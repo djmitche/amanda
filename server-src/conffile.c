@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.15 2000/12/04 22:33:56 jrjackson Exp $
+ * $Id: conffile.c,v 1.54.2.15.2.1 2001/01/24 22:12:17 jrjackson Exp $
  *
  * read configuration file
  */
@@ -192,17 +192,39 @@ static dumptype_t dpcur;
 
 static interface_t ifcur;
 
-static int seen_org, seen_mailto, seen_dumpuser;
+static int seen_org;
+static int seen_mailto;
+static int seen_dumpuser;
 static int seen_rawtapedev;
 static int seen_printer;
-static int seen_tapedev, seen_tpchanger, seen_chngrdev, seen_chngrfile;
-static int seen_labelstr, seen_runtapes, seen_maxdumps;
-static int seen_tapelist, seen_infofile, seen_diskfile, seen_diskdir;
-static int seen_logdir, seen_bumpsize, seen_bumpmult, seen_bumpdays;
-static int seen_tapetype, seen_dumpcycle, seen_runspercycle;
-static int seen_maxcycle, seen_tapecycle;
-static int seen_disksize, seen_netusage, seen_inparallel, seen_timeout;
-static int seen_indexdir, seen_etimeout, seen_dtimeout, seen_ctimeout;
+static int seen_tapedev;
+static int seen_tpchanger;
+static int seen_chngrdev;
+static int seen_chngrfile;
+static int seen_labelstr;
+static int seen_runtapes;
+static int seen_maxdumps;
+static int seen_tapelist;
+static int seen_infofile;
+static int seen_diskfile;
+static int seen_diskdir;
+static int seen_logdir;
+static int seen_bumpsize;
+static int seen_bumpmult;
+static int seen_bumpdays;
+static int seen_tapetype;
+static int seen_dumpcycle;
+static int seen_runspercycle;
+static int seen_maxcycle;
+static int seen_tapecycle;
+static int seen_disksize;
+static int seen_netusage;
+static int seen_inparallel;
+static int seen_timeout;
+static int seen_indexdir;
+static int seen_etimeout;
+static int seen_dtimeout;
+static int seen_ctimeout;
 static int seen_tapebufs;
 static int seen_reserve;
 static int seen_columnspec;
@@ -634,18 +656,40 @@ static void init_defaults()
 
     /* defaults for internal variables */
 
-    seen_org = seen_mailto = seen_dumpuser = seen_tapedev = 0;
+    seen_org = 0;
+    seen_mailto = 0;
+    seen_dumpuser = 0;
+    seen_tapedev = 0;
     seen_rawtapedev = 0;
     seen_printer = 0;
     conf_printer.s = "";
-    seen_tpchanger = seen_chngrdev = seen_chngrfile = 0;
-    seen_labelstr = seen_runtapes = seen_maxdumps = 0;
-    seen_tapelist = seen_infofile = seen_diskfile = seen_diskdir = 0;
-    seen_logdir = seen_bumpsize = seen_bumpmult = seen_bumpdays = 0;
-    seen_tapetype = seen_dumpcycle = seen_runspercycle = 0;
-    seen_maxcycle = seen_tapecycle = 0;
-    seen_disksize = seen_netusage = seen_inparallel = seen_timeout = 0;
-    seen_indexdir = seen_etimeout = seen_dtimeout = seen_ctimeout = 0;
+    seen_tpchanger = 0;
+    seen_chngrdev = 0;
+    seen_chngrfile = 0;
+    seen_labelstr = 0;
+    seen_runtapes = 0;
+    seen_maxdumps = 0;
+    seen_tapelist = 0;
+    seen_infofile = 0;
+    seen_diskfile = 0;
+    seen_diskdir = 0;
+    seen_logdir = 0;
+    seen_bumpsize = 0;
+    seen_bumpmult = 0;
+    seen_bumpdays = 0;
+    seen_tapetype = 0;
+    seen_dumpcycle = 0;
+    seen_runspercycle = 0;
+    seen_maxcycle = 0;
+    seen_tapecycle = 0;
+    seen_disksize = 0;
+    seen_netusage = 0;
+    seen_inparallel = 0;
+    seen_timeout = 0;
+    seen_indexdir = 0;
+    seen_etimeout = 0;
+    seen_dtimeout = 0;
+    seen_ctimeout = 0;
     seen_tapebufs = 0;
     seen_reserve = 0;
     seen_columnspec = 0;
