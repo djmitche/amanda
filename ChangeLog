@@ -1,3 +1,7 @@
+2001-02-27 John R. Jackson <jrj@purdue.edu>
+
+	* configure.in: Copy ssize_t type check code from main branch.
+
 2001-02-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* docs/SYSTEM.NOTES: change cs.umd.edu by amanda.org.

@@ -1505,6 +1505,22 @@ AMANDA_C_UNSIGNED_LONG_CONSTANTS
 AC_TYPE_OFF_T
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
+
+dnl We don't have an acconfig.h template since we moved all define templates
+dnl into the third argument of AC_DEFINE.  However, AC_CHECK_TYPE calls
+dnl AC_DEFINE without such an argument, so autoheader complains about no
+dnl template being available.  This is an ugly work-around.
+
+pushdef([AC_DEFINE_SAVED],defn([AC_DEFINE]))
+pushdef([AC_DEFINE],[AC_DEFINE_SAVED([$1],[$2],[Define to $2 if $1 is not defined])])
+
+AC_CHECK_TYPE(ssize_t, int)
+
+popdef([AC_DEFINE])
+popdef([AC_DEFINE_SAVED])
+
+dnl End ugly AC_CHECK_TYPE work-around.
+
 AC_TYPE_UID_T
 AC_TYPE_SIGNAL
 AC_STRUCT_TM
