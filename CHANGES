@@ -22,6 +22,9 @@
 
 Version 2.4.0
 
+	fix NO-ROOM handling when Kerberos encryption is enabled.
+	-oliva & Eric Siegerman <erics@now.com>
+
 	patch file for automake 1.2d provided. -oliva
 
 	sendbackup.debug now contains the argument list of child
