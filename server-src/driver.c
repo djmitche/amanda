@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.26.2.2 1998/02/13 04:59:18 amcore Exp $
+ * $Id: driver.c,v 1.26.2.3 1998/02/14 23:21:40 amcore Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -333,7 +333,8 @@ fflush(stdout);
 				  hdp->diskdir, "/", datestamp,
 				  NULL);
 	    if(rmdir(newdir) != 0)
-		log(L_WARNING,"Could not rmdir%s: %s", newdir,strerror(errno));
+		log(L_WARNING, "Could not rmdir %s: %s",
+		    newdir, strerror(errno));
 	}
     }
     afree(newdir);
