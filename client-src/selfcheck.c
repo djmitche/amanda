@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.40.2.3.4.4.2.1 2001/12/18 21:59:11 martinea Exp $
+ * $Id: selfcheck.c,v 1.40.2.3.4.4.2.2 2001/12/29 21:41:29 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -291,7 +291,7 @@ int level;
     char *err = NULL;
     char *user_and_password = NULL, *domain = NULL;
     char *share = NULL, *subdir = NULL;
-    int lpass;
+    int lpass = 0;
     int amode;
     int access_result;
     char *access_type;

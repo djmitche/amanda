@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.22.2.7 2001/09/17 22:18:08 jrjackson Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.6.2.22.2.7.2.1 2001/12/29 21:41:28 martinea Exp $";
 #endif
 /*
  * 
@@ -1006,7 +1006,6 @@ int main(int argc, char *argv[])
 {
   int loaded,target,oldtarget;
   command com;   /* a little DOS joke */
-  char *volstr;
   int x;
 
   MBC_T *pbarcoderes = malloc(sizeof(MBC_T));
@@ -1026,17 +1025,8 @@ int main(int argc, char *argv[])
   char *time_file=NULL;
 
   /*
-   * For the label read fucntion
-   */
-  char *datestamp = NULL;
-  char *label = NULL;
-  char *result;
-
-  /*
    * For the emubarcode stuff
    */
-  int slot, from;
-
   int use_slots;
   int slot_offset;
   int confnum;
@@ -1044,7 +1034,7 @@ int main(int argc, char *argv[])
   int fd, slotcnt, drivecnt;
   int endstatus = 0;
 
-  char *changer_dev;
+  char *changer_dev    = NULL;
   char *tape_device    = NULL;
   char *chg_scsi_conf  = NULL;          /* The config file for us */
   char *slot_file      = NULL;          /* Where we will place the info which
@@ -1052,7 +1042,7 @@ int main(int argc, char *argv[])
                                          */
   char *scsitapedevice = NULL;
 
-  int param_index;
+  int param_index = 0;
 
   memset(pbarcoderes, 0 , sizeof(MBC_T));
   chg.number_of_configs = 0;

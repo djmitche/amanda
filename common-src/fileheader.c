@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.11.4.1.4.1 2001/07/31 22:38:39 jrjackson Exp $
+ * $Id: fileheader.c,v 1.11.4.1.4.1.2.1 2001/12/29 21:41:30 martinea Exp $
  *
  */
 
@@ -377,7 +377,7 @@ long blocksize;
 			"To restore, position tape at start of file and run:\n",
 			buflen-strlen(buffer));
 		      ap_snprintf(number, sizeof(number),
-				  "%d", blocksize / 1024);
+				  "%ld", blocksize / 1024);
 		      line = newvstralloc(line, "\t",
 				       "dd",
 				       " if=<tape>",

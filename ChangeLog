@@ -1,5 +1,14 @@
 2001-12-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* restore-src/amrestore.c: Fix compiler warning.
+	* changer-src/chg-scsi.c: Ditto.
+	* common-src/fileheader.c: Ditto.
+	* changer-src/scsi-changer-driver.c: Ditto.
+	* changer-src/scsi-defs.h: Ditto.
+	* client-src/selfcheck.c: Ditto.
+
+2001-12-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* configure.in: Set MAX_TAPE_BLOCK_KB on linux.
 
 2001-12-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
