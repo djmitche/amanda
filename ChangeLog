@@ -1,3 +1,23 @@
+2001-03-14 John R. Jackson <jrj@purdue.edu>
+
+	* client-src/selfcheck.c: Send smbclient via pipe instead of command
+	  line arg.  Various minor cleanups.  Use pipespawn instead of system()
+	  to clean up quoting problems and be consistent with sendsize and
+	  sendbackup.
+	* client-src/sendbackup-dump.c: Send smbclient via pipe instead of
+	  line arg.  Various minor cleanups.
+	* client-src/sendbackup-gnutar.c: Send smbclient via pipe instead of
+	  line arg.  Various minor cleanups.  Clean up listed incremental file
+	  handling.
+	* client-src/sendbackup.c: Various minor cleanups.
+	* client-src/sendsize.c: Send smbclient via pipe instead of command
+	  line arg.  Various minor cleanups.  Clean up listed incremental file
+	  handling.
+	* docs/SAMBA: Update and cleanup.
+	* common-src/pipespawn.c: Import from 2.4.2 branch.
+	* common-src/pipespawn.h: Import from 2.4.2 branch.
+	* common-src/Makefile.am: Add pipespawn.[ch] references.
+
 2001-03-13 John R. Jackson <jrj@purdue.edu>
 
 	* recover-src/extract_list.c (extract_files_child): Fix xfsrestore

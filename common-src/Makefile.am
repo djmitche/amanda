@@ -19,7 +19,7 @@ libamanda_la_SOURCES = \
 	file.c		fileheader.c	\
 	krb4-security.c	krb5-security.c	\
 	match.c		\
-	packet.c	protocol.c	\
+	packet.c	pipespawn.c	protocol.c	\
 	regcomp.c	regerror.c	regexec.c	regfree.c	\
 	rsh-security.c	\
 	security.c	statfs.c	stream.c	\
@@ -36,7 +36,7 @@ libamanda_a_LIBADD =	@LIBOBJS@ @ALLOCA@
 noinst_HEADERS =	amanda.h	amregex.h	arglist.h	\
 			dgram.h		\
 			event.h		\
-			packet.h	protocol.h	\
+			packet.h	pipespawn.h	protocol.h	\
 			queue.h		\
 			security.h	statfs.h	stream.h	\
 			token.h		\

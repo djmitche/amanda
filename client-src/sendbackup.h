@@ -24,14 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.h,v 1.12 1999/04/24 20:48:09 martinea Exp $
+ * $Id: sendbackup.h,v 1.13 2001/03/15 02:25:50 jrjackson Exp $
  *
  * a few common decls for the sendbackup-* sources
  */
 #include "amanda.h"
+#include "pipespawn.h"
 
 void info_tapeheader P((void));
-int pipespawn P((char *prog, int *stdinfd, int stdoutfd, int stderrfd, ...));
 void start_index P((int createindex, int input, int mesg, 
 		    int index, char *cmd));
 
@@ -76,3 +76,6 @@ extern backup_program_t *programs[], *program;
 
 #define COMPR_FAST 1
 #define COMPR_BEST 2
+
+extern char *efile;
+extern char *estr;

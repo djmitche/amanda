@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.73 2000/12/12 22:16:24 jrjackson Exp $
+ * $Id: sendbackup-gnutar.c,v 1.74 2001/03/15 02:25:50 jrjackson Exp $
  *
  * send backup data using GNU tar
  */
@@ -32,6 +32,7 @@
 #include "amanda.h"
 #include "sendbackup.h"
 #include "amandates.h"
+#include "util.h"
 #include "getfsent.h"			/* for amname_to_dirname lookup */
 #include "version.h"
 
@@ -125,10 +126,10 @@ static void start_backup P((char *, char *, int, char *, int, int, int));
 static void end_backup P((int));
 
 static void start_backup(host, disk, level, dumpdate, dataf, mesgf, indexf)
-char *host;
-char *disk;
-int level, dataf, mesgf, indexf;
-char *dumpdate;
+    char *host;
+    char *disk;
+    int level, dataf, mesgf, indexf;
+    char *dumpdate;
 {
     int dumpin, dumpout;
     char *cmd = NULL;
@@ -144,33 +145,45 @@ char *dumpdate;
 	    get_pname(), host, disk, level);
 
     if(compress) {
+	char *compopt = skip_argument;
+
 #if defined(COMPRESS_BEST_OPT) && defined(COMPRESS_FAST_OPT)
-	char *compopt;
-	compopt = (compress == COMPR_BEST?
-		   COMPRESS_BEST_OPT : COMPRESS_FAST_OPT);
-#else
-	const char compopt[] = "";
+	if(compress == COMPR_BEST) {
+	    compopt = COMPRESS_BEST_OPT;
+	} else {
+	    compopt = COMPRESS_FAST_OPT;
+	}
 #endif
-	comppid = pipespawn(COMPRESS_PATH, &dumpout, dataf, mesgf,
-			    COMPRESS_PATH, compopt, (char *)0);
-	dbprintf(("sendbackup-gnutar: pid %d: %s %s\n",
-		comppid, COMPRESS_PATH, compopt));
+	comppid = pipespawn(COMPRESS_PATH, STDIN_PIPE,
+			    &dumpout, &dataf, &mesgf,
+			    COMPRESS_PATH, compopt, NULL);
+	dbprintf(("%s-gnutar: pid %ld: %s",
+		  get_pname(), (long)comppid, COMPRESS_PATH));
+	if(compopt != skip_argument) {
+	    dbprintf((" %s", compopt));
+	}
+	dbprintf(("\n"));
     } else {
 	dumpout = dataf;
 	comppid = -1;
     }
 
-#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-#ifdef SAMBA_CLIENT
+#ifdef GNUTAR_LISTED_INCREMENTAL_DIR					/* { */
+#ifdef SAMBA_CLIENT							/* { */
     if (disk[0] == '/' && disk[1]=='/')
-      amfree(incrname);
+	amfree(incrname);
     else
-#endif
+#endif									/* } */
     {
 	char *basename = NULL;
 	char number[NUM_STR_SIZE];
 	char *s;
 	int ch;
+	char *inputname = NULL;
+	FILE *in = NULL;
+	FILE *out;
+	int baselevel;
+	char *line = NULL;
 
 	basename = vstralloc(GNUTAR_LISTED_INCREMENTAL_DIR,
 			     "/",
@@ -190,70 +203,69 @@ char *dumpdate;
 	incrname = vstralloc(basename, "_", number, ".new", NULL);
 	unlink(incrname);
 
-	if (level == 0) {
-	  FILE *out;
-
-notincremental:
-
-	  out = fopen(incrname, "w");
-	  if (out == NULL)
-	    error("error [opening %s: %s]", incrname, strerror(errno));
-
-	  if (fclose(out) == EOF)
-	    error("error [closing %s: %s]", incrname, strerror(errno));
-	  out = NULL;
-
-	  dbprintf(("%s: doing level %d dump as listed-incremental: %s\n",
-		    get_pname(), level, incrname));
-	} else {
-	    FILE *in = NULL, *out;
-	    char *inputname = NULL;
-	    char buf[BUFSIZ];
-	    int baselevel = level;
-
-	    while (in == NULL && --baselevel >= 0) {
+	/*
+	 * Open the listed incremental file for the previous level.  Search
+	 * backward until one is found.  If none are found (which will also
+	 * be true for a level 0), arrange to read from /dev/null.
+	 */
+	baselevel = level;
+	while (in == NULL) {
+	    if (--baselevel >= 0) {
 		snprintf(number, sizeof(number), "%d", baselevel);
 		inputname = newvstralloc(inputname,
-					 basename, "_", number,
-					 NULL);
-		in = fopen(inputname, "r");
+					 basename, "_", number, NULL);
+	    } else {
+		inputname = newstralloc(inputname, "/dev/null");
 	    }
+	    if ((in = fopen(inputname, "r")) == NULL) {
+		int save_errno = errno;
 
-	    if (in == NULL) {
-	      amfree(inputname);
-	      goto notincremental;
+		dbprintf(("%s-gnutar: error opening %s: %s\n",
+			  get_pname(),
+			  inputname,
+			  strerror(save_errno)));
+		if (baselevel < 0) {
+		    error("error [opening %s: %s]", inputname, strerror(errno));
+		}
 	    }
-
-	    out = fopen(incrname, "w");
-	    if (out == NULL)
-		error("error [opening %s: %s]", incrname, strerror(errno));
-
-	    while(fgets(buf, sizeof(buf), in) != NULL)
-		if (fputs(buf, out) == EOF)
-		    error("error [writing to %s: %s]", incrname,
-			  strerror(errno));
-
-	    if (ferror(in)) {
-		error("error [reading from %s: %s]", inputname,
-		      strerror(errno));
-	    }
-
-	    if (fclose(in) == EOF)
-		error("error [closing %s: %s]", inputname, strerror(errno));
-	    in = NULL;
-
-	    if (fclose(out) == EOF)
-		error("error [closing %s: %s]", incrname, strerror(errno));
-	    out = NULL;
-
-	    dbprintf(("%s: doing level %d dump as listed-incremental from %s, updating to %s\n",
-		      get_pname(), level, inputname, incrname));
-
-	    amfree(inputname);
 	}
+
+	/*
+	 * Copy the previous listed incremental file to the new one.
+	 */
+	if ((out = fopen(incrname, "w")) == NULL) {
+	    error("error [opening %s: %s]", incrname, strerror(errno));
+	}
+
+	for (; (line = agets(in)) != NULL; free(line)) {
+	    if(fputs(line, out) == EOF || putc('\n', out) == EOF) {
+		error("error [writing to %s: %s]", incrname, strerror(errno));
+	    }
+	}
+	amfree(line);
+
+	if (ferror(in)) {
+	    error("error [reading from %s: %s]", inputname, strerror(errno));
+	}
+	if (fclose(in) == EOF) {
+	    error("error [closing %s: %s]", inputname, strerror(errno));
+	}
+	in = NULL;
+	if (fclose(out) == EOF) {
+	    error("error [closing %s: %s]", incrname, strerror(errno));
+	}
+	out = NULL;
+
+	dbprintf(("%s-gnutar: doing level %d dump as listed-incremental",
+		  get_pname(), level));
+	if(baselevel >= 0) {
+	    dbprintf((" from %s", inputname));
+	}
+	dbprintf((" to %s\n", incrname));
+	amfree(inputname);
 	amfree(basename);
     }
-#endif
+#endif									/* } */
 
     /* find previous dump time */
 
@@ -277,7 +289,7 @@ notincremental:
 		gmtm->tm_year + 1900, gmtm->tm_mon+1, gmtm->tm_mday,
 		gmtm->tm_hour, gmtm->tm_min, gmtm->tm_sec);
 
-    dbprintf(("%s: doing level %d dump from date: %s\n",
+    dbprintf(("%s-gnutar: doing level %d dump from date: %s\n",
 	      get_pname(), level, dumptimestr));
 
     dirname = amname_to_dirname(disk);
@@ -285,168 +297,151 @@ notincremental:
     cur_dumptime = time(0);
     cur_level = level;
     cur_disk = stralloc(disk);
+    indexcmd = vstralloc(
+#ifdef GNUTAR
+			 GNUTAR,
+#else
+			 "tar",
+#endif
+			 " -tf", " -",
+			 " 2>/dev/null",
+			 " | sed", " -e",
+			 " \'s/^\\.//\'",
+			 NULL);
 
-#ifdef SAMBA_CLIENT
+#ifdef SAMBA_CLIENT							/* { */
     /* Use sambatar if the disk to back up is a PC disk */
    if (disk[0] == '/' && disk[1]=='/') {
-	char *sharename = NULL, *pass, *domain = NULL;
-	char *tarcmd, *taropt;
+	char *sharename = NULL, *user_and_password = NULL, *domain = NULL;
+	char *pwtext;
+	char *taropt;
+	int passwdf;
+	int lpass;
 
-	if ((pass = findpass(disk, &domain)) == NULL) {
-	    error("[invalid samba host or password not found?]");
-	}
-	if ((sharename = makesharename(disk, 0)) == 0) {
-	    memset(pass, '\0', strlen(pass));
-	    amfree(pass);
+	if ((user_and_password = findpass(disk, &domain)) == NULL) {
 	    if(domain) {
 		memset(domain, '\0', strlen(domain));
 		amfree(domain);
 	    }
-	    error("[can't make share name of %s]", disk);
+	    error("error [invalid samba host or password not found?]");
+	}
+	lpass = strlen(user_and_password);
+	if ((pwtext = strchr(user_and_password, '%')) == NULL) {
+	    memset(user_and_password, '\0', lpass);
+	    amfree(user_and_password);
+	    if(domain) {
+		memset(domain, '\0', strlen(domain));
+		amfree(domain);
+	    }
+	    error("%s-smbtar: password field not \'user%%pass\' for %s",
+		  get_pname(), disk);
+	}
+	*pwtext++ = '\0';
+	if ((sharename = makesharename(disk, 0)) == 0) {
+	    memset(user_and_password, '\0', lpass);
+	    amfree(user_and_password);
+	    if(domain) {
+		memset(domain, '\0', strlen(domain));
+		amfree(domain);
+	    }
+	    error("error [can't make share name of %s]", disk);
+	}
+
+	taropt = stralloc("-T");
+	if (estr != NULL && *estr != '\0') {
+	    strappend(taropt, "X");
 	}
 #if SAMBA_VERSION >= 2
-	if (level==0) {
-	    if (no_record)
-		taropt = "-Tqc";
-	    else
-		taropt = "-Tqca";
-	} else
-	    taropt = "-Tqcg";
-#else
-	if (level==0) {
-	    if (no_record)
-		taropt = "-Tc";
-	    else
-		taropt = "-Tca";
-	} else
-	    taropt = "-Tcg";
+	strappend(taropt, "q");
 #endif
-	dbprintf(("backup from %s, pass %s\n", 
-		  sharename, "(see amandapass)"));
+	strappend(taropt, "c");
+	if (level != 0) {
+	    strappend(taropt, "g");
+	} else if (!no_record) {
+	    strappend(taropt, "a");
+	}
+
+	dbprintf(("%s-gnutar: backup of %s\n", get_pname(), sharename));
 
 	program->backup_name = program->restore_name = SAMBA_CLIENT;
-
-#ifdef GNUTAR
-	tarcmd = GNUTAR;
-#else
-	tarcmd = "tar";
-#endif
-	indexcmd = vstralloc(tarcmd,
-			     " -tf", " -",
-			     " 2>/dev/null",
-			     " | sed", " -e", 
-			     " \'s/^\\.//\'",
-			     NULL);
+	cmd = stralloc(program->backup_name);
 	info_tapeheader();
 
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
-	dumppid = pipespawn(program->backup_name, &dumpin, dumpout, mesgf,
+	dumppid = pipespawn(cmd, STDIN_PIPE|PASSWD_PIPE,
+			    &dumpin, &dumpout, &mesgf,
+			    "PASSWD_FD", &passwdf,
 			    "smbclient",
-			    sharename, "-U", pass, "-E",
-			    domain ? "-W" : "-d0",
-			    domain ? domain : taropt,
-			    domain ? "-d0" : "-",
-			    domain ? taropt : (char *)0,
-			    domain ? "-" : (char *)0,
-			    (char *) 0);
-	tarpid = dumppid;
-	memset(pass, '\0', strlen(pass));
-	amfree(pass);
+			    sharename,
+			    "-U", user_and_password,		/* user only */
+			    "-E",
+			    domain ? "-W" : skip_argument,
+			    domain ? domain : skip_argument,
+			    "-d0",
+			    taropt,
+			    "-",
+			    estr ? estr : skip_argument,
+			    NULL);
 	if(domain) {
 	    memset(domain, '\0', strlen(domain));
 	    amfree(domain);
 	}
+	if(fullwrite(passwdf, pwtext, strlen(pwtext)) < 0) {
+	    int save_errno = errno;
+
+	    aclose(passwdf);
+	    memset(user_and_password, '\0', lpass);
+	    amfree(user_and_password);
+	    error("error [password write failed: %s]", strerror(save_errno));
+	}
+	memset(user_and_password, '\0', lpass);
+	amfree(user_and_password);
+	aclose(passwdf);
 	amfree(sharename);
-    } else {
-#endif
-      cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
-
-      {
-	char *format_buf;
-	char *a00, *a01, *a02, *a03, *a04, *a05;
-	char *a06, *a07, *a08, *a09, *a10, *a11;
-	char *incr;
-	char *tarcmd;
-
-#ifdef GNUTAR
-	tarcmd = GNUTAR;
-#else
-	tarcmd = "tar";
-#endif
-	indexcmd = vstralloc(tarcmd,
-			     " -tf", " -",
-			     " 2>/dev/null",
-			     " | sed", " -e",
-			     " \'s/^\\.//\'",
-			     NULL);
+	amfree(taropt);
+	tarpid = dumppid;
+    } else
+#endif									/* } */
+    {
+	cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
 	info_tapeheader();
 
 	start_index(createindex, dumpout, mesgf, indexf, indexcmd);
 
-	dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf,
-			"gtar",
-			"--create",
-			"--directory", dirname,
+	dumppid = pipespawn(cmd, STDIN_PIPE,
+			    &dumpin, &dumpout, &mesgf,
+			    "gtar",
+			    "--create",
+			    "--file", "-",
+			    "--directory", dirname,
+			    "--one-file-system",
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-			"--listed-incremental", incrname,
+			    "--listed-incremental", incrname,
 #else
-			"--incremental", "--newer", dumptimestr,
+			    "--incremental",
+			    "--newer", dumptimestr,
 #endif
-			"--sparse","--one-file-system",
 #ifdef ENABLE_GNUTAR_ATIME_PRESERVE
-			/* --atime-preserve causes gnutar to call
-			 * utime() after reading files in order to
-			 * adjust their atime.  However, utime()
-			 * updates the file's ctime, so incremental
-			 * dumps will think the file has changed. */
-			"--atime-preserve",
+			    /* --atime-preserve causes gnutar to call
+			     * utime() after reading files in order to
+			     * adjust their atime.  However, utime()
+			     * updates the file's ctime, so incremental
+			     * dumps will think the file has changed. */
+			    "--atime-preserve",
 #endif
-			"--ignore-failed-read", "--totals",
-			"--file", "-",
-			efile ? efile : ".",
-			efile ? "." : (char *)0,
-			(char *) 0);
+			    "--sparse",
+			    "--ignore-failed-read",
+			    "--totals",
+			    efile ? "--exclude-from" : skip_argument,
+			    efile ? efile : skip_argument,
+			    estr ? "--exclude" : skip_argument,
+			    estr ? estr : skip_argument,
+			    ".",
+			    NULL);
 	tarpid = dumppid;
-	
-	a00 = "sendbackup-gnutar: pid %d: %s";
-	a01 = " --create";
-	a02 = " --directory %s";
-#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-	a03 = " --listed-incremental %s";
-#else
-	a03 = " --incremental --newer %s";
-#endif
-	a04 = " --sparse";
-	a05 = " --one-file-system";
-#ifdef ENABLE_GNUTAR_ATIME_PRESERVE
-	a06 = " --atime-preserve";
-#else
-	a06 = "";
-#endif
-	a07 = " --ignore-failed-read";
-	a08 = " --totals";
-	a09 = " --file -";
-	a10 = " %s";
-	a11 = efile ? " ." : "";
-
-	format_buf = vstralloc(a00, a01, a02, a03,
-			       a04, a05, a06, a07,
-			       a08, a09, a10, a11,
-			       "\n", NULL);
-
-#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-	incr = incrname;
-#else
-	incr = dumptimestr;
-#endif
-	dbprintf((format_buf, dumppid, cmd, dirname, incr,
-		  efile ? efile : "."));
-	amfree(format_buf);
-      }
-#ifdef SAMBA_CLIENT
     }
-#endif
+    dbprintf(("%s-gnutar: %s: pid %ld\n", get_pname(), cmd, (long)dumppid));
 
     amfree(dirname);
     amfree(cmd);

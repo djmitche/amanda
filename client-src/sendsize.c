@@ -24,13 +24,15 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.108 2000/10/11 02:23:33 martinea Exp $
+ * $Id: sendsize.c,v 1.109 2001/03/15 02:25:50 jrjackson Exp $
  *
  * send estimated backup sizes using dump
  */
 
 #include "amanda.h"
+#include "pipespawn.h"
 #include "amandates.h"
+#include "util.h"
 #include "getfsent.h"
 #include "version.h"
 
@@ -379,35 +381,34 @@ disk_estimates_t *est;
       case 0:
 	break;
       case -1:
-        error("calc_estimates: fork returned: %s", strerror(errno));
+        error("%s: calc_estimates: fork returned: %s",
+	      get_pname(), strerror(errno));
       default:
 	return;
       }
     }
 
     /* Now in the child process */
-    if(est->program_is_wrapper ==  1) {
+    if(est->program_is_wrapper ==  1)
 	wrapper_calc_estimates(est);
-    }
-    else {
+    else
 #ifndef USE_GENERIC_CALCSIZE
-	if(strcmp(est->program, "DUMP") == 0)
-	    dump_calc_estimates(est);
-	else
+    if(strcmp(est->program, "DUMP") == 0)
+	dump_calc_estimates(est);
+    else
 #endif
 #ifdef SAMBA_CLIENT
-	if (strcmp(est->program, "GNUTAR") == 0 &&
-	    est->amname[0] == '/' && est->amname[1] == '/')
-	    smbtar_calc_estimates(est);
-	else
+      if (strcmp(est->program, "GNUTAR") == 0 &&
+	  est->amname[0] == '/' && est->amname[1] == '/')
+	smbtar_calc_estimates(est);
+      else
 #endif
 #ifdef GNUTAR
 	if (strcmp(est->program, "GNUTAR") == 0)
-	    gnutar_calc_estimates(est);
+	  gnutar_calc_estimates(est);
 	else
 #endif
-	generic_calc_estimates(est);
-    }
+	  generic_calc_estimates(est);
     if (maxdumps > 1)
       exit(0);
 }
@@ -419,7 +420,7 @@ disk_estimates_t *est;
 
 /* local functions */
 long getsize_dump P((char *disk, int level));
-long getsize_smbtar P((char *disk, int level));
+long getsize_smbtar P((char *disk, int level, char *exclude));
 long getsize_gnutar P((char *disk, int level,
 		       char *exclude, time_t dumpsince));
 long getsize_wrapper P((char *program, char *disk, int level,
@@ -497,7 +498,7 @@ disk_estimates_t *est;
 
     switch(calcpid = fork()) {
     case -1:
-        error("%s: fork returned: %s", cmd, strerror(errno));
+        error("%s: %s: fork returned: %s", get_pname(), cmd, strerror(errno));
     default:
         break;
     case 0:
@@ -550,7 +551,7 @@ disk_estimates_t *est;
 	if(est->est[level].needestimate) {
 	    dbprintf(("%s: getting size via smbclient for %s level %d\n",
 		      get_pname(), est->amname, level));
-	    size = getsize_smbtar(est->amname, level);
+	    size = getsize_smbtar(est->amname, level, est->exclude);
 
 	    amflock(1, "size");
 
@@ -786,6 +787,7 @@ long getsize_dump(disk, level)
 
     switch(dumppid = fork()) {
     case -1:
+	dbprintf(("cannot fork for killpgrp: %s\n", strerror(errno)));
 	amfree(dumpkeys);
 	amfree(cmd);
 	amfree(rundump_cmd);
@@ -878,11 +880,8 @@ long getsize_dump(disk, level)
 # endif
 #endif
 	{
-	  dbprintf(("%s: exec %s failed or no dump program available",
-		    get_pname(), cmd));
-	  error("%s: exec %s failed or no dump program available",
-		get_pname(), cmd);
-	  exit(1);
+	    error("%s: exec %s failed or no dump program available: %s",
+		  get_pname(), cmd, strerror(errno));
 	}
     }
 
@@ -964,30 +963,50 @@ long getsize_dump(disk, level)
 }
 
 #ifdef SAMBA_CLIENT
-long getsize_smbtar(disk, level)
-     char *disk;
-     int level;
+long getsize_smbtar(disk, level, exclude_spec)
+    char *disk;
+    int level;
+    char *exclude_spec;
 {
-    int pipefd[2], nullfd, dumppid;
+    int pipefd = -1, nullfd = -1, passwdfd = -1;
+    int dumppid;
     long size;
     FILE *dumpout;
-    char *tarkeys, *sharename, *pass, *domain = NULL;
+    char *tarkeys, *sharename, *user_and_password = NULL, *domain = NULL;
+    int lpass;
+    char *pwtext;
     char *line;
 
-    if ((pass = findpass(disk, &domain)) == NULL) {
-	error("[sendsize : error in smbtar diskline, unable to find password]");
-    }
-    if ((sharename = makesharename(disk, 0)) == NULL) {
-	memset(pass, '\0', strlen(pass));
-	amfree(pass);
+    if ((user_and_password = findpass(disk, &domain)) == NULL) {
 	if(domain) {
 	    memset(domain, '\0', strlen(domain));
 	    amfree(domain);
 	}
-	error("[sendsize : can't make share name of %s]", disk);
+	error("%s-smbtar: cannot find password for %s", get_pname(), disk);
+    }
+    lpass = strlen(user_and_password);
+    if ((pwtext = strchr(user_and_password, '%')) == NULL) {
+	memset(user_and_password, '\0', lpass);
+	amfree(user_and_password);
+	if(domain) {
+	    memset(domain, '\0', strlen(domain));
+	    amfree(domain);
+	}
+	error("%s-smbtar: password field not \'user%%pass\' for %s",
+	      get_pname(), disk);
+    }
+    *pwtext++ = '\0';
+    if ((sharename = makesharename(disk, 0)) == NULL) {
+	memset(user_and_password, '\0', lpass);
+	amfree(user_and_password);
+	if(domain) {
+	    memset(domain, '\0', strlen(domain));
+	    amfree(domain);
+	}
+	error("%s-smbtar: cannot make share name of %s", get_pname(), disk);
     }
     nullfd = open("/dev/null", O_RDWR);
-    pipe(pipefd);
+
 #if SAMBA_VERSION >= 2
     if (level == 0)
 	tarkeys = "archive 0;recurse;du";
@@ -1000,60 +1019,37 @@ long getsize_smbtar(disk, level)
 	tarkeys = "archive 1;recurse;dir";
 #endif
 
-    dbprintf(("%s: running \"%s \'%s\' -d %s -U %s -E%s%s -c \'%s\'\"\n",
-	      get_pname(), SAMBA_CLIENT, sharename,
-	      SAMBA_DEBUG_LEVEL, "(see amandapss)", domain ? " -W " : "",
-	      domain ? domain : "", tarkeys));
-
-    switch(dumppid = fork()) {
-    case -1:
-	memset(pass, '\0', strlen(pass));
-	amfree(pass);
-	if(domain) {
-	    memset(domain, '\0', strlen(domain));
-	    amfree(domain);
-	}
-	amfree(sharename);
-	return -1;
-    default:
-	amfree(sharename);
-	break; 
-    case 0:   /* child process */
-	dup2(nullfd, 0);
-	dup2(nullfd, 1);
-	dup2(pipefd[1], 2);
-	aclose(pipefd[0]);
-
-	execle(SAMBA_CLIENT, "smbclient", sharename,
-	       "-d", SAMBA_DEBUG_LEVEL,
-	       "-U", pass,
-	       "-E",
-	       domain ? "-W" : "-c",
-	       domain ? domain : tarkeys,
-	       domain ? "-c" : (char *)0,
-	       domain ? tarkeys : (char *)0,
-	       (char *)0,
-	       safe_env());
-	/* should not get here */
-	memset(pass, '\0', strlen(pass));
-	amfree(pass);
-	if(domain) {
-	    memset(domain, '\0', strlen(domain));
-	    amfree(domain);
-	}
-	amfree(sharename);
-	exit(1);
-	/* NOTREACHED */
-    }
-    memset(pass, '\0', strlen(pass));
-    amfree(pass);
+    dumppid = pipespawn(SAMBA_CLIENT, STDERR_PIPE|PASSWD_PIPE,
+	      &nullfd, &nullfd, &pipefd, 
+	      "PASSWD_FD", &passwdfd,
+	      "smbclient",
+	      sharename,
+	      "-d", SAMBA_DEBUG_LEVEL,
+	      "-U", user_and_password,				/* user only */
+	      "-E",
+	      domain ? "-W" : skip_argument,
+	      domain ? domain : skip_argument,
+	      "-c", tarkeys,
+	      NULL);
     if(domain) {
 	memset(domain, '\0', strlen(domain));
 	amfree(domain);
     }
+    aclose(nullfd);
+    if(fullwrite(passwdfd, pwtext, strlen(pwtext)) < 0) {
+	int save_errno = errno;
+
+	memset(user_and_password, '\0', lpass);
+	amfree(user_and_password);
+	aclose(passwdfd);
+	error("%s-smbtar: password write failed: %s",
+	      get_pname(), strerror(save_errno));
+    }
+    memset(user_and_password, '\0', lpass);
+    amfree(user_and_password);
+    aclose(passwdfd);
     amfree(sharename);
-    aclose(pipefd[1]);
-    dumpout = fdopen(pipefd[0],"r");
+    dumpout = fdopen(pipefd,"r");
 
     for(size = -1; (line = agets(dumpout)) != NULL; free(line)) {
 	dbprintf(("%s\n",line));
@@ -1078,8 +1074,8 @@ long getsize_smbtar(disk, level)
 
     wait(NULL);
 
-    aclose(nullfd);
     afclose(dumpout);
+    pipefd = -1;
 
     return size;
 }
@@ -1092,140 +1088,109 @@ int level;
 char *exclude_spec;
 time_t dumpsince;
 {
-    int pipefd[2], nullfd, dumppid;
-    long size;
-    FILE *dumpout;
+    int pipefd = -1, nullfd = -1, dumppid;
+    long size = -1;
+    FILE *dumpout = NULL;
     char *incrname = NULL;
+    char *basename = NULL;
     char *dirname = NULL;
+    char *inputname = NULL;
+    FILE *in = NULL;
+    FILE *out = NULL;
     char *exclude_arg = NULL;
+    char *efile = NULL, *estr = NULL;
     char *line = NULL;
     char *cmd = NULL;
-    char *cmd_line;
     char dumptimestr[80];
     struct tm *gmtm;
 
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
     {
-      char *basename = NULL;
-      char number[NUM_STR_SIZE];
-      char *s;
-      int ch;
+	char number[NUM_STR_SIZE];
+	char *s;
+	int ch;
+	int baselevel;
 
-      basename = vstralloc(GNUTAR_LISTED_INCREMENTAL_DIR,
-			   "/",
-			   host,
-			   disk,
-			   NULL);
-      /*
-       * The loop starts at the first character of the host name,
-       * not the '/'.
-       */
-      s = basename + sizeof(GNUTAR_LISTED_INCREMENTAL_DIR);
-      while((ch = *s++) != '\0') {
-	if(ch == '/' || isspace(ch)) s[-1] = '_';
-      }
-
-      snprintf(number, sizeof(number), "%d", level);
-      incrname = vstralloc(basename, "_", number, ".new", NULL);
-      unlink(incrname);
-
-      if (level == 0) {
-	FILE *out;
-
-notincremental:
-
-	out = fopen(incrname, "w");
-	if (out == NULL) {
-	  dbprintf(("error [opening %s: %s]\n", incrname, strerror(errno)));
-	  amfree(incrname);
-	  amfree(basename);
-	  amfree(dirname);
-	  return -1;
+	basename = vstralloc(GNUTAR_LISTED_INCREMENTAL_DIR,
+			     "/",
+			     host,
+			     disk,
+			     NULL);
+	/*
+	 * The loop starts at the first character of the host name,
+	 * not the '/'.
+	 */
+	s = basename + sizeof(GNUTAR_LISTED_INCREMENTAL_DIR);
+	while((ch = *s++) != '\0') {
+	    if(ch == '/' || isspace(ch)) s[-1] = '_';
 	}
 
-	if (fclose(out) == EOF) {
-	  dbprintf(("error [closing %s: %s]\n", incrname, strerror(errno)));
-	  out = NULL;
-	  amfree(incrname);
-	  amfree(basename);
-	  amfree(dirname);
-	  return -1;
-	}
-	out = NULL;
+	snprintf(number, sizeof(number), "%d", level);
+	incrname = vstralloc(basename, "_", number, ".new", NULL);
+	unlink(incrname);
 
-      } else {
-	FILE *in = NULL, *out;
-	char *inputname = NULL;
-	char buf[BUFSIZ];
-	int baselevel = level;
+	/*
+	 * Open the listed incremental file from the previous level.  Search
+	 * backward until one is found.  If none are found (which will also
+	 * be true for a level 0), arrange to read from /dev/null.
+	 */
+	baselevel = level;
+	while (in == NULL) {
+	    if (--baselevel >= 0) {
+		snprintf(number, sizeof(number), "%d", baselevel);
+		inputname = newvstralloc(inputname,
+					 basename, "_", number, NULL);
+	    } else {
+		inputname = newstralloc(inputname, "/dev/null");
+	    }
+	    if ((in = fopen(inputname, "r")) == NULL) {
+		int save_errno = errno;
 
-	while (in == NULL && --baselevel >= 0) {
-	  snprintf(number, sizeof(number), "%d", baselevel);
-	  inputname = newvstralloc(inputname, basename, "_", number, NULL);
-	  in = fopen(inputname, "r");
-	}
-
-	if (in == NULL) {
-	  amfree(inputname);
-	  goto notincremental;
-	}
-
-	out = fopen(incrname, "w");
-	if (out == NULL) {
-	  dbprintf(("error [opening %s: %s]\n", incrname, strerror(errno)));
-	  amfree(incrname);
-	  amfree(basename);
-	  amfree(inputname);
-	  amfree(dirname);
-	  return -1;
+		dbprintf(("%s-gnutar: error opening %s: %s\n",
+			  get_pname(),
+			  inputname,
+			  strerror(save_errno)));
+		if (baselevel < 0) {
+		    goto common_exit;
+		}
+	    }
 	}
 
-	while(fgets(buf, sizeof(buf), in) != NULL)
-	  if (fputs(buf, out) == EOF) {
-	    dbprintf(("error [writing to %s: %s]\n", incrname,
-		      strerror(errno)));
-	    amfree(incrname);
-	    amfree(basename);
-	    amfree(inputname);
-	    amfree(dirname);
-	    return -1;
-	  }
+	/*
+	 * Copy the previous listed incremental file to the new one.
+	 */
+	if ((out = fopen(incrname, "w")) == NULL) {
+	    dbprintf(("opening %s: %s\n", incrname, strerror(errno)));
+	    goto common_exit;
+	}
+
+	for (; (line = agets(in)) != NULL; free(line)) {
+	    if (fputs(line, out) == EOF || putc('\n', out) == EOF) {
+		dbprintf(("writing to %s: %s\n", incrname, strerror(errno)));
+		goto common_exit;
+	    }
+	}
+	amfree(line);
 
 	if (ferror(in)) {
-	  dbprintf(("error [reading from %s: %s]\n", inputname,
-		    strerror(errno)));
-	  amfree(incrname);
-	  amfree(basename);
-	  amfree(inputname);
-	  amfree(dirname);
-	  return -1;
+	    dbprintf(("reading from %s: %s\n", inputname, strerror(errno)));
+	    goto common_exit;
 	}
-
 	if (fclose(in) == EOF) {
-	  dbprintf(("error [closing %s: %s]\n", inputname, strerror(errno)));
-	  in = NULL;
-	  amfree(incrname);
-	  amfree(basename);
-	  amfree(inputname);
-	  amfree(dirname);
-	  return -1;
+	    dbprintf(("closing %s: %s\n", inputname, strerror(errno)));
+	    in = NULL;
+	    goto common_exit;
 	}
 	in = NULL;
-
 	if (fclose(out) == EOF) {
-	  dbprintf(("error [closing %s: %s]\n", incrname, strerror(errno)));
-	  out = NULL;
-	  amfree(incrname);
-	  amfree(basename);
-	  amfree(inputname);
-	  amfree(dirname);
-	  return -1;
+	    dbprintf(("closing %s: %s\n", incrname, strerror(errno)));
+	    out = NULL;
+	    goto common_exit;
 	}
 	out = NULL;
 
 	amfree(inputname);
-      }
-      amfree(basename);
+	amfree(basename);
     }
 #endif
 
@@ -1241,6 +1206,8 @@ notincremental:
 
     if (exclude_spec == NULL) {
 	amfree(exclude_arg);
+	estr = NULL;
+	efile = NULL;
 	/* do nothing */
 #define sc "--exclude-list="
     } else if (strncmp(exclude_spec, sc, sizeof(sc)-1)==0) {
@@ -1248,98 +1215,65 @@ notincremental:
 /* BEGIN HPS */
 	if(*file != '/')
 	  file = vstralloc(dirname,"/",file, NULL);
-/* END HPS */		
+/* END HPS */
+	estr = NULL;
 	if (access(file, F_OK) == 0)
-	    exclude_arg = newstralloc2(exclude_arg, "--exclude-from=", file);
+	    efile = newstralloc(efile, file);
 	else {
 	    dbprintf(("%s: missing exclude list file \"%s\" discarded\n",
 		      get_pname(), file));
-	    amfree(exclude_arg);
+	    amfree(efile);
 	}
 #undef sc
 #define sc "--exclude-file="
     } else if (strncmp(exclude_spec, sc, sizeof(sc)-1)==0) {
-	exclude_arg = newstralloc2(exclude_arg, "--exclude=",
-				   exclude_spec+sizeof(sc)-1);
+	efile = NULL;
+	estr = newstralloc(estr, exclude_spec+sizeof(sc)-1);
 #undef sc
     } else {
-	dbprintf(("error [exclude_spec is neither --exclude-list nor --exclude-file: %s]\n", exclude_spec));
-	error("error: exclude_spec is neither --exclude-list nor --exclude-file: %s]", exclude_spec);
+	error("exclude_spec is neither --exclude-list nor --exclude-file: %s",
+	      exclude_spec);
     }
-
-    cmd_line = vstralloc(cmd,
-			 " --create",
-			 " --directory ", dirname,
-#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-			 " --listed-incremental ", incrname,
-#else
-			 " --incremental",
-			 " --newer ", dumptimestr,
-#endif
-			 " --sparse",
-			 " --one-file-system",
-#ifdef ENABLE_GNUTAR_ATIME_PRESERVE
-			 " --atime-preserve",
-#endif
-			 " --ignore-failed-read",
-			 " --totals",
-			 " --file", " /dev/null",
-			 " ", exclude_arg ? exclude_arg : ".",
-			 exclude_arg ? " ." : "",
-			 NULL);
-
-    dbprintf(("%s: running \"%s\"\n", get_pname(), cmd_line));
 
     nullfd = open("/dev/null", O_RDWR);
-    pipe(pipefd);
-
-    switch(dumppid = fork()) {
-    case -1:
-      amfree(cmd);
-      amfree(dirname);
-      return -1;
-    default:
-      break;
-    case 0:
-      dup2(nullfd, 0);
-      dup2(nullfd, 1);
-      dup2(pipefd[1], 2);
-      aclose(pipefd[0]);
-
-      execle(cmd,
+    dumppid = pipespawn(cmd, STDERR_PIPE, &nullfd, &nullfd, &pipefd,
 #ifdef GNUTAR
-	     GNUTAR,
+	      GNUTAR,
 #else
-	     "tar",
+	      "tar",
 #endif
-	     "--create",
-	     "--directory", dirname,
+	      "--create",
+	      "--file", "/dev/null",
+	      "--directory", dirname,
+	      "--one-file-system",
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-	     "--listed-incremental", incrname,
+	      "--listed-incremental", incrname,
 #else
-	     "--incremental", "--newer", dumptimestr,
+	      "--incremental",
+	      "--newer", dumptimestr,
 #endif
-	     "--sparse",
-	     "--one-file-system",
 #ifdef ENABLE_GNUTAR_ATIME_PRESERVE
-	     "--atime-preserve",
+	      /* --atime-preserve causes gnutar to call
+	       * utime() after reading files in order to
+	       * adjust their atime.  However, utime()
+	       * updates the file's ctime, so incremental
+	       * dumps will think the file has changed. */
+	      "--atime-preserve",
 #endif
-	     "--ignore-failed-read",
-	     "--totals",
-	     "--file", "/dev/null",
-	     exclude_arg ? exclude_arg : ".",
-	     exclude_arg ? "." : (char *)0,
-	     (char *)0,
-	     safe_env());
-
-      exit(1);
-      break;
-    }
-    amfree(exclude_arg);
+	      "--sparse",
+	      "--ignore-failed-read",
+	      "--totals",
+	      efile ? "--exclude-from" : skip_argument,
+	      efile ? efile : skip_argument,
+	      estr ? "--exclude" : skip_argument,
+	      estr ? estr : skip_argument,
+	      ".",
+	      NULL);
+    amfree(efile);
+    amfree(estr);
     amfree(cmd);
 
-    aclose(pipefd[1]);
-    dumpout = fdopen(pipefd[0],"r");
+    dumpout = fdopen(pipefd,"r");
 
     for(size = -1; (line = agets(dumpout)) != NULL; free(line)) {
 	dbprintf(("%s\n",line));
@@ -1362,14 +1296,22 @@ notincremental:
 
     kill(-dumppid, SIGTERM);
 
-    unlink(incrname);
-    amfree(incrname);
-    amfree(dirname);
-
     wait(NULL);
+
+common_exit:
+
+    if (incrname) {
+	unlink(incrname);
+    }
+    amfree(incrname);
+    amfree(basename);
+    amfree(dirname);
+    amfree(inputname);
 
     aclose(nullfd);
     afclose(dumpout);
+    afclose(in);
+    afclose(out);
 
     return size;
 }
