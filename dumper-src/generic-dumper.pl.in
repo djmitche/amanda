@@ -318,7 +318,7 @@ sub parse_options() {
 
    while($no_option <= $#ARGV) {
       $options = $ARGV[${no_option}];
-      @options = split (/,/,$options);
+      @options = split (/;/,$options);
       foreach $option (@options) {
          if( $option =~ /=/ ) {
             ($name,$value) = split(/=/,$option);

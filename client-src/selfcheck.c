@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.40 1998/09/23 03:03:18 oliva Exp $
+ * $Id: selfcheck.c,v 1.41 1999/04/17 15:57:59 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -53,12 +53,13 @@ int need_vxrestore=0;
 int need_runtar=0;
 int need_gnutar=0;
 int need_compress_path=0;
+int program_is_wrapper=0;
 
 /* local functions */
 int main P((int argc, char **argv));
 
 static void check_options P((char *program, char *disk, char *str));
-static void check_disk P((char *program, char *disk, int level));
+static void check_disk P((char *program, char *disk, int level, char *optstr));
 static void check_overall P((void));
 static void check_file P((char *filename, int mode));
 static void check_dir P((char *dirname, int mode));
@@ -124,6 +125,17 @@ char **argv;
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';				/* terminate the program name */
 
+	if(strcmp(program,"DUMPER")==0) {
+	    program_is_wrapper=1;
+	    skip_whitespace(s, ch);		/* find dumper name */
+	    if (ch == '\0') {
+		goto err;			/* no program */
+	    }
+	    program = s - 1;
+	    skip_non_whitespace(s, ch);
+	    s[-1] = '\0';			/* terminate the program name */
+	}
+
 	skip_whitespace(s, ch);			/* find disk name */
 	if (ch == '\0') {
 	    goto err;				/* no disk */
@@ -152,7 +164,7 @@ char **argv;
 	    skip_non_whitespace(s, ch);
 	    s[-1] = '\0';			/* terminate the options */
 	    check_options(program, disk, optstr);
-	    check_disk(program, disk, level);
+	    check_disk(program, disk, level, &optstr[2]);
 	} else if (ch == '\0') {
 	    /* check all since no option */
 	    need_samba=1;
@@ -168,7 +180,7 @@ char **argv;
 	    need_runtar=1;
 	    need_gnutar=1;
 	    need_compress_path=1;
-	    check_disk(program, disk, level);
+	    check_disk(program, disk, level, "");
 	} else {
 	    goto err;				/* bad syntax */
 	}
@@ -273,6 +285,8 @@ check_options(program, disk, str)
 	    need_restore=1;
 #endif
     }
+    if(program_is_wrapper==1) {
+    }
     if(strstr(str, "compress") != NULL)
 	need_compress_path=1;
     if(strstr(str, "index") != NULL) {
@@ -280,9 +294,10 @@ check_options(program, disk, str)
     }
 }
 
-static void check_disk(program, disk, level)
+static void check_disk(program, disk, level, optstr)
 char *program, *disk;
 int level;
+char *optstr;
 {
     char *device = NULL;
     char *err = NULL;
@@ -337,7 +352,8 @@ int level;
 #endif
 	amode = F_OK;
 	device = amname_to_dirname(disk);
-    } else {
+    }
+    else if (strcmp(program, "DUMP") == 0) {
 #ifdef VDUMP
 #ifdef DUMP
         if (strcmp(amname_to_fstype(disk), "advfs") == 0) {
@@ -356,6 +372,32 @@ int level;
 	    amode = R_OK;
 #endif
 	}
+    }
+    else { /* program_is_wrapper==1 */
+	int pid_wrapper;
+	fflush(stdout);fflush(stdin);
+	switch (pid_wrapper = fork()) {
+	case -1: error("fork: %s", strerror(errno));
+	case 0: /* child */
+	    {
+		char *argvchild[5];
+		char *cmd = vstralloc(DUMPER_DIR, "/", program, NULL);
+		argvchild[0] = cmd;
+		argvchild[1] = "selfcheck";
+		argvchild[2] = disk;
+		argvchild[3] = optstr;
+		argvchild[4] = NULL;
+		execve(cmd,argvchild,safe_env());
+		exit(127);
+	    }
+	default: /* parent */
+	    {
+		int status;
+		waitpid(pid_wrapper, &status, 0);
+	    }
+	}
+	fflush(stdout);fflush(stdin);
+	return;
     }
 
     dbprintf(("checking disk %s: device %s", disk, device));

@@ -70,7 +70,7 @@ $group_default = "amanda";
 
 
 sub command_selfcheck {
-   print "selfcheck\n";
+   print "OK selfcheck\n";
 }
 
 sub command_estimate_full {
