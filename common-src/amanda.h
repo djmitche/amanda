@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.54 1998/02/26 19:24:30 jrj Exp $
+ * $Id: amanda.h,v 1.55 1998/03/10 00:25:01 blair Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -786,6 +786,7 @@ extern int gethostname P((char *name, int namelen));
 #endif
 
 #ifndef HAVE_GETOPT_DECL
+extern char *optarg;
 extern int getopt P((int argc, char * const *argv, const char *optstring));
 #endif
 
