@@ -1,3 +1,9 @@
+2004-01-08  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* Amanda 2.4.4p2 released.
+	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.4.4p2).
+
+
 2004-01-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/planner.c (handle_result): Detect bad estimate (-1).
