@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.30 1999/05/11 23:55:40 kashmir Exp $
+ * $Id: protocol.c,v 1.31 1999/05/26 20:36:27 kashmir Exp $
  *
  * implements amanda protocol
  */
@@ -58,18 +58,23 @@ typedef action_t (*pstate_t) P((struct proto *, action_t, pkt_t *));
  */
 typedef struct proto {
     pstate_t state;			/* current state of the request */
+    char *hostname;			/* remote host */
+    const security_driver_t *security_driver;	/* for connect retries */
     security_handle_t *security_handle;	/* network stream for this req */
     time_t timeout;			/* seconds for this timeout */
     time_t repwait;			/* seconds to wait for reply */
     time_t origtime;			/* orig start time of this request */
     time_t curtime;			/* time when this attempt started */
-    int reqtries;			/* times client can start over */
-    int acktries;			/* times we'll retry an ACK */
+    int connecttries;			/* times we'll retry a connect */
+    int reqtries;			/* times we'll resend a REQ */
+    int acktries;			/* times we'll wait for an a ACK */
     pkt_t req;				/* the actual wire request */
     protocol_sendreq_callback continuation; /* call when req dies/finishes */
     void *datap;			/* opaque cookie passed to above */
 } proto_t;
 
+#define	CONNECT_TRIES	3	/* num retries after connect errors */
+#define	CONNECT_WAIT	5	/* secs between connect attempts */
 #define ACK_WAIT	10	/* time (secs) to wait for ACK - keep short */
 #define ACK_TRIES	3	/* num retries after ACK_WAIT timeout */
 #define REQ_TRIES	2	/* num restarts (reboot/crash) */
@@ -95,9 +100,9 @@ static const char *pstate2str P((pstate_t));
 
 static void connect_callback P((void *, security_handle_t *,
     security_status_t));
+static void connect_wait_callback P((void *));
 static void recvpkt_callback P((void *, pkt_t *, security_status_t));
 
-static action_t s_init P((proto_t *, action_t, pkt_t *));
 static action_t s_sendreq P((proto_t *, action_t, pkt_t *));
 static action_t s_ackwait P((proto_t *, action_t, pkt_t *));
 static action_t s_repwait P((proto_t *, action_t, pkt_t *));
@@ -134,11 +139,14 @@ protocol_sendreq(hostname, security_driver, req, repwait, continuation, datap)
     proto_t *p;
 
     p = alloc(sizeof(proto_t));
-    p->state = s_init;
-    /* p->security_handle set in the callback */
+    p->state = s_sendreq;
+    p->hostname = stralloc(hostname);
+    p->security_driver = security_driver;
+    /* p->security_handle set in connect_callback */
     p->repwait = repwait;
     p->origtime = CURTIME;
     /* p->curtime set in the sendreq state */
+    p->connecttries = CONNECT_TRIES;
     p->reqtries = REQ_TRIES;
     p->acktries = ACK_TRIES;
     pkt_init(&p->req, P_REQ, req);
@@ -147,7 +155,7 @@ protocol_sendreq(hostname, security_driver, req, repwait, continuation, datap)
      * These are here for the caller
      * We call the continuation function after processing is complete.
      * We pass the datap on through untouched.  It is here so the caller
-     * has a way to associate random data with each request.
+     * has a way to keep state with each request.
      */
     p->continuation = continuation;
     p->datap = datap;
@@ -157,7 +165,7 @@ protocol_sendreq(hostname, security_driver, req, repwait, continuation, datap)
 	    (int)CURTIME, hostname, (int)p);
 #endif
 
-    security_connect(security_driver, hostname, connect_callback, p);
+    security_connect(p->security_driver, p->hostname, connect_callback, p);
 }
 
 /*
@@ -165,7 +173,7 @@ protocol_sendreq(hostname, security_driver, req, repwait, continuation, datap)
  * has initiated a connection to the given host, this will be called
  * with a security_handle_t.
  *
- * On error, the security_status_t arg will reflect errors, which can
+ * On error, the security_status_t arg will reflect errors which can
  * be had via security_geterror on the handle.
  */
 static void
@@ -190,11 +198,28 @@ connect_callback(cookie, security_handle, status)
 	break;
 
     case S_TIMEOUT:
-	state_machine(p, A_TIMEOUT, NULL);
-	break;
+	security_seterror(p->security_handle, "timeout during connect");
+	/* FALLTHROUGH */
 
     case S_ERROR:
-	state_machine(p, A_ERROR, NULL);
+	/*
+	 * For timeouts or errors, retry a few times, waiting CONNECT_WAIT
+	 * seconds between each attempt.  If they all fail, just return
+	 * an error back to the caller.
+	 */
+	if (--p->connecttries == 0) {
+	    state_machine(p, A_ABORT, NULL);
+	} else {
+#ifdef PROTO_DEBUG
+    fprintf(stderr, "protocol: time %d: connect_callback: p %X: retrying %s\n",
+	(int)CURTIME, (int)p, p->hostname);
+#endif
+	    security_close(p->security_handle);
+	    /* XXX overload p->security handle to hold the event handle */
+	    p->security_handle =
+		(security_handle_t *)event_register(CONNECT_WAIT, EV_TIME,
+		connect_wait_callback, p);
+	}
 	break;
 
     default:
@@ -202,6 +227,21 @@ connect_callback(cookie, security_handle, status)
 	break;
     }
 }
+
+/*
+ * This gets called when a host has been put on a wait queue because
+ * initial connection attempts failed.
+ */
+static void
+connect_wait_callback(cookie)
+    void *cookie;
+{
+    proto_t *p = cookie;
+
+    event_release((event_handle_t *)p->security_handle);
+    security_connect(p->security_driver, p->hostname, connect_callback, p);
+}
+
 
 /*
  * Does a one pass protocol sweep.  Handles any incoming packets that 
@@ -221,11 +261,8 @@ protocol_check()
 
 
 /*
- * Does an infinite pass protocol sweep.  For each packet on the pending
- * queue (which is sorted by timeout, ascending), wait for the response for
- * the first item.  If no res
- * it doesn't return until all requests have been satisfied or have timed
- * out.
+ * Does an infinite pass protocol sweep.  This doesn't return until all
+ * requests have been satisfied or have timed out.
  *
  * Callers should call this after they have finished submitting requests
  * and are just waiting for all of the answers to come back.
@@ -278,6 +315,9 @@ state_machine(p, action, pkt)
 #endif
 
 	/*
+	 * p->state is a function pointer to the current state a request
+	 * is in.
+	 *
 	 * We keep track of the last state we were in so we can make
 	 * sure states which return A_CONTINUE really have transitioned
 	 * the request to a new state.
@@ -292,9 +332,8 @@ state_machine(p, action, pkt)
 	    retaction = A_ABORT;
 	else
 	    /*
-	     * p->state is a function pointer to the current state a request
-	     * is in.  The function is expected to return one of the following
-	     * action_t's.
+	     * Else we run the state and perform the action it
+	     * requests.
 	     */
 	    retaction = (*curstate)(p, action, pkt);
 
@@ -304,12 +343,16 @@ state_machine(p, action, pkt)
 	    (int)CURTIME, (int)p, pstate2str(p->state), action2str(retaction));
 #endif
 
+	/*
+	 * The state function is expected to return one of the following
+	 * action_t's.
+	 */
 	switch (retaction) {
 
 	/*
 	 * Request is still waiting for more data off of the network.
-	 * Add it to the pending queue, to be processed when data is
-	 * received.
+	 * Setup to receive another pkt, and wait for the recv event
+	 * to occur.
 	 */
 	case A_PENDING:
 #ifdef PROTO_DEBUG
@@ -361,6 +404,7 @@ state_machine(p, action, pkt)
 	case A_FINISH:
 	    (*p->continuation)(p->datap, pkt, p->security_handle);
 	    security_close(p->security_handle);
+	    amfree(p->hostname);
 	    amfree(p);
 	    return;
 
@@ -372,51 +416,6 @@ state_machine(p, action, pkt)
     }
     /* NOTREACHED */
 }
-
-/*
- * The init state.  We have just received a handle, or our connection
- * to the remote host has timed out.
- */
-static action_t
-s_init(p, action, pkt)
-    proto_t *p;
-    action_t action;
-    pkt_t *pkt;
-{
-
-    assert(pkt == NULL);
-
-    switch (action) {
-
-    /*
-     * We made the connection.  Finish initializing, and move to the sendreq
-     * state.
-     */
-    case A_START:
-	p->state = s_sendreq;
-	return (A_CONTINUE);
-
-    /*
-     * Timeout making the connection.  Indicate this, and return.
-     * Generate an error message if the security driver didn't provide
-     * one.
-     */
-    case A_TIMEOUT:
-	security_seterror(p->security_handle, "timeout during connect");
-	return (A_ABORT);
-
-    /*
-     * Error.  Just abort.
-     */
-    case A_ERROR:
-	return (A_ABORT);
-
-    default:
-	assert(0);
-	return (A_ABORT);
-    }
-}
-
 
 /*
  * The request send state.  Here, the packet is actually transmitted
@@ -639,7 +638,6 @@ pstate2str(pstate)
 	const char name[12];
     } pstates[] = {
 #define	X(s)	{ s, stringize(s) }
-	X(s_init),
 	X(s_sendreq),
 	X(s_ackwait),
 	X(s_repwait),

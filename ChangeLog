@@ -1,5 +1,11 @@
 1999-05-26  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/protocol.c: retry connection failures three times,
+	waiting five seconds between each attempt.  Also, fix a lot
+	of untrue comments.
+
+1999-05-26  Mike Grupenhoff <kashmir@munge.com>
+
 	* client-src/amandad.c: add a lot more dbprintfs so we know what's
 	going on.
 	(service_new): use error() instead of dbprintf(); exit()
