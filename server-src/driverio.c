@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.19 1997/12/16 18:02:31 jrj Exp $
+ * $Id: driverio.c,v 1.20 1997/12/23 11:51:00 amcore Exp $
  *
  * I/O-related functions for driver program
  */
@@ -38,7 +38,7 @@
 #include "token.h"
 
 #define GLOBAL		/* the global variables defined here */
-#include "driver.h"
+#include "driverio.h"
 
 char *cmdstr[] = {
     "BOGUS", "QUIT", "DONE",
@@ -49,16 +49,6 @@ char *cmdstr[] = {
     "PORT", "TAPE-ERROR", "TAPER-OK",			/* taper results */
     NULL
 };
-
-char *pname = "driver";
-
-int main(main_argc, main_argv)
-int main_argc;
-char **main_argv;
-{
-    erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
-    return driver_main(main_argc, main_argv);
-}
 
 void addfd(fd)
 int fd;

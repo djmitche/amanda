@@ -56,22 +56,23 @@ amindexd_SOURCES =	amindexd.c					\
 			disk_history.c			disk_history.h	\
 			list_dir.c			list_dir.h
 
-driver_SOURCES =	driver.c			driver.h	\
-			driverio.c
+driver_SOURCES =	driver.c
 
 lib_LTLIBRARIES = 	@BUILD_SERVER_LIB@
 
 EXTRA_LTLIBRARIES = 	libamserver.la
 
 libamserver_la_SOURCES=	amindex.c	changer.c	clock.c		\
-			conffile.c	diskfile.c	infofile.c	\
-			logfile.c	tapefile.c	holding.c
+			conffile.c	diskfile.c	driverio.c	\
+			holding.c	infofile.c	logfile.c	\
+			tapefile.c
 
 libamserver_la_LDFLAGS= -version-info $(libserver_version) -rpath $(libdir)
 
 noinst_HEADERS = 	amindex.h	changer.h	clock.h		\
-			conffile.h	diskfile.h	infofile.h	\
-			logfile.h	tapefile.h	holding.h
+			conffile.h	diskfile.h	driverio.h	\
+			holding.h	infofile.h	logfile.h	\
+			tapefile.h
 
 install-exec-hook:
 	@list="$(sbin_PROGRAMS) $(sbin_SCRIPTS)"; \

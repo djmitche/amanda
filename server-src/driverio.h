@@ -25,10 +25,11 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.h,v 1.12 1997/12/16 18:02:29 jrj Exp $
+ * $Id: driverio.h,v 1.1 1997/12/23 11:51:01 amcore Exp $
  *
- * defines and globals for the Amanda driver
+ * driver-related helper functions
  */
+
 #define MAX_DUMPERS 15
 #define MAX_ARGS 10
 #define MAX_LINE 1024
@@ -92,60 +93,18 @@ typedef enum {
 } tok_t;
 
 extern char *cmdstr[];
-extern char *pname;
 
 GLOBAL tok_t tok;
-GLOBAL fd_set readset;
-GLOBAL disklist_t waitq, runq, stoppedq, tapeq;
-GLOBAL int pending_aborts, inside_dump_to_tape;
-GLOBAL int verbose;
 
+GLOBAL int maxfd;
+GLOBAL fd_set readset;
 GLOBAL int taper, taper_busy, taper_pid;
-GLOBAL disk_t *taper_disk;
 
 GLOBAL int argc;
 GLOBAL char *argv[MAX_ARGS+1];
-GLOBAL int maxfd;
-GLOBAL int force_parameters, use_lffo;
-GLOBAL char datestamp[80], taper_program[80], dumper_program[80];
+GLOBAL char datestamp[80];
+GLOBAL char taper_program[1024], dumper_program[1024];
 
-/* driver.c functions */
-
-int driver_main P((int argc, char **argv));
-int client_constrained P((disk_t *dp));
-int sort_by_priority_reversed P((disk_t *a, disk_t *b));
-int sort_by_time P((disk_t *a, disk_t *b));
-int sort_by_size_reversed P((disk_t *a, disk_t *b));
-int start_some_dumps P((disklist_t *rq));
-void dump_schedule P((disklist_t *qp, char *str));
-void start_degraded_mode P((disklist_t *queuep));
-void handle_taper_result P((void));
-dumper_t *idle_dumper P((void));
-int some_dumps_in_progress P((void));
-int num_busy_dumpers P((void));
-dumper_t *lookup_dumper P((int fd));
-void construct_datestamp P((char *buf, int len));
-void handle_dumper_result P((int fd));
-disklist_t read_schedule P((disklist_t *waitqp));
-int free_kps P((interface_t *ip));
-void allocate_bandwidth P((interface_t *ip, int kps));
-void deallocate_bandwidth P((interface_t *ip, int kps));
-unsigned long free_space P((void));
-holdingdisk_t *find_diskspace P((unsigned long size));
-char *diskname2filename P((char *dname));
-void assign_holdingdisk P((holdingdisk_t *holdp, disk_t *diskp));
-void adjust_diskspace P((disk_t *diskp, tok_t tok));
-void delete_diskspace P((disk_t *diskp));
-void holdingdisk_state P((char *time_str));
-int dump_to_tape P((disk_t *dp));
-int queue_length P((disklist_t q));
-void short_dump_state P((void));
-void dump_state P((char *str));
-
-
-/* driverio.c functions */
-
-int main P((int argc, char **argv));
 void addfd P((int fd));
 char *childstr P((int fd));
 void startup_tape_process P((void));

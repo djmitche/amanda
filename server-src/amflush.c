@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.14 1997/12/16 20:44:52 jrj Exp $
+ * $Id: amflush.c,v 1.15 1997/12/23 11:50:55 amcore Exp $
  *
  * write files from work directory onto tape
  */
@@ -38,67 +38,27 @@
 #include "clock.h"
 #include "version.h"
 #include "holding.h"
-
-#define MAX_ARGS 10
-#define MAX_LINE 1024
-
-/* define schedule structure */
-
-typedef struct sched_s {
-    int level;			/* dump level */
-    char destname[128];		/* file name */
-} sched_t;
-
-#define sched(dp)	((sched_t *) (dp)->up)
-
-/* command/result tokens */
-
-typedef enum {
-    BOGUS, QUIT, DONE,
-    FILE_DUMP, PORT_DUMP, CONTINUE, ABORT,		/* dumper cmds */
-    FAILED, TRYAGAIN, NO_ROOM, ABORT_FINISHED,		/* dumper results */
-    START_TAPER, FILE_WRITE, PORT_WRITE,		/* taper cmds */
-    PORT, TAPE_ERROR, TAPER_OK,				/* taper results */
-    LAST_TOK
-} tok_t;
-
-char *cmdstr[] = {
-    "BOGUS", "QUIT", "DONE",
-    "FILE-DUMP", "PORT-DUMP", "CONTINUE", "ABORT",	/* dumper cmds */
-    "FAILED", "TRY-AGAIN", "NO-ROOM", "ABORT-FINISHED",	/* dumper results */
-    "START-TAPER", "FILE-WRITE", "PORT-WRITE",		/* taper cmds */
-    "PORT", "TAPE-ERROR", "TAPER-OK",			/* taper results */
-    NULL
-};
-
-tok_t tok;
+#include "driverio.h"
 
 char *pname = "amflush";
 
-int taper, taper_pid;
-
 disklist_t *diskqp;
 
-int result_argc;
-char *result_argv[MAX_ARGS];
 static char *config;
 char confdir[1024];
-extern char datestamp[80], taper_program[80], reporter_program[80];
+char reporter_program[1024];
 
 /* local functions */
 int main P((int argc, char **argv));
 void flush_holdingdisk P((char *diskdir));
-static void startup_tape_process P((void));
-tok_t getresult P((int fd));
-void taper_cmd P((tok_t cmd, void *ptr, char *destname, int level));
 void confirm P((void));
 void detach P((void));
 void run_dumps P((void));
 
 
-int main(argc, argv)
-int argc;
-char **argv;
+int main(main_argc, main_argv)
+int main_argc;
+char **main_argv;
 {
     int foreground;
     struct passwd *pw;
@@ -107,16 +67,16 @@ char **argv;
     erroutput_type = ERR_INTERACTIVE;
     foreground = 0;
 
-    if(argc > 1 && !strcmp(argv[1], "-f")) {
+    if(main_argc > 1 && !strcmp(main_argv[1], "-f")) {
 	foreground = 1;
-	argc--,argv++;
+	main_argc--,main_argv++;
     }
 
-    if(argc != 2)
+    if(main_argc != 2)
 	error("Usage: amflush%s [-f] <confdir>", versionsuffix());
 
-    config = argv[1];
-    ap_snprintf(confdir, sizeof(confdir), "%s/%s", CONFIG_DIR, argv[1]);
+    config = main_argv[1];
+    ap_snprintf(confdir, sizeof(confdir), "%s/%s", CONFIG_DIR, main_argv[1]);
     if(chdir(confdir) != 0)
 	error("could not cd to confdir %s: %s",	confdir, strerror(errno));
 
@@ -251,16 +211,20 @@ char *diskdir;
 	    continue;
 	}
 
-	taper_cmd(FILE_WRITE, dp, destname, level);
+	taper_cmd(FILE_WRITE, dp);
 	tok = getresult(taper);
 	if(tok == TRYAGAIN) {
 	    /* we'll retry one time */
-	    taper_cmd(FILE_WRITE, dp, destname, level);
+	    taper_cmd(FILE_WRITE, dp);
 	    tok = getresult(taper);
 	}
 
 	switch(tok) {
-	case DONE:
+	case DONE: /* DONE <handle> <label> <tape file> <err mess> */
+	    assert(argc == 5);
+
+	    update_info_taper(dp, argv[3], atoi(argv[4]));
+	    
 	    unlink(destname);
 	    break;
 	case TRYAGAIN:
@@ -292,7 +256,7 @@ void run_dumps()
 
     chdir(confdir);
     startup_tape_process();
-    taper_cmd(START_TAPER, datestamp, NULL, 0);
+    taper_cmd(START_TAPER, datestamp);
     tok = getresult(taper);
 
     if(tok != TAPER_OK) {
@@ -307,7 +271,7 @@ void run_dumps()
 	    flush_holdingdisk(hdisk->diskdir);
 
 	/* tell taper to quit, then wait for it */
-	taper_cmd(QUIT, NULL, NULL, 0);
+	taper_cmd(QUIT, NULL);
 	while(wait(NULL) != -1);
 
     }
@@ -319,98 +283,3 @@ void run_dumps()
     chdir(confdir);
     execle(reporter_program, "reporter", (char *)0, safe_env());
 }
-
-static void startup_tape_process()
-{
-    int fd[2];
-
-    if(socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1)
-	error("taper pipe: %s", strerror(errno));
-
-    switch(taper_pid = fork()) {
-    case -1:
-	error("fork taper: %s", strerror(errno));
-    case 0:	/* child process */
-	close(fd[0]);
-	if(dup2(fd[1], 0) == -1 || dup2(fd[1], 1) == -1)
-	    error("taper dup2: %s", strerror(errno));
-	execle(taper_program, "taper", (char *)0, safe_env());
-	error("exec %s: %s", taper_program, strerror(errno));
-    default:	/* parent process */
-	close(fd[1]);
-	taper = fd[0];
-    }
-}
-
-char line[MAX_LINE];
-
-tok_t getresult(fd)
-int fd;
-{
-    char *p;
-    int arg, len;
-    tok_t t;
-
-    if((len = read(fd, line, MAX_LINE)) == -1)
-	error("reading result from taper: %s", strerror(errno));
-
-    line[len] = '\0';
-
-    p = line;
-    result_argc = 0;
-    while(*p) {
-	while(isspace(*p)) p++;
-	if(result_argc < MAX_ARGS) result_argv[result_argc++] = p;
-	while(*p && !isspace(*p)) p++;
-	if(*p) *p++ = '\0';
-    }
-    for(arg = result_argc; arg < MAX_ARGS; arg++) result_argv[arg] = "";
-
-#ifdef DEBUG
-    printf("argc = %d\n", result_argc);
-    for(arg = 0; arg < MAX_ARGS; arg++)
-	printf("argv[%d] = \"%s\"\n", arg, result_argv[arg]);
-#endif
-
-    for(t = BOGUS+1; t < LAST_TOK; t++)
-	if(!strcmp(result_argv[0], cmdstr[t])) return t;
-
-    return BOGUS;
-}
-
-
-void taper_cmd(cmd, /* optional */ ptr, destname, level)
-tok_t cmd;
-void *ptr;
-char *destname;
-int level;
-{
-    char cmdline[MAX_LINE];
-    disk_t *dp;
-    int len;
-
-    switch(cmd) {
-    case START_TAPER:
-	ap_snprintf(cmdline, sizeof(cmdline), "START-TAPER %s\n", (char *) ptr);
-	break;
-    case FILE_WRITE:
-	dp = (disk_t *) ptr;
-	ap_snprintf(cmdline, sizeof(cmdline), "FILE-WRITE handle %s %s %s %d\n",
-		    destname, dp->host->hostname, dp->name, level);
-	break;
-    case PORT_WRITE:
-	dp = (disk_t *) ptr;
-	ap_snprintf(cmdline, sizeof(cmdline), "PORT-WRITE handle %s %s %d\n",
-		    dp->host->hostname, dp->name, level);
-	break;
-    case QUIT:
-	ap_snprintf(cmdline, sizeof(cmdline), "QUIT\n");
-	break;
-    default:
-	assert(0);
-    }
-    len = strlen(cmdline);
-    if(write(taper, cmdline, len) < len)
-	error("writing taper command");
-}
-
