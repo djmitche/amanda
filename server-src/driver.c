@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.20.2.2 2004/02/13 14:03:36 martinea Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.20.2.3 2004/04/05 17:22:59 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -57,7 +57,7 @@ int  inparallel;
 int nodump = 0;
 long tape_length, tape_left = 0;
 int conf_taperalgo;
-host_t *flushhost = NULL;
+am_host_t *flushhost = NULL;
 
 int client_constrained P((disk_t *dp));
 int sort_by_priority_reversed P((disk_t *a, disk_t *b));
@@ -1423,7 +1423,7 @@ disklist_t *tapeqp;
 
 	/* add it to the flushhost list */
 	if(!flushhost) {
-	    flushhost = alloc(sizeof(host_t));
+	    flushhost = alloc(sizeof(am_host_t));
 	    flushhost->next = NULL;
 	    flushhost->hostname = stralloc("FLUSHHOST");
 	    flushhost->up = NULL;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.27.4.6.4.3.2.15 2003/12/16 22:36:45 martinea Exp $
+ * $Id: diskfile.c,v 1.27.4.6.4.3.2.15.2.1 2004/04/05 17:22:59 martinea Exp $
  *
  * read disklist file
  */
@@ -38,7 +38,7 @@
 static disklist_t lst;
 static FILE *diskf;
 static char *diskfname = NULL;
-static host_t *hostlist;
+static am_host_t *hostlist;
 static int line_num, got_parserror;
 
 /* local functions */
@@ -72,10 +72,10 @@ char *filename;
     else return &lst;
 }
 
-host_t *lookup_host(hostname)
+am_host_t *lookup_host(hostname)
 char *hostname;
 {
-    host_t *p;
+    am_host_t *p;
 
     for(p = hostlist; p != NULL; p = p->next) {
 	if(strcasecmp(p->hostname, hostname) == 0) return p;
@@ -86,7 +86,7 @@ char *hostname;
 disk_t *lookup_disk(hostname, diskname)
 char *hostname, *diskname;
 {
-    host_t *host;
+    am_host_t *host;
     disk_t *disk;
 
     host = lookup_host(hostname);
@@ -151,7 +151,7 @@ char *hostname;
 char *diskname;
 {
     disk_t *disk;
-    host_t *host;
+    am_host_t *host;
 
     disk = alloc(sizeof(disk_t));
     disk->line = 0;
@@ -165,7 +165,7 @@ char *diskname;
 
     host = lookup_host(hostname);
     if(host == NULL) {
-	host = alloc(sizeof(host_t));
+	host = alloc(sizeof(am_host_t));
 	host->next = hostlist;
 	hostlist = host;
 
@@ -261,7 +261,7 @@ char *st;
 
 static int read_diskline()
 {
-    host_t *host;
+    am_host_t *host;
     disk_t *disk;
     dumptype_t *dtype;
     interface_t *netif = 0;
@@ -475,7 +475,7 @@ static int read_diskline()
     /* success, add disk to lists */
 
     if(host == NULL) {			/* new host */
-	host = alloc(sizeof(host_t));
+	host = alloc(sizeof(am_host_t));
 	malloc_mark(host);
 	host->next = hostlist;
 	hostlist = host;
@@ -928,7 +928,7 @@ void
 dump_disklist()
 {
     disk_t *dp, *prev;
-    host_t *hp;
+    am_host_t *hp;
 
     if(hostlist == NULL) {
 	printf("DISKLIST not read in\n");

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.19.2.7.2.20.2.3 2004/03/23 11:38:35 weichinger Exp $
+ * $Id: amcheck.c,v 1.50.2.19.2.7.2.20.2.4 2004/04/05 17:22:59 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1019,7 +1019,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	char *infofile = NULL;
 	struct stat statbuf;
 	disk_t *dp;
-	host_t *hostp;
+	am_host_t *hostp;
 	int indexdir_checked = 0;
 	int hostindexdir_checked = 0;
 	char *host;
@@ -1241,7 +1241,7 @@ static void handle_response P((proto_t *p, pkt_t *pkt));
 #define DISK_DONE				((void *)2)
 
 int start_host(hostp)
-    host_t *hostp;
+    am_host_t *hostp;
 {
     disk_t *dp;
     char *req = NULL;
@@ -1441,7 +1441,7 @@ int start_host(hostp)
 int start_client_checks(fd)
 int fd;
 {
-    host_t *hostp;
+    am_host_t *hostp;
     disk_t *dp;
     int hostcount, pid;
     struct servent *amandad;
@@ -1527,7 +1527,7 @@ static void handle_response(p, pkt)
 proto_t *p;
 pkt_t *pkt;
 {
-    host_t *hostp;
+    am_host_t *hostp;
     disk_t *dp;
     char *line;
     char *s;
@@ -1535,7 +1535,7 @@ pkt_t *pkt;
     int ch;
     int tch;
 
-    hostp = (host_t *) p->datap;
+    hostp = (am_host_t *) p->datap;
     hostp->up = HOST_READY;
 
     if(p->state == S_FAILED && pkt == NULL) {
