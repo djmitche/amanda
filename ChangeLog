@@ -1,3 +1,7 @@
+1998-11-21  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* Amanda 2.4.1p1 released
+
 1998-11-20  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/amcleanup.sh.in (logdir/amdump): arrange that it is
