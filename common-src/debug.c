@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.7 1997/10/30 14:49:18 amcore Exp $
+ * $Id: debug.c,v 1.8 1997/11/07 10:08:30 george Exp $
  *
  * debug log subroutines
  */
@@ -37,9 +37,13 @@ int debug = 1;
 extern char *pname;
 
 #ifdef DEBUG_CODE
-int db_file = -1;
+  int db_file = -1;
 #else
-int db_file = 2;
+  int db_file = 2;
+#endif
+
+#ifndef DEBUG_DIR
+#  define DEBUG_DIR "/tmp"
 #endif
 
 arglist_function(void debug_printf, char *, format)
@@ -71,45 +75,45 @@ void debug_open()
 {
     time_t curtime;
     int saved_debug;
-    int maxtries = 50;
+    int maxtries;
     char dbfilename[256];
     struct passwd *pwent;
-    uid_t uid = 0;
-    gid_t gid = 0;
-
-#ifndef DEBUG_DIR
-#define DEBUG_DIR "/tmp"
-#endif
-
-#ifdef DEBUG_FILE_WITH_PID
-    sprintf(dbfilename,"%s/%s.debug.%ld", DEBUG_DIR, pname, (long) getpid());
-#else
-    sprintf(dbfilename,"%s/%s.debug", DEBUG_DIR, pname);
-#endif
+    uid_t uid;
+    gid_t gid;
 
     if((pwent = getpwnam(CLIENT_LOGIN)) != NULL) {
 	uid = pwent->pw_uid;
 	gid = pwent->pw_gid;
     }
-
-    do {
-      unlink(dbfilename);
-      if (--maxtries)
-	continue;
-      error("open debug file \"%s\": %s", dbfilename, strerror(errno));
-    } while(maketreefor(dbfilename, 0700, uid, gid) != 0
-	    || (db_file = open(dbfilename, O_WRONLY|O_CREAT|O_EXCL|O_APPEND,
-			       0600)) == -1);
-
-    if (uid || gid) {
-	chown(dbfilename, uid, gid);
+    else {
+	uid = (uid_t)-1;
+	gid = (gid_t)-1;
     }
+
+#ifdef DEBUG_FILE_WITH_PID
+    sprintf(dbfilename, "%s/%s.%ld.debug", DEBUG_DIR, pname, (long)getpid());
+#else
+    sprintf(dbfilename, "%s/%s.debug", DEBUG_DIR, pname);
+#endif
+
+    if(mkpdir(dbfilename, 0700, uid, gid) == -1)
+        error("open debug file \"%s\": %s", dbfilename, strerror(errno));
+
+    maxtries = 50;
+    do {
+	if (--maxtries == 0)
+	    error("open debug file \"%s\": %s", dbfilename, strerror(errno));
+	unlink(dbfilename);
+	db_file = open(dbfilename, O_WRONLY|O_CREAT|O_EXCL|O_APPEND, 0600);
+    } while(db_file == -1);
+
+    chown(dbfilename, uid, gid);
 
     time(&curtime);
     saved_debug = debug; debug = 1;
     debug_printf("%s: debug %d pid %ld ruid %ld euid %ld start time %s",
-		 pname, debug, (long) getpid(), (long) getuid(),
-		 (long) geteuid(), ctime(&curtime));
+		 pname, debug, (long)getpid(), (long)getuid(),
+		 (long)geteuid(), ctime(&curtime));
     debug = saved_debug;
 }
 
@@ -119,7 +123,7 @@ void debug_close()
 
     time(&curtime);
     debug = 1;
-    debug_printf("%s: pid %ld finish time %s",pname, (long) getpid(),
+    debug_printf("%s: pid %ld finish time %s", pname, (long)getpid(),
 		 ctime(&curtime));
 
     if(close(db_file) == -1)
