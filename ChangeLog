@@ -1,3 +1,20 @@
+2002-11-06  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* common-src/amfeatures.h (fe_amidxtaped_fsf, fe_amidxtaped_label,
+	  fe_amidxtaped_device, fe_amidxtaped_host, fe_amidxtaped_disk,
+	  fe_amidxtaped_datestamp, fe_amidxtaped_header, fe_amidxtaped_nargs,
+	  fe_amidxtaped_config): New features.
+	* common-src/amfeatures.c (am_init_feature_set): Set new features.
+	* recover-src/extract_list.c: Send new protocol data to amidxtaped.
+	* restore-src/Makefile.am: amidxtaped.c need libamserver.
+	* restore-src/amidxtaped.c: Read new protocol data from amrecover.
+	* restore-src/amidxtaped.c: Use new configuration options.
+	* server-src/conffile.c (conf_amrecover_do_fsf,
+	  conf_amrecover_check_label, conf_amrecover_changer): New config.
+	* server-src/conffile.h: New config options.
+	* example/amanda.conf.in: Document them.
+	* man/amanda.8.in: Document them.
+
 2002-11-05  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* autogen: touch config/config.h.in

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.c,v 1.9 2002/10/27 21:13:12 martinea Exp $
+ * $Id: amfeatures.c,v 1.10 2002/11/07 02:12:46 martinea Exp $
  *
  * Feature test related code.
  */
@@ -99,6 +99,15 @@ am_init_feature_set()
 
 	am_add_feature(f, fe_amindexd_fileno_in_OLSD);
 	am_add_feature(f, fe_amindexd_fileno_in_ORLD);
+	am_add_feature(f, fe_amidxtaped_fsf);
+	am_add_feature(f, fe_amidxtaped_label);
+	am_add_feature(f, fe_amidxtaped_device);
+	am_add_feature(f, fe_amidxtaped_host);
+	am_add_feature(f, fe_amidxtaped_disk);
+	am_add_feature(f, fe_amidxtaped_datestamp);
+	am_add_feature(f, fe_amidxtaped_header);
+	am_add_feature(f, fe_amidxtaped_nargs);
+	am_add_feature(f, fe_amidxtaped_config);
     }
     return f;
 }

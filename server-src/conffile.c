@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.93 2002/11/05 01:58:52 martinea Exp $
+ * $Id: conffile.c,v 1.94 2002/11/07 02:12:48 martinea Exp $
  *
  * read configuration file
  */
@@ -70,6 +70,7 @@ typedef enum {
     DEFINE, DUMPTYPE, TAPETYPE, INTERFACE,
     PRINTER, AUTOFLUSH, RESERVE,
     COLUMNSPEC, 
+    AMRECOVER_DO_FSF, AMRECOVER_CHECK_LABEL, AMRECOVER_CHANGER,
 
     /* holding disk */
     COMMENT, DIRECTORY, USE, CHUNKSIZE,
@@ -171,6 +172,7 @@ static val_t conf_tapetype;
 static val_t conf_indexdir;
 static val_t conf_columnspec;
 static val_t conf_dumporder;
+static val_t conf_amrecover_changer;
 
 /* ints */
 static val_t conf_dumpcycle;
@@ -191,6 +193,8 @@ static val_t conf_ctimeout;
 static val_t conf_tapebufs;
 static val_t conf_autoflush;
 static val_t conf_reserve;
+static val_t conf_amrecover_do_fsf;
+static val_t conf_amrecover_check_label;
 
 /* reals */
 static val_t conf_bumpmult;
@@ -242,6 +246,9 @@ static int seen_tapebufs;
 static int seen_autoflush;
 static int seen_reserve;
 static int seen_columnspec;
+static int seen_amrecover_do_fsf;
+static int seen_amrecover_check_label;
+static int seen_amrecover_changer;
 
 static int allow_overwrites;
 static int token_pushed;
@@ -380,6 +387,9 @@ struct byname {
     { "TAPEBUFS", CNF_TAPEBUFS, INT },
     { "RAWTAPEDEV", CNF_RAWTAPEDEV, STRING },
     { "COLUMNSPEC", CNF_COLUMNSPEC, STRING },
+    { "AMRECOVER_DO_FSF", CNF_AMRECOVER_DO_FSF, BOOL },
+    { "AMRECOVER_CHECK_LABEL", CNF_AMRECOVER_CHECK_LABEL, BOOL },
+    { "AMRECOVER_CHANGER", CNF_AMRECOVER_CHANGER, STRING },
     { "AUTOFLUSH", CNF_AUTOFLUSH, BOOL },
     { "RESERVE", CNF_RESERVE, INT },
     { NULL }
@@ -460,6 +470,9 @@ confparm_t parm;
     case CNF_RAWTAPEDEV: return seen_rawtapedev;
     case CNF_AUTOFLUSH: return seen_autoflush;
     case CNF_RESERVE: return seen_reserve;
+    case CNF_AMRECOVER_DO_FSF: return seen_amrecover_do_fsf;
+    case CNF_AMRECOVER_CHECK_LABEL: return seen_amrecover_check_label;
+    case CNF_AMRECOVER_CHANGER: return seen_amrecover_changer;
     default: return 0;
     }
 }
@@ -488,6 +501,8 @@ confparm_t parm;
     case CNF_TAPEBUFS: r = conf_tapebufs.i; break;
     case CNF_AUTOFLUSH: r = conf_autoflush.i; break;
     case CNF_RESERVE: r = conf_reserve.i; break;
+    case CNF_AMRECOVER_DO_FSF: r = conf_amrecover_do_fsf.i; break;
+    case CNF_AMRECOVER_CHECK_LABEL: r = conf_amrecover_check_label.i; break;
 
     default:
 	error("error [unknown getconf_int parm: %d]", parm);
@@ -539,6 +554,7 @@ confparm_t parm;
     case CNF_INDEXDIR: r = conf_indexdir.s; break;
     case CNF_RAWTAPEDEV: r = conf_rawtapedev.s; break;
     case CNF_COLUMNSPEC: r = conf_columnspec.s; break;
+    case CNF_AMRECOVER_CHANGER: r = conf_amrecover_changer.s; break;
 
     default:
 	error("error [unknown getconf_str parm: %d]", parm);
@@ -657,6 +673,7 @@ static void init_defaults()
     malloc_mark(conf_columnspec.s);
     conf_dumporder.s = newstralloc(conf_dumporder.s, "ttt");
     malloc_mark(conf_dumporder.s);
+    conf_amrecover_changer.s = newstralloc(conf_amrecover_changer.s, "");
 
     conf_dumpcycle.i	= 10;
     conf_runspercycle.i	= 0;
@@ -676,6 +693,8 @@ static void init_defaults()
     conf_tapebufs.i     = 20;
     conf_autoflush.i	= 0;
     conf_reserve.i	= 100;
+    conf_amrecover_do_fsf.i = 0;
+    conf_amrecover_check_label.i = 0;
 
     /* defaults for internal variables */
 
@@ -718,6 +737,9 @@ static void init_defaults()
     seen_autoflush = 0;
     seen_reserve = 0;
     seen_columnspec = 0;
+    seen_amrecover_do_fsf = 0;
+    seen_amrecover_check_label = 0;
+    seen_amrecover_changer = 0;
     line_num = got_parserror = 0;
     allow_overwrites = 0;
     token_pushed = 0;
@@ -885,6 +907,9 @@ keytab_t main_keytable[] = {
     { "AUTOFLUSH", AUTOFLUSH },
     { "RESERVE", RESERVE },
     { "COLUMNSPEC", COLUMNSPEC },
+    { "AMRECOVER_DO_FSF", AMRECOVER_DO_FSF },
+    { "AMRECOVER_CHECK_LABEL", AMRECOVER_CHECK_LABEL },
+    { "AMRECOVER_CHANGER", AMRECOVER_CHANGER },
     { NULL, IDENT }
 };
 
@@ -999,6 +1024,10 @@ static int read_confline()
 		    }
 		    break;
     case COLUMNSPEC:get_simple(&conf_columnspec,&seen_columnspec,STRING); break;
+
+    case AMRECOVER_DO_FSF: get_simple(&conf_amrecover_do_fsf,&seen_amrecover_do_fsf, BOOL); break;
+    case AMRECOVER_CHECK_LABEL: get_simple(&conf_amrecover_check_label,&seen_amrecover_check_label, BOOL); break;
+    case AMRECOVER_CHANGER: get_simple(&conf_amrecover_changer,&seen_amrecover_changer, STRING); break;
 
     case LOGFILE: /* XXX - historical */
 	/* truncate the filename part and pretend he said "logdir" */
@@ -2707,6 +2736,9 @@ dump_configuration(filename)
     printf("conf_tapebufs = %d\n", getconf_int(CNF_TAPEBUFS));
     printf("conf_autoflush  = %d\n", getconf_int(CNF_AUTOFLUSH));
     printf("conf_reserve  = %d\n", getconf_int(CNF_RESERVE));
+    printf("conf_amrecover_do_fsf  = %d\n", getconf_int(CNF_AMRECOVER_DO_FSF));
+    printf("conf_amrecover_check_label  = %d\n", getconf_int(CNF_AMRECOVER_CHECK_LABEL));
+    printf("conf_amrecover_changer = \"%s\"\n", getconf_str(CNF_AMRECOVER_CHANGER));
 
     /*printf("conf_diskdir = \"%s\"\n", getconf_str(CNF_DISKDIR));*/
     /*printf("conf_disksize = %d\n", getconf_int(CNF_DISKSIZE));*/

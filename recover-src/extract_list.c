@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.74 2002/10/27 21:13:13 martinea Exp $
+ * $Id: extract_list.c,v 1.75 2002/11/07 02:12:47 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1079,7 +1079,9 @@ char *cmd;
 /* start up connection to tape server and set commands to initiate
    transfer of dump image.
    Return tape server socket on success, -1 on error. */
-static int extract_files_setup P((void))
+static int extract_files_setup(label, fsf)
+char *label;
+int fsf;
 {
     struct servent *sp;
     int my_port;
@@ -1156,7 +1158,7 @@ static int extract_files_setup P((void))
     ch = dump_hostname;
     ch1 = host_regex;
 
-    /* we want to force amrestore to only match disk_name exactly */
+    /* we want to force amrestore to only match dump_hostname exactly */
     *(ch1++) = '^';
 
     /* We need to escape some characters first... NT compatibilty crap */
@@ -1170,7 +1172,7 @@ static int extract_files_setup P((void))
 	}
     }
 
-    /* we want to force amrestore to only match disk_name exactly */
+    /* we want to force amrestore to only match dump_hostname exactly */
     *(ch1++) = '$';
 
     *ch1 = '\0';
@@ -1183,28 +1185,69 @@ static int extract_files_setup P((void))
 	}
     }
     *ch = '\0';
-    /* send to the tape server what tape file we want */
-    /* 6 args:
-     *   "-h"
-     *   "-p"
-     *   "tape device"
-     *   "hostname"
-     *   "diskname"
-     *   "datestamp"
-     */
-    send_to_tape_server(tape_server_socket, "6");
-    send_to_tape_server(tape_server_socket, "-h");
-    send_to_tape_server(tape_server_socket, "-p");
-    send_to_tape_server(tape_server_socket, dump_device_name);
-    send_to_tape_server(tape_server_socket, host_regex);
-    send_to_tape_server(tape_server_socket, disk_regex);
-    send_to_tape_server(tape_server_socket, clean_datestamp);
 
-    dbprintf(("Started amidxtaped with arguments \"6 -h -p %s %s %s %s\"\n",
-	      dump_device_name, host_regex, disk_regex, clean_datestamp));
+    if(am_has_feature(their_features, fe_amidxtaped_header) &&
+       am_has_feature(their_features, fe_amidxtaped_device) &&
+       am_has_feature(their_features, fe_amidxtaped_host) &&
+       am_has_feature(their_features, fe_amidxtaped_disk) &&
+       am_has_feature(their_features, fe_amidxtaped_datestamp)) {
 
-    amfree(disk_regex);
-    amfree(host_regex);
+	char *tt = NULL;
+
+	if(am_has_feature(their_features, fe_amidxtaped_config)) {
+	    tt = newstralloc2(tt, "CONFIG=", config);
+	    send_to_tape_server(tape_server_socket, tt);
+	}
+	if(am_has_feature(their_features, fe_amidxtaped_label) &&
+	   label && label[0] != '/') {
+	    tt = newstralloc2(tt,"LABEL=",label);
+	    send_to_tape_server(tape_server_socket, tt);
+	}
+	if(am_has_feature(their_features, fe_amidxtaped_fsf)) {
+	    char v_fsf[100];
+	    snprintf(v_fsf, 99, "%d", fsf);
+	    tt = newstralloc2(tt, "FSF=",v_fsf);
+	    send_to_tape_server(tape_server_socket, tt);
+	}
+	send_to_tape_server(tape_server_socket, "HEADER");
+	tt = newstralloc2(tt, "DEVICE=", dump_device_name);
+	send_to_tape_server(tape_server_socket, tt);
+	tt = newstralloc2(tt, "HOST=", host_regex);
+	send_to_tape_server(tape_server_socket, tt);
+	tt = newstralloc2(tt, "DISK=", disk_regex);
+	send_to_tape_server(tape_server_socket, tt);
+	tt = newstralloc2(tt, "DATESTAMP=", clean_datestamp);
+	send_to_tape_server(tape_server_socket, tt);
+	send_to_tape_server(tape_server_socket, "END");
+	amfree(tt);
+    }
+    else if(1 /* am_has_feature(their_features, fe_amidxtaped_nargs) */) {
+	/* 2.4.3 doesn't set fe_amidxtaped_nargs but support it */
+	/* must be supported without test until 2005 */
+
+	/* send to the tape server what tape file we want */
+	/* 6 args:
+	 *   "-h"
+	 *   "-p"
+	 *   "tape device"
+	 *   "hostname"
+	 *   "diskname"
+	 *   "datestamp"
+	 */
+	send_to_tape_server(tape_server_socket, "6");
+	send_to_tape_server(tape_server_socket, "-h");
+	send_to_tape_server(tape_server_socket, "-p");
+	send_to_tape_server(tape_server_socket, dump_device_name);
+	send_to_tape_server(tape_server_socket, host_regex);
+	send_to_tape_server(tape_server_socket, disk_regex);
+	send_to_tape_server(tape_server_socket, clean_datestamp);
+
+	dbprintf(("Started amidxtaped with arguments \"6 -h -p %s %s %s %s\"\n",
+		  dump_device_name, host_regex, disk_regex, clean_datestamp));
+
+	amfree(disk_regex);
+	amfree(host_regex);
+    }
 
     return tape_server_socket;
 }
@@ -1601,7 +1644,7 @@ void extract_files P((void))
 	dump_datestamp = newstralloc(dump_datestamp, elist->date);
 
 	/* connect to the tape handler daemon on the tape drive server */
-	if ((tape_server_socket = extract_files_setup()) == -1)
+	if ((tape_server_socket = extract_files_setup(elist->tape, elist->fileno)) == -1)
 	{
 	    fprintf(stderr, "amrecover - can't talk to tape server\n");
 	    return;

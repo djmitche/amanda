@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.45 2002/04/07 20:01:12 jrjackson Exp $
+ * $Id: conffile.h,v 1.46 2002/11/07 02:12:48 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -75,7 +75,10 @@ typedef enum conf_e {
     CNF_PRINTER,
     CNF_AUTOFLUSH,
     CNF_RESERVE,
-    CNF_COLUMNSPEC
+    CNF_COLUMNSPEC,
+    CNF_AMRECOVER_DO_FSF,
+    CNF_AMRECOVER_CHECK_LABEL,
+    CNF_AMRECOVER_CHANGER
 } confparm_t;
 
 typedef struct tapetype_s {

@@ -825,6 +825,20 @@ Default:
 .IR off .
 Whether an amdump run will flush the dump already on holding disk to tape.
 .TP
+.BN amrecover_do_fsf bool
+Default:
+.IR off .
+Amrecover will call amrestore with the -f flag for faster positioning of the tape.
+.TP
+.BN amrecover_check_label bool
+Default:
+.IR off .
+Amrecover will call amrestore with the -l flag to check the label.
+.TP
+.BS amrecover_changer string
+Default: ''.
+Amrecover will use the changer if you restore from this device..
+.TP
 .BS columnspec string
 Defines the width of columns
 .B amreport
