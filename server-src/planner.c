@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.67 1998/05/15 12:10:28 amcore Exp $
+ * $Id: planner.c,v 1.68 1998/07/02 08:58:19 oliva Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -591,20 +591,14 @@ disk_t *dp;
     if(dp->skip_full) {
 	if(ep->next_level0 <= 0) {
 	    /* update the date field */
-	    if(inf.inf[0].date == EPOCH || inf.command == PLANNER_FORCE)
-		inf.inf[0].date = today;
-	    else
-		inf.inf[0].date += conf_dumpcycle * SECS_PER_DAY;
+	    inf.inf[0].date = today;
 	    if(inf.command == PLANNER_FORCE)
 		inf.command = NO_COMMAND;
+	    ep->next_level0 += conf_dumpcycle;
+	    ep->last_level = 0;
 	    if(put_info(dp->host->hostname, dp->name, &inf))
 		error("could not put info record for %s:%s: %s",
 		      dp->host->hostname, dp->name, strerror(errno));
-	    ep->next_level0 += conf_dumpcycle;
-	    ep->last_level = 0;
-	}
-
-	if(days_diff(inf.inf[0].date, today) == 0) {
 	    log_add(L_INFO, "Skipping full dump of %s:%s today.",
 		    dp->host->hostname, dp->name);
 	    fprintf(stderr,"%s:%s lev 0 skipped due to skip-full flag\n",
@@ -620,11 +614,15 @@ disk_t *dp;
 	    return;
 	}
 
+	if(ep->last_level == -1) {
+	    /* probably a new disk, but skip-full means no full! */
+	    ep->last_level = 0;
+	}
+
 	if(ep->next_level0 == 1) {
 	    log_add(L_WARNING, "Skipping full dump of %s:%s tommorrow.",
 		    dp->host->hostname, dp->name);
 	}
-
     }
 
     /* handle "skip-incr" type archives */

@@ -1,5 +1,8 @@
 1998-07-02  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* server-src/planner.c (setup_estimate): handle new disks with
+	skip-full correctly.
+
 	* Makefile.am (aclocal.m4): must depend on libtool.m4, so as to
  	force it to be newer on distributions.
 
