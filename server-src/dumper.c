@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.66 1998/06/08 01:05:15 kovert Exp $
+/* $Id: dumper.c,v 1.67 1998/06/17 17:15:40 jrj Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -839,9 +839,12 @@ int write_tapeheader(outfd, file)
 int outfd;
 dumpfile_t *file;
 {
-    char buffer[TAPE_BLOCK_BYTES], *bufptr;
+    char buffer[TAPE_BLOCK_BYTES];
+#if 0
+    char *bufptr;
     int len;
     int count;
+#endif
 
     write_header(buffer, file, sizeof(buffer));
 
