@@ -1,5 +1,11 @@
 2004-08-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* common-src/match.c (match_tar, tar_to_regex): New fonction similar
+	  to the exclude option of tar.
+	* common-src/amanda.h (match_tar, tar_to_regex): Prototype.
+
+2004-08-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
         * server-src/infofile.h (history_t): new struct.
         * server-src/infofile.h (info_t): Add a history_t.
         * server-src/infofile.c (read_txinfofile): Parse history data.

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: match.c,v 1.10.4.1.4.1.2.4 2002/11/12 18:01:19 martinea Exp $
+ * $Id: match.c,v 1.10.4.1.4.1.2.4.2.1 2004/08/02 18:56:32 martinea Exp $
  *
  * functions for checking and matching regular expressions
  */
@@ -194,6 +194,111 @@ char *glob;
 	    if (ch == '*') {
 		*r++ = '*';
 	    }
+	} else if (ch == '('
+		   || ch == ')'
+		   || ch == '{'
+		   || ch == '}'
+		   || ch == '+'
+		   || ch == '.'
+		   || ch == '^'
+		   || ch == '$'
+		   || ch == '|') {
+	    *r++ = '\\';
+	    *r++ = ch;
+	} else {
+	    *r++ = ch;
+	}
+    }
+    if (last_ch != '\\') {
+	*r++ = '$';
+    }
+    *r = '\0';
+
+    return regex;
+}
+
+
+int match_tar(glob, str)
+char *glob, *str;
+{
+    char *regex = NULL;
+    regex_t regc;
+    int result;
+    char errmsg[STR_SIZE];
+
+    regex = tar_to_regex(glob);
+    if((result = regcomp(&regc, regex,
+			 REG_EXTENDED|REG_NOSUB|REG_NEWLINE)) != 0) {
+        regerror(result, &regc, errmsg, sizeof(errmsg));
+	amfree(regex);
+	error("glob \"%s\" -> regex \"%s\": %s", glob, regex, errmsg);
+    }
+
+    if((result = regexec(&regc, str, 0, 0, 0)) != 0
+       && result != REG_NOMATCH) {
+        regerror(result, &regc, errmsg, sizeof(errmsg));
+	amfree(regex);
+	error("glob \"%s\" -> regex \"%s\": %s", glob, regex, errmsg);
+    }
+
+    regfree(&regc);
+    amfree(regex);
+
+    return result == 0;
+}
+
+char *tar_to_regex(glob)
+char *glob;
+{
+    char *regex;
+    char *r;
+    size_t len;
+    int ch;
+    int last_ch;
+
+    /*
+     * Allocate an area to convert into.  The worst case is a five to
+     * one expansion.
+     */
+    len = strlen(glob);
+    regex = alloc(1 + len * 5 + 1 + 1);
+
+    /*
+     * Do the conversion:
+     *
+     *  ?      -> [^/]
+     *  *      -> .*
+     *  [!...] -> [^...]
+     *
+     * The following are given a leading backslash to protect them
+     * unless they already have a backslash:
+     *
+     *   ( ) { } + . ^ $ |
+     *
+     * Put a leading ^ and trailing $ around the result.  If the last
+     * non-escaped character is \ leave the $ off to cause a syntax
+     * error when the regex is compiled.
+     */
+
+    r = regex;
+    *r++ = '^';
+    last_ch = '\0';
+    for (ch = *glob++; ch != '\0'; last_ch = ch, ch = *glob++) {
+	if (last_ch == '\\') {
+	    *r++ = ch;
+	    ch = '\0';			/* so last_ch != '\\' next time */
+	} else if (last_ch == '[' && ch == '!') {
+	    *r++ = '^';
+	} else if (ch == '\\') {
+	    *r++ = ch;
+	} else if (ch == '*') {
+	    *r++ = '.';
+	    *r++ = '*';
+	} else if (ch == '?') {
+	    *r++ = '[';
+	    *r++ = '^';
+	    *r++ = '/';
+	    *r++ = ']';
 	} else if (ch == '('
 		   || ch == ')'
 		   || ch == '{'
