@@ -1,3 +1,8 @@
+1999-03-23  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/stream.c, common-src/stream.h (stream_client):
+	const the hostname arg
+
 1999-03-22 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* configure.in: AC_SUBST(GNUTAR_LISTED_INCREMENTAL_DIR)

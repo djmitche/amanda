@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.13 1998/12/09 18:33:24 jrj Exp $
+ * $Id: stream.c,v 1.14 1999/03/23 21:12:00 kashmir Exp $
  *
  * functions for managing stream sockets
  */
@@ -123,7 +123,7 @@ int sendsize, recvsize;
 }
 
 int stream_client(hostname, port, sendsize, recvsize, localport)
-char *hostname;
+const char *hostname;
 int port, sendsize, recvsize, *localport;
 {
     int client_socket;
