@@ -1,5 +1,5 @@
  #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.27.2.7.2.3 2002/01/10 21:41:37 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.27.2.7.2.4 2002/01/11 21:11:33 martinea Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -5755,7 +5755,7 @@ int SCSI_ReadElementStatus(int DeviceFD,
   ElementStatusData_T *ElementStatusData;
   RequestSense_T *pRequestSense;
   int retry = 1;
-  int ret; 
+  int ret = -1; 
  
   DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### START SCSI_ReadElementStatus\n");
 

@@ -1,4 +1,9 @@
-2002-01-11   Thomas Hepper <th@ant.han.de>
+2002-01-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* changer-src/scsi-changer-driver.c (SCSI_ReadElementStatus):
+	  set ret to -1.
+
+2002-01-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/planner.c: Check for dp->todo.
 
