@@ -1,6 +1,6 @@
 AMANDA SECURITY API
 
-$Id: SECURITY-API,v 1.1 1998/11/04 19:32:35 kashmir Exp $
+$Id: SECURITY-API,v 1.2 1998/11/05 23:10:17 kashmir Exp $
 
 by Mike Grupenhoff <kashmir@munge.com>
 
@@ -100,13 +100,22 @@ security_geterror().
 3.1.6. security_recvpkt
 
     int security_recvpkt(security_handle_t *h,
-	void (*callback)(void *arg, pkt_t *pkt), void *arg);
+	void (*callback)(void *arg, pkt_t *pkt, security_recvpkt_status_t),
+	void *arg, int timeout);
 
 Requests that when incoming packets arrive for this handle, the given
-function is called with the given argument and the received packet.
+function is called with the given argument, the received packet, and
+the status of the reception.
 
-On receive error, the callback will be passed NULL for the pkt arg.  An
-error message can be retrieved via security_geterror().
+If a packet does not arrive within the number of seconds specified in
+the 'timeout' argument, RECV_TIMEOUT is passed in the status argument
+of the timeout.
+
+On receive error, the callback's status argument will be set to RECV_ERROR.
+An error message can be retrieved via security_geterror().
+
+On successful reception, RECV_OK will be passed in the status argument,
+and the pkt argument will point to a valid packet.
 
 This function uses the event interface.  Callbacks will only be generated
 when event_loop() is called.
@@ -228,6 +237,17 @@ many to the same remote host.
 This is an object that describes a data connection to a remote host.
 It is always associated and derived from a security_handle_t.
 Arbitrary data can be passed over a security stream.
+
+4.4. security_recvpkt_status_t
+
+This is an enumerated type that is passed to the callback of
+security_recvpkt.  The possible values it can have are:
+
+    RECV_OK - the pkt_t was received fine
+    RECV_TIMEOUT - no pkt_t was received within the time specified in
+	the timeout argument to security_recvpkt().
+    RECV_ERROR - an error occurred during reception.  Call
+	security_geterror() for more information.
 
 5. SECURITY DRIVERS
 
