@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.84 2002/02/10 03:34:04 jrjackson Exp $
+ * $Id: conffile.c,v 1.85 2002/02/11 04:44:30 jrjackson Exp $
  *
  * read configuration file
  */
@@ -82,7 +82,7 @@ typedef enum {
     EXCLUDE, KENCRYPT, IGNORE, COMPRATE,
 
     /* tape type */
-    /*COMMENT,*/ BLOCKSIZE, LBL_TEMPL, FILEMARK, LENGTH, SPEED,
+    /*COMMENT,*/ BLOCKSIZE, FILE_PAD, LBL_TEMPL, FILEMARK, LENGTH, SPEED,
 
     /* network interface */
     /*COMMENT, USE,*/
@@ -1470,6 +1470,7 @@ keytab_t tapetype_keytable[] = {
     { "COMMENT", COMMENT },
     { "LBL-TEMPL", LBL_TEMPL },
     { "BLOCKSIZE", BLOCKSIZE },
+    { "FILE-PAD", FILE_PAD },
     { "FILEMARK", FILEMARK },
     { "LENGTH", LENGTH },
     { "SPEED", SPEED },
@@ -1483,7 +1484,6 @@ static void get_tapetype()
     val_t value;
 
     keytab_t *save_kt;
-    long blocksize_kb;
 
     save_overwrites = allow_overwrites;
     allow_overwrites = 1;
@@ -1518,16 +1518,17 @@ static void get_tapetype()
 	    break;
 	case BLOCKSIZE:
 	    get_simple((val_t *)&tpcur.blocksize, &tpcur.s_blocksize, INT);
-	    if((blocksize_kb = tpcur.blocksize) < 0) {
-		blocksize_kb = -blocksize_kb;
-	    }
-	    if(blocksize_kb < DISK_BLOCK_KB) {
+	    if(tpcur.blocksize < DISK_BLOCK_KB) {
 		parserror("Tape blocksize must be at least %d KBytes",
 			  DISK_BLOCK_KB);
-	    } else if(blocksize_kb > MAX_TAPE_BLOCK_KB) {
+	    } else if(tpcur.blocksize > MAX_TAPE_BLOCK_KB) {
 		parserror("Tape blocksize must not be larger than %d KBytes",
 			  MAX_TAPE_BLOCK_KB);
 	    }
+	    break;
+	case FILE_PAD:
+	    get_simple(&value, &tpcur.s_file_pad, BOOL);
+	    tpcur.file_pad = (value.i != 0);
 	    break;
 	case LENGTH:
 	    get_simple(&value, &tpcur.s_length, INT);
@@ -1576,7 +1577,8 @@ static void init_tapetype_defaults()
 {
     tpcur.comment = "";
     tpcur.lbl_templ = "";
-    tpcur.blocksize = -(DISK_BLOCK_KB);
+    tpcur.blocksize = (DISK_BLOCK_KB);
+    tpcur.file_pad = 1;
     tpcur.length = 2000 * 1024;
     tpcur.filemark = 1000;
     tpcur.speed = 200;
@@ -1584,6 +1586,7 @@ static void init_tapetype_defaults()
     tpcur.s_comment = 0;
     tpcur.s_lbl_templ = 0;
     tpcur.s_blocksize = 0;
+    tpcur.s_file_pad = 0;
     tpcur.s_length = 0;
     tpcur.s_filemark = 0;
     tpcur.s_speed = 0;
@@ -1624,6 +1627,7 @@ static void copy_tapetype()
     ttcopy(comment, s_comment);
     ttcopy(lbl_templ, s_lbl_templ);
     ttcopy(blocksize, s_blocksize);
+    ttcopy(file_pad, s_file_pad);
     ttcopy(length, s_length);
     ttcopy(filemark, s_filemark);
     ttcopy(speed, s_speed);
@@ -2468,7 +2472,7 @@ dump_configuration(filename)
     printf("conf_bumpmult = %f\n", getconf_real(CNF_BUMPMULT));
     printf("conf_netusage = %d\n", getconf_int(CNF_NETUSAGE));
     printf("conf_inparallel = %d\n", getconf_int(CNF_INPARALLEL));
-    printf("conf_dumporder = \"%s\"\n", getconf_int(CNF_DUMPORDER));
+    printf("conf_dumporder = \"%s\"\n", getconf_str(CNF_DUMPORDER));
     /*printf("conf_timeout = %d\n", getconf_int(CNF_TIMEOUT));*/
     printf("conf_maxdumps = %d\n", getconf_int(CNF_MAXDUMPS));
     printf("conf_etimeout = %d\n", getconf_int(CNF_ETIMEOUT));
@@ -2496,6 +2500,7 @@ dump_configuration(filename)
 	printf("	COMMENT \"%s\"\n", tp->comment);
 	printf("	LBL_TEMPL %s\n", tp->lbl_templ);
 	printf("	BLOCKSIZE %ld\n", (long)tp->blocksize);
+	printf("	FILE_PAD %s\n", (tp->file_pad) ? "YES" : "NO");
 	printf("	LENGTH %lu\n", (unsigned long)tp->length);
 	printf("	FILEMARK %lu\n", (unsigned long)tp->filemark);
 	printf("	SPEED %ld\n", (long)tp->speed);

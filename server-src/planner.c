@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.116 2002/01/11 20:01:38 martinea Exp $
+ * $Id: planner.c,v 1.117 2002/02/11 04:44:30 jrjackson Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -314,9 +314,7 @@ char **argv;
     tape = lookup_tapetype(conf_tapetype);
     tape_length = tape->length * conf_runtapes;
     tape_mark   = tape->filemark;
-    if((tt_blocksize_kb = tape->blocksize) < 0) {
-	tt_blocksize_kb = -tt_blocksize_kb;
-    }
+    tt_blocksize_kb = tape->blocksize;
     tt_blocksize = tt_blocksize_kb * 1024;
 
     fprintf(stderr, "startup took %s secs\n", walltime_str(curclock()));

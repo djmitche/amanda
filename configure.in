@@ -1007,7 +1007,8 @@ AC_ARG_WITH(maxtapeblocksize,
     : ${MAXTAPEBLOCKSIZE=32}
 )
 
-AC_DEFINE_UNQUOTED(MAX_TAPE_BLOCK_KB,($MAXTAPEBLOCKSIZE),[Maximum size of a tape block in KB.])
+AC_DEFINE_UNQUOTED(MAX_TAPE_BLOCK_KB,($MAXTAPEBLOCKSIZE),[Maximum size of a tape block in KBytes.])
+AC_SUBST(MAXTAPEBLOCKSIZE)
 
 AC_ARG_WITH(db,
     [  --with-db={text,db,dbm,gdbm,ndbm} use the selected database format [text]],
