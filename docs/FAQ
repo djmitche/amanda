@@ -437,3 +437,22 @@ log.<TIMESTAMP>.<count> and amdump.<count>.  Finally, remove the
 tapelist file, stored in the directory that contains amanda.conf,
 unless amanda.conf specifies otherwise.  Depending on the tape changer
 you have selected, you may also want to reset its state file.
+
+
+Q: The man-page of DUMP says that active filesystems may be backed up
+inconsistently.  What does Amanda do to prevent inconsistent backups?
+
+A: Nothing.  When you back up an active filesystem, there are two
+possibilities:
+
+1) dump may print strange error messages about invalid blocks, then
+fail; in this case, Amanda will retry the backup on the next run
+
+2) files that are modified while dump runs may be backed up
+inconsistently.  But then, they will be included in the next
+incremental backup, which should usually be enough
+
+   Large, critical files such as databases should be locked somehow,
+to avoid inconsistent backups, but there's no direct support for that
+in Amanda.  The best bet is to configure Amanda to use a wrapper to
+DUMP, that locks and unlocks the database when appropriate.
