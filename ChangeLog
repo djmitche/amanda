@@ -1,3 +1,14 @@
+2002-01-06  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* changer-src/chg-rth.pl.in: Typo. fi -> }.
+
+2002-01-06  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	Patch by Harlan Stenn <Harlan.Stenn@pfcs.com>
+
+	* changer-src/chg-chio.pl.in: Typo. fi -> }.
+	* changer-src/chg-chio.pl.in (prefix, exec_prefix): Set correctly.
+	* changer-src/chg-chio.pl.in (max_picker): Init to -1.
+
 2002-01-05  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* recover-src/extract_list.c (okay_to_continue_tape): Ignore \n

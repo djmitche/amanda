@@ -48,7 +48,7 @@ if (-x "$sbindir/ammt$SUF") {
 } else {
 	print "<none> $pname: mt program not found\n";
 	exit(1);
-fi
+}
 
 $tapeDevice=`$sbindir/amgetconf$SUF tapedev`;
 
