@@ -14595,13 +14595,13 @@ EOF
 echo $ac_n "checking whether /dev/root and /dev/rroot exist""... $ac_c" 1>&6
 echo "configure:14597: checking whether /dev/root and /dev/rroot exist" >&5
 if [ -b /dev/root ] && [ -c /dev/rroot ]; then
-  cat >> confdefs.h <<EOF
+    cat >> confdefs.h <<EOF
 #define DEV_ROOT 1
 EOF
 
-  echo "$ac_t""yes" 1>&6
+    echo "$ac_t""yes" 1>&6
 else
-  echo "$ac_t""no" 1>&6
+    echo "$ac_t""no" 1>&6
 fi
 
 case $mount in

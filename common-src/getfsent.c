@@ -173,20 +173,23 @@ generic_fsent_t *fsent;
 #endif /* } */
 
 #ifdef DEV_ROOT
-static char dev_root[] = "/dev/root";
-static char dev_rroot[] = "/dev/rroot";
+static char dev_root[] = "/dev/";
+static char dev_rroot[] = "/dev/r";
 #endif
 
 static char *dev2rdev(name)
 char *name;
 {
   static char fname[1024];
+  struct stat st;
   
   if (strncmp(name, DEV_PREFIX, strlen(DEV_PREFIX)) == 0)
     sprintf(fname, "%s%s", RDEV_PREFIX, name+strlen(DEV_PREFIX));
 #ifdef DEV_ROOT
-  else if (strncmp(name, dev_root, strlen(dev_root)) == 0)
-    sprintf(fname, "%s%s", dev_rroot, name+strlen(dev_root));
+  else if (strncmp(name, dev_root, strlen(dev_root)) == 0
+	   && (sprintf(fname, "%s%s", dev_rroot, name+strlen(dev_root)),
+	       stat(fname, &st) == 0))
+      ;
 #endif
   else
     return name;
@@ -198,11 +201,15 @@ static char *rdev2dev2rdev(name)
 char *name;
 {
   static char fname[1024];
+  struct stat st;
+
   if (strncmp(name, RDEV_PREFIX, strlen(RDEV_PREFIX)) == 0)
     sprintf(fname, "%s%s", DEV_PREFIX, name+strlen(RDEV_PREFIX));
 #ifdef DEV_ROOT
-  else if (strncmp(name, dev_rroot, strlen(dev_rroot)) == 0)
-    sprintf(fname, "%s%s", dev_root, name+strlen(dev_rroot));
+  else if (strncmp(name, dev_rroot, strlen(dev_rroot)) == 0
+	   && (sprintf(fname, "%s%s", dev_root, name+strlen(dev_rroot)),
+	       stat(fname, &st) == 0))
+    ;
 #endif
   else
     return dev2rdev(name);
