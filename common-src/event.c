@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.2 1998/11/04 22:24:11 kashmir Exp $
+ * $Id: event.c,v 1.3 1998/11/05 19:06:28 kashmir Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
  * a uniform interface, central state storage, and localized
@@ -438,6 +438,7 @@ event_loop(dontblock)
 		fprintf(stderr, "event: %X fired: data=%d, type=%s (qlen=%d)\n",
 		    eh, eh->data, event_type2str(eh->type), eventq.qlength);
 #endif
+		assert(eh->type != EV_DEAD);
 		eh->lastfired = curtime;
 		(*eh->fn)(eh->arg);
 	    }
