@@ -155,10 +155,10 @@ createindex_gnutar_SOURCES = createindex-gnutar.c	indexfilename.c \
 			indexfilename.h
 
 sendbackup_dump_SOURCES = sendbackup-dump.c		sendbackup-common.c \
-			sendbackup-common.h
+			@KRB4CLIENT_C@ sendbackup-common.h
 
 sendbackup_gnutar_SOURCES = sendbackup-gnutar.c		sendbackup-common.c \
-			sendbackup-common.h
+			@KRB4CLIENT_C@ sendbackup-common.h
 
 sendindex_SOURCES =	sendindex.c			indexfilename.c \
 			indexfilename.h
@@ -205,11 +205,11 @@ selfcheck_OBJECTS =  selfcheck.o
 selfcheck_LDADD = $(LDADD)
 selfcheck_DEPENDENCIES =  ../common-src/libamanda.a
 selfcheck_LDFLAGS = 
-sendbackup_dump_OBJECTS =  sendbackup-dump.o sendbackup-common.o
+sendbackup_dump_OBJECTS =  sendbackup-dump.o sendbackup-common.o @KRB4CLIENT_O@
 sendbackup_dump_LDADD = $(LDADD)
 sendbackup_dump_DEPENDENCIES =  ../common-src/libamanda.a
 sendbackup_dump_LDFLAGS = 
-sendbackup_gnutar_OBJECTS =  sendbackup-gnutar.o sendbackup-common.o
+sendbackup_gnutar_OBJECTS =  sendbackup-gnutar.o sendbackup-common.o @KRB4CLIENT_O@
 sendbackup_gnutar_LDADD = $(LDADD)
 sendbackup_gnutar_DEPENDENCIES =  ../common-src/libamanda.a
 sendbackup_gnutar_LDFLAGS = 

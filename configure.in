@@ -453,6 +453,8 @@ if test -f common-src/krb4-security.c ; then
 	    KRB4LIBS="-lkrb -ldes"
 	    KRB4COMMON_C=krb4-security.c
 	    KRB4COMMON_O=krb4-security.o
+	    KRB4CLIENT_C=sendbackup-krb4.c
+	    KRB4CLIENT_O=sendbackup-krb4.o
 	fi
     done
     
@@ -1717,6 +1719,8 @@ AC_SUBST(ac_c)
 dnl kerberos bits that need to be linked into common-src/libamanda.a
 AC_SUBST(KRB4COMMON_C)
 AC_SUBST(KRB4COMMON_O)
+AC_SUBST(KRB4CLIENT_C)
+AC_SUBST(KRB4CLIENT_O)
 LIBS="$LIBS $KRB4LIBS"
 
 AC_OUTPUT( \
