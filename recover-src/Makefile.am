@@ -33,6 +33,8 @@ install-exec-hook:
 		chown $(CLIENT_LOGIN) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \
 		chgrp $(SETUID_GROUP) $$pa; \
+		echo chmod o-rwx $$pa; \
+		chmod o-rwx $$pa; \
 	done
 
 # so that uscan.c is never generated before uparse.h
