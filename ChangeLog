@@ -1,5 +1,10 @@
 1999-03-05  Mike Grupenhoff <kashmir@munge.com>
 
+	* configure.in: check for ssize_t, make it int if not present
+	* config/acconfig.h: add def for ssize_t
+
+1999-03-05  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/base64.c (base64encode): don't cast away a const
 	needlessly.
 
