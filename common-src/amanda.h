@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.77 1999/04/16 04:58:54 kashmir Exp $
+ * $Id: amanda.h,v 1.78 1999/05/11 23:33:36 kashmir Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -304,15 +304,21 @@ extern int errno;
 #endif
 
 /*
- * define prototype macro so that prototypes can be declared in both ANSI
- * and classic C environments.
+ * Macros to allow code to adapt to both ANSI and class C environments.
+ *
+ * P(): prototype argument macro - removes arguments from prototypes in
+ *      class C environments
+ * stringize(): turn a bare word or words into a quoted string
+ * stringconcat(): turn two quoted strings into one
  */
 #if STDC_HEADERS
 #  define P(parms)	parms
 #  define stringize(x) #x
+#  define stringconcat(x, y) x ## y
 #else
 #  define P(parms)	()
 #  define stringize(x) "x"
+#  define stringconcat(x, y) x/**/y
 #endif
 
 /*

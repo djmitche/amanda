@@ -57,8 +57,7 @@ noinst_HEADERS =	amanda.h	amregex.h	arglist.h	\
 EXTRA_PROGRAMS = genversion $(TEST_PROGS)
 
 genversion_SOURCES = genversion.c
-genversion_LDADD = versuff.$(OBJ_EXTENSION) $(libamanda_a_LIBADD) \
-	alloc.$(OBJ_EXTENSION) error.$(OBJ_EXTENSION)
+genversion_LDADD = versuff.$(OBJ_EXTENSION) $(libamanda_a_LIBADD)
 
 genversion.o: genversion.c
 	$(COMPILE) -DCC="\"$(CC)\"" \

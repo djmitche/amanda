@@ -1,5 +1,15 @@
 1999-05-11  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/amanda.h: define stringconcat() macros that
+	concatenate two const strings together
+	* common-src/versuff.c.in (versionsuffix, version): generate
+	data at compile time using stringconcat().
+	* common-src/genversion.c: simplify, don't need to alloc anything
+	* common-src/Makefile.am (genversion_LDADD): this doesn't need
+	alloc.o or error.o anymore
+
+1999-05-11  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/security.c (security_handleinit, security_streaminit):
 	change default error message "unknown error" to "unknown protocol
 	error" or "unknown stream error" to help identify where an

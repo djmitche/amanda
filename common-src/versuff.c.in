@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: versuff.c.in,v 1.9 1999/04/26 02:43:25 oliva Exp $
+ * $Id: versuff.c.in,v 1.10 1999/05/11 23:33:38 kashmir Exp $
  *
  * provide amanda version number and suffix appended to program names
  */
@@ -40,35 +40,16 @@ const char *
 versionsuffix()
 {
 #ifdef USE_VERSION_SUFFIXES
-	static char *vsuff = NULL;
-
-	if(vsuff) return vsuff;			/* been here once already */
-
-	vsuff = stralloc2("-", version());
-	malloc_mark(vsuff);
-	return vsuff;
+    return stringconcat("-@VERSION_MAJOR@.@VERSION_MINOR@.@VERSION_PATCH@",
+	@VERSION_COMMENT@);
 #else
-	return "";
+    return "";
 #endif
 }
 
 const char *
 version()
 {
-	static char *vsuff = NULL;
-	char major_str[32];
-	char minor_str[32];
-	char patch_str[32];
-
-	if(vsuff) return vsuff;			/* been here once already */
-
-	snprintf(major_str, sizeof(major_str), "%d", VERSION_MAJOR);
-	snprintf(minor_str, sizeof(minor_str), "%d", VERSION_MINOR);
-	snprintf(patch_str, sizeof(patch_str), "%d", VERSION_PATCH);
-
-	vsuff = vstralloc(major_str, ".", minor_str, ".", patch_str,
-			  VERSION_COMMENT,
-			  NULL);
-	malloc_mark(vsuff);
-	return vsuff;
+    return stringconcat("@VERSION_MAJOR@.@VERSION_MINOR@.@VERSION_PATCH@",
+	@VERSION_COMMENT@);
 }
