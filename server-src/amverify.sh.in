@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.27 2002/09/18 18:24:25 martinea Exp $
+#	$Id: amverify.sh.in,v 1.28 2003/06/04 18:28:30 martinea Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -374,7 +374,7 @@ while [ $SLOT -lt $SLOTS ]; do
 		sleep 3
 	done
 	$Echon "Processing label..."
-	$DD if=$DEVICE count=1 bs=32k 2> $TEMP/errors > $TEMP/header
+	$DD if=$DEVICE count=1 bs=@MAXTAPEBLOCKSIZE@k 2> $TEMP/errors > $TEMP/header
 	[ ! -s $TEMP/header ] \
 		&& report "** Error reading label on tape" \
 		&& cat $TEMP/errors >> $DEFECTS \
