@@ -1,0 +1,90 @@
+--- autoconf-2.12/bin/autoreconf	Wed Nov 27 00:39:57 1996
++++ autoconf-2.12/bin/autoreconf	Thu May 22 03:13:25 1997
+@@ -19,12 +19,15 @@
+ 
+ usage="\
+ Usage: autoreconf [-f] [-h] [--help] [-m dir] [--macrodir=dir]
+-       [-l dir] [--localdir=dir] [--force] [--verbose] [--version]"
++       [-l dir] [--localdir=dir] [--force] [--verbose] [--version]
++       [--cygnus] [--foreign] [--gnits] [--gnu] [-i] [--include-deps]"
+ 
+ localdir=
+ verbose=no
+ show_version=no
+ force=no
++automake_mode=--gnu
++automake_deps=
+ 
+ test -z "$AC_MACRODIR" && AC_MACRODIR=/n/gnu/autoconf-2.12/share/autoconf
+ 
+@@ -54,6 +57,10 @@
+     force=yes; shift ;;
+   --version | --vers*)
+     show_version=yes; shift ;;
++  --cygnus | --foreign | --gnits | --gnu)
++    automake_mode=$1; shift ;;
++  --include-deps | -i)
++    automake_deps=$1; shift ;;
+   --)     # Stop option processing.
+     shift; break ;;
+   -*) echo "$usage" 1>&2; exit 1 ;;
+@@ -111,6 +118,46 @@
+        aclocal=$dots$localdir/aclocal.m4 ;;
+   esac
+ 
++  # Regenerate aclocal.m4 if necessary.  FIXME: if aclocal searches
++  # nonstandard directories, we need to deal with that here.  The
++  # easiest way is to move this info into configure.in.
++  run_aclocal=no
++  if test "$aclocal" = aclocal.m4
++  then
++     if test -f aclocal.m4 &&
++       grep 'generated automatically by aclocal' aclocal.m4 > /dev/null
++     then
++       run_aclocal=yes
++     else
++	if test -f acinclude.m4
++	then
++	   run_aclocal=yes
++	fi
++     fi
++  fi
++  if test $run_aclocal = yes
++  then
++     if test $force = no &&
++       ls -lt configure.in aclocal.m4 | sed 1q |
++         grep 'aclocal.m4$' > /dev/null
++     then
++	:
++     else
++	test $verbose = yes && echo running aclocal in $dir
++	aclocal
++     fi
++  fi
++
++  # Re-run automake if required.  Assumes that there is a Makefile.am
++  # in the topmost directory.
++  if test -f Makefile.am
++  then
++     amforce=
++     test $force = no && amforce=--no-force
++     test $verbose = yes && echo running automake in $dir
++     automake $amforce $automake_mode $automake_deps
++  fi
++
+   test ! -f $aclocal && aclocal=
+ 
+   if test $force = no && test -f configure &&
+@@ -123,9 +170,9 @@
+     $autoconf $macrodir_opt $localdir_opt
+   fi
+ 
+-  if grep AC_CONFIG_HEADER configure.in >/dev/null; then
+-    template=`sed -n '/AC_CONFIG_HEADER/{
+-s%[^#]*AC_CONFIG_HEADER(\([^)]*\).*%\1%
++  if grep 'A[CM]_CONFIG_HEADER' configure.in >/dev/null; then
++    template=`sed -n '/A[CM]_CONFIG_HEADER/{
++s%[^#]*A[CM]_CONFIG_HEADER(\([^)]*\).*%\1%
+ t here
+ : here
+ s%.*:%%

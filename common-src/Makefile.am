@@ -5,7 +5,8 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
 BUILT_SOURCES = 	version.c
-DISTCLEANFILES =	versuff.c
+
+noinst_DATA =		versuff.c
 
 noinst_LIBRARIES =	libamanda.a libamnolog.a
 
@@ -19,19 +20,14 @@ libamanda_a_LIBADD =	@ALLOCA@ @LIBOBJS@
 
 libamnolog_a_SOURCES = 	nolog.c
 
-EXTRA_DIST =		genversion.c
-
 noinst_HEADERS =	amanda.h	arglist.h	\
 			dgram.h		protocol.h	\
 			regex.h		statfs.h	stream.h	\
 			token.h		version.h
 
-BUILT_SOURCES = 	version.c
-
 EXTRA_DIST = 		alloca.c	flock.c		getcwd.c	\
 			mktime.c	strdup.c	strerror.c	\
-			strstr.c	\
-			genversion.c
+			strstr.c	genversion.c
 
 .sh:
 	cat $< > $@
@@ -45,7 +41,7 @@ version.c:	$(srcdir)/genversion.c versuff.c $(srcdir)/version.h
 	rm -f genversion genversion.o versuff.o
 
 statfs: $(srcdir)/statfs.c $(srcdir)/statfs.h
-	$(CC) $(LDFLAGS) -DTEST -I.. $(srcdir)/statfs.c -o statfs
+	$(COMPILE) $(LDFLAGS) -DTEST -I.. $(srcdir)/statfs.c -o statfs
 
 token: $(srcdir)/token.c $(srcdir)/token.h
-	$(CC) $(LDFLAGS) -DTEST -I.. $(srcdir)/token.c -o token
+	$(COMPILE) $(LDFLAGS) -DTEST -I.. $(srcdir)/token.c -o token

@@ -1932,4 +1932,7 @@ AC_OUTPUT( \
 	man/amdump.8			man/amflush.8			\
 	man/amlabel.8			man/Makefile			\
 									\
+	docs/Makefile							\
+	patches/Makefile						\
+									\
 	Makefile)
