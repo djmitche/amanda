@@ -77,6 +77,9 @@
 /* For SCO OS5 systems.  */
 #undef STATFS_SCO_OS5
 
+/* For HPUX tape-changer support.  */
+#undef HAVE_HPUX_SCSI
+
 /* For Linux systems with floppy tapes: 
  * QIC volume table support via raw tape device.  */
 #undef DEFAULT_RAW_TAPE_DEVICE

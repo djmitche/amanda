@@ -1485,15 +1485,30 @@ AC_CHECK_HEADERS(\
 	unistd.h \
 	vtblc.h)
 
+if test x"$ac_cv_header_sys_scsi_h" = x"yes"; then
+   AC_CACHE_CHECK([for HP/UX-like scsi changer support],
+	amanda_cv_hpux_scsi,
+	[AC_TRY_COMPILE([
+#include <sys/scsi.h>
+], [
+	static struct element_addresses changer_info;
+	int i = SIOC_ELEMENT_ADDRESSES;
+	int j = SIOC_ELEMENT_STATUS;
+	int k = SIOC_MOVE_MEDIUM;
+], amanda_cv_hpux_scsi=yes, amanda_cv_hpux_scsi=no)])
+    if test x"$amanda_cv_hpux_scsi" = x"yes"; then
+	AC_DEFINE(HAVE_HPUX_SCSI)
+    fi
+fi
+
 dnl Do not build chg-scsi if we cannot find the needed support include files
 dnl for the SCSI interfaces
 dnl chio.h and sys/chio.h are chio based systems
 dnl sys/scsi.h is for HP/UX systems
 dnl sys/scsi/impl/uscsi.h is for Solaris 2.5 and later
-if test x"$ac_cv_header_chio_h" = xno &&
-   test x"$ac_cv_header_sys_chio_h" = xno &&
-   test x"$ac_cv_header_sys_scsi_h" = xno &&
-   true; then
+if test x"$ac_cv_header_chio_h" != x"yes" &&
+   test x"$ac_cv_header_sys_chio_h" != x"yes" &&
+   test x"$amanda_cv_hpux_scsi" != x"yes"; then
     BUILD_CHANGER_PROGS_LIBEXEC=
 fi
 

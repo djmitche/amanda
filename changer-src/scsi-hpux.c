@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-hpux.c,v 1.2 1998/02/26 19:24:05 jrj Exp $
+ *	$Id: scsi-hpux.c,v 1.3 1998/05/27 08:14:24 amcore Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -13,7 +13,7 @@
 #include "config.h"
 #include "amanda.h"
 
-#if defined(HAVE_SYS_SCSI_H)
+#if defined(HAVE_HPUX_SCSI)
 # include <sys/scsi.h>
 
 char *moddesc = "@(#)" __FILE__
