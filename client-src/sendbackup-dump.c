@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.36 1997/09/30 20:47:46 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.37 1997/10/01 12:57:49 amcore Exp $
  *
  * send backup data using BSD dump
  */
@@ -69,15 +69,13 @@ static regex_t re_table[] = {
 
   { DMP_SIZE, "DUMP: [0-9][0-9]* bytes were dumped",		            1},
 
-  { DMP_SIZE,
-"vdump: Dumped  [0-9][0-9]* of [0-9][0-9]* bytes; 100\\.0% completed",	    1},
+  { DMP_SIZE, "vdump: Dumped  [0-9][0-9]* of [0-9][0-9]* bytes",	    1},
 		/* OSF's vdump */
 
   { DMP_SIZE, "dump: Actual: [0-9][0-9]* blocks output to pipe",         1024},
                 /* DU 4.0a dump */
 
-  { DMP_SIZE,
-"dump: Dumped  [0-9][0-9]* of [0-9][0-9]* bytes; 100\\.0% completed",       1},
+  { DMP_SIZE, "dump: Dumped  [0-9][0-9]* of [0-9][0-9]* bytes",		    1},
 		/* DU 4.0 vdump */
 
   { DMP_SIZE, "DUMP: [0-9][0-9]* KB actual output", 1024},
