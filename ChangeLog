@@ -1,3 +1,9 @@
+2004-01-26  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* configure.in: Set GNUTAR_LISTED_INCREMENTAL_DIRX.
+	* example/amanda.conf.in: Update record documentation.
+	* man/amanda.8.in: Update record documentation.
+
 2004-01-13  Greg Troxel  <gdt@t...>
 
 	* common-src/krb4-security.c (errstr;): Make krb4 work on 64-bit

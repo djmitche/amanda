@@ -629,7 +629,11 @@ if test "$GNUTAR_LISTDIR"; then
         eval echo "$GNUTAR_LISTDIR"
     )`
     AC_DEFINE_UNQUOTED(GNUTAR_LISTED_INCREMENTAL_DIR,"$GNUTAR_LISTDIR",[The directory in which GNU tar should store directory lists for incrementals. ])
+    GNUTAR_LISTED_INCREMENTAL_DIRX=$GNUTAR_LISTDIR
+else
+    GNUTAR_LISTED_INCREMENTAL_DIRX=
 fi
+AC_SUBST(GNUTAR_LISTED_INCREMENTAL_DIRX)
 
 AC_ARG_WITH(gnutar-listed-incremental,
    [  --with-gnutar-listed-incremental was deprecated, use --with-gnutar-listdir],

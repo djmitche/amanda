@@ -340,7 +340,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
         order to modify this file.  Run it with a `-h' argument for
         usage.
 
-	If your Amanda client uses xinetd, you have to create the following
+	If your Amanda client uses xinetd, you have to add the following
 	file to your xinetd-configuration
         (usually /etc/xinetd.d):
 

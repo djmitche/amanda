@@ -376,7 +376,10 @@ define tapetype MIMSY-MEGATAPE {
 #		  disks are at least dumped.  Default: [priority medium]
 #   program	- specify the dump system to use.  Valid values are "DUMP" and
 #		  "GNUTAR".  Default: [program "DUMP"].
-#   record	- record the dump in /etc/dumpdates.  Default: [record yes]
+#   record	- record the backup in the time-stamp-database of the backup
+#		  program (e.g. /etc/dumpdates for DUMP or
+#		  @GNUTAR_LISTED_INCREMENTAL_DIRX@ for GNUTAR.).
+#		  Default: [record yes]
 #   skip-full	- skip the disk when a level 0 is due, to allow full backups
 #		  outside Amanda, eg when the machine is in single-user mode.
 #   skip-incr	- skip the disk when the level 0 is NOT due.  This is used in
