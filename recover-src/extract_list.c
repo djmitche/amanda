@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.34 1998/04/14 19:13:58 blair Exp $
+ * $Id: extract_list.c,v 1.35 1998/05/19 15:00:22 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -622,6 +622,7 @@ char *path;
 	return;
     }
 
+    dbprintf(("delete_file: Looking for \"%s\"\n", path));
     /* remove "/" at the end of the path */
     i = strlen(path)-1;
     if(path[i] == '/') path[i] = '\0';
@@ -634,8 +635,11 @@ char *path;
 
     path_on_disk_slash = stralloc2(path_on_disk, "/");
 
+    dbprintf(("delete_file: Converted path=\"%s\" to path_on_disk=\"%s\"\n",
+	      path, path_on_disk));
     for (ditem=get_dir_list(); ditem!=NULL; ditem=get_next_dir_item(ditem))
     {
+	dbprintf(("delete_file: Pondering ditem->path=\"%s\"\n", ditem->path));
 	if (strcmp(ditem->path, path_on_disk) == 0 ||
 	    strcmp(ditem->path, path_on_disk_slash) == 0)
 	{
@@ -643,7 +647,7 @@ char *path;
 	       strcmp(&(ditem->path[strlen(ditem->path)-2]),"/.")==0)
 	    {	/* It is a directory */
 		ditem_path = newstralloc(ditem_path, ditem->path);
-		clean_pathname(ditem->path);
+		clean_pathname(ditem_path);
 
 		cmd = stralloc2("ORLD ", ditem_path);
 		if(send_command(cmd) == -1) {

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.34 1998/04/22 18:30:18 jrj Exp $
+ * $Id: amindexd.c,v 1.35 1998/05/19 15:00:25 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -192,13 +192,15 @@ int  recursive;
 
     for(; (line = agets(fp)) != NULL; free(line)) {
 	if(strncmp(dir_slash, line, len_dir_slash) == 0) {
-	    s = line + len_dir_slash;
-	    ch = *s++;
-	    while(ch && ch != '/') ch = *s++;	/* find end of the file name */
-	    if(ch == '/') {
+	    if(!recursive) {
+		s = line + len_dir_slash;
 		ch = *s++;
+		while(ch && ch != '/') ch = *s++;/* find end of the file name */
+		if(ch == '/') {
+		    ch = *s++;
+		}
+		s[-1] = '\0';
 	    }
-	    s[-1] = '\0';
 	    if(old_line == NULL || strcmp(line, old_line) != 0) {
 		add_dir_list_item(dump_item, line);
 		old_line = line;

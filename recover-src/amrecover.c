@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.27 1998/04/08 16:24:48 amcore Exp $
+ * $Id: amrecover.c,v 1.28 1998/05/19 15:00:19 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -280,7 +280,7 @@ char *s;
     length = strlen(s);
 
     /* remove "/" at end of path */
-    if(s[length-1]=='/')
+    if(length>1 && s[length-1]=='/')
 	s[length-1]='\0';
 
     /* change "/." to "/" */

@@ -1,3 +1,12 @@
+1998-05-19  Jean-Louis Martineau <martineau@IRO.UMontrealCA>
+
+	* client-src/amandad.c: set parse_errmsg when unexpected packet
+	* recover-src/amrecover.c: overflow in clean_pathname()
+	* recover-src/extract_list.c: add log in delete_file().
+	small bug when call clean_pathname()
+	* server-src/amindexd.c: ORLD command is not working
+	* server-src/dumper.c: fixe overflow
+
 1998-05-17  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* configure.in: do not check for MAXFILESIZE

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.26 1998/04/14 16:28:31 jrj Exp $
+ * $Id: amandad.c,v 1.27 1998/05/19 15:00:16 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -218,6 +218,12 @@ char **argv;
 	/* XXX */
 	dbprintf(("this is a %s packet, nak'ing it\n", 
 		  in_msg.type == P_BOGUS? "bogus" : "unexpected"));
+	if(in_msg.type != P_BOGUS) {
+	    parse_errmsg = newvstralloc(parse_errmsg,"unexpected ",
+		in_msg.type == P_ACK? "ack ":
+		in_msg.type == P_REP? "rep ": "",
+		"packet", NULL);
+	}
 	sendnak(&in_msg, &out_msg, parse_errmsg);
 	dbclose();
 	return 1;

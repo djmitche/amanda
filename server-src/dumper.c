@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.64 1998/05/12 15:31:31 martinea Exp $
+/* $Id: dumper.c,v 1.65 1998/05/19 15:00:27 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1310,8 +1310,8 @@ pkt_t *pkt;
 		goto request_NAK;
 	    }
 	    errstr = newvstralloc(errstr, "nak error:", s - 1, NULL);
-	    if(errstr[strlen(errstr)] == '\n' )
-		errstr[strlen(errstr)] = '\0';
+	    if(errstr[strlen(errstr)-1] == '\n' )
+		errstr[strlen(errstr)-1] = '\0';
 	    response_error = 2;
 	    return;
 	}
