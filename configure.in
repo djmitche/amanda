@@ -1719,25 +1719,6 @@ AC_CACHE_CHECK(
 	rm -f conftest.$ac_ext
 	cat <<EOF >conftest.$ac_ext
 #include "confdefs.h"
-#include <stdio.h>
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
-#endif
-#ifdef HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#endif
-#ifdef HAVE_SYS_FILE_H
-# include <sys/file.h>
-#endif
-#ifdef HAVE_SYS_STAT_H
-# include <sys/stat.h>
-#endif
-#ifdef HAVE_FCNTL_H
-# include <fcntl.h>
-#endif
-#ifdef HAVE_SYS_FCNTL_H
-# include <sys/fcntl.h>
-#endif
 
 #define CONFIGURE_TEST
 #define USE_POSIX_FCNTL
@@ -1772,25 +1753,6 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 	    rm -f conftest.$ac_ext
 	    cat <<EOF >conftest.$ac_ext
 #include "confdefs.h"
-#include <stdio.h>
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
-#endif
-#ifdef HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#endif
-#ifdef HAVE_SYS_FILE_H
-# include <sys/file.h>
-#endif
-#ifdef HAVE_SYS_STAT_H
-# include <sys/stat.h>
-#endif
-#ifdef HAVE_FCNTL_H
-# include <fcntl.h>
-#endif
-#ifdef HAVE_SYS_FCNTL_H
-# include <sys/fcntl.h>
-#endif
 
 #if defined(LOCK_EX) && defined(LOCK_UN)
 
@@ -1837,25 +1799,6 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 	    rm -f conftest.$ac_ext
 	    cat <<EOF >conftest.$ac_ext
 #include "confdefs.h"
-#include <stdio.h>
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
-#endif
-#ifdef HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#endif
-#ifdef HAVE_SYS_FILE_H
-# include <sys/file.h>
-#endif
-#ifdef HAVE_SYS_STAT_H
-# include <sys/stat.h>
-#endif
-#ifdef HAVE_FCNTL_H
-# include <fcntl.h>
-#endif
-#ifdef HAVE_SYS_FCNTL_H
-# include <sys/fcntl.h>
-#endif
 
 #define CONFIGURE_TEST
 #define USE_LOCKF
@@ -1891,29 +1834,16 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 	    rm -f conftest.$ac_ext
 	    cat <<EOF >conftest.$ac_ext
 #include "confdefs.h"
-#include <stdio.h>
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
-#endif
-#ifdef HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#endif
-#ifdef HAVE_SYS_FILE_H
-# include <sys/file.h>
-#endif
-#ifdef HAVE_SYS_STAT_H
-# include <sys/stat.h>
-#endif
-#ifdef HAVE_FCNTL_H
-# include <fcntl.h>
-#endif
-#ifdef HAVE_SYS_FCNTL_H
-# include <sys/fcntl.h>
-#endif
 
 #define CONFIGURE_TEST
 #define USE_MYLOCK
 #include "${srcdir-.}/common-src/amflock.c"
+
+void *alloc(l)
+int l;
+{
+    return malloc(l);
+}
 EOF
 	    ${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >/dev/null 2>/dev/null
 	    if test $? = 0; then

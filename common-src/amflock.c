@@ -42,9 +42,7 @@
 **   whether a particular type of locking works.
 */
 
-#ifndef CONFIGURE_TEST
-#  include "amanda.h"
-#endif
+#include "amanda.h"
 
 #if defined(USE_POSIX_FCNTL)
    static struct flock lock = {
@@ -107,46 +105,158 @@ int op;	/* true to lock; false to unlock */
 #if !defined(USE_POSIX_FCNTL) && !defined(USE_FLOCK) && !defined(USE_LOCKF) && defined(USE_MYLOCK)
 /* XXX - error checking in this section needs to be tightened up */
 
-/* Can we steal a lock?
-**   0=no; 1=yes; 2=not locked; 3=error
+/* Delete a lock file.
 */
-int steal_lock(fn, mypid)
+int delete_lock(fn)
 char *fn;
-long mypid;
+{
+	int rc;
+
+	rc = unlink(fn);
+	if (rc != 0 && errno == ENOENT) rc = 0;
+
+	return rc;
+}
+
+/* Create a lock file.
+*/
+int create_lock(fn, pid)
+char *fn;
+{
+	int rc;
+	int fd;
+	char buff[64];
+	int len;
+
+	rc = delete_lock(fn);  /* that's MY file! */
+
+	fd = open(fn, O_WRONLY|O_CREAT|O_EXCL, 0644);
+	if (fd == -1) return -1;
+
+	len = sprintf(buff, "%ld\n", pid);
+	assert(len > 0 && len < sizeof(buff));
+
+	rc = write(fd, buff, len);
+
+	rc = close(fd);
+
+	rc = chmod(fn, 0644);
+
+	return 0;
+}
+
+/* Read the pid out of a lock file.
+**   -1=error, otherwise pid.
+*/
+long read_lock(fn)
+char *fn; /* name of lock file */
+{
+	int rc;
+	int fd;
+	char buff[64];
+	long pid;
+
+	fd = open(fn, O_RDONLY);
+	if (fd == -1) return -1;
+
+	rc = read(fd, buff, sizeof(buff));
+	if (rc < 1) {
+		/* XXX should preserve errno */
+		rc = close(fd);
+		return -1;
+	}
+
+	rc = close(fd);
+	if (rc != 0) return -1;
+
+	rc = sscanf(buff, "%ld\n", &pid);
+	if (rc != 1) return -1; /* XXX need to set errno */
+
+	return pid;
+}
+
+/* Link a lock if we can.
+**   0=done, 1=already locked, -1=error.
+*/
+int link_lock(lk, tlk)
+char *lk;	/* real lock file */
+char *tlk;	/* temp lock file */
+{
+	int rc;
+	int serrno;	/* saved errno */
+	struct stat lkstat, tlkstat;
+
+	/* an atomic check and set operation */
+	rc = link(tlk, lk);
+	if (rc == 0) return 0; /* XXX do we trust it? */
+
+	/* link() says it failed - don't beleive it */
+	serrno = errno;
+
+	if (stat(lk, &lkstat) == 0 &&
+	    stat(tlk, &tlkstat) == 0 &&
+	    lkstat.st_ino == tlkstat.st_ino)
+		return 0;	/* it did work! */
+
+	errno = serrno;
+
+	if (errno == EEXIST) rc = 1;
+
+	return rc;
+}
+
+/* Steal a lock if we can.
+**   0=done; 1=still in use; -1 = error.
+*/
+int steal_lock(fn, mypid, sres)
+char *fn;	/* name of lock file to steal */
+long mypid;	/* my process id */
+char *sres;	/* name of steal-resource to lock */
 {
 	int fd;
 	char buff[64];
 	long pid;
 	int rc;
 
-	fd = open(fn, O_RDONLY);
-	if (fd == -1) {
-		if (errno == ENOENT) return 2; /* it's not now */
-		return 3;
+	/* prevent a race with another stealer */
+	rc = my_lock(sres, 1);
+	if (rc != 0) goto error;
+
+	pid = read_lock(fn);
+	if (pid == -1) {
+		if (errno == ENOENT) goto done;
+		goto error;
 	}
 
-	rc = read(fd, buff, sizeof(buff));
-	if (rc < 1) {
-		rc = close(fd);
-		return 3;
-	}
-
-	rc = close(fd);
-	if (rc != 0) return 3;
-
-	rc = sscanf(buff, "%ld\n", &pid);
-	if (rc != 1) return 3; /* XXX */
-
-	if (pid == mypid) return 1; /* i'm the locker! */
+	if (pid == mypid) goto steal; /* i'm the locker! */
 
 	/* are they still there ? */
 	rc = kill((pid_t)pid, 0);
 	if (rc != 0) {
-		if (errno == ESRCH) return 1; /* locker has gone */
-		return 3;
+		if (errno == ESRCH) goto steal; /* locker has gone */
+		goto error;
 	}
 
+inuse:
+	rc = my_lock(sres, 0);
+	if (rc != 0) goto error;
+
+	return 1;
+
+steal:
+	rc = delete_lock(lockf);
+	if (rc != 0) goto error;
+
+done:
+	rc = my_lock(sres, 0);
+	if (rc != 0) goto error;
+
 	return 0;
+
+error:
+	rc = my_lock(sres, 0);
+
+	return -1;
 }
 
 /* Locking using existance of a file.
@@ -157,71 +267,58 @@ int op;    /* true to lock; false to unlock */
 {
 	int resl;
 	long mypid;
-	char pidstr[64];
-	int pidstrl;
+	int len;
 	char *lockf;
 	char *tlockf;
-	int fd;
+	char *mres;
 	int rc;
-	int retry;
 
 	resl = strlen(res);
 
-	lockf = alloc(resl+12+1);
-	sprintf(lockf, "/tmp/am%s.lock", res);
+	mypid = (long)getpid();
+
+	len = resl + 12 + 1/*null*/;
+	lockf = alloc(len);
+	rc = sprintf(lockf, "/tmp/am%s.lock", res);
+	assert(rc > 0 && rc < len);
 
 	if (!op) {
 		/* unlock the resource */
-		unlink(lockf);
+		assert(read_lock(lockf) == mypid);
+
+		rc = delete_lock(lockf);
 		free(lockf);
 		return 0;
 	}
 
 	/* lock the resource */
 
-	mypid = (long)getpid();
-	sprintf(pidstr, "%ld", mypid);
-	pidstrl = strlen(pidstr);
+	len = resl + 8 + 10/*pid*/ + 1/*null*/;
+	tlockf = alloc(len);
+	rc = sprintf(tlockf, "/tmp/am%s.%ld", res, mypid);
+	assert(rc > 0 && rc < len);
 
-	tlockf = alloc(resl+8+pidstrl+1);
-	sprintf(tlockf, "/tmp/am%s.%s", res, pidstr);
+	rc = create_lock(tlockf, mypid);
 
-	rc = unlink(tlockf);
-	fd = open(tlockf, O_WRONLY|O_CREAT|O_EXCL, 0644);
-	if (fd == -1) return 1;
-	rc = write(fd, pidstr, pidstrl);
-	rc = write(fd, "\n", 1);
-	rc = close(fd);
-	rc = chmod(tlockf, 0644);
+	len = resl + 1 + 1/*null*/;
+	mres = alloc(len);
+	rc = sprintf(mres, "%s.", res);
+	assert(rc > 0 && rc < len);
 
-	retry = 1;
-	while(retry && (rc = link(tlockf, lockf)) != 0) {
-		if (errno != EEXIST) break;
+	while(1) {
+		rc = link_lock(lockf, tlockf);
+		if (rc == -1) break;
+		if (rc == 0) break;
 
-		/* resource is locked by someone else - can we steal it ? */
-/* XXX we need to lock this part ... */
-		rc = steal_lock(lockf, mypid);
-		switch(rc) {
-		case 0: /* no - still locked */
-			sleep(1);
-			break;
-		case 1: /* yes - steal it */
-			rc = unlink(lockf);
-			if (rc != 0 && errno != ENOENT) retry = 0;
-			break;
-		case 2: /* not locked */
-			break;
-		case 3: /* error */
-			retry = 0;
-			break;
-		default:
-			assert(0);
-		}
-/* XXX ...down to here some where */
+		rc = steal_lock(lockf, mypid, mres);
+		if (rc == -1) break;
+		if (rc == 0) continue;
+		sleep(1);
 	}
 
-	unlink(tlockf);
+	(void) delete_lock(tlockf);
 
+	free(mres);
 	free(tlockf);
 	free(lockf);
 
@@ -265,7 +362,7 @@ char *resource;
 	r = flock(fd, LOCK_EX);
 #else
 #ifdef USE_LOCKF
-	r = use_flock(fd, 1);
+	r = use_lockf(fd, 1);
 #else
 #ifdef USE_MYLOCK
 	r = my_lock(resource, 1);
@@ -296,7 +393,7 @@ char *resource;
 	r = flock(fd, LOCK_UN);
 #else
 #ifdef USE_LOCKF
-	r = use_flock(fd, 0);
+	r = use_lockf(fd, 0);
 #else
 #ifdef USE_MYLOCK
 	r = my_lock(resource, 0);
