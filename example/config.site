@@ -295,6 +295,18 @@
 # PORTRANGE=50000,50100
 
 
+# UDPPORTRANGE          --with-udpportrange=min,max
+#			Default: unlimited
+#			Limits the range of ports that UDP sockets
+#			will be bound to.  This one *does* affect
+#			reserved (<1024) ports, except those handed to
+#			amandad by inetd, of course.  This is useful 
+#			for backing up hosts behind firewalls: they can
+#			be configured to use this limited range of
+#			ports for requests.
+# UDPPORTRANGE=512,520
+
+
 # KRB4_SECURITY		--with-krb4-security
 #			Default: no
 #			KRB4_SECURITY selects MIT Kerberos version 4 style
