@@ -6,6 +6,8 @@ eval '(exit $?0)' && eval 'exec @PERL@ -S $0 ${1+"$@"}'
 	& eval 'exec @PERL@ -S $0 $argv:q'
 		if 0;
 
++push(@INC, "@DUMPER_DIR@");
+
 use File::Copy;
 use IPC::Open3;
 use Sys::Hostname;
