@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.56 1998/03/14 13:48:38 amcore Exp $
+ * $Id: amanda.h,v 1.57 1998/03/18 10:00:47 amcore Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -1065,7 +1065,11 @@ extern int vprintf P((const char *format, va_list ap));
 #endif
 
 #ifndef HAVE_WAITPID
+#ifdef HAVE_WAIT4
 #define waitpid(pid,status,options) wait4(pid,status,options,0)
+#else
+extern pid_t waitpid P((pid_t pid, amwait_t *stat_loc, int options));
+#endif
 #endif
 
 #ifndef STDIN_FILENO

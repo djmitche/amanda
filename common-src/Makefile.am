@@ -43,7 +43,7 @@ noinst_HEADERS =	amanda.h	arglist.h	\
 
 EXTRA_DIST = 		genversion.c	getcwd.c	memmove.c	\
 			mktime.c	snprintf.c	strerror.c	\
-			strstr.c
+			strftime.c	strstr.c	waitpid.c
 
 .sh:
 	cat $< > $@
