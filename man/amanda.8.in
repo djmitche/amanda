@@ -461,7 +461,20 @@ days /
 .BN tapecycle int
 Default:
 .IR "15 tapes" .
-The number of tapes in the active tape cycle.
+The mininum number of tapes in the active tape cycle.
+You can have more tapes in your active tape cycle.
+It means that you must write at least
+.B tapecycle
+tape before a tape
+is overwritten.
+A tape marked as 
+.B no-reuse
+is not in the active tape cycle.
+.IP
+Amanda will accept any tape for writting if it is not in the last
+.B tapecycle
+tapes used.
+.IP
 This must be at least one larger than the
 number of Amanda runs done during a dump cycle
 (see the
