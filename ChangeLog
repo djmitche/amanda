@@ -1,3 +1,10 @@
+1998-09-04  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/driverio.c (update_info_dumper): set inf.command to
+	NO_COMMAND if reserve< 100 because if you force a level 0 with
+	'amadmin force', it will do level 0 every days until you flush them
+	to tape.
+
 1998-09-03  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* NEWS: another typo (too late :-(
