@@ -1,5 +1,14 @@
 2002-04-19  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* client-src/client_util.c (parse_g_options) New function to parse
+	  the global options string.
+	* client-src/client_util.h (parse_g_options): Prototype.
+	* client-src/selfcheck.c: use parse_g_options.
+	* client-src/sendbackup.c: use parse_g_options.
+	* client-src/sendsize.c: use parse_g_options.
+
+2002-04-19  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/diskfile.c: Improve message for missing features.
 
 2002-04-19  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>

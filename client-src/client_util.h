@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.h,v 1.1.2.8 2002/04/17 20:05:41 martinea Exp $
+ * $Id: client_util.h,v 1.1.2.9 2002/04/20 01:59:04 martinea Exp $
  *
  */
 
@@ -53,6 +53,13 @@ typedef struct option_s {
 #endif
 } option_t;
 
+typedef struct g_option_s {
+    char *str;
+    am_feature_t *features;
+    char *hostname;
+    int maxdumps;
+} g_option_t;
+
 #define NO_COMPR   0
 #define COMPR_FAST 1
 #define COMPR_BEST 2
@@ -65,5 +72,8 @@ option_t *parse_options P((char *str,
 			   char *device,
 			   am_feature_t *fs,
 			   int verbose));
+
+void init_g_options P((g_option_t *g_options));
+g_option_t *parse_g_options P((char *str, int verbose));
 
 #endif

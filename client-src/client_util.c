@@ -24,13 +24,15 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.1.2.18 2002/04/19 14:24:29 martinea Exp $
+ * $Id: client_util.c,v 1.1.2.19 2002/04/20 01:59:04 martinea Exp $
  *
  */
 
 #include "client_util.h"
 #include "getfsent.h"
 #include "util.h"
+
+#define MAXMAXDUMPS 16
 
 static char *fixup_relative(name, device)
 char *name;
@@ -502,3 +504,72 @@ int verbose;
     return options;
 }
 
+
+void init_g_options(g_options)
+g_option_t *g_options;
+{
+    g_options->features = NULL;
+    g_options->hostname = NULL;
+    g_options->maxdumps = 1;
+}
+
+
+g_option_t *parse_g_options(str, verbose)
+char *str;
+int verbose;
+{
+    g_option_t *g_options;
+    char *p, *tok;
+    int new_maxdumps;
+
+    g_options = alloc(sizeof(g_option_t));
+    init_g_options(g_options);
+    g_options->str = stralloc(str);
+
+    p = stralloc(str);
+    tok = strtok(p,";");
+
+    while (tok != NULL) {
+	if(strncmp(tok,"features=", 9) == 0) {
+	    if((g_options->features = am_string_to_feature(tok+9)) == NULL) {
+		dbprintf(("%s: bad features value \"%s\n",
+			  debug_prefix(NULL), tok+10));
+		if(verbose) {
+		    printf("ERROR [bad features value \"%s\"]\n", tok+10);
+		}
+	    }
+	}
+	else if(strncmp(tok,"hostname=", 9) == 0) {
+	    g_options->hostname = stralloc(tok+9);
+	}
+	else if(strncmp(tok,"maxdumps=", 9) == 0) {
+	    if(sscanf(tok+9, "%d;", &new_maxdumps) == 1) {
+		if (new_maxdumps > MAXMAXDUMPS) {
+		    g_options->maxdumps = MAXMAXDUMPS;
+		}
+		else if (new_maxdumps > 0) {
+		    g_options->maxdumps = new_maxdumps;
+		}
+	    }
+	    else {
+		dbprintf(("%s: bad maxdumps value \"%s\"\n",
+			  debug_prefix(NULL), tok+9));
+		if(verbose) {
+		    printf("ERROR [bad maxdumps value]\n");
+		}
+	    }
+	}
+	else {
+	    dbprintf(("%s: unknown option \"%s\"\n",
+                                  debug_prefix(NULL), tok));
+	    if(verbose) {
+		printf("ERROR [unknown option \"%s\"]\n", tok);
+	    }
+	}
+	tok = strtok(NULL, ";");
+    }
+    if(g_options->features == NULL) {
+	g_options->features = am_set_default_feature_set();
+    }
+    return g_options;
+}
