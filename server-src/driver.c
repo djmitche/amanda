@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.15 2003/06/03 20:14:43 martinea Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.16 2003/06/05 15:48:57 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -2222,10 +2222,10 @@ int dump_to_tape(dp)
 	    error("error [dump to tape DONE result_argc != 5: %d]", result_argc);
 	}
 
-	free_serial(result_argv[2]);
-
 	if(failed == 1) goto tryagain;	/* dump didn't work */
-	else if(failed == 2) goto fatal;
+	else if(failed == 2) goto failed_dumper;
+
+	free_serial(result_argv[2]);
 
 	/* every thing went fine */
 	update_info_dumper(dp, origsize, dumpsize, dumptime);
@@ -2239,9 +2239,10 @@ int dump_to_tape(dp)
 
     case TRYAGAIN: /* TRY-AGAIN <handle> <err mess> */
     tryagain:
+	headqueue_disk(&runq, dp);
+    failed_dumper:
 	update_failed_dump_to_tape(dp);
 	free_serial(result_argv[2]);
-	headqueue_disk(&runq, dp);
 	tape_left = tape_length;
 	break;
 
@@ -2249,7 +2250,6 @@ int dump_to_tape(dp)
     case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
     case BOGUS:
     default:
-    fatal:
 	update_failed_dump_to_tape(dp);
 	free_serial(result_argv[2]);
 	failed = 2;	/* fatal problem */

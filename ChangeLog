@@ -1,5 +1,10 @@
 2003-06-05  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/driver.c (dump_to_tape): Don't go in degraded mode if
+	  taper reply DONE.
+
+2003-06-05  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* tape-src/output-rait.c: Don't call waitpid if we didn't fork.
 
 2003-06-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
