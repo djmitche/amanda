@@ -1,5 +1,9 @@
 1999-08-25  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* changer-src/chg-chs.sh.in (changerdev): Pass it as -f flag to CHS.
+	* docs/TAPE.CHANGERS: Document it.
+	Reported by Mike Horansky <moho@stanford.EDU>
+
 	* server-src/conffile.c (read_dumptype): Renamed from get_dumptype.
 	Extended to support reading a named dumptype from a specified FILE.
 	(get_dumptype): Use read_dumptype.

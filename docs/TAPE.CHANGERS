@@ -475,9 +475,11 @@ tested only with FreeBSD 2.2.5 and the accompanying chio program.]
 chg-chs: (former chs-changer)
 
 A tape changer script very similar to chg-multi, that uses the `chs'
-program to change tapes.  As in chg-multi, `tapedev' and
-`changerdev' are ignored, whereas `changerfile' names its
-configuration file, similar to chg-multi.conf.
+program to change tapes.  As in chg-multi, `tapedev' is ignored.
+`changerfile' names its configuration file, similar to chg-multi.conf.
+`changerdev' will be passed to CHS in a -f command-line switch, unless
+it is set to an empty string or "/dev/null" (watch out for default
+values!)
 
 chg-rth: (former rth-changer)
 
