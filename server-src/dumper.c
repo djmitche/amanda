@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.34 1997/12/01 01:06:10 amcore Exp $
+/* $Id: dumper.c,v 1.35 1997/12/10 07:37:59 amcore Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -314,11 +314,13 @@ char **main_argv;
 		break;
 	    }
 
+	    abort_pending = 0;
 	    do_dump(mesgfd, datafd, indexfd, outfd);
 	    close(mesgfd);
 	    close(datafd);
 	    close(indexfd);
 	    close(outfd);
+	    if(abort_pending) putresult("ABORT-FINISHED %s\n", handle);
 	    break;
 
 	default:

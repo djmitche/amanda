@@ -1,5 +1,9 @@
 Version 2.4.0b5
 
+	Make sure dumper replies with ABORT_FINISHED when a PORT-DUMP
+	is aborted because of tape error.
+	-Michael C. Povel <Michael.Povel@hub.de>
+
 	Amcheck checks only for the needed features.
 	-Jean-Louis Martineau <martinea@iro.umontreal.ca>
 
