@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.61.2.8 1998/03/06 02:39:22 amcore Exp $
+ * $Id: sendsize.c,v 1.61.2.9 1998/03/14 13:05:52 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -666,19 +666,31 @@ int level;
 	aclose(pipefd[0]);
 
 #ifdef XFSDUMP
+#ifdef DUMP
 	if (strcmp(amname_to_fstype(device), "xfs") == 0)
+#else
+	if (1)
+#endif
 	    execle(cmd, "xfsdump", "-F", "-J", "-l", level_str, "-", device,
 		   (char *)0, safe_env());
 	else
 #endif
 #ifdef VXDUMP
+#ifdef DUMP
 	if (strcmp(amname_to_fstype(device), "vxfs") == 0)
+#else
+	if (1)
+#endif
 	    execle(cmd, "vxdump", dumpkeys, "100000", "-", device, (char *)0,
 		   safe_env());
 	else
 #endif
 #ifdef VDUMP
+#ifdef DUMP
 	if (strcmp(amname_to_fstype(device), "advfs") == 0)
+#else
+	if (1)
+#endif
 	    execle(cmd, "vdump", dumpkeys, "60", "-", device, (char *)0,
 		   safe_env());
 	else
