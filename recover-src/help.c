@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: help.c,v 1.4 1998/07/04 00:19:13 oliva Exp $
+ * $Id: help.c,v 1.4.4.1 1999/03/05 01:31:01 martinea Exp $
  *
  * implements the "help" command in amrecover
  */
@@ -50,11 +50,12 @@ void help_list P((void))
     printf("lcd directory     - change cwd on local file system\n");
     printf("ls                - list directory on virtual file system\n");
     printf("lpwd              - show cwd on local file system\n");
+    printf("mode              - show the method used to extract SMB shares\n");
     printf("pwd               - show cwd on virtual file system\n");
     printf("quit\n");
     printf("setdate {YYYY-MM-DD|--MM-DD|---DD} - set date of look\n");
     printf("setdisk diskname [mountpoint] - select disk on dump host\n");
     printf("sethost host      - select dump host\n");
-
+    printf("setmode smb|tar   - select the method used to extract SMB shares\n");
     printf("\n");
 }

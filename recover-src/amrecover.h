@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.h,v 1.8 1998/07/04 00:19:09 oliva Exp $
+ * $Id: amrecover.h,v 1.8.4.1 1999/03/05 01:30:57 martinea Exp $
  *
  * data structures and declarations for amrecover
  */
@@ -71,6 +71,8 @@ extern void set_host P((char *host));
 extern int set_date P((char *date));
 extern void set_directory P((char *dir));
 extern void show_directory P((void));
+extern void set_mode P((int mode));
+extern void show_mode P((void));
 
 extern void list_disk_history P((void));
 extern void list_directory P((void));
@@ -90,3 +92,8 @@ extern void delete_regex P((char *regex));
 extern void delete_file P((char *path, char *regex));
 
 extern void extract_files P((void));
+
+#ifdef SAMBA_CLIENT
+#define SAMBA_SMBCLIENT 0
+#define SAMBA_TAR       1
+#endif

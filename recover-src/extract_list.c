@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43 1998/09/29 03:42:12 oliva Exp $
+ * $Id: extract_list.c,v 1.43.2.1 1999/03/05 01:30:59 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -71,6 +71,9 @@ pid_t extract_restore_child_pid = -1;
 
 static EXTRACT_LIST *extract_list = NULL;
 
+#ifdef SAMBA_CLIENT
+unsigned short samba_extract_method = SAMBA_SMBCLIENT;
+#endif /* SAMBA_CLIENT */
 
 #define READ_TIMEOUT	30*60
 
@@ -1236,8 +1239,13 @@ static void extract_files_child(in_fd, elist)
 	}
 
 #ifdef SAMBA_CLIENT
-	if (dumptype == IS_UNKNOWN && strcmp(file.program, SAMBA_CLIENT) == 0)
+	if (dumptype == IS_UNKNOWN && strcmp(file.program, SAMBA_CLIENT) ==0) {
 	    dumptype = IS_SAMBA;
+
+	    if (samba_extract_method == SAMBA_TAR) {
+	      dumptype = IS_TAR;
+	    }
+	}
 #endif
     }
 
