@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.33 1998/07/04 00:19:51 oliva Exp $
+ * $Id: driverio.c,v 1.34 1998/09/04 14:00:21 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -437,6 +437,10 @@ long dumptime;
 	    newperf(perfp->rate, 1);
 	else
 	    newperf(perfp->rate, dumpsize/dumptime);
+    }
+
+    if(getconf_int(CNF_RESERVE)<100) {
+	inf.command = NO_COMMAND;
     }
 
     if(put_info(dp->host->hostname, dp->name, &inf))
