@@ -55,6 +55,9 @@ field column width to
 .I width
 characters instead of 20.
 .TP
+\fB\-skipmissed\fR
+Compacts the output by only printing stats for the days AMANDA actually ran\&.
+.TP
 .B -verbose
 .B Amoverview
 can take a long while on large systems.
