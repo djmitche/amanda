@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.19.2.7.2.22 2004/03/16 19:03:39 martinea Exp $
+ * $Id: amcheck.c,v 1.50.2.19.2.7.2.23 2004/09/20 20:42:08 weichinger Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1252,6 +1252,16 @@ int start_host(hostp)
 
     if(hostp->up != HOST_READY) {
 	return 0;
+    }
+
+    /*
+     * Echo a warning if something like "localhost" is used in the disklist.
+     */
+
+    if (strncmp (hostp->hostname,"localhost",9) == 0) {
+	fprintf(outf,
+                    "WARNING: Usage of fully qualified hostname recommended for Client %s.\n",
+                    hostp->hostname);
     }
 
     /*
