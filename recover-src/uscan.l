@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: uscan.l,v 1.10 1998/03/19 17:22:14 amcore Exp $
+ * $Id: uscan.l,v 1.11 1998/04/14 16:23:31 jrj Exp $
  *
  * lexer for amrecover interactive language
  */
@@ -86,7 +86,7 @@ extract { return EXTRACT; }
 %}
 
 [-A-Za-z0-9_/.]* { yylval.strval = stralloc(yytext); return PATH; }
-\"               { afree(string_buf); BEGIN(quotedstring); }
+\"               { amfree(string_buf); BEGIN(quotedstring); }
 
 <quotedstring>\"        { /* saw closing quote - all done */
   BEGIN(INITIAL);
@@ -106,7 +106,7 @@ extract { return EXTRACT; }
 <quotedstring>\n        {
   /* error - unterminated string constant */
   yyerror("unterminated string");
-  afree(string_buf);
+  amfree(string_buf);
 }
 
 <quotedstring>[^\\\n\"]+        { strappend(string_buf, yytext); }
