@@ -56,6 +56,10 @@ indexdir "@INDEX_DIR@/@DEFAULT_CONFIG@"		# index directory
 # how many MB will fit on the tape, how big the filemarks are, and how
 # fast the tape device is.
 #
+# There's a script by Icarus Sparry <I.Sparry@bath.ac.uk> that may help
+# calculating the size of a tape.  Get it from the URL
+# http://www.amanda.org/amanda-users/users/Oct-Dec.1995/msg00208.html
+#
 # For completeness Amanda should calculate the inter-record gaps too, but it
 # doesn't.  For EXABYTE and DAT tapes this is ok.  Anyone using 9 tracks for
 # amanda and need IRG calculations?  Drop me a note if so.
