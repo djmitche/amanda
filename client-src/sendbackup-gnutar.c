@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.46 1998/02/04 22:42:10 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.47 1998/02/13 05:15:50 amcore Exp $
  *
  * send backup data using GNU tar
  */
@@ -406,7 +406,7 @@ notincremental:
 	a08 = " --totals";
 	a09 = " --file -";
 	a10 = " %s";
-	a11 = efile ? "." : "";
+	a11 = efile ? " ." : "";
 
 	format_buf = vstralloc(a00, a01, a02, a03,
 			       a04, a05, a06, a07,
