@@ -28,8 +28,8 @@ AMVERIFY=$sbindir/amverify$SUF
 LOGDIR=`getparm logdir`
 AMDUMPLOG=${LOGDIR}/amdump.1
 AMFLUSHLOG=${LOGDIR}/amflush.1
-if [ -e $AMDUMPLOG ]; then
-  if [ -e $AMFLUSHLOG ]; then
+if [ -f $AMDUMPLOG ]; then
+  if [ -f $AMFLUSHLOG ]; then
     if [ $AMDUMPLOG -nt $AMFLUSHLOG ]; then
       AMLOG=$AMDUMPLOG
     else
@@ -39,7 +39,7 @@ if [ -e $AMDUMPLOG ]; then
     AMLOG=$AMDUMPLOG
   fi
 else
-  if [ -e $AMFLUSHLOG ]; then
+  if [ -f $AMFLUSHLOG ]; then
     AMLOG=$AMFLUSHLOG
   else
     echo "Nothing to verify"
