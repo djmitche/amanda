@@ -282,6 +282,7 @@ rait_open(char *dev, int flags, int mask) {
 		fd = -1;
 		break;
 	    }
+	    tapefd_set_master_fd(res->fds[res->nfds], fd);
 	    amfree(dev_real);
 	    res->nfds++;
 	}

@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: tapeio.c,v 1.20.4.7.4.4.2.7 2003/03/06 21:44:21 martinea Exp $
+ * $Id: tapeio.c,v 1.20.4.7.4.4.2.8 2003/03/07 20:55:32 martinea Exp $
  *
  * implements generic tape I/O functions
  */
@@ -98,6 +98,7 @@ static struct tape_info {
     char *tapetype;
     int fake_label;
     int ioctl_fork;
+    int master_fd;
 } *tape_info = NULL;
 static int tape_info_count = 0;
 
@@ -116,6 +117,7 @@ tape_info_init(ptr)
     t->level = -1;
     t->vtape_index = -1;
     t->ioctl_fork = 1;
+    t->master_fd = -1;
 }
 
 /*
@@ -264,6 +266,8 @@ tapefd_getinfo_host(fd)
 		  fd + 1,
 		  10,
 		  tape_info_init);
+    if(tape_info[fd].master_fd != -1)
+	return tapefd_getinfo_host(tape_info[fd].master_fd);
     return tape_info[fd].host;
 }
 
@@ -294,6 +298,8 @@ tapefd_getinfo_disk(fd)
 		  fd + 1,
 		  10,
 		  tape_info_init);
+    if(tape_info[fd].master_fd != -1)
+	return tapefd_getinfo_disk(tape_info[fd].master_fd);
     return tape_info[fd].disk;
 }
 
@@ -324,6 +330,8 @@ tapefd_getinfo_level(fd)
 		  fd + 1,
 		  10,
 		  tape_info_init);
+    if(tape_info[fd].master_fd != -1)
+	return tapefd_getinfo_level(tape_info[fd].master_fd);
     return tape_info[fd].level;
 }
 
@@ -475,6 +483,21 @@ tapefd_setinfo_ioctl_fork(fd, v)
 		  tape_info_init);
     tape_info[fd].ioctl_fork = v;
 }
+
+void
+tapefd_set_master_fd(fd, master_fd)
+    int fd;
+    int master_fd;
+{
+    amtable_alloc((void **)&tape_info,
+		  &tape_info_count,
+		  sizeof(*tape_info),
+		  fd + 1,
+		  10,
+		  tape_info_init);
+    tape_info[fd].master_fd = master_fd;
+}
+
 
 /*
  * The normal tape operation functions.

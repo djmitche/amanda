@@ -1,4 +1,16 @@
-312003-04-06  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+2003-04-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* file tape-src/output-rait.c (rait_open): Call tapefd_set_master_fd();
+	* file tape-src/tapeio.c (struct tape_info): Add master_fd field.
+	* file tape-src/tapeio.c (tape_info_init): Set master_fd to -1;
+	* file tape-src/tapeio.c (tapefd_getinfo_host, tapefd_getinfo_disk, 
+	  tapefd_getinfo_level): Return info of master_fd.
+	* file tape-src/tapeio.c (tapefd_set_master_fd): New function to set
+	  master_fd.
+	* file tape-src/tapeio.h (tapefd_set_master_fd): Prototype.
+	* NEWS: rait: works with file:
+
+2003-04-06  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* tape-src/output-file.c (file_tapefd_can_fork): New function that 
 	  return 1 if the file: can be run under a forked process.

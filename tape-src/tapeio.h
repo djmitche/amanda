@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.h,v 1.9.2.2.4.3.2.2 2003/03/06 21:44:21 martinea Exp $
+ * $Id: tapeio.h,v 1.9.2.2.4.3.2.3 2003/03/07 20:55:37 martinea Exp $
  *
  * interface for tapeio.c
  */
@@ -125,6 +125,7 @@ int tapefd_getinfo_fake_label P((int fd));
 void tapefd_setinfo_fake_label P((int fd, int v));
 int tapefd_getinfo_ioctl_fork P((int fd));
 void tapefd_setinfo_ioctl_fork P((int fd, int v));
+void tapefd_set_master_fd P((int tapefd, int master_fd));
 
 #ifdef HAVE_LINUX_ZFTAPE_H
 int is_zftape P((const char *filename));
