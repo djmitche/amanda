@@ -12,6 +12,11 @@
 	properly responds to -eject requests, among other things.
 	-Eric Schnoebelen <eric@cirr.com>
 
+Version 2.4.0
+
+	formatting error in amoverview fixed.
+	-Terje Malmedal <tm@odin.funcom.com>
+
 Version 2.4.0b6p4
 
 	use vdump to dump advfs filesystems only.  add support for vdump
