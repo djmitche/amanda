@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.88 1998/05/23 18:01:20 amcore Exp $
+ * $Id: sendsize.c,v 1.89 1998/05/27 08:12:01 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -581,7 +581,7 @@ long getsize_dump(disk, level)
 char *disk;
 int level;
 {
-    int pipefd[2], nullfd;
+    int pipefd[2], nullfd, killctl[2];
     pid_t dumppid;
     long size;
     FILE *dumpout;
@@ -593,7 +593,6 @@ int level;
     char *rundump_cmd = NULL;
     char level_str[NUM_STR_SIZE];
     int s;
-    int killerr;
 
     ap_snprintf(level_str, sizeof(level_str), "%d", level);
 
@@ -604,7 +603,9 @@ int level;
     rundump_cmd = stralloc(cmd);
 
     nullfd = open("/dev/null", O_RDWR);
+    pipefd[0] = pipefd[1] = killctl[0] = killctl[1] = -1;
     pipe(pipefd);
+
 #ifdef XFSDUMP						/* { */
 #ifdef DUMP						/* { */
     if (strcmp(fstype, "xfs") == 0)
@@ -700,6 +701,9 @@ int level;
 	error("%s: no dump program available", get_pname());
     }
 
+    if (strcmp(rundump_cmd, cmd) == 0)
+	pipe(killctl);
+
     switch(dumppid = fork()) {
     case -1:
 	amfree(dumpkeys);
@@ -715,20 +719,27 @@ int level;
 	else if (strcmp(rundump_cmd, cmd) == 0) {
 	    switch(fork()) {
 	    case -1:
-		/* FIXME */
-		exit(-1);
+		dbprintf(("fork failed, trying without killpgrp\n"));
+		break;
 
 	    default:
 	    {
 		char *killpgrp_cmd = vstralloc(libexecdir, "/killpgrp",
 					       versionsuffix(), NULL);
 		dbprintf(("running %s\n",killpgrp_cmd));
+		dup2(killctl[0], 0);
+		dup2(nullfd, 1);
+		dup2(nullfd, 2);
+		close(pipefd[0]);
+		close(pipefd[1]);
+		close(killctl[1]);
+		close(nullfd);
 		execle(killpgrp_cmd, (char *)0, safe_env());
 		dbprintf(("cannot execute %s\n", killpgrp_cmd));
 		exit(-1);
 	    }
 
-	    case 0:
+	    case 0:  /* child process */
 		break;
 	    }
 	}
@@ -737,6 +748,10 @@ int level;
 	dup2(nullfd, 1);
 	dup2(pipefd[1], 2);
 	aclose(pipefd[0]);
+	if (killctl[0] != -1)
+	    aclose(killctl[0]);
+	if (killctl[1] != -1)
+	    aclose(killctl[1]);
 
 #ifdef XFSDUMP
 #ifdef DUMP
@@ -793,6 +808,8 @@ int level;
     amfree(rundump_cmd);
 
     aclose(pipefd[1]);
+    if (killctl[0] != -1)
+	aclose(killctl[0]);
     dumpout = fdopen(pipefd[0],"r");
 
     for(size = -1; (line = agets(dumpout)) != NULL; free(line)) {
@@ -814,33 +831,45 @@ int level;
     if(size == 0 && level == 0)
 	dbprintf(("(PC SHARE connection problem, is this disk really empty?)\n.....\n"));
 
+    if (killctl[1] != -1) {
+	dbprintf(("asking killpgrp to terminate\n"));
+	aclose(killctl[1]);
+	for(s = 5; s > 0; --s) {
+	    sleep(1);
+	    if (waitpid(dumppid, NULL, WNOHANG) != -1)
+		goto terminated;
+	}
+    }
+    
     /*
      * First, try to kill the dump process nicely.  If it ignores us
      * for several seconds, hit it harder.
      */
     dbprintf(("sending SIGTERM to process group %ld\n", (long) dumppid));
-    killerr = kill(-dumppid, SIGTERM);
-    if (killerr == -1) {
+    if (kill(-dumppid, SIGTERM) == -1) {
 	dbprintf(("kill failed: %s\n", strerror(errno)));
     }
     /* Now check whether it dies */
-    for(s = 5; s > 0 && (killerr = kill(dumppid, 0)) == 0; s--) {
+    for(s = 5; s > 0; --s) {
 	sleep(1);
+	if (waitpid(dumppid, NULL, WNOHANG) != -1)
+	    goto terminated;
     }
-    if(killerr == 0) {
-        dbprintf(("it won\'t die with SIGTERM, but SIGKILL should do\n"));
-	killerr = kill(-dumppid, SIGKILL);
-	if (killerr == -1) {
-	    dbprintf(("kill failed: %s\n", strerror(errno)));
-	}
-	for(s = 5; s > 0 && (killerr = kill(dumppid, 0)) == 0; s--) {
-	    sleep(1);
-	}
-	if(killerr == 0) {
-	    dbprintf(("oh well, seems like it won\'t die; amanda may have to run as root then\n"));
-	}
+
+    dbprintf(("sending SIGKILL to process group %ld\n", (long) dumppid));
+    if (kill(-dumppid, SIGKILL) == -1) {
+	dbprintf(("kill failed: %s\n", strerror(errno)));
     }
+    for(s = 5; s > 0; --s) {
+	sleep(1);
+	if (waitpid(dumppid, NULL, WNOHANG) != -1)
+	    goto terminated;
+    }
+
+    dbprintf(("cannot kill it, waiting for normal termination\n"));
     wait(NULL);
+
+ terminated:
 
     aclose(nullfd);
     afclose(dumpout);

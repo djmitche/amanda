@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: killpgrp.c,v 1.4 1998/03/31 00:05:21 blair Exp $
+ * $Id: killpgrp.c,v 1.5 1998/05/27 08:11:59 amcore Exp $
  *
  * if it is the process group leader, it kills all processes in its
  * process group when it is killed itself.
@@ -111,8 +111,14 @@ char **argv;
 
     signal(SIGTERM, term_kill_soft);
 
+    while (getchar() != EOF) {
+	/* wait until EOF */
+    }
+
+    term_kill_soft(0);
+
     for(;;) {
-	if (wait(&status) == 0)
+	if (wait(&status) != -1)
 	    break;
 	if (errno != EINTR) {
 	    error("error [wait() failed: %s]\n", strerror(errno));
@@ -137,7 +143,7 @@ int sig;
     alarm(3);
     /*
      * First, try to kill the dump process nicely.  If it ignores us
-     * for five seconds, hit it harder.
+     * for three seconds, hit it harder.
      */
     dbprintf(("sending SIGTERM to process group %ld\n", (long) dumppid));
     killerr = kill(-dumppid, SIGTERM);
