@@ -1,0 +1,18 @@
+1998-05-17  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* configure.in: do not check for MAXFILESIZE
+	* config/acconfig.h: do not define MAXFILESIZE
+	* server-src/conffile.c: use INT_MAX instead of MAXFILESIZE
+	* example/amanda.conf.in: ditto
+
+	* server-src/driver.c (interface_state): new function; print the
+	free bandwidth for each interface.
+	(short_dump_state): call interface_state before holdingdisk_state
+
+	* ChangeLog: new file
+
+Local Variables:
+mode: change-log
+left-margin: 8
+fill-column: 76
+End:

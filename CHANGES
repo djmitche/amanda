@@ -1,3 +1,8 @@
+	configure no longer checks for MAXFILESIZE; INT_MAX is used
+	instead.  -oliva
+
+	print interfaces status in short_dump_state.  -oliva
+
 	fix skip-incr handling so that reporter reports SKIPPED
 	instead of missing result.
 	-Jim Simmons <s4i@sws6.ctd.ornl.gov>
