@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: rundump.c,v 1.16 1998/02/04 22:02:32 amcore Exp $
+ * $Id: rundump.c,v 1.17 1998/02/11 23:25:25 jrj Exp $
  *
  * runs DUMP program as root
  */
@@ -36,14 +36,32 @@ char *pname = "rundump";
 
 int main P((int argc, char **argv));
 
+#ifdef VDUMP
+#define USE_RUNDUMP
+#endif
+
+#if !defined(VDUMP) && \
+    ((!defined(DUMP) && !defined(XFSDUMP) && !defined(VXDUMP)) \
+     || !defined(USE_RUNDUMP))					/* { */
+
+#if !defined(USE_RUNDUMP)					/* { */
+#define ERRMSG "rundump not enabled on this system.\n"
+#else								/* } { */
+#define ERRMSG "DUMP not available on this system.\n"
+#endif								/* } */
+
+#else								/* } { */
+#undef	ERRMSG
+#endif								/* } */
+
 int main(argc, argv)
 int argc;
 char **argv;
 {
+#ifndef ERRMSG
     char *dump_program;
-#if defined(USE_RUNDUMP) || defined(XFSDUMP) || defined(VDUMP)
     int i;
-#endif /* USE_RUNDUMP */
+#endif /* ERRMSG */
     int fd;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
@@ -59,20 +77,14 @@ char **argv;
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 
-#if !defined(USE_RUNDUMP) && !defined(XFSDUMP) && !defined(VDUMP)
-
-#if !defined(USE_RUNDUMP)
-#define ERRMSG "rundump not enabled on this system.\n"
-#else
-#define ERRMSG "DUMP not available on this system.\n"
-#endif
+#ifdef ERRMSG							/* { */
 
     fprintf(stderr, ERRMSG);
     dbprintf(("%s: %s", argv[0], ERRMSG));
     dbclose();
     return 1;
 
-#else
+#else								/* } { */
 
     /* we should be invoked by CLIENT_LOGIN */
     {
@@ -139,5 +151,5 @@ char **argv;
     fprintf(stderr, "rundump: could not exec %s: %s\n",
 	    dump_program, strerror(errno));
     return 1;
-#endif
+#endif								/* } */
 }

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.45 1998/02/08 21:55:07 amcore Exp $
+ * $Id: amanda.h,v 1.46 1998/02/11 23:25:30 jrj Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -303,7 +303,7 @@ extern int errno;
  */
 #ifndef ASSERTIONS
 
-#define assert(exp) (0)
+#define assert(exp) ((void)0)
 
 #else	/* ASSERTIONS */
 

@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.54 1998/02/08 20:52:44 amcore Exp $
+/* $Id: dumper.c,v 1.55 1998/02/11 23:25:34 jrj Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -72,7 +72,6 @@ char *argv[MAX_ARGS+1];
 int argc;
 int interactive;
 char *handle = NULL;
-char *loginid = NULL;
 
 char databuf[DATABUF_SIZE];
 char mesgbuf[MESGBUF_SIZE+1];
@@ -178,7 +177,6 @@ char **main_argv;
 {
     cmd_t cmd;
     int outfd, protocol_port, taper_port, rc;
-    struct passwd *pwptr;
     dgram_t *msg;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
@@ -221,11 +219,10 @@ char **main_argv;
 	    pname, (long) getpid(), main_argv[0], version(), protocol_port);
     fflush(stderr);
 
-    /* now, find out who I'm running as */
+    /* now, make sure we are a valid user */
 
-    if((pwptr = getpwuid(getuid())) == NULL)
+    if(getpwuid(getuid()) == NULL)
 	error("can't get login name for my uid %ld", (long)getuid());
-    loginid = newstralloc(loginid, pwptr->pw_name);
 
     signal(SIGPIPE, SIG_IGN);
     signal(SIGCHLD, SIG_IGN);

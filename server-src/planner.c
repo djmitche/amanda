@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.58 1998/01/26 21:16:32 jrj Exp $
+ * $Id: planner.c,v 1.59 1998/02/11 23:25:40 jrj Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -89,7 +89,6 @@ double total_lev0, balanced_size, balance_threshold;
 unsigned long tape_length, tape_mark;
 int result_port, result_socket, amanda_port;
 int total_waiting, max_disks;
-char *loginid = NULL;
 
 #ifdef KRB4_SECURITY
 int kamanda_port;
@@ -145,7 +144,6 @@ char **argv;
     disklist_t *origqp;
     int moved_one;
     char *datestamp = NULL, **vp;
-    struct passwd *pwptr;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     int fd;
@@ -194,13 +192,12 @@ char **argv;
 
     /*
      * From this point on we are running under our real uid, so we don't
-     * have to worry about opening security holes below.  Find out who we
-     * are running as.
+     * have to worry about opening security holes below.  Make sure we
+     * are a valid user.
      */
 
-    if((pwptr = getpwuid(getuid())) == NULL)
+    if(getpwuid(getuid()) == NULL)
 	error("can't get login name for my uid %ld", (long)getuid());
-    loginid = newstralloc(loginid, pwptr->pw_name);
 
     /*
      * 2. Read in Configuration Information
@@ -683,8 +680,8 @@ disk_t *dp;
 		 * last night, we can't bump.
 		 */
 		if((inf.inf[curr_level].size == 0 || /* no data, try it anyway */
-		   ((inf.inf[curr_level].size > bump_thresh(curr_level))) &&
-		   ep->level_days >= conf_bumpdays)) {
+		    (((inf.inf[curr_level].size > bump_thresh(curr_level)))
+		     && ep->level_days >= conf_bumpdays))) {
 		    askfor(ep, i++, curr_level+1, &inf);
 		}
 	    } 

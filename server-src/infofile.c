@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.38 1998/01/30 23:09:16 blair Exp $
+ * $Id: infofile.c,v 1.39 1998/02/11 23:25:37 jrj Exp $
  *
  * manage current info file
  */
@@ -346,7 +346,9 @@ char *disk;
 }
 #endif
 
+#ifndef TEXTDB
 static char *lockname = NULL;
+#endif
 
 int open_infofile(filename)
 char *filename;
