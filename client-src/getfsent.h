@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: getfsent.h,v 1.4 1998/07/04 00:18:15 oliva Exp $
+ * $Id: getfsent.h,v 1.4.8.1 2001/04/12 15:31:38 jrjackson Exp $
  *
  * interfaces for obtaining filesystem information
  */
@@ -54,7 +54,7 @@ int open_fstab P((void));
 void close_fstab P((void));
 
 int get_fstab_nextentry P((generic_fsent_t *fsent));
-int search_fstab P((char *name, generic_fsent_t *fsent));
+int search_fstab P((char *name, generic_fsent_t *fsent, int check_dev));
 int is_local_fstype P((generic_fsent_t *fsent));
 
 char *amname_to_devname P((char *str));
