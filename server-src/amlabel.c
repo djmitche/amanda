@@ -25,12 +25,13 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlabel.c,v 1.9 1998/02/26 19:25:03 jrj Exp $
+ * $Id: amlabel.c,v 1.10 1998/03/15 23:40:00 martinea Exp $
  *
  * write an Amanda label on a tape
  */
 #include "amanda.h"
 #include "conffile.h"
+#include "tapefile.h"
 #include "tapeio.h"
 #include "changer.h"
 
@@ -43,7 +44,7 @@ void usage P((char *argv0));
 void usage(argv0)
 char *argv0;
 {
-    fprintf(stderr, "Usage: %s <conf> <label> [slot <slot-number>]\n",
+    fprintf(stderr, "Usage: %s [-f] <conf> <label> [slot <slot-number>]\n",
 	    argv0);
     exit(1);
 }
@@ -53,10 +54,14 @@ int argc;
 char **argv;
 {
     char *confdir, *outslot = NULL;
-    char *errstr, *confname, *label, *tapename = NULL, *labelstr, *slotstr;
+    char *errstr, *confname, *label, *oldlabel=NULL, *tapename = NULL;
+    char *labelstr, *slotstr;
+    char *olddatestamp=NULL, *tapefilename;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     int fd;
+    int force, tape_ok;
+    tape_t *tp;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -74,16 +79,20 @@ char **argv;
 
     erroutput_type = ERR_INTERACTIVE;
 
-    if(argc != 3 && argc != 5)
+    if(strcmp(argv[1],"-f"))
+	 force=0;
+    else force=1;
+
+    if(argc != 3+force && argc != 5+force)
 	usage(argv[0]);
 
-    confname = argv[1];
-    label = argv[2];
+    confname = argv[1+force];
+    label = argv[2+force];
 
-    if(argc == 5) {
-	if(strcmp(argv[3], "slot"))
+    if(argc == 5+force) {
+	if(strcmp(argv[3+force], "slot"))
 	    usage(argv[0]);
-	slotstr = argv[4];
+	slotstr = argv[4+force];
 	slotcommand = 1;
     }
     else {
@@ -100,8 +109,17 @@ char **argv;
 
     labelstr = getconf_str(CNF_LABELSTR);
 
+    tapefilename = getconf_str(CNF_TAPELIST);
+    if(read_tapelist(tapefilename))
+	error("parse error in %s", tapefilename);
+
     if(!match(labelstr, label))
 	error("label %s doesn't match labelstr \"%s\"", label, labelstr);
+
+    if((tp = lookup_tapelabel(label))!=NULL) {
+	if(!force)
+	    error("label %s already on a tape\n",label);
+    }
 
     if(!changer_init()) {
 	if(slotcommand) {
@@ -127,25 +145,60 @@ char **argv;
 	error(errstr);
     }
 
-    printf(", writing label %s", label); fflush(stdout);
+    tape_ok=1;
+    printf(", reading label");fflush(stdout);
+    if((errstr = tape_rdlabel(tapename, &olddatestamp, &oldlabel)) != NULL) {
+	printf(", %s\n",errstr);
+	tape_ok=1;
+    }
+    else {
+	/* got an amanda tape */
+	printf(" %s",oldlabel);
+	if(!match(labelstr, oldlabel)) {
+	    printf(", tape is in another amanda configuration");
+	    if(!force)
+		tape_ok=0;
+	}
+	else {
+	    if((tp = lookup_tapelabel(oldlabel)) != NULL) {
+		printf(", tape is active");
+		if(!force)
+		    tape_ok=0;
+	    }
+	}
+	printf("\n");
+    }
+	
+    printf("rewinding"); fflush(stdout);
 
-    if((errstr = tape_wrlabel(tapename, "X", label)) != NULL) {
+    if((errstr = tape_rewind(tapename)) != NULL) {
 	putchar('\n');
 	error(errstr);
     }
 
-    printf(", writing end marker"); fflush(stdout);
+    if(tape_ok) {
+	printf(", writing label %s", label); fflush(stdout);
 
-    if((errstr = tape_wrendmark(tapename, "X")) != NULL) {
-	putchar('\n');
-	error(errstr);
+	if((errstr = tape_wrlabel(tapename, "X", label)) != NULL) {
+	    putchar('\n');
+	    error(errstr);
+	}
+
+	printf(", writing end marker"); fflush(stdout);
+
+	if((errstr = tape_wrendmark(tapename, "X")) != NULL) {
+	    putchar('\n');
+	    error(errstr);
+	}
+	printf(", done.\n");
+    }
+    else {
+	printf("\ntape not labeled\n");
     }
 
     afree(outslot);
     afree(tapename);
     afree(confdir);
-
-    printf(", done.\n");
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 

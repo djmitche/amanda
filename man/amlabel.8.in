@@ -12,6 +12,7 @@
 amlabel \- label an Amanda tape
 .SH SYNOPSIS
 .B amlabel
+[-f]
 .I config label
 [
 .B slot
@@ -28,6 +29,12 @@ may be any string that does not contain whitespace and that matches the
 .B labelstr
 regular expression option.
 It is up to the system administrator to define a naming convention.
+.LP
+.B Amlabel
+will not write the label if the tape contain an active
+amanda tape or if the label specified is on an active tape. The
+.B -f
+(force) flag bypass these verification.
 .LP
 An optional slot may be specified after the tape label.
 If a tape changer is in use,
