@@ -2023,7 +2023,7 @@ dnl the positional parameters to find the particular line from df
 dnl that contains the root paritition.  We put it in a subshell so
 dnl that the original positional parameters are not messed with.
 dfline=`(
-    df | while read line; do
+    df / | while read line; do
 	set -- $line
 	while test $# -gt 0; do
 	    if test "$1" = "/"; then

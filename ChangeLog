@@ -1,3 +1,9 @@
+1998-10-28  John R. Jackson  <jrj@purdue.edu>
+
+	* configure.in: use "df /" instead of just "df" when trying to find
+	the device that has the root file system to avoid things like NFS
+	hangs that df sometimes suffers from.
+
 1998-10-27  Mike Grupenhoff <kashmir@munge.com>
 
 	* common-src/stream.c (stream-client): add a 'localport' argument
