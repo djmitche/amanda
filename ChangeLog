@@ -1,4 +1,15 @@
 2001-02-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	Patch by Joe Rhett <jrhett@isite.net>
+	and Jason Hollinden <jhollind@sammg.com>
+
+	* changer-src/chg-zd-mtx.sh.in:  Added barcode reader support,
+	>9 tape slot support, variable for 'offline' or 'ONLINE'
+	return value of tape device, and multi-config support.  Moved
+	all user settable variables to 'changerfile'.conf in the
+	amanda config directory.  Added commented out example of .conf
+	file into script.
+
+2001-02-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amindexd.c (uncompress_file): remove uncompressed
 	index file if the command failed.
