@@ -1,36 +1,44 @@
---- ./source/client.c~	Tue Oct 21 08:47:16 1997
-+++ ./source/client.c	Mon Nov 17 07:34:05 1997
-@@ -137,7 +137,7 @@
+This patch fixes Samba 2.0.0 or newer, so that it does not overflow on
+filesystems larger than 2GB.  Note that it requires a compiler that
+supports unsigned long longs, such as gcc.
+
+The hunks for client.c and clitar.c were updated for Samba 2.0.0 by
+Tom Schutter <tom@platte.com>.  The snprintf.c improvement is by
+Cloyce D. Spradling <cloyce@headgear.org>.
+
+--- ./source/client/client.c	Sat Feb  6 15:51:52 1999
++++ ./source/client/client.c	Wed Feb 24 14:55:24 1999
+@@ -101,7 +101,7 @@
  int put_total_time_ms = 0;
  
  /* totals globals */
 -int dir_total = 0;
 +unsigned long long dir_total = 0;
  
- extern int Client;
+ #define USENMB
  
-@@ -1131,7 +1131,7 @@
+@@ -430,7 +430,7 @@
  
-   do_dskattr();
+ 	do_dskattr();
  
--  DEBUG(3, ("Total bytes listed: %d\n", dir_total));
-+  DEBUG(3, ("Total bytes listed: %llu\n", dir_total));
+-	DEBUG(3, ("Total bytes listed: %d\n", dir_total));
++	DEBUG(3, ("Total bytes listed: %llu\n", dir_total));
  }
  
  
---- ./source/clitar.c~	Fri Sep  5 16:44:43 1997
-+++ ./source/clitar.c	Mon Nov 17 07:35:03 1997
-@@ -41,7 +41,8 @@
+--- ./source/client/clitar.c	Sat Feb  6 15:51:52 1999
++++ ./source/client/clitar.c	Wed Feb 24 14:56:21 1999
+@@ -85,7 +85,8 @@
  #endif
  
- static char *tarbuf;
+ static char *tarbuf, *buffer_p;
 -static int tp, ntarf, tbufsiz, ttarf;
 +static int tp, ntarf, tbufsiz;
 +static unsigned long long ttarf;
  /* Incremental mode */
  BOOL tar_inc=False;
  /* Reset archive bit */
-@@ -1606,7 +1607,7 @@
+@@ -1486,7 +1487,7 @@
      free(tarbuf);
      
      DEBUG(0, ("tar: dumped %d tar files\n", ntarf));
@@ -39,3 +47,82 @@
      break;
    }
  
+--- ./source/lib/snprintf.c	Mon Nov 23 17:50:57 1998
++++ ./source/lib/snprintf.c	Sat Feb 27 01:53:25 1999
+@@ -131,6 +131,7 @@
+ #define DP_C_SHORT   1
+ #define DP_C_LONG    2
+ #define DP_C_LDOUBLE 3
++#define DP_C_LLONG   4
+ 
+ #define char_to_int(p) (p - '0')
+ #define MAX(p,q) ((p >= q) ? p : q)
+@@ -237,7 +238,6 @@
+ 	state = DP_S_MOD;
+       break;
+     case DP_S_MOD:
+-      /* Currently, we don't support Long Long, bummer */
+       switch (ch) 
+       {
+       case 'h':
+@@ -247,6 +247,10 @@
+       case 'l':
+ 	cflags = DP_C_LONG;
+ 	ch = *format++;
++	if (ch == 'l') {	/* It's a long long */
++	  cflags = DP_C_LLONG;
++	  ch = *format++;
++	}
+ 	break;
+       case 'L':
+ 	cflags = DP_C_LDOUBLE;
+@@ -266,6 +270,8 @@
+ 	  value = va_arg (args, short int);
+ 	else if (cflags == DP_C_LONG)
+ 	  value = va_arg (args, long int);
++	else if (cflags == DP_C_LLONG)
++	  value = va_arg (args, long long);
+ 	else
+ 	  value = va_arg (args, int);
+ 	fmtint (buffer, &currlen, maxlen, value, 10, min, max, flags);
+@@ -276,6 +282,8 @@
+ 	  value = va_arg (args, unsigned short int);
+ 	else if (cflags == DP_C_LONG)
+ 	  value = (long)va_arg (args, unsigned long int);
++	else if (cflags == DP_C_LLONG)
++	  value = (long)va_arg (args, unsigned long long);
+ 	else
+ 	  value = (long)va_arg (args, unsigned int);
+ 	fmtint (buffer, &currlen, maxlen, value, 8, min, max, flags);
+@@ -286,6 +294,8 @@
+ 	  value = va_arg (args, unsigned short int);
+ 	else if (cflags == DP_C_LONG)
+ 	  value = (long)va_arg (args, unsigned long int);
++	else if (cflags == DP_C_LLONG)
++	  value = (long long)va_arg (args, unsigned long long);
+ 	else
+ 	  value = (long)va_arg (args, unsigned int);
+ 	fmtint (buffer, &currlen, maxlen, value, 10, min, max, flags);
+@@ -298,6 +308,8 @@
+ 	  value = va_arg (args, unsigned short int);
+ 	else if (cflags == DP_C_LONG)
+ 	  value = (long)va_arg (args, unsigned long int);
++	else if (cflags == DP_C_LLONG)
++	  value = (long)va_arg (args, unsigned long long);
+ 	else
+ 	  value = (long)va_arg (args, unsigned int);
+ 	fmtint (buffer, &currlen, maxlen, value, 16, min, max, flags);
+@@ -351,6 +363,12 @@
+ 	  long int *num;
+ 	  num = va_arg (args, long int *);
+ 	  *num = (long int)currlen;
++        } 
++	else if (cflags == DP_C_LLONG) 
++	{
++	  long long *num;
++	  num = va_arg (args, long long *);
++	  *num = (long long)currlen;
+         } 
+ 	else 
+ 	{
+
