@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.19 1997/12/09 07:16:06 amcore Exp $
+ * $Id: amcheck.c,v 1.20 1997/12/14 20:09:02 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -403,7 +403,7 @@ int fd;
 	    disklow = 1;
 	}
 	else if(access(hdp->diskdir, W_OK) == -1) {
-	    fprintf(outf, "ERROR: %s is unwritable: %s\n",
+	    fprintf(outf, "ERROR: %s is unwriteable: %s\n",
 		    hdp->diskdir, strerror(errno));
 	    disklow = 1;
 	}
@@ -483,7 +483,7 @@ int fd;
 	if((stat(indexdir, &statbuf) == -1)
 	   || !S_ISDIR(statbuf.st_mode)
 	   || (access(indexdir, W_OK) == -1)) {
-	    fprintf(outf, "Index dir \"%s\" doesn't exist or is not writable.\n",
+	    fprintf(outf, "Index dir \"%s\" doesn't exist or is not writeable.\n",
 		    indexdir);
 	}
     }

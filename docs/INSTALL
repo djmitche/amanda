@@ -194,7 +194,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	/usr/local/var/amanda/csd), and the work directory on the
 	holding disk.  These directories need to agree with the
 	parameters in amanda.conf.  Don't forget to make all these
-	directories writable by the dump user!
+	directories writeable by the dump user!
 
 	Make sure that you specify the *no-rewind* version of the tape
 	device in your amanda.conf file.  This is a frequently
