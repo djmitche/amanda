@@ -1,3 +1,6 @@
+	Compression is now performed where specified, and server
+	compress best specifications are obeyed. -oliva
+
 	genversion now correctly recognizes the selected locking scheme.
 	-Thomas Schmeidl <schmeidl@nwp.kwu.siemens.de>
 

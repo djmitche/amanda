@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.14 1997/08/27 08:13:15 amcore Exp $
+ * $Id: driverio.c,v 1.15 1997/08/31 17:58:56 amcore Exp $
  *
  * I/O-related functions for driver program
  */
@@ -247,7 +247,10 @@ disk_t *dp;
 	strcat(str, "compress-best;");
 	break;
     case COMP_SERV_FAST:
-	strcat(str, "srvcompress;");
+	strcat(str, "srvcomp-fast;");
+	break;
+    case COMP_SERV_BEST:
+        strcat(str, "srvcomp-best;");
 	break;
     }
 

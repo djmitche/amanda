@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.18 1997/08/27 08:13:04 amcore Exp $
+ * $Id: conffile.c,v 1.19 1997/08/31 17:58:54 amcore Exp $
  *
  * read configuration file
  */
@@ -1506,13 +1506,13 @@ static void get_compress()
 
     comp = -1;
 
-    if(serv && !clie) {
+    if(!serv && clie) {
 	if(none && !fast && !best) comp = COMP_NONE;
 	if(!none && fast && !best) comp = COMP_FAST;
 	if(!none && !fast && best) comp = COMP_BEST;
     }
 
-    if(!serv && clie) {
+    if(serv && !clie) {
 	if(none && !fast && !best) comp = COMP_NONE;
 	if(!none && fast && !best) comp = COMP_SERV_FAST;
 	if(!none && !fast && best) comp = COMP_SERV_BEST;

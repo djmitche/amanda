@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.24 1997/08/27 08:13:16 amcore Exp $
+/* $Id: dumper.c,v 1.25 1997/08/31 17:58:57 amcore Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -83,7 +83,7 @@ pid_t pid;
 long dumpsize, origsize;
 times_t runtime;
 double dumptime;	/* Time dump took in secs */
-static int srvcompress;
+static enum { srvcomp_none, srvcomp_fast, srvcomp_best } srvcompress;
 
 char errfname[MAX_LINE];
 FILE *errf;
@@ -128,10 +128,15 @@ void check_options(options)
 char *options;
 {
 #ifdef KRB4_SECURITY
-    krb4_auth = strstr(options, "krb4-auth") != NULL;
-    kencrypt = strstr(options, "kencrypt") != NULL;
+    krb4_auth = strstr(options, "krb4-auth;") != NULL;
+    kencrypt = strstr(options, "kencrypt;") != NULL;
 #endif
-    srvcompress= strstr(options, "srvcompress") != NULL;
+    if (strstr(options, "srvcomp-best;") != NULL)
+      srvcompress = srvcomp_best;
+    else if (strstr(options, "srvcomp-fast;") != NULL)
+      srvcompress = srvcomp_fast;
+    else
+      srvcompress = srvcomp_none;
 }
 
 void service_ports_init()
@@ -727,7 +732,11 @@ int mesgfd, datafd, indexfd, outfd;
 		for(tmpfd = 3; tmpfd <= 255; ++tmpfd)
 		    close(tmpfd);
 		/* now spawn gzip -1 to take care of the rest */
-		execlp(COMPRESS_PATH, COMPRESS_PATH, COMPRESS_FAST_OPT, (char *)0);
+		execlp(COMPRESS_PATH, COMPRESS_PATH,
+		       (srvcompress == srvcomp_best
+			? COMPRESS_BEST_OPT
+			: COMPRESS_FAST_OPT),
+		       (char *)0);
 		error("error: couldn't exec %s.\n", COMPRESS_PATH);
 	}
 	/* Now the pipe has been inserted. */
