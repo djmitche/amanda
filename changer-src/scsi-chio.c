@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-chio.c,v 1.5.4.2 1998/11/27 04:25:53 oliva Exp $
+ *	$Id: scsi-chio.c,v 1.5.4.3 1998/12/14 07:55:58 oliva Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -53,46 +53,7 @@ int rc = 0;
 
 int get_clean_state(int changerfd, char *changerdev, char *dev)
 {
-    int status;
-    unsigned char *cmd;
-    unsigned char buffer[255];
-    int filenr;
 
-    if (strcmp(changerdev, dev) == 0)
-      {
-	filenr = changerfd;
-      } else {
-    	if ((filenr = open(dev, O_RDWR)) < 0) {
-	  perror(dev);
-	  return 0;
-    	}
-      }
-    memset(buffer, 0, sizeof(buffer));
-
-    *((int *) buffer) = 0;      /* length of input data */
-    *(((int *) buffer) + 1) = 100;     /* length of output buffer */
-
-    cmd = (char *) (((int *) buffer) + 2);
-
-    cmd[0] = 0x4d;         /* LOG SENSE  */
-    cmd[2] = (1 << 6)|0x33;     /* PageControl, PageCode */
-    cmd[7] = 00;                 /* allocation length hi */
-    cmd[8] = 100;                 /* allocation length lo */
-
-    status = ioctl(filenr, 1 /* SCSI_IOCTL_SEND_COMMAND */ , buffer);
-/*
-    if (status)
-        printf("ioctl(SCSI_IOCTL_SEND_COMMAND) status\t= %u\n", status);
-*/
-    if (strcmp(changerdev, dev) != 0)
-      close(filenr);
-    
-    if (status)
-      return 0;
-    
-    if ((buffer[16] & 0x1) == 1)
-      return 1;
-    
     return 0;
 
 }
@@ -103,6 +64,7 @@ int mtfd;
 struct mtop mt_com;
 
     if ((mtfd = open(tape, O_RDWR)) < 0) {
+        dbprintf(("eject_tape : failed\n"));
         perror(tape);
         exit(2);
     }
@@ -137,8 +99,8 @@ int type=CHET_ST;
 
     rc = ioctl(fd, CHIOGSTATUS, &ces);
     if (rc) {
-	fprintf(stderr,"%s: changer status query failed: 0x%x %s\n",
-			get_pname(), rc,strerror(errno));
+	dbprintf(("%s: changer status query failed: 0x%x %s\n",
+			get_pname(), rc,strerror(errno)));
 	return -1;
     }
 
@@ -164,8 +126,8 @@ int type=CHET_ST;
 
     rc = ioctl(fd,CHIOGSTATUS,&ces);
     if (rc) {
-	fprintf(stderr,"%s: changer status query failed: 0x%x %s\n",
-			get_pname(), rc, strerror(errno));
+	dbprintf(("%s: changer status query failed: 0x%x %s\n",
+			get_pname(), rc, strerror(errno)));
 	return -1;
     }
 
@@ -192,8 +154,8 @@ int type=CHET_DT;
 
     rc = ioctl(fd, CHIOGSTATUS, &ces);
     if (rc) {
-	fprintf(stderr,"%s: drive status query failed: 0x%x %s\n",
-			get_pname(), rc, strerror(errno));
+	dbprintf(("%s: drive status query failed: 0x%x %s\n",
+			get_pname(), rc, strerror(errno)));
 	return -1;
     }
 
@@ -212,6 +174,8 @@ int unload(int fd, int drive, int slot)
 struct changer_move  move;
 int rc;
 
+    dbprintf(("unload : fd = %d, drive = %d, slot =%d\n",fd, drive, slot));
+
     move.cm_fromtype = CHET_DT;
     move.cm_fromunit = drive;
     move.cm_totype = CHET_ST;
@@ -220,8 +184,8 @@ int rc;
 
     rc = ioctl(fd, CHIOMOVE, &move);
     if (rc){
-	fprintf(stderr,"%s: drive unload failed (MOVE): 0x%x %s\n",
-		get_pname(), rc, strerror(errno));
+	dbprintf(("%s: drive unload failed (MOVE): 0x%x %s\n",
+		get_pname(), rc, strerror(errno)));
 	return(-2);
     }
     return 0;
@@ -236,6 +200,8 @@ int load(int fd, int drive, int slot)
 struct changer_move  move;
 int rc;
 
+    dbprintf(("load : fd = %d, drive = %d, slot =%d\n",fd, drive, slot));
+
     move.cm_fromtype = CHET_ST;
     move.cm_fromunit = slot;
     move.cm_totype = CHET_DT;
@@ -244,8 +210,8 @@ int rc;
 
     rc = ioctl(fd,CHIOMOVE,&move);
     if (rc){
-	fprintf(stderr,"%s: drive load failed (MOVE): 0x%x %s\n",
-		get_pname(), rc, strerror(errno));
+	dbprintf(("%s: drive load failed (MOVE): 0x%x %s\n",
+		get_pname(), rc, strerror(errno)));
 	return(-2);
     }
     return(0);
@@ -257,8 +223,8 @@ int rc;
 
     rc = get_changer_info(fd);
     if (rc) {
-        fprintf(stderr, "%s: slot count query failed: 0x%x %s\n", 
-			get_pname(), rc, strerror(errno));
+        dbprintf(("%s: slot count query failed: 0x%x %s\n", 
+			get_pname(), rc, strerror(errno)));
         return -1;
     }
 
@@ -271,8 +237,8 @@ int rc;
 
     rc = get_changer_info(fd);
     if (rc) {
-        fprintf(stderr, "%s: drive count query failed: 0x%x %s\n",
-			get_pname(), rc, strerror(errno));
+        dbprintf(("%s: drive count query failed: 0x%x %s\n",
+			get_pname(), rc, strerror(errno)));
         return -1;
     }
 
@@ -285,7 +251,7 @@ int Tape_Ready ( char *tapedev , char * changerdev, int changerfd, int wait)
   FILE *out=NULL;
   int cnt=0;
   
-  if (strcmp(tapedev,changerdev) == 0)
+  if (tapedev == NULL || strcmp(tapedev,changerdev) == 0)
     {
       sleep(wait);
       return(0);

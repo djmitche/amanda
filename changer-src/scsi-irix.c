@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-irix.c,v 1.1.2.3 1998/11/18 07:03:45 oliva Exp $";
+static char rcsid[] = "$Id: scsi-irix.c,v 1.1.2.4 1998/12/14 07:56:01 oliva Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an SGI Workstation
@@ -60,17 +60,19 @@ int SCSI_ExecuteCommand(int DeviceFD,
 			int CDB_Length,
 			void *DataBuffer,
 			int DataBufferLength,
-			char *RequestSense,
+			char *pRequestSense,
                         int RequestSenseLength)
 {
+  ExtendedRequestSense_T ExtendedRequestSense;
   struct dsreq ds;
   int Zero = 0, Result;
   int retries = 5;
   
   memset(&ds, 0, sizeof(struct dsreq));
-  memset(RequestSense, 0, RequestSenseLength);
+  memset(pRequestSense, 0, RequestSenseLength);
+  memset(&ExtendedRequestSense, 0 , sizeof(ExtendedRequestSense_T)); 
   
-  ds.ds_flags = DSRQ_SENSE|DSRQ_ASYNXFR; 
+  ds.ds_flags = DSRQ_SENSE; 
   /* Timeout */
   ds.ds_time = 120000;
   /* Set the cmd */
@@ -80,7 +82,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
   ds.ds_databuf = (caddr_t)DataBuffer;
   ds.ds_datalen = DataBufferLength;
   /* Sense Buffer */
-  ds.ds_sensebuf = (caddr_t)RequestSense;
+  ds.ds_sensebuf = (caddr_t)pRequestSense;
   ds.ds_senselen = RequestSenseLength;
   
   switch (Direction) 
@@ -100,11 +102,12 @@ int SCSI_ExecuteCommand(int DeviceFD,
 	RET(&ds) = DSRT_DEVSCSI;
 	return (-1);
       }
+    dbprintf(("SCSI_ExecuteCommand(irix) %02X STATUS(%02X) RET(%02X) : %02X\n", CDB[0], STATUS(&ds), RET(&ds)));
     switch (STATUS(&ds))
       {
       case ST_BUSY:                /*  BUSY */
 	break;
-      case 0x18:                   /*  RESERV CONFLICT */
+      case STA_RESERV:                   /*  RESERV CONFLICT */
 	if (retries > 0)
 	  sleep(2);
 	continue;
@@ -131,6 +134,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
 
 int SCSI_Scan()
 {
+	return(0);
 }
 
 int Tape_Eject ( int DeviceFD)
@@ -140,36 +144,27 @@ int Tape_Eject ( int DeviceFD)
   mtop.mt_op = MTUNLOAD;
   mtop.mt_count = 1;
   ioctl(DeviceFD, MTIOCTOP, &mtop);
-  return;
+  return(0);
 }
 
-int Tape_Status( int DeviceFD)
-{
-	struct mtget mtget;
-	int true = 1;
-	bzero(&mtget, sizeof(struct mtget));
-
-	if(ioctl(DeviceFD,  MTIOCGET, &mtget) != -1)
-	{
-	} else {
-	}
-}
 
 int Tape_Ready(char *tapedev, char *changerdev, int changerfd, int wait)
 {
 
   struct mtget mtget;
   int true = 1;
-  int cnt;
+  int cnt = 0;
   int DeviceFD;
   
   if (strcmp(tapedev, changerdev) == 0) {
+    dbprintf(("Tape_Ready: %s %s\n",tapedev, changerdev));
     DeviceFD = changerfd;
   } else {
     if ((DeviceFD = SCSI_OpenDevice(tapedev)) < 0)
       {
 	sleep(wait);
-	return;
+	dbprintf(("Tape_Ready: SCSI_OpenDevice failed\n"));
+	return(0);
       }
   }
   
@@ -186,8 +181,10 @@ int Tape_Ready(char *tapedev, char *changerdev, int changerfd, int wait)
       sleep(1);
       cnt++;
     }
+    dbprintf(("Tape_Ready: cnt = %d\n",cnt));
 
   if (strcmp(tapedev, changerdev) != 0)
     SCSI_CloseDevice(tapedev, DeviceFD);
+  return(0);
 }
 #endif

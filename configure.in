@@ -1472,6 +1472,7 @@ AC_CHECK_HEADERS(\
 	sys/mtio.h \
 	sys/param.h \
 	sys/scarray.h \
+	sys/scsiio.h \
 	sys/scsi.h \
 	sys/scsi/impl/uscsi.h \
 	sys/scsi/scsi/ioctl.h \
@@ -1492,6 +1493,8 @@ AC_CHECK_HEADERS(\
 
 NO_SCSI_CHANGER_MODE=true
 NO_CHIO_CHANGER_MODE=true
+
+AC_C_BIGENDIAN
 
 dnl
 dnl chio support
@@ -1619,7 +1622,27 @@ if test x"$ac_cv_header_sys_tape_h" = x"yes" &&
 		NO_SCSI_CHANGER_MODE=false
 	fi
 fi
-
+dnl
+dnl BSD SCSI
+dnl
+if test x"$ac_cv_header_sys_mtio_h" = x"yes" -a \
+   test x"$ac_cv_header_sys_scsiio_h" = x"yes"; then
+    AC_CACHE_CHECK([for BSD like scsi support],
+    amanda_cv_bsd_scsi,
+    AC_TRY_COMPILE([
+#include <sys/types.h>
+#include <sys/scsiio.h>
+#include <sys/mtio.h>
+],[
+    int device=1;
+    char Command;
+    ioctl(device, SCIOCCOMMAND, &Command);
+], amanda_cv_bsd_scsi=yes, amanda_cv_bsd_scsi=no)])
+    if test x"$amanda_cv_bsd_scsi" = x"yes";then
+       AC_DEFINE(HAVE_BSD_LIKE_SCSI)
+       NO_SCSI_CHANGER_MODE=false
+    fi
+fi
 
 dnl Do not build chg-scsi-chio if we cannot find the needed support
 dnl include files for the SCSI interfaces

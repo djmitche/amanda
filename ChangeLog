@@ -1,3 +1,37 @@
+1998-12-14  Thomas Hepper <th@icem.de>
+
+	* changer-src/Makefile.am Added scsi-bsd.c
+	* changer-src/chg-scsi.c Initialize *scsitapedevice
+	* changer-src/scsi-changer-driver.c remove LITTLE_ENDIAN_BITFILEDS
+	defenition
+	changed RequestSense to pRequestSense (there is a function 
+	called RequestSense)
+	changed error handling in ResetStatus (fix for IRIX)
+	FIxed length handling for the pages in ReadElemtStatus
+	* changer-src/scsi-chio.c get_clean_state only returns 0, the
+	ioctl to get the clean flag is not portable ;-(
+	changed all (f)printf to dbprintf
+
+	* changer-src/scsi-defs.h ElementStatusData_T is for BIG and
+	LITTLE endian the same ...
+
+	* changer-src/scsi-bsd.c New file for FreeBSD
+
+	* changer-src/scsi-irix.c Clean up in the return handling
+	changed RequestSense to pRequestSense
+	Removed unused function TapeStatus
+
+	* changer-src/scsi-linux.c changed RequestSense to pRequestSense
+	Removed unused function TapeStatus
+
+	* changer-src/scsi-solaris.c changed RequestSense to pRequestSense
+	Removed unused function TapeStatus
+
+	* config/acconfig.h added def for BSD_LIKE_SCSI
+
+	* configure.in Added check for ENDIAN type AC_C_BIGENDIAN
+	added sys/scsiio.h and check for BSD SCSI interface
+
 1998-12-12  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/driver.c (handle_dumper_result): rename .tmp files

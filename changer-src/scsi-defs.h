@@ -1,6 +1,10 @@
 /*
  * Copyright (c) 1998 T.Hepper
  */
+#ifndef WORDS_BIGENDIAN
+#define LITTLE_ENDIAN_BITFIELDS
+#endif
+
 typedef enum { Input, Output } Direction_T; 
 typedef unsigned char CDB_T[12];
 
@@ -218,17 +222,10 @@ typedef struct
 /* ======================================================= */
 typedef struct 
 {
-#ifdef LITTLE_ENDIAN_BITFIELDS        
-    unsigned char count[3];		/* Byte 6-8 = Byte Count of Report Available */
-    unsigned char byte5;      /* Reserved */
-    unsigned char number[2];   /* Byte 3-4 = Number of Elements Available */
-    unsigned char first[2];    /* Byte 1-2 = First Element Adress Reported */
-#else
    unsigned char first[2];    /* Byte 1-2 = First Element Adress Reported */
     unsigned char number[2];   /* Byte 3-4 = Number of Elements Available */
     unsigned char byte5;      /* Reserved */
     unsigned char count[3];		/* Byte 6-8 = Byte Count of Report Available */
-#endif
 } ElementStatusData_T;
 
 /* ======================================================= */
@@ -461,3 +458,8 @@ struct ChangerCMD {
 #define TAPETYPE 4
 #define STORAGE 2
 #define CHANGER 1
+
+#define NOT_READY 2
+#define UNIT_ATTENTION 6
+
+#define MAX_RETRIES 100
