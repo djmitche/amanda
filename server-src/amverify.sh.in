@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.7.2.13.4.4 2001/07/18 19:10:58 jrjackson Exp $
+#	$Id: amverify.sh.in,v 1.7.2.13.4.5 2001/08/25 00:45:52 jrjackson Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -123,7 +123,7 @@ doonefile() {
 		shift 9
 		if [ X"$1" = X"program" -a X"$2" != X"" ]; then
 			if [ X"$TAR" != X"" \
-			     -a \( X"`basename $2`" = X"`basename $TAR" \
+			     -a \( X"`basename $2`" = X"`basename $TAR`" \
 				   -o X"`basename $2`" = X"gtar" \
 				   -o X"`basename $2`" = X"gnutar" \
 				   -o X"`basename $2`" = X"tar" \) ]; then
