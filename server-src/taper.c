@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.31 1998/03/16 14:36:18 amcore Exp $
+/* $Id: taper.c,v 1.32 1998/03/17 01:43:52 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1425,7 +1425,7 @@ int label_tape()
 	    errstr = newstralloc(errstr, result);
 	    return 0;
 	}
-	if((errstr = tapefd_rewind(tape_fd)) != NULL) { 
+	if(tapefd_rewind(tape_fd) == -1) { 
 	    return 0;
 	} 
 	tapefd_close(tape_fd);
@@ -1597,8 +1597,8 @@ int writerror;
     if (is_zftape(tapedev) == 1){
 	/* rewind the tape */
 
-	if((result = tapefd_rewind(tape_fd)) != NULL) {
-	    errstr = newstralloc(errstr, result);
+	if(tapefd_rewind(tape_fd) == -1 ) {
+	    errstr = newstralloc2(errstr, "rewinding tape: ", strerror(errno));
 	    goto tape_error;
 	}
 	/* close the tape */

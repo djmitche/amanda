@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlabel.c,v 1.11 1998/03/16 14:36:13 amcore Exp $
+ * $Id: amlabel.c,v 1.12 1998/03/17 01:43:51 martinea Exp $
  *
  * write an Amanda label on a tape
  */
@@ -159,7 +159,7 @@ char **argv;
 	    errstr = newstralloc2(errstr, "amlabel: ",
 				  (errno == EACCES) ? "tape is write-protected"
 				  : strerror(errno));
-	    return errstr;
+	    error(errstr);
 	}
     }
 #endif /* HAVE_LINUX_ZFTAPE_H */
@@ -168,9 +168,9 @@ char **argv;
 
 #ifdef HAVE_LINUX_ZFTAPE_H
     if (is_zftape(tapename) == 1){
-	if((errstr = tapefd_rewind(fd)) != NULL) {
+	if(tapefd_rewind(fd) == -1) {
 	    putchar('\n');
-	    error(errstr);
+	    error(strerror(errno));
 	}
     }
     else
@@ -208,9 +208,9 @@ char **argv;
 
 #ifdef HAVE_LINUX_ZFTAPE_H
     if (is_zftape(tapename) == 1){
-	if((errstr = tapefd_rewind(fd)) != NULL) {
+	if(tapefd_rewind(fd) == -1) {
 	    putchar('\n');
-	    error(errstr);
+	    error(strerror(errno));
 	}
     }
     else
@@ -263,9 +263,9 @@ char **argv;
 
 	    printf(",\nrewinding"); fflush(stdout); 
      
-	    if((errstr = tapefd_rewind(fd)) != NULL) { 
+	    if(tapefd_rewind(fd) == -1) { 
 		putchar('\n'); 
-		error(errstr); 
+		error(strerror(errno)); 
 	    } 
 	    close(fd);
 #ifdef HAVE_LIBVTBLC
