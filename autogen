@@ -13,4 +13,6 @@
 awk '/^#!\/bin\/sh/ { next } /^#.*/,/^#$/ { print }' <$0 |
 sed 's/^# \?//'
 
-exit 0
+echo "Now running autoreconf -i --foreign"
+echo "(it will fail if you have not applied the patch yet)"
+exec autoreconf -i --foreign
