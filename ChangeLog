@@ -1,3 +1,7 @@
+2001-01-20  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* docs/INSTALL: Notes about tar-1.13.19
+
 2001-01-17  Thomas Hepper <th@ant.han.de>
 
 	* changer-src/chg-scsi.c: Moved definitions for config_t and
