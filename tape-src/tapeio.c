@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.29 2000/11/26 15:55:45 martinea Exp $
+ * $Id: tapeio.c,v 1.30 2000/12/01 16:07:50 mengel Exp $
  *
  * implements tape I/O functions
  */
@@ -90,6 +90,14 @@ int tapefd;
     return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, T_RWD, &st);
 }
 
+int tapefd_unload(tapefd)
+int tapefd;
+{
+    int st;
+    return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, T_OFFL, &st);
+                               /* not sure of speling here ^^^ */
+}
+
 int tapefd_fsf(tapefd, count)
 int tapefd, count;
 /*
@@ -144,6 +152,17 @@ int tapefd;
     return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, STIOCTOP, &st);
 }
 
+int tapefd_unload(tapefd)
+int tapefd;
+{
+    struct stop st;
+
+    st.st_op = STOFFL;
+    st.st_count = 1;
+
+    return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, STIOCTOP, &st);
+}
+
 int tapefd_fsf(tapefd, count)
 int tapefd, count;
 /*
@@ -186,6 +205,17 @@ int tapefd;
 {
     int st;
     return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, MT_REWIND, &st);
+}
+
+int tapefd_unload(tapefd)
+int tapefd;
+{
+    int st;
+#ifdef MT_OFFLINE
+    return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, MT_OFFLINE, &st);
+#else
+    return (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, MT_UNLOAD, &st);
+#endif
 }
 
 int tapefd_fsf(tapefd, count)
@@ -239,6 +269,34 @@ int tapefd;
     int rc, cnt;
 
     mt.mt_op = MTREW;
+    mt.mt_count = 1;
+
+    /* EXB-8200 drive on FreeBSD can fail to rewind, but retrying
+     * won't hurt, and it will usually even work! */
+    for(cnt = 0; cnt < 10; ++cnt) {
+	rc = (tapefd == no_op_tapefd) ? 0 : ioctl(tapefd, MTIOCTOP, &mt);
+	if (rc == 0)
+	    break;
+	sleep(3);
+    }
+    return rc;
+}
+
+int tapefd_unload(tapefd)
+int tapefd;
+{
+    struct mtop mt;
+    int rc, cnt;
+
+#ifdef MTUNLOAD
+    mt.mt_op = MTUNLOAD;
+#else
+#ifdef MTOFFL
+    mt.mt_op = MTOFFL;
+#else
+    mt.mt_op = syntax error;
+#endif
+#endif
     mt.mt_count = 1;
 
     /* EXB-8200 drive on FreeBSD can fail to rewind, but retrying
@@ -317,10 +375,14 @@ int tape_open(filename, mode)
 #endif /* HAVE_LINUX_ZFTAPE_H */
     int ret = 0, delay = 2, timeout = 200;
     filename = namefix(filename);
+    if (mode == 0 )
+	mode = O_RDONLY;
+#ifdef WHY
     if (mode == 0 || mode == O_RDONLY)
 	mode = O_RDONLY;
     else
 	mode = O_RDWR;
+#endif
 #if 0
     /* Since we're no longer using a special name for no-tape, we no
        longer need this */
@@ -411,7 +473,7 @@ char *devname;
     int fd;
 
     if((fd = tape_open(devname, O_RDONLY)) == -1) {
-	errstr = newstralloc(errstr, "no tape online");
+	errstr = newstralloc(errstr, "tape offline");
 	return errstr;
     }
 
@@ -425,6 +487,25 @@ char *devname;
     return NULL;
 }
 
+char *tape_unload(devname)
+char *devname;
+{
+    int fd;
+
+    if((fd = tape_open(devname, O_RDONLY)) == -1) {
+	errstr = newstralloc(errstr, "tape offline");
+	return errstr;
+    }
+
+    if(tapefd_unload(fd) == -1) {
+	errstr = newstralloc2(errstr, "unloading tape: ", strerror(errno));
+	tapefd_close(fd);
+	return errstr;
+    }
+
+    tapefd_close(fd);
+    return NULL;
+}
 
 char *tape_fsf(devname, count)
 char *devname;
@@ -434,7 +515,7 @@ int count;
     char count_str[NUM_STR_SIZE];
 
     if((fd = tape_open(devname, O_RDONLY)) == -1) {
-	errstr = newstralloc(errstr, "no tape online");
+	errstr = newstralloc(errstr, "tape offline");
 	return errstr;
     }
 
@@ -500,7 +581,7 @@ char *devname, **datestamp, **label;
     int fd;
 
     if((fd = tape_open(devname, O_RDONLY)) == -1) {
-	errstr = newstralloc(errstr, "no tape online");
+	errstr = newstralloc(errstr, "tape offline");
 	return errstr;
     }
 
@@ -657,3 +738,70 @@ int is_zftape(filename)
     return(0);
 }
 #endif /* HAVE_LINUX_ZFTAPE_H */
+
+
+char *tape_status(devname)
+char *devname;
+{
+    int fd;
+
+    if((fd = tape_open(devname, O_RDONLY)) == -1) {
+	errstr = newstralloc(errstr, "tape offline or not readable");
+	return errstr;
+    }
+
+    if(tapefd_status(fd) == -1) {
+	errstr = newstralloc2(errstr, "tape status: ", strerror(errno));
+	tapefd_close(fd);
+	return errstr;
+    }
+
+    tapefd_close(fd);
+    return NULL;
+}
+
+int
+tapefd_status(fd) 
+int fd;
+{
+   int res = 0;
+
+#if defined(MTIOCGET)
+   struct mtget buf;
+
+   res = ioctl(fd,MTIOCGET,&buf);
+
+#ifdef MT_ONL
+   /* IRIX-ish system */
+   printf("status: %s %s %s %s\n",
+		(buf.mt.dposn & MT_ONL) ? "ONLINE" : "OFFLINE",
+		(buf.mt.dposn & MT_EOT) ? "EOT" : "",
+		(buf.mt.dposn & MT_BOT) ? "BOT" : "",
+		(buf.mt.dposn & MT_WRPROT) ? "PROTECTED" : ""
+        );
+#endif
+#ifdef GMT_ONLINE
+   /* Linux-ish system */
+   printf("status: %s %s %s %s\n",
+		GMT_ONLINE(buf.mt_gstat) ? "ONLINE" : "OFFLINE",
+		GMT_EOT(buf.mt_gstat) ? "EOT" : "",
+		GMT_BOT(buf.mt_gstat) ? "BOT" : "",
+		GMT_WR_PROT(buf.mt_gstat) ? "PROTECTED" : ""
+        );
+#endif
+
+#ifdef DEV_BOM
+   /* OSF1-ish system */
+   printf("status: %s %s %s\n",
+		~(DEV_OFFLINE & buf.mt_dsreg) ? "ONLINE" : "OFFLINE",
+		(DEV_BOM & buf.mt_dsreg) ? "BOT" : "",
+		(DEV_WRTLCK & buf.mt_dsreg) ? "PROTECTED" : ""
+        );
+#endif
+
+   /* Solaris, minix, etc. */
+   printf( "dsreg == 0x%x\n", buf.mt_dsreg  );
+#endif
+
+  return res;
+}

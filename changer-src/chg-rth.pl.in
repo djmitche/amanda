@@ -37,7 +37,7 @@ if ("@USE_VERSION_SUFFIXES@" eq "yes") {
     $suf = "";
 }
 
-$MT="@MT@";
+$MT="am-mt";
 $MTF="@MT_FILE_FLAG@";
 
 $tapeDevice=`$sbindir/amgetconf$SUF tapedev`;

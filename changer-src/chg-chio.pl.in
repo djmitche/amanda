@@ -343,7 +343,7 @@ $nr_tapes = &getTapeStatus();
 # Before we do anything with the tape changer we'll have to rewind the tape
 #
 
-system ("@MT@ @MT_FILE_FLAG@ $tapeDevice rewind")
+system ("am-mt @MT_FILE_FLAG@ $tapeDevice rewind")
 	unless $currentTape == 0;
 
 

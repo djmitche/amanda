@@ -38,10 +38,10 @@ if [ "$tape" = "/dev/null" -o "$TAPE" = "/dev/null" ]; then
   exit 2;
 fi
 fake=0
-MT=@MT@
+MT=am-mt
 MTF=@MT_FILE_FLAG@
 MTX=@MTX@
-DD=@DD@
+DD=am-dd
 firstslot=1
 lastslot=6
 # counted from 1 !!!

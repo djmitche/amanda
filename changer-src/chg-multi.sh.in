@@ -49,7 +49,7 @@ fi
 
 ourconf=`amgetconf$SUF changerfile`
 
-MT=@MT@
+MT=am-mt
 MTF=@MT_FILE_FLAG@
 EXPR=expr
 # EXPR=/usr/local/bin/expr # in case you need a more powerful expr...

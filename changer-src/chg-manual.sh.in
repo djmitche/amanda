@@ -24,9 +24,9 @@ fi
 
 myname=$0
 EGREP=@EGREP@
-MT=@MT@
-MTF=@MT_FILE_FLAG@
-DD=@DD@
+MT=am-mt
+MTF=-f
+DD=am-dd
 MAILER=@MAILER@
 ONLINEREGEX="ONLINE|READY|sense[_ ]key[(]0x0[)]|sense key error = 0|^er=0$"
 REPORTTO=`amgetconf$SUF mailto`

@@ -35,10 +35,10 @@ if [ "$tape" = "/dev/null" -o "$TAPE" = "/dev/null" ]; then
   echo "Both tapedev and changerdev must be specified in config file";
   exit 2;
 fi
-MT=@MT@
+MT=am-mt
 MTF=@MT_FILE_FLAG@
 MTX=@MTX@
-DD=@DD@
+DD=am-dd
 firstslot=1
 lastslot=5
 # counted from 1 !!!

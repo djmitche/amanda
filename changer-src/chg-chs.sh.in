@@ -41,7 +41,7 @@ PATH=$sbindir:$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
 export PATH
 
 CHS=@CHS@
-MT=@MT@
+MT=am-mt
 MTF=@MT_FILE_FLAG@
 
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"

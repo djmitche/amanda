@@ -1,3 +1,22 @@
+2000-11-30 Marc Mengel <mengel@fnal.gov>
+	* changer-src/chg-chio.pl.in: Use am-mt and am-dd versus mt and dd.
+	* changer-src/chg-chs.sh.in: Likewise.
+	* changer-src/chg-manual.sh.in: Likewise.
+	* changer-src/chg-mtx.sh.in: Likewise.
+	* changer-src/chg-multi.sh.in: Likewise.
+	* changer-src/chg-rth.pl.in: Likewise.
+	* changer-src/chg-zd-mtx.sh.in:  Likewise.
+	* tape-src/am-dd.c: New file. Replacement for dd.
+	* tape-src/am-mt.c: New file. replacement for mt.
+	* tape-src/Makefile.am: Add build for am-mt and am-dd.
+	* tape-src/tapeio.c (tape_unload, tapefd_unload, tape_status, 
+	  tapefd_status): New functions.
+          (tape_rewind, tape_fsf, tape_rdlabel): Change error message 
+		for tape being offline so it matches online/offline regex 
+		in changer scripts.
+	  (tape_open): Ifdef-out mode flag clearing, so you can pass 
+		O_TRUNC, etc.  in for am-dd.
+
 2000-11-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* common-src/util.c: #include "../tape-src/tapeio.h"

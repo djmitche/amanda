@@ -20,7 +20,15 @@ noinst_HEADERS = 	tapeio.h
 
 EXTRA_PROGRAMS = 	tapetype
 
+sbin_PROGRAMS=          am-mt am-dd
+
 tapetype_LDADD = libamtape.$(LIB_EXTENSION) \
+	../common-src/libamanda.$(LIB_EXTENSION)
+
+am_mt_LDADD = libamtape.$(LIB_EXTENSION) \
+	../common-src/libamanda.$(LIB_EXTENSION)
+
+am_dd_LDADD = libamtape.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
 
 ## So that we can tell people to `cd tape-src && make tapetype':
