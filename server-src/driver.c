@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.132 2003/07/07 15:19:28 martinea Exp $
+ * $Id: driver.c,v 1.133 2003/11/24 16:41:14 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1026,12 +1026,10 @@ handle_taper_result(cookie)
 		log_add(L_FAIL, "%s %s %s %d [too many taper retries]",
 	    	    dp->host->hostname, dp->name, sched(dp)->datestamp,
 		    sched(dp)->level);
-		continue_dumps();
 	    }
 	    else {
 		sched(dp)->attempted++;
 		headqueue_disk(&tapeq, dp);
-		startaflush();
 	    }
 
 	    tape_left = tape_length;
@@ -1041,6 +1039,7 @@ handle_taper_result(cookie)
 	    taper_busy = 0;
 	    taper_disk = NULL;
 	    startaflush();
+	    continue_dumps();
 	    break;
 
 	case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
