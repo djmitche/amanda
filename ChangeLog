@@ -1,3 +1,8 @@
+1998-09-11  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* client-src/sendbackup-gnutar.c (re_table): ignore
+	`load_client_codepage' message from SAMBA
+
 1998-09-11  John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/amstatus.pl.in (all): fix USE_VERSION_SUFFIXES=yes
