@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.43 1997/12/30 05:23:57 jrj Exp $
+ * $Id: sendbackup-dump.c,v 1.44 1998/01/19 17:53:07 amcore Exp $
  *
  * send backup data using BSD dump
  */
@@ -121,7 +121,7 @@ static regex_t re_table[] = {
   { DMP_NORMAL, "^backup:" },					/* AIX */
   { DMP_NORMAL, "^        Use the umount command to unmount the filesystem" },
 
-  { DMP_NORMAL, "^[ \t]*\\\n" },
+  { DMP_NORMAL, "^[ \t]*$" },
 
   /* catch-all; DMP_STRANGE is returned for all other lines */
   { DMP_STRANGE, NULL, 0}
