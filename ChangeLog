@@ -1,3 +1,7 @@
+2000-06-12  Jeroen Ruigrok van der Werven  <asmodai@wxs.nl>
+
+	* server-src/amlabel.c (main): Do not amfree(config_name).
+
 2000-06-03 Thomas Hepper <th@ant.han.de>
 
 	* changer-src/scsi-defs.h: Add missing defines which are used by the
@@ -855,7 +859,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.351 2000/06/05 19:28:59 ant Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.352 2000/06/12 04:44:33 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
