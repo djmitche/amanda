@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.65 1999/09/15 00:32:10 jrj Exp $
+ * $Id: amadmin.c,v 1.66 1999/11/02 22:10:16 oliva Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -128,8 +128,8 @@ static const struct {
 #define	NCMDS	(sizeof(cmdtab) / sizeof(cmdtab[0]))
 
 int main(argc, argv)
-int argc;
-char **argv;
+     int argc;
+     char **argv;
 {
     int fd, i;
     char *conf_diskfile;
@@ -190,7 +190,7 @@ char **argv;
 	error("could not load tapelist \"%s\"", conf_tapelist);
     amfree(conf_tapelist);
 
-    conf_infofile = getconf_str(CNF_TAPELIST);
+    conf_infofile = getconf_str(CNF_INFOFILE);
     if (*conf_infofile == '/') {
 	conf_infofile = stralloc(conf_infofile);
     } else {

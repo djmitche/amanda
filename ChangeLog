@@ -1,3 +1,8 @@
+1999-11-02  David M. Olsen  <David.M.Olsen@boeing.com>
+
+	* server-src/amadmin.c (main): Second occurrence of CNF_TAPELIST
+	should have been CNF_INFOFILE; fixed.
+
 1999-11-02  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
 	* common-src/amflock.c (struct flock): Do not assume the fields are
