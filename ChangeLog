@@ -1,3 +1,8 @@
+2004-04-14  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Fix by John Koyle <jkoyle@rfpdepot.com>
+
+	* common-src/dgram.c: Fix EAGAIN on Linux.
+
 2004-04-06  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/amadmin.c (bumpsize): Typo.

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.26 2002/11/12 19:18:54 martinea Exp $
+ * $Id: dgram.c,v 1.27 2004/04/14 13:23:59 martinea Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -177,6 +177,17 @@ dgram_t *dgram;
 	if(errno == ECONNREFUSED && wait_count++ < max_wait) {
 	    sleep(5);
 	    dbprintf(("%s: dgram_send_addr: sendto(%s.%d): retry %d after ECONNREFUSED\n",
+		      debug_prefix_time(NULL),
+		      inet_ntoa(addr_save.sin_addr),
+		      (int) ntohs(addr.sin_port),
+		      wait_count));
+	    continue;
+	}
+#endif
+#ifdef EAGAIN
+	if(errno == EAGAIN && wait_count++ < max_wait) {
+	    sleep(5);
+	    dbprintf(("%s: dgram_send_addr: sendto(%s.%d): retry %d after EAGAIN\n",
 		      debug_prefix_time(NULL),
 		      inet_ntoa(addr_save.sin_addr),
 		      (int) ntohs(addr.sin_port),
