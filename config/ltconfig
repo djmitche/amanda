@@ -41,10 +41,10 @@ help="Try \`$progname --help' for more information."
 
 # Sed substitution that helps us do robust quoting.  It backslashifies
 # metacharacters that are still active within double-quoted strings.
-sed_quote_subst='s/\([\\"$\\\\]\)/\\\1/g'
+sed_quote_subst='s/\([\\"\\`$\\\\]\)/\\\1/g'
 
 # Same as above, but don't quote variable references.
-double_quote_subst='s/\([\\"\\\\]\)/\\\1/g'
+double_quote_subst='s/\([\\"\\`\\\\]\)/\\\1/g'
 
 # Global variables:
 can_build_shared=yes

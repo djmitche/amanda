@@ -66,7 +66,7 @@ rm="rm -f"
 
 # Sed substitution that helps us do robust quoting.  It backslashifies
 # metacharacters that are still active within double-quoted strings.
-sed_quote_subst='s/\([\\"$\\\\]\)/\\\1/g'
+sed_quote_subst='s/\([\\`\\"$\\\\]\)/\\\1/g'
 
 # NLS nuisances.
 # Only set LANG and LC_ALL to C if already set.
