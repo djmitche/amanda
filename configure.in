@@ -1764,7 +1764,6 @@ AC_CHECK_HEADERS(\
 	ndbm.h \
 	netdb.h \
 	netinet/in_systm.h \
-	netinet/ip.h \
 	readline.h \
 	readline/history.h \
 	readline/readline.h \
@@ -1781,9 +1780,8 @@ AC_CHECK_HEADERS(\
 	sys/ipc.h \
 	sys/mman.h \
 	sys/mntent.h \
-	sys/param.h \
-	sys/mount.h \
 	sys/mtio.h \
+	sys/param.h \
 	sys/scarray.h \
 	sys/scsiio.h \
 	sys/scsi.h \
@@ -1803,7 +1801,9 @@ AC_CHECK_HEADERS(\
 	syslog.h \
 	unistd.h \
 	vtblc.h \
-,,,
+)
+
+AC_CHECK_HEADERS(netinet/ip.h,,,
 [[#include <sys/socket.h>
 #if HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -1811,10 +1811,13 @@ AC_CHECK_HEADERS(\
 #ifdef HAVE_NETINET_IN_SYSTM_H
 #include <netinet/in_systm.h>
 #endif
-#ifdef HAVE_SYS_PARAM_H
+#include <netinet/in.h>
+]])
+
+AC_CHECK_HEADERS(sys/mount.h,,,
+[[#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#include <netinet/in.h>
 ]])
 
 NO_SCSI_CHANGER_MODE=true
