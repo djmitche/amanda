@@ -100,9 +100,10 @@ In particular, Amanda 2.4.0 has been compiled, and the client side tested
 on the following systems:
 	AIX 3.2
 	AIX 4.1
-	DEC OSF/1 3.2
 	BSDI BSD/OS 2.1
+	DEC OSF/1 3.2
 	IRIX 5.2
+	Linux/GNU
 	NetBSD 1.0
 	SunOS 4.1.x	(x >= 1)
 	SunOS 5.5	
@@ -110,7 +111,7 @@ on the following systems:
 	HP-UX 9.x
 	HP-UX 10.x	(x >= 01)
 The Amanda 2.4.0 server side is known to run on SunOS 4.1.3 and Solaris
-2.5 machines, but it also compile on all of the other machines and
+2.[56] machines, but it also compile on all of the other machines and
 there is no reason at this time to believe that it will not work.
 
 
@@ -118,7 +119,7 @@ WHERE DO I GET AMANDA?
 ----------------------
 
 There are several versions of Amanda.  The latest version at the time
-of this writing is 2.4.0b4 available at:
+of this writing is available at:
 
 	ftp://ftp.amanda.org/pub/amanda
 
