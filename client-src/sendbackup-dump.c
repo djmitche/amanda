@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.44 1998/01/19 17:53:07 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.45 1998/01/22 01:49:26 amcore Exp $
  *
  * send backup data using BSD dump
  */
@@ -245,7 +245,7 @@ char *dumpdate;
 			     " -tvf", " -",
 			     " 2>/dev/null",
 			     " | awk",
-			     " \'/^[leaf|dir]/ {print $3$1}\'",
+			     " \'/^(leaf|dir)/ {print $3$1}\'",
 			     " | sed",
 			     " -e", " \'s/leaf$//\'",
 			     " -e", " \'s/dir$/\\//\'",
@@ -283,7 +283,7 @@ char *dumpdate;
 			     " -tvf", " -",
 			     " 2>/dev/null",
 			     " | awk",
-			     " \'/^[leaf|dir]/ {print $3$1}\'",
+			     " \'/^(leaf|dir)/ {print $3$1}\'",
 			     " | sed",
 			     " -e", " \'s/leaf$//\'",
 			     " -e", " \'s/dir$/\\//\'",
@@ -318,7 +318,7 @@ char *dumpdate;
 			 " -tvf", " -",
 			 " 2>/dev/null",
 			 " | awk",
-			 " \'/^[leaf|dir]/ {print $3$1}\'",
+			 " \'/^(leaf|dir)/ {print $3$1}\'",
 			 " | sed",
 			 " -e", " \'s/leaf$//\'",
 			 " -e", " \'s/dir$/\\//\'",
