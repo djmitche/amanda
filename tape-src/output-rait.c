@@ -6,20 +6,41 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #else
 #include "amanda.h"
 #include "tapeio.h"
 #endif
 
 #include "output-rait.h"
+#include "output-tape.h"
 
 #ifdef NO_AMANDA
+#define	amfree(x)	do {						\
+	int save_errno = errno;						\
+	free(x);							\
+	(x) = 0;							\
+	errno = save_errno;						\
+} while(0)
 #define	tape_open	open
 #define tapefd_read	read
 #define tapefd_write	write
 #define tapefd_close	close
 #define tape_access	access
 #define tape_stat	stat
+#define tapefd_fsf	tape_tapefd_fsf
+#define tapefd_rewind	tape_tapefd_rewind
+#define tapefd_status	tape_tapefd_status
+#define tapefd_unload	tape_tapefd_unload
+#define tapefd_weof	tape_tapefd_weof
+
+int tapeio_init_devname (char * dev,
+			 char **dev_left,
+			 char **dev_right,
+			 char **dev_next);
+char *tapeio_next_devname (char * dev_left,
+			   char * dev_right,
+			   char **dev_next);
 #endif
 
 /*
@@ -80,8 +101,6 @@
 ** and do a normal open, and do normal operations on it.
 */
 
-#define RAIT_DEBUG	/*JJ*/
-
 #ifdef RAIT_DEBUG
 #define rait_debug(p) do {						\
   int save_errno = errno;						\
@@ -98,8 +117,9 @@
 static RAIT *rait_table = 0;		/* table to keep track of RAITS */
 static int rait_table_count;
 
+#ifdef NO_AMANDA
 /*
- * table_alloc -- (re)allocate enough space for some number of elements.
+ * amtable_alloc -- (re)allocate enough space for some number of elements.
  *
  * input:	table -- pointer to pointer to table
  *		elsize -- size of a table element
@@ -111,7 +131,12 @@ static int rait_table_count;
  */
 
 static int
-table_alloc(void **table, size_t elsize, int count, int *current, int bump) {
+amtable_alloc(void **table,
+	      size_t elsize,
+	      int count,
+	      int *current,
+	      int bump,
+	      int dummy) {
     void *table_new;
     int table_count_new;
 
@@ -124,7 +149,7 @@ table_alloc(void **table, size_t elsize, int count, int *current, int bump) {
 	}
 	if (0 != *table) {
 	    memcpy(table_new, *table, *current * elsize);
-	    free(*table);
+	    amfree(*table);
 	}
 	*table = table_new;
 	memset(((char *)*table) + *current * elsize,
@@ -134,15 +159,17 @@ table_alloc(void **table, size_t elsize, int count, int *current, int bump) {
     }
     return 0;
 }
+#endif
 
-#define rait_table_alloc(fd)	table_alloc((void **)&rait_table,	\
-					    sizeof(*rait_table),	\
-					    (fd),			\
-					    &rait_table_count,		\
-					    10)
+#define rait_table_alloc(fd)	amtable_alloc((void **)&rait_table,	\
+					      sizeof(*rait_table),	\
+					      (fd),			\
+					      &rait_table_count,	\
+					      10,			\
+					      NULL)
 
 int
-rait_open(char *dev, int flags, int mode) {
+rait_open(char *dev, int flags, int mask) {
     int fd;			/* the file descriptor number to return */
     RAIT *res;			/* resulting RAIT structure */
     char *dev_left;		/* string before { */
@@ -154,7 +181,7 @@ rait_open(char *dev, int flags, int mode) {
     int save_errno;
     int r;
 
-    rait_debug((stderr,"rait_open( %s, %d, %d )\n", dev, flags, mode));
+    rait_debug((stderr,"rait_open( %s, %d, %d )\n", dev, flags, mask));
 
     rait_flag = (0 != strchr(dev, '{'));
 
@@ -164,14 +191,14 @@ rait_open(char *dev, int flags, int mode) {
 	** we have to return a valid file descriptor, so use
 	** a dummy one to /dev/null
 	*/
-	fd = open("/dev/null",flags);
+	fd = open("/dev/null",flags,mask);
     } else {
 
 	/*
 	** call the normal tape_open function if we are not
 	** going to do RAIT
 	*/
-	fd = tape_open(dev,flags);
+	fd = tape_open(dev,flags,mask);
     }
     if(-1 == fd) {
 	rait_debug((stderr, "rait_open:returning %d: %s\n",
@@ -185,7 +212,7 @@ rait_open(char *dev, int flags, int mode) {
 	(void)tapefd_close(fd);
 	errno = save_errno;
 	rait_debug((stderr, "rait_open:returning %d: %s\n",
-			    fd,
+			    -1,
 			    strerror(errno)));
 	return -1;
     }
@@ -195,61 +222,54 @@ rait_open(char *dev, int flags, int mode) {
     memset(res, 0, sizeof(*res));
     res->nopen = 1;
 
+    fd_count = 0;
     if (rait_flag) {
 
 	/* copy and parse the dev string so we can scribble on it */
-        dev = rait_init_namelist(dev, &dev_left, &dev_right, &dev_next);
+	dev = strdup(dev);
 	if (0 == dev) {
 	    rait_debug((stderr, "rait_open:returning %d: %s\n",
-			        fd,
+			        -1,
+			        "out of strdup memory"));
+	    return -1;
+        }
+        if (0 != tapeio_init_devname(dev, &dev_left, &dev_right, &dev_next)) {
+	    rait_debug((stderr, "rait_open:returning %d: %s\n",
+			        -1,
 			        strerror(errno)));
 	    return -1;
         }
 
-	/*
-	** because the names we generate are subsets of the input name,
-	** the following guarantees we have enough working space
-	*/
-	dev_real = malloc(strlen(dev));
-	if (0 == dev_real) {
-	    free(dev);
-	    errno = ENOMEM;
-	    rait_debug((stderr, "rait_open:returning %d: %s\n",
-			        fd,
-			        strerror(errno)));
-	    return -1;
-	}
-
-	fd_count = 0;
-	while (rait_next_name(dev_left, dev_right, &dev_next, dev_real)) {
-	    r = table_alloc((void **)&res->fds,
+	while (0 != (dev_real = tapeio_next_devname(dev_left, dev_right, &dev_next))) {
+	    r = amtable_alloc((void **)&res->fds,
 			    sizeof(*res->fds),
 			    res->nfds,
 			    &fd_count,
-			    10);
+			    10,
+			    NULL);
 	    if (0 != r) {
 		(void)rait_close(fd);
 		fd = -1;
+		amfree(dev_real);
 		break;
 	    }
-	    res->fds[ res->nfds ] = tape_open(dev_real,flags);
+	    res->fds[ res->nfds ] = tape_open(dev_real,flags,mask);
 	    rait_debug((stderr,"rait_open:opening %s yields %d\n",
 			dev_real, res->fds[res->nfds] ));
 	    if ( res->fds[res->nfds] < 0 ) {
 		save_errno = errno;
 		(void)rait_close(fd);
+		amfree(dev_real);
 		errno = save_errno;
 		fd = -1;
 		break;
 	    }
+	    amfree(dev_real);
 	    res->nfds++;
 	}
 
 	/* clean up our copied string */
-	save_errno = errno;
-	free(dev);
-	free(dev_real);
-	errno = save_errno;
+	amfree(dev);
 
     } else {
 
@@ -259,12 +279,13 @@ rait_open(char *dev, int flags, int mode) {
 	*/
 
 	res->nfds = 1;
-	r = table_alloc((void **)&res->fds,
-			sizeof(*res->fds),
-			res->nfds,
-			&fd_count,
-			1);
-	if (0 == r) {
+	r = amtable_alloc((void **)&res->fds,
+			  sizeof(*res->fds),
+			  res->nfds,
+			  &fd_count,
+			  1,
+			  NULL);
+	if (0 != r) {
 	    (void)tapefd_close(fd);
 	    memset(res, 0, sizeof(*res));
 	    errno = ENOMEM;
@@ -293,42 +314,37 @@ rait_open(char *dev, int flags, int mode) {
     return fd;
 }
 
-char *
-rait_init_namelist(char * dev,
-		   char **dev_left,
-		   char **dev_right,
-		   char **dev_next) {
-
-    dev = strdup(dev);
-    if (0 == dev) { 
-	return 0;
-    }
-
+#ifdef NO_AMANDA
+int
+tapeio_init_devname(char * dev,
+		    char **dev_left,
+		    char **dev_right,
+		    char **dev_next) {
     /*
     ** find the first { and then the first } that follows it
     */
     if ( 0 == (*dev_next = strchr(dev, '{'))
 	 || 0 == (*dev_right = strchr(*dev_next + 1, '}')) ) {
 	/* we dont have a {} pair */
-	free(dev);
+	amfree(dev);
 	errno = EINVAL;
-	return 0;
+	return -1;
     }
 
     *dev_left = dev;				/* before the { */
     **dev_next = 0;				/* zap the { */
     (*dev_next)++;
     (*dev_right)++;				/* after the } */
-    return dev;
+    return 0;
 }
 
-int
-rait_next_name(char * dev_left,
-	       char * dev_right,
-	       char **dev_next,
-	       char * dev_real) {
+char *
+tapeio_next_devname(char * dev_left,
+	            char * dev_right,
+	            char **dev_next) {
+    char *dev_real = 0;
     char *next;
-    int ret = 0;
+    int len;
 
     next = *dev_next;
     if (0 != (*dev_next = strchr(next, ','))
@@ -340,13 +356,16 @@ rait_next_name(char * dev_left,
 	/* 
 	** we have one string picked out, build it into the buffer
 	*/
-	strcpy(dev_real, dev_left);		/* safe */
-	strcat(dev_real, next);			/* safe */
-	strcat(dev_real, dev_right);		/* safe */
-        ret = 1;
+	len = strlen(dev_left) + strlen(next) + strlen(dev_right) + 1;
+	if ( 0 != (dev_real = malloc(len)) ) {
+	    strcpy(dev_real, dev_left);		/* safe */
+	    strcat(dev_real, next);		/* safe */
+	    strcat(dev_real, dev_right);	/* safe */
+	}
     }
-    return ret;
+    return dev_real;
 }
+#endif
 
 /*
 ** close everything we opened and free our memory.
@@ -427,15 +446,15 @@ rait_close(int fd) {
 	(void)close(fd);	/* close the dummy /dev/null descriptor */
     }
     if (0 != pr->fds) {
-	free(pr->fds);
+	amfree(pr->fds);
 	pr->fds = 0;
     }
     if (0 != pr->readres) {
-	free(pr->readres);
+	amfree(pr->readres);
 	pr->readres = 0;
     }
     if (0 != pr->xorbuf) {
-	free(pr->xorbuf);
+	amfree(pr->xorbuf);
 	pr->xorbuf = 0;
     }
     pr->nopen = 0;
@@ -550,7 +569,7 @@ rait_write(int fd, const void *bufptr, int len) {
 	/* make sure we have enough buffer space */
 	if (len > pr->xorbuflen) {
 	    if (0 != pr->xorbuf) {
-		free(pr->xorbuf);
+		amfree(pr->xorbuf);
 	    }
 	    pr->xorbuf = malloc(len);
 	    if (0 == pr->xorbuf) {
@@ -704,7 +723,7 @@ rait_read(int fd, void *bufptr, int len) {
 	/* make sure we have enough buffer space */
 	if (len > pr->xorbuflen) {
 	    if (0 != pr->xorbuf) {
-		free(pr->xorbuf);
+		amfree(pr->xorbuf);
 	    }
 	    pr->xorbuf = malloc(len);
 	    if (0 == pr->xorbuf) {
@@ -876,46 +895,32 @@ int rait_access(char *devname, int flags) {
     char *dev_right;		/* string after } */
     char *dev_next;		/* string inside {} */
     char *dev_real;		/* parsed device name */
-    int save_errno = errno;
 
-    if (0 == strchr(devname, '{')) {
-        return tape_access(devname, flags);
+    /* copy and parse the dev string so we can scribble on it */
+    devname = strdup(devname);
+    if (0 == devname) {
+	rait_debug((stderr, "rait_access:returning %d: %s\n",
+			    -1,
+			    "out of strdup memory"));
+	return -1;
     }
-
-    devname = rait_init_namelist(devname, &dev_left, &dev_right, &dev_next);
-    if ( 0 == devname ) { 
+    if ( 0 != tapeio_init_devname(devname, &dev_left, &dev_right, &dev_next)) {
 	rait_debug((stderr, "rait_access:returning %d: %s\n",
 			    -1,
 			    strerror(errno)));
 	return -1;
     }
 
-    /*
-    ** because the names we generate are subsets of the input name,
-    ** the following guarantees we have enough working space
-    */
-    dev_real = malloc(strlen(devname));
-    if (0 == dev_real) {
-	free(devname);
-	errno = ENOMEM;
-	rait_debug((stderr, "rait_access:returning %d: %s\n",
-			    -1,
-			    strerror(errno)));
-	return -1;
-    }
-
-    while(rait_next_name(dev_left, dev_right, &dev_next, dev_real)) {
+    while( 0 != (dev_real = tapeio_next_devname(dev_left, dev_right, &dev_next))) {
 	res = tape_access(dev_real, flags);
 	rait_debug((stderr,"rait_access:access( %s, %d ) yields %d\n",
 		dev_real, flags, res ));
+	amfree(dev_real);
 	if (res < 0) { 
 	    break;
         }
     }
-    save_errno = errno;
-    free(devname);
-    free(dev_real);
-    errno = save_errno;
+    amfree(devname);
 
     rait_debug((stderr, "rait_access: returning %d%s%s\n",
 			res,
@@ -934,46 +939,32 @@ int rait_stat(char *devname, struct stat *buf) {
     char *dev_right;		/* string after } */
     char *dev_next;		/* string inside {} */
     char *dev_real;		/* parsed device name */
-    int save_errno;
 
-    if (0 == strchr(devname, '{')) {
-        return tape_stat(devname, buf);
+    /* copy and parse the dev string so we can scribble on it */
+    devname = strdup(devname);
+    if (0 == devname) {
+	rait_debug((stderr, "rait_access:returning %d: %s\n",
+			    -1,
+			    "out of strdup memory"));
+	return -1;
     }
-
-    devname = rait_init_namelist(devname, &dev_left, &dev_right, &dev_next);
-    if ( 0 == devname ) { 
-	rait_debug((stderr, "rait_stat:returning %d: %s\n",
+    if ( 0 != tapeio_init_devname(devname, &dev_left, &dev_right, &dev_next)) {
+	rait_debug((stderr, "rait_access:returning %d: %s\n",
 			    -1,
 			    strerror(errno)));
 	return -1;
     }
 
-    /*
-    ** because the names we generate are subsets of the input name,
-    ** the following guarantees we have enough working space
-    */
-    dev_real = malloc(strlen(devname));
-    if (0 == dev_real) {
-	free(devname);
-	errno = ENOMEM;
-	rait_debug((stderr, "rait_stat:returning %d: %s\n",
-			    -1,
-			    strerror(errno)));
-	return -1;
-    }
-
-    while(rait_next_name(dev_left, dev_right, &dev_next, dev_real)) {
+    while( 0 != (dev_real = tapeio_next_devname(dev_left, dev_right, &dev_next))) {
 	res = tape_stat(dev_real, buf);
 	rait_debug((stderr,"rait_stat:stat( %s ) yields %d\n",
 		dev_real, res ));
+	amfree(dev_real);
 	if (res < 0) { 
 	    break;
         }
     }
-    save_errno = errno;
-    free(devname);
-    free(dev_real);
-    errno = save_errno;
+    amfree(devname);
 
     rait_debug((stderr, "rait_access: returning %d%s%s\n",
 			res,
@@ -1020,7 +1011,7 @@ int rait_copy(char *f1, char *f2, int buflen) {
 	}
     } while( len > 0 );
     save_errno = errno;
-    free(buf);
+    amfree(buf);
     (void)rait_close(t1);
     (void)rait_close(t2);
     errno = save_errno;
@@ -1028,7 +1019,6 @@ int rait_copy(char *f1, char *f2, int buflen) {
 }
 
 /**/
-#ifndef NO_AMANDA
 
 /*
 ** Amanda Tape API routines:
@@ -1134,8 +1124,8 @@ int rait_tapefd_weof(int fd, int count) {
     return rait_tapefd_ioctl(0, tapefd_weof, fd, count);
 }
 
-int rait_tape_open(char *name,  int mode) {
-    return rait_open(name, mode, 0644);
+int rait_tape_open(char *name, int flags, int mask) {
+    return rait_open(name, flags, mask);
 }
 
 int rait_tapefd_status(int fd, struct am_mt_status *stat) {
@@ -1178,5 +1168,3 @@ int rait_tapefd_status(int fd, struct am_mt_status *stat) {
 void rait_tapefd_resetofs(int fd) {
     rait_lseek(fd,  0L, SEEK_SET);
 }
-
-#endif

@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-null.h,v 1.1.4.1 2001/01/24 22:12:18 jrjackson Exp $
+ * $Id: output-null.h,v 1.1.4.2 2001/06/29 23:39:56 jrjackson Exp $
  *
  * tapeio.c virtual tape interface for a null device.
  */
@@ -37,7 +37,7 @@
 #include "amanda.h"
 
 extern int null_tape_access P((char *, int));
-extern int null_tape_open P((char *, int));
+extern int null_tape_open ();
 extern int null_tape_stat P((char *, struct stat *));
 extern int null_tapefd_close P((int));
 extern int null_tapefd_fsf P((int, int));

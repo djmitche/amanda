@@ -7,11 +7,20 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
+#include "output-rait.h"
+
 extern char *getenv();
 
-extern char *tape_rewind();
-extern char *tape_unload();
-extern char *tape_fsf();
+#define	tape_open	rait_open
+#define	tapefd_read	rait_read
+#define	tapefd_write	rait_write
+#define	tapefd_fsf	rait_tapefd_fsf
+#define	tapefd_rewind	rait_tapefd_rewind
+#define	tapefd_status	rait_tapefd_status
+#define	tapefd_unload	rait_tapefd_unload
+#define	tapefd_weof	rait_tapefd_weof
+#define tapefd_setinfo_length(outfd, length)
+#define	tapefd_close	rait_close
 
 #else
 #include "amanda.h"
@@ -27,7 +36,7 @@ struct cmd {
     int min_chars;
     int count;
     int (*func)();
-    int mode;
+    int flags;
 } cmd[] = {
     { "eof",		0,	1,	tapefd_weof, O_RDWR },
     { "weof",		0,	1,	tapefd_weof, O_RDWR },
@@ -231,9 +240,9 @@ main(int argc, char **argv) {
     }
 
     if(debug) {
-	fprintf(stderr, "calling tape_open(\"%s\",%d)\n", tapename, cmd[i].mode);
+	fprintf(stderr, "calling tape_open(\"%s\",%d)\n", tapename, cmd[i].flags);
     }
-    if((fd = tape_open(tapename, cmd[i].mode)) < 0) {
+    if((fd = tape_open(tapename, cmd[i].flags)) < 0) {
 	goto report_error;
     }
 

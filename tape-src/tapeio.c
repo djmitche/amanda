@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: tapeio.c,v 1.20.4.7.2.3 2001/01/29 22:16:00 jrjackson Exp $
+ * $Id: tapeio.c,v 1.20.4.7.2.4 2001/06/29 23:39:56 jrjackson Exp $
  *
  * implements generic tape I/O functions
  */
@@ -49,7 +49,7 @@
 static struct virtualtape {
     char *prefix;
     int (*xxx_tape_access) P((char *, int));
-    int (*xxx_tape_open) P((char *, int));
+    int (*xxx_tape_open) ();
     int (*xxx_tape_stat) P((char *, struct stat *));
     int (*xxx_tapefd_close) P((int));
     int (*xxx_tapefd_fsf) P((int, int));
@@ -141,6 +141,109 @@ name2slot(name, ntrans)
     }
     *ntrans = name;
     return 0;
+}
+
+/*
+ * Routines for parsing a device name.
+ */
+
+/*
+ * Initialize parsing.  The text in the "dev" parameter will be altered,
+ * so a copy should be passed to us.
+ */
+
+int
+tapeio_init_devname(char * dev,
+		    char **dev_left,
+		    char **dev_right,
+		    char **dev_next) {
+    int ch;
+    char *p;
+    int depth;
+
+    *dev_left = *dev_right = *dev_next = NULL;	/* defensive coding */
+
+    /*
+     * See if there is a '{' and find the matching '}'.
+     */
+    if((*dev_next = p = strchr(dev, '{')) != NULL) {
+	depth = 1;
+	p++;
+	while(depth > 0) {
+	    while((ch = *p++) != '\0' && ch != '{' && ch != '}') {}
+	    if(ch == '\0') {
+		/*
+		 * Did not find a matching '}'.
+		 */
+		amfree(dev);
+		errno = EINVAL;
+		return -1;
+	    } else if(ch == '{') {
+		depth++;
+	    } else if(ch == '}') {
+		depth--;
+	    }
+	}
+	if(strchr(p, '{') != NULL || strchr(p, '}') != NULL) {
+	    amfree(dev);
+	    errno = EINVAL;
+	    return -1;				/* only one list allowed */
+	}
+	*dev_left = dev;			/* text before the '{' */
+	**dev_next = '\0';			/* zap the '{' */
+	(*dev_next)++;				/* point to the first name */
+	p[-1] = '\0';				/* zap the '}' */
+	*dev_right = p;				/* text after the '}' */
+    } else {
+	/*
+	 * Arrange to return just one name.
+	 */
+	*dev_next = dev;
+	*dev_left = *dev_right = "";
+    }
+    return 0;
+}
+
+/*
+ * Return the next device name.  A dynamic area is returned that the
+ * caller is responsible for freeing.
+ */
+
+char *
+tapeio_next_devname(char * dev_left,
+	            char * dev_right,
+	            char **dev_next) {
+    int ch;
+    char *next;
+    char *p;
+    int depth;
+
+    p = next = *dev_next;			/* remember the start point */
+    depth = 0;
+    do {
+	while((ch = *p++) != '\0' && ch != '{' && ch != '}' && ch != ',') {}
+	if(ch == '\0') {
+	    /*
+	     * Found the end of a name.
+	     */
+	    assert(depth == 0);
+	    if(*next == '\0') {
+		return NULL;			/* end of the list */
+	    }
+	    p--;				/* point to the null byte */
+	    break;
+	} else if(ch == '{') {
+	    depth++;
+	} else if(ch == '}') {
+	    assert(depth > 0);
+	    depth--;
+	}
+    } while(depth != 0 || ch != ',');
+    if(ch == ',') {
+	p[-1] = '\0';				/* zap the ',' */
+    }
+    *dev_next = p;				/* set up for the next call */
+    return vstralloc(dev_left, next, dev_right, NULL);
 }
 
 /*
@@ -397,16 +500,17 @@ tape_stat(filename, buf)
 }
 
 int
-tape_open(filename, mode)
+tape_open(filename, mode, mask)
     char *filename;
     int mode;
+    int mask;
 {
     char *tname;
     int vslot;
     int fd;
 
     vslot = name2slot(filename, &tname);
-    if((fd = vtable[vslot].xxx_tape_open(tname, mode)) >= 0) {
+    if((fd = vtable[vslot].xxx_tape_open(tname, mode, mask)) >= 0) {
 	amtable_alloc((void **)&tape_info,
 		      sizeof(*tape_info),
 		      fd,
@@ -905,7 +1009,7 @@ do_open()
     }
 
     fprintf(stderr, "tapefd_open(\"%s\", %d): ", file, mode);
-    if((fd = tape_open(file, mode)) < 0) {
+    if((fd = tape_open(file, mode, 0644)) < 0) {
 	perror("");
     } else {
 	fprintf(stderr, "%d (OK)\n", fd);

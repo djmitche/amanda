@@ -26,16 +26,31 @@
  */
 
 /*
- * $Id: output-tape.c,v 1.1.4.3 2001/04/23 18:49:07 jrjackson Exp $
+ * $Id: output-tape.c,v 1.1.4.4 2001/06/29 23:39:56 jrjackson Exp $
  *
  * tapeio.c virtual tape interface for normal tape drives.
  */
 
+#ifdef NO_AMANDA
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#else
 #include "amanda.h"
-
 #include "tapeio.h"
+#endif
+
 #include "output-tape.h"
+
+#ifndef NO_AMANDA
 #include "fileheader.h"
+#endif
+
 #ifndef R_OK
 #define R_OK 4
 #define W_OK 2
@@ -414,18 +429,19 @@ is_zftape(filename)
 }
 #endif /* HAVE_LINUX_ZFTAPE_H */
 
-int tape_tape_open(filename, mode)
+int tape_tape_open(filename, flags, mask)
     char *filename;
-    int mode;
+    int flags;
+    int mask;
 {
     int ret = 0, delay = 2, timeout = 200;
 
-    if ((mode & 3) != O_RDONLY) {
-	mode &= ~3;
-	mode |= O_RDWR;
+    if ((flags & 3) != O_RDONLY) {
+	flags &= ~3;
+	flags |= O_RDWR;
     }
     while (1) {
-	ret = open(filename, mode, 0644);
+	ret = open(filename, flags, mask);
 	/* if tape open fails with errno==EAGAIN, EBUSY or EINTR, it
 	 * is worth retrying a few seconds later.  */
 	if (ret >= 0 ||
