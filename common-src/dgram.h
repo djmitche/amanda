@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: dgram.h,v 1.5 1998/09/03 22:11:19 oliva Exp $
+ * $Id: dgram.h,v 1.6 1998/10/12 20:03:13 kashmir Exp $
  *
  * interface for datagram module
  */
@@ -49,7 +49,7 @@ int dgram_send P((char *hostname, int port, dgram_t *dgram));
 int dgram_send_addr P((struct sockaddr_in addr, dgram_t *dgram));
 int dgram_recv P((dgram_t *dgram, int timeout, struct sockaddr_in *fromaddr));
 void dgram_zero P((dgram_t *dgram));
-void dgram_cat P((dgram_t *dgram, char *str));
+void dgram_cat P((dgram_t *dgram, const char *str));
 void dgram_eatline P((dgram_t *dgram));
 int bind_reserved P((int sock, struct sockaddr_in *addrp));
 

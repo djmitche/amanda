@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.10 1998/09/03 22:11:10 oliva Exp $
+ * $Id: dgram.c,v 1.11 1998/10/12 20:03:11 kashmir Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -257,7 +257,7 @@ dgram_t *dgram_alloc()
 
 void dgram_cat(dgram, str)
 dgram_t *dgram;
-char *str;
+const char *str;
 {
     int len = strlen(str);
 
