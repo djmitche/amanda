@@ -47,6 +47,7 @@ EXTRA_DIST = scsi-proto.c
 .pl:
 			cat $< > $@
 			chmod a+x $@
+			-test -z "$(PERL)" || $(PERL) -c $@
 
 .sh:
 			cat $< > $@
