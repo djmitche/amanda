@@ -1,3 +1,8 @@
+2001-12-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	Patch by Blaz Zupan <blaz@amis.net>
+
+	* changer-src/chg-zd-mtx.sh.in: typo.
+
 2001-12-18  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* client-src/selfcheck.c (check_access): New function (old check_file
