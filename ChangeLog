@@ -1,5 +1,10 @@
 1998-12-02  Mike Grupenhoff <kashmir@munge.com>
 
+	* config/acconfig.h: add KRB5_SECURITY.  Update comment above
+	krb4 define to make clear that they are for krb4
+
+1998-12-02  Mike Grupenhoff <kashmir@munge.com>
+
 	* configure.in: if we're doing krb4 and -lcom_err is there, pull
 	it in
 	* configure.in: implement --with-krb5-security.

@@ -219,7 +219,7 @@
 #undef KAMANDA_SERVICE_NAME
 #undef SERVICE_SUFFIX
 
-/* Kerberos security defines.  */
+/* Kerberos IV security defines.  */
 #undef KRB4_SECURITY
 #undef SERVER_HOST_PRINCIPLE
 #undef SERVER_HOST_INSTANCE
@@ -228,6 +228,9 @@
 #undef CLIENT_HOST_INSTANCE
 #undef CLIENT_HOST_KEY_FILE
 #undef TICKET_LIFETIME
+
+/* Kerberos V security defines.  */
+#undef KRB5_SECURITY
 
 /* Define only one of these as the header file for the database routines.  */
 #undef USE_DB_H
