@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.84 1999/09/15 00:31:46 jrj Exp $
+ * $Id: amanda.h,v 1.85 1999/10/02 22:20:30 jrj Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -497,6 +497,7 @@ extern char  *dbmalloc_areads P((const char *c, int l, int fd));
 extern char  *agets	      P((FILE *file));
 extern char  *areads	      P((int fd));
 #endif
+extern void   areads_relbuf   P((int fd));
 
 /*
  * amfree(ptr) -- if allocated, release space and set ptr to NULL.
@@ -535,11 +536,16 @@ extern char  *areads	      P((int fd));
  *  }
  *
  * Since aclose() sets the argument to -1, this will loop forever.
+ * Just copy fd to a temp variable and use that with aclose().
+ *
+ * Aclose() interacts with areads() to inform it to release any buffer
+ * it has outstanding on the file descriptor.
  */
 
 #define aclose(fd) do {							\
     assert(fd >= 0);							\
     close(fd);								\
+    areads_relbuf(fd);							\
     (fd) = -1;								\
 } while(0)
 

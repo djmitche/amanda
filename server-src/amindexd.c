@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.50 1999/09/15 00:32:29 jrj Exp $
+ * $Id: amindexd.c,v 1.51 1999/10/02 22:20:40 jrj Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -904,7 +904,7 @@ char **argv;
 		break;
 	    }
 	    /*
-	     * Hmmm.  We got a "line" from areads(), which means it saw
+	     * Hmmm.  We got a "line" from agets(), which means it saw
 	     * a '\n' (or EOF, etc), but there was not a '\r' before it.
 	     * Put a '\n' back in the buffer and loop for more.
 	     */

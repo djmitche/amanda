@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.28 1999/09/15 00:32:03 jrj Exp $
+/* $Id: amidxtaped.c,v 1.29 1999/10/02 22:20:35 jrj Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -81,7 +81,7 @@ get_client_line()
 	    break;
 	}
 	/*
-	 * Hmmm.  We got a "line" from areads(), which means it saw
+	 * Hmmm.  We got a "line" from agets(), which means it saw
 	 * a '\n' (or EOF, etc), but there was not a '\r' before it.
 	 * Put a '\n' back in the buffer and loop for more.
 	 */

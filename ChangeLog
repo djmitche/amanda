@@ -1,5 +1,16 @@
 1999-10-02 John R. Jackson  <jrj@purdue.edu>
 
+	* common-src/file.c (areads): when NO-ROOM became advisory and didn't
+	  participate in a full handshake, it exposed a problem in areads()
+	  where a static buffer was shared among all I/O.  Changed it to use
+	  a separate buffer for each file descriptor.  Enhanced the test
+	  program to check out the code.
+	* common-src/amanda.h: ditto
+	* restore-src/amidxtaped.c: minor areads/agets comment typo.
+	* server-src/amindexd.c: ditto
+
+1999-10-02 John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/amlogroll.c: fix minor memory leak.
 
 1999-09-29 John R. Jackson  <jrj@purdue.edu>
