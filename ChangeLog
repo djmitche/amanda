@@ -1,3 +1,9 @@
+1998-09-28  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/taper.c (taperscan_slot): initialize scan_datestamp, to
+ 	avoid amfree of uninitialized pointer
+	Reported by Lance A. Brown <brown9@niehs.nih.gov>
+
 1998-09-27  Andy Farkas  <andyf@speednet.com.au>
 
 	* man/amlabel.8.in (labelstr): fix typo

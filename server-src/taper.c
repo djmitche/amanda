@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.38.2.3 1998/09/23 03:27:58 oliva Exp $
+/* $Id: taper.c,v 1.38.2.4 1998/09/29 01:42:48 oliva Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1837,12 +1837,12 @@ int rc, ns, bk;
 }
 
 int taperscan_slot(rc, slotstr, device)
-int rc;
-char *slotstr;
-char *device;
+     int rc;
+     char *slotstr;
+     char *device;
 {
     char *t_errstr;
-    char *scan_datestamp;
+    char *scan_datestamp = NULL;
 
     if(rc == 2) {
 	fprintf(stderr, "%s: fatal slot %s: %s\n",
