@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.21 1998/10/12 22:23:19 jrj Exp $
+ * $Id: amtape.c,v 1.22 1998/10/24 03:02:02 martinea Exp $
  *
  * tape changer interface program
  */
@@ -231,7 +231,7 @@ char **argv;
 /* ---------------------------- */
 
 int nslots, backwards, found, got_match, tapedays;
-extern char *datestamp;
+char *datestamp;
 char *label = NULL, *first_match_label = NULL, *first_match = NULL;
 char *searchlabel, *labelstr;
 tape_t *tp;

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.39 1998/10/23 20:28:37 martinea Exp $
+ * $Id: amflush.c,v 1.40 1998/10/24 03:02:01 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -43,6 +43,7 @@ static char *config;
 char *confdir;
 char *reporter_program;
 char **datestamps;
+char *datestamp;
 
 /* local functions */
 int main P((int argc, char **argv));
@@ -139,7 +140,7 @@ void confirm()
     for(dss = datestamps; *dss != NULL; dss++)
 	printf(" %s,",*dss);
     printf("\n");
-printf("today: %s\n",datestamp);
+    printf("today: %s\n",datestamp);
     tpchanger = getconf_str(CNF_TPCHANGER);
     if(*tpchanger != '\0') printf("using tape changer \"%s\".\n", tpchanger);
     else printf("to tape drive %s.\n", getconf_str(CNF_TAPEDEV));

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.43 1998/10/17 02:02:27 martinea Exp $
+ * $Id: reporter.c,v 1.44 1998/10/24 03:02:11 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -84,7 +84,7 @@ float total_time, startup_time;
 /* count files to tape */
 int tapefcount = 0;
 
-extern char *datestamp;
+char *datestamp;
 char *tape_labels = NULL;
 int last_run_tapes = 0;
 static int degraded_mode = 0; /* defined in driverio too */

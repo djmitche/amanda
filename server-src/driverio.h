@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.11 1998/10/23 20:28:41 martinea Exp $
+ * $Id: driverio.h,v 1.12 1998/10/24 03:02:06 martinea Exp $
  *
  * driver-related helper functions
  */
@@ -98,7 +98,6 @@ GLOBAL int taper, taper_busy, taper_pid;
 
 GLOBAL int argc;
 GLOBAL char *argv[MAX_ARGS+1];
-GLOBAL char *datestamp;
 GLOBAL char *taper_program, *dumper_program;
 
 void addfd P((int fd));

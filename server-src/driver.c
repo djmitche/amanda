@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.53 1998/10/23 20:28:39 martinea Exp $
+ * $Id: driver.c,v 1.54 1998/10/24 03:02:04 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -90,6 +90,7 @@ int main P((int argc, char **argv));
 #define LITTLE_DUMPERS 3
 
 static int idle_reason;
+char *datestamp;
 
 #define max(a, b)     ((a) > (b)? (a) : (b))
 #define min(a, b)     ((a) < (b)? (a) : (b))

@@ -1,10 +1,20 @@
 1998-10-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/driverio.h: remove datestamp declaration.
+	* server-src/amcheck.c: remove 'extern' to datestamp declaration.
+	* server-src/amflush.c: declare datestamp.
+	* server-src/amtape.c: remove 'extern' to datestamp declaration.
+	* server-src/driver.c: declare datestamp.
+	* server-src/dumper.c: remove 'extern' to datestamp declaration.
+	* server-src/reporter.c: remove 'extern' to datestamp declaration.
+
+1998-10-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/driverio.h: remove declaration of tok.
 	* server-src/amflush.c (flush_holdingdisk,run_dumps): declare
-	tok localy.
+	tok locally.
 	* server-src/driver.c (main, handle_taper_result, handle_dumper_result,
-	dump_to_tape): declare tok localy.
+	dump_to_tape): declare tok locally.
 
 1998-10-23  John R. Jackson  <jrj@purdue.edu>
 

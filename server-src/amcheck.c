@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.49 1998/10/17 01:57:21 martinea Exp $
+ * $Id: amcheck.c,v 1.50 1998/10/24 03:01:59 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -299,7 +299,7 @@ char **argv;
 /* --------------------------------------------------- */
 
 int nslots, backwards, found, got_match, tapedays;
-extern char *datestamp;
+char *datestamp;
 char *first_match_label = NULL, *first_match = NULL, *found_device = NULL;
 char *label;
 char *searchlabel, *labelstr;
