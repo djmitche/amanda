@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: holding.h,v 1.4 1998/01/02 03:29:46 jrj Exp $
+ * $Id: holding.h,v 1.5 1998/02/05 03:07:40 martinea Exp $
  *
  */
 
@@ -35,13 +35,10 @@
 #include "amanda.h"
 #include "diskfile.h"
 
-extern disklist_t *diskqp;
 extern struct dirname {
     struct dirname *next;
     char *name;
 } *dir_list;
-extern int ndirs;
-char host[MAX_HOSTNAME_LENGTH+1], *domain;
 
 /* local functions */
 int is_dir P((char *fname));
