@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.24 2002/02/11 14:14:35 martinea Exp $
+ * $Id: fileheader.c,v 1.25 2003/10/24 13:44:35 martinea Exp $
  */
 
 #include "amanda.h"
@@ -315,9 +315,9 @@ print_header(outf, file)
 	    filetype2str(file->type), file->datestamp, file->name,
 	    file->disk, file->dumplevel, file->comp_suffix);
 	if(*file->program)
-	    printf(" program %s\n",file->program);
+	    printf(outf, " program %s\n",file->program);
 	else
-	    printf("\n");
+	    printf(outf, "\n");
 	break;
     case F_TAPEEND:
 	fprintf(outf, "end of tape: date %s\n", file->datestamp);

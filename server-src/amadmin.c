@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.85 2003/01/04 03:35:04 martinea Exp $
+ * $Id: amadmin.c,v 1.86 2003/10/24 13:44:35 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1458,7 +1458,7 @@ disk_t *dp;
 	   ip->name[0] ? ip->name : "default");
 
     printf("    disk %s:\n", dp->name);
-    if(dp->device) printf("        device: %s\n", dp->device);
+    if(dp->device) printf("        device %s\n", dp->device);
 
     printf("        program \"%s\"\n", dp->program);
     if(dp->exclude_file != NULL && dp->exclude_file->nb_element > 0) {

@@ -1,3 +1,11 @@
+2003-10-24  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amverify.sh.in: Fix usage message.
+	* common-src/fileheader.c (print_header): fprintf to outf.
+	* server-src/tapefile.c (lookup_last_reusable_tape): Check for
+	  tp->datestamp > 0.
+	* server-src/amadmin.c (disklist_one): Don't print ':' on device line.
+
 2003-10-23  Todd Kover <kovert@omniscient.com>
 
 	* make amrecover link against readline rather than libamanda so
