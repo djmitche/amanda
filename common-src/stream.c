@@ -25,14 +25,14 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.10.2.2 1998/12/09 18:38:52 jrj Exp $
+ * $Id: stream.c,v 1.10.2.3 1999/06/07 16:36:46 kashmir Exp $
  *
  * functions for managing stream sockets
  */
 #include "amanda.h"
 #include "dgram.h"
-
 #include "stream.h"
+#include "util.h"
 
 /* local functions */
 static void try_socksize P((int sock, int which, int size));
@@ -44,17 +44,6 @@ int sendsize, recvsize;
     int server_socket, len;
     int on = 1;
     struct sockaddr_in server;
-    struct sockaddr *sa = (struct sockaddr *)&server;
-    /* portrange is supposed to be a pair of port numbers */
-    static unsigned portrange[2] =
-#ifdef PORTRANGE
-        { PORTRANGE };
-#else
-        { INADDR_ANY, INADDR_ANY };
-#endif
-    unsigned portnum;
-
-    assert(portrange[0] <= portrange[1]);
 
     *portp = -1;				/* in case we error exit */
     if((server_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -74,38 +63,36 @@ int sendsize, recvsize;
     if(recvsize != DEFAULT_SIZE) 
         try_socksize(server_socket, SO_RCVBUF, recvsize);
 
-    if(portrange[0] == INADDR_ANY && geteuid() == 0) {
-	/*
-	 * If we do not care what port is allocated and we are running
-	 * as root, try for a reserved port.
-	 */
-	if(bind_reserved(server_socket, &server) == -1) {
-	    aclose(server_socket);
-	    return -1;
-	}
-    } else {
-	for (portnum = portrange[0]; portnum <= portrange[1]; ++portnum) {
-	    if(portnum == INADDR_ANY) {
-		server.sin_port = INADDR_ANY;	/* any available port */
-	    } else {
-		server.sin_port = htons(portnum);
-	    }
-	    if(bind(server_socket, sa, sizeof(server)) != -1) {
-		break;				/* got a port */
-	    }
-	}
-	if(portnum > portrange[1]) {
-	    aclose(server_socket);
-	    return -1;
-	}
+    /*
+     * If a port range was specified, we try to get a port in that
+     * range first.  Next, we try to get a reserved port.  If that
+     * fails, we just go for any port.
+     *
+     * It is up to the caller to make sure we have the proper permissions
+     * to get the desired port, and to make sure we return a port that
+     * is within the range it requires.
+     */
+#ifdef PORTRANGE
+    if (bind_portrange(server_socket, &server, PORTRANGE) == 0)
+	goto out;
+#endif
+
+    if (bind_portrange(server_socket, &server, 512, IPPORT_RESERVED) == 0)
+	goto out;
+
+    server.sin_port = INADDR_ANY;
+    if (bind(server_socket, (struct sockaddr *)&server, sizeof(server)) == -1) {
+	aclose(server_socket);
+	return -1;
     }
 
+out:
     listen(server_socket, 1);
 
     /* find out what port was actually used */
 
     len = sizeof(server);
-    if(getsockname(server_socket, sa, &len) == -1) {
+    if(getsockname(server_socket, (struct sockaddr *)&server, &len) == -1) {
 	aclose(server_socket);
 	return -1;
     }
@@ -158,22 +145,31 @@ int port, sendsize, recvsize, *localport;
     memset(&claddr, 0, sizeof(claddr));
     claddr.sin_family = AF_INET;
     claddr.sin_addr.s_addr = INADDR_ANY;
-    if(geteuid() == 0) {	
-	/* bind client side to reserved port before connect */
-	if(bind_reserved(client_socket, &claddr) == -1) {
-	    aclose(client_socket);
-	    return -1;
-	}
-    } else {
-	/* pick any available non-reserved port */
-	claddr.sin_port = INADDR_ANY;
-	if(bind(client_socket, (struct sockaddr *)&claddr,
-	    sizeof claddr) == -1) {
-	    aclose(client_socket);
-	    return -1;
-	}
+
+    /*
+     * If a port range was specified, we try to get a port in that
+     * range first.  Next, we try to get a reserved port.  If that
+     * fails, we just go for any port.
+     *
+     * It is up to the caller to make sure we have the proper permissions
+     * to get the desired port, and to make sure we return a port that
+     * is within the range it requires.
+     */
+#ifdef PORTRANGE
+    if (bind_portrange(client_socket, &claddr, PORTRANGE) == 0)
+	goto out;
+#endif
+
+    if (bind_portrange(client_socket, &claddr, 512, IPPORT_RESERVED) == 0)
+	goto out;
+
+    claddr.sin_port = INADDR_ANY;
+    if (bind(client_socket, (struct sockaddr *)&claddr, sizeof(claddr)) == -1) {
+	aclose(client_socket);
+	return -1;
     }
 
+out:
     if(connect(client_socket, (struct sockaddr *)&svaddr, sizeof(svaddr))
        == -1) {
 	aclose(client_socket);

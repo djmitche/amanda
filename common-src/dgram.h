@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: dgram.h,v 1.6 1998/10/12 20:03:13 kashmir Exp $
+ * $Id: dgram.h,v 1.6.2.1 1999/06/07 16:36:44 kashmir Exp $
  *
  * interface for datagram module
  */
@@ -51,7 +51,6 @@ int dgram_recv P((dgram_t *dgram, int timeout, struct sockaddr_in *fromaddr));
 void dgram_zero P((dgram_t *dgram));
 void dgram_cat P((dgram_t *dgram, const char *str));
 void dgram_eatline P((dgram_t *dgram));
-int bind_reserved P((int sock, struct sockaddr_in *addrp));
 
 #if defined(USE_DBMALLOC)
 extern dgram_t  *dbmalloc_dgram_alloc  P((char *c, int l));

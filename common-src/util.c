@@ -24,65 +24,11 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.2 1999/06/07 16:05:09 kashmir Exp $
+ * $Id: util.c,v 1.2.2.1 1999/06/07 16:36:37 kashmir Exp $
  */
 
 #include "amanda.h"
 #include "util.h"
-
-/*
- * Keep calling read() until we've read buflen's worth of data, or EOF,
- * or we get an error.
- *
- * Returns the number of bytes read, 0 on EOF, or negative on error.
- */
-ssize_t
-fullread(fd, vbuf, buflen)
-    int fd;
-    void *vbuf;
-    size_t buflen;
-{
-    ssize_t nread, tot = 0;
-    char *buf = vbuf;	/* cast to char so we can ++ it */
-
-    while (buflen > 0) {
-	nread = read(fd, buf, buflen);
-	if (nread < 0)
-	    return (nread);
-	if (nread == 0)
-	    break;
-	tot += nread;
-	buf += nread;
-	buflen -= nread;
-    }
-    return (tot);
-}
-
-/*
- * Keep calling write() until we've written buflen's worth of data,
- * or we get an error.
- *
- * Returns the number of bytes written, or negative on error.
- */
-ssize_t
-fullwrite(fd, vbuf, buflen)
-    int fd;
-    const void *vbuf;
-    size_t buflen;
-{
-    ssize_t nwritten, tot = 0;
-    const char *buf = vbuf;	/* cast to char so we can ++ it */
-
-    while (buflen > 0) {
-	nwritten = write(fd, buf, buflen);
-	if (nwritten < 0)
-	    return (nwritten);
-	tot += nwritten;
-	buf += nwritten;
-	buflen -= nwritten;
-    }
-    return (tot);
-}
 
 /*
  * Bind to a port in the given range.  Takes a begin,end pair of port numbers.
