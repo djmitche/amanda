@@ -22,6 +22,9 @@
 
 Version 2.4.0
 
+	accept curses and ncurses in addition to termcap for readline
+	support, just as readline itself does.  -oliva
+
 	fix NO-ROOM handling when Kerberos encryption is enabled.
 	-oliva & Eric Siegerman <erics@now.com>
 
