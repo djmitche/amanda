@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.12 1997/12/17 21:03:41 jrj Exp $
+ * $Id: amrestore.c,v 1.13 1997/12/17 23:30:49 jrj Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -62,9 +62,12 @@ pid_t compress_pid = -1;
 void errexit P((void));
 void handle_sigpipe P((int sig));
 int disk_match P((dumpfile_t *file, char *hostname, char *diskname));
-void make_filename P((string_t filename, unsigned filename_len, dumpfile_t *file));
-int read_file_header P((char *buffer, dumpfile_t *file, int buflen, int tapedev));
-void restore P((dumpfile_t *file, string_t filename, int tapedev, int isafile));
+void make_filename P((string_t filename, unsigned filename_len,
+		      dumpfile_t *file));
+int read_file_header P((char *buffer, dumpfile_t *file,
+			int buflen, int tapedev));
+void restore P((dumpfile_t *file, string_t filename, unsigned filename_len,
+		int tapedev, int isafile));
 void usage P((void));
 int main P((int argc, char **argv));
 
@@ -144,9 +147,10 @@ int tapedev;
 }
 
 
-void restore(file, filename, tapedev, isafile)
+void restore(file, filename, filename_len, tapedev, isafile)
 dumpfile_t *file;
 string_t filename;
+unsigned filename_len;
 int tapedev;
 int isafile;
 /*
@@ -178,9 +182,9 @@ int isafile;
 	if(compflag) 
 	    strncat(filename, 
 		    file->compressed? file->comp_suffix : COMPRESS_SUFFIX,
-		    sizeof(filename)-strlen(filename));
+		    filename_len-strlen(filename));
 	else if(rawflag) 
-	    strncat(filename, ".RAW", sizeof(filename)-strlen(filename));
+	    strncat(filename, ".RAW", filename_len-strlen(filename));
 
 	if((dest = creat(filename, CREAT_MODE)) < 0)
 	    error("could not create output file: %s", strerror(errno));
@@ -375,7 +379,7 @@ char **argv;
 	if(disk_match(&file,hostname,diskname) != 0) {
 	    fprintf(stderr, "%s: %3d: restoring %s\n", 
 		    pname, file_number, filename);
-	    restore(&file, filename, tapedev, isafile);
+	    restore(&file, filename, sizeof(filename), tapedev, isafile);
 	    if(pipeflag) break;
 	      /* GH: close and reopen the tape device, so that the
 		 read_file_header() below reads the next file on the

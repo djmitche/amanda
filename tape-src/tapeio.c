@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.8 1997/12/17 21:03:48 jrj Exp $
+ * $Id: tapeio.c,v 1.9 1997/12/17 23:30:51 jrj Exp $
  *
  * implements tape I/O functions
  */
@@ -299,8 +299,8 @@ unsigned labsize;
 	errstr[sizeof(errstr)-1] = '\0';
 	return errstr;
     }
-    strncpy(datestamp, file.datestamp, sizeof(datestamp)-1);
-    datestamp[sizeof(datestamp)-1] = '\0';
+    strncpy(datestamp, file.datestamp, datestampsize-1);
+    datestamp[datestampsize-1] = '\0';
     strncpy(label, file.name, labsize-1);
     label[labsize-1] = '\0';
 
