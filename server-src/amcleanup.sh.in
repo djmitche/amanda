@@ -35,6 +35,7 @@ exec_prefix=@exec_prefix@
 libexecdir=@libexecdir@
 
 confdir=@CONFIG_DIR@
+logdir=@LOG_DIR@
 
 PATH=$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
 export PATH
@@ -60,7 +61,7 @@ fi
 
 cd $confdir/$conf
 logfile=`getconf$SUF logfile`
-errfile=`dirname $logfile`/amdump
+errfile=$logdir/$conf/amdump
 tapecycle=`getconf$SUF tapecycle`
 
 if [ -f $logfile ]; then
