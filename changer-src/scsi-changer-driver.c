@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.30 2001/06/04 12:07:40 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.31 2001/06/04 15:20:46 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -709,7 +709,7 @@ int eject_tape(char *tapedev, int type)
   
   if (pDev[INDEX_TAPE].avail == 1)
     {
-      ret=Tape_Eject(INDEX_TAPE);
+      ret=Tape_Ioctl(INDEX_TAPE, IOCTL_EJECT);
       DebugPrint(DEBUG_INFO,SECTION_TAPE,"##### STOP (ioctl)eject_tape [%d]\n", ret);
       return(ret);
     }
@@ -1810,7 +1810,7 @@ int DLT4000Eject(char *Device, int type)
   if ( type > 1)
     {
       dbprintf(("DLT4000Eject : use mtio ioctl for eject on %s\n", pDev[INDEX_TAPE].dev));
-      return(Tape_Eject(INDEX_TAPE));
+      return(Tape_Ioctl(INDEX_TAPE, IOCTL_EJECT));
     }
   
   
@@ -1818,7 +1818,7 @@ int DLT4000Eject(char *Device, int type)
   if (pDev[INDEX_TAPECTL].SCSI == 0)
     {
       dbprintf(("DLT4000Eject : Device %s not able to receive SCSI commands\n", pDev[INDEX_TAPE].dev));
-      return(Tape_Eject(INDEX_TAPE));
+      return(Tape_Ioctl(INDEX_TAPE, IOCTL_EJECT));
     }
   
   

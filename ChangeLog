@@ -1,4 +1,8 @@
 2001-06-04 Thomas Hepper <th@ant.han.de>
+	* changer-src/scsi-changer-driver.c: Renamed Tape_Eject to Tape_Ioctl
+	incl. change of passwd parameter.
+
+2001-06-04 Thomas Hepper <th@ant.han.de>
 	* changer-src/chg-scsi.c: include dmalloc.h for debugging of mem problems
 	* changer-src/scsi-cam.c: Replaced Tape_Eject with a more generic 
 	function to send different ioctls (Tape_Ioctl)
