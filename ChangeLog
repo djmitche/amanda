@@ -1,3 +1,9 @@
+1999-05-19 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/reporter.c: take the orig size from the SUCCESS line.
+	use value from the infofile only the datestamp are equal.
+	Write all available value.
+
 1999-05-18  Mike Grupenhoff <kashmir@munge.com>
 
 	* common-src/strerror.c (strerror): restructure so that it doesn't
