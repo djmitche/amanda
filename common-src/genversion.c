@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: genversion.c,v 1.18.4.4.4.1 2001/03/20 00:25:22 jrjackson Exp $
+ * $Id: genversion.c,v 1.18.4.4.4.1.2.1 2002/02/11 03:00:10 jrjackson Exp $
  *
  * dump the current Amanda version info
  */
@@ -116,6 +116,10 @@ int main()
 
 #ifdef CC
     prvar(" CC", CC);
+#endif
+
+#ifdef CONFIGURE_COMMAND
+    prvar(" CONFIGURE_COMMAND", CONFIGURE_COMMAND);
 #endif
 
     newline();

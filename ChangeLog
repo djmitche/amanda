@@ -1,5 +1,11 @@
 2002-02-10 John R. Jackson (jrj@purdue.edu)
 
+	* configure.in: Save the ./configure args and display them in the
+	  version string (e.g. amandad*debug and "amadmin xx version").
+	* common-src/genversion.c: Ditto.
+
+2002-02-10 John R. Jackson (jrj@purdue.edu)
+
 	* common-src/alloc.c: Fix type mismatch issues discovered by splint
 	  (www.splint.org).  Compliments of jens persson <jens@persson.cx>.
 	* common-src/debug.c: Ditto.
