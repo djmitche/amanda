@@ -42,14 +42,14 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	Samba allows Unix systems to talk to PC clients.  Amanda can
 	back up Microsoft Windows 95/NT clients using samba:
 
-		ftp://samba.anu.edu.au/pub/tridge/samba/samba-1.9.18p7.tar.gz
+		ftp://samba.anu.edu.au/pub/tridge/samba/samba-1.9.18p8.tar.gz
 
 	Read docs/SAMBA for configuration tips and known limitations.
 
-	You may want to apply patches/samba-largefs.patch, but read
-	its header before you do so.  If you want to use a pre-1.9.17
-	version of samba, you may need to apply
-	patches/samba-1.9.16p2.patch too.
+    *** There is a required patch for samba-1.9.18p8 in the Amanda
+    *** Patches Page.  If you don't install it, you won't be able to
+    *** restore your backups!
+
 
     B.  If you wish to make use of some of the scripts that come with
 	Amanda, you will need to install Perl.  You can get Perl from

@@ -4,22 +4,19 @@ Installation
 
 Amanda is able to back up Microsoft Windows shared disks by using
 SAMBA, a package that implements a SMB client and server for Unix.
-This version of amanda is reported to work with samba 1.9.18p8.  It
-will not work with versions prior to 1.9.17, unless you have samba
-1.9.16p2 or some beta versions of 1.9.17 already installed with a
-patch that used to be provided with amanda.
+This version of amanda is reported to work with samba 1.9.18p8, as
+long as a patch provided in the Amanda Patches Page is installed.  The
+bug fixed by this patch caused SAMBA to print log messages to the tar
+file it produced, rendering the backup useless.  The bug will
+hopefully be fixed in the next release of SAMBA.
 
-Make sure you don't set a low logging/debugging level in the samba
-configuration file, because this flag may prevent that estimate sizes
-are printed correctly.  Amanda will report an estimate failure in this
-case.
+If you're using SAMBA pre-1.9.18p4, make sure you don't set a low
+logging/debugging level in the samba configuration file, because this
+flag may prevent that estimate sizes are printed correctly.  Amanda
+will report an estimate failure in this case.
 
-If you have very long pathnames or very deep directory trees in the PC
-filesystems, you may need samba to 1.9.18 or higher.  It produces
-GNUTAR-compatible tar files, without a hardcoded limit on pathname
-length.  There used to be a patch in the amanda distribution that
-would enlarge the maximum filename size; unfortunately, this patch
-caused samba to produce invalid tar files.
+Amanda no longer supports SAMBA releases prior to 1.9.18.
+
 
 If you wish to back up large (>2GB) filesystems with samba, apply
 samba-largefs.patch, after making sure your C compiler supports
@@ -113,6 +110,12 @@ files) nor Access Control List data.  Furthermore, at restore time,
 smbclient is unable to overwrite read-only files.  Hence, Amanda+SAMBA
 is not a perfect solution for backing up (restoring, actually) system
 disks.
+
+SAMBA does not use Windows' Backup API, so configuring the Amanda
+backup user as a member of group backup, in the Windows host, is
+useless.  You will probably have to configure it as an Administrator,
+and make sure that it can read and change permission of *all* files in
+the share.
 
 It seems impossible to detect when a per-user based login fails - e.g.
 the username doesn't exist on an NT workstation.  It connects but you

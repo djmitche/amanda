@@ -1,3 +1,9 @@
+1998-08-19  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/SAMBA: updated; documented new patch (sambatar.diff,
+ 	available in the patches page) and requirements about backup user.
+	* docs/INSTALL: documented new patch
+
 1998-08-18  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* client-src/sendsize.c (regex_s): refuse to compile if SAMBA_CLIENT
