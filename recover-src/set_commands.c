@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: set_commands.c,v 1.17 2002/02/11 01:32:10 jrjackson Exp $
+ * $Id: set_commands.c,v 1.18 2002/03/06 19:23:20 martinea Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -206,6 +206,25 @@ char *mtpt;
 	printf("If date correct, notify system administrator\n");
 	disk_path = newstralloc(disk_path, "/");	/* fake it */
 	clear_dir_list();
+    }
+}
+
+void list_disk(amdevice)
+char *amdevice;
+{
+    char *cmd = NULL;
+
+    if(amdevice) {
+	cmd = stralloc2("LISTDISK ", amdevice);
+	if (converse(cmd) == -1)
+	    exit(1);
+	amfree(cmd);
+    }
+    else {
+	cmd = stralloc("LISTDISK");
+	if (converse(cmd) == -1)
+	    exit(1);
+	amfree(cmd);
     }
 }
 

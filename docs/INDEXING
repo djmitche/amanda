@@ -90,6 +90,8 @@ HOST <host> - set host to host
 
 DISK <disk> - set disk to disk
 
+LISTDISK [<device>] - list the disks for the current host
+
 SCNF <config> - set amanda configuration to config
 
 DATE <date> - set date to date

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.62 2002/02/10 03:34:04 jrjackson Exp $
+ * $Id: amindexd.c,v 1.63 2002/03/06 19:23:20 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -996,6 +996,49 @@ char **argv;
 		disk_name = newstralloc(disk_name, arg);
 		if (build_disk_table() != -1) {
 		    reply(200, "Disk set to %s.", disk_name);
+		}
+	    }
+	    s[-1] = ch;
+	} else if (strcmp(cmd, "LISTDISK") == 0) {
+	    disk_t *disk;
+	    int nbdisk = 0;
+	    s[-1] = '\0';
+	    if (config_name == NULL || dump_hostname == NULL) {
+		reply(501, "Must set config, host before listdisk");
+	    }
+	    else if(arg) {
+		lreply(200, " List of disk for device %s on host %s", arg,
+		       dump_hostname);
+		for (disk = disk_list->head; disk!=NULL; disk = disk->next) {
+		    if(strcmp(disk->host->hostname, dump_hostname) == 0 &&
+		       ((disk->device && strcmp(disk->device, arg) == 0) ||
+			(!disk->device && strcmp(disk->name, arg) == 0))) {
+			fast_lreply(201, " %s", disk->name);
+			nbdisk++;
+		    }
+		}
+		if(nbdisk > 0) {
+		    reply(200, "List of disk for device %s on host %s", arg,
+			  dump_hostname);
+		}
+		else {
+		    reply(200, "No disk for device %s on host %s", arg,
+			  dump_hostname);
+		}
+	    }
+	    else {
+		lreply(200, " List of disk for host %s", dump_hostname);
+		for (disk = disk_list->head; disk!=NULL; disk = disk->next) {
+		    if(strcmp(disk->host->hostname, dump_hostname) == 0) {
+			fast_lreply(201, " %s", disk->name);
+			nbdisk++;
+		    }
+		}
+		if(nbdisk > 0) {
+		    reply(200, "List of disk for host %s", dump_hostname);
+		}
+		else {
+		    reply(200, "No disk for host %s", dump_hostname);
 		}
 	    }
 	    s[-1] = ch;

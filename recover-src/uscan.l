@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: uscan.l,v 1.19 2001/11/03 14:02:46 martinea Exp $
+ * $Id: uscan.l,v 1.20 2002/03/06 19:23:20 martinea Exp $
  *
  * lexer for amrecover interactive language
  */
@@ -54,6 +54,7 @@ static char *string_buf = NULL;
     /* literal keyword tokens */
 %}
 
+listdisk	{ return LISTDISK; }
 sethost	{ return SETHOST; }
 setdisk	{ return SETDISK; }
 setdate { return SETDATE; }

@@ -152,6 +152,10 @@ If
 is not specified, all pathnames will be relative to the (unknown)
 mount point instead of full pathnames.
 .TP
+.CP listdisk [diskdevice]
+List all
+.B diskname
+.TP
 .CP settape [[server]:][tapedev|default]
 Specifies the host to use as the tape server, and which of its tape
 devices to use.
