@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: statfs.c,v 1.10 1998/07/04 00:18:57 oliva Exp $
+ * $Id: statfs.c,v 1.11 1999/05/23 17:11:05 oliva Exp $
  *
  * a generic statfs-like routine
  */
@@ -54,7 +54,7 @@
 ** System V.4 (STATFS_SVR4)
 */
 #  include <sys/statvfs.h>
-#  define STATFS_TYP		"SVR4 (Irix-5, Solaris-2)"
+#  define STATFS_TYP		"SVR4 (Irix-5+, Solaris-2, Linux glibc 2.1)"
 #  define STATFS_STRUCT	struct statvfs
 #  define STATFS_TOTAL(buf)	(buf).f_blocks
 #  define STATFS_AVAIL(buf)	(buf).f_bavail
@@ -62,7 +62,7 @@
 #  define STATFS_FILES(buf)	(buf).f_files
 #  define STATFS_FAVAIL(buf)	(buf).f_favail
 #  define STATFS_FFREE(buf)	(buf).f_ffree
-#  define STATFS_SCALE(buf)	(buf).f_frsize
+#  define STATFS_SCALE(buf)	((buf).f_frsize?(buf).f_frsize:(buf).f_bsize)
 #  define STATFS(path, buffer)	statvfs(path, &buffer)
 # else
 #  if HAVE_SYS_VFS_H
@@ -89,7 +89,7 @@
 ** System V.3 (STATFS_SVR3)
 */
 #    include <sys/statfs.h>
-#    define STATFS_TYP		"SVR3 (Irix-3, Irix-4, Irix-6)"
+#    define STATFS_TYP		"SVR3 (Irix-3, Irix-4)"
 #    define STATFS_STRUCT	struct statfs
 #    define STATFS_TOTAL(buf)	(buf).f_blocks
 #    define STATFS_AVAIL(buf)	(buf).f_bfree
