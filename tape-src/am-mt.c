@@ -1,14 +1,11 @@
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
+#include "amanda.h"
 
 int
 main(int argc, char **argv) {
    int count;
    int debug = 0;
-   char *name = 0;
-   char *res = 0;
+   char *name = NULL;
+   int res = 0;
 
    while( ++argv, --argc ) {
        if (0 == strncmp( *argv, "-d", 2)) {

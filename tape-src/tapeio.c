@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.32 2000/12/12 21:40:58 jrjackson Exp $
+ * $Id: tapeio.c,v 1.33 2001/01/01 23:36:14 martinea Exp $
  *
  * implements tape I/O functions
  */
@@ -55,13 +55,13 @@ static struct virtualtape {
     int (*xxx_tape_stat)(char *, struct stat *);
     int (*xxx_tapefd_close)(int);
     int (*xxx_tapefd_fsf)(int, int);
-    int (*xxx_tapefd_read)(int, void *, int);
+    int (*xxx_tapefd_read)(int, char *, int);
     int (*xxx_tapefd_rewind)(int);
     void (*xxx_tapefd_resetofs)(int);
     int (*xxx_tapefd_unload)(int);
     int (*xxx_tapefd_status)(int);
     int (*xxx_tapefd_weof)(int, int);
-    int (*xxx_tapefd_write)(int, const void *, int);
+    int (*xxx_tapefd_write)(int, const char *, int);
 } vtable[] = {
   /* note: "plain" has to be the zeroth entry, its the
   **        default if no prefix match is found.
@@ -317,14 +317,14 @@ static int no_op_tapefd = -1;
 
 int plain_tapefd_read(tapefd, buffer, count)
 int tapefd, count;
-void *buffer;
+char *buffer;
 {
     return read(tapefd, buffer, count);
 }
 
 int plain_tapefd_write(tapefd, buffer, count)
 int tapefd, count;
-const void *buffer;
+const char *buffer;
 {
     return write(tapefd, buffer, count);
 }

@@ -1,3 +1,14 @@
+2001-01-01  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* tape-src/am-dd.c: include "amanda.h"
+	* tape-src/am-mt.c: include "amanda.h"
+	* tape-src/am-mt.c (main): res is int.
+	* tape-src/output-rait.c: include "amanda.h", do not define stderr.
+	* tape-src/tapeio.c (xxx_tapefd_read, plain_tapefd_read): second
+	  argument should be "char *"
+	* tape-src/tapeio.c (xxx_tapefd_write, plain_tapefd_write): second
+	  argument should be "const char *"
+
 2000-12-31  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/find.c (find_match): Use todo bit.

@@ -1,8 +1,5 @@
+#include "amanda.h"
 #include "output-rait.h"
-#include <string.h>
-#include <sys/errno.h>
-#include <fcntl.h>
-#include <stdio.h>
 
 /*
 ** RAIT -- redundant array of (inexpensive?) tapes
@@ -72,7 +69,6 @@
 #define rait_debug (0!=getenv("RAIT_DEBUG"))&&fprintf
 #else
 #define rait_debug (void)
-#define stderr 1
 #endif
 
 #define MAX_RAITS 20			/* maximum simul. RAIT sets */
