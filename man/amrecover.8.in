@@ -232,6 +232,16 @@ to print the local working directory, and
 .BR lcd
 to change it.
 .TP
+.CP setmode mode
+Sets the extracting mode for SMB shares. The value 
+.BR samba
+means implies extracting the SMB shares files on the SMB server. The 
+.BR tar
+value means to extract them the same way TAR volumes are extracted.
+.TP
+.CP mode
+Shows the extracting mode for SMB shares.
+.TP
 .CP help
 Display a brief list of these commands.
 .SH EXAMPLES
