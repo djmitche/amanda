@@ -1,6 +1,14 @@
 1999-01-14  Mike Grupenhoff <kashmir@munge.com>
 
-	* common-src/dumper.c (databuf_write): Egads!  Also increment the
+	* server-src/dumper.c: move max() macro to top of file.  Add min()
+	* server-src/dumper.c (databuf_write): use min() to determine the
+	copy size
+	* server-src/dumper.c (databuf_flush): more clearly calculate the
+	buffer offset in the write loop
+
+1999-01-14  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/dumper.c (databuf_write): Egads!  Also increment the
 	source pointer doing a partial buf copy
 
 1999-01-14  Mike Grupenhoff <kashmir@munge.com>

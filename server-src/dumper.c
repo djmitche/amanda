@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.96 1999/01/14 22:28:31 kashmir Exp $
+/* $Id: dumper.c,v 1.97 1999/01/14 23:57:13 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -116,6 +116,8 @@ int indexfd = -1;
 int amanda_port;
 
 /* local functions */
+#define	min(a,b)	((a)<(b)?(a):(b))
+#define	max(a,b)	((a)>(b)?(a):(b))
 int main P((int main_argc, char **main_argv));
 static cmd_t getcmd P((struct cmdargs *));
 static void putresult P((char *format, ...))
@@ -590,7 +592,7 @@ databuf_write(db, buf, size)
     int nwritten;
 
     while (size > 0) {
-	nwritten = size < db->spaceleft ? size : db->spaceleft;
+	nwritten = min(size, db->spaceleft);
 	memcpy(db->dataptr, buf, nwritten);
 	size -= nwritten;
 	db->spaceleft -= nwritten;
@@ -613,7 +615,7 @@ databuf_flush(db)
     struct databuf *db;
 {
     struct cmdargs cmdargs;
-    int fd, written;
+    int fd, written, off;
     cmd_t cmd;
     char *tmp_filename;
 
@@ -687,11 +689,13 @@ databuf_flush(db)
     /*
      * Write out the buffer
      */
+    off = 0;
     do {
-	written = write(db->fd, db->buf + db->spaceleft,
-	sizeof(db->buf) - db->spaceleft);
+	written = write(db->fd, db->buf + off,
+	    sizeof(db->buf) - db->spaceleft);
 	if (written > 0) {
 	    db->spaceleft += written;
+	    off += written;
 	    continue;
 	} else if (written < 0 && errno != ENOSPC) {
 	    errstr = squotef("data write: %s", strerror(errno));
@@ -721,7 +725,6 @@ int got_info_endline;
 int got_sizeline;
 int got_endline;
 int dump_result;
-#define max(a,b) ((a)>(b)?(a):(b))
 
 static void process_dumpeof()
 {
