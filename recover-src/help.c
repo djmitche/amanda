@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: help.c,v 1.6 2000/01/21 05:08:22 oliva Exp $
+ * $Id: help.c,v 1.7 2001/11/03 14:02:46 martinea Exp $
  *
  * implements the "help" command in amrecover
  */
@@ -38,7 +38,8 @@ void help_list P((void))
 
     printf("add path1 ...     - add to extraction list (shell wildcards)\n");
     printf("addx path1 ...    - add to extraction list (regular expressions)\n");
-    printf("cd directory      - change cwd on virtual file system\n");
+    printf("cd directory      - change cwd on virtual file system (shell wildcards)\n");
+    printf("cdx directory     - change cwd on virtual file system (regular expressions)\n");
     printf("clear             - clear extraction list\n");
     printf("delete path1 ...  - delete from extraction list (shell wildcards)\n");
     printf("deletex path1 ... - delete from extraction list (regular expressions)\n");

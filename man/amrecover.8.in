@@ -200,6 +200,14 @@ relative to the current backup working directory.
 If the mount point was not specified,
 paths are relative to the mount point if they start with "/",
 otherwise they are relative to the current backup working directory.
+The
+.I dir
+can be a shell style wildcards.
+.TP
+.CP cdx dir
+Like the
+.B cd
+command but allow regular expression.
 .TP
 .CP lpwd
 Display the

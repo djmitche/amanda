@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: uparse.y,v 1.7 2000/01/21 05:08:26 oliva Exp $
+ * $Id: uparse.y,v 1.8 2001/11/03 14:02:46 martinea Exp $
  *
  * parser for amrecover interactive language
  */
@@ -47,7 +47,7 @@ extern int yylex P((void));
 	/* literal keyword tokens */
 
 %token SETHOST SETDISK SETDATE SETTAPE SETMODE
-%token CD QUIT DHIST LS ADD ADDX EXTRACT
+%token CD CDX QUIT DHIST LS ADD ADDX EXTRACT
 %token LIST DELETE DELETEX PWD CLEAR HELP LCD LPWD MODE SMB TAR
 
         /* typed tokens */
@@ -79,7 +79,8 @@ set_command:
   |     SETDISK PATH { set_disk($2, NULL); }
   |     SETTAPE PATH { set_tape($2); }
   |     SETTAPE { set_tape(""); }
-  |     CD PATH { set_directory($2); }
+  |     CD PATH { cd_glob($2); }
+  |     CDX PATH { cd_regex($2); }
   |     SETMODE SMB {
 #ifdef SAMBA_CLIENT
 			 set_mode(SAMBA_SMBCLIENT);

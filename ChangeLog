@@ -1,3 +1,13 @@
+2001-11-03  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* recover-src/amrecover.h (cd_glob, cd_regex, cd_dir): New prototypes.
+	* recover-src/set_commands.c (cd_glob, cd_regex, cd_dir): New functions.
+	* recover-src/uparse.y: Add new token CDX, call cd_glob instead 
+	of set_directory for cd command, call cd_regex for cdx command.
+	* recover-src/uscan.l: On cdx string return CDX token.
+	* recover-src/help.c: Document it.
+	* man/amrecover.8.in: Document it.
+
 2001-09-26 John R. Jackson (jrj@purdue.edu)
 
 	* server-src/reporter.c: Fix problem when column sizes are negative.

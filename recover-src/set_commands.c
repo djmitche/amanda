@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: set_commands.c,v 1.15 2001/06/19 19:36:04 jrjackson Exp $
+ * $Id: set_commands.c,v 1.16 2001/11/03 14:02:46 martinea Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -209,6 +209,137 @@ char *mtpt;
     }
 }
 
+void cd_glob(glob)
+char *glob;
+{
+    char *regex;
+    char *regex_path;
+    char *s;
+
+    char *path_on_disk = NULL;
+
+    if (disk_name == NULL) {
+	printf("Must select disk before changing directory\n");
+	return;
+    }
+
+    regex = glob_to_regex(glob);
+    dbprintf(("cd_glob (%s) -> %s\n", glob, regex));
+    if ((s = validate_regexp(regex)) != NULL) {
+        printf("\"%s\" is not a valid shell wildcard pattern: ", glob);
+        puts(s);
+        return;
+    }
+    /*
+     * glob_to_regex() anchors the beginning of the pattern with ^,
+     * but we will be tacking it onto the end of the current directory
+     * in add_file, so strip that off.  Also, it anchors the end with
+     * $, but we need to match a trailing /, add it if it is not there
+     */
+    regex_path = stralloc(regex + 1);
+    amfree(regex);
+    if(regex_path[strlen(regex_path) - 2] != '/' ) {
+	regex_path[strlen(regex_path) - 1] = '\0';
+	strappend(regex_path, "/$");
+    }
+
+    /* convert path (assumed in cwd) to one on disk */
+    if (strcmp(disk_path, "/") == 0)
+        path_on_disk = stralloc2("/", regex_path);
+    else {
+        char *clean_disk_path = clean_regex(disk_path);
+        path_on_disk = vstralloc(clean_disk_path, "/", regex_path, NULL);
+        amfree(clean_disk_path);
+    }
+
+    cd_dir(path_on_disk, glob);
+
+    amfree(regex_path);
+    amfree(path_on_disk);
+}
+
+void cd_regex(regex)
+char *regex;
+{
+    char *s;
+
+    char *path_on_disk = NULL;
+
+    if (disk_name == NULL) {
+	printf("Must select disk before changing directory\n");
+	return;
+    }
+
+    if ((s = validate_regexp(regex)) != NULL) {
+	printf("\"%s\" is not a valid regular expression: ", regex);
+	puts(s);
+	return;
+    }
+
+    /* convert path (assumed in cwd) to one on disk */
+    if (strcmp(disk_path, "/") == 0)
+        path_on_disk = stralloc2("/", regex);
+    else {
+        char *clean_disk_path = clean_regex(disk_path);
+        path_on_disk = vstralloc(clean_disk_path, "/", regex, NULL);
+        amfree(clean_disk_path);
+    }
+
+    cd_dir(path_on_disk, regex);
+
+    amfree(path_on_disk);
+}
+
+void cd_dir(path_on_disk, default_dir)
+char *path_on_disk;
+char *default_dir;
+{
+    char *path_on_disk_slash = NULL;
+    char *dir = NULL;
+
+    int nb_found;
+    int i;
+
+    DIR_ITEM *ditem;
+
+    path_on_disk_slash = stralloc2(path_on_disk, "/");
+
+    nb_found = 0;
+
+    for (ditem=get_dir_list(); ditem!=NULL && nb_found <= 1; 
+			       ditem=get_next_dir_item(ditem))
+    {
+	if (match(path_on_disk, ditem->path)
+	    || match(path_on_disk_slash, ditem->path))
+	{
+	    i = strlen(ditem->path);
+	    if((i > 0 && ditem->path[i-1] == '/')
+               || (i > 1 && ditem->path[i-2] == '/' && ditem->path[i-1] == '.'))
+            {   /* It is a directory */
+		char *dir1, *dir2;
+		nb_found++;
+		dir = newstralloc(dir,ditem->path);
+		if(dir[strlen(dir)-1] == '/')
+		    dir[strlen(dir)-1] = '\0'; /* remove last / */
+		/* remove everything before the last / */
+		dir1 = rindex(dir,'/');
+		dir1++;
+		dir2 = stralloc(dir1);
+		amfree(dir);
+		dir = dir2;
+	    }
+	}
+    }
+    if(nb_found==0) {
+	set_directory(default_dir);
+    }
+    else if(nb_found==1) {
+	set_directory(dir);
+    }
+    else {
+	printf("Too many directory\n");
+    }
+}
 
 void set_directory(dir)
 char *dir;
