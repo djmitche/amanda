@@ -1434,14 +1434,20 @@ if test "$DUMP" -a "$RESTORE"; then
 	    [
 	        case "$DUMP" in
 	        *dump)
-		    AC_TRY_COMMAND($DUMP 9Ef /dev/null /dev/null/invalid/fs
-		        >conftest.d-E 2>&1)
+		    AC_TRY_COMMAND($DUMP 9Ef /dev/null /dev/null/invalid/fs 2>&1
+		        | $GREP -v Dumping
+			| $GREP -v Date
+			| $GREP -v Label >conftest.d-E 2>&1)
 		    cat conftest.d-E >&AC_FD_CC
-		    AC_TRY_COMMAND($DUMP 9Sf /dev/null /dev/null/invalid/fs
-		        >conftest.d-S 2>&1)
+		    AC_TRY_COMMAND($DUMP 9Sf /dev/null /dev/null/invalid/fs 2>&1
+		        | $GREP -v Dumping
+			| $GREP -v Date
+		        | $GREP -v Label >conftest.d-S 2>&1)
 		    cat conftest.d-S >&AC_FD_CC
 		    AC_TRY_COMMAND($DUMP 9f /dev/null /dev/null/invalid/fs 2>&1
-		        | $EGREP -v "Dumping\|Date of" >conftest.d)
+		        | $GREP -v Dumping
+			| $GREP -v Date
+		        | $GREP -v Label >conftest.d 2>&1)
 		    cat conftest.d >&AC_FD_CC
 		    if AC_TRY_COMMAND(cmp conftest.d-E conftest.d 1>&2); then
 		        amanda_cv_dump_estimate=E
@@ -1474,10 +1480,14 @@ if test "$DUMP" -a "$RESTORE"; then
 	    case "$DUMP" in
 	    *dump)
 		AC_TRY_COMMAND($DUMP 9hf 0 /dev/null /dev/null/invalid/fs 2>&1
-		    | $EGREP -v "Dumping\|Date of" > conftest.d-h)
+		    | $GREP -v Dumping
+		    | $GREP -v Date
+		    | $GREP -v Label >conftest.d-h 2>&1)
 		cat conftest.d-h >&AC_FD_CC
 		AC_TRY_COMMAND($DUMP 9f /dev/null /dev/null/invalid/fs 2>&1
-		    | $EGREP -v "Dumping\|Date of" >conftest.d)
+		    | $GREP -v Dumping
+		    | $GREP -v Date
+		    | $GREP -v Label >conftest.d 2>&1)
 		cat conftest.d >&AC_FD_CC
 		if AC_TRY_COMMAND(diff conftest.d-h conftest.d 1>&2); then
 		    amanda_cv_honor_nodump=yes

@@ -1,5 +1,12 @@
 1999-12-12 John R. Jackson  <jrj@purdue.edu>
 
+	* configure.in: egrep was having trouble with quoting on some systems.
+	Broke it apart into multiple unquoted statements.  Also, changed the
+	script to run the steps on all dump tests and added "Label" as another
+	line to ignore.
+
+1999-12-12 John R. Jackson  <jrj@purdue.edu>
+
 	* tape-src/tapetype.c: tweak the algorithm to write files in both
 	passes and compute the tape mark size as the difference.  Never
 	report a negative tape mark size.  Various other minor cleanup.
