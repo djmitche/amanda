@@ -1,3 +1,9 @@
+1999-10-03 John R. Jackson  <jrj@purdue.edu>
+
+	* common-src/amanda.h: protect the close macros and areads* from
+	  out of range file descriptors.
+	* common-src/file.c: ditto.
+
 1999-10-02 John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/amindexd.c (build_disk_table): only "OK" results from

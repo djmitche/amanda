@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.85 1999/10/02 22:20:30 jrj Exp $
+ * $Id: amanda.h,v 1.86 1999/10/03 16:03:00 jrj Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -543,21 +543,24 @@ extern void   areads_relbuf   P((int fd));
  */
 
 #define aclose(fd) do {							\
-    assert(fd >= 0);							\
-    close(fd);								\
-    areads_relbuf(fd);							\
+    if((fd) >= 0) {							\
+	close(fd);							\
+	areads_relbuf(fd);						\
+    }									\
     (fd) = -1;								\
 } while(0)
 
 #define afclose(f) do {							\
-    assert(f != NULL);							\
-    fclose(f);								\
+    if((f) != NULL) {							\
+	fclose(f);							\
+    }									\
     (f) = NULL;								\
 } while(0)
 
 #define apclose(p) do {							\
-    assert(p != NULL);							\
-    pclose(p);								\
+    if((p) != NULL) {							\
+	pclose(p);							\
+    }									\
     (p) = NULL;								\
 } while(0)
 
