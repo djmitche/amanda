@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.42 1998/01/22 15:00:33 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.43 1998/01/23 22:49:48 amcore Exp $
  *
  * send backup data using GNU tar
  */
@@ -59,6 +59,7 @@ static regex_t re_table[] = {
      care of too.  */
 #if 0
   { DMP_NORMAL, ": File .* shrunk by [0-9][0-9]* bytes, padding with zeros", 1 },
+  { DMP_NORMAL, ": Cannot add file .*: No such file or directory$", 1},
   { DMP_NORMAL, ": Error exit delayed from previous errors", 1},
 #endif
   
