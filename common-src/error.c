@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: error.c,v 1.8.6.1 2001/07/19 22:53:50 jrjackson Exp $
+ * $Id: error.c,v 1.8.6.2 2001/09/17 22:18:17 jrjackson Exp $
  *
  * error handling common to Amanda programs
  */
@@ -86,7 +86,7 @@ char *msg;
 	fflush(stderr);
     }
 
-    if(debug_fp() != NULL) {
+    if(dbfp() != NULL) {
 	dbprintf(("%s\n", msg));
 	dbclose();
     }
