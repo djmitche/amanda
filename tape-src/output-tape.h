@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-tape.h,v 1.4 2002/11/12 21:24:03 martinea Exp $
+ * $Id: output-tape.h,v 1.5 2003/03/06 21:43:58 martinea Exp $
  *
  * tapeio.c virtual tape interface for normal tape drives.
  */
@@ -52,5 +52,6 @@ extern int tape_tapefd_unload P((int));
 extern int tape_tapefd_status P((int, struct am_mt_status *));
 extern int tape_tapefd_weof P((int, int));
 extern ssize_t tape_tapefd_write P((int, const void *, size_t));
+extern int tape_tapefd_can_fork P((int));
 
 #endif /* OUTPUT_TAPE_H */

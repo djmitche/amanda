@@ -1,3 +1,25 @@
+2003-04-06  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* tape-src/output-file.c (file_tapefd_can_fork): New function that
+	  return 1 if the file: can be run under a forked process.
+	* tape-src/output-file.h (file_tapefd_can_fork): Prototype.
+	* tape-src/output-null.c (null_tapefd_can_fork): New function that
+	  return 1 if the null: can be run under a forked process.
+	* tape-src/output-null.h (null_tapefd_can_fork): Prototype.
+	* tape-src/output-rait.c (rait_close, rait_tapefd_ioctl): Fork only if
+	* tapefd_can_fork() return 1.
+	* tape-src/output-rait.c (rait_tapefd_can_fork): New function that
+	  return 1 if the rait: can be run under a forked process.
+	* tape-src/output-rait.h (rait_tapefd_can_fork): Prototype.
+	* tape-src/output-tape.c (tape_tapefd_can_fork): New function that
+	  return 1 if the tape: can be run under a forked process.
+	* tape-src/output-tape.h (tape_tapefd_can_fork): Prototype.
+	* tape-src/tapeio.c (struct virtualtape): Add xxx_tapefd_can_fork and
+	  initialize vtable[];
+	* tape-src/tapeio.c (tapefd_can_fork): New function to can the driver
+	  xxx_tapefd_can_fork function.
+	* tape-src/tapeio.h (tapefd_can_fork): Prototype.
+
 2003-04-05  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* tape-src/output-file.c (file_tapefd_write): Call file_release(fd)

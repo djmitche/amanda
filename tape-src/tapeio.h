@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.h,v 1.16 2002/11/12 21:24:04 martinea Exp $
+ * $Id: tapeio.h,v 1.17 2003/03/06 21:43:59 martinea Exp $
  *
  * interface for tapeio.c
  */
@@ -89,6 +89,7 @@ char *tapefd_wrendmark P((int tapefd, char *datestamp, unsigned int s));
 
 int tapefd_eof P((int tapefd));		/* just used in tapeio-test */
 int tapefd_close P((int tapefd));
+int tapefd_can_fork P((int tapefd));
 
 char *tape_unload P((char *dev));
 char *tape_rewind P((char *dev));

@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-null.c,v 1.6 2002/11/12 21:24:03 martinea Exp $
+ * $Id: output-null.c,v 1.7 2003/03/06 21:43:57 martinea Exp $
  *
  * tapeio.c virtual tape interface for a null device.
  */
@@ -178,3 +178,11 @@ null_tapefd_weof(fd, count)
 {
     return 0;
 }
+
+int 
+null_tapefd_can_fork(fd)
+    int fd;
+{
+    return 0;
+}
+

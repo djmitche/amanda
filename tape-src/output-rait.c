@@ -437,28 +437,40 @@ rait_close(int fd) {
     ** activities like filemark writes, etc.)
     */
     for( i = 0; i < pr->nfds; i++ ) {
-	if ((kid = fork()) == 0) {
-	    /* we are the child process */
-	    sleep(0);
+	if(tapefd_can_fork(pr->fds[i])) {
+	    if ((kid = fork()) == 0) {
+		/* we are the child process */
+		sleep(0);
+		j = tapefd_close(pr->fds[i]);
+		exit(j);
+            } else {
+		/* remember who the child is or that an error happened */
+	  	pr->readres[i] = kid;
+            }
+	}
+	else {
 	    j = tapefd_close(pr->fds[i]);
-	    exit(j);
-        } else {
-	    /* remember who the child is or that an error happened */
-  	    pr->readres[i] = kid;
-        }
+	    if ( j != 0 )
+		res = j;
+	    pr->readres[i] = -1;
+	}
     }
+
     for( i = 0; i < pr->nfds; i++ ) {
 	j = tapefd_close(pr->fds[i]);
 	if ( j != 0 )
            res = j;
     }
+
     for( i = 0; i < pr->nfds; i++ ) {
         int stat;
-	waitpid( pr->readres[i], &stat, 0);
-	if( WEXITSTATUS(stat) != 0 ) {
-	    res = WEXITSTATUS(stat);
-	    if( res == 255 ) 
-		res = -1;
+	if(pr->readres[i] != -1) {
+	    waitpid( pr->readres[i], &stat, 0);
+	    if( WEXITSTATUS(stat) != 0 ) {
+		res = WEXITSTATUS(stat);
+		if( res == 255 ) 
+		    res = -1;
+	    }
         }
     }
     if (pr->nfds > 1) {
@@ -1044,7 +1056,7 @@ static int rait_tapefd_ioctl(int (*func0)(int),
 			     int (*func1)(int, int),
 			     int fd,
 			     int count) {
-    int i, res = 0;
+    int i, j, res = 0;
     RAIT *pr;
     int errors = 0;
     int kid;
@@ -1082,21 +1094,33 @@ static int rait_tapefd_ioctl(int (*func0)(int),
     }
 
     for( i = 0; i < pr->nfds ; i++ ) {
-        if ((kid = fork()) < 1) {
-	    rait_debug((stderr, "in kid, fork returned %d\n", kid));
-	    /* if we are the kid, or fork failed do the action */
-	    if (0 != func0) {
-		res = (*func0)(pr->fds[i]);
+	if(tapefd_can_fork(pr->fds[i])) {
+            if ((kid = fork()) < 1) {
+		rait_debug((stderr, "in kid, fork returned %d\n", kid));
+		/* if we are the kid, or fork failed do the action */
+		if (0 != func0) {
+		    res = (*func0)(pr->fds[i]);
+		} else {
+		    res = (*func1)(pr->fds[i], count);
+		}
+		rait_debug((stderr, "in kid, func ( %d ) returned %d errno %d\n", pr->fds[i], res, errno));
+		if (kid == 0)
+		    exit(res);
+            } else {
+		rait_debug((stderr, "in parent, fork returned %d\n", kid));
+		pr->readres[i] = kid;
+            }
+	}
+	else {
+	    if(0 != func0) {
+		j = (*func0)(pr->fds[i]);
 	    } else {
-		res = (*func1)(pr->fds[i], count);
+		j = (*func1)(pr->fds[i], count);
 	    }
-	    rait_debug((stderr, "in kid, func ( %d ) returned %d errno %d\n", pr->fds[i], res, errno));
-	    if (kid == 0)
-	        exit(res);
-        } else {
-	    rait_debug((stderr, "in parent, fork returned %d\n", kid));
-	    pr->readres[i] = kid;
-        }
+	    if( j != 0)
+		res = j;
+	    pr->readres[i] = -1;
+	}
     }
     for( i = 0; i < pr->nfds ; i++ ) {
         rait_debug((stderr, "in parent, waiting for %d\n", pr->readres[i]));
@@ -1184,3 +1208,11 @@ int rait_tapefd_status(int fd, struct am_mt_status *stat) {
 void rait_tapefd_resetofs(int fd) {
     rait_lseek(fd,  0L, SEEK_SET);
 }
+
+int 
+rait_tapefd_can_fork(fd)
+    int fd;
+{
+    return 0;
+}
+
