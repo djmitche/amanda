@@ -1,15 +1,3 @@
-AMINDEX
-=======
-
-
-Amindex was a collection of code that added dump indexing and more
-friendly recovery to amanda-2.3.0.  It has since been fully integrated
-into amanda-2.3.0.X.  An index of the files in each dump image is
-generated as part of the dump process and stored in a database.  A
-tool, amrecover, is provided which lets users browse the database.
-Once a set of files to recover has been assembled, amrecover
-"automates" the restoration of these files.
-
 This file describes how the index files are generated and how amrecover
 is used.
 
@@ -17,49 +5,23 @@ is used.
 Database Format
 ---------------
 
-The database consists of a directory containing a large number of
-files, one for each disk backup.  The file names are formed from the
-host name, disk name, date, and dump level.  The files are ASCII text
-files containing a list of the leaf nodes of the dump, one per line.
-Each entry is the filename relative to the mount point, starting with a
-/, e.g., /home/user1/data from the disk mounted on /home would generate
-the entry /user1/data.  The index files are stored in compressed format
-(eg gzip or compress).
+The database consists of a directory tree of the format:
+  $host/$disk/$date_$level.gz
 
+The host and disk are those listed in the disklist file, the "$host/$disk/"
+is like the curinfo database, '/' are changed for '_'.
+There is an index file for each dump, the name of the file is made
+of the date and the level, they will have the .gz suffix if they are
+compressed with gzip.
 
-Database Record Generation
---------------------------
+ex. The file foo/_usr/19991231_0.gz is the index of the level 0 made on
+    19991231 of the disk /usr of the host foo.
 
-This section walks through the operation of the system while backups
-are being done, and highlights the changes to amanda-2.3.0.X needed.
-
-First off, a new disk-type option "index" was added.  This required
-changes to common-src/conffile.[ch] to parse such an option and add it
-to the data structure for options, and changes to server-src/driverio.c
-to add "index" to the reconstructed option string passed to clients.
-Obviously, a backup index is only generated if this option is added to
-a file.
-
-On the client side, sendbackup-common.[ch] and sendbackup-dump.c have
-been modified to handle the "index" option.  If this option is set,
-sendbackup-dump adds createindex-dump to the chain of programs to be
-run, between the dump and the compression (if present).
-Createindex-dump is responsible for generating the index file.  It
-pipes the dump output through "restore -t" to get the necessary
-information.  The file is then compressed and stored in a temporary
-file on the client.  The location of this file is configurable, e.g.,
-/var/tmp, /usr/tmp, /tmp.
-
-[ Yes, okay, this makes the file system containing the temp file active
-during its dump, which is a bad thing, but if you have the DEBUG flags
-set, amanda is also actively using files in /tmp. ]
-
-Once all of the dumping operations of amdump have been completed,
-amdump calls amgetidx, which determines for which file systems an index
-was generated and copies them to the database server (assumed to be the
-machine running amdump).  The source for this is in
-server-src/amgetidx.c.  In early versions, amgetidx used rsh/rcp to
-perform this, but now it uses amandad.
+The files are ASCII text files containing a list of the directory
+and files of the dump, one per line.  Each entry is the filename
+relative to the mount point, starting with a /, e.g., /home/user1/data
+from the disk mounted on /home would generate the entry /user1/data.
+The index files are stored in compressed format (eg gzip or compress).
 
 
 Database Browsing
@@ -97,8 +59,7 @@ options for specifying a default.
 Amrecover contacts amidxtaped on the tape server host specifying which
 tape device to use, which host and disk files are needed for.  On the
 tape server host, amidxtaped exec's amrestore to get the dump image
-file off the tape, strips the (amanda) header, and returns the data to
-amrecover.
+file off the tape, and returns the data to amrecover.
 
 If dumps are stored compressed for the client, then amrecover pipes the
 data through the appropriate uncompression routine to uncompress it
