@@ -1,5 +1,16 @@
 1998-12-19  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c (startup_chunker): new function.  When doing
+	chunking, fork a piped subprocess that reads in a fileheader and
+	a data stream, and writes out the headered, chunked files.  This
+	allows us to treat unchunked, chunked, and port-dump dumps exactly
+	the same.
+	* server-src/dumper.c (main): file-dump: if chunksize > 0,
+	call startup_chunker for our outfd.  Otherwise, open the
+	holding file directly.
+
+1998-12-19  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c (struct databuf): add a chunk_size member,
 	the size of each chunk.  Remove chunksize global.
 	* server-src/dumper.c (main): add a chunksize local var

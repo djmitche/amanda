@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.90 1998/12/19 18:56:47 kashmir Exp $
+/* $Id: dumper.c,v 1.91 1998/12/19 19:53:33 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -135,6 +135,7 @@ static void log_msgout P((logtype_t typ));
 void sendbackup_response P((proto_t *p, pkt_t *pkt));
 int startup_dump P((char *hostname, char *disk, int level, char *dumpdate,
 		    char *dumpname, char *options));
+static int startup_chunker P((const char *, long));
 
 
 void check_options(options)
@@ -202,7 +203,7 @@ main(main_argc, main_argv)
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     char *q = NULL;
-    char *filename, *tmp_filename = NULL;
+    char *filename;
     long chunksize;
 
     for (outfd = 3; outfd < FD_SETSIZE; outfd++) {
@@ -287,15 +288,37 @@ main(main_argc, main_argv)
 	    progname = newstralloc(progname, cmdargs.argv[9]);
 	    options = newstralloc(options, cmdargs.argv[10]);
 
-	    tmp_filename = newvstralloc(tmp_filename, filename, ".tmp", NULL);
-	    if((outfd = open(tmp_filename, O_WRONLY|O_CREAT, 0666)) == -1) {
-		q = squotef("[holding file \"%s\": %s]",
-			    tmp_filename, strerror(errno));
-		putresult("FAILED %s %s\n", handle, q);
-		amfree(q);
-		break;
+	    /*
+	     * We start a subprocess to do the chunking, and pipe our
+	     * data to it.  This allows us to insert a compress in between
+	     * if srvcompress is set.
+	     */
+	    if (chunksize > 0) {
+		outfd = startup_chunker(filename, chunksize);
+		if (outfd < 0) {
+		    q = squotef("[chunker startup failed: %s]",
+			strerror(errno));
+		    putresult("FAILED %s %s\n", handle, q);
+		    amfree(q);
+		    break;
+		}
+		databuf_init(&db, outfd, "<pipe to chunker>", -1);
+	    } else {
+		char *tmp_filename;
+
+		tmp_filename = vstralloc(filename, ".tmp", NULL);
+		outfd = open(tmp_filename, O_WRONLY|O_CREAT, 0666);
+		if (outfd < 0) {
+		    q = squotef("[holding file \"%s\": %s]",
+				tmp_filename, strerror(errno));
+		    putresult("FAILED %s %s\n", handle, q);
+		    amfree(q);
+		    amfree(tmp_filename);
+		    break;
+		}
+		amfree(tmp_filename);
+		databuf_init(&db, outfd, filename, -1);
 	    }
-	    databuf_init(&db, outfd, filename, chunksize);
 
 	    check_options(options);
 
@@ -404,6 +427,72 @@ main(main_argc, main_argv)
     if (malloc_size_1 != malloc_size_2)
 	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
 
+    exit(0);
+}
+
+/*
+ * Forks a subprocess that reads in a file header and data, and writes
+ * out several files.  Returns a file descriptor to a pipe to the process
+ * on success, or -1 on error.
+ */
+static int
+startup_chunker(filename, chunksize)
+    const char *filename;
+    long chunksize;
+{
+    struct databuf db;
+    char buf[TAPE_BLOCK_BYTES], *tmp_filename;
+    int nread;
+    int pipefd[2], outfd;
+
+    if (pipe(pipefd) < 0)
+	return (-1);
+
+    switch (fork()) {
+    case -1:
+	aclose(pipefd[0]);
+	aclose(pipefd[1]);
+	return (-1);
+
+    case 0:
+	aclose(pipefd[0]);
+	return (pipefd[1]);
+
+    default:
+	dup2(pipefd[0], 0);
+	aclose(pipefd[0]);
+	aclose(pipefd[1]);
+	break;
+    }
+
+    tmp_filename = vstralloc(filename, ".tmp", NULL);
+    if ((outfd = open(tmp_filename, O_WRONLY|O_CREAT, 0666)) < 0) {
+	putresult("FAILED %s [holding file \"%s\": %s]", handle,
+	    tmp_filename, strerror(errno));
+	amfree(tmp_filename);
+	exit(1);
+    }
+    amfree(tmp_filename);
+    databuf_init(&db, outfd, filename, chunksize);
+
+    /*
+     * The first thing we should recieve is the file header, which we
+     * need to save into "file", as well as write out.  Later, the
+     * chunk code will rewrite it.
+     */
+    if ((nread = read(0, buf, sizeof(buf))) <= 0)
+	exit(1);
+    parse_file_header(buf, &file, nread);
+    databuf_write(&db, buf, nread);
+
+    /*
+     * We've written the file header.  Now, just write data until the
+     * end.
+     */
+    while ((nread = read(0, buf, sizeof(buf))) > 0)
+	databuf_write(&db, buf, nread);
+    databuf_flush(&db);
+    close(0);
     exit(0);
 }
 
