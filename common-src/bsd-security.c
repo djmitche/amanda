@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.3 1998/11/06 17:14:55 kashmir Exp $
+ * $Id: bsd-security.c,v 1.4 1998/11/06 22:25:06 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -132,7 +132,7 @@ struct bsd_stream {
      * This is the function and argument that is called when this stream
      * is readable.  It is passed a buffer of data read.
      */
-    void (*fn) P((void *, void *, size_t));
+    void (*fn) P((void *, void *, int));
     void *arg;
 
     /*
@@ -159,7 +159,7 @@ static void *bsd_stream_client P((void *, int));
 static void bsd_stream_close P((void *));
 static int bsd_stream_id P((void *));
 static int bsd_stream_write P((void *, const void *, size_t));
-static void bsd_stream_read P((void *, void (*)(void *, void *, size_t),
+static void bsd_stream_read P((void *, void (*)(void *, void *, int),
     void *));
 static void bsd_stream_read_cancel P((void *));
 
@@ -321,7 +321,7 @@ gethandle(he, port, handle)
     int port, handle;
 {
     struct bsd_handle *bh;
-    int i, rc;
+    int i;
 
     assert(he != NULL);
     assert(port > 0);
@@ -768,7 +768,7 @@ check_user(bh, remoteuser)
     /* lookup our local user name */
     uid = getuid();
     if ((pwd = getpwuid(uid)) == NULL)
-        error("error [getpwuid(%d) fails]", uid);
+        error("error [getpwuid(%ld) fails]", uid);
     localuser = stralloc(pwd->pw_name);
 
     /*
@@ -919,6 +919,7 @@ bsd_stream_client(h, id)
     bs->socket = -1;	/* we're a client */
     bs->bsd_handle = bh;
     bs->ev_read = NULL;
+    return (bs);
 }
 
 /*
@@ -1000,7 +1001,7 @@ bsd_stream_write(s, vbuf, size)
 static void
 bsd_stream_read(s, fn, arg)
     void *s, *arg;
-    void (*fn) P((void *, void *, size_t));
+    void (*fn) P((void *, void *, int));
 {
     struct bsd_stream *bs = s;
     int fd;
@@ -1137,7 +1138,7 @@ str2pkthdr(str, pkt, handle, sequence)
     int *handle, *sequence;
 {
     int i;
-    const char *typestr, *origstr = str;
+    const char *typestr;
 
     assert(str != NULL);
     assert(pkt != NULL);
