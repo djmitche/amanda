@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.14.4.4 1999/10/03 16:09:06 jrj Exp $
+ * $Id: file.c,v 1.14.4.5 1999/10/03 21:29:56 jrj Exp $
  *
  * file and directory bashing routines
  */
@@ -435,16 +435,17 @@ agets(file)
 static struct areads_buffer {
     char *buffer;
     char *endptr;
-    int bufsize;
+    ssize_t bufsize;
 } *areads_buffer = NULL;
 static int areads_bufcount = 0;
+static ssize_t areads_bufsize = BUFSIZ;		/* for the test program */
 
 static void
 areads_getbuf(fd)
     int fd;
 {
     struct areads_buffer *new;
-    int size;
+    ssize_t size;
 
     assert(fd >= 0);
     if(fd >= areads_bufcount) {
@@ -460,11 +461,34 @@ areads_getbuf(fd)
 	areads_bufcount = fd + 1;
     }
     if(areads_buffer[fd].buffer == NULL) {
-	areads_buffer[fd].bufsize = BUFSIZ;
+	areads_buffer[fd].bufsize = areads_bufsize;
 	areads_buffer[fd].buffer = alloc(areads_buffer[fd].bufsize + 1);
 	areads_buffer[fd].buffer[0] = '\0';
 	areads_buffer[fd].endptr = areads_buffer[fd].buffer;
     }
+}
+
+/*
+ *=====================================================================
+ * Return the amount of data still in an areads buffer.
+ *
+ * ssize_t areads_dataready (int fd)
+ *
+ * entry:	fd = file descriptor to release buffer for
+ * exit:	returns number of bytes of data ready to process
+ *=====================================================================
+ */
+
+ssize_t
+areads_dataready(fd)
+    int fd;
+{
+    ssize_t r = 0;
+
+    if(fd >= 0 && fd < areads_bufcount && areads_buffer[fd].buffer != NULL) {
+	r = areads_buffer[fd].endptr - areads_buffer[fd].buffer;
+    }
+    return r;
 }
 
 /*
@@ -520,9 +544,9 @@ areads (fd)
     char *buffer;
     char *endptr;
     char *newbuf;
-    int buflen;
-    int size;
-    int r;
+    ssize_t buflen;
+    ssize_t size;
+    ssize_t r;
 
     malloc_enter(dbmalloc_caller_loc(s, l));
 
@@ -539,9 +563,10 @@ areads (fd)
 	 * No newline yet, so get more data.
 	 */
 	if (buflen == 0) {
-	    size = areads_buffer[fd].bufsize + BUFSIZ;
+	    size = areads_buffer[fd].bufsize + areads_bufsize;
 	    newbuf = alloc(size + 1);
-	    memcpy (newbuf, buffer, areads_buffer[fd].bufsize);
+	    memcpy (newbuf, buffer, areads_buffer[fd].bufsize + 1);
+	    areads_buffer[fd].buffer = newbuf;
 	    areads_buffer[fd].endptr = newbuf + areads_buffer[fd].bufsize;
 	    areads_buffer[fd].bufsize = size;
 	    buffer = areads_buffer[fd].buffer;
@@ -630,6 +655,7 @@ int main(argc, argv)
 		perror(file);
 		return 1;
 	}
+	areads_bufsize = 1;			/* force buffer overflow */
 	while ((line = areads(fd)) != NULL) {
 		puts(line);
 		amfree(line);

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.22 1999/10/02 17:04:15 jrj Exp $
+ * $Id: driver.c,v 1.58.2.23 1999/10/03 21:30:01 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -359,9 +359,21 @@ int main(main_argc, main_argv)
 
 	/* handle any results that have come in */
 
-	for(fd = 0; fd <= maxfd; fd++) if(FD_ISSET(fd, &selectset)) {
-	    if(fd == taper) handle_taper_result();
-	    else handle_dumper_result(fd);
+	for(fd = 0; fd <= maxfd; fd++) {
+	    /*
+	     * The first pass through the following loop, we have
+	     * data ready for areads (called by getresult, called by
+	     * handle_.*_result).  But that may read more than one record,
+	     * so we need to keep processing as long as areads has data.
+	     * We will get control back after each record and the buffer
+	     * will go empty (indicated by areads_dataready(fd) == 0)
+	     * after the last one available has been processed.
+	     */
+	    while(FD_ISSET(fd, &selectset) || areads_dataready(fd) > 0) {
+		if(fd == taper) handle_taper_result();
+		else handle_dumper_result(fd);
+		FD_CLR(fd, &selectset);
+	    }
 	}
 
     }
