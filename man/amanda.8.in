@@ -1499,6 +1499,7 @@ Default:
 How much data will be written in each tape record.
 The minimum blocksize value is 32 KBytes.
 The maximum blocksize value is @MAXTAPEBLOCKSIZE@ KBytes.
+The maximum is set during configure with --with-maxtapeblocksize.
 .TP
 .BS file-pad boolean
 Default:
