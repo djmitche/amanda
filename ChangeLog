@@ -1,3 +1,11 @@
+2004-01-29  Christoph Pospiech <pospiech@de.ibm.com>
+
+	* configure.in (AC_CONFIG_FILES): Add changer-src/chg-iomega.pl.
+	* changer-src/Makefile.am (libexec_SCRIPTS) Add chg-iomega.
+	* changer-src/chg-iomega.pl.in: New changer script.
+	* docs/TAPE.CHANGERS: Document chg-iomega.
+	* contrib/mkamandisk: Script to format iomega disk.
+
 2004-01-29  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* restore-src/amidxtaped.c (scan_init): Remove the log file if it exit.

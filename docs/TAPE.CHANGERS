@@ -743,6 +743,42 @@ stackers, you would use the follwing changerfile:
 The third uses the null changer.  The tapedev_n entries are only needed
 if the changerfile in question uses them.
 
+
+================================
+chg-iomega
+================================
+
+This changer script is designed for IOMEGA or JAZZ disks of various sizes
+as well as any other removable disk media.
+
+This is a PURELY MANUAL changer. It requests insertion of disk media via
+messages on /dev/tty. So it cannot be used via crontab.
+
+Make sure you comply with any of the following.
+- Add statements 
+        tpchanger "chg-iomega"
+        tapedev "file:<mount_point_of_removable_disk>"
+        (e.g. tapedev "file:/mnt/iomega" )
+        tapetype IOMEGA      
+
+        
+        define tapetype IOMEGA {
+            comment "IOMega 250 MB floppys"
+            length 250 mbytes
+            filemark 100 kbytes
+            speed 1 mbytes
+        }
+  to your /etc/amanda/<backup_set>/amanda.conf file
+- Add entry to /etc/fstab to specify mount point of removable disk
+  and make this disk mountable by any user.
+- Format all disks, add a "data" sub directory and label all disks
+  by a call to amlabel.
+- Be aware that as of version 2.4.4p1, amanda can't handle backups that are
+  larger than the size of the removable disk media. So make sure
+  /etc/amanda/<backup_set>/disklist specifies chunks smaller than the 
+  disk size.
+
+
 ==============================
 chg-null
 ==============================
