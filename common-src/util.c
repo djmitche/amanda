@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.2.2.2.2.1 2001/03/15 02:18:49 jrjackson Exp $
+ * $Id: util.c,v 1.2.2.2.2.2 2001/03/20 00:25:52 jrjackson Exp $
  */
 
 #include "amanda.h"
@@ -127,4 +127,50 @@ bind_portrange(s, addrp, first_port, last_port)
 	errno = EAGAIN;
     }
     return -1;
+}
+
+/*
+ * Construct a datestamp (YYYYMMDD) from a time_t.
+ */
+char *
+construct_datestamp(t)
+    time_t *t;
+{
+    struct tm *tm;
+    char datestamp[3*NUM_STR_SIZE];
+    time_t when;
+
+    if(t == NULL) {
+	when = time((time_t *)NULL);
+    } else {
+	when = *t;
+    }
+    tm = localtime(&when);
+    ap_snprintf(datestamp, sizeof(datestamp),
+                "%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
+    return stralloc(datestamp);
+}
+
+/*
+ * Construct a timestamp (YYYYMMDDHHMMSS) from a time_t.
+ */
+char *
+construct_timestamp(t)
+    time_t *t;
+{
+    struct tm *tm;
+    char timestamp[6*NUM_STR_SIZE];
+    time_t when;
+
+    if(t == NULL) {
+	when = time((time_t *)NULL);
+    } else {
+	when = *t;
+    }
+    tm = localtime(&when);
+    ap_snprintf(timestamp, sizeof(timestamp),
+                "%04d%02d%02d%02d%02d%02d",
+		tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday,
+		tm->tm_hour, tm->tm_min, tm->tm_sec);
+    return stralloc(timestamp);
 }

@@ -961,19 +961,20 @@ case "$AMANDA_DBGDIR" in
    AC_SUBST(AMANDA_DBGDIR);;
 esac
 
-AC_ARG_WITH(pid-debug-files,
-    [  --with-pid-debug-files append pid's to program's debugging filenames],
-    DEBUG_FILE_WITH_PID="$withval",
-    : ${DEBUG_FILE_WITH_PID=no}
+AC_ARG_WITH(debug_days,
+    [  --with-debug-days=NN    number of days to keep debugging files [default=4]],
+    debug_days="$withval",
+    : ${debug_days=4}
 )
-case "$DEBUG_FILE_WITH_PID" in
-n | no) : ;;
-y |  ye | yes) AC_DEFINE(DEBUG_FILE_WITH_PID,1,[Define if you want the debugging files that appear in the --with-debugging
- * directory to have the process ID appended to the filename. ])
-  ;;
-*) AC_MSG_ERROR([*** You must not supply an argument to --with-pid-debug-files option.])
+case "$debug_days" in
+n | no) AMANDA_DEBUG_DAYS=0 ;;
+y |  ye | yes) AMANDA_DEBUG_DAYS=4 ;;
+[[0-9]] | [[0-9]][[0-9]] | [[0-9]][[0-9]][[0-9]]) AMANDA_DEBUG_DAYS="$debug_days" ;;
+*) AC_MSG_ERROR([*** --with-debug-days value not numeric or out of range.])
   ;;
 esac
+AC_DEFINE_UNQUOTED(AMANDA_DEBUG_DAYS,$AMANDA_DEBUG_DAYS,[Number of days to keep debugging files. ])
+AC_SUBST(AMANDA_DEBUG_DAYS)
 
 AC_ARG_WITH(testing,
     [  --with-testing[=suffix] use alternate service names],

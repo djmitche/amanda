@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: genversion.c,v 1.18.4.4 1999/09/08 23:26:48 jrj Exp $
+ * $Id: genversion.c,v 1.18.4.4.2.1 2001/03/20 00:25:52 jrjackson Exp $
  *
  * dump the current Amanda version info
  */
@@ -55,9 +55,17 @@ int main P((void));
     linelen += len;							\
 } while (0)
 
-/* Print a "variable" */
+/* Print a text "variable" */
 #define prvar(var, val) do {						\
     str = newvstralloc(str, (var), "=\\\"", (val), "\\\"", NULL);	\
+    prstr(str);								\
+} while(0)
+
+/* Print a numeric "variable" */
+#define prnum(var, val) do {						\
+    char number[NUM_STR_SIZE];						\
+    ap_snprintf(number, sizeof(number), "%ld", (long)(val));		\
+    str = newvstralloc(str, (var), "=", number, NULL);			\
     prstr(str);								\
 } while(0)
 
@@ -258,8 +266,8 @@ int main()
     prstr(" DEBUG_CODE");
 #endif
 
-#ifdef DEBUG_FILE_WITH_PID
-    prstr(" DEBUG_FILE_WITH_PID");
+#ifdef AMANDA_DEBUG_DAYS
+    prnum(" AMANDA_DEBUG_DAYS", AMANDA_DEBUG_DAYS);
 #endif
 
 #ifdef BSD_SECURITY

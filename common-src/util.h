@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.h,v 1.2.2.1.2.1 2001/03/15 02:18:49 jrjackson Exp $
+ * $Id: util.h,v 1.2.2.1.2.2 2001/03/20 00:25:52 jrjackson Exp $
  */
 #ifndef UTIL_H
 #define	UTIL_H
@@ -33,5 +33,8 @@ ssize_t fullread P((int, void *, size_t));
 ssize_t fullwrite P((int, const void *, size_t));
 
 int bind_portrange P((int, struct sockaddr_in *, int, int));
+
+char *construct_datestamp P((time_t *t));
+char *construct_timestamp P((time_t *t));
 
 #endif	/* UTIL_H */
