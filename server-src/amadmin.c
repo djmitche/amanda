@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.82 2002/11/24 21:42:15 martinea Exp $
+ * $Id: amadmin.c,v 1.83 2002/11/28 02:29:45 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -257,9 +257,6 @@ int seq;
     return str;
 }
 
-#undef days_diff
-#define days_diff(a, b)        (((b) - (a) + SECS_PER_DAY) / SECS_PER_DAY)
-
 /* when is next level 0 due? 0 = tonight, 1 = tommorrow, etc*/
 static int next_level0(dp, info)
 disk_t *dp;
@@ -270,7 +267,7 @@ info_t *info;
     if(info->inf[0].date < (time_t)0)
 	return 0;	/* new disk */
     else
-	return dp->dumpcycle - days_diff(info->inf[0].date, today);
+	return dp->dumpcycle - (days_diff(info->inf[0].date, today) + 1);
 }
 
 static void check_dumpuser()
