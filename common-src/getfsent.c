@@ -166,6 +166,83 @@ generic_fsent_t *fsent;
     fsent->passno  = sys_fsent.vfs_fsckpass? atoi(sys_fsent.vfs_fsckpass) : 0;
     return 1;
 }
+#elif defined(HAVE_SYS_MNTTAB_H) /* } { */
+
+/* we won't actually include mnttab.h, since it contains nothing useful.. */
+
+#define GETFSENT_TYPE "SVR3 (Interactive UNIX)"
+
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define FSTAB "/etc/fstab"
+
+static FILE *fstabf = NULL;
+
+int open_fstab()
+{
+    close_fstab();
+    return (fstabf = fopen(FSTAB, "r")) != NULL;
+}
+
+void close_fstab()
+{
+    if(fstabf)
+	fclose(fstabf);
+    fstabf = NULL;
+}
+
+static generic_fsent_t _fsent;
+
+int get_fstab_nextentry(fsent)
+generic_fsent_t *fsent;
+{
+    static char lfsnam[32];
+    static char opts[512];
+    static char line[1024];
+    char *cp, *dp, *ep=lfsnam;
+
+    while (cp = fgets(line, sizeof(line), fstabf)) {
+	fsent->fsname = strtok(cp, " \t\n");
+	if ( fsent->fsname && *fsent->fsname != '#' )
+	    break;
+    }
+    if (!cp) return 0;
+
+    fsent->mntdir = strtok((char *)NULL, " \t\n");
+    fsent->mntopts = strtok((char *)NULL, " \t\n");
+    if ( *fsent->mntopts != '-' )  {
+	fsent->fstype = fsent->mntopts;
+	fsent->mntopts = "rw";
+    } else {
+	if (!strcmp(fsent->mntopts, "-r")) {
+	    fsent->mntopts = "ro";
+	}
+    }
+    if (dp = strchr(fsent->fstype, ',')) {
+	*dp++ = '\0';
+	strcpy(opts, fsent->mntopts);
+	strcat(opts, ",");
+	strcat(opts, dp);
+	fsent->mntopts = opts;
+    }
+
+    dp = fsent->fstype;
+    while (*dp) 
+	*ep++ = tolower(*dp++);
+
+    fsent->fstype = lfsnam;
+
+    if (!strncmp(fsent->fstype, "hs", 2))
+	fsent->fstype = "iso9660";
+
+    fsent->freq = 0;
+    fsent->passno = 0;
+
+    return 1;
+}
+
 #else /* } { */
 
 #define GETFSENT_TYPE "undefined"

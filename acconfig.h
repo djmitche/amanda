@@ -71,6 +71,9 @@
 #undef OSF1_VDUMP
 #undef STATFS_OSF1
 
+/* For XENIX/ISC systems.  */
+#undef XENIX_TAPEIO
+
 /*
  * Decide whether to invoke rundump (setuid-root) or DUMP program directly.
  * This is enabled for OSF1_VDUMP, for instance.

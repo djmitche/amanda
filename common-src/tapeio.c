@@ -80,8 +80,54 @@ int tapefd, count;
     return ioctl(tapefd, STIOCTOP, &st);
 }
 
+#else /* AIX_TAPEIO */
+#ifdef XENIX_TAPEIO
 
-#else	/* ! AIX_TAPEIO */
+#include <sys/tape.h>
+
+int tapefd_rewind(tapefd)
+int tapefd;
+{
+    int st;
+    return ioctl(tapefd, MT_REWIND, &st);
+}
+
+int tapefd_fsf(tapefd, count)
+int tapefd, count;
+/*
+ * fast-forwards the tape device count files.
+ */
+{
+    int st;
+    int c;
+    int status;
+
+    for ( c = count; c ; c--)
+	if (status = ioctl(tapefd, MT_RFM, &st))
+	    break;
+
+    return status;
+}
+
+int tapefd_weof(tapefd, count)
+int tapefd, count;
+/*
+ * write <count> filemarks on the tape.
+ */
+{
+    int st;
+    int c;
+    int status;
+
+    for ( c = count; c ; c--)
+	if (status = ioctl(tapefd, MT_WFM, &st))
+	    break;
+
+    return status;
+}
+
+
+#else	/* ! AIX_TAPEIO && !XENIX_TAPEIO */
 
 
 #include <sys/mtio.h>
@@ -127,7 +173,9 @@ int tapefd, count;
 
 
 
+#endif /* !XENIX_TAPEIO */
 #endif /* !AIX_TAPEIO */
+
 
 
 int tape_open(filename, mode)

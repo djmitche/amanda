@@ -817,6 +817,9 @@ case "$target" in
 			AC_DEFINE(STATFS_ULTRIX)
 			AC_DEFINE(DUMP_RETURNS_1)
 			;;
+  i386-pc-isc4*)	
+			AC_DEFINE(XENIX_TAPEIO)
+			;;
   *)
 			cat <<END
 
@@ -1080,6 +1083,7 @@ AC_CHECK_HEADERS(\
 	grp.h \
 	history.h \
 	mntent.h \
+	mnttab.h \
 	ndbm.h \
 	netdb.h \
 	readline.h \
