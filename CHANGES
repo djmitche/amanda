@@ -1,5 +1,9 @@
 Version 2.4.0
 
+	exclude-list support was broken, the filename was not copied
+	to the gnutar argument list.
+	-Stefan Bohm <Stefan.Bohm@rp-online.de>
+
 	chg-chio still thought it was seagate-changer, and contained a
 	few bugs.  -Tim Tsai <tim@futuresouth.com>
 

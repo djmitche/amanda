@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.55 1998/01/12 22:32:30 blair Exp $
+ * $Id: sendsize.c,v 1.56 1998/01/13 13:35:17 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -1029,10 +1029,15 @@ notincremental:
 	/* do nothing */
 #define sc "--exclude-list"
     } else if (strncmp(efile, sc, sizeof(sc)-1)==0) {
-	efile = newstralloc(efile, "--exclude-from");
+	char *t;
+
+	t = stralloc2("--exclude-from", efile+sizeof(sc)-1);
+	afree(efile);
+	efile = t;
+	t = NULL;
 #undef sc
 #define sc "--exclude-file"
-    } else if (strncmp(efile, "--exclude-file", strlen("--exclude-file"))==0) {
+    } else if (strncmp(efile, sc, sizeof(sc)-1)==0) {
 	char *t;
 
 	t = stralloc2("--exclude", efile+sizeof(sc)-1);
