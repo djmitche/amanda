@@ -1,5 +1,8 @@
 Version 2.4.0
 
+	fixed tape block size of vxdump on HPUX 10.20.
+	-Andrew Ivanov <ivanov@mics.msu.su>
+
 	Use "a" mode instead of "w" for the fdopen of the debug file.
 	-David Lamkin <drl@net-tel.co.uk>
 
