@@ -578,32 +578,37 @@ disklist_t *qp;
     /* determine which estimates to get */
 
     i = 0;
+
     if(!(dp->dtype->skip_full || dp->dtype->no_full))
 	ep->level[i++] = 0;
-    if(ep->last_level == -1) {		/* a new disk */
-	if(dp->dtype->no_full)
-	    ep->level[i++] = 1;
-	else assert(!dp->dtype->skip_full);	/* should be handled above */
-    }
-    else {				/* not new, pick normally */
-	curr_level = ep->last_level;
-	if(curr_level == 0)
-	    ep->level[i++] = 1;
-	else {
-	    ep->level[i++] = curr_level;
-	    /*
-	     * If last time we dumped less than the threshold, then this
-	     * time we will too, OR the extra size will be charged to both
-	     * cur_level and cur_level + 1, so we will never bump.  Also,
-	     * if we haven't been at this level 2 days, or the dump failed
-	     * last night, we can't bump.
-	     */
-	    if((inf.inf[curr_level].size == 0 || /* no data, try it anyway */
-		(inf.inf[curr_level].size > bump_thresh(curr_level))) &&
-		ep->level_days >= getconf_int(CNF_BUMPDAYS))
-		ep->level[i++] = curr_level+1;
+
+    if(!dp->dtype->skip_incr) {
+	if(ep->last_level == -1) {		/* a new disk */
+	    if(dp->dtype->no_full)
+		ep->level[i++] = 1;
+	    else assert(!dp->dtype->skip_full);	/* should be handled above */
+	}
+	else {				/* not new, pick normally */
+	    curr_level = ep->last_level;
+	    if(curr_level == 0)
+		ep->level[i++] = 1;
+	    else {
+		ep->level[i++] = curr_level;
+		/*
+		 * If last time we dumped less than the threshold, then this
+		 * time we will too, OR the extra size will be charged to both
+		 * cur_level and cur_level + 1, so we will never bump.  Also,
+		 * if we haven't been at this level 2 days, or the dump failed
+		 * last night, we can't bump.
+		 */
+		if((inf.inf[curr_level].size == 0 || /* no data, try it anyway */
+		   (inf.inf[curr_level].size > bump_thresh(curr_level))) &&
+		   ep->level_days >= getconf_int(CNF_BUMPDAYS))
+		    ep->level[i++] = curr_level+1;
+	    }
 	}
     }
+
     while(i < MAX_LEVELS) {	/* mark end of estimates */
 	ep->level[i] = -1;
 	ep->est_size[i] = -1;
