@@ -24,11 +24,12 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.9 2002/03/30 19:02:56 jrjackson Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.10 2002/03/30 20:07:39 jrjackson Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
 #include "amanda.h"
+#include "arglist.h"
 #include "conffile.h"
 #include "diskfile.h"
 #include "tapefile.h"
@@ -1695,14 +1696,12 @@ disk_t *dp;
 ** more balanced cycle.
 */
 
-static void delay_remove_dump P((disk_t *dp, char *errstr));
-static void delay_modify_dump P((disk_t *dp, char *errstr));
+static void delay_one_dump P((disk_t *dp, int delete, ...));
 
 static void delay_dumps P((void))
 /* delay any dumps that will not fit */
 {
     disk_t *dp, *ndp, *preserve;
-    char *errbuf = NULL;
     bi_t *bi, *nbi;
     long new_total;	/* New total_size */
 
@@ -1722,41 +1721,31 @@ static void delay_dumps P((void))
     for(dp = schedq.head; dp != NULL; dp = ndp) {
 	ndp = dp->next; /* remove_disk zaps this */
 
-	if(est(dp)->dump_level == 0 && est(dp)->dump_size > tape->length) {
-	    if(est(dp)->last_level == -1 || dp->skip_incr) {
-		errbuf = vstralloc(dp->host->hostname,
-				   " ", dp->name,
-				   " ", datestamp,
-				   " ", "0",
-				   " [dump larger than tape,",
-				   " but cannot incremental dump",
-				   " ", dp->skip_incr ? "skip-incr": "new",
-				   " disk]",
-				   NULL);
-		delay_remove_dump(dp, errbuf);
-	    }
-	    else {
-		errbuf = vstralloc("Dump larger than tape:",
-				   " full dump of ", dp->host->hostname,
-				   ":", dp->name, " delayed.",
-				   NULL);
-		delay_modify_dump(dp, errbuf);
-	    }
+	if (est(dp)->dump_size <= tape->length) {
+	    continue;
 	}
 
-	if(est(dp)->dump_level != 0 && est(dp)->dump_size > tape->length) {
-	    char level_str[NUM_STR_SIZE];
-
-	    ap_snprintf(level_str, sizeof(level_str),
-			"%d", est(dp)->dump_level);
-	    errbuf = vstralloc(dp->host->hostname,
-			       " ", dp->name,
-			       " ", datestamp,
-			       " ", level_str,
-			       " ", "[dump larger than tape,",
-			       " ", "skipping incremental]",
+	if(est(dp)->dump_level == 0) {
+	    if(est(dp)->last_level == -1 || dp->skip_incr) {
+		delay_one_dump(dp, 1,
+			       "dump larger than tape,",
+			       "but cannot incremental dump",
+			       dp->skip_incr ? "skip-incr": "new",
+			       "disk",
 			       NULL);
-	    delay_remove_dump(dp, errbuf);
+	    }
+	    else {
+		delay_one_dump(dp, 0,
+			       "dump larger than tape,",
+			       "full dump delayed",
+			       NULL);
+	    }
+	}
+	else {
+	    delay_one_dump(dp, 1,
+			   "dump larger than tape,",
+			   "skipping incremental",
+			   NULL);
 	}
     }
 
@@ -1785,23 +1774,18 @@ static void delay_dumps P((void))
 
 	if(est(dp)->dump_level == 0 && dp != preserve) {
 	    if(est(dp)->last_level == -1 || dp->skip_incr) {
-		errbuf = vstralloc(dp->host->hostname,
-				   " ", dp->name,
-				   " ", datestamp,
-				   " ", "0",
-				   " [dumps too big,",
-				   " but cannot incremental dump",
-				   " ", dp->skip_incr ? "skip-incr": "new",
-				   " disk]",
-				   NULL);
-		delay_remove_dump(dp, errbuf);
+		delay_one_dump(dp, 1,
+			       "dumps too big,",
+			       "but cannot incremental dump",
+			       dp->skip_incr ? "skip-incr": "new",
+			       "disk",
+			       NULL);
 	    }
 	    else {
-		errbuf = vstralloc("Dump too big for tape:",
-				   " full dump of ", dp->host->hostname,
-				   ":", dp->name, " delayed.",
-				   NULL);
-		delay_modify_dump(dp, errbuf);
+		delay_one_dump(dp, 0,
+			       "dumps too big,",
+			       "full dump delayed",
+			       NULL);
 	    }
 	}
     }
@@ -1820,18 +1804,10 @@ static void delay_dumps P((void))
 	ndp = dp->prev;
 
 	if(est(dp)->dump_level != 0) {
-	    char level_str[NUM_STR_SIZE];
-
-	    ap_snprintf(level_str, sizeof(level_str),
-			"%d", est(dp)->dump_level);
-	    errbuf = vstralloc(dp->host->hostname,
-			       " ", dp->name,
-			       " ", datestamp,
-			       " ", level_str,
-			       " ", "[dumps way too big,",
-			       " ", "must skip incremental dumps]",
-			       NULL);
-	    delay_remove_dump(dp, errbuf);
+	    delay_one_dump(dp, 1,
+			   "dumps way too big,",
+			   "must skip incremental dumps",
+			   NULL);
 	}
     }
 
@@ -1898,7 +1874,7 @@ static void delay_dumps P((void))
 	}
 	else {
 	    dp = bi->dp;
-	    fprintf(stderr, "  delay: %s  Now at level %d.\n",
+	    fprintf(stderr, "  delay: %s now at level %d\n",
 		bi->errstr, est(dp)->dump_level);
 	    log_add(L_INFO, "%s", bi->errstr);
 	}
@@ -1908,24 +1884,32 @@ static void delay_dumps P((void))
 	amfree(bi);
     }
 
-    amfree(errbuf);
-
     fprintf(stderr, "  delay: Total size now %ld.\n", total_size);
 
     return;
 }
 
 
-static void delay_remove_dump(dp, errstr)
-disk_t *dp;
-char *errstr;
-/* Remove a dump - keep track on the bi q */
+/*
+ * Remove a dump or modify it from full to incremental.
+ * Keep track of it on the bi q in case we can add it back later.
+ */
+arglist_function1(static void delay_one_dump,
+		  disk_t *, dp,
+		  int, delete)
 {
     bi_t *bi;
+    va_list argp;
+    char level_str[NUM_STR_SIZE];
+    char *sep;
+    char *next;
+
+    arglist_start(argp, delete);
 
     total_size -= tt_blocksize_kb + est(dp)->dump_size + tape_mark;
-    if(est(dp)->dump_level == 0)
+    if(est(dp)->dump_level == 0) {
 	total_lev0 -= (double) est(dp)->dump_size;
+    }
 
     bi = alloc(sizeof(bi_t));
     bi->next = NULL;
@@ -1936,47 +1920,32 @@ char *errstr;
 	biq.tail->next = bi;
     biq.tail = bi;
 
-    bi->deleted = 1;
+    bi->deleted = delete;
     bi->dp = dp;
     bi->level = est(dp)->dump_level;
     bi->size = est(dp)->dump_size;
-    bi->errstr = stralloc(errstr);
 
-    remove_disk(&schedq, dp);
+    ap_snprintf(level_str, sizeof(level_str), "%d", est(dp)->dump_level);
+    bi->errstr = vstralloc(dp->host->hostname,
+			   " ", dp->name,
+			   " ", datestamp ? datestamp : "?",
+			   " ", level_str,
+			   NULL);
+    sep = " [";
+    while ((next = arglist_val(argp, char *)) != NULL) {
+	bi->errstr = newvstralloc(bi->errstr, bi->errstr, sep, next, NULL);
+	sep = " ";
+    }
+    strappend(bi->errstr, "]");
+    arglist_end(argp);
 
-    return;
-}
-
-
-static void delay_modify_dump(dp, errstr)
-disk_t *dp;
-char *errstr;
-/* Modify a dump from total to incr - keep track on the bi q */
-{
-    bi_t *bi;
-
-    total_size -= est(dp)->dump_size;
-    total_lev0 -= (double) est(dp)->dump_size;
-
-    bi = alloc(sizeof(bi_t));
-    bi->next = NULL;
-    bi->prev = biq.tail;
-    if (biq.tail == NULL)
-	biq.head = bi;
-    else
-	biq.tail->next = bi;
-    biq.tail = bi;
-
-    bi->deleted = 0;
-    bi->dp = dp;
-    bi->level = est(dp)->dump_level;
-    bi->size = est(dp)->dump_size;
-    bi->errstr = stralloc(errstr);
-
-    est(dp)->dump_level = est(dp)->degr_level;
-    est(dp)->dump_size = est(dp)->degr_size;
-
-    total_size += est(dp)->dump_size;
+    if (delete) {
+	remove_disk(&schedq, dp);
+    } else {
+	est(dp)->dump_level = est(dp)->degr_level;
+	est(dp)->dump_size = est(dp)->degr_size;
+	total_size += tt_blocksize_kb + est(dp)->dump_size + tape_mark;
+    }
 
     return;
 }
