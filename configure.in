@@ -1207,7 +1207,7 @@ if test ! -z "$SAMBA_CLIENT"; then
 		SAMBA_CLIENT=
 		;;
   esac
-  AC_DEFINE(SAMBA_VERSION, $smbversion,
+  AC_DEFINE_UNQUOTED(SAMBA_VERSION, $smbversion,
   [Not the actual samba version, just a number that should be increased whenever we start to use a certain samba feature])
 
 fi
