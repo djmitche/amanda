@@ -1,5 +1,10 @@
 1998-08-06  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* tape-src/tapetype.c (initrandombytes): use random() instead of
+	rand(), its low-order bits are more random
+	(main): call srandom(seed) instead of srand(seed)
+	(USE_RAND): if defined, reverts to using rand() and srand(seed)
+
 	* docs/FAQ: some notes about driving real tape changers
 
 1998-08-05  Alexandre Oliva  <oliva@dcc.unicamp.br>
