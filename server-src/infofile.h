@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.h,v 1.11 1998/12/03 03:03:25 martinea Exp $
+ * $Id: infofile.h,v 1.12 2004/08/02 18:53:31 martinea Exp $
  *
  * interface for current info file reading code
  */
@@ -39,6 +39,7 @@
 #define EPOCH		((time_t)0)
 
 #define AVG_COUNT	3
+#define NB_HISTORY	100
 #define newperf(ary,f)	( ary[2]=ary[1], ary[1]=ary[0], ary[0]=(f) )
 
 typedef struct stats_s {
@@ -51,6 +52,13 @@ typedef struct stats_s {
     int filenum;		/* file number on tape */
     char label[MAX_LABEL];	/* tape label */
 } stats_t;
+
+typedef struct history_s {
+    int level;			/* level of dump */
+    long size;			/* original size of dump in kbytes */
+    long csize;			/* compressed size of dump in kbytes */
+    time_t date;		/* time of dump */
+} history_t;
 
 typedef struct perf_s {
     float rate[AVG_COUNT];
@@ -67,6 +75,7 @@ typedef struct info_s {
     perf_t  incr;
     stats_t inf[DUMP_LEVELS];
     int last_level, consecutive_runs;
+    history_t history[NB_HISTORY+1];
 } info_t;
 
 

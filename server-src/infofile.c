@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.50 1999/11/10 14:35:56 oliva Exp $
+ * $Id: infofile.c,v 1.51 2004/08/02 18:53:31 martinea Exp $
  *
  * manage current info file
  */
@@ -142,6 +142,8 @@ info_t *info;
     perf_t *pp;
     char *s;
     int ch;
+    int nb_history;
+    int i;
 
     /* get version: command: lines */
 
@@ -200,6 +202,9 @@ info_t *info;
 	    return 0;				/* normal end of record */
 	}
 	else if (strncmp(line,"last_level:",11) == 0) {
+	    break;				/* normal */
+	}
+	else if (strncmp(line,"history:",8) == 0) {
 	    break;				/* normal */
 	}
 	memset(&onestat, 0, sizeof(onestat));
@@ -276,7 +281,64 @@ info_t *info;
     if(rc > 2) return -2;
     rc = 0;
 
-    if((line = agets(infof)) == NULL) return -1;
+    nb_history = 0;
+    for(i=0;i<=NB_HISTORY+1;i++) {
+	info->history[i].level = -2;
+    }
+    for(rc = -2; (line = agets(infof)) != NULL; free(line)) {
+	history_t onehistory;	/* one history record */
+	long date;
+
+	if(line[0] == '/' && line[1] == '/') {
+	    info->history[nb_history].level = -2;
+	    rc = 0;
+	    amfree(line);
+	    return 0;				/* normal end of record */
+	}
+
+	memset(&onehistory, 0, sizeof(onehistory));
+
+	s = line;
+	ch = *s++;
+
+#define sc "history:"
+	if(strncmp(line, sc, sizeof(sc)-1) != 0) {
+	    break;
+	}
+	s += sizeof(sc)-1;
+	ch = s[-1];
+#undef sc
+
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf((s - 1), "%d", &onehistory.level) != 1) {
+	    break;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf((s - 1), "%ld", &onehistory.size) != 1) {
+	    break;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf((s - 1), "%ld", &onehistory.csize) != 1) {
+	    break;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf((s - 1), "%ld", &date) != 1) {
+	    break;
+	}
+	skip_integer(s, ch);
+
+	onehistory.date = date;	/* time_t not guarranteed to be long */
+
+	info->history[nb_history++] = onehistory;
+    }
+
+    if((line = agets(infof)) == NULL) return -1; /* // line */
     amfree(line);
 
     return rc;
@@ -336,6 +398,12 @@ info_t *info;
     }
 
     fprintf(infof, "last_level: %d %d\n", info->last_level, info->consecutive_runs);
+
+    for(i=0;info->history[i].level > -1;i++) {
+	fprintf(infof, "history: %d %ld %ld %ld\n",info->history[i].level,
+		info->history[i].size, info->history[i].csize,
+		info->history[i].date);
+    }
     fprintf(infof, "//\n");
 
     return 0;
@@ -495,6 +563,12 @@ info_t *info;
     info->last_level = -1;
     info->consecutive_runs = -1;
 
+    for(i=0;i<=NB_HISTORY;i++) {
+	info->history[i].level = -2;
+	info->history[i].size = 0;
+	info->history[i].csize = 0;
+	info->history[i].date = 0;
+    }
     return;
 }
 
