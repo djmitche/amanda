@@ -1,3 +1,6 @@
+	Added support for printing tape labels.
+	-Scott Mesches <mesches@allison.Colorado.EDU>
+
 	Do not let amrecover die because of SIGPIPE if the pager terminates
 	early during a long listing.  Use the PAGER environment variable if
 	available, else "more".  -JJ

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.15 1998/01/11 21:59:26 jrj Exp $
+ * $Id: conffile.h,v 1.16 1998/03/14 12:45:07 amcore Exp $
  *
  * interface for config file reading code
  */
@@ -43,7 +43,8 @@ typedef enum conf_e {
     CNF_INDEXDIR, CNF_TAPETYPE, CNF_DUMPCYCLE, CNF_MAXCYCLE, CNF_TAPECYCLE,
     CNF_DISKSIZE, CNF_NETUSAGE, CNF_INPARALLEL, CNF_TIMEOUT,
     CNF_BUMPSIZE, CNF_BUMPMULT, CNF_BUMPDAYS, CNF_TPCHANGER, CNF_RUNTAPES,
-    CNF_MAXDUMPS, CNF_ETIMEOUT
+    CNF_MAXDUMPS, CNF_ETIMEOUT,
+    CNF_PRINTER,
 } confparm_t;
 
 typedef enum auth_e {
@@ -57,12 +58,14 @@ typedef struct tapetype_s {
     char *name;
 
     char *comment;
+    char *lbl_templ;
     unsigned long length;
     unsigned long filemark;
     long speed;
 
     /* seen flags */
     int s_comment;
+    int s_lbl_templ;
     int s_length;
     int s_filemark;
     int s_speed;

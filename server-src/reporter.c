@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.23 1998/03/07 18:07:26 martinea Exp $
+ * $Id: reporter.c,v 1.24 1998/03/14 12:45:08 amcore Exp $
  *
  * nightly Amanda Report generator
  */
@@ -97,6 +97,10 @@ char *tapestart_error = NULL;
 
 FILE *logfile, *mailf;
 
+#define PSLOGFILE "/tmp/reporter.out.ps"
+FILE *template_file, *postscript;
+char *printer;
+
 disklist_t *diskq;
 disklist_t sortq;
 
@@ -111,6 +115,7 @@ int contline_next P((void));
 void addline P((line_t **lp, char *str));
 int main P((int argc, char **argv));
 
+void copy_template_file P((char *lbl_templ));
 void setup_data P((void));
 void handle_start P((void));
 void handle_finish P((void));
@@ -167,6 +172,7 @@ int argc;
 char **argv;
 {
     char *logfname, *subj_str = NULL;
+    tapetype_t *tp;
     int fd;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
@@ -252,8 +258,12 @@ char **argv;
 			 " ", "MAIL REPORT FOR",
 			 " ", nicedate(datestamp ? atoi(datestamp) : 0),
 			 NULL);
+	
+    /* lookup the tapetype and printer type from the amanda.conf file. */
+    tp = lookup_tapetype(getconf_str(CNF_TAPETYPE));
+    printer = getconf_str(CNF_PRINTER);
 
-   /* open pipe to mailer */
+   /* open pipe to mailer (and print spooler if necessary) */
 
     if(testing) {
 	/* just output to a temp file when testing */
@@ -262,6 +272,14 @@ char **argv;
 	    error("could not open tmpfile: %s", strerror(errno));
 	fprintf(mailf, "To: %s\n", getconf_str(CNF_MAILTO));
 	fprintf(mailf, "Subject: %s\n\n", subj_str);
+
+	/* if the postscript_label_template (tp->lbl_templ) field is not */
+	/* the empty string (i.e. it is set to something), open the      */
+	/* postscript debugging file for writing.                        */
+	if ((strcmp(tp->lbl_templ,"")) != 0) {
+	  if ((postscript = fopen(PSLOGFILE,"w")) == NULL)
+	    error("could not open PSLOGFILE: %s", strerror(errno));
+	}
     }
     else {
 	char *cmd = NULL;
@@ -272,9 +290,27 @@ char **argv;
 			NULL);
 	if((mailf = popen(cmd, "w")) == NULL)
 	    error("could not open pipe to \"%s\": %s", cmd, strerror(errno));
-	afree(cmd);
+
+	*cmd = NULL;
+	if (strcmp(printer,"") != 0)
+	  cmd = vstralloc("lpr"," -P", printer, NULL);
+	else
+	  cmd = vstralloc("lpr", NULL);
+
+	if ((strcmp(tp->lbl_templ,"")) != 0)
+	  if ((postscript = popen(cmd,"w")) == NULL)
+	    error("could not open pipe to \"%s\": %s", cmd, strerror(errno));
     }
     afree(subj_str);
+
+    if (postscript) {
+      copy_template_file(tp->lbl_templ);
+      /* generate a few elements */
+      fprintf(postscript,"(%s) DrawDate\n\n",
+	      nicedate(datestamp ? atoi(datestamp) : 0));
+      fprintf(postscript,"(Amanda Version %s) DrawVers\n",version());
+      fprintf(postscript,"(%s) DrawTitle\n",tape_labels ? tape_labels : "");
+    }
 
     if(!got_finish) fputs("*** THE DUMPS DID NOT FINISH PROPERLY!\n\n", mailf);
 
@@ -288,6 +324,8 @@ char **argv;
     if(!(amflush_run && degraded_mode)) {
 	output_stats();
     }
+    
+
     if(errdet) {
 	fprintf(mailf,"\n\014\nFAILED AND STRANGE DUMP DETAILS:\n");
 	output_lines(errdet, mailf);
@@ -304,10 +342,15 @@ char **argv;
     fprintf(mailf,"\n(brought to you by Amanda version %s)\n",
 	    version());
 
-    if(testing)
+    if (postscript) fprintf(postscript,"\nshowpage\n");
+
+    if(testing) {
 	afclose(mailf);
+	afclose(postscript);
+    }
     else {
 	apclose(mailf);
+	apclose(postscript);
 	log_rename(datestamp);
     }
 
@@ -435,6 +478,20 @@ void output_stats()
     fputs("    ", mailf);
     divzero_wide(mailf, stats[1].outsize,stats[1].taper_time);
     putc('\n', mailf);
+
+    if (postscript) {
+      fprintf(postscript,"(Total Size:       %6.1f MB) DrawStat\n",
+	      mb(stats[2].outsize));
+      fprintf(postscript, "(Tape Used (%%)       ");
+      divzero(postscript, pct(stats[2].outsize+marksize*stats[2].disks),
+	      tapesize);
+      fprintf(postscript," %%) DrawStat\n");
+      fprintf(postscript, "(Compression Ratio:  ");
+      divzero(postscript, pct(stats[2].coutsize),stats[2].corigsize);
+      fprintf(postscript," %%) DrawStat\n");
+      fprintf(postscript,"(Filesystems Dumped: %4d) DrawStat\n",
+	      stats[2].disks);
+    }
 }
 
 /* ----- */
@@ -614,6 +671,11 @@ void output_summary()
 			mnsc(data(dp)->dumper.sec), data(dp)->dumper.kps);
 	    else
 		fprintf(mailf, "    N/A    N/A ");
+
+	    if ((postscript) && (data(dp)->taper.success)) {
+		fprintf(postscript,"(%s) (%s) (%d) (%d) DrawHost\n",
+			dp->host->hostname, dp->name, data(dp)->level);
+	    }
 
 	    if(data(dp)->taper[i].success)
 		fprintf(mailf, " %4d:%02d %6.1f",
@@ -1204,4 +1266,28 @@ prefix (host, disk, level)
 		       level != -987 ? number : "",
 		       NULL);
     return str;
+}
+
+void copy_template_file(lbl_templ)
+char *lbl_templ;
+{
+  char buf[BUFSIZ];
+  int numread, numwritten;
+
+  if ((template_file = fopen(lbl_templ,"r")) == NULL)
+    error("could not open template file \"%s\":%s",
+	  lbl_templ ,strerror(errno));
+
+  while ((numread = (read((fileno(template_file)), buf, BUFSIZ))) > 0) {
+    if ((numwritten = (write((fileno(postscript)), buf, numread)))
+	!= numread)
+      if (numread < 0)
+	error("error copying template file: %s",strerror(errno));
+      else
+	error("error copying template file: short write (r:%d w:%d)",
+	      numread, numwritten);
+  }
+  if (numread < 0)
+    error("error reading template file: %s",strerror(errno));
+  fclose(template_file);
 }

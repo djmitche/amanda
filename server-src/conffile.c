@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.38 1998/02/26 19:25:07 jrj Exp $
+ * $Id: conffile.c,v 1.39 1998/03/14 12:45:05 amcore Exp $
  *
  * read configuration file
  */
@@ -66,6 +66,7 @@ typedef enum {
     DISKDIR, DISKSIZE, INDEXDIR, NETUSAGE, INPARALLEL, TIMEOUT,
     TPCHANGER, RUNTAPES,
     DEFINE, DUMPTYPE, TAPETYPE, INTERFACE,
+    PRINTER,
 
     /* holding disk */
     COMMENT, DIRECTORY, USE,
@@ -78,7 +79,7 @@ typedef enum {
     EXCLUDE, KENCRYPT, IGNORE, COMPRATE,
 
     /* tape type */
-    /*COMMENT,*/ FILEMARK, LENGTH, SPEED,
+    /*COMMENT,*/ LBL_TEMPL, FILEMARK, LENGTH, SPEED,
 
     /* network interface */
     /*COMMENT, USE,*/
@@ -133,6 +134,7 @@ int num_holdingdisks;
 static val_t conf_org;
 static val_t conf_mailto;
 static val_t conf_dumpuser;
+static val_t conf_printer;
 static val_t conf_tapedev;
 static val_t conf_tpchanger;
 static val_t conf_chngrdev;
@@ -173,6 +175,7 @@ static dumptype_t dpcur;
 static interface_t ifcur;
 
 static int seen_org, seen_mailto, seen_dumpuser;
+static int seen_printer;
 static int seen_tapedev, seen_tpchanger, seen_chngrdev, seen_chngrfile;
 static int seen_labelstr, seen_runtapes, seen_maxdumps;
 static int seen_tapelist, seen_infofile, seen_diskfile, seen_diskdir;
@@ -284,6 +287,7 @@ struct byname {
     { "ORG", CNF_ORG, STRING },
     { "MAILTO", CNF_MAILTO, STRING },
     { "DUMPUSER", CNF_DUMPUSER, STRING },
+    { "PRINTER", CNF_PRINTER, STRING },
     { "TAPEDEV", CNF_TAPEDEV, STRING },
     { "TPCHANGER", CNF_TPCHANGER, STRING },
     { "CHANGERDEV", CNF_CHNGRDEV, STRING },
@@ -353,6 +357,7 @@ confparm_t parm;
     case CNF_ORG: return seen_org;
     case CNF_MAILTO: return seen_mailto;
     case CNF_DUMPUSER: return seen_dumpuser;
+    case CNF_PRINTER: return seen_printer;
     case CNF_TAPEDEV: return seen_tapedev;
     case CNF_TPCHANGER: return seen_tpchanger;
     case CNF_CHNGRDEV: return seen_chngrdev;
@@ -435,6 +440,7 @@ confparm_t parm;
     case CNF_ORG: r = conf_org.s; break;
     case CNF_MAILTO: r = conf_mailto.s; break;
     case CNF_DUMPUSER: r = conf_dumpuser.s; break;
+    case CNF_PRINTER: r = conf_printer.s; break;
     case CNF_TAPEDEV: r = conf_tapedev.s; break;
     case CNF_TPCHANGER: r = conf_tpchanger.s; break;
     case CNF_CHNGRDEV: r = conf_chngrdev.s; break;
@@ -572,6 +578,8 @@ static void init_defaults()
     /* defaults for internal variables */
 
     seen_org = seen_mailto = seen_dumpuser = seen_tapedev = 0;
+    seen_printer = 0;
+    conf_printer.s = "";
     seen_tpchanger = seen_chngrdev = seen_chngrfile = 0;
     seen_labelstr = seen_runtapes = seen_maxdumps = 0;
     seen_tapelist = seen_infofile = seen_diskfile = seen_diskdir = 0;
@@ -707,6 +715,7 @@ keytab_t main_keytable[] = {
     { "DUMPCYCLE", DUMPCYCLE },
     { "DUMPTYPE", DUMPTYPE },
     { "DUMPUSER", DUMPUSER },
+    { "PRINTER", PRINTER },
     { "HOLDINGDISK", HOLDING },
     { "INCLUDEFILE", INCLUDEFILE },
     { "INDEXDIR", INDEXDIR },
@@ -755,6 +764,7 @@ static int read_confline()
     case ORG:       get_simple(&conf_org,       &seen_org,       STRING); break;
     case MAILTO:    get_simple(&conf_mailto,    &seen_mailto,    STRING); break;
     case DUMPUSER:  get_simple(&conf_dumpuser,  &seen_dumpuser,  STRING); break;
+    case PRINTER:   get_simple(&conf_printer,   &seen_printer,   STRING); break;
     case DUMPCYCLE: get_simple(&conf_dumpcycle, &seen_dumpcycle, INT);    break;
     case MAXCYCLE:  get_simple(&conf_maxcycle,  &seen_maxcycle,  INT);    break;
     case TAPECYCLE: get_simple(&conf_tapecycle, &seen_tapecycle, INT);    break;
@@ -1206,6 +1216,7 @@ static void copy_dumptype()
 
 keytab_t tapetype_keytable[] = {
     { "COMMENT", COMMENT },
+    { "LBL-TEMPL", LBL_TEMPL },
     { "FILEMARK", FILEMARK },
     { "LENGTH", LENGTH },
     { "SPEED", SPEED },
@@ -1246,6 +1257,9 @@ static void get_tapetype()
 	case COMMENT:
 	    get_simple((val_t *)&tpcur.comment, &tpcur.s_comment, STRING);
 	    break;
+	case LBL_TEMPL:
+	    get_simple((val_t *)&tpcur.lbl_templ, &tpcur.s_lbl_templ, STRING);
+	    break;
 	case LENGTH:
 	    get_simple((val_t *)&tpcur.length, &tpcur.s_length, INT);
 	    break;
@@ -1277,11 +1291,13 @@ static void get_tapetype()
 static void init_tapetype_defaults()
 {
     tpcur.comment = "";
+    tpcur.lbl_templ = "";
     tpcur.length = 2000 * 1024;
     tpcur.filemark = 1000;
     tpcur.speed = 200;
 
     tpcur.s_comment = 0;
+    tpcur.s_lbl_templ = 0;
     tpcur.s_length = 0;
     tpcur.s_filemark = 0;
     tpcur.s_speed = 0;
@@ -1320,6 +1336,7 @@ static void copy_tapetype()
 #define ttcopy(v,s) if(tp->s) { tpcur.v = tp->v; tpcur.s = tp->s; }
 
     ttcopy(comment, s_comment);
+    ttcopy(lbl_templ, s_lbl_templ);
     ttcopy(length, s_length);
     ttcopy(filemark, s_filemark);
     ttcopy(speed, s_speed);
@@ -2123,6 +2140,7 @@ dump_configuration(filename)
     printf("conf_org = \"%s\"\n", getconf_str(CNF_ORG));
     printf("conf_mailto = \"%s\"\n", getconf_str(CNF_MAILTO));
     printf("conf_dumpuser = \"%s\"\n", getconf_str(CNF_DUMPUSER));
+    printf("conf_printer = \"%s\"\n", getconf_str(CNF_PRINTER));
     printf("conf_tapedev = \"%s\"\n", getconf_str(CNF_TAPEDEV));
     printf("conf_tpchanger = \"%s\"\n", getconf_str(CNF_TPCHANGER));
     printf("conf_chngrdev = \"%s\"\n", getconf_str(CNF_CHNGRDEV));
@@ -2160,6 +2178,7 @@ dump_configuration(filename)
     for(tp = tapelist; tp != NULL; tp = tp->next) {
 	printf("\nTAPETYPE %s:\n", tp->name);
 	printf("	COMMENT \"%s\"\n", tp->comment);
+	printf("	LBL_TEMPL %s\n", tp->lbl_templ);
 	printf("	LENGTH %u\n", tp->length);
 	printf("	FILEMARK %u\n", tp->filemark);
 	printf("	SPEED %d\n", tp->speed);
