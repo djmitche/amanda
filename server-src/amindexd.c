@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.25 1998/01/20 20:47:14 amcore Exp $
+ * $Id: amindexd.c,v 1.26 1998/01/26 18:38:32 jrj Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -393,7 +393,7 @@ char *config;
     conf_dir = vstralloc(CONFIG_DIR, "/", config, NULL);
     if (chdir(conf_dir) == -1)
     {
-	reply(501, "Couldn't cd into config dir.  Misconfiguration?");
+	reply(501, "Couldn't cd into %s.  Misconfiguration?", conf_dir);
 	afree(conf_dir);
 	return -1;
     }
@@ -402,7 +402,7 @@ char *config;
     /* read conffile */
     if (read_conffile(CONFFILE_NAME))
     {
-	reply(501, "Couldn't read config file!");
+	reply(501, "Couldn't read config file %s/%s!", conf_dir, CONFFILE_NAME);
 	return -1;
     }
 
