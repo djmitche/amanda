@@ -1,3 +1,7 @@
+1999-11-11  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* docs/FAQ: Sometimes FQDNs are wrong for amandahosts.
+
 1999-11-10 John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/amindexd.c (build_disk_table): need to clear the old
@@ -610,7 +614,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.306 1999/11/11 01:05:09 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.307 1999/11/11 23:43:47 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

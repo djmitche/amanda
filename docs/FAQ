@@ -134,16 +134,17 @@ configured as a UDP service; check /etc/services and /etc/inetd.conf.
 Q: Why does `amcheck' say `access as <username> not allowed...'
 
 A: There must be something wrong with .amandahosts configuration (or
-.rhosts, if you have not configured --with-amandahosts).
+.rhosts, if you have configured --without-amandahosts).
 
    First, if the <username> is not what you expect (i.e., not what you
 have specified in the --with-user flag, at configure time), check the
 inetd configuration file: you must have specified the wrong username
 there.
 
-   Make sure you specify a fully-qualified domain name in
-.amandahosts/.rhosts; aliases are better avoided, for security
-reasons.
+   Make sure you specify the names exactly as they appear in the error
+message after the `@' sign in .amandahosts/.rhosts.  You'll need a
+fully-qualified domain name or not, depending on how your client
+resolves IP addresses to host names.
 
 
 Q: Why does `amcheck' report `ip address #.#.#.# is not in the ip list 
