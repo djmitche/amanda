@@ -1,3 +1,8 @@
+2001-04-08  Alexandre Oliva  <aoliva@redhat.com>
+
+	* client-src/getfsent.c (search_fstab): Don't skip entry just
+	because device stats failed.
+
 2001-04-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* config/config.guess: Upgrade from ftp://ftp.gnu.org/pub/gnu/config
