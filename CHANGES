@@ -1,5 +1,10 @@
 Version 2.4.0
 
+	samba-related bugfixes.
+	-Klaus Thiele <kth@becker-software.com>
+
+	xfsdump and DNS bugfixes. -martineau
+
 	exclude-list support was broken, the filename was not copied
 	to the gnutar argument list.
 	-Stefan Bohm <Stefan.Bohm@rp-online.de>
