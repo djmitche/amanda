@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.13 1997/12/16 17:52:44 jrj Exp $
+ * $Id: amandad.c,v 1.14 1997/12/16 21:38:22 amcore Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -62,8 +62,6 @@ struct service_s {
 int max_retry_count = MAX_RETRIES;
 int ack_timeout     = ACK_TIMEOUT;
 
-char response_fname[256];
-char input_fname[256];
 char errstr[30720];
 char *pname = "amandad";
 
@@ -112,7 +110,8 @@ pkt_t in_msg, out_msg, dup_msg;
 char cmd[256], base[256];
 char *pwname, **vp;
 struct passwd *pwptr;
-int f, retry_count, rc, reqlen;
+int retry_count, rc, reqlen;
+int req_pipe[2], rep_pipe[2];
 
 int main(argc, argv)
 int argc;
@@ -148,7 +147,7 @@ char **argv;
 
     /* initialize */
 
-    chdir("/tmp");
+    chdir("/");		/* someplace not world writable */
     umask(077);
     dbopen();
     {
@@ -170,14 +169,10 @@ char **argv;
     dgram_zero(&out_msg.dgram);
     dgram_socket(&out_msg.dgram, 0);
 
-    /* set up input and response filenames */
+    /* set up input and response pipes */
 
-    strncpy(input_fname, "/tmp/amandad.inpXXXXXX", sizeof(input_fname)-1);
-    input_fname[sizeof(input_fname)-1] = '\0';
-    mktemp(input_fname);
-    strncpy(response_fname, "/tmp/amandad.outXXXXXX", sizeof(response_fname)-1);
-    response_fname[sizeof(response_fname)-1] = '\0';
-    mktemp(response_fname);
+    if(pipe(req_pipe) == -1 || pipe(rep_pipe) == -1)
+      error("pipe: %s", strerror(errno));
 
 #ifdef KRB4_SECURITY
     if(argc >= 2 && !strcmp(argv[1], "-krb4")) {
@@ -293,38 +288,25 @@ char **argv;
     switch(fork()) {
     case -1: error("could not fork service: %s", strerror(errno));
 
-    default: break;	/* parent */
+    default:		/* parent */
+
+        close(req_pipe[0]);
+        close(rep_pipe[1]);
+
+        reqlen = strlen(in_msg.dgram.cur);
+        if(write(req_pipe[1], in_msg.dgram.cur, reqlen) < reqlen)
+            error("short write to child pipe");
+        close(req_pipe[1]);
+
+        break; 
+
     case 0:		/* child */
 
-	/* put packet in input file */
-
-	if((f = open(input_fname, O_WRONLY|O_CREAT|O_TRUNC,0660)) == -1)
-	    error("could not open temp file \"%s\": %s", 
-		  input_fname, strerror(errno));
-
-	dbprintf(("%s: cmd for \"%s\":\n----\n%s----\n\n", argv[0], cmd, 
-		  in_msg.dgram.cur));
-
-	reqlen = strlen(in_msg.dgram.cur);
-	if(write(f, in_msg.dgram.cur, reqlen) < reqlen)
-	    error("short write to temp file");
-	if(close(f))
-	    error("close temp file: %s", strerror(errno));
-
-	/* reopen temp file for input, response file for output */
-		  
-	if((f = open(input_fname, O_RDONLY)) == -1)
-	    error("could not open temp file \"%s\": %s", 
-		  input_fname, strerror(errno));
-	dup2(f,0);
-	close(f);
-
-	if((f = open(response_fname, O_WRONLY|O_CREAT,0660)) == -1)
-	    error("could not open temp file \"%s\": %s", 
-		  response_fname, strerror(errno));
-	dup2(f,1);
-	/* dup2(f,2); no, because of ld.so caca in the output */
-	close(f);
+        close(req_pipe[1]); 
+        close(rep_pipe[0]);
+        
+        dup2(req_pipe[0], 0);
+        dup2(rep_pipe[1], 1);
 
 #ifdef  KRB4_SECURITY
 	transfer_session_key();
@@ -333,7 +315,7 @@ char **argv;
 	/* run service */
 
 	execle(cmd, cmd, NULL, safe_env());
-	error("could not fork service: %s", strerror(errno));
+	error("could not exec service: %s", strerror(errno));
     }
 
     if(!setjmp(sigjmp))
@@ -383,16 +365,15 @@ char **argv;
     add_mutual_authenticator(&out_msg.dgram);
 #endif
 
-    /* read response packet from file: up to MAX_DGRAM bytes are sent */
+    /* read response packet from pipe: up to MAX_DGRAM bytes are sent */
 
-    if((f = open(response_fname, O_RDONLY)) < 0)
-	error("could not open response file \"%s\": %s",
-	      response_fname, strerror(errno));
-    if((rc = read(f, out_msg.dgram.cur, MAX_DGRAM-out_msg.dgram.len)) < 0)
-	error("reading response file: %s", strerror(errno));
+    if((rc = read(rep_pipe[0], out_msg.dgram.cur,
+                  MAX_DGRAM-out_msg.dgram.len)) < 0)
+        error("reading response pipe: %s", strerror(errno));
+    
     out_msg.dgram.len += rc;
     out_msg.dgram.data[out_msg.dgram.len] = '\0';
-    close(f);
+    close(rep_pipe[0]);
 
 send_response:
 
@@ -433,11 +414,6 @@ send_response:
 	}		
     }
     /* XXX log if retry count exceeded */
-
-    /* remove temp files */
-
-    unlink(input_fname);
-    unlink(response_fname);
 
     dbclose();
     return 0;
@@ -653,7 +629,7 @@ pkt_t *msg;
     }
 
     dup2(1,2);
-    chdir("/tmp");      /* now go someplace where I can drop core :-) */
+    chdir("/");		/* now go someplace where I can't drop core :-) */
     dbprintf(("bsd security check passed\n"));
     return 1;
 #else
@@ -697,7 +673,7 @@ pkt_t *msg;
     fclose(fPerm);
 
     if( amandahostsauth ) {
-	chdir("/tmp");      /* now go someplace where I can drop core :-) */
+	chdir("/");      /* now go someplace where I can't drop core :-) */
 	dbprintf(("amandahosts security check passed\n"));
 	return 1;
     }
