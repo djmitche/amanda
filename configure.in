@@ -2120,8 +2120,8 @@ AC_OUTPUT( \
 	man/amadmin.8			man/amanda.8			\
 	man/amcheck.8			man/amcleanup.8			\
 	man/amdump.8			man/amflush.8			\
-	man/amrecover.8			man/amrmtape.8			\
-	man/amlabel.8			man/Makefile			\
+	man/amlabel.8			man/amrecover.8			\
+	man/amrmtape.8			man/Makefile			\
 									\
 	recover-src/Makefile						\
 									\
