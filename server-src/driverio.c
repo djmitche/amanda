@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.35.2.1 1998/11/09 19:00:40 martinea Exp $
+ * $Id: driverio.c,v 1.35.2.2 1998/11/12 13:19:30 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -408,7 +408,7 @@ long dumpsize;
 long dumptime;
 {
     int level;
-    info_t inf;
+    info_t info;
     stats_t *infp;
     perf_t *perfp;
     int rc;
@@ -420,16 +420,16 @@ long dumptime;
 	error("could not open infofile %s: %s (%d)", getconf_str(CNF_INFOFILE),
 	      strerror(errno), rc);
 
-    get_info(dp->host->hostname, dp->name, &inf);
+    get_info(dp->host->hostname, dp->name, &info);
 
-    infp = &inf.inf[level];
+    infp = &info.inf[level];
     infp->size = origsize;
     infp->csize = dumpsize;
     infp->secs = dumptime;
 /*GS    if(dp->record)*/ infp->date = sched(dp)->timestamp;
 
-    if(level == 0) perfp = &inf.full;
-    else perfp = &inf.incr;
+    if(level == 0) perfp = &info.full;
+    else perfp = &info.incr;
 
     /* Update the stats, but only if the new values are meaningful */
     if(dp->compress != COMP_NONE && origsize != 0L) {
@@ -443,16 +443,16 @@ long dumptime;
     }
 
     if(getconf_int(CNF_RESERVE)<100) {
-	inf.command = NO_COMMAND;
+	info.command = NO_COMMAND;
     }
 
-    if(level == inf.last_level)
-	inf.consecutive_runs++;
+    if(level == info.last_level)
+	info.consecutive_runs++;
     else {
-	inf.last_level = level;
-	inf.consecutive_runs = 1;
+	info.last_level = level;
+	info.consecutive_runs = 1;
     }
-    if(put_info(dp->host->hostname, dp->name, &inf))
+    if(put_info(dp->host->hostname, dp->name, &info))
 	error("infofile update failed (%s,%s)\n", dp->host->hostname, dp->name);
 
     close_infofile();
@@ -464,7 +464,7 @@ char *label;
 int filenum;
 {
     int level;
-    info_t inf;
+    info_t info;
     stats_t *infp;
     int rc;
 
@@ -475,17 +475,17 @@ int filenum;
 	error("could not open infofile %s: %s (%d)", getconf_str(CNF_INFOFILE),
 	      strerror(errno), rc);
 
-    get_info(dp->host->hostname, dp->name, &inf);
+    get_info(dp->host->hostname, dp->name, &info);
 
-    infp = &inf.inf[level];
+    infp = &info.inf[level];
     /* XXX - should we record these two if no-record? */
     strncpy(infp->label, label, sizeof(infp->label)-1);
     infp->label[sizeof(infp->label)-1] = '\0';
     infp->filenum = filenum;
 
-    inf.command = NO_COMMAND;
+    info.command = NO_COMMAND;
 
-    if(put_info(dp->host->hostname, dp->name, &inf))
+    if(put_info(dp->host->hostname, dp->name, &info))
 	error("infofile update failed (%s,%s)\n", dp->host->hostname, dp->name);
 
     close_infofile();

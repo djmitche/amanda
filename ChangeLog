@@ -1,3 +1,31 @@
+1998-11-12  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/infofile.h (get_dumpdate): rename record parameter to info.
+	* server-src/infofile.h (get_info): rename record parameter to info.
+	* server-src/infofile.h (put_info): rename record parameter to info.
+	* server-src/infofile.c (get_dumpdate): rename rec parameter to info.
+	* server-src/infofile.c (zero_info): rename ip parameter to info.
+	* server-src/infofile.c (get_info): rename record parameter to info.
+	* server-src/infofile.c (put_info): rename record parameter to info.
+	* server-src/infofile.c (dump_rec): rename r parameter to info.
+	* server-src/infofile.c (dump_db): rename record variable to info.
+	* server-src/planner.c (last_level): rename ip parameter to info.
+	* server-src/planner.c (next_level0): rename ip parameter to info.
+	* server-src/planner.c (runs_at): rename ip parameter to info.
+	* server-src/planner.c (askfor): rename inf parameter to info.
+	* server-src/planner.c (setup_estimate): rename inf variable to info.
+	* server-src/driverio.c (update_info_dumper): rename inf parameter 
+	to info.
+	* server-src/driverio.c (update_info_taper): rename inf parameter 
+	to info.
+	* server-src/amadmin.c (next_level0): rename ip parameter to info.
+	* server-src/amadmin.c (force_one): rename inf variable to info.
+	* server-src/amadmin.c (unforce_one): rename inf variable to info.
+	* server-src/amadmin.c (delete_one): rename inf variable to info.
+	* server-src/amadmin.c (info_one): rename inf variable to info.
+	* server-src/amadmin.c (due_one): rename inf variable to info.
+	* server-src/amadmin.c (balance): rename inf variable to info.
+
 1998-11-11  Thomas Hepper <th@icem.de>
 
 	* configure.in: amanda_cv_hpux_scsi was double defined.

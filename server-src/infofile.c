@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.44.4.1 1998/11/09 19:00:43 martinea Exp $
+ * $Id: infofile.c,v 1.44.4.2 1998/11/12 13:19:33 martinea Exp $
  *
  * manage current info file
  */
@@ -419,8 +419,8 @@ void close_infofile()
 }
 
 /* Convert a dump level to a GMT based time stamp */
-char *get_dumpdate(rec, lev)
-info_t *rec;
+char *get_dumpdate(info, lev)
+info_t *info;
 int lev;
 {
     static char stamp[20]; /* YYYY:MM:DD:hh:mm:ss */
@@ -431,7 +431,7 @@ int lev;
     last = EPOCH;
 
     for(l = 0; l < lev; l++) {
-	this = rec->inf[l].date;
+	this = info->inf[l].date;
 	if (this > last) last = this;
     }
 
@@ -468,35 +468,35 @@ double d;	/* default value */
     return sum / n;
 }
 
-void zero_info(ip)
-info_t *ip;
+void zero_info(info)
+info_t *info;
 {
     int i;
 
-    memset(ip, '\0', sizeof(info_t));
+    memset(info, '\0', sizeof(info_t));
 
     for(i = 0; i < AVG_COUNT; i++) {
-	ip->full.comp[i] = ip->incr.comp[i] = -1.0;
-	ip->full.rate[i] = ip->incr.rate[i] = -1.0;
+	info->full.comp[i] = info->incr.comp[i] = -1.0;
+	info->full.rate[i] = info->incr.rate[i] = -1.0;
     }
 
     for(i = 0; i < DUMP_LEVELS; i++) {
-	ip->inf[i].date = (time_t)-1;
+	info->inf[i].date = (time_t)-1;
     }
 
-    ip->last_level = -1;
-    ip->consecutive_runs = -1;
+    info->last_level = -1;
+    info->consecutive_runs = -1;
 
     return;
 }
 
-int get_info(hostname, diskname, record)
+int get_info(hostname, diskname, info)
 char *hostname, *diskname;
-info_t *record;
+info_t *info;
 {
     int rc;
 
-    (void) zero_info(record);
+    (void) zero_info(info);
 
     {
 #ifdef TEXTDB
@@ -508,7 +508,7 @@ info_t *record;
 	    rc = -1; /* record not found */
 	}
 	else {
-	    rc = read_txinfofile(infof, record);
+	    rc = read_txinfofile(infof, info);
 
 	    close_txinfofile(infof);
 	}
@@ -528,7 +528,7 @@ info_t *record;
 	    rc = -1; /* record not found */
 	}
 	else {
-	    memcpy(record, d.dptr, d.dsize);
+	    memcpy(info, d.dptr, d.dsize);
 	    rc = 0;
 	}
 #endif
@@ -624,9 +624,9 @@ int hostname_size, diskname_size;
 }
 
 
-int put_info(hostname, diskname, record)
+int put_info(hostname, diskname, info)
 char *hostname, *diskname;
-info_t *record;
+info_t *info;
 {
 #ifdef TEXTDB
     FILE *infof;
@@ -636,7 +636,7 @@ info_t *record;
 
     if(infof == NULL) return -1;
 
-    rc = write_txinfofile(infof, record);
+    rc = write_txinfofile(infof, info);
 
     rc = rc || close_txinfofile(infof);
 
@@ -650,7 +650,7 @@ info_t *record;
     k.dptr = vstralloc(hostname, ":", diskname, NULL);
     k.dsize = strlen(k.dptr)+1;
 
-    d.dptr = (char *)record;
+    d.dptr = (char *)info;
     d.size = sizeof(info_t);
 
     /* store record */
@@ -694,23 +694,23 @@ char *hostname, *diskname;
 
 #ifdef TEST
 
-void dump_rec(r)
-info_t *r;
+void dump_rec(info)
+info_t *info;
 {
     int i;
     stats_t *sp;
 
-    printf("command word: %d\n", r->command);
+    printf("command word: %d\n", info->command);
     printf("full dump rate (K/s) %5.1f, %5.1f, %5.1f\n",
-	   r->full.rate[0],r->full.rate[1],r->full.rate[2]);
+	   info->full.rate[0],info->full.rate[1],info->full.rate[2]);
     printf("full comp rate %5.1f, %5.1f, %5.1f\n",
-	   r->full.comp[0]*100,r->full.comp[1]*100,r->full.comp[2]*100);
+	   info->full.comp[0]*100,info->full.comp[1]*100,info->full.comp[2]*100);
     printf("incr dump rate (K/s) %5.1f, %5.1f, %5.1f\n",
-	   r->incr.rate[0],r->incr.rate[1],r->incr.rate[2]);
+	   info->incr.rate[0],info->incr.rate[1],info->incr.rate[2]);
     printf("incr comp rate %5.1f, %5.1f, %5.1f\n",
-	   r->incr.comp[0]*100,r->incr.comp[1]*100,r->incr.comp[2]*100);
+	   info->incr.comp[0]*100,info->incr.comp[1]*100,info->incr.comp[2]*100);
     for(i = 0; i < DUMP_LEVELS; i++) {
-	sp = &r->inf[i];
+	sp = &info->inf[i];
 	if( sp->size != -1) {
 
 	    printf("lev %d date %ld tape %s filenum %d size %ld csize %ld secs %ld\n",
@@ -719,18 +719,18 @@ info_t *r;
 	}
     }
     putchar('\n');
-   printf("last_level: %d %d\n", r->last_level, r->consecutive_runs);
+   printf("last_level: %d %d\n", info->last_level, info->consecutive_runs);
 }
 
 #ifdef TEXTDB
 void dump_db(host, disk)
 char *host, *disk;
 {
-    info_t record;
+    info_t info;
     int rc;
 
-    if((rc = get_info(host, disk, &record)) == 0) {
-	dump_rec(&record);
+    if((rc = get_info(host, disk, &info)) == 0) {
+	dump_rec(&info);
     } else {
 	printf("cannot fetch information for %s:%s rc=%d\n", host, disk, rc);
     }
@@ -741,7 +741,7 @@ char *str;
 {
     datum k,d;
     int rec,r,num;
-    info_t record;
+    info_t info;
 
 
     printf("info database %s:\n--------\n", str);
@@ -752,11 +752,11 @@ char *str;
 	printf("%3d: KEY %s =\n", rec, k.dptr);
 
 	d = dbm_fetch(infodb, k);
-	memset(&record, '\0', sizeof(record));
-	memcpy(&record, d.dptr, d.dsize);
+	memset(&info, '\0', sizeof(info));
+	memcpy(&info, d.dptr, d.dsize);
 
 	num = (d.dsize-HEADER)/sizeof(stats_t);
-	dump_rec(&record);
+	dump_rec(&info);
 
 	k = dbm_nextkey(infodb);
 	rec++;
