@@ -1,3 +1,8 @@
+2000-01-31 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/driver.c (main): use the holding disk even if the
+	datestamped directory already exist.
+
 2000-01-21  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
 	* server-src/amstatus.pl.in (prefix, exec_prefix): Refer to them

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.90 1999/11/12 00:16:07 oliva Exp $
+ * $Id: driver.c,v 1.91 2000/02/01 01:25:25 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -273,7 +273,7 @@ main(main_argc, main_argv)
 	    log_add(L_WARNING, "WARNING: could not create parents of %s: %s",
 		    newdir, strerror(errno));
 	    hdp->disksize = 0L;
-	} else if (mkdir(newdir, 0770) != 0) {
+	} else if (mkdir(newdir, 0770) != 0 && errno != EEXIST) {
 	    log_add(L_WARNING, "WARNING: could not create %s: %s",
 		    newdir, strerror(errno));
 	    hdp->disksize = 0L;
