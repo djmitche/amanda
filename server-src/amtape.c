@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtape.c,v 1.4 1997/08/27 08:12:55 amcore Exp $
+ * $Id: amtape.c,v 1.5 1997/11/17 11:11:36 amcore Exp $
  *
  * tape changer interface program
  */
@@ -176,7 +176,7 @@ char **argv;
 /* ---------------------------- */
 
 int nslots, backwards, found, got_match, tapedays;
-char datestamp[64], label[64], first_match_label[64], first_match[64];
+char datestamp[80], label[64], first_match_label[64], first_match[64];
 char *searchlabel, *labelstr;
 tape_t *tp;
 
