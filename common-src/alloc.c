@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: alloc.c,v 1.3 1997/08/27 08:11:47 amcore Exp $
+ * $Id: alloc.c,v 1.4 1997/08/31 18:02:19 amcore Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -41,7 +41,7 @@ int size;
 {
     void *addr;
 
-    addr = (void *)malloc(size);
+    addr = (void *)malloc(size ? size : 1);
     if(addr == NULL)
 	error("memory allocation failed");
     return addr;

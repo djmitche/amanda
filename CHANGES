@@ -1,3 +1,6 @@
+	Ensure that malloc(0) is not called.  -Wolfram Schmidt
+	<Wolfram.Schmidt@iao.fhg.de>
+
 	Compression is now performed where specified, and server
 	compress best specifications are obeyed. -oliva
 
