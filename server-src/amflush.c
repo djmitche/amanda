@@ -78,6 +78,7 @@ disklist_t *diskqp;
 
 int result_argc;
 char *result_argv[MAX_ARGS];
+static char *config;
 char datestamp[80];
 char confdir[256];
 char taper_program[80], reporter_program[80];
@@ -124,6 +125,7 @@ char **argv;
     if(argc != 2) 
 	error("Usage: amflush%s [-f] <confdir>", versionsuffix());
 
+    config = argv[1];
     sprintf(confdir, "%s/%s", CONFIG_DIR, argv[1]);
     if(chdir(confdir) != 0)
 	error("could not cd to confdir %s: %s",	confdir, strerror(errno));
@@ -522,6 +524,13 @@ char *diskdir;
 	    dirname);
 }
 
+static void getindex()
+{
+    char cmd[1024];
+    sprintf(cmd, "%s/amgetidx%s %s on %s",
+	    libexecdir, versionsuffix(), config, datestamp);
+    system(cmd);
+}
 
 void run_dumps()
 {
@@ -553,6 +562,8 @@ void run_dumps()
     }
 
     log(L_FINISH, "date %s time %s", datestamp, walltime_str(curclock()));
+
+    getindex();
 
     /* now, have reporter generate report and send mail */
 
