@@ -21,7 +21,6 @@ EXTRA_DIST = CHANGES COPYRIGHT COPYRIGHT-GNU COPYRIGHT-REGEX \
 	regex-src/regerror.c \
 	regex-src/regex.3 \
 	regex-src/regex.7 \
-	regex-src/regex.h \
 	regex-src/regex2.h \
 	regex-src/regexec.c \
 	regex-src/regfree.c \
