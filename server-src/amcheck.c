@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.93 2002/04/23 14:26:40 martinea Exp $
+ * $Id: amcheck.c,v 1.94 2002/11/05 01:58:52 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -51,8 +51,6 @@
 
 static int conf_ctimeout;
 static int overwrite;
-char *config_name = NULL;
-char *config_dir = NULL;
 
 static disklist_t origq;
 

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.40 2002/08/26 13:57:00 martinea Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.41 2002/11/05 01:58:51 martinea Exp $";
 #endif
 /*
  * 
@@ -83,9 +83,6 @@ static char rcsid[] = "$Id: chg-scsi.c,v 1.40 2002/08/26 13:57:00 martinea Exp $
 
 char *tapestatfile = NULL;
 FILE *debug_file = NULL;
-
-char *config_name = NULL;
-char *config_dir = NULL;
 
 /* 
  * So we have 3 devices, here will all the infos be stored after an

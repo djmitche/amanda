@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.126 2002/04/14 13:14:56 martinea Exp $
+ * $Id: driver.c,v 1.127 2002/11/05 01:58:52 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -121,9 +121,6 @@ static const char *idle_strings[] = {
 #define IDLE_TAPER_WAIT		8
     "taper-wait",
 };
-
-char *config_name = NULL;
-char *config_dir = NULL;
 
 int
 main(main_argc, main_argv)

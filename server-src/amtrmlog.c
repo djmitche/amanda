@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmlog.c,v 1.6 2001/07/19 22:20:36 jrjackson Exp $
+ * $Id: amtrmlog.c,v 1.7 2002/11/05 01:58:52 martinea Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -43,9 +43,6 @@
 #include "version.h"
 
 int main P((int, char **));
-
-char *config_name = NULL;
-char *config_dir = NULL;
 
 int main(argc, argv)
 int argc;

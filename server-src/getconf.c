@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.13 2002/03/31 21:02:00 jrjackson Exp $
+ * $Id: getconf.c,v 1.14 2002/11/05 01:58:52 martinea Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -35,9 +35,6 @@
 #include "conffile.h"
 
 int main P((int argc, char **argv));
-
-char *config_name = NULL;
-char *config_dir = NULL;
 
 static struct build_info {
     char *symbol;

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.32 2001/07/19 22:20:36 jrjackson Exp $
+ * $Id: amtape.c,v 1.33 2002/11/05 01:58:52 martinea Exp $
  *
  * tape changer interface program
  */
@@ -93,9 +93,6 @@ static const struct {
 	"device               show current tape device" },
 };
 #define	NCMDS	(sizeof(cmdtab) / sizeof(cmdtab[0]))
-
-char *config_name = NULL;
-char *config_dir = NULL;
 
 void usage()
 {

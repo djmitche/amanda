@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.75 2002/09/05 17:50:28 martinea Exp $
+ * $Id: reporter.c,v 1.76 2002/11/05 01:58:52 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -100,9 +100,6 @@ static int degraded_mode = 0; /* defined in driverio too */
 static int normal_run = 0;
 static int amflush_run = 0;
 static int got_finish = 0;
-
-char *config_name = NULL;
-char *config_dir = NULL;
 
 static char *tapestart_error = NULL;
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.79 2002/03/22 15:00:12 martinea Exp $
+ * $Id: amadmin.c,v 1.80 2002/11/05 01:58:52 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -76,9 +76,6 @@ void disklist P((int argc, char **argv));
 void disklist_one P((disk_t *dp));
 void show_version P((int argc, char **argv));
 static void check_dumpuser P((void));
-
-char *config_name = NULL;
-char *config_dir = NULL;
 
 static char *conffile = NULL;
 static char *conf_tapelist = NULL;
