@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.23 2001/03/20 00:27:18 jrjackson Exp $
+ * $Id: debug.c,v 1.24 2001/08/01 19:23:28 jrjackson Exp $
  *
  * debug log subroutines
  */
@@ -111,6 +111,7 @@ void debug_open()
     int test_name_len;
     int fd = -1;
     int i;
+    int d_name_len;
     int fd_close[MIN_DB_FD+1];
     struct passwd *pwent;
     struct stat sbuf;
@@ -149,12 +150,15 @@ void debug_open()
 	if(is_dot_or_dotdot(entry->d_name)) {
 	    continue;
 	}
+	d_name_len = strlen(entry->d_name);
 	if(strncmp(entry->d_name, pname, pname_len) != 0
-	   || entry->d_name[pname_len] != '.') {
-	    continue;				/* not one of our files */
+	   || entry->d_name[pname_len] != '.'
+	   || d_name_len < 6
+	   || strcmp(entry->d_name + d_name_len - 6, ".debug") != 0) {
+	    continue;				/* not one of our debug files */
 	}
 	e = newvstralloc(e, dbgdir, entry->d_name, NULL);
-	if(strlen(entry->d_name) < test_name_len) {
+	if(d_name_len < test_name_len) {
 	    /*
 	     * Create a "pretend" name based on the last modification
 	     * time.  This name will be used to decide if the real name
