@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.55 1998/09/11 20:51:40 oliva Exp $
+ * $Id: sendbackup-gnutar.c,v 1.56 1998/11/02 04:46:00 oliva Exp $
  *
  * send backup data using GNU tar
  */
@@ -472,7 +472,7 @@ int goterror;
     }
 }
 
-backup_program_t backup_program = {
+backup_program_t gnutar_program = {
   "GNUTAR",
 #ifdef GNUTAR
   GNUTAR, GNUTAR,

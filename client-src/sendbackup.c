@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.43 1998/09/03 22:10:55 oliva Exp $
+ * $Id: sendbackup.c,v 1.44 1998/11/02 04:46:02 oliva Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -993,10 +993,10 @@ char *cmd;
   exit(0);
 }
 
-extern backup_program_t dump_program, backup_program;
+extern backup_program_t dump_program, gnutar_program;
 
 backup_program_t *programs[] = {
-  &dump_program, &backup_program, NULL
+  &dump_program, &gnutar_program, NULL
 };
 
 #ifdef KRB4_SECURITY
