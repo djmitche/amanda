@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.20 1998/02/20 23:16:05 martinea Exp $
+ * $Id: reporter.c,v 1.21 1998/02/26 19:25:21 jrj Exp $
  *
  * nightly Amanda Report generator
  */
@@ -76,7 +76,6 @@ struct cumulative_stats {
 int disks[10];	/* by-level breakdown of disk count */
 
 float total_time, startup_time;
-char *pname = "reporter";
 
 int curlinenum;
 logtype_t curlog;
@@ -179,6 +178,8 @@ char **argv;
 	close(fd);
     }
 
+    set_pname("reporter");
+
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     /* open input log file */
@@ -189,11 +190,12 @@ char **argv;
     if(argc == 2) {
 	testing = 1;
 	logfname = argv[1];
-    }
-    else if(argc > 1)
+    } else if(argc > 1) {
 	error("Usage: reporter [<logfile>]");
-    else
+    } else {
 	erroutput_type |= ERR_AMANDALOG;
+	set_logerror(logerror);
+    }
 
     /* read configuration files */
 

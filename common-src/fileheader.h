@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: fileheader.h,v 1.3 1997/12/30 05:24:15 jrj Exp $
+ * $Id: fileheader.h,v 1.4 1998/02/26 19:24:37 jrj Exp $
  *
  */
 
@@ -53,8 +53,6 @@ typedef struct file_s {
     string_t recover_cmd;
     string_t uncompress_cmd;
 } dumpfile_t;
-
-extern char *pname;
 
 /* local functions */
 

@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.27 1998/02/24 22:28:08 blair Exp $
+/* $Id: taper.c,v 1.28 1998/02/26 19:25:23 jrj Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -113,7 +113,6 @@ int bufdebug = 0;
 
 buffer_t *buftable;
 
-char *pname = "taper";
 char *procname = "parent";
 
 extern char *datestamp;
@@ -147,16 +146,22 @@ char **main_argv;
 	close(fd);
     }
 
+    set_pname("taper");
+
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     /* print prompts and debug messages if running interactive */
 
     interactive = (main_argc > 1 && strcmp(main_argv[1],"-t") == 0);
-    if(interactive) erroutput_type = ERR_INTERACTIVE;
-    else erroutput_type = ERR_AMANDALOG;
+    if(interactive) {
+	erroutput_type = ERR_INTERACTIVE;
+    } else {
+	erroutput_type = ERR_AMANDALOG;
+	set_logerror(logerror);
+    }
 
     fprintf(stderr, "%s: pid %ld executable %s version %s\n",
-	    pname, (long) getpid(), main_argv[0], version());
+	    get_pname(), (long) getpid(), main_argv[0], version());
     fflush(stderr);
 
     if(read_conffile(CONFFILE_NAME))
@@ -258,7 +263,7 @@ int rdpipe, wrpipe;
 	q = squotef("[%s]", result ? result : "(null)");
 	putresult("TAPE-ERROR %s\n", q);
 	afree(q);
-	log(L_ERROR,"no-tape [%s]", result);
+	log_add(L_ERROR,"no-tape [%s]", result);
 	afree(result);
 	exit(1);
     default:
@@ -521,8 +526,8 @@ char *handle, *hostname, *diskname;
 		q = squote(errstr);
 		putresult("TRY-AGAIN %s %s\n", handle, q);
 		afree(q);
-		log(L_INFO, "retrying %s:%s.%d on new tape: %s",
-		    hostname, diskname, level, errstr);
+		log_add(L_INFO, "retrying %s:%s.%d on new tape: %s",
+		        hostname, diskname, level, errstr);
 		closing = 1;
 		syncpipe_put('X');	/* X == buffer snafu, bail */
 		do {
@@ -567,11 +572,12 @@ char *handle, *hostname, *diskname;
 	    q = squote(errstr);
 	    if(tok == 'T') {
 		putresult("TRY-AGAIN %s %s\n", handle, q);
-		log(L_INFO, "retrying %s:%s.%d on new tape: %s",
-		    hostname, diskname, level, errstr);
+		log_add(L_INFO, "retrying %s:%s.%d on new tape: %s",
+		        hostname, diskname, level, errstr);
 	    } else {
 		putresult("TAPE-ERROR %s %s\n", handle, q);
-		log(L_FAIL, "%s %s %d %s", hostname, diskname, level, errstr);
+		log_add(L_FAIL, "%s %s %d %s",
+			hostname, diskname, level, errstr);
 	    }
 	    afree(q);
 	    return;
@@ -600,7 +606,8 @@ char *handle, *hostname, *diskname;
 		q = squote(errstr);
 		putresult("TAPE-ERROR %s %s\n", handle, q);
 		afree(q);
-		log(L_FAIL, "%s %s %d %s", hostname, diskname, level, errstr);
+		log_add(L_FAIL, "%s %s %d %s",
+			hostname, diskname, level, errstr);
 		str = syncpipe_getstr();	/* reap stats */
 		afree(str);
 	    } else {
@@ -625,8 +632,8 @@ char *handle, *hostname, *diskname;
 		putresult("DONE %s %s %d %s\n",
 			  handle, label, filenum, q);
 		afree(q);
-		log(L_SUCCESS, "%s %s %d %s",
-		    hostname, diskname, level, errstr);
+		log_add(L_SUCCESS, "%s %s %d %s",
+		        hostname, diskname, level, errstr);
 	    }
 	    return;
 
@@ -990,7 +997,7 @@ char ***argvp;
     int argc;
 
     if(interactive) {
-	fprintf(stderr, "%s> ", pname);
+	fprintf(stderr, "%s> ", get_pname());
 	fflush(stderr);
     }
 
@@ -1354,7 +1361,8 @@ int label_tape()
     if(write_tapelist(tapefilename))
 	error("couldn't write tapelist: %s", strerror(errno));
 
-    log(L_START, "datestamp %s label %s tape %d", datestamp, label, cur_tape);
+    log_add(L_START, "datestamp %s label %s tape %d",
+	    datestamp, label, cur_tape);
 
     total_tape_used=0.0;
     total_tape_fm = 0;
@@ -1479,7 +1487,7 @@ int rc, ns, bk;
 {
     if(rc) {
 	fprintf(stderr, "%s: could not get changer info: %s\n",
-		pname, changer_resultstr);
+		get_pname(), changer_resultstr);
 	return rc;
     }
 
@@ -1499,12 +1507,12 @@ char *device;
 
     if(rc == 2) {
 	fprintf(stderr, "%s: fatal slot %s: %s\n",
-		pname, slotstr, changer_resultstr);
+		get_pname(), slotstr, changer_resultstr);
 	fflush(stderr);
 	return 1;
     }
     else if(rc == 1) {
-	fprintf(stderr, "%s: slot %s: %s\n", pname,
+	fprintf(stderr, "%s: slot %s: %s\n", get_pname(),
 		slotstr, changer_resultstr);
 	fflush(stderr);
 	return 0;
@@ -1512,13 +1520,14 @@ char *device;
     else {
 	if((t_errstr = tape_rdlabel(device, &scan_datestamp, &label)) != NULL) {
 	    afree(scan_datestamp);
-	    fprintf(stderr, "%s: slot %s: %s\n", pname, slotstr, t_errstr);
+	    fprintf(stderr, "%s: slot %s: %s\n",
+		    get_pname(), slotstr, t_errstr);
 	    fflush(stderr);
 	}
 	else {
 	    /* got an amanda tape */
 	    fprintf(stderr, "%s: slot %s: date %-8s label %s",
-		    pname, slotstr, scan_datestamp, label);
+		    get_pname(), slotstr, scan_datestamp, label);
 	    fflush(stderr);
 	    afree(scan_datestamp);
 	    if(searchlabel != NULL && strcmp(label, searchlabel) == 0) {

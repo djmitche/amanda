@@ -25,14 +25,12 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: versionsuffix.c,v 1.4 1998/01/02 18:47:51 jrj Exp $
+ * $Id: versionsuffix.c,v 1.5 1998/02/26 19:24:27 jrj Exp $
  *
  * prints the (possibly empty) suffix appended to amanda program names
  */
 #include "amanda.h"
 #include "version.h"
-
-char *pname = "versionsuffix";
 
 int main()
 {
@@ -47,6 +45,8 @@ int main()
 		 */
 		close(fd);
 	}
+
+	set_pname("versionsuffix");
 
 	printf("%s\n", versionsuffix());
 	return 0;

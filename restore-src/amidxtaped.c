@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: amidxtaped.c,v 1.19 1998/02/19 10:04:22 amcore Exp $
+/* $Id: amidxtaped.c,v 1.20 1998/02/26 19:24:53 jrj Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -35,8 +35,6 @@
 
 #include "amanda.h"
 #include "version.h"
-
-char *pname = "amidxtaped";
 
 static char *get_client_line P((void));
 
@@ -123,6 +121,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    set_pname("amidxtaped");
 
 #ifdef FORCE_USERID
 

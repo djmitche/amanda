@@ -34,12 +34,6 @@
 #include "amanda.h"
 #include "conffile.h"
 
-/*
- * This is referenced off in libam*'s and won't build on some systems
- * unless the pname definition is out here..
- */
-char *pname = "chg-chio";
-
 #if defined(HAVE_CHIO_H) || defined(HAVE_SYS_CHIO_H)
 
 /* This include comes with Gerd Knor's SCSI media changer driver.
@@ -354,6 +348,8 @@ int main(argc, argv)
 	 */
 	close(fd);
     }
+
+    set_pname("chg-chio");
 
     parse_args(argc,argv,&com);
 

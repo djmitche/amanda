@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.10 1998/02/23 21:47:38 jrj Exp $
+ * $Id: file.c,v 1.11 1998/02/26 19:24:34 jrj Exp $
  *
  * file and directory bashing routines
  */
@@ -341,8 +341,6 @@ areads (fd)
 
 #ifdef TEST
 
-char *pname = "file test";
-
 int main() {
 	int rc;
 	int fd;
@@ -356,6 +354,8 @@ int main() {
 		 */
 		close(fd);
 	}
+
+	set_pname("file test");
 
 	printf("Create...");
 	rc = mkpdir("/tmp/a/b/c/d/e", 0777, (uid_t)-1, (gid_t)-1);

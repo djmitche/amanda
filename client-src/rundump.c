@@ -25,14 +25,12 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: rundump.c,v 1.17 1998/02/11 23:25:25 jrj Exp $
+ * $Id: rundump.c,v 1.18 1998/02/26 19:24:15 jrj Exp $
  *
  * runs DUMP program as root
  */
 #include "amanda.h"
 #include "version.h"
-
-char *pname = "rundump";
 
 int main P((int argc, char **argv));
 
@@ -73,6 +71,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    set_pname("rundump");
 
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));

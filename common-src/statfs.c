@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: statfs.c,v 1.5 1998/01/02 18:48:00 jrj Exp $
+ * $Id: statfs.c,v 1.6 1998/02/26 19:24:42 jrj Exp $
  *
  * a generic statfs-like routine
  */
@@ -153,7 +153,6 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    char *pname = argv[0];
     generic_fs_stats_t statbuf;
     int fd;
 
@@ -167,8 +166,10 @@ char **argv;
 	close(fd);
     }
 
+    set_pname(argv[0]);
+
     if(argc < 2) {
-	fprintf(stderr, "Usage: %s files ...\n", pname);
+	fprintf(stderr, "Usage: %s files ...\n", get_pname());
 	return 1;
     }
 

@@ -4,8 +4,6 @@ ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
 
 # last updated on amanda 2.4.0b6p3
 libamanda_version = 4:1:1
-# last updated on amanda 2.4.0b1
-libnolog_version = 0:0:0
 
 AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
@@ -14,10 +12,10 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 noinst_DATA =		versuff.c
 
 lib_LTLIBRARIES =	@BUILD_COMMON_LTLIB@
-EXTRA_LTLIBRARIES =	libamanda.la libamnolog.la
+EXTRA_LTLIBRARIES =	libamanda.la
 
 noinst_LIBRARIES = 	@BUILD_COMMON_LIB@
-EXTRA_LIBRARIES =	libamanda.a libamnolog.a
+EXTRA_LIBRARIES =	libamanda.a
 
 REGDIR = ../regex-src
 REGsrcdir = $(srcdir)/$(REGDIR)
@@ -34,13 +32,8 @@ libamanda_la_SOURCES = \
 libamanda_la_LIBADD =	@LIBOBJS@ @ALLOCA@
 libamanda_la_LDFLAGS =  -version-info $(libamanda_version) -rpath $(libdir)
 
-libamnolog_la_SOURCES =	nolog.c
-libamnolog_la_LDFLAGS = -version-info $(libnolog_version) -rpath $(libdir)
-
 libamanda_a_SOURCES =	$(libamanda_la_SOURCES)
 libamanda_a_LIBADD =	$(libamanda_la_LIBADD)
-
-libamnolog_a_SOURCES =	$(libamnolog_la_SOURCES)
 
 noinst_HEADERS =	amanda.h	arglist.h	\
 			dgram.h		protocol.h	\
@@ -60,8 +53,7 @@ EXTRA_PROGRAMS = genversion $(TEST_PROGS)
 
 genversion_SOURCES = genversion.c
 genversion_LDADD = versuff.$(OBJ_EXTENSION) $(libamanda_a_LIBADD) \
-	alloc.$(OBJ_EXTENSION) error.$(OBJ_EXTENSION) \
-	nolog.$(OBJ_EXTENSION)
+	alloc.$(OBJ_EXTENSION) error.$(OBJ_EXTENSION)
 
 genversion.o: genversion.c
 	$(COMPILE) -DCC="\"$(CC)\"" \

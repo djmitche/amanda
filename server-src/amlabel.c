@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlabel.c,v 1.8 1998/01/26 21:16:13 jrj Exp $
+ * $Id: amlabel.c,v 1.9 1998/02/26 19:25:03 jrj Exp $
  *
  * write an Amanda label on a tape
  */
@@ -33,8 +33,6 @@
 #include "conffile.h"
 #include "tapeio.h"
 #include "changer.h"
-
-char *pname = "amlabel";
 
 int slotcommand;
 
@@ -69,6 +67,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    set_pname("amlabel");
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

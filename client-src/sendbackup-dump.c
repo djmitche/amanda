@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.54 1998/02/15 08:14:59 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.55 1998/02/26 19:24:20 jrj Exp $
  *
  * send backup data using BSD dump
  */
@@ -146,7 +146,7 @@ char *dumpdate;
     ap_snprintf(level_str, sizeof(level_str), "%d", level);
 
     fprintf(stderr, "%s: start [%s:%s level %d]\n",
-	    pname, host, disk, level);
+	    get_pname(), host, disk, level);
 
     NAUGHTY_BITS;
 

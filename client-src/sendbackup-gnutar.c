@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.50 1998/02/22 02:03:51 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.51 1998/02/26 19:24:21 jrj Exp $
  *
  * send backup data using GNU tar
  */
@@ -133,7 +133,7 @@ char *dumpdate;
     time_t prev_dumptime;
 
     fprintf(stderr, "%s: start [%s:%s level %d]\n",
-	    pname, host, disk, level);
+	    get_pname(), host, disk, level);
 
     NAUGHTY_BITS;
 
@@ -199,7 +199,7 @@ notincremental:
 	  out = NULL;
 
 	  dbprintf(("%s: doing level %d dump as listed-incremental: %s\n",
-		    pname, level, incrname));
+		    get_pname(), level, incrname));
 	} else {
 	    FILE *in = NULL, *out;
 	    char *inputname = NULL;
@@ -242,7 +242,7 @@ notincremental:
 	    out = NULL;
 
 	    dbprintf(("%s: doing level %d dump as listed-incremental from %s, updating to %s\n",
-		      pname, level, inputname, incrname));
+		      get_pname(), level, inputname, incrname));
 
 	    afree(inputname);
 	}
@@ -273,7 +273,7 @@ notincremental:
 		gmtm->tm_hour, gmtm->tm_min, gmtm->tm_sec);
 
     dbprintf(("%s: doing level %d dump from date: %s\n",
-	      pname, level, dumptimestr));
+	      get_pname(), level, dumptimestr));
 
     dirname = amname_to_dirname(disk);
 

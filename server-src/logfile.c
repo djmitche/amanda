@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.13 1998/01/22 18:05:55 jrj Exp $
+ * $Id: logfile.c,v 1.14 1998/02/26 19:25:17 jrj Exp $
  *
  * common log file writing routine
  */
@@ -75,14 +75,13 @@ static void close_log P((void));
 void logerror(msg)
 char *msg;
 {
-    log(L_FATAL, "%s", msg);
+    log_add(L_FATAL, "%s", msg);
 }
 
-arglist_function(void log, logtype_t, typ)
+arglist_function(void log_add, logtype_t, typ)
 {
     va_list argp;
     char *format;
-    extern char *pname;
     int saved_errout;
     char *leader = NULL;
     char linebuf[STR_SIZE];
@@ -96,7 +95,7 @@ arglist_function(void log, logtype_t, typ)
     if(multiline > 0) {
 	leader = stralloc("  ");		/* continuation line */
     } else {
-	leader = vstralloc(logtype_str[(int)typ], " ", pname, " ", NULL);
+	leader = vstralloc(logtype_str[(int)typ], " ", get_pname(), " ", NULL);
     }
 
     arglist_start(argp, typ);

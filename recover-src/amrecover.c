@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.21 1998/02/06 20:50:52 amcore Exp $
+ * $Id: amrecover.c,v 1.22 1998/02/26 19:24:48 jrj Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -63,8 +63,6 @@
 #    endif
 #  endif
 #endif
-
-char *pname = "amrecover";
 
 char *errstr = NULL;
 
@@ -125,11 +123,12 @@ int get_line ()
 		errno = save_errno;
 	    }
 	    if(errno != 0) {
-		fprintf(stderr, "%s: ", pname);
+		fprintf(stderr, "%s: ", get_pname());
 		errno = save_errno;
 		perror("Error reading line from server");
 	    } else {
-		fprintf(stderr, "%s: Unexpected server end of file\n", pname);
+		fprintf(stderr, "%s: Unexpected server end of file\n",
+			get_pname());
 	    }
 	    afree(line);
 	    afree(server_line);
@@ -414,6 +413,8 @@ char **argv;
 	close(fd);
     }
 
+    set_pname("amrecover");
+
     if (geteuid() != 0) {
 	error("amrecover must be run by root");
     }
@@ -445,7 +446,8 @@ char **argv;
 	new_argv = (char **) malloc ((argc + 1 + 1) * sizeof (*new_argv));
 	if (new_argv == NULL)
 	{
-	    (void)fprintf(stderr, "%s: no memory for argument list\n",pname);
+	    (void)fprintf(stderr, "%s: no memory for argument list\n",
+			  get_pname());
 	    exit(1);
 	}
 	new_argv[0] = argv[0];
@@ -523,7 +525,7 @@ char **argv;
     if ((hp = gethostbyname(server_name)) == NULL)
     {
 	(void)fprintf(stderr, "%s: %s is an unknown host\n",
-		      pname, server_name);
+		      get_pname(), server_name);
 	dbprintf(("%s is an unknown host\n", server_name));
 	dbclose();
 	exit(1);
@@ -547,7 +549,7 @@ char **argv;
     if ((hp = gethostbyname(localhost)) == NULL)
     {
 	(void)fprintf(stderr, "%s: %s is an unknown host\n",
-		      pname, localhost);
+		      get_pname(), localhost);
 	dbprintf(("%s is an unknown host\n", localhost));
 	dbclose();
 	exit(1);

@@ -25,14 +25,12 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.5 1998/01/26 21:16:28 jrj Exp $
+ * $Id: getconf.c,v 1.6 1998/02/26 19:25:14 jrj Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
 #include "amanda.h"
 #include "conffile.h"
-
-char *pname = "getconf";
 
 int main P((int argc, char **argv));
 
@@ -54,6 +52,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    set_pname("getconf");
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

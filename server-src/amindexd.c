@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.28 1998/01/29 08:30:28 amcore Exp $
+ * $Id: amindexd.c,v 1.29 1998/02/26 19:25:02 jrj Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -70,7 +70,6 @@ typedef struct REMOVE_ITEM
     struct REMOVE_ITEM *next;
 } REMOVE_ITEM;
 
-char *pname = "amindexd";
 char *server_version = "1.1";
 
 /* state */
@@ -815,6 +814,8 @@ char **argv;
 	close(fd);
     }
 
+    set_pname("amindexd");
+
 #ifdef FORCE_USERID
 
     /* we'd rather not run as root */
@@ -851,7 +852,7 @@ char **argv;
 
     umask(0007);
     dbopen();
-    dbprintf(("%s: version %s\n", pname, version()));
+    dbprintf(("%s: version %s\n", get_pname(), version()));
 
     if(gethostname(local_hostname, sizeof(local_hostname)-1) == -1)
 	error("gethostname: %s", strerror(errno));

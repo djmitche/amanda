@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: calcsize.c,v 1.19 1998/01/26 21:15:33 jrj Exp $
+ * $Id: calcsize.c,v 1.20 1998/02/26 19:24:12 jrj Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -92,8 +92,6 @@ char exclude_string[] = "--exclude=";
 char exclude_list_string[] = "--exclude-list=";
 #endif
 
-char *pname = "calcsize";
-
 int main(argc, argv)
 int argc;
 char **argv;
@@ -116,6 +114,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    set_pname("calcsize");
 
     if (argc < 2) {
 	fprintf(stderr,"Usage: %s file[s]\n",argv[0]);
@@ -166,7 +166,7 @@ char **argv;
       usage:
 #endif
 	error("Usage: %s [DUMP|GNUTAR%s] name dir [level date] ...",
-	      pname,
+	      get_pname(),
 #ifdef BUILTIN_EXCLUDE_SUPPORT
 	      " [-X --exclude[-list]=regexp]"
 #else
@@ -180,7 +180,7 @@ char **argv;
 
     if(strcmp(*argv, "DUMP") == 0) {
 #if !defined(DUMP) && !defined(XFSDUMP)
-	error("%s: dump not available on this system", pname);
+	error("%s: dump not available on this system", get_pname());
 	return 1;
 #else
 	add_file = add_file_dump;
@@ -189,7 +189,7 @@ char **argv;
     }
     else if(strcmp(*argv, "GNUTAR") == 0) {
 #ifndef GNUTAR
-	error("%s: gnutar not available on this system", pname);
+	error("%s: gnutar not available on this system", get_pname());
 	return 1;
 #else
 	add_file = add_file_gnutar;
@@ -211,7 +211,7 @@ char **argv;
 	argv++;
 
 	if (!use_gtar_excl) {
-	  error("%s: exclusion specification not supported", pname);
+	  error("%s: exclusion specification not supported", get_pname());
 	  return 1;
 	}
 

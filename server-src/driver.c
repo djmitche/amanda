@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.33 1998/02/23 21:47:47 jrj Exp $
+ * $Id: driver.c,v 1.34 1998/02/26 19:25:10 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -126,8 +126,6 @@ struct timeval sleep_time = { SLEEP_MAX, 0 };
 # define MAXFILESIZE	(LONG_MAX/1024)
 #endif
 
-char *pname = "driver";
-
 int main(main_argc, main_argv)
 int main_argc;
 char **main_argv;
@@ -153,22 +151,25 @@ char **main_argv;
 	close(fd);
     }
 
+    set_pname("driver");
+
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
+    set_logerror(logerror);
 
     startclock();
     FD_ZERO(&readset);
 
     printf("%s: pid %ld executable %s version %s\n",
-	   pname, (long) getpid(), main_argv[0], version());
+	   get_pname(), (long) getpid(), main_argv[0], version());
 
     if(read_conffile(CONFFILE_NAME))
 	error("could not read amanda config file\n");
 
     afree(datestamp);
     datestamp = construct_datestamp();
-    log(L_START,"date %s", datestamp);
+    log_add(L_START,"date %s", datestamp);
 
     taper_program = vstralloc(libexecdir, "/", "taper", versionsuffix(), NULL);
     dumper_program = vstralloc(libexecdir, "/", "dumper", versionsuffix(),
@@ -198,8 +199,8 @@ char **main_argv;
 
 	    if(get_fs_stats(hdp->diskdir, &fs) == -1
 	       || access(hdp->diskdir, W_OK) == -1) {
-		log(L_WARNING, "WARNING: ignoring holding disk %s: %s\n",
-		    hdp->diskdir, strerror(errno));
+		log_add(L_WARNING, "WARNING: ignoring holding disk %s: %s\n",
+		        hdp->diskdir, strerror(errno));
 		hdp->disksize = 0L;
 		continue;
 	    }
@@ -217,9 +218,9 @@ char **main_argv;
 		}
 
 		if(hdp->disksize > avail) {
-		    log(L_WARNING,
-			"WARNING: %s: %ld KB requested, but only %ld KB available.",
-			hdp->diskdir, hdp->disksize, avail);
+		    log_add(L_WARNING,
+			    "WARNING: %s: %ld KB requested, but only %ld KB available.",
+			    hdp->diskdir, hdp->disksize, avail);
 
 		    hdp->disksize = avail;
 		}
@@ -256,7 +257,7 @@ char **main_argv;
     stoppedq.head = stoppedq.tail = NULL;
     tapeq.head = tapeq.tail = NULL;
 
-    log(L_STATS, "startup time %s", walltime_str(curclock()));
+    log_add(L_STATS, "startup time %s", walltime_str(curclock()));
 
     printf("driver: start time %s inparallel %d bandwidth %d diskspace %lu",
 	   walltime_str(curclock()), inparallel, free_kps((interface_t *)0),
@@ -303,15 +304,20 @@ char **main_argv;
 	if(!degraded_mode) {
 	    int rc = dump_to_tape(diskp);
 	    if(rc == 1)
-		log(L_INFO, "%s %s %d [dump to tape failed, will try again]",
-		    diskp->host->hostname, diskp->name, sched(diskp)->level);
+		log_add(L_INFO,
+			"%s %s %d [dump to tape failed, will try again]",
+		        diskp->host->hostname,
+			diskp->name,
+			sched(diskp)->level);
 	    else if(rc == 2)
-		log(L_FAIL, "%s %s %d [dump to tape failed]",
-		    diskp->host->hostname, diskp->name, sched(diskp)->level);
+		log_add(L_FAIL, "%s %s %d [dump to tape failed]",
+		        diskp->host->hostname,
+			diskp->name,
+			sched(diskp)->level);
 	}
 	else
-	    log(L_FAIL, "%s %s %d [%s]",
-		diskp->host->hostname, diskp->name, sched(diskp)->level,
+	    log_add(L_FAIL, "%s %s %d [%s]",
+		    diskp->host->hostname, diskp->name, sched(diskp)->level,
 		diskp->no_hold ?
 		    "can't dump no-hold disk in degraded mode" :
 		    "no more holding disk space");
@@ -339,8 +345,8 @@ char **main_argv;
 				  hdp->diskdir, "/", datestamp,
 				  NULL);
 	    if(rmdir(newdir) != 0)
-		log(L_WARNING, "Could not rmdir %s: %s",
-		    newdir, strerror(errno));
+		log_add(L_WARNING, "Could not rmdir %s: %s",
+		        newdir, strerror(errno));
 	    afree(holdalloc(hdp));
 	}
     }
@@ -348,7 +354,7 @@ char **main_argv;
 
     printf("driver: FINISHED time %s\n", walltime_str(curclock()));
     fflush(stdout);
-    log(L_FINISH,"date %s time %s", datestamp, walltime_str(curclock()));
+    log_add(L_FINISH,"date %s time %s", datestamp, walltime_str(curclock()));
     afree(datestamp);
 
     afree(dumper_program);
@@ -560,8 +566,8 @@ disklist_t *queuep;
 		insert_disk(&newq, dp, sort_by_priority_reversed);
 	    }
 	    else {
-		log(L_FAIL, "%s %s %d [can't switch to incremental dump]",
-		    dp->host->hostname, dp->name, sched(dp)->level);
+		log_add(L_FAIL, "%s %s %d [can't switch to incremental dump]",
+		        dp->host->hostname, dp->name, sched(dp)->level);
 	    }
 	}
     }
@@ -640,8 +646,8 @@ void handle_taper_result()
 	/* re-insert into taper queue */
 
 	if(sched(dp)->attempted) {
-	    log(L_FAIL, "%s %s %d [too many taper retries]",
-		dp->host->hostname, dp->name, sched(dp)->level);
+	    log_add(L_FAIL, "%s %s %d [too many taper retries]",
+		    dp->host->hostname, dp->name, sched(dp)->level);
 	    /* XXX should I do this? */
 	    delete_diskspace(dp);
 	}
@@ -674,7 +680,7 @@ void handle_taper_result()
 	 * The tape queue is zapped so that it appears empty in future
 	 * checks.
 	 */
-	log(L_WARNING, "going into degraded mode because of tape error.");
+	log_add(L_WARNING, "going into degraded mode because of tape error.");
 	start_degraded_mode(&runq);
 	tapeq.head = tapeq.tail = NULL;
 	taper_busy = 0;
@@ -812,9 +818,9 @@ int fd;
 	dp->inprogress = 0;
 
 	if(sched(dp)->attempted) {
-	    log(L_FAIL, "%s %s %d [could not connect to %s]",
-		dp->host->hostname, dp->name,
-		sched(dp)->level, dp->host->hostname);
+	    log_add(L_FAIL, "%s %s %d [could not connect to %s]",
+		    dp->host->hostname, dp->name,
+		    sched(dp)->level, dp->host->hostname);
 	}
 	else {
 	    sched(dp)->attempted++;
@@ -823,8 +829,8 @@ int fd;
 
 	if(tok == FATAL_TRYAGAIN) {
 	    /* dumper is confused, start another */
-	    log(L_WARNING, "%s (pid %ld) confused, restarting it.",
-		dumper->name, (long)dumper->pid);
+	    log_add(L_WARNING, "%s (pid %ld) confused, restarting it.",
+		    dumper->name, (long)dumper->pid);
 	    FD_CLR(fd,&readset);
 	    aclose(fd);
 	    startup_dump_process(dumper);
@@ -884,8 +890,8 @@ int fd;
 
     case BOGUS:
 	/* either EOF or garbage from dumper.  Turn it off */
-	log(L_WARNING, "%s pid %ld is messed up, ignoring it.\n",
-	    dumper->name, (long)dumper->pid);
+	log_add(L_WARNING, "%s pid %ld is messed up, ignoring it.\n",
+	        dumper->name, (long)dumper->pid);
 	FD_CLR(fd,&readset);
 	aclose(fd);
 	dumper->busy = 0;
@@ -898,14 +904,14 @@ int fd;
 	    dp->host->inprogress -= 1;
 	    dp->inprogress = 0;
 	    if(sched(dp)->attempted) {
-		log(L_FAIL, "%s %s %d [%s died]",
-		    dp->host->hostname, dp->name,
-		    sched(dp)->level, dumper->name);
+		log_add(L_FAIL, "%s %s %d [%s died]",
+		        dp->host->hostname, dp->name,
+		        sched(dp)->level, dumper->name);
 	    }
 	    else {
-		log(L_WARNING, "%s died while dumping %s:%s lev %d.",
-		    dumper->name, dp->host->hostname, dp->name,
-		    sched(dp)->level);
+		log_add(L_WARNING, "%s died while dumping %s:%s lev %d.",
+		        dumper->name, dp->host->hostname, dp->name,
+		        sched(dp)->level);
 		sched(dp)->attempted++;
 		enqueue_disk(&runq, dp);
 	    }
@@ -1036,8 +1042,9 @@ disklist_t *waitqp;
 
 	dp = lookup_disk(hostname, diskname);
 	if(dp == NULL) {
-	    log(L_WARNING, "schedule line %d: %s:%s not in disklist, ignored",
-		  line, hostname, diskname);
+	    log_add(L_WARNING,
+		    "schedule line %d: %s:%s not in disklist, ignored",
+		    line, hostname, diskname);
 	    continue;
 	}
 
@@ -1081,7 +1088,7 @@ disklist_t *waitqp;
     }
     afree(inpline);
     if(line == 0)
-	log(L_WARNING, "WARNING: got empty schedule from planner");
+	log_add(L_WARNING, "WARNING: got empty schedule from planner");
 
     return rq;
 }
@@ -1324,8 +1331,8 @@ disk_t *dp;
 	printf("driver: no idle dumpers for %s:%s.\n", 
 		dp->host->hostname, dp->name);
 	fflush(stdout);
-	log(L_WARNING, "no idle dumpers for %s:%s.\n",
-		dp->host->hostname, dp->name);
+	log_add(L_WARNING, "no idle dumpers for %s:%s.\n",
+	        dp->host->hostname, dp->name);
 	inside_dump_to_tape = 0;
 	return 2;	/* fatal problem */
     }
@@ -1370,8 +1377,8 @@ disk_t *dp;
     switch(tok) {
     case BOGUS:
 	/* either eof or garbage from dumper */
-	log(L_WARNING, "%s pid %ld is messed up, ignoring it.\n",
-	    dumper->name, (long)dumper->pid);
+	log_add(L_WARNING, "%s pid %ld is messed up, ignoring it.\n",
+	        dumper->name, (long)dumper->pid);
 	dumper->down = 1;	/* mark it down so it isn't used again */
 	failed = 1;	/* dump failed, must still finish up with taper */
 	break;

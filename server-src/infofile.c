@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.39 1998/02/11 23:25:37 jrj Exp $
+ * $Id: infofile.c,v 1.40 1998/02/26 19:25:15 jrj Exp $
  *
  * manage current info file
  */
@@ -770,6 +770,8 @@ char *argv[];
     close(fd);
   }
 
+  set_pname("infofile");
+
   malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
   for(i = 1; i < argc; ++i) {
@@ -791,7 +793,5 @@ char *argv[];
   }
 
 }
-
-char *pname = "infofile";
 
 #endif /* TEST */

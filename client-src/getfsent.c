@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getfsent.c,v 1.13 1998/01/26 21:15:35 jrj Exp $
+ * $Id: getfsent.c,v 1.14 1998/02/26 19:24:13 jrj Exp $
  *
  * generic version of code to read fstab
  */
@@ -520,8 +520,6 @@ generic_fsent_t *fsent;
 	   fsent->freq, fsent->passno, nchk(fsent->mntopts));
 }
 
-char *pname = "getfsent";
-
 int main()
 {
     generic_fsent_t fsent;
@@ -539,6 +537,8 @@ int main()
 	 */
 	close(fd);
     }
+
+    set_pname("getfsent");
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

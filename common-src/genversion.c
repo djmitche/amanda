@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: genversion.c,v 1.15 1998/01/26 21:16:02 jrj Exp $
+ * $Id: genversion.c,v 1.16 1998/02/26 19:24:38 jrj Exp $
  *
  * dump the current Amanda version info
  */
@@ -61,8 +61,6 @@ int main P((void));
     prstr(str);								\
 } while(0)
 
-char *pname = "genversion";
-
 int main()
 {
     char line[STR_SIZE], *str = NULL;
@@ -80,6 +78,8 @@ int main()
 	 */
 	close(fd);
     }
+
+    set_pname("genversion");
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.36 1998/02/23 21:47:45 jrj Exp $
+ * $Id: amcheck.c,v 1.37 1998/02/26 19:24:59 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -57,8 +57,6 @@
 
 #define CHECK_TIMEOUT   30
 #define BUFFER_SIZE	32768
-
-char *pname = "amcheck";
 
 static int mailout, overwrite;
 dgram_t *msg = NULL;
@@ -110,6 +108,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    set_pname("amcheck");
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
@@ -191,7 +191,7 @@ char **argv;
 
     dup2(mainfd, 1);
     dup2(mainfd, 2);
-    pname = "amcheck-parent";
+    set_pname("amcheck-parent");
 
     /* start server side checks */
 
@@ -331,20 +331,21 @@ char *device;
 
     if(rc == 2) {
 	fprintf(errf, "%s: fatal slot %s: %s\n",
-		pname, slotstr, changer_resultstr);
+		get_pname(), slotstr, changer_resultstr);
 	return 1;
     }
     else if(rc == 1) {
-	fprintf(errf, "%s: slot %s: %s\n", pname, slotstr, changer_resultstr);
+	fprintf(errf, "%s: slot %s: %s\n",
+		get_pname(), slotstr, changer_resultstr);
 	return 0;
     }
     else {
 	if((errstr = tape_rdlabel(device, &datestamp, &label)) != NULL) {
-	    fprintf(errf, "%s: slot %s: %s\n", pname, slotstr, errstr);
+	    fprintf(errf, "%s: slot %s: %s\n", get_pname(), slotstr, errstr);
 	} else {
 	    /* got an amanda tape */
 	    fprintf(errf, "%s: slot %s: date %-8s label %s",
-		    pname, slotstr, datestamp, label);
+		    get_pname(), slotstr, datestamp, label);
 	    if(searchlabel != NULL && strcmp(label, searchlabel) == 0) {
 		/* it's the one we are looking for, stop here */
 		fprintf(errf, " (exact label match)\n");
@@ -428,7 +429,7 @@ int fd;
     int pid, tapebad, disklow, logbad;
     int inparallel;
 
-    pname = "amcheck-server";
+    set_pname("amcheck-server");
 
     switch(pid = fork()) {
     case -1: error("could not fork server check: %s", strerror(errno));
@@ -640,7 +641,7 @@ int fd;
     int kamanda_port;
 #endif
 
-    pname = "amcheck-clients";
+    set_pname("amcheck-clients");
 
     switch(pid = fork()) {
     case -1: error("could not fork client check: %s", strerror(errno));

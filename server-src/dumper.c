@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.57 1998/02/23 21:47:50 jrj Exp $
+/* $Id: dumper.c,v 1.58 1998/02/26 19:25:12 jrj Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -65,8 +65,6 @@
 #define STARTUP_TIMEOUT 60
 
 typedef enum { BOGUS, FILE_DUMP, PORT_DUMP, CONTINUE, ABORT, QUIT } cmd_t;
-
-char *pname = "dumper";
 
 char *argv[MAX_ARGS+1];
 int argc;
@@ -143,8 +141,8 @@ void service_ports_init()
 
     if((amandad = getservbyname(AMANDA_SERVICE_NAME, "udp")) == NULL) {
 	amanda_port = AMANDA_SERVICE_DEFAULT;
-	log(L_WARNING, "no %s/udp service, using default port %d",
-	    AMANDA_SERVICE_NAME, AMANDA_SERVICE_DEFAULT);
+	log_add(L_WARNING, "no %s/udp service, using default port %d",
+	        AMANDA_SERVICE_NAME, AMANDA_SERVICE_DEFAULT);
     }
     else
 	amanda_port = ntohs(amandad->s_port);
@@ -152,8 +150,8 @@ void service_ports_init()
 #ifdef KRB4_SECURITY
     if((amandad = getservbyname(KAMANDA_SERVICE_NAME, "udp")) == NULL) {
 	kamanda_port = KAMANDA_SERVICE_DEFAULT;
-	log(L_WARNING, "no %s/udp service, using default port %d",
-	    KAMANDA_SERVICE_NAME, KAMANDA_SERVICE_DEFAULT);
+	log_add(L_WARNING, "no %s/udp service, using default port %d",
+	        KAMANDA_SERVICE_NAME, KAMANDA_SERVICE_DEFAULT);
     }
     else
 	kamanda_port = ntohs(amandad->s_port);
@@ -196,9 +194,12 @@ char **main_argv;
 	close(fd);
     }
 
+    set_pname("dumper");
+
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
+    set_logerror(logerror);
 
     if(read_conffile(CONFFILE_NAME))
 	error("could not read conf file");
@@ -220,7 +221,8 @@ char **main_argv;
 
     fprintf(stderr,
 	    "%s: pid %ld executable %s version %s, using port %d\n",
-	    pname, (long) getpid(), main_argv[0], version(), protocol_port);
+	    get_pname(), (long) getpid(),
+	    main_argv[0], version(), protocol_port);
     fflush(stderr);
 
     /* now, make sure we are a valid user */
@@ -395,7 +397,7 @@ static cmd_t getcmd()
     char *line;
 
     if(interactive) {
-	printf("%s> ", pname);
+	printf("%s> ", get_pname());
 	fflush(stdout);
     }
 
@@ -673,7 +675,7 @@ logtype_t typ;
 	error("opening msg output: %s", strerror(errno));
 
     for(; (line = agets(errf)) != NULL; free(line)) {
-	log(typ, "%s", line);
+	log_add(typ, "%s", line);
     }
     afclose(errf);
 }
@@ -1062,13 +1064,13 @@ int mesgfd, datafd, indexfd, outfd;
 
     switch(dump_result) {
     case 0:
-	log(L_SUCCESS, "%s %s %d [%s]", hostname, diskname, level, errstr);
+	log_add(L_SUCCESS, "%s %s %d [%s]", hostname, diskname, level, errstr);
 
 	break;
 
     case 1:
 	log_start_multiline();
-	log(L_STRANGE, "%s %s %d [%s]", hostname, diskname, level, errstr);
+	log_add(L_STRANGE, "%s %s %d [%s]", hostname, diskname, level, errstr);
 	log_msgout(L_STRANGE);
 	log_end_multiline();
 
@@ -1107,7 +1109,7 @@ failed:
  log_failed:
 
     log_start_multiline();
-    log(L_FAIL, "%s %s %d [%s]", hostname, diskname, level, errstr);
+    log_add(L_FAIL, "%s %s %d [%s]", hostname, diskname, level, errstr);
     if (errfname) {
 	log_msgout(L_FAIL);
 	unlink(errfname);

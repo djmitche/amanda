@@ -12,8 +12,7 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
 LDADD =	libamclient.$(LIB_EXTENSION) \
-	../common-src/libamanda.$(LIB_EXTENSION) \
-	../common-src/libamnolog.$(LIB_EXTENSION)
+	../common-src/libamanda.$(LIB_EXTENSION)
 
 SUFFIXES =		.sh .pl
 

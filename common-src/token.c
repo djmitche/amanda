@@ -23,7 +23,7 @@
  * Author: George Scott, Computer Centre, Monash University.
  */
 /*
- * $Id: token.c,v 1.16 1998/02/23 21:47:43 jrj Exp $
+ * $Id: token.c,v 1.17 1998/02/26 19:24:43 jrj Exp $
  *
  * token bashing routines
  */
@@ -259,8 +259,6 @@ int val;
 
 #ifdef TEST
 
-char *pname = "token test";
-
 int main()
 {
 	char *str = NULL;
@@ -279,6 +277,8 @@ int main()
 		 */
 		close(fd);
 	}
+
+	set_pname("token test");
 
 	erroutput_type = ERR_INTERACTIVE;
 

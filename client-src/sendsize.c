@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.75 1998/02/23 21:47:29 jrj Exp $
+ * $Id: sendsize.c,v 1.76 1998/02/26 19:24:26 jrj Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -59,8 +59,6 @@
 } while(0)
 
 #endif
-
-char *pname = "sendsize";
 
 typedef struct level_estimates_s {
     time_t dumpsince;
@@ -124,6 +122,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    set_pname("sendsize");
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
@@ -435,7 +435,8 @@ disk_estimates_t *est;
         break;
     case 0:
 	execve(cmd, argv, safe_env());
-	dbprintf(("%s: execve %s returned: %s", pname, cmd, strerror(errno)));
+	dbprintf(("%s: execve %s returned: %s",
+		  get_pname(), cmd, strerror(errno)));
 	exit(1);
     }
     for(i = 0; i < argc; i++) {
@@ -470,7 +471,7 @@ disk_estimates_t *est;
     for(level = 0; level < DUMP_LEVELS; level++) {
 	if(est->est[level].needestimate) {
 	    dbprintf(("%s: getting size via dump for %s level %d\n",
-		      pname, est->amname, level));
+		      get_pname(), est->amname, level));
 	    size = getsize_dump(est->amname, level);
 
 	    amflock(1, "size");
@@ -495,7 +496,7 @@ disk_estimates_t *est;
     for(level = 0; level < DUMP_LEVELS; level++) {
 	if(est->est[level].needestimate) {
 	    dbprintf(("%s: getting size via smbclient for %s level %d\n",
-		      pname, est->amname, level));
+		      get_pname(), est->amname, level));
 	    size = getsize_smbtar(est->amname, level);
 
 	    amflock(1, "size");
@@ -521,7 +522,7 @@ disk_estimates_t *est;
   for(level = 0; level < DUMP_LEVELS; level++) {
       if (est->est[level].needestimate) {
 	  dbprintf(("%s: getting size via gnutar for %s level %d\n",
-		    pname, est->amname, level));
+		    get_pname(), est->amname, level));
 	  size = getsize_gnutar(est->amname, level,
 				est->exclude, est->est[level].dumpsince);
 
@@ -607,7 +608,7 @@ int level;
     {
         char *name = " (xfsdump)";
 	dbprintf(("%s: running \"%s%s -F -J -l %s - %s\"\n",
-		  pname, cmd, name, level_str, device));
+		  get_pname(), cmd, name, level_str, device));
     }
     else
 #endif							/* } */
@@ -627,7 +628,7 @@ int level;
 #endif							/* } */
 	dumpkeys = vstralloc(level_str, "s", "f", NULL);
         dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n",
-		  pname, cmd, name, dumpkeys, device));
+		  get_pname(), cmd, name, dumpkeys, device));
     }
     else
 #endif							/* } */
@@ -643,7 +644,7 @@ int level;
 	device = amname_to_dirname(disk);
 	dumpkeys = vstralloc(level_str, "b", "f", NULL);
 	dbprintf(("%s: running \"%s%s %s 60 - %s\"\n",
-		  pname, cmd, name, dumpkeys, device));
+		  get_pname(), cmd, name, dumpkeys, device));
     }
     else
 #endif							/* } */
@@ -665,7 +666,7 @@ int level;
 # ifdef AIX_BACKUP					/* { */
 	dumpkeys = vstralloc("-", level_str, "f", NULL);
 	dbprintf(("%s: running \"%s%s %s - %s\"\n",
-		  pname, cmd, name, dumpkeys, device));
+		  get_pname(), cmd, name, dumpkeys, device));
 # else							/* } { */
 	dumpkeys = vstralloc(level_str,
 #  ifdef HAVE_DUMP_ESTIMATE				/* { */
@@ -676,15 +677,15 @@ int level;
 			     "s", "f", NULL);
 
 	dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n",
-		  pname, cmd, name, dumpkeys, device));
+		  get_pname(), cmd, name, dumpkeys, device));
 # endif							/* } */
 	afree(name);
     }
     else
 #endif							/* } */
     {
-        dbprintf(("%s: no dump program available", pname));
-	error("%s: no dump program available", pname);
+        dbprintf(("%s: no dump program available", get_pname()));
+	error("%s: no dump program available", get_pname());
     }
 
     switch(dumppid = fork()) {
@@ -732,9 +733,9 @@ int level;
 #endif
 	{
 	  dbprintf(("%s: exec %s failed or no dump program available",
-		    pname, cmd));
+		    get_pname(), cmd));
 	  error("%s: exec %s failed or no dump program available",
-		pname, cmd);
+		get_pname(), cmd);
 	  exit(1);
 	}
     }
@@ -832,7 +833,7 @@ int level;
 	tarkeys = "archive 1;recurse;dir";
 
     dbprintf(("%s: running \"%s \'%s\' %s -d 3 -U %s -E%s%s -c \'%s\'\"\n",
-	      pname, SAMBA_CLIENT, sharename, "XXXXX", SAMBA_USER,
+	      get_pname(), SAMBA_CLIENT, sharename, "XXXXX", SAMBA_USER,
 	      domain ? " -W " : "", domain ? domain : "",
 	      tarkeys));
 
@@ -1078,7 +1079,8 @@ notincremental:
 	if (access(file, F_OK) == 0)
 	    exclude_arg = newstralloc2(exclude_arg, "--exclude-from=", file);
 	else {
-	    dbprintf(("%s: missing exclude list file \"%s\" discarded\n", pname, file));
+	    dbprintf(("%s: missing exclude list file \"%s\" discarded\n",
+		      get_pname(), file));
 	    afree(exclude_arg);
 	}
 #undef sc
@@ -1113,7 +1115,7 @@ notincremental:
 			 exclude_arg ? " ." : "",
 			 NULL);
 
-    dbprintf(("%s: running \"%s\"\n", pname, cmd_line));
+    dbprintf(("%s: running \"%s\"\n", get_pname(), cmd_line));
 
     nullfd = open("/dev/null", O_RDWR);
     pipe(pipefd);

@@ -1,5 +1,5 @@
 /*
- *	$Id: chg-scsi.c,v 1.1 1998/01/24 06:46:19 amcore Exp $
+ *	$Id: chg-scsi.c,v 1.2 1998/02/26 19:24:01 jrj Exp $
  *
  *	chg-scsi.c -- generic SCSI changer driver
  *
@@ -53,8 +53,6 @@
 #include "conffile.h"
 #include "libscsi.h"
 
-char *pname = "chg-scsi";
-
 /*  The tape drive does not have an idea of current slot so
  *  we use a file to store the current slot.  It is not ideal
  *  but it gets the job done  
@@ -65,7 +63,7 @@ int get_current_slot(char *count_file)
     int retval;
     if ((inf=fopen(count_file,"r")) == NULL) {
 	fprintf(stderr, "%s: unable to open current slot file (%s)\n",
-				pname, count_file);
+				get_pname(), count_file);
 	return 0;
     }
     fscanf(inf,"%d",&retval);
@@ -79,7 +77,7 @@ void put_current_slot(char *count_file,int slot)
 
     if ((inf=fopen(count_file,"w")) == NULL) {
 	fprintf(stderr, "%s: unable to open current slot file (%s)\n",
-				pname, count_file);
+				get_pname(), count_file);
 	exit(2);
     }
     fprintf(inf, "%d\n", slot);
@@ -229,6 +227,8 @@ int main(int argc, char *argv[])
     int endstatus = 0;
     char *changer_dev, *changer_file, *tape_device;
 
+    set_pname("chg-scsi");
+
     parse_args(argc,argv,&com);
 
     if(read_conffile(CONFFILE_NAME)) {
@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
     /* get info about the changer */
     if (-1 == (fd = open(changer_dev,O_RDWR))) {
 	int localerr = errno;
-	fprintf(stderr, "%s: open: %s: %s\n", pname, 
+	fprintf(stderr, "%s: open: %s: %s\n", get_pname(), 
 				changer_dev, strerror(localerr));
 	printf("%s open: %s: %s\n", "<none>", changer_dev, strerror(localerr));
 	return 2;
@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
 	printf("%s drive number error (%d > %d)\n", "<none>", 
 						drive_num, drivecnt);
 	fprintf(stderr, "%s: requested drive number (%d) greater than "
-			"number of supported drives (%d)\n", pname, 
+			"number of supported drives (%d)\n", get_pname(), 
 			drive_num, drivecnt);
 	return 2;
     }

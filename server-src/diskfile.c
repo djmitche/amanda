@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.21 1998/01/26 21:16:21 jrj Exp $
+ * $Id: diskfile.c,v 1.22 1998/02/26 19:25:09 jrj Exp $
  *
  * read disklist file
  */
@@ -522,6 +522,8 @@ char *argv[];
     close(fd);
   }
 
+  set_pname("diskfile");
+
   malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
   if (argc>1)
@@ -539,7 +541,5 @@ char *argv[];
 
   return result;
 }
-
-char *pname = "diskfile";
 
 #endif /* TEST */

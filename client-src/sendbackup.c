@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.36 1998/02/23 18:44:54 amcore Exp $
+ * $Id: sendbackup.c,v 1.37 1998/02/26 19:24:23 jrj Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -49,7 +49,6 @@ int index_socket, index_port, indexf;
 
 char *efile = NULL;
 char *estr = NULL;
-char *pname = "sendbackup";
 int compress, no_record, bsd_auth;
 int createindex;
 #define COMPR_FAST 1
@@ -114,7 +113,8 @@ char *str;
 		/* if exclude list file does not exist, ignore it.
 		 * Should not test for R_OK, because the file may be
 		 * readable by root only! */
-		dbprintf(("%s: exclude list file \"%s\" does not exist, ignoring\n", pname, j));
+		dbprintf(("%s: exclude list file \"%s\" does not exist, ignoring\n",
+			  get_pname(), j));
 	        afree(efile);
 	    } else
 	        efile = newvstralloc(efile, "--exclude", e, "=", j, NULL);
@@ -197,6 +197,8 @@ char **argv;
 		close(fd);
     }
 
+    set_pname("sendbackup");
+
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     chdir("/tmp");
@@ -212,7 +214,7 @@ char **argv;
 	 * connections back to driver programs on the tape host are set up.
 	 * Index service is run and goes to stdout.
 	 */
-	fprintf(stderr, "%s: running in interactive test mode\n", pname);
+	fprintf(stderr, "%s: running in interactive test mode\n", get_pname());
 	fflush(stderr);
     }
 
@@ -223,7 +225,7 @@ char **argv;
     /* parse dump request */
 
     if(interactive) {
-	fprintf(stderr, "%s> ", pname);
+	fprintf(stderr, "%s> ", get_pname());
 	fflush(stderr);
     }
 
@@ -540,9 +542,9 @@ amwait_t w;
 */
 void write_tapeheader()
 {
-    fprintf(stderr, "%s: info BACKUP=%s\n", pname, program->backup_name);
+    fprintf(stderr, "%s: info BACKUP=%s\n", get_pname(), program->backup_name);
 
-    fprintf(stderr, "%s: info RECOVER_CMD=", pname);
+    fprintf(stderr, "%s: info RECOVER_CMD=", get_pname());
     if (compress)
 	fprintf(stderr, "%s %s |", UNCOMPRESS_PATH,
 #ifdef UNCOMPRESS_OPT
@@ -555,9 +557,10 @@ void write_tapeheader()
     fprintf(stderr, "%s -f... -\n", program->restore_name);
 
     if (compress)
-	fprintf(stderr, "%s: info COMPRESS_SUFFIX=%s\n", pname, COMPRESS_SUFFIX);
+	fprintf(stderr, "%s: info COMPRESS_SUFFIX=%s\n",
+			get_pname(), COMPRESS_SUFFIX);
 
-    fprintf(stderr, "%s: info end\n", pname);
+    fprintf(stderr, "%s: info end\n", get_pname());
 }
 
 #ifdef STDC_HEADERS
@@ -576,8 +579,8 @@ va_dcl
     int pid, i, inpipe[2];
     char *e;
 
-    dbprintf(("%s: spawning \"%s\" in pipeline\n", pname, prog));
-    dbprintf(("%s: argument list:", pname));
+    dbprintf(("%s: spawning \"%s\" in pipeline\n", get_pname(), prog));
+    dbprintf(("%s: argument list:", get_pname()));
     arglist_start(ap, stderrfd);		/* setup argv */
     for(i = 0; i < MAX_PIPESPAWN_ARGS; i++) {
 	char *arg = arglist_val(ap, char *);
@@ -650,7 +653,7 @@ int stdoutfd, stderrfd;
     int pid, inpipe[2];
     char *e;
 
-    dbprintf(("%s: forking function %s in pipeline\n", pname, fname));
+    dbprintf(("%s: forking function %s in pipeline\n", get_pname(), fname));
 
     if(pipe(inpipe) == -1) {
       e = strerror(errno);
@@ -732,8 +735,8 @@ int mesgin;
 
     program->end_backup(goterror);
 
-    fprintf(stderr, "%s: size %ld\n", pname, dump_size);
-    fprintf(stderr, "%s: end\n", pname);
+    fprintf(stderr, "%s: size %ld\n", get_pname(), dump_size);
+    fprintf(stderr, "%s: end\n", get_pname());
 }
 
 
@@ -916,7 +919,7 @@ char *cmd;
     error("couldn't start index creator [%s]", e);
   }
 
-  dbprintf(("%s: started index creator: \"%s\"\n", pname, cmd));
+  dbprintf(("%s: started index creator: \"%s\"\n", get_pname(), cmd));
   while(1) {
     char buffer[BUFSIZ], *ptr;
     int bytes_read;
@@ -986,7 +989,7 @@ char *cmd;
   }
   pipe_fp = NULL;
 
-  dbprintf(("%s: index created successfully\n", pname));
+  dbprintf(("%s: index created successfully\n", get_pname()));
   exit(0);
 }
 

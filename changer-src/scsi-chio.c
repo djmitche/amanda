@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-chio.c,v 1.1 1998/01/24 06:46:21 amcore Exp $
+ *	$Id: scsi-chio.c,v 1.2 1998/02/26 19:24:04 jrj Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -28,8 +28,6 @@
 #else
 # error "Inside CHIO code without CHIO_H or SYS_CHIO_H defined"
 #endif
-
-extern char *pname;
 
 char *modname = "@(#)" __FILE__ 
 		": SCSI support library for the chio(2) interface @(#)";
@@ -69,7 +67,7 @@ int type=CHET_ST;
     rc = ioctl(fd, CHIOGSTATUS, &ces);
     if (rc) {
 	fprintf(stderr,"%s: changer status query failed: 0x%x %s\n",
-			pname, rc,strerror(errno));
+			get_pname(), rc,strerror(errno));
 	return -1;
     }
 
@@ -96,7 +94,7 @@ int type=CHET_ST;
     rc = ioctl(fd,CHIOGSTATUS,&ces);
     if (rc) {
 	fprintf(stderr,"%s: changer status query failed: 0x%x %s\n",
-			pname, rc, strerror(errno));
+			get_pname(), rc, strerror(errno));
 	return -1;
     }
 
@@ -124,7 +122,7 @@ int type=CHET_DT;
     rc = ioctl(fd, CHIOGSTATUS, &ces);
     if (rc) {
 	fprintf(stderr,"%s: drive status query failed: 0x%x %s\n",
-			pname, rc, strerror(errno));
+			get_pname(), rc, strerror(errno));
 	return -1;
     }
 
@@ -152,7 +150,7 @@ int rc;
     rc = ioctl(fd, CHIOMOVE, &move);
     if (rc){
 	fprintf(stderr,"%s: drive unload failed (MOVE): 0x%x %s\n",
-		pname, rc, strerror(errno));
+		get_pname(), rc, strerror(errno));
 	return(-2);
     }
     return 0;
@@ -176,7 +174,7 @@ int rc;
     rc = ioctl(fd,CHIOMOVE,&move);
     if (rc){
 	fprintf(stderr,"%s: drive load failed (MOVE): 0x%x %s\n",
-		pname, rc, strerror(errno));
+		get_pname(), rc, strerror(errno));
 	return(-2);
     }
     return(0);
@@ -189,7 +187,7 @@ int rc;
     rc = get_changer_info(fd);
     if (rc) {
         fprintf(stderr, "%s: slot count query failed: 0x%x %s\n", 
-			pname, rc, strerror(errno));
+			get_pname(), rc, strerror(errno));
         return -1;
     }
 
@@ -203,7 +201,7 @@ int rc;
     rc = get_changer_info(fd);
     if (rc) {
         fprintf(stderr, "%s: drive count query failed: 0x%x %s\n",
-			pname, rc, strerror(errno));
+			get_pname(), rc, strerror(errno));
         return -1;
     }
 

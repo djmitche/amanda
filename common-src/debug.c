@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.14 1998/02/06 18:23:52 jrj Exp $
+ * $Id: debug.c,v 1.15 1998/02/26 19:24:32 jrj Exp $
  *
  * debug log subroutines
  */
@@ -34,7 +34,6 @@
 #include "arglist.h"
 
 int debug = 1;
-extern char *pname;
 
 #define	MIN_DB_FD			10
 
@@ -92,9 +91,10 @@ void debug_open()
 
 #ifdef DEBUG_FILE_WITH_PID
     ap_snprintf(pid_str, sizeof(pid_str), "%ld", (long)getpid());
-    dbfilename = vstralloc(DEBUG_DIR, "/", pname, ".", pid_str, ".debug", NULL);
+    dbfilename = vstralloc(DEBUG_DIR, "/", get_pname(),
+			   ".", pid_str, ".debug", NULL);
 #else
-    dbfilename = vstralloc(DEBUG_DIR, "/", pname, ".debug", NULL);
+    dbfilename = vstralloc(DEBUG_DIR, "/", get_pname(), ".debug", NULL);
 #endif
 
     if(mkpdir(dbfilename, 0700, uid, gid) == -1)
@@ -127,7 +127,7 @@ void debug_open()
     time(&curtime);
     saved_debug = debug; debug = 1;
     debug_printf("%s: debug %d pid %ld ruid %ld euid %ld start time %s",
-		 pname, debug, (long)getpid(), (long)getuid(),
+		 get_pname(), debug, (long)getpid(), (long)getuid(),
 		 (long)geteuid(), ctime(&curtime));
     debug = saved_debug;
     afree(dbfilename);
@@ -139,7 +139,7 @@ void debug_close()
 
     time(&curtime);
     debug = 1;
-    debug_printf("%s: pid %ld finish time %s", pname, (long)getpid(),
+    debug_printf("%s: pid %ld finish time %s", get_pname(), (long)getpid(),
 		 ctime(&curtime));
 
     if(fclose(db_file) == EOF)

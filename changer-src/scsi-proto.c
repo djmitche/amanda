@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-proto.c,v 1.1 1998/01/24 06:46:23 amcore Exp $
+ *	$Id: scsi-proto.c,v 1.2 1998/02/26 19:24:07 jrj Exp $
  *
  *	scsi-proto.c -- library routines to handle the changer
  *			Prototype file for customization
@@ -15,8 +15,6 @@
 #include "libscsi.h"
 
 #if defined(PROTO_H) 
-
-extern char *pname;
 
 char *modname = "@(#)" __FILE__
 		": SCSI support library for the proto scsi interface @(#)";

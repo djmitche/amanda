@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-hpux.c,v 1.1 1998/01/24 06:46:22 amcore Exp $
+ *	$Id: scsi-hpux.c,v 1.2 1998/02/26 19:24:05 jrj Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -15,11 +15,6 @@
 
 #if defined(HAVE_SYS_SCSI_H)
 # include <sys/scsi.h>
-
-/*
- * the program name, as defined by the calling program.
- */
-extern char *pname;
 
 char *moddesc = "@(#)" __FILE__
 		": HP/UX SCSI changer support routines @(#)";
@@ -59,7 +54,7 @@ int rc;
     rc = ioctl(fd, SIOC_ELEMENT_STATUS, &es);
     if (rc) {
 	fprintf(stderr, "%s: element status query failed: 0x%x %s\n",
-				pname, rc, strerror(errno));
+				get_pname(), rc, strerror(errno));
 	return(-1);
     }
 
@@ -85,7 +80,7 @@ int i, rc;
 
     if (rc) {
 	fprintf(stderr,"%s: element status query failed: 0x%x %s\n",
-				pname, rc, strerror(errno));
+				get_pname(), rc, strerror(errno));
 	return -1;
     }
     return (i - changer_info.first_storage - 1);
@@ -106,7 +101,7 @@ int                            i,rc;
     rc = ioctl(fd, SIOC_ELEMENT_STATUS, &es);
     if (rc) {
 	fprintf(stderr,"%s: drive status quer failed: 0x%x %s\n",
-				pname, rc, strerror(errno));
+				get_pname(), rc, strerror(errno));
 	return(-1);
     }
 
@@ -136,7 +131,7 @@ int rc;
     rc = ioctl(fd, SIOC_MOVE_MEDIUM, &move);
     if (rc){
 	fprintf(stderr,"%s: move medium command failed: 0x%x %s\n",
-		pname, rc, strerror(errno));
+		get_pname(), rc, strerror(errno));
 	return(-2);
     }
     return 0;
@@ -166,7 +161,7 @@ int rc;
     rc = ioctl(fd, SIOC_MOVE_MEDIUM,&move);
     if (rc){
 	fprintf(stderr,"%s: drive load failed (MOVE): 0x%x %s\n",
-		pname, rc, strerror(errno));
+		get_pname(), rc, strerror(errno));
 	return(-2);
     }
     return (0);
@@ -178,7 +173,7 @@ int rc;
 
     rc = get_changer_info(fd);
     if (rc) {
-        fprintf(stderr, "%s: storage size query failed: 0x%x %s\n", pname,
+        fprintf(stderr, "%s: storage size query failed: 0x%x %s\n", get_pname(),
 						rc, strerror(errno));
         return -1;
     }
@@ -193,7 +188,7 @@ int get_drive_count(int fd)
 
     rc = get_changer_info(fd);
     if (rc) {
-        fprintf(stderr, "%s: drive count query failed: 0x%x %s\n", pname,
+        fprintf(stderr, "%s: drive count query failed: 0x%x %s\n", get_pname(),
 						rc, strerror(errno));
         return -1;
     }

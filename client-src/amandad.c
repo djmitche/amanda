@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.23 1998/02/23 21:47:26 jrj Exp $
+ * $Id: amandad.c,v 1.24 1998/02/26 19:24:11 jrj Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -61,8 +61,6 @@ struct service_s {
 
 int max_retry_count = MAX_RETRIES;
 int ack_timeout     = ACK_TIMEOUT;
-
-char *pname = "amandad";
 
 #ifdef KRB4_SECURITY
 #  include "amandad-krb4.c"
@@ -128,6 +126,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    set_pname("amandad");
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.21 1998/02/20 23:16:06 martinea Exp $
+ * $Id: amflush.c,v 1.22 1998/02/26 19:25:00 jrj Exp $
  *
  * write files from work directory onto tape
  */
@@ -39,8 +39,6 @@
 #include "version.h"
 #include "holding.h"
 #include "driverio.h"
-
-char *pname = "amflush";
 
 disklist_t *diskqp;
 
@@ -74,6 +72,8 @@ char **main_argv;
 	 */
 	close(fd);
     }
+
+    set_pname("amflush");
 
     erroutput_type = ERR_INTERACTIVE;
     foreground = 0;
@@ -115,6 +115,7 @@ char **main_argv;
     confirm();
     if(!foreground) detach();
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
+    set_logerror(logerror);
     run_dumps();
     return 0;
 }
@@ -185,8 +186,8 @@ char *diskdir;
     dirname = vstralloc(diskdir, "/", datestamp, NULL);
 
     if((workdir = opendir(dirname)) == NULL) {
-	log(L_INFO, "%s: could not open working dir: %s",
-	    dirname, strerror(errno));
+	log_add(L_INFO, "%s: could not open working dir: %s",
+	        dirname, strerror(errno));
 	afree(dirname);
 	return;
     }
@@ -198,9 +199,9 @@ char *diskdir;
 
 	if(is_emptyfile(entry->d_name)) {
 	    if(unlink(entry->d_name) == -1)
-		log(L_INFO,"%s: ignoring zero length file.", entry->d_name);
+		log_add(L_INFO,"%s: ignoring zero length file.", entry->d_name);
 	    else
-		log(L_INFO,"%s: removed zero length file.", entry->d_name);
+		log_add(L_INFO,"%s: removed zero length file.", entry->d_name);
 	    continue;
 	}
 
@@ -211,21 +212,21 @@ char *diskdir;
 	afree(hostname);
 	afree(diskname);
 	if(get_amanda_names(destname, &hostname, &diskname, &level)) {
-	    log(L_INFO, "%s: ignoring cruft file.", entry->d_name);
+	    log_add(L_INFO, "%s: ignoring cruft file.", entry->d_name);
 	    continue;
 	}
 
 	dp = lookup_disk(hostname, diskname);
 
 	if (dp == NULL) {
-	    log(L_INFO, "%s: disk %s:%s not in database, skipping it.",
-		entry->d_name, hostname, diskname);
+	    log_add(L_INFO, "%s: disk %s:%s not in database, skipping it.",
+		    entry->d_name, hostname, diskname);
 	    continue;
 	}
 
 	if(level < 0 || level > 9) {
-	    log(L_INFO, "%s: ignoring file with bogus dump level %d.",
-		entry->d_name, level);
+	    log_add(L_INFO, "%s: ignoring file with bogus dump level %d.",
+		    entry->d_name, level);
 	    continue;
 	}
 
@@ -247,12 +248,13 @@ char *diskdir;
 	    unlink(destname);
 	    break;
 	case TRYAGAIN:
-	    log(L_WARNING, "%s: too many taper retries, leaving file on disk",
-		destname);
+	    log_add(L_WARNING,
+		    "%s: too many taper retries, leaving file on disk",
+		    destname);
 	    break;
 	default:
-	    log(L_WARNING, "%s: taper error, leaving file on disk",
-		destname);
+	    log_add(L_WARNING, "%s: taper error, leaving file on disk",
+		    destname);
 	    break;
 	}
     }
@@ -262,8 +264,8 @@ char *diskdir;
     /* try to zap the now (hopefully) empty working dir */
     chdir(confdir);
     if(rmdir(dirname))
-	log(L_WARNING, "Could not rmdir %s.  Check for cruft.",
-	    dirname);
+	log_add(L_WARNING, "Could not rmdir %s.  Check for cruft.",
+	        dirname);
     afree(diskname);
     afree(hostname);
     afree(destname);
@@ -275,7 +277,7 @@ void run_dumps()
     holdingdisk_t *hdisk;
 
     startclock();
-    log(L_START, "date %s", datestamp);
+    log_add(L_START, "date %s", datestamp);
 
     chdir(confdir);
     startup_tape_process();
@@ -285,8 +287,9 @@ void run_dumps()
     if(tok != TAPER_OK) {
 	/* forget it */
 	sleep(5);	/* let taper log first, but not really necessary */
-	log(L_ERROR, "Cannot flush without tape.  Try again.");
-	log(L_FINISH, "date %s time %s", datestamp, walltime_str(curclock()));
+	log_add(L_ERROR, "Cannot flush without tape.  Try again.");
+	log_add(L_FINISH, "date %s time %s",
+		datestamp, walltime_str(curclock()));
     }
     else {
 
@@ -299,7 +302,7 @@ void run_dumps()
 
     }
 
-    log(L_FINISH, "date %s time %s", datestamp, walltime_str(curclock()));
+    log_add(L_FINISH, "date %s time %s", datestamp, walltime_str(curclock()));
 
     /* now, have reporter generate report and send mail */
 

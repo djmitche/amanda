@@ -1,3 +1,8 @@
+	Change log() calls to log_add() so it does not conflict with the math
+	function of the same name.  Replace pname global variable with two
+	functions to set/get.  Get rid of libamnolog.
+	-JJ
+
 	ensure that `amadmin find' reports multiple backups performed on
 	the same day in the correct sequence.
 	-Liudvikas Bukys <bukys@cs.rochester.edu>

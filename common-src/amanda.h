@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.53 1998/02/23 21:47:34 jrj Exp $
+ * $Id: amanda.h,v 1.54 1998/02/26 19:24:30 jrj Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -404,6 +404,9 @@ extern int  debug_fd P((void));
 	void *bufp[len];	\
     }
 
+extern void   set_logerror P((void (*f)(char *)));
+extern void   set_pname P((char *pname));
+extern char  *get_pname P((void));
 extern int    erroutput_type;
 extern void   error     P((char *format, ...))
     __attribute__ ((format (printf, 1, 2)));

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtrmidx.c,v 1.15 1998/01/02 18:48:22 jrj Exp $
+ * $Id: amtrmidx.c,v 1.16 1998/02/26 19:25:06 jrj Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -40,8 +40,6 @@
 #include "conffile.h"
 #include "diskfile.h"
 #include "version.h"
-
-char *pname = "amtrmidx";
 
 int main(argc, argv)
 int argc;
@@ -67,6 +65,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    set_pname("amtrmidx");
 
     if (argc != 2)
     {

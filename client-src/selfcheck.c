@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.30 1998/02/23 21:47:28 jrj Exp $
+ * $Id: selfcheck.c,v 1.31 1998/02/26 19:24:18 jrj Exp $
  *
  * do self-check and send back any error messages
  */
@@ -53,8 +53,6 @@ int need_vxrestore=0;
 int need_runtar=0;
 int need_gnutar=0;
 int need_compress_path=0;
-
-char *pname = "selfcheck";
 
 /* local functions */
 int main P((int argc, char **argv));
@@ -91,6 +89,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    set_pname("selfcheck");
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

@@ -1,5 +1,5 @@
 /*
- *	$Id: libscsi.h,v 1.2 1998/02/24 03:28:52 blair Exp $
+ *	$Id: libscsi.h,v 1.3 1998/02/26 19:24:02 jrj Exp $
  *
  *	libscsi.h -- library header for routines to handle the changer
  *			support for chio based systems
@@ -14,12 +14,6 @@
 #define LIBSCSI_H
 
 #include "amanda.h"
-
-/*
- * the name of the calling program
- * (an amanda convention)
- */
-extern char *pname;
 
 /* 
  * is the specified slot empty?

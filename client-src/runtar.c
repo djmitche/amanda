@@ -25,14 +25,12 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: runtar.c,v 1.8 1998/01/02 18:47:46 jrj Exp $
+ * $Id: runtar.c,v 1.9 1998/02/26 19:24:17 jrj Exp $
  *
  * runs GNUTAR program as root
  */
 #include "amanda.h"
 #include "version.h"
-
-char *pname = "runtar";
 
 int main P((int argc, char **argv));
 
@@ -54,6 +52,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    set_pname("runtar");
 
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.33 1998/02/25 18:37:52 martinea Exp $
+ * $Id: amadmin.c,v 1.34 1998/02/26 19:24:57 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -38,7 +38,6 @@
 #include "version.h"
 #include "holding.h"
 
-char *pname = "amadmin";
 disklist_t *diskqp;
 
 struct find_result {
@@ -107,6 +106,8 @@ char **argv;
 	close(fd);
     }
 
+    set_pname("amadmin");
+
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     erroutput_type = ERR_INTERACTIVE;
@@ -169,8 +170,8 @@ char **argv;
 
 void usage P((void))
 {
-    fprintf(stderr, "\nUsage: %s%s <conf> <command> {<args>} ...\n", pname,
-	    versionsuffix());
+    fprintf(stderr, "\nUsage: %s%s <conf> <command> {<args>} ...\n",
+	    get_pname(), versionsuffix());
     fprintf(stderr, "    Valid <command>s are:\n");
     fprintf(stderr,"\tversion\t\t\t\t# Show version info.\n");
     fprintf(stderr,
@@ -263,10 +264,10 @@ disk_t *dp;
     inf.command = PLANNER_FORCE;
     if(put_info(hostname, diskname, &inf) == 0) {
 	printf("%s: %s:%s is set to a forced level 0 tonight.\n",
-	       pname, hostname, diskname);
+	       get_pname(), hostname, diskname);
     } else {
 	fprintf(stderr, "%s: %s:%s could not be forced.\n",
-		pname, hostname, diskname);
+		get_pname(), hostname, diskname);
     }
 }
 
@@ -294,16 +295,16 @@ disk_t *dp;
 	inf.command = NO_COMMAND;
 	if(put_info(hostname, diskname, &inf) == 0){
 	    printf("%s: force command for %s:%s cleared.\n",
-		   pname, hostname, diskname);
+		   get_pname(), hostname, diskname);
 	} else {
 	    fprintf(stderr,
 		    "%s: force command for %s:%s could not be cleared.\n",
-		    pname, hostname, diskname);
+		    get_pname(), hostname, diskname);
 	}
     }
     else {
 	printf("%s: no force command outstanding for %s:%s, unchanged.\n",
-	       pname, hostname, diskname);
+	       get_pname(), hostname, diskname);
     }
 }
 
@@ -379,7 +380,7 @@ disk_t *dp;
 
     if(get_info(hostname, diskname, &inf)) {
 	printf("%s: %s:%s NOT currently in database.\n",
-	       pname, hostname, diskname);
+	       get_pname(), hostname, diskname);
 	return;
     }
 
@@ -389,7 +390,7 @@ disk_t *dp;
 	      hostname, diskname, strerror(errno));
     else
 	printf("%s: %s:%s deleted from curinfo database.\n",
-	       pname, hostname, diskname);
+	       get_pname(), hostname, diskname);
 }
 
 void delete(argc, argv)
@@ -402,7 +403,7 @@ char **argv;
    if(deleted)
 	printf(
 	 "%s: NOTE: you'll have to remove these from the disklist yourself.\n",
-	 pname);
+	 get_pname());
 }
 
 /* ----------------------------------------------- */
@@ -613,7 +614,8 @@ char **argv;
 
     if(argc < 3) {
 	fprintf(stderr,
-		"%s: expecting \"find [--sort <hkdlb>] [hostname [<disk> ...]]\"\n", pname);
+		"%s: expecting \"find [--sort <hkdlb>] [hostname [<disk> ...]]\"\n",
+		get_pname());
 	usage();
     }
 
@@ -1294,7 +1296,7 @@ char **argv;
     /* process header line */
 
     if((line = agets(stdin)) == NULL) {
-	fprintf(stderr, "%s: empty input.\n", pname);
+	fprintf(stderr, "%s: empty input.\n", get_pname());
 	return;
     }
 
@@ -1358,11 +1360,11 @@ char **argv;
     if(newer)
 	fprintf(stderr,
 	     "%s: WARNING: input is from newer Amanda version: %d.%d.%d.\n",
-		pname, vers_maj, vers_min, vers_patch);
+		get_pname(), vers_maj, vers_min, vers_patch);
 
     if(strcmp(org, getconf_str(CNF_ORG)) != 0) {
 	fprintf(stderr, "%s: WARNING: input is from different org: %s\n",
-		pname, org);
+		get_pname(), org);
     }
 
     while(import_one());
@@ -1373,7 +1375,8 @@ char **argv;
  bad_header:
 
     afree(line);
-    fprintf(stderr, "%s: bad CURINFO header line in input: %s.\n", pname, hdr);
+    fprintf(stderr, "%s: bad CURINFO header line in input: %s.\n",
+	    get_pname(), hdr);
     fprintf(stderr, "    Was the input in \"amadmin export\" format?\n");
     return;
 }
@@ -1555,7 +1558,7 @@ int import_one P((void))
 
     if(put_info(hostname, diskname, &info)) {
 	fprintf(stderr, "%s: error writing record for %s:%s\n",
-		pname, hostname, diskname);
+		get_pname(), hostname, diskname);
     }
     afree(hostname);
     afree(diskname);
@@ -1565,14 +1568,14 @@ int import_one P((void))
     afree(line);
     afree(hostname);
     afree(diskname);
-    fprintf(stderr, "%s: parse error reading import record.\n", pname);
+    fprintf(stderr, "%s: parse error reading import record.\n", get_pname());
     return 0;
 
  shortfile_err:
     afree(line);
     afree(hostname);
     afree(diskname);
-    fprintf(stderr, "%s: short file reading import record.\n", pname);
+    fprintf(stderr, "%s: short file reading import record.\n", get_pname());
     return 0;
 }
 
@@ -1598,7 +1601,8 @@ impget_line ()
 	/* otherwise, a blank line, so keep going */
     }
     if(ferror(stdin)) {
-	fprintf(stderr, "%s: reading stdin: %s\n", pname, strerror(errno));
+	fprintf(stderr, "%s: reading stdin: %s\n",
+		get_pname(), strerror(errno));
     }
     return NULL;
 }

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.h,v 1.8 1998/01/27 05:39:45 amcore Exp $
+ * $Id: sendbackup.h,v 1.9 1998/02/26 19:24:24 jrj Exp $
  *
  * a few common decls for the sendbackup-* sources
  */
@@ -74,8 +74,6 @@ typedef struct backup_program_s {
 } backup_program_t;
 
 extern backup_program_t *programs[], *program;
-
-extern char *pname;
 
 #define COMPR_FAST 1
 #define COMPR_BEST 2

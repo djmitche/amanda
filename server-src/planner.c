@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.60 1998/02/23 21:47:52 jrj Exp $
+ * $Id: planner.c,v 1.61 1998/02/26 19:25:19 jrj Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -39,8 +39,6 @@
 #include "dgram.h"
 #include "protocol.h"
 #include "version.h"
-
-char *pname = "planner";
 
 #define MAX_LEVELS		    3	/* max# of estimates per filesys */
 
@@ -158,15 +156,18 @@ char **argv;
 	close(fd);
     }
 
+    set_pname("planner");
+
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
+    set_logerror(logerror);
     startclock();
 
     fprintf(stderr, "%s: pid %ld executable %s version %s\n",
-	    pname, (long) getpid(), argv[0], version());
+	    get_pname(), (long) getpid(), argv[0], version());
     for(vp = version_info; *vp != NULL; vp++)
-	fprintf(stderr, "%s: %s", pname, *vp);
+	fprintf(stderr, "%s: %s", get_pname(), *vp);
 
     /*
      * 1. Networking Setup
@@ -224,7 +225,7 @@ char **argv;
 
     afree(datestamp);
     datestamp = construct_datestamp();
-    log(L_START, "date %s", datestamp);
+    log_add(L_START, "date %s", datestamp);
 
     if((origqp = read_diskfile(conf_diskfile)) == NULL)
 	error("could not load \"%s\"\n", conf_diskfile);
@@ -408,7 +409,7 @@ char **argv;
     fprintf(stderr, "--------\n");
 
     close_infofile();
-    log(L_FINISH, "date %s", datestamp);
+    log_add(L_FINISH, "date %s", datestamp);
 
     afree(msg);
     afree(datestamp);
@@ -500,7 +501,7 @@ disk_t *dp;
 
     if(get_info(dp->host->hostname, dp->name, &inf)) {
 	/* no record for this disk, make a note of it */
-	log(L_INFO, "Adding new disk %s:%s.", dp->host->hostname, dp->name);
+	log_add(L_INFO, "Adding new disk %s:%s.", dp->host->hostname, dp->name);
     }
 
     /* setup working data struct for disk */
@@ -528,9 +529,9 @@ disk_t *dp;
 	     * hosed when that tape gets re-used next.  Disallow this for
 	     * now.
 	     */
-	    log(L_ERROR,
-		"Cannot force full dump of %s:%s with no-full option.",
-		dp->host->hostname, dp->name);
+	    log_add(L_ERROR,
+		    "Cannot force full dump of %s:%s with no-full option.",
+		    dp->host->hostname, dp->name);
 
 	    /* clear force command */
 	    if(inf.command == PLANNER_FORCE)
@@ -544,8 +545,8 @@ disk_t *dp;
 	else {
 	    ep->last_level = -1;
 	    ep->next_level0 = -conf_dumpcycle;
-	    log(L_INFO, "Forcing full dump of %s:%s as directed.",
-		dp->host->hostname, dp->name);
+	    log_add(L_INFO, "Forcing full dump of %s:%s as directed.",
+		    dp->host->hostname, dp->name);
 	}
     }
     else {
@@ -563,14 +564,14 @@ disk_t *dp;
 	if(ep->last_level > -1) {
 	    int overwrite_runs = when_overwrite(inf.inf[0].label);
 	    if(overwrite_runs == 0) {
-		log(L_WARNING,
-		 "Last full dump of %s:%s on tape %s overwritten on this run.",
-		    dp->host->hostname, dp->name, inf.inf[0].label);
+		log_add(L_WARNING,
+		  "Last full dump of %s:%s on tape %s overwritten on this run.",
+		        dp->host->hostname, dp->name, inf.inf[0].label);
 	    }
 	    else if(overwrite_runs < RUNS_REDZONE) {
-		log(L_WARNING,
-		 "Last full dump of %s:%s on tape %s overwritten in %d run%s.",
-		    dp->host->hostname, dp->name, inf.inf[0].label,
+		log_add(L_WARNING,
+		  "Last full dump of %s:%s on tape %s overwritten in %d run%s.",
+		        dp->host->hostname, dp->name, inf.inf[0].label,
 		    overwrite_runs, overwrite_runs == 1? "" : "s");
 	    }
 	}
@@ -598,8 +599,8 @@ disk_t *dp;
 	}
 
 	if(days_diff(inf.inf[0].date, today) == 0) {
-	    log(L_INFO, "Skipping full dump of %s:%s today.",
-		dp->host->hostname, dp->name);
+	    log_add(L_INFO, "Skipping full dump of %s:%s today.",
+		    dp->host->hostname, dp->name);
 	    fprintf(stderr,"%s:%s lev 0 skipped due to skip-full flag\n",
 		    dp->host->hostname, dp->name);
 	    /* don't enqueue the disk */
@@ -608,14 +609,14 @@ disk_t *dp;
 	    askfor(ep, 2, -1, &inf);
 	    fprintf(stderr, "planner: SKIPPED %s %s 0 [skip-full]\n",
 		    dp->host->hostname, dp->name);
-	    log(L_SUCCESS, "%s %s 0 [skipped: skip-full]",
-		dp->host->hostname, dp->name);
+	    log_add(L_SUCCESS, "%s %s 0 [skipped: skip-full]",
+		    dp->host->hostname, dp->name);
 	    return;
 	}
 
 	if(ep->next_level0 == 1) {
-	    log(L_WARNING, "Skipping full dump of %s:%s tommorrow.",
-		dp->host->hostname, dp->name);
+	    log_add(L_WARNING, "Skipping full dump of %s:%s tommorrow.",
+		    dp->host->hostname, dp->name);
 	}
 
     }
@@ -633,15 +634,15 @@ disk_t *dp;
 	fprintf(stderr, "planner: SKIPPED %s %s 1 [skip-incr]\n",
 		dp->host->hostname, dp->name);
 
-	log(L_SUCCESS, "%s %s 1 [skipped: skip-incr]",
-	    dp->host->hostname, dp->name);
+	log_add(L_SUCCESS, "%s %s 1 [skipped: skip-incr]",
+	        dp->host->hostname, dp->name);
 	return;
     }
 
     if(ep->last_level == -1 && ep->next_level0 > 0 && dp->strategy != DS_NOFULL) {
-	log(L_WARNING,
-	    "%s:%s mismatch: no tapelist record, but curinfo next_level0: %d.",
-	    dp->host->hostname, dp->name, ep->next_level0);
+	log_add(L_WARNING,
+	     "%s:%s mismatch: no tapelist record, but curinfo next_level0: %d.",
+	        dp->host->hostname, dp->name, ep->next_level0);
 	ep->next_level0 = 0;
     }
 
@@ -1086,8 +1087,8 @@ pkt_t *pkt;
 
 	    tmp = s[-1];
 	    s[-1] = '\0';			/* for error message */
-	    log(L_ERROR, "%s: invalid reply from sendsize: `%s'\n",
-		hostp->hostname, resp);
+	    log_add(L_ERROR, "%s: invalid reply from sendsize: `%s'\n",
+		    hostp->hostname, resp);
 	    s[-1] = tmp;
 	} else {
 	    for(i = 0; i < MAX_LEVELS; i++)
@@ -1270,9 +1271,9 @@ disk_t *dp;
 
 #ifdef old_behavior
     if(est(dp)->last_level != -1) {
-	log(L_WARNING,
-	    "Could not get estimate for %s:%s, using historical data.",
-	    dp->host->hostname, dp->name);
+	log_add(L_WARNING,
+	        "Could not get estimate for %s:%s, using historical data.",
+	        dp->host->hostname, dp->name);
 	analyze_estimate(dp);
 	return;
     }
@@ -1283,8 +1284,7 @@ disk_t *dp;
     fprintf(stderr, "planner: FAILED %s %s 0 [%s]\n",
 	dp->host->hostname, dp->name, errstr);
 
-    log(L_FAIL, "%s %s 0 [%s]",
-	dp->host->hostname, dp->name, errstr);
+    log_add(L_FAIL, "%s %s 0 [%s]", dp->host->hostname, dp->name, errstr);
 
     /* XXX - memory leak with *dp */
 }
@@ -1364,8 +1364,8 @@ disk_t *dp;
     }
 
     fprintf(stderr, "BUMPED\n");
-    log(L_INFO, "Incremental of %s:%s bumped to level %d.",
-	dp->host->hostname, dp->name, bump_level);
+    log_add(L_INFO, "Incremental of %s:%s bumped to level %d.",
+	    dp->host->hostname, dp->name, bump_level);
 
     return bump_level;
 }
@@ -1590,13 +1590,13 @@ static void delay_dumps P((void))
 
 	if(bi->deleted) {
 	    fprintf(stderr, "planner: FAILED %s\n", bi->errstr);
-	    log(L_FAIL, "%s", bi->errstr);
+	    log_add(L_FAIL, "%s", bi->errstr);
 	}
 	else {
 	    dp = bi->dp;
 	    fprintf(stderr, "  delay: %s  Now at level %d.\n",
 		bi->errstr, est(dp)->dump_level);
-	    log(L_INFO, "%s", bi->errstr);
+	    log_add(L_INFO, "%s", bi->errstr);
 	}
 
 	/* Clean up - dont be too fancy! */
@@ -1731,9 +1731,9 @@ static int promote_highest_priority_incremental P((void))
 		    dp->host->hostname, dp->name,
 		    total_lev0, total_size);
 
-	    log(L_INFO,
-		"Full dump of %s:%s promoted from %d days ahead.",
-		dp->host->hostname, dp->name, check_days);
+	    log_add(L_INFO,
+		    "Full dump of %s:%s promoted from %d days ahead.",
+		    dp->host->hostname, dp->name, check_days);
 
 	    return 1;
 	}
@@ -1815,9 +1815,9 @@ static int promote_hills P((void))
 		    dp->host->hostname, dp->name,
 		    total_lev0, total_size);
 
-	    log(L_INFO,
-		"Full dump of %s:%s specially promoted from %d days ahead.",
-		dp->host->hostname, dp->name, hill_days);
+	    log_add(L_INFO,
+		    "Full dump of %s:%s specially promoted from %d days ahead.",
+		    dp->host->hostname, dp->name, hill_days);
 
 	    afree(sp);
 	    return 1;
@@ -1859,8 +1859,8 @@ disk_t *dp;
 	fprintf(stderr,
 		"planner: FAILED %s %s %d [no estimate or historical data]\n",
 		dp->host->hostname, dp->name, ep->dump_level);
-	log(L_FAIL, "%s %s %d [no estimate or historical data]",
-	    dp->host->hostname, dp->name, ep->dump_level);
+	log_add(L_FAIL, "%s %s %d [no estimate or historical data]",
+	        dp->host->hostname, dp->name, ep->dump_level);
 	return;
     }
 

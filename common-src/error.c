@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: error.c,v 1.6 1997/12/30 05:24:11 jrj Exp $
+ * $Id: error.c,v 1.7 1998/02/26 19:24:33 jrj Exp $
  *
  * error handling common to Amanda programs
  */
@@ -40,6 +40,27 @@ static voidfunc onerr[MAXFUNCS] =
 
 int erroutput_type = ERR_INTERACTIVE;
 
+static char *pname = "unknown";
+
+static void (*logerror) P((char *)) = NULL;
+
+void set_pname(p)
+char *p;
+{
+    pname = p;
+}
+
+char *get_pname()
+{
+    return pname;
+}
+
+void set_logerror(f)
+void (*f) P((char *));
+{
+    logerror = f;
+}
+
 
 arglist_function(void error, char *, format)
 /*
@@ -48,7 +69,6 @@ arglist_function(void error, char *, format)
  */
 {
     va_list argp;
-    extern char *pname;
     int i;
     char linebuf[STR_SIZE];
 
@@ -60,23 +80,22 @@ arglist_function(void error, char *, format)
 
     /* print and/or log message */
 
-    if(erroutput_type & ERR_AMANDALOG) {
-        extern void logerror P((char *string));
-	logerror(linebuf);
+    if((erroutput_type & ERR_AMANDALOG) != 0 && logerror != NULL) {
+	(*logerror)(linebuf);
     }
 
     if(erroutput_type & ERR_SYSLOG) {
 #ifdef LOG_AUTH
-	openlog(pname, LOG_PID, LOG_AUTH);
+	openlog(get_pname(), LOG_PID, LOG_AUTH);
 #else
-	openlog(pname, LOG_PID);
+	openlog(get_pname(), LOG_PID);
 #endif
 	syslog(LOG_NOTICE, "%s", linebuf);
 	closelog();
     }
 
     if(erroutput_type & ERR_INTERACTIVE) {
-	fprintf(stderr, "%s: %s\n", pname, linebuf);
+	fprintf(stderr, "%s: %s\n", get_pname(), linebuf);
 	fflush(stderr);
     }
 

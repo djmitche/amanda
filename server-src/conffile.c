@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.37 1998/02/15 20:20:55 martinea Exp $
+ * $Id: conffile.c,v 1.38 1998/02/26 19:25:07 jrj Exp $
  *
  * read configuration file
  */
@@ -2268,6 +2268,8 @@ char *argv[];
     close(fd);
   }
 
+  set_pname("conffile");
+
   malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
   startclock();
@@ -2284,7 +2286,5 @@ char *argv[];
 
   return result;
 }
-
-char *pname = "conffile";
 
 #endif /* TEST */

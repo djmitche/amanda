@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.24 1998/02/19 10:04:19 amcore Exp $
+ * $Id: extract_list.c,v 1.25 1998/02/26 19:24:50 jrj Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -941,7 +941,7 @@ static int extract_files_setup P((void))
     if ((hp = gethostbyname(localhost)) == NULL)
     {
 	(void)fprintf(stderr, "%s: %s is an unknown host\n",
-		      pname, localhost);
+		      get_pname(), localhost);
 	dbprintf(("%s is an unknown host\n", localhost));
 	dbclose();
 	exit(1);
@@ -1017,7 +1017,7 @@ int tapedev;
 	error("error reading tape: %s", strerror(errno));
     }
     else if(bytes_read < buflen) {
-	fprintf(stderr, "%s: short block %d bytes\n", pname, bytes_read);
+	fprintf(stderr, "%s: short block %d bytes\n", get_pname(), bytes_read);
 	print_header(stdout, file);
 	error("Can't read file header");
     }

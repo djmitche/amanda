@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.19 1998/02/22 02:08:19 amcore Exp $
+ * $Id: amrestore.c,v 1.20 1998/02/26 19:24:54 jrj Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -49,7 +49,6 @@
 
 #define CREAT_MODE	0640
 
-char *pname = "amrestore";
 char buffer[TAPE_BLOCK_BYTES];
 
 
@@ -147,7 +146,7 @@ int tapedev;
 	error("error reading tape: %s", strerror(errno));
     }
     else if(bytes_read < buflen) {
-	fprintf(stderr, "%s: short block %d bytes\n", pname, bytes_read);
+	fprintf(stderr, "%s: short block %d bytes\n", get_pname(), bytes_read);
 	file->type = F_TAPEEND;
     }
     else {
@@ -180,7 +179,7 @@ int isafile;
     if(!compflag && file->compressed && !known_compress_type(file)) {
 	fprintf(stderr, 
 		"%s: unknown compression suffix %s, can't uncompress\n",
-		pname, file->comp_suffix);
+		get_pname(), file->comp_suffix);
 	compflag = 1;
     }
 
@@ -255,7 +254,7 @@ int isafile;
 	out = outpipe[1];
 	switch(compress_pid = fork()) {
 	case -1: 
-	    error("%s: could not fork for %s: %s", pname, 
+	    error("%s: could not fork for %s: %s", get_pname(), 
 		  UNCOMPRESS_PATH, strerror(errno));
 	default:
 	    aclose(outpipe[0]);
@@ -288,10 +287,10 @@ int isafile;
 				   errno, strerror(errno), wc, buflen, rc);
 		    fprintf(stderr,  
 			    "%s: pipe reader has quit in middle of file.\n",
-			    pname);
+			    get_pname());
 		    fprintf(stderr,
 			    "%s: skipping ahead to start of next file, please wait...\n",
-			    pname);
+			    get_pname());
 		    if(!isafile) {
 			if(tapefd_fsf(tapedev, 1) == -1) {
 			    error("fast-forward: %s", strerror(errno));
@@ -350,6 +349,8 @@ char **argv;
 	close(fd);
     }
 
+    set_pname("amrestore");
+
     erroutput_type = ERR_INTERACTIVE;
 
     onerror(errexit);
@@ -374,7 +375,7 @@ char **argv;
     }
 
     if(optind >= argc) {
-	fprintf(stderr, "%s: Must specify tape device\n", pname);
+	fprintf(stderr, "%s: Must specify tape device\n", get_pname());
 	usage();
     }
     else tapename = argv[optind++];
@@ -387,7 +388,7 @@ char **argv;
 	hostname = argv[optind++];
 	if((errstr=validate_regexp(hostname)) != NULL) {
 	    fprintf(stderr, "%s: bad hostname regex \"%s\": %s\n",
-		    pname, hostname, errstr);
+		    get_pname(), hostname, errstr);
 	    usage();
 	}
     }
@@ -397,7 +398,7 @@ char **argv;
 	diskname = argv[optind++];
 	if((errstr=validate_regexp(diskname)) != NULL) {
 	    fprintf(stderr, "%s: bad diskname regex \"%s\": %s\n",
-		    pname, diskname, errstr);
+		    get_pname(), diskname, errstr);
 	    usage();
 	}
     }
@@ -410,14 +411,15 @@ char **argv;
 
     if(file.type != F_TAPESTART && !isafile)
 	fprintf(stderr,
-    "%s: WARNING: not at start of tape, file numbers will be offset\n", pname);
+    "%s: WARNING: not at start of tape, file numbers will be offset\n",
+    get_pname());
 
     while(file.type == F_TAPESTART || file.type == F_DUMPFILE) {
 	afree(filename);
 	filename = make_filename(&file);
 	if(disk_match(&file,hostname,diskname) != 0) {
 	    fprintf(stderr, "%s: %3d: restoring %s\n", 
-		    pname, file_number, filename);
+		    get_pname(), file_number, filename);
 	    restore(&file, filename, tapedev, isafile);
 	    if(pipeflag) break;
 	      /* GH: close and reopen the tape device, so that the
@@ -434,7 +436,7 @@ char **argv;
 		error("could not open tape %s: %s", tapename, strerror(errno));
 	}
 	else {
-	    fprintf(stderr, "%s: %3d: skipping ", pname, file_number);
+	    fprintf(stderr, "%s: %3d: skipping ", get_pname(), file_number);
 	    if(file.type != F_DUMPFILE) print_header(stderr,&file);
 	    else fprintf(stderr, "%s\n", filename);
 	    if(tapefd_fsf(tapedev, 1) == -1)
@@ -449,7 +451,7 @@ char **argv;
     tapefd_close(tapedev);
 
     if(file.type == F_TAPEEND && !isafile) {
-	fprintf(stderr, "%s: %3d: reached ", pname, file_number);
+	fprintf(stderr, "%s: %3d: reached ", get_pname(), file_number);
 	print_header(stderr,&file);
 	return 1;
     }

@@ -12,7 +12,6 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 LDADD = @LEXLIB@ \
 	../client-src/libamclient.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION) \
-	../common-src/libamnolog.$(LIB_EXTENSION) \
 	../tape-src/libamtape.$(LIB_EXTENSION) 
 
 EXTRA_PROGRAMS = 	amrecover
