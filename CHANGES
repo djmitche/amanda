@@ -28,6 +28,9 @@
 
 Version 2.4.0
 
+	chg-mtx should use changer-dev if specified.
+	-Steve Khoo <steve@gordian.com>
+
 	flex-related backward-compatibility problem fixed.
 	-Norman K Scherer <nsche@seros-48.hac.com>
 
