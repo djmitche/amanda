@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amregex.h,v 1.6 1997/11/12 23:06:26 blair Exp $
+ * $Id: amregex.h,v 1.7 1997/12/16 21:17:47 blair Exp $
  *
  * compatibility header file for Henry Spencer's regex library.
  */
@@ -68,6 +68,15 @@
 #  define P(parms)	()
 #endif
 
+/*
+ * So that we can use GNUC attributes (such as to get -Wall warnings
+ * for printf-like functions).  Only do this in gcc 2.7 or later ...
+ * it may work on earlier stuff, but why chance it.
+ */
+#if !defined(__GNUC__) || __GNUC__ < 2 || __GNUC_MINOR__ < 7
+#define __attribute__(__x)
+#endif
+
 #ifndef HAVE_BCOPY_DECL
 extern void bcopy P((const void *from, void *to, size_t n));
 #endif
@@ -84,6 +93,17 @@ extern void *memset P((void *s, int c, size_t n));
 #define USEBCOPY
 #endif
 
+#ifdef HAVE_SNPRINTF
+#define ap_snprintf     snprintf
+#define ap_vsnprintf    vsnprintf
+#endif
+#ifndef HAVE_SNPRINTF_DECL
+#include "arglist.h"
+int ap_snprintf  P((char *buf, size_t len, const char *format,...))
+                    __attribute__((format(printf,3,4)));
+int ap_vsnprintf P((char *buf, size_t len, const char *format, va_list ap));
+#endif
+
 #define POSIX_MISTAKE
 
 #ifdef HAVE_UNSIGNED_LONG_CONSTANTS
@@ -92,4 +112,4 @@ extern void *memset P((void *s, int c, size_t n));
 #define NO_UL_CNSTS
 #endif
 
-#endif
+#endif /* AMREGEX_H */
