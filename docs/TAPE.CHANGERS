@@ -386,7 +386,7 @@ Irix 6.x
 FreeBSD
 
 Tape and robot on different IDs with special modules run on
-Solaris	with sst kernel module (availabe at SUN)
+Solaris	with sst kernel module. See in the contrib/sst directory
 
 For HP you have to create the special device files for the pass throu
 interface. Check if the ctl driver is installed.
