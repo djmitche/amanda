@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.72 1998/10/27 15:05:28 martinea Exp $
+/* $Id: dumper.c,v 1.73 1998/10/27 21:12:39 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -56,7 +56,6 @@
 #endif
 
 #define CONNECT_TIMEOUT	5*60
-#define READ_TIMEOUT	30*60
 #define MAX_ARGS	10
 /* Note: This must be kept in sync with the DATABUF_SIZE defined in
  * client-src/sendbackup-krb4.c, or kerberos encryption won't work...
@@ -98,6 +97,7 @@ char *datestamp;
 char *backup_name = NULL;
 char *recover_cmd = NULL;
 char *compress_suffix = NULL;
+int conf_dtimeout;
 
 dumpfile_t file;
 int filename_seq;
@@ -246,6 +246,7 @@ char **main_argv;
 
     amfree(datestamp);
     datestamp = construct_datestamp();
+    conf_dtimeout = getconf_int(CNF_DTIMEOUT);
 
     service_ports_init();
     proto_init(msg->socket, time(0), 16);
@@ -1103,7 +1104,7 @@ int mesgfd, datafd, indexfd, outfd;
 	}
 #endif
 
-	timeout.tv_sec = READ_TIMEOUT;
+	timeout.tv_sec = conf_dtimeout;
 	timeout.tv_usec = 0;
 	memcpy(&selectset, &readset, sizeof(fd_set));
 
@@ -1125,7 +1126,7 @@ int mesgfd, datafd, indexfd, outfd;
 	    lowwatset = 0;
 
 	    /* ... try once more */
-	    timeout.tv_sec = READ_TIMEOUT;
+	    timeout.tv_sec = conf_dtimeout;
 	    timeout.tv_usec = 0;
 	    memcpy(&selectset, &readset, sizeof(fd_set));
 	    nfound = select(maxfd, (SELECT_ARG_TYPE *)(&selectset), NULL, NULL, &timeout);

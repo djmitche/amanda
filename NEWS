@@ -3,6 +3,8 @@ Changes in release 2.4.2
 * Increased the maximum number of filesystems that can be backed up
   from a single host, by increasing the maximum UDP request packet
   size
+* A new `dtimeout' keyword in amanda.conf to replace the READ_TIMEOUT
+  constant in dumper.c.
 
 Changes in release 2.4.1
 

@@ -38,6 +38,7 @@ etimeout 300		# number of seconds per filesystem for estimates.
 # each host; a negative number will be taken as an absolute total time-out.
 # The default is 5 minutes per filesystem.
 
+dtimeout 1800		# number of idle seconds before a dump is aborted.
 
 tapebufs 20
 # A positive integer telling taper how many 32k buffers to allocate.

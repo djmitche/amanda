@@ -1,5 +1,14 @@
 1998-10-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/conffile.h (dtimeout): new keyword 
+	* server-src/conffile.c (dtimeout): ditto
+	* server-src/dumper.c: use dtimeout instead of READ_TIMEOUT
+	* example/amanda.conf.in: document it
+	* man/amanda.8.in: ditto
+	* NEWS: ditto
+
+1998-10-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/dumper.c (sendbackup_response): a nak error will
 	be a TRY-AGAIN instead of a FAILED.
 

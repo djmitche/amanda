@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.53 1998/10/15 21:31:32 martinea Exp $
+ * $Id: conffile.c,v 1.54 1998/10/27 21:12:34 martinea Exp $
  *
  * read configuration file
  */
@@ -69,7 +69,7 @@ typedef enum {
     INCLUDEFILE,
     ORG, MAILTO, DUMPUSER,
     TAPECYCLE, TAPEDEV, CHNGRDEV, CHNGRFILE, LABELSTR,
-    BUMPSIZE, BUMPDAYS, BUMPMULT, ETIMEOUT, TAPEBUFS,
+    BUMPSIZE, BUMPDAYS, BUMPMULT, ETIMEOUT, DTIMEOUT, TAPEBUFS,
     TAPELIST, DISKFILE, INFOFILE, LOGDIR, LOGFILE,
     DISKDIR, DISKSIZE, INDEXDIR, NETUSAGE, INPARALLEL, TIMEOUT,
     TPCHANGER, RUNTAPES,
@@ -172,6 +172,7 @@ static val_t conf_maxdumps;
 static val_t conf_bumpsize;
 static val_t conf_bumpdays;
 static val_t conf_etimeout;
+static val_t conf_dtimeout;
 static val_t conf_tapebufs;
 static val_t conf_reserve;
 
@@ -197,7 +198,7 @@ static int seen_logdir, seen_bumpsize, seen_bumpmult, seen_bumpdays;
 static int seen_tapetype, seen_dumpcycle, seen_runspercycle;
 static int seen_maxcycle, seen_tapecycle;
 static int seen_disksize, seen_netusage, seen_inparallel, seen_timeout;
-static int seen_indexdir, seen_etimeout;
+static int seen_indexdir, seen_etimeout, seen_dtimeout;
 static int seen_tapebufs;
 static int seen_reserve;
 
@@ -332,6 +333,7 @@ struct byname {
     /*{ "TIMEOUT", CNF_TIMEOUT, INT },*/
     { "MAXDUMPS", CNF_MAXDUMPS, INT },
     { "ETIMEOUT", CNF_ETIMEOUT, INT },
+    { "DTIMEOUT", CNF_DTIMEOUT, INT },
     { "TAPEBUFS", CNF_TAPEBUFS, INT },
     { "RAWTAPEDEV", CNF_RAWTAPEDEV, STRING },
     { "RESERVE", CNF_RESERVE, INT },
@@ -406,6 +408,7 @@ confparm_t parm;
     /*case CNF_TIMEOUT: return seen_timeout;*/
     case CNF_INDEXDIR: return seen_indexdir;
     case CNF_ETIMEOUT: return seen_etimeout;
+    case CNF_DTIMEOUT: return seen_dtimeout;
     case CNF_TAPEBUFS: return seen_tapebufs;
     case CNF_RAWTAPEDEV: return seen_rawtapedev;
     case CNF_RESERVE: return seen_reserve;
@@ -432,6 +435,7 @@ confparm_t parm;
     /*case CNF_TIMEOUT: r = conf_timeout.i; break;*/
     case CNF_MAXDUMPS: r = conf_maxdumps.i; break;
     case CNF_ETIMEOUT: r = conf_etimeout.i; break;
+    case CNF_DTIMEOUT: r = conf_dtimeout.i; break;
     case CNF_TAPEBUFS: r = conf_tapebufs.i; break;
     case CNF_RESERVE: r = conf_reserve.i; break;
 
@@ -616,6 +620,7 @@ static void init_defaults()
     conf_bumpdays.i	= 2;
     conf_bumpmult.r	= 1.5;
     conf_etimeout.i     = 300;
+    conf_dtimeout.i     = 1800;
     conf_tapebufs.i     = 20;
     conf_reserve.i	= 100;
 
@@ -632,7 +637,7 @@ static void init_defaults()
     seen_tapetype = seen_dumpcycle = seen_runspercycle = 0;
     seen_maxcycle = seen_tapecycle = 0;
     seen_disksize = seen_netusage = seen_inparallel = seen_timeout = 0;
-    seen_indexdir = seen_etimeout =  0;
+    seen_indexdir = seen_etimeout = seen_dtimeout = 0;
     seen_tapebufs = 0;
     seen_reserve = 0;
     line_num = got_parserror = 0;
@@ -790,6 +795,7 @@ keytab_t main_keytable[] = {
     { "CHANGERDEV", CHNGRDEV },
     { "CHANGERFILE", CHNGRFILE },
     { "ETIMEOUT", ETIMEOUT },
+    { "DTIMEOUT", DTIMEOUT },
     { "TAPEBUFS", TAPEBUFS },
     { "RAWTAPEDEV", RAWTAPEDEV },
     { "RESERVE", RESERVE },
@@ -842,6 +848,7 @@ static int read_confline()
     case TAPETYPE:  get_simple(&conf_tapetype,  &seen_tapetype,  IDENT);  break;
     case INDEXDIR:  get_simple(&conf_indexdir,  &seen_indexdir,  STRING); break;
     case ETIMEOUT:  get_simple(&conf_etimeout,  &seen_etimeout,  INT);    break;
+    case DTIMEOUT:  get_simple(&conf_dtimeout,  &seen_dtimeout,  INT);    break;
     case TAPEBUFS:  get_simple(&conf_tapebufs,  &seen_tapebufs,  INT);    break;
     case RESERVE:   get_simple(&conf_reserve,  &seen_reserve,	 INT);    break;
 
@@ -2255,6 +2262,7 @@ dump_configuration(filename)
     /*printf("conf_timeout = %d\n", getconf_int(CNF_TIMEOUT));*/
     printf("conf_maxdumps = %d\n", getconf_int(CNF_MAXDUMPS));
     printf("conf_etimeout = %d\n", getconf_int(CNF_ETIMEOUT));
+    printf("conf_dtimeout = %d\n", getconf_int(CNF_DTIMEOUT));
     printf("conf_tapebufs = %d\n", getconf_int(CNF_TAPEBUFS));
     printf("conf_reserve  = %d\n", getconf_int(CNF_RESERVE));
 
