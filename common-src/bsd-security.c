@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.20 1999/03/15 15:12:59 kashmir Exp $
+ * $Id: bsd-security.c,v 1.21 1999/04/06 16:07:26 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -48,7 +48,7 @@ struct bsd_handle {
      * This must be first.  Instances of bsd_handle will be cast to
      * security_handle_t's.
      */
-    security_handle_t security_handle;
+    security_handle_t sech;
 
     /*
      * protocol handle for this request.  Each request gets its own
@@ -99,13 +99,7 @@ struct bsd_stream {
      * This must be first, because instances of this will be cast
      * to security_stream_t's outside of this module.
      */
-    security_stream_t security_stream;
-
-    /*
-     * For conveinence, this is a pointer to the security handle
-     * in the above
-     */
-    struct bsd_handle *bsd_handle;
+    security_stream_t secstr;
 
     /*
      * This is the file descriptor which we will do io on
@@ -150,10 +144,9 @@ struct bsd_stream {
 /*
  * Interface functions
  */
-static void bsd_connect P((void *, const char *,
+static void bsd_connect P((const char *,
     void (*)(void *, security_handle_t *, security_status_t), void *));
-static void bsd_accept P((int, int, void (*)(void *, void *, pkt_t *),
-    void *));
+static void bsd_accept P((int, int, void (*)(security_handle_t *, pkt_t *)));
 static void bsd_close P((void *));
 static int bsd_sendpkt P((void *, pkt_t *));
 static void bsd_recvpkt P((void *,
@@ -176,7 +169,6 @@ static void bsd_stream_read_cancel P((void *));
  */
 const security_driver_t bsd_security_driver = {
     "BSD",
-    sizeof(struct bsd_handle),
     bsd_connect,
     bsd_accept,
     bsd_close,
@@ -243,8 +235,7 @@ static int newhandle = 0;
  * This is the function and argument that is called when new requests
  * arrive on the netfd.
  */
-static void (*accept_fn) P((void *, void *, pkt_t *));
-static void *accept_fn_arg;
+static void (*accept_fn) P((security_handle_t *, pkt_t *));
 
 /*
  * These are the internal helper functions
@@ -259,23 +250,25 @@ static void recvpkt_timeout P((void *));
 static int recv_security_ok P((struct bsd_handle *));
 static void stream_read_callback P((void *));
 
+
 /*
  * Setup and return a handle outgoing to a client
  */
 static void
-bsd_connect(cookie, hostname, fn, arg)
-    void *cookie;
+bsd_connect(hostname, fn, arg)
     const char *hostname;
     void (*fn) P((void *, security_handle_t *, security_status_t));
     void *arg;
 {
-    struct bsd_handle *bh = cookie;
+    struct bsd_handle *bh;
     struct servent *se;
     struct hostent *he;
     int port;
 
     assert(hostname != NULL);
-    assert(bh != NULL);
+
+    bh = alloc(sizeof(*bh));
+    security_handleinit(&bh->sech, &bsd_security_driver);
 
     /*
      * Only init the socket once
@@ -292,18 +285,18 @@ bsd_connect(cookie, hostname, fn, arg)
 	 * We must have a reserved port.  Bomb if we didn't get one.
 	 */
 	if (ntohs(port) >= IPPORT_RESERVED) {
-	    security_seterror(&bh->security_handle,
+	    security_seterror(&bh->sech,
 		"unable to bind to a reserved port (got port %d)",
 		ntohs(port));
-	    (*fn)(arg, &bh->security_handle, S_ERROR);
+	    (*fn)(arg, &bh->sech, S_ERROR);
 	    return;
 	}
     }
 
     if ((he = gethostbyname(hostname)) == NULL) {
-	security_seterror(&bh->security_handle,
+	security_seterror(&bh->sech,
 	    "%s: could not resolve hostname", hostname);
-	(*fn)(arg, &bh->security_handle, S_ERROR);
+	(*fn)(arg, &bh->sech, S_ERROR);
 	return;
     }
     if ((se = getservbyname(AMANDA_SERVICE_NAME, "udp")) == NULL)
@@ -311,19 +304,18 @@ bsd_connect(cookie, hostname, fn, arg)
     else
 	port = se->s_port;
     if (inithandle(bh, he, port, newhandle++) < 0)
-	(*fn)(arg, &bh->security_handle, S_ERROR);
+	(*fn)(arg, &bh->sech, S_ERROR);
     else
-	(*fn)(arg, &bh->security_handle, S_OK);
+	(*fn)(arg, &bh->sech, S_OK);
 }
 
 /*
  * Setup to accept new incoming connections
  */
 static void
-bsd_accept(in, out, fn, arg)
+bsd_accept(in, out, fn)
     int in, out;
-    void (*fn) P((void *, void *, pkt_t *));
-    void *arg;
+    void (*fn) P((security_handle_t *, pkt_t *));
 {
 
     assert(in >= 0 && out >= 0);
@@ -341,7 +333,6 @@ bsd_accept(in, out, fn, arg)
      * new incoming connections
      */
     accept_fn = fn;
-    accept_fn_arg = arg;
 
     netfd_addref();
 }
@@ -376,7 +367,7 @@ inithandle(bh, he, port, handle)
      * resolves back to the remote ip for security reasons.
      */
     if ((he = gethostbyname(bh->hostname)) == NULL) {
-	security_seterror(&bh->security_handle,
+	security_seterror(&bh->sech,
 	    "%s: could not resolve hostname", bh->hostname);
 	return (-1);
     }
@@ -384,8 +375,8 @@ inithandle(bh, he, port, handle)
      * Make sure the hostname matches.  This should always work.
      */
     if (strncasecmp(bh->hostname, he->h_name, strlen(bh->hostname)) != 0) {
-	security_seterror(&bh->security_handle, "%s: did not resolve to %s",
-	    bh->hostname, bh->hostname);
+	security_seterror(&bh->sech,
+	    "%s: did not resolve to %s", bh->hostname, bh->hostname);
 	return (-1);
     }
 
@@ -414,7 +405,7 @@ inithandle(bh, he, port, handle)
 	 * DNS is messed up.
 	 */
 	if (he->h_aliases[i] == NULL) {
-	    security_seterror(&bh->security_handle,
+	    security_seterror(&bh->sech,
 		"DNS check failed: no matching ip address for %s",
 		bh->hostname);
 	    return (-1);
@@ -443,6 +434,7 @@ bsd_close(bh)
 {
 
     bsd_recvpkt_cancel(bh);
+    bsd_close(bh);
 }
 
 /*
@@ -475,7 +467,7 @@ bsd_sendpkt(cookie, pkt)
 	 * Requests get sent with our username in the body
 	 */
 	if ((pwd = getpwuid(geteuid())) == NULL) {
-	    security_seterror(&bh->security_handle,
+	    security_seterror(&bh->sech,
 		"can't get login name for my uid %ld", (long)getuid());
 	    return (-1);
 	}
@@ -491,8 +483,9 @@ bsd_sendpkt(cookie, pkt)
      */
     dgram_cat(&netfd.dgram, pkt->body);
     if (dgram_send_addr(bh->peer, &netfd.dgram) != 0) {
-	security_seterror(&bh->security_handle, "send %s to %s failed: %s",
-	    pkt_type2str(pkt->type), bh->hostname, strerror(errno));
+	security_seterror(&bh->sech,
+	    "send %s to %s failed: %s", pkt_type2str(pkt->type),
+	    bh->hostname, strerror(errno));
 	return (-1);
     }
     return (0);
@@ -602,7 +595,7 @@ netfd_read_callback(cookie)
     if (he == NULL)
 	return;
     bh = alloc(sizeof(*bh));
-    bh->security_handle.error = NULL;
+    security_handleinit(&bh->sech, &bsd_security_driver);
     if (inithandle(bh, he, netfd.peer.sin_port, netfd.handle) < 0) {
 	amfree(bh);
 	return;
@@ -612,9 +605,9 @@ netfd_read_callback(cookie)
      * to the accept function instead of a packet.
      */
     if (recv_security_ok(bh) < 0)
-	(*accept_fn)(accept_fn_arg, bh, NULL);
+	(*accept_fn)(&bh->sech, NULL);
     else
-	(*accept_fn)(accept_fn_arg, bh, &netfd.pkt);
+	(*accept_fn)(&bh->sech, &netfd.pkt);
 }
 
 /*
@@ -693,8 +686,8 @@ recv_security_ok(bh)
     /*
      * Set this preempively before we mangle the body.  
      */
-    security_seterror(&bh->security_handle, "bad SECURITY line: '%s'",
-	pkt->body);
+    security_seterror(&bh->sech,
+	"bad SECURITY line: '%s'", pkt->body);
 
     /*
      * Now, find the SECURITY line in the body, and parse it out
@@ -730,7 +723,7 @@ recv_security_ok(bh)
 	 * Request packets must come from a reserved port
 	 */
 	if (ntohs(bh->peer.sin_port) >= IPPORT_RESERVED) {
-	    security_seterror(&bh->security_handle,
+	    security_seterror(&bh->sech,
 		"host %s: port %d not secure", bh->hostname,
 		ntohs(bh->peer.sin_port));
 	    return (-1);
@@ -746,7 +739,7 @@ recv_security_ok(bh)
 
 	/* there must be some security info */
 	if (security == NULL) {
-	    security_seterror(&bh->security_handle,
+	    security_seterror(&bh->sech,
 		"no bsd SECURITY for P_REQ");
 	    return (-1);
 	}
@@ -755,7 +748,7 @@ recv_security_ok(bh)
 	if ((tok = strtok(security, " ")) == NULL)
 	    return (-1);	/* default errmsg */
 	if (strcmp(tok, "USER") != 0) {
-	    security_seterror(&bh->security_handle,
+	    security_seterror(&bh->sech,
 		"REQ SECURITY line parse error, expecting USER, got %s", tok);
 	    return (-1);
 	}
@@ -764,8 +757,8 @@ recv_security_ok(bh)
 	if ((tok = strtok(NULL, "")) == NULL)
 	    return (-1);	/* default errmsg */
 	if (check_user(bh, tok) < 0) {
-	    security_seterror(&bh->security_handle, "%s not allowed access: %s",
-		tok,
+	    security_seterror(&bh->sech,
+		"%s not allowed access: %s", tok,
 #ifdef USE_AMANDAHOSTS
 		".amandahosts auth failed"
 #else
@@ -908,15 +901,15 @@ bsd_stream_server(h)
     assert(bh != NULL);
 
     bs = alloc(sizeof(*bs));
+    security_streaminit(&bs->secstr, &bsd_security_driver);
     bs->socket = stream_server(&bs->port, STREAM_BUFSIZE, STREAM_BUFSIZE);
     if (bs->socket < 0) {
-	security_seterror(&bh->security_handle,
+	security_seterror(&bh->sech,
 	    "can't create server stream: %s", strerror(errno));
 	amfree(bs);
 	return (NULL);
     }
     bs->fd = -1;
-    bs->bsd_handle = bh;
     bs->ev_read = NULL;
     return (bs);
 }
@@ -937,7 +930,7 @@ bsd_stream_accept(s)
 
     bs->fd = stream_accept(bs->socket, 30, DEFAULT_SIZE, DEFAULT_SIZE);
     if (bs->fd < 0) {
-	security_seterror(&bs->bsd_handle->security_handle,
+	security_stream_seterror(&bs->secstr,
 	    "can't accept new stream connection: %s", strerror(errno));
 	return (-1);
     }
@@ -958,23 +951,23 @@ bsd_stream_client(h, id)
     assert(bh != NULL);
 
     if (id < 0) {
-	security_seterror(&bh->security_handle,
+	security_seterror(&bh->sech,
 	    "%d: invalid security stream id", id);
 	return (NULL);
     }
 
     bs = alloc(sizeof(*bs));
+    security_streaminit(&bs->secstr, &bsd_security_driver);
     bs->fd = stream_client(bh->hostname, id, STREAM_BUFSIZE, STREAM_BUFSIZE,
-	&bs->port);
+	&bs->port, 0);
     if (bs->fd < 0) {
-	security_seterror(&bh->security_handle,
-	    "can't connect stream to %s port %d: %s", bh->hostname, id,
-	    strerror(errno));
+	security_seterror(&bh->sech,
+	    "can't connect stream to %s port %d: %s", bh->hostname,
+	    id, strerror(errno));
 	amfree(bs);
 	return (NULL);
     }
     bs->socket = -1;	/* we're a client */
-    bs->bsd_handle = bh;
     bs->ev_read = NULL;
     return (bs);
 }
@@ -1044,7 +1037,7 @@ bsd_stream_write(s, vbuf, size)
     while (size > 0) {
 	n = write(bs->fd, buf, size);
 	if (n < 0) {
-	    security_seterror(&bs->bsd_handle->security_handle,
+	    security_stream_seterror(&bs->secstr,
 		"write error on stream %d: %s", bs->port, strerror(errno));
 	    return (-1);
 	}
@@ -1121,8 +1114,7 @@ stream_read_callback(arg)
     bsd_stream_read_cancel(bs);
     n = read(bs->fd, bs->databuf, sizeof(bs->databuf));
     if (n < 0)
-	security_seterror(&bs->bsd_handle->security_handle,
-	    strerror(errno));
+	security_stream_seterror(&bs->secstr, strerror(errno));
     (*bs->fn)(bs->arg, bs->databuf, n);
 }
 
@@ -1209,7 +1201,7 @@ str2pkthdr()
 
 parse_error:
 #if 0 /* XXX we have no way of passing this back up */
-    security_seterror(&bh->security_handle,
+    security_seterror(&bh->sech,
 	"parse error in packet header : '%s'", origstr);
 #endif
     amfree(str);

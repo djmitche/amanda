@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.h,v 1.8 1999/03/04 22:40:07 kashmir Exp $
+ * $Id: security.h,v 1.9 1999/04/06 16:07:28 kashmir Exp $
  *
  * security api
  */
@@ -52,15 +52,10 @@ typedef struct security_driver {
     const char *name;
 
     /*
-     * The amount of memory to allocate for its handle.
-     */
-    const size_t handlesize;
-
-    /*
      * Connects a security handle, for this driver to a remote
      * host.
      */
-    void (*connect) P((void *, const char *,
+    void (*connect) P((const char *,
 	void (*)(void *, struct security_handle *, security_status_t),
 	void *));
 
@@ -68,7 +63,7 @@ typedef struct security_driver {
      * This form sets up a callback that returns new handles as
      * they are received.  It takes an input and output file descriptor.
      */
-    void (*accept) P((int, int, void (*)(void *, void *, pkt_t *), void *));
+    void (*accept) P((int, int, void (*)(struct security_handle *, pkt_t *)));
 
     /*
      * Frees up handles allocated by the previous
@@ -161,29 +156,36 @@ typedef struct security_driver {
 typedef struct security_handle {
     const security_driver_t *driver;
     char *error;
-    int refcnt;
 } security_handle_t;
 
 /*
  * This structure is a handle to a stream connection to a host for
  * transmission of random data such as dumps or index data.
- * It is inherently associated with (and created from) a security_handle_t.
  */
 typedef struct security_stream {
-    security_handle_t *security_handle;
+    const security_driver_t *driver;
+    char *error;
 } security_stream_t;
 
 
 const security_driver_t *security_getdriver P((const char *));
+void security_handleinit P((security_handle_t *, const security_driver_t *));
+void security_streaminit P((security_stream_t *, const security_driver_t *));
 
-const char *security_geterror P((security_handle_t *));
+/* const char *security_geterror P((security_handle_t *)); */
+#define	security_geterror(handle)	((handle)->error)
 void security_seterror P((security_handle_t *, const char *, ...))
     __attribute__ ((format (printf, 2, 3)));
 
-void security_connect P((const security_driver_t *, const char *,
-    void (*)(void *, security_handle_t *, security_status_t), void *));
-void security_accept P((const security_driver_t *, int, int,
-    void (*)(security_handle_t *, pkt_t *)));
+
+/* void security_connect P((const security_driver_t *, const char *,
+    void (*)(void *, security_handle_t *, security_status_t), void *)); */
+#define	security_connect(driver, hostname, fn, arg)	\
+    (*(driver)->connect)(hostname, fn, arg)
+/* void security_accept P((const security_driver_t *, int, int,
+    void (*)(security_handle_t *, pkt_t *))); */
+#define	security_accept(driver, in, out, fn)	\
+    (*(driver)->accept)(in, out, fn)
 void security_close P((security_handle_t *));
 
 /* int security_sendpkt P((security_handle_t *, const pkt_t *)); */
@@ -199,35 +201,44 @@ void security_close P((security_handle_t *));
 #define	security_recvpkt_cancel(handle)		\
     (*(handle)->driver->recvpkt_cancel)(handle)
 
-security_stream_t *security_stream_server P((security_handle_t *));
+/* const char *security_stream_geterror P((security_stream_t *)); */
+#define	security_stream_geterror(stream)	((stream)->error)
+void security_stream_seterror P((security_stream_t *, const char *, ...))
+    __attribute__ ((format (printf, 2, 3)));
+
+/* security_stream_t *security_stream_server P((security_handle_t *)); */
+#define	security_stream_server(handle)	\
+    (*(handle)->driver->stream_server)(handle)
 
 /* int security_stream_accept P((security_stream_t *)); */
 #define	security_stream_accept(stream)		\
-    (*(stream)->security_handle->driver->stream_accept)(stream)
+    (*(stream)->driver->stream_accept)(stream)
 
-security_stream_t *security_stream_client P((security_handle_t *, int));
+/* security_stream_t *security_stream_client P((security_handle_t *, int)); */
+#define	security_stream_client(handle, id)	\
+    (*(handle)->driver->stream_client)(handle, id)
 
 void security_stream_close P((security_stream_t *));
 
 /* int security_stream_auth P((security_stream_t *)); */
 #define	security_stream_auth(stream)		\
-    (*(stream)->security_handle->driver->stream_auth)(stream)
+    (*(stream)->driver->stream_auth)(stream)
 
 /* int security_stream_id P((security_stream_t *)); */
 #define	security_stream_id(stream)		\
-    (*(stream)->security_handle->driver->stream_id)(stream)
+    (*(stream)->driver->stream_id)(stream)
 
 /* int security_stream_write P((security_stream_t *, const void *, size_t)); */
 #define	security_stream_write(stream, buf, size)	\
-    (*(stream)->security_handle->driver->stream_write)(stream, buf, size)
+    (*(stream)->driver->stream_write)(stream, buf, size)
 
 /* void security_stream_read P((security_stream_t *,
     void (*)(void *, void *, size_t), void *)); */
 #define	security_stream_read(stream, fn, arg)		\
-    (*(stream)->security_handle->driver->stream_read)(stream, fn, arg)
+    (*(stream)->driver->stream_read)(stream, fn, arg)
 
 /* void security_stream_read_cancel P((security_stream_t *)); */
 #define	security_stream_read_cancel(stream)		\
-    (*(stream)->security_handle->driver->stream_read_cancel)(stream)
+    (*(stream)->driver->stream_read_cancel)(stream)
 
 #endif	/* SECURITY_H */
