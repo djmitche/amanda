@@ -1,5 +1,8 @@
 2000-01-21  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* server-src/reporter.c (output_tapeinfo): Report used tapes
+	regardless of tape errors.
+
 	* config/acinclude.m4i (CF_WAIT): Simplify the test.  Declare wait()
 	in the global scope.
 
@@ -721,7 +724,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.323 2000/01/21 05:54:57 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.324 2000/01/21 06:59:10 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

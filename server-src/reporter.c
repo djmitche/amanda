@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-1998, 2000 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.13 1999/09/11 22:41:25 jrj Exp $
+ * $Id: reporter.c,v 1.44.2.14 2000/01/21 06:59:18 oliva Exp $
  *
  * nightly Amanda Report generator
  */
@@ -902,31 +902,7 @@ void output_tapeinfo()
     int run_tapes;
     int skip = 0;
 
-    if(degraded_mode) {
-	fprintf(mailf,
-		"*** A TAPE ERROR OCCURRED: %s.\n", tapestart_error);
-
-	if(amflush_run) {
-	    fputs("*** COULD NOT FLUSH DUMPS.  TRY AGAIN!\n\n", mailf);
-	    fputs("Flush these dumps onto", mailf);
-	}
-	else {
-	    fputs(
-	"*** PERFORMED ALL DUMPS TO HOLDING DISK.\n\n",
-		  mailf);
-	    fputs("THESE DUMPS WERE TO DISK.  Flush them onto", mailf);
-	}
-
-	tp = lookup_last_reusable_tape(skip);
-	if(tp != NULL) fprintf(mailf, " tape %s or", tp->label);
-	fputs(" a new tape.\n", mailf);
-	if(tp != NULL) {
-	    skip++;
-	    tp = lookup_last_reusable_tape(skip);
-	}
-
-    }
-    else {
+    if (last_run_tapes > 0) {
 	if(amflush_run)
 	    fprintf(mailf, "The dumps were flushed to tape%s %s.\n",
 		    last_run_tapes == 1 ? "" : "s",
@@ -935,15 +911,27 @@ void output_tapeinfo()
 	    fprintf(mailf, "These dumps were to tape%s %s.\n",
 		    last_run_tapes == 1 ? "" : "s",
 		    tape_labels ? tape_labels : "");
-
-	tp = lookup_last_reusable_tape(skip);
     }
+
+    if(degraded_mode) {
+	fprintf(mailf,
+		"*** A TAPE ERROR OCCURRED: %s.\n", tapestart_error);
+	fputs("Some dumps may have been left in the holding disk.\n", mailf);
+	fprintf(mailf,
+		"Run amflush%s to flush them to tape.\n",
+		amflush_run ? " again" : "");
+    }
+
+    tp = lookup_last_reusable_tape(skip);
 
     run_tapes = getconf_int(CNF_RUNTAPES);
 
-    fprintf(mailf, "Tonight's dumps should go onto %d tape%s: ", run_tapes,
-	    run_tapes == 1? "" : "s");
-
+    if (run_tapes > 1)
+	fputs("The next tape Amanda expects to use is: ", mailf);
+    else
+	fprintf(mailf, "The next %d tapes Amanda expects to used are: ",
+		run_tapes);
+    
     while(run_tapes > 0) {
 	if(tp != NULL)
 	    fprintf(mailf, "%s", tp->label);
