@@ -1,3 +1,8 @@
+1998-08-14  John R. Jackson  <jrj@purdue.edu>
+
+	* configure.in (LFS): add code that might support configuring large
+	files on HP-UX.
+
 1998-09-10  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/conffile.c (dump_configuration): runspercycle is not a
