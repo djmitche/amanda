@@ -1,5 +1,5 @@
  #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.27.2.7.2.7 2002/03/24 19:04:12 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.27.2.7.2.8 2002/04/20 13:08:55 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -181,6 +181,18 @@ SC_COM_T SCSICommand[] = {
 };
 
 ChangerCMD_T ChangerIO[] = {
+  {"generic_changer",
+   "Generic driver changer [generic_changer]",
+   GenericMove,
+   GenericElementStatus,
+   GenericResetStatus,
+   GenericFree,
+   GenericEject,
+   GenericClean,
+   GenericRewind,
+   GenericBarCode,
+   GenericSearch,
+   GenericSenseHandler},
 	/* HP Devices */
   {"C1553A",
    "HP Auto Loader [C1553A]",
@@ -266,7 +278,7 @@ ChangerCMD_T ChangerIO[] = {
    GenericEject,
    GenericClean,
    GenericRewind,
-   NoBarCode,
+   GenericBarCode,
    GenericSearch,
    GenericSenseHandler},
   {"VLS SDX",               
@@ -278,7 +290,7 @@ ChangerCMD_T ChangerIO[] = {
    GenericEject,
    GenericClean,
    GenericRewind,
-   NoBarCode,
+   GenericBarCode,
    GenericSearch,
    GenericSenseHandler},
   {"FastStor DLT",               
@@ -290,7 +302,7 @@ ChangerCMD_T ChangerIO[] = {
    GenericEject,
    GenericClean,
    GenericRewind,
-   NoBarCode,
+   GenericBarCode,
    GenericSearch,
    GenericSenseHandler},
   {"Scalar DLT 448",
@@ -302,7 +314,7 @@ ChangerCMD_T ChangerIO[] = {
    GenericEject,
    GenericClean,
    GenericRewind,
-   NoBarCode,
+   GenericBarCode,
    GenericSearch,
    GenericSenseHandler},
    /* Sepctra Logic Devices */
@@ -334,6 +346,19 @@ ChangerCMD_T ChangerIO[] = {
   /* 
    * And now the tape devices
    */
+  /* The generic handler if nothing matches */
+  {"generic_tape",
+   "Generic driver tape [generic_tape]",
+   GenericMove,
+   GenericElementStatus,
+   GenericResetStatus,
+   GenericFree,
+   GenericEject,
+   GenericClean,
+   GenericRewind,
+   NoBarCode,
+   GenericSearch,
+   GenericSenseHandler},
   {"DLT7000",        
    "DLT Tape [DLT7000]",
    DoNothing,
@@ -353,19 +378,6 @@ ChangerCMD_T ChangerIO[] = {
    DoNothing,
    DoNothing,
    DLT4000Eject,
-   GenericClean,
-   GenericRewind,
-   NoBarCode,
-   GenericSearch,
-   GenericSenseHandler},
-  /* The generic handler if nothing matches */
-  {"generic",
-   "Generic driver tape/robot [generic]",
-   GenericMove,
-   GenericElementStatus,
-   GenericResetStatus,
-   GenericFree,
-   GenericEject,
    GenericClean,
    GenericRewind,
    NoBarCode,
@@ -1250,6 +1262,7 @@ int get_drive_count(int fd)
 int OpenDevice(int ip , char *DeviceName, char *ConfigName, char *ident)
 {
   extern OpenFiles_T *pDev;
+  char tmpstr[15];
   ChangerCMD_T *p = (ChangerCMD_T *)&ChangerIO;
   
   DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### START OpenDevice\n");
@@ -1292,9 +1305,10 @@ int OpenDevice(int ip , char *DeviceName, char *ConfigName, char *ident)
       /* divide generic in generic_type, where type is the */
       /* num returned by the inquiry command */
       p = (ChangerCMD_T *)&ChangerIO;
+      sprintf(&tmpstr[0],"%s_%s","generic",pDev[0].type);
       while(p->ident != NULL)
         {
-          if (strcmp("generic", p->ident) == 0)
+          if (strcmp(tmpstr, p->ident) == 0)
             {
               pDev[ip].functions = p;
               DebugPrint(DEBUG_INFO, SECTION_SCSI,"using ident = %s, type = %s\n",p->ident, p->type);
@@ -3697,7 +3711,8 @@ int GetElementStatus(int DeviceFD)
   ImportExportElementDescriptor_T *ImportExportElementDescriptor;
   int x = 0;
   int offset = 0;
-  int barcode = 0;                   /* To store the result of the BarCode function */
+  int length = 0;	/* Length of an Element */
+  int barcode = 0;      /* To store the result of the BarCode function */
   int NoOfElements;
  
   DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"##### START GetElementStatus\n");
@@ -3744,10 +3759,13 @@ int GetElementStatus(int DeviceFD)
           
           ElementStatusPage = (ElementStatusPage_T *)&DataBuffer[offset];
           offset = offset + sizeof(ElementStatusPage_T);
+	  length = V2(ElementStatusPage->length);
+          DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"MTE Length %d(%d)\n",length,sizeof(MediumTransportElementDescriptor_T));
           
           for (x = 0; x < MTE; x++)
             {
               MediumTransportElementDescriptor = (MediumTransportElementDescriptor_T *)&DataBuffer[offset];
+	      
               if (ElementStatusPage->pvoltag == 1)
                 {
                   strncpy(pMTE[x].VolTag, 
@@ -3755,21 +3773,39 @@ int GetElementStatus(int DeviceFD)
                           TAG_SIZE);
                   TerminateString(pMTE[x].VolTag, TAG_SIZE+1);
                 }
+	      
               pMTE[x].type = ElementStatusPage->type;
               pMTE[x].address = V2(MediumTransportElementDescriptor->address);
               pMTE[x].except = MediumTransportElementDescriptor->except;
-              pMTE[x].ASC = MediumTransportElementDescriptor->asc;
-              pMTE[x].ASCQ = MediumTransportElementDescriptor->ascq;
               pMTE[x].status = (MediumTransportElementDescriptor->full > 0) ? 'F':'E';
               pMTE[x].full = MediumTransportElementDescriptor->full;
 	      
-              if (MediumTransportElementDescriptor->svalid == 1)
-                {
-                  pMTE[x].from = V2(MediumTransportElementDescriptor->source);
-                } else {
-                  pMTE[x].from = -1;
-                }
-	      offset = offset + V2(ElementStatusPage->length); 
+	      if (length >= 5)
+		{
+		  pMTE[x].ASC = MediumTransportElementDescriptor->asc;
+		} else {
+		  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASC MTE\n");
+		}
+	      
+	      if (length >= 6)
+		{
+		  pMTE[x].ASCQ = MediumTransportElementDescriptor->ascq;
+		} else {
+		  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASCQ MTE\n");
+		}
+	      
+	      if (length >= 0xa)
+		{
+		  if (MediumTransportElementDescriptor->svalid == 1)
+		    {
+		      pMTE[x].from = V2(MediumTransportElementDescriptor->source);
+		    } else {
+		      pMTE[x].from = -1;
+		    }
+		} else {
+		  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip source MTE\n");
+		}
+	      offset = offset + length; 
             }
         }
       /* 
@@ -3809,6 +3845,8 @@ int GetElementStatus(int DeviceFD)
           
           ElementStatusPage = (ElementStatusPage_T *)&DataBuffer[offset];
           offset = offset + sizeof(ElementStatusPage_T);
+	  length = V2(ElementStatusPage->length);
+          DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"STE Length %d\n",length);
           
           for (x = 0; x < STE; x++)
             {
@@ -3825,18 +3863,36 @@ int GetElementStatus(int DeviceFD)
               pSTE[x].type = ElementStatusPage->type;
               pSTE[x].address = V2(StorageElementDescriptor->address);
               pSTE[x].except = StorageElementDescriptor->except;
-              pSTE[x].ASC = StorageElementDescriptor->asc;
-              pSTE[x].ASCQ = StorageElementDescriptor->ascq;
               pSTE[x].status = (StorageElementDescriptor->full > 0) ? 'F':'E';
               pSTE[x].full = StorageElementDescriptor->full;
+	      
+	      if (length >= 5)
+		{
+		  pSTE[x].ASC = StorageElementDescriptor->asc;
+		} else {
+		  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASC STE\n");
+		}
+	      
+	      if (length >= 6)
+		{
+		  pSTE[x].ASCQ = StorageElementDescriptor->ascq;
+		} else {
+		  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASCQ STE\n");
+		}
               
-              if (StorageElementDescriptor->svalid == 1)
-                {
-                  pSTE[x].from = V2(StorageElementDescriptor->source);
-                } else {
-                  pSTE[x].from = -1;
-                }              
-              offset = offset + V2(ElementStatusPage->length); 
+	      if (length >= 0xa)
+		{
+		  if (StorageElementDescriptor->svalid == 1)
+		    {
+		      pSTE[x].from = V2(StorageElementDescriptor->source);
+		    } else {
+		      pSTE[x].from = -1;
+		    }              
+		} else {
+		  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip source STE\n");
+		}
+	      
+              offset = offset + length; 
             }
           
         }
@@ -3876,6 +3932,8 @@ int GetElementStatus(int DeviceFD)
           
           ElementStatusPage = (ElementStatusPage_T *)&DataBuffer[offset];
           offset = offset + sizeof(ElementStatusPage_T);
+	  length = V2(ElementStatusPage->length);
+          DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"IEE Length %d\n",length);
           
           for (x = 0; x < IEE; x++)
             {
@@ -3890,18 +3948,36 @@ int GetElementStatus(int DeviceFD)
               pIEE[x].type = ElementStatusPage->type;
               pIEE[x].address = V2(ImportExportElementDescriptor->address);
               pIEE[x].except = ImportExportElementDescriptor->except;
-              pIEE[x].ASC = ImportExportElementDescriptor->asc;
-              pIEE[x].ASCQ = ImportExportElementDescriptor->ascq;
               pIEE[x].status = (ImportExportElementDescriptor->full > 0) ? 'F':'E';
               pIEE[x].full = ImportExportElementDescriptor->full;
+	      
+	      if (length >= 5)
+		{
+		  pIEE[x].ASC = ImportExportElementDescriptor->asc;
+		} else {
+		  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASC IEE\n");
+		}
+	      
+	      if (length >= 6)
+		{
+		  pIEE[x].ASCQ = ImportExportElementDescriptor->ascq;
+		} else {
+		  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASCQ IEE\n");
+		}
               
-              if (ImportExportElementDescriptor->svalid == 1)
-                {
-                  pIEE[x].from = V2(ImportExportElementDescriptor->source);
-                } else {
-                  pIEE[x].from = -1;
-                }              
-              offset = offset + V2(ElementStatusPage->length); 
+	      if (length >= 0xa)
+		{
+		  if (ImportExportElementDescriptor->svalid == 1)
+		    {
+		      pIEE[x].from = V2(ImportExportElementDescriptor->source);
+		    } else {
+		      pIEE[x].from = -1;
+		    }              
+		} else {
+		  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip source IEE\n");
+		}
+	      
+              offset = offset + length; 
             }
           
         }
@@ -3941,6 +4017,8 @@ int GetElementStatus(int DeviceFD)
           
           ElementStatusPage = (ElementStatusPage_T *)&DataBuffer[offset];
           offset = offset + sizeof(ElementStatusPage_T);
+	  length = V2(ElementStatusPage->length);
+          DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"DTE Length %d\n",length);
 	  
           for (x = 0; x < DTE; x++)
             {
@@ -3955,19 +4033,37 @@ int GetElementStatus(int DeviceFD)
               pDTE[x].type = ElementStatusPage->type;
 	      pDTE[x].address = V2(DataTransferElementDescriptor->address);
               pDTE[x].except = DataTransferElementDescriptor->except;
-              pDTE[x].ASC = DataTransferElementDescriptor->asc;
-              pDTE[x].ASCQ = DataTransferElementDescriptor->ascq;
               pDTE[x].scsi = DataTransferElementDescriptor->scsi;
               pDTE[x].status = (DataTransferElementDescriptor->full > 0) ? 'F':'E';
               pDTE[x].full = DataTransferElementDescriptor->full;
               
-              if (DataTransferElementDescriptor->svalid == 1)
-                {
-                  pDTE[x].from = V2(DataTransferElementDescriptor->source);
-                } else {
-                  pDTE[x].from = -1;
-                }
-              offset = offset + V2(ElementStatusPage->length); 
+	      if (length >= 5)
+	      {
+              	pDTE[x].ASC = DataTransferElementDescriptor->asc;
+	      } else {
+		DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASC DTE\n");
+	      }
+	      
+	      if (length >= 6)
+		{
+		  pDTE[x].ASCQ = DataTransferElementDescriptor->ascq;
+	      } else {
+		DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASCQ DTE\n");
+	      }
+	      
+	      if (length >= 0xa)
+		{
+		  if (DataTransferElementDescriptor->svalid == 1)
+		    {
+		      pDTE[x].from = V2(DataTransferElementDescriptor->source);
+		    } else {
+		      pDTE[x].from = -1;
+		    }
+		} else {
+		  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip source STE\n");
+		}
+	      
+              offset = offset + length; 
             }
         }
     } else {
@@ -4007,6 +4103,7 @@ int GetElementStatus(int DeviceFD)
           ElementStatusPage = (ElementStatusPage_T *)&DataBuffer[offset];
           NoOfElements = V3(ElementStatusPage->count) / V2(ElementStatusPage->length);
           offset = offset + sizeof(ElementStatusPage_T);
+	  length = V2(ElementStatusPage->length);
           
           switch (ElementStatusPage->type)
             {
@@ -4031,18 +4128,37 @@ int GetElementStatus(int DeviceFD)
                   pMTE[x].type = ElementStatusPage->type;
                   pMTE[x].address = V2(MediumTransportElementDescriptor->address);
                   pMTE[x].except = MediumTransportElementDescriptor->except;
-                  pMTE[x].ASC = MediumTransportElementDescriptor->asc;
-                  pMTE[x].ASCQ = MediumTransportElementDescriptor->ascq;
                   pMTE[x].status = (MediumTransportElementDescriptor->full > 0) ? 'F':'E';
                   pMTE[x].full = MediumTransportElementDescriptor->full;
                   
-                  if (MediumTransportElementDescriptor->svalid == 1)
-                    {
-                      pMTE[x].from = V2(MediumTransportElementDescriptor->source);
-                    } else {
-                      pMTE[x].from = -1;
-                    }                  
-		  offset = offset + V2(ElementStatusPage->length); 
+		  
+		  if (length >= 5)
+		    {
+		      pMTE[x].ASC = MediumTransportElementDescriptor->asc;
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASC MTE\n");
+		    }
+		  
+	          if (length >= 6)
+		    {
+		      pMTE[x].ASCQ = MediumTransportElementDescriptor->ascq;
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASCQ MTE\n");
+		    }
+		  
+	          if (length >= 0xa)
+		    {
+		      if (MediumTransportElementDescriptor->svalid == 1)
+			{
+			  pMTE[x].from = V2(MediumTransportElementDescriptor->source);
+			} else {
+			  pMTE[x].from = -1;
+			}                  
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip source MTE\n");
+		    }
+
+		  offset = offset + length; 
 		}
               break;
             case STORAGE:
@@ -4067,18 +4183,36 @@ int GetElementStatus(int DeviceFD)
                   pSTE[x].type = ElementStatusPage->type;
                   pSTE[x].address = V2(StorageElementDescriptor->address);
                   pSTE[x].except = StorageElementDescriptor->except;
-                  pSTE[x].ASC = StorageElementDescriptor->asc;
-                  pSTE[x].ASCQ = StorageElementDescriptor->ascq;
                   pSTE[x].status = (StorageElementDescriptor->full > 0) ? 'F':'E';
                   pSTE[x].full = StorageElementDescriptor->full;
+
+		  if (length >= 5)
+		    {
+		      pSTE[x].ASC = StorageElementDescriptor->asc;
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASC STE\n");
+		    }
 		  
-                  if (StorageElementDescriptor->svalid == 1)
-                    {
-                      pSTE[x].from = V2(StorageElementDescriptor->source);
-                    } else {
-                      pSTE[x].from = -1;
-                    }
-                  offset = offset + V2(ElementStatusPage->length); 
+		  if (length >= 6)
+		    {
+		      pSTE[x].ASCQ = StorageElementDescriptor->ascq;
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASCQ STE\n");
+		    }
+		  
+		  if (length >= 0xa)
+		    {
+		      if (StorageElementDescriptor->svalid == 1)
+			{
+			  pSTE[x].from = V2(StorageElementDescriptor->source);
+			} else {
+			  pSTE[x].from = -1;
+			}              
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip source STE\n");
+		    }
+		  
+                  offset = offset + length; 
                 }
               break;
             case IMPORT:
@@ -4104,18 +4238,36 @@ int GetElementStatus(int DeviceFD)
                   pIEE[x].type = ElementStatusPage->type;
                   pIEE[x].address = V2(ImportExportElementDescriptor->address);
                   pIEE[x].except = ImportExportElementDescriptor->except;
-                  pIEE[x].ASC = ImportExportElementDescriptor->asc;
-                  pIEE[x].ASCQ = ImportExportElementDescriptor->ascq;
                   pIEE[x].status = (ImportExportElementDescriptor->full > 0) ? 'F':'E';
                   pIEE[x].full = ImportExportElementDescriptor->full;
-                  
-                  if (ImportExportElementDescriptor->svalid == 1)
-                    {
-                      pIEE[x].from = V2(ImportExportElementDescriptor->source);
-                    } else {
-                      pIEE[x].from = -1;
-                    }
-		  offset = offset + V2(ElementStatusPage->length); 
+		  
+		  if (length >= 5)
+		    {
+		      pIEE[x].ASC = ImportExportElementDescriptor->asc;
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASC IEE\n");
+		    }
+		  
+		  if (length >= 6)
+		    {
+		      pIEE[x].ASCQ = ImportExportElementDescriptor->ascq;
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASCQ IEE\n");
+		    }
+		  
+		  if (length >= 0xa)
+		    {
+		      if (ImportExportElementDescriptor->svalid == 1)
+			{
+			  pIEE[x].from = V2(ImportExportElementDescriptor->source);
+			} else {
+			  pIEE[x].from = -1;
+			}              
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip source IEE\n");
+		    }
+		  
+		  offset = offset + length; 
 		}
 	      break;
             case TAPETYPE:
@@ -4140,23 +4292,41 @@ int GetElementStatus(int DeviceFD)
                   pDTE[x].type = ElementStatusPage->type;
                   pDTE[x].address = V2(DataTransferElementDescriptor->address);
                   pDTE[x].except = DataTransferElementDescriptor->except;
-                  pDTE[x].ASC = DataTransferElementDescriptor->asc;
-                  pDTE[x].ASCQ = DataTransferElementDescriptor->ascq;
                   pDTE[x].scsi = DataTransferElementDescriptor->scsi;
                   pDTE[x].status = (DataTransferElementDescriptor->full > 0) ? 'F':'E';
                   pDTE[x].full = DataTransferElementDescriptor->full;
+
+		  if (length >= 5)
+		    {
+		      pDTE[x].ASC = DataTransferElementDescriptor->asc;
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASC DTE\n");
+		    }
 		  
-                  if (DataTransferElementDescriptor->svalid == 1)
-                    {
-                      pDTE[x].from = V2(DataTransferElementDescriptor->source);
-                    } else {
-                      pDTE[x].from = -1;
-                    }
-                  offset = offset + V2(ElementStatusPage->length); 
+		  if (length >= 6)
+		    {
+		      pDTE[x].ASCQ = DataTransferElementDescriptor->ascq;
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASCQ DTE\n");
+		    }
+		  
+		  if (length >= 0xa)
+		    {
+		      if (DataTransferElementDescriptor->svalid == 1)
+			{
+			  pDTE[x].from = V2(DataTransferElementDescriptor->source);
+			} else {
+			  pDTE[x].from = -1;
+			}
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip source STE\n");
+		    }
+		  
+		  offset = offset + length; 
                 }
               break;
             default:
-              offset = offset + V2(ElementStatusPage->length); 
+              offset = offset + length; 
               DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"GetElementStatus : UnGknown Type %d\n",ElementStatusPage->type);
               break;
             }

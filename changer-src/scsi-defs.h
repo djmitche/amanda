@@ -400,9 +400,9 @@ typedef struct
     PackedBit     avoltag : 1;
     PackedBit     bitres  : 6;
 #endif
-    unsigned char length[2];    /* Byte 3-4  = Element Descriptor Length */
-    unsigned char byte4;        /* Byte 5 */
-    unsigned char count[3];     /* Byte 6-8 = Byte Count of Descriptor Available */
+    unsigned char length[2];    /* Byte 2-3  = Element Descriptor Length */
+    unsigned char byte4;        /* Byte 4 */
+    unsigned char count[3];     /* Byte 5-7 = Byte Count of Descriptor Available */
 } ElementStatusPage_T;
 
 
@@ -422,7 +422,7 @@ typedef struct
 /* ======================================================= */
 typedef struct 
 {
-    unsigned char address[2];   /* Byte 1 = Element Address */
+    unsigned char address[2];   /* Byte 1-2 = Element Address */
 #ifdef LITTLE_ENDIAN_BITFIELDS        
     PackedBit     full   : 1;
     PackedBit     rsvd   : 1;
@@ -434,10 +434,10 @@ typedef struct
     PackedBit     rsvd   : 1;
     PackedBit     full   : 1;
 #endif
-    unsigned char byte4;
-    unsigned char asc;
-    unsigned char ascq;
-    unsigned char byte79[3];
+    unsigned char byte4;        /* Byte 4      */
+    unsigned char asc;          /* Byte 5 ASC  */
+    unsigned char ascq;         /* Byte 6 ASCQ */
+    unsigned char byte79[3];    /* Byte 7-9    */
 #ifdef LITTLE_ENDIAN_BITFIELDS        
     PackedBit     byte10res : 6;
     PackedBit     invert : 1;
@@ -1098,6 +1098,7 @@ typedef struct OpenFiles {
   unsigned char SCSI;           /* Can we send SCSI commands */
   int flags;                    /* Can be used for some flags ... */
   char *dev;                    /* The device which is used */
+  char *type;			/* Type of device, tape/changer */
   char *ConfigName;             /* The name in the config */
   char ident[17];               /* The identifier from the inquiry command */
   ChangerCMD_T *functions;      /* Pointer to the function array for this device */

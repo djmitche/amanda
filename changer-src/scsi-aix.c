@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-aix.c,v 1.1.2.14.4.3.2.1 2002/03/24 19:04:12 ant Exp $
+ * $Id: scsi-aix.c,v 1.1.2.14.4.3.2.2 2002/04/20 13:08:55 ant Exp $
  *
  * Interface to execute SCSI commands on an AIX System
  *
@@ -64,7 +64,7 @@
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-aix.c,v 1.1.2.14.4.3.2.1 2002/03/24 19:04:12 ant Exp $";
+   static char rcsid[] = "$Id: scsi-aix.c,v 1.1.2.14.4.3.2.2 2002/04/20 13:08:55 ant Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -84,7 +84,7 @@ int SCSI_OpenDevice(int ip)
        */
       if (strncmp("/dev/gsc", pDev[ip].dev, 8) == 0)
         {
-          pDev[ip].dev = AIX_USE_GSC;
+	  pDev[ip].flags = AIX_USE_GSC;
           DeviceFD = open(pDev[ip].dev, 0);
         } else {
           DeviceFD = openx(pDev[ip].dev, O_RDWR, 0, SC_DIAGNOSTIC);
@@ -108,6 +108,17 @@ int SCSI_OpenDevice(int ip)
                      pDev[ip].ident[i] = '\0';
                    }
                  pDev[ip].SCSI = 1;
+
+		  if (pDev[ip].inquiry->type == TYPE_TAPE)
+		  {
+		          pDev[ip].type = strdup("tape");
+		  }
+
+		  if (pDev[ip].inquiry->type == TYPE_CHANGER)
+		  {
+		          pDev[ip].type = strdup("changer");
+		  }
+
                  PrintInquiry(pDev[ip].inquiry);
                  return(1); 
                } else {
@@ -346,7 +357,7 @@ int SCSI_Scan()
           si.scsi_id = target;
           si.lun_id = lun;
           si.inquiry_len = 255;
-          si.inquiry_ptr = &buf;
+          si.inquiry_ptr = (char *)&buf;
           if (ioctl(fd, SCIOINQU, &si) == -1)
             {
               printf("SCIOINQU: %s\n", strerror(errno));

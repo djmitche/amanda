@@ -1,3 +1,25 @@
+2002-04-20  Thomas Hepper <th@ant.han.de>
+	* changer-src/scsi-aix.c: Fixed bug with the setting of the GSC driver
+	  Added detection and setting of device type tape/robot
+	* changer-src/scsi-bsd.c: Added detection and setting of device 
+	  type tape/robot
+	* changer-src/scsi-cam.c: Added detection and setting of device 
+	  type tape/robot
+	* changer-src/scsi-hpux_new.c: Added detection and setting of device 
+	  type tape/robot
+	* changer-src/scsi-linux.c: Added detection and setting of device 
+	  type tape/robot
+	* changer-src/scsi-solaris.c: Added detection and setting of device 
+	  type tape/robot
+	* changer-src/scsi-irix.c: Added detection and setting of device 
+	  type tape/robot
+	* changer-src/scsi-changer-driver.c: Now there is an device handler
+	  for an generic tape and an generic robot.
+	  The result length from the read element status is now checked
+	  and only fields which are in this area are used.. (Some librarys
+	  retrun only 4 byte, expected are 52)
+	* changer-src/scsi-defs.h: Fixed the some defines in 
+	  ElementStatusPage_T, 
 2002-04-19  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* client-src/client_util.c (parse_g_options) New function to parse

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-irix.c,v 1.1.2.13.4.1.2.3 2002/03/24 19:04:12 ant Exp $
+ * $Id: scsi-irix.c,v 1.1.2.13.4.1.2.4 2002/04/20 13:08:55 ant Exp $
  *
  * Interface to execute SCSI commands on an SGI Workstation
  *
@@ -62,7 +62,7 @@
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-irix.c,v 1.1.2.13.4.1.2.3 2002/03/24 19:04:12 ant Exp $";
+   static char rcsid[] = "$Id: scsi-irix.c,v 1.1.2.13.4.1.2.4 2002/04/20 13:08:55 ant Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -96,6 +96,17 @@ int SCSI_OpenDevice(int ip)
                     }
                   pDev[ip].SCSI = 1;
                   close(DeviceFD);
+
+		  if (pDev[ip].inquiry->type == TYPE_TAPE)
+		  {
+		          pDev[ip].type = strdup("tape");
+		  }
+
+		  if (pDev[ip].inquiry->type == TYPE_CHANGER)
+		  {
+		          pDev[ip].type = strdup("changer");
+		  }
+
                   PrintInquiry(pDev[ip].inquiry);
                   return(1);
                 } else { /* ! TYPE_TAPE ! TYPE_CHANGER */
