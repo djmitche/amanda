@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: match.c,v 1.11 2000/09/23 15:33:35 martinea Exp $
+ * $Id: match.c,v 1.12 2000/12/30 15:22:09 martinea Exp $
  *
  * functions for checking and matching regular expressions
  */
@@ -214,4 +214,161 @@ char *glob;
     *r = '\0';
 
     return regex;
+}
+
+
+int match_word(glob, word, delim)
+char *glob, *word;
+char delim;
+{
+    char *regex;
+    char *r;
+    int  len;
+    int  ch;
+    int  last_ch;
+    int  lenword;
+    char *nword;
+    char *g, *w;
+    int  i;
+
+    lenword = strlen(word);
+    nword = (char *)malloc(lenword + 3);
+
+    r = nword;
+    w = word;
+    if(lenword == 1 && *w == delim) {
+	*r++ = delim;
+	*r++ = delim;
+    }
+    else {
+	if(*w != delim)
+	    *r++ = delim;
+	while(*w != '\0')
+	    *r++ = *w++;
+	if(*(r-1) != delim)
+	    *r++ = delim;    
+    }
+    *r = '\0';
+
+    /*
+     * Allocate an area to convert into.  The worst case is a six to
+     * one expansion.
+     */
+    len = strlen(glob);
+    regex = (char *)malloc(1 + len * 6 + 1 + 1 + 2 + 2);
+    r = regex;
+    g = glob;
+
+    if(len == 1 && *g == delim) {
+	*r++ = '^';
+	*r++ = '\\';
+	*r++ = delim;
+	*r++ = '\\';
+	*r++ = delim;
+	*r++ = '$';
+    }
+    else {
+	/*
+	 * Do the conversion:
+	 *
+	 *  ?      -> [^\delim]
+	 *  *      -> [^\delim]
+	 *  [!...] -> [^...]
+	 *
+	 * The following are given a leading backslash to protect them
+	 * unless they already have a backslash:
+	 *
+	 *   ( ) { } + . ^ $ |
+	 *
+	 * If the last
+	 * non-escaped character is \ leave the $ off to cause a syntax
+	 * error when the regex is compiled.
+	 */
+
+	if(*glob == delim)	/* add a leading ^ */
+	    *r++ = '^';
+	else {
+	    *r++ = '\\';	/* add a leading \delim */
+	    *r++ = delim;
+	}
+	last_ch = '\0';
+	for (ch = *g++; ch != '\0'; last_ch = ch, ch = *g++) {
+	    if (last_ch == '\\') {
+		*r++ = ch;
+		ch = '\0';		/* so last_ch != '\\' next time */
+	    } else if (last_ch == '[' && ch == '!') {
+		*r++ = '^';
+	    } else if (ch == '\\') {
+		*r++ = ch;
+	    } else if (ch == '*' || ch == '?') {
+		*r++ = '[';
+		*r++ = '^';
+		*r++ = delim;
+		*r++ = ']';
+		if (ch == '*') {
+		    *r++ = '*';
+		}
+	    } else if (   ch == '('
+		       || ch == ')'
+		       || ch == '{'
+		       || ch == '}'
+		       || ch == '+'
+		       || ch == '.'
+		       || ch == '^'
+		       || ch == '$'
+		       || ch == '|') {
+		*r++ = '\\';
+		*r++ = ch;
+	    } else {
+		*r++ = ch;
+	    }
+	}
+	if (last_ch == '.')	/* add a trailing $ */
+	    *r++ = '$';
+	else  {			/* add a trailing \delim */
+	    *r++ = '\\';
+	    *r++ = delim;
+	}
+    }
+    *r = '\0';
+
+    i = match(regex,nword);
+
+    amfree(nword);
+    amfree(regex);
+    return i;
+}
+
+
+int match_host(glob, host)
+char *glob, *host;
+{
+    char *lglob, *lhost;
+    char *c, *d;
+    int i;
+
+    
+    lglob = (char *)malloc(strlen(glob)+1);
+    c = lglob, d=glob;
+    while( *d != '\0')
+	*c++ = tolower(*d++);
+    *c = *d;
+
+    lhost = (char *)malloc(strlen(host)+1);
+    c = lhost, d=host;
+    while( *d != '\0')
+	*c++ = tolower(*d++);
+    *c = *d;
+
+    i = match_word(lglob, lhost, '.');
+    amfree(lglob);
+    amfree(lhost);
+    return i;
+}
+
+
+int match_disk(glob, disk)
+char *glob, *disk;
+{
+    return match_word(glob, disk, '/');
 }
