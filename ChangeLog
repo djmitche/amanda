@@ -1,5 +1,12 @@
 1999-06-25  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* Makefile.am (pkgdata_DATA): Install COPYRIGHTs.
+	(EXTRA_DIST): Remove docs/*.
+	* docs/Makefile.am: New file.
+	(pkgdata_DATA): Install all docs.
+	* configure.in: Output docs/Makefile.
+	Suggested by Paul L. Lussier <plussier@baynetworks.com>
+
 	* docs/FAQ (selfcheck time-out): NIS services, inetd rebooting,
 	keyboard time-out, lsof.
 

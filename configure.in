@@ -2557,6 +2557,8 @@ AC_OUTPUT( \
 	man/amverify.8			man/Makefile			\
 	man/amstatus.8			man/amreport.8			\
 									\
+	docs/Makefile							\
+									\
 	recover-src/Makefile						\
 									\
 	restore-src/Makefile						\
