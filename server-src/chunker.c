@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.3 2000/10/29 13:43:05 martinea Exp $
+/* $Id: chunker.c,v 1.4 2000/10/29 19:05:15 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -518,6 +518,8 @@ databuf_flush(db)
 	    } else {
 		abort_pending = 1;
 		errstr = newstralloc(errstr, "ERROR");
+		putresult("ABORT-FINISHED %s\n", handle);
+		exit(1);
 		return 1;
 	    }
 	}
