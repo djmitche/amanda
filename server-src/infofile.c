@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.28 1998/01/02 18:48:33 jrj Exp $
+ * $Id: infofile.c,v 1.29 1998/01/03 18:02:04 kovert Exp $
  *
  * manage current info file
  */
@@ -478,7 +478,7 @@ info_t *record;
 	/* setup key */
 
 	k.dptr = vstralloc(hostname, ":", diskname, NULL);
-	k.dsize = strlen(key)+1;
+	k.dsize = strlen(k.dptr)+1;
 
 	/* lookup record */
 
@@ -606,7 +606,7 @@ info_t *record;
     /* setup key */
 
     k.dptr = vstralloc(hostname, ":", diskname, NULL);
-    k.dsize = strlen(key)+1;
+    k.dsize = strlen(k.dptr)+1;
 
     /* find last non-empty dump level */
 
