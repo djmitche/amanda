@@ -1,3 +1,7 @@
+2001-09-01 John R. Jackson (jrj@purdue.edu)
+
+	* client-src/sendsize.c: Fix memory allocation problem.
+
 2001-08-31 John R. Jackson (jrj@purdue.edu)
 
 	* server-src/amindex.c: Fix memory leak.  Compliments of Robert Minsk
