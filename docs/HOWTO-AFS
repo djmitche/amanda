@@ -1,0 +1,8 @@
+You need to download the following package if you want to backup AFS volume
+with amanda:
+  ftp://ftp.ccmr.cornell.edu/pub/amanda-afs/amanda-afs.tar.gz
+or 
+  anonymous cvs from :pserver:anonymous@cvs.ccmr.cornell.edu:/usr/common/cvs
+  and checkout project 'amanda-afs'
+
+The patch to amanda is already included in this distribution.

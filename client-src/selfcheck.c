@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.69 2003/01/04 17:45:44 martinea Exp $
+ * $Id: selfcheck.c,v 1.70 2003/11/18 18:04:17 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -609,20 +609,23 @@ char *optstr;
 
     dbprintf(("%s: device %s\n", debug_prefix_time(NULL), device));
 
+    /* skip accessability test if this is an AFS entry */
+    if(strncmp(device, "afs:", 4) != 0) {
 #ifdef CHECK_FOR_ACCESS_WITH_OPEN
-    access_result = open(device, O_RDONLY);
-    access_type = "open";
+	access_result = open(device, O_RDONLY);
+	access_type = "open";
 #else
-    access_result = access(device, amode);
-    access_type = "access";
+	access_result = access(device, amode);
+	access_type = "access";
 #endif
-    if(access_result == -1) {
-	err = vstralloc("could not ", access_type, " ", device,
+	if(access_result == -1) {
+	    err = vstralloc("could not ", access_type, " ", device,
 			" (", disk, "): ", strerror(errno), NULL);
-    }
+	}
 #ifdef CHECK_FOR_ACCESS_WITH_OPEN
-    aclose(access_result);
+	aclose(access_result);
 #endif
+    }
 
 common_exit:
 
