@@ -1,3 +1,7 @@
+2003-11-26  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/reporter.c (output_tapeinfo): Fix printing of new tape.
+
 2003-11-25  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/amcheck.c (taperscan_slot): Deal with label not in
