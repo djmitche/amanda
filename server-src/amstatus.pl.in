@@ -118,6 +118,10 @@ $estimate_done = 0;
 $holding_space = 0;
 $start_time = 0;
 @dumpers_active = ();
+$nb_tape = 0;
+$ntpartition{$nb_tape} = 0;
+$ntsize{$nb_tape} = 0;
+$ntesize{$nb_tape} = 0;
 
 while(<AMDUMP>) {
 	chomp;
@@ -513,6 +517,14 @@ while(<AMDUMP>) {
 		if(!defined $size{$hostpart}) {
 			$size{$hostpart}=$size;
 		}
+		$ntpartition{$nb_tape}++;
+		$ntsize{$nb_tape} += $size{$hostpart};
+		if(defined $esize{$hostpart} && $esize{$hostpart} > 1) {
+			$ntesize{$nb_tape} += $esize{$hostpart};
+		}
+		else {
+			$ntesize{$nb_tape} += $size{$hostpart};
+		}
 	}
 	elsif(/driver: result time (\S+) from taper: (TRY-AGAIN|TAPE-ERROR) (\d+-\d+) (.+)/) {
 		$current_time=$1;
@@ -556,6 +568,13 @@ while(<AMDUMP>) {
 		if(! defined($dumpers_held[$dumpers_active]{$status_driver})) {
 			$dumpers_held[$dumpers_active]{$status_driver}=0;
 		}
+	}
+	elsif(/taper: wrote label `(\S*)'/) {
+		$nb_tape++;
+		$ntlabel{$nb_tape} = $1;
+		$ntpartition{$nb_tape} = 0;
+		$ntsize{$nb_tape} = 0;
+		$ntesize{$nb_tape} = 0;
 	}
 }
 
@@ -925,6 +944,12 @@ if (defined $opt_summary) {
 		$tpartition , $tsize , $tesize,
 		$tesize ? ($tsize * 1.0 / $tesize) * 100 : 0.0,
 		($estsize+$flsize) ? ($tsize * 1.0 / ($estsize + $flsize)) * 100 : 0.0;
+	if($nb_tape > 1) {
+		for($i=1; $i <= $nb_tape; $i++) {
+			printf "  tape %-3d      : %3d %9dk %9dk %s\n",
+				$i, $ntpartition{$i}, $ntsize{$i}, $ntesize{$i}, $ntlabel{$i};
+		}
+	}
 	if($idle_dumpers ==0) {
 		printf "all dumpers active\n";
 	}
