@@ -1371,6 +1371,7 @@ GZIP=
 
 dnl Checks for compilers, typedefs, structures, and compiler characteristics.
 dnl Check for large file compilation environment.
+need_resetofs=yes
 AC_CACHE_CHECK(
     [for large file compilation CFLAGS],
     amanda_cv_LFS_CFLAGS,
@@ -1379,6 +1380,7 @@ AC_CACHE_CHECK(
 	if test "$GETCONF"; then
 	    if $GETCONF ${GETCONF_LFS}_CFLAGS >/dev/null 2>&1; then
 		amanda_cv_LFS_CFLAGS=`$GETCONF ${GETCONF_LFS}_CFLAGS 2>/dev/null`
+		need_resetofs=no
 	    fi
 	fi
     ]
@@ -1391,6 +1393,7 @@ AC_CACHE_CHECK(
 	if test "$GETCONF"; then
 	    if $GETCONF ${GETCONF_LFS}_LDFLAGS >/dev/null 2>&1; then
 		amanda_cv_LFS_LDFLAGS=`$GETCONF ${GETCONF_LFS}_LDFLAGS 2>/dev/null`
+		need_resetofs=no
 	    fi
 	fi
     ]
@@ -1403,10 +1406,14 @@ AC_CACHE_CHECK(
 	if test "$GETCONF"; then
 	    if $GETCONF ${GETCONF_LFS}_LIBS >/dev/null 2>&1; then
 		amanda_cv_LFS_LIBS=`$GETCONF ${GETCONF_LFS}_LIBS 2>/dev/null`
+		need_resetofs=no
 	    fi
 	fi
     ]
 )
+if test "$need_resetofs" = yes; then
+    AC_DEFINE(NEED_RESETOFS)
+fi
 CFLAGS="$amanda_cv_LFS_CFLAGS $CFLAGS"
 CPPFLAGS="$amanda_cv_LFS_CFLAGS $CPPFLAGS"
 LDFLAGS="$amanda_cv_LFS_LDFLAGS $LDFLAGS"
