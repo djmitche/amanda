@@ -601,7 +601,7 @@ the backup image Amanda was processing starts over again on the next tape.
 .TP
 .BN maxdumpsize int
 Default:
-.IR runtapes * tape_lenght .
+.IR runtapes * tape_length .
 Maximum number of bytes the planner will schedule for a run.
 .TP
 .BN taperalgo [first|firstfit|largest|largestfit|smallest|last]
