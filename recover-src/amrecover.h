@@ -24,12 +24,13 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.h,v 1.8.4.2.4.1.2.1 2002/03/06 19:23:32 martinea Exp $
+ * $Id: amrecover.h,v 1.8.4.2.4.1.2.2 2002/10/22 23:35:40 martinea Exp $
  *
  * data structures and declarations for amrecover
  */
 
 #include "amanda.h"
+#include "amfeatures.h"
 
 typedef struct DIR_ITEM
 {
@@ -53,6 +54,8 @@ extern char dump_date[STR_SIZE];	/* date on which we are restoring */
 extern int quit_prog;			/* set when time to exit parser */
 extern char *tape_server_name;
 extern char *tape_device_name;
+extern am_feature_t *our_features;
+extern am_feature_t *their_features;
 extern pid_t extract_restore_child_pid;
 
 extern int converse P((char *cmd));

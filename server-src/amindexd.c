@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.39.2.11.4.4.2.6 2002/03/31 21:01:33 jrjackson Exp $
+ * $Id: amindexd.c,v 1.39.2.11.4.4.2.7 2002/10/22 23:35:40 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -87,6 +87,9 @@ static int amindexd_debug = 0;
 
 static REMOVE_ITEM *uncompress_remove = NULL;
 					/* uncompressed files to remove */
+
+static am_feature_t *our_features = NULL;
+static am_feature_t *their_features = NULL;
 
 static void reply P((int n, char * fmt, ...))
     __attribute__ ((format (printf, 2, 3)));
@@ -896,6 +899,9 @@ char **argv;
     amfree(disk_name);
     amfree(target_date);
 
+    our_features = am_init_feature_set();
+    their_features = am_set_default_feature_set();
+
     if (config_name != NULL && is_config_valid(config_name) != -1) {
 	return 1;
     }
@@ -1072,6 +1078,18 @@ char **argv;
 		amfree(config_name);
 		amfree(config_dir);
 	    }
+	    s[-1] = ch;
+	} else if (strcmp(cmd, "FEATURES") == 0 && arg) {
+	    char *our_feature_string = NULL;
+	    char *their_feature_string = NULL;
+	    s[-1] = '\0';
+	    our_features = am_init_feature_set();
+	    our_feature_string = am_feature_to_string(our_features);
+	    their_feature_string = newstralloc(target_date, arg);
+	    their_features = am_string_to_feature(their_feature_string);
+	    reply(200, "FEATURES %s", our_feature_string);
+	    amfree(our_feature_string);
+	    amfree(their_feature_string);
 	    s[-1] = ch;
 	} else if (strcmp(cmd, "DATE") == 0 && arg) {
 	    s[-1] = '\0';
