@@ -588,6 +588,33 @@ degraded mode (incremental) backups will be performed to the holding disk.
 If you wish to also allow full backups in this case,
 you may reduce the amount of holding disk space reserved for incrementals.
 .TP
+.BS columspec string
+Specify the width of columns, reporter should use.
+.I String
+is a comma (',') seperated list of triples. Each triple consists
+of three parts which are seperated by a equal sign ('=') and a colon
+(':') (see the example). These three parts specify:
+.RS
+.IP + 2
+the name of the column. This can be one of 
+"HostName", "Disk", "Level", "OrigKB", "OutKB", "Compress",
+"DumpTime", "DumpRate", "TapeTime" or "TapeRate".
+.IP + 2
+the amount of space to print before the column (used to get spaces
+between colmuns).
+.IP + 2
+the width of the column itself. If this is set to a negative value,
+the width will be calculated on demand to fit the largest entry in
+this column.
+.RE
+Here is an example:
+.EX
+     columnspec "Disk=1:18,HostName=0:10,OutKB=1:7"
+.EE
+This will print the disk column with a width of 18 and puts one space
+before it. The hostname column will be printed 10 chars wide with
+no space to the left. OutKB column is printed 7 chars wide.
+.TP
 .B holdingdisk
 Define parameters for a holding disk.
 The syntax is:

@@ -1,3 +1,10 @@
+1999-03-21  Elmar Bartel  <bartel@Informatik.TU-Muenchen.DE>
+
+	* conffile.h, conffile.c: new columnspec option
+	* reporter.c: use it
+	* man/amanda.8.in: description and example
+	* example/amanda.conf.in: ditto
+
 1999-03-20  Dahn Nilsson <dahn.nilsson@maxlab.lu.se>
 
 	* configure.in: SAMBA_VERSION is not set correctly.

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.47 1999/01/17 14:59:36 martinea Exp $
+ * $Id: reporter.c,v 1.48 1999/03/21 14:21:52 oliva Exp $
  *
  * nightly Amanda Report generator
  */
@@ -38,6 +38,7 @@ report format
     notes
     success summary
 */
+
 #include "amanda.h"
 #include "conffile.h"
 #include "tapefile.h"
@@ -137,6 +138,192 @@ void bogus_line P((void));
 char *nicedate P((int datestamp));
 void setup_disk P((disk_t *dp));
 static char *prefix P((char *host, char *disk, int level));
+
+/* enumeration of our reporter columns */
+typedef enum {
+    HostName,
+    Disk,
+    Level,
+    OrigKB,
+    OutKB,
+    Compress,
+    DumpTime,
+    DumpRate,
+    TapeTime,
+    TapeRate,
+    ColumnNameCount
+} ColumnName;
+
+/* the corresponding strings for the above enumeration
+ */
+static char *ColumnNameStrings[ColumnNameCount] = {
+    "HostName",
+    "Disk",
+    "Level",
+    "OrigKB",
+    "OutKB",
+    "Compress",
+    "DumpTime",
+    "DumpRate",
+    "TapeTime",
+    "TapeRate"
+};
+
+/* conversion from string to enumeration
+ */
+static int StringToColumnName(char *s) {
+    static char *myname= "StringToColumnName";
+    ColumnName cn;
+    for (cn= 0; cn<ColumnNameCount; cn++) {
+    	if (strcmp(s, ColumnNameStrings[cn]) == 0) {
+	    return cn;
+	}
+    }
+    return -1;
+}
+
+char LastChar(char *s) {
+    return s[strlen(s)-1];
+}
+
+/* for each column we define some values on how to
+ * format this column element
+ */
+typedef struct {
+    char PrefixSpace;	/* the blank space to print before this
+   			 * column. It is used to get the space
+			 * between the colums
+			 */
+    char Width;		/* the widht of the column itself */
+    char Precision;	/* the precision if its a float */
+    char MaxWidth;	/* if set, Width will be recalculated
+    			 * to the space needed */
+    char *Format;	/* the printf format string for this
+   			 * column element
+			 */
+    char *Title;	/* the title to use for this column */
+} ColumnInfo;
+
+/* this corresponds to the normal output of amanda, but may
+ * be adapted to any spacing as you like.
+ */
+ColumnInfo ColumnData[ColumnNameCount] = {
+    /*HostName */	{  0, 12, 12, 0, "%-*.*s", "HOSTNAME" },
+    /*Disk     */	{  1, 11, 11, 0, "%-*.*s", "DISK" },
+    /*Level    */	{  1, 1,  1,  0, "%*.*d",  "L" },
+    /*OrigKB   */	{  1, 7,  0,  0, "%*.*f",  "ORIG-KB" },
+    /*OutKB    */	{  0, 7,  0,  0, "%*.*f",  "OUT-KB" },
+    /*Compress */	{  0, 6,  1,  0, "%*.*f",  "COMP%" },
+    /*DumpTime */	{  0, 7,  7,  0, "%*.*s",  "MMM:SS" },
+    /*DumpRate */       {  0, 6,  1,  0, "%*.*f",  "KB/s" },
+    /*TapeTime */	{  1, 6,  6,  0, "%*.*s",  "MMM:SS" },
+    /*TapeRate */	{  0, 6,  1,  0, "%*.*f",  "KB/s" }
+};
+static char *ColumnSpec="";		/* filled from config */
+static char MaxWidthsRequested=0;	/* determined via config data */
+
+static int SetColumDataFromString(ColumnInfo* ci, char *s) {
+    /* Convert from a Columspec string to our internal format
+     * of columspec. The purpose is to provide this string
+     * as configuration paramter in the amanda.conf file or
+     * (maybe) as environment variable.
+     * 
+     * This text should go as comment into the sample amanda.conf
+     *
+     * The format for such a ColumnSpec string s is a ',' seperated
+     * list of triples. Each triple consists of
+     *   -the name of the column (as in ColumnNameStrings)
+     *   -prefix before the column
+     *   -the width of the column
+     *       if set to -1 it will be recalculated
+     *	 to the maximum length of a line to print.
+     * Example:
+     * 	"Disk=1:17,HostName=1:10,OutKB=1:7"
+     * or
+     * 	"Disk=1:-1,HostName=1:10,OutKB=1:7"
+     *	
+     * You need only specify those colums that should be changed from
+     * the default. If nothing is specified in the configfile, the
+     * above compiled in values will be in effect, resulting in an
+     * output as it was all the time.
+     *							ElB, 1999-02-24.
+     */
+    static char *myname= "SetColumDataFromString";
+
+    while (s && *s) {
+	int Space, Width;
+	ColumnName cn;
+    	char *eon= strchr(s, '=');
+	*eon= '\0';
+	if ((cn=StringToColumnName(s)) < 0) {
+	    fprintf(stderr, "%s: invalid ColumnName: %s\n", myname, s);
+	    return -1;
+	}
+	if (sscanf(eon+1, "%d:%d", &Space, &Width) != 2) {
+	    fprintf(stderr, "%s: invalid format: %s\n", myname, eon+1);
+	    return -1;
+	}
+	ColumnData[cn].Width= Width;
+	ColumnData[cn].PrefixSpace= Space;
+	if (LastChar(ColumnData[cn].Format) == 's') {
+	    if (Width < 0)
+		ColumnData[cn].MaxWidth= 1;
+	    else
+		if (Width > ColumnData[cn].Precision)
+		    ColumnData[cn].Precision= Width;
+	}
+	else if (Width < ColumnData[cn].Precision)
+	    ColumnData[cn].Precision= Width;
+	s= strchr(eon+1, ',');
+	if (s != NULL)
+	    s++;
+    }
+    return 0;
+}
+
+static int ColWidth(ColumnName From, ColumnName To) {
+    int i, Width= 0;
+    for (i=From; i<=To; i++)
+    	Width+= ColumnData[i].PrefixSpace + ColumnData[i].Width;
+    return Width;
+}
+
+static char *Rule(ColumnName From, ColumnName To) {
+    int i, ThisLeng;
+    int Leng= ColWidth(0, ColumnNameCount-1);
+    char *RuleSpace= alloc(Leng+1);
+    ThisLeng= ColWidth(From, To);
+    for (i=0;i<ColumnData[From].PrefixSpace; i++)
+    	RuleSpace[i]= ' ';
+    for (; i<ThisLeng; i++)
+    	RuleSpace[i]= '-';
+    RuleSpace[ThisLeng]= '\0';
+    return RuleSpace;
+}
+
+static char *TextRule(ColumnName From, ColumnName To, char *s) {
+    ColumnInfo *cd= &ColumnData[From];
+    int leng;
+    int RuleSpaceSize= ColWidth(0, ColumnNameCount-1)+1;
+    char *RuleSpace= alloc(RuleSpaceSize), *tmp;
+    leng= cd->PrefixSpace+cd->Width;
+    ap_snprintf(RuleSpace, RuleSpaceSize, "%*.*s", leng, leng, s);
+    strcpy(RuleSpace+leng, tmp=Rule(From+1, To)); amfree(tmp);
+    return RuleSpace;
+}
+
+char *sDivZero(float a, float b, ColumnName cn) {
+    ColumnInfo *cd= &ColumnData[cn];
+    static char PrtBuf[256];
+    if (b == 0.0)
+    	ap_snprintf(PrtBuf, sizeof(PrtBuf),
+	  "%*s", cd->Width, "-- ");
+    else
+    	ap_snprintf(PrtBuf, sizeof(PrtBuf),
+	  cd->Format, cd->Width, cd->Precision, a/b);
+    return PrtBuf;
+}
+
 
 
 int contline_next()
@@ -257,6 +444,18 @@ char **argv;
 
     if(read_conffile(conffname))
         error("could not read amanda config file");
+    ColumnSpec= getconf_str(CNF_COLUMNSPEC);
+    if(SetColumDataFromString(ColumnData, ColumnSpec) < 0)
+        error("wrong column specification\n");
+    else {
+    	int cn;
+    	for (cn=0; cn<ColumnNameCount; cn++) {
+	    if (ColumnData[cn].MaxWidth) {
+	    	MaxWidthsRequested= 1;
+		break;
+	    }
+	}
+    }
     if((diskq = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
 	error("could not read disklist file");
     if(read_tapelist(getconf_str(CNF_TAPELIST)))
@@ -417,8 +616,9 @@ char **argv;
 
 
     /* close postscript file */
-    if (psfname) {
-        afclose(postscript);
+    if (psfname && postscript) {
+    	/* it may be that postscript is NOT opened */
+	afclose(postscript);
     }
     else {
 	if (postscript != NULL && pclose(postscript) != 0)
@@ -582,7 +782,7 @@ void output_stats()
     putc('\n', mailf);
 
     if (postscript) {
-      fprintf(postscript,"(Total Size:       %6.1f MB) DrawStat\n",
+      fprintf(postscript, "(Total Size:        %6.1f MB) DrawStat\n",
 	      mb(stats[2].outsize));
       fprintf(postscript, "(Tape Used (%%)       ");
       divzero(postscript, pct(stats[2].outsize+marksize*stats[2].disks),
@@ -709,103 +909,286 @@ void sort_disks()
     }
 }
 
+CheckStringMax(ColumnInfo *cd, char *s) {
+    if (cd->MaxWidth) {
+	int l= strlen(s);
+	if (cd->Width < l)
+	    cd->Width= l;
+    }
+}
+
+CheckIntMax(ColumnInfo *cd, int n) {
+    if (cd->MaxWidth) {
+    	char testBuf[200];
+    	int l;
+	ap_snprintf(testBuf, sizeof(testBuf),
+	  cd->Format, cd->Width, cd->Precision, n);
+	l= strlen(testBuf);
+	if (cd->Width < l)
+	    cd->Width= l;
+    }
+}
+
+CheckFloatMax(ColumnInfo *cd, double d) {
+    if (cd->MaxWidth) {
+    	char testBuf[200];
+	int l;
+	ap_snprintf(testBuf, sizeof(testBuf),
+	  cd->Format, cd->Width, cd->Precision, d);
+	l= strlen(testBuf);
+	if (cd->Width < l)
+	    cd->Width= l;
+    }
+}
+
+CalcMaxWidth() {
+    /* we have to look for columspec's, that require the recalculation.
+     * we do here the same loops over the sortq as is done in
+     * output_summary. So, if anything is changed there, we have to
+     * change this here also.
+     *							ElB, 1999-02-24.
+     */
+    disk_t *dp;
+    float f;
+
+    for(dp = sortq.head; dp != NULL; dp = dp->next) {
+	int i;
+	for (i=0; i<data(dp)->nb_taper; i++) {
+	    ColumnInfo *cd;
+	    char TimeRateBuffer[40];
+
+	    CheckStringMax(&ColumnData[HostName], dp->host->hostname);
+	    CheckStringMax(&ColumnData[Disk], dp->name);
+	    if (data(dp)->result == L_BOGUS)
+		continue;
+	    CheckIntMax(&ColumnData[Level], data(dp)->level);
+	    if (data(dp)->result == L_SKIPPED)
+		continue;
+	    if (data(dp)->result == L_FAIL);
+		continue;
+	    if(!amflush_run || i == data(dp)->nb_taper-1) {
+		CheckFloatMax(&ColumnData[OrigKB], data(dp)->origsize);
+		CheckFloatMax(&ColumnData[OutKB], data(dp)->outsize);
+	    }
+	    if(dp->compress == COMP_NONE)
+		f = 0.0;
+	    else 
+		f = data(dp)->origsize;
+	    CheckStringMax(&ColumnData[Disk], 
+	      sDivZero(pct(data(dp)->outsize), f, Compress));
+
+	    if(!amflush_run)
+		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
+		  "%3d:%02d", mnsc(data(dp)->dumper.sec));
+	    else
+		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
+		  "N/A ");
+	    CheckStringMax(&ColumnData[DumpTime], TimeRateBuffer);
+
+	    CheckFloatMax(&ColumnData[DumpRate], data(dp)->dumper.kps); 
+
+	    cd= &ColumnData[TapeTime];
+	    if(!data(dp)->taper[i].success && !degraded_mode) {
+		CheckStringMax(cd, "FAILED");
+		continue;
+	    }
+	    if(data(dp)->taper[i].success)
+		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer), 
+		  "%3d:%02d", mnsc(data(dp)->taper[i].sec));
+	    else
+		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
+		  "N/A ");
+	    CheckStringMax(cd, TimeRateBuffer);
+
+	    cd= &ColumnData[TapeRate];
+	    if(data(dp)->taper[i].success)
+		CheckFloatMax(cd, data(dp)->taper[i].kps);
+	    else
+		CheckStringMax(cd, "N/A ");
+	}
+    }
+}
 
 void output_summary()
 {
     disk_t *dp;
     float f;
-    int len;
-    char *dname;
-    int i;
+    char *ds="DUMPER STATS";
+    char *ts=" TAPER STATS";
+    char *tmp;
 
-    fprintf(mailf,
- "                                      DUMPER STATS                  TAPER STATS\n");
-    fprintf(mailf,
- "HOSTNAME  DISK           L  ORIG-KB   OUT-KB COMP%%  MMM:SS   KB/s  MMM:SS   KB/s\n");
-    fprintf(mailf,
- "-------------------------- -------------------------------------- --------------\n");
+    int i, h, w1, wDump, wTape;
+
+
+    /* at first determine if we have recalculate our widths */
+    if (MaxWidthsRequested)
+	CalcMaxWidth();
+
+    /* title for Dumper-Stats */
+    w1= ColWidth(HostName, Level);
+    wDump= ColWidth(OrigKB, DumpRate);
+    wTape= ColWidth(TapeTime, TapeRate);
+
+    /* print centered top titles */
+    h= (wDump-strlen(ds))/2;
+    fprintf(mailf, "%*s", w1+h, "");
+    fprintf(mailf, "%-*s", wDump-h, ds);
+    h= (wTape-strlen(ts))/2;
+    fprintf(mailf, "%*s", h, "");
+    fprintf(mailf, "%-*s", wTape-h, ts);
+    fputc('\n', mailf);
+
+    /* print the titles */
+    for (i=0; i<ColumnNameCount; i++) {
+    	char *fmt;
+    	ColumnInfo *cd= &ColumnData[i];
+    	fprintf(mailf, "%*s", cd->PrefixSpace, "");
+	if (cd->Format[1] == '-')
+	    fmt= "%-*s";
+	else
+	    fmt= "%*s";
+	fprintf(mailf, fmt, cd->Width, cd->Title);
+    }
+    fputc('\n', mailf);
+
+    /* print the rules */
+    fputs(tmp=Rule(HostName, Level), mailf); amfree(tmp);
+    fputs(tmp=Rule(OrigKB, DumpRate), mailf); amfree(tmp);
+    fputs(tmp=Rule(TapeTime, TapeRate), mailf); amfree(tmp);
+    fputc('\n', mailf);
 
     /* print out postscript line for Amanda label file */
-     if (postscript) {
-         fprintf(postscript,"(-) (%s) (-) (  0) (      32) (      32) DrawHost\n",
-                 tape_labels ? tape_labels : "");
-     }
+    if (postscript) {
+	fprintf(postscript,
+	  "(-) (%s) (-) (  0) (      32) (      32) DrawHost\n",
+          tape_labels);
+    }
 
     for(dp = sortq.head; dp != NULL; free(dp->up), dp = dp->next) {
-#if 0
-	/* should we skip missing dumps for amflush? */
-	if(amflush_run && data(dp)->result == L_BOGUS)
-	    continue;
-#endif
-	if(data(dp)->nb_taper == 0) data(dp)->nb_taper = 1;
-	for(i=0;i<data(dp)->nb_taper;i++) {
-	    /* print rightmost chars of names that are too long to fit */
-	    if(((len = strlen(dp->name)) > 14) && (*(dp->name) == '/')) {
-		dname = &(dp->name[len - 13]);
-		fprintf(mailf,"%-9.9s -%-13.13s ",dp->host->hostname, dname);
-	    } else
-		fprintf(mailf,"%-9.9s %-14.14s ",dp->host->hostname, dp->name);
+    	ColumnInfo *cd;
+	char TimeRateBuffer[40];
+	if (data(dp)->nb_taper == 0)
+	    data(dp)->nb_taper= 1;
+	for (i=0; i<data(dp)->nb_taper; i++) {
+	    int devlen;
 
-	    if(data(dp)->result == L_BOGUS) {
-		if(amflush_run)
-		    fprintf(mailf,
-		   "   NO FILE TO FLUSH -----------------------------------\n");
-		else
-		    fprintf(mailf,
-		   "   MISSING --------------------------------------------\n");
-		    continue;
-	    }
-	    if(data(dp)->result == L_SKIPPED) {
-		fprintf(mailf,
-		  "%1d  SKIPPED --------------------------------------------\n",
-		  data(dp)->level);
-		continue;
-	    }
-	    else if(data(dp)->result == L_FAIL) {
-		fprintf(mailf,
-		  "%1d   FAILED --------------------------------------------\n",
-		  data(dp)->level);
-		continue;
-	    }
+	    cd= &ColumnData[HostName];
+	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
+	    fprintf(mailf, cd->Format, cd->Width, cd->Width, dp->host->hostname);
 
-	    if(!amflush_run || i == data(dp)->nb_taper-1)
-		fprintf(mailf,"%1d %8.0f %8.0f ",
-			data(dp)->level, data(dp)->origsize, data(dp)->outsize);
+	    cd= &ColumnData[Disk];
+	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
+	    devlen= strlen(dp->name);
+	    if (devlen > cd->Width) {
+	   	fputc('-', mailf); 
+		fprintf(mailf, cd->Format, cd->Width-1, cd->Precision-1,
+		  dp->name+devlen - (cd->Width-1) );
+	    }
 	    else
-		fprintf(mailf, "%1d      N/A      N/A ",data(dp)->level);
+		fprintf(mailf, cd->Format, cd->Width, cd->Width, dp->name);
 
+	    cd= &ColumnData[Level];
+	    if (data(dp)->result == L_BOGUS) {
+	      if(amflush_run){
+		fprintf(mailf, "%*s%s\n", cd->PrefixSpace+cd->Width, "",
+			tmp=TextRule(OrigKB, TapeRate, "NO FILE TO FLUSH"));
+		amfree(tmp);
+	      } else {
+		fprintf(mailf, "%*s%s\n", cd->PrefixSpace+cd->Width, "",
+			tmp=TextRule(OrigKB, TapeRate, "MISSING"));
+		amfree(tmp);
+		continue;
+	      }
+	    }
+	    
+	    cd= &ColumnData[Level];
+	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
+	    fprintf(mailf, cd->Format, cd->Width, cd->Precision, data(dp)->level);
+
+	    if (data(dp)->result == L_SKIPPED) {
+		fprintf(mailf, "%s\n",
+			tmp=TextRule(OrigKB, TapeRate, "SKIPPED"));
+		amfree(tmp);
+		continue;
+	    }
+	    if (data(dp)->result == L_FAIL) {
+		fprintf(mailf, "%s\n",
+			tmp=TextRule(OrigKB, TapeRate, "FAILED"));
+		amfree(tmp);
+		continue;
+	    }
+
+	    cd= &ColumnData[OrigKB];
+	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
+	    if(!amflush_run || i == data(dp)->nb_taper-1)
+		fprintf(mailf, cd->Format, cd->Width, cd->Precision, data(dp)->origsize);
+	    else
+		fprintf(mailf, "%*.*s", cd->Width, cd->Width, "N/A");
+
+	    cd= &ColumnData[OutKB];
+	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
+	    if(!amflush_run || i == data(dp)->nb_taper-1)
+		fprintf(mailf, cd->Format, cd->Width, cd->Precision, data(dp)->outsize);
+	    else
+		fprintf(mailf, "%*.*s", cd->Width, cd->Width, "N/A");
+	    	
+	    cd= &ColumnData[Compress];
+	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
 	    if(dp->compress == COMP_NONE)
 		f = 0.0;
-	    else
+	    else 
 		f = data(dp)->origsize;
-	    divzero(mailf, pct(data(dp)->outsize), f);
+	    fputs(sDivZero(pct(data(dp)->outsize), f, Compress), mailf);
 
+	    cd= &ColumnData[DumpTime];
+	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
 	    if(!amflush_run)
-		fprintf(mailf, " %4d:%02d %6.1f",
-			mnsc(data(dp)->dumper.sec), data(dp)->dumper.kps);
+		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
+		  "%3d:%02d", mnsc(data(dp)->dumper.sec));
 	    else
-		fprintf(mailf, "    N/A    N/A ");
+		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
+		  "N/A ");
+	    fprintf(mailf, cd->Format, cd->Width, cd->Width, TimeRateBuffer);
+
+	    cd= &ColumnData[DumpRate];
+	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
+	    if(!amflush_run)
+		fprintf(mailf, cd->Format, cd->Width, cd->Precision, data(dp)->dumper.kps);
+	    else
+		fprintf(mailf, "%*s", cd->Width, "N/A ");
+
+	    cd= &ColumnData[TapeTime];
+	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
+	    if(!data(dp)->taper[i].success && !degraded_mode) {
+		fprintf(mailf, "%s\n",
+			tmp=TextRule(TapeTime, TapeRate, "FAILED "));
+		amfree(tmp);
+		continue;
+	    }
+	    if(data(dp)->taper[i].success)
+		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
+		  "%3d:%02d", mnsc(data(dp)->taper[i].sec));
+	    else
+		ap_snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
+		  "N/A ");
+	    fprintf(mailf, cd->Format, cd->Width, cd->Width, TimeRateBuffer);
+
+	    cd= &ColumnData[TapeRate];
+	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
+	    if(data(dp)->taper[i].success)
+		fprintf(mailf, cd->Format, cd->Width, cd->Precision, data(dp)->taper[i].kps);
+	    else
+		fprintf(mailf, "%*s", cd->Width, "N/A ");
+	    fputc('\n', mailf);
 
 	    if ((postscript) && (data(dp)->taper[i].success)) {
 		fprintf(postscript,"(%s) (%s) (%d) (%3.0d) (%8.0f) (%8.0f) DrawHost\n",
 			dp->host->hostname, dp->name, data(dp)->level,
                         data(dp)->filenum, data(dp)->origsize, data(dp)->outsize);
 	    }
-
-	    if(data(dp)->taper[i].success)
-		fprintf(mailf, " %4d:%02d %6.1f",
-			mnsc(data(dp)->taper[i].sec), data(dp)->taper[i].kps);
-	    else if(degraded_mode)
-		fprintf(mailf,"    N/A    N/A");
-	    else
-		fprintf(mailf,"  FAILED ------");
-
-	    putc('\n',mailf);
 	}
     }
 }
-
-/* ----- */
 
 void bogus_line()
 {
