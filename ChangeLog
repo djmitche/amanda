@@ -1,5 +1,8 @@
 1999-01-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* Makefile.am: declare that we want automake 1.4 and we're a foreign 
+	package
+
 	* configure.in: require autoconf 2.13, and use
 	AC_VALIDATE_CACHED_SYSTEM_TUPLE instead of
 	AC_VALIDATE_CACHE_SYSTEM_TYPE
