@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.91 1998/06/10 13:58:53 oliva Exp $
+ * $Id: sendsize.c,v 1.92 1998/06/24 06:39:54 oliva Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -701,8 +701,7 @@ int level;
 	error("%s: no dump program available", get_pname());
     }
 
-    if (strcmp(rundump_cmd, cmd) == 0)
-	pipe(killctl);
+    pipe(killctl);
 
     switch(dumppid = fork()) {
     case -1:
@@ -716,6 +715,8 @@ int level;
     case 0:	/* child process */
 	if(SETPGRP == -1)
 	    SETPGRP_FAILED();
+	else if (killctl[0] == -1 || killctl[1] == -1)
+	    dbprintf(("pipe for killpgrp failed, trying without killpgrp\n"));
 	else {
 	    switch(fork()) {
 	    case -1:

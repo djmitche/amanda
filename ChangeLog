@@ -1,5 +1,8 @@
 1998-06-24  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* client-src/sendsize.c (getsize_dump): always create pipe for
+ 	killpgrp.
+
 	* client-src/amandad.c (sendnak): report `UNKNOWN' error if str is
 	NULL.
 
