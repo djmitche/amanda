@@ -1,3 +1,7 @@
+2000-11-21 John R. Jackson  <jrj@purdue.edu>
+
+	* contrib/sst/sst.c (sst_ioctl): Allow non-root users to use sst.
+
 2000-11-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amdump.sh.in: exit if amgetconf exit with status != 0.
@@ -1156,7 +1160,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.406 2000/11/08 01:58:53 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.407 2000/11/21 20:36:20 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

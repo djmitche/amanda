@@ -1358,12 +1358,14 @@ sst_ioctl(dev_t dev, int cmd, intptr_t arg, int mode,
 		 * Run a generic ucsi.h command.
 		 */
 
+#if 0 /* allow non-root to do this */
 		/*
 		 * Check root permissions
 		 */
 		if (drv_priv(cred_p) != 0) {
 			return (EPERM);
 		}
+#endif
 
 #ifdef _MULTI_DATAMODEL
 		switch (model = ddi_model_convert_from(mode & FMODELS)) {
