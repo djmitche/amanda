@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: getfsent.c,v 1.20.4.1.2.2.2.5 2002/10/27 22:58:47 martinea Exp $
+ * $Id: getfsent.c,v 1.20.4.1.2.2.2.6 2003/03/17 18:50:11 martinea Exp $
  *
  * generic version of code to read fstab
  */
@@ -350,7 +350,7 @@ generic_fsent_t *fsent;
 {
     struct statfs fsd;
     char typebuf[FSTYPSZ];
-    struct mnttab mnt;
+    static struct mnttab mnt;
     char *dp, *ep;
 
     if(!fread (&mnt, sizeof mnt, 1, fstabf))
@@ -363,9 +363,10 @@ generic_fsent_t *fsent;
     if (statfs (fsent->mntdir, &fsd, sizeof fsd, 0) != -1
         && sysfs (GETFSTYP, fsd.f_fstyp, typebuf) != -1) {
        dp = typebuf;
-       ep = fsent->fstype;
+       ep = fsent->fstype = malloc(strlen(typebuf)+2);
        while (*dp)
             *ep++ = tolower(*dp++);
+       *ep=0;
     }
 
     if ( mnt.mt_ro_flg == MNT_READONLY ) {
