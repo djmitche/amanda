@@ -16,12 +16,14 @@ amflush \- flush Amanda backup files from holding disk to tape
 .B -f
 ] [
 .B -D
-.I date
+.I datestamp
 ]*
 .I config
 [
 .I host
+[
 .I disk
+]*
 ]*
 .SH DESCRIPTION
 .B Amflush
@@ -36,15 +38,20 @@ When this happens, the problem must be corrected and
 run by hand.
 .LP
 .B -D
-.I date
-specify the date range you want to flush, 
+.I datestamp
+specify a  datestamp expression you want to flush, see the 
+"DATASTAMP EXPRESSION" section of
+.IR amanda (8)
+for a description.
 .B -D 20001225-7
 will flush all
 dump from 25 december 2000 to 27 december 2000.
 .LP
 You can specify many host/disk expressions, only disks that
 match an expression will be flushed. All disk are flushed if no
-expression are given.
+expression are given. see the "HOST & DISK EXPRESSION" section of
+.IR amanda (8)
+for a description.
 .PP
 .B Amflush
 will look in the holding disks specified by the

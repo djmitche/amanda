@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.76 2000/12/30 16:13:55 martinea Exp $
+ * $Id: amcheck.c,v 1.77 2001/01/09 00:07:07 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -67,7 +67,7 @@ int test_server_pgm P((FILE *outf, char *dir, char *pgm,
 
 void usage()
 {
-    error("Usage: amcheck%s [-M <username>] [-mwsclt] <conf> [host disk]*", versionsuffix());
+    error("Usage: amcheck%s [-M <username>] [-mwsclt] <conf> [host [disk]* ]*", versionsuffix());
 }
 
 static unsigned long malloc_hist_1, malloc_size_1;

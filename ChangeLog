@@ -1,5 +1,18 @@
 2001-01-08  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* man/amanda.8.in: New section "HOST & DISK EXPRESSION" and 
+	  "DATESTAMP EXPRESSION".
+	* man/amadmin.8.in: Document new usage.
+	* man/amflush.8.in: Document new usage.
+	* man/amcheck.8.in: Document new usage.
+	* man/amdump.8.in: Document new usage.
+	* man/amrestore.8: Document new usage.
+	* server-src/amadmin.c: Fix usage.
+	* server-src/amflush.c: Fix usage.
+	* server-src/amcheck.c: Fix usage.
+
+2001-01-08  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/diskfile.c (match_disklist): Return if no args.
 
 2001-01-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>

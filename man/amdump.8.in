@@ -17,7 +17,8 @@ amdump \- back up all disks in an Amanda configuration
 .I host
 [
 .I disk
-]]*
+]*
+]*
 .SH DESCRIPTION
 .B Amdump
 switches to the appropriate Amanda configuration directory,

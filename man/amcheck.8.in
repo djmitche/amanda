@@ -23,7 +23,8 @@ amcheck \- run Amanda self\-checks
 .I host
 [
 .I disk
-]]*
+]*
+]*
 .SH DESCRIPTION
 .B Amcheck
 runs a number of self\-checks on both the Amanda tape server host and

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.61 2001/01/07 23:02:56 martinea Exp $
+ * $Id: amflush.c,v 1.62 2001/01/09 00:07:07 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -115,7 +115,7 @@ char **main_argv;
     main_argc -= optind, main_argv += optind;
 
     if(main_argc < 1)
-	error("Usage: amflush%s [-f] [-D date]* <confdir> [host disk]*", versionsuffix());
+	error("Usage: amflush%s [-f] [-D date]* <confdir> [host [disk]* ]*", versionsuffix());
 
     config_name = main_argv[0];
     config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);

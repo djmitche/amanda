@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.71 2001/01/02 14:24:58 martinea Exp $
+ * $Id: amadmin.c,v 1.72 2001/01/09 00:07:06 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -91,27 +91,27 @@ static const struct {
     { "version", show_version,
 	"\t\t\t\t# Show version info." },
     { "force", force,
-	" <hostname> <disks> ...\t# Force level 0 at next run." },
+	" [<hostname> [<disks>]* ]+\t# Force level 0 at next run." },
     { "unforce", unforce,
-	" <hostname> <disks> ...\t# Clear force command." },
+	" [<hostname> [<disks>]* ]+\t# Clear force command." },
     { "force-bump", force_bump,
-	" <hostname> <disks> ...\t# Force bump at next run." },
+	" [<hostname> [<disks>]* ]+\t# Force bump at next run." },
     { "force-no-bump", force_no_bump,
-	" <hostname> <disks> ...\t# Force no-bump at next run." },
+	" [<hostname> [<disks>]* ]+\t# Force no-bump at next run." },
     { "unforce-bump", unforce_bump,
-	" <hostname> <disks> ...\t# Clear bump command." },
+	" [<hostname> [<disks>]* ]+\t# Clear bump command." },
     { "reuse", reuse,
 	" <tapelabel> ...\t\t# re-use this tape." },
     { "no-reuse", noreuse,
 	" <tapelabel> ...\t# never re-use this tape." },
     { "find", find,
-	" <hostname> <disks> ...\t# Show which tapes these dumps are on." },
+	" [<hostname> [<disks>]* ]*\t# Show which tapes these dumps are on." },
     { "delete", delete,
-	" <hostname> <disks> ...\t# Delete from database." },
+	" [<hostname> [<disks>]* ]+\t# Delete from database." },
     { "info", info,
-	" <hostname> <disks> ...\t# Show current info records." },
+	" [<hostname> [<disks>]* ]*\t# Show current info records." },
     { "due", due,
-	" <hostname> <disks> ...\t# Show due date." },
+	" [<hostname> [<disks>]* ]*\t# Show due date." },
     { "balance", balance,
 	"\t\t\t\t# Show nightly dump size balance." },
     { "tape", tape,
@@ -119,11 +119,11 @@ static const struct {
     { "bumpsize", bumpsize,
 	"\t\t\t# Show current bump thresholds." },
     { "export", export_db,
-	" [<hostname> [<disks>]]\t# Export curinfo database to stdout." },
+	" [<hostname> [<disks>]* ]*\t# Export curinfo database to stdout." },
     { "import", import_db,
 	"\t\t\t\t# Import curinfo database from stdin." },
     { "disklist", disklist,
-	" [<hostname> [<disks> ...]]\t# Debug disklist entries." },
+	" [<hostname> [<disks>]* ]*\t# Debug disklist entries." },
 };
 #define	NCMDS	(sizeof(cmdtab) / sizeof(cmdtab[0]))
 
@@ -320,7 +320,7 @@ void (*func) P((disk_t *dp));
     int count = 0;
 
     if(argc < 4) {
-	fprintf(stderr,"%s: expecting \"%s [<hostname> <disks>]+\"\n",
+	fprintf(stderr,"%s: expecting \"%s [<hostname> [<disks>]* ]+\"\n",
 		get_pname(), cmdname);
 	usage();
     }
