@@ -1,14 +1,12 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-solaris.c,v 1.1.2.4 1998/11/16 09:25:09 oliva Exp $";
+static char rcsid[] = "$Id: scsi-solaris.c,v 1.1.2.5 1998/11/18 07:03:50 oliva Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an Sun Workstation
  *
- * Copyright (c) 1998 T.Hepper
+ * Copyright (c) 1998 T.Hepper th@icem.de
  */
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include <amanda.h>
 
 #ifdef HAVE_SOLARIS_LIKE_SCSI
 /*

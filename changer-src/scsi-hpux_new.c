@@ -1,14 +1,13 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.1.2.2 1998/11/12 00:00:22 oliva Exp $";
+static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.1.2.3 1998/11/18 07:03:43 oliva Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an HP-UX Workstation
  *
- * Copyright (c) 1998 T.Hepper
+ * Copyright (c) 1998 T.Hepper th@icem.de
  */
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include <amanda.h>
+
 #ifdef HAVE_HPUX_LIKE_SCSI
 
 # ifdef HAVE_FCNTL_H

@@ -1,3 +1,25 @@
+1998-11-18  Thomas Hepper <th@icem.de>
+
+	* changer-src/chg-scsi.c Added debug print option
+	* changer-src/chg-scsi.c If the load fails do not continue
+	* changer-src/scsi-aix.c changed #include <config.h> to <amanda.h>
+	* changer-src/scsi-aix.c Added debug prints to SCSI_ExecuteCommand
+	* changer-src/scsi-changer-driver.c changed #include <config.h> to 
+	#include <amanda.h>
+	* changer-src/scsi-changer-driver.c Added debugging prints
+	* changer-src/scsi-changer-driver.c Remove unused funktion TestUnitReady
+	* changer-src/scsi-chio.c added missing funktion Tape_Ready
+	* changer-src/scsi-hpux.c removed #include "config.h", is already done
+	in amanda.h
+	* changer-src/scsi-hpux_new.c  changed #include <config.h> to 
+	#include <amanda.h>
+	* changer-src/scsi-irix.c changed #include <config.h> to 
+	#include <amanda.h>
+	* changer-src/scsi-linux.c changed #include <config.h> to 
+	#include <amanda.h>
+	* changer-src/scsi-solaris.c changed #include <config.h> to 
+	#include <amanda.h>
+
 1998-11-17  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* client-src/sendsize.c: disable HAVE_DUMP_ESTIMATE if SAMBA_CLIENT

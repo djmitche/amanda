@@ -1,16 +1,13 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.2 1998/11/12 00:00:18 oliva Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.1.2.3 1998/11/18 07:03:34 oliva Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
  *
- * Copyright (c) 1998 T.Hepper
+ * Copyright (c) 1998 T.Hepper th@icem.de
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
+#include <amanda.h>
 /*
 #ifdef HAVE_STDIO_H
 */
@@ -103,6 +100,8 @@ int TapeDeviceFD;
 int MaxSlots = 0;
 int MinSlots = 99;
 int TapeDrive = 0;
+int NoTapeDrive = 0;
+int NoRobot = 0;
 char *SlotArgs = 0;
 ElementInfo_T *pElementInfo = 0;
 ElementInfo_T *pwElementInfo = 0;
@@ -132,11 +131,11 @@ int Inquiry(int DeviceFD)
 			      sizeof(RequestSense_T));
     if (ret < 0)
       {
-/* 	fprintf(stderr, "%s: Request Sense[Inquiry]: %02X", */
-/* 		"chs", ((unsigned char *) &RequestSense)[0]); */
-/* 	for (i = 1; i < sizeof(RequestSense_T); i++)                */
-/* 	  fprintf(stderr, " %02X", ((unsigned char *) &RequestSense)[i]); */
-/* 	fprintf(stderr, "\n");    */
+	dbprintf(("%s: Request Sense[Inquiry]: %02X",
+		"chs", ((unsigned char *) &RequestSense)[0]));
+	for (i = 1; i < sizeof(RequestSense_T); i++)               
+	  dbprintf((" %02X", ((unsigned char *) &RequestSense)[i]));
+	dbprintf(("\n"));   
 	return(ret);
       }
     if ( ret > 0)
@@ -151,18 +150,18 @@ int Inquiry(int DeviceFD)
 
 int PrintInquiry()
 {
-    fprintf(stderr,"%-15s %x\n", "qualifier", SCSIInquiry->qualifier);
-    fprintf(stderr,"%-15s %x\n", "type", SCSIInquiry->type);
-    fprintf(stderr,"%-15s %x\n", "data_format", SCSIInquiry->data_format);
-    fprintf(stderr,"%-15s %X\n", "ansi_version", SCSIInquiry->ansi_version);
-    fprintf(stderr,"%-15s %X\n", "ecma_version", SCSIInquiry->ecma_version);
-    fprintf(stderr,"%-15s %X\n", "iso_version", SCSIInquiry->iso_version);
-    fprintf(stderr,"%-15s %X\n", "type_modifier", SCSIInquiry->type_modifier);
-    fprintf(stderr,"%-15s %x\n", "removable", SCSIInquiry->removable);
-    fprintf(stderr,"%-15s %.8s\n", "vendor_info", SCSIInquiry->vendor_info);
-    fprintf(stderr,"%-15s %.16s\n", "prod_ident", SCSIInquiry->prod_ident);
-    fprintf(stderr,"%-15s %.4s\n", "prod_version", SCSIInquiry->prod_version);
-    fprintf(stderr,"%-15s %.20s\n", "vendor_specific", SCSIInquiry->vendor_specific);
+    dbprintf((stderr,"%-15s %x\n", "qualifier", SCSIInquiry->qualifier));
+    dbprintf((stderr,"%-15s %x\n", "type", SCSIInquiry->type));
+    dbprintf((stderr,"%-15s %x\n", "data_format", SCSIInquiry->data_format));
+    dbprintf((stderr,"%-15s %X\n", "ansi_version", SCSIInquiry->ansi_version));
+    dbprintf((stderr,"%-15s %X\n", "ecma_version", SCSIInquiry->ecma_version));
+    dbprintf((stderr,"%-15s %X\n", "iso_version", SCSIInquiry->iso_version));
+    dbprintf((stderr,"%-15s %X\n", "type_modifier", SCSIInquiry->type_modifier));
+    dbprintf((stderr,"%-15s %x\n", "removable", SCSIInquiry->removable));
+    dbprintf((stderr,"%-15s %.8s\n", "vendor_info", SCSIInquiry->vendor_info));
+    dbprintf((stderr,"%-15s %.16s\n", "prod_ident", SCSIInquiry->prod_ident));
+    dbprintf((stderr,"%-15s %.4s\n", "prod_version", SCSIInquiry->prod_version));
+    dbprintf((stderr,"%-15s %.20s\n", "vendor_specific", SCSIInquiry->vendor_specific));
 }
 
 
@@ -216,47 +215,6 @@ static int Endian24(unsigned char *BigEndianData)
 /* Function Prototypes */
 /* =================== */
 void NewElement(ElementInfo_T **ElementInfo);
-
-
-/* ======================================================= */
-int TestUnitReady(int DeviceFD)
-{
-  CDB_T CDB;
-  RequestSense_T RequestSense;
-  SCSIInquiry_T *SCSIInquiry;
-  int i;
-  int ret;
-
-  SCSIInquiry = (SCSIInquiry_T *)malloc(sizeof(SCSIInquiry_T));
-  CDB[0] = 0;   /* Test Unit Ready*/
-  CDB[1] = 0;
-  CDB[2] = 0;
-  CDB[3] = 0;
-  CDB[4] = 0;
-  CDB[5] = 0;
-
-
-  ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,                      
-			    0, 0,
-			    (char *) &RequestSense,
-			    sizeof(RequestSense_T));
-
-  if (ret < 0)
-    {
-      /* 	fprintf(stderr, "%s: Request Sense[Inquiry]: %02X", */
-      /* 		"chs", ((unsigned char *) &RequestSense)[0]); */
-      /* 	for (i = 1; i < sizeof(RequestSense_T); i++)                */
-      /* 	  fprintf(stderr, " %02X", ((unsigned char *) &RequestSense)[i]); */
-      /* 	fprintf(stderr, "\n");    */
-      return(ret);
-    }
-  if ( ret > 0)
-    return(RequestSense.SenseKey);
-  
-  fprintf(stderr,"Type %d, product %s\n",SCSIInquiry->type, SCSIInquiry->prod_ident); 
-  
-  return(ret);
-}
 
 int ResetStatus(int DeviceFD)
 {
@@ -314,6 +272,7 @@ int GenericMove(int DeviceFD, int from, int to)
   int ret;
   int i;
 
+  dbprintf(("GenericMove from = %d, to = %d\n", from, to));
 
   CDB[0]  = 0xA5;
   CDB[1]  = 0;
@@ -331,13 +290,15 @@ int GenericMove(int DeviceFD, int from, int to)
   ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 12,
 	0, 0, (char *) &RequestSense, sizeof(RequestSense_T)); 
 
+  dbprintf(("GenericMove SCSI_ExecuteCommand = %d\n", ret));
+
   if (ret < 0)
     {
-      /* 	fprintf(stderr, "%s: Request Sense[Inquiry]: %02X", */
-      /* 		"chs", ((unsigned char *) &RequestSense)[0]); */
-      /* 	for (i = 1; i < sizeof(RequestSense_T); i++)                */
-      /* 	  fprintf(stderr, " %02X", ((unsigned char *) &RequestSense)[i]); */
-      /* 	fprintf(stderr, "\n");    */
+      dbprintf(("%s: Request Sense[Inquiry]: %02X", 
+	      "chs", ((unsigned char *) &RequestSense)[0])); 
+      for (i = 1; i < sizeof(RequestSense_T); i++)                
+	dbprintf((stderr, " %02X", ((unsigned char *) &RequestSense)[i])); 
+      dbprintf(("\n"));    
       return(ret);
     }
   if ( ret > 0)
@@ -403,6 +364,10 @@ int ReadElementStatus(int DeviceFD, ElementInfo_T **ElementInfo)
 
   MinSlots = 99;
   MaxSlots = 0;
+  NoTapeDrive = 0;
+  NoRobot = 0;
+ 
+  dbprintf(("ReadElementStatus ....\n"));
 
   CDB[0] = 0xB8;                /* READ ELEMENT STATUS */
   CDB[1] = 0;                   /* Element Type Code = 0, VolTag = 0 */
@@ -426,11 +391,11 @@ int ReadElementStatus(int DeviceFD, ElementInfo_T **ElementInfo)
 
   if (ret < 0)
     {
-      /* 	fprintf(stderr, "%s: Request Sense[Inquiry]: %02X", */
-      /* 		"chs", ((unsigned char *) &RequestSense)[0]); */
-      /* 	for (i = 1; i < sizeof(RequestSense_T); i++)                */
-      /* 	  fprintf(stderr, " %02X", ((unsigned char *) &RequestSense)[i]); */
-      /* 	fprintf(stderr, "\n");    */
+      dbprintf(("%s: Request Sense[Inquiry]: %02X",
+	      "chs", ((unsigned char *) &RequestSense)[0]));
+      for (i = 1; i < sizeof(RequestSense_T); i++)               
+	dbprintf((" %02X", ((unsigned char *) &RequestSense)[i]));
+      dbprintf(("\n"));   
       return(ret);
     }
   if ( ret > 0)
@@ -461,6 +426,7 @@ int ReadElementStatus(int DeviceFD, ElementInfo_T **ElementInfo)
 		error = 1;
 	      ElementInfo = &((*ElementInfo)->next);
 	      offset = offset + sizeof(MediumTransportElementDescriptor_T);
+          NoRobot++;
 	    }
 	  break;
 	case 2:
@@ -497,12 +463,23 @@ int ReadElementStatus(int DeviceFD, ElementInfo_T **ElementInfo)
 	      if ((*ElementInfo)->ASC > 0)
 		error = 1;
 	      TapeDrive = (*ElementInfo)->address;
+          NoTapeDrive++;
 	      ElementInfo = &((*ElementInfo)->next);
 	      offset = offset + sizeof(DataTransferElementDescriptor_T);
 	    }
 	  break;
 	}
     }
+  dbprintf(("\tMinSlots %d, MaxSlots %d\n", MinSlots, MaxSlots));
+  dbprintf(("\tTapeDrive %d, Changer %d\n", NoTapeDrive, NoRobot));
+  dbprintf(("\tTapeDrive is Element %d\n", TapeDrive));
+  for (pwElementInfo = pElementInfo; 
+       pwElementInfo; 
+       pwElementInfo = pwElementInfo->next)
+    dbprintf(("\t\tElement #%d %c ASC = %02X ASCQ = %02X Type %d\n",
+	      pwElementInfo->address, pwElementInfo->status,
+	      pwElementInfo->ASC, pwElementInfo->ASCQ, pwElementInfo->type ));
+  
   return(error);
 }
 
@@ -545,11 +522,11 @@ int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int
 			    (char *) &RequestSense, sizeof(RequestSense_T));
   if (ret < 0)
     {
-      /* 	fprintf(stderr, "%s: Request Sense[Inquiry]: %02X", */
-      /* 		"chs", ((unsigned char *) &RequestSense)[0]); */
-      /* 	for (i = 1; i < sizeof(RequestSense_T); i++)                */
-      /* 	  fprintf(stderr, " %02X", ((unsigned char *) &RequestSense)[i]); */
-      /* 	fprintf(stderr, "\n");    */
+      dbprintf(("%s: Request Sense[Inquiry]: %02X",
+       		"chs", ((unsigned char *) &RequestSense)[0]));
+       	for (i = 1; i < sizeof(RequestSense_T); i++)               
+       	  dbprintf((" %02X", ((unsigned char *) &RequestSense)[i]));
+       	dbprintf(("\n"));   
       return(ret);
     }
   if ( ret > 0)
@@ -560,13 +537,15 @@ int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int
 int Move(char *ident, int fd, int from, int to)
 {
     struct ChangerCMD *p = (struct ChangerCMD *)&ChangerIO;
+    int ret;
 
     while(p->ident != NULL)
 	{
 	    if (strcmp(ident, p->ident) == 0)
 		{
-		    p->move(fd, from, to);
-		    return(0);
+		    ret = p->move(fd, from, to);
+		    dbprintf(("Move for %s returned %d\n", ident, ret));
+		    return(ret);
 		}
 	    p++;
 	}
@@ -576,8 +555,9 @@ int Move(char *ident, int fd, int from, int to)
 	{
 	    if (strcmp("generic", p->ident) == 0)
 		{
-		    p->move(fd, from, to);
-		    return(0);
+		    ret = p->move(fd, from, to);
+		    dbprintf(("Move for %s returned %d\n", ident, ret));
+		    return(ret);
 		}
 	    p++;
 	}
@@ -782,9 +762,12 @@ int unload(int fd, int drive, int slot)
 
 int load(int fd, int drive, int slot)
 {
-    Inquiry(fd);
-    Status((char *)&SCSIIdent, fd, &pElementInfo);
-    Move((char *)&SCSIIdent, fd, slot+MinSlots, TapeDrive);
+  int ret;
+  
+  Inquiry(fd);
+  Status((char *)&SCSIIdent, fd, &pElementInfo);
+  ret = Move((char *)&SCSIIdent, fd, slot+MinSlots, TapeDrive);
+  return(ret);
     /*
      * load the media from the specified element (slot) into the
      * specified data transfer unit (drive)

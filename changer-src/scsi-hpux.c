@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-hpux.c,v 1.4.4.2 1998/11/12 00:00:20 oliva Exp $
+ *	$Id: scsi-hpux.c,v 1.4.4.3 1998/11/18 07:03:40 oliva Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -11,7 +11,6 @@
  *      Michael C. Povel 03.06.98 added dummy for eject_tape
  */
 
-#include "config.h"
 #include "amanda.h"
 
 #if defined(HAVE_HPUX_SCSI_CHIO)
@@ -234,7 +233,7 @@ int rc;
 		get_pname(), rc, strerror(errno));
 	return(-2);
     }
-    return (0);
+    return (rc);
 }
 
 int get_slot_count(int fd)
