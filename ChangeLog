@@ -1,5 +1,7 @@
 1999-08-15  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* example/amanda.conf.in: Clarify holdingdisk::use 0.
+
 	* config/missing: Update from automake 1.4a.
 
 1999-07-04 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
@@ -56,7 +58,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.227 1999/08/15 07:24:10 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.228 1999/08/15 07:31:06 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
