@@ -1,3 +1,12 @@
+1999-09-18 John R. Jackson  <jrj@purdue.edu>
+
+	* client-src/sendbackup.c: pclose returns a child exit status of the
+	  pipe, not an errno, so do not try to strerror it.
+	  Have the index child process exit with the pclose exit code.
+	  Treat index failures as strange rather than fatal so the dump gets
+	  fully processed.  It's more important to have the dump image than
+	  to skip it just because indexing had a (possibly unrelated) problem.
+
 1999-09-15 John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/amtoc.pl.in: handle an image failing on one tape and

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.52 1999/09/15 00:31:37 jrj Exp $
+ * $Id: sendbackup.c,v 1.53 1999/09/18 19:21:31 jrj Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -443,30 +443,67 @@ amwait_t w;
 {
     char *thiserr = NULL;
     char *str;
-    int ret, sig;
+    int ret, sig, rc;
     char number[NUM_STR_SIZE];
-
-    if(WIFSIGNALED(w))	ret = 0, sig = WTERMSIG(w);
-    else sig = 0, ret = WEXITSTATUS(w);
 
     str = childstr(pid);
 
+    if(WIFSIGNALED(w)) {
+	ret = 0;
+	rc = sig = WTERMSIG(w);
+    } else {
+	sig = 0;
+	rc = ret = WEXITSTATUS(w);
+    }
+
+    if(pid == indexpid) {
+	/*
+	 * Treat an index failure (other than signal) as a "STRANGE"
+	 * rather than an error so the dump goes ahead and gets processed
+	 * but the failure is noted.
+	 */
+	if(ret != 0) {
+	    fprintf(stderr, "? %s returned %d\n", str, ret);
+	    rc = 0;
+	}
+    }
+
 #ifndef HAVE_GZIP
-    if(pid == comppid) 	/* compress returns 2 sometimes; it's ok */
-	if(ret == 2) return 0;
+    if(pid == comppid) {
+	/*
+	 * compress returns 2 sometimes, but it is ok.
+	 */
+	if(ret == 2) {
+	    rc = 0;
+	}
+    }
 #endif
 
 #ifdef DUMP_RETURNS_1
-    if(pid == dumppid && tarpid == -1)
-        /* Ultrix dump returns 1 sometimes; it's ok too */
-        if(ret == 1) return 0;
+    if(pid == dumppid && tarpid == -1) {
+        /*
+	 * Ultrix dump returns 1 sometimes, but it is ok.
+	 */
+        if(ret == 1) {
+	    rc = 0;
+	}
+    }
 #endif
 
 #ifdef IGNORE_TAR_ERRORS
-    if(pid == tarpid)
-	/* tar bitches about active filesystems, but I don't care */
-        if(ret == 2) return 0;
+    if(pid == tarpid) {
+	/*
+	 * tar bitches about active filesystems, but we do not care.
+	 */
+        if(ret == 2) {
+	    rc = 0;
+	}
+    }
 #endif
+
+    if(rc == 0) {
+	return 0;				/* normal exit */
+    }
 
     if(ret == 0) {
 	snprintf(number, sizeof(number), "%d", sig);
@@ -671,15 +708,12 @@ int mesgin;
     }
 
     while((wpid = wait(&retstat)) != -1) {
-	/* we know that it exited, so we don't have to check WIFEXITED */
-	if((WIFSIGNALED(retstat) || WEXITSTATUS(retstat)) &&
-	   check_status(wpid, retstat))
-	    goterror = 1;
+	if(check_status(wpid, retstat)) goterror = 1;
     }
 
-    if(goterror) {
-      dbprintf(("error [%s]\n", errorstr ? errorstr : "(empty errorstr?)"));
-      error("error [%s]", errorstr ? errorstr : "(empty errorstr?)");
+    if(errorstr) {
+      dbprintf(("error [%s]\n", errorstr));
+      error("error [%s]", errorstr);
     } else if(dump_size == -1) {
       dbprintf(("error [no backup size line]\n"));
       error("error [no backup size line]");
@@ -805,6 +839,7 @@ char *cmd;
   struct sigaction act, oact;
   int pipefd[2];
   FILE *pipe_fp;
+  int exitcode;
   char *e;
 
   if (!createindex)
@@ -938,15 +973,14 @@ char *cmd;
 
   /* finished */
   /* check the exit code of the pipe and moan if not 0 */
-  if ((pipefd[0] = pclose(pipe_fp)) != 0) {
-    e = strerror(errno);
-    dbprintf(("index pipe returned %d [%s]\n", pipefd[0], e));
-    error("index pipe returned %d [%s]", pipefd[0], e);
+  if ((exitcode = pclose(pipe_fp)) != 0) {
+    dbprintf(("%s: index pipe returned %d\n", get_pname(), exitcode));
+  } else {
+    dbprintf(("%s: index created successfully\n", get_pname()));
   }
   pipe_fp = NULL;
 
-  dbprintf(("%s: index created successfully\n", get_pname()));
-  exit(0);
+  exit(exitcode);
 }
 
 extern backup_program_t dump_program, gnutar_program;
