@@ -1205,6 +1205,34 @@ The name of a network interface definition in the
 .I config
 .IR file ,
 used to balance network load.
+.LP
+Instead of naming a
+.IR dumptype ,
+it is possible to define one in-line, enclosing
+.I dumptype
+options within curly braces, one per line, just like a
+.I dumptype
+definition in
+.IR amanda.conf .
+Since pre-existing
+.IR dumptype s
+are valid option names, you can use this syntax to customize
+.IR dumptype s
+for particular disks.
+.LP
+A line break
+.B must
+follow the left curly bracket.
+.LP
+.RS
+.EX
+\fIhostname diskdevice\fP {
+  \fIdumptype/option\fP
+  [ ... ]
+} [ \fIspindle\fP [ \fIinterface\fP ] ]
+.EE
+.RE
+.LP
 .SH TAPE MANAGEMENT
 The
 .I tapelist

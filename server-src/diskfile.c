@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.27.4.2 1999/08/21 20:40:34 martinea Exp $
+ * $Id: diskfile.c,v 1.27.4.3 1999/08/25 06:53:16 oliva Exp $
  *
  * read disklist file
  */
@@ -219,7 +219,7 @@ static int read_diskline()
     char *hostname = NULL;
     static char *line = NULL;
     char *s, *fp;
-    int ch;
+    int ch, dup = 0;
 
     amfree(line);
     for(; (line = agets(diskf)) != NULL; free(line)) {
@@ -256,36 +256,86 @@ static int read_diskline()
 
     if(host && (disk = lookup_disk(hostname, fp)) != NULL) {
 	parserror("duplicate disk record, previous on line %d", disk->line);
-	return 1;
+	dup = 1;
+    } else {
+	disk = alloc(sizeof(disk_t));
+	malloc_mark(disk);
+	disk->line = line_num;
+	disk->name = stralloc(fp);
+	malloc_mark(disk->name);
+	disk->spindle = -1;
+	disk->up = NULL;
+	disk->inprogress = 0;
     }
-
-    disk = alloc(sizeof(disk_t));
-    malloc_mark(disk);
-    disk->line = line_num;
-    disk->name = stralloc(fp);
-    malloc_mark(disk->name);
-    disk->spindle = -1;
-    disk->up = NULL;
-    disk->inprogress = 0;
 
     skip_whitespace(s, ch);
     if(ch == '\0' || ch == '#') {
 	parserror("disk dumptype expected");
 	if(host == NULL) amfree(hostname);
-	amfree(disk->name);
-	amfree(disk);
+	if(!dup) {
+	    amfree(disk->name);
+	    amfree(disk);
+	}
 	return 1;
     }
     fp = s - 1;
     skip_non_whitespace(s, ch);
     s[-1] = '\0';
-    if((dtype = lookup_dumptype(upcase(fp))) == NULL) {
+    if (fp[0] == '{') {
+	s[-1] = ch;
+	s = fp+2;
+	skip_whitespace(s, ch);
+	if (ch != '\0' && ch != '#') {
+	    parserror("expected line break after `{\', ignoring rest of line");
+	}
+
+	if (strchr(s-1, '}') &&
+	    (strchr(s-1, '#') == NULL ||
+	     strchr(s-1, '}') < strchr(s-1, '#'))) {
+	    if(host == NULL) amfree(hostname);
+	    if(!dup) {
+		amfree(disk->name);
+		amfree(disk);
+	    }
+	    return 1;
+	}
+	amfree(line);
+
+	dtype = read_dumptype(vstralloc("custom(", hostname,
+					":", disk->name, ")", 0),
+			      diskf, diskfname, &line_num);
+
+	line = agets(diskf);
+	/* line_num += 1; */ /* read_dumptype did it already */
+
+	if (dtype == NULL || dup) {
+	    if(host == NULL) amfree(hostname);
+	    if(!dup) {
+	      amfree(disk->name);
+	      amfree(disk);
+	    }
+	    return line != NULL;
+	}
+
+	if (line == NULL)
+	    line = stralloc("");
+	s = line;
+	ch = *s++;
+    } else if((dtype = lookup_dumptype(upcase(fp))) == NULL) {
 	parserror("undefined dumptype `%s'", fp);
 	if(host == NULL) amfree(hostname);
-	amfree(disk->name);
-	amfree(disk);
+	if(!dup) {
+	  amfree(disk->name);
+	  amfree(disk);
+	}
 	return 1;
     }
+
+    if (dup) {
+	if(host == NULL) amfree(hostname);
+	return 1;
+    }
+
     disk->dtype_name	= dtype->name;
     disk->program	= dtype->program;
     disk->exclude	= dtype->exclude;

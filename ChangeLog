@@ -1,3 +1,16 @@
+1999-08-25  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/conffile.c (read_dumptype): Renamed from get_dumptype.
+	Extended to support reading a named dumptype from a specified FILE.
+	(get_dumptype): Use read_dumptype.
+	(main): Read disklist, so that custom dumptypes are shown.
+	* server-src/conffile.h (read_dumptype): Declare.
+	* server-src/diskfile.c (read_diskline): Use read_dumptype if
+	dumptype starts with `{'.
+	* man/amanda.8.in (disklist): Document it.
+	* NEWS: Likewise.
+	* example/disklist: Exemplify it.
+
 1999-08-23 John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/reporter.c (copy_template_file): make sure all data is
@@ -145,7 +158,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.241 1999/08/23 20:30:48 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.242 1999/08/25 06:52:37 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
