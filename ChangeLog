@@ -1,5 +1,7 @@
 1998-06-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* man/amanda.8.in: add info about the chunksize parameter
+	of the holdingdisk.
 	* man/amanda.8.in: add info about amstatus command
 
 1998-06-13  Alexandre Oliva  <oliva@dcc.unicamp.br>
