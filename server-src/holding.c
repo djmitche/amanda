@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.45 2003/06/20 18:42:46 martinea Exp $
+ * $Id: holding.c,v 1.46 2004/02/02 20:29:01 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -60,10 +60,11 @@ char *fname;
 
 int is_datestr(fname)
 char *fname;
-/* sanity check on datestamp of the form YYYYMMDD */
+/* sanity check on datestamp of the form YYYYMMDD or YYYYMMDDhhmmss*/
 {
     char *cp;
-    int ch, num, date, year, month;
+    int ch, num, date, year, month, hour, minute, second;
+    char ymd[9], hms[7];
 
     /* must be 8 digits */
     for(cp = fname; (ch = *cp) != '\0'; cp++) {
@@ -71,17 +72,32 @@ char *fname;
 	    break;
 	}
     }
-    if(ch != '\0' || cp-fname != 8) {
+    if(ch != '\0' || (cp-fname != 8 && cp-fname != 14)) {
 	return 0;
     }
 
     /* sanity check year, month, and day */
 
-    num = atoi(fname);
+    strncpy(ymd, fname, 8);
+    ymd[8] = '\0';
+    num = atoi(ymd);
     year = num / 10000;
     month = (num / 100) % 100;
     date = num % 100;
     if(year<1990 || year>2100 || month<1 || month>12 || date<1 || date>31)
+	return 0;
+
+    if(cp-fname == 8)
+	return 1;
+
+    /* sanity check hour, minute, and second */
+    strncpy(hms, fname+8, 6);
+    hms[6] = '\0';
+    num = atoi(hms);
+    hour = num / 10000;
+    minute = (num / 100) % 100;
+    second = num % 100;
+    if(hour> 23 || minute>59 || second>59)
 	return 0;
 
     /* yes, we passed all the checks */

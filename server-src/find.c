@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.19 2003/10/27 18:32:50 martinea Exp $
+ * $Id: find.c,v 1.20 2004/02/02 20:29:00 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -255,7 +255,20 @@ find_result_t **output_find;
 		    find_result_t *new_output_find =
 			alloc(sizeof(find_result_t));
 		    new_output_find->next=*output_find;
-		    new_output_find->datestamp=atoi(dir->name);
+		    if(strlen(dir->name) == 8) {
+			new_output_find->datestamp=atoi(dir->name);
+			new_output_find->timestamp=stralloc2(dir->name, "000000");
+		    }
+		    else if(strlen(dir->name) == 14) {
+			char *name = stralloc(dir->name);
+			name[8] = '\0';
+			new_output_find->datestamp=atoi(name);
+			new_output_find->timestamp=stralloc(dir->name);
+			amfree(name);
+		    }
+		    else {
+			error("Bad date\n");
+		    }
 		    new_output_find->datestamp_aux=1001;
 		    new_output_find->hostname=hostname;
 		    hostname = NULL;
@@ -661,6 +674,8 @@ int datestamp, datestamp_aux;
 			(find_result_t *)alloc(sizeof(find_result_t));
 		    new_output_find->next=*output_find;
 		    new_output_find->datestamp=datestampI;
+		    new_output_find->timestamp = alloc(15);
+		    ap_snprintf(new_output_find->timestamp, 15, "%d000000", datestampI);
 		    new_output_find->datestamp_aux=datestamp_aux;
 		    new_output_find->hostname=stralloc(host);
 		    new_output_find->diskname=stralloc(disk);
@@ -679,6 +694,8 @@ int datestamp, datestamp_aux;
 		    new_output_find->next=*output_find;
 		    new_output_find->datestamp=datestamp;
 		    new_output_find->datestamp_aux=datestamp_aux;
+		    new_output_find->timestamp = alloc(15);
+		    ap_snprintf(new_output_find->timestamp, 15, "%d000000", datestamp);
 		    new_output_find->hostname=stralloc(host);
 		    new_output_find->diskname=stralloc(disk);
 		    new_output_find->level=level;

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.134 2003/11/27 18:08:13 martinea Exp $
+ * $Id: driver.c,v 1.135 2004/02/02 20:29:00 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -64,6 +64,7 @@ static int conf_taperalgo;
 static time_t sleep_time;
 static int idle_reason;
 static char *datestamp;
+static char *timestamp;
 static host_t *flushhost = NULL;
 
 static void allocate_bandwidth P((interface_t *ip, int kps));
@@ -203,6 +204,7 @@ main(main_argc, main_argv)
 
     amfree(datestamp);
     datestamp = construct_datestamp(NULL);
+    timestamp = construct_timestamp(NULL);
     log_add(L_START,"date %s", datestamp);
 
     taper_program = vstralloc(libexecdir, "/", "taper", versionsuffix(), NULL);
@@ -279,7 +281,7 @@ main(main_argc, main_argv)
 	       dsk, hdp->diskdir, hdp->disksize);
 
 	newdir = newvstralloc(newdir,
-			      hdp->diskdir, "/", datestamp,
+			      hdp->diskdir, "/", timestamp,
 			      NULL);
 	if(!mkholdingdir(newdir)) {
 	    hdp->disksize = 0L;
@@ -449,6 +451,7 @@ main(main_argc, main_argv)
     fflush(stdout);
     log_add(L_FINISH,"date %s time %s", datestamp, walltime_str(curclock()));
     amfree(datestamp);
+    amfree(timestamp);
 
     amfree(dumper_program);
     amfree(taper_program);
@@ -2089,7 +2092,7 @@ assign_holdingdisk(holdp, diskp)
     for( ; holdp[i]; i++ ) {
 	holdp[i]->destname = newvstralloc( holdp[i]->destname,
 					   holdp[i]->disk->diskdir, "/",
-					   datestamp, "/",
+					   timestamp, "/",
 					   diskp->host->hostname, ".",
 					   sfn, ".",
 					   lvl, NULL );
