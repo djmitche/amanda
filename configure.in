@@ -990,6 +990,16 @@ if test x"${UDPPORTRANGE+set}" = x"set"; then
    maximum reserved UDP port numbers sockets should be bound to. ])
 fi
 
+AC_ARG_WITH(maxtapeblocksize,
+    [  --with-maxtapeblocksize=kb            Maximum size of a tape block],
+    [
+	MAXTAPEBLOCKSIZE="$withval"
+    ],
+    : ${MAXTAPEBLOCKSIZE=32}
+)
+
+AC_DEFINE_UNQUOTED(MAX_TAPE_BLOCK_KB,($MAXTAPEBLOCKSIZE),[Maximum size of a tape block in KB.])
+
 AC_ARG_WITH(db,
     [  --with-db={text,db,dbm,gdbm,ndbm} use the selected database format [text]],
     [
@@ -1272,11 +1282,6 @@ fi
 if test -n "$xenix_tapeio"; then
   AC_DEFINE(XENIX_TAPEIO,1,[Define on XENIX/ISC. ])
 fi
-
-case "$target" in
-  *-linux-*) AC_DEFINE(MAX_TAPE_BLOCK_KB,(1024),[Define this if MAX_TAPE_BLOCK_KB must be smaller than 4 MBytes.])
-
-esac
 
 AMANDA_CFLAGS="$AMANDA_CFLAGS $KRB4INCLUDES $KRB5INCLUDES $DBMALLOCCFLAGS"
 AMANDA_CPPFLAGS="$AMANDA_CPPFLAGS $KRB4INCLUDES $KRB5INCLUDES $DBMALLOCINCLUDES"

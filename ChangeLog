@@ -1,5 +1,10 @@
 2002-01-31  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* configure.in: New --with-maxtapeblocksize with a default of 32.
+	* common-src/amanda.h: MAX_TAPE_BLOCK_KB is defined in amanda.h
+
+2002-01-31  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* common-src/fileheader.c (build_header): Never write the
 	  BLOCKSIZE= line.
 	* common-src/fileheader.c (parse_file_header): Do not parse the

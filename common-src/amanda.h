@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.97 2001/12/30 17:42:07 martinea Exp $
+ * $Id: amanda.h,v 1.98 2002/02/01 01:09:07 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -410,10 +410,9 @@ extern char *  debug_fn P((void));
 #define DISK_BLOCK_KB		32
 #define DISK_BLOCK_BYTES	(DISK_BLOCK_KB * 1024)
 
-/* Maximum size of a tape block in kbytes. */
-#if !defined(MAX_TAPE_BLOCK_KB)
-#define MAX_TAPE_BLOCK_KB (4 * 1024)			/* 4 MBytes */
-#endif
+/* Maximum size of a tape block */
+/* MAX_TAPE_BLOCK_KB is defined in config.h */
+/* by configure --with-maxtapeblocksize     */
 #define MAX_TAPE_BLOCK_BYTES (MAX_TAPE_BLOCK_KB*1024)
 
 /* Define miscellaneous amanda functions.  */
