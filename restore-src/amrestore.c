@@ -25,15 +25,17 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.24 1998/05/05 21:47:34 martinea Exp $
+ * $Id: amrestore.c,v 1.25 1998/05/27 23:16:49 jrj Exp $
  *
  * retrieves files from an amanda tape
  */
 /*
- * usage: amrestore [-p] [-h] [-r|-c] [-d datestamp] tape-device [hostname [diskname]]
+ * usage: amrestore [-p] [-h] [-r|-c] tape-device [hostname [diskname [datestamp [hostname [diskname [datestamp ... ]]]]]]
  *
- * Pulls all files from the tape that match the hostname and diskname regular
- * expressions.  For example, specifying "rz1" as the diskname matches "rz1a",
+ * Pulls all files from the tape that match the hostname, diskname and
+ * datestamp regular expressions.
+ *
+ * For example, specifying "rz1" as the diskname matches "rz1a",
  * "rz1g" etc on the tape.
  *
  * Command line options:
@@ -41,8 +43,6 @@
  *	-c   write compressed
  *	-r   raw, write file as is on tape (with header, possibly compressed)
  *	-h   write the header too
- *
- *	-d   the file should have this datestamp
  */
 
 #include "amanda.h"
@@ -235,7 +235,7 @@ int isafile;
     /* if -c and file not compressed, insert compress pipe */
 
     if(compflag && !file->compressed) {
-	pipe(outpipe);
+	if(pipe(outpipe) < 0) error("error [pipe: %s]", strerror(errno));
 	out = outpipe[1];
 	switch(compress_pid = fork()) {
 	case -1: error("could not fork for %s: %s",
@@ -248,8 +248,10 @@ int isafile;
 	    aclose(outpipe[1]);
 	    if(dup2(outpipe[0], 0) == -1)
 		error("error [dup2 pipe: %s]", strerror(errno));
+	    aclose(outpipe[0]);
 	    if(dup2(dest, 1) == -1)
 		error("error [dup2 dest: %s]", strerror(errno));
+	    aclose(dest);
 	    execlp(COMPRESS_PATH, COMPRESS_PATH, (char *)0);
 	    error("could not exec %s: %s", COMPRESS_PATH, strerror(errno));
 	}
@@ -278,8 +280,10 @@ int isafile;
 	    aclose(outpipe[1]);
 	    if(dup2(outpipe[0], 0) < 0)
 		error("dup2 pipe: %s", strerror(errno));
+	    aclose(outpipe[0]);
 	    if(dup2(dest, 1) < 0)
 		error("dup2 dest: %s", strerror(errno));
+	    aclose(dest);
 	    (void) execlp(UNCOMPRESS_PATH, UNCOMPRESS_PATH,
 #ifdef UNCOMPRESS_OPT
 			  UNCOMPRESS_OPT,
@@ -346,7 +350,13 @@ int isafile;
     } while (buflen > 0);
     if(buflen < 0)
 	error("read error: %s", strerror(errno));
-    aclose(out);
+    if(pipeflag) {
+	if(out != dest) {
+	    aclose(out);
+	}
+    } else {
+	aclose(out);
+    }
 }
 
 
@@ -355,7 +365,7 @@ void usage()
  * Print usage message and terminate.
  */
 {
-    error("Usage: amrestore [-r|-c] [-h] [-p] [-d datestamp] tapedev [host [disk]]");
+    error("Usage: amrestore [-r|-c] [-h] [-p] tapedev [host [disk [date ... ]]]");
 }
 
 
@@ -374,7 +384,15 @@ char **argv;
     struct stat stat_tape;
     dumpfile_t file;
     char *filename = NULL;
-    char *datestamp, *tapename, *hostname, *diskname;
+    char *tapename;
+    struct match_list {
+	char *hostname;
+	char *diskname;
+	char *datestamp;
+	struct match_list *next;
+    } *match_list = NULL, *me;
+    int found_match;
+    int arg_state;
     amwait_t compress_status;
     int tapedev;
     int fd;
@@ -396,7 +414,6 @@ char **argv;
     onerror(errexit);
     signal(SIGPIPE, handle_sigpipe);
 
-    datestamp = "";
     /* handle options */
     while( (opt = getopt(argc, argv, "cd:rpkh")) != -1) {
 	switch(opt) {
@@ -404,7 +421,6 @@ char **argv;
 	case 'r': rawflag = 1; break;
 	case 'p': pipeflag = 1; break;
 	case 'h': headerflag = 1; break;
-	case 'd': datestamp = stralloc(optarg); break;
 	default:
 	    usage();
 	}
@@ -425,24 +441,59 @@ char **argv;
     if((tapedev = tape_open(tapename, 0)) < 0)
 	error("could not open tape %s: %s", tapename, strerror(errno));
 
-    if(optind >= argc) hostname = "";
-    else {
-	hostname = argv[optind++];
-	if((errstr=validate_regexp(hostname)) != NULL) {
-	    fprintf(stderr, "%s: bad hostname regex \"%s\": %s\n",
-		    get_pname(), hostname, errstr);
-	    usage();
+#define ARG_GET_HOST 0
+#define ARG_GET_DISK 1
+#define ARG_GET_DATE 2
+
+    arg_state = ARG_GET_HOST;
+    while(optind < argc) {
+	switch(arg_state) {
+	case ARG_GET_HOST:
+	    /*
+	     * This is a new host/disk/date triple, so allocate a match_list.
+	     */
+	    me = alloc(sizeof(*me));
+	    me->hostname = argv[optind++];
+	    me->diskname = "";
+	    me->datestamp = "";
+	    me->next = match_list;
+	    match_list = me;
+	    if(me->hostname[0] != '\0'
+	       && (errstr=validate_regexp(me->hostname)) != NULL) {
+	        fprintf(stderr, "%s: bad hostname regex \"%s\": %s\n",
+		        get_pname(), me->hostname, errstr);
+	        usage();
+	    }
+	    arg_state = ARG_GET_DISK;
+	    break;
+	case ARG_GET_DISK:
+	    me->diskname = argv[optind++];
+	    if(me->diskname[0] != '\0'
+	       && (errstr=validate_regexp(me->diskname)) != NULL) {
+	        fprintf(stderr, "%s: bad diskname regex \"%s\": %s\n",
+		        get_pname(), me->diskname, errstr);
+	        usage();
+	    }
+	    arg_state = ARG_GET_DATE;
+	    break;
+	case ARG_GET_DATE:
+	    me->datestamp = argv[optind++];
+	    if(me->datestamp[0] != '\0'
+	       && (errstr=validate_regexp(me->datestamp)) != NULL) {
+	        fprintf(stderr, "%s: bad datestamp regex \"%s\": %s\n",
+		        get_pname(), me->datestamp, errstr);
+	        usage();
+	    }
+	    arg_state = ARG_GET_HOST;
+	    break;
 	}
     }
-
-    if(optind >= argc) diskname = "";
-    else {
-	diskname = argv[optind++];
-	if((errstr=validate_regexp(diskname)) != NULL) {
-	    fprintf(stderr, "%s: bad diskname regex \"%s\": %s\n",
-		    get_pname(), diskname, errstr);
-	    usage();
-	}
+    if(match_list == NULL) {
+	match_list = alloc(sizeof(*match_list));
+	match_list->hostname = "";
+	match_list->diskname = "";
+	match_list->datestamp = "";
+	match_list->next = NULL;
     }
 
     if(stat(tapename,&stat_tape)!=0)
@@ -459,14 +510,21 @@ char **argv;
     while(file.type == F_TAPESTART || file.type == F_DUMPFILE) {
 	amfree(filename);
 	filename = make_filename(&file);
-	if(disk_match(&file,datestamp,hostname,diskname) != 0) {
+	found_match = 0;
+	for(me = match_list; me; me = me->next) {
+	    if(disk_match(&file,me->datestamp,me->hostname,me->diskname) != 0) {
+		found_match = 1;
+		break;
+	    }
+	}
+	if(found_match) {
 	    fprintf(stderr, "%s: %3d: restoring %s\n", 
 		    get_pname(), file_number, filename);
 	    restore(&file, filename, tapedev, isafile);
 	    if(pipeflag) break;
 	      /* GH: close and reopen the tape device, so that the
 		 read_file_header() below reads the next file on the
-		 tape an does not report: short block... */
+		 tape and does not report: short block... */
 	    tapefd_close(tapedev);
 	    /* DB: wait for (un)compress, otherwise
                    reopening the tape might fail */

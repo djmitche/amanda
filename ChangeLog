@@ -1,3 +1,12 @@
+1998-05-27  John R. Jackson  <jrj@purdue.edu>
+
+	* man/amrestore.8: update for host/disk/date triplets.
+	* recover-src/extract_list.c (extract_files_setup): pass datestamp
+	argument in new position and without -d.
+	* restore-src/amidxtaped.c (main): remove -d checks.
+	* restore-src/amrestore.c (restore, usage, main): fix file descriptor
+	leak, move datestamp to host/disk triplet and allow all to be repeated.
+
 1998-05-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* client-src/killpgrp.c (main): wait for either SIGTERM or EOF on

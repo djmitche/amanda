@@ -23,23 +23,27 @@ amrestore \- extract files from an Amanda tape
 [
 .B \-h
 ]
-[
-.B \-d
-.I datestamp
-]
 .I tapedevice
 [
 .I hostname
 [
 .I diskname
-]]
+[
+.I datestamp
+[
+.I hostname
+[
+.I diskname
+[
+.I datestamp
+\&...
+]]]]]]
 .SH DESCRIPTION
 .B Amrestore
 extracts files from the tape mounted on
 .I tapedevice
 that match
-.I hostname
-,
+.IR hostname ,
 .I diskname
 and
 .I datestamp
@@ -49,20 +53,27 @@ The tape must be in a format written by the
 or
 .B amflush
 program.
+.LP
 If
 .I diskname
-is not specified, all backups on the tape for
+is not specified, all backups on the tape for the previous
 .I hostname
 are candidates.
 If
-.I hostname
-is not specified, every backup on the tape is a candidate.
-If
 .I datestamp
-is not specified, every backup on the tape is a candidate.
+is not specified, all backups on the tape for the previous
+.I hostname
+and
+.I diskname
+are candidates.
+If no
+.IR hostname ,
+.I diskname
+or
+.I datestamp
+are specified, every backup on the tape is a candidate.
 .LP
-.I Hostname
-,
+.IR Hostname ,
 .I diskname
 and
 .I datestamp
@@ -73,11 +84,17 @@ is "rz[23]a", it would match disks
 .B rz2a
 and
 .BR rz3a .
-.LP
+.IR Hostname ,
+.I diskname
+or
 .I datestamp
-is usefull if you have
+may be an empty string ("") to match every host, disk or date
+(this is just an abbreviation for ".*").
+.LP
+.I Datestamp
+is useful if you have multiple
 .B amflush
-multiple runs on the tape.
+runs on the tape.
 .PP
 Unless
 .B -p

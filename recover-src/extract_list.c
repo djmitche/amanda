@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.35 1998/05/19 15:00:22 martinea Exp $
+ * $Id: extract_list.c,v 1.36 1998/05/27 23:16:43 jrj Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1033,18 +1033,24 @@ static int extract_files_setup P((void))
     }
     *ch = '\0';
     /* send to the tape server what tape file we want */
-    /* 7 args: "-h ", "-p", "-d", "datestamp", "tape device", "hostname", "diskname" */
-    send_to_tape_server(tape_server_socket, "7");
+    /* 6 args:
+     *   "-h"
+     *   "-p"
+     *   "tape device"
+     *   "hostname"
+     *   "diskname"
+     *   "datestamp"
+     */
+    send_to_tape_server(tape_server_socket, "6");
     send_to_tape_server(tape_server_socket, "-h");
     send_to_tape_server(tape_server_socket, "-p");
-    send_to_tape_server(tape_server_socket, "-d");
-    send_to_tape_server(tape_server_socket, clean_datestamp);
     send_to_tape_server(tape_server_socket, dump_device_name);
     send_to_tape_server(tape_server_socket, dump_hostname);
     send_to_tape_server(tape_server_socket, disk_regex);
+    send_to_tape_server(tape_server_socket, clean_datestamp);
 
-    dbprintf(("Started amidxtaped with arguments \"7 -h -p -d %s %s %s %s\"\n",
-	      clean_datestamp, dump_device_name, dump_hostname, disk_regex));
+    dbprintf(("Started amidxtaped with arguments \"6 -h -p %s %s %s %s\"\n",
+	      dump_device_name, dump_hostname, disk_regex, clean_datestamp));
 
     amfree(disk_regex);
 
