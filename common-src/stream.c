@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.14 1999/03/23 21:12:00 kashmir Exp $
+ * $Id: stream.c,v 1.15 1999/04/06 16:19:56 kashmir Exp $
  *
  * functions for managing stream sockets
  */
@@ -122,9 +122,9 @@ int sendsize, recvsize;
     return server_socket;
 }
 
-int stream_client(hostname, port, sendsize, recvsize, localport)
+int stream_client(hostname, port, sendsize, recvsize, localport, nonblock)
 const char *hostname;
-int port, sendsize, recvsize, *localport;
+int port, sendsize, recvsize, *localport, nonblock;
 {
     int client_socket;
     int on = 1;
@@ -174,8 +174,12 @@ int port, sendsize, recvsize, *localport;
 	}
     }
 
+    if (nonblock)
+	fcntl(client_socket, F_SETFL,
+	    fcntl(client_socket, F_GETFL, 0)|O_NONBLOCK);
+
     if(connect(client_socket, (struct sockaddr *)&svaddr, sizeof(svaddr))
-       == -1) {
+       == -1 && !nonblock) {
 	aclose(client_socket);
 	return -1;
     }

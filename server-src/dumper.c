@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.101 1999/03/07 17:44:32 martinea Exp $
+/* $Id: dumper.c,v 1.102 1999/04/06 16:20:01 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -364,7 +364,7 @@ main(main_argc, main_argv)
 	    /* connect outf to taper port */
 
 	    outfd = stream_client("localhost", taper_port,
-				  DATABUF_SIZE, DEFAULT_SIZE, NULL);
+				  DATABUF_SIZE, DEFAULT_SIZE, NULL, 0);
 	    if (outfd == -1) {
 		q = squotef("[taper port open: %s]", strerror(errno));
 		putresult("FAILED %s %s\n", handle, q);
@@ -1606,7 +1606,7 @@ pkt_t *pkt;
     }
 
     datafd = stream_client(hostname, data_port,
-			   DEFAULT_SIZE, DEFAULT_SIZE, NULL);
+			   DEFAULT_SIZE, DEFAULT_SIZE, NULL, 0);
     if(datafd == -1) {
 	errstr = newvstralloc(errstr,
 			      "[could not connect to data port: ",
@@ -1618,7 +1618,7 @@ pkt_t *pkt;
 	return;
     }
     mesgfd = stream_client(hostname, mesg_port,
-			   DEFAULT_SIZE, DEFAULT_SIZE, NULL);
+			   DEFAULT_SIZE, DEFAULT_SIZE, NULL, 0);
     if(mesgfd == -1) {
 	errstr = newvstralloc(errstr,
 			      "[could not connect to mesg port: ",
@@ -1634,7 +1634,7 @@ pkt_t *pkt;
 
     if (index_port != -1) {
 	indexfd = stream_client(hostname, index_port,
-				DEFAULT_SIZE, DEFAULT_SIZE, NULL);
+				DEFAULT_SIZE, DEFAULT_SIZE, NULL, 0);
 	if (indexfd == -1) {
 	    errstr = newvstralloc(errstr,
 				  "[could not connect to index port: ",

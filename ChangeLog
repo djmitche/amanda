@@ -1,5 +1,11 @@
 1999-04-06  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/stream.c, common-src/stream.h (stream_client): add
+	yet another arg - if nonzero, do a nonblocking connect
+	* server-src/dumper.c: catch up with extra arg to stream_client()
+
+1999-04-06  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/bsd-security.c, common-src/security.h: attempt
 	to decouple security streams from security handles.  Lots of
 	other restructuring.
