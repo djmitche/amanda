@@ -1,5 +1,9 @@
 2004-02-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/amdump.sh.in: Do not redirect to /dev/null.
+
+2004-02-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* config/acinclude.m4i: Define CF_WAIT_INT.
 	* configure.in: Call CF_WAIT_INT.
 	* common-src/amanda.h: Try to make waitpid doesn't warn.

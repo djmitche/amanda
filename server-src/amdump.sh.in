@@ -100,11 +100,16 @@ $libexecdir/planner$SUF "$@" | $libexecdir/driver$SUF $conf
 echo "amdump: end at `date`"
 
 # Send out a report on the dumps.
-exec </dev/null >/dev/null 2>&1
 $sbindir/amreport$SUF $conf
 
 # Roll the log file to its datestamped name.
 $libexecdir/amlogroll$SUF $conf
+
+# Trim the log file to those for dumps that still exist.
+$libexecdir/amtrmlog$SUF $conf
+
+# Trim the index file to those for dumps that still exist.
+$libexecdir/amtrmidx$SUF $conf
 
 # Keep a debug log through the tapecycle plus a couple of days.
 maxdays=`expr $tapecycle + 2`
@@ -121,11 +126,5 @@ while [ $days -ge 2 ]; do
 	days=$ndays
 done
 mv $errfile $errfile.1
-
-# Trim the log file to those for dumps that still exist.
-$libexecdir/amtrmlog$SUF $conf
-
-# Trim the index file to those for dumps that still exist.
-$libexecdir/amtrmidx$SUF $conf
 
 exit 0
