@@ -54,16 +54,18 @@ AC_ARG_WITH(includes,
 	    AC_MSG_ERROR([*** You must supply an argument to the --with-includes option.])
 	  ;;
 	esac
-	for dir in $withval; do
+	INCLUDE_DIRS="$withval"
+    ])
+
+if test "$INCLUDE_DIRS"; then
+	for dir in $INCLUDE_DIRS; do
 	    if test -d "$dir"; then
 		AMANDA_CPPFLAGS="$AMANDA_CPPFLAGS -I$dir"
 	    else
 		AC_MSG_WARN([*** Include directory $dir does not exist.])
 	    fi
 	done
-    ],
-    AMANDA_CPPFLAGS=
-)
+fi
 
 AC_ARG_WITH(libraries,
     [   --with-libraries=DIR   site library directories for readline, etc in DIR],
@@ -73,6 +75,10 @@ AC_ARG_WITH(libraries,
 	    AC_MSG_ERROR([*** You must supply an argument to the --with-libraries option.])
 	  ;;
 	esac
+	LIBRARY_DIRS="$withval"
+    ])
+
+if test "$LIBRARY_DIRS"; then
 	for dir in $withval; do
 	    if test -d "$dir"; then
 		AMANDA_LDFLAGS="$AMANDA_LDFLAGS -L$dir"
@@ -80,9 +86,7 @@ AC_ARG_WITH(libraries,
 		AC_MSG_WARN([*** Library directory $dir does not exist.])
 	    fi
 	done
-    ],
-    AMANDA_LDFLAGS=
-)
+fi
 
 AC_ARG_WITH(configdir,
     [   --with-configdir=DIR   runtime config files in DIR [sysconfdir/amanda]],
@@ -267,7 +271,7 @@ AC_ARG_WITH(server,
 	y | ye | yes) NO_SERVER_MODE=false ;;
 	n | no) NO_SERVER_MODE=true;;
 	*)
-	    AC_MSG_ERROR([*** You must not supply an argument to --with-server option.  Maybe you meant --with-indexserver=$withval])
+	    AC_MSG_ERROR([*** You must not supply an argument to --with-server option.  Maybe you meant --with-index-server=$withval])
 	  ;;
 	esac
     ]
@@ -290,14 +294,8 @@ AC_ARG_WITH(restore,
     [   --without-restore      do not build amrestore nor amidxtaped],
     [
 	case "$withval" in
-	y | ye | yes) : ;;
-	n | no)
-	    BUILD_RESTORE_PROGS_SBIN=
-	    BUILD_RESTORE_PROGS_LIBEXEC=
-	    case "$BUILD_SERVER_LIB" in
-	    "") BUILD_TAPE_LIB="";;
-	    esac
-	  ;;
+	y | ye | yes) NO_RESTORE_MODE=false;;
+	n | no) NO_RESTORE_MODE=true;;
 	*)
 	    AC_MSG_ERROR([*** You must not supply an argument to --with-restore option.])
 	  ;;
@@ -313,10 +311,8 @@ AC_ARG_WITH(amrecover,
 	    if ${NO_CLIENT_MODE-false}; then
 		AC_MSG_ERROR([*** --without-client and --with-amrecover are incompatible])
 	    fi
-	    ;;
-	n | no)
-	    BUILD_RECOVER_PROGS_SBIN=
-	  ;;
+	    NO_RECOVER_MODE=true;;
+	n | no) NO_RECOVER_MODE=false;;
 	*)
 	    AC_MSG_ERROR([*** You must not supply an argument to --with-amrecover option.])
 	  ;;
@@ -324,8 +320,8 @@ AC_ARG_WITH(amrecover,
     ]
 )
 
-AC_ARG_WITH(indexserver,
-   [   --with-indexserver=HOST default amanda index server [`uname -n`]],
+AC_ARG_WITH(index-server,
+   [   --with-index-server=HOST default amanda index server [`uname -n`]],
    [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -388,16 +384,14 @@ AC_SUBST(SETUID_GROUP)
 
 AC_ARG_WITH(rundump,
     [   --with-rundump         use rundump (setuid-root) to invoke dump],
-    USE_RUNDUMP="$withval",
+    [
+    case "$withval" in
+	n | no | y | ye | yes) USE_RUNDUMP="$withval";;
+	*) AC_MSG_ERROR([*** You must not supply an argument to --with-rundump option.]);;
+    esac
+    ],
     : ${USE_RUNDUMP=no}
 )
-case "$USE_RUNDUMP" in
-n | no) : ;;
-y |  ye | yes) AC_DEFINE(USE_RUNDUMP)
-  ;;
-*) AC_MSG_ERROR([*** You must not supply an argument to --with-rundump option.])
-  ;;
-esac
 
 AC_ARG_WITH(config,
    [   --with-config=CONFIG   default configuration [DailySet1]],
@@ -1050,7 +1044,7 @@ fi
 case "$DUMP" in
     *vdump*)
 	AC_DEFINE(OSF1_VDUMP)
-	AC_DEFINE(USE_RUNDUMP)
+	: ${USE_RUNDUMP=yes}
 	AC_MSG_WARN([*** enabling rundump because vdump must run as root])
 	;;
 esac
@@ -1063,7 +1057,7 @@ fi
 AC_PATH_PROGS(XFSDUMP,xfsdump,,$SYSLOCPATH)
 if test "$XFSDUMP"; then
     AC_DEFINE_UNQUOTED(XFSDUMP,"$XFSDUMP")
-    AC_DEFINE(USE_RUNDUMP)
+    : ${USE_RUNDUMP=yes}
     AC_MSG_WARN([*** enabling rundump because xfsdump must be run as root])
 fi
 AC_PATH_PROGS(XFSRESTORE,xfsrestore,,$SYSLOCPATH)
@@ -1987,6 +1981,22 @@ if ${NO_CLIENT_MODE-false}; then
     BUILD_CLIENT_LIB=
     BUILD_RECOVER_PROGS_SBIN=
 fi
+
+if ${NO_RESTORE_MODE-false}; then
+    BUILD_RESTORE_PROGS_SBIN=
+    BUILD_RESTORE_PROGS_LIBEXEC=
+    case "$BUILD_SERVER_LIB" in
+    "") BUILD_TAPE_LIB="";;
+    esac
+fi
+
+if ${NO_RECOVER_MODE-false}; then
+    BUILD_RECOVER_PROGS_SBIN=
+fi
+
+case "$USE_RUNDUMP" in
+y |  ye | yes) AC_DEFINE(USE_RUNDUMP);;
+esac
 
 dnl for libtool support on autoconf 2.12 and earlier
 LTLIBOBJS=`echo "$LIBOBJS" | sed 's/\.o/\.lo/g'`

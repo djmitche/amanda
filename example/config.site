@@ -20,21 +20,49 @@
 # Other directories are setable:
 #    $prefix		--prefix=		Default:/usr/local
 #    $exec_prefix	--exec-prefix=		Default:$prefix
-#    $bindir		--bindir=		Default:$exec_prefix/bin
+#    $sbindir		--sbindir=		Default:$exec_prefix/sbin
 #    $libexecdir	--libexecdir=		Default:$exec_prefix/libexec
+#    $libdir		--libdir=		Default:$exec_prefix/lib
 #    $sysconfdir	--sysconfdir=		Default:$prefix/etc
 #    $localstatedir	--localstatedir=	Default:$prefix/var
+#    $mandir		--mandir=		Default:$prefix/man
 
-# bindir		--bindir=DIR
-#			Default: $exec_prefix/bin = /usr/local/bin
+# sbindir		--sbindir=DIR
+#			Default: $exec_prefix/sbin = /usr/local/sbin
 #			Directory containing the server side binaries.
-# bindir=/usr/local/bin
+# sbindir=/usr/local/sbin
 
 
 # libexecdir		--libexecdir=DIR
-#			Default: $exec_prefix/libexec = /usr/local/bin
+#			Default: $exec_prefix/libexec = /usr/local/libexec
 #			Directory containing the client side binaries.
 # libexecdir=/usr/local/lib/amanda
+
+
+# lib			--libdir=DIR
+#			Default: $exec_prefix/lib = /usr/local/lib
+#			Directory containing the amanda (shared) libraries.
+# libdir=/usr/local/lib/amanda
+
+
+# mandir		--mandir=DIR
+#			Default: $prefix/man = /usr/local/man
+#			Directory containing the manual pages.
+# mandir=/local/man
+
+
+# INCLUDE_DIRS		--with-includes="DIR DIR ..."
+#			Default: empty
+#			Non-standard directories where include files should
+#			be looked for.
+# INCLUDE_DIRS="/opt/gnu/readline/include /opt/gnu/gdbm/include"
+
+
+# LIBRARY_DIRS		--with-libraries="DIR DIR ..."
+#			Default: empty
+#			Non-standard directories where libraries should
+#			be looked for.
+# LIBRARY_DIRS="/opt/gnu/readline/lib /opt/gnu/gdbm/lib"
 
 
 # CONFIG_DIR		--with-configdir=DIR
@@ -71,12 +99,6 @@
 # LOG_DIR=/usr/adm/amanda
 
 
-# mandir		--mandir=DIR
-#			Default: $prefix/man = /usr/local/man
-#			Directory containing the manual pages.
-# mandir=/local/man
-
-
 # USE_VERSION_SUFFIXES	--with-suffixes
 #			Default: no
 #			All the Amanda binaries will be installed with a
@@ -91,6 +113,37 @@
 #			wish to try out the new version in parallel with
 #			the old.
 # USE_VERSION_SUFFIXES=yes
+
+
+# NO_SERVER_MODE	--without-server
+#			Default: false
+#			if true, disables building server stuff.
+# NO_SERVER_MODE=true
+
+
+# NO_CLIENT_MODE	--without-client
+#			Default: false
+#			if true, disables building client stuff.
+# NO_CLIENT_MODE=true
+
+
+# NO_RESTORE_MODE	--without-restore
+#			Default: false
+#			if true, disables building amrestore and amidxtaped
+# NO_RESTORE_MODE=true
+
+
+# NO_RECOVER_MODE	--without-amrecover
+#			Default: false
+#			if true, disables building amrecover.
+# NO_RECOVER_MODE=true
+
+
+# DEFAULT_SERVER	--with-index-server=HOST
+#			Default: name of the machine configure is run on
+#			The default server for the index of files dumped
+#			database.
+# DEFAULT_SERVER=kipuka
 
 
 # FORCE_USERID		--with-dont-force-uid
@@ -125,6 +178,13 @@
 # SETUID_GROUP=bin
 
 
+# USE_RUNDUMP		--with-rundump
+#			Default: no (unless xfsdump or vdump are found)
+#			Enables the usage of the rundump setuid-root
+#			program, that invokes dump as root.
+# USE_RUNDUMP=yes
+
+
 # DEFAULT_CONFIG	--with-config=CONFIG
 #			Default: DailySet1
 #			The default configuration name of the default
@@ -133,15 +193,8 @@
 # DEFAULT_CONFIG=DailySet1
 
 
-# DEFAULT_SERVER	--with-server=HOST
-#			Default: name of the machine configure is run on
-#			The default server for the index of files dumped
-#			database.
-# DEFAULT_SERVER=kipuka
-
-
 # DEFAULT_TAPE_SERVER	--with-tape-server=TAPE_SERVER
-#			Default: DEFAULT_SERVER or --with-server
+#			Default: DEFAULT_SERVER or [--with-index-server]
 #			This is the name of the machine which serves as the
 #			default machine to recover files from tape using
 #			amrecover.  The default machine is the one used
@@ -195,28 +248,13 @@
 # SAMBA_CLIENT=/usr/local/lib/smbclient
 
 
-# GNUTAR_LIST_DIR	--with-gnutar-listed-incremental[=DIR]
+# GNUTAR_LISTDIR	--with-gnutar-listdir[=DIR]
 #			Default: $localstatedir/amanda-gnutar-lists =
-#				/usr/local/var/amanda-gnutar-lists
+#				/usr/local/var/amanda/gnutar-lists
 #			This specifies the directory where gnutar should
-#			place the listed incrementals so it can do
-#			incremental backups.  Without specifiing this
-#			option, gnutar will not do incrementals.  You
-#			can just list --with-gnutar-listed-incremental and
-#			the files will be placed in
-#			$localstatedir/amanda-gnutar-lists or you can
-#			specifiy the directory where to have the files
-#			go by appending the directory to the --with option.
-# GNUTAR_LIST_DIR=/usr/local/var/amanda-gnutar-lists
-
-
-# GNUTAR_ATIME_PRESERVE	--enable-gnutar-atime-preserve
-#			Default: no
-#			Have gnutar call utime() after reading files in
-#			order to adjust their atime.  However, utime()
-#			updates the file's ctime, so incremental
-#			dumps will think the file has changed.
-# GNUTAR_ATIME_PRESERVE=yes
+#			place the listed incrementals directory lists it 
+#			uses to do incremental backups.
+# GNUTAR_LISTDIR=/usr/local/var/amanda/gnutar-lists
 
 
 # DEV_PREFIX
@@ -305,6 +343,13 @@
 # FORCE_MMAP=yes
 
 
+# DUMPER_SOCKET_BUFFERIING --with-buffered-dump
+#			Default: no
+#			Dumping sockets are buffered in the server.  This
+#			may improve dumping speed.
+# DUMPER_SOCKET_BUFFERING=yes
+
+
 # ASSERTIONS		--with-assertions
 #			Default: no
 #			Turns on assertion checking, which makes Amanda a
@@ -313,12 +358,12 @@
 # ASSERTIONS=yes
 
 
-# DEBUGGING		--with-debugging
-#			Default: no
-#			Turning on debugging has each program save a
+# DEBUGGING		--without-debugging
+#			Default: yes
+#			Turning off debugging has each program save a
 #			transcript of what it did to a file in /tmp for
 #			debugging purposes.
-# DEBUGGING=yes
+# DEBUGGING=no
 
 
 # DEBUG_FILE_WITH_PID	--with-pid-debug-files
@@ -329,21 +374,31 @@
 # DEBUG_FILE_WITH_PID=yes
 
 
-#
-######################################################################
+# TESTING		--with-testing
+#			Default: no
+#			Ues alternate service numbers so that a new
+#			version of amanda can be tested without preventing
+#			a production one from being run successfully.
+# TESTING=yes
 
 
-######################################################################
-#
-# The some environmental variables for the configure and compile
-# only.
-# environment for configure only
-#
-# MAKE_LDFLAGS	Loader flags for compile time only
-# MAKE_CFLAGS	Compiler flags for compile time only
+# with_gnu_ld		--with-gnu-ld
+#			Default: no
+#			Use GNU ld in order to build shared libraries
+# with_gnu_ld=yes
 
-#MAKE_LDFLAGS="-L/opt/util/lib"
-#MAKE_CFLAGS="-I/opt/util/include"
+
+# libtool_shared	--enable-shared
+#			Default: (enabled)
+#			Enable the creation of shared libraries
+# libtool_shared=--disable-shared
+
+
+# libtool_static	--enable-static
+#			Default: (enabled)
+#			Enable the creation of static libraries
+# libtool_static=--disable-static
+
 
 #
 ######################################################################

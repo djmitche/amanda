@@ -105,7 +105,6 @@ static void process_dumpeof P((void));
 static void process_dumpline P((char *str));
 static void add_msg_data P((char *str, int len));
 static void log_msgout P((logtype_t typ));
-void update_info P((void));
 char *diskname2filename P((char *dname));
 void sendbackup_response P((proto_t *p, pkt_t *pkt));
 int startup_dump P((char *hostname, char *disk, int level, char *dumpdate,

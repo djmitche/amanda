@@ -138,7 +138,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
 		options.  You will probably want to remember the
 		command line options for future builds of Amanda.
 
-	    b.  Edit conf/config.site and install it in the directory
+	    b.  Edit example/config.site and install it in the directory
 		$prefix/etc or $prefix/share.  When `configure' runs
 		the next time it will look for this file and use it to
 		configure Amanda.
