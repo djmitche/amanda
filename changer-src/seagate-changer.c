@@ -35,7 +35,6 @@
    without express or implied warranty.
    */
 
-#include "config.h"
 #include "amanda.h"
 
 #if defined(HAVE_CHIO_H) || defined(HAVE_SYS_CHIO_H)

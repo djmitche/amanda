@@ -30,7 +30,9 @@
 #ifndef AMANDA_H
 #define AMANDA_H
 
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
 
 /*
  * I would prefer that each Amanda module include only those system headers
@@ -52,11 +54,22 @@
 #  include <sys/types.h>
 #endif
 
+/* from the autoconf documentation */
 #ifdef HAVE_DIRENT_H
 #  include <dirent.h>
+#  define NAMLEN(dirent) strlen((dirent)->d_name)
 #else
-#  include <sys/dir.h>
 #  define dirent direct
+#  define NAMLEN(dirent) (dirent)->d_namlen
+#  if HAVE_SYS_NDIR_H
+#    include <sys/ndir.h>
+#  endif
+#  if HAVE_SYS_DIR_H
+#    include <sys/dir.h>
+#  endif
+#  if HAVE_NDIR_H
+#    include <ndir.h>
+#  endif
 #endif
 
 #ifdef HAVE_FCNTL_H

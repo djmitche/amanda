@@ -18,7 +18,7 @@
 /* Written by Brian L. Matthews, blm@6sceng.UUCP. */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+# include "config.h"
 #endif
 
 #if !defined (HAVE_ST_BLOCKS) && !defined(_POSIX_VERSION)
