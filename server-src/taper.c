@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.68 2001/03/05 23:52:39 martinea Exp $
+/* $Id: taper.c,v 1.69 2001/03/09 19:34:17 jrjackson Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -137,7 +137,7 @@ char *taper_datestamp = NULL;
 char *label = NULL;
 int filenum;
 char *errstr = NULL;
-int tape_fd;
+int tape_fd = -1;
 char *tapedev = NULL;
 char *tapetype = NULL;
 static unsigned long malloc_hist_1, malloc_size_1;
@@ -302,6 +302,7 @@ int rdpipe, wrpipe;
     char *q;
     int level, fd, data_port, data_socket, wpid;
     struct stat stat_file;
+    int tape_started;
 
     procname = "reader";
     syncpipe_init(rdpipe, wrpipe);
@@ -320,6 +321,7 @@ int rdpipe, wrpipe;
 
     taper_datestamp = newstralloc(taper_datestamp, cmdargs.argv[2]);
 
+    tape_started = 0;
     syncpipe_put('S');
     syncpipe_putstr(taper_datestamp);
 
@@ -329,6 +331,7 @@ int rdpipe, wrpipe;
     switch(tok) {
     case 'S':
 	putresult(TAPER_OK, "\n");
+	tape_started = 1;
 	/* start is logged in writer */
 	break;
     case 'E':
@@ -339,9 +342,8 @@ int rdpipe, wrpipe;
 	amfree(q);
 	log_add(L_ERROR,"no-tape [%s]", result);
 	amfree(result);
-	detach_buffers(buftable);
-	destroy_buffers();
-	exit(1);
+	syncpipe_put('e');			/* ACK error */
+	break;
     default:
 	error("expected 'S' or 'E' for START-TAPER, got '%c'", tok);
     }
@@ -351,6 +353,9 @@ int rdpipe, wrpipe;
     while(1) {
 	startclock();
 	cmd = getcmd(&cmdargs);
+	if(cmd != QUIT && !tape_started) {
+	    error("error [file_reader_side cmd %d without tape ready]", cmd);
+	}
 	total_wait = timesadd(total_wait, stopclock());
 
 	switch(cmd) {
@@ -975,25 +980,39 @@ int getp, putp;
 	startclock();
 	tok = syncpipe_get();
 	idlewait = timesadd(idlewait, stopclock());
+	if(tok != 'S' && tok != 'Q' && !tape_started) {
+	    error("writer: token '%c' before start", tok);
+	}
 
 	switch(tok) {
 	case 'S':		/* start-tape */
-	    assert(!tape_started);
-	    tape_started = 1;
+	    if(tape_started) {
+		error("writer: multiple start requests");
+	    }
 	    str = syncpipe_getstr();
 	    if(!first_tape(str ? str : "bad-datestamp")) {
+		if(tape_fd >= 0) {
+		    tapefd_close(tape_fd);
+		    tape_fd = -1;
+		}
 		syncpipe_put('E');
 		syncpipe_putstr(errstr);
-		exit(1);
-	    }
-	    else
+		/* wait for reader to acknowledge error */
+		do {
+		    tok = syncpipe_get();
+		    if(tok != 'e') {
+			error("writer: got '%c' unexpectedly after error", tok);
+		    }
+		} while(tok != 'e');
+	    } else {
 		syncpipe_put('S');
+		tape_started = 1;
+	    }
 	    amfree(str);
 
 	    break;
 
 	case 'O':		/* open-output */
-	    assert(tape_started);
 	    datestamp = syncpipe_getstr();
 	    tapefd_setinfo_datestamp(tape_fd, datestamp);
 	    amfree(datestamp);
@@ -1045,6 +1064,7 @@ int getp, putp;
 	    }
 
 	    exit(0);
+
 	default:
 	    assert(0);
 	}
@@ -1709,7 +1729,7 @@ int writerror;
     }
 
 #ifdef HAVE_LINUX_ZFTAPE_H
-    if (is_zftape(tapedev) == 1){
+    if (tape_fd >= 0 && is_zftape(tapedev) == 1) {
 	/* rewind the tape */
 
 	if(tapefd_rewind(tape_fd) == -1 ) {
@@ -1830,7 +1850,7 @@ int writerror;
 
 common_exit:
 
-    if(tapefd_close(tape_fd) == -1 && ! writerror) {
+    if(tape_fd >= 0 && tapefd_close(tape_fd) == -1 && ! writerror) {
 	errstr = newstralloc2(errstr, "closing tape: ", strerror(errno));
 	rc = 1;
     }
