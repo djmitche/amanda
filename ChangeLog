@@ -1,5 +1,11 @@
 1999-02-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/holding.h (get_dumpfile): new function
+	* server-src/holding.c (get_dumpfile): new function to fill a
+	dumpfile_t struct from a holding file.
+
+1999-02-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amlabel.c: compiler warning: too many arguments for format
 
 1999-02-13  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
