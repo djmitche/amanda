@@ -1,5 +1,12 @@
 Version 2.4.0b5
 
+	This is no longer tested on configure.in, since it is
+	expressly forbidden to include kernel headers under glibc,
+	according to Matthias Urlichs <smurf@noris.de>.  However, Eric
+	Doutreleau <ed@cti.ecp.fr> said he needed to include this
+	header file in order to build amanda on
+	sparc-unknown-linux-gnu.  -oliva
+
 	It is now possible to specify a username to be used to backup
 	up with samba.
 	-Jean-Louis Martineau <martinea@iro.umontreal.ca>

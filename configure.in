@@ -1314,7 +1314,6 @@ AC_HEADER_DIRENT
 AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
 AC_CHECK_HEADERS(\
-	asm/byteorder.h \
 	chio.h \
 	sys/chio.h \
 	db.h \

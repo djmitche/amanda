@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.30 1997/12/15 21:44:05 blair Exp $
+ * $Id: amanda.h,v 1.31 1997/12/17 03:13:21 amcore Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -48,8 +48,12 @@
 #  include <alloca.h>
 #endif
 
+#if 0
+/* an explanation for this is available in the CHANGES file for
+   amanda-2.4.0b5 */
 #ifdef HAVE_ASM_BYTEORDER_H
 #  include <asm/byteorder.h>
+#endif
 #endif
 
 #ifdef HAVE_SYS_TYPES_H
