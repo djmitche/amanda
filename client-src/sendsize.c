@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.89 1998/05/27 08:12:01 amcore Exp $
+ * $Id: sendsize.c,v 1.90 1998/05/28 23:04:02 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -734,7 +734,7 @@ int level;
 		close(pipefd[1]);
 		close(killctl[1]);
 		close(nullfd);
-		execle(killpgrp_cmd, (char *)0, safe_env());
+		execle(killpgrp_cmd, killpgrp_cmd, (char *)0, safe_env());
 		dbprintf(("cannot execute %s\n", killpgrp_cmd));
 		exit(-1);
 	    }
