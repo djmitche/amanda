@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.11.4.3.4.1.2.9.2.1 2004/04/05 17:22:59 martinea Exp $
+ * $Id: diskfile.h,v 1.11.4.3.4.1.2.9.2.2 2004/04/22 19:22:12 martinea Exp $
  *
  * interface for disklist file reading code
  */
@@ -71,17 +71,21 @@ typedef struct disk_s {
     auth_t auth;			/* type of authentication (per system?) */
     int maxdumps;			/* max number of parallel dumps (per system) */
     int maxpromoteday;			/* maximum of promote day */
+    int bumppercent;
+    int bumpsize;
+    int bumpdays;
+    double bumpmult;
     time_t start_t;			/* start this dump after this time */
     int strategy;			/* what dump strategy to use */
     int compress;			/* type of compression to use */
     float comprate[2];			/* default compression rates */
     /* flag options */
-    unsigned int record:1;			/* record dump in /etc/dumpdates ? */
-    unsigned int skip_incr:1;			/* incs done externally ? */
-    unsigned int skip_full:1;			/* fulls done externally ? */
-    unsigned int no_hold:1;			/* don't use holding disk ? */
+    unsigned int record:1;		/* record dump in /etc/dumpdates ? */
+    unsigned int skip_incr:1;		/* incs done externally ? */
+    unsigned int skip_full:1;		/* fulls done externally ? */
+    unsigned int no_hold:1;		/* don't use holding disk ? */
     unsigned int kencrypt:1;
-    unsigned int index:1;			/* produce an index ? */
+    unsigned int index:1;		/* produce an index ? */
     int spindle;			/* spindle # - for parallel dumps */
     int inprogress;			/* being dumped now? */
     int todo;

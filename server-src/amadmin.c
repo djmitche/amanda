@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.13.2.3.2.15.2.2 2004/04/06 13:09:41 martinea Exp $
+ * $Id: amadmin.c,v 1.49.2.13.2.3.2.15.2.3 2004/04/22 19:22:11 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1549,6 +1549,14 @@ disk_t *dp;
     printf("        dumpcycle %ld\n", dp->dumpcycle);
     printf("        maxdumps %d\n", dp->maxdumps);
     printf("        maxpromoteday %d\n", dp->maxpromoteday);
+    if(dp->bumppercent > 0) {
+	printf("        bumppercent %d\n", dp->bumppercent);
+    }
+    else {
+	printf("        bumpsize %d\n", dp->bumpsize);
+    }
+    printf("        bumpdays %d\n", dp->bumpdays);
+    printf("        bumpmult %f\n", dp->bumpmult);
 
     printf("        strategy ");
     switch(dp->strategy) {

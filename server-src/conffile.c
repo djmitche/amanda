@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.16.2.5.2.20.2.1 2004/04/06 13:09:41 martinea Exp $
+ * $Id: conffile.c,v 1.54.2.16.2.5.2.20.2.2 2004/04/22 19:22:11 martinea Exp $
  *
  * read configuration file
  */
@@ -1265,6 +1265,10 @@ static void save_holdingdisk()
 
 keytab_t dumptype_keytable[] = {
     { "AUTH", AUTH },
+    { "BUMPDAYS", BUMPDAYS },
+    { "BUMPMULT", BUMPMULT },
+    { "BUMPSIZE", BUMPSIZE },
+    { "BUMPPERCENT", BUMPPERCENT },
     { "COMMENT", COMMENT },
     { "COMPRATE", COMPRATE },
     { "COMPRESS", COMPRESS },
@@ -1403,6 +1407,30 @@ dumptype_t *read_dumptype(name, from, fname, linenum)
 		parserror("dpcur.maxpromoteday must be >= 0");
 	    }
 	    break;
+	case BUMPPERCENT:
+	    get_simple((val_t *)&dpcur.bumppercent,  &dpcur.s_bumppercent,  INT);
+	    if(dpcur.bumppercent < 0 || dpcur.bumppercent > 100) {
+		parserror("bumppercent must be between 0 and 100");
+	    }
+	    break;
+	case BUMPSIZE:
+	    get_simple((val_t *)&dpcur.bumpsize,  &dpcur.s_bumpsize,  INT);
+	    if(dpcur.bumpsize < 1) {
+		parserror("bumpsize must be positive");
+	    }
+	    break;
+	case BUMPDAYS:
+	    get_simple((val_t *)&dpcur.bumpdays,  &dpcur.s_bumpdays,  INT);
+	    if(dpcur.bumpdays < 1) {
+		parserror("bumpdays must be positive");
+	    }
+	    break;
+	case BUMPMULT:
+	    get_simple((val_t *)&dpcur.bumpmult,  &dpcur.s_bumpmult,  REAL);
+	    if(dpcur.bumpmult < 0.999) {
+		parserror("bumpmult must be positive (%f)",dpcur.bumpmult);
+	    }
+	    break;
 	case OPTIONS:
 	    get_dumpopts();
 	    break;
@@ -1494,6 +1522,10 @@ static void init_dumptype_defaults()
     dpcur.frequency = 1;
     dpcur.maxdumps = conf_maxdumps.i;
     dpcur.maxpromoteday = 10000;
+    dpcur.bumppercent = conf_bumppercent.i;
+    dpcur.bumpsize = conf_bumpsize.i;
+    dpcur.bumpdays = conf_bumpdays.i;
+    dpcur.bumpmult = conf_bumpmult.r;
     dpcur.start_t = 0;
 
     dpcur.auth = AUTH_BSD;
@@ -1521,6 +1553,10 @@ static void init_dumptype_defaults()
     dpcur.s_frequency = 0;
     dpcur.s_maxdumps = 0;
     dpcur.s_maxpromoteday = 0;
+    dpcur.s_bumppercent = 0;
+    dpcur.s_bumpsize = 0;
+    dpcur.s_bumpdays = 0;
+    dpcur.s_bumpmult = 0;
     dpcur.s_start_t = 0;
     dpcur.s_auth = 0;
     dpcur.s_record = 0;
@@ -1595,7 +1631,10 @@ static void copy_dumptype()
     dtcopy(maxcycle, s_maxcycle);
     dtcopy(frequency, s_frequency);
     dtcopy(maxdumps, s_maxdumps);
-    dtcopy(maxpromoteday, s_maxpromoteday);
+    dtcopy(bumppercent, s_bumppercent);
+    dtcopy(bumpsize, s_bumpsize);
+    dtcopy(bumpdays, s_bumpdays);
+    dtcopy(bumpmult, s_bumpmult);
     dtcopy(start_t, s_start_t);
     dtcopy(auth, s_auth);
     dtcopy(record, s_record);

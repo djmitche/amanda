@@ -1,4 +1,15 @@
 2004-04-22  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	Allow bumpsize, bumppercent, bumpdays and bumpmult to be in a dumptype.
+	* server-src/conffile.c: Parse.
+	* server-src/conffile.h: Define.
+	* server-src/amadmin.c (disklist_one): Use.
+	* server-src/diskfile.c (read_diskline): Initialize.
+	* server-src/diskfile.h: Define.
+	* server-src/planner.c: Use.
+	* man/amanda.8.in: Document.
+
+2004-04-22  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Fix by Paul Bijnens <paul.bijnens@xplanation.com>
 
 	* server-src/planner.c (setup_estimate): Only ask for level 0 estimate

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.24.2.8.4.4.2.9.2.1 2004/04/06 13:09:41 martinea Exp $
+ * $Id: conffile.h,v 1.24.2.8.4.4.2.9.2.2 2004/04/22 19:22:12 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -154,6 +154,10 @@ typedef struct dumptype_s {
     int maxcycle;
     int frequency;
     int maxpromoteday;
+    int bumppercent;
+    int bumpsize;
+    int bumpdays;
+    double bumpmult;
     auth_t auth;
     int maxdumps;
     time_t start_t;
@@ -185,6 +189,10 @@ typedef struct dumptype_s {
     int s_auth;
     int s_maxdumps;
     int s_maxpromoteday;
+    int s_bumppercent;
+    int s_bumpsize;
+    int s_bumpdays;
+    int s_bumpmult;
     int s_start_t;
     int s_strategy;
     int s_compress;

@@ -758,6 +758,8 @@ is set to 0.
 See also the
 .B bumpmult
 option.
+.B bumpsize
+can be overwriten in a dumptype.
 .TP
 .BN bumppercent int
 Default:
@@ -772,6 +774,8 @@ If this value is set to 0, the bumpsize option is used instead.
 See also the
 .B bumpmult
 option.
+.B bumppercent
+can be overwriten in a dumptype.
 .TP
 .BN bumpmult float
 Default:
@@ -788,6 +792,8 @@ and
 .BR bumpmult
 set to 2.0, the bump threshold will be 10 Mbytes for level one, 20
 Mbytes for level two, 40 Mbytes for level three, and so on.
+.B bumpmult
+can be overwriten in a dumptype.
 .TP
 .BN bumpdays int
 Default:
@@ -796,6 +802,8 @@ To insure redundancy in the dumps, Amanda keeps filesystems at the
 same incremental level for at least
 .B bumpdays
 days, even if the other bump threshold criteria are met.
+.B bumpdays
+can be overwriten in a dumptype.
 .TP
 .BS diskfile string
 Default:
@@ -1071,6 +1079,58 @@ Type of authorization to perform between tape server and backup client hosts.
 May be
 .B krb4
 to use Kerberos\-IV authorization.
+.TP
+.BN bumpsize int
+Default:
+.IR "10 Mbytes" .
+The minimum savings required to trigger an automatic
+bump from one incremental level to the next.
+If Amanda determines that the next higher backup level
+will be this much smaller than the current level,
+it will do the next level. This option is used only if
+.B bumppercent
+is set to 0.
+See also the
+.B bumpmult
+option.
+.TP
+.BN bumppercent int
+Default:
+.IR "0" .
+This is the percentage of the disk used that must be
+saved to trigger an automatic
+bump from one incremental level to the next.
+If Amanda determines that the next higher backup level
+will be this much smaller than the current level,
+it will do the next level. 
+If this value is set to 0, the bumpsize option is used instead.
+See also the
+.B bumpmult
+option.
+.TP
+.BN bumpmult float
+Default:
+.IR 1.5 .
+The bump size multiplier.
+Amanda multiplies
+.B bumpsize
+by this factor for each level.
+This prevents active filesystems from
+bumping too much by making it harder to bump to the next level.
+For example, with the default
+.B bumpsize
+and
+.BR bumpmult
+set to 2.0, the bump threshold will be 10 Mbytes for level one, 20
+Mbytes for level two, 40 Mbytes for level three, and so on.
+.TP
+.BN bumpdays int
+Default:
+.IR "2 days" .
+To insure redundancy in the dumps, Amanda keeps filesystems at the
+same incremental level for at least
+.B bumpdays
+days, even if the other bump threshold criteria are met.
 .TP
 .BS comment string
 Default:
