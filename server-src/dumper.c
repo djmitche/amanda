@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.79 1998/12/09 19:27:30 martinea Exp $
+/* $Id: dumper.c,v 1.80 1998/12/09 23:54:52 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -68,8 +68,11 @@
 
 typedef enum { BOGUS, FILE_DUMP, PORT_DUMP, CONTINUE, ABORT, QUIT } cmd_t;
 
-char *argv[MAX_ARGS+1];
-int argc;
+struct cmdargs {
+    int argc;
+    char *argv[MAX_ARGS + 1];
+};
+
 int interactive;
 char *handle = NULL;
 
@@ -110,7 +113,7 @@ int amanda_port;
 
 /* local functions */
 int main P((int main_argc, char **main_argv));
-static cmd_t getcmd P((void));
+static cmd_t getcmd P((struct cmdargs *));
 static void putresult P((char *format, ...))
     __attribute__ ((format (printf, 1, 2)));
 int do_dump P((int mesgfd, int datafd, int indexfd, int outfd));
@@ -185,6 +188,7 @@ int main(main_argc, main_argv)
 int main_argc;
 char **main_argv;
 {
+    struct cmdargs cmdargs;
     cmd_t cmd;
     int outfd, protocol_port, taper_port, rc;
     dgram_t *msg;
@@ -253,7 +257,7 @@ char **main_argv;
     proto_init(msg->socket, time(0), 16);
 
     do {
-	cmd = getcmd();
+	cmd = getcmd(&cmdargs);
 
 	switch(cmd) {
 	case QUIT:
@@ -263,19 +267,19 @@ char **main_argv;
 	     * FILE-DUMP handle filename host disk level dumpdate chunksize
 	     *   progname options
 	     */
-	    if(argc != 10) {
-		error("error [dumper FILE-DUMP argc != 10: %d]", argc);
+	    if(cmdargs.argc != 10) {
+		error("error [dumper FILE-DUMP argc != 10: %d]", cmdargs.argc);
 	    }
-	    handle = newstralloc(handle, argv[2]);
-	    filename = newstralloc(filename, argv[3]);
-	    hostname = newstralloc(hostname, argv[4]);
-	    diskname = newstralloc(diskname, argv[5]);
-	    level = atoi(argv[6]);
-	    dumpdate = newstralloc(dumpdate, argv[7]);
-	    chunksize = atoi(argv[8]);
+	    handle = newstralloc(handle, cmdargs.argv[2]);
+	    filename = newstralloc(filename, cmdargs.argv[3]);
+	    hostname = newstralloc(hostname, cmdargs.argv[4]);
+	    diskname = newstralloc(diskname, cmdargs.argv[5]);
+	    level = atoi(cmdargs.argv[6]);
+	    dumpdate = newstralloc(dumpdate, cmdargs.argv[7]);
+	    chunksize = atoi(cmdargs.argv[8]);
 	    chunksize = (chunksize/TAPE_BLOCK_SIZE)*TAPE_BLOCK_SIZE;
-	    progname = newstralloc(progname, argv[9]);
-	    options = newstralloc(options, argv[10]);
+	    progname = newstralloc(progname, cmdargs.argv[9]);
+	    options = newstralloc(options, cmdargs.argv[10]);
 	    cont_filename[0] = '\0';
 
 	    tmp_filename = newvstralloc(tmp_filename, filename, ".tmp", NULL);
@@ -327,18 +331,18 @@ char **main_argv;
 	    /*
 	     * PORT-DUMP handle port host disk level dumpdate progname options
 	     */
-	    if(argc != 9) {
-		error("error [dumper PORT-DUMP argc != 9: %d]", argc);
+	    if(cmdargs.argc != 9) {
+		error("error [dumper PORT-DUMP argc != 9: %d]", cmdargs.argc);
 	    }
-	    handle = newstralloc(handle, argv[2]);
-	    taper_port = atoi(argv[3]);
+	    handle = newstralloc(handle, cmdargs.argv[2]);
+	    taper_port = atoi(cmdargs.argv[3]);
 	    filename = newstralloc(filename, "<taper program>");
-	    hostname = newstralloc(hostname, argv[4]);
-	    diskname = newstralloc(diskname, argv[5]);
-	    level = atoi(argv[6]);
-	    dumpdate = newstralloc(dumpdate, argv[7]);
-	    progname = newstralloc(progname, argv[8]);
-	    options = newstralloc(options, argv[9]);
+	    hostname = newstralloc(hostname, cmdargs.argv[4]);
+	    diskname = newstralloc(diskname, cmdargs.argv[5]);
+	    level = atoi(cmdargs.argv[6]);
+	    dumpdate = newstralloc(dumpdate, cmdargs.argv[7]);
+	    progname = newstralloc(progname, cmdargs.argv[8]);
+	    options = newstralloc(options, cmdargs.argv[9]);
 	    cont_filename[0] = '\0';
 
 	    /* connect outf to taper port */
@@ -389,7 +393,7 @@ char **main_argv;
 	    break;
 
 	default:
-	    q = squote(argv[1]);
+	    q = squote(cmdargs.argv[1]);
 	    putresult("BAD-COMMAND %s\n", q);
 	    amfree(q);
 	}
@@ -419,40 +423,50 @@ char **main_argv;
     return 0;
 }
 
-static cmd_t getcmd()
+static cmd_t
+getcmd(cmdargs)
+    struct cmdargs *cmdargs;
 {
+    static const struct {
+	const char str[12];
+	cmd_t cmd;
+    } cmdtab[] = {
+	{ "FILE-DUMP", FILE_DUMP },
+	{ "PORT-DUMP", PORT_DUMP },
+	{ "CONTINUE", CONTINUE },
+	{ "ABORT", ABORT },
+	{ "QUIT", QUIT },
+    };
     char *line;
+    int i;
 
-    if(interactive) {
+    assert(cmdargs != NULL);
+
+    if (interactive) {
 	printf("%s> ", get_pname());
 	fflush(stdout);
     }
 
-    if((line = agets(stdin)) == NULL) {
-	return QUIT;
-    }
+    if ((line = agets(stdin)) == NULL)
+	return (QUIT);
 
-    argc = split(line, argv, sizeof(argv) / sizeof(argv[0]), " ");
+    cmdargs->argc = split(line, cmdargs->argv,
+	sizeof(cmdargs->argv) / sizeof(cmdargs->argv[0]), " ");
     amfree(line);
 
 #if DEBUG
-    {
-      int arg;
-      printf("argc = %d\n", argc);
-      for(arg = 0; arg < sizeof(argv) / sizeof(argv[0]); arg++)
-	printf("argv[%d] = \"%s\"\n", arg, argv[arg]);
-    }
+    printf("argc = %d\n", cmdargs->argc);
+    for (i = 0; i < cmdargs->argc; i++)
+	printf("argv[%d] = \"%s\"\n", i, cmdargs->argv[i]);
 #endif
 
-    /* not enough commands for a table lookup */
+    if (cmdargs->argc < 1)
+	return (BOGUS);
 
-    if(argc < 1) return BOGUS;
-    if(strcmp(argv[1],"FILE-DUMP") == 0) return FILE_DUMP;
-    if(strcmp(argv[1],"PORT-DUMP") == 0) return PORT_DUMP;
-    if(strcmp(argv[1],"CONTINUE") == 0) return CONTINUE;
-    if(strcmp(argv[1],"ABORT") == 0) return ABORT;
-    if(strcmp(argv[1],"QUIT") == 0) return QUIT;
-    return BOGUS;
+    for (i = 0; i < sizeof(cmdtab) / sizeof(cmdtab[0]); i++)
+	if (strcmp(cmdargs->argv[1], cmdtab[i].str) == 0)
+	    return (cmdtab[i].cmd);
+    return (BOGUS);
 }
 
 
@@ -474,8 +488,9 @@ int outf;
  * written if it is full, or the remainder is zeroed if at eof.
  */
 {
-    cmd_t cmd;
+    struct cmdargs cmdargs;
     int written;
+    cmd_t cmd;
 
     do {
 	written = write(outf, databuf + spaceleft,
@@ -488,14 +503,17 @@ int outf;
 	    return 1;
 	}
 	putresult("NO-ROOM %s\n", handle);
-	cmd = getcmd();
-	if(cmd != CONTINUE && cmd != ABORT) {
+	cmd = getcmd(&cmdargs);
+	switch (cmd) {
+	case ABORT:
+	    abort_pending = 1;
+	    errstr = "ERROR";
+	    return (1);
+	case CONTINUE:
+	    continue;
+	default:
 	    error("error [bad command after NO-ROOM: %d]", cmd);
 	}
-	if(cmd == CONTINUE) continue;
-	abort_pending = 1;
-	errstr = "ERROR";
-	return 1;
     } while (spaceleft != sizeof(databuf));
     dataptr = databuf;
     dumpsize += (sizeof(databuf)/1024);

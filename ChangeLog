@@ -1,3 +1,11 @@
+1998-12-09  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/dumper.c (main, getcmd, write_dataptr): kill argc and
+	argv globals, pass them as arguments to getcmd() via struct cmdargs.
+	* server-src/dumper.c (getcmd): make the command lookup table driven.
+	* server-src/dumper.c (write_dataptr): restructure the command
+	logic a bit to hopefully clarify things.
+
 1998-12-09  Henning P. Schmiedehausen  <henning@tanstaafl.de>
 
 	* client-src/sendbackup.c (parse_options): Added check whether the
