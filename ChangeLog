@@ -1,3 +1,15 @@
+2001-08-16 John R. Jackson (jrj@purdue.edu)
+
+	* NEWS: Add missing patch from amanda-242 branch.
+	* client-src/killpgrp.c: Ditto.
+	* docs/INSTALL: Ditto.
+	* man/amanda.8.in: Ditto.
+	* server-src/amadmin.c: Ditto.
+	* server-src/amstatus.pl.in: Ditto.
+	* server-src/conffile.c: Ditto.
+	* server-src/planner.c: Ditto.
+	* configure.in: Ditto.  Also changed release to "2.4.2p2-multitape".
+
 2001-08-14 John R. Jackson (jrj@purdue.edu)
 
 	* docs/EXCLUDE: New document from Andrew Hall <ahall@secureworks.net>

@@ -1,7 +1,7 @@
 Amanda INSTALLATION NOTES
 
 This document covers the compilation, installation, and runtime setup
-of Amanda 2.4.1 and higher.
+of Amanda 2.4.2 and higher.
 
 0. BEFORE DOING ANYTHING
 
@@ -33,13 +33,18 @@ to compile some of the Amanda programs (see section 1.2.H below).
     A.  Amanda can optionally make use of the following packages to
 	back up different types of clients or clients with different
 	filesystem dumping programs.  If you wish to use GNU tar to
-	back up filesystems, then install version 1.12 from
+	back up filesystems, we can install version 1.12 or 1.13.19.
+	gnutar 1.12 can be found at:
 
 		ftp://ftp.gnu.org/pub/gnu/tar/tar-1.12.tar.gz
  
 	Apply the patch from patches/tar-1.12.patch.  The first hunk
 	may be enough, unless it's a SunOS4 host.  Read more about the
 	patches in the patch file itself.
+
+	gnutar 1.13.19 can be found at:
+
+		ftp://alpha.gnu.org/pub/gnu/tar
 
 	Samba allows Unix systems to talk to PC clients.  Amanda can
 	back up Microsoft Windows 95/NT clients using samba:
@@ -48,6 +53,8 @@ to compile some of the Amanda programs (see section 1.2.H below).
 
 	Read docs/SAMBA for configuration tips and known limitations.
 
+	Look at http://www.amanda.org/patches.html for up to date
+	information on patches.
 
     B.  If you wish to make use of some of the scripts that come with
 	Amanda, you will need to install Perl.  You can get Perl from

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.12.2.2 2001/07/19 22:15:16 jrjackson Exp $
+ * $Id: amadmin.c,v 1.49.2.12.2.3 2001/08/16 22:29:28 jrjackson Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -487,7 +487,7 @@ disk_t *dp;
 	       get_pname(), hostname, diskname);
     }
     if(put_info(hostname, diskname, &info) == 0) {
-	printf("%s: %s:%s is set to bump at next run.\n",
+	printf("%s: %s:%s is set to not bump at next run.\n",
 	       get_pname(), hostname, diskname);
     } else {
 	fprintf(stderr, "%s: %s:%s could not be force to not bump.\n",
