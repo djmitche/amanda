@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.28.2.4.4.3.2.6 2002/10/30 22:18:02 martinea Exp $
+ * $Id: amrestore.c,v 1.28.2.4.4.3.2.7 2003/01/25 21:35:36 jrjackson Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -606,7 +606,7 @@ char **argv;
     }
 
     if(tape_stat(tapename,&stat_tape)!=0) {
-	error("could not stat %s",tapename);
+	error("could not stat %s: %s", tapename, strerror(errno));
     }
     isafile=S_ISREG((stat_tape.st_mode));
 

@@ -1,3 +1,9 @@
+2003-01-25  John R. Jackson (jrj@purdue.edu)
+
+	* restore-src/amidxtaped.c: Log errno when tape_stat fails.
+	* restore-src/amrestore.c: Ditto.
+	* tape-src/output-rait.c: Ditto.
+
 2003-01-24  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/amstatus.pl.in: print an usage by tape.

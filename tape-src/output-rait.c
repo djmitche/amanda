@@ -972,10 +972,10 @@ int rait_stat(char *devname, struct stat *buf) {
 
     while( 0 != (dev_real = tapeio_next_devname(dev_left, dev_right, &dev_next))) {
 	res = tape_stat(dev_real, buf);
-	rait_debug((stderr,"rait_stat:stat( %s ) yields %d\n",
-		dev_real, res ));
+	rait_debug((stderr,"rait_stat:stat( %s ) yields %d (%s)\n",
+		dev_real, res, (res != 0) ? strerror(errno) : "no error" ));
 	amfree(dev_real);
-	if (res < 0) { 
+	if (res != 0) { 
 	    break;
         }
     }
