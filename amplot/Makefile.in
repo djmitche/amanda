@@ -1,4 +1,4 @@
-# Makefile.in generated automatically by automake 1.1m from Makefile.am
+# Makefile.in generated automatically by automake 1.1n from Makefile.am
 
 # Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
@@ -44,6 +44,13 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 transform = @program_transform_name@
+
+NORMAL_INSTALL = true
+PRE_INSTALL = true
+POST_INSTALL = true
+NORMAL_UNINSTALL = true
+PRE_UNINSTALL = true
+POST_UNINSTALL = true
 build_alias = @build_alias@
 build_triplet = @build@
 host_alias = @host_alias@
@@ -85,7 +92,6 @@ GNUTAR = @GNUTAR@
 GREP = @GREP@
 GZIP = @GZIP@
 INDEX_DIR = @INDEX_DIR@
-INSTALL_SCRIPT = @INSTALL_SCRIPT@
 KRB4CLIENT_C = @KRB4CLIENT_C@
 KRB4CLIENT_O = @KRB4CLIENT_O@
 KRB4COMMON_C = @KRB4COMMON_C@
@@ -143,7 +149,7 @@ DIST_COMMON =  Makefile.am Makefile.in amcat.awk.in amplot.sh.in
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
-TAR = gnutar
+TAR = tar
 default: all
 
 .SUFFIXES:
@@ -161,9 +167,9 @@ amplot.sh: $(top_builddir)/config.status amplot.sh.in
 	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
 
 install-binSCRIPTS: $(bin_SCRIPTS)
-	$(NORMAL_INSTALL)
+	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(bindir)
-	@list="$(bin_SCRIPTS)"; for p in $$list; do \
+	@list='$(bin_SCRIPTS)'; for p in $$list; do \
 	  if test -f $$p; then \
 	    echo " $(INSTALL_SCRIPT) $$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
 	    $(INSTALL_SCRIPT) $$p $(bindir)/`echo $$p|sed '$(transform)'`; \
@@ -174,14 +180,15 @@ install-binSCRIPTS: $(bin_SCRIPTS)
 	done
 
 uninstall-binSCRIPTS:
-	list="$(bin_SCRIPTS)"; for p in $$list; do \
+	$(NORMAL_UNINSTALL)
+	list='$(bin_SCRIPTS)'; for p in $$list; do \
 	  rm -f $(bindir)/`echo $$p|sed '$(transform)'`; \
 	done
 
 install-amplotDATA: $(amplot_DATA)
-	$(NORMAL_INSTALL)
+	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(amplotdir)
-	@list="$(amplot_DATA)"; for p in $$list; do \
+	@list='$(amplot_DATA)'; for p in $$list; do \
 	  if test -f $(srcdir)/$$p; then \
 	    echo " $(INSTALL_DATA) $(srcdir)/$$p $(amplotdir)/$$p"; \
 	    $(INSTALL_DATA) $(srcdir)/$$p $(amplotdir)/$$p; \
@@ -192,7 +199,8 @@ install-amplotDATA: $(amplot_DATA)
 	done
 
 uninstall-amplotDATA:
-	list="$(amplot_DATA)"; for p in $$list; do \
+	$(NORMAL_UNINSTALL)
+	list='$(amplot_DATA)'; for p in $$list; do \
 	  rm -f $(amplotdir)/$$p; \
 	done
 tags: TAGS
@@ -215,11 +223,11 @@ check: all
 	$(MAKE)
 installcheck:
 install-exec: install-binSCRIPTS
-	$(NORMAL_INSTALL)
+	@$(NORMAL_INSTALL)
 	$(MAKE) install-exec-hook
 
 install-data: install-amplotDATA
-	$(NORMAL_INSTALL)
+	@$(NORMAL_INSTALL)
 	$(MAKE) install-data-hook
 
 install: install-exec install-data all

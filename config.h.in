@@ -43,12 +43,6 @@
 /* Define if you have the vprintf function.  */
 #undef HAVE_VPRINTF
 
-/* Define if you have the atexit function. */
-#undef HAVE_ATEXIT
-
-/* Define if you have the on_exit function. */
-#define HAVE_ON_EXIT
-
 /* Define to `long' if <sys/types.h> doesn't define.  */
 #undef off_t
 
@@ -93,6 +87,9 @@
 
 /* Define if you have the add_exclude function.  */
 #undef HAVE_ADD_EXCLUDE
+
+/* Define if you have the atexit function.  */
+#undef HAVE_ATEXIT
 
 /* Define if you have the atof function.  */
 #undef HAVE_ATOF
@@ -192,6 +189,9 @@
 
 /* Define if you have the mktime function.  */
 #undef HAVE_MKTIME
+
+/* Define if you have the on_exit function.  */
+#undef HAVE_ON_EXIT
 
 /* Define if you have the openlog function.  */
 #undef HAVE_OPENLOG
@@ -333,9 +333,6 @@
 
 /* Define if you have the <fstab.h> header file.  */
 #undef HAVE_FSTAB_H
-
-/* Define if you have the <gdbm.h> header file.  */
-#undef HAVE_GDBM_H
 
 /* Define if you have the <grp.h> header file.  */
 #undef HAVE_GRP_H

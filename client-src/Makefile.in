@@ -1,4 +1,4 @@
-# Makefile.in generated automatically by automake 1.1l from Makefile.am
+# Makefile.in generated automatically by automake 1.1n from Makefile.am
 
 # Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
@@ -34,81 +34,96 @@ pkgincludedir = $(includedir)/@PACKAGE@
 
 top_builddir = ..
 
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
+
 INSTALL = @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 transform = @program_transform_name@
-target_alias = @target_alias@
+
+NORMAL_INSTALL = true
+PRE_INSTALL = true
+POST_INSTALL = true
+NORMAL_UNINSTALL = true
+PRE_UNINSTALL = true
+POST_UNINSTALL = true
 build_alias = @build_alias@
-host_triplet = @host@
-target_triplet = @target@
 build_triplet = @build@
 host_alias = @host_alias@
-LOG_DIR = @LOG_DIR@
-MT = @MT@
-RESTORE = @RESTORE@
-DB_DIR = @DB_DIR@
-VERSION = @VERSION@
-ac_c = @ac_c@
-XFSDUMP = @XFSDUMP@
-PCAT = @PCAT@
-DD = @DD@
-LEX = @LEX@
-GNUPLOT = @GNUPLOT@
-VERSION_MINOR = @VERSION_MINOR@
-INSTALL_SCRIPT = @INSTALL_SCRIPT@
-BUILD_SERVER_PROGS_LIBEXEC = @BUILD_SERVER_PROGS_LIBEXEC@
-PACKAGE = @PACKAGE@
-COMPRESS = @COMPRESS@
-RSH = @RSH@
-BUILD_CLIENT_SCRIPTS_BIN = @BUILD_CLIENT_SCRIPTS_BIN@
-ac_n = @ac_n@
-XFSRESTORE = @XFSRESTORE@
-DUMP = @DUMP@
-INDEX_DIR = @INDEX_DIR@
-BUILD_AMPLOT_LIBEXEC = @BUILD_AMPLOT_LIBEXEC@
-AMPLOT_COMPRESS = @AMPLOT_COMPRESS@
-RANLIB = @RANLIB@
-VERSION_COMMENT = @VERSION_COMMENT@
-MAILER = @MAILER@
-DEFAULT_SERVER = @DEFAULT_SERVER@
-AMPLOT_CAT_GZIP = @AMPLOT_CAT_GZIP@
-TAPE_NO_REWIND_DEVICE = @TAPE_NO_REWIND_DEVICE@
-DEFAULT_TAPE_DEVICE = @DEFAULT_TAPE_DEVICE@
-YACC = @YACC@
-TAPE_REWIND_DEVICE = @TAPE_REWIND_DEVICE@
-AMPLOT_CAT_PACK = @AMPLOT_CAT_PACK@
-SAMBA_CLIENT = @SAMBA_CLIENT@
-DEFAULT_TAPE_SERVER = @DEFAULT_TAPE_SERVER@
-BUILD_SERVER_SCRIPTS_BIN = @BUILD_SERVER_SCRIPTS_BIN@
-CC = @CC@
-BUILD_SERVER_PROGS_BIN = @BUILD_SERVER_PROGS_BIN@
-BUILD_CHANGER_SCRIPTS_LIBEXEC = @BUILD_CHANGER_SCRIPTS_LIBEXEC@
-BUILD_CHANGER_PROGS_LIBEXEC = @BUILD_CHANGER_PROGS_LIBEXEC@
-GREP = @GREP@
+host_triplet = @host@
+target_alias = @target_alias@
+target_triplet = @target@
 AMPLOT_CAT_COMPRESS = @AMPLOT_CAT_COMPRESS@
-BUILD_CLIENT_SCRIPTS_LIBEXEC = @BUILD_CLIENT_SCRIPTS_LIBEXEC@
-GNUTAR = @GNUTAR@
-PERL = @PERL@
-BUILD_CLIENT_PROGS_LIBEXEC = @BUILD_CLIENT_PROGS_LIBEXEC@
+AMPLOT_CAT_GZIP = @AMPLOT_CAT_GZIP@
+AMPLOT_CAT_PACK = @AMPLOT_CAT_PACK@
+AMPLOT_COMPRESS = @AMPLOT_COMPRESS@
 AR = @AR@
-EGREP = @EGREP@
-CONFIG_DIR = @CONFIG_DIR@
-BUILD_AMPLOT_BIN = @BUILD_AMPLOT_BIN@
 AWK_VAR_ASSIGNMENT_OPT = @AWK_VAR_ASSIGNMENT_OPT@
-VERSION_PATCH = @VERSION_PATCH@
-CLIENT_LOGIN = @CLIENT_LOGIN@
-SHELL = @SHELL@
+BUILD_AMPLOT_BIN = @BUILD_AMPLOT_BIN@
+BUILD_AMPLOT_LIBEXEC = @BUILD_AMPLOT_LIBEXEC@
+BUILD_CHANGER_PROGS_LIBEXEC = @BUILD_CHANGER_PROGS_LIBEXEC@
+BUILD_CHANGER_SCRIPTS_LIBEXEC = @BUILD_CHANGER_SCRIPTS_LIBEXEC@
+BUILD_CLIENT_PROGS_LIBEXEC = @BUILD_CLIENT_PROGS_LIBEXEC@
+BUILD_CLIENT_SCRIPTS_BIN = @BUILD_CLIENT_SCRIPTS_BIN@
+BUILD_CLIENT_SCRIPTS_LIBEXEC = @BUILD_CLIENT_SCRIPTS_LIBEXEC@
+BUILD_SERVER_PROGS_BIN = @BUILD_SERVER_PROGS_BIN@
+BUILD_SERVER_PROGS_LIBEXEC = @BUILD_SERVER_PROGS_LIBEXEC@
+BUILD_SERVER_SCRIPTS_BIN = @BUILD_SERVER_SCRIPTS_BIN@
 CAT = @CAT@
+CC = @CC@
+CLIENT_LOGIN = @CLIENT_LOGIN@
+COMPRESS = @COMPRESS@
+CONFIG_DIR = @CONFIG_DIR@
+DB_DIR = @DB_DIR@
+DD = @DD@
+DEFAULT_CONFIG = @DEFAULT_CONFIG@
+DEFAULT_SERVER = @DEFAULT_SERVER@
+DEFAULT_TAPE_DEVICE = @DEFAULT_TAPE_DEVICE@
+DEFAULT_TAPE_SERVER = @DEFAULT_TAPE_SERVER@
+DUMP = @DUMP@
+EGREP = @EGREP@
+GNUPLOT = @GNUPLOT@
+GNUTAR = @GNUTAR@
+GREP = @GREP@
+GZIP = @GZIP@
+INDEX_DIR = @INDEX_DIR@
+KRB4CLIENT_C = @KRB4CLIENT_C@
+KRB4CLIENT_O = @KRB4CLIENT_O@
+KRB4COMMON_C = @KRB4COMMON_C@
+KRB4COMMON_O = @KRB4COMMON_O@
+LEX = @LEX@
+LOG_DIR = @LOG_DIR@
+MAILER = @MAILER@
+MT = @MT@
 MTX = @MTX@
 MT_FILE_FLAG = @MT_FILE_FLAG@
-GZIP = @GZIP@
-VERSION_SUFFIX = @VERSION_SUFFIX@
+PACKAGE = @PACKAGE@
+PCAT = @PCAT@
+PERL = @PERL@
+RANLIB = @RANLIB@
+RESTORE = @RESTORE@
+RSH = @RSH@
+SAMBA_CLIENT = @SAMBA_CLIENT@
 SETUID_GROUP = @SETUID_GROUP@
-DEFAULT_CONFIG = @DEFAULT_CONFIG@
-VERSION_MAJOR = @VERSION_MAJOR@
+SHELL = @SHELL@
+TAPE_NO_REWIND_DEVICE = @TAPE_NO_REWIND_DEVICE@
+TAPE_REWIND_DEVICE = @TAPE_REWIND_DEVICE@
 USE_VERSION_SUFFIXES = @USE_VERSION_SUFFIXES@
+VERSION = @VERSION@
+VERSION_COMMENT = @VERSION_COMMENT@
+VERSION_MAJOR = @VERSION_MAJOR@
+VERSION_MINOR = @VERSION_MINOR@
+VERSION_PATCH = @VERSION_PATCH@
+VERSION_SUFFIX = @VERSION_SUFFIX@
+XFSDUMP = @XFSDUMP@
+XFSRESTORE = @XFSRESTORE@
+YACC = @YACC@
+ac_c = @ac_c@
+ac_n = @ac_n@
 
 INCLUDES =		-I$(top_srcdir)/common-src
 
@@ -155,10 +170,10 @@ createindex_gnutar_SOURCES = createindex-gnutar.c	indexfilename.c \
 			indexfilename.h
 
 sendbackup_dump_SOURCES = sendbackup-dump.c		sendbackup-common.c \
-			@KRB4CLIENT_C@ sendbackup-common.h
+			sendbackup-common.h
 
 sendbackup_gnutar_SOURCES = sendbackup-gnutar.c		sendbackup-common.c \
-			@KRB4CLIENT_C@ sendbackup-common.h
+			sendbackup-common.h
 
 sendindex_SOURCES =	sendindex.c			indexfilename.c \
 			indexfilename.h
@@ -205,11 +220,11 @@ selfcheck_OBJECTS =  selfcheck.o
 selfcheck_LDADD = $(LDADD)
 selfcheck_DEPENDENCIES =  ../common-src/libamanda.a
 selfcheck_LDFLAGS = 
-sendbackup_dump_OBJECTS =  sendbackup-dump.o sendbackup-common.o @KRB4CLIENT_O@
+sendbackup_dump_OBJECTS =  sendbackup-dump.o sendbackup-common.o
 sendbackup_dump_LDADD = $(LDADD)
 sendbackup_dump_DEPENDENCIES =  ../common-src/libamanda.a
 sendbackup_dump_LDFLAGS = 
-sendbackup_gnutar_OBJECTS =  sendbackup-gnutar.o sendbackup-common.o @KRB4CLIENT_O@
+sendbackup_gnutar_OBJECTS =  sendbackup-gnutar.o sendbackup-common.o
 sendbackup_gnutar_LDADD = $(LDADD)
 sendbackup_gnutar_DEPENDENCIES =  ../common-src/libamanda.a
 sendbackup_gnutar_LDFLAGS = 
@@ -246,8 +261,7 @@ DIST_COMMON =  Makefile.am Makefile.in patch-system.sh.in uparse.c \
 uscan.c
 
 
-DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) \
-	$(TEXINFOS) $(MANS) $(EXTRA_DIST)
+DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 SOURCES = amandad.c calcsize.c $(createindex_dump_SOURCES) $(createindex_gnutar_SOURCES) rundump.c runtar.c selfcheck.c $(sendbackup_dump_SOURCES) $(sendbackup_gnutar_SOURCES) $(sendindex_SOURCES) sendsize.c $(amrecover_SOURCES) amrestore.c versionsuffix.c
@@ -257,8 +271,8 @@ default: all
 
 .SUFFIXES:
 .SUFFIXES: .c .o .y .l .sh .pl
-$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL) 
-	cd $(top_srcdir) && automake --foreign client-src/Makefile
+$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
+	cd $(top_srcdir) && $(AUTOMAKE) --foreign client-src/Makefile
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status $(BUILT_SOURCES)
 	cd $(top_builddir) \
@@ -277,17 +291,18 @@ distclean-binPROGRAMS:
 maintainer-clean-binPROGRAMS:
 
 install-binPROGRAMS: $(bin_PROGRAMS)
-	$(NORMAL_INSTALL)
+	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(bindir)
-	@list="$(bin_PROGRAMS)"; for p in $$list; do \
+	@list='$(bin_PROGRAMS)'; for p in $$list; do \
 	  if test -f $$p; then \
-	    echo " $(INSTALL_PROGRAM) $$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
+	    echo "  $(INSTALL_PROGRAM) $$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
 	     $(INSTALL_PROGRAM) $$p $(bindir)/`echo $$p|sed '$(transform)'`; \
 	  else :; fi; \
 	done
 
 uninstall-binPROGRAMS:
-	list="$(bin_PROGRAMS)"; for p in $$list; do \
+	$(NORMAL_UNINSTALL)
+	list='$(bin_PROGRAMS)'; for p in $$list; do \
 	  rm -f $(bindir)/`echo $$p|sed '$(transform)'`; \
 	done
 
@@ -301,17 +316,18 @@ distclean-libexecPROGRAMS:
 maintainer-clean-libexecPROGRAMS:
 
 install-libexecPROGRAMS: $(libexec_PROGRAMS)
-	$(NORMAL_INSTALL)
+	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(libexecdir)
-	@list="$(libexec_PROGRAMS)"; for p in $$list; do \
+	@list='$(libexec_PROGRAMS)'; for p in $$list; do \
 	  if test -f $$p; then \
-	    echo " $(INSTALL_PROGRAM) $$p $(libexecdir)/`echo $$p|sed '$(transform)'`"; \
+	    echo "  $(INSTALL_PROGRAM) $$p $(libexecdir)/`echo $$p|sed '$(transform)'`"; \
 	     $(INSTALL_PROGRAM) $$p $(libexecdir)/`echo $$p|sed '$(transform)'`; \
 	  else :; fi; \
 	done
 
 uninstall-libexecPROGRAMS:
-	list="$(libexec_PROGRAMS)"; for p in $$list; do \
+	$(NORMAL_UNINSTALL)
+	list='$(libexec_PROGRAMS)'; for p in $$list; do \
 	  rm -f $(libexecdir)/`echo $$p|sed '$(transform)'`; \
 	done
 
@@ -327,96 +343,98 @@ distclean-compile:
 	rm -f *.tab.c
 
 maintainer-clean-compile:
-$(amandad_OBJECTS): ../config.h
 
 amandad: $(amandad_OBJECTS) $(amandad_DEPENDENCIES)
+	@rm -f amandad
 	$(LINK) $(amandad_LDFLAGS) $(amandad_OBJECTS) $(amandad_LDADD) $(LIBS)
-$(calcsize_OBJECTS): ../config.h
 
 calcsize: $(calcsize_OBJECTS) $(calcsize_DEPENDENCIES)
+	@rm -f calcsize
 	$(LINK) $(calcsize_LDFLAGS) $(calcsize_OBJECTS) $(calcsize_LDADD) $(LIBS)
-$(createindex_dump_OBJECTS): ../config.h
 
 createindex-dump: $(createindex_dump_OBJECTS) $(createindex_dump_DEPENDENCIES)
+	@rm -f createindex-dump
 	$(LINK) $(createindex_dump_LDFLAGS) $(createindex_dump_OBJECTS) $(createindex_dump_LDADD) $(LIBS)
-$(createindex_gnutar_OBJECTS): ../config.h
 
 createindex-gnutar: $(createindex_gnutar_OBJECTS) $(createindex_gnutar_DEPENDENCIES)
+	@rm -f createindex-gnutar
 	$(LINK) $(createindex_gnutar_LDFLAGS) $(createindex_gnutar_OBJECTS) $(createindex_gnutar_LDADD) $(LIBS)
-$(rundump_OBJECTS): ../config.h
 
 rundump: $(rundump_OBJECTS) $(rundump_DEPENDENCIES)
+	@rm -f rundump
 	$(LINK) $(rundump_LDFLAGS) $(rundump_OBJECTS) $(rundump_LDADD) $(LIBS)
-$(runtar_OBJECTS): ../config.h
 
 runtar: $(runtar_OBJECTS) $(runtar_DEPENDENCIES)
+	@rm -f runtar
 	$(LINK) $(runtar_LDFLAGS) $(runtar_OBJECTS) $(runtar_LDADD) $(LIBS)
-$(selfcheck_OBJECTS): ../config.h
 
 selfcheck: $(selfcheck_OBJECTS) $(selfcheck_DEPENDENCIES)
+	@rm -f selfcheck
 	$(LINK) $(selfcheck_LDFLAGS) $(selfcheck_OBJECTS) $(selfcheck_LDADD) $(LIBS)
-$(sendbackup_dump_OBJECTS): ../config.h
 
 sendbackup-dump: $(sendbackup_dump_OBJECTS) $(sendbackup_dump_DEPENDENCIES)
+	@rm -f sendbackup-dump
 	$(LINK) $(sendbackup_dump_LDFLAGS) $(sendbackup_dump_OBJECTS) $(sendbackup_dump_LDADD) $(LIBS)
-$(sendbackup_gnutar_OBJECTS): ../config.h
 
 sendbackup-gnutar: $(sendbackup_gnutar_OBJECTS) $(sendbackup_gnutar_DEPENDENCIES)
+	@rm -f sendbackup-gnutar
 	$(LINK) $(sendbackup_gnutar_LDFLAGS) $(sendbackup_gnutar_OBJECTS) $(sendbackup_gnutar_LDADD) $(LIBS)
-$(sendindex_OBJECTS): ../config.h
 
 sendindex: $(sendindex_OBJECTS) $(sendindex_DEPENDENCIES)
+	@rm -f sendindex
 	$(LINK) $(sendindex_LDFLAGS) $(sendindex_OBJECTS) $(sendindex_LDADD) $(LIBS)
-$(sendsize_OBJECTS): ../config.h
 
 sendsize: $(sendsize_OBJECTS) $(sendsize_DEPENDENCIES)
+	@rm -f sendsize
 	$(LINK) $(sendsize_LDFLAGS) $(sendsize_OBJECTS) $(sendsize_LDADD) $(LIBS)
-$(amrecover_OBJECTS): ../config.h
 
 amrecover: $(amrecover_OBJECTS) $(amrecover_DEPENDENCIES)
+	@rm -f amrecover
 	$(LINK) $(amrecover_LDFLAGS) $(amrecover_OBJECTS) $(amrecover_LDADD) $(LIBS)
-$(amrestore_OBJECTS): ../config.h
 
 amrestore: $(amrestore_OBJECTS) $(amrestore_DEPENDENCIES)
+	@rm -f amrestore
 	$(LINK) $(amrestore_LDFLAGS) $(amrestore_OBJECTS) $(amrestore_LDADD) $(LIBS)
-$(versionsuffix_OBJECTS): ../config.h
 
 versionsuffix: $(versionsuffix_OBJECTS) $(versionsuffix_DEPENDENCIES)
+	@rm -f versionsuffix
 	$(LINK) $(versionsuffix_LDFLAGS) $(versionsuffix_OBJECTS) $(versionsuffix_LDADD) $(LIBS)
 
 install-binSCRIPTS: $(bin_SCRIPTS)
-	$(NORMAL_INSTALL)
+	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(bindir)
-	@list="$(bin_SCRIPTS)"; for p in $$list; do \
+	@list='$(bin_SCRIPTS)'; for p in $$list; do \
 	  if test -f $$p; then \
-	    echo "$(INSTALL_SCRIPT) $$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
+	    echo " $(INSTALL_SCRIPT) $$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
 	    $(INSTALL_SCRIPT) $$p $(bindir)/`echo $$p|sed '$(transform)'`; \
 	  else if test -f $(srcdir)/$$p; then \
-	    echo "$(INSTALL_SCRIPT) $(srcdir)/$$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
+	    echo " $(INSTALL_SCRIPT) $(srcdir)/$$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
 	    $(INSTALL_SCRIPT) $(srcdir)/$$p $(bindir)/`echo $$p|sed '$(transform)'`; \
 	  else :; fi; fi; \
 	done
 
 uninstall-binSCRIPTS:
-	list="$(bin_SCRIPTS)"; for p in $$list; do \
+	$(NORMAL_UNINSTALL)
+	list='$(bin_SCRIPTS)'; for p in $$list; do \
 	  rm -f $(bindir)/`echo $$p|sed '$(transform)'`; \
 	done
 
 install-libexecSCRIPTS: $(libexec_SCRIPTS)
-	$(NORMAL_INSTALL)
+	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(libexecdir)
-	@list="$(libexec_SCRIPTS)"; for p in $$list; do \
+	@list='$(libexec_SCRIPTS)'; for p in $$list; do \
 	  if test -f $$p; then \
-	    echo "$(INSTALL_SCRIPT) $$p $(libexecdir)/`echo $$p|sed '$(transform)'`"; \
+	    echo " $(INSTALL_SCRIPT) $$p $(libexecdir)/`echo $$p|sed '$(transform)'`"; \
 	    $(INSTALL_SCRIPT) $$p $(libexecdir)/`echo $$p|sed '$(transform)'`; \
 	  else if test -f $(srcdir)/$$p; then \
-	    echo "$(INSTALL_SCRIPT) $(srcdir)/$$p $(libexecdir)/`echo $$p|sed '$(transform)'`"; \
+	    echo " $(INSTALL_SCRIPT) $(srcdir)/$$p $(libexecdir)/`echo $$p|sed '$(transform)'`"; \
 	    $(INSTALL_SCRIPT) $(srcdir)/$$p $(libexecdir)/`echo $$p|sed '$(transform)'`; \
 	  else :; fi; fi; \
 	done
 
 uninstall-libexecSCRIPTS:
-	list="$(libexec_SCRIPTS)"; for p in $$list; do \
+	$(NORMAL_UNINSTALL)
+	list='$(libexec_SCRIPTS)'; for p in $$list; do \
 	  rm -f $(libexecdir)/`echo $$p|sed '$(transform)'`; \
 	done
 .y.c:
@@ -435,11 +453,11 @@ ID: $(HEADERS) $(SOURCES)
 TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES)
 	tags=; \
 	here=`pwd`; \
-	list="$(SUBDIRS)"; for subdir in $$list; do \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
 	  test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
 	done; \
 	test -z "$(ETAGS_ARGS)$(SOURCES)$(HEADERS)$$tags" \
-	  || cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $(SOURCES) $(HEADERS) -o $$here/TAGS
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $(SOURCES) $(HEADERS) -o $$here/TAGS)
 
 mostlyclean-tags:
 
@@ -466,11 +484,11 @@ check: all
 	$(MAKE)
 installcheck:
 install-exec: install-binPROGRAMS install-libexecPROGRAMS install-binSCRIPTS install-libexecSCRIPTS
-	$(NORMAL_INSTALL)
+	@$(NORMAL_INSTALL)
 	$(MAKE) install-exec-hook
 
 install-data: 
-	$(NORMAL_INSTALL)
+	@$(NORMAL_INSTALL)
 
 install: install-exec install-data all
 	@:

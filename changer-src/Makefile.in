@@ -1,4 +1,4 @@
-# Makefile.in generated automatically by automake 1.1l from Makefile.am
+# Makefile.in generated automatically by automake 1.1n from Makefile.am
 
 # Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
@@ -34,81 +34,96 @@ pkgincludedir = $(includedir)/@PACKAGE@
 
 top_builddir = ..
 
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
+
 INSTALL = @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 transform = @program_transform_name@
-target_alias = @target_alias@
+
+NORMAL_INSTALL = true
+PRE_INSTALL = true
+POST_INSTALL = true
+NORMAL_UNINSTALL = true
+PRE_UNINSTALL = true
+POST_UNINSTALL = true
 build_alias = @build_alias@
-host_triplet = @host@
-target_triplet = @target@
 build_triplet = @build@
 host_alias = @host_alias@
-LOG_DIR = @LOG_DIR@
-MT = @MT@
-RESTORE = @RESTORE@
-DB_DIR = @DB_DIR@
-VERSION = @VERSION@
-ac_c = @ac_c@
-XFSDUMP = @XFSDUMP@
-PCAT = @PCAT@
-DD = @DD@
-LEX = @LEX@
-GNUPLOT = @GNUPLOT@
-VERSION_MINOR = @VERSION_MINOR@
-INSTALL_SCRIPT = @INSTALL_SCRIPT@
-BUILD_SERVER_PROGS_LIBEXEC = @BUILD_SERVER_PROGS_LIBEXEC@
-PACKAGE = @PACKAGE@
-COMPRESS = @COMPRESS@
-RSH = @RSH@
-BUILD_CLIENT_SCRIPTS_BIN = @BUILD_CLIENT_SCRIPTS_BIN@
-ac_n = @ac_n@
-XFSRESTORE = @XFSRESTORE@
-DUMP = @DUMP@
-INDEX_DIR = @INDEX_DIR@
-BUILD_AMPLOT_LIBEXEC = @BUILD_AMPLOT_LIBEXEC@
-AMPLOT_COMPRESS = @AMPLOT_COMPRESS@
-RANLIB = @RANLIB@
-VERSION_COMMENT = @VERSION_COMMENT@
-MAILER = @MAILER@
-DEFAULT_SERVER = @DEFAULT_SERVER@
-AMPLOT_CAT_GZIP = @AMPLOT_CAT_GZIP@
-TAPE_NO_REWIND_DEVICE = @TAPE_NO_REWIND_DEVICE@
-DEFAULT_TAPE_DEVICE = @DEFAULT_TAPE_DEVICE@
-YACC = @YACC@
-TAPE_REWIND_DEVICE = @TAPE_REWIND_DEVICE@
-AMPLOT_CAT_PACK = @AMPLOT_CAT_PACK@
-SAMBA_CLIENT = @SAMBA_CLIENT@
-DEFAULT_TAPE_SERVER = @DEFAULT_TAPE_SERVER@
-BUILD_SERVER_SCRIPTS_BIN = @BUILD_SERVER_SCRIPTS_BIN@
-CC = @CC@
-BUILD_SERVER_PROGS_BIN = @BUILD_SERVER_PROGS_BIN@
-BUILD_CHANGER_SCRIPTS_LIBEXEC = @BUILD_CHANGER_SCRIPTS_LIBEXEC@
-BUILD_CHANGER_PROGS_LIBEXEC = @BUILD_CHANGER_PROGS_LIBEXEC@
-GREP = @GREP@
+host_triplet = @host@
+target_alias = @target_alias@
+target_triplet = @target@
 AMPLOT_CAT_COMPRESS = @AMPLOT_CAT_COMPRESS@
-BUILD_CLIENT_SCRIPTS_LIBEXEC = @BUILD_CLIENT_SCRIPTS_LIBEXEC@
-GNUTAR = @GNUTAR@
-PERL = @PERL@
-BUILD_CLIENT_PROGS_LIBEXEC = @BUILD_CLIENT_PROGS_LIBEXEC@
+AMPLOT_CAT_GZIP = @AMPLOT_CAT_GZIP@
+AMPLOT_CAT_PACK = @AMPLOT_CAT_PACK@
+AMPLOT_COMPRESS = @AMPLOT_COMPRESS@
 AR = @AR@
-EGREP = @EGREP@
-CONFIG_DIR = @CONFIG_DIR@
-BUILD_AMPLOT_BIN = @BUILD_AMPLOT_BIN@
 AWK_VAR_ASSIGNMENT_OPT = @AWK_VAR_ASSIGNMENT_OPT@
-VERSION_PATCH = @VERSION_PATCH@
-CLIENT_LOGIN = @CLIENT_LOGIN@
-SHELL = @SHELL@
+BUILD_AMPLOT_BIN = @BUILD_AMPLOT_BIN@
+BUILD_AMPLOT_LIBEXEC = @BUILD_AMPLOT_LIBEXEC@
+BUILD_CHANGER_PROGS_LIBEXEC = @BUILD_CHANGER_PROGS_LIBEXEC@
+BUILD_CHANGER_SCRIPTS_LIBEXEC = @BUILD_CHANGER_SCRIPTS_LIBEXEC@
+BUILD_CLIENT_PROGS_LIBEXEC = @BUILD_CLIENT_PROGS_LIBEXEC@
+BUILD_CLIENT_SCRIPTS_BIN = @BUILD_CLIENT_SCRIPTS_BIN@
+BUILD_CLIENT_SCRIPTS_LIBEXEC = @BUILD_CLIENT_SCRIPTS_LIBEXEC@
+BUILD_SERVER_PROGS_BIN = @BUILD_SERVER_PROGS_BIN@
+BUILD_SERVER_PROGS_LIBEXEC = @BUILD_SERVER_PROGS_LIBEXEC@
+BUILD_SERVER_SCRIPTS_BIN = @BUILD_SERVER_SCRIPTS_BIN@
 CAT = @CAT@
+CC = @CC@
+CLIENT_LOGIN = @CLIENT_LOGIN@
+COMPRESS = @COMPRESS@
+CONFIG_DIR = @CONFIG_DIR@
+DB_DIR = @DB_DIR@
+DD = @DD@
+DEFAULT_CONFIG = @DEFAULT_CONFIG@
+DEFAULT_SERVER = @DEFAULT_SERVER@
+DEFAULT_TAPE_DEVICE = @DEFAULT_TAPE_DEVICE@
+DEFAULT_TAPE_SERVER = @DEFAULT_TAPE_SERVER@
+DUMP = @DUMP@
+EGREP = @EGREP@
+GNUPLOT = @GNUPLOT@
+GNUTAR = @GNUTAR@
+GREP = @GREP@
+GZIP = @GZIP@
+INDEX_DIR = @INDEX_DIR@
+KRB4CLIENT_C = @KRB4CLIENT_C@
+KRB4CLIENT_O = @KRB4CLIENT_O@
+KRB4COMMON_C = @KRB4COMMON_C@
+KRB4COMMON_O = @KRB4COMMON_O@
+LEX = @LEX@
+LOG_DIR = @LOG_DIR@
+MAILER = @MAILER@
+MT = @MT@
 MTX = @MTX@
 MT_FILE_FLAG = @MT_FILE_FLAG@
-GZIP = @GZIP@
-VERSION_SUFFIX = @VERSION_SUFFIX@
+PACKAGE = @PACKAGE@
+PCAT = @PCAT@
+PERL = @PERL@
+RANLIB = @RANLIB@
+RESTORE = @RESTORE@
+RSH = @RSH@
+SAMBA_CLIENT = @SAMBA_CLIENT@
 SETUID_GROUP = @SETUID_GROUP@
-DEFAULT_CONFIG = @DEFAULT_CONFIG@
-VERSION_MAJOR = @VERSION_MAJOR@
+SHELL = @SHELL@
+TAPE_NO_REWIND_DEVICE = @TAPE_NO_REWIND_DEVICE@
+TAPE_REWIND_DEVICE = @TAPE_REWIND_DEVICE@
 USE_VERSION_SUFFIXES = @USE_VERSION_SUFFIXES@
+VERSION = @VERSION@
+VERSION_COMMENT = @VERSION_COMMENT@
+VERSION_MAJOR = @VERSION_MAJOR@
+VERSION_MINOR = @VERSION_MINOR@
+VERSION_PATCH = @VERSION_PATCH@
+VERSION_SUFFIX = @VERSION_SUFFIX@
+XFSDUMP = @XFSDUMP@
+XFSRESTORE = @XFSRESTORE@
+YACC = @YACC@
+ac_c = @ac_c@
+ac_n = @ac_n@
 
 INCLUDES =		-I$(top_srcdir)/common-src
 
@@ -148,8 +163,7 @@ DIST_COMMON =  Makefile.am Makefile.in chg-generic.sh.in \
 hp-changer.sh.in no-changer.sh.in rth-changer.pl.in
 
 
-DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) \
-	$(TEXINFOS) $(MANS) $(EXTRA_DIST)
+DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 SOURCES = seagate-changer.c
@@ -159,8 +173,8 @@ default: all
 
 .SUFFIXES:
 .SUFFIXES: .c .o .pl .sh
-$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL) 
-	cd $(top_srcdir) && automake --foreign changer-src/Makefile
+$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
+	cd $(top_srcdir) && $(AUTOMAKE) --foreign changer-src/Makefile
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status $(BUILT_SOURCES)
 	cd $(top_builddir) \
@@ -185,17 +199,18 @@ distclean-libexecPROGRAMS:
 maintainer-clean-libexecPROGRAMS:
 
 install-libexecPROGRAMS: $(libexec_PROGRAMS)
-	$(NORMAL_INSTALL)
+	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(libexecdir)
-	@list="$(libexec_PROGRAMS)"; for p in $$list; do \
+	@list='$(libexec_PROGRAMS)'; for p in $$list; do \
 	  if test -f $$p; then \
-	    echo " $(INSTALL_PROGRAM) $$p $(libexecdir)/`echo $$p|sed '$(transform)'`"; \
+	    echo "  $(INSTALL_PROGRAM) $$p $(libexecdir)/`echo $$p|sed '$(transform)'`"; \
 	     $(INSTALL_PROGRAM) $$p $(libexecdir)/`echo $$p|sed '$(transform)'`; \
 	  else :; fi; \
 	done
 
 uninstall-libexecPROGRAMS:
-	list="$(libexec_PROGRAMS)"; for p in $$list; do \
+	$(NORMAL_UNINSTALL)
+	list='$(libexec_PROGRAMS)'; for p in $$list; do \
 	  rm -f $(libexecdir)/`echo $$p|sed '$(transform)'`; \
 	done
 
@@ -211,26 +226,27 @@ distclean-compile:
 	rm -f *.tab.c
 
 maintainer-clean-compile:
-$(seagate_changer_OBJECTS): ../config.h
 
 seagate-changer: $(seagate_changer_OBJECTS) $(seagate_changer_DEPENDENCIES)
+	@rm -f seagate-changer
 	$(LINK) $(seagate_changer_LDFLAGS) $(seagate_changer_OBJECTS) $(seagate_changer_LDADD) $(LIBS)
 
 install-libexecSCRIPTS: $(libexec_SCRIPTS)
-	$(NORMAL_INSTALL)
+	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(libexecdir)
-	@list="$(libexec_SCRIPTS)"; for p in $$list; do \
+	@list='$(libexec_SCRIPTS)'; for p in $$list; do \
 	  if test -f $$p; then \
-	    echo "$(INSTALL_SCRIPT) $$p $(libexecdir)/`echo $$p|sed '$(transform)'`"; \
+	    echo " $(INSTALL_SCRIPT) $$p $(libexecdir)/`echo $$p|sed '$(transform)'`"; \
 	    $(INSTALL_SCRIPT) $$p $(libexecdir)/`echo $$p|sed '$(transform)'`; \
 	  else if test -f $(srcdir)/$$p; then \
-	    echo "$(INSTALL_SCRIPT) $(srcdir)/$$p $(libexecdir)/`echo $$p|sed '$(transform)'`"; \
+	    echo " $(INSTALL_SCRIPT) $(srcdir)/$$p $(libexecdir)/`echo $$p|sed '$(transform)'`"; \
 	    $(INSTALL_SCRIPT) $(srcdir)/$$p $(libexecdir)/`echo $$p|sed '$(transform)'`; \
 	  else :; fi; fi; \
 	done
 
 uninstall-libexecSCRIPTS:
-	list="$(libexec_SCRIPTS)"; for p in $$list; do \
+	$(NORMAL_UNINSTALL)
+	list='$(libexec_SCRIPTS)'; for p in $$list; do \
 	  rm -f $(libexecdir)/`echo $$p|sed '$(transform)'`; \
 	done
 
@@ -242,11 +258,11 @@ ID: $(HEADERS) $(SOURCES)
 TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES)
 	tags=; \
 	here=`pwd`; \
-	list="$(SUBDIRS)"; for subdir in $$list; do \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
 	  test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
 	done; \
 	test -z "$(ETAGS_ARGS)$(SOURCES)$(HEADERS)$$tags" \
-	  || cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $(SOURCES) $(HEADERS) -o $$here/TAGS
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $(SOURCES) $(HEADERS) -o $$here/TAGS)
 
 mostlyclean-tags:
 
@@ -273,11 +289,11 @@ check: all
 	$(MAKE)
 installcheck:
 install-exec: install-libexecPROGRAMS install-libexecSCRIPTS
-	$(NORMAL_INSTALL)
+	@$(NORMAL_INSTALL)
 	$(MAKE) install-exec-hook
 
 install-data: 
-	$(NORMAL_INSTALL)
+	@$(NORMAL_INSTALL)
 
 install: install-exec install-data all
 	@:
