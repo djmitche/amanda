@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.h,v 1.6 1997/09/26 11:24:27 george Exp $
+ * $Id: sendbackup.h,v 1.7 1997/11/13 20:54:01 blair Exp $
  *
  * a few common decls for the sendbackup-* sources
  */
@@ -61,8 +61,6 @@ typedef struct regex_s {
     char *regex;
     int scale;                  /* only used for size lines */
 } regex_t;
-
-extern regex_t re_table[];
 
 extern int compress, comppid, dumppid, no_record;
 extern int indexpid, createindex;
