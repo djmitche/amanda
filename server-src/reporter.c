@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.22 1998/03/02 15:55:58 amcore Exp $
+ * $Id: reporter.c,v 1.23 1998/03/07 18:07:26 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -54,14 +54,17 @@ typedef struct line_s {
     char *str;
 } line_t;
 
+#define	MAX_TAPER 31
+
 typedef struct repdata_s {
     logtype_t result;
     int level;
     float origsize, outsize;
+    int nb_taper;
     struct timedata_s {
 	int success;
 	float sec, kps;
-    } taper, dumper;
+    } taper[MAX_TAPER], dumper;
 } repdata_t;
 
 #define data(dp) ((repdata_t *)(dp)->up)
@@ -549,6 +552,7 @@ void output_summary()
     float f;
     int len;
     char *dname;
+    int i;
 
     fprintf(mailf,
  "                                      DUMPER STATS                  TAPER STATS\n");
@@ -562,60 +566,65 @@ void output_summary()
 	if(amflush_run && data(dp)->result == L_BOGUS)
 	    continue;
 #endif
+	if(data(dp)->nb_taper == 0) data(dp)->nb_taper = 1;
+	for(i=0;i<data(dp)->nb_taper;i++) {
+	    /* print rightmost chars of names that are too long to fit */
+	    if(((len = strlen(dp->name)) > 14) && (*(dp->name) == '/')) {
+		dname = &(dp->name[len - 13]);
+		fprintf(mailf,"%-9.9s -%-13.13s ",dp->host->hostname, dname);
+	    } else
+		fprintf(mailf,"%-9.9s %-14.14s ",dp->host->hostname, dp->name);
 
-	/* print rightmost chars of names that are too long to fit */
-	if(((len = strlen(dp->name)) > 14) && (*(dp->name) == '/')) {
-	    dname = &(dp->name[len - 13]);
-	    fprintf(mailf,"%-9.9s -%-13.13s ",dp->host->hostname, dname);
-	} else
-	    fprintf(mailf,"%-9.9s %-14.14s ",dp->host->hostname, dp->name);
-
-	if(data(dp)->result == L_BOGUS) {
-	    if(amflush_run)
+	    if(data(dp)->result == L_BOGUS) {
+		if(amflush_run)
+		    fprintf(mailf,
+		   "   NO FILE TO FLUSH -----------------------------------\n");
+		else
+		    fprintf(mailf,
+		   "   MISSING --------------------------------------------\n");
+		    continue;
+	    }
+	    if(data(dp)->result == L_SKIPPED) {
 		fprintf(mailf,
-		 "   NO FILE TO FLUSH -----------------------------------\n");
+		  "%1d  SKIPPED --------------------------------------------\n",
+		  data(dp)->level);
+		continue;
+	    }
+	    else if(data(dp)->result == L_FAIL) {
+		fprintf(mailf,
+		  "%1d   FAILED --------------------------------------------\n",
+		  data(dp)->level);
+		continue;
+	    }
+
+	    if(!amflush_run || i == data(dp)->nb_taper-1)
+		fprintf(mailf,"%1d %8.0f %8.0f ",
+			data(dp)->level, data(dp)->origsize, data(dp)->outsize);
 	    else
-		fprintf(mailf,
-		 "   MISSING --------------------------------------------\n");
-	    continue;
+		fprintf(mailf, "%1d      N/A      N/A ",data(dp)->level);
+
+	    if(dp->compress == COMP_NONE)
+		f = 0.0;
+	    else
+		f = data(dp)->origsize;
+	    divzero(mailf, pct(data(dp)->outsize), f);
+
+	    if(!amflush_run)
+		fprintf(mailf, " %4d:%02d %6.1f",
+			mnsc(data(dp)->dumper.sec), data(dp)->dumper.kps);
+	    else
+		fprintf(mailf, "    N/A    N/A ");
+
+	    if(data(dp)->taper[i].success)
+		fprintf(mailf, " %4d:%02d %6.1f",
+			mnsc(data(dp)->taper[i].sec), data(dp)->taper[i].kps);
+	    else if(degraded_mode)
+		fprintf(mailf,"    N/A    N/A");
+	    else
+		fprintf(mailf,"  FAILED ------");
+
+	    putc('\n',mailf);
 	}
-	if(data(dp)->result == L_SKIPPED) {
-	    fprintf(mailf,
-		"%1d  SKIPPED --------------------------------------------\n",
-		    data(dp)->level);
-	    continue;
-	}
-	else if(data(dp)->result == L_FAIL) {
-	    fprintf(mailf,
-		"%1d   FAILED --------------------------------------------\n",
-		    data(dp)->level);
-	    continue;
-	}
-
-	fprintf(mailf,"%1d %8.0f %8.0f ",
-		data(dp)->level, data(dp)->origsize, data(dp)->outsize);
-
-	if(dp->compress == COMP_NONE)
-	    f = 0.0;
-	else
-	    f = data(dp)->origsize;
-	divzero(mailf, pct(data(dp)->outsize), f);
-
-	if(!amflush_run)
-	    fprintf(mailf, " %4d:%02d %6.1f",
-		    mnsc(data(dp)->dumper.sec), data(dp)->dumper.kps);
-	else
-	    fprintf(mailf, "    N/A    N/A ");
-
-	if(data(dp)->taper.success)
-	    fprintf(mailf, " %4d:%02d %6.1f",
-		    mnsc(data(dp)->taper.sec), data(dp)->taper.kps);
-	else if(degraded_mode)
-	    fprintf(mailf,"    N/A    N/A");
-	else
-	    fprintf(mailf,"  FAILED ------");
-
-	putc('\n',mailf);
     }
 }
 
@@ -925,6 +934,7 @@ void handle_success()
     int i;
     char *s, *fp;
     int ch;
+    int datestampI;
 
     if(curprog != P_TAPER && curprog != P_DUMPER && curprog != P_PLANNER) {
 	bogus_line();
@@ -957,8 +967,28 @@ void handle_success()
     s[-1] = ch;
 
     skip_whitespace(s, ch);
-    if(sscanf(s - 1,"%d [sec %f kb %f kps %f",
-	      &level, &sec, &kbytes, &kps) != 4) {
+    if(ch == '\0' || sscanf(s - 1, "%d", &datestampI) != 1) {
+	bogus_line();
+	return;
+    }
+    skip_integer(s, ch);
+
+    if(datestampI < 100)  {
+	level = datestampI;
+	/* datestampI = datestamp;*/
+    }
+    else {
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
+	    bogus_line();
+	    return;
+	}
+	skip_integer(s, ch);
+    }
+
+    skip_whitespace(s, ch);
+    if(sscanf(s - 1,"[sec %f kb %f kps %f",
+	      &sec, &kbytes, &kps) != 3) {
 	bogus_line();
 	return;
     }
@@ -983,7 +1013,8 @@ void handle_success()
     }
     data(dp)->result = L_SUCCESS;
 
-    if(curprog == P_TAPER) sp = &(data(dp)->taper);
+    if(curprog == P_TAPER)
+	sp = &(data(dp)->taper[data(dp)->nb_taper++]);
     else sp = &(data(dp)->dumper);
 
     sp->success = 1;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.26 1998/02/23 21:47:49 jrj Exp $
+ * $Id: driverio.c,v 1.27 1998/03/07 18:07:21 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -197,11 +197,12 @@ int show;
 }
 
 
-void taper_cmd(cmd, /* optional */ ptr, destname, level)
+void taper_cmd(cmd, /* optional */ ptr, destname, level, datestamp)
 tok_t cmd;
 void *ptr;
 char *destname;
 int level;
+char *datestamp;
 {
     char *cmdline = NULL;
     char number[NUM_STR_SIZE];
@@ -221,6 +222,7 @@ int level;
 			    " ", dp->host->hostname,
 			    " ", dp->name,
 			    " ", number,
+			    " ", datestamp,
 			    "\n", NULL);
 	break;
     case PORT_WRITE:
@@ -231,6 +233,7 @@ int level;
 			    " ", dp->host->hostname,
 			    " ", dp->name,
 			    " ", number,
+			    " ", datestamp,
 			    "\n", NULL);
 	break;
     case QUIT:

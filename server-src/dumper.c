@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.58 1998/02/26 19:25:12 jrj Exp $
+/* $Id: dumper.c,v 1.59 1998/03/07 18:07:24 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1064,7 +1064,7 @@ int mesgfd, datafd, indexfd, outfd;
 
     switch(dump_result) {
     case 0:
-	log_add(L_SUCCESS, "%s %s %d [%s]", hostname, diskname, level, errstr);
+	log_add(L_SUCCESS, "%s %s %s %d [%s]", hostname, diskname, datestamp, level, errstr);
 
 	break;
 

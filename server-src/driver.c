@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.36 1998/03/02 04:57:11 amcore Exp $
+ * $Id: driver.c,v 1.37 1998/03/07 18:07:20 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -178,7 +178,7 @@ char **main_argv;
     /* taper takes a while to get going, so start it up right away */
 
     startup_tape_process();
-    taper_cmd(START_TAPER, datestamp, NULL, 0);
+    taper_cmd(START_TAPER, datestamp, NULL, 0, NULL);
 
     /* start initializing: read in databases */
 
@@ -317,7 +317,7 @@ char **main_argv;
     fflush(stdout);
 
     if(taper)
-	taper_cmd(QUIT, NULL, NULL, 0);
+	taper_cmd(QUIT, NULL, NULL, 0, NULL);
 
     for(dumper = dmptable; dumper < dmptable + inparallel; dumper++) {
 	dumper_cmd(dumper, QUIT, NULL);
@@ -604,7 +604,7 @@ void handle_taper_result()
 	else {
 	    dp = dequeue_disk(&tapeq);
 	    taper_disk = dp;
-	    taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level);
+	    taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level, datestamp);
 	}
 	/*
 	 * we need to restart some stopped dumps; without a good
@@ -650,7 +650,7 @@ void handle_taper_result()
 
 	dp = dequeue_disk(&tapeq);
 	taper_disk = dp;
-	taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level);
+	taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level, datestamp);
 	break;
 
     case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
@@ -791,7 +791,8 @@ int fd;
 	else if(!degraded_mode) {
 	    taper_disk = dp;
 	    taper_busy = 1;
-	    taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level);
+	    taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level,
+		      datestamp);
 	}
 	dp = NULL;
 	break;
@@ -1332,7 +1333,7 @@ disk_t *dp;
 
     /* tell the taper to read from a port number of its choice */
 
-    taper_cmd(PORT_WRITE, dp, NULL, sched(dp)->level);
+    taper_cmd(PORT_WRITE, dp, NULL, sched(dp)->level, datestamp);
     tok = getresult(taper, 1);
     if(tok != PORT) {
 	printf("driver: did not get PORT from taper for %s:%s\n",

@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.28 1998/02/26 19:25:23 jrj Exp $
+/* $Id: taper.c,v 1.29 1998/03/07 18:07:27 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -115,7 +115,7 @@ buffer_t *buftable;
 
 char *procname = "parent";
 
-extern char *datestamp;
+char *taper_datestamp = NULL;
 char *label = NULL;
 int filenum;
 char *errstr = NULL;
@@ -213,7 +213,8 @@ char **main_argv;
  *
  */
 void read_file P((int fd, char *handle,
-		  char *host, char *disk, int level, int port_flag));
+		  char *host, char *disk, char *datestamp, 
+		  int level, int port_flag));
 int fill_buffer P((int fd, char *buffer, int size));
 void dumpbufs P((char *str1));
 void dumpstatus P((buffer_t *bp));
@@ -225,6 +226,7 @@ int rdpipe, wrpipe;
     int argc;
     char **argv;
     char *handle = NULL, *hostname = NULL, *diskname = NULL, *result;
+    char *datestamp;
     char tok;
     char *q;
     int level, fd, data_port, data_socket, wpid;
@@ -244,10 +246,10 @@ int rdpipe, wrpipe;
 
     /* pass start command on to tape writer */
 
-    datestamp = newstralloc(datestamp, argv[2]);
+    taper_datestamp = newstralloc(taper_datestamp, argv[2]);
 
     syncpipe_put('S');
-    syncpipe_putstr(datestamp);
+    syncpipe_putstr(taper_datestamp);
 
     /* get result of start command */
 
@@ -280,17 +282,17 @@ int rdpipe, wrpipe;
 	switch(cmd) {
 	case PORT_WRITE:
 	    /*
-	     * PORT-WRITE <handle> <host> <disk> <lev>
+	     * PORT-WRITE <handle> <host> <disk> <lev> <datestamp>
 	     */
-	    if(argc != 5) {
-		error("error [file_reader_side PORT-WRITE argc != 5: %d]",
+	    if(argc != 6) {
+		error("error [file_reader_side PORT-WRITE argc != 6: %d]",
 		      argc);
 	    }
-
 	    handle = stralloc(argv[2]);
 	    hostname = stralloc(argv[3]);
 	    diskname = stralloc(argv[4]);
 	    level = atoi(argv[5]);
+	    datestamp = stralloc(argv[6]);
 
 	    data_port = 0;
 	    data_socket = stream_server(&data_port);
@@ -307,7 +309,7 @@ int rdpipe, wrpipe;
 		afree(diskname);
 		break;
 	    }
-	    read_file(fd, handle, hostname, diskname, level, 1);
+	    read_file(fd, handle, hostname, diskname, datestamp, level, 1);
 	    aclose(data_socket);
 	    afree(handle);
 	    afree(hostname);
@@ -316,10 +318,10 @@ int rdpipe, wrpipe;
 
 	case FILE_WRITE:
 	    /*
-	     * FILE-WRITE <sn> <fname> <hst> <dsk> <lev>
+	     * FILE-WRITE <sn> <fname> <hst> <dsk> <lev> <datestamp>
 	     */
-	    if(argc != 6) {
-		error("error [file_reader_side FILE-WRITE argc != 6: %d]",
+	    if(argc != 7) {
+		error("error [file_reader_side FILE-WRITE argc != 7: %d]",
 		      argc);
 	    }
 
@@ -327,6 +329,7 @@ int rdpipe, wrpipe;
 	    hostname = stralloc(argv[4]);
 	    diskname = stralloc(argv[5]);
 	    level = atoi(argv[6]);
+	    datestamp = stralloc(argv[7]);
 
 	    if((fd = open(argv[3], O_RDONLY)) == -1) {
 		q = squotef("[%s]", strerror(errno));
@@ -337,7 +340,7 @@ int rdpipe, wrpipe;
 		afree(diskname);
 		break;
 	    }
-	    read_file(fd, handle, hostname, diskname, level, 0);
+	    read_file(fd, handle, hostname, diskname, datestamp, level, 0);
 	    afree(handle);
 	    afree(hostname);
 	    afree(diskname);
@@ -439,9 +442,9 @@ buffer_t *bp;
 }
 
 
-void read_file(fd, handle, hostname, diskname, level, port_flag)
+void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 int fd, level, port_flag;
-char *handle, *hostname, *diskname;
+char *handle, *hostname, *diskname, *datestamp;
 {
     buffer_t *bp;
     char tok;
@@ -632,8 +635,8 @@ char *handle, *hostname, *diskname;
 		putresult("DONE %s %s %d %s\n",
 			  handle, label, filenum, q);
 		afree(q);
-		log_add(L_SUCCESS, "%s %s %d %s",
-		        hostname, diskname, level, errstr);
+		log_add(L_SUCCESS, "%s %s %s %d %s",
+		        hostname, diskname, datestamp, level, errstr);
 	    }
 	    return;
 
@@ -739,7 +742,7 @@ int getp, putp;
 	case 'Q':
 	    end_tape(0);	/* XXX check results of end tape ?? */
 	    clear_tapelist();
-	    afree(datestamp);
+	    afree(taper_datestamp);
 	    afree(label);
 	    afree(errstr);
 	    afree(changer_resultstr);
@@ -1334,19 +1337,19 @@ int label_tape()
 	return 0;
     }
 
-    if((result = tapefd_wrlabel(tape_fd, datestamp, label)) != NULL) {
+    if((result = tapefd_wrlabel(tape_fd, taper_datestamp, label)) != NULL) {
 	errstr = newstralloc(errstr, result);
 	return 0;
     }
 
-    fprintf(stderr, "taper: wrote label `%s' date `%s'\n", label, datestamp);
+    fprintf(stderr, "taper: wrote label `%s' date `%s'\n", label, taper_datestamp);
     fflush(stderr);
 
     /* write tape list */
 
     /* XXX add cur_tape number to tape list structure */
     remove_tapelabel(label);
-    add_tapelabel(atoi(datestamp), label);
+    add_tapelabel(atoi(taper_datestamp), label);
 
     if(cur_tape == 0) {
 	oldtapefilename = stralloc2(tapefilename, ".yesterday");
@@ -1362,7 +1365,7 @@ int label_tape()
 	error("couldn't write tapelist: %s", strerror(errno));
 
     log_add(L_START, "datestamp %s label %s tape %d",
-	    datestamp, label, cur_tape);
+	    taper_datestamp, label, cur_tape);
 
     total_tape_used=0.0;
     total_tape_fm = 0;
@@ -1388,7 +1391,7 @@ char *new_datestamp;
 
     have_changer = changer_init();
 
-    datestamp = newstralloc(datestamp, new_datestamp);
+    taper_datestamp = newstralloc(taper_datestamp, new_datestamp);
 
     if(!label_tape())
 	return 0;
@@ -1432,7 +1435,7 @@ int writerror;
 	    goto tape_error;
 	}
 
-	if((result = tapefd_wrendmark(tape_fd, datestamp)) != NULL) {
+	if((result = tapefd_wrendmark(tape_fd, taper_datestamp)) != NULL) {
 	    tapefd_close(tape_fd);
 	    errstr = newstralloc(errstr, result);
 	    goto tape_error;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.34 1998/02/26 19:24:57 jrj Exp $
+ * $Id: amadmin.c,v 1.35 1998/03/07 18:07:18 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1047,6 +1047,7 @@ int datestamp, datestamp_aux;
     FILE *logf;
     char *host, *host_undo, host_undo_ch;
     char *disk, *disk_undo, disk_undo_ch;
+    int   datestampI;
     char *rest;
     char *ck_label;
     int level, filenum, ck_datestamp, tapematch;
@@ -1115,11 +1116,24 @@ int datestamp, datestamp_aux;
 	    *disk_undo = '\0';
 
 	    skip_whitespace(s, ch);
-	    if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
+	    if(ch == '\0' || sscanf(s - 1, "%d", &datestampI) != 1) {
 		printf("strange log line \"%s\"\n", curstr);
 		continue;
 	    }
 	    skip_integer(s, ch);
+
+	    if(datestampI < 100)  { /* old log didn't have datestamp */
+		level = datestampI;
+		datestampI = datestamp;
+	    }
+	    else {
+		skip_whitespace(s, ch);
+		if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
+		    printf("strange log line \"%s\"\n", curstr);
+		    continue;
+		}
+		skip_integer(s, ch);
+	    }
 
 	    skip_whitespace(s, ch);
 	    if(ch == '\0') {
@@ -1136,7 +1150,7 @@ int datestamp, datestamp_aux;
 		    struct find_result *new_output_find=
 			(struct find_result *)alloc(sizeof(struct find_result));
 		    new_output_find->next=output_find;
-		    new_output_find->datestamp=stralloc(nicedate(datestamp));
+		    new_output_find->datestamp=stralloc(nicedate(datestampI));
 		    new_output_find->datestamp_aux=datestamp_aux;
 		    new_output_find->hostname=stralloc(host);
 		    new_output_find->diskname=stralloc(disk);
