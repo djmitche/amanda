@@ -1,3 +1,25 @@
+--- automake	Thu Nov 27 06:15:47 1997
++++ automake	Sat Feb  7 01:54:05 1998
+@@ -2832,8 +2832,8 @@
+     {
+ 	local (@ac_deps) = (
+ 			    ($seen_maint_mode ? "\@MAINT\@" : "") ,
+-			    "configure.in",
+-			    ($acinclude ? ' acinclude.m4' : '')
++			    "$(top_srcdir)/configure.in",
++			    ($acinclude ? ' $(srcdir)/acinclude.m4' : '')
+ 			    );
+ 
+ 	# Scan all -I directories for m4 files.  These are our
+@@ -2927,7 +2927,7 @@
+ 		      # Don't know why.
+ 		      . ': '
+ 		      . ($seen_maint_mode ? '@MAINT@ ' : '')
+-		      . $amfile . ' '
++		      . '$(srcdir)/' . $amfile . ' '
+ 		      . '$(top_srcdir)/configure.in $(ACLOCAL_M4) '
+ 		      . join (' ', @rewritten) . "\n"
+ 		      . "\tcd \$(top_srcdir) && \$(AUTOMAKE) "
 --- aclocal	Thu Nov 27 07:26:37 1997
 +++ aclocal	Thu Nov 27 07:30:27 1997
 @@ -381,11 +381,11 @@
