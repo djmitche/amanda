@@ -5,9 +5,12 @@
 	Solaris so it can automatically handle vxfs filesystems.
 	* client-src/sendbackup-dump.c: add missing last NULL argument to
 	newvstralloc().
-	* server-src/dumper.c add missing last NULL argument to	newvstralloc().
+	* server-src/dumper.c: add missing last NULL argument to
+	newvstralloc().
 	* NEWS: reorder 2.4.1 items into most to least important for most
 	users.
+	* config/acconfig.h: update comment for VXDUMP and VXRESTORE to
+	include systems where the Veritas filesystem is used.
 
 1998-08-21  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
