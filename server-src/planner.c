@@ -796,9 +796,9 @@ host_t *hostp;
 	for(i=0;i<MAX_LEVELS;i++) {
 	    if(est(dp)->level[i] == -1) break;
 
-	    sprintf(line, "%s %d %s %d %s\n", dp->name, est(dp)->level[i],
-		    (dp->dtype->exclude ? dp->dtype->exclude : "-"),
-		    dp->platter, dp->dtype->program);
+	    sprintf(line, "%s %d %d %s %s\n", dp->name, est(dp)->level[i],
+		    dp->platter, dp->dtype->program,
+		    (dp->dtype->exclude ? dp->dtype->exclude : ""));
 	    strcat(req, line);
 	    disks++;
 	}

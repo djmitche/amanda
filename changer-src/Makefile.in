@@ -337,6 +337,10 @@ maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 			cat $< > $@
 			chmod a+x $@
 
+.sh:
+			cat $< > $@
+			chmod a+x $@
+
 install-exec-hook:
 	@list="$(bin_PROGRAMS) $(bin_SCRIPTS)"; for p in $$list; do \
 		echo chown $(CLIENT_LOGIN) $(bindir)/`echo $$p|sed '$(transform)'`; \

@@ -33,11 +33,15 @@
  * File:	$RCSFile: sendbackup-dump.c,v $
  * Part of:	
  *
- * Revision:	$Revision: 1.4 $
+ * Revision:	$Revision: 1.5 $
  * Last Edited:	$data: 1997/03/24 10:10:10 $
  * Author:	$Author: oliva $
  *
  * History:	$Log: sendbackup-gnutar.c,v $
+ * History:	Revision 1.5  1997/04/10 03:49:07  oliva
+ * History:	Fixed handling of exclusion on GNUTAR.
+ * History:	Removed option GNUTAR_EXCLUDE_FILE, now enabled by default.
+ * History:
  * History:	Revision 1.4  1997/04/10 01:35:22  oliva
  * History:	GNUTAR listed incrementals now work if previous incremental level
  * History:	directory list cannot be found.
@@ -283,55 +287,9 @@ int level, dataf, mesgf;
 			    (char *) 0);
     } else {
 #endif
-    sprintf(cmd, "%s/runtar%s", libexecdir, versionsuffix());
+      sprintf(cmd, "%s/runtar%s", libexecdir, versionsuffix());
 
-    if (*efile) {
-	char sprintf_buf[512];
-
-	dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf,
-			"gtar", "--create", efile,
-			"--directory", dirname,
-#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-			"--listed-incremental", incrname,
-#else
-			"--incremental", "--newer", dumptimestr,
-#endif
-			"--sparse","--one-file-system",
-#ifdef ENABLE_GNUTAR_ATIME_PRESERVE
-			/* --atime-preserve causes gnutar to call
-			 * utime() after reading files in order to
-			 * adjust their atime.  However, utime()
-			 * updates the file's ctime, so incremental
-			 * dumps will think the file has changed. */
-			"--atime-preserve",
-#endif
-			"--ignore-failed-read", "--totals",
-			"--file", "-", ".",
-			(char *) 0);
-
-	strcpy(sprintf_buf,
-	       "sendbackup-gnutar: pid %d: %s --create %s --directory %s ");
-#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-	strcat(sprintf_buf, "--listed-incremental %s ");
-#else
-	strcat(sprintf_buf, "--incremental --newer %s ");
-#endif
-	strcat(sprintf_buf, "--sparse --one-file-system ");
-#ifdef ENABLE_GNUTAR_ATIME_PRESERVE
-	strcat(sprintf_buf, "--atime-preserve ");
-#endif
-	strcat(sprintf_buf, "--ignore-failed-read --totals --file - .\n");
-
-	sprintf(dbprintf_buf, sprintf_buf, 
-			dumppid, cmd, efile, dirname,
-#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-			incrname
-#else
-			dumptimestr
-#endif
-		);
-	dbprintf((dbprintf_buf));
-    } else {
+      {
 	char sprintf_buf[512];
 
 	dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf,
@@ -352,7 +310,9 @@ int level, dataf, mesgf;
 			"--atime-preserve",
 #endif
 			"--ignore-failed-read", "--totals",
-			"--file", "-", ".",
+			"--file", "-",
+			*efile ? efile : ".",
+			*efile ? "." : (char *)0,
 			(char *) 0);
 
 	strcpy(sprintf_buf,
@@ -366,19 +326,19 @@ int level, dataf, mesgf;
 #ifdef ENABLE_GNUTAR_ATIME_PRESERVE
 	strcat(sprintf_buf, "--atime-preserve ");
 #endif
-	strcat(sprintf_buf, "--ignore-failed-read --totals --file - .\n");
+	strcat(sprintf_buf, "--ignore-failed-read --totals --file - %s.\n");
 
-	sprintf(dbprintf_buf, sprintf_buf,
-			dumppid, cmd, dirname,
+	sprintf(dbprintf_buf, sprintf_buf, 
+			dumppid, cmd, efile, dirname,
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-			incrname
+			incrname,
 #else
-			dumptimestr
+			dumptimestr,
 #endif
+		        efile
 		);
 	dbprintf((dbprintf_buf));
-    }
-
+      }
 #ifdef SAMBA_CLIENT
     }
 #endif

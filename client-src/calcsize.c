@@ -81,21 +81,7 @@ long final_size_unknown P((int, char *));
 
 int use_gtar_excl = 0;
 
-
 char *pname = "calcsize";
-
-#ifdef GNUTAR_EXCLUDE_FILE
-char *x_buffer = NULL;
-int free_x_buffer = 0;
-int size_x_buffer = 0;
-char **exclude = NULL;
-int size_exclude = 0;
-int free_exclude = 0;
-char **re_exclude = NULL;
-int size_re_exclude = 0;
-int free_re_exclude = 0;
-#endif
-
 
 int main(argc, argv)
 int argc;
@@ -151,18 +137,17 @@ char **argv;
 
     /* need at least program, amname, and directory name */
 
-    if(argc < 2)
-#ifdef GNUTAR_EXCLUDE_FILE
-	error("Usage: %s [DUMP|GNUTAR [-X exclude-file]] name dir [level date] ...", argv[0]);
-#else
-	error("Usage: %s [DUMP|GNUTAR] name dir [level date] ...", argv[0]);
-#endif
+    if(argc < 2) {
+      usage:
+	error("Usage: %s [DUMP|GNUTAR [-X --exclude[-list]=regexp]] name dir [level date] ...", pname);
+	return 1;
+    }
 
     /* parse backup program name */
 
     if(!strcmp(*argv, "DUMP")) {
-#ifndef DUMP
-	error("%s: dump not available on this system", argv[0]);
+#if !defined(DUMP) && !defined(XFSDUMP)
+	error("%s: dump not available on this system", pname);
 	return 1;
 #endif
 	add_file = add_file_dump;
@@ -170,7 +155,7 @@ char **argv;
     }
     else if(!strcmp(*argv, "GNUTAR")) {
 #ifndef GNUTAR
-	error("%s: gnutar not available on this system", argv[0]);
+	error("%s: gnutar not available on this system", pname);
 	return 1;
 #endif
 	add_file = add_file_gnutar;
@@ -182,27 +167,34 @@ char **argv;
 	final_size = final_size_unknown;
     }
     argc--, argv++;
-#ifdef GNUTAR_EXCLUDE_FILE
-    if (use_gtar_excl && (argc > 1) && !strcmp(*argv,"-X")) {
+    if ((argc > 1) && !strcmp(*argv,"-X")) {
 	char *cp = (char *)0;
 	argv++;
 
+	if (!use_gtar_excl) {
+	  error("%s: exclusion list available only with GNUTAR", pname);
+	  return 1;
+	}
+	
 	strcpy(result,*argv);
 	if (*result && (cp = strrchr(result,';')))
 	    /* delete trailing ; */
 	    *cp = 0;
-	if (!*result || !(cp = strrchr(result,'=')) || access(cp+1,R_OK)) {
+	if (strncmp(result, "--exclude=", strlen("--exclude=")) == 0)
+	  add_exclude(result+strlen("--exclude="));
+	else if (strncmp(result, "--exclude-list=", strlen("--exclude-list=")) == 0) {
+	  if (access(result + strlen("--exclude-list="), R_OK) != 0) {
 	    fprintf(stderr,"Cannot open exclude file %s\n",cp+1);
 	    use_gtar_excl = 0;
-	} else {
+	  } else {
 	    add_exclude_file(cp+1);
-	}
+	  }
+	} else
+	  goto usage;
 	argc -= 2;
 	argv++;
-    } else {
+    } else
 	use_gtar_excl = 0;
-    }
-#endif
 
     /* the amanda name can be different from the directory name */
 
@@ -243,7 +235,6 @@ char **argv;
  * =========================================================================
  */
 
-#ifdef GNUTAR_EXCLUDE_FILE
 char *basename(file)
 char *file;
 {
@@ -253,7 +244,6 @@ char *file;
 	return cp+1;
     return file;
 }
-#endif
 
 void push_name P((char *str));
 char *pop_name P((void));
@@ -277,11 +267,11 @@ char *parent_dir;
 
     for(dirname = pop_name(); dirname; free(dirname), dirname = pop_name()) {
 
-#ifdef GNUTAR_EXCLUDE_FILE
-	if(use_gtar_excl && check_exclude(basename(dirname)))
+	if(use_gtar_excl &&
+	   (check_exclude(basename(dirname)) ||
+	    check_exclude(dirname)))
 	    /* will not be added by gnutar */
 	    continue;
-#endif
 
 	if(chdir(dirname) == -1 || (d = opendir(".")) == NULL) {
 	    perror(dirname);
@@ -316,10 +306,7 @@ char *parent_dir;
 
 	    for(i = 0; i < ndumps; i++) {
 		if(finfo.st_ctime >= dumpdate[i])
-#ifdef GNUTAR_EXCLUDE_FILE
-		    if (!check_exclude(f->d_name))
-#endif
-		    if (
+		    if (!check_exclude(f->d_name) &&
 			/* regular files */
 			((finfo.st_mode & S_IFMT) == S_IFREG)
 			  /* directories */

@@ -84,6 +84,7 @@ char **argv;
     int level, new_maxdumps, platter;
     char exclude[256], disk[256], prog[256], opt[256], *str;
     disk_estimates_t *est;
+    int scanres;
 
     /* initialize */
 
@@ -107,13 +108,21 @@ char **argv;
 	    continue;
 	}
 
-	if(sscanf(line, "%s %d %s %d %s\n", disk, &level, exclude, &platter, prog) != 5) {
-	    platter = -1;
-	    strcpy(prog, "DUMP");
-	    *exclude = 0;
-	    if(sscanf(line, "%s %d\n", disk, &level) != 2) goto err;
+	scanres = sscanf(line, "%s %d %d %s %s\n", disk, &level, &platter, prog, exclude+2);
+	switch(scanres) {
+	case 2:
+	  platter = -1;
+	case 3:
+	  strcpy(prog, "DUMP");
+	case 4:
+	  *exclude = 0;
+	  break;
+	case 5:
+	  exclude[0] = exclude[1] = '-';
+	  break;
+	default:
+	  goto err;
 	}
-        if (*exclude == '-') *exclude = 0;
 	add_diskest(disk, level, exclude, platter, prog);
     }
 

@@ -1,14 +1,14 @@
 #include "amanda.h"
 
-extern char *x_buffer;
-extern int free_x_buffer;
-extern int size_x_buffer;
-extern char **exclude;
-extern int size_exclude;
-extern int free_exclude;
-extern char **re_exclude;
-extern int size_re_exclude;
-extern int free_re_exclude;
+char *x_buffer;
+int free_x_buffer;
+int size_x_buffer;
+char **exclude;
+int size_exclude;
+int free_exclude;
+char **re_exclude;
+int size_re_exclude;
+int free_re_exclude;
 
 #ifndef FNM_LEADING_DIR
 # include "fnmatch.h"

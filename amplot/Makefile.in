@@ -259,6 +259,10 @@ installdirs mostlyclean-generic distclean-generic clean-generic \
 maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 
 
+.sh:
+			cat $< > $@
+			chmod a+x $@
+
 amplot.gp:		amplot.g
 			rm -f amplot.gp
 			cat $(srcdir)/amplot.g > amplot.gp

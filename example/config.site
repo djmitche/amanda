@@ -195,13 +195,6 @@
 # SAMBA_CLIENT=/usr/local/lib/smbclient
 
 
-# GNUTAR_EXCLUDE_FILE	--with-gnutar-exclude
-#			Default: no
-#			If you wish to have gnutar exclude files from the
-#			dump, then set this to yes.
-# GNUTAR_EXCLUDE_FILE=yes
-
-
 # GNUTAR_LIST_DIR	--with-gnutar-listed-incremental[=DIR]
 #			Default: $localstatedir/amanda-gnutar-lists =
 #				/usr/local/var/amanda-gnutar-lists

@@ -383,15 +383,6 @@ if test "$SAMBA_CLIENT"; then
     AC_DEFINE_UNQUOTED(SAMBA_CLIENT,"$SAMBA_CLIENT")
 fi
 
-AC_ARG_WITH(gnutar-exclude,
-    [   --with-gnutar-exclude  have gnutar exclude files from dumps],
-    GNUTAR_EXCLUDE_FILE=yes
-)
-: ${GNUTAR_EXCLUDE_FILE:=no}
-if test "$GNUTAR_EXCLUDE_FILE" = yes; then
-    AC_DEFINE(GNUTAR_EXCLUDE_FILE)
-fi
-
 AC_ARG_WITH(gnutar-listed-incremental,
    [   --with-gnutar-listed-incremental=DIR  gnutar directory lists go in DIR [localstatedir/amanda-gnutar-lists]],
    [

@@ -517,9 +517,6 @@
 #undef GNUTAR
 
 #ifdef GNUTAR
-/* Define if you want Gnu tar to exclude files from the dump.  */
-#undef GNUTAR_EXCLUDE_FILE
-
 /* Used in sendbackup-gnutar.c  */
 #undef GNUTAR_LISTED_INCREMENTAL_DIR
 #undef ENABLE_GNUTAR_ATIME_PRESERVE
