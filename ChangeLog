@@ -1,16 +1,22 @@
+1998-06-09  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/SAMBA: added notes about (not) backing up registry files and
+	ACLs with SAMBA.
+	* docs/INSTALL: point to docs/SAMBA for usage and limitations
+
 1998-06-08  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* configure.in (amanda_cv_print_command): removed; using PRINT
  	instead.
 
-1998-06-07 Todd Kover <kovert@omniscient.com>
+1998-06-07  Todd Kover <kovert@omniscient.com>
 
 	* add --with-owner option to allow installed binaries to be owned
 	by someone other than the amanda user
 
 	* add GB as valid holding disk size.
 
-1998-06-07 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+1998-06-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amadmin.c (info): don't need to specify an host.
 
@@ -21,7 +27,7 @@
 	* server-src/amstatus.pl.in (dump_size): new function to report
 	the size of a dump split on multiple files.
 
-1998-06-05 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+1998-06-05  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* recover-src/extract_list.c (read_buffer): write a message
 	when amrecover timeout waiting for amrestore to send the dump.

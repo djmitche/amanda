@@ -33,7 +33,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	filesystem dumping programs.  If you wish to use GNU tar to
 	back up filesystems, then install version 1.12 from
 
-		ftp://prep.ai.mit.edu/pub/gnu/tar-1.12.tar.gz
+		ftp://ftp.gnu.org/pub/gnu/tar-1.12.tar.gz
  
 	Apply the patch from patches/tar-1.12.patch.  The first hunk
 	may be enough, unless it's a SunOS4 host.  Read more about the
@@ -42,7 +42,9 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	Samba allows Unix systems to talk to PC clients.  Amanda can
 	back up Microsoft Windows 95/NT clients using samba:
 
-		ftp://nimbus.anu.edu.au/pub/tridge/samba/samba-1.9.18p4.tar.gz
+		ftp://samba.anu.edu.au/pub/tridge/samba/samba-1.9.18p7.tar.gz
+
+	Read docs/SAMBA for configuration tips and known limitations.
 
 	You may want to apply patches/samba-largefs.patch, but read
 	its header before you do so.  If you want to use a pre-1.9.17

@@ -1,17 +1,13 @@
 README for adding PC hosts to the Amanda backup system.
 
-Release 2. 28/Jan/1997
-$Id: SAMBA,v 1.8 1998/03/01 00:06:16 amcore Exp $
-
 Installation
 
 Amanda is able to back up Microsoft Windows shared disks by using
 SAMBA, a package that implements a SMB client and server for Unix.
-This version of amanda is reported to work with samba 1.9.18p3.  It
-will not work with versions previous to 1.9.17, unless you have samba
+This version of amanda is reported to work with samba 1.9.18p7.  It
+will not work with versions prior to 1.9.17, unless you have samba
 1.9.16p2 or some beta versions of 1.9.17 already installed with a
-patch that used to be provided with amanda.  In this case, there's
-probably no reason for you to upgrade.
+patch that used to be provided with amanda.
 
 Make sure you don't set a low logging/debugging level in the samba
 configuration file, because this flag may prevent that estimate sizes
@@ -27,14 +23,21 @@ that would enlarge the maximum filename size; unfortunately, this
 patch caused samba to produce invalid tar files.
 
 If you wish to back up large (>2GB) filesystems with samba, apply
-samba-largefs.patch, and make sure your C compiler supports `unsigned
-long long's, and that printf() in your C library understands "%llu".
+samba-largefs.patch, after making sure your C compiler supports
+`unsigned long long's, and that printf() in your C library understands
+that "%llu" means `unsigned long long'.  gcc may help you getting
+unsigned long longs, in case your platform doesn't, but it will not
+help printf understand "%llu".
 
 After building and installing samba with the selected patches, Amanda
 must be configured with smbclient support - when you run configure,
 add the following argument:
 
  --with-smbclient=/full/path/to/smbclient
+
+If you configure --with-smbclient, amanda will try to find smbclient
+in the PATH, but if the --with-smbclient switch is not issued at all,
+amanda will *not* enable its SAMBA hooks.
 
 Setup
 
@@ -106,6 +109,12 @@ connect to any appropriate hosts.  It also checks for the existence of
 
 Bugs
 
+SAMBA will not back up open files (such as PAGEFILE.SYS and registry
+files) nor Access Control List data.  Furthermore, at restore time,
+smbclient is unable to overwrite read-only files.  Hence, Amanda+SAMBA
+is not a perfect solution for backing up (restoring, actually) system
+disks.
+
 It seems impossible to detect when a per-user based login fails - e.g.
 the username doesn't exist on an NT workstation.  It connects but you
 can't see any files (e.g. backups backup nothing).  The selfcheck code
@@ -126,6 +135,7 @@ about the availability of /usr/local/bin/gtar (or whatever it was
 compiled with) - these can safely be ignored, unless you enable index
 generation for those filesystems.
 
+Original text by:
 Michael Zucchi
 School of Computer and Information Science
 University of South Australia
