@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.62 1998/11/30 21:32:59 martinea Exp $
+ * $Id: driver.c,v 1.63 1998/12/07 01:34:01 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1293,15 +1293,12 @@ void adjust_diskspace(diskp, tok)
 disk_t *diskp;
 tok_t tok;
 {
-    struct stat finfo;
     holdingdisk_t *holdp;
     unsigned long kbytes;
     long diff;
+    long size;
 
-    if(stat(sched(diskp)->destname, &finfo) == -1) {
-	printf("stat %s: %s\n", sched(diskp)->destname, strerror(errno));
-	finfo.st_size = 0;
-    }
+    size = size_holding_files(sched(diskp)->destname);
 
     holdp = sched(diskp)->holdp;
 
@@ -1311,7 +1308,7 @@ tok_t tok;
 	   holdalloc(holdp)->allocated_dumpers);
 #endif
 
-    kbytes = (finfo.st_size+1023)/1024;
+    kbytes = (size+1023)/1024;
     diff = kbytes - sched(diskp)->act_size;
     switch(tok) {
     case DONE:
