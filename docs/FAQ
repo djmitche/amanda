@@ -1,7 +1,7 @@
 This file contains answers to some questions that are frequently asked
 in the Amanda mailing lists, specially by new users.  Please take a
 look at this file before posting, this can save us time that could be
-spent improving amanda and its documentation.
+spent improving Amanda and its documentation.
 
 New entries and modifications are welcome; send them to
 amanda-users@amanda.org or amanda-hackers@amanda.org.
@@ -33,13 +33,13 @@ drops the setuid bit.
 
 Q: Why does `amcheck' claim that the tape is `not an amanda tape'?
 
-A: Because amanda requires you to label tapes before it uses them.
+A: Because Amanda requires you to label tapes before it uses them.
 Run `amlabel' in order to label a tape.
 
    If, even after labeling a tape, `amcheck' still complains about it,
 make sure the regular expression specified in amanda.conf matches the
 label you have specified, and check whether you have configured
-non-rewinding tape devices for amanda to use.  For example, use
+non-rewinding tape devices for Amanda to use.  For example, use
 /dev/nrst0 instead of /dev/rst0, /dev/rmt/0bn instead of /dev/rmt/0b,
 or some other system-dependent device name that contains an `n',
 instead of one that does not.  The `n' stands for non-rewinding.
@@ -63,7 +63,7 @@ lacks permission to create /tmp/amanda/amandad.debug.
 
    In the latter case, wipe out /tmp/amanda, and amandad should create
 it next time it runs.  In the former case, check your inetd
-configuration.  Make sure you have added the amanda services to
+configuration.  Make sure you have added the Amanda services to
 /etc/services, that /etc/inetd.conf was properly configured, and that
 you have signalled inetd to reread this file.  Check section 2.2 from
 the INSTALL file for details.
@@ -74,7 +74,7 @@ program name incorrectly.  Make sure the same user that you have
 specified at configure-time (--with-user=<USERNAME>) is listed in
 inetd.conf.  Check whether this user has permission to run amandad, as
 well as any shared libraries amandad depends upon, by running the
-specified amandad command by hand, as the amanda user.  If you type
+specified amandad command by hand, as the Amanda user.  If you type
 anything, amandad should abort because it can't read an UDP packet
 from the keyboard.
 
@@ -101,13 +101,13 @@ Q: Why does `amcheck' report `ip address #.#.#.# is not in the ip list
 list for <hostname>'?
 
 A: Check your DNS configuration tables.  In order to avoid
-DNS-spoofing, amanda double-checks hostname<->IP address mapping.  If
+DNS-spoofing, Amanda double-checks hostname<->IP address mapping.  If
 the IP address the request comes from maps to a hostname, but this
 hostname does not map back to the incoming IP address, the request is
 denied.
 
 
-Q: How can I configure amanda so that it performs full backups on the
+Q: How can I configure Amanda so that it performs full backups on the
 week-end and incrementals on weekdays?
 
 A: You can't.  Amanda doesn't work this way.  You just have to tell
@@ -149,3 +149,21 @@ A: The best approach is to create a separate configuration for your
 archive backups.  It should use a separate set of tapes, and have all
 dumptypes configured with `record no', so it doesn't interfere with
 regular backups.
+
+
+Q: Can Amanda span large filesystems across multiple tapes?
+
+A: Not yet :-(
+
+   This is an open project, looking for developers.  If you'd like to
+help, please take a look at the Amanda Ongoing Projects Page, where
+more up-to-date information is likely to be found about this project.
+
+   The current work-around is to use GNU tar to back up subdirectories
+of the huge filesystem separately.  But don't list too many of them:
+if you do, the estimate request or the reply may not fit in a UDP
+packet, and you'll get messages such as `missing estimates for' or
+such, and these backups won't happen.  This is yet another known
+limitation of Amanda; fixing it involves modifying the way estimate
+requests are issued, so that no packet exceeds the maximum packet
+size.
