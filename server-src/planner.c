@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.89 1999/04/10 06:20:02 kashmir Exp $
+ * $Id: planner.c,v 1.90 1999/04/15 16:50:38 kashmir Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -998,15 +998,15 @@ host_t *hostp;
 	    hostp->disks->security_driver, hostp->hostname);
     }
 
-    protocol_sendreq(hostp->hostname, secdrv, req, timeout,
-	handle_result, hostp);
-    amfree(req);
-
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
 	if(est(dp)->level[0] == -1) continue;   /* ignore this disk */
 	est(dp)->errstr = NULL;
 	enqueue_disk(&waitq, dp);
     }
+
+    protocol_sendreq(hostp->hostname, secdrv, req, timeout,
+	handle_result, hostp);
+    amfree(req);
 }
 
 static disk_t *lookup_hostdisk(hp, str)

@@ -1,3 +1,8 @@
+1999-04-15  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/planner.c (getsize): put the hosts disks on the waitq
+	before sending the request, not after.
+
 1999-04-15  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/UPGRADE: Update URL for archived message.
