@@ -1,3 +1,6 @@
+	amrecover will now restore files using SAMBA.
+	-Rob Riggs <rob@devilsthumb.com>
+
 	VXDUMP needs not be run as root, so it no longer enables
 	rundump automatically.  -oliva
 

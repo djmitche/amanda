@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.30 1998/04/08 16:30:22 amcore Exp $
+ * $Id: extract_list.c,v 1.31 1998/04/12 22:29:11 amcore Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -35,6 +35,9 @@
 #include "amrecover.h"
 #include "fileheader.h"
 #include "dgram.h"
+#ifndef SAMBA_CLIENT
+#include "findpass.h"
+#endif
 
 #if defined(KRB4_SECURITY)
 #include "krb4-security.h"
@@ -993,8 +996,29 @@ static int extract_files_setup P((void))
     memset(line, '\0', strlen(line));
     amfree(line);
 
+    disk_regex = alloc(strlen(disk_name) * 2 + 3);
+
+    ch = disk_name;
+    ch1 = disk_regex;
+
     /* we want to force amrestore to only match disk_name exactly */
-    disk_regex = vstralloc("^", disk_name, "$", NULL);
+    *(ch1++) = '^';
+
+    /* We need to escape some characters first... NT compatibilty crap */
+    for (; *ch != 0; ch++, ch1++) {
+	switch (*ch) {     /* done this way in case there are more */
+	case '$':
+	    *(ch1++) = '\\';
+	    /* no break; we do want to fall through... */
+	default:
+	    *ch1 = *ch;
+	}
+    }
+
+    /* we want to force amrestore to only match disk_name exactly */
+    *(ch1++) = '$';
+
+    *ch1 = '\0';
 
     clean_datestamp = stralloc(dump_datestamp);
     for(ch=ch1=clean_datestamp;*ch1 != '\0';ch1++) {
@@ -1049,6 +1073,7 @@ int tapedev;
     return(bytes_read);
 }
 
+enum dumptypes {IS_UNKNOWN, IS_DUMP, IS_GNUTAR, IS_TAR, IS_SAMBA};
 
 /* exec restore to do the actual restoration */
 static void extract_files_child(in_fd, elist)
@@ -1056,15 +1081,17 @@ int in_fd;
 EXTRACT_LIST *elist;
 {
     int no_initial_params;
-    int i;
+    int i,j=0;
     char **restore_args = NULL;
     int files_off_tape;
     EXTRACT_LIST_ITEM *fn;
-    int istar;
+    enum dumptypes dumptype = IS_UNKNOWN;
     char buffer[TAPE_BLOCK_BYTES];
     dumpfile_t file;
     int buflen;
     int len_program;
+    char *cmd = NULL;
+    char *domain = NULL, *smbpass = NULL;
 
     /* code executed by child to do extraction */
     /* never returns */
@@ -1085,108 +1112,144 @@ EXTRACT_LIST *elist;
     }
 
 #ifdef GNUTAR
-    istar = (strcmp(file.program, GNUTAR) == 0);
-#else
-    istar = 0;
+    if (strcmp(file.program, GNUTAR) == 0)
+	dumptype = IS_GNUTAR;
 #endif
-    if (!istar) {
-	len_program=strlen(file.program);
-	if(len_program<3)
-	    istar=0;
-	else
-	    istar=(strcmp(&file.program[len_program-3],"tar") == 0);
+    if (dumptype == IS_UNKNOWN) {
+	len_program = strlen(file.program);
+	if(len_program >= 3 &&
+	   strcmp(&file.program[len_program-3],"tar") == 0)
+	    dumptype = IS_TAR;
     }
 
+#ifdef SAMBA_CLIENT
+    if ((dumptype == IS_UNKNOWN) && (strcmp(file.program, SAMBA_CLIENT) == 0))
+    	dumptype = IS_SAMBA;
+#endif
+    if (dumptype == IS_UNKNOWN)
+    	dumptype = IS_DUMP;
+
     /* form the arguments to restore */
-    if(istar)
+    switch (dumptype) {
+    case IS_SAMBA:
+#ifdef SAMBA_CLIENT
+    	no_initial_params = 10;
+    	break;
+#endif
+    case IS_TAR:
+    case IS_GNUTAR:
         no_initial_params = 3;
-    else
+        break;
+    case IS_DUMP:
 #ifdef AIX_BACKUP
         no_initial_params = 2;
 #else
         no_initial_params = 4;
 #endif
+    	break;
+    }
+
     files_off_tape = length_of_tape_list(elist);
     if ((restore_args
 	 = (char **)malloc((no_initial_params + files_off_tape + 1)
 			   * sizeof(char *)))
 	== NULL) 
     {
-	perror("Couldn't malloc restore_args");
-	exit(3);
+  	perror("Couldn't malloc restore_args");
+  	exit(3);
     }
-    if(istar) {
-	restore_args[0] = stralloc("tar");
-    } else {
-        restore_args[0] = stralloc("restore");
-    }
-    if(istar) {
-	restore_args[1] = stralloc("-xpGvf");
-	restore_args[2] = stralloc("-");	/* data on stdin */
-    }
-    else {
+    switch(dumptype) {
+    case IS_SAMBA:
+#ifdef SAMBA_CLIENT
+    	restore_args[j++] = stralloc("smbclient");
+    	smbpass = findpass(file.disk, &domain);
+    	if (smbpass) {
+            restore_args[j++] = stralloc(file.disk);
+    	    restore_args[j++] = smbpass;
+    	    restore_args[j++] = stralloc("-U");
+    	    restore_args[j++] = stralloc(SAMBA_USER);
+    	    if (domain) {
+            	restore_args[j++] = stralloc("-W");
+    	    	restore_args[j++] = stralloc(domain);
+   	    }	
+    	}
+    	restore_args[j++] = stralloc("-d0");
+    	restore_args[j++] = stralloc("-Tx");
+	restore_args[j++] = stralloc("-");	/* data on stdin */
+    	break;
+#endif
+    case IS_TAR:
+    case IS_GNUTAR:
+    	restore_args[j++] = stralloc("tar");
+	restore_args[j++] = stralloc("-xpGvf");
+	restore_args[j++] = stralloc("-");	/* data on stdin */
+	break;
+    case IS_DUMP:
+        restore_args[j++] = stralloc("restore");
 #ifdef AIX_BACKUP
-        restore_args[1] = stralloc("-xB");
+        restore_args[j++] = stralloc("-xB");
 #else
-        restore_args[1] = stralloc("xbf");
-        restore_args[2] = stralloc("2");	/* read in units of 1K */
-        restore_args[3] = stralloc("-");	/* data on stdin */
+        restore_args[j++] = stralloc("xbf");
+        restore_args[j++] = stralloc("2");	/* read in units of 1K */
+        restore_args[j++] = stralloc("-");	/* data on stdin */
 #endif
     }
-
+  
     for (i = 0, fn = elist->files; i < files_off_tape; i++, fn = fn->next)
     {
-	if(istar) {
-	    restore_args[no_initial_params+i] = stralloc2(".", fn->path);
-	} else {
-	    restore_args[no_initial_params+i] = stralloc(fn->path);
-	}
+	switch (dumptype) {
+    	case IS_TAR:
+    	case IS_GNUTAR:
+    	case IS_SAMBA:
+	    restore_args[j+i] = stralloc2(".", fn->path);
+	    break;
+	case IS_DUMP:
+	    restore_args[j+i] = stralloc(fn->path);
+  	}
     }
-
-    restore_args[no_initial_params + files_off_tape] = NULL;
-
-    if(istar) {
-	char *cmd = NULL;
+    j+=i;
+    restore_args[j] = NULL;
+  
+    switch (dumptype) {
+    case IS_SAMBA:
+#ifdef SAMBA_CLIENT
+    	cmd = stralloc(SAMBA_CLIENT);
+    	break;
+#endif
+    case IS_TAR:
+    case IS_GNUTAR:
 #ifndef GNUTAR
-        fprintf(stderr, "GNUTAR program not available.\n");
+	fprintf(stderr, "warning: GNUTAR program not available.\n");
+	cmd = "tar";
 #else
-	/* cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL); */
-	cmd = stralloc(GNUTAR);
-        dbprintf(("Exec'ing %s with arguments:\n", cmd));
-        for (i = 0; i < no_initial_params + files_off_tape; i++)
-	    dbprintf(("\t%s\n", restore_args[i]));
-        (void)execv(cmd, restore_args);
-        /* only get here if exec failed */
-        for (i = 0; i < no_initial_params + files_off_tape; i++) {
-	    amfree(restore_args[i]);
-	}
-	amfree(restore_args);
-	amfree(cmd);
-        perror("amrecover couldn't exec tar");
+  	cmd = stralloc(GNUTAR);
 #endif
-    }
-    else {
+    	break;
+    case IS_DUMP:
 #ifndef RESTORE
-        fprintf(stderr, "RESTORE program not available.\n");
+	fprintf(stderr, "RESTORE program not available.\n");
+	cmd = "restore";
 #else
-        dbprintf(("Exec'ing %s with arguments:\n", RESTORE));
-        for (i = 0; i < no_initial_params + files_off_tape; i++)
-	    dbprintf(("\t%s\n", restore_args[i]));
-        (void)execv(RESTORE, restore_args);
-        /* only get here if exec failed */
-        for (i = 0; i < no_initial_params + files_off_tape; i++) {
-	    amfree(restore_args[i]);
-	}
-	amfree(restore_args);
-        perror("amrecover couldn't exec restore");
+    	cmd = stralloc(RESTORE);
 #endif
     }
-
+    if (cmd) {
+        dbprintf(("Exec'ing %s with arguments:\n", cmd));
+	for (i = 0; i < no_initial_params + files_off_tape; i++)
+  	    dbprintf(("\t%s\n", restore_args[i]));
+        (void)execv(cmd, restore_args);
+	/* only get here if exec failed */
+	for (i = 0; i < no_initial_params + files_off_tape; i++) {
+  	    amfree(restore_args[i]);
+  	}
+  	amfree(restore_args);
+        perror("amrecover couldn't exec");
+        fprintf(stderr, " problem executing %s\n", cmd);
+	amfree(cmd);
+    }
     exit(1);
     /*NOT REACHED */
 }
-
-
 
 
 /* does the actual extraction of files */
