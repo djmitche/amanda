@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.46.2.8 1998/04/08 16:26:58 amcore Exp $
+/* $Id: dumper.c,v 1.46.2.9 1998/04/22 18:04:47 jrj Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -820,6 +820,15 @@ int mesgfd, datafd, indexfd, outfd;
 					    datestamp, level),
 			      ".tmp",
 			      NULL);
+
+	if (mkpdir(indexfile, 0755, (uid_t)-1, (gid_t)-1) == -1) {
+	   errstr = newvstralloc(errstr, "err create ",
+					 indexfile,
+					 ": ",
+					 strerror(errno));
+	   amfree(indexfile);
+	   goto failed;
+	}
 
 	switch(fork()) {
 	case -1:
