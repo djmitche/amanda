@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb5-security.c,v 1.5 2003/03/30 00:29:59 kovert Exp $
+ * $Id: krb5-security.c,v 1.6 2003/03/30 01:53:18 kovert Exp $
  *
  * krb5-security.c - kerberos V5 security module
  */
@@ -320,6 +320,7 @@ static int conn_run_frameq P((struct krb5_conn *, struct krb5_stream *));
 static int net_writev P((int, struct iovec *, int));
 static ssize_t net_read P((struct krb5_conn *, void *, size_t, int));
 static int net_read_fillbuf P((struct krb5_conn *, int));
+static char *krb5_checkuser(char *, char *, char *);
 static void parse_pkt P((pkt_t *, const void *, size_t));
 
 
@@ -1354,7 +1355,7 @@ gss_server(kc)
     gss_OID doid;
     gss_name_t gss_name;
     gss_cred_id_t gss_creds;
-    char *p;
+    char *p, *realm, *msg;
     uid_t euid;
     int rc, rval = -1;
     char errbuf[256];
@@ -1470,13 +1471,14 @@ gss_server(kc)
 	goto out;
     }
     *p = '\0';
+    realm = ++p;
 
     /* 
      * If the principal doesn't match, complain
      */
-    if (strcmp(send_tok.value, AMANDA_PRINCIPAL) != 0) {
+    if ((msg = krb5_checkuser(kc->hostname, send_tok.value, realm)) != NULL) {
 	snprintf(errbuf, sizeof(errbuf),
-	    "access not allowed from %s", (char *)send_tok.value);
+	    "access not allowed from %s: %s", (char *)send_tok.value, msg);
 	amfree(send_tok.value);
 	goto out;
     }
@@ -1995,6 +1997,144 @@ k5printf(("net_read_fillbuf: read %d characters w/ errno %d\n", kc->readbuf.size
 	return (-1);
     kc->readbuf.left = kc->readbuf.size;
     return (0);
+}
+
+/*
+ * hackish, but you can #undef AMANDA_PRINCIPAL here, and you can both
+ * hardcode a principal in your build and use the .k5amandahosts.  This is
+ * not the default behavior because other sites that run pre-releases of
+ * 2.5.0 before this feature was there do not behave this way...
+ */
+
+/*#undef AMANDA_PRINCIPAL*/
+
+/*
+ * check ~/.k5amandahosts to see if this principal is allowed in.  If it's
+ * hardcoded, then we don't check the realm
+ */
+static char *
+krb5_checkuser(host, name, realm)
+	char *host, *name, *realm;
+{
+#ifdef AMANDA_PRINCIPAL
+    if(strcmp(name, AMANDA_PRINCIPAL) == 0) {
+	return(NULL);
+    } else {
+	return(vstralloc("does not match compiled in default"));
+    }
+#else
+    struct passwd *pwd;
+    char *ptmp;
+    char *result = "generic error";	/* default is to not permit */
+    FILE *fp;
+    struct stat sbuf;
+    uid_t localuid;
+    char *line = NULL;
+    char *filehost = NULL, *fileuser = NULL, *filerealm = NULL;
+    char n1[NUM_STR_SIZE];
+    char n2[NUM_STR_SIZE];
+
+    assert( host != NULL);
+    assert( name != NULL);
+
+    if((pwd = getpwnam(CLIENT_LOGIN)) == NULL) {
+	result = vstralloc("can not find user ", CLIENT_LOGIN, NULL);
+    }
+    localuid = pwd->pw_uid;
+
+    ptmp = stralloc2(pwd->pw_dir, "/.k5amandahosts");
+
+    if(!ptmp) {
+	result = vstralloc("could not find home directory for ", CLIENT_LOGIN, NULL);
+	goto common_exit;
+   }
+
+    dbprintf(("opening ptmp: %s\n", (ptmp)?ptmp: "NULL!"));
+    if((fp = fopen(ptmp, "r")) == NULL) {
+	result = vstralloc("can not open ", ptmp, NULL);
+	goto common_exit;
+    }
+    dbprintf(("opened ptmp\n"));
+
+    if (fstat(fileno(fp), &sbuf) != 0) {
+	result = vstralloc("cannot fstat ", ptmp, ": ", strerror(errno), NULL);
+	goto common_exit;
+    }
+
+    if (sbuf.st_uid != localuid) {
+	snprintf(n1, sizeof(n1), "%ld", (long) sbuf.st_uid);
+	snprintf(n2, sizeof(n2), "%ld", (long) localuid);
+	result = vstralloc(ptmp, ": ",
+	    "owned by id ", n1,
+	    ", should be ", n2,
+	    NULL);
+	goto common_exit;
+    }
+    if ((sbuf.st_mode & 077) != 0) {
+	result = stralloc2(ptmp,
+	    ": incorrect permissions; file must be accessible only by its owner");
+	goto common_exit;
+    }       
+
+    while((line = agets(fp)) != NULL) {
+#if defined(SHOW_SECURITY_DETAIL)                               /* { */
+	dbprintf(("%s: processing line: <%s>\n", debug_prefix(NULL), line));
+#endif                                                          /* } */
+	/* if there's more than one column, then it's the host */
+	if( (filehost = strtok(line, " \t")) == NULL) {
+	    amfree(line);
+	    continue;
+	}
+
+	/*
+	 * if there's only one entry, then it's a username and we have
+	 * no hostname.  (so the principal is allowed from anywhere.
+	 */
+	if((fileuser = strtok(NULL, " \t")) == NULL) {
+	    fileuser = filehost;
+	    filehost = NULL;
+	}
+
+	if(filehost && strcmp(filehost, host) != 0) {
+	    amfree(line);
+	    continue;
+	} else {
+		dbprintf(("found a host match\n"));
+	}
+
+	if( (filerealm = strchr(fileuser, '@')) != NULL) {
+	    *filerealm++ = '\0';
+	}
+
+	/*
+	 * we have a match.  We're going to be a little bit insecure
+	 * and indicate that the principal is correct but the realm is
+	 * not if that's the case.  Technically we should say nothing
+	 * and let the user figure it out, but it's helpful for debugging.
+	 * You likely only get this far if you've turned on cross-realm auth
+	 * anyway...
+	 */
+	dbprintf(("comparing %s %s\n", fileuser, name));
+	if(strcmp(fileuser, name) == 0) {
+		dbprintf(("found a match!\n"));
+		if(realm && filerealm && (strcmp(realm, filerealm)!=0)) {
+			amfree(line);
+			continue;
+		}
+		result = NULL;
+		goto common_exit;
+	}
+
+	amfree(line);
+    }
+
+    result = vstralloc("no match in ", ptmp, NULL);
+
+common_exit:
+    afclose(fp);
+    amfree(line);
+    return(result);
+#endif /* AMANDA_PRINCIPAL */
 }
 
 #else

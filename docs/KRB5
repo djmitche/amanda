@@ -1,4 +1,4 @@
-$Id: KRB5,v 1.1 2003/03/29 23:59:06 kovert Exp $
+$Id: KRB5,v 1.2 2003/03/30 01:53:19 kovert Exp $
 
 Amanda 2.5.0 - KERBEROS v5 SUPPORT NOTES
 
@@ -64,3 +64,33 @@ The following dumptype options apply to krb5:
 
 	auth "krb5"	use krb5 auth for this host
 			(you can mingle krb hosts & bsd .rhosts in one conf)
+
+4. DESTINATION HOST PERMISSIONS file
+
+If (and only if) AMANDA_PRINCIPAL is not defined and the host to
+authenticate as is defined elsewhere, you must specify on the remote
+hosts for which principals are permitted to connect.  This is done by
+editing the file .k5amandahosts in the amanda user's home directory.
+
+This file is a hybrid of the .amandahosts and a .k5login file.  You
+can just list principal names, as in a .k5login file and the principal
+will be permitted in from any host.  If you do NOT specify a realm,
+then there is no attempt to validate the realm (this is only really
+a concern if you have cross-realm authentication set p with another
+realm or something else that allows you multiple realms in your kdc.  If
+you do specify a realm, only that principal@realm will be permitted to
+connect.
+
+You may prepend this with a hostname and whitespace, and only that
+principal (with optional realm as above) will be permitted to access
+from that hostname.
+
+Here are examples of valid entries in the .k5amandahosts:
+
+	service/amanda
+	service/amanda@TEST.COM
+	dumpmaster.test.com service/amanda
+	dumpmaster.test.com service/amanda@TEST.COM
+
+If AMANDA_PRINCIPAL is #defined, then the hardcoded value will be used
+and the realm will not be compared (see above for concerns).
