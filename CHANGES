@@ -1,23 +1,31 @@
 Version 2.4.0b5
 
-	Use extended regular expressions.  -Noel Hunt
-	<noel@jpmorgan.com>
+	Amcheck checks only for the needed features.
+	-Jean-Louis Martineau <martinea@iro.umontreal.ca>
 
-	Fixed regular expressions for samba support.  -Brian Fernald
-	<fernald@nsi.edu>
+	Performance and memory-usage improvements to amrecover.
+	-Jean-Louis Martineau <martinea@iro.umontreal.ca>
+
+	Use extended regular expressions.
+	-Noel Hunt <noel@jpmorgan.com>
+
+	Fixed regular expressions for samba support.
+	-Brian Fernald <fernald@nsi.edu>
 
 	Fixed a few bugs that caused arithmetic exceptions in planner.
 	-Bob Willcox <bob@luke.pmr.com>, Evan Champion
 	<evanc@synapse.net>, scott and oliva
 
 	amrecover should now be able to handle GNUtar restores.
-	-Jean-Louis Martineau <martinea@iro.umontreal.ca>
+	-Jean-Louis Martineau <martinea@iro.umontreal.ca>, plus
+	incremental (-G) patch by Lars Fenneberg <lf@elemental.net>
 
-	Ported to SINIX (Reliant Unix V5.43).  -Michael Schmitz
-	<mschmitz@iname.com>
+	Ported to SINIX (Reliant Unix V5.43).
+	-Michael Schmitz <mschmitz@iname.com>
 
 	Configure now looks for large file support and will use it under
-	Solaris 2.6 and above.  -Blair Zajac <blair@gps.caltech.edu>
+	Solaris 2.6 and above.
+	-Blair Zajac <blair@gps.caltech.edu>
 
 	Compatibility problems fixed for:
 		SCO OpenServer 5.0.2: Paul Gampe <paulg@twics.com>
