@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.31 1997/08/27 08:13:25 amcore Exp $
+ * $Id: planner.c,v 1.32 1997/09/05 02:48:14 amcore Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -462,6 +462,7 @@ disk_t *dp;
     int i;
 
     assert(dp && dp->host);
+    fprintf(stderr, "setting up estimates for %s:%s\n", dp->host->hostname, dp->name);
 
     /* get current information about disk */
 
@@ -633,13 +634,13 @@ disk_t *dp;
 		askfor(ep, i++, 1, &inf);
 	    else assert(!dp->skip_full);	/* should be handled above */
 	}
-	else {				/* not new, pick normally */
+	else {					/* not new, pick normally */
 	    int curr_level;
 
 	    curr_level = ep->last_level;
 	    if(curr_level == 0)
 		askfor(ep, i++, 1, &inf);
-	    else {
+	    else if(ep->last_level < MAX_LEVELS) {
 		askfor(ep, i++, curr_level, &inf);
 		/*
 		 * If last time we dumped less than the threshold, then this
@@ -648,15 +649,23 @@ disk_t *dp;
 		 * if we haven't been at this level 2 days, or the dump failed
 		 * last night, we can't bump.
 		 */
-		if((inf.inf[curr_level].size == 0 || /* no data, try it anyway */
-		   (inf.inf[curr_level].size > bump_thresh(curr_level))) &&
-		   ep->level_days >= conf_bumpdays)
+		if(curr_level < MAX_LEVELS &&
+		  (inf.inf[curr_level].size == 0 || /* no data, try it anyway */
+		   ((inf.inf[curr_level].size > bump_thresh(curr_level))) &&
+		   ep->level_days >= conf_bumpdays)) {
 		    askfor(ep, i++, curr_level+1, &inf);
+		}
+	    } else {
+		/* 
+		 * what is the right thing to do when the last_level was >
+		 * MAX_LEVELS?  [XXX]
+		 */
+		;
 	    }
 	}
     }
 
-    while(i < MAX_LEVELS)	/* mark end of estimates */
+    while(i < MAX_LEVELS) 	/* mark end of estimates */
 	askfor(ep, i++, -1, &inf);
 
     /* debug output */
