@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.3 1998/11/05 19:06:28 kashmir Exp $
+ * $Id: event.c,v 1.4 1998/11/05 19:12:36 kashmir Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
  * a uniform interface, central state storage, and localized
@@ -348,7 +348,7 @@ event_loop(dontblock)
 	if (rc < 0) {
 	    if (errno != EINTR) {
 		if (++ntries > 5)
-		    error("select failed");
+		    error("select failed: %s", strerror(errno));
 		continue;
 	    }
 	    /* proceed if errno == EINTR, we may have caught a signal */
