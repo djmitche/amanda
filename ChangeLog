@@ -1,3 +1,11 @@
+1999-09-13  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* config/acinclude.m4i: Added comments for config/config.h.in to all
+	AC_DEFINEs.
+	* configure.in: Likewise.
+	* config/acconfig.h: Deleted.
+	* autogen: Updated.
+
 1999-09-13 John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/amverify.sh.in: protect against uname not returning
@@ -388,7 +396,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.268 1999/09/13 21:19:52 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.269 1999/09/14 03:09:55 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

@@ -17,7 +17,7 @@ AC_DEFUN(AMANDA_C_UNSIGNED_LONG_CONSTANTS,
 	    ]
 	)
 	if test "$amanda_cv_c_unsigned_long_constants" = yes; then
-	    AC_DEFINE(HAVE_UNSIGNED_LONG_CONSTANTS)
+	    AC_DEFINE(HAVE_UNSIGNED_LONG_CONSTANTS,1,[Define if the compiler support unsigned long constants. ])
 	fi
     ]
 )
@@ -66,7 +66,7 @@ EOF
 		fi
 	    ]
 	)
-	AC_DEFINE_UNQUOTED(SHM_ARG_TYPE,$amanda_cv_shmdt_arg_type)
+	AC_DEFINE_UNQUOTED(SHM_ARG_TYPE,$amanda_cv_shmdt_arg_type,[Define to type of shmget() function argument. ])
     ]
 )
 
@@ -138,7 +138,7 @@ EOF
 		rm -f conftest*
 	    ]
 	)
-	AC_DEFINE_UNQUOTED(SELECT_ARG_TYPE,$amanda_cv_select_arg_type)
+	AC_DEFINE_UNQUOTED(SELECT_ARG_TYPE,$amanda_cv_select_arg_type,[Define to type of select arguments. ])
     ]
 )
 
@@ -186,7 +186,7 @@ main() {
 	    ]
 	)
 	if test "$amanda_cv_setsockopt_SO_SNDTIMEO" = yes; then
-	    AC_DEFINE(HAVE_SO_SNDTIMEO)
+	    AC_DEFINE(HAVE_SO_SNDTIMEO,1,[Define if SO_SNDTIMEO is available. ])
 	fi
     ]
 )
@@ -264,7 +264,7 @@ AC_DEFUN(AMANDA_FUNC_GETTIMEOFDAY_ARGS,
 	    ]
 	)
 	if test "$amanda_cv_gettimeofday_args" = 2; then
-	    AC_DEFINE(HAVE_TWO_ARG_GETTIMEOFDAY)
+	    AC_DEFINE(HAVE_TWO_ARG_GETTIMEOFDAY,1,[Define if gettimeofday takes two arguments. ])
 	fi
     ]
 )
@@ -288,7 +288,7 @@ AC_DEFUN(AMANDA_C_VOLATILE,
 	    ]
 	)
 	if test $amanda_cv_c_volatile = no; then
-	    AC_DEFINE(volatile, )
+	    AC_DEFINE(volatile, [],[Define to empty if the compiler does not support volatile. ])
 	fi
     ]
 )
@@ -335,7 +335,7 @@ AC_DEFUN(AMANDA_TYPE_PID_T,
 	    ]
 	)
 	case $amanda_cv_pid_type in
-	    int)	AC_DEFINE_UNQUOTED(PRINTF_PID_T,"%d") ;;
+	    int)	AC_DEFINE_UNQUOTED(PRINTF_PID_T,"%d",[Define to printf formatting string to print a PID. ]) ;;
 	    long)	AC_DEFINE_UNQUOTED(PRINTF_PID_T,"%ld") ;;
 	    short)	AC_DEFINE_UNQUOTED(PRINTF_PID_T,"%d") ;;
 	esac
@@ -351,11 +351,6 @@ dnl HEADER_FILE, define `HAVE_FUNCTION_DECL` (in all capitals).
 dnl
 AC_DEFUN(ICE_CHECK_DECL,
 [
-changequote(,)dnl
-ice_tr=`echo $1 | tr '[a-z]' '[A-Z]'`
-changequote([,])dnl
-ice_have_tr=HAVE_$ice_tr
-ice_have_decl_tr=${ice_have_tr}_DECL
 ice_have_$1=no
 AC_CHECK_FUNCS($1, ice_have_$1=yes)
 if test "${ice_have_$1}" = yes; then
@@ -384,7 +379,7 @@ done
 ])
 AC_MSG_RESULT($ice_cv_have_$1_decl)
 if test "$ice_cv_have_$1_decl" = yes; then
-AC_DEFINE_UNQUOTED(${ice_have_decl_tr})
+AC_DEFINE_UNQUOTED([HAVE_]translit($1,[a-z],[A-Z])[_DECL],1,[Define if $1 is declared. ])
 fi
 fi
 ])dnl
@@ -437,6 +432,8 @@ if test $cf_cv_decl_union_wait = yes; then
                         [cf_cv_arg_union_wait=no])
                 ])
         AC_MSG_RESULT($cf_cv_arg_union_wait)
-        test $cf_cv_arg_union_wait = yes && AC_DEFINE(WAIT_USES_UNION)
+        if test $cf_cv_arg_union_wait = yes; then
+          AC_DEFINE(WAIT_USES_UNION,1,[Defined if wait() puts the status in a union wait instead of int. ])
+	fi
 fi
 ])dnl
