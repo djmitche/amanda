@@ -1,5 +1,19 @@
 1999-04-09  Mike Grupenhoff <kashmir@munge.com>
 
+	* client-src/amandad.h: new file describing the pipes between
+	amandad and children.
+	* client-src/amandad.c: rewrite for security changes.  Can
+	now handle multiple requests simultaneously, and has a state
+	machine to deal with each active request.
+	This handles all network transmissions and authentication.
+	Each child process (sendbackup, selfcheck) gets three general
+	purpose pipes to amandad which it may allocate for anything.
+	amandad relays these pipes to equivalent security_streams.
+	Lots of other stuff.
+	Finally, NEED_KEYPIPE stuff removed.
+
+1999-04-09  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c: security changes:
 	Remove krb4 includes and NAUGHTY_BITS macros.
 	Remove no-longer-true comment about DATABUF_SIZE ==
