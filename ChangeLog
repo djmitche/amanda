@@ -1,3 +1,8 @@
+2000-01-31 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/amadmin.c (force_one, force_bump_one): FORCE_FULL
+	and FORCE_BUMP are mutually exclusive.
+
 2000-01-30  Thomas Hepper <th@ant.han.de>
 
 	* changer-src/chg-scsi.c : Exit it tapedev in amanda.conf is not a 
@@ -767,7 +772,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.335 2000/01/30 12:31:26 th Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.336 2000/02/01 01:37:14 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
