@@ -1,4 +1,4 @@
-1998-08-11  Alexandre Oliva  <oliva@dcc.unicamp.br>
+1998-08-11  Alexandre Oliva  <oliva@dcc.unicamp.br>, Gunnar Gunnarsson  <gunnar@ki.ericsson.se>
 
 	* common-src/token.h (rxquote, shquote): new functions
 	* common-src/token.c (rxquote) quotes a string into an equivalent
