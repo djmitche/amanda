@@ -1,6 +1,6 @@
 #
-# amanda.conf - sample Amanda configuration file.  This is the actual config
-#		file in use at CS.UMD.EDU.
+# amanda.conf - sample Amanda configuration file.  This started off life as
+#               the actual config file in use at CS.UMD.EDU.
 #
 # If your configuration is called, say, "csd", then this file normally goes
 # in @CONFIG_DIR@/csd/amanda.conf.
@@ -9,36 +9,51 @@
 org "@DEFAULT_CONFIG@"		# your organization name for reports
 mailto "@CLIENT_LOGIN@"		# space separated list of operators at your site
 dumpuser "@CLIENT_LOGIN@"	# the user to run dumps under
-#
+
 inparallel 4		# maximum dumpers that will run in parallel
-netusage  600		# maximum net bandwidth for Amanda, in KB per sec
+netusage  600 Kbps	# maximum net bandwidth for Amanda, in KB per sec
 
 dumpcycle 4 weeks	# the number of days in the normal dump cycle
 tapecycle 8 tapes	# the number of tapes in rotation
 
-bumpsize 20 MB		# minimum savings (threshold) to bump level 1 -> 2
-bumpdays     1		# minimum days at each level
-bumpmult     4		# threshold = bumpsize * (level-1)**bumpmult
+bumpsize 20 Mb		# minimum savings (threshold) to bump level 1 -> 2
+bumpdays 1		# minimum days at each level
+bumpmult 4		# threshold = bumpsize * (level-1)**bumpmult
 
-runtapes     1		# number of tapes to be used in a single run of amdump
-tpchanger "no-changer" # the tape-changer glue script
+runtapes 1		# number of tapes to be used in a single run of amdump
+tpchanger "no-changer"	# the tape-changer glue script
 # tapedev "/dev/nst0"	# Linux @ tuck
 # tapedev "@DEFAULT_TAPE_DEVICE@"	# or use the (no-rewind!) tape device directly
 
 tapetype HP-DAT		# what kind of tape it is (see tapetypes below)
 labelstr "^HISS[0-9][0-9]*$"	# label constraint regex: all tapes must match
 
-diskdir "/space"	# where the holding disk is
-disksize 290 MB			# how much space can we use on it
-#diskdir "/dumps/amanda/work"	# additionaly holding disks can be specified
-#diskdir "/mnt/disk4"
-#disksize 1000 MB		# 	they are used round-robin
+# Specify holding disks.  These are used as a temporary staging area for
+# dumps before they are written to tape and are recommended for most sites.
+# The advantages include: tape drive is more likely to operate in streaming
+# mode (which reduces tape and drive wear, reduces total dump time); multiple
+# dumps can be done in parallel (which can dramatically reduce total dump time.
+# The main disadvantage is that dumps on the holding disk need to be flushed
+# (with amflush) to tape after an operating system crash or a tape failure.
+# If no holding disks are specified then all dumps will be written directly
+# to tape.  If more than one holding disk is specified then they will all
+# be used round-robin.
 
-# If you don't want to use a holding disk:
-#diskdir "/tmp"
-#disksize 0 MB
+holdingdisk hd1 {
+    comment "main holding disk"
+    directory "/space"	# where the holding disk is
+    use 290 Mb		# how much space can we use on it
+    }
+#holdingdisk hd2 {
+#    directory "/dumps/amanda/work"
+#    use 1000 Mb
+#    }
+#holdingdisk hd3 {
+#    directory "/mnt/disk4"
+#    use 1000 Mb
+#    }
 
-# Amanda needs a few MB of diskspace for the log and debug files,
+# Amanda needs a few Mb of diskspace for the log and debug files,
 # as well as a database.  This stuff can grow large, so the conf directory
 # isn't usually appropriate.  We use /usr/adm.  Create an amanda directory
 # under there.  You need a separate infofile and logfile for each
@@ -133,140 +148,168 @@ define tapetype MIMSY-MEGATAPE {
 # dumptypes
 #
 # These are referred to by the disklist file.  The dumptype specifies
-# certain "options" for dumping including:
-#	index		- keep an index of the files backed up
-#	compress-fast	- (default) compress on the client using fast algorithm
-#	compress-best	- compress using the best (and slowww) algorithm
-#	no-compress	- don't compress the dump output
-#	srvcompress	- Compress dumps on the tape host instead of client
-#			  machines.  This may be useful when a fast tape host
-#			  is backing up slow clients.
-#	record		- (default) record the dump in /etc/dumpdates
-#	no-record	- don't record the dump, for testing
-#	no-hold		- don't go to the holding disk, good for dumping
-#			  the holding disk partition itself.
-#	skip-full	- Skip the disk when a level 0 is due, to allow
-#			  full backups outside Amanda, eg when the machine
-#			  is in single-user mode.
-#	skip-incr	- Skip the disk when the level 0 is NOT due.  This
-#			  is used in archive configurations, where only full
-#			  dumps are done and the tapes saved.
-#	no-full		- Do a level 1 every night.  This can be used, for
-#			  example, for small root filesystems that only change
-#			  slightly relative to a site-wide prototype.  Amanda
-#			  then backs up just the changes.
-#       comprate	- set default compression rate.  Should be followed
-#			  by one or two numbers, separated or not by a comma.
-#			  The 1st is the full compression rate; the 2nd is
-#			  the incremental rate.  If the second is omitted,
-#			  it is assumed equal to the first.  The numbers
-#			  represent the amount of the original file the
-#			  compressed file is expected to take up.
-#			  Default: comprate 0.50, 0.50
-#	ignore		- Do not back this filesystem up.  Useful for sharing
-#			  a single disklist in several configurations.
+# certain parameters for dumping including:
+#   auth	- authentication scheme to use between server and client.
+#		  Valid values are "bsd" and "krb4".  Default: [auth bsd]
+#   comment	- just a comment string
+#   comprate	- set default compression rate.  Should be followed by one or
+#		  two numbers, optionally separated by a comma.  The 1st is
+#		  the full compression rate; the 2nd is the incremental rate.
+#		  If the second is omitted, it is assumed equal to the first.
+#		  The numbers represent the amount of the original file the
+#		  compressed file is expected to take up.
+#		  Default: [comprate 0.50, 0.50]
+#   compress	- specify compression of the backed up data.  Valid values are:
+#		  "none"        - don't compress the dump output.
+#		  "client best" - compress on the client using the best (and
+#				  probably slowest) algorithm.
+#		  "client fast" - compress on the client using fast algorithm.
+#		  "server best" - compress on the tape host using the best (and
+#				  probably slowest) algorithm.
+#		  "server fast" - compress on the tape host using a fast
+#				  algorithm.  This may be useful when a fast
+#				  tape host is backing up slow clients.
+#		  Default: [compress client fast]
+#   dumpcycle	- set the number of days in the dump cycle, ie, set how often a
+#		  full dump should be performed.  Default: from DUMPCYCLE above
+#   exclude	- specify files and directories to be excluded from the dump.
+#		  Currently only useful with gnutar.  Valid values are:
+#		  "regular expression" - an re defining which files to exclude
+#		  list "filename"      - a file (on the client!) containing
+#					 re's (1 per line) defining which files
+#					 to exclude.
+#		  Default: include all files
+#   holdingdisk	- should the holding disk be used for this dump.  Useful for
+#		  dumping the holding disk itself.  Default: [holdingdisk yes]
+#   ignore	- do not back this filesystem up.  Useful for sharing a single
+#		  disklist in several configurations.
+#   index	- keep an index of the files backed up.  Default: [index no]
+#   kencrypt	- encrypt the data stream between the client and server.
+#		  Default: [kencrypt no]
+#   maxdumps	- max number of concurrent dumps to run on the client.
+#		  Default: [maxdumps 1]
+#   priority	- priority level of the dump.  Valid levels are "low", "medium"
+#		  or "high".  These are really only used when Amanda has no
+#		  tape to write to because of some error.  In that "degraded
+#		  mode", as many incrementals as will fit on the holding disk
+#		  are done, higher priority first, to insure the important
+#		  disks are at least dumped.  Default: [priority medium]
+#   program	- specify the dump system to use.  Valid values are "DUMP" and
+#		  "GNUTAR".  Default: [program "DUMP"].
+#   record	- record the dump in /etc/dumpdates.  Default: [record yes]
+#   skip-full	- skip the disk when a level 0 is due, to allow full backups
+#		  outside Amanda, eg when the machine is in single-user mode.
+#   skip-incr	- skip the disk when the level 0 is NOT due.  This is used in
+#		  archive configurations, where only full dumps are done and
+#		  the tapes saved.
+#   starttime	- delay the start of the dump?  Default: no delay
+#   strategy	- set the dump strategy.  Valid strategies are currently:
+#		  "standard" - the standard one.
+#		  "nofull"   - do level 1 dumps every time.  This can be used,
+#			       for example, for small root filesystems that
+#			       only change slightly relative to a site-wide
+#			       prototype.  Amanda then backs up just the
+#			       changes.
+#		  "noinc"    - do level 0 dumps every time.
+#		  "skip"     - skip all dumps.  Useful for sharing a single
+#			       disklist in several configurations.
+#		  Default: [strategy standard]
 #
-# Also, the dumptype specifies the priority level, where "low", "medium" and
-# "high" are the allowed levels.  These are only really used when Amanda has
-# no tape to write to because of some error.  In that "degraded mode", as
-# many incrementals as will fit on the holding disk are done, higher priority
-# first, to insure the important disks are dumped first.
+# Note that you may specify previously defined dumptypes as a shorthand way
+# of defining parameters.
 
 define dumptype always-full {
     comment "Full dump of this filesystem always"
-    options no-compress
+    compress none
     priority high
     dumpcycle 0
-    maxcycle 0
-}
-
-define dumptype comp-user-tar {
-    program "GNUTAR"
-    comment "partitions dumped with tar"
-    options no-compress, index, exclude-list "/usr/local/lib/amanda/exclude.gtar"
-    priority medium
-}
-
-define dumptype comp-root-tar {
-    program "GNUTAR"
-    comment "Root partitions with compression"
-    options no-compress, index, exclude-list "/usr/local/lib/amanda/exclude.gtar"
-    priority low
-}
-
-define dumptype user-tar {
-    program "GNUTAR"
-    comment "partitions dumped with tar"
-    options no-compress, index, exclude-list "/usr/local/lib/amanda/exclude.gtar"
-    priority medium
-}
-
-define dumptype high-tar {
-    program "GNUTAR"
-    comment "partitions dumped with tar"
-    options no-compress, index, exclude-list "/usr/local/lib/amanda/exclude.gtar"
-    priority high
 }
 
 define dumptype root-tar {
     program "GNUTAR"
-    comment "Root partitions dumped with tar"
-    options no-compress, index, exclude-list "/usr/local/lib/amanda/exclude.gtar"
+    comment "root partitions dumped with tar"
+    compress none
+    index
+    exclude list "/usr/local/lib/amanda/exclude.gtar"
     priority low
 }
 
-define dumptype comp-user {
-    comment "Non-root partitions on reasonably fast machines"
-    options compress-fast
+define dumptype user-tar {
+    root-tar
+    comment "user partitions dumped with tar"
     priority medium
 }
 
-define dumptype nocomp-user {
-    comment "Non-root partitions on slow machines"
-    options no-compress
-    priority medium
+define dumptype high-tar {
+    root-tar
+    comment "partitions dumped with tar"
+    priority high
+}
+
+define dumptype comp-root-tar {
+    root-tar
+    comment "Root partitions with compression"
+    compress client fast
+}
+
+define dumptype comp-user-tar {
+    user-tar
+    compress client fast
 }
 
 define dumptype holding-disk {
     comment "The master-host holding disk itself"
-    options no-hold
+    holdingdisk true
     priority medium
+}
+
+define dumptype comp-user {
+    comment "Non-root partitions on reasonably fast machines"
+    compress client fast
+    priority medium
+}
+
+define dumptype nocomp-user {
+    comp-user
+    comment "Non-root partitions on slow machines"
+    compress none
 }
 
 define dumptype comp-root {
     comment "Root partitions with compression"
-    options compress-fast
+    compress client fast
     priority low
 }
 
 define dumptype nocomp-root {
+    comp-root
     comment "Root partitions without compression"
-    options no-compress
-    priority low
+    compress none
 }
 
 define dumptype comp-high {
     comment "very important partitions on fast machines"
-    options compress-best
+    compress client best
     priority high
 }
 
 define dumptype nocomp-high {
+    comp-high
     comment "very important partitions on slow machines"
-    options no-compress
-    priority high
+    compress none
 }
 
 define dumptype nocomp-test {
     comment "test dump without compression, no /etc/dumpdates recording"
-    options no-compress, no-record
+    compress none
+    record no
     priority medium
 }
 
 define dumptype comp-test {
+    nocomp-test
     comment "test dump with compression, no /etc/dumpdates recording"
-    options compress-fast, no-record
-    priority medium
+    compress client fast
 }
 
 # network interfaces
@@ -280,16 +323,16 @@ define dumptype comp-test {
 #          through that interface.  Your OS routing tables do that.  This
 #          is just a mechanism to stop Amanda trashing your network.
 # Attributes are:
-#	usage		- bandwidth we can consume.  Note that this is
+#	use		- bandwidth we can consume.  Note that this is
 #			  not guaranteed; it is only a guideline that
 #			  Amanda will try to keep within.
 
 define interface local {
     comment "a local disk"
-    usage 1000 kb
+    use 1000 kbps
 }
 
 define interface le0 {
     comment "10 Mbps ethernet"
-    usage 400 kb
+    use 400 kbps
 }
