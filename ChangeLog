@@ -1,3 +1,9 @@
+2001-05-11 John R. Jackson <jrj@purdue.edu>
+
+	* common-src/util.c (bind_portrange): Log a debug message stating
+	  explicitly that all ports in the requested range were busy, or
+	  that a specific port failed bind() for an unexpected reason.
+
 2001-05-10 John R. Jackson <jrj@purdue.edu>
 
 	* changer-src/scsi-changer-driver.c: Fix routine name in diagnostic
