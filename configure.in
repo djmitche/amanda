@@ -4,6 +4,15 @@ AC_INIT(common-src/amanda.h)
 AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_SYSTEM
 AC_VALIDATE_CACHED_SYSTEM_TUPLE
+
+CONFIGURE_COMMAND="'$0'"
+for arg in "$@"; do
+  CONFIGURE_COMMAND="$CONFIGURE_COMMAND '$arg'"
+done
+AC_DEFINE_UNQUOTED(CONFIGURE_COMMAND,"$CONFIGURE_COMMAND",
+	  [Saves the original ./configure command line arguments])
+AC_SUBST(CONFIGURE_COMMAND)
+
 AM_INIT_AUTOMAKE(amanda, 2.5.0)
 AM_CONFIG_HEADER(config/config.h)
 
