@@ -144,7 +144,7 @@ by larger percentages.  In particular, in the case of a tape or dump
 failure, a bump will occur the following night, which will not be
 smoothed out until the next pass through the schedule.
 .SH FILES
-@bindir@/amadmin, @CONFIG_DIR@/<config>/amanda.conf
+@sbindir@/amadmin, @CONFIG_DIR@/<config>/amanda.conf
 
 .SH AUTHOR
 James da Silva <jds@cs.umd.edu>

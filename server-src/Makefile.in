@@ -68,16 +68,16 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 AWK_VAR_ASSIGNMENT_OPT = @AWK_VAR_ASSIGNMENT_OPT@
-BUILD_AMPLOT_BIN = @BUILD_AMPLOT_BIN@
 BUILD_AMPLOT_LIBEXEC = @BUILD_AMPLOT_LIBEXEC@
+BUILD_AMPLOT_SBIN = @BUILD_AMPLOT_SBIN@
 BUILD_CHANGER_PROGS_LIBEXEC = @BUILD_CHANGER_PROGS_LIBEXEC@
 BUILD_CHANGER_SCRIPTS_LIBEXEC = @BUILD_CHANGER_SCRIPTS_LIBEXEC@
 BUILD_CLIENT_PROGS_LIBEXEC = @BUILD_CLIENT_PROGS_LIBEXEC@
-BUILD_CLIENT_SCRIPTS_BIN = @BUILD_CLIENT_SCRIPTS_BIN@
 BUILD_CLIENT_SCRIPTS_LIBEXEC = @BUILD_CLIENT_SCRIPTS_LIBEXEC@
-BUILD_SERVER_PROGS_BIN = @BUILD_SERVER_PROGS_BIN@
+BUILD_CLIENT_SCRIPTS_SBIN = @BUILD_CLIENT_SCRIPTS_SBIN@
 BUILD_SERVER_PROGS_LIBEXEC = @BUILD_SERVER_PROGS_LIBEXEC@
-BUILD_SERVER_SCRIPTS_BIN = @BUILD_SERVER_SCRIPTS_BIN@
+BUILD_SERVER_PROGS_SBIN = @BUILD_SERVER_PROGS_SBIN@
+BUILD_SERVER_SCRIPTS_SBIN = @BUILD_SERVER_SCRIPTS_SBIN@
 CAT = @CAT@
 CC = @CC@
 CLIENT_LOGIN = @CLIENT_LOGIN@
@@ -140,11 +140,11 @@ LDADD =			../common-src/libamanda.a
 
 SUFFIXES =		.sh .pl
 
-bin_PROGRAMS =		@BUILD_SERVER_PROGS_BIN@
+sbin_PROGRAMS =		@BUILD_SERVER_PROGS_SBIN@
 
 libexec_PROGRAMS =	@BUILD_SERVER_PROGS_LIBEXEC@
 
-bin_SCRIPTS =		@BUILD_SERVER_SCRIPTS_BIN@
+sbin_SCRIPTS =		@BUILD_SERVER_SCRIPTS_SBIN@
 
 EXTRA_PROGRAMS =	amadmin				amcheck		\
 			amflush						\
@@ -170,7 +170,7 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = ../config.h
 CONFIG_CLEAN_FILES =  amcheckdb.sh amcleanup.sh amdump.sh amfreetapes.sh \
 amoverview.pl amrmtape.sh amtoc.pl amverify.sh
-PROGRAMS =  $(bin_PROGRAMS) $(libexec_PROGRAMS)
+PROGRAMS =  $(libexec_PROGRAMS) $(sbin_PROGRAMS)
 
 
 DEFS = @DEFS@ -I. -I$(srcdir) -I..
@@ -245,7 +245,7 @@ taper_OBJECTS =  taper.o
 taper_LDADD = $(LDADD)
 taper_DEPENDENCIES =  ../common-src/libamanda.a
 taper_LDFLAGS = 
-SCRIPTS =  $(bin_SCRIPTS)
+SCRIPTS =  $(sbin_SCRIPTS)
 
 CFLAGS = @CFLAGS@
 LINK = $(CC) $(LDFLAGS) -o $@
@@ -256,7 +256,7 @@ amtoc.pl.in amverify.sh.in
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
-TAR = tar
+TAR = gnutar
 SOURCES = amadmin.c amcheck.c amflush.c amidxtaped.c $(amindexd_SOURCES) amlabel.c amtape.c amtrmidx.c $(driver_SOURCES) dumper.c getconf.c planner.c reporter.c taper.c
 OBJECTS = amadmin.o amcheck.o amflush.o amidxtaped.o $(amindexd_OBJECTS) amlabel.o amtape.o amtrmidx.o $(driver_OBJECTS) dumper.o getconf.o planner.o reporter.o taper.o
 
@@ -288,31 +288,6 @@ amtoc.pl: $(top_builddir)/config.status amtoc.pl.in
 amverify.sh: $(top_builddir)/config.status amverify.sh.in
 	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
 
-mostlyclean-binPROGRAMS:
-
-clean-binPROGRAMS:
-	test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
-
-distclean-binPROGRAMS:
-
-maintainer-clean-binPROGRAMS:
-
-install-binPROGRAMS: $(bin_PROGRAMS)
-	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(bindir)
-	@list='$(bin_PROGRAMS)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    echo "  $(INSTALL_PROGRAM) $$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
-	     $(INSTALL_PROGRAM) $$p $(bindir)/`echo $$p|sed '$(transform)'`; \
-	  else :; fi; \
-	done
-
-uninstall-binPROGRAMS:
-	$(NORMAL_UNINSTALL)
-	list='$(bin_PROGRAMS)'; for p in $$list; do \
-	  rm -f $(bindir)/`echo $$p|sed '$(transform)'`; \
-	done
-
 mostlyclean-libexecPROGRAMS:
 
 clean-libexecPROGRAMS:
@@ -336,6 +311,31 @@ uninstall-libexecPROGRAMS:
 	$(NORMAL_UNINSTALL)
 	list='$(libexec_PROGRAMS)'; for p in $$list; do \
 	  rm -f $(libexecdir)/`echo $$p|sed '$(transform)'`; \
+	done
+
+mostlyclean-sbinPROGRAMS:
+
+clean-sbinPROGRAMS:
+	test -z "$(sbin_PROGRAMS)" || rm -f $(sbin_PROGRAMS)
+
+distclean-sbinPROGRAMS:
+
+maintainer-clean-sbinPROGRAMS:
+
+install-sbinPROGRAMS: $(sbin_PROGRAMS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(sbindir)
+	@list='$(sbin_PROGRAMS)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo "  $(INSTALL_PROGRAM) $$p $(sbindir)/`echo $$p|sed '$(transform)'`"; \
+	     $(INSTALL_PROGRAM) $$p $(sbindir)/`echo $$p|sed '$(transform)'`; \
+	  else :; fi; \
+	done
+
+uninstall-sbinPROGRAMS:
+	$(NORMAL_UNINSTALL)
+	list='$(sbin_PROGRAMS)'; for p in $$list; do \
+	  rm -f $(sbindir)/`echo $$p|sed '$(transform)'`; \
 	done
 
 .c.o:
@@ -407,23 +407,23 @@ taper: $(taper_OBJECTS) $(taper_DEPENDENCIES)
 	@rm -f taper
 	$(LINK) $(taper_LDFLAGS) $(taper_OBJECTS) $(taper_LDADD) $(LIBS)
 
-install-binSCRIPTS: $(bin_SCRIPTS)
+install-sbinSCRIPTS: $(sbin_SCRIPTS)
 	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(bindir)
-	@list='$(bin_SCRIPTS)'; for p in $$list; do \
+	$(mkinstalldirs) $(sbindir)
+	@list='$(sbin_SCRIPTS)'; for p in $$list; do \
 	  if test -f $$p; then \
-	    echo " $(INSTALL_SCRIPT) $$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
-	    $(INSTALL_SCRIPT) $$p $(bindir)/`echo $$p|sed '$(transform)'`; \
+	    echo " $(INSTALL_SCRIPT) $$p $(sbindir)/`echo $$p|sed '$(transform)'`"; \
+	    $(INSTALL_SCRIPT) $$p $(sbindir)/`echo $$p|sed '$(transform)'`; \
 	  else if test -f $(srcdir)/$$p; then \
-	    echo " $(INSTALL_SCRIPT) $(srcdir)/$$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
-	    $(INSTALL_SCRIPT) $(srcdir)/$$p $(bindir)/`echo $$p|sed '$(transform)'`; \
+	    echo " $(INSTALL_SCRIPT) $(srcdir)/$$p $(sbindir)/`echo $$p|sed '$(transform)'`"; \
+	    $(INSTALL_SCRIPT) $(srcdir)/$$p $(sbindir)/`echo $$p|sed '$(transform)'`; \
 	  else :; fi; fi; \
 	done
 
-uninstall-binSCRIPTS:
+uninstall-sbinSCRIPTS:
 	$(NORMAL_UNINSTALL)
-	list='$(bin_SCRIPTS)'; for p in $$list; do \
-	  rm -f $(bindir)/`echo $$p|sed '$(transform)'`; \
+	list='$(sbin_SCRIPTS)'; for p in $$list; do \
+	  rm -f $(sbindir)/`echo $$p|sed '$(transform)'`; \
 	done
 
 tags: TAGS
@@ -461,7 +461,7 @@ dvi:
 check: all
 	$(MAKE)
 installcheck:
-install-exec: install-binPROGRAMS install-libexecPROGRAMS install-binSCRIPTS
+install-exec: install-libexecPROGRAMS install-sbinPROGRAMS install-sbinSCRIPTS
 	@$(NORMAL_INSTALL)
 	$(MAKE) install-exec-hook
 
@@ -471,14 +471,14 @@ install-data:
 install: install-exec install-data all
 	@:
 
-uninstall: uninstall-binPROGRAMS uninstall-libexecPROGRAMS uninstall-binSCRIPTS
+uninstall: uninstall-libexecPROGRAMS uninstall-sbinPROGRAMS uninstall-sbinSCRIPTS
 
 all: Makefile $(PROGRAMS) $(SCRIPTS)
 
 install-strip:
 	$(MAKE) INSTALL_PROGRAM='$(INSTALL_PROGRAM) -s' install
 installdirs:
-	$(mkinstalldirs)  $(bindir) $(libexecdir) $(bindir)
+	$(mkinstalldirs)  $(libexecdir) $(sbindir) $(sbindir)
 
 
 mostlyclean-generic:
@@ -495,33 +495,33 @@ distclean-generic:
 maintainer-clean-generic:
 	test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 	test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
-mostlyclean:  mostlyclean-binPROGRAMS mostlyclean-libexecPROGRAMS \
+mostlyclean:  mostlyclean-libexecPROGRAMS mostlyclean-sbinPROGRAMS \
 		mostlyclean-compile mostlyclean-tags \
 		mostlyclean-generic
 
-clean:  clean-binPROGRAMS clean-libexecPROGRAMS clean-compile clean-tags \
-		clean-generic mostlyclean
+clean:  clean-libexecPROGRAMS clean-sbinPROGRAMS clean-compile \
+		clean-tags clean-generic mostlyclean
 
-distclean:  distclean-binPROGRAMS distclean-libexecPROGRAMS \
+distclean:  distclean-libexecPROGRAMS distclean-sbinPROGRAMS \
 		distclean-compile distclean-tags distclean-generic \
 		clean
 	rm -f config.status
 
-maintainer-clean:  maintainer-clean-binPROGRAMS \
-		maintainer-clean-libexecPROGRAMS \
-		maintainer-clean-compile maintainer-clean-tags \
-		maintainer-clean-generic distclean
+maintainer-clean:  maintainer-clean-libexecPROGRAMS \
+		maintainer-clean-sbinPROGRAMS maintainer-clean-compile \
+		maintainer-clean-tags maintainer-clean-generic \
+		distclean
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 
-.PHONY: default mostlyclean-binPROGRAMS distclean-binPROGRAMS \
-clean-binPROGRAMS maintainer-clean-binPROGRAMS uninstall-binPROGRAMS \
-install-binPROGRAMS mostlyclean-libexecPROGRAMS \
-distclean-libexecPROGRAMS clean-libexecPROGRAMS \
-maintainer-clean-libexecPROGRAMS uninstall-libexecPROGRAMS \
-install-libexecPROGRAMS mostlyclean-compile distclean-compile \
-clean-compile maintainer-clean-compile uninstall-binSCRIPTS \
-install-binSCRIPTS tags mostlyclean-tags distclean-tags clean-tags \
+.PHONY: default mostlyclean-libexecPROGRAMS distclean-libexecPROGRAMS \
+clean-libexecPROGRAMS maintainer-clean-libexecPROGRAMS \
+uninstall-libexecPROGRAMS install-libexecPROGRAMS \
+mostlyclean-sbinPROGRAMS distclean-sbinPROGRAMS clean-sbinPROGRAMS \
+maintainer-clean-sbinPROGRAMS uninstall-sbinPROGRAMS \
+install-sbinPROGRAMS mostlyclean-compile distclean-compile \
+clean-compile maintainer-clean-compile uninstall-sbinSCRIPTS \
+install-sbinSCRIPTS tags mostlyclean-tags distclean-tags clean-tags \
 maintainer-clean-tags distdir info dvi installcheck install-exec \
 install-data install uninstall all installdirs mostlyclean-generic \
 distclean-generic clean-generic maintainer-clean-generic clean \
@@ -537,8 +537,8 @@ mostlyclean distclean maintainer-clean
 			chmod a+x $@
 
 install-exec-hook:
-	@list="$(bin_PROGRAMS) $(bin_SCRIPTS)"; for p in $$list; do \
-		pa=$(bindir)/`echo $$p|sed '$(transform)'`; \
+	@list="$(sbin_PROGRAMS) $(sbin_SCRIPTS)"; for p in $$list; do \
+		pa=$(sbindir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(CLIENT_LOGIN) $$pa; \
 		chown $(CLIENT_LOGIN) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \
@@ -551,8 +551,8 @@ install-exec-hook:
 		echo chgrp $(SETUID_GROUP) $$pa; \
 		chgrp $(SETUID_GROUP) $$pa; \
 	done; \
-	list="$(bindir)/amcheck $(libexecdir)/dumper $(libexecdir)/planner"; for p in $$list; do \
-		if echo "$(bin_PROGRAMS) $(bin_SCRIPTS) $(libexec_PROGRAMS) $(libexec_SCRIPTS)" | grep `basename $$p` >/dev/null 2>&1; then \
+	list="$(sbindir)/amcheck $(libexecdir)/dumper $(libexecdir)/planner"; for p in $$list; do \
+		if echo "$(sbin_PROGRAMS) $(sbin_SCRIPTS) $(libexec_PROGRAMS) $(libexec_SCRIPTS)" | grep `basename $$p` >/dev/null 2>&1; then \
 			pa=`echo $$p|sed '$(transform)'`; \
 			echo chown root $$pa; \
 			chown root $$pa; \

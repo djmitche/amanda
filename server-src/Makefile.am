@@ -18,11 +18,11 @@ SUFFIXES =		.sh .pl
 			cat $< > $@
 			chmod a+x $@
 
-bin_PROGRAMS =		@BUILD_SERVER_PROGS_BIN@
+sbin_PROGRAMS =		@BUILD_SERVER_PROGS_SBIN@
 
 libexec_PROGRAMS =	@BUILD_SERVER_PROGS_LIBEXEC@
 
-bin_SCRIPTS =		@BUILD_SERVER_SCRIPTS_BIN@
+sbin_SCRIPTS =		@BUILD_SERVER_SCRIPTS_SBIN@
 
 EXTRA_PROGRAMS =	amadmin				amcheck		\
 			amflush						\
@@ -46,8 +46,8 @@ driver_SOURCES =	driver.c			driver.h	\
 			driverio.c
 
 install-exec-hook:
-	@list="$(bin_PROGRAMS) $(bin_SCRIPTS)"; for p in $$list; do \
-		pa=$(bindir)/`echo $$p|sed '$(transform)'`; \
+	@list="$(sbin_PROGRAMS) $(sbin_SCRIPTS)"; for p in $$list; do \
+		pa=$(sbindir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(CLIENT_LOGIN) $$pa; \
 		chown $(CLIENT_LOGIN) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \
@@ -60,8 +60,8 @@ install-exec-hook:
 		echo chgrp $(SETUID_GROUP) $$pa; \
 		chgrp $(SETUID_GROUP) $$pa; \
 	done; \
-	list="$(bindir)/amcheck $(libexecdir)/dumper $(libexecdir)/planner"; for p in $$list; do \
-		if echo "$(bin_PROGRAMS) $(bin_SCRIPTS) $(libexec_PROGRAMS) $(libexec_SCRIPTS)" | grep `basename $$p` >/dev/null 2>&1; then \
+	list="$(sbindir)/amcheck $(libexecdir)/dumper $(libexecdir)/planner"; for p in $$list; do \
+		if echo "$(sbin_PROGRAMS) $(sbin_SCRIPTS) $(libexec_PROGRAMS) $(libexec_SCRIPTS)" | grep `basename $$p` >/dev/null 2>&1; then \
 			pa=`echo $$p|sed '$(transform)'`; \
 			echo chown root $$pa; \
 			chown root $$pa; \

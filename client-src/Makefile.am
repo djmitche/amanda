@@ -18,7 +18,7 @@ SUFFIXES =		.sh .pl
 			cat $< > $@
 			chmod a+x $@
 
-bin_PROGRAMS =		amrecover			amrestore
+sbin_PROGRAMS =		amrecover			amrestore
 
 libexec_PROGRAMS =	versionsuffix					\
 			@BUILD_CLIENT_PROGS_LIBEXEC@
@@ -28,7 +28,7 @@ EXTRA_PROGRAMS =	amandad				calcsize	\
 			selfcheck			sendbackup-dump	\
 			sendbackup-gnutar 		sendsize
 
-bin_SCRIPTS =		@BUILD_CLIENT_SCRIPTS_BIN@
+sbin_SCRIPTS =		@BUILD_CLIENT_SCRIPTS_SBIN@
 
 libexec_SCRIPTS =	@BUILD_CLIENT_SCRIPTS_LIBEXEC@
 
@@ -51,8 +51,8 @@ sendbackup_gnutar_SOURCES = sendbackup-gnutar.c		sendbackup-common.c \
 			sendbackup-common.h
 
 install-exec-hook:
-	@list="$(bin_PROGRAMS) $(bin_SCRIPTS)"; for p in $$list; do \
-		pa=$(bindir)/`echo $$p|sed '$(transform)'`; \
+	@list="$(sbin_PROGRAMS) $(sbin_SCRIPTS)"; for p in $$list; do \
+		pa=$(sbindir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(CLIENT_LOGIN) $$pa; \
 		chown $(CLIENT_LOGIN) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \
@@ -66,7 +66,7 @@ install-exec-hook:
 		chgrp $(SETUID_GROUP) $$pa; \
 	done; \
 	list="$(libexecdir)/calcsize $(libexecdir)/rundump $(libexecdir)/runtar"; for p in $$list; do \
-		if echo "$(bin_PROGRAMS) $(bin_SCRIPTS) $(libexec_PROGRAMS) $(libexec_SCRIPTS)" | grep `basename $$p` >/dev/null 2>&1; then \
+		if echo "$(sbin_PROGRAMS) $(sbin_SCRIPTS) $(libexec_PROGRAMS) $(libexec_SCRIPTS)" | grep `basename $$p` >/dev/null 2>&1; then \
 			pa=`echo $$p|sed '$(transform)'`; \
 			echo chown root $$pa; \
 			chown root $$pa; \

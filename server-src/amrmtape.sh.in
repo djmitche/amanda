@@ -31,12 +31,12 @@
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
-bindir=@bindir@
+sbindir=@sbindir@
 libexecdir=@libexecdir@
 
 ConfigDir=@CONFIG_DIR@
 
-PATH=$libexecdir:$bindir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
+PATH=$libexecdir:$sbindir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
 export PATH
 
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"

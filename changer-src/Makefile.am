@@ -25,8 +25,8 @@ libexec_SCRIPTS =	@BUILD_CHANGER_SCRIPTS_LIBEXEC@
 EXTRA_SCRIPTS =		chg-generic hp-changer no-changer rth-changer
 
 install-exec-hook:
-	@list="$(bin_PROGRAMS) $(bin_SCRIPTS)"; for p in $$list; do \
-		pa=$(bindir)/`echo $$p|sed '$(transform)'`; \
+	@list="$(sbin_PROGRAMS) $(sbin_SCRIPTS)"; for p in $$list; do \
+		pa=$(sbindir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(CLIENT_LOGIN) $$pa; \
 		chown $(CLIENT_LOGIN) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \

@@ -15,10 +15,10 @@
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
-bindir=@bindir@
+sbindir=@sbindir@
 libexecdir=@libexecdir@
 
-PATH=$libexecdir:$bindir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
+PATH=$libexecdir:$sbindir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
 export PATH
 
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
@@ -82,8 +82,8 @@ EOF
 
 	CONFIG_DIR=@CONFIG_DIR@
 	libexecdir=$libexecdir
-	bindir=$bindir
-	AMRESTORE=$bindir/amrestore$SUF
+	sbindir=$sbindir
+	AMRESTORE=$sbindir/amrestore$SUF
 	AMGETCONF=$libexecdir/getconf$SUF
 	TAR=@GNUTAR@
 	MT=@MT@

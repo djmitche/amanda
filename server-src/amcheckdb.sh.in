@@ -5,9 +5,7 @@
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
-bindir=@bindir@
-
-bindir=@bindir@
+sbindir=@sbindir@
 CONFIG_DIR=@CONFIG_DIR@
 
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
@@ -28,7 +26,7 @@ TAPELIST=$CONFIG_DIR/$CONFIG/tapelist
 	&& echo "$TAPELIST not found" >&2 \
 	&& exit 1
 
-AMADMIN=$bindir/amadmin$SUF
+AMADMIN=$sbindir/amadmin$SUF
 
 [ ! -x $AMADMIN ] \
 	&& echo "$AMADMIN not found or not executable" >&2 \

@@ -32,7 +32,7 @@ END
 my $prefix='@prefix@';
 my $exec_prefix="@exec_prefix@";
 my $libexecdir="@libexecdir@";
-my $bindir="@bindir@";
+my $sbindir="@sbindir@";
  
 # The directory where configurations can be found.
 my $confdir="@CONFIG_DIR@";
@@ -47,7 +47,7 @@ if ( $USE_VERSION_SUFFIXES =~ /^yes$/i ) {
 	$suf='-@VERSION@';
 }
 
-my $amadmin	= "$bindir/amadmin$suf";
+my $amadmin	= "$sbindir/amadmin$suf";
 
 # overrideable defaults
 my $opt_config		= "$config";

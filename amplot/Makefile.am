@@ -6,7 +6,7 @@ SUFFIXES =		.sh
 			cat $< > $@
 			chmod a+x $@
 
-bin_SCRIPTS =		@BUILD_AMPLOT_BIN@
+sbin_SCRIPTS =		@BUILD_AMPLOT_SBIN@
 
 EXTRA_SCRIPTS =		amplot
 
@@ -22,8 +22,8 @@ amplot.gp:		amplot.g
 			echo "pause -1;" >> amplot.gp
 
 install-exec-hook:
-	@list="$(bin_SCRIPTS)"; for p in $$list; do \
-		pa=$(bindir)/`echo $$p|sed '$(transform)'`; \
+	@list="$(sbin_SCRIPTS)"; for p in $$list; do \
+		pa=$(sbindir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(CLIENT_LOGIN) $$pa; \
 		chown $(CLIENT_LOGIN) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \

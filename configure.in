@@ -208,25 +208,25 @@ BUILD_CHANGER_PROGS_LIBEXEC="seagate-changer"
 BUILD_CHANGER_SCRIPTS_LIBEXEC="chg-generic hp-changer no-changer rth-changer"
 BUILD_CLIENT_PROGS_LIBEXEC="amandad calcsize rundump runtar selfcheck sendbackup-dump sendbackup-gnutar sendsize"
 BUILD_CLIENT_SCRIPTS_LIBEXEC="patch-system"
-BUILD_SERVER_PROGS_BIN="amadmin amcheck amflush amlabel amtape"
+BUILD_SERVER_PROGS_SBIN="amadmin amcheck amflush amlabel amtape"
 BUILD_SERVER_PROGS_LIBEXEC="amidxtaped amindexd amtrmidx driver dumper getconf planner reporter taper"
-BUILD_SERVER_SCRIPTS_BIN="amcheckdb amcleanup amdump amoverview amrmtape amtoc amverify"
+BUILD_SERVER_SCRIPTS_SBIN="amcheckdb amcleanup amdump amoverview amrmtape amtoc amverify"
 case "$target" in
     *-hp-*)
-	BUILD_CLIENT_SCRIPTS_BIN=amhpfixdevs
+	BUILD_CLIENT_SCRIPTS_SBIN=amhpfixdevs
 	;;
     *)
-	BUILD_CLIENT_SCRIPTS_BIN=
+	BUILD_CLIENT_SCRIPTS_SBIN=
 	;;
 esac
 
 AC_SUBST(BUILD_CHANGER_PROGS_LIBEXEC)
 AC_SUBST(BUILD_CHANGER_SCRIPTS_LIBEXEC)
-AC_SUBST(BUILD_CLIENT_SCRIPTS_BIN)
+AC_SUBST(BUILD_CLIENT_SCRIPTS_SBIN)
 AC_SUBST(BUILD_CLIENT_PROGS_LIBEXEC)
-AC_SUBST(BUILD_SERVER_PROGS_BIN)
+AC_SUBST(BUILD_SERVER_PROGS_SBIN)
 AC_SUBST(BUILD_SERVER_PROGS_LIBEXEC)
-AC_SUBST(BUILD_SERVER_SCRIPTS_BIN)
+AC_SUBST(BUILD_SERVER_SCRIPTS_SBIN)
 AC_SUBST(BUILD_CLIENT_SCRIPTS_LIBEXEC)
 
 AC_ARG_WITH(client-only,
@@ -236,9 +236,9 @@ AC_ARG_WITH(client-only,
         y | ye | yes)
 	    BUILD_CHANGER_PROGS_LIBEXEC=
 	    BUILD_CHANGER_SCRIPTS_LIBEXEC=
-	    BUILD_SERVER_PROGS_BIN=
+	    BUILD_SERVER_PROGS_SBIN=
 	    BUILD_SERVER_PROGS_LIBEXEC=
-	    BUILD_SERVER_SCRIPTS_BIN=
+	    BUILD_SERVER_SCRIPTS_SBIN=
 	  ;;
 	n | no)
 	    AC_MSG_ERROR([*** use --with-server-only instead of --without-client-only])
@@ -736,6 +736,9 @@ esac
     tmp=`eval echo "$bindir"`
     AC_DEFINE_UNQUOTED(bindir,"$tmp")
 
+    tmp=`eval echo "$sbindir"`
+    AC_DEFINE_UNQUOTED(sbindir,"$tmp")
+
     tmp=`eval echo "$libexecdir"`
     AC_DEFINE_UNQUOTED(libexecdir,"$tmp")
 
@@ -847,15 +850,15 @@ AC_SUBST(AMANDA_CFLAGS)
 dnl Check for programs.
 AC_PATH_PROGS(AR,ar,,$LOCSYSPATH)
 
-BUILD_AMPLOT_BIN="amplot"
+BUILD_AMPLOT_SBIN="amplot"
 BUILD_AMPLOT_LIBEXEC="amcat.awk amplot.awk amplot.g amplot.gp"
-AC_SUBST(BUILD_AMPLOT_BIN)
+AC_SUBST(BUILD_AMPLOT_SBIN)
 AC_SUBST(BUILD_AMPLOT_LIBEXEC)
 
 AC_PROG_AWK
 AMANDA_PROG_AWK_VAR
 if test "$amanda_cv_awk_var_assignment" = no; then
-    BUILD_AMPLOT_BIN=
+    BUILD_AMPLOT_SBIN=
     BUILD_AMPLOT_LIBEXEC=
     AC_MSG_WARN([*** Your $awk cannot do command line variable assignment.  Amplot will not be installed.])
 fi
@@ -871,7 +874,7 @@ AC_PATH_PROGS(EGREP,egrep,,$LOCSYSPATH)
 
 AC_PATH_PROGS(GNUPLOT,gnuplot,,$LOCSYSPATH)
 if test -z "$GNUPLOT"; then
-    BUILD_AMPLOT_BIN=
+    BUILD_AMPLOT_SBIN=
     BUILD_AMPLOT_LIBEXEC=
     AC_MSG_WARN([*** You do not have gnuplot.  Amplot will not be installed.])
 fi

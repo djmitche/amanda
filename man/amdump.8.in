@@ -35,7 +35,7 @@ Here is a typical crontab entry.  It runs
 .B amdump
 every weeknight at 1 a.m.:
 .TP
-	0 1 * * 1-5	bin	@bindir@/amdump @DEFAULT_CONFIG@
+	0 1 * * 1-5	bin	@sbindir@/amdump @DEFAULT_CONFIG@
 
 .SH AUTHOR
 James da Silva <jds@cs.umd.edu>
