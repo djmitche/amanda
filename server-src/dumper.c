@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.109 1999/04/07 18:32:39 kashmir Exp $
+/* $Id: dumper.c,v 1.110 1999/04/08 15:17:39 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -134,12 +134,13 @@ static int do_dump P((struct databuf *));
 void check_options P((char *options));
 void service_ports_init P((void));
 static char *construct_datestamp P((void));
-int write_tapeheader P((int outfd, dumpfile_t *type));
+static void finish_tapeheader P((dumpfile_t *));
+static int write_tapeheader P((int outfd, dumpfile_t *type));
 static void databuf_init P((struct databuf *, int, const char *, long));
 static int databuf_write P((struct databuf *, const void *, int));
 static int databuf_flush P((struct databuf *));
 static void process_dumpeof P((void));
-static void process_dumpline P((char *str));
+static void process_dumpline P((const char *));
 static void add_msg_data P((const char *str, size_t len));
 static void log_msgout P((logtype_t typ));
 
@@ -791,15 +792,13 @@ char *str;
 
 static void
 process_dumpline(str)
-    char *str;
+    const char *str;
 {
-    char *s, *fp;
-    int ch;
+    char *buf, *tok;
 
-    s = str;
-    ch = *s++;
+    buf = stralloc(str);
 
-    switch (ch) {
+    switch (*buf) {
     case '|':
 	/* normal backup output line */
 	break;
@@ -809,67 +808,68 @@ process_dumpline(str)
 	break;
     case 's':
 	/* a sendbackup line, just check them all since there are only 5 */
-#define sc "sendbackup: start"
-	if(strncmp(str, sc, sizeof(sc)-1) == 0) {
+	tok = strtok(buf, " ");
+	if (tok == NULL || strcmp(tok, "sendbackup:") != 0)
+	    goto bad_line;
+
+	tok = strtok(NULL, " ");
+	if (tok == NULL)
+	    goto bad_line;
+
+	if (strcmp(tok, "start") == 0)
+	    break;
+
+	if (strcmp(tok, "size") == 0) {
+	    tok = strtok(NULL, "");
+	    if (tok != NULL) {
+		origsize = (long)atof(tok);
+		SET(status, GOT_SIZELINE);
+	    }
 	    break;
 	}
-#undef sc
-#define sc "sendbackup: size"
-	if(strncmp(str, sc, sizeof(sc)-1) == 0) {
-	    s += sizeof(sc)-1;
-	    ch = s[-1];
-	    skip_whitespace(s, ch);
-	    if(ch) {
-		origsize = (long)atof(str + sizeof(sc)-1);
-		SET(status, GOT_SIZELINE);
-		break;
-	    }
-	}
-#undef sc
-#define sc "sendbackup: end"
-	if(strncmp(str, sc, sizeof(sc)-1) == 0) {
+
+	if (strcmp(tok, "end") == 0) {
 	    SET(status, GOT_ENDLINE);
 	    break;
 	}
-#undef sc
-#define sc "sendbackup: error"
-	if(strncmp(str, sc, sizeof(sc)-1) == 0) {
-	    s += sizeof(sc)-1;
-	    ch = s[-1];
-#undef sc
+
+	if (strcmp(tok, "error") == 0) {
 	    SET(status, GOT_ENDLINE);
 	    dump_result = max(dump_result, 2);
-	    skip_whitespace(s, ch);
-	    if(ch == '\0' || ch != '[') {
-		errstr = newvstralloc(errstr,
-				      "bad remote error: ", str,
-				      NULL);
+
+	    tok = strtok(NULL, "");
+	    if (tok == NULL || *tok != '[') {
+		errstr = newvstralloc(errstr, "bad remote error: ", str, NULL);
 	    } else {
-		ch = *s++;
-		fp = s - 1;
-		while(ch && ch != ']') ch = *s++;
-		s[-1] = '\0';
-		errstr = newstralloc(errstr, fp);
-		s[-1] = ch;
+		char *enderr;
+
+		tok++;	/* skip over '[' */
+		if ((enderr = strchr(tok, ']')) != NULL)
+		    *enderr = '\0';
+		errstr = newstralloc(errstr, tok);
 	    }
 	    break;
 	}
-#define sc "sendbackup: info"
-	if(strncmp(str, sc, sizeof(sc)-1) == 0) {
-	    s += sizeof(sc)-1;
-	    ch = s[-1];
-	    skip_whitespace(s, ch);
-	    parse_info_line(s - 1);
+
+	if (strcmp(tok, "info") == 0) {
+	    tok = strtok(NULL, "");
+	    if (tok != NULL)
+		parse_info_line(tok);
 	    break;
 	}
-#undef sc
 	/* else we fall through to bad line */
     default:
-	fprintf(errf, "??%s", str);
-	dump_result = max(dump_result, 1);
-	return;
+	goto bad_line;
     }
+
     fprintf(errf, "%s\n", str);
+    amfree(buf);
+    return;
+
+bad_line:
+    fprintf(errf, "??%s", str);
+    dump_result = max(dump_result, 1);
+    amfree(buf);
 }
 
 static void
@@ -976,12 +976,14 @@ logtype_t typ;
 
 /* ------------- */
 
-void make_tapeheader(file, type)
-dumpfile_t *file;
-filetype_t type;
+/*
+ * Fill in the rest of the tape header
+ */
+static void
+finish_tapeheader(file)
+    dumpfile_t *file;
 {
-    fh_init(file);
-    file->type = type;
+    file->type = F_DUMPFILE;
     strncpy(file->datestamp  , datestamp  , sizeof(file->datestamp)-1);
     file->datestamp[sizeof(file->datestamp)-1] = '\0';
     strncpy(file->name       , hostname   , sizeof(file->name)-1);
@@ -1022,10 +1024,10 @@ filetype_t type;
     file->cont_filename[0] = '\0';
 }
 
-/* Send an Amanda dump header to the output file.
-*/
-
-int
+/*
+ * Send an Amanda dump header to the output file.
+ */
+static int
 write_tapeheader(outfd, file)
     int outfd;
     dumpfile_t *file;
@@ -1079,6 +1081,7 @@ do_dump(db)
     amfree(backup_name);
     amfree(recover_cmd);
     amfree(compress_suffix);
+    fh_init(&file);
 
     ap_snprintf(level_str, sizeof(level_str), "%d", level);
     fn = sanitise_filename(diskname);
@@ -1292,7 +1295,7 @@ do_dump(db)
 
 	    if (ISSET(status, GOT_INFO_ENDLINE) &&
 		!ISSET(status, HEADER_DONE)) { /* time to do the header */
-		make_tapeheader(&file, F_DUMPFILE);
+		finish_tapeheader(&file);
 		if (write_tapeheader(db->fd, &file)) {
 		    errstr = newstralloc2(errstr, "write_tapeheader: ", 
 					  strerror(errno));

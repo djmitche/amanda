@@ -1,3 +1,14 @@
+1999-04-08  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/dumper.c (process_dumpline): rewrite to use strtok
+	and const the argument.
+	* server-src/dumper.c (make_tapeheader): rename to finish_tapeheader
+	and prototype it.  Remove the 'type' arg, since it's always
+	F_DUMPFILE.  Remove call to fn_init().
+	* server-src/dumper.c (do_dump): call fh_init on 'file' while
+	initializing globals.  Call finish_tapeheader after getting info
+	endline.
+
 1999-04-07 John R. Jackson  <jrj@purdue.edu>
 
 	* tape-src/tapeio.c: allow tapedev to be /dev/null.
