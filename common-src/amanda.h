@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.71 1998/12/14 19:12:15 kashmir Exp $
+ * $Id: amanda.h,v 1.72 1998/12/14 19:20:44 kashmir Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -426,8 +426,8 @@ extern void   set_logerror P((void (*f)(char *)));
 extern void   set_pname P((char *pname));
 extern char  *get_pname P((void));
 extern int    erroutput_type;
-extern void   error     P((char *format, ...))
-    __attribute__ ((format (printf, 1, 2)));
+extern void   error     P((const char *format, ...))
+    __attribute__ ((format (printf, 1, 2), noreturn));
 extern int    onerror         P((void (*errf)(void)));
 
 #if defined(USE_DBMALLOC)

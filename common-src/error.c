@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: error.c,v 1.8 1998/07/04 00:18:42 oliva Exp $
+ * $Id: error.c,v 1.9 1998/12/14 19:20:42 kashmir Exp $
  *
  * error handling common to Amanda programs
  */
@@ -62,7 +62,7 @@ void (*f) P((char *));
 }
 
 
-arglist_function(void error, char *, format)
+arglist_function(void error, const char *, format)
 /*
  * Prints an error message, calls the functions installed via onerror(),
  * then exits.
