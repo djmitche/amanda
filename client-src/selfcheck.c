@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.17 1997/12/17 04:39:21 jrj Exp $
+ * $Id: selfcheck.c,v 1.18 1997/12/19 20:35:06 amcore Exp $
  *
  * do self-check and send back any error messages
  */
@@ -361,6 +361,9 @@ static void check_overall()
 #endif
     check_file("/dev/null", R_OK|W_OK);
     check_space("/tmp", 64);		/* for amandad i/o */
+#ifdef DEBUG_DIR
+    check_space(DEBUG_DIR, 64);		/* for amandad i/o */
+#endif
     check_space("/etc", 64);		/* for /etc/dumpdates writing */
 }
 
