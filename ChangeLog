@@ -1,5 +1,15 @@
 1999-02-17  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* server-src/amtoc.pl.in: minor fixes for multi-tape runs
+
+1999-02-17  Nicolas Mayencourt  <Nicolas.Mayencourt@cui.unige.ch>
+
+	* server-src/amtoc.pl.in: complete, backward-incompatible rewrite;
+	command-line arguments changed
+	* man/amtoc.8.in: ditto
+
+1999-02-17  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
 	* changer-src/chg-multi.sh.in: minor portability changes
 	* docs/TAPE.CHANGERS: originally by James da Silva
 

@@ -1,311 +1,131 @@
-#!@PERL@
+#!@PERL@ -w
 
-# Run perl.
-eval '(exit $?0)' && eval 'exec @PERL@ -S $0 ${1+"$@"}'
-	& eval 'exec @PERL@ -S $0 $argv:q'
-		if 0;
+# create a TOC (Table Of Content) file for an amanda dump
 
-# -------------------------------------------------------
-#	Generate a TOC (TableOfContent) for Amanda
-#	Release 2 (Amanda 2.3.0 support)
-# -------------------------------------------------------
+# Author: Nicolas.Mayencourt@cui.unige.ch
 
-# Default paths for this installation of Amanda.
-$prefix='@prefix@';
-$exec_prefix="@exec_prefix@";
-$libexecdir="@libexecdir@";
+#--------------------------------------------------------
+sub pr($$$$$) { 
+# you can update these proc if you want another formating
+# format: filenumber  host:part  level  size
+  print $OF "$_[0]  $_[1]:$_[2]  $_[3]  $_[4]\n";
+}
+#--------------------------------------------------------
 
-# The directory where configurations can be found.
-$config_dir="@CONFIG_DIR@";
 
-# Get the version suffix.
-$USE_VERSION_SUFFIXES = '@USE_VERSION_SUFFIXES@';
-$suf = '';
-if ( $USE_VERSION_SUFFIXES =~ /^yes$/i ) {
-	$suf='-@VERSION@';
+
+#--------------------------------------------------------
+sub tfn($) {
+  # calculate tocfilename
+  $_ = $_[0];
+  eval $subs;
+  return $dir . $_ ;
+}
+#--------------------------------------------------------
+
+
+#--------------------------------------------------------
+sub usage($) {
+  print STDERR "@_\n\n";
+  print STDERR "usage: amtoc [-a] [-f file] [-s subs] [--] logfile\n";
+  print STDERR "         -a      : file output to `label`.toc\n";
+  print STDERR "         -f file : file output to file\n";
+  print STDERR "         -s subs : file output evaluated to `eval \$subs`\n";
+  print STDERR "         --      : last option\n";
+  print STDERR "         logfile : input file ('-' for stdin)\n";
+  exit;
+}
+#--------------------------------------------------------
+
+#--------------------------------------------------------
+sub init() {
+  &usage("amtoc required at least 'logfile' parameter.") if ($#ARGV==-1) ;
+
+  for ($i=0;$i<=$#ARGV;$i++) {
+    if ($ARGV[$i] eq '-a') {
+        $subs="s/\$/.toc/";
+      }
+    elsif ($ARGV[$i] eq '-f') {
+        $i++;
+        &usage("'-f' option require 'file' parameter.")  if ($i > $#ARGV);
+        $tocfilename=$ARGV[$i];
+      }
+    elsif ($ARGV[$i] eq '-s') {
+        $i++;
+        &usage("'-s' option require 'subs' parameter.")  if ($i > $#ARGV);
+        $subs=$ARGV[$i];
+      }
+    elsif ($ARGV[$i] eq '--') {
+      # no more options: next arg == logfile
+        $i++;
+        &usage("amtoc required at least 'logfile' parameter.") if ($i > $#ARGV);
+        $logfile=$ARGV[$i];
+        &usage("too many parameters.") unless ($i == $#ARGV);
+      }
+    else {
+        $logfile=$ARGV[$i];
+        &usage("too many parameters.") unless ($i == $#ARGV);
+      }
+  }
+  &usage("amtoc required at least 'logfile' parameter.") unless ($logfile);
 }
 
-$tmpFile="/tmp/amtoc$$";
-$= =1000;
-
-$stats_t='i3 l i A80 ';
-$template='i f3f3 f3f3' . ($stats_t x 10);
+#--------------------------------------------------------
 
 &init;
 
-foreach $current_disk (keys(%method)) {
-    if (&read_info($current_disk)) {
-      &print_info;
-    } else {
-      print "no such partition ($current_disk) in database\n" ;
-    }
+$dir=$logfile;
+$dir =~ s/[^\/]*$//;
+
+
+if ($logfile eq '-') {$IF=STDIN} else 
+  {die ("Cannot open logfile $logfile") unless open (IF,"$logfile");$IF=IF;}
+
+$filenumber=0;
+
+while ( <$IF> ) {
+  if ( /^FAIL dumper (\S+) (\S+)/ ) {
+    $fail{$1}{$2} = 1;
+    next;
+  }
+  $line = $_;
+  if ( ! /^([A-Z]+) taper (\S+) (\S+) \S+ (\S+)/) { next;}
+  # $_ = $1;
+  $host = $2;
+  $part = $3;
+  $level = $4;
+  switch: {
+    /START taper/ && do {
+      $tocfilename=&tfn($level) if ($subs);
+      if (!$tocfilename || ($tocfilename eq '-')) {$OF=STDOUT;}
+      else {
+          die ("Cannot open tocfile $tocfilename") unless open(OF,">$tocfilename");
+          $OF=OF;
+        }
+      $filenumber=0;
+      &pr("#","Server","/partition","level","size[Kb]");
+      &pr("$filenumber","$level","","-","-");
+      last switch; };
+    /SUCCESS taper/ && do {
+      $line =~ / kb (\d+) /;
+      if ( $fail{$host}{$part} ) {
+        &pr("$filenumber","${host}","${part}","${level}","FAIL");
+      } else {
+        &pr("$filenumber","${host}","${part}","${level}","$1");
+      }
+      last switch;};
+    /INFO taper retrying/ && do {
+      --$filenumber;
+      last switch; };
+    /INFO taper tape/ && do {
+      $line =~ / kb (\d+) /;
+      $size = $1;
+      $line =~ / fm (\d+) /;
+      &pr("$1","total","","-","$size");
+      last switch; };
+    /FAIL taper/ && do { next; };
+  }
+  $filenumber += 1;
 }
-
-dbmclose(%curinfo) if ($use_dbm);
-
-if (!defined($verbose)) {
-    close(TMP);
-    open(TMP, "< $tmpFile");
-    while (<TMP>) {print;}
-    close(TMP);
-    unlink($tmpFile);
-}
-
-# ------------------------------------------------------------------------
-sub read_info {
-# ------------------------------------------------------------------------
-    $info_readed = 0;
-    if (! $use_dbm) {
-	($host, $fs)=split (':', $_[0]);
-	$fs =~ s,_,__,g;
-	$fs =~ s,[/\s],_,g;
-	if (open (I, "$infofile/$host/$fs/info")) {
-	    while (<I>) {
-		chomp;
-		@field=split;
-		if ($field[0] eq "full-rate:") {
-		    $full_rate[0]=$field[1];
-		    $full_rate[1]=$field[2];
-		    $full_rate[2]=$field[3];
-		} elsif ($field[0] eq "full-comp:") {
-		    $full_comp[0]=$field[1];
-		    $full_comp[1]=$field[2];
-		    $full_comp[2]=$field[3];
-		} elsif ($field[0] eq "incr-rate:") {
-		    $incr_rate[0]=$field[1];
-		    $incr_rate[1]=$field[2];
-		    $incr_rate[2]=$field[3];
-		} elsif ($field[0] eq "incr-comp:") {
-		    $incr_comp[0]=$field[1];
-		    $incr_comp[1]=$field[2];
-		    $incr_comp[2]=$field[3];
-		} elsif ($field[0] eq "stats:") {
-		    $size[$field[1]]=$field[2];
-		    $csize[$field[1]]=$field[3];
-		    $secs[$field[1]]=$field[4];
-		    $time[$field[1]]=$field[5];
-		    $file_no[$field[1]]=$field[6];
-		    $label[$field[1]]=$field[7];
-		}
-	    }
-	    $com="unknown";			# ???
-	    close (I);
-	    $info_readed=1;
-	}
-    } elsif (!defined($curinfo{$_[0]."\0"})) {$info_readed=0;}
-    else {
-	$info_readed=1;
-	($com,
-	    $full_rate[0],$full_rate[1],$full_rate[2],
-	    $full_comp[0],$full_comp[1],$full_comp[2],
-	    $incr_rate[0],$incr_rate[1],$incr_rate[2],
-	    $incr_comp[0],$incr_comp[1],$incr_comp[2],
-	    $size[0],$csize[0],$secs[0],$time[0],$file_no[0],$label[0],
-	    $size[1],$csize[1],$secs[1],$time[1],$file_no[1],$label[1],
-	    $size[2],$csize[2],$secs[2],$time[2],$file_no[2],$label[2],
-	    $size[3],$csize[3],$secs[3],$time[3],$file_no[3],$label[3],
-	    $size[4],$csize[4],$secs[4],$time[4],$file_no[4],$label[4],
-	    $size[5],$csize[5],$secs[5],$time[5],$file_no[5],$label[5],
-	    $size[6],$csize[6],$secs[6],$time[6],$file_no[6],$label[6],
-	    $size[7],$csize[7],$secs[7],$time[7],$file_no[7],$label[7],
-	    $size[8],$csize[8],$secs[8],$time[8],$file_no[8],$label[8],
-	    $size[9],$csize[9],$secs[9],$time[9],$file_no[9],$label[9])
-	  = unpack($template,$curinfo{$_[0]."\0"});
-	for ($i=0;$i<10;$i++) { if (defined($label[$i]))
-	    {$label[$i] =~ s/\0.*//;}
-	}
-    } # else
-    $info_readed;
-} # read_info
-
-# ------------------------------------------------------------------------
-sub print_info {
-# ------------------------------------------------------------------------
-    if ($verbose) {
-	print "$current_disk:";
-	print "\tcommand=$com";
-	print "\t$comments{$current_disk}\n";
-	printf ("\tfull_rate=\t%3.1f\t%3.1f\t%3.1f\n",$full_rate[0],$full_rate[1],$full_rate[2]);
-	printf ("\tincr_rate=\t%3.1f\t%3.1f\t%3.1f\n",$incr_rate[0],$incr_rate[1],$incr_rate[2]);
-	printf ("\tfull_comp=\t%3.1f%%\t%3.1f%%\t%3.1f%%\n",$full_comp[0]*100,$full_comp[1]*100,$full_comp[2]*100);
-	printf ("\tincr_comp=\t%3.1f%%\t%3.1f%%\t%3.1f%%\n",$incr_comp[0]*100,$incr_comp[1]*100,$incr_comp[2]*100);
-	print "\n\tlevel\tsize\tcsize\tdur.\tdate\t\tfile_no\tlabel\n";
-	for ($i=0;$i<10;$i++) {
-	if (defined($size[$i]) && $size[$i]) {
-	    ($garb,$garb,$garb,$mday,$mon,$year,$garb,$garb,$garb)=localtime($time[$i]);
-	    $mon++;
-	    print "\t$i";
-	    print "\t$size[$i]";
-	    print "\t$csize[$i]";
-	    print "\t$secs[$i]";
-	    $year += 1900;
-	    print "\t$year-$mon-$mday";
-	    print "\t$file_no[$i]";
-	    print "\t$label[$i]\n";
-	} # if
-	} # for $i
-	print "\n";
-    } # if verbose
-    else {
-	for ($i=0;$i<10;$i++) {
-	    if (defined($size[$i]) && ($size[$i] ne "") && ($size[$i]>0)
-		&& ($label[$i] eq $tape_name)) {
-		if (!defined($use_tab)) {
-		    write(TMP);
-		}
-		else {
-		    print TMP "\t$file_no[$i]";
-		    print TMP "\t$current_disk";
-		    print TMP "\t$i";
-		    print TMP "\t$size[$i]";
-		    print TMP "\t$method{$current_disk}";
-		    print TMP "\t$comments{$current_disk}\n";
-		}
-		$i=10;	# trick. I don't want to examine amdump files
-
-	    } # if
-	} # for
-    } # else
-} # print_info
-
-
-# ------------------------------------------------------------------------
-sub init {
-# ------------------------------------------------------------------------
-    &usage("amtoc required at least '-c config' option") if ($#ARGV==-1) ;
-
-    for ($i=0;$i<=$#ARGV;$i++) {
-	if ($ARGV[$i] eq '-c' || ($i == 0 && $ARGV[0] !~ /^-/)) {
-	    if ($ARGV[$i] eq '-c') {
-		$i++;
-		&usage("'-c' option require 'config' parameter") if ($i > $#ARGV);
-	    }
-	    $conf_name=$ARGV[$i];
-
-	    -d "$config_dir/$conf_name" ||
-		die "$0: configuration directory `$config_dir/$conf_name' does not exist.\n";
-	    chdir("$config_dir/$conf_name") ||
-		die "$0: cannot chdir to `$config_dir/$conf_name': $!\n";
-
-            # where to find the directories which hold the
-	    # administration files
-            $infofile=`cd $config_dir/$conf_name && $libexecdir/getconf$suf infofile`;
-	    chomp $infofile;
-
-	    if (-d "$infofile") {
-		$use_dbm = 0;
-	    } else {
-		$use_dbm = 1;
-	    }
-	    if ($use_dbm) {
-		dbmopen(%curinfo,"$infofile",400)
-		    || die ("cannot open dbm_file `$infofile': $!\n");
-	    }
-	}
-	elsif ($ARGV[$i] eq '-l') {
-	    $i++;
-	    &usage("'-l' option require 'label' parameter") if ($i > $#ARGV);
-	    $tape_name=$ARGV[$i];
-	}
-	elsif ($ARGV[$i] eq '-h') {
-	    $i++;
-	    &usage("'-h' parameter require 'diskname' parameter") if ($i > $#ARGV);
-	    $only_host=$ARGV[$i];
-	}
-	elsif ($ARGV[$i] eq '-v') {$verbose=1;}
-	elsif ($ARGV[$i] eq '-f') {$to_file=1;}
-	elsif ($ARGV[$i] eq '-i') {$info=1;}
-	elsif ($ARGV[$i] eq '-t') {$use_tab=1;}
-	else {&usage("no such option $ARGV[$i]");}
-    } # all options have been readed
-
-    # if ($use_dbm && ! defined (%curinfo)) {&usage("dbmfile empty ?")};
-
-    # Read the tapelist.
-    $tapelist = `$libexecdir/getconf$suf tapelist`;
-    chomp($tapelist);
-    $tapelist = 'tapelist' unless $tapelist;
-    open(TAPELIST,"< $tapelist")
-	|| warn "WARNING: cannot open `$tapelist' for reading: $!\n";
-
-    if (defined ($tape_name)) {
-	# check that $tape_name is defined in tapelist
-	$finded=0;
-	while (($_=<TAPELIST>) && (!$finded)) {
-	    ($date,$ltape_name) = split;
-	    $finded = ($tape_name eq $ltape_name);
-	}
-	warn "WARNING: $tape_name not in tapelist\n" unless $finded;
-    }
-    else { # tape_list == top($conf_name/tapelist)
-	$_=<TAPELIST>;
-	($date,$tape_name) = split;
-    }
-    close(TAPELIST);
-
-    open(DISKLIST,"< $config_dir/$conf_name/disklist")
-	|| warn "WARNING: cannot open `disklist': $!\n";
-
-    while (<DISKLIST>) {
-	if ( (/^[^\#]/) && (/^(\S+)\s+(\S+)\s+(\S+)\s+(.*)/) ) {
-                # host part method comments
-	    if ((defined ($only_host) && ($1 eq $only_host))
-		|| !defined($only_host)) {
-		$method{$1.":".$2}=$3;
-		$comments{$1.":".$2}=$4;
-	    }
-	}
-    }
-    close(DISKLIST);
-
-
-    if (defined($to_file)) {
-	close(STDOUT);
-	$t=$tape_name;
-	$t=~s,[\s/],_,g;
-	($toc=$infofile) =~ s![^/]*$!!;		# remove last path element
-	$toc.="$t.toc";
-	open(FOUT,"> $toc") ||
-	    die "Cannot open toc file `$toc' for writing: $!\n";
-	select(FOUT) || die "Cannot select output file: $!\n";
-	$| = 1; $= =10000; $- = 10000;
-    }
-
-
-    if (defined($info)) {
-	print "AMANDA: To restore:\n";
-	print "    position tape at start of file and run:\n";
-	print "        dd if=<tape> bs=32k skip=1 [ | zcat ] | restore -...f\n";
-	print "    or run:\n";
-	print "        amrestore -p <tape> [host [partition]] | restore -...f\n";
-	print "\n";
-    }
-
-    if (!defined($verbose)) {
-	if (defined($use_tab)) {
-	    print "\t#\tpartition\tlevel\tsize\tmethod\n";
-	    print "\t0\t$tape_name\t-\t-\t$date\n";
-	}
-	else {
-           print "  #  partition                               lvl  size[Kb]  method\n";
-	   printf("  0  %-41s -         -  %-15s\n",$tape_name,$date);
-	}
-	open(TMP,"|sort -n > $tmpFile") ||
-	    die "cannot open temporary file: $!\n";
-	$| = 1;
-    }
-} # init
-
-
-# ------------------------------------------------------------------------
-sub usage {
-# ------------------------------------------------------------------------
-	print "@_\n";
-    die "USAGE: amtoc [-c] config [-l label] [-h host] [-v] [-i] [-t] [-f]\n";
-} # usage
-
-# ------------------------------------------------------------------------
-format TMP =
-@>>  @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< @>> @>>>>>>>>  @<<<<<<<<<<<<<<
-$file_no[$i],$current_disk,$i,$size[$i],$method{$current_disk}
-.
+close $IF;
+close OF;
