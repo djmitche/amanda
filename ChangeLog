@@ -1,3 +1,8 @@
+2005-03-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/planner.c: Improve server estimate.
+	* server-src/planner.c: Write server estimate like others estimate.
+
 2005-02-14  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/amstatus.pl.in: last_level is negative, on new disk.
