@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-chio.c,v 1.11 1999/03/06 09:09:29 th Exp $
+ *	$Id: scsi-chio.c,v 1.12 1999/03/30 10:08:12 oliva Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -13,7 +13,8 @@
 #include "config.h"
 #include "amanda.h"
 
-#if defined(HAVE_CHIO_H) || defined(HAVE_SYS_CHIO_H)
+#if (defined(HAVE_CHIO_H) || defined(HAVE_SYS_CHIO_H)) \
+    && !defined(HAVE_CAMLIB_H)
 
 #include <sys/types.h>
 #include <sys/ioctl.h>
