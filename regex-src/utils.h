@@ -20,3 +20,19 @@ typedef unsigned char uch;
 #ifdef USEBCOPY
 #define	memmove(d, s, c)	bcopy(s, d, c)
 #endif
+
+#include "config.h"
+ 
+/* String concatenation.  */
+#undef Concatenate
+#ifdef HAVE_ANSI_CONCATENATE
+#define Concatenate(a,b)a##b
+#else
+#define Concatenate(a,b)a/**/b
+#endif
+
+#ifdef HAVE_UNSIGNED_LONG_CONSTANTS
+#define AM_UNSIGNED_LONG(num) (Concatenate(num,ul))
+#else
+#define AM_UNSIGNED_LONG(num) ((unsigned long) Concatenate(num,l))
+#endif

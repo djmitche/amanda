@@ -1267,12 +1267,13 @@ CPPFLAGS="$amanda_cv_LFS_CFLAGS $CPPFLAGS"
 LDFLAGS="$amanda_cv_LFS_LDFLAGS $LDFLAGS"
 LIBS="$amanda_cv_LFS_LIBS $LIBS"
 
-
 AM_PROG_LIBTOOL
 AC_PROG_CC
 AC_PROG_GCC_TRADITIONAL
 AC_C_CONST
 AMANDA_C_VOLATILE
+AMANDA_C_UNSIGNED_LONG_CONSTANTS
+AMANCA_C_CONCATENATE_STRINGS
 AC_TYPE_OFF_T
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
@@ -1607,51 +1608,51 @@ esac
 AC_SUBST(DB_EXT)
 
 AC_CACHE_CHECK(whether _POSIX2_RE_DUP_MAX is defined,
-	amanda_cv_have__posix2_re_dup_max,
-	AC_EGREP_CPP(yes, [
+    amanda_cv_have__posix2_re_dup_max,
+    AC_EGREP_CPP(yes, [
 #include <limits.h>
 #ifdef _POSIX2_RE_DUP_MAX
   yes
 #endif
 ], amanda_cv_have__posix2_re_dup_max=yes, amanda_cv_have__posix2_re_dup_max=no))
 if test "$amanda_cv_have__posix2_re_dup_max" = yes; then
-	AC_DEFINE(HAVE__POSIX2_RE_DUP_MAX)
+    AC_DEFINE(HAVE__POSIX2_RE_DUP_MAX)
 fi
 
 AC_CACHE_CHECK(whether CHAR_MIN is defined,
-	amanda_cv_have_char_min,
-	AC_EGREP_CPP(yes, [
+    amanda_cv_have_char_min,
+    AC_EGREP_CPP(yes, [
 #include <limits.h>
 #ifdef CHAR_MIN
   yes
 #endif
 ], amanda_cv_have_char_min=yes, amanda_cv_have_char_min=no))
 if test "$amanda_cv_have_char_min" = yes; then
-	AC_DEFINE(HAVE_CHAR_MIN)
+    AC_DEFINE(HAVE_CHAR_MIN)
 fi
 
 AC_CACHE_CHECK(whether CHAR_MAX is defined,
-	amanda_cv_have_char_max,
-	AC_EGREP_CPP(yes, [
+    amanda_cv_have_char_max,
+    AC_EGREP_CPP(yes, [
 #include <limits.h>
 #ifdef CHAR_MAX
   yes
 #endif
 ], amanda_cv_have_char_max=yes, amanda_cv_have_char_max=no))
 if test "$amanda_cv_have_char_max" = yes; then
-	AC_DEFINE(HAVE_CHAR_MAX)
+    AC_DEFINE(HAVE_CHAR_MAX)
 fi
 
 AC_CACHE_CHECK(whether CHAR_BIT is defined,
-	amanda_cv_have_char_bit,
-	AC_EGREP_CPP(yes, [
+    amanda_cv_have_char_bit,
+    AC_EGREP_CPP(yes, [
 #include <limits.h>
 #ifdef CHAR_BIT
   yes
 #endif
 ], amanda_cv_have_char_bit=yes, amanda_cv_have_char_bit=no))
 if test "$amanda_cv_have_char_bit" = yes; then
-	AC_DEFINE(HAVE_CHAR_BIT)
+    AC_DEFINE(HAVE_CHAR_BIT)
 fi
 
 dnl Checks for library functions and if the function is declared in

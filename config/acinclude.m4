@@ -1,3 +1,50 @@
+dnl Find out how the compiler catenates strings.
+AC_DEFUN(AMANCA_C_CONCATENATE_STRINGS,
+    [
+	AC_CACHE_CHECK(
+	    [for ANSI C string concatenation],
+	    amanda_cv_c_ansi_string_concatenation,
+	    [
+		AC_EGREP_CPP(123456,
+		    [
+			#define Concat(a,b)a##b
+			Concat(123,456)
+		    ],
+		    amanda_cv_c_ansi_string_concatenation=yes,
+		    amanda_cv_c_ansi_string_concatenation=no
+		)
+	    ]
+	)
+	if test "$amanda_cv_c_ansi_string_concatenation" = yes; then
+	    AC_DEFINE(HAVE_ANSI_CONCATENATE)
+	fi
+    ]
+)
+
+dnl Check if the compiler can handle unsigned long constants, ie 2ul.
+AC_DEFUN(AMANDA_C_UNSIGNED_LONG_CONSTANTS,
+    [
+	AC_CACHE_CHECK(
+	    [for working unsigned long constants],
+	    amanda_cv_c_unsigned_long_constants,
+	    [
+		AC_TRY_COMPILE(
+		    [
+		    ],
+		    [
+			long l = 1ul;
+		    ],
+		    amanda_cv_c_unsigned_long_constants=yes,
+		    amanda_cv_c_unsigned_long_constants=no
+		)
+	    ]
+	)
+	if test "$amanda_cv_c_unsigned_long_constants" = yes; then
+	    AC_DEFINE(HAVE_UNSIGNED_LONG_CONSTANTS)
+	fi
+    ]
+)
+
 dnl Check for the argument type for shmat() and shmdt()
 AC_DEFUN(AMANDA_FUNC_SHM_ARG_TYPE,
     [

@@ -81,7 +81,7 @@
 /* Define this if this system's dump exits with 1 as a success code.  */
 #undef DUMP_RETURNS_1
 
-/* Define this if dump accepts -E for estimates. */
+/* Define this if dump accepts -E for estimates.  */
 #undef HAVE_DUMP_ESTIMATE
 
 /* Define the location of the ufsdump, vdump, backup, or dump program.  */
@@ -198,13 +198,17 @@
 #undef HAVE_TWO_ARG_GETTIMEOFDAY
 #undef HAVE_STRUCT_DATUM
 
-/* Type of file locking.  Define none or one of these. */
+/* Compiler characteristics.  */
+#undef HAVE_UNSIGNED_LONG_CONSTANTS
+#undef HAVE_ANSI_CONCATENATE
+
+/* Type of file locking.  Define none or one of these.  */
 #undef USE_POSIX_FCNTL
 #undef USE_FLOCK
 #undef USE_LOCKF
 #undef USE_LNLOCK
 
-/* Definitions in header files. */
+/* Definitions in header files.  */
 #undef HAVE__POSIX2_RE_DUP_MAX
 #undef HAVE_CHAR_MIN
 #undef HAVE_CHAR_MAX

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.22 1997/11/06 04:25:50 amcore Exp $
+ * $Id: amanda.h,v 1.23 1997/11/07 04:01:03 blair Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -294,9 +294,15 @@ extern void debug_printf P((char *format, ...))
 #define SECS_PER_DAY	(24*60*60)
 #define days_diff(a, b)	(((b) - (a) + SECS_PER_DAY/2) / SECS_PER_DAY)
 
+/* String concatenation.  */
+#undef Concatenate
+#ifdef HAVE_ANSI_CONCATENATE
+#define Concatenate(a,b)a##b
+#else
+#define Concatenate(a,b)a/**/b
+#endif
 
-/* Global constants. */
-
+/* Global constants.  */
 #ifndef SERVICE_SUFFIX
 #define SERVICE_SUFFIX ""
 #endif
@@ -307,12 +313,12 @@ extern void debug_printf P((char *format, ...))
 #define KAMANDA_SERVICE_NAME "kamanda" SERVICE_SUFFIX
 #define KAMANDA_SERVICE_DEFAULT	10081
 
-/* Size of a tape block in kbytes.  Do not change lightly. */
+/* Size of a tape block in kbytes.  Do not change lightly.  */
 #define TAPE_BLOCK_SIZE 32
 #define TAPE_BLOCK_BYTES (TAPE_BLOCK_SIZE*1024)
 
 
-/* Define misc amanda functions.  */
+/* Define miscellaneous amanda functions.  */
 #define ERR_INTERACTIVE	1
 #define ERR_SYSLOG	2
 #define ERR_AMANDALOG	4

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.14 1997/08/27 08:12:46 amcore Exp $
+ * $Id: amcheck.c,v 1.15 1997/11/07 04:01:12 blair Exp $
  *
  * checks for common problems in server and clients
  */
@@ -427,8 +427,8 @@ int fd;
     tapename = getconf_str(CNF_TAPEDEV);
 
     if (getconf_seen(CNF_TAPEDEV) && getconf_seen(CNF_TPCHANGER)) {
-	fprintf(outf,
-		"WARNING: when both tapedev and tpchanger are specified, tapedev is ignored.\n"
+	fprintf(outf, "%s%s",
+		"WARNING: when both tapedev and tpchanger are specified, tapedev is ignored.\n",
 		"WARNING: the device to be used is hard-coded in the changer script.\n");
     }
 

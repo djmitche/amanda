@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.21 1997/11/06 07:32:20 amcore Exp $
+ * $Id: conffile.c,v 1.22 1997/11/07 04:01:14 blair Exp $
  *
  * read configuration file
  */
@@ -658,7 +658,7 @@ static void init_defaults()
     save_dumptype();
 }
 
-void read_conffile_recursively(filename)
+static void read_conffile_recursively(filename)
 char *filename;
 {
     extern int errno;
