@@ -11,13 +11,13 @@ strings for printing long long integers.
 --- tar-1.12/src/create.c	Mon Dec 15 17:26:47 1997
 +++ tar-1.12/src/create.c	Mon Dec 15 17:50:48 1997
 @@ -1048,7 +1048,7 @@
-  }
+ 	}
        if (save_typeflag == GNUTYPE_SPARSE)
-  {
--   if (finish_sparse_file (f, &sizeleft, current_stat.st_size, p))
-+   if (f < 0 || finish_sparse_file (f, &sizeleft, current_stat.st_size, p))
-      goto padit;
-  }
+ 	{
+-	  if (finish_sparse_file (f, &sizeleft, current_stat.st_size, p))
++	  if (f < 0 || finish_sparse_file (f, &sizeleft, current_stat.st_size, p))
+ 	    goto padit;
+ 	}
        else
 --- tar-1.12/lib/Makefile.am	Wed Apr 16 16:30:04 1997
 +++ tar-1.12/lib/Makefile.am	Mon Nov 17 06:45:43 1997
