@@ -302,9 +302,24 @@ Default:
 .IR "15 tapes" .
 The number of tapes in your active tape cycle.
 This must be at least one larger than the
+number of Amanda runs done during a dump cycle
+(see the
 .B dumpcycle
-parameter.
-In practice you should have 5 or more extra tapes
+parameter)
+times the number of tapes used per run
+(see the
+.B runtapes
+parameter).
+.IP
+For instance, if you have
+.B dumpcycle
+set to 14 days, do one Amanda run per day and have
+.B runtapes
+set to one, then
+.B tapecycle
+must be at least 15 (14 days * one run/day * one tape/run + one tape).
+.IP
+In practice you should have five or more extra tapes
 to allow for schedule adjustments or disaster recovery.
 .TP
 .BS dumpuser string
