@@ -1,3 +1,21 @@
+2001-06-04 Thomas Hepper <th@ant.han.de>
+	* changer-src/chg-scsi.c: include dmalloc.h for debugging of mem problems
+	* changer-src/scsi-cam.c: Replaced Tape_Eject with a more generic 
+	function to send different ioctls (Tape_Ioctl)
+	* changer-src/scsi-bsd.c: see above
+	* changer-src/scsi-hpux_new.c: see above
+	* changer-src/scsi-irix.c: If the device can be opened in SCSI_OpenDevice
+	set pDev[ip].avail to 1.
+	* changer-src/scsi-linux.c: include dmalloc.h for debugging of mem problems.
+	Fixed an invalid free in SCSI_OpenDevice. Replaced Tape_Eject with Tape_Ioctl.	
+	* changer-src/scsi-changer-driver.c: include dmalloc.h for debugging of mem problems
+	Eject the tape in the inventory function before the scan to get all
+	barcode labels. Check in GenericEject if the device is able to receive
+	SCSI commands, if not use the ioctl interface to eject the tape.
+	Same for the GenericRewind function.
+	Added the LogSense in the GenericEject function.
+	* changer-src/scsi-defs.h: Added define for Tape_Ioctl commands, IOCTL_EJECT.
+	
 2001-06-01 John R. Jackson <jrj@purdue.edu>
 
 	* server-src/amindexd.c (build_disk_table): Make sure a holding disk

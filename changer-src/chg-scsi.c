@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.27 2001/05/28 18:25:54 ant Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.28 2001/06/04 12:07:40 ant Exp $";
 #endif
 /*
  * 
@@ -65,8 +65,17 @@ static char rcsid[] = "$Id: chg-scsi.c,v 1.27 2001/05/28 18:25:54 ant Exp $";
  * 
  */
 
+
 #include "config.h"
+
+
 #include "amanda.h"
+
+#ifdef HAVE_DMALLOC_H
+#include <dmalloc.h>
+#endif
+
+
 #include "conffile.h"
 #include "libscsi.h"
 #include "scsi-defs.h"

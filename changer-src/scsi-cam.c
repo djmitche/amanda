@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-cam.c,v 1.9 2001/05/28 18:25:54 ant Exp $
+ * $Id: scsi-cam.c,v 1.10 2001/06/04 12:07:40 ant Exp $
  *
  * Interface to execute SCSI commands on an system with cam support
  * Current support is for FreeBSD 4.x
@@ -289,21 +289,40 @@ int SCSI_ExecuteCommand(int DeviceFD,
   return(SCSI_OK);
 }
 
-int Tape_Eject ( int DeviceFD)
-{  
+/*
+ * Send the command to the device with the
+ * ioctl interface
+ */
+int Tape_Ioctl( int DeviceFD, int command)
+{
   extern OpenFiles_T *pDev;
   struct mtop mtop;
-  
-  if (pDev[DeviceFD].devopen == 0)
-    SCSI_OpenDevice(DeviceFD);
+  int ret = 0;
 
-  mtop.mt_op = MTOFFL;
-  mtop.mt_count = 1;
-  ioctl(pDev[DeviceFD].fd, MTIOCTOP, &mtop);
+  if (pDev[DeviceFD].devopen == 0)
+    {
+      SCSI_OpenDevice(DeviceFD);
+    }
+
+  switch (command)
+    {
+    case IOCTL_EJECT:
+      mtop.mt_op = MTOFFL;
+      mtop.mt_count = 1;
+      break;
+    default:
+      break;
+    }
+
+  if (ioctl(pDev[DeviceFD].fd , MTIOCTOP, &mtop) != 0)
+    {
+      dbprintf(("Tape_Ioctl error ioctl %d\n",errno));
+      SCSI_CloseDevice(DeviceFD);
+      return(-1);
+    }
 
   SCSI_CloseDevice(DeviceFD);
-
-  return(-1);
+  return(ret);  
 }
 
 int Tape_Status( int DeviceFD)

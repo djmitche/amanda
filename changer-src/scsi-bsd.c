@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-bsd.c,v 1.11 2001/04/15 12:05:24 ant Exp $
+ * $Id: scsi-bsd.c,v 1.12 2001/06/04 12:07:40 ant Exp $
  *
  * Interface to execute SCSI commands on an BSD System (FreeBSD)
  *
@@ -194,15 +194,40 @@ int SCSI_ExecuteCommand(int DeviceFD,
   return(SCSI_SENSE);
 }
 
-int Tape_Eject ( int DeviceFD)
+/*
+ * Send the command to the device with the
+ * ioctl interface
+ */
+int Tape_Ioctl( int DeviceFD, int command)
 {
-    struct mtop mtop;
+  extern OpenFiles_T *pDev;
+  struct mtop mtop;
+  int ret = 0;
 
-    mtop.mt_op = MTOFFL;
-    mtop.mt_count = 1;
-    ioctl(DeviceFD, MTIOCTOP, &mtop);
+  if (pDev[DeviceFD].devopen == 0)
+    {
+      SCSI_OpenDevice(DeviceFD);
+    }
 
-    return(0);
+  switch (command)
+    {
+    case IOCTL_EJECT:
+      mtop.mt_op = MTOFFL;
+      mtop.mt_count = 1;
+      break;
+    default:
+      break;
+    }
+
+  if (ioctl(pDev[DeviceFD].fd , MTIOCTOP, &mtop) != 0)
+    {
+      dbprintf(("Tape_Ioctl error ioctl %d\n",errno));
+      SCSI_CloseDevice(DeviceFD);
+      return(-1);
+    }
+
+  SCSI_CloseDevice(DeviceFD);
+  return(ret);  
 }
 
 int Tape_Status( int DeviceFD)

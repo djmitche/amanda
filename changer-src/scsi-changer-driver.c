@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.29 2001/06/01 19:43:20 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.30 2001/06/04 12:07:40 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -8,6 +8,11 @@ static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.29 2001/06/01 19:43:20 ant
  */
 
 #include <amanda.h>
+
+#ifdef HAVE_DMALLOC_H
+#include <dmalloc.h>
+#endif
+
 #include "arglist.h"
 /*
 #ifdef HAVE_STDIO_H
@@ -575,15 +580,16 @@ void Inventory(char *labelfile, int drive, int eject, int start, int stop, int c
 
   if (barcode == 1)
     {
-      if (eject)
-	{
-	  eject_tape("", eject);
-	}
 
       if (pDTE[0].status == 'F')
 	{
+	  if (eject)
+	    {
+	      eject_tape("", eject);
+	    }
 	  (void)unload(INDEX_TAPE, 0, 0);
 	}
+
       GenericResetStatus(INDEX_CHANGER);
     }
 
@@ -1729,7 +1735,7 @@ void TapeStatus()
 		  true = 0;
 		  break;
 		case SENSE_TAPE_NOT_ONLINE:
-		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericEject (TestUnitReady) SENSE_TAPE_NOT_ONLINE\n");
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"TapeStatus (TestUnitReady) SENSE_TAPE_NOT_ONLINE\n");
 		  pDTE[0].status = 'E';
 		  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### EMPTY\n");
 		  true = 0;
@@ -1919,87 +1925,97 @@ int GenericEject(char *Device, int type)
   int cnt = 0;
   int true = 1;
   
-  dbprintf(("##### START GenericEject\n"));
+  DebugPrint(DEBUG_INFO, SECTION_TAPE, "##### START GenericEject\n");
   
   if ((pRequestSense = malloc(sizeof(RequestSense_T))) == NULL)
     {
-      dbprintf(("%-20s : malloc failed\n","GenericEject"));
+      DebugPrint(DEBUG_ERROR, SECTION_TAPE, "%-20s : malloc failed\n","GenericEject");
       return(-1);
     }
     
-  dbprintf(("GenericEject : SCSI eject on %s = %s\n", pDev[INDEX_TAPECTL].dev, pDev[INDEX_TAPECTL].ConfigName));
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"GenericEject : SCSI eject on %s = %s\n", pDev[INDEX_TAPECTL].dev, pDev[INDEX_TAPECTL].ConfigName);
   
-  /* Unload the tape, 1 == don't wait for success
-   * 0 == unload 
+  /*
+   * Can we use SCSI commands ?
    */
-  ret = SCSI_LoadUnload(INDEX_TAPECTL, pRequestSense, 1, 0);
-  
-  /* < 0 == fatal */
-  if (ret < 0)
-    return(-1);
-  
-  if ( ret > 0)
+  if (pDev[INDEX_TAPECTL].SCSI == 1)
     {
-    }
-  
-  true = 1;
-  
-  
-  while (true && cnt < 300)
-    {
-      ret = SCSI_TestUnitReady(INDEX_TAPECTL, pRequestSense);
-      DebugPrint(DEBUG_INFO, SECTION_SCSI, "GenericEject TestUnitReady ret %d\n",ret);
-      switch (ret)
+      LogSense(INDEX_TAPECTL);
+      /* 
+       * Unload the tape, 1 == don't wait for success
+       * 0 == unload 
+       */
+      ret = SCSI_LoadUnload(INDEX_TAPECTL, pRequestSense, 1, 0);
+      
+      /* < 0 == fatal */
+      if (ret < 0)
+	return(-1);
+      
+      if ( ret > 0)
 	{
-	case SCSI_OK:
-	case SCSI_SENSE:
-	  switch (SenseHandler(INDEX_TAPECTL, 0, pRequestSense->SenseKey, pRequestSense->AdditionalSenseCode, pRequestSense->AdditionalSenseCodeQualifier, (char *)pRequestSense))
+	}
+      
+      true = 1;
+      
+      
+      while (true && cnt < 300)
+	{
+	  ret = SCSI_TestUnitReady(INDEX_TAPECTL, pRequestSense);
+	  DebugPrint(DEBUG_INFO, SECTION_SCSI, "GenericEject TestUnitReady ret %d\n",ret);
+	  switch (ret)
 	    {
-	    case SENSE_NO:
-	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericEject (TestUnitReady) SENSE_NO\n");
+	    case SCSI_OK:
+	    case SCSI_SENSE:
+	      switch (SenseHandler(INDEX_TAPECTL, 0, pRequestSense->SenseKey, pRequestSense->AdditionalSenseCode, pRequestSense->AdditionalSenseCodeQualifier, (char *)pRequestSense))
+		{
+		case SENSE_NO:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericEject (TestUnitReady) SENSE_NO\n");
+		  break;
+		case SENSE_TAPE_NOT_ONLINE:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericEject (TestUnitReady) SENSE_TAPE_NOT_ONLINE\n");
+		  true = 0;
+		  break;
+		case SENSE_IGNORE:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericEject (TestUnitReady) SENSE_IGNORE\n");
+		  break;
+		case SENSE_ABORT:
+		  DebugPrint(DEBUG_ERROR, SECTION_SCSI,"GenericEject (TestUnitReady) SENSE_ABORT\n");
+		  return(-1);
+		  break;
+		case SENSE_RETRY:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericEject (TestUnitReady) SENSE_RETRY\n");
+		  break;
+		default:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericEject (TestUnitReady) default (SENSE)\n");
+		  break;
+		}
 	      break;
-	    case SENSE_TAPE_NOT_ONLINE:
-	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericEject (TestUnitReady) SENSE_TAPE_NOT_ONLINE\n");
-	      true = 0;
-	      break;
-	    case SENSE_IGNORE:
-	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericEject (TestUnitReady) SENSE_IGNORE\n");
-	      break;
-	    case SENSE_ABORT:
-	      DebugPrint(DEBUG_ERROR, SECTION_SCSI,"GenericEject (TestUnitReady) SENSE_ABORT\n");
+	    case SCSI_ERROR:
+	      DebugPrint(DEBUG_ERROR, SECTION_SCSI,"GenericEject (TestUnitReady) SCSI_ERROR\n");
 	      return(-1);
 	      break;
-	    case SENSE_RETRY:
-	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericEject (TestUnitReady) SENSE_RETRY\n");
+	    case SCSI_BUSY:
+	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericEject (TestUnitReady) SCSI_BUSY\n");
+	      break;
+	    case SCSI_CHECK:
+	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericEject (TestUnitReady) SCSI_CHECK\n");
 	      break;
 	    default:
-	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericEject (TestUnitReady) default (SENSE)\n");
+	      DebugPrint(DEBUG_ERROR, SECTION_SCSI,"GenericEject (TestUnitReady) unknown (%d)\n",ret);
 	      break;
-	    }
-	  break;
-	case SCSI_ERROR:
-	  DebugPrint(DEBUG_ERROR, SECTION_SCSI,"GenericEject (TestUnitReady) SCSI_ERROR\n");
-	  return(-1);
-	  break;
-	case SCSI_BUSY:
-	  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericEject (TestUnitReady) SCSI_BUSY\n");
-	  break;
-	case SCSI_CHECK:
-	  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericEject (TestUnitReady) SCSI_CHECK\n");
-	  break;
-	default:
-	  DebugPrint(DEBUG_ERROR, SECTION_SCSI,"GenericEject (TestUnitReady) unknown (%d)\n",ret);
-	  break;
-	}  
-      cnt++;
-      sleep(2);
+	    }  
+	  cnt++;
+	  sleep(2);
+	}
+      
+      free(pRequestSense);
+      
+    } else {
+      DebugPrint(DEBUG_INFO, SECTION_TAPE,"GenericEject : Device can't understand SCSI try ioctl\n");
+      Tape_Ioctl(INDEX_TAPECTL, IOCTL_EJECT);
     }
-  
-  free(pRequestSense);
-  
-  dbprintf(("GenericEject : Ready after %d sec, true = %d\n", cnt * 2, true));
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"GenericEject : Ready after %d sec, true = %d\n", cnt * 2, true);
   return(0);
-  
 }
 
 /*
@@ -2007,8 +2023,7 @@ int GenericEject(char *Device, int type)
  *
  * TODO:
  * Make the retry counter an config option,
- * if no tape is loaded return an error.
- * 
+ *
  * Return:
  * -1 -> error
  * 0  -> success
@@ -2016,180 +2031,194 @@ int GenericEject(char *Device, int type)
 int GenericRewind(int DeviceFD)
 {
   CDB_T CDB;
+  extern OpenFiles_T *pDev; 
   RequestSense_T *pRequestSense;
   int ret;
   int cnt = 0;
   int true = 1;
 
-  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### START GenericRewind\n");
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### START GenericRewind pDEV -> %d\n",DeviceFD);
 
-  if ((pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
-      {
+
+  /*
+   * If we can use the SCSI device than use it, else use the ioctl
+   * function
+   */
+  if (pDev[DeviceFD].SCSI == 1)
+    {
+      if ((pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
+	{
           DebugPrint(DEBUG_ERROR, SECTION_TAPE,"GenericRewind : malloc failed\n");
           return(-1);
-      }
-  /*
-   * Before doing the rewind check if the tape is ready to accept commands
-   */
-
-  while (true == 1)
-    {
-      ret = SCSI_TestUnitReady(DeviceFD, (RequestSense_T *)pRequestSense );
-      DebugPrint(DEBUG_INFO, SECTION_TAPE, "GenericRewind (TestUnitReady) ret %d\n",ret);
-      switch (ret)
+	}
+      /*
+       * Before doing the rewind check if the tape is ready to accept commands
+       */
+      
+      while (true == 1)
 	{
-	case SCSI_OK:
-	case SCSI_SENSE:
-	  switch (SenseHandler(DeviceFD, 0, pRequestSense->SenseKey, pRequestSense->AdditionalSenseCode, pRequestSense->AdditionalSenseCodeQualifier, (char *)pRequestSense))
+	  ret = SCSI_TestUnitReady(DeviceFD, (RequestSense_T *)pRequestSense );
+	  DebugPrint(DEBUG_INFO, SECTION_TAPE, "GenericRewind (TestUnitReady) ret %d\n",ret);
+	  switch (ret)
 	    {
-	    case SENSE_NO:
-	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_NO\n");
-	      true = 0;
-	      break;
-	    case SENSE_TAPE_NOT_ONLINE:
+	    case SCSI_OK:
+	    case SCSI_SENSE:
+	      switch (SenseHandler(DeviceFD, 0, pRequestSense->SenseKey, pRequestSense->AdditionalSenseCode, pRequestSense->AdditionalSenseCodeQualifier, (char *)pRequestSense))
+		{
+		case SENSE_NO:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_NO\n");
+		  true = 0;
+		  break;
+		case SENSE_TAPE_NOT_ONLINE:
 	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_TAPE_NOT_ONLINE\n");
 	      return(-1);
 	      break;
-	    case SENSE_IGNORE:
-	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_IGNORE\n");
-	      true = 0;
+		case SENSE_IGNORE:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_IGNORE\n");
+		  true = 0;
+		  break;
+		case SENSE_ABORT:
+		  DebugPrint(DEBUG_ERROR, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_ABORT\n");
+		  return(-1);
+		  break;
+		case SENSE_RETRY:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_RETRY\n");
+		  break;
+		default:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) default (SENSE)\n");
+		  true = 0;
+		  break;
+		}
 	      break;
-	    case SENSE_ABORT:
-	      DebugPrint(DEBUG_ERROR, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_ABORT\n");
+	    case SCSI_ERROR:
+	      DebugPrint(DEBUG_ERROR, SECTION_SCSI,"GenericRewind (TestUnitReady) SCSI_ERROR\n");
 	      return(-1);
 	      break;
-	    case SENSE_RETRY:
-	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_RETRY\n");
+	    case SCSI_BUSY:
+	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SCSI_BUSY\n");
+	      break;
+	    case SCSI_CHECK:
+	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SCSI_CHECK\n");
 	      break;
 	    default:
-	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) default (SENSE)\n");
-	      true = 0;
+	      DebugPrint(DEBUG_ERROR, SECTION_SCSI,"GenericRewind (TestUnitReady) unknown (%d)\n",ret);
 	      break;
 	    }
-	  break;
-	case SCSI_ERROR:
-	  DebugPrint(DEBUG_ERROR, SECTION_SCSI,"GenericRewind (TestUnitReady) SCSI_ERROR\n");
-	  return(-1);
-	  break;
-	case SCSI_BUSY:
-	  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SCSI_BUSY\n");
-	  break;
-	case SCSI_CHECK:
-	  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SCSI_CHECK\n");
-	  break;
-	default:
-	  DebugPrint(DEBUG_ERROR, SECTION_SCSI,"GenericRewind (TestUnitReady) unknown (%d)\n",ret);
-	  break;
-	}
-      
-      sleep(1);
-      DebugPrint(DEBUG_INFO, SECTION_TAPE," Wait .... (%d)\n",cnt);
-      if (cnt > 180)
-	{
-	  DebugPrint(DEBUG_ERROR, SECTION_TAPE,"##### STOP GenericRewind (-1)\n");
-	  return(-1);
-	}
-    }
-  
-  cnt = 0;
-  true = 1;
-  
-  CDB[0] = SC_COM_REWIND;
-  CDB[1] = 1;             
-  CDB[2] = 0;
-  CDB[3] = 0;
-  CDB[4] = 0;
-  CDB[5] = 0;
-  
-  while (true)
-    {
-      ret = SCSI_Run(DeviceFD, Input, CDB, 6,
-                                NULL, 0, 
-                                (char *) pRequestSense,
-                                sizeof(RequestSense_T));
-      
-      DecodeSense(pRequestSense, "GenericRewind : ", debug_file);
-      
-      if (ret > 0) 
-        {
-          if (pRequestSense->SenseKey != UNIT_ATTENTION)
-            {
-              true = 0;
-            }
-        }
-      if (ret == 0)
-        {
-          true = 0;
-        }
-      if (ret < 0)
-        {
-          DebugPrint(DEBUG_INFO, SECTION_TAPE,"GenericRewind : failed %d\n", ret);
-          true = 0;
-        }
-    }
-
-  true = 1;
-
-  while (true && cnt < 300)
-    {
-      ret = SCSI_TestUnitReady(DeviceFD, pRequestSense);
-      DebugPrint(DEBUG_INFO, SECTION_SCSI, "GenericRewind TestUnitReady ret %d\n",ret);
-      switch (ret)
-	{
-	case SCSI_OK:
-	  true = 0;
-	  break;
-	case SCSI_SENSE:
-	  switch (SenseHandler(DeviceFD, 0, pRequestSense->SenseKey, pRequestSense->AdditionalSenseCode, pRequestSense->AdditionalSenseCodeQualifier, (char *)pRequestSense))
+	  
+	  sleep(1);
+	  DebugPrint(DEBUG_INFO, SECTION_TAPE," Wait .... (%d)\n",cnt);
+	  if (cnt > 180)
 	    {
-	    case SENSE_NO:
-	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_NO\n");
+	      DebugPrint(DEBUG_ERROR, SECTION_TAPE,"##### STOP GenericRewind (-1)\n");
+	      return(-1);
+	    }
+	}
+      
+      cnt = 0;
+      true = 1;
+      
+      CDB[0] = SC_COM_REWIND;
+      CDB[1] = 1;             
+      CDB[2] = 0;
+      CDB[3] = 0;
+      CDB[4] = 0;
+      CDB[5] = 0;
+      
+      while (true)
+	{
+	  ret = SCSI_Run(DeviceFD, Input, CDB, 6,
+			 NULL, 0, 
+			 (char *) pRequestSense,
+			 sizeof(RequestSense_T));
+	  
+	  DecodeSense(pRequestSense, "GenericRewind : ", debug_file);
+	  
+	  if (ret > 0) 
+	    {
+	      if (pRequestSense->SenseKey != UNIT_ATTENTION)
+		{
+		  true = 0;
+		}
+	    }
+	  if (ret == 0)
+	    {
+	      true = 0;
+	    }
+	  if (ret < 0)
+	    {
+	      DebugPrint(DEBUG_INFO, SECTION_TAPE,"GenericRewind : failed %d\n", ret);
+	      true = 0;
+	    }
+	}
+      
+      true = 1;
+      
+      while (true && cnt < 300)
+	{
+	  ret = SCSI_TestUnitReady(DeviceFD, pRequestSense);
+	  DebugPrint(DEBUG_INFO, SECTION_SCSI, "GenericRewind TestUnitReady ret %d\n",ret);
+	  switch (ret)
+	    {
+	    case SCSI_OK:
 	      true = 0;
 	      break;
-	    case SENSE_TAPE_NOT_ONLINE:
-	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_TAPE_NOT_ONLINE\n");
+	    case SCSI_SENSE:
+	      switch (SenseHandler(DeviceFD, 0, pRequestSense->SenseKey, pRequestSense->AdditionalSenseCode, pRequestSense->AdditionalSenseCodeQualifier, (char *)pRequestSense))
+		{
+		case SENSE_NO:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_NO\n");
+		  true = 0;
+		  break;
+		case SENSE_TAPE_NOT_ONLINE:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_TAPE_NOT_ONLINE\n");
+		  return(-1);
+		  break;
+		case SENSE_IGNORE:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_IGNORE\n");
+		  true = 0;
+		  break;
+		case SENSE_ABORT:
+		  DebugPrint(DEBUG_ERROR, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_ABORT\n");
+		  return(-1);
+		  break;
+		case SENSE_RETRY:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_RETRY\n");
+		  break;
+		default:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) default (SENSE)\n");
+		  true = 0;
+		  break;
+		}
+	      break;
+	    case SCSI_ERROR:
+	      DebugPrint(DEBUG_ERROR, SECTION_SCSI,"GenericRewind (TestUnitReady) SCSI_ERROR\n");
 	      return(-1);
+	      break;     
+	    case SCSI_BUSY:
+	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SCSI_BUSY\n");
 	      break;
-	    case SENSE_IGNORE:
-	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_IGNORE\n");
-	      true = 0;
-	      break;
-	    case SENSE_ABORT:
-	      DebugPrint(DEBUG_ERROR, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_ABORT\n");
-	      return(-1);
-	      break;
-	    case SENSE_RETRY:
-	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SENSE_RETRY\n");
+	    case SCSI_CHECK:
+	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SCSI_CHECK\n");
 	      break;
 	    default:
-	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) default (SENSE)\n");
-	      true = 0;
+	      DebugPrint(DEBUG_ERROR, SECTION_SCSI,"GenericRewind (TestUnitReady) unknown (%d)\n",ret);
 	      break;
 	    }
-	  break;
-	case SCSI_ERROR:
-	  DebugPrint(DEBUG_ERROR, SECTION_SCSI,"GenericRewind (TestUnitReady) SCSI_ERROR\n");
-	  return(-1);
-	  break;     
-	case SCSI_BUSY:
-	  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SCSI_BUSY\n");
-	  break;
-	case SCSI_CHECK:
-	  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericRewind (TestUnitReady) SCSI_CHECK\n");
-	  break;
-	default:
-	  DebugPrint(DEBUG_ERROR, SECTION_SCSI,"GenericRewind (TestUnitReady) unknown (%d)\n",ret);
-	  break;
+	  cnt++;
+	  sleep(2);
 	}
-      cnt++;
-      sleep(2);
+      
+      
+      free(pRequestSense);
+      
+      DebugPrint(DEBUG_INFO, SECTION_TAPE,"GenericRewind : Ready after %d sec, true = %d\n", cnt * 2, true);
+      DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP GenericRewind (0)\n");
+    } else {
+      DebugPrint(DEBUG_INFO, SECTION_TAPE,"GenericRewind : use ioctl rewind");
+      tape_rewind(pDev[DeviceFD].dev);
+      DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP GenericRewind (0)\n");
     }
-  
-  
-  free(pRequestSense);
-  
-  DebugPrint(DEBUG_INFO, SECTION_TAPE,"GenericRewind : Ready after %d sec, true = %d\n", cnt * 2, true);
-  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP GenericRewind (0)\n");
+
   return(0);
 }
 
@@ -2871,7 +2900,7 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
 	  if (GenericResetStatus(DeviceFD) != 0)
 	    {
 	      ElementStatusValid = 0;
-	      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Can't init status\n");
+	      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Can't init status STEError(%d) MTEError(%d) DTEError(%d) IEEError(%d)\n", STEError, MTEError, DTEError, IEEError);
 	      return(-1);
 	    }
 	  error = 0;
@@ -3872,7 +3901,6 @@ ElementInfo_T *LookupElement(int address)
  * Fix the result handling from TestUnitReady
  *
  */
-
 int LogSense(DeviceFD)
 {
   extern OpenFiles_T *pDev;
@@ -3897,28 +3925,21 @@ int LogSense(DeviceFD)
   int nologpages;
   int size = 2048;
 
-  dbprintf(("##### START LogSense\n"));
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### START LogSense\n");
 
   if (tapestatfile != NULL && 
-      (StatFile = fopen(tapestatfile,"a")) != NULL &&
+      (StatFile = fopen(tapestatfile,"a")) != NULL && 
       pDev[INDEX_TAPECTL].SCSI == 1) 
     {
       if ((pRequestSense  = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
         {
-          dbprintf(("LogSense : malloc failed\n"));
+          DebugPrint(DEBUG_ERROR, SECTION_TAPE,"LogSense : malloc failed\n");
               return(-1);
         }
       
-      if (SCSI_TestUnitReady(INDEX_TAPECTL, pRequestSense) == 0)
-        {
-          DecodeSense(pRequestSense, "LogSense :", debug_file);
-          dbprintf(("LogSense : Tape_Ready failed\n"));
-          free(pRequestSense);
-          return(0);
-        }
-      if (GenericRewind(2) < 0) 
+      if (GenericRewind(INDEX_TAPECTL) < 0) 
         { 
-          dbprintf(("LogSense : Rewind failed\n"));
+          DebugPrint(DEBUG_INFO, SECTION_TAPE,"LogSense : Rewind failed\n");
           free(pRequestSense);
           return(0); 
         } 
@@ -3931,20 +3952,19 @@ int LogSense(DeviceFD)
 	    {
 	      SCSI_CloseDevice(INDEX_TAPE);
 	    }
-	  if ((fd = tape_open(pDev[INDEX_TAPE].dev, O_RDONLY)) != 0)
+	  
+	  if ((result = (char *)tape_rdlabel(pDev[INDEX_TAPE].dev, &datestamp, &label)) == NULL)
 	    {
-	      if ((result = (char *)tapefd_rdlabel(pDev[INDEX_TAPE].fd, &datestamp, &label)) == NULL)
-		{
-		  fprintf(StatFile, "==== %s ==== %s ====\n", datestamp, label);
-		} else {
-		  fprintf(StatFile, "%s\n", result);
-		}
-	      tapefd_close(fd);
+	      fprintf(StatFile, "==== %s ==== %s ====\n", datestamp, label);
+	    } else {
+	      fprintf(StatFile, "%s\n", result);
 	    }
-        }
+	  tapefd_close(fd);
+	}
+
       if ((buffer = (char *)malloc(size)) == NULL)
         {
-          dbprintf(("LogSense : malloc failed\n"));
+          DebugPrint(DEBUG_ERROR, SECTION_TAPE,"LogSense : malloc failed\n");
           return(-1);
         }
       memset(buffer, 0, size);
@@ -3962,10 +3982,7 @@ int LogSense(DeviceFD)
       MSB2(&CDB[7], size);
       CDB[9] = 0;
       
-      
-      dbprintf(("LogSense\n"));
-      
-      if (SCSI_Run(DeviceFD, Input, CDB, 10,
+            if (SCSI_Run(INDEX_TAPECTL, Input, CDB, 10,
                               buffer,
                               size, 
                               (char *)pRequestSense,
@@ -3981,7 +3998,7 @@ int LogSense(DeviceFD)
       nologpages = V2(LogSenseHeader->PageLength);
       if ((logpages = (char *)malloc(nologpages)) == NULL)
         {
-          dbprintf(("LogSense : malloc failed\n"));
+          DebugPrint(DEBUG_ERROR, SECTION_TAPE,"LogSense : malloc failed\n");
           return(-1);
         }
       
@@ -4002,7 +4019,7 @@ int LogSense(DeviceFD)
           MSB2(&CDB[7], size);
           CDB[9] = 0;
       
-          if (SCSI_Run(DeviceFD, Input, CDB, 10,
+          if (SCSI_Run(INDEX_TAPECTL, Input, CDB, 10,
                                   buffer,
                                   size, 
                                   (char *)pRequestSense,
@@ -4071,7 +4088,9 @@ int LogSense(DeviceFD)
       free(pRequestSense);
       free(buffer);
     }
-    return(0);
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP LogSense\n");
+  
+  return(0);
 }
 
 void WriteErrorCountersPage(LogParameter_T *buffer, int length)

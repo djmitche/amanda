@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-hpux_new.c,v 1.13 2001/04/15 12:05:24 ant Exp $
+ * $Id: scsi-hpux_new.c,v 1.14 2001/06/04 12:07:41 ant Exp $
  *
  * Interface to execute SCSI commands on an HP-UX Workstation
  *
@@ -192,25 +192,42 @@ int SCSI_ExecuteCommand(int DeviceFD,
   }
   return(SCSI_ERROR);
 }
-
-int Tape_Eject (int DeviceFD)
+/*
+ * Send the command to the device with the
+ * ioctl interface
+ */
+int Tape_Ioctl( int DeviceFD, int command)
 {
   extern OpenFiles_T *pDev;
   struct mtop mtop;
+  int ret = 0;
 
   if (pDev[DeviceFD].devopen == 0)
-    SCSI_OpenDevice(DeviceFD);
+    {
+      SCSI_OpenDevice(DeviceFD);
+    }
 
-  mtop.mt_op = MTOFFL;
-  mtop.mt_count = 1;
-  if (ioctl(pDev[DeviceFD].fd, MTIOCTOP, &mtop) < 0) {
-    SCSI_CloseDevice(DeviceFD);
-    return(-1);
-  } else {
-    SCSI_CloseDevice(DeviceFD);
-    return(0);
-  }
+  switch (command)
+    {
+    case IOCTL_EJECT:
+      mtop.mt_op = MTOFFL;
+      mtop.mt_count = 1;
+      break;
+    default:
+      break;
+    }
+
+  if (ioctl(pDev[DeviceFD].fd , MTIOCTOP, &mtop) != 0)
+    {
+      dbprintf(("Tape_Ioctl error ioctl %d\n",errno));
+      SCSI_CloseDevice(DeviceFD);
+      return(-1);
+    }
+
+  SCSI_CloseDevice(DeviceFD);
+  return(ret);  
 }
+
 
 
 int Tape_Status( int DeviceFD)

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-irix.c,v 1.15 2001/04/15 12:05:24 ant Exp $
+ * $Id: scsi-irix.c,v 1.16 2001/06/04 12:07:41 ant Exp $
  *
  * Interface to execute SCSI commands on an SGI Workstation
  *
@@ -70,6 +70,7 @@ int SCSI_OpenDevice(int ip)
       if ((DeviceFD = open(DeviceName, O_RDONLY)) > 0)
         {
           pDev[ip].SCSI = 0;
+          pDev[ip].avail = 1;
           pDev[ip].inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
           if (SCSI_Inquiry(DeviceFD, pDev[ip].inquiry, INQUIRY_SIZE) == 0)
             {
@@ -116,10 +117,14 @@ int SCSI_OpenDevice(int ip)
 int SCSI_CloseDevice(int DeviceFD)
 {
   extern OpenFiles_T *pDev;
-  int ret;
-    
-  ret = close(pDev[DeviceFD].fd);
-  pDev[DeviceFD].devopen = 0;
+  int ret = 0;
+  
+  if (pDev[DeviceFD].devopen == 1)
+    {
+      pDev[DeviceFD].devopen = 0;
+      ret = close(pDev[DeviceFD].fd);
+    }
+
   return(ret);
 }
 

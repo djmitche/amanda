@@ -24,13 +24,19 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-linux.c,v 1.21 2001/05/28 18:25:55 ant Exp $
+ * $Id: scsi-linux.c,v 1.22 2001/06/04 12:07:41 ant Exp $
  *
  * Interface to execute SCSI commands on Linux
  *
  * Copyright (c) Thomas Hepper th@ant.han.de
  */
+
+
 #include <amanda.h>
+
+#ifdef HAVE_DMALLOC_H
+#include <dmalloc.h>
+#endif
 
 #ifdef HAVE_LINUX_LIKE_SCSI
 
@@ -226,8 +232,6 @@ int SCSI_OpenDevice(int ip)
           pDev[ip].SCSI = 0;
           pDev[ip].devopen = 0;
           close(DeviceFD);
-          free(pDev[ip].inquiry);
-          pDev[ip].inquiry = NULL;
           DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_OpenDevice (1)\n");
           return(1);
         }
@@ -486,21 +490,40 @@ int SCSI_ExecuteCommand(int DeviceFD,
 }
 #endif
 
-int Tape_Eject ( int DeviceFD)
+/*
+ * Send the command to the device with the
+ * ioctl interface
+ */
+int Tape_Ioctl( int DeviceFD, int command)
 {
   extern OpenFiles_T *pDev;
   struct mtop mtop;
+  int ret = 0;
 
   if (pDev[DeviceFD].devopen == 0)
     {
       SCSI_OpenDevice(DeviceFD);
     }
-  
-  mtop.mt_op = MTUNLOAD;
-  mtop.mt_count = 1;
-  ioctl(pDev[DeviceFD].fd, MTIOCTOP, &mtop);
+
+  switch (command)
+    {
+    case IOCTL_EJECT:
+      mtop.mt_op = MTOFFL;
+      mtop.mt_count = 1;
+      break;
+    default:
+      break;
+    }
+
+  if (ioctl(pDev[DeviceFD].fd , MTIOCTOP, &mtop) != 0)
+    {
+      dbprintf(("Tape_Ioctl error ioctl %d\n",errno));
+      SCSI_CloseDevice(DeviceFD);
+      return(-1);
+    }
+
   SCSI_CloseDevice(DeviceFD);
-  return(0);
+  return(ret);  
 }
 
 int Tape_Status( int DeviceFD)
