@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.5 1999/04/01 15:33:40 martinea Exp $
+ * $Id: amcheck.c,v 1.50.2.6 1999/05/24 20:16:11 kashmir Exp $
  *
  * checks for common problems in server and clients
  */
@@ -246,8 +246,8 @@ char **argv;
 	    ap_snprintf(number, sizeof(number), "%ld", (long)pid);
 	    wait_msg = vstralloc("parent: reaped bogus pid ", number, "\n",
 				 NULL);
-	    for(l = 0, n = strlen(buffer); l < n; l += s) {
-		if((s = write(mainfd, buffer + l, n - l)) < 0) {
+	    for(l = 0, n = strlen(wait_msg); l < n; l += s) {
+		if((s = write(mainfd, wait_msg + l, n - l)) < 0) {
 		    error("write main file: %s", strerror(errno));
 		}
 	    }

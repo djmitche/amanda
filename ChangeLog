@@ -1,3 +1,9 @@
+1999-05-24  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/amcheck.c (main): if we reap a bogus pid, print
+	out the error message we generate, instead of whatever junk
+	happens to be in the buffer.
+
 1999-05-23  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/amindex.h: Keep P macro expression in a single line.
