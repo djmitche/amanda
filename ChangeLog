@@ -1,5 +1,8 @@
 1998-09-09  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* server-src/reporter.c (divzero, divzero_wide): print `#'s on
+ 	overflow
+
 	* server-src/amtape.c (show_init): no longer print `scanning'
  	message
 	(show_init_show, current_init_all): call show_init, then print the

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.40 1998/09/02 03:40:49 oliva Exp $
+ * $Id: reporter.c,v 1.41 1998/09/09 05:29:32 oliva Exp $
  *
  * nightly Amanda Report generator
  */
@@ -468,12 +468,26 @@ char **argv;
 #define hrmn(f) ((int)(f)+30)/3600, (((int)(f)+30)%3600)/60
 #define mnsc(f) ((int)(f+0.5))/60, ((int)(f+0.5)) % 60
 
-#define divzero(fp,a,b)	((b) == 0.0? \
-			 fprintf(fp,"  -- ") : \
-			 fprintf(fp, "%5.1f",(a)/(b)))
-#define divzero_wide(fp,a,b)	((b) == 0.0? \
-				 fprintf(fp,"    -- ") : \
-				 fprintf(fp, "%7.1f",(a)/(b)))
+#define divzero(fp,a,b)	        	    \
+    do {       	       	       	       	    \
+	double q = (b);			    \
+	if (q == 0.0)			    \
+	    fprintf((fp),"  -- ");	    \
+	else if ((q = (a)/q) >= 999.95)	    \
+	    fprintf((fp), "###.#");	    \
+	else				    \
+	    fprintf((fp), "%5.1f",q);	    \
+    } while(0)
+#define divzero_wide(fp,a,b)	       	    \
+    do {       	       	       	       	    \
+	double q = (b);			    \
+	if (q == 0.0)			    \
+	    fprintf((fp),"    -- ");	    \
+	else if ((q = (a)/q) >= 99999.95)   \
+	    fprintf((fp), "#####.#");	    \
+	else				    \
+	    fprintf((fp), "%7.1f",q);	    \
+    } while(0)
 
 void output_stats()
 {
