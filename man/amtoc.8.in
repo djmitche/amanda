@@ -75,11 +75,13 @@ The file is named:
 .LP
 .RS
 .RS
-@LOG_DIR@/\fIconfig\fP/\fIlabel\fP.toc,
+\fIlogdir\fP/\fIlabel\fP.toc,
 .RE
 .RE
 .IP
 where
+.I logdir
+is the log directory defined in amanda.conf, and
 .I label
 is the tape label
 (any '/' characters are converted to '_').
