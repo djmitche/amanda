@@ -1,4 +1,12 @@
 2002-10-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	Undo patch of 2002-10-24. They are needed by amrecover.
+
+	* client-src/getfsent.h (open_fstab, close_fstab, get_fstab_nextentry,
+	  is_local_fstype): Add Prototype.
+	* client-src/getfsent.c (open_fstab, close_fstab, get_fstab_nextentry,
+	  is_local_fstype): remove Prototype.
+
+2002-10-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	Patch by Paul Bijnens <paul.bijnens@xplanation.com>
 
 	* tape-src/tapetype.c: Detects and warns the user if the tape drive

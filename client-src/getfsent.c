@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: getfsent.c,v 1.29 2002/10/27 14:31:00 martinea Exp $
+ * $Id: getfsent.c,v 1.30 2002/10/27 22:58:33 martinea Exp $
  *
  * generic version of code to read fstab
  */
@@ -42,11 +42,6 @@
 
 static char *dev2rdev P((char *));
 static int samefile P((struct stat[3], struct stat *));
-
-int open_fstab P((void));
-void close_fstab P((void));
-int get_fstab_nextentry P((generic_fsent_t *fsent));
-int is_local_fstype P((generic_fsent_t *fsent));
 
 /*
  * You are in a twisty maze of passages, all alike.
