@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.33 2003/03/27 23:54:38 kovert Exp $
+ * $Id: protocol.c,v 1.34 2003/03/28 00:15:21 kovert Exp $
  *
  * implements amanda protocol
  */
@@ -161,7 +161,7 @@ protocol_sendreq(hostname, security_driver, req, repwait, continuation, datap)
     p->datap = datap;
 
 #ifdef PROTO_DEBUG
-    dbprintf(("security_connect: host %s -> p %X\n", 
+    dbprintf(("%s: security_connect: host %s -> p %X\n", 
 	      debug_prefix_time(": protocol"), hostname, (int)p));
 #endif
 
@@ -188,7 +188,7 @@ connect_callback(cookie, security_handle, status)
     p->security_handle = security_handle;
 
 #ifdef PROTO_DEBUG
-    dbprintf(("connect_callback: p %X\n",
+    dbprintf(("%s: connect_callback: p %X\n",
 	      debug_prefix_time(": protocol"), (int)p));
 #endif
 
@@ -211,7 +211,7 @@ connect_callback(cookie, security_handle, status)
 	    state_machine(p, A_ABORT, NULL);
 	} else {
 #ifdef PROTO_DEBUG
-    dbprintf(("connect_callback: p %X: retrying %s\n",
+    dbprintf(("%s: connect_callback: p %X: retrying %s\n",
 	      debug_prefix_time(": protocol"), (int)p, p->hostname));
 #endif
 	    security_close(p->security_handle);
