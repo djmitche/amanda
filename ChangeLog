@@ -1,5 +1,25 @@
 2002-10-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* common-src/amfeatures.h (fe_amindexd_fileno_in_OLSD, 
+	  fe_amindexd_fileno_in_ORLD): New amfeatures.
+	* common-src/amfeatures.c (am_init_feature_set): Set
+	  fe_amindexd_fileno_in_OLSD and fe_amindexd_fileno_in_ORLD.
+	* recover-src/amrecover.h (struct DIR_ITEM): Add fileno.
+	* recover-src/display_commands.c (add_dir_list_item): Set fileno
+	  in struct DIR_ITEM.
+	* recover-src/display_commands.c (suck_dir_list_from_server): Read
+	  fileno if fe_amindexd_fileno_in_OLSD is set.
+	* recover-src/extract_list.c (struct EXTRACT_LIST): Add fileno.
+	* recover-src/extract_list.c (add_file): Read fileno if
+	  fe_amindexd_fileno_in_ORLD is set.
+	* recover-src/extract_list.c (delete_file): Read fileno if
+	  fe_amindexd_fileno_in_ORLD is set.
+	* server-src/amindexd.c (opaque_ls): Write fileno if
+	  fe_amindexd_fileno_in_OLSD or fe_amindexd_fileno_in_ORLD are set.
+
+2002-10-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	patch by Doug Kingston <dpk@pobox.com>
+
 	* configure.in (NEED_PATH_ENV, IGNORE_UID_CHECK, IGNORE_FSTAB,
 	  DONT_SUID_ROOT): Defined if on *-pc-cygwin.
 	* client-src/Makefile.am: Fix for cygwin.

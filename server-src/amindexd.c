@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.68 2002/10/22 23:35:26 martinea Exp $
+ * $Id: amindexd.c,v 1.69 2002/10/27 21:13:13 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -692,20 +692,38 @@ int  recursive;
     {
 	lreply(200, " Opaque recursive list of %s", dir);
 	for (dir_item = get_dir_list(); dir_item != NULL; 
-	     dir_item = dir_item->next)
-	    fast_lreply(201, " %s %d %-16s %s",
-			dir_item->dump->date, dir_item->dump->level,
-			dir_item->dump->tape, dir_item->path);
+	     dir_item = dir_item->next) {
+	    if(am_has_feature(their_features, fe_amindexd_fileno_in_ORLD)){
+		fast_lreply(201, " %s %d %-16s %d %s",
+			    dir_item->dump->date, dir_item->dump->level,
+			    dir_item->dump->tape, dir_item->dump->file,
+			    dir_item->path);
+	    }
+	    else {
+		fast_lreply(201, " %s %d %-16s %s",
+			    dir_item->dump->date, dir_item->dump->level,
+			    dir_item->dump->tape, dir_item->path);
+	    }
+	}
 	reply(200, " Opaque recursive list of %s", dir);
     }
     else
     {
 	lreply(200, " Opaque list of %s", dir);
 	for (dir_item = get_dir_list(); dir_item != NULL; 
-	     dir_item = dir_item->next)
-	    lreply(201, " %s %d %-16s %s",
-		   dir_item->dump->date, dir_item->dump->level,
-		   dir_item->dump->tape, dir_item->path);
+	     dir_item = dir_item->next) {
+	    if(am_has_feature(their_features, fe_amindexd_fileno_in_OLSD)){
+		lreply(201, " %s %d %-16s %d %s",
+			    dir_item->dump->date, dir_item->dump->level,
+			    dir_item->dump->tape, dir_item->dump->file,
+			    dir_item->path);
+	    }
+	    else {
+		lreply(201, " %s %d %-16s %s",
+			    dir_item->dump->date, dir_item->dump->level,
+			    dir_item->dump->tape, dir_item->path);
+	    }
+	}
 	reply(200, " Opaque list of %s", dir);
     }
     clear_dir_list();
