@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.24.2.1 1999/01/22 20:51:22 oliva Exp $
+ * $Id: conffile.h,v 1.24.2.2 1999/03/04 00:35:27 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -109,13 +109,13 @@ typedef struct dumptype_s {
     int compress;
     float comprate[2]; /* first is full, second is incremental */
     /* flag options */
-    int record:1;
-    int skip_incr:1;
-    int skip_full:1;
-    int no_hold:1;
-    int kencrypt:1;
-    int ignore:1;
-    int index:1;
+    unsigned int record:1;
+    unsigned int skip_incr:1;
+    unsigned int skip_full:1;
+    unsigned int no_hold:1;
+    unsigned int kencrypt:1;
+    unsigned int ignore:1;
+    unsigned int index:1;
 
     /* seen flags */
     int s_comment;
