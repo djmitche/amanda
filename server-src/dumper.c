@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.92 1998/12/19 20:22:11 kashmir Exp $
+/* $Id: dumper.c,v 1.93 1998/12/30 18:43:23 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -310,7 +310,7 @@ main(main_argc, main_argv)
 		char *tmp_filename;
 
 		tmp_filename = vstralloc(filename, ".tmp", NULL);
-		outfd = open(tmp_filename, O_WRONLY|O_CREAT, 0666);
+		outfd = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600);
 		if (outfd < 0) {
 		    q = squotef("[holding file \"%s\": %s]",
 				tmp_filename, strerror(errno));
@@ -469,7 +469,7 @@ startup_chunker(filename, chunksize)
     }
 
     tmp_filename = vstralloc(filename, ".tmp", NULL);
-    if ((outfd = open(tmp_filename, O_WRONLY|O_CREAT, 0666)) < 0) {
+    if ((outfd = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600)) < 0) {
 	putresult("FAILED %s [holding file \"%s\": %s]", handle,
 	    tmp_filename, strerror(errno));
 	amfree(tmp_filename);
@@ -655,7 +655,7 @@ databuf_flush(db)
 	 * that has no cont_filename pointer.
 	 */
 	tmp_filename = vstralloc(file.cont_filename, ".tmp", NULL);
-	if ((fd = open(tmp_filename, O_WRONLY|O_CREAT, 0666)) == -1) {
+	if ((fd = open(tmp_filename, O_WRONLY|O_CREAT|O_TRUNC, 0600)) == -1) {
 	    errstr = squotef("holding file \"%s\": %s",
 			tmp_filename, strerror(errno));
 	    amfree(tmp_filename);
