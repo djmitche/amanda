@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.91 2002/04/22 19:38:57 martinea Exp $
+ * $Id: amcheck.c,v 1.92 2002/04/22 23:36:12 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1173,7 +1173,6 @@ void start_host(hostp)
     char *req = NULL;
     int req_len = 0;
     int disk_count;
-    char *service;
     const security_driver_t *secdrv;
     char number[NUM_STR_SIZE];
 
@@ -1188,10 +1187,11 @@ void start_host(hostp)
      * empty structure.  In either case, we do the disks on the second
      * (and subsequent) pass(es).
      */
-    if(hostp->features == NULL) {
-	service = "noop";
-    } else {
-	service = "selfcheck";
+    disk_count = 0;
+    if(hostp->features != NULL) { /* selfcheck service */
+	int has_features=am_has_feature(hostp->features, fe_g_options_features);
+	int has_hostname=am_has_feature(hostp->features, fe_g_options_hostname);
+	int has_maxdumps=am_has_feature(hostp->features, fe_g_options_maxdump);
 
 	if(!am_has_feature(hostp->features, fe_selfcheck_req) &&
 	   !am_has_feature(hostp->features, fe_selfcheck_req_device)) {
@@ -1227,18 +1227,22 @@ void start_host(hostp)
 		   "ERROR: Client %s does not support sendbackup REP packet.\n",
 		   hostp->hostname);
 	}
-    }
 
-    snprintf(number, sizeof(number), "%d", hostp->maxdumps);
-    req = vstralloc("SERVICE ", service, "\n",
-		    "OPTIONS ",
-		    "features=", our_feature_string, ";",
-		    "maxdumps=", number, ";",
-		    "hostname=", hostp->hostname, ";",
-		    "\n",
-		    NULL);
-    disk_count = 0;
-    if(hostp->features != NULL) {
+	snprintf(number, sizeof(number), "%d", hostp->maxdumps);
+	req = vstralloc("SERVICE ", "selfcheck", "\n",
+			"OPTIONS ",
+			has_features ? "features=" : "",
+			has_features ? our_feature_string : "",
+			has_features ? ";" : "",
+			has_maxdumps ? "maxdumps=" : "",
+			has_maxdumps ? number : "",
+			has_maxdumps ? ";" : "",
+			has_hostname ? "hostname=" : "",
+			has_hostname ? hostp->hostname : "",
+			has_hostname ? ";" : "",
+			"\n",
+			NULL);
+
 	req_len = strlen(req);
 	req_len += 128;                         /* room for SECURITY ... */
 	req_len += 256;                         /* room for non-disk answers */
@@ -1333,7 +1337,12 @@ void start_host(hostp)
 	    disk_count++;
 	}
     }
-    else {
+    else { /* noop service */
+	req = vstralloc("SERVICE ", "noop", "\n",
+			"OPTIONS ",
+			"features=", our_feature_string, ";",
+			"\n",
+			NULL);
 	for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
 	    if(dp->up != DISK_READY || dp->todo != 1) {
 		continue;

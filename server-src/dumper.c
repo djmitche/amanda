@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.152 2002/04/17 20:06:10 martinea Exp $
+/* $Id: dumper.c,v 1.153 2002/04/22 23:36:12 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1499,6 +1499,10 @@ startup_dump(hostname, disk, device, level, dumpdate, progname, options)
     const security_driver_t *secdrv;
     char *dumper_api;
 
+    int has_features = am_has_feature(their_features, fe_g_options_features);
+    int has_hostname = am_has_feature(their_features, fe_g_options_hostname);
+    int has_device = am_has_feature(their_features, fe_sendbackup_req_device);
+
     /*
      * Default to bsd authentication if none specified.  This is gross.
      *
@@ -1525,12 +1529,16 @@ startup_dump(hostname, disk, device, level, dumpdate, progname, options)
     }
     req = vstralloc("SERVICE sendbackup\n",
 		    "OPTIONS ",
-		    "features=", our_feature_string, ";",
-		    "hostname=", hostname, ";",
+		    has_features ? "features=" : "",
+		    has_features ? our_feature_string : "",
+		    has_features ? ";" : "",
+		    has_hostname ? "hostname=" : "",
+		    has_hostname ? hostname : "",
+		    has_hostname ? ";" : "",
 		    "\n",
 		    dumper_api, progname,
 		    " ", disk,
-		    " ", device ? device : "",
+		    " ", device && has_device ? device : "",
 		    " ", level_string,
 		    " ", dumpdate,
 		    " OPTIONS ", options,
