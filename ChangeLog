@@ -1,5 +1,9 @@
 1999-08-25  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* changer-src/chg-chs.sh.in (changerdev): Pass it as -f flag to CHS.
+	* docs/TAPE.CHANGERS: Document it.
+	Reported by Mike Horansky <moho@stanford.EDU>
+
 	* server-src/conffile.c (read_dumptype): Renamed from get_dumptype.
 	Extended to support reading a named dumptype from a specified FILE.
 	(get_dumptype): Use read_dumptype.
@@ -158,7 +162,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.242 1999/08/25 06:52:37 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.243 1999/08/25 07:42:19 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

@@ -51,6 +51,10 @@ else
 fi
 
 ourconf=`getconf$SUF changerfile`
+changerdev=`getconf$SUF changerdev`
+if test -n "$changerdev" && test x"$changerdev" != x/dev/null; then
+  CHS="$CHS -f$changerdev"
+fi
 
 # read in some config parameters
 
