@@ -1504,6 +1504,7 @@ CF_WAIT
 AC_HEADER_TIME
 AC_CHECK_HEADERS(\
 	arpa/inet.h \
+	camlib.h \
 	chio.h \
 	db.h \
 	dbm.h \
@@ -1577,6 +1578,13 @@ if test x"$ac_cv_header_chio_h" != x"yes" &&
    test x"$ac_cv_header_sys_chio_h" != x"yes" &&
    test x"$amanda_cv_hpux_scsi" != x"yes"; then
     BUILD_CHANGER_PROGS_LIBEXEC=
+elif test x"$ac_cv_header_camlib_h" = x"yes"; then
+dnl chg-scsi does not support FreeBSD 3.0's chio.h; it became backward
+dnl incompatible with the introduction of camlib.h
+    if test x"$ac_cv_header_chio_h" = x"yes" ||
+       test x"$ac_cv_header_sys_chio_h" = x"yes"; then
+    	BUILD_CHANGER_PROGS_LIBEXEC=
+    fi
 fi
 
 dnl cur_colr is on some HP's

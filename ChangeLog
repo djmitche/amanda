@@ -1,3 +1,10 @@
+1998-10-31  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* configure.in (NO_SCSI_CHANGER_MODE): chg-scsi does not support the
+	new FreeBSD 3.0 chio.h, so disable it if camlib.h is found.
+	* docs/SYSTEM.NOTES (FreeBSD 3.0): add a note about this
+	(SunOS 4.x): libtool will no longer find incorrect library versions
+
 1998-10-30  John R. Jackson  <jrj@purdue.edu>
 
 	* common-src/security.c (bsd_security_ok): change error message to

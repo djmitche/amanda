@@ -25,13 +25,6 @@ A bug in GNU tar 1.12 causes it to miscalculate (in fact, to
 misreport) the size of filesystems.  A patch for GNU tar is available
 in the patches directory.
 
-
-If you have shared libraries of other versions of amanda lying around,
-gcc may pick them up instead of the locally built ones.  A few
-possible solutions are to remove the old libraries, configure amanda
-not to build shared libraries, or specify a different library
-directory when running configure.
-
 ---------------------------------------------------------------------------
 Ultrix
 ------
@@ -216,6 +209,16 @@ Jens Krause <jens@transcom.de> has reported some problems with GNU tar
 GNU tar would consistently crash.  GNU tar had to be built linked with
 malloc-libraries, and the `--sparse' switches had to be removed from
 client-src/sendbackup-gnutar.c and client-src/sendsize.c.
+
+
+---------------------------------------------------------------------------
+FreeBSD 3.0
+-----------
+
+chg-scsi was not updated to support the new camlib.h-dependent chio.h,
+so chg-scsi will be automatically disabled if camlib.h is found.  You
+may use chg-chio instead.
+
 
 ---------------------------------------------------------------------------
 Microsoft Windows
