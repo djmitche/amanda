@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.3 1998/11/28 22:55:13 martinea Exp $
+ * $Id: planner.c,v 1.76.2.4 1998/12/03 03:02:48 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -529,7 +529,7 @@ disk_t *dp;
 
     /* calculated fields */
 
-    if(info.command & PLANNER_FORCE) {
+    if(info.command & FORCE_FULL) {
 	/* force a level 0, kind of like a new disk */
 	if(dp->strategy == DS_NOFULL) {
 	    /*
@@ -548,8 +548,8 @@ disk_t *dp;
 		    dp->host->hostname, dp->name);
 
 	    /* clear force command */
-	    if(info.command & PLANNER_FORCE)
-		info.command ^ PLANNER_FORCE;
+	    if(info.command & FORCE_FULL)
+		info.command ^ FORCE_FULL;
 	    if(put_info(dp->host->hostname, dp->name, &info))
 		error("could not put info record for %s:%s: %s",
 		      dp->host->hostname, dp->name, strerror(errno));
@@ -596,7 +596,7 @@ disk_t *dp;
 	    }
 	}
     }
-    else if(info.command & PLANNER_FORCE)
+    else if(info.command & FORCE_FULL)
 	ep->dump_priority += 1;
     /* else XXX bump up the priority of incrementals that failed last night */
 
@@ -606,8 +606,8 @@ disk_t *dp;
 	if(ep->next_level0 <= 0) {
 	    /* update the date field */
 	    info.inf[0].date = today;
-	    if(info.command & PLANNER_FORCE)
-		info.command ^ PLANNER_FORCE;
+	    if(info.command & FORCE_FULL)
+		info.command ^ FORCE_FULL;
 	    ep->next_level0 += conf_dumpcycle;
 	    ep->last_level = 0;
 	    if(put_info(dp->host->hostname, dp->name, &info))

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.5 1998/11/28 22:54:46 martinea Exp $
+ * $Id: amadmin.c,v 1.49.2.6 1998/12/03 03:02:42 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -320,7 +320,7 @@ disk_t *dp;
     check_dumpuser();
 #endif
     get_info(hostname, diskname, &info);
-    info.command |= PLANNER_FORCE;
+    info.command |= FORCE_FULL;
     if(put_info(hostname, diskname, &info) == 0) {
 	printf("%s: %s:%s is set to a forced level 0 tonight.\n",
 	       get_pname(), hostname, diskname);
@@ -350,11 +350,11 @@ disk_t *dp;
     info_t info;
 
     get_info(hostname, diskname, &info);
-    if(info.command & PLANNER_FORCE) {
+    if(info.command & FORCE_FULL) {
 #if TEXTDB
 	check_dumpuser();
 #endif
-	info.command ^= PLANNER_FORCE;
+	info.command ^= FORCE_FULL;
 	if(put_info(hostname, diskname, &info) == 0){
 	    printf("%s: force command for %s:%s cleared.\n",
 		   get_pname(), hostname, diskname);
@@ -503,7 +503,7 @@ disk_t *dp;
     get_info(dp->host->hostname, dp->name, &info);
 
     printf("\nCurrent info for %s %s:\n", dp->host->hostname, dp->name);
-    if(info.command & PLANNER_FORCE) 
+    if(info.command & FORCE_FULL) 
 	printf("  (Forcing to level 0 dump on next run)\n");
     if(info.command & FORCE_BUMP) 
 	printf("  (Forcing bump on next run)\n");
