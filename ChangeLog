@@ -1,3 +1,7 @@
+2003-06-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amverify.sh.in: Do not advance to next tape.
+
 2003-06-10  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	patch by Eric Siegerman <eric_97@pobox.com>
 

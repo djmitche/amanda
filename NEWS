@@ -1,5 +1,6 @@
 Changes in release 2.4.4p1
 
+* amverfiy do not advance to next tape at the end.
 * new amflush -b and -s options, change -r behavior.
 * new chg-mcutil changer.
 * amrecover_changer works with chg-multi.
