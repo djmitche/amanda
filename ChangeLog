@@ -1,3 +1,10 @@
+1998-12-10  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/dumper.c (main): reuse outfd to clear the open files
+	passed to us.  Nuke the fd var.
+	* server-src/dumper.c (update_dataptr): nuke 'split' argument - it
+	was always set to 1
+
 1998-12-09  Mike Grupenhoff <kashmir@munge.com>
 
 	* server-src/dumper.c (write_tapeheader): kill dead code

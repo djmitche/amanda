@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.82 1998/12/10 01:00:05 kashmir Exp $
+/* $Id: dumper.c,v 1.83 1998/12/10 16:32:40 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -126,7 +126,7 @@ void service_ports_init P((void));
 static char *construct_datestamp P((void));
 int write_tapeheader P((int outfd, dumpfile_t *type));
 int write_dataptr P((int outf, struct databuf *));
-int update_dataptr P((int outf, struct databuf *, int size, int split));
+int update_dataptr P((int outf, struct databuf *, int size));
 static void process_dumpeof P((void));
 static void process_dumpline P((char *str));
 static void add_msg_data P((char *str, int len));
@@ -200,17 +200,16 @@ main(main_argc, main_argv)
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     char *q = NULL;
-    int fd;
     char *tmp_filename = NULL;
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
+    for (outfd = 3; outfd < FD_SETSIZE; outfd++) {
 	/*
 	 * Make sure nobody spoofs us with a lot of extra open files
 	 * that would cause an open we do to get a very high file
 	 * descriptor, which in turn might be used as an index into
 	 * an array (e.g. an fd_set).
 	 */
-	close(fd);
+	close(outfd);
     }
 
     set_pname("dumper");
@@ -246,7 +245,7 @@ main(main_argc, main_argv)
 
     /* now, make sure we are a valid user */
 
-    if(getpwuid(getuid()) == NULL)
+    if (getpwuid(getuid()) == NULL)
 	error("can't get login name for my uid %ld", (long)getuid());
 
     signal(SIGPIPE, SIG_IGN);
@@ -517,8 +516,8 @@ write_dataptr(outf, db)
  * written if it is full, or the remainder is zeroed if at eof.
  */
 int
-update_dataptr(outf, db, size, split)
-    int outf, size, split;
+update_dataptr(outf, db, size)
+    int outf, size;
     struct databuf *db;
 {
     db->spaceleft -= size;
@@ -534,7 +533,7 @@ update_dataptr(outf, db, size, split)
 
 	NAUGHTY_BITS;
 
-	if (split && split_size > 0 && dumpsize >= split_size) {
+	if (split_size > 0 && dumpsize >= split_size) {
 	    char *new_filename = NULL;
 	    char sequence[10];
 	    int save_outf;
@@ -1137,13 +1136,13 @@ int mesgfd, datafd, indexfd, outfd;
 		errstr = newstralloc2(errstr, "data read: ", strerror(errno));
 		goto failed;
 	    case 0:
-		if(update_dataptr(outfd, &db, size1, 1)) goto failed;
+		if(update_dataptr(outfd, &db, size1)) goto failed;
 		eof1 = 1;
 		FD_CLR(datafd, &readset);
 		aclose(datafd);
 		break;
 	    default:
-		if(update_dataptr(outfd, &db, size1, 1)) goto failed;
+		if(update_dataptr(outfd, &db, size1)) goto failed;
 	    }
 	}
 
