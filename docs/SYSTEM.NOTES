@@ -46,6 +46,14 @@ userid for dumps.  For this reason, the rundump program (a setuid-root
 wrapper for dump) is enabled by default.  If you find rundump is not
 necessary for you, just configure --without-rundump.
 
+
+The Ultrix restore program will fail if it is not connected to a tty.
+Since the restore program is invoked in the clients in order to create
+index files, and it the client is not connected to a tty, index
+creation will fail.  Using GNUTAR instead of DUMP is an option.
+Thanks to Edwin Wiles <ewiles@mclean.sterling.com> for the
+investigation.
+
 ---------------------------------------------------------------------------
 HP/UX
 -----
