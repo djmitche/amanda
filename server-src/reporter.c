@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.26 1998/03/20 06:57:32 amcore Exp $
+ * $Id: reporter.c,v 1.27 1998/03/21 18:00:27 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -293,7 +293,11 @@ char **argv;
 
 	if (strcmp(printer,"") != 0)	/* alternate printer is defined */
 	  /* print to the specified printer */
+#ifdef LPRFLAG
 	  cmd = newvstralloc(LPRCMD, " ", LPRFLAG, printer, NULL);
+#else
+	  cmd = newvstralloc(LPRCMD, NULL);
+#endif
 	else
 	  /* print to the default printer */
 	  cmd = newvstralloc(LPRCMD, NULL);
