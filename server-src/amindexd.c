@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.15 1997/12/30 05:24:54 jrj Exp $
+ * $Id: amindexd.c,v 1.16 1997/12/31 01:42:01 jrj Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -76,7 +76,7 @@ char *server_version = "1.1";
 /* state */
 char local_hostname[MAX_HOSTNAME_LENGTH];	/* me! */
 char *remote_hostname = NULL;			/* the client */
-char *dump_hostname;				/* machine we are restoring */
+char *dump_hostname = NULL;			/* machine we are restoring */
 char *disk_name;				/* disk we are restoring */
 char *config = NULL;				/* config we are restoring */
 char *target_date = NULL;
@@ -103,7 +103,7 @@ REMOVE_ITEM *remove_files(REMOVE_ITEM *remove)
 char *uncompress_file(filename_gz)
 char *filename_gz;
 {
-    char *cmd;
+    char *cmd = NULL;
     char *filename;
     struct stat stat_filename;
     int result;
@@ -344,8 +344,7 @@ char *disk;
     char *search_str;
     int i;
 
-    if (strlen(dump_hostname) == 0)
-    {
+    if (config == NULL || dump_hostname == NULL) {
 	reply(501, "Must set config,host before setting disk.");
 	return -1;
     }
@@ -438,7 +437,7 @@ int build_disk_table P((void))
     int ch;
     char *line;
 
-    if (disk_name == NULL) {
+    if (config == NULL || dump_hostname == NULL || disk_name == NULL) {
 	reply(590, "Must set config,host,disk before building disk table");
 	return -1;
     }
@@ -538,7 +537,7 @@ int disk_history_list P((void))
 {
     DUMP_ITEM *item;
 
-    if (disk_name == NULL) {
+    if (config == NULL || dump_hostname == NULL || disk_name == NULL) {
 	reply(502, "Must set config,host,disk before listing history");
 	return -1;
     }
@@ -573,7 +572,7 @@ char *dir;
     int len;
     int ldir_len;
 
-    if (disk_name == NULL) {
+    if (config == NULL || dump_hostname == NULL || disk_name == NULL) {
 	reply(502, "Must set config,host,disk before asking about directories");
 	return -1;
     }
@@ -594,10 +593,10 @@ char *dir;
 	return -1;
     }
 
-    if(dir[0] == '/') {
-	ldir = stralloc2(dir, "/");
-    } else {
+    if(strcmp(dir, "/") == 0) {
 	ldir = stralloc(dir);
+    } else {
+	ldir = stralloc2(dir, "/");
     }
     ldir_len = strlen(ldir);
 
@@ -653,7 +652,7 @@ int  recursive;
 
     clear_dir_list();
 
-    if (disk_name == NULL) {
+    if (config == NULL || dump_hostname == NULL || disk_name == NULL) {
 	reply(502, "Must set config,host,disk before listing a directory");
 	return -1;
     }
@@ -748,7 +747,7 @@ int are_dumps_compressed P((void))
     disk_t *diskp;
 
     /* check state okay to do this */
-    if (disk_name == NULL) {
+    if (config == NULL || dump_hostname == NULL || disk_name == NULL) {
 	reply(501, "Must set config,host,disk name before asking about dumps.");
 	return -1;
     }
@@ -811,7 +810,7 @@ char **argv;
 #endif	/* FORCE_USERID */
 
     /* initialize */
-    umask(0);
+    umask(0007);
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 
@@ -937,8 +936,7 @@ char **argv;
 	    s[-1] = '\0';
 	    if (is_dump_host_valid(arg) != -1)
 	    {
-		strncpy(dump_hostname, arg, sizeof(dump_hostname)-1);
-		dump_hostname[sizeof(dump_hostname)-1] = '\0';
+		dump_hostname = newstralloc(dump_hostname, arg);
 		reply(200, "Dump host set to %s.", dump_hostname);
 		afree(disk_name);		/* invalidate any value */
 	    }
@@ -956,7 +954,7 @@ char **argv;
 	    s[-1] = '\0';
 	    if (is_config_valid(arg) != -1) {
 		config = newstralloc(config, arg);
-		dump_hostname[0] = '\0';	/* invalidate any valud */
+		afree(dump_hostname);		/* invalidate any value */
 		afree(disk_name);		/* invalidate any value */
 		reply(200, "Config set to %s.", config);
 	    }

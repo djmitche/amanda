@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: set_commands.c,v 1.5 1997/12/30 05:24:36 jrj Exp $
+ * $Id: set_commands.c,v 1.6 1997/12/31 01:41:58 jrj Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -258,14 +258,10 @@ char *dir;
 		*de = '\0';
  	    }
 	} else {
-	    char *tmp;
-
 	    if (strcmp(new_dir, "/") != 0) {
-		tmp = "/";
-	    } else {
-		tmp = "";
+		strappend(new_dir, "/");
 	    }
-	    new_dir = newvstralloc(new_dir, tmp, ldir, NULL);
+	    strappend(new_dir, ldir);
 	}
     }
 
