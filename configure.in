@@ -1066,7 +1066,7 @@ fi
 AC_PATH_PROGS(COMPRESS,compress,,$LOCSYSPATH)
 AC_PATH_PROGS(DD,dd,,$LOCSYSPATH)
 AC_PATH_PROGS(EGREP,egrep,,$LOCSYSPATH)
-AC_PATH_PROGS(GETCONF,getconf,,$LOCSYSPATH)
+AC_PATH_PROGS(GETCONF,getconf,,$SYSPATH)
 
 AC_PATH_PROGS(GNUPLOT,gnuplot,,$LOCSYSPATH)
 if test -z "$GNUPLOT"; then
@@ -1243,8 +1243,8 @@ AC_CACHE_CHECK(
     [
 	amanda_cv_LFS_CFLAGS=
 	if test "$GETCONF"; then
-	    if getconf LFS_CFLAGS >/dev/null 2>&1; then
-		amanda_cv_LFS_CFLAGS=`getconf LFS_CFLAGS 2>/dev/null`
+	    if $GETCONF LFS_CFLAGS >/dev/null 2>&1; then
+		amanda_cv_LFS_CFLAGS=`$GETCONF LFS_CFLAGS 2>/dev/null`
 	    fi
 	fi
     ]
@@ -1255,8 +1255,8 @@ AC_CACHE_CHECK(
     [
 	amanda_cv_LFS_LDFLAGS=
 	if test "$GETCONF"; then
-	    if getconf LFS_LDFLAGS >/dev/null 2>&1; then
-		amanda_cv_LFS_LDFLAGS=`getconf LFS_LDFLAGS 2>/dev/null`
+	    if $GETCONF LFS_LDFLAGS >/dev/null 2>&1; then
+		amanda_cv_LFS_LDFLAGS=`$GETCONF LFS_LDFLAGS 2>/dev/null`
 	    fi
 	fi
     ]
@@ -1267,8 +1267,8 @@ AC_CACHE_CHECK(
     [
 	amanda_cv_LFS_LIBS=
 	if test "$GETCONF"; then
-	    if getconf LFS_LIBS >/dev/null 2>&1; then
-		amanda_cv_LFS_LIBS=`getconf LFS_LIBS 2>/dev/null`
+	    if $GETCONF LFS_LIBS >/dev/null 2>&1; then
+		amanda_cv_LFS_LIBS=`$GETCONF LFS_LIBS 2>/dev/null`
 	    fi
 	fi
     ]
