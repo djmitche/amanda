@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.34 1998/04/23 08:34:56 amcore Exp $
+ * $Id: selfcheck.c,v 1.35 1998/04/29 06:52:38 amcore Exp $
  *
  * do self-check and send back any error messages
  */
@@ -554,5 +554,5 @@ int mode;
 {
     char *dir = stralloc2(dirname, "/.");
     check_file(dir, mode);
-    afree(dir);
+    amfree(dir);
 }
