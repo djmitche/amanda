@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.5 1999/03/29 02:17:59 martinea Exp $
+ * $Id: reporter.c,v 1.44.2.6 1999/04/07 02:55:19 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -302,12 +302,20 @@ static char *Rule(ColumnName From, ColumnName To) {
 
 static char *TextRule(ColumnName From, ColumnName To, char *s) {
     ColumnInfo *cd= &ColumnData[From];
-    int leng;
+    int leng, nbrules, i, txtlength;
     int RuleSpaceSize= ColWidth(0, ColumnNameCount-1)+1;
     char *RuleSpace= alloc(RuleSpaceSize), *tmp;
-    leng= cd->PrefixSpace+cd->Width;
-    ap_snprintf(RuleSpace, RuleSpaceSize, "%*.*s", leng, leng, s);
-    strcpy(RuleSpace+leng, tmp=Rule(From+1, To)); amfree(tmp);
+
+    leng= strlen(s);
+    if(leng >= (RuleSpaceSize - cd->PrefixSpace))
+	leng = RuleSpaceSize - cd->PrefixSpace - 1;
+    ap_snprintf(RuleSpace, RuleSpaceSize, "%*s%*.*s ", cd->PrefixSpace, "", 
+		leng, leng, s);
+    txtlength = cd->PrefixSpace + leng + 1;
+    nbrules = ColWidth(From,To) - txtlength;
+    for(tmp=RuleSpace + txtlength, i=nbrules ; i>0; tmp++,i--)
+	*tmp='-';
+    *tmp = '\0';
     return RuleSpace;
 }
 
@@ -1096,8 +1104,8 @@ void output_summary()
 		fprintf(mailf, "%*s%s\n", cd->PrefixSpace+cd->Width, "",
 			tmp=TextRule(OrigKB, TapeRate, "MISSING"));
 		amfree(tmp);
-		continue;
 	      }
+	      continue;
 	    }
 	    
 	    cd= &ColumnData[Level];

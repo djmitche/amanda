@@ -1,10 +1,14 @@
+1999-04-06 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/reporter.c (TextRule): Fix to write the full string.
+
 1999-04-06  David Mankins <dm@k12-nis-2.bbn.com>
 
 	* common-src/security.c (bsd_security_ok): if an .amandahosts
 	file is missing or unreadable, log this fact to the debug file
 	instead of claiming that a user doesn't have permission.
 
-1999-03-28 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+1999-04-01 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amcheck.c: -t should read the tapelist to validate
 	the label.
