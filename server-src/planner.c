@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.32.2.3 2004/04/05 17:23:00 martinea Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.32.2.4 2004/04/06 13:09:41 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -60,6 +60,7 @@ int conf_runspercycle;
 int conf_tapecycle;
 int conf_bumpdays;
 int conf_bumpsize;
+int conf_bumppercent;
 int conf_etimeout;
 int conf_reserve;
 int conf_autoflush;
@@ -308,6 +309,7 @@ char **argv;
     conf_runspercycle = getconf_int(CNF_RUNSPERCYCLE);
     conf_tapecycle = getconf_int(CNF_TAPECYCLE);
     conf_bumpdays = getconf_int(CNF_BUMPDAYS);
+    conf_bumppercent = getconf_int(CNF_BUMPPERCENT);
     conf_bumpsize = getconf_int(CNF_BUMPSIZE);
     conf_bumpmult = getconf_real(CNF_BUMPMULT);
     conf_etimeout = getconf_int(CNF_ETIMEOUT);
@@ -595,7 +597,7 @@ static long est_size P((disk_t *dp, int level));
 static long est_tape_size P((disk_t *dp, int level));
 static int next_level0 P((disk_t *dp, info_t *info));
 static int runs_at P((info_t *info, int lev));
-static long bump_thresh P((int level));
+static long bump_thresh P((int level, long size_level_0));
 static int when_overwrite P((char *label));
 
 static void askfor(ep, seq, lev, info)
@@ -875,7 +877,7 @@ setup_estimate(dp)
 		 * last night, we can't bump.
 		 */
 		if((info.inf[curr_level].size == 0 || /* no data, try it anyway */
-		    (((info.inf[curr_level].size > bump_thresh(curr_level)))
+		    (((info.inf[curr_level].size > bump_thresh(curr_level, info.inf[0].size)))
 		     && ep->level_days >= conf_bumpdays))
 		   && curr_level + 1 < DUMP_LEVELS) {
 		    askfor(ep, i++, curr_level+1, &info);
@@ -1063,12 +1065,18 @@ int lev;
 }
 
 
-static long bump_thresh(level)
+static long bump_thresh(level, size_level_0)
 int level;
+long size_level_0;
 {
     double bump;
 
-    bump = conf_bumpsize;
+    if(conf_bumppercent != 0 && size_level_0 > 1024) {
+	bump = (size_level_0 * conf_bumppercent)/100.0;
+    }
+    else {
+	bump = conf_bumpsize;
+    }
     while(--level) bump = bump * conf_bumpmult;
 
     return (long)bump;
@@ -1898,7 +1906,7 @@ disk_t *dp;
 	return base_level;
     }
 
-    thresh = bump_thresh(base_level);
+    thresh = bump_thresh(base_level, est_size(dp, 0));
 
     fprintf(stderr,
 	    "   pick: size %ld level %d days %d (thresh %ldK, %d days)\n",

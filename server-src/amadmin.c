@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.13.2.3.2.15.2.1 2004/04/05 17:22:58 martinea Exp $
+ * $Id: amadmin.c,v 1.49.2.13.2.3.2.15.2.2 2004/04/06 13:09:41 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1037,20 +1037,43 @@ int level;
 void bumpsize()
 {
     int l;
+    int conf_bumppercent = getconf_int(CNF_BUMPPERCENT);
+    double conf_bumpmult = getconf_real(CNF_BUMPMULT);
 
     printf("Current bump parameters:\n");
-    printf("  bumpsize %5d KB\t- minimum savings (threshold) to bump level 1 -> 2\n",
-	   getconf_int(CNF_BUMPSIZE));
-    printf("  bumpdays %5d\t- minimum days at each level\n",
-	   getconf_int(CNF_BUMPDAYS));
-    printf("  bumpmult %5.5g\t- threshold = bumpsize * bumpmult**(level-1)\n\n",
-	   getconf_real(CNF_BUMPMULT));
 
-    printf("      Bump -> To  Threshold\n");
-    for(l = 1; l < 9; l++) {
-	printf("\t%d  ->  %d  %9d KB\n", l, l+1, bump_thresh(l));
+    if(conf_bumppercent == 0) {
+	printf("  bumpsize %5d KB\t- minimum savings (threshold) to bump level 1 -> 2\n",
+	       getconf_int(CNF_BUMPSIZE));
+	printf("  bumpdays %5d\t- minimum days at each level\n",
+	       getconf_int(CNF_BUMPDAYS));
+	printf("  bumpmult %5.5g\t- threshold = bumpsize * bumpmult**(level-1)\n\n",
+	       conf_bumpmult);
+
+	printf("      Bump -> To  Threshold\n");
+	for(l = 1; l < 9; l++) {
+	    printf("\t%d  ->  %d  %9d KB\n", l, l+1, bump_thresh(l));
+	}
+	putchar('\n');
     }
-    putchar('\n');
+    else {
+	double bumppercent = conf_bumppercent;
+
+	printf("  bumppercent %3d %%\t- minimum savings (threshold) to bump level 1 -> 2\n",
+	       conf_bumppercent);
+	printf("  bumpdays %5d\t- minimum days at each level\n",
+	       getconf_int(CNF_BUMPDAYS));
+	printf("  bumpmult %5.5g\t- threshold = disk_size * bumppercent * bumpmult**(level-1)\n\n",
+	       conf_bumpmult);
+
+	printf("      Bump -> To  Threshold\n");
+	for(l = 1; l < 9; l++) {
+	    printf("\t%d  ->  %d  %7.2f %%\n", l, l+1, bumppercent);
+	    bumppercent *= conf_bumpmult;
+	    if(bumppercent >= 100.000) { bumppercent = 100.0;}
+	}
+	putchar('\n');
+    }
 }
 
 /* ----------------------------------------------- */

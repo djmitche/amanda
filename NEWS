@@ -5,6 +5,9 @@ Change in release 2.4.5b1
 * autoflush flush today's dump.
 * amanda will not use a tape if it's label is not in the tapelist file
   (eg. after an amrmtape).
+* new bumppercent global option, this should improve bumping criteria,
+  the bumpsize is set to a fixed value which can be adequate for small
+  and large disk.
 
 Changes in release 2.4.4p2
 

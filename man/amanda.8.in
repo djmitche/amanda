@@ -752,7 +752,23 @@ The minimum savings required to trigger an automatic
 bump from one incremental level to the next.
 If Amanda determines that the next higher backup level
 will be this much smaller than the current level,
-it will do the next level.
+it will do the next level. This option is used only if
+.B bumppercent
+is set to 0.
+See also the
+.B bumpmult
+option.
+.TP
+.BN bumppercent int
+Default:
+.IR "0" .
+This is the percentage of the disk used that must be
+saved to trigger an automatic
+bump from one incremental level to the next.
+If Amanda determines that the next higher backup level
+will be this much smaller than the current level,
+it will do the next level. 
+If this value is set to 0, the bumpsize option is used instead.
 See also the
 .B bumpmult
 option.
