@@ -1,5 +1,7 @@
 Version 2.4.0
 
+	updated to libtool 1.0i. -oliva
+
 	fixed tape block size of vxdump on HPUX 10.20.
 	-Andrew Ivanov <ivanov@mics.msu.su>
 
