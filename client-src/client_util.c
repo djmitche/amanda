@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.1.2.6 2002/02/15 18:25:01 martinea Exp $
+ * $Id: client_util.c,v 1.1.2.7 2002/02/16 17:42:19 martinea Exp $
  *
  */
 
@@ -141,18 +141,28 @@ char *aexc;
     return 1;
 }
 
-static int add_include(file_include, ainc, verbose)
+static int add_include(disk, file_include, ainc, verbose)
+char *disk;
 FILE *file_include;
 char *ainc;
 {
     int l;
 
     l = strlen(ainc);
+    if(ainc[l-1] == '\n') {
+	ainc[l-1] = '\0';
+	l--;
+    }
     if(l > MAXPATHLEN-1) {
 	dbprintf(("%s: include too long: %s\n", get_pname(), ainc));
 	if(verbose)
 	    printf("ERROR [include too long: %s]\n", ainc);
 	return 0;
+    }
+    else if(l < 3) {
+	dbprintf(("%s: include must be at least 3 character long: %s\n", get_pname(), ainc));
+	if(verbose)
+	    printf("ERROR [include must be at least 3 character long: %s]\n", ainc);
     }
     else if(ainc[0] != '.' && ainc[0] != '\0' && ainc[1] != '/') {
         dbprintf(("%s: include must start with './': %s\n", get_pname(), ainc));
@@ -161,11 +171,28 @@ char *ainc;
 	return 0;
     }
     else {
-        if(ainc[l-1] != '\n') {
-	    ainc[l] = '\n';
-	    ainc[l+1] = '\0';
-	 }
-	 fprintf(file_include, "%s", ainc);
+	char *glob;
+	char *regex;
+	DIR *d;
+	struct dirent *entry;
+
+	glob = ainc+2;
+	regex = glob_to_regex(glob);
+	if((d = opendir(disk)) == NULL) {
+	    dbprintf(("%s: Can't open disk '%s'\n", get_pname(), disk));
+	    if(verbose)
+		printf("ERROR [Can't open disk '%s'\n", disk);
+	}
+	else {
+	    while((entry = readdir(d)) != NULL) {
+		if(is_dot_or_dotdot(entry->d_name)) {
+		    continue;
+		}
+		if(match(regex, entry->d_name)) {
+		    fprintf(file_include, "./%s\n", entry->d_name);
+		}
+	    }
+	}
     }
     return 1;
 }
@@ -239,7 +266,7 @@ int verbose;
     if(options->include_file) {
 	for(incl = options->include_file->first; incl != NULL;
 	    incl = incl->next) {
-	    add_include(file_include, incl->name, verbose);
+	    add_include(disk, file_include, incl->name, verbose);
 	}
     }
 
@@ -249,7 +276,7 @@ int verbose;
 	    include = fopen(incl->name, "r");
 	    while (!feof(include)) {
 		if(fgets(ainc, MAXPATHLEN, include))
-		    add_include(file_include, ainc, verbose);
+		    add_include(disk, file_include, ainc, verbose);
 	    }
 	    fclose(include);
 	}
