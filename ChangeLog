@@ -1,5 +1,10 @@
 2002-09-18  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amverify.sh.in: Accept runtapes as a third argument.
+	* man/amverify.8.in: Document it.
+
+2002-09-18  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* config/missing: Updated from automake-1.5.
 
 2002-09-17  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>

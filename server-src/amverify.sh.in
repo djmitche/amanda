@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.7.2.13.4.5.2.2 2002/09/10 12:08:35 martinea Exp $
+#	$Id: amverify.sh.in,v 1.7.2.13.4.5.2.3 2002/09/18 18:24:39 martinea Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -269,7 +269,7 @@ if [ X"$TPCHANGER" = X"" ]; then
 else
 	CHANGER_SLOT=${2:-current}
 	$Echoe "Tape changer is $TPCHANGER..."
-	SLOTS=`getparm runtapes`
+	SLOTS=${3:-`getparm runtapes`}
 	[ X"$SLOTS" = X"" ] && SLOTS=1
 	if [ $SLOTS -eq 1 ]; then
 		p=""
