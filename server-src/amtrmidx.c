@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtrmidx.c,v 1.10 1997/12/16 01:27:01 amcore Exp $
+ * $Id: amtrmidx.c,v 1.11 1997/12/16 20:44:55 jrj Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -67,7 +67,7 @@ char **argv;
     dbprintf(("%s: version %s\n", argv[0], version()));
 
     /* get the list of disks being dumped and their types */
-    sprintf(buf, "%s/%s", CONFIG_DIR, argv[1]);
+    ap_snprintf(buf, sizeof(buf), "%s/%s", CONFIG_DIR, argv[1]);
     if (chdir(buf) != 0)
 	error("could not cd to confdir %s: %s", buf, strerror(errno));
     if (read_conffile(CONFFILE_NAME))
@@ -103,9 +103,9 @@ char **argv;
 	    /* get listing of indices, newest first */
 	    /* We have to be careful here of
 	     * trigraph replacement by some compilers.  */
-	    sprintf(cmd, "ls -r '%s_%s_'????%s-??_?%s",
-		    diskp->host->hostname, diskp->name,
-		    "-??", COMPRESS_SUFFIX);
+	    ap_snprintf(cmd, sizeof(buf), "ls -r '%s_%s_'????%s-??_?%s",
+			diskp->host->hostname, diskp->name,
+			"-??", COMPRESS_SUFFIX);
 	    if ((fp = popen(cmd, "r")) == NULL)
 		error("couldn't open cmd \"%s\".", cmd);
 

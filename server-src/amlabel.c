@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlabel.c,v 1.4 1997/08/27 08:12:54 amcore Exp $
+ * $Id: amlabel.c,v 1.5 1997/12/16 20:44:54 jrj Exp $
  *
  * write an Amanda label on a tape
  */
@@ -76,7 +76,7 @@ char **argv;
 	slotcommand = 0;
     }
 
-    sprintf(confdir, "%s/%s", CONFIG_DIR, confname);
+    ap_snprintf(confdir, sizeof(confdir), "%s/%s", CONFIG_DIR, confname);
     if(chdir(confdir) != 0)
 	error("could not cd to confdir %s: %s", confdir, strerror(errno));
 

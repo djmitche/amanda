@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.13 1997/11/20 19:58:35 jrj Exp $
+ * $Id: amflush.c,v 1.14 1997/12/16 20:44:52 jrj Exp $
  *
  * write files from work directory onto tape
  */
@@ -83,7 +83,7 @@ int result_argc;
 char *result_argv[MAX_ARGS];
 static char *config;
 char confdir[1024];
-extern char datestamp[], taper_program[], reporter_program[];
+extern char datestamp[80], taper_program[80], reporter_program[80];
 
 /* local functions */
 int main P((int argc, char **argv));
@@ -116,7 +116,7 @@ char **argv;
 	error("Usage: amflush%s [-f] <confdir>", versionsuffix());
 
     config = argv[1];
-    sprintf(confdir, "%s/%s", CONFIG_DIR, argv[1]);
+    ap_snprintf(confdir, sizeof(confdir), "%s/%s", CONFIG_DIR, argv[1]);
     if(chdir(confdir) != 0)
 	error("could not cd to confdir %s: %s",	confdir, strerror(errno));
 
@@ -135,8 +135,10 @@ char **argv;
     if(pw->pw_uid != getuid())
 	error("must run amflush as user %s", dumpuser);
 
-    sprintf(taper_program, "%s/taper%s", libexecdir, versionsuffix());
-    sprintf(reporter_program, "%s/reporter%s", libexecdir, versionsuffix());
+    ap_snprintf(taper_program, sizeof(taper_program),
+		"%s/taper%s", libexecdir, versionsuffix());
+    ap_snprintf(reporter_program, sizeof(reporter_program),
+		"%s/reporter%s", libexecdir, versionsuffix());
 
     pick_datestamp();
     confirm();
@@ -206,7 +208,7 @@ char *diskdir;
     int level;
     disk_t *dp;
 
-    sprintf(dirname, "%s/%s", diskdir, datestamp);
+    ap_snprintf(dirname, sizeof(dirname), "%s/%s", diskdir, datestamp);
 
     if((workdir = opendir(dirname)) == NULL) {
 	log(L_INFO, "%s: could not open working dir: %s",
@@ -227,7 +229,8 @@ char *diskdir;
 	    continue;
 	}
 
-	sprintf(destname, "%s/%s", dirname, entry->d_name);
+	ap_snprintf(destname, sizeof(destname),
+		    "%s/%s", dirname, entry->d_name);
 
 	if(get_amanda_names(destname, hostname, diskname, &level)) {
 	    log(L_INFO, "%s: ignoring cruft file.", entry->d_name);
@@ -388,21 +391,20 @@ int level;
 
     switch(cmd) {
     case START_TAPER:
-	sprintf(cmdline, "START-TAPER %s\n", (char *) ptr);
+	ap_snprintf(cmdline, sizeof(cmdline), "START-TAPER %s\n", (char *) ptr);
 	break;
     case FILE_WRITE:
 	dp = (disk_t *) ptr;
-	sprintf(cmdline, "FILE-WRITE handle %s %s %s %d\n",
-		destname, dp->host->hostname, dp->name,
-		level);
+	ap_snprintf(cmdline, sizeof(cmdline), "FILE-WRITE handle %s %s %s %d\n",
+		    destname, dp->host->hostname, dp->name, level);
 	break;
     case PORT_WRITE:
 	dp = (disk_t *) ptr;
-	sprintf(cmdline, "PORT-WRITE handle %s %s %d\n",
-		dp->host->hostname, dp->name, level);
+	ap_snprintf(cmdline, sizeof(cmdline), "PORT-WRITE handle %s %s %d\n",
+		    dp->host->hostname, dp->name, level);
 	break;
     case QUIT:
-	sprintf(cmdline, "QUIT\n");
+	ap_snprintf(cmdline, sizeof(cmdline), "QUIT\n");
 	break;
     default:
 	assert(0);

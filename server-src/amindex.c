@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindex.c,v 1.5 1997/12/16 18:02:14 jrj Exp $
+ * $Id: amindex.c,v 1.6 1997/12/16 20:44:53 jrj Exp $
  *
  * index control
  */
@@ -56,7 +56,8 @@ int level;
     }
   }
   datebuf[sizeof (datebuf) - 1] = '\0';
-  sprintf(buf, "%s_%s_%s_%d%s", host, disk, datebuf, level, COMPRESS_SUFFIX);
+  ap_snprintf(buf, sizeof(buf),
+    "%s_%s_%s_%d%s", host, disk, datebuf, level, COMPRESS_SUFFIX);
 
   for (pc = buf; *pc != '\0'; pc++)
     if ((*pc == '/') || (*pc == ' '))
@@ -73,7 +74,8 @@ int *len;
   static char name[1024];
 
   *len = sizeof(name);
-  sprintf(name, "%s/%s", dir, getindexfname(host, disk, date, level));
+  ap_snprintf(name, sizeof(name),
+    "%s/%s", dir, getindexfname(host, disk, date, level));
 
   return name;
 }

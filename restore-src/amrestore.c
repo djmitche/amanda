@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.10 1997/12/16 17:59:52 jrj Exp $
+ * $Id: amrestore.c,v 1.11 1997/12/16 20:44:50 jrj Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -112,9 +112,9 @@ void make_filename(filename, file)
 string_t filename;
 dumpfile_t *file;
 {
-    sprintf(filename, "%s.%s.%s.%d", file->name,
-	    sanitise_filename(file->disk),
-	    file->datestamp, file->dumplevel);
+    ap_snprintf(filename, sizeof(filename), "%s.%s.%s.%d", file->name,
+		sanitise_filename(file->disk),
+		file->datestamp, file->dumplevel);
 }
 
 

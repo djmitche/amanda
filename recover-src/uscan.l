@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: uscan.l,v 1.4 1997/09/02 12:04:09 amcore Exp $
+ * $Id: uscan.l,v 1.5 1997/12/16 20:44:42 jrj Exp $
  *
  * lexer for amrecover interactive language
  */
@@ -34,6 +34,8 @@
 #include "uparse.h"
 
 #define YY_NO_UNPUT
+
+#define	DATE_ALLOC_SIZE		sizeof("YYYY-MM-DD")	/* includes null */
 
 extern void yyerror P((char *s));
 extern int  yyparse P((void));
@@ -73,20 +75,20 @@ extract { return EXTRACT; }
 
 ---[0-9][0-9] { time_t now;
 	        struct tm *t;
-                yylval.strval = (char *)malloc(11);
+                yylval.strval = (char *)malloc(DATE_ALLOC_SIZE);
                 now = time((time_t *)NULL);
                 t = localtime(&now);
-                sprintf(yylval.strval, "%04d-%02d%s", 1900+t->tm_year,
-                        t->tm_mon+1, yytext+2);
+                ap_snprintf(yylval.strval, DATE_ALLOC_SIZE,
+			"%04d-%02d%s", 1900+t->tm_year, t->tm_mon+1, yytext+2);
                 return DATE; }
 
 --[0-9][0-9]-[0-9][0-9] { time_t now;
 	                  struct tm *t;
-                          yylval.strval = (char *)malloc(11);
+                          yylval.strval = (char *)malloc(DATE_ALLOC_SIZE);
                           now = time((time_t *)NULL);
                           t = localtime(&now);
-                          sprintf(yylval.strval, "%04d%s", 1900+t->tm_year,
-                                  yytext+1);
+                          ap_snprintf(yylval.strval, DATE_ALLOC_SIZE,
+				   "%04d%s", 1900+t->tm_year, yytext+1);
                           return DATE; }
                         
 [1-2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] { yylval.strval = stralloc(yytext); return DATE; }

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.24 1997/11/25 08:27:28 george Exp $
+ * $Id: infofile.c,v 1.25 1997/12/16 20:44:58 jrj Exp $
  *
  * manage current info file
  */
@@ -69,7 +69,7 @@ char *mode;
 
     len = strlen(infodir) + strlen(shost) + strlen(sdisk) + 7;
     infofile = alloc(len + 1);
-    sprintf(infofile, "%s/%s/%s/info", infodir, shost, sdisk);
+    ap_snprintf(infofile, len + 1, "%s/%s/%s/info", infodir, shost, sdisk);
 
     free(sdisk);
     free(shost);
@@ -86,7 +86,7 @@ char *mode;
     }
 
     newinfofile = alloc(len + 4 + 1);
-    sprintf(newinfofile, "%s.new", infofile);
+    ap_snprintf(newinfofile, len + 4 + 1, "%s.new", infofile);
 
     if(writing) {
 	infof = fopen(newinfofile, mode);
@@ -284,7 +284,7 @@ char *disk;
     len = strlen(infodir) + strlen(shost) + strlen(sdisk) + 7;
     fn = alloc(len + 4 + 1);
 
-    sprintf(fn, "%s/%s/%s/info.new", infodir, shost, sdisk);
+    ap_snprintf(fn, len + 4 + 1, "%s/%s/%s/info.new", infodir, shost, sdisk);
 
     free(sdisk);
     free(shost);
@@ -315,7 +315,7 @@ char *filename;
 #else
     /* lock the dbm file */
 
-    sprintf(lockname, "%s.lck", filename);
+    ap_snprintf(lockname, sizeof(lockname), "%s.lck", filename);
     if((lockfd = open(lockname, O_CREAT|O_RDWR, 0644)) == -1)
 	return 2;
 
@@ -368,7 +368,7 @@ int lev;
     }
 
     t = gmtime(&last);
-    len = sprintf(stamp, "%d:%d:%d:%d:%d:%d",
+    len = ap_snprintf(stamp, sizeof(stamp), "%d:%d:%d:%d:%d:%d",
 	t->tm_year+1900, t->tm_mon+1, t->tm_mday,
 	t->tm_hour, t->tm_min, t->tm_sec);
 
@@ -449,7 +449,7 @@ info_t *record;
 
 	/* setup key */
 
-	sprintf(key, "%s:%s", hostname, diskname);
+	ap_snprintf(key, sizeof(key), "%s:%s", hostname, diskname);
 	k.dptr = key;
 	k.dsize = strlen(key)+1;
 
@@ -532,7 +532,7 @@ info_t *record;
 
     /* setup key */
 
-    sprintf(key, "%s:%s", hostname, diskname);
+    ap_snprintf(key, sizeof(key), "%s:%s", hostname, diskname);
     k.dptr = key;
     k.dsize = strlen(key)+1;
 
@@ -566,7 +566,7 @@ char *hostname, *diskname;
 
     /* setup key */
 
-    sprintf(key, "%s:%s", hostname, diskname);
+    ap_snprintf(key, sizeof(key), "%s:%s", hostname, diskname);
     k.dptr = key;
     k.dsize = strlen(key)+1;
 
