@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.19.2.7.2.13 2003/02/12 02:12:37 martinea Exp $
+ * $Id: amcheck.c,v 1.50.2.19.2.7.2.14 2003/04/28 20:29:17 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -394,8 +394,13 @@ char **argv;
 	if(lseek(mainfd, (off_t)0, SEEK_SET) == -1) {
 	    error("lseek main file: %s", strerror(errno));
 	}
-	subject = stralloc2(getconf_str(CNF_ORG),
+	if(alwaysmail && !(server_probs || client_probs)) {
+	    subject = stralloc2(getconf_str(CNF_ORG),
+			    " AMCHECK REPORT: NO PROBLEMS FOUND");
+	} else {
+	    subject = stralloc2(getconf_str(CNF_ORG),
 			    " AMANDA PROBLEM: FIX BEFORE RUN, IF POSSIBLE");
+	}
 	/*
 	 * Variable arg lists are hard to deal with when we do not know
 	 * ourself how many args are involved.  Split the address list
