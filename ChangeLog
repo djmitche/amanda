@@ -1,3 +1,10 @@
+1999-05-26  Mike Grupenhoff <kashmir@munge.com>
+
+	* client-src/amandad.c: add a lot more dbprintfs so we know what's
+	going on.
+	(service_new): use error() instead of dbprintf(); exit()
+
+
 1999-05-25  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/FAQ (tar-patch): Mention sparse file problem.

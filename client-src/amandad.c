@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.39 1999/05/25 02:11:41 martinea Exp $
+ * $Id: amandad.c,v 1.40 1999/05/26 14:32:51 kashmir Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -464,6 +464,7 @@ protocol_accept(handle, pkt)
 	if (strcmp(services[i], service) == 0)
 	    break;
     if (i == NSERVICES) {
+	dbprintf(("amandad: %s: invalid service\n", service));
 	pkt_init(&nak, P_NAK, "ERROR %s: invalid service\n", service);
 	goto sendnak;
     }
@@ -475,6 +476,7 @@ protocol_accept(handle, pkt)
     service = tok;
 
     if (access(service, X_OK) < 0) {
+	dbprintf(("amandad: can't execute %s: %s\n", service, strerror(errno)));
 	pkt_init(&nak, P_NAK, "ERROR execute access to \"%s\" denied\n",
 	    service);
 	goto sendnak;
@@ -485,20 +487,25 @@ protocol_accept(handle, pkt)
 	as = TAILQ_NEXT(as, tq)) {
 	    if (strcmp(as->cmd, service) == 0 &&
 		strcmp(as->arguments, arguments) == 0) {
-		    dbprintf(("amandad: service is already running\n"));
+		    dbprintf(("amandad: %s %s: already running, acking req\n",
+			service, arguments));
 		    pkt_init(&nak, P_ACK, "");
 		    goto sendnak;
-		}
+	    }
     }
 
     /*
      * create a new service instance, and send the arguments down
      * the request pipe.
      */
+    dbprintf(("amandad: creating new service: %s %s\n", service, arguments));
     as = service_new(handle, service, arguments);
     if (writebuf(as->reqfd, arguments, strlen(arguments)) < 0) {
+	const char *errmsg = strerror(errno);
+	dbprintf(("amandad: error sening arguments to %s: %s\n", service,
+	    errmsg));
 	pkt_init(&nak, P_NAK, "ERROR error writing arguments to %s: %s\n",
-	    service, strerror(errno));
+	    service, errmsg);
 	goto sendnak;
     }
     aclose(as->reqfd);
@@ -1123,9 +1130,8 @@ service_new(security_handle, cmd, arguments)
 	 * The data stream is stdin in the new process
 	 */
         if (dup2(data[0][0], 0) < 0) {
-	    dbprintf(("dup %d to %d failed: %s\n", data[0][0], 0,
-		strerror(errno)));
-	    exit(1);
+	    error("dup %d to %d failed: %s\n", data[0][0], 0,
+		strerror(errno));
 	}
 	aclose(data[0][0]);
 	aclose(data[0][1]);
@@ -1134,9 +1140,8 @@ service_new(security_handle, cmd, arguments)
 	 * The reply stream is stdout
 	 */
         if (dup2(data[1][1], 1) < 0) {
-	    dbprintf(("dup %d to %d failed: %s\n", data[1][1], 1,
-		strerror(errno)));
-	    exit(1);
+	    error("dup %d to %d failed: %s\n", data[1][1], 1,
+		strerror(errno));
 	}
         aclose(data[1][0]);
         aclose(data[1][1]);
@@ -1147,9 +1152,8 @@ service_new(security_handle, cmd, arguments)
 	 */
 	for (i = 0; i < DATA_FD_COUNT; i++) {
 	    if (dup2(data[i + 2][1], i + DATA_FD_OFFSET) < 0) {
-		dbprintf(("dup %d to %d failed: %s\n", data[i + 2][1],
-		    i + DATA_FD_OFFSET, strerror(errno)));
-		exit(1);
+		error("dup %d to %d failed: %s\n", data[i + 2][1],
+		    i + DATA_FD_OFFSET, strerror(errno));
 	    }
 	    aclose(data[i + 2][0]);
 	    aclose(data[i + 2][1]);
