@@ -27,8 +27,7 @@ libamanda_la_SOURCES =	alloc.c		debug.c		dgram.c		\
 			statfs.c	stream.c	token.c		\
 			version.c	versuff.c	amflock.c	\
 			regcomp.c	regexec.c	security.c	\
-			regerror.c	regfree.c	maketree.c	\
-			file.c
+			regerror.c	regfree.c	file.c
 
 libamanda_la_LIBADD =	@LTLIBOBJS@
 
