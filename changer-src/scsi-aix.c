@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-aix.c,v 1.11 2000/11/26 15:55:45 martinea Exp $
+ * $Id: scsi-aix.c,v 1.12 2001/01/17 17:08:57 ant Exp $
  *
  * Interface to execute SCSI commands on an AIX System
  *
@@ -58,42 +58,58 @@
 
 #include <scsi-defs.h>
 
-int SCSI_OpenDevice(OpenFiles_T *pwork, char *DeviceName)
+int SCSI_OpenDevice(int ip)
 {
   int DeviceFD;
   int i;
+  extern OpenFiles_T *pDev;
   
-  if ((DeviceFD = openx(DeviceName, O_RDWR, 0, SC_DIAGNOSTIC)) > 0)
+  if (pDev[ip].inqdone == 0)
     {
-      pwork->fd = DeviceFD;
-      pwork->SCSI = 0;
-      pwork->dev = strdup(DeviceName);
-      pwork->inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
-      
-      if ( SCSI_Inquiry(DeviceFD, pwork->inquiry, INQUIRY_SIZE) == 0)
+      pDev[ip].inqdone = 1;
+      if ((DeviceFD = openx(pDev[ip].dev, O_RDWR, 0, SC_DIAGNOSTIC)) > 0)
+	{
+	  pDev[ip].avail = 1;
+          pDev[ip].fd = DeviceFD;
+          pDev[ip].SCSI = 0;
+          pDev[ip].devopen = 1;
+          pDev[ip].inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
+
+          if (SCSI_Inquiry(ip, pDev[ip].inquiry, INQUIRY_SIZE) == 0)
+	    {
+             if (pDev[ip].inquiry->type == TYPE_TAPE || pDev[ip].inquiry->type == TYPE_CHANGER)
+               {
+                 for (i=0;i < 16;i++)
+                   pDev[ip].ident[i] = pDev[ip].inquiry->prod_ident[i];
+                 for (i=15; i >= 0 && !isalnum(pDev[ip].ident[i]) ; i--)
+                   {
+                     pDev[ip].ident[i] = '\0';
+                   }
+                 pDev[ip].SCSI = 1;
+                 PrintInquiry(pDev[ip].inquiry);
+                 return(1); 
+               } else {
+                 close(DeviceFD);
+                 free(pDev[ip].inquiry);
+                 return(0);
+               }
+           } else {
+             free(pDev[ip].inquiry);
+             pDev[ip].inquiry = NULL;
+             return(1);
+           }
+	 return(1);
+       } else {
+	 dbprintf(("SCSI_OpenDevice %s failed\n", pDev[ip].dev));
+         return(0);
+       }
+    } else {
+      if ((DeviceFD = openx(pDev[ip].dev, O_RDWR, 0, SC_DIAGNOSTIC)) > 0)
         {
-          if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
-            {
-              for (i=0;i < 16 ;i++)
-                pwork->ident[i] = pwork->inquiry->prod_ident[i];
-              for (i=15; i >= 0 && !isalnum(pwork->ident[i]) ; i--)
-                {
-                  pwork->ident[i] = '\0';
-                }
-              pwork->SCSI = 1;
-              PrintInquiry(pwork->inquiry);
-              return(1); 
-            } else {
-              free(pwork->inquiry);
-              close(DeviceFD);
-              return(0);
-            }
-        } else {
-          free(pwork->inquiry);
-          pwork->inquiry = NULL;
+          pDev[ip].fd = DeviceFD;
+          pDev[ip].devopen = 1;
           return(1);
         }
-      return(1);
     }
   return(0);
 }

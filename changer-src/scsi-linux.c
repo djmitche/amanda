@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-linux.c,v 1.13 2000/11/26 15:55:45 martinea Exp $
+ * $Id: scsi-linux.c,v 1.14 2001/01/17 17:08:57 ant Exp $
  *
  * Interface to execute SCSI commands on Linux
  *
@@ -50,6 +50,11 @@
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
+
+#ifdef HAVE_DIRENT_H
+#include <dirent.h>
+#endif
+
 #include <time.h>
 
 #ifdef HAVE_SCSI_SCSI_IOCTL_H
@@ -502,6 +507,74 @@ int Tape_Status( int DeviceFD)
   return(ret); 
 }
 
+/*
+ * This functions scan all /dev/sg* devices
+ * It opens the device an print the result of the inquiry 
+ *
+ */
+int ScanBus()
+{
+  DIR *dir;
+  struct dirent *dirent;
+  extern OpenFiles_T *pDev;
+
+  dir = opendir("/dev/");
+
+  while ((dirent = readdir(dir)) != NULL)
+    {
+      if (strstr(dirent->d_name, "sg") != NULL)
+      {
+        pDev[0].dev = malloc(10);
+        pDev[0].inqdone = 0;
+        sprintf(pDev[0].dev,"/dev/%s", dirent->d_name);
+        if (SCSI_OpenDevice(0))
+          {
+            SCSI_CloseDevice(0);
+            free(pDev[0].dev);
+            pDev[0].inqdone = 0;
+            printf("name /dev/%s ", dirent->d_name);
+
+            switch (pDev[0].inquiry->type)
+              {
+              case TYPE_DISK:
+                printf("Disk");
+                break;
+              case TYPE_TAPE:
+                printf("Tape");
+                break;
+              case TYPE_PRINTER:
+                printf("Printer");
+                break;
+              case TYPE_PROCESSOR:
+                printf("Processor");
+                break;
+              case TYPE_WORM:
+                printf("Worm");
+                break;
+              case TYPE_CDROM:
+                printf("Cdrom");
+                break;
+              case TYPE_SCANNER:
+                printf("Scanner");
+                break;
+              case TYPE_OPTICAL:
+                printf("Optical");
+                break;
+              case TYPE_CHANGER:
+                printf("Changer");
+                break;
+              case TYPE_COMM:
+                printf("Comm");
+                break;
+              default:
+                printf("unknown %d",pDev[0].inquiry->type);
+                break;
+              }
+            printf("\n");
+          }
+      }
+    }
+}
 #endif
 /*
  * Local variables:

@@ -1,3 +1,17 @@
+2001-01-17  Thomas Hepper <th@ant.han.de>
+
+	* changer-src/chg-scsi.c: Moved definitions for config_t and
+	changer_t into scsi-defs.h
+	* changer-src/chg-scsi.c: New config option havebarcode
+	* changer-src/scsi-changer-driver.c: Changed GenericBarCode do handle
+	the option havebarcode. Replaced NoBarCode with GenericBarCode.
+	Fixed compile warnings from -Wshadow
+	* changer-src/scsi-linux.c: New function ScanBus to scan the SCSI Bus.
+	not used yet.
+	* changer-src/scsi-solaris.c: Changed the return value to
+	Command.uscsi_status in SCSI_ExecuteCommand if the return from the
+	ioctl is not 0;
+	
 2001-01-08  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* man/amanda.8.in: New section "HOST & DISK EXPRESSION" and 

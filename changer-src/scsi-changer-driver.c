@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.18 2001/01/04 01:51:30 martinea Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.19 2001/01/17 17:08:57 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -75,7 +75,7 @@ void Inventory(char *labelfile, int drive, int eject, int start, int stop, int c
 
 int TreeFrogBarCode(int DeviceFD);
 int EXB120BarCode(int DeviceFD);
-int GenericSenseHandler(int fd, unsigned char, char *);
+int GenericSenseHandler(int fd, int flags, char *);
 
 ElementInfo_T *LookupElement(int address);
 int eject_tape(char *tapedev, int type);
@@ -169,7 +169,7 @@ ChangerCMD_T ChangerIO[] = {
    GenericEject,
    GenericClean,
    GenericRewind,
-   NoBarCode,
+   GenericBarCode,
    GenericSearch,
    GenericSenseHandler}, 
 	/* Exabyte Devices */
@@ -222,7 +222,7 @@ ChangerCMD_T ChangerIO[] = {
    GenericBarCode,
    GenericSearch,
    GenericSenseHandler},
-
+  /* And now the tape devices */
   {"DLT7000",        
    "DLT Tape [DLT7000]",
    DoNothing,
@@ -833,7 +833,7 @@ int BarCode(int fd)
  * wait -> time to wait for the ready status
  *
  */
-int Tape_Ready(int fd, int wait)
+int Tape_Ready(int fd, int wait_time)
 {
   extern OpenFiles_T *pDev;
   int true = 1;
@@ -847,7 +847,7 @@ int Tape_Ready(int fd, int wait)
   if (pDev[fd].SCSI == 0)
       {
           dbprintf(("Tape_Ready : can#t send SCSI commands\n"));
-          sleep(wait);
+          sleep(wait_time);
           return(0);
       }
 
@@ -861,7 +861,7 @@ int Tape_Ready(int fd, int wait)
   GenericRewind(fd);
  
 
-  while (true && cnt < wait)
+  while (true && cnt < wait_time)
     {
       ret = SCSI_TestUnitReady(fd, pRequestSense );
       switch (SenseHandler(fd, 0, (char *)pRequestSense))
@@ -1356,20 +1356,17 @@ int NoBarCode(int DeviceFD)
 
 int GenericBarCode(int DeviceFD)
 {
-  extern OpenFiles_T *pDev;
-
+  extern changer_t chg;
   dbprintf(("##### START GenericBarCode\n"));
-  dump_hex((char *)pDev[INDEX_CHANGER].inquiry, INQUIRY_SIZE);
-  dbprintf(("GenericBarCode : vendor_specific[19] %x\n",
-            pDev[INDEX_CHANGER].inquiry->vendor_specific[19]));
-  if ((pDev[INDEX_CHANGER].inquiry->vendor_specific[19] & 1) == 1)
+/*   dump_hex((char *)pChangerDev->inquiry, INQUIRY_SIZE); */
+  if ( chg.havebarcode  >= 1)
     {
+      dbprintf(("##### STOP GenericBarCode (havebarcode) => %d\n",chg.havebarcode));
       return(1);
-    } else {
-      return(0);
     }
+  dbprintf(("##### STOP GenericBarCode => 0\n"));
   return(0);
-}
+ }
 
 int SenseHandler(int DeviceFD, unsigned char flag, char *buffer)
 {
@@ -1733,7 +1730,7 @@ int GenericResetStatus(int DeviceFD)
  * TODO:
  * Limit recursion, may run in an infinite loop
  */
-int GenericSenseHandler(int ip, unsigned char flag, char *buffer)
+int GenericSenseHandler(int ip, int flag, char *buffer)
 { 
   extern OpenFiles_T *pDev;
   RequestSense_T *pRequestSense = (RequestSense_T *)buffer;
@@ -1764,9 +1761,9 @@ int SDXMove(int DeviceFD, int from, int to)
   int ret;
   int tapestat;
   int moveok = 0;
-  int MTE = 0;      /* This are parameters  passed */
-  int STE = -1;     /* to                          */
-  int DTE = -1;     /* AlignElements               */
+  int SDX_MTE = 0;      /* This are parameters  passed */
+  int SDX_STE = -1;     /* to                          */
+  int SDX_DTE = -1;     /* AlignElements               */
 
   dbprintf(("##### START SDXMove\n"));
 
@@ -1819,39 +1816,39 @@ int SDXMove(int DeviceFD, int from, int to)
   switch (pto->type)
   {
     case TAPETYPE:
-      DTE = pto->address;
+      SDX_DTE = pto->address;
       break;
     case STORAGE:
-     STE = pto->address;
+     SDX_STE = pto->address;
      break;
     case IMPORT:
-     STE = pto->address;
+     SDX_STE = pto->address;
      break;
   }
 
   switch (pfrom->type)
   {
     case TAPETYPE:
-      DTE = pfrom->address;
+      SDX_DTE = pfrom->address;
       break;
     case STORAGE:
-     STE = pfrom->address;
+     SDX_STE = pfrom->address;
      break;
     case IMPORT:
-     STE = pfrom->address;
+     SDX_STE = pfrom->address;
      break;
   }
 
-  if (DTE >= 0 && STE >= 0)
+  if (SDX_DTE >= 0 && SDX_STE >= 0)
   {
-    ret = SCSI_AlignElements(DeviceFD, MTE, DTE, STE);
+    ret = SCSI_AlignElements(DeviceFD, SDX_MTE, SDX_DTE, SDX_STE);
     dbprintf(("##### SCSI_AlignElemnts ret = %d\n",ret));
     if (ret != 0 )
     {
        return(-1);
     }
   } else {
-    dbprintf(("##### Error setting STE/DTE %d/%d\n", STE, DTE));
+    dbprintf(("##### Error setting STE/DTE %d/%d\n", SDX_STE, SDX_DTE));
     return(-1);
   }
 
@@ -2152,7 +2149,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
   DataTransferElementDescriptor_T *DataTransferElementDescriptor;
   ImportExportElementDescriptor_T *ImportExportElementDescriptor;
 
-  int error = 0;                /* Is set if ASC for an element is set */
+  int ESerror = 0;                /* Is set if ASC for an element is set */
   int x = 0;
   int offset = 0;
   int NoOfElements;
@@ -2197,9 +2194,9 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
                                      MTE,
                                      (char **)&DataBuffer) != 0)
             {
-              if (*DataBuffer != 0)
+              if (DataBuffer != 0)
               {
-                free((char **)&DataBuffer);
+                free(DataBuffer);
               }
               ChgExit("genericElementStatus","Can't read MTE status", FATAL);
             }
@@ -2239,7 +2236,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
                   switch(SenseHandler(DeviceFD, 1, (char *)&pMTE[x]))
                     {
                     case SENSE_IES:
-                      error=1;
+                      ESerror=1;
                       break;
                     case SENSE_ABORT:
                       return(-1);
@@ -2271,9 +2268,9 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
                                      STE,
                                      (char **)&DataBuffer) != 0)
             {
-              if (*DataBuffer != 0)
+              if (DataBuffer != 0)
               {
-                free((char **)&DataBuffer);
+                free(DataBuffer);
               }
               ChgExit("GenericElementStatus", "Can't read STE status", FATAL);
             }
@@ -2316,7 +2313,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
                   switch(SenseHandler(DeviceFD, 1, (char *)&pSTE[x]))
                     {
                     case SENSE_IES:
-                      error=1;
+                      ESerror=1;
                       break;
                     case SENSE_ABORT:
                       return(-1);
@@ -2349,9 +2346,9 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
                                      IEE,
                                      (char **)&DataBuffer) != 0)
             {
-              if (*DataBuffer != 0)
+              if (DataBuffer != 0)
               {
-                free((char **)&DataBuffer);
+                free(DataBuffer);
               }
               ChgExit("GenericElementStatus", "Can't read IEE status", FATAL);
             }
@@ -2392,7 +2389,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
                   switch(SenseHandler(DeviceFD, 1, (char *)&pIEE[x]))
                     {
                     case SENSE_IES:
-                      error=1;
+                      ESerror=1;
                       break;
                     case SENSE_ABORT:
                       return(-1);
@@ -2425,9 +2422,9 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
                                      DTE,
                                      (char **)&DataBuffer) != 0)
             {
-              if (*DataBuffer != 0)
+              if (DataBuffer != 0)
               {
-                free((char **)&DataBuffer);
+                free(DataBuffer);
               }
               ChgExit("GenericElementStatus", "Can't read DTE status", FATAL);
             }
@@ -2468,7 +2465,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
                   switch(SenseHandler(DeviceFD,  1, (char *)&pDTE[x]))
                     {
                     case SENSE_IES:
-                      error=1;
+                      ESerror=1;
                       break;
                     case SENSE_ABORT:
                       return(-1);
@@ -2488,9 +2485,9 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
                                  0xffff,
                                  (char **)&DataBuffer) != 0)
         {
-              if (*DataBuffer != 0)
+              if (DataBuffer != 0)
               {
-                free((char **)&DataBuffer);
+                free(DataBuffer);
               }
           ChgExit("GenericElementStatus","Can't get ElementStatus", FATAL);
         }
@@ -2554,7 +2551,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
                   if (pMTE[x].ASC > 0)
                     {
                       if (SenseHandler(DeviceFD,  1, (char *)&pMTE[x]) == SENSE_RETRY)
-                        error = 1;
+                        ESerror = 1;
                     }
                   offset = offset + V2(ElementStatusPage->length); 
                 }
@@ -2600,7 +2597,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
                   if (pSTE[x].ASC > 0)
                     {
                       if (SenseHandler(DeviceFD,  1, (char *)&pSTE[x]) == SENSE_RETRY)
-                        error = 1;
+                        ESerror = 1;
                     }
                             
                   offset = offset + V2(ElementStatusPage->length); 
@@ -2644,7 +2641,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
                   if (pIEE[x].ASC > 0)
                     {
                       if (SenseHandler(DeviceFD, 1, (char *)&pIEE[x]) == SENSE_RETRY)
-                        error = 1;
+                        ESerror = 1;
                     }
                   
                   offset = offset + V2(ElementStatusPage->length); 
@@ -2692,7 +2689,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
                   if (pDTE[x].ASC > 0)
                     {
                       if (SenseHandler(DeviceFD, 1, (char *)&pDTE[x]) == SENSE_RETRY)
-                        error = 1;
+                        ESerror = 1;
                     }
                             
                   offset = offset + V2(ElementStatusPage->length); 
@@ -2734,7 +2731,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
               pIEE[x].address, pIEE[x].status, pIEE[x].except, pIEE[x].ASC,
               pIEE[x].ASCQ, pIEE[x].type, pIEE[x].from, pIEE[x].VolTag));
 
-  if (error != 0 && InitStatus == 1)
+  if (ESerror != 0 && InitStatus == 1)
     {
       if (GenericResetStatus(DeviceFD) != 0)
         {
@@ -2759,7 +2756,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
 int SDXElementStatus(int DeviceFD, int InitStatus)
 {
 	int count;
-	int error;
+	int SDXerror;
 	int retry = 2;
 
 	dbprintf(("##### START SDXElementStatus\n"));
@@ -2767,16 +2764,16 @@ int SDXElementStatus(int DeviceFD, int InitStatus)
 	{
 		GenericElementStatus(DeviceFD, InitStatus);
 
-		error=0;
+		SDXerror=0;
 		for (count=0; count < STE ; count++)
 		{
 			if (pSTE[count].except != 0)
 			{
-				error = 1;
+				SDXerror = 1;
 			}
 		}
 
-		if (error == 1)
+		if (SDXerror == 1)
 		{
 			dbprintf(("##### GenericResetStatus\n"));
 			GenericResetStatus(DeviceFD);
@@ -2784,7 +2781,7 @@ int SDXElementStatus(int DeviceFD, int InitStatus)
 		retry--;
 	}
 
-	if (error != 0)
+	if (SDXerror != 0)
 	{
 		dbprintf(("##### STOP SDXElementStatus (-1)\n"));
 		return(-1);
@@ -2805,7 +2802,7 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
   DataTransferElementDescriptor_T *DataTransferElementDescriptor;
   ImportExportElementDescriptor_T *ImportExportElementDescriptor;
 
-  int error = 0;                /* Is set if ASC for an element is set */
+  int ESerror = 0;                /* Is set if ASC for an element is set */
   int x = 0;
   int offset = 0;
   int NoOfElements;
@@ -2850,9 +2847,9 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
                                      MTE,
                                      (char **)&DataBuffer) != 0)
             {
-              if (*DataBuffer != 0)
+              if (DataBuffer != 0)
               {
-                free((char **)&DataBuffer);
+                free(DataBuffer);
               }
               ChgExit("genericElementStatus","Can't read MTE status", FATAL);
             }
@@ -2892,7 +2889,7 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
                   switch(SenseHandler(DeviceFD, 1, (char *)&pMTE[x]))
                     {
                     case SENSE_IES:
-                      error=1;
+                      ESerror=1;
                       break;
                     case SENSE_ABORT:
                       return(-1);
@@ -2924,9 +2921,9 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
                                      STE,
                                      (char **)&DataBuffer) != 0)
             {
-              if (*DataBuffer != 0)
+              if (DataBuffer != 0)
               {
-                free((char **)&DataBuffer);
+                free(DataBuffer);
               }
               ChgExit("GenericElementStatus", "Can't read STE status", FATAL);
             }
@@ -2969,7 +2966,7 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
                   switch(SenseHandler(DeviceFD, 1, (char *)&pSTE[x]))
                     {
                     case SENSE_IES:
-                      error=1;
+                      ESerror=1;
                       break;
                     case SENSE_ABORT:
                       return(-1);
@@ -3002,9 +2999,9 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
                                      IEE,
                                      (char **)&DataBuffer) != 0)
             {
-              if (*DataBuffer != 0)
+              if (DataBuffer != 0)
               {
-                free((char **)&DataBuffer);
+                free(DataBuffer);
               }
               ChgExit("GenericElementStatus", "Can't read IEE status", FATAL);
             }
@@ -3045,7 +3042,7 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
                   switch(SenseHandler(DeviceFD, 1, (char *)&pIEE[x]))
                     {
                     case SENSE_IES:
-                      error=1;
+                      ESerror=1;
                       break;
                     case SENSE_ABORT:
                       return(-1);
@@ -3078,9 +3075,9 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
                                      DTE,
                                      (char **)&DataBuffer) != 0)
             {
-              if (*DataBuffer != 0)
+              if (DataBuffer != 0)
               {
-                free((char **)&DataBuffer);
+                free(DataBuffer);
               }
               ChgExit("GenericElementStatus", "Can't read DTE status", FATAL);
             }
@@ -3121,7 +3118,7 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
                   switch(SenseHandler(DeviceFD, 1, (char *)&pDTE[x]))
                     {
                     case SENSE_IES:
-                      error=1;
+                      ESerror=1;
                       break;
                     case SENSE_ABORT:
                       return(-1);
@@ -3141,9 +3138,9 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
                                  0xffff,
                                  (char **)&DataBuffer) != 0)
         {
-              if (*DataBuffer != 0)
+              if (DataBuffer != 0)
               {
-                free((char **)&DataBuffer);
+                free(DataBuffer);
               }
           ChgExit("GenericElementStatus","Can't get ElementStatus", FATAL);
         }
@@ -3207,7 +3204,7 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
                   if (pMTE[x].ASC > 0)
                     {
                       if (SenseHandler(DeviceFD, 1, (char *)&pMTE[x]) == SENSE_RETRY)
-                        error = 1;
+                        ESerror = 1;
                     }
                   offset = offset + V2(ElementStatusPage->length); 
                 }
@@ -3253,7 +3250,7 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
                   if (pSTE[x].ASC > 0)
                     {
                       if (SenseHandler(DeviceFD, 1, (char *)&pSTE[x]) == SENSE_RETRY)
-                        error = 1;
+                        ESerror = 1;
                     }
                             
                   offset = offset + V2(ElementStatusPage->length); 
@@ -3297,7 +3294,7 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
                   if (pIEE[x].ASC > 0)
                     {
                       if (SenseHandler(DeviceFD, 1, (char *)&pIEE[x]) == SENSE_RETRY)
-                        error = 1;
+                        ESerror = 1;
                     }
                   
                   offset = offset + V2(ElementStatusPage->length); 
@@ -3345,7 +3342,7 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
                   if (pDTE[x].ASC > 0)
                     {
                       if (SenseHandler(DeviceFD, 1, (char *)&pDTE[x]) == SENSE_RETRY)
-                        error = 1;
+                        ESerror = 1;
                     }
                             
                   offset = offset + V2(ElementStatusPage->length); 
@@ -3387,7 +3384,7 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
               pIEE[x].address, pIEE[x].status, pIEE[x].except, pIEE[x].ASC,
               pIEE[x].ASCQ, pIEE[x].type, pIEE[x].from, pIEE[x].VolTag));
 
-  if (error != 0 && InitStatus == 1)
+  if (ESerror != 0 && InitStatus == 1)
     {
       if (GenericResetStatus(DeviceFD) != 0)
         {
@@ -3412,10 +3409,16 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
 int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int ClearErrorCounters )
 {
   CDB_T CDB;
-  RequestSense_T RequestSense;
+  RequestSense_T *pRequestSense;
   int ret;
   
   dbprintf(("##### START RequestSense\n"));
+
+  if ((pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
+      {
+        dbprintf(("RequestSense : malloc failed\n"));
+        return(-1);
+      }
 
   CDB[0] = SC_COM_REQUEST_SENSE; /* REQUEST SENSE */                       
   CDB[1] = 0;                   /* Logical Unit Number = 0, Reserved */ 
@@ -3429,7 +3432,7 @@ int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int
   ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,                      
                             (char *) ExtendedRequestSense,
                             sizeof(ExtendedRequestSense_T),  
-                            (char *) &RequestSense, sizeof(RequestSense_T));
+                            (char *) pRequestSense, sizeof(RequestSense_T));
   
   
   if (ret < 0)
@@ -3440,7 +3443,7 @@ int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int
   if ( ret > 0)
     {
       DecodeExtSense(ExtendedRequestSense, "RequestSense : ",debug_file);
-      return(RequestSense.SenseKey);
+      return(pRequestSense->SenseKey);
     }
   return(0);
 }
@@ -4087,6 +4090,7 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
          printf ("Ident = %s, type = %s\n",p->ident, p->type);
          p++;
       }
+    DumpSense();
   }
 
   if (strcmp("robot", option) == 0 || strcmp("all", option) == 0)
@@ -4284,7 +4288,7 @@ void ChgExit(char *where, char *reason, int level)
 /* This a vendor specific command !!!!!! */
 /* First seen at AIT :-)                 */
 /*                                       */
-int SCSI_AlignElements(int DeviceFD, int MTE, int DTE, int STE)
+int SCSI_AlignElements(int DeviceFD, int AE_MTE, int AE_DTE, int AE_STE)
 {
   RequestSense_T *pRequestSense;
   int retry = 1;
@@ -4304,9 +4308,9 @@ int SCSI_AlignElements(int DeviceFD, int MTE, int DTE, int STE)
     {
       CDB[0]  = 0xE5;
       CDB[1]  = 0;
-      MSB2(&CDB[2],MTE);	/* Which MTE to use, default 0 */
-      MSB2(&CDB[4],DTE);	/* Which DTE to use, no range check !! */
-      MSB2(&CDB[6],STE);	/* Which STE to use, no range check !! */
+      MSB2(&CDB[2],AE_MTE);	/* Which MTE to use, default 0 */
+      MSB2(&CDB[4],AE_DTE);	/* Which DTE to use, no range check !! */
+      MSB2(&CDB[6],AE_STE);	/* Which STE to use, no range check !! */
       CDB[8]  = 0;
       CDB[9]  = 0;
       CDB[10] = 0;

@@ -258,6 +258,35 @@
 	
 	{ "EXB-10e", "", TYPE_CHANGER, -1, 0x0, 0x0, SENSE_ABORT, "Nothing Found for EXB-10e"},
 /*
+ * Exabyte 230D Library (Robot)
+ */
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NULL, 0x0, 0x0, SENSE_RETRY, "Retry, no sense"},
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NULL, 0x90, 0x2, SENSE_ABORT, "Illegal Request"},
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NULL , 0x90, 0x3, SENSE_IES, "IES"},
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NULL , -1, -1, SENSE_RETRY, "Default for SENSE_NULL"},
+
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x0, SENSE_RETRY, "Logical Unit not ready, no additionla sense"},
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x1, SENSE_RETRY, "Logical Unit not ready, in progress becoming ready"},
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x85, SENSE_ABORT, "Library door is open"},
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x85, SENSE_ABORT, "The data cartridge magazine is missing"},
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x89, SENSE_ABORT, "The library is in CHS Monitor mode"},
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x8C, SENSE_RETRY, "The library is performing a power-on self test"},
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x8D, SENSE_ABORT, "The library is in LCD mode"},
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NOT_READY, 0x4, 0x8E, SENSE_ABORT, "The library is in Sequential mode"},
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NOT_READY, 0x30, 0x3, SENSE_RETRY, "The tape drive is being cleaned"},
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NOT_READY, 0x3A, 0x0, SENSE_TAPE_NOT_ONLINE, "No Tape online"},
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NOT_READY , -1, -1, SENSE_RETRY, "Default for SENSE_NOT_READY"},
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_NOT_READY , -1, -1, SENSE_RETRY, "Default for SENSE_NOT_READY"},
+
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_UNIT_ATTENTION, 0x0, 0x0, SENSE_RETRY, "Unit Attention"},
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_UNIT_ATTENTION , -1, -1, SENSE_RETRY, "Default for SENSE_UNIT_ATTENTION"},
+	
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x0, 0x0, SENSE_ABORT, "Illegal Request"},
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST, 0x91, 0x0, SENSE_CHM_FULL, "CHM full during reset"},
+	{ "EXB-230D", "", TYPE_CHANGER, SENSE_ILLEGAL_REQUEST , -1, -1, SENSE_RETRY, "Default for SENSE_ILLEGAL_REQUEST"},
+	
+	{ "EXB-230D", "", TYPE_CHANGER, -1, 0x0, 0x0, SENSE_ABORT, "Nothing Found for EXB-10e"},
+/*
  * Spectra TreeFrog  library
  */
  	{ "215", "SPECTRA", TYPE_CHANGER, SENSE_NULL, 0x0, 0x0, SENSE_NO, "No Sense, Unit Ready"},

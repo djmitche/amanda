@@ -144,6 +144,34 @@ typedef unsigned char PackedBit;
 #define FIND_SLOT 5
 #define RESET_VALID 6
 #define BARCODE_DUMP 7
+/*----------------------------------------------------------------------------*/
+/* Some stuff for our own configurationfile */
+typedef struct {  /* The information we can get for any drive (configuration) */
+  int drivenum;      /* Which drive to use in the library */
+  int start;         /* Which is the first slot we may use */
+  int end;           /* The last slot we are allowed to use */
+  int cleanslot;     /* Where the cleaningcartridge stays */
+  char *scsitapedev; /* Where can we send raw SCSI commands to the tape */
+  char *device;      /* Which device is associated to the drivenum */
+  char *slotfile;    /* Where we should have our memory */   
+  char *cleanfile;   /* Where we count how many cleanings we did */
+  char *timefile;    /* Where we count the time the tape was used*/
+  char *tapestatfile;/* Where can we place some drive stats */
+  char *changerident;/* Config to use foe changer control, ovverride result from inquiry */
+  char *tapeident;   /* Same as above for the tape device */
+}config_t; 
+
+typedef struct {
+  int number_of_configs; /* How many different configurations are used */
+  int eject;             /* Do the drives need an eject-command */
+  int havebarcode;       /* Do we have an barcode reader installed */
+  unsigned char emubarcode;	/* Emulate the barcode feature,  used for keeping an inventory of the lib */
+  int sleep;             /* How many seconds to wait for the drive to get ready */
+  int cleanmax;          /* How many runs could be done with one cleaning tape */
+  char *device;          /* Which device is our changer */
+  char *labelfile;       /* Mapping from Barcode labels to volume labels */
+  config_t *conf;
+}changer_t;
 
 typedef struct {
   char voltag[128];
@@ -1008,7 +1036,7 @@ typedef struct {
     int (*function_rewind)(int);
     int (*function_barcode)(int);
     int (*function_search)();
-    int (*function_error)(int, unsigned char, char *);
+    int (*function_error)(int, int, char *);
 } ChangerCMD_T ;
 
 typedef struct {
@@ -1041,14 +1069,14 @@ typedef struct LogPageDecode {
 } LogPageDecode_T;
 
 typedef struct {
-   char *ident;                    /* Ident as returned from the inquiry */
-   char *vendor;                   /* Vendor as returned from the inquiry */
-   unsigned char type;             /* removable .... */
-   int sense;                      /* Sense key as returned from the device */
-   int asc;                        /* ASC as set in the sense struct */
-   int ascq;                       /* ASCQ as set in the sense struct */
-   int  ret;                       /* What we think that we should return on this conditon */
-   char text[80];                  /* A short text describing this condition */
+   char *ident;      /* Ident as returned from the inquiry */
+   char *vendor;     /* Vendor as returned from the inquiry */
+   int type;         /* removable .... */
+   int sense;        /* Sense key as returned from the device */
+   int asc;          /* ASC as set in the sense struct */
+   int ascq;         /* ASCQ as set in the sense struct */
+   int  ret;         /* What we think that we should return on this conditon */
+   char text[80];    /* A short text describing this condition */
 } SenseType_T;                                                                                    
 
 /* ======================================================= */
@@ -1088,7 +1116,7 @@ void ChangerStatus(char * option, char * labelfile, int HasBarCode, char *change
 int BarCode(int fd);
 char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action, int slot, int from);
 
-int Tape_Ready(int fd, int wait);
+int Tape_Ready(int fd, int wait_time);
 
 void Inventory(char *labelfile, int drive, int eject, int start, int stop, int clean);
 void ChangerDriverVersion();
