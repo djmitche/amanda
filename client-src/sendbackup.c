@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.29 1998/01/26 21:15:42 jrj Exp $
+ * $Id: sendbackup.c,v 1.30 1998/02/08 19:58:03 amcore Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -580,6 +580,16 @@ va_dcl
     char *e;
 
     dbprintf(("%s: spawning \"%s\" in pipeline\n", pname, prog));
+    dbprintf(("%s: argument list:", pname));
+    arglist_start(ap, stderrfd);		/* setup argv */
+    for(i = 0; i < MAX_PIPESPAWN_ARGS; i++) {
+	char *arg = arglist_val(ap, char *);
+	if (arg == NULL)
+	    break;
+	dbprintf((" \"%s\"", arg));
+    }
+    arglist_end(ap);
+    dbprintf(("\n"));
 
     if(pipe(inpipe) == -1) {
       e = strerror(errno);
