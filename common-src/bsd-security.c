@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.1 1998/11/04 20:14:27 kashmir Exp $
+ * $Id: bsd-security.c,v 1.2 1998/11/05 23:19:37 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -33,6 +33,7 @@
 #include "dgram.h"
 #include "event.h"
 #include "packet.h"
+#include "parse.h"
 #include "queue.h"
 #include "security.h"
 #include "stream.h"
@@ -71,12 +72,17 @@ struct bsd_handle {
      * Function to call when recvpkt detects new incoming data for this
      * handle
      */
-    void (*fn) P((void *, pkt_t *));
+    void (*fn) P((void *, pkt_t *, security_recvpkt_status_t));
 
     /*
      * Argument for previous function
      */
     void *arg;
+
+    /*
+     * Timeout handle for a recv
+     */
+    event_handle_t *ev_timeout;
 
     /*
      * Queue handles.  bsd_handle's that are blocked on input get added
@@ -138,7 +144,8 @@ static void bsd_accept P((int, int, void (*)(void *, void *, pkt_t *),
     void *));
 static void bsd_close P((void *));
 static int bsd_sendpkt P((void *, pkt_t *));
-static void bsd_recvpkt P((void *, void (*)(void *, pkt_t *), void *));
+static void bsd_recvpkt P((void *,
+    void (*)(void *, pkt_t *, security_recvpkt_status_t), void *, int));
 static void bsd_recvpkt_cancel P((void *));
 
 static void *bsd_stream_server P((void *));
@@ -203,7 +210,7 @@ static struct {
 
 #define	handleq_remove(kh)	do {		\
     assert(handleq.qlength > 0);		\
-    assert(TAILQ_FIRST(&handleq.tailq) != NULL)	\
+    assert(TAILQ_FIRST(&handleq.tailq) != NULL);\
     TAILQ_REMOVE(&handleq.tailq, kh, tq);	\
     handleq.qlength--;				\
     assert(handleq.qlength == 0 ? TAILQ_FIRST(&handleq.tailq) == NULL : 1); \
@@ -228,6 +235,7 @@ static void *gethandle P((struct hostent *, int, int));
 static const char *pkthdr2str P((const struct bsd_handle *, const pkt_t *));
 static int str2pkthdr P((const char *, pkt_t *, int *, int *));
 static void recvpkt_callback P((void *));
+static void recvpkt_timeout P((void *));
 static int recv_security_ok P((struct bsd_handle *, pkt_t *));
 static void stream_read_callback P((void *));
 
@@ -292,6 +300,10 @@ bsd_accept(in, out, fn, arg)
      */
     accept_fn = fn;
     accept_fn_arg = arg;
+
+    if (ev_netfd == NULL)
+	ev_netfd = event_register(netfd.socket, EV_READFD, recvpkt_callback,
+	    NULL);
 }
 
 /*
@@ -312,6 +324,11 @@ gethandle(he, port, handle)
      * Allocate space for our handle
      */
     bh = alloc(sizeof(*bh));
+
+    /*
+     * Initialize the error buffer now, because we might use it soon.
+     */
+    bh->security_handle.error = NULL;
 
     /*
      * Save the hostname and port info
@@ -377,6 +394,7 @@ gethandle(he, port, handle)
     bh->handle = handle;
     bh->fn = NULL;
     bh->arg = NULL;
+    bh->ev_timeout = NULL;
 
     return (bh);
 }
@@ -455,9 +473,10 @@ bsd_sendpkt(cookie, pkt)
  * been read.
  */
 static void
-bsd_recvpkt(cookie, fn, arg)
+bsd_recvpkt(cookie, fn, arg, timeout)
     void *cookie, *arg;
-    void (*fn) P((void *, pkt_t *));
+    void (*fn) P((void *, pkt_t *, security_recvpkt_status_t));
+    int timeout;
 {
     struct bsd_handle *bh = cookie;
 
@@ -481,6 +500,12 @@ bsd_recvpkt(cookie, fn, arg)
      */
     if (bh->fn == NULL)
 	handleq_add(bh);
+    if (bh->ev_timeout != NULL)
+	event_release(bh->ev_timeout);
+    if (timeout < 0)
+	bh->ev_timeout = NULL;
+    else
+	bh->ev_timeout = event_register(timeout, EV_TIME, recvpkt_timeout, bh);
     bh->fn = fn;
     bh->arg = arg;
 }
@@ -497,15 +522,18 @@ bsd_recvpkt_cancel(cookie)
     struct bsd_handle *bh = cookie;
 
     assert(bh != NULL);
-    assert(bh->fn != NULL);
-    assert(handleq.qlength > 0);
 
-    handleq_remove(bh);
-    bh->fn = NULL;
-    bh->arg = NULL;
+    if (bh->fn != NULL) {
+	handleq_remove(bh);
+	bh->fn = NULL;
+	bh->arg = NULL;
+    }
+    if (bh->ev_timeout != NULL)
+	event_release(bh->ev_timeout);
+    bh->ev_timeout = NULL;
 
-    if (handleq.qlength == 0) {
-	assert(ev_netfd != NULL);
+    if (handleq.qlength == 0 && accept_fn == NULL &&
+	ev_netfd != NULL) {
 	event_release(ev_netfd);
 	ev_netfd = NULL;
     }
@@ -525,7 +553,7 @@ recvpkt_callback(cookie)
     int handle, sequence;
     struct bsd_handle *bh;
     struct hostent *he;
-    void (*fn) P((void *, pkt_t *));
+    void (*fn) P((void *, pkt_t *, security_recvpkt_status_t));
     void *arg;
 
     assert(cookie == NULL);
@@ -559,9 +587,9 @@ recvpkt_callback(cookie)
 	    arg = bh->arg;
 	    bsd_recvpkt_cancel(bh);
 	    if (recv_security_ok(bh, &pkt) < 0)
-		(*fn)(arg, NULL);
+		(*fn)(arg, NULL, RECV_ERROR);
 	    else
-		(*fn)(arg, &pkt);
+		(*fn)(arg, &pkt, RECV_OK);
 	    return;
 	}
     }
@@ -587,6 +615,27 @@ recvpkt_callback(cookie)
 	(*accept_fn)(accept_fn_arg, bh, NULL);
     else
 	(*accept_fn)(accept_fn_arg, bh, &pkt);
+}
+
+/*
+ * This is called when a handle times out before receiving a packet.
+ */
+static void
+recvpkt_timeout(cookie)
+    void *cookie;
+{
+    struct bsd_handle *bh = cookie;
+    void (*fn) P((void *, pkt_t *, security_recvpkt_status_t));
+    void *arg;
+
+    assert(bh != NULL);
+
+    assert(bh->ev_timeout != NULL);
+    fn = bh->fn;
+    arg = bh->arg;
+    bsd_recvpkt_cancel(bh);
+    (*fn)(arg, NULL, RECV_TIMEOUT);
+
 }
 
 /*
