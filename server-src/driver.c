@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.137 2004/03/10 14:02:35 martinea Exp $
+ * $Id: driver.c,v 1.138 2004/04/05 17:22:24 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -65,7 +65,7 @@ static time_t sleep_time;
 static int idle_reason;
 static char *datestamp;
 static char *timestamp;
-static host_t *flushhost = NULL;
+static am_host_t *flushhost = NULL;
 
 static event_handle_t *dumpers_ev_time = NULL;
 
@@ -1588,7 +1588,7 @@ read_flush()
 
 	/* add it to the flushhost list */
 	if(!flushhost) {
-	    flushhost = alloc(sizeof(host_t));
+	    flushhost = alloc(sizeof(am_host_t));
 	    flushhost->next = NULL;
 	    flushhost->hostname = stralloc("FLUSHHOST");
 	    flushhost->up = NULL;

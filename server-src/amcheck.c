@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.106 2004/03/22 22:11:07 weichinger Exp $
+ * $Id: amcheck.c,v 1.107 2004/04/05 17:22:24 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -988,7 +988,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	char *infofile = NULL;
 	struct stat statbuf;
 	disk_t *dp;
-	host_t *hostp;
+	am_host_t *hostp;
 	int indexdir_checked = 0;
 	int hostindexdir_checked = 0;
 	char *host;
@@ -1208,7 +1208,7 @@ static void handle_result P((void *, pkt_t *, security_handle_t *));
 #define DISK_DONE				((void *)2)
 
 void start_host(hostp)
-    host_t *hostp;
+    am_host_t *hostp;
 {
     disk_t *dp;
     char *req = NULL;
@@ -1423,7 +1423,7 @@ void start_host(hostp)
 int start_client_checks(fd)
 int fd;
 {
-    host_t *hostp;
+    am_host_t *hostp;
     disk_t *dp;
     int hostcount, pid;
     int userbad = 0;
@@ -1490,7 +1490,7 @@ void *datap;
 pkt_t *pkt;
 security_handle_t *sech;
 {
-    host_t *hostp;
+    am_host_t *hostp;
     disk_t *dp;
     char *line;
     char *s;
@@ -1498,7 +1498,7 @@ security_handle_t *sech;
     int ch;
     int tch;
 
-    hostp = (host_t *)datap;
+    hostp = (am_host_t *)datap;
     hostp->up = HOST_READY;
 
     if (pkt == NULL) {

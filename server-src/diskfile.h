@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.27 2003/01/04 03:35:04 martinea Exp $
+ * $Id: diskfile.h,v 1.28 2004/04/05 17:22:24 martinea Exp $
  *
  * interface for disklist file reading code
  */
@@ -36,8 +36,8 @@
 #include "conffile.h"
 #include "amfeatures.h"
 
-typedef struct host_s {
-    struct host_s *next;		/* next host */
+typedef struct amhost_s {
+    struct amhost_s *next;		/* next host */
     char *hostname;			/* name of host */
     struct disk_s *disks;		/* linked list of disk records */
     int inprogress;			/* # dumps in progress */
@@ -46,13 +46,13 @@ typedef struct host_s {
     time_t start_t;			/* start dump after this time */
     char *up;				/* generic user pointer */
     am_feature_t *features;		/* feature set */
-} host_t;
+} am_host_t;
 
 typedef struct disk_s {
     int line;				/* line number of last definition */
     struct disk_s *prev, *next;		/* doubly linked disk list */
 
-    host_t *host;			/* host list */
+    am_host_t *host;			/* host list */
     struct disk_s *hostnext;
 
     char *name;				/* label name for disk */
@@ -97,7 +97,7 @@ typedef struct disklist_s {
 
 int read_diskfile P((const char *, disklist_t *));
 
-host_t *lookup_host P((const char *hostname));
+am_host_t *lookup_host P((const char *hostname));
 disk_t *lookup_disk P((const char *hostname, const char *diskname));
 
 disk_t *add_disk P((disklist_t *list, char *hostname, char *diskname));

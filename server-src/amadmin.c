@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.88 2003/11/07 17:56:18 martinea Exp $
+ * $Id: amadmin.c,v 1.89 2004/04/05 17:22:24 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -703,7 +703,7 @@ char **argv;
 void due_one(dp)
 disk_t *dp;
 {
-    host_t *hp;
+    am_host_t *hp;
     int days;
     info_t info;
 
@@ -1478,7 +1478,7 @@ impget_line ()
 void disklist_one(dp)
 disk_t *dp;
 {
-    host_t *hp;
+    am_host_t *hp;
     interface_t *ip;
     sle_t *excl;
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.151 2004/02/13 14:00:36 martinea Exp $
+ * $Id: planner.c,v 1.152 2004/04/05 17:22:25 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1063,14 +1063,14 @@ int level;
  *
  */
 
-static void getsize P((host_t *hostp));
-static disk_t *lookup_hostdisk P((host_t *hp, char *str));
+static void getsize P((am_host_t *hostp));
+static disk_t *lookup_hostdisk P((am_host_t *hp, char *str));
 static void handle_result P((void *datap, pkt_t *pkt, security_handle_t *sech));
 
 
 static void get_estimates P((void))
 {
-    host_t *hostp;
+    am_host_t *hostp;
     disk_t *dp;
     int something_started;
 
@@ -1164,7 +1164,7 @@ static void get_estimates P((void))
 }
 
 static void getsize(hostp)
-host_t *hostp;
+am_host_t *hostp;
 {
     char number[NUM_STR_SIZE], *req;
     disk_t *dp;
@@ -1334,7 +1334,7 @@ host_t *hostp;
 }
 
 static disk_t *lookup_hostdisk(hp, str)
-host_t *hp;
+am_host_t *hp;
 char *str;
 {
     disk_t *dp;
@@ -1354,7 +1354,7 @@ security_handle_t *sech;
     int level, i;
     long size;
     disk_t *dp;
-    host_t *hostp;
+    am_host_t *hostp;
     char *msgdisk=NULL, *msgdisk_undo=NULL, msgdisk_undo_ch = '\0';
     char *remoterr, *errbuf = NULL;
     char *s;
@@ -1364,7 +1364,7 @@ security_handle_t *sech;
     int ch;
     int tch;
 
-    hostp = (host_t *)datap;
+    hostp = (am_host_t *)datap;
     hostp->up = HOST_READY;
 
     if (pkt == NULL) {
