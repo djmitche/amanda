@@ -274,7 +274,7 @@ In addition to the `changerfile'-clean and the `changerfile'-access
 files, it will maintain a `changerfile'-slot that indicates the
 currently loaded slot.
 
-chg-scsi: (former seagate-changer, then chg-chio)
+chg-scsi-chio: (former seagate-changer, then chg-chio)
 
 A C program that relies on scsi tape-changer interfaces.  It may
 either use the tape changer interface specified in chio.h (Gerd Knor's
@@ -349,6 +349,30 @@ usagecount <filename>				This points to a file which is
 											 
 Comments begin with an '#' until end of line.
 Allowed separators are TAB and SPACE. 
+
+chg-scsi: (new interface, try to drive a robot with direct scsi commands)
+The config and the sysntax is the same as for chg-scsi-chio. New
+is the config type 
+
+scsitapedev <devicename>
+
+This device is used to control the tape, read status infos etc.
+
+Notes on how to run on different Plattforms. At the moment it is
+tested with a HP DAT changer and an exabyte 10h library on the following
+plattforms:
+HP_UX 10.20
+IRIX 6.x
+Solaris 2.5/6
+Linux
+
+For solaris a generic scsi driver modules is needed(sst), you can find it in
+the driver development package at sun or ask me (th@icem.de) for a copy.
+
+For HP you have to create the special device files for the pass throu
+interface.
+
+
 
 chg-chio: (new perl script, that replaces the original chg-chio written in C)
 

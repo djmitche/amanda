@@ -14,8 +14,12 @@ endif
 
 if WANT_SERVER
 
+if WANT_CHIO_SCSI
+CHIO_SCSI = chg-scsi-chio
+endif
+
 if WANT_CHG_SCSI
-libexec_PROGRAMS =	chg-scsi
+libexec_PROGRAMS =	chg-scsi $(CHIO_SCSI)
 endif
 
 libexec_SCRIPTS =	chg-manual	chg-multi	chg-mtx		\
@@ -29,7 +33,11 @@ LDADD = ../server-src/libamserver.$(LIB_EXTENSION) \
 
 SUFFIXES =		.pl .sh
 
-chg_scsi_SOURCES =	chg-scsi.c scsi-hpux.c scsi-chio.c libscsi.h
+chg_scsi_SOURCES =	chg-scsi.c libscsi.h \
+	scsi-aix.c scsi-changer-driver.c scsi-defs.h scsi-hpux_new.c scsi-irix.c \
+	scsi-linux.c scsi-solaris.c
+
+chg_scsi_chio_SOURCES = chg-scsi.c scsi-hpux.c scsi-chio.c libscsi.h
 
 EXTRA_DIST = scsi-proto.c
 

@@ -1,5 +1,5 @@
 /*
- *	$Id: libscsi.h,v 1.4 1998/06/13 06:13:21 oliva Exp $
+ *	$Id: libscsi.h,v 1.4.4.1 1998/11/07 08:49:51 oliva Exp $
  *
  *	libscsi.h -- library header for routines to handle the changer
  *			support for chio based systems
@@ -19,7 +19,7 @@
 /*
  * This function gets the actual cleaning state of the drive 
  */
-int get_clean_state(char *tape);
+int get_clean_state(int fd, char *changer, char *tape);
 
 
 /*

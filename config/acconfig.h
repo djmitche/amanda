@@ -78,7 +78,22 @@
 #undef STATFS_SCO_OS5
 
 /* For HPUX tape-changer support.  */
-#undef HAVE_HPUX_SCSI
+#undef HAVE_HPUX_LIKE_SCSI
+
+/* For HPUX chio based changer support */
+#undef HAVE_HPUX_SCSI_CHIO
+
+/* For Linux tape-changer support */
+#undef HAVE_LINUX_LIKE_SCSI
+
+/* For IRIX tape-changer support */
+#undef HAVE_IRIX_LIKE_SCSI
+
+/* For Solaris tape-changer support */
+#undef HAVE_SOLARIS_LIKE_SCSI 
+
+/* For AIX tape-changer support */
+#undef HAVE_AIX_LIKE_SCSI
 
 /* For Linux systems with floppy tapes: 
  * QIC volume table support via raw tape device.  */

@@ -1,5 +1,5 @@
 /*
- *	$Id: chg-scsi.c,v 1.6 1998/09/19 01:58:30 oliva Exp $
+ *	$Id: chg-scsi.c,v 1.6.2.1 1998/11/07 08:49:49 oliva Exp $
  *
  *	chg-scsi.c -- generic SCSI changer driver
  *
@@ -66,6 +66,7 @@ typedef struct {  /* The information we can get for any drive (configuration) */
         int start;	/* Which is the first slot we may use */
         int end;	/* The last slot we are allowed to use */
         int cleanslot;	/* Where the cleaningcartridge stays */
+        char *scsitapedev; /* Where can we send raw SCSI commands to the tape */
         char *device;	/* Which device is associated to the drivenum */
         char *slotfile;	/* Where we should have our memory */	
         char *cleanfile;/* Where we count how many cleanings we did */
@@ -83,7 +84,7 @@ typedef struct {
 
 typedef enum{
   NUMDRIVE,EJECT,SLEEP,CLEANMAX,DRIVE,START,END,CLEAN,DEVICE,STATFILE,CLEANFILE,DRIVENUM,
-  CHANGERDEV,USAGECOUNT
+  CHANGERDEV,USAGECOUNT,SCSITAPEDEV
 } token_t;
 
 typedef struct {
@@ -106,6 +107,7 @@ tokentable_t t_table[]={
   { "drivenum",DRIVENUM},
   { "changerdev",CHANGERDEV},
   { "usagecount",USAGECOUNT},
+  { "scsitapedev", SCSITAPEDEV},
   { NULL,-1 }
 };
 
@@ -130,6 +132,7 @@ void init_changer_struct(changer_t *chg,int number_of_config)
        chg->conf[i].slotfile   = NULL;
        chg->conf[i].cleanfile  = NULL;
        chg->conf[i].timefile  = NULL;
+       chg->conf[i].scsitapedev = NULL;
      }
   }
 }
@@ -262,6 +265,9 @@ int read_config(char *configfile, changer_t *chg)
                         break;
   	 case CHANGERDEV:
 			chg->device = strdup(value);
+			break;
+	 case SCSITAPEDEV:
+	                chg->conf[drivenum].scsitapedev = strdup(value);
 			break;
          case CLEANMAX:
                         chg->cleanmax = atoi(value);
@@ -522,25 +528,10 @@ int get_relative_target(int fd,int nslots,char *parameter,int loaded,
     };
 }
 
-int wait_ready(char *tapedev,int timeout)
-/* This function should ask the drive if it is ready */
-{
-  FILE *out=NULL;
-  int cnt=0;
-  while ((cnt<timeout) && (NULL==(out=fopen(tapedev,"w+")))){
-    cnt++;
-    sleep(1);
-  }
-  if (out != NULL)
-    fclose(out);
-  return 0;
-}
-
-int ask_clean(char *tapedev,int timeout)
+int ask_clean(int fd, char *changerdev, char *tapedev)
 /* This function should ask the drive if it wants to be cleaned */
 {
-  wait_ready(tapedev,timeout);
-  return get_clean_state(tapedev);
+  return get_clean_state(fd, changerdev, tapedev);
 }
 
 void clean_tape(int fd,char *tapedev,char *cnt_file, int drivenum, 
@@ -617,7 +608,7 @@ int main(int argc, char *argv[])
 
     int fd, rc, slotcnt, drivecnt;
     int endstatus = 0;
-    char *changer_dev, *changer_file, *tape_device;
+    char *changer_dev, *changer_file, *tape_device, *scsitapedevice;
 
     set_pname("chg-scsi");
 
@@ -633,7 +624,7 @@ int main(int argc, char *argv[])
     tape_device = getconf_str(CNF_TAPEDEV);
 
     /* Get the configuration parameters */
-    if (tape_device[0] >= '0' && tape_device[0] <= '9' && tape_device[1] == 0){
+    if (strlen(tape_device)==1){
       read_config(changer_file,&chg);
       confnum=atoi(tape_device);
       use_slots    = chg.conf[confnum].end-chg.conf[confnum].start+1;
@@ -652,6 +643,8 @@ int main(int argc, char *argv[])
         tape_device  = strdup(chg.conf[confnum].device);
       if (NULL != chg.device)
         changer_dev  = strdup(chg.device); 
+      if (NULL != chg.conf[confnum].scsitapedev)
+	scsitapedevice = strdup(chg.conf[confnum].scsitapedev);
       /* dump_changer_struct(chg); */
       /* get info about the changer */
       if (-1 == (fd = open(changer_dev,O_RDWR))) {
@@ -717,7 +710,7 @@ int main(int argc, char *argv[])
 		    if (need_eject)
 		      eject_tape(tape_device);
 		    (void)unload(fd, drive_num, oldtarget);
-		    if (ask_clean(tape_device,need_sleep))
+		    if (ask_clean(fd, changer_dev, scsitapedevice))
 			clean_tape(fd,tape_device,clean_file,drive_num,
                                    clean_slot,maxclean,time_file);
 		    loaded=0;
@@ -734,7 +727,7 @@ int main(int argc, char *argv[])
 	    if (!loaded)
 		(void)load(fd, drive_num, target);
 	    if (need_sleep)
-	      wait_ready(tape_device,need_sleep);
+	      Tape_Ready(tape_device, need_sleep);
 	    printf("%d %s\n", target-slot_offset, tape_device);
 	    break;
 
@@ -751,7 +744,7 @@ int main(int argc, char *argv[])
 		if (need_eject)
 		    eject_tape(tape_device);
 		(void)unload(fd, drive_num, target);
-		if (ask_clean(tape_device,need_sleep))
+		if (ask_clean(fd, changer_dev, scsitapedevice))
 		    clean_tape(fd,tape_device,clean_file,drive_num,clean_slot,
                                maxclean,time_file);
 	    }
@@ -766,7 +759,7 @@ int main(int argc, char *argv[])
 	    (void)load(fd, drive_num, slot_offset);
 	    put_current_slot(changer_file, slot_offset);
 	    if (need_sleep)
-	      wait_ready(tape_device,need_sleep);
+		Tape_Ready(tape_device, need_sleep);
 	    printf("%d %s\n", get_current_slot(changer_file), tape_device);
 	    break;
 
@@ -776,7 +769,7 @@ int main(int argc, char *argv[])
 		if (need_eject)
 		  eject_tape(tape_device);
 		(void)unload(fd, drive_num, target);
-		if (ask_clean(tape_device,need_sleep))
+		if (ask_clean(fd, changer_dev, scsitapedevice))
 		    clean_tape(fd,tape_device,clean_file,drive_num,clean_slot,
                                maxclean,time_file);
 		printf("%d %s\n", target, tape_device);

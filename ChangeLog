@@ -1,3 +1,30 @@
+1998-11-07  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* configure.in: merge with camlib.h patch from Oct 31.
+	remove all uses of test ... -a ...; this is not portable.
+	(AC_CHECK_HEADERS) added header files for Linux and Solaris
+
+1998-11-07  Thomas Hepper  <th@icem.de>
+
+	* changer-src/chg-scsi: Add config option scsidev
+	* changer-src/chg-scsi: Remove function tape_ready
+	* changer-src/chg-scsi: Add new parameter tapedev to function
+	ask_clean
+	* changer_src/scsi-hpux.c: changed HAVE_HPUX_SCSI to 
+	HAVE_HPUX_SCSI_CHIO, changed in configure.in too
+	* changer-src/libscsi.h: Expand definition for get_clean_state
+	* new files in /changer-src:
+	scsi-aix.c, scsi-changer-driver.c, scsi-defs.h
+	scsi-hpux_new.c, scsi-irix.c, scsi-linux.c, scsi-solaris.c
+	* configure.in checks for scsi ioctl added, check for header files
+	for the scsi suport added
+	* config/acconfig.h new:
+	HAVE_HPUX_LIKE_SCSI, HAVE_HPUX_SCSI_CHIO, HAVE_LINUX_LIKE_SCSI
+	HAVE_IRIX_LIKE_SCSI, HAVE_SOLARIS_LIKE_SCSI, HAVE_AIX_LIKE_SCSI
+	       removed: HAVE_HPUX_SCSI
+	* changer-src/Makefile.am: New conditional for building chg-scsi-chio
+	and chg-scsi. chg-scsi-chio is the old chg-scsi
+
 1998-11-05  John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/amverify.sh.in: tolerate extra amtape output.
