@@ -1,3 +1,7 @@
+2001-08-24 John R. Jackson (jrj@purdue.edu)
+
+	* server-src/amverify.sh.in: Fix missing backtick error.
+
 2001-08-16 John R. Jackson (jrj@purdue.edu)
 
 	* man/amanda.8.in: Fix several minor odds and ends.
