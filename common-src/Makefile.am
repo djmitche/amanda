@@ -90,4 +90,4 @@ statfs: $(srcdir)/statfs.c $(srcdir)/statfs.h
 	$(LINK_TEST) $(srcdir)/statfs.c -o statfs
 
 token: $(srcdir)/token.c $(srcdir)/token.h libamanda.la libamnolog.la
-	$(LINK_TEST) $(srcdir)/token.c -o token .libs/libamanda.a .libs/libamnolog.a
+	$(LINK_TEST) $(srcdir)/token.c -o token _libs/libamanda.a _libs/libamnolog.a
