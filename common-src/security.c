@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: security.c,v 1.6 1998/01/14 22:41:25 amcore Exp $
+ * $Id: security.c,v 1.7 1998/01/17 15:33:40 amcore Exp $
  *
  * wrapper file for kerberos security
  */
@@ -83,7 +83,10 @@ char **errstr;
     char *ptmp;
     int pbuf_len;
     int amandahostsauth = 0;
+#else
+    int saved_stderr;
 #endif
+
     *errstr = NULL;
 
     /* what host is making the request? */
@@ -218,10 +221,12 @@ char **errstr;
      */
     chdir(pwptr->pw_dir);       /* pamper braindead ruserok's */
 #ifndef USE_AMANDAHOSTS
+    saved_stderr = dup(2);
     close(2);			/*  " */
 
     if(ruserok(remotehost, myuid == 0, remoteuser, localuser) == -1) {
-	dup2(1,2);
+	dup2(saved_stderr,2);
+	close(saved_stderr);
 	*errstr = vstralloc("[",
 			    "access as ", localuser, " not allowed",
 			    " from ", remoteuser, "@", remotehost,
@@ -233,7 +238,8 @@ char **errstr;
 	return 0;
     }
 
-    dup2(1,2);
+    dup2(saved_stderr,2);
+    close(saved_stderr);
     chdir("/");		/* now go someplace where I can't drop core :-) */
     dbprintf(("bsd security check passed\n"));
     afree(remotehost);
