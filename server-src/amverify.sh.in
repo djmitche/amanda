@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.28 2003/06/04 18:28:30 martinea Exp $
+#	$Id: amverify.sh.in,v 1.29 2003/06/11 12:03:43 martinea Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -451,16 +451,6 @@ while [ $SLOT -lt $SLOTS ]; do
 	      $TEMP/errors \
 	      $TEMP/onefile.errors
 done
-
-if [ X"$TPCHANGER" != X"" ]; then
-	report "Advancing past the last tape..."
-	$AMTAPE $CONFIG slot advance 2> $TEMP/amtape.out
-	RESULT=`grep "changed to slot" $TEMP/amtape.out`
-	[ X"$RESULT" = X"" ] \
-		&& report "** Error advancing after last slot" \
-		&& report "`cat $TEMP/amtape.out`" \
-		&& cat $TEMP/amtape.out >> $DEFECTS
-fi
 
 [ -s $DEFECTS ] \
 	&& $Echoe "Errors found: " \
