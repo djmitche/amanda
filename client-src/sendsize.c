@@ -550,7 +550,7 @@ int level;
     if(size == 0 && level == 0)
 	dbprintf(("(PC SHARE connection problem, is this disk really empty?)\n.....\n"));
 
-#ifdef HAVE_DUMP_ESTIMATE
+#ifndef HAVE_DUMP_ESTIMATE
 #ifdef OSF1_VDUMP
     sleep(5);
 #endif
