@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.15 1999/03/04 22:40:02 kashmir Exp $
+ * $Id: file.c,v 1.16 1999/05/12 16:15:06 kashmir Exp $
  *
  * file and directory bashing routines
  */
@@ -206,13 +206,12 @@ char *inp;
 char *
 #if defined(USE_DBMALLOC)
 dbmalloc_agets(s, l, file)
-    char *s;
+    const char *s;
     int l;
-    FILE *file;
 #else
 agets(file)
-    FILE *file;
 #endif
+    FILE *file;
 {
     char *line = NULL, *line_ptr;
     int line_size, line_free, size_save, line_len;
@@ -282,13 +281,12 @@ agets(file)
 char *
 #if defined(USE_DBMALLOC)
 dbmalloc_areads (s, l, fd)
-    char *s;
+    const char *s;
     int l;
-    int fd;
 #else
 areads (fd)
-    int fd;
 #endif
+    int fd;
 {
     char *nl;
     char *line;

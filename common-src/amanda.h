@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.79 1999/05/11 23:48:44 kashmir Exp $
+ * $Id: amanda.h,v 1.80 1999/05/12 16:15:02 kashmir Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -411,13 +411,14 @@ extern void   error     P((const char *format, ...))
 extern int    onerror         P((void (*errf)(void)));
 
 #if defined(USE_DBMALLOC)
-extern void  *debug_alloc           P((char *c, int l, int size));
-extern void  *debug_newalloc        P((char *c, int l, void *old, int size));
-extern char  *debug_stralloc        P((char *c, int l, const char *str));
-extern char  *debug_newstralloc     P((char *c, int l, char *oldstr, const char *newstr));
+extern void *debug_alloc P((const char *c, int l, int size));
+extern void *debug_newalloc P((const char *c, int l, void *old, int size));
+extern char *debug_stralloc P((const char *c, int l, const char *str));
+extern char *debug_newstralloc P((const char *c, int l, char *oldstr,
+    const char *newstr));
 extern const char *dbmalloc_caller_loc P((const char *file, int line));
-extern int   debug_alloc_push	    P((char *file, int line));
-extern void  debug_alloc_pop	    P((void));
+extern int debug_alloc_push P((const char *file, int line));
+extern void debug_alloc_pop P((void));
 
 #define	alloc(s)		debug_alloc(__FILE__, __LINE__, (s))
 #define	newalloc(p,s)		debug_newalloc(__FILE__, __LINE__, (p), (s))
@@ -476,7 +477,6 @@ extern char  *newvstralloc    P((char *oldstr, const char *newstr, ...));
 #define	stralloc2(s1,s2)      vstralloc((s1),(s2),NULL)
 #define	newstralloc2(p,s1,s2) newvstralloc((p),(s1),(s2),NULL)
 
-extern void  *sbuf_man        P((void *bufs, void *ptr));
 extern char **safe_env        P((void));
 extern char  *validate_regexp P((char *regex));
 extern char  *validate_glob   P((char *glob));
@@ -485,8 +485,8 @@ extern int    match_glob      P((char *glob, char *str));
 extern char  *glob_to_regex   P((char *glob));
 extern time_t unctime         P((char *timestr));
 #if defined(USE_DBMALLOC)
-extern char  *dbmalloc_agets  P((char *c, int l, FILE *file));
-extern char  *dbmalloc_areads P((char *c, int l, int fd));
+extern char  *dbmalloc_agets  P((const char *c, int l, FILE *file));
+extern char  *dbmalloc_areads P((const char *c, int l, int fd));
 #define agets(f)	      dbmalloc_agets(__FILE__,__LINE__,(f))
 #define areads(f)	      dbmalloc_areads(__FILE__,__LINE__,(f))
 #else

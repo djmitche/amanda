@@ -1,3 +1,9 @@
+1999-05-12  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/amanda.h, common-src/alloc.c, common-src/file.c:
+	const the filename arg to all of the dbmalloc versions of
+	alloc and io functions
+
 1999-05-11  Mike Grupenhoff <kashmir@munge.com>
 
 	* common-src/protocol.c (proto_t): don't need prev and next ptrs

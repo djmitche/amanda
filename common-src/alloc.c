@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: alloc.c,v 1.22 1999/05/11 23:48:46 kashmir Exp $
+ * $Id: alloc.c,v 1.23 1999/05/12 16:15:04 kashmir Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -33,6 +33,8 @@
 #include "amanda.h"
 #include "arglist.h"
 #include "queue.h"
+
+#define	max(a, b)	((a) > (b) ? (a) : (b))
 
 #if defined(USE_DBMALLOC)
 
@@ -139,8 +141,8 @@ static int		saved_line;
 
 int
 debug_alloc_push (s, l)
-char *s;
-int l;
+    const char *s;
+    int l;
 {
     debug_alloc_loc_info[debug_alloc_ptr].file = s;
     debug_alloc_loc_info[debug_alloc_ptr].line = l;
@@ -173,22 +175,23 @@ debug_alloc_pop ()
 #endif
 
 /*
-** alloc - a wrapper for malloc.
-*/
+ * alloc - a wrapper for malloc.
+ */
+void *
 #if defined(USE_DBMALLOC)
-void *debug_alloc(s, l, size)
-char *s;
-int l;
+debug_alloc(s, l, size)
+    const char *s;
+    int l;
 #else
-void *alloc(size)
+alloc(size)
 #endif
-int size;
+    int size;
 {
     void *addr;
 
     malloc_enter(dbmalloc_caller_loc(s, l));
-    addr = (void *)malloc(size>0 ? size : 1);
-    if(addr == NULL)
+    addr = (void *)malloc(max(size, 1));
+    if (addr == NULL)
 	error("memory allocation failed");
     malloc_leave(dbmalloc_caller_loc(s, l));
     return addr;
@@ -196,64 +199,67 @@ int size;
 
 
 /*
-** newalloc - free existing buffer and then alloc a new one.
-*/
+ * newalloc - free existing buffer and then alloc a new one.
+ */
+void *
 #if defined(USE_DBMALLOC)
-void *debug_newalloc(s, l, old, size)
-char *s;
-int l;
+debug_newalloc(s, l, old, size)
+    const char *s;
+    int l;
 #else
-void *newalloc(old, size)
+newalloc(old, size)
 #endif
-void *old;
-int size;
+    void *old;
+    int size;
 {
     char *addr;
 
     malloc_enter(dbmalloc_caller_loc(s, l));
     amfree(old);
-    addr = alloc(size);
+    addr = alloc(max(size, 1));
     malloc_leave(dbmalloc_caller_loc(s, l));
     return addr;
 }
 
 
 /*
-** stralloc - copies the given string into newly allocated memory.
-**            Just like strdup()!
-*/
+ * stralloc - copies the given string into newly allocated memory.
+ *            Just like strdup()!
+ */
+char *
 #if defined(USE_DBMALLOC)
-char *debug_stralloc(s, l, str)
-char *s;
-int l;
+debug_stralloc(s, l, str)
+    const char *s;
+    int l;
 #else
-char *stralloc(str)
+stralloc(str)
 #endif
-const char *str;
+    const char *str;
 {
     char *addr;
 
     malloc_enter(dbmalloc_caller_loc(s, l));
-    addr = alloc(strlen(str)+1);
+    addr = alloc(strlen(str) + 1);
     strcpy(addr, str);
     malloc_leave(dbmalloc_caller_loc(s, l));
-    return addr;
+    return (addr);
 }
 
 
 /*
-** internal_vstralloc - copies up to MAX_STR_ARGS strings into newly
-** allocated memory.
-**
-** The MAX_STR_ARGS limit is purely an efficiency issue so we do not have
-** to scan the strings more than necessary.
-*/
+ * internal_vstralloc - copies up to MAX_STR_ARGS strings into newly
+ * allocated memory.
+ *
+ * The MAX_STR_ARGS limit is purely an efficiency issue so we do not have
+ * to scan the strings more than necessary.
+ */
 
 #define	MAX_VSTRALLOC_ARGS	32
 
-static char *internal_vstralloc(str, argp)
-const char *str;
-va_list argp;
+static char *
+internal_vstralloc(str, argp)
+    const char *str;
+    va_list argp;
 {
     char *next;
     char *result;
@@ -302,8 +308,8 @@ va_list argp;
 
 
 /*
-** vstralloc - copies multiple strings into newly allocated memory.
-*/
+ * vstralloc - copies multiple strings into newly allocated memory.
+ */
 #if defined(USE_DBMALLOC)
 arglist_function(char *debug_vstralloc, const char *, str)
 #else
@@ -324,17 +330,18 @@ arglist_function(char *vstralloc, const char *, str)
 
 
 /*
-** newstralloc - free existing string and then stralloc a new one.
-*/
+ * newstralloc - free existing string and then stralloc a new one.
+ */
+char *
 #if defined(USE_DBMALLOC)
-char *debug_newstralloc(s, l, oldstr, newstr)
-char *s;
-int l;
+debug_newstralloc(s, l, oldstr, newstr)
+    const char *s;
+    int l;
 #else
-char *newstralloc(oldstr, newstr)
+newstralloc(oldstr, newstr)
 #endif
-char *oldstr;
-const char *newstr;
+    char *oldstr;
+    const char *newstr;
 {
     char *addr;
 
@@ -342,13 +349,13 @@ const char *newstr;
     amfree(oldstr);
     addr = stralloc(newstr);
     malloc_leave(dbmalloc_caller_loc(s, l));
-    return addr;
+    return (addr);
 }
 
 
 /*
-** newvstralloc - free existing string and then vstralloc a new one.
-*/
+ * newvstralloc - free existing string and then vstralloc a new one.
+ */
 #if defined(USE_DBMALLOC)
 arglist_function1(char *debug_newvstralloc, char *, oldstr, const char *,
     newstr)
@@ -371,9 +378,10 @@ arglist_function1(char *newvstralloc, char *, oldstr, const char *, newstr)
 
 
 /*
-** safe_env - build a "safe" environment list.
-*/
-char **safe_env()
+ * safe_env - build a "safe" environment list.
+ */
+char **
+safe_env()
 {
     static char *safe_env_list[] = {
 	"TZ",
