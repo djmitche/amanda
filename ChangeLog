@@ -1,3 +1,8 @@
+1998-09-22  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* client-src/sendsize.c: remove usage of #error
+	Reported by Jay Orr <orr@vss.fsi.com>
+
 1998-09-21  John R. Jackson  <jrj@purdue.edu>
 
 	* man/amanda.8.in: document the new "tapebufs" parameter.
