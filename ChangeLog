@@ -1,4 +1,10 @@
 2003-07-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Scott Mcdermott <smcdermott@questra.com>
+
+	* changer-src/chg-zd-mtx.sh.in (initial_poll_delay): New config
+	  variable to add a pause after a tape loading.
+
+2003-07-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Fix by John E. Hein <jhein@timing.com>
 
 	* changer-src/chg-manual.sh.in: Quote @EGREP@.
