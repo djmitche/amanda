@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.8 1998/12/02 22:27:04 kashmir Exp $
+ * $Id: bsd-security.c,v 1.9 1998/12/03 18:36:02 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -469,7 +469,7 @@ bsd_sendpkt(cookie, pkt)
 		"can't get login name for my uid %ld", (long)getuid());
 	    return (-1);
 	}
-	p = vstralloc("SECURITY USER ", pwd->pw_name, NULL);
+	p = vstralloc("SECURITY USER ", pwd->pw_name, "\n", NULL);
 	dgram_cat(&netfd, p);
 	amfree(p);
 	break;
@@ -839,7 +839,8 @@ check_user(bh, remoteuser)
     struct bsd_handle *bh;
     const char *remoteuser;
 {
-    char buf[256], *localuser, *filehost, *fileuser;
+    char buf[256], *localuser, *filehost;
+    const char *fileuser;
     uid_t uid;
     struct passwd *pwd;
     FILE *fp;
@@ -867,11 +868,11 @@ check_user(bh, remoteuser)
 	    fileuser = remoteuser;
 
 	/* compare */
-	if (strcasecmp(filehost, remotehost) == 0 &&
+	if (strcasecmp(filehost, bh->hostname) == 0 &&
 	    strcasecmp(fileuser, remoteuser) == 0) {
 		/* success */
 		rval = 0;
-		break
+		break;
 	}
     }
     afclose(fp);

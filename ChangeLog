@@ -1,5 +1,12 @@
 1998-12-03  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/bsd-security.c (bsd_sendpkt): newline-terminate
+	the 'SECURITY USER' line in the packet
+	* common-src/bsd-security.c (check_user): fix many bugs
+	in the USE_AMANDAHOSTS case
+
+1998-12-03  Mike Grupenhoff <kashmir@munge.com>
+
 	* configure.in: AC_REPLACE_FUNCS(writev)
 
 1998-12-02  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
