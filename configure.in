@@ -1064,12 +1064,6 @@ case "$target" in
   *-sgi-irix6*)
 			;;
   *-solaris2*)
-			dnl Solaris 2.6 and above allows huge files.
-			case "$target" in
-			    *solaris2.[[6789]]*)
-				amanda_cv_max_file_size=1000000000
-				;;
-			esac
 			;;
   *-sun-sunos4.1*)
 			;;
