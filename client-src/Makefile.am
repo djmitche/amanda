@@ -5,7 +5,7 @@ INCLUDES =		-I$(top_srcdir)/common-src
 lib_LTLIBRARIES =	libamclient.la
 LIB_EXTENSION = la
 
-libexec_PROGRAMS =	amandad calcsize killpgrp rundump runtar selfcheck sendbackup sendsize versionsuffix
+libexec_PROGRAMS =	amandad noop calcsize killpgrp rundump runtar selfcheck sendbackup sendsize versionsuffix
 
 sbin_SCRIPTS =		@CLIENT_SCRIPTS_OPT@
 

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.54 2003/03/29 23:47:54 kovert Exp $
+ * $Id: amandad.c,v 1.55 2003/05/26 03:52:52 kovert Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -471,20 +471,15 @@ protocol_accept(handle, pkt)
 	goto send_pkt_out;
     }
 
-    /*
-     * If this is not an internal function, see if the binary exists.
-     */
-    if (strcmp(service, "noop") != 0) {
-	service = newvstralloc(service,
-			       libexecdir, "/", service, versionsuffix(),
-			       NULL);
-	if (access(service, X_OK) < 0) {
-	    dbprintf(("%s: can't execute %s: %s\n",
-	        debug_prefix_time(NULL), service, strerror(errno)));
+    service = newvstralloc(service,
+		       libexecdir, "/", service, versionsuffix(),
+		       NULL);
+    if (access(service, X_OK) < 0) {
+	dbprintf(("%s: can't execute %s: %s\n",
+	    debug_prefix_time(NULL), service, strerror(errno)));
 	    pkt_init(&pkt_out, P_NAK, "ERROR execute access to \"%s\" denied\n",
-	        service);
-	    goto send_pkt_out;
-	}
+	    service);
+	goto send_pkt_out;
     }
 
     /* see if its already running */
@@ -1204,29 +1199,6 @@ service_new(security_handle, cmd, arguments)
 	    aclose(data[i + 2][1]);
 	}
 
-	/* run service */
-	if (strcmp(cmd, "noop") == 0) {
-	    char ch;
-	    am_feature_t *our_features = NULL;
-	    char *our_feature_string = NULL;
-	    char *options;
-
-	    while (read(0, &ch, 1) > 0) {}	/* soak up any stdin */
-	    our_features = am_init_feature_set();
-	    our_feature_string = am_feature_to_string(our_features);
-	    options = vstralloc("OPTIONS features=",
-				our_feature_string,
-				";\n",
-				NULL);
-	    amfree(our_feature_string);
-	    am_release_feature_set(our_features);
-	    our_features = NULL;
-	    if (fullwrite(1, options, strlen(options)) < 0) {
-		error("error sending noop response: %s", strerror(errno));
-	    }
-	    amfree(options);
-	    exit(0);
-	}
 	execle(cmd, cmd, NULL, safe_env());
 	error("could not exec service %s: %s", cmd, strerror(errno));
     }
