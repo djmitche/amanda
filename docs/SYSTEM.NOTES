@@ -280,6 +280,14 @@ in the /etc/sysctl.conf file.
 
 
 ---------------------------------------------------------------------------
+AIX
+-----------
+
+sendsize is reported to coredump on AIX 4.3.3, this is a linking problem,
+try configuring amanda with --disable-shared option.
+
+
+---------------------------------------------------------------------------
 Microsoft Windows
 -----------------
 

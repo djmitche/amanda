@@ -1,3 +1,7 @@
+2003-12-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* docs/SYSTEM.NOTES: Add a note about sendsize coredump on AIX.
+
 2003-11-28  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Jean-Christian SIMONETTI <simonetti@echo.fr>
 
