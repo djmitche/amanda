@@ -1,5 +1,5 @@
 /*
- *	$Id: libscsi.h,v 1.4.4.3 1999/01/26 11:22:59 th Exp $
+ *	$Id: libscsi.h,v 1.4.4.4 1999/06/17 18:33:13 th Exp $
  *
  *	libscsi.h -- library header for routines to handle the changer
  *			support for chio based systems
@@ -41,7 +41,7 @@ int isempty P((int fd, int slot));
 /*
  * find the first empty slot 
  */
-int find_empty P((int fd));
+int find_empty P((int fd, int start, int count));
 
 /*
  * returns one if there is a tape loaded in the drive 

@@ -1,5 +1,5 @@
 /*
- *  $Id: chg-scsi-chio.c,v 1.1.2.1 1999/02/14 20:07:57 th Exp $
+ *  $Id: chg-scsi-chio.c,v 1.1.2.2 1999/06/17 18:33:09 th Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -812,7 +812,7 @@ int main(int argc, char *argv[])
       }
     if (loaded) {
       if (!isempty(fd, target))
-        target=find_empty(fd);
+        target=find_empty(fd,0 ,0);
       if (need_eject)
         eject_tape(scsitapedevice, need_eject);
       (void)unload(fd, drive_num, target);

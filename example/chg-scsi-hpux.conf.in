@@ -1,0 +1,19 @@
+number_configs	1
+eject		0	# Tapedrives need an eject command
+sleep		90	# Seconds to wait until the tape gets ready
+cleanmax	100 	# How many times could a cleaning tape get used
+changerdev	/dev/scsi/4:1
+#
+# Next comes the data for drive 0
+#
+config		0
+drivenum	0
+dev		/dev/rmt/0mnb
+startuse	0	# The slots associated with the drive 0
+enduse		4	# 
+statfile 	@CONFIG_DIR@/@DEFAULT_CONFIG@/tape0-slot  # The file where the actual slot is stored
+cleancart	5	# the slot where the cleaningcartridge for drive 0 is located
+cleanfile	@CONFIG_DIR@/@DEFAULT_CONFIG@/tape0-clean # The file where the cleanings are recorded
+usagecount	@CONFIG_DIR@/@DEFAULT_CONFIG@/totaltime
+tapestatus	@CONFIG_DIR@/@DEFAULT_CONFIG@/tapestatus
+#labelfile	@CONFIG_DIR@/@DEFAULT_CONFIG@/labelfile # Use this if you have an barcode reader

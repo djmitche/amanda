@@ -625,7 +625,80 @@ typedef struct {
     unsigned char SenseDataLength;
     char res[3];
 } ParameterListHeader_T;
+/* ======================================================= */
+/* ReadWriteErrorRecoveryPage_T */
+/* ======================================================= */
+typedef struct 
+{
+#ifdef LITTLE_ENDIAN_BITFIELDS
+    PackedBit PageCode : 6;
+    PackedBit res      : 1;
+    PackedBit PS       : 1;
+#else
+    PackedBit PS       : 1;
+    PackedBit res      : 1;
+    PackedBit PageCode : 6;
+#endif
+    unsigned char ParameterListLength;
+#ifdef LITTLE_ENDIAN_BITFIELDS
+    PackedBit dcr  :1;  /* Disable ECC Correction */
+    PackedBit dte  :1;  /* Disable Transfer on Error */
+    PackedBit per  :1;  /* Enable Post  Error reporting */
+    PackedBit eer  :1;  /* Enable early recovery */
+    PackedBit res1 :1;
+    PackedBit tb   :1;  /* Transfer block (when not fully recovered) */
+    PackedBit res2 :1;
+    PackedBit res3 :1;
+#else
+    PackedBit res3 :1;
+    PackedBit res2 :1;
+    PackedBit tb   :1;
+    PackedBit res1 :1;
+    PackedBit eer  :1;
+    PackedBit per  :1;
+    PackedBit dte  :1;
+    PackedBit dcr  :1;
+#endif
+    unsigned char ReadRetryCount;
+    unsigned char res4[4];
+    unsigned char WriteRetryCount;
+    unsigned char res5[3];
+} ReadWriteErrorRecoveryPage_T; 
+/* ======================================================= */
+/* EDisconnectReconnectPage_T */
+/* ======================================================= */
+typedef struct 
+{
+#ifdef LITTLE_ENDIAN_BITFIELDS
+    PackedBit PageCode : 6;
+    PackedBit RSVD     : 1;
+    PackedBit PS       : 1;
+#else
+    PackedBit PS       : 1;
+    PackedBit RSVD     : 1;
+    PackedBit PageCode : 6;
+#endif
 
+    unsigned char BufferFullRatio;
+    unsigned char BufferEmptyRatio;
+    unsigned char BusInactivityLimit[2];
+    unsigned char DisconnectTimeLimit[2];
+    unsigned char ConnectTimeLimit[2];
+    unsigned char MaximumBurstSize[2];
+
+#ifdef LITTLE_ENDIAN_BITFIELDS
+    PackedBit DTDC :2;
+    PackedBit res  :6;
+#else
+    PackedBit res  :6;
+    PackedBit DTDC :2;
+#endif
+    unsigned char res1[3];
+} DisconnectReconnectPage_T;
+
+/* ======================================================= */
+/* EAAPage_T */
+/* ======================================================= */
 typedef struct 
 {
 #ifdef LITTLE_ENDIAN_BITFIELDS
@@ -648,7 +721,9 @@ typedef struct
     unsigned char NoDataTransferElements[2];
     unsigned char res[2];
 } EAAPage_T;    
-
+/* ======================================================= */
+/* TransPortGeometryDescriptorPage_T */
+/* ======================================================= */
 typedef struct {
 #ifdef LITTLE_ENDIAN_BITFIELDS
     PackedBit PageCode : 6;
@@ -669,7 +744,9 @@ typedef struct {
 #endif
     unsigned char MemberNumber;
 } TransportGeometryDescriptorPage_T;  
-
+/* ======================================================= */
+/* DeviceCapabilitiesPage_T */
+/* ======================================================= */
 typedef struct
 {
 #ifdef LITTLE_ENDIAN_BITFIELDS
@@ -753,7 +830,9 @@ typedef struct
 #endif
     unsigned char res0819[12];
 } DeviceCapabilitiesPage_T;  
-
+/* ======================================================= */
+/* ModePageEXB10hLCD_T */
+/* ======================================================= */
 typedef struct ModePageEXB10hLCD
 {
   unsigned char PageCode;
@@ -778,14 +857,18 @@ typedef struct ModePageEXB10hLCD
   unsigned char line3[20];
   unsigned char line4[20];
 } ModePageEXB10hLCD_T;
-
+/* ======================================================= */
+/* ModePageEXBBaudRatePage_T */
+/* ======================================================= */
 typedef struct ModePageEXBBaudRatePage
 {
   unsigned char PageCode;
   unsigned char ParameterListLength;
   unsigned char BaudRate[2];
 } ModePageEXBBaudRatePage_T;
-
+/* ======================================================= */
+/* ModePageEXB120VendorUnique_T */
+/* ======================================================= */
 typedef struct ModePageEXB120VendorUnique
 {
 #ifdef  LITTLE_ENDIAN_BITFIELDS

@@ -1010,19 +1010,24 @@ sst_open(dev_t *dev_p, int flag, int otyp, cred_t *cred_p)
 	 * with extended sense data to tell us why) so do one sst_unit_ready
 	 * and ignore the result.
 	 */
+
+/* Makes no sense for chg-scsi, test unit ready is done by chg-scsi */
+/*
+
 	(void) sst_unit_ready(dev);
 
 	if (sst_unit_ready(dev) == 0) {
 		SST_LOG(0, SST_CE_DEBUG1, "sst%d_open: not ready\n",
 		    getminor(dev));
 		targ->targ_state = SST_STATE_CLOSED;
-
+*/
 		/*LINTED*/
+/*
 		_NOTE(COMPETING_THREADS_NOW);
 
 		return (EIO);
 	}
-
+*/
 	/*
 	 * Do any other initalization work here, e.g. send
 	 * Mode Sense/Select commands to get the target in the

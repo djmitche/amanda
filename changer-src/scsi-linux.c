@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.13 1999/03/16 20:43:34 th Exp $";
+static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.14 1999/06/17 18:33:23 th Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on Linux
@@ -52,105 +52,114 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
   int timeout;
   OpenFiles_T *pwork;
   struct stat pstat;
-  char *buffer;
+  char *buffer = NULL ;           /* Will contain the device name after checking */
+  int usesg = 0;        /* Do we work with an sg device ?, if yes open RDWR, else RDONLY */
+  int openmode = O_RDONLY;
 
-  if ((DeviceFD = open(DeviceName, O_RDWR)) > 0)
+  if (strncmp("/dev/sg", DeviceName, 7) != 0) /* Check if no sg device for an link .... */
+    {
+      dbprintf(("SCSI_OpenDevice : checking if %s is a sg device\n", DeviceName));
+      if (lstat(DeviceName, &pstat) != -1)
+        {
+          if (S_ISLNK(pstat.st_mode) == 1)
+            {
+              dbprintf(("SCSI_OpenDevice : is a link, checking destination\n"));
+              if ((buffer = (char *)malloc(512)) == NULL)
+                {
+                  dbprintf(("SCSI_OpenDevice : malloc failed\n"));
+                  return(NULL);
+                }
+              memset(buffer, 0, 512);
+              if (( i = readlink(DeviceName, buffer, 512)) == -1)
+                {
+                  if (errno == ENAMETOOLONG )
+                    {
+                    } else {
+                      pwork->SCSI = 0;
+                    }
+                }
+              if ( i >= 7)
+                {
+                  if (strncmp("/dev/sg", buffer, 7) == 0)
+                    {
+                      dbprintf(("SCSI_OpenDevice : link points to %s\n", buffer));
+                      usesg = 1;
+                    }
+                }
+            } else {/* S_ISLNK(pstat.st_mode) == 1 */
+              dbprintf(("No link %s\n", DeviceName));
+              buffer = strdup(DeviceName);
+            }
+        } else {/* lstat(DeviceName, &pstat) != -1 */ 
+          dbprintf(("can't stat device %s\n", DeviceName));
+          return(NULL);
+        }
+    } else {
+      buffer = strdup(DeviceName);
+      usesg = 1;
+    }
+  
+  if (usesg == 1)
+    {
+      openmode = O_RDWR;
+    }
+
+  if ((DeviceFD = open(buffer, openmode)) > 0)
     {
       pwork = (OpenFiles_T *)malloc(sizeof(OpenFiles_T));
       memset(pwork, 0, sizeof(OpenFiles_T));
-     pwork->fd = DeviceFD;
-      if (strncmp("/dev/sg", DeviceName, 7) != 0)
+      pwork->fd = DeviceFD;
+    } else {
+      free(pwork);
+      return(NULL);
+    }
+      
+  if (usesg == 1)
+    {
+      pwork->SCSI = 1;
+    }
+
+  pwork->dev = strdup(buffer);
+  if (pwork->SCSI == 1)
+    {
+      dbprintf(("SCSI_OpenDevice : use SG interface\n"));
+      if ((timeout = ioctl(DeviceFD, SG_GET_TIMEOUT)) > 0) 
         {
-          dbprintf(("SCSI_OpenDevice : checking if %s is a sg device\n", DeviceName));
-          if (lstat(DeviceName, &pstat) != -1)
+          dbprintf(("SCSI_OpenDevice : current timeout %d\n", timeout));
+          timeout = 60000;
+          if (ioctl(DeviceFD, SG_SET_TIMEOUT, &timeout) == 0)
             {
-              if (S_ISLNK(pstat.st_mode) == 1)
+              dbprintf(("SCSI_OpenDevice : timeout set to %d\n", timeout));
+            }
+        }
+      pwork->inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
+      if (SCSI_Inquiry(DeviceFD, pwork->inquiry, INQUIRY_SIZE) == 0)
+        {
+          if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
+            {
+              for (i=0;i < 16;i++)
+                pwork->ident[i] = pwork->inquiry->prod_ident[i];
+              for (i=15; i >= 0 && !isalnum(pwork->ident[i]); i--)
                 {
-                  dbprintf(("SCSI_OpenDevice : is a link, checking destination\n"));
-                  if ((buffer = (char *)malloc(512)) == NULL)
-                    {
-                      dbprintf(("SCSI_OpenDevice : malloc failed\n"));
-                      return(NULL);
-                    }
-                  memset(buffer, 0, 512);
-                  if (( i = readlink(DeviceName, buffer, 512)) == -1)
-                    {
-                      if (errno == ENAMETOOLONG )
-                        {
-                        } else {
-                          pwork->SCSI = 0;
-                        }
-                    }
-                  if ( i >= 7)
-                    {
-                      if (strncmp("/dev/sg", buffer, 7) == 0)
-                        {
-                          dbprintf(("SCSI_OpenDevice : link points to %s\n", buffer));
-                          pwork->SCSI = 1;
-                        } else {
-                          dbprintf(("SCSI_OpenDevice : link %s does not point to /dev/sg device\n",
-                                    DeviceName));
-                          pwork->SCSI = 0;
-                        }
-                    } else {
-                      dbprintf(("SCSI_OpenDevice : link %s does not point to /dev/sg device\n",
-                                DeviceName));
-                    }
-                  dbprintf(("SCSI_OpenDevice : link points to %s\n", buffer));
-                } else {
-                  dbprintf(("SCSI_OpenDevice : %s is neither a link nor an sg device\n", DeviceName));
-                  pwork->SCSI = 0;
+                  pwork->ident[i] = '\0';
                 }
+              pwork->SCSI = 1;
+              PrintInquiry(pwork->inquiry);
+              return(pwork);
             } else {
-              dbprintf(("SCSI_OpenDevice : lstat on %s failed\n", DeviceName));
-              pwork->SCSI=0;
+              free(pwork->inquiry);
+              free(pwork);
+              close(DeviceFD);
+              return(NULL);
             }
         } else {
-          pwork->SCSI = 1;
+          pwork->SCSI = 0;
+          free(pwork->inquiry);
+          pwork->inquiry = NULL;
+          return(pwork);
         }
-      
-      pwork->dev = strdup(DeviceName);
-      if (pwork->SCSI == 1)
-        {
-          dbprintf(("SCSI_OpenDevice : use SG interface\n"));
-          if ((timeout = ioctl(DeviceFD, SG_GET_TIMEOUT)) > 0) 
-            {
-              dbprintf(("SCSI_OpenDevice : current timeout %d\n", timeout));
-              timeout = 60000;
-              if (ioctl(DeviceFD, SG_SET_TIMEOUT, &timeout) == 0)
-                {
-                  dbprintf(("SCSI_OpenDevice : timeout set to %d\n", timeout));
-                }
-            }
-          pwork->inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
-          if (SCSI_Inquiry(DeviceFD, pwork->inquiry, INQUIRY_SIZE) == 0)
-            {
-              if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
-                {
-                  for (i=0;i < 16;i++)
-                    pwork->ident[i] = pwork->inquiry->prod_ident[i];
-                  for (i=15; i >= 0 && !isalnum(pwork->ident[i]); i--)
-                    {
-                      pwork->ident[i] = '\0';
-                    }
-                  pwork->SCSI = 1;
-                  PrintInquiry(pwork->inquiry);
-                  return(pwork);
-                } else {
-                  free(pwork->inquiry);
-                  free(pwork);
-                  close(DeviceFD);
-                  return(NULL);
-                }
-            } else {
-              pwork->SCSI = 0;
-              free(pwork->inquiry);
-              pwork->inquiry = NULL;
-              return(pwork);
-            }
-        }
-      return(pwork);
     }
+  return(pwork);
   return(NULL); 
 }
 

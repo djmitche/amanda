@@ -1,5 +1,5 @@
 /*
- *  $Id: chg-scsi.c,v 1.6.2.13 1999/03/16 20:43:23 th Exp $
+ *  $Id: chg-scsi.c,v 1.6.2.14 1999/06/17 18:33:11 th Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -69,6 +69,7 @@
 #include "scsi-defs.h"
 
 char *tapestatfile = NULL;
+FILE *debug_file = NULL;
 
 /* So we have 3 devices, here will all the infos be stored after an
  * successfull open 
@@ -715,7 +716,15 @@ int get_relative_target(int fd,int nslots,char *parameter,int loaded,
 int ask_clean(char *tapedev)
      /* This function should ask the drive if it wants to be cleaned */
 {
-  return get_clean_state(tapedev);
+  int ret;
+
+  ret = get_clean_state(tapedev);
+
+  if (ret < 0) /* < 0 means query does not work ... */
+  {
+    return(0);
+  }
+  return ret;
 }
 
 void clean_tape(int fd,char *tapedev,char *cnt_file, int drivenum, 
@@ -802,11 +811,20 @@ int main(int argc, char *argv[])
   char *changer_dev, *tape_device;
   char *changer_file = NULL;
   char *scsitapedevice = NULL;
-
+  int TapeEject = 0;              /* Do we have an device for ejecting the tape ? */
   set_pname("chg-scsi");
   dbopen();
-  parse_args(argc,argv,&com);
 
+  if (debug_file == NULL)
+    {
+        /*
+      debug_file = fdopen((int)debug_fd(), "a");
+        */
+        debug_file = debug_fp();
+    }
+  
+  parse_args(argc,argv,&com);
+  
   if(read_conffile(CONFFILE_NAME)) {
     perror(CONFFILE_NAME);
     exit(1);
@@ -818,7 +836,11 @@ int main(int argc, char *argv[])
 
   /* Get the configuration parameters */
   if (strlen(tape_device)==1){
-    read_config(changer_file,&chg);
+    if (read_config(changer_file,&chg) == -1)
+    {
+      fprintf(stderr, "%s open: of %s failed\n", get_pname(), changer_file);
+      return 2;
+    }
     confnum=atoi(tape_device);
     use_slots    = chg.conf[confnum].end-chg.conf[confnum].start+1;
     slot_offset  = chg.conf[confnum].start;
@@ -863,6 +885,10 @@ int main(int argc, char *argv[])
             dbprintf(("warning open of %s: failed\n",  tape_device));
           }
       }
+    /*
+      if (pTapeDev != NULL)
+      close(pTapeDev->fd);
+    */
 
     if (scsitapedevice != NULL)
       {
@@ -872,15 +898,36 @@ int main(int argc, char *argv[])
             return(2);
           }
       } else {
-        if (pTapeDev != NULL && pTapeDev->SCSI == 1)
+	if (pTapeDev != NULL && pTapeDev->SCSI == 1)
+	{
+		pTapeDevCtl = pTapeDev;
+	}
+     }
+    
+
+    if (pTapeDevCtl != NULL)
+      {
+        TapeEject = 1;
+      }
+
+    if (pTapeDev != NULL)
+      {
+        if (TapeEject == 0)
           {
-            pTapeDevCtl = pTapeDev;
-          } else { 
-            if (pChangerDev != NULL && pChangerDev->SCSI == 1)
-              {
-                pTapeDevCtl = pChangerDev;
-              }
+            TapeEject = 1;
           }
+        if (need_eject == 1)
+          {
+            dbprintf(("force need_eject to 2\n"));
+            need_eject = 2;
+          }
+      }
+
+
+    if (need_eject != 0 && TapeEject == 0)
+      {
+        printf("No device found for tape eject");
+        return(2);
       }
 
     if ((chg.conf[confnum].end == -1) || (chg.conf[confnum].start == -1)){
@@ -934,7 +981,7 @@ int main(int argc, char *argv[])
 
   switch(com.command_code) {
   case COM_STATUS:
-    ChangerStatus(com.parameter);
+    ChangerStatus(com.parameter, chg.labelfile, BarCode(fd),changer_file, changer_dev, tape_device);
     break;
   case COM_LABEL: /* Update BarCode/Label mapping file */
     MapBarCode(chg.labelfile, com.parameter, pDTE[drive_num].VolTag, BARCODE_PUT);
@@ -984,6 +1031,12 @@ int main(int argc, char *argv[])
       }
     if (loaded) {
       oldtarget = get_current_slot(changer_file);
+      if (oldtarget < 0)
+        {
+          dbprintf(("COM_SLOT: get_current_slot %d\n", oldtarget));
+          oldtarget = find_empty(fd, slot_offset, use_slots);
+          dbprintf(("COM_SLOT: find_empty %d\n", oldtarget));
+        }
       
       if ((oldtarget)!=target) {
         if (need_eject)
@@ -1030,8 +1083,14 @@ int main(int argc, char *argv[])
     break;
 
   case COM_INFO:
-    loaded = get_current_slot(changer_file)-slot_offset;
+    loaded = get_current_slot(changer_file);
 
+    if (loaded < 0)
+      {
+        loaded = find_empty(fd, slot_offset, use_slots);
+      }
+    loaded = loaded - slot_offset;
+      
     printf("%d %d 1", loaded, use_slots);
 
     if (BarCode(fd) == 1)
@@ -1045,9 +1104,16 @@ int main(int argc, char *argv[])
   case COM_RESET:
     target=get_current_slot(changer_file);
 
+    if (target < 0)
+    {
+	    	dbprintf(("COM_RESET: get_current_slot %d\n", target));
+		target=find_empty(fd, slot_offset, use_slots);
+		dbprintf(("COM_RESET: find_empty %d\n", target));
+    }
+
     if (loaded) {
       if (!isempty(fd, target))
-        target=find_empty(fd);
+        target=find_empty(fd, slot_offset, use_slots);
       if (need_eject)
         eject_tape(scsitapedevice, need_eject);
       (void)unload(fd, drive_num, target);
@@ -1087,6 +1153,12 @@ int main(int argc, char *argv[])
   case COM_EJECT:
     if (loaded) {
       target=get_current_slot(changer_file);
+      if (target < 0)
+        {
+          dbprintf(("COM_EJECT: get_current_slot %d\n", target));
+          target = find_empty(fd, slot_offset, use_slots);
+          dbprintf(("COM_EJECT: find_empty %d\n", target));
+        }
       
       if (need_eject)
         eject_tape(scsitapedevice, need_eject);
@@ -1103,6 +1175,13 @@ int main(int argc, char *argv[])
   case COM_CLEAN:
     if (loaded) {
       target=get_current_slot(changer_file);
+      if (target < 0)
+        {
+          dbprintf(("COM_CLEAN: get_current_slot %d\n", target));
+          target = find_empty(fd, slot_offset, use_slots);
+          dbprintf(("COM_CLEAN: find_empty %d\n",target));
+        }
+
       if (need_eject)
         eject_tape(scsitapedevice, need_eject);
       (void)unload(fd, drive_num, target);

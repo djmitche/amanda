@@ -2422,6 +2422,8 @@ AC_OUTPUT( \
 	common-src/versuff.c		common-src/Makefile		\
 									\
 	example/amanda.conf		example/Makefile		\
+	example/amanda.conf.chg-scsi	example/chg-scsi-linux.conf	\
+	example/chg-scsi-solaris.conf	example/chg-scsi-hpux.conf	\
 									\
 	man/amadmin.8			man/amanda.8			\
 	man/amcheck.8			man/amcheckdb.8			\

@@ -1,3 +1,35 @@
+1999-06-17  Thomas Hepper <th@ant.han.de>
+
+	* configure.in: Add new example files amanda.conf.chg-scsi, 
+	chg-scsi-linux.conf, chg-scsi-solaris.conf, chg-scsi-hpux.conf
+
+	* changer-src/chg-scsi-chio.c: Add parameter to find_empty
+
+	* changer-src/chg-scsi.c: Changed the way files are opened, added
+	FILE *debug_file because now it is possible to send some output to
+	stdout. (scsi-changer-driver.c).
+	(ask_clean) return 0  if result from get_clean_state is < 0
+	if get_current_slot returns < 0 try to find the used slot by asking
+	the robot. (happens if no slot file is available, or slot file is empty)
+	
+	* changer-src/scsi-changer-driver.c: New tape/robot types.
+	(find_empty) new parameter to specify range where to search.
+	More checks for NULL pointer ....
+	(DumpDev) new function to print the info for the device struct.
+	(ChangerStatus) some more output ....
+	
+	* changer-src/scsi-linux.c: Complete rewrite of SCSI_OpenDevice.
+
+	* common-src/debug.c: (debug_fp) new function to return the FILE *
+	to the debug file.
+
+	* contrib/sst/sst.c: Removed the inquiry call, this is handled by
+	chg-scsi. The old version will hang if for example no tape is loaded.
+	
+	* contrib/sst/Makefile: New Makefile, the old one does not work if not
+	the complete SUNdrv kit is installed.
+
+
 1999-06-15  Adam Hammer  <hammer@math.purdue.edu>
 
 	* server-src/amverify.sh.in: Wait until device becomes ready after
