@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.54 1998/01/13 17:15:17 blair Exp $
+ * $Id: planner.c,v 1.55 1998/01/14 21:43:51 amcore Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1476,7 +1476,7 @@ static void delay_dumps P((void))
 		errbuf = vstralloc(dp->host->hostname,
 				   " ", dp->name,
 				   " ", "0",
-				   " [dumps too bug,",
+				   " [dumps too big,",
 				   " but cannot incremental dump",
 				   " ", dp->skip_incr ? "skip-incr": "new",
 				   " disk]",
@@ -1515,7 +1515,7 @@ static void delay_dumps P((void))
 			       " ", dp->name,
 			       " ", level_str,
 			       " ", "[dumps way too big,",
-			       " ", "must skipp incremental dumps]",
+			       " ", "must skip incremental dumps]",
 			       NULL);
 	    delay_remove_dump(dp, errbuf);
 	}
