@@ -42,11 +42,11 @@ MT=ammt
 
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
 if test "$USE_VERSION_SUFFIXES" = "yes"; then
-	SUF="-2.4.1p1"
+        SUF="-@VERSION@";
 else
 	SUF=
 fi
-getconf=$libexecdir/getconf$SUF
+getconf=$sbindir/amgetconf$SUF
 
 #
 # make sure we can find JUKE later
@@ -59,7 +59,7 @@ then
     setup juke
 fi
 
-PATH=$libexecdir:$JUKE_DIR/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
+PATH=$sbindir:$libexecdir:$JUKE_DIR/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
 export PATH JUKE_DIR
 
 build_drivelists() {
@@ -194,6 +194,9 @@ build_drivelists
 if [ -f "$changerfile" ] 
 then
     slot="`cat $changerfile`"
+else
+    slot=0
+    echo $slot > $changerfile
 fi
 
 #
