@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.28.2.4.4.3.2.5 2002/10/27 21:17:15 martinea Exp $
+ * $Id: amrestore.c,v 1.28.2.4.4.3.2.6 2002/10/30 22:18:02 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -448,7 +448,7 @@ void usage()
  * Print usage message and terminate.
  */
 {
-    error("Usage: amrestore [-b blocksize] [-r|-c] [-p] [-h] [-f fileno] tape-device|holdingfile [hostname [diskname [datestamp [hostname [diskname [datestamp ... ]]]]]]");
+    error("Usage: amrestore [-b blocksize] [-r|-c] [-p] [-h] [-f fileno] [-l label] tape-device|holdingfile [hostname [diskname [datestamp [hostname [diskname [datestamp ... ]]]]]]");
 }
 
 
@@ -481,6 +481,7 @@ char **argv;
     int r = 0;
     char *e;
     char *err;
+    char *label = NULL;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -500,7 +501,7 @@ char **argv;
     signal(SIGPIPE, handle_sigpipe);
 
     /* handle options */
-    while( (opt = getopt(argc, argv, "b:cCd:rpkhf:")) != -1) {
+    while( (opt = getopt(argc, argv, "b:cCd:rpkhf:l:")) != -1) {
 	switch(opt) {
 	case 'b':
 	    blocksize = strtol(optarg, &e, 10);
@@ -526,6 +527,9 @@ char **argv;
 	    if(e != NULL && *e != '\0') {
 		error("invalid fileno value \"%s\"", optarg);
 	    }
+	    break;
+	case 'l':
+	    label = stralloc(optarg);
 	    break;
 	default:
 	    usage();
@@ -606,6 +610,31 @@ char **argv;
     }
     isafile=S_ISREG((stat_tape.st_mode));
 
+    if(label) {
+	if(isafile) {
+	    fprintf(stderr,"%s: ignoring -l flag when restoring from a file.\n",
+		    get_pname());
+	}
+	else {
+	    if((err = tape_rewind(tapename)) != NULL) {
+		error("Could not rewind device '%s': %s", tapename, err);
+	    }
+	    tapedev = tape_open(tapename, 0);
+	    read_file_header(&file, isafile);
+	    if(file.type != F_TAPESTART) {
+		fprintf(stderr,"Not an amanda tape\n");
+		exit (1);
+	    }
+	    if(strcmp(label, file.name) != 0) {
+		fprintf(stderr,"Wrong label: '%s'\n", file.name);
+		exit (1);
+	    }
+	    tapefd_close(tapedev);
+	    if((err = tape_rewind(tapename)) != NULL) {
+		error("Could not rewind device '%s': %s", tapename, err);
+	    }
+	}
+    }
     file_number = 0;
     if(filefsf != -1) {
 	if(isafile) {
@@ -613,7 +642,6 @@ char **argv;
 		    get_pname());
 	}
 	else {
-fprintf(stderr, "tapename: %s\n", tapename);
 	    if((err = tape_rewind(tapename)) != NULL) {
 		error("Could not rewind device '%s': %s", tapename, err);
 	    }
