@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.13.2.3 2001/08/01 22:05:27 jrjackson Exp $
+ * $Id: sendsize.c,v 1.97.2.13.2.4 2001/08/01 22:36:58 jrjackson Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -940,13 +940,26 @@ long getsize_smbtar(disk, level, exclude_spec)
     long size;
     FILE *dumpout;
     char *tarkeys, *sharename, *user_and_password = NULL, *domain = NULL;
+    char *share = NULL, *subdir = NULL;
     int lpass;
     char *pwtext;
     int pwtext_len;
     char *line;
     char *pw_fd_env;
 
-    if ((user_and_password = findpass(disk, &domain)) == NULL) {
+    parsesharename(disk, &share, &subdir);
+    if (!share) {
+	amfree(share);
+	amfree(subdir);
+	error("%s-smbtar: cannot parse disk entry '%s' for share/subdir", get_pn
+    }
+    if ((subdir) && (SAMBA_VERSION < 2)) {
+	amfree(share);
+	amfree(subdir);
+	error("%s-smbtar: subdirectory specified for share but samba not v2 or b
+    }
+    if ((user_and_password = findpass(share, &domain)) == NULL) {
+
 	if(domain) {
 	    memset(domain, '\0', strlen(domain));
 	    amfree(domain);
@@ -966,14 +979,14 @@ long getsize_smbtar(disk, level, exclude_spec)
     }
     *pwtext++ = '\0';
     pwtext_len = strlen(pwtext);
-    if ((sharename = makesharename(disk, 0)) == NULL) {
+    if ((sharename = makesharename(share, 0)) == NULL) {
 	memset(user_and_password, '\0', lpass);
 	amfree(user_and_password);
 	if(domain) {
 	    memset(domain, '\0', strlen(domain));
 	    amfree(domain);
 	}
-	error("%s-smbtar: cannot make share name of %s", get_pname(), disk);
+	error("%s-smbtar: cannot make share name of %s", get_pname(), share);
     }
     nullfd = open("/dev/null", O_RDWR);
 
@@ -1005,6 +1018,10 @@ long getsize_smbtar(disk, level, exclude_spec)
 	      "-E",
 	      domain ? "-W" : skip_argument,
 	      domain ? domain : skip_argument,
+#if SAMBA_VERSION >= 2
+	      subdir ? "-D" : skip_argument,
+	      subdir ? subdir : skip_argument,
+#endif
 	      "-c", tarkeys,
 	      NULL);
     if(domain) {
@@ -1025,6 +1042,8 @@ long getsize_smbtar(disk, level, exclude_spec)
     amfree(user_and_password);
     aclose(passwdfd);
     amfree(sharename);
+    amfree(share);
+    amfree(subdir);
     dumpout = fdopen(pipefd,"r");
 
     for(size = -1; (line = agets(dumpout)) != NULL; free(line)) {
