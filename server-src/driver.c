@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.13 1997/09/23 02:41:06 george Exp $
+ * $Id: driver.c,v 1.14 1997/09/23 06:54:19 george Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1236,7 +1236,7 @@ void short_dump_state()
     else printf("writing");
     nidle = 0;
     for(i = 0; i < inparallel; i++) if(!dmptable[i].busy) nidle++;
-    printf(" idle dumpers: %d", nidle);
+    printf(" idle-dumpers: %d", nidle);
     printf(" qlen tapeq: %d", queue_length(tapeq));
     printf(" runq: %d", queue_length(runq));
     printf(" stoppedq: %d", queue_length(stoppedq));
