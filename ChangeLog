@@ -1,3 +1,7 @@
+2003-06-14  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/holding.c: Skip lost+found directories on holding disks.
+
 2003-06-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/amverify.sh.in: Do not advance to next tape.

@@ -24,12 +24,13 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.17.2.12.4.3.2.9 2003/06/03 20:14:44 martinea Exp $
+ * $Id: holding.c,v 1.17.2.12.4.3.2.10 2003/06/14 13:47:05 martinea Exp $
  *
  * Functions to access holding disk
  */
 
 #include "amanda.h"
+#include "util.h"
 #include "holding.h"
 #include "fileheader.h"
 #include "util.h"
@@ -130,7 +131,8 @@ int verbose;
     if(verbose)
 	printf("Scanning %s...\n", diskdir);
     while((workdir = readdir(topdir)) != NULL) {
-	if(is_dot_or_dotdot(workdir->d_name)) {
+	if(is_dot_or_dotdot(workdir->d_name)
+	   || strcmp(workdir->d_name, "lost+found") == 0) {
 	    continue;
 	}
 	entryname = newvstralloc(entryname,
@@ -139,18 +141,15 @@ int verbose;
 	    printf("  %s: ", workdir->d_name);
 	}
 	if(!is_dir(entryname)) {
-	    if(verbose) {
+	    if(verbose)
 	        puts("skipping cruft file, perhaps you should delete it.");
-	    }
 	} else if(!is_datestr(workdir->d_name)) {
-	    if(verbose) {
+	    if(verbose)
 	        puts("skipping cruft directory, perhaps you should delete it.");
-	    }
 	} else {
 	    holding_list = insert_sort_sl(holding_list, workdir->d_name);
-	    if(verbose) {
+	    if(verbose)
 		puts("found Amanda directory.");
-	    }
 	}
     }
     closedir(topdir);
@@ -497,6 +496,13 @@ int complete;
 	    return 0;
 	}
 	buflen = fullread(fd, buffer, sizeof(buffer));
+	if (buflen == 0) {
+	    fprintf(stderr,"rename_tmp_holding: %s: empty file?\n", filename_tmp);
+	    amfree(filename);
+	    amfree(filename_tmp);
+	    close(fd);
+	    return 0;
+	}
 	parse_file_header(buffer, &file, buflen);
 	close(fd);
 	if(complete == 0 ) {
@@ -510,7 +516,7 @@ int complete;
 	    }
 	    file.is_partial = 1;
 	    build_header(buffer, &file, sizeof(buffer));
-	    write(fd, buffer, sizeof(buffer));
+	    fullwrite(fd, buffer, sizeof(buffer));
 	    close(fd);
 	}
 	if(rename(filename_tmp, filename) != 0) {
@@ -546,11 +552,10 @@ int verbose;
 	printf("Scanning %s...\n", diskdir);
     chdir(diskdir);
     while((workdir = readdir(topdir)) != NULL) {
-	if(strcmp(workdir->d_name, ".") == 0
-	   || strcmp(workdir->d_name, "..") == 0
-	   || strcmp(workdir->d_name, "lost+found") == 0)
+	if(is_dot_or_dotdot(workdir->d_name)
+	   || strcmp(workdir->d_name, "lost+found") == 0) {
 	    continue;
-
+	}
 	if(verbose)
 	    printf("  %s: ", workdir->d_name);
 	if(!is_dir(workdir->d_name)) {
