@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-linux.c,v 1.23 2001/06/12 17:42:28 ant Exp $
+ * $Id: scsi-linux.c,v 1.24 2002/08/22 17:42:48 martinea Exp $
  *
  * Interface to execute SCSI commands on Linux
  *
@@ -79,6 +79,13 @@
 #include <scsi-defs.h>
 
 
+void SCSI_OS_Version()
+{
+#ifndef lint
+   static char rcsid[] = "$Id: scsi-linux.c,v 1.24 2002/08/22 17:42:48 martinea Exp $";
+   DebugPrint(DEBUG_ERROR, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
+#endif
+}
 
 int SCSI_CloseDevice(int DeviceFD)
 {
@@ -209,6 +216,17 @@ int SCSI_OpenDevice(int ip)
                       pDev[ip].ident[i] = '\0';
                     }
                   pDev[ip].SCSI = 1;
+
+		  if (pDev[ip].inquiry->type == TYPE_TAPE)
+		  {
+		          pDev[ip].type = strdup("tape");
+		  }
+
+		  if (pDev[ip].inquiry->type == TYPE_CHANGER)
+		  {
+		          pDev[ip].type = strdup("changer");
+		  }
+
                   PrintInquiry(pDev[ip].inquiry);
                   DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_OpenDevice (1)\n");
                   return(1);

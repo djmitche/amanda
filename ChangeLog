@@ -1,3 +1,19 @@
+2002-07-22  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* changer-src/chg-mtx.sh.in: Sync with 2.4.3 branch.
+	* changer-src/chg-scsi-chio.c: Ditto.
+	* changer-src/chg-scsi.c: Ditto.
+	* changer-src/scsi-aix.c: Ditto.
+	* changer-src/scsi-bsd.c: Ditto.
+	* changer-src/scsi-cam.c: Ditto.
+	* changer-src/scsi-changer-driver.c: Ditto.
+	* changer-src/scsi-defs.h: Ditto.
+	* changer-src/scsi-hpux_new.c: Ditto.
+	* changer-src/scsi-irix.c: Ditto.
+	* changer-src/scsi-linux.c: Ditto.
+	* changer-src/scsi-solaris.c: Ditto.
+	* tape-src/tapeio.c: Ditto.
+
 2002-07-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* recover-src/uparse.y: Fix compiler warning.

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.41 2002/02/10 03:34:04 jrjackson Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.42 2002/08/22 17:42:47 martinea Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -132,7 +132,8 @@ int SCSI_ReadElementStatus(int DeviceFD,
                            unsigned char VolTag,
                            int StartAddress,
                            int NoOfElements,
-                           char **data);
+			   int DescriptorSize,
+			   char **data);
 
 FILE *StatFile;
 
@@ -180,6 +181,18 @@ SC_COM_T SCSICommand[] = {
 };
 
 ChangerCMD_T ChangerIO[] = {
+  {"generic_changer",
+   "Generic driver changer [generic_changer]",
+   GenericMove,
+   GenericElementStatus,
+   GenericResetStatus,
+   GenericFree,
+   GenericEject,
+   GenericClean,
+   GenericRewind,
+   GenericBarCode,
+   GenericSearch,
+   GenericSenseHandler},
 	/* HP Devices */
   {"C1553A",
    "HP Auto Loader [C1553A]",
@@ -265,7 +278,7 @@ ChangerCMD_T ChangerIO[] = {
    GenericEject,
    GenericClean,
    GenericRewind,
-   NoBarCode,
+   GenericBarCode,
    GenericSearch,
    GenericSenseHandler},
   {"VLS SDX",               
@@ -277,7 +290,7 @@ ChangerCMD_T ChangerIO[] = {
    GenericEject,
    GenericClean,
    GenericRewind,
-   NoBarCode,
+   GenericBarCode,
    GenericSearch,
    GenericSenseHandler},
   {"FastStor DLT",               
@@ -289,7 +302,7 @@ ChangerCMD_T ChangerIO[] = {
    GenericEject,
    GenericClean,
    GenericRewind,
-   NoBarCode,
+   GenericBarCode,
    GenericSearch,
    GenericSenseHandler},
   {"Scalar DLT 448",
@@ -301,7 +314,7 @@ ChangerCMD_T ChangerIO[] = {
    GenericEject,
    GenericClean,
    GenericRewind,
-   NoBarCode,
+   GenericBarCode,
    GenericSearch,
    GenericSenseHandler},
    /* Sepctra Logic Devices */
@@ -333,6 +346,19 @@ ChangerCMD_T ChangerIO[] = {
   /* 
    * And now the tape devices
    */
+  /* The generic handler if nothing matches */
+  {"generic_tape",
+   "Generic driver tape [generic_tape]",
+   GenericMove,
+   GenericElementStatus,
+   GenericResetStatus,
+   GenericFree,
+   GenericEject,
+   GenericClean,
+   GenericRewind,
+   NoBarCode,
+   GenericSearch,
+   GenericSenseHandler},
   {"DLT7000",        
    "DLT Tape [DLT7000]",
    DoNothing,
@@ -352,19 +378,6 @@ ChangerCMD_T ChangerIO[] = {
    DoNothing,
    DoNothing,
    DLT4000Eject,
-   GenericClean,
-   GenericRewind,
-   NoBarCode,
-   GenericSearch,
-   GenericSenseHandler},
-  /* The generic handler if nothing matches */
-  {"generic",
-   "Generic driver tape/robot [generic]",
-   GenericMove,
-   GenericElementStatus,
-   GenericResetStatus,
-   GenericFree,
-   GenericEject,
    GenericClean,
    GenericRewind,
    NoBarCode,
@@ -441,7 +454,8 @@ char *chgscsi_result = NULL;          /* Needed for the result string of MapBarC
 
 void ChangerDriverVersion()
 {
-  DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-changer-driver: %s\n",rcsid);
+  DebugPrint(DEBUG_ERROR, SECTION_INFO, "scsi-changer-driver: %s\n",rcsid);
+  SCSI_OS_Version();
 }
 
 /*
@@ -742,8 +756,13 @@ int eject_tape(char *tapedev, int type)
    */
   if (pDev[INDEX_TAPE].avail == 1 && (chg.emubarcode == 1 || BarCode(INDEX_CHANGER)))
     {
-      pDev[INDEX_TAPE].functions->function_rewind(INDEX_TAPE);
-      
+
+      if (pDev[INDEX_TAPECTL].SCSI == 1 && pDev[INDEX_TAPECTL].avail) {
+	pDev[INDEX_TAPECTL].functions->function_rewind(INDEX_TAPECTL);
+      } else {
+	pDev[INDEX_TAPE].functions->function_rewind(INDEX_TAPE);
+      }
+
       if (pDev[INDEX_TAPE].devopen == 1)
 	{
 	  SCSI_CloseDevice(INDEX_TAPE);
@@ -914,6 +933,11 @@ int unload(int fd, int drive, int slot)
 	}
       
       slot = find_empty(fd, 0, 0);
+      if (slot == -1 )
+      {
+	      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "unload: No Empty slot found\n");
+	      return(-1);
+      }
       DebugPrint(DEBUG_INFO, SECTION_TAPE,"unload : found empty one, try to unload to slot %d\n", slot);
     }
 
@@ -927,7 +951,12 @@ int unload(int fd, int drive, int slot)
     {
       if (pDev[INDEX_TAPE].avail == 1 && (chg.emubarcode == 1 || BarCode(INDEX_CHANGER)))
 	{
-	  pDev[INDEX_TAPE].functions->function_rewind(INDEX_TAPE);
+
+	  if (pDev[INDEX_TAPECTL].SCSI == 1 && pDev[INDEX_TAPECTL].avail) {
+	    pDev[INDEX_TAPECTL].functions->function_rewind(INDEX_TAPECTL);
+	  } else {
+	    pDev[INDEX_TAPE].functions->function_rewind(INDEX_TAPE);
+	  }
 	  
 	  if (pDev[INDEX_TAPE].devopen == 1)
 	    {
@@ -1089,7 +1118,12 @@ int load(int fd, int drive, int slot)
    */
   if (pDev[INDEX_TAPE].avail == 1 && (chg.emubarcode == 1 || BarCode(INDEX_CHANGER)))
     {
-      pDev[INDEX_TAPE].functions->function_rewind(INDEX_TAPE);
+
+      if (pDev[INDEX_TAPECTL].SCSI == 1 && pDev[INDEX_TAPECTL].avail) {
+	pDev[INDEX_TAPECTL].functions->function_rewind(INDEX_TAPECTL);
+      } else {
+	pDev[INDEX_TAPE].functions->function_rewind(INDEX_TAPE);
+      }
       
       if (pDev[INDEX_TAPE].devopen == 1)
 	{
@@ -1228,6 +1262,7 @@ int get_drive_count(int fd)
 int OpenDevice(int ip , char *DeviceName, char *ConfigName, char *ident)
 {
   extern OpenFiles_T *pDev;
+  char tmpstr[15];
   ChangerCMD_T *p = (ChangerCMD_T *)&ChangerIO;
   
   DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### START OpenDevice\n");
@@ -1270,9 +1305,10 @@ int OpenDevice(int ip , char *DeviceName, char *ConfigName, char *ident)
       /* divide generic in generic_type, where type is the */
       /* num returned by the inquiry command */
       p = (ChangerCMD_T *)&ChangerIO;
+      sprintf(&tmpstr[0],"%s_%s","generic",pDev[0].type);
       while(p->ident != NULL)
         {
-          if (strcmp("generic", p->ident) == 0)
+          if (strcmp(tmpstr, p->ident) == 0)
             {
               pDev[ip].functions = p;
               DebugPrint(DEBUG_INFO, SECTION_SCSI,"using ident = %s, type = %s\n",p->ident, p->type);
@@ -1659,8 +1695,13 @@ int DecodeSense(RequestSense_T *sense, char *pstring, FILE *out)
     }
   fprintf(out,"##### START DecodeSense\n");
   fprintf(out,"%sSense Keys\n", pstring);
-  fprintf(out,"\tErrorCode                     %02x\n", sense->ErrorCode);
-  fprintf(out,"\tValid                         %d\n", sense->Valid);
+  if (sense->ErrorCode == 0x70)
+    {
+    fprintf(out,"\tExtended Sense                     \n");
+    } else {
+      fprintf(out,"\tErrorCode                     %02x\n", sense->ErrorCode);
+      fprintf(out,"\tValid                         %d\n", sense->Valid);
+    }
   fprintf(out,"\tASC                           %02X\n", sense->AdditionalSenseCode);
   fprintf(out,"\tASCQ                          %02X\n", sense->AdditionalSenseCodeQualifier);
   fprintf(out,"\tSense key                     %02X\n", sense->SenseKey);
@@ -1731,54 +1772,57 @@ int DecodeExtSense(ExtendedRequestSense_T *sense, char *pstring, FILE *out)
   fprintf(out,"\tLog Parameter Code              %02X\n", sense->LogParameterCode);
   fprintf(out,"\tUnderrun/Overrun Counter        %02X\n", sense->UnderrunOverrunCounter);
   fprintf(out,"\tRead/Write Error Counter        %d\n", V3((char *)sense->ReadWriteDataErrorCounter)); 
-  if (sense->PF)
-    fprintf(out,"\tPower Fail\n");
-  if (sense->BPE)
-    fprintf(out,"\tSCSI Bus Parity Error\n");
-  if (sense->FPE)
-    fprintf(out,"\tFormatted Buffer parity Error\n");
-  if (sense->ME)
-    fprintf(out,"\tMedia Error\n");
-  if (sense->ECO)
-    fprintf(out,"\tError Counter Overflow\n");
-  if (sense->TME)
-    fprintf(out,"\tTapeMotion Error\n");
-  if (sense->TNP)
-    fprintf(out,"\tTape Not Present\n");
-  if (sense->LBOT)
-    fprintf(out,"\tLogical Beginning of tape\n");
-  if (sense->TMD)
-    fprintf(out,"\tTape Mark Detect Error\n");
-  if (sense->WP)
-    fprintf(out,"\tWrite Protect\n");
-  if (sense->FMKE)
-    fprintf(out,"\tFilemark Error\n");
-  if (sense->URE)
-    fprintf(out,"\tUnder Run Error\n");
-  if (sense->WEI)
-    fprintf(out,"\tWrite Error 1\n");
-  if (sense->SSE)
-    fprintf(out,"\tServo System Error\n");
-  if (sense->FE)
-    fprintf(out,"\tFormatter Error\n");
-  if (sense->UCLN)
-    fprintf(out,"\tCleaning Cartridge is empty\n");
-  if (sense->RRR)
-    fprintf(out,"\tReverse Retries Required\n");
-  if (sense->CLND)
-    fprintf(out,"\tTape Drive has been cleaned\n");
-  if (sense->CLN)
-    fprintf(out,"\tTape Drive needs to be cleaned\n");
-  if (sense->PEOT)
-    fprintf(out,"\tPhysical End of Tape\n");
-  if (sense->WSEB)
-    fprintf(out,"\tWrite Splice Error\n");
-  if (sense->WSEO)
-    fprintf(out,"\tWrite Splice Error\n");
-  fprintf(out,"\tRemaing 1024 byte tape blocks   %d\n", V3((char *)sense->RemainingTape));
-  fprintf(out,"\tTracking Retry Counter          %02X\n", sense->TrackingRetryCounter);
-  fprintf(out,"\tRead/Write Retry Counter        %02X\n", sense->ReadWriteRetryCounter);
-  fprintf(out,"\tFault Sympton Code              %02X\n", sense->FaultSymptomCode);
+  if (sense->AdditionalSenseLength > sizeof(RequestSense_T))
+    {
+      if (sense->PF)
+        fprintf(out,"\tPower Fail\n");
+      if (sense->BPE)
+        fprintf(out,"\tSCSI Bus Parity Error\n");
+      if (sense->FPE)
+        fprintf(out,"\tFormatted Buffer parity Error\n");
+      if (sense->ME)
+        fprintf(out,"\tMedia Error\n");
+      if (sense->ECO)
+        fprintf(out,"\tError Counter Overflow\n");
+      if (sense->TME)
+        fprintf(out,"\tTapeMotion Error\n");
+      if (sense->TNP)
+        fprintf(out,"\tTape Not Present\n");
+      if (sense->LBOT)
+        fprintf(out,"\tLogical Beginning of tape\n");
+      if (sense->TMD)
+        fprintf(out,"\tTape Mark Detect Error\n");
+      if (sense->WP)
+        fprintf(out,"\tWrite Protect\n");
+      if (sense->FMKE)
+        fprintf(out,"\tFilemark Error\n");
+      if (sense->URE)
+        fprintf(out,"\tUnder Run Error\n");
+      if (sense->WEI)
+        fprintf(out,"\tWrite Error 1\n");
+      if (sense->SSE)
+        fprintf(out,"\tServo System Error\n");
+      if (sense->FE)
+        fprintf(out,"\tFormatter Error\n");
+      if (sense->UCLN)
+        fprintf(out,"\tCleaning Cartridge is empty\n");
+      if (sense->RRR)
+        fprintf(out,"\tReverse Retries Required\n");
+      if (sense->CLND)
+        fprintf(out,"\tTape Drive has been cleaned\n");
+      if (sense->CLN)
+        fprintf(out,"\tTape Drive needs to be cleaned\n");
+      if (sense->PEOT)
+        fprintf(out,"\tPhysical End of Tape\n");
+      if (sense->WSEB)
+        fprintf(out,"\tWrite Splice Error\n");
+      if (sense->WSEO)
+        fprintf(out,"\tWrite Splice Error\n");
+      fprintf(out,"\tRemaing 1024 byte tape blocks   %d\n", V3((char *)sense->RemainingTape));
+      fprintf(out,"\tTracking Retry Counter          %02X\n", sense->TrackingRetryCounter);
+      fprintf(out,"\tRead/Write Retry Counter        %02X\n", sense->ReadWriteRetryCounter);
+      fprintf(out,"\tFault Sympton Code              %02X\n", sense->FaultSymptomCode);
+    }
   return(0);
 }
 
@@ -1988,7 +2032,7 @@ int TapeStatus()
    * normal ioctl (MTIOCGET for example) may fail
    * So try an Inquiry
    */
-  if (pDev[INDEX_TAPE].SCSI == 1)
+  if (pDev[INDEX_TAPECTL].SCSI == 1)
     {
       if ((pRequestSense = malloc(sizeof(RequestSense_T))) == NULL)
 	{
@@ -2559,15 +2603,19 @@ int GenericClean(char * Device)
   /*
    * Request Sense Data, reset the counter
    */
-  RequestSense(INDEX_TAPECTL, &ExtRequestSense, 1);
-
-  DecodeExtSense(&ExtRequestSense, "GenericClean : ", debug_file);
-  if(ExtRequestSense.CLN) {
-    ret = 1;
-  } else {
-    ret = 0;
-  }
-  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP GenericClean\n");
+  if ( RequestSense(INDEX_TAPECTL, &ExtRequestSense, 1) == 0)
+    {
+      
+      DecodeExtSense(&ExtRequestSense, "GenericClean : ", debug_file);
+      if(ExtRequestSense.CLN) {
+	ret = 1;
+      } else {
+	ret = 0;
+      }
+    } else {
+      DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Got error from RequestSense\n");
+    }
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP GenericClean (%d)\n",ret);
   return(ret);
 }
 
@@ -2740,6 +2788,11 @@ int SDXMove(int DeviceFD, int from, int to)
            DebugPrint(DEBUG_INFO, SECTION_MOVE,"SDXMove : Destination Element %d Type %d is full\n",
                 pto->address, pto->type);
             to = find_empty(DeviceFD, 0, 0);
+	    if (to == -1 )
+	    {
+		    DebugPrint(DEBUG_ERROR, SECTION_MOVE,"SDXMove : no empty slot found for unload\n");
+		    return(-1);
+	    }
             DebugPrint(DEBUG_INFO, SECTION_MOVE,"SDXMove : Unload to %d\n", to);
             if ((pto = LookupElement(to)) == NULL)
             {
@@ -2874,6 +2927,11 @@ int GenericMove(int DeviceFD, int from, int to)
       DebugPrint(DEBUG_INFO, SECTION_MOVE, "GenericMove : Destination Element %d Type %d is full\n",
 		 pto->address, pto->type);
       to = find_empty(DeviceFD, 0, 0);
+      if ( to == -1)
+      {
+	      DebugPrint(DEBUG_ERROR, SECTION_MOVE, "GenericMove : no empty slot found\n");
+	      return(-1);
+      }
       DebugPrint(DEBUG_INFO, SECTION_MOVE, "GenericMove : Unload to %d\n", to);
       if ((pto = LookupElement(to)) == NULL)
         {
@@ -3313,7 +3371,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
   int x;           /* The standard loop counter :-) */
   int loop = 2;    /* Redo it if an error has been reset */
 
-  DebugPrint(DEBUG_INFO, SECTION_ELEMENT, "##### START GenericElementStatus\n");
+  DebugPrint(DEBUG_INFO, SECTION_ELEMENT, "##### START DLT448ElementStatus\n");
 
   if (pEAAPage == NULL)
     {
@@ -3326,15 +3384,15 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
         {
           if ((pModePage = malloc(0xff)) == NULL)
             {
-              DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"GenericElementStatus : malloc failed\n");
+              DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"DLT448ElementStatus : malloc failed\n");
               return(-1);
             }
 	  if (SCSI_ModeSense(DeviceFD, pModePage, 0xff, 0x8, 0x3f) == 0)
 	    {
 	      LibModeSenseValid = 1;
-	      DecodeModeSense(pModePage, 12, "GenericElementStatus :", 0, debug_file);
+	      DecodeModeSense(pModePage, 12, "DLT448ElementStatus :", 0, debug_file);
 	    } else {
-	      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"GetElementStatus : failed SCSI_ModeSense\n");
+	      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"DLT448ElementStatus : failed SCSI_ModeSense\n");
 	      LibModeSenseValid = -1;
 	    }
         }
@@ -3354,7 +3412,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
 		  error = 1;
 		  break;
 		case SENSE_ABORT:
-		  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Abort on MTE\n");
+		  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "DLT448ElementStatus : Abort on MTE\n");
 		  return(-1);
 		  break;
 		}
@@ -3372,7 +3430,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
 		  error = 1;
 		  break;
 		case SENSE_ABORT:
-		  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Abort on IEE\n");
+		  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "DLT448ElementStatus : Abort on IEE\n");
 		  return(-1);
 		  break;
 		}
@@ -3400,7 +3458,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
 		  error = 1;
 		  break;
 		case SENSE_ABORT:
-		  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Abort on IES\n");
+		  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "DLT448ElementStatus : Abort on IES\n");
 		  return(-1);
 		  break;
 		}
@@ -3418,7 +3476,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
 		  error = 1;
 		  break;
 		case SENSE_ABORT:
-		  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Abort on DTE\n");
+		  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "DLT448ElementStatus : Abort on DTE\n");
 		  return(-1);
 		  break;
 		}
@@ -3435,7 +3493,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
 	  if (GenericResetStatus(DeviceFD) != 0)
 	    {
 	      ElementStatusValid = 0;
-	      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Can't init status\n");
+	      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "DLT448ElementStatus : Can't init status\n");
 	      return(-1);
 	    }
 	  error = 0;
@@ -3450,7 +3508,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
 	   */
 	  if (pDTE[0].status == 'E')
 	    {
-	      DebugPrint(DEBUG_INFO, SECTION_ELEMENT, "GenericElementStatus : try to move tape to tape drive\n");
+	      DebugPrint(DEBUG_INFO, SECTION_ELEMENT, "DLT448ElementStatus : try to move tape to tape drive\n");
 	      pDev[DeviceFD].functions->function_move(DeviceFD, pDTE[0].address, pDTE[0].address);
 	    }
 	}
@@ -3459,12 +3517,12 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
 
   if (error != 0)
     {
-      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Can't init status (after loop)\n");
+      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "DLT448ElementStatus : Can't init status (after loop)\n");
       return(-1);
     }
 
   ElementStatusValid = 1;
-  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "#### STOP GenericElementStatus\n");
+  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "#### STOP DLT448ElementStatus\n");
   return(0);
 }
 
@@ -3653,9 +3711,9 @@ int GetElementStatus(int DeviceFD)
   ImportExportElementDescriptor_T *ImportExportElementDescriptor;
   int x = 0;
   int offset = 0;
-  int barcode = 0;                   /* To store the result of the BarCode function */
+  int length = 0;	/* Length of an Element */
+  int barcode = 0;      /* To store the result of the BarCode function */
   int NoOfElements;
-
  
   DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"##### START GetElementStatus\n");
   
@@ -3686,7 +3744,8 @@ int GetElementStatus(int DeviceFD)
                                      0,
                                      barcode,
                                      V2(pEAAPage->MediumTransportElementAddress),
-                                     MTE,
+                                     MTE+1,
+				     sizeof(MediumTransportElementDescriptor_T),
                                      (char **)&DataBuffer) != 0)
             {
               if (DataBuffer != 0)
@@ -3700,32 +3759,53 @@ int GetElementStatus(int DeviceFD)
           
           ElementStatusPage = (ElementStatusPage_T *)&DataBuffer[offset];
           offset = offset + sizeof(ElementStatusPage_T);
+	  length = V2(ElementStatusPage->length);
+          DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"MTE Length %d(%d)\n",length,sizeof(MediumTransportElementDescriptor_T));
           
           for (x = 0; x < MTE; x++)
             {
               MediumTransportElementDescriptor = (MediumTransportElementDescriptor_T *)&DataBuffer[offset];
+	      
               if (ElementStatusPage->pvoltag == 1)
                 {
                   strncpy(pMTE[x].VolTag, 
-                          MediumTransportElementDescriptor->res4,
+                          MediumTransportElementDescriptor->pvoltag,
                           TAG_SIZE);
                   TerminateString(pMTE[x].VolTag, TAG_SIZE+1);
                 }
+	      
               pMTE[x].type = ElementStatusPage->type;
               pMTE[x].address = V2(MediumTransportElementDescriptor->address);
               pMTE[x].except = MediumTransportElementDescriptor->except;
-              pMTE[x].ASC = MediumTransportElementDescriptor->asc;
-              pMTE[x].ASCQ = MediumTransportElementDescriptor->ascq;
               pMTE[x].status = (MediumTransportElementDescriptor->full > 0) ? 'F':'E';
               pMTE[x].full = MediumTransportElementDescriptor->full;
 	      
-              if (MediumTransportElementDescriptor->svalid == 1)
-                {
-                  pMTE[x].from = V2(MediumTransportElementDescriptor->source);
-                } else {
-                  pMTE[x].from = -1;
-                }
-	      offset = offset + V2(ElementStatusPage->length); 
+	      if (length >= 5)
+		{
+		  pMTE[x].ASC = MediumTransportElementDescriptor->asc;
+		} else {
+		  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASC MTE\n");
+		}
+	      
+	      if (length >= 6)
+		{
+		  pMTE[x].ASCQ = MediumTransportElementDescriptor->ascq;
+		} else {
+		  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASCQ MTE\n");
+		}
+	      
+	      if (length >= 0xa)
+		{
+		  if (MediumTransportElementDescriptor->svalid == 1)
+		    {
+		      pMTE[x].from = V2(MediumTransportElementDescriptor->source);
+		    } else {
+		      pMTE[x].from = -1;
+		    }
+		} else {
+		  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip source MTE\n");
+		}
+	      offset = offset + length; 
             }
         }
       /* 
@@ -3750,6 +3830,7 @@ int GetElementStatus(int DeviceFD)
                                      barcode,
                                      V2(pEAAPage->FirstStorageElementAddress),
                                      STE,
+				     sizeof(StorageElementDescriptor_T),
                                      (char **)&DataBuffer) != 0)
             {
               if (DataBuffer != 0)
@@ -3764,6 +3845,8 @@ int GetElementStatus(int DeviceFD)
           
           ElementStatusPage = (ElementStatusPage_T *)&DataBuffer[offset];
           offset = offset + sizeof(ElementStatusPage_T);
+	  length = V2(ElementStatusPage->length);
+          DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"STE Length %d\n",length);
           
           for (x = 0; x < STE; x++)
             {
@@ -3771,7 +3854,7 @@ int GetElementStatus(int DeviceFD)
               if (ElementStatusPage->pvoltag == 1)
                 {
                   strncpy(pSTE[x].VolTag, 
-                          StorageElementDescriptor->res4,
+                          StorageElementDescriptor->pvoltag,
                           TAG_SIZE);
                   TerminateString(pSTE[x].VolTag, TAG_SIZE+1);
                 }
@@ -3780,18 +3863,36 @@ int GetElementStatus(int DeviceFD)
               pSTE[x].type = ElementStatusPage->type;
               pSTE[x].address = V2(StorageElementDescriptor->address);
               pSTE[x].except = StorageElementDescriptor->except;
-              pSTE[x].ASC = StorageElementDescriptor->asc;
-              pSTE[x].ASCQ = StorageElementDescriptor->ascq;
               pSTE[x].status = (StorageElementDescriptor->full > 0) ? 'F':'E';
               pSTE[x].full = StorageElementDescriptor->full;
+	      
+	      if (length >= 5)
+		{
+		  pSTE[x].ASC = StorageElementDescriptor->asc;
+		} else {
+		  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASC STE\n");
+		}
+	      
+	      if (length >= 6)
+		{
+		  pSTE[x].ASCQ = StorageElementDescriptor->ascq;
+		} else {
+		  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASCQ STE\n");
+		}
               
-              if (StorageElementDescriptor->svalid == 1)
-                {
-                  pSTE[x].from = V2(StorageElementDescriptor->source);
-                } else {
-                  pSTE[x].from = -1;
-                }              
-              offset = offset + V2(ElementStatusPage->length); 
+	      if (length >= 0xa)
+		{
+		  if (StorageElementDescriptor->svalid == 1)
+		    {
+		      pSTE[x].from = V2(StorageElementDescriptor->source);
+		    } else {
+		      pSTE[x].from = -1;
+		    }              
+		} else {
+		  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip source STE\n");
+		}
+	      
+              offset = offset + length; 
             }
           
         }
@@ -3816,6 +3917,7 @@ int GetElementStatus(int DeviceFD)
                                      barcode,
                                      V2(pEAAPage->FirstImportExportElementAddress),
                                      IEE,
+				     sizeof(ImportExportElementDescriptor_T),
                                      (char **)&DataBuffer) != 0)
             {
               if (DataBuffer != 0)
@@ -3830,6 +3932,8 @@ int GetElementStatus(int DeviceFD)
           
           ElementStatusPage = (ElementStatusPage_T *)&DataBuffer[offset];
           offset = offset + sizeof(ElementStatusPage_T);
+	  length = V2(ElementStatusPage->length);
+          DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"IEE Length %d\n",length);
           
           for (x = 0; x < IEE; x++)
             {
@@ -3837,25 +3941,43 @@ int GetElementStatus(int DeviceFD)
               if (ElementStatusPage->pvoltag == 1)
                 {
                   strncpy(pIEE[x].VolTag, 
-                          ImportExportElementDescriptor->res4,
+                          ImportExportElementDescriptor->pvoltag,
                           TAG_SIZE);
                   TerminateString(pIEE[x].VolTag, TAG_SIZE+1);
                 }
               pIEE[x].type = ElementStatusPage->type;
               pIEE[x].address = V2(ImportExportElementDescriptor->address);
               pIEE[x].except = ImportExportElementDescriptor->except;
-              pIEE[x].ASC = ImportExportElementDescriptor->asc;
-              pIEE[x].ASCQ = ImportExportElementDescriptor->ascq;
               pIEE[x].status = (ImportExportElementDescriptor->full > 0) ? 'F':'E';
               pIEE[x].full = ImportExportElementDescriptor->full;
+	      
+	      if (length >= 5)
+		{
+		  pIEE[x].ASC = ImportExportElementDescriptor->asc;
+		} else {
+		  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASC IEE\n");
+		}
+	      
+	      if (length >= 6)
+		{
+		  pIEE[x].ASCQ = ImportExportElementDescriptor->ascq;
+		} else {
+		  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASCQ IEE\n");
+		}
               
-              if (ImportExportElementDescriptor->svalid == 1)
-                {
-                  pIEE[x].from = V2(ImportExportElementDescriptor->source);
-                } else {
-                  pIEE[x].from = -1;
-                }              
-              offset = offset + V2(ElementStatusPage->length); 
+	      if (length >= 0xa)
+		{
+		  if (ImportExportElementDescriptor->svalid == 1)
+		    {
+		      pIEE[x].from = V2(ImportExportElementDescriptor->source);
+		    } else {
+		      pIEE[x].from = -1;
+		    }              
+		} else {
+		  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip source IEE\n");
+		}
+	      
+              offset = offset + length; 
             }
           
         }
@@ -3880,6 +4002,7 @@ int GetElementStatus(int DeviceFD)
                                      barcode,
                                      V2(pEAAPage->FirstDataTransferElementAddress),
                                      DTE,
+				     sizeof(DataTransferElementDescriptor_T),
                                      (char **)&DataBuffer) != 0)
             {
               if (DataBuffer != 0)
@@ -3894,6 +4017,8 @@ int GetElementStatus(int DeviceFD)
           
           ElementStatusPage = (ElementStatusPage_T *)&DataBuffer[offset];
           offset = offset + sizeof(ElementStatusPage_T);
+	  length = V2(ElementStatusPage->length);
+          DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"DTE Length %d\n",length);
 	  
           for (x = 0; x < DTE; x++)
             {
@@ -3901,39 +4026,58 @@ int GetElementStatus(int DeviceFD)
               if (ElementStatusPage->pvoltag == 1)
                 {
                   strncpy(pDTE[x].VolTag, 
-                          DataTransferElementDescriptor->res4,
+                          DataTransferElementDescriptor->pvoltag,
                           TAG_SIZE);
                   TerminateString(pDTE[x].VolTag, TAG_SIZE+1);
                 }
               pDTE[x].type = ElementStatusPage->type;
 	      pDTE[x].address = V2(DataTransferElementDescriptor->address);
               pDTE[x].except = DataTransferElementDescriptor->except;
-              pDTE[x].ASC = DataTransferElementDescriptor->asc;
-              pDTE[x].ASCQ = DataTransferElementDescriptor->ascq;
               pDTE[x].scsi = DataTransferElementDescriptor->scsi;
               pDTE[x].status = (DataTransferElementDescriptor->full > 0) ? 'F':'E';
               pDTE[x].full = DataTransferElementDescriptor->full;
               
-              if (DataTransferElementDescriptor->svalid == 1)
-                {
-                  pDTE[x].from = V2(DataTransferElementDescriptor->source);
-                } else {
-                  pDTE[x].from = -1;
-                }
-              offset = offset + V2(ElementStatusPage->length); 
+	      if (length >= 5)
+	      {
+              	pDTE[x].ASC = DataTransferElementDescriptor->asc;
+	      } else {
+		DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASC DTE\n");
+	      }
+	      
+	      if (length >= 6)
+		{
+		  pDTE[x].ASCQ = DataTransferElementDescriptor->ascq;
+	      } else {
+		DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASCQ DTE\n");
+	      }
+	      
+	      if (length >= 0xa)
+		{
+		  if (DataTransferElementDescriptor->svalid == 1)
+		    {
+		      pDTE[x].from = V2(DataTransferElementDescriptor->source);
+		    } else {
+		      pDTE[x].from = -1;
+		    }
+		} else {
+		  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip source STE\n");
+		}
+	      
+              offset = offset + length; 
             }
         }
     } else {
       /*
        * And now the old way, when we get here the read mode sense page has failed ...
        */
-      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Reading Element Status the old way ....\n");
+      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Reading Element Status the old way .... (max 255 elements)\n");
       if (SCSI_ReadElementStatus(DeviceFD, 
                                  0, 
                                  0,
                                  barcode,
                                  0,
-                                 0xffff,
+                                 0xff,
+				 0x7f,
                                  (char **)&DataBuffer) != 0)
         {
 	  if (DataBuffer != 0)
@@ -3959,6 +4103,7 @@ int GetElementStatus(int DeviceFD)
           ElementStatusPage = (ElementStatusPage_T *)&DataBuffer[offset];
           NoOfElements = V3(ElementStatusPage->count) / V2(ElementStatusPage->length);
           offset = offset + sizeof(ElementStatusPage_T);
+	  length = V2(ElementStatusPage->length);
           
           switch (ElementStatusPage->type)
             {
@@ -3976,25 +4121,44 @@ int GetElementStatus(int DeviceFD)
                   if (ElementStatusPage->pvoltag == 1)
                     {
                       strncpy(pMTE[x].VolTag, 
-                              MediumTransportElementDescriptor->res4,
+                              MediumTransportElementDescriptor->pvoltag,
                               TAG_SIZE);
                       TerminateString(pMTE[x].VolTag, TAG_SIZE+1);
                     }
                   pMTE[x].type = ElementStatusPage->type;
                   pMTE[x].address = V2(MediumTransportElementDescriptor->address);
                   pMTE[x].except = MediumTransportElementDescriptor->except;
-                  pMTE[x].ASC = MediumTransportElementDescriptor->asc;
-                  pMTE[x].ASCQ = MediumTransportElementDescriptor->ascq;
                   pMTE[x].status = (MediumTransportElementDescriptor->full > 0) ? 'F':'E';
                   pMTE[x].full = MediumTransportElementDescriptor->full;
                   
-                  if (MediumTransportElementDescriptor->svalid == 1)
-                    {
-                      pMTE[x].from = V2(MediumTransportElementDescriptor->source);
-                    } else {
-                      pMTE[x].from = -1;
-                    }                  
-		  offset = offset + V2(ElementStatusPage->length); 
+		  
+		  if (length >= 5)
+		    {
+		      pMTE[x].ASC = MediumTransportElementDescriptor->asc;
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASC MTE\n");
+		    }
+		  
+	          if (length >= 6)
+		    {
+		      pMTE[x].ASCQ = MediumTransportElementDescriptor->ascq;
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASCQ MTE\n");
+		    }
+		  
+	          if (length >= 0xa)
+		    {
+		      if (MediumTransportElementDescriptor->svalid == 1)
+			{
+			  pMTE[x].from = V2(MediumTransportElementDescriptor->source);
+			} else {
+			  pMTE[x].from = -1;
+			}                  
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip source MTE\n");
+		    }
+
+		  offset = offset + length; 
 		}
               break;
             case STORAGE:
@@ -4011,7 +4175,7 @@ int GetElementStatus(int DeviceFD)
                   if (ElementStatusPage->pvoltag == 1)
                     {
                       strncpy(pSTE[x].VolTag, 
-                              StorageElementDescriptor->res4,
+                              StorageElementDescriptor->pvoltag,
                               TAG_SIZE);
                       TerminateString(pSTE[x].VolTag, TAG_SIZE+1);
                     }
@@ -4019,18 +4183,36 @@ int GetElementStatus(int DeviceFD)
                   pSTE[x].type = ElementStatusPage->type;
                   pSTE[x].address = V2(StorageElementDescriptor->address);
                   pSTE[x].except = StorageElementDescriptor->except;
-                  pSTE[x].ASC = StorageElementDescriptor->asc;
-                  pSTE[x].ASCQ = StorageElementDescriptor->ascq;
                   pSTE[x].status = (StorageElementDescriptor->full > 0) ? 'F':'E';
                   pSTE[x].full = StorageElementDescriptor->full;
+
+		  if (length >= 5)
+		    {
+		      pSTE[x].ASC = StorageElementDescriptor->asc;
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASC STE\n");
+		    }
 		  
-                  if (StorageElementDescriptor->svalid == 1)
-                    {
-                      pSTE[x].from = V2(StorageElementDescriptor->source);
-                    } else {
-                      pSTE[x].from = -1;
-                    }
-                  offset = offset + V2(ElementStatusPage->length); 
+		  if (length >= 6)
+		    {
+		      pSTE[x].ASCQ = StorageElementDescriptor->ascq;
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASCQ STE\n");
+		    }
+		  
+		  if (length >= 0xa)
+		    {
+		      if (StorageElementDescriptor->svalid == 1)
+			{
+			  pSTE[x].from = V2(StorageElementDescriptor->source);
+			} else {
+			  pSTE[x].from = -1;
+			}              
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip source STE\n");
+		    }
+		  
+                  offset = offset + length; 
                 }
               break;
             case IMPORT:
@@ -4048,7 +4230,7 @@ int GetElementStatus(int DeviceFD)
                   if (ElementStatusPage->pvoltag == 1)
                     {
                       strncpy(pIEE[x].VolTag, 
-                              ImportExportElementDescriptor->res4,
+                              ImportExportElementDescriptor->pvoltag,
                               TAG_SIZE);
                       TerminateString(pIEE[x].VolTag, TAG_SIZE+1);
                     }
@@ -4056,18 +4238,36 @@ int GetElementStatus(int DeviceFD)
                   pIEE[x].type = ElementStatusPage->type;
                   pIEE[x].address = V2(ImportExportElementDescriptor->address);
                   pIEE[x].except = ImportExportElementDescriptor->except;
-                  pIEE[x].ASC = ImportExportElementDescriptor->asc;
-                  pIEE[x].ASCQ = ImportExportElementDescriptor->ascq;
                   pIEE[x].status = (ImportExportElementDescriptor->full > 0) ? 'F':'E';
                   pIEE[x].full = ImportExportElementDescriptor->full;
-                  
-                  if (ImportExportElementDescriptor->svalid == 1)
-                    {
-                      pIEE[x].from = V2(ImportExportElementDescriptor->source);
-                    } else {
-                      pIEE[x].from = -1;
-                    }
-		  offset = offset + V2(ElementStatusPage->length); 
+		  
+		  if (length >= 5)
+		    {
+		      pIEE[x].ASC = ImportExportElementDescriptor->asc;
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASC IEE\n");
+		    }
+		  
+		  if (length >= 6)
+		    {
+		      pIEE[x].ASCQ = ImportExportElementDescriptor->ascq;
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASCQ IEE\n");
+		    }
+		  
+		  if (length >= 0xa)
+		    {
+		      if (ImportExportElementDescriptor->svalid == 1)
+			{
+			  pIEE[x].from = V2(ImportExportElementDescriptor->source);
+			} else {
+			  pIEE[x].from = -1;
+			}              
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip source IEE\n");
+		    }
+		  
+		  offset = offset + length; 
 		}
 	      break;
             case TAPETYPE:
@@ -4085,30 +4285,48 @@ int GetElementStatus(int DeviceFD)
                   if (ElementStatusPage->pvoltag == 1)
                     {
                       strncpy(pSTE[x].VolTag, 
-                              DataTransferElementDescriptor->res4,
+                              DataTransferElementDescriptor->pvoltag,
                               TAG_SIZE);
                       TerminateString(pSTE[x].VolTag, TAG_SIZE+1);
                     }
                   pDTE[x].type = ElementStatusPage->type;
                   pDTE[x].address = V2(DataTransferElementDescriptor->address);
                   pDTE[x].except = DataTransferElementDescriptor->except;
-                  pDTE[x].ASC = DataTransferElementDescriptor->asc;
-                  pDTE[x].ASCQ = DataTransferElementDescriptor->ascq;
                   pDTE[x].scsi = DataTransferElementDescriptor->scsi;
                   pDTE[x].status = (DataTransferElementDescriptor->full > 0) ? 'F':'E';
                   pDTE[x].full = DataTransferElementDescriptor->full;
+
+		  if (length >= 5)
+		    {
+		      pDTE[x].ASC = DataTransferElementDescriptor->asc;
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASC DTE\n");
+		    }
 		  
-                  if (DataTransferElementDescriptor->svalid == 1)
-                    {
-                      pDTE[x].from = V2(DataTransferElementDescriptor->source);
-                    } else {
-                      pDTE[x].from = -1;
-                    }
-                  offset = offset + V2(ElementStatusPage->length); 
+		  if (length >= 6)
+		    {
+		      pDTE[x].ASCQ = DataTransferElementDescriptor->ascq;
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip ASCQ DTE\n");
+		    }
+		  
+		  if (length >= 0xa)
+		    {
+		      if (DataTransferElementDescriptor->svalid == 1)
+			{
+			  pDTE[x].from = V2(DataTransferElementDescriptor->source);
+			} else {
+			  pDTE[x].from = -1;
+			}
+		    } else {
+		      DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"Skip source STE\n");
+		    }
+		  
+		  offset = offset + length; 
                 }
               break;
             default:
-              offset = offset + V2(ElementStatusPage->length); 
+              offset = offset + length; 
               DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"GetElementStatus : UnGknown Type %d\n",ElementStatusPage->type);
               break;
             }
@@ -4159,22 +4377,15 @@ int GetElementStatus(int DeviceFD)
 int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int ClearErrorCounters )
 {
   CDB_T CDB;
-  RequestSense_T *pRequestSense;
   int ret;
   
   DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### START RequestSense\n");
   
-  if ((pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
-    {
-      DebugPrint(DEBUG_INFO, SECTION_SCSI,"RequestSense : malloc failed\n");
-        return(-1);
-    }
-  
-  CDB[0] = SC_COM_REQUEST_SENSE; /* REQUEST SENSE */                       
-  CDB[1] = 0;                   /* Logical Unit Number = 0, Reserved */ 
-  CDB[2] = 0;                   /* Reserved */              
-  CDB[3] = 0;                   /* Reserved */
-  CDB[4] = 0x1D;                /* Allocation Length */                    
+  CDB[0] = SC_COM_REQUEST_SENSE;               /* REQUEST SENSE */                       
+  CDB[1] = 0;                                  /* Logical Unit Number = 0, Reserved */ 
+  CDB[2] = 0;                                  /* Reserved */              
+  CDB[3] = 0;                                  /* Reserved */
+  CDB[4] = sizeof(ExtendedRequestSense_T);     /* Allocation Length */                    
   CDB[5] = (ClearErrorCounters << 7) & 0x80;                 /*  */
   
   memset(ExtendedRequestSense, 0, sizeof(ExtendedRequestSense_T));
@@ -4182,19 +4393,24 @@ int RequestSense(int DeviceFD, ExtendedRequestSense_T *ExtendedRequestSense, int
   ret = SCSI_Run(DeviceFD, Input, CDB, 6,                      
 		 (char *) ExtendedRequestSense,
 		 sizeof(ExtendedRequestSense_T),  
-		 (char *) pRequestSense, sizeof(RequestSense_T));
+		 (char *) ExtendedRequestSense, sizeof(ExtendedRequestSense_T));
   
   
   if (ret < 0)
     {
+      DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP RequestSense (%d)\n",ret);
       return(ret);
     }
   
   if ( ret > 0)
     {
       DecodeExtSense(ExtendedRequestSense, "RequestSense : ",debug_file);
-      return(pRequestSense->SenseKey);
+      DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP RequestSense (%d)\n", ExtendedRequestSense->SenseKey);
+      return(ExtendedRequestSense->SenseKey);
     }
+  
+  dump_hex((char *)ExtendedRequestSense , sizeof(ExtendedRequestSense_T) , DEBUG_INFO, SECTION_SCSI);
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP RequestSense (0)\n");
   return(0);
 }
 
@@ -4287,7 +4503,7 @@ int LogSense(DeviceFD)
   char *buffer;
   char *logpages;
   int nologpages;
-  int size = 2048;
+  int size = 128;
 
   DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### START LogSense\n");
 
@@ -4402,6 +4618,8 @@ int LogSense(DeviceFD)
           p = (struct LogPageDecode *)&DecodePages;
           found = 0;
 
+	  dump_hex((char *)LogParameter, 64, DEBUG_INFO, SECTION_SCSI);
+
           while(p->ident != NULL) {
             if ((strcmp(pDev[INDEX_TAPECTL].ident, p->ident) == 0 ||strcmp("*", p->ident) == 0)  && p->LogPage == logpages[count]) {
               p->decode(LogParameter, length);
@@ -4412,7 +4630,12 @@ int LogSense(DeviceFD)
             p++;
           }
 
-          if (!found && 0 == 1) {
+	  /*
+	  *  Hack to disable the printing of unknown pages
+	  */
+	  found = 1;
+
+          if (!found) {
             fprintf(StatFile, "Logpage No %d = %x\n", count ,logpages[count]);
       
             while ((char *)LogParameter < (buffer + length)) {
@@ -4448,6 +4671,34 @@ int LogSense(DeviceFD)
           }
         }
       }
+
+      /*
+       * Test only !!!!
+       * Reset the cumulative counters 
+       */
+      CDB[0] = SC_COM_LOG_SELECT;
+      CDB[1] = 2;
+      CDB[2] = 0xc0;  
+      CDB[3] = 0;
+      CDB[4] = 0;
+      CDB[5] = 0;
+      CDB[6] = 0;
+      CDB[7] = 0;
+      CDB[8] = 0;
+      CDB[9] = 0;
+      
+            if (SCSI_Run(INDEX_TAPECTL, Input, CDB, 10,
+                              buffer,
+                              size, 
+                              (char *)pRequestSense,
+                              sizeof(RequestSense_T)) != 0)
+        {
+          DecodeSense(pRequestSense, "LogSense : ",debug_file);
+          free(buffer);
+          free(pRequestSense);
+          return(0);
+        }
+
       free(pRequestSense);
       free(buffer);
     }
@@ -4470,6 +4721,7 @@ void WriteErrorCountersPage(LogParameter_T *buffer, int length)
     i = LogParameter->ParameterLength;
     ParameterCode = V2(LogParameter->ParameterCode);
 
+    value = 0;
     if (Decode(LogParameter, &value) == 0) {
       switch (ParameterCode) {
       case 2:
@@ -4740,8 +4992,8 @@ void EXB85058HEPage3c(LogParameter_T *buffer, int length)
 int Decode(LogParameter_T *LogParameter, int *value)
 {
 
-  dbprintf(("##### START Decode\n"));
-
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### START Decode\n");
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"Decode Parameter with length %d\n", LogParameter->ParameterLength);
   switch (LogParameter->ParameterLength) {
   case 1:
     *value = V1((char *)LogParameter + sizeof(LogParameter_T));
@@ -4764,8 +5016,11 @@ int Decode(LogParameter_T *LogParameter, int *value)
   default:
     fprintf(StatFile, "Can't decode ParameterCode %02X size %d\n",
             V2(LogParameter->ParameterCode), LogParameter->ParameterLength);
+    DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP Decode (1)\n");
     return(1);
   }
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"Result = %d\n", *value);
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP Decode(0)\n");
   return(0);
 }
 
@@ -4866,15 +5121,20 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
                  (pMTE[x].full ? "Full " :"Empty"),
                  pMTE[x].from, pMTE[x].VolTag);
 
-	  pbarcoderes->action = BARCODE_BARCODE;
-	  strcpy(pbarcoderes->data.barcode, pMTE[x].VolTag);
-
-          if (MapBarCode(labelfile, pbarcoderes) == 0 )
-          { 
-		printf("No mapping\n");
-          } else {
-                printf("%s \n",pbarcoderes->data.barcode);
-          }
+	  if (pMTE[x].full == 1)
+	    {
+	      pbarcoderes->action = BARCODE_BARCODE;
+	      strcpy(pbarcoderes->data.barcode, pMTE[x].VolTag);
+	      
+	      if (MapBarCode(labelfile, pbarcoderes) == 0 )
+		{ 
+		  printf("No mapping\n");
+		} else {
+		  printf("%s \n",pbarcoderes->data.voltag);
+		}
+	    } else {
+	      printf("\n");
+	    }
 	} else {
           printf("%07d MTE  %s  %04d \n",pMTE[x].address,
                  (pMTE[x].full ? "Full " :"Empty"),
@@ -4889,15 +5149,20 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
                  (pSTE[x].full ? "Full ":"Empty"),
                  pSTE[x].from, pSTE[x].VolTag);
 
-	  pbarcoderes->action = BARCODE_BARCODE;
-	  strcpy(pbarcoderes->data.barcode, pSTE[x].VolTag);
-	  
-          if (MapBarCode(labelfile, pbarcoderes) == 0 )
-          {
-                printf("No mapping\n");
-          } else {
-                printf("%s \n",pbarcoderes->data.barcode);
-          }
+	  if (pSTE[x].full == 1)
+	    {
+	      pbarcoderes->action = BARCODE_BARCODE;
+	      strcpy(pbarcoderes->data.barcode, pSTE[x].VolTag);
+	      
+	      if (MapBarCode(labelfile, pbarcoderes) == 0 )
+		{
+		  printf("No mapping\n");
+		} else {
+		  printf("%s \n",pbarcoderes->data.voltag);
+		}
+	    } else {
+	      printf("\n");
+	    }
 	} else {
           printf("%07d STE  %s  %04d %s\n",pSTE[x].address,  
                  (pSTE[x].full ? "Full ":"Empty"),
@@ -4912,15 +5177,20 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
                  (pDTE[x].full ? "Full " : "Empty"),
                  pDTE[x].from, pDTE[x].VolTag);
 
-	  pbarcoderes->action = BARCODE_BARCODE;
-	  strcpy(pbarcoderes->data.barcode, pDTE[x].VolTag);
-	  
-          if (MapBarCode(labelfile, pbarcoderes) == 0 )
-          {
-                printf("No mapping\n");
-          } else {
-                printf("%s \n",pbarcoderes->data.barcode);
-          }
+	  if (pDTE[x].full == 1)
+	    {
+	      pbarcoderes->action = BARCODE_BARCODE;
+	      strcpy(pbarcoderes->data.barcode, pDTE[x].VolTag);
+	      
+	      if (MapBarCode(labelfile, pbarcoderes) == 0 )
+		{
+		  printf("No mapping\n");
+		} else {
+		  printf("%s \n",pbarcoderes->data.voltag);
+		}
+	    } else {
+	      printf("\n");
+	    }
 
 	} else {
           printf("%07d DTE  %s  %04d %s\n",pDTE[x].address,  
@@ -4935,15 +5205,20 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
                  (pIEE[x].full ? "Full " : "Empty"),
                  pIEE[x].from, pIEE[x].VolTag);
 
-	  pbarcoderes->action = BARCODE_BARCODE;
-	  strcpy(pbarcoderes->data.barcode, pIEE[x].VolTag);
-	  
-          if (MapBarCode(labelfile, pbarcoderes) == 0 )
-          {
-                printf("No mapping\n");
-          } else {
-                printf("%s \n",pbarcoderes->data.barcode);
-          }
+	  if (pIEE[x].full == 1)
+	    {
+	      pbarcoderes->action = BARCODE_BARCODE;
+	      strcpy(pbarcoderes->data.barcode, pIEE[x].VolTag);
+	      
+	      if (MapBarCode(labelfile, pbarcoderes) == 0 )
+		{
+		  printf("No mapping\n");
+		} else {
+		  printf("%s \n",pbarcoderes->data.voltag);
+		}
+	    } else {
+	      printf("\n");
+	    }
 
 	} else {
           printf("%07d IEE  %s  %04d %s\n",pIEE[x].address,  
@@ -4955,15 +5230,26 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
 
   if (strcmp("sense", option) == 0 || strcmp("all", option) == 0)
     {
-      printf("\nSense Status from robot:\n");
-      RequestSense(INDEX_CHANGER , &ExtRequestSense, 0);
-      DecodeExtSense(&ExtRequestSense, "", out);
+      if (pDev[INDEX_CHANGER].SCSI == 1)
+	{
+           printf("\nSense Status from robot:\n");
+           RequestSense(INDEX_CHANGER , &ExtRequestSense, 0);
+           DecodeExtSense(&ExtRequestSense, "", out);
+	}
       
-      if (pDev[2].SCSI == 1)
+      if (pDev[INDEX_TAPE].SCSI == 1)
         {
           printf("\n");
-          printf("Sense Status from tape:\n");
-          RequestSense(2, &ExtRequestSense, 0); 
+          printf("Sense Status from tape (tapectl):\n");
+          RequestSense(INDEX_TAPE, &ExtRequestSense, 0); 
+          DecodeExtSense(&ExtRequestSense, "", out);
+        }
+
+      if (pDev[INDEX_TAPECTL].SCSI == 1)
+        {
+          printf("\n");
+          printf("Sense Status from tape (tapectl):\n");
+          RequestSense(INDEX_TAPECTL, &ExtRequestSense, 0); 
           DecodeExtSense(&ExtRequestSense, "", out);
         }
     }
@@ -5122,8 +5408,11 @@ int SCSI_Run(int DeviceFD,
 	  DebugPrint(DEBUG_ERROR, SECTION_SCSI,"SCSI_Run (TestUnitReady) unknown (%d)\n",ret);
 	  break;
 	}
-      maxtries++;
-      sleep(1);
+      if (!ok)
+      {
+	sleep(1);
+        maxtries++;
+      }
     }
   
   DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_Run TestUnitReady after %d sec:\n",maxtries);
@@ -5656,12 +5945,24 @@ int SCSI_Inquiry(int DeviceFD, SCSIInquiry_T *buffer, u_char size)
   return(ret);
 }
 
+/*
+ * Read the Element Status. If DescriptorSize  != 0 then 
+ * allocate DescriptorSize * NoOfElements for the result from the
+ * Read Element Status command. 
+ * If DescriptorSize == 0 than try to figure out how much space is needed
+ * by 
+ * 1. do an read with an allocation size of 8
+ * 2. from the result take the 'Byte Count of Descriptor Available'
+ * 3. do again an Read Element Status with the result from 2.
+ *
+ */
 int SCSI_ReadElementStatus(int DeviceFD, 
                            unsigned char type, 
                            unsigned char lun,
                            unsigned char VolTag,
                            int StartAddress,
                            int NoOfElements,
+			   int DescriptorSize,
                            char **data)
 {
   CDB_T CDB;
@@ -5674,91 +5975,106 @@ int SCSI_ReadElementStatus(int DeviceFD,
   DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### START SCSI_ReadElementStatus\n");
 
   if ((pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
-      {
-          DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ReadElementStatus : malloc failed\n");
-          ChgExit("SCSI_ReadElementStatus","malloc failed", FATAL);
-      }
-
-  
-  if (*data != NULL)
     {
-      *data = realloc(*data, 8);
-    } else {
-      *data = malloc(8);
+      DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ReadElementStatus : malloc failed\n");
+      ChgExit("SCSI_ReadElementStatus","malloc failed", FATAL);
     }
-
-  memset(*data, 0, 8);
+  
+  /*
+   * How many elements, if <= 0 than exit with an fatal error
+   */
+  if (NoOfElements <= 0)
+    {
+      ChgExit("SCSI_ReadElementStatus","No of Elements passed are le 0",FATAL);
+    }
 
   VolTag = (VolTag << 4) & 0x10;
   type = type & 0xf;
   lun = (lun << 5) & 0xe0;
- 
-  /* 
-   * First try to get the allocation length for a second call
+
+
+  /* if  DescriptorSize == 0
+   * try to get the allocation length for the second call
    */
-
-  while (retry > 0 && retry < MAX_RETRIES)
+  if (DescriptorSize == 0)
     {
-      memset(pRequestSense, 0, sizeof(RequestSense_T) );
+      if (*data != NULL)
+	{
+	  *data = realloc(*data, 8);
+	} else {
+	  *data = malloc(8);
+	}
       
-      CDB[0] = SC_COM_RES;          /* READ ELEMENT STATUS */
-      CDB[1] = VolTag | type | lun; /* Element Type Code , VolTag, LUN */
-      MSB2(&CDB[2], StartAddress);  /* Starting Element Address */
-      MSB2(&CDB[4], NoOfElements);  /* Number Of Element */
-      CDB[6] = 0;                             /* Reserved */                          
-      MSB3(&CDB[7],8);                   /* Allocation Length */    
-      CDB[10] = 0;                           /* Reserved */                           
-      CDB[11] = 0;                           /* Control */                             
-      
-      ret = SCSI_Run(DeviceFD, Input, CDB, 12,                      
-                                *data, 8, 
-                                (char *)pRequestSense, sizeof(RequestSense_T));
+      memset(*data, 0, 8);
       
       
-      DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ReadElementStatus : (1) SCSI_Run %d\n", ret);
-      if (ret < 0)
-        {
-          DecodeSense(pRequestSense, "SCSI_ReadElementStatus :",debug_file);
+      
+      while (retry > 0 && retry < MAX_RETRIES)
+	{
+	  memset(pRequestSense, 0, sizeof(RequestSense_T) );
+	  
+	  CDB[0] = SC_COM_RES;          /* READ ELEMENT STATUS */
+	  CDB[1] = VolTag | type | lun; /* Element Type Code , VolTag, LUN */
+	  MSB2(&CDB[2], StartAddress);  /* Starting Element Address */
+	  MSB2(&CDB[4], NoOfElements);  /* Number Of Element */
+	  CDB[6] = 0;                             /* Reserved */                          
+	  MSB3(&CDB[7],8);                   /* Allocation Length */    
+	  CDB[10] = 0;                           /* Reserved */                           
+	  CDB[11] = 0;                           /* Control */                             
+	  
+	  ret = SCSI_Run(DeviceFD, Input, CDB, 12,                      
+			 *data, 8, 
+			 (char *)pRequestSense, sizeof(RequestSense_T));
+	  
+	  
+	  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ReadElementStatus : (1) SCSI_Run %d\n", ret);
+	  if (ret < 0)
+	    {
+	      DecodeSense(pRequestSense, "SCSI_ReadElementStatus :",debug_file);
+	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_ReadElementStatus (%d)\n",ret);
+	      return(ret);
+	    }
+	  if ( ret > 0)
+	    {
+	      switch(SenseHandler(DeviceFD, 0, pRequestSense->SenseKey, pRequestSense->AdditionalSenseCode, pRequestSense->AdditionalSenseCodeQualifier, (char *)pRequestSense))
+		{
+		case SENSE_IGNORE:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ModeSense : SENSE_IGNORE\n");
+		  retry = 0;
+		  break;
+		case SENSE_RETRY:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ModeSense : SENSE_RETRY no %d\n", retry);
+		  sleep(2);
+		  break;
+		default:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ModeSense : end %d\n", pRequestSense->SenseKey);
+		  return(pRequestSense->SenseKey);
+		  break;
+		}
+	    }
+	  retry++;
+	  if (ret == 0)
+	    {
+	      retry=0;
+	    }
+	}
+      if (retry > 0)
+	{
 	  DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_ReadElementStatus (%d)\n",ret);
-          return(ret);
-        }
-      if ( ret > 0)
-        {
-          switch(SenseHandler(DeviceFD, 0, pRequestSense->SenseKey, pRequestSense->AdditionalSenseCode, pRequestSense->AdditionalSenseCodeQualifier, (char *)pRequestSense))
-            {
-            case SENSE_IGNORE:
-              DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ModeSense : SENSE_IGNORE\n");
-              retry = 0;
-              break;
-            case SENSE_RETRY:
-              DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ModeSense : SENSE_RETRY no %d\n", retry);
-              sleep(2);
-              break;
-            default:
-              DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ModeSense : end %d\n", pRequestSense->SenseKey);
-              return(pRequestSense->SenseKey);
-              break;
-            }
-        }
-      retry++;
-      if (ret == 0)
-        {
-          retry=0;
-        }
+	  return(ret);
+	}
+ 
+      ElementStatusData = (ElementStatusData_T *)*data;
+      DataBufferLength = V3(ElementStatusData->count);
+
+      DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ReadElementStatus: DataBufferLength %X, ret %d\n",DataBufferLength, ret);
+      
+      dump_hex(*data, 8, DEBUG_INFO, SECTION_ELEMENT);
+    } else { /* DescriptorSize != 0 */
+      DataBufferLength = NoOfElements * DescriptorSize;
     }
-  if (retry > 0)
-    {
-      DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_ReadElementStatus (%d)\n",ret);
-      return(ret);
-    }
-  
-  ElementStatusData = (ElementStatusData_T *)*data;
-  DataBufferLength = V3(ElementStatusData->count);
+
   DataBufferLength = DataBufferLength + 8;
-  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ReadElementStatus: DataBufferLength %X, ret %d\n",DataBufferLength, ret);
-
-  dump_hex(*data, 8, DEBUG_INFO, SECTION_ELEMENT);
-
   *data = realloc(*data, DataBufferLength);
   memset(*data, 0, DataBufferLength);
   retry = 1;
@@ -5831,6 +6147,9 @@ printf_arglist_function2(void DebugPrint, int, level, int, section, char *, fmt)
   extern changer_t chg;
   int dlevel,dsection;
 
+  time_t ti;
+
+  time(&ti);
   if (chg.debuglevel)
     {
       sscanf(chg.debuglevel,"%d:%d", &dlevel, &dsection);
@@ -5845,7 +6164,12 @@ printf_arglist_function2(void DebugPrint, int, level, int, section, char *, fmt)
     {
       if (section == dsection || dsection == 0)
 	{
-	  dbprintf(("%s", buf));
+	  if (index(buf, '\n') != NULL && strlen(buf) > 1)
+          {
+	     dbprintf(("%ld:%s", (long)ti, buf));
+	  } else {
+	     dbprintf(("%s", buf));
+	  }
 	}
     }
   arglist_end(argp);  

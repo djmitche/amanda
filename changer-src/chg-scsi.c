@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.38 2002/03/24 04:12:55 jrjackson Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.39 2002/08/22 17:42:47 martinea Exp $";
 #endif
 /*
  * 
@@ -319,9 +319,9 @@ int read_config(char *configfile, changer_t *chg)
   if (NULL==(file=fopen(configfile,"r"))){
     return (-1);
   }
-  while (1){
-    amfree(linebuffer);
-    if (NULL!=(linebuffer=agets(file))){
+
+  amfree(linebuffer);
+  while ((NULL!=(linebuffer=agets(file)))) {
       parse_line(linebuffer,&token,&value);
       if (token != -1){
         if (0==init_flag) {
@@ -461,7 +461,7 @@ int read_config(char *configfile, changer_t *chg)
           break;
         }
       }
-    }
+    amfree(linebuffer);
   }
   amfree(linebuffer);
 
@@ -533,9 +533,11 @@ int MapBarCode(char *labelfile, MBC_T *result)
   LabelV2_T *plabelv2;
   int unusedpos = 0;
   int unusedrec = 0;
-  int pos  = 0;
-  int record = 0;
+  int pos     = 0;
+  int record  = 0;
   int volseen = 0;
+  int loop    = 1;
+  int rsize   = 0;
 
   DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : Parameter\n");
   DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"labelfile -> %s, vol -> %s, barcode -> %s, action -> %c, slot -> %d, from -> %d\n",
@@ -586,8 +588,11 @@ int MapBarCode(char *labelfile, MBC_T *result)
   
   memset(plabelv2, 0, sizeof(LabelV2_T));
 
-  while(fread(plabelv2, 1, sizeof(LabelV2_T), fp) > 0)
+  while(feof(fp) == 0 && loop == 1)
     {
+      rsize = fread(plabelv2, 1, sizeof(LabelV2_T), fp);
+      if (rsize == sizeof(LabelV2_T))
+      {
       record++;
       DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : (%d) VolTag %s, BarCode %s, inuse %d, slot %d, from %d, loadcount %d\n",record,
                  plabelv2->voltag,
@@ -730,6 +735,11 @@ int MapBarCode(char *labelfile, MBC_T *result)
           break;
         }
       pos = ftell(fp);
+      } else {
+         DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : feof (%d)\n", feof(fp));
+         DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : error in read record expect %d, got %d\n",sizeof(LabelV2_T), rsize);
+	loop=0;
+      }
     }
 
   /*

@@ -24,12 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-solaris.c,v 1.21 2002/03/31 21:26:39 jrjackson Exp $
+ * $Id: scsi-solaris.c,v 1.22 2002/08/22 17:42:48 martinea Exp $
  *
  * Interface to execute SCSI commands on an Sun Workstation
  *
  * Copyright (c) Thomas Hepper th@ant.han.de
  */
+
+
 #include <amanda.h>
 
 #ifdef HAVE_SOLARIS_LIKE_SCSI
@@ -55,6 +57,14 @@
 #include <scsi-defs.h>
 #include <sys/mtio.h>
 
+void SCSI_OS_Version()
+{
+#ifndef lint
+   static char rcsid[] = "$Id: scsi-solaris.c,v 1.22 2002/08/22 17:42:48 martinea Exp $";
+   DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
+#endif
+}
+
 int SCSI_OpenDevice(int ip)
 {
   int DeviceFD;
@@ -64,7 +74,7 @@ int SCSI_OpenDevice(int ip)
   if (pDev[ip].inqdone == 0)
     {
       pDev[ip].inqdone = 1;
-      if ((DeviceFD = open(pDev[ip].dev, O_RDWR| O_NDELAY)) > 0)
+      if ((DeviceFD = open(pDev[ip].dev, O_RDWR| O_NONBLOCK)) > 0)
         {
           pDev[ip].avail = 1;
           pDev[ip].fd = DeviceFD;
@@ -83,6 +93,17 @@ int SCSI_OpenDevice(int ip)
                       pDev[ip].ident[i] = '\0';
                     }
                   pDev[ip].SCSI = 1;
+
+		  if (pDev[ip].inquiry->type == TYPE_TAPE)
+		  {
+		          pDev[ip].type = strdup("tape");
+		  }
+
+		  if (pDev[ip].inquiry->type == TYPE_CHANGER)
+		  {
+		          pDev[ip].type = strdup("changer");
+		  }
+
                   PrintInquiry(pDev[ip].inquiry);
                   return(1);
                 } else {
@@ -282,6 +303,10 @@ int Tape_Status( int DeviceFD)
    * I assume that nothing set is tape loaded
    * 0x2 is no tape online
    */
+
+  DebugPrint(DEBUG_INFO, SECTION_TAPE, "ioctl result for mt_dsreg (%d)\n", mtget.mt_dsreg);
+  DebugPrint(DEBUG_INFO, SECTION_TAPE, "ioctl result for mt_erreg (%d)\n", mtget.mt_erreg);
+
   if (mtget.mt_erreg == 0)
     {
       ret = ret | TAPE_ONLINE;

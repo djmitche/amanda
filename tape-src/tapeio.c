@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: tapeio.c,v 1.42 2002/01/29 16:44:36 jrjackson Exp $
+ * $Id: tapeio.c,v 1.43 2002/08/22 17:42:48 martinea Exp $
  *
  * implements generic tape I/O functions
  */
@@ -751,7 +751,6 @@ tape_fsf(devname, count)
 				  ": ",
 				  strerror(errno),
 				  NULL);
-	r = errstr = newstralloc2(errstr, "tape open: ", strerror(errno));
     } else if(tapefd_fsf(fd, count) == -1) {
 	snprintf(count_str, sizeof(count_str), "%d", count);
 	r = errstr = newvstralloc(errstr,

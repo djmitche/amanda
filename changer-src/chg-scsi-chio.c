@@ -1,5 +1,5 @@
 /*
- *  $Id: chg-scsi-chio.c,v 1.5 2002/03/24 04:12:55 jrjackson Exp $
+ *  $Id: chg-scsi-chio.c,v 1.6 2002/08/22 17:42:47 martinea Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -252,9 +252,9 @@ int read_config(char *configfile, changer_t *chg)
   if (NULL==(file=fopen(configfile,"r"))){
     return (-1);
   }
-  while (1){
-    amfree(linebuffer);
-    if (NULL!=(linebuffer=agets(file))){
+
+  amfree(linebuffer);
+  while (NULL!=(linebuffer=agets(file))){
       parse_line(linebuffer,&token,&value);
       if (token != -1){
         if (0==init_flag) {
@@ -364,7 +364,7 @@ int read_config(char *configfile, changer_t *chg)
           break;
         }
       }
-    }
+    amfree(linebuffer);
   }
   amfree(linebuffer);
 

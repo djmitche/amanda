@@ -24,13 +24,15 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-cam.c,v 1.10 2001/06/04 12:07:40 ant Exp $
+ * $Id: scsi-cam.c,v 1.11 2002/08/22 17:42:47 martinea Exp $
  *
  * Interface to execute SCSI commands on an system with cam support
  * Current support is for FreeBSD 4.x
  *
  * Copyright (c) Thomes Hepper th@ant.han.de
  */
+
+
 #include <amanda.h>
 
 #ifdef HAVE_CAM_LIKE_SCSI
@@ -68,6 +70,15 @@ extern OpenFiles_T *pChangerDev;
 extern OpenFiles_T *pTapeDev;
 extern OpenFiles_T *pTapeDevCtl;
 extern FILE *debug_file;
+
+
+void SCSI_OS_Version()
+{
+#ifndef lint
+   static char rcsid[] = "$Id: scsi-cam.c,v 1.11 2002/08/22 17:42:47 martinea Exp $";
+   DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
+#endif
+}
 
 /* parse string of format 1:2:3 and fill in path, target, lun
    returns 0  if it doesn't look like btl
@@ -141,6 +152,17 @@ int SCSI_OpenDevice(int ip)
             pDev[ip].ident[i] = '\0';
           }
           pDev[ip].SCSI = 1;
+
+	  if (pDev[ip].inquiry->type == TYPE_TAPE)
+	  {
+	          pDev[ip].type = strdup("tape");
+	  }
+
+	  if (pDev[ip].inquiry->type == TYPE_CHANGER)
+	  {
+	          pDev[ip].type = strdup("changer");
+	  }
+
           PrintInquiry(pDev[ip].inquiry);
           return(1);
         } else {

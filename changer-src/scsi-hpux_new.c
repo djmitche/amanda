@@ -24,12 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-hpux_new.c,v 1.14 2001/06/04 12:07:41 ant Exp $
+ * $Id: scsi-hpux_new.c,v 1.15 2002/08/22 17:42:48 martinea Exp $
  *
  * Interface to execute SCSI commands on an HP-UX Workstation
  *
  * Copyright (c) Thomas Hepper th@ant.han.de
  */
+
+
 #include <amanda.h>
 
 #ifdef HAVE_HPUX_LIKE_SCSI
@@ -54,6 +56,14 @@
 #include <sys/mtio.h>
 
 #include <scsi-defs.h>
+
+void SCSI_OS_Version()
+{
+#ifndef lint
+    static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.15 2002/08/22 17:42:48 martinea Exp $";
+   DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
+#endif
+}
 
 int SCSI_OpenDevice(int ip)
 {
@@ -83,6 +93,17 @@ int SCSI_OpenDevice(int ip)
                       pDev[ip].inquiry->prod_ident[i] = '\0';
                     }
                   pDev[ip].SCSI = 1;
+
+		  if (pDev[ip].inquiry->type == TYPE_TAPE)
+		  {
+		          pDev[ip].type = strdup("tape");
+		  }
+
+		  if (pDev[ip].inquiry->type == TYPE_CHANGER)
+		  {
+		          pDev[ip].type = strdup("changer");
+		  }
+
                   PrintInquiry(pDev[ip].inquiry);
                   return(1);    
                 } else {
