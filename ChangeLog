@@ -1,3 +1,7 @@
+1998-09-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* doc/SAMBA: 1.9.18p10 has a bug
+
 1998-09-09  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* configure.in (CHIO): look for chio and AC_SUBST it

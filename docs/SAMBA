@@ -4,8 +4,7 @@ Installation
 
 Amanda is able to back up Microsoft Windows shared disks by using
 SAMBA, a package that implements a SMB client and server for Unix.
-This version of amanda is reported to work with samba 1.9.18p10.
-Releases from 1.9.18p5 up to 1.9.18p8 would log information in the tar
+Releases from 1.9.18p5 up to 1.9.18p10 would log information in the tar
 files it produces, making them unusable (both the tar files and the
 releases of SAMBA :-)!  If you really must, a patch that fixes the
 problem was posted to the Amanda Users mailing-list; please check the
