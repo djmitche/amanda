@@ -296,6 +296,9 @@ define tapetype MIMSY-MEGATAPE {
 #		  want to backup /usr/tmp, your exclude list should contain
 #		  the pattern `./tmp', as this is relative to the `/usr' above.
 #		  Please refer to the man-page of gnutar for more information.
+#		  If a relative pathname is specified as the exclude list,
+#		  it is searched from within the directory that is
+#		  going to be backed up.
 #		  Default: include all files
 #   holdingdisk	- should the holding disk be used for this dump.  Useful for
 #		  dumping the holding disk itself.  Default: [holdingdisk yes]

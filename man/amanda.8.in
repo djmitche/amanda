@@ -785,11 +785,12 @@ Default:
 The string is passed as a value to the GNU tar
 .B \-\-exclude
 or
-.B \-\-exclude\-list
+.B \-\-exclude\-from
 option.
 In the case of
 .BR "exclude list" ,
-the file must be available on the backup client host.
+the file must be available on the backup client host.  The backup
+directory is prepended to relative pathnames.
 .TP
 .BS holdingdisk boolean
 Default:

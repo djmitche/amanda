@@ -1,5 +1,13 @@
 1999-02-01  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* example/amanda.conf.in: document the behavior of relative
+	exclude-list files
+	* man/amanda.8.in: ditto
+
+	* man/amanda.8.in (exclude list): the GNU tar flag is
+	--exclude-from, not --exclude-list
+	Reported by Tom Schutter <tom@platte.com>
+
 	* client-src/sendbackup-gnutar.c (re_table): ignore `session request 
 	to' message printed by Samba 2.0.0
 
