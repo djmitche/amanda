@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-tape.c,v 1.8 2002/01/29 16:44:36 jrjackson Exp $
+ * $Id: output-tape.c,v 1.9 2002/10/29 19:00:56 martinea Exp $
  *
  * tapeio.c virtual tape interface for normal tape drives.
  */
@@ -575,17 +575,17 @@ tape_tapefd_status(fd, stat)
 	anything_valid = 1;
 	stat->online_valid = 1;
 	stat->online = 1;			/* ioctl fails otherwise */
-#ifdef AM_HAVE_MT_DSREG
+#ifdef HAVE_MT_DSREG
 	stat->device_status_valid = 1;
 	stat->device_status_size = sizeof(buf.mt_dsreg);
 	stat->device_status = (unsigned long)buf.mt_dsreg;
 #endif
-#ifdef AM_HAVE_MT_ERREG
+#ifdef HAVE_MT_ERREG
 	stat->error_status_valid = 1;
 	stat->error_status_size = sizeof(buf.mt_erreg);
 	stat->error_status = (unsigned long)buf.mt_erreg;
 #endif
-#if defined(AM_HAVE_MT_FLAGS) && defined(MTF_SCSI)			/* { */
+#if defined(HAVE_MT_FLAGS) && defined(MTF_SCSI)			/* { */
 	/* 
 	 * On Solaris, the file/block number fields are only valid if
 	 * the driver is SCSI.  And in that case, the dsreg value is
@@ -593,11 +593,11 @@ tape_tapefd_status(fd, stat)
 	 */
 	if(buf.mt_flags & MTF_SCSI) {
 	    stat->device_status_valid = 0;
-#ifdef AM_HAVE_MT_FILENO
+#ifdef HAVE_MT_FILENO
 	    stat->fileno_valid = 1;
 	    stat->fileno = (long)buf.mt_fileno;
 #endif
-#ifdef AM_HAVE_MT_BLKNO
+#ifdef HAVE_MT_BLKNO
 	    stat->blkno_valid = 1;
 	    stat->blkno = (long)buf.mt_blkno;
 #endif

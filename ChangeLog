@@ -1,3 +1,10 @@
+2002-10-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* configure.in (AM_HAVE_MT_FLAGS, AM_HAVE_MT_FILENO, AM_HAVE_MT_BLKNO,
+	  AM_HAVE_MT_DSREG,AM_HAVE_MT_ERREG): Rename to HAVE_MT_FLAGS,
+	  HAVE_MT_FILENO, HAVE_MT_BLKNO, HAVE_MT_DSREG and HAVE_MT_ERREG.
+	* tape-src/output-tape.c: Ditto.
+
 2002-10-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	Undo patch of 2002-10-24. They are needed by amrecover.
 
