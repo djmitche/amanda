@@ -510,15 +510,16 @@ int level;
     sleep(5);
 #endif
 
-    kill(-dumppid, SIGTERM);
-#endif /* HAVE_DUMP_ESTIMATE */
-    wait(&status);
+    kill(-dumppid,
 #ifdef XFSDUMP
     /* `xfsdump' catches and ignores `SIGTERM', so make sure it dies. */
-    sleep(5);
-    kill(-dumppid, SIGKILL);
-    wait(&status);
+	 SIGKILL
+#else
+	 SIGTERM
 #endif
+	 );
+#endif /* HAVE_DUMP_ESTIMATE */
+    wait(&status);
 
     close(nullfd);
     fclose(dumpout);

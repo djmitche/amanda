@@ -229,10 +229,6 @@ char *dumpdate;
 
 	start_index(createindex, dumpout, mesgf, indexf,
 		    VXRESTORE
-		    " -t -v silent - 2>/dev/null | /sbin/sed -e 's/^/\\//'");
-
-	start_index(createindex, dumpout, mesgf, indexf,
-		    VXRESTORE
 		    " -tvf - 2>/dev/null |"
 		    " awk '/^leaf/ {$1=\"\"; $2=\"\"; print}' |"
 		    " cut -c4-");

@@ -168,9 +168,12 @@
 /* Define if you want assertion checking.  */
 #undef ASSERTIONS
 
+/* Defined to the switch to be used when invoking mt to specify the
+ * tape device */
+#undef MT_FILE_FLAG
+
 /* Define if you want to use an alternate service name.  This is useful when
-** you are trying to run a test installation in parallel to a production one.
-*/
+** you are trying to run a test installation in parallel to a production one.  */
 #undef USE_TEST_SERVICE
 
 /* Kerberos security defines.  */

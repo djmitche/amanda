@@ -2,11 +2,22 @@
 *
 * File:          $RCSfile: amidxtaped.c,v $
 *
-* Revision:      $Revision: 1.1 $
-* Last Edited:   $Date: 1997/05/14 08:29:29 $
+* Revision:      $Revision: 1.2 $
+* Last Edited:   $Date: 1997/07/03 07:48:12 $
 * Author:        $Author: amcore $
 *
 * History:       $Log: amidxtaped.c,v $
+* History:       Revision 1.2  1997/07/03 07:48:12  amcore
+* History:       Added MT_FILE_FLAG to {ac,}config.h, so that amidxtaped uses the
+* History:       switch determined by configure for invoking mt.
+* History:
+* History:       Changed sendsize so that it sends SIGKILL instead of SIGTERM to
+* History:       xfsdump.  The previous approach caused hangs on some releases of IRIX
+* History:       6.x.
+* History:
+* History:       Removed a duplicated invocation of start_index in the vxdump support
+* History:       in sendbackup-dump.
+* History:
 * History:       Revision 1.1  1997/05/14 08:29:29  amcore
 * History:       Moved library files and its dependencies into appropriate directories.
 * History:
@@ -251,7 +262,13 @@ char **argv;
 	dbclose();
 	return 1;
     }
-    sprintf(buf, "mt -f %s rewind", amrestore_args[i]);
+    sprintf(buf, "mt "
+#ifdef MT_FILE_FLAG
+	    MT_FILE_FLAG
+#else
+	    "-f"
+#endif
+	    " %s rewind", amrestore_args[i]);
     dbprintf(("Rewinding tape: %s\n", buf));
     system(buf);
     

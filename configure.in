@@ -827,10 +827,6 @@ dnl a variable is set up here to specify the order of dump programs to
 dnl search for on the system.
 DUMP_PROGRAMS="ufsdump vdump dump backup"
 
-dnl This specifies the flag for mt that tells mt the proper tape drive
-dnl to use.
-MT_FILE_FLAG="-f"
-AC_SUBST(MT_FILE_FLAG)
 case "$target" in
     *-dec-osf*)
 			# setpgrp takes void
@@ -916,6 +912,12 @@ CPPFLAGS="$CPPFLAGS $AMANDA_CPPFLAGS"
 LDFLAGS="$LDFLAGS $AMANDA_LDFLAGS $KRB4LDFLAGS"
 AC_SUBST(AMANDA_CFLAGS)
 
+
+dnl This specifies the flag for mt that tells mt the proper tape drive
+dnl to use.
+: ${MT_FILE_FLAG="-f"}
+AC_SUBST(MT_FILE_FLAG)
+AC_DEFINE_UNQUOTED(MT_FILE_FLAG, "$MT_FILE_FLAG")
 
 dnl Check for programs.
 AC_PATH_PROGS(AR,ar,,$LOCSYSPATH)
