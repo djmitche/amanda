@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.11.4.3.4.1.2.4 2002/03/03 17:10:52 martinea Exp $
+ * $Id: diskfile.h,v 1.11.4.3.4.1.2.5 2002/03/22 15:00:23 martinea Exp $
  *
  * interface for disklist file reading code
  */
@@ -61,6 +61,8 @@ typedef struct disk_s {
     sl_t *exclude_list;			/* exclude list */
     sl_t *include_file;			/* file include spec */
     sl_t *include_list;			/* include list */
+    int exclude_optional;		/* exclude list are optional */
+    int include_optional;		/* include list are optional */
     long priority;			/* priority of disk */
     long dumpcycle;			/* days between fulls */
     long frequency;			/* XXX - not used */

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.1.2.10 2002/03/13 01:07:03 martinea Exp $
+ * $Id: client_util.c,v 1.1.2.11 2002/03/22 15:00:22 martinea Exp $
  *
  */
 
@@ -238,7 +238,8 @@ int verbose;
 	    if(options->exclude_file) {
 		for(excl = options->exclude_file->first; excl != NULL;
 		    excl = excl->next) {
-		    add_exclude(file_exclude, excl->name, verbose);
+		    add_exclude(file_exclude, excl->name,
+				verbose && options->exclude_optional == 0);
 		}
 	    }
 
@@ -248,14 +249,15 @@ int verbose;
 		    if((exclude = fopen(excl->name, "r")) != NULL) {
 			while (!feof(exclude)) {
 			    if(fgets(aexc, MAXPATHLEN, exclude))
-				add_exclude(file_exclude, aexc, verbose);
+				add_exclude(file_exclude, aexc,
+				    verbose && options->exclude_optional == 0);
 			}
 			fclose(exclude);
 		    }
 		    else {
 			dbprintf(("%s: Can't open exclude file '%s': %s\n",
 				  get_pname(), excl->name, strerror(errno)));
-			if(verbose)
+			if(verbose && options->exclude_optional==0)
 			    printf("ERROR [Can't open exclude file '%s': %s]\n",
 				   excl->name, strerror(errno));
 		    }
@@ -266,7 +268,7 @@ int verbose;
 	else {
 	    dbprintf(("%s: Can't create exclude file '%s': %s\n", get_pname(),
 		      filename, strerror(errno)));
-	    if(verbose)
+	    if(verbose && options->exclude_optional == 0)
 		printf("ERROR [Can't create exclude file '%s': %s]\n", filename,
 			strerror(errno));
 	}
@@ -301,7 +303,8 @@ int verbose;
 		for(incl = options->include_file->first; incl != NULL;
 		    incl = incl->next) {
 		    nb_exp += add_include(disk, device, file_include,
-					  incl->name, verbose);
+				  incl->name,
+				   verbose && options->include_optional == 0);
 		}
 	    }
 
@@ -312,14 +315,15 @@ int verbose;
 			while (!feof(include)) {
 			    if(fgets(ainc, MAXPATHLEN, include))
 				nb_exp += add_include(disk, device,
-						   file_include, ainc, verbose);
+					   file_include, ainc,
+					   verbose && options->include_optional == 0);
 			}
 			fclose(include);
 		    }
 		    else {
 			dbprintf(("%s: Can't open include file '%s': %s\n",
 				  get_pname(), incl->name, strerror(errno)));
-			if(verbose)
+			if(verbose && options->include_optional == 0)
 			    printf("ERROR [Can't open include file '%s': %s]\n",
 				   incl->name, strerror(errno));
 		   }
@@ -328,17 +332,17 @@ int verbose;
             fclose(file_include);
 	}
 	else {
-	    dbprintf(("%s: Can't create include file '%s': %s\n", get_pname(),
+	    dbprintf(("%s: Can't open include file '%s': %s\n", get_pname(),
 		      filename, strerror(errno)));
-	    if(verbose)
-		printf("ERROR [Can't create include file '%s': %s]\n", filename,
+	    if(verbose && options->include_optional == 0)
+		printf("ERROR [Can't open include file '%s': %s]\n", filename,
 			strerror(errno));
 	}
     }
 	
     if(nb_exp == 0) {
 	dbprintf(("%s: No include for '%s'\n", get_pname(), disk));
-	if(verbose)
+	if(verbose && options->include_optional == 0)
 	    printf("ERROR [No include for '%s']\n", disk);
     }
 
@@ -362,6 +366,8 @@ option_t *options;
     options->exclude_list = NULL;
     options->include_file = NULL;
     options->include_list = NULL;
+    options->exclude_optional = 0;
+    options->include_optional = 0;
 }
 
 
@@ -409,6 +415,12 @@ int verbose;
 	    options->kencrypt = 1;
 	}
 #endif
+	else if(strcmp(tok, "exclude-optional") == 0) {
+	    options->exclude_optional = 1;
+	}
+	else if(strcmp(tok, "include-optional") == 0) {
+	    options->include_optional = 1;
+	}
 	else if(strncmp(tok,"exclude-file=", 13) == 0) {
 	    exc = &tok[13];
 	    options->exclude_file = append_sl(options->exclude_file,exc);

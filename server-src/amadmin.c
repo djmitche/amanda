@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.13.2.3.2.5 2002/03/03 17:10:51 martinea Exp $
+ * $Id: amadmin.c,v 1.49.2.13.2.3.2.6 2002/03/22 15:00:22 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1406,6 +1406,7 @@ disk_t *dp;
     }
     if(dp->exclude_list != NULL && dp->exclude_list->nb_element > 0) {
 	printf("        exclude list");
+	if(dp->exclude_optional) printf(" optional");
 	for(excl = dp->exclude_list->first; excl != NULL; excl = excl->next) {
 	    printf(" \"%s\"", excl->name);
 	}
@@ -1420,6 +1421,7 @@ disk_t *dp;
     }
     if(dp->include_list != NULL && dp->include_list->nb_element > 0) {
 	printf("        include list");
+	if(dp->include_optional) printf(" optional");
 	for(excl = dp->include_list->first; excl != NULL; excl = excl->next) {
 	    printf(" \"%s\"", excl->name);
 	}

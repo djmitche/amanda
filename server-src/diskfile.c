@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.27.4.6.4.3.2.4 2002/03/03 17:10:52 martinea Exp $
+ * $Id: diskfile.c,v 1.27.4.6.4.3.2.5 2002/03/22 15:00:23 martinea Exp $
  *
  * read disklist file
  */
@@ -409,6 +409,8 @@ static int read_diskline()
     disk->exclude_list	= duplicate_sl(dtype->exclude_list);
     disk->include_file	= duplicate_sl(dtype->include_file);
     disk->include_list	= duplicate_sl(dtype->include_list);
+    disk->exclude_optional = dtype->exclude_optional;
+    disk->include_optional = dtype->include_optional;
     disk->priority	= dtype->priority;
     disk->dumpcycle	= dtype->dumpcycle;
     disk->frequency	= dtype->frequency;
@@ -547,6 +549,8 @@ disk_t *dp;
     char *exclude_list;
     char *include_file;
     char *include_list;
+    char *excl_opt = "";
+    char *incl_opt = "";
     char *exc = NULL;
     sle_t *excl;
 
@@ -607,6 +611,9 @@ disk_t *dp;
 	}
     }
 
+    if(dp->exclude_optional) excl_opt = "exclude-optional;";
+    if(dp->include_optional) incl_opt = "include-optional;";
+
     return vstralloc(";",
 		     auth_opt,
 		     kencrypt_opt,
@@ -617,6 +624,8 @@ disk_t *dp;
 		     exclude_list,
 		     include_file,
 		     include_list,
+		     excl_opt,
+		     incl_opt,
 		     NULL);
 }
 

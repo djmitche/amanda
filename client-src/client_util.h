@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.h,v 1.1.2.5 2002/03/13 01:07:03 martinea Exp $
+ * $Id: client_util.h,v 1.1.2.6 2002/03/22 15:00:22 martinea Exp $
  *
  */
 
@@ -44,6 +44,8 @@ typedef struct option_s {
     sl_t *exclude_list;
     sl_t *include_file;
     sl_t *include_list;
+    int exclude_optional;
+    int include_optional;
 #ifdef KRB4_SECURITY
     int krb4_auth;
     int kencrypt;

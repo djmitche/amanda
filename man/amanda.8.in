@@ -1067,7 +1067,7 @@ Each disk using this set of options
 will get a full backup at least this often.
 Setting this to zero tries to do a full backup each run.
 .TP
-.P1 exclude [ list|file ][[ append ][ "string" ]+]
+.P1 exclude [ list|file ][[optional][ append ][ "string" ]+]
 Default:
 .IR file .
 There is two exclude list
@@ -1095,6 +1095,12 @@ keyword, the
 are appended to the current value of the list, without it, the
 .I string
 overwrite the list.
+.IP
+If
+.B optional
+is specified for
+.B exclude list,
+then amcheck will not complain if the file doesn't exist or is not readable.
 .IP
 For
 .B exclude list,
@@ -1136,7 +1142,7 @@ This option is useful when the
 file is shared among several configurations,
 some of which should not back up all the listed file systems.
 .TP
-.P1 include [ list|file ][[ append ][ "string" ]+]
+.P1 include [ list|file ][[optional][ append ][ "string" ]+]
 Default:
 .I file
 ".".
@@ -1165,6 +1171,12 @@ keyword, the
 are appended to the current value of the list, without it, the
 .I string
 overwrite the list.
+.IP
+If
+.B optional
+is specified for
+.B include list,
+then amcheck will not complain if the file doesn't exist or is not readable.
 .IP
 For
 .B include list,
