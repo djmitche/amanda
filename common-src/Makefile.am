@@ -86,13 +86,13 @@ regerror.ih: $(REGsrcdir)/regerror.c $(REGsrcdir)/mkh
 
 # used for testing only
 
-statfs_SOURCES = statfs.test.c alloc.c error.c
+statfs_SOURCES = statfs.test.c alloc.c debug.c error.c file.c
 statfs_LDADD = $(libamanda_a_LIBADD)
 
-token_SOURCES = token.test.c alloc.c error.c file.c
+token_SOURCES = token.test.c alloc.c debug.c error.c file.c
 token_LDADD = $(libamanda_a_LIBADD)
 
-file_SOURCES = file.test.c alloc.c error.c
+file_SOURCES = file.test.c alloc.c debug.c error.c
 file_LDADD = $(libamanda_a_LIBADD)
 
 security_SOURCES = security.test.c

@@ -1,3 +1,12 @@
+2001-02-03 John R. Jackson <jrj@purdue.edu>
+
+	* client-src/Makefile.am: Add CLEANFILES rule to remove *.test.c.
+	* common-src/Makefile.am: Add more sources as needed to the test
+	  programs so they would compile.
+	* server-src/Makefile.am: Create TEST_PROGS make variable ala the
+	  other Makefile.am files.
+	* tape-src/Makefile.am: Add CLEANFILES rule to remove *.test.c.
+
 2001-02-02 John R. Jackson <jrj@purdue.edu>
 
 	* server-src/reporter.c: Fix problem with enum being unsigned on
