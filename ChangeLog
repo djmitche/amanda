@@ -1,5 +1,9 @@
 2000-09-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amindexd.c: use strcasecmp to compare hostname.
+
+2000-09-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amstatus.pl.in: fix plural misuse.
 
 2000-09-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
@@ -978,7 +982,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.376 2000/09/25 23:44:50 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.377 2000/09/25 23:50:29 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.39.2.10 1999/11/11 01:05:19 jrj Exp $
+ * $Id: amindexd.c,v 1.39.2.11 2000/09/25 23:50:30 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -321,9 +321,9 @@ char *host;
 
 #if 0
     /* only let a client restore itself for now unless it is the server */
-    if (strcmp(remote_hostname, local_hostname) == 0)
+    if (strcasecmp(remote_hostname, local_hostname) == 0)
 	return 0;
-    if (strcmp(remote_hostname, host) != 0)
+    if (strcasecmp(remote_hostname, host) != 0)
     {
 	reply(501,
 	      "You don't have the necessary permissions to set dump host to %s.",
@@ -454,7 +454,7 @@ int build_disk_table P((void))
     clear_list();
     for(find_output = output_find; find_output != NULL; 
 	find_output = find_output->next) {
-	if(strcmp(dump_hostname, find_output->hostname) == 0 &&
+	if(strcasecmp(dump_hostname, find_output->hostname) == 0 &&
 	   strcmp(disk_name    , find_output->diskname) == 0 &&
 	   strcmp("OK"         , find_output->status)   == 0) {
 	    ap_snprintf(date, sizeof(date), "%04d-%02d-%02d",
@@ -700,7 +700,7 @@ int are_dumps_compressed P((void))
 
     /* now go through the list of disks and find which have indexes */
     for (diskp = disk_list->head; diskp != NULL; diskp = diskp->next)
-	if ((strcmp(diskp->host->hostname, dump_hostname) == 0)
+	if ((strcasecmp(diskp->host->hostname, dump_hostname) == 0)
 	    && (strcmp(diskp->name, disk_name) == 0))
 	    break;
 
