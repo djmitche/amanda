@@ -7,7 +7,6 @@ amandates.lo
 calcize
 calcsize
 getfsent
-getfsent.c.000
 getfsent.lo
 getfsent.test.c
 killpgrp
