@@ -1,5 +1,9 @@
 2003-02-20  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* tape-src/tapetype.c: Use %ld to print some variable.
+
+2003-02-20  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/conffile.c (init_defaults): conf_printer.s must be set 
 	  with stralloc("").
 
