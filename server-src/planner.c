@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.142 2003/04/26 02:02:28 kovert Exp $
+ * $Id: planner.c,v 1.143 2003/05/26 16:17:50 kovert Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1307,18 +1307,22 @@ security_handle_t *sech;
 	    s = pkt->body + sizeof(sc)-1;
 	    ch = *s++;
 #undef sc
-	    skip_whitespace(s, ch);
-	    if(ch == '\0') goto NAK_parse_failed;
-	    remoterr = s - 1;
-	    if((s = strchr(remoterr, '\n')) != NULL) {
-		if(s == remoterr) goto NAK_parse_failed;
+	} else {
+	    goto NAK_parse_failed;
+	}
+	skip_whitespace(s, ch);
+	if(ch == '\0') goto NAK_parse_failed;
+	remoterr = s - 1;
+	if((s = strchr(remoterr, '\n')) != NULL) {
+	    if(s == remoterr) goto NAK_parse_failed;
 		*s = '\0';
-	    }
+	}
+	if (strcmp(remoterr, "unknown service: noop") != 0
+	           && strcmp(remoterr, "noop: invalid service") != 0) {
 	    errbuf = vstralloc(hostp->hostname, " NAK: ", remoterr, NULL);
 	    if(s) *s = '\n';
 	    goto error_return;
 	}
-	goto NAK_parse_failed;
     }
 
     msgdisk_undo = NULL;
