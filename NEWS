@@ -3,6 +3,8 @@ Change in release 2.4.5b1
 * new chg-iomega changer script.
 * holding disk disk use timestamped directory.
 * autoflush flush today's dump.
+* amanda will not use a tape if it's label is not in the tapelist file
+  (eg. after an amrmtape).
 
 Changes in release 2.4.4p2
 

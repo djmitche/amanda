@@ -1,5 +1,12 @@
 2004-02-13  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/amcheck.c: Verify the tape is listed in the tapelist file.
+	* server-src/taper.c: Ditto
+	* NEWS: * amanda will not use a tape if it's label is not in the
+		  tapelist file (eg. after an amrmtape).
+
+2004-02-13  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/driver.c (dump_schedule): Print complete name.
 
 2004-02-13  Jean-Louis Martineau <martineau@iro.umontreal.ca>

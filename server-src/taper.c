@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.47.2.14.4.8.2.17 2003/11/25 12:21:08 martinea Exp $
+/* $Id: taper.c,v 1.47.2.14.4.8.2.17.2.1 2004/02/13 14:09:34 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1791,7 +1791,14 @@ int label_tape()
     /* check against tape list */
     if (strcmp(label, FAKE_LABEL) != 0) {
 	tp = lookup_tapelabel(label);
-	if(tp != NULL && !reusable_tape(tp)) {
+	if(tp == NULL) {
+	    errstr = newvstralloc(errstr,
+				  "label ", label,
+		" match labelstr but it not listed in the tapelist file",
+				  NULL);
+	    return 0;
+	}
+	else if(tp != NULL && !reusable_tape(tp)) {
 	    errstr = newvstralloc(errstr,
 			          "cannot overwrite active tape ", label,
 			          NULL);
