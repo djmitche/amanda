@@ -25,12 +25,13 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.22 1998/02/26 19:24:48 jrj Exp $
+ * $Id: amrecover.c,v 1.23 1998/03/01 23:43:15 amcore Exp $
  *
  * an interactive program for recovering backed-up files
  */
 
 #include "amanda.h"
+#include "version.h"
 #ifdef HAVE_NETINET_IN_SYSTM_H
 #include <netinet/in_systm.h>
 #endif
@@ -513,8 +514,8 @@ char **argv;
 
     service_name = stralloc2("amandaidx", SERVICE_SUFFIX);
 
-    printf("AMRECOVER Version 1.1. Contacting server on %s ...\n",
-	   server_name);  
+    printf("AMRECOVER Version %s. Contacting server on %s ...\n",
+	   version(), server_name);  
     if ((sp = getservbyname(service_name, "tcp")) == NULL)
     {
 	perror("amrecover: amandaidx/tcp unknown protocol");
