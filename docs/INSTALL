@@ -249,20 +249,19 @@ to compile some of the Amanda programs (see section 1.2.H below).
     F.  If the tape server host is itself going to be backed up (as is
 	usually the case), you must also follow the client-side install
 	instructions below on the server host, INCLUDING setting up the
-	.rhosts file so that the server host lets itself in.  This is a
-	frequently encountered problem for new sites.
+	.amandahosts file so that the server host lets itself in.
+	This is a frequently encountered problem for new sites.
 
 
 2.2. SET UP THE BACKUP CLIENT HOSTS
 
     A.  When using BSD-style security (enabled by default), set up
-	your ~dumpuser/.rhosts or /etc/hosts.equiv so that the
-	dumpuser is allowed in from the server host.  If you have
-	configured --with-amandahosts, ~dumpuser/.amandahosts will be
-	used instead of /etc/hosts.equiv and ~/.rhosts, and only
-	canonical host names will be accepted, because this is safer.
-	--with-amandahosts will probably be enabled by default in some
-	future release.
+	your ~dumpuser/.amandahosts (or ~dumpuser/.rhosts and/or
+	/etc/hosts.equiv, if you have configured
+	--without-amandahosts) so that the dumpuser is allowed in from
+	the server host.  Only canonical host names will be accepted
+	in .amandahosts, and usernames must be present in every line,
+	because this is safer.
 
     B.  Set up your raw disk devices so that the dumpuser can read
 	them, and /etc/dumpdates so that the dumpuser can write to it.

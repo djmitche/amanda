@@ -1,5 +1,10 @@
 1999-01-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* configure.in (USE_AMANDAHOSTS): enable by default
+	* example/config.site: ditto
+	* docs/INSTALL: ditto
+	* NEWS: ditto
+
 	* docs/INSTALL: updated URLs for GNU packages and Samba
 	* docs/SAMBA: note that Samba 2.0.0 is supported
 

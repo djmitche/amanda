@@ -592,19 +592,17 @@ y |  ye | yes) AC_DEFINE(BSD_SECURITY)
 esac
 
 AC_ARG_WITH(amandahosts,
-    [  --with-amandahosts     use .amandahosts instead of .rhosts],
+    [  --without-amandahosts  use .rhosts instead of .amandahosts],
     USE_AMANDAHOSTS=$withval,
-    : ${USE_AMANDAHOSTS=no}
+    : ${USE_AMANDAHOSTS=yes}
 )
 case "$USE_AMANDAHOSTS" in
 n | no) : ;;
 y |  ye | yes) :
   case "$BSD_SECURITY" in
-  n | no) AC_MSG_WARN([*** --with-amandahosts implies --with-bsd-security, so turning that on.])
+  y | ye | yes) AC_DEFINE(USE_AMANDAHOSTS)
     ;;
   esac
-  AC_DEFINE(BSD_SECURITY)
-  AC_DEFINE(USE_AMANDAHOSTS)
   ;;
 *) AC_MSG_ERROR([*** You must not supply an argument to --with-amandahosts option.])
   ;;
