@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.9 2002/01/01 16:55:37 martinea Exp $
+ * $Id: rsh-security.c,v 1.10 2002/04/19 00:49:19 martinea Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -239,7 +239,7 @@ rsh_connect(hostname, fn, arg)
     struct rsh_handle *rh;
     struct hostent *he;
 
-    assert(rh != NULL);
+    assert(fn != NULL);
     assert(hostname != NULL);
 
     rshprintf(("rsh_connect: %s\n", hostname));

@@ -1,3 +1,8 @@
+2002-04-18  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* common-src/amfeatures.c: Include "amfeatures.h"
+	* common-src/rsh-security.c: Don't assert on undefined variable.
+
 2002-04-17  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* common-src/amfeatures.c: Renamed from features.c
