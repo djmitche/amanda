@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.41 1997/12/30 05:25:12 jrj Exp $
+/* $Id: dumper.c,v 1.42 1997/12/31 01:19:48 jrj Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1088,7 +1088,7 @@ pkt_t *pkt;
 
 #ifdef KRB4_SECURITY
     if(krb4_auth && !check_mutual_authenticator(&cred.session, pkt, p)) {
-	errstr = newalloc(errstr, "[mutual-authentication failed]");
+	errstr = newstralloc(errstr, "[mutual-authentication failed]");
 	response_error = 2;
 	return;
     }

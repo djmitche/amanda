@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: genversion.c,v 1.10 1997/12/30 05:24:16 jrj Exp $
+ * $Id: genversion.c,v 1.11 1997/12/31 01:19:46 jrj Exp $
  *
  * dump the current Amanda version info
  */
@@ -299,7 +299,7 @@ int main()
 		       "\\\"",
 		       NULL);
     prstr(str);
-    ap_snprintf(lifetime_str, (sizeof(lifetime_str), "%d", TICKET_LIFETIME);
+    ap_snprintf(lifetime_str, sizeof(lifetime_str), "%d", TICKET_LIFETIME);
     str = newvstralloc(str, " TICKET_LIFETIME=", lifetime_str, NULL);
     prstr(str);
 #endif
