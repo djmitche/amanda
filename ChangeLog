@@ -1,3 +1,14 @@
+2001-04-02  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	Upgrade to the 2.5.0 code.
+
+	* changer-src/chg-zd-mtx.sh.in: Added barcode reader support,
+	>9 tape slot support, variable for 'offline' or 'ONLINE'
+	return value of tape device, and multi-config support.  Moved
+	all user settable variables to 'changerfile'.conf in the
+	amanda config directory.  Added commented out example of .conf
+	file into script.
+	* NEWS: updated chg-zd-mtx.sh.in changer.
+
 2001-04-02 John R. Jackson <jrj@purdue.edu>
 
 	* NEWS: Initial notes for 2.4.2p2.
