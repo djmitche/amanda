@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.123 2002/04/12 01:21:28 jrjackson Exp $
+ * $Id: driver.c,v 1.124 2002/04/13 01:51:48 jrjackson Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -939,6 +939,10 @@ handle_taper_result(cookie)
 		   walltime_str(curclock()), dp->host->hostname, dp->name);
 	    fflush(stdout);
 
+	    amfree(sched(dp)->destname);
+	    amfree(sched(dp)->dumpdate);
+	    amfree(dp->up);
+
 	    if(empty(tapeq)) {
 		taper_busy = 0;
 		taper_disk = NULL;
@@ -953,9 +957,6 @@ handle_taper_result(cookie)
 		taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level,
 			  sched(dp)->datestamp);
 	    }
-	    amfree(sched(dp)->destname);
-	    amfree(sched(dp)->dumpdate);
-	    amfree(dp->up);
 
 	    /* continue with those dumps waiting for diskspace */
 	    continue_dumps();
