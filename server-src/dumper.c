@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.14.2.7.2.9 2002/04/22 23:36:28 martinea Exp $
+/* $Id: dumper.c,v 1.75.2.14.2.7.2.10 2002/04/23 14:26:55 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1774,9 +1774,9 @@ int level;
     char *req = NULL;
     int rc;
 
-    int has_features = am_has_feature(their_features, fe_g_options_features);
-    int has_hostname = am_has_feature(their_features, fe_g_options_hostname);
-    int has_device = am_has_feature(their_features, fe_sendbackup_req_device);
+    int has_features = am_has_feature(their_features, fe_req_options_features);
+    int has_hostname = am_has_feature(their_features, fe_req_options_hostname);
+    int has_device   = am_has_feature(their_features, fe_sendbackup_req_device);
 
     ap_snprintf(level_string, sizeof(level_string), "%d", level);
     req = vstralloc("SERVICE sendbackup\n",
