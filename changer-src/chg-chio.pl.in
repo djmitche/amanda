@@ -58,7 +58,6 @@ die "$progname: cannot open $logfile: $ERRNO\n"
 $prefix="@prefix@";
 $exec_prefix="@exec_prefix@";
 $sbindir="@sbindir@";
-$libexecdir = "@libexecdir@";
 if ( "@USE_VERSION_SUFFIXES@" eq "yes" ) {
     $SUF = "-@VERSION@";
 } else {
