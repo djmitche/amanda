@@ -1,5 +1,10 @@
 1999-02-13  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/dumper.c: make sure holding files are not larger
+	that chunksize.
+
+1999-02-13  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amcleanupdisk.c: new program to scan and find temporary
 	file on holding disks.
 	* server-src/Makefile.am (libexec_PROGRAMS): add amcleanupdisk.

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.98 1999/01/15 00:03:25 kashmir Exp $
+/* $Id: dumper.c,v 1.99 1999/02/13 22:32:34 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -667,6 +667,8 @@ databuf_flush(db)
 	file.type = F_CONT_DUMPFILE;
 	file.cont_filename[0] = '\0';
 	write_tapeheader(fd, &file);
+	dumpsize += TAPE_BLOCK_SIZE;
+	nb_header_block++;
 	amfree(tmp_filename);
 
 	/*
@@ -1024,8 +1026,7 @@ do_dump(mesgfd, datafd, indexfd, db)
     startclock();
 
     dumpsize = origsize = dump_result = 0;
-    dumpsize = TAPE_BLOCK_SIZE;
-    nb_header_block = 1;
+    nb_header_block = 0;
     got_info_endline = got_sizeline = got_endline = 0;
     header_done = 0;
     amfree(backup_name);
@@ -1249,6 +1250,8 @@ do_dump(mesgfd, datafd, indexfd, db)
 					  strerror(errno));
 		    goto failed;
 		}
+		dumpsize += TAPE_BLOCK_SIZE;
+		nb_header_block++;
 		header_done = 1;
 
 		if (datafd != -1)
