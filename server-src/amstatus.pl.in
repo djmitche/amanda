@@ -518,6 +518,7 @@ foreach $host (sort @hosts) {
 			if( !defined $size{$hostpart} && defined $holding_file{$hostpart}) {
 				$size{$hostpart} = &dump_size($holding_file{$hostpart}) / 1024;
 			}
+			$in_flush=0;
 			if($estimate_done != 1) {
 				if(defined $estimate{$hostpart}) {
 					if($estimate{$hostpart} != 1) {
@@ -555,6 +556,7 @@ foreach $host (sort @hosts) {
 				else {
 					$flpartition++;
 					$flsize += $size{$hostpart};
+					$in_flush=1;
 				}
 				if(defined $taper_started{$hostpart} &&
 			      $taper_started{$hostpart}==1) {
@@ -583,7 +585,12 @@ foreach $host (sort @hosts) {
 						if( defined $opt_writingtape ) {
 							printf "%-40s%2d", "$host:$partition", $level{$hostpart};
 							printf "%8dk", $size{$hostpart};
-							print " writing to tape";
+							if($in_flush == 0) {
+								print " writing to tape";
+							}
+							else {
+								print " flushing to tape";
+							}
 							if( defined $starttime ) {
 								print " (", &showtime($taper_time{$hostpart}), ")";
 							}
@@ -602,7 +609,12 @@ foreach $host (sort @hosts) {
 						if( defined $opt_failed ) {
 							printf "%-40s%2d", "$host:$partition", $level{$hostpart};
 							printf "%8dk", $size{$hostpart};
-							print " failed to tape";
+							if($in_flush == 0) {
+								print " failed to tape";
+							}
+							else {
+								print " failed to flush";
+							}
 							print " (will retry)" unless $taper_finished{$hostpart} < -1;
 							if( defined $starttime ) {
 								print " (", &showtime($taper_time{$hostpart}), ")";
@@ -622,7 +634,12 @@ foreach $host (sort @hosts) {
 						if( defined $opt_finished ) {
 							printf "%-40s%2d", "$host:$partition", $level{$hostpart};
 							printf "%8dk", $size{$hostpart};
-							print " finished";
+							if($in_flush == 0) {
+								print " finished";
+							}
+							else {
+								print " flushed";
+							}
 							if( defined $starttime ) {
 								print " (", &showtime($taper_time{$hostpart}), ")";
 							}
