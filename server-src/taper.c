@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.35 1998/05/05 21:47:49 martinea Exp $
+/* $Id: taper.c,v 1.36 1998/05/28 23:12:02 amcore Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1640,18 +1640,21 @@ int writerror;
 {
     char *result;
 
-    log_add(L_INFO, "tape %s kb %ld fm %d %s", 
-	    label,
-	    (long) ((total_tape_used+1023.0) / 1024.0),
-	    total_tape_fm,
-	    writerror? errstr : "[OK]");
+    if (label != NULL) {
+	/* label would be null after entering degraded mode */
+	log_add(L_INFO, "tape %s kb %ld fm %d %s", 
+		label,
+		(long) ((total_tape_used+1023.0) / 1024.0),
+		total_tape_fm,
+		writerror? errstr : "[OK]");
 
-    fprintf(stderr, "taper: writing end marker. [%s %s kb %ld fm %d]\n",
-	    label,
-	    writerror? "ERR" : "OK",
-	    (long) ((total_tape_used+1023.0) / 1024.0),
-	    total_tape_fm);
-    fflush(stderr);
+	fprintf(stderr, "taper: writing end marker. [%s %s kb %ld fm %d]\n",
+		label,
+		writerror? "ERR" : "OK",
+		(long) ((total_tape_used+1023.0) / 1024.0),
+		total_tape_fm);
+	fflush(stderr);
+    }
 
     if(!writerror) {
 	if(!write_filemark()) {

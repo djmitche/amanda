@@ -1,5 +1,8 @@
 1998-05-28  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* server-src/taper.c (endtape): do not log amount of used tape after 
+	entering degraded mode.
+
 	* client-src/sendsize.c (getsize_dump): pass at least argv[0] to
  	killpgrp.
 
