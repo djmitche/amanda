@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.151 2002/04/13 19:24:51 jrjackson Exp $
+/* $Id: dumper.c,v 1.152 2002/04/17 20:06:10 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -41,7 +41,7 @@
 #include "token.h"
 #include "version.h"
 #include "fileheader.h"
-#include "features.h"
+#include "amfeatures.h"
 #include "server_util.h"
 #include "util.h"
 

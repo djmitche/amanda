@@ -17,7 +17,7 @@ libamanda_la_SOURCES = \
 	clock.c		\
 	debug.c		dgram.c		\
 	event.c		error.c		\
-	features.c	\
+	amfeatures.c	\
 	file.c		fileheader.c	\
 	krb4-security.c	krb5-security.c	\
 	match.c		\
@@ -39,7 +39,7 @@ noinst_HEADERS =	amanda.h	amregex.h	arglist.h	\
 			clock.h		\
 			dgram.h		\
 			event.h		\
-			features.h	\
+			amfeatures.h	\
 			packet.h	pipespawn.h	protocol.h	\
 			queue.h		\
 			sl.h		security.h	statfs.h	\
@@ -83,7 +83,7 @@ REGEXHSRC =	$(REGsrcdir)/regex2.h \
 		$(REGsrcdir)/regfree.c
 
 # these are used for testing only:
-TEST_PROGS = statfs token file bsdsecurity features
+TEST_PROGS = statfs token file bsdsecurity amfeatures
 
 CLEANFILES = regex.h regcomp.ih engine.ih regerror.ih *.test.c
 
@@ -135,8 +135,8 @@ bsdsecurity_LDADD = $(libamanda_a_LIBADD) \
 		    security.$(OBJEXT) \
 		    versuff.$(OBJEXT)
 
-features_SOURCES = features.test.c
-features_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF)
+amfeatures_SOURCES = amfeatures.test.c
+amfeatures_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF)
 
 %.test.c: $(srcdir)/%.c
 	echo '#define TEST' >$@

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: features.c,v 1.3 2002/04/13 23:38:27 jrjackson Exp $
+ * $Id: amfeatures.c,v 1.2 2002/04/17 20:06:10 martinea Exp $
  *
  * Feature test related code.
  */

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.127 2002/04/13 23:38:27 jrjackson Exp $
+ * $Id: planner.c,v 1.128 2002/04/17 20:06:10 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -40,7 +40,7 @@
 #include "security.h"
 #include "protocol.h"
 #include "version.h"
-#include "features.h"
+#include "amfeatures.h"
 #include "server_util.h"
 #include "holding.h"
 

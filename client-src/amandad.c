@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.50 2002/04/13 19:24:51 jrjackson Exp $
+ * $Id: amandad.c,v 1.51 2002/04/17 20:06:10 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -38,7 +38,7 @@
 #include "amandad.h"
 #include "clock.h"
 #include "event.h"
-#include "features.h"
+#include "amfeatures.h"
 #include "packet.h"
 #include "version.h"
 #include "queue.h"

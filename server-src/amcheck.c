@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.88 2002/04/13 22:15:00 jrjackson Exp $
+ * $Id: amcheck.c,v 1.89 2002/04/17 20:06:10 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -45,7 +45,7 @@
 #include "token.h"
 #include "server_util.h"
 #include "pipespawn.h"
-#include "features.h"
+#include "amfeatures.h"
 
 #define BUFFER_SIZE	32768
 

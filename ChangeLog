@@ -1,3 +1,20 @@
+2002-04-17  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* common-src/amfeatures.c: Renamed from features.c
+	* common-src/amfeatures.h: Renamed from features.h
+	* common-src/Makefile.am: Rename features to amfeatures.
+	* client-src/amandad.c: Ditto.
+	* client-src/client_util.h: Ditto.
+	* client-src/selfcheck.c: Ditto.
+	* client-src/sendbackup.c: Ditto.
+	* client-src/sendsize.c: Ditto.
+	* server-src/amcheck.c: Ditto.
+	* server-src/chunker.h: Ditto.
+	* server-src/diskfile.h: Ditto.
+	* server-src/dumper.c: Ditto.
+	* server-src/planner.c: Ditto.
+	* server-src/taper.c: Ditto.
+
 2002-04-14  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/conffile.c: Default dumporder set to "ttt".

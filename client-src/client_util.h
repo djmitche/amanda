@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.h,v 1.8 2002/04/13 23:38:27 jrjackson Exp $
+ * $Id: client_util.h,v 1.9 2002/04/17 20:06:10 martinea Exp $
  *
  */
 
@@ -32,7 +32,7 @@
 #define CLIENT_UTIL_H
 
 #include "amanda.h"
-#include "features.h"
+#include "amfeatures.h"
 #include "sl.h"
 
 typedef struct option_s {
