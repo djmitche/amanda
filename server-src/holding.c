@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.15 1998/07/04 00:19:58 oliva Exp $
+ * $Id: holding.c,v 1.15.2.1 1998/09/08 17:44:50 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -284,7 +284,7 @@ char **pick_datestamp()
     return directories_names;
 }
 
-int get_amanda_names(fname, hostname, diskname, level)
+filetype_t get_amanda_names(fname, hostname, diskname, level)
 char *fname, **hostname, **diskname;
 int *level;
 {
@@ -294,24 +294,24 @@ int *level;
     *hostname = *diskname = NULL;
 
     if((fd = open(fname, O_RDONLY)) == -1)
-	return 1;
+	return F_UNKNOWN;
 
     if(read(fd, buffer, sizeof(buffer)) != sizeof(buffer)) {
 	aclose(fd);
-	return 1;
+	return F_UNKNOWN;
     }
 
     parse_file_header(buffer,&file,sizeof(buffer));
-    if(file.type != F_DUMPFILE) {
+    if(file.type != F_DUMPFILE && file.type != F_CONT_DUMPFILE) {
 	aclose(fd);
-	return 1;
+	return file.type;
     }
     *hostname = stralloc(file.name);
     *diskname = stralloc(file.disk);
     *level = file.dumplevel;
 
     aclose(fd);
-    return 0;
+    return file.type;
 }
 
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.4 1998/07/04 00:19:55 oliva Exp $
+ * $Id: find.c,v 1.4.2.1 1998/09/08 17:44:42 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -154,7 +154,7 @@ find_result_t **output_find;
 					NULL);
 		amfree(hostname);
 		amfree(diskname);
-		if(get_amanda_names(destname, &hostname, &diskname, &level)) {
+		if(get_amanda_names(destname, &hostname, &diskname, &level) != F_DUMPFILE) {
 		    continue;
 		}
 		dp = NULL;
