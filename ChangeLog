@@ -1,5 +1,7 @@
 1999-09-14  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* config/Makefile.am: Remove all traces of acconfig.h.
+
 	* server-src/changer.c (changer_command): Fix for amwait_t != int.
 
 1999-09-13  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
