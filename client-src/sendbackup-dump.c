@@ -29,41 +29,6 @@
  * sendbackup-dump.c - send backup data using BSD dump
  */
 
-/*
- * File:	$RCSFile: sendbackup-dump.c,v $
- * Part of:	
- *
- * Revision:	$Revision: 1.8 $
- * Last Edited:	$Date: 1997/04/25 22:04:09 $
- * Author:	$Author: oliva $
- *
- * History:	$Log: sendbackup-dump.c,v $
- * History:	Revision 1.8  1997/04/25 22:04:09  oliva
- * History:	removed doubled DUMP: from BSDI dump size regexp
- * History:
- * History:	Revision 1.7  1997/04/23 07:32:20  oliva
- * History:	if DUMP is not defined, force usage of XFSDUMP arguments.
- * History:
- * History:	Revision 1.6  1997/04/18 05:21:56  amcore
- * History:	clean up kerberos a bit; make error messages more meaningful.
- * History:	options strings arrays are now 512 bytes instead of 80.  (with many
- * History:	options it runs over 80 characters).
- * History:	'gcc -Wall'-happy a bit more
- * History:
- * History:	Revision 1.5  1997/04/17 00:41:02  oliva
- * History:	Fixed typo
- * History:
- * History:	Revision 1.4  1997/04/01 20:50:11  oliva
- * History:	Make rundump xfsdump-aware.
- * History:	Fix sendbackup-dump so that it invokes rundump for xfsdumps.
- * History:
- * History:	Revision 1.3  1997/03/24 17:12:26  blair
- * History:	Put the dump/restore program locations that configure found into the
- * History:	header for printing, instead of always printing out restore or dump.
- * History:
- *
- */
-
 #include "sendbackup-common.h"
 #include "getfsent.h"
 #include "version.h"
@@ -174,8 +139,6 @@ int level, dataf, mesgf;
 
     NAUGHTY_BITS;
 
-    write_tapeheader(host, disk, level, compress, datestamp, dataf);
-
     if(compress)
 	comppid = pipespawn(COMPRESS_PATH, &indexout, dataf, mesgf,
 			    COMPRESS_PATH,
@@ -235,6 +198,9 @@ int level, dataf, mesgf;
 	backup_program_name  = XFSDUMP;
 #endif
 	restore_program_name = XFSRESTORE;
+
+	write_tapeheader(host, disk, level, compress, datestamp, dataf);
+
 	sprintf(dumpkeys, "%d", level);
 	if (no_record)
 	{
@@ -254,6 +220,8 @@ int level, dataf, mesgf;
     {
 	sprintf(dumpkeys, "%d%ssf", level, no_record ? "" : "u");
 
+	write_tapeheader(host, disk, level, compress, datestamp, dataf);
+
 	dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf, 
 			    "dump", dumpkeys, "100000", "-", device,
 			    (char *)0);
@@ -261,6 +229,9 @@ int level, dataf, mesgf;
 #else
     /* AIX backup program */
     sprintf(dumpkeys, "-%d%sf", level, no_record ? "" : "u");
+
+    write_tapeheader(host, disk, level, compress, datestamp, dataf);
+
     dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf, 
 			"backup", dumpkeys, "-", device, (char *)0);
 #endif

@@ -29,36 +29,6 @@
  * sendbackup-gnutar.c - send backup data using GNU tar
  */
 
-/*
- * File:	$RCSFile: sendbackup-dump.c,v $
- * Part of:	
- *
- * Revision:	$Revision: 1.6 $
- * Last Edited:	$data: 1997/03/24 10:10:10 $
- * Author:	$Author: amcore $
- *
- * History:	$Log: sendbackup-gnutar.c,v $
- * History:	Revision 1.6  1997/04/18 05:22:00  amcore
- * History:	clean up kerberos a bit; make error messages more meaningful.
- * History:	options strings arrays are now 512 bytes instead of 80.  (with many
- * History:	options it runs over 80 characters).
- * History:	'gcc -Wall'-happy a bit more
- * History:
- * History:	Revision 1.5  1997/04/10 03:49:07  oliva
- * History:	Fixed handling of exclusion on GNUTAR.
- * History:	Removed option GNUTAR_EXCLUDE_FILE, now enabled by default.
- * History:
- * History:	Revision 1.4  1997/04/10 01:35:22  oliva
- * History:	GNUTAR listed incrementals now work if previous incremental level
- * History:	directory list cannot be found.
- * History:
- * History:	Revision 1.3  1997/03/24 17:14:43  blair
- * History:	Instead of just listing gtar in the header, put in the
- * History:	full path to gtar.
- * History:
- *
- */
-
 #include "amanda.h"
 #include "sendbackup-common.h"
 #include "amandates.h"
@@ -135,8 +105,6 @@ int level, dataf, mesgf;
 	    pname, host, disk, level, datestamp);
 
     NAUGHTY_BITS;
-
-    write_tapeheader(host, disk, level, compress, datestamp, dataf);
 
     if(compress) {
 #if defined(COMPRESS_BEST_OPT) && defined(COMPRESS_FAST_OPT)
@@ -285,6 +253,11 @@ int level, dataf, mesgf;
 	else
 	    taropt = "-Tcga";
 	dbprintf(("backup from %s, pass %s\n", sharename, "XXXXX"));
+
+	restore_program_name = SAMBA_CLIENT;
+	
+	write_tapeheader(host, disk, level, compress, datestamp, dataf);
+
 	dumppid = pipespawn(SAMBA_CLIENT, &dumpin, dumpout, mesgf,
 			    "gtar",
 			    sharename, pass, "-U", "backup",
@@ -297,6 +270,8 @@ int level, dataf, mesgf;
 
       {
 	char sprintf_buf[512];
+
+	write_tapeheader(host, disk, level, compress, datestamp, dataf);
 
 	dumppid = pipespawn(cmd, &dumpin, dumpout, mesgf,
 			"gtar", "--create",
