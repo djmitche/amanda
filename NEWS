@@ -1,5 +1,6 @@
 Changes in release 2.4.4p1
 
+* amrecover_changer works with chg-multi.
 * default driveslot for chg-zd-mtx is now 0.
 * amplot generate color postscript by default.
 * amplot -b flag to generate b/w postscript.

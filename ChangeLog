@@ -1,5 +1,9 @@
 2003-04-08  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* NEWS: amrecover_changer works with chg-multi.
+
+2003-04-08  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* client-src/client_util.c (add_include): If include contain 2 '/' then
 	  use at asis, don't try to match it.
 
