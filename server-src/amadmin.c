@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.90 2004/04/06 13:09:00 martinea Exp $
+ * $Id: amadmin.c,v 1.91 2004/04/06 13:25:49 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1063,8 +1063,9 @@ char **argv;
     }
     else {
 	double bumppercent = conf_bumppercent;
+
 	printf("  bumppercent %3d %%\t- minimum savings (threshold) to bump level 1 -> 2\n",
-	       bumppercent);
+	       conf_bumppercent);
 	printf("  bumpdays %5d\t- minimum days at each level\n",
 	       getconf_int(CNF_BUMPDAYS));
 	printf("  bumpmult %5.5g\t- threshold = disk_size * bumppercent * bumpmult**(level-1)\n\n",

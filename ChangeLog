@@ -1,5 +1,9 @@
 2004-04-06  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/amadmin.c (bumpsize): Typo.
+
+2004-04-06  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	New bumppercent global option.
 	* example/amanda.conf.in: Document it.
 	* man/amanda.8.in: Document it.
