@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.18 1998/01/08 19:33:38 jrj Exp $
+ * $Id: amrecover.c,v 1.19 1998/01/11 21:19:41 jrj Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -565,8 +565,8 @@ char **argv;
      * the tape server, so we will drop down now but might have to
      * come back later.
      */
-    seteuid(getuid());
     setegid(getgid());
+    seteuid(getuid());
 
     if (connect(server_socket, (struct sockaddr *)&server, sizeof(server))
 	== -1)

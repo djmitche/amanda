@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.20 1998/01/08 19:33:39 jrj Exp $
+ * $Id: extract_list.c,v 1.21 1998/01/11 21:19:42 jrj Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -955,8 +955,8 @@ static int extract_files_setup P((void))
 	perror("amrecover: Error binding socket");
 	exit(2);
     }
-    seteuid(getuid());				/* put it back */
     setegid(getgid());
+    seteuid(getuid());				/* put it back */
     if (connect(tape_server_socket, (struct sockaddr *)&tape_server,
 		sizeof(struct sockaddr_in)) == -1)
     {

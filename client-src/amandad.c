@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.20 1998/01/08 19:33:30 jrj Exp $
+ * $Id: amandad.c,v 1.21 1998/01/11 21:19:37 jrj Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -144,8 +144,8 @@ char **argv;
 	 * order to get at the machine's srvtab entry, so we hang on to
 	 * some root privledges for now.  We give them up entirely later.
 	 */
-	seteuid(pwptr->pw_uid);
 	setegid(pwptr->pw_gid);
+	seteuid(pwptr->pw_uid);
 #else
 	initgroups(pwname, pwptr->pw_gid);
 	setgid(pwptr->pw_gid);
@@ -255,8 +255,8 @@ char **argv;
      * we need to be root to access the srvtab file, but only if we started
      * out that way.
      */
-    seteuid(getuid());
     setegid(getgid());
+    seteuid(getuid());
 #endif /* KRB4_SECURITY */
 
     afree(errstr);
