@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.25 1998/01/12 22:32:42 blair Exp $
+ * $Id: amadmin.c,v 1.26 1998/01/13 16:56:26 amcore Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1053,6 +1053,7 @@ int datestamp;
 		    new_output_find->level=level;
 		    new_output_find->label=stralloc("---");
 		    new_output_find->filenum=0;
+		    new_output_find->status=0;
 		    new_output_find->status=newvstralloc(
 			 new_output_find->status,
 			 "FAILED (",
