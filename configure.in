@@ -498,7 +498,7 @@ AC_ARG_WITH(client-principal,
 	fi
     ]
 )
-: ${CLIENT_HOST_PRINCIPLE:="rcmp"}
+: ${CLIENT_HOST_PRINCIPLE:="rcmd"}
 AC_DEFINE_UNQUOTED(CLIENT_HOST_PRINCIPLE,"$CLIENT_HOST_PRINCIPLE")
 
 AC_ARG_WITH(client-instance,
@@ -692,8 +692,8 @@ case "$target" in
 *****
 This machine, target type $target, is not known
 to be fully supported by this configure script.  If the
-installation of Amanda on this system suceeds or needed
-any patches, please email amanda-hackers@cs.umb.edu with
+installation of Amanda on this system succeeds or needed
+any patches, please email amanda-hackers@cs.umd.edu with
 the patches or an indication of the sucess or failure of
 the Amanda installation on your system.
 *****
