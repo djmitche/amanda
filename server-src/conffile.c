@@ -74,6 +74,13 @@ struct interface_seen_s {
     int maxusage;
 };
 
+/*
+ * [XXX] hopefully nobody will need this here.  (not very likely).  -kovert
+ */
+#if defined(KRB4_SECURITY) && defined(INTERFACE)
+#undef INTERFACE
+#endif
+
 typedef enum {
     UNKNOWN, ANY, INT, REAL, STRING, TIME, IDENT, COMMA, LBRACE,
     RBRACE, NL, END, ORG, MAILTO, DUMPUSER, DUMPCYCLE, MAXCYCLE,
