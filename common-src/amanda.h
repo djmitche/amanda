@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.36 1998/01/13 17:41:52 blair Exp $
+ * $Id: amanda.h,v 1.37 1998/01/13 19:09:54 blair Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -764,6 +764,14 @@ extern int select P((int nfds,
 #ifndef HAVE_SENDTO_DECL
 extern int sendto P((int s, const char *msg, int len, int flags,
 		     const struct sockaddr *to, int tolen));
+#endif
+
+#ifndef HAVE_SETEGID_DECL
+extern int setegid P((gid_t egid));
+#endif
+
+#ifndef HAVE_SETEUID_DECL
+extern int seteuid P((uid_t euid));
 #endif
 
 #ifndef HAVE_SETPGRP_DECL

@@ -1741,6 +1741,8 @@ ICE_CHECK_DECL(ruserok,netdb.h sys/socket.h)
 ICE_CHECK_DECL(select,sys/types.h sys/socket.h sys/select.h time.h sys/time.h)
 AMANDA_FUNC_SELECT_ARG_TYPE
 ICE_CHECK_DECL(sendto,sys/types.h sys/socket.h)
+ICE_CHECK_DECL(setegid,unistd.h)
+ICE_CHECK_DECL(seteuid,unistd.h)
 
 dnl arguments for setpgrp or not
 AC_CHECK_FUNC(setpgrp,[AC_FUNC_SETPGRP])
