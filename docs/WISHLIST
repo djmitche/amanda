@@ -63,6 +63,12 @@ from the backup user.
 call log_error instead of just error, and this function would call
 both log and error.
 
+* When a disk is configured to skip-incr, it will present no estimate
+errors every day except the day it is scheduled for a full dump.
+Besides, it will never be promoted, because no estimate is requested
+on such days.  Maybe we should request a full estimate anyway, and
+skip incrementals after analysis takes place.
+
 * It should be possible to re-generate databases and indexes from tapes.
 
 * amdump should not run if files named either amdump or log exist in
