@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.41 2003/02/28 19:59:48 martinea Exp $
+/* $Id: amidxtaped.c,v 1.42 2003/07/08 21:26:41 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -382,19 +382,12 @@ char **argv;
 	amfree(re_label);
     }
 
-    if(re_fsf && re_config && getconf_int(CNF_AMRECOVER_DO_FSF) == 0) {
-	amfree(re_fsf);
-    }
-    if(re_label && re_config && getconf_int(CNF_AMRECOVER_CHECK_LABEL) == 0) {
-	amfree(re_label);
-    }
-
     if(re_device && re_config &&
        strcmp(re_device, getconf_str(CNF_TAPEDEV)) == 0) {
 	get_lock = lock_logfile();
     }
 
-    if(re_label &&
+    if(re_label && re_config &&
        strcmp(re_device, getconf_str(CNF_AMRECOVER_CHANGER)) == 0) {
 
 	if(changer_init() == 0) {
@@ -419,6 +412,13 @@ char **argv;
 			  debug_prefix_time(NULL), searchlabel));
 	    }
 	}
+    }
+
+    if(re_fsf && re_config && getconf_int(CNF_AMRECOVER_DO_FSF) == 0) {
+	amfree(re_fsf);
+    }
+    if(re_label && re_config && getconf_int(CNF_AMRECOVER_CHECK_LABEL) == 0) {
+	amfree(re_label);
     }
 
     dbprintf(("%s: amrestore_nargs=%d\n",
