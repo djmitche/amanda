@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.43 1998/01/27 05:39:48 amcore Exp $
+ * $Id: amanda.h,v 1.44 1998/01/29 10:19:36 amcore Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -887,6 +887,12 @@ extern int setresuid P((uid_t ruid, uid_t euid, uid_t suid));
 #else
 #ifndef HAVE_SETEUID_DECL
 extern int seteuid P((uid_t euid));
+#endif
+#endif
+
+#ifndef HAVE_SETPGID_DECL
+#ifdef HAVE_SETPGID
+extern int setpgid(int pid, int pgid);
 #endif
 #endif
 

@@ -15,6 +15,9 @@
 
 Version 2.4.0
 
+	use setpgid instead of setpgrp if available
+	-Mark Woodford <woodford@uniprise.com> & oliva
+
 	chg-mtx will check whether slot 6 is a cleaning tape or not.
 	-Martyn Johnson <Martyn.Johnson@cl.cam.ac.uk>
 
