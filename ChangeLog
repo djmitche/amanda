@@ -1,5 +1,7 @@
 1999-08-15  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* config/ltconfig, config/ltmain.sh: Update from libtool 1.3.3.
+
 	* example/amanda.conf.in: Clarify holdingdisk::use 0.
 
 	* config/missing: Update from automake 1.4a.
