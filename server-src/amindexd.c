@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.48 1999/05/23 01:50:35 martinea Exp $
+ * $Id: amindexd.c,v 1.49 1999/06/07 06:10:08 oliva Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -256,7 +256,7 @@ arglist_function1(static void reply, int, n, char *, fmt)
     vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
     arglist_end(args);
 
-    if (printf("%s\r\n", buf) <= 0)
+    if (printf("%s\r\n", buf) < 0)
     {
 	dbprintf(("! error %d (%s) in printf\n", errno, strerror(errno)));
 	uncompress_remove = remove_files(uncompress_remove);
@@ -282,7 +282,7 @@ arglist_function1(static void lreply, int, n, char *, fmt)
     vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
     arglist_end(args);
 
-    if (printf("%s\r\n", buf) <= 0)
+    if (printf("%s\r\n", buf) < 0)
     {
 	dbprintf(("! error %d (%s) in printf\n", errno, strerror(errno)));
 	uncompress_remove = remove_files(uncompress_remove);
@@ -309,7 +309,7 @@ arglist_function1(static void fast_lreply, int, n, char *, fmt)
     vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
     arglist_end(args);
 
-    if (printf("%s\r\n", buf) <= 0)
+    if (printf("%s\r\n", buf) < 0)
     {
 	dbprintf(("! error %d (%s) in printf\n", errno, strerror(errno)));
 	uncompress_remove = remove_files(uncompress_remove);

@@ -1,3 +1,10 @@
+1999-06-07  Mark F. Vlems  <mvlems@vbox.xs4all.nl>
+
+	* server-src/amindexd.c (reply, lreply, fast_lreply): Return code 0
+	of printf does not imply an error on some systems (Openstep) even if
+	the number of written characters is more than 0.  The weakened error 
+	check has no implication for the correct implementations of printf.
+
 1999-06-03  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/driver.c (dump_to_tape): Tell hard from soft
