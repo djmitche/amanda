@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.34 1998/01/08 19:33:32 jrj Exp $
+ * $Id: amanda.h,v 1.35 1998/01/13 15:06:07 blair Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -190,6 +190,10 @@
 #include <sys/resource.h>
 #include <sys/socket.h>
 
+#ifdef HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
+
 #ifdef KRB4_SECURITY
 #  include <des.h>
 #  include <krb.h>
@@ -332,7 +336,6 @@ extern void  *newalloc        P((void *old, int size));
 extern char  *stralloc        P((char *str));
 extern char  *vstralloc       P((char *str, ...));
 #define	stralloc2(s1,s2)      vstralloc((s1),(s2),NULL)
-extern char  *stralloc2       P((char *str1, char *str2));
 extern char  *newstralloc     P((char *oldstr, char *newstr));
 extern char  *newvstralloc    P((char *oldstr, char *newstr, ...));
 #define	newstralloc2(p,s1,s2) newvstralloc((p),(s1),(s2),NULL)
