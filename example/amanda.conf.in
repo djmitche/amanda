@@ -99,6 +99,8 @@ holdingdisk hd1 {
 infofile "/usr/adm/amanda/@DEFAULT_CONFIG@/curinfo"	# database filename
 logdir   "/usr/adm/amanda/@DEFAULT_CONFIG@"		# log directory
 indexdir "/usr/adm/amanda/@DEFAULT_CONFIG@/index"	# index directory
+#tapelist "/usr/adm/amanda/@DEFAULT_CONFIG@/tapelist"	# list of used tapes
+# tapelist is stored, by default, in the directory that contains amanda.conf
 
 # tapetypes
 #
