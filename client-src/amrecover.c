@@ -4,13 +4,17 @@
 * Module:        
 * Part of:       
 *
-* Revision:      $Revision: 1.2 $
-* Last Edited:   $Date: 1997/04/17 09:16:57 $
+* Revision:      $Revision: 1.3 $
+* Last Edited:   $Date: 1997/04/29 09:40:13 $
 * Author:        $Author: amcore $
 *
 * Notes:         
 * Private Func:  
 * History:       $Log: amrecover.c,v $
+* History:       Revision 1.3  1997/04/29 09:40:13  amcore
+* History:       Better guessing of disk name at startup
+* History:       Now handles disks specified by logical names
+* History:
 * History:       Revision 1.2  1997/04/17 09:16:57  amcore
 * History:       amrecover failed to restore from an uncompressed dump image
 * History:       because I read the amrestore man page incorrectly. It now
@@ -300,19 +304,18 @@ int signum;
     
 
 /* try and guess the disk the user is currently on.
-   Return -1 if error, 0 if disk not local, 1 if disk local */
+   Return -1 if error, 0 if disk not local, 1 if disk local,
+   2 if disk local but can't guess name */
 /* do this by looking for the longest mount point which matches the
    current directory */
-int guess_disk P((void))
+int guess_disk P((char *cwd, char *dn_guess, char *mpt_guess))
 {
     int longest_match = 0;
     int current_length;
     int cwd_length;
     int local_disk = 0;
     generic_fsent_t fsent;
-    char dir[LINE_LENGTH];
     char fsname[LINE_LENGTH];
-    char cwd[LINE_LENGTH];
 
     if (getcwd(cwd, LINE_LENGTH) == NULL)
 	return -1;
@@ -329,7 +332,7 @@ int guess_disk P((void))
 	    && (strncmp(fsent.mntdir, cwd, current_length) == 0))
 	{
 	    longest_match = current_length;
-	    strcpy(dir, fsent.mntdir);
+	    strcpy(mpt_guess, fsent.mntdir);
 	    strcpy(fsname, (fsent.fsname+strlen(DEV_PREFIX)));
 	    local_disk = is_local_fstype(&fsent);
 	}
@@ -342,13 +345,27 @@ int guess_disk P((void))
     if (!local_disk)
 	return 0;
 
-    strcpy(mount_point, dir);
-    strcpy(disk_name, fsname);
-    if (strcmp(mount_point, "/") == 0)
-	strcpy(disk_path, cwd);
-    else
-	strcpy(disk_path, cwd+longest_match);
+    /* have mount point now */
+    /* disk name may be specified by mount point (logical name) or
+       device name, have to determine */
+    sprintf(line, "DISK %s", mpt_guess); /* try logical name */
+    if (exchange(line) == -1)
+	exit(1);
+    if (server_happy())
+    {
+	strcpy(dn_guess, mpt_guess);	/* logical is okay */
+	return 1;
+    }
+    sprintf(line, "DISK %s", fsname); /* try device name */
+    if (exchange(line) == -1)
+	exit(1);
+    if (server_happy())
+    {
+	strcpy(dn_guess, fsname);	/* device name is okay */
+	return 1;
+    }
 
+    /* neither is okay */
     return 1;
 }
 
@@ -373,6 +390,7 @@ char **argv;
     struct sigaction act, oact;
     extern char *optarg;
     extern int optind;
+    char cwd[LINE_LENGTH], dn_guess[LINE_LENGTH], mpt_guess[LINE_LENGTH];
 
     strcpy(config, DEFAULT_CONFIG);
     strcpy(server_name, DEFAULT_SERVER);
@@ -412,7 +430,7 @@ char **argv;
     if (optind != argc)
     {
 	(void)fprintf(stderr, USAGE);
-	return 1;
+	exit(1);
     }
 
     dbopen("/tmp/amrecover.debug");
@@ -431,17 +449,17 @@ char **argv;
 	perror("amrecover: Error setting signal handler");
 	dbprintf(("Error setting signal handler\n"));
 	dbclose();
-	return 1;
+	exit(1);
     }
     
-    printf("AMRECOVER Version 1.0. Contacting server on %s ...\n",
+    printf("AMRECOVER Version 1.1. Contacting server on %s ...\n",
 	   server_name);  
     if ((sp = getservbyname("amandaidx", "tcp")) == NULL)
     {
 	perror("amrecover: amandaidx/tcp unknown protocol");
 	dbprintf(("amandaidx/tcp unknown protocol\n"));
 	dbclose();
-	return 1;
+	exit(1);
     }
     if ((hp = gethostbyname(server_name)) == NULL)
     {
@@ -449,7 +467,7 @@ char **argv;
 		      server_name);
 	dbprintf(("%s is an unknown host\n", server_name));
 	dbclose();
-	return 1;
+	exit(1);
     }
     memset((char *)&server, 0, sizeof(server));
     memcpy((char *)&server.sin_addr, hp->h_addr, hp->h_length);
@@ -461,7 +479,7 @@ char **argv;
 	perror("amrecover: Error creating socket");
 	dbprintf(("Error creating socket\n"));
 	dbclose();
-	return 1;
+	exit(1);
     }
 
     if (connect(server_socket, (struct sockaddr *)&server, sizeof(server))
@@ -470,17 +488,17 @@ char **argv;
 	perror("amrecover: Error connecting to server");
 	dbprintf(("Error connecting to server\n"));
 	dbclose();
-	return 1;
+	exit(1);
     }
     
     /* get server's banner */
     if (print_reply() == -1)
-	return 1;
+	exit(1);
     if (!server_happy())
     {
 	dbclose();
 	close(server_socket);
-	return 0;
+	exit(1);
     }
     
     /* set the date of extraction to be today */
@@ -489,11 +507,11 @@ char **argv;
     printf("Setting restore date to today (%s)\n", dump_date);
     sprintf(line, "DATE %s", dump_date);
     if (converse(line) == -1)
-	return 1;
+	exit(1);
 
     sprintf(line, "SCNF %s", config);
     if (converse(line) == -1)
-	return 1;
+	exit(1);
     
     if (server_happy())
     {
@@ -507,6 +525,7 @@ char **argv;
 	}
 	else
 	{
+#ifndef USE_FQDN
 	    /* trim domain off name */
 	    for (i = 0; i < strlen(dump_hostname); i++)
 		if (dump_hostname[i] == '.')
@@ -514,33 +533,41 @@ char **argv;
 		    dump_hostname[i] = '\0';
 		    break;
 		}
+#endif
 	    sprintf(line, "HOST %s", dump_hostname);
 	    if (converse(line) == -1)
-		return 1;
+		exit(1);
 	}
 
 	if (server_happy())
 	{
             /* get a starting disk and directory based on where
 	       we currently are */
-	    if ((i = guess_disk()) == 1)
+	    switch (guess_disk(cwd, dn_guess, mpt_guess))
 	    {
-		/* okay, got a guess. Set disk accordingly */
-		printf("Divided $CWD into directory %s on disk %s mounted at %s.\n",
-		   disk_path, disk_name, mount_point);
-		sprintf(line, "DISK %s", disk_name);
-		if (converse(line) == -1)
-		    return 1;
-	    }
-	    else
-	    {
-		if (i == 0)
-		    (void)printf("$CWD is on a network mounted disk. You must restore from its server\n");
-		else
-		    (void)fprintf(stderr,
-				  "Can't determine disk and mount point from $CWD\n");
-		/* fake an unhappy server */
-		server_line[0] = '5';
+		case 1:
+		    /* okay, got a guess. Set disk accordingly */
+		    printf("$CWD '%s' is on disk '%s' mounted at '%s'.\n",
+			   cwd, dn_guess, mpt_guess);
+		    set_disk(dn_guess, mpt_guess);
+		    set_directory(cwd);
+		    break;
+
+		case 0:
+		    printf("$CWD '%s' is on a network mounted disk\n",
+			   cwd);
+		    printf("so you must 'sethost' to the server\n");
+		    /* fake an unhappy server */
+		    server_line[0] = '5';
+		    break;
+
+		case 2:
+		case -1:
+		default:
+		    printf("Can't determine disk and mount point from $CWD\n");
+		    /* fake an unhappy server */
+		    server_line[0] = '5';
+		    break;
 	    }
 	}
     }

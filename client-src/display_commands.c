@@ -4,13 +4,17 @@
 * Module:        
 * Part of:       
 *
-* Revision:      $Revision: 1.2 $
-* Last Edited:   $Date: 1997/04/21 08:48:27 $
+* Revision:      $Revision: 1.3 $
+* Last Edited:   $Date: 1997/04/29 09:40:17 $
 * Author:        $Author: amcore $
 *
 * Notes:         
 * Private Func:  
 * History:       $Log: display_commands.c,v $
+* History:       Revision 1.3  1997/04/29 09:40:17  amcore
+* History:       Better guessing of disk name at startup
+* History:       Now handles disks specified by logical names
+* History:
 * History:       Revision 1.2  1997/04/21 08:48:27  amcore
 * History:       These changes cleanup a number of problems related to getting
 * History:       and maintaining a consistent directory listing as the disk, host,
@@ -89,12 +93,8 @@ char *path;
     dbprintf(("add_dir_list_item: Adding \"%s\" \"%d\" \"%s\" \"%s\"\n",
 	      date, level, tape, path));
 
-    dbprintf(("add_dir_list_item: dir_list=0x%08x\n", (unsigned int)dir_list));
-
     if (dir_list == NULL)
     {
-	dbprintf(("add_dir_list_item: dir_list==NULL\n"));
-
 	if ((dir_list = (DIR_ITEM *)malloc(sizeof(DIR_ITEM))) == NULL)
 	    return -1;
 	dir_list->next = NULL;
@@ -103,22 +103,15 @@ char *path;
 	strcpy(dir_list->tape, tape);
 	strcpy(dir_list->path, path);
 
-	dbprintf(("add_dir_list_item: dir_list=0x%08x\n",
-		  (unsigned int)dir_list));
-
 	return 0;
     }
     
-    dbprintf(("add_dir_list_item: dir_list!=NULL\n"));
-
     last = dir_list;
     while (last->next != NULL)
     {
 	last = last->next;
     }
     
-    dbprintf(("add_dir_list_item: last=0x%08x\n", (unsigned int)last));
-
     if ((last->next = (DIR_ITEM *)malloc(sizeof(DIR_ITEM))) == NULL)
 	return -1;
     last->next->next = NULL;
@@ -126,9 +119,6 @@ char *path;
     last->next->level = level;
     strcpy(last->next->tape, tape);
     strcpy(last->next->path, path);
-
-    dbprintf(("add_dir_list_item: last->next=0x%08x\n",
-	      (unsigned int)(last->next)));
 
     return 0;
 }
