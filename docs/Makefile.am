@@ -23,6 +23,7 @@ pkgdata_DATA = \
 	WHATS.NEW		\
 	WISHLIST		\
 	YEAR2000		\
-	ZFTAPE
+	ZFTAPE			\
+	chg-scsi.notes
 
 EXTRA_DIST = $(pkgdata_DATA)
