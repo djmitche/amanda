@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-1999 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: version.h,v 1.4 1998/07/04 00:19:04 oliva Exp $
+ * $Id: version.h,v 1.5 1999/04/16 04:58:58 kashmir Exp $
  *
  * interface to obtain the current amanda version
  */
@@ -47,12 +47,13 @@
 extern const int   VERSION_MAJOR;
 extern const int   VERSION_MINOR;
 extern const int   VERSION_PATCH;
-extern const char *VERSION_COMMENT;
+extern const char * const VERSION_COMMENT;
+extern const char * const version_info[];
 
 /* versionsuffix returns an empty string or a string like -2.3.0.4b1.  */
-extern char *versionsuffix();
+extern const char *versionsuffix P((void));
 
 /* version returns a string representing the version of Amanda.  */
-extern char *version();
+extern const char *version P((void));
 
 #endif

@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-1999 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.76 1999/04/10 06:18:40 kashmir Exp $
+ * $Id: amanda.h,v 1.77 1999/04/16 04:58:54 kashmir Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -694,7 +694,6 @@ extern int    rmpdir    P((char *file, char *topdir));
 extern char  *sanitise_filename P((char *inp));
 
 extern int debug;
-extern char *version_info[];
 
 /*
  * Handle functions which are not always declared on all systems.  This

@@ -1,5 +1,17 @@
 1999-04-16  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/amanda.h: remove version_info extern.  Bump
+	copyright to 1999
+	* common-src/genversion.c: constify version_info.  Emit
+	{KRB4,KRB5,RSH}_SECURITY.  Bump copyright.
+	* common-src/version.h: const VERSION_COMMENT and version_info.
+	const return str and fully prototype versionsuffix() and version()
+	prototypes.  Bump copyright.
+	* server-src/planner.c (main): iterate through version_info using
+	an index instead of a pointer.
+
+1999-04-16  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/conffile.c: explicitly give the seen_columnspec global
 	an int type instead of letting the compiler default to it.
 

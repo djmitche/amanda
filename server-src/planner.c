@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-1999 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.90 1999/04/15 16:50:38 kashmir Exp $
+ * $Id: planner.c,v 1.91 1999/04/16 04:59:02 kashmir Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -136,11 +136,11 @@ char **argv;
 {
     disklist_t *origqp;
     int moved_one;
-    char *datestamp = NULL, **vp;
+    char *datestamp = NULL;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     long initial_size;
-    int fd;
+    int fd, i;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -164,8 +164,8 @@ char **argv;
 
     fprintf(stderr, "%s: pid %ld executable %s version %s\n",
 	    get_pname(), (long) getpid(), argv[0], version());
-    for(vp = version_info; *vp != NULL; vp++)
-	fprintf(stderr, "%s: %s", get_pname(), *vp);
+    for (i = 0; version_info[i] != NULL; i++)
+	fprintf(stderr, "%s: %s", get_pname(), version_info[i]);
 
     /*
      * 1. Networking Setup
