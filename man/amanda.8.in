@@ -1012,6 +1012,17 @@ How much data will fit on a tape.
 Default:
 .IR 200 .
 How fast the drive will accept data, in bytes per second.
+.TP
+.BS lbl-templ string
+A PostScript template file used by
+.B amreport
+to generate labels.
+Several sample files are provided with the Amanda sources in the
+.I example
+directory.
+See the
+.IR amreport (8)
+man page for more information.
 .LP
 In addition to options, you may also put another
 .B tapetype
