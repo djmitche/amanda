@@ -23,7 +23,7 @@
  * Author: George Scott, Computer Centre, Monash University.
  */
 /*
- * $Id: token.c,v 1.19 1998/04/14 17:11:23 jrj Exp $
+ * $Id: token.c,v 1.20 1998/06/04 18:55:52 jrj Exp $
  *
  * token bashing routines
  */
@@ -291,7 +291,7 @@ int main()
 			break;
 		}
 		r = split(str, t, 20, " ");
-		printf("%d token%s:\n", r (r == 1) ? "" : "s");
+		printf("%d token%s:\n", r, (r == 1) ? "" : "s");
 		for (i=0; i <= r; i++) printf("tok[%d] = \"%s\"\n", i, t[i]);
 	}
 	amfree(str);
@@ -315,6 +315,7 @@ int main()
 		amfree(sr);
 	}
 	amfree(str);
+	return 0;
 }
 
 #endif

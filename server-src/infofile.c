@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.42 1998/04/11 06:41:57 amcore Exp $
+ * $Id: infofile.c,v 1.43 1998/06/04 18:55:58 jrj Exp $
  *
  * manage current info file
  */
@@ -702,8 +702,8 @@ int num;
     for(i = 0; i < num; i++) {
 	sp = &r->inf[i];
 
-	printf("lev %d date %d tape %s filenum %d size %ld csize %ld secs %ld\n",
-	       i, sp->date, sp->label, sp->filenum,
+	printf("lev %d date %ld tape %s filenum %d size %ld csize %ld secs %ld\n",
+	       i, (long)sp->date, sp->label, sp->filenum,
 	       sp->size, sp->csize, sp->secs);
     }
     putchar('\n');
@@ -752,6 +752,7 @@ char *str;
 }
 #endif
 
+int
 main(argc, argv)
 int argc;
 char *argv[];
@@ -777,6 +778,10 @@ char *argv[];
 
   for(i = 1; i < argc; ++i) {
 #ifdef TEXTDB
+    if(i+1 >= argc) {
+      fprintf(stderr,"usage: %s host disk [host disk ...]\n",argv[0]);
+      return 1;
+    }
     open_infofile("curinfo");
     dump_db(argv[i], argv[i+1]);
     i++;
@@ -793,6 +798,7 @@ char *argv[];
     malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
   }
 
+  return 0;
 }
 
 #endif /* TEST */

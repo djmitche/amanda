@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.25 1998/04/10 23:49:02 amcore Exp $
+ * $Id: diskfile.c,v 1.26 1998/06/04 18:55:57 jrj Exp $
  *
  * read disklist file
  */
@@ -461,6 +461,17 @@ disk_t *dp;
 
 #ifdef TEST
 
+void
+dump_disk(dp)
+disk_t *dp;
+{
+    printf("  DISK %s (HOST %s, LINE %d) TYPE %s NAME %s SPINDLE %d\n",
+	   dp->name, dp->host->hostname, dp->line, dp->dtype_name,
+	   dp->name == NULL? "(null)": dp->name,
+	   dp->spindle);
+}
+
+void
 dump_disklist()
 {
     disk_t *dp, *prev;
@@ -495,15 +506,7 @@ dump_disklist()
     }
 }
 
-dump_disk(dp)
-disk_t *dp;
-{
-    printf("  DISK %s (HOST %s, LINE %d) TYPE %s NAME %s SPINDLE %d\n",
-	   dp->name, dp->host->hostname, dp->line, dp->dtype_name,
-	   dp->name == NULL? "(null)": dp->name,
-	   dp->spindle);
-}
-
+int
 main(argc, argv)
 int argc;
 char *argv[];
@@ -528,7 +531,10 @@ char *argv[];
   malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
   if (argc>1)
-    chdir(argv[1]);
+    if (chdir(argv[1])) {
+       perror(argv[1]);
+       return 1;
+    }
   if((result = read_conffile(CONFFILE_NAME)) == 0) {
     result = (read_diskfile(getconf_str(CNF_DISKFILE)) == NULL);
   }

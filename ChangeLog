@@ -5,6 +5,12 @@
 	drop core for trying to write into read only memory.  Also add the
 	capability of passing additional lookups on the command line.
 
+	* common-src/Makefile.am, common-src/file.c (main),
+	common-src/token.c (main), server-src/conffile.c (dump_configuration,
+	main), server-src/diskfile.c (main), server-src/infofile.c (main):
+	Clean up compiler warnings in the test programs and make them all
+	work again.
+
 1998-06-03  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* amplot/amplot.sh.in: modified command line argument parsing

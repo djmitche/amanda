@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.44 1998/05/17 22:45:10 amcore Exp $
+ * $Id: conffile.c,v 1.45 1998/06/04 18:55:54 jrj Exp $
  *
  * read configuration file
  */
@@ -2175,7 +2175,10 @@ tok_t exp;
 
 
 #ifdef TEST
+
+void
 dump_configuration(filename)
+    char *filename;
 {
     tapetype_t *tp;
     dumptype_t *dp;
@@ -2222,25 +2225,25 @@ dump_configuration(filename)
 	printf("\nHOLDINGDISK %s:\n", hp->name);
 	printf("	COMMENT \"%s\"\n", hp->comment);
 	printf("	DISKDIR \"%s\"\n", hp->diskdir);
-	printf("	SIZE %d\n", hp->disksize);
-	printf("	CHUNKSIZE %d\n", hp->chunksize);
+	printf("	SIZE %ld\n", (long)hp->disksize);
+	printf("	CHUNKSIZE %ld\n", (long)hp->chunksize);
     }
 
     for(tp = tapelist; tp != NULL; tp = tp->next) {
 	printf("\nTAPETYPE %s:\n", tp->name);
 	printf("	COMMENT \"%s\"\n", tp->comment);
 	printf("	LBL_TEMPL %s\n", tp->lbl_templ);
-	printf("	LENGTH %u\n", tp->length);
-	printf("	FILEMARK %u\n", tp->filemark);
-	printf("	SPEED %d\n", tp->speed);
+	printf("	LENGTH %lu\n", (unsigned long)tp->length);
+	printf("	FILEMARK %lu\n", (unsigned long)tp->filemark);
+	printf("	SPEED %ld\n", (long)tp->speed);
     }
 
     for(dp = dumplist; dp != NULL; dp = dp->next) {
 	printf("\nDUMPTYPE %s:\n", dp->name);
 	printf("	COMMENT \"%s\"\n", dp->comment);
 	printf("	PROGRAM \"%s\"\n", dp->program);
-	printf("	PRIORITY %d\n", dp->priority);
-	printf("	DUMPCYCLE %d\n", dp->dumpcycle);
+	printf("	PRIORITY %ld\n", (long)dp->priority);
+	printf("	DUMPCYCLE %ld\n", (long)dp->dumpcycle);
 	st = dp->start_t;
 	if(st) {
 	    stm = localtime(&st);
@@ -2254,7 +2257,7 @@ dump_configuration(filename)
 	    }
 	    printf(" \"%s\"\n", dp->exclude);
 	}
-	printf("	FREQUENCY %d\n", dp->frequency);
+	printf("	FREQUENCY %ld\n", (long)dp->frequency);
 	printf("	MAXDUMPS %d\n", dp->maxdumps);
 	printf("	STRATEGY ");
 	switch(dp->strategy) {
@@ -2319,6 +2322,7 @@ dump_configuration(filename)
     }
 }
 
+int
 main(argc, argv)
 int argc;
 char *argv[];
@@ -2344,7 +2348,10 @@ char *argv[];
 
   startclock();
   if (argc>1)
-    chdir(argv[1]);
+    if(chdir(argv[1])) {
+      perror(argv[1]);
+      return 1;
+    }
   result = read_conffile(CONFFILE_NAME);
   dump_configuration(CONFFILE_NAME);
 

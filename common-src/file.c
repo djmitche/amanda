@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.12 1998/04/08 16:24:39 amcore Exp $
+ * $Id: file.c,v 1.13 1998/06/04 18:55:51 jrj Exp $
  *
  * file and directory bashing routines
  */
@@ -341,9 +341,14 @@ areads (fd)
 
 #ifdef TEST
 
-int main() {
+int main(argc, argv)
+	int argc;
+	char **argv;
+{
 	int rc;
 	int fd;
+	char *name;
+	char *top;
 
 	for(fd = 3; fd < FD_SETSIZE; fd++) {
 		/*
@@ -357,8 +362,16 @@ int main() {
 
 	set_pname("file test");
 
-	printf("Create...");
-	rc = mkpdir("/tmp/a/b/c/d/e", 0777, (uid_t)-1, (gid_t)-1);
+	if (argc > 2) {
+		name = *++argv;
+		top = *++argv;
+	} else {
+		name = "/tmp/a/b/c/d/e";
+		top = "/tmp";
+	}
+
+	printf("Create %s ...", name);
+	rc = mkpdir(name, 0777, (uid_t)-1, (gid_t)-1);
 	if (rc == 0)
 		printf("done\n");
 	else {
@@ -366,8 +379,8 @@ int main() {
 		return rc;
 	}
 
-	printf("Delete...");
-	rc = rmpdir("/tmp/a/b/c/d/e", "/tmp");
+	printf("Delete %s back to %s ...", name, top);
+	rc = rmpdir(name, top);
 	if (rc == 0)
 		printf("done\n");
 	else {

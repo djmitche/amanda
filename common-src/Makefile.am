@@ -99,8 +99,16 @@ regerror.ih: $(REGsrcdir)/regerror.c $(REGsrcdir)/mkh
 # used for testing only
 
 statfs_SOURCES = statfs.test.c
+statfs_LDADD = $(libamanda_a_LIBADD) \
+	error.$(OBJ_EXTENSION)
+
 token_SOURCES = token.test.c
+token_LDADD = $(libamanda_a_LIBADD) \
+	alloc.$(OBJ_EXTENSION) error.$(OBJ_EXTENSION) file.$(OBJ_EXTENSION)
+
 file_SOURCES = file.test.c
+file_LDADD = $(libamanda_a_LIBADD) \
+	alloc.$(OBJ_EXTENSION) error.$(OBJ_EXTENSION)
 
 %.test.c: $(srcdir)/%.c
 	echo '#define TEST' >$@
