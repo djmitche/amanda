@@ -52,6 +52,10 @@ program, it will be rewritten by running this script!):
 
 perl -pi -e 'BEGIN { $/ = "/dev/tty" } s-$/-/dev/nul-' restore
 
+
+The Ultrix C compiler seems to be too broken to compile Amanda.  You
+are likely to need gcc or egcs.
+
 ---------------------------------------------------------------------------
 HP/UX
 -----
@@ -186,6 +190,13 @@ you *must* patch your system with *all* kernel and scsi rollup
 patches, otherwise you may end up with useless tapes, due to tape
 rewinding after short periods of inactivity.  See
 http://www-viz.tamu.edu/~sgi-faq/ for more details.
+
+
+Some unpatched version of xfsdump are reported as not printing
+estimates.  This causes estimates to take much longer than they had
+to, because backups are always performed twice.  According to Mike
+Acar <mike@kentinfoworks.com>, patch 2333 for IRIX 5.3 and 6.1 will
+fix this problem.
 
 ---------------------------------------------------------------------------
 IRIX 6
