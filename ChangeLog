@@ -1,3 +1,10 @@
+1998-09-11  John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/amstatus.pl.in (all): fix USE_VERSION_SUFFIXES=yes
+	problems.  Reported by David Eckelkamp <davide@locutus.tradewave.com>.
+
+	* man/amstatus.8.in (all): fix minor typos.
+
 1998-09-10  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/conffile.c (dump_configuration): runspercycle is not a
