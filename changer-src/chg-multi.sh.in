@@ -29,6 +29,11 @@
 #
 # chg-multi.sh - generic tape changer script
 #
+# chg-multi is 'not' intended for use with tape changers or
+# libraries.  It is primarily used to make several, individual
+# tape drives appear to amanda as a single changer or library.
+# The "multi" in the script name refers to multiple drives.
+#
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
