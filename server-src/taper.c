@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.71 2001/07/31 23:19:58 jrjackson Exp $
+/* $Id: taper.c,v 1.72 2001/08/24 20:00:02 jrjackson Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -145,6 +145,7 @@ char *tapetype = NULL;
 tapetype_t *tt = NULL;
 long tt_blocksize;
 long tt_blocksize_kb;
+long buffer_size;
 int pad_tape_blocksize;
 static unsigned long malloc_hist_1, malloc_size_1;
 static unsigned long malloc_hist_2, malloc_size_2;
@@ -172,6 +173,9 @@ char **main_argv;
     int fd;
     unsigned int size;
     int i;
+    int j;
+    int page_size;
+    char *first_buffer;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -270,8 +274,21 @@ char **main_argv;
 
     /* create shared memory segment */
 
+#if defined(HAVE_GETPAGESIZE)
+    page_size = getpagesize();
+    fprintf(stderr, "%s: page size is %d\n", get_pname(), page_size);
+#else
+    page_size = 1024;
+    fprintf(stderr, "%s: getpagesize() not available, using %d\n",
+	    get_pname(),
+	    page_size);
+#endif
+    buffer_size = am_round(tt_blocksize, page_size);
+    fprintf(stderr, "%s: buffer size is %ld\n", get_pname(), buffer_size);
     while(conf_tapebufs > 0) {
-	size = conf_tapebufs * tt_blocksize + conf_tapebufs * sizeof(buffer_t);
+	size  = page_size;
+	size += conf_tapebufs * buffer_size;
+	size += conf_tapebufs * sizeof(buffer_t);
 	if((buffers = attach_buffers(size)) != NULL) {
 	    break;
 	}
@@ -285,11 +302,36 @@ char **main_argv;
     if(buffers == NULL) {
 	error("cannot allocate shared memory");
     }
-    buftable = (buffer_t *)(buffers + conf_tapebufs * tt_blocksize);
-    memset(buftable, 0, conf_tapebufs * sizeof(buffer_t));
-    for(i = 0; i < conf_tapebufs; i++) {
-	buftable[i].buffer = buffers + i * tt_blocksize;
+    i = (buffers - (char *)0) & (page_size - 1);  /* page boundary offset */
+    if(i != 0) {
+	first_buffer = buffers + page_size - i;
+	fprintf(stderr, "%s: shared memory at 0x%x, first buffer at 0x%x\n",
+		get_pname(),
+		(unsigned int)buffers,
+		(unsigned int)first_buffer);
+    } else {
+	first_buffer = buffers;
     }
+    buftable = (buffer_t *)(first_buffer + conf_tapebufs * buffer_size);
+    memset(buftable, 0, conf_tapebufs * sizeof(buffer_t));
+    if(conf_tapebufs < 10) {
+	j = 1;
+    } else if(conf_tapebufs < 100) {
+	j = 2;
+    } else {
+	j = 3;
+    }
+    for(i = 0; i < conf_tapebufs; i++) {
+	buftable[i].buffer = first_buffer + i * buffer_size;
+	fprintf(stderr, "%s: buffer[%0*d] at 0x%x\n",
+		get_pname(),
+		j, i,
+		(unsigned int)buftable[i].buffer);
+    }
+    fprintf(stderr, "%s: buffer structures at 0x%x for %d bytes\n",
+	    get_pname(),
+	    (unsigned int)buftable,
+	    conf_tapebufs * sizeof(buffer_t));
 
     /* fork off child writer process, parent becomes reader process */
 
