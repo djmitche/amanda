@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.24 1998/03/07 15:45:44 martinea Exp $
+ * $Id: amflush.c,v 1.25 1998/03/07 18:12:56 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -45,13 +45,15 @@ disklist_t *diskqp;
 static char *config;
 char *confdir;
 char *reporter_program;
+char **datestamps;
 
 /* local functions */
 int main P((int argc, char **argv));
-void flush_holdingdisk P((char *diskdir));
+void flush_holdingdisk P((char *diskdir, char *datestamp));
 void confirm P((void));
 void detach P((void));
 void run_dumps P((void));
+static char *construct_datestamp P((void));
 
 
 int main(main_argc, main_argv)
@@ -94,6 +96,8 @@ char **main_argv;
     if(read_conffile(CONFFILE_NAME))
 	error("could not read amanda config file\n");
 
+    datestamp = construct_datestamp();
+
     if((diskqp = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
 	error("could not read disklist file\n");
 
@@ -110,8 +114,7 @@ char **main_argv;
     reporter_program = vstralloc(libexecdir, "/", "reporter", versionsuffix(),
 				 NULL);
 
-    afree(datestamp);
-    datestamp = pick_datestamp();
+    datestamps = pick_datestamp();
     confirm();
     if(!foreground) detach();
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
@@ -126,8 +129,13 @@ void confirm()
 {
     tape_t *tp;
     char *tpchanger;
+    char **dss;
 
-    printf("\nFlushing dumps in %s ", datestamp);
+    printf("\nFlushing dumps in");
+    for(dss = datestamps; *dss != NULL; dss++)
+	printf(" %s,",*dss);
+    printf("\n");
+printf("today: %s\n",datestamp);
     tpchanger = getconf_str(CNF_TPCHANGER);
     if(*tpchanger != '\0') printf("using tape changer \"%s\".\n", tpchanger);
     else printf("to tape drive %s.\n", getconf_str(CNF_TAPEDEV));
@@ -171,8 +179,8 @@ void detach()
 }
 
 
-void flush_holdingdisk(diskdir)
-char *diskdir;
+void flush_holdingdisk(diskdir, datestamp)
+char *diskdir, *datestamp;
 {
     DIR *workdir;
     struct dirent *entry;
@@ -230,11 +238,11 @@ char *diskdir;
 	    continue;
 	}
 
-	taper_cmd(FILE_WRITE, dp, destname, level);
+	taper_cmd(FILE_WRITE, dp, destname, level, datestamp);
 	tok = getresult(taper, 0);
 	if(tok == TRYAGAIN) {
 	    /* we'll retry one time */
-	    taper_cmd(FILE_WRITE, dp, destname, level);
+	    taper_cmd(FILE_WRITE, dp, destname, level, datestamp);
 	    tok = getresult(taper, 0);
 	}
 
@@ -294,13 +302,14 @@ char *diskdir;
 void run_dumps()
 {
     holdingdisk_t *hdisk;
+    char **dss;
 
     startclock();
     log_add(L_START, "date %s", datestamp);
 
     chdir(confdir);
     startup_tape_process();
-    taper_cmd(START_TAPER, datestamp, NULL, 0);
+    taper_cmd(START_TAPER, datestamp, NULL, 0, NULL);
     tok = getresult(taper, 0);
 
     if(tok != TAPER_OK) {
@@ -312,11 +321,13 @@ void run_dumps()
     }
     else {
 
-	for(hdisk = holdingdisks; hdisk != NULL; hdisk = hdisk->next)
-	    flush_holdingdisk(hdisk->diskdir);
+    	for(dss = datestamps; *dss != NULL; dss++) {
+	    for(hdisk = holdingdisks; hdisk != NULL; hdisk = hdisk->next)
+		flush_holdingdisk(hdisk->diskdir, *dss);
+	}
 
 	/* tell taper to quit, then wait for it */
-	taper_cmd(QUIT, NULL, NULL, 0);
+	taper_cmd(QUIT, NULL, NULL, 0, NULL);
 	while(wait(NULL) != -1);
 
     }
@@ -327,4 +338,17 @@ void run_dumps()
 
     chdir(confdir);
     execle(reporter_program, "reporter", (char *)0, safe_env());
+}
+
+static char *construct_datestamp()
+{
+    struct tm *tm;
+    char datestamp[3*NUM_STR_SIZE];
+    time_t today;
+
+    today = time((time_t *)NULL);
+    tm = localtime(&today);
+    ap_snprintf(datestamp, sizeof(datestamp),
+                "%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
+    return stralloc(datestamp);
 }

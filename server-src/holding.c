@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: holding.c,v 1.11 1998/02/10 01:37:00 martinea Exp $
+ * $Id: holding.c,v 1.12 1998/03/07 18:12:59 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -154,10 +154,10 @@ int select_dir()
     struct dirname *dir;
 
     while(1) {
-	puts("\nMultiple Amanda directories, please pick one by letter:");
+	puts("\nMultiple Amanda directories, please pick multiple by letter:");
 	for(dir = dir_list, i = 0; dir != NULL && i < 26; dir = dir->next, i++)
 	    printf("  %c. %s\n", 'A'+i, dir->name);
-	printf("Select a directory to flush [A..%c]: ", 'A' + i - 1);
+	printf("Select a directory to flush [A..%c]: [ALL] ", 'A' + i - 1);
 	ch = get_letter_from_user();
 	if(ch < 'A' || ch > 'A' + i - 1)
 	    printf("That is not a valid answer.  Try again, or ^C to quit.\n");
@@ -217,26 +217,72 @@ int verbose;
     closedir(topdir);
 }
 
-char *pick_datestamp()
+char **pick_datestamp()
 {
     holdingdisk_t *hdisk;
     struct dirname *dir;
-    int picked;
+    int picked, i;
+    char ** directories_names;
+    struct dirname **directories;
+    char answer[1024], *result;
+    char max_char, *ch, chupper;
 
     for(hdisk = holdingdisks; hdisk != NULL; hdisk = hdisk->next)
 	scan_holdingdisk(hdisk->diskdir,1);
 
+    directories_names = alloc((ndirs+1) * sizeof(char *));
+    directories = alloc((ndirs) * sizeof(struct dirname *));
+    for(dir = dir_list, i=0; dir != NULL; dir = dir->next,i++) {
+	directories[i] = dir;
+    }
+
     if(ndirs == 0) {
+	directories_names[0] = NULL;
 	puts("Could not find any Amanda directories to flush.");
 	exit(1);
     }
-    else if(ndirs > 1) picked = select_dir();
-    else picked = 0;
+    else if(ndirs == 1) {
+	directories_names[0] = stralloc(dir_list->name);
+	directories_names[1] = NULL;
+    }
+    else {
+	while(1) {
+	    puts("\nMultiple Amanda directories, please pick one by letter:");
+	    for(dir = dir_list, i = 0; dir != NULL && i < 26; dir = dir->next, i++) {
+		printf("  %c. %s\n", 'A'+i, dir->name);
+		max_char = 'A'+i;
+	    }
+	    printf("Select directories to flush [A..%c]: [ALL] ", 'A' + i - 1);
+	    result = fgets(answer, 1000, stdin);
+	    if(strlen(answer) == 1 || !strncasecmp(answer,"ALL",3)) {
+		for(dir = dir_list, i = 0; dir != NULL; dir = dir->next)
+		    directories_names[i++] = stralloc(dir->name);
+		directories_names[i] = NULL;
+		break;
+	    }
+	    else {
+		directories_names[0]   = NULL;
+		i=0;
+		for(ch = answer; *ch != '\0'; ch++) {
+		    chupper = toupper(*ch);
+		    if(chupper >= 'A' && chupper <= max_char) {
+			directories_names[i++] = stralloc(directories[chupper-'A']->name);
+			directories_names[i]   = NULL;
+		    }
+		    else if(chupper != ' ' && chupper != ',' && chupper != '\n') {
+			i=0;
+			printf("Invalid caracter: %c\n",*ch);
+			break;
+		    }
+		}
+		if(i>0)
+		    break;
+	    }
 
-    for(dir = dir_list; dir != NULL; dir = dir->next)
-	if(picked-- == 0) break;
+	}
+    }
 
-    return stralloc(dir->name);
+    return directories_names;
 }
 
 int get_amanda_names(fname, hostname, diskname, level)
