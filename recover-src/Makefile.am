@@ -21,7 +21,8 @@ endif
 LDADD = ../common-src/libamanda.$(LIB_EXTENSION) \
 	@LEXLIB@ \
 	../client-src/libamclient.$(LIB_EXTENSION) \
-	../common-src/libamanda.$(LIB_EXTENSION)
+	../common-src/libamanda.$(LIB_EXTENSION) \
+	$(READLINE_LIBS)
 
 amrecover_SOURCES =	amrecover.c					\
 			display_commands.c		extract_list.c	\

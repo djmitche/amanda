@@ -14,7 +14,7 @@ AC_DEFINE_UNQUOTED(CONFIGURE_COMMAND,"$CONFIGURE_COMMAND",
 	  [Saves the original ./configure command line arguments])
 AC_SUBST(CONFIGURE_COMMAND)
 
-AM_INIT_AUTOMAKE(amanda, 2.4.4p1)
+AM_INIT_AUTOMAKE(amanda, 2.4.4.1p2-pre)
 AM_CONFIG_HEADER(config/config.h)
 
 AC_PREREQ(2.53)		dnl Minimum Autoconf version required.
@@ -567,7 +567,7 @@ y |  ye | yes) AC_DEFINE(HAVE_BROKEN_FSF,1,[Define this if issuing a fsf on a ta
 esac
 
 AC_ARG_WITH(gnutar,
-    [  --with-gnutar[=PROG]      use PROG as GNU tar executable [default: looks for one]],
+    [  --with-gnutar[=PROG]     use PROG as GNU tar executable [default: looks for one]],
     [
 	case "$withval" in
 	    /*)	GNUTAR="$withval";;
@@ -1931,6 +1931,12 @@ if test "$ac_cv_lib_termcap_tgetent" = yes ||
     fi
 else
     AC_MSG_WARN([*** No terminal library, no history and command line editing in amrecover!])
+fi
+
+if test "$ac_cv_lib_readline_readline" = yes; then
+    READLINE_LIBS=-lreadline
+    LIBS=`echo $LIBS | sed s/-lreadline//`
+    AC_SUBST(READLINE_LIBS)
 fi
 
 if test "$ac_cv_header_linux_zftape_h" = yes; then
