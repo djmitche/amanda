@@ -1,4 +1,10 @@
 2005-02-09  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* client-src/calcsize.c: Print estimate to STDERR.
+	* client-src/sendsize.c (generic_calc_estimates): Read calcsize result,
+	  and send it to amandad. Write debuging message.
+
+2005-02-09  Jean-Louis Martineau <martineau@iro.umontreal.ca>
         Patch by Franz G. Fischer
 
 	* server-src/conffile.c: Adds a value type LONG and a val_t.l long
