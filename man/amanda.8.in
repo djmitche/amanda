@@ -722,8 +722,10 @@ Default:
 .IR 0.50 ,
 .IR 0.50 .
 The expected full and incremental compression factor for dumps.
-Normally you should not set this because Amanda keeps the actual full
-and partial dump compression rates in the historical database.
+It is only used if Amanda does not have any history information on
+compression rates for a filesystem, so you should not usually have to
+set it.  However, it may be useful for the first time you back up a
+very large filesystem that compresses very little.
 .TP
 .BS "compress [client|server]" string
 Default:
