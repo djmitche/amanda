@@ -1,3 +1,11 @@
+2001-04-09 Thomas Hepper <th@ant.han.de>
+	* changer-src/scsi-changer-driver.c: More rework on the debug output.
+	changed definition SENSE_NO_TAPE to SENSE_TAPE_NOT_ONLINE
+	In function GenericRewind do an check before the rewind to see
+	if the tape is loaded.
+	* changer-src/scsi-defs.h: New #define for the debug, SECTION_TAPE
+	* changer-src/sense.c: New definition for SENSE_RETRY, ASC=4, ASCQ=1
+	
 2001-04-08  Alexandre Oliva  <aoliva@redhat.com>
 
 	* client-src/getfsent.c (search_fstab): Don't skip entry just

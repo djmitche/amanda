@@ -14,7 +14,7 @@
  At the moment the following status us returned
  SENSE_ABORT	       	-> -1 , some strange happend, abort everything
  SENSE_IGNORE	       	-> 0 , nothing special, only info
- SENSE_NO_TAPE	       	-> 1 , this is for tape devices, not tape online
+ SENSE_NO_TAPE	       	-> 1 , this is for tape devices, not tape online (not used any longer ??)
  SENSE_RETRY	       	-> 2 , retry the command
  SENSE_IES	       	-> 3 , initialize element status
  SENSE_TAPE_NOT_LOADED 	-> 4 , no tape loaded
@@ -34,6 +34,7 @@
 	{ "generic", "", TYPE_TAPE,  SENSE_RECOVERED_ERROR , -1, -1, SENSE_RETRY, "Default for SENSE_RECOVERED_ERROR"},
 
 	{ "generic", "", TYPE_TAPE , SENSE_NOT_READY, 0x0, 0x0, SENSE_IGNORE, "Not Ready"},
+	{ "generic", "", TYPE_TAPE , SENSE_NOT_READY, 0x4, 0x1, SENSE_RETRY, "The drive is not ready, but it is in the process of becoming ready"},
 	{ "generic", "", TYPE_TAPE , SENSE_NOT_READY, 0x3A, 0x0, SENSE_TAPE_NOT_ONLINE, "No Tape online"},
 	{ "generic", "", TYPE_TAPE,  SENSE_NOT_READY , -1, -1, SENSE_RETRY, "Default for SENSE_NOT_READY"},
 

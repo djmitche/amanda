@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.21 2001/02/25 16:54:08 martinea Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.22 2001/04/10 16:17:42 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -560,23 +560,23 @@ void Inventory(char *labelfile, int drive, int eject, int start, int stop, int c
 int isempty(int fd, int slot)
 {
   extern OpenFiles_T *pDev;
-  dbprintf(("##### START isempty\n"));
+  DebugPrint(DEBUG_INFO,SECTION_TAPE,"##### START isempty\n");
 
   if (ElementStatusValid == 0)
     {
       if ( pDev[fd].functions->function_status(fd, 1) != 0)
         {
-          dbprintf(("##### STOP isempty [-1]\n"));
+          DebugPrint(DEBUG_ERROR,SECTION_TAPE,"##### STOP isempty [-1]\n");
           return(-1);
         }
     }
 
   if (pSTE[slot].status == 'E')
     {
-      dbprintf(("##### STOP isempty [1]\n"));
+      DebugPrint(DEBUG_INFO,SECTION_TAPE,"##### STOP isempty [1]\n");
       return(1);
     }
-  dbprintf(("##### STOP isempty [0]\n"));
+  DebugPrint(DEBUG_INFO,SECTION_TAPE,"##### STOP isempty [0]\n");
   return(0);
 }
 
@@ -586,15 +586,15 @@ int get_clean_state(char *tapedev)
   /* Return 1 if cleaning is needed */
   int ret;
   
-  dbprintf(("##### START get_clean_state\n"));
+  DebugPrint(DEBUG_INFO,SECTION_TAPE,"##### START get_clean_state\n");
 
   if (pDev[INDEX_TAPECTL].SCSI == 0)
     {
-      dbprintf(("##### STOP get_clean_state [-1]\n"));
+      DebugPrint(DEBUG_ERROR,SECTION_TAPE,"##### STOP get_clean_state [-1]\n");
       return(-1);
     }
   ret=pDev[INDEX_TAPECTL].functions->function_clean(tapedev);
-  dbprintf(("##### STOP get_clean_state [%d]\n", ret));
+  DebugPrint(DEBUG_INFO,SECTION_TAPE,"##### STOP get_clean_state [%d]\n", ret);
   return(ret);    
 }
 
@@ -610,23 +610,23 @@ int eject_tape(char *tapedev, int type)
   extern OpenFiles_T *pDev;
   int ret = 0;
 
-  dbprintf(("##### START eject_tape\n"));
+  DebugPrint(DEBUG_INFO,SECTION_TAPE,"##### START eject_tape\n");
 
   if (pDev[INDEX_TAPECTL].SCSI == 1 && pDev[INDEX_TAPECTL].avail == 1 && type == 1)
     {
       ret=pDev[INDEX_TAPECTL].functions->function_eject(tapedev, type);
-      dbprintf(("##### STOP (SCSI)eject_tape [%d]\n", ret));
+      DebugPrint(DEBUG_INFO,SECTION_TAPE,"##### STOP (SCSI)eject_tape [%d]\n", ret);
       return(ret);
     }
   
   if (pDev[INDEX_TAPE].avail == 1)
     {
       ret=Tape_Eject(pDev[INDEX_TAPE].fd);
-      dbprintf(("##### STOP (ioctl)eject_tape [%d]\n", ret));
+      DebugPrint(DEBUG_INFO,SECTION_TAPE,"##### STOP (ioctl)eject_tape [%d]\n", ret);
       return(ret);
     }
 
-  dbprintf(("##### STOP eject_tape [-1]\n"));
+  DebugPrint(DEBUG_INFO,SECTION_TAPE,"##### STOP eject_tape [-1]\n");
   return(-1);
 }
 
@@ -638,13 +638,13 @@ int find_empty(int fd, int start, int count)
   int x;
   int end;
 
-  dbprintf(("###### START find_empty\n"));
+  DebugPrint(DEBUG_INFO,SECTION_ELEMENT,"###### START find_empty\n");
 
   if (ElementStatusValid == 0)
     {
       if ( pDev[fd].functions->function_status(fd , 1) != 0)
         {
-          dbprintf(("###### END find_empty [%d]\n", -1));
+          DebugPrint(DEBUG_ERROR,SECTION_ELEMENT,"###### END find_empty [%d]\n", -1);
           return(-1);
         }
     }
@@ -661,17 +661,17 @@ int find_empty(int fd, int start, int count)
       end = STE;
     }
   
-  dbprintf(("start at %d, end at %d\n", start, end));
+  DebugPrint(DEBUG_INFO,SECTION_ELEMENT,"start at %d, end at %d\n", start, end);
 
   for (x = start; x < end; x++)
     {
       if (pSTE[x].status == 'E')
         {
-          dbprintf(("###### END find_empty [%d]\n", x));     
+          DebugPrint(DEBUG_INFO,SECTION_ELEMENT,"###### END find_empty [%d]\n", x);     
           return(x);
         }
     }
-  dbprintf(("###### END find_empty [%d]\n", -1));
+  DebugPrint(DEBUG_ERROR,SECTION_ELEMENT,"###### END find_empty [%d]\n", -1);
   return(-1);
 }
 
@@ -687,22 +687,26 @@ int drive_loaded(int fd, int drivenum)
 {
   extern OpenFiles_T *pDev;
 
-  dbprintf(("###### START drive_loaded\n"));
-  dbprintf(("%-20s : fd %d drivenum %d \n", "drive_loaded", fd, drivenum));
+  DebugPrint(DEBUG_INFO,SECTION_TAPE,"###### START drive_loaded\n");
+  DebugPrint(DEBUG_INFO,SECTION_TAPE,"%-20s : fd %d drivenum %d \n", "drive_loaded", fd, drivenum);
   
   
   if (ElementStatusValid == 0)
     {
       if (pDev[INDEX_CHANGER].functions->function_status(INDEX_CHANGER, 1) != 0)
 	{
+	  DebugPrint(DEBUG_ERROR,SECTION_TAPE,"Fatal error\n");
 	  return(-1);
 	}
     }
   
-  if (pDTE[drivenum].status == 'E')
+  if (pDTE[drivenum].status == 'E') {
+    DebugPrint(DEBUG_INFO,SECTION_TAPE,"###### STOP drive_loaded (empty)\n");
     return(0);
-  
-  return(1);
+  } else {
+    DebugPrint(DEBUG_INFO,SECTION_TAPE,"###### STOP drive_loaded (not empty)\n");
+    return(1);
+  }
 }
 
 
@@ -713,37 +717,36 @@ int drive_loaded(int fd, int drivenum)
 int unload(int fd, int drive, int slot) 
 {
   extern OpenFiles_T *pDev;
-
-  dbprintf(("###### START unload\n"));
-  dbprintf(("%-20s : fd %d, slot %d, drive %d \n", "unload", fd, slot, drive));
-
-
+  
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"###### START unload\n");
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"%-20s : fd %d, slot %d, drive %d \n", "unload", fd, slot, drive);
+  
+  
   if (ElementStatusValid == 0)
-      {
-          if (pDev[INDEX_CHANGER].functions->function_status(INDEX_CHANGER , 1) != 0)
-              {
-                  return(-1);
-              }
-      }
-
-  dbprintf(("%-20s : unload drive %d[%d] slot %d[%d]\n", "unload",
-            drive,
-            pDTE[drive].address,
-            slot,
-            pSTE[slot].address));
+    {
+      if (pDev[INDEX_CHANGER].functions->function_status(INDEX_CHANGER , 1) != 0)
+	{
+	  DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Element Status not valid, reset failed\n");
+	  DebugPrint(DEBUG_ERROR, SECTION_TAPE,"##### STOP unload (-1)\n");
+	  return(-1);
+	}
+    }
+  
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"%-20s : unload drive %d[%d] slot %d[%d]\n", "unload", drive, pDTE[drive].address, slot, pSTE[slot].address);
   
   
   if (pDTE[drive].status == 'E')
     {
-      dbprintf(("unload : Drive %d address %d is empty\n", drive, pDTE[drive].address));
+      DebugPrint(DEBUG_ERROR, SECTION_TAPE,"unload : Drive %d address %d is empty\n", drive, pDTE[drive].address);
+      DebugPrint(DEBUG_ERROR, SECTION_TAPE,"##### STOP unload (-1)\n");
       return(-1);
     }
   
   if (pSTE[slot].status == 'F')
     {
-      dbprintf(("unload : Slot %d address %d is full\n", drive, pSTE[slot].address));
+      DebugPrint(DEBUG_INFO, SECTION_TAPE,"unload : Slot %d address %d is full\n", drive, pSTE[slot].address);
       slot = find_empty(fd, 0, 0);
-      dbprintf(("unload : try to unload to slot %d\n", slot));
+      DebugPrint(DEBUG_INFO, SECTION_TAPE,"unload : try to unload to slot %d\n", slot);
     }
   
   pDev[INDEX_CHANGER].functions->function_move(INDEX_CHANGER , pDTE[drive].address, pSTE[slot].address);
@@ -751,10 +754,12 @@ int unload(int fd, int drive, int slot)
    * Update the Status
    */
   if (pDev[INDEX_CHANGER].functions->function_status(INDEX_CHANGER , 1) != 0)
-      {
-          return(-1);
-      }
-
+    {
+      DebugPrint(DEBUG_ERROR, SECTION_TAPE,"##### STOP unload (-1 update status failed)\n");
+      return(-1);
+    }
+  
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP unload(0)\n");
   return(0);
 }
 
@@ -774,31 +779,35 @@ int load(int fd, int drive, int slot)
   int ret;
   extern OpenFiles_T *pDev;
 
-  dbprintf(("###### START load\n"));
-  dbprintf(("%-20s : fd %d, drive %d, slot %d \n", "load", fd, drive, slot));
+  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"###### START load\n");
+  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"%-20s : fd %d, drive %d, slot %d \n", "load", fd, drive, slot);
 
   if (ElementStatusValid == 0)
       {
           if (pDev[fd].functions->function_status(fd, 1) != 0)
               {
-                  return(-1);
+		DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"##### STOP load (-1)\n");
+		DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"##### STOP load (-1 update status failed)\n");
+		return(-1);
               }
       }
 
-  dbprintf(("load : load drive %d[%d] slot %d[%d]\n",drive,
+  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"load : load drive %d[%d] slot %d[%d]\n",drive,
           pDTE[drive].address,
           slot,
-          pSTE[slot].address));
+          pSTE[slot].address);
 
   if (pDTE[drive].status == 'F')
     {
-      dbprintf(("load : Drive %d address %d is full\n", drive, pDTE[drive].address));
+      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"load : Drive %d address %d is full\n", drive, pDTE[drive].address);
+      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"##### STOP load (-1 update status failed)\n");
       return(-1);
     }
 
   if (pSTE[slot].status == 'E')
     {
-      dbprintf(("load : Slot %d address %d is empty\n", drive, pSTE[slot].address));
+      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"load : Slot %d address %d is empty\n", drive, pSTE[slot].address);
+      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"##### STOP load (-1 update status failed)\n");
       return(-1);
     }
 
@@ -809,9 +818,10 @@ int load(int fd, int drive, int slot)
    */
   if (pDev[fd].functions->function_status(fd, 1) != 0)
       {
-          return(-1);
+	DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"##### STOP load (-1 update status failed)\n");
+	return(-1);
       }
-  
+  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"##### STOP load (%d)\n",ret);
   return(ret);
 }
 
@@ -824,14 +834,14 @@ int get_slot_count(int fd)
 {
   extern OpenFiles_T *pDev;
 
-  dbprintf(("###### START get_slot_count\n"));
-  dbprintf(("%-20s : fd %d\n", "get_slot_count", fd));
+  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"###### START get_slot_count\n");
+  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"%-20s : fd %d\n", "get_slot_count", fd);
 
   if (ElementStatusValid == 0)
     {
       pDev[fd].functions->function_status(fd, 1);
     }
-
+  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"##### STOP get_slot_count (%d)\n",STE);
   return(STE);
   /*
    * return the number of slots in the robot
@@ -851,18 +861,20 @@ int get_drive_count(int fd)
 
   extern OpenFiles_T *pDev;
 
-  dbprintf(("###### START get_drive_count\n"));
-  dbprintf(("%-20s : fd %d\n", "get_drive_count", fd));
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"###### START get_drive_count\n");
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"%-20s : fd %d\n", "get_drive_count", fd);
 
 
   if (ElementStatusValid == 0)
       {
           if ( pDev[fd].functions->function_status(fd, 1) != 0)
-              {
-                  return(-1);
-              }
+	    {
+		DebugPrint(DEBUG_ERROR, SECTION_SCSI, "Error getting drive count\n");
+		DebugPrint(DEBUG_ERROR, SECTION_SCSI, "##### STOP get_drive_count (-1)\n");
+		return(-1);
+	    }
       }
-  
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"###### STOP get_drive_count (%d drives)\n",DTE);
   return(DTE);
 }
 
@@ -880,8 +892,8 @@ int OpenDevice(int ip , char *DeviceName, char *ConfigName, char *ident)
   extern OpenFiles_T *pDev;
   ChangerCMD_T *p = (ChangerCMD_T *)&ChangerIO;
   
-  dbprintf(("##### START OpenDevice\n"));
-  dbprintf(("OpenDevice : %s\n", DeviceName));
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### START OpenDevice\n");
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"OpenDevice : %s\n", DeviceName);
   
   pDev[ip].ConfigName = strdup(ConfigName);
   pDev[ip].dev = strdup(DeviceName);
@@ -898,7 +910,8 @@ int OpenDevice(int ip , char *DeviceName, char *ConfigName, char *ident)
               {
                 pDev[ip].functions = p;
 		strncpy(pDev[ip].ident, ident, 17);
-                dbprintf(("override using ident = %s, type = %s\n",p->ident, p->type));
+                DebugPrint(DEBUG_INFO, SECTION_SCSI,"override using ident = %s, type = %s\n",p->ident, p->type);
+		DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP OpenDevice\n");
                 return(1);
               }
             p++;
@@ -910,25 +923,30 @@ int OpenDevice(int ip , char *DeviceName, char *ConfigName, char *ident)
             if (strcmp(pDev[ip].ident, p->ident) == 0)
               {
                 pDev[ip].functions = p;
-                dbprintf(("using ident = %s, type = %s\n",p->ident, p->type));
+                DebugPrint(DEBUG_INFO, SECTION_SCSI,"using ident = %s, type = %s\n",p->ident, p->type);
+		DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP OpenDevice\n");
                 return(1);
               }
             p++;
           }
       }
       /* Nothing matching found, try generic */
+      /* divide generic in generic_type, where type is the */
+      /* num returned by the inquiry command */
       p = (ChangerCMD_T *)&ChangerIO;
       while(p->ident != NULL)
         {
           if (strcmp("generic", p->ident) == 0)
             {
               pDev[ip].functions = p;
-              dbprintf(("using ident = %s, type = %s\n",p->ident, p->type));
+              DebugPrint(DEBUG_INFO, SECTION_SCSI,"using ident = %s, type = %s\n",p->ident, p->type);
+	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP OpenDevice\n");
               return(1);
             }
           p++;
         }  
     }
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP OpenDevice (nothing found !!\n");
   return(0); 
 }
 
@@ -942,12 +960,13 @@ int BarCode(int fd)
   int ret;
   extern OpenFiles_T *pDev;
 
-  dbprintf(("##### START BarCode\n"));
-  dbprintf(("%-20s : fd %d\n", "BarCode", fd));
+  DebugPrint(DEBUG_INFO, SECTION_BARCODE,"##### START BarCode\n");
+  DebugPrint(DEBUG_INFO, SECTION_BARCODE,"%-20s : fd %d\n", "BarCode", fd);
 
-  dbprintf(("Ident = [%s], function = [%s]\n", pDev[fd].ident,
-        pDev[fd].functions->ident));
+  DebugPrint(DEBUG_INFO, SECTION_BARCODE,"Ident = [%s], function = [%s]\n", pDev[fd].ident,
+	     pDev[fd].functions->ident);
   ret = pDev[fd].functions->function_barcode(fd);
+  DebugPrint(DEBUG_INFO, SECTION_BARCODE,"##### STOP BarCode (%d)\n",ret);
   return(ret);
 }
 
@@ -995,7 +1014,7 @@ int Tape_Ready(int fd, int wait_time)
 	  case SENSE_NO:
 		  true=0;
 		  break;
-          case SENSE_NO_TAPE:
+          case SENSE_TAPE_NOT_ONLINE:
             break;
           case SENSE_IGNORE:
             break;
@@ -1476,23 +1495,24 @@ int EXB120BarCode(int DeviceFD)
 
 int NoBarCode(int DeviceFD)
 {
-  dbprintf(("##### START NoBarCode\n"));
+  DebugPrint(DEBUG_INFO, SECTION_BARCODE,"##### START NoBarCode\n");
+  DebugPrint(DEBUG_INFO, SECTION_BARCODE,"##### STOP  NoBarCode\n");
   return(0);
 }
 
 int GenericBarCode(int DeviceFD)
 {
   extern changer_t chg;
-  dbprintf(("##### START GenericBarCode\n"));
-/*   dump_hex((char *)pChangerDev->inquiry, INQUIRY_SIZE); */
+  
+  DebugPrint(DEBUG_INFO, SECTION_BARCODE,"##### START GenericBarCode\n");
   if ( chg.havebarcode  >= 1)
     {
-      dbprintf(("##### STOP GenericBarCode (havebarcode) => %d\n",chg.havebarcode));
+      DebugPrint(DEBUG_INFO, SECTION_BARCODE,"##### STOP GenericBarCode (havebarcode) => %d\n",chg.havebarcode);
       return(1);
     }
-  dbprintf(("##### STOP GenericBarCode => 0\n"));
+  DebugPrint(DEBUG_INFO, SECTION_BARCODE,"##### STOP GenericBarCode => 0\n");
   return(0);
- }
+}
 
 int SenseHandler(int DeviceFD, unsigned char flag, char *buffer)
 {
@@ -1550,19 +1570,19 @@ int DLT4000Eject(char *Device, int type)
 
   if ((pRequestSense = malloc(sizeof(RequestSense_T))) == NULL)
     {
-      dbprintf(("%-20s : malloc failed\n","GenericEject"));
+      dbprintf(("%-20s : malloc failed\n","DLT4000Eject"));
       return(-1);
     }
 
   if ((pExtendedRequestSense = malloc(sizeof(ExtendedRequestSense_T))) == NULL)
     {
-      dbprintf(("%-20s : malloc failed\n","GenericEject"));
+      dbprintf(("%-20s : malloc failed\n","DLT4000Eject"));
       return(-1);
     }
     
   if ( type > 1)
     {
-      dbprintf(("GenericEject : use mtio ioctl for eject on %s\n", pDev[INDEX_TAPE].dev));
+      dbprintf(("DLT4000Eject : use mtio ioctl for eject on %s\n", pDev[INDEX_TAPE].dev));
       return(Tape_Eject(INDEX_TAPE));
     }
   
@@ -1605,7 +1625,7 @@ int DLT4000Eject(char *Device, int type)
           true = 0;
           break;
         }
-      if (SenseHandler(INDEX_TAPECTL, 0, (char *)pRequestSense) == SENSE_NO_TAPE)
+      if (SenseHandler(INDEX_TAPECTL, 0, (char *)pRequestSense) == SENSE_TAPE_NOT_ONLINE)
         {
           true=0;
           break;
@@ -1663,7 +1683,7 @@ int GenericEject(char *Device, int type)
           true = 0;
           break;
         }
-      if (SenseHandler(INDEX_TAPECTL, 0, (char *)pRequestSense) == SENSE_NO_TAPE)
+      if (SenseHandler(INDEX_TAPECTL, 0, (char *)pRequestSense) == SENSE_TAPE_NOT_ONLINE)
         {
           true=0;
           break;
@@ -1680,6 +1700,13 @@ int GenericEject(char *Device, int type)
   
 }
 
+/*
+ * Rewind the tape 
+ *
+ * TODO:
+ * Make the retry counter an config option 
+ *
+ */
 int GenericRewind(int DeviceFD)
 {
   CDB_T CDB;
@@ -1688,13 +1715,62 @@ int GenericRewind(int DeviceFD)
   int cnt = 0;
   int true = 1;
 
-  dbprintf(("##### START GenericRewind\n"));
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### START GenericRewind\n");
 
   if ((pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
       {
-          dbprintf(("GenericRewind : malloc failed\n"));
+          DebugPrint(DEBUG_ERROR, SECTION_TAPE,"GenericRewind : malloc failed\n");
           return(-1);
       }
+  /*
+   * Before doing the rewind check if the tape is ready to accept commands
+   */
+
+  while (true == 1)
+    {
+      ret = SCSI_TestUnitReady(DeviceFD, (RequestSense_T *)pRequestSense );
+      DebugPrint(DEBUG_INFO, SECTION_TAPE, "SCSI_Run Unit START (TestUnitReady) ret %d\n",ret);
+      if (ret)
+	{
+	  true=0;
+	  break;
+	} else {
+	  switch (SenseHandler(DeviceFD, 0, pRequestSense))
+	    {
+	    case SENSE_NO:
+	      DebugPrint(DEBUG_INFO, SECTION_TAPE,"(TestUnitReady) SENSE_NO\n");
+	      true=0;
+	      break;
+	    case SENSE_TAPE_NOT_ONLINE:
+	      DebugPrint(DEBUG_INFO, SECTION_TAPE,"(TestUnitReady) SENSE_TAPE_NOT_ONLINE\n");
+	      cnt++;
+	      break;
+	    case SENSE_ABORT:
+	      DebugPrint(DEBUG_ERROR, SECTION_TAPE,"(TestUnitReady) SENSE_ABORT\n");
+	      DebugPrint(DEBUG_ERROR, SECTION_TAPE,"##### STOP GenericRewind (-1)\n");
+	      return(-1);
+	      break;
+	    case SENSE_RETRY:
+	      DebugPrint(DEBUG_INFO, SECTION_TAPE,"(TestUnitReady) SENSE_RETRY\n");
+	      cnt++;
+	      break;
+	    default:
+	      DebugPrint(DEBUG_INFO, SECTION_TAPE,"(TestUnitReady) default (SENSE)\n");
+	      true=0;
+	      break;
+	    }
+	}
+      sleep(1);
+      DebugPrint(DEBUG_INFO, SECTION_TAPE," Wait .... (%d)\n",cnt);
+      if (cnt > 180)
+	{
+	  DebugPrint(DEBUG_ERROR, SECTION_TAPE,"##### STOP GenericRewind (-1)\n");
+	  return(-1);
+	}
+    }
+
+  cnt = 0;
+  true = 1;
 
   CDB[0] = SC_COM_REWIND;
   CDB[1] = 1;             
@@ -1725,7 +1801,7 @@ int GenericRewind(int DeviceFD)
         }
       if (ret < 0)
         {
-          dbprintf(("GenericRewind : failed %d\n", ret));
+          DebugPrint(DEBUG_INFO, SECTION_TAPE,"GenericRewind : failed %d\n", ret);
           true = 0;
         }
     }
@@ -1739,8 +1815,9 @@ int GenericRewind(int DeviceFD)
           true = 0;
           break;
         }
-      if (SenseHandler(DeviceFD, 0, (char *)pRequestSense) == SENSE_NO_TAPE)
+      if (SenseHandler(DeviceFD, 0, (char *)pRequestSense) == SENSE_TAPE_NOT_ONLINE)
         {
+	  DebugPrint(DEBUG_ERROR, SECTION_TAPE,"##### STOP GenericRewind (-1)\n");
           return(-1);
           break;
         } else {
@@ -1751,10 +1828,17 @@ int GenericRewind(int DeviceFD)
   
   free(pRequestSense);
   
-  dbprintf(("GenericRewind : Ready after %d sec, true = %d\n", cnt * 2, true));
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"GenericRewind : Ready after %d sec, true = %d\n", cnt * 2, true);
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP GenericRewind (0)\n");
   return(0);
 }
 
+
+/*
+ * Check if the tape has the tape clean
+ * bit set in the return of an request sense
+ *
+ */
 int GenericClean(char * Device)
 {
   extern OpenFiles_T *pDev;
@@ -2311,7 +2395,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
             {
               if ((pMTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * MTE)) == NULL)
                 {
-                  dbprintf(("GenericElementStatus : malloc failed\n"));
+                  dbprintf(("DLT448ElementStatus : malloc failed\n"));
                   return(-1);
                 }
             }
@@ -2385,7 +2469,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
             {
               if ((pSTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * STE)) == NULL)
                 {
-                  dbprintf(("GenericElementStatus : malloc failed\n"));
+                  dbprintf(("DLT448ElementStatus : malloc failed\n"));
                   return(-1);
                 }
             }
@@ -2403,7 +2487,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
               {
                 free(DataBuffer);
               }
-              ChgExit("GenericElementStatus", "Can't read STE status", FATAL);
+              ChgExit("DLT448ElementStatus", "Can't read STE status", FATAL);
             }
           
           ElementStatusData = (ElementStatusData_T *)DataBuffer;
@@ -2464,7 +2548,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
             {
               if ((pIEE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * IEE)) == NULL)
                 {
-                  dbprintf(("GenericElementStatus : malloc failed\n"));
+                  dbprintf(("DLT448ElementStatus : malloc failed\n"));
                   return(-1);
                 }
             }
@@ -2481,7 +2565,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
               {
                 free(DataBuffer);
               }
-              ChgExit("GenericElementStatus", "Can't read IEE status", FATAL);
+              ChgExit("DLT448ElementStatus", "Can't read IEE status", FATAL);
             }
           
           ElementStatusData = (ElementStatusData_T *)DataBuffer;
@@ -2540,7 +2624,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
             {
               if ((pDTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * DTE)) == NULL)
                 {
-                  dbprintf(("GenericElementStatus : malloc failed\n"));
+                  dbprintf(("DLT448ElementStatus : malloc failed\n"));
                   return(-1);
                 }
             }
@@ -2557,7 +2641,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
               {
                 free(DataBuffer);
               }
-              ChgExit("GenericElementStatus", "Can't read DTE status", FATAL);
+              ChgExit("DLT448ElementStatus", "Can't read DTE status", FATAL);
             }
           
           ElementStatusData = (ElementStatusData_T *)DataBuffer;
@@ -2620,7 +2704,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
               {
                 free(DataBuffer);
               }
-          ChgExit("GenericElementStatus","Can't get ElementStatus", FATAL);
+          ChgExit("DLT448ElementStatus","Can't get ElementStatus", FATAL);
         }
       
       ElementStatusData = (ElementStatusData_T *)DataBuffer;
@@ -2646,7 +2730,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
               MTE = NoOfElements;
               if ((pMTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * MTE)) == NULL)
                 {
-                  dbprintf(("GenericElementStatus : malloc failed\n"));
+                  dbprintf(("DLT448ElementStatus : malloc failed\n"));
                   return(-1);
                 }
               memset(pMTE, 0, sizeof(ElementInfo_T) * MTE);
@@ -2691,7 +2775,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
               STE = NoOfElements;
               if ((pSTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * STE)) == NULL)
                 {
-                  dbprintf(("GenericElementStatus : malloc failed\n"));
+                  dbprintf(("DLT448ElementStatus : malloc failed\n"));
                   return(-1);
                 }
               memset(pSTE, 0, sizeof(ElementInfo_T) * STE);
@@ -2782,7 +2866,7 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
               DTE = NoOfElements;
               if ((pDTE = (ElementInfo_T *)malloc(sizeof(ElementInfo_T) * DTE)) == NULL)
                 {
-                  dbprintf(("GenericElementStatus : malloc failed\n"));
+                  dbprintf(("DLT448ElementStatus : malloc failed\n"));
                   return(-1);
                 }
               memset(pDTE, 0, sizeof(ElementInfo_T) * DTE);
@@ -4458,8 +4542,8 @@ int SCSI_Run(int DeviceFD,
 	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_Run (TestUnitReady) SENSE_NO\n");
 	      ok=1;
 	      break;
-	    case SENSE_NO_TAPE:
-	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_Run (TestUnitReady) SENSE_NO_TAPE\n");
+	    case SENSE_TAPE_NOT_ONLINE:
+	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_Run (TestUnitReady) SENSE_TAPE_NOT_ONLINE\n");
 	      ok=1;
 	      break;
 	    case SENSE_IGNORE:
@@ -4697,7 +4781,7 @@ int SCSI_TestUnitReady(int DeviceFD, RequestSense_T *pRequestSense)
 {
   CDB_T CDB;
 
-  dbprintf(("##### START SCSI_TestUnitReady\n"));
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### START SCSI_TestUnitReady\n");
 
   CDB[0] = SC_COM_TEST_UNIT_READY;
   CDB[1] = 0;
@@ -4713,9 +4797,10 @@ int SCSI_TestUnitReady(int DeviceFD, RequestSense_T *pRequestSense)
 
   if (pRequestSense->ErrorCode == 0 && pRequestSense->SenseKey == 0)
     {
+      DebugPrint(DEBUG_INFO, SECTION_SCSI,"###### STOP SCSI_TestUnitReady (1)\n");
       return(1);
     }
-  
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"###### STOP SCSI_TestUnitReady (0)\n");
   return(0);
 }
 
@@ -4949,11 +5034,11 @@ int SCSI_ReadElementStatus(int DeviceFD,
   int retry = 1;
   int ret; 
  
-  dbprintf(("##### START SCSI_ReadElementStatus\n"));
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### START SCSI_ReadElementStatus\n");
 
   if ((pRequestSense = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
       {
-          dbprintf(("SCSI_ReadElementStatus : malloc failed\n"));
+          DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ReadElementStatus : malloc failed\n");
           ChgExit("SCSI_ReadElementStatus","malloc failed", FATAL);
       }
 
@@ -4992,10 +5077,11 @@ int SCSI_ReadElementStatus(int DeviceFD,
                                 (char *)pRequestSense, sizeof(RequestSense_T));
       
       
-      dbprintf(("SCSI_ReadElementStatus : (1) SCSI_Run %d\n", ret));
+      DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ReadElementStatus : (1) SCSI_Run %d\n", ret);
       if (ret < 0)
         {
           DecodeSense(pRequestSense, "SCSI_ReadElementStatus :",debug_file);
+	  DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_ReadElementStatus (%d)\n",ret);
           return(ret);
         }
       if ( ret > 0)
@@ -5003,15 +5089,15 @@ int SCSI_ReadElementStatus(int DeviceFD,
           switch(SenseHandler(DeviceFD, 0 ,(char *)pRequestSense))
             {
             case SENSE_IGNORE:
-              dbprintf(("SCSI_ModeSense : SENSE_IGNORE\n"));
+              DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ModeSense : SENSE_IGNORE\n");
               retry = 0;
               break;
             case SENSE_RETRY:
-              dbprintf(("SCSI_ModeSense : SENSE_RETRY no %d\n", retry));
+              DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ModeSense : SENSE_RETRY no %d\n", retry);
               sleep(2);
               break;
             default:
-              dbprintf(("SCSI_ModeSense : end %d\n", pRequestSense->SenseKey));
+              DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ModeSense : end %d\n", pRequestSense->SenseKey);
               return(pRequestSense->SenseKey);
               break;
             }
@@ -5024,13 +5110,14 @@ int SCSI_ReadElementStatus(int DeviceFD,
     }
   if (retry > 0)
     {
+      DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_ReadElementStatus (%d)\n",ret);
       return(ret);
     }
   
   ElementStatusData = (ElementStatusData_T *)*data;
   DataBufferLength = V3(ElementStatusData->count);
   DataBufferLength = DataBufferLength + 8;
-  dbprintf(("SCSI_ReadElementStatus: DataBufferLength %X, ret %d\n",DataBufferLength, ret));
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ReadElementStatus: DataBufferLength %X, ret %d\n",DataBufferLength, ret);
 
   dump_hex(*data, 8, DEBUG_INFO, SECTION_ELEMENT);
 
@@ -5056,10 +5143,11 @@ int SCSI_ReadElementStatus(int DeviceFD,
                                 (char *)pRequestSense, sizeof(RequestSense_T));
       
       
-      dbprintf(("SCSI_ReadElementStatus : (2) SCSI_Run %d\n", ret));
+      DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ReadElementStatus : (2) SCSI_Run %d\n", ret);
       if (ret < 0)
         {
           DecodeSense(pRequestSense, "SCSI_ReadElementStatus :",debug_file);
+	  DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_ReadElementStatus (%d)\n",ret);
           return(ret);
         }
       if ( ret > 0)
@@ -5067,15 +5155,15 @@ int SCSI_ReadElementStatus(int DeviceFD,
           switch(SenseHandler(DeviceFD, 0 ,(char *)pRequestSense))
             {
             case SENSE_IGNORE:
-              dbprintf(("SCSI_ModeSense : SENSE_IGNORE\n"));
+              DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ModeSense : SENSE_IGNORE\n");
               retry = 0;
               break;
             case SENSE_RETRY:
-              dbprintf(("SCSI_ModeSense : SENSE_RETRY no %d\n", retry));
+              DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ModeSense : SENSE_RETRY no %d\n", retry);
               sleep(2);
               break;
             default:
-              dbprintf(("SCSI_ModeSense : end %d\n", pRequestSense->SenseKey));
+              DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_ModeSense : end %d\n", pRequestSense->SenseKey);
               return(pRequestSense->SenseKey);
               break;
             }
@@ -5089,11 +5177,12 @@ int SCSI_ReadElementStatus(int DeviceFD,
 
   if (retry > 0)
     {
+      DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_ReadElementStatus (%d)\n",ret);
       return(ret);
     }
  
   dump_hex(*data, DataBufferLength, DEBUG_INFO, SECTION_SCSI);
-  
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_ReadElementStatus (%d)\n",ret);
   return(ret);
 }
 

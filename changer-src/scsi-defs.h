@@ -83,7 +83,6 @@ typedef unsigned char PackedBit;
  */
 #define SENSE_ABORT -1
 #define SENSE_IGNORE 0
-#define SENSE_NO_TAPE 1
 #define SENSE_RETRY 2
 #define SENSE_IES 3
 #define SENSE_TAPE_NOT_ONLINE 4
@@ -155,6 +154,7 @@ typedef unsigned char PackedBit;
 #define SECTION_MAP_BARCODE 3
 #define SECTION_ELEMENT 4
 #define SECTION_BARCODE 5
+#define SECTION_TAPE 6
 /*----------------------------------------------------------------------------*/
 /* Some stuff for our own configurationfile */
 typedef struct {  /* The information we can get for any drive (configuration) */
