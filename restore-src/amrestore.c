@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.5 1997/08/27 08:12:43 amcore Exp $
+ * $Id: amrestore.c,v 1.6 1997/09/09 17:05:26 amcore Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -71,6 +71,8 @@ char *tapename, *hostname, *diskname;
 
 int compflag, rawflag, pipeflag;
 int buflen, tapedev, got_sigpipe, file_number;
+pid_t compress_pid = -1;
+int compress_status;
 
 /* local functions */
 
@@ -332,7 +334,7 @@ void restore()
     if(compflag && !file.compressed) {
 	pipe(outpipe);
 	out = outpipe[1];
-	switch(fork()) {
+	switch(compress_pid = fork()) {
 	case -1: error("could not fork for %s: %s",
 		       COMPRESS_PATH, strerror(errno));
 	default:
@@ -361,7 +363,7 @@ void restore()
 	 */
 	if(pipe(outpipe) < 0) error("error [pipe: %s]", strerror(errno));
 	out = outpipe[1];
-	switch(fork()) {
+	switch(compress_pid = fork()) {
 	case -1: 
 	    error("amrestore: could not fork for %s: %s", 
 		  UNCOMPRESS_PATH, strerror(errno));
@@ -509,6 +511,12 @@ char **argv;
 		 read_file_header() below reads the next file on the
 		 tape an does not report: short block... */
 	    tapefd_close(tapedev);
+	    /* DB: wait for (un)compress, otherwise
+                   reopening the tape might fail */
+	    if (compress_pid > 0) {
+	      waitpid(compress_pid, &compress_status, 0);
+	      compress_pid = -1;
+	    }
 	    if((tapedev = tape_open(tapename, 0)) < 0)
 		error("could not open tape %s: %s", tapename, strerror(errno));
 	}
