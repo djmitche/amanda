@@ -22,9 +22,10 @@ This cleanup process is normally done automatically as part of the
 .B amdump
 program, but if
 .B amdump
-cannot complete for some reason (usually because of a host crash),
+cannot complete for some reason (usually because of a tape server host crash),
 .B amcleanup
-must be run some time later.
+must be run some time later
+(usually during system boot).
 .LP
 See the
 .IR amanda (8)

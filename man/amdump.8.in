@@ -32,7 +32,7 @@ circumstances warrant, for example, if the tape device is being
 used for some other purpose.
 While waiting,
 .B amdump
-checks for the hold file every five minutes.
+checks for the hold file every minute.
 .LP
 See the
 .IR amanda (8)
@@ -53,6 +53,21 @@ every weeknight at 1 a.m. as user
 0 1 * * 1-5 bin \*(pr/amdump @DEFAULT_CONFIG@
 .EE
 .RE
+.SH MESSAGES
+.TP
+amdump: waiting for hold file to be removed
+The "hold" file exists and amdump is waiting for it to be removed
+before starting backups.
+.TP
+amdump: amdump or amflush is already running, or you must run amcleanup
+Amdump detected another amdump or amflush running,
+or the remains of a previous incomplete amdump or amflush run.
+This run is terminated.
+If the problem is caused by the remains of a previous run,
+you must execute
+.IR amcleanup (8)
+and then rerun
+.IR amdump .
 .SH AUTHOR
 James da Silva <jds@cs.umd.edu>
 .br

@@ -36,16 +36,35 @@ See the
 .IR amanda (8)
 man page for more details about Amanda.
 .SH COMMANDS
-All commands that take
+Commands that take a
 .I hostname
 [
 .I disks
 ]
-parameters operate on all the disks in the
+parameter pair operate on all disks in the
 .I disklist
 for that
 .I hostname
 if no disks are specified.
+Where
+.I hostname
+is also marked as being optional,
+the command operates on all hosts and disks in the
+.IR disklist .
+.P
+.I Hostnames
+are case-insensitive matched from the left breaking at each dot.
+So "HostA" will match "hosta"
+as well as "hosta.some.domain"
+and "hosta.another.domain".
+But it will not match "hostabc"
+or "hostabc.some.domain"
+or "hostabc.another.domain".
+.P
+However "HostA.some" will only match "hosta.some.domain",
+not "hosta.another.domain",
+or "hosta.something.domain"
+or just "hosta".
 .P
 .I Disks
 are regular expressions,
@@ -59,54 +78,61 @@ This is the same mechanism used by
 .TP
 .B version
 Show the current version and some compile time and runtime parameters.
+The
+.I config
+parameter must be present but is ignored.
 .TP
 .P1 force-bump hostname [ disks ]
 Force the
 .I disks
 on
 .I hostname
-to bump during the next Amanda run.
+to bump to a new incremental level during the next Amanda run.
 .TP
 .P1 force-no-bump hostname [ disks ]
 Force the
 .I disks
 on
 .I hostname
-to not bump during the next Amanda run.
+to not bump to a new incremental level during the next Amanda run.
 .TP
 .P1 unforce-bump hostname [ disks ]
-Clear
+Undo a previous
 .B force-bump
-and
+or
 .B force-no-bump
-command 
+command.
 .TP
 .P1 force hostname [ disks ]
 Force the
 .I disks
 on
 .I hostname
-to do a full level 0 backup during the next Amanda run.
+to do a full (level 0) backup during the next Amanda run.
 .TP
 .P1 unforce hostname [ disks ]
 Undo a previous
 .B force
 command.
 .TP
-.P3 reuse [ tapelabel ]
-The tapes
-.I tapelabel
-will be reuse in the cycle.
+.P3 reuse tapelabel [ ... ]
+The tapes listed
+will be available for reuse at their point in the tape cycle.
 .TP
-.P3 no-reuse [ tapelabel ]
-The tapes
-.I tapelabel
-will never be reuse in the cycle.
+.P3 no-reuse tapelabel [ ... ]
+The tapes listed
+will not be reused when their turn comes up again in the tape cycle.
+Note that if this causes the number of reusable tapes to drop below the
+.B amanda.conf
+.I tapecycle
+value, Amanda will request new tapes until the count is satisfied again.
 .TP
-.P1 "find\fP [ \fB--sort\fP \fBhkdlb\fP ]\fB" hostname [ disks ]
-Display
-all backups currently on tape for each disk.
-The tape label,
+.P3 due [ hostname [ disks ] ]
+Show when the next full dump is due.
+.TP
+.P3 "find\fP [ \fB--sort\fP \fBhkdlb\fP ]\fB" [ hostname [ disks ] ]
+Display all backups currently on tape or in the holding disk.
+The tape label or holding disk filename,
 file number,
 and status are displayed.
 .IP
@@ -130,18 +156,20 @@ An uppercase letter reverses the sort order for that key.
 The default sort order is
 .BR hkdlb .
 .TP
-.P2 delete hostname disks
+.P3 delete hostname [ disks ]
 Delete the specified
 .I disks
+on
+.I hostname
 from the Amanda
 database.
 .IP
 Note: if you do not also remove the disk from the
 .I disklist
-file, Amanda will treat it as a new disk on the next run.
+file, Amanda will treat it as a new disk during the next run.
 .TP
 .B tape
-Display the label of the tape Amanda is expecting to write to next.
+Display the tape(s) Amanda expects to write to during the next run.
 See also
 .IR amcheck (8).
 .TP
@@ -174,7 +202,7 @@ on
 (or all hosts).
 Mostly used for debugging.
 .TP
-.P1 info [ hostname [ disks ] ]
+.P3 info [ hostname [ disks ] ]
 Display the
 database record for each of the
 .I disks
@@ -188,8 +216,8 @@ Request three specific file systems on
 get a full level 0 backup during the next Amanda run.
 .LP
 Note the use of "^/$" to get the root file system.
-Without the extra regular expression characters, just "/" would
-have matched all the file systems on
+Without the extra regular expression characters, just "/" will
+match all the file systems on
 .IR machine-a .
 .LP
 .RS
@@ -231,14 +259,20 @@ amadmin: force command for machine-b:/home cleared.
 .EE
 .RE
 .LP
-Locate tapes holding
+Locate backup images of
 .I /var
 from
 .IR machine-c .
 The
+.I tape or file
+column displays either a tape label or a filename depending on whether
+the image is on tape or is still in the holding disk.
+If the image is on tape, the
 .I file
-column tells you which file on the tape has the backup
+column tells you which file on the tape has the image
 (file number zero is a tape label).
+This column shows zero and is not meaningful if the image
+is still in the holding disk.
 The
 .I status
 column tells you whether the backup was successful or had
@@ -247,17 +281,17 @@ some type of error.
 .RS
 .EX
 $ amadmin @DEFAULT_CONFIG@ find machine-c /var
-date        host      disk lv tape    file status
-1997-11-09  machine-c /var  0 000110     9 OK
-1997-11-08  machine-c /var  2 000109     2 OK
-1997-11-07  machine-c /var  2 000108     2 OK
-1997-11-06  machine-c /var  2 000107     2 OK
-1997-11-05  machine-c /var  2 000106     3 OK
-1997-11-04  machine-c /var  2 000105     2 OK
-1997-11-03  machine-c /var  2 000104     2 OK
-1997-11-02  machine-c /var  2 000103     2 OK
-1997-11-01  machine-c /var  1 000102     5 OK
-1997-10-31  machine-c /var  1 000101     3 OK
+date        host      disk lv tape or file                    file status
+2000-11-09  machine-c /var  0 000110                             9 OK
+2000-11-08  machine-c /var  2 000109                             2 OK
+2000-11-07  machine-c /var  2 /amanda/20001107/machine-c._var.2  0 OK
+2000-11-06  machine-c /var  2 000107                             2 OK
+2000-11-05  machine-c /var  2 000106                             3 OK
+2000-11-04  machine-c /var  2 000105                             2 OK
+2000-11-03  machine-c /var  2 000104                             2 OK
+2000-11-02  machine-c /var  2 000103                             2 OK
+2000-11-01  machine-c /var  1 000102                             5 OK
+2000-10-31  machine-c /var  1 000101                             3 OK
 .EE
 .RE
 .LP
@@ -267,7 +301,7 @@ disk on
 .IR machine-d .
 If you do not also remove the disk from the
 .I disklist
-file, Amanda will treat it as a new disk on the next run.
+file, Amanda will treat it as a new disk during the next run.
 .LP
 .RS
 .EX
