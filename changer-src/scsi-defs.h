@@ -154,13 +154,6 @@ typedef unsigned char PackedBit;
 #define MSB4(s,v) *(s)=B(v,24),(s)[1]=B(v,16), (s)[2]=B(v,8), (s)[3]=B1(v)
 
 #define LABEL_DB_VERSION 2
-#define BARCODE_PUT 1
-#define BARCODE_VOL 2
-#define BARCODE_BARCODE 3
-#define UPDATE_SLOT 4
-#define FIND_SLOT 5
-#define RESET_VALID 6
-#define BARCODE_DUMP 7
 
 #define DEBUG_INFO 9
 #define DEBUG_ERROR 1
@@ -211,8 +204,8 @@ typedef struct {
 } LabelV1_T;
 
 typedef struct {
-  char voltag[128];
-  char barcode[TAG_SIZE];
+  char voltag[128];              /* Tape volume label */
+  char barcode[TAG_SIZE];        /* Barcode of the tape */
   unsigned int slot;             /* in which slot is the tape */
   unsigned int from;      	 /* from where it comes, needed to move
 				 * a tape back to the right slot from the drive
@@ -223,6 +216,13 @@ typedef struct {
   unsigned int UnrecovError;	/* How man unrecoverd errors */
   unsigned char valid;		/* Is this tape in the current magazin */
 } LabelV2_T;
+
+typedef enum {BARCODE_PUT, BARCODE_VOL, BARCODE_BARCODE, BARCODE_DUMP, RESET_VALID, FIND_SLOT, UPDATE_SLOT } MBCAction_T;
+typedef struct {
+  LabelV2_T data;
+  MBCAction_T action;
+} MBC_T;
+
 
 /* ======================================================= */
 /* RequestSense_T */
@@ -1145,7 +1145,7 @@ int DecodeExtSense P((ExtendedRequestSense_T *sense, char *pstring, FILE *out));
 void ChangerReplay(char *option);
 void ChangerStatus(char * option, char * labelfile, int HasBarCode, char *changer_file, char *changer_dev, char *tape_device);
 int BarCode(int fd);
-char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action, int slot, int from);
+int MapBarCode(char *labelfile, MBC_T *);
 
 int Tape_Ready(int fd, int wait_time);
 
