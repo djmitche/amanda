@@ -1,5 +1,21 @@
 1999-03-01  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/driverio.h: remove declaration of inparallel, cmdstr()
+	and childstr(), declare init_driverio(), add inparallel parameter
+	to startup_dump_processes().
+	* server-src/driverio.c (init_driverio): new function to initialize
+	dmptable and taper.
+	* server-src/driverio.c (childstr): scan for all dumpers (MAX_DUMPERS)
+	instead of only inparallel
+	* server-src/driverio.c (startup_dump_processes): new parameter
+	inparallel is used instead of global variable.
+	* server-src/driver.c (main): call init_driverio.
+	* server-src/driver.c (main): call startup_dump_processes with 
+	inparallel parameter.
+	* server-src/amflush.c (main): call init_driverio.
+
+1999-03-01  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amrmtape.sh.in: work with "last_level" and
 	"consecutive_runs" in the ouput of "amadmin export".
 

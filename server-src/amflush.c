@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.47 1999/02/26 22:08:15 martinea Exp $
+ * $Id: amflush.c,v 1.48 1999/03/02 00:58:59 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -399,6 +399,7 @@ void run_dumps()
     log_add(L_START, "date %s", datestamp);
 
     chdir(confdir);
+    init_driverio();
     startup_tape_process(taper_program);
     taper_cmd(START_TAPER, datestamp, NULL, 0, NULL);
     tok = getresult(taper, 0, &result_argc, result_argv, MAX_ARGS+1);
