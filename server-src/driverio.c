@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.47 1999/04/30 21:07:06 kashmir Exp $
+ * $Id: driverio.c,v 1.48 1999/05/04 21:15:51 kashmir Exp $
  *
  * I/O-related functions for driver program
  */
@@ -61,21 +61,6 @@ void init_driverio()
     }
 }
 
-
-void addfd(fd, readset, maxfd)
-int    fd;
-fd_set *readset;
-int    *maxfd;
-{
-    if(fd < 0 || fd >= FD_SETSIZE) {
-	error("addfd: descriptor %d out of range (0 .. %d)\n",
-	      fd, FD_SETSIZE-1);
-    }
-    if(readset != NULL)
-	FD_SET(fd, readset);
-    if(maxfd != NULL)
-	if(fd > *maxfd) *maxfd = fd;
-}
 
 char *childstr(fd)
 int fd;
@@ -123,7 +108,7 @@ char *taper_program;
     default:	/* parent process */
 	aclose(fd[1]);
 	taper = fd[0];
-	addfd(taper, &readset, &maxfd);
+	taper_ev_read = NULL;
     }
 }
 
@@ -149,7 +134,8 @@ char *dumper_program;
     default:	/* parent process */
 	aclose(fd[1]);
 	dumper->fd = fd[0];
-	addfd(dumper->fd, &readset, &maxfd);
+	dumper->ev_read = NULL;
+	dumper->ev_wait = NULL;
 	dumper->busy = dumper->down = 0;
 	dumper->dp = NULL;
 	fprintf(stderr,"driver: started %s pid %d\n",

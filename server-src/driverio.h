@@ -25,10 +25,12 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.20 1999/04/30 21:07:08 kashmir Exp $
+ * $Id: driverio.h,v 1.21 1999/05/04 21:15:52 kashmir Exp $
  *
  * driver-related helper functions
  */
+
+#include "event.h"
 
 #define MAX_DUMPERS 63
 #define MAX_ARGS 10
@@ -44,6 +46,8 @@ typedef struct dumper_s {
     int pid;			/* its pid */
     int busy, down;		/* state */
     int fd;			/* read/write */
+    event_handle_t *ev_read;	/* read event handle */
+    event_handle_t *ev_wait;	/* for delayed disks */
     disk_t *dp;			/* disk currently being dumped */
 } dumper_t;
 
@@ -87,9 +91,8 @@ typedef enum {
     LAST_TOK
 } tok_t;
 
-GLOBAL int maxfd;
-GLOBAL fd_set readset;
 GLOBAL int taper, taper_busy, taper_pid;
+GLOBAL event_handle_t *taper_ev_read;
 
 void init_driverio();
 void startup_tape_process P((char *taper_program));

@@ -1,5 +1,20 @@
 1999-05-04  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/driver.c: convert to use event handler.
+	(some_dumps_in_progress, lookup_dumper): nuke.
+	(sleep_time): make a time_t and static.
+	(IDLE_NO_DUMPERS): give a lower precedence than IDLE_START_WAIT.
+	(start_some_dumps): make this work on one dumper instead of all.
+	Call when a dumper is finished and needs more work.
+	(handle_idle_wait): callback for dumpers waiting for delayed
+	disks to start up.
+	* server-src/driverio.c: initialize event handles for dumpers
+	and the taper.  Nuke addfd().
+	* server-src/driverio.h: add event handles for each dumper, and
+	one global one for the taper.  Nuke maxfd and readset globals.
+
+1999-05-04  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/driver.c (taper_queuedisk): new function that takes
 	a disk_t, and, if the taper is not busy, tells it to write it out,
 	or else adds it to the tapeq.  Make use_lffo global static.

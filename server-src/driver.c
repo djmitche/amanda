@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.79 1999/05/04 15:42:23 kashmir Exp $
+ * $Id: driver.c,v 1.80 1999/05/04 21:15:48 kashmir Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -38,6 +38,7 @@
 #include "clock.h"
 #include "conffile.h"
 #include "diskfile.h"
+#include "event.h"
 #include "holding.h"
 #include "infofile.h"
 #include "logfile.h"
@@ -56,6 +57,7 @@ unsigned long reserved_space;
 unsigned long total_disksize;
 char *dumper_program;
 int  inparallel;
+static time_t sleep_time;
 
 static void adjust_diskspace P((disk_t *diskp, tok_t tok));
 static void allocate_bandwidth P((interface_t *ip, int kps));
@@ -68,22 +70,21 @@ static int dump_to_tape P((disk_t *dp));
 static holdingdisk_t *find_diskspace P((unsigned long size, int *cur_idle));
 static int free_kps P((interface_t *ip));
 static unsigned long free_space P((void));
-static void handle_dumper_result P((int fd));
-static void handle_taper_result P((void));
+static void handle_dumper_result P((void *));
+static void handle_idle_wait P((void *));
+static void handle_taper_result P((void *));
 static void holdingdisk_state P((char *time_str));
 static dumper_t *idle_dumper P((void));
 static void interface_state P((char *time_str));
-static dumper_t *lookup_dumper P((int fd));
 static int num_busy_dumpers P((void));
 static int queue_length P((disklist_t q));
 static disklist_t read_schedule P((disklist_t *waitqp));
 static void short_dump_state P((void));
-static int some_dumps_in_progress P((void));
 static int sort_by_priority_reversed P((disk_t *a, disk_t *b));
 static int sort_by_size_reversed P((disk_t *a, disk_t *b));
 static int sort_by_time P((disk_t *a, disk_t *b));
 static void start_degraded_mode P((disklist_t *queuep));
-static int start_some_dumps P((disklist_t *rq));
+static void start_some_dumps P((dumper_t *dumper, disklist_t *rq));
 static void taper_queuedisk P((disk_t *));
 #if 0
 static void dump_state P((const char *str));
@@ -100,10 +101,10 @@ char *datestamp;
 static const char *idle_strings[] = {
 #define NOT_IDLE		0
     "not-idle",
-#define IDLE_START_WAIT		1
-    "start-wait",
-#define IDLE_NO_DUMPERS		2
+#define IDLE_NO_DUMPERS		1
     "no-dumpers",
+#define IDLE_START_WAIT		2
+    "start-wait",
 #define IDLE_NO_HOLD		3
     "no-hold",
 #define IDLE_CLIENT_CONSTRAINED	4
@@ -118,11 +119,6 @@ static const char *idle_strings[] = {
     "taper-wait",
 };
 
-#define SLEEP_MAX		(24*3600)
-struct timeval sleep_time = { SLEEP_MAX, 0 };
-/* enabled if any disks are in start-wait: */
-int any_delayed_disk = 0;
-
 int
 main(main_argc, main_argv)
      int main_argc;
@@ -130,7 +126,6 @@ main(main_argc, main_argv)
 {
     disklist_t origq;
     disk_t *diskp;
-    fd_set selectset;
     int fd, dsk;
     dumper_t *dumper;
     char *newdir = NULL;
@@ -162,7 +157,6 @@ main(main_argc, main_argv)
     set_logerror(logerror);
 
     startclock();
-    FD_ZERO(&readset);
 
     printf("%s: pid %ld executable %s version %s\n",
 	   get_pname(), (long) getpid(), main_argv[0], version());
@@ -305,29 +299,18 @@ main(main_argc, main_argv)
     if(tok != TAPER_OK) {
 	/* no tape, go into degraded mode: dump to holding disk */
 	start_degraded_mode(&runq);
-	FD_CLR(taper,&readset);
     }
 
-    while(start_some_dumps(&runq) || some_dumps_in_progress() ||
-	  any_delayed_disk) {
-
-	short_dump_state();
-
-	/* wait for results */
-
-	memcpy(&selectset, &readset, sizeof(fd_set));
-	if(select(maxfd+1, (SELECT_ARG_TYPE *)(&selectset),
-		  NULL, NULL, &sleep_time) == -1)
-	    error("select: %s", strerror(errno));
-
-	/* handle any results that have come in */
-
-	for(fd = 0; fd <= maxfd; fd++) if(FD_ISSET(fd, &selectset)) {
-	    if(fd == taper) handle_taper_result();
-	    else handle_dumper_result(fd);
-	}
-
+    /*
+     * Assume we'll schedule this dumper, and default to idle no-dumpers.
+     */
+    for (dumper = dmptable; dumper < dmptable+inparallel; dumper++) {
+	start_some_dumps(dumper, &runq);
+	event_loop(1);
     }
+
+    short_dump_state();
+    event_loop(0);
 
     /* handle any remaining dumps by dumping directly to tape, if possible */
 
@@ -431,26 +414,30 @@ client_constrained(dp)
 
 #define is_bigdumper(d) (((d)-dmptable) >= (inparallel-big_dumpers))
 
-static int
-start_some_dumps(rq)
+static void
+start_some_dumps(dumper, rq)
+    dumper_t *dumper;
     disklist_t *rq;
 {
-    int total, cur_idle;
-    disk_t *diskp, *big_degraded_diskp;
-    dumper_t *dumper;
+    int cur_idle;
+    disk_t *diskp, *big_degraded_diskp, *delayed_diskp;
     holdingdisk_t *holdp, *big_degraded_holdp;
-    time_t now = time(NULL);
+    const time_t now = time(NULL);
 
-    if (empty(*rq)) {
-	idle_reason = 0;
-	return 0;
+    assert(dumper->busy == 0);	/* we better not have been grabbed */
+
+    if (dumper->ev_read != NULL) {
+	event_release(dumper->ev_read);
+	dumper->ev_read = NULL;
     }
 
-    total = 0;
+    if (empty(*rq)) {
+	idle_reason = NOT_IDLE;
+	return;
+    }
+
     idle_reason = IDLE_NO_DUMPERS;
-    sleep_time.tv_sec = SLEEP_MAX;
-    sleep_time.tv_usec = 0;
-    any_delayed_disk = 0;
+    sleep_time = 0;
 
     /*
      * A potential problem with starting from the bottom of the dump time
@@ -470,84 +457,110 @@ start_some_dumps(rq)
      * the biggest&smallest dumps problem: both can be started at the
      * beginning.
      */
-    for(dumper = dmptable; dumper < dmptable+inparallel; dumper++) {
-	if(dumper->busy || dumper->down) continue;
-	/* found an idle dumper, now find a disk for it */
-	if(is_bigdumper(dumper)) diskp = rq->tail;
-	else diskp = rq->head;
-	big_degraded_diskp = NULL;
 
-	if(idle_reason == IDLE_NO_DUMPERS)
-	    idle_reason = NOT_IDLE;
+    if (is_bigdumper(dumper))
+	diskp = rq->tail;
+    else
+	diskp = rq->head;
+    big_degraded_diskp = NULL;
+    delayed_diskp = NULL;
 
-	cur_idle = NOT_IDLE;
+    cur_idle = NOT_IDLE;
 
-	while(diskp) {
-	    assert(diskp->host != NULL && sched(diskp) != NULL);
+    while (diskp) {
+	assert(diskp->host != NULL && sched(diskp) != NULL);
 
-	    if(diskp->host->start_t > now) {
-		cur_idle = max(cur_idle, IDLE_START_WAIT);
-		sleep_time.tv_sec = min(diskp->host->start_t - now, 
-					sleep_time.tv_sec);
-		any_delayed_disk = 1;
+	if (diskp->host->start_t > now) {
+	    cur_idle = max(cur_idle, IDLE_START_WAIT);
+	    if (delayed_diskp == NULL || sleep_time > diskp->host->start_t) {
+		delayed_diskp = diskp;
+		sleep_time = diskp->host->start_t;
 	    }
-	    else if(diskp->start_t > now) {
-		cur_idle = max(cur_idle, IDLE_START_WAIT);
-		sleep_time.tv_sec = min(diskp->start_t - now, 
-					sleep_time.tv_sec);
-		any_delayed_disk = 1;
+	} else if(diskp->start_t > now) {
+	    cur_idle = max(cur_idle, IDLE_START_WAIT);
+	    if (delayed_diskp == NULL || sleep_time > diskp->start_t) {
+		delayed_diskp = diskp;
+		sleep_time = diskp->start_t;
 	    }
-	    else if(sched(diskp)->est_kps > free_kps(diskp->host->netif))
-		cur_idle = max(cur_idle, IDLE_NO_BANDWIDTH);
-	    else if((holdp = find_diskspace(sched(diskp)->est_size,&cur_idle)) == NULL)
-		cur_idle = max(cur_idle, IDLE_NO_DISKSPACE);
-	    else if(diskp->no_hold)
-		cur_idle = max(cur_idle, IDLE_NO_HOLD);
-	    else if(client_constrained(diskp))
-		cur_idle = max(cur_idle, IDLE_CLIENT_CONSTRAINED);
-	    else {
-
-		/* disk fits, dump it */
-		if(is_bigdumper(dumper) && degraded_mode) {
-		   if(!big_degraded_diskp || 
-		      sched(diskp)->priority > big_degraded_diskp->priority) {
-			big_degraded_diskp = diskp;
-			big_degraded_holdp = holdp;
-		    }
-		}
-		else {
-		    cur_idle = NOT_IDLE;
-		    break;
-		}
+	} else if (sched(diskp)->est_kps > free_kps(diskp->host->netif)) {
+	    cur_idle = max(cur_idle, IDLE_NO_BANDWIDTH);
+	} else if ((holdp =
+	    find_diskspace(sched(diskp)->est_size, &cur_idle)) == NULL) {
+	    cur_idle = max(cur_idle, IDLE_NO_DISKSPACE);
+	} else if (diskp->no_hold) {
+	    cur_idle = max(cur_idle, IDLE_NO_HOLD);
+	} else if (client_constrained(diskp)) {
+	    cur_idle = max(cur_idle, IDLE_CLIENT_CONSTRAINED);
+	} else if (is_bigdumper(dumper) && degraded_mode) {
+	    if (!big_degraded_diskp || 
+		sched(diskp)->priority > big_degraded_diskp->priority) {
+		big_degraded_diskp = diskp;
+		big_degraded_holdp = holdp;
 	    }
-	    if(is_bigdumper(dumper)) diskp = diskp->prev;
-	    else diskp = diskp->next;
+	} else {
+	    /* disk fits, dump it */
+	    cur_idle = NOT_IDLE;
+	    break;
 	}
-
-	if(is_bigdumper(dumper) && degraded_mode) {
-	    diskp = big_degraded_diskp;
-	    holdp = big_degraded_holdp;
-	    if(big_degraded_diskp) cur_idle = NOT_IDLE;
-	}
-	if(diskp && cur_idle == NOT_IDLE) {
-	    allocate_bandwidth(diskp->host->netif, sched(diskp)->est_kps);
-	    assign_holdingdisk(holdp, diskp);
-	    diskp->host->inprogress += 1;	/* host is now busy */
-	    diskp->inprogress = 1;
-	    sched(diskp)->dumper = dumper;
-	    sched(diskp)->holdp = holdp;
-	    sched(diskp)->timestamp = time((time_t *)0);
-
-	    dumper->busy = 1;		/* dumper is now busy */
-	    dumper->dp = diskp;		/* link disk to dumper */
-	    total++;
-	    remove_disk(rq, diskp);		/* take it off the run queue */
-	    dumper_cmd(dumper, FILE_DUMP, diskp);
-	    diskp->host->start_t = time(NULL) + 15;
-	}
-	idle_reason = max(idle_reason, cur_idle);
+	if (is_bigdumper(dumper))
+	    diskp = diskp->prev;
+	else
+	    diskp = diskp->next;
     }
-    return total;
+
+    if (is_bigdumper(dumper) && degraded_mode) {
+	diskp = big_degraded_diskp;
+	holdp = big_degraded_holdp;
+	if (big_degraded_diskp)
+	    cur_idle = NOT_IDLE;
+    }
+
+    /*
+     * If we have no disk at this point, and there are disks that
+     * are delayed, then schedule a time event to call this dumper
+     * with the disk with the shortest delay.
+     */
+    if (diskp == NULL && delayed_diskp != NULL) {
+	assert(dumper->ev_wait == NULL);
+	dumper->ev_wait = event_register(sleep_time - now, EV_TIME,
+	    handle_idle_wait, dumper);
+    } else if (diskp != NULL && cur_idle == NOT_IDLE) {
+	allocate_bandwidth(diskp->host->netif, sched(diskp)->est_kps);
+	assign_holdingdisk(holdp, diskp);
+	diskp->host->inprogress++;	/* host is now busy */
+	diskp->inprogress = 1;
+	sched(diskp)->dumper = dumper;
+	sched(diskp)->holdp = holdp;
+	sched(diskp)->timestamp = now;
+
+	dumper->ev_read = event_register(dumper->fd, EV_READFD,
+	    handle_dumper_result, dumper);
+	dumper->busy = 1;		/* dumper is now busy */
+	dumper->dp = diskp;		/* link disk to dumper */
+	remove_disk(rq, diskp);		/* take it off the run queue */
+	dumper_cmd(dumper, FILE_DUMP, diskp);
+	diskp->host->start_t = now + 15;
+    }
+    idle_reason = max(idle_reason, cur_idle);
+}
+
+/*
+ * This gets called when a disk that had a delayed start is ready to be
+ * dumped.  These timed events are only registered if a dumper can't find
+ * any disk that is ready to be dumped.
+ */
+static void
+handle_idle_wait(cookie)
+    void *cookie;
+{
+    dumper_t *dumper = cookie;
+
+    short_dump_state();
+
+    assert(dumper != NULL);
+    event_release(dumper->ev_wait);
+    dumper->ev_wait = NULL;
+    start_some_dumps(dumper, &runq);
 }
 
 static int
@@ -615,6 +628,11 @@ start_degraded_mode(queuep)
     disklist_t newq;
     unsigned long est_full_size;
 
+    if (taper_ev_read != NULL) {
+	event_release(taper_ev_read);
+	taper_ev_read = NULL;
+    }
+
     newq.head = newq.tail = 0;
 
     dump_schedule(queuep, "before start degraded mode");
@@ -654,13 +672,18 @@ start_degraded_mode(queuep)
 }
 
 static void
-handle_taper_result()
+handle_taper_result(cookie)
+    void *cookie;
 {
     disk_t *dp;
     int filenum;
     tok_t tok;
     int result_argc;
     char *result_argv[MAX_ARGS+1];
+
+    assert(cookie == NULL);
+
+    short_dump_state();
 
     tok = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
 
@@ -689,6 +712,8 @@ handle_taper_result()
 	if(empty(tapeq)) {
 	    taper_busy = 0;
 	    taper_disk = NULL;
+	    event_release(taper_ev_read);
+	    taper_ev_read = NULL;
 	}
 	else {
 	    dp = dequeue_disk(&tapeq);
@@ -762,7 +787,8 @@ handle_taper_result()
 	tapeq.head = tapeq.tail = NULL;
 	taper_busy = 0;
 	taper_disk = NULL;
-	FD_CLR(taper,&readset);
+	event_release(taper_ev_read);
+	taper_ev_read = NULL;
 	if(tok != TAPE_ERROR) aclose(taper);
 	break;
     default:
@@ -782,17 +808,6 @@ idle_dumper()
 }
 
 static int
-some_dumps_in_progress()
-{
-    dumper_t *dumper;
-
-    for(dumper = dmptable; dumper < dmptable+inparallel; dumper++)
-	if(dumper->busy) return 1;
-
-    return taper_busy;
-}
-
-static int
 num_busy_dumpers()
 {
     dumper_t *dumper;
@@ -805,24 +820,12 @@ num_busy_dumpers()
     return n;
 }
 
-static dumper_t *
-lookup_dumper(fd)
-    int fd;
-{
-    dumper_t *dumper;
-
-    for(dumper = dmptable; dumper < dmptable+inparallel; dumper++)
-	if(dumper->fd == fd) return dumper;
-
-    return NULL;
-}
-
 static void
-handle_dumper_result(fd)
-    int fd;
+handle_dumper_result(cookie)
+    void *cookie;
 {
     static int pending_aborts = 0;
-    dumper_t *dumper;
+    dumper_t *dumper = cookie;
     disk_t *dp, *sdp;
     long origsize;
     long dumpsize;
@@ -831,10 +834,11 @@ handle_dumper_result(fd)
     int result_argc;
     char *result_argv[MAX_ARGS+1];
 
-    dumper = lookup_dumper(fd);
     assert(dumper != NULL);
     dp = dumper->dp;
     assert(dp != NULL && sched(dp) != NULL);
+
+    short_dump_state();
 
     tok = getresult(dumper->fd, 1, &result_argc, result_argv, MAX_ARGS+1);
 
@@ -871,6 +875,7 @@ handle_dumper_result(fd)
 
 	taper_queuedisk(dp);
 	dp = NULL;
+	start_some_dumps(dumper, &runq);
 	break;
 
     case TRYAGAIN: /* TRY-AGAIN <handle> <err str> */
@@ -884,6 +889,8 @@ handle_dumper_result(fd)
 		    sched(dp)->level, dp->host->hostname);
 	}
 	else {
+	    /* give it 15 seconds in case of temp problems */
+	    dp->start_t = time(NULL) + 15;
 	    sched(dp)->attempted++;
 	    enqueue_disk(&runq, dp);
 	}
@@ -902,7 +909,7 @@ handle_dumper_result(fd)
 	/* no need to log this, dumper will do it */
 	/* sleep in case the dumper failed because of a temporary network
 	   problem, as NIS or NFS... */
-	sleep(15);
+	dumper->ev_wait = event_register(15, EV_TIME, handle_idle_wait, dumper);
 	break;
 
     case NO_ROOM: /* NO-ROOM <handle> */
@@ -949,14 +956,15 @@ handle_dumper_result(fd)
 	    dp2 = dequeue_disk(&stoppedq);
 	    dumper_cmd(sched(dp2)->dumper, CONTINUE, NULL);
 	}
+	start_some_dumps(dumper, &runq);
 	break;
 
     case BOGUS:
 	/* either EOF or garbage from dumper.  Turn it off */
 	log_add(L_WARNING, "%s pid %ld is messed up, ignoring it.\n",
 	        dumper->name, (long)dumper->pid);
-	FD_CLR(fd,&readset);
-	aclose(fd);
+	event_release(dumper->ev_read);
+	aclose(dumper->fd);
 	dumper->busy = 0;
 	dumper->down = 1;	/* mark it down so it isn't used again */
 	if(dp) {
@@ -1005,6 +1013,9 @@ taper_queuedisk(dp)
 	else
 	    enqueue_disk(&tapeq, dp);
     } else if (!degraded_mode) {
+	assert(taper_ev_read == NULL);
+	taper_ev_read = event_register(taper, EV_READFD,
+	    handle_taper_result, NULL);
 	taper_disk = dp;
 	taper_busy = 1;
 	taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level,
@@ -1482,7 +1493,7 @@ dump_to_tape(dp)
     dp->inprogress = 1;
     sched(dp)->timestamp = time((time_t *)0);
     allocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
-    idle_reason = 0;
+    idle_reason = NOT_IDLE;
 
     short_dump_state();
 
@@ -1607,7 +1618,7 @@ short_dump_state()
     printf(" qlen tapeq: %d", queue_length(tapeq));
     printf(" runq: %d", queue_length(runq));
     printf(" stoppedq: %d", queue_length(stoppedq));
-    printf(" wakeup: %d", (int)sleep_time.tv_sec);
+    printf(" wakeup: %d", (int)sleep_time);
     printf(" driver-idle: %s\n", idle_strings[idle_reason]);
     interface_state(wall_time);
     holdingdisk_state(wall_time);
