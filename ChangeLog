@@ -1,3 +1,7 @@
+1998-11-04  John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/amverify.sh.in: tolerate extra amtape output.
+
 1998-11-04  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* configure.in: bumped to 2.5.0
