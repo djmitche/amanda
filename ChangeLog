@@ -1,3 +1,8 @@
+2001-06-01 John R. Jackson <jrj@purdue.edu>
+
+	* server-src/amindexd.c (build_disk_table): Make sure a holding disk
+	  image is used rather than a copy also on tape, if both exist.
+
 2001-05-29 John R. Jackson <jrj@purdue.edu>
 
 	* server-src/reporter.c: Fix PostScript output to only show what went
