@@ -90,6 +90,7 @@ char **argv;
 		  GNUTAR, COMPRESS_PATH,
 		  indexfilename(host, disk, level, datestamp));
 
+    umask(066);
     /* open pipe to command */
     if ((pipe_fp = popen(cmd, "w")) == NULL)
     {

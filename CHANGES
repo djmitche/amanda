@@ -1,4 +1,9 @@
-        Fixed autoconf for gdbm on linux. -oliva
+	SAMBA backups won't succeed if GNUTAR listed incrementals are
+	enabled. -oliva
+
+	Change umask to 066 before creating index file in /tmp. -oliva
+
+	Fixed autoconf for gdbm on linux. -oliva
 
 Version 2.3.0.4
 

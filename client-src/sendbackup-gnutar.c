@@ -139,6 +139,11 @@ int level, dataf, mesgf;
     }
 
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
+#ifdef SAMBA_CLIENT
+    if (disk[0] == '/' && disk[1]=='/')
+      incrname = NULL;
+    else
+#endif
     {
 	int i;
 	int len = sizeof(GNUTAR_LISTED_INCREMENTAL_DIR) +
@@ -361,6 +366,9 @@ int goterror;
 {
     if(!no_record && !goterror) {
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
+#ifdef SAMBA_CLIENT
+      if (incrname != NULL) {
+#endif
         char *nodotnew = strdup(incrname);
         nodotnew[strlen(nodotnew)-4] = '\0';
 	unlink(nodotnew);
@@ -368,6 +376,9 @@ int goterror;
             error("error [renaming %s to %s: %s]", 
 		  incrname, nodotnew, strerror(errno));
 	free(nodotnew); 
+#ifdef SAMBA_CLIENT
+      }
+#endif
 #endif
 
 	amandates_updateone(cur_disk, cur_level, cur_dumptime);

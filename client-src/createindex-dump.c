@@ -116,6 +116,7 @@ char **argv;
 		      indexfilename(host, disk, level, datestamp));
     }
 
+    umask(066);
     /* open pipe to command */
     if ((pipe_fp = popen(cmd, "w")) == NULL)
     {
