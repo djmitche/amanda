@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amqde.c,v 1.1.2.1 2003/10/24 20:38:23 kovert Exp $
+ * $Id: amqde.c,v 1.1.2.2 2004/08/05 11:39:37 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -147,7 +147,7 @@ main(argc, argv)
 			if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0)
 				continue;
 
-			snprintf(buf, sizeof(buf) - 1, "%s/%s", new->dirname, de->d_name);
+			ap_snprintf(buf, sizeof(buf) - 1, "%s/%s", new->dirname, de->d_name);
 
 #ifdef USE_STRHASH
 			if (should_exclude(hash, buf))
