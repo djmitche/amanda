@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.16 2000/09/23 13:05:17 martinea Exp $
+ * $Id: amcheck.c,v 1.50.2.17 2000/09/27 00:30:43 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -152,8 +152,16 @@ char **argv;
 
     while((opt = getopt(argc, argv, "M:mwsclt")) != EOF) {
 	switch(opt) {
-	case 'm':	mailout = 1; break;
-	case 'M':	mailout = 1; mailto=optarg; break;
+	case 'M':	mailto=optarg;
+	case 'm':	
+#ifdef MAILER
+			mailout = 1;
+#else
+			printf("You can't use -%c because configure didn't find a mailer.\n",
+				opt);
+			exit(1);
+#endif
+			break;
 	case 's':	do_localchk = 1; do_tapechk = 1;
 			chk_flag = 1;
 			break;
@@ -311,6 +319,7 @@ char **argv;
     }
 
     /* send mail if requested, but only if there were problems */
+#ifdef MAILER
 
     if((server_probs || client_probs) && mailout) {
 	fflush(stdout);
@@ -332,6 +341,7 @@ char **argv;
     if(mailout) {
 	unlink(mainfname);
     }
+#endif
     dbclose();
     return (server_probs || client_probs);
 }

@@ -1,3 +1,9 @@
+2000-09-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/amcheck.c: Don't accept -m or -M option if MAILER
+	is not defined.
+	* server-src/reporter.c: Need a -f optionn if MAILER is not defined.
+
 2000-09-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	patch by <jeg@time.ucsc.edu>
 
@@ -987,7 +993,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.378 2000/09/26 00:18:39 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.379 2000/09/27 00:30:42 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
