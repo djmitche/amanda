@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.58 1998/04/08 16:24:35 amcore Exp $
+ * $Id: amanda.h,v 1.59 1998/04/11 05:23:41 amcore Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -514,8 +514,8 @@ extern char  *areads	      P((int fd));
 } while(0)
 
 #define strappend(s1,s2) do {						\
-    char *t = stralloc2((s1),(s2));					\
-    amfree(s1);								\
+    char *t = (s1) ? stralloc2((s1),(s2)) : stralloc((s2));		\
+    amfree((s1));							\
     (s1) = t;								\
 } while(0)
 
