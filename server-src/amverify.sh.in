@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.7.2.13.4.5.2.6 2003/10/24 13:44:49 martinea Exp $
+#	$Id: amverify.sh.in,v 1.7.2.13.4.5.2.7 2004/10/04 11:47:06 martinea Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -370,7 +370,20 @@ while [ $SLOT -lt $SLOTS ]; do
 		sleep 3
 	done
 	$Echon "Rewinding..."
-	until $MT $MTF $DEVICE rewind; do
+	ERRORS=0
+	until $MT $MTF $DEVICE rewind > $TEMP/ammt.out 2>&1; do
+		RESULT=`grep "No medium found" $TEMP/ammt.out`
+		[ X"$RESULT" != X"" ] \
+			&& report "** Error rewinding tape" \
+			&& report "`cat $TEMP/ammt.out`" \
+			&& cat $TEMP/ammt.out >> $DEFECTS \
+			&& break
+		ERRORS=`expr $ERRORS + 1`
+		[ $ERRORS -gt 100 ] \
+			&& report "** Error rewinding tape" \
+			&& report "`cat $TEMP/ammt.out`" \
+			&& cat $TEMP/ammt.out >> $DEFECTS \
+			&& break
 		sleep 3
 	done
 	$Echon "Processing label..."

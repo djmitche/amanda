@@ -1,6 +1,11 @@
+2004-10-04  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amverify.sh.in: Terminate if no tape online.
+
 2004-09-20  Stefan G. Weichinger <monitor@oops.co.at>
 
-       * server-src/amcheck.c (start_host): Added warning for hostname localhost.
+       * server-src/amcheck.c (start_host): Added warning for hostname
+	 localhost.
 
 2004-09-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
