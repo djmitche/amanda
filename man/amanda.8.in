@@ -7,6 +7,9 @@
 .fi
 .if t .ft
 ..
+.de P1
+\fB\\$1\fP \\$2 \fI\\$3\fP \\$4 \fI\\$5\fP \\$6 "\fI\\$7\fP" \\$8
+..
 .TH AMANDA 8
 .SH NAME
 amanda \- Advanced Maryland Automatic Network Disk Archiver
@@ -1064,18 +1067,37 @@ Each disk using this set of options
 will get a full backup at least this often.
 Setting this to zero tries to do a full backup each run.
 .TP
-.BS "exclude [list]" string
+.P1 exclude [ list|file ][[ append ][ "string" ]+]
 Default:
-.IR none .
-The string is passed as a file name value to the GNU tar
-.B \-\-exclude
-or
-.B \-\-exclude\-from
-option.
-In the case of
-.BR "exclude list" ,
-the file must be available on the backup client host.
+.IR file .
+There is two exclude list
+.B exclude file
+and
+.B exclude list.
+With
+.B exclude file
+, the
+.I string
+is a gnutar exclude expression. With
+.B exclude list
+, the
+.I string
+is a file name on the client containing gnutar exclude expression.
 .IP
+All exclude expression are concatenated in one file and passed to gnutar as a
+.B \-\-exclude\-from
+argument.
+.IP
+With the
+.B append
+keyword, the
+.I string
+are appended to the current value of the list, without it, the
+.I string
+overwrite the list.
+.IP
+For
+.B exclude list,
 If the file name is relative,
 the disk name being backed up is prepended.
 So if this is entered:
@@ -1084,7 +1106,7 @@ So if this is entered:
     exclude list ".amanda.excludes"
 .EE
 .IP
-the actual file passed to GNU tar would be
+the actual file use would be
 .I /var/.amanda.excludes
 for a backup of
 .IR /var ,
@@ -1113,6 +1135,41 @@ This option is useful when the
 .I disklist
 file is shared among several configurations,
 some of which should not back up all the listed file systems.
+.TP
+.P1 include [ list|file ][[ append ][ "string" ]+]
+Default:
+.I file
+".".
+There is two include list
+.B include file
+and
+.B include list.
+With
+.B include file
+, the
+.I string
+is a glob expression. With
+.B include list
+, the
+.I string
+is a file name on the client containing glob expression.
+.IP
+All include expression are expanded by amanda and concatenated in one file and passed to gnutar as a
+.B \-\-files\-from
+argument. They must start with "./" and containing no other "/".
+.IP
+With the
+.B append
+keyword, the
+.I string
+are appended to the current value of the list, without it, the
+.I string
+overwrite the list.
+.IP
+For
+.B include list,
+If the file name is relative,
+the disk name being backed up is prepended.
 .TP
 .BS index boolean
 Default:
