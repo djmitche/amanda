@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindex.c,v 1.12 1999/09/15 00:32:26 jrj Exp $
+ * $Id: amindex.c,v 1.13 2001/09/01 03:36:24 jrjackson Exp $
  *
  * index control
  */
@@ -61,9 +61,9 @@ int level;
     snprintf(level_str, sizeof(level_str), "%d", level);
   }
 
-  host = stralloc(sanitise_filename(host));
+  host = sanitise_filename(host);
   if (disk != NULL) {
-    disk = stralloc(sanitise_filename(disk));
+    disk = sanitise_filename(disk);
   }
 
   conf_indexdir = getconf_str(CNF_INDEXDIR);
