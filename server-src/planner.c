@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.36 1997/09/11 08:44:10 amcore Exp $
+ * $Id: planner.c,v 1.37 1997/09/20 14:59:41 george Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -64,10 +64,10 @@ double conf_bumpmult;
 
 typedef struct est_s {
     int got_estimate;
-    int curr_priority;
-    int curr_level;
-    long size;
-    int degr_level;	/* if curr_level == 0, what would be the inc level */
+    int dump_priority;
+    int dump_level;
+    long dump_size;
+    int degr_level;	/* if dump_level == 0, what would be the inc level */
     long degr_size;
     int last_level;
     long last_lev0size;
@@ -320,8 +320,8 @@ char **argv;
 	fprintf(stderr, "INITIAL SCHEDULE (size %ld):\n", total_size);
 	for(dp = schedq.head; dp != NULL; dp = dp->next) {
 	    fprintf(stderr, "  %s %s pri %d lev %d size %ld\n",
-		    dp->host->hostname, dp->name, est(dp)->curr_priority,
-		    est(dp)->curr_level, est(dp)->size);
+		    dp->host->hostname, dp->name, est(dp)->dump_priority,
+		    est(dp)->dump_level, est(dp)->dump_size);
 	}
     }
 
@@ -476,8 +476,8 @@ disk_t *dp;
 
     ep = alloc(sizeof(est_t));
     dp->up = (void *) ep;
-    ep->size = -1;
-    ep->curr_priority = dp->priority;
+    ep->dump_size = -1;
+    ep->dump_priority = dp->priority;
     ep->errstr = 0;
 
     /* calculated fields */
@@ -526,7 +526,7 @@ disk_t *dp;
     if(ep->next_level0 < 0) {
 	fprintf(stderr,"%s:%s overdue %d days for level 0\n",
 		dp->host->hostname, dp->name, - ep->next_level0);
-	ep->curr_priority -= ep->next_level0;
+	ep->dump_priority -= ep->next_level0;
 	/* warn if dump will be overwritten */
 	if(ep->last_level > -1) {
 	    int overwrite_runs = when_overwrite(inf.inf[0].label);
@@ -544,7 +544,7 @@ disk_t *dp;
 	}
     }
     else if(inf.command == PLANNER_FORCE)
-	ep->curr_priority += 1;
+	ep->dump_priority += 1;
     /* else XXX bump up the priority of incrementals that failed last night */
 
     /* handle external level 0 dumps */
@@ -1079,9 +1079,9 @@ disk_t *dp;
 
     if(ep->next_level0 <= 0) {
 	fprintf(stderr,"(due for level 0) ");
-	ep->curr_level = 0;
-	ep->size = est_tape_size(dp, 0);
-	total_lev0 += (double) ep->size;
+	ep->dump_level = 0;
+	ep->dump_size = est_tape_size(dp, 0);
+	total_lev0 += (double) ep->dump_size;
 	if(ep->last_level == -1 || dp->skip_incr) {
 	    fprintf(stderr,"(%s disk, can't switch to degraded mode)\n",
 		    dp->skip_incr? "skip-incr":"new");
@@ -1097,15 +1097,15 @@ disk_t *dp;
     }
     else {
 	fprintf(stderr,"(not due for a full dump, picking an incr level)\n");
-	ep->curr_level = pick_inclevel(dp);
-	ep->size = est_tape_size(dp, ep->curr_level);
+	ep->dump_level = pick_inclevel(dp);
+	ep->dump_size = est_tape_size(dp, ep->dump_level);
     }
 
-    fprintf(stderr,"  curr level %d size %ld ", ep->curr_level, ep->size);
+    fprintf(stderr,"  curr level %d size %ld ", ep->dump_level, ep->dump_size);
 
     insert_disk(&schedq, dp, schedule_order);
 
-    total_size += TAPE_BLOCK_SIZE + ep->size + tape_mark;
+    total_size += TAPE_BLOCK_SIZE + ep->dump_size + tape_mark;
 
     /* update the balanced size */
     if(!(dp->skip_full || dp->strategy == DS_NOFULL)) {
@@ -1171,10 +1171,10 @@ disk_t *a, *b;
     int diff;
     long ldiff;
 
-    diff = est(b)->curr_priority - est(a)->curr_priority;
+    diff = est(b)->dump_priority - est(a)->dump_priority;
     if(diff != 0) return diff;
 
-    ldiff = est(b)->size - est(a)->size;
+    ldiff = est(b)->dump_size - est(a)->dump_size;
     if(ldiff < 0) return -1; /* XXX - there has to be a better way to dothis */
     if(ldiff > 0) return 1;
     return 0;
@@ -1288,7 +1288,7 @@ static void delay_dumps P((void))
     for(dp = schedq.head; dp != NULL; dp = ndp) {
 	ndp = dp->next; /* remove_disk zaps this */
 
-	if(est(dp)->curr_level == 0 && est(dp)->size > tape->length) {
+	if(est(dp)->dump_level == 0 && est(dp)->dump_size > tape->length) {
 	    if(est(dp)->last_level == -1 || dp->skip_incr) {
 		sprintf(errbuf,
 "%s %s 0 [dump larger than tape, but cannot incremental dump %s disk]",
@@ -1306,10 +1306,10 @@ static void delay_dumps P((void))
 	    }
 	}
 
-	if(est(dp)->curr_level != 0 && est(dp)->size > tape->length) {
+	if(est(dp)->dump_level != 0 && est(dp)->dump_size > tape->length) {
 	    sprintf(errbuf,
 		"%s %s %d [dump larger than tape, skipping incremental]",
-		dp->host->hostname, dp->name, est(dp)->curr_level);
+		dp->host->hostname, dp->name, est(dp)->dump_level);
 
 	    delay_remove_dump(dp, errbuf);
 	}
@@ -1330,7 +1330,7 @@ static void delay_dumps P((void))
 
     preserve = NULL;
     for(dp = schedq.head; dp != NULL && preserve == NULL; dp = dp->next)
-	if(est(dp)->curr_level == 0)
+	if(est(dp)->dump_level == 0)
 	    preserve = dp;
 
     for(dp = schedq.tail;
@@ -1338,7 +1338,7 @@ static void delay_dumps P((void))
 		dp = ndp) {
 	ndp = dp->prev;
 
-	if(est(dp)->curr_level == 0 && dp != preserve) {
+	if(est(dp)->dump_level == 0 && dp != preserve) {
 	    if(est(dp)->last_level == -1 || dp->skip_incr) {
 		sprintf(errbuf,
 "%s %s 0 [dumps too big, but cannot incremental dump %s disk]",
@@ -1370,10 +1370,10 @@ static void delay_dumps P((void))
 	    dp = ndp) {
 	ndp = dp->prev;
 
-	if(est(dp)->curr_level != 0) {
+	if(est(dp)->dump_level != 0) {
 	    sprintf(errbuf,
 		"%s %s %d [dumps way too big, must skip incremental dumps]",
-		dp->host->hostname, dp->name, est(dp)->curr_level);
+		dp->host->hostname, dp->name, est(dp)->dump_level);
 
 	    delay_remove_dump(dp, errbuf);
 	}
@@ -1392,20 +1392,20 @@ static void delay_dumps P((void))
 	dp = bi->dp;
 
 	if(bi->deleted)
-	    new_total = total_size + TAPE_BLOCK_SIZE + est(dp)->size + tape_mark;
+	    new_total = total_size + TAPE_BLOCK_SIZE + est(dp)->dump_size + tape_mark;
 	else
-	    new_total = total_size - est(dp)->size + bi->size;
+	    new_total = total_size - est(dp)->dump_size + bi->size;
 
 	if(new_total <= tape_length) { /* reinstate it */
 	    if(bi->deleted) {
 		total_size = new_total;
-		total_lev0 += (double) est(dp)->size;
+		total_lev0 += (double) est(dp)->dump_size;
 		insert_disk(&schedq, dp, schedule_order);
 	    }
 	    else {
 		total_size = new_total;
-		est(dp)->curr_level = bi->level;
-		est(dp)->size = bi->size;
+		est(dp)->dump_level = bi->level;
+		est(dp)->dump_size = bi->size;
 	    }
 
 	    /* Keep it clean */
@@ -1440,7 +1440,7 @@ static void delay_dumps P((void))
 	else {
 	    dp = bi->dp;
 	    fprintf(stderr, "  delay: %s  Now at level %d.\n",
-		bi->errstr, est(dp)->curr_level);
+		bi->errstr, est(dp)->dump_level);
 	    log(L_INFO, "%s", bi->errstr);
 	}
 
@@ -1455,16 +1455,16 @@ static void delay_dumps P((void))
 }
 
 
-static void delay_remove_dump  (dp, errstr)
+static void delay_remove_dump(dp, errstr)
 disk_t *dp;
 char *errstr;
 /* Remove a dump - keep track on the bi q */
 {
     bi_t *bi;
 
-    total_size -= TAPE_BLOCK_SIZE + est(dp)->size + tape_mark;
-    if(est(dp)->curr_level == 0)
-	total_lev0 -= (double) est(dp)->size;
+    total_size -= TAPE_BLOCK_SIZE + est(dp)->dump_size + tape_mark;
+    if(est(dp)->dump_level == 0)
+	total_lev0 -= (double) est(dp)->dump_size;
 
     bi = alloc(sizeof(bi_t));
     bi->next = NULL;
@@ -1485,15 +1485,15 @@ char *errstr;
 }
 
 
-static void delay_modify_dump (dp, errstr)
+static void delay_modify_dump(dp, errstr)
 disk_t *dp;
 char *errstr;
 /* Modify a dump from total to incr - keep track on the bi q */
 {
     bi_t *bi;
 
-    total_size -= est(dp)->size;
-    total_lev0 -= (double) est(dp)->size;
+    total_size -= est(dp)->dump_size;
+    total_lev0 -= (double) est(dp)->dump_size;
 
     bi = alloc(sizeof(bi_t));
     bi->next = NULL;
@@ -1506,14 +1506,14 @@ char *errstr;
 
     bi->deleted = 0;
     bi->dp = dp;
-    bi->level = est(dp)->curr_level;
-    bi->size = est(dp)->size;
+    bi->level = est(dp)->dump_level;
+    bi->size = est(dp)->dump_size;
     bi->errstr = stralloc(errstr);
 
-    est(dp)->curr_level = est(dp)->degr_level;
-    est(dp)->size = est(dp)->degr_size;
+    est(dp)->dump_level = est(dp)->degr_level;
+    est(dp)->dump_size = est(dp)->degr_size;
 
-    total_size += est(dp)->size;
+    total_size += est(dp)->dump_size;
 
     return;
 }
@@ -1548,7 +1548,7 @@ static int promote_highest_priority_incremental P((void))
 		continue; /* totals continue here too */
 
 	    new_size = est_tape_size(dp, 0);
-	    new_total = total_size - est(dp)->size + new_size;
+	    new_total = total_size - est(dp)->dump_size + new_size;
 	    new_lev0 = total_lev0 + new_size;
 
 	    if(new_total > tape_length
@@ -1563,10 +1563,10 @@ static int promote_highest_priority_incremental P((void))
 
 	    total_size = new_total;
 	    total_lev0 = new_lev0;
-	    est(dp)->degr_level = est(dp)->curr_level;
-	    est(dp)->degr_size = est(dp)->size;
-	    est(dp)->curr_level = 0;
-	    est(dp)->size = new_size;
+	    est(dp)->degr_level = est(dp)->dump_level;
+	    est(dp)->degr_size = est(dp)->dump_size;
+	    est(dp)->dump_level = 0;
+	    est(dp)->dump_size = new_size;
 	    est(dp)->next_level0 = 0;
 
 	    fprintf(stderr,
@@ -1641,17 +1641,17 @@ static int promote_hills P((void))
 	       dp->strategy == DS_NOFULL)
 		continue;
 	    new_size = est_tape_size(dp, 0);
-	    new_total = total_size - est(dp)->size + new_size;
+	    new_total = total_size - est(dp)->dump_size + new_size;
 	    if(new_total > tape_length)
 		continue;
 	    /* We found a disk we can promote */
 	    total_size = new_total;
 	    total_lev0 += new_size;
-	    est(dp)->degr_level = est(dp)->curr_level;
-	    est(dp)->degr_size = est(dp)->size;
-	    est(dp)->curr_level = 0;
+	    est(dp)->degr_level = est(dp)->dump_level;
+	    est(dp)->degr_size = est(dp)->dump_size;
+	    est(dp)->dump_level = 0;
 	    est(dp)->next_level0 = 0;
-	    est(dp)->size = new_size;
+	    est(dp)->dump_size = new_size;
 
 	    fprintf(stderr,
 		    "   promote: moving %s:%s up, total_lev0 %1.0f, total_size %ld\n",
@@ -1683,40 +1683,50 @@ static void output_scheduleline(dp)
 disk_t *dp;
 {
     est_t *ep;
-    long time, degr_time;
+    long dump_time, degr_time;
     char schedline[1024];
+    char *dump_date, *degr_date;
+    int i;
 
     ep = est(dp);
 
-    if(ep->size == -1) {
+    if(ep->dump_size == -1) {
 	/* no estimate, fail the disk */
 	fprintf(stderr,
 		"planner: FAILED %s %s %d [no estimate or historical data]\n",
-		dp->host->hostname, dp->name, ep->curr_level);
+		dp->host->hostname, dp->name, ep->dump_level);
 	log(L_FAIL, "%s %s %d [no estimate or historical data]",
-	    dp->host->hostname, dp->name, ep->curr_level);
+	    dp->host->hostname, dp->name, ep->dump_level);
 	return;
     }
 
-    if(ep->curr_level == 0 && ep->degr_level != -1) {
-	time = ep->size / ep->fullrate;
+    dump_date = degr_date = (char *)0;
+    for(i = 0; i < MAX_LEVELS; i++) {
+	if(ep->dump_level == ep->level[i])
+	    dump_date = ep->dumpdate[i];
+	if(ep->degr_level == ep->level[i])
+	    degr_date = ep->dumpdate[i];
+    }
+
+    if(ep->dump_level == 0 && ep->degr_level != -1) {
+	dump_time = ep->dump_size / ep->fullrate;
 	degr_time = ep->degr_size / ep->incrrate;
 	sprintf(schedline, "%s %s %d %d %s %ld %ld %d %s %ld %ld\n",
-		dp->host->hostname, dp->name, ep->curr_priority,
-		ep->curr_level, ep->dumpdate[ep->curr_level],
-		ep->size, time,
-		ep->degr_level, ep->dumpdate[ep->degr_level],
+		dp->host->hostname, dp->name, ep->dump_priority,
+		ep->dump_level, dump_date,
+		ep->dump_size, dump_time,
+		ep->degr_level, degr_date,
 		ep->degr_size, degr_time);
     }
     else {
-	if(ep->curr_level == 0)
-	    time = ep->size / ep->fullrate;
+	if(ep->dump_level == 0)
+	    dump_time = ep->dump_size / ep->fullrate;
 	else
-	    time = ep->size / ep->incrrate;
+	    dump_time = ep->dump_size / ep->incrrate;
 	sprintf(schedline, "%s %s %d %d %s %ld %ld\n",
-		dp->host->hostname, dp->name, ep->curr_priority,
-		ep->curr_level, ep->dumpdate[ep->curr_level],
-		ep->size, time);
+		dp->host->hostname, dp->name, ep->dump_priority,
+		ep->dump_level, dump_date,
+		ep->dump_size, dump_time);
     }
 
     fputs(schedline, stdout);
