@@ -1,3 +1,25 @@
+1999-06-07  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/util.c (bind_portrange): function that attempts
+	to bind a network connection to a port in a given range.
+	* common-src/util.h: prototype bind_portrange().
+	* common-src/dgram.c (bind_reserved): remove, superceeded by
+	bind_portrange().
+	(dgram_bind): use bind_portrange() instead of bind_reserved(), and
+	try user specified ports first, then reserved ports, then regular
+	ports.
+	* common-src/dgram.h: remove prototype for bind_reserved().
+	* common-src/stream.c (stream_server, stream_client): use
+	bind_portrange() instead of bind_reserved(), and try user
+	specified ports first, then reserved ports, then regular
+	ports.
+	* recover-src/amrecover.c (main): use bind_portrange() instead
+	of bind_reserved(), and verify that the port it gives us is
+	a reserved one.
+	* recover-src/extract_list.c (extract_files_setup): use
+	bind_portrange() instead of bind_reserved(), and verify that
+	the port it gives us is a reserved one.
+
 1999-06-07  Mark F. Vlems  <mvlems@vbox.xs4all.nl>
 
 	* server-src/amindexd.c (reply, lreply, fast_lreply): Return code 0

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.32 1998/11/19 23:05:05 kashmir Exp $
+ * $Id: amrecover.c,v 1.33 1999/06/07 16:05:28 kashmir Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -41,6 +41,7 @@
 #include "amrecover.h"
 #include "getfsent.h"
 #include "dgram.h"
+#include "util.h"
 
 #ifdef HAVE_LIBREADLINE
 #  ifdef HAVE_READLINE_READLINE_H
@@ -552,12 +553,19 @@ char **argv;
     memset((char *)&myname, 0, sizeof(myname));
     memcpy((char *)&myname.sin_addr, hp->h_addr, hp->h_length);
     myname.sin_family = hp->h_addrtype;
-    if (bind_reserved(server_socket, &myname) != 0)
+    if (bind_portrange(server_socket, &myname, 512, IPPORT_RESERVED) != 0)
     {
 	int save_errno = errno;
 
 	perror("amrecover: Error binding socket");
 	dbprintf(("Error binding socket: %s\n", strerror(save_errno)));
+	dbclose();
+	exit(1);
+    }
+    if (myname.sin_port >= IPPORT_RESERVED) {
+	(void)fprintf(stderr, "%s: can't get a reserved udp port\n",
+		      get_pname());
+	dbprintf(("can't get a reserved udp port\n"));
 	dbclose();
 	exit(1);
     }

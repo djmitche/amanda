@@ -24,12 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.h,v 1.1 1999/06/02 21:42:52 kashmir Exp $
+ * $Id: util.h,v 1.2 1999/06/07 16:05:12 kashmir Exp $
  */
 #ifndef UTIL_H
 #define	UTIL_H
 
 ssize_t fullread P((int, void *, size_t));
 ssize_t fullwrite P((int, const void *, size_t));
+
+int bind_portrange P((int, struct sockaddr_in *, int, int));
 
 #endif	/* UTIL_H */

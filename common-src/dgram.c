@@ -25,61 +25,14 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.17 1999/06/01 21:03:53 oliva Exp $
+ * $Id: dgram.c,v 1.18 1999/06/07 16:05:14 kashmir Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
 #include "amanda.h"
 #include "arglist.h"
 #include "dgram.h"
-
-int bind_reserved(sock, addrp)
-int sock;
-struct sockaddr_in *addrp;
-{
-/*
- * When using kerberos, we don't care about reserved ports or not.
- */
-#ifndef UDPPORTRANGE
-#   define FIRST_PORT 512
-#   define NUM_PORTS		(IPPORT_RESERVED-FIRST_PORT)
-#else
-    static unsigned udpportrange[2] = { UDPPORTRANGE };
-    assert (udpportrange[0] <= udpportrange [1]);
-#   define FIRST_PORT udpportrange[0]
-#   define NUM_PORTS  udpportrange[1]-udpportrange[0]
-#endif
-    int port, count;
-    static int port_base = FIRST_PORT;
-
-    /* 
-     * we pick a different starting point based on our pid to avoid always
-     * picking the same reserved port twice.
-     */
-
-    port = FIRST_PORT + ((getpid() + port_base) % NUM_PORTS);
-
-    for(count = 0; count < NUM_PORTS; count++) {
-	addrp->sin_port = htons(port);
-	if(bind(sock, (struct sockaddr *)addrp, sizeof(struct sockaddr_in)) 
-	   != -1) break;
-	else if(errno != EADDRINUSE) {
-	    /* something weird, probably EACCES */
-	    return -1;
-	}
-	if(++port == IPPORT_RESERVED)
-	    port = FIRST_PORT;
-    }
-
-    if(count >= NUM_PORTS) {
-	/* all ports busy */
-	errno = EAGAIN;
-	return -1;
-    }
-    port_base = port + 1;
-    return 0;
-}
-
+#include "util.h"
 
 void dgram_socket(dgram, socket)
 dgram_t *dgram;
@@ -113,25 +66,29 @@ int *portp;
     name.sin_addr.s_addr = INADDR_ANY;
 
     /*
-     * If possible, we get a reserved port, since some of our security types
-     * depend on it.  If we don't have proper privledges to do this, we just
-     * don't worry about it.  It's up to the caller and user to grant us
-     * the right things.
+     * If a port range was specified, we try to get a port in that
+     * range first.  Next, we try to get a reserved port.  If that
+     * fails, we just go for any port.
+     *
+     * It is up to the caller to make sure we have the proper permissions
+     * to get the desired port, and to make sure we return a port that
+     * is within the range it requires.
      */
-    if(geteuid() == 0) {
-	if(bind_reserved(s, &name) == -1) {
-	    aclose(s);
-	    return -1;
-	}
-    } else {
-	/* pick any available non-reserved port */
-	name.sin_port = INADDR_ANY;
-	if(bind(s, (struct sockaddr *)&name, sizeof name) == -1) {
-	    aclose(s);
-	    return -1;
-	}
+#ifdef UDPPORTRANGE
+    if (bind_portrange(s, &name, UDPPORTRANGE) == 0)
+	goto out;
+#endif
+
+    if (bind_portrange(s, &name, 512, IPPORT_RESERVED) == 0)
+	goto out;
+
+    name.sin_port = INADDR_ANY;
+    if (bind(s, (struct sockaddr *)&name, sizeof name) == -1) {
+	aclose(s);
+	return -1;
     }
 
+out:
     /* find out what name was actually used */
 
     len = sizeof name;

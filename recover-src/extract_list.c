@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.45 1999/03/05 01:29:43 martinea Exp $
+ * $Id: extract_list.c,v 1.46 1999/06/07 16:05:34 kashmir Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -37,6 +37,7 @@
 #ifdef SAMBA_CLIENT
 #include "findpass.h"
 #endif
+#include "util.h"
 
 typedef struct EXTRACT_LIST_ITEM
 {
@@ -1065,11 +1066,19 @@ static int extract_files_setup P((void))
     myname.sin_family = hp->h_addrtype;
     seteuid(0);					/* it either works ... */
     setegid(0);
-    if (bind_reserved(tape_server_socket, &myname) != 0)
+    if (bind_portrange(tape_server_socket, &myname, 512, IPPORT_RESERVED) != 0)
     {
 	perror("amrecover: Error binding socket");
 	exit(2);
     }
+    if (myname.sin_port >= IPPORT_RESERVED) {
+	(void)fprintf(stderr, "%s: can't get a reserved udp port\n",
+		      get_pname());
+	dbprintf(("can't get a reserved udp port\n"));
+	dbclose();                    
+	exit(1);
+    }
+
     setegid(getgid());
     seteuid(getuid());				/* put it back */
     if (connect(tape_server_socket, (struct sockaddr *)&tape_server,

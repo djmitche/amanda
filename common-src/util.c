@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.1 1999/06/02 21:42:51 kashmir Exp $
+ * $Id: util.c,v 1.2 1999/06/07 16:05:09 kashmir Exp $
  */
 
 #include "amanda.h"
@@ -82,4 +82,48 @@ fullwrite(fd, vbuf, buflen)
 	buflen -= nwritten;
     }
     return (tot);
+}
+
+/*
+ * Bind to a port in the given range.  Takes a begin,end pair of port numbers.
+ *
+ * Returns negative on error (EGAIN if all ports are in use).  Returns 0
+ * on success.
+ */
+int
+bind_portrange(s, addrp, first_port, last_port)
+    int s;
+    struct sockaddr_in *addrp;
+    int first_port, last_port;
+{
+    int port, cnt;
+    const int num_ports = last_port - first_port;
+
+    assert(first_port < last_port);
+
+    /*
+     * We pick a different starting port based on our pid to avoid
+     * always picking the same reserved port twice.
+     */
+    port = (first_port + getpid()) % num_ports;
+
+    /*
+     * Scan through the range, trying all available ports.  Wrap around
+     * if we don't happen to start at the beginning.
+     */
+    for (cnt = 0; cnt < num_ports; cnt++, port = (port + 1) % num_ports) {
+	addrp->sin_port = htons(port);
+	if (bind(s, (struct sockaddr *)addrp, sizeof(*addrp)) >= 0)
+	    break;
+	/*
+	 * If the error was something other then port in use, stop.
+	 */
+	if (errno != EADDRINUSE)
+	    return (-1);
+    }
+    if (cnt == num_ports) {
+	errno = EAGAIN;
+	return (-1);
+    }
+    return (0);
 }
