@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.70 2002/03/24 19:25:51 jrjackson Exp $
+ * $Id: extract_list.c,v 1.71 2002/04/30 01:42:52 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1571,10 +1571,10 @@ void extract_files P((void))
 	    printf("Extracting from file %s\n",dump_device_name);
 	}
 	else {
-	    dump_device_name = newstralloc(dump_device_name, tape_device_name);
 	    printf("Load tape %s now\n", elist->tape);
 	    if (!okay_to_continue(1))
 	        return;
+	    dump_device_name = newstralloc(dump_device_name, tape_device_name);
 	}
 	dump_datestamp = newstralloc(dump_datestamp, elist->date);
 
