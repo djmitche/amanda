@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.27.4.6 2000/10/10 21:33:23 martinea Exp $
+ * $Id: diskfile.c,v 1.27.4.6.4.1 2001/02/10 04:28:46 jrjackson Exp $
  *
  * read disklist file
  */
@@ -611,7 +611,7 @@ char *argv[];
   malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
   if (argc>1) {
-    config_name = stralloc(argv[1]);
+    config_name = argv[1];
     if (strchr(config_name, '/') != NULL) {
       config_dir = stralloc2(argv[1], "/");
       config_name = strrchr(config_name, '/') + 1;
@@ -636,7 +636,6 @@ char *argv[];
   }
   amfree(conffile);
   amfree(config_dir);
-  amfree(config_name);
 
   malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
