@@ -25,7 +25,7 @@
  *                         University of Maryland at College Park
  */
 /*
- * $Id: sl.c,v 1.1.2.1 2002/02/11 20:51:41 martinea Exp $
+ * $Id: sl.c,v 1.1.2.2 2002/07/02 14:00:42 martinea Exp $
  *
  * A doubly linked list of string (char *)
  */
@@ -45,7 +45,7 @@ sl_t *sl;
 
 sl_t *new_sl() {
     sl_t *sl;
-    sl = alloc(sizeof(sl_t *));
+    sl = alloc(sizeof(sl_t));
     init_sl(sl);
     return(sl);
 }
