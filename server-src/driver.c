@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.6 1998/12/09 19:28:23 martinea Exp $
+ * $Id: driver.c,v 1.58.2.7 1998/12/12 02:44:15 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -430,7 +430,7 @@ disklist_t *rq;
     int total, cur_idle;
     disk_t *diskp, *big_degraded_diskp;
     dumper_t *dumper;
-    holdingdisk_t *holdp;
+    holdingdisk_t *holdp, *big_degraded_holdp;
     time_t now = time(NULL);
 
     if(rq->head == NULL) {
@@ -495,8 +495,10 @@ disklist_t *rq;
 		/* disk fits, dump it */
 		if(is_bigdumper(dumper) && degraded_mode) {
 		   if(!big_degraded_diskp || 
-		      sched(diskp)->priority > big_degraded_diskp->priority)
+		      sched(diskp)->priority > big_degraded_diskp->priority) {
 			big_degraded_diskp = diskp;
+			big_degraded_holdp = holdp;
+		    }
 		}
 		else {
 		    cur_idle = NOT_IDLE;
@@ -509,6 +511,7 @@ disklist_t *rq;
 
 	if(is_bigdumper(dumper) && degraded_mode) {
 	    diskp = big_degraded_diskp;
+	    holdp = big_degraded_holdp;
 	    if(big_degraded_diskp) cur_idle = NOT_IDLE;
 	}
 	if(diskp && cur_idle == NOT_IDLE) {
