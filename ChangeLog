@@ -1,3 +1,8 @@
+2001-06-18 John R. Jackson <jrj@purdue.edu>
+
+	* changer-src/chg-manual.sh.in: Add yet another online regex.  Found
+	  by George Herson <gherson@snet.net>.
+
 2001-06-12 Thomas Hepper <th@ant.han.de>
 	* changer-src/scsi-changer-driver.c (Inventory): Call Tape_Ready and let this function
 	decide how to get the tape drive status.
