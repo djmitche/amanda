@@ -1,3 +1,10 @@
+1998-11-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/amadmin.c(export_one): export the last_level and
+	consecutive_runs field.
+	* server-src/amadmin.c(import_one): import the last_level and
+	consecutive_runs field.
+
 1998-11-24  John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/amlabel.c: insist on being run as the dump user (ala
