@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.c,v 1.18 1999/03/14 08:42:13 oliva Exp $
+ * $Id: security.c,v 1.19 1999/04/06 23:10:36 kashmir Exp $
  *
  * wrapper file for kerberos security
  */
@@ -319,14 +319,18 @@ int bsd_security_ok(addr, str, cksum, errstr)
 #endif
 
     if((fPerm = fopen(".amandahosts", "r")) == NULL) {
-#if defined(TEST)
-	dbprintf(("fopen failed: %s\n", strerror(errno)));
-#endif
+      /*
+       * put an explanation in the /tmp/amanda/amandad.debug log that will
+       * help a system administrator fix the problem, but don't send a
+       * clue back to the other end to tell them what to fix in order to
+       * be able to hack our system.
+       */
+      
+	dbprintf(("fopen of .amandahosts failed: %s\n", strerror(errno)));
 	*errstr = vstralloc("[",
 			    "access as ", localuser, " not allowed",
 			    " from ", remoteuser, "@", remotehost,
 			    "] .amandahosts failed", NULL);
-	dbprintf(("check failed: %s\n", *errstr));
 	amfree(remotehost);
 	amfree(localuser);
 	amfree(remoteuser);

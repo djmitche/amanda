@@ -1,3 +1,9 @@
+1999-04-06  David Mankins <dm@k12-nis-2.bbn.com>
+
+	* common-src/security.c (bsd_security_ok): if an .amandahosts
+	file is missing or unreadable, log this fact to the debug file
+	instead of claiming that a user doesn't have permission.
+
 1999-04-06  Mike Grupenhoff <kashmir@munge.com>
 
 	* server-src/dumper.c: put all of the streams (data,mesg,index)
