@@ -166,6 +166,23 @@ while(<AMDUMP>) {
 			push @datestamp, $gdatestamp;
 		}
 	}
+	elsif(/setup_estimate: (\S+):(\S+): command .*, options: *(\S+) *last_level \d+ next_level0 -*\d+ level_days \d+ *getting estimates (-*\d) \(-2\) (-*\d) \(-2\) (-*\d) \(-2\)/) {
+		$host=$1;
+		$partition=$2;
+		$hostpart=&make_hostpart($host,$partition,$gdatestamp);
+		$estimate{$hostpart}=0;
+		$level{$hostpart}=0;
+		$esize{$hostpart}=0;
+		$dump_started{$hostpart}=0;
+		$dump_finished{$hostpart}=0;
+		$taper_started{$hostpart}=0;
+		$taper_finished{$hostpart}=0;
+		$partialestimate{$hostpart}=0;
+		$error{$hostpart}="";
+		if($4 != -1) { $getest{$hostpart} .= ":$4:" };
+		if($5 != -1) { $getest{$hostpart} .= ":$5:" };
+		if($6 != -1) { $getest{$hostpart} .= ":$6:" };
+	}
 	elsif(/setup_estimate: (\S+):(\S+): command .*, options:/) {
 		$host=$1;
 		$partition=$2;
