@@ -1,5 +1,9 @@
 2000-10-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/driver.c: typo.
+
+2000-10-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* configure.in: --with-samba-user is deprecated.
 	* docs/SAMBA: the username is now on the amandapass file.
 	* NEWS: the username is now on the amandapass file.
