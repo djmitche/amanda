@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.19 1997/12/30 05:23:56 jrj Exp $
+ * $Id: selfcheck.c,v 1.20 1997/12/31 01:32:25 jrj Exp $
  *
  * do self-check and send back any error messages
  */
@@ -79,7 +79,7 @@ char **argv;
 
     chdir("/tmp");
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
-    umask(0);
+    umask(0007);
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 

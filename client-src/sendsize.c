@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.46 1997/12/30 17:38:52 jrj Exp $
+ * $Id: sendsize.c,v 1.47 1997/12/31 01:32:28 jrj Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -107,7 +107,7 @@ char **argv;
 
     chdir("/tmp");
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
-    umask(0);
+    umask(0007);
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
 

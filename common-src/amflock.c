@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflock.c,v 1.11 1997/12/30 05:24:08 jrj Exp $
+ * $Id: amflock.c,v 1.12 1997/12/31 01:32:30 jrj Exp $
  *
  * file locking routines, put here to hide the system dependant stuff
  * from the rest of the code
@@ -138,8 +138,8 @@ long pid;
 
 	(void)delete_lock(fn);			/* that's MY file! */
 
-	mask = umask(022);
-	fd = open(fn, O_WRONLY|O_CREAT|O_EXCL, 0644);
+	mask = umask(0027);
+	fd = open(fn, O_WRONLY|O_CREAT|O_EXCL, 0640);
 	umask(mask);
 	if (fd == -1) return -1;
 

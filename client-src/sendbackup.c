@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.22 1997/12/30 05:24:00 jrj Exp $
+ * $Id: sendbackup.c,v 1.23 1997/12/31 01:32:26 jrj Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -193,7 +193,7 @@ char **argv;
     chdir("/tmp");
     interactive = (argc > 1 && strcmp(argv[1],"-t") == 0);
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
-    umask(0);
+    umask(0007);
     dbopen();
 
     if(interactive) {
