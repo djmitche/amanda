@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.20 1998/11/24 23:49:10 jrj Exp $
+ * $Id: amlabel.c,v 1.21 1998/12/20 07:10:33 oliva Exp $
  *
  * write an Amanda label on a tape
  */
@@ -260,7 +260,7 @@ int main(argc, argv)
 	    /* write tape list */
 
     	    /* XXX add cur_tape number to tape list structure */
-    	    add_tapelabel(atoi("19700101"), label);
+    	    add_tapelabel(0, label);
        	    oldtapefilename = stralloc2(tapefilename, ".amlabel");
 	    rename(tapefilename, oldtapefilename);
 	    amfree(oldtapefilename);

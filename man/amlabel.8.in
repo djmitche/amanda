@@ -29,6 +29,12 @@ may be any string that does not contain whitespace and that matches the
 .B labelstr
 regular expression option.
 It is up to the system administrator to define a naming convention.
+.B Amlabel
+will also append the new tape to the
+.I tapelist
+file, so that it will be the next tape to be used by Amanda.
+Therefore, if you have a bunch of new tapes to add, do that in reverse
+order, so that Amanda uses them in the order you expect.
 .LP
 .B Amlabel
 will not write the label if the tape contains an active
