@@ -28,9 +28,8 @@
 
 Version 2.4.0
 
-	when amrecover starts up, it will chdir() to the root of the
-	local filesystem, if the local directory exists in the index.
-	-oliva
+	when amrecover starts up, it will warn you $CWD is not the root
+	of the selected filesystem.  -oliva
 
 	removed all uses of #elif, because some C compilers won't
 	handle it correctly. -Gunther Felkel <G.Felkel@edelmann.de>

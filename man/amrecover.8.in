@@ -36,8 +36,18 @@ amrecover \- Amanda index database browser
 ]
 .SH DESCRIPTION
 .B Amrecover
-browses the database of Amanda index files to determine
-which tapes contain files to recover.
+browses the database of Amanda index files to determine which tapes
+contain files to recover.  Furthermore, it is able to actually recover
+files backed up with DUMP or GNUTAR, but not (yet) with XFSDUMP,
+VXDUMP, VDUMP or SMBCLIENT.
+.LP
+In order to restore files in place, you must invoke
+.BR amrecover
+from the root of the backed up filesystem, or use
+.BR lcd
+to move into that directory, otherwise a directory tree that resembles 
+the backed up filesystem will be created in the current directory.
+See the examples below for details.
 .LP
 See the
 .IR amanda (8)
@@ -169,9 +179,8 @@ working directory.  When you restore files, this directory will be
 considered the root of the backed up filesystem.
 .TP
 .CP lcd path
-Change the
-.B amrecover
-working directory on the local file system to
+Change the directory that will be considered the root of the restored
+filesystem to
 .I path.
 .TP
 .CP ls
@@ -235,7 +244,7 @@ Setting restore date to today (1997-12-09)
 $CWD '/var/log' is on disk '/var' mounted at '/var'.
 200 Disk set to /var.
 /var/log
-$LCWD '/var'.
+WARNING: not on root of selected filesystem, check man-page!
 amrecover> ls
 1997-12-09 daemon.log
 1997-12-09 syslog
@@ -252,6 +261,8 @@ amrecover> ls
 amrecover> add syslog.7
 Added /log/syslog.7
 amrecover> lpwd
+/var/log
+amrecover> lcd ..
 /var
 amrecover> extract
 
@@ -259,7 +270,7 @@ Extracting files using tape drive @DEFAULT_TAPE_DEVICE@ on host @DEFAULT_TAPE_SE
 
 The following tapes are needed: DMP014
 
-Restoring files into directory /var/log
+Restoring files into directory /var
 Continue? [Y/n]: y
 
 Load tape DMP014 now
