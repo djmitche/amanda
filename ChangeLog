@@ -1,3 +1,7 @@
+2000-09-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* man/amanda.8.in: add all pages in the SEE ALSO section.
+
 2000-09-24  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* client-src/sendbackup.c: set estr=NULL if the exclude
@@ -970,7 +974,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.374 2000/09/25 00:11:44 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.375 2000/09/25 23:41:14 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
