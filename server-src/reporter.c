@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.12 1999/09/11 22:39:51 jrj Exp $
+ * $Id: reporter.c,v 1.44.2.13 1999/09/11 22:41:25 jrj Exp $
  *
  * nightly Amanda Report generator
  */
@@ -544,9 +544,6 @@ char **argv;
     if((logfile = fopen(logfname, "r")) == NULL) {
 	error("could not open log %s: %s", logfname, strerror(errno));
     }
-
-    erroutput_type |= ERR_AMANDALOG;
-    set_logerror(logerror);
 
     setup_data();    /* setup per-disk data */
 

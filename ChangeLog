@@ -1,5 +1,9 @@
 1999-09-11 John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/reporter.c: sigh -- it was right the first time.
+
+1999-09-11 John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/reporter.c: lost a few too many lines with the amlogroll
 	  changes to amreport.
 
@@ -374,7 +378,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.265 1999/09/11 22:39:40 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.266 1999/09/11 22:41:15 jrj Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
