@@ -1,3 +1,14 @@
+2001-08-01 Marko Injac <marko.injac@mail.insert.si> via John R. Jackson (jrj@purdue.edu)
+
+	* client-src/findpass.c: Allow backup of subdirs of PC shares for
+	  amanda-2.4.1beta1 by Greg Shebert amanda-hackers list Tue Feb 1,
+	  2000.  Ported to amanda-2.4.2p2 on debian potato by Marko Injac.
+	* client-src/findpass.h: Ditto.
+	* client-src/selfcheck.c: Ditto.
+	* client-src/sendbackup-gnutar.c: Ditto.
+	* client-src/sendsize.c: Ditto.
+	* docs/SAMBA: Ditto.
+
 2001-08-01 John R. Jackson (jrj@purdue.edu)
 
 	* client-src/sendsize.c: Prefix each debug line with sendsize process

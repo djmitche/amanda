@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: findpass.c,v 1.10.4.1 2000/10/11 02:08:26 martinea Exp $
+ * $Id: findpass.c,v 1.10.4.2 2001/08/01 22:35:02 jrjackson Exp $
  *
  * Support routines for Amanda SAMBA support
  */
@@ -118,3 +118,37 @@ int shell;
   *s = '\0';					/* terminate the share name */
   return buffer;
 }
+
+/*
+ * find out if the samba sharename specifies both a share
+ * and a target subdirectory or just a share
+ *
+ * the caller is expected to release share & subdir
+ */
+void parsesharename (disk, share, subdir)
+char *disk;
+char **share;
+char **subdir;
+{
+    char *ch=NULL;
+    int slashcnt=0;
+
+    *share = NULL;
+    *subdir = NULL;
+    if (!disk) {
+	return;
+    }
+    *share = stralloc(disk);
+    ch = *share;
+    *subdir = NULL;
+    while (*ch != '\0') {
+	if (*ch == '/') {slashcnt++;}
+	if (slashcnt == 4) {
+	    *ch = '\0';
+	    *subdir = stralloc(++ch);
+	    return;
+	}
+	ch++;
+    }
+}
+
