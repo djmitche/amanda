@@ -101,7 +101,7 @@ CleanTapelist () {
     return 1
   fi
   for dbext in @DB_EXT@; do
-    if [ ! -r ${InfoFile}${dbext} ] && [ ! -d ${Infofile}${dbext} ]; then
+    if [ ! -r ${InfoFile}${dbext} ] && [ ! -d ${InfoFile}${dbext} ]; then
       log "${Program}: ${InfoFile}${dbext} does not exist or is not readable."
       return 1
     fi

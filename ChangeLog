@@ -1,3 +1,8 @@
+2000-04-09  Frank Wojcik  <fwojcik@lucent.com>
+
+	* server-src/amrmtape.sh.in: Fix occurrence of `Infofile', that
+	should have been `InfoFile'.
+
 2000-04-09  Davide Marchignoli  <marchign@di.unipi.it>
   
 	* server-src/conffile.h (confparm_t): Added CTIMEOUT.
