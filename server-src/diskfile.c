@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.27.4.6.4.3.2.15.2.4 2004/11/08 18:31:16 martinea Exp $
+ * $Id: diskfile.c,v 1.27.4.6.4.3.2.15.2.5 2004/11/19 13:28:15 martinea Exp $
  *
  * read disklist file
  */
@@ -446,7 +446,9 @@ static int read_diskline()
 	int is_digit=1;
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';
-	for(fp1=fp;*fp1!='\0';fp1++) {
+	fp1=fp;
+	if (*fp1 == '-') fp1++;
+	for(;*fp1!='\0';fp1++) {
 	    if(!isdigit(*fp1)) {
 		is_digit = 0;
 	    }
