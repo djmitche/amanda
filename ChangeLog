@@ -1,3 +1,9 @@
+1999-03-30  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* configure.in (VXSYSLOCPATH): apparently a complex path expression
+	gets AC_PATH_PROGS confused; set the path beforehand
+	Reported by Francis Lam <Francis.Lam@Leitch.com>
+
 1999-03-28 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/reporter.c: compiler warning.
