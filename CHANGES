@@ -1,6 +1,9 @@
 	fix amtoc behavior in case of failed reads.
 	-Niek Rijnbout <niek@knoware.nl>
 
+	index files are now stored in a directory tree ala curinfo instead
+	of a flat namespace. -JJ
+
 	amrecover will now restore files using SAMBA.
 	-Rob Riggs <rob@devilsthumb.com>
 
@@ -50,9 +53,6 @@ Version 2.4.0p1
 
 	check whether GNUTAR_LISTED_INCREMENTAL_DIR is a directory.
 	-oliva, reported by J.A. Gutierrez <spd@gtc1.cps.unizar.es>
-
-	index files are now stored in a directory tree ala curinfo instead
-	of a flat namespace. -JJ
 
 	amindexd no longer considers prefixes of hostnames as valid
 	hostnames. -oliva
