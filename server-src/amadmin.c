@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.23 1998/01/05 06:03:17 george Exp $
+ * $Id: amadmin.c,v 1.24 1998/01/08 08:28:41 amcore Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1314,12 +1314,19 @@ int import_one P((void))
     fp = s-1;
     skip_non_whitespace(s, ch);
     s[-1] = '\0';
-    hostname = stralloc(fp - 1);
+    hostname = stralloc(fp);
     s[-1] = ch;
 
     skip_whitespace(s, ch);
+    while (ch == 0) {
+      afree(line);
+      if((line = impget_line()) == NULL) goto shortfile_err;
+      s = line;
+      ch = *s++;
+      skip_whitespace(s, ch);
+    }
 #define sc "disk:"
-    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) goto parse_err;
+    if(strncmp(s - 1, sc, sizeof(sc)-1) != 0) goto parse_err;
     s += sizeof(sc)-1;
     ch = s[-1];
 #undef sc
@@ -1328,7 +1335,7 @@ int import_one P((void))
     fp = s-1;
     skip_non_whitespace(s, ch);
     s[-1] = '\0';
-    diskname = stralloc(s - 1);
+    diskname = stralloc(fp);
     s[-1] = ch;
 
     afree(line);
@@ -1425,10 +1432,13 @@ int import_one P((void))
 
 	    skip_whitespace(s, ch);
 	    if(ch == '\0') {
-		goto parse_err;
+		if (onestat.filenum != 0)
+		    goto parse_err;
+		onestat.label[0] = '\0';
+	    } else {
+		strncpy(onestat.label, s - 1, sizeof(onestat.label)-1);
+		onestat.label[sizeof(onestat.label)-1] = '\0';
 	    }
-	    strncpy(onestat.label, s - 1, sizeof(onestat.label)-1);
-	    onestat.label[sizeof(onestat.label)-1] = '\0';
 	}
 
 	/* time_t not guarranteed to be long */
