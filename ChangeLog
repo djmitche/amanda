@@ -1,3 +1,8 @@
+1998-12-14  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/debug.c (debug_printf): const the format arg
+	* common-src/amanda.h: const debug_printf's format arg
+
 1998-12-14  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* configure.in (BSD SCSI): test ... -a ... is not portable, and less 

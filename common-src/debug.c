@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.17 1998/07/04 00:18:38 oliva Exp $
+ * $Id: debug.c,v 1.18 1998/12/14 19:12:13 kashmir Exp $
  *
  * debug log subroutines
  */
@@ -49,7 +49,7 @@ int debug = 1;
 #  define DEBUG_DIR "/tmp"
 #endif
 
-arglist_function(void debug_printf, char *, format)
+arglist_function(void debug_printf, const char *, format)
 /*
  * Formats and writes a debug message to the process's debug file.
  */

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.70 1998/12/04 20:54:55 kashmir Exp $
+ * $Id: amanda.h,v 1.71 1998/12/14 19:12:15 kashmir Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -371,7 +371,7 @@ extern int errno;
 
 extern void debug_open P((void));
 extern void debug_close P((void));
-extern void debug_printf P((char *format, ...))
+extern void debug_printf P((const char *format, ...))
     __attribute__ ((format (printf, 1, 2)));
 extern int  debug_fd P((void));
 #else
