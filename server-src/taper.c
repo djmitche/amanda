@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.30 1998/03/08 08:15:37 amcore Exp $
+/* $Id: taper.c,v 1.31 1998/03/16 14:36:18 amcore Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -40,7 +40,25 @@
 #include "version.h"
 #include "arglist.h"
 #include "token.h"
+#ifdef HAVE_LIBVTBLC
+#include <vtblc.h>
+#include <strings.h>
 
+static int vtbl_no   = -1;
+static int len       =  0;
+static int offset    =  0;
+static char *datestr = NULL;
+static char start_datestr[20];
+time_t raw_time;
+struct tm tape_time;
+struct tm backup_time;
+struct tm *tape_timep = &tape_time;
+typedef struct vtbl_lbls {
+    u_int8_t  label[45];
+    u_int8_t  date[20];
+} vtbl_lbls;
+static vtbl_lbls vtbl_entry[MAX_VOLUMES];
+#endif /* HAVE_LIBVTBLC */
 /*
  * XXX update stat collection/printing
  * XXX advance to next tape first in next_tape
@@ -452,7 +470,15 @@ char *handle, *hostname, *diskname, *datestamp;
     long filesize;
     times_t runtime;
     char *str;
+
     char *q = NULL;
+
+#ifdef HAVE_LIBVTBLC
+    static char desc[45];
+    static char vol_date[20];
+    static char vol_label[45];
+#endif /* HAVE_LIBVTBLC */
+
 
     /* initialize */
 
@@ -637,6 +663,66 @@ char *handle, *hostname, *diskname, *datestamp;
 		afree(q);
 		log_add(L_SUCCESS, "%s %s %s %d %s",
 		        hostname, diskname, datestamp, level, errstr);
+#ifdef HAVE_LIBVTBLC
+		/* 
+		 *  We have 44 characters available for the label string:
+		 *  use max 20 characters for hostname
+		 *      max 20 characters for diskname 
+		 *             (it could contain a samba share or dos path)
+		 *           2 for level
+		 */
+		memset(desc, '\0', 45);
+
+		strncpy(desc, hostname, 20);
+
+		if ((len = strlen(hostname)) <= 20) {
+		    memset(desc + len, ' ', 1);
+		    offset = len + 1;
+		}
+		else{
+		    memset(desc + 20, ' ', 1);
+		    offset = 21;
+		}
+
+		strncpy(desc + offset, diskname, 20);
+
+		if ((len = strlen(diskname)) <= 20) {
+		    memset(desc + offset + len, ' ', 1);
+		    offset = offset + len + 1;
+		}
+		else{
+		    memset(desc + offset + 20, ' ', 1);
+		    offset = offset + 21;
+		}
+
+		sprintf(desc + offset, "%i", level);
+
+	        strncpy(vol_label, desc, 44);
+		fprintf(stderr, "taper: added vtbl volume string %i: \"%s\"\n",
+			filenum, vol_label);
+		fflush(stderr);
+
+		/* pass label string on to tape writer */
+		syncpipe_put('L');
+		syncpipe_putint(filenum);
+		syncpipe_putstr(vol_label);		
+
+		/* 
+		 * reformat datestamp for later use with set_date from vtblc 
+		 */
+		strptime(datestamp, "%Y%m%d", &backup_time);
+		strftime(vol_date, 20, "%T %D", &backup_time);
+		fprintf(stderr, 
+			"taper: reformatted vtbl date string: \"%s\"->\"%s\"\n",
+			datestamp,
+			vol_date);
+
+		/* pass date string on to tape writer */		
+		syncpipe_put('D');
+		syncpipe_putint(filenum);
+		syncpipe_putstr(vol_date);
+
+#endif /* HAVE_LIBVTBLC */
 	    }
 	    return;
 
@@ -706,6 +792,11 @@ int getp, putp;
     int tape_started, out_open;
     char *str;
 
+#ifdef HAVE_LIBVTBLC
+    char *vol_label;
+    char * vol_date;
+#endif /* HAVE_LIBVTBLC */
+
     procname = "writer";
     syncpipe_init(getp, putp);
 
@@ -738,6 +829,24 @@ int getp, putp;
 	    assert(tape_started);
 	    write_file();
 	    break;
+
+#ifdef HAVE_LIBVTBLC
+	case 'L':		/* read vtbl label */
+	    vtbl_no = syncpipe_getint();
+	    vol_label = syncpipe_getstr();
+	    fprintf(stderr, "taper: read label string %s from pipe\n", 
+		    vol_label);
+	    strncpy(vtbl_entry[vtbl_no].label, vol_label, 45);
+	    break;
+
+	case 'D':		/* read vtbl date */
+	    vtbl_no = syncpipe_getint();
+	    vol_date = syncpipe_getstr();
+	    fprintf(stderr, "taper: read date string %s from pipe\n", 
+		    vol_date);
+	    strncpy(vtbl_entry[vtbl_no].date, vol_date, 20);
+	    break;
+#endif /* HAVE_LIBVTBLC */
 
 	case 'Q':
 	    end_tape(0);	/* XXX check results of end tape ?? */
@@ -1277,6 +1386,10 @@ char *item;
 
 int runtapes, cur_tape, have_changer, tapedays;
 char *labelstr, *tapefilename;
+#ifdef HAVE_LIBVTBLC
+char *rawtapedev;
+int first_seg, last_seg;
+#endif /* HAVE_LIBVTBLC */
 
 /* local functions */
 int scan_init P((int rc, int ns, int bk));
@@ -1299,6 +1412,26 @@ int label_tape()
 	}
     }
 
+#ifdef HAVE_LINUX_ZFTAPE_H
+    if (is_zftape(tapedev) == 1){
+	if((tape_fd = tape_open(tapedev, O_RDONLY)) == -1) {
+	    errstr = newstralloc2(errstr, "taper: ",
+				  (errno == EACCES) ? "tape is write-protected"
+				  : strerror(errno));
+	    return 0;
+	}
+	if((result = tapefd_rdlabel(tape_fd, &olddatestamp, &label)) != NULL) {
+	    afree(olddatestamp);
+	    errstr = newstralloc(errstr, result);
+	    return 0;
+	}
+	if((errstr = tapefd_rewind(tape_fd)) != NULL) { 
+	    return 0;
+	} 
+	tapefd_close(tape_fd);
+    }
+    else
+#endif /* !HAVE_LINUX_ZFTAPE_H */
     if((result = tape_rdlabel(tapedev, &olddatestamp, &label)) != NULL) {
 	afree(olddatestamp);
 	errstr = newstralloc(errstr, result);
@@ -1345,6 +1478,15 @@ int label_tape()
     fprintf(stderr, "taper: wrote label `%s' date `%s'\n", label, taper_datestamp);
     fflush(stderr);
 
+#ifdef HAVE_LIBVTBLC
+    /* store time for the first volume entry */ 
+    time(&raw_time);
+    tape_timep = localtime(&raw_time);
+    strftime(start_datestr, 20, "%T %D", tape_timep);
+    fprintf(stderr, "taper: got vtbl start time: %s\n", start_datestr);
+    fflush(stderr);
+#endif /* HAVE_LIBVTBLC */
+
     /* write tape list */
 
     /* XXX add cur_tape number to tape list structure */
@@ -1380,6 +1522,9 @@ char *new_datestamp;
     tapefilename = getconf_str(CNF_TAPELIST);
 
     tapedev	= getconf_str(CNF_TAPEDEV);
+#ifdef HAVE_LIBVTBLC
+    rawtapedev = getconf_str(CNF_RAWTAPEDEV);
+#endif /* HAVE_LIBVTBLC */
     tapedays	= getconf_int(CNF_TAPECYCLE);
     labelstr	= getconf_str(CNF_LABELSTR);
 
@@ -1448,6 +1593,113 @@ int writerror;
 	}
     }
 
+#ifdef HAVE_LINUX_ZFTAPE_H
+    if (is_zftape(tapedev) == 1){
+	/* rewind the tape */
+
+	if((result = tapefd_rewind(tape_fd)) != NULL) {
+	    errstr = newstralloc(errstr, result);
+	    goto tape_error;
+	}
+	/* close the tape */
+
+	if(tapefd_close(tape_fd) == -1) {
+	    errstr = newstralloc2(errstr, "closing tape: ", strerror(errno));
+	    goto tape_error;
+	}
+
+#ifdef HAVE_LIBVTBLC
+	/* update volume table */
+	fprintf(stderr, "taper: updating volume table ...\n");
+	fflush(stderr);
+    
+	if ((tape_fd = raw_tape_open(rawtapedev, O_RDWR)) == -1) {
+	    if(errno == EACCES) {
+		errstr = newstralloc(errstr,
+				     "updating volume table: tape is write protected");
+	    } else {
+		errstr = newstralloc2(errstr,
+				      "updating volume table: ", 
+				      strerror(errno));
+	    }
+	    goto tape_error;
+	}
+	/* read volume table */
+	if ((num_volumes = read_vtbl(tape_fd, volumes, vtbl_buffer,
+				     &first_seg, &last_seg)) == -1 ) {
+	    errstr = newstralloc2(errstr,
+				  "reading volume table: ", 
+				  strerror(errno));
+	    goto tape_error;
+	}
+	/* set volume label and date for first entry */
+	vtbl_no = 0;
+	if(set_label(label, volumes, num_volumes, vtbl_no)){
+	    errstr = newstralloc2(errstr,
+				  "setting label for entry 1: ",
+				  strerror(errno));
+	    goto tape_error;
+	}
+	/* date of start writing this tape */
+	if (set_date(start_datestr, volumes, num_volumes, vtbl_no)){
+	    errstr = newstralloc2(errstr,
+				  "setting date for entry 1: ", 
+				  strerror(errno));
+	    goto tape_error;
+	}
+	/* set volume labels and dates for backup files */
+	for (vtbl_no = 1; vtbl_no <= num_volumes - 2; vtbl_no++){ 
+	    fprintf(stderr,"taper: label %i: %s, date %s\n", 
+		    vtbl_no,
+		    vtbl_entry[vtbl_no].label,
+		    vtbl_entry[vtbl_no].date);
+	    fflush(stderr);
+	    if(set_label(vtbl_entry[vtbl_no].label, 
+			 volumes, num_volumes, vtbl_no)){
+		errstr = newstralloc2(errstr,
+				      "setting label for entry i: ", 
+				      strerror(errno));
+		goto tape_error;
+	    }
+	    if(set_date(vtbl_entry[vtbl_no].date, 
+			volumes, num_volumes, vtbl_no)){
+		errstr = newstralloc2(errstr,
+				      "setting date for entry i: ",
+				      strerror(errno));
+		goto tape_error;
+	    }
+	}
+	/* set volume label and date for last entry */
+	vtbl_no = num_volumes - 1;
+	if(set_label("AMANDA Tape End", volumes, num_volumes, vtbl_no)){
+	    errstr = newstralloc2(errstr,
+				  "setting label for last entry: ", 
+				  strerror(errno));
+	    goto tape_error;
+	}
+	datestr = NULL; /* take current time */ 
+	if (set_date(datestr, volumes, num_volumes, vtbl_no)){
+	    errstr = newstralloc2(errstr,
+				  "setting date for last entry 1: ", 
+				  strerror(errno));
+	    goto tape_error;
+	}
+	/* write volume table back */
+	if (write_vtbl(tape_fd, volumes, vtbl_buffer, num_volumes, first_seg,
+		       op_mode == trunc)) {
+	    errstr = newstralloc2(errstr,
+				  "writing volume table: ", 
+				  strerror(errno));
+	    goto tape_error;
+	}  
+	close(tape_fd);
+
+	fprintf(stderr, "taper: updating volume table: done.\n");
+	fflush(stderr);
+#endif /* HAVE_LIBVTBLC */
+    }
+    else
+#endif /* !HAVE_LINUX_ZFTAPE_H */
     /* write the final filemarks */
 
     if(tapefd_close(tape_fd) == -1) {

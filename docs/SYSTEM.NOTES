@@ -130,6 +130,79 @@ configure again, or you may set MAXFILESIZE in config/config.h after
 running configure (and make sure you do that whenever config/config.h
 is rebuilt!)
 
+Floppy tape drives and Linux: (A.Gebhardt <albrecht.gebhardt@uni-klu.ac.at>)
+
+Amanda now supports the ftape driver version 3.04d. It adjusts the 
+blocksize automatically to 32k and has preliminary QIC volume table support.
+It uses only one open() call for writing backups to one tape, so the 
+"busy"-lamp of the drive will be on all the time. (With normal amanda
+code it would be off in pauses between two files written to tape.)
+
+For volume table support you have to get libvtblc first (Available at
+ftp://pc02-stat.sci.uni-klu.ac.at/pub/Linux/libvtblc). This library contains
+the functions and subroutines from the vtblc utility, distributed with ftape.
+
+You have to set the raw tape device for volume table operations, usually
+/dev/rawft0, either via "configure --with-ftape-rawdevice=..." or
+with "rawtapedev=..." in amanda.conf. Dont forget to give rw-access on 
+this device to your backup user.
+
+For compilation you need the header files from ftape 3.04d in your include
+tree.
+
+The volumetable of a tape "amlabeld" TEST-VOL2 with 4 backups on it
+could look like (listed with vtblc utility from ftape):
+
+gamma@backup[backup]$ vtblc
+ Nr  Id          Label                   Date           Start      End    Space
+--------------------------------------------------------------------------------
+  0 VTBL "TEST-VOL2             "  23:08:06 03/15/98        3        4    0.00%
+  1 VTBL "gamma //beta/C 0      "  00:00:00 03/15/98        5      374    0.68%
+  2 VTBL "gamma sda2 0          "  00:00:00 03/15/98      375     1029    1.21%
+  3 VTBL "alpha sda2 0          "  00:00:00 03/15/98     1030     1906    1.62%
+  4 VTBL "alpha sda6 0          "  00:00:00 03/15/98     1907     8092    11.45%
+  5 VTBL "AMANDA Tape End       "  01:45:15 03/16/98     8093     8094    0.00%
+
+With lvtblc, currently available with the libvtblc library, you can list 
+the complete label strings (44 chars, not only the first 22 shown by vtblc):
+  
+gamma@backup[backup]$ lvtblc -l
+ Nr  Id          Label                                         Date 
+--------------------------------------------------------------------------------
+  0 VTBL "TEST-VOL2                                   "  23:08:06 03/15/98
+  1 VTBL "gamma //beta/C 0                            "  00:00:00 03/15/98
+  2 VTBL "gamma sda2 0                                "  00:00:00 03/15/98
+  3 VTBL "alpha sda2 0                                "  00:00:00 03/15/98
+  4 VTBL "alpha sda6 0                                "  00:00:00 03/15/98
+  5 VTBL "AMANDA Tape End                             "  01:45:15 03/16/98
+
+Note on datestamps:
+volume 0    (amanda label): reflects the time of start writing the tape
+volume i    (backup files): amanda datestamps of the backup files
+last volume (end marker)  : reflects the time of finish writing the tape
+
+
+I tested this on a Linux machine (P90 / 96Mb RAM / 256 Mb swap) with two other 
+clients (Linux / WfW) using
+
+kernel 2.0.33 , 
+ftape 3.04d , 
+amanda 2.4.0b6p4 
+
+with an internal Iomega Ditto 3200 (TR-3) drive attached to an Iomega Ditto 
+Dash controller (at 2000 Kbps). My "tapetype" follows:
+
+define tapetype DITTO-TR3 {
+    comment "Iomega DITTO 3200 Travan 3 tape drives"
+    length 1500 mbytes          #
+    filemark  0 kbytes          # ???
+    speed 256 kbytes            # = 2000 Kbit/s ?
+}
+
+Note on filemark size:
+Filemarks are not written to the tape (they are written to the header segment 
+and use there 128 byte), so their size could be 0 !?
+
 ---------------------------------------------------------------------------
 Digital Unix 4
 --------------

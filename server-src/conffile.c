@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.39 1998/03/14 12:45:05 amcore Exp $
+ * $Id: conffile.c,v 1.40 1998/03/16 14:36:15 amcore Exp $
  *
  * read configuration file
  */
@@ -106,8 +106,9 @@ typedef enum {
     INFINITY, MULT1, MULT7, MULT1K, MULT1M,
 
     /* boolean */
-    ATRUE, AFALSE
+    ATRUE, AFALSE,
 
+    RAWTAPEDEV
 } tok_t;
 
 typedef struct {	/* token table entry */
@@ -136,6 +137,7 @@ static val_t conf_mailto;
 static val_t conf_dumpuser;
 static val_t conf_printer;
 static val_t conf_tapedev;
+static val_t conf_rawtapedev;
 static val_t conf_tpchanger;
 static val_t conf_chngrdev;
 static val_t conf_chngrfile;
@@ -175,6 +177,7 @@ static dumptype_t dpcur;
 static interface_t ifcur;
 
 static int seen_org, seen_mailto, seen_dumpuser;
+static int seen_rawtapedev;
 static int seen_printer;
 static int seen_tapedev, seen_tpchanger, seen_chngrdev, seen_chngrfile;
 static int seen_labelstr, seen_runtapes, seen_maxdumps;
@@ -314,6 +317,7 @@ struct byname {
     /*{ "TIMEOUT", CNF_TIMEOUT, INT },*/
     { "MAXDUMPS", CNF_MAXDUMPS, INT },
     { "ETIMEOUT", CNF_ETIMEOUT, INT },
+    { "RAWTAPEDEV", CNF_RAWTAPEDEV, STRING },
     { NULL }
 };
 
@@ -384,6 +388,7 @@ confparm_t parm;
     /*case CNF_TIMEOUT: return seen_timeout;*/
     case CNF_INDEXDIR: return seen_indexdir;
     case CNF_ETIMEOUT: return seen_etimeout;
+    case CNF_RAWTAPEDEV: return seen_rawtapedev;
     default: return 0;
     }
 }
@@ -454,6 +459,7 @@ confparm_t parm;
     /*case CNF_DISKDIR: r = conf_diskdir.s; break;*/
     case CNF_TAPETYPE: r = conf_tapetype.s; break;
     case CNF_INDEXDIR: r = conf_indexdir.s; break;
+    case CNF_RAWTAPEDEV: r = conf_rawtapedev.s; break;
 
     default:
 	error("error [unknown getconf_str parm: %d]", parm);
@@ -533,6 +539,13 @@ static void init_defaults()
 #endif
     conf_tapedev.s = newstralloc(conf_tapedev.s, s);
     malloc_mark(conf_tapedev.s);
+#ifdef DEFAULT_RAW_TAPE_DEVICE
+    s = DEFAULT_RAW_TAPE_DEVICE;
+#else
+    s = "/dev/rawft0";
+#endif
+    conf_rawtapedev.s = newstralloc(conf_rawtapedev.s, s);
+    malloc_mark(conf_rawtapedev.s);
     conf_tpchanger.s = newstralloc(conf_tpchanger.s, "");
     malloc_mark(conf_tpchanger.s);
 #ifdef DEFAULT_CHANGER_DEVICE
@@ -578,6 +591,7 @@ static void init_defaults()
     /* defaults for internal variables */
 
     seen_org = seen_mailto = seen_dumpuser = seen_tapedev = 0;
+    seen_rawtapedev = 0;
     seen_printer = 0;
     conf_printer.s = "";
     seen_tpchanger = seen_chngrdev = seen_chngrfile = 0;
@@ -741,6 +755,7 @@ keytab_t main_keytable[] = {
     { "CHANGERDEV", CHNGRDEV },
     { "CHANGERFILE", CHNGRFILE },
     { "ETIMEOUT", ETIMEOUT },
+    { "RAWTAPEDEV", RAWTAPEDEV },
     { NULL, IDENT }
 };
 
@@ -770,6 +785,7 @@ static int read_confline()
     case TAPECYCLE: get_simple(&conf_tapecycle, &seen_tapecycle, INT);    break;
     case RUNTAPES:  get_simple(&conf_runtapes,  &seen_runtapes,  INT);    break;
     case TAPEDEV:   get_simple(&conf_tapedev,   &seen_tapedev,   STRING); break;
+    case RAWTAPEDEV:get_simple(&conf_rawtapedev,&seen_rawtapedev,STRING); break;
     case TPCHANGER: get_simple(&conf_tpchanger, &seen_tpchanger, STRING); break;
     case CHNGRDEV:  get_simple(&conf_chngrdev,  &seen_chngrdev,  STRING); break;
     case CHNGRFILE: get_simple(&conf_chngrfile, &seen_chngrfile, STRING); break;
@@ -2142,6 +2158,7 @@ dump_configuration(filename)
     printf("conf_dumpuser = \"%s\"\n", getconf_str(CNF_DUMPUSER));
     printf("conf_printer = \"%s\"\n", getconf_str(CNF_PRINTER));
     printf("conf_tapedev = \"%s\"\n", getconf_str(CNF_TAPEDEV));
+    printf("conf_rawtapedev = \"%s\"\n", getconf_str(CNF_RAWTAPEDEV));
     printf("conf_tpchanger = \"%s\"\n", getconf_str(CNF_TPCHANGER));
     printf("conf_chngrdev = \"%s\"\n", getconf_str(CNF_CHNGRDEV));
     printf("conf_chngrfile = \"%s\"\n", getconf_str(CNF_CHNGRFILE));

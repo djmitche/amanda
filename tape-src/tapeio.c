@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.17 1998/03/14 11:59:31 amcore Exp $
+ * $Id: tapeio.c,v 1.18 1998/03/16 14:36:22 amcore Exp $
  *
  * implements tape I/O functions
  */
@@ -33,7 +33,6 @@
 
 #include "tapeio.h"
 #include "fileheader.h"
-
 #ifndef R_OK
 #define R_OK 4
 #define W_OK 2
@@ -243,6 +242,9 @@ int tape_open(filename, mode)
 char *filename;
 int mode;
 {
+#ifdef HAVE_LINUX_ZFTAPE_H
+    struct mtop mt;
+#endif /* HAVE_LINUX_ZFTAPE_H */
     int ret = 0, delay = 2, timeout = 200;
     if (mode == 0 || mode == O_RDONLY)
 	mode = O_RDONLY;
@@ -259,6 +261,19 @@ int mode;
 	if (delay < 16)
 	    delay *= 2;
     } while (timeout > 0);
+#ifdef HAVE_LINUX_ZFTAPE_H
+    /* 
+     * switch the block size for the zftape driver (3.04d) 
+     * (its default is 10kb and not TAPE_BLOCK_BYTES=32kb) 
+     *        A. Gebhardt <albrecht.gebhardt@uni-klu.ac.at>
+     */
+    if (ret >= 0 && is_zftape(filename) == 1)
+	{
+	    mt.mt_op = MTSETBLK;
+	    mt.mt_count = TAPE_BLOCK_BYTES;
+	    ioctl(ret, MTIOCTOP, &mt);    
+	}
+#endif /* HAVE_LINUX_ZFTAPE_H */
     return ret;
 }
 
@@ -525,3 +540,18 @@ char *devname;
 
     return NULL;
 }
+
+#ifdef HAVE_LINUX_ZFTAPE_H
+/*
+ * is_zftape(filename) checks if filename is a valid ftape device name. 
+ */
+int is_zftape(filename)
+     const char *filename;
+{
+    if (strncmp(filename, "/dev/nftape", 11) == 0) return(1);
+    if (strncmp(filename, "/dev/nqft",    9) == 0) return(1);
+    if (strncmp(filename, "/dev/nrft",    9) == 0) return(1);
+    return(0);
+}
+#endif /* HAVE_LINUX_ZFTAPE_H */
+

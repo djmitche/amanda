@@ -1,3 +1,6 @@
+	Added support for ZFTAPE on Linux.
+	-Albrecht Gebhardt <agebhard@zidsrv.sci.uni-klu.ac.at>
+
 	Added support for printing tape labels.
 	-Scott Mesches <mesches@allison.Colorado.EDU>
 

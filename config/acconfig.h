@@ -77,6 +77,10 @@
 /* For SCO OS5 systems.  */
 #undef STATFS_SCO_OS5
 
+/* For Linux systems with floppy tapes: 
+ * QIC volume table support via raw tape device.  */
+#undef DEFAULT_RAW_TAPE_DEVICE
+
 /*
  * Decide whether to invoke rundump (setuid-root) or DUMP program directly.
  */

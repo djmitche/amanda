@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlabel.c,v 1.10 1998/03/15 23:40:00 martinea Exp $
+ * $Id: amlabel.c,v 1.11 1998/03/16 14:36:13 amcore Exp $
  *
  * write an Amanda label on a tape
  */
@@ -34,6 +34,14 @@
 #include "tapefile.h"
 #include "tapeio.h"
 #include "changer.h"
+#ifdef HAVE_LIBVTBLC
+#include <vtblc.h>
+
+static int vtbl_no      = -1;
+static char *datestr    = NULL;
+#endif /* HAVE_LIBVTBLC */
+
+char *pname = "amlabel";
 
 int slotcommand;
 
@@ -62,6 +70,10 @@ char **argv;
     int fd;
     int force, tape_ok;
     tape_t *tp;
+#ifdef HAVE_LIBVTBLC
+    char *rawtapedev = NULL;
+    int first_seg, last_seg;
+#endif /* HAVE_LIBVTBLC */
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -129,6 +141,9 @@ char **argv;
 	    usage(argv[0]);
 	}
 	tapename = stralloc(getconf_str(CNF_TAPEDEV));
+#ifdef HAVE_LIBVTBLC
+	rawtapedev = stralloc(getconf_str(CNF_RAWTAPEDEV));
+#endif /* HAVE_LIBVTBLC */
     }
     else {
 	if(changer_loadslot(slotstr, &outslot, &tapename)) {
@@ -138,8 +153,28 @@ char **argv;
 	printf("labeling tape in slot %s (%s):\n", outslot, tapename);
     }
 
+#ifdef HAVE_LINUX_ZFTAPE_H
+    if (is_zftape(tapename) == 1){
+	if((fd = tape_open(tapename, O_WRONLY)) == -1) {
+	    errstr = newstralloc2(errstr, "amlabel: ",
+				  (errno == EACCES) ? "tape is write-protected"
+				  : strerror(errno));
+	    return errstr;
+	}
+    }
+#endif /* HAVE_LINUX_ZFTAPE_H */
+
     printf("rewinding"); fflush(stdout);
 
+#ifdef HAVE_LINUX_ZFTAPE_H
+    if (is_zftape(tapename) == 1){
+	if((errstr = tapefd_rewind(fd)) != NULL) {
+	    putchar('\n');
+	    error(errstr);
+	}
+    }
+    else
+#endif /* HAVE_LINUX_ZFTAPE_H */
     if((errstr = tape_rewind(tapename)) != NULL) {
 	putchar('\n');
 	error(errstr);
@@ -171,6 +206,15 @@ char **argv;
 	
     printf("rewinding"); fflush(stdout);
 
+#ifdef HAVE_LINUX_ZFTAPE_H
+    if (is_zftape(tapename) == 1){
+	if((errstr = tapefd_rewind(fd)) != NULL) {
+	    putchar('\n');
+	    error(errstr);
+	}
+    }
+    else
+#endif /* HAVE_LINUX_ZFTAPE_H */
     if((errstr = tape_rewind(tapename)) != NULL) {
 	putchar('\n');
 	error(errstr);
@@ -179,17 +223,117 @@ char **argv;
     if(tape_ok) {
 	printf(", writing label %s", label); fflush(stdout);
 
+#ifdef HAVE_LINUX_ZFTAPE_H
+	if (is_zftape(tapename) == 1){
+	    if((errstr = tapefd_wrlabel(fd, "X", label)) != NULL) {
+		putchar('\n');
+		error(errstr);
+	    }
+	}
+	else
+#endif /* HAVE_LINUX_ZFTAPE_H */
 	if((errstr = tape_wrlabel(tapename, "X", label)) != NULL) {
 	    putchar('\n');
 	    error(errstr);
 	}
 
-	printf(", writing end marker"); fflush(stdout);
+#ifdef HAVE_LINUX_ZFTAPE_H
+	if (is_zftape(tapename) == 1){
+	    tapefd_weof(fd, 1);
+	}
+#endif /* HAVE_LINUX_ZFTAPE_H */
 
+#ifdef HAVE_LINUX_ZFTAPE_H
+	if (is_zftape(tapename) == 1){
+	    if((errstr = tapefd_wrendmark(fd, "X")) != NULL) {
+		putchar('\n');
+		error(errstr);
+	    }
+	}
+	else
+#endif /* HAVE_LINUX_ZFTAPE_H */
 	if((errstr = tape_wrendmark(tapename, "X")) != NULL) {
 	    putchar('\n');
 	    error(errstr);
 	}
+
+#ifdef HAVE_LINUX_ZFTAPE_H
+	if (is_zftape(tapename) == 1){
+	    tapefd_weof(fd, 1);
+
+	    printf(",\nrewinding"); fflush(stdout); 
+     
+	    if((errstr = tapefd_rewind(fd)) != NULL) { 
+		putchar('\n'); 
+		error(errstr); 
+	    } 
+	    close(fd);
+#ifdef HAVE_LIBVTBLC
+	    /* update volume table */
+	    printf(", updating volume table"); fflush(stdout);
+    
+	    if ((fd = raw_tape_open(rawtapedev, O_RDWR)) == -1) {
+		if(errno == EACCES) {
+		    errstr = newstralloc(errstr,
+					 "updating volume table: raw tape device is write protected");
+		} else {
+		    errstr = newstralloc2(errstr,
+					  "updating volume table: ", strerror(errno));
+		}
+		putchar('\n');
+		error(errstr);
+	    }
+	    /* read volume table */
+	    if ((num_volumes = read_vtbl(fd, volumes, vtbl_buffer,
+					 &first_seg, &last_seg)) == -1 ) {
+		errstr = newstralloc2(errstr,
+				      "reading volume table: ", strerror(errno));
+		putchar('\n');
+		error(errstr);
+	    }
+	    /* set date and volume label for first entry */
+	    vtbl_no = 0;
+	    datestr = NULL; 
+	    if (set_date(datestr, volumes, num_volumes, vtbl_no)){
+		errstr = newstralloc2(errstr,
+				      "setting date for entry 1: ", strerror(errno));
+		putchar('\n');
+		error(errstr);
+	    }
+	    if(set_label(label, volumes, num_volumes, vtbl_no)){
+		errstr = newstralloc2(errstr,
+				      "setting label for entry 1: ", strerror(errno));
+		putchar('\n');
+		error(errstr);
+	    }
+	    /* set date and volume label for last entry */
+	    vtbl_no = 1;
+	    datestr = NULL; 
+	    if (set_date(datestr, volumes, num_volumes, vtbl_no)){
+		errstr = newstralloc2(errstr,
+				      "setting date for entry 2: ", strerror(errno));
+		putchar('\n');
+		error(errstr);
+	    }
+	    if(set_label("AMANDA Tape End", volumes, num_volumes, vtbl_no)){
+		errstr = newstralloc2(errstr,
+				      "setting label for entry 2: ", strerror(errno));
+		putchar('\n');
+		error(errstr);
+	    }
+	    /* write volume table back */
+	    if (write_vtbl(fd, volumes, vtbl_buffer, num_volumes, first_seg,
+			   op_mode == trunc)) {
+		errstr = newstralloc2(errstr,
+				      "writing volume table: ", strerror(errno));
+		putchar('\n');
+		error(errstr);
+	    }  
+	    close(fd);
+#endif /* HAVE_LIBVTBLC */
+	}
+#endif /* HAVE_LINUX_ZFTAPE_H */
+
 	printf(", done.\n");
     }
     else {
