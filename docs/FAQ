@@ -235,6 +235,30 @@ more up-to-date information is likely to be found about this project.
 of the huge filesystem separately.  But be aware of the problems listed in the next question:
 
 
+Q: What's the difference between option `skip-full' and `strategy nofull'?
+
+A: `strategy nofull' is supposed to handle the following situation:
+you run a full dump off-line once a millenium :-), because that disk
+isn't supposed to change at all and, if it does, changes are minimal.
+Amanda will run only level 1 backups of that filesystem, to avoid the
+risk of overwriting a level 1 backup needed to do a restore.
+Remember, you run full dumps once a millenium, and your tape cycle
+probably won't last that long :-)
+
+   `skip-full', OTOH, is supposed to let the user run full dumps
+off-line regularly (i.e., as often as specified in the dumpcycle),
+while Amanda takes care of the incrementals.  Currently, Amanda will
+tell you when you're supposed to run the level 0 backups but, if you
+fail to do so, Amanda will not only skip a full day's worth of
+valuable backups of the filesystem, on the day it told you to the full
+backup manually, but it will also run a level 1 backup on the next
+day, even if you have not performed the full backup yet.  Worse yet:
+it might perform a level 2 on the next day, just after you have run
+the level 0, so, if the disk should crash, you'd have to restore a
+level 0 then a level 2, but not the level 1!  Not a real problem, but
+definitely strange, eh?
+
+
 Q: Why does `amdump' report `results missing'?
 
 A: One of the possible reasons is that you have requested too many
