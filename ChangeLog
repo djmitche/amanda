@@ -1,5 +1,7 @@
 1998-11-07  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* changer-src/scsi-solaris.c: added missing #endif
+
 	* configure.in: merge with camlib.h patch from Oct 31.
 	remove all uses of test ... -a ...; this is not portable.
 	(AC_CHECK_HEADERS) added header files for Linux and Solaris
