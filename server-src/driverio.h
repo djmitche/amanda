@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.19 1999/04/29 19:48:02 kashmir Exp $
+ * $Id: driverio.h,v 1.20 1999/04/30 21:07:08 kashmir Exp $
  *
  * driver-related helper functions
  */
@@ -40,11 +40,11 @@
 /* dumper process structure */
 
 typedef struct dumper_s {
-    char *name;		/* name of this dumper */
-    int pid;		/* its pid */
-    int busy, down;
-    int infd, outfd;
-    disk_t *dp;
+    char *name;			/* name of this dumper */
+    int pid;			/* its pid */
+    int busy, down;		/* state */
+    int fd;			/* read/write */
+    disk_t *dp;			/* disk currently being dumped */
 } dumper_t;
 
 /* schedule structure */

@@ -1,3 +1,12 @@
+1999-04-30  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/driverio.h (dumper_t): merge infd and outfd into
+	just 'fd'.  Comment the other members of the struct.
+	* server-src/driverio.c: infd/outfd -> fd
+	* server-src/driver.c (handle_dumper_result): merge some common
+	code between the FAILED and TRYAGAIN cases.  Comment the
+	ABORT_FINISHED case.  Also infd/outfd -> fd.
+
 1999-04-29 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/planner.c (when_overwrite): return a big number (1024)

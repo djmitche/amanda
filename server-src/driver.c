@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.76 1999/04/29 19:47:58 kashmir Exp $
+ * $Id: driver.c,v 1.77 1999/04/30 21:07:10 kashmir Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -804,7 +804,7 @@ int fd;
     dumper_t *dumper;
 
     for(dumper = dmptable; dumper < dmptable+inparallel; dumper++)
-	if(dumper->outfd == fd) return dumper;
+	if(dumper->fd == fd) return dumper;
 
     return NULL;
 }
@@ -872,16 +872,10 @@ int fd;
 	break;
 
     case TRYAGAIN: /* TRY-AGAIN <handle> <err str> */
-	free_serial(result_argv[2]);
-
-	rename_tmp_holding(sched(dp)->destname, 0);
-	deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
-	adjust_diskspace(dp, DONE);
-	delete_diskspace(dp);
-	dumper->busy = 0;
-	dp->host->inprogress -= 1;
-	dp->inprogress = 0;
-
+	/*
+	 * Requeue this disk, and fall through to the FAILED
+	 * case for cleanup.
+	 */
 	if(sched(dp)->attempted) {
 	    log_add(L_FAIL, "%s %s %d [could not connect to %s]",
 		    dp->host->hostname, dp->name,
@@ -891,12 +885,7 @@ int fd;
 	    sched(dp)->attempted++;
 	    enqueue_disk(&runq, dp);
 	}
-
-	/* sleep in case the dumper failed because of a temporary network
-	   problem, as NIS or NFS... */
-	sleep(15);
-	break;
-
+	/* FALLTHROUGH */
     case FAILED: /* FAILED <handle> <errstr> */
 	free_serial(result_argv[2]);
 
@@ -906,7 +895,7 @@ int fd;
 	delete_diskspace(dp);
 	dumper->busy = 0;
 	dp->host->inprogress -= 1;
-	dp->inprogress = 1;
+	dp->inprogress = 0;
 
 	/* no need to log this, dumper will do it */
 	/* sleep in case the dumper failed because of a temporary network
@@ -934,6 +923,12 @@ int fd;
 	break;
 
     case ABORT_FINISHED: /* ABORT-FINISHED <handle> */
+	/*
+	 * We sent an ABORT from the NO-ROOM case because this dump
+	 * wasn't going to fit onto the holding disk.  We now need to
+	 * clean up the remains of this image, and try to finish
+	 * other dumps that are waiting on disk space.
+	 */
 	assert(pending_aborts);
 	free_serial(result_argv[2]);
 	rename_tmp_holding(sched(dp)->destname, 0);
@@ -1461,7 +1456,7 @@ disk_t *dp;
 
     /* wait for result from dumper */
 
-    tok = getresult(dumper->outfd, 1, &result_argc, result_argv, MAX_ARGS+1);
+    tok = getresult(dumper->fd, 1, &result_argc, result_argv, MAX_ARGS+1);
 
     if(tok != BOGUS)
 	free_serial(result_argv[2]);
@@ -1484,7 +1479,7 @@ disk_t *dp;
 
     case NO_ROOM: /* NO-ROOM <handle> */
 	dumper_cmd(dumper, ABORT, dp);
-	tok = getresult(dumper->outfd, 1, &result_argc, result_argv, MAX_ARGS+1);
+	tok = getresult(dumper->fd, 1, &result_argc, result_argv, MAX_ARGS+1);
 	if(tok != BOGUS)
 	    free_serial(result_argv[2]);
 	assert(tok == ABORT_FINISHED);

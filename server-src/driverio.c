@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.46 1999/04/29 19:48:00 kashmir Exp $
+ * $Id: driverio.c,v 1.47 1999/04/30 21:07:06 kashmir Exp $
  *
  * I/O-related functions for driver program
  */
@@ -57,7 +57,7 @@ void init_driverio()
     taper = -1;
 
     for(dumper = dmptable; dumper < dmptable + MAX_DUMPERS; dumper++) {
-	dumper->outfd = -1;
+	dumper->fd = -1;
     }
 }
 
@@ -87,7 +87,7 @@ int fd;
     if(fd == taper) return "taper";
 
     for(dumper = dmptable; dumper < dmptable + MAX_DUMPERS; dumper++)
-	if(dumper->outfd == fd) return dumper->name;
+	if(dumper->fd == fd) return dumper->name;
 
     snprintf(fd_str, sizeof(fd_str), "%d", fd);
     str = newvstralloc(str, "unknown child (fd ", fd_str, ")", NULL);
@@ -148,8 +148,8 @@ char *dumper_program;
 	      dumper->name, strerror(errno));
     default:	/* parent process */
 	aclose(fd[1]);
-	dumper->infd = dumper->outfd = fd[0];
-	addfd(dumper->outfd, &readset, &maxfd);
+	dumper->fd = fd[0];
+	addfd(dumper->fd, &readset, &maxfd);
 	dumper->busy = dumper->down = 0;
 	dumper->dp = NULL;
 	fprintf(stderr,"driver: started %s pid %d\n",
@@ -343,7 +343,7 @@ disk_t *dp;
 	       walltime_str(curclock()), dumper->name, cmdline);
 	fflush(stdout);
 	for(l = 0, n = strlen(cmdline); l < n; l += s) {
-	    if((s = write(dumper->infd, cmdline + l, n - l)) < 0) {
+	    if((s = write(dumper->fd, cmdline + l, n - l)) < 0) {
 		error("writing %s command: %s", dumper->name, strerror(errno));
 	    }
 	}
