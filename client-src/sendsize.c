@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.133 2002/04/21 23:13:27 martinea Exp $
+ * $Id: sendsize.c,v 1.134 2002/04/26 00:45:23 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -172,8 +172,17 @@ char **argv;
 		g_options->hostname[MAX_HOSTNAME_LENGTH] = '\0';
 	    }
 
-	    printf("OPTIONS features=%s;maxdumps=%d;hostname=%s;\n",
-		   our_feature_string, g_options->maxdumps,g_options->hostname);
+	    printf("OPTIONS ");
+	    if(am_has_feature(g_options->features, fe_rep_options_features)) {
+		printf("features=%s;", our_feature_string);
+	    }
+	    if(am_has_feature(g_options->features, fe_rep_options_maxdumps)) {
+		printf("maxdumps=%d;", g_options->maxdumps);
+	    }
+	    if(am_has_feature(g_options->features, fe_rep_options_hostname)) {
+		printf("hostname=%s;", g_options->hostname);
+	    }
+	    printf("\n");
 	    fflush(stdout);
 	    continue;
 	}

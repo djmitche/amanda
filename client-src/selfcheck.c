@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.65 2002/04/22 01:54:06 martinea Exp $
+ * $Id: selfcheck.c,v 1.66 2002/04/26 00:45:23 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -133,8 +133,14 @@ char **argv;
 		g_options->hostname[MAX_HOSTNAME_LENGTH] = '\0';
 	    }
 
-	    printf("OPTIONS features=%s;hostname=%s;\n",
-		   our_feature_string, g_options->hostname);
+	    printf("OPTIONS ");
+	    if(am_has_feature(g_options->features, fe_rep_options_features)) {
+		printf("features=%s;", our_feature_string);
+	    }
+	    if(am_has_feature(g_options->features, fe_rep_options_hostname)) {
+		printf("hostname=%s;", g_options->hostname);
+	    }
+	    printf("\n");
 	    fflush(stdout);
 	    continue;
 	}
