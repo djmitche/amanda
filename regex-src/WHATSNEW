@@ -1,3 +1,5 @@
+New in alpha3.6:  A couple more portability glitches fixed.
+
 New in alpha3.5:  Active development of this code has been stopped --
 I'm working on a complete reimplementation -- but folks have found some
 minor portability glitches and the like, hence this release to fix them.
