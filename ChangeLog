@@ -1,3 +1,10 @@
+1999-11-10 John R. Jackson  <jrj@purdue.edu>
+
+	* recover-src/extract_list.c: report the tape server host in the
+	  message to check the amidxtaped.debug file.	If extract_list_child
+	  fails (such as when amidxtaped fails to read the tape), ask if
+	  things should continue instead of aborting.
+
 1999-11-11  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
 	* server-src/driverio.c (update_info_dumper): Discard information on
@@ -619,7 +626,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.308 1999/11/12 00:16:15 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.309 1999/11/12 00:53:54 jrj Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

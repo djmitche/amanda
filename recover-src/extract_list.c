@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43.2.8 1999/09/23 22:22:45 oliva Exp $
+ * $Id: extract_list.c,v 1.43.2.9 1999/11/12 00:54:04 jrj Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -135,7 +135,8 @@ int buflen;
 	    case 0:
 		spaceleft -= size;
 		dataptr += size;
-		fprintf(stderr,"EOF, check amidxtaped.debug file.\n");
+		fprintf(stderr,"EOF, check amidxtaped.debug file on %s.\n",
+			       tape_server_name);
 		break;
 	    default:
 		spaceleft -= size;
@@ -1559,7 +1560,8 @@ void extract_files P((void))
 	    fprintf(stderr,
 		    "extract_list - child returned non-zero status: %d\n",
 		    WEXITSTATUS(child_stat));
-	    exit(1);
+	    if (!okay_to_continue())
+		return;
 	}
 
 	/* finish up */
