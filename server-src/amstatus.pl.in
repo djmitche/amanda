@@ -791,11 +791,29 @@ print "hostpart: $hostpart\n";
 						}
 					}
 					elsif($taper_finished{$hostpart} < 0) {
+
+						if(defined $size{$hostpart}) {
+							$xsize = $size{$hostpart};
+						}
+						elsif(defined $esize{$hostpart}) {
+							$xsize = $esize{$hostpart};
+						}
+						else {
+							$xsize = 0;
+						}
+
+						if(defined $esize{$hostpart}) {
+							$exsize += $esize{$hostpart};
+						}
+						else {
+							$exsize += $xsize;
+						}
+
 						if( defined $opt_failed  ||
 							 (defined $opt_waittaper && ($taper_finished{$hostpart} == -1))) {
 							printf "%8s ", $datestamp if defined $opt_date;
 							printf "%-${maxnamelength}s%2d", "$host:$partition", $level{$hostpart};
-							printf "%9dk", $size{$hostpart};
+							printf "%9dk", $xsize;
 							if($in_flush == 0) {
 								print " failed to tape";
 							}
@@ -810,33 +828,17 @@ print "hostpart: $hostpart\n";
 						}
 
 						$tfpartition++;
-						$tfsize += $size{$hostpart};
-						if(defined $esize{$hostpart}) {
-							$tfesize += $esize{$hostpart};
-						}
-						else {
-							$tfesize += $size{$hostpart};
-						}
+						$tfsize += $xsize;
+						$tfesize += $exsize;
 
 						if($in_flush == 0) {
 							$twpartition++;
-							$twsize += $size{$hostpart};
-							if(defined $esize{$hostpart}) {
-								$twesize += $esize{$hostpart};
-							}
-							else {
-								$twesize += $size{$hostpart};
-							}
+							$twsize += $xsize;
+							$twesize += $exsize;
 						}
 						else {
 							$wfpartition++;
-							$wfsize += $size{$hostpart};
-							if(defined $esize{$hostpart}) {
-								$wfesize += $esize{$hostpart};
-							}
-							else {
-								$wfesize += $size{$hostpart};
-							}
+							$wfsize += $xsize;
 						}
 					}
 					elsif($taper_finished{$hostpart} == 1) {
