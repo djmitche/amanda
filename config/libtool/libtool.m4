@@ -174,7 +174,7 @@ AC_CACHE_VAL(ac_cv_path_NM,
   ;;
 *)
   IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS="${IFS}:"
-  for ac_dir in /usr/ucb:$PATH:/bin; do
+  for ac_dir in /usr/ucb $PATH /bin; do
     test -z "$ac_dir" && dir=.
     if test -f $ac_dir/nm; then
       # Check to see if the nm accepts a BSD-compat flag.
