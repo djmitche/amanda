@@ -1,3 +1,7 @@
+	fix some kerberos4 problems; no longer require low ports for
+	kerberized connections; now use amanda@REALM instead of
+	amanda.amanda@REALM in .klogin's.  -kovert
+
 	amrecover no longer depends on GNU flex library.  -oliva
 
 	Ensure that malloc(0) is not called.  -Wolfram Schmidt
