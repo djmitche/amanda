@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.41 1998/12/15 00:04:46 kashmir Exp $
+ * $Id: amindexd.c,v 1.42 1998/12/15 00:27:06 kashmir Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -46,7 +46,6 @@
 #include "arglist.h"
 #include "dgram.h"
 #include "version.h"
-#include "protocol.h"
 #include "amindex.h"
 #include "disk_history.h"
 #include "list_dir.h"
