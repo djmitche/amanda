@@ -1,5 +1,12 @@
 2001-07-18 John R. Jackson <jrj@purdue.edu>
 
+	* server-src/amverify.sh.in: Change to the Amanda temp directory
+	  instead of the config directory.  In addition to making amverify
+	  act like most other Amanda programs, this gets around an
+	  xfsrestore bug.
+
+2001-07-18 John R. Jackson <jrj@purdue.edu>
+
 	* man/amanda.8.in: Describe the .amandahosts format better.  Clean up
 	  a couple of minor typos.
 
