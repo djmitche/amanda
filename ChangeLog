@@ -1,3 +1,8 @@
+2000-11-22 John R. Jackson  <jrj@purdue.edu>
+
+	* Makefile.am: Forgot to add contrib/sst/README.Amanda to the list
+	  of files to put in a distribution.
+
 2000-11-21 John R. Jackson  <jrj@purdue.edu>
 
 	* recover-src/extract_list.c (extract_files_child): Add support for
@@ -1199,7 +1204,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.412 2000/11/21 22:23:30 jrjackson Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.413 2000/11/22 12:09:41 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
