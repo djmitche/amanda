@@ -604,6 +604,31 @@ Default:
 .IR runtapes * tape_lenght .
 Maximum number of bytes the planner will schedule for a run.
 .TP
+.BN taperalgo [first|firstfit|largest|largestfit|smallest|last]
+Default:
+.IR first .
+The algorithm use to choose which dump image to send to the taper.
+.RS
+.TP
+.B first
+First in first out.
+.TP
+.B firstfit
+The first dump image that will fit on the current tape.
+.TP
+.B largest
+The largest dump image.
+.TP
+.B largestfit
+The largest dump image that will fit on the current tape.
+.TP
+.B smallest
+The smallest dump image.
+.TP
+.B last
+Last in first out.
+.RE
+.LP
 .BS labelstr string
 Default:
 .IR .* .

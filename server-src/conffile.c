@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.16.2.5.2.14 2002/11/07 23:20:22 martinea Exp $
+ * $Id: conffile.c,v 1.54.2.16.2.5.2.15 2002/12/27 19:39:35 martinea Exp $
  *
  * read configuration file
  */
@@ -79,6 +79,8 @@ typedef enum {
     PRINTER, AUTOFLUSH, RESERVE, MAXDUMPSIZE,
     COLUMNSPEC, 
     AMRECOVER_DO_FSF, AMRECOVER_CHECK_LABEL, AMRECOVER_CHANGER,
+
+    TAPERALGO, FIRST, FIRSTFIT, LARGEST, LARGESTFIT, SMALLEST, LAST,
 
     /* holding disk */
     COMMENT, DIRECTORY, USE, CHUNKSIZE,
@@ -207,6 +209,7 @@ static val_t conf_reserve;
 static val_t conf_maxdumpsize;
 static val_t conf_amrecover_do_fsf;
 static val_t conf_amrecover_check_label;
+static val_t conf_taperalgo;
 
 /* reals */
 static val_t conf_bumpmult;
@@ -262,6 +265,7 @@ static int seen_columnspec;
 static int seen_amrecover_do_fsf;
 static int seen_amrecover_check_label;
 static int seen_amrecover_changer;
+static int seen_taperalgo;
 
 static int allow_overwrites;
 static int token_pushed;
@@ -305,6 +309,7 @@ static void get_auth P((void));
 static void get_strategy P((void));
 static void get_exclude P((void));
 static void get_include P((void));
+static void get_taperalgo P((val_t *c_taperalgo, int *s_taperalgo));
 
 static void get_simple P((val_t *var, int *seen, tok_t type));
 static int get_time P((void));
@@ -404,6 +409,7 @@ struct byname {
     { "AMRECOVER_DO_FSF", CNF_AMRECOVER_DO_FSF, BOOL },
     { "AMRECOVER_CHECK_LABEL", CNF_AMRECOVER_CHECK_LABEL, BOOL },
     { "AMRECOVER_CHANGER", CNF_AMRECOVER_CHANGER, STRING },
+    { "TAPERALGO", CNF_TAPERALGO, INT },
     { "AUTOFLUSH", CNF_AUTOFLUSH, BOOL },
     { "RESERVE", CNF_RESERVE, INT },
     { "MAXDUMPSIZE", CNF_MAXDUMPSIZE, INT },
@@ -489,6 +495,7 @@ confparm_t parm;
     case CNF_AMRECOVER_DO_FSF: return seen_amrecover_do_fsf;
     case CNF_AMRECOVER_CHECK_LABEL: return seen_amrecover_check_label;
     case CNF_AMRECOVER_CHANGER: return seen_amrecover_changer;
+    case CNF_TAPERALGO: return seen_taperalgo;
     default: return 0;
     }
 }
@@ -520,6 +527,7 @@ confparm_t parm;
     case CNF_MAXDUMPSIZE: r = conf_maxdumpsize.i; break;
     case CNF_AMRECOVER_DO_FSF: r = conf_amrecover_do_fsf.i; break;
     case CNF_AMRECOVER_CHECK_LABEL: r = conf_amrecover_check_label.i; break;
+    case CNF_TAPERALGO: r = conf_taperalgo.i; break;
 
     default:
 	error("error [unknown getconf_int parm: %d]", parm);
@@ -713,6 +721,7 @@ static void init_defaults()
     conf_maxdumpsize.i	= -1;
     conf_amrecover_do_fsf.i = 0;
     conf_amrecover_check_label.i = 0;
+    conf_taperalgo.i = 0;
 
     /* defaults for internal variables */
 
@@ -759,6 +768,7 @@ static void init_defaults()
     seen_amrecover_do_fsf = 0;
     seen_amrecover_check_label = 0;
     seen_amrecover_changer = 0;
+    seen_taperalgo = 0;
     line_num = got_parserror = 0;
     allow_overwrites = 0;
     token_pushed = 0;
@@ -930,6 +940,7 @@ keytab_t main_keytable[] = {
     { "AMRECOVER_DO_FSF", AMRECOVER_DO_FSF },
     { "AMRECOVER_CHECK_LABEL", AMRECOVER_CHECK_LABEL },
     { "AMRECOVER_CHANGER", AMRECOVER_CHANGER },
+    { "TAPERALGO", TAPERALGO },
     { NULL, IDENT }
 };
 
@@ -1049,6 +1060,8 @@ static int read_confline()
     case AMRECOVER_DO_FSF: get_simple(&conf_amrecover_do_fsf,&seen_amrecover_do_fsf, BOOL); break;
     case AMRECOVER_CHECK_LABEL: get_simple(&conf_amrecover_check_label,&seen_amrecover_check_label, BOOL); break;
     case AMRECOVER_CHANGER: get_simple(&conf_amrecover_changer,&seen_amrecover_changer, STRING); break;
+
+    case TAPERALGO: get_taperalgo(&conf_taperalgo,&seen_taperalgo); break;
 
     case LOGFILE: /* XXX - historical */
 	/* truncate the filename part and pretend he said "logdir" */
@@ -1977,6 +1990,42 @@ static void get_compress()
     keytable = save_kt;
 }
 
+keytab_t taperalgo_keytable[] = {
+    { "FIRST", FIRST },
+    { "FIRSTFIT", FIRSTFIT },
+    { "LARGEST", LARGEST },
+    { "LARGESTFIT", LARGESTFIT },
+    { "SMALLEST", SMALLEST },
+    { "LAST", LAST },
+    { NULL, IDENT }
+};
+
+static void get_taperalgo(c_taperalgo, s_taperalgo)
+val_t *c_taperalgo;
+int *s_taperalgo;
+{
+    keytab_t *save_kt;
+
+    save_kt = keytable;
+    keytable = taperalgo_keytable;
+
+    ckseen(s_taperalgo);
+
+    get_conftoken(ANY);
+    switch(tok) {
+    case FIRST:      c_taperalgo->i = ALGO_FIRST;      break;
+    case FIRSTFIT:   c_taperalgo->i = ALGO_FIRSTFIT;   break;
+    case LARGEST:    c_taperalgo->i = ALGO_LARGEST;    break;
+    case LARGESTFIT: c_taperalgo->i = ALGO_LARGESTFIT; break;
+    case SMALLEST:   c_taperalgo->i = ALGO_SMALLEST;   break;
+    case LAST:       c_taperalgo->i = ALGO_LAST;       break;
+    default:
+	parserror("FIRST, FIRSTFIT, LARGEST, LARGESTFIT, SMALLEST or LAST expected");
+    }
+
+    keytable = save_kt;
+}
+
 keytab_t priority_keytable[] = {
     { "HIGH", HIGH },
     { "LOW", LOW },
@@ -2729,6 +2778,19 @@ int SetColumDataFromString(ColumnInfo* ci, char *s, char **errstr) {
 }
 
 
+char *taperalgo2str(taperalgo)
+int taperalgo;
+{
+    if(taperalgo == ALGO_FIRST) return "FIRST";
+    if(taperalgo == ALGO_FIRSTFIT) return "FIRSTFIT";
+    if(taperalgo == ALGO_LARGEST) return "LARGEST";
+    if(taperalgo == ALGO_LARGESTFIT) return "LARGESTFIT";
+    if(taperalgo == ALGO_SMALLEST) return "SMALLEST";
+    if(taperalgo == ALGO_LAST) return "LAST";
+    return "UNKNOWN";
+}
+
+
 /* ------------------------ */
 
 
@@ -2785,6 +2847,7 @@ dump_configuration(filename)
     printf("conf_amrecover_do_fsf  = %d\n", getconf_int(CNF_AMRECOVER_DO_FSF));
     printf("conf_amrecover_check_label  = %d\n", getconf_int(CNF_AMRECOVER_CHECK_LABEL));
     printf("conf_amrecover_changer = \"%s\"\n", getconf_str(CNF_AMRECOVER_CHANGER));
+    printf("conf_taperalgo  = %s\n", taperalgo2str(getconf_int(CNF_TAPERALGO)));
 
     /*printf("conf_diskdir = \"%s\"\n", getconf_str(CNF_DISKDIR));*/
     /*printf("conf_disksize = %d\n", getconf_int(CNF_DISKSIZE));*/

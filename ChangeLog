@@ -1,3 +1,11 @@
+2002-12-27  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/conffile.c: New taperalgo configuration keyword.
+	* server-src/conffile.h: Ditto.
+	* man/amanda.8.in: Document it.
+	* server-src/driver.c (startaflush): New function to start a flush to
+	  tape.
+
 2002-12-23  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/amstatus.pl.in: Parse features from PORT-WRITE line.

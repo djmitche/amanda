@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.24.2.8.4.4.2.7 2002/11/07 23:20:22 martinea Exp $
+ * $Id: conffile.h,v 1.24.2.8.4.4.2.8 2002/12/27 19:39:35 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -79,7 +79,8 @@ typedef enum conf_e {
     CNF_COLUMNSPEC,
     CNF_AMRECOVER_DO_FSF,
     CNF_AMRECOVER_CHECK_LABEL,
-    CNF_AMRECOVER_CHANGER
+    CNF_AMRECOVER_CHANGER,
+    CNF_TAPERALGO
 } confparm_t;
 
 typedef enum auth_e {
@@ -126,6 +127,13 @@ typedef struct tapetype_s {
 #define COMP_BEST	2	/* Best compression on client */
 #define COMP_SERV_FAST	3	/* Fast compression on server */
 #define COMP_SERV_BEST	4	/* Best compression on server */
+
+#define ALGO_FIRST	0
+#define ALGO_FIRSTFIT	1
+#define ALGO_LARGEST	2
+#define ALGO_LARGESTFIT	3
+#define ALGO_SMALLEST	4
+#define ALGO_LAST	5
 
 typedef struct dumptype_s {
     struct dumptype_s *next;
@@ -268,5 +276,7 @@ int ColumnDataCount P((void));
 int StringToColumn P((char *s));
 char LastChar P((char *s));
 int SetColumDataFromString P((ColumnInfo* ci, char *s, char **errstr));
+
+char *taperalgo2str P((int taperalgo));
 
 #endif /* ! CONFFILE_H */
