@@ -598,31 +598,58 @@ y |  ye | yes) AC_DEFINE(USE_AMANDAHOSTS)
   ;;
 esac
 
-dnl Specify --with-krb4 if Amanda kerberos bits are in somewhere other
-dnl than the listed KRB4_SPOTS.  We only compile kerberos support in if
-dnl the right files are there.
+dnl Specify --with-krb4-security if Kerberos software is in somewhere
+dnl other than the listed KRB4_SPOTS.  We only compile kerberos support in
+dnl if the right files are there.
+
+: ${KRB4_SPOTS="/usr/kerberos /usr/cygnus /usr /opt/kerberos"}
 
 AC_ARG_WITH(krb4-security,
-    [  --with-krb4=DIR   Amanda kerberos bits can be found here],
-    KRB4_SPOTS="$withval",
-    : ${KRB4_SPOTS="/usr/kerberos /usr/cygnus /usr /opt/kerberos"}
+    [  --with-krb4-security=DIR   Location of Kerberos software [/usr/kerberos /usr/cygnus /usr /opt/kerberos]],
+    KRB4_SECURITY="$withval",
+    : ${KRB4_SECURITY=no}
 )
 
-AC_MSG_CHECKING(Amanda kerberos4 bits)
-if test -f common-src/krb4-security.c ; then
+case "$KRB4_SECURITY" in
+n | no) KRB4_SECURITY=no ;;
+y | ye | yes) : ;;
+*) KRB4_SPOTS="$KRB4_SECURITY"
+   KRB4_SECURITY=yes
+   ;;
+esac
+
+AC_MSG_CHECKING(for Kerberos and Amanda kerberos4 bits)
+if test "${KRB4_SECURITY}" = yes -a -f common-src/krb4-security.c ; then
     for dir in $KRB4_SPOTS; do
-	if test "$KRB4_SECURITY" != "yes" -a -f ${dir}/lib/libkrb.a ; then
+	if test -f ${dir}/lib/libkrb.a -a -f ${dir}/lib/libdes.a ; then
+	    #
+	    # This is the original Kerberos 4.
+	    #
 	    AC_MSG_RESULT(found in $dir)
 	    KRB4_SECURITY=yes
 	    AC_DEFINE(KRB4_SECURITY)
 	    KRB4INCLUDES=-I$dir/include
 	    KRB4LDFLAGS=-L$dir/lib
 	    KRB4LIBS="-lkrb -ldes"
+	    break
+	elif test -f ${dir}/lib/libkrb4.a \
+		  -a -f ${dir}/lib/libcrypto.a \
+		  -a -f ${dir}/lib/libdes425.a ; then
+	    #
+	    # This is Kerberos 5 with Kerberos 4 back-support.
+	    #
+	    AC_MSG_RESULT(found in $dir)
+	    KRB4_SECURITY=yes
+	    AC_DEFINE(KRB4_SECURITY)
+	    KRB4INCLUDES="-I$dir/include -I$dir/include/kerberosIV"
+	    KRB4LDFLAGS=-L$dir/lib
+	    KRB4LIBS="-lkrb4 -lcrypto -ldes425"
+	    break
 	fi
     done
 
     if test "$KRB4LDFLAGS" = "" ; then
-	AC_MSG_RESULT(no libkrb.a)
+	AC_MSG_RESULT(no libraries found)
     fi
 else
     AC_MSG_RESULT(no)
@@ -982,10 +1009,10 @@ fi
 OLD_CFLAGS="$CFLAGS"
 AMANDA_CFLAGS="$AMANDA_CFLAGS $KRB4INCLUDES"
 AMANDA_CPPFLAGS="$AMANDA_CPPFLAGS $KRB4INCLUDES"
-AMANDA_LDFLAGS="$AMANDA_LDFLAGS $KRB4INCLUDES"
+AMANDA_LDFLAGS="$AMANDA_LDFLAGS $KRB4LDFLAGS"
 CFLAGS="$CFLAGS $AMANDA_CPPFLAGS $AMANDA_CFLAGS"
 CPPFLAGS="$CPPFLAGS $AMANDA_CPPFLAGS"
-LDFLAGS="$LDFLAGS $AMANDA_LDFLAGS $KRB4LDFLAGS"
+LDFLAGS="$LDFLAGS $AMANDA_LDFLAGS"
 AC_SUBST(AMANDA_CFLAGS)
 
 
@@ -1699,6 +1726,7 @@ ICE_CHECK_DECL(openlog,syslog.h)
 ICE_CHECK_DECL(pclose,stdio.h)
 ICE_CHECK_DECL(perror,stdio.h)
 ICE_CHECK_DECL(printf,stdio.h)
+AC_CHECK_FUNCS(putenv)
 ICE_CHECK_DECL(puts,stdio.h)
 ICE_CHECK_DECL(realloc,stdlib.h)
 ICE_CHECK_DECL(recvfrom,sys/types.h sys/socket.h)
