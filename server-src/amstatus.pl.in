@@ -478,11 +478,23 @@ while(<AMDUMP>) {
 		$taper_finished{$hostpart}=0;
 		$taper_time{$hostpart}=$1;
 	}
-	elsif(/driver: send-cmd time (\S+) to taper: PORT-WRITE (\d+-\d+) (\S+) (\S+) \d*( \d*|)/){
+	elsif(/driver: send-cmd time (\S+) to taper: PORT-WRITE (\d+-\d+) (\S+) (\S+) \d+( \d+|)/){
 		$current_time=$1;
 		$serial=$2;
 		$host=$3;
 		$partition=$4;
+		$hostpart=&make_hostpart($host,$partition,$gdatestamp);
+		$serial{$serial}=$hostpart;
+		$taper_started{$hostpart}=1;
+		$taper_finished{$hostpart}=0;
+		$taper_time{$hostpart}=$1;
+	}
+	elsif(/driver: send-cmd time (\S+) to taper: PORT-WRITE (\d+-\d+) (\S+) (\S+) (\S+) \d+ \d+/){
+		$current_time=$1;
+		$serial=$2;
+		$host=$3;
+		$features=$4;
+		$partition=$5;
 		$hostpart=&make_hostpart($host,$partition,$gdatestamp);
 		$serial{$serial}=$hostpart;
 		$taper_started{$hostpart}=1;
@@ -666,7 +678,12 @@ foreach $host (sort @hosts) {
 						$taper_started{$hostpart}==1) {
 					if(defined $dump_started{$hostpart}) {
 						$dpartition++;
-						$dsize += $size{$hostpart};
+						if(defined($size{$hostpart})) {
+							$dsize += $size{$hostpart};
+						}
+						else {
+							$dsize += $esize{$hostpart};
+						}
 						$desize += $esize{$hostpart};
 					}
 					if(defined $dump_started{$hostpart} &&
@@ -676,7 +693,7 @@ foreach $host (sort @hosts) {
 						if( defined $opt_dumpingtape ) {
 							printf "%8s ", $datestamp if defined $opt_date;
 							printf "%-${maxnamelength}s%2d", "$host:$partition", $level{$hostpart};
-							printf "%9dk", $size{$hostpart};
+							printf "%9dk", $esize{$hostpart};
 							print " dumping to tape";
 							if( defined $starttime ) {
 								print " (", &showtime($taper_time{$hostpart}), ")";
