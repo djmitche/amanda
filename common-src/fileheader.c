@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.19 2001/12/29 21:57:59 martinea Exp $
+ * $Id: fileheader.c,v 1.20 2002/01/14 00:27:44 martinea Exp $
  */
 
 #include "amanda.h"
@@ -38,6 +38,7 @@ fh_init(file)
     dumpfile_t *file;
 {
     memset(file, '\0', sizeof(*file));
+    file->blocksize = DISK_BLOCK_BYTES;
 }
 
 void
@@ -142,67 +143,6 @@ parse_file_header(buffer, file, buflen)
 	if (file->program[0] == '\0')
 	    strncpy(file->program, "RESTORE", sizeof(file->program) - 1);
 
-	/* iterate through the rest of the lines */
-	while ((line = strtok(NULL, "\n")) != NULL) {
-
-#define SC "CONT_FILENAME="
-	    if (strncmp(line, SC, sizeof(SC) - 1) == 0) {
-		line += sizeof(SC) - 1;
-		strncpy(file->cont_filename, line,
-		    sizeof(file->cont_filename) - 1);
-		continue;
-	    }
-#undef SC
-
-#define SC "PARTIAL="
-	    if (strncmp(line, SC, sizeof(SC) - 1) == 0) {
-		line += sizeof(SC) - 1;
-		file->is_partial = !strcasecmp(line, "yes");
-		continue;
-	    }
-#undef SC
-
-#define SC "To restore, position tape at start of file and run:"
-	    if (strncmp(line, SC, sizeof(SC) - 1) == 0)
-		continue;
-#undef SC
-
-#define SC "\tdd if=<tape> bs="
-	    if (strncmp(line, SC, sizeof(SC) - 1) == 0) {
-		char *cmd1, *cmd2;
-
-		/* skip over dd command */
-		if ((cmd1 = strchr(line, '|')) == NULL) {
-
-		    strncpy(file->recover_cmd, "BUG",
-			sizeof(file->recover_cmd) - 1);
-		    continue;
-		}
-		cmd1++;
-
-		/* block out first pipeline command */
-		if ((cmd2 = strchr(cmd1, '|')) != NULL)
-		    *cmd2++ = '\0';
-
-		/*
-		 * If there's a second cmd then the first is the uncompress cmd.
-		 * Otherwise, the first cmd is the recover cmd, and there
-		 * is no uncompress cmd.
-		 */
-		if (cmd2 == NULL) {
-		    strncpy(file->recover_cmd, cmd1,
-			sizeof(file->recover_cmd) - 1);
-		} else {
-		    snprintf(file->uncompress_cmd,
-			sizeof(file->uncompress_cmd), "%s|", cmd1);
-		    strncpy(file->recover_cmd, cmd2,
-			sizeof(file->recover_cmd) - 1);
-		}
-		continue;
-	    }
-#undef SC
-	    /* XXX complain about weird lines? */
-	}
 	break;
 
     case F_TAPEEND:
@@ -217,6 +157,75 @@ parse_file_header(buffer, file, buflen)
 	goto weird_header;
     }
 
+    /* iterate through the rest of the lines */
+    while ((line = strtok(NULL, "\n")) != NULL) {
+
+#define SC "CONT_FILENAME="
+	if (strncmp(line, SC, sizeof(SC) - 1) == 0) {
+	    line += sizeof(SC) - 1;
+	    strncpy(file->cont_filename, line,
+		    sizeof(file->cont_filename) - 1);
+		    continue;
+	}
+#undef SC
+
+#define SC "PARTIAL="
+	if (strncmp(line, SC, sizeof(SC) - 1) == 0) {
+	    line += sizeof(SC) - 1;
+	    file->is_partial = !strcasecmp(line, "yes");
+	    continue;
+	}
+#undef SC
+
+#define SC "BLOCKSIZE="
+	if (strncmp(line, SC, sizeof(SC) - 1) == 0) {
+	    line += sizeof(SC) - 1;
+	    file->blocksize = atoi(line);
+	    continue;
+	}
+#undef SC
+
+#define SC "To restore, position tape at start of file and run:"
+	if (strncmp(line, SC, sizeof(SC) - 1) == 0)
+	    continue;
+#undef SC
+
+#define SC "\tdd if=<tape> bs="
+	if (strncmp(line, SC, sizeof(SC) - 1) == 0) {
+	    char *cmd1, *cmd2;
+
+	    /* skip over dd command */
+	    if ((cmd1 = strchr(line, '|')) == NULL) {
+
+		strncpy(file->recover_cmd, "BUG",
+			sizeof(file->recover_cmd) - 1);
+		continue;
+	    }
+	    cmd1++;
+
+	    /* block out first pipeline command */
+	    if ((cmd2 = strchr(cmd1, '|')) != NULL)
+		*cmd2++ = '\0';
+
+	    /*
+	     * If there's a second cmd then the first is the uncompress cmd.
+	     * Otherwise, the first cmd is the recover cmd, and there
+	     * is no uncompress cmd.
+	     */
+	    if (cmd2 == NULL) {
+		strncpy(file->recover_cmd, cmd1,
+			sizeof(file->recover_cmd) - 1);
+	    } else {
+		snprintf(file->uncompress_cmd,
+			 sizeof(file->uncompress_cmd), "%s|", cmd1);
+		strncpy(file->recover_cmd, cmd2,
+			sizeof(file->recover_cmd) - 1);
+	    }
+	    continue;
+	}
+#undef SC
+	/* XXX complain about weird lines? */
+    }
     amfree(buf);
     return;
 
@@ -228,11 +237,10 @@ weird_header:
 }
 
 void
-build_header(buffer, file, buflen, blocksize)
+build_header(buffer, file, buflen)
     char *buffer;
     const dumpfile_t *file;
     int buflen;
-    long blocksize;
 {
     int n;
 
@@ -240,8 +248,9 @@ build_header(buffer, file, buflen, blocksize)
 
     switch (file->type) {
     case F_TAPESTART:
-	snprintf(buffer, buflen, "AMANDA: TAPESTART DATE %s TAPE %s\n\014\n",
-	    file->datestamp, file->name);
+	snprintf(buffer, buflen,
+	    "AMANDA: TAPESTART DATE %s TAPE %s\nBLOCKSIZE=%ld\n\014\n",
+	    file->datestamp, file->name, file->blocksize);
 	break;
 
     case F_CONT_DUMPFILE:
@@ -264,6 +273,11 @@ build_header(buffer, file, buflen, blocksize)
 	    buffer += n;
 	    buflen -= n;
 	}
+
+	n = snprintf(buffer, buflen, "BLOCKSIZE=%ld\n", file->blocksize);
+	buffer += n;
+	buflen -= n;
+
 	n = snprintf(buffer, buflen, 
 	    "To restore, position tape at start of file and run:\n");
 	buffer += n;
@@ -272,14 +286,14 @@ build_header(buffer, file, buflen, blocksize)
 	/* \014 == ^L */
 	n = snprintf(buffer, buflen,
 	    "\tdd if=<tape> bs=%ldk skip=1 |%s %s\n\014\n",
-	    blocksize / 1024, file->uncompress_cmd, file->recover_cmd);
+	    file->blocksize / 1024, file->uncompress_cmd, file->recover_cmd);
 	buffer += n;
 	buflen -= n;
 	break;
 
     case F_TAPEEND:
-	snprintf(buffer, buflen, "AMANDA: TAPEEND DATE %s\n\014\n",
-	    file->datestamp);
+	snprintf(buffer, buflen, "AMANDA: TAPEEND DATE %s\nBLOCKSIZE=%ld\n\014\n",
+	    file->datestamp, file->blocksize);
 	break;
 
     case F_UNKNOWN:

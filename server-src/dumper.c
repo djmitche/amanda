@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.145 2001/12/04 15:42:42 martinea Exp $
+/* $Id: dumper.c,v 1.146 2002/01/14 00:27:44 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -704,7 +704,7 @@ write_tapeheader(outfd, file)
     char buffer[DISK_BLOCK_BYTES];
     int written;
 
-    build_header(buffer, file, sizeof(buffer), sizeof(buffer));
+    build_header(buffer, file, sizeof(buffer));
 
     written = write(outfd, buffer, sizeof(buffer));
     if(written == sizeof(buffer)) return 0;

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.12 2001/12/30 17:42:07 martinea Exp $
+/* $Id: chunker.c,v 1.13 2002/01/14 00:27:44 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -672,7 +672,8 @@ write_tapeheader(outfd, file)
     char buffer[DISK_BLOCK_BYTES];
     int written;
 
-    build_header(buffer, file, sizeof(buffer), sizeof(buffer));
+    file->blocksize = DISK_BLOCK_BYTES;
+    build_header(buffer, file, sizeof(buffer));
 
     written = fullwrite(outfd, buffer, sizeof(buffer));
     if(written == sizeof(buffer)) return 0;

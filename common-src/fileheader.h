@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.h,v 1.11 2001/07/31 23:19:57 jrjackson Exp $
+ * $Id: fileheader.h,v 1.12 2002/01/14 00:27:44 martinea Exp $
  *
  */
 
@@ -54,6 +54,7 @@ typedef struct file_s {
     string_t uncompress_cmd;
     string_t cont_filename;
     int is_partial;
+    long blocksize;
 } dumpfile_t;
 
 /* local functions */
@@ -62,8 +63,7 @@ void  fh_init             P((dumpfile_t *file));
 void  parse_file_header   P((const char *buffer, dumpfile_t *file, int buflen));
 void  build_header        P((char *buffer,
 			     const dumpfile_t *file,
-			     int buflen,
-			     long blocksize));
+			     int buflen));
 void  print_header        P((FILE *outf, const dumpfile_t *file));
 int   known_compress_type P((const dumpfile_t *file));
 
