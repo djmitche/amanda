@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: amidxtaped.c,v 1.17 1998/01/17 14:59:37 amcore Exp $
+/* $Id: amidxtaped.c,v 1.18 1998/01/17 19:38:26 amcore Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -176,7 +176,7 @@ char **argv;
 
     /* do the security thing */
     afree(buf);
-    buf = get_client_line();
+    buf = stralloc(get_client_line());
     s = buf;
     ch = *s++;
 
@@ -199,7 +199,7 @@ char **argv;
 
     /* get the number of arguments */
     afree(buf);
-    buf = get_client_line();
+    buf = stralloc(get_client_line());
     amrestore_nargs = atoi(buf);
     dbprintf(("amrestore_nargs=%d\n", amrestore_nargs));
 
