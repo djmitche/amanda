@@ -1593,12 +1593,34 @@ Even though Amanda does not use
 it can use
 .BR .rhosts -style
 authentication and a
-.BR .rhosts file.
+.B .rhosts
+file.
 .IP .amandahosts
 This is essentially the same as
 .B .rhosts
-authentication except a different file, with the same format, is used.
-The is the default mechanism built into Amanda.
+authentication except a different file, with almost the same format, is used.
+This is the default mechanism built into Amanda.
+.IP
+The format of the
+.B .amandahosts
+file is:
+.RS
+.IP
+.I hostname
+[
+.I username
+]
+.RE
+.IP
+If
+.I username
+is ommitted, it defaults to the user running
+.BR amandad ,
+i.e. the user listed in the
+.B inetd
+or
+.B xinetd
+configuration file.
 .IP Kerberos
 Amanda may use the Kerberos authentication system.
 Further information is in the
