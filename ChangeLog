@@ -1,3 +1,14 @@
+2003-04-13  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	New file by Robert C Dege <RDege@northropgrumman.com>
+
+	* configure.in: Find mcutil binary.
+	* configure.in (AC_CONFIG_FILES): Add changer-src/chg-mcutil.sh and
+	  example/chg-mcutil.conf.
+	* changer-src/Makefile (libexec_SCRIPTS): Add chg-mcutil.
+	* changer-src/chg-mcutil.sh.in: New file.
+	* example/Makefile (EXTRA_DIST): Add chg-mcutil.conf
+	* example/chg-mcutil.conf.in: New file.
+
 2003-04-08  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* man/amanda.8.in (blocksize): Document the --with-maxtapeblocksize
