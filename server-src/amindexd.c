@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.57 2001/02/25 21:10:17 martinea Exp $
+ * $Id: amindexd.c,v 1.58 2001/06/01 21:02:44 jrjackson Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -457,7 +457,9 @@ char *config;
 
 static int build_disk_table()
 {
-    char date[100];
+    char date[3 * NUM_STR_SIZE + 2 + 1];
+    long last_datestamp;
+    int last_filenum;
     find_result_t *find_output;
 
     if (config_name == NULL || dump_hostname == NULL || disk_name == NULL) {
@@ -471,11 +473,25 @@ static int build_disk_table()
     }
 
     clear_list();
-    for(find_output = output_find; find_output != NULL; 
+    last_datestamp = -1;
+    last_filenum = -1;
+    for(find_output = output_find;
+	find_output != NULL; 
 	find_output = find_output->next) {
 	if(strcasecmp(dump_hostname, find_output->hostname) == 0 &&
 	   strcmp(disk_name    , find_output->diskname) == 0 &&
 	   strcmp("OK"         , find_output->status)   == 0) {
+	    /*
+	     * The sort order puts holding disk entries first.  We want to
+	     * use them if at all possible, so ignore any other entries
+	     * for the same datestamp after we see a holding disk entry
+	     * (as indicated by a filenum of zero).
+	     */
+	    if(find_output->datestamp == last_datestamp && last_filenum == 0) {
+		continue;
+	    }
+	    last_datestamp = find_output->datestamp;
+	    last_filenum = find_output->filenum;
 	    snprintf(date, sizeof(date), "%04d-%02d-%02d",
 			find_output->datestamp/10000,
 			(find_output->datestamp/100) %100,

@@ -1,3 +1,8 @@
+2001-06-01 John R. Jackson <jrj@purdue.edu>
+
+	* server-src/amindexd.c (build_disk_table): Make sure a holding disk
+	  image is used rather than a copy also on tape, if both exist.
+
 2001-06-01 Thomas Hepper <th@ant.han.de>
 	* changer-src/scsi-changer-driver.c: Added an range check in the load
 	function and abort if the requested slot is out of range.
