@@ -1,3 +1,8 @@
+1998-06-24  Scott Mesches  <mesches@allison.Colorado.EDU>
+
+	* example/DLT.ps: new file
+	* example/Makefile.am (EXTRA_DIST): add DLT.ps
+
 1998-06-24  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* Makefile.am (EXTRA_DIST): moved CHANGES into ChangeLog
