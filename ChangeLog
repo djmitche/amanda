@@ -1,5 +1,8 @@
 1998-09-24  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* docs/DUMPER-API: added draft description of the DUMPER API
+	* Makefile.am (EXTRA_DIST): add it to the distribution
+
 	* config/acinclude.m4 (AC_VALIDATE_CACHE_SYSTEM_TYPE): make sure
  	cached values for host, build and target system types match with the
  	guessed ones

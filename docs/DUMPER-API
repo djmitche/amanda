@@ -1,0 +1,247 @@
+AMANDA DUMPER API
+
+by Alexandre Oliva <oliva@dcc.unicamp.br>
+
+1. INTRODUCTION
+
+This is a proposal of a mechanism for Amanda to support arbitrary
+backup programs, that relies on a generic backup driver and scripts or
+programs that interface with backup programs such as dump, tar,
+smbclient, and others.  It can also be used to introduce pre- and
+post-backup commands.
+
+The interface is simple, but supports everything that is currently
+supported by Amanda, and it can be consistently extended to support
+new abstractions that may be introduced in the backup driver in the
+future.
+
+This proposal does not imply any modification in the Amanda protocol
+or in Amanda servers; only Amanda clients have to be modified.  By
+Amanda clients, we refer to hosts whose disks are to be backed up;
+an Amanda server is a host connected to a tape unit.
+
+Currently (as of release 2.4.1 of Amanda), Amanda clients support
+three operations: selfcheck, estimate and backup.
+
+Selfcheck is used by the server program amcheck, to check whether a
+client is responding or if there are configuration or permission
+problems in the client that might prevent the backup from taking
+place.
+
+Estimates are requested by the Amanda planner, that runs on the server
+and collects information about the expected sizes of backups of each
+disk at several levels.  Given this information and the amount of
+available tape space, the planner can select which disks and which
+levels it should tell dumper to run.
+
+Dumper is yet another server-side program; it requests clients to
+perform dumps, as determined by planner, and stores these dumps in
+holding disks or sends them directly to the taper program.  The
+interaction between dumper and taper is beyond the scope of this text.
+
+We are going to focus on the interaction between the Amanda client
+program and wrappers of dump programs.  These wrappers must implement
+the DUMPER API.
+
+2. THE PROBLEM
+
+Different backup programs present distinct requirements; some must be
+run as super-user, whereas others can be run under other user-ids.
+Some require a directory name, the root of the tree to be backed up;
+others prefer a raw device name; some don't even refer to local disks
+(SAMBA).  Some wrappers may need to know a filesystem type in order to
+decide which particular backup program to use (dump, vdump, vxdump,
+xfsdump, backup).
+
+Some provide special options for estimates, whereas others must be
+started as if a complete dump were to be performed, and must be killed
+as soon as they print an estimate.
+
+Furthermore, the output formats of these backup programs vary wildly.
+Some will print estimates and total sizes in bytes, in 512-byte tape
+blocks units, in Kbytes, Mbytes, Gbytes, and possibly Tbytes in the
+near future.  Some will print a timestamp for the backup; some won't.
+
+There are also restrictions related with possible scheduling policies.
+For example, some backup programs only support full backups or
+incrementals based on the last full backup (0-1).  Some support full
+backups or incrementals based on the last backup, be it a full or an
+incremental backup (0-inf++).  Some support incrementals based on a
+timestamp (incr/date); whereas others are based on a limited number of
+incremental levels, but incrementals of the same level can be
+repeated, such as dump (0-9).
+
+Amanda was originally built upon DUMP incremental levels, so this is
+the only model it currently supports.  Backup programs that use other
+incremental management mechanisms had to be adapted to this policy.
+Wrapper scripts are responsible for this adaptation.
+
+Another important issue has to do with index generation.  Some backup
+programs can generate indexes, but each one lists files in its own
+particular format, but they must be stored in a common format, so that 
+the Amanda server can manipulate them.
+
+The DUMPER API must accomodate for all these variations.
+
+3. OVERVIEW OF THE API
+
+We are going to define a standard format of argument lists and
+environment variables that the backup driver will provide to wrapper
+programs, and the expected result of the execution of these wrappers.
+
+As a general rule, whenever a wrapper is started, there should be
+three environment variables set: DISK_DIR, DISK_DEVICE and
+DISK_FSTYPE.  Amanda should try to obtain these values based on the
+disk name in the disklist.  However, it may fail to obtain some or all
+of these values, for example, when a SAMBA share is specified.  In
+this case, the environment variables should not be defined.
+
+The first argument to a wrapper should always be a command name.  If
+no arguments are given, or an unsupported command is requested, an
+error message should be printed to stderr, and the program should
+terminate with exit status 1.
+
+3.1.  The `support' command
+
+As a general mechanism for Amanda to probe for features provided by a
+backup program, a wrapper script must support at least the `support'
+command.  Some features must be supported, and Amanda won't ever ask
+about them.  Others will be considered as extensions, and Amanda will
+ask the wrapper whether they are supported before issuing the
+corresponding commands.
+
+For example, before requesting for an incremental backup of a given
+level, Amanda should ask the wrapper whether the backup program
+supports level-based incrementals.  We don't currently support backup
+programs that don't, but we may in the future, so it would be nice if
+wrappers already implemented the command `support level-incrementals',
+by returning a 0 exit status, printing, say, the maximum incremental
+level it supports, i.e., 9.  A sample session would be:
+
+% env DISK_DIR=/ DISK_DEVICE=/dev/hda0 DISK_FSTYPE=ext2 \
+> /usr/local/amanda/libexec/wrappers/DUMP support level-incrementals hda0
+9
+
+Note that the result of the support command may depend on filesystem
+information, so the disklist entry should be specified as a command
+line argument, and the standard environment variables should be set.
+
+We are not going to explicitly refer to the environment variables in
+command lines any more, but be aware that they are present.  So, a
+simplified version of the sample support command above would be:
+
+	DUMP support level-incrementals hda0
+
+We could also suggest a `support' command for full backups, but can't
+think of a backup program that does not support full backups...
+
+Other `support' sub-commands are `index', `exclude' and
+`exclude-list':
+
+	DUMP support index hda0
+
+3.2. The `selfcheck' command
+
+We should support commands to perform self-checks, run estimates,
+backups and restores (for future extensions of the Amanda protocol
+so as to support restores)
+
+A selfcheck request would go like this:
+
+	DUMP selfcheck hda0 option option=value ...
+
+The options specified as command-line arguments are dumptype options
+enabled for that disk, such as `index', `norecord', etc.  For each
+successful check, a message such as:
+
+OK [/dev/hda0 is readable]
+OK [/usr/sbin/dump is executable]
+
+Errors should be printed as:
+
+ERROR [/etc/dumpdates is not writable]
+
+If selfcheck needs super-user (or some other user, for that matter)
+access to perform some tests, it should print to the standard output
+either:
+
+USER root
+GROUP operator
+
+The backup driver should then arrange to re-run the script (or another
+script, from a privileged directory) as the specified user.
+
+The exit status of selfcheck and of this alternate script are probably
+going to be disregarded.  Anyway, for consistency, selfcheck should
+return exit status 0 for complete success, 1 if any failures have
+occurred and 2 if it needs additional permissions (USER/GROUP).  Note
+that, if the wrapper needs a special permission to perform a test, it
+should not report a failure for that test.
+
+3.3. The `estimate' and `estimate-parse' commands
+
+Estimate requests can be on several different forms.  An estimate of a
+full backup may be requested, or estimates for level- or
+timestamp-based incrementals:
+
+  DUMP estimate full hda0 option ...
+  DUMP estimate level 1 hda0 option ...
+  DUMP estimate diff 1998:09:24:01:02:03 hda0 option ...
+
+
+If the backup program needs privileged access to obtain estimates, it
+should just print:
+
+USER root
+GROUP operator
+
+and exit, with exit status 2.  If requested estimate type is not
+supported, exit status 3 should be returned.  Otherwise, the script
+should write to stdout the estimated size, in bytes, a pair of numbers
+that, multiplied by one another, yield the estimated size in bytes, or
+the word PARSE.
+
+If the first line of output of the estimate command contains only the
+word PIPE, any further output will be fed to the `estimate-parse'
+command, that should extract from its input the estimated size.  The
+syntax of `estimate-parse' is identical to that of `estimate'.
+
+If `estimate' or `estimate-parse' succeed, they should exit 0,
+otherwise exit 1.
+
+3.4. The `backup' and `backup-parse' commands
+
+The syntax of `backup' is the same as that of `estimate'.  The backup
+image should be written to standard output, whereas stderr should be
+used for the user-oriented output of the backup program and other
+messages.
+
+The standard error of `backup' will *always* be fed to the command
+`backup-parse', started with the same syntax as that of `backup'.
+This command must edit its input so that it prints in standard output
+only lines that start with either `!' for normal output, `?' for
+strange output or `&' for error output.  It must also print a line
+starting with `#', followed by the total backup size in bytes, by a
+pair of numbers that, multiplied, yield the total backup size, or by
+nothing, implying that the wrapper cannot obtain this information from
+the output of the backup program.
+
+3.5. The `index' command
+
+The syntax of the `index' command is identical to the one of `backup'.
+It is fed the backup image, and it must produce a list of files and
+directories, one per line, to the standard output.  Directories must
+be identified by the `/' termination.
+
+3.6. The `restore' command
+
+Yet to be specified.
+
+3.7. The `print-command' command
+
+This command must be followed by a valid backup or restore command,
+and it should print a shell-command that would produce an equivalent
+result, i.e., that would perform the backup to standard output, or
+that would restore the whole filesystem reading from standard input.
+This command is to be included in the header of backup images, to ease
+crash-recovery.
