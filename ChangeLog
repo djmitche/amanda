@@ -1,5 +1,11 @@
 1999-04-09  Mike Grupenhoff <kashmir@munge.com>
 
+	* configure.in: implement --with-dbmalloc=[dir], where dir is
+	where the dist is unpacked and built.  This could be improved on,
+	because it doesn't handle the case where it's installed.
+
+1999-04-09  Mike Grupenhoff <kashmir@munge.com>
+
 	* client-src/sendbackup.c: security changes:
 	remove krb4 code and NAUGHTY_BITS macros.
 	(parse_options): don't look for krb4 options

@@ -635,6 +635,25 @@ y |  ye | yes) :
   ;;
 esac
 
+dnl Specify --with-dbmalloc if you desire dbmalloc to be linked in
+
+AC_ARG_WITH(dbmalloc,
+    [  --with-dbmalloc=DIR  Location of dbmalloc libs and headers],
+    DBMALLOC="$withval",
+    : ${DBMALLOC=no}
+)
+
+case "$DBMALLOC" in
+n | no)
+    DBMALLOCCFLAGS=""
+    DBMALLOCLIBS=""
+    ;;
+*) 
+    DBMALLOCCFLAGS="-I$DBMALLOC -DUSE_DBMALLOC"
+    DBMALLOCLIBS="-L$DBMALLOC -ldbmalloc"
+    ;;
+esac
+
 dnl Specify --with-krb4-security if Kerberos software is in somewhere
 dnl other than the listed KRB4_SPOTS.  We only compile kerberos support in
 dnl if the right files are there.
@@ -1149,8 +1168,8 @@ if test "x" = "x$CFLAGS"; then
     CFLAGS=-g
 fi
 OLD_CFLAGS="$CFLAGS"
-AMANDA_CFLAGS="$AMANDA_CFLAGS $KRB4INCLUDES $KRB5INCLUDES"
-AMANDA_CPPFLAGS="$AMANDA_CPPFLAGS $KRB4INCLUDES $KRB5INCLUDES"
+AMANDA_CFLAGS="$AMANDA_CFLAGS $KRB4INCLUDES $KRB5INCLUDES $DBMALLOCCFLAGS"
+AMANDA_CPPFLAGS="$AMANDA_CPPFLAGS $KRB4INCLUDES $KRB5INCLUDES $DBMALLOCINCLUDES"
 AMANDA_LDFLAGS="$AMANDA_LDFLAGS $KRB4LDFLAGS $KRB5LDFLAGS"
 CFLAGS="$CFLAGS $AMANDA_CPPFLAGS $AMANDA_CFLAGS"
 CPPFLAGS="$CPPFLAGS $AMANDA_CPPFLAGS"
@@ -2445,7 +2464,7 @@ fi
 
 dnl restore the old CFLAGS
 CFLAGS="$OLD_CFLAGS"
-LIBS="$LIBS $KRB4LIBS $KRB5LIBS"
+LIBS="$LIBS $KRB4LIBS $KRB5LIBS $DBMALLOCLIBS"
 
 dnl extra substitution parameters
 AC_SUBST(CHS)
