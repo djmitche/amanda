@@ -20,9 +20,10 @@
 # N.B.  amrmtape must be run as a user that can read the tape database
 # files and rewrite them.
 #
-# Usage: amrmtape [-v] [-n] [-d] <configuration> <tape name>
-#          -v Verbose mode.
-#          -n Do nothing to orignal files, leave new ones in /tmp directory.
+# Usage: amrmtape [-q] [-v] [-n] [-d] <configuration> <tape name>
+#          -v Verbose mode.  Enabled by default.
+#          -q Quiet (opposite of -v).
+#          -n Do nothing to original files, leave new ones in /tmp directory.
 #          -d Enable debug tracing.
 #
 # Credits: The what-to-do algorithm was provided by Cedric Scott,
@@ -145,7 +146,8 @@ CleanCurinfo () {
       stats*)
 	set ${Line}
 	if [ $# -lt 6 ] || [ $# -gt 8 ]; then
-	  log "${Program}: unexpected number of fields in 'stats' entry."
+	  log "${Program}: unexpected number of fields in 'stats' entry for ${Host}:${Disk}."
+	  log "${Line}"
 	  return 1
 	fi
 	Level=$2
@@ -200,13 +202,16 @@ usage () {
 }
 
 
-Verbose=": "
+Verbose="log "
 DoNothing="no"
 DebugMode="no"
 
-set dummy "$@"
+set dummy ${1+"$@"}
 while shift 2>/dev/null; do
-  case $1 in
+  case "$1" in
+    -q)
+      Verbose=": "
+      ;;
     -v)
       Verbose="log "
       ;;

@@ -17,6 +17,8 @@ amrmtape \- remove a tape from the Amanda database
 ] [
 .B -v
 ] [
+.B -q
+] [
 .B -d
 ]
 .I config
@@ -44,7 +46,11 @@ removed, but leave them in
 and do not update the original copies.
 .TP
 .B -v
-List backups of hosts and disks that are being discarded.
+List backups of hosts and disks that are being discarded.  Enabled by default.
+.TP
+.B -q
+Opposite of
+.B -v .
 .TP
 .B -d
 Run in debugging mode so all executed commands are shown.

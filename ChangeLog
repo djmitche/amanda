@@ -1,3 +1,14 @@
+1998-06-24 Alexandre Oliva <oliva@dcc.unicamp.br>
+
+	* server-src/amrmtape.sh.in: enable verbose by default; implement -q 
+ 	for quiet.
+	* man/amrmtape.8.in: ditto
+	
+1998-06-24  Nick Hibma  <nick.hibma@jrc.it>
+
+	* server-src/amrmtape.sh.in: better error reporting for incorrect
+	database entries
+
 1998-06-24  Dan Swartzendruber <dswartz@druber.com>
 	
 	* server-src/conffile.h (RESERVE): new keyword.
