@@ -35,17 +35,21 @@ to compile some of the Amanda programs (see section 1.2.H below).
 
 		ftp://prep.ai.mit.edu/pub/gnu/tar-1.12.tar.gz
  
+	Apply the patch from patches/tar-1.12.patch on SunOS4 hosts.
+
 	Samba allows Unix systems to talk to PC clients.  Amanda can
 	now back up PC clients using the following package
-		ftp://nimbus.anu.edu.au/pub/tridge/samba/samba-1.9.16p11.tar.gz
-	and with the patch in patches/samba-1.9.16p2.patch installed.
+		ftp://nimbus.anu.edu.au/pub/tridge/samba/samba-1.9.17p4.tar.gz
+	You may want to apply patches/samba-largefs.patch and
+	patches/samba-longnames.patch.  If you want to use a
+	pre-1.9.17 version of samba, you may need to apply
+	patches/samba-1.9.16p2.patch.
 
     B.  If you wish to make use of some of the scripts that come with
 	Amanda, you will need to install Perl.  You can get Perl from
 	any CPAN site.  
-	    ftp://uiarchive.cso.uiuc.edu/
-	    pub/lang/perl/CPAN/src/5.0/perl5.003.tar.gz
-		Some of the Amanda scripts use Perl.  Perl 5.003 is the
+	    ftp://ftp.gnu.org/pub/gnu/perl-5.004_04.tar.gz
+		Some of the Amanda scripts use Perl.  Perl 5.004_04 is the
 		latest release of Perl.
 
     C.  One of the programs included in this package is amplot,
@@ -56,18 +60,18 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	version of awk that understands command line variable
 	substitutions, such as nawk or gawk, which is available from
 
-	    ftp://prep.ai.mit.edu/pub/gnu/gawk-3.0.3.tar.gz
+	    ftp://ftp.gnu.org/pub/gnu/gawk-3.0.3.tar.gz
 
 	Amplot also required that gnuplot be installed on your system.
 	Gnuplot is available at
 
-	    ftp://ftp.dartmouth.edu/pub/gnuplot/gnuplot3.5.tar.Z
+	    ftp://ftp.gnu.org/pub/gnu/gnuplot-3.5.tar.gz
 
     D.	The process of building Amanda requires that some other
 	packages be installed on your system.  The following packages
 	are used:
 
-	    ftp://prep.ai.mit.edu/pub/gnu/readline-2.1.tar.gz
+	    ftp://ftp.gnu.org/pub/gnu/readline-2.1.tar.gz
 		Amanda uses the readline library here.  Some patches
 		are included with this version of Amanda to fix some
 		problems with the compilation of this package.
@@ -77,11 +81,16 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	required if you are going to rebuild the Makefiles and auto
 	configuration scripts.  Bison is only needed if you
 	are going to work on the index server and client code.
-	    ftp://prep.ai.mit.edu/pub/gnu/autoconf-2.12.tar.gz
-	    ftp://prep.ai.mit.edu/pub/gnu/autoconf/automake-1.2.tar.gz
-	    ftp://prep.ai.mit.edu/pub/gnu/libtool-1.0.tar.gz
-	    ftp://prep.ai.mit.edu/pub/gnu/bison-1.25.tar.gz
-	    ftp://prep.ai.mit.edu/pub/gnu/flex-2.5.4a.tar.gz
+	    ftp://ftp.gnu.org/pub/gnu/autoconf-2.12.tar.gz
+	    ftp://ftp.gnu.org/pub/gnu/autoconf/automake-1.2.tar.gz
+	    ftp://ftp.gnu.org/pub/gnu/bison-1.25.tar.gz
+	    ftp://ftp.gnu.org/pub/gnu/flex-2.5.4a.tar.gz
+
+	Although Amanda uses libtool in order to build shared
+	libraries, you shouldn't have any version of libtool
+	different from the one distributed with Amanda, otherwise you
+	may find incompatibilities between the libtool scripts and its
+	autoconf macros.
 
     E.  Read about the different configuration options available for
 	building and running Amanda.  To see the options, do both:
@@ -91,12 +100,16 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	    b.  Read the example/config.site file which gives longer
 		descriptions to the same options as in step a).
 
-    F.  Choose which user you will run the dumps under.  Common choices
-	are `bin' or another user specifically created for Amanda, such
-	as `amanda'.  Also choose the default name for your
-	configuration, such as `csd' or `DailySet1').  This name is
-	used by the Amanda commands to choose one of multiple possible
-	configurations.
+    F.  Choose which user and group you will run the dumps under.
+	Common choices for user are `bin' or another user specifically
+	created for Amanda, such as `amanda'; common choices for group
+	are `operator' or `disk'.  If you do not specify
+	--with-user=<username> and --with-group=<groupname>, configure
+	will use your login and group to run backups.  Also choose the
+	default name for your configuration, such as `csd' or
+	`DailySet1').  This name is used by the Amanda commands to
+	choose one of multiple possible configurations.  You may
+	specify it using the --with-config=<confgname>.
 
     G.  Decide where Amanda will live.  You need to choose a root
 	directory for Amanda.  Let this root directory be called
@@ -134,6 +147,9 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	operating system that will serve as the tape host and you do
 	not wish to back up any machines that run this operating system,
 	add the --without-client option to the configure options.
+	There are many other configuration switches for amanda.  You
+	may learn more about them by running `configure --help' and by
+	reading examples/config.site.
 
     I.  Now configure Amanda.  There are two ways of doing this.  If
 	you are running Amanda on a single OS, then probably the first
