@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-hpux.c,v 1.4 1998/06/13 06:13:23 oliva Exp $
+ *	$Id: scsi-hpux.c,v 1.5 1998/11/07 08:49:21 oliva Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -14,7 +14,7 @@
 #include "config.h"
 #include "amanda.h"
 
-#if defined(HAVE_HPUX_SCSI)
+#if defined(HAVE_HPUX_SCSI_CHIO)
 # include <sys/scsi.h>
 
 char *moddesc = "@(#)" __FILE__
@@ -266,4 +266,7 @@ int get_drive_count(int fd)
     return changer_info.num_data_transfers;
 }
 
+int Tape_Ready(char *Device, int wait)
+{
+}
 #endif

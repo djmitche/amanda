@@ -1443,10 +1443,10 @@ AC_CHECK_HEADERS(\
 	history.h \
 	libc.h \
 	limits.h \
-	linux/ftape.h \
-	linux/ftape-vendors.h \
-	linux/zftape.h \
 	linux/ftape-header-segment.h \
+	linux/ftape-vendors.h \
+	linux/ftape.h \
+	linux/zftape.h \
 	mntent.h \
 	mnttab.h \
 	ndbm.h \
@@ -1456,10 +1456,12 @@ AC_CHECK_HEADERS(\
 	readline.h \
 	readline/history.h \
 	readline/readline.h \
+	scsi/scsi_ioctl.h \
 	stdlib.h \
 	string.h \
 	strings.h \
 	sys/chio.h \
+	sys/dsreq.h \
 	sys/fcntl.h \
 	sys/file.h \
 	sys/ioctl.h \
@@ -1467,21 +1469,33 @@ AC_CHECK_HEADERS(\
 	sys/mman.h \
 	sys/mntent.h \
 	sys/mount.h \
+	sys/mtio.h \
 	sys/param.h \
+	sys/scarray.h \
+	sys/scsi.h \
+	sys/scsi/impl/uscsi.h \
+	sys/scsi/scsi/ioctl.h \
 	sys/select.h \
 	sys/shm.h \
 	sys/stat.h \
 	sys/statfs.h \
 	sys/statvfs.h \
+	sys/tape.h \
 	sys/time.h \
 	sys/types.h \
 	sys/vfs.h \
 	sys/vfstab.h \
-	sys/scsi.h \
 	syslog.h \
 	unistd.h \
-	vtblc.h)
+	vtblc.h \
+)
 
+NO_SCSI_CHANGER_MODE=true
+NO_CHIO_CHANGER_MODE=true
+
+dnl
+dnl chio support
+dnl
 if test x"$ac_cv_header_sys_scsi_h" = x"yes"; then
    AC_CACHE_CHECK([for HP/UX-like scsi changer support],
 	amanda_cv_hpux_scsi,
@@ -1494,26 +1508,133 @@ if test x"$ac_cv_header_sys_scsi_h" = x"yes"; then
 	int k = SIOC_MOVE_MEDIUM;
 ], amanda_cv_hpux_scsi=yes, amanda_cv_hpux_scsi=no)])
     if test x"$amanda_cv_hpux_scsi" = x"yes"; then
-	AC_DEFINE(HAVE_HPUX_SCSI)
+	AC_DEFINE(HAVE_HPUX_SCSI_CHIO)
+	NO_SCSI_CHANGER_MODE=false
     fi
 fi
 
-dnl Do not build chg-scsi if we cannot find the needed support include files
-dnl for the SCSI interfaces
+dnl
+dnl Linux SCSI
+dnl
+if test x"$ac_cv_header_sys_mtio_h" = x"yes" &&
+   test x"$ac_cv_header_scsi_scsi_ioctl_h" = x"yes"; then 
+	AC_CACHE_CHECK([for Linux like scsi support],
+	amanda_cv_linux_scsi,
+	[AC_TRY_COMPILE([
+#include <scsi/scsi_ioctl.h>
+#include <sys/mtio.h>
+],[
+	int device;
+	char *Command;
+	ioctl(device, SCSI_IOCTL_SEND_COMMAND, Command);
+], amanda_cv_linux_scsi=yes, amanda_cv_linux_scsi=no)])
+	if test x"$amanda_cv_linux_scsi" = x"yes";then
+		AC_DEFINE(HAVE_LINUX_LIKE_SCSI)
+		NO_SCSI_CHANGER_MODE=false
+	fi
+fi
+dnl
+dnl HP-UX SCSI
+dnl
+if test x"$ac_cv_header_sys_mtio_h" = x"yes" &&
+   test x"$ac_cv_header_sys_scsi_h" = x"yes"; then 
+	AC_CACHE_CHECK([for HP-UX like scsi support],
+	amanda_cv_hpux_scsi,
+	AC_TRY_COMPILE([
+#include <stdio.h>
+#include <sys/ioctl.h>
+#include <sys/scsi.h>
+#include <sys/mtio.h>
+],[
+	int device;
+	char *Command;
+	ioctl(device, SIOC_IO, Command);
+], amanda_cv_hpux_scsi=yes, amanda_cv_hpux_scsi=no)])
+	if test x"$amanda_cv_hpux_scsi" = x"yes";then
+		AC_DEFINE(HAVE_HPUX_LIKE_SCSI)
+		NO_SCSI_CHANGER_MODE=false
+		NO_CHIO_CHANGER_MODE=false
+	fi
+fi
+dnl
+dnl IRIX SCSI
+dnl
+if test x"$ac_cv_header_sys_mtio_h" = x"yes" &&
+   test x"$ac_cv_header_sys_dsreq_h" = x"yes"; then 
+	AC_CACHE_CHECK([for Irix like scsi support],
+	amanda_cv_irix_scsi,
+	AC_TRY_COMPILE([
+#include <sys/types.h>
+#include <sys/dsreq.h>
+#include <sys/mtio.h>
+],[
+	int device=1;
+	char Command;
+	ioctl(device, DS_ENTER, &Command);
+], amanda_cv_irix_scsi=yes, amanda_cv_irix_scsi=no)])
+	if test x"$amanda_cv_irix_scsi" = x"yes";then
+		AC_DEFINE(HAVE_IRIX_LIKE_SCSI)
+		NO_SCSI_CHANGER_MODE=false
+	fi
+fi
+dnl
+dnl Solaris  SCSI
+dnl
+if test x"$ac_cv_header_sys_mtio_h" = x"yes" &&
+   test x"$ac_cv_header_sys_scsi_impl_uscsi_h" = x"yes"; then 
+	AC_CACHE_CHECK([for Solaris like scsi support],
+	amanda_cv_solaris_scsi,
+	AC_TRY_COMPILE([
+#include <sys/types.h>
+#include <sys/scsi/impl/uscsi.h>
+#include <sys/mtio.h>
+],[
+	int device;
+	char *Command;
+	ioctl(device, USCSICMD, Command);
+], amanda_cv_solaris_scsi=yes, amanda_cv_solaris_scsi=no)])
+	if test x"$amanda_cv_solaris_scsi" = x"yes";then
+		AC_DEFINE(HAVE_SOLARIS_LIKE_SCSI)
+		NO_SCSI_CHANGER_MODE=false
+	fi
+fi
+dnl
+dnl AIX SCSI
+dnl
+if test x"$ac_cv_header_sys_tape_h" = x"yes" &&
+   test x"$ac_cv_header_sys_scarray_h" = x"yes"; then 
+	AC_CACHE_CHECK([for AIX like scsi support],
+	amanda_cv_aix_scsi,
+	AC_TRY_COMPILE([
+#include <sys/types.h>
+#include <sys/scarray.h>
+#include <sys/tape.h>
+],[
+	int device;
+	char *Command;
+	ioctl(device, STIOCMD, Command);
+], amanda_cv_aix_scsi=yes, amanda_cv_aix_scsi=no)])
+	if test x"$amanda_cv_aix_scsi" = x"yes";then
+		AC_DEFINE(HAVE_AIX_LIKE_SCSI)
+		NO_SCSI_CHANGER_MODE=false
+	fi
+fi
+
+
+dnl Do not build chg-scsi-chio if we cannot find the needed support
+dnl include files for the SCSI interfaces
 dnl chio.h and sys/chio.h are chio based systems
-dnl sys/scsi.h is for HP/UX systems
-dnl sys/scsi/impl/uscsi.h is for Solaris 2.5 and later
-if test x"$ac_cv_header_chio_h" != x"yes" &&
-   test x"$ac_cv_header_sys_chio_h" != x"yes" &&
-   test x"$amanda_cv_hpux_scsi" != x"yes"; then
-    NO_SCSI_CHANGER_MODE=true
-elif test x"$ac_cv_header_camlib_h" = x"yes"; then
-dnl chg-scsi does not support FreeBSD 3.0's chio.h; it became backward
-dnl incompatible with the introduction of camlib.h
-    if test x"$ac_cv_header_chio_h" = x"yes" ||
-       test x"$ac_cv_header_sys_chio_h" = x"yes"; then
-	NO_SCSI_CHANGER_MODE=true
-    fi
+if test x"$ac_cv_header_chio_h" = x"yes" ||
+   test x"$ac_cv_header_sys_chio_h" = x"yes"; then
+   dnl chg-scsi does not support FreeBSD 3.0's chio.h; it became backward
+   dnl incompatible with the introduction of camlib.h
+   if test x"$ac_cv_header_camlib_h" != x"yes"; then
+     if $NO_SCSI_CHANGER_MODE; then
+       NO_SCSI_CHANGER_MODE=false
+     else
+       NO_CHIO_CHANGER_MODE=false
+     fi
+   fi
 fi
 
 dnl cur_colr is on some HP's
@@ -2240,6 +2361,7 @@ AM_CONDITIONAL(WANT_RECOVER, test x"$NO_RECOVER_MODE" != x"true" && test x"$NO_C
 AM_CONDITIONAL(WANT_TAPE, test x"$NO_SERVER_MODE" != x"true" || test x"$NO_RESTORE_MODE" != x"true")
 AM_CONDITIONAL(WANT_AMPLOT, test x"$NO_AMPLOT_MODE" != x"true")
 AM_CONDITIONAL(WANT_CHG_SCSI, test x"$NO_SCSI_CHANGER_MODE" != x"true")
+AM_CONDITIONAL(WANT_CHIO_SCSI, test x"$NO_CHIO_CHANGER_MODE" != x"true")
 
 case "${FORCE_USE_RUNDUMP-${USE_RUNDUMP}}" in
 y |  ye | yes) AC_DEFINE(USE_RUNDUMP);;
