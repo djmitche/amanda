@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.60 1998/01/20 03:09:55 amcore Exp $
+ * $Id: sendsize.c,v 1.61 1998/01/20 06:00:30 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -1029,21 +1029,11 @@ notincremental:
 	/* do nothing */
 #define sc "--exclude-list"
     } else if (strncmp(efile, sc, sizeof(sc)-1)==0) {
-	char *t;
-
-	t = stralloc2("--exclude-from", efile+sizeof(sc)-1);
-	afree(efile);
-	efile = t;
-	t = NULL;
+        efile = stralloc2("--exclude-from", efile+sizeof(sc)-1);
 #undef sc
 #define sc "--exclude-file"
     } else if (strncmp(efile, sc, sizeof(sc)-1)==0) {
-	char *t;
-
-	t = stralloc2("--exclude", efile+sizeof(sc)-1);
-	afree(efile);
-	efile = t;
-	t = NULL;
+	efile = stralloc2("--exclude", efile+sizeof(sc)-1);
 #undef sc
     } else {
 	dbprintf(("error [efile is neither --exclude-list nor --exclude-file: %s]\n", efile));
@@ -1067,8 +1057,8 @@ notincremental:
 			 " --ignore-failed-read",
 			 " --totals",
 			 " --file", " /dev/null",
-			 " ", efile ? efile : ".",
-			 efile ? " ." : "",
+			 " ", efile && efile[0] ? efile : ".",
+			 efile && efile[0] ? " ." : "",
 			 NULL);
 
     dbprintf(("%s: running \"%s\"\n", pname, cmd_line));
@@ -1109,8 +1099,8 @@ notincremental:
 	     "--ignore-failed-read",
 	     "--totals",
 	     "--file", "/dev/null",
-	     efile[0] ? efile : ".",
-	     efile[0] ? "." : (char *)0,
+	     efile && efile[0] ? efile : ".",
+	     efile && efile[0] ? "." : (char *)0,
 	     (char *)0,
 	     safe_env());
 
