@@ -1,5 +1,15 @@
 1998-12-14  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/amindexd.c: remove duplication inclusion of version.h.
+	Include tapefile.h to get read_tapelist() prototype
+	* server-src/amindexd.c (build_disk_table): remove a plethora of
+	unused local vars
+	* server-src/amindexd.c (main): rename security_ok() call to
+	check_security(), and define check_security() locally.  security_ok
+	will disappear when the new security api goes in
+
+1998-12-14  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/changer.c (changer_label): make it return void
 	to keep gcc warning about control reaching the end of a nonvoid
 	function.

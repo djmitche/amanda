@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.40 1998/11/05 21:07:08 martinea Exp $
+ * $Id: amindexd.c,v 1.41 1998/12/15 00:04:46 kashmir Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -47,13 +47,13 @@
 #include "dgram.h"
 #include "version.h"
 #include "protocol.h"
-#include "version.h"
 #include "amindex.h"
 #include "disk_history.h"
 #include "list_dir.h"
 #include "logfile.h"
 #include "token.h"
 #include "find.h"
+#include "tapefile.h"
 
 #ifdef HAVE_NETINET_IN_SYSTM_H
 #include <netinet/in_systm.h>
@@ -85,6 +85,9 @@ static int amindexd_debug = 0;
 
 static REMOVE_ITEM *uncompress_remove = NULL;
 					/* uncompressed files to remove */
+
+static int check_security P((struct sockaddr_in *addr, char *str,
+    unsigned long cksum, char **errstr));
 
 REMOVE_ITEM *remove_files(remove)
 REMOVE_ITEM *remove;
@@ -429,17 +432,6 @@ char *config;
 int build_disk_table P((void))
 {
     char date[100];
-    char *host;
-    int level;
-    char *tape;
-    int file;
-    char *status;
-    char *cmd = NULL;
-    FILE *fp;
-    int first_line = 0;
-    char *s;
-    int ch;
-    char *line;
     find_result_t *find_output;
 
     if (config == NULL || dump_hostname == NULL || disk_name == NULL) {
@@ -929,7 +921,7 @@ char **argv;
 
 	amfree(errstr);
 	if (!user_validated && strcmp(cmd, "SECURITY") == 0 && arg) {
-	    user_validated = security_ok(&his_addr, arg, 0, &errstr);
+	    user_validated = check_security(&his_addr, arg, 0, &errstr);
 	    if(user_validated) {
 		reply(200, "Access OK");
 		continue;
@@ -1004,4 +996,304 @@ char **argv;
     reply(200, "Good bye.");
     dbclose();
     return 0;
+}
+
+static int
+check_security(addr, str, cksum, errstr)
+struct sockaddr_in *addr;
+char *str;
+unsigned long cksum;
+char **errstr;
+{
+    char *remotehost = NULL, *remoteuser = NULL, *localuser = NULL;
+    char *bad_bsd = NULL;
+    struct hostent *hp;
+    struct passwd *pwptr;
+    int myuid, i, j;
+    char *s, *fp;
+    int ch;
+#ifdef USE_AMANDAHOSTS
+    FILE *fPerm;
+    char *pbuf = NULL;
+    char *ptmp;
+    int pbuf_len;
+    int amandahostsauth = 0;
+#else
+    int saved_stderr;
+#endif
+
+    *errstr = NULL;
+
+    /* what host is making the request? */
+
+    hp = gethostbyaddr((char *)&addr->sin_addr, sizeof(addr->sin_addr),
+		       AF_INET);
+    if(hp == NULL) {
+	/* XXX include remote address in message */
+	*errstr = vstralloc("[",
+			    "addr ", inet_ntoa(addr->sin_addr), ": ",
+			    "hostname lookup failed",
+			    "]", NULL);
+	return 0;
+    }
+    remotehost = stralloc(hp->h_name);
+
+    /* Now let's get the hostent for that hostname */
+    hp = gethostbyname( remotehost );
+    if(hp == NULL) {
+	/* XXX include remote hostname in message */
+	*errstr = vstralloc("[",
+			    "host ", remotehost, ": ",
+			    "hostname lookup failed",
+			    "]", NULL);
+	amfree(remotehost);
+	return 0;
+    }
+
+    /* Verify that the hostnames match -- they should theoretically */
+    if( strncasecmp( remotehost, hp->h_name, strlen(remotehost)+1 ) != 0 ) {
+	*errstr = vstralloc("[",
+			    "hostnames do not match: ",
+			    remotehost, " ", hp->h_name,
+			    "]", NULL);
+	amfree(remotehost);
+	return 0;
+    }
+
+    /* Now let's verify that the ip which gave us this hostname
+     * is really an ip for this hostname; or is someone trying to
+     * break in? (THIS IS THE CRUCIAL STEP)
+     */
+    for (i = 0; hp->h_addr_list[i]; i++) {
+	if (memcmp(hp->h_addr_list[i],
+		   (char *) &addr->sin_addr, sizeof(addr->sin_addr)) == 0)
+	    break;                     /* name is good, keep it */
+    }
+
+    /* If we did not find it, your DNS is messed up or someone is trying
+     * to pull a fast one on you. :(
+     */
+
+   /*   Check even the aliases list. Work around for Solaris if dns goes over NIS */
+
+    if( !hp->h_addr_list[i] ) {
+        for (j = 0; hp->h_aliases[j] !=0 ; j++) {
+	     if ( strcmp(hp->h_aliases[j],inet_ntoa(addr->sin_addr)) == 0)
+	         break;                          /* name is good, keep it */
+        }
+    }
+    if( !hp->h_addr_list[i] && !hp->h_aliases[j] ) {
+	*errstr = vstralloc("[",
+			    "ip address ", inet_ntoa(addr->sin_addr),
+			    " is not in the ip list for ", remotehost,
+			    "]",
+			    NULL);
+	amfree(remotehost);
+	return 0;
+    }
+
+    /* next, make sure the remote port is a "reserved" one */
+
+    if(ntohs(addr->sin_port) >= IPPORT_RESERVED) {
+	char number[NUM_STR_SIZE];
+
+	ap_snprintf(number, sizeof(number), "%d", ntohs(addr->sin_port));
+	*errstr = vstralloc("[",
+			    "host ", remotehost, ": ",
+			    "port ", number, " not secure",
+			    "]", NULL);
+	amfree(remotehost);
+	return 0;
+    }
+
+    /* extract the remote user name from the message */
+
+    s = str;
+    ch = *s++;
+
+    bad_bsd = vstralloc("[",
+			"host ", remotehost, ": ",
+			"bad bsd security line",
+			"]", NULL);
+
+#define sc "USER"
+    if(strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	*errstr = bad_bsd;
+	bad_bsd = NULL;
+	amfree(remotehost);
+	return 0;
+    }
+    s += sizeof(sc)-1;
+    ch = s[-1];
+#undef sc
+
+    skip_whitespace(s, ch);
+    if(ch == '\0') {
+	*errstr = bad_bsd;
+	bad_bsd = NULL;
+	amfree(remotehost);
+	return 0;
+    }
+    fp = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    remoteuser = stralloc(fp);
+    s[-1] = ch;
+    amfree(bad_bsd);
+
+    /* lookup our local user name */
+
+    myuid = getuid();
+    if((pwptr = getpwuid(myuid)) == NULL)
+        error("error [getpwuid(%d) fails]", myuid);
+
+    localuser = stralloc(pwptr->pw_name);
+
+    dbprintf(("bsd security: remote host %s user %s local user %s\n",
+	      remotehost, remoteuser, localuser));
+
+    /*
+     * note that some versions of ruserok (eg SunOS 3.2) look in
+     * "./.rhosts" rather than "~localuser/.rhosts", so we have to
+     * chdir ourselves.  Sigh.
+     *
+     * And, believe it or not, some ruserok()'s try an initgroup just
+     * for the hell of it.  Since we probably aren't root at this point
+     * it'll fail, and initgroup "helpfully" will blatt "Setgroups: Not owner"
+     * into our stderr output even though the initgroup failure is not a
+     * problem and is expected.  Thanks a lot.  Not.
+     */
+    chdir(pwptr->pw_dir);       /* pamper braindead ruserok's */
+#ifndef USE_AMANDAHOSTS
+    saved_stderr = dup(2);
+    close(2);			/*  " */
+
+#if defined(TEST)
+    {
+	char *dir = stralloc(pwptr->pw_dir);
+
+	dbprintf(("calling ruserok(%s, %d, %s, %s)\n",
+	          remotehost, myuid == 0, remoteuser, localuser));
+	if (myuid == 0) {
+	    dbprintf(("because you are running as root, "));
+	    dbprintf(("/etc/hosts.equiv will not be used\n"));
+	} else {
+	    show_stat_info("/etc/hosts.equiv", NULL);
+	}
+	show_stat_info(dir, "/.rhosts");
+	amfree(dir);
+    }
+#endif
+
+    if(ruserok(remotehost, myuid == 0, remoteuser, localuser) == -1) {
+	dup2(saved_stderr,2);
+	close(saved_stderr);
+	*errstr = vstralloc("[",
+			    "access as ", localuser, " not allowed",
+			    " from ", remoteuser, "@", remotehost,
+			    "]", NULL);
+	dbprintf(("check failed: %s\n", *errstr));
+	amfree(remotehost);
+	amfree(localuser);
+	amfree(remoteuser);
+	return 0;
+    }
+
+    dup2(saved_stderr,2);
+    close(saved_stderr);
+    chdir("/");		/* now go someplace where I can't drop core :-) */
+    dbprintf(("bsd security check passed\n"));
+    amfree(remotehost);
+    amfree(localuser);
+    amfree(remoteuser);
+    return 1;
+#else
+    /* We already chdired to ~amandauser */
+
+#if defined(TEST)
+    show_stat_info(pwptr->pw_dir, "/.amandahosts");
+#endif
+
+    if((fPerm = fopen(".amandahosts", "r")) == NULL) {
+#if defined(TEST)
+	dbprintf(("fopen failed: %s\n", strerror(errno)));
+#endif
+	*errstr = vstralloc("[",
+			    "access as ", localuser, " not allowed",
+			    " from ", remoteuser, "@", remotehost,
+			    "]", NULL);
+	dbprintf(("check failed: %s\n", *errstr));
+	amfree(remotehost);
+	amfree(localuser);
+	amfree(remoteuser);
+	return 0;
+    }
+
+    for(; (pbuf = agets(fPerm)) != NULL; free(pbuf)) {
+#if defined(TEST)
+	dbprintf(("processing line: <%s>\n", pbuf));
+#endif
+	pbuf_len = strlen(pbuf);
+	s = pbuf;
+	ch = *s++;
+
+	/* Find end of remote host */
+	skip_non_whitespace(s, ch);
+	if(s - 1 == pbuf) {
+	    memset(pbuf, '\0', pbuf_len);	/* leave no trace */
+	    continue;				/* no remotehost field */
+	}
+	s[-1] = '\0';				/* terminate remotehost field */
+
+	/* Find start of remote user */
+	skip_whitespace(s, ch);
+	if(ch == '\0') {
+	    ptmp = localuser;			/* no remoteuser field */
+	} else {
+	    ptmp = s-1;				/* start of remoteuser field */
+
+	    /* Find end of remote user */
+	    skip_non_whitespace(s, ch);
+	    s[-1] = '\0';			/* terminate remoteuser field */
+	}
+#if defined(TEST)
+	dbprintf(("comparing %s with\n", pbuf));
+	dbprintf(("          %s (%s)\n",
+		  remotehost,
+		  (strcasecmp(pbuf, remotehost) == 0) ? "match" : "no match"));
+	dbprintf(("      and %s with\n", ptmp));
+	dbprintf(("          %s (%s)\n",
+		  remoteuser,
+		  (strcasecmp(ptmp, remoteuser) == 0) ? "match" : "no match"));
+#endif
+	if(strcasecmp(pbuf, remotehost) == 0 && strcasecmp(ptmp, remoteuser) == 0) {
+	    amandahostsauth = 1;
+	    break;
+	}
+	memset(pbuf, '\0', pbuf_len);		/* leave no trace */
+    }
+    afclose(fPerm);
+    amfree(pbuf);
+
+    if( amandahostsauth ) {
+	chdir("/");      /* now go someplace where I can't drop core :-) */
+	dbprintf(("amandahosts security check passed\n"));
+	amfree(remotehost);
+	amfree(localuser);
+	amfree(remoteuser);
+	return 1;
+    }
+
+    *errstr = vstralloc("[",
+			"access as ", localuser, " not allowed",
+			" from ", remoteuser, "@", remotehost,
+			"]", NULL);
+    dbprintf(("check failed: %s\n", *errstr));
+
+    amfree(remotehost);
+    amfree(localuser);
+    amfree(remoteuser);
+    return 0;
+
+#endif
 }
