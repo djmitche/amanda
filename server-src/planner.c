@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.56 1998/01/16 11:32:39 amcore Exp $
+ * $Id: planner.c,v 1.57 1998/01/16 12:11:41 amcore Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -914,7 +914,7 @@ host_t *hostp;
 	    }
 	    t = vstralloc(req,
 			  dp->program, " ", dp->name, " ", level, " ",
-			  est(dp)->dumpdate[i], " ", spindle, " ",
+			  est(dp)->dumpdate[i], " ", spindle,
 			  exclude1,
 			  exclude2,
 			  "\n",
