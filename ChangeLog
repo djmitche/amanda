@@ -1,3 +1,7 @@
+1999-11-02  Nicolas Mayencourt  <Nicolas.Mayencourt@cui.unige.ch>
+
+	* server-src/amtoc.pl.in: Correct a bug for total report.
+
 1999-11-01 John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/driver.c (find_diskspace): make noisy holding space log
@@ -562,7 +566,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.297 1999/11/01 23:29:35 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.298 1999/11/02 21:15:51 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
