@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.32 1998/02/15 04:08:19 amcore Exp $
+ * $Id: sendbackup.c,v 1.33 1998/02/15 06:41:14 amcore Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -964,8 +964,7 @@ char *cmd;
 	ptr += just_written;
       }
     }
-    /* we are likely to be interrupted part way through one write by
-       the subprocess finishing. But we don't care at that point */
+
     /* write the stuff to stdout, ensuring none lost when interrupt
        occurs */
     ptr = buffer;

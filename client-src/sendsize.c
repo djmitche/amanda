@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.72 1998/02/15 04:08:21 amcore Exp $
+ * $Id: sendsize.c,v 1.73 1998/02/15 06:41:16 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -636,8 +636,9 @@ int level;
     if (1)
 #endif							/* } */
     {
-        char *name = " (vdump)";
-        device = newstralloc(device, amname_to_dirname(disk));
+	char *name = " (vdump)";
+	afree(device);
+	device = amname_to_dirname(disk);
 	dumpkeys = vstralloc(level_str, "b", "f", NULL);
 	dbprintf(("%s: running \"%s%s %s 60 - %s\"\n",
 		  pname, cmd, name, dumpkeys, device));

@@ -12,10 +12,15 @@
 	properly responds to -eject requests, among other things.
 	-Eric Schnoebelen <eric@cirr.com>
 
-	use vdump to dump advfs filesystems only.
+Version 2.4.0b6p4
+
+	use vdump to dump advfs filesystems only.  add support for vdump
+	indexes.
 	-Martyn Johnson <Martyn.Johnson@cl.cam.ac.uk> & oliva
 
-Version 2.4.0
+	change index generation commands so that they are less prone
+	to be fooled by blanks or strange characters in filenames.
+	-oliva
 
 	check whether exclude-list file exists before calling gnutar.
 	If it does not, log a message to debugging file and discard it.

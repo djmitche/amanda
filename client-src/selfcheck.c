@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.28 1998/02/03 21:11:03 amcore Exp $
+ * $Id: selfcheck.c,v 1.29 1998/02/15 06:41:12 amcore Exp $
  *
  * do self-check and send back any error messages
  */
@@ -498,7 +498,7 @@ static void check_overall()
 #endif
 #ifdef VDUMP
     if (need_vdump)
-	check_file("/etc/vdumpdates", F_OK);
+        check_file("/etc/vdumpdates", F_OK);
 #endif
     check_file("/dev/null", R_OK|W_OK);
     check_space("/tmp", 64);		/* for amandad i/o */
