@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.3.2.3.4.3.2.3 2003/02/09 20:39:17 jrjackson Exp $
+ * $Id: tapetype.c,v 1.3.2.3.4.3.2.4 2003/02/11 00:52:28 martinea Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -234,15 +234,16 @@ void do_pass(size, blocks, files, seconds)
 }
 
 
-void do_pass0(size, seconds)
+void do_pass0(size, seconds, dorewind)
   size_t size;
   time_t *seconds;
+  int dorewind;
 {
   size_t blks;
   time_t start, end;
   int save_errno;
 
-  if (tapefd_rewind(fd) == -1) {
+  if (dorewind  &&  tapefd_rewind(fd) == -1) {
     fprintf(stderr, "%s: could not rewind %s: %s\n",
 	    sProgName, tapedev, strerror(errno));
     exit(1);
@@ -301,6 +302,7 @@ int main(argc, argv)
   char *typename;
   time_t now;
   int hwcompr = 0;
+  int comprtstonly = 0;
 
   if ((sProgName = strrchr(*argv, '/')) == NULL) {
     sProgName = *argv;
@@ -312,7 +314,7 @@ int main(argc, argv)
   tapedev = getenv("TAPE");
   typename = "unknown-tapetype";
 
-  while ((ch = getopt(argc, argv, "b:e:f:t:h")) != EOF) {
+  while ((ch = getopt(argc, argv, "b:e:f:t:hc")) != EOF) {
     switch (ch) {
     case 'b':
       blockkb = strtol(optarg, &suffix, 0);
@@ -344,6 +346,9 @@ int main(argc, argv)
     case 't':
       typename = optarg;
       break;
+    case 'c':
+      comprtstonly = 1;
+      break;
     case 'h':
       help();
       return 1;
@@ -374,7 +379,7 @@ int main(argc, argv)
   do_tty = isatty(fileno(stderr));
 
   /*
-   * Estimate pass: write twice a file of 16 MByte, once with compressable
+   * Estimate pass: write twice a small file, once with compressable
    * data and once with uncompressable data.
    * The theory is that if the drive is in hardware compression mode
    * we notice a significant difference in writing speed between the two
@@ -383,11 +388,40 @@ int main(argc, argv)
 
   initnotrandombytes();
 
-  pass0size = 16 * 1024 / blockkb;  /* 16 MB default -- make this tuneable? */
-
-  printf("Estimate phase 1...\n");
-
-  do_pass0(pass0size, &pass1time);
+  fprintf(stderr, "Estimate phase 1...");
+  pass0size = 8 * 1024 / blockkb;
+  pass1time = 0;
+  pass2time = 0;
+  /*
+   * To get accurate results, we should write enough data
+   * so that rewind/start/stop time is small compared to
+   * the total time; let's take 10%.
+   * The timer has a 1 sec granularity, so the test
+   * should take at least 10 seconds to measure a
+   * difference with 10% accuracy; let's take 25 seconds.
+   */ 
+  while (pass1time < 25 || ((100*(pass2time-pass1time)/pass2time) >= 10) ) {
+    if (pass1time != 0) {
+      int i = pass1time;
+      do {
+	  pass0size *= 2;
+	  i *= 2;
+      } while (i < 25);
+    }
+    /*
+     * first a dummy pass to rewind, stop, start and
+     * get drive streaming, then do the real timing
+     */
+    do_pass0(pass0size, &pass2time, 1);
+    do_pass0(pass0size, &pass1time, 0);
+    if (pass0size >= 10 * 1024 * 1024) {
+      fprintf(stderr,
+	"\rTape device is too fast to detect hardware compression...\n");
+      break;	/* avoid loops if tape is superfast or broken */
+    }
+  }
+  fprintf(stderr, "\rWriting %d Mbyte   compresseable data:  %d sec\n",
+	(int)(blockkb * pass0size / 1024), (int)pass1time);
 
   /*
    * now generate uncompressable data and try again
@@ -396,8 +430,11 @@ int main(argc, argv)
   srandom(now);
   initrandombytes();
 
-  printf("Estimate phase 2...\n");
-  do_pass0(pass0size, &pass2time);
+  fprintf(stderr, "Estimate phase 2...");
+  do_pass0(pass0size, &pass2time, 1);	/* rewind and get drive streaming */
+  do_pass0(pass0size, &pass2time, 0);
+  fprintf(stderr, "\rWriting %d Mbyte uncompresseable data:  %d sec\n",
+	(int)(blockkb * pass0size / 1024), (int)pass2time);
 
   /*
    * Compute the time difference between writing the compressable and
@@ -405,23 +442,31 @@ int main(argc, argv)
    * user that the tape drive has probably hardware compression enabled.
    */
   if (pass1time > pass2time) {
-    timediff = pass1time - pass2time;
+    /*
+     * Strange!  I would expect writing compresseable data to be
+     * much faster (or about equal, if hardware compression is disabled)
+     */
+    timediff = 0;
   } else {
     timediff = pass2time - pass1time;
   }
   if (((100 * timediff) / pass2time) >= 20) {	/* 20% faster? */
-    printf("WARNING: The tape drive has hardware compression enabled\n");
+    fprintf(stderr, "WARNING: Tape drive has hardware compression enabled\n");
     hwcompr = 1;
   }
 
   /*
    * Inform about estimated time needed to run the remaining of this program
    */
-  printf("Estimated time to write 2 * %d Mbyte: ", estsize / 1024);
-  pass1time = 2 * pass2time * estsize / (16 * 1024);
-  printf("%ld sec = ", (long)pass1time);
-  printf("%ld h %ld min\n", ((long)pass1time / 3600),
-	 (((long)pass1time % 3600) / 60));
+  fprintf(stderr, "Estimated time to write 2 * %d Mbyte: ", estsize / 1024);
+  pass1time = 2 * pass2time * estsize / (pass0size * blockkb);
+  fprintf(stderr, "%d sec = ", pass1time);
+  fprintf(stderr, "%d h %d min\n", (pass1time/3600), ((pass1time%3600) / 60));
+
+  if (comprtstonly) {
+	exit(hwcompr);
+  }
+
 
   /*
    * Do pass 1 -- write files that are 1% of the estimated size until error.

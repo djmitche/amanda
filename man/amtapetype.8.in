@@ -13,6 +13,7 @@ amtapetype \- generate a tapetype definition.
 .SH SYNOPSIS
 .B amtapetype
 [-h]
+[-c]
 [-b blocksize]
 [-e estsize]
 [-f tapedev]
@@ -25,6 +26,10 @@ generate a tapetype entry for amanda.
 .TP 10
 .B \-h
 Display an help message.
+.TP
+.B \-c
+Run only the hardware compression detection heuristic test and stop.
+This takes a few minutes only.
 .TP
 .BI \-b "\| blocksize\^"
 record block size (default: 32k)
@@ -45,5 +50,12 @@ Generate a tapetype definition for your tape device:
 .RS
 .nf
 % amtapetype -f @DEFAULT_TAPE_DEVICE@
+.SH NOTES
+Hardware compression is detected by measuring
+the writing speed difference of the tape drive
+when writing an amount of compressable and uncompresseable data.
+It does not rely on the status bits of the tape drive or the OS parameters.
+If your tape drive has very large buffers or is very fast, the program
+could fail to detect hardware compression status reliably.
 .SH "SEE ALSO"
 amanda(8)

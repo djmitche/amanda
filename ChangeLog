@@ -1,3 +1,10 @@
+2003-02-10  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Paul Bijnens <paul.bijnens@xplanation.com>
+
+	* tape-src/tapetype.c: New -c argument to do only the compression test.
+	  Better detection of compression.
+	* man/amtapetype.8.in: Document -c argument.
+
 2003-02-09  John R. Jackson (jrj@purdue.edu)
 
 	* tape-src/tapetype.c: Allocate the I/O buffers on page boundaries.
