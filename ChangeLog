@@ -1,4 +1,10 @@
 2000-09-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	patch by Rudolf Cejka <cejkar@users.sourceforge.net>
+
+	* client-src/calcsize.c:sets correct program name,
+	prevent coredumps and some improrer command line error mesages
+
+2000-09-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* common-src/amanda.h: prototype clean_regex().
 	* common-src/match.c: new function clean_regex() that escape
