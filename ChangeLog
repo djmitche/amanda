@@ -1,5 +1,12 @@
 1999-04-09  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/amanda.h: rip out krb4 defines, headers, and
+	prototypes.  Also, make assert() abort() after calling error().
+	* common-src/krb4-security.c: stub file that pulls in the real
+	krb4-security out of amanda-krb-2 if KRB4_SECURITY is defined.
+
+1999-04-09  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/conffile.h: aggregate all of the compress defines
 	(COMP_{NONE,FAST,BEST,...}) into an enum and typedef it to comp_t.
 	Make dumptype_t->compress a comp_t.

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.74 1999/03/04 22:39:58 kashmir Exp $
+ * $Id: amanda.h,v 1.75 1999/04/09 19:43:27 kashmir Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -210,22 +210,6 @@ struct iovec {
 #  include <unistd.h>
 #endif
 
-/*
- * At present, the kerberos routines require atexit(), or equivilent.  If 
- * you're not using kerberos, you don't need it at all.  If you just null
- * out the definition, you'll end up with ticket files hanging around in
- * /tmp.
- */
-#if defined(KRB4_SECURITY)
-#   if !defined(HAVE_ATEXIT) 
-#      if defined(HAVE_ON_EXIT)
-#          define atexit(func) on_exit(func, 0)
-#      else
-#	   define atexit(func) (you must to resolve lack of atexit in amanda.h)
-#      endif
-#   endif
-#endif
-
 #include <ctype.h>
 #include <errno.h>
 #include <netinet/in.h>
@@ -238,11 +222,6 @@ struct iovec {
 
 #ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
-#endif
-
-#ifdef KRB4_SECURITY
-#  include <des.h>
-#  include <krb.h>
 #endif
 
 /*
@@ -354,8 +333,13 @@ extern int errno;
 
 #else	/* ASSERTIONS */
 
-#define assert(exp) {if(!(exp)) error("assert: %s false, file %s, line %d", \
-				   stringize(exp), __FILE__, __LINE__);}
+#define assert(exp)	do {						\
+    if (!(exp)) {							\
+	onerror(abort);							\
+	error("assert: %s false, file %s, line %d",			\
+	   stringize(exp), __FILE__, __LINE__);				\
+    }									\
+} while (0)
 
 #endif	/* ASSERTIONS */
 
@@ -435,7 +419,7 @@ extern void  *debug_alloc           P((char *c, int l, int size));
 extern void  *debug_newalloc        P((char *c, int l, void *old, int size));
 extern char  *debug_stralloc        P((char *c, int l, const char *str));
 extern char  *debug_newstralloc     P((char *c, int l, char *oldstr, const char *newstr));
-extern char  *dbmalloc_caller_loc   P((char *file, int line));
+extern const char *dbmalloc_caller_loc P((const char *file, int line));
 extern int   debug_alloc_push	    P((char *file, int line));
 extern void  debug_alloc_pop	    P((void));
 
@@ -711,11 +695,6 @@ extern char  *sanitise_filename P((char *inp));
 
 extern int debug;
 extern char *version_info[];
-
-/* from security.c */
-extern int security_ok P((struct sockaddr_in *addr,
-			  char *str, unsigned long cksum, char **errstr));
-extern char *get_bsd_security P((void));
 
 /*
  * Handle functions which are not always declared on all systems.  This
