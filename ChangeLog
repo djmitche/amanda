@@ -1,5 +1,7 @@
 2000-01-21  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* server-src/amstatus.pl.in: Remove bogus (?) line `$$host=1'.
+
 	* configure.in (MAILER): Warn or print an error if not found,
 	depending on whether server code is disabled or not.
 
