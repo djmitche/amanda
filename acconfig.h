@@ -174,6 +174,7 @@
 #undef USE_DBM_H
 #undef USE_GDBM_H
 #undef USE_NDBM_H
+#undef TEXTDB
 
 /* System function characteristics.  */
 #undef HAVE_SYSVSHM

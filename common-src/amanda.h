@@ -348,7 +348,7 @@ extern void closelog P((void));
 extern int connect P((int s, struct sockaddr *name, int namelen));
 #endif
 
-#ifndef HAVE_DBM_OPEN_DECL
+#if !defined(TEXTDB) && !defined(HAVE_DBM_OPEN_DECL)
     #undef   DBM_INSERT
     #define  DBM_INSERT  0
 

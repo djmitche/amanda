@@ -31,15 +31,250 @@
 #include "conffile.h"
 #include "infofile.h"
 
-#define MAX_KEY 256
-#define HEADER	(sizeof(info_t)-DUMP_LEVELS*sizeof(stats_t)) 
+#ifdef TEXTDB
+  static char *infodir = (char *)0;
+  static char *fn = (char *)0;
+  static char *newfn;
+  static int writing;
+#else
+#  define MAX_KEY 256
+#  define HEADER	(sizeof(info_t)-DUMP_LEVELS*sizeof(stats_t)) 
 
-static DBM *infodb = NULL;
-static lockfd = -1;
+  static DBM *infodb = NULL;
+  static lockfd = -1;
+#endif
+
+#ifdef TEXTDB
+FILE *open_txinfofile(host,disk,mode)
+char *host;
+char *disk;
+char *mode;
+{
+    FILE *infof;
+    int rc;
+    int len;
+
+    writing = (*mode == 'w');
+
+    assert(fn == (char *)0);
+/* XXX - need to sanitise host and disk */
+    len = strlen(infodir) + strlen(host) + strlen(disk) + 7;
+    fn = alloc(len + 1);
+
+    /* create the directory structure if in write mode */
+    if (writing) {
+	rc = mkdir(infodir, 0755);
+	if (rc == -1 && errno == EEXIST) rc = 0;
+
+	if (rc == 0) {
+	    sprintf(fn, "%s/%s", infodir, host);
+	    rc = mkdir(fn, 0755);
+	    if (rc == -1 && errno == EEXIST) rc = 0;
+
+	    if (rc == 0) {
+		sprintf(fn, "%s/%s/%s", infodir, host, disk);
+		rc = mkdir(fn, 0755);
+		if (rc == -1 && errno == EEXIST) rc = 0;
+	    }
+	}
+	if (rc == -1) {
+	    free(fn);
+	    return NULL;
+	}
+    }
+
+    sprintf(fn, "%s/%s/%s/info", infodir, host, disk);
+
+    newfn = alloc(len + 4 + 1);
+    sprintf(newfn, "%s.new", fn);
+
+    if(writing) {
+	infof = fopen(newfn, mode);
+	amflock(fileno(infof));
+    }
+    else {
+	infof = fopen(fn, mode);
+	/* no need to lock readers */
+    }
+
+    return infof;
+}
+
+int close_txinfofile(infof)
+FILE *infof;
+{
+    int rc;
+
+    assert(fn != (char *)0);
+
+    if(writing) {
+	rc = rename(newfn, fn);
+
+	amfunlock(fileno(infof));
+    }
+
+    free(fn);
+    free(newfn);
+
+#ifdef ASSERTIONS
+    fn = (char *)0;
+#endif
+
+    rc = fclose(infof);
+    if (rc == EOF) rc = -1;
+
+    return rc;
+}
+
+int read_txinfofile(infof,info)
+FILE *infof;
+info_t *info;
+{
+    char line[1024];
+    int version;
+    int rc, level;
+    stats_t onestat;
+    long onedate;
+
+    memset(info, 0, sizeof(info_t));
+
+    /* get version: command: lines */
+
+    if(!fgets(line, 1024, infof)) return -1;
+    if(sscanf(line, "version: %d", &version) != 1) return -2;
+
+    if(!fgets(line, 1024, infof)) return -1;
+    if(sscanf(line, "command: %d", &info->command) != 1) return -2;
+
+    /* get rate: and comp: lines for full dumps */
+
+    if(!fgets(line, 1024, infof)) return -1;
+    rc = sscanf(line, "full-rate: %f %f %f", 
+		&info->full.rate[0], &info->full.rate[1], &info->full.rate[2]);
+    if(rc != 3) return -2;
+
+    if(!fgets(line, 1024, infof)) return -1;
+    rc = sscanf(line, "full-comp: %f %f %f", 
+		&info->full.comp[0], &info->full.comp[1], &info->full.comp[2]);
+    if(rc != 3) return -2;
+
+    /* get rate: and comp: lines for incr dumps */
+
+    if(!fgets(line, 1024, infof)) return -1;
+    rc = sscanf(line, "incr-rate: %f %f %f", 
+		&info->incr.rate[0], &info->incr.rate[1], &info->incr.rate[2]);
+    if(rc != 3) return -2;
+
+    if(!fgets(line, 1024, infof)) return -1;
+    rc = sscanf(line, "incr-comp: %f %f %f", 
+		&info->incr.comp[0], &info->incr.comp[1], &info->incr.comp[2]);
+    if(rc != 3) return -2;
+
+    /* get stats for dump levels */
+
+    while(1) {
+	if(!fgets(line, 1024, infof)) return -1;
+	if(!strncmp(line, "//", 2)) {
+	    /* end of record */
+	    break;
+	}
+	memset(&onestat, 0, sizeof(onestat));
+	rc = sscanf(line, "stats: %d %d %d %d %ld %d %80[^\n]",
+		    &level, &onestat.size, &onestat.csize, &onestat.secs,
+		    &onedate, &onestat.filenum, onestat.label);
+	if(rc != 7) return -2;
+
+	/* time_t not guarranteed to be long */
+	onestat.date = onedate;
+	if(level < 0 || level > 9) return -2;
+
+	info->inf[level] = onestat;
+    }
+
+    return 0;
+}
+
+int write_txinfofile(infof,info)
+FILE *infof;
+info_t *info;
+{
+    int i,l;
+
+    fprintf(infof, "version: %d\n", 0);
+    fprintf(infof, "command: %d\n", info->command);
+
+    fprintf(infof, "full-rate:");
+    for(i=0; i<AVG_COUNT; i++)
+	fprintf(infof, " %f", info->full.rate[i]);
+    fprintf(infof, "\nfull-comp:");
+    for(i=0; i<AVG_COUNT; i++)
+	fprintf(infof, " %f", info->full.comp[i]);
+
+    fprintf(infof, "\nincr-rate:");
+    for(i=0; i<AVG_COUNT; i++)
+	fprintf(infof, " %f", info->incr.rate[i]);
+    fprintf(infof, "\nincr-comp:");
+    for(i=0; i<AVG_COUNT; i++)
+	fprintf(infof, " %f", info->incr.comp[i]);
+
+    fprintf(infof, "\n");
+    for(l=0; l<DUMP_LEVELS; l++) {
+	if(info->inf[l].date == EPOCH) continue;
+	fprintf(infof, "stats: %d %d %d %d %ld %d %s\n", l, 
+	       info->inf[l].size, info->inf[l].csize, info->inf[l].secs,
+	       (long)info->inf[l].date, info->inf[l].filenum,
+	       info->inf[l].label);
+    }
+    fprintf(infof, "//\n");
+
+    return 0;
+}
+
+int delete_txinfofile(host,disk)
+char *host;
+char *disk;
+{
+    int len;
+    char *fn;
+    int rc, rc2;
+
+/* XXX - need to sanitise host and disk */
+    len = strlen(infodir) + strlen(host) + strlen(disk) + 7;
+    fn = alloc(len + 4 + 1);
+
+    sprintf(fn, "%s/%s/%s/info.new", infodir, host, disk);
+    rc = unlink(fn);
+
+    sprintf(fn, "%s/%s/%s/info", infodir, host, disk);
+    rc = unlink(fn);
+    if(errno == ENOENT) rc = 0; /* already gone! */
+
+    /* try to clean up */
+    if (rc == 0) {
+	sprintf(fn, "%s/%s/%s", infodir, host, disk);
+	rc2 = rmdir(fn);
+	if (rc2 == 0) {
+	    sprintf(fn, "%s/%s", infodir, host);
+	    rc2 = rmdir(fn);
+	}
+    }
+
+    free(fn);
+
+    return rc;
+}
+#endif
 
 int open_infofile(filename)
 char *filename;
 {
+#ifdef TEXTDB
+    assert(infodir == (char *)0);
+
+    infodir = stralloc(filename);
+
+    return 0; /* success! */
+#else
     char lockname[256];
 
     /* lock the dbm file */
@@ -53,10 +288,19 @@ char *filename;
 
     infodb = dbm_open(filename, O_CREAT|O_RDWR, 0666);
     return (infodb == NULL);	/* return 1 on error */
+#endif
 }
 
 void close_infofile()
 {
+#ifdef TEXTDB
+    assert(infodir != (char *)0);
+
+    free(infodir);
+#ifdef ASSERTIONS
+    infodir = (char *)0;
+#endif
+#else
     dbm_close(infodb);
 
     if(amfunlock(lockfd) == -1)
@@ -64,6 +308,7 @@ void close_infofile()
 
     close(lockfd);
     lockfd = -1;
+#endif
 }
 
 double perf_average(a, d)
@@ -86,6 +331,21 @@ int get_info(hostname, diskname, record)
 char *hostname, *diskname;
 info_t *record;
 {
+#ifdef TEXTDB
+    char *fn;	/* Name of data file */
+    FILE *infof;
+    int rc;
+
+    infof = open_txinfofile(hostname, diskname, "r");
+
+    if(infof == NULL) return -1; /* record not found */
+
+    rc = read_txinfofile(infof, record);
+
+    close_txinfofile(infof);
+
+    return rc;
+#else
     char key[MAX_KEY];
     datum k, d;
     int i;
@@ -112,12 +372,16 @@ info_t *record;
     /* return record */
     memcpy(record, d.dptr, d.dsize);
     return 0;
+#endif
 }
 
 
 int get_firstkey(hostname, diskname)
 char *hostname, *diskname;
 {
+#ifdef TEXTDB
+    assert(0);
+#else
     datum k;
     int rc;
 
@@ -127,12 +391,16 @@ char *hostname, *diskname;
     rc = sscanf(k.dptr, "%[^:]:%s", hostname, diskname);
     if(rc != 2) return 0;
     return 1;
+#endif
 }
 
 
 int get_nextkey(hostname, diskname)
 char *hostname, *diskname;
 {
+#ifdef TEXTDB
+    assert(0);
+#else
     datum k;
     int rc;
 
@@ -142,6 +410,7 @@ char *hostname, *diskname;
     rc = sscanf(k.dptr, "%[^:]:%s", hostname, diskname);
     if(rc != 2) return 0;
     return 1;
+#endif
 }
 
 
@@ -149,6 +418,20 @@ int put_info(hostname, diskname, record)
 char *hostname, *diskname;
 info_t *record;
 {
+#ifdef TEXTDB
+    FILE *infof;
+    int rc;
+
+    infof = open_txinfofile(hostname, diskname, "w");
+
+    if(infof == NULL) return -1;
+
+    rc = write_txinfofile(infof, record);
+
+    close_txinfofile(infof);
+
+    return rc;
+#else
     char key[MAX_KEY];
     datum k, d;
     int maxlev;
@@ -172,12 +455,16 @@ info_t *record;
     if(dbm_store(infodb, k, d, DBM_REPLACE) != 0) return -1;
 
     return 0;
+#endif
 }
 
 
 int del_info(hostname, diskname)
 char *hostname, *diskname;
 {
+#ifdef TEXTDB
+    return delete_txinfofile(hostname, diskname);
+#else
     char key[MAX_KEY];
     datum k;
 
@@ -191,6 +478,7 @@ char *hostname, *diskname;
 
     if(dbm_delete(infodb, k) != 0) return -1;
     return 0;
+#endif
 }
 
 

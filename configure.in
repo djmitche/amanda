@@ -697,7 +697,7 @@ AC_ARG_WITH(ticket-lifetime,
 AC_DEFINE_UNQUOTED(TICKET_LIFETIME,$TICKET_LIFETIME)
 
 AC_ARG_WITH(db,
-    [   --with-db={db,dbm,gdbm,ndbm} use the given library for dbm_open],
+    [   --with-db={db,dbm,gdbm,ndbm,text} use the given library for dbm_open],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -710,9 +710,9 @@ AC_ARG_WITH(db,
 )
 if test "$DB_STYLE"; then
     case "$DB_STYLE" in
-	db | dbm | gdbm | ndbm)	;;
+	db | dbm | gdbm | ndbm | text)	;;
 	*)
-	    AC_MSG_ERROR([*** Unknown argument $DB_STYLE given to --with-db.  Choose from db, dbm, gdbm, ndbm.])
+	    AC_MSG_ERROR([*** Unknown argument $DB_STYLE given to --with-db.  Choose from db, dbm, gdbm, ndbm, text.])
 	    DB_STYLE=
 	    ;;
     esac
@@ -1236,7 +1236,7 @@ case "$DB_STYLE" in
 	    fi
 	else
 	    DB_STYLE=
-	    AC_MSG_WARN([*** db batabase library requested but db.h not found.])
+	    AC_MSG_WARN([*** db database library requested but db.h not found.])
 	fi
 	;;
 
@@ -1320,65 +1320,83 @@ case "$DB_STYLE" in
 	    AC_MSG_WARN([*** ndbm database library requested but ndbm.h not found.])
 	fi
 	;;
+    text)
+	DB_HEADER=
+	DB_LIB=
+	;;
 esac
 
-if test -z "$DB_STYLE"; then
+if test -z "$DB_STYLE" -a "$ac_cv_header_ndbm_h" = yes; then
     AC_CHECK_LIB(ndbm,dbm_open)
-    if test "$ac_cv_lib_ndbm_dbm_open" = yes && test "$ac_cv_header_ndbm_h" = yes; then
+    if test "$ac_cv_lib_ndbm_dbm_open" = yes; then
 	DB_STYLE=ndbm
 	DB_HEADER=ndbm.h
 	DB_LIB=ndbm
-    elif test "$ac_cv_lib_c_dbm_open" = yes &&  test "$ac_cv_header_ndbm_h" = yes; then
+    elif test "$ac_cv_lib_c_dbm_open" = yes; then
 	DB_STYLE=ndbm
 	DB_HEADER=ndbm.h
 	DB_LIB=c
-    else
-	AC_CHECK_LIB(db,dbm_open)
-	if test "$ac_cv_lib_db_dbm_open" = yes && test "$ac_cv_header_db_h" = yes; then
-	    DB_STYLE=db
-	    DB_HEADER=db.h
-	    DB_LIB=db
-	elif test "$ac_cv_lib_c_dbm_open" = yes && test "$ac_cv_header_db_h" = yes; then
-	    DB_STYLE=db
-	    DB_HEADER=db.h
-	    DB_LIB=c
-	else
-	    AC_CHECK_LIB(dbm,dbm_open)
-	    if test "$ac_cv_lib_db_dbm_open" = yes && test "$ac_cv_header_dbm_h" = yes; then
-		DB_STYLE=dbm
-		DB_HEADER=dbm.h
-		DB_LIB=dbm
-	    elif test "$ac_cv_lib_c_dbm_open" = yes && test "$ac_cv_header_dbm_h" = yes; then
-		DB_STYLE=dbm
-		DB_HEADER=dbm.h
-		DB_LIB=c
-	    else
-		AC_CHECK_LIB(gdbm,dbm_open)
-		if test "$ac_cv_lib_gdbm_dbm_open" = yes && test "$ac_cv_header_ndbm_h" = yes; then
-		    DB_STYLE=gdbm
-		    DB_HEADER=ndbm.h
-		    DB_LIB=gdbm
-		elif test "$ac_cv_lib_c_dbm_open" = yes && test "$ac_cv_header_ndbm_h" = yes; then
-		    DB_STYLE=gdbm
-		    DB_HEADER=ndbm.h
-		    DB_LIB=c
-		else
-		    if test "$ac_cv_lib_c_dbm_open" = yes; then
-			AC_MSG_WARN([*** A dbm_open() routine was found in -lc, but no header])
-			AC_MSG_WARN([*** files exist.  Please remedy the situation.  You may])
-			AC_MSG_WARN([*** want to install the gdbm library from])
-		    else
-			AC_MSG_WARN([*** No dbm_open() routine found!  Please download and install])
-		    fi
-		    AC_MSG_WARN([*** ftp://prep.ai.mit.edu/pub/gnu/gdbm-1.7.3.tar.gz.])
-		    AC_MSG_WARN([*** This system will not support the Amanda server.])
-		    NO_SERVER_MODE=true
-		fi
-	    fi
-	fi
     fi
 fi
-if test "$DB_STYLE"; then
+
+if test -z "$DB_STYLE" -a "$ac_cv_header_db_h" = yes; then
+    AC_CHECK_LIB(db,dbm_open)
+    if test "$ac_cv_lib_db_dbm_open" = yes; then
+	DB_STYLE=db
+	DB_HEADER=db.h
+	DB_LIB=db
+    elif test "$ac_cv_lib_c_dbm_open" = yes; then
+	DB_STYLE=db
+	DB_HEADER=db.h
+	DB_LIB=c
+    fi
+fi
+
+if test -z "$DB_STYLE" -a "$ac_cv_header_dbm_h" = yes; then
+    AC_CHECK_LIB(dbm,dbm_open)
+    if test "$ac_cv_lib_db_dbm_open" = yes; then
+	DB_STYLE=dbm
+	DB_HEADER=dbm.h
+	DB_LIB=dbm
+    elif test "$ac_cv_lib_c_dbm_open" = yes; then
+	DB_STYLE=dbm
+	DB_HEADER=dbm.h
+	DB_LIB=c
+    fi
+fi
+
+if test -z "$DB_STYLE" -a "$ac_cv_header_ndbm_h" = yes; then
+    AC_CHECK_LIB(gdbm,dbm_open)
+    if test "$ac_cv_lib_gdbm_dbm_open" = yes; then
+	DB_STYLE=gdbm
+	DB_HEADER=ndbm.h
+	DB_LIB=gdbm
+    elif test "$ac_cv_lib_c_dbm_open" = yes; then
+	DB_STYLE=gdbm
+	DB_HEADER=ndbm.h
+	DB_LIB=c
+    fi
+fi
+
+if test -z "$DB_STYLE"; then
+    if test "$ac_cv_lib_c_dbm_open" = yes; then
+	AC_MSG_WARN([*** A dbm_open() routine was found in -lc, but no header])
+	AC_MSG_WARN([*** files exist.  Please remedy the situation.])
+    else
+	AC_MSG_WARN([*** No dbm_open() routine found!])
+    fi
+    AC_MSG_WARN([*** You may want to install the gdbm library from])
+    AC_MSG_WARN([*** ftp://prep.ai.mit.edu/pub/gnu/gdbm-1.7.3.tar.gz.])
+
+    AC_MSG_WARN([*** Using the built-in text database.])
+    DB_STYLE=text
+    DB_HEADER=
+    DB_LIB=
+fi
+
+if test "$DB_STYLE" = text; then
+    AC_DEFINE(TEXTDB)
+else
     AC_MSG_CHECKING([for database])
     AC_MSG_RESULT([header is $DB_HEADER, linking against -l$DB_LIB])
     case "$DB_STYLE" in
@@ -1387,41 +1405,42 @@ if test "$DB_STYLE"; then
 	gdbm)	AC_DEFINE(USE_NDBM_H) ;;
 	ndbm)	AC_DEFINE(USE_NDBM_H) ;;
     esac
+
+    AC_CACHE_CHECK(
+	[for struct datum declared in header files],
+	amanda_cv_struct_datum,
+	[
+	    AC_TRY_COMPILE(
+		[
+		    #if defined(USE_DB_H)
+		    #  include <db.h>
+		    #elif defined(USE_DBM_H)
+		    #  include <dbm.h>
+		    #elif defined(USE_NDBM_H)
+		    #  include <ndbm.h>
+		    #endif
+		],
+		[
+		    datum a;
+		],
+		amanda_cv_struct_datum=yes,
+		amanda_cv_struct_datum=no
+	    )
+	]
+	if test "$amanda_cv_struct_datum" = yes; then
+	    AC_DEFINE(HAVE_STRUCT_DATUM)
+	fi
+    )
 fi
 
 case "$DB_STYLE" in
     db) DB_EXT=.db;;
     gdbm) DB_EXT='""';;
     dbm | ndbm) DB_EXT=".dir .pag";;
+    text) DB_EXT='""';;
     *) DB_EXT=;;
 esac
 AC_SUBST(DB_EXT)
-
-AC_CACHE_CHECK(
-    [for struct datum declared in header files],
-    amanda_cv_struct_datum,
-    [
-	AC_TRY_COMPILE(
-	    [
-		#if defined(USE_DB_H)
-		#  include <db.h>
-		#elif defined(USE_DBM_H)
-		#  include <dbm.h>
-		#elif defined(USE_NDBM_H)
-		#  include <ndbm.h>
-		#endif
-	    ],
-	    [
-		datum a;
-	    ],
-	    amanda_cv_struct_datum=yes,
-	    amanda_cv_struct_datum=no
-	)
-    ]
-    if test "$amanda_cv_struct_datum" = yes; then
-	AC_DEFINE(HAVE_STRUCT_DATUM)
-    fi
-)
 
 dnl Checks for library functions and if the function is declared in
 dnl an appropriate header file.  Add some of the missing functions
