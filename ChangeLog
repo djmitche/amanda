@@ -1,5 +1,10 @@
 2001-06-18 John R. Jackson <jrj@purdue.edu>
 
+	* recover-src/extract_list.c: Do not pass a 'b' (blocking) factor
+	  flag to vrestore.  Some versions do not like it.
+
+2001-06-18 John R. Jackson <jrj@purdue.edu>
+
 	* common-src/dgram.c: Use a sin_addr arg to inet_ntoa() like all the
 	  other Amanda code.
 	* common-src/stream.c: Ditto.
