@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.69 1999/02/16 03:11:30 martinea Exp $
+ * $Id: driver.c,v 1.70 1999/02/16 03:18:40 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -140,6 +140,7 @@ int main(main_argc, main_argv)
     tok_t tok;
     int result_argc;
     char *result_argv[MAX_ARGS+1];
+    char *taper_program;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -177,7 +178,7 @@ int main(main_argc, main_argv)
 
     /* taper takes a while to get going, so start it up right away */
 
-    startup_tape_process();
+    startup_tape_process(taper_program);
     taper_cmd(START_TAPER, datestamp, NULL, 0, NULL);
 
     /* start initializing: read in databases */

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.45 1999/02/14 21:56:02 martinea Exp $
+ * $Id: amflush.c,v 1.46 1999/02/16 03:18:38 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -115,7 +115,6 @@ char **main_argv;
 	error("%s exists: amdump or amflush is already running, or you must run amcleanup", logfile);
     amfree(logfile);
     
-    taper_program = vstralloc(libexecdir, "/", "taper", versionsuffix(), NULL);
     reporter_program = vstralloc(sbindir, "/", "amreport", versionsuffix(),
 				 NULL);
 
@@ -393,12 +392,14 @@ void run_dumps()
     tok_t tok;
     int result_argc;
     char *result_argv[MAX_ARGS+1];
+    char *taper_program;
 
+    taper_program = vstralloc(libexecdir, "/", "taper", versionsuffix(), NULL);
     startclock();
     log_add(L_START, "date %s", datestamp);
 
     chdir(confdir);
-    startup_tape_process();
+    startup_tape_process(taper_program);
     taper_cmd(START_TAPER, datestamp, NULL, 0, NULL);
     tok = getresult(taper, 0, &result_argc, result_argv, MAX_ARGS+1);
 
