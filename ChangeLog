@@ -1,5 +1,11 @@
 2001-07-12 John R. Jackson <jrj@purdue.edu>
 
+	* tape-src/amdd.c: Use tapefd_close() in amdd if the file was
+	  opened with tape_open().  This does any necessary output driver
+	  cleanup (such as moving the current file position for "file:").
+
+2001-07-12 John R. Jackson <jrj@purdue.edu>
+
 	* Makefile.am: Fix automake warning.
 
 2001-07-11 John R. Jackson <jrj@purdue.edu>
