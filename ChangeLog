@@ -1,5 +1,8 @@
 2000-01-21  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* server-src/amstatus.pl.in (prefix, exec_prefix): Refer to them
+	twice to avoid warnings of possible typo.
+
 	* amplot/amplot.awk: Ignore dumper's RQ-MORE-DISK.
 	Reported by David Wolfskill <dhw@whistle.com>
 	* amplot/amplot.awk: Handle taper's TRY-AGAIN like TAPE-ERROR.
@@ -759,7 +762,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.333 2000/01/21 09:13:14 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.334 2000/01/21 09:52:31 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
