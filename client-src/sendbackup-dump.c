@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.32 1997/09/11 15:06:48 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.33 1997/09/11 15:16:15 amcore Exp $
  *
  * send backup data using BSD dump
  */
@@ -200,7 +200,7 @@ char *dumpdate;
 	}
 	else
 	{
-	    dumppid = pipespawn(program->backup_name, &dumpin, dumpout, mesgf,
+	    dumppid = pipespawn(progname, &dumpin, dumpout, mesgf,
 				"xfsdump", "-F", "-l", dumpkeys, "-",
 				device, (char *)0);
 	}
