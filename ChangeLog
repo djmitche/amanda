@@ -1,3 +1,8 @@
+2001-07-19 John R. Jackson <jrj@purdue.edu>
+
+	* server-src/driverio.c: Make the name "ps" reports match the dumper
+	  name (e.g. "dumper3").
+
 2001-07-18 John R. Jackson <jrj@purdue.edu>
 
 	* changer-src/chg-chio.pl.in: Try to unload the drive before moving
