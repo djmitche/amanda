@@ -1,3 +1,13 @@
+1998-07-23  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/driver.c (any_delayed_disk): new variable, to ensure
+	that we do not leave the main driver loop if there are delayed disks 
+	but there are no active dumpers
+	(main): instead of checking whether idle_reason is IDLE_START_WAIT,
+	check whether there is any_delayed_disk for remaining in the loop
+	(start_degraded_mode): set any_delayed_disk when needed
+	Reported by Peter Walker <peter@talarian.com>
+
 1998-07-23  John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/reporter.c (main): handle LPRCMD being undefined.

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.46 1998/07/04 15:53:12 martinea Exp $
+ * $Id: driver.c,v 1.46.2.1 1998/07/23 22:15:08 oliva Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -114,6 +114,8 @@ char *idle_strings[] = {
 
 #define SLEEP_MAX		(24*3600)
 struct timeval sleep_time = { SLEEP_MAX, 0 };
+/* enabled if any disks are in start-wait: */
+int any_delayed_disk = 0;
 
 #ifndef MAXFILESIZE
 /*
@@ -290,7 +292,7 @@ char **main_argv;
     }
 
     while(start_some_dumps(&runq) || some_dumps_in_progress() ||
-	  (idle_reason == IDLE_START_WAIT)) {
+	  any_delayed_disk) {
 
 	short_dump_state();
 
@@ -427,6 +429,7 @@ disklist_t *rq;
     idle_reason = IDLE_NO_DUMPERS;
     sleep_time.tv_sec = SLEEP_MAX;
     sleep_time.tv_usec = 0;
+    any_delayed_disk = 0;
 
     /*
      * A potential problem with starting from the bottom of the dump time
@@ -466,6 +469,7 @@ disklist_t *rq;
 	    if(diskp->start_t > now) {
 		cur_idle = max(cur_idle, IDLE_START_WAIT);
 		sleep_time.tv_sec = min(diskp->start_t - now, sleep_time.tv_sec);
+		any_delayed_disk = 1;
 	    } else if(sched(diskp)->est_kps > free_kps(diskp->host->netif))
 		cur_idle = max(cur_idle, IDLE_NO_BANDWIDTH);
 	    else if((holdp = find_diskspace(sched(diskp)->est_size,&cur_idle)) == NULL)
