@@ -25,13 +25,13 @@
  */
 
 /*
- * $Id: features.c,v 1.1.2.2 2002/04/13 23:36:19 jrjackson Exp $
+ * $Id: amfeatures.c,v 1.1.2.1 2002/04/17 20:05:42 martinea Exp $
  *
  * Feature test related code.
  */
 
 #include <amanda.h>
-#include <features.h>
+#include <amfeatures.h>
 
 /*
  *=====================================================================

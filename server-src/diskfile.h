@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.11.4.3.4.1.2.6 2002/04/13 19:24:17 jrjackson Exp $
+ * $Id: diskfile.h,v 1.11.4.3.4.1.2.7 2002/04/17 20:05:42 martinea Exp $
  *
  * interface for disklist file reading code
  */
@@ -34,7 +34,7 @@
 
 #include "amanda.h"
 #include "conffile.h"
-#include "features.h"
+#include "amfeatures.h"
 
 typedef struct host_s {
     struct host_s *next;		/* next host */

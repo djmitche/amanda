@@ -14,7 +14,7 @@ INCLUDES = -I$(REGsrcdir)
 libamanda_la_SOURCES = \
 	alloc.c		amflock.c	clock.c		debug.c		\
 	dgram.c		error.c		file.c		fileheader.c	\
-	features.c	match.c						\
+	amfeatures.c	match.c						\
 	protocol.c	regcomp.c	regerror.c	regexec.c	\
 	regfree.c	security.c	statfs.c	stream.c	\
 	token.c		util.c		version.c	versuff.c       \
@@ -28,7 +28,7 @@ libamanda_a_LIBADD =	@LIBOBJS@ @ALLOCA@
 
 noinst_HEADERS =	amanda.h	arglist.h	\
 			clock.h		dgram.h		\
-			features.h	protocol.h	\
+			amfeatures.h	protocol.h	\
 			statfs.h	stream.h	\
 			token.h		version.h	\
 			amregex.h	fileheader.h	\
@@ -80,7 +80,7 @@ REGEXHSRC =	$(REGsrcdir)/regex2.h \
 		$(REGsrcdir)/regfree.c
 
 # these are used for testing only:
-TEST_PROGS = statfs token file security features
+TEST_PROGS = statfs token file security amfeatures
 
 CLEANFILES = regex.h regcomp.ih engine.ih regerror.ih *.test.c
 
@@ -112,8 +112,8 @@ file_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF_NOT_FILE)
 security_SOURCES = security.test.c
 security_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF)
 
-features_SOURCES = features.test.c
-features_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF)
+amfeatures_SOURCES = amfeatures.test.c
+amfeatures_LDADD = $(libamanda_a_LIBADD) $(STANDARD_COMMON_STUFF)
 
 %.test.c: $(srcdir)/%.c
 	echo '#define TEST' >$@

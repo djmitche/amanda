@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.44.2.9.4.4.2.6 2002/04/13 23:36:18 jrjackson Exp $
+ * $Id: sendbackup.c,v 1.44.2.9.4.4.2.7 2002/04/17 20:05:42 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -33,7 +33,7 @@
 #include "sendbackup.h"
 #include "clock.h"
 #include "pipespawn.h"
-#include "features.h"
+#include "amfeatures.h"
 #include "stream.h"
 #include "arglist.h"
 #include "getfsent.h"

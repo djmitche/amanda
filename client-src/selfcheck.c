@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.40.2.3.4.4.2.12 2002/04/13 23:36:18 jrjackson Exp $
+ * $Id: selfcheck.c,v 1.40.2.3.4.4.2.13 2002/04/17 20:05:41 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -38,7 +38,7 @@
 #include "amandates.h"
 #include "util.h"
 #include "pipespawn.h"
-#include "features.h"
+#include "amfeatures.h"
 #include "client_util.h"
 
 #ifdef SAMBA_CLIENT

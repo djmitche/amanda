@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.32.2.4.4.1.2.3 2002/04/13 19:24:16 jrjackson Exp $
+ * $Id: amandad.c,v 1.32.2.4.4.1.2.4 2002/04/17 20:05:41 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -35,7 +35,7 @@
 #include "amanda.h"
 #include "clock.h"
 #include "dgram.h"
-#include "features.h"
+#include "amfeatures.h"
 #include "version.h"
 #include "protocol.h"
 #include "util.h"

@@ -24,14 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.13.4.6.2.12 2002/04/13 23:36:19 jrjackson Exp $
+ * $Id: sendsize.c,v 1.97.2.13.4.6.2.13 2002/04/17 20:05:42 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
 
 #include "amanda.h"
 #include "pipespawn.h"
-#include "features.h"
+#include "amfeatures.h"
 #include "amandates.h"
 #include "clock.h"
 #include "util.h"

@@ -25,13 +25,13 @@
  */
 
 /*
- * $Id: features.h,v 1.1.2.2 2002/04/13 23:36:19 jrjackson Exp $
+ * $Id: amfeatures.h,v 1.1.2.1 2002/04/17 20:05:42 martinea Exp $
  *
  * Define feature test related items.
  */
 
-#ifndef FEATURES_H
-#define FEATURES_H
+#ifndef AMFEATURES_H
+#define AMFEATURES_H
 
 /*
  * !!!WARNING!!!    !!!WARNING!!!    !!!WARNING!!!    !!!WARNING!!!
@@ -98,4 +98,4 @@ extern int am_has_feature P((am_feature_t *f, am_feature_e n));
 extern char *am_feature_to_string P((am_feature_t *f));
 extern am_feature_t *am_string_to_feature P((char *s));
 
-#endif	/* !FEATURES_H */
+#endif	/* !AMFEATURES_H */

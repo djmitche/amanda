@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.19.2.7.2.4 2002/04/13 19:24:16 jrjackson Exp $
+ * $Id: amcheck.c,v 1.50.2.19.2.7.2.5 2002/04/17 20:05:42 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -42,7 +42,7 @@
 #include "token.h"
 #include "util.h"
 #include "pipespawn.h"
-#include "features.h"
+#include "amfeatures.h"
 
 /*
  * If we don't have the new-style wait access functions, use our own,

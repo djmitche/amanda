@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.47.2.14.4.8.2.6 2002/04/13 19:24:17 jrjackson Exp $
+/* $Id: taper.c,v 1.47.2.14.4.8.2.7 2002/04/17 20:05:42 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -39,7 +39,7 @@
 #include "version.h"
 #include "arglist.h"
 #include "token.h"
-#include "features.h"
+#include "amfeatures.h"
 #include "fileheader.h"
 #include "server_util.h"
 #ifdef HAVE_LIBVTBLC
