@@ -1,3 +1,10 @@
+2003-01-30  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* configure.in: Define WANT_RUNTIME_PSEUDO_RELOC on cygwin
+	* client-src/Makefile.am: AM_LDFLAGS="-Wl,-enable-runtime-pseudo-reloc"
+	  if WANT_RUNTIME_PSEUDO_RELOC.
+	* recover-src/Makefile.am: Ditto.
+
 2003-01-28  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* tape-src/output-rait.h: #define stralloc strdup

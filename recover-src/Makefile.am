@@ -7,6 +7,10 @@ LIB_EXTENSION = la
 
 sbin_PROGRAMS =		amrecover
 
+if WANT_RUNTIME_PSEUDO_RELOC
+AM_LDFLAGS = -Wl,-enable-runtime-pseudo-reloc
+endif
+
 ###
 # Because libamanda includes routines (e.g. regex) provided by some system
 # libraries, and because of the way libtool sets up the command line, we

@@ -15,6 +15,10 @@ if WANT_SAMBA
 samba_sources = findpass.c
 endif
 
+if WANT_RUNTIME_PSEUDO_RELOC
+AM_LDFLAGS = -Wl,-enable-runtime-pseudo-reloc
+endif
+
 libamclient_la_SOURCES=	amandates.c		getfsent.c	\
 			unctime.c		client_util.c	\
 			$(samba_sources)

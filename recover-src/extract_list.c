@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43.2.13.4.6.2.17 2003/01/23 23:02:50 martinea Exp $
+ * $Id: extract_list.c,v 1.43.2.13.4.6.2.18 2003/01/31 02:42:22 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1743,7 +1743,7 @@ void extract_files P((void))
 	    else if(otc == 1) {
 		delete_tape_list(elist); /* tape failed so delete from list */
 	    }
-	    else { /* TAPE_RETRY */
+	    else { /* RETRY_TAPE */
 	    }
 	}
 	else {
